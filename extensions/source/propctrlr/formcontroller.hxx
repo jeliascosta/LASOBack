@@ -68,34 +68,32 @@ namespace pcr
         );
 
         // XServiceInfo - static versions
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_static(  );
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_static(  );
+        static OUString getImplementationName_static(  ) throw(css::uno::RuntimeException);
+        static css::uno::Sequence< OUString > getSupportedServiceNames_static(  ) throw(css::uno::RuntimeException);
         static css::uno::Reference< css::uno::XInterface > SAL_CALL
                         Create(const css::uno::Reference< css::uno::XComponentContext >&);
 
     protected:
-        virtual ~FormController() override;
+        virtual ~FormController();
 
         DECLARE_XINTERFACE()
         DECLARE_XTYPEPROVIDER()
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         // XPropertySet and friends
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
 
         virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any & rConvertedValue, css::uno::Any & rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue
-            ) override;
+            )   throw (css::lang::IllegalArgumentException) override;
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                 sal_Int32 nHandle, const css::uno::Any& rValue
-            ) override;
+            ) throw (css::uno::Exception, std::exception) override;
         virtual void SAL_CALL getFastPropertyValue(
                 css::uno::Any& rValue, sal_Int32 nHandle
             ) const override;
@@ -112,10 +110,8 @@ namespace pcr
     {
     public:
         // XServiceInfo - static versions
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_static(  );
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_static(  );
+        static OUString getImplementationName_static(  ) throw(css::uno::RuntimeException);
+        static css::uno::Sequence< OUString > getSupportedServiceNames_static(  ) throw(css::uno::RuntimeException);
         static css::uno::Reference< css::uno::XInterface > SAL_CALL
                         Create(const css::uno::Reference< css::uno::XComponentContext >&);
 

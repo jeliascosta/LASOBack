@@ -10,7 +10,7 @@ Option ClassModule
 
 Option Explicit
 
-REM MODULE NAME &lt;&gt; COLLECTION (is a reserved name for ... collections)
+REM MODULE NAME &lt;&gt; COLLECTION (seems a reserved name ?)
 
 REM -----------------------------------------------------------------------------------------------------------------------
 REM --- CLASS ROOT FIELDS 								        														---
@@ -77,8 +77,6 @@ Dim vNames() As Variant, oProperty As Object
 			Set Item = Application.AllDialogs(pvItem)
 		Case COLLALLFORMS
 			Set Item = Application.AllForms(pvItem)
-		Case COLLALLMODULES
-			Set Item = Application.AllModules(pvItem)
 		Case COLLCOMMANDBARS
 			Set Item = Application.CommandBars(pvItem)
 		Case COLLCOMMANDBARCONTROLS
@@ -107,10 +105,8 @@ Dim vNames() As Variant, oProperty As Object
 			End Select
 		Case COLLPROPERTIES
 			Select Case _ParentType
-				Case OBJCONTROL
+				Case OBJCONTROL, OBJSUBFORM
 					Set Item = getObject(_ParentName).Properties(pvItem)
-				Case OBJSUBFORM
-					Set Item = getValue(_ParentName).Properties(pvItem)
 				Case OBJDATABASE
 					Set Item = _ParentDatabase.Properties(pvItem)
 				Case OBJDIALOG

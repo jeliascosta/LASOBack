@@ -23,6 +23,7 @@
 #include <vcl/field.hxx>
 #include <vcl/group.hxx>
 #include <vcl/layout.hxx>
+#include <svtools/stdctrl.hxx>
 #include <sfx2/tabdlg.hxx>
 
 class SwLabDlg;
@@ -43,7 +44,7 @@ class SwLabPrtPage : public SfxTabPage
     VclPtr<FixedText>    m_pPrinterInfo;
     VclPtr<PushButton>   m_pPrtSetup;
 
-    DECL_LINK( CountHdl, Button *, void );
+    DECL_LINK_TYPED( CountHdl, Button *, void );
 
     SwLabDlg* GetParentSwLabDlg() {return static_cast<SwLabDlg*>(GetParentDialog());}
 
@@ -52,17 +53,17 @@ class SwLabPrtPage : public SfxTabPage
 
 public:
     SwLabPrtPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwLabPrtPage() override;
+    virtual ~SwLabPrtPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
+    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
             void FillItem(SwLabItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
-    Printer* GetPrt() { return pPrinter; }
+    inline Printer* GetPrt() { return pPrinter; }
 };
 
 #endif

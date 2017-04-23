@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.20.0 -->
+<!-- Generated with glade 3.19.0 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
   <object class="GtkAdjustment" id="adjustment1">
@@ -44,7 +44,6 @@
                   <object class="GtkGrid" id="grid3">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Requires restart</property>
                     <property name="row_spacing">6</property>
                     <child>
                       <object class="GtkCheckButton" id="useaccel">
@@ -78,7 +77,7 @@
                     </child>
                     <child>
                       <object class="GtkCheckButton" id="useopengl">
-                        <property name="label" translatable="yes">Use OpenGL for all rendering</property>
+                        <property name="label" translatable="yes">Use OpenGL for all rendering (on restart)</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
@@ -91,12 +90,12 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="forceopengl">
-                        <property name="label" translatable="yes">Ignore OpenGL blacklist</property>
+                      <object class="GtkCheckButton" id="forceopengl:wrap">
+                        <property name="label" translatable="yes">Force OpenGL even if blacklisted (on restart)</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
-                        <property name="tooltip_text" translatable="yes">Requires restart. Enabling this may expose driver bugs</property>
+                        <property name="tooltip_text" translatable="yes">Enabling this may expose driver bugs</property>
                         <property name="margin_left">12</property>
                         <property name="xalign">0</property>
                         <property name="draw_indicator">True</property>
@@ -166,12 +165,11 @@
                   <object class="GtkGrid" id="grid8">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="row_spacing">6</property>
+                    <property name="column_spacing">12</property>
                     <child>
                       <object class="GtkLabel" id="label13">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
                         <property name="label" translatable="yes">Icons in men_us:</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">menuicons</property>
@@ -179,35 +177,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="contextmenushortcuts">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <items>
-                          <item translatable="yes">Automatic</item>
-                          <item translatable="yes">Hide</item>
-                          <item translatable="yes">Show</item>
-                        </items>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="label10">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="label" translatable="yes">Shortcuts in context menus:</property>
-                        <property name="use_underline">True</property>
-                        <property name="mnemonic_widget">contextmenushortcuts</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">2</property>
                       </packing>
                     </child>
                     <child>
@@ -221,8 +190,8 @@
                         </items>
                       </object>
                       <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
                       </packing>
                     </child>
                   </object>
@@ -335,18 +304,46 @@
                         <property name="can_focus">False</property>
                         <property name="hexpand">True</property>
                         <property name="row_spacing">6</property>
+                        <property name="column_spacing">12</property>
+                        <child>
+                          <object class="GtkLabel" id="label7">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">Sc_aling:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">windowsize:0%</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="windowsize:0%">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="halign">start</property>
+                            <property name="invisible_char">•</property>
+                            <property name="adjustment">adjustment1</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">0</property>
+                          </packing>
+                        </child>
                         <child>
                           <object class="GtkLabel" id="label8">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">start</property>
-                            <property name="label" translatable="yes">Toolbar icon _size:</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">Icon _size:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">iconsize</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -362,14 +359,15 @@
                               <item translatable="yes">Tango</item>
                               <item translatable="yes">Oxygen</item>
                               <item translatable="yes">Classic</item>
+                              <item translatable="yes">Human</item>
                               <item translatable="yes">Sifr</item>
                               <item translatable="yes">Breeze</item>
                               <item translatable="yes">Tango Testing</item>
                             </items>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">7</property>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -380,11 +378,10 @@
                               <item translatable="yes">Automatic</item>
                               <item translatable="yes">Small</item>
                               <item translatable="yes">Large</item>
-                              <item translatable="yes">Extra Large</item>
                             </items>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
+                            <property name="left_attach">1</property>
                             <property name="top_attach">1</property>
                           </packing>
                         </child>
@@ -392,14 +389,14 @@
                           <object class="GtkLabel" id="label6">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">start</property>
+                            <property name="halign">end</property>
                             <property name="label" translatable="yes">Icon s_tyle:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">iconstyle</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -414,46 +411,18 @@
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">8</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label9">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">start</property>
-                            <property name="label" translatable="yes">Sidebar _icon size:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">iconsize</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="sidebariconsize">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <items>
-                              <item translatable="yes">Automatic</item>
-                              <item translatable="yes">Small</item>
-                              <item translatable="yes">Large</item>
-                            </items>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
                             <property name="top_attach">3</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label7">
+                          <object class="GtkLabel" id="aafrom">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">start</property>
-                            <property name="label" translatable="yes">_Notebookbar icon size:</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">fro_m:</property>
                             <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">iconsize</property>
+                            <property name="mnemonic_widget">aanf:0pixels</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -461,56 +430,16 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="notebookbariconsize">
+                          <object class="GtkSpinButton" id="aanf:0pixels">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <items>
-                              <item translatable="yes">Automatic</item>
-                              <item translatable="yes">Small</item>
-                              <item translatable="yes">Large</item>
-                            </items>
+                            <property name="can_focus">True</property>
+                            <property name="halign">start</property>
+                            <property name="invisible_char">•</property>
+                            <property name="adjustment">adjustment2</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkGrid">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="margin_left">18</property>
-                            <property name="column_spacing">12</property>
-                            <child>
-                              <object class="GtkLabel" id="aafrom">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="halign">start</property>
-                                <property name="label" translatable="yes">fro_m:</property>
-                                <property name="use_underline">True</property>
-                                <property name="mnemonic_widget">aanf:0pixels</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkSpinButton" id="aanf:0pixels">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="invisible_char">•</property>
-                                <property name="adjustment">adjustment2</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">9</property>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                       </object>

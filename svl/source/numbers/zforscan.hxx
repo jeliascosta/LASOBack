@@ -44,7 +44,7 @@ public:
     ~ImpSvNumberformatScan();
     void ChangeIntl(); // Replaces Keywords
 
-    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear); // Replaces reference date
+    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear); // Replaces reference date
     void ChangeStandardPrec(sal_uInt16 nPrec); // Replaces standard precision
 
     sal_Int32 ScanFormat( OUString& rString ); // Call scan analysis
@@ -154,7 +154,6 @@ private: // Private section
     OUString sNameStandardFormat;               // "Standard"
     sal_uInt16 nStandardPrec;                   // Default Precision for Standardformat
     SvNumberFormatter* pFormatter;              // Pointer to the FormatList
-    css::uno::Reference< css::i18n::XNumberFormatCode > xNFC;
 
     OUString sStrArray[NF_MAX_FORMAT_SYMBOLS];  // Array of symbols
     short nTypeArray[NF_MAX_FORMAT_SYMBOLS];    // Array of infos
@@ -217,7 +216,7 @@ private: // Private section
     short GetKeyWord( const OUString& sSymbol,  // Determine keyword at nPos
                       sal_Int32 nPos );         // Return 0 <=> not found
 
-    bool IsAmbiguousE( short nKey )      // whether nKey is ambiguous E of NF_KEY_E/NF_KEY_EC
+    inline bool IsAmbiguousE( short nKey )      // whether nKey is ambiguous E of NF_KEY_E/NF_KEY_EC
         {
             return (nKey == NF_KEY_EC || nKey == NF_KEY_E) &&
                 (GetKeywords()[NF_KEY_EC] == GetKeywords()[NF_KEY_E]);
@@ -241,7 +240,7 @@ private: // Private section
         reused instead of shifting all one up and nPos is decremented! */
     bool InsertSymbol( sal_uInt16 & nPos, svt::NfSymbolType eType, const OUString& rStr );
 
-    static bool StringEqualsChar( const OUString& rStr, sal_Unicode ch )
+    static inline bool StringEqualsChar( const OUString& rStr, sal_Unicode ch )
         { return rStr.getLength() == 1 && rStr[0] == ch; }
 
     // remove "..." and \... quotes from rStr, return how many chars removed

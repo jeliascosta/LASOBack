@@ -59,7 +59,10 @@ $(eval $(call gb_CppunitTest_set_include,sc_editfieldobj_cell,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sc_editfieldobj_cell))
+$(eval $(call gb_CppunitTest_use_api,sc_editfieldobj_cell,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_editfieldobj_cell))
 $(eval $(call gb_CppunitTest_use_vcl,sc_editfieldobj_cell))
@@ -94,7 +97,6 @@ $(eval $(call gb_CppunitTest_use_components,sc_editfieldobj_cell,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
 	svtools/util/svt \
 ))
 

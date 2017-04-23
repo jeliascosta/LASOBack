@@ -40,23 +40,27 @@ public:
     PPPOptimizer(
         css::uno::Reference<css::uno::XComponentContext> const & xContext,
         css::uno::Reference< css::frame::XFrame > const & xFrame);
-    virtual     ~PPPOptimizer() override;
+    virtual     ~PPPOptimizer();
 
     // XDispatchProvider
     virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL queryDispatch(
-        const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags ) override;
+        const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags )
+            throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL queryDispatches(
-        const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts ) override;
+        const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts ) throw( css::uno::RuntimeException, std::exception ) override;
 
     // XDispatch
     virtual void SAL_CALL dispatch( const css::util::URL& aURL,
-                                        const css::uno::Sequence< css::beans::PropertyValue >& lArguments ) override;
+                                        const css::uno::Sequence< css::beans::PropertyValue >& lArguments )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xListener,
-                                                const css::util::URL& aURL ) override;
+                                                const css::util::URL& aURL )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xListener,
-                                                const css::util::URL& aURL ) override;
+                                                const css::util::URL& aURL )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     static sal_Int64 GetFileSize( const OUString& rURL );
 };

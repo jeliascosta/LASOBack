@@ -26,7 +26,9 @@
 
 #define DEBUG_CSV_HANDLER 0
 
-inline OUString getConditionalFormatString(ScDocument* pDoc, SCCOL nCol, SCROW nRow, SCTAB nTab)
+namespace {
+
+OUString getConditionalFormatString(ScDocument* pDoc, SCCOL nCol, SCROW nRow, SCTAB nTab)
 {
     OUString aString;
     Color* pColor;
@@ -42,7 +44,7 @@ inline OUString getConditionalFormatString(ScDocument* pDoc, SCCOL nCol, SCROW n
     return aString;
 }
 
-inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab)
+OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab)
 {
     OStringBuffer aString("Error in Table: ");
     aString.append(static_cast<sal_Int32>(nTab));
@@ -53,7 +55,7 @@ inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab)
     return aString.makeStringAndClear();
 }
 
-inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, const OUString& rExpectedString, const OUString& rString)
+OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, const OUString& rExpectedString, const OUString& rString)
 {
     OStringBuffer aString(createErrorMessage(nCol, nRow, nTab));
     aString.append("; Expected: '");
@@ -64,7 +66,7 @@ inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, const OUSt
     return aString.makeStringAndClear();
 }
 
-inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, double aExpected, double aValue)
+OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, double aExpected, double aValue)
 {
     OStringBuffer aString(createErrorMessage(nCol, nRow, nTab));
     aString.append("; Expected: '");
@@ -76,10 +78,12 @@ inline OString createErrorMessage(SCCOL nCol, SCROW nRow, SCTAB nTab, double aEx
 
 }
 
+}
+
 class csv_handler
 {
 public:
-    csv_handler(ScDocument* pDoc, SCTAB nTab, StringType eType):
+    csv_handler(ScDocument* pDoc, SCTAB nTab, StringType eType = StringValue):
             mpDoc(pDoc),
             mnCol(0),
             mnRow(0),
@@ -112,7 +116,7 @@ public:
                 CPPUNIT_ASSERT_MESSAGE(createErrorMessage(mnCol, mnRow, mnTab).getStr(), false);
             }
         }
-        else if (meStringType == StringType::PureString)
+        else if (meStringType == PureString)
         {
             OUString aCSVString(p, n, RTL_TEXTENCODING_UTF8);
             OUString aString = mpDoc->GetString(mnCol, mnRow, mnTab);
@@ -135,8 +139,11 @@ public:
                 OUString aString;
                 switch (meStringType)
                 {
-                    case StringType::StringValue:
+                    case StringValue:
                         aString = mpDoc->GetString(mnCol, mnRow, mnTab);
+                        break;
+                    case FormulaValue:
+                        mpDoc->GetFormula(mnCol, mnRow, mnTab, aString);
                         break;
                     default:
                         break;

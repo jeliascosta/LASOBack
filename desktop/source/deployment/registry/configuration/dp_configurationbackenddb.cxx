@@ -21,7 +21,6 @@
 #include <rtl/string.h>
 #include <rtl/bootstrap.hxx>
 #include <cppuhelper/exc_hlp.hxx>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/xml/dom/XDocumentBuilder.hpp>
 #include <com/sun/star/xml/xpath/XXPathAPI.hpp>
@@ -127,11 +126,11 @@ ConfigurationBackendDb::getEntry(OUString const & url)
     }
 }
 
-std::list<OUString> ConfigurationBackendDb::getAllDataUrls()
+::std::list<OUString> ConfigurationBackendDb::getAllDataUrls()
 {
     try
     {
-        std::list<OUString> listRet;
+        ::std::list<OUString> listRet;
         Reference<css::xml::dom::XDocument> doc = getDocument();
         Reference<css::xml::dom::XNode> root = doc->getFirstChild();
 

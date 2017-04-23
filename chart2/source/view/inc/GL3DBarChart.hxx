@@ -12,7 +12,7 @@
 
 #include <GL3DPlotterBase.hxx>
 
-#include <deque>
+#include <list>
 #include <vector>
 #include "VDataSeries.hxx"
 
@@ -50,6 +50,7 @@ enum RenderEventType
     EVENT_SHOW_SCROLL,
     EVENT_SHOW_SELECT,
     EVENT_AUTO_FLY,
+    EVENT_DIE,
     EVENT_SELECTBAR_UPDEDATE
 };
 
@@ -68,7 +69,7 @@ public:
         const css::uno::Reference<css::chart2::XChartType>& xChartType,
         OpenGLWindow* pContext);
 
-    virtual ~GL3DBarChart() override;
+    virtual ~GL3DBarChart();
 
     virtual void create3DShapes(const std::vector<std::unique_ptr<VDataSeries>>& rDataSeries,
         ExplicitCategoriesProvider& rCatProvider) override;
@@ -100,10 +101,10 @@ private:
     void updateScreenText();
     void updateRenderFPS();
     void updateDataUpdateFPS();
-    DECL_LINK(UpdateTimerHdl, Timer*, void);
+    DECL_LINK_TYPED(UpdateTimerHdl, Idle*, void);
     static int calcTimeInterval(TimeValue &startTime, TimeValue &endTime);
-    float addScreenTextShape(OUString &nStr, const glm::vec2& rLeftOrRightTop, float nTextHeight, bool bLeftTopFlag,
-                                  const glm::vec4& rColor,
+    float addScreenTextShape(OUString &nStr, const glm::vec2& rLeftOrRightTop, float nTextHeight, bool bLeftTopFlag = true,
+                                  const glm::vec4& rColor = glm::vec4(0.0f, 1.0f, 1.0f, 0.0f),
                                   const glm::vec3& rPos = glm::vec3(0.0f, 0.0f, 0.0f),
                                   sal_uInt32 nEvent = 0);
     void recordBarHistory(sal_uInt32 &nBarID, float &nVal);
@@ -180,7 +181,7 @@ private:
     TimeValue maFPSRenderEndTime;
     TimeValue maDataUpdateStartTime;
     TimeValue maDataUpdateEndTime;
-    std::map<sal_uInt32, std::deque<float> > maBarHistory;
+    std::map<sal_uInt32, std::list<float> > maBarHistory;
     std::vector<sal_uInt32> maVectorNearest;
     std::map<sal_uInt32, float> maDistanceMap;
     std::map<sal_uInt32, sal_uInt32> maBarColorMap;

@@ -19,7 +19,7 @@
 #ifndef INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYVIEWSWITCH_HXX
 #define INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYVIEWSWITCH_HXX
 
-#include "JoinDesignView.hxx"
+#include "queryview.hxx"
 
 namespace dbtools
 {
@@ -32,16 +32,14 @@ namespace dbaui
     class OQueryTextView;
     class OAddTableDlg;
     class OQueryContainerWindow;
-    class OQueryController;
-
-    class OQueryViewSwitch final
+    class OQueryViewSwitch
     {
         VclPtr<OQueryDesignView>   m_pDesignView;
         VclPtr<OQueryTextView>     m_pTextView;
         bool            m_bAddTableDialogWasVisible; // true if so
     public:
         OQueryViewSwitch(OQueryContainerWindow* pParent, OQueryController& _rController,const css::uno::Reference< css::uno::XComponentContext >& );
-        ~OQueryViewSwitch();
+        virtual ~OQueryViewSwitch();
 
         bool isCutAllowed();
         bool isPasteAllowed();
@@ -72,7 +70,7 @@ namespace dbaui
         void     setSlotEnabled(sal_Int32 _nSlotId, bool _bEnable);
         void     setNoneVisbleRow(sal_Int32 _nRows);
         void     SaveUIConfig();
-        bool     reset();
+        bool     reset( ::dbtools::SQLExceptionInfo* _pErrorInfo );
         void     GrabFocus();
 
         // returns the add table dialog from the design view

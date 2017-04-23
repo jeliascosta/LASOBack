@@ -34,7 +34,7 @@
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
 #include <osl/diagnose.h>
-#include "drawingml/lineproperties.hxx"
+#include "oox/drawingml/lineproperties.hxx"
 #include "drawingml/chart/seriesconverter.hxx"
 #include "drawingml/chart/typegroupmodel.hxx"
 #include <oox/core/xmlfilterbase.hxx>
@@ -222,6 +222,11 @@ ObjectType TypeGroupConverter::getSeriesObjectType() const
         (maTypeInfo.mbSeriesIsFrame2d ? OBJECTTYPE_FILLEDSERIES2D : OBJECTTYPE_LINEARSERIES2D);
 }
 
+bool TypeGroupConverter::isReverseSeries() const
+{
+    return maTypeInfo.mbReverseSeries && !mb3dChart && !isStacked() && !isPercent();
+}
+
 OUString TypeGroupConverter::getSingleSeriesTitle() const
 {
     OUString aSeriesTitle;
@@ -291,7 +296,6 @@ Reference< XLabeledDataSequence > TypeGroupConverter::createCategorySequence()
         SeriesModel &aModel = *mrModel.maSeries.get(0);
         DataSourceModel &aSrc = aModel.maSources.create( SeriesModel::CATEGORIES );
         DataSequenceModel &aSeq = aSrc.mxDataSeq.create();
-        aSeq.mnPointCount = nMaxValues;
         for( sal_Int32 i = 0; i < nMaxValues; i++ )
             aSeq.maData[ i ] <<= OUString::number( i + 1 );
         SeriesConverter aSeriesConv( *this,  aModel );
@@ -344,7 +348,7 @@ void TypeGroupConverter::convertFromModel( const Reference< XDiagram >& rxDiagra
             aSeries.push_back( std::make_shared<SeriesConverter>( *this, **aIt ) );
 
         // reverse series order for some unstacked 2D chart types
-        if( maTypeInfo.mbReverseSeries && !mb3dChart && !isStacked() && !isPercent() )
+        if( isReverseSeries() )
             ::std::reverse( aSeries.begin(), aSeries.end() );
 
         // decide whether to use varying colors for each data point

@@ -61,7 +61,7 @@ namespace dbaui
 
     public:
         OScrollWindowHelper( vcl::Window* pParent);
-        virtual ~OScrollWindowHelper() override;
+        virtual ~OScrollWindowHelper();
         virtual void dispose() override;
 
         void setTableView(OJoinTableView* _pTableView);
@@ -85,11 +85,11 @@ namespace dbaui
 
     private:
         OTableWindowMap     m_aTableMap;
-        std::vector<VclPtr<OTableConnection> >    m_vTableConnection;
+        ::std::vector<VclPtr<OTableConnection> >    m_vTableConnection;
 
         Idle                m_aDragScrollIdle;
-        tools::Rectangle           m_aDragRect;
-        tools::Rectangle           m_aSizingRect;
+        Rectangle           m_aDragRect;
+        Rectangle           m_aSizingRect;
         Point               m_aDragOffset;
         Point               m_aScrollOffset;
         Point               m_ptPrevDraggingPos;
@@ -103,7 +103,7 @@ namespace dbaui
 
         bool                    m_bTrackingInitiallyMoved;
 
-        DECL_LINK(OnDragScrollTimer, Timer*, void);
+        DECL_LINK_TYPED(OnDragScrollTimer, Idle*, void);
 
     protected:
         VclPtr<OTableWindow>               m_pLastFocusTabWin;
@@ -112,7 +112,7 @@ namespace dbaui
 
     public:
         OJoinTableView( vcl::Window* pParent, OJoinDesignView* pView );
-        virtual ~OJoinTableView() override;
+        virtual ~OJoinTableView();
         virtual void dispose() override;
 
         // window override
@@ -126,9 +126,9 @@ namespace dbaui
         // own methods
         ScrollBar& GetHScrollBar() { return static_cast<OScrollWindowHelper*>(GetParent())->GetHScrollBar(); }
         ScrollBar& GetVScrollBar() { return static_cast<OScrollWindowHelper*>(GetParent())->GetVScrollBar(); }
-        DECL_LINK( ScrollHdl, ScrollBar*, void );
+        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
 
-        void DrawConnections(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+        void DrawConnections(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
         void InvalidateConnections();
 
         void BeginChildMove( OTableWindow* pTabWin, const Point& rMousePos );
@@ -181,7 +181,7 @@ namespace dbaui
 
         /** gives a read only access to the connection vector
         */
-        const std::vector<VclPtr<OTableConnection> >& getTableConnections() const { return m_vTableConnection; }
+        const ::std::vector<VclPtr<OTableConnection> >& getTableConnections() const { return m_vTableConnection; }
 
         bool ExistsAConn(const OTableWindow* pFromWin) const;
 
@@ -190,7 +190,7 @@ namespace dbaui
             @param  _pFromWin   the table for which connections should be found
             @return an iterator which can be used to travel all connections of the table
         */
-        std::vector<VclPtr<OTableConnection> >::const_iterator getTableConnections(const OTableWindow* _pFromWin) const;
+        ::std::vector<VclPtr<OTableConnection> >::const_iterator getTableConnections(const OTableWindow* _pFromWin) const;
 
         /** how many connection belongs to single table
 
@@ -199,7 +199,7 @@ namespace dbaui
         */
         sal_Int32 getConnectionCount(const OTableWindow* _pFromWin) const;
 
-        OTableConnection* GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin = false) const;
+        OTableConnection* GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin = false,const OTableConnection* _rpFirstAfter = nullptr) const;
 
         /** clear the window map and connection vector without destroying it
 
@@ -270,7 +270,7 @@ namespace dbaui
         virtual void MouseButtonUp( const MouseEvent& rEvt ) override;
         virtual void MouseButtonDown( const MouseEvent& rEvt ) override;
         virtual void Tracking( const TrackingEvent& rTEvt ) override;
-        virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+        virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
         virtual void ConnDoubleClicked(VclPtr<OTableConnection>& rConnection);
         void SetDefaultTabWinPosSize( OTableWindow* pTabWin );
         virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -318,7 +318,7 @@ namespace dbaui
             modified
             @param _pAction a possible undo action to add at the controller
         */
-        void invalidateAndModify(SfxUndoAction *_pAction);
+        void invalidateAndModify(SfxUndoAction *_pAction=nullptr);
 
     private:
         using Window::Scroll;

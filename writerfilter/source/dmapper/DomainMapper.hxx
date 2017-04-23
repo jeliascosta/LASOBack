@@ -64,6 +64,12 @@ class StyleSheetTable;
 class GraphicZOrderHelper;
 class GraphicNamingHelper;
 
+// different context types require different sprm handling (e.g. names)
+enum SprmType
+{
+    SPRM_DEFAULT,
+    SPRM_LIST
+};
 class DomainMapper : public LoggedProperties, public LoggedTable,
                     public BinaryObj, public LoggedStream
 {
@@ -76,7 +82,7 @@ public:
                  bool bRepairStorage,
                  SourceDocumentType eDocumentType,
                  utl::MediaDescriptor& rMediaDesc);
-    virtual ~DomainMapper() override;
+    virtual ~DomainMapper();
 
     // Stream
     virtual void markLastParagraphInSection() override;
@@ -120,6 +126,9 @@ public:
     void enableInteropGrabBag(const OUString& aName);
     /// Get the stored tokens and clear the internal storage.
     css::beans::PropertyValue getInteropGrabBag();
+
+    css::uno::Sequence<css::beans::PropertyValue> GetThemeFontLangProperties() const;
+    css::uno::Sequence<css::beans::PropertyValue> GetCompatSettings() const;
 
     void HandleRedline( Sprm& rSprm );
 

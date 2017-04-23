@@ -100,6 +100,7 @@ OfficeInstallationDirectories::~OfficeInstallationDirectories()
 // virtual
 OUString SAL_CALL
 OfficeInstallationDirectories::getOfficeInstallationDirectoryURL()
+    throw ( uno::RuntimeException, std::exception )
 {
     initDirs();
     return OUString( *m_pOfficeBrandDir );
@@ -109,6 +110,7 @@ OfficeInstallationDirectories::getOfficeInstallationDirectoryURL()
 // virtual
 OUString SAL_CALL
 OfficeInstallationDirectories::getOfficeUserDataDirectoryURL()
+    throw ( uno::RuntimeException, std::exception )
 {
     initDirs();
     return OUString( *m_pUserDir );
@@ -119,6 +121,7 @@ OfficeInstallationDirectories::getOfficeUserDataDirectoryURL()
 // virtual
 OUString SAL_CALL
 OfficeInstallationDirectories::makeRelocatableURL( const OUString& URL )
+    throw ( uno::RuntimeException, std::exception )
 {
     if ( !URL.isEmpty() )
     {
@@ -154,6 +157,7 @@ OfficeInstallationDirectories::makeRelocatableURL( const OUString& URL )
 // virtual
 OUString SAL_CALL
 OfficeInstallationDirectories::makeAbsoluteURL( const OUString& URL )
+    throw ( uno::RuntimeException, std::exception )
 {
     if ( !URL.isEmpty() )
     {
@@ -191,6 +195,7 @@ OfficeInstallationDirectories::makeAbsoluteURL( const OUString& URL )
 // virtual
 OUString SAL_CALL
 OfficeInstallationDirectories::getImplementationName()
+    throw ( uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.util.OfficeInstallationDirectories");
 }
@@ -198,6 +203,7 @@ OfficeInstallationDirectories::getImplementationName()
 // virtual
 sal_Bool SAL_CALL
 OfficeInstallationDirectories::supportsService( const OUString& ServiceName )
+    throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -205,6 +211,7 @@ OfficeInstallationDirectories::supportsService( const OUString& ServiceName )
 // virtual
 uno::Sequence< OUString > SAL_CALL
 OfficeInstallationDirectories::getSupportedServiceNames()
+    throw ( uno::RuntimeException, std::exception )
 {
     return { "com.sun.star.util.OfficeInstallationDirectories" };
 }

@@ -38,7 +38,7 @@
 
 
 /*
-    A simple popup window similarly to the one the
+    A simple popup window similary to the one the
     windows help (using WinHelp) creates when called
     with the option HELP_CONTEXTPOPUP.
 
@@ -110,7 +110,7 @@ private:
     HWND            m_hwnd;
     HWND            m_hwndParent;
     HINSTANCE       m_hInstance;
-    bool            m_bWndClassRegistered;
+    sal_Bool        m_bWndClassRegistered;
     OUString m_HelpText;
     HBITMAP         m_hBitmapShadow;
     HBRUSH          m_hBrushShadow;

@@ -43,6 +43,7 @@ VAxisOrGridBase::~VAxisOrGridBase()
 void VAxisOrGridBase::setExplicitScaleAndIncrement(
               const ExplicitScaleData& rScale
             , const ExplicitIncrementData& rIncrement )
+            throw (uno::RuntimeException)
 {
     m_aScale = rScale;
     m_aIncrement = rIncrement;

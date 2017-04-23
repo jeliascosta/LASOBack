@@ -43,7 +43,7 @@ class REPORTDESIGN_DLLPUBLIC OReportModel : public SdrModel
     friend class OReportPage;
 
 private:
-    rtl::Reference<OXUndoEnvironment>   m_xUndoEnv;
+    OXUndoEnvironment*                  m_pUndoEnv;
     ::dbaui::DBSubComponentController*  m_pController;
     ::reportdesign::OReportDefinition*  m_pReportDefinition;
 
@@ -55,7 +55,7 @@ private:
 public:
 
     OReportModel(::reportdesign::OReportDefinition* _pReportDefinition);
-    virtual ~OReportModel() override;
+    virtual ~OReportModel();
 
     virtual void        SetChanged(bool bFlg = true) override;
     virtual SdrPage*    AllocPage(bool bMasterPage) override;
@@ -63,11 +63,11 @@ public:
     /** @returns the numbering type that is used to format page fields in drawing shapes */
     virtual SvxNumType  GetPageNumType() const override;
 
-    OXUndoEnvironment&  GetUndoEnv() { return *m_xUndoEnv.get();}
+    OXUndoEnvironment&  GetUndoEnv() { return *m_pUndoEnv;}
     void                SetModified(bool _bModified);
 
-    dbaui::DBSubComponentController* getController() const { return m_pController; }
-    void attachController( dbaui::DBSubComponentController& _rController ) { m_pController = &_rController; }
+    inline dbaui::DBSubComponentController* getController() const { return m_pController; }
+    inline void attachController( dbaui::DBSubComponentController& _rController ) { m_pController = &_rController; }
     void detachController();
 
     OReportPage* createNewPage(const css::uno::Reference< css::report::XSection >& _xSection);

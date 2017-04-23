@@ -29,8 +29,8 @@
 #include <fstream>
 #include <vector>
 
-static OString sInputFileName;
-static OString sOutputFile;
+OString sInputFileName;
+OString sOutputFile;
 
 int extractTranslations()
 {
@@ -108,7 +108,7 @@ namespace
 
             MergeEntrys* pEntrys = aI->second->GetMergeEntries();
             OString sOut;
-            pEntrys->GetText( sOut, StringType::Text, rLanguage );
+            pEntrys->GetText( sOut, STRING_TYP_TEXT, rLanguage );
 
             if (sOut.isEmpty())
                 continue;

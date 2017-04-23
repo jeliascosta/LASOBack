@@ -40,7 +40,7 @@ void lcl_setValue( FormattedField& rFmtField, double fValue )
 }
 
 TrendlineResources::TrendlineResources( vcl::Window * pParent, const SfxItemSet& rInAttrs ) :
-        m_eTrendLineType( SvxChartRegress::Linear ),
+        m_eTrendLineType( CHREGRESS_LINEAR ),
         m_bTrendLineUnique( true ),
         m_pNumFormatter( nullptr ),
         m_nNbPoints( 0 )
@@ -60,8 +60,6 @@ TrendlineResources::TrendlineResources( vcl::Window * pParent, const SfxItemSet&
     pTabPage->get(m_pCB_SetIntercept,"setIntercept");
     pTabPage->get(m_pFmtFld_InterceptValue,"interceptValue");
     pTabPage->get(m_pCB_ShowEquation,"showEquation");
-    pTabPage->get(m_pEE_XName,"entry_Xname");
-    pTabPage->get(m_pEE_YName,"entry_Yname");
     pTabPage->get(m_pCB_ShowCorrelationCoeff,"showCorrelationCoefficient");
     pTabPage->get(m_pFI_Linear,"imageLinear");
     pTabPage->get(m_pFI_Logarithmic,"imageLogarithmic");
@@ -84,8 +82,6 @@ TrendlineResources::TrendlineResources( vcl::Window * pParent, const SfxItemSet&
     m_pNF_Period->SetModifyHdl( aLink2 );
     m_pFmtFld_InterceptValue->SetModifyHdl( aLink2 );
 
-    m_pCB_ShowEquation->SetToggleHdl( LINK(this, TrendlineResources, ShowEquation ) );
-
     Reset( rInAttrs );
     UpdateControlStates();
 }
@@ -93,20 +89,20 @@ TrendlineResources::TrendlineResources( vcl::Window * pParent, const SfxItemSet&
 TrendlineResources::~TrendlineResources()
 {}
 
-IMPL_LINK( TrendlineResources, SelectTrendLine, Button *, pRadioButton, void )
+IMPL_LINK_TYPED( TrendlineResources, SelectTrendLine, Button *, pRadioButton, void )
 {
     if( pRadioButton == m_pRB_Linear )
-        m_eTrendLineType = SvxChartRegress::Linear;
+        m_eTrendLineType = CHREGRESS_LINEAR;
     else if( pRadioButton == m_pRB_Logarithmic )
-        m_eTrendLineType = SvxChartRegress::Log;
+        m_eTrendLineType = CHREGRESS_LOG;
     else if( pRadioButton == m_pRB_Exponential )
-        m_eTrendLineType = SvxChartRegress::Exp;
+        m_eTrendLineType = CHREGRESS_EXP;
     else if( pRadioButton == m_pRB_Power )
-        m_eTrendLineType = SvxChartRegress::Power;
+        m_eTrendLineType = CHREGRESS_POWER;
     else if( pRadioButton == m_pRB_Polynomial )
-        m_eTrendLineType = SvxChartRegress::Polynomial;
+        m_eTrendLineType = CHREGRESS_POLYNOMIAL;
     else if( pRadioButton == m_pRB_MovingAverage )
-        m_eTrendLineType = SvxChartRegress::MovingAverage;
+        m_eTrendLineType = CHREGRESS_MOVING_AVERAGE;
     m_bTrendLineUnique = true;
 
     UpdateControlStates();
@@ -124,24 +120,6 @@ void TrendlineResources::Reset( const SfxItemSet& rInAttrs )
     else
     {
         m_pEE_Name->SetText("");
-    }
-    if( rInAttrs.GetItemState( SCHATTR_REGRESSION_XNAME, true, &pPoolItem ) == SfxItemState::SET )
-    {
-        OUString aName = static_cast< const SfxStringItem* >(pPoolItem)->GetValue();
-        m_pEE_XName->SetText(aName);
-    }
-    else
-    {
-        m_pEE_XName->SetText("x");
-    }
-    if( rInAttrs.GetItemState( SCHATTR_REGRESSION_YNAME, true, &pPoolItem ) == SfxItemState::SET )
-    {
-        OUString aName = static_cast< const SfxStringItem* >(pPoolItem)->GetValue();
-        m_pEE_YName->SetText(aName);
-    }
-    else
-    {
-        m_pEE_YName->SetText("f(x)");
     }
 
     SfxItemState aState = rInAttrs.GetItemState( SCHATTR_REGRESSION_TYPE, true, &pPoolItem );
@@ -239,22 +217,22 @@ void TrendlineResources::Reset( const SfxItemSet& rInAttrs )
     {
         switch( m_eTrendLineType )
         {
-            case SvxChartRegress::Linear :
+            case CHREGRESS_LINEAR :
                 m_pRB_Linear->Check();
                 break;
-            case SvxChartRegress::Log :
+            case CHREGRESS_LOG :
                 m_pRB_Logarithmic->Check();
                 break;
-            case SvxChartRegress::Exp :
+            case CHREGRESS_EXP :
                 m_pRB_Exponential->Check();
                 break;
-            case SvxChartRegress::Power :
+            case CHREGRESS_POWER :
                 m_pRB_Power->Check();
                 break;
-            case SvxChartRegress::Polynomial :
+            case CHREGRESS_POLYNOMIAL :
                 m_pRB_Polynomial->Check();
                 break;
-            case SvxChartRegress::MovingAverage :
+            case CHREGRESS_MOVING_AVERAGE :
                 m_pRB_MovingAverage->Check();
                 break;
             default:
@@ -276,14 +254,6 @@ bool TrendlineResources::FillItemSet(SfxItemSet* rOutAttrs) const
 
     OUString aName = m_pEE_Name->GetText();
     rOutAttrs->Put(SfxStringItem(SCHATTR_REGRESSION_CURVE_NAME, aName));
-    aName = m_pEE_XName->GetText();
-    if ( aName.isEmpty() )
-        aName = "x";
-    rOutAttrs->Put(SfxStringItem(SCHATTR_REGRESSION_XNAME, aName));
-    aName = m_pEE_YName->GetText();
-    if ( aName.isEmpty() )
-        aName = "f(x)";
-    rOutAttrs->Put(SfxStringItem(SCHATTR_REGRESSION_YNAME, aName));
 
     sal_Int32 aDegree = m_pNF_Degree->GetValue();
     rOutAttrs->Put(SfxInt32Item( SCHATTR_REGRESSION_DEGREE, aDegree ) );
@@ -312,12 +282,12 @@ bool TrendlineResources::FillItemSet(SfxItemSet* rOutAttrs) const
 
 void TrendlineResources::FillValueSets()
 {
-    m_pFI_Linear->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_LINEAR))));
-    m_pFI_Logarithmic->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_LOG))));
-    m_pFI_Exponential->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_EXP))));
-    m_pFI_Power->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_POWER))));
-    m_pFI_Polynomial->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_POLYNOMIAL))));
-    m_pFI_MovingAverage->SetImage(Image(BitmapEx(SchResId(BMP_REGRESSION_MOVING_AVERAGE))));
+    m_pFI_Linear->SetImage(       Image( SchResId( BMP_REGRESSION_LINEAR          ) ) );
+    m_pFI_Logarithmic->SetImage(  Image( SchResId( BMP_REGRESSION_LOG             ) ) );
+    m_pFI_Exponential->SetImage(  Image( SchResId( BMP_REGRESSION_EXP             ) ) );
+    m_pFI_Power->SetImage(        Image( SchResId( BMP_REGRESSION_POWER           ) ) );
+    m_pFI_Polynomial->SetImage(   Image( SchResId( BMP_REGRESSION_POLYNOMIAL      ) ) );
+    m_pFI_MovingAverage->SetImage(Image( SchResId( BMP_REGRESSION_MOVING_AVERAGE  ) ) );
 }
 
 void TrendlineResources::UpdateControlStates()
@@ -329,10 +299,10 @@ void TrendlineResources::UpdateControlStates()
         m_pNF_Degree->SetMax( nMaxValue );
         m_pNF_Period->SetMax( m_nNbPoints - 1 );
     }
-    bool bMovingAverage = ( m_eTrendLineType == SvxChartRegress::MovingAverage );
-    bool bInterceptAvailable = ( m_eTrendLineType == SvxChartRegress::Linear )
-                            || ( m_eTrendLineType == SvxChartRegress::Polynomial )
-                            || ( m_eTrendLineType == SvxChartRegress::Exp );
+    bool bMovingAverage = ( m_eTrendLineType == CHREGRESS_MOVING_AVERAGE );
+    bool bInterceptAvailable = ( m_eTrendLineType == CHREGRESS_LINEAR )
+                            || ( m_eTrendLineType == CHREGRESS_POLYNOMIAL )
+                            || ( m_eTrendLineType == CHREGRESS_EXP );
     m_pFmtFld_ExtrapolateForward->Enable( !bMovingAverage );
     m_pFmtFld_ExtrapolateBackward->Enable( !bMovingAverage );
     m_pCB_SetIntercept->Enable( bInterceptAvailable );
@@ -344,11 +314,9 @@ void TrendlineResources::UpdateControlStates()
     }
     m_pCB_ShowEquation->Enable( !bMovingAverage );
     m_pCB_ShowCorrelationCoeff->Enable( !bMovingAverage );
-    m_pEE_XName->Enable( !bMovingAverage && m_pCB_ShowEquation->IsChecked() );
-    m_pEE_YName->Enable( !bMovingAverage && m_pCB_ShowEquation->IsChecked() );
 }
 
-IMPL_LINK( TrendlineResources, ChangeValue, Edit&, rNumericField, void)
+IMPL_LINK_TYPED( TrendlineResources, ChangeValue, Edit&, rNumericField, void)
 {
     if( &rNumericField == m_pNF_Degree )
     {
@@ -385,16 +353,6 @@ void TrendlineResources::SetNumFormatter( SvNumberFormatter* pFormatter )
 void TrendlineResources::SetNbPoints( sal_Int32 nNbPoints )
 {
     m_nNbPoints = nNbPoints;
-    UpdateControlStates();
-}
-
-IMPL_LINK( TrendlineResources, ShowEquation, CheckBox&, rCheckBox, void)
-{
-    if( &rCheckBox == m_pCB_ShowEquation )
-    {
-        m_pEE_XName->Enable( m_pCB_ShowEquation->IsChecked() );
-        m_pEE_YName->Enable( m_pCB_ShowEquation->IsChecked() );
-    }
     UpdateControlStates();
 }
 

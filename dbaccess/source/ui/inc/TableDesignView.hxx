@@ -37,12 +37,12 @@ namespace dbaui
         VclPtr<OTableEditorCtrl>            m_pEditorCtrl;
 
         void ImplInitSettings();
-        DECL_LINK( SplitHdl, Splitter*, void );
+        DECL_LINK_TYPED( SplitHdl, Splitter*, void );
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OTableBorderWindow(vcl::Window* pParent);
-        virtual ~OTableBorderWindow() override;
+        virtual ~OTableBorderWindow();
         // Window overrides
         virtual void dispose() override;
         virtual void Resize() override;
@@ -70,13 +70,13 @@ namespace dbaui
     protected:
 
         // return the Rectangle where I can paint myself
-        virtual void resizeDocumentView(tools::Rectangle& rRect) override;
+        virtual void resizeDocumentView(Rectangle& rRect) override;
 
     public:
         OTableDesignView(   vcl::Window* pParent,
                             const css::uno::Reference< css::uno::XComponentContext >&,
                             OTableController& _rController);
-        virtual ~OTableDesignView() override;
+        virtual ~OTableDesignView();
         virtual void dispose() override;
 
         // Window overrides

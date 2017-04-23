@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
@@ -42,7 +39,6 @@
 #include <xmloff/xmluconv.hxx>
 #include <xmloff/xmltoken.hxx>
 #include "XMLAnchorTypePropHdl.hxx"
-#include "enummaps.hxx"
 #include <xmloff/XMLConstantsPropertyHandler.hxx>
 #include "XMLClipPropertyHandler.hxx"
 #include "XMLTextColumnsPropertyHandler.hxx"
@@ -50,6 +46,8 @@
 #include "txtprhdl.hxx"
 #include <com/sun/star/text/WrapInfluenceOnPosition.hpp>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
+
+//UUUU
 #include <xmloff/EnumPropertyHdl.hxx>
 #include "XMLFillBitmapSizePropertyHandler.hxx"
 #include "XMLBitmapLogicalSizePropertyHandler.hxx"
@@ -62,9 +60,16 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::style;
 using namespace ::com::sun::star::text;
 using namespace ::xmloff::token;
+
+//UUUU
 using namespace ::com::sun::star::drawing;
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriPos_Enum[] =
+//UUUU
+extern SvXMLEnumMapEntry aXML_FillStyle_EnumMap[];
+extern SvXMLEnumMapEntry aXML_RefPoint_EnumMap[];
+extern SvXMLEnumMapEntry aXML_BitmapMode_EnumMap[];
+
+static SvXMLEnumMapEntry const pXML_HoriPos_Enum[] =
 {
     { XML_FROM_LEFT,        HoriOrientation::NONE   },
     { XML_FROM_INSIDE,      HoriOrientation::NONE   },  // import only
@@ -76,7 +81,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriPos_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriPosMirrored_Enum[] =
+static SvXMLEnumMapEntry const pXML_HoriPosMirrored_Enum[] =
 {
     { XML_FROM_INSIDE,      HoriOrientation::NONE   },
     { XML_INSIDE,           HoriOrientation::LEFT   },
@@ -85,7 +90,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriPosMirrored_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriRel_Enum[] =
+static SvXMLEnumMapEntry const pXML_HoriRel_Enum[] =
 {
     { XML_PARAGRAPH,            RelOrientation::FRAME   },
     { XML_PARAGRAPH_CONTENT,    RelOrientation::PRINT_AREA  },
@@ -103,7 +108,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriRel_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriRelFrame_Enum[] =
+static SvXMLEnumMapEntry const pXML_HoriRelFrame_Enum[] =
 {
     { XML_FRAME,                RelOrientation::FRAME   },
     { XML_FRAME_CONTENT,        RelOrientation::PRINT_AREA  },
@@ -117,19 +122,35 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_HoriRelFrame_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<bool> const pXML_HoriMirror_Enum[] =
+static SvXMLEnumMapEntry const pXML_HoriMirror_Enum[] =
 {
-    { XML_FROM_LEFT,        false },
-    { XML_FROM_INSIDE,      true },
-    { XML_LEFT,             false },
-    { XML_INSIDE,           true },
-    { XML_CENTER,           false },
-    { XML_RIGHT,            false },
-    { XML_OUTSIDE,          true },
-    { XML_TOKEN_INVALID,    false }
+    { XML_FROM_LEFT,        sal_uInt16(false) },
+    { XML_FROM_INSIDE,      sal_uInt16(true) },
+    { XML_LEFT,             sal_uInt16(false) },
+    { XML_INSIDE,           sal_uInt16(true) },
+    { XML_CENTER,           sal_uInt16(false) },
+    { XML_RIGHT,            sal_uInt16(false) },
+    { XML_OUTSIDE,          sal_uInt16(true) },
+    { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertPosAtChar_Enum[] =
+static SvXMLEnumMapEntry const pXML_VertPos_Enum[] =
+{
+    { XML_FROM_TOP,         VertOrientation::NONE       },
+    { XML_TOP,              VertOrientation::TOP        },
+    { XML_TOP,              VertOrientation::CHAR_TOP   },  // export only
+    { XML_TOP,              VertOrientation::LINE_TOP   },  // export only
+    { XML_MIDDLE,           VertOrientation::CENTER     },
+    { XML_MIDDLE,           VertOrientation::CHAR_CENTER    },  // export only
+    { XML_MIDDLE,           VertOrientation::LINE_CENTER    },  // export only
+    { XML_BOTTOM,           VertOrientation::BOTTOM     },
+    { XML_BOTTOM,           VertOrientation::CHAR_BOTTOM    },  // export only
+    { XML_BOTTOM,           VertOrientation::LINE_BOTTOM    },  // export only
+    { XML_BELOW,            VertOrientation::CHAR_BOTTOM    },  // import only
+    { XML_TOKEN_INVALID, 0 }
+};
+
+static SvXMLEnumMapEntry const pXML_VertPosAtChar_Enum[] =
 {
     { XML_FROM_TOP,         VertOrientation::NONE       },
     { XML_TOP,              VertOrientation::TOP        },
@@ -144,7 +165,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertPosAtChar_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRel_Enum[] =
+static SvXMLEnumMapEntry const pXML_VertRel_Enum[] =
 {
     { XML_PARAGRAPH,            RelOrientation::FRAME   },
     { XML_PARAGRAPH_CONTENT,    RelOrientation::PRINT_AREA  },
@@ -159,7 +180,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRel_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRelPage_Enum[] =
+static SvXMLEnumMapEntry const pXML_VertRelPage_Enum[] =
 {
     { XML_PAGE,         RelOrientation::FRAME   },
     { XML_PAGE_CONTENT, RelOrientation::PRINT_AREA  },
@@ -168,14 +189,14 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRelPage_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRelFrame_Enum[] =
+static SvXMLEnumMapEntry const pXML_VertRelFrame_Enum[] =
 {
     { XML_FRAME,            RelOrientation::FRAME   },
     { XML_FRAME_CONTENT,    RelOrientation::PRINT_AREA  },
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRelAsChar_Enum[] =
+static SvXMLEnumMapEntry const pXML_VertRelAsChar_Enum[] =
 {
     { XML_BASELINE,     VertOrientation::TOP        },
     { XML_BASELINE,     VertOrientation::CENTER     },  // export only
@@ -189,17 +210,17 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_VertRelAsChar_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<RubyAdjust> const pXML_RubyAdjust_Enum[] =
+static SvXMLEnumMapEntry const pXML_RubyAdjust_Enum[] =
 {
     { XML_LEFT,                 RubyAdjust_LEFT },
     { XML_CENTER,               RubyAdjust_CENTER },
     { XML_RIGHT,                RubyAdjust_RIGHT },
     { XML_DISTRIBUTE_LETTER,    RubyAdjust_BLOCK },
     { XML_DISTRIBUTE_SPACE,     RubyAdjust_INDENT_BLOCK },
-    { XML_TOKEN_INVALID,        (RubyAdjust)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_FontRelief_Enum[] =
+static SvXMLEnumMapEntry const pXML_FontRelief_Enum[] =
 {
     { XML_NONE,             FontRelief::NONE        },
     { XML_ENGRAVED,         FontRelief::ENGRAVED    },
@@ -207,7 +228,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_FontRelief_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_ParaVerticalAlign_Enum[] =
+static SvXMLEnumMapEntry const pXML_ParaVerticalAlign_Enum[] =
 {
     { XML_TOP,          ParagraphVertAlign::TOP     },
     { XML_MIDDLE,       ParagraphVertAlign::CENTER  },
@@ -218,7 +239,7 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_ParaVerticalAlign_Enum[] =
 };
 
 // OD 2004-05-05 #i28701#
-static SvXMLEnumMapEntry<sal_uInt16> const pXML_WrapInfluenceOnPosition_Enum[] =
+static SvXMLEnumMapEntry const pXML_WrapInfluenceOnPosition_Enum[] =
 {
     // Tokens have been renamed and <XML_ITERATIVE> has been added (#i35017#)
     { XML_ONCE_SUCCESSIVE, WrapInfluenceOnPosition::ONCE_SUCCESSIVE },
@@ -227,18 +248,20 @@ static SvXMLEnumMapEntry<sal_uInt16> const pXML_WrapInfluenceOnPosition_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry<drawing::TextVerticalAdjust> const pXML_VerticalAlign_Enum[] =
+static SvXMLEnumMapEntry const pXML_VerticalAlign_Enum[] =
 {
     { XML_TOP,          drawing::TextVerticalAdjust_TOP },
     { XML_MIDDLE,       drawing::TextVerticalAdjust_CENTER },
     { XML_BOTTOM,       drawing::TextVerticalAdjust_BOTTOM },
     { XML_JUSTIFY,      drawing::TextVerticalAdjust_BLOCK },
-    { XML_TOKEN_INVALID, (drawing::TextVerticalAdjust)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
 class XMLDropCapPropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLDropCapPropHdl_Impl ();
+
     virtual bool equals(
             const css::uno::Any& r1,
             const css::uno::Any& r2 ) const override;
@@ -253,6 +276,10 @@ public:
             const css::uno::Any& rValue,
             const SvXMLUnitConverter& ) const override;
 };
+
+XMLDropCapPropHdl_Impl::~XMLDropCapPropHdl_Impl ()
+{
+}
 
 bool XMLDropCapPropHdl_Impl::equals(
         const Any& r1,
@@ -273,7 +300,7 @@ bool XMLDropCapPropHdl_Impl::importXML(
            Any&,
         const SvXMLUnitConverter& ) const
 {
-    SAL_WARN( "xmloff", "drop caps are an element import property" );
+    DBG_ASSERT( false, "drop caps are an element import property" );
     return false;
 }
 
@@ -282,13 +309,15 @@ bool XMLDropCapPropHdl_Impl::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    SAL_WARN( "xmloff", "drop caps are an element export property" );
+    DBG_ASSERT( false, "drop caps are an element export property" );
     return false;
 }
 
 class XMLOpaquePropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLOpaquePropHdl_Impl ();
+
     virtual bool importXML(
             const OUString& rStrImpValue,
             css::uno::Any& rValue,
@@ -322,7 +351,7 @@ bool XMLOpaquePropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
            rStrExpValue = GetXMLToken( XML_FOREGROUND );
     else
            rStrExpValue = GetXMLToken( XML_BACKGROUND );
@@ -330,9 +359,15 @@ bool XMLOpaquePropHdl_Impl::exportXML(
     return true;
 }
 
+XMLOpaquePropHdl_Impl::~XMLOpaquePropHdl_Impl ()
+{
+}
+
 class XMLContourModePropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLContourModePropHdl_Impl ();
+
     virtual bool importXML(
             const OUString& rStrImpValue,
             css::uno::Any& rValue,
@@ -366,7 +401,7 @@ bool XMLContourModePropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
            rStrExpValue = GetXMLToken( XML_OUTSIDE );
     else
            rStrExpValue = GetXMLToken( XML_FULL );
@@ -374,9 +409,15 @@ bool XMLContourModePropHdl_Impl::exportXML(
     return true;
 }
 
+XMLContourModePropHdl_Impl::~XMLContourModePropHdl_Impl()
+{
+}
+
 class XMLParagraphOnlyPropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLParagraphOnlyPropHdl_Impl ();
+
     virtual bool importXML(
             const OUString& rStrImpValue,
             css::uno::Any& rValue,
@@ -413,7 +454,7 @@ bool XMLParagraphOnlyPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
            rStrExpValue = GetXMLToken( XML_1 );
     else
            rStrExpValue = GetXMLToken( XML_NO_LIMIT );
@@ -421,20 +462,26 @@ bool XMLParagraphOnlyPropHdl_Impl::exportXML(
     return true;
 }
 
-SvXMLEnumMapEntry<WrapTextMode> const pXML_Wrap_Enum[] =
+XMLParagraphOnlyPropHdl_Impl::~XMLParagraphOnlyPropHdl_Impl()
+{
+}
+
+SvXMLEnumMapEntry const pXML_Wrap_Enum[] =
 {
     { XML_NONE,         WrapTextMode_NONE },
-    { XML_RUN_THROUGH,  WrapTextMode_THROUGH },
+    { XML_RUN_THROUGH,  WrapTextMode_THROUGHT },
     { XML_PARALLEL,     WrapTextMode_PARALLEL },
     { XML_DYNAMIC,      WrapTextMode_DYNAMIC },
     { XML_LEFT,         WrapTextMode_LEFT },
     { XML_RIGHT,        WrapTextMode_RIGHT },
-    { XML_TOKEN_INVALID, (WrapTextMode)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
 class XMLWrapPropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLWrapPropHdl_Impl ();
+
     virtual bool importXML(
             const OUString& rStrImpValue,
             css::uno::Any& rValue,
@@ -450,12 +497,12 @@ bool XMLWrapPropHdl_Impl::importXML(
            Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    WrapTextMode nWrap;
+    sal_uInt16 nWrap;
     bool bRet = SvXMLUnitConverter::convertEnum( nWrap, rStrImpValue,
                                                 pXML_Wrap_Enum );
 
     if( bRet )
-        rValue <<= nWrap;
+        rValue <<= (WrapTextMode)nWrap;
 
     return bRet;
 }
@@ -477,12 +524,17 @@ bool XMLWrapPropHdl_Impl::exportXML(
     return bRet;
 }
 
+XMLWrapPropHdl_Impl::~XMLWrapPropHdl_Impl ()
+{
+}
+
 class XMLFrameProtectPropHdl_Impl : public XMLPropertyHandler
 {
     const OUString sVal;
 public:
     explicit XMLFrameProtectPropHdl_Impl( enum XMLTokenEnum eVal ) :
            sVal( GetXMLToken(eVal) ) {}
+    virtual ~XMLFrameProtectPropHdl_Impl ();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -528,7 +580,7 @@ bool XMLFrameProtectPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
     {
         if( rStrExpValue.isEmpty() ||
             IsXMLToken( rStrExpValue, XML_NONE ) )
@@ -548,14 +600,18 @@ bool XMLFrameProtectPropHdl_Impl::exportXML(
     return true;
 }
 
-SvXMLEnumMapEntry<TextContentAnchorType> const pXML_Anchor_Enum[] =
+XMLFrameProtectPropHdl_Impl::~XMLFrameProtectPropHdl_Impl()
 {
-    { XML_CHAR,          TextContentAnchorType_AT_CHARACTER },
-    { XML_PAGE,          TextContentAnchorType_AT_PAGE },
-    { XML_FRAME,         TextContentAnchorType_AT_FRAME },
-    { XML_PARAGRAPH,     TextContentAnchorType_AT_PARAGRAPH },
-    { XML_AS_CHAR,       TextContentAnchorType_AS_CHARACTER },
-    { XML_TOKEN_INVALID, (TextContentAnchorType)0 }
+}
+
+SvXMLEnumMapEntry const pXML_Anchor_Enum[] =
+{
+    { XML_CHAR,         TextContentAnchorType_AT_CHARACTER },
+    { XML_PAGE,         TextContentAnchorType_AT_PAGE },
+    { XML_FRAME,        TextContentAnchorType_AT_FRAME },
+    { XML_PARAGRAPH,        TextContentAnchorType_AT_PARAGRAPH },
+    { XML_AS_CHAR,      TextContentAnchorType_AS_CHARACTER },
+    { XML_TOKEN_INVALID, 0 }
 };
 
 bool XMLAnchorTypePropHdl::importXML(
@@ -563,12 +619,12 @@ bool XMLAnchorTypePropHdl::importXML(
            Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    TextContentAnchorType nAnchor;
+    sal_uInt16 nAnchor;
     bool bRet = SvXMLUnitConverter::convertEnum( nAnchor, rStrImpValue,
                                                 pXML_Anchor_Enum );
 
     if( bRet )
-        rValue <<= nAnchor;
+        rValue <<= (TextContentAnchorType)nAnchor;
 
     return bRet;
 }
@@ -597,11 +653,11 @@ XMLAnchorTypePropHdl::~XMLAnchorTypePropHdl()
 bool XMLAnchorTypePropHdl::convert( const OUString& rStrImpValue,
                  TextContentAnchorType& rType )
 {
-    TextContentAnchorType nAnchor;
+    sal_uInt16 nAnchor;
     bool bRet = SvXMLUnitConverter::convertEnum( nAnchor, rStrImpValue,
                                                 pXML_Anchor_Enum );
     if( bRet )
-        rType = nAnchor;
+        rType = (TextContentAnchorType)nAnchor;
     return bRet;
 }
 
@@ -651,7 +707,7 @@ bool XMLTextColumnsPropertyHandler::importXML(
            Any&,
         const SvXMLUnitConverter& ) const
 {
-    SAL_WARN( "xmloff", "columns are an element import property" );
+    DBG_ASSERT( false, "columns are an element import property" );
     return false;
 }
 
@@ -660,13 +716,15 @@ bool XMLTextColumnsPropertyHandler::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    SAL_WARN( "xmloff", "columns are an element export property" );
+    DBG_ASSERT( false, "columns are an element export property" );
     return false;
 }
 
 class XMLHoriMirrorPropHdl_Impl : public XMLPropertyHandler
 {
 public:
+    virtual ~XMLHoriMirrorPropHdl_Impl ();
+
     virtual bool importXML(
             const OUString& rStrImpValue,
             css::uno::Any& rValue,
@@ -682,13 +740,13 @@ bool XMLHoriMirrorPropHdl_Impl::importXML(
            Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    bool nHoriMirror;
+    sal_uInt16 nHoriMirror;
     bool bRet = SvXMLUnitConverter::convertEnum( nHoriMirror, rStrImpValue,
                                                 pXML_HoriMirror_Enum );
 
     if( bRet )
     {
-        rValue <<= nHoriMirror;
+        rValue <<= (nHoriMirror != 0);
     }
 
     return bRet;
@@ -699,9 +757,13 @@ bool XMLHoriMirrorPropHdl_Impl::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    SAL_WARN( "xmloff", "HorMirror property shouldn't be exported" );
+    DBG_ASSERT( false, "HorMirror properyt shouldn't be exported" );
 
     return false;
+}
+
+XMLHoriMirrorPropHdl_Impl::~XMLHoriMirrorPropHdl_Impl ()
+{
 }
 
 class XMLGrfMirrorPropHdl_Impl : public XMLPropertyHandler
@@ -713,6 +775,7 @@ public:
     XMLGrfMirrorPropHdl_Impl( enum XMLTokenEnum eVal, bool bH ) :
            sVal( GetXMLToken( eVal ) ),
         bHori( bH ) {}
+    virtual ~XMLGrfMirrorPropHdl_Impl ();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -759,7 +822,7 @@ bool XMLGrfMirrorPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
     {
         if( rStrExpValue.isEmpty() ||
             IsXMLToken( rStrExpValue, XML_NONE ) )
@@ -789,7 +852,11 @@ bool XMLGrfMirrorPropHdl_Impl::exportXML(
     return true;
 }
 
-SvXMLEnumMapEntry<sal_uInt16> const pXML_Emphasize_Enum[] =
+XMLGrfMirrorPropHdl_Impl::~XMLGrfMirrorPropHdl_Impl()
+{
+}
+
+SvXMLEnumMapEntry const pXML_Emphasize_Enum[] =
 {
     { XML_NONE,     FontEmphasis::NONE },
     { XML_DOT,      FontEmphasis::DOT_ABOVE },
@@ -802,6 +869,7 @@ class XMLTextEmphasizePropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextEmphasizePropHdl_Impl() {}
+    virtual ~XMLTextEmphasizePropHdl_Impl();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -867,7 +935,7 @@ bool XMLTextEmphasizePropHdl_Impl::exportXML(
 {
     OUStringBuffer aOut( 15 );
     bool bRet = true;
-    sal_uInt16 nType = sal_uInt16();
+    sal_Int16 nType = sal_Int16();
     if( rValue >>= nType )
     {
         bool bBelow = false;
@@ -894,10 +962,15 @@ bool XMLTextEmphasizePropHdl_Impl::exportXML(
     return bRet;
 }
 
+XMLTextEmphasizePropHdl_Impl::~XMLTextEmphasizePropHdl_Impl()
+{
+}
+
 class XMLTextCombineCharPropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextCombineCharPropHdl_Impl() {}
+    virtual ~XMLTextCombineCharPropHdl_Impl();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -933,10 +1006,15 @@ bool XMLTextCombineCharPropHdl_Impl::exportXML(
     return (1 == rStrExpValue.getLength());
 }
 
+XMLTextCombineCharPropHdl_Impl::~XMLTextCombineCharPropHdl_Impl()
+{
+}
+
 class XMLTextRelWidthHeightPropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextRelWidthHeightPropHdl_Impl() {}
+    virtual ~XMLTextRelWidthHeightPropHdl_Impl();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -980,6 +1058,10 @@ bool XMLTextRelWidthHeightPropHdl_Impl::exportXML(
     return bRet;
 }
 
+XMLTextRelWidthHeightPropHdl_Impl::~XMLTextRelWidthHeightPropHdl_Impl()
+{
+}
+
 class XMLTextSyncWidthHeightPropHdl_Impl : public XMLPropertyHandler
 {
     const OUString sValue;
@@ -987,6 +1069,7 @@ class XMLTextSyncWidthHeightPropHdl_Impl : public XMLPropertyHandler
 public:
     explicit XMLTextSyncWidthHeightPropHdl_Impl( enum XMLTokenEnum eValue ) :
            sValue( GetXMLToken(eValue) )    {}
+    virtual ~XMLTextSyncWidthHeightPropHdl_Impl();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1014,7 +1097,7 @@ bool XMLTextSyncWidthHeightPropHdl_Impl::exportXML(
         const SvXMLUnitConverter& ) const
 {
     bool bRet = false;
-    if( *o3tl::doAccess<bool>(rValue) )
+    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
     {
         rStrExpValue = sValue;
         bRet = true;
@@ -1023,11 +1106,16 @@ bool XMLTextSyncWidthHeightPropHdl_Impl::exportXML(
     return bRet;
 }
 
+XMLTextSyncWidthHeightPropHdl_Impl::~XMLTextSyncWidthHeightPropHdl_Impl()
+{
+}
+
 class XMLTextRotationAnglePropHdl_Impl : public XMLPropertyHandler
 {
 
 public:
     XMLTextRotationAnglePropHdl_Impl()  {}
+    virtual ~XMLTextRotationAnglePropHdl_Impl();
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1073,18 +1161,24 @@ bool XMLTextRotationAnglePropHdl_Impl::exportXML(
     bool bRet = ( rValue >>= nAngle );
     if( bRet )
     {
-        rStrExpValue = OUString::number( nAngle / 10 );
+        OUStringBuffer aOut;
+        ::sax::Converter::convertNumber( aOut, nAngle / 10 );
+        rStrExpValue = aOut.makeStringAndClear();
     }
     OSL_ENSURE( bRet, "illegal rotation angle" );
 
     return bRet;
 }
 
+XMLTextRotationAnglePropHdl_Impl::~XMLTextRotationAnglePropHdl_Impl()
+{
+}
 class XMLNumber8OneBasedHdl : public XMLPropertyHandler
 {
 
 public:
     XMLNumber8OneBasedHdl() {}
+    virtual ~XMLNumber8OneBasedHdl() {};
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1117,7 +1211,9 @@ bool XMLNumber8OneBasedHdl::exportXML(
     bool bRet = ( rValue >>= nValue );
     if( bRet )
     {
-        rStrExpValue = OUString::number( nValue + 1 );
+        OUStringBuffer aOut;
+        ::sax::Converter::convertNumber( aOut, nValue + 1 );
+        rStrExpValue = aOut.makeStringAndClear();
     }
     return bRet;
 }
@@ -1172,6 +1268,9 @@ static const XMLPropertyHandler *GetPropertyHandler
         break;
     case XML_TYPE_TEXT_HORIZONTAL_MIRROR:
         pHdl = new XMLHoriMirrorPropHdl_Impl;
+        break;
+    case XML_TYPE_TEXT_VERTICAL_POS:
+        pHdl = new XMLConstantsPropertyHandler( pXML_VertPos_Enum, XML_TOKEN_INVALID );
         break;
     case XML_TYPE_TEXT_VERTICAL_POS_AT_CHAR:
         pHdl = new XMLConstantsPropertyHandler( pXML_VertPosAtChar_Enum, XML_TOKEN_INVALID );
@@ -1291,8 +1390,9 @@ static const XMLPropertyHandler *GetPropertyHandler
         pHdl = new XMLConstantsPropertyHandler( pXML_VerticalAlign_Enum, XML_TOKEN_INVALID );
         break;
 
+    //UUUU
     case XML_SW_TYPE_FILLSTYLE:
-        pHdl = new XMLEnumPropertyHdl( aXML_FillStyle_EnumMap);
+        pHdl = new XMLEnumPropertyHdl( aXML_FillStyle_EnumMap, cppu::UnoType<FillStyle>::get());
         break;
     case XML_SW_TYPE_FILLBITMAPSIZE:
         pHdl = new XMLFillBitmapSizePropertyHandler();
@@ -1301,16 +1401,17 @@ static const XMLPropertyHandler *GetPropertyHandler
         pHdl = new XMLBitmapLogicalSizePropertyHandler();
         break;
     case XML_SW_TYPE_BITMAP_REFPOINT:
-        pHdl = new XMLEnumPropertyHdl( aXML_RefPoint_EnumMap);
+        pHdl = new XMLEnumPropertyHdl( aXML_RefPoint_EnumMap, cppu::UnoType<RectanglePoint>::get());
         break;
     case XML_SW_TYPE_BITMAP_MODE:
-        pHdl = new XMLEnumPropertyHdl( aXML_BitmapMode_EnumMap);
+        pHdl = new XMLEnumPropertyHdl( aXML_BitmapMode_EnumMap, cppu::UnoType<BitmapMode>::get());
         break;
     case XML_SW_TYPE_BITMAPREPOFFSETX:
     case XML_SW_TYPE_BITMAPREPOFFSETY:
         pHdl = new XMLBitmapRepeatOffsetPropertyHandler(XML_SW_TYPE_BITMAPREPOFFSETX == nType);
         break;
 
+    //UUUU
     default:
     {
         OSL_ENSURE(false, "XMLPropertyHandler missing (!)");
@@ -1323,6 +1424,10 @@ static const XMLPropertyHandler *GetPropertyHandler
 
 XMLTextPropertyHandlerFactory::XMLTextPropertyHandlerFactory() :
     XMLPropertyHandlerFactory()
+{
+}
+
+XMLTextPropertyHandlerFactory::~XMLTextPropertyHandlerFactory()
 {
 }
 

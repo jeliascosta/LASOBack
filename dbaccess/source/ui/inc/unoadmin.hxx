@@ -41,8 +41,7 @@ class ODatabaseAdministrationDialog
 protected:
     SfxItemSet*             m_pDatasourceItems;     // item set for the dialog
     SfxItemPool*            m_pItemPool;            // item pool for the item set for the dialog
-    std::vector<SfxPoolItem*>*
-                            m_pItemPoolDefaults;    // pool defaults
+    SfxPoolItem**           m_pItemPoolDefaults;    // pool defaults
     ::dbaccess::ODsnTypeCollection*
                             m_pCollection;          // datasource type collection
 
@@ -51,9 +50,10 @@ protected:
 
 protected:
     ODatabaseAdministrationDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
-    virtual ~ODatabaseAdministrationDialog() override;
+    virtual ~ODatabaseAdministrationDialog();
 protected:
 // OGenericUnoDialog overridables
+    virtual void destroyDialog() override;
     virtual void implInitialize(const css::uno::Any& _rValue) override;
 };
 

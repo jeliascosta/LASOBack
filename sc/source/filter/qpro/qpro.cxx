@@ -31,6 +31,7 @@
 #include "filter.hxx"
 #include "document.hxx"
 #include "formulacell.hxx"
+#include "biff.hxx"
 #include <tools/stream.hxx>
 #include <memory>
 
@@ -105,7 +106,7 @@ FltError ScQProReader::readSheet( SCTAB nTab, ScDocument* pDoc, ScQProStyle *pSt
                 const ScTokenArray *pArray;
 
                 QProToSc aConv(*mpStream, pDoc->GetSharedStringPool(), aAddr);
-                if (ConvErr::OK != aConv.Convert( pArray ))
+                if (ConvOK != aConv.Convert( pArray ))
                     eRet = eERR_FORMAT;
                 else
                 {
@@ -130,26 +131,10 @@ FltError ScFormatFilterPluginImpl::ScImportQuattroPro( SfxMedium &rMedium, ScDoc
     return eRet;
 }
 
-ScQProReader::ScQProReader( SfxMedium &rMedium )
-    : mnId(0)
-    , mnLength(0)
-    , mnOffset(0)
-    , mbEndOfFile(false)
+ScQProReader::ScQProReader( SfxMedium &rMedium ):
+    ScBiffReader( rMedium )
 {
-    mpStream = rMedium.GetInStream();
-    if( mpStream )
-    {
-        mpStream->SetBufferSize( 65535 );
-        mpStream->SetStreamCharSet( RTL_TEXTENCODING_MS_1252 );
-    }
 }
-
-ScQProReader::~ScQProReader()
-{
-    if( mpStream )
-        mpStream->SetBufferSize( 0 );
-}
-
 
 FltError ScQProReader::import( ScDocument *pDoc )
 {
@@ -162,7 +147,7 @@ FltError ScQProReader::import( ScDocument *pDoc )
     if( !recordsLeft() )
         return eERR_OPEN;
 
-    std::unique_ptr<ScQProStyle> pStyleElement( new ScQProStyle );
+    ScQProStyle *pStyleElement = new ScQProStyle;
 
     while( nextRecord() && eRet == eERR_OK)
     {
@@ -178,13 +163,13 @@ FltError ScQProReader::import( ScDocument *pDoc )
                     if( nTab < 26 )
                     {
                         OUString aName;
-                        aName += OUStringLiteral1( 'A' + nTab );
+                        aName += OUString( sal_Unicode( 'A' + nTab ) );
                         if (!nTab)
                             pDoc->RenameTab( nTab, aName, false );
                         else
                             pDoc->InsertTab( nTab, aName );
                     }
-                    eRet = readSheet( nTab, pDoc, pStyleElement.get() );
+                    eRet = readSheet( nTab, pDoc, pStyleElement );
                     nTab++;
                 }
                 break;
@@ -220,60 +205,26 @@ FltError ScQProReader::import( ScDocument *pDoc )
         }
     }
     pDoc->CalcAfterLoad();
+    delete pStyleElement;
     return eRet;
 }
 
 bool ScQProReader::recordsLeft()
 {
-    return mpStream && !mpStream->IsEof();
+    bool bValue = ScBiffReader::recordsLeft();
+    return bValue;
 }
 
 bool ScQProReader::nextRecord()
 {
-    if( !recordsLeft() )
-        return false;
-
-    if( mbEndOfFile )
-        return false;
-
-    sal_uInt32 nPos = mpStream->Tell();
-    if( nPos != mnOffset + mnLength )
-        mpStream->Seek( mnOffset + mnLength );
-
-    mnLength = mnId = 0;
-    mpStream->ReadUInt16( mnId ).ReadUInt16( mnLength );
-
-    mnOffset = mpStream->Tell();
-#ifdef DEBUG_SC_QPRO
-    fprintf( stderr, "Read record 0x%x length 0x%x at offset 0x%x\n",
-        (unsigned)mnId, (unsigned)mnLength, (unsigned)mnOffset );
-
-#if 1  // rather verbose
-    int len = mnLength;
-    while (len > 0) {
-        int i, chunk = len < 16 ? len : 16;
-        unsigned char data[16];
-        mpStream->Read( data, chunk );
-
-        for (i = 0; i < chunk; i++)
-            fprintf( stderr, "%.2x ", data[i] );
-        fprintf( stderr, "| " );
-        for (i = 0; i < chunk; i++)
-            fprintf( stderr, "%c", data[i] < 127 && data[i] > 30 ? data[i] : '.' );
-        fprintf( stderr, "\n" );
-
-        len -= chunk;
-    }
-    mpStream->Seek( mnOffset );
-#endif
-#endif
-    return true;
+    bool bValue = ScBiffReader::nextRecord();
+    return bValue;
 }
 
 void ScQProReader::readString( OUString &rString, sal_uInt16 nLength )
 {
     std::unique_ptr<sal_Char[]> pText(new sal_Char[ nLength + 1 ]);
-    nLength = mpStream->ReadBytes(pText.get(), nLength);
+    nLength = mpStream->Read(pText.get(), nLength);
     pText[ nLength ] = 0;
     rString = OUString( pText.get(), strlen(pText.get()), mpStream->GetStreamCharSet() );
 }

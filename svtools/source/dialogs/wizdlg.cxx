@@ -57,8 +57,8 @@ void WizardDialog::ImplInitData()
     mbEmptyViewMargin =  false;
     mnLeftAlignCount = 0;
 
-    maWizardLayoutIdle.SetPriority(TaskPriority::RESIZE);
-    maWizardLayoutIdle.SetInvokeHandler( LINK( this, WizardDialog, ImplHandleWizardLayoutTimerHdl ) );
+    maWizardLayoutIdle.SetPriority(SchedulerPriority::RESIZE);
+    maWizardLayoutIdle.SetIdleHdl( LINK( this, WizardDialog, ImplHandleWizardLayoutTimerHdl ) );
 }
 
 
@@ -105,16 +105,21 @@ void WizardDialog::ImplCalcSize( Size& rSize )
     }
 }
 
+bool WizardDialog::hasWizardPendingLayout() const
+{
+    return maWizardLayoutIdle.IsActive();
+}
+
 void WizardDialog::queue_resize(StateChangedType /*eReason*/)
 {
-    if (maWizardLayoutIdle.IsActive())
+    if (hasWizardPendingLayout())
         return;
     if (IsInClose())
         return;
     maWizardLayoutIdle.Start();
 }
 
-IMPL_LINK_NOARG( WizardDialog, ImplHandleWizardLayoutTimerHdl, Timer*, void )
+IMPL_LINK_NOARG_TYPED( WizardDialog, ImplHandleWizardLayoutTimerHdl, Idle*, void )
 {
     ImplPosCtrls();
     ImplPosTabPage();
@@ -230,7 +235,7 @@ void WizardDialog::ImplPosCtrls()
 
 
 long WizardDialog::LogicalCoordinateToPixel(int iCoordinate){
-    Size aLocSize = LogicToPixel(Size( iCoordinate, 0 ), MapUnit::MapAppFont );
+    Size aLocSize = LogicToPixel(Size( iCoordinate, 0 ), MAP_APPFONT );
     int iPixelCoordinate =  aLocSize.Width();
     return iPixelCoordinate;
 }
@@ -418,7 +423,7 @@ void WizardDialog::StateChanged( StateChangedType nType )
 }
 
 
-bool WizardDialog::EventNotify( NotifyEvent& rNEvt )
+bool WizardDialog::Notify( NotifyEvent& rNEvt )
 {
     if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && mpPrevBtn && mpNextBtn )
     {
@@ -459,7 +464,7 @@ bool WizardDialog::EventNotify( NotifyEvent& rNEvt )
         }
     }
 
-    return Dialog::EventNotify( rNEvt );
+    return Dialog::Notify( rNEvt );
 }
 
 

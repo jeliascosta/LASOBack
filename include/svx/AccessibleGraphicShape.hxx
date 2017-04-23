@@ -20,22 +20,11 @@
 #ifndef INCLUDED_SVX_ACCESSIBLEGRAPHICSHAPE_HXX
 #define INCLUDED_SVX_ACCESSIBLEGRAPHICSHAPE_HXX
 
-#include <exception>
-
-#include <com/sun/star/accessibility/XAccessibleImage.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <com/sun/star/uno/Sequence.hxx>
-#include <com/sun/star/uno/Type.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <svx/AccessibleShape.hxx>
+#include <com/sun/star/accessibility/XAccessibleImage.hpp>
 #include <svx/svxdllapi.h>
 
 namespace accessibility {
-
-class AccessibleShapeInfo;
-class AccessibleShapeTreeInfo;
 
 /** @descr
         This class makes graphic shapes accessible.  With respect to its
@@ -52,20 +41,24 @@ public:
         const AccessibleShapeInfo& rShapeInfo,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
 
-    virtual ~AccessibleGraphicShape() override;
+    virtual ~AccessibleGraphicShape();
 
     //=====  XAccessibleImage  ================================================
 
-    OUString SAL_CALL getAccessibleImageDescription() override;
+    OUString SAL_CALL getAccessibleImageDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Int32 SAL_CALL getAccessibleImageHeight() override;
+    sal_Int32 SAL_CALL getAccessibleImageHeight()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Int32 SAL_CALL getAccessibleImageWidth() override;
+    sal_Int32 SAL_CALL getAccessibleImageWidth()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XInterface  ======================================================
 
     virtual css::uno::Any SAL_CALL
-        queryInterface (const css::uno::Type & rType) override;
+        queryInterface (const css::uno::Type & rType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         acquire()
@@ -80,25 +73,30 @@ public:
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XTypeProvider  ===================================================
 
     virtual css::uno::Sequence< css::uno::Type> SAL_CALL
-        getTypes() override;
+        getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
 /// Return this object's role.
-    virtual sal_Int16 SAL_CALL getAccessibleRole() override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole() throw (css::uno::RuntimeException, std::exception) override;
 protected:
     /// Create a name string that contains the accessible name.
     virtual OUString
-        CreateAccessibleBaseName () override;
+        CreateAccessibleBaseName ()
+        throw (css::uno::RuntimeException) override;
 
     /// Create a description string that contains the accessible description.
     virtual OUString
-        CreateAccessibleDescription () override;
+        CreateAccessibleDescription ()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     AccessibleGraphicShape (const AccessibleGraphicShape&) = delete;

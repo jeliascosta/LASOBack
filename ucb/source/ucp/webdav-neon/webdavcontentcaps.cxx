@@ -52,7 +52,6 @@
 #include "webdavprovider.hxx"
 #include "DAVSession.hxx"
 #include "ContentProperties.hxx"
-#include "PropfindCache.hxx"
 
 using namespace com::sun::star;
 using namespace webdav_ucp;
@@ -69,7 +68,7 @@ bool ContentProvider::getProperty(
         osl::MutexGuard aGuard( m_aMutex );
         if ( !m_pProps )
         {
-            m_pProps.reset( new PropertyMap );
+            m_pProps = new PropertyMap;
 
 
             // Fill map of known properties...
@@ -78,7 +77,7 @@ bool ContentProvider::getProperty(
             // Mandatory UCB properties.
             m_pProps->insert(
                 beans::Property(
-                    "ContentType",
+                    OUString( "ContentType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -86,7 +85,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "IsDocument",
+                    OUString( "IsDocument" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
@@ -94,7 +93,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "IsFolder",
+                    OUString( "IsFolder" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
@@ -102,7 +101,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "Title",
+                    OUString( "Title" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND ) );
@@ -111,7 +110,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "DateCreated",
+                    OUString( "DateCreated" ),
                     -1,
                     cppu::UnoType<util::DateTime>::get(),
                     beans::PropertyAttribute::BOUND
@@ -119,7 +118,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "DateModified",
+                    OUString( "DateModified" ),
                     -1,
                     cppu::UnoType<util::DateTime>::get(),
                     beans::PropertyAttribute::BOUND
@@ -127,7 +126,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "MediaType",
+                    OUString( "MediaType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -135,7 +134,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "Size",
+                    OUString( "Size" ),
                     -1,
                     cppu::UnoType<sal_Int64>::get(),
                     beans::PropertyAttribute::BOUND
@@ -143,7 +142,7 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "BaseURI",
+                    OUString( "BaseURI" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -151,7 +150,8 @@ bool ContentProvider::getProperty(
 
             m_pProps->insert(
                 beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<
                         uno::Sequence< ucb::ContentInfo >>::get(),
@@ -281,14 +281,6 @@ bool ContentProvider::getProperty(
 }
 
 
-static PropertyNamesCache aStaticPropertyNamesCache;
-
-// static
-void Content::removeCachedPropertyNames( const OUString & rURL )
-{
-    aStaticPropertyNamesCache.removeCachedPropertyNames( rURL );
-}
-
 // Content implementation.
 
 
@@ -320,41 +312,18 @@ uno::Sequence< beans::Property > Content::getProperties(
     if ( !bTransient )
     {
         // Obtain all properties supported for this resource from server.
-        DAVOptions aDAVOptions;
-        getResourceOptions( xEnv, aDAVOptions, xResAccess );
-        // only Class 1 is needed for PROPFIND
-        if ( aDAVOptions.isClass1() )
+        try
         {
-            try
-            {
-                std::vector< DAVResourceInfo > props;
-                OUString aTheURL( xResAccess->getURL() );
-                PropertyNames aPropsNames( aTheURL );
+            std::vector< DAVResourceInfo > props;
+            xResAccess->PROPFIND( DAVZERO, props, xEnv );
 
-                if( !aStaticPropertyNamesCache.getCachedPropertyNames( aTheURL, aPropsNames ) )
-                {
-
-                    xResAccess->PROPFIND( DAVZERO, props, xEnv );
-                    aPropsNames.setPropertiesNames( props );
-
-                    aStaticPropertyNamesCache.addCachePropertyNames( aPropsNames );
-                }
-                else
-                {
-                    props = aPropsNames.getPropertiesNames();
-                }
-
-                // Note: vector should contain exactly one resource info, because
-                //       we used a depth of DAVZERO for PROPFIND.
-                if (props.size() == 1)
-                {
-                    aPropSet.insert( (*props.begin()).properties.begin(),
-                                     (*props.begin()).properties.end() );
-                }
-            }
-            catch ( DAVException const & )
-            {
-            }
+            // Note: vector always contains exactly one resource info, because
+            //       we used a depth of DAVZERO for PROPFIND.
+            aPropSet.insert( (*props.begin()).properties.begin(),
+                             (*props.begin()).properties.end() );
+        }
+        catch ( DAVException const & )
+        {
         }
     }
 
@@ -546,22 +515,22 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands(
 
     aCmdInfo[ 0 ] =
             ucb::CommandInfo(
-                "getCommandInfo",
+                OUString( "getCommandInfo" ),
                 -1,
                 cppu::UnoType<void>::get() );
     aCmdInfo[ 1 ] =
             ucb::CommandInfo(
-                "getPropertySetInfo",
+                OUString( "getPropertySetInfo" ),
                 -1,
                 cppu::UnoType<void>::get() );
     aCmdInfo[ 2 ] =
             ucb::CommandInfo(
-                "getPropertyValues",
+                OUString( "getPropertyValues" ),
                 -1,
                 cppu::UnoType<uno::Sequence< beans::Property >>::get() );
     aCmdInfo[ 3 ] =
             ucb::CommandInfo(
-                "setPropertyValues",
+                OUString( "setPropertyValues" ),
                 -1,
                 cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get() );
 
@@ -571,17 +540,17 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands(
 
     aCmdInfo[ 4 ] =
             ucb::CommandInfo(
-                "delete",
+                OUString( "delete" ),
                 -1,
                 cppu::UnoType<bool>::get() );
     aCmdInfo[ 5 ] =
             ucb::CommandInfo(
-                "insert",
+                OUString( "insert" ),
                 -1,
                 cppu::UnoType<ucb::InsertCommandArgument>::get() );
     aCmdInfo[ 6 ] =
             ucb::CommandInfo(
-                "open",
+                OUString( "open" ),
                 -1,
                 cppu::UnoType<ucb::OpenCommandArgument2>::get() );
 
@@ -591,17 +560,17 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands(
 
     aCmdInfo[ 7 ] =
             ucb::CommandInfo(
-                "post",
+                OUString( "post" ),
                 -1,
                 cppu::UnoType<ucb::PostCommandArgument2>::get() );
     aCmdInfo[ 8 ] =
             ucb::CommandInfo(
-                "addProperty",
+                OUString( "addProperty" ),
                 -1,
                 cppu::UnoType<ucb::PropertyCommandArgument>::get() );
     aCmdInfo[ 9 ] =
             ucb::CommandInfo(
-                "removeProperty",
+                OUString( "removeProperty" ),
                 -1,
                 cppu::UnoType<rtl::OUString>::get() );
 
@@ -634,13 +603,14 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands(
 
         aCmdInfo[ nPos ] =
             ucb::CommandInfo(
-                "transfer",
+                OUString( "transfer" ),
                 -1,
                 cppu::UnoType<ucb::TransferInfo>::get() );
         nPos++;
         aCmdInfo[ nPos ] =
             ucb::CommandInfo(
-                "createNewContent",
+                OUString(
+                    "createNewContent" ),
                 -1,
                 cppu::UnoType<ucb::ContentInfo>::get() );
         nPos++;
@@ -654,13 +624,13 @@ uno::Sequence< ucb::CommandInfo > Content::getCommands(
     {
         aCmdInfo[ nPos ] =
             ucb::CommandInfo(
-                "lock",
+                OUString( "lock" ),
                 -1,
                 cppu::UnoType<void>::get() );
         nPos++;
         aCmdInfo[ nPos ] =
             ucb::CommandInfo(
-                "unlock",
+                OUString( "unlock" ),
                 -1,
                 cppu::UnoType<void>::get() );
         nPos++;

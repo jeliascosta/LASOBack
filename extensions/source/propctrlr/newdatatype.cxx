@@ -28,7 +28,7 @@ namespace pcr
     //= NewDataTypeDialog
 
 
-    NewDataTypeDialog::NewDataTypeDialog( vcl::Window* _pParent, const OUString& _rNameBase, const std::vector< OUString >& _rProhibitedNames )
+    NewDataTypeDialog::NewDataTypeDialog( vcl::Window* _pParent, const OUString& _rNameBase, const ::std::vector< OUString >& _rProhibitedNames )
         : ModalDialog( _pParent, "DataTypeDialog",
         "modules/spropctrlr/ui/datatypedialog.ui" )
         , m_aProhibitedNames( _rProhibitedNames.begin(), _rProhibitedNames.end() )
@@ -52,7 +52,8 @@ namespace pcr
             }
         }
 
-        OUString sNameBase = _rNameBase.copy( 0, nStripUntil ? nStripUntil + 1 : 0 ) + " ";
+        OUString sNameBase( _rNameBase.copy( 0, nStripUntil ? nStripUntil + 1 : 0 ) );
+        sNameBase += " ";
         OUString sInitialName;
         sal_Int32 nPostfixNumber = 1;
         do
@@ -77,7 +78,7 @@ namespace pcr
         ModalDialog::dispose();
     }
 
-    IMPL_LINK_NOARG( NewDataTypeDialog, OnNameModified, Edit&, void )
+    IMPL_LINK_NOARG_TYPED( NewDataTypeDialog, OnNameModified, Edit&, void )
     {
         OUString sCurrentName = GetName();
         bool bNameIsOK = ( !sCurrentName.isEmpty() )

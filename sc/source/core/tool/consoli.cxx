@@ -47,6 +47,29 @@ static const OpCode eOpCodeTable[] = {      //  order as for enum ScSubTotalFunc
         ocVar,
         ocVarP };
 
+void ScReferenceList::AddEntry( SCCOL nCol, SCROW nRow, SCTAB nTab )
+{
+    ScReferenceEntry* pOldData = pData;
+    pData = new ScReferenceEntry[ nFullSize+1 ];
+    if (pOldData)
+    {
+        memcpy( pData, pOldData, nCount * sizeof(ScReferenceEntry) );
+        delete[] pOldData;
+    }
+    while (nCount < nFullSize)
+    {
+        pData[nCount].nCol = SC_CONS_NOTFOUND;
+        pData[nCount].nRow = SC_CONS_NOTFOUND;
+        pData[nCount].nTab = SC_CONS_NOTFOUND;
+        ++nCount;
+    }
+    pData[nCount].nCol = nCol;
+    pData[nCount].nRow = nRow;
+    pData[nCount].nTab = nTab;
+    ++nCount;
+    nFullSize = nCount;
+}
+
 template< typename T >
 static void lcl_AddString( ::std::vector<OUString>& rData, T& nCount, const OUString& rInsert )
 {
@@ -93,6 +116,9 @@ void ScConsData::DeleteData()
     {
         for (SCSIZE i=0; i<nColCount; i++)
         {
+            for (SCSIZE j=0; j<nRowCount; j++)
+                if (ppUsed[i][j])
+                    ppRefs[i][j].Clear();
             delete[] ppRefs[i];
         }
         delete[] ppRefs;
@@ -102,7 +128,7 @@ void ScConsData::DeleteData()
     DELETEARR( ppCount, nColCount );
     DELETEARR( ppSum,   nColCount );
     DELETEARR( ppSumSqr,nColCount );
-    DELETEARR( ppUsed,  nColCount );
+    DELETEARR( ppUsed,  nColCount );                // only after ppRefs !!!
     DELETEARR( ppTitlePos, nRowCount );
     ::std::vector<OUString>().swap( maColHeaders);
     ::std::vector<OUString>().swap( maRowHeaders);
@@ -255,12 +281,17 @@ void ScConsData::AddName( const OUString& rName )
 
             SCSIZE nMax = 0;
             for (nArrX=0; nArrX<nColCount; nArrX++)
-                nMax = std::max( nMax, ppRefs[nArrX][nArrY].size() );
+                if (ppUsed[nArrX][nArrY])
+                    nMax = std::max( nMax, ppRefs[nArrX][nArrY].GetCount() );
 
             for (nArrX=0; nArrX<nColCount; nArrX++)
             {
-                ppUsed[nArrX][nArrY] = true;
-                ppRefs[nArrX][nArrY].resize( nMax, { SC_CONS_NOTFOUND, SC_CONS_NOTFOUND, SC_CONS_NOTFOUND });
+                if (!ppUsed[nArrX][nArrY])
+                {
+                    ppUsed[nArrX][nArrY] = true;
+                    ppRefs[nArrX][nArrY].Init();
+                }
+                ppRefs[nArrX][nArrY].SetFullSize(nMax);
             }
 
             //  store positions
@@ -533,8 +564,14 @@ void ScConsData::AddData( ScDocument* pSrcDoc, SCTAB nTab,
                 {
                     if (bReference)
                     {
-                        ppUsed[nArrX][nArrY] = true;
-                        ppRefs[nArrX][nArrY].push_back( { nCol, nRow, nTab } );
+                        if (ppUsed[nArrX][nArrY])
+                            ppRefs[nArrX][nArrY].AddEntry( nCol, nRow, nTab );
+                        else
+                        {
+                            ppUsed[nArrX][nArrY] = true;
+                            ppRefs[nArrX][nArrY].Init();
+                            ppRefs[nArrX][nArrY].AddEntry( nCol, nRow, nTab );
+                        }
                     }
                     else
                     {
@@ -571,7 +608,8 @@ SCROW ScConsData::GetInsertCount() const
         {
             SCSIZE nNeeded = 0;
             for (nArrX=0; nArrX<nColCount; nArrX++)
-                nNeeded = std::max( nNeeded, ppRefs[nArrX][nArrY].size() );
+                if (ppUsed[nArrX][nArrY])
+                    nNeeded = std::max( nNeeded, ppRefs[nArrX][nArrY].GetCount() );
 
             nInsert += nNeeded;
         }
@@ -624,7 +662,7 @@ void ScConsData::OutputToDocument( ScDocument* pDestDoc, SCCOL nCol, SCROW nRow,
                                                 ppSumSqr[nArrX][nArrY]);
                     if (ppCount[nArrX][nArrY] < 0.0)
                         pDestDoc->SetError( sal::static_int_cast<SCCOL>(nCol+nArrX),
-                                            sal::static_int_cast<SCROW>(nRow+nArrY), nTab, FormulaError::NoValue );
+                                            sal::static_int_cast<SCROW>(nRow+nArrY), nTab, formula::errNoValue );
                     else
                         pDestDoc->SetValue( sal::static_int_cast<SCCOL>(nCol+nArrX),
                                             sal::static_int_cast<SCROW>(nRow+nArrY), nTab, fVal );
@@ -649,7 +687,8 @@ void ScConsData::OutputToDocument( ScDocument* pDestDoc, SCCOL nCol, SCROW nRow,
         {
             SCSIZE nNeeded = 0;
             for (nArrX=0; nArrX<nColCount; nArrX++)
-                nNeeded = std::max( nNeeded, ppRefs[nArrX][nArrY].size() );
+                if (ppUsed[nArrX][nArrY])
+                    nNeeded = std::max( nNeeded, ppRefs[nArrX][nArrY].GetCount() );
 
             if (nNeeded)
             {
@@ -658,12 +697,13 @@ void ScConsData::OutputToDocument( ScDocument* pDestDoc, SCCOL nCol, SCROW nRow,
                 for (nArrX=0; nArrX<nColCount; nArrX++)
                     if (ppUsed[nArrX][nArrY])
                     {
-                        SCSIZE nCount = ppRefs[nArrX][nArrY].size();
+                        ScReferenceList& rList = ppRefs[nArrX][nArrY];
+                        SCSIZE nCount = rList.GetCount();
                         if (nCount)
                         {
                             for (SCSIZE nPos=0; nPos<nCount; nPos++)
                             {
-                                ScReferenceEntry aRef = ppRefs[nArrX][nArrY][nPos];
+                                ScReferenceEntry aRef = rList.GetEntry(nPos);
                                 if (aRef.nTab != SC_CONS_NOTFOUND)
                                 {
                                     // insert reference (absolute, 3d)
@@ -680,7 +720,7 @@ void ScConsData::OutputToDocument( ScDocument* pDestDoc, SCCOL nCol, SCROW nRow,
                                 }
                             }
 
-                            // insert sum (relative, not 3d)
+                            // insert sum (relativ, not 3d)
 
                             ScAddress aDest( sal::static_int_cast<SCCOL>(nCol+nArrX),
                                              sal::static_int_cast<SCROW>(nRow+nArrY+nNeeded), nTab );

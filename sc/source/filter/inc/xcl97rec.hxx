@@ -28,8 +28,6 @@
 class XclObj;
 class XclExpMsoDrawing;
 class SdrCaptionObj;
-class SdrTextObj;
-class XclTxo;
 
 class XclExpObjList : public ExcEmptyRec, protected XclExpRoot
 {
@@ -38,7 +36,7 @@ public:
     typedef std::vector<XclObj*>::iterator iterator;
 
     explicit            XclExpObjList( const XclExpRoot& rRoot, XclEscherEx& rEscherEx );
-    virtual             ~XclExpObjList() override;
+    virtual             ~XclExpObjList();
 
     /// return: 1-based ObjId
     ///! count>=0xFFFF: Obj will be deleted, return 0
@@ -54,15 +52,15 @@ public:
 
     void pop_back ();
 
-    bool empty () const { return maObjs.empty(); }
+    inline bool empty () const { return maObjs.empty(); }
 
-    size_t size () const { return maObjs.size(); }
+    inline size_t size () const { return maObjs.size(); }
 
-    iterator begin () { return maObjs.begin(); }
+    inline iterator begin () { return maObjs.begin(); }
 
-    iterator end () { return maObjs.end(); }
+    inline iterator end () { return maObjs.end(); }
 
-    XclExpMsoDrawing* GetMsodrawingPerSheet() { return pMsodrawingPerSheet; }
+    inline XclExpMsoDrawing* GetMsodrawingPerSheet() { return pMsodrawingPerSheet; }
 
                                 /// close groups and DgContainer opened in ctor
     void                EndSheet();
@@ -85,6 +83,9 @@ private:
 
 // --- class XclObj --------------------------------------------------
 
+class XclTxo;
+class SdrTextObj;
+
 class XclObj : public XclExpRecord
 {
 protected:
@@ -104,7 +105,7 @@ protected:
         See SetOwnEscher() for details. */
     explicit                    XclObj( XclExpObjectManager& rObjMgr, sal_uInt16 nObjType, bool bOwnEscher = false );
 
-    void                        ImplWriteAnchor( const XclExpRoot& rRoot, const SdrObject* pSdrObj, const tools::Rectangle* pChildAnchor );
+    void                        ImplWriteAnchor( const XclExpRoot& rRoot, const SdrObject* pSdrObj, const Rectangle* pChildAnchor );
 
                                 // overwritten for writing MSODRAWING record
     virtual void                WriteBody( XclExpStream& rStrm ) override;
@@ -112,27 +113,27 @@ protected:
             void                SaveTextRecs( XclExpStream& rStrm );
 
 public:
-    virtual                     ~XclObj() override;
+    virtual                     ~XclObj();
 
-    sal_uInt16           GetObjType() const { return mnObjType; }
+    inline sal_uInt16           GetObjType() const { return mnObjType; }
 
-    void                SetId( sal_uInt16 nId ) { nObjId = nId; }
+    inline  void                SetId( sal_uInt16 nId ) { nObjId = nId; }
 
-    void                SetTab( SCTAB nScTab )  { mnScTab = nScTab; }
-    SCTAB               GetTab() const          { return mnScTab; }
+    inline  void                SetTab( SCTAB nScTab )  { mnScTab = nScTab; }
+    inline  SCTAB               GetTab() const          { return mnScTab; }
 
-    void                SetLocked( bool b )
+    inline  void                SetLocked( bool b )
                                     { b ? nGrbit |= 0x0001 : nGrbit &= ~0x0001; }
-    void                SetPrintable( bool b )
+    inline  void                SetPrintable( bool b )
                                     { b ? nGrbit |= 0x0010 : nGrbit &= ~0x0010; }
-    void                SetAutoFill( bool b )
+    inline  void                SetAutoFill( bool b )
                                     { b ? nGrbit |= 0x2000 : nGrbit &= ~0x2000; }
-    void                SetAutoLine( bool b )
+    inline  void                SetAutoLine( bool b )
                                     { b ? nGrbit |= 0x4000 : nGrbit &= ~0x4000; }
 
                                 // set corresponding Excel object type in OBJ/ftCmo
             void                SetEscherShapeType( sal_uInt16 nType );
-    void                SetEscherShapeTypeGroup() { mnObjType = EXC_OBJTYPE_GROUP; }
+    inline  void                SetEscherShapeTypeGroup() { mnObjType = EXC_OBJTYPE_GROUP; }
 
     /** If set to true, this object has created its own escher data.
         @descr  This causes the function EscherEx::EndShape() to not post process
@@ -143,7 +144,7 @@ public:
         EscherEx::EndShape(). */
     /** Returns true, if the object has created the escher data itself.
         @descr  See SetOwnEscher() for details. */
-    bool                 IsOwnEscher() const { return mbOwnEscher; }
+    inline bool                 IsOwnEscher() const { return mbOwnEscher; }
 
                                 //! actually writes ESCHER_ClientTextbox
             void                SetText( const XclExpRoot& rRoot, const SdrTextObj& rObj );
@@ -159,18 +160,18 @@ class XclObjComment : public XclObj
     std::unique_ptr< SdrCaptionObj >
                                 mpCaption;
     bool                        mbVisible;
-    tools::Rectangle                   maFrom;
-    tools::Rectangle                   maTo;
+    Rectangle                   maFrom;
+    Rectangle                   maTo;
 
 public:
                                 XclObjComment( XclExpObjectManager& rObjMgr,
-                                    const tools::Rectangle& rRect, const EditTextObject& rEditObj, SdrCaptionObj* pCaption, bool bVisible, const ScAddress& rAddress, tools::Rectangle &rFrom, tools::Rectangle &To );
-    virtual                     ~XclObjComment() override;
+                                    const Rectangle& rRect, const EditTextObject& rEditObj, SdrCaptionObj* pCaption, bool bVisible, const ScAddress& rAddress, Rectangle &rFrom, Rectangle &To );
+    virtual                     ~XclObjComment();
 
     /** c'tor process for formatted text objects above .
        @descr used to construct the MSODRAWING Escher object properties. */
     void                        ProcessEscherObj( const XclExpRoot& rRoot,
-                                    const tools::Rectangle& rRect, SdrObject* pCaption, bool bVisible );
+                                    const Rectangle& rRect, SdrObject* pCaption, bool bVisible );
 
     virtual void                Save( XclExpStream& rStrm ) override;
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
@@ -188,25 +189,27 @@ private:
 protected:
 public:
                                 XclObjDropDown( XclExpObjectManager& rObjMgr, const ScAddress& rPos, bool bFilt );
-    virtual                     ~XclObjDropDown() override;
+    virtual                     ~XclObjDropDown();
 };
 
 // --- class XclTxo --------------------------------------------------
 
+class SdrTextObj;
+
 class XclTxo : public ExcRecord
 {
 public:
-                                XclTxo( const OUString& rString, sal_uInt16 nFontIx );
+                                XclTxo( const OUString& rString, sal_uInt16 nFontIx = EXC_FONT_APP );
                                 XclTxo( const XclExpRoot& rRoot, const SdrTextObj& rEditObj );
                                 XclTxo( const XclExpRoot& rRoot, const EditTextObject& rEditObj, SdrObject* pCaption );
 
-    void                 SetHorAlign( sal_uInt8 nHorAlign ) { mnHorAlign = nHorAlign; }
-    void                 SetVerAlign( sal_uInt8 nVerAlign ) { mnVerAlign = nVerAlign; }
+    inline void                 SetHorAlign( sal_uInt8 nHorAlign ) { mnHorAlign = nHorAlign; }
+    inline void                 SetVerAlign( sal_uInt8 nVerAlign ) { mnVerAlign = nVerAlign; }
 
     virtual void                Save( XclExpStream& rStrm ) override;
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
 private:
     virtual void                SaveCont( XclExpStream& rStrm ) override;
@@ -231,7 +234,7 @@ private:
 
 public:
                                 XclObjOle( XclExpObjectManager& rObjMgr, const SdrObject& rObj );
-    virtual                     ~XclObjOle() override;
+    virtual                     ~XclObjOle();
 
     virtual void                Save( XclExpStream& rStrm ) override;
 };
@@ -247,7 +250,7 @@ public:
                                 XclObjAny( XclExpObjectManager& rObjMgr,
                                     const css::uno::Reference< css::drawing::XShape >& rShape,
                                     ScDocument* pDoc);
-    virtual                     ~XclObjAny() override;
+    virtual                     ~XclObjAny();
 
     const css::uno::Reference< css::drawing::XShape >&
                                 GetShape() const { return mxShape; }
@@ -268,6 +271,7 @@ private:
 class ExcBof8_Base : public ExcBof_Base
 {
 protected:
+        sal_uInt32              nFileHistory;       // bfh
         sal_uInt32              nLowestBiffVer;     // sfo
 
     virtual void                SaveCont( XclExpStream& rStrm ) override;
@@ -276,7 +280,7 @@ public:
                                 ExcBof8_Base();
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 };
 
 // --- class ExcBofW8 ------------------------------------------------
@@ -311,7 +315,7 @@ public:
                                 ExcBundlesheet8( RootData& rRootData, SCTAB nTab );
                                 ExcBundlesheet8( const OUString& rString );
 
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 };
@@ -322,7 +326,7 @@ class XclObproj : public ExcRecord
 {
 public:
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 };
 
 // ---- class XclCodename --------------------------------------------
@@ -336,7 +340,7 @@ public:
                                 XclCodename( const OUString& );
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 };
 
 // ---- Scenarios ----------------------------------------------------
@@ -355,7 +359,7 @@ protected:
 public:
                                 ExcEScenarioCell( sal_uInt16 nC, sal_uInt16 nR, const OUString& rTxt );
 
-    std::size_t          GetStringBytes() const
+    inline sal_Size             GetStringBytes() const
                                     { return sText.GetSize(); }
 
     void                        WriteAddress( XclExpStream& rStrm ) const ;
@@ -367,7 +371,7 @@ public:
 class ExcEScenario : public ExcRecord
 {
 private:
-    std::size_t                 nRecLen;
+    sal_Size                    nRecLen;
     XclExpString                sName;
     XclExpString                sComment;
     XclExpString                sUserName;
@@ -382,10 +386,10 @@ private:
 protected:
 public:
                                 ExcEScenario( const XclExpRoot& rRoot, SCTAB nTab );
-    virtual                     ~ExcEScenario() override;
+    virtual                     ~ExcEScenario();
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 };
@@ -394,20 +398,20 @@ class ExcEScenarioManager : public ExcRecord
 {
 private:
     sal_uInt16                      nActive;
-    std::vector<ExcEScenario>   aScenes;
+    std::vector<ExcEScenario*> aScenes;
 
     virtual void                SaveCont( XclExpStream& rStrm ) override;
 
 protected:
 public:
                                 ExcEScenarioManager( const XclExpRoot& rRoot, SCTAB nTab );
-    virtual                     ~ExcEScenarioManager() override;
+    virtual                     ~ExcEScenarioManager();
 
     virtual void                Save( XclExpStream& rStrm ) override;
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 };
 
 /** Represents a FEATHDR (SHEETPROTECTION) record that stores sheet protection
@@ -450,7 +454,7 @@ public:
                                 XclCalccount( const ScDocument& );
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 };
@@ -465,7 +469,7 @@ public:
                                 XclIteration( const ScDocument& );
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 };
@@ -480,7 +484,7 @@ public:
                                 XclDelta( const ScDocument& );
 
     virtual sal_uInt16              GetNum() const override;
-    virtual std::size_t         GetLen() const override;
+    virtual sal_Size            GetLen() const override;
 
     virtual void                SaveXml( XclExpXmlStream& rStrm ) override;
 };
@@ -497,7 +501,7 @@ class XclExpFileEncryption : public XclExpRecord
 {
 public:
     explicit XclExpFileEncryption( const XclExpRoot& rRoot );
-    virtual ~XclExpFileEncryption() override;
+    virtual ~XclExpFileEncryption();
 
 private:
     virtual void WriteBody( XclExpStream& rStrm ) override;
@@ -521,7 +525,7 @@ class XclExpInterfaceEnd : public XclExpRecord
 {
 public:
     explicit XclExpInterfaceEnd();
-    virtual ~XclExpInterfaceEnd() override;
+    virtual ~XclExpInterfaceEnd();
 
 private:
     virtual void WriteBody( XclExpStream& rStrm ) override;
@@ -533,7 +537,7 @@ class XclExpWriteAccess : public XclExpRecord
 {
 public:
     explicit XclExpWriteAccess();
-    virtual ~XclExpWriteAccess() override;
+    virtual ~XclExpWriteAccess();
 
 private:
     virtual void WriteBody( XclExpStream& rStrm ) override;
@@ -559,7 +563,7 @@ class XclExpProt4Rev : public XclExpRecord
 {
 public:
     explicit XclExpProt4Rev();
-    virtual ~XclExpProt4Rev() override;
+    virtual ~XclExpProt4Rev();
 
 private:
     virtual void WriteBody( XclExpStream& rStrm ) override;
@@ -569,7 +573,7 @@ class XclExpProt4RevPass : public XclExpRecord
 {
 public:
     explicit XclExpProt4RevPass();
-    virtual ~XclExpProt4RevPass() override;
+    virtual ~XclExpProt4RevPass();
 
 private:
     virtual void WriteBody( XclExpStream& rStrm ) override;

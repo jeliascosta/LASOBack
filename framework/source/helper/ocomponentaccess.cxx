@@ -39,7 +39,7 @@ OComponentAccess::OComponentAccess( const css::uno::Reference< XDesktop >& xOwne
         :   m_xOwner        ( xOwner                        )
 {
     // Safe impossible cases
-    SAL_WARN_IF( !xOwner.is(), "fwk", "OComponentAccess::OComponentAccess(): Invalid parameter detected!" );
+    SAL_WARN_IF( !impldbg_checkParameter_OComponentAccessCtor( xOwner ), "fwk", "OComponentAccess::OComponentAccess(): Invalid parameter detected!" );
 }
 
 //  destructor
@@ -49,7 +49,7 @@ OComponentAccess::~OComponentAccess()
 }
 
 //  XEnumerationAccess
-css::uno::Reference< XEnumeration > SAL_CALL OComponentAccess::createEnumeration()
+css::uno::Reference< XEnumeration > SAL_CALL OComponentAccess::createEnumeration() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -76,7 +76,7 @@ css::uno::Reference< XEnumeration > SAL_CALL OComponentAccess::createEnumeration
 }
 
 //  XElementAccess
-Type SAL_CALL OComponentAccess::getElementType()
+Type SAL_CALL OComponentAccess::getElementType() throw( RuntimeException, std::exception )
 {
     // Elements in list an enumeration are components!
     // Return the uno-type of XComponent.
@@ -84,7 +84,7 @@ Type SAL_CALL OComponentAccess::getElementType()
 }
 
 //  XElementAccess
-sal_Bool SAL_CALL OComponentAccess::hasElements()
+sal_Bool SAL_CALL OComponentAccess::hasElements() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -161,6 +161,22 @@ css::uno::Reference< XComponent > OComponentAccess::impl_getFrameComponent( cons
     return xComponent;
 }
 
+//  debug methods
+
+/*-----------------------------------------------------------------------------------------------------------------
+    The follow methods checks the parameter for other functions. If a parameter or his value is non valid,
+    we return "sal_False". (else sal_True) This mechanism is used to throw an ASSERT!
+
+    ATTENTION
+
+        If you miss a test for one of this parameters, contact the author or add it himself !(?)
+        But ... look for right testing! See using of this methods!
+-----------------------------------------------------------------------------------------------------------------*/
+
+bool OComponentAccess::impldbg_checkParameter_OComponentAccessCtor( const   css::uno::Reference< XDesktop >&      xOwner  )
+{
+    return xOwner.is();
+}
 
 }       //  namespace framework
 

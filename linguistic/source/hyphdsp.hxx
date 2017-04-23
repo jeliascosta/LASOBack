@@ -71,39 +71,47 @@ class HyphenatorDispatcher :
     static css::uno::Reference< css::linguistic2::XHyphenatedWord>
             buildHyphWord( const OUString& rOrigWord,
                 const css::uno::Reference< css::linguistic2::XDictionaryEntry> &xEntry,
-                LanguageType nLang, sal_Int16 nMaxLeading );
+                sal_Int16 nLang, sal_Int16 nMaxLeading );
 
     static css::uno::Reference< css::linguistic2::XPossibleHyphens >
             buildPossHyphens( const css::uno::Reference< css::linguistic2::XDictionaryEntry > &xEntry,
-                    LanguageType nLanguage );
+                    sal_Int16 nLanguage );
 
 public:
     explicit HyphenatorDispatcher( LngSvcMgr &rLngSvcMgr );
-    virtual ~HyphenatorDispatcher() override;
+    virtual ~HyphenatorDispatcher();
 
     // XSupportedLocales
     virtual css::uno::Sequence< css::lang::Locale > SAL_CALL
-        getLocales() override;
+        getLocales()
+            throw(css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL
-        hasLocale( const css::lang::Locale& aLocale ) override;
+        hasLocale( const css::lang::Locale& aLocale )
+            throw(css::uno::RuntimeException, std::exception) override;
 
     // XHyphenator
     virtual css::uno::Reference< css::linguistic2::XHyphenatedWord > SAL_CALL
         hyphenate( const OUString& aWord,
                 const css::lang::Locale& aLocale,
                 sal_Int16 nMaxLeading,
-                const css::beans::PropertyValues& aProperties ) override;
+                const css::beans::PropertyValues& aProperties )
+            throw(css::lang::IllegalArgumentException,
+                  css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::linguistic2::XHyphenatedWord > SAL_CALL
         queryAlternativeSpelling( const OUString& aWord,
                 const css::lang::Locale& aLocale,
                 sal_Int16 nIndex,
-                const css::beans::PropertyValues& aProperties ) override;
+                const css::beans::PropertyValues& aProperties )
+            throw(css::lang::IllegalArgumentException,
+                  css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
             css::linguistic2::XPossibleHyphens > SAL_CALL
         createPossibleHyphens(
                 const OUString& aWord,
                 const css::lang::Locale& aLocale,
-                const css::beans::PropertyValues& aProperties ) override;
+                const css::beans::PropertyValues& aProperties )
+            throw(css::lang::IllegalArgumentException,
+                  css::uno::RuntimeException, std::exception) override;
 
     // LinguDispatcher
     virtual void

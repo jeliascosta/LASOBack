@@ -43,9 +43,11 @@ namespace sdext { namespace presenter {
 class PresenterPaneBase;
 class PresenterSprite;
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::lang::XEventListener
-> PresenterPaneContainerInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::lang::XEventListener
+    > PresenterPaneContainerInterfaceBase;
+}
 
 /** This class could also be called PresenterPaneAndViewContainer because it
     stores not only references to all panes that belong to the presenter
@@ -58,7 +60,7 @@ class PresenterPaneContainer
 public:
     explicit PresenterPaneContainer (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterPaneContainer() override;
+    virtual ~PresenterPaneContainer();
     PresenterPaneContainer(const PresenterPaneContainer&) = delete;
     PresenterPaneContainer& operator=(const PresenterPaneContainer&) = delete;
 
@@ -96,11 +98,13 @@ public:
         double mnBottom;
         SharedBitmapDescriptor mpViewBackground;
         bool mbIsActive;
+        bool mbNeedsClipping;
         bool mbIsOpaque;
         SpriteProvider maSpriteProvider;
         bool mbIsSprite;
         Activator maActivator;
         css::awt::Point maCalloutAnchorLocation;
+        bool mbHasCalloutAnchor;
 
         void SetActivationState (const bool bIsActive);
     };
@@ -167,7 +171,8 @@ public:
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent) override;
+        const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::drawing::XPresenterHelper> mxPresenterHelper;

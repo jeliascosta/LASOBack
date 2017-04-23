@@ -28,9 +28,9 @@ enum class QuickHelpFlags;
 class HelpTextWindow : public FloatingWindow
 {
 private:
-    tools::Rectangle           maHelpArea; // If next Help for the same rectangle w/ same text, then keep window
+    Rectangle           maHelpArea; // If next Help for the same rectangle w/ same text, then keep window
 
-    tools::Rectangle           maTextRect; // For wrapped text in QuickHelp
+    Rectangle           maTextRect; // For wrapped text in QuickHelp
 
     OUString            maHelpText;
     OUString            maStatusText;
@@ -42,9 +42,9 @@ private:
     QuickHelpFlags      mnStyle;
 
 private:
-    DECL_LINK( TimerHdl, Timer*, void );
+    DECL_LINK_TYPED( TimerHdl, Timer*, void );
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
     virtual void StateChanged(StateChangedType nType) override;
@@ -55,29 +55,29 @@ private:
     virtual void        dispose() override;
 public:
                         HelpTextWindow( vcl::Window* pParent, const OUString& rText, sal_uInt16 nHelpWinStyle, QuickHelpFlags nStyle );
-    virtual             ~HelpTextWindow() override;
+    virtual             ~HelpTextWindow();
 
     const OUString&     GetHelpText() const { return maHelpText; }
     void                SetHelpText( const OUString& rHelpText );
     sal_uInt16          GetWinStyle() const { return mnHelpWinStyle; }
     QuickHelpFlags      GetStyle() const { return mnStyle; }
 
-    // only remember:
+    // Nur merken:
     void                SetStatusText( const OUString& rStatusText ) { maStatusText = rStatusText; }
-    void                SetHelpArea( const tools::Rectangle& rRect ) { maHelpArea = rRect; }
+    void                SetHelpArea( const Rectangle& rRect ) { maHelpArea = rRect; }
 
     void                ShowHelp( sal_uInt16 nDelayMode );
 
     Size                CalcOutSize() const;
-    const tools::Rectangle&    GetHelpArea() const { return maHelpArea; }
+    const Rectangle&    GetHelpArea() const { return maHelpArea; }
 };
 
 void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHelpFlags nStyle,
         const OUString& rHelpText, const OUString& rStatusText,
-        const Point& rScreenPos, const tools::Rectangle& rHelpArea );
+        const Point& rScreenPos, const Rectangle& rHelpArea );
 void ImplDestroyHelpWindow( bool bUpdateHideTime );
 void ImplSetHelpWindowPos( vcl::Window* pHelpWindow, sal_uInt16 nHelpWinStyle, QuickHelpFlags nStyle,
-                            const Point& rPos, const tools::Rectangle& rHelpArea );
+                            const Point& rPos, const Rectangle& rHelpArea );
 
 #endif // INCLUDED_VCL_INC_HELPWIN_HXX
 

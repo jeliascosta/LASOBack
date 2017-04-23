@@ -49,7 +49,7 @@
 #define CSV_FORMAT_TYPE      (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
 #define HTML_FORMAT_TYPE     (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
 #define DIF_FORMAT_TYPE      (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
-#define XLS_XML_FORMAT_TYPE  (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN | SfxFilterFlags::STARONEFILTER)
+#define XLS_XML_FORMAT_TYPE  (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN)
 #define XLSB_XML_FORMAT_TYPE (SfxFilterFlags::IMPORT |                          SfxFilterFlags::ALIEN | SfxFilterFlags::STARONEFILTER | SfxFilterFlags::PREFERED)
 #define FODS_FORMAT_TYPE     (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::OWN | SfxFilterFlags::STARONEFILTER )
 
@@ -65,7 +65,7 @@
 #define FORMAT_XLSB     9
 #define FORMAT_FODS     10
 
-enum class StringType { PureString, StringValue };
+enum StringType { PureString, FormulaValue, StringValue };
 
 SCQAHELPER_DLLPUBLIC bool testEqualsWithTolerance( long nVal1, long nVal2, long nTol );
 
@@ -119,7 +119,7 @@ SCQAHELPER_DLLPUBLIC std::ostream& operator<<(std::ostream& rStrm, const OpCode&
 
 SCQAHELPER_DLLPUBLIC void loadFile(const OUString& aFileName, std::string& aContent);
 
-SCQAHELPER_DLLPUBLIC void testFile(OUString& aFileName, ScDocument& rDoc, SCTAB nTab, StringType aStringFormat = StringType::StringValue);
+SCQAHELPER_DLLPUBLIC void testFile(OUString& aFileName, ScDocument& rDoc, SCTAB nTab, StringType aStringFormat = StringValue);
 
 //need own handler because conditional formatting strings must be generated
 SCQAHELPER_DLLPUBLIC void testCondFile(OUString& aFileName, ScDocument* pDoc, SCTAB nTab);
@@ -139,10 +139,6 @@ SCQAHELPER_DLLPUBLIC bool checkFormulaPositions(
 SCQAHELPER_DLLPUBLIC ScTokenArray* compileFormula(
     ScDocument* pDoc, const OUString& rFormula, const ScAddress* pPos = nullptr,
     formula::FormulaGrammar::Grammar eGram = formula::FormulaGrammar::GRAM_NATIVE );
-
-SCQAHELPER_DLLPUBLIC bool checkOutput(
-    ScDocument* pDoc, const ScRange& aOutRange,
-    const std::vector<std::vector<const char*>>& aCheck, const char* pCaption );
 
 template<size_t Size>
 bool checkOutput(ScDocument* pDoc, const ScRange& aOutRange, const char* aOutputCheck[][Size], const char* pCaption)
@@ -194,7 +190,7 @@ SCQAHELPER_DLLPUBLIC bool isFormulaWithoutError(ScDocument& rDoc, const ScAddres
  */
 SCQAHELPER_DLLPUBLIC OUString toString(
     ScDocument& rDoc, const ScAddress& rPos, ScTokenArray& rArray,
-    formula::FormulaGrammar::Grammar eGram);
+    formula::FormulaGrammar::Grammar eGram = formula::FormulaGrammar::GRAM_NATIVE);
 
 inline std::string print(const ScAddress& rAddr)
 {
@@ -227,7 +223,7 @@ public:
     static const FileFormat* getFileFormats() { return aFileFormats; }
 
     explicit ScBootstrapFixture( const OUString& rsBaseString );
-    virtual ~ScBootstrapFixture() override;
+    virtual ~ScBootstrapFixture();
 
     void createFileURL(const OUString& aFileBase, const OUString& aFileExtension, OUString& rFilePath);
 
@@ -249,8 +245,11 @@ public:
 #define ASSERT_DOUBLES_EQUAL_MESSAGE( message, expected, result )   \
     CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( (message), (expected), (result), 1e-14 )
 
+#define ASSERT_EQUAL_TYPE( type, expected, result ) \
+    CPPUNIT_ASSERT_EQUAL( static_cast<type>(expected), static_cast<type>(result) );
+
 SCQAHELPER_DLLPUBLIC void checkFormula(ScDocument& rDoc, const ScAddress& rPos,
-        const char* expected, const char* msg, CppUnit::SourceLine const & sourceLine);
+        const char* expected, const char* msg, CppUnit::SourceLine sourceLine);
 
 #define ASSERT_FORMULA_EQUAL(doc, pos, expected, msg) \
     checkFormula(doc, pos, expected, msg, CPPUNIT_SOURCELINE())

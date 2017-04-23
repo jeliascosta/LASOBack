@@ -18,6 +18,7 @@
  */
 
 #include <unx/salunx.h>
+#include <unx/saldata.hxx>
 #include <unx/salinst.h>
 #include <unx/saldisp.hxx>
 #include <unx/x11/x11sys.hxx>
@@ -60,13 +61,13 @@ unsigned int X11SalSystem::GetDisplayBuiltInScreen()
     return pSalDisp->GetDefaultXScreen().getXScreen();
 }
 
-tools::Rectangle X11SalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
+Rectangle X11SalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
 {
-    tools::Rectangle aRet;
+    Rectangle aRet;
     SalDisplay* pSalDisp = vcl_sal::getSalDisplay(GetGenericData());
     if( pSalDisp->IsXinerama() )
     {
-        const std::vector< tools::Rectangle >& rScreens = pSalDisp->GetXineramaScreens();
+        const std::vector< Rectangle >& rScreens = pSalDisp->GetXineramaScreens();
 
         // we shouldn't be able to pick a screen > number of screens available
         assert(nScreen < rScreens.size() );
@@ -78,7 +79,7 @@ tools::Rectangle X11SalSystem::GetDisplayScreenPosSizePixel( unsigned int nScree
     {
         const SalDisplay::ScreenData& rScreen =
             pSalDisp->getDataForScreen( SalX11Screen( nScreen ) );
-        aRet = tools::Rectangle( Point( 0, 0 ), rScreen.m_aSize );
+        aRet = Rectangle( Point( 0, 0 ), rScreen.m_aSize );
     }
 
     return aRet;

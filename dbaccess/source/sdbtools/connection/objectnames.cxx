@@ -19,6 +19,7 @@
 
 #include "objectnames.hxx"
 
+#include "module_sdbt.hxx"
 #include "sdbt_resource.hrc"
 
 #include <com/sun/star/sdb/CommandType.hpp>
@@ -163,7 +164,7 @@ namespace sdbtools
         {
         }
 
-        static ::connectivity::ErrorCondition validateName_getErrorCondition( const OUString& _rName )
+        static inline ::connectivity::ErrorCondition validateName_getErrorCondition( const OUString& _rName )
         {
             if  (   ( _rName.indexOf( (sal_Unicode)34  ) >= 0 )  // "
                 ||  ( _rName.indexOf( (sal_Unicode)39  ) >= 0 )  // '
@@ -206,7 +207,7 @@ namespace sdbtools
         PNameValidation  m_pSecondary;
 
     public:
-        CombinedNameCheck(const PNameValidation& _pPrimary, const PNameValidation& _pSecondary)
+        CombinedNameCheck( PNameValidation _pPrimary, PNameValidation _pSecondary )
             :m_pPrimary( _pPrimary )
             ,m_pSecondary( _pSecondary )
         {
@@ -288,7 +289,7 @@ namespace sdbtools
             &&  ( _nCommandType != CommandType::QUERY )
             )
             throw IllegalArgumentException(
-                SdbtRes( STR_INVALID_COMMAND_TYPE ),
+                OUString( SdbtRes( STR_INVALID_COMMAND_TYPE ) ),
                 nullptr,
                 0
             );
@@ -311,7 +312,7 @@ namespace sdbtools
         catch( const Exception& )
         {
             throw IllegalArgumentException(
-                SdbtRes( STR_CONN_WITHOUT_QUERIES_OR_TABLES ),
+                OUString( SdbtRes( STR_CONN_WITHOUT_QUERIES_OR_TABLES ) ),
                 nullptr,
                 0
             );
@@ -353,9 +354,16 @@ namespace sdbtools
         return PNameValidation( new QueryValidityCheck( _rContext, _rxConnection ) );
     }
 
+    // ObjectNames_Impl
+    struct ObjectNames_Impl
+    {
+        SdbtClient  m_aModuleClient;    // keep the module alive as long as this instance lives
+    };
+
     // ObjectNames
     ObjectNames::ObjectNames( const Reference<XComponentContext>& _rContext, const Reference< XConnection >& _rxConnection )
         :ConnectionDependentComponent( _rContext )
+        ,m_pImpl( new ObjectNames_Impl )
     {
         setWeakConnection( _rxConnection );
     }
@@ -364,7 +372,7 @@ namespace sdbtools
     {
     }
 
-    OUString SAL_CALL ObjectNames::suggestName( ::sal_Int32 CommandType, const OUString& BaseName )
+    OUString SAL_CALL ObjectNames::suggestName( ::sal_Int32 CommandType, const OUString& BaseName ) throw (IllegalArgumentException, SQLException, RuntimeException, std::exception)
     {
         EntryGuard aGuard( *this );
 
@@ -393,14 +401,14 @@ namespace sdbtools
         return sName;
     }
 
-    OUString SAL_CALL ObjectNames::convertToSQLName( const OUString& Name )
+    OUString SAL_CALL ObjectNames::convertToSQLName( const OUString& Name ) throw (RuntimeException, std::exception)
     {
         EntryGuard aGuard( *this );
         Reference< XDatabaseMetaData > xMeta( getConnection()->getMetaData(), UNO_QUERY_THROW );
         return ::dbtools::convertName2SQLName( Name, xMeta->getExtraNameCharacters() );
     }
 
-    sal_Bool SAL_CALL ObjectNames::isNameUsed( ::sal_Int32 CommandType, const OUString& Name )
+    sal_Bool SAL_CALL ObjectNames::isNameUsed( ::sal_Int32 CommandType, const OUString& Name ) throw (IllegalArgumentException, SQLException, RuntimeException, std::exception)
     {
         EntryGuard aGuard( *this );
 
@@ -408,7 +416,7 @@ namespace sdbtools
         return !pNameCheck->validateName( Name );
     }
 
-    sal_Bool SAL_CALL ObjectNames::isNameValid( ::sal_Int32 CommandType, const OUString& Name )
+    sal_Bool SAL_CALL ObjectNames::isNameValid( ::sal_Int32 CommandType, const OUString& Name ) throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         EntryGuard aGuard( *this );
 
@@ -416,7 +424,7 @@ namespace sdbtools
         return pNameCheck->validateName( Name );
     }
 
-    void SAL_CALL ObjectNames::checkNameForCreate( ::sal_Int32 CommandType, const OUString& Name )
+    void SAL_CALL ObjectNames::checkNameForCreate( ::sal_Int32 CommandType, const OUString& Name ) throw (SQLException, RuntimeException, std::exception)
     {
         EntryGuard aGuard( *this );
 

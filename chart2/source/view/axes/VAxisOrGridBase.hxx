@@ -37,13 +37,13 @@ class VAxisOrGridBase : public PlotterBase
 {
 public:
     VAxisOrGridBase( sal_Int32 nDimensionIndex, sal_Int32 nDimensionCount );
-    virtual ~VAxisOrGridBase() override;
+    virtual ~VAxisOrGridBase();
 
     virtual void setTransformationSceneToScreen( const css::drawing::HomogenMatrix& rMatrix ) override;
-    /// @throws css::uno::RuntimeException
     virtual void setExplicitScaleAndIncrement(
             const ExplicitScaleData& rScale
-          , const ExplicitIncrementData& rIncrement );
+          , const ExplicitIncrementData& rIncrement )
+                throw (css::uno::RuntimeException);
     void set3DWallPositions( CuboidPlanePosition eLeftWallPos, CuboidPlanePosition eBackWallPos, CuboidPlanePosition eBottomPos );
 
     virtual TickFactory* createTickFactory();

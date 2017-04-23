@@ -92,6 +92,7 @@ namespace sdr
             :   ViewContactOfSdrObj(rObj)
             {
             }
+            virtual ~VCOfSwFlyDrawObj();
         };
 
         drawinglayer::primitive2d::Primitive2DContainer VCOfSwFlyDrawObj::createViewIndependentPrimitive2DSequence() const
@@ -100,6 +101,9 @@ namespace sdr
             return drawinglayer::primitive2d::Primitive2DContainer();
         }
 
+        VCOfSwFlyDrawObj::~VCOfSwFlyDrawObj()
+        {
+        }
     } // end of namespace contact
 } // end of namespace sdr
 
@@ -126,9 +130,9 @@ SwFlyDrawObj::~SwFlyDrawObj()
 
 // SwFlyDrawObj - Factory-Methods
 
-SdrInventor SwFlyDrawObj::GetObjInventor() const
+sal_uInt32 SwFlyDrawObj::GetObjInventor() const
 {
-    return SdrInventor::Swg;
+    return SWGInventor;
 }
 
 sal_uInt16 SwFlyDrawObj::GetObjIdentifier() const
@@ -150,7 +154,7 @@ namespace drawinglayer
 
         protected:
             /// method which is to be used to implement the local decomposition of a 2D primitive
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             SwVirtFlyDrawObjPrimitive(
@@ -167,7 +171,7 @@ namespace drawinglayer
             virtual basegfx::B2DRange getB2DRange(const geometry::ViewInformation2D& rViewInformation) const override;
 
             // override to allow callbacks to wrap_DoPaintObject
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
             // data read access
             const SwVirtFlyDrawObj& getSwVirtFlyDrawObj() const { return mrSwVirtFlyDrawObj; }
@@ -183,8 +187,10 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void SwVirtFlyDrawObjPrimitive::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer SwVirtFlyDrawObjPrimitive::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
+            Primitive2DContainer aRetval;
+
             if(!getOuterRange().isEmpty())
             {
                 // currently this SW object has no primitive representation. As long as this is the case,
@@ -193,11 +199,15 @@ namespace drawinglayer
                 // the old SwVirtFlyDrawObj::CheckHit implementation are handled now in SwDrawView::PickObj;
                 // this removed the 'hack' to get a view from inside model data or to react on null-tolerance
                 // as it was done in the old implementation
-                rContainer.push_back(
+                const Primitive2DReference aHitTestReference(
                     createHiddenGeometryPrimitives2D(
                         true,
                         getOuterRange()));
+
+                aRetval = Primitive2DContainer { aHitTestReference };
             }
+
+            return aRetval;
         }
 
         bool SwVirtFlyDrawObjPrimitive::operator==(const BasePrimitive2D& rPrimitive) const
@@ -218,7 +228,7 @@ namespace drawinglayer
             return getOuterRange();
         }
 
-        void SwVirtFlyDrawObjPrimitive::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer SwVirtFlyDrawObjPrimitive::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             // This is the callback to keep the FlyFrame painting in SW alive as long as it
             // is not changed to primitives. This is the method which will be called by the processors
@@ -228,7 +238,7 @@ namespace drawinglayer
             getSwVirtFlyDrawObj().wrap_DoPaintObject(rViewInformation);
 
             // call parent
-            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
         }
 
         // provide unique ID
@@ -261,6 +271,7 @@ namespace sdr
             :   ViewContactOfVirtObj(rObj)
             {
             }
+            virtual ~VCOfSwVirtFlyDrawObj();
 
             /// access to SwVirtFlyDrawObj
             SwVirtFlyDrawObj& GetSwVirtFlyDrawObj() const
@@ -300,6 +311,9 @@ namespace sdr
             return xRetval;
         }
 
+        VCOfSwVirtFlyDrawObj::~VCOfSwVirtFlyDrawObj()
+        {
+        }
     } // end of namespace contact
 } // end of namespace sdr
 
@@ -314,7 +328,7 @@ basegfx::B2DRange SwVirtFlyDrawObj::getOuterBound() const
 
         if(pFlyFrame)
         {
-            const tools::Rectangle aOuterRectangle(pFlyFrame->Frame().Pos(), pFlyFrame->Frame().SSize());
+            const Rectangle aOuterRectangle(pFlyFrame->Frame().Pos(), pFlyFrame->Frame().SSize());
 
             if(!aOuterRectangle.IsEmpty())
             {
@@ -338,7 +352,7 @@ basegfx::B2DRange SwVirtFlyDrawObj::getInnerBound() const
 
         if(pFlyFrame)
         {
-            const tools::Rectangle aInnerRectangle(pFlyFrame->Frame().Pos() + pFlyFrame->Prt().Pos(), pFlyFrame->Prt().SSize());
+            const Rectangle aInnerRectangle(pFlyFrame->Frame().Pos() + pFlyFrame->Prt().Pos(), pFlyFrame->Prt().SSize());
 
             if(!aInnerRectangle.IsEmpty())
             {
@@ -488,16 +502,16 @@ void SwVirtFlyDrawObj::SetRect() const
     if ( GetFlyFrame()->Frame().HasArea() )
         const_cast<SwVirtFlyDrawObj*>(this)->aOutRect = GetFlyFrame()->Frame().SVRect();
     else
-        const_cast<SwVirtFlyDrawObj*>(this)->aOutRect = tools::Rectangle();
+        const_cast<SwVirtFlyDrawObj*>(this)->aOutRect = Rectangle();
 }
 
-const tools::Rectangle& SwVirtFlyDrawObj::GetCurrentBoundRect() const
+const Rectangle& SwVirtFlyDrawObj::GetCurrentBoundRect() const
 {
     SetRect();
     return aOutRect;
 }
 
-const tools::Rectangle& SwVirtFlyDrawObj::GetLastBoundRect() const
+const Rectangle& SwVirtFlyDrawObj::GetLastBoundRect() const
 {
     return GetCurrentBoundRect();
 }
@@ -512,51 +526,51 @@ void SwVirtFlyDrawObj::RecalcSnapRect()
     SetRect();
 }
 
-const tools::Rectangle& SwVirtFlyDrawObj::GetSnapRect()  const
+const Rectangle& SwVirtFlyDrawObj::GetSnapRect()  const
 {
     SetRect();
     return aOutRect;
 }
 
-void SwVirtFlyDrawObj::SetSnapRect(const tools::Rectangle& )
+void SwVirtFlyDrawObj::SetSnapRect(const Rectangle& )
 {
-    tools::Rectangle aTmp( GetLastBoundRect() );
+    Rectangle aTmp( GetLastBoundRect() );
     SetRect();
     SetChanged();
     BroadcastObjectChange();
     if (pUserCall!=nullptr)
-        pUserCall->Changed(*this, SdrUserCallType::Resize, aTmp);
+        pUserCall->Changed(*this, SDRUSERCALL_RESIZE, aTmp);
 }
 
-void SwVirtFlyDrawObj::NbcSetSnapRect(const tools::Rectangle& )
+void SwVirtFlyDrawObj::NbcSetSnapRect(const Rectangle& )
 {
     SetRect();
 }
 
-const tools::Rectangle& SwVirtFlyDrawObj::GetLogicRect() const
+const Rectangle& SwVirtFlyDrawObj::GetLogicRect() const
 {
     SetRect();
     return aOutRect;
 }
 
-void SwVirtFlyDrawObj::SetLogicRect(const tools::Rectangle& )
+void SwVirtFlyDrawObj::SetLogicRect(const Rectangle& )
 {
-    tools::Rectangle aTmp( GetLastBoundRect() );
+    Rectangle aTmp( GetLastBoundRect() );
     SetRect();
     SetChanged();
     BroadcastObjectChange();
     if (pUserCall!=nullptr)
-        pUserCall->Changed(*this, SdrUserCallType::Resize, aTmp);
+        pUserCall->Changed(*this, SDRUSERCALL_RESIZE, aTmp);
 }
 
-void SwVirtFlyDrawObj::NbcSetLogicRect(const tools::Rectangle& )
+void SwVirtFlyDrawObj::NbcSetLogicRect(const Rectangle& )
 {
     SetRect();
 }
 
 ::basegfx::B2DPolyPolygon SwVirtFlyDrawObj::TakeXorPoly() const
 {
-    const tools::Rectangle aSourceRectangle(GetFlyFrame()->Frame().SVRect());
+    const Rectangle aSourceRectangle(GetFlyFrame()->Frame().SVRect());
     const ::basegfx::B2DRange aSourceRange(aSourceRectangle.Left(), aSourceRectangle.Top(), aSourceRectangle.Right(), aSourceRectangle.Bottom());
     ::basegfx::B2DPolyPolygon aRetval;
 
@@ -565,7 +579,7 @@ void SwVirtFlyDrawObj::NbcSetLogicRect(const tools::Rectangle& )
     return aRetval;
 }
 
-//  SwVirtFlyDrawObj::Move() and Resize()
+//  SwVirtFlyDrawObj::Move() und Resize()
 
 void SwVirtFlyDrawObj::NbcMove(const Size& rSiz)
 {
@@ -722,7 +736,7 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
 
     // Compute old and new rect. This will give us the deformation to apply to
     // the object to crop
-    tools::Rectangle aOldRect( aOutRect );
+    Rectangle aOldRect( aOutRect );
 
     const long nOldWidth = aOldRect.GetWidth();
     const long nOldHeight = aOldRect.GetHeight();
@@ -730,20 +744,20 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
     if (!nOldWidth || !nOldHeight)
         return;
 
-    tools::Rectangle aNewRect( aOutRect );
+    Rectangle aNewRect( aOutRect );
     ResizeRect( aNewRect, rRef, xFact, yFact );
 
     // Get graphic object size in 100th of mm
     GraphicObject const *pGraphicObject = pSh->GetGraphicObj();
     if (!pGraphicObject)
         return;
-    const MapMode aMapMode100thmm(MapUnit::Map100thMM);
+    const MapMode aMapMode100thmm(MAP_100TH_MM);
     Size aGraphicSize(pGraphicObject->GetPrefSize());
-    if( MapUnit::MapPixel == pGraphicObject->GetPrefMapMode().GetMapUnit() )
+    if( MAP_PIXEL == pGraphicObject->GetPrefMapMode().GetMapUnit() )
         aGraphicSize = Application::GetDefaultDevice()->PixelToLogic( aGraphicSize, aMapMode100thmm );
     else
         aGraphicSize = OutputDevice::LogicToLogic( aGraphicSize, pGraphicObject->GetPrefMapMode(), aMapMode100thmm);
-    if( aGraphicSize.Width() == 0 || aGraphicSize.Height() == 0 )
+    if( aGraphicSize.A() == 0 || aGraphicSize.B() == 0 )
         return ;
 
     // Get old values for crop in 10th of mm
@@ -751,7 +765,7 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
     pSh->GetCurAttr( aSet );
     SwCropGrf aCrop( static_cast<const SwCropGrf&>(aSet.Get(RES_GRFATR_CROPGRF)) );
 
-    tools::Rectangle aCropRectangle(
+    Rectangle aCropRectangle(
         convertTwipToMm100(aCrop.GetLeft()),
         convertTwipToMm100(aCrop.GetTop()),
         convertTwipToMm100(aCrop.GetRight()),
@@ -774,7 +788,7 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
 
     // Apply values
     pSh->StartAllAction();
-//    pSh->StartUndo(SwUndoId::START);
+//    pSh->StartUndo(UNDO_START);
 
     // Set new crop values in twips
     aCrop.SetLeft  (convertMm100ToTwip(nLeftCrop));
@@ -790,7 +804,7 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
     aSz.SetHeight(aNewRect.GetHeight());
     pFormat->GetDoc()->SetAttr( aSz, *pFormat );
 
-//    pSh->EndUndo(SwUndoId::END);
+//    pSh->EndUndo(UNDO_END);
     pSh->EndAllAction();
 
 }
@@ -922,18 +936,18 @@ void SwVirtFlyDrawObj::Crop(const Point& rRef, const Fraction& xFact, const Frac
 
 void SwVirtFlyDrawObj::addCropHandles(SdrHdlList& rTarget) const
 {
-    tools::Rectangle aRect(GetSnapRect());
+    Rectangle aRect(GetSnapRect());
 
     if(!aRect.IsEmpty())
     {
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopLeft()     , SdrHdlKind::UpperLeft, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopCenter()   , SdrHdlKind::Upper, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopRight()    , SdrHdlKind::UpperRight, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.LeftCenter()  , SdrHdlKind::Left , 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.RightCenter() , SdrHdlKind::Right, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomLeft()  , SdrHdlKind::LowerLeft, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomCenter(), SdrHdlKind::Lower, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomRight() , SdrHdlKind::LowerRight, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopLeft()     , HDL_UPLFT, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopCenter()   , HDL_UPPER, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopRight()    , HDL_UPRGT, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.LeftCenter()  , HDL_LEFT , 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.RightCenter() , HDL_RIGHT, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomLeft()  , HDL_LWLFT, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomCenter(), HDL_LOWER, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomRight() , HDL_LWRGT, 0, 0));
     }
 }
 
@@ -976,13 +990,27 @@ SdrObject* SwVirtFlyDrawObj::CheckMacroHit( const SdrObjMacroHitRec& rRec ) cons
             {
                 if( !rURL.GetMap() ||
                     m_pFlyFrame->GetFormat()->GetIMapObject( rRec.aPos, m_pFlyFrame ))
-                    return const_cast<SwVirtFlyDrawObj*>(this);
+                    return const_cast<SdrObject*>(static_cast<SdrObject const *>(this));
 
                 return nullptr;
             }
         }
     }
     return SdrObject::CheckMacroHit( rRec );
+}
+
+// Dragging
+
+bool SwVirtFlyDrawObj::supportsFullDrag() const
+{
+    // call parent
+    return SdrVirtObj::supportsFullDrag();
+}
+
+SdrObject* SwVirtFlyDrawObj::getFullDragClone() const
+{
+    // call parent
+    return SdrVirtObj::getFullDragClone();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

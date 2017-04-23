@@ -159,7 +159,7 @@ sal_Int32 BrowseBox::GetAccessibleControlCount() const
 
 Reference< XAccessible > BrowseBox::CreateAccessibleControl( sal_Int32 )
 {
-    SAL_WARN( "svtools", "BrowseBox::CreateAccessibleControl: to be overwritten!" );
+    DBG_ASSERT( false, "BrowseBox::CreateAccessibleControl: to be overwritten!" );
     return nullptr;
 }
 
@@ -235,11 +235,11 @@ OUString BrowseBox::GetAccessibleObjectName( ::svt::AccessibleBrowseBoxObjType e
             else
                 aRetText = "TableCell";
 #if OSL_DEBUG_LEVEL > 0
-            aRetText += " ["
-                        + OUString::number(sal_Int32(GetCurRow()))
-                        + ","
-                        + OUString::number(sal_Int32(GetCurColumnId()))
-                        + "]";
+            aRetText += " [";
+            aRetText += OUString::number(sal_Int32(GetCurRow()));
+            aRetText += ",";
+            aRetText += OUString::number(sal_Int32(GetCurColumnId()));
+            aRetText += "]";
 #endif
             break;
         case ::svt::BBTYPE_ROWHEADERCELL:
@@ -248,21 +248,21 @@ OUString BrowseBox::GetAccessibleObjectName( ::svt::AccessibleBrowseBoxObjType e
                 aRetText = OUString::number( rowId );
             }
 #if OSL_DEBUG_LEVEL > 0
-            aRetText += " ["
-                        + OUString::number(sal_Int32(GetCurRow()))
-                        + ","
-                        + OUString::number(sal_Int32(GetCurColumnId()))
-                        + "]";
+            aRetText += " [";
+            aRetText += OUString::number(sal_Int32(GetCurRow()));
+            aRetText += ",";
+            aRetText += OUString::number(sal_Int32(GetCurColumnId()));
+            aRetText += "]";
 #endif
             break;
         case ::svt::BBTYPE_COLUMNHEADERCELL:
             aRetText = GetColumnDescription( sal_Int16( _nPosition ) );
 #if OSL_DEBUG_LEVEL > 0
-            aRetText += " ["
-                        + OUString::number(sal_Int32(GetCurRow()))
-                        + ","
-                        + OUString::number(sal_Int32(GetCurColumnId()))
-                        + "]";
+            aRetText += " [";
+            aRetText += OUString::number(sal_Int32(GetCurRow()));
+            aRetText += ",";
+            aRetText += OUString::number(sal_Int32(GetCurColumnId()));
+            aRetText += "]";
 #endif
             break;
         default:
@@ -397,7 +397,7 @@ void BrowseBox::GrabTableFocus()
 
 OUString BrowseBox::GetCellText(long, sal_uInt16 ) const
 {
-    SAL_WARN("svtools", "This method has to be implemented by the derived classes! BUG!!");
+    DBG_ASSERT(false,"This method has to be implemented by the derived classes! BUG!!");
     return OUString();
 }
 
@@ -529,12 +529,12 @@ OUString BrowseBox::GetAccessibleCellText(long _nRow, sal_uInt16 _nColPos) const
 }
 
 
-bool BrowseBox::GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, MetricVector& rVector )
+bool BrowseBox::GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, int nBase, MetricVector& rVector )
 {
-    return Control::GetGlyphBoundRects( rOrigin, rStr, nIndex, nLen, rVector );
+    return Control::GetGlyphBoundRects( rOrigin, rStr, nIndex, nLen, nBase, rVector );
 }
 
-tools::Rectangle BrowseBox::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
+Rectangle BrowseBox::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
 {
     return Control::GetWindowExtentsRelative( pRelativeWindow );
 }

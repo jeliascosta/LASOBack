@@ -25,7 +25,6 @@
 #include <com/sun/star/reflection/XConstantTypeDescription.hpp>
 #include <com/sun/star/reflection/XTypeDescription.hpp>
 #include <com/sun/star/uno/RuntimeException.hpp>
-#include <o3tl/any.hxx>
 #include <uno/lbnames.h>
 
 using namespace css;
@@ -43,6 +42,8 @@ using namespace osl;
 namespace stoc_corefl
 {
 
+static const sal_Int32 CACHE_SIZE = 256;
+
 #define IMPLNAME    "com.sun.star.comp.stoc.CoreReflection"
 
 static Sequence< OUString > core_getSupportedServiceNames()
@@ -59,7 +60,7 @@ static OUString core_getImplementationName()
 IdlReflectionServiceImpl::IdlReflectionServiceImpl(
     const Reference< XComponentContext > & xContext )
     : OComponentHelper( _aComponentMutex )
-    , _aElements()
+    , _aElements( CACHE_SIZE )
 {
     xContext->getValueByName(
         "/singletons/com.sun.star.reflection.theTypeDescriptionManager" ) >>= _xTDMgr;
@@ -71,6 +72,7 @@ IdlReflectionServiceImpl::~IdlReflectionServiceImpl() {}
 // XInterface
 
 Any IdlReflectionServiceImpl::queryInterface( const Type & rType )
+    throw(css::uno::RuntimeException, std::exception)
 {
     Any aRet( ::cppu::queryInterface(
         rType,
@@ -94,6 +96,7 @@ void IdlReflectionServiceImpl::release() throw()
 // XTypeProvider
 
 Sequence< Type > IdlReflectionServiceImpl::getTypes()
+    throw (css::uno::RuntimeException, std::exception)
 {
     static OTypeCollection * s_pTypes = nullptr;
     if (! s_pTypes)
@@ -113,6 +116,7 @@ Sequence< Type > IdlReflectionServiceImpl::getTypes()
 }
 
 Sequence< sal_Int8 > IdlReflectionServiceImpl::getImplementationId()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -120,6 +124,7 @@ Sequence< sal_Int8 > IdlReflectionServiceImpl::getImplementationId()
 // XComponent
 
 void IdlReflectionServiceImpl::dispose()
+    throw(css::uno::RuntimeException, std::exception)
 {
     OComponentHelper::dispose();
 
@@ -139,16 +144,19 @@ void IdlReflectionServiceImpl::dispose()
 // XServiceInfo
 
 OUString IdlReflectionServiceImpl::getImplementationName()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return core_getImplementationName();
 }
 
 sal_Bool IdlReflectionServiceImpl::supportsService( const OUString & rServiceName )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > IdlReflectionServiceImpl::getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return core_getSupportedServiceNames();
 }
@@ -156,6 +164,7 @@ Sequence< OUString > IdlReflectionServiceImpl::getSupportedServiceNames()
 // XIdlReflection
 
 Reference< XIdlClass > IdlReflectionServiceImpl::getType( const Any & rObj )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return (rObj.hasValue() ? forType( rObj.getValueTypeRef() ) : Reference< XIdlClass >());
 }
@@ -184,7 +193,7 @@ inline Reference< XIdlClass > IdlReflectionServiceImpl::constructClass(
     case typelib_TypeClass_ANY:
         return new IdlClassImpl( this, pTypeDescr->pTypeName, pTypeDescr->eTypeClass, pTypeDescr );
 
-    case typelib_TypeClass_ENUM:
+    case TypeClass_ENUM:
         return new EnumIdlClassImpl( this, pTypeDescr->pTypeName, pTypeDescr->eTypeClass, pTypeDescr );
 
     case typelib_TypeClass_STRUCT:
@@ -207,13 +216,15 @@ inline Reference< XIdlClass > IdlReflectionServiceImpl::constructClass(
 }
 
 Reference< XIdlClass > IdlReflectionServiceImpl::forName( const OUString & rTypeName )
+    throw(css::uno::RuntimeException, std::exception)
 {
     Reference< XIdlClass > xRet;
     Any aAny( _aElements.getValue( rTypeName ) );
 
     if (aAny.hasValue())
     {
-        aAny >>= xRet;
+        if (aAny.getValueTypeClass() == TypeClass_INTERFACE)
+            xRet = *static_cast<const Reference< XIdlClass > *>(aAny.getValue());
     }
     else
     {
@@ -234,6 +245,7 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forName( const OUString & rType
 // XHierarchicalNameAccess
 
 Any IdlReflectionServiceImpl::getByHierarchicalName( const OUString & rName )
+    throw(css::container::NoSuchElementException, css::uno::RuntimeException, std::exception)
 {
     Any aRet( _aElements.getValue( rName ) );
     if (! aRet.hasValue())
@@ -242,7 +254,7 @@ Any IdlReflectionServiceImpl::getByHierarchicalName( const OUString & rName )
         if (aRet.getValueTypeClass() == TypeClass_INTERFACE)
         {
             // type retrieved from tdmgr
-            OSL_ASSERT( (*o3tl::forceAccess<Reference<XInterface>>(aRet))->queryInterface(
+            OSL_ASSERT( (*static_cast<Reference< XInterface > const *>(aRet.getValue()))->queryInterface(
                 cppu::UnoType<XTypeDescription>::get()).hasValue() );
 
             css::uno::Reference< css::reflection::XConstantTypeDescription >
@@ -287,6 +299,7 @@ Any IdlReflectionServiceImpl::getByHierarchicalName( const OUString & rName )
 }
 
 sal_Bool IdlReflectionServiceImpl::hasByHierarchicalName( const OUString & rName )
+    throw(css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -300,6 +313,7 @@ sal_Bool IdlReflectionServiceImpl::hasByHierarchicalName( const OUString & rName
 
 
 Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescription * pTypeDescr )
+    throw(css::uno::RuntimeException)
 {
     Reference< XIdlClass > xRet;
     OUString aName( pTypeDescr->pTypeName );
@@ -307,7 +321,8 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescriptio
 
     if (aAny.hasValue())
     {
-        aAny >>= xRet;
+        if (aAny.getValueTypeClass() == TypeClass_INTERFACE)
+            xRet = *static_cast<const Reference< XIdlClass > *>(aAny.getValue());
     }
     else
     {
@@ -319,6 +334,7 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescriptio
 }
 
 Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescriptionReference * pRef )
+    throw(css::uno::RuntimeException)
 {
     typelib_TypeDescription * pTD = nullptr;
     TYPELIB_DANGER_GET( &pTD, pRef );
@@ -335,6 +351,7 @@ Reference< XIdlClass > IdlReflectionServiceImpl::forType( typelib_TypeDescriptio
 
 
 const Mapping & IdlReflectionServiceImpl::getCpp2Uno()
+    throw(css::uno::RuntimeException)
 {
     if (! _aCpp2Uno.is())
     {
@@ -357,6 +374,7 @@ const Mapping & IdlReflectionServiceImpl::getCpp2Uno()
 }
 
 const Mapping & IdlReflectionServiceImpl::getUno2Cpp()
+    throw(css::uno::RuntimeException)
 {
     if (! _aUno2Cpp.is())
     {
@@ -380,6 +398,7 @@ const Mapping & IdlReflectionServiceImpl::getUno2Cpp()
 
 uno_Interface * IdlReflectionServiceImpl::mapToUno(
     const Any & rObj, typelib_InterfaceTypeDescription * pTo )
+    throw(css::uno::RuntimeException)
 {
     Reference< XInterface > xObj;
     if (extract( rObj, pTo, xObj, this ))
@@ -390,9 +409,10 @@ uno_Interface * IdlReflectionServiceImpl::mapToUno(
         static_cast<XWeak *>(static_cast<OWeakObject *>(this)) );
 }
 
-/// @throws css::uno::Exception
+
 Reference< XInterface > SAL_CALL IdlReflectionServiceImpl_create(
     const Reference< XComponentContext > & xContext )
+    throw(css::uno::Exception)
 {
     return Reference< XInterface >( static_cast<XWeak *>(static_cast<OWeakObject *>(new IdlReflectionServiceImpl( xContext ))) );
 }

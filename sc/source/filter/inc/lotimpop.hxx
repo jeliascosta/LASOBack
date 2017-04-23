@@ -77,7 +77,7 @@ private:
 public:
     ImportLotus(LotusContext& rContext, SvStream&, ScDocument*, rtl_TextEncoding eSrc);
 
-    virtual             ~ImportLotus() override;
+    virtual             ~ImportLotus();
 
     FltError            Read() override;
     FltError            Read( SvStream& );                  // special for *.fm3-Dateien

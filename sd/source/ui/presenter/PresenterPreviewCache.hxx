@@ -30,10 +30,12 @@
 
 namespace sd { namespace presenter {
 
-typedef ::cppu::WeakComponentImplHelper<
-    css::lang::XInitialization,
-    css::drawing::XSlidePreviewCache
-> PresenterPreviewCacheInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper<
+        css::lang::XInitialization,
+        css::drawing::XSlidePreviewCache
+    > PresenterPreviewCacheInterfaceBase;
+}
 
 /** Uno API wrapper around the slide preview cache.
 */
@@ -43,7 +45,7 @@ class PresenterPreviewCache
 {
 public:
     explicit PresenterPreviewCache (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterPreviewCache() override;
+    virtual ~PresenterPreviewCache();
     PresenterPreviewCache(const PresenterPreviewCache&) = delete;
     PresenterPreviewCache& operator=(const PresenterPreviewCache&) = delete;
 
@@ -52,35 +54,44 @@ public:
     /** Accepts no arguments.  All values that are necessary to set up a
         preview cache can be provided via methods.
     */
-    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments) override;
+    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments)
+        throw(css::uno::Exception,css::uno::RuntimeException, std::exception) override;
 
     // XSlidePreviewCache
 
     virtual void SAL_CALL setDocumentSlides (
         const css::uno::Reference<css::container::XIndexAccess>& rxSlides,
-        const css::uno::Reference<css::uno::XInterface>& rxDocument) override;
+        const css::uno::Reference<css::uno::XInterface>& rxDocument)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setVisibleRange (
         sal_Int32 nFirstVisibleSlideIndex,
-        sal_Int32 nLastVisibleSlideIndex) override;
+        sal_Int32 nLastVisibleSlideIndex)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setPreviewSize (
-        const css::geometry::IntegerSize2D& rSize) override;
+        const css::geometry::IntegerSize2D& rSize)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<css::rendering::XBitmap> SAL_CALL
         getSlidePreview (
             sal_Int32 nSlideIndex,
-            const css::uno::Reference<css::rendering::XCanvas>& rxCanvas) override;
+            const css::uno::Reference<css::rendering::XCanvas>& rxCanvas)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addPreviewCreationNotifyListener (
-        const css::uno::Reference<css::drawing::XSlidePreviewCacheListener>& rxListener) override;
+        const css::uno::Reference<css::drawing::XSlidePreviewCacheListener>& rxListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removePreviewCreationNotifyListener (
-        const css::uno::Reference<css::drawing::XSlidePreviewCacheListener>& rxListener) override;
+        const css::uno::Reference<css::drawing::XSlidePreviewCacheListener>& rxListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL pause() override;
+    virtual void SAL_CALL pause()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL resume() override;
+    virtual void SAL_CALL resume()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     class PresenterCacheContext;
@@ -88,10 +99,10 @@ private:
     std::shared_ptr<PresenterCacheContext> mpCacheContext;
     std::shared_ptr<sd::slidesorter::cache::PageCache> mpCache;
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed() throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sd::presenter

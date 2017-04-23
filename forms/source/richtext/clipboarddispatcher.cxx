@@ -106,7 +106,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OClipboardDispatcher::dispatch( const URL& /*_rURL*/, const Sequence< PropertyValue >& /*Arguments*/ )
+    void SAL_CALL OClipboardDispatcher::dispatch( const URL& /*_rURL*/, const Sequence< PropertyValue >& /*Arguments*/ ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !getEditView() )
@@ -130,15 +130,16 @@ namespace frm
 
     OPasteClipboardDispatcher::OPasteClipboardDispatcher( EditView& _rView )
         :OClipboardDispatcher( _rView, ePaste )
+        ,m_pClipListener( nullptr )
         ,m_bPastePossible( false )
     {
         m_pClipListener = new TransferableClipboardListener( LINK( this, OPasteClipboardDispatcher, OnClipboardChanged ) );
-        m_pClipListener->AddListener( _rView.GetWindow() );
+        m_pClipListener->acquire();
+        m_pClipListener->AddRemoveListener( _rView.GetWindow(), true );
 
         // initial state
         TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( _rView.GetWindow() ) );
-        m_bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) ||
-        aDataHelper.HasFormat( SotClipboardFormatId::RTF ) || aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) );
+        m_bPastePossible = ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) || aDataHelper.HasFormat( SotClipboardFormatId::RTF ) );
     }
 
 
@@ -152,12 +153,11 @@ namespace frm
     }
 
 
-    IMPL_LINK( OPasteClipboardDispatcher, OnClipboardChanged, TransferableDataHelper*, _pDataHelper, void )
+    IMPL_LINK_TYPED( OPasteClipboardDispatcher, OnClipboardChanged, TransferableDataHelper*, _pDataHelper, void )
     {
         OSL_ENSURE( _pDataHelper, "OPasteClipboardDispatcher::OnClipboardChanged: ooops!" );
         m_bPastePossible = _pDataHelper->HasFormat( SotClipboardFormatId::STRING )
-                        || _pDataHelper->HasFormat( SotClipboardFormatId::RTF )
-                        || _pDataHelper->HasFormat( SotClipboardFormatId::RICHTEXT );
+                        || _pDataHelper->HasFormat( SotClipboardFormatId::RTF );
 
         invalidate();
     }
@@ -166,12 +166,13 @@ namespace frm
     void OPasteClipboardDispatcher::disposing( ::osl::ClearableMutexGuard& _rClearBeforeNotify )
     {
         OSL_ENSURE( getEditView() && getEditView()->GetWindow(), "OPasteClipboardDispatcher::disposing: EditView should not (yet) be disfunctional here!" );
-        if (m_pClipListener.is())
+        if (m_pClipListener)
         {
             if (getEditView() && getEditView()->GetWindow())
-                m_pClipListener->RemoveListener( getEditView()->GetWindow() );
+                m_pClipListener->AddRemoveListener( getEditView()->GetWindow(), false );
 
-            m_pClipListener.clear();
+            m_pClipListener->release();
+            m_pClipListener = nullptr;
         }
 
         OClipboardDispatcher::disposing( _rClearBeforeNotify );

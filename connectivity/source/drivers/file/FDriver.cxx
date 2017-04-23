@@ -36,7 +36,7 @@ using namespace com::sun::star::sdbc;
 using namespace com::sun::star::sdbcx;
 using namespace com::sun::star::container;
 
-OFileDriver::OFileDriver(const css::uno::Reference< css::uno::XComponentContext >& _rxContext)
+OFileDriver::OFileDriver(const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext >& _rxContext)
     : ODriver_BASE(m_aMutex)
     ,m_xContext(_rxContext)
 {
@@ -60,12 +60,12 @@ void OFileDriver::disposing()
 
 // static ServiceInfo
 
-OUString OFileDriver::getImplementationName_Static(  )
+OUString OFileDriver::getImplementationName_Static(  ) throw(RuntimeException)
 {
     return OUString("com.sun.star.sdbc.driver.file.Driver");
 }
 
-Sequence< OUString > OFileDriver::getSupportedServiceNames_Static(  )
+Sequence< OUString > OFileDriver::getSupportedServiceNames_Static(  ) throw (RuntimeException)
 {
     Sequence< OUString > aSNS( 2 );
     aSNS[0] = "com.sun.star.sdbc.Driver";
@@ -74,24 +74,24 @@ Sequence< OUString > OFileDriver::getSupportedServiceNames_Static(  )
 }
 
 
-OUString SAL_CALL OFileDriver::getImplementationName(  )
+OUString SAL_CALL OFileDriver::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL OFileDriver::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OFileDriver::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
 
-Sequence< OUString > SAL_CALL OFileDriver::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL OFileDriver::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
 
-Reference< XConnection > SAL_CALL OFileDriver::connect( const OUString& url, const Sequence< PropertyValue >& info )
+Reference< XConnection > SAL_CALL OFileDriver::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(ODriver_BASE::rBHelper.bDisposed);
@@ -105,58 +105,59 @@ Reference< XConnection > SAL_CALL OFileDriver::connect( const OUString& url, con
 }
 
 sal_Bool SAL_CALL OFileDriver::acceptsURL( const OUString& url )
+                throw(SQLException, RuntimeException, std::exception)
 {
     return url.startsWith("sdbc:file:");
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL OFileDriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
+Sequence< DriverPropertyInfo > SAL_CALL OFileDriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( acceptsURL(url) )
     {
-        std::vector< DriverPropertyInfo > aDriverInfo;
+        ::std::vector< DriverPropertyInfo > aDriverInfo;
 
         Sequence< OUString > aBoolean(2);
         aBoolean[0] = "0";
         aBoolean[1] = "1";
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                "CharSet"
-                ,"CharSet of the database."
+                OUString("CharSet")
+                ,OUString("CharSet of the database.")
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "Extension"
-                ,"Extension of the file format."
+                OUString("Extension")
+                ,OUString("Extension of the file format.")
                 ,false
-                ,".*"
+                ,OUString(".*")
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "ShowDeleted"
-                ,"Display inactive records."
+                OUString("ShowDeleted")
+                ,OUString("Display inactive records.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "EnableSQL92Check"
-                ,"Use SQL92 naming constraints."
+                OUString("EnableSQL92Check")
+                ,OUString("Use SQL92 naming constraints.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "UseRelativePath"
-                ,"Handle the connection url as relative path."
+                OUString("UseRelativePath")
+                ,OUString("Handle the connection url as relative path.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "URL"
-                ,"The URL of the database document which is used to create an absolute path."
+                OUString("URL")
+                ,OUString("The URL of the database document which is used to create an absolute path.")
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
@@ -171,25 +172,25 @@ Sequence< DriverPropertyInfo > SAL_CALL OFileDriver::getPropertyInfo( const OUSt
     return Sequence< DriverPropertyInfo >();
 }
 
-sal_Int32 SAL_CALL OFileDriver::getMajorVersion(  )
+sal_Int32 SAL_CALL OFileDriver::getMajorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 1;
 }
 
-sal_Int32 SAL_CALL OFileDriver::getMinorVersion(  )
+sal_Int32 SAL_CALL OFileDriver::getMinorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 0;
 }
 
 
 // XDataDefinitionSupplier
-Reference< XTablesSupplier > SAL_CALL OFileDriver::getDataDefinitionByConnection( const Reference< css::sdbc::XConnection >& connection )
+Reference< XTablesSupplier > SAL_CALL OFileDriver::getDataDefinitionByConnection( const Reference< ::com::sun::star::sdbc::XConnection >& connection ) throw(::com::sun::star::sdbc::SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(ODriver_BASE::rBHelper.bDisposed);
 
     Reference< XTablesSupplier > xTab = nullptr;
-    Reference< css::lang::XUnoTunnel> xTunnel(connection,UNO_QUERY);
+    Reference< ::com::sun::star::lang::XUnoTunnel> xTunnel(connection,UNO_QUERY);
     if(xTunnel.is())
     {
         OConnection* pSearchConnection = reinterpret_cast< OConnection* >( xTunnel->getSomething(OConnection::getUnoTunnelImplementationId()) );
@@ -210,7 +211,7 @@ Reference< XTablesSupplier > SAL_CALL OFileDriver::getDataDefinitionByConnection
 }
 
 
-Reference< XTablesSupplier > SAL_CALL OFileDriver::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info )
+Reference< XTablesSupplier > SAL_CALL OFileDriver::getDataDefinitionByURL( const OUString& url, const Sequence< PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, RuntimeException, std::exception)
 {
     if ( ! acceptsURL(url) )
     {

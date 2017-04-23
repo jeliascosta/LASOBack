@@ -42,30 +42,30 @@ public:
     explicit FinalThreadManager(css::uno::Reference< css::uno::XComponentContext > const & context);
 
     // css::lang::XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     // css::util::XJobManager:
-    virtual void SAL_CALL registerJob(const css::uno::Reference< css::util::XCancellable > & Job) override;
-    virtual void SAL_CALL releaseJob(const css::uno::Reference< css::util::XCancellable > & Job) override;
-    virtual void SAL_CALL cancelAllJobs() override;
+    virtual void SAL_CALL registerJob(const css::uno::Reference< css::util::XCancellable > & Job) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL releaseJob(const css::uno::Reference< css::util::XCancellable > & Job) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancelAllJobs() throw (css::uno::RuntimeException, std::exception) override;
 
     // css::frame::XTerminateListener2
-    virtual void SAL_CALL cancelTermination( const css::lang::EventObject& Event ) override;
+    virtual void SAL_CALL cancelTermination( const css::lang::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // css::frame::XTerminateListener (inherited via css::frame::XTerminateListener2)
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) throw (css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ::com::sun:star::lang::XEventListener (inherited via css::frame::XTerminateListener)
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     FinalThreadManager(FinalThreadManager &) = delete;
     void operator =(FinalThreadManager &) = delete;
 
-    virtual ~FinalThreadManager() override;
+    virtual ~FinalThreadManager();
 
     void registerAsListenerAtDesktop();
 

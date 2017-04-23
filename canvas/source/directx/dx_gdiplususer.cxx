@@ -64,7 +64,7 @@ namespace dxcanvas
 
             Gdiplus::GdiplusStartup( &a_GdiPlusToken,
                                      &gdiPlusStartupInput,
-                                     nullptr );
+                                     NULL );
         }
 
         ++n_gdiPlusUsageCount;

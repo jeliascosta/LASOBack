@@ -48,7 +48,7 @@ public:
     SchXMLExportHelper( SvXMLExport& rExport,
                         SvXMLAutoStylePoolP& rASPool );
 
-    virtual ~SchXMLExportHelper() override;
+    virtual ~SchXMLExportHelper();
 
     /// returns the string corresponding to the current FileFormat CLSID for Chart
     const OUString& getChartCLSID();

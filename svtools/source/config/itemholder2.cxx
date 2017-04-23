@@ -59,10 +59,10 @@ ItemHolder2::ItemHolder2()
         if(bMessage)
         {
             bMessage = false;
-            OString sMsg = "CreateInstance with arguments exception: "
-                         + OString(rEx.Message.getStr(),
-                                   rEx.Message.getLength(),
-                                   RTL_TEXTENCODING_ASCII_US);
+            OString sMsg("CreateInstance with arguments exception: ");
+            sMsg += OString(rEx.Message.getStr(),
+                        rEx.Message.getLength(),
+                        RTL_TEXTENCODING_ASCII_US);
             OSL_FAIL(sMsg.getStr());
         }
     }
@@ -86,6 +86,7 @@ void ItemHolder2::holdConfigItem(EItem eItem)
 
 
 void SAL_CALL ItemHolder2::disposing(const css::lang::EventObject&)
+    throw(css::uno::RuntimeException, std::exception)
 {
     impl_releaseAllItems();
 }
@@ -133,31 +134,39 @@ void ItemHolder2::impl_newItem(TItemInfo& rItem)
 {
     switch(rItem.eItem)
     {
-        case EItem::AccessibilityOptions :
+        case E_ACCESSIBILITYOPTIONS :
             rItem.pItem = new SvtAccessibilityOptions();
             break;
 
-        case EItem::ColorConfig :
+        case E_APEARCFG :
+// no ref count            rItem.pItem = new SvtTabAppearanceCfg();
+            break;
+
+        case E_COLORCFG :
             rItem.pItem = new ::svtools::ColorConfig();
             break;
 
-        case EItem::HelpOptions :
+        case E_FONTSUBSTCONFIG :
+// no ref count            rItem.pItem = new SvtFontSubstConfig();
+            break;
+
+        case E_HELPOPTIONS :
             rItem.pItem = new SvtHelpOptions();
             break;
 
-        case EItem::MenuOptions :
+        case E_MENUOPTIONS :
             rItem.pItem = new SvtMenuOptions();
             break;
 
-        case EItem::PrintOptions :
+        case E_PRINTOPTIONS :
             rItem.pItem = new SvtPrinterOptions();
             break;
 
-        case EItem::PrintFileOptions :
+        case E_PRINTFILEOPTIONS :
             rItem.pItem = new SvtPrintFileOptions();
             break;
 
-        case EItem::MiscOptions :
+        case E_MISCOPTIONS :
             rItem.pItem = new SvtMiscOptions();
             break;
 

@@ -57,9 +57,6 @@ struct SearchSelection
     }
 };
 
-} // end of namespace sd
-
-
 /** The main purpose of this class is searching and replacing as well as
     spelling of impress documents.  The main part of both tasks lies in
     iterating over the pages and view modes of a document and apply the
@@ -112,7 +109,7 @@ struct SearchSelection
     queried.  This is only sufficient for searching the outline view.
     </p>
 */
-class SdOutliner
+class Outliner
     : public SdrOutliner
 {
 public:
@@ -129,11 +126,11 @@ public:
             <const>OutlinerMode::OutlineView</const> are defined in
             editeng/outliner.hxx.
     */
-    SdOutliner( SdDrawDocument* pDoc, OutlinerMode nMode );
-    virtual ~SdOutliner() override;
+    Outliner( SdDrawDocument* pDoc, OutlinerMode nMode );
+    virtual ~Outliner();
     /// Forbid copy construction and copy assignment
-    SdOutliner(const Outliner&) = delete;
-    SdOutliner& operator=(const Outliner&) = delete;
+    Outliner(const Outliner&) = delete;
+    Outliner& operator=(const Outliner&) = delete;
 
     /** Despite the name this method is called prior to spell checking *and*
         searching and replacing.  The position of current view
@@ -205,7 +202,7 @@ private:
         pointer to avoid keeping it alive when the view is changed
         during searching.
     */
-    std::weak_ptr<::sd::ViewShell> mpWeakViewShell;
+    std::weak_ptr<ViewShell> mpWeakViewShell;
     /// This window contains the view.
     VclPtr< ::sd::Window> mpWindow;
     /// The document on whose objects and pages this class operates.
@@ -245,6 +242,12 @@ private:
         which stops when set to </sal_True>.
     */
     bool mbFoundObject;
+
+    /** When set to <TRUE/> this flag indicates that an error has occurred
+        that should terminate the iteration over the objects to search/spell
+        check.
+    */
+    bool mbError;
 
     /** This flag indicates whether to search forward or backwards.
     */
@@ -360,7 +363,7 @@ private:
             The return value specifies whether the search ended (</sal_True>) or
             another call to this method is required (</sal_False>).
     */
-    bool SearchAndReplaceOnce(std::vector<::sd::SearchSelection>* pSelections = nullptr);
+    bool SearchAndReplaceOnce(std::vector<SearchSelection>* pSelections = nullptr);
 
     /** Detect changes of the document or view and react accordingly.  Such
         changes may occur because different calls to
@@ -461,7 +464,7 @@ private:
 
     /** Switch on edit mode for the currently selected text object.
     */
-    void EnterEditMode (bool bGrabFocus);
+    void EnterEditMode (bool bGrabFocus=true);
 
     /** Return the position at which a new search is started with respect to
         the search direction as specified by the argument.
@@ -508,7 +511,7 @@ private:
         It handles i.e. registering at the associated view as selection
         change listener.
     */
-    void SetViewShell (const std::shared_ptr<::sd::ViewShell>& rpViewShell);
+    void SetViewShell (const std::shared_ptr<ViewShell>& rpViewShell);
 
     /** Activate or deactivate the search in the current selection.  Call
         this method whenever the selection has changed.  This method creates
@@ -534,6 +537,8 @@ private:
     */
     sal_uInt16 ShowModalMessageBox (Dialog& rMessageBox);
 };
+
+} // end of namespace sd
 
 #endif
 

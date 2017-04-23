@@ -22,7 +22,7 @@
 
 #include <xmloff/xmlprhdl.hxx>
 
-template<typename EnumT> struct SvXMLEnumMapEntry;
+struct SvXMLEnumMapEntry;
 
 
 /** Abstract base-class for different XML-types. Derivations of this class
@@ -37,7 +37,7 @@ public:
     XMLRectangleMembersHdl( sal_Int32 nType );
 
     // Just needed for virtual destruction
-    virtual ~XMLRectangleMembersHdl() override;
+    virtual ~XMLRectangleMembersHdl();
 
     /// Imports the given value in cas of the given XML-data-type
     virtual bool importXML(

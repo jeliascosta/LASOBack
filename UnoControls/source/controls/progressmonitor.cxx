@@ -46,7 +46,7 @@ namespace unocontrols{
 ProgressMonitor::ProgressMonitor( const css::uno::Reference< XComponentContext >& rxContext )
     : BaseContainerControl  ( rxContext  )
 {
-    // It's not allowed to work with member in this method (refcounter !!!)
+    // Its not allowed to work with member in this method (refcounter !!!)
     // But with a HACK (++refcount) its "OK" :-(
     ++m_refCount;
 
@@ -57,7 +57,7 @@ ProgressMonitor::ProgressMonitor( const css::uno::Reference< XComponentContext >
     m_xTopic_Bottom.set( rxContext->getServiceManager()->createInstanceWithContext( FIXEDTEXT_SERVICENAME, rxContext ), UNO_QUERY );
     m_xText_Bottom.set ( rxContext->getServiceManager()->createInstanceWithContext( FIXEDTEXT_SERVICENAME, rxContext ), UNO_QUERY );
     m_xButton.set      ( rxContext->getServiceManager()->createInstanceWithContext( BUTTON_SERVICENAME, rxContext ), UNO_QUERY );
-    m_xProgressBar = new ProgressBar(rxContext);
+    m_xProgressBar = VclPtr<ProgressBar>::Create(rxContext);
 
     // ... cast controls to Reference< XControl >  (for "setModel"!) ...
     css::uno::Reference< XControl >   xRef_Topic_Top      ( m_xTopic_Top    , UNO_QUERY );
@@ -103,7 +103,7 @@ ProgressMonitor::~ProgressMonitor()
 }
 
 //  XInterface
-Any SAL_CALL ProgressMonitor::queryInterface( const Type& rType )
+Any SAL_CALL ProgressMonitor::queryInterface( const Type& rType ) throw( RuntimeException, std::exception )
 {
     // Attention:
     //  Don't use mutex or guard in this method!!! Is a method of XInterface.
@@ -145,7 +145,7 @@ void SAL_CALL ProgressMonitor::release() throw()
 }
 
 //  XTypeProvider
-Sequence< Type > SAL_CALL ProgressMonitor::getTypes()
+Sequence< Type > SAL_CALL ProgressMonitor::getTypes() throw( RuntimeException, std::exception )
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -175,7 +175,7 @@ Sequence< Type > SAL_CALL ProgressMonitor::getTypes()
 }
 
 //  XAggregation
-Any SAL_CALL ProgressMonitor::queryAggregation( const Type& aType )
+Any SAL_CALL ProgressMonitor::queryAggregation( const Type& aType ) throw( RuntimeException, std::exception )
 {
     // Ask for my own supported interfaces ...
     // Attention: XTypeProvider and XInterface are supported by OComponentHelper!
@@ -201,12 +201,12 @@ void SAL_CALL ProgressMonitor::addText(
     const OUString& rTopic,
     const OUString& rText,
     sal_Bool bbeforeProgress
-)
+) throw( RuntimeException, std::exception )
 {
     // Safe impossible cases
     // Check valid call of this method.
     DBG_ASSERT ( impl_debug_checkParameter ( rTopic, rText, bbeforeProgress )   , "ProgressMonitor::addText()\nCall without valid parameters!\n");
-    DBG_ASSERT ( !(impl_searchTopic ( rTopic, bbeforeProgress ) != nullptr )       , "ProgressMonitor::addText()\nThe text already exist.\n"        );
+    DBG_ASSERT ( !(impl_searchTopic ( rTopic, bbeforeProgress ) != nullptr )       , "ProgresMonitor::addText()\nThe text already exist.\n"        );
 
     // Do nothing (in Release), if topic already exist.
     if ( impl_searchTopic ( rTopic, bbeforeProgress ) != nullptr )
@@ -240,7 +240,7 @@ void SAL_CALL ProgressMonitor::addText(
 }
 
 //  XProgressMonitor
-void SAL_CALL ProgressMonitor::removeText ( const OUString& rTopic, sal_Bool bbeforeProgress )
+void SAL_CALL ProgressMonitor::removeText ( const OUString& rTopic, sal_Bool bbeforeProgress ) throw( RuntimeException, std::exception )
 {
     // Safe impossible cases
     // Check valid call of this method.
@@ -283,7 +283,7 @@ void SAL_CALL ProgressMonitor::updateText (
     const OUString& rTopic,
     const OUString& rText,
     sal_Bool bbeforeProgress
-)
+) throw( RuntimeException, std::exception )
 {
     // Safe impossible cases
     // Check valid call of this method.
@@ -307,7 +307,7 @@ void SAL_CALL ProgressMonitor::updateText (
 }
 
 //  XProgressBar
-void SAL_CALL ProgressMonitor::setForegroundColor ( sal_Int32 nColor )
+void SAL_CALL ProgressMonitor::setForegroundColor ( sal_Int32 nColor ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -316,7 +316,7 @@ void SAL_CALL ProgressMonitor::setForegroundColor ( sal_Int32 nColor )
 }
 
 //  XProgressBar
-void SAL_CALL ProgressMonitor::setBackgroundColor ( sal_Int32 nColor )
+void SAL_CALL ProgressMonitor::setBackgroundColor ( sal_Int32 nColor ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -325,7 +325,7 @@ void SAL_CALL ProgressMonitor::setBackgroundColor ( sal_Int32 nColor )
 }
 
 //  XProgressBar
-void SAL_CALL ProgressMonitor::setValue ( sal_Int32 nValue )
+void SAL_CALL ProgressMonitor::setValue ( sal_Int32 nValue ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -334,7 +334,7 @@ void SAL_CALL ProgressMonitor::setValue ( sal_Int32 nValue )
 }
 
 //  XProgressBar
-void SAL_CALL ProgressMonitor::setRange ( sal_Int32 nMin, sal_Int32 nMax )
+void SAL_CALL ProgressMonitor::setRange ( sal_Int32 nMin, sal_Int32 nMax ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -343,7 +343,7 @@ void SAL_CALL ProgressMonitor::setRange ( sal_Int32 nMin, sal_Int32 nMax )
 }
 
 //  XProgressBar
-sal_Int32 SAL_CALL ProgressMonitor::getValue ()
+sal_Int32 SAL_CALL ProgressMonitor::getValue () throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -352,7 +352,7 @@ sal_Int32 SAL_CALL ProgressMonitor::getValue ()
 }
 
 //  XButton
-void SAL_CALL ProgressMonitor::addActionListener ( const css::uno::Reference< XActionListener > & rListener )
+void SAL_CALL ProgressMonitor::addActionListener ( const css::uno::Reference< XActionListener > & rListener ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -364,7 +364,7 @@ void SAL_CALL ProgressMonitor::addActionListener ( const css::uno::Reference< XA
 }
 
 //  XButton
-void SAL_CALL ProgressMonitor::removeActionListener ( const css::uno::Reference< XActionListener > & rListener )
+void SAL_CALL ProgressMonitor::removeActionListener ( const css::uno::Reference< XActionListener > & rListener ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -376,7 +376,7 @@ void SAL_CALL ProgressMonitor::removeActionListener ( const css::uno::Reference<
 }
 
 //  XButton
-void SAL_CALL ProgressMonitor::setLabel ( const OUString& rLabel )
+void SAL_CALL ProgressMonitor::setLabel ( const OUString& rLabel ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -388,7 +388,7 @@ void SAL_CALL ProgressMonitor::setLabel ( const OUString& rLabel )
 }
 
 //  XButton
-void SAL_CALL ProgressMonitor::setActionCommand ( const OUString& rCommand )
+void SAL_CALL ProgressMonitor::setActionCommand ( const OUString& rCommand ) throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -400,13 +400,13 @@ void SAL_CALL ProgressMonitor::setActionCommand ( const OUString& rCommand )
 }
 
 //  XLayoutConstrains
-Size SAL_CALL ProgressMonitor::getMinimumSize ()
+Size SAL_CALL ProgressMonitor::getMinimumSize () throw( RuntimeException, std::exception )
 {
     return Size (PROGRESSMONITOR_DEFAULT_WIDTH, PROGRESSMONITOR_DEFAULT_HEIGHT);
 }
 
 //  XLayoutConstrains
-Size SAL_CALL ProgressMonitor::getPreferredSize ()
+Size SAL_CALL ProgressMonitor::getPreferredSize () throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     ClearableMutexGuard aGuard ( m_aMutex );
@@ -450,13 +450,13 @@ Size SAL_CALL ProgressMonitor::getPreferredSize ()
 }
 
 //  XLayoutConstrains
-Size SAL_CALL ProgressMonitor::calcAdjustedSize ( const Size& /*rNewSize*/ )
+Size SAL_CALL ProgressMonitor::calcAdjustedSize ( const Size& /*rNewSize*/ ) throw( RuntimeException, std::exception )
 {
     return getPreferredSize ();
 }
 
 //  XControl
-void SAL_CALL ProgressMonitor::createPeer ( const css::uno::Reference< XToolkit > & rToolkit, const css::uno::Reference< XWindowPeer > & rParent    )
+void SAL_CALL ProgressMonitor::createPeer ( const css::uno::Reference< XToolkit > & rToolkit, const css::uno::Reference< XWindowPeer > & rParent    ) throw( RuntimeException, std::exception )
 {
     if (!getPeer().is())
     {
@@ -471,14 +471,14 @@ void SAL_CALL ProgressMonitor::createPeer ( const css::uno::Reference< XToolkit 
 }
 
 //  XControl
-sal_Bool SAL_CALL ProgressMonitor::setModel ( const css::uno::Reference< XControlModel > & /*rModel*/ )
+sal_Bool SAL_CALL ProgressMonitor::setModel ( const css::uno::Reference< XControlModel > & /*rModel*/ ) throw( RuntimeException, std::exception )
 {
     // We have no model.
     return false;
 }
 
 //  XControl
-css::uno::Reference< XControlModel > SAL_CALL ProgressMonitor::getModel ()
+css::uno::Reference< XControlModel > SAL_CALL ProgressMonitor::getModel () throw( RuntimeException, std::exception )
 {
     // We have no model.
     // return (XControlModel*)this;
@@ -486,7 +486,7 @@ css::uno::Reference< XControlModel > SAL_CALL ProgressMonitor::getModel ()
 }
 
 //  XComponent
-void SAL_CALL ProgressMonitor::dispose ()
+void SAL_CALL ProgressMonitor::dispose () throw( RuntimeException, std::exception )
 {
     // Ready for multithreading
     MutexGuard aGuard ( m_aMutex );
@@ -518,7 +518,7 @@ void SAL_CALL ProgressMonitor::dispose ()
 }
 
 //  XWindow
-void SAL_CALL ProgressMonitor::setPosSize ( sal_Int32 nX, sal_Int32 nY, sal_Int32 nWidth, sal_Int32 nHeight, sal_Int16 nFlags )
+void SAL_CALL ProgressMonitor::setPosSize ( sal_Int32 nX, sal_Int32 nY, sal_Int32 nWidth, sal_Int32 nHeight, sal_Int16 nFlags ) throw( RuntimeException, std::exception )
 {
     Rectangle   aBasePosSize = getPosSize ();
     BaseContainerControl::setPosSize (nX, nY, nWidth, nHeight, nFlags);
@@ -638,7 +638,7 @@ void ProgressMonitor::impl_recalcLayout ()
     nWidth_Topic_Top        =   std::max( aTopicSize_Top.Width, aTopicSize_Bottom.Width );
     nHeight_Topic_Top       =   aTopicSize_Top.Height;
 
-    // Right column before progressbar has relative position to left column ...
+    // Right column before progressbar has relativ position to left column ...
     // ... and a size as rest of dialog size!
     nX_Text_Top             =   nX_Topic_Top+nWidth_Topic_Top+PROGRESSMONITOR_FREEBORDER;
     nY_Text_Top             =   nY_Topic_Top;
@@ -652,7 +652,7 @@ void ProgressMonitor::impl_recalcLayout ()
         nWidth_Text_Top     =   impl_getWidth()-nWidth_Topic_Top-(3*PROGRESSMONITOR_FREEBORDER);
     nHeight_Text_Top        =   nHeight_Topic_Top;
 
-    // Position of progressbar is relative to columns before.
+    // Position of progressbar is relativ to columns before.
     // Progressbar.Width  = Dialog.Width !!!
     // Progressbar.Height = Button.Height
     nX_ProgressBar          =   nX_Topic_Top;
@@ -743,7 +743,8 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Top)
         {
-            aCollectString  +=  pSearchItem->sTopic + "\n";
+            aCollectString  +=  pSearchItem->sTopic;
+            aCollectString  +=  "\n";
         }
 
         m_xTopic_Top->setText ( aCollectString );
@@ -758,7 +759,8 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Top)
         {
-            aCollectString  +=  pSearchItem->sText + "\n";
+            aCollectString  +=  pSearchItem->sText;
+            aCollectString  +=  "\n";
         }
 
         m_xText_Top->setText ( aCollectString );
@@ -775,7 +777,8 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Bottom)
         {
-            aCollectString  +=  pSearchItem->sTopic + "\n";
+            aCollectString  +=  pSearchItem->sTopic;
+            aCollectString  +=  "\n";
         }
 
         m_xTopic_Bottom->setText ( aCollectString );
@@ -790,7 +793,8 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Bottom)
         {
-            aCollectString  +=  pSearchItem->sText + "\n";
+            aCollectString  +=  pSearchItem->sText;
+            aCollectString  +=  "\n";
         }
 
         m_xText_Bottom->setText ( aCollectString );

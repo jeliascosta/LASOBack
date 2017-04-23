@@ -47,14 +47,14 @@ typedef SC_HANDLE (__stdcall * OpenService_t)(SC_HANDLE, LPCSTR, DWORD);
 typedef BOOL (__stdcall * QueryServiceStatus_t)(SC_HANDLE, LPSERVICE_STATUS);
 typedef BOOL (__stdcall * StartService_t)(SC_HANDLE, DWORD, LPCSTR*);
 
-static CloseServiceHandle_t CloseServiceHandle_ = nullptr;
-static ControlService_t ControlService_ = nullptr;
-static OpenSCManager_t OpenSCManager_ = nullptr;
-static OpenService_t OpenService_ = nullptr;
-static QueryServiceStatus_t QueryServiceStatus_ = nullptr;
-static StartService_t StartService_ = nullptr;
+CloseServiceHandle_t CloseServiceHandle_ = NULL;
+ControlService_t ControlService_ = NULL;
+OpenSCManager_t OpenSCManager_ = NULL;
+OpenService_t OpenService_ = NULL;
+QueryServiceStatus_t QueryServiceStatus_ = NULL;
+StartService_t StartService_ = NULL;
 
-const char * const INDEXING_SERVICE_NAME = "cisvc";
+const TCHAR* const INDEXING_SERVICE_NAME = TEXT("cisvc");
 
 bool StopIndexingService(SC_HANDLE hService)
 {
@@ -104,7 +104,7 @@ bool StopIndexingService(SC_HANDLE hService)
 
 void StartIndexingService(SC_HANDLE hService)
 {
-    if (StartService_(hService, 0, nullptr))
+    if (StartService_(hService, 0, NULL))
     {
         SERVICE_STATUS status;
 
@@ -150,7 +150,7 @@ void StartIndexingService(SC_HANDLE hService)
 
 extern "C" UINT __stdcall RestartIndexingService(MSIHANDLE)
 {
-    // MessageBoxW(NULL, L"Restarting Indexing Service", L"Message", MB_OK | MB_ICONINFORMATION);
+    //MessageBox(NULL, TEXT("Restarting Indexing Service"), TEXT("Message"), MB_OK | MB_ICONINFORMATION);
 
     HMODULE hAdvapi32 = LoadLibrary("advapi32.dll");
 
@@ -171,11 +171,11 @@ extern "C" UINT __stdcall RestartIndexingService(MSIHANDLE)
         return ERROR_SUCCESS;
 
     SC_HANDLE hSCManager = OpenSCManager_(
-        nullptr, // local machine
-        nullptr, // ServicesActive database
+        NULL, // local machine
+        NULL, // ServicesActive database
         SC_MANAGER_ALL_ACCESS);
 
-    if (hSCManager != nullptr)
+    if (hSCManager != NULL)
     {
         SC_HANDLE hIndexingService = OpenService_(
             hSCManager, INDEXING_SERVICE_NAME, SERVICE_QUERY_STATUS | SERVICE_START | SERVICE_STOP);

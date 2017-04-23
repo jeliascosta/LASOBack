@@ -46,7 +46,7 @@ public:
         ViewShell* pSdViewShell,
         SfxItemPool& rItemPool,
         ::sd::View* pSdView);
-    virtual ~TextObjectBar() override;
+    virtual ~TextObjectBar();
 
     void GetAttrState( SfxItemSet& rSet );
     void GetCharState( SfxItemSet& rSet );

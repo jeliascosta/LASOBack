@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <astoperation.hxx>
-#include <asttype.hxx>
-#include <astbasetype.hxx>
-#include <astparameter.hxx>
-#include <errorhandler.hxx>
+#include <idlc/astoperation.hxx>
+#include <idlc/asttype.hxx>
+#include <idlc/astbasetype.hxx>
+#include <idlc/astparameter.hxx>
+#include <idlc/errorhandler.hxx>
 
 #include <registry/writer.hxx>
 
@@ -41,7 +41,7 @@ bool AstOperation::isVariadic() const {
 bool AstOperation::dumpBlob(typereg::Writer & rBlob, sal_uInt16 index)
 {
     sal_uInt16      nParam = getNodeCount(NT_parameter);
-    sal_uInt16      nExcep = (sal_uInt16)m_exceptions.size();
+    sal_uInt16      nExcep = nExceptions();
     RTMethodMode    methodMode = RTMethodMode::TWOWAY;
 
     OUString returnTypeName;
@@ -116,6 +116,11 @@ bool AstOperation::dumpBlob(typereg::Writer & rBlob, sal_uInt16 index)
     }
 
     return true;
+}
+
+AstDeclaration* AstOperation::addDeclaration(AstDeclaration* pDecl)
+{
+    return AstScope::addDeclaration(pDecl);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

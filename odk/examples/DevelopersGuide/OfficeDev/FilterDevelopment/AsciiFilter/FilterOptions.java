@@ -163,7 +163,7 @@ public class FilterOptions
             catch(com.sun.star.lang.IllegalArgumentException exConvert)
             {
                 // ONE argument has the wrong type
-                // But I think we mustn't react here - because we set
+                // But I think we mustn't react here - because we setted
                 // default values for every necessary item we need.
                 // In case this exception occurs - this default exist
                 // and we can live with it.

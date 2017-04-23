@@ -24,7 +24,6 @@
 #include "ftools.hxx"
 
 class SfxObjectShell;
-enum class FormulaError : sal_uInt16;
 
 // BIFF versions ==============================================================
 
@@ -116,9 +115,9 @@ public:
     static sal_uInt8    GetXclOrientFromRot( sal_uInt16 nXclRot );
 
     /** Converts a Calc error code to an Excel error code. */
-    static sal_uInt8    GetXclErrorCode( FormulaError nScError );
+    static sal_uInt8    GetXclErrorCode( sal_uInt16 nScError );
     /** Converts an Excel error code to a Calc error code. */
-    static FormulaError GetScErrorCode( sal_uInt8 nXclError );
+    static sal_uInt16       GetScErrorCode( sal_uInt8 nXclError );
 
     /** Converts the passed BIFF error to a double containing the respective Calc error code. */
     static double       ErrorToDouble( sal_uInt8 nXclError );
@@ -235,10 +234,19 @@ public:
     // Basic macro names ------------------------------------------------------
 
     /** Returns the full StarBasic macro URL from an Excel macro name. */
-    static OUString GetSbMacroUrl( const OUString& rMacroName, SfxObjectShell* pDocShell );
+    static OUString GetSbMacroUrl( const OUString& rMacroName, SfxObjectShell* pDocShell = nullptr );
     /** Returns the Excel macro name from a full StarBasic macro URL. */
     static OUString GetXclMacroName( const OUString& rSbMacroUrl );
 
+private:
+    static const OUString maDefNamePrefix;      /// Prefix for built-in defined names.
+    static const OUString maDefNamePrefixXml;   /// Prefix for built-in defined names for OOX
+    static const OUString maStyleNamePrefix1;   /// Prefix for built-in cell style names.
+    static const OUString maStyleNamePrefix2;   /// Prefix for built-in cell style names from OOX filter.
+    static const OUString maCFStyleNamePrefix1; /// Prefix for cond. formatting style names.
+    static const OUString maCFStyleNamePrefix2; /// Prefix for cond. formatting style names from OOX filter.
+    static const OUString maSbMacroPrefix;   /// Prefix for StarBasic macros.
+    static const OUString maSbMacroSuffix;   /// Suffix for StarBasic macros.
 };
 
 // read/write colors ----------------------------------------------------------

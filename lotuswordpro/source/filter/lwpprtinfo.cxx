@@ -57,6 +57,14 @@
 
 LwpPrinterInfo::LwpPrinterInfo(LwpObjectStream* pStrm)
 {
+    Read(pStrm);
+}
+/**
+ * @descr  read printer info in VO_DOCUMENT
+  */
+void LwpPrinterInfo::Read(LwpObjectStream* pStrm)
+{
+    //Just skip now
     Skip(pStrm);
 }
 /**

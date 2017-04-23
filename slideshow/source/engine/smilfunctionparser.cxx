@@ -35,7 +35,6 @@
 // But watch out, the parser might have
 // state not visible to this code!
 #define BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
-
 #if defined(DBG_UTIL)
 #include <typeinfo>
 #define BOOST_SPIRIT_DEBUG
@@ -60,7 +59,7 @@ namespace slideshow
 
             struct ParserContext
             {
-                typedef ::std::stack< std::shared_ptr<ExpressionNode> > OperandStack;
+                typedef ::std::stack< ExpressionNodeSharedPtr > OperandStack;
 
                 // stores a stack of not-yet-evaluated operands. This is used
                 // by the operators (i.e. '+', '*', 'sin' etc.) to pop their
@@ -198,7 +197,7 @@ namespace slideshow
                 {
                 public:
                     UnaryFunctionExpression( const Functor&                 rFunctor,
-                                             const std::shared_ptr<ExpressionNode>& rArg ) :
+                                             const ExpressionNodeSharedPtr& rArg ) :
                         maFunctor( rFunctor ),
                         mpArg( rArg )
                     {
@@ -216,7 +215,7 @@ namespace slideshow
 
                 private:
                     Functor                 maFunctor;
-                    std::shared_ptr<ExpressionNode> mpArg;
+                    ExpressionNodeSharedPtr mpArg;
                 };
 
             public:
@@ -237,7 +236,7 @@ namespace slideshow
                         throw ParseError( "Not enough arguments for unary operator" );
 
                     // retrieve arguments
-                    std::shared_ptr<ExpressionNode> pArg( rNodeStack.top() );
+                    ExpressionNodeSharedPtr pArg( rNodeStack.top() );
                     rNodeStack.pop();
 
                     // check for constness
@@ -251,7 +250,7 @@ namespace slideshow
                     {
                         // push complex node, that calcs the value on demand
                         rNodeStack.push(
-                            std::shared_ptr<ExpressionNode>(
+                            ExpressionNodeSharedPtr(
                                 new UnaryFunctionExpression(
                                     maFunctor,
                                     pArg ) ) );
@@ -312,13 +311,13 @@ namespace slideshow
                         throw ParseError( "Not enough arguments for binary operator" );
 
                     // retrieve arguments
-                    std::shared_ptr<ExpressionNode> pSecondArg( rNodeStack.top() );
+                    ExpressionNodeSharedPtr pSecondArg( rNodeStack.top() );
                     rNodeStack.pop();
-                    std::shared_ptr<ExpressionNode> pFirstArg( rNodeStack.top() );
+                    ExpressionNodeSharedPtr pFirstArg( rNodeStack.top() );
                     rNodeStack.pop();
 
                     // create combined ExpressionNode
-                    std::shared_ptr<ExpressionNode> pNode( maGenerator( pFirstArg,
+                    ExpressionNodeSharedPtr pNode( maGenerator( pFirstArg,
                                                                 pSecondArg ) );
                     // check for constness
                     if( pFirstArg->isConstant() &&
@@ -512,9 +511,10 @@ namespace slideshow
                 ParserContextSharedPtr  mpParserContext; // might get modified during parsing
             };
 
+#ifdef BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
             const ParserContextSharedPtr& getParserContext()
             {
-                static ParserContextSharedPtr lcl_parserContext( new ParserContext );
+                static ParserContextSharedPtr lcl_parserContext( new ParserContext() );
 
                 // clear node stack (since we reuse the static object, that's
                 // the whole point here)
@@ -523,9 +523,10 @@ namespace slideshow
 
                 return lcl_parserContext;
             }
+#endif
         }
 
-        std::shared_ptr<ExpressionNode> SmilFunctionParser::parseSmilValue( const OUString&          rSmilValue,
+        ExpressionNodeSharedPtr SmilFunctionParser::parseSmilValue( const OUString&          rSmilValue,
                                                                     const ::basegfx::B2DRectangle&  rRelativeShapeBounds )
         {
             // TODO(Q1): Check if a combination of the RTL_UNICODETOTEXT_FLAGS_*
@@ -539,9 +540,13 @@ namespace slideshow
 
             ParserContextSharedPtr pContext;
 
+#ifdef BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
             // static parser context, because the actual
             // Spirit parser is also a static object
             pContext = getParserContext();
+#else
+            pContext.reset( new ParserContext() );
+#endif
 
             pContext->maShapeBounds = rRelativeShapeBounds;
             pContext->mbParseAnimationFunction = false; // parse with '$' disabled
@@ -570,7 +575,7 @@ namespace slideshow
             return pContext->maOperandStack.top();
         }
 
-        std::shared_ptr<ExpressionNode> SmilFunctionParser::parseSmilFunction( const OUString&           rSmilFunction,
+        ExpressionNodeSharedPtr SmilFunctionParser::parseSmilFunction( const OUString&           rSmilFunction,
                                                                        const ::basegfx::B2DRectangle&   rRelativeShapeBounds )
         {
             // TODO(Q1): Check if a combination of the RTL_UNICODETOTEXT_FLAGS_*
@@ -584,9 +589,13 @@ namespace slideshow
 
             ParserContextSharedPtr pContext;
 
+#ifdef BOOST_SPIRIT_SINGLE_GRAMMAR_INSTANCE
             // static parser context, because the actual
             // Spirit parser is also a static object
             pContext = getParserContext();
+#else
+            pContext.reset( new ParserContext() );
+#endif
 
             pContext->maShapeBounds = rRelativeShapeBounds;
             pContext->mbParseAnimationFunction = true; // parse with '$' enabled

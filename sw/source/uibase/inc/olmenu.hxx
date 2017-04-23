@@ -25,7 +25,6 @@
 #include <com/sun/star/uno/Sequence.h>
 
 #include <rtl/ustring.hxx>
-#include <vcl/builder.hxx>
 #include <vcl/image.hxx>
 #include <vcl/menu.hxx>
 
@@ -34,22 +33,8 @@
 
 class SwWrtShell;
 
-class SW_DLLPUBLIC SwSpellPopup
+class SW_DLLPUBLIC SwSpellPopup : public PopupMenu
 {
-    VclBuilder m_aBuilder;
-    VclPtr<PopupMenu> m_xPopupMenu;
-    sal_uInt16 m_nIgnoreWordId;
-    sal_uInt16 m_nAddMenuId;
-    sal_uInt16 m_nAddId;
-    sal_uInt16 m_nSpellDialogId;
-    sal_uInt16 m_nCorrectMenuId;
-    sal_uInt16 m_nCorrectDialogId;
-    sal_uInt16 m_nLangSelectionMenuId;
-    sal_uInt16 m_nLangParaMenuId;
-    sal_uInt16 m_nRedlineAcceptId;
-    sal_uInt16 m_nRedlineRejectId;
-    sal_uInt16 m_nRedlineNextId;
-    sal_uInt16 m_nRedlinePrevId;
     SwWrtShell* m_pSh;
     css::uno::Sequence< css::uno::Reference< css::linguistic2::XDictionary >  >     m_aDics;
     css::uno::Reference< css::linguistic2::XSpellAlternatives > m_xSpellAlt;
@@ -66,13 +51,18 @@ class SW_DLLPUBLIC SwSpellPopup
 
     std::map< sal_Int16, OUString > m_aLangTable_Text;
     std::map< sal_Int16, OUString > m_aLangTable_Paragraph;
+//    std::map< sal_Int16, OUString > aLangTable_Document;
 
     OUString  m_aDicNameSingle;
     bool      m_bGrammarResults;    // show grammar results? Or show spellcheck results?
 
+    Image     m_aInfo16;
+
     static void fillLangPopupMenu( PopupMenu *pPopupMenu, sal_uInt16 nLangStart,
             const css::uno::Sequence< OUString >& aSeq, SwWrtShell* pWrtSh,
             std::map< sal_Int16, OUString > &rLangTable );
+
+    using PopupMenu::Execute;
 
     /// Checks if any of the redline menu items should be hidden.
     void checkRedline();
@@ -88,14 +78,7 @@ public:
             const css::uno::Sequence< OUString > &rSuggestions,
             const OUString & rParaText );
 
-    ~SwSpellPopup();
-
-    Menu&   GetMenu()
-    {
-        return *m_xPopupMenu.get();
-    }
-
-    void Execute( const tools::Rectangle& rPopupPos, vcl::Window* pWin );
+    void Execute( const Rectangle& rPopupPos, vcl::Window* pWin );
     void Execute( sal_uInt16 nId );
 
 };

@@ -255,6 +255,11 @@ void SwTOXMgr::PrevTOXMark(bool bSame)
     }
 }
 
+// insert keyword index
+const SwTOXBase* SwTOXMgr::GetCurTOX()
+{
+    return pSh->GetCurTOX();
+}
 const SwTOXType* SwTOXMgr::GetTOXType(TOXTypes eTyp) const
 {
     return pSh->GetTOXType(eTyp, 0);
@@ -271,7 +276,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
 {
     SwWait aWait( *pSh->GetView().GetDocShell(), true );
     bool bRet = true;
-    const SwTOXBase* pCurTOX = ppBase && *ppBase ? *ppBase : pSh->GetCurTOX();
+    const SwTOXBase* pCurTOX = ppBase && *ppBase ? *ppBase : GetCurTOX();
     SwTOXBase* pTOX = const_cast<SwTOXBase*>(pCurTOX);
 
     SwTOXBase * pNewTOX = nullptr;
@@ -291,7 +296,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
             {
                 const SwTOXType* pType = pSh->GetTOXType(eCurTOXType, 0);
                 SwForm aForm(eCurTOXType);
-                pNewTOX = new SwTOXBase(pType, aForm, SwTOXElement::Mark, pType->GetTypeName());
+                pNewTOX = new SwTOXBase(pType, aForm, nsSwTOXElement::TOX_MARK, pType->GetTypeName());
             }
             pNewTOX->SetOptions(rDesc.GetIndexOptions());
             pNewTOX->SetMainEntryCharStyle(rDesc.GetMainEntryCharStyle());
@@ -348,7 +353,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
             if(TOX_AUTHORITIES == eCurTOXType)
             {
                 SwAuthorityFieldType* pFType = static_cast<SwAuthorityFieldType*>(
-                                                pSh->GetFieldType(SwFieldIds::TableOfAuthorities, aEmptyOUStr));
+                                                pSh->GetFieldType(RES_AUTHORITY, aEmptyOUStr));
                 if (!pFType)
                 {
                     SwAuthorityFieldType const type(pSh->GetDoc());
@@ -376,8 +381,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
                 SwForm aForm(eCurTOXType);
                 pNewTOX = new SwTOXBase(
                     pType, aForm,
-                    TOX_AUTHORITIES == eCurTOXType ? SwTOXElement::Mark : SwTOXElement::NONE,
-                    pType->GetTypeName());
+                    TOX_AUTHORITIES == eCurTOXType ? nsSwTOXElement::TOX_MARK : 0, pType->GetTypeName());
             }
             else
             {
@@ -429,7 +433,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
         if (pDoc->GetIDocumentUndoRedo().DoesUndo())
         {
             pDoc->GetIDocumentUndoRedo().DelAllUndoObj();
-            pDoc->GetIDocumentUndoRedo().StartUndo(SwUndoId::TOXCHANGE, nullptr);
+            pDoc->GetIDocumentUndoRedo().StartUndo(UNDO_TOXCHANGE, nullptr);
         }
 
         pDoc->ChgTOX(*pTOX, *pNewTOX);
@@ -440,7 +444,7 @@ bool SwTOXMgr::UpdateOrInsertTOX(const SwTOXDescription& rDesc,
 
         if (pDoc->GetIDocumentUndoRedo().DoesUndo())
         {
-            pDoc->GetIDocumentUndoRedo().EndUndo(SwUndoId::TOXCHANGE, nullptr);
+            pDoc->GetIDocumentUndoRedo().EndUndo(UNDO_TOXCHANGE, nullptr);
         }
     }
 

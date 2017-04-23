@@ -30,34 +30,37 @@ namespace chart
 namespace wrapper
 {
 
-enum class GraphicObjectType
-{
-    FilledDataPoint,
-    LineDataPoint,
-    LineProperties,
-    LineAndFillProperties
-};
-
 class GraphicPropertyItemConverter : public ItemConverter
 {
 public:
+    enum eGraphicObjectType
+    {
+        FILLED_DATA_POINT,
+        LINE_DATA_POINT,
+        LINE_PROPERTIES,
+        FILL_PROPERTIES,
+        LINE_AND_FILL_PROPERTIES
+    };
+
     GraphicPropertyItemConverter(
         const css::uno::Reference< css::beans::XPropertySet > & rPropertySet,
         SfxItemPool& rItemPool,
         SdrModel& rDrawModel,
         const css::uno::Reference< css::lang::XMultiServiceFactory > & xNamedPropertyContainerFactory,
-        GraphicObjectType eObjectType = GraphicObjectType::FilledDataPoint );
-    virtual ~GraphicPropertyItemConverter() override;
+        eGraphicObjectType eObjectType = FILLED_DATA_POINT );
+    virtual ~GraphicPropertyItemConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
     virtual bool GetItemProperty( tWhichIdType nWhichId, tPropertyNameWithMemberId & rOutProperty ) const override;
 
-    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const override;
-    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet ) override;
+    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+        throw (css::uno::Exception, std::exception) override;
+    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+        throw( css::uno::Exception ) override;
 
 private:
-    GraphicObjectType              m_GraphicObjectType;
+    eGraphicObjectType              m_eGraphicObjectType;
     SdrModel &                      m_rDrawModel;
     css::uno::Reference< css::lang::XMultiServiceFactory >  m_xNamedPropertyTableFactory;
 };

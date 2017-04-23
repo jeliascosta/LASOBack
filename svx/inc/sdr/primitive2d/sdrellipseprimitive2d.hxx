@@ -40,7 +40,7 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrEllipsePrimitive2D(
@@ -71,12 +71,13 @@ namespace drawinglayer
             double                                      mfStartAngle;
             double                                      mfEndAngle;
 
+            // bitfield
             bool                                        mbCloseSegment : 1;
             bool                                        mbCloseUsingCenter : 1;
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrEllipseSegmentPrimitive2D(

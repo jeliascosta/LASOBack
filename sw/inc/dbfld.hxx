@@ -38,12 +38,12 @@ class SW_DLLPUBLIC SwDBFieldType : public SwValueFieldType
 public:
 
     SwDBFieldType(SwDoc* pDocPtr, const OUString& rColumnName, const SwDBData& rDBData);
-    virtual ~SwDBFieldType() override;
+    virtual ~SwDBFieldType();
 
     virtual OUString GetName() const override;
     virtual SwFieldType*  Copy() const override;
 
-    void     AddRef() { nRefCnt++; }
+    inline void     AddRef() { nRefCnt++; }
     void            ReleaseRef();
 
     const OUString&     GetColumnName() const {return sColumn;}
@@ -69,7 +69,7 @@ class SW_DLLPUBLIC SwDBField : public SwValueField
 
 public:
     SwDBField(SwDBFieldType*, sal_uLong nFormat = 0);
-    virtual ~SwDBField() override;
+    virtual ~SwDBField();
 
     virtual SwFieldType*    ChgTyp( SwFieldType* ) override;
 
@@ -93,9 +93,9 @@ public:
 
     inline void         ChgBodyTextFlag( bool bIsInBody );
 
-    bool         IsInitialized() const   { return bInitialized; }
-    void         ClearInitialized()      { bInitialized = false; }
-    void         SetInitialized()        { bInitialized = true; }
+    inline bool         IsInitialized() const   { return bInitialized; }
+    inline void         ClearInitialized()      { bInitialized = false; }
+    inline void         SetInitialized()        { bInitialized = true; }
 
     /// Get name.
     virtual OUString    GetPar1() const override;
@@ -104,7 +104,7 @@ public:
     void                SetFieldCode(const OUString& rStr) { sFieldCode = rStr; }
 
     /// DBName
-    const SwDBData&  GetDBData() const { return static_cast<SwDBFieldType*>(GetTyp())->GetDBData(); }
+    inline const SwDBData&  GetDBData() const { return static_cast<SwDBFieldType*>(GetTyp())->GetDBData(); }
     virtual bool        QueryValue( css::uno::Any& rVal, sal_uInt16 nWhich ) const override;
     virtual bool        PutValue( const css::uno::Any& rVal, sal_uInt16 nWhich ) override;
 
@@ -133,8 +133,8 @@ protected:
 
 public:
     /// DBName
-    const SwDBData&  GetRealDBData() const { return aDBData; }
-    SwDBData&        GetRealDBData() { return aDBData; }
+    inline const SwDBData&  GetRealDBData() const { return aDBData; }
+    inline SwDBData&        GetRealDBData() { return aDBData; }
 
     SwDBData                GetDBData(SwDoc* pDoc);
     void                    SetDBData(const SwDBData& rDBData);

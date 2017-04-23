@@ -27,6 +27,8 @@
 #include <vcl/wrkwin.hxx>
 #include <vcl/virdev.hxx>
 
+#include <tools/stream.hxx>
+
 #include <cstdlib>
 
 using namespace com::sun::star;
@@ -53,10 +55,10 @@ public:
         }
     }
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)  override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)  override;
 };
 
-void DemoMtfWin::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void DemoMtfWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     maMtf.Play(this, maMtf.GetActionSize());
 

@@ -19,8 +19,6 @@
 
 #include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
 #include <com/sun/star/chart2/data/XDataReceiver.hpp>
-#include <com/sun/star/awt/XRequestCallback.hpp>
-#include <com/sun/star/awt/Rectangle.hpp>
 
 #include <com/sun/star/embed/EmbedMisc.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
@@ -64,7 +62,6 @@
 
 #include <tools/urlobj.hxx>
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
-#include <comphelper/lok.hxx>
 
 using namespace com::sun::star;
 
@@ -81,7 +78,7 @@ void ScTabViewShell::ConnectObject( SdrOle2Obj* pObj )
     if ( !pClient )
     {
         pClient = new ScClient( this, pWin, GetSdrView()->GetModel(), pObj );
-        tools::Rectangle aRect = pObj->GetLogicRect();
+        Rectangle aRect = pObj->GetLogicRect();
         Size aDrawSize = aRect.GetSize();
 
         Size aOleSize = pObj->GetOrigObjSize();
@@ -101,47 +98,6 @@ void ScTabViewShell::ConnectObject( SdrOle2Obj* pObj )
     }
 }
 
-class PopupCallback : public cppu::WeakImplHelper<css::awt::XCallback>
-{
-    ScTabViewShell* m_pViewShell;
-    SdrOle2Obj* m_pObject;
-
-public:
-    explicit PopupCallback(ScTabViewShell* pViewShell, SdrOle2Obj* pObject)
-        : m_pViewShell(pViewShell)
-        , m_pObject(pObject)
-    {}
-
-    // XCallback
-    virtual void SAL_CALL notify(const css::uno::Any& aData) override
-    {
-        uno::Sequence<beans::PropertyValue> aProperties;
-        if (aData >>= aProperties)
-        {
-            awt::Rectangle xRectangle;
-            sal_Int32 dimensionIndex = 0;
-            OUString sPivotTableName("DataPilot1");
-
-            for (beans::PropertyValue const & rProperty : aProperties)
-            {
-                if (rProperty.Name == "Rectangle")
-                    rProperty.Value >>= xRectangle;
-                if (rProperty.Name == "DimensionIndex")
-                    rProperty.Value >>= dimensionIndex;
-                if (rProperty.Name == "PivotTableName")
-                    rProperty.Value >>= sPivotTableName;
-            }
-
-            tools::Rectangle aChartRect = m_pObject->GetLogicRect();
-
-            Point aPoint(xRectangle.X  + aChartRect.Left(), xRectangle.Y + aChartRect.Top());
-            Size aSize(xRectangle.Width, xRectangle.Height);
-
-            m_pViewShell->DoDPFieldPopup(sPivotTableName, dimensionIndex, aPoint, aSize);
-        }
-    }
-};
-
 void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
 {
     // Do not leave the hint message box on top of the object
@@ -159,19 +115,19 @@ void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
 
         if ( !(nErr & ERRCODE_ERROR_MASK) && xObj.is() )
         {
-            tools::Rectangle aRect = pObj->GetLogicRect();
+            Rectangle aRect = pObj->GetLogicRect();
 
             {
                 // #i118485# center on BoundRect for activation,
                 // OLE may be sheared/rotated now
-                const tools::Rectangle& rBoundRect = pObj->GetCurrentBoundRect();
+                const Rectangle& rBoundRect = pObj->GetCurrentBoundRect();
                 const Point aDelta(rBoundRect.Center() - aRect.Center());
                 aRect.Move(aDelta.X(), aDelta.Y());
             }
 
             Size aDrawSize = aRect.GetSize();
 
-            MapMode aMapMode( MapUnit::Map100thMM );
+            MapMode aMapMode( MAP_100TH_MM );
             Size aOleSize = pObj->GetOrigObjSize( &aMapMode );
 
             if ( pClient->GetAspect() != embed::Aspects::MSOLE_ICON
@@ -183,7 +139,7 @@ void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
                 {
                     MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( pClient->GetAspect() ) );
                     aOleSize = OutputDevice::LogicToLogic( aDrawSize,
-                                            MapUnit::Map100thMM, aUnit );
+                                            MAP_100TH_MM, aUnit );
                     awt::Size aSz( aOleSize.Width(), aOleSize.Height() );
                     xObj->setVisualAreaSize( pClient->GetAspect(), aSz );
                 }
@@ -227,18 +183,11 @@ void ScTabViewShell::ActivateObject( SdrOle2Obj* pObj, long nVerb )
                             xSup->getComponent(), uno::UNO_QUERY_THROW );
                         uno::Reference< chart2::data::XRangeHighlighter > xRangeHightlighter(
                             xDataReceiver->getRangeHighlighter());
-                        if (xRangeHightlighter.is())
+                        if( xRangeHightlighter.is())
                         {
                             uno::Reference< view::XSelectionChangeListener > xListener(
                                 new ScChartRangeSelectionListener( this ));
                             xRangeHightlighter->addSelectionChangeListener( xListener );
-                        }
-                        uno::Reference<awt::XRequestCallback> xPopupRequest(xDataReceiver->getPopupRequest());
-                        if (xPopupRequest.is())
-                        {
-                            uno::Reference<awt::XCallback> xCallback(new PopupCallback(this, pObj));
-                            uno::Any aAny;
-                            xPopupRequest->addCallback(xCallback, aAny);
                         }
                     }
                     catch( const uno::Exception & )
@@ -353,7 +302,7 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
             try
             {
                 sfx2::FileDialogHelper aDlg(ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE,
-                        FileDialogFlags::NONE, "com.sun.star.chart2.ChartDocument");
+                        FileDialogFlags::NONE, OUString("com.sun.star.chart2.ChartDocument"));
                 if(aDlg.Execute() == ERRCODE_NONE )
                 {
                     INetURLObject aURLObj( aDlg.GetPath() );
@@ -377,7 +326,7 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
                 {
                     const SfxRectangleItem& rRect =
                         static_cast<const SfxRectangleItem&>(rReq.GetArgs()->Get(SID_OBJECTRESIZE));
-                    tools::Rectangle aRect( pWin->PixelToLogic( rRect.GetValue() ) );
+                    Rectangle aRect( pWin->PixelToLogic( rRect.GetValue() ) );
 
                     if ( pView->AreObjectsMarked() )
                     {
@@ -406,12 +355,12 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
         case SID_LINKS:
             {
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                ScopedVclPtr<SfxAbstractLinksDialog> pDlg(pFact->CreateLinksDialog( pWin, rDoc.GetLinkManager() ));
+                SfxAbstractLinksDialog* pDlg = pFact->CreateLinksDialog( pWin, rDoc.GetLinkManager() );
                 if ( pDlg )
                 {
                     pDlg->Execute();
                     rBindings.Invalidate( nSlot );
-                    SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScAreaLinksChanged ) );     // Navigator
+                    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREALINKS_CHANGED ) );     // Navigator
                     rReq.Done();
                 }
             }
@@ -435,12 +384,12 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
 
                         if(pNewDBField)
                         {
-                            tools::Rectangle aVisArea = pWin->PixelToLogic(tools::Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
+                            Rectangle aVisArea = pWin->PixelToLogic(Rectangle(Point(0,0), pWin->GetOutputSizePixel()));
                             Point aObjPos(aVisArea.Center());
                             Size aObjSize(pNewDBField->GetLogicRect().GetSize());
                             aObjPos.X() -= aObjSize.Width() / 2;
                             aObjPos.Y() -= aObjSize.Height() / 2;
-                            tools::Rectangle aNewObjectRectangle(aObjPos, aObjSize);
+                            Rectangle aNewObjectRectangle(aObjPos, aObjSize);
 
                             pNewDBField->SetLogicRect(aNewObjectRectangle);
 
@@ -451,7 +400,7 @@ void ScTabViewShell::ExecDrawIns(SfxRequest& rReq)
                                 pNewDBField->NbcSetLayer(SC_LAYER_FRONT);
                             if (dynamic_cast<const SdrObjGroup*>( pNewDBField) !=  nullptr)
                             {
-                                SdrObjListIter aIter( *pNewDBField, SdrIterMode::DeepWithGroups );
+                                SdrObjListIter aIter( *pNewDBField, IM_DEEPWITHGROUPS );
                                 SdrObject* pSubObj = aIter.Next();
                                 while (pSubObj)
                                 {
@@ -507,33 +456,11 @@ void ScTabViewShell::GetDrawInsState(SfxItemSet &rSet)
                     rSet.DisableItem( nWhich );
                 break;
 
+            case SID_INSERT_GRAPHIC:
             case SID_INSERT_AVMEDIA:
             case SID_FONTWORK_GALLERY_FLOATER:
                 if ( bTabProt || bShared )
                     rSet.DisableItem( nWhich );
-                break;
-
-            case SID_INSERT_GRAPHIC:
-                if (bTabProt || bShared)
-                {
-                    // do not disable 'insert graphic' item if the currently marked area is editable (not protected)
-                    // if there is no marked area, check the current cell
-                    bool bDisableInsertImage = true;
-                    ScMarkData& rMark = GetViewData().GetMarkData();
-                    if (!rMark.GetMarkedRanges().empty() && GetViewData().GetDocument()->IsSelectionEditable(rMark))
-                        bDisableInsertImage = false;
-                    else
-                    {
-                        if (GetViewData().GetDocument()->IsBlockEditable
-                            (GetViewData().GetTabNo(), GetViewData().GetCurX(), GetViewData().GetCurY(), GetViewData().GetCurX(), GetViewData().GetCurY()))
-                        {
-                            bDisableInsertImage = false;
-                        }
-                    }
-
-                    if (bDisableInsertImage)
-                        rSet.DisableItem(nWhich);
-                }
                 break;
 
             case SID_LINKS:
@@ -568,33 +495,6 @@ void ScTabViewShell::ExecuteUndo(SfxRequest& rReq)
                 const SfxPoolItem* pItem;
                 if ( pReqArgs && pReqArgs->GetItemState( nSlot, true, &pItem ) == SfxItemState::SET )
                     nCount = static_cast<const SfxUInt16Item*>(pItem)->GetValue();
-
-                // Repair mode: allow undo/redo of all undo actions, even if access would
-                // be limited based on the view shell ID.
-                bool bRepair = false;
-                if (pReqArgs && pReqArgs->GetItemState(SID_REPAIRPACKAGE, false, &pItem) == SfxItemState::SET)
-                    bRepair = static_cast<const SfxBoolItem*>(pItem)->GetValue();
-
-                if (comphelper::LibreOfficeKit::isActive() && !bRepair)
-                {
-                    SfxUndoAction* pAction = nullptr;
-                    if (bIsUndo)
-                    {
-                        if (pUndoManager->GetUndoActionCount() != 0)
-                            pAction = pUndoManager->GetUndoAction();
-                    }
-                    else
-                    {
-                        if (pUndoManager->GetRedoActionCount() != 0)
-                            pAction = pUndoManager->GetRedoAction();
-                    }
-                    if (pAction)
-                    {
-                        ViewShellId nViewShellId = GetViewShellId();
-                        if (pAction->GetViewShellId() != nViewShellId)
-                            return;
-                    }
-                }
 
                 // lock paint for more than one cell undo action (not for editing within a cell)
                 bool bLockPaint = ( nCount > 1 && pUndoManager == GetUndoManager() );

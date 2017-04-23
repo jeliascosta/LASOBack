@@ -59,8 +59,8 @@ void lcl_fireModifyEvent(
     }
 }
 
-struct lcl_weakReferenceToSame : public std::unary_function<
-        std::pair<
+struct lcl_weakReferenceToSame : public ::std::unary_function<
+        ::std::pair<
             css::uno::WeakReference< css::util::XModifyListener >,
             css::uno::Reference< css::util::XModifyListener > >,
         bool >
@@ -101,6 +101,11 @@ ModifyEventForwarder::ModifyEventForwarder() :
 {
 }
 
+void ModifyEventForwarder::FireEvent( const lang::EventObject & rEvent )
+{
+    lcl_fireModifyEvent( m_aModifyListeners, Reference< uno::XWeak >(), & rEvent );
+}
+
 void ModifyEventForwarder::AddListener( const Reference< util::XModifyListener >& aListener )
 {
     try
@@ -131,7 +136,7 @@ void ModifyEventForwarder::RemoveListener( const Reference< util::XModifyListene
         // look up fitting helper class that has been added
         Reference< util::XModifyListener > xListenerToRemove( aListener );
         tListenerMap::iterator aIt(
-            std::find_if( m_aListenerMap.begin(), m_aListenerMap.end(), lcl_weakReferenceToSame( aListener )));
+            ::std::find_if( m_aListenerMap.begin(), m_aListenerMap.end(), lcl_weakReferenceToSame( aListener )));
         if( aIt != m_aListenerMap.end())
         {
             xListenerToRemove.set( (*aIt).second );
@@ -157,23 +162,27 @@ void ModifyEventForwarder::DisposeAndClear( const Reference< uno::XWeak > & xSou
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL ModifyEventForwarder::addModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     AddListener( aListener );
 }
 
 void SAL_CALL ModifyEventForwarder::removeModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     RemoveListener( aListener );
 }
 
 // ____ XModifyListener ____
 void SAL_CALL ModifyEventForwarder::modified( const lang::EventObject& aEvent )
+    throw (uno::RuntimeException, std::exception)
 {
-   lcl_fireModifyEvent( m_aModifyListeners, Reference< uno::XWeak >(), &aEvent );
+    FireEvent( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL ModifyEventForwarder::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }

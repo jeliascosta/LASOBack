@@ -33,11 +33,12 @@
 #include "sal/types.h"
 
 #include <saltime.hxx>
-#include <salusesyslog.hxx>
 
 #if HAVE_SYSLOG_H
 #include <string.h>
 #include <syslog.h>
+// from sal/osl/all/log.cxx:
+extern bool sal_use_syslog;
 #endif
 
 extern "C" {
@@ -64,7 +65,7 @@ void sal_detail_initialize(int argc, char ** argv) {
         openMax = 1024;
     }
     assert(openMax >= 0 && openMax <= std::numeric_limits< int >::max());
-    for (int fd = 3; fd < int(openMax); ++fd) {
+    for (int fd = 3; fd < openMax; ++fd) {
         struct stat s;
         if (fstat(fd, &s) != -1 && S_ISREG(s.st_mode))
             close(fd);

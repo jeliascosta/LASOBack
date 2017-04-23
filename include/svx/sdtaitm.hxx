@@ -33,20 +33,21 @@ enum SdrTextVertAdjust {SDRTEXTVERTADJUST_TOP,      // aligned to top (normally 
                         SDRTEXTVERTADJUST_BLOCK    // support vertical full with supported now
                         /*,SDRTEXTVERTADJUST_STRETCH*/}; // also stretch letters in their height (ni)
 
-class SVX_DLLPUBLIC SdrTextVertAdjustItem: public SfxEnumItem<SdrTextVertAdjust> {
+class SVX_DLLPUBLIC SdrTextVertAdjustItem: public SfxEnumItem {
 public:
-    SdrTextVertAdjustItem(SdrTextVertAdjust eAdj=SDRTEXTVERTADJUST_TOP): SfxEnumItem(SDRATTR_TEXT_VERTADJUST, eAdj) {}
-    SdrTextVertAdjustItem(SdrTextVertAdjust eAdj, sal_uInt16 nWhich): SfxEnumItem(nWhich, eAdj) {}
+    SdrTextVertAdjustItem(SdrTextVertAdjust eAdj=SDRTEXTVERTADJUST_TOP): SfxEnumItem(SDRATTR_TEXT_VERTADJUST,(sal_uInt16)eAdj) {}
+    SdrTextVertAdjustItem(SdrTextVertAdjust eAdj, sal_uInt16 nWhich): SfxEnumItem(nWhich,(sal_uInt16)eAdj) {}
     SdrTextVertAdjustItem(SvStream& rIn)                               : SfxEnumItem(SDRATTR_TEXT_VERTADJUST,rIn)  {}
     virtual SfxPoolItem*      Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem*      Create(SvStream& rIn, sal_uInt16 nVer) const override;
-    virtual sal_uInt16        GetValueCount() const override; // { return 5; }
+    virtual sal_uInt16            GetValueCount() const override; // { return 5; }
+            SdrTextVertAdjust GetValue() const      { return (SdrTextVertAdjust)SfxEnumItem::GetValue(); }
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
-    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
     virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 };
 
@@ -60,19 +61,20 @@ enum SdrTextHorzAdjust {SDRTEXTHORZADJUST_LEFT,     // left adjusted
                         SDRTEXTHORZADJUST_BLOCK    // use the whole text frame width
                         /*,SDRTEXTHORZADJUST_STRETCH*/}; // FitToSize in X direction (ni).
 
-class SVX_DLLPUBLIC SdrTextHorzAdjustItem: public SfxEnumItem<SdrTextHorzAdjust> {
+class SVX_DLLPUBLIC SdrTextHorzAdjustItem: public SfxEnumItem {
 public:
-    SdrTextHorzAdjustItem(SdrTextHorzAdjust eAdj=SDRTEXTHORZADJUST_BLOCK): SfxEnumItem(SDRATTR_TEXT_HORZADJUST, eAdj) {}
-    SdrTextHorzAdjustItem(SvStream& rIn)                                 : SfxEnumItem(SDRATTR_TEXT_HORZADJUST, rIn)  {}
+    SdrTextHorzAdjustItem(SdrTextHorzAdjust eAdj=SDRTEXTHORZADJUST_BLOCK): SfxEnumItem(SDRATTR_TEXT_HORZADJUST,(sal_uInt16)eAdj) {}
+    SdrTextHorzAdjustItem(SvStream& rIn)                                 : SfxEnumItem(SDRATTR_TEXT_HORZADJUST,rIn)  {}
     virtual SfxPoolItem*      Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem*      Create(SvStream& rIn, sal_uInt16 nVer) const override;
     virtual sal_uInt16        GetValueCount() const override;
+            SdrTextHorzAdjust GetValue() const      { return (SdrTextHorzAdjust)SfxEnumItem::GetValue(); }
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
-    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
 };
 
 #endif

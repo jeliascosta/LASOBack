@@ -95,7 +95,7 @@ bool EditUndoManager::Redo()
             mpEditEngine->SetActiveView(mpEditEngine->GetEditViews()[0]);
         else
         {
-            OSL_FAIL( "Redo in Engine without View not possible!" );
+            OSL_FAIL( "Redo in Engine ohne View nicht moeglich!" );
             return false;
         }
     }
@@ -118,12 +118,8 @@ bool EditUndoManager::Redo()
 }
 
 EditUndo::EditUndo(sal_uInt16 nI, EditEngine* pEE) :
-    nId(nI), mnViewShellId(-1), mpEditEngine(pEE)
+    nId(nI), mpEditEngine(pEE)
 {
-    const EditView* pEditView = mpEditEngine ? mpEditEngine->GetActiveView() : nullptr;
-    const OutlinerViewShell* pViewShell = pEditView ? pEditView->GetImpEditView()->GetViewShell() : nullptr;
-    if (pViewShell)
-        mnViewShellId = pViewShell->GetViewShellId();
 }
 
 EditUndo::~EditUndo()
@@ -149,11 +145,6 @@ OUString EditUndo::GetComment() const
         aComment = mpEditEngine->GetUndoComment( GetId() );
 
     return aComment;
-}
-
-ViewShellId EditUndo::GetViewShellId() const
-{
-    return mnViewShellId;
 }
 
 EditUndoDelContent::EditUndoDelContent(
@@ -317,7 +308,7 @@ void EditUndoInsertChars::Undo()
 
 void EditUndoInsertChars::Redo()
 {
-    DBG_ASSERT( GetEditEngine()->GetActiveView(), "Undo/Redo: No Active View!" );
+    DBG_ASSERT( GetEditEngine()->GetActiveView(), "Undo/Redo: Keine Active View!" );
     EditPaM aPaM = GetEditEngine()->CreateEditPaM(aEPaM);
     GetEditEngine()->InsertText(EditSelection(aPaM, aPaM), aText);
     EditPaM aNewPaM( aPaM );
@@ -349,7 +340,7 @@ EditUndoRemoveChars::EditUndoRemoveChars(
 
 void EditUndoRemoveChars::Undo()
 {
-    DBG_ASSERT( GetEditEngine()->GetActiveView(), "Undo/Redo: No Active View!" );
+    DBG_ASSERT( GetEditEngine()->GetActiveView(), "Undo/Redo: Keine Active View!" );
     EditPaM aPaM = GetEditEngine()->CreateEditPaM(aEPaM);
     EditSelection aSel( aPaM, aPaM );
     GetEditEngine()->InsertText(aSel, aText);
@@ -371,12 +362,13 @@ EditUndoInsertFeature::EditUndoInsertFeature(
     EditEngine* pEE, const EPaM& rEPaM, const SfxPoolItem& rFeature) :
     EditUndo(EDITUNDO_INSERTFEATURE, pEE), aEPaM(rEPaM)
 {
-    pFeature.reset( rFeature.Clone() );
+    pFeature = rFeature.Clone();
     DBG_ASSERT( pFeature, "Feature could not be duplicated: EditUndoInsertFeature" );
 }
 
 EditUndoInsertFeature::~EditUndoInsertFeature()
 {
+    delete pFeature;
 }
 
 void EditUndoInsertFeature::Undo()
@@ -428,14 +420,14 @@ void EditUndoMoveParagraphs::Undo()
     else
         nTmpDest += aTmpRange.Len();
 
-    EditSelection aNewSel = GetEditEngine()->MoveParagraphs(aTmpRange, nTmpDest);
+    EditSelection aNewSel = GetEditEngine()->MoveParagraphs(aTmpRange, nTmpDest, nullptr);
     GetEditEngine()->GetActiveView()->GetImpEditView()->SetEditSelection( aNewSel );
 }
 
 void EditUndoMoveParagraphs::Redo()
 {
     DBG_ASSERT( GetEditEngine()->GetActiveView(), "Undo/Redo: No Active View!" );
-    EditSelection aNewSel = GetEditEngine()->MoveParagraphs(nParagraphs, nDest);
+    EditSelection aNewSel = GetEditEngine()->MoveParagraphs(nParagraphs, nDest, nullptr);
     GetEditEngine()->GetActiveView()->GetImpEditView()->SetEditSelection( aNewSel );
 }
 
@@ -504,7 +496,7 @@ EditUndoSetAttribs::EditUndoSetAttribs(EditEngine* pEE, const ESelection& rESel,
     bSetIsRemove = false;
     bRemoveParaAttribs = false;
     nRemoveWhich = 0;
-    nSpecial = SetAttribsMode::NONE;
+    nSpecial = 0;
 }
 
 namespace {
@@ -586,12 +578,13 @@ void EditUndoSetAttribs::ImpSetSelection( EditView* /*pView*/ )
     pEE->GetActiveView()->GetImpEditView()->SetEditSelection(aSel);
 }
 
-EditUndoTransliteration::EditUndoTransliteration(EditEngine* pEE, const ESelection& rESel, TransliterationFlags nM) :
+EditUndoTransliteration::EditUndoTransliteration(EditEngine* pEE, const ESelection& rESel, sal_Int32 nM) :
     EditUndo(EDITUNDO_TRANSLITERATE, pEE),
     aOldESel(rESel), nMode(nM), pTxtObj(nullptr) {}
 
 EditUndoTransliteration::~EditUndoTransliteration()
 {
+    delete pTxtObj;
 }
 
 void EditUndoTransliteration::Undo()

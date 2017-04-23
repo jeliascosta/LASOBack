@@ -25,11 +25,9 @@
 #include <rtl/ref.hxx>
 #include <rtl/ustring.h>
 #include "jni.h"
-
-#include <memory>
 #include <vector>
 #include <utility>
-#include "elements.hxx"
+#include "../source/elements.hxx"
 #include <vendorbase.hxx>
 
 /**
@@ -57,7 +55,6 @@ enum class javaPluginError
     FailedVersion,
     NoJre,
     WrongVendor,
-    WrongArch,
     VmCreationFailed
 };
 
@@ -74,6 +71,13 @@ enum class javaPluginError
     The JavaInfo structures returned in <code>parJavaInfo</code> should be ordered
     according to their version. The one, representing a JRE with the highest
     version should be the first in the array. </p>
+    <p>
+    The function allocates memory for an array and all the JavaInfo objects returned
+    in <code>parJavaInfo</code>. The caller must delete each JavaInfo object.
+    The array is to be
+    freed by rtl_freeMemory.
+    In case an error occurred <code>parJavaInfo</code> need not be freed.
+    </p>
     @param sVendor
         [in] only JREs from this vendor are examined. This parameter always contains
         a vendor string. That is, the string it is not empty.
@@ -83,15 +87,22 @@ enum class javaPluginError
         [in] represents the maximum version of a JRE. The string can be empty.
     @param arExcludeList
         [in] contains a list of &quot;bad&quot; versions. JREs which have one of these
-        versions must not be returned by this function.
+        versions must not be returned by this function. It can be NULL.
+    @param nSizeExcludeList
+        [in] the number of version strings contained in <code>arExcludeList</code>.
     @param parJavaInfo
         [out] if the function runs successfully then <code>parJavaInfo</code> contains
-        on return a vector of pointers to <code>JavaInfo</code> objects.
+        on return an array of pointers to <code>JavaInfo</code> objects.
+    @param nSizeJavaInfo
+       [out] the number of <code>JavaInfo</code> pointers contained in
+       <code>parJavaInfo</code>.
 
     @return
     javaPluginError::NONE the function ran successfully.</br>
     javaPluginError::Error an error occurred during execution.</br>
-    javaPluginError::InvalidArg an argument was not valid.</br>
+    javaPluginError::InvalidArg an argument was not valid. For example
+    <code>nSizeExcludeList</code> is greater null but <code>arExcludeList</code>
+    is NULL or NULL pointer were passed for at least on of the strings.</br>
     javaPluginError::WrongVersionFormat the version strings in
     <code>sMinVersion,sMaxVersion,arExcludeList</code> are not recognized as valid
     version strings.
@@ -101,8 +112,10 @@ javaPluginError jfw_plugin_getAllJavaInfos(
     OUString const& sVendor,
     OUString const& sMinVersion,
     OUString const& sMaxVersion,
-    std::vector<OUString> const & arExcludeList,
-    std::vector<std::unique_ptr<JavaInfo>> * parJavaInfo,
+    rtl_uString * * arExcludeList,
+    sal_Int32  nSizeExcludeList,
+    JavaInfo*** parJavaInfo,
+    sal_Int32 *nSizeJavaInfo,
     std::vector<rtl::Reference<jfw_plugin::VendorBase>> & infos);
 
 /** obtains information for a JRE at a given location.
@@ -124,7 +137,9 @@ javaPluginError jfw_plugin_getAllJavaInfos(
        [in] represents the maximum version of a JRE.
    @param arExcludeList
        [in] contains a list of &quot;bad&quot; versions. JREs which have one of these
-        versions must not be returned by this function.
+        versions must not be returned by this function. It can be NULL.
+   @param nSizeExcludeList
+       [in] the number of version strings contained in <code>arExcludeList</code>.
    @param ppInfo
        [out] if the function runs successfully then <code>ppInfo</code> contains
         on return a pointer to a <code>JavaInfo</code> object.
@@ -132,7 +147,9 @@ javaPluginError jfw_plugin_getAllJavaInfos(
    @return
    javaPluginError::NONE the function ran successfully.</br>
    javaPluginError::Error an error occurred during execution.</br>
-   javaPluginError::InvalidArg an argument was not valid. For example, sLocation
+   javaPluginError::InvalidArg an argument was not valid. For example
+    <code>nSizeExcludeList</code> is greater null but <code>arExcludeList</code>
+    is NULL, NULL pointer were passed for at least on of the strings, sLocation
     is an empty string.</br>
    javaPluginError::WrongVersionFormat the version strings in
     <code>sMinVersion,sMaxVersion,arExcludeList</code> are not recognized as valid
@@ -148,8 +165,9 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
     OUString const& sVendor,
     OUString const& sMinVersion,
     OUString const& sMaxVersion,
-    std::vector<OUString> const &arExcludeList,
-    std::unique_ptr<JavaInfo> * ppInfo);
+    rtl_uString * *arExcludeList,
+    sal_Int32  nSizeExcludeList,
+    JavaInfo ** ppInfo);
 
 
 /** obtains information for a JRE referenced by the JAVA_HOME environment variable.
@@ -172,6 +190,8 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
 
    @return
    javaPluginError::NONE the function ran successfully.</br>
+   javaPluginError::InvalidArg an argument was not valid, for example
+    <code>ppInfo</code> is an invalid pointer.
    javaPluginError::NoJre no suitable JRE could be detected at the given location. However, that
    does not mean necessarily that there is no JRE. There could be a JRE but it has
    a vendor which is not supported by this API implementation or it does not
@@ -179,7 +199,7 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
  */
 javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
     std::vector<std::pair<OUString, jfw::VersionInfo>> const& vecVendorInfos,
-    std::unique_ptr<JavaInfo> * ppInfo,
+    JavaInfo ** ppInfo,
     std::vector<rtl::Reference<jfw_plugin::VendorBase>> & infos);
 
 
@@ -195,6 +215,10 @@ javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
     The JavaInfo structures returned in <code>vecJavaInfosFromPath</code> should be ordered
     according to their occurrence in the PATH. The one that is the first one on the PATH
     is also the first element in the vector.</p>
+    <p>
+    The function allocates memory for all the JavaInfo objects returned
+    in <code>vecJavaInfosFromPath</code>. The caller must delete each JavaInfo object.
+    </p>
     @param vecVendorInfos
        [in] vector specifying the vendor and version requirements that the JRE must fulfill.
        The vector contains pairs of vendors and the respective version requirements
@@ -217,7 +241,7 @@ javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
 
 javaPluginError jfw_plugin_getJavaInfosFromPath(
     std::vector<std::pair<OUString, jfw::VersionInfo>> const& vecVendorInfos,
-    std::vector<std::unique_ptr<JavaInfo>> & vecJavaInfosFromPath,
+    std::vector<JavaInfo*> & vecJavaInfosFromPath,
     std::vector<rtl::Reference<jfw_plugin::VendorBase>> & infos);
 
 /** starts a Java Virtual Machine.
@@ -258,6 +282,9 @@ javaPluginError jfw_plugin_getJavaInfosFromPath(
     javaPluginError::Error an error occurred during execution.</br>
     javaPluginError::WrongVendor the <code>JavaInfo</code> object was not created
     in by this library and the VM cannot be started.</br>
+    javaPluginError::InvalidArg an argument was not valid. For example
+    <code>pInfo</code> or , <code>ppVM</code> or <code>ppEnv</code> are NULL.
+    </br>
     JFW_PLUGIN_E_VM_CREATION_FAILED a VM could not be created. The error was caused
     by the JRE.
  */
@@ -286,7 +313,7 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
     javaPluginError::Error an error occurred during execution.</br>
     javaPluginError::InvalidArg pInfo contains invalid data</br>
  */
-javaPluginError jfw_plugin_existJRE(const JavaInfo *pInfo, bool *exist);
+javaPluginError jfw_plugin_existJRE(const JavaInfo *pInfo, sal_Bool *exist);
 
 #endif
 

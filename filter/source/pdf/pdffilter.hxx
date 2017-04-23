@@ -61,35 +61,42 @@ private:
 protected:
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) override;
-    virtual void SAL_CALL cancel( ) override;
+    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel( ) throw (RuntimeException, std::exception) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) override;
+    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()  throw(RuntimeException, std::exception) override;
 
 public:
 
     explicit    PDFFilter( const Reference< XComponentContext >& rxContext );
-    virtual     ~PDFFilter() override;
+    virtual     ~PDFFilter();
 };
 
-/// @throws RuntimeException
-OUString PDFFilter_getImplementationName ();
 
-/// @throws RuntimeException
-Sequence< OUString > SAL_CALL PDFFilter_getSupportedServiceNames(  );
+OUString PDFFilter_getImplementationName ()
+    throw ( RuntimeException );
 
-/// @throws Exception
+
+bool SAL_CALL PDFFilter_supportsService( const OUString& ServiceName )
+    throw ( RuntimeException );
+
+
+Sequence< OUString > SAL_CALL PDFFilter_getSupportedServiceNames(  )
+    throw ( RuntimeException );
+
+
 Reference< XInterface >
-SAL_CALL PDFFilter_createInstance( const Reference< XMultiServiceFactory > & rSMgr);
+SAL_CALL PDFFilter_createInstance( const Reference< XMultiServiceFactory > & rSMgr)
+    throw ( Exception );
 
 #endif // INCLUDED_FILTER_SOURCE_PDF_PDFFILTER_HXX
 

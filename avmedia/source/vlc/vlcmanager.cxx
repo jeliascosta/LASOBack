@@ -83,6 +83,7 @@ Manager::~Manager()
 }
 
 uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const rtl::OUString& rURL )
+    throw (uno::RuntimeException, std::exception)
 {
     if ( !m_is_vlc_found )
         throw uno::RuntimeException("VLC not found", nullptr);
@@ -106,18 +107,22 @@ uno::Reference< media::XPlayer > SAL_CALL Manager::createPlayer( const rtl::OUSt
 }
 
 rtl::OUString SAL_CALL Manager::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return VLC_IMPLEMENTATION_NAME;
 }
 
 sal_Bool SAL_CALL Manager::supportsService( const rtl::OUString& serviceName )
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 uno::Sequence< rtl::OUString > SAL_CALL Manager::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
-    return { VLC_SERVICENAME };
+    ::uno::Sequence< OUString > aRet { VLC_SERVICENAME };
+    return aRet;
 }
 
 } // end namespace vlc

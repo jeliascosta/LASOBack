@@ -38,23 +38,26 @@ typedef cppu::WeakComponentImplHelper< css::graphic::XPrimitiveFactory2D, css::l
 
 // base class for C++ implementation of css::graphic::XPrimitiveFactory2D
 class PrimitiveFactory2D
-    :   protected cppu::BaseMutex,
+    :   protected comphelper::OBaseMutex,
         public PrimitiveFactory2DImplBase
 {
 public:
     PrimitiveFactory2D(): PrimitiveFactory2DImplBase(m_aMutex) {}
 
             // Methods from XPrimitiveFactory2D
-    virtual css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL createPrimitivesFromXShape( const css::uno::Reference< css::drawing::XShape >& xShape, const css::uno::Sequence< css::beans::PropertyValue >& aParms ) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL createPrimitivesFromXDrawPage( const css::uno::Reference< css::drawing::XDrawPage >& xDrawPage, const css::uno::Sequence< css::beans::PropertyValue >& aParms ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL createPrimitivesFromXShape( const css::uno::Reference< css::drawing::XShape >& xShape, const css::uno::Sequence< css::beans::PropertyValue >& aParms ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL createPrimitivesFromXDrawPage( const css::uno::Reference< css::drawing::XDrawPage >& xDrawPage, const css::uno::Sequence< css::beans::PropertyValue >& aParms ) throw (css::uno::RuntimeException, std::exception) override;
 
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return OUString("com.sun.star.comp.graphic.PrimitiveFactory2D"); }
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     { return cppu::supportsService(this, ServiceName); }
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return css::uno::Sequence<OUString>{
             "com.sun.star.graphic.PrimitiveFactory2D"};
@@ -63,7 +66,7 @@ public:
 
 css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL PrimitiveFactory2D::createPrimitivesFromXShape(
     const uno::Reference< drawing::XShape >& xShape,
-    const uno::Sequence< beans::PropertyValue >& /*aParms*/ )
+    const uno::Sequence< beans::PropertyValue >& /*aParms*/ ) throw (uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > aRetval;
 
@@ -74,7 +77,7 @@ css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL
         if(pSource)
         {
             const sdr::contact::ViewContact& rSource(pSource->GetViewContact());
-            aRetval = comphelper::containerToSequence(rSource.getViewIndependentPrimitive2DContainer());
+            aRetval = comphelper::containerToSequence(rSource.getViewIndependentPrimitive2DSequence());
         }
     }
 
@@ -83,7 +86,7 @@ css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL
 
 css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL PrimitiveFactory2D::createPrimitivesFromXDrawPage(
     const uno::Reference< drawing::XDrawPage >& xDrawPage,
-    const uno::Sequence< beans::PropertyValue >& /*aParms*/ )
+    const uno::Sequence< beans::PropertyValue >& /*aParms*/ ) throw (uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > aRetval;
 
@@ -95,7 +98,7 @@ css::uno::Sequence< css::uno::Reference< css::graphic::XPrimitive2D > > SAL_CALL
         {
             const sdr::contact::ViewContact& rSource(pSource->GetViewContact());
 
-            aRetval = comphelper::containerToSequence(rSource.getViewIndependentPrimitive2DContainer());
+            aRetval = comphelper::containerToSequence(rSource.getViewIndependentPrimitive2DSequence());
         }
     }
 

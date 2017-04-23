@@ -21,7 +21,7 @@
 
 #include "inscldlg.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 
 static sal_uInt8 nInsItemChecked=0;
 

@@ -165,7 +165,7 @@ OUString makeShortRepresentativeSymbolTextForSelectedFont(OutputDevice &rDevice)
 
     if (!bOpenSymbol)
     {
-        FontCharMapRef xFontCharMap;
+        FontCharMapPtr xFontCharMap;
         bool bHasCharMap = rDevice.GetFontCharMap(xFontCharMap);
         if( bHasCharMap )
         {
@@ -1107,28 +1107,28 @@ namespace
     }
 
     //false for all bits considered "Latin" by LibreOffice
-    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> const & getLatinMask()
+    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> getLatinMask()
     {
         static std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> s_Mask(getMaskByScriptType(css::i18n::ScriptType::LATIN));
         return s_Mask;
     }
 
     //false for all bits considered "Asian" by LibreOffice
-    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> const & getCJKMask()
+    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> getCJKMask()
     {
         static std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> s_Mask(getMaskByScriptType(css::i18n::ScriptType::ASIAN));
         return s_Mask;
     }
 
     //false for all bits considered "Complex" by LibreOffice
-    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> const & getCTLMask()
+    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> getCTLMask()
     {
         static std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> s_Mask(getMaskByScriptType(css::i18n::ScriptType::COMPLEX));
         return s_Mask;
     }
 
     //false for all bits considered "WEAK" by LibreOffice
-    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> const & getWeakMask()
+    std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> getWeakMask()
     {
         static std::bitset<vcl::UnicodeCoverage::MAX_UC_ENUM> s_Mask(getMaskByScriptType(css::i18n::ScriptType::WEAK));
         return s_Mask;

@@ -56,7 +56,7 @@ STDMETHODIMP CAccTable::get_accessibleAt(long row, long column, IUnknown * * acc
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(accessible == nullptr)
+    if(accessible == NULL)
         return E_INVALIDARG;
     // #CHECK XInterface#
     if(!pRXTable.is())
@@ -66,16 +66,16 @@ STDMETHODIMP CAccTable::get_accessibleAt(long row, long column, IUnknown * * acc
 
     if(!pRAcc.is())
     {
-        *accessible = nullptr;
+        *accessible = NULL;
         return E_FAIL;
     }
 
-    IAccessible* pRet = nullptr;
+    IAccessible* pRet = NULL;
 
     BOOL isTRUE = CMAccessible::get_IAccessibleFromXAccessible(pRAcc.get(), &pRet);
     if(isTRUE)
     {
-        *accessible = static_cast<IAccessible2 *>(pRet);
+        *accessible = (IAccessible2 *)pRet;
         pRet->AddRef();
         return S_OK;
     }
@@ -88,7 +88,7 @@ STDMETHODIMP CAccTable::get_accessibleAt(long row, long column, IUnknown * * acc
 
         if(isTRUE)
         {
-            *accessible = static_cast<IAccessible2 *>(pRet);
+            *accessible = (IAccessible2 *)pRet;
             pRet->AddRef();
             return S_OK;
         }
@@ -121,7 +121,7 @@ STDMETHODIMP CAccTable::get_columnDescription(long column, BSTR * description)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(description == nullptr)
+    if(description == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -132,8 +132,8 @@ STDMETHODIMP CAccTable::get_columnDescription(long column, BSTR * description)
     // #CHECK#
 
     SAFE_SYSFREESTRING(*description);//??
-    *description = SysAllocString(SAL_W(ouStr.getStr()));
-    if(description==nullptr)
+    *description = SysAllocString((OLECHAR*)ouStr.getStr());
+    if(description==NULL)
         return E_FAIL;
     return S_OK;
 
@@ -156,7 +156,7 @@ STDMETHODIMP CAccTable::get_columnExtentAt(long row, long column, long * nColumn
     XAccessibleTable    *pXAccTable = GetXInterface();
 
     // Check pointer.
-    if(nColumnsSpanned == nullptr)
+    if(nColumnsSpanned == NULL)
         return E_INVALIDARG;
 
     // Get Extent.
@@ -187,7 +187,7 @@ STDMETHODIMP CAccTable::get_columnHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(accessibleTable == nullptr || startingRowIndex == nullptr)
+    if(accessibleTable == NULL || startingRowIndex == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -197,7 +197,7 @@ STDMETHODIMP CAccTable::get_columnHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *
     Reference<XAccessibleTable> pRColumnHeaderTable = GetXInterface()->getAccessibleColumnHeaders();
     if(!pRColumnHeaderTable.is())
     {
-        *accessibleTable = nullptr;
+        *accessibleTable = NULL;
         return E_FAIL;
     }
 
@@ -205,12 +205,12 @@ STDMETHODIMP CAccTable::get_columnHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *
 
     if(!pRXColumnHeader.is())
     {
-        *accessibleTable = nullptr;
+        *accessibleTable = NULL;
         return E_FAIL;
     }
     *startingRowIndex = 0 ;
 
-    IMAccessible* pIMacc = nullptr;
+    IMAccessible* pIMacc = NULL;
     HRESULT hr = createInstance<CMAccessible>(IID_IMAccessible, &pIMacc);
     if (!SUCCEEDED(hr))
     {
@@ -218,7 +218,7 @@ STDMETHODIMP CAccTable::get_columnHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *
     }
     pIMacc->SetXAccessible(
         reinterpret_cast<hyper>(pRXColumnHeader.get()));
-    pIMacc->QueryInterface(IID_IAccessibleTable,reinterpret_cast<void **>(accessibleTable));
+    pIMacc->QueryInterface(IID_IAccessibleTable,(void **)accessibleTable);
 
     return S_OK;
 
@@ -237,7 +237,7 @@ STDMETHODIMP CAccTable::get_nColumns(long * columnCount)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(columnCount == nullptr)
+    if(columnCount == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -262,7 +262,7 @@ STDMETHODIMP CAccTable::get_nRows(long * rowCount)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(rowCount == nullptr)
+    if(rowCount == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -287,7 +287,7 @@ STDMETHODIMP CAccTable::get_nSelectedColumns(long * columnCount)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(columnCount == nullptr)
+    if(columnCount == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -313,7 +313,7 @@ STDMETHODIMP CAccTable::get_nSelectedRows(long * rowCount)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(rowCount == nullptr)
+    if(rowCount == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -340,7 +340,7 @@ STDMETHODIMP CAccTable::get_rowDescription(long row, BSTR * description)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(description == nullptr)
+    if(description == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -351,8 +351,8 @@ STDMETHODIMP CAccTable::get_rowDescription(long row, BSTR * description)
     // #CHECK#
 
     SAFE_SYSFREESTRING(*description);
-    *description = SysAllocString(SAL_W(ouStr.getStr()));
-    if(description==nullptr)
+    *description = SysAllocString((OLECHAR*)ouStr.getStr());
+    if(description==NULL)
         return E_FAIL;
 
     return S_OK;
@@ -376,7 +376,7 @@ STDMETHODIMP CAccTable::get_rowExtentAt(long row, long column, long * nRowsSpann
     XAccessibleTable    *pXAccTable = GetXInterface();
 
     // Check pointer.
-    if(nRowsSpanned == nullptr)
+    if(nRowsSpanned == NULL)
         return E_INVALIDARG;
 
     // Get Extent.
@@ -408,7 +408,7 @@ STDMETHODIMP CAccTable::get_rowHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *acc
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(accessibleTable == nullptr || startingColumnIndex == nullptr)
+    if(accessibleTable == NULL || startingColumnIndex == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -418,7 +418,7 @@ STDMETHODIMP CAccTable::get_rowHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *acc
     Reference<XAccessibleTable> pRRowHeaderTable = GetXInterface()->getAccessibleRowHeaders();
     if(!pRRowHeaderTable.is())
     {
-        *accessibleTable = nullptr;
+        *accessibleTable = NULL;
         return E_FAIL;
     }
 
@@ -426,12 +426,12 @@ STDMETHODIMP CAccTable::get_rowHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *acc
 
     if(!pRXRowHeader.is())
     {
-        *accessibleTable = nullptr;
+        *accessibleTable = NULL;
         return E_FAIL;
     }
     *startingColumnIndex = 0 ;
 
-    IMAccessible* pIMacc = nullptr;
+    IMAccessible* pIMacc = NULL;
     HRESULT hr = createInstance<CMAccessible>(IID_IMAccessible, &pIMacc);
     if (!SUCCEEDED(hr))
     {
@@ -439,7 +439,7 @@ STDMETHODIMP CAccTable::get_rowHeader(IAccessibleTable __RPC_FAR *__RPC_FAR *acc
     }
     pIMacc->SetXAccessible(
         reinterpret_cast<hyper>(pRXRowHeader.get()));
-    pIMacc->QueryInterface(IID_IAccessibleTable,reinterpret_cast<void **>(accessibleTable));
+    pIMacc->QueryInterface(IID_IAccessibleTable,(void **)accessibleTable);
 
     return S_OK;
 
@@ -460,7 +460,7 @@ STDMETHODIMP CAccTable::get_selectedRows(long, long ** rows, long * nRows)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(rows == nullptr || nRows == nullptr)
+    if(rows == NULL || nRows == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -471,9 +471,9 @@ STDMETHODIMP CAccTable::get_selectedRows(long, long ** rows, long * nRows)
     long count = pSelected.getLength() ;
     *nRows = count;
 
-    *rows = static_cast<long*>(CoTaskMemAlloc((count) * sizeof(long)));
+    *rows = reinterpret_cast<long*>(CoTaskMemAlloc((count) * sizeof(long)));
     // #CHECK Memory Allocation#
-    if(*rows == nullptr)
+    if(*rows == NULL)
     {
         return E_FAIL;
     }
@@ -499,7 +499,7 @@ STDMETHODIMP CAccTable::get_selectedColumns(long, long ** columns, long * numCol
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(columns == nullptr || numColumns == nullptr)
+    if(columns == NULL || numColumns == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -510,9 +510,9 @@ STDMETHODIMP CAccTable::get_selectedColumns(long, long ** columns, long * numCol
     long count = pSelected.getLength() ;
     *numColumns = count;
 
-    *columns = static_cast<long*>(CoTaskMemAlloc((count) * sizeof(long)));
+    *columns = reinterpret_cast<long*>(CoTaskMemAlloc((count) * sizeof(long)));
     // #CHECK Memory Allocation#
-    if(*columns == nullptr)
+    if(*columns == NULL)
     {
         return E_FAIL;
     }
@@ -536,7 +536,7 @@ STDMETHODIMP CAccTable::get_summary(IUnknown * * accessible)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(accessible == nullptr)
+    if(accessible == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -546,12 +546,12 @@ STDMETHODIMP CAccTable::get_summary(IUnknown * * accessible)
     }
     Reference<XAccessible> pRAcc = GetXInterface()->getAccessibleSummary();
 
-    IAccessible* pRet = nullptr;
+    IAccessible* pRet = NULL;
     CMAccessible::get_IAccessibleFromXAccessible(pRAcc.get(), &pRet);
 
     if(pRet)
     {
-        *accessible = static_cast<IAccessible2 *>(pRet);
+        *accessible = (IAccessible2 *)pRet;
         pRet->AddRef();
         return S_OK;
     }
@@ -574,7 +574,7 @@ STDMETHODIMP CAccTable::get_isColumnSelected(long column, unsigned char * isSele
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(isSelected == nullptr)
+    if(isSelected == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -600,7 +600,7 @@ STDMETHODIMP CAccTable::get_isRowSelected(long row, unsigned char * isSelected)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(isSelected == nullptr)
+    if(isSelected == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -628,7 +628,7 @@ STDMETHODIMP CAccTable::get_isSelected(long row, long column, unsigned char * is
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(isSelected == nullptr)
+    if(isSelected == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -836,7 +836,7 @@ STDMETHODIMP CAccTable::put_XInterface(hyper pXInterface)
 
     CUNOXWrapper::put_XInterface(pXInterface);
     //special query.
-    if(pUNOInterface == nullptr)
+    if(pUNOInterface == NULL)
         return E_INVALIDARG;
 
     Reference<XAccessibleContext> pRContext = pUNOInterface->getAccessibleContext();
@@ -845,7 +845,7 @@ STDMETHODIMP CAccTable::put_XInterface(hyper pXInterface)
 
     Reference<XAccessibleTable> pRXI(pRContext,UNO_QUERY);
     if( !pRXI.is() )
-        pRXTable = nullptr;
+        pRXTable = NULL;
     else
         pRXTable = pRXI.get();
     return S_OK;
@@ -865,7 +865,7 @@ STDMETHODIMP CAccTable::get_columnIndex(long childIndex, long * columnIndex)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(columnIndex == nullptr)
+    if(columnIndex == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -889,7 +889,7 @@ STDMETHODIMP CAccTable::get_rowIndex(long childIndex, long * rowIndex)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(rowIndex == nullptr)
+    if(rowIndex == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -913,7 +913,7 @@ STDMETHODIMP CAccTable::get_childIndex(long RowIndex , long columnIndex, long * 
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(childIndex == nullptr)
+    if(childIndex == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -951,7 +951,7 @@ STDMETHODIMP CAccTable::get_nSelectedChildren(long *childCount)
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(childCount == nullptr)
+    if(childCount == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -982,7 +982,7 @@ STDMETHODIMP CAccTable::get_selectedChildren(long, long **children, long *nChild
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(children == nullptr || nChildren == nullptr)
+    if(children == NULL || nChildren == NULL)
         return E_INVALIDARG;
 
     // #CHECK XInterface#
@@ -997,7 +997,7 @@ STDMETHODIMP CAccTable::get_selectedChildren(long, long **children, long *nChild
 
     *nChildren = childCount;
 
-    *children = static_cast<long*>(CoTaskMemAlloc((childCount) * sizeof(long)));
+    *children = reinterpret_cast<long*>(CoTaskMemAlloc((childCount) * sizeof(long)));
 
     for( long i = 0; i< childCount; i++)
     {

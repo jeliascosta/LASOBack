@@ -66,6 +66,7 @@ struct LtTm
     long tm_year;    /* years since 1900 */
     long tm_wday;    /* days since Sunday - [0,6] */
     long tm_yday;    /* days since January 1 - [0,365] */
+    long tm_isdst;   /* daylight savings time flag */
     LtTm()
         : tm_sec(0)
         , tm_min(0)
@@ -75,6 +76,7 @@ struct LtTm
         , tm_year(0)
         , tm_wday(0)
         , tm_yday(0)
+        , tm_isdst(0)
     {
     }
 };

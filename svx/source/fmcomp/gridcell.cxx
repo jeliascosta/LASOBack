@@ -226,6 +226,7 @@ void DbGridColumn::CreateControl(sal_Int32 _nFieldPos, const Reference< css::bea
                 m_pCell = new FmXEditCell( this, *pCellControl );
         }
     }
+    m_pCell->acquire();
     m_pCell->init();
 
     impl_toggleScriptManager_nothrow( true );
@@ -261,9 +262,9 @@ void DbGridColumn::impl_toggleScriptManager_nothrow( bool _bAttach )
 
 void DbGridColumn::UpdateFromField(const DbGridRow* pRow, const Reference< XNumberFormatter >& xFormatter)
 {
-    if (FmXFilterCell* pCell = dynamic_cast<FmXFilterCell*>(m_pCell.get()))
+    if (FmXFilterCell* pCell = dynamic_cast<FmXFilterCell*>(m_pCell))
         pCell->Update();
-    else if (pRow && pRow->IsValid() && m_nFieldPos >= 0 && m_pCell.is() && pRow->HasField(m_nFieldPos))
+    else if (pRow && pRow->IsValid() && m_nFieldPos >= 0 && m_pCell && pRow->HasField(m_nFieldPos))
     {
         dynamic_cast<FmXDataCell&>(*m_pCell).UpdateFromField( pRow->GetField( m_nFieldPos ).getColumn(), xFormatter  );
     }
@@ -272,13 +273,13 @@ void DbGridColumn::UpdateFromField(const DbGridRow* pRow, const Reference< XNumb
 bool DbGridColumn::Commit()
 {
     bool bResult = true;
-    if (!m_bInSave && m_pCell.is())
+    if (!m_bInSave && m_pCell)
     {
         m_bInSave = true;
         bResult = m_pCell->Commit();
 
         // store the data into the model
-        FmXDataCell* pDataCell = dynamic_cast<FmXDataCell*>( m_pCell.get() );
+        FmXDataCell* pDataCell = dynamic_cast<FmXDataCell*>( m_pCell );
         if (bResult && pDataCell)
         {
             Reference< css::form::XBoundComponent >  xComp(m_xModel, UNO_QUERY);
@@ -299,24 +300,25 @@ DbGridColumn::~DbGridColumn()
 
 void DbGridColumn::setModel(const css::uno::Reference< css::beans::XPropertySet >&  _xModel)
 {
-    if ( m_pCell.is() )
+    if ( m_pCell )
         impl_toggleScriptManager_nothrow( false );
 
     m_xModel = _xModel;
 
-    if ( m_pCell.is() )
+    if ( m_pCell )
         impl_toggleScriptManager_nothrow( true );
 }
 
 
 void DbGridColumn::Clear()
 {
-    if ( m_pCell.is() )
+    if ( m_pCell )
     {
         impl_toggleScriptManager_nothrow( false );
 
         m_pCell->dispose();
-        m_pCell.clear();
+        m_pCell->release();
+        m_pCell = nullptr;
     }
 
     m_xController = nullptr;
@@ -368,7 +370,7 @@ sal_Int16 DbGridColumn::SetAlignment(sal_Int16 _nAlign)
     }
 
     m_nAlign = _nAlign;
-    if (m_pCell.is() && m_pCell->isAlignedController())
+    if (m_pCell && m_pCell->isAlignedController())
         m_pCell->AlignControl(m_nAlign);
 
     return m_nAlign;
@@ -409,7 +411,7 @@ void DbGridColumn::setLock(bool _bLock)
 OUString DbGridColumn::GetCellText(const DbGridRow* pRow, const Reference< XNumberFormatter >& xFormatter) const
 {
     OUString aText;
-    if (m_pCell.is() && dynamic_cast<const FmXFilterCell*>( m_pCell.get() ) !=  nullptr)
+    if (m_pCell && dynamic_cast<const FmXFilterCell*>( m_pCell) !=  nullptr)
         return aText;
 
     if (!pRow || !pRow->IsValid())
@@ -427,7 +429,7 @@ OUString DbGridColumn::GetCellText(const Reference< css::sdb::XColumn >& xField,
     OUString aText;
     if (xField.is())
     {
-        FmXTextCell* pTextCell = dynamic_cast<FmXTextCell*>( m_pCell.get() );
+        FmXTextCell* pTextCell = dynamic_cast<FmXTextCell*>( m_pCell );
         if (pTextCell)
             aText = pTextCell->GetText(xField, xFormatter);
         else if (m_bObject)
@@ -441,7 +443,7 @@ Reference< css::sdb::XColumn >  DbGridColumn::GetCurrentFieldValue() const
 {
     Reference< css::sdb::XColumn >  xField;
     const DbGridRowRef xRow = m_rParent.GetCurrentRow();
-    if (xRow.is() && xRow->HasField(m_nFieldPos))
+    if (xRow.Is() && xRow->HasField(m_nFieldPos))
     {
         xField = xRow->GetField(m_nFieldPos).getColumn();
     }
@@ -450,14 +452,14 @@ Reference< css::sdb::XColumn >  DbGridColumn::GetCurrentFieldValue() const
 
 
 void DbGridColumn::Paint(OutputDevice& rDev,
-                         const tools::Rectangle& rRect,
+                         const Rectangle& rRect,
                          const DbGridRow* pRow,
                          const Reference< XNumberFormatter >& xFormatter)
 {
     bool bEnabled = ( rDev.GetOutDevType() != OUTDEV_WINDOW )
                 ||  ( static_cast< vcl::Window& >( rDev ).IsEnabled() );
 
-    FmXDataCell* pDataCell = dynamic_cast<FmXDataCell*>( m_pCell.get() );
+    FmXDataCell* pDataCell = dynamic_cast<FmXDataCell*>( m_pCell );
     if (pDataCell)
     {
         if (!pRow || !pRow->IsValid())
@@ -493,7 +495,7 @@ void DbGridColumn::Paint(OutputDevice& rDev,
             pDataCell->PaintFieldToCell(rDev, rRect, pRow->GetField( m_nFieldPos ).getColumn(), xFormatter);
         }
     }
-    else if (!m_pCell.is())
+    else if (!m_pCell)
     {
         if (!pRow || !pRow->IsValid())
         {
@@ -511,14 +513,14 @@ void DbGridColumn::Paint(OutputDevice& rDev,
             rDev.DrawText(rRect, OUString(OBJECTTEXT), nStyle);
         }
     }
-    else if ( dynamic_cast<const FmXFilterCell*>( m_pCell.get() ) !=  nullptr )
-        static_cast< FmXFilterCell* >( m_pCell.get() )->PaintCell( rDev, rRect );
+    else if ( dynamic_cast<const FmXFilterCell*>( m_pCell) !=  nullptr )
+        static_cast< FmXFilterCell* >( m_pCell )->PaintCell( rDev, rRect );
 }
 
 
 void DbGridColumn::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet _eInitWhat )
 {
-    if ( m_pCell.is() )
+    if ( m_pCell )
         m_pCell->ImplInitWindow( rParent, _eInitWhat );
 }
 
@@ -528,6 +530,8 @@ void DbGridColumn::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet _
 
 DbCellControl::DbCellControl( DbGridColumn& _rColumn )
     :OPropertyChangeListener(m_aMutex)
+    ,m_pModelChangeBroadcaster(nullptr)
+    ,m_pFieldChangeBroadcaster(nullptr)
     ,m_bTransparent( false )
     ,m_bAlignedController( true )
     ,m_bAccessingValueProperty( false )
@@ -540,6 +544,7 @@ DbCellControl::DbCellControl( DbGridColumn& _rColumn )
     {
         // if our model's format key changes we want to propagate the new value to our windows
         m_pModelChangeBroadcaster = new ::comphelper::OPropertyChangeMultiplexer(this, Reference< css::beans::XPropertySet > (_rColumn.getModel(), UNO_QUERY));
+        m_pModelChangeBroadcaster->acquire();
 
         // be listener for some common properties
         implDoPropertyListening( FM_PROP_READONLY, false );
@@ -565,6 +570,7 @@ DbCellControl::DbCellControl( DbGridColumn& _rColumn )
                 if ( xField.is() )
                 {
                     m_pFieldChangeBroadcaster = new ::comphelper::OPropertyChangeMultiplexer(this, xField);
+                    m_pFieldChangeBroadcaster->acquire();
                     m_pFieldChangeBroadcaster->addProperty( FM_PROP_ISREADONLY );
                 }
             }
@@ -604,15 +610,16 @@ void DbCellControl::implDoPropertyListening(const OUString& _rPropertyName, bool
 
 void DbCellControl::doPropertyListening(const OUString& _rPropertyName)
 {
-    implDoPropertyListening( _rPropertyName, true );
+    implDoPropertyListening( _rPropertyName );
 }
 
-static void lcl_clearBroadCaster(rtl::Reference<::comphelper::OPropertyChangeMultiplexer>& _pBroadcaster)
+static void lcl_clearBroadCaster(::comphelper::OPropertyChangeMultiplexer*& _pBroadcaster)
 {
-    if ( _pBroadcaster.is() )
+    if ( _pBroadcaster )
     {
         _pBroadcaster->dispose();
-        _pBroadcaster.clear();
+        _pBroadcaster->release();
+        _pBroadcaster = nullptr;
         // no delete, this is done implicitly
     }
 }
@@ -645,7 +652,7 @@ void DbCellControl::implAdjustGenericFieldSetting( const Reference< XPropertySet
 }
 
 
-void DbCellControl::_propertyChanged(const PropertyChangeEvent& _rEvent)
+void DbCellControl::_propertyChanged(const PropertyChangeEvent& _rEvent) throw(RuntimeException)
 {
     SolarMutexGuard aGuard;
 
@@ -710,7 +717,7 @@ void DbCellControl::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet 
 {
     vcl::Window* pWindows[] = { m_pPainter, m_pWindow };
 
-    if (_eInitWhat & InitWindowFacet::WritingMode)
+    if ((_eInitWhat & InitWritingMode) != 0)
     {
         for (vcl::Window* pWindow : pWindows)
         {
@@ -719,7 +726,7 @@ void DbCellControl::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet 
         }
     }
 
-    if (_eInitWhat & InitWindowFacet::Font)
+    if ((_eInitWhat & InitFontFacet) != 0)
     {
         for (vcl::Window* pWindow : pWindows)
         {
@@ -744,7 +751,7 @@ void DbCellControl::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet 
         }
     }
 
-    if ((_eInitWhat & InitWindowFacet::Font) || (_eInitWhat & InitWindowFacet::Foreground))
+    if (((_eInitWhat & InitFontFacet) != 0) || ((_eInitWhat & InitForeground) != 0))
     {
         Color aTextColor(rParent.IsControlForeground() ? rParent.GetControlForeground() : rParent.GetTextColor());
 
@@ -767,7 +774,7 @@ void DbCellControl::ImplInitWindow( vcl::Window& rParent, const InitWindowFacet 
         }
     }
 
-    if (_eInitWhat & InitWindowFacet::Background)
+    if ((_eInitWhat & InitBackground) != 0)
     {
         if (rParent.IsControlBackground())
         {
@@ -845,7 +852,7 @@ void DbCellControl::implAdjustEnabled( const Reference< XPropertySet >& _rxModel
 
 void DbCellControl::Init( vcl::Window& rParent, const Reference< XRowSet >& _rxCursor )
 {
-    ImplInitWindow( rParent, InitWindowFacet::All );
+    ImplInitWindow( rParent, InitAll );
 
     if ( m_pWindow )
     {
@@ -951,7 +958,7 @@ void DbCellControl::AlignControl(sal_Int16 nAlignment)
 }
 
 
-void DbCellControl::PaintCell( OutputDevice& _rDev, const tools::Rectangle& _rRect )
+void DbCellControl::PaintCell( OutputDevice& _rDev, const Rectangle& _rRect )
 {
     if ( m_pPainter->GetParent() == &_rDev )
     {
@@ -978,7 +985,7 @@ void DbCellControl::PaintCell( OutputDevice& _rDev, const tools::Rectangle& _rRe
 }
 
 
-void DbCellControl::PaintFieldToCell( OutputDevice& _rDev, const tools::Rectangle& _rRect, const Reference< XColumn >& _rxField, const Reference< XNumberFormatter >& _rxFormatter )
+void DbCellControl::PaintFieldToCell( OutputDevice& _rDev, const Rectangle& _rRect, const Reference< XColumn >& _rxField, const Reference< XNumberFormatter >& _rxFormatter )
 {
     m_pPainter->SetText( GetFormatText( _rxField, _rxFormatter ) );
     PaintCell( _rDev, _rRect );
@@ -1141,7 +1148,7 @@ CellControllerRef DbTextField::CreateController() const
 }
 
 
-void DbTextField::PaintFieldToCell( OutputDevice& _rDev, const tools::Rectangle& _rRect, const Reference< XColumn >& _rxField, const Reference< XNumberFormatter >& _rxFormatter )
+void DbTextField::PaintFieldToCell( OutputDevice& _rDev, const Rectangle& _rRect, const Reference< XColumn >& _rxField, const Reference< XNumberFormatter >& _rxFormatter )
 {
     if ( m_pPainterImplementation )
         m_pPainterImplementation->SetText( GetFormatText( _rxField, _rxFormatter ) );
@@ -1288,7 +1295,7 @@ void DbFormattedField::Init( vcl::Window& rParent, const Reference< XRowSet >& x
             }
             else
             {
-                SAL_INFO("svx.fmcomp", "DbFormattedField::Init : my uno-model has no format-key, but a formats supplier !");
+                SAL_INFO("svx", "DbFormattedField::Init : my uno-model has no format-key, but a formats supplier !");
                 // the OFormattedModel which we usually are working with ensures that the model has a format key
                 // as soon as the form is loaded. Unfortunally this method here is called from within loaded, too.
                 // So if our LoadListener is called before the LoadListener of the model, this "else case" is
@@ -1443,7 +1450,7 @@ CellControllerRef DbFormattedField::CreateController() const
 }
 
 
-void DbFormattedField::_propertyChanged( const PropertyChangeEvent& _rEvent )
+void DbFormattedField::_propertyChanged( const PropertyChangeEvent& _rEvent ) throw( RuntimeException )
 {
     if (_rEvent.PropertyName == FM_PROP_FORMATKEY )
     {
@@ -1584,7 +1591,7 @@ bool DbFormattedField::commitControl()
         // ein LeerString wird erst mal standardmaessig als void weitergereicht
     }
     else
-        aNewVal <<= rField.GetTextValue();
+        aNewVal <<= OUString(rField.GetTextValue());
 
     m_rColumn.getModel()->setPropertyValue(FM_PROP_EFFECTIVE_VALUE, aNewVal);
     return true;
@@ -1680,7 +1687,7 @@ void DbCheckBox::UpdateFromField(const Reference< css::sdb::XColumn >& _rxField,
 }
 
 
-void DbCheckBox::PaintFieldToCell(OutputDevice& rDev, const tools::Rectangle& rRect,
+void DbCheckBox::PaintFieldToCell(OutputDevice& rDev, const Rectangle& rRect,
                           const Reference< css::sdb::XColumn >& _rxField,
                           const Reference< XNumberFormatter >& xFormatter)
 {
@@ -1989,7 +1996,7 @@ bool DbNumericField::commitControl()
     if (!aText.isEmpty())   // not empty
     {
         double fValue = static_cast<DoubleNumericField*>(m_pWindow.get())->GetValue();
-        aVal <<= fValue;
+        aVal <<= (double)fValue;
     }
     m_rColumn.getModel()->setPropertyValue(FM_PROP_VALUE, aVal);
     return true;
@@ -2063,7 +2070,7 @@ double DbCurrencyField::GetCurrency(const Reference< css::sdb::XColumn >& _rxFie
     double fValue = GetValue(_rxField, xFormatter);
     if (m_nScale)
     {
-        // SAL_INFO("svx",("double = %.64f ",fValue);
+        // OSL_TRACE("double = %.64f ",fValue);
         fValue = ::rtl::math::pow10Exp(fValue, m_nScale);
         fValue = ::rtl::math::round(fValue);
     }
@@ -2141,7 +2148,7 @@ bool DbCurrencyField::commitControl()
         {
             fValue /= ::rtl::math::pow10Exp(1.0, m_nScale);
         }
-        aVal <<= fValue;
+        aVal <<= (double)fValue;
     }
     m_rColumn.getModel()->setPropertyValue(FM_PROP_VALUE, aVal);
     return true;
@@ -2394,7 +2401,7 @@ DbComboBox::DbComboBox(DbGridColumn& _rColumn)
 }
 
 
-void DbComboBox::_propertyChanged( const PropertyChangeEvent& _rEvent )
+void DbComboBox::_propertyChanged( const PropertyChangeEvent& _rEvent ) throw( RuntimeException )
 {
     if ( _rEvent.PropertyName == FM_PROP_STRINGITEMLIST )
     {
@@ -2513,7 +2520,7 @@ DbListBox::DbListBox(DbGridColumn& _rColumn)
 }
 
 
-void DbListBox::_propertyChanged( const css::beans::PropertyChangeEvent& _rEvent )
+void DbListBox::_propertyChanged( const css::beans::PropertyChangeEvent& _rEvent ) throw( RuntimeException )
 {
     if ( _rEvent.PropertyName == FM_PROP_STRINGITEMLIST )
     {
@@ -2677,7 +2684,7 @@ DbFilterField::~DbFilterField()
 }
 
 
-void DbFilterField::PaintCell(OutputDevice& rDev, const tools::Rectangle& rRect)
+void DbFilterField::PaintCell(OutputDevice& rDev, const Rectangle& rRect)
 {
     static const DrawTextFlags nStyle = DrawTextFlags::Clip | DrawTextFlags::VCenter | DrawTextFlags::Left;
     switch (m_nControlClass)
@@ -3094,7 +3101,7 @@ void DbFilterField::UpdateFromField(const Reference< XColumn >& /*_rxField*/, co
 }
 
 
-IMPL_LINK_NOARG(DbFilterField, OnClick, VclPtr<CheckBox>, void)
+IMPL_LINK_NOARG_TYPED(DbFilterField, OnClick, VclPtr<CheckBox>, void)
 {
     TriState eState = static_cast<CheckBoxControl*>(m_pWindow.get())->GetBox().GetState();
     OUString aText;
@@ -3174,7 +3181,7 @@ void FmXGridCell::SetTextLineColor(const Color& _rColor)
 
 // XTypeProvider
 
-Sequence< Type > SAL_CALL FmXGridCell::getTypes( )
+Sequence< Type > SAL_CALL FmXGridCell::getTypes( ) throw (RuntimeException, std::exception)
 {
     Sequence< uno::Type > aTypes = ::comphelper::concatSequences(
         ::cppu::OComponentHelper::getTypes(),
@@ -3208,7 +3215,7 @@ void FmXGridCell::disposing()
 }
 
 
-Any SAL_CALL FmXGridCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXGridCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = OComponentHelper::queryAggregation( _rType );
 
@@ -3223,13 +3230,13 @@ Any SAL_CALL FmXGridCell::queryAggregation( const css::uno::Type& _rType )
 
 // css::awt::XControl
 
-Reference< XInterface >  FmXGridCell::getContext()
+Reference< XInterface >  FmXGridCell::getContext() throw( RuntimeException, std::exception )
 {
     return Reference< XInterface > ();
 }
 
 
-Reference< css::awt::XControlModel >  FmXGridCell::getModel()
+Reference< css::awt::XControlModel >  FmXGridCell::getModel() throw( css::uno::RuntimeException, std::exception )
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     return Reference< css::awt::XControlModel > (m_pColumn->getModel(), UNO_QUERY);
@@ -3237,14 +3244,14 @@ Reference< css::awt::XControlModel >  FmXGridCell::getModel()
 
 // css::form::XBoundControl
 
-sal_Bool FmXGridCell::getLock()
+sal_Bool FmXGridCell::getLock() throw( RuntimeException, std::exception )
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     return m_pColumn->isLocked();
 }
 
 
-void FmXGridCell::setLock(sal_Bool _bLock)
+void FmXGridCell::setLock(sal_Bool _bLock) throw( RuntimeException, std::exception )
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     if (getLock() == _bLock)
@@ -3257,126 +3264,126 @@ void FmXGridCell::setLock(sal_Bool _bLock)
 }
 
 
-void SAL_CALL FmXGridCell::setPosSize( ::sal_Int32, ::sal_Int32, ::sal_Int32, ::sal_Int32, ::sal_Int16 )
+void SAL_CALL FmXGridCell::setPosSize( ::sal_Int32, ::sal_Int32, ::sal_Int32, ::sal_Int32, ::sal_Int16 ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::setPosSize: not implemented" );
     // not allowed to tamper with this for a grid cell
 }
 
 
-awt::Rectangle SAL_CALL FmXGridCell::getPosSize(  )
+awt::Rectangle SAL_CALL FmXGridCell::getPosSize(  ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::getPosSize: not implemented" );
     return awt::Rectangle();
 }
 
 
-void SAL_CALL FmXGridCell::setVisible( sal_Bool )
+void SAL_CALL FmXGridCell::setVisible( sal_Bool ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::setVisible: not implemented" );
     // not allowed to tamper with this for a grid cell
 }
 
 
-void SAL_CALL FmXGridCell::setEnable( sal_Bool )
+void SAL_CALL FmXGridCell::setEnable( sal_Bool ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::setEnable: not implemented" );
     // not allowed to tamper with this for a grid cell
 }
 
 
-void SAL_CALL FmXGridCell::setFocus(  )
+void SAL_CALL FmXGridCell::setFocus(  ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::setFocus: not implemented" );
     // not allowed to tamper with this for a grid cell
 }
 
 
-void SAL_CALL FmXGridCell::addWindowListener( const Reference< awt::XWindowListener >& _rxListener )
+void SAL_CALL FmXGridCell::addWindowListener( const Reference< awt::XWindowListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aWindowListeners.addInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::removeWindowListener( const Reference< awt::XWindowListener >& _rxListener )
+void SAL_CALL FmXGridCell::removeWindowListener( const Reference< awt::XWindowListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aWindowListeners.removeInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::addFocusListener( const Reference< awt::XFocusListener >& _rxListener )
+void SAL_CALL FmXGridCell::addFocusListener( const Reference< awt::XFocusListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aFocusListeners.addInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::removeFocusListener( const Reference< awt::XFocusListener >& _rxListener )
+void SAL_CALL FmXGridCell::removeFocusListener( const Reference< awt::XFocusListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aFocusListeners.removeInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::addKeyListener( const Reference< awt::XKeyListener >& _rxListener )
+void SAL_CALL FmXGridCell::addKeyListener( const Reference< awt::XKeyListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aKeyListeners.addInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::removeKeyListener( const Reference< awt::XKeyListener >& _rxListener )
+void SAL_CALL FmXGridCell::removeKeyListener( const Reference< awt::XKeyListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aKeyListeners.removeInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::addMouseListener( const Reference< awt::XMouseListener >& _rxListener )
+void SAL_CALL FmXGridCell::addMouseListener( const Reference< awt::XMouseListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aMouseListeners.addInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::removeMouseListener( const Reference< awt::XMouseListener >& _rxListener )
+void SAL_CALL FmXGridCell::removeMouseListener( const Reference< awt::XMouseListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aMouseListeners.removeInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::addMouseMotionListener( const Reference< awt::XMouseMotionListener >& _rxListener )
+void SAL_CALL FmXGridCell::addMouseMotionListener( const Reference< awt::XMouseMotionListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aMouseMotionListeners.addInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::removeMouseMotionListener( const Reference< awt::XMouseMotionListener >& _rxListener )
+void SAL_CALL FmXGridCell::removeMouseMotionListener( const Reference< awt::XMouseMotionListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     checkDisposed(OComponentHelper::rBHelper.bDisposed);
     m_aMouseMotionListeners.removeInterface( _rxListener );
 }
 
 
-void SAL_CALL FmXGridCell::addPaintListener( const Reference< awt::XPaintListener >& _rxListener )
+void SAL_CALL FmXGridCell::addPaintListener( const Reference< awt::XPaintListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::addPaintListener: not implemented" );
     (void)_rxListener;
 }
 
 
-void SAL_CALL FmXGridCell::removePaintListener( const Reference< awt::XPaintListener >& _rxListener )
+void SAL_CALL FmXGridCell::removePaintListener( const Reference< awt::XPaintListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "FmXGridCell::removePaintListener: not implemented" );
     (void)_rxListener;
 }
 
 
-IMPL_LINK( FmXGridCell, OnWindowEvent, VclWindowEvent&, _rEvent, void )
+IMPL_LINK_TYPED( FmXGridCell, OnWindowEvent, VclWindowEvent&, _rEvent, void )
 {
     ENSURE_OR_THROW( _rEvent.GetWindow(), "illegal window" );
     onWindowEvent( _rEvent.GetId(), *_rEvent.GetWindow(), _rEvent.GetData() );
@@ -3397,23 +3404,23 @@ void FmXGridCell::onFocusLost( const awt::FocusEvent& _rEvent )
 }
 
 
-void FmXGridCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
+void FmXGridCell::onWindowEvent( const sal_uIntPtr _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
 {
     switch ( _nEventId )
     {
-    case VclEventId::ControlGetFocus:
-    case VclEventId::WindowGetFocus:
-    case VclEventId::ControlLoseFocus:
-    case VclEventId::WindowLoseFocus:
+    case VCLEVENT_CONTROL_GETFOCUS:
+    case VCLEVENT_WINDOW_GETFOCUS:
+    case VCLEVENT_CONTROL_LOSEFOCUS:
+    case VCLEVENT_WINDOW_LOSEFOCUS:
     {
         if  (   (   _rWindow.IsCompoundControl()
-                &&  (   _nEventId == VclEventId::ControlGetFocus
-                    ||  _nEventId == VclEventId::ControlLoseFocus
+                &&  (   _nEventId == VCLEVENT_CONTROL_GETFOCUS
+                    ||  _nEventId == VCLEVENT_CONTROL_LOSEFOCUS
                     )
                 )
             ||  (   !_rWindow.IsCompoundControl()
-                &&  (   _nEventId == VclEventId::WindowGetFocus
-                    ||  _nEventId == VclEventId::WindowLoseFocus
+                &&  (   _nEventId == VCLEVENT_WINDOW_GETFOCUS
+                    ||  _nEventId == VCLEVENT_WINDOW_LOSEFOCUS
                     )
                 )
             )
@@ -3421,7 +3428,7 @@ void FmXGridCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& 
             if ( !m_aFocusListeners.getLength() )
                 break;
 
-            bool bFocusGained = ( _nEventId == VclEventId::ControlGetFocus ) || ( _nEventId == VclEventId::WindowGetFocus );
+            bool bFocusGained = ( _nEventId == VCLEVENT_CONTROL_GETFOCUS ) || ( _nEventId == VCLEVENT_WINDOW_GETFOCUS );
 
             awt::FocusEvent aEvent;
             aEvent.Source = *this;
@@ -3435,19 +3442,19 @@ void FmXGridCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& 
         }
     }
     break;
-    case VclEventId::WindowMouseButtonDown:
-    case VclEventId::WindowMouseButtonUp:
+    case VCLEVENT_WINDOW_MOUSEBUTTONDOWN:
+    case VCLEVENT_WINDOW_MOUSEBUTTONUP:
     {
         if ( !m_aMouseListeners.getLength() )
             break;
 
-        const bool bButtonDown = ( _nEventId == VclEventId::WindowMouseButtonDown );
+        const bool bButtonDown = ( _nEventId == VCLEVENT_WINDOW_MOUSEBUTTONDOWN );
 
         awt::MouseEvent aEvent( VCLUnoHelper::createMouseEvent( *static_cast< const ::MouseEvent* >( _pEventData ), *this ) );
         m_aMouseListeners.notifyEach( bButtonDown ? &awt::XMouseListener::mousePressed : &awt::XMouseListener::mouseReleased, aEvent );
     }
     break;
-    case VclEventId::WindowMouseMove:
+    case VCLEVENT_WINDOW_MOUSEMOVE:
     {
         const MouseEvent& rMouseEvent = *static_cast< const ::MouseEvent* >( _pEventData );
         if ( rMouseEvent.IsEnterWindow() || rMouseEvent.IsLeaveWindow() )
@@ -3470,23 +3477,22 @@ void FmXGridCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& 
         }
     }
     break;
-    case VclEventId::WindowKeyInput:
-    case VclEventId::WindowKeyUp:
+    case VCLEVENT_WINDOW_KEYINPUT:
+    case VCLEVENT_WINDOW_KEYUP:
     {
         if ( !m_aKeyListeners.getLength() )
             break;
 
-        const bool bKeyPressed = ( _nEventId == VclEventId::WindowKeyInput );
+        const bool bKeyPressed = ( _nEventId == VCLEVENT_WINDOW_KEYINPUT );
         awt::KeyEvent aEvent( VCLUnoHelper::createKeyEvent( *static_cast< const ::KeyEvent* >( _pEventData ), *this ) );
         m_aKeyListeners.notifyEach( bKeyPressed ? &awt::XKeyListener::keyPressed: &awt::XKeyListener::keyReleased, aEvent );
     }
     break;
-    default: break;
     }
 }
 
 
-void FmXDataCell::PaintFieldToCell(OutputDevice& rDev, const tools::Rectangle& rRect,
+void FmXDataCell::PaintFieldToCell(OutputDevice& rDev, const Rectangle& rRect,
                         const Reference< css::sdb::XColumn >& _rxField,
                         const Reference< XNumberFormatter >& xFormatter)
 {
@@ -3510,7 +3516,7 @@ FmXTextCell::FmXTextCell( DbGridColumn* pColumn, DbCellControl& _rControl )
 
 
 void FmXTextCell::PaintFieldToCell(OutputDevice& rDev,
-                        const tools::Rectangle& rRect,
+                        const Rectangle& rRect,
                         const Reference< css::sdb::XColumn >& _rxField,
                         const Reference< XNumberFormatter >& xFormatter)
 {
@@ -3552,7 +3558,7 @@ void FmXTextCell::PaintFieldToCell(OutputDevice& rDev,
     }
     catch (const Exception& e)
     {
-        SAL_WARN("svx.fmcomp", "PaintFieldToCell: caught an exception: " << e.Message);
+        SAL_WARN("svx.form", "PaintFieldToCell: caught an exception: " << e.Message);
     }
 }
 
@@ -3608,7 +3614,7 @@ void FmXEditCell::disposing()
 }
 
 
-Any SAL_CALL FmXEditCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXEditCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = FmXTextCell::queryAggregation( _rType );
 
@@ -3619,7 +3625,7 @@ Any SAL_CALL FmXEditCell::queryAggregation( const css::uno::Type& _rType )
 }
 
 
-Sequence< css::uno::Type > SAL_CALL FmXEditCell::getTypes(  )
+Sequence< css::uno::Type > SAL_CALL FmXEditCell::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         FmXTextCell::getTypes(),
@@ -3632,19 +3638,19 @@ IMPLEMENT_GET_IMPLEMENTATION_ID( FmXEditCell )
 
 // css::awt::XTextComponent
 
-void SAL_CALL FmXEditCell::addTextListener(const Reference< css::awt::XTextListener >& l)
+void SAL_CALL FmXEditCell::addTextListener(const Reference< css::awt::XTextListener >& l) throw( RuntimeException, std::exception )
 {
     m_aTextListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXEditCell::removeTextListener(const Reference< css::awt::XTextListener >& l)
+void SAL_CALL FmXEditCell::removeTextListener(const Reference< css::awt::XTextListener >& l) throw( RuntimeException, std::exception )
 {
     m_aTextListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXEditCell::setText( const OUString& aText )
+void SAL_CALL FmXEditCell::setText( const OUString& aText ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3659,7 +3665,7 @@ void SAL_CALL FmXEditCell::setText( const OUString& aText )
 }
 
 
-void SAL_CALL FmXEditCell::insertText(const css::awt::Selection& rSel, const OUString& aText)
+void SAL_CALL FmXEditCell::insertText(const css::awt::Selection& rSel, const OUString& aText) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3671,7 +3677,7 @@ void SAL_CALL FmXEditCell::insertText(const css::awt::Selection& rSel, const OUS
 }
 
 
-OUString SAL_CALL FmXEditCell::getText()
+OUString SAL_CALL FmXEditCell::getText() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3695,7 +3701,7 @@ OUString SAL_CALL FmXEditCell::getText()
 }
 
 
-OUString SAL_CALL FmXEditCell::getSelectedText()
+OUString SAL_CALL FmXEditCell::getSelectedText() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3709,7 +3715,7 @@ OUString SAL_CALL FmXEditCell::getSelectedText()
 }
 
 
-void SAL_CALL FmXEditCell::setSelection( const css::awt::Selection& aSelection )
+void SAL_CALL FmXEditCell::setSelection( const css::awt::Selection& aSelection ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3718,7 +3724,7 @@ void SAL_CALL FmXEditCell::setSelection( const css::awt::Selection& aSelection )
 }
 
 
-css::awt::Selection SAL_CALL FmXEditCell::getSelection()
+css::awt::Selection SAL_CALL FmXEditCell::getSelection() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3730,7 +3736,7 @@ css::awt::Selection SAL_CALL FmXEditCell::getSelection()
 }
 
 
-sal_Bool SAL_CALL FmXEditCell::isEditable()
+sal_Bool SAL_CALL FmXEditCell::isEditable() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3738,7 +3744,7 @@ sal_Bool SAL_CALL FmXEditCell::isEditable()
 }
 
 
-void SAL_CALL FmXEditCell::setEditable( sal_Bool bEditable )
+void SAL_CALL FmXEditCell::setEditable( sal_Bool bEditable ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3747,7 +3753,7 @@ void SAL_CALL FmXEditCell::setEditable( sal_Bool bEditable )
 }
 
 
-sal_Int16 SAL_CALL FmXEditCell::getMaxTextLen()
+sal_Int16 SAL_CALL FmXEditCell::getMaxTextLen() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3755,7 +3761,7 @@ sal_Int16 SAL_CALL FmXEditCell::getMaxTextLen()
 }
 
 
-void SAL_CALL FmXEditCell::setMaxTextLen( sal_Int16 nLen )
+void SAL_CALL FmXEditCell::setMaxTextLen( sal_Int16 nLen ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3764,13 +3770,13 @@ void SAL_CALL FmXEditCell::setMaxTextLen( sal_Int16 nLen )
 }
 
 
-void SAL_CALL FmXEditCell::addChangeListener( const Reference< form::XChangeListener >& Listener )
+void SAL_CALL FmXEditCell::addChangeListener( const Reference< form::XChangeListener >& Listener ) throw (RuntimeException, std::exception)
 {
     m_aChangeListeners.addInterface( Listener );
 }
 
 
-void SAL_CALL FmXEditCell::removeChangeListener( const Reference< form::XChangeListener >& Listener )
+void SAL_CALL FmXEditCell::removeChangeListener( const Reference< form::XChangeListener >& Listener ) throw (RuntimeException, std::exception)
 {
     m_aChangeListeners.removeInterface( Listener );
 }
@@ -3803,17 +3809,16 @@ void FmXEditCell::onFocusLost( const awt::FocusEvent& _rEvent )
 }
 
 
-void FmXEditCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
+void FmXEditCell::onWindowEvent( const sal_uIntPtr _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
 {
     switch ( _nEventId )
     {
-    case VclEventId::EditModify:
+    case VCLEVENT_EDIT_MODIFY:
     {
         if ( m_pEditImplementation && m_aTextListeners.getLength() )
             onTextChanged();
         return;
     }
-    default: break;
     }
 
     FmXTextCell::onWindowEvent( _nEventId, _rWindow, _pEventData );
@@ -3853,7 +3858,7 @@ void FmXCheckBoxCell::disposing()
 }
 
 
-Any SAL_CALL FmXCheckBoxCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXCheckBoxCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = FmXDataCell::queryAggregation( _rType );
 
@@ -3864,7 +3869,7 @@ Any SAL_CALL FmXCheckBoxCell::queryAggregation( const css::uno::Type& _rType )
 }
 
 
-Sequence< css::uno::Type > SAL_CALL FmXCheckBoxCell::getTypes(  )
+Sequence< css::uno::Type > SAL_CALL FmXCheckBoxCell::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         FmXDataCell::getTypes(),
@@ -3876,19 +3881,19 @@ Sequence< css::uno::Type > SAL_CALL FmXCheckBoxCell::getTypes(  )
 IMPLEMENT_GET_IMPLEMENTATION_ID( FmXCheckBoxCell )
 
 
-void SAL_CALL FmXCheckBoxCell::addItemListener( const Reference< css::awt::XItemListener >& l )
+void SAL_CALL FmXCheckBoxCell::addItemListener( const Reference< css::awt::XItemListener >& l ) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXCheckBoxCell::removeItemListener( const Reference< css::awt::XItemListener >& l )
+void SAL_CALL FmXCheckBoxCell::removeItemListener( const Reference< css::awt::XItemListener >& l ) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXCheckBoxCell::setState( short n )
+void SAL_CALL FmXCheckBoxCell::setState( short n ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3900,7 +3905,7 @@ void SAL_CALL FmXCheckBoxCell::setState( short n )
 }
 
 
-short SAL_CALL FmXCheckBoxCell::getState()
+short SAL_CALL FmXCheckBoxCell::getState() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3913,7 +3918,7 @@ short SAL_CALL FmXCheckBoxCell::getState()
 }
 
 
-void SAL_CALL FmXCheckBoxCell::enableTriState( sal_Bool b )
+void SAL_CALL FmXCheckBoxCell::enableTriState( sal_Bool b ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -3922,19 +3927,19 @@ void SAL_CALL FmXCheckBoxCell::enableTriState( sal_Bool b )
 }
 
 
-void SAL_CALL FmXCheckBoxCell::addActionListener( const Reference< awt::XActionListener >& Listener )
+void SAL_CALL FmXCheckBoxCell::addActionListener( const Reference< awt::XActionListener >& Listener ) throw (RuntimeException, std::exception)
 {
     m_aActionListeners.addInterface( Listener );
 }
 
 
-void SAL_CALL FmXCheckBoxCell::removeActionListener( const Reference< awt::XActionListener >& Listener )
+void SAL_CALL FmXCheckBoxCell::removeActionListener( const Reference< awt::XActionListener >& Listener ) throw (RuntimeException, std::exception)
 {
     m_aActionListeners.removeInterface( Listener );
 }
 
 
-void SAL_CALL FmXCheckBoxCell::setLabel( const OUString& Label )
+void SAL_CALL FmXCheckBoxCell::setLabel( const OUString& Label ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if ( m_pColumn )
@@ -3945,7 +3950,7 @@ void SAL_CALL FmXCheckBoxCell::setLabel( const OUString& Label )
 }
 
 
-void SAL_CALL FmXCheckBoxCell::setActionCommand( const OUString& Command )
+void SAL_CALL FmXCheckBoxCell::setActionCommand( const OUString& Command ) throw (RuntimeException, std::exception)
 {
     m_aActionCommand = Command;
 }
@@ -3957,11 +3962,11 @@ vcl::Window* FmXCheckBoxCell::getEventWindow() const
 }
 
 
-void FmXCheckBoxCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
+void FmXCheckBoxCell::onWindowEvent( const sal_uIntPtr _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
 {
     switch ( _nEventId )
     {
-    case VclEventId::CheckboxToggle:
+    case VCLEVENT_CHECKBOX_TOGGLE:
     {
         // check boxes are to be committed immediately (this holds for ordinary check box controls in
         // documents, and this must hold for check boxes in grid columns, too
@@ -4030,7 +4035,7 @@ void FmXListBoxCell::disposing()
 }
 
 
-Any SAL_CALL FmXListBoxCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXListBoxCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = FmXTextCell::queryAggregation(_rType);
 
@@ -4041,7 +4046,7 @@ Any SAL_CALL FmXListBoxCell::queryAggregation( const css::uno::Type& _rType )
 }
 
 
-Sequence< css::uno::Type > SAL_CALL FmXListBoxCell::getTypes(  )
+Sequence< css::uno::Type > SAL_CALL FmXListBoxCell::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         FmXTextCell::getTypes(),
@@ -4053,31 +4058,31 @@ Sequence< css::uno::Type > SAL_CALL FmXListBoxCell::getTypes(  )
 IMPLEMENT_GET_IMPLEMENTATION_ID( FmXListBoxCell )
 
 
-void SAL_CALL FmXListBoxCell::addItemListener(const Reference< css::awt::XItemListener >& l)
+void SAL_CALL FmXListBoxCell::addItemListener(const Reference< css::awt::XItemListener >& l) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXListBoxCell::removeItemListener(const Reference< css::awt::XItemListener >& l)
+void SAL_CALL FmXListBoxCell::removeItemListener(const Reference< css::awt::XItemListener >& l) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXListBoxCell::addActionListener(const Reference< css::awt::XActionListener >& l)
+void SAL_CALL FmXListBoxCell::addActionListener(const Reference< css::awt::XActionListener >& l) throw( RuntimeException, std::exception )
 {
     m_aActionListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXListBoxCell::removeActionListener(const Reference< css::awt::XActionListener >& l)
+void SAL_CALL FmXListBoxCell::removeActionListener(const Reference< css::awt::XActionListener >& l) throw( RuntimeException, std::exception )
 {
     m_aActionListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXListBoxCell::addItem(const OUString& aItem, sal_Int16 nPos)
+void SAL_CALL FmXListBoxCell::addItem(const OUString& aItem, sal_Int16 nPos) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (m_pBox)
@@ -4085,7 +4090,7 @@ void SAL_CALL FmXListBoxCell::addItem(const OUString& aItem, sal_Int16 nPos)
 }
 
 
-void SAL_CALL FmXListBoxCell::addItems(const css::uno::Sequence<OUString>& aItems, sal_Int16 nPos)
+void SAL_CALL FmXListBoxCell::addItems(const css::uno::Sequence<OUString>& aItems, sal_Int16 nPos) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (m_pBox)
@@ -4101,7 +4106,7 @@ void SAL_CALL FmXListBoxCell::addItems(const css::uno::Sequence<OUString>& aItem
 }
 
 
-void SAL_CALL FmXListBoxCell::removeItems(sal_Int16 nPos, sal_Int16 nCount)
+void SAL_CALL FmXListBoxCell::removeItems(sal_Int16 nPos, sal_Int16 nCount) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pBox )
@@ -4112,20 +4117,20 @@ void SAL_CALL FmXListBoxCell::removeItems(sal_Int16 nPos, sal_Int16 nCount)
 }
 
 
-sal_Int16 SAL_CALL FmXListBoxCell::getItemCount()
+sal_Int16 SAL_CALL FmXListBoxCell::getItemCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_pBox ? m_pBox->GetEntryCount() : 0;
 }
 
 
-OUString SAL_CALL FmXListBoxCell::getItem(sal_Int16 nPos)
+OUString SAL_CALL FmXListBoxCell::getItem(sal_Int16 nPos) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_pBox ? OUString(m_pBox->GetEntry(nPos)) : OUString();
 }
 
-css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getItems()
+css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getItems() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4144,7 +4149,7 @@ css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getItems()
 }
 
 
-sal_Int16 SAL_CALL FmXListBoxCell::getSelectedItemPos()
+sal_Int16 SAL_CALL FmXListBoxCell::getSelectedItemPos() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (m_pBox)
@@ -4159,7 +4164,7 @@ sal_Int16 SAL_CALL FmXListBoxCell::getSelectedItemPos()
 }
 
 
-Sequence< sal_Int16 > SAL_CALL FmXListBoxCell::getSelectedItemsPos()
+Sequence< sal_Int16 > SAL_CALL FmXListBoxCell::getSelectedItemsPos() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     Sequence<sal_Int16> aSeq;
@@ -4175,7 +4180,7 @@ Sequence< sal_Int16 > SAL_CALL FmXListBoxCell::getSelectedItemsPos()
     return aSeq;
 }
 
-OUString SAL_CALL FmXListBoxCell::getSelectedItem()
+OUString SAL_CALL FmXListBoxCell::getSelectedItem() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4191,7 +4196,7 @@ OUString SAL_CALL FmXListBoxCell::getSelectedItem()
 }
 
 
-css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getSelectedItems()
+css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getSelectedItems() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4209,7 +4214,7 @@ css::uno::Sequence<OUString> SAL_CALL FmXListBoxCell::getSelectedItems()
 }
 
 
-void SAL_CALL FmXListBoxCell::selectItemPos(sal_Int16 nPos, sal_Bool bSelect)
+void SAL_CALL FmXListBoxCell::selectItemPos(sal_Int16 nPos, sal_Bool bSelect) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4218,7 +4223,7 @@ void SAL_CALL FmXListBoxCell::selectItemPos(sal_Int16 nPos, sal_Bool bSelect)
 }
 
 
-void SAL_CALL FmXListBoxCell::selectItemsPos(const Sequence< sal_Int16 >& aPositions, sal_Bool bSelect)
+void SAL_CALL FmXListBoxCell::selectItemsPos(const Sequence< sal_Int16 >& aPositions, sal_Bool bSelect) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4230,7 +4235,7 @@ void SAL_CALL FmXListBoxCell::selectItemsPos(const Sequence< sal_Int16 >& aPosit
 }
 
 
-void SAL_CALL FmXListBoxCell::selectItem(const OUString& aItem, sal_Bool bSelect)
+void SAL_CALL FmXListBoxCell::selectItem(const OUString& aItem, sal_Bool bSelect) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4239,7 +4244,7 @@ void SAL_CALL FmXListBoxCell::selectItem(const OUString& aItem, sal_Bool bSelect
 }
 
 
-sal_Bool SAL_CALL FmXListBoxCell::isMutipleMode()
+sal_Bool SAL_CALL FmXListBoxCell::isMutipleMode() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4250,7 +4255,7 @@ sal_Bool SAL_CALL FmXListBoxCell::isMutipleMode()
 }
 
 
-void SAL_CALL FmXListBoxCell::setMultipleMode(sal_Bool bMulti)
+void SAL_CALL FmXListBoxCell::setMultipleMode(sal_Bool bMulti) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4259,7 +4264,7 @@ void SAL_CALL FmXListBoxCell::setMultipleMode(sal_Bool bMulti)
 }
 
 
-sal_Int16 SAL_CALL FmXListBoxCell::getDropDownLineCount()
+sal_Int16 SAL_CALL FmXListBoxCell::getDropDownLineCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4271,7 +4276,7 @@ sal_Int16 SAL_CALL FmXListBoxCell::getDropDownLineCount()
 }
 
 
-void SAL_CALL FmXListBoxCell::setDropDownLineCount(sal_Int16 nLines)
+void SAL_CALL FmXListBoxCell::setDropDownLineCount(sal_Int16 nLines) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4280,7 +4285,7 @@ void SAL_CALL FmXListBoxCell::setDropDownLineCount(sal_Int16 nLines)
 }
 
 
-void SAL_CALL FmXListBoxCell::makeVisible(sal_Int16 nEntry)
+void SAL_CALL FmXListBoxCell::makeVisible(sal_Int16 nEntry) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4289,10 +4294,10 @@ void SAL_CALL FmXListBoxCell::makeVisible(sal_Int16 nEntry)
 }
 
 
-void FmXListBoxCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
+void FmXListBoxCell::onWindowEvent( const sal_uIntPtr _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
 {
     if  (   ( &_rWindow == m_pBox )
-        &&  ( _nEventId == VclEventId::ListboxSelect )
+        &&  ( _nEventId == VCLEVENT_LISTBOX_SELECT )
         )
     {
         OnDoubleClick( *m_pBox );
@@ -4313,7 +4318,7 @@ void FmXListBoxCell::onWindowEvent( const VclEventId _nEventId, const vcl::Windo
 }
 
 
-IMPL_LINK_NOARG(FmXListBoxCell, OnDoubleClick, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(FmXListBoxCell, OnDoubleClick, ListBox&, void)
 {
     if (m_pBox)
     {
@@ -4358,7 +4363,7 @@ void FmXComboBoxCell::disposing()
 }
 
 
-Any SAL_CALL FmXComboBoxCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXComboBoxCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = FmXTextCell::queryAggregation(_rType);
 
@@ -4369,7 +4374,7 @@ Any SAL_CALL FmXComboBoxCell::queryAggregation( const css::uno::Type& _rType )
 }
 
 
-Sequence< Type > SAL_CALL FmXComboBoxCell::getTypes(  )
+Sequence< Type > SAL_CALL FmXComboBoxCell::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         FmXTextCell::getTypes(),
@@ -4381,31 +4386,31 @@ Sequence< Type > SAL_CALL FmXComboBoxCell::getTypes(  )
 IMPLEMENT_GET_IMPLEMENTATION_ID( FmXComboBoxCell )
 
 
-void SAL_CALL FmXComboBoxCell::addItemListener(const Reference< awt::XItemListener >& l)
+void SAL_CALL FmXComboBoxCell::addItemListener(const Reference< awt::XItemListener >& l) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXComboBoxCell::removeItemListener(const Reference< awt::XItemListener >& l)
+void SAL_CALL FmXComboBoxCell::removeItemListener(const Reference< awt::XItemListener >& l) throw( RuntimeException, std::exception )
 {
     m_aItemListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXComboBoxCell::addActionListener(const Reference< awt::XActionListener >& l)
+void SAL_CALL FmXComboBoxCell::addActionListener(const Reference< awt::XActionListener >& l) throw( RuntimeException, std::exception )
 {
     m_aActionListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXComboBoxCell::removeActionListener(const Reference< awt::XActionListener >& l)
+void SAL_CALL FmXComboBoxCell::removeActionListener(const Reference< awt::XActionListener >& l) throw( RuntimeException, std::exception )
 {
     m_aActionListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXComboBoxCell::addItem( const OUString& Item, sal_Int16 Pos )
+void SAL_CALL FmXComboBoxCell::addItem( const OUString& Item, sal_Int16 Pos ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pComboBox )
@@ -4413,7 +4418,7 @@ void SAL_CALL FmXComboBoxCell::addItem( const OUString& Item, sal_Int16 Pos )
 }
 
 
-void SAL_CALL FmXComboBoxCell::addItems( const Sequence< OUString >& Items, sal_Int16 Pos )
+void SAL_CALL FmXComboBoxCell::addItems( const Sequence< OUString >& Items, sal_Int16 Pos ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pComboBox )
@@ -4429,7 +4434,7 @@ void SAL_CALL FmXComboBoxCell::addItems( const Sequence< OUString >& Items, sal_
 }
 
 
-void SAL_CALL FmXComboBoxCell::removeItems( sal_Int16 Pos, sal_Int16 Count )
+void SAL_CALL FmXComboBoxCell::removeItems( sal_Int16 Pos, sal_Int16 Count ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pComboBox )
@@ -4440,20 +4445,20 @@ void SAL_CALL FmXComboBoxCell::removeItems( sal_Int16 Pos, sal_Int16 Count )
 }
 
 
-sal_Int16 SAL_CALL FmXComboBoxCell::getItemCount()
+sal_Int16 SAL_CALL FmXComboBoxCell::getItemCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_pComboBox ? m_pComboBox->GetEntryCount() : 0;
 }
 
 
-OUString SAL_CALL FmXComboBoxCell::getItem( sal_Int16 Pos )
+OUString SAL_CALL FmXComboBoxCell::getItem( sal_Int16 Pos ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_pComboBox ? OUString(m_pComboBox->GetEntry(Pos)) : OUString();
 }
 
-Sequence< OUString > SAL_CALL FmXComboBoxCell::getItems()
+Sequence< OUString > SAL_CALL FmXComboBoxCell::getItems() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4470,7 +4475,7 @@ Sequence< OUString > SAL_CALL FmXComboBoxCell::getItems()
 }
 
 
-sal_Int16 SAL_CALL FmXComboBoxCell::getDropDownLineCount()
+sal_Int16 SAL_CALL FmXComboBoxCell::getDropDownLineCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -4482,7 +4487,7 @@ sal_Int16 SAL_CALL FmXComboBoxCell::getDropDownLineCount()
 }
 
 
-void SAL_CALL FmXComboBoxCell::setDropDownLineCount(sal_Int16 nLines)
+void SAL_CALL FmXComboBoxCell::setDropDownLineCount(sal_Int16 nLines) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pComboBox )
@@ -4490,12 +4495,12 @@ void SAL_CALL FmXComboBoxCell::setDropDownLineCount(sal_Int16 nLines)
 }
 
 
-void FmXComboBoxCell::onWindowEvent( const VclEventId _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
+void FmXComboBoxCell::onWindowEvent( const sal_uIntPtr _nEventId, const vcl::Window& _rWindow, const void* _pEventData )
 {
 
     switch ( _nEventId )
     {
-    case VclEventId::ComboboxSelect:
+    case VCLEVENT_COMBOBOX_SELECT:
     {
         awt::ItemEvent aEvent;
         aEvent.Source = *this;
@@ -4538,7 +4543,7 @@ FmXFilterCell::~FmXFilterCell()
 
 // XUnoTunnel
 
-sal_Int64 SAL_CALL FmXFilterCell::getSomething( const Sequence< sal_Int8 >& _rIdentifier )
+sal_Int64 SAL_CALL FmXFilterCell::getSomething( const Sequence< sal_Int8 >& _rIdentifier ) throw(RuntimeException, std::exception)
 {
     sal_Int64 nReturn(0);
 
@@ -4563,7 +4568,7 @@ const Sequence<sal_Int8>& FmXFilterCell::getUnoTunnelId()
 }
 
 
-void FmXFilterCell::PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect )
+void FmXFilterCell::PaintCell( OutputDevice& rDev, const Rectangle& rRect )
 {
     static_cast< DbFilterField* >( m_pCellControl )->PaintCell( rDev, rRect );
 }
@@ -4581,7 +4586,7 @@ void FmXFilterCell::disposing()
 }
 
 
-Any SAL_CALL FmXFilterCell::queryAggregation( const css::uno::Type& _rType )
+Any SAL_CALL FmXFilterCell::queryAggregation( const css::uno::Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = FmXGridCell::queryAggregation(_rType);
 
@@ -4592,7 +4597,7 @@ Any SAL_CALL FmXFilterCell::queryAggregation( const css::uno::Type& _rType )
 }
 
 
-Sequence< css::uno::Type > SAL_CALL FmXFilterCell::getTypes(  )
+Sequence< css::uno::Type > SAL_CALL FmXFilterCell::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         FmXGridCell::getTypes(),
@@ -4605,77 +4610,77 @@ IMPLEMENT_GET_IMPLEMENTATION_ID( FmXFilterCell )
 
 // css::awt::XTextComponent
 
-void SAL_CALL FmXFilterCell::addTextListener(const Reference< css::awt::XTextListener >& l)
+void SAL_CALL FmXFilterCell::addTextListener(const Reference< css::awt::XTextListener >& l) throw( RuntimeException, std::exception )
 {
     m_aTextListeners.addInterface( l );
 }
 
 
-void SAL_CALL FmXFilterCell::removeTextListener(const Reference< css::awt::XTextListener >& l)
+void SAL_CALL FmXFilterCell::removeTextListener(const Reference< css::awt::XTextListener >& l) throw( RuntimeException, std::exception )
 {
     m_aTextListeners.removeInterface( l );
 }
 
 
-void SAL_CALL FmXFilterCell::setText( const OUString& aText )
+void SAL_CALL FmXFilterCell::setText( const OUString& aText ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     static_cast<DbFilterField*>(m_pCellControl)->SetText(aText);
 }
 
 
-void SAL_CALL FmXFilterCell::insertText( const css::awt::Selection& /*rSel*/, const OUString& /*aText*/ )
+void SAL_CALL FmXFilterCell::insertText( const css::awt::Selection& /*rSel*/, const OUString& /*aText*/ ) throw( RuntimeException, std::exception )
 {
 }
 
 
-OUString SAL_CALL FmXFilterCell::getText()
+OUString SAL_CALL FmXFilterCell::getText() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return static_cast<DbFilterField*>(m_pCellControl)->GetText();
 }
 
 
-OUString SAL_CALL FmXFilterCell::getSelectedText()
+OUString SAL_CALL FmXFilterCell::getSelectedText() throw( RuntimeException, std::exception )
 {
     return getText();
 }
 
 
-void SAL_CALL FmXFilterCell::setSelection( const css::awt::Selection& /*aSelection*/ )
+void SAL_CALL FmXFilterCell::setSelection( const css::awt::Selection& /*aSelection*/ ) throw( RuntimeException, std::exception )
 {
 }
 
 
-css::awt::Selection SAL_CALL FmXFilterCell::getSelection()
+css::awt::Selection SAL_CALL FmXFilterCell::getSelection() throw( RuntimeException, std::exception )
 {
     return css::awt::Selection();
 }
 
 
-sal_Bool SAL_CALL FmXFilterCell::isEditable()
+sal_Bool SAL_CALL FmXFilterCell::isEditable() throw( RuntimeException, std::exception )
 {
     return true;
 }
 
 
-void SAL_CALL FmXFilterCell::setEditable( sal_Bool /*bEditable*/ )
+void SAL_CALL FmXFilterCell::setEditable( sal_Bool /*bEditable*/ ) throw( RuntimeException, std::exception )
 {
 }
 
 
-sal_Int16 SAL_CALL FmXFilterCell::getMaxTextLen()
+sal_Int16 SAL_CALL FmXFilterCell::getMaxTextLen() throw( RuntimeException, std::exception )
 {
     return 0;
 }
 
 
-void SAL_CALL FmXFilterCell::setMaxTextLen( sal_Int16 /*nLen*/ )
+void SAL_CALL FmXFilterCell::setMaxTextLen( sal_Int16 /*nLen*/ ) throw( RuntimeException, std::exception )
 {
 }
 
 
-IMPL_LINK_NOARG(FmXFilterCell, OnCommit, DbFilterField&, void)
+IMPL_LINK_NOARG_TYPED(FmXFilterCell, OnCommit, DbFilterField&, void)
 {
     ::comphelper::OInterfaceIteratorHelper2 aIt( m_aTextListeners );
     css::awt::TextEvent aEvt;

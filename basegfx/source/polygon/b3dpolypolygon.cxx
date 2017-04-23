@@ -29,7 +29,7 @@
 
 class ImplB3DPolyPolygon
 {
-    typedef std::vector< ::basegfx::B3DPolygon >  PolygonVector;
+    typedef ::std::vector< ::basegfx::B3DPolygon >  PolygonVector;
 
     PolygonVector                                   maPolygons;
 
@@ -155,34 +155,34 @@ public:
 
     const basegfx::B3DPolygon* begin() const
     {
-        if (maPolygons.empty())
+        if(maPolygons.empty())
             return nullptr;
         else
-            return maPolygons.data();
+            return &maPolygons.front();
     }
 
     const basegfx::B3DPolygon* end() const
     {
-        if (maPolygons.empty())
+        if(maPolygons.empty())
             return nullptr;
         else
-            return maPolygons.data() + maPolygons.size();
+            return (&maPolygons.back())+1;
     }
 
     basegfx::B3DPolygon* begin()
     {
-        if (maPolygons.empty())
+        if(maPolygons.empty())
             return nullptr;
         else
-            return maPolygons.data();
+            return &maPolygons.front();
     }
 
     basegfx::B3DPolygon* end()
     {
-        if (maPolygons.empty())
+        if(maPolygons.empty())
             return nullptr;
         else
-            return maPolygons.data() + maPolygons.size();
+            return &(maPolygons.back())+1;
     }
 };
 
@@ -201,11 +201,6 @@ namespace basegfx
     {
     }
 
-    B3DPolyPolygon::B3DPolyPolygon(B3DPolyPolygon&& rPolyPolygon) :
-        mpPolyPolygon(std::move(rPolyPolygon.mpPolyPolygon))
-    {
-    }
-
     B3DPolyPolygon::B3DPolyPolygon(const B3DPolygon& rPolygon) :
         mpPolyPolygon( ImplB3DPolyPolygon(rPolygon) )
     {
@@ -218,12 +213,6 @@ namespace basegfx
     B3DPolyPolygon& B3DPolyPolygon::operator=(const B3DPolyPolygon& rPolyPolygon)
     {
         mpPolyPolygon = rPolyPolygon.mpPolyPolygon;
-        return *this;
-    }
-
-    B3DPolyPolygon& B3DPolyPolygon::operator=(B3DPolyPolygon&& rPolyPolygon)
-    {
-        mpPolyPolygon = std::move(rPolyPolygon.mpPolyPolygon);
         return *this;
     }
 

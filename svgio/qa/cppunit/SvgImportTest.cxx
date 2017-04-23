@@ -60,12 +60,13 @@ class Test : public test::BootstrapFixture, public XmlTestTools
     void test47446();
     void test47446b();
     void testMaskText();
-    void testTdf99994();
-    void testTdf101237();
 
     Primitive2DSequence parseSvg(const char* aSource);
 
 public:
+    virtual void setUp() override;
+    virtual void tearDown() override;
+
     CPPUNIT_TEST_SUITE(Test);
     CPPUNIT_TEST(testStyles);
     CPPUNIT_TEST(testTdf87309);
@@ -89,8 +90,6 @@ public:
     CPPUNIT_TEST(test47446);
     CPPUNIT_TEST(test47446b);
     CPPUNIT_TEST(testMaskText);
-    CPPUNIT_TEST(testTdf99994);
-    CPPUNIT_TEST(testTdf101237);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -102,15 +101,25 @@ Primitive2DSequence Test::parseSvg(const char* aSource)
     OUString aPath = m_directories.getPathFromSrc(aSource);
 
     SvFileStream aFileStream(aUrl, StreamMode::READ);
-    std::size_t nSize = aFileStream.remainingSize();
+    sal_Size nSize = aFileStream.remainingSize();
     std::unique_ptr<sal_Int8[]> pBuffer(new sal_Int8[nSize + 1]);
-    aFileStream.ReadBytes(pBuffer.get(), nSize);
+    aFileStream.Read(pBuffer.get(), nSize);
     pBuffer[nSize] = 0;
 
     Sequence<sal_Int8> aData(pBuffer.get(), nSize + 1);
     Reference<XInputStream> aInputStream(new comphelper::SequenceInputStream(aData));
 
     return xSvgParser->getDecomposition(aInputStream, aPath);
+}
+
+void Test::setUp()
+{
+    BootstrapFixture::setUp();
+}
+
+void Test::tearDown()
+{
+    BootstrapFixture::tearDown();
 }
 
 void Test::checkRectPrimitive(Primitive2DSequence& rPrimitive)
@@ -204,55 +213,16 @@ void Test::testFontsizeKeywords()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "9");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "fontcolor", "#ffffff");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "height", "11");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "fontcolor", "#ffd700");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "height", "13");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[4]", "fontcolor", "#ff0000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[4]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[4]", "height", "16");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[4]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[5]", "fontcolor", "#ffff00");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[5]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[5]", "height", "19");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[5]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[6]", "fontcolor", "#0000ff");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[6]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[6]", "height", "23");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[6]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[7]", "fontcolor", "#008000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[7]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[7]", "height", "27");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[7]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[8]", "fontcolor", "#ff7f50");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[8]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[8]", "height", "13");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[8]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[9]", "fontcolor", "#ffc0cb");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[9]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[9]", "height", "19");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[9]", "familyname", "Times New Roman");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[10]", "fontcolor", "#fffff0");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[10]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[10]", "height", "16");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[9]", "familyname", "Times New Roman");
 }
 
 
@@ -267,10 +237,7 @@ void Test::testFontsizePercentage()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "16");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Times New Roman");
 }
 
 void Test::testFontsizeRelative()
@@ -284,15 +251,7 @@ void Test::testFontsizeRelative()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "50");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "serif");
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "text", "Sample");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "height", "50");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "familyname", "serif");
 }
 
 void Test::testTdf45771()
@@ -306,10 +265,7 @@ void Test::testTdf45771()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "32");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Times New Roman");
 }
 
 void Test::testTdf97941()
@@ -323,10 +279,7 @@ void Test::testTdf97941()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Sample");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "48");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Times New Roman");
 }
 
 void Test::testTdf85770()
@@ -339,19 +292,9 @@ void Test::testTdf85770()
 
     CPPUNIT_ASSERT (pDocument);
 
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#000000");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "Start Middle End");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "11");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Times New Roman");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "fontcolor", "#000000");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "text", "Start ");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "height", "11");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[2]", "familyname", "Times New Roman");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "fontcolor", "#000000");
     assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "text", "End");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "height", "11");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[3]", "familyname", "Times New Roman");
-
 }
 
 void Test::testTdf79163()
@@ -379,9 +322,6 @@ void Test::testTdf97542_1()
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/objectinfo/textsimpleportion", "fontcolor", "#ffff00");
-    assertXPath(pDocument, "/primitive2D/transform/objectinfo/textsimpleportion", "text", "Text");
-    assertXPath(pDocument, "/primitive2D/transform/objectinfo/textsimpleportion", "height", "48");
-    assertXPath(pDocument, "/primitive2D/transform/objectinfo/textsimpleportion", "familyname", "serif");
 }
 
 void Test::testTdf97542_2()
@@ -592,45 +532,7 @@ void Test::testMaskText()
     CPPUNIT_ASSERT (pDocument);
 
     assertXPath(pDocument, "/primitive2D/transform/transform/polypolygoncolor", "color", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/transform/textsimpleportion", "fontcolor", "#ffffff");
     assertXPath(pDocument, "/primitive2D/transform/transform/textsimpleportion", "text", "Black White");
-    assertXPath(pDocument, "/primitive2D/transform/transform/textsimpleportion", "height", "26");
-    assertXPath(pDocument, "/primitive2D/transform/transform/textsimpleportion", "familyname", "Times New Roman");
-}
-
-void Test::testTdf99994()
-{
-    //Check text fontsize when using relative units
-    Primitive2DSequence aSequenceTdf99994 = parseSvg("/svgio/qa/cppunit/data/tdf99994.svg");
-    CPPUNIT_ASSERT_EQUAL(1, (int)aSequenceTdf99994.getLength());
-
-    Primitive2dXmlDump dumper;
-    xmlDocPtr pDocument = dumper.dumpAndParse(comphelper::sequenceToContainer<Primitive2DContainer>(aSequenceTdf99994));
-
-    CPPUNIT_ASSERT (pDocument);
-
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "fontcolor", "#0000ff");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "height", "16");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "text", "test");
-    assertXPath(pDocument, "/primitive2D/transform/textsimpleportion[1]", "familyname", "Sans");
-}
-
-void Test::testTdf101237()
-{
-    //Check that fill color, stroke color and stroke-width are inherited from use element
-    //when the element is within a clipPath element
-    Primitive2DSequence aSequenceTdf101237 = parseSvg("/svgio/qa/cppunit/data/tdf101237.svg");
-    CPPUNIT_ASSERT_EQUAL(1, (int)aSequenceTdf101237.getLength());
-
-    Primitive2dXmlDump dumper;
-    xmlDocPtr pDocument = dumper.dumpAndParse(comphelper::sequenceToContainer<Primitive2DContainer>(aSequenceTdf101237));
-
-    CPPUNIT_ASSERT (pDocument);
-
-    assertXPath(pDocument, "/primitive2D/transform/polypolygoncolor", "color", "#ff0000");
-    assertXPath(pDocument, "/primitive2D/transform/polypolygonstroke/line", "color", "#000000");
-    assertXPath(pDocument, "/primitive2D/transform/polypolygonstroke/line", "width", "5");
-
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Test);

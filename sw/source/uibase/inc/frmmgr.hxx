@@ -56,7 +56,7 @@ class SW_DLLPUBLIC SwFlyFrameAttrMgr
     bool    m_bAbsPos,
                 m_bNewFrame;
     bool    m_bIsInVertical;
-    // #mongolianlayout#
+    // --> OD 2009-09-01 #mongolianlayout#
     bool    m_bIsInVerticalL2R;
 
     // internal calculation for borders
@@ -93,10 +93,10 @@ public:
     void                SetHeightSizeType(SwFrameSize eType);
 
     // space to content
-    void                SetLRSpace( long nLeft,
-                                    long nRight );
-    void                SetULSpace( long nTop,
-                                    long nBottom );
+    void                SetLRSpace( long nLeft  = LONG_MAX,
+                                    long nRight = LONG_MAX );
+    void                SetULSpace( long nTop   = LONG_MAX,
+                                    long nBottom= LONG_MAX );
 
     void                SetCol( const SwFormatCol &rCol);
 
@@ -118,8 +118,8 @@ public:
     void                DelAttr(sal_uInt16 nId);
 
     // reach out the set
-    const SfxItemSet &GetAttrSet() const { return m_aSet; }
-    SfxItemSet &GetAttrSet()       { return m_aSet; }
+    inline const SfxItemSet &GetAttrSet() const { return m_aSet; }
+    inline       SfxItemSet &GetAttrSet()       { return m_aSet; }
     void                     SetAttrSet(const SfxItemSet& rSet);
 
     inline const SwFormatVertOrient &GetVertOrient() const;

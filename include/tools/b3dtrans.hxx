@@ -29,8 +29,23 @@
 #include <basegfx/point/b2dpoint.hxx>
 #include <tools/toolsdllapi.h>
 
+/// Supported methods for setting the aspect ratio
+enum Base3DRatio
+{
+    Base3DRatioGrow = 1,
+    Base3DRatioShrink,
+    Base3DRatioMiddle
+};
+
+/// Supported projection types
+enum Base3DProjectionType
+{
+    Base3DProjectionTypeParallel = 1,
+    Base3DProjectionTypePerspective
+};
+
 /// Transformation sets for 3D output
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC B3dTransformationSet
+class TOOLS_DLLPUBLIC B3dTransformationSet
 {
 private:
     // Object Matrix Object -> World
@@ -68,16 +83,23 @@ private:
     double                mfRatio;
 
     // Viewport area in logical coordinates
-    tools::Rectangle             maViewportRectangle;
+    Rectangle             maViewportRectangle;
     // Visible area within viewport
-    tools::Rectangle             maVisibleRectangle;
+    Rectangle             maVisibleRectangle;
 
     // Actual coordinates as set by CalcViewport
     // of visible viewport area (logical coordinates)
-    tools::Rectangle             maSetBound;
+    Rectangle             maSetBound;
+
+    // Method of keeping defined aspect ratio
+    // default: Base3DRatioGrow
+    Base3DRatio           meRatio;
 
     // Flags
     bool mbPerspective              : 1;
+    bool mbWorldToViewValid         : 1;
+    bool mbInvTransObjectToEyeValid : 1;
+    bool mbObjectToDeviceValid      : 1;
     bool mbProjectionValid          : 1;
 
 public:
@@ -91,6 +113,8 @@ public:
         const basegfx::B3DPoint& rVRP = basegfx::B3DPoint(0.0,0.0,1.0),
         const basegfx::B3DVector& rVPN = basegfx::B3DVector(0.0,0.0,1.0),
         const basegfx::B3DVector& rVUP = basegfx::B3DVector(0.0,1.0,0.0));
+    const basegfx::B3DHomMatrix& GetOrientation() { return maOrientation; }
+    const basegfx::B3DHomMatrix& GetInvOrientation() { return maInvOrientation; }
 
     // Projection
     void SetProjection(const basegfx::B3DHomMatrix& mProject);
@@ -100,7 +124,7 @@ public:
 
     // aspect ratio accessors and the defined method of keeping defined aspect ratio
     double GetRatio() { return mfRatio; }
-    void SetRatio(double fNew);
+    void SetRatio(double fNew=1.0);
 
     // Parameters of ViewportTransformation
     void SetDeviceRectangle(double fL=-1.0, double fR=1.0,
@@ -109,8 +133,8 @@ public:
 
     void SetPerspective(bool bNew);
 
-    void SetViewportRectangle(tools::Rectangle const & rRect, tools::Rectangle const & rVisible);
-    void SetViewportRectangle(tools::Rectangle const & rRect) { SetViewportRectangle(rRect, rRect); }
+    void SetViewportRectangle(Rectangle& rRect, Rectangle& rVisible);
+    void SetViewportRectangle(Rectangle& rRect) { SetViewportRectangle(rRect, rRect); }
 
     void CalcViewport();
 
@@ -147,7 +171,7 @@ protected:
     Uses a simplified model, in which a point is described using a View
     Reference Point (VRP).
 */
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC B3dViewport : public B3dTransformationSet
+class TOOLS_DLLPUBLIC B3dViewport : public B3dTransformationSet
 {
 private:
     basegfx::B3DPoint           aVRP;   // View Reference Point
@@ -156,7 +180,7 @@ private:
 
 public:
     B3dViewport();
-    virtual ~B3dViewport() override;
+    virtual ~B3dViewport();
 
     void SetVUV(const basegfx::B3DVector& rNewVUV);
     void SetViewportValues(
@@ -174,7 +198,7 @@ protected:
 
 // B3D camera
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC B3dCamera : public B3dViewport
+class TOOLS_DLLPUBLIC B3dCamera : public B3dViewport
 {
 private:
     basegfx::B3DPoint       aPosition;
@@ -183,12 +207,14 @@ private:
     double                  fFocalLength;
     double                  fBankAngle;
 
+    bool                    bUseFocalLength         : 1;
+
 public:
     B3dCamera(
         const basegfx::B3DPoint& rPos = basegfx::B3DPoint(0.0, 0.0, 1.0),
         const basegfx::B3DVector& rLkAt = basegfx::B3DVector(0.0, 0.0, 0.0),
         double fFocLen = 35.0, double fBnkAng = 0.0);
-    virtual ~B3dCamera() override;
+    virtual ~B3dCamera();
 
 protected:
     void CalcNewViewportValues();

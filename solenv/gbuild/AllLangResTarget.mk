@@ -257,6 +257,8 @@ $(call gb_ResTarget_get_target,%) : $(gb_Helper_MISCDUMMY) \
 			-lg$(LANGUAGE) \
 			-fs=$@ \
 			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION)/$(LIBRARY) \
+			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION)/imglst/$(LANGUAGE) \
+			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION)/imglst \
 			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION)/res/$(LANGUAGE) \
 			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION)/res \
 			-lip=$(gb_ResTarget_DEFIMAGESLOCATION)$(RESLOCATION) \
@@ -327,11 +329,9 @@ $(call gb_AllLangResTarget_get_target,%) :
 
 gb_ResTarget_get_install_target = $(INSTROOT)/$(LIBO_SHARE_RESOURCE_FOLDER)/$(1).res
 
+gb_AllLangResTarget_ALLTARGETS :=
 define gb_AllLangResTarget_AllLangResTarget
-ifeq (,$$(filter $(1),$$(gb_AllLangResTarget_REGISTERED)))
-$$(eval $$(call gb_Output_info,Currently known AllLangResTargets are: $(sort $(gb_AllLangResTarget_REGISTERED)),ALL))
-$$(eval $$(call gb_Output_error,AllLangResTarget $(1) must be registered in Repository.mk))
-endif
+gb_AllLangResTarget_ALLTARGETS += $(1)
 $(foreach lang,$(gb_AllLangResTarget_LANGS),\
 	$(call gb_ResTarget_ResTarget,$(1)$(lang),$(1),$(lang)))
 
@@ -362,11 +362,6 @@ define gb_AllLangResTarget_set_reslocation
 $(foreach lang,$(gb_AllLangResTarget_LANGS),\
 	$(call gb_ResTarget_set_reslocation,$(1)$(lang),$(2)))
 
-endef
-
-define gb_AllLangResTarget_get_imagelists
-$(foreach lang,$(gb_AllLangResTarget_LANGS),\
-    $(call gb_ResTarget_get_imagelist_target,$(1)$(lang)))
 endef
 
 # vim: set noet sw=4: 

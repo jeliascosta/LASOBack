@@ -72,13 +72,13 @@ namespace cppu_threadpool
     void DisposedCallerAdmin::destroy( sal_Int64 nDisposeId )
     {
         MutexGuard guard( m_mutex );
-        for( auto it = m_lst.begin() ;
-             it != m_lst.end() ;
-             ++ it )
+        for( DisposedCallerList::iterator ii = m_lst.begin() ;
+             ii != m_lst.end() ;
+             ++ ii )
         {
-            if( (*it) == nDisposeId )
+            if( (*ii) == nDisposeId )
             {
-                m_lst.erase( it );
+                m_lst.erase( ii );
                 break;
             }
         }
@@ -87,11 +87,11 @@ namespace cppu_threadpool
     bool DisposedCallerAdmin::isDisposed( sal_Int64 nDisposeId )
     {
         MutexGuard guard( m_mutex );
-        for( auto it = m_lst.begin() ;
-             it != m_lst.end() ;
-             ++ it )
+        for( DisposedCallerList::iterator ii = m_lst.begin() ;
+             ii != m_lst.end() ;
+             ++ ii )
         {
-            if( (*it) == nDisposeId )
+            if( (*ii) == nDisposeId )
             {
                 return true;
             }
@@ -361,9 +361,9 @@ struct uno_ThreadPool_Equal
 
 struct uno_ThreadPool_Hash
 {
-    std::size_t operator () ( const uno_ThreadPool &a  )  const
+    sal_Size operator () ( const uno_ThreadPool &a  )  const
         {
-            return reinterpret_cast<std::size_t>( a );
+            return reinterpret_cast<sal_Size>( a );
         }
 };
 
@@ -397,7 +397,7 @@ uno_threadpool_create() SAL_THROW_EXTERN_C()
     ThreadPoolHolder p;
     if( ! g_pThreadpoolHashSet )
     {
-        g_pThreadpoolHashSet = new ThreadpoolHashSet;
+        g_pThreadpoolHashSet = new ThreadpoolHashSet();
         p = new ThreadPool;
     }
     else
@@ -454,7 +454,7 @@ uno_threadpool_putJob(
     if (!getThreadPool(hPool)->addJob( pThreadId, bIsOneway, pJob ,doRequest ))
     {
         SAL_WARN(
-            "cppu.threadpool",
+            "cppu",
             "uno_threadpool_putJob in parallel with uno_threadpool_destroy");
     }
 }

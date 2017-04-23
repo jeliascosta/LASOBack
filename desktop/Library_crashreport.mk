@@ -36,7 +36,6 @@ $(eval $(call gb_Library_use_libraries,crashreport,\
     cppuhelper \
     sal \
     salhelper \
-    utl \
 	$(gb_UWINAPI) \
 ))
 

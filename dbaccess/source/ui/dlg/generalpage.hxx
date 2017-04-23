@@ -61,11 +61,11 @@ namespace dbaui
         ::dbaccess::ODsnTypeCollection*
                             m_pCollection;  /// the DSN type collection instance
 
-        std::vector< OUString>
+        ::std::vector< OUString>
                             m_aURLPrefixes;
 
     public:
-        virtual ~OGeneralPage() override;
+        virtual ~OGeneralPage();
         virtual void dispose() override;
 
         /// set a handler which gets called every time the user selects a new type
@@ -83,9 +83,9 @@ namespace dbaui
         virtual bool approveDatasourceType( ::dbaccess::DATASOURCE_TYPE eType, OUString& _inout_rDisplayName );
 
         // <method>OGenericAdministrationPage::fillControls</method>
-        virtual void fillControls(std::vector< ISaveValueWrapper* >& _rControlList) override;
+        virtual void fillControls(::std::vector< ISaveValueWrapper* >& _rControlList) override;
         // <method>OGenericAdministrationPage::fillWindows</method>
-        virtual void fillWindows(std::vector< ISaveValueWrapper* >& _rControlList) override;
+        virtual void fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) override;
 
         void onTypeSelected(const OUString& _sURLPrefix);
         void initializeTypeList();
@@ -97,7 +97,7 @@ namespace dbaui
         /// sets the title of the parent dialog
         virtual void setParentTitle( const OUString& _sURLPrefix );
 
-        DECL_LINK(OnDatasourceTypeSelected, ListBox&, void);
+        DECL_LINK_TYPED(OnDatasourceTypeSelected, ListBox&, void);
     };
 
     // OGeneralPageDialog
@@ -118,7 +118,7 @@ namespace dbaui
     {
     public:
         OGeneralPageWizard( vcl::Window* pParent, const SfxItemSet& _rItems );
-        virtual ~OGeneralPageWizard() override;
+        virtual ~OGeneralPageWizard();
         virtual void dispose() override;
     public:
         enum CreationMode
@@ -178,18 +178,18 @@ namespace dbaui
         virtual OUString getDatasourceName( const SfxItemSet& _rSet ) override;
         virtual bool approveDatasourceType( ::dbaccess::DATASOURCE_TYPE eType, OUString& _inout_rDisplayName ) override;
 
-        std::vector< OUString>
+        ::std::vector< OUString>
                             m_aEmbeddedURLPrefixes;
 
         OUString getEmbeddedDBName( const SfxItemSet& _rSet );
         void initializeEmbeddedDBList();
 
     protected:
-        DECL_LINK( OnEmbeddedDBTypeSelected, ListBox&, void );
-        DECL_LINK( OnCreateDatabaseModeSelected, Button*, void );
-        DECL_LINK( OnSetupModeSelected, Button*, void );
-        DECL_LINK( OnDocumentSelected, ListBox&, void );
-        DECL_LINK( OnOpenDocument, Button*, void );
+        DECL_LINK_TYPED( OnEmbeddedDBTypeSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnCreateDatabaseModeSelected, Button*, void );
+        DECL_LINK_TYPED( OnSetupModeSelected, Button*, void );
+        DECL_LINK_TYPED( OnDocumentSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnOpenDocument, Button*, void );
     };
 
 }   // namespace dbaui

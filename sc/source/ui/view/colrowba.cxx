@@ -40,9 +40,12 @@ static OUString lcl_MetricString( long nTwips, const OUString& rText )
 
         sal_Int64 nUserVal = MetricField::ConvertValue( nTwips*100, 1, 2, FUNIT_TWIP, eUserMet );
 
-        OUString aStr = rText + " "
-                        + ScGlobal::pLocaleData->getNum( nUserVal, 2 )
-                        + " " + SdrFormatter::GetUnitStr(eUserMet);
+        OUString aStr = rText;
+        aStr += " ";
+        aStr += ScGlobal::pLocaleData->getNum( nUserVal, 2 );
+        aStr += " ";
+        aStr += SdrFormatter::GetUnitStr(eUserMet);
+
         return aStr;
     }
 }
@@ -59,6 +62,11 @@ ScColBar::ScColBar( vcl::Window* pParent, ScHSplitPos eWhich,
 
 ScColBar::~ScColBar()
 {
+}
+
+inline bool ScColBar::UseNumericHeader() const
+{
+    return pTabView->GetViewData().GetDocument()->GetAddressConvention() == formula::FormulaGrammar::CONV_XL_R1C1;
 }
 
 SCCOLROW ScColBar::GetPos() const
@@ -79,7 +87,7 @@ sal_uInt16 ScColBar::GetEntrySize( SCCOLROW nEntryNo ) const
 
 OUString ScColBar::GetEntryText( SCCOLROW nEntryNo ) const
 {
-    return pTabView->GetViewData().GetDocument()->GetAddressConvention() == formula::FormulaGrammar::CONV_XL_R1C1
+    return UseNumericHeader()
         ? OUString::number(nEntryNo + 1)
         : ScColToAlpha( static_cast<SCCOL>(nEntryNo) );
 }
@@ -187,7 +195,7 @@ bool ScColBar::ResizeAllowed() const
 
 void ScColBar::DrawInvert( long nDragPosP )
 {
-    tools::Rectangle aRect( nDragPosP,0, nDragPosP+HDR_SLIDERSIZE-1,GetOutputSizePixel().Width()-1 );
+    Rectangle aRect( nDragPosP,0, nDragPosP+HDR_SLIDERSIZE-1,GetOutputSizePixel().Width()-1 );
     Update();
     Invert(aRect);
 
@@ -346,7 +354,7 @@ bool ScRowBar::ResizeAllowed() const
 
 void ScRowBar::DrawInvert( long nDragPosP )
 {
-    tools::Rectangle aRect( 0,nDragPosP, GetOutputSizePixel().Width()-1,nDragPosP+HDR_SLIDERSIZE-1 );
+    Rectangle aRect( 0,nDragPosP, GetOutputSizePixel().Width()-1,nDragPosP+HDR_SLIDERSIZE-1 );
     Update();
     Invert(aRect);
 

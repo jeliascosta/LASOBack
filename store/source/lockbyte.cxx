@@ -30,7 +30,6 @@
 #include "object.hxx"
 #include "storbase.hxx"
 
-#include <memory>
 #include <string.h>
 
 using namespace store;
@@ -47,7 +46,7 @@ storeError ILockBytes::initialize (rtl::Reference< PageData::Allocator > & rxAll
     return initialize_Impl (rxAllocator, nPageSize);
 }
 
-storeError ILockBytes::readPageAt (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset)
+storeError ILockBytes::readPageAt (PageHolder & rPage, sal_uInt32 nOffset)
 {
     OSL_PRECOND(!(nOffset == STORE_PAGE_NULL), "store::ILockBytes::readPageAt(): invalid Offset");
     if (nOffset == STORE_PAGE_NULL)
@@ -56,7 +55,7 @@ storeError ILockBytes::readPageAt (std::shared_ptr<PageData> & rPage, sal_uInt32
     return readPageAt_Impl (rPage, nOffset);
 }
 
-storeError ILockBytes::writePageAt (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset)
+storeError ILockBytes::writePageAt (PageHolder const & rPage, sal_uInt32 nOffset)
 {
     // [SECURITY:ValInput]
     PageData const * pagedata = rPage.get();
@@ -198,14 +197,14 @@ struct FileHandle
         sal_uInt32 nFlags = 0;
         switch (eAccessMode)
         {
-        case storeAccessMode::Create:
-        case storeAccessMode::ReadCreate:
+        case store_AccessCreate:
+        case store_AccessReadCreate:
             nFlags |= osl_File_OpenFlag_Create;
             SAL_FALLTHROUGH;
-        case storeAccessMode::ReadWrite:
+        case store_AccessReadWrite:
             nFlags |= osl_File_OpenFlag_Write;
             SAL_FALLTHROUGH;
-        case storeAccessMode::ReadOnly:
+        case store_AccessReadOnly:
             nFlags |= osl_File_OpenFlag_Read;
             break;
         default:
@@ -244,7 +243,7 @@ struct FileHandle
         {
             // Already existing (O_CREAT | O_EXCL).
             result = osl_openFile (aFileUrl.pData, &m_handle, osl_File_OpenFlag_Read | osl_File_OpenFlag_Write);
-            if ((result == osl_File_E_None) && (eAccessMode == storeAccessMode::Create))
+            if ((result == osl_File_E_None) && (eAccessMode == store_AccessCreate))
             {
                 // Truncate existing file.
                 result = osl_setFileSize (m_handle, 0);
@@ -292,8 +291,8 @@ class FileLockBytes :
      */
     virtual storeError initialize_Impl (rtl::Reference< PageData::Allocator > & rxAllocator, sal_uInt16 nPageSize) override;
 
-    virtual storeError readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset) override;
-    virtual storeError writePageAt_Impl (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset) override;
+    virtual storeError readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset) override;
+    virtual storeError writePageAt_Impl (PageHolder const & rPage, sal_uInt32 nOffset) override;
 
     virtual storeError readAt_Impl (sal_uInt32 nOffset, void * pBuffer, sal_uInt32 nBytes) override;
     virtual storeError writeAt_Impl (sal_uInt32 nOffset, void const * pBuffer, sal_uInt32 nBytes) override;
@@ -314,7 +313,7 @@ public:
 protected:
     /** Destruction.
      */
-    virtual ~FileLockBytes() override;
+    virtual ~FileLockBytes();
 };
 
 } // namespace store
@@ -361,11 +360,11 @@ storeError FileLockBytes::initialize_Impl (rtl::Reference< PageData::Allocator >
     return store_E_None;
 }
 
-storeError FileLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset)
+storeError FileLockBytes::readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset)
 {
     if (m_xAllocator.is())
     {
-        std::shared_ptr<PageData> page (m_xAllocator->construct<PageData>(), PageData::Deallocate(m_xAllocator));
+        PageHolder page (m_xAllocator->construct<PageData>(), m_xAllocator);
         page.swap (rPage);
     }
 
@@ -378,7 +377,7 @@ storeError FileLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, sa
     return readAt_Impl (nOffset, pagedata, pagedata->size());
 }
 
-storeError FileLockBytes::writePageAt_Impl (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset)
+storeError FileLockBytes::writePageAt_Impl (PageHolder const & rPage, sal_uInt32 nOffset)
 {
     PageData const * pagedata = rPage.get();
     OSL_PRECOND(pagedata != nullptr, "contract violation");
@@ -520,8 +519,8 @@ class MappedLockBytes :
      */
     virtual storeError initialize_Impl (rtl::Reference< PageData::Allocator > & rxAllocator, sal_uInt16 nPageSize) override;
 
-    virtual storeError readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset) override;
-    virtual storeError writePageAt_Impl (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset) override;
+    virtual storeError readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset) override;
+    virtual storeError writePageAt_Impl (PageHolder const & rPage, sal_uInt32 nOffset) override;
 
     virtual storeError readAt_Impl  (sal_uInt32 nOffset, void * pBuffer, sal_uInt32 nBytes) override;
     virtual storeError writeAt_Impl (sal_uInt32 nOffset, const void * pBuffer, sal_uInt32 nBytes) override;
@@ -542,7 +541,7 @@ public:
 protected:
     /* Destruction.
      */
-    virtual ~MappedLockBytes() override;
+    virtual ~MappedLockBytes();
 };
 
 } // namespace store
@@ -580,7 +579,7 @@ storeError MappedLockBytes::initialize_Impl (rtl::Reference< PageData::Allocator
     return store_E_None;
 }
 
-storeError MappedLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset)
+storeError MappedLockBytes::readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset)
 {
     sal_uInt8 * src_lo = m_pData + nOffset;
     if ((m_pData > src_lo) || (src_lo >= m_pData + m_nSize))
@@ -590,13 +589,13 @@ storeError MappedLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, 
     if ((m_pData > src_hi) || (src_hi > m_pData + m_nSize))
         return store_E_CantRead;
 
-    std::shared_ptr<PageData> page (reinterpret_cast< PageData* >(src_lo), PageData::Deallocate(static_cast< PageData::Allocator* >(this)));
+    PageHolder page (reinterpret_cast< PageData* >(src_lo), static_cast< PageData::Allocator* >(this));
     page.swap (rPage);
 
     return store_E_None;
 }
 
-storeError MappedLockBytes::writePageAt_Impl (std::shared_ptr<PageData> const & /*rPage*/, sal_uInt32 /*nOffset*/)
+storeError MappedLockBytes::writePageAt_Impl (PageHolder const & /*rPage*/, sal_uInt32 /*nOffset*/)
 {
     return store_E_AccessViolation;
 }
@@ -658,8 +657,8 @@ class MemoryLockBytes :
      */
     virtual storeError initialize_Impl (rtl::Reference< PageData::Allocator > & rxAllocator, sal_uInt16 nPageSize) override;
 
-    virtual storeError readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset) override;
-    virtual storeError writePageAt_Impl (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset) override;
+    virtual storeError readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset) override;
+    virtual storeError writePageAt_Impl (PageHolder const & rPage, sal_uInt32 nOffset) override;
 
     virtual storeError readAt_Impl  (sal_uInt32 nOffset, void * pBuffer, sal_uInt32 nBytes) override;
     virtual storeError writeAt_Impl (sal_uInt32 nOffset, const void * pBuffer, sal_uInt32 nBytes) override;
@@ -680,7 +679,7 @@ public:
 protected:
     /** Destruction.
      */
-    virtual ~MemoryLockBytes() override;
+    virtual ~MemoryLockBytes();
 };
 
 } // namespace store
@@ -705,11 +704,11 @@ storeError MemoryLockBytes::initialize_Impl (rtl::Reference< PageData::Allocator
     return result;
 }
 
-storeError MemoryLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, sal_uInt32 nOffset)
+storeError MemoryLockBytes::readPageAt_Impl (PageHolder & rPage, sal_uInt32 nOffset)
 {
     if (m_xAllocator.is())
     {
-        std::shared_ptr<PageData> page (m_xAllocator->construct<PageData>(), PageData::Deallocate(m_xAllocator));
+        PageHolder page (m_xAllocator->construct<PageData>(), m_xAllocator);
         page.swap (rPage);
     }
 
@@ -722,7 +721,7 @@ storeError MemoryLockBytes::readPageAt_Impl (std::shared_ptr<PageData> & rPage, 
     return readAt_Impl (nOffset, pagedata, pagedata->size());
 }
 
-storeError MemoryLockBytes::writePageAt_Impl (std::shared_ptr<PageData> const & rPage, sal_uInt32 nOffset)
+storeError MemoryLockBytes::writePageAt_Impl (PageHolder const & rPage, sal_uInt32 nOffset)
 {
     PageData const * pagedata = rPage.get();
     OSL_PRECOND(!(pagedata == nullptr), "contract violation");
@@ -814,13 +813,13 @@ template< class T > struct ResourceHolder
     T m_value;
 
     explicit ResourceHolder (T const & value = T()) : m_value (value) {}
-    ~ResourceHolder() { reset(T()); }
+    ~ResourceHolder() { reset(); }
 
     T & get() { return m_value; }
     T const & get() const { return m_value; }
 
     void set (T const & value) { m_value = value; }
-    void reset (T const & value)
+    void reset (T const & value = T())
     {
         T tmp (m_value);
         if (tmp != value)
@@ -854,7 +853,7 @@ FileLockBytes_createInstance (
     if (result != store_E_None)
         return result;
 
-    if (eAccessMode == storeAccessMode::ReadOnly)
+    if (eAccessMode == store_AccessReadOnly)
     {
         ResourceHolder<FileMapping> xMapping;
         if (xMapping.get().initialize (xFile.get().m_handle) == osl_File_E_None)

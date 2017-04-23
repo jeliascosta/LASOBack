@@ -68,6 +68,7 @@ struct OptimizerSettings
         mbSaveAs( true ),
         mbOpenNewDocument( true ),
         mnEstimatedFileSize( 0 ){};
+        ~OptimizerSettings(){};
 
         void LoadSettingsFromConfiguration( const css::uno::Reference< css::container::XNameAccess >& rSettings );
         void SaveSettingsToConfiguration( const css::uno::Reference< css::container::XNameReplace >& rSettings );
@@ -79,7 +80,8 @@ class ConfigurationAccess
 {
     public:
 
-        explicit ConfigurationAccess( const css::uno::Reference< css::uno::XComponentContext >& rXFactory );
+        ConfigurationAccess( const css::uno::Reference< css::uno::XComponentContext >& rXFactory,
+                                OptimizerSettings* pDefaultSettings = nullptr );
         ~ConfigurationAccess();
         void SaveConfiguration();
 
@@ -101,7 +103,14 @@ class ConfigurationAccess
 
     private:
 
-        std::map < PPPOptimizerTokenEnum, OUString > maStrings;
+        struct Compare
+        {
+            bool operator()( const PPPOptimizerTokenEnum s1, const PPPOptimizerTokenEnum s2 ) const
+            {
+                return s1 < s2;
+            }
+        };
+        std::map < PPPOptimizerTokenEnum, OUString, Compare > maStrings;
 
         std::vector< OptimizerSettings > maSettings;
         std::vector< OptimizerSettings > maInitialSettings;

@@ -82,13 +82,18 @@ public:
     virtual void SAL_CALL release() throw () override;
 
     virtual css::uno::Reference< css::uno::XInterface >
-    SAL_CALL getParent() override;
+    SAL_CALL getParent()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setParent(
-        css::uno::Reference< css::uno::XInterface > const &) override;
+        css::uno::Reference< css::uno::XInterface > const &)
+        throw (
+            css::lang::NoSupportException,
+            css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Int64 SAL_CALL getSomething(
-        css::uno::Sequence< sal_Int8 > const & aIdentifier) override;
+        css::uno::Sequence< sal_Int8 > const & aIdentifier)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     void bind(
         rtl::Reference< RootAccess > const & root,
@@ -113,7 +118,7 @@ public:
     void commitChanges(bool valid, Modifications * globalModifications);
 
 private:
-    virtual ~ChildAccess() override;
+    virtual ~ChildAccess();
 
     virtual void addTypes(
         std::vector< css::uno::Type > * types) const override;
@@ -122,7 +127,8 @@ private:
         std::vector<OUString> * services) override;
 
     virtual css::uno::Any SAL_CALL queryInterface(
-        css::uno::Type const & aType) override;
+        css::uno::Type const & aType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     rtl::Reference< RootAccess > root_;
     rtl::Reference< Access > parent_; // null if free node

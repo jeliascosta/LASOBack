@@ -39,7 +39,7 @@ ScXMLTableScenarioContext::ScXMLTableScenarioContext(
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference< xml::sax::XAttributeList >& xAttrList ):
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     aBorderColor( COL_BLACK ),
     bDisplayBorder( true ),
     bCopyBack( true ),
@@ -133,17 +133,17 @@ void ScXMLTableScenarioContext::EndElement()
     if (pDoc)
     {
         pDoc->SetScenario( nCurrTable, true );
-        ScScenarioFlags nFlags( ScScenarioFlags::NONE );
+        sal_uInt16 nFlags( 0 );
         if( bDisplayBorder )
-            nFlags |= ScScenarioFlags::ShowFrame;
+            nFlags |= SC_SCENARIO_SHOWFRAME;
         if( bCopyBack )
-            nFlags |= ScScenarioFlags::TwoWay;
+            nFlags |= SC_SCENARIO_TWOWAY;
         if( bCopyStyles )
-            nFlags |= ScScenarioFlags::Attrib;
+            nFlags |= SC_SCENARIO_ATTRIB;
         if( !bCopyFormulas )
-            nFlags |= ScScenarioFlags::Value;
+            nFlags |= SC_SCENARIO_VALUE;
         if( bProtected )
-            nFlags |= ScScenarioFlags::Protected;
+            nFlags |= SC_SCENARIO_PROTECT;
         pDoc->SetScenarioData( nCurrTable, OUString( sComment ), aBorderColor, nFlags );
         for( size_t i = 0; i < aScenarioRanges.size(); ++i )
         {

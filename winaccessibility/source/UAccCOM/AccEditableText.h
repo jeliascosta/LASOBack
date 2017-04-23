@@ -20,8 +20,8 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCEDITABLETEXT_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCEDITABLETEXT_H
 
-#include "Resource.h"
-#include <com/sun/star/uno/Reference.hxx>
+#include "resource.h"
+#include <com/sun/star/uno/reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleEditableText.hpp>
 #include "UNOXWrapper.h"
 
@@ -47,20 +47,13 @@ public:
     BEGIN_COM_MAP(CAccEditableText)
     COM_INTERFACE_ENTRY(IAccessibleEditableText)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
-    static HRESULT WINAPI SmartQI_(void* pv,
+    static HRESULT WINAPI _SmartQI(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return static_cast<CAccEditableText*>(pv)->SmartQI(iid,ppvObject);
+        return ((CAccEditableText*)pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -76,37 +69,37 @@ public:
     // IAccessibleEditableText
 
     // Copies a range of text to the clipboard.
-    STDMETHOD(copyText)(long startOffset, long endOffset) override;
+    STDMETHOD(copyText)(long startOffset, long endOffset);
 
     // Deletes a range of text.
-    STDMETHOD(deleteText)(long startOffset, long endOffset) override;
+    STDMETHOD(deleteText)(long startOffset, long endOffset);
 
     // Inserts text at a specified offset.
-    STDMETHOD(insertText)(long offset, BSTR * text) override;
+    STDMETHOD(insertText)(long offset, BSTR * text);
 
     // Cuts a range of text to the clipboard.
-    STDMETHOD(cutText)(long startOffset, long endOffset) override;
+    STDMETHOD(cutText)(long startOffset, long endOffset);
 
     // Pastes text from clipboard at specified offset.
-    STDMETHOD(pasteText)(long offset) override;
+    STDMETHOD(pasteText)(long offset);
 
     // Replaces range of text with new text.
-    STDMETHOD(replaceText)(long startOffset, long endOffset, BSTR * text) override;
+    STDMETHOD(replaceText)(long startOffset, long endOffset, BSTR * text);
 
 
     // Sets attributes of range of text.
-    STDMETHOD(setAttributes)(long startOffset, long endOffset, BSTR * attributes) override;
+    STDMETHOD(setAttributes)(long startOffset, long endOffset, BSTR * attributes);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface) override;
+    STDMETHOD(put_XInterface)(hyper pXInterface);
 
 private:
 
     css::uno::Reference<css::accessibility::XAccessibleEditableText> pRXEdtTxt;
 
-    static void get_AnyFromOLECHAR(const ::rtl::OUString &ouName, const ::rtl::OUString &ouValue, css::uno::Any &rAny);
+    void get_AnyFromOLECHAR(const ::rtl::OUString &ouName, const ::rtl::OUString &ouValue, css::uno::Any &rAny);
 
-    css::accessibility::XAccessibleEditableText* GetXInterface()
+    inline css::accessibility::XAccessibleEditableText* GetXInterface()
     {
         return pRXEdtTxt.get();
     }

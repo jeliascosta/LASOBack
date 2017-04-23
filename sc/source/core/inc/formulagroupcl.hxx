@@ -18,7 +18,7 @@ class FormulaGroupInterpreterOpenCL : public FormulaGroupInterpreter
 {
 public:
     FormulaGroupInterpreterOpenCL();
-    virtual ~FormulaGroupInterpreterOpenCL() override;
+    virtual ~FormulaGroupInterpreterOpenCL();
 
     virtual ScMatrixRef inverseMatrix( const ScMatrix& rMat ) override;
     virtual bool interpret( ScDocument& rDoc, const ScAddress& rTopPos,

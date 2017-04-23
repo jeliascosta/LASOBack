@@ -102,12 +102,13 @@ void OColumnControlModel::registerProperties()
 }
 
 // XCloneable
-Reference< XCloneable > SAL_CALL OColumnControlModel::createClone( )
+Reference< XCloneable > SAL_CALL OColumnControlModel::createClone( ) throw (RuntimeException, std::exception)
 {
-    return new OColumnControlModel( this, m_xORB );
+    return new OColumnControlModel( this, getORB() );
 }
 
 css::uno::Sequence<sal_Int8> OColumnControlModel::getImplementationId()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -116,13 +117,13 @@ IMPLEMENT_GETTYPES2(OColumnControlModel,OColumnControlModel_BASE,comphelper::OPr
 IMPLEMENT_PROPERTYCONTAINER_DEFAULTS(OColumnControlModel)
 IMPLEMENT_SERVICE_INFO2_STATIC(OColumnControlModel,"com.sun.star.comp.dbu.OColumnControlModel","com.sun.star.awt.UnoControlModel","com.sun.star.sdb.ColumnDescriptorControlModel")
 IMPLEMENT_FORWARD_REFCOUNT( OColumnControlModel, OColumnControlModel_BASE )
-Any SAL_CALL OColumnControlModel::queryInterface( const Type& _rType )
+Any SAL_CALL OColumnControlModel::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
 {
     return OColumnControlModel_BASE::queryInterface( _rType );
 }
 
 // css::XAggregation
-Any SAL_CALL OColumnControlModel::queryAggregation( const Type& rType )
+Any SAL_CALL OColumnControlModel::queryAggregation( const Type& rType ) throw(RuntimeException, std::exception)
 {
     Any aRet(OColumnControlModel_BASE::queryAggregation(rType));
     if (!aRet.hasValue())
@@ -130,17 +131,17 @@ Any SAL_CALL OColumnControlModel::queryAggregation( const Type& rType )
     return aRet;
 }
 
-OUString SAL_CALL OColumnControlModel::getServiceName()
+OUString SAL_CALL OColumnControlModel::getServiceName() throw ( RuntimeException, std::exception)
 {
     return OUString();
 }
 
-void OColumnControlModel::write(const Reference<XObjectOutputStream>& /*_rxOutStream*/)
+void OColumnControlModel::write(const Reference<XObjectOutputStream>& /*_rxOutStream*/) throw ( css::io::IOException, RuntimeException, std::exception)
 {
     // TODO
 }
 
-void OColumnControlModel::read(const Reference<XObjectInputStream>& /*_rxInStream*/)
+void OColumnControlModel::read(const Reference<XObjectInputStream>& /*_rxInStream*/) throw ( css::io::IOException, RuntimeException, std::exception)
 {
     // TODO
 }

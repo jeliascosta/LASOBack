@@ -19,152 +19,53 @@
 #ifndef INCLUDED_UNOTOOLS_COMPATIBILITY_HXX
 #define INCLUDED_UNOTOOLS_COMPATIBILITY_HXX
 
+#include <unotools/unotoolsdllapi.h>
 #include <sal/types.h>
 #include <osl/mutex.hxx>
 #include <com/sun/star/uno/Sequence.h>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <unotools/options.hxx>
-#include <unotools/unotoolsdllapi.h>
-#include <rtl/ustring.hxx>
-#include <memory>
+
+//  types, enums, ...
+
+enum CompatibilityOptions
+{
+    COPT_USE_PRINTERDEVICE = 0,
+    COPT_ADD_SPACING,
+    COPT_ADD_SPACING_AT_PAGES,
+    COPT_USE_OUR_TABSTOPS,
+    COPT_NO_EXTLEADING,
+    COPT_USE_LINESPACING,
+    COPT_ADD_TABLESPACING,
+    COPT_USE_OBJECTPOSITIONING,
+    COPT_USE_OUR_TEXTWRAPPING,
+    COPT_CONSIDER_WRAPPINGSTYLE,
+    COPT_EXPAND_WORDSPACE,
+    COPT_PROTECT_FORM
+};
 
 /*-************************************************************************************************************
-    @descr  Struct to hold information about one compatibility entry
+    @descr          The method GetList() returns a list of property values.
+                    Use follow defines to separate values by names.
 *//*-*************************************************************************************************************/
-class UNOTOOLS_DLLPUBLIC SvtCompatibilityEntry
-{
-    public:
-        /*-************************************************************************************************************
-            @descr          The method SvtCompatibilityOptions::GetList() returns a list of property values.
-                            Use follow enum class to separate values by names.
-                            Sync it with sPropertyName in SvtCompatibilityEntry::getName()
-        *//*-*************************************************************************************************************/
-        enum class Index
-        {
-            /* Should be in the start. Do not remove it. */
-            Name,
-            Module,
+#define COMPATIBILITY_PROPERTYNAME_NAME                     "Name"
+#define COMPATIBILITY_PROPERTYNAME_MODULE                   "Module"
+#define COMPATIBILITY_PROPERTYNAME_USEPRTMETRICS            "UsePrinterMetrics"
+#define COMPATIBILITY_PROPERTYNAME_ADDSPACING               "AddSpacing"
+#define COMPATIBILITY_PROPERTYNAME_ADDSPACINGATPAGES        "AddSpacingAtPages"
+#define COMPATIBILITY_PROPERTYNAME_USEOURTABSTOPS           "UseOurTabStopFormat"
+#define COMPATIBILITY_PROPERTYNAME_NOEXTLEADING             "NoExternalLeading"
+#define COMPATIBILITY_PROPERTYNAME_USELINESPACING           "UseLineSpacing"
+#define COMPATIBILITY_PROPERTYNAME_ADDTABLESPACING          "AddTableSpacing"
+#define COMPATIBILITY_PROPERTYNAME_USEOBJECTPOSITIONING     "UseObjectPositioning"
+#define COMPATIBILITY_PROPERTYNAME_USEOURTEXTWRAPPING       "UseOurTextWrapping"
+#define COMPATIBILITY_PROPERTYNAME_CONSIDERWRAPPINGSTYLE    "ConsiderWrappingStyle"
+#define COMPATIBILITY_PROPERTYNAME_EXPANDWORDSPACE          "ExpandWordSpace"
+#define COMPATIBILITY_PROPERTYNAME_PROTECTFORM              "ProtectForm"
 
-            /* Editable list of compatibility options. */
-            UsePrtMetrics,
-            AddSpacing,
-            AddSpacingAtPages,
-            UseOurTabStops,
-            NoExtLeading,
-            UseLineSpacing,
-            AddTableSpacing,
-            UseObjectPositioning,
-            UseOurTextWrapping,
-            ConsiderWrappingStyle,
-            ExpandWordSpace,
-            ProtectForm,
-            MsWordTrailingBlanks,
+#define COMPATIBILITY_DEFAULT_NAME                          "_default"
 
-            /* Should be at the end. Do not remove it. */
-            INVALID
-        };
-
-        SvtCompatibilityEntry();
-        ~SvtCompatibilityEntry();
-
-        static OUString getName( const Index rIdx );
-
-        static OUString getUserEntryName()
-        {
-            return OUString( "_user" );
-        }
-
-        static OUString getDefaultEntryName()
-        {
-            return OUString( "_default" );
-        }
-
-        static Index getIndex( const OUString& rName )
-        {
-            for ( int i = static_cast<int>(Index::Name); i < static_cast<int>(Index::INVALID); ++i )
-                if ( getName( Index(i) ) == rName )
-                    return Index(i);
-
-            /* SvtCompatibilityEntry::getIndex() Undeclared compatibility property name */
-            assert(false);
-
-            return Index::INVALID;
-        }
-
-        static size_t getElementCount()
-        {
-            return static_cast<size_t>(Index::INVALID);
-        }
-
-        css::uno::Any getValue( const Index rIdx ) const
-        {
-            if ( static_cast<size_t>(rIdx) < getElementCount() )
-            {
-                return m_aPropertyValue[ static_cast<int>(rIdx) ];
-            } else
-            {
-                /* Wrong index. */
-                assert( false );
-                return css::uno::Any();
-            }
-        }
-
-        template<typename T>
-        T getValue( const Index rIdx ) const
-        {
-            T aValue = T();
-
-            if ( static_cast<size_t>(rIdx) < getElementCount() )
-            {
-                m_aPropertyValue[ static_cast<int>(rIdx) ] >>= aValue;
-            } else
-            {
-                /* Wrong index. */
-                assert( false );
-            }
-
-            return aValue;
-        }
-
-        void setValue( const Index rIdx, css::uno::Any& rValue )
-        {
-            if ( static_cast<size_t>(rIdx) < getElementCount() )
-            {
-                m_aPropertyValue[ static_cast<int>(rIdx) ] = rValue;
-            } else
-            {
-                /* Wrong index. */
-                assert( false );
-            }
-        }
-
-        template<typename T>
-        void setValue( const Index rIdx, T rValue )
-        {
-            if ( static_cast<size_t>(rIdx) < getElementCount() )
-            {
-                m_aPropertyValue[ static_cast<int>(rIdx) ] = css::uno::Any(rValue);
-            } else
-            {
-                /* Wrong index. */
-                assert( false );
-            }
-        }
-
-        bool isDefaultEntry() const
-        {
-            return m_bDefaultEntry;
-        }
-
-        void setDefaultEntry( bool rValue )
-        {
-            m_bDefaultEntry = rValue;
-        }
-
-    private:
-        std::vector<css::uno::Any> m_aPropertyValue;
-        bool                       m_bDefaultEntry;
-};
+//  forward declarations
 
 /*-************************************************************************************************************
     @short          forward declaration to our private date container implementation
@@ -172,6 +73,7 @@ class UNOTOOLS_DLLPUBLIC SvtCompatibilityEntry
                     You can create the container if it is necessary. The class which use these mechanism
                     is faster and smaller then a complete implementation!
 *//*-*************************************************************************************************************/
+
 class SvtCompatibilityOptions_Impl;
 
 /*-************************************************************************************************************
@@ -179,30 +81,40 @@ class SvtCompatibilityOptions_Impl;
     @descr          Make it possible to configure dynamic menu structures of menus like "new" or "wizard".
     @devstatus      ready to use
 *//*-*************************************************************************************************************/
+
 class UNOTOOLS_DLLPUBLIC SvtCompatibilityOptions: public utl::detail::Options
 {
+
+    //  public methods
+
     public:
-        SvtCompatibilityOptions();
-        virtual ~SvtCompatibilityOptions() override;
+
+        //  constructor / destructor
 
         /*-****************************************************************************************************
-            @short      append a new item
-            @descr
+            @short      standard constructor and destructor
+            @descr      This will initialize an instance with default values.
+                        We implement these class with a refcount mechanism! Every instance of this class increase it
+                        at create and decrease it at delete time - but all instances use the same data container!
+                        He is implemented as a static member ...
 
-            @seealso    method Clear()
-
-            @param      "aItem"             SvtCompatibilityEntry
+            @seealso    member m_nRefCount
+            @seealso    member m_pDataContainer
         *//*-*****************************************************************************************************/
-        void AppendItem( const SvtCompatibilityEntry& aItem );
+
+         SvtCompatibilityOptions();
+        virtual ~SvtCompatibilityOptions();
+
+        //  interface
 
         /*-****************************************************************************************************
             @short      clear complete specified list
             @descr      Call this methods to clear the whole list.
         *//*-*****************************************************************************************************/
+
         void Clear();
 
-        void SetDefault( SvtCompatibilityEntry::Index rIdx, bool rValue );
-        bool GetDefault( SvtCompatibilityEntry::Index rIdx ) const;
+        void SetDefault( const OUString & sName, bool bValue );
 
         /*-****************************************************************************************************
             @short      return complete specified list
@@ -212,10 +124,49 @@ class UNOTOOLS_DLLPUBLIC SvtCompatibilityOptions: public utl::detail::Options
 
             @onerror    We return an empty list.
         *//*-*****************************************************************************************************/
+
         css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > > GetList() const;
 
+        /*-****************************************************************************************************
+            @short      append a new item
+            @descr
+
+            @seealso    method Clear()
+
+            @param      "sName"             Name
+            @param      "sModule"           Module
+        *//*-*****************************************************************************************************/
+
+        void AppendItem( const OUString& sName,
+                         const OUString& sModule,
+                         bool bUsePrtMetrics,
+                         bool bAddSpacing,
+                         bool bAddSpacingAtPages,
+                         bool bUseOurTabStops,
+                         bool bNoExtLeading,
+                         bool bUseLineSpacing,
+                         bool bAddTableSpacing,
+                         bool bUseObjectPositioning,
+                         bool bUseOurTextWrapping,
+                         bool bConsiderWrappingStyle,
+                         bool bExpandWordSpace,
+                         bool bProtectForm );
+
+        bool        IsUsePrtDevice() const;
+        bool        IsAddSpacing() const;
+        bool        IsAddSpacingAtPages() const;
+        bool        IsUseOurTabStops() const;
+        bool        IsNoExtLeading() const;
+        bool        IsUseLineSpacing() const;
+        bool        IsAddTableSpacing() const;
+        bool        IsUseObjectPositioning() const;
+        bool        IsUseOurTextWrapping() const;
+        bool        IsConsiderWrappingStyle() const;
+        bool        IsExpandWordSpace() const;
+
+    //  private methods
+
     private:
-        std::shared_ptr<SvtCompatibilityOptions_Impl> m_pImpl;
 
         /*-****************************************************************************************************
             @short      return a reference to a static mutex
@@ -224,8 +175,25 @@ class UNOTOOLS_DLLPUBLIC SvtCompatibilityOptions: public utl::detail::Options
                         We create a static mutex only for one ime and use at different times.
             @return     A reference to a static mutex member.
         *//*-*****************************************************************************************************/
-        UNOTOOLS_DLLPRIVATE static osl::Mutex& GetOwnStaticMutex();
-};
+
+        UNOTOOLS_DLLPRIVATE static ::osl::Mutex& GetOwnStaticMutex();
+
+    //  private member
+
+    private:
+
+        /*Attention
+
+            Don't initialize these static members in these headers!
+            a) Double defined symbols will be detected ...
+            b) and unresolved externals exist at linking time.
+            Do it in your source only.
+         */
+
+        static SvtCompatibilityOptions_Impl*    m_pDataContainer;
+        static sal_Int32                        m_nRefCount;
+
+};      // class SvtCompatibilityOptions
 
 #endif // INCLUDED_UNOTOOLS_COMPATIBILITY_HXX
 

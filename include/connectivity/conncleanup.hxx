@@ -58,15 +58,15 @@ namespace dbtools
 
     protected:
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& _rEvent ) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& _rEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XRowSetListener
-        virtual void SAL_CALL cursorMoved( const css::lang::EventObject& event ) override;
-        virtual void SAL_CALL rowChanged( const css::lang::EventObject& event ) override;
-        virtual void SAL_CALL rowSetChanged( const css::lang::EventObject& event ) override;
+        virtual void SAL_CALL cursorMoved( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL rowChanged( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL rowSetChanged( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         void clearConnection();
@@ -77,6 +77,7 @@ namespace dbtools
 
         void        startPropertyListening( const css::uno::Reference< css::beans::XPropertySet >& _rxProps );
         void        stopPropertyListening( const css::uno::Reference< css::beans::XPropertySet >& _rxEventSource );
+        bool        isPropertyListening() const { return m_bPropertyListening; }
     };
 
 

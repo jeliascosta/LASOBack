@@ -24,6 +24,7 @@
 #include "dbustrings.hrc"
 #include "defaultobjectnamecheck.hxx"
 #include "dlgsave.hxx"
+#include "localresaccess.hxx"
 #include "uiservices.hxx"
 #include "QTableWindow.hxx"
 #include "QTableWindowData.hxx"
@@ -32,6 +33,7 @@
 #include "QueryDesignView.hxx"
 #include "QueryTableView.hxx"
 #include "QueryTextView.hxx"
+#include "queryview.hxx"
 #include "QueryViewSwitch.hxx"
 #include "sqlmessage.hxx"
 #include "TableConnectionData.hxx"
@@ -74,7 +76,7 @@
 #include <connectivity/dbtools.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <sfx2/sfxsids.hrc>
-#include <tools/resary.hxx>
+#include <svtools/localresaccess.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <tools/diagnose_ex.h>
 #include <osl/diagnose.h>
@@ -99,11 +101,11 @@ namespace dbaui
 
     class OViewController : public OQueryController
     {
-        virtual OUString SAL_CALL getImplementationName() override
+        virtual OUString SAL_CALL getImplementationName() throw( RuntimeException, std::exception ) override
         {
             return getImplementationName_Static();
         }
-        virtual Sequence< OUString> SAL_CALL getSupportedServiceNames() override
+        virtual Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(RuntimeException, std::exception) override
         {
             return getSupportedServiceNames_Static();
         }
@@ -112,13 +114,11 @@ namespace dbaui
         explicit OViewController(const Reference< XComponentContext >& _rM) : OQueryController(_rM){}
 
         // need by registration
-        /// @throws RuntimeException
-        static OUString getImplementationName_Static()
+        static OUString getImplementationName_Static() throw( RuntimeException )
         {
             return OUString("org.openoffice.comp.dbu.OViewDesign");
         }
-        /// @throws RuntimeException
-        static Sequence< OUString > getSupportedServiceNames_Static()
+        static Sequence< OUString > getSupportedServiceNames_Static() throw( RuntimeException )
         {
             Sequence<OUString> aSupported { "com.sun.star.sdb.ViewDesign" };
             return aSupported;
@@ -173,6 +173,12 @@ namespace dbaui
                         rString += OStringToOUString(sT, RTL_TEXTENCODING_UTF8);
                      break;}
 
+                case SQLNodeType::Comparison:
+                    {
+                        rString += "SQL_COMPARISON:" + _pNode->getTokenValue(); // append Nodevalue
+                            // and start new line
+                        break;}
+
                 case SQLNodeType::Name:
                     {
                         rString += "SQL_NAME:\"" + _pNode->getTokenValue() + "\"";
@@ -198,6 +204,11 @@ namespace dbaui
                         rString += "SQL_PUNCTUATION:" + _pNode->getTokenValue(); // append Nodevalue
                         break;}
 
+                case SQLNodeType::AMMSC:
+                    {
+                        rString += "SQL_AMMSC:" + _pNode->getTokenValue(); // append Nodevalue
+                        break;}
+
                 default:
                     OSL_FAIL("OSQLParser::ShowParseTree: unzulaessiger NodeType");
                     rString += _pNode->getTokenValue();
@@ -213,9 +224,11 @@ namespace dbaui
         OUString lcl_getObjectResourceString( sal_uInt16 _nResId, sal_Int32 _nCommandType )
         {
             OUString sMessageText = ModuleRes( _nResId );
-            ModuleRes aResId(RSC_QUERY_OBJECT_TYPE);
-            ResStringArray aResList(aResId);
-            OUString sObjectType = aResList.GetString(_nCommandType);
+            OUString sObjectType;
+            {
+                LocalResourceAccess aLocalRes( RSC_QUERY_OBJECT_TYPE, RSC_RESOURCE );
+                sObjectType = ModuleRes( (sal_uInt16)( _nCommandType + 1 ) );
+            }
             sMessageText = sMessageText.replaceFirst( "$object$", sObjectType );
             return sMessageText;
         }
@@ -270,12 +283,13 @@ namespace
      */
     void grabFocusFromLimitBox( OQueryController& _rController )
     {
+        static const char sResourceURL[] = "private:resource/toolbar/designobjectbar";
         Reference< XLayoutManager > xLayoutManager = OGenericUnoController::getLayoutManager( _rController.getFrame() );
-        Reference< XUIElement > xUIElement = xLayoutManager->getElement("private:resource/toolbar/designobjectbar");
+        Reference< XUIElement > xUIElement = xLayoutManager->getElement(sResourceURL);
         if (xUIElement.is())
         {
             Reference< XWindow > xWindow(xUIElement->getRealInterface(), css::uno::UNO_QUERY);
-            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+            vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
             if( pWindow && pWindow->HasChildPathFocus() )
             {
                 pWindow->GrabFocusToDocument();
@@ -284,23 +298,23 @@ namespace
     }
 }
 
-OUString SAL_CALL OQueryController::getImplementationName()
+OUString SAL_CALL OQueryController::getImplementationName() throw( RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
 
-OUString OQueryController::getImplementationName_Static()
+OUString OQueryController::getImplementationName_Static() throw( RuntimeException )
 {
     return OUString("org.openoffice.comp.dbu.OQueryDesign");
 }
 
-Sequence< OUString> OQueryController::getSupportedServiceNames_Static()
+Sequence< OUString> OQueryController::getSupportedServiceNames_Static() throw( RuntimeException )
 {
     Sequence<OUString> aSupported { "com.sun.star.sdb.QueryDesign" };
     return aSupported;
 }
 
-Sequence< OUString> SAL_CALL OQueryController::getSupportedServiceNames()
+Sequence< OUString> SAL_CALL OQueryController::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -346,10 +360,20 @@ OQueryController::~OQueryController()
 IMPLEMENT_FORWARD_XINTERFACE2( OQueryController, OJoinController, OQueryController_PBase )
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( OQueryController, OJoinController, OQueryController_PBase )
 
-Reference< XPropertySetInfo > SAL_CALL OQueryController::getPropertySetInfo()
+Reference< XPropertySetInfo > SAL_CALL OQueryController::getPropertySetInfo() throw(RuntimeException, std::exception)
 {
     Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
+}
+
+sal_Bool SAL_CALL OQueryController::convertFastPropertyValue( Any& o_rConvertedValue, Any& o_rOldValue, sal_Int32 i_nHandle, const Any& i_rValue ) throw (IllegalArgumentException)
+{
+    return OPropertyContainer::convertFastPropertyValue( o_rConvertedValue, o_rOldValue, i_nHandle, i_rValue );
+}
+
+void SAL_CALL OQueryController::setFastPropertyValue_NoBroadcast( sal_Int32 i_nHandle, const Any& i_rValue ) throw ( Exception, std::exception )
+{
+    OPropertyContainer::setFastPropertyValue_NoBroadcast( i_nHandle, i_rValue );
 }
 
 void SAL_CALL OQueryController::getFastPropertyValue( Any& o_rValue, sal_Int32 i_nHandle ) const
@@ -403,7 +427,7 @@ void SAL_CALL OQueryController::getFastPropertyValue( Any& o_rValue, sal_Int32 i
         PropertyAttribute::READONLY
     );
 
-    std::sort(
+    ::std::sort(
         aProps.getArray(),
         aProps.getArray() + aProps.getLength(),
         ::comphelper::PropertyCompareByName()
@@ -469,7 +493,7 @@ FeatureState OQueryController::GetState(sal_uInt16 _nId) const
             aReturn.bEnabled = isEditable() && m_bGraphicalDesign && m_vTableData.size() > 1;
             break;
         case ID_BROWSER_SAVEASDOC:
-            aReturn.bEnabled = !editingCommand() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
+            aReturn.bEnabled = !editingCommand() && !editingView() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
             break;
         case ID_BROWSER_SAVEDOC:
             aReturn.bEnabled = isEditable() && (!m_bGraphicalDesign || !(m_vTableFieldDesc.empty() || m_vTableData.empty()));
@@ -505,7 +529,7 @@ FeatureState OQueryController::GetState(sal_uInt16 _nId) const
         case SID_QUERY_LIMIT:
             aReturn.bEnabled = m_bGraphicalDesign;
             if( aReturn.bEnabled )
-                aReturn.aValue <<= m_nLimit;
+                aReturn.aValue = makeAny( m_nLimit );
             break;
         case SID_QUERY_PROP_DLG:
             aReturn.bEnabled = m_bGraphicalDesign;
@@ -607,7 +631,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
                             if ( m_pSqlIterator->getStatementType() != OSQLStatementType::Select || rTabs.begin() == rTabs.end() )
                             {
                                 aError = SQLException(
-                                    ModuleRes( STR_QRY_NOSELECT ),
+                                    OUString( ModuleRes( STR_QRY_NOSELECT ) ),
                                     nullptr,
                                     "S1000",
                                     1000,
@@ -630,7 +654,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
                     else
                     {
                         aError = SQLException(
-                            ModuleRes( STR_QRY_SYNTAX ),
+                            OUString( ModuleRes( STR_QRY_SYNTAX ) ),
                             nullptr,
                             "S1000",
                             1000,
@@ -660,7 +684,7 @@ void OQueryController::Execute(sal_uInt16 _nId, const Sequence< PropertyValue >&
         break;
         case SID_BROWSER_CLEAR_QUERY:
             {
-                GetUndoManager().EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString(), 0, ViewShellId(-1) );
+                GetUndoManager().EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString() );
                 getContainer()->clear();
                 GetUndoManager().LeaveListAction();
 
@@ -970,7 +994,7 @@ void OQueryController::impl_initialize()
             if ( !( aView >>= m_xAlterView ) )
             {
                 throw IllegalArgumentException(
-                    ModuleRes( STR_NO_ALTER_VIEW_SUPPORT ),
+                    OUString( ModuleRes( STR_NO_ALTER_VIEW_SUPPORT ) ),
                     *this,
                     1
                 );
@@ -1076,7 +1100,7 @@ void OQueryController::setQueryComposer()
             OSL_ENSURE(m_xComposer.is(),"No querycomposer available!");
             Reference<XTablesSupplier> xTablesSup(getConnection(), UNO_QUERY);
             deleteIterator();
-            m_pSqlIterator = new ::connectivity::OSQLParseTreeIterator( getConnection(), xTablesSup->getTables(), m_aSqlParser );
+            m_pSqlIterator = new ::connectivity::OSQLParseTreeIterator( getConnection(), xTablesSup->getTables(), m_aSqlParser, nullptr );
         }
     }
 }
@@ -1126,7 +1150,7 @@ void OQueryController::impl_onModifyChanged()
     InvalidateFeature(ID_BROWSER_QUERY_EXECUTE);
 }
 
-void SAL_CALL OQueryController::disposing( const EventObject& Source )
+void SAL_CALL OQueryController::disposing( const EventObject& Source ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1143,7 +1167,7 @@ void SAL_CALL OQueryController::disposing( const EventObject& Source )
         }
     }
 
-    OJoinController_BASE::disposing(Source);
+    OJoinController::disposing(Source);
 }
 
 void OQueryController::reconnect(bool _bUI)
@@ -1358,7 +1382,7 @@ bool OQueryController::askForNewName(const Reference<XNameAccess>& _xElements, b
                 getConnection(),
                 aDefaultName,
                 aNameChecker,
-                SADFlags::NONE );
+                SAD_DEFAULT );
 
         bRet = ( aDlg->Execute() == RET_OK );
         if ( bRet )
@@ -1568,9 +1592,9 @@ struct CommentStrip
 
     See also delComment() implementation for OSQLParser::parseTree().
  */
-static std::vector< CommentStrip > getComment( const OUString& rQuery )
+static ::std::vector< CommentStrip > getComment( const OUString& rQuery )
 {
-    std::vector< CommentStrip > aRet;
+    ::std::vector< CommentStrip > aRet;
     // First a quick search if there is any "--" or "//" or "/*", if not then
     // the whole copying loop is pointless.
     if (rQuery.indexOf( "--" ) < 0 && rQuery.indexOf( "//" ) < 0 &&
@@ -1645,7 +1669,7 @@ static std::vector< CommentStrip > getComment( const OUString& rQuery )
     recomposition. This is ugly but at least allows commented queries while
     preserving the comments _somehow_.
  */
-static OUString concatComment( const OUString& rQuery, const std::vector< CommentStrip >& rComments )
+static OUString concatComment( const OUString& rQuery, const ::std::vector< CommentStrip >& rComments )
 {
     // No comments => return query.
     if (rComments.empty())
@@ -1657,7 +1681,7 @@ static OUString concatComment( const OUString& rQuery, const std::vector< Commen
     // Obtaining the needed size once should be faster than reallocating.
     // Also add a blank or linefeed for each comment.
     sal_Int32 nBufSize = nLen + nComments;
-    for (std::vector< CommentStrip >::const_iterator it( rComments.begin()); it != rComments.end(); ++it)
+    for (::std::vector< CommentStrip >::const_iterator it( rComments.begin()); it != rComments.end(); ++it)
         nBufSize += (*it).maComment.getLength();
     OUStringBuffer aBuf( nBufSize );
     sal_Int32 nIndBeg = 0;
@@ -1706,7 +1730,7 @@ OUString OQueryController::translateStatement( bool _bFireStatementChange )
         {
             OUString aErrorMsg;
 
-            std::vector< CommentStrip > aComments = getComment( m_sStatement);
+            ::std::vector< CommentStrip > aComments = getComment( m_sStatement);
 
             ::connectivity::OSQLParseNode* pNode = m_aSqlParser.parseTree( aErrorMsg, m_sStatement, m_bGraphicalDesign );
             if(pNode)
@@ -1844,7 +1868,7 @@ void OQueryController::impl_reset( const bool i_bForceCurrentControllerSettings 
             else if ( m_bEscapeProcessing )
             {
                 OUString aErrorMsg;
-                std::unique_ptr< ::connectivity::OSQLParseNode > pNode(
+                ::std::unique_ptr< ::connectivity::OSQLParseNode > pNode(
                     m_aSqlParser.parseTree( aErrorMsg, m_sStatement, m_bGraphicalDesign ) );
 
                 if ( pNode.get() )
@@ -1893,7 +1917,7 @@ void OQueryController::impl_reset( const bool i_bForceCurrentControllerSettings 
 void OQueryController::reset()
 {
     impl_reset();
-    getContainer()->reset();
+    getContainer()->reset( nullptr );
     ClearUndoManager();
 }
 
@@ -1921,7 +1945,7 @@ void OQueryController::setEscapeProcessing_fireEvent( const bool _bEscapeProcess
     fire( &nHandle, &aNewValue, &aOldValue, 1, false );
 }
 
-IMPL_LINK_NOARG( OQueryController, OnExecuteAddTable, void*, void )
+IMPL_LINK_NOARG_TYPED( OQueryController, OnExecuteAddTable, void*, void )
 {
     Execute( ID_BROWSER_ADDTABLE,Sequence<PropertyValue>() );
 }
@@ -1943,7 +1967,7 @@ bool OQueryController::allowQueries() const
     return !bCreatingView;
 }
 
-Any SAL_CALL OQueryController::getViewData()
+Any SAL_CALL OQueryController::getViewData() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( getMutex() );
 
@@ -1955,7 +1979,7 @@ Any SAL_CALL OQueryController::getViewData()
     return makeAny( aViewSettings.getPropertyValues() );
 }
 
-void SAL_CALL OQueryController::restoreViewData(const Any& /*Data*/)
+void SAL_CALL OQueryController::restoreViewData(const Any& /*Data*/) throw( RuntimeException, std::exception )
 {
     // TODO
 }

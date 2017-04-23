@@ -65,7 +65,7 @@ public:
     virtual void EndRunProperties( const SwRedlineData* pRedlineData ) override;
 
     /// Output text.
-    virtual void RunText( const OUString& rText, rtl_TextEncoding eCharSet = RTL_TEXTENCODING_UTF8 ) override;
+    virtual void RunText( const OUString& rText, rtl_TextEncoding eCharSet ) override;
 
     /// Output text (without markup).
     virtual void RawText(const OUString& rText, rtl_TextEncoding eCharSet) override;
@@ -92,7 +92,7 @@ public:
     /// Output FKP (Formatted disK Page) - necessary for binary formats only.
     /// FIXME having it in AttributeOutputBase is probably a hack, it
     /// should be in WW8AttributeOutput only...
-    virtual void OutputFKP(bool bForce) override;
+    virtual void OutputFKP(bool bForce = false) override;
 
     /// Output style.
     virtual void ParagraphStyle( sal_uInt16 nStyle ) override;
@@ -111,7 +111,7 @@ public:
     virtual void TableNodeInfoInner( ww8::WW8TableNodeInfoInner::Pointer_t pNodeInfoInner ) override;
     virtual void TableOrientation( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
     virtual void TableSpacing( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner ) override;
-    virtual void TableRowEnd( sal_uInt32 nDepth ) override;
+    virtual void TableRowEnd( sal_uInt32 nDepth = 1 ) override;
 
     /// Start of the styles table.
     virtual void StartStyles() override;
@@ -120,7 +120,7 @@ public:
     virtual void EndStyles( sal_uInt16 nNumberOfStyles ) override;
 
     /// Write default style.
-    virtual void DefaultStyle() override;
+    virtual void DefaultStyle( sal_uInt16 nStyle ) override;
 
     /// Start of a style in the styles table.
     virtual void StartStyle( const OUString& rName, StyleType eType,
@@ -196,7 +196,7 @@ public:
         sal_Int16 nFirstLineIndex,
         sal_Int16 nListTabPos,
         const OUString &rNumberingString,
-        const SvxBrushItem* pBrush) override; //For i120928,transfer graphic of bullet
+        const SvxBrushItem* pBrush = nullptr) override; //For i120928,transfer graphic of bullet
 
 protected:
     /// Output frames - the implementation.
@@ -469,6 +469,8 @@ public:
     {
     }
 
+    virtual ~WW8AttributeOutput() {}
+
     /// Return the right export class.
     virtual WW8Export& GetExport() override { return m_rWW8Export; }
 
@@ -480,7 +482,7 @@ protected:
     void OutputWW8AttributeCTL( sal_uInt8 nId, bool bVal );
 
     void TableCellBorders(
-        ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
+        ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
 
 };
 

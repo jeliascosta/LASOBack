@@ -55,6 +55,7 @@ ScInputStatusItem::ScInputStatusItem( const ScInputStatusItem& rItem ) :
 
 ScInputStatusItem::~ScInputStatusItem()
 {
+    delete pEditData;
 }
 
 bool ScInputStatusItem::operator==( const SfxPoolItem& rItem ) const
@@ -94,8 +95,8 @@ ScTablesHint::~ScTablesHint()
 {
 }
 
-ScIndexHint::ScIndexHint(SfxHintId nNewId, sal_uInt16 nIdx) :
-    SfxHint( nNewId ),
+ScIndexHint::ScIndexHint(sal_uInt16 nNewId, sal_uInt16 nIdx) :
+    nId( nNewId ),
     nIndex( nIdx )
 {
 }
@@ -318,11 +319,14 @@ ScUserListItem::ScUserListItem( const ScUserListItem& rItem )
     :   SfxPoolItem ( rItem )
 {
     if ( rItem.pUserList )
-        pUserList.reset( new ScUserList( *(rItem.pUserList) ) );
+        pUserList = new ScUserList( *(rItem.pUserList) );
+    else
+        pUserList = nullptr;
 }
 
 ScUserListItem::~ScUserListItem()
 {
+    delete pUserList;
 }
 
 bool ScUserListItem::operator==( const SfxPoolItem& rItem ) const
@@ -347,7 +351,8 @@ SfxPoolItem* ScUserListItem::Clone( SfxItemPool * ) const
 
 void ScUserListItem::SetUserList( const ScUserList& rUserList )
 {
-    pUserList.reset( new ScUserList( rUserList ) );
+    delete pUserList;
+    pUserList = new ScUserList( rUserList );
 }
 
 /**
@@ -394,9 +399,9 @@ ScPivotItem::ScPivotItem( sal_uInt16 nWhichP, const ScDPSaveData* pData,
 {
     // pSaveData must always exist
     if ( pData )
-        pSaveData.reset( new ScDPSaveData(*pData) );
+        pSaveData = new ScDPSaveData(*pData);
     else
-        pSaveData.reset( new ScDPSaveData );
+        pSaveData = new ScDPSaveData;
     if ( pRange ) aDestRange = *pRange;
     bNewSheet = bNew;
 }
@@ -407,11 +412,12 @@ ScPivotItem::ScPivotItem( const ScPivotItem& rItem ) :
         bNewSheet   ( rItem.bNewSheet )
 {
     assert(rItem.pSaveData && "pSaveData");
-    pSaveData.reset( new ScDPSaveData(*rItem.pSaveData) );
+    pSaveData = new ScDPSaveData(*rItem.pSaveData);
 }
 
 ScPivotItem::~ScPivotItem()
 {
+    delete pSaveData;
 }
 
 bool ScPivotItem::operator==( const SfxPoolItem& rItem ) const

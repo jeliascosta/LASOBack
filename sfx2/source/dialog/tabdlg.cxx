@@ -37,8 +37,6 @@
 #include <sfx2/sfxdlg.hxx>
 #include <sfx2/itemconnect.hxx>
 
-#include "uitest/sfx_uiobject.hxx"
-
 #include "dialog.hrc"
 #include "helpid.hrc"
 
@@ -124,6 +122,9 @@ struct TabDlg_Impl
     {
         aData.reserve( nCnt );
     }
+    ~TabDlg_Impl()
+    {
+    }
 };
 
 
@@ -198,7 +199,7 @@ void SfxTabPage::ActivatePage( const SfxItemSet& )
 {
 }
 
-DeactivateRC SfxTabPage::DeactivatePage( SfxItemSet* )
+SfxTabPage::sfxpg SfxTabPage::DeactivatePage( SfxItemSet* )
 
 /*  [Description]
 
@@ -212,11 +213,11 @@ DeactivateRC SfxTabPage::DeactivatePage( SfxItemSet* )
 
     [Return value]
 
-    DeactivateRC::LeavePage; Allow leaving the page
+    LEAVE_PAGE; Allow leaving the page
 */
 
 {
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 
@@ -284,7 +285,7 @@ const SfxPoolItem* SfxTabPage::GetOldItem( const SfxItemSet& rSet,
 
 void SfxTabPage::PageCreated( const SfxAllItemSet& /*aSet*/ )
 {
-    SAL_WARN( "sfx.dialog", "SfxTabPage::PageCreated should not be called");
+    DBG_ASSERT(false, "SfxTabPage::PageCreated should not be called");
 }
 
 void SfxTabPage::ChangesApplied()
@@ -354,11 +355,11 @@ void SfxTabDialog::dispose()
                     RTL_TEXTENCODING_UTF8);
                 if (sConfigId.isEmpty())
                 {
-                    SAL_WARN("sfx.dialog", "Tabpage needs to be converted to .ui format");
+                    SAL_WARN("sfx.config", "Tabpage needs to be converted to .ui format");
                     sConfigId = OUString::number(pDataObject->nId);
                 }
 
-                SvtViewOptions aPageOpt(EViewType::TabPage, sConfigId);
+                SvtViewOptions aPageOpt(E_TABPAGE, sConfigId);
                 aPageOpt.SetUserItem( USERITEM_NAME, makeAny( OUString( aPageData ) ) );
             }
 
@@ -437,20 +438,14 @@ void SfxTabDialog::Init_Impl(bool bFmtFlag)
     m_pResetBtn = m_pUIBuilder->get<PushButton>("reset");
     m_bOwnsResetBtn = m_pResetBtn == nullptr;
     if (m_bOwnsResetBtn)
-    {
         m_pResetBtn = VclPtr<PushButton>::Create(m_pActionArea.get());
-        m_pResetBtn->set_id("reset");
-    }
     else
         m_pImpl->bHideResetBtn = !m_pResetBtn->IsVisible();
 
     m_pBaseFmtBtn = m_pUIBuilder->get<PushButton>("standard");
     m_bOwnsBaseFmtBtn = m_pBaseFmtBtn == nullptr;
     if (m_bOwnsBaseFmtBtn)
-    {
         m_pBaseFmtBtn = VclPtr<PushButton>::Create(m_pActionArea.get());
-        m_pBaseFmtBtn->set_id("standard");
-    }
 
     m_pOKBtn->SetClickHdl( LINK( this, SfxTabDialog, OkHdl ) );
     m_pCancelBtn->SetClickHdl( LINK( this, SfxTabDialog, CancelHdl ) );
@@ -546,7 +541,7 @@ void SfxTabDialog::Start_Impl()
     sal_uInt16 nActPage = m_pTabCtrl->GetPageId( 0 );
 
     // load old settings, when exists
-    SvtViewOptions aDlgOpt(EViewType::TabDialog, OStringToOUString(GetHelpId(),RTL_TEXTENCODING_UTF8));
+    SvtViewOptions aDlgOpt(E_TABDIALOG, OStringToOUString(GetHelpId(),RTL_TEXTENCODING_UTF8));
     if ( aDlgOpt.Exists() )
     {
         SetWindowState(OUStringToOString(aDlgOpt.GetWindowState().getStr(), RTL_TEXTENCODING_ASCII_US));
@@ -556,6 +551,12 @@ void SfxTabDialog::Start_Impl()
 
         if ( USHRT_MAX != m_nAppPageId )
             nActPage = m_nAppPageId;
+        else
+        {
+            sal_uInt16 nAutoTabPageId = SfxGetpApp()->Get_Impl()->nAutoTabPageId;
+            if ( nAutoTabPageId )
+                nActPage = nAutoTabPageId;
+        }
 
         if ( TAB_PAGE_NOTFOUND == m_pTabCtrl->GetPagePos( nActPage ) )
             nActPage = m_pTabCtrl->GetPageId( 0 );
@@ -580,7 +581,7 @@ sal_uInt16 SfxTabDialog::AddTabPage
 (
     const OString &rName,          // Page ID
     CreateTabPage pCreateFunc,     // Pointer to the Factory Method
-    GetTabPageRanges pRangesFunc   // Pointer to the Method for querying
+    GetTabPageRanges pRangesFunc   // Pointer to the Method for quering
                                    // Ranges onDemand
 )
 {
@@ -658,11 +659,11 @@ void SfxTabDialog::RemoveTabPage( sal_uInt16 nId )
                     RTL_TEXTENCODING_UTF8);
                 if (sConfigId.isEmpty())
                 {
-                    SAL_WARN("sfx.dialog", "Tabpage needs to be converted to .ui format");
+                    SAL_WARN("sfx.config", "Tabpage needs to be converted to .ui format");
                     sConfigId = OUString::number(pDataObject->nId);
                 }
 
-                SvtViewOptions aPageOpt(EViewType::TabPage, sConfigId);
+                SvtViewOptions aPageOpt(E_TABPAGE, sConfigId);
                 aPageOpt.SetUserItem( USERITEM_NAME, makeAny( OUString( aPageData ) ) );
             }
 
@@ -733,7 +734,7 @@ SfxTabPage* SfxTabDialog::GetTabPage( sal_uInt16 nPageId ) const
 void SfxTabDialog::SavePosAndId()
 {
     // save settings (screen position and current page)
-    SvtViewOptions aDlgOpt(EViewType::TabDialog, OStringToOUString(GetHelpId(),RTL_TEXTENCODING_UTF8));
+    SvtViewOptions aDlgOpt(E_TABDIALOG, OStringToOUString(GetHelpId(),RTL_TEXTENCODING_UTF8));
     aDlgOpt.SetWindowState(OStringToOUString(GetWindowState(WindowStateMask::Pos),RTL_TEXTENCODING_ASCII_US));
     // to-do replace with name of page when all pages are converted to .ui
     aDlgOpt.SetPageID( m_pTabCtrl->GetCurPageId() );
@@ -800,7 +801,7 @@ short SfxTabDialog::Ok()
     return bModified ? RET_OK : RET_CANCEL;
 }
 
-IMPL_LINK_NOARG(SfxTabDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxTabDialog, CancelHdl, Button*, void)
 {
     EndDialog( RET_USER_CANCEL );
 }
@@ -826,7 +827,7 @@ void SfxTabDialog::RefreshInputSet()
 
     Default implementation of the virtual Method.
     This is called, when <SfxTabPage::DeactivatePage(SfxItemSet *)>
-    returns <DeactivateRC::RefreshSet>.
+    returns <SfxTabPage::REFRESH_SET>.
 */
 
 {
@@ -834,13 +835,13 @@ void SfxTabDialog::RefreshInputSet()
 }
 
 
-IMPL_LINK_NOARG(SfxTabDialog, OkHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxTabDialog, OkHdl, Button*, void)
 
 /*  [Description]
 
     Handler of the Ok-Buttons
     This calls the current page <SfxTabPage::DeactivatePage(SfxItemSet *)>.
-    Returns <DeactivateRC::LeavePage>, <SfxTabDialog::Ok()> is called
+    Returns <SfxTabPage::LEAVE_PAGE>, <SfxTabDialog::Ok()> is called
     and the Dialog is ended.
 */
 
@@ -885,7 +886,7 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
 
     if ( pPage )
     {
-        DeactivateRC nRet = DeactivateRC::LeavePage;
+        int nRet = SfxTabPage::LEAVE_PAGE;
         if ( m_pSet )
         {
             SfxItemSet aTmp( *m_pSet->GetPool(), m_pSet->GetRanges() );
@@ -895,7 +896,7 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
             else
                 nRet = pPage->DeactivatePage( nullptr );
 
-            if ( ( DeactivateRC::LeavePage & nRet ) == DeactivateRC::LeavePage
+            if ( ( SfxTabPage::LEAVE_PAGE & nRet ) == SfxTabPage::LEAVE_PAGE
                  && aTmp.Count() )
             {
                 m_pExampleSet->Put( aTmp );
@@ -904,20 +905,20 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
         }
         else
             nRet = pPage->DeactivatePage( nullptr );
-        bEnd = nRet != DeactivateRC::KeepPage;
+        bEnd = nRet;
     }
 
     return bEnd;
 }
 
 
-IMPL_LINK_NOARG(SfxTabDialog, UserHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxTabDialog, UserHdl, Button*, void)
 
 /*  [Description]
 
     Handler of the User-Buttons
     This calls the current page <SfxTabPage::DeactivatePage(SfxItemSet *)>.
-    returns this <DeactivateRC::LeavePage> and  <SfxTabDialog::Ok()> is called.
+    returns this <SfxTabPage::LEAVE_PAGE> and  <SfxTabDialog::Ok()> is called.
     Then the Dialog is ended with the Return value <SfxTabDialog::Ok()>
 */
 
@@ -935,7 +936,7 @@ IMPL_LINK_NOARG(SfxTabDialog, UserHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SfxTabDialog, ResetHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxTabDialog, ResetHdl, Button*, void)
 
 /*  [Description]
 
@@ -953,7 +954,7 @@ IMPL_LINK_NOARG(SfxTabDialog, ResetHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SfxTabDialog, BaseFmtHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxTabDialog, BaseFmtHdl, Button*, void)
 
 /*  [Description]
 
@@ -1029,7 +1030,7 @@ IMPL_LINK_NOARG(SfxTabDialog, BaseFmtHdl, Button*, void)
 }
 
 
-IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
+IMPL_LINK_TYPED( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 
 /*  [Description]
 
@@ -1044,12 +1045,13 @@ IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
     sal_uInt16 nId = pTabCtrl->GetCurPageId();
 
     DBG_ASSERT( m_pImpl->aData.size(), "no Pages registered" );
+    SfxGetpApp();
 
     // Tab Page schon da?
     VclPtr<SfxTabPage> pTabPage = dynamic_cast<SfxTabPage*> (pTabCtrl->GetTabPage( nId ));
     Data_Impl* pDataObject = Find( m_pImpl->aData, nId );
 
-    // fallback to 1st page when requested one does not exist
+    //UUUU fallback to 1st page when requested one does not exist
     if(!pDataObject && pTabCtrl->GetPageCount())
     {
         pTabCtrl->SetCurPageId(pTabCtrl->GetPageId(0));
@@ -1060,7 +1062,7 @@ IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 
     if (!pDataObject)
     {
-        SAL_WARN("sfx.dialog", "Tab Page ID not known, this is pretty serious and needs investigation");
+        SAL_WARN("sfx.config", "Tab Page ID not known, this is pretty serious and needs investigation");
         return;
     }
 
@@ -1088,10 +1090,10 @@ IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
         OUString sConfigId = OStringToOUString(pTabPage->GetConfigId(), RTL_TEXTENCODING_UTF8);
         if (sConfigId.isEmpty())
         {
-            SAL_WARN("sfx.dialog", "Tabpage needs to be converted to .ui format");
+            SAL_WARN("sfx.config", "Tabpage needs to be converted to .ui format");
             sConfigId = OUString::number(pDataObject->nId);
         }
-        SvtViewOptions aPageOpt(EViewType::TabPage, sConfigId);
+        SvtViewOptions aPageOpt(E_TABPAGE, sConfigId);
         OUString sUserData;
         Any aUserItem = aPageOpt.GetUserItem( USERITEM_NAME );
         OUString aTemp;
@@ -1128,7 +1130,7 @@ IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 }
 
 
-IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
+IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
 
 /*  [Description]
 
@@ -1141,6 +1143,7 @@ IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
 
 {
     sal_uInt16 nId = pTabCtrl->GetCurPageId();
+    SfxGetpApp();
     SfxTabPage *pPage = dynamic_cast<SfxTabPage*> (pTabCtrl->GetTabPage( nId ));
     DBG_ASSERT( pPage, "no active Page" );
     if (!pPage)
@@ -1150,7 +1153,7 @@ IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
     DBG_ASSERT( pDataObject, "no Data structure for current page" );
 #endif
 
-    DeactivateRC nRet = DeactivateRC::LeavePage;
+    int nRet = SfxTabPage::LEAVE_PAGE;
 
     if ( !m_pExampleSet && pPage->HasExchangeSupport() && m_pSet )
         m_pExampleSet = new SfxItemSet( *m_pSet->GetPool(), m_pSet->GetRanges() );
@@ -1163,8 +1166,8 @@ IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
             nRet = pPage->DeactivatePage( &aTmp );
         else
             nRet = pPage->DeactivatePage( nullptr );
-        if ( ( DeactivateRC::LeavePage & nRet ) == DeactivateRC::LeavePage &&
-             aTmp.Count() && m_pExampleSet)
+        if ( ( SfxTabPage::LEAVE_PAGE & nRet ) == SfxTabPage::LEAVE_PAGE &&
+             aTmp.Count() )
         {
             m_pExampleSet->Put( aTmp );
             m_pOutSet->Put( aTmp );
@@ -1186,7 +1189,7 @@ IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
             nRet = pPage->DeactivatePage( nullptr );
     }
 
-    if ( nRet & DeactivateRC::RefreshSet )
+    if ( nRet & SfxTabPage::REFRESH_SET )
     {
         RefreshInputSet();
         // Flag all Pages as to be initialized as new
@@ -1201,7 +1204,7 @@ IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
                 pObj->bRefresh = false;
         }
     }
-    if ( nRet & DeactivateRC::LeavePage )
+    if ( nRet & SfxTabPage::LEAVE_PAGE )
         return true;
     else
         return false;
@@ -1220,21 +1223,6 @@ void SfxTabDialog::ShowPage( sal_uInt16 nId )
     ActivatePageHdl( m_pTabCtrl );
 }
 
-OString SfxTabDialog::GetScreenshotId() const
-{
-    SfxTabPage *pActiveTabPage = GetCurTabPage();
-    OString aScreenshotId = GetHelpId();
-
-    if ( pActiveTabPage )
-    {
-        vcl::Window* pToplevelBox = pActiveTabPage->GetWindow( GetWindowType::FirstChild );
-
-        if ( pToplevelBox )
-            aScreenshotId = pToplevelBox->GetHelpId();
-    }
-
-    return aScreenshotId;
-}
 
 const sal_uInt16* SfxTabDialog::GetInputRanges( const SfxItemPool& rPool )
 
@@ -1320,59 +1308,6 @@ void SfxTabDialog::SetInputSet( const SfxItemSet* pInSet )
         m_pExampleSet = new SfxItemSet( *m_pSet );
         m_pOutSet = new SfxItemSet( *m_pSet->GetPool(), m_pSet->GetRanges() );
     }
-}
-
-FactoryFunction SfxTabDialog::GetUITestFactory() const
-{
-    return SfxTabDialogUIObject::create;
-}
-
-std::vector<OString> SfxTabDialog::getAllPageUIXMLDescriptions() const
-{
-    std::vector<OString> aRetval;
-
-    for (SfxTabDlgData_Impl::const_iterator it = m_pImpl->aData.begin(); it != m_pImpl->aData.end(); ++it)
-    {
-        SfxTabPage* pCandidate = GetTabPage((*it)->nId);
-
-        if (!pCandidate)
-        {
-            // force SfxTabPage creation
-            const_cast<SfxTabDialog*>(this)->ShowPage((*it)->nId);
-            pCandidate = GetTabPage((*it)->nId);
-        }
-
-        if (pCandidate)
-        {
-            // use UIXMLDescription (without '.ui', with '/')
-            aRetval.push_back(pCandidate->getUIFile());
-        }
-    }
-
-    return aRetval;
-}
-
-bool SfxTabDialog::selectPageByUIXMLDescription(const OString& rUIXMLDescription)
-{
-    for (SfxTabDlgData_Impl::const_iterator it = m_pImpl->aData.begin(); it != m_pImpl->aData.end(); ++it)
-    {
-        SfxTabPage* pCandidate = (*it)->pTabPage;
-
-        if (!pCandidate)
-        {
-            // force SfxTabPage creation
-            ShowPage((*it)->nId);
-            pCandidate = GetTabPage((*it)->nId);
-        }
-
-        if (pCandidate && pCandidate->getUIFile() == rUIXMLDescription)
-        {
-            ShowPage((*it)->nId);
-            return true;
-        }
-    }
-
-    return false;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -19,11 +19,11 @@
 
 #include "storagexmlstream.hxx"
 
-#include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
 
+#include <cppuhelper/implbase1.hxx>
 #include <rtl/ref.hxx>
 #include <tools/diagnose_ex.h>
 #include <xmloff/attrlist.hxx>
@@ -48,7 +48,7 @@ namespace dbaccess
     struct StorageXMLOutputStream_Data
     {
         Reference< XDocumentHandler >           xHandler;
-        std::stack< OUString >         aElements;
+        ::std::stack< OUString >         aElements;
         ::rtl::Reference< SvXMLAttributeList >  xAttributes;
     };
 
@@ -118,18 +118,20 @@ namespace dbaccess
         m_pData->xHandler->characters( i_rCharacters );
     }
 
+    // StorageXMLInputStream_Data
+    struct StorageXMLInputStream_Data
+    {
+        Reference< XParser >    xParser;
+    };
+
     // StorageXMLInputStream
     StorageXMLInputStream::StorageXMLInputStream( const Reference<XComponentContext>& i_rContext,
                                                   const Reference< XStorage >& i_rParentStorage,
                                                   const OUString& i_rStreamName )
+        :StorageInputStream( i_rParentStorage, i_rStreamName )
+        ,m_pData( new StorageXMLInputStream_Data )
     {
-        ENSURE_OR_THROW( i_rParentStorage.is(), "illegal stream" );
-
-        const Reference< css::io::XStream > xStream(
-            i_rParentStorage->openStreamElement( i_rStreamName, css::embed::ElementModes::READ ), UNO_QUERY_THROW );
-        m_xInputStream.set( xStream->getInputStream(), css::uno::UNO_SET_THROW );
-
-        m_xParser.set( Parser::create(i_rContext) );
+        m_pData->xParser.set( Parser::create(i_rContext) );
     }
 
     void StorageXMLInputStream::import( const Reference< XDocumentHandler >& i_rHandler )
@@ -137,10 +139,10 @@ namespace dbaccess
         ENSURE_OR_THROW( i_rHandler.is(), "illegal document handler (NULL)" );
 
         InputSource aInputSource;
-        aInputSource.aInputStream = m_xInputStream;
+        aInputSource.aInputStream = getInputStream();
 
-        m_xParser->setDocumentHandler( i_rHandler );
-        m_xParser->parseStream( aInputSource );
+        m_pData->xParser->setDocumentHandler( i_rHandler );
+        m_pData->xParser->parseStream( aInputSource );
     }
 
     StorageXMLInputStream::~StorageXMLInputStream()

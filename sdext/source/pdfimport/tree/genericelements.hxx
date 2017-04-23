@@ -50,7 +50,7 @@ namespace pdfi
             PDFIProcessor&                           _rProcessor,
             const css::uno::Reference<
             css::task::XStatusIndicator>& _xStatusIndicator,
-            css::uno::Reference< css::uno::XComponentContext > const & xContext)
+            css::uno::Reference< css::uno::XComponentContext >  xContext)
         :
             rEmitter(_rEmitter),
             rStyles(_rStyles),
@@ -251,7 +251,7 @@ namespace pdfi
         // helper method for resolveHyperlinks
         bool resolveHyperlink( const std::list<Element*>::iterator& link_it, std::list<Element*>& rElements );
     public:
-        virtual ~PageElement() override;
+        virtual ~PageElement();
 
         virtual void visitedBy( ElementTreeVisitor&, const std::list< Element* >::const_iterator& rParentIt ) override;
 
@@ -276,7 +276,7 @@ namespace pdfi
     protected:
         DocumentElement() : Element( nullptr ) {}
     public:
-        virtual ~DocumentElement() override;
+        virtual ~DocumentElement();
 
         virtual void visitedBy( ElementTreeVisitor&, const std::list< Element* >::const_iterator& ) override;
     };

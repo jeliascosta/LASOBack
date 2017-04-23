@@ -49,17 +49,29 @@ bool ScWarnPassword::WarningOnPassword( SfxMedium& rMedium )
                 InteractionClassification_QUERY,
                  ERRCODE_SVX_EXPORT_FILTER_CRYPT)));
 
-        rtl::Reference< ucbhelper::SimpleInteractionRequest > xRequest
+        Reference< ucbhelper::SimpleInteractionRequest > xRequest
                     = new ucbhelper::SimpleInteractionRequest(
                         aException,
-                        ContinuationFlags::Approve | ContinuationFlags::Disapprove );
+                        ucbhelper::CONTINUATION_APPROVE
+                            | ucbhelper::CONTINUATION_DISAPPROVE );
 
         xHandler->handle( xRequest.get() );
 
-        const ContinuationFlags nResp = xRequest->getResponse();
+        const sal_Int32 nResp = xRequest->getResponse();
 
-        if ( nResp == ContinuationFlags::Disapprove )
-            bReturn = false;
+        switch ( nResp )
+        {
+        case ucbhelper::CONTINUATION_UNKNOWN:
+                break;
+
+        case ucbhelper::CONTINUATION_APPROVE:
+                // Continue
+                break;
+
+        case ucbhelper::CONTINUATION_DISAPPROVE:
+                bReturn = false;
+                break;
+        }
     }
     return bReturn;
 }

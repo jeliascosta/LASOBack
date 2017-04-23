@@ -27,15 +27,14 @@
 
 VCL_DLLPUBLIC bool ImportJPEG( SvStream& rInputStream, Graphic& rGraphic, void* pCallerData, GraphicFilterImportFlags nImportFlags )
 {
+    ReadState   eReadState;
     bool        bReturn = true;
 
-    std::shared_ptr<GraphicReader> pContext = rGraphic.GetContext();
-    rGraphic.SetContext(nullptr);
-    JPEGReader* pJPEGReader = dynamic_cast<JPEGReader*>( pContext.get() );
-    if (!pJPEGReader)
+    JPEGReader* pJPEGReader = static_cast<JPEGReader*>( rGraphic.GetContext() );
+
+    if( !pJPEGReader )
     {
-        pContext = std::make_shared<JPEGReader>( rInputStream, pCallerData, bool( nImportFlags & GraphicFilterImportFlags::SetLogsizeForJpeg ) );
-        pJPEGReader = static_cast<JPEGReader*>( pContext.get() );
+        pJPEGReader = new JPEGReader( rInputStream, pCallerData, bool( nImportFlags & GraphicFilterImportFlags::SetLogsizeForJpeg ) );
     }
 
     if( nImportFlags & GraphicFilterImportFlags::ForPreview )
@@ -47,15 +46,21 @@ VCL_DLLPUBLIC bool ImportJPEG( SvStream& rInputStream, Graphic& rGraphic, void* 
         pJPEGReader->DisablePreviewMode();
     }
 
-    ReadState eReadState = pJPEGReader->Read( rGraphic );
+    rGraphic.SetContext( nullptr );
+    eReadState = pJPEGReader->Read( rGraphic );
 
     if( eReadState == JPEGREAD_ERROR )
     {
         bReturn = false;
+        delete pJPEGReader;
     }
-    else if( eReadState == JPEGREAD_NEED_MORE )
+    else if( eReadState == JPEGREAD_OK )
     {
-        rGraphic.SetContext( pContext );
+        delete pJPEGReader;
+    }
+    else
+    {
+        rGraphic.SetContext( pJPEGReader );
     }
 
     return bReturn;

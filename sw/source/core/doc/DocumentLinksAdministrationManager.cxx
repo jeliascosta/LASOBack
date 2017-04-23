@@ -75,7 +75,7 @@ namespace
                     tools::SvRef<sfx2::SvBaseLink> xLink = pLnk;
 
                     OUString sFName;
-                    sfx2::LinkManager::GetDisplayNames( xLink.get(), nullptr, &sFName );
+                    sfx2::LinkManager::GetDisplayNames( xLink, nullptr, &sFName );
 
                     INetURLObject aURL( sFName );
                     if( INetProtocol::File == aURL.GetProtocol() ||
@@ -205,6 +205,8 @@ void DocumentLinksAdministrationManager::UpdateLinks()
     if (eMode == SfxObjectCreateMode::INTERNAL)
         return;
     if (eMode == SfxObjectCreateMode::ORGANIZER)
+        return;
+    if (eMode == SfxObjectCreateMode::PREVIEW)
         return;
     if (m_rDoc.GetDocShell()->IsPreview())
         return;
@@ -414,8 +416,8 @@ bool DocumentLinksAdministrationManager::EmbedAllLinks()
             xLink->Closed();
 
             // if one forgot to remove itself
-            if( xLink.is() )
-                rLnkMgr.Remove( xLink.get() );
+            if( xLink.Is() )
+                rLnkMgr.Remove( xLink );
 
             bRet = true;
         }
@@ -448,7 +450,7 @@ bool DocumentLinksAdministrationManager::SelectServerObj( const OUString& rStr, 
     rpRange = nullptr;
 
     OUString sItem( INetURLObject::decode( rStr,
-                                         INetURLObject::DecodeMechanism::WithCharset ));
+                                         INetURLObject::DECODE_WITH_CHARSET ));
 
     sal_Int32 nPos = sItem.indexOf( cMarkSeparator );
 
@@ -507,7 +509,7 @@ bool DocumentLinksAdministrationManager::SelectServerObj( const OUString& rStr, 
                 const int nLvl = pNd->GetTextNode()->GetAttrOutlineLevel()-1;
 
                 const SwOutlineNodes& rOutlNds = m_rDoc.GetNodes().GetOutLineNds();
-                SwOutlineNodes::size_type nTmpPos;
+                sal_uInt16 nTmpPos;
                 (void)rOutlNds.Seek_Entry( pNd, &nTmpPos );
                 rpRange = new SwNodeRange( aPos.nNode, 0, aPos.nNode );
 

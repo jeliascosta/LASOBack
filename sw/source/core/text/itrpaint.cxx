@@ -67,7 +67,7 @@ bool IsUnderlineBreak( const SwLinePortion& rPor, const SwFont& rFnt )
            rPor.IsHolePortion() ||
           ( rPor.IsMultiPortion() && ! static_cast<const SwMultiPortion&>(rPor).IsBidi() ) ||
            rFnt.GetEscapement() < 0 || rFnt.IsWordLineMode() ||
-           SvxCaseMap::SmallCaps == rFnt.GetCaseMap();
+           SVX_CASEMAP_KAPITAELCHEN == rFnt.GetCaseMap();
 }
 
 void SwTextPainter::CtorInitTextPainter( SwTextFrame *pNewFrame, SwTextPaintInfo *pNewInf )
@@ -76,6 +76,14 @@ void SwTextPainter::CtorInitTextPainter( SwTextFrame *pNewFrame, SwTextPaintInfo
     m_pInf = pNewInf;
     SwFont *pMyFnt = GetFnt();
     GetInfo().SetFont( pMyFnt );
+#if OSL_DEBUG_LEVEL > 1
+    if( ALIGN_BASELINE != pMyFnt->GetAlign() )
+    {
+        OSL_ENSURE( ALIGN_BASELINE == pMyFnt->GetAlign(),
+                "+SwTextPainter::CTOR: font alignment revolution" );
+        pMyFnt->SetAlign( ALIGN_BASELINE );
+    }
+#endif
     bPaintDrop = false;
 }
 
@@ -162,15 +170,12 @@ void SwTextPainter::DrawTextLine( const SwRect &rPaint, SwSaveClip &rClip,
         SwLinePortion* pPorIter = pPor;
         while( pPorIter )
         {
-            if( pPorIter->InTabGrp() )
+            if( pPorIter->IsTabRightPortion() )
             {
-               const SwTabPortion* pTabPor = static_cast<SwTabPortion*>(pPorIter);
-               const SwTwips nTabPos = nTmpLeft + pTabPor->GetTabPos();
+               const SwTabRightPortion *pRightTabPor = static_cast<SwTabRightPortion*>(pPorIter);
+               const SwTwips nTabPos = nTmpLeft + pRightTabPor->GetTabPos();
                 if( nMaxRight < nTabPos )
-                {
-                    nMaxRight = rPaint.Right();
-                    break;
-                }
+                    nMaxRight = std::min( rPaint.Right(), nTabPos );
             }
             pPorIter = pPorIter->GetPortion();
         }
@@ -316,7 +321,7 @@ void SwTextPainter::DrawTextLine( const SwRect &rPaint, SwSaveClip &rClip,
             sal_Int32 nOffset = GetInfo().GetIdx();
             SeekStartAndChg( GetInfo(), true );
             if( GetRedln() && m_pCurr->HasRedline() )
-                GetRedln()->Seek( *m_pFont, nOffset, 0 );
+                GetRedln()->Seek( *pFnt, nOffset, 0 );
         }
         else if( pPor->InTextGrp() || pPor->InFieldGrp() || pPor->InTabGrp() )
             SeekAndChg( GetInfo() );
@@ -481,17 +486,13 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
                                           long nAdjustBaseLine )
 {
     // Check if common underline should not be continued
-    if ( IsUnderlineBreak( *pPor, *m_pFont ) )
+    if ( IsUnderlineBreak( *pPor, *pFnt ) )
     {
         // delete underline font
         delete GetInfo().GetUnderFnt();
         GetInfo().SetUnderFnt( nullptr );
         return;
     }
-
-    // Reuse calculated underline font as much as possible.
-    if ( GetInfo().GetUnderFnt() && GetInfo().GetIdx() + pPor->GetLen() <= GetInfo().GetUnderFnt()->GetEnd() + 1)
-        return;
 
     // If current underline matches the common underline font, we continue
     // to use the common underline font.
@@ -511,9 +512,9 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
 
     if( HasHints() )
     {
-        for ( size_t nTmp = 0; nTmp < m_pHints->Count(); ++nTmp )
+        for ( size_t nTmp = 0; nTmp < pHints->Count(); ++nTmp )
         {
-            SwTextAttr* const pTextAttr = m_pHints->Get( nTmp );
+            SwTextAttr* const pTextAttr = pHints->Get( nTmp );
 
             const SvxUnderlineItem* pItem =
                     static_cast<const SvxUnderlineItem*>(CharFormat::GetItem( *pTextAttr, RES_CHRATR_UNDERLINE ));
@@ -524,7 +525,7 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
                 const sal_Int32 nEnd = *pTextAttr->GetEnd();
                 if( nEnd > nSt )
                 {
-                    const bool bUnderSelect = m_pFont->GetUnderline() == pItem->GetLineStyle();
+                    const bool bUnderSelect = pFnt->GetUnderline() == pItem->GetLineStyle();
                     aUnderMulti.Select( Range( nSt, nEnd - 1 ), bUnderSelect );
                 }
             }
@@ -571,7 +572,7 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
         sal_uInt16 nMaxBaseLineOfst = 0;
         int nNumberOfPortions = 0;
 
-        while( sal::static_int_cast<long>(nTmpIdx) <= nUnderEnd && pPor )
+        while( nTmpIdx <= nUnderEnd && pPor )
         {
             if ( pPor->IsFlyPortion() || pPor->IsFlyCntPortion() ||
                 pPor->IsBreakPortion() || pPor->IsMarginPortion() ||
@@ -581,8 +582,8 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
 
             aIter.Seek( nTmpIdx );
 
-            if ( aIter.GetFnt()->GetEscapement() < 0 || m_pFont->IsWordLineMode() ||
-                 SvxCaseMap::SmallCaps == m_pFont->GetCaseMap() )
+            if ( aIter.GetFnt()->GetEscapement() < 0 || pFnt->IsWordLineMode() ||
+                 SVX_CASEMAP_KAPITAELCHEN == pFnt->GetCaseMap() )
                 break;
 
             if ( !aIter.GetFnt()->GetEscapement() )
@@ -641,9 +642,9 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
     }
 
     // an escaped redlined portion should also have a special underlining
-    if( ! pUnderlineFnt && m_pFont->GetEscapement() > 0 && GetRedln() &&
+    if( ! pUnderlineFnt && pFnt->GetEscapement() > 0 && GetRedln() &&
         GetRedln()->ChkSpecialUnderline() )
-        pUnderlineFnt = new SwFont( *m_pFont );
+        pUnderlineFnt = new SwFont( *pFnt );
 
     delete GetInfo().GetUnderFnt();
 
@@ -656,7 +657,7 @@ void SwTextPainter::CheckSpecialUnderline( const SwLinePortion* pPor,
         const Color aFillColor( COL_TRANSPARENT );
         pUnderlineFnt->SetFillColor( aFillColor );
 
-        GetInfo().SetUnderFnt( new SwUnderlineFont( *pUnderlineFnt, nUnderEnd,
+        GetInfo().SetUnderFnt( new SwUnderlineFont( *pUnderlineFnt,
                                                      aCommonBaseLine ) );
     }
     else

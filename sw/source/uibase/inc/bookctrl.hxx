@@ -34,7 +34,7 @@ public:
     SFX_DECL_STATUSBAR_CONTROL();
 
     SwBookmarkControl( sal_uInt16 nSlotId, sal_uInt16 nId, StatusBar& rStb );
-    virtual ~SwBookmarkControl() override;
+    virtual ~SwBookmarkControl();
 
 private:
     OUString  sPageNumber;

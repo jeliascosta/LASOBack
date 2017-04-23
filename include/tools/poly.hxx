@@ -42,19 +42,19 @@ namespace o3tl
     template<> struct typed_flags<PolyOptimizeFlags> : is_typed_flags<PolyOptimizeFlags, 0x001f> {};
 }
 
-enum class PolyStyle
+enum PolyStyle
 {
-    Arc = 1,
-    Pie = 2,
-    Chord = 3
+    POLY_ARC = 1,
+    POLY_PIE = 2,
+    POLY_CHORD = 3
 };
 
-enum class PolyFlags : sal_uInt8
+enum PolyFlags
 {
-    Normal,   // start-/endpoint of a curve or a line
-    Smooth,   // smooth transition between curves
-    Control,  // control handles of a Bezier curve
-    Symmetric // smooth and symmetrical transition between curves
+    POLY_NORMAL,
+    POLY_SMOOTH,
+    POLY_CONTROL,
+    POLY_SYMMTR
 };
 
 class SvStream;
@@ -86,19 +86,19 @@ public:
                         Polygon();
                         Polygon( sal_uInt16 nSize );
                         Polygon( sal_uInt16 nPoints, const Point* pPtAry,
-                                 const PolyFlags* pFlagAry = nullptr );
-                        Polygon( const tools::Rectangle& rRect );
-                        Polygon( const tools::Rectangle& rRect,
+                                 const sal_uInt8* pFlagAry = nullptr );
+                        Polygon( const Rectangle& rRect );
+                        Polygon( const Rectangle& rRect,
                                  sal_uInt32 nHorzRound, sal_uInt32 nVertRound );
                         Polygon( const Point& rCenter,
                                  long nRadX, long nRadY );
-                        Polygon( const tools::Rectangle& rBound,
+                        Polygon( const Rectangle& rBound,
                                  const Point& rStart, const Point& rEnd,
-                                 PolyStyle ePolyStyle = PolyStyle::Arc,
+                                 PolyStyle ePolyStyle = POLY_ARC,
                                  bool bWholeCircle = false );
                         Polygon( const Point& rBezPt1, const Point& rCtrlPt1,
                                  const Point& rBezPt2, const Point& rCtrlPt2,
-                                 sal_uInt16 nPoints );
+                                 sal_uInt16 nPoints = 0 );
 
                         Polygon( const tools::Polygon& rPoly );
                         ~Polygon();
@@ -117,10 +117,12 @@ public:
 
     void                Clear();
 
-    tools::Rectangle           GetBoundRect() const;
+    Rectangle           GetBoundRect() const;
+    double              GetSignedArea() const;
     bool                IsInside( const Point& rPt ) const;
+    bool                IsRightOrientated() const;
     double              CalcDistance( sal_uInt16 nPt1, sal_uInt16 nPt2 );
-    void                Clip( const tools::Rectangle& rRect );
+    void                Clip( const Rectangle& rRect );
     void                Optimize( PolyOptimizeFlags nOptimizeFlags );
 
     /** Adaptive subdivision of polygons with curves
@@ -157,7 +159,6 @@ public:
     Point&              operator[]( sal_uInt16 nPos );
 
     tools::Polygon&     operator=( const tools::Polygon& rPoly );
-    tools::Polygon&     operator=( tools::Polygon&& rPoly );
     bool                operator==( const tools::Polygon& rPoly ) const;
     bool                operator!=( const tools::Polygon& rPoly ) const
                             { return !(Polygon::operator==( rPoly )); }
@@ -172,7 +173,7 @@ public:
     void                Write( SvStream& rOStream ) const;
 
     const Point*        GetConstPointAry() const;
-    const PolyFlags*    GetConstFlagAry() const;
+    const sal_uInt8*    GetConstFlagAry() const;
 
     // convert to ::basegfx::B2DPolygon and return
     ::basegfx::B2DPolygon getB2DPolygon() const;
@@ -190,7 +191,9 @@ private:
 
     enum class PolyClipOp {
         INTERSECT,
-        UNION
+        UNION,
+        DIFF,
+        XOR
     };
     TOOLS_DLLPRIVATE void  ImplDoOperation( const tools::PolyPolygon& rPolyPoly, tools::PolyPolygon& rResult, PolyClipOp nOperation ) const;
 
@@ -210,8 +213,8 @@ public:
     void                Clear();
 
     sal_uInt16          Count() const;
-    tools::Rectangle           GetBoundRect() const;
-    void                Clip( const tools::Rectangle& rRect );
+    Rectangle           GetBoundRect() const;
+    void                Clip( const Rectangle& rRect );
     void                Optimize( PolyOptimizeFlags nOptimizeFlags );
 
     /** Adaptive subdivision of polygons with curves
@@ -243,7 +246,6 @@ public:
     tools::Polygon& operator[]( sal_uInt16 nPos );
 
     tools::PolyPolygon& operator=( const tools::PolyPolygon& rPolyPoly );
-    tools::PolyPolygon& operator=( tools::PolyPolygon&& rPolyPoly );
     bool                operator==( const tools::PolyPolygon& rPolyPoly ) const;
     bool                operator!=( const tools::PolyPolygon& rPolyPoly ) const
                             { return !(PolyPolygon::operator==( rPolyPoly )); }

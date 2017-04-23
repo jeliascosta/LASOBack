@@ -48,7 +48,7 @@ namespace sax_fastparser {
 }
 
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class SdrObject;
 
 namespace oox {
@@ -99,14 +99,14 @@ class OOX_DLLPUBLIC VMLExport : public EscherEx
     sal_uInt32 m_nShapeFlags;
 
     /// Remember style, the most important shape attribute ;-)
-    OStringBuffer m_ShapeStyle;
+    OStringBuffer *m_pShapeStyle;
 
     /// Remember which shape types we had already written.
-    std::vector<bool> m_aShapeTypeWritten;
+    bool *m_pShapeTypeWritten;
 
 public:
-                        VMLExport( ::sax_fastparser::FSHelperPtr const & pSerializer, VMLTextExport* pTextExport = nullptr );
-    virtual             ~VMLExport() override;
+                        VMLExport( ::sax_fastparser::FSHelperPtr pSerializer, VMLTextExport* pTextExport = nullptr );
+    virtual             ~VMLExport();
 
     const ::sax_fastparser::FSHelperPtr&
                         GetFS() { return m_pSerializer; }
@@ -140,14 +140,14 @@ protected:
     ///
     /// The parameter is just what we got from StartShape().
     virtual void        EndShape( sal_Int32 nShapeElement );
-    virtual void        Commit( EscherPropertyContainer& rProps, const tools::Rectangle& rRect ) override;
+    virtual void        Commit( EscherPropertyContainer& rProps, const Rectangle& rRect ) override;
 
 private:
 
     virtual void OpenContainer( sal_uInt16 nEscherContainer, int nRecInstance = 0 ) override;
     virtual void CloseContainer() override;
 
-    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const tools::Rectangle* pBoundRect ) override;
+    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const Rectangle* pBoundRect = nullptr ) override;
     virtual void LeaveGroup() override;
 
     virtual void AddShape( sal_uInt32 nShapeType, sal_uInt32 nShapeFlags, sal_uInt32 nShapeId = 0 ) override;
@@ -160,10 +160,10 @@ private:
     void AddFlipXY( );
 
     /// Add starting and ending point of a line to the m_pShapeAttrList.
-    void AddLineDimensions( const tools::Rectangle& rRectangle );
+    void AddLineDimensions( const Rectangle& rRectangle );
 
     /// Add position and size to the OStringBuffer.
-    void AddRectangleDimensions( OStringBuffer& rBuffer, const tools::Rectangle& rRectangle, bool rbAbsolutePos = true );
+    void AddRectangleDimensions( OStringBuffer& rBuffer, const Rectangle& rRectangle, bool rbAbsolutePos = true );
 };
 
 } // namespace vml

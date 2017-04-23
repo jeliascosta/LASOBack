@@ -13,7 +13,7 @@ $(eval $(call gb_Module_add_targets,chart2,\
     Library_chartcontroller \
     Library_chartcore \
 ))
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_Module_add_targets,chart2,\
      Library_chartopengl \
      Package_opengl \
@@ -33,25 +33,17 @@ $(eval $(call gb_Module_add_slowcheck_targets,chart2,\
     CppunitTest_chart2_export \
     CppunitTest_chart2_import \
     CppunitTest_chart2_trendcalculators \
-    CppunitTest_chart2_dump \
-    CppunitTest_chart2_pivot_chart_test \
 ))
 
 ifeq ($(ENABLE_CHART_TESTS),TRUE)
-ifeq ($(WITH_FONTS), TRUE)
 $(eval $(call gb_Module_add_slowcheck_targets,chart2,\
     CppunitTest_chart2_xshape \
 ))
-endif
+
 endif
 
 $(eval $(call gb_Module_add_subsequentcheck_targets,chart2,\
     JunitTest_chart2_unoapi \
-))
-
-# screenshots
-$(eval $(call gb_Module_add_screenshot_targets,chart2,\
-    CppunitTest_chart2_dialogs_test \
 ))
 
 # vim: set noet sw=4 ts=4:

@@ -40,7 +40,7 @@ private:
 
 public:
     ScXMLFontAutoStylePool_Impl( ScXMLExport& rExport, bool bBlockFontEmbedding );
-    virtual ~ScXMLFontAutoStylePool_Impl() override;
+    virtual ~ScXMLFontAutoStylePool_Impl();
 };
 
 void ScXMLFontAutoStylePool_Impl::AddFontItems(sal_uInt16* pWhichIds, sal_uInt8 nIdCount, const SfxItemPool* pItemPool, const bool bExportDefaults)
@@ -86,7 +86,7 @@ ScXMLFontAutoStylePool_Impl::ScXMLFontAutoStylePool_Impl(ScXMLExport& rExportP, 
     const SfxItemPool* pEditPool(rExportP.GetDocument()->GetEditPool());
     AddFontItems(aEditWhichIds, 3, pEditPool, false);
 
-    std::shared_ptr<SfxStyleSheetIterator> pItr = rExportP.GetDocument()->GetStyleSheetPool()->CreateIterator(SfxStyleFamily::Page, 0xFFFF);
+    SfxStyleSheetIteratorPtr pItr = rExportP.GetDocument()->GetStyleSheetPool()->CreateIterator(SfxStyleFamily::Page, 0xFFFF);
 
     if(pItr)
     {

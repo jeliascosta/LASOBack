@@ -63,13 +63,13 @@ public:
 
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new ( size_t nSize )
+    inline static void * SAL_CALL operator new ( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete ( void * pMem )
+    inline static void SAL_CALL operator delete ( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new ( size_t, void * pMem )
+    inline static void * SAL_CALL operator new ( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete ( void *, void * )
+    inline static void SAL_CALL operator delete ( void *, void * )
         {}
     /// @endcond
 
@@ -94,11 +94,6 @@ public:
     */
     inline Environment( const Environment & rEnv );
 
-#if defined LIBO_INTERNAL_ONLY
-    Environment(Environment && other): _pEnv(other._pEnv)
-    { other._pEnv = nullptr; }
-#endif
-
     /** Destructor: releases a set environment.
     */
     inline ~Environment();
@@ -114,46 +109,35 @@ public:
         @param rEnv another environment
         @return this environment
     */
-    Environment & SAL_CALL operator = ( const Environment & rEnv )
+    inline Environment & SAL_CALL operator = ( const Environment & rEnv )
         { return operator = ( rEnv._pEnv ); }
-
-#if defined LIBO_INTERNAL_ONLY
-    Environment & operator =(Environment && other) {
-        if (_pEnv != nullptr) {
-            (*_pEnv->release)(_pEnv);
-        }
-        _pEnv = other._pEnv;
-        other._pEnv = nullptr;
-        return *this;
-    }
-#endif
 
     /** Provides UNacquired pointer to the set C environment.
 
         @return UNacquired pointer to the C environment struct
     */
-    uno_Environment * SAL_CALL get() const
+    inline uno_Environment * SAL_CALL get() const
         { return _pEnv; }
 
     /** Gets type name of set environment.
 
         @return type name of set environment
     */
-    ::rtl::OUString SAL_CALL getTypeName() const
+    inline ::rtl::OUString SAL_CALL getTypeName() const
         { return _pEnv->pTypeName; }
 
     /** Gets free context pointer of set environment.
 
         @return free context pointer of set environment
     */
-    void * SAL_CALL getContext() const
+    inline void * SAL_CALL getContext() const
         { return _pEnv->pContext; }
 
     /** Tests if a environment is set.
 
         @return true, if a environment is set, false otherwise
     */
-    bool SAL_CALL is() const
+    inline bool SAL_CALL is() const
         { return (_pEnv != NULL); }
 
     /** Releases a set environment.

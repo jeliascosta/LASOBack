@@ -142,7 +142,7 @@ namespace sdr
             // invalidate all new rectangles
             if(dynamic_cast<const SdrObjGroup*>( &GetSdrObject() ) != nullptr)
             {
-                SdrObjListIter aIter(static_cast<SdrObjGroup&>(GetSdrObject()), SdrIterMode::DeepNoGroups);
+                SdrObjListIter aIter(static_cast<SdrObjGroup&>(GetSdrObject()), IM_DEEPNOGROUPS);
 
                 while(aIter.IsMore())
                 {
@@ -162,7 +162,7 @@ namespace sdr
             // also send the user calls
             for(sal_uInt32 a(0L); a < nCount; a++)
             {
-                GetSdrObject().SendUserCall(SdrUserCallType::ChangeAttr, rChange.GetRectangle(a));
+                GetSdrObject().SendUserCall(SDRUSERCALL_CHGATTR, rChange.GetRectangle(a));
             }
         }
 

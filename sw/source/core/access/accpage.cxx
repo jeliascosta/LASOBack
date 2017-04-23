@@ -35,6 +35,7 @@ using namespace ::com::sun::star::accessibility;
 using uno::RuntimeException;
 using uno::Sequence;
 
+const sal_Char sServiceName[] = "com.sun.star.text.AccessiblePageView";
 const sal_Char sImplementationName[] = "com.sun.star.comp.Writer.SwAccessiblePageView";
 
 bool SwAccessiblePage::IsSelected()
@@ -108,14 +109,16 @@ void SwAccessiblePage::InvalidateFocus_()
     }
 }
 
-SwAccessiblePage::SwAccessiblePage(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+SwAccessiblePage::SwAccessiblePage( SwAccessibleMap* pInitMap,
                                     const SwFrame* pFrame )
     : SwAccessibleContext( pInitMap, AccessibleRole::PANEL, pFrame )
     , bIsSelected( false )
 {
-    assert(pFrame != nullptr);
-    assert(pInitMap != nullptr);
-    assert(pFrame->IsPageFrame());
+    OSL_ENSURE( pFrame != nullptr, "need frame" );
+    OSL_ENSURE( pInitMap != nullptr, "need map" );
+    OSL_ENSURE( pFrame->IsPageFrame(), "need page frame" );
+
+    SolarMutexGuard aGuard;
 
     OUString sPage = OUString::number(
         static_cast<const SwPageFrame*>( GetFrame() )->GetPhyPageNum() );
@@ -133,32 +136,37 @@ bool SwAccessiblePage::HasCursor()
 }
 
 OUString SwAccessiblePage::getImplementationName( )
+    throw( RuntimeException, std::exception )
 {
     return OUString(sImplementationName);
 }
 
 sal_Bool SwAccessiblePage::supportsService( const OUString& rServiceName)
+    throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence<OUString> SwAccessiblePage::getSupportedServiceNames( )
+    throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet(2);
     OUString* pArray = aRet.getArray();
-    pArray[0] = "com.sun.star.text.AccessiblePageView";
+    pArray[0] = sServiceName;
     pArray[1] = sAccessibleServiceName;
     return aRet;
 }
 
 Sequence< sal_Int8 > SAL_CALL SwAccessiblePage::getImplementationId()
+        throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 OUString SwAccessiblePage::getAccessibleDescription( )
+    throw( RuntimeException, std::exception )
 {
-    ThrowIfDisposed();
+    CHECK_FOR_DEFUNC( css::accessibility::XAccessibleContext );
 
     OUString sArg( GetFormattedPageNumber() );
     return GetResource( STR_ACCESS_PAGE_DESC, &sArg );

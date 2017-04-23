@@ -46,6 +46,9 @@
  ************************************************************************/
 
 
+#define WB_STDPROGRESSBAR       WB_BORDER
+
+
 class VCL_DLLPUBLIC ProgressBar : public vcl::Window
 {
 private:
@@ -63,9 +66,9 @@ private:
     SAL_DLLPRIVATE void ImplDrawProgress(vcl::RenderContext& rRenderContext, sal_uInt16 nOldPerc, sal_uInt16 nNewPerc);
 
 public:
-                        ProgressBar( vcl::Window* pParent, WinBits nWinBits );
+                        ProgressBar( vcl::Window* pParent, WinBits nWinBits = WB_STDPROGRESSBAR );
 
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void        Resize() override;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;

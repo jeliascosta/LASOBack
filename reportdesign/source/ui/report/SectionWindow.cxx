@@ -57,7 +57,7 @@ OSectionWindow::OSectionWindow( OViewsWindow* _pParent,const uno::Reference< rep
     SetMapMode( rMapMode );
     ImplInitSettings();
     // TRY
-    m_aSplitter->SetMapMode( MapMode( MapUnit::Map100thMM ) );
+    m_aSplitter->SetMapMode( MapMode( MAP_100TH_MM ) );
     m_aSplitter->SetStartSplitHdl(LINK(this, OSectionWindow,StartSplitHdl));
     m_aSplitter->SetSplitHdl(LINK(this, OSectionWindow,SplitHdl));
     m_aSplitter->SetEndSplitHdl(LINK(this, OSectionWindow,EndSplitHdl));
@@ -123,6 +123,7 @@ void OSectionWindow::dispose()
 }
 
 void OSectionWindow::_propertyChanged(const beans::PropertyChangeEvent& _rEvent)
+    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     const uno::Reference< report::XSection > xSection(_rEvent.Source,uno::UNO_QUERY);
@@ -265,7 +266,7 @@ void OSectionWindow::Resize()
         aReportPos.Y() += aSectionSize.Height();
         m_aSplitter->SetPosSizePixel(aReportPos,Size(aSectionSize.Width(),m_aSplitter->GetSizePixel().Height()));
         aSectionSize.Height() = (long)(1000 * (double)GetMapMode().GetScaleY());
-        m_aSplitter->SetDragRectPixel( tools::Rectangle(Point(aStartWidth,0),aSectionSize));
+        m_aSplitter->SetDragRectPixel( Rectangle(Point(aStartWidth,0),aSectionSize));
 
         // set end marker
         aReportPos.X() += aSectionSize.Width();
@@ -294,7 +295,7 @@ void OSectionWindow::setMarked(bool _bMark)
     m_aEndMarker->setMarked(_bMark);
 }
 
-IMPL_LINK( OSectionWindow, Collapsed, OColorListener&, _rMarker, void )
+IMPL_LINK_TYPED( OSectionWindow, Collapsed, OColorListener&, _rMarker, void )
 {
     bool bShow = !_rMarker.isCollapsed();
     m_aReportSection->Show(bShow);
@@ -315,18 +316,18 @@ void OSectionWindow::zoom(const Fraction& _aZoom)
     Invalidate();
 }
 
-IMPL_LINK_NOARG( OSectionWindow, StartSplitHdl, Splitter*, void)
+IMPL_LINK_NOARG_TYPED( OSectionWindow, StartSplitHdl, Splitter*, void)
 {
     const OUString sUndoAction( ModuleRes( RID_STR_UNDO_CHANGE_SIZE ) );
-    getViewsWindow()->getView()->getReportView()->getController().getUndoManager().EnterListAction( sUndoAction, OUString(), 0, ViewShellId(-1) );
+    getViewsWindow()->getView()->getReportView()->getController().getUndoManager().EnterListAction( sUndoAction, OUString() );
 }
 
-IMPL_LINK_NOARG( OSectionWindow, EndSplitHdl, Splitter*, void )
+IMPL_LINK_NOARG_TYPED( OSectionWindow, EndSplitHdl, Splitter*, void )
 {
     getViewsWindow()->getView()->getReportView()->getController().getUndoManager().LeaveListAction();
 }
 
-IMPL_LINK( OSectionWindow, SplitHdl, Splitter*, _pSplitter, void )
+IMPL_LINK_TYPED( OSectionWindow, SplitHdl, Splitter*, _pSplitter, void )
 {
     if ( !getViewsWindow()->getView()->getReportView()->getController().isEditable() )
     {

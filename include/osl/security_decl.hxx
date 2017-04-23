@@ -26,9 +26,9 @@
 namespace osl
 {
 
-/** Encapsulate security information for one user.
+/** capsulate security information for one user.
     A object of this class is used to execute a process with the rights an
-    security options of a specified user.
+    security options of a scecified user.
     @see Process::executeProcess
 */
 class Security
@@ -37,19 +37,19 @@ protected:
     oslSecurity m_handle;
 
 public:
+    /// constructor
     inline Security();
+    /// destructor
     inline ~Security();
-
     /** get the security information for one user.
         The underlying operating system is asked for this information.
         @param[in] strName denotes the name of the user
         @param[in] strPasswd denotes the password of this user
-        @retval True, if the specified user is known by the underlying operating system
-        @retval False unknown user
+        @return True, if the specified user is known by the underlying operating system,
+        otherwise False
     */
     inline bool SAL_CALL logonUser(const rtl::OUString& strName,
                                        const rtl::OUString& strPasswd);
-
     /** get the security information for one user.
 
         @verbatim
@@ -58,14 +58,11 @@ public:
         could be connected by this user, the methos will return true and getHomeDir
         will return \\server\username.
         @endverbatim
-
         @param[in] strName denotes the name of the user
         @param[in] strPasswd denotes the password of this user
         @param[in] strFileServer denotes the file server to login to
-
-        @retval True if the specified user is known by the file server and they
-        could be connected
-        @retval False if the user is not known by the file server
+        @return True, if the specified user is known by file server and the
+        could be connected, otherwise False
     */
     inline bool SAL_CALL logonUser(const rtl::OUString & strName,
                                        const rtl::OUString & strPasswd,
@@ -73,9 +70,7 @@ public:
 
     /** get the ident of the logged in user.
         @param[out] strIdent is the OUString which returns the name
-
-        @retval True if any user is successfully logged in
-        @retval False no user logged in
+        @return True, if any user is successfully logged in, otherwise False
     */
     inline bool  SAL_CALL getUserIdent( rtl::OUString& strIdent) const;
 
@@ -83,31 +78,24 @@ public:
         @param[out] strName is the OUString which returns the name
         @param[in] bIncludeDomain Include the Domain name (like "ORG\username"). Affects Windows only.
                                   This parameter is available since LibreOffice 5.2.
-
-        @retval True if any user is successfully logged in
-        @retval False if no user is logged in
+        @return True, if any user is successfully logged in, otherwise False
     */
     inline bool SAL_CALL getUserName( rtl::OUString& strName, bool bIncludeDomain=true ) const;
 
     /** get the home directory of the logged in user.
         @param[out] strDirectory is the OUString which returns the directory name
-
-        @retval True if any user is successfully logged in
-        @retval False if user is not logged in
+         @return True, if any user is successfully logged in, otherwise False
     */
     inline bool SAL_CALL getHomeDir( rtl::OUString& strDirectory) const;
 
     /** get the directory for configuration data of the logged in user.
         @param[out] strDirectory is the OUString which returns the directory name
-
-        @retval True if any user is successfully logged in
-        @retval False if user is not logged in
+        @return True, if any user is successfully logged in, otherwise False
     */
     inline bool SAL_CALL getConfigDir( rtl::OUString & strDirectory) const;
 
     /** Query if the user who is logged in has administrator rights.
-        @retval True if the user has administrator rights
-        @retval False if the user does not have admin rights
+        @return True, if the user has administrator rights, otherwise false.
     */
     inline bool SAL_CALL isAdministrator() const;
 

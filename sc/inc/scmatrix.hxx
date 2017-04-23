@@ -40,7 +40,6 @@
 class ScInterpreter;
 class SvNumberFormatter;
 class ScMatrixImpl;
-enum class FormulaError : sal_uInt16;
 
 namespace formula { class DoubleVectorRefToken; }
 
@@ -65,12 +64,12 @@ struct ScMatrixValue
     const svl::SharedString& GetString() const { return aStr; }
 
     /// Only valid if ScMatrix methods indicate that this is no string!
-    FormulaError GetError() const { return GetDoubleErrorValue(fVal); }
+    sal_uInt16 GetError() const { return formula::GetDoubleErrorValue( fVal); }
 
     /// Only valid if ScMatrix methods indicate that this is a boolean
     bool GetBoolean() const         { return fVal != 0.0; }
 
-    ScMatrixValue() : fVal(0.0), nType(ScMatValType::Empty) {}
+    ScMatrixValue() : fVal(0.0), nType(SC_MATVAL_EMPTY) {}
 
     ScMatrixValue(const ScMatrixValue& r) :
         fVal(r.fVal), aStr(r.aStr), nType(r.nType) {}
@@ -82,8 +81,8 @@ struct ScMatrixValue
 
         switch (nType)
         {
-            case ScMatValType::Value:
-            case ScMatValType::Boolean:
+            case SC_MATVAL_VALUE:
+            case SC_MATVAL_BOOLEAN:
                 return fVal == r.fVal;
             break;
             default:
@@ -114,7 +113,7 @@ struct ScMatrixValue
 class SC_DLLPUBLIC ScMatrix
 {
     mutable size_t  nRefCnt;    // reference count
-    mutable bool    mbCloneIfConst; // Whether the matrix is cloned with a CloneIfConst() call.
+    bool            mbCloneIfConst; // Whether the matrix is cloned with a CloneIfConst() call.
 
     ScMatrix( const ScMatrix& ) = delete;
     ScMatrix& operator=( const ScMatrix&) = delete;
@@ -153,7 +152,7 @@ public:
     };
 
     /// The maximum number of elements a matrix may have at runtime.
-    static size_t GetElementsMax()
+    inline static size_t GetElementsMax()
     {
         // TODO: Fix me.
         return 0x08000000;
@@ -174,41 +173,41 @@ public:
     bool static IsSizeAllocatable( SCSIZE nC, SCSIZE nR );
 
     /// Value or boolean.
-    static bool IsValueType( ScMatValType nType )
+    inline static bool IsValueType( ScMatValType nType )
     {
-        return nType <= ScMatValType::Boolean;
+        return nType <= SC_MATVAL_BOOLEAN;
     }
 
     /// Boolean.
-    static bool IsBooleanType( ScMatValType nType )
+    inline static bool IsBooleanType( ScMatValType nType )
     {
-        return nType == ScMatValType::Boolean;
+        return nType == SC_MATVAL_BOOLEAN;
     }
 
     /// String, empty or empty path, but not value nor boolean.
-    static bool IsNonValueType( ScMatValType nType )
+    inline static bool IsNonValueType( ScMatValType nType )
     {
-        return bool(nType & ScMatValType::NonvalueMask);
+        return (nType & SC_MATVAL_NONVALUE) != 0;
     }
 
     /** String, but not empty or empty path or any other type.
         Not named IsStringType to prevent confusion because previously
         IsNonValueType was named IsStringType. */
-    static bool IsRealStringType( ScMatValType nType )
+    inline static bool IsRealStringType( ScMatValType nType )
     {
-        return (nType & ScMatValType::NonvalueMask) == ScMatValType::String;
+        return (nType & SC_MATVAL_NONVALUE) == SC_MATVAL_STRING;
     }
 
     /// Empty, but not empty path or any other type.
-    static bool IsEmptyType( ScMatValType nType )
+    inline static bool IsEmptyType( ScMatValType nType )
     {
-        return (nType & ScMatValType::NonvalueMask) == ScMatValType::Empty;
+        return (nType & SC_MATVAL_NONVALUE) == SC_MATVAL_EMPTY;
     }
 
     /// Empty path, but not empty or any other type.
-    static bool IsEmptyPathType( ScMatValType nType )
+    inline static bool IsEmptyPathType( ScMatValType nType )
     {
-        return (nType & ScMatValType::NonvalueMask) == ScMatValType::EmptyPath;
+        return (nType & SC_MATVAL_NONVALUE) == SC_MATVAL_EMPTYPATH;
     }
 
     ScMatrix() : nRefCnt(0), mbCloneIfConst(true) {}
@@ -220,13 +219,9 @@ public:
         return _this_ matrix, to be assigned to a ScMatrixRef. */
     ScMatrix* CloneIfConst();
 
-    /** Set the matrix to mutable for CloneIfConst(), only the interpreter
+    /** Set the matrix to (im)mutable for CloneIfConst(), only the interpreter
         should do this and know the consequences. */
-    void SetMutable();
-
-    /** Set the matrix to immutable for CloneIfConst(), only the interpreter
-        should do this and know the consequences. */
-    void SetImmutable() const;
+    void SetImmutable( bool bVal );
 
     /**
      * Resize the matrix to specified new dimension.
@@ -275,7 +270,7 @@ public:
 
     /// Jump sal_False without path
     virtual void PutEmptyPath( SCSIZE nC, SCSIZE nR) = 0;
-    virtual void PutError( FormulaError nErrorCode, SCSIZE nC, SCSIZE nR ) = 0;
+    virtual void PutError( sal_uInt16 nErrorCode, SCSIZE nC, SCSIZE nR ) = 0;
     virtual void PutBoolean( bool bVal, SCSIZE nC, SCSIZE nR) = 0;
 
     virtual void FillDouble( double fVal,
@@ -301,12 +296,12 @@ public:
         @ATTENTION: MUST NOT be used if the element is a string!
                     Use GetErrorIfNotString() instead if not sure.
         @returns 0 if no error, else one of err... constants */
-    virtual FormulaError GetError( SCSIZE nC, SCSIZE nR) const = 0;
+    virtual sal_uInt16 GetError( SCSIZE nC, SCSIZE nR) const = 0;
 
     /** Use in ScInterpreter to obtain the error code, if any.
         @returns 0 if no error or string element, else one of err... constants */
-    FormulaError GetErrorIfNotString( SCSIZE nC, SCSIZE nR) const
-        { return IsValue( nC, nR) ? GetError( nC, nR) : FormulaError::NONE; }
+    sal_uInt16 GetErrorIfNotString( SCSIZE nC, SCSIZE nR) const
+        { return IsValue( nC, nR) ? GetError( nC, nR) : 0; }
 
     /// @return 0.0 if empty or empty path, else value or DoubleError.
     virtual double GetDouble( SCSIZE nC, SCSIZE nR) const = 0;
@@ -387,11 +382,9 @@ public:
 
     virtual double GetMaxValue( bool bTextAsZero ) const = 0;
     virtual double GetMinValue( bool bTextAsZero ) const = 0;
-    virtual double GetGcd() const = 0;
-    virtual double GetLcm() const = 0;
 
     virtual ScMatrixRef CompareMatrix(
-        sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions ) const = 0;
+        sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions = nullptr ) const = 0;
 
     /**
      * Convert the content of matrix into a linear array of numeric values.
@@ -447,7 +440,7 @@ public:
 
     ScFullMatrix( size_t nC, size_t nR, const std::vector<double>& rInitVals );
 
-    virtual ~ScFullMatrix() override;
+    virtual ~ScFullMatrix();
 
     /** Clone the matrix. */
     virtual ScMatrix* Clone() const override;
@@ -496,7 +489,7 @@ public:
 
     /// Jump sal_False without path
     virtual void PutEmptyPath( SCSIZE nC, SCSIZE nR) override;
-    virtual void PutError( FormulaError nErrorCode, SCSIZE nC, SCSIZE nR ) override;
+    virtual void PutError( sal_uInt16 nErrorCode, SCSIZE nC, SCSIZE nR ) override;
     virtual void PutBoolean( bool bVal, SCSIZE nC, SCSIZE nR) override;
 
     virtual void FillDouble( double fVal,
@@ -522,7 +515,7 @@ public:
         @ATTENTION: MUST NOT be used if the element is a string!
                     Use GetErrorIfNotString() instead if not sure.
         @returns 0 if no error, else one of err... constants */
-    virtual FormulaError GetError( SCSIZE nC, SCSIZE nR) const override;
+    virtual sal_uInt16 GetError( SCSIZE nC, SCSIZE nR) const override;
 
     /// @return 0.0 if empty or empty path, else value or DoubleError.
     virtual double GetDouble( SCSIZE nC, SCSIZE nR) const override;
@@ -603,11 +596,9 @@ public:
 
     virtual double GetMaxValue( bool bTextAsZero ) const override;
     virtual double GetMinValue( bool bTextAsZero ) const override;
-    virtual double GetGcd() const override;
-    virtual double GetLcm() const override;
 
     virtual ScMatrixRef CompareMatrix(
-        sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions ) const override;
+        sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions = nullptr ) const override;
 
     /**
      * Convert the content of matrix into a linear array of numeric values.
@@ -667,7 +658,7 @@ public:
 
     ScVectorRefMatrix(const formula::DoubleVectorRefToken* pToken, SCSIZE nRowStart, SCSIZE nRowSize);
 
-    virtual ~ScVectorRefMatrix() override;
+    virtual ~ScVectorRefMatrix();
 
     /** Clone the matrix. */
     virtual ScMatrix* Clone() const override;
@@ -716,7 +707,7 @@ public:
 
     /// Jump sal_False without path
     virtual void PutEmptyPath(SCSIZE nC, SCSIZE nR) override;
-    virtual void PutError(FormulaError nErrorCode, SCSIZE nC, SCSIZE nR ) override;
+    virtual void PutError(sal_uInt16 nErrorCode, SCSIZE nC, SCSIZE nR ) override;
     virtual void PutBoolean(bool bVal, SCSIZE nC, SCSIZE nR) override;
 
     virtual void FillDouble(double fVal, SCSIZE nC1, SCSIZE nR1, SCSIZE nC2, SCSIZE nR2) override;
@@ -741,7 +732,7 @@ public:
         @ATTENTION: MUST NOT be used if the element is a string!
                     Use GetErrorIfNotString() instead if not sure.
         @returns 0 if no error, else one of err... constants */
-    virtual FormulaError GetError(SCSIZE nC, SCSIZE nR) const override;
+    virtual sal_uInt16 GetError(SCSIZE nC, SCSIZE nR) const override;
 
     /// @return 0.0 if empty or empty path, else value or DoubleError.
     virtual double GetDouble(SCSIZE nC, SCSIZE nR) const override;
@@ -822,10 +813,8 @@ public:
 
     virtual double GetMaxValue(bool bTextAsZero) const override;
     virtual double GetMinValue(bool bTextAsZero) const override;
-    virtual double GetGcd() const override;
-    virtual double GetLcm() const override;
 
-    virtual ScMatrixRef CompareMatrix(sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions) const override;
+    virtual ScMatrixRef CompareMatrix(sc::Compare& rComp, size_t nMatPos, sc::CompareOptions* pOptions = nullptr) const override;
 
     /**
      * Convert the content of matrix into a linear array of numeric values.

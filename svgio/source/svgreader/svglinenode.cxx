@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svglinenode.hxx>
+#include <svgio/svgreader/svglinenode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
@@ -40,6 +40,7 @@ namespace svgio
 
         SvgLineNode::~SvgLineNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgLineNode::getSvgStyleAttributes() const
@@ -69,7 +70,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX1 = aNum;
+                        setX1(aNum);
                     }
                     break;
                 }
@@ -79,7 +80,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY1 = aNum;
+                        setY1(aNum);
                     }
                     break;
                 }
@@ -89,7 +90,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX2 = aNum;
+                        setX2(aNum);
                     }
                     break;
                 }
@@ -99,7 +100,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY2 = aNum;
+                        setY2(aNum);
                     }
                     break;
                 }

@@ -47,7 +47,7 @@ public:
             : maBitmap(rBitmap), mbIsExcluded(bIsExcluded) {}
         Representative (const Representative& rOther)
             : maBitmap(rOther.maBitmap), mbIsExcluded(rOther.mbIsExcluded) {}
-        Representative& operator= (Representative const& rOther)
+        Representative operator= (Representative const& rOther)
         {   if (&rOther != this) {maBitmap = rOther.maBitmap; mbIsExcluded = rOther.mbIsExcluded; }
             return *this;
         }
@@ -68,7 +68,7 @@ public:
     TransferableData (
         SlideSorterViewShell* pViewShell,
         const ::std::vector<TransferableData::Representative>& rRepresentatives);
-    virtual ~TransferableData() override;
+    virtual ~TransferableData();
 
     const ::std::vector<Representative>& GetRepresentatives() const { return maRepresentatives;}
 

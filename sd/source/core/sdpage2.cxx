@@ -41,8 +41,8 @@
 #include "pglink.hxx"
 #include "anminfo.hxx"
 
-#include "strings.hrc"
-#include "DrawDocShell.hxx"
+#include "../ui/inc/strings.hrc"
+#include "../ui/inc/DrawDocShell.hxx"
 
 #include <tools/tenccvt.hxx>
 #include <svl/itemset.hxx>
@@ -149,7 +149,7 @@ void SdPage::SetPresentationLayout(const OUString& rLayoutName,
     {
         auto pObj = GetObj(nObj);
 
-        if (pObj->GetObjInventor() == SdrInventor::Default &&
+        if (pObj->GetObjInventor() == SdrInventor &&
             pObj->GetObjIdentifier() == OBJ_OUTLINETEXT)
         {
             if (!bListsFilled || !bReplaceStyleSheets)
@@ -228,7 +228,7 @@ void SdPage::SetPresentationLayout(const OUString& rLayoutName,
                 }
             }
         }
-        else if (pObj->GetObjInventor() == SdrInventor::Default &&
+        else if (pObj->GetObjInventor() == SdrInventor &&
                  pObj->GetObjIdentifier() == OBJ_TITLETEXT)
         {
             // We do net get PresObjKind via GetPresObjKind() since there are
@@ -318,7 +318,7 @@ void SdPage::ConnectLink()
     sfx2::LinkManager* pLinkManager = pModel!=nullptr ? pModel->GetLinkManager() : nullptr;
 
     if (pLinkManager && !mpPageLink && !maFileName.isEmpty() && !maBookmarkName.isEmpty() &&
-        mePageKind==PageKind::Standard && !IsMasterPage() &&
+        mePageKind==PK_STANDARD && !IsMasterPage() &&
         static_cast<SdDrawDocument*>(pModel)->IsNewOrLoadCompleted())
     {
         /**********************************************************************
@@ -442,8 +442,8 @@ SdrPage* SdPage::Clone(SdrModel* pNewModel) const
     cloneAnimations( *pNewPage );
 
     // fix user calls for duplicated slide
-    SdrObjListIter aSourceIter( *this, SdrIterMode::DeepWithGroups );
-    SdrObjListIter aTargetIter( *pNewPage, SdrIterMode::DeepWithGroups );
+    SdrObjListIter aSourceIter( *this, IM_DEEPWITHGROUPS );
+    SdrObjListIter aTargetIter( *pNewPage, IM_DEEPWITHGROUPS );
 
     while( aSourceIter.IsMore() && aTargetIter.IsMore() )
     {
@@ -513,7 +513,7 @@ void SdPage::getAlienAttributes( css::uno::Any& rAttributes )
 
 void SdPage::RemoveEmptyPresentationObjects()
 {
-    SdrObjListIter  aShapeIter( *this, SdrIterMode::DeepWithGroups );
+    SdrObjListIter  aShapeIter( *this, IM_DEEPWITHGROUPS );
 
     SdrObject* pShape;
     for( pShape = aShapeIter.Next(); pShape; pShape = aShapeIter.Next() )
@@ -631,19 +631,19 @@ void SdPage::removeAnnotation( const Reference< XAnnotation >& xAnnotation )
 
 void SdPage::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SdPage"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("sdPage"));
 
     const char* pPageKind = nullptr;
     switch (mePageKind)
     {
-    case PageKind::Standard:
-        pPageKind = "PageKind::Standard";
+    case PK_STANDARD:
+        pPageKind = "PK_STANDARD";
     break;
-    case PageKind::Notes:
-        pPageKind = "PageKind::Notes";
+    case PK_NOTES:
+        pPageKind = "PK_NOTES";
         break;
-    case PageKind::Handout:
-        pPageKind = "PageKind::Handout";
+    case PK_HANDOUT:
+        pPageKind = "PK_HANDOUT";
         break;
     }
     if (pPageKind)

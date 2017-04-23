@@ -44,11 +44,11 @@ using namespace ::com::sun::star::i18n;
 
 namespace sax {
 
-static const sal_Char* const gpsMM = "mm";
-static const sal_Char* const gpsCM = "cm";
-static const sal_Char* const gpsPT = "pt";
-static const sal_Char* const gpsINCH = "in";
-static const sal_Char* const gpsPC = "pc";
+static const sal_Char* gpsMM = "mm";
+static const sal_Char* gpsCM = "cm";
+static const sal_Char* gpsPT = "pt";
+static const sal_Char* gpsINCH = "in";
+static const sal_Char* gpsPC = "pc";
 
 const sal_Int8 XML_MAXDIGITSCOUNT_TIME = 14;
 
@@ -524,6 +524,12 @@ void Converter::convertColor( OUStringBuffer& rBuffer, sal_Int32 nColor )
     rBuffer.append( sal_Unicode( aHexTab[ nCol & 0xf ] ) );
 }
 
+/** convert number to string */
+void Converter::convertNumber( OUStringBuffer& rBuffer, sal_Int32 nNumber )
+{
+    rBuffer.append( nNumber );
+}
+
 /** convert string to number with optional min and max values */
 bool Converter::convertNumber(  sal_Int32& rValue,
                                 const OUString& rString,
@@ -645,7 +651,7 @@ void Converter::convertAngle(OUStringBuffer& rBuffer, sal_Int16 const nAngle)
 {
 #if 1
     // wrong, but backward compatible with OOo/LO < 4.4
-    rBuffer.append(static_cast<sal_Int32>(nAngle));
+    ::sax::Converter::convertNumber(rBuffer, nAngle);
 #else
     // maybe in the future... (see other convertAngle)
     double fAngle(double(nAngle) / 10.0);
@@ -814,7 +820,7 @@ bool Converter::convertDuration(double& rfTime,
                 }
                 else
                 {
-                    sDoubleStr += OUStringLiteral1(c);
+                    sDoubleStr += OUString(c);
                 }
             }
         }
@@ -1242,7 +1248,7 @@ bool Converter::convertDuration(util::Duration& rDuration,
         rDuration.Hours         = static_cast<sal_Int16>(nHours);
         rDuration.Minutes       = static_cast<sal_Int16>(nMinutes);
         rDuration.Seconds       = static_cast<sal_Int16>(nSeconds);
-        rDuration.NanoSeconds   = nNanoSeconds;
+        rDuration.NanoSeconds   = static_cast<sal_Int32>(nNanoSeconds);
     }
 
     return bSuccess;
@@ -2549,7 +2555,7 @@ bool Converter::convertAny(OUStringBuffer&    rsValue,
                 {
                     rsType.append("integer");
                     bConverted = true;
-                    rsValue.append(nTempValue);
+                    ::sax::Converter::convertNumber(rsValue, nTempValue);
                 }
             }
             break;

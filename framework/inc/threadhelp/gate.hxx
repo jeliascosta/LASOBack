@@ -47,7 +47,7 @@ class Gate
             @short      ctor
             @descr      These initialize the object right as an open gate.
         *//*-*****************************************************************************************************/
-        Gate()
+        inline Gate()
             :   m_bClosed   ( false )
         {
             open();
@@ -59,7 +59,7 @@ class Gate
                         blocked threads can running ... but I don't know
                         if it's right - we are destroyed yet!?
         *//*-*****************************************************************************************************/
-        ~Gate()
+        inline ~Gate()
         {
             open();
         }
@@ -70,7 +70,7 @@ class Gate
         Gate(const Gate&) = delete;
         /*-****************************************************************************************************
             @short      copy-assignment
-            @descr      Forbid copy assigning
+            @descr      Forbid copy assiging
         *//*-*****************************************************************************************************/
         Gate& operator=(const Gate&) = delete;
 

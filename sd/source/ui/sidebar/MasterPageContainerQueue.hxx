@@ -33,7 +33,7 @@ namespace sd { namespace sidebar {
     heuristic that uses values given with each request and which is
     controlled by various parameters that are described below.
 */
-class MasterPageContainerQueue final
+class MasterPageContainerQueue
 {
 public:
     class ContainerAdapter {
@@ -50,7 +50,7 @@ public:
 
     static MasterPageContainerQueue* Create (
         const std::weak_ptr<ContainerAdapter>& rpContainer);
-    ~MasterPageContainerQueue();
+    virtual ~MasterPageContainerQueue();
 
     /** This method is typically called for entries in the container for
         which GetPreviewState() returns OS_CREATABLE.  The creation of the
@@ -122,7 +122,7 @@ private:
     */
     static sal_Int32 CalculatePriority (const SharedMasterPageDescriptor& rDescriptor);
 
-    DECL_LINK(DelayedPreviewCreation, Timer *, void);
+    DECL_LINK_TYPED(DelayedPreviewCreation, Timer *, void);
 };
 
 } } // end of namespace sd::sidebar

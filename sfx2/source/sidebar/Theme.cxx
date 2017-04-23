@@ -18,6 +18,7 @@
  */
 #include <sfx2/sidebar/Theme.hxx>
 #include <sfx2/sidebar/Paint.hxx>
+#include <sfx2/sidebar/SidebarResource.hxx>
 #include <sfx2/sidebar/Tools.hxx>
 #include <sfx2/app.hxx>
 
@@ -128,7 +129,7 @@ void Theme::HandleDataChange()
     {
         // Do not modify mbIsHighContrastMode when it was manually set.
         GetCurrentTheme().mbIsHighContrastMode = Application::GetSettings().GetStyleSettings().GetHighContrastMode();
-        rTheme.maRawValues[Bool_IsHighContrastModeActive] <<= GetCurrentTheme().mbIsHighContrastMode;
+        rTheme.maRawValues[Bool_IsHighContrastModeActive] = Any(GetCurrentTheme().mbIsHighContrastMode);
     }
 
     GetCurrentTheme().UpdateTheme();
@@ -143,6 +144,8 @@ void Theme::InitializeTheme()
 
 void Theme::UpdateTheme()
 {
+    SidebarResource aLocalResource;
+
     try
     {
         const StyleSettings& rStyle (Application::GetSettings().GetStyleSettings());
@@ -202,7 +205,7 @@ void Theme::UpdateTheme()
         setPropertyValue(
             maPropertyIdToNameMap[Paint_PanelTitleBarBackground],
             Any(Tools::VclToAwtGradient(Gradient(
-                        GradientStyle::Linear,
+                        GradientStyle_LINEAR,
                         aSecondColor.GetRGBColor(),
                         aBaseBackgroundColor.GetRGBColor()
                         ))));
@@ -250,6 +253,7 @@ void Theme::UpdateTheme()
         setPropertyValue(
             maPropertyIdToNameMap[Color_TabItemBorder],
             Any(sal_Int32(rStyle.GetActiveBorderColor().GetRGBColor())));
+        //                    mbIsHighContrastMode ? 0x00ff00 : 0xbfbfbf)));
 
         setPropertyValue(
             maPropertyIdToNameMap[Paint_DropDownBackground],
@@ -271,11 +275,12 @@ void Theme::UpdateTheme()
         setPropertyValue(
             maPropertyIdToNameMap[Paint_TabItemBackgroundHighlight],
             Any(sal_Int32(rStyle.GetActiveTabColor().GetRGBColor())));
+        //                    mbIsHighContrastMode ? 0x000000 : 0x00ffffff)));
 
         setPropertyValue(
             maPropertyIdToNameMap[Paint_HorizontalBorder],
             Any(sal_Int32(aBorderColor.GetRGBColor())));
-
+        //                    mbIsHighContrastMode ? 0x00ff00 :  0xe4e4e4)));
         setPropertyValue(
             maPropertyIdToNameMap[Paint_VerticalBorder],
             Any(sal_Int32(aBorderColor.GetRGBColor())));
@@ -301,6 +306,29 @@ void Theme::UpdateTheme()
             maPropertyIdToNameMap[Image_CloseIndicator],
             Any(OUString("private:graphicrepository/cmd/lc_decrementlevel.png")));
 
+        // ToolBox
+
+        /*
+        // Separator style
+        setPropertyValue(
+            maPropertyIdToNameMap[Paint_ToolBoxBackground],
+            Any(sal_Int32(rStyle.GetMenuColor().GetRGBColor())));
+        setPropertyValue(
+            maPropertyIdToNameMap[Paint_ToolBoxBorderTopLeft],
+            Any());
+        setPropertyValue(
+            maPropertyIdToNameMap[Paint_ToolBoxBorderCenterCorners],
+            Any());
+        setPropertyValue(
+            maPropertyIdToNameMap[Paint_ToolBoxBorderBottomRight],
+            Any());
+        setPropertyValue(
+            maPropertyIdToNameMap[Rect_ToolBoxPadding],
+            Any(awt::Rectangle(2,2,2,2)));
+        setPropertyValue(
+            maPropertyIdToNameMap[Rect_ToolBoxBorder],
+            Any(awt::Rectangle(0,0,0,0)));
+        */
         // Gradient style
         Color aGradientStop2 (aBaseBackgroundColor);
         aGradientStop2.IncreaseLuminance(17);
@@ -309,7 +337,7 @@ void Theme::UpdateTheme()
         setPropertyValue(
             maPropertyIdToNameMap[Paint_ToolBoxBackground],
             Any(Tools::VclToAwtGradient(Gradient(
-                        GradientStyle::Linear,
+                        GradientStyle_LINEAR,
                         aBaseBackgroundColor.GetRGBColor(),
                         aGradientStop2.GetRGBColor()
                         ))));
@@ -337,7 +365,10 @@ void Theme::UpdateTheme()
     }
     catch(beans::UnknownPropertyException& rException)
     {
-        SAL_WARN("sfx", "unknown property: " << rException.Message);
+        OSL_TRACE("unknown property: %s",
+            OUStringToOString(
+                rException.Message,
+                RTL_TEXTENCODING_ASCII_US).getStr());
         OSL_ASSERT(false);
     }
 }
@@ -378,6 +409,7 @@ Reference<beans::XPropertySet> Theme::GetPropertySet()
 }
 
 Reference<beans::XPropertySetInfo> SAL_CALL Theme::getPropertySetInfo()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Reference<beans::XPropertySetInfo>(this);
 }
@@ -385,6 +417,9 @@ Reference<beans::XPropertySetInfo> SAL_CALL Theme::getPropertySetInfo()
 void SAL_CALL Theme::setPropertyValue (
     const ::rtl::OUString& rsPropertyName,
     const css::uno::Any& rValue)
+    throw (css::beans::UnknownPropertyException,
+           css::uno::RuntimeException,
+           std::exception)
 {
     PropertyNameToIdMap::const_iterator iId (maPropertyNameToIdMap.find(rsPropertyName));
     if (iId == maPropertyNameToIdMap.end())
@@ -427,6 +462,9 @@ void SAL_CALL Theme::setPropertyValue (
 
 Any SAL_CALL Theme::getPropertyValue (
     const ::rtl::OUString& rsPropertyName)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     PropertyNameToIdMap::const_iterator iId (maPropertyNameToIdMap.find(rsPropertyName));
     if (iId == maPropertyNameToIdMap.end())
@@ -444,6 +482,9 @@ Any SAL_CALL Theme::getPropertyValue (
 void SAL_CALL Theme::addPropertyChangeListener(
     const ::rtl::OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XPropertyChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ThemeItem eItem (AnyItem_);
     if (rsPropertyName.getLength() > 0)
@@ -466,6 +507,9 @@ void SAL_CALL Theme::addPropertyChangeListener(
 void SAL_CALL Theme::removePropertyChangeListener(
     const ::rtl::OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XPropertyChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ThemeItem eItem (AnyItem_);
     if (rsPropertyName.getLength() > 0)
@@ -498,6 +542,9 @@ void SAL_CALL Theme::removePropertyChangeListener(
 void SAL_CALL Theme::addVetoableChangeListener(
     const ::rtl::OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XVetoableChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ThemeItem eItem (AnyItem_);
     if (rsPropertyName.getLength() > 0)
@@ -520,6 +567,9 @@ void SAL_CALL Theme::addVetoableChangeListener(
 void SAL_CALL Theme::removeVetoableChangeListener(
     const ::rtl::OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XVetoableChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ThemeItem eItem (AnyItem_);
     if (rsPropertyName.getLength() > 0)
@@ -549,6 +599,7 @@ void SAL_CALL Theme::removeVetoableChangeListener(
 }
 
 css::uno::Sequence<css::beans::Property> SAL_CALL Theme::getProperties()
+    throw(css::uno::RuntimeException, std::exception)
 {
     ::std::vector<beans::Property> aProperties;
 
@@ -568,11 +619,13 @@ css::uno::Sequence<css::beans::Property> SAL_CALL Theme::getProperties()
     }
 
     return css::uno::Sequence<css::beans::Property>(
-        aProperties.data(),
+        &aProperties.front(),
         aProperties.size());
 }
 
 beans::Property SAL_CALL Theme::getPropertyByName (const ::rtl::OUString& rsPropertyName)
+    throw(css::beans::UnknownPropertyException,
+        css::uno::RuntimeException, std::exception)
 {
     PropertyNameToIdMap::const_iterator iId (maPropertyNameToIdMap.find(rsPropertyName));
     if (iId == maPropertyNameToIdMap.end())
@@ -592,6 +645,7 @@ beans::Property SAL_CALL Theme::getPropertyByName (const ::rtl::OUString& rsProp
 }
 
 sal_Bool SAL_CALL Theme::hasPropertyByName (const ::rtl::OUString& rsPropertyName)
+    throw(css::uno::RuntimeException, std::exception)
 {
     PropertyNameToIdMap::const_iterator iId (maPropertyNameToIdMap.find(rsPropertyName));
     if (iId == maPropertyNameToIdMap.end())
@@ -1041,7 +1095,7 @@ void Theme::ProcessNewValue (
             awt::Rectangle aBox;
             if (rValue >>= aBox)
             {
-                maRectangles[nIndex] = tools::Rectangle(
+                maRectangles[nIndex] = Rectangle(
                     aBox.X,
                     aBox.Y,
                     aBox.Width,

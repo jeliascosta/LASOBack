@@ -95,6 +95,12 @@ LwpGlobalMgr::~LwpGlobalMgr()
         delete m_pXFStyleManager;
         m_pXFStyleManager = nullptr;
     }
+    std::map<sal_uInt16,LwpEditorAttr*>::iterator iter;
+    for (iter =m_EditorAttrMap.begin();iter != m_EditorAttrMap.end(); ++iter)
+    {
+        delete iter->second;
+        iter->second = nullptr;
+    }
     m_EditorAttrMap.clear();
 }
 
@@ -128,12 +134,13 @@ void LwpGlobalMgr::DeleteInstance()
 
 void LwpGlobalMgr::SetEditorAttrMap(sal_uInt16 nID, LwpEditorAttr* pAttr)
 {
-    m_EditorAttrMap[nID].reset(pAttr);
+    m_EditorAttrMap[nID] = pAttr;
 }
 
 OUString LwpGlobalMgr::GetEditorName(sal_uInt8 nID)
 {
-    auto iter = m_EditorAttrMap.find(nID);
+    std::map<sal_uInt16,LwpEditorAttr*>::iterator iter;
+    iter = m_EditorAttrMap.find(nID);
     if (iter != m_EditorAttrMap.end())
         return iter->second->cName.str();
     return OUString("");
@@ -141,7 +148,9 @@ OUString LwpGlobalMgr::GetEditorName(sal_uInt8 nID)
 
 XFColor LwpGlobalMgr::GetHighlightColor(sal_uInt8 nID)
 {
-    auto iter = m_EditorAttrMap.find(nID);
+    std::map<sal_uInt16,LwpEditorAttr*>::iterator iter;
+
+    iter = m_EditorAttrMap.find(nID);
     if (iter != m_EditorAttrMap.end())
     {
         LwpColor aLwpColor = iter->second->cHiLiteColor;

@@ -19,6 +19,8 @@
 
 #include <sal/config.h>
 
+#include <ctype.h>
+
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -54,32 +56,38 @@ namespace dxcanvas
     }
 
     // XTextLayout
-    uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > > SAL_CALL TextLayout::queryTextShapes(  )
+    uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > > SAL_CALL TextLayout::queryTextShapes(  ) throw (uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > >();
     }
 
-    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryInkMeasures(  )
+    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryInkMeasures(  ) throw (uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< geometry::RealRectangle2D >();
     }
 
-    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryMeasures(  )
+    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryMeasures(  ) throw (uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< geometry::RealRectangle2D >();
     }
 
-    uno::Sequence< double > SAL_CALL TextLayout::queryLogicalAdvancements(  )
+    uno::Sequence< double > SAL_CALL TextLayout::queryLogicalAdvancements(  ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return maLogicalAdvancements;
     }
 
-    void SAL_CALL TextLayout::applyLogicalAdvancements( const uno::Sequence< double >& aAdvancements )
+    void SAL_CALL TextLayout::applyLogicalAdvancements( const uno::Sequence< double >& aAdvancements ) throw (lang::IllegalArgumentException, uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -92,7 +100,7 @@ namespace dxcanvas
         maLogicalAdvancements = aAdvancements;
     }
 
-    geometry::RealRectangle2D SAL_CALL TextLayout::queryTextBounds( )
+    geometry::RealRectangle2D SAL_CALL TextLayout::queryTextBounds( ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -110,75 +118,91 @@ namespace dxcanvas
         return aBounds;
     }
 
-    double SAL_CALL TextLayout::justify( double /*nSize*/ )
+    double SAL_CALL TextLayout::justify( double /*nSize*/ ) throw (lang::IllegalArgumentException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
     double SAL_CALL TextLayout::combinedJustify( const uno::Sequence< uno::Reference< rendering::XTextLayout > >& /*aNextLayouts*/,
-                                                 double /*nSize*/ )
+                                                 double /*nSize*/ ) throw (lang::IllegalArgumentException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
-    rendering::TextHit SAL_CALL TextLayout::getTextHit( const geometry::RealPoint2D& /*aHitPoint*/ )
+    rendering::TextHit SAL_CALL TextLayout::getTextHit( const geometry::RealPoint2D& /*aHitPoint*/ ) throw (uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return rendering::TextHit();
     }
 
     rendering::Caret SAL_CALL TextLayout::getCaret( sal_Int32 /*nInsertionIndex*/,
-                                                    sal_Bool /*bExcludeLigatures*/ )
+                                                    sal_Bool /*bExcludeLigatures*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return rendering::Caret();
     }
 
     sal_Int32 SAL_CALL TextLayout::getNextInsertionIndex( sal_Int32 /*nStartIndex*/,
                                                           sal_Int32 /*nCaretAdvancement*/,
-                                                          sal_Bool /*bExcludeLigatures*/ )
+                                                          sal_Bool /*bExcludeLigatures*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0;
     }
 
     uno::Reference< rendering::XPolyPolygon2D > SAL_CALL TextLayout::queryVisualHighlighting( sal_Int32 /*nStartIndex*/,
-                                                                                              sal_Int32 /*nEndIndex*/ )
+                                                                                              sal_Int32 /*nEndIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Reference< rendering::XPolyPolygon2D >();
     }
 
     uno::Reference< rendering::XPolyPolygon2D > SAL_CALL TextLayout::queryLogicalHighlighting( sal_Int32 /*nStartIndex*/,
-                                                                                               sal_Int32 /*nEndIndex*/ )
+                                                                                               sal_Int32 /*nEndIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Reference< rendering::XPolyPolygon2D >();
     }
 
-    double SAL_CALL TextLayout::getBaselineOffset(  )
+    double SAL_CALL TextLayout::getBaselineOffset(  ) throw (uno::RuntimeException)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
-    sal_Int8 SAL_CALL TextLayout::getMainTextDirection(  )
+    sal_Int8 SAL_CALL TextLayout::getMainTextDirection(  ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return mnTextDirection;
     }
 
-    uno::Reference< rendering::XCanvasFont > SAL_CALL TextLayout::getFont(  )
+    uno::Reference< rendering::XCanvasFont > SAL_CALL TextLayout::getFont(  ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return mpFont.get();
     }
 
-    rendering::StringContext SAL_CALL TextLayout::getText(  )
+    rendering::StringContext SAL_CALL TextLayout::getText(  ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -211,19 +235,21 @@ namespace dxcanvas
         return true;
     }
 
-    OUString SAL_CALL TextLayout::getImplementationName()
+    OUString SAL_CALL TextLayout::getImplementationName() throw( uno::RuntimeException )
     {
         return OUString( "DXCanvas::TextLayout" );
     }
 
-    sal_Bool SAL_CALL TextLayout::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL TextLayout::supportsService( const OUString& ServiceName ) throw( uno::RuntimeException )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL TextLayout::getSupportedServiceNames()
+    uno::Sequence< OUString > SAL_CALL TextLayout::getSupportedServiceNames()  throw( uno::RuntimeException )
     {
-        return { "com.sun.star.rendering.TextLayout" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.TextLayout" };
+
+        return aRet;
     }
 }
 

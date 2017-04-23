@@ -29,7 +29,7 @@ namespace sd { namespace framework {
 
 GenericConfigurationChangeRequest::GenericConfigurationChangeRequest (
     const Reference<XResourceId>& rxResourceId,
-    const Mode eMode)
+    const Mode eMode) throw(css::lang::IllegalArgumentException)
     : GenericConfigurationChangeRequestInterfaceBase(MutexOwner::maMutex),
       mxResourceId(rxResourceId),
       meMode(eMode)
@@ -44,6 +44,7 @@ GenericConfigurationChangeRequest::~GenericConfigurationChangeRequest() throw()
 
 void SAL_CALL GenericConfigurationChangeRequest::execute (
     const Reference<XConfiguration>& rxConfiguration)
+    throw (RuntimeException, std::exception)
 {
     if (rxConfiguration.is())
     {
@@ -61,6 +62,7 @@ void SAL_CALL GenericConfigurationChangeRequest::execute (
 }
 
 OUString SAL_CALL GenericConfigurationChangeRequest::getName()
+    throw (RuntimeException, std::exception)
 {
     return "GenericConfigurationChangeRequest "
         + (meMode==Activation ? OUString("activate ") : OUString("deactivate "))
@@ -68,6 +70,7 @@ OUString SAL_CALL GenericConfigurationChangeRequest::getName()
 }
 
 void SAL_CALL GenericConfigurationChangeRequest::setName (const OUString& rsName)
+    throw (RuntimeException, std::exception)
 {
     (void)rsName;
     // Ignored.

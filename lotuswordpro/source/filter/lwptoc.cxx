@@ -93,25 +93,25 @@ LwpTocSuperLayout::~LwpTocSuperLayout()
 void LwpTocSuperLayout::Read()
 {
     LwpSuperTableLayout::Read();
-    m_TextMarker.Read(m_pObjStrm.get());
-    m_ParentName.Read(m_pObjStrm.get());
-    m_DivisionName.Read(m_pObjStrm.get());
-    m_SectionName.Read(m_pObjStrm.get());
+    m_TextMarker.Read(m_pObjStrm);
+    m_ParentName.Read(m_pObjStrm);
+    m_DivisionName.Read(m_pObjStrm);
+    m_SectionName.Read(m_pObjStrm);
     m_nFrom = m_pObjStrm->QuickReaduInt16();
 
-    m_SearchItems.Read(m_pObjStrm.get());
+    m_SearchItems.Read(m_pObjStrm);
 
     sal_uInt16 count = m_pObjStrm->QuickReaduInt16();
     if (count > MAX_LEVELS)
         throw std::range_error("corrupt LwpTocSuperLayout");
     for (sal_uInt16 i = 0; i < count; ++i)
-        m_DestName[i].Read(m_pObjStrm.get());
+        m_DestName[i].Read(m_pObjStrm);
 
     count = m_pObjStrm->QuickReaduInt16();
     if (count > MAX_LEVELS)
         throw std::range_error("corrupt LwpTocSuperLayout");
     for (sal_uInt16 i = 0; i < count; ++i)
-        m_DestPGName[i].Read(m_pObjStrm.get());
+        m_DestPGName[i].Read(m_pObjStrm);
 
     count = m_pObjStrm->QuickReaduInt16();
     if (count > MAX_LEVELS)
@@ -361,7 +361,7 @@ bool LwpTocSuperLayout::GetUsePageNumber(sal_uInt16 index)
     return false;
 }
 /**
- * @short   Get what is used for separator
+ * @short   Get what is used for separater
  * @param  index - TOC level
  * @return sal_uInt16 - separator type
  */
@@ -468,7 +468,7 @@ void LwpTocLevelData::Read()
     LwpDLVList::Read();
     m_nFlags = m_pObjStrm->QuickReaduInt16();
     m_nLevel = m_pObjStrm->QuickReaduInt16();
-    m_SearchName.Read(m_pObjStrm.get());
+    m_SearchName.Read(m_pObjStrm);
 
     m_pObjStrm->SkipExtra();
 }

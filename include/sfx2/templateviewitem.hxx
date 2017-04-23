@@ -18,7 +18,7 @@ public:
 
     TemplateViewItem (ThumbnailView &rView, sal_uInt16 nId);
 
-    virtual ~TemplateViewItem () override;
+    virtual ~TemplateViewItem ();
 
     void setPath (const OUString &rPath) { maPath = rPath; }
 
@@ -28,7 +28,7 @@ public:
 
     bool IsDefaultTemplate() const { return mbIsDefaultTemplate; }
 
-    tools::Rectangle getDefaultIconArea() const;
+    Rectangle getDefaultIconArea() const;
 
     virtual void Paint (drawinglayer::processor2d::BaseProcessor2D *pProcessor,
                         const ThumbnailItemAttributes *pAttrs) override;

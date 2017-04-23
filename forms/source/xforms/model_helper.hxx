@@ -53,6 +53,7 @@ class BindingCollection : public NamedCollection<css::uno::Reference<css::beans:
 
 public:
     explicit BindingCollection( Model* pModel ) : mpModel( pModel ) {}
+    virtual ~BindingCollection() {}
 
     virtual bool isValid( const T& t ) const override
     {
@@ -79,7 +80,9 @@ class SubmissionCollection : public NamedCollection<css::uno::Reference<css::bea
 
 public:
     explicit SubmissionCollection( Model* pModel ) : mpModel( pModel ) {}
+    virtual ~SubmissionCollection() {}
 
+public:
     virtual bool isValid( const T& t ) const override
     {
         return Submission::getSubmission( t ) != nullptr;

@@ -19,12 +19,8 @@
 
 
 #include <string.h>
-#include "dxfreprd.hxx"
+#include <dxfreprd.hxx>
 #include "osl/nlsupport.h"
-#include "officecfg/Setup.hxx"
-#include "officecfg/Office/Linguistic.hxx"
-#include <unotools/wincodepage.hxx>
-#include <unotools/configmgr.hxx>
 
 //------------------DXFBoundingBox--------------------------------------------
 
@@ -132,9 +128,10 @@ void DXFPalette::SetColor(sal_uInt8 nIndex, sal_uInt8 nRed, sal_uInt8 nGreen, sa
 
 
 DXFRepresentation::DXFRepresentation()
-    : mEnc(RTL_TEXTENCODING_DONTKNOW)
+    : bUseUTF8(false)
     , mbInCalc(false)
 {
+    setTextEncoding(osl_getTextEncodingFromLocale(nullptr)); // Use default encoding if none specified
     setGlobalLineTypeScale(1.0);
 }
 
@@ -142,27 +139,6 @@ DXFRepresentation::~DXFRepresentation()
 {
 }
 
-namespace {
-
-OUString getLODefaultLanguage()
-{
-    if (utl::ConfigManager::IsAvoidConfig())
-        return OUString("en-US");
-
-    OUString result(officecfg::Office::Linguistic::General::DefaultLocale::get());
-    if (result.isEmpty())
-        result = officecfg::Setup::L10N::ooSetupSystemLocale::get();
-    return result;
-}
-
-}
-
-rtl_TextEncoding DXFRepresentation::getTextEncoding() const
-{
-    return (isTextEncodingSet()) ?
-        mEnc :
-        osl_getTextEncodingFromLocale(nullptr); // Use default encoding if none specified
-}
 
 bool DXFRepresentation::Read( SvStream & rIStream, sal_uInt16 /*nMinPercent*/, sal_uInt16 /*nMaxPercent*/)
 {
@@ -220,48 +196,18 @@ void DXFRepresentation::ReadHeader(DXFGroupReader & rDGR)
             {
                 if (!rDGR.Read(1))
                     continue;
-                // Versions of AutoCAD up to Release 12 (inclusive, AC1009)
-                // were DOS software and used OEM encoding for storing strings.
-                // Release 13 (AC1012) had both DOS and Windows variants.
-                // Its Windows variant, and later releases used ANSI encodings for
-                // strings (up to version 2006, which was the last one to do so).
-                // Later versions (2007+, AC1021+) use UTF-8 for that.
-                // Other (non-Autodesk) implementations may have used different
-                // encodings for storing to corresponding formats, but there's
-                // no way to know that.
-                // See http://autodesk.blogs.com/between_the_lines/autocad-release-history.html
-                if ((rDGR.GetS() <= "AC1009") || (rDGR.GetS() == "AC2.22") || (rDGR.GetS() == "AC2.21") || (rDGR.GetS() == "AC2.10") ||
-                    (rDGR.GetS() == "AC1.50") || (rDGR.GetS() == "AC1.40") || (rDGR.GetS() == "AC1.2")  || (rDGR.GetS() == "MC0.0"))
-                {
-                    // Set OEM encoding for old DOS formats
-                    // only if the encoding is not set yet
-                    // e.g. by previous $DWGCODEPAGE
-                    if (!isTextEncodingSet())
-                        setTextEncoding(utl_getWinTextEncodingFromLangStr(getLODefaultLanguage().toUtf8().getStr(), true));
-                }
-                else if (rDGR.GetS() >= "AC1021")
-                    setTextEncoding(RTL_TEXTENCODING_UTF8);
-                else
-                {
-                    // Set ANSI encoding for old Windows formats
-                    // only if the encoding is not set yet
-                    // e.g. by previous $DWGCODEPAGE
-                    if (!isTextEncodingSet())
-                        setTextEncoding(utl_getWinTextEncodingFromLangStr(getLODefaultLanguage().toUtf8().getStr()));
-                }
+                if (rDGR.GetS() >= "AC1021")
+                    bUseUTF8 = true;
             }
             else if (rDGR.GetS() == "$DWGCODEPAGE")
             {
                 if (!rDGR.Read(3))
                     continue;
 
-                // If we already use UTF8, then don't update encoding anymore
-                if (mEnc == RTL_TEXTENCODING_UTF8)
-                    continue;
                 // FIXME: we really need a whole table of
                 // $DWGCODEPAGE to encodings mappings
-                else if ( (rDGR.GetS().equalsIgnoreAsciiCase("ANSI_932")) ||
-                          (rDGR.GetS().equalsIgnoreAsciiCase("DOS932")) )
+                if ( (rDGR.GetS().equalsIgnoreAsciiCase("ANSI_932")) ||
+                     (rDGR.GetS().equalsIgnoreAsciiCase("DOS932")) )
                 {
                     setTextEncoding(RTL_TEXTENCODING_MS_932);
                 }
@@ -464,9 +410,9 @@ OUString DXFRepresentation::ToOUString(const OString& s) const
     OUString result = OStringToOUString(s, getTextEncoding());
     result = result.replaceAll("%%o", "")                     // Overscore - simply remove
                    .replaceAll("%%u", "")                     // Underscore - simply remove
-                   .replaceAll("%%d", OUStringLiteral1(0x00B0)) // Degrees symbol (°)
-                   .replaceAll("%%p", OUStringLiteral1(0x00B1)) // Tolerance symbol (±)
-                   .replaceAll("%%c", OUStringLiteral1(0x2205)) // Diameter symbol
+                   .replaceAll("%%d", OUString(sal_Unicode(L'\u00B0'))) // Degrees symbol (°)
+                   .replaceAll("%%p", OUString(sal_Unicode(L'\u00B1'))) // Tolerance symbol (±)
+                   .replaceAll("%%c", OUString(sal_Unicode(L'\u2205'))) // Diameter symbol
                    .replaceAll("%%%", "%");                   // Percent symbol
 
     sal_Int32 pos = result.indexOf("%%"); // %%nnn, where nnn - 3-digit decimal ASCII code

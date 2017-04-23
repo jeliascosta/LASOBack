@@ -58,14 +58,14 @@ class RTSDialog : public TabDialog
 
     bool mbDataModified;
 
-    DECL_LINK( ActivatePage, TabControl*, void );
-    DECL_LINK( ClickButton, Button*, void );
+    DECL_LINK_TYPED( ActivatePage, TabControl*, void );
+    DECL_LINK_TYPED( ClickButton, Button*, void );
 
     // helper functions
     void insertAllPPDValues( ListBox&, const psp::PPDParser*, const psp::PPDKey* );
 public:
-    RTSDialog(const ::psp::PrinterInfo& rJobData, vcl::Window* pParent);
-    virtual ~RTSDialog() override;
+    RTSDialog(const ::psp::PrinterInfo& rJobData, vcl::Window* pParent = nullptr);
+    virtual ~RTSDialog();
     virtual void dispose() override;
 
     const ::psp::PrinterInfo& getSetup() const { return m_aJobData; }
@@ -89,10 +89,10 @@ class RTSPaperPage : public TabPage
     VclPtr<FixedText>          m_pSlotText;
     VclPtr<ListBox>            m_pSlotBox;
 
-    DECL_LINK( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
 public:
     explicit RTSPaperPage( RTSDialog* );
-    virtual ~RTSPaperPage() override;
+    virtual ~RTSPaperPage();
     virtual void dispose() override;
 
     void update();
@@ -115,11 +115,11 @@ class RTSDevicePage : public TabPage
 
     void FillValueBox( const ::psp::PPDKey* );
 
-    DECL_LINK( SelectHdl, ListBox&, void );
-    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
 public:
     explicit RTSDevicePage( RTSDialog* );
-    virtual ~RTSDevicePage() override;
+    virtual ~RTSDevicePage();
     virtual void dispose() override;
 
     sal_uLong getLevel();

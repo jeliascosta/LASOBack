@@ -60,12 +60,12 @@ namespace sdr
 
             // basic constructor, destructor
             explicit ViewContactOfGraphic(SdrGrafObj& rGrafObj);
-            virtual ~ViewContactOfGraphic() override;
+            virtual ~ViewContactOfGraphic();
 
             // #i102380#
             void flushGraphicObjects();
 
-            // helpers for visualisation state
+            // helpers for viusualisation state
             bool visualisationUsesPresObj() const;
             bool visualisationUsesDraft() const;
 

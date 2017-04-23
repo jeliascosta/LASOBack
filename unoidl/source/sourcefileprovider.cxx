@@ -27,7 +27,7 @@ public:
     {}
 
 private:
-    virtual ~Cursor() throw () override {}
+    virtual ~Cursor() throw () {}
 
     virtual rtl::Reference< Entity > getNext(OUString * name) override;
 
@@ -53,7 +53,7 @@ public:
     std::map< OUString, rtl::Reference<Entity> > map;
 
 private:
-    virtual ~Module() throw () override {}
+    virtual ~Module() throw () {}
 
     virtual std::vector<rtl::OUString> getMemberNames() const override;
 

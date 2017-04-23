@@ -29,7 +29,7 @@ ScAddInResult::ScAddInResult(const String& rStr) :
     nTickCount( 0 )
 {
     aTimer.SetTimeout( 1000 );
-    aTimer.SetInvokeHandler( LINK( this, ScAddInResult, TimeoutHdl ) );
+    aTimer.SetTimeoutHdl( LINK( this, ScAddInResult, TimeoutHdl ) );
     aTimer.Start();
 }
 
@@ -47,7 +47,7 @@ void ScAddInResult::NewValue()
         m_Listeners[n]->modified( aEvent );
 }
 
-IMPL_LINK( ScAddInResult, TimeoutHdl, Timer*, pT, void )
+IMPL_LINK_TYPED( ScAddInResult, TimeoutHdl, Timer*, pT, void )
 {
     NewValue();
     pT->Start();

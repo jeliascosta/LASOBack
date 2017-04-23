@@ -22,8 +22,6 @@
 #include <com/sun/star/awt/MouseButton.hpp>
 #include <com/sun/star/awt/MouseEvent.hpp>
 #include <cppuhelper/supportsservice.hxx>
-#include <o3tl/any.hxx>
-
 #include <process.h>
 #include <memory>
 
@@ -36,6 +34,13 @@
 #include <winuser.h>
 #include <stdio.h>
 
+#ifdef __MINGW32__
+#if defined __uuidof
+#undef __uuidof
+#endif
+#define __uuidof(I) IID_##I
+#endif
+
 using namespace cppu;
 using namespace osl;
 using namespace com::sun::star::datatransfer;
@@ -46,13 +51,15 @@ using namespace com::sun::star::awt::MouseButton;
 using namespace com::sun::star::awt;
 using namespace com::sun::star::lang;
 
+extern Reference< XTransferable > g_XTransferable;
+
 unsigned __stdcall DndOleSTAFunc(LPVOID pParams);
 
 DragSource::DragSource( const Reference<XComponentContext>& rxContext):
     WeakComponentImplHelper< XDragSource, XInitialization, XServiceInfo >(m_mutex),
     m_xContext( rxContext ),
 //  m_pcurrentContext_impl(0),
-    m_hAppWindow(nullptr),
+    m_hAppWindow(0),
     m_MouseButton(0),
     m_RunningDndOperationCount(0)
 {
@@ -67,7 +74,7 @@ DragSource::~DragSource()
 
      ????
           Do we really need a separate thread for
-          every Dnd operation or only if the source
+          every Dnd opeartion or only if the source
           thread is an MTA thread
      ????
 */
@@ -97,7 +104,7 @@ void DragSource::StartDragImpl(
     // while this function executes). The source context is also used
     // in DragSource::QueryContinueDrag.
     m_currentContext= static_cast<XDragSourceContext*>( new SourceContext(
-                      this, listener ) );
+                      static_cast<DragSource*>(this), listener ) );
 
     // Convert the XTransferable data object into an IDataObject object;
 
@@ -121,7 +128,7 @@ void DragSource::StartDragImpl(
     // Hopefully this instance is not destroyed before the thread has terminated.
     unsigned threadId;
     HANDLE hThread= reinterpret_cast<HANDLE>(_beginthreadex(
-        nullptr, 0, DndOleSTAFunc, this, 0, &threadId));
+        0, 0, DndOleSTAFunc, reinterpret_cast<void*>(this), 0, &threadId));
 
     // detach from thread
     CloseHandle(hThread);
@@ -130,19 +137,22 @@ void DragSource::StartDragImpl(
 // XInitialization
 /** aArguments contains a machine id */
 void SAL_CALL DragSource::initialize( const Sequence< Any >& aArguments )
+    throw(Exception, RuntimeException)
 {
     if( aArguments.getLength() >=2)
-        m_hAppWindow= reinterpret_cast<HWND>(static_cast<sal_uIntPtr>(*o3tl::doAccess<sal_uInt64>(aArguments[1])));
+        m_hAppWindow= *(HWND*)aArguments[1].getValue();
     OSL_ASSERT( IsWindow( m_hAppWindow) );
 }
 
 /** XDragSource */
 sal_Bool SAL_CALL DragSource::isDragImageSupported(  )
+         throw(RuntimeException)
 {
-    return false;
+    return 0;
 }
 
 sal_Int32 SAL_CALL DragSource::getDefaultCursor( sal_Int8 /*dragAction*/ )
+          throw( IllegalArgumentException, RuntimeException)
 {
     return 0;
 }
@@ -155,7 +165,7 @@ void SAL_CALL DragSource::startDrag(
     sal_Int32 cursor,
     sal_Int32 image,
     const Reference<XTransferable >& trans,
-    const Reference<XDragSourceListener >& listener )
+    const Reference<XDragSourceListener >& listener ) throw( RuntimeException)
 {
     // Allow only one running dnd operation at a time,
     // see XDragSource documentation
@@ -191,7 +201,7 @@ HRESULT STDMETHODCALLTYPE DragSource::QueryInterface( REFIID riid, void  **ppvOb
 {
     if( !ppvObject)
         return E_POINTER;
-    *ppvObject= nullptr;
+    *ppvObject= NULL;
 
     if(  riid == __uuidof( IUnknown) )
         *ppvObject= static_cast<IUnknown*>( this);
@@ -277,17 +287,17 @@ dwEffect
 }
 
 // XServiceInfo
-OUString SAL_CALL DragSource::getImplementationName(  )
+OUString SAL_CALL DragSource::getImplementationName(  ) throw (RuntimeException)
 {
     return OUString(DNDSOURCE_IMPL_NAME);
 }
 // XServiceInfo
-sal_Bool SAL_CALL DragSource::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL DragSource::supportsService( const OUString& ServiceName ) throw (RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > SAL_CALL DragSource::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL DragSource::getSupportedServiceNames(  ) throw (RuntimeException)
 {
     OUString names[1]= {OUString(DNDSOURCE_SERVICE_NAME)};
 
@@ -304,17 +314,17 @@ unsigned __stdcall DndOleSTAFunc(LPVOID pParams)
     osl_setThreadName("DragSource DndOleSTAFunc");
 
     // The structure contains all arguments for DoDragDrop and other
-    DragSource *pSource= static_cast<DragSource*>(pParams);
+    DragSource *pSource= (DragSource*)pParams;
 
     // Drag and drop only works in a thread in which OleInitialize is called.
-    HRESULT hr= OleInitialize( nullptr);
+    HRESULT hr= OleInitialize( NULL);
 
     if(SUCCEEDED(hr))
     {
         // We force the creation of a thread message queue. This is necessary
         // for a later call to AttachThreadInput
         MSG msgtemp;
-        PeekMessage( &msgtemp, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
+        PeekMessage( &msgtemp, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
         DWORD threadId= GetCurrentThreadId();
 
@@ -346,12 +356,12 @@ unsigned __stdcall DndOleSTAFunc(LPVOID pParams)
         sal_Int8 action= hr == DRAGDROP_S_DROP ? dndOleDropEffectsToActions( dwEffect) : ACTION_NONE;
 
         static_cast<SourceContext*>(pSource->m_currentContext.get())->fire_dragDropEnd(
-                                                        hr == DRAGDROP_S_DROP, action);
+                                                        hr == DRAGDROP_S_DROP ? sal_True : sal_False, action);
 
         // Destroy SourceContextslkfgj
-        pSource->m_currentContext= nullptr;
+        pSource->m_currentContext= 0;
         // Destroy the XTransferable wrapper
-        pSource->m_spDataObject=nullptr;
+        pSource->m_spDataObject=0;
 
         OleUninitialize();
     }

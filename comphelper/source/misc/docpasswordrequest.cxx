@@ -46,27 +46,27 @@ namespace comphelper {
 class AbortContinuation : public ::cppu::WeakImplHelper< XInteractionAbort >
 {
 public:
-    virtual void SAL_CALL select() override {}
+    virtual void SAL_CALL select() throw( RuntimeException, std::exception ) override {}
 };
 
 
 class PasswordContinuation : public ::cppu::WeakImplHelper< XInteractionPassword2 >
 {
 public:
-    explicit     PasswordContinuation() : mbReadOnly( false ), mbSelected( false ) {}
+    inline explicit     PasswordContinuation() : mbReadOnly( false ), mbSelected( false ) {}
 
-    bool     isSelected() const { return mbSelected; }
+    inline bool     isSelected() const { return mbSelected; }
 
-    virtual void SAL_CALL select() override { mbSelected = true; }
+    virtual void SAL_CALL select() throw( RuntimeException, std::exception ) override { mbSelected = true; }
 
-    virtual void SAL_CALL setPassword( const OUString& rPass ) override { maPassword = rPass; }
-    virtual OUString SAL_CALL getPassword() override { return maPassword; }
+    virtual void SAL_CALL setPassword( const OUString& rPass ) throw( RuntimeException, std::exception ) override { maPassword = rPass; }
+    virtual OUString SAL_CALL getPassword() throw( RuntimeException, std::exception ) override { return maPassword; }
 
-    virtual void SAL_CALL setPasswordToModify( const OUString& rPass ) override { maModifyPassword = rPass; }
-    virtual OUString SAL_CALL getPasswordToModify() override { return maModifyPassword; }
+    virtual void SAL_CALL setPasswordToModify( const OUString& rPass ) throw( RuntimeException, std::exception ) override { maModifyPassword = rPass; }
+    virtual OUString SAL_CALL getPasswordToModify() throw( RuntimeException, std::exception ) override { return maModifyPassword; }
 
-    virtual void SAL_CALL setRecommendReadOnly( sal_Bool bReadOnly ) override { mbReadOnly = bReadOnly; }
-    virtual sal_Bool SAL_CALL getRecommendReadOnly() override { return mbReadOnly; }
+    virtual void SAL_CALL setRecommendReadOnly( sal_Bool bReadOnly ) throw( RuntimeException, std::exception ) override { mbReadOnly = bReadOnly; }
+    virtual sal_Bool SAL_CALL getRecommendReadOnly() throw( RuntimeException, std::exception ) override { return mbReadOnly; }
 
 private:
     OUString            maPassword;
@@ -76,14 +76,16 @@ private:
 };
 
 
-SimplePasswordRequest::SimplePasswordRequest()
+SimplePasswordRequest::SimplePasswordRequest( PasswordRequestMode eMode )
 {
     PasswordRequest aRequest( OUString(), Reference< XInterface >(),
-        InteractionClassification_QUERY, css::task::PasswordRequestMode_PASSWORD_CREATE );
+        InteractionClassification_QUERY, eMode );
     maRequest <<= aRequest;
 
-    mxAbort = new AbortContinuation;
-    mxPassword = new PasswordContinuation;
+    maContinuations.realloc( 2 );
+    maContinuations[ 0 ].set( new AbortContinuation );
+    mpPassword = new PasswordContinuation;
+    maContinuations[ 1 ].set( mpPassword );
 }
 
 SimplePasswordRequest::~SimplePasswordRequest()
@@ -92,22 +94,22 @@ SimplePasswordRequest::~SimplePasswordRequest()
 
 bool SimplePasswordRequest::isPassword() const
 {
-    return mxPassword->isSelected();
+    return mpPassword->isSelected();
 }
 
 OUString SimplePasswordRequest::getPassword() const
 {
-    return mxPassword->getPassword();
+    return mpPassword->getPassword();
 }
 
-Any SAL_CALL SimplePasswordRequest::getRequest()
+Any SAL_CALL SimplePasswordRequest::getRequest() throw( RuntimeException, std::exception )
 {
     return maRequest;
 }
 
-Sequence< Reference< XInteractionContinuation > > SAL_CALL SimplePasswordRequest::getContinuations()
+Sequence< Reference< XInteractionContinuation > > SAL_CALL SimplePasswordRequest::getContinuations() throw( RuntimeException, std::exception )
 {
-    return { mxAbort.get(), mxPassword.get() };
+    return maContinuations;
 }
 
 
@@ -134,8 +136,10 @@ DocPasswordRequest::DocPasswordRequest( DocPasswordRequestType eType,
             implementation of a new enum value. */
     }
 
-    mxAbort = new AbortContinuation;
-    mxPassword = new PasswordContinuation;
+    maContinuations.realloc( 2 );
+    maContinuations[ 0 ].set( new AbortContinuation );
+    mpPassword = new PasswordContinuation;
+    maContinuations[ 1 ].set( mpPassword );
 }
 
 DocPasswordRequest::~DocPasswordRequest()
@@ -144,32 +148,32 @@ DocPasswordRequest::~DocPasswordRequest()
 
 bool DocPasswordRequest::isPassword() const
 {
-    return mxPassword->isSelected();
+    return mpPassword->isSelected();
 }
 
 OUString DocPasswordRequest::getPassword() const
 {
-    return mxPassword->getPassword();
+    return mpPassword->getPassword();
 }
 
 OUString DocPasswordRequest::getPasswordToModify() const
 {
-    return mxPassword->getPasswordToModify();
+    return mpPassword->getPasswordToModify();
 }
 
 bool DocPasswordRequest::getRecommendReadOnly() const
 {
-    return mxPassword->getRecommendReadOnly();
+    return mpPassword->getRecommendReadOnly();
 }
 
-Any SAL_CALL DocPasswordRequest::getRequest()
+Any SAL_CALL DocPasswordRequest::getRequest() throw( RuntimeException, std::exception )
 {
     return maRequest;
 }
 
-Sequence< Reference< XInteractionContinuation > > SAL_CALL DocPasswordRequest::getContinuations()
+Sequence< Reference< XInteractionContinuation > > SAL_CALL DocPasswordRequest::getContinuations() throw( RuntimeException, std::exception )
 {
-    return { mxAbort.get(), mxPassword.get() };
+    return maContinuations;
 }
 
 

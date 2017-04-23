@@ -68,7 +68,7 @@ bool Window::PreNotify( NotifyEvent& rNEvt )
             }
 
             if ( bCompoundFocusChanged || ( rNEvt.GetWindow() == this ) )
-                CallEventListeners( VclEventId::WindowGetFocus );
+                CallEventListeners( VCLEVENT_WINDOW_GETFOCUS );
         }
         else if( rNEvt.GetType() == MouseNotifyEvent::LOSEFOCUS )
         {
@@ -80,7 +80,7 @@ bool Window::PreNotify( NotifyEvent& rNEvt )
             }
 
             if ( bCompoundFocusChanged || ( rNEvt.GetWindow() == this ) )
-                CallEventListeners( VclEventId::WindowLoseFocus );
+                CallEventListeners( VCLEVENT_WINDOW_LOSEFOCUS );
         }
 
         // #82968# mouse and key events will be notified after processing ( in ImplNotifyKeyMouseCommandEventListeners() )!
@@ -91,7 +91,7 @@ bool Window::PreNotify( NotifyEvent& rNEvt )
     return bDone;
 }
 
-bool Window::EventNotify( NotifyEvent& rNEvt )
+bool Window::Notify( NotifyEvent& rNEvt )
 {
     bool bRet = false;
 
@@ -101,17 +101,15 @@ bool Window::EventNotify( NotifyEvent& rNEvt )
     // check for docking window
     // but do nothing if window is docked and locked
     ImplDockingWindowWrapper *pWrapper = ImplGetDockingManager()->GetDockingWindowWrapper( this );
-    if (pWrapper && !( !pWrapper->IsFloatingMode() && pWrapper->IsLocked() ))
+    if( pWrapper && !( !pWrapper->IsFloatingMode() && pWrapper->IsLocked() ) )
     {
-        const bool bDockingSupportCrippled = !StyleSettings::GetDockingFloatsSupported();
-
         if ( rNEvt.GetType() == MouseNotifyEvent::MOUSEBUTTONDOWN )
         {
             const MouseEvent* pMEvt = rNEvt.GetMouseEvent();
             bool bHit = pWrapper->GetDragArea().IsInside( pMEvt->GetPosPixel() );
             if ( pMEvt->IsLeft() )
             {
-                if (!bDockingSupportCrippled && pMEvt->IsMod1() && (pMEvt->GetClicks() == 2))
+                if ( pMEvt->IsMod1() && (pMEvt->GetClicks() == 2) )
                 {
                     // ctrl double click toggles floating mode
                     pWrapper->SetFloatingMode( !pWrapper->IsFloatingMode() );
@@ -151,8 +149,8 @@ bool Window::EventNotify( NotifyEvent& rNEvt )
         else if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
         {
             const vcl::KeyCode& rKey = rNEvt.GetKeyEvent()->GetKeyCode();
-            if (rKey.GetCode() == KEY_F10 && rKey.GetModifier() &&
-                rKey.IsShift() && rKey.IsMod1() && !bDockingSupportCrippled)
+            if( rKey.GetCode() == KEY_F10 && rKey.GetModifier() &&
+                rKey.IsShift() && rKey.IsMod1() )
             {
                 pWrapper->SetFloatingMode( !pWrapper->IsFloatingMode() );
                 /* At this point the floating toolbar frame does not have the
@@ -175,7 +173,7 @@ bool Window::EventNotify( NotifyEvent& rNEvt )
         if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) || (rNEvt.GetType() == MouseNotifyEvent::KEYUP) )
         {
             if ( ImplIsOverlapWindow() ||
-                 ((getNonLayoutParent(this)->GetStyle() & (WB_DIALOGCONTROL | WB_NODIALOGCONTROL)) != WB_DIALOGCONTROL) )
+                 ((getNonLayoutRealParent(this)->GetStyle() & (WB_DIALOGCONTROL | WB_NODIALOGCONTROL)) != WB_DIALOGCONTROL) )
             {
                 bRet = ImplDlgCtrl( *rNEvt.GetKeyEvent(), rNEvt.GetType() == MouseNotifyEvent::KEYINPUT );
             }
@@ -203,7 +201,7 @@ bool Window::EventNotify( NotifyEvent& rNEvt )
     return bRet;
 }
 
-void Window::CallEventListeners( VclEventId nEvent, void* pData )
+void Window::CallEventListeners( sal_uLong nEvent, void* pData )
 {
     VclWindowEvent aEvent( this, nEvent, pData );
 
@@ -345,9 +343,9 @@ ImplSVEvent * Window::PostUserEvent( const Link<void*,void>& rLink, void* pCalle
 
 void Window::RemoveUserEvent( ImplSVEvent * nUserEvent )
 {
-    SAL_WARN_IF( nUserEvent->mpWindow.get() != this, "vcl",
+    DBG_ASSERT( nUserEvent->mpWindow.get() == this,
                 "Window::RemoveUserEvent(): Event doesn't send to this window or is already removed" );
-    SAL_WARN_IF( !nUserEvent->mbCall, "vcl",
+    DBG_ASSERT( nUserEvent->mbCall,
                 "Window::RemoveUserEvent(): Event is already removed" );
 
     if ( nUserEvent->mpWindow )
@@ -361,7 +359,7 @@ void Window::RemoveUserEvent( ImplSVEvent * nUserEvent )
 
 static MouseEvent ImplTranslateMouseEvent( const MouseEvent& rE, vcl::Window* pSource, vcl::Window* pDest )
 {
-    // the mouse event occurred in a different window, we need to translate the coordinates of
+    // the mouse event occured in a different window, we need to translate the coordinates of
     // the mouse cursor within that (source) window to the coordinates the mouse cursor would
     // be in the destination window
     Point aPos = pSource->OutputToScreenPixel( rE.GetPosPixel() );
@@ -392,7 +390,7 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
                 }
                 else
                 {
-                    // the mouse event occurred in a different window, we need to translate the coordinates of
+                    // the mouse event occured in a different window, we need to translate the coordinates of
                     // the mouse cursor within that window to the coordinates the mouse cursor would be in the
                     // current window
                     vcl::Window* pSource = rNEvt.GetWindow();
@@ -400,7 +398,7 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
                     aCommandEvent = CommandEvent( ScreenToOutputPixel( aPos ), pCEvt->GetCommand(), pCEvt->IsMouseEvent(), pCEvt->GetEventData() );
                 }
 
-                CallEventListeners( VclEventId::WindowCommand, &aCommandEvent );
+                CallEventListeners( VCLEVENT_WINDOW_COMMAND, &aCommandEvent );
             }
         }
     }
@@ -417,11 +415,11 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
         if ( mpWindowImpl->mbCompoundControl || ( rNEvt.GetWindow() == this ) )
         {
             if ( rNEvt.GetWindow() == this )
-                CallEventListeners( VclEventId::WindowMouseMove, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEMOVE, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
             else
             {
                 MouseEvent aMouseEvent = ImplTranslateMouseEvent( *rNEvt.GetMouseEvent(), rNEvt.GetWindow(), this );
-                CallEventListeners( VclEventId::WindowMouseMove, &aMouseEvent );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEMOVE, &aMouseEvent );
             }
         }
     }
@@ -430,11 +428,11 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
         if ( mpWindowImpl->mbCompoundControl || ( rNEvt.GetWindow() == this ) )
         {
             if ( rNEvt.GetWindow() == this )
-                CallEventListeners( VclEventId::WindowMouseButtonUp, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEBUTTONUP, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
             else
             {
                 MouseEvent aMouseEvent = ImplTranslateMouseEvent( *rNEvt.GetMouseEvent(), rNEvt.GetWindow(), this );
-                CallEventListeners( VclEventId::WindowMouseButtonUp, &aMouseEvent );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEBUTTONUP, &aMouseEvent );
             }
         }
     }
@@ -443,23 +441,23 @@ void Window::ImplNotifyKeyMouseCommandEventListeners( NotifyEvent& rNEvt )
         if ( mpWindowImpl->mbCompoundControl || ( rNEvt.GetWindow() == this ) )
         {
             if ( rNEvt.GetWindow() == this )
-                CallEventListeners( VclEventId::WindowMouseButtonDown, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEBUTTONDOWN, const_cast<MouseEvent *>(rNEvt.GetMouseEvent()) );
             else
             {
                 MouseEvent aMouseEvent = ImplTranslateMouseEvent( *rNEvt.GetMouseEvent(), rNEvt.GetWindow(), this );
-                CallEventListeners( VclEventId::WindowMouseButtonDown, &aMouseEvent );
+                CallEventListeners( VCLEVENT_WINDOW_MOUSEBUTTONDOWN, &aMouseEvent );
             }
         }
     }
     else if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
         if ( mpWindowImpl->mbCompoundControl || ( rNEvt.GetWindow() == this ) )
-            CallEventListeners( VclEventId::WindowKeyInput, const_cast<KeyEvent *>(rNEvt.GetKeyEvent()) );
+            CallEventListeners( VCLEVENT_WINDOW_KEYINPUT, const_cast<KeyEvent *>(rNEvt.GetKeyEvent()) );
     }
     else if( rNEvt.GetType() == MouseNotifyEvent::KEYUP )
     {
         if ( mpWindowImpl->mbCompoundControl || ( rNEvt.GetWindow() == this ) )
-            CallEventListeners( VclEventId::WindowKeyUp, const_cast<KeyEvent *>(rNEvt.GetKeyEvent()) );
+            CallEventListeners( VCLEVENT_WINDOW_KEYUP, const_cast<KeyEvent *>(rNEvt.GetKeyEvent()) );
     }
 
     if ( xWindow->IsDisposed() )
@@ -524,7 +522,7 @@ void Window::ImplCallResize()
 
     // #88419# Most classes don't call the base class in Resize() and Move(),
     // => Call ImpleResize/Move instead of Resize/Move directly...
-    CallEventListeners( VclEventId::WindowResize );
+    CallEventListeners( VCLEVENT_WINDOW_RESIZE );
 }
 
 void Window::ImplCallMove()
@@ -566,7 +564,7 @@ void Window::ImplCallMove()
 
     Move();
 
-    CallEventListeners( VclEventId::WindowMove );
+    CallEventListeners( VCLEVENT_WINDOW_MOVE );
 }
 
 void Window::ImplCallFocusChangeActivate( vcl::Window* pNewOverlapWindow,
@@ -580,17 +578,17 @@ void Window::ImplCallFocusChangeActivate( vcl::Window* pNewOverlapWindow,
 
     pOldRealWindow = pOldOverlapWindow->ImplGetWindow();
     pNewRealWindow = pNewOverlapWindow->ImplGetWindow();
-    if ( (pOldRealWindow->GetType() != WindowType::FLOATINGWINDOW) ||
+    if ( (pOldRealWindow->GetType() != WINDOW_FLOATINGWINDOW) ||
          pOldRealWindow->GetActivateMode() != ActivateModeFlags::NONE )
     {
-        if ( (pNewRealWindow->GetType() == WindowType::FLOATINGWINDOW) &&
+        if ( (pNewRealWindow->GetType() == WINDOW_FLOATINGWINDOW) &&
              pNewRealWindow->GetActivateMode() == ActivateModeFlags::NONE)
         {
             pSVData->maWinData.mpLastDeacWin = pOldOverlapWindow;
             bCallDeactivate = false;
         }
     }
-    else if ( (pNewRealWindow->GetType() != WindowType::FLOATINGWINDOW) ||
+    else if ( (pNewRealWindow->GetType() != WINDOW_FLOATINGWINDOW) ||
               pNewRealWindow->GetActivateMode() != ActivateModeFlags::NONE )
     {
         if ( pSVData->maWinData.mpLastDeacWin )
@@ -655,6 +653,7 @@ NotifyEvent::NotifyEvent( MouseNotifyEvent nEventType, vcl::Window* pWindow,
     mpWindow    = pWindow;
     mpData      = const_cast<void*>(pEvent);
     mnEventType  = nEventType;
+    mnRetValue  = 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

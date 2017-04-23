@@ -24,7 +24,7 @@
 
 #include "serialnumberadapter.hxx"
 #include "xmlelementwrapper_xmlsecimpl.hxx"
-#include "xmlsec/xmldocumentwrapper_xmlsecimpl.hxx"
+#include "xmldocumentwrapper_xmlsecimpl.hxx"
 #include "xsec_xmlsec.hxx"
 
 using namespace ::cppu;
@@ -40,21 +40,21 @@ SAL_DLLPUBLIC_EXPORT void* SAL_CALL xsec_xmlsec_component_getFactory( const sal_
     Reference< XInterface > xFactory ;
 
     if( pImplName != nullptr ) {
-        if( XMLElementWrapper_XmlSecImpl_getImplementationName().equalsAscii( pImplName ) )
+        if( XMLElementWrapper_XmlSecImpl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = cppu::createSingleComponentFactory(
                 XMLElementWrapper_XmlSecImpl_createInstance,
                 OUString::createFromAscii( pImplName ),
                 XMLElementWrapper_XmlSecImpl_getSupportedServiceNames() );
         }
-        else if( XMLDocumentWrapper_XmlSecImpl_getImplementationName().equalsAscii( pImplName ) )
+        else if( XMLDocumentWrapper_XmlSecImpl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = cppu::createSingleComponentFactory(
                 XMLDocumentWrapper_XmlSecImpl_createInstance,
                 OUString::createFromAscii( pImplName ),
                 XMLDocumentWrapper_XmlSecImpl_getSupportedServiceNames() );
         }
-        else if( xml_security::serial_number_adapter::implementationName().equalsAscii( pImplName ) )
+        else if( xml_security::serial_number_adapter::implementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = ::cppu::createSingleComponentFactory(
               xml_security::serial_number_adapter::create,
@@ -73,7 +73,7 @@ SAL_DLLPUBLIC_EXPORT void* SAL_CALL xsec_xmlsec_component_getFactory( const sal_
 
 #if defined( XMLSEC_CRYPTO_MSCRYPTO )
         pRet = mscrypt_component_getFactory( pImplName, pServiceManager, pRegistryKey ) ;
-        if( pRet != nullptr )
+        if( pRet != NULL )
             return pRet ;
 #endif
     }

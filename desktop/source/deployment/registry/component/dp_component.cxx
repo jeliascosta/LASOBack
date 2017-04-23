@@ -21,7 +21,6 @@
 #include "dp_component.hrc"
 #include "dp_backend.h"
 #include "dp_platform.hxx"
-#include "dp_services.hxx"
 #include "dp_ucb.h"
 #include <rtl/string.hxx>
 #include <rtl/strbuf.hxx>
@@ -35,7 +34,6 @@
 #include <comphelper/sequence.hxx>
 #include <xmlscript/xml_helper.hxx>
 #include <svl/inettype.hxx>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/container/XSet.hpp>
@@ -62,23 +60,23 @@ namespace backend {
 namespace component {
 namespace {
 
-typedef std::list<OUString> t_stringlist;
-typedef std::vector< std::pair<OUString, OUString> > t_stringpairvec;
+typedef ::std::list<OUString> t_stringlist;
+typedef ::std::vector< ::std::pair<OUString, OUString> > t_stringpairvec;
 
 #define IMPLEMENTATION_NAME  "com.sun.star.comp.deployment.component.PackageRegistryBackend"
 
 /** return a vector of bootstrap variables which have been provided
     as command arguments.
 */
-std::vector<OUString> getCmdBootstrapVariables()
+::std::vector<OUString> getCmdBootstrapVariables()
 {
-    std::vector<OUString> ret;
+    ::std::vector<OUString> ret;
     sal_uInt32 count = osl_getCommandArgCount();
     for (sal_uInt32 i = 0; i < count; i++)
     {
         OUString arg;
         osl_getCommandArg(i, &arg.pData);
-        if (arg.startsWith("-env:"))
+        if (arg.match("-env:"))
             ret.push_back(arg);
     }
     return ret;
@@ -129,6 +127,8 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
                 factories);
 
         void componentLiveRemoval(ComponentBackendDb::Data const & data);
+
+        virtual void SAL_CALL disposing() override;
 
         // Package
         virtual beans::Optional< beans::Ambiguous<sal_Bool> > isRegistered_(
@@ -183,6 +183,8 @@ class BackendImpl : public ::dp_registry::backend::PackageRegistryBackend
         BackendImpl * getMyBackend() const;
 
         const bool m_jarFile;
+
+        virtual void SAL_CALL disposing() override;
 
         // Package
         virtual beans::Optional< beans::Ambiguous<sal_Bool> > isRegistered_(
@@ -322,9 +324,11 @@ public:
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() override;
+    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception) override;
 
     using PackageRegistryBackend::disposing;
 
@@ -385,6 +389,18 @@ BackendImpl * BackendImpl::ComponentPackageImpl::getMyBackend() const
 }
 
 
+void BackendImpl::ComponentPackageImpl::disposing()
+{
+    Package::disposing();
+}
+
+
+void BackendImpl::TypelibraryPackageImpl::disposing()
+{
+    Package::disposing();
+}
+
+
 void BackendImpl::disposing()
 {
     try {
@@ -430,7 +446,7 @@ void BackendImpl::initServiceRdbFiles()
     if (oldRDB.get().is())
     {
         if (! cacheDir.transferContent(
-                oldRDB, ::ucbhelper::InsertOperation::Copy,
+                oldRDB, ::ucbhelper::InsertOperation_COPY,
                 m_commonRDB, NameClash::OVERWRITE ))
         {
 
@@ -451,7 +467,7 @@ void BackendImpl::initServiceRdbFiles()
     if (oldRDB.get().is())
     {
         if (! cacheDir.transferContent(
-                oldRDB, ::ucbhelper::InsertOperation::Copy,
+                oldRDB, ::ucbhelper::InsertOperation_COPY,
                 m_nativeRDB, NameClash::OVERWRITE ))
             throw RuntimeException( "UCB transferContent() failed!", nullptr );
     }
@@ -495,34 +511,34 @@ BackendImpl::BackendImpl(
              "application/vnd.sun.star.uno-component;type=native;platform=" +
                                    getPlatformString(),
                                    "*" SAL_DLLEXTENSION,
-                                   getResourceString(RID_STR_DYN_COMPONENT)
-                                   ) ),
+                                   getResourceString(RID_STR_DYN_COMPONENT),
+                                   RID_IMG_COMPONENT) ),
       m_xJavaComponentTypeInfo( new Package::TypeInfo(
              "application/vnd.sun.star.uno-component;type=Java",
                                     "*.jar",
-                                    getResourceString(RID_STR_JAVA_COMPONENT)
-                                    ) ),
+                                    getResourceString(RID_STR_JAVA_COMPONENT),
+                                    RID_IMG_JAVA_COMPONENT) ),
       m_xPythonComponentTypeInfo( new Package::TypeInfo(
              "application/vnd.sun.star.uno-component;type=Python",
                                       "*.py",
                                       getResourceString(
-                                          RID_STR_PYTHON_COMPONENT)
-                                      ) ),
+                                          RID_STR_PYTHON_COMPONENT),
+                                      RID_IMG_COMPONENT ) ),
       m_xComponentsTypeInfo( new Package::TypeInfo(
                                  "application/vnd.sun.star.uno-components",
                                  "*.components",
-                                 getResourceString(RID_STR_COMPONENTS)
-                                 ) ),
+                                 getResourceString(RID_STR_COMPONENTS),
+                                 RID_IMG_COMPONENT ) ),
       m_xRDBTypelibTypeInfo( new Package::TypeInfo(
              "application/vnd.sun.star.uno-typelibrary;type=RDB",
                                  "*.rdb",
-                                 getResourceString(RID_STR_RDB_TYPELIB)
-                                 ) ),
+                                 getResourceString(RID_STR_RDB_TYPELIB),
+                                 RID_IMG_TYPELIB ) ),
       m_xJavaTypelibTypeInfo( new Package::TypeInfo(
              "application/vnd.sun.star.uno-typelibrary;type=Java",
                                   "*.jar",
-                                  getResourceString(RID_STR_JAVA_TYPELIB)
-                                  ) ),
+                                  getResourceString(RID_STR_JAVA_TYPELIB),
+                                  RID_IMG_JAVA_TYPELIB ) ),
       m_typeInfos( 6 )
 {
     m_typeInfos[ 0 ] = m_xDynComponentTypeInfo;
@@ -584,12 +600,14 @@ void BackendImpl::revokeEntryFromDb(OUString const & url)
 // XPackageRegistry
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes()
+BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
 {
     return m_typeInfos;
 }
 
 void BackendImpl::packageRemoved(OUString const & url, OUString const & /*mediaType*/)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception)
 {
     if (m_backendDb.get())
         m_backendDb->removeEntry(url);
@@ -976,7 +994,7 @@ void BackendImpl::addToUnoRc( RcItem kind, OUString const & url_,
     const ::osl::MutexGuard guard( getMutex() );
     unorc_verify_init( xCmdEnv );
     t_stringlist & rSet = getRcItemList(kind);
-    if (std::find( rSet.begin(), rSet.end(), rcterm ) == rSet.end()) {
+    if (::std::find( rSet.begin(), rSet.end(), rcterm ) == rSet.end()) {
         rSet.push_front( rcterm ); // prepend to list, thus overriding
         // write immediately:
         m_unorc_modified = true;
@@ -1005,7 +1023,7 @@ bool BackendImpl::hasInUnoRc(
     const OUString rcterm( dp_misc::makeRcTerm(url_) );
     const ::osl::MutexGuard guard( getMutex() );
     t_stringlist const & rSet = getRcItemList(kind);
-    return std::find( rSet.begin(), rSet.end(), rcterm ) != rSet.end();
+    return ::std::find( rSet.begin(), rSet.end(), rcterm ) != rSet.end();
 }
 
 css::uno::Reference< css::uno::XComponentContext > BackendImpl::getRootContext()
@@ -1040,7 +1058,7 @@ Reference<XInterface> BackendImpl::insertObject(
     OUString const & id, Reference<XInterface> const & xObject )
 {
     const ::osl::MutexGuard guard( getMutex() );
-    const std::pair<t_string2object::iterator, bool> insertion(
+    const ::std::pair<t_string2object::iterator, bool> insertion(
         m_backendObjects.insert( t_string2object::value_type(
                                      id, xObject ) ) );
     return insertion.first->second;
@@ -1061,7 +1079,7 @@ Reference<XComponentContext> raise_uno_process(
     // javavm service uses unorc next to executable to retrieve deployed
     // jar typelibs
 
-    std::vector<OUString> args{
+    ::std::vector<OUString> args{
 #if OSL_DEBUG_LEVEL == 0
         "--quiet",
 #endif
@@ -1072,7 +1090,7 @@ Reference<XComponentContext> raise_uno_process(
         "-env:INIFILENAME=" };
 
     //now add the bootstrap variables which were supplied on the command line
-    std::vector<OUString> bootvars = getCmdBootstrapVariables();
+    ::std::vector<OUString> bootvars = getCmdBootstrapVariables();
     args.insert(args.end(), bootvars.begin(), bootvars.end());
 
     oslProcess hProcess;
@@ -1200,7 +1218,9 @@ void BackendImpl::ComponentPackageImpl::componentLiveInsertion(
         try {
             set->insert(css::uno::Any(*factory++));
         } catch (const container::ElementExistException &) {
-            SAL_WARN("desktop.deployment", "implementation already registered " << *i);
+            OSL_TRACE(
+                "implementation %s already registered",
+                OUStringToOString(*i, RTL_TEXTENCODING_UTF8).getStr());
         }
     }
     if (!data.singletons.empty()) {
@@ -1222,7 +1242,10 @@ void BackendImpl::ComponentPackageImpl::componentLiveInsertion(
             try {
                 cont->insertByName(name, css::uno::Any());
             } catch (const container::ElementExistException &) {
-                SAL_WARN("desktop.deployment", "singleton already registered " << i->first);
+                OSL_TRACE(
+                    "singleton %s already registered",
+                    OUStringToOString(
+                        i->first, RTL_TEXTENCODING_UTF8).getStr());
                 cont->replaceByName(name, css::uno::Any());
             }
         }
@@ -1720,7 +1743,7 @@ BackendImpl::ComponentsPackageImpl::ComponentsPackageImpl(
 
 namespace sdecl = comphelper::service_decl;
 sdecl::class_<BackendImpl, sdecl::with_args<true> > serviceBI;
-sdecl::ServiceDecl const serviceDecl(
+extern sdecl::ServiceDecl const serviceDecl(
     serviceBI,
     IMPLEMENTATION_NAME,
     BACKEND_SERVICE_NAME );

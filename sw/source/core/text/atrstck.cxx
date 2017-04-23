@@ -353,13 +353,15 @@ SwAttrHandler::SwAttrHandler()
 
 SwAttrHandler::~SwAttrHandler()
 {
+    delete pFnt;
 }
 
 void SwAttrHandler::Init( const SwAttrSet& rAttrSet,
-                          const IDocumentSettingAccess& rIDocumentSettingAcces )
+                          const IDocumentSettingAccess& rIDocumentSettingAcces,
+                          const SwViewShell* pSh )
 {
     mpIDocumentSettingAccess = &rIDocumentSettingAcces;
-    mpShell = nullptr;
+    mpShell = pSh;
 
     for ( sal_uInt16 i = RES_CHRATR_BEGIN; i < RES_CHRATR_END; i++ )
         pDefaultArray[ StackPos[ i ] ] = &rAttrSet.Get( i );
@@ -403,7 +405,8 @@ void SwAttrHandler::Init( const SfxPoolItem** pPoolItem, const SwAttrSet* pAS,
 
     // It is possible, that Init is called more than once, e.g., in a
     // SwTextFrame::FormatOnceMore situation.
-    pFnt.reset( new SwFont( rFnt ) );
+    delete pFnt;
+    pFnt = new SwFont( rFnt );
 }
 
 void SwAttrHandler::Reset( )
@@ -786,7 +789,7 @@ void SwAttrHandler::FontChg(const SfxPoolItem& rItem, SwFont& rFnt, bool bPush )
             rFnt.SetPropWidth( static_cast<const SvxCharScaleWidthItem&>(rItem).GetValue() );
             break;
         case RES_CHRATR_RELIEF :
-            rFnt.SetRelief( static_cast<const SvxCharReliefItem&>(rItem).GetValue() );
+            rFnt.SetRelief( (FontRelief)static_cast<const SvxCharReliefItem&>(rItem).GetValue() );
             break;
         case RES_CHRATR_HIDDEN :
             if( mpShell && mpShell->GetWin())

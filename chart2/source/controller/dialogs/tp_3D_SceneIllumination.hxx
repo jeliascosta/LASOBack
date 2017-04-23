@@ -29,8 +29,6 @@
 #include <svx/dlgctrl.hxx>
 #include <svx/dlgctl3d.hxx>
 
-class SvxColorListBox;
-
 namespace chart
 {
 
@@ -54,21 +52,22 @@ public:
     ThreeD_SceneIllumination_TabPage(
         vcl::Window* pWindow,
         const css::uno::Reference< css::beans::XPropertySet > & xSceneProperties,
-        const css::uno::Reference< css::frame::XModel >& xChartModel );
-    virtual ~ThreeD_SceneIllumination_TabPage() override;
+        const css::uno::Reference< css::frame::XModel >& xChartModel,
+        const XColorListRef &pColorTable );
+    virtual ~ThreeD_SceneIllumination_TabPage();
     virtual void dispose() override;
 
 private:
-    DECL_LINK( ClickLightSourceButtonHdl, Button*, void );
-    DECL_LINK( SelectColorHdl, SvxColorListBox&, void );
-    DECL_LINK( ColorDialogHdl, Button*, void );
-    DECL_LINK( PreviewChangeHdl, SvxLightCtl3D*, void );
-    DECL_LINK( PreviewSelectHdl, SvxLightCtl3D*, void );
+    DECL_LINK_TYPED( ClickLightSourceButtonHdl, Button*, void );
+    DECL_LINK_TYPED( SelectColorHdl, ListBox&, void );
+    DECL_LINK_TYPED( ColorDialogHdl, Button*, void );
+    DECL_LINK_TYPED( PreviewChangeHdl, SvxLightCtl3D*, void );
+    DECL_LINK_TYPED( PreviewSelectHdl, SvxLightCtl3D*, void );
 
     void updatePreview();
 
 private:
-    DECL_LINK(fillControlsFromModel, void *, void);
+    DECL_LINK_TYPED(fillControlsFromModel, void *, void);
 
     void applyLightSourceToModel( sal_uInt32 nLightNumber );
     void applyLightSourcesToModel();
@@ -82,10 +81,10 @@ private:
     VclPtr<LightButton> m_pBtn_Light7;
     VclPtr<LightButton> m_pBtn_Light8;
 
-    VclPtr<SvxColorListBox> m_pLB_LightSource;
+    VclPtr<ColorLB>     m_pLB_LightSource;
     VclPtr<PushButton>  m_pBtn_LightSource_Color;
 
-    VclPtr<SvxColorListBox> m_pLB_AmbientLight;
+    VclPtr<ColorLB>     m_pLB_AmbientLight;
     VclPtr<PushButton>  m_pBtn_AmbientLight_Color;
 
     VclPtr<SvxLightCtl3D>   m_pCtl_Preview;

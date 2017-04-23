@@ -39,6 +39,7 @@
 
 #include <basegfx/tools/canvastools.hxx>
 #include <canvas/canvastools.hxx>
+
 #include <memory>
 
 #include "textaction.hxx"
@@ -157,7 +158,7 @@ namespace cppcanvas
                 return tools::createTextLinesPolyPolygon(
                     0.0,
                     // extract character cell furthest to the right
-                    *(std::max_element(
+                    *(::std::max_element(
                           rOffsets.getConstArray(),
                           rOffsets.getConstArray() + rOffsets.getLength() )),
                     rTextLineInfo );
@@ -192,7 +193,7 @@ namespace cppcanvas
             {
                 // no external DX array given, create one from given
                 // string
-                std::unique_ptr< long []> pCharWidths( new long[nLen] );
+                ::std::unique_ptr< long []> pCharWidths( new long[nLen] );
 
                 rVDev.GetTextArray( rText, pCharWidths.get(),
                                     nStartPos, nLen );
@@ -305,7 +306,7 @@ namespace cppcanvas
                 // assumed to have output position 0), correct begin
                 // iterator.
                 const double nMinPos( rSubset.mnSubsetBegin <= 0 ? 0 :
-                                      *(std::min_element( pOffsets+rSubset.mnSubsetBegin-1,
+                                      *(::std::min_element( pOffsets+rSubset.mnSubsetBegin-1,
                                                             pOffsets+rSubset.mnSubsetEnd )) );
 
                 // determine rightmost position in given subset range
@@ -314,7 +315,7 @@ namespace cppcanvas
                 // assumed to have output position 0), correct begin
                 // iterator.
                 const double nMaxPos(
-                    *(std::max_element( pOffsets + (rSubset.mnSubsetBegin <= 0 ?
+                    *(::std::max_element( pOffsets + (rSubset.mnSubsetBegin <= 0 ?
                                                       0 : rSubset.mnSubsetBegin-1),
                                           pOffsets + rSubset.mnSubsetEnd )) );
 
@@ -330,7 +331,7 @@ namespace cppcanvas
                 if( rSubset.mnSubsetBegin > 0 )
                 {
                     ::basegfx::B2DHomMatrix aTranslation;
-                    if( rOrigTextLayout->getFont()->getFontRequest().FontDescription.IsVertical == css::util::TriState_YES )
+                    if( rOrigTextLayout->getFont()->getFontRequest().FontDescription.IsVertical )
                     {
                         // vertical text -> offset in y direction
                         aTranslation.translate( 0.0, nMinPos );
@@ -356,7 +357,7 @@ namespace cppcanvas
                 // move to new output position (subtract nMinPos,
                 // which is the new '0' position), copy only the range
                 // as given by rSubset.
-                std::transform( pOffsets + rSubset.mnSubsetBegin,
+                ::std::transform( pOffsets + rSubset.mnSubsetBegin,
                                   pOffsets + rSubset.mnSubsetEnd,
                                   pAdaptedOffsets,
                                   [nMinPos](double aPos) { return aPos - nMinPos; } );
@@ -375,10 +376,10 @@ namespace cppcanvas
                 // create temporary new text layout with subset string
 
 
-                const sal_Int32 nNewStartPos( rOrigContext.StartPosition + std::min(
+                const sal_Int32 nNewStartPos( rOrigContext.StartPosition + ::std::min(
                                                   rSubset.mnSubsetBegin, rOrigContext.Length-1 ) );
-                const sal_Int32 nNewLength( std::max(
-                                                std::min(
+                const sal_Int32 nNewLength( ::std::max(
+                                                ::std::min(
                                                     rSubset.mnSubsetEnd - rSubset.mnSubsetBegin,
                                                     rOrigContext.Length ),
                                                 sal_Int32( 0 ) ) );

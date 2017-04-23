@@ -61,7 +61,6 @@
 #include "lwplayout.hxx"
 #include "lwpusewhen.hxx"
 #include "lwptools.hxx"
-#include "lwplaypiece.hxx"
 #include "xfilter/xfcolumns.hxx"
 #include "lwpstory.hxx"
 #include "lwpparastyle.hxx"
@@ -93,7 +92,7 @@ void LwpVirtualLayout::Read()
 {
     LwpDLNFPVList::Read();
 
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
     m_nAttributes = pStrm->QuickReaduInt32();
     m_nAttributes2 = pStrm->QuickReaduInt32();
     m_nAttributes3 = pStrm->QuickReaduInt32();
@@ -338,7 +337,7 @@ void LwpVirtualLayout::RegisterChildStyle()
     while (xLayout.is())
     {
         xLayout->SetFoundry(m_pFoundry);
-        xLayout->DoRegisterStyle();
+        xLayout->RegisterStyle();
         xLayout.set(dynamic_cast<LwpVirtualLayout*>(xLayout->GetNext().obj().get()));
     }
 }
@@ -526,6 +525,7 @@ LwpLayoutStyle::LwpLayoutStyle()
 
 LwpLayoutStyle::~LwpLayoutStyle()
 {
+    delete m_pDescription;
 }
 
 void LwpLayoutStyle::Read(LwpObjectStream* pStrm)
@@ -540,35 +540,49 @@ void LwpLayoutStyle::Read(LwpObjectStream* pStrm)
 }
 
 LwpLayoutMisc::LwpLayoutMisc() :
-m_nGridDistance(0), m_nGridType(0)
+m_nGridDistance(0), m_nGridType(0),
+m_pContentStyle(new LwpAtomHolder)
 {
 }
 
 LwpLayoutMisc::~LwpLayoutMisc()
 {
+    if (m_pContentStyle)
+    {
+        delete m_pContentStyle;
+    }
 }
 
 void LwpLayoutMisc::Read(LwpObjectStream* pStrm)
 {
     m_nGridType = pStrm->QuickReaduInt16();
     m_nGridDistance = pStrm->QuickReadInt32();
-    m_aContentStyle.Read(pStrm);
+    m_pContentStyle->Read(pStrm);
     pStrm->SkipExtra();
 }
 
 LwpMiddleLayout::LwpMiddleLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm )
     : LwpVirtualLayout(objHdr, pStrm)
+    , m_pStyleStuff(new LwpLayoutStyle)
+    , m_pMiscStuff(new LwpLayoutMisc)
     , m_bGettingGeometry(false)
 {
 }
 
 LwpMiddleLayout::~LwpMiddleLayout()
 {
+    if (m_pStyleStuff)
+    {
+        delete m_pStyleStuff;
+    }
+    if (m_pMiscStuff)
+    {
+        delete m_pMiscStuff;
+    }
 }
-
 void LwpMiddleLayout::Read()
 {
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
 
     LwpVirtualLayout::Read();
 
@@ -591,11 +605,11 @@ void LwpMiddleLayout::Read()
 
     if (nWhatsItGot & DISK_GOT_STYLE_STUFF)
     {
-        m_aStyleStuff.Read(pStrm);
+        m_pStyleStuff->Read(pStrm);
     }
     if (nWhatsItGot & DISK_GOT_MISC_STUFF)
     {
-        m_aMiscStuff.Read(pStrm);
+        m_pMiscStuff->Read(pStrm);
     }
 
     m_LayGeometry.ReadIndexed(pStrm);
@@ -621,6 +635,8 @@ rtl::Reference<LwpObject> LwpMiddleLayout::GetBasedOnStyle()
     }
     return xRet;
 }
+
+#include "lwplaypiece.hxx"
 
 /**
 * @descr:   Get the geometry of current layout
@@ -695,7 +711,7 @@ bool LwpMiddleLayout::MarginsSameAsParent()
 * @descr:   Get margin
 * @param:   nWhichSide - 0: left, 1: right, 2:top, 3: bottom
 */
-double LwpMiddleLayout::MarginsValue(sal_uInt8 nWhichSide)
+double LwpMiddleLayout::MarginsValue(const sal_uInt8 &nWhichSide)
 {
     double fValue = 0;
     if((nWhichSide==MARGIN_LEFT)||(nWhichSide==MARGIN_RIGHT))
@@ -735,7 +751,7 @@ double LwpMiddleLayout::MarginsValue(sal_uInt8 nWhichSide)
  * @param:
  * @return:
 */
-double LwpMiddleLayout::ExtMarginsValue(sal_uInt8 nWhichSide)
+double LwpMiddleLayout::ExtMarginsValue(const sal_uInt8 &nWhichSide)
 {
     double fValue = 0;
     if(m_nOverrideFlag & OVER_MARGINS)
@@ -1356,13 +1372,7 @@ rtl::Reference<LwpVirtualLayout> LwpMiddleLayout::GetWaterMarkLayout()
         {
             return xLay;
         }
-        rtl::Reference<LwpVirtualLayout> xNext(dynamic_cast<LwpVirtualLayout*>(xLay->GetNext().obj().get()));
-        if (xNext == xLay)
-        {
-            SAL_WARN("lwp", "loop in layout");
-            break;
-        }
-        xLay = xNext;
+        xLay.set(dynamic_cast<LwpVirtualLayout*>(xLay->GetNext().obj().get()));
     }
     return rtl::Reference<LwpVirtualLayout>();
 }
@@ -1459,16 +1469,20 @@ bool LwpMiddleLayout::HasContent()
 }
 
 LwpLayout::LwpLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm ) :
-    LwpMiddleLayout(objHdr, pStrm)
+    LwpMiddleLayout(objHdr, pStrm), m_pUseWhen(new LwpUseWhen)
 {}
 
 LwpLayout::~LwpLayout()
 {
+    if (m_pUseWhen)
+    {
+        delete m_pUseWhen;
+    }
 }
 
 void LwpLayout::Read()
 {
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
 
     LwpMiddleLayout::Read();
     if (LwpFileHeader::m_nFileRevision < 0x000B)
@@ -1481,7 +1495,7 @@ void LwpLayout::Read()
 
         if (!nSimple)
         {
-            m_aUseWhen.Read(pStrm);
+            m_pUseWhen->Read(pStrm);
 
             sal_uInt8 nFlag = pStrm->QuickReaduInt8();
             if (nFlag)
@@ -1731,7 +1745,7 @@ LwpUseWhen* LwpLayout::VirtualGetUseWhen()
 {
     if(m_nOverrideFlag & OVER_PLACEMENT)
     {
-        return &m_aUseWhen;
+        return m_pUseWhen;
     }
     else
     {
@@ -1947,7 +1961,7 @@ LwpPlacableLayout::~LwpPlacableLayout()
 
 void LwpPlacableLayout::Read()
 {
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
     LwpLayout::Read();
     if(LwpFileHeader::m_nFileRevision < 0x000B)
     {

@@ -33,7 +33,6 @@ enum class InputContextFlags;
 enum class WindowStateMask;
 enum class WindowStateState;
 enum class ExtTextInputAttr;
-enum class ModKeyFlags;
 
 enum class SalEvent {
     NONE,
@@ -124,7 +123,7 @@ struct SalKeyModEvent
 {
     sal_uInt64      mnTime;         // Time in ms, when event is created
     sal_uInt16      mnCode;         // SV-Modifiercode (KEY_SHIFT|KEY_MOD1|KEY_MOD2)
-    ModKeyFlags     mnModKeyCode;   // extended Modifier (MODKEY_LEFT,MODKEY_RIGHT,MODKEY_PRESS,MODKEY_RELEASE)
+    sal_uInt16      mnModKeyCode;   // extended Modifier (MODKEY_LEFT,MODKEY_RIGHT,MODKEY_PRESS,MODKEY_RELEASE)
 };
 
 struct SalPaintEvent
@@ -162,10 +161,12 @@ struct SalWheelMouseEvent
 
 struct SalExtTextInputEvent
 {
+    sal_uInt64          mnTime;         // Time in ms, when event is created
     OUString            maText;         // Text
     const ExtTextInputAttr* mpTextAttr;     // Text-Attribute
     sal_Int32           mnCursorPos;    // Cursor-Position
     sal_uInt8           mnCursorFlags;  // EXTTEXTINPUT_CURSOR_xxx
+    bool                mbOnlyCursor;   // true: Only Cursor-Position has been changed
 };
 
 struct SalExtTextInputPosEvent
@@ -221,7 +222,8 @@ typedef bool (*SALFRAMEPROC)( vcl::Window* pInst, SalEvent nEvent, const void* p
 enum class SalObjEvent {
     GetFocus           = 1,
     LoseFocus          = 2,
-    ToTop              = 3
+    ToTop              = 3,
+    Count              = 4
 };
 
 typedef long (*SALOBJECTPROC)( void* pInst, SalObject* pObject,

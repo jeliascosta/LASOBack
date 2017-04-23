@@ -61,13 +61,13 @@ AquaA11yEventListener::~AquaA11yEventListener()
 }
 
 void SAL_CALL
-AquaA11yEventListener::disposing( const EventObject& )
+AquaA11yEventListener::disposing( const EventObject& ) throw( RuntimeException, std::exception )
 {
     [ AquaA11yFactory removeFromWrapperRepositoryFor: [ (AquaA11yWrapper *) m_wrapperObject accessibleContext ] ];
 }
 
 void SAL_CALL
-AquaA11yEventListener::notifyEvent( const AccessibleEventObject& aEvent )
+AquaA11yEventListener::notifyEvent( const AccessibleEventObject& aEvent ) throw( RuntimeException, std::exception )
 {
     NSString * notification = nil;
     id element = m_wrapperObject;
@@ -80,7 +80,7 @@ AquaA11yEventListener::notifyEvent( const AccessibleEventObject& aEvent )
             if( m_role != AccessibleRole::LIST ) {
                 Reference< XAccessible > xAccessible;
                 if( aEvent.NewValue >>= xAccessible )
-                    TheAquaA11yFocusTracker::get().setFocusedObject( xAccessible );
+                    AquaA11yFocusTracker::get().setFocusedObject( xAccessible );
             }
             break;
 

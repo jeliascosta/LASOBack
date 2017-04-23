@@ -70,9 +70,9 @@ struct JNI_type_info
 
     virtual void destroy( JNIEnv * jni_env ) = 0;
 protected:
-    void destruct( JNIEnv * jni_env )
+    inline void destruct( JNIEnv * jni_env )
         { jni_env->DeleteGlobalRef( m_class ); }
-    virtual ~JNI_type_info() {}
+    virtual inline ~JNI_type_info() {}
     explicit JNI_type_info(
         JNI_context const & jni, typelib_TypeDescription * td );
 };
@@ -89,7 +89,7 @@ struct JNI_interface_type_info : public JNI_type_info
         JNI_context const & jni, typelib_TypeDescription * td );
 
 private:
-    virtual ~JNI_interface_type_info() override {}
+    virtual ~JNI_interface_type_info() {}
 };
 
 struct JNI_compound_type_info : public JNI_type_info
@@ -105,7 +105,7 @@ struct JNI_compound_type_info : public JNI_type_info
         JNI_context const & jni, typelib_TypeDescription * td );
 
 private:
-    virtual ~JNI_compound_type_info() override {}
+    virtual ~JNI_compound_type_info() {}
 };
 
 struct JNI_type_info_holder
@@ -115,10 +115,10 @@ struct JNI_type_info_holder
     JNI_type_info_holder(const JNI_type_info_holder&) = delete;
     const JNI_type_info_holder& operator=(const JNI_type_info_holder&) = delete;
 
-    JNI_type_info_holder() : m_info( nullptr ) {}
+    inline JNI_type_info_holder() : m_info( nullptr ) {}
 };
 
-typedef std::unordered_map<
+typedef ::std::unordered_map<
     OUString, JNI_type_info_holder, OUStringHash > t_str2type;
 
 class JNI_info
@@ -235,7 +235,7 @@ private:
 
     JNI_info( JNIEnv * jni_env, jobject class_loader,
               jclass classClass, jmethodID methodForName );
-    ~JNI_info() {}
+    inline ~JNI_info() {}
 };
 
 inline void JNI_info::destroy( JNIEnv * jni_env )

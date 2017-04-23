@@ -50,33 +50,39 @@
 namespace pq_sdbc_driver
 {
 class View : public ReflectionBase,
-             public css::sdbcx::XRename
+             public com::sun::star::sdbcx::XRename
 {
 public:
     View( const ::rtl::Reference< RefCountedMutex > & refMutex,
-          const css::uno::Reference< css::sdbc::XConnection > & connection,
+          const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > & connection,
           ConnectionSettings *pSettings);
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override { ReflectionBase::acquire(); }
     virtual void SAL_CALL release() throw() override { ReflectionBase::release(); }
-    virtual css::uno::Any  SAL_CALL queryInterface(
-        const css::uno::Type & reqType ) override;
+    virtual com::sun::star::uno::Any  SAL_CALL queryInterface(
+        const com::sun::star::uno::Type & reqType )
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider, first implemented by OPropertySetHelper
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8> SAL_CALL getImplementationId() override;
+    virtual com::sun::star::uno::Sequence< com::sun::star::uno::Type > SAL_CALL getTypes()
+        throw( com::sun::star::uno::RuntimeException, std::exception ) override;
+    virtual com::sun::star::uno::Sequence< sal_Int8> SAL_CALL getImplementationId()
+        throw( com::sun::star::uno::RuntimeException, std::exception ) override;
 
     // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL
-    createDataDescriptor(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL
+    createDataDescriptor(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
     // XRename
-    virtual void SAL_CALL rename( const OUString& newName ) override;
+    virtual void SAL_CALL rename( const OUString& newName )
+        throw (::com::sun::star::sdbc::SQLException,
+               ::com::sun::star::container::ElementExistException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
     // XNamed
-    virtual OUString SAL_CALL getName(  ) override;
-    virtual void SAL_CALL setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setName( const OUString& aName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -85,12 +91,12 @@ class ViewDescriptor : public ReflectionBase
 {
 public:
     ViewDescriptor( const ::rtl::Reference< RefCountedMutex > & refMutex,
-          const css::uno::Reference< css::sdbc::XConnection > & connection,
+          const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > & connection,
           ConnectionSettings *pSettings);
 
     // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL
-    createDataDescriptor(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL
+    createDataDescriptor(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 };
 
 }

@@ -37,7 +37,7 @@ class DependencyDialog: public ModalDialog {
 public:
     DependencyDialog(
         vcl::Window * parent, std::vector< OUString > const & dependencies);
-    virtual ~DependencyDialog() override;
+    virtual ~DependencyDialog();
     virtual void dispose() override;
 
 private:

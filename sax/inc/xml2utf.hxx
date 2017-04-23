@@ -57,10 +57,15 @@ public:
     ~Unicode2TextConverter();
 
     css::uno::Sequence<sal_Int8> convert( const sal_Unicode * , sal_Int32 nLength );
+    bool canContinue() {  return m_bCanContinue; }
 
 private:
+    void init( rtl_TextEncoding encoding );
+
     rtl_UnicodeToTextConverter      m_convUnicode2Text;
     rtl_UnicodeToTextContext        m_contextUnicode2Text;
+    bool                            m_bCanContinue;
+    bool                            m_bInitialized;
     rtl_TextEncoding                m_rtlEncoding;
     css::uno::Sequence<sal_Unicode> m_seqSource;
 };
@@ -88,11 +93,11 @@ public:
 
     // @param nMaxToRead The number of chars, that should be read. Note that this is no exact number. There
     //                   may be returned less or more bytes than ordered.
-    /// @throws css::io::IOException
-    /// @throws css::io::NotConnectedException
-    /// @throws css::io::BufferSizeExceededException
-    /// @throws css::uno::RuntimeException
-    sal_Int32 readAndConvert( css::uno::Sequence<sal_Int8> &seq , sal_Int32 nMaxToRead );
+    sal_Int32 readAndConvert( css::uno::Sequence<sal_Int8> &seq , sal_Int32 nMaxToRead )
+        throw ( css::io::IOException,
+                css::io::NotConnectedException ,
+                css::io::BufferSizeExceededException ,
+                css::uno::RuntimeException );
 
 private:
 

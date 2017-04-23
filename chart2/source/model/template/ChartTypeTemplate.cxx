@@ -23,6 +23,7 @@
 #include "DataSeriesHelper.hxx"
 #include "DataInterpreter.hxx"
 #include "CommonConverters.hxx"
+#include "ContainerHelper.hxx"
 #include "ChartTypeHelper.hxx"
 
 #include "CartesianCoordinateSystem.hxx"
@@ -64,7 +65,7 @@ void lcl_applyDefaultStyle(
         if( xSeriesProp.is() && xColorScheme.is() )
             xSeriesProp->setPropertyValue(
                 "Color",
-                uno::Any( xColorScheme->getColorByIndex( nIndex )));
+                uno::makeAny( xColorScheme->getColorByIndex( nIndex )));
     }
 }
 
@@ -113,7 +114,7 @@ void lcl_ensureCorrectMissingValueTreatment( const Reference< chart2::XDiagram >
             ::chart::ChartTypeHelper::getSupportedMissingValueTreatments( xChartType ) );
 
         if( aAvailableMissingValueTreatment.getLength() )
-            xDiaProp->setPropertyValue( "MissingValueTreatment", uno::Any( aAvailableMissingValueTreatment[0] ) );
+            xDiaProp->setPropertyValue( "MissingValueTreatment", uno::makeAny( aAvailableMissingValueTreatment[0] ) );
         else
             xDiaProp->setPropertyValue( "MissingValueTreatment", uno::Any() );
     }
@@ -139,6 +140,7 @@ ChartTypeTemplate::~ChartTypeTemplate()
 uno::Reference< XDiagram > SAL_CALL ChartTypeTemplate::createDiagramByDataSource(
     const uno::Reference< data::XDataSource >& xDataSource,
     const uno::Sequence< beans::PropertyValue >& aArguments )
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< XDiagram > xDia;
 
@@ -177,11 +179,13 @@ uno::Reference< XDiagram > SAL_CALL ChartTypeTemplate::createDiagramByDataSource
 }
 
 sal_Bool SAL_CALL ChartTypeTemplate::supportsCategories()
+    throw (css::uno::RuntimeException, ::std::exception)
 {
     return true;
 }
 
 void SAL_CALL ChartTypeTemplate::changeDiagram( const uno::Reference< XDiagram >& xDiagram )
+    throw (uno::RuntimeException, std::exception)
 {
     if( ! xDiagram.is())
         return;
@@ -214,7 +218,7 @@ void SAL_CALL ChartTypeTemplate::changeDiagram( const uno::Reference< XDiagram >
             if( aData.Categories.is())
             {
                 aParam.realloc( 1 );
-                aParam[0] = beans::PropertyValue( "HasCategories", -1, uno::Any( true ),
+                aParam[0] = beans::PropertyValue( "HasCategories", -1, uno::makeAny( true ),
                                                   beans::PropertyState_DIRECT_VALUE );
             }
             aData = xInterpreter->interpretDataSource( xSource, aParam, aFlatSeriesSeq );
@@ -259,6 +263,7 @@ void SAL_CALL ChartTypeTemplate::changeDiagramData(
     const Reference< chart2::XDiagram >& xDiagram,
     const Reference< chart2::data::XDataSource >& xDataSource,
     const Sequence< beans::PropertyValue >& aArguments )
+    throw (uno::RuntimeException, std::exception)
 {
     if( ! (xDiagram.is() &&
            xDataSource.is()) )
@@ -293,7 +298,7 @@ void SAL_CALL ChartTypeTemplate::changeDiagramData(
 
         Sequence< Reference< XChartType > > aChartTypes(
             DiagramHelper::getChartTypesFromDiagram( xDiagram ));
-        sal_Int32 nMax = std::min( aChartTypes.getLength(), aSeriesSeq.getLength());
+        sal_Int32 nMax = ::std::min( aChartTypes.getLength(), aSeriesSeq.getLength());
         for( i=0; i<nMax; ++i )
         {
             Reference< XDataSeriesContainer > xDSCnt( aChartTypes[i], uno::UNO_QUERY_THROW );
@@ -309,6 +314,7 @@ void SAL_CALL ChartTypeTemplate::changeDiagramData(
 sal_Bool SAL_CALL ChartTypeTemplate::matchesTemplate(
     const Reference< chart2::XDiagram >& xDiagram,
     sal_Bool /* bAdaptProperties */ )
+    throw (uno::RuntimeException, std::exception)
 {
     bool bResult = false;
 
@@ -368,9 +374,10 @@ sal_Bool SAL_CALL ChartTypeTemplate::matchesTemplate(
 }
 
 Reference< chart2::XDataInterpreter > SAL_CALL ChartTypeTemplate::getDataInterpreter()
+    throw (uno::RuntimeException, std::exception)
 {
     if( ! m_xDataInterpreter.is())
-        m_xDataInterpreter.set( new DataInterpreter );
+        m_xDataInterpreter.set( new DataInterpreter( GetComponentContext() ) );
 
     return m_xDataInterpreter;
 }
@@ -380,6 +387,7 @@ void SAL_CALL ChartTypeTemplate::applyStyle(
     ::sal_Int32 nChartTypeIndex,
     ::sal_Int32 /* nSeriesIndex */,
     ::sal_Int32 /* nSeriesCount */ )
+    throw (uno::RuntimeException, std::exception)
 {
     // sset stacking mode
     Reference< beans::XPropertySet > xSeriesProp( xSeries, uno::UNO_QUERY );
@@ -388,11 +396,11 @@ void SAL_CALL ChartTypeTemplate::applyStyle(
         try
         {
             StackMode eStackMode = getStackMode( nChartTypeIndex );
-            const uno::Any aPropValue = uno::Any(
-                ( (eStackMode == StackMode::YStacked) ||
-                  (eStackMode == StackMode::YStackedPercent) )
+            const uno::Any aPropValue = uno::makeAny(
+                ( (eStackMode == StackMode_Y_STACKED) ||
+                  (eStackMode == StackMode_Y_STACKED_PERCENT) )
                 ? chart2::StackingDirection_Y_STACKING
-                : (eStackMode == StackMode::ZStacked )
+                : (eStackMode == StackMode_Z_STACKED )
                 ? chart2::StackingDirection_Z_STACKING
                 : chart2::StackingDirection_NO_STACKING );
             xSeriesProp->setPropertyValue( "StackingDirection", aPropValue );
@@ -417,6 +425,7 @@ void SAL_CALL ChartTypeTemplate::applyStyle(
 }
 
 void SAL_CALL ChartTypeTemplate::applyStyles( const Reference< chart2::XDiagram >& xDiagram )
+    throw (uno::RuntimeException)
 {
     // apply chart-type specific styles, like "symbols on" for example
     Sequence< Sequence< Reference< XDataSeries > > > aNewSeriesSeq(
@@ -433,9 +442,10 @@ void SAL_CALL ChartTypeTemplate::applyStyles( const Reference< chart2::XDiagram 
 }
 
 void SAL_CALL ChartTypeTemplate::resetStyles( const Reference< chart2::XDiagram >& xDiagram )
+    throw (uno::RuntimeException, std::exception)
 {
     // reset number format if we had percent stacking on
-    bool bPercent = (getStackMode(0) == StackMode::YStackedPercent);
+    bool bPercent = (getStackMode(0) == StackMode_Y_STACKED_PERCENT);
     if( bPercent )
     {
         Sequence< Reference< chart2::XAxis > > aAxisSeq( AxisHelper::getAllAxesOfDiagram( xDiagram ) );
@@ -447,7 +457,7 @@ void SAL_CALL ChartTypeTemplate::resetStyles( const Reference< chart2::XDiagram 
                 if( xAxisProp.is())
                 {
                     // set number format to source format
-                    xAxisProp->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::Any(true));
+                    xAxisProp->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::makeAny(true));
                     xAxisProp->setPropertyValue(CHART_UNONAME_NUMFMT, uno::Any());
                 }
             }
@@ -512,6 +522,7 @@ void SAL_CALL ChartTypeTemplate::resetStyles( const Reference< chart2::XDiagram 
 
 // ____ XServiceName ____
     OUString SAL_CALL ChartTypeTemplate::getServiceName()
+    throw (uno::RuntimeException, std::exception)
 {
     return m_aServiceName;
 }
@@ -523,7 +534,7 @@ sal_Int32 ChartTypeTemplate::getDimension() const
 
 StackMode ChartTypeTemplate::getStackMode( sal_Int32 /* nChartTypeIndex */ ) const
 {
-    return StackMode::NONE;
+    return StackMode_NONE;
 }
 
 bool ChartTypeTemplate::isSwapXAndY() const
@@ -652,7 +663,7 @@ void ChartTypeTemplate::adaptScales(
                     Reference< chart2::XAxis > xAxis( xCooSys->getAxisByDimension( 1,nI ));
                     if( xAxis.is())
                     {
-                        bool bPercent = (getStackMode(0) == StackMode::YStackedPercent);
+                        bool bPercent = (getStackMode(0) == StackMode_Y_STACKED_PERCENT);
                         chart2::ScaleData aScaleData = xAxis->getScaleData();
 
                         if( bPercent != (aScaleData.AxisType==AxisType::PERCENT) )
@@ -738,14 +749,14 @@ void ChartTypeTemplate::adaptAxes(
                     if( nAxisIndex == MAIN_AXIS_INDEX || nAxisIndex == SECONDARY_AXIS_INDEX )
                     {
                         // adapt scales
-                        bool bPercent = (getStackMode(0) == StackMode::YStackedPercent);
+                        bool bPercent = (getStackMode(0) == StackMode_Y_STACKED_PERCENT);
                         if( bPercent && nDim == 1 )
                         {
                             Reference< beans::XPropertySet > xAxisProp( xAxis, uno::UNO_QUERY );
                             if( xAxisProp.is())
                             {
                                 // set number format to source format
-                                xAxisProp->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::Any(true));
+                                xAxisProp->setPropertyValue(CHART_UNONAME_LINK_TO_SRC_NUMFMT, uno::makeAny(true));
                                 xAxisProp->setPropertyValue(CHART_UNONAME_NUMFMT, uno::Any());
                             }
                         }
@@ -842,7 +853,7 @@ void ChartTypeTemplate::createChartTypes(
                     Sequence< Reference< XDataSeries > > aNewSeriesSeq( xDSCnt->getDataSeries());
                     sal_Int32 nNewStartIndex = aNewSeriesSeq.getLength();
                     aNewSeriesSeq.realloc( nNewStartIndex + aSeriesSeq[nSeriesIdx].getLength() );
-                    std::copy( aSeriesSeq[nSeriesIdx].begin(),
+                    ::std::copy( aSeriesSeq[nSeriesIdx].begin(),
                                  aSeriesSeq[nSeriesIdx].end(),
                                  aNewSeriesSeq.getArray() + nNewStartIndex );
                     xDSCnt->setDataSeries( aNewSeriesSeq );

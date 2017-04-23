@@ -29,14 +29,18 @@ class FuConstruct : public FuDraw
     FuConstruct(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pView,
                    SdrModel* pDoc, SfxRequest& rReq);
 
-    virtual ~FuConstruct() override;
+    virtual ~FuConstruct();
                                        // Mouse- & Key-Events
     virtual bool KeyInput(const KeyEvent& rKEvt) override;
     virtual bool MouseMove(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
+    virtual sal_uInt8 Command(const CommandEvent& rCEvt) override;
 
             bool SimpleMouseButtonUp(const MouseEvent& rMEvt);
+
+    virtual void Activate() override;
+    virtual void Deactivate() override;
 
     // Returns grid sync offset for rInOutPos, additionally adjusts rInOutPos
     // by the offset

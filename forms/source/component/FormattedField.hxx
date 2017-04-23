@@ -64,31 +64,39 @@ class OFormattedModel
         virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
 
         // XAggregation
-        virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) override;
+        virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) throw(css::uno::RuntimeException, std::exception) override;
 
         // OComponentHelper
         virtual void SAL_CALL disposing() override;
 
         // XServiceInfo
-        OUString SAL_CALL getImplementationName() override
+        OUString SAL_CALL getImplementationName()
+            throw (css::uno::RuntimeException, std::exception) override
         { return OUString("com.sun.star.form.OFormattedModel"); }
 
-        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
 
         // XPersistObject
-        virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) override;
-        virtual void SAL_CALL read(const css::uno::Reference< css::io::XObjectInputStream>& _rxInStream) override;
-        virtual OUString SAL_CALL getServiceName() override;
+        virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL read(const css::uno::Reference< css::io::XObjectInputStream>& _rxInStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
+
+        // XPropertySet
+        virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
+        virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue,
+                                              sal_Int32 nHandle, const css::uno::Any& rValue )
+                                            throw(css::lang::IllegalArgumentException) override;
+        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
 
         // XLoadListener
-        virtual void SAL_CALL loaded(const css::lang::EventObject& rEvent) override;
+        virtual void SAL_CALL loaded(const css::lang::EventObject& rEvent) throw ( css::uno::RuntimeException, std::exception) override;
 
         // XPropertyState
         void setPropertyToDefaultByHandle(sal_Int32 nHandle) override;
         css::uno::Any getPropertyDefaultByHandle(sal_Int32 nHandle) const override;
 
-        void SAL_CALL setPropertyToDefault(const OUString& aPropertyName) override;
-        css::uno::Any SAL_CALL getPropertyDefault( const OUString& aPropertyName ) override;
+        void SAL_CALL setPropertyToDefault(const OUString& aPropertyName) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        css::uno::Any SAL_CALL getPropertyDefault( const OUString& aPropertyName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
 
         // OControlModel's property handling
         virtual void describeFixedProperties(
@@ -99,7 +107,7 @@ class OFormattedModel
         ) const override;
 
         // XPropertyChangeListener
-        virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) override;
+        virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception) override;
 
         // prevent method hiding
         using OEditBaseModel::disposing;
@@ -130,7 +138,7 @@ class OFormattedModel
         virtual void        onDisconnectedDbColumn() override;
 
     private:
-        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         void implConstruct();
 
@@ -145,34 +153,35 @@ class OFormattedModel
 
     public:
         explicit OFormattedControl(const css::uno::Reference< css::uno::XComponentContext>& _rxContext);
-        virtual ~OFormattedControl() override;
+        virtual ~OFormattedControl();
 
         DECLARE_UNO3_AGG_DEFAULTS(OFormattedControl, OBoundControl)
-        virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) override;
+        virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) throw(css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
 
         // css::lang::XServiceInfo
-        OUString SAL_CALL getImplementationName() override
+        OUString SAL_CALL getImplementationName()
+            throw (css::uno::RuntimeException, std::exception) override
         { return OUString("com.sun.star.form.OFormattedControl"); }
 
-        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
 
         // css::lang::XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) throw(css::uno::RuntimeException, std::exception) override;
 
         // css::awt::XKeyListener
-        virtual void SAL_CALL keyPressed(const css::awt::KeyEvent& e) override;
-        virtual void SAL_CALL keyReleased(const css::awt::KeyEvent& e) override;
+        virtual void SAL_CALL keyPressed(const css::awt::KeyEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL keyReleased(const css::awt::KeyEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
 
         // css::awt::XControl
-        using OBoundControl::setDesignMode;
+        virtual void SAL_CALL setDesignMode(sal_Bool bOn) throw ( css::uno::RuntimeException, std::exception) override;
 
         // disambiguation
         using OBoundControl::disposing;
 
     private:
-        DECL_LINK( OnKeyPressed, void*, void );
+        DECL_LINK_TYPED( OnKeyPressed, void*, void );
     };
 }
 #endif // INCLUDED_FORMS_SOURCE_COMPONENT_FORMATTEDFIELD_HXX

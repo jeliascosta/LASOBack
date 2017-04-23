@@ -63,10 +63,11 @@
 
 #include "xfglobal.hxx"
 
-class XFOfficeMeta final
+class XFOfficeMeta
 {
 public:
     XFOfficeMeta(){}
+    virtual ~XFOfficeMeta(){}
 
     void SetCreator(const OUString& creator);
     void SetDescription(const OUString& dsr);

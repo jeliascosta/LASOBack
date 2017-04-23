@@ -33,6 +33,8 @@ struct ApiMap
     SymbolFunc *refValue;
 };
 
+namespace
+{
 #if defined( LINUX )
     const char LibName[] = "libvlc.so.5";
 #elif defined( MACOSX )
@@ -40,7 +42,7 @@ struct ApiMap
 #elif defined( WNT )
     const char LibName[] = "libvlc.dll";
 
-    inline OUString GetVLCPath()
+    OUString GetVLCPath()
     {
         HKEY hKey;
         wchar_t arCurrent[MAX_PATH];
@@ -86,6 +88,7 @@ struct ApiMap
 
         return true;
     }
+}
 
     template<size_t N>
     bool InitApiMap( const ApiMap ( &pMap )[N]  )

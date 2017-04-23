@@ -20,7 +20,6 @@
 #include <editeng/eeitem.hxx>
 #include <editeng/flditem.hxx>
 #include <sfx2/printer.hxx>
-#include <sfx2/styfitem.hxx>
 #include <svl/inethist.hxx>
 #include <svl/poolitem.hxx>
 #include <svl/flagitem.hxx>
@@ -105,7 +104,7 @@ static SdPage* GetCurrentPage( sd::ViewShell* pViewSh, EditFieldInfo* pInfo, boo
                 nPgNum++;
         }
 
-        pPage = pViewSh->GetDoc()->GetSdPage( (sal_uInt16)nPgNum, PageKind::Standard );
+        pPage = pViewSh->GetDoc()->GetSdPage( (sal_uInt16)nPgNum, PK_STANDARD );
     }
     else
     {
@@ -143,7 +142,7 @@ static SdPage* GetCurrentPage( sd::ViewShell* pViewSh, EditFieldInfo* pInfo, boo
 /**
  * Link for CalcFieldValue of Outliners
  */
-IMPL_LINK(SdModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
+IMPL_LINK_TYPED(SdModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 {
     if (!pInfo)
         return;
@@ -233,7 +232,7 @@ IMPL_LINK(SdModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
         {
             int nPgNum;
 
-            if( (pPage->GetPageKind() == PageKind::Handout) && pViewSh )
+            if( (pPage->GetPageKind() == PK_HANDOUT) && pViewSh )
             {
                 nPgNum = pViewSh->GetPrintedHandoutPageNum();
             }
@@ -272,8 +271,8 @@ IMPL_LINK(SdModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
         }
         else
         {
-            DocumentType eDocType = pDoc ? pDoc->GetDocumentType() : DocumentType::Impress;
-            aRepresentation = ( ( eDocType == DocumentType::Impress )
+            DocumentType eDocType = pDoc ? pDoc->GetDocumentType() : DOCUMENT_TYPE_IMPRESS;
+            aRepresentation = ( ( eDocType == DOCUMENT_TYPE_IMPRESS )
                                 ? SdResId(STR_FIELD_PLACEHOLDER_SLIDENAME).toString()
                                 : SdResId(STR_FIELD_PLACEHOLDER_PAGENAME).toString() );
         }
@@ -301,13 +300,13 @@ IMPL_LINK(SdModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 
         if( !bMasterView )
         {
-            if( pPage && (pPage->GetPageKind() == PageKind::Handout) && pViewSh )
+            if( pPage && (pPage->GetPageKind() == PK_HANDOUT) && pViewSh )
             {
                 nPageCount = pViewSh->GetPrintedHandoutPageCount();
             }
             else if( pDoc )
             {
-                nPageCount = pDoc->GetActiveSdPageCount();
+                nPageCount = (sal_uInt16)pDoc->GetActiveSdPageCount();
             }
         }
 
@@ -415,9 +414,9 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
     SdDrawDocument* pDoc = nullptr;
 
     // Here we set the DocType of the option dialog (not document!)
-    DocumentType eDocType = DocumentType::Impress;
+    DocumentType eDocType = DOCUMENT_TYPE_IMPRESS;
     if( nSlot == SID_SD_GRAPHIC_OPTIONS )
-        eDocType = DocumentType::Draw;
+        eDocType = DOCUMENT_TYPE_DRAW;
 
     if (pDocSh)
     {
@@ -437,7 +436,7 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
 
     // Pool has by default MapUnit Twips (Awgh!)
     SfxItemPool& rPool = GetPool();
-    rPool.SetDefaultMetric( MapUnit::Map100thMM );
+    rPool.SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
 
     SfxItemSet*  pRet = new SfxItemSet( rPool,
                         SID_ATTR_METRIC, SID_ATTR_METRIC,
@@ -457,7 +456,7 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
                         0 );
 
     // TP_OPTIONS_LAYOUT:
-    pRet->Put( SdOptionsLayoutItem( pOptions, pFrameView ) );
+    pRet->Put( SdOptionsLayoutItem( ATTR_OPTIONS_LAYOUT, pOptions, pFrameView ) );
 
     sal_uInt16 nDefTab = 0;
     if( pFrameView)
@@ -478,10 +477,10 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
     pRet->Put( SfxUInt16Item( SID_ATTR_METRIC, (sal_uInt16)nMetric ) );
 
     // TP_OPTIONS_CONTENTS:
-    pRet->Put( SdOptionsContentsItem( pOptions, pFrameView ) );
+    pRet->Put( SdOptionsContentsItem( ATTR_OPTIONS_CONTENTS, pOptions, pFrameView ) );
 
     // TP_OPTIONS_MISC:
-    SdOptionsMiscItem aSdOptionsMiscItem( pOptions, pFrameView );
+    SdOptionsMiscItem aSdOptionsMiscItem( ATTR_OPTIONS_MISC, pOptions, pFrameView );
     if ( pFrameView )
     {
         aSdOptionsMiscItem.GetOptionsMisc().SetSummationOfParagraphs( pDoc->IsSummationOfParagraphs() );
@@ -491,7 +490,7 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
     pRet->Put( aSdOptionsMiscItem );
 
     // TP_OPTIONS_SNAP:
-    pRet->Put( SdOptionsSnapItem( pOptions, pFrameView ) );
+    pRet->Put( SdOptionsSnapItem( ATTR_OPTIONS_SNAP, pOptions, pFrameView ) );
 
     // TP_SCALE:
     sal_uInt32 nW = 10L;
@@ -500,7 +499,7 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
     sal_Int32  nY;
     if( pDocSh )
     {
-        SdrPage* pPage = static_cast<SdrPage*>(pDoc->GetSdPage(0, PageKind::Standard));
+        SdrPage* pPage = static_cast<SdrPage*>(pDoc->GetSdPage(0, PK_STANDARD));
         Size aSize(pPage->GetSize());
         nW = aSize.Width();
         nH = aSize.Height();
@@ -524,10 +523,10 @@ SfxItemSet*  SdModule::CreateItemSet( sal_uInt16 nSlot )
     pRet->Put( SfxUInt32Item( ATTR_OPTIONS_SCALE_HEIGHT, nH ) );
 
     // TP_OPTIONS_PRINT:
-    pRet->Put( SdOptionsPrintItem( pOptions ) );
+    pRet->Put( SdOptionsPrintItem( ATTR_OPTIONS_PRINT, pOptions ) );
 
     // RID_SVXPAGE_GRID:
-    pRet->Put( SdOptionsGridItem( pOptions ) );
+    pRet->Put( SdOptionsGridItem( SID_ATTR_GRID_OPTIONS, pOptions ) );
 
     return pRet;
 }
@@ -541,9 +540,9 @@ void SdModule::ApplyItemSet( sal_uInt16 nSlot, const SfxItemSet& rSet )
     ::sd::DrawDocShell* pDocSh = dynamic_cast< ::sd::DrawDocShell *>( SfxObjectShell::Current() );
     SdDrawDocument* pDoc = nullptr;
     // Here we set the DocType of the option dialog (not document!)
-    DocumentType eDocType = DocumentType::Impress;
+    DocumentType eDocType = DOCUMENT_TYPE_IMPRESS;
     if( nSlot == SID_SD_GRAPHIC_OPTIONS )
-        eDocType = DocumentType::Draw;
+        eDocType = DOCUMENT_TYPE_DRAW;
 
     ::sd::ViewShell* pViewShell = nullptr;
 
@@ -639,7 +638,7 @@ void SdModule::ApplyItemSet( sal_uInt16 nSlot, const SfxItemSet& rSet )
         pPrintItem->SetOptions( pOptions );
 
         // set PrintOptionsSet
-        SdOptionsPrintItem aPrintItem( pOptions );
+        SdOptionsPrintItem aPrintItem( ATTR_OPTIONS_PRINT, pOptions );
         SfxFlagItem aFlagItem( SID_PRINTER_CHANGESTODOC );
         SfxPrinterChangeFlags nFlags =
                 (aPrintItem.GetOptionsPrint().IsWarningSize() ? SfxPrinterChangeFlags::CHG_SIZE : SfxPrinterChangeFlags::NONE) |
@@ -667,11 +666,11 @@ void SdModule::ApplyItemSet( sal_uInt16 nSlot, const SfxItemSet& rSet )
             SdDrawDocument* pDocument = pDocSh->GetDoc();
             pDocument->SetDefaultTabulator( nDefTab );
 
-            SdOutliner* pOutl = pDocument->GetOutliner( false );
+            ::sd::Outliner* pOutl = pDocument->GetOutliner( false );
             if( pOutl )
                 pOutl->SetDefTab( nDefTab );
 
-            SdOutliner* pInternalOutl = pDocument->GetInternalOutliner( false );
+            ::sd::Outliner* pInternalOutl = pDocument->GetInternalOutliner( false );
             if( pInternalOutl )
                 pInternalOutl->SetDefTab( nDefTab );
         }
@@ -685,7 +684,7 @@ void SdModule::ApplyItemSet( sal_uInt16 nSlot, const SfxItemSet& rSet )
             SdrOutliner& rOutl = pDocument->GetDrawOutliner();
             nCntrl = rOutl.GetControlWord() &~ EEControlBits::ULSPACESUMMATION;
             rOutl.SetControlWord( nCntrl | nSum );
-            SdOutliner* pOutl = pDocument->GetOutliner( false );
+            ::sd::Outliner* pOutl = pDocument->GetOutliner( false );
             if( pOutl )
             {
                 nCntrl = pOutl->GetControlWord() &~ EEControlBits::ULSPACESUMMATION;
@@ -798,23 +797,6 @@ VclPtr<SfxTabPage> SdModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
     }
 
     return pRet;
-}
-
-SfxStyleFamilies* SdModule::CreateStyleFamilies()
-{
-    SfxStyleFamilies *pStyleFamilies = new SfxStyleFamilies;
-
-    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Para,
-                                                    SD_RESSTR(STR_GRAPHICS_STYLE_FAMILY),
-                                                    Image(BitmapEx(SdResId(BMP_STYLES_FAMILY_GRAPHICS))),
-                                                    SdResId(RID_GRAPHICSTYLEFAMILY)));
-
-    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Pseudo,
-                                                    SD_RESSTR(STR_PRESENTATIONS_STYLE_FAMILY),
-                                                    Image(BitmapEx(SdResId(BMP_STYLES_FAMILY_PRESENTATIONS))),
-                                                    SdResId(RID_PRESENTATIONSTYLEFAMILY)));
-
-    return pStyleFamilies;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

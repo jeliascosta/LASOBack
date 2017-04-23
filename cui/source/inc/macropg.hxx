@@ -48,7 +48,7 @@ struct EventDisplayName
     {
     }
 };
-typedef std::vector< EventDisplayName >   EventDisplayNames;
+typedef ::std::vector< EventDisplayName >   EventDisplayNames;
 
 class SvxMacroTabPage_;
 class SvTabListBox;
@@ -58,9 +58,9 @@ class SvxMacroTabPage_Impl;
 
 class SvxMacroTabPage_ : public SfxTabPage
 {
-    DECL_LINK( SelectEvent_Impl, SvTreeListBox*, void );
-    DECL_LINK( AssignDeleteHdl_Impl, Button *, void );
-    DECL_LINK( DoubleClickHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( SelectEvent_Impl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( AssignDeleteHdl_Impl, Button *, void );
+    DECL_LINK_TYPED( DoubleClickHdl_Impl, SvTreeListBox*, bool );
 
     static long GenericHandler_Impl( SvxMacroTabPage_* pThis, PushButton* pBtn );
 
@@ -71,18 +71,18 @@ protected:
     css::uno::Reference< css::util::XModifiable > m_xModifiable;
     EventsHash m_appEventsHash;
     EventsHash m_docEventsHash;
-    bool bDocModified, bAppEvents, bInitialized;
+    bool bReadOnly, bDocModified, bAppEvents, bInitialized;
     EventDisplayNames aDisplayNames;
 
     SvxMacroTabPage_( vcl::Window* pParent, const OString& rID, const OUString& rUIXMLDescription, const SfxItemSet& rItemSet );
 
     void                        EnableButtons();
     static css::uno::Any  GetPropsByName( const OUString& eventName, EventsHash& eventsHash );
-    static std::pair< OUString, OUString > GetPairFromAny( const css::uno::Any& aAny );
+    static ::std::pair< OUString, OUString > GetPairFromAny( const css::uno::Any& aAny );
 
 public:
 
-    virtual                     ~SvxMacroTabPage_() override;
+    virtual                     ~SvxMacroTabPage_();
     virtual void                dispose() override;
     void                        InitResources();
 
@@ -103,7 +103,7 @@ public:
         vcl::Window* pParent,
         const css::uno::Reference< css::frame::XFrame >& _rxDocumentFrame,
         const SfxItemSet& rSet,
-        css::uno::Reference< css::container::XNameReplace > const & xNameReplace,
+        css::uno::Reference< css::container::XNameReplace > xNameReplace,
         sal_uInt16 nSelectedIndex
     );
 };
@@ -118,7 +118,7 @@ public:
     SvxMacroAssignSingleTabDialog(vcl::Window* pParent, const SfxItemSet& rOptionsSet);
 
 private:
-    DECL_LINK( OKHdl_Impl, Button *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( OKHdl_Impl, Button *, void );
 };
 
 

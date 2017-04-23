@@ -22,7 +22,6 @@
 
 #include <rtl/ustring.hxx>
 #include <map>
-#include <memory>
 #include <stack>
 #include <tuple>
 #include <vector>
@@ -38,13 +37,14 @@ class XMLTextListsHelper
 {
     public:
         XMLTextListsHelper();
+        ~XMLTextListsHelper();
         XMLTextListsHelper(const XMLTextListsHelper&) = delete;
         XMLTextListsHelper& operator=(const XMLTextListsHelper&) = delete;
 
         /// list stack for importing:
 
         /// push a list context on the list context stack
-        void PushListContext(XMLTextListBlockContext *i_pListBlock);
+        void PushListContext(XMLTextListBlockContext *i_pListBlock = nullptr);
         void PushListContext(XMLNumberedParaContext *i_pNumberedParagraph);
         /// pop the list context stack
         void PopListContext();
@@ -136,7 +136,7 @@ class XMLTextListsHelper
         // as value
         typedef ::std::map< OUString,
                             ::std::pair< OUString, OUString > > tMapForLists;
-        std::unique_ptr<tMapForLists> mpProcessedLists;
+        tMapForLists* mpProcessedLists;
         OUString msLastProcessedListId;
         OUString msListStyleOfLastProcessedList;
 
@@ -144,19 +144,19 @@ class XMLTextListsHelper
            map with <ListStyleName> as key and pair( <ListId, ListStyleDefaultListId> )
            as value. (#i92811#)
         */
-        std::unique_ptr<tMapForLists> mpMapListIdToListStyleDefaultListId;
+        tMapForLists* mpMapListIdToListStyleDefaultListId;
 
         // container type to build up continue list chain:
         // map with <ListId> of master list as key and <ListId> of last list
         // continuing the master list as value
         typedef ::std::map< OUString, OUString > tMapForContinuingLists;
-        std::unique_ptr<tMapForContinuingLists> mpContinuingLists;
+        tMapForContinuingLists* mpContinuingLists;
 
         // stack type for opened list elements and its list style:
         // vector with pair( <ListId>, <ListStyleName> ) as value
         typedef ::std::vector< ::std::pair< OUString, OUString > >
                                                                 tStackForLists;
-        std::unique_ptr<tStackForLists> mpListStack;
+        tStackForLists* mpListStack;
 
         /// to connect numbered-paragraphs that have no list-id attribute:
         /// vector of pair of style-name and list-id (indexed by level)

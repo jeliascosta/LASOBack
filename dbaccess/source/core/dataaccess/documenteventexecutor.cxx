@@ -138,7 +138,7 @@ namespace dbaccess
     {
     }
 
-    void SAL_CALL DocumentEventExecutor::documentEventOccured( const DocumentEvent& Event )
+    void SAL_CALL DocumentEventExecutor::documentEventOccured( const DocumentEvent& Event ) throw (RuntimeException, std::exception)
     {
         Reference< XEventsSupplier > xEventsSupplier( m_pData->xDocument.get(), UNO_QUERY );
         if ( !xEventsSupplier.is() )
@@ -190,7 +190,7 @@ namespace dbaccess
         }
     }
 
-    void SAL_CALL DocumentEventExecutor::disposing( const lang::EventObject& /*_Source*/ )
+    void SAL_CALL DocumentEventExecutor::disposing( const lang::EventObject& /*_Source*/ ) throw (RuntimeException, std::exception)
     {
         // not interested in
     }

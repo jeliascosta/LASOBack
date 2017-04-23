@@ -50,16 +50,6 @@ namespace vcl_sal { class WMAdaptor; class NetWMAdaptor; class GnomeWMAdaptor; }
 #define SHOWSTATE_NORMAL        1
 #define SHOWSTATE_HIDDEN        2
 
-enum class WMWindowType
-{
-    Normal,
-    ModelessDialogue,
-    Utility,
-    Splash,
-    Toolbar,
-    Dock
-};
-
 class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandleProvider
 {
     friend class vcl_sal::WMAdaptor;
@@ -80,6 +70,8 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
     ::Window        mhStackingWindow;
     // window to listen for CirculateNotify events
 
+    Pixmap          mhBackgroundPixmap;
+
     Cursor          hCursor_;
     int             nCaptured_;         // is captured
 
@@ -88,13 +80,14 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
 
     sal_uInt16      nKeyCode_;          // last key code
     sal_uInt16      nKeyState_;         // last key state
+    int             nCompose_;          // compose state
     bool            mbSendExtKeyModChange;
-    ModKeyFlags     mnExtKeyMod;
+    sal_uInt16      mnExtKeyMod;
 
     int             nShowState_;        // show state
     int             nWidth_;            // client width
     int             nHeight_;           // client height
-    tools::Rectangle       maRestorePosSize;
+    Rectangle       maRestorePosSize;
     SalFrameStyleFlags nStyle_;
     SalExtStyle     mnExtStyle;
     bool            bAlwaysOnTop_;
@@ -108,12 +101,12 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
     bool            m_bSetFocusOnMap;
 
     ScreenSaverInhibitor maScreenSaverInhibitor;
-    tools::Rectangle       maPaintRegion;
+    Rectangle       maPaintRegion;
 
     Timer           maAlwaysOnTopRaiseTimer;
 
     // data for WMAdaptor
-    WMWindowType    meWindowType;
+    int             meWindowType;
     int             mnDecorationFlags;
     bool            mbMaximizedVert;
     bool            mbMaximizedHorz;
@@ -138,10 +131,10 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
 
     bool mPendingSizeEvent;
 
-    void            GetPosSize( tools::Rectangle &rPosSize );
+    void            GetPosSize( Rectangle &rPosSize );
     void            SetSize   ( const Size      &rSize );
     void            Center();
-    void            SetPosSize( const tools::Rectangle &rPosSize );
+    void            SetPosSize( const Rectangle &rPosSize );
     void            Minimize();
     void            Maximize();
     void            Restore();
@@ -158,7 +151,7 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
     long            HandleReparentEvent ( XReparentEvent    *pEvent );
     long            HandleClientMessage ( XClientMessageEvent*pEvent );
 
-    DECL_LINK( HandleAlwaysOnTopRaise, Timer*, void );
+    DECL_LINK_TYPED( HandleAlwaysOnTopRaise, Timer*, void );
 
     void            createNewWindow( ::Window aParent, SalX11Screen nXScreen = SalX11Screen( -1 ) );
     void            updateScreenNumber();
@@ -168,12 +161,12 @@ class VCLPLUG_GEN_PUBLIC X11SalFrame : public SalFrame, public NativeWindowHandl
 
     void            updateWMClass();
 public:
-    X11SalFrame( SalFrame* pParent, SalFrameStyleFlags nSalFrameStyle, SystemParentData* pSystemParent = nullptr );
-    virtual ~X11SalFrame() override;
+    X11SalFrame( SalFrame* pParent, SalFrameStyleFlags nSalFrameStyle, SystemParentData* pSystemParent = NULL );
+    virtual ~X11SalFrame();
 
     long            Dispatch( XEvent *pEvent );
-    void            Init( SalFrameStyleFlags nSalFrameStyle, SalX11Screen nScreen,
-                          SystemParentData* pParentData, bool bUseGeometry = false );
+    void            Init( SalFrameStyleFlags nSalFrameStyle, SalX11Screen nScreen = SalX11Screen( -1 ),
+                          SystemParentData* pParentData = NULL, bool bUseGeometry = false );
 
     SalDisplay* GetDisplay() const
     {
@@ -188,7 +181,7 @@ public:
     ::Window                GetShellWindow() const { return mhShellWindow; }
     ::Window                GetForeignParent() const { return mhForeignParent; }
     ::Window                GetStackingWindow() const { return mhStackingWindow; }
-    void                    Close() const { CallCallback( SalEvent::Close, nullptr ); }
+    void                    Close() const { CallCallback( SalEvent::Close, NULL ); }
     SalFrameStyleFlags      GetStyle() const { return nStyle_; }
 
     Cursor                  GetCursor() const { return hCursor_; }
@@ -228,7 +221,7 @@ public:
     virtual void                SetMaxClientSize( long nWidth, long nHeight ) override;
     virtual void                SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_uInt16 nFlags ) override;
     virtual void                GetClientSize( long& rWidth, long& rHeight ) override;
-    virtual void                GetWorkArea( tools::Rectangle& rRect ) override;
+    virtual void                GetWorkArea( Rectangle& rRect ) override;
     virtual SalFrame*           GetParent() const override;
     virtual void                SetWindowState( const SalFrameState* pState ) override;
     virtual bool                GetWindowState( SalFrameState* pState ) override;

@@ -99,12 +99,12 @@ InsertObjectDialog_Impl::InsertObjectDialog_Impl(vcl::Window * pParent, const OU
 }
 
 
-IMPL_LINK_NOARG(SvInsertOleDlg, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvInsertOleDlg, DoubleClickHdl, ListBox&, void)
 {
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_NOARG(SvInsertOleDlg, BrowseHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvInsertOleDlg, BrowseHdl, Button*, void)
 {
     Reference< XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
 
@@ -120,7 +120,7 @@ IMPL_LINK_NOARG(SvInsertOleDlg, BrowseHdl, Button*, void)
     }
     catch( const IllegalArgumentException& )
     {
-        SAL_WARN( "cui.dialogs", "caught IllegalArgumentException when registering filter\n" );
+        DBG_ASSERT( false, "caught IllegalArgumentException when registering filter\n" );
     }
 
     if( xFilePicker->execute() == ExecutableDialogResults::OK )
@@ -132,7 +132,7 @@ IMPL_LINK_NOARG(SvInsertOleDlg, BrowseHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvInsertOleDlg, RadioHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvInsertOleDlg, RadioHdl, Button*, void)
 {
     if ( m_pRbNewObject->IsChecked() )
     {
@@ -144,6 +144,12 @@ IMPL_LINK_NOARG(SvInsertOleDlg, RadioHdl, Button*, void)
         m_pFileFrame->Show();
         m_pObjectTypeFrame->Hide();
     }
+}
+
+
+void SvInsertOleDlg::SelectDefault()
+{
+    m_pLbObjecttype->SelectEntryPos(0);
 }
 
 
@@ -203,11 +209,12 @@ short SvInsertOleDlg::Execute()
     }
 
     // fill listbox and select default
-    m_pLbObjecttype->SetUpdateMode( false );
+    ListBox& rBox = GetObjectTypes();
+    rBox.SetUpdateMode( false );
     for ( sal_uLong i = 0; i < m_pServers->Count(); i++ )
-        m_pLbObjecttype->InsertEntry( (*m_pServers)[i].GetHumanName() );
-    m_pLbObjecttype->SetUpdateMode( true );
-    m_pLbObjecttype->SelectEntryPos(0);
+        rBox.InsertEntry( (*m_pServers)[i].GetHumanName() );
+    rBox.SetUpdateMode( true );
+    SelectDefault();
     OUString aName;
 
     DBG_ASSERT( m_xStorage.is(), "No storage!");
@@ -218,7 +225,7 @@ short SvInsertOleDlg::Execute()
         if ( bCreateNew )
         {
             // create and insert new embedded object
-            OUString aServerName = m_pLbObjecttype->GetSelectEntry();
+            OUString aServerName = rBox.GetSelectEntry();
             const SvObjectServer* pS = m_pServers->Get( aServerName );
             if ( pS )
             {
@@ -292,12 +299,12 @@ short SvInsertOleDlg::Execute()
         }
         else
         {
-            aFileName = m_pEdFilepath->GetText();
+            aFileName = GetFilePath();
             INetURLObject aURL;
             aURL.SetSmartProtocol( INetProtocol::File );
             aURL.SetSmartURL( aFileName );
-            aFileName = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
-            bool bLink = m_pCbFilelink->IsChecked();
+            aFileName = aURL.GetMainURL( INetURLObject::NO_DECODE );
+            bool bLink = IsLinked();
 
             if ( !aFileName.isEmpty() )
             {
@@ -522,7 +529,7 @@ short SfxInsertFloatingFrameDialog::Execute()
             INetURLObject aObj;
             aObj.SetSmartProtocol( INetProtocol::File );
             if ( aObj.SetSmartURL( m_pEDURL->GetText() ) )
-                aURL = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+                aURL = aObj.GetMainURL( INetURLObject::NO_DECODE );
         }
 
         if ( !m_xObj.is() && !aURL.isEmpty() )
@@ -545,13 +552,13 @@ short SfxInsertFloatingFrameDialog::Execute()
                     m_xObj->changeState( embed::EmbedStates::RUNNING );
 
                 OUString aName = m_pEDName->GetText();
-                ScrollingMode eScroll = ScrollingMode::No;
+                ScrollingMode eScroll = ScrollingNo;
                 if ( m_pRBScrollingOn->IsChecked() )
-                    eScroll = ScrollingMode::Yes;
+                    eScroll = ScrollingYes;
                 if ( m_pRBScrollingOff->IsChecked() )
-                    eScroll = ScrollingMode::No;
+                    eScroll = ScrollingNo;
                 if ( m_pRBScrollingAuto->IsChecked() )
-                    eScroll = ScrollingMode::Auto;
+                    eScroll = ScrollingAuto;
 
                 bool bHasBorder = m_pRBFrameBorderOn->IsChecked();
 
@@ -567,17 +574,17 @@ short SfxInsertFloatingFrameDialog::Execute()
                 else
                     lMarginHeight = SIZE_NOT_SET;
 
-                xSet->setPropertyValue( "FrameURL", Any( aURL ) );
-                xSet->setPropertyValue( "FrameName", Any( aName ) );
+                xSet->setPropertyValue( "FrameURL", makeAny( aURL ) );
+                xSet->setPropertyValue( "FrameName", makeAny( aName ) );
 
-                if ( eScroll == ScrollingMode::Auto )
-                    xSet->setPropertyValue( "FrameIsAutoScroll", Any( true ) );
+                if ( eScroll == ScrollingAuto )
+                    xSet->setPropertyValue( "FrameIsAutoScroll", makeAny( true ) );
                 else
-                    xSet->setPropertyValue( "FrameIsScrollingMode", Any( eScroll == ScrollingMode::Yes ) );
+                    xSet->setPropertyValue( "FrameIsScrollingMode", makeAny( eScroll == ScrollingYes ) );
 
-                xSet->setPropertyValue( "FrameIsBorder", Any( bHasBorder ) );
-                xSet->setPropertyValue( "FrameMarginWidth", Any( sal_Int32( lMarginWidth ) ) );
-                xSet->setPropertyValue( "FrameMarginHeight", Any( sal_Int32( lMarginHeight ) ) );
+                xSet->setPropertyValue( "FrameIsBorder", makeAny( bHasBorder ) );
+                xSet->setPropertyValue( "FrameMarginWidth", makeAny( sal_Int32( lMarginWidth ) ) );
+                xSet->setPropertyValue( "FrameMarginHeight", makeAny( sal_Int32( lMarginHeight ) ) );
 
                 if ( bIPActive )
                     m_xObj->changeState( embed::EmbedStates::INPLACE_ACTIVE );
@@ -593,7 +600,7 @@ short SfxInsertFloatingFrameDialog::Execute()
 }
 
 
-IMPL_LINK( SfxInsertFloatingFrameDialog, CheckHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SfxInsertFloatingFrameDialog, CheckHdl, Button*, pButton, void )
 {
     CheckBox* pCB = static_cast<CheckBox*>(pButton);
     if ( pCB == m_pCBMarginWidthDefault )
@@ -614,7 +621,7 @@ IMPL_LINK( SfxInsertFloatingFrameDialog, CheckHdl, Button*, pButton, void )
 }
 
 
-IMPL_LINK_NOARG( SfxInsertFloatingFrameDialog, OpenHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED( SfxInsertFloatingFrameDialog, OpenHdl, Button*, void)
 {
     // create the file dialog
     sfx2::FileDialogHelper aFileDlg(
@@ -626,7 +633,7 @@ IMPL_LINK_NOARG( SfxInsertFloatingFrameDialog, OpenHdl, Button*, void)
     // show the dialog
     if ( aFileDlg.Execute() == ERRCODE_NONE )
         m_pEDURL->SetText(
-            INetURLObject( aFileDlg.GetPath() ).GetMainURL( INetURLObject::DecodeMechanism::WithCharset ) );
+            INetURLObject( aFileDlg.GetPath() ).GetMainURL( INetURLObject::DECODE_WITH_CHARSET ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

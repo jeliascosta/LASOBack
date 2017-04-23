@@ -20,7 +20,9 @@
 #include "headless/svpgdi.hxx"
 #include "headless/svpbmp.hxx"
 #include "headless/svpframe.hxx"
+#ifndef IOS
 #include "headless/svpcairotextrender.hxx"
+#endif
 #include "saldatabasic.hxx"
 
 #include <vcl/sysdata.hxx>
@@ -85,6 +87,8 @@ namespace
     }
 }
 
+#ifndef IOS
+
 bool SvpSalGraphics::blendBitmap( const SalTwoRect&, const SalBitmap& /*rBitmap*/ )
 {
     SAL_WARN("vcl.gdi", "unsupported SvpSalGraphics::blendBitmap case");
@@ -133,28 +137,9 @@ namespace
         {
             return source;
         }
-        void mark_dirty()
-        {
-            cairo_surface_mark_dirty(source);
-        }
-        unsigned char* getBits(sal_Int32 &rStride)
-        {
-            cairo_surface_flush(source);
-
-            unsigned char *mask_data = cairo_image_surface_get_data(source);
-
-            cairo_format_t nFormat = cairo_image_surface_get_format(source);
-            assert(nFormat == CAIRO_FORMAT_ARGB32 && "need to implement CAIRO_FORMAT_A1 after all here");
-            rStride = cairo_format_stride_for_width(nFormat, cairo_image_surface_get_width(source));
-
-            return mask_data;
-        }
     private:
         SvpSalBitmap aTmpBmp;
         cairo_surface_t* source;
-
-        SourceHelper(const SourceHelper&) = delete;
-        SourceHelper& operator=(const SourceHelper&) = delete;
     };
 
     class MaskHelper
@@ -215,9 +200,6 @@ namespace
     private:
         cairo_surface_t *mask;
         unsigned char* pAlphaBits;
-
-        MaskHelper(const MaskHelper&) = delete;
-        MaskHelper& operator=(const MaskHelper&) = delete;
     };
 }
 
@@ -330,6 +312,8 @@ bool SvpSalGraphics::drawTransformedBitmap(
     return true;
 }
 
+#endif
+
 void SvpSalGraphics::clipRegion(cairo_t* cr)
 {
     RectangleVector aRectangles;
@@ -393,7 +377,7 @@ SvpSalGraphics::SvpSalGraphics()
     , m_fScale(1.0)
     , m_aLineColor(MAKE_SALCOLOR(0x00, 0x00, 0x00))
     , m_aFillColor(MAKE_SALCOLOR(0xFF, 0xFF, 0XFF))
-    , m_ePaintMode(PaintMode::Over)
+    , m_ePaintMode(OVERPAINT)
     , m_aTextRenderImpl(*this)
 {
 }
@@ -402,10 +386,9 @@ SvpSalGraphics::~SvpSalGraphics()
 {
 }
 
-void SvpSalGraphics::setSurface(cairo_surface_t* pSurface, const basegfx::B2IVector& rSize)
+void SvpSalGraphics::setSurface(cairo_surface_t* pSurface)
 {
     m_pSurface = pSurface;
-    m_aFrameSize = rSize;
 #if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 14, 0)
     cairo_surface_get_device_scale(pSurface, &m_fScale, nullptr);
 #endif
@@ -417,16 +400,18 @@ void SvpSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
     rDPIX = rDPIY = 96;
 }
 
+#ifndef IOS
+
 sal_uInt16 SvpSalGraphics::GetBitCount() const
 {
-    if (cairo_surface_get_content(m_pSurface) != CAIRO_CONTENT_COLOR_ALPHA)
+    if (CAIRO_FORMAT_A1 == cairo_image_surface_get_format(m_pSurface))
         return 1;
     return 32;
 }
 
 long SvpSalGraphics::GetGraphicsWidth() const
 {
-    return m_pSurface ? m_aFrameSize.getX() : 0;
+    return m_pSurface ? cairo_image_surface_get_width(m_pSurface) / m_fScale : 0;
 }
 
 void SvpSalGraphics::ResetClipRegion()
@@ -460,9 +445,9 @@ void SvpSalGraphics::SetFillColor( SalColor nSalColor )
     m_aFillColor = nSalColor;
 }
 
-void SvpSalGraphics::SetXORMode(bool bSet )
+void SvpSalGraphics::SetXORMode(bool bSet, bool bInvert)
 {
-    m_ePaintMode = bSet ? PaintMode::Xor : PaintMode::Over;
+    m_ePaintMode = bInvert ? INVERT : (bSet ? XOR : OVERPAINT);
 }
 
 void SvpSalGraphics::SetROPLineColor( SalROPColor nROPColor )
@@ -670,16 +655,14 @@ static void AddPolygonToPath(cairo_t* cr, const basegfx::B2DPolygon& rPolygon, b
 
             // tdf#99165 if the control points are 'empty', create the mathematical
             // correct replacement ones to avoid problems with the graphical sub-system
-            // tdf#101026 The 1st attempt to create a mathematically correct replacement control
-            // vector was wrong. Best alternative is one as close as possible which means short.
-            if (aCP1.equal(aLast))
+            if(aCP1.equal(aLast))
             {
-                aCP1 = aLast + ((aCP2 - aLast) * 0.0005);
+                aCP1 = aLast + ((aCP2 - aLast) * 0.3);
             }
 
             if(aCP2.equal(aPoint))
             {
-                aCP2 = aPoint + ((aCP1 - aPoint) * 0.0005);
+                aCP2 = aPoint + ((aCP1 - aPoint) * 0.3);
             }
 
             cairo_curve_to(cr, aCP1.getX(), aCP1.getY(), aCP2.getX(), aCP2.getY(),
@@ -831,7 +814,7 @@ bool SvpSalGraphics::drawPolyLine(
 
 bool SvpSalGraphics::drawPolyLineBezier( sal_uInt32,
                                          const SalPoint*,
-                                         const PolyFlags* )
+                                         const sal_uInt8* )
 {
     SAL_INFO("vcl.gdi", "unsupported SvpSalGraphics::drawPolyLineBezier case");
     return false;
@@ -839,7 +822,7 @@ bool SvpSalGraphics::drawPolyLineBezier( sal_uInt32,
 
 bool SvpSalGraphics::drawPolygonBezier( sal_uInt32,
                                         const SalPoint*,
-                                        const PolyFlags* )
+                                        const sal_uInt8* )
 {
     SAL_INFO("vcl.gdi", "unsupported SvpSalGraphics::drawPolygonBezier case");
     return false;
@@ -848,7 +831,7 @@ bool SvpSalGraphics::drawPolygonBezier( sal_uInt32,
 bool SvpSalGraphics::drawPolyPolygonBezier( sal_uInt32,
                                             const sal_uInt32*,
                                             const SalPoint* const*,
-                                            const PolyFlags* const* )
+                                            const sal_uInt8* const* )
 {
     SAL_INFO("vcl.gdi", "unsupported SvpSalGraphics::drawPolyPolygonBezier case");
     return false;
@@ -902,7 +885,7 @@ bool SvpSalGraphics::drawPolyPolygon(const basegfx::B2DPolyPolygon& rPolyPoly, d
 
 void SvpSalGraphics::applyColor(cairo_t *cr, SalColor aColor)
 {
-    if (cairo_surface_get_content(m_pSurface) == CAIRO_CONTENT_COLOR_ALPHA)
+    if (CAIRO_FORMAT_ARGB32 == cairo_image_surface_get_format(m_pSurface))
     {
         cairo_set_source_rgba(cr, SALCOLOR_RED(aColor)/255.0,
                                   SALCOLOR_GREEN(aColor)/255.0,
@@ -999,10 +982,17 @@ void SvpSalGraphics::copyBits( const SalTwoRect& rTR,
     if (pSrc == this)
     {
         //self copy is a problem, so dup source in that case
+#if CAIRO_VERSION < CAIRO_VERSION_ENCODE(1, 12, 0)
         pCopy = cairo_surface_create_similar(source,
                                             cairo_surface_get_content(m_pSurface),
                                             aTR.mnSrcWidth * m_fScale,
                                             aTR.mnSrcHeight * m_fScale);
+#else
+        pCopy = cairo_surface_create_similar_image(source,
+                                            cairo_image_surface_get_format(m_pSurface),
+                                            aTR.mnSrcWidth * m_fScale,
+                                            aTR.mnSrcHeight * m_fScale);
+#endif
 #if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 14, 0)
         cairo_surface_set_device_scale(pCopy, m_fScale, m_fScale);
 #endif
@@ -1059,8 +1049,16 @@ void SvpSalGraphics::drawMask( const SalTwoRect& rTR,
     /** creates an image from the given rectangle, replacing all black pixels
      *  with nMaskColor and make all other full transparent */
     SourceHelper aSurface(rSalBitmap);
-    sal_Int32 nStride;
-    unsigned char *mask_data = aSurface.getBits(nStride);
+    cairo_surface_t* mask = aSurface.getSurface();
+
+    cairo_surface_flush(mask);
+
+    unsigned char *mask_data = cairo_image_surface_get_data(mask);
+
+    cairo_format_t nFormat = cairo_image_surface_get_format(mask);
+    assert(nFormat == CAIRO_FORMAT_ARGB32 && "need to implement CAIRO_FORMAT_A1 after all here");
+    sal_Int32 nStride = cairo_format_stride_for_width(nFormat,
+                                                      cairo_image_surface_get_width(mask));
     for (sal_Int32 y = rTR.mnSrcY ; y < rTR.mnSrcY + rTR.mnSrcHeight; ++y)
     {
         unsigned char *row = mask_data + (nStride*y);
@@ -1087,7 +1085,7 @@ void SvpSalGraphics::drawMask( const SalTwoRect& rTR,
             data+=4;
         }
     }
-    aSurface.mark_dirty();
+    cairo_surface_mark_dirty(mask);
 
     cairo_t* cr = getCairoContext(false);
     clipRegion(cr);
@@ -1100,7 +1098,7 @@ void SvpSalGraphics::drawMask( const SalTwoRect& rTR,
 
     cairo_translate(cr, rTR.mnDestX, rTR.mnDestY);
     cairo_scale(cr, (double)(rTR.mnDestWidth)/rTR.mnSrcWidth, ((double)rTR.mnDestHeight)/rTR.mnSrcHeight);
-    cairo_set_source_surface(cr, aSurface.getSurface(), -rTR.mnSrcX, -rTR.mnSrcY);
+    cairo_set_source_surface(cr, mask, -rTR.mnSrcX, -rTR.mnSrcY);
     cairo_paint(cr);
 
     releaseCairoContext(cr, false, extents);
@@ -1125,24 +1123,18 @@ SalBitmap* SvpSalGraphics::getBitmap( long nX, long nY, long nWidth, long nHeigh
 
 SalColor SvpSalGraphics::getPixel( long nX, long nY )
 {
-    cairo_surface_t *target = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
-    cairo_t* cr = cairo_create(target);
-
-    cairo_rectangle(cr, 0, 0, 1, 1);
-    cairo_set_source_surface(cr, m_pSurface, -nX, -nY);
-    cairo_paint(cr);
-    cairo_destroy(cr);
-
-    cairo_surface_flush(target);
-    unsigned char *data = cairo_image_surface_get_data(target);
+    cairo_surface_flush(m_pSurface);
+    cairo_format_t nFormat = cairo_image_surface_get_format(m_pSurface);
+    assert(nFormat == CAIRO_FORMAT_ARGB32 && "need to implement CAIRO_FORMAT_A1 after all here");
+    sal_Int32 nStride = cairo_format_stride_for_width(nFormat,
+                                                      cairo_image_surface_get_width(m_pSurface));
+    unsigned char *surface_data = cairo_image_surface_get_data(m_pSurface);
+    unsigned char *row = surface_data + (nStride*nY);
+    unsigned char *data = row + (nX * 4);
     sal_uInt8 b = unpremultiply(data[SVP_CAIRO_BLUE], data[SVP_CAIRO_ALPHA]);
     sal_uInt8 g = unpremultiply(data[SVP_CAIRO_GREEN], data[SVP_CAIRO_ALPHA]);
     sal_uInt8 r = unpremultiply(data[SVP_CAIRO_RED], data[SVP_CAIRO_ALPHA]);
-    SalColor nRet = MAKE_SALCOLOR(r, g, b);
-
-    cairo_surface_destroy(target);
-
-    return nRet;
+    return MAKE_SALCOLOR(r, g, b);
 }
 
 namespace
@@ -1189,10 +1181,6 @@ void SvpSalGraphics::invert(const basegfx::B2DPolygon &rPoly, SalInvert nFlags)
         cairo_set_dash(cr, dashLengths, 2, 0);
 
         extents = getClippedStrokeDamage(cr);
-        //see tdf#106577 under wayland, some pixel droppings seen, maybe we're
-        //out by one somewhere, or cairo_stroke_extents is confused by
-        //dashes/line width
-        extents.grow(1);
 
         cairo_stroke(cr);
     }
@@ -1205,21 +1193,8 @@ void SvpSalGraphics::invert(const basegfx::B2DPolygon &rPoly, SalInvert nFlags)
         if (nFlags & SalInvert::N50)
         {
             cairo_pattern_t *pattern = create_stipple();
-            cairo_surface_t* surface = cairo_surface_create_similar(m_pSurface,
-                                                                    cairo_surface_get_content(m_pSurface),
-                                                                    extents.getWidth() * m_fScale,
-                                                                    extents.getHeight() * m_fScale);
-
-#if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 14, 0)
-            cairo_surface_set_device_scale(surface, m_fScale, m_fScale);
-#endif
-            cairo_t* stipple_cr = cairo_create(surface);
-            cairo_set_source_rgb(stipple_cr, 1.0, 1.0, 1.0);
-            cairo_mask(stipple_cr, pattern);
+            cairo_mask(cr, pattern);
             cairo_pattern_destroy(pattern);
-            cairo_destroy(stipple_cr);
-            cairo_mask_surface(cr, surface, extents.getMinX(), extents.getMinY());
-            cairo_surface_destroy(surface);
         }
         else
         {
@@ -1247,6 +1222,8 @@ void SvpSalGraphics::invert(sal_uInt32 nPoints, const SalPoint* pPtAry, SalInver
 
     invert(aPoly, nFlags);
 }
+
+#endif
 
 bool SvpSalGraphics::drawEPS( long, long, long, long, void*, sal_uLong )
 {
@@ -1293,29 +1270,33 @@ cairo_surface_t* SvpSalGraphics::createCairoSurface(const BitmapBuffer *pBuffer)
     return target;
 }
 
-cairo_t* SvpSalGraphics::createTmpCompatibleCairoContext() const
+static cairo_t* createTmpCompatibleCairoContext(cairo_surface_t* pSurface, double fScale)
 {
-    cairo_surface_t *target = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
-                                                         m_aFrameSize.getX() * m_fScale,
-                                                         m_aFrameSize.getY() * m_fScale);
+    cairo_surface_t *target = cairo_image_surface_create(
+                                cairo_image_surface_get_format(pSurface),
+                                cairo_image_surface_get_width(pSurface),
+                                cairo_image_surface_get_height(pSurface));
 #if CAIRO_VERSION >= CAIRO_VERSION_ENCODE(1, 14, 0)
-    cairo_surface_set_device_scale(target, m_fScale, m_fScale);
+    cairo_surface_set_device_scale(target, fScale, fScale);
+#else
+    (void)fScale;
 #endif
-
     return cairo_create(target);
 }
 
 cairo_t* SvpSalGraphics::getCairoContext(bool bXorModeAllowed) const
 {
     cairo_t* cr;
-    if (m_ePaintMode == PaintMode::Xor && bXorModeAllowed)
-        cr = createTmpCompatibleCairoContext();
+    if (m_ePaintMode == XOR && bXorModeAllowed)
+        cr = createTmpCompatibleCairoContext(m_pSurface, m_fScale);
     else
         cr = cairo_create(m_pSurface);
     cairo_set_line_width(cr, 1);
     cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
-    cairo_set_antialias(cr, getAntiAliasB2DDraw() ? CAIRO_ANTIALIAS_DEFAULT : CAIRO_ANTIALIAS_NONE);
-    cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+    if (m_ePaintMode == INVERT)
+        cairo_set_operator(cr, CAIRO_OPERATOR_DIFFERENCE);
+    else
+        cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
     return cr;
 }
 
@@ -1336,8 +1317,8 @@ void SvpSalGraphics::releaseCairoContext(cairo_t* cr, bool bXorModeAllowed, cons
 
     sal_Int32 nExtentsLeft(rExtents.getMinX()), nExtentsTop(rExtents.getMinY());
     sal_Int32 nExtentsRight(rExtents.getMaxX()), nExtentsBottom(rExtents.getMaxY());
-    sal_Int32 nWidth = m_aFrameSize.getX();
-    sal_Int32 nHeight = m_aFrameSize.getY();
+    sal_Int32 nWidth = cairo_image_surface_get_width(m_pSurface);
+    sal_Int32 nHeight = cairo_image_surface_get_height(m_pSurface);
     nExtentsLeft = std::max<sal_Int32>(nExtentsLeft, 0);
     nExtentsTop = std::max<sal_Int32>(nExtentsTop, 0);
     nExtentsRight = std::min<sal_Int32>(nExtentsRight, nWidth);
@@ -1349,37 +1330,23 @@ void SvpSalGraphics::releaseCairoContext(cairo_t* cr, bool bXorModeAllowed, cons
     //For the most part we avoid the use of XOR these days, but there
     //are some edge cases where legacy stuff still supports it, so
     //emulate it (slowly) here.
-    if (m_ePaintMode == PaintMode::Xor && bXorModeAllowed)
+    if (m_ePaintMode == XOR && bXorModeAllowed)
     {
-        cairo_surface_t* target_surface = m_pSurface;
-        if (cairo_surface_get_type(target_surface) != CAIRO_SURFACE_TYPE_IMAGE)
-        {
-            //in the unlikely case we can't use m_pSurface directly, copy contents
-            //to another temp image surface
-            cairo_t* copycr = createTmpCompatibleCairoContext();
-            cairo_rectangle(copycr, nExtentsLeft, nExtentsTop,
-                                    nExtentsRight - nExtentsLeft,
-                                    nExtentsBottom - nExtentsTop);
-            cairo_set_source_surface(copycr, m_pSurface, 0, 0);
-            cairo_paint(copycr);
-            target_surface = cairo_get_target(copycr);
-            cairo_destroy(copycr);
-        }
-
-        cairo_surface_flush(target_surface);
-        unsigned char *target_surface_data = cairo_image_surface_get_data(target_surface);
+        cairo_surface_t* true_surface = m_pSurface;
+        cairo_surface_flush(true_surface);
+        unsigned char *true_surface_data = cairo_image_surface_get_data(true_surface);
         unsigned char *xor_surface_data = cairo_image_surface_get_data(surface);
 
-        cairo_format_t nFormat = cairo_image_surface_get_format(target_surface);
+        cairo_format_t nFormat = cairo_image_surface_get_format(m_pSurface);
         assert(nFormat == CAIRO_FORMAT_ARGB32 && "need to implement CAIRO_FORMAT_A1 after all here");
-        sal_Int32 nStride = cairo_format_stride_for_width(nFormat, nWidth * m_fScale);
+        sal_Int32 nStride = cairo_format_stride_for_width(nFormat, nWidth);
         sal_Int32 nUnscaledExtentsLeft = nExtentsLeft * m_fScale;
         sal_Int32 nUnscaledExtentsRight = nExtentsRight * m_fScale;
         sal_Int32 nUnscaledExtentsTop = nExtentsTop * m_fScale;
         sal_Int32 nUnscaledExtentsBottom = nExtentsBottom * m_fScale;
         for (sal_Int32 y = nUnscaledExtentsTop; y < nUnscaledExtentsBottom; ++y)
         {
-            unsigned char *true_row = target_surface_data + (nStride*y);
+            unsigned char *true_row = true_surface_data + (nStride*y);
             unsigned char *xor_row = xor_surface_data + (nStride*y);
             unsigned char *true_data = true_row + (nUnscaledExtentsLeft * 4);
             unsigned char *xor_data = xor_row + (nUnscaledExtentsLeft * 4);
@@ -1398,22 +1365,7 @@ void SvpSalGraphics::releaseCairoContext(cairo_t* cr, bool bXorModeAllowed, cons
                 xor_data+=4;
             }
         }
-        cairo_surface_mark_dirty(target_surface);
-
-        if (target_surface != m_pSurface)
-        {
-            cairo_t* copycr = cairo_create(m_pSurface);
-            //unlikely case we couldn't use m_pSurface directly, copy contents
-            //back from image surface
-            cairo_rectangle(copycr, nExtentsLeft, nExtentsTop,
-                                    nExtentsRight - nExtentsLeft,
-                                    nExtentsBottom - nExtentsTop);
-            cairo_set_source_surface(copycr, target_surface, 0, 0);
-            cairo_paint(copycr);
-            cairo_destroy(copycr);
-            cairo_surface_destroy(target_surface);
-        }
-
+        cairo_surface_mark_dirty(true_surface);
         cairo_surface_destroy(surface);
     }
 
@@ -1457,6 +1409,8 @@ css::uno::Any SvpSalGraphics::GetNativeSurfaceHandle(cairo::SurfaceSharedPtr& /*
 
 #endif // ENABLE_CAIRO_CANVAS
 
+#ifndef IOS
+
 SystemGraphicsData SvpSalGraphics::GetGraphicsData() const
 {
     return SystemGraphicsData();
@@ -1466,11 +1420,13 @@ bool SvpSalGraphics::supportsOperation(OutDevSupportType eType) const
 {
     switch (eType)
     {
-        case OutDevSupportType::TransparentRect:
-        case OutDevSupportType::B2DDraw:
+        case OutDevSupport_TransparentRect:
+        case OutDevSupport_B2DDraw:
             return true;
     }
     return false;
 }
+
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

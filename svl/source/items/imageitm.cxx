@@ -35,21 +35,22 @@ struct SfxImageItem_Impl
 
 
 SfxImageItem::SfxImageItem( sal_uInt16 which )
-    : SfxInt16Item( which, 0 ),
-          pImpl( new SfxImageItem_Impl)
+    : SfxInt16Item( which, 0 )
 {
-    pImpl->nAngle = 0;
-    pImpl->bMirrored = false;
+    pImp = new SfxImageItem_Impl;
+    pImp->nAngle = 0;
+    pImp->bMirrored = false;
 }
 
 SfxImageItem::SfxImageItem( const SfxImageItem& rItem )
-    : SfxInt16Item( rItem ),
-      pImpl( new SfxImageItem_Impl( *(rItem.pImpl.get()) ) )
+    : SfxInt16Item( rItem )
 {
+    pImp = new SfxImageItem_Impl( *(rItem.pImp) );
 }
 
 SfxImageItem::~SfxImageItem()
 {
+    delete pImp;
 }
 
 
@@ -62,18 +63,18 @@ SfxPoolItem* SfxImageItem::Clone( SfxItemPool* ) const
 bool SfxImageItem::operator==( const SfxPoolItem& rItem ) const
 {
     return (static_cast<const SfxImageItem&>(rItem).GetValue() == GetValue()) &&
-           (*pImpl == *static_cast<const SfxImageItem&>(rItem).pImpl);
+           (*pImp == *static_cast<const SfxImageItem&>(rItem).pImp);
 }
 
 bool SfxImageItem::QueryValue( css::uno::Any& rVal, sal_uInt8 ) const
 {
     css::uno::Sequence< css::uno::Any > aSeq( 4 );
-    aSeq[0] <<= GetValue();
-    aSeq[1] <<= pImpl->nAngle;
-    aSeq[2] <<= pImpl->bMirrored;
-    aSeq[3] <<= pImpl->aURL;
+    aSeq[0] = css::uno::makeAny( GetValue() );
+    aSeq[1] = css::uno::makeAny( pImp->nAngle );
+    aSeq[2] = css::uno::makeAny( pImp->bMirrored );
+    aSeq[3] = css::uno::makeAny( OUString( pImp->aURL ));
 
-    rVal <<= aSeq;
+    rVal = css::uno::makeAny( aSeq );
     return true;
 }
 
@@ -86,10 +87,10 @@ bool SfxImageItem::PutValue( const css::uno::Any& rVal, sal_uInt8 )
         OUString aURL;
         if ( aSeq[0] >>= nVal )
             SetValue( nVal );
-        aSeq[1] >>= pImpl->nAngle;
-        aSeq[2] >>= pImpl->bMirrored;
+        aSeq[1] >>= pImp->nAngle;
+        aSeq[2] >>= pImp->bMirrored;
         if ( aSeq[3] >>= aURL )
-            pImpl->aURL = aURL;
+            pImp->aURL = aURL;
         return true;
     }
 
@@ -98,22 +99,22 @@ bool SfxImageItem::PutValue( const css::uno::Any& rVal, sal_uInt8 )
 
 void SfxImageItem::SetRotation( long nValue )
 {
-    pImpl->nAngle = nValue;
+    pImp->nAngle = nValue;
 }
 
 long SfxImageItem::GetRotation() const
 {
-    return pImpl->nAngle;
+    return pImp->nAngle;
 }
 
 void SfxImageItem::SetMirrored( bool bSet )
 {
-    pImpl->bMirrored = bSet;
+    pImp->bMirrored = bSet;
 }
 
 bool SfxImageItem::IsMirrored() const
 {
-    return pImpl->bMirrored;
+    return pImp->bMirrored;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

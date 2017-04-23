@@ -18,14 +18,13 @@
 
 package com.sun.star.lib.uno.typedesc;
 
+import com.sun.star.uno.IFieldDescription;
+import com.sun.star.uno.ITypeDescription;
 import java.lang.reflect.Field;
 
-/**
- * Describes non method members.
- */
-public final class FieldDescription {
+final class FieldDescription implements IFieldDescription {
     public FieldDescription(
-        String name, int index, TypeDescription typeDescription, Field field)
+        String name, int index, ITypeDescription typeDescription, Field field)
     {
         this.name = name;
         this.index = index;
@@ -53,26 +52,16 @@ public final class FieldDescription {
         return index;
     }
 
-    /**
-     * Gives the name of this member.
-     * <p>
-     * @return  the name
-     */
-    public TypeDescription getTypeDescription() {
+    public ITypeDescription getTypeDescription() {
         return typeDescription;
     }
 
-    /**
-     * Gives native java field of this member.
-     * <p>
-     * @return  the java field
-     */
     public Field getField() {
         return field;
     }
 
     private final String name;
     private final int index;
-    private final TypeDescription typeDescription;
+    private final ITypeDescription typeDescription;
     private final Field field;
 }

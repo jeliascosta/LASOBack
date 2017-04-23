@@ -37,8 +37,11 @@
 #pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 
+#ifdef __MINGW32__
+#define _INIT_ATL_COMMON_VARS
+#endif
 #include <atlbase.h>
-static CComModule _Module;
+CComModule _Module;
 #include <atlcom.h>
 
 #if defined __clang__
@@ -64,7 +67,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-        _Module.Init(ObjectMap, hInstance);
+        _Module.Init(ObjectMap, hInstance, NULL);
         DisableThreadLibraryCalls(hInstance);
     }
     else if (dwReason == DLL_PROCESS_DETACH)

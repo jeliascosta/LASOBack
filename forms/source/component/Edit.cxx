@@ -72,7 +72,7 @@ Sequence<Type> OEditControl::_getTypes()
 }
 
 
-Any SAL_CALL OEditControl::queryAggregation(const Type& _rType)
+Any SAL_CALL OEditControl::queryAggregation(const Type& _rType) throw (RuntimeException, std::exception)
 {
     Any aReturn = OBoundControl::queryAggregation(_rType);
     if (!aReturn.hasValue())
@@ -116,13 +116,13 @@ OEditControl::~OEditControl()
 
 // XChangeBroadcaster
 
-void OEditControl::addChangeListener(const Reference<XChangeListener>& l)
+void OEditControl::addChangeListener(const Reference<XChangeListener>& l) throw ( css::uno::RuntimeException, std::exception)
 {
     m_aChangeListeners.addInterface( l );
 }
 
 
-void OEditControl::removeChangeListener(const Reference<XChangeListener>& l)
+void OEditControl::removeChangeListener(const Reference<XChangeListener>& l) throw ( css::uno::RuntimeException, std::exception)
 {
     m_aChangeListeners.removeInterface( l );
 }
@@ -139,7 +139,7 @@ void OEditControl::disposing()
 
 // XServiceInfo
 
-css::uno::Sequence<OUString>  OEditControl::getSupportedServiceNames()
+css::uno::Sequence<OUString>  OEditControl::getSupportedServiceNames() throw(std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 3);
@@ -153,14 +153,14 @@ css::uno::Sequence<OUString>  OEditControl::getSupportedServiceNames()
 
 // XEventListener
 
-void OEditControl::disposing(const EventObject& Source)
+void OEditControl::disposing(const EventObject& Source) throw( RuntimeException, std::exception )
 {
     OBoundControl::disposing(Source);
 }
 
 // XFocusListener
 
-void OEditControl::focusGained( const FocusEvent& /*e*/ )
+void OEditControl::focusGained( const FocusEvent& /*e*/ ) throw ( css::uno::RuntimeException, std::exception)
 {
     Reference<XPropertySet>  xSet(getModel(), UNO_QUERY);
     if (xSet.is())
@@ -168,7 +168,7 @@ void OEditControl::focusGained( const FocusEvent& /*e*/ )
 }
 
 
-void OEditControl::focusLost( const FocusEvent& /*e*/ )
+void OEditControl::focusLost( const FocusEvent& /*e*/ ) throw ( css::uno::RuntimeException, std::exception)
 {
     Reference<XPropertySet>  xSet(getModel(), UNO_QUERY);
     if (xSet.is())
@@ -185,7 +185,7 @@ void OEditControl::focusLost( const FocusEvent& /*e*/ )
 
 // XKeyListener
 
-void OEditControl::keyPressed(const css::awt::KeyEvent& e)
+void OEditControl::keyPressed(const css::awt::KeyEvent& e) throw ( css::uno::RuntimeException, std::exception)
 {
     if( e.KeyCode != KEY_RETURN || e.Modifiers != 0 )
         return;
@@ -242,12 +242,12 @@ void OEditControl::keyPressed(const css::awt::KeyEvent& e)
 }
 
 
-void OEditControl::keyReleased(const css::awt::KeyEvent& /*e*/)
+void OEditControl::keyReleased(const css::awt::KeyEvent& /*e*/) throw ( css::uno::RuntimeException, std::exception)
 {
 }
 
 
-IMPL_LINK_NOARG(OEditControl, OnKeyPressed, void*, void)
+IMPL_LINK_NOARG_TYPED(OEditControl, OnKeyPressed, void*, void)
 {
     m_nKeyEvent = nullptr;
 
@@ -258,6 +258,17 @@ IMPL_LINK_NOARG(OEditControl, OnKeyPressed, void*, void)
         xSubmit->submit( Reference<XControl>(), css::awt::MouseEvent() );
 }
 
+
+void SAL_CALL OEditControl::createPeer( const Reference< XToolkit>& _rxToolkit, const Reference< XWindowPeer>& _rxParent ) throw ( RuntimeException, std::exception )
+{
+    OBoundControl::createPeer(_rxToolkit, _rxParent);
+}
+
+
+Sequence<Type> OEditModel::_getTypes()
+{
+    return OEditBaseModel::_getTypes();
+}
 
 
 OEditModel::OEditModel(const Reference<XComponentContext>& _rxFactory)
@@ -307,14 +318,14 @@ void OEditModel::disposing()
 
 // XPersistObject
 
-OUString SAL_CALL OEditModel::getServiceName()
+OUString SAL_CALL OEditModel::getServiceName() throw ( css::uno::RuntimeException, std::exception)
 {
     return OUString(FRM_COMPONENT_EDIT);  // old (non-sun) name for compatibility !
 }
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL OEditModel::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OEditModel::getSupportedServiceNames() throw(std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OBoundControlModel::getSupportedServiceNames();
 
@@ -393,7 +404,7 @@ bool OEditModel::implActsAsRichText( ) const
 }
 
 
-void SAL_CALL OEditModel::reset(  )
+void SAL_CALL OEditModel::reset(  ) throw(RuntimeException, std::exception)
 {
     // no reset if we currently act as rich text control
     if ( implActsAsRichText() )
@@ -514,7 +525,7 @@ void OEditModel::readAggregate( const Reference< XObjectInputStream >& _rxInStre
 }
 
 
-void OEditModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
+void OEditModel::write(const Reference<XObjectOutputStream>& _rxOutStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     Any aCurrentText;
     sal_Int16 nOldTextLen = 0;
@@ -544,7 +555,7 @@ void OEditModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
 }
 
 
-void OEditModel::read(const Reference<XObjectInputStream>& _rxInStream)
+void OEditModel::read(const Reference<XObjectInputStream>& _rxInStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     OEditBaseModel::read(_rxInStream);
 
@@ -631,6 +642,12 @@ bool OEditModel::approveDbColumnType( sal_Int32 _nColumnType )
         return false;
 
     return OEditBaseModel::approveDbColumnType( _nColumnType );
+}
+
+
+void OEditModel::resetNoBroadcast()
+{
+    OEditBaseModel::resetNoBroadcast();
 }
 
 

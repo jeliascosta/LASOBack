@@ -50,13 +50,12 @@ namespace ucbhelper
 
     @param xEnv is the command environment that may contain an Interaction
            Handler to use before throwing the appropriate exception.
-
-    @throws css::uno::Exception
  */
 UCBHELPER_DLLPUBLIC void cancelCommandExecution( const css::uno::Any & rException,
                              const css::uno::Reference<
                                 css::ucb::XCommandEnvironment > &
-                                    xEnv );
+                                    xEnv )
+    throw( css::uno::Exception );
 
 /** Cancel the execution of a command by throwing the appropriate exception.
     If an Interaction Handler is given with the command environment and the
@@ -71,7 +70,7 @@ UCBHELPER_DLLPUBLIC void cancelCommandExecution( const css::uno::Any & rExceptio
 
     @param eError is an IO error code.
 
-    @param rArgs is a sequence containing the arguments to pass along with
+    @param rArgs is a sequeence containing the arguments to pass along with
            the exception. Each IO error code can be combined with one or
            more additional arguments. Refer to com/sun/star/ucb/IOErroprCode.idl
            for details.
@@ -86,14 +85,13 @@ UCBHELPER_DLLPUBLIC void cancelCommandExecution( const css::uno::Any & rExceptio
     @param xContext is the command processor executing the command to cancel.
            Used as debugging aid only. Passed to the member 'Context' of the
            uno::Exception thrown by this function.
-
-    @throws css::uno::Exception
  */
 UCBHELPER_DLLPUBLIC void cancelCommandExecution( const css::ucb::IOErrorCode eError,
                              const css::uno::Sequence< css::uno::Any > & rArgs,
                              const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv,
                              const OUString & rMessage = OUString(),
-                             const css::uno::Reference< css::ucb::XCommandProcessor > & xContext = nullptr );
+                             const css::uno::Reference< css::ucb::XCommandProcessor > & xContext = nullptr )
+    throw( css::uno::Exception );
 }
 
 #endif // INCLUDED_UCBHELPER_CANCELCOMMANDEXECUTION_HXX

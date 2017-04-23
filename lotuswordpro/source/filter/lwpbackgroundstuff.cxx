@@ -56,7 +56,7 @@
 /**
  * @file
  * For LWP filter architecture prototype
- *  Implementation of class LwpBackgroundStuff.
+ *  Implemention of class LwpBackgroundStuff.
  */
 
 #include "lwpbackgroundstuff.hxx"
@@ -123,7 +123,7 @@ XFBGImage* LwpBackgroundStuff::GetFillPattern()
     // create XOBitmap object from bitmap object
     XOBitmap aXOBitmap( aBmp );
     aXOBitmap.Bitmap2Array();
-    aXOBitmap.SetBitmapType( XBitmapType::N8x8 );
+    aXOBitmap.SetBitmapType( XBITMAP_8X8 );
 
     // set back/fore-ground colors
     if (m_aFillColor.IsValidColor() && m_aPatternColor.IsValidColor())

@@ -343,13 +343,14 @@ void ScDBData::SetArea(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW 
 
 void ScDBData::MoveTo(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2)
 {
+    sal_uInt16 i;
     long nDifX = ((long) nCol1) - ((long) nStartCol);
     long nDifY = ((long) nRow1) - ((long) nStartRow);
 
     long nSortDif = bByRow ? nDifX : nDifY;
     long nSortEnd = bByRow ? static_cast<long>(nCol2) : static_cast<long>(nRow2);
 
-    for (sal_uInt16 i=0; i<mpSortParam->GetSortKeyCount(); i++)
+    for (i=0; i<mpSortParam->GetSortKeyCount(); i++)
     {
         mpSortParam->maKeyState[i].nField += nSortDif;
         if (mpSortParam->maKeyState[i].nField > nSortEnd)
@@ -360,7 +361,7 @@ void ScDBData::MoveTo(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW n
     }
 
     SCSIZE nCount = mpQueryParam->GetEntryCount();
-    for (SCSIZE i = 0; i < nCount; ++i)
+    for (i = 0; i < nCount; ++i)
     {
         ScQueryEntry& rEntry = mpQueryParam->GetEntry(i);
         rEntry.nField += nDifX;
@@ -370,7 +371,7 @@ void ScDBData::MoveTo(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW n
             rEntry.bDoQuery = false;
         }
     }
-    for (sal_uInt16 i=0; i<MAXSUBTOTAL; i++)
+    for (i=0; i<MAXSUBTOTAL; i++)
     {
         mpSubTotal->nField[i] = sal::static_int_cast<SCCOL>( mpSubTotal->nField[i] + nDifX );
         if (mpSubTotal->nField[i] > nCol2)
@@ -486,6 +487,8 @@ bool ScDBData::IsDBAtCursor(SCCOL nCol, SCROW nRow, SCTAB nTab, ScDBDataPortion 
         {
             case ScDBDataPortion::TOP_LEFT:
                 return nCol == nStartCol && nRow == nStartRow;
+            case ScDBDataPortion::HEADER:
+                return HasHeader() && nRow == nStartRow && nCol >= nStartCol && nCol <= nEndCol;
             case ScDBDataPortion::AREA:
                 return nCol >= nStartCol && nCol <= nEndCol && nRow >= nStartRow && nRow <= nEndRow;
         }
@@ -496,9 +499,9 @@ bool ScDBData::IsDBAtCursor(SCCOL nCol, SCROW nRow, SCTAB nTab, ScDBDataPortion 
 
 bool ScDBData::IsDBAtArea(SCTAB nTab, SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2) const
 {
-    return (nTab == nTable)
-           && (nCol1 == nStartCol) && (nRow1 == nStartRow)
-           && (nCol2 == nEndCol) && (nRow2 == nEndRow);
+    return (bool)((nTab == nTable)
+                    && (nCol1 == nStartCol) && (nRow1 == nStartRow)
+                    && (nCol2 == nEndCol) && (nRow2 == nEndRow));
 }
 
 bool ScDBData::HasImportParam() const
@@ -535,7 +538,7 @@ void ScDBData::UpdateMoveTab(SCTAB nOldPos, SCTAB nNewPos)
         GetArea( aRange );
         SCTAB nTab = aRange.aStart.Tab();               // a database range is only on one sheet
 
-        //  customize as the current table as ScTablesHint (tabvwsh5.cxx)
+        //  anpassen wie die aktuelle Tabelle bei ScTablesHint (tabvwsh5.cxx)
 
         if ( nTab == nOldPos )                          // moved sheet
             nTab = nNewPos;
@@ -625,10 +628,9 @@ void ScDBData::UpdateReference(ScDocument* pDoc, UpdateRefMode eUpdateRefMode,
 void ScDBData::ExtendDataArea(ScDocument* pDoc)
 {
     // Extend the DB area to include data rows immediately below.
+    // or shrink it if all cells are empty
     SCCOL nOldCol1 = nStartCol, nOldCol2 = nEndCol;
-    SCROW nOldEndRow = nEndRow;
     pDoc->GetDataArea(nTable, nStartCol, nStartRow, nEndCol, nEndRow, false, true);
-    nEndRow = std::max(nEndRow, nOldEndRow);
     if (nStartCol != nOldCol1 || nEndCol != nOldCol2)
     {
         SAL_WARN_IF( !maTableColumnNames.empty(), "sc.core", "ScDBData::ExtendDataArea - invalidating column names/offsets");
@@ -891,7 +893,7 @@ void ScDBData::Notify( const SfxHint& rHint )
     if (!pScHint)
         return;
 
-    if (pScHint->GetId() == SfxHintId::ScDataChanged)
+    if (pScHint->GetId() & SC_HINT_DATACHANGED)
     {
         mbTableColumnNamesDirty = true;
         if (!mpContainer)

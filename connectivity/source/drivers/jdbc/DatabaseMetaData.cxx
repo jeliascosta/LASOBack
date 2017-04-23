@@ -69,7 +69,7 @@ Reference< XResultSet > java_sql_DatabaseMetaData::impl_getTypeInfo_throw(  )
     return impl_callResultSetMethod( "getTypeInfo", mID );
 }
 
-Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getCatalogs(  )
+Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getCatalogs(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethod( "getCatalogs", mID );
@@ -81,21 +81,21 @@ OUString java_sql_DatabaseMetaData::impl_getCatalogSeparator_throw(  )
     return impl_callStringMethod( "getCatalogSeparator", mID );
 }
 
-Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getSchemas(  )
+Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getSchemas(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethod( "getSchemas", mID );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getColumnPrivileges(
-        const Any& catalog, const OUString& schema, const OUString& table, const OUString& columnNamePattern )
+        const Any& catalog, const OUString& schema, const OUString& table, const OUString& columnNamePattern ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getColumnPrivileges", mID, catalog, schema, table, &columnNamePattern );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getColumns(
-        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern, const OUString& columnNamePattern )
+        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern, const OUString& columnNamePattern ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getColumns", mID, catalog, schemaPattern, tableNamePattern, &columnNamePattern );
@@ -103,9 +103,9 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getColumns(
 
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTables(
-        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern, const Sequence< OUString >& _types )
+        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern, const Sequence< OUString >& _types ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char * const cMethodName = "getTables";
+    static const char * cMethodName = "getTables";
 
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, cMethodName );
 
@@ -113,7 +113,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTables(
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;)Ljava/sql/ResultSet;";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;)Ljava/sql/ResultSet;";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -124,7 +124,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTables(
         sal_Int32 typeFilterCount = _types.getLength();
         if ( typeFilterCount )
         {
-            jobjectArray pObjArray = t.pEnv->NewObjectArray( (jsize)typeFilterCount, java_lang_String::st_getMyClass(), nullptr );
+            jobjectArray pObjArray = static_cast< jobjectArray >( t.pEnv->NewObjectArray( (jsize)typeFilterCount, java_lang_String::st_getMyClass(), nullptr ) );
             OSL_VERIFY( !isExceptionOccurred( t.pEnv, true ) );
             const OUString* typeFilter = _types.getConstArray();
             bool bIncludeAllTypes = false;
@@ -217,87 +217,87 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTables(
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getProcedureColumns(
-        const Any& catalog, const OUString& schemaPattern, const OUString& procedureNamePattern, const OUString& columnNamePattern )
+        const Any& catalog, const OUString& schemaPattern, const OUString& procedureNamePattern, const OUString& columnNamePattern ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getProcedureColumns", mID, catalog, schemaPattern, procedureNamePattern, &columnNamePattern );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getProcedures( const Any&
-                catalog, const OUString& schemaPattern, const OUString& procedureNamePattern )
+                catalog, const OUString& schemaPattern, const OUString& procedureNamePattern ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getProcedures", mID, catalog, schemaPattern, procedureNamePattern );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getVersionColumns(
-        const Any& catalog, const OUString& schema, const OUString& table )
+        const Any& catalog, const OUString& schema, const OUString& table ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getVersionColumns", mID, catalog, schema, table );
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxBinaryLiteralLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxBinaryLiteralLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxBinaryLiteralLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxRowSize(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxRowSize(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxRowSize", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCatalogNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCatalogNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxCatalogNameLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCharLiteralLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCharLiteralLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxCharLiteralLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnNameLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInIndex(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInIndex(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnsInIndex", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCursorNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxCursorNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxCursorNameLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxConnections(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxConnections(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxConnections", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInTable(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInTable(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnsInTable", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxStatementLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxStatementLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxStatementLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxTableNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxTableNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxTableNameLength", mID);
@@ -310,21 +310,21 @@ sal_Int32 java_sql_DatabaseMetaData::impl_getMaxTablesInSelect_throw(  )
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getExportedKeys(
-        const Any& catalog, const OUString& schema, const OUString& table )
+        const Any& catalog, const OUString& schema, const OUString& table ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getExportedKeys", mID, catalog, schema, table );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getImportedKeys(
-        const Any& catalog, const OUString& schema, const OUString& table )
+        const Any& catalog, const OUString& schema, const OUString& table ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getImportedKeys", mID, catalog, schema, table );
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getPrimaryKeys(
-        const Any& catalog, const OUString& schema, const OUString& table )
+        const Any& catalog, const OUString& schema, const OUString& table ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethodWithStrings( "getPrimaryKeys", mID, catalog, schema, table );
@@ -332,9 +332,9 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getPrimaryKeys(
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getIndexInfo(
         const Any& catalog, const OUString& schema, const OUString& table,
-        sal_Bool unique, sal_Bool approximate )
+        sal_Bool unique, sal_Bool approximate ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char * const cMethodName = "getIndexInfo";
+    static const char * cMethodName = "getIndexInfo";
 
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, cMethodName );
 
@@ -342,7 +342,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getIndexInfo(
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Ljava/sql/ResultSet;";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)Ljava/sql/ResultSet;";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -373,9 +373,9 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getIndexInfo(
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getBestRowIdentifier(
         const Any& catalog, const OUString& schema, const OUString& table, sal_Int32 scope,
-        sal_Bool nullable )
+        sal_Bool nullable ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char * const cMethodName = "getBestRowIdentifier";
+    static const char * cMethodName = "getBestRowIdentifier";
 
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, cMethodName );
 
@@ -383,7 +383,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getBestRowIdentifier
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZ)Ljava/sql/ResultSet;";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZ)Ljava/sql/ResultSet;";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -412,7 +412,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getBestRowIdentifier
 }
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTablePrivileges(
-        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern )
+        const Any& catalog, const OUString& schemaPattern, const OUString& tableNamePattern ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( m_pConnection->isIgnoreDriverPrivilegesEnabled() )
         return new OResultSetPrivileges(this,catalog,schemaPattern,tableNamePattern);
@@ -430,15 +430,15 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTablePrivileges(
             if ( xMeta.is() && xMeta->getColumnCount() != 7 )
             {
                 // here we know that the count of column doesn't match
-                std::map<sal_Int32,sal_Int32> aColumnMatching;
-                static const OUStringLiteral sPrivs[] = {
-                                            "TABLE_CAT",
-                                            "TABLE_SCHEM",
-                                            "TABLE_NAME",
-                                            "GRANTOR",
-                                            "GRANTEE",
-                                            "PRIVILEGE",
-                                            "IS_GRANTABLE"
+                ::std::map<sal_Int32,sal_Int32> aColumnMatching;
+                static const OUString sPrivs[] = {
+                                            OUString("TABLE_CAT"),
+                                            OUString("TABLE_SCHEM"),
+                                            OUString("TABLE_NAME"),
+                                            OUString("GRANTOR"),
+                                            OUString("GRANTEE"),
+                                            OUString("PRIVILEGE"),
+                                            OUString("IS_GRANTABLE")
                                         };
 
                 OUString sColumnName;
@@ -450,7 +450,7 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTablePrivileges(
                     {
                         if ( sPrivs[j] == sColumnName )
                         {
-                            aColumnMatching.insert( std::map<sal_Int32,sal_Int32>::value_type(i,j+1) );
+                            aColumnMatching.insert( ::std::map<sal_Int32,sal_Int32>::value_type(i,j+1) );
                             break;
                         }
                     }
@@ -467,8 +467,8 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTablePrivileges(
                 ODatabaseMetaDataResultSet::ORow aRow(8);
                 while ( xRow.is() && xTemp->next() )
                 {
-                    std::map<sal_Int32,sal_Int32>::const_iterator aIter = aColumnMatching.begin();
-                    std::map<sal_Int32,sal_Int32>::const_iterator aEnd  = aColumnMatching.end();
+                    ::std::map<sal_Int32,sal_Int32>::const_iterator aIter = aColumnMatching.begin();
+                    ::std::map<sal_Int32,sal_Int32>::const_iterator aEnd  = aColumnMatching.end();
                     for (;aIter != aEnd ; ++aIter)
                     {
                         sValue = xRow->getString(aIter->first);
@@ -490,15 +490,15 @@ Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTablePrivileges(
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getCrossReference(
         const Any& primaryCatalog, const OUString& primarySchema,
         const OUString& primaryTable, const Any& foreignCatalog,
-        const OUString& foreignSchema, const OUString& foreignTable )
+        const OUString& foreignSchema, const OUString& foreignTable ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char * const cMethodName = "getCrossReference";
+    static const char * cMethodName = "getCrossReference";
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, cMethodName );
 
     jobject out(nullptr);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     {
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/sql/ResultSet;";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/sql/ResultSet;";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -564,16 +564,16 @@ OUString java_sql_DatabaseMetaData::impl_callStringMethod( const char* _pMethodN
 sal_Int32 java_sql_DatabaseMetaData::impl_callIntMethod_ThrowSQL(const char* _pMethodName, jmethodID& _inout_MethodID)
 {
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, _pMethodName );
-    sal_Int32 out( callIntMethod_ThrowSQL(_pMethodName,_inout_MethodID) );
-    m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_RESULT, _pMethodName, out );
+    sal_Int32 out( (sal_Int32)callIntMethod_ThrowSQL(_pMethodName,_inout_MethodID) );
+    m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_RESULT, _pMethodName, (sal_Int32)out );
     return out;
 }
 
 sal_Int32 java_sql_DatabaseMetaData::impl_callIntMethod_ThrowRuntime(const char* _pMethodName, jmethodID& _inout_MethodID)
 {
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD, _pMethodName );
-    sal_Int32 out( callIntMethod_ThrowRuntime(_pMethodName,_inout_MethodID) );
-    m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_RESULT, _pMethodName, out );
+    sal_Int32 out( (sal_Int32)callIntMethod_ThrowRuntime(_pMethodName,_inout_MethodID) );
+    m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_RESULT, _pMethodName, (sal_Int32)out );
     return out;
 }
 
@@ -669,19 +669,19 @@ Reference< XResultSet > java_sql_DatabaseMetaData::impl_callResultSetMethodWithS
 }
 
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::doesMaxRowSizeIncludeBlobs(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::doesMaxRowSizeIncludeBlobs(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "doesMaxRowSizeIncludeBlobs", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesLowerCaseQuotedIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesLowerCaseQuotedIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "storesLowerCaseQuotedIdentifiers", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesLowerCaseIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesLowerCaseIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "storesLowerCaseIdentifiers", mID );
@@ -693,19 +693,19 @@ bool java_sql_DatabaseMetaData::impl_storesMixedCaseQuotedIdentifiers_throw(  )
     return impl_callBooleanMethod( "storesMixedCaseQuotedIdentifiers", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesMixedCaseIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesMixedCaseIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "storesMixedCaseIdentifiers", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesUpperCaseQuotedIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesUpperCaseQuotedIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "storesUpperCaseQuotedIdentifiers", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesUpperCaseIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::storesUpperCaseIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "storesUpperCaseIdentifiers", mID );
@@ -723,19 +723,19 @@ bool java_sql_DatabaseMetaData::impl_supportsAlterTableWithDropColumn_throw(  )
     return impl_callBooleanMethod( "supportsAlterTableWithDropColumn", mID );
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxIndexLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxIndexLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxIndexLength", mID);
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsNonNullableColumns(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsNonNullableColumns(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsNonNullableColumns", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getCatalogTerm(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getCatalogTerm(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getCatalogTerm", mID );
@@ -747,13 +747,13 @@ OUString java_sql_DatabaseMetaData::impl_getIdentifierQuoteString_throw(  )
     return impl_callStringMethod( "getIdentifierQuoteString", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getExtraNameCharacters(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getExtraNameCharacters(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getExtraNameCharacters", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDifferentTableCorrelationNames(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDifferentTableCorrelationNames(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsDifferentTableCorrelationNames", mID );
@@ -765,67 +765,67 @@ bool java_sql_DatabaseMetaData::impl_isCatalogAtStart_throw(  )
     return impl_callBooleanMethod( "isCatalogAtStart", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::dataDefinitionIgnoredInTransactions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::dataDefinitionIgnoredInTransactions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "dataDefinitionIgnoredInTransactions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::dataDefinitionCausesTransactionCommit(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::dataDefinitionCausesTransactionCommit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "dataDefinitionCausesTransactionCommit", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDataManipulationTransactionsOnly(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDataManipulationTransactionsOnly(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsDataManipulationTransactionsOnly", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDataDefinitionAndDataManipulationTransactions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsDataDefinitionAndDataManipulationTransactions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsDataDefinitionAndDataManipulationTransactions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsPositionedDelete(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsPositionedDelete(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsPositionedDelete", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsPositionedUpdate(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsPositionedUpdate(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsPositionedUpdate", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenStatementsAcrossRollback(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenStatementsAcrossRollback(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOpenStatementsAcrossRollback", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenStatementsAcrossCommit(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenStatementsAcrossCommit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOpenStatementsAcrossCommit", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenCursorsAcrossCommit(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenCursorsAcrossCommit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOpenCursorsAcrossCommit", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenCursorsAcrossRollback(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOpenCursorsAcrossRollback(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOpenCursorsAcrossRollback", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTransactionIsolationLevel( sal_Int32 level )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTransactionIsolationLevel( sal_Int32 level ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "supportsTransactionIsolationLevel", mID, level );
@@ -837,25 +837,25 @@ bool java_sql_DatabaseMetaData::impl_supportsSchemasInDataManipulation_throw(  )
     return impl_callBooleanMethod( "supportsSchemasInDataManipulation", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92FullSQL(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92FullSQL(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsANSI92FullSQL", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92EntryLevelSQL(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92EntryLevelSQL(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsANSI92EntryLevelSQL", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsIntegrityEnhancementFacility(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsIntegrityEnhancementFacility(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsIntegrityEnhancementFacility", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInIndexDefinitions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInIndexDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSchemasInIndexDefinitions", mID );
@@ -873,7 +873,7 @@ bool java_sql_DatabaseMetaData::impl_supportsCatalogsInTableDefinitions_throw(  
     return impl_callBooleanMethod( "supportsCatalogsInTableDefinitions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInIndexDefinitions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInIndexDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsCatalogsInIndexDefinitions", mID );
@@ -885,13 +885,13 @@ bool java_sql_DatabaseMetaData::impl_supportsCatalogsInDataManipulation_throw(  
     return impl_callBooleanMethod( "supportsCatalogsInDataManipulation", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOuterJoins(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOuterJoins(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOuterJoins", mID );
 }
 
-Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTableTypes(  )
+Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getTableTypes(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callResultSetMethod( "getTableTypes", mID );
@@ -903,94 +903,94 @@ sal_Int32 java_sql_DatabaseMetaData::impl_getMaxStatements_throw(  )
     return impl_callIntMethod_ThrowSQL("getMaxStatements", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxProcedureNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxProcedureNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxProcedureNameLength", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxSchemaNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxSchemaNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxSchemaNameLength", mID);
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTransactions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTransactions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsTransactions", mID );
 }
 
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::allProceduresAreCallable(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::allProceduresAreCallable(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "allProceduresAreCallable", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsStoredProcedures(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsStoredProcedures(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsStoredProcedures", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSelectForUpdate(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSelectForUpdate(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSelectForUpdate", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::allTablesAreSelectable(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::allTablesAreSelectable(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "allTablesAreSelectable", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::isReadOnly(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::isReadOnly(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "isReadOnly", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::usesLocalFiles(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::usesLocalFiles(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "usesLocalFiles", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::usesLocalFilePerTable(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::usesLocalFilePerTable(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "usesLocalFilePerTable", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTypeConversion(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTypeConversion(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsTypeConversion", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullPlusNonNullIsNull(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullPlusNonNullIsNull(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "nullPlusNonNullIsNull", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsColumnAliasing(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsColumnAliasing(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsColumnAliasing", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTableCorrelationNames(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsTableCorrelationNames(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsTableCorrelationNames", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsConvert( sal_Int32 fromType, sal_Int32 toType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsConvert( sal_Int32 fromType, sal_Int32 toType ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char* const pMethodName = "supportsConvert";
+    static const char* pMethodName = "supportsConvert";
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD_ARG2, pMethodName, fromType, toType );
 
     jboolean out( false );
@@ -1007,67 +1007,67 @@ sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsConvert( sal_Int32 fromType
     return out;
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsExpressionsInOrderBy(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsExpressionsInOrderBy(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsExpressionsInOrderBy", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupBy(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupBy(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsGroupBy", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupByBeyondSelect(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupByBeyondSelect(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsGroupByBeyondSelect", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupByUnrelated(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsGroupByUnrelated(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsGroupByUnrelated", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMultipleTransactions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMultipleTransactions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsMultipleTransactions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMultipleResultSets(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMultipleResultSets(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsMultipleResultSets", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsLikeEscapeClause(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsLikeEscapeClause(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsLikeEscapeClause", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOrderByUnrelated(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsOrderByUnrelated(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsOrderByUnrelated", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsUnion(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsUnion(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsUnion", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsUnionAll(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsUnionAll(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsUnionAll", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMixedCaseIdentifiers(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMixedCaseIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsMixedCaseIdentifiers", mID );
@@ -1079,91 +1079,91 @@ bool java_sql_DatabaseMetaData::impl_supportsMixedCaseQuotedIdentifiers_throw(  
     return impl_callBooleanMethod( "supportsMixedCaseQuotedIdentifiers", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedAtEnd(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedAtEnd(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "nullsAreSortedAtEnd", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedAtStart(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedAtStart(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "nullsAreSortedAtStart", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedHigh(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedHigh(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "nullsAreSortedHigh", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedLow(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::nullsAreSortedLow(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "nullsAreSortedLow", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInProcedureCalls(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInProcedureCalls(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSchemasInProcedureCalls", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInPrivilegeDefinitions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSchemasInPrivilegeDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSchemasInPrivilegeDefinitions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInProcedureCalls(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInProcedureCalls(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsCatalogsInProcedureCalls", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInPrivilegeDefinitions(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCatalogsInPrivilegeDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsCatalogsInPrivilegeDefinitions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCorrelatedSubqueries(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCorrelatedSubqueries(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsCorrelatedSubqueries", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInComparisons(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInComparisons(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSubqueriesInComparisons", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInExists(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInExists(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSubqueriesInExists", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInIns(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInIns(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSubqueriesInIns", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInQuantifieds(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsSubqueriesInQuantifieds(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsSubqueriesInQuantifieds", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92IntermediateSQL(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsANSI92IntermediateSQL(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsANSI92IntermediateSQL", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getURL(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getURL(  ) throw(SQLException, RuntimeException, std::exception)
 {
     OUString sURL = m_pConnection->getURL();
     if ( sURL.isEmpty() )
@@ -1174,165 +1174,165 @@ OUString SAL_CALL java_sql_DatabaseMetaData::getURL(  )
     return sURL;
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getUserName(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getUserName(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getUserName", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getDriverName(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getDriverName(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getDriverName", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getDriverVersion(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getDriverVersion(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getDriverVersion", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getDatabaseProductVersion(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getDatabaseProductVersion(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getDatabaseProductVersion", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getDatabaseProductName(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getDatabaseProductName(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getDatabaseProductName", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getProcedureTerm(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getProcedureTerm(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getProcedureTerm", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getSchemaTerm(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getSchemaTerm(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getSchemaTerm", mID );
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDriverMajorVersion(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDriverMajorVersion(  ) throw(RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowRuntime("getDriverMajorVersion", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDefaultTransactionIsolation(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDefaultTransactionIsolation(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getDefaultTransactionIsolation", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDriverMinorVersion(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getDriverMinorVersion(  ) throw(RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowRuntime("getDriverMinorVersion", mID);
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getSQLKeywords(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getSQLKeywords(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getSQLKeywords", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getSearchStringEscape(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getSearchStringEscape(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getSearchStringEscape", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getStringFunctions(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getStringFunctions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getStringFunctions", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getTimeDateFunctions(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getTimeDateFunctions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getTimeDateFunctions", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getSystemFunctions(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getSystemFunctions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getSystemFunctions", mID );
 }
 
-OUString SAL_CALL java_sql_DatabaseMetaData::getNumericFunctions(  )
+OUString SAL_CALL java_sql_DatabaseMetaData::getNumericFunctions(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callStringMethod( "getNumericFunctions", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsExtendedSQLGrammar(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsExtendedSQLGrammar(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsExtendedSQLGrammar", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCoreSQLGrammar(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsCoreSQLGrammar(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsCoreSQLGrammar", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMinimumSQLGrammar(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsMinimumSQLGrammar(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsMinimumSQLGrammar", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsFullOuterJoins(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsFullOuterJoins(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsFullOuterJoins", mID );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsLimitedOuterJoins(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsLimitedOuterJoins(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsLimitedOuterJoins", mID );
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInGroupBy(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInGroupBy(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnsInGroupBy", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInOrderBy(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInOrderBy(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnsInOrderBy", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInSelect(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxColumnsInSelect(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxColumnsInSelect", mID);
 }
 
-sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxUserNameLength(  )
+sal_Int32 SAL_CALL java_sql_DatabaseMetaData::getMaxUserNameLength(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callIntMethod_ThrowSQL("getMaxUserNameLength", mID);
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsResultSetType( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsResultSetType( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "supportsResultSetType", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsResultSetConcurrency( sal_Int32 setType, sal_Int32 concurrency )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsResultSetConcurrency( sal_Int32 setType, sal_Int32 concurrency ) throw(SQLException, RuntimeException, std::exception)
 {
-    static const char* const pMethodName = "supportsResultSetConcurrency";
+    static const char* pMethodName = "supportsResultSetConcurrency";
     m_aLogger.log( LogLevel::FINEST, STR_LOG_META_DATA_METHOD_ARG2, pMethodName, setType, concurrency );
 
     jboolean out( false );
@@ -1349,61 +1349,61 @@ sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsResultSetConcurrency( sal_I
     return out;
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownUpdatesAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownUpdatesAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "ownUpdatesAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownDeletesAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownDeletesAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "ownDeletesAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownInsertsAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::ownInsertsAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "ownInsertsAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersUpdatesAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersUpdatesAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "othersUpdatesAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersDeletesAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersDeletesAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "othersDeletesAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersInsertsAreVisible( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::othersInsertsAreVisible( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "othersInsertsAreVisible", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::updatesAreDetected( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::updatesAreDetected( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "updatesAreDetected", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::deletesAreDetected( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::deletesAreDetected( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "deletesAreDetected", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::insertsAreDetected( sal_Int32 setType )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::insertsAreDetected( sal_Int32 setType ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethodWithIntArg( "insertsAreDetected", mID, setType );
 }
 
-sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsBatchUpdates(  )
+sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsBatchUpdates(  ) throw(SQLException, RuntimeException, std::exception)
 {
     static jmethodID mID(nullptr);
     return impl_callBooleanMethod( "supportsBatchUpdates", mID );
@@ -1411,15 +1411,15 @@ sal_Bool SAL_CALL java_sql_DatabaseMetaData::supportsBatchUpdates(  )
 
 Reference< XResultSet > SAL_CALL java_sql_DatabaseMetaData::getUDTs(
         const Any& catalog, const OUString& schemaPattern, const OUString& typeNamePattern,
-        const Sequence< sal_Int32 >& types )
+        const Sequence< sal_Int32 >& types ) throw(SQLException, RuntimeException, std::exception)
 {
     jobject out(nullptr);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     {
 
 
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[I)Ljava/sql/ResultSet;";
-        static const char * const cMethodName = "getUDTs";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[I)Ljava/sql/ResultSet;";
+        static const char * cMethodName = "getUDTs";
         // dismiss Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);

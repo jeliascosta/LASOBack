@@ -33,20 +33,20 @@ class SvStream;
 // * BeginCompression, Write*, EndCompression
 // * BeginCompression, Read*, EndCompression
 // * BeginCompression, ReadAsynchron*, EndCompression
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ZCodec
+class TOOLS_DLLPUBLIC ZCodec
 {
     enum State { STATE_INIT, STATE_DECOMPRESS, STATE_COMPRESS };
     State           meState;
     bool            mbStatus;
     bool            mbFinish;
     sal_uInt8*      mpInBuf;
-    size_t          mnInBufSize;
-    size_t          mnInToRead;
+    sal_uIntPtr     mnInBufSize;
+    sal_uIntPtr     mnInToRead;
     SvStream*       mpOStm;
     sal_uInt8*      mpOutBuf;
-    size_t          mnOutBufSize;
+    sal_uIntPtr     mnOutBufSize;
 
-    sal_uInt32      mnCRC;
+    sal_uIntPtr     mnCRC;
     int             mnCompressLevel;
     bool            mbUpdateCrc;
     bool            mbGzLib;
@@ -55,7 +55,8 @@ class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ZCodec
     void            InitCompress();
     void            InitDecompress(SvStream & inStream);
     void            ImplWriteBack();
-    void            UpdateCRC( sal_uInt8 const * pSource, long nDatSize );
+
+    void            UpdateCRC( sal_uInt8* pSource, long nDatSize );
 
 public:
                     ZCodec( sal_uIntPtr nInBuf = 0x8000UL, sal_uIntPtr nOutBuf = 0x8000UL );
@@ -68,14 +69,14 @@ public:
     long            Decompress( SvStream& rIStm, SvStream& rOStm );
     bool            AttemptDecompression( SvStream& rIStm, SvStream& rOStm );
 
-    void            Write( SvStream& rOStm, const sal_uInt8* pData, sal_uInt32 nSize );
-    long            Read( SvStream& rIStm, sal_uInt8* pData, sal_uInt32 nSize );
-    long            ReadAsynchron( SvStream& rIStm, sal_uInt8* pData, sal_uInt32 nSize );
+    void            Write( SvStream& rOStm, const sal_uInt8* pData, sal_uIntPtr nSize );
+    long            Read( SvStream& rIStm, sal_uInt8* pData, sal_uIntPtr nSize );
+    long            ReadAsynchron( SvStream& rIStm, sal_uInt8* pData, sal_uIntPtr nSize );
 
-    void            SetBreak( size_t );
-    size_t          GetBreak();
-    void            SetCRC( sal_uInt32 nCurrentCRC );
-    sal_uInt32      GetCRC() { return mnCRC;}
+    void            SetBreak( sal_uIntPtr );
+    sal_uIntPtr     GetBreak();
+    void            SetCRC( sal_uIntPtr nCurrentCRC );
+    sal_uIntPtr     GetCRC() { return mnCRC;}
 };
 
 #endif

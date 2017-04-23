@@ -23,7 +23,6 @@
 #include <doc.hxx>
 #include <docsh.hxx>
 #include <IDocumentStylePoolAccess.hxx>
-#include <swdll.hxx>
 #include <swerror.h>
 
 #include <unotextrange.hxx>
@@ -39,7 +38,7 @@ using namespace ::com::sun::star;
 /// Glue class to call RtfImport as an internal filter, needed by copy&paste support.
 class SwRTFReader : public Reader
 {
-    sal_uLong Read(SwDoc&, const OUString& rBaseURL, SwPaM&, const OUString&) override;
+    virtual sal_uLong Read(SwDoc&, const OUString& rBaseURL, SwPaM&, const OUString&) override;
 };
 
 sal_uLong SwRTFReader::Read(SwDoc& rDoc, const OUString& /*rBaseURL*/, SwPaM& rPam, const OUString&)
@@ -155,39 +154,7 @@ sal_uLong SwRTFReader::Read(SwDoc& rDoc, const OUString& /*rBaseURL*/, SwPaM& rP
 
 extern "C" SAL_DLLPUBLIC_EXPORT Reader* SAL_CALL ImportRTF()
 {
-    return new SwRTFReader;
-}
-
-extern "C" SAL_DLLPUBLIC_EXPORT bool SAL_CALL TestImportRTF(SvStream& rStream)
-{
-    SwGlobals::ensure();
-
-    SfxObjectShellLock xDocSh(new SwDocShell(SfxObjectCreateMode::INTERNAL));
-    xDocSh->DoInitNew();
-
-    uno::Reference<lang::XMultiServiceFactory> xMultiServiceFactory(comphelper::getProcessServiceFactory());
-    uno::Reference<uno::XInterface> xInterface(xMultiServiceFactory->createInstance("com.sun.star.comp.Writer.RtfFilter"), uno::UNO_QUERY_THROW);
-
-    uno::Reference<document::XImporter> xImporter(xInterface, uno::UNO_QUERY_THROW);
-    uno::Reference<lang::XComponent> xDstDoc(xDocSh->GetModel(), uno::UNO_QUERY_THROW);
-    xImporter->setTargetDocument(xDstDoc);
-
-    uno::Reference<document::XFilter> xFilter(xInterface, uno::UNO_QUERY_THROW);
-    uno::Sequence<beans::PropertyValue> aDescriptor(1);
-    aDescriptor[0].Name = "InputStream";
-    uno::Reference<io::XStream> xStream(new utl::OStreamWrapper(rStream));
-    aDescriptor[0].Value <<= xStream;
-    bool bRet = true;
-    try
-    {
-        xFilter->filter(aDescriptor);
-    }
-    catch (...)
-    {
-        bRet = false;
-    }
-    return bRet;
-
+    return new SwRTFReader();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

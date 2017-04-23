@@ -28,7 +28,7 @@
 class XMLBorderWidthHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLBorderWidthHdl() override;
+    virtual ~XMLBorderWidthHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -37,7 +37,7 @@ public:
 class XMLBorderHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLBorderHdl() override;
+    virtual ~XMLBorderHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

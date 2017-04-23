@@ -39,8 +39,6 @@
 #include <svx/dialmgr.hxx>
 #include "helpid.hrc"
 #include <memory>
-#include <o3tl/make_unique.hxx>
-
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -64,7 +62,7 @@ SvxFillToolBoxControl::SvxFillToolBoxControl(
     , mpFillControl(nullptr)
     , mpLbFillType(nullptr)
     , mpLbFillAttr(nullptr)
-    , meLastXFS(static_cast<drawing::FillStyle>(-1))
+    , meLastXFS(static_cast<sal_uInt16>(-1))
     , mnLastPosGradient(0)
     , mnLastPosHatch(0)
     , mnLastPosBitmap(0)
@@ -102,7 +100,7 @@ void SvxFillToolBoxControl::StateChanged(
                 mpLbFillAttr->Disable();
                 mpLbFillAttr->SetNoSelection();
                 mpToolBoxColor->Hide();
-                meLastXFS = static_cast<drawing::FillStyle>(-1);
+                meLastXFS = static_cast<sal_uInt16>(-1);
                 mpStyleItem.reset();
             }
 
@@ -134,7 +132,7 @@ void SvxFillToolBoxControl::StateChanged(
             mpLbFillAttr->Disable();
             mpLbFillAttr->SetNoSelection();
             mpToolBoxColor->Hide();
-            meLastXFS = static_cast<drawing::FillStyle>(-1);
+            meLastXFS = static_cast<sal_uInt16>(-1);
             mpStyleItem.reset();
             break;
         }
@@ -378,16 +376,19 @@ void SvxFillToolBoxControl::Update()
                             }
                             aTmpStr = TMP_STR_BEGIN + aString + TMP_STR_END;
 
+                            std::unique_ptr<XGradientEntry> pEntry(new XGradientEntry(mpFillGradientItem->GetGradientValue(), aTmpStr));
                             XGradientList aGradientList( "", ""/*TODO?*/ );
-                            aGradientList.Insert(o3tl::make_unique<XGradientEntry>(mpFillGradientItem->GetGradientValue(), aTmpStr));
+                            aGradientList.Insert( pEntry.get() );
                             aGradientList.SetDirty( false );
                             const Bitmap aBmp = aGradientList.GetUiBitmap( 0 );
 
                             if(!aBmp.IsEmpty())
                             {
-                                mpLbFillAttr->InsertEntry(aGradientList.Get(0)->GetName(), Image(aBmp));
+                                mpLbFillAttr->InsertEntry(pEntry->GetName(), Image(aBmp));
                                 mpLbFillAttr->SelectEntryPos(mpLbFillAttr->GetEntryCount() - 1);
                             }
+
+                            aGradientList.Remove( 0 );
                         }
 
                     }
@@ -437,17 +438,21 @@ void SvxFillToolBoxControl::Update()
                             }
                             aTmpStr = TMP_STR_BEGIN + aString + TMP_STR_END;
 
+                            XHatchEntry* pEntry = new XHatchEntry(mpHatchItem->GetHatchValue(), aTmpStr);
                             XHatchList aHatchList( "", ""/*TODO?*/ );
-                            aHatchList.Insert(o3tl::make_unique<XHatchEntry>(mpHatchItem->GetHatchValue(), aTmpStr));
+                            aHatchList.Insert( pEntry );
                             aHatchList.SetDirty( false );
                             const Bitmap aBmp = aHatchList.GetUiBitmap( 0 );
 
                             if( !aBmp.IsEmpty() )
                             {
-                                mpLbFillAttr->InsertEntry(aHatchList.GetHatch(0)->GetName(), Image(aBmp));
+                                mpLbFillAttr->InsertEntry(pEntry->GetName(), Image(aBmp));
                                 mpLbFillAttr->SelectEntryPos( mpLbFillAttr->GetEntryCount() - 1 );
                                 //delete pBmp;
                             }
+
+                            aHatchList.Remove( 0 );
+                            delete pEntry;
                         }
                     }
                     else
@@ -496,14 +501,16 @@ void SvxFillToolBoxControl::Update()
                             }
                             aTmpStr = TMP_STR_BEGIN + aString + TMP_STR_END;
 
+                            std::unique_ptr<XBitmapEntry> pEntry(new XBitmapEntry(mpBitmapItem->GetGraphicObject(), aTmpStr));
                             XBitmapListRef xBitmapList =
                                 XPropertyList::AsBitmapList(
                                     XPropertyList::CreatePropertyList(
-                                        XPropertyListType::Bitmap, "TmpList", ""/*TODO?*/));
-                            xBitmapList->Insert(o3tl::make_unique<XBitmapEntry>(mpBitmapItem->GetGraphicObject(), aTmpStr));
+                                        XBITMAP_LIST, "TmpList", ""/*TODO?*/));
+                            xBitmapList->Insert( pEntry.get() );
                             xBitmapList->SetDirty( false );
                             mpLbFillAttr->Fill( xBitmapList );
                             mpLbFillAttr->SelectEntryPos(mpLbFillAttr->GetEntryCount() - 1);
+                            xBitmapList->Remove( 0 );
                         }
 
                     }
@@ -568,7 +575,7 @@ void FillControl::dispose()
     vcl::Window::dispose();
 }
 
-IMPL_LINK_NOARG(SvxFillToolBoxControl, SelectFillTypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvxFillToolBoxControl, SelectFillTypeHdl, ListBox&, void)
 {
     const drawing::FillStyle eXFS = (drawing::FillStyle)mpLbFillType->GetSelectEntryPos();
 
@@ -734,7 +741,7 @@ IMPL_LINK_NOARG(SvxFillToolBoxControl, SelectFillTypeHdl, ListBox&, void)
             }
         }
 
-        meLastXFS = eXFS;
+        meLastXFS = (sal_uInt16)eXFS;
 
         if(drawing::FillStyle_NONE != eXFS)
         {
@@ -743,7 +750,7 @@ IMPL_LINK_NOARG(SvxFillToolBoxControl, SelectFillTypeHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG(SvxFillToolBoxControl, SelectFillAttrHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvxFillToolBoxControl, SelectFillAttrHdl, ListBox&, void)
 {
     const drawing::FillStyle eXFS = (drawing::FillStyle)mpLbFillType->GetSelectEntryPos();
     const XFillStyleItem aXFillStyleItem(eXFS);
@@ -890,7 +897,7 @@ void FillControl::Resize()
 void FillControl::SetOptimalSize()
 {
     const Size aLogicalAttrSize(50,0);
-    Size aSize(LogicToPixel(aLogicalAttrSize,MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(aLogicalAttrSize,MAP_APPFONT));
 
     Point aAttrPnt = mpLbFillAttr->GetPosPixel();
 

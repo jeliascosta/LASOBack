@@ -140,7 +140,7 @@ void MasterPageObserver::RemoveEventListener (const Link<MasterPageObserverEvent
 }
 
 MasterPageObserver::MasterPageObserver()
-    : mpImpl (new Implementation)
+    : mpImpl (new Implementation())
 {}
 
 MasterPageObserver::~MasterPageObserver()
@@ -153,10 +153,10 @@ void MasterPageObserver::Implementation::RegisterDocument (
 {
     // Gather the names of all the master pages in the given document.
     MasterPageContainer::mapped_type aMasterPageSet;
-    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PageKind::Standard);
+    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PK_STANDARD);
     for (sal_uInt16 nIndex=0; nIndex<nMasterPageCount; nIndex++)
     {
-        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PageKind::Standard);
+        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PK_STANDARD);
         if (pMasterPage != nullptr)
             aMasterPageSet.insert (pMasterPage->GetName());
     }
@@ -226,7 +226,7 @@ void MasterPageObserver::Implementation::Notify(
     {
         switch (pSdrHint->GetKind())
         {
-            case SdrHintKind::PageOrderChange:
+            case HINT_PAGEORDERCHG:
                 // Process the modified set of pages only when the number of
                 // standard and notes master pages are equal.  This test
                 // filters out events that are sent in between the insertion
@@ -236,8 +236,8 @@ void MasterPageObserver::Implementation::Notify(
                 {
                     SdDrawDocument& rDocument (
                         static_cast<SdDrawDocument&>(rBroadcaster));
-                    if (rDocument.GetMasterSdPageCount(PageKind::Standard)
-                        == rDocument.GetMasterSdPageCount(PageKind::Notes))
+                    if (rDocument.GetMasterSdPageCount(PK_STANDARD)
+                        == rDocument.GetMasterSdPageCount(PK_NOTES))
                     {
                         AnalyzeUsedMasterPages (rDocument);
                     }
@@ -254,13 +254,17 @@ void MasterPageObserver::Implementation::AnalyzeUsedMasterPages (
     SdDrawDocument& rDocument)
 {
     // Create a set of names of the master pages used by the given document.
-    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PageKind::Standard);
+    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PK_STANDARD);
     ::std::set<OUString> aCurrentMasterPages;
     for (sal_uInt16 nIndex=0; nIndex<nMasterPageCount; nIndex++)
     {
-        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PageKind::Standard);
+        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PK_STANDARD);
         if (pMasterPage != nullptr)
             aCurrentMasterPages.insert (pMasterPage->GetName());
+        OSL_TRACE("currently used master page %d is %s",
+            nIndex,
+            ::rtl::OUStringToOString(pMasterPage->GetName(),
+                RTL_TEXTENCODING_UTF8).getStr());
     }
 
     typedef ::std::vector<OUString> StringList;
@@ -273,6 +277,14 @@ void MasterPageObserver::Implementation::AnalyzeUsedMasterPages (
         StringList::iterator I;
 
         ::std::set<OUString>::iterator J;
+        int i=0;
+        for (J=aOldMasterPagesDescriptor->second.begin();
+             J!=aOldMasterPagesDescriptor->second.end();
+             ++J)
+            OSL_TRACE("old used master page %d is %s",
+            i++,
+            ::rtl::OUStringToOString(*J,
+                RTL_TEXTENCODING_UTF8).getStr());
 
         // Send events about the newly used master pages.
         ::std::set_difference (
@@ -283,6 +295,10 @@ void MasterPageObserver::Implementation::AnalyzeUsedMasterPages (
             ::std::back_insert_iterator<StringList>(aNewMasterPages));
         for (I=aNewMasterPages.begin(); I!=aNewMasterPages.end(); ++I)
         {
+            OSL_TRACE("    added master page %s",
+                ::rtl::OUStringToOString(*I,
+                    RTL_TEXTENCODING_UTF8).getStr());
+
             MasterPageObserverEvent aEvent (
                 MasterPageObserverEvent::ET_MASTER_PAGE_ADDED,
                 *I);
@@ -298,6 +314,10 @@ void MasterPageObserver::Implementation::AnalyzeUsedMasterPages (
             ::std::back_insert_iterator<StringList>(aRemovedMasterPages));
         for (I=aRemovedMasterPages.begin(); I!=aRemovedMasterPages.end(); ++I)
         {
+            OSL_TRACE("    removed master page %s",
+                ::rtl::OUStringToOString(*I,
+                    RTL_TEXTENCODING_UTF8).getStr());
+
             MasterPageObserverEvent aEvent (
                 MasterPageObserverEvent::ET_MASTER_PAGE_REMOVED,
                 *I);

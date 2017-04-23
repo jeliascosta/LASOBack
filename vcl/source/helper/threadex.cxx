@@ -23,51 +23,52 @@
 using namespace vcl;
 
 SolarThreadExecutor::SolarThreadExecutor()
-    :m_aStart()
-    ,m_aFinish()
-    ,m_nReturn( 0 )
+    :m_nReturn( 0 )
     ,m_bTimeout( false )
 {
+    m_aStart = osl_createCondition();
+    m_aFinish = osl_createCondition();
 }
 
 SolarThreadExecutor::~SolarThreadExecutor()
 {
+    osl_destroyCondition( m_aStart );
+    osl_destroyCondition( m_aFinish );
 }
 
-IMPL_LINK_NOARG(SolarThreadExecutor, worker, void*, void)
+IMPL_LINK_NOARG_TYPED(SolarThreadExecutor, worker, void*, void)
 {
     if ( !m_bTimeout )
     {
-        m_aStart.set();
+        osl_setCondition( m_aStart );
         m_nReturn = doIt();
-        m_aFinish.set();
+        osl_setCondition( m_aFinish );
     }
 }
 
-void SolarThreadExecutor::execute()
+long SolarThreadExecutor::impl_execute()
 {
     if( ::osl::Thread::getCurrentIdentifier() == Application::GetMainThreadIdentifier() )
     {
-        m_aStart.set();
+        osl_setCondition( m_aStart );
         m_nReturn = doIt();
-        m_aFinish.set();
+        osl_setCondition( m_aFinish );
     }
     else
     {
-        m_aStart.reset();
-        m_aFinish.reset();
+        osl_resetCondition( m_aStart );
+        osl_resetCondition( m_aFinish );
         SolarMutexReleaser aReleaser;
         ImplSVEvent * nEvent = Application::PostUserEvent( LINK( this, SolarThreadExecutor, worker ) );
-        if (m_aStart.wait() == osl::Condition::result_timeout)
+        if ( osl_cond_result_timeout == osl_waitCondition( m_aStart, nullptr ) )
         {
             m_bTimeout = true;
             Application::RemoveUserEvent( nEvent );
         }
         else
-        {
-            m_aFinish.wait();
-        }
+            osl_waitCondition( m_aFinish, nullptr );
     }
+    return m_nReturn;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

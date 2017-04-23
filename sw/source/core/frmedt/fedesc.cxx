@@ -69,7 +69,7 @@ void SwFEShell::ChgCurPageDesc( const SwPageDesc& rDesc )
             const SwFormatPageDesc& rPgDesc = pFlow->GetAttrSet()->GetPageDesc();
             if( rPgDesc.GetPageDesc() )
             {
-                // we found the culprit
+                // wir haben ihn den Schlingel
                 oPageNumOffset = rPgDesc.GetNumOffset();
                 break;
             }
@@ -84,7 +84,7 @@ void SwFEShell::ChgCurPageDesc( const SwPageDesc& rDesc )
         {
             pPage   = static_cast<SwPageFrame*>(pPage->GetNext());
             pFlow = pPage->FindFirstBodyContent();
-            OSL_ENSURE( pFlow, "Document without content?!?" );
+            OSL_ENSURE( pFlow, "Dokuemnt ohne Inhalt?!?" );
         }
     }
 
@@ -129,7 +129,7 @@ SwPageDesc* SwFEShell::FindPageDescByName( const OUString& rName,
     SwPageDesc* pDesc = GetDoc()->FindPageDesc(rName, pPos);
     if( !pDesc && bGetFromPool )
     {
-        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( rName, SwGetPoolIdFromName::PageDesc );
+        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( rName, nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC );
         if( USHRT_MAX != nPoolId &&
             nullptr != (pDesc = GetDoc()->getIDocumentStylePoolAccess().GetPageDescFromPool( nPoolId ))
             && pPos )

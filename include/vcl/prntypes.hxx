@@ -25,11 +25,10 @@
 #include <o3tl/typed_flags_set.hxx>
 
 
-// appears to be a copy of css::view::DuplexMode
-enum class DuplexMode { Unknown, Off, LongEdge, ShortEdge };
+enum DuplexMode { DUPLEX_UNKNOWN, DUPLEX_OFF, DUPLEX_LONGEDGE, DUPLEX_SHORTEDGE };
 
 
-enum class Orientation { Portrait, Landscape };
+enum Orientation { ORIENTATION_PORTRAIT, ORIENTATION_LANDSCAPE };
 
 
 enum class PrintQueueFlags
@@ -75,11 +74,13 @@ enum class PrinterCapType
     Copies             = 2,
     CollateCopies      = 3,
     SetOrientation     = 4,
+    SetPaperBin        = 5,
     SetPaperSize       = 6,
     SetPaper           = 7,
     Fax                = 8,
     PDF                = 9,
     ExternalDialog     = 10,
+    SetDuplex          = 11,
     UsePullModel       = 12,
 };
 

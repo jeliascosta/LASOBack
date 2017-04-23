@@ -49,7 +49,7 @@ namespace rptxml
                     ,OXMLCell& _rCell
                     ,OXMLTable* _pContainer
                     ,OXMLFixedContent* _pInP = nullptr);
-        virtual ~OXMLFixedContent() override;
+        virtual ~OXMLFixedContent();
 
         // This method is called for all characters that are contained in the
         // current element. The default is to ignore them.

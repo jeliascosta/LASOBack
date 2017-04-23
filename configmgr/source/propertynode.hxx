@@ -45,7 +45,7 @@ public:
 
     bool isNillable() const { return nillable_;}
 
-    css::uno::Any const & getValue(Components & components);
+    css::uno::Any getValue(Components & components);
 
     void setValue(int layer, css::uno::Any const & value);
     css::uno::Any *getValuePtr(int layer);
@@ -57,7 +57,7 @@ public:
 private:
     PropertyNode(PropertyNode const & other);
 
-    virtual ~PropertyNode() override;
+    virtual ~PropertyNode();
 
     virtual Kind kind() const override;
 

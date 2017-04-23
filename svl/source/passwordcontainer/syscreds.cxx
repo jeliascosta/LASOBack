@@ -26,7 +26,8 @@ using namespace com::sun::star;
 
 SysCredentialsConfigItem::SysCredentialsConfigItem(
     SysCredentialsConfig * pOwner )
-: utl::ConfigItem( "Office.Common/Passwords", ConfigItemMode::ImmediateUpdate ),
+: utl::ConfigItem( OUString("Office.Common/Passwords"),
+                   ConfigItemMode::ImmediateUpdate ),
   m_bInited( false ),
   m_pOwner( pOwner )
 {
@@ -185,7 +186,7 @@ void SysCredentialsConfig::writeCfg()
 
     OSL_ENSURE( m_bCfgInited, "SysCredentialsConfig::writeCfg : not initialized!" );
 
-    m_aConfigItem.setSystemCredentialsURLs( comphelper::containerToSequence(m_aCfgContainer) );
+    m_aConfigItem.setSystemCredentialsURLs( comphelper::containerToSequence<OUString>(m_aCfgContainer) );
 }
 
 OUString SysCredentialsConfig::find( OUString const & aURL )

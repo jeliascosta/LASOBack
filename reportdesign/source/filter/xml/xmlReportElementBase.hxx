@@ -44,7 +44,7 @@ namespace rptxml
     protected:
         ORptFilter&   m_rImport;
         OXMLTable*    m_pContainer;
-        css::uno::Reference< css::report::XReportComponent >      m_xReportComponent;
+        css::uno::Reference< css::report::XReportComponent >      m_xComponent;
 
         virtual SvXMLImportContext* CreateChildContext_( sal_uInt16 nPrefix,
                     const OUString& rLocalName,
@@ -56,7 +56,7 @@ namespace rptxml
                     ,const OUString& rLName
                     ,const css::uno::Reference< css::report::XReportComponent >& _xComponent
                     ,OXMLTable* _pContainer);
-        virtual ~OXMLReportElementBase() override;
+        virtual ~OXMLReportElementBase();
 
         virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                     const OUString& rLocalName,

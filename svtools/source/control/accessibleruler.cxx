@@ -67,21 +67,21 @@ SvtRulerAccessible::~SvtRulerAccessible()
 
 //=====  XAccessible  =========================================================
 
-uno::Reference< XAccessibleContext > SAL_CALL SvtRulerAccessible::getAccessibleContext()
+uno::Reference< XAccessibleContext > SAL_CALL SvtRulerAccessible::getAccessibleContext() throw( RuntimeException, std::exception )
 {
     return this;
 }
 
 //=====  XAccessibleComponent  ================================================
 
-sal_Bool SAL_CALL SvtRulerAccessible::containsPoint( const awt::Point& rPoint )
+sal_Bool SAL_CALL SvtRulerAccessible::containsPoint( const awt::Point& rPoint ) throw( RuntimeException, std::exception )
 {
     // no guard -> done in getBounds()
 //  return GetBoundingBox().IsInside( VCLPoint( rPoint ) );
-    return tools::Rectangle( Point( 0, 0 ), GetBoundingBox().GetSize() ).IsInside( VCLPoint( rPoint ) );
+    return Rectangle( Point( 0, 0 ), GetBoundingBox().GetSize() ).IsInside( VCLPoint( rPoint ) );
 }
 
-uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleAtPoint( const awt::Point& )
+uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleAtPoint( const awt::Point& ) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard           aGuard( m_aMutex );
 
@@ -93,31 +93,31 @@ uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleAtPoint(
     return xRet;
 }
 
-awt::Rectangle SAL_CALL SvtRulerAccessible::getBounds()
+awt::Rectangle SAL_CALL SvtRulerAccessible::getBounds() throw( RuntimeException, std::exception )
 {
     // no guard -> done in GetBoundingBox()
     return AWTRectangle( GetBoundingBox() );
 }
 
-awt::Point SAL_CALL SvtRulerAccessible::getLocation()
+awt::Point SAL_CALL SvtRulerAccessible::getLocation() throw( RuntimeException, std::exception )
 {
     // no guard -> done in GetBoundingBox()
     return AWTPoint( GetBoundingBox().TopLeft() );
 }
 
-awt::Point SAL_CALL SvtRulerAccessible::getLocationOnScreen()
+awt::Point SAL_CALL SvtRulerAccessible::getLocationOnScreen() throw( RuntimeException, std::exception )
 {
     // no guard -> done in GetBoundingBoxOnScreen()
     return AWTPoint( GetBoundingBoxOnScreen().TopLeft() );
 }
 
-awt::Size SAL_CALL SvtRulerAccessible::getSize()
+awt::Size SAL_CALL SvtRulerAccessible::getSize() throw( RuntimeException, std::exception )
 {
     // no guard -> done in GetBoundingBox()
     return AWTSize( GetBoundingBox().GetSize() );
 }
 
-bool SAL_CALL SvtRulerAccessible::isVisible()
+bool SAL_CALL SvtRulerAccessible::isVisible() throw( RuntimeException )
 {
     ::osl::MutexGuard           aGuard( m_aMutex );
 
@@ -127,7 +127,7 @@ bool SAL_CALL SvtRulerAccessible::isVisible()
 }
 
 //=====  XAccessibleContext  ==================================================
-sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleChildCount()
+sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleChildCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard   aGuard( m_aMutex );
 
@@ -137,18 +137,19 @@ sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleChildCount()
 }
 
 uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleChild( sal_Int32 )
+    throw( RuntimeException, lang::IndexOutOfBoundsException, std::exception )
 {
     uno::Reference< XAccessible >   xChild ;
 
     return xChild;
 }
 
-uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleParent()
+uno::Reference< XAccessible > SAL_CALL SvtRulerAccessible::getAccessibleParent() throw( RuntimeException, std::exception )
 {
     return mxParent;
 }
 
-sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleIndexInParent()
+sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleIndexInParent() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard   aGuard( m_aMutex );
     //  Use a simple but slow solution for now.  Optimize later.
@@ -174,18 +175,18 @@ sal_Int32 SAL_CALL SvtRulerAccessible::getAccessibleIndexInParent()
    return -1;
 }
 
-sal_Int16 SAL_CALL SvtRulerAccessible::getAccessibleRole()
+sal_Int16 SAL_CALL SvtRulerAccessible::getAccessibleRole() throw( RuntimeException, std::exception )
 {
     return AccessibleRole::RULER;
 }
 
-OUString SAL_CALL SvtRulerAccessible::getAccessibleDescription()
+OUString SAL_CALL SvtRulerAccessible::getAccessibleDescription() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard   aGuard( m_aMutex );
     return msDescription;
 }
 
-OUString SAL_CALL SvtRulerAccessible::getAccessibleName()
+OUString SAL_CALL SvtRulerAccessible::getAccessibleName() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard   aGuard( m_aMutex );
     return msName;
@@ -194,13 +195,13 @@ OUString SAL_CALL SvtRulerAccessible::getAccessibleName()
 /** Return empty uno::Reference to indicate that the relation set is not
     supported.
 */
-uno::Reference< XAccessibleRelationSet > SAL_CALL SvtRulerAccessible::getAccessibleRelationSet()
+uno::Reference< XAccessibleRelationSet > SAL_CALL SvtRulerAccessible::getAccessibleRelationSet() throw( RuntimeException, std::exception )
 {
     return uno::Reference< XAccessibleRelationSet >();
 }
 
 
-uno::Reference< XAccessibleStateSet > SAL_CALL SvtRulerAccessible::getAccessibleStateSet()
+uno::Reference< XAccessibleStateSet > SAL_CALL SvtRulerAccessible::getAccessibleStateSet() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard                       aGuard( m_aMutex );
     utl::AccessibleStateSetHelper*          pStateSetHelper = new utl::AccessibleStateSetHelper;
@@ -230,7 +231,7 @@ uno::Reference< XAccessibleStateSet > SAL_CALL SvtRulerAccessible::getAccessible
     return pStateSetHelper;
 }
 
-lang::Locale SAL_CALL SvtRulerAccessible::getLocale()
+lang::Locale SAL_CALL SvtRulerAccessible::getLocale() throw( IllegalAccessibleComponentStateException, RuntimeException, std::exception )
 {
     ::osl::MutexGuard                           aGuard( m_aMutex );
     if( mxParent.is() )
@@ -245,6 +246,7 @@ lang::Locale SAL_CALL SvtRulerAccessible::getLocale()
 }
 
 void SAL_CALL SvtRulerAccessible::addAccessibleEventListener( const uno::Reference< XAccessibleEventListener >& xListener )
+    throw( RuntimeException, std::exception )
 {
     if (xListener.is())
     {
@@ -256,8 +258,9 @@ void SAL_CALL SvtRulerAccessible::addAccessibleEventListener( const uno::Referen
 }
 
 void SAL_CALL SvtRulerAccessible::removeAccessibleEventListener( const uno::Reference< XAccessibleEventListener >& xListener )
+    throw( RuntimeException, std::exception )
 {
-    if (xListener.is() && mnClientId)
+    if (xListener.is())
     {
         ::osl::MutexGuard   aGuard( m_aMutex );
 
@@ -274,7 +277,7 @@ void SAL_CALL SvtRulerAccessible::removeAccessibleEventListener( const uno::Refe
     }
 }
 
-void SAL_CALL SvtRulerAccessible::grabFocus()
+void SAL_CALL SvtRulerAccessible::grabFocus() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard     aSolarGuard;
     ::osl::MutexGuard   aGuard( m_aMutex );
@@ -285,6 +288,7 @@ void SAL_CALL SvtRulerAccessible::grabFocus()
 }
 
 sal_Int32 SvtRulerAccessible::getForeground(  )
+        throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard     aSolarGuard;
     ::osl::MutexGuard   aGuard( m_aMutex );
@@ -293,6 +297,7 @@ sal_Int32 SvtRulerAccessible::getForeground(  )
     return mpRepr->GetControlForeground().GetColor();
 }
 sal_Int32 SvtRulerAccessible::getBackground(  )
+        throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard     aSolarGuard;
     ::osl::MutexGuard   aGuard( m_aMutex );
@@ -302,23 +307,24 @@ sal_Int32 SvtRulerAccessible::getBackground(  )
 }
 
 // XServiceInfo
-OUString SAL_CALL SvtRulerAccessible::getImplementationName()
+OUString SAL_CALL SvtRulerAccessible::getImplementationName() throw( RuntimeException, std::exception )
 {
-    return OUString( "com.sun.star.comp.ui.SvtRulerAccessible" );
+    return OUString( RTL_CONSTASCII_USTRINGPARAM( "com.sun.star.comp.ui.SvtRulerAccessible" ) );
 }
 
-sal_Bool SAL_CALL SvtRulerAccessible::supportsService( const OUString& sServiceName )
+sal_Bool SAL_CALL SvtRulerAccessible::supportsService( const OUString& sServiceName ) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService( this, sServiceName );
 }
 
-Sequence< OUString > SAL_CALL SvtRulerAccessible::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL SvtRulerAccessible::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
-    return Sequence< OUString > { OUString("com.sun.star.accessibility.AccessibleContext") };
+    const OUString sServiceName( RTL_CONSTASCII_USTRINGPARAM( "com.sun.star.accessibility.AccessibleContext" ) );
+    return Sequence< OUString >( &sServiceName, 1 );
 }
 
 //=====  XTypeProvider  =======================================================
-Sequence< sal_Int8 > SAL_CALL SvtRulerAccessible::getImplementationId()
+Sequence< sal_Int8 > SAL_CALL SvtRulerAccessible::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -327,41 +333,48 @@ void SAL_CALL SvtRulerAccessible::disposing()
 {
     if( !rBHelper.bDisposed )
     {
-        ::osl::MutexGuard   aGuard( m_aMutex );
-        mpRepr = nullptr;      // object dies with representation
-
-        // Send a disposing to all listeners.
-        if ( mnClientId )
         {
-            comphelper::AccessibleEventNotifier::revokeClientNotifyDisposing( mnClientId, *this );
-            mnClientId =  0;
+            ::osl::MutexGuard   aGuard( m_aMutex );
+            mpRepr = nullptr;      // object dies with representation
+
         }
-        mxParent.clear();
+
+        {
+            ::osl::MutexGuard   aGuard( m_aMutex );
+
+            // Send a disposing to all listeners.
+            if ( mnClientId )
+            {
+                comphelper::AccessibleEventNotifier::revokeClientNotifyDisposing( mnClientId, *this );
+                mnClientId =  0;
+            }
+            mxParent.clear();
+        }
     }
 }
 
-tools::Rectangle SvtRulerAccessible::GetBoundingBoxOnScreen()
+Rectangle SvtRulerAccessible::GetBoundingBoxOnScreen() throw( RuntimeException )
 {
     SolarMutexGuard     aSolarGuard;
     ::osl::MutexGuard   aGuard( m_aMutex );
 
     ThrowExceptionIfNotAlive();
-    return tools::Rectangle( mpRepr->GetParent()->OutputToAbsoluteScreenPixel( mpRepr->GetPosPixel() ), mpRepr->GetSizePixel() );
+    return Rectangle( mpRepr->GetParent()->OutputToAbsoluteScreenPixel( mpRepr->GetPosPixel() ), mpRepr->GetSizePixel() );
 }
 
-tools::Rectangle SvtRulerAccessible::GetBoundingBox()
+Rectangle SvtRulerAccessible::GetBoundingBox() throw( RuntimeException )
 {
     SolarMutexGuard     aSolarGuard;
     ::osl::MutexGuard   aGuard( m_aMutex );
 
     ThrowExceptionIfNotAlive();
 
-    return tools::Rectangle( mpRepr->GetPosPixel(), mpRepr->GetSizePixel() );
+    return Rectangle( mpRepr->GetPosPixel(), mpRepr->GetSizePixel() );
 }
 
-void SvtRulerAccessible::ThrowExceptionIfNotAlive()
+void SvtRulerAccessible::ThrowExceptionIfNotAlive() throw( lang::DisposedException )
 {
-    if( rBHelper.bDisposed || rBHelper.bInDispose )
+    if( IsNotAlive() )
         throw lang::DisposedException();
 }
 

@@ -66,10 +66,10 @@ private:
 
 public:
     explicit TblStylePrHandler( DomainMapper & rDMapper );
-    virtual ~TblStylePrHandler( ) override;
+    virtual ~TblStylePrHandler( );
 
     const PropertyMapPtr&       getProperties() { return m_pProperties; };
-    TblStyleType         getType() { return m_nType; };
+    inline TblStyleType         getType() { return m_nType; };
     OUString getTypeString();
     void appendInteropGrabBag(const OUString& aKey, const OUString& aValue);
     css::beans::PropertyValue getInteropGrabBag(const OUString& aName);

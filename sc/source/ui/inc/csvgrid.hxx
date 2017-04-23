@@ -62,7 +62,7 @@ private:
 
     VclPtr<VirtualDevice>       mpBackgrDev;        /// Grid background, headers, cell texts.
     VclPtr<VirtualDevice>       mpGridDev;          /// Data grid with selection and cursor.
-    VclPtr<PopupMenu>           mpPopup;            /// Popup menu for column types.
+    PopupMenu                   maPopup;            /// Popup menu for column types.
 
     ::svtools::ColorConfig*     mpColorConfig;      /// Application color configuration.
     Color                       maBackColor;        /// Cell background color.
@@ -93,7 +93,7 @@ private:
 
 public:
     explicit                    ScCsvGrid( ScCsvControl& rParent );
-    virtual                     ~ScCsvGrid() override;
+    virtual                     ~ScCsvGrid();
     virtual void                dispose() override;
 
     /** Finishes initialization. Must be called after constructing a new object. */
@@ -145,7 +145,7 @@ private:
     // columns/column types ---------------------------------------------------
 public:
     /** Returns the number of columns. */
-    sal_uInt32           GetColumnCount() const { return maColStates.size(); }
+    inline sal_uInt32           GetColumnCount() const { return maColStates.size(); }
     /** Returns the index of the first visible column. */
     sal_uInt32                  GetFirstVisColumn() const;
     /** Returns the index of the last visible column. */
@@ -162,14 +162,14 @@ public:
     sal_uInt32                  GetColumnFromX( sal_Int32 nX ) const;
 
     /** Returns start position of the column with the specified index. */
-    sal_Int32            GetColumnPos( sal_uInt32 nColIndex ) const { return maSplits[ nColIndex ]; }
+    inline sal_Int32            GetColumnPos( sal_uInt32 nColIndex ) const { return maSplits[ nColIndex ]; }
     /** Returns column index from position. A split counts to its following column. */
     sal_uInt32                  GetColumnFromPos( sal_Int32 nPos ) const;
     /** Returns the character width of the column with the specified index. */
     sal_Int32                   GetColumnWidth( sal_uInt32 nColIndex ) const;
 
     /** Returns the vector with the states of all columns. */
-    const ScCsvColStateVec& GetColumnStates() const { return maColStates; }
+    inline const ScCsvColStateVec& GetColumnStates() const { return maColStates; }
     /** Sets all column states to the values in the passed vector. */
     void                        SetColumnStates( const ScCsvColStateVec& rColStates );
     /** Returns the data type of the selected columns. */
@@ -189,7 +189,7 @@ public:
 private:
     /** Returns the data type of the specified column. */
     SAL_DLLPRIVATE sal_Int32                   GetColumnType( sal_uInt32 nColIndex ) const;
-    /** Sets the data type of the specified column. */
+    /** Returns the data type of the specified column. */
     SAL_DLLPRIVATE void                        SetColumnType( sal_uInt32 nColIndex, sal_Int32 nColType );
 
     /** Scrolls data grid vertically. */
@@ -215,7 +215,7 @@ public:
     void                        SelectAll( bool bSelect = true );
 
     /** Returns index of the focused column. */
-    sal_uInt32           GetFocusColumn() const { return GetColumnFromPos( GetGridCursorPos() ); }
+    inline sal_uInt32           GetFocusColumn() const { return GetColumnFromPos( GetGridCursorPos() ); }
 
 private:
     /** Moves column cursor to a new position. */
@@ -254,11 +254,11 @@ protected:
 
     virtual void                DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    virtual void                ConfigurationChanged( ::utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+    virtual void                ConfigurationChanged( ::utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
     // painting ---------------------------------------------------------------
 protected:
-    virtual void                Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void                Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
 
 public:
     /** Redraws the entire data grid. */
@@ -268,9 +268,9 @@ public:
 
 private:
     /** Returns the width of the control. */
-    sal_Int32            GetWidth() const { return maWinSize.Width(); }
+    inline sal_Int32            GetWidth() const { return maWinSize.Width(); }
     /** Returns the height of the control. */
-    sal_Int32            GetHeight() const { return maWinSize.Height(); }
+    inline sal_Int32            GetHeight() const { return maWinSize.Height(); }
 
     /** Sets a clip region in the specified output device for the specified column. */
     SAL_DLLPRIVATE void                        ImplSetColumnClipRegion( OutputDevice& rOutDev, sal_uInt32 nColIndex );

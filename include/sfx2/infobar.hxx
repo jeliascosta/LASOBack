@@ -18,13 +18,6 @@
 #include <sfx2/dllapi.h>
 #include <sfx2/childwin.hxx>
 
-enum class InfoBarType {
-    Info,
-    Success,
-    Warning,
-    Danger
-};
-
 /** SfxChildWindow for positioning the InfoBar in the view.
   */
 class SFX2_DLLPUBLIC SfxInfoBarContainerChild : public SfxChildWindow
@@ -37,7 +30,7 @@ class SFX2_DLLPUBLIC SfxInfoBarContainerChild : public SfxChildWindow
                                   sal_uInt16 nId,
                                   SfxBindings* pBindings,
                                   SfxChildWinInfo* pInfo );
-        virtual ~SfxInfoBarContainerChild() override;
+        virtual ~SfxInfoBarContainerChild();
 
         SFX_DECL_CHILDWINDOW_WITHID( SfxInfoBarContainerChild );
 
@@ -50,24 +43,25 @@ class SfxInfoBarWindow : public vcl::Window
 {
     private:
         OUString                           m_sId;
-        VclPtr<FixedImage>        m_pImage;
-        VclPtr<FixedText>           m_pMessage;
-        VclPtr<Button>                m_pCloseBtn;
+        VclPtr<FixedText>                  m_pMessage;
+        VclPtr<Button>                     m_pCloseBtn;
         std::vector< VclPtr<PushButton> >  m_aActionBtns;
+        basegfx::BColor                    m_aBackgroundColor;
+        basegfx::BColor                    m_aForegroundColor;
 
     public:
         SfxInfoBarWindow( vcl::Window* parent, const OUString& sId,
                           const OUString& sMessage,
-                          InfoBarType infoBarType,
-                          WinBits nMessageStyle);
-        virtual ~SfxInfoBarWindow( ) override;
+                          const basegfx::BColor* pBackgroundColor,
+                          const basegfx::BColor* pForegroundColor,
+                          const basegfx::BColor* pMessageColor,
+                          WinBits nMessageStyle );
+        virtual ~SfxInfoBarWindow( );
         virtual void dispose() override;
 
         const OUString& getId() const { return m_sId; }
-        virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+        virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
         virtual void Resize( ) override;
-        basegfx::BColor                m_aBackgroundColor;
-        basegfx::BColor                m_aForegroundColor;
 
         /** Add button to Infobar.
          * Infobar takes ownership of the button so the button is
@@ -76,7 +70,7 @@ class SfxInfoBarWindow : public vcl::Window
         void addButton(PushButton* pButton);
 
     private:
-        DECL_LINK( CloseHandler, Button*, void );
+        DECL_LINK_TYPED( CloseHandler, Button*, void );
 };
 
 class SfxInfoBarContainerWindow : public vcl::Window
@@ -87,15 +81,17 @@ class SfxInfoBarContainerWindow : public vcl::Window
 
     public:
         SfxInfoBarContainerWindow(SfxInfoBarContainerChild* pChildWin);
-        virtual ~SfxInfoBarContainerWindow( ) override;
+        virtual ~SfxInfoBarContainerWindow( );
         virtual void dispose() override;
 
-        VclPtr<SfxInfoBarWindow> appendInfoBar(const OUString& sId,
+        SfxInfoBarWindow* appendInfoBar(const OUString& sId,
                                         const OUString& sMessage,
-                                        InfoBarType ibType,
-                                        WinBits nMessageStyle = WB_LEFT|WB_VCENTER);
-        VclPtr<SfxInfoBarWindow> getInfoBar(const OUString& sId);
-        void removeInfoBar(VclPtr<SfxInfoBarWindow> const & pInfoBar);
+                                        const basegfx::BColor* pBackgroundColor,
+                                        const basegfx::BColor* pForegroundColor,
+                                        const basegfx::BColor* pMessageColor,
+                                        WinBits nMessageStyle);
+        SfxInfoBarWindow* getInfoBar(const OUString& sId);
+        void removeInfoBar(SfxInfoBarWindow* pInfoBar);
 
         virtual void Resize() override;
 };

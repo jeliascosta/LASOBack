@@ -45,6 +45,7 @@
 #include "ToolBarManager.hxx"
 #include <svx/svx3ditems.hxx>
 
+#include <svx/polysc3d.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
 using namespace com::sun::star;
@@ -75,7 +76,7 @@ void FuConstruct3dObject::DoExecute( SfxRequest& rReq )
 {
     FuConstruct::DoExecute( rReq );
     mpViewShell->GetViewShellBase().GetToolBarManager()->SetToolBar(
-        ToolBarManager::ToolBarGroup::Function,
+        ToolBarManager::TBG_FUNCTION,
         ToolBarManager::msDrawingObjectToolBar);
 }
 
@@ -127,14 +128,14 @@ E3dCompoundObject* FuConstruct3dObject::ImpCreateBasic3DShape()
             XPolygon aXPoly(Point (0, 1250), 2500, 2500, 0, 900, false);
             aXPoly.Scale(5.0, 5.0);
 
-            aXPoly.Insert(0, Point (2400*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (2000*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (1500*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (1000*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (500*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (250*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (50*5, 1250*5), PolyFlags::Normal);
-            aXPoly.Insert(0, Point (0*5, 1250*5), PolyFlags::Normal);
+            aXPoly.Insert(0, Point (2400*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (2000*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (1500*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (1000*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (500*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (250*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (50*5, 1250*5), XPOLY_NORMAL);
+            aXPoly.Insert(0, Point (0*5, 1250*5), XPOLY_NORMAL);
 
             ::basegfx::B2DPolygon aB2DPolygon(aXPoly.getB2DPolygon());
             if(aB2DPolygon.areControlPointsUsed())
@@ -335,13 +336,18 @@ bool FuConstruct3dObject::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
+bool FuConstruct3dObject::MouseMove(const MouseEvent& rMEvt)
+{
+    return FuConstruct::MouseMove(rMEvt);
+}
+
 bool FuConstruct3dObject::MouseButtonUp(const MouseEvent& rMEvt)
 {
     bool bReturn = false;
 
     if ( mpView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        mpView->EndCreateObj(SdrCreateCmd::ForceEnd);
+        mpView->EndCreateObj(SDRCREATE_FORCEEND);
         bReturn = true;
     }
 
@@ -353,6 +359,15 @@ bool FuConstruct3dObject::MouseButtonUp(const MouseEvent& rMEvt)
     return bReturn;
 }
 
+/**
+ * Process keyboard input
+ * @returns sal_True if a KeyEvent is being processed, sal_False otherwise
+ */
+bool FuConstruct3dObject::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuConstruct::KeyInput(rKEvt);
+}
+
 void FuConstruct3dObject::Activate()
 {
     mpView->SetCurrentObj(OBJ_NONE);
@@ -360,7 +375,12 @@ void FuConstruct3dObject::Activate()
     FuConstruct::Activate();
 }
 
-SdrObject* FuConstruct3dObject::CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle)
+void FuConstruct3dObject::Deactivate()
+{
+    FuConstruct::Deactivate();
+}
+
+SdrObject* FuConstruct3dObject::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
 {
 
     E3dCompoundObject* p3DObj = ImpCreateBasic3DShape();
@@ -372,8 +392,8 @@ SdrObject* FuConstruct3dObject::CreateDefaultObject(const sal_uInt16 nID, const 
     basegfx::B3DRange aVolume(aObjVol);
     double fW(aVolume.getWidth());
     double fH(aVolume.getHeight());
-    ::tools::Rectangle a3DRect(0, 0, (long)fW, (long)fH);
-    E3dScene* pScene = new E3dScene(mpView->Get3DDefaultAttributes());
+    Rectangle a3DRect(0, 0, (long)fW, (long)fH);
+    E3dScene* pScene = new E3dPolyScene(mpView->Get3DDefaultAttributes());
 
     // copied code from E3dView::InitScene
     double fCamZ(aVolume.getMaxZ() + ((fW + fH) / 4.0));
@@ -403,7 +423,7 @@ SdrObject* FuConstruct3dObject::CreateDefaultObject(const sal_uInt16 nID, const 
     pScene->SetRectsDirty();
 
     // Take care of restrictions for the rectangle
-    ::tools::Rectangle aRect(rRectangle);
+    Rectangle aRect(rRectangle);
 
     switch(nID)
     {

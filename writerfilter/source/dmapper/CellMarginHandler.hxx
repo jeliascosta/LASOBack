@@ -56,7 +56,7 @@ public:
 
 public:
     CellMarginHandler( );
-    virtual ~CellMarginHandler() override;
+    virtual ~CellMarginHandler();
 
     void enableInteropGrabBag(const OUString& aName);
     css::beans::PropertyValue getInteropGrabBag();

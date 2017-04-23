@@ -65,7 +65,7 @@ public:
     Svx3DReducedLineGeometryItem(bool bVal = false);
     virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 class SVX_DLLPUBLIC Svx3DNormalsKindItem : public SfxUInt16Item {
@@ -145,7 +145,7 @@ inline SfxBoolItem makeSvx3DTextureFilterItem(bool bVal) {
 // Svx3D _3DSCENE_ Items
 class SVX_DLLPUBLIC Svx3DPerspectiveItem : public SfxUInt16Item {
 public:
-    Svx3DPerspectiveItem(ProjectionType nVal = ProjectionType::Perspective);
+    Svx3DPerspectiveItem(sal_uInt16 nVal = (sal_uInt16)PR_PERSPECTIVE);
 
     // use drawing::ProjectionMode
     SVX_DLLPRIVATE virtual  bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
@@ -286,7 +286,7 @@ public:
     Svx3DSmoothNormalsItem(bool bVal = true);
     virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 // #107245# Item to replace bExtrudeSmoothFrontBack and bLatheSmoothFrontBack
@@ -295,7 +295,7 @@ public:
     Svx3DSmoothLidsItem(bool bVal = false);
     virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 // #107245# Item to replace bExtrudeCharacterMode and bLatheCharacterMode
@@ -304,7 +304,7 @@ public:
     Svx3DCharacterModeItem(bool bVal = false);
     virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 // #107245# Item to replace bExtrudeCloseFront and bLatheCloseFront
@@ -313,7 +313,7 @@ public:
     Svx3DCloseFrontItem(bool bVal = true);
     SVX_DLLPRIVATE virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     SVX_DLLPRIVATE virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 // #107245# Item to replace bExtrudeCloseBack and bLatheCloseBack
@@ -322,7 +322,7 @@ public:
     Svx3DCloseBackItem(bool bVal = true);
     SVX_DLLPRIVATE virtual SfxPoolItem* Create(SvStream& rIn, sal_uInt16 nItemVersion) const override;
     SVX_DLLPRIVATE virtual sal_uInt16 GetVersion(sal_uInt16 nFileFormatVersion) const override;
-    SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+    SfxPoolItem * Clone(SfxItemPool *) const override;
 };
 
 #endif // INCLUDED_SVX_SVX3DITEMS_HXX

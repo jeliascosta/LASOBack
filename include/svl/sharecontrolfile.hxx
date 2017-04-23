@@ -44,6 +44,7 @@ class SVL_DLLPUBLIC ShareControlFile : public LockFileCommon
 
     std::vector< LockFileEntry >                  m_aUsersData;
 
+    void OpenStream();
     void Close();
     bool IsValid()
     {

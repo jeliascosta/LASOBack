@@ -23,13 +23,6 @@ Private	Connection				As Object				&apos;	com.sun.star.sdbc.drivers.OConnectionW
 Private	URL						As String
 Private _ReadOnly				As Boolean
 Private	MetaData				As Object				&apos;	interface XDatabaseMetaData
-Private _RDBMS					As Integer				&apos;	DBMS constants
-Private _ColumnTypes()			As Variant				&apos;	Part of Metadata.GetTypeInfo()
-Private _ColumnTypeNames()		As Variant
-Private _ColumnPrecisions()		As Variant
-Private _ColumnTypesReference()	As Variant
-Private _ColumnTypesAlias()		As Variant				&apos;	To what should a field whose origin is another DBMS be converted ? See DataTypes By RDBMS.ods
-Private _BinaryStream			As Boolean				&apos;	False = binary fields must NOT be streamed f.i. via ReadAllBytes or WriteAllBytes
 Private	Form					As Object				&apos;	com.sun.star.form.XForm
 Private FormName				As String
 Private RecordsetMax			As Integer
@@ -48,13 +41,6 @@ Private Sub Class_Initialize()
 	URL = &quot;&quot;
 	_ReadOnly = False
 	Set MetaData = Nothing
-	_RDBMS = DBMS_UNKNOWN
-	_ColumnTypes = Array()
-	_ColumnTypeNames = Array()
-	_ColumnPrecisions = Array()
-	_ColumnTypesReference = Array()
-	_ColumnTypesAlias() = Array()
-	_BinaryStream = False
 	Set Form = Nothing
 	FormName = &quot;&quot;
 	RecordsetMax = 0
@@ -88,24 +74,9 @@ REM ----------------------------------------------------------------------------
 REM --- CLASS GET/LET/SET PROPERTIES					        														---
 REM -----------------------------------------------------------------------------------------------------------------------
 
-Property Get Connect() As String
-	Connect = _PropertyGet(&quot;Connect&quot;)
-End Property		&apos;	Connect (get)
-
-REM -----------------------------------------------------------------------------------------------------------------------
-Property Get Name() As String
-	Name = _PropertyGet(&quot;Name&quot;)
-End Property		&apos;	Name (get)
-
-REM -----------------------------------------------------------------------------------------------------------------------
 Property Get ObjectType() As String
 	ObjectType = _PropertyGet(&quot;ObjectType&quot;)
 End Property		&apos;	ObjectType (get)
-
-REM -----------------------------------------------------------------------------------------------------------------------
-Property Get Version() As String
-	Version = _PropertyGet(&quot;Version&quot;)
-End Property		&apos;	Version (get)
 
 REM -----------------------------------------------------------------------------------------------------------------------
 REM --- CLASS METHODS	 								        														---
@@ -483,17 +454,17 @@ Dim sObjects() As String, bFound As Boolean, oTables As Object, oQueries As Obje
 	If IsMissing(pvType) Then
 		pvType = cstNull
 	Else
-		If Not Utils._CheckArgument(pvType, 2, Utils._AddNumeric(), dbOpenForwardOnly) Then Goto Exit_Function
+		If Not Utils._CheckArgument(pvType, 1, Utils._AddNumeric(), dbOpenForwardOnly) Then Goto Exit_Function
 	End If
 	If IsMissing(pvOptions) Then
 		pvOptions = cstNull
 	Else
-		If Not Utils._CheckArgument(pvOptions, 3, Utils._AddNumeric(), dbSQLPassThrough) Then Goto Exit_Function
+		If Not Utils._CheckArgument(pvOptions, 2, Utils._AddNumeric(), dbSQLPassThrough) Then Goto Exit_Function
 	End If
 	If IsMissing(pvLockEdit) Then
 		pvLockEdit = cstNull
 	Else
-		If Not Utils._CheckArgument(pvLockEdit, 4, Utils._AddNumeric(), dbReadOnly) Then Goto Exit_Function
+		If Not Utils._CheckArgument(pvLockEdit, 3, Utils._AddNumeric(), dbReadOnly) Then Goto Exit_Function
 	End If
 
 	sSource = Split(UCase(Trim(pvSource)), &quot; &quot;)(0)
@@ -629,11 +600,8 @@ Public Function OutputTo(ByVal pvObjectType As Variant _
 							, ByVal Optional pvTemplateFile As Variant _
 							, ByVal Optional pvEncoding As Variant _
 							, ByVal Optional pvQuality As Variant _
-							, ByRef Optional pvHeaders As Variant _
-							, ByRef Optional pvData As Variant _
 							) As Boolean
 &apos;Supported:	acFormatHTML, acFormatODS, acFormatXLS, acFormatXLSX, acFormatTXT		for tables and queries
-&apos;pvHeaders and pvData (unpublished) when pvObjectType = acOutputArray
 
 	If _ErrorHandler() Then On Local Error Goto Error_Function
 Const cstThisSub = &quot;Database.OutputTo&quot;
@@ -641,7 +609,7 @@ Const cstThisSub = &quot;Database.OutputTo&quot;
 
 	OutputTo = False
 	
-	If Not Utils._CheckArgument(pvObjectType, 1, Utils._AddNumeric(), Array(acOutputTable, acOutputQuery, acOutputArray)) Then Goto Exit_Function
+	If Not Utils._CheckArgument(pvObjectType, 1, Utils._AddNumeric(), Array(acOutputTable, acOutputQuery)) Then Goto Exit_Function
 	If IsMissing(pvObjectName) Then Call _TraceArguments()
 	If Not Utils._CheckArgument(pvObjectName, 2, vbString) Then Goto Exit_Function
 	If IsMissing(pvOutputFormat) Then pvOutputFormat = &quot;&quot;
@@ -666,21 +634,13 @@ Const cstThisSub = &quot;Database.OutputTo&quot;
 	If Not Utils._CheckArgument(pvEncoding, 7, _AddNumeric()) Then Goto Exit_Function
 	If IsMissing(pvQuality) Then pvQuality = acExportQualityPrint
 	If Not Utils._CheckArgument(pvQuality, 7, _AddNumeric(), Array(acExportQualityPrint, acExportQualityScreen)) Then Goto Exit_Function
-	If pvObjectType = acOutputArray Then
-		If IsMissing(pvHeaders) Or IsMissing(pvData) Then Call _TraceArguments()
-		pvOutputFormat = &quot;HTML&quot;
-	End If
 
 Dim sOutputFile As String, oTable As Object
 Dim sOutputFormat As String, iTemplate As Integer, iOutputFile As Integer, bOutput As Boolean, sSuffix As String
 
-	If pvObjectType = acOutputArray Then
-		Set oTable = Nothing
-	Else
-		&apos;Find applicable table or query
-		If pvObjectType = acOutputTable Then Set oTable = TableDefs(pvObjectName, True) Else Set oTable = Querydefs(pvObjectName, True)
-		If IsNull(oTable) Then Goto Error_NotFound
-	End If
+	&apos;Find applicable table or query
+	If pvObjectType = acOutputTable Then Set oTable = TableDefs(pvObjectName, True) Else Set oTable = Querydefs(pvObjectName, True)
+	If IsNull(oTable) Then Goto Error_NotFound
 	
 	&apos;Determine format and parameters
 	If pvOutputFormat = &quot;&quot; Then
@@ -709,11 +669,7 @@ Dim sOutputFormat As String, iTemplate As Integer, iOutputFile As Integer, bOutp
 	&apos;Create file
 	Select Case sOutputFormat
 		Case UCase(acFormatHTML), &quot;HTML&quot;
-			If pvObjectType = acOutputArray Then
-				bOutput = _OutputToHTML(Nothing, pvObjectName, sOutputFile, pvTemplateFile, pvHeaders, pvData)
-			Else
-				bOutput = _OutputToHTML(oTable, pvObjectName, sOutputFile, pvTemplateFile)
-			End If
+			bOutput = _OutputToHTML(oTable, sOutputFile, pvTemplateFile)
 		Case UCase(acFormatODS), &quot;ODS&quot;
 			bOutput = _OutputToCalc(oTable, sOutputFile, acFormatODS)
 		Case UCase(acFormatXLS), &quot;XLS&quot;
@@ -723,6 +679,7 @@ Dim sOutputFormat As String, iTemplate As Integer, iOutputFile As Integer, bOutp
 		Case UCase(acFormatTXT), &quot;TXT&quot;, &quot;CSV&quot;
 			bOutput = _OutputToCalc(oTable, sOutputFile, acFormatTXT, pvEncoding)
 	End Select
+	oTable.Dispose()
 	
 	&apos;Launch application, if requested
 	If bOutput Then
@@ -734,10 +691,6 @@ Dim sOutputFormat As String, iTemplate As Integer, iOutputFile As Integer, bOutp
 	OutputTo = True
 	
 Exit_Function:
-	If Not IsNull(oTable) Then
-		oTable.Dispose()
-		Set oTable = Nothing
-	End If
 	Utils._ResetCalledSub(cstThisSub)
 	Exit Function
 Error_NotFound:
@@ -898,8 +851,7 @@ Public Function RunSQL(Optional ByVal pvSQL As Variant _
 
 	If _ErrorHandler() Then On Local Error Goto Error_Function
 
-Const cstThisSub = &quot;Database.RunSQL&quot;
-	Utils._SetCalledSub(cstThisSub)
+	Utils._SetCalledSub(&quot;RunSQL&quot;)
 	
 	RunSQL = False
 	If IsMissing(pvSQL) Then Call _TraceArguments()
@@ -915,15 +867,14 @@ Dim oStatement As Object, vResult As Variant
 	Set oStatement = Connection.createStatement()
 	oStatement.EscapeProcessing = Not ( pvOption = dbSQLPassThrough )
 	On Local Error Goto SQL_Error
-	vResult = oStatement.execute(_ReplaceSquareBrackets(pvSQL))
+	vResult = oStatement.executeUpdate(_ReplaceSquareBrackets(pvSQL))
 	On Local Error Goto Error_Function
 	RunSQL = True
 
 Exit_Function:
-	Utils._ResetCalledSub(cstThisSub)
 	Exit Function
 Error_Function:
-	TraceError(TRACEABORT, Err, cstThisSub, Erl)
+	TraceError(TRACEABORT, Err, &quot;RunSQL&quot;, Erl)
 	GoTo Exit_Function
 SQL_Error:
 	TraceError(TRACEFATAL, ERRSQLSTATEMENT, Utils._CalledSub(), 0, , pvSQL)
@@ -1110,127 +1061,6 @@ Error_Function:		&apos;	Item by key aborted
 End Function	&apos;	_hasRecordset	V0.9.5
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Private Sub _LoadMetadata()
-&apos;	Load essentially getTypeInfo() results from Metadata
-
-Dim sProduct As String
-Dim iInfo As Integer, oTypeInfo As Object, sName As String, lType As Integer
-
-Const cstMaxInfo = 40
-	ReDim _ColumnTypes(0 To cstMaxInfo)
-	ReDim _ColumnTypeNames(0 To cstMaxInfo)
-	ReDim _ColumnPrecisions(0 To cstMaxInfo)
-Const cstHSQLDB1 = &quot;HSQL Database Engine 1.&quot;
-Const cstHSQLDB2 = &quot;HSQL Database Engine 2.&quot;
-Const cstMSAccess2003 = &quot;MS Jet 0&quot;
-Const cstMSAccess2007 = &quot;MS Jet 04.&quot;
-Const cstMYSQL = &quot;MySQL&quot;
-Const cstPOSTGRES = &quot;PostgreSQL&quot;
-Const cstSQLITE = &quot;SQLite&quot;
-
-	With com.sun.star.sdbc.DataType
-		_ColumnTypesReference = Array( _
-			.ARRAY _
-			, .BIGINT _
-			, .BINARY _
-			, .BIT _
-			, .BLOB _
-			, .BOOLEAN _
-			, .CHAR _
-			, .CLOB _
-			, .DATE _
-			, .DECIMAL _
-			, .DISTINCT _
-			, .DOUBLE _
-			, .FLOAT _
-			, .INTEGER _
-			, .LONGVARBINARY _
-			, .LONGVARCHAR _
-			, .NUMERIC _
-			, .OBJECT _
-			, .OTHER _
-			, .REAL _
-			, .REF _
-			, .SMALLINT _
-			, .SQLNULL _
-			, .STRUCT _
-			, .TIME _
-			, .TIMESTAMP _
-			, .TINYINT _
-			, .VARBINARY _
-			, .VARCHAR _
-		)
-	End With
-
-	With Metadata
-		sProduct = .getDatabaseProductName() &amp; &quot; &quot; &amp; .getDatabaseProductVersion
-		Select Case True
-			Case Len(sProduct) &gt; Len(cstHSQLDB1) And Left(sProduct, Len(cstHSQLDB1)) = cstHSQLDB1
-				_RDBMS = DBMS_HSQLDB1
-				_ColumnTypesAlias = Array(0, -5, -2, 16, -4, 16, 1, -1, 91, 3, 0, 8, 6, 4, -4, -1, 2, 0, 0, 7, 0, 5, 0, 0, 92, 93, -6, -3, 12)
-				_BinaryStream = True
-			Case Len(sProduct) &gt; Len(cstHSQLDB2) And Left(sProduct, Len(cstHSQLDB2)) = cstHSQLDB2
-				_RDBMS = DBMS_HSQLDB2
-				_ColumnTypesAlias = Array(0, -5, -3, -7, 2004, 16, 1, 2005, 91, 3, 0, 8, 8, 4, -3, 12, 2, 0, 0, 8, 0, 5, 0, 0, 92, 93, -6, -3, 12)
-				_BinaryStream = True
-			Case Len(sProduct) &gt; Len(cstMSAccess2007) And Left(sProduct, Len(cstMSAccess2007)) = cstMSAccess2007
-				_RDBMS = DBMS_MSACCESS2007
-				_ColumnTypesAlias = Array(0, 4, -2, 16, -2, 16, 12, 12, 93, 8, 0, 8, 6, 4, -3, 12, 2, 0, 0, 8, 0, 5, 0, 0, 93, 93, -6, -2, 12)
-				_BinaryStream = True
-			Case Len(sProduct) &gt; Len(cstMSAccess2003) And Left(sProduct, Len(cstMSAccess2003)) = cstMSAccess2003
-				_RDBMS = DBMS_MSACCESS2003
-				_ColumnTypesAlias = Array(0, 4, -2, 16, -2, 16, 12, 12, 93, 8, 0, 8, 6, 4, -3, 12, 2, 0, 0, 8, 0, 5, 0, 0, 93, 93, -6, -2, 12)
-				_BinaryStream = True
-			Case Len(sProduct) &gt; Len(cstMYSQL) And Left(sProduct, Len(cstMYSQL)) = cstMYSQL
-				_RDBMS = DBMS_MYSQL
-				_ColumnTypesAlias = Array(0, -5, -2, -7, -4, -7, 1, -1, 91, 3, 0, 8, 8, 4, -4, -1, 2, 0, 0, 7, 0, 5, 0, 0, 92, 93, -6, -3, -1)
-				_BinaryStream = False
-			Case Len(sProduct) &gt; Len(cstPOSTGRES) And Left(sProduct, Len(cstPOSTGRES)) = cstPOSTGRES
-				_RDBMS = DBMS_POSTGRES
-				_ColumnTypesAlias = Array(0, -5, -3, 16, -3, 16, 1, 12, 91, 8, 0, 8, 8, 4, -3, 12, 2, 0, 0, 7, 0, 5, 0, 0, 92, 93, 4, -3, 12)
-				_BinaryStream = True
-			Case Len(sProduct) &gt; Len(cstSQLITE) And Left(sProduct, Len(cstSQLITE)) = cstSQLITE
-				_RDBMS = DBMS_SQLITE
-				_ColumnTypesAlias = Array(0, -5, -4, -7, -4, -7, 1, -1, 91, 8, 0, 8, 6, 4, -4, -1, 8, 0, 0, 8, 0, 5, 0, 0, 92, 93, -6, -4, 12)
-				_BinaryStream = True
-			Case Else		&apos;	Firebird TODO
-				_RDBMS = DBMS_UNKNOWN
-				_BinaryStream = True
-		End Select
-
-		iInfo = -1
-		Set oTypeInfo = MetaData.getTypeInfo()
-		With oTypeInfo
-			.next()
-			Do While Not .isAfterLast() And iInfo &lt; cstMaxInfo
-				sName = .getString(1)
-				lType = .getLong(2)
-				If _RDBMS = DBMS_POSTGRES And (Left(sName, 1) &lt;&gt; &quot;_&quot; Or lType &lt;&gt; -1) Then		&apos;	Skip
-				Else
-					iInfo = iInfo + 1
-					_ColumnTypeNames(iInfo) = sName
-					_ColumnTypes(iInfo) = lType
-					_ColumnPrecisions(iInfo) = CLng(.getLong(3))
-				End If
-				.next()
-			Loop
-		End With
-		ReDim Preserve _ColumnTypes(0 To iInfo)
-		ReDim Preserve _ColumnTypeNames(0 To iInfo)
-		ReDim Preserve _ColumnPrecisions(0 To iInfo)
-	End With
-
-End Sub			&apos;	_LoadMetadata	V1.6.0
-
-REM -----------------------------------------------------------------------------------------------------------------------
-Private Function _OutputBinaryToHTML() As String
-&apos;	Converts Binary value to HTML compatible string
-
-	_OutputBinaryToHTML = &quot;&amp;nbsp;&quot;
-
-End Function	&apos;	_OutputBinaryToHTML	V1.4.0
-
-REM -----------------------------------------------------------------------------------------------------------------------
 Private Function _OutputBooleanToHTML(ByVal pbBool As Boolean) As String
 &apos;	Converts input boolean value to HTML compatible string
 
@@ -1253,50 +1083,36 @@ Private Function _OutputClassToHTML(ByVal pvArray As variant) As String
 End Function	&apos;	_OutputClassToHTML	V1.4.0
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Private Function _OutputDataToHTML(ByRef pvTable As Variant, ByVal pvName As String, ByVal piFile As Integer _
-									, ByRef Optional pvHeaders As Variant _
-									, ByRef Optional pvData As Variant _
-									) As Boolean
-&apos;	Write html tags around data found in pvTable
+Private Function _OutputDataToHTML(poTable As Object, piFile As Integer) As Boolean
+&apos;	Write html tags around data found in poTable
 &apos;	Exit when error without execution stop (to avoid file remaining open ...)
 
 Dim oTableRS As Object, vData() As Variant, i As Integer, j As Integer
 Dim vFieldsBin() As Variant, iDataType As Integer, iNumRows As Integer, iNumFields As Integer, vDataCell As Variant
-Dim bDataArray As Boolean, sHeader As String
 Dim vTrClass() As Variant, vTdClass As Variant, iCountRows As Integer, iLastRow As Integer
 Const cstMaxRows = 200
 	On Local Error GoTo Error_Function
 
-	bDataArray = IsNull(pvTable)
 	Print #piFile, &quot;  &lt;table class=&quot;&quot;dbdatatable&quot;&quot;&gt;&quot;
-	Print #piFile, &quot;   &lt;caption&gt;&quot; &amp; pvName &amp; &quot;&lt;/caption&gt;&quot;
+	Print #piFile, &quot;   &lt;caption&gt;&quot; &amp; poTable._Name &amp; &quot;&lt;/caption&gt;&quot;
 
+	Set oTableRS = poTable.OpenRecordset( , , dbReadOnly)
 	vFieldsBin() = Array()
-	If bDataArray Then
-		Set oTableRS = Nothing
-		iNumFields = UBound(pvHeaders) + 1
-		ReDim vFieldsBin(0 To iNumFields - 1)
+	iNumFields = oTableRS.Fields.Count
+	ReDim vFieldsBin(0 To iNumFields - 1)
+	With com.sun.star.sdbc.DataType
 		For i = 0 To iNumFields - 1
-			vFieldsBin(i) =  False
+			iDataType = oTableRS.Fields(i).DataType
+			vFieldsBin(i) = False
+			If iDataType = .BINARY Or iDataType = .VARBINARY Or iDataType = .LONGVARBINARY Or iDataType = .BLOB Or iDataType = .CLOB Then vFieldsBin(i) = True
 		Next i
-	Else
-		Set oTableRS = pvTable.OpenRecordset( , , dbReadOnly)
-		iNumFields = oTableRS.Fields.Count
-		ReDim vFieldsBin(0 To iNumFields - 1)
-		With com.sun.star.sdbc.DataType
-			For i = 0 To iNumFields - 1
-				iDataType = oTableRS.Fields(i).DataType
-				vFieldsBin(i) =  Utils._IsBinaryType(iDataType)
-			Next i
-		End With
-	End If
+	End With
 
 	With oTableRS
 		Print #piFile, &quot;   &lt;thead&gt;&quot;
 		Print #piFile, &quot;    &lt;tr&gt;&quot;
 		For i = 0 To iNumFields - 1
-			If bDataArray Then sHeader = pvHeaders(i) Else sHeader = .Fields(i)._Name
-			Print #piFile, &quot;     &lt;th scope=&quot;&quot;col&quot;&quot;&gt;&quot; &amp; sHeader &amp; &quot;&lt;/th&gt;&quot;
+			Print #piFile, &quot;     &lt;th scope=&quot;&quot;col&quot;&quot;&gt;&quot; &amp; .Fields(i)._Name &amp; &quot;&lt;/th&gt;&quot;
 		Next i
 		Print #piFile, &quot;    &lt;/tr&gt;&quot;
 		Print #piFile, &quot;   &lt;/thead&gt;&quot;
@@ -1304,21 +1120,13 @@ Const cstMaxRows = 200
 		Print #piFile, &quot;   &lt;/tfoot&gt;&quot;
 
 		Print #piFile, &quot;   &lt;tbody&gt;&quot;
-		If bDataArray Then
-			iLastRow = UBound(pvData, 2) + 1
-		Else
-			.MoveLast
-			iLastRow = .RecordCount
-			.MoveFirst
-		End If
+		.MoveLast
+		iLastRow = .RecordCount
+		.MoveFirst
 		iCountRows = 0
-		Do While iCountRows &lt; iLastRow
-			If bDataArray Then
-				iNumRows = iLastRow
-			Else
-				vData() = .GetRows(cstMaxRows)
-				iNumRows = UBound(vData, 2) + 1
-			End If
+		Do While Not .EOF()
+			vData() = .GetRows(cstMaxRows)
+			iNumRows = UBound(vData, 2) + 1
 			For j = 0 To iNumRows - 1
 				iCountRows = iCountRows + 1
 				vTrClass() = Array()
@@ -1331,9 +1139,7 @@ Const cstMaxRows = 200
 					If i = 0 Then vTdClass() = _AddArray(vTdClass, &quot;firstcol&quot;)
 					If i = iNumFields - 1 Then vTdClass() = _AddArray(vTdClass, &quot;lastcol&quot;)
 					If Not vFieldsBin(i) Then
-						If bDataArray Then vDataCell = pvData(i, j) Else vDataCell = vData(i, j)
-						If vDataCell Is Nothing Then vDataCell = Null		&apos;	Necessary because Null object has not a VarType = vbNull
-						If IsDate(vDataCell) And VarType(vDataCell) = vbString Then vDataCell = CDate(vDataCell)
+						vDataCell = vData(i, j)
 						Select Case VarType(vDataCell)
 							Case vbEmpty, vbNull
 								vTdClass() = _AddArray(vTdClass, &quot;null&quot;)
@@ -1362,7 +1168,7 @@ Const cstMaxRows = 200
 			Next j
 		Loop
 
-		If Not bDataArray Then .mClose()
+		.mClose()
 	End With
 	Set oTableRS = Nothing
 
@@ -1377,6 +1183,14 @@ Error_Function:
 	_OutputDataToHTML = False
 	Resume Exit_Function
 End Function	&apos;	_OutputDataToHTML	V1.4.0
+
+REM -----------------------------------------------------------------------------------------------------------------------
+Private Function _OutputBinaryToHTML() As String
+&apos;	Converts Binary value to HTML compatible string
+
+	_OutputBinaryToHTML = &quot;&amp;nbsp;&quot;
+
+End Function	&apos;	_OutputBinaryToHTML	V1.4.0
 
 REM -----------------------------------------------------------------------------------------------------------------------
 Private Function _OutputDateToHTML(ByVal psDate As Date) As String
@@ -1446,7 +1260,7 @@ Dim i As Integer, l As Long
 			lNextPattern = InStr(lCurrentChar, psString, vPatterns(i), 1)		&apos;	Text (not case-sensitive) string comparison
 			If lNextPattern &gt; 0 And lNextPattern &lt; lPattern Then
 				lPattern = lNextPattern
-				sPattern = Mid(psString, lPattern, Len(vPatterns(i)))
+				sPattern = Mid(psString, lPattern, Len(vPatterns(i))
 			End If
 		Next i
 		&apos;	Up to the next pattern or to the end of the string, UTF8-encode each character
@@ -1581,13 +1395,9 @@ Error_Function:
 End Function	&apos;	OutputToCalc	V1.4.0
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Public Function _OutputToHTML(ByRef pvTable As Variant, ByVal pvName As String, ByVal psOutputFile As String, ByVal psTemplateFile As String _
-								, ByRef Optional pvHeaders As Variant _
-								, ByRef Optional pvData As Variant _
-								) As Boolean
+Public Function _OutputToHTML(poTable As Object, ByVal psOutputFile As String, ByVal psTemplateFile As String) As Boolean
 &apos;	http://www.ehow.com/how_5652706_create-html-template-ms-access.html
 
-Dim bDataArray As Boolean
 Dim vMinimalTemplate As Variant, vTemplate As Variant
 Dim iFile As Integer, i As Integer, sLine As String, lBody As Long
 Const cstTitle = &quot;&lt;!--Template_Title--&gt;&quot;, cstBody = &quot;&lt;!--Template_Body--&gt;&quot;
@@ -1608,8 +1418,6 @@ Const cstTitleAlt = &quot;&lt;!--AccessTemplate_Title--&gt;&quot;, cstBodyAlt = 
 
 	vTemplate = _ReadFileIntoArray(psTemplateFile)
 	If LBound(vTemplate) &gt; UBound(vTemplate) Then vTemplate() = vMinimalTemplate()
-	
-	bDataArray = IsNull(pvTable)
 
 &apos;	Write output file
 	iFile = FreeFile()
@@ -1620,16 +1428,12 @@ Const cstTitleAlt = &quot;&lt;!--AccessTemplate_Title--&gt;&quot;, cstBodyAlt = 
 			sLine = Join(Split(sLine, cstBodyAlt), cstBody)
 			Select Case True
 				Case InStr(sLine, cstTitle) &gt; 0
-					sLine = Join(Split(sLine, cstTitle), pvName)
+					sLine = Join(Split(sLine, cstTitle), poTable._Name)
 					Print #iFile, sLine
 				Case InStr(sLine, cstBody) &gt; 0
 					lBody = InStr(sLine, cstBody)
 					If lBody &gt; 1 Then Print #iFile, Left(sLine, lBody - 1)
-					If bDataArray Then
-						_OutputDataToHTML(pvTable, pvName, iFile, pvHeaders, pvData)
-					Else
-						_OutputDataToHTML(pvTable, pvName, iFile)
-					End If
+					_OutputDataToHTML(poTable, iFile)
 					If Len(sLine) &gt; lBody + Len(cstBody) - 1 Then Print #iFile, Right(sLine, Len(sLine) - lBody + Len(cstBody) + 1)
 				Case Else
 					Print #iFile, sLine
@@ -1649,7 +1453,7 @@ End Function	&apos;	_OutputToHTML	V1.4.0
 REM -----------------------------------------------------------------------------------------------------------------------
 Private Function _PropertiesList() As Variant
 
-	_PropertiesList = Array(&quot;Connect&quot;, &quot;Name&quot;, &quot;ObjectType&quot;, &quot;Version&quot;)
+	_PropertiesList = Array(&quot;ObjectType&quot;)
 
 End Function	&apos;	_PropertiesList
 
@@ -1659,19 +1463,12 @@ Private Function _PropertyGet(ByVal psProperty As String) As Variant
 
 	If _ErrorHandler() Then On Local Error Goto Error_Function
 	Utils._SetCalledSub(&quot;Database.get&quot; &amp; psProperty)
-
-	_PropertyGet = EMPTY
+Dim vEMPTY As Variant
+	_PropertyGet = vEMPTY
 	
 	Select Case UCase(psProperty)
-		Case UCase(&quot;Connect&quot;)
-			_PropertyGet = Document.Datasource.URL
-		&apos;	Location = ConvertFromUrl(URL)
-		Case UCase(&quot;Name&quot;)
-			_PropertyGet = Title
 		Case UCase(&quot;ObjectType&quot;)
 			_PropertyGet = _Type
-		Case UCase(&quot;Version&quot;)
-			_PropertyGet = MetaData.getDatabaseProductName() &amp; &quot; &quot; &amp; MetaData.getDatabaseProductVersion
 		Case Else
 			Goto Trace_Error
 	End Select
@@ -1681,11 +1478,11 @@ Exit_Function:
 	Exit Function
 Trace_Error:
 	TraceError(TRACEFATAL, ERRPROPERTY, Utils._CalledSub(), 0, , psProperty)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	Goto Exit_Function
 Error_Function:
 	TraceError(TRACEABORT, Err, &quot;Database._PropertyGet&quot;, Erl)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	GoTo Exit_Function
 End Function		&apos;	_PropertyGet
 

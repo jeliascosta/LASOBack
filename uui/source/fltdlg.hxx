@@ -47,7 +47,7 @@ class FilterDialog : public ModalDialog
     // public interface
     public:
         explicit FilterDialog(vcl::Window* pParentWindow);
-        virtual ~FilterDialog() override;
+        virtual ~FilterDialog();
         virtual void dispose() override;
         void SetURL       ( const OUString&          sURL           );
         void ChangeFilters( const FilterNameList*    pFilterNames   );

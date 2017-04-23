@@ -20,7 +20,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ENUMVARIANT_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ENUMVARIANT_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleSelection.hpp>
 #include <AccObjectManagerAgent.hxx>
@@ -45,8 +45,8 @@ class ATL_NO_VTABLE CEnumVariant :
 public:
     CEnumVariant()
             :m_lLBound(0),
-            pUNOInterface(nullptr),
-            m_pXAccessibleSelection(nullptr)
+            pUNOInterface(NULL),
+            m_pXAccessibleSelection(NULL)
     {
         m_lCurrent = m_lLBound;
     }
@@ -60,38 +60,31 @@ public:
     BEGIN_COM_MAP(CEnumVariant)
     COM_INTERFACE_ENTRY(IEnumVariant)
     COM_INTERFACE_ENTRY(IEnumVARIANT)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
     // IEnumVariant
 public:
 
-    STDMETHOD(ClearEnumeration)() override;
+    STDMETHOD(ClearEnumeration)();
 
     // IEnumVARIANT
 
 
-    HRESULT STDMETHODCALLTYPE Next(ULONG cElements,VARIANT __RPC_FAR *pvar,ULONG __RPC_FAR *pcElementFetched) override;
+    HRESULT STDMETHODCALLTYPE Next(ULONG cElements,VARIANT __RPC_FAR *pvar,ULONG __RPC_FAR *pcElementFetched);
 
 
-    HRESULT STDMETHODCALLTYPE Skip(ULONG cElements) override;
+    HRESULT STDMETHODCALLTYPE Skip(ULONG cElements);
 
 
-    HRESULT STDMETHODCALLTYPE Reset( void) override;
+    HRESULT STDMETHODCALLTYPE Reset( void);
 
 
-    HRESULT STDMETHODCALLTYPE Clone(IEnumVARIANT __RPC_FAR *__RPC_FAR *ppenum) override;
+    HRESULT STDMETHODCALLTYPE Clone(IEnumVARIANT __RPC_FAR *__RPC_FAR *ppenum);
 
     // IEnumVariant
 
 
-    HRESULT STDMETHODCALLTYPE PutSelection(hyper pXSelection) override;
+    HRESULT STDMETHODCALLTYPE PutSelection(hyper pXSelection);
 
 
     static HRESULT STDMETHODCALLTYPE Create(CEnumVariant __RPC_FAR *__RPC_FAR *ppenum);

@@ -29,6 +29,8 @@ enum ScSelectionType
     SC_SELECTTYPE_NONE,             /// No selection, simple cell cursor.
     SC_SELECTTYPE_SHEET,            /// Single cell, cell range, or multi range selection.
     SC_SELECTTYPE_EDITCELL,         /// Cell in edit mode (with or without selection).
+    SC_SELECTTYPE_DRAWING,          /// One or more drawing objects.
+    SC_SELECTTYPE_EDITDRAW          /// Edit mode in drawing object (with or without selection).
 };
 
 class ScViewData;
@@ -40,12 +42,12 @@ public:
     explicit            ScSelectionState( ScViewData& rViewData );
 
     /** Returns the type of the selection this object contains. */
-    ScSelectionType GetSelectionType() const { return meType; }
+    inline ScSelectionType GetSelectionType() const { return meType; }
 
     /** Returns the position of the cell cursor. */
-    const ScAddress& GetCellCursor() const { return maCursor; }
+    inline const ScAddress& GetCellCursor() const { return maCursor; }
     /** Returns the edit engine selection. */
-    const ESelection& GetEditSelection() const { return maEditSel; }
+    inline const ESelection& GetEditSelection() const { return maEditSel; }
 
 private:
     ScSelectionType     meType;             /// Type of the selection.

@@ -17,15 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 
 #include <doc.hxx>
 #include "writerhelper.hxx"
 #include <msfilter.hxx>
 #include <com/sun/star/container/XChild.hpp>
+#include <com/sun/star/embed/EmbedStates.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -54,10 +52,9 @@
 #include <IDocumentDrawModelAccess.hxx>
 #include <IDocumentLayoutAccess.hxx>
 #include <IDocumentStylePoolAccess.hxx>
-#include <IDocumentMarkAccess.hxx>
-#include <IMark.hxx>
 
 using namespace com::sun::star;
+using namespace nsSwGetPoolIdFromName;
 
 namespace
 {
@@ -129,7 +126,7 @@ namespace
 
             if (const SwPosition* pAnchor = rEntry.GetAnchor().GetContentAnchor())
             {
-                // the anchor position will be invalidated by SetRedlineFlags
+                // the anchor position will be invalidated by SetRedlineMode
                 // so set a dummy position and fix it in UpdateFramePositions
                 SwPosition const dummy(SwNodeIndex(
                             const_cast<SwNodes&>(pAnchor->nNode.GetNodes())));
@@ -178,9 +175,9 @@ namespace ww8
         , mbForBullet(true)
         , maGrf(rGrf)
     {
-        const MapMode aMap100mm( MapUnit::Map100thMM );
+        const MapMode aMap100mm( MAP_100TH_MM );
         Size    aSize( rGrf.GetPrefSize() );
-        if ( MapUnit::MapPixel == rGrf.GetPrefMapMode().GetMapUnit() )
+        if ( MAP_PIXEL == rGrf.GetPrefMapMode().GetMapUnit() )
         {
             aSize = Application::GetDefaultDevice()->PixelToLogic(aSize, aMap100mm );
         }
@@ -200,7 +197,7 @@ namespace ww8
         , meWriterType(eTextBox)
         , mpStartFrameContent(nullptr)
         // #i43447# - move to initialization list
-        , mbIsInline( (rFormat.GetAnchor().GetAnchorId() == RndStdIds::FLY_AS_CHAR) )
+        , mbIsInline( (rFormat.GetAnchor().GetAnchorId() == FLY_AS_CHAR) )
         // #i120928# - handle graphic of bullet within existing implementation
         , mbForBullet(false)
         , maGrf()
@@ -215,7 +212,7 @@ namespace ww8
                     // #i43447# - determine layout size
                     {
                         SwRect aLayRect( rFormat.FindLayoutRect() );
-                        tools::Rectangle aRect( aLayRect.SVRect() );
+                        Rectangle aRect( aLayRect.SVRect() );
                         // The Object is not rendered (e.g. something in unused
                         // header/footer) - thus, get the values from the format.
                         if ( aLayRect.IsEmpty() )
@@ -226,11 +223,11 @@ namespace ww8
                     }
                     switch (rNd.GetNodeType())
                     {
-                        case SwNodeType::Grf:
+                        case ND_GRFNODE:
                             meWriterType = eGraphic;
                             maSize = rNd.GetNoTextNode()->GetTwipSize();
                             break;
-                        case SwNodeType::Ole:
+                        case ND_OLENODE:
                             meWriterType = eOle;
                             maSize = rNd.GetNoTextNode()->GetTwipSize();
                             break;
@@ -251,7 +248,7 @@ namespace ww8
             default:
                 if (const SdrObject* pObj = rFormat.FindRealSdrObject())
                 {
-                    if (pObj->GetObjInventor() == SdrInventor::FmForm)
+                    if (pObj->GetObjInventor() == FmFormInventor)
                         meWriterType = eFormControl;
                     else
                         meWriterType = eDrawing;
@@ -376,7 +373,7 @@ namespace sw
 
         void SetLayer::SetObjectLayer(SdrObject &rObject, Layer eLayer) const
         {
-            if (SdrInventor::FmForm == rObject.GetObjInventor())
+            if (FmFormInventor == rObject.GetObjInventor())
                 rObject.SetLayer(mnFormLayer);
             else
             {
@@ -494,7 +491,7 @@ namespace sw
             {
                 // Collection not found, try in Pool ?
                 sal_uInt16 n = SwStyleNameMapper::GetPoolIdFromUIName(rName,
-                    SwGetPoolIdFromName::TxtColl);
+                    nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL);
                 if (n != SAL_MAX_UINT16)       // found or standard
                     pColl = rDoc.getIDocumentStylePoolAccess().GetTextCollFromPool(n, false);
             }
@@ -508,7 +505,7 @@ namespace sw
             {
                 // Collection not found, try in Pool ?
                 sal_uInt16 n = SwStyleNameMapper::GetPoolIdFromUIName(rName,
-                    SwGetPoolIdFromName::ChrFmt);
+                    nsSwGetPoolIdFromName::GET_POOLID_CHRFMT);
                 if (n != SAL_MAX_UINT16)       // found or standard
                     pFormat = rDoc.getIDocumentStylePoolAccess().GetCharFormatFromPool(n);
             }
@@ -543,7 +540,7 @@ namespace sw
                 }
                 else
                 {   // these don't need to be corrected, they're not in redlines
-                    assert(RndStdIds::FLY_AT_PAGE == rAnchor.GetAnchorId());
+                    assert(FLY_AT_PAGE == rAnchor.GetAnchorId());
                 }
             }
         }
@@ -638,7 +635,7 @@ namespace sw
             else if (const SwContentNode *pNd = rNd.GetContentNode())
                 pBreak = &(ItemGet<SvxFormatBreakItem>(*pNd, RES_BREAK));
 
-            if (pBreak && pBreak->GetBreak() == SvxBreak::PageBefore)
+            if (pBreak && pBreak->GetBreak() == SVX_BREAK_PAGE_BEFORE)
                 return true;
             return false;
         }
@@ -732,7 +729,7 @@ namespace sw
             bool operator()(const SwFltStackEntry *pEntry) const
             {
                 const SwFltRedline *pTest = static_cast<const SwFltRedline *>
-                    (pEntry->pAttr.get());
+                    (pEntry->pAttr);
                 return (pEntry->bOpen && (pTest->eType == meType));
             }
         };
@@ -744,26 +741,6 @@ namespace sw
                 SameOpenRedlineType(eType));
             if (aResult != maStack.rend())
             {
-                SwTextNode *const pNode(rPos.nNode.GetNode().GetTextNode());
-                sal_Int32 const nIndex(rPos.nContent.GetIndex());
-                // HACK to prevent overlap of field-mark and redline,
-                // which would destroy field-mark invariants when the redline
-                // is hidden: move the redline end one to the left
-                if (pNode && nIndex > 0
-                    && pNode->GetText()[nIndex - 1] == CH_TXT_ATR_FIELDEND)
-                {
-                    SwPosition const end(*rPos.nNode.GetNode().GetTextNode(),
-                                         nIndex - 1);
-                    sw::mark::IFieldmark *const pFieldMark(
-                        rPos.GetDoc()->getIDocumentMarkAccess()->getFieldmarkFor(end));
-                    assert(pFieldMark);
-                    if (pFieldMark->GetMarkPos().nNode.GetIndex() == (*aResult)->m_aMkPos.m_nNode.GetIndex()+1
-                        && pFieldMark->GetMarkPos().nContent.GetIndex() < (*aResult)->m_aMkPos.m_nContent)
-                    {
-                        (*aResult)->SetEndPos(end);
-                        return true;
-                    }
-                }
                 (*aResult)->SetEndPos(rPos);
                 return true;
             }
@@ -775,40 +752,6 @@ namespace sw
             std::for_each(maStack.begin(), maStack.end(), SetEndIfOpen(rPos));
         }
 
-        void RedlineStack::MoveAttrs( const SwPosition& rPos )
-        {
-            size_t nCnt = maStack.size();
-            sal_uLong nPosNd = rPos.nNode.GetIndex();
-            sal_Int32 nPosCt = rPos.nContent.GetIndex() - 1;
-
-            for (size_t i=0; i < nCnt; ++i)
-            {
-                SwFltStackEntry& rEntry = *maStack[i];
-                bool const isPoint(rEntry.m_aMkPos == rEntry.m_aPtPos);
-                if ((rEntry.m_aMkPos.m_nNode.GetIndex()+1 == nPosNd) &&
-                    (nPosCt <= rEntry.m_aMkPos.m_nContent))
-                {
-                    rEntry.m_aMkPos.m_nContent++;
-                    SAL_WARN_IF(rEntry.m_aMkPos.m_nContent > rPos.nNode.GetNodes()[nPosNd]->GetContentNode()->Len(),
-                            "sw.ww8", "redline ends after end of line");
-                    if (isPoint) // sigh ... important special case...
-                    {
-                        rEntry.m_aPtPos.m_nContent++;
-                        continue;
-                    }
-                }
-                // for the end position, leave it alone if it's *on* the dummy
-                // char position, that should remain *before*
-                if ((rEntry.m_aPtPos.m_nNode.GetIndex()+1 == nPosNd) &&
-                    (nPosCt < rEntry.m_aPtPos.m_nContent))
-                {
-                    rEntry.m_aPtPos.m_nContent++;
-                    SAL_WARN_IF(rEntry.m_aPtPos.m_nContent > rPos.nNode.GetNodes()[nPosNd]->GetContentNode()->Len(),
-                            "sw.ww8", "redline ends after end of line");
-                }
-            }
-        }
-
         void SetInDocAndDelete::operator()(SwFltStackEntry *pEntry)
         {
             SwPaM aRegion(pEntry->m_aMkPos.m_nNode);
@@ -817,12 +760,12 @@ namespace sw
                 (*aRegion.GetPoint() != *aRegion.GetMark())
             )
             {
-                mrDoc.getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::On | RedlineFlags::ShowInsert |
-                                         RedlineFlags::ShowDelete);
+                mrDoc.getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT |
+                                         nsRedlineMode_t::REDLINE_SHOW_DELETE));
                 const SwFltRedline *pFltRedline = static_cast<const SwFltRedline*>
-                    (pEntry->pAttr.get());
+                    (pEntry->pAttr);
 
-                if (SwFltRedline::NoPrevAuthor != pFltRedline->nAutorNoPrev)
+                if (USHRT_MAX != pFltRedline->nAutorNoPrev)
                 {
                     SwRedlineData aData(pFltRedline->eTypePrev,
                         pFltRedline->nAutorNoPrev, pFltRedline->aStampPrev, OUString(),
@@ -840,8 +783,8 @@ namespace sw
                 aRegion.DeleteMark();
                 *aRegion.GetPoint() = SwPosition(SwNodeIndex(mrDoc.GetNodes()));
                 mrDoc.getIDocumentRedlineAccess().AppendRedline(pNewRedline, true);
-                mrDoc.getIDocumentRedlineAccess().SetRedlineFlags(RedlineFlags::NONE | RedlineFlags::ShowInsert |
-                     RedlineFlags::ShowDelete );
+                mrDoc.getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)(nsRedlineMode_t::REDLINE_NONE | nsRedlineMode_t::REDLINE_SHOW_INSERT |
+                     nsRedlineMode_t::REDLINE_SHOW_DELETE ));
             }
             delete pEntry;
         }
@@ -850,9 +793,9 @@ namespace sw
             const SwFltStackEntry *pTwoE) const
         {
             const SwFltRedline *pOne= static_cast<const SwFltRedline*>
-                (pOneE->pAttr.get());
+                (pOneE->pAttr);
             const SwFltRedline *pTwo= static_cast<const SwFltRedline*>
-                (pTwoE->pAttr.get());
+                (pTwoE->pAttr);
 
             //Return the earlier time, if two have the same time, prioritize
             //inserts over deletes

@@ -23,7 +23,6 @@
 
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
-#include <unx/salgdi.h>
 
 class KDESalFrame : public X11SalFrame
 {
@@ -32,22 +31,24 @@ class KDESalFrame : public X11SalFrame
 
         struct GraphicsHolder
         {
-            std::unique_ptr<X11SalGraphics> pGraphics;
+            X11SalGraphics* pGraphics;
             bool bInUse;
 
-            GraphicsHolder() : bInUse( false ) {}
+            GraphicsHolder() : pGraphics(nullptr),bInUse( false ) {}
+            ~GraphicsHolder();
         };
 
         GraphicsHolder m_aGraphics[ nMaxGraphics ];
 
     public:
         KDESalFrame( SalFrame* pParent, SalFrameStyleFlags nStyle );
+        virtual ~KDESalFrame();
 
         virtual SalGraphics* AcquireGraphics() override;
         virtual void ReleaseGraphics( SalGraphics *pGraphics ) override;
         virtual void updateGraphics( bool bClear ) override;
         virtual void UpdateSettings( AllSettings& rSettings ) override;
-        virtual void Show( bool bVisible, bool bNoActivate = false ) override;
+        virtual void Show( bool bVisible, bool bNoActivate ) override;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

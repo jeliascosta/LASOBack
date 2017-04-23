@@ -75,7 +75,7 @@ protected:
 
                     // Window overrides
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -109,7 +109,7 @@ protected:
 public:
             ScHeaderControl( vcl::Window* pParent, SelectionEngine* pSelectionEngine,
                              SCCOLROW nNewSize, bool bNewVertical, ScTabView* pTab );
-            virtual ~ScHeaderControl() override;
+            virtual ~ScHeaderControl();
 
     void    SetIgnoreMove(bool bSet)            { bIgnoreMove = bSet; }
 

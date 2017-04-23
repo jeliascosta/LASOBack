@@ -38,8 +38,8 @@ class WPXSvInputStreamImpl;
 class WRITERPERFECT_DLLPUBLIC WPXSvInputStream : public librevenge::RVNGInputStream
 {
 public:
-    WPXSvInputStream(css::uno::Reference< css::io::XInputStream > const &xStream);
-    virtual ~WPXSvInputStream() override;
+    WPXSvInputStream(css::uno::Reference< css::io::XInputStream > xStream);
+    virtual ~WPXSvInputStream();
 
     virtual bool isStructured() override;
     virtual unsigned subStreamCount() override;

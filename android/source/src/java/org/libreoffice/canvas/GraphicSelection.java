@@ -15,7 +15,6 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 
 import org.libreoffice.LOKitShell;
-import org.libreoffice.LibreOfficeMainActivity;
 import org.mozilla.gecko.gfx.LayerView;
 
 import static org.libreoffice.canvas.GraphicSelectionHandle.HandlePosition;
@@ -36,13 +35,11 @@ public class GraphicSelection extends CommonCanvasElement {
     private GraphicSelectionHandle mHandles[] = new GraphicSelectionHandle[8];
     private GraphicSelectionHandle mDragHandle = null;
     private boolean mTriggerSinglePress = false;
-    private LibreOfficeMainActivity mContext;
 
     /**
      * Construct the graphic selection.
      */
-    public GraphicSelection(LibreOfficeMainActivity context) {
-        mContext = context;
+    public GraphicSelection() {
         // Create the paint, which is needed at drawing
         mPaintStroke = new Paint();
         mPaintStroke.setStyle(Paint.Style.STROKE);
@@ -246,7 +243,7 @@ public class GraphicSelection extends CommonCanvasElement {
      */
     private void sendGraphicSelection(String type, PointF screenPosition)
     {
-        LayerView layerView = mContext.getLayerClient().getView();
+        LayerView layerView = LOKitShell.getLayerView();
         if (layerView != null) {
             // Position is in screen coordinates. We need to convert them to
             // document coordinates.

@@ -29,12 +29,9 @@
 #include <i18nlangtag/lang.h>
 #include <comphelper/stl_types.hxx>
 #include <o3tl/sorted_vector.hxx>
-#include <o3tl/typed_flags_set.hxx>
-#include <rtl/ref.hxx>
 
 #include "shellio.hxx"
 #include "wrt_fn.hxx"
-#include "htmlfly.hxx"
 
 // einige Forward Deklarationen
 class Color;
@@ -57,7 +54,6 @@ class SvxFontItem;
 class SwHTMLNumRuleInfo;
 class SwHTMLPosFlyFrames;
 class SwTextFootnote;
-enum class HtmlPosition;
 
 typedef std::vector<SwTextFootnote*> SwHTMLTextFootnotes;
 
@@ -69,43 +65,46 @@ extern SwAttrFnTab aHTMLAttrFnTab;
 // BORDER geht nur bei OutHTML_Image
 // ANYSIZE gibt an, ob auch VAR_SIZE und MIN_SIZE angaben exportiert werden
 // ABSSIZE gibt an, ob Abstand und Umrandung ignoriert werden sollen
-enum class HtmlFrmOpts {
-    NONE        = 0,
-    Align       = 1<<0,
-    SAlign      = 1<<1,
+const sal_uInt32 HTML_FRMOPT_ALIGN      = 1<<0;
+const sal_uInt32 HTML_FRMOPT_S_ALIGN    = 1<<1;
 
-    Width       = 1<<2,
-    Height      = 1<<3,
-    Size        = Width | Height,
-    SWidth      = 1<<4,
-    SHeight     = 1<<5,
-    SSize       = SWidth | SHeight,
-    AnySize     = 1<<6,
-    AbsSize     = 1<<7,
-    MarginSize  = 1<<8,
+const sal_uInt32 HTML_FRMOPT_WIDTH      = 1<<2;
+const sal_uInt32 HTML_FRMOPT_HEIGHT         = 1<<3;
+const sal_uInt32 HTML_FRMOPT_SIZE       = HTML_FRMOPT_WIDTH|HTML_FRMOPT_HEIGHT;
+const sal_uInt32 HTML_FRMOPT_S_WIDTH    = 1<<4;
+const sal_uInt32 HTML_FRMOPT_S_HEIGHT   = 1<<5;
+const sal_uInt32 HTML_FRMOPT_S_SIZE     = HTML_FRMOPT_S_WIDTH|HTML_FRMOPT_S_HEIGHT;
+const sal_uInt32 HTML_FRMOPT_ANYSIZE    = 1<<6;
+const sal_uInt32 HTML_FRMOPT_ABSSIZE    = 1<<7;
+const sal_uInt32 HTML_FRMOPT_MARGINSIZE     = 1<<8;
 
-    Space       = 1<<9,
-    SSpace      = 1<<10,
+const sal_uInt32 HTML_FRMOPT_SPACE      = 1<<9;
+const sal_uInt32 HTML_FRMOPT_S_SPACE    = 1<<10;
 
-    Border      = 1<<11,
-    SBorder     = 1<<12,
-    SNoBorder   = 1<<13,
+const sal_uInt32 HTML_FRMOPT_BORDER     = 1<<11;
+const sal_uInt32 HTML_FRMOPT_S_BORDER   = 1<<12;
+const sal_uInt32 HTML_FRMOPT_S_NOBORDER     = 1<<13;
 
-    SBackground = 1<<14,
+const sal_uInt32 HTML_FRMOPT_S_BACKGROUND = 1<<14;
 
-    Name        = 1<<15,
-    Alt         = 1<<16,
-    BrClear     = 1<<17,
-    SPixSize    = 1<<18,
-    Id          = 1<<19,
-    Dir         = 1<<20,
+const sal_uInt32 HTML_FRMOPT_NAME           = 1<<15;
+const sal_uInt32 HTML_FRMOPT_ALT        = 1<<16;
+const sal_uInt32 HTML_FRMOPT_BRCLEAR    = 1<<17;
+const sal_uInt32 HTML_FRMOPT_S_PIXSIZE  = 1<<18;
+const sal_uInt32 HTML_FRMOPT_ID             = 1<<19;
+const sal_uInt32 HTML_FRMOPT_DIR            = 1<<20;
 
-    GenImgAllMask = Alt | Size | AbsSize | Name,
-    GenImgMask    = GenImgAllMask | Align | Space | BrClear
-};
-namespace o3tl {
-    template<> struct typed_flags<HtmlFrmOpts> : is_typed_flags<HtmlFrmOpts, ((1<<21)-1)> {};
-}
+const sal_uInt32 HTML_FRMOPTS_GENIMG_ALL    =
+    HTML_FRMOPT_ALT     |
+    HTML_FRMOPT_SIZE    |
+    HTML_FRMOPT_ABSSIZE |
+    HTML_FRMOPT_NAME;
+const sal_uInt32 HTML_FRMOPTS_GENIMG_CNTNR = HTML_FRMOPTS_GENIMG_ALL;
+const sal_uInt32 HTML_FRMOPTS_GENIMG    =
+    HTML_FRMOPTS_GENIMG_ALL |
+    HTML_FRMOPT_ALIGN       |
+    HTML_FRMOPT_SPACE       |
+    HTML_FRMOPT_BRCLEAR;
 
 #define HTMLMODE_BLOCK_SPACER       0x00010000
 #define HTMLMODE_FLOAT_FRAME        0x00020000
@@ -212,7 +211,7 @@ struct SwHTMLFormatInfo
     OString aToken;          // das auszugebende Token
     OUString aClass;          // die auszugebende Klasse
 
-    std::unique_ptr<SfxItemSet> pItemSet;   // der auszugebende Attribut-Set
+    SfxItemSet *pItemSet;   // der auszugebende Attribut-Set
 
     sal_Int32 nLeftMargin;      // ein par default-Werte fuer
     sal_Int32 nRightMargin; // Absatz-Vorlagen
@@ -257,7 +256,7 @@ class IDocumentStylePoolAccess;
 class SwHTMLWriter : public Writer
 {
     SwHTMLPosFlyFrames *m_pHTMLPosFlyFrames;
-    std::unique_ptr<SwHTMLNumRuleInfo> m_pNumRuleInfo;// aktuelle Numerierung
+    SwHTMLNumRuleInfo *m_pNumRuleInfo;// aktuelle Numerierung
     SwHTMLNumRuleInfo *m_pNextNumRuleInfo;
     sal_uInt32 m_nHTMLMode;               // Beschreibung der Export-Konfiguration
 
@@ -294,7 +293,7 @@ public:
 
     css::uno::Reference<css::container::XIndexContainer> mxFormComps; // die aktuelle Form
 
-    rtl::Reference<SwDoc> m_xTemplate;               // die HTML-Vorlage
+    SwDoc *m_pTemplate;               // die HTML-Vorlage
     Color *m_pDfltColor;              // default Farbe
     SwNodeIndex *m_pStartNdIdx;       // Index des ersten Absatz
     const SwPageDesc *m_pCurrPageDesc;// Die aktuelle Seiten-Vorlage
@@ -327,8 +326,8 @@ public:
     sal_uInt16 m_nExportMode;
     sal_uInt16 m_nCSS1OutMode;
     sal_uInt16 m_nCSS1Script;         // contains default script (that's the one
-                                      // that is not contained in class names)
-    SvxFrameDirection   m_nDirection;     // the current direction
+                                    // that is not contained in class names)
+    sal_uInt16 m_nDirection;          // the current direction
 
     rtl_TextEncoding    m_eDestEnc;
     LanguageType        m_eLang;
@@ -396,7 +395,7 @@ public:
     // 25
 
     explicit SwHTMLWriter( const OUString& rBaseURL );
-    virtual ~SwHTMLWriter() override;
+    virtual ~SwHTMLWriter();
 
     void Out_SwDoc( SwPaM* );       // schreibe den makierten Bereich
 
@@ -412,9 +411,9 @@ public:
 
     // gebe die evt. an der akt. Position stehenden FlyFrame aus.
     bool OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx,
-                      HtmlPosition nPos, HTMLOutContext *pContext = nullptr );
-    void OutFrameFormat( AllHtmlFlags nType, const SwFrameFormat& rFormat,
-                         const SdrObject *pSdrObj );
+                        sal_uInt8 nPos, HTMLOutContext *pContext = nullptr );
+    void OutFrameFormat( sal_uInt8 nType, const SwFrameFormat& rFormat,
+                    const SdrObject *pSdrObj );
 
     void OutForm( bool bTagOn=true, const SwStartNode *pStNd=nullptr );
     void OutHiddenForms();
@@ -456,25 +455,25 @@ public:
     void OutBackground( const SfxItemSet& rItemSet, bool bGraphic );
 
     void OutLanguage( LanguageType eLang );
-    SvxFrameDirection GetHTMLDirection( SvxFrameDirection nDir ) const;
-    SvxFrameDirection GetHTMLDirection( const SfxItemSet& rItemSet ) const;
-    void OutDirection( SvxFrameDirection nDir );
-    static OString convertDirection(SvxFrameDirection nDirection);
+    sal_uInt16 GetHTMLDirection( sal_uInt16 nDir ) const;
+    sal_uInt16 GetHTMLDirection( const SfxItemSet& rItemSet ) const;
+    void OutDirection( sal_uInt16 nDir );
+    static OString convertDirection(sal_uInt16 nDirection);
 
     // ALT/ALIGN/WIDTH/HEIGHT/HSPACE/VSPACE-Optionen des aktuellen
     // Frame-Formats ausgeben und ggf. ein <BR CLEAR=...> vorne an
     // rEndTags anhaengen
     OString OutFrameFormatOptions( const SwFrameFormat& rFrameFormat, const OUString& rAltText,
-                                   HtmlFrmOpts nFrameOpts );
+        sal_uInt32 nFrameOpts, const OString& rEndTags = OString() );
 
-    void writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameFormat& rFrameFormat, const OUString& rAltText, HtmlFrmOpts nFrameOpts);
+    void writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameFormat& rFrameFormat, const OUString& rAltText, sal_uInt32 nFrameOpts);
 
     void OutCSS1_TableFrameFormatOptions( const SwFrameFormat& rFrameFormat );
     void OutCSS1_TableCellBorderHack(const SwFrameFormat& rFrameFormat);
     void OutCSS1_SectionFormatOptions( const SwFrameFormat& rFrameFormat, const SwFormatCol *pCol );
-    void OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat, HtmlFrmOpts nFrameOpts,
-                                     const SdrObject *pSdrObj=nullptr,
-                                     const SfxItemSet *pItemSet=nullptr );
+    void OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat, sal_uInt32 nFrameOpts,
+                                const SdrObject *pSdrObj=nullptr,
+                                const SfxItemSet *pItemSet=nullptr );
     void OutCSS1_FrameFormatBackground( const SwFrameFormat& rFrameFormat );
 
     void ChangeParaToken( sal_uInt16 nNew );
@@ -614,7 +613,7 @@ struct HTMLSaveData
     SwHTMLNumRuleInfo *pOldNumRuleInfo;     // Owner = this
     SwHTMLNumRuleInfo *pOldNextNumRuleInfo; // Owner = HTML-Writer
     sal_uInt16 nOldDefListLvl;
-    SvxFrameDirection nOldDirection;
+    sal_uInt16 nOldDirection;
     bool bOldWriteAll : 1;
     bool bOldOutHeader : 1;
     bool bOldOutFooter : 1;
@@ -647,8 +646,8 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
 Writer& OutHTML_Image( Writer&, const SwFrameFormat& rFormat,
                        const OUString& rGraphicURL,
                        Graphic& rGraphic, const OUString& rAlternateText,
-                       const Size& rRealSize, HtmlFrmOpts nFrameOpts,
-                       const sal_Char *pMarkType,
+                       const Size& rRealSize, sal_uInt32 nFrameOpts,
+                       const sal_Char *pMarkType = nullptr,
                        const ImageMap *pGenImgMap = nullptr );
 
 Writer& OutHTML_BulletImage( Writer& rWrt, const sal_Char *pTag,

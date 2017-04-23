@@ -22,7 +22,6 @@
 #include <vcl/lstbox.hxx>
 #include "swdllapi.h"
 #include <o3tl/typed_flags_set.hxx>
-#include <editeng/svxenum.hxx>
 
 enum class SwInsertNumTypes
 {
@@ -41,19 +40,19 @@ struct SwNumberingTypeListBox_Impl;
 
 class SW_DLLPUBLIC SwNumberingTypeListBox : public ListBox
 {
-    std::unique_ptr<SwNumberingTypeListBox_Impl> pImpl;
+    SwNumberingTypeListBox_Impl* pImpl;
 
 public:
-    SwNumberingTypeListBox( vcl::Window* pWin, WinBits nStyle );
-    virtual ~SwNumberingTypeListBox() override;
+    SwNumberingTypeListBox( vcl::Window* pWin, WinBits nStyle = WB_BORDER );
+    virtual ~SwNumberingTypeListBox();
     virtual void dispose() override;
 
     virtual bool set_property(const OString &rKey, const OString &rValue) override;
 
-    void          Reload(SwInsertNumTypes nTypeFlags);
+    void        Reload(SwInsertNumTypes nTypeFlags);
 
-    SvxNumType    GetSelectedNumberingType();
-    bool          SelectNumberingType(SvxNumType nType);
+    sal_Int16   GetSelectedNumberingType();
+    bool    SelectNumberingType(sal_Int16 nType);
 };
 
 #endif

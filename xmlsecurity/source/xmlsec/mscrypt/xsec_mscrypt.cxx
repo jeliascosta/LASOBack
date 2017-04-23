@@ -41,21 +41,21 @@ extern "C"
 
 void* SAL_CALL mscrypt_component_getFactory( const sal_Char* pImplName , void* pServiceManager , void* /*pRegistryKey*/ )
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
     Reference< XSingleServiceFactory > xFactory ;
 
-    if( pImplName != nullptr && pServiceManager != nullptr ) {
-        if( XMLSignature_MSCryptImpl::impl_getImplementationName().equalsAscii( pImplName ) ) {
-            xFactory = XMLSignature_MSCryptImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
-        } else if( XMLSecurityContext_MSCryptImpl::impl_getImplementationName().equalsAscii( pImplName ) ) {
-            xFactory = XMLSecurityContext_MSCryptImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
-        } else if( SecurityEnvironment_MSCryptImpl::impl_getImplementationName().equalsAscii( pImplName ) ) {
-            xFactory = SecurityEnvironment_MSCryptImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
-        } else if( XMLEncryption_MSCryptImpl::impl_getImplementationName().equalsAscii( pImplName ) ) {
-            xFactory = XMLEncryption_MSCryptImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
-        } else if( SEInitializer_MSCryptImpl_getImplementationName().equalsAscii( pImplName ) ) {
+    if( pImplName != NULL && pServiceManager != NULL ) {
+        if( XMLSignature_MSCryptImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) ) {
+            xFactory = XMLSignature_MSCryptImpl::impl_createFactory( reinterpret_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
+        } else if( XMLSecurityContext_MSCryptImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) ) {
+            xFactory = XMLSecurityContext_MSCryptImpl::impl_createFactory( reinterpret_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
+        } else if( SecurityEnvironment_MSCryptImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) ) {
+            xFactory = SecurityEnvironment_MSCryptImpl::impl_createFactory( reinterpret_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
+        } else if( XMLEncryption_MSCryptImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) ) {
+            xFactory = XMLEncryption_MSCryptImpl::impl_createFactory( reinterpret_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
+        } else if( SEInitializer_MSCryptImpl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) ) {
             xFactory.set( createSingleFactory(
-                static_cast< XMultiServiceFactory * >( pServiceManager ),
+                reinterpret_cast< XMultiServiceFactory * >( pServiceManager ),
                 OUString::createFromAscii( pImplName ),
                 SEInitializer_MSCryptImpl_createInstance, SEInitializer_MSCryptImpl_getSupportedServiceNames() ) );
         }

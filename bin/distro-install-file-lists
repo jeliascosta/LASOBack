@@ -78,6 +78,7 @@ if test "z$OOO_VENDOR" != "zDebian" ; then
     rm -f common_list.txt
     for module in gid_Module_Root gid_Module_Root_Brand \
         gid_Module_Root_Files_[0-9] \
+        gid_Module_Filter \
         gid_Module_Root_Hack \
         gid_Module_Oo_Linguistic \
         gid_Module_Root_Extension_Dictionary_* \
@@ -235,6 +236,7 @@ if test "z$OOO_VENDOR" != "zDebian" ; then
     test -f $DESTDIR/gid_Module_Optional_Gnome && cp $DESTDIR/gid_Module_Optional_Gnome gnome_list.txt || :
     mv_file_between_flists gnome_list.txt common_list.txt $INSTALLDIR/program/libevoab2.so
     mv_file_between_flists gnome_list.txt common_list.txt $INSTALLDIR/program/libvclplug_gtk[0-9]*l..so
+    mv_file_between_flists common_list.txt gnome_list.txt $INSTALLDIR/program/ucpgvfs1lo.so
     add_used_directories gnome_list.txt common_list.txt
 
     # mono subpackage
@@ -339,6 +341,9 @@ if test "z$OOO_VENDOR" != "zDebian" ; then
             mv_file_between_flists core_list.txt common_list.txt "$INSTALLDIR/$f"
         done
 
+        # Put gtk/gnome stuff into gnome package
+        mv_file_between_flists gnome_list.txt core_list.txt $INSTALLDIR/program/ucpgvfs1lo.so
+
         # Ship ooqstart for gnome in gnome package
         mv_file_between_flists gnome_list.txt core_list.txt "$INSTALLDIR/program/libqstart_gtk680.*"
 
@@ -389,6 +394,7 @@ else
     create_package_directory gid_Module_Root_Files_Images           pkg/libreoffice-common
     create_package_directory gid_Module_Oo_Linguistic               pkg/libreoffice-common
     create_package_directory gid_Module_Optional_Xsltfiltersamples  pkg/libreoffice-common
+    create_package_directory gid_Module_Filter                      pkg/libreoffice-common
     create_package_directory gid_Module_Optional_Grfflt             pkg/libreoffice-draw
     create_package_directory gid_Module_Prg_Calc_Bin                pkg/libreoffice-calc
     create_package_directory gid_Module_Prg_Math_Bin                pkg/libreoffice-math

@@ -31,24 +31,26 @@ ScDrawObjFactory::~ScDrawObjFactory()
     SdrObjFactory::RemoveMakeUserDataHdl( LINK ( this, ScDrawObjFactory, MakeUserData ) );
 }
 
-IMPL_STATIC_LINK(
-    ScDrawObjFactory, MakeUserData, SdrObjUserDataCreatorParams, aParams, SdrObjUserData* )
+IMPL_STATIC_LINK_TYPED(
+    ScDrawObjFactory, MakeUserData, SdrObjFactory *, pObjFactory, void )
 {
-    if ( aParams.nInventor == SdrInventor::ScOrSwDraw )
+    if ( pObjFactory->nInventor == SC_DRAWLAYER )
     {
-        if ( aParams.nObjIdentifier == SC_UD_OBJDATA )
-            return new ScDrawObjData;
-        else if ( aParams.nObjIdentifier == SC_UD_IMAPDATA )
-            return new ScIMapInfo;
-        else if ( aParams.nObjIdentifier == SC_UD_MACRODATA )
-            return new ScMacroInfo;
-        OSL_FAIL("MakeUserData: wrong ID");
+        if ( pObjFactory->nIdentifier == SC_UD_OBJDATA )
+            pObjFactory->pNewData = new ScDrawObjData;
+        else if ( pObjFactory->nIdentifier == SC_UD_IMAPDATA )
+            pObjFactory->pNewData = new ScIMapInfo;
+        else if ( pObjFactory->nIdentifier == SC_UD_MACRODATA )
+            pObjFactory->pNewData = new ScMacroInfo;
+        else
+        {
+            OSL_FAIL("MakeUserData: wrong ID");
+        }
     }
-    return nullptr;
 }
 
 ScDrawObjData::ScDrawObjData() :
-    SdrObjUserData( SdrInventor::ScOrSwDraw, SC_UD_OBJDATA ),
+    SdrObjUserData( SC_DRAWLAYER, SC_UD_OBJDATA ),
     maStart( ScAddress::INITIALIZE_INVALID ),
     maEnd( ScAddress::INITIALIZE_INVALID ),
     meType( DrawingObject )
@@ -61,12 +63,12 @@ ScDrawObjData* ScDrawObjData::Clone( SdrObject* ) const
 }
 
 ScIMapInfo::ScIMapInfo() :
-    SdrObjUserData( SdrInventor::ScOrSwDraw, SC_UD_IMAPDATA )
+    SdrObjUserData( SC_DRAWLAYER, SC_UD_IMAPDATA )
 {
 }
 
 ScIMapInfo::ScIMapInfo( const ImageMap& rImageMap ) :
-    SdrObjUserData( SdrInventor::ScOrSwDraw, SC_UD_IMAPDATA ),
+    SdrObjUserData( SC_DRAWLAYER, SC_UD_IMAPDATA ),
     aImageMap( rImageMap )
 {
 }
@@ -87,7 +89,7 @@ SdrObjUserData* ScIMapInfo::Clone( SdrObject* ) const
 }
 
 ScMacroInfo::ScMacroInfo() :
-    SdrObjUserData( SdrInventor::ScOrSwDraw, SC_UD_MACRODATA )
+    SdrObjUserData( SC_DRAWLAYER, SC_UD_MACRODATA )
 {
 }
 

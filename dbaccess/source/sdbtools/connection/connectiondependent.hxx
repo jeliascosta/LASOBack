@@ -88,12 +88,12 @@ namespace sdbtools
 
         ::osl::Mutex&   getMutex( GuardAccess ) const { return m_aMutex; }
 
-        bool acquireConnection( GuardAccess )
+        inline bool acquireConnection( GuardAccess )
         {
             m_xConnection.set(m_aConnection);
             return m_xConnection.is();
         }
-        void releaseConnection( GuardAccess )
+        inline void releaseConnection( GuardAccess )
         {
             m_xConnection.clear();
         }

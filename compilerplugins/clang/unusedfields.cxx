@@ -28,7 +28,7 @@ Be warned that it produces around 5G of log file.
 The process goes something like this:
   $ make check
   $ make FORCE_COMPILE_ALL=1 COMPILER_PLUGIN_TOOL='unusedfields' check
-  $ ./compilerplugins/clang/unusedfields.py
+  $ ./compilerplugins/clang/unusedfields.py unusedfields.log
 
 and then
   $ for dir in *; do make FORCE_COMPILE_ALL=1 UPDATE_FILES=$dir COMPILER_PLUGIN_TOOL='unusedfieldsremove' $dir; done
@@ -47,7 +47,6 @@ struct MyFieldInfo
     std::string fieldName;
     std::string fieldType;
     std::string sourceLocation;
-    std::string access;
 };
 bool operator < (const MyFieldInfo &lhs, const MyFieldInfo &rhs)
 {
@@ -57,9 +56,7 @@ bool operator < (const MyFieldInfo &lhs, const MyFieldInfo &rhs)
 
 
 // try to limit the voluminous output a little
-static std::set<MyFieldInfo> touchedFromInsideSet;
-static std::set<MyFieldInfo> touchedFromConstructorSet;
-static std::set<MyFieldInfo> touchedFromOutsideSet;
+static std::set<MyFieldInfo> touchedSet;
 static std::set<MyFieldInfo> readFromSet;
 static std::set<MyFieldInfo> definitionSet;
 
@@ -77,79 +74,109 @@ public:
         // dump all our output in one write call - this is to try and limit IO "crosstalk" between multiple processes
         // writing to the same logfile
         std::string output;
-        for (const MyFieldInfo & s : touchedFromInsideSet)
-            output += "inside:\t" + s.parentClass + "\t" + s.fieldName + "\n";
-        for (const MyFieldInfo & s : touchedFromConstructorSet)
-            output += "constructor:\t" + s.parentClass + "\t" + s.fieldName + "\n";
-        for (const MyFieldInfo & s : touchedFromOutsideSet)
-            output += "outside:\t" + s.parentClass + "\t" + s.fieldName + "\n";
+        for (const MyFieldInfo & s : touchedSet)
+            output += "touch:\t" + s.parentClass + "\t" + s.fieldName + "\n";
         for (const MyFieldInfo & s : readFromSet)
             output += "read:\t" + s.parentClass + "\t" + s.fieldName + "\n";
         for (const MyFieldInfo & s : definitionSet)
         {
-            output += "definition:\t" + s.access + "\t" + s.parentClass + "\t" + s.fieldName + "\t" + s.fieldType + "\t" + s.sourceLocation + "\n";
+            output += "definition:\t" + s.parentClass + "\t" + s.fieldName + "\t" + s.fieldType + "\t" + s.sourceLocation + "\n";
         }
         ofstream myfile;
-        myfile.open( SRCDIR "/loplugin.unusedfields.log", ios::app | ios::out);
+        myfile.open( SRCDIR "/unusedfields.log", ios::app | ios::out);
         myfile << output;
         myfile.close();
     }
 
     bool shouldVisitTemplateInstantiations () const { return true; }
-    bool shouldVisitImplicitCode() const { return true; }
 
+    bool VisitCallExpr(CallExpr* );
     bool VisitFieldDecl( const FieldDecl* );
     bool VisitMemberExpr( const MemberExpr* );
     bool VisitDeclRefExpr( const DeclRefExpr* );
 private:
     MyFieldInfo niceName(const FieldDecl*);
-    void checkTouched(const FieldDecl* fieldDecl, const Expr* memberExpr);
+    std::string fullyQualifiedName(const FunctionDecl*);
 };
 
 MyFieldInfo UnusedFields::niceName(const FieldDecl* fieldDecl)
 {
     MyFieldInfo aInfo;
-
-    const RecordDecl* recordDecl = fieldDecl->getParent();
-
-    if (const CXXRecordDecl* cxxRecordDecl = dyn_cast<CXXRecordDecl>(recordDecl))
-    {
-        if (cxxRecordDecl->getTemplateInstantiationPattern())
-            cxxRecordDecl = cxxRecordDecl->getTemplateInstantiationPattern();
-        aInfo.parentClass = cxxRecordDecl->getQualifiedNameAsString();
-    }
-    else
-        aInfo.parentClass = recordDecl->getQualifiedNameAsString();
-
+    aInfo.parentClass = fieldDecl->getParent()->getQualifiedNameAsString();
     aInfo.fieldName = fieldDecl->getNameAsString();
     aInfo.fieldType = fieldDecl->getType().getAsString();
 
     SourceLocation expansionLoc = compiler.getSourceManager().getExpansionLoc( fieldDecl->getLocation() );
     StringRef name = compiler.getSourceManager().getFilename(expansionLoc);
     aInfo.sourceLocation = std::string(name.substr(strlen(SRCDIR)+1)) + ":" + std::to_string(compiler.getSourceManager().getSpellingLineNumber(expansionLoc));
-    normalizeDotDotInFilePath(aInfo.sourceLocation);
-
-    switch (fieldDecl->getAccess())
-    {
-    case AS_public: aInfo.access = "public"; break;
-    case AS_private: aInfo.access = "private"; break;
-    case AS_protected: aInfo.access = "protected"; break;
-    default: aInfo.access = "unknown"; break;
-    }
 
     return aInfo;
+}
+
+std::string UnusedFields::fullyQualifiedName(const FunctionDecl* functionDecl)
+{
+    std::string ret = compat::getReturnType(*functionDecl).getCanonicalType().getAsString();
+    ret += " ";
+    if (isa<CXXMethodDecl>(functionDecl)) {
+        const CXXRecordDecl* recordDecl = dyn_cast<CXXMethodDecl>(functionDecl)->getParent();
+        ret += recordDecl->getQualifiedNameAsString();
+        ret += "::";
+    }
+    ret += functionDecl->getNameAsString() + "(";
+    bool bFirst = true;
+    for (const ParmVarDecl *pParmVarDecl : compat::parameters(*functionDecl)) {
+        if (bFirst)
+            bFirst = false;
+        else
+            ret += ",";
+        ret += pParmVarDecl->getType().getCanonicalType().getAsString();
+    }
+    ret += ")";
+    if (isa<CXXMethodDecl>(functionDecl) && dyn_cast<CXXMethodDecl>(functionDecl)->isConst()) {
+        ret += " const";
+    }
+
+    return ret;
+}
+
+// prevent recursive templates from blowing up the stack
+static std::set<std::string> traversedFunctionSet;
+
+bool UnusedFields::VisitCallExpr(CallExpr* expr)
+{
+    // Note that I don't ignore ANYTHING here, because I want to get calls to my code that result
+    // from template instantiation deep inside the STL and other external code
+
+    FunctionDecl* calleeFunctionDecl = expr->getDirectCallee();
+    if (calleeFunctionDecl == nullptr) {
+        Expr* callee = expr->getCallee()->IgnoreParenImpCasts();
+        DeclRefExpr* dr = dyn_cast<DeclRefExpr>(callee);
+        if (dr) {
+            calleeFunctionDecl = dyn_cast<FunctionDecl>(dr->getDecl());
+            if (calleeFunctionDecl)
+                goto gotfunc;
+        }
+        return true;
+    }
+
+gotfunc:
+    // if we see a call to a function, it may effectively create new code,
+    // if the function is templated. However, if we are inside a template function,
+    // calling another function on the same template, the same problem occurs.
+    // Rather than tracking all of that, just traverse anything we have not already traversed.
+    if (traversedFunctionSet.insert(fullyQualifiedName(calleeFunctionDecl)).second)
+        TraverseFunctionDecl(calleeFunctionDecl);
+
+    return true;
 }
 
 bool UnusedFields::VisitFieldDecl( const FieldDecl* fieldDecl )
 {
     fieldDecl = fieldDecl->getCanonicalDecl();
-    if (ignoreLocation( fieldDecl )) {
+    const FieldDecl* canonicalDecl = fieldDecl;
+
+    if( ignoreLocation( fieldDecl ))
         return true;
-    }
-    // ignore stuff that forms part of the stable URE interface
-    if (isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(fieldDecl->getLocation()))) {
-        return true;
-    }
 
     QualType type = fieldDecl->getType();
     // unwrap array types
@@ -172,7 +199,7 @@ bool UnusedFields::VisitFieldDecl( const FieldDecl* fieldDecl )
             return true;
     }
 */
-    definitionSet.insert(niceName(fieldDecl));
+    definitionSet.insert(niceName(canonicalDecl));
     return true;
 }
 
@@ -183,22 +210,13 @@ bool UnusedFields::VisitMemberExpr( const MemberExpr* memberExpr )
     if (!fieldDecl) {
         return true;
     }
-    fieldDecl = fieldDecl->getCanonicalDecl();
-    if (ignoreLocation(fieldDecl)) {
-        return true;
-    }
-    // ignore stuff that forms part of the stable URE interface
-    if (isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(fieldDecl->getLocation()))) {
-        return true;
-    }
-
     MyFieldInfo fieldInfo = niceName(fieldDecl);
-
-  // for the touched-from-outside analysis
-
-    checkTouched(fieldDecl, memberExpr);
+    touchedSet.insert(fieldInfo);
 
   // for the write-only analysis
+
+    if (ignoreLocation(memberExpr))
+        return true;
 
     const Stmt* child = memberExpr;
     const Stmt* parent = parentStmt(memberExpr);
@@ -272,49 +290,11 @@ bool UnusedFields::VisitMemberExpr( const MemberExpr* memberExpr )
 bool UnusedFields::VisitDeclRefExpr( const DeclRefExpr* declRefExpr )
 {
     const Decl* decl = declRefExpr->getDecl();
-    const FieldDecl* fieldDecl = dyn_cast<FieldDecl>(decl);
-    if (!fieldDecl) {
+    if (!isa<FieldDecl>(decl)) {
         return true;
     }
-    fieldDecl = fieldDecl->getCanonicalDecl();
-    if (ignoreLocation(fieldDecl)) {
-        return true;
-    }
-    // ignore stuff that forms part of the stable URE interface
-    if (isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(fieldDecl->getLocation()))) {
-        return true;
-    }
-    checkTouched(fieldDecl, declRefExpr);
+    touchedSet.insert(niceName(dyn_cast<FieldDecl>(decl)));
     return true;
-}
-
-void UnusedFields::checkTouched(const FieldDecl* fieldDecl, const Expr* memberExpr) {
-    const FunctionDecl* memberExprParentFunction = parentFunctionDecl(memberExpr);
-    const CXXMethodDecl* methodDecl = dyn_cast_or_null<CXXMethodDecl>(memberExprParentFunction);
-
-    MyFieldInfo fieldInfo = niceName(fieldDecl);
-
-    // it's touched from somewhere outside a class
-    if (!methodDecl) {
-        touchedFromOutsideSet.insert(fieldInfo);
-        return;
-    }
-
-    auto constructorDecl = dyn_cast<CXXConstructorDecl>(methodDecl);
-    if (methodDecl->isCopyAssignmentOperator() || methodDecl->isMoveAssignmentOperator()) {
-        // ignore move/copy operator, it's self->self
-    } else if (constructorDecl && (constructorDecl->isCopyConstructor() || constructorDecl->isMoveConstructor())) {
-        // ignore move/copy constructor, it's self->self
-    } else if (constructorDecl && memberExprParentFunction->getParent() == fieldDecl->getParent()) {
-        // if the field is touched from inside it's parent class constructor
-        touchedFromConstructorSet.insert(fieldInfo);
-    } else {
-        if (memberExprParentFunction->getParent() == fieldDecl->getParent()) {
-            touchedFromInsideSet.insert(fieldInfo);
-        } else {
-           touchedFromOutsideSet.insert(fieldInfo);
-        }
-    }
 }
 
 loplugin::Plugin::Registration< UnusedFields > X("unusedfields", false);

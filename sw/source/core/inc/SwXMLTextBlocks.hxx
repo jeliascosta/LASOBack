@@ -23,25 +23,20 @@
 #include <sfx2/objsh.hxx>
 #include <sfx2/docfile.hxx>
 #include <swblocks.hxx>
-#include <o3tl/typed_flags_set.hxx>
 
 class SwPaM;
 class SwDoc;
 class SvxMacroTableDtor;
 
-enum class SwXmlFlags {
-    NONE         = 0x0000,
-    NoRootCommit = 0x0002,
-};
-namespace o3tl {
-    template<> struct typed_flags<SwXmlFlags> : is_typed_flags<SwXmlFlags, 0x0002> {};
-}
+#define SWXML_CONVBLOCK     0x0001
+#define SWXML_NOROOTCOMMIT  0x0002
 
 class SwXMLTextBlocks : public SwImpBlocks
 {
 protected:
+    bool                    bAutocorrBlock;
     SfxObjectShellRef       xDocShellRef;
-    SwXmlFlags              nFlags;
+    sal_uInt16              nFlags;
     OUString                aPackageName;
     tools::SvRef<SfxMedium> xMedium;
 
@@ -55,10 +50,10 @@ public:
     css::uno::Reference < css::embed::XStorage > xRoot;
     SwXMLTextBlocks( const OUString& rFile );
     SwXMLTextBlocks( const css::uno::Reference < css::embed::XStorage >&, const OUString& rFile );
-    void   AddName( const OUString&, const OUString&, const OUString&, bool bOnlyText );
+    void   AddName( const OUString&, const OUString&, const OUString&, bool bOnlyText = false );
     virtual void   AddName( const OUString&, const OUString&, bool bOnlyText = false ) override;
     static OUString GeneratePackageName ( const OUString& rShort );
-    virtual ~SwXMLTextBlocks() override;
+    virtual ~SwXMLTextBlocks();
     virtual sal_uLong Delete( sal_uInt16 ) override;
     virtual sal_uLong Rename( sal_uInt16, const OUString&, const OUString& ) override;
     virtual sal_uLong CopyBlock( SwImpBlocks& rImp, OUString& rShort, const OUString& rLong) override;

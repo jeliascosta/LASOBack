@@ -45,13 +45,13 @@ private:
     // shell of the current document
     SwWrtShell*             m_pWrtShell;
     // impl object
-    std::unique_ptr<SwCompatibilityOptPage_Impl> m_pImpl;
+    SwCompatibilityOptPage_Impl* m_pImpl;
     // saved options after "Reset"; used in "FillItemSet" for comparison
     sal_uLong                   m_nSavedOptions;
 
     // handler
-    DECL_LINK(SelectHdl, ListBox&, void);
-    DECL_LINK(UseAsDefaultHdl, Button*, void);
+    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(UseAsDefaultHdl, Button*, void);
 
     // private methods
     void                    InitControls( const SfxItemSet& rSet );
@@ -61,7 +61,7 @@ private:
 
 public:
     SwCompatibilityOptPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwCompatibilityOptPage() override;
+    virtual ~SwCompatibilityOptPage();
     virtual void            dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

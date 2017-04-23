@@ -52,10 +52,12 @@ namespace connectivity
     {
     public:
         explicit SQLError_Impl( const Reference<XComponentContext> & _rxContext );
+        ~SQLError_Impl();
 
         // versions of the public SQLError methods which are just delegated to this impl-class
         static const OUString& getMessagePrefix();
         OUString     getErrorMessage( const ErrorCondition _eCondition, const ParamValue& _rParamValue1, const ParamValue& _rParamValue2, const ParamValue& _rParamValue3 );
+        OUString     getSQLState( const ErrorCondition _eCondition );
         static ErrorCode    getErrorCode( const ErrorCondition _eCondition );
         void                raiseException( const ErrorCondition _eCondition, const Reference< XInterface >& _rxContext, const ParamValue& _rParamValue1, const ParamValue& _rParamValue2, const ParamValue& _rParamValue3 );
         void                raiseException( const ErrorCondition _eCondition, const ParamValue& _rParamValue1, const ParamValue& _rParamValue2, const ParamValue& _rParamValue3 );
@@ -82,7 +84,7 @@ namespace connectivity
     private:
         ::osl::Mutex                                            m_aMutex;
         Reference<XComponentContext>                            m_aContext;
-        std::unique_ptr< ::comphelper::OfficeResourceBundle > m_pResources;
+        ::std::unique_ptr< ::comphelper::OfficeResourceBundle > m_pResources;
         bool                                                    m_bAttemptedInit;
     };
 
@@ -90,6 +92,11 @@ namespace connectivity
         :m_aContext( _rxContext )
         ,m_pResources( )
         ,m_bAttemptedInit( false )
+    {
+    }
+
+
+    SQLError_Impl::~SQLError_Impl()
     {
     }
 
@@ -141,6 +148,12 @@ namespace connectivity
     }
 
 
+    OUString SQLError_Impl::getSQLState( const ErrorCondition _eCondition )
+    {
+        return impl_getSQLState( _eCondition );
+    }
+
+
     ErrorCode SQLError_Impl::getErrorCode( const ErrorCondition _eCondition )
     {
         return 0 - ::sal::static_int_cast< ErrorCode, ErrorCondition >( _eCondition );
@@ -177,7 +190,7 @@ namespace connectivity
         const Type& _rExceptionType, const ParamValue& _rParamValue1, const ParamValue& _rParamValue2, const ParamValue& _rParamValue3 )
     {
         if ( !::cppu::UnoType< SQLException >::get().isAssignableFrom( _rExceptionType ) )
-            throw std::bad_cast();
+            throw ::std::bad_cast();
 
         // default-construct an exception of the desired type
         Any aException( nullptr, _rExceptionType );
@@ -204,7 +217,7 @@ namespace connectivity
         return SQLException(
             getErrorMessage( _eCondition, _rParamValue1, _rParamValue2, _rParamValue3 ),
             _rxContext,
-            impl_getSQLState( _eCondition ),
+            getSQLState( _eCondition ),
             getErrorCode( _eCondition ),
             Any()
         );

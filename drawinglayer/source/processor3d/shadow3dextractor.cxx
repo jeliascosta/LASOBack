@@ -272,7 +272,7 @@ namespace drawinglayer
                 aCandidate += maLightNormal * fCut;
 
                 // transform to view, use 2d coordinates
-                aCandidate *= maEyeToView;
+                aCandidate *= getEyeToView();
                 aRetval.append(basegfx::B2DPoint(aCandidate.getX(), aCandidate.getY()));
             }
 

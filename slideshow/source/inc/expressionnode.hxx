@@ -76,6 +76,8 @@ namespace slideshow
             */
             virtual bool isConstant() const = 0;
         };
+
+        typedef ::std::shared_ptr< ExpressionNode > ExpressionNodeSharedPtr;
     }
 }
 

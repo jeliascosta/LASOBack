@@ -52,30 +52,30 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&        Store(SvStream &, sal_uInt16 nItemVersion ) const override;
 
-    void SetHyphen( const bool bNew ) { bHyphen = bNew; }
-    bool IsHyphen() const { return bHyphen; }
+    inline void SetHyphen( const bool bNew ) { bHyphen = bNew; }
+    inline bool IsHyphen() const { return bHyphen; }
 
-    void SetPageEnd( const bool bNew ) { bPageEnd = bNew; }
-    bool IsPageEnd() const { return bPageEnd; }
+    inline void SetPageEnd( const bool bNew ) { bPageEnd = bNew; }
+    inline bool IsPageEnd() const { return bPageEnd; }
 
-    sal_uInt8 &GetMinLead() { return nMinLead; }
-    sal_uInt8 GetMinLead() const { return nMinLead; }
+    inline sal_uInt8 &GetMinLead() { return nMinLead; }
+    inline sal_uInt8 GetMinLead() const { return nMinLead; }
 
-    sal_uInt8 &GetMinTrail() { return nMinTrail; }
-    sal_uInt8 GetMinTrail() const { return nMinTrail; }
+    inline sal_uInt8 &GetMinTrail() { return nMinTrail; }
+    inline sal_uInt8 GetMinTrail() const { return nMinTrail; }
 
-    sal_uInt8 &GetMaxHyphens() { return nMaxHyphens; }
-    sal_uInt8 GetMaxHyphens() const { return nMaxHyphens; }
+    inline sal_uInt8 &GetMaxHyphens() { return nMaxHyphens; }
+    inline sal_uInt8 GetMaxHyphens() const { return nMaxHyphens; }
 
-    SvxHyphenZoneItem &operator=( const SvxHyphenZoneItem &rNew )
+    inline SvxHyphenZoneItem &operator=( const SvxHyphenZoneItem &rNew )
     {
         bHyphen = rNew.IsHyphen();
         bPageEnd = rNew.IsPageEnd();

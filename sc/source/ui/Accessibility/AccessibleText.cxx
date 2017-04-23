@@ -52,9 +52,10 @@ class ScViewForwarder : public SvxViewForwarder
     ScSplitPos          meSplitPos;
 public:
                         ScViewForwarder(ScTabViewShell* pViewShell, ScSplitPos eSplitPos, const ScAddress& rCell);
+    virtual             ~ScViewForwarder();
 
     virtual bool        IsValid() const override;
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 
@@ -69,14 +70,18 @@ ScViewForwarder::ScViewForwarder(ScTabViewShell* pViewShell, ScSplitPos eSplitPo
 {
 }
 
+ScViewForwarder::~ScViewForwarder()
+{
+}
+
 bool ScViewForwarder::IsValid() const
 {
     return mpViewShell != nullptr;
 }
 
-tools::Rectangle ScViewForwarder::GetVisArea() const
+Rectangle ScViewForwarder::GetVisArea() const
 {
-    tools::Rectangle aVisArea;
+    Rectangle aVisArea;
     if (mpViewShell)
     {
         vcl::Window* pWindow = mpViewShell->GetWindowByPos(meSplitPos);
@@ -145,9 +150,10 @@ class ScEditObjectViewForwarder : public SvxViewForwarder
 public:
                         ScEditObjectViewForwarder( vcl::Window* pWindow,
                                                    const EditView* _pEditView);
+    virtual             ~ScEditObjectViewForwarder();
 
     virtual bool        IsValid() const override;
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 
@@ -162,17 +168,21 @@ ScEditObjectViewForwarder::ScEditObjectViewForwarder( vcl::Window* pWindow,
 {
 }
 
+ScEditObjectViewForwarder::~ScEditObjectViewForwarder()
+{
+}
+
 bool ScEditObjectViewForwarder::IsValid() const
 {
     return (mpWindow != nullptr);
 }
 
-tools::Rectangle ScEditObjectViewForwarder::GetVisArea() const
+Rectangle ScEditObjectViewForwarder::GetVisArea() const
 {
-    tools::Rectangle aVisArea;
+    Rectangle aVisArea;
     if (mpWindow)
     {
-        tools::Rectangle aVisRect(mpWindow->GetWindowExtentsRelative(mpWindow->GetAccessibleParentWindow()));
+        Rectangle aVisRect(mpWindow->GetWindowExtentsRelative(mpWindow->GetAccessibleParentWindow()));
 
         aVisRect.SetPos(Point(0, 0));
 
@@ -194,7 +204,7 @@ Point ScEditObjectViewForwarder::LogicToPixel( const Point& rPoint, const MapMod
         Point aPoint( rPoint );
         if ( mpEditView )
         {
-            tools::Rectangle aEditViewVisArea( mpEditView->GetVisArea() );
+            Rectangle aEditViewVisArea( mpEditView->GetVisArea() );
             aPoint += aEditViewVisArea.TopLeft();
         }
         return mpWindow->LogicToPixel( aPoint, rMapMode );
@@ -215,7 +225,7 @@ Point ScEditObjectViewForwarder::PixelToLogic( const Point& rPoint, const MapMod
         Point aPoint( mpWindow->PixelToLogic( rPoint, rMapMode ) );
         if ( mpEditView )
         {
-            tools::Rectangle aEditViewVisArea( mpEditView->GetVisArea() );
+            Rectangle aEditViewVisArea( mpEditView->GetVisArea() );
             aPoint -= aEditViewVisArea.TopLeft();
         }
         return aPoint;
@@ -238,22 +248,27 @@ protected:
     ScPreviewShell*     mpViewShell;
 public:
     explicit            ScPreviewViewForwarder(ScPreviewShell* pViewShell);
+    virtual             ~ScPreviewViewForwarder();
 
     virtual bool        IsValid() const override;
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 
     void                SetInvalid();
 
-    tools::Rectangle GetVisRect() const;
+    Rectangle GetVisRect() const;
 
     // clips the VisArea and calculates with the negativ coordinates
-    tools::Rectangle CorrectVisArea(const tools::Rectangle& rVisArea) const;
+    Rectangle CorrectVisArea(const Rectangle& rVisArea) const;
 };
 
 ScPreviewViewForwarder::ScPreviewViewForwarder(ScPreviewShell* pViewShell)
     : mpViewShell(pViewShell)
+{
+}
+
+ScPreviewViewForwarder::~ScPreviewViewForwarder()
 {
 }
 
@@ -262,9 +277,9 @@ bool ScPreviewViewForwarder::IsValid() const
     return mpViewShell != nullptr;
 }
 
-tools::Rectangle ScPreviewViewForwarder::GetVisArea() const
+Rectangle ScPreviewViewForwarder::GetVisArea() const
 {
-    tools::Rectangle aVisArea;
+    Rectangle aVisArea;
     OSL_FAIL("should be implemented in an abrevated class");
     return aVisArea;
 }
@@ -316,7 +331,7 @@ void ScPreviewViewForwarder::SetInvalid()
     mpViewShell = nullptr;
 }
 
-tools::Rectangle ScPreviewViewForwarder::GetVisRect() const
+Rectangle ScPreviewViewForwarder::GetVisRect() const
 {
     if ( mpViewShell )
     {
@@ -325,15 +340,15 @@ tools::Rectangle ScPreviewViewForwarder::GetVisRect() const
         if ( pWindow )
             aOutputSize = pWindow->GetOutputSizePixel();
         Point aPoint;
-        tools::Rectangle aVisRect( aPoint, aOutputSize );
+        Rectangle aVisRect( aPoint, aOutputSize );
         return aVisRect;
     }
-    return tools::Rectangle();
+    return Rectangle();
 }
 
-tools::Rectangle ScPreviewViewForwarder::CorrectVisArea(const tools::Rectangle& rVisArea) const
+Rectangle ScPreviewViewForwarder::CorrectVisArea(const Rectangle& rVisArea) const
 {
-    tools::Rectangle aVisArea(rVisArea);
+    Rectangle aVisArea(rVisArea);
     Point aPos = aVisArea.TopLeft(); // get first the position to remember negative positions after clipping
 
     vcl::Window* pWin = mpViewShell->GetWindow();
@@ -361,8 +376,9 @@ class ScPreviewHeaderFooterViewForwarder : public ScPreviewViewForwarder
     bool            mbHeader;
 public:
                         ScPreviewHeaderFooterViewForwarder(ScPreviewShell* pViewShell, bool bHeader);
+    virtual             ~ScPreviewHeaderFooterViewForwarder();
 
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
 };
 
 ScPreviewHeaderFooterViewForwarder::ScPreviewHeaderFooterViewForwarder(ScPreviewShell* pViewShell, bool bHeader)
@@ -372,9 +388,13 @@ ScPreviewHeaderFooterViewForwarder::ScPreviewHeaderFooterViewForwarder(ScPreview
 {
 }
 
-tools::Rectangle ScPreviewHeaderFooterViewForwarder::GetVisArea() const
+ScPreviewHeaderFooterViewForwarder::~ScPreviewHeaderFooterViewForwarder()
 {
-    tools::Rectangle aVisArea;
+}
+
+Rectangle ScPreviewHeaderFooterViewForwarder::GetVisArea() const
+{
+    Rectangle aVisArea;
     if (mpViewShell)
     {
         const ScPreviewLocationData& rData = mpViewShell->GetLocationData();
@@ -398,8 +418,9 @@ class ScPreviewCellViewForwarder : public ScPreviewViewForwarder
 public:
                         ScPreviewCellViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos);
+    virtual             ~ScPreviewCellViewForwarder();
 
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
 };
 
 ScPreviewCellViewForwarder::ScPreviewCellViewForwarder(ScPreviewShell* pViewShell,
@@ -410,9 +431,13 @@ ScPreviewCellViewForwarder::ScPreviewCellViewForwarder(ScPreviewShell* pViewShel
 {
 }
 
-tools::Rectangle ScPreviewCellViewForwarder::GetVisArea() const
+ScPreviewCellViewForwarder::~ScPreviewCellViewForwarder()
 {
-    tools::Rectangle aVisArea;
+}
+
+Rectangle ScPreviewCellViewForwarder::GetVisArea() const
+{
+    Rectangle aVisArea;
     if (mpViewShell)
     {
         const ScPreviewLocationData& rData = mpViewShell->GetLocationData();
@@ -435,8 +460,9 @@ public:
                         ScPreviewHeaderCellViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos,
                             bool bColHeader);
+    virtual             ~ScPreviewHeaderCellViewForwarder();
 
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
 };
 
 ScPreviewHeaderCellViewForwarder::ScPreviewHeaderCellViewForwarder(ScPreviewShell* pViewShell,
@@ -449,9 +475,13 @@ ScPreviewHeaderCellViewForwarder::ScPreviewHeaderCellViewForwarder(ScPreviewShel
 {
 }
 
-tools::Rectangle ScPreviewHeaderCellViewForwarder::GetVisArea() const
+ScPreviewHeaderCellViewForwarder::~ScPreviewHeaderCellViewForwarder()
 {
-    tools::Rectangle aVisArea;
+}
+
+Rectangle ScPreviewHeaderCellViewForwarder::GetVisArea() const
+{
+    Rectangle aVisArea;
     if (mpViewShell)
     {
         const ScPreviewLocationData& rData = mpViewShell->GetLocationData();
@@ -474,8 +504,9 @@ public:
                         ScPreviewNoteViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos,
                             bool bNoteMark);
+    virtual             ~ScPreviewNoteViewForwarder();
 
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
 };
 
 ScPreviewNoteViewForwarder::ScPreviewNoteViewForwarder(ScPreviewShell* pViewShell,
@@ -488,9 +519,13 @@ ScPreviewNoteViewForwarder::ScPreviewNoteViewForwarder(ScPreviewShell* pViewShel
 {
 }
 
-tools::Rectangle ScPreviewNoteViewForwarder::GetVisArea() const
+ScPreviewNoteViewForwarder::~ScPreviewNoteViewForwarder()
 {
-    tools::Rectangle aVisArea;
+}
+
+Rectangle ScPreviewNoteViewForwarder::GetVisArea() const
+{
+    Rectangle aVisArea;
     if (mpViewShell)
     {
         const ScPreviewLocationData& rData = mpViewShell->GetLocationData();
@@ -511,9 +546,10 @@ class ScEditViewForwarder : public SvxEditViewForwarder
     VclPtr<vcl::Window> mpWindow;
 public:
                         ScEditViewForwarder(EditView* pEditView, vcl::Window* pWin);
+    virtual             ~ScEditViewForwarder();
 
     virtual bool        IsValid() const override;
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual bool        GetSelection( ESelection& rSelection ) const override;
@@ -531,14 +567,18 @@ ScEditViewForwarder::ScEditViewForwarder(EditView* pEditView, vcl::Window* pWin)
 {
 }
 
+ScEditViewForwarder::~ScEditViewForwarder()
+{
+}
+
 bool ScEditViewForwarder::IsValid() const
 {
     return mpWindow && mpEditView;
 }
 
-tools::Rectangle ScEditViewForwarder::GetVisArea() const
+Rectangle ScEditViewForwarder::GetVisArea() const
 {
-    tools::Rectangle aVisArea;
+    Rectangle aVisArea;
     if (IsValid() && mpEditView->GetEditEngine())
     {
         MapMode aMapMode(mpEditView->GetEditEngine()->GetRefMapMode());
@@ -680,7 +720,8 @@ ScAccessibleCellTextData::~ScAccessibleCellTextData()
 
 void ScAccessibleCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -713,8 +754,8 @@ SvxTextForwarder* ScAccessibleCellTextData::GetTextForwarder()
         long nIndent = 0;
         const SvxHorJustifyItem* pHorJustifyItem = static_cast< const SvxHorJustifyItem* >(
             rDoc.GetAttr( aCellPos.Col(), aCellPos.Row(), aCellPos.Tab(), ATTR_HOR_JUSTIFY ) );
-        SvxCellHorJustify eHorJust = pHorJustifyItem ? pHorJustifyItem->GetValue() : SvxCellHorJustify::Standard;
-        if ( eHorJust == SvxCellHorJustify::Left )
+        SvxCellHorJustify eHorJust = ( pHorJustifyItem ? static_cast< SvxCellHorJustify >( pHorJustifyItem->GetValue() ) : SVX_HOR_JUSTIFY_STANDARD );
+        if ( eHorJust == SVX_HOR_JUSTIFY_LEFT )
         {
             const SfxUInt16Item* pIndentItem = static_cast< const SfxUInt16Item* >(
                 rDoc.GetAttr( aCellPos.Col(), aCellPos.Row(), aCellPos.Tab(), ATTR_INDENT ) );
@@ -777,9 +818,9 @@ SvxTextForwarder* ScAccessibleCellTextData::GetTextForwarder()
         pEditEngine->SetPaperSize( aSize );
 
         // #i92143# text getRangeExtents reports incorrect 'x' values for spreadsheet cells
-        if ( eHorJust == SvxCellHorJustify::Standard && rDoc.HasValueData( aCellPos.Col(), aCellPos.Row(), aCellPos.Tab() ) )
+        if ( eHorJust == SVX_HOR_JUSTIFY_STANDARD && rDoc.HasValueData( aCellPos.Col(), aCellPos.Row(), aCellPos.Tab() ) )
         {
-            pEditEngine->SetDefaultItem( SvxAdjustItem( SvxAdjust::Right, EE_PARA_JUST ) );
+            pEditEngine->SetDefaultItem( SvxAdjustItem( SVX_ADJUST_RIGHT, EE_PARA_JUST ) );
         }
 
         Size aTextSize;
@@ -796,12 +837,12 @@ SvxTextForwarder* ScAccessibleCellTextData::GetTextForwarder()
         {
             switch ( eHorJust )
             {
-                case SvxCellHorJustify::Right:
+                case SVX_HOR_JUSTIFY_RIGHT:
                     {
                         nOffsetX -= nDiffX;
                     }
                     break;
-                case SvxCellHorJustify::Center:
+                case SVX_HOR_JUSTIFY_CENTER:
                     {
                         nOffsetX -= nDiffX / 2;
                     }
@@ -816,7 +857,7 @@ SvxTextForwarder* ScAccessibleCellTextData::GetTextForwarder()
         long nOffsetY = 0;
         const SvxVerJustifyItem* pVerJustifyItem = static_cast< const SvxVerJustifyItem* >(
             rDoc.GetAttr( aCellPos.Col(), aCellPos.Row(), aCellPos.Tab(), ATTR_VER_JUSTIFY ) );
-        SvxCellVerJustify eVerJust = ( pVerJustifyItem ? pVerJustifyItem->GetValue() : SVX_VER_JUSTIFY_STANDARD );
+        SvxCellVerJustify eVerJust = ( pVerJustifyItem ? static_cast< SvxCellVerJustify >( pVerJustifyItem->GetValue() ) : SVX_VER_JUSTIFY_STANDARD );
         switch ( eVerJust )
         {
             case SVX_VER_JUSTIFY_STANDARD:
@@ -861,7 +902,7 @@ SvxEditViewForwarder* ScAccessibleCellTextData::GetEditViewForwarder( bool /* bC
     return nullptr;
 }
 
-IMPL_LINK(ScAccessibleTextData, NotifyHdl, EENotify&, aNotify, void)
+IMPL_LINK_TYPED(ScAccessibleTextData, NotifyHdl, EENotify&, aNotify, void)
 {
     ::std::unique_ptr< SfxHint > aHint = SvxEditSourceHelper::EENotification2Hint( &aNotify );
 
@@ -907,7 +948,8 @@ ScAccessibleEditObjectTextData::~ScAccessibleEditObjectTextData()
 
 void ScAccessibleEditObjectTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpWindow = nullptr;
         mpEditView = nullptr;
@@ -966,7 +1008,7 @@ SvxEditViewForwarder* ScAccessibleEditObjectTextData::GetEditViewForwarder( bool
     return mpEditViewForwarder;
 }
 
-IMPL_LINK(ScAccessibleEditObjectTextData, NotifyHdl, EENotify&, rNotify, void)
+IMPL_LINK_TYPED(ScAccessibleEditObjectTextData, NotifyHdl, EENotify&, rNotify, void)
 {
     ::std::unique_ptr< SfxHint > aHint = SvxEditSourceHelper::EENotification2Hint( &rNotify );
 
@@ -1000,7 +1042,7 @@ ScAccessibleEditLineTextData::~ScAccessibleEditLineTextData()
         delete mpEditEngine;
         mpEditEngine = nullptr;    // don't access in ScAccessibleEditObjectTextData dtor!
     }
-    else if (pTxtWnd && pTxtWnd->HasEditView() && pTxtWnd->GetEditView()->GetEditEngine())
+    else if (pTxtWnd && pTxtWnd->GetEditView() && pTxtWnd->GetEditView()->GetEditEngine())
     {
         //  the NotifyHdl also has to be removed from the ScTextWnd's EditEngine
         //  (it's set in ScAccessibleEditLineTextData::GetTextForwarder, and mpEditEngine
@@ -1034,10 +1076,9 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
 
     if (pTxtWnd)
     {
-        if (pTxtWnd->HasEditView())
+        mpEditView = pTxtWnd->GetEditView();
+        if (mpEditView)
         {
-            mpEditView = pTxtWnd->GetEditView();
-
             if (mbEditEngineCreated && mpEditEngine)
                 ResetEditMode();
             mbEditEngineCreated = false;
@@ -1048,8 +1089,6 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
         }
         else
         {
-            mpEditView = nullptr;
-
             if (mpEditEngine && !mbEditEngineCreated)
                 ResetEditMode();
             if (!mpEditEngine)
@@ -1059,7 +1098,7 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
                 mpEditEngine = new ScFieldEditEngine(nullptr, pEnginePool, nullptr, true);
                 mbEditEngineCreated = true;
                 mpEditEngine->EnableUndo( false );
-                mpEditEngine->SetRefMapMode( MapUnit::Map100thMM );
+                mpEditEngine->SetRefMapMode( MAP_100TH_MM );
                 mpForwarder = new SvxEditEngineForwarder(*mpEditEngine);
 
                 mpEditEngine->SetText(pTxtWnd->GetTextString());
@@ -1083,7 +1122,8 @@ SvxEditViewForwarder* ScAccessibleEditLineTextData::GetEditViewForwarder( bool b
 
     if (pTxtWnd)
     {
-        if (!pTxtWnd->HasEditView() && bCreate)
+        mpEditView = pTxtWnd->GetEditView();
+        if (!mpEditView && bCreate)
         {
             if ( !pTxtWnd->IsInputActive() )
             {
@@ -1104,7 +1144,7 @@ void ScAccessibleEditLineTextData::ResetEditMode()
 
     if (mbEditEngineCreated && mpEditEngine)
         delete mpEditEngine;
-    else if (pTxtWnd && pTxtWnd->HasEditView() && pTxtWnd->GetEditView()->GetEditEngine())
+    else if (pTxtWnd && pTxtWnd->GetEditView() && pTxtWnd->GetEditView()->GetEditEngine())
         pTxtWnd->GetEditView()->GetEditEngine()->SetNotifyHdl(Link<EENotify&,void>());
     mpEditEngine = nullptr;
 
@@ -1130,15 +1170,15 @@ void ScAccessibleEditLineTextData::StartEdit()
     ResetEditMode();
     mpEditView = nullptr;
 
-    // send SdrHintKind::BeginEdit
-    SdrHint aHint(SdrHintKind::BeginEdit);
+    // send HINT_BEGEDIT
+    SdrHint aHint(HINT_BEGEDIT);
     GetBroadcaster().Broadcast( aHint );
 }
 
 void ScAccessibleEditLineTextData::EndEdit()
 {
-    // send SdrHintKind::EndEdit
-    SdrHint aHint(SdrHintKind::EndEdit);
+    // send HINT_ENDEDIT
+    SdrHint aHint(HINT_ENDEDIT);
     GetBroadcaster().Broadcast( aHint );
 
     ResetEditMode();
@@ -1165,7 +1205,8 @@ ScAccessiblePreviewCellTextData::~ScAccessiblePreviewCellTextData()
 
 void ScAccessiblePreviewCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -1238,7 +1279,8 @@ ScAccessiblePreviewHeaderCellTextData::~ScAccessiblePreviewHeaderCellTextData()
 
 void ScAccessiblePreviewHeaderCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -1271,7 +1313,7 @@ SvxTextForwarder* ScAccessiblePreviewHeaderCellTextData::GetTextForwarder()
         if (pDocShell)
             pEditEngine->SetRefDevice(pDocShell->GetRefDevice());
         else
-            pEditEngine->SetRefMapMode( MapUnit::Map100thMM );
+            pEditEngine->SetRefMapMode( MAP_100TH_MM );
         pForwarder = new SvxEditEngineForwarder(*pEditEngine);
     }
 
@@ -1287,7 +1329,7 @@ SvxTextForwarder* ScAccessiblePreviewHeaderCellTextData::GetTextForwarder()
             if ( pWindow )
                 aOutputSize = pWindow->GetOutputSizePixel();
             Point aPoint;
-            tools::Rectangle aVisRect( aPoint, aOutputSize );
+            Rectangle aVisRect( aPoint, aOutputSize );
             Size aSize(mpViewShell->GetLocationData().GetHeaderCellOutputRect(aVisRect, aCellPos, mbColHeader).GetSize());
             if (pWindow)
                 aSize = pWindow->PixelToLogic(aSize, pEditEngine->GetRefMapMode());
@@ -1356,7 +1398,8 @@ ScAccessibleTextData* ScAccessibleHeaderTextData::Clone() const
 
 void ScAccessibleHeaderTextData::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;// invalid now
         mpDocSh = nullptr;
@@ -1374,7 +1417,7 @@ SvxTextForwarder* ScAccessibleHeaderTextData::GetTextForwarder()
         ScHeaderEditEngine* pHdrEngine = new ScHeaderEditEngine( pEnginePool );
 
         pHdrEngine->EnableUndo( false );
-        pHdrEngine->SetRefMapMode( MapUnit::MapTwip );
+        pHdrEngine->SetRefMapMode( MAP_TWIP );
 
         //  default font must be set, independently of document
         //  -> use global pool from module
@@ -1384,12 +1427,9 @@ SvxTextForwarder* ScAccessibleHeaderTextData::GetTextForwarder()
         rPattern.FillEditItemSet( &aDefaults );
         //  FillEditItemSet adjusts font height to 1/100th mm,
         //  but for header/footer twips is needed, as in the PatternAttr:
-        std::unique_ptr<SfxPoolItem> pNewItem(rPattern.GetItem(ATTR_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT));
-        aDefaults.Put( *pNewItem );
-        pNewItem.reset(rPattern.GetItem(ATTR_CJK_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK));
-        aDefaults.Put( *pNewItem );
-        pNewItem.reset(rPattern.GetItem(ATTR_CTL_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL));
-        aDefaults.Put( *pNewItem );
+        aDefaults.Put( rPattern.GetItem(ATTR_FONT_HEIGHT), EE_CHAR_FONTHEIGHT );
+        aDefaults.Put( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CJK );
+        aDefaults.Put( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CTL );
         aDefaults.Put( SvxAdjustItem( meAdjust, EE_PARA_JUST ) );
         pHdrEngine->SetDefaults( aDefaults );
 
@@ -1409,7 +1449,7 @@ SvxTextForwarder* ScAccessibleHeaderTextData::GetTextForwarder()
 
     if ( mpViewShell  )
     {
-        tools::Rectangle aVisRect;
+        Rectangle aVisRect;
         mpViewShell->GetLocationData().GetHeaderPosition(aVisRect);
         Size aSize(aVisRect.GetSize());
         vcl::Window* pWin = mpViewShell->GetWindow();
@@ -1469,7 +1509,8 @@ ScAccessibleTextData* ScAccessibleNoteTextData::Clone() const
 
 void ScAccessibleNoteTextData::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;// invalid now
         mpDocSh = nullptr;
@@ -1497,7 +1538,7 @@ SvxTextForwarder* ScAccessibleNoteTextData::GetTextForwarder()
         if (mpDocSh)
             mpEditEngine->SetRefDevice(mpDocSh->GetRefDevice());
         else
-            mpEditEngine->SetRefMapMode( MapUnit::Map100thMM );
+            mpEditEngine->SetRefMapMode( MAP_100TH_MM );
         mpForwarder = new SvxEditEngineForwarder(*mpEditEngine);
     }
 
@@ -1514,7 +1555,7 @@ SvxTextForwarder* ScAccessibleNoteTextData::GetTextForwarder()
             if ( pWindow )
                 aOutputSize = pWindow->GetOutputSizePixel();
             Point aPoint;
-            tools::Rectangle aVisRect( aPoint, aOutputSize );
+            Rectangle aVisRect( aPoint, aOutputSize );
             Size aSize(mpViewShell->GetLocationData().GetNoteInRangeOutputRect(aVisRect, mbMarkNote, maCellPos).GetSize());
             if (pWindow)
                 aSize = pWindow->PixelToLogic(aSize, mpEditEngine->GetRefMapMode());
@@ -1541,21 +1582,21 @@ SvxViewForwarder* ScAccessibleNoteTextData::GetViewForwarder()
 
 class ScCsvViewForwarder : public SvxViewForwarder
 {
-    tools::Rectangle                   maBoundBox;
+    Rectangle                   maBoundBox;
     VclPtr<vcl::Window>         mpWindow;
 
 public:
-    explicit                    ScCsvViewForwarder( vcl::Window* pWindow, const tools::Rectangle& rBoundBox );
+    explicit                    ScCsvViewForwarder( vcl::Window* pWindow, const Rectangle& rBoundBox );
 
     virtual bool                IsValid() const override;
-    virtual tools::Rectangle           GetVisArea() const override;
+    virtual Rectangle           GetVisArea() const override;
     virtual Point               LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point               PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 
     void                        SetInvalid();
 };
 
-ScCsvViewForwarder::ScCsvViewForwarder( vcl::Window* pWindow, const tools::Rectangle& rBoundBox ) :
+ScCsvViewForwarder::ScCsvViewForwarder( vcl::Window* pWindow, const Rectangle& rBoundBox ) :
     maBoundBox( rBoundBox ),
     mpWindow( pWindow )
 {
@@ -1566,7 +1607,7 @@ bool ScCsvViewForwarder::IsValid() const
     return mpWindow != nullptr;
 }
 
-tools::Rectangle ScCsvViewForwarder::GetVisArea() const
+Rectangle ScCsvViewForwarder::GetVisArea() const
 {
     return maBoundBox;
 }
@@ -1590,7 +1631,7 @@ void ScCsvViewForwarder::SetInvalid()
 
 ScAccessibleCsvTextData::ScAccessibleCsvTextData(
         vcl::Window* pWindow, EditEngine* pEditEngine,
-        const OUString& rCellText, const tools::Rectangle& rBoundBox, const Size& rCellSize ) :
+        const OUString& rCellText, const Rectangle& rBoundBox, const Size& rCellSize ) :
     mpWindow( pWindow ),
     mpEditEngine( pEditEngine ),
     maCellText( rCellText ),
@@ -1605,7 +1646,8 @@ ScAccessibleCsvTextData::~ScAccessibleCsvTextData()
 
 void ScAccessibleCsvTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         mpWindow = nullptr;
         mpEditEngine = nullptr;

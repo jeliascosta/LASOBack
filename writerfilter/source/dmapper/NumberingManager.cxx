@@ -16,9 +16,6 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-
-#include <sal/config.h>
-
 #include "ConversionHelper.hxx"
 #include "NumberingManager.hxx"
 #include "StyleSheetTable.hxx"
@@ -41,15 +38,16 @@
 
 using namespace com::sun::star;
 
+#define MAKE_PROPVAL(NameId, Value) \
+    beans::PropertyValue(getPropertyName(NameId), 0, uno::makeAny(Value), beans::PropertyState_DIRECT_VALUE )
+
+#define NUMBERING_MAX_LEVELS    10
+
+
 namespace writerfilter {
 namespace dmapper {
 
 //---------------------------------------------------  Utility functions
-template <typename T>
-beans::PropertyValue lcl_makePropVal(PropertyIds nNameID, T const & aValue)
-{
-    return {getPropertyName(nNameID), 0, uno::makeAny(aValue), beans::PropertyState_DIRECT_VALUE};
-}
 
 sal_Int32 lcl_findProperty( const uno::Sequence< beans::PropertyValue >& aProps, const OUString& sName )
 {
@@ -241,7 +239,7 @@ uno::Sequence< beans::PropertyValue > ListLevel::GetLevelProperties( )
     std::vector<beans::PropertyValue> aNumberingProperties;
 
     if( m_nIStartAt >= 0)
-        aNumberingProperties.push_back(lcl_makePropVal<sal_Int16>(PROP_START_WITH, m_nIStartAt) );
+        aNumberingProperties.push_back( MAKE_PROPVAL(PROP_START_WITH, (sal_Int16)m_nIStartAt) );
 
     sal_Int16 nNumberFormat = ConversionHelper::ConvertNumberingType(m_nNFC);
     if( m_nNFC >= 0)
@@ -252,11 +250,11 @@ uno::Sequence< beans::PropertyValue > ListLevel::GetLevelProperties( )
             // w:lvlText is empty, that means no numbering in Word.
             // CHAR_SPECIAL is handled separately below.
             nNumberFormat = style::NumberingType::NUMBER_NONE;
-        aNumberingProperties.push_back(lcl_makePropVal(PROP_NUMBERING_TYPE, nNumberFormat));
+        aNumberingProperties.push_back( MAKE_PROPVAL(PROP_NUMBERING_TYPE, nNumberFormat ));
     }
 
     if( m_nJC >= 0 && m_nJC <= sal::static_int_cast<sal_Int32>(sizeof(aWWToUnoAdjust) / sizeof(sal_Int16)) )
-        aNumberingProperties.push_back(lcl_makePropVal(PROP_ADJUST, aWWToUnoAdjust[m_nJC]));
+        aNumberingProperties.push_back( MAKE_PROPVAL(PROP_ADJUST, aWWToUnoAdjust[m_nJC]));
 
     if( !isOutlineNumbering())
     {
@@ -265,24 +263,21 @@ uno::Sequence< beans::PropertyValue > ListLevel::GetLevelProperties( )
         {
             if (!m_sBulletChar.isEmpty())
             {
-                aNumberingProperties.push_back(lcl_makePropVal(PROP_BULLET_CHAR, m_sBulletChar.copy(0, 1)));
+                aNumberingProperties.push_back( MAKE_PROPVAL(PROP_BULLET_CHAR, m_sBulletChar.copy(0,1)));
             }
             else
             {
                 // If w:lvlText's value is null - set bullet char to zero.
-                aNumberingProperties.push_back(lcl_makePropVal<sal_Unicode>(PROP_BULLET_CHAR, 0));
+                aNumberingProperties.push_back( MAKE_PROPVAL(PROP_BULLET_CHAR, sal_Unicode(0x0)));
             }
         }
         if (!m_sGraphicURL.isEmpty())
-            aNumberingProperties.push_back(lcl_makePropVal(PROP_GRAPHIC_URL, m_sGraphicURL));
+            aNumberingProperties.push_back(MAKE_PROPVAL(PROP_GRAPHIC_URL, m_sGraphicURL));
         if (m_sGraphicBitmap.is())
-        {
-            aNumberingProperties.push_back(lcl_makePropVal(PROP_GRAPHIC_BITMAP, m_sGraphicBitmap));
-            aNumberingProperties.push_back(lcl_makePropVal(PROP_GRAPHIC_SIZE, m_aGraphicSize));
-        }
+            aNumberingProperties.push_back(MAKE_PROPVAL(PROP_GRAPHIC_BITMAP, m_sGraphicBitmap));
     }
 
-    aNumberingProperties.push_back(lcl_makePropVal(PROP_LISTTAB_STOP_POSITION, m_nTabstop));
+    aNumberingProperties.push_back( MAKE_PROPVAL( PROP_LISTTAB_STOP_POSITION, m_nTabstop ) );
 
     //TODO: handling of nFLegal?
     //TODO: nFNoRestart lower levels do not restart when higher levels are incremented, like:
@@ -292,10 +287,18 @@ uno::Sequence< beans::PropertyValue > ListLevel::GetLevelProperties( )
     //2.3
     //3.4
 
+
+    if( m_nFWord6 > 0) //Word 6 compatibility
+    {
+        if( m_nFPrev == 1)
+            aNumberingProperties.push_back( MAKE_PROPVAL( PROP_PARENT_NUMBERING, (sal_Int16) NUMBERING_MAX_LEVELS ));
+        //TODO: prefixing space     nFPrevSpace;     - has not been used in WW8 filter
+    }
+
 //    TODO: sRGBXchNums;     array of inherited numbers
 
 //  nXChFollow; following character 0 - tab, 1 - space, 2 - nothing
-    aNumberingProperties.push_back(lcl_makePropVal(PROP_LEVEL_FOLLOW, m_nXChFollow));
+    aNumberingProperties.push_back( MAKE_PROPVAL( PROP_LEVEL_FOLLOW, m_nXChFollow ));
 
     const int nIds = 5;
     PropertyIds aReadIds[nIds] =
@@ -532,14 +535,14 @@ void ListDef::CreateNumberingRules( DomainMapper& rDMapper,
             uno::Sequence< uno::Sequence< beans::PropertyValue > > aProps = GetPropertyValues( );
 
             sal_Int32 nAbstLevels = m_pAbstractDef ? m_pAbstractDef->Size() : 0;
-            sal_Int32 nLevel = 0;
+            sal_Int16 nLevel = 0;
             while ( nLevel < nAbstLevels )
             {
                 ListLevel::Pointer pAbsLevel = m_pAbstractDef->GetLevel( nLevel );
                 ListLevel::Pointer pLevel = GetLevel( nLevel );
 
                 // Get the merged level properties
-                auto aLvlProps = comphelper::sequenceToContainer< std::vector<beans::PropertyValue> >(aProps[nLevel]);
+                auto aLvlProps = comphelper::sequenceToContainer< std::vector<beans::PropertyValue> >(aProps[sal_Int32(nLevel)]);
 
                 // Get the char style
                 uno::Sequence< beans::PropertyValue > aAbsCharStyleProps = pAbsLevel->GetCharStyleProperties( );
@@ -664,6 +667,7 @@ ListsManager::ListsManager(DomainMapper& rDMapper,
     , LoggedTable("ListsManager")
     , m_rDMapper(rDMapper)
     , m_xFactory(xFactory)
+    , m_bIsLFOImport(false)
 {
 }
 
@@ -716,13 +720,7 @@ void ListsManager::lcl_attribute( Id nName, Value& rVal )
             //the Writer supports only a number of upper levels to show, separators is always a dot
             //and each level can have a prefix and a suffix
             if(pCurrentLvl.get())
-            {
-                //if the BulletChar is a soft-hyphen (0xad)
-                //replace it with a hard-hyphen (0x2d)
-                //-> this fixes missing hyphen export in PDF etc.
-                // see tdf#101626
-                pCurrentLvl->SetBulletChar( rVal.getString().replace( 0xad, 0x2d ) );
-            }
+                pCurrentLvl->SetBulletChar( rVal.getString() );
         }
         break;
         case NS_ooxml::LN_CT_Lvl_start:
@@ -859,6 +857,19 @@ void ListsManager::lcl_sprm( Sprm& rSprm )
             {
                 uno::Reference<drawing::XShape> xShape = m_rDMapper.PopPendingShape();
 
+                // Respect only the aspect ratio of the picture, not its size.
+                awt::Size aPrefSize = xShape->getSize();
+                // See SwDefBulletConfig::InitFont(), default height is 14.
+                const int nFontHeight = 14;
+                // Point -> mm100.
+                const int nHeight = nFontHeight * 35;
+                if (aPrefSize.Height * aPrefSize.Width != 0)
+                {
+                    int nWidth = (nHeight * aPrefSize.Width) / aPrefSize.Height;
+                    awt::Size aSize(nWidth, nHeight);
+                    xShape->setSize(aSize);
+                }
+
                 m_pCurrentNumPicBullet->SetShape(xShape);
             }
             break;
@@ -891,24 +902,9 @@ void ListsManager::lcl_sprm( Sprm& rSprm )
                     } catch(const beans::UnknownPropertyException&)
                     {}
 
-                    // Respect only the aspect ratio of the picture, not its size.
-                    awt::Size aPrefSize = xShape->getSize();
-                    // See SwDefBulletConfig::InitFont(), default height is 14.
-                    const int nFontHeight = 14;
-                    // Point -> mm100.
-                    const int nHeight = nFontHeight * 35;
-                    if ( aPrefSize.Height * aPrefSize.Width != 0 )
-                    {
-                        int nWidth = (nHeight * aPrefSize.Width) / aPrefSize.Height;
-
-                        awt::Size aSize( convertMm100ToTwip(nWidth), convertMm100ToTwip(nHeight) );
-                        m_pCurrentDefinition->GetCurrentLevel()->SetGraphicSize( aSize );
-                    }
-                    else
-                    {
-                        awt::Size aSize( convertMm100ToTwip(aPrefSize.Width), convertMm100ToTwip(aPrefSize.Height) );
-                        m_pCurrentDefinition->GetCurrentLevel()->SetGraphicSize( aSize );
-                    }
+                    // Now that we saved the URL of the graphic, remove it from the document.
+                    uno::Reference<lang::XComponent> xShapeComponent(xShape, uno::UNO_QUERY);
+                    xShapeComponent->dispose();
                 }
             }
             break;
@@ -1092,13 +1088,27 @@ void ListsManager::lcl_entry( int /* pos */,
     }
     else
     {
-        // Create AbstractListDef's
-        OSL_ENSURE( !m_pCurrentDefinition.get(), "current entry has to be NULL here");
-        m_pCurrentDefinition.reset( new AbstractListDef( ) );
-        ref->resolve(*this);
-        //append it to the table
-        m_aAbstractLists.push_back( m_pCurrentDefinition );
-        m_pCurrentDefinition = AbstractListDef::Pointer();
+        if ( m_bIsLFOImport )
+        {
+            // Create ListDef's
+            OSL_ENSURE( !m_pCurrentDefinition.get(), "current entry has to be NULL here");
+            ListDef::Pointer pList( new ListDef() );
+            m_pCurrentDefinition = pList;
+            ref->resolve(*this);
+            //append it to the table
+            m_aLists.push_back( pList );
+            m_pCurrentDefinition = AbstractListDef::Pointer();
+        }
+        else
+        {
+            // Create AbstractListDef's
+            OSL_ENSURE( !m_pCurrentDefinition.get(), "current entry has to be NULL here");
+            m_pCurrentDefinition.reset( new AbstractListDef( ) );
+            ref->resolve(*this);
+            //append it to the table
+            m_aAbstractLists.push_back( m_pCurrentDefinition );
+            m_pCurrentDefinition = AbstractListDef::Pointer();
+        }
     }
 }
 

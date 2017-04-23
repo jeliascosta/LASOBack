@@ -62,26 +62,24 @@
 
 XFSaxAttrList::XFSaxAttrList()
 {
-    m_xSvAttrList = new SvXMLAttributeList();
+    m_pSvAttrList = new SvXMLAttributeList();
+    m_xAttrList.set(m_pSvAttrList);
 }
 
 XFSaxAttrList::~XFSaxAttrList()
 {
+    //pls don't delete m_pSvAttrList,because when m_xAttrList release,the object will be automatic deleted.
+//  if( m_pSvAttrList )
+//      delete m_pSvAttrList;
 }
 
-void XFSaxAttrList::AddAttribute(const OUString& name, const OUString& value)
+void    XFSaxAttrList::AddAttribute(const OUString& name, const OUString& value)
 {
-    m_xSvAttrList->AddAttribute(name,value);
+    m_pSvAttrList->AddAttribute(name,value);
 }
 
-void XFSaxAttrList::Clear()
+void    XFSaxAttrList::Clear()
 {
-    m_xSvAttrList->Clear();
+    m_pSvAttrList->Clear();
 }
-
-css::uno::Reference<css::xml::sax::XAttributeList> XFSaxAttrList::GetAttributeList() const
-{
-    return m_xSvAttrList.get();
-}
-
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

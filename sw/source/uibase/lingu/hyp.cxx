@@ -25,6 +25,7 @@
 #include <vcl/msgbox.hxx>
 #include <vcl/wrkwin.hxx>
 #include <linguistic/lngprops.hxx>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/linguistic2/XLinguProperties.hpp>
 #include <swwait.hxx>
 
@@ -58,7 +59,7 @@ SwHyphWrapper::SwHyphWrapper( SwView* pVw,
 
 void SwHyphWrapper::SpellStart( SvxSpellArea eSpell )
 {
-    if( SvxSpellArea::Other == eSpell && nPageCount )
+    if( SVX_SPELL_OTHER == eSpell && nPageCount )
     {
         ::EndProgress( pView->GetDocShell() );
         nPageCount = 0;

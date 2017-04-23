@@ -72,7 +72,7 @@ class Listener
 {
 public:
     explicit Listener (SlideSorter& rSlideSorter);
-    virtual ~Listener() override;
+    virtual ~Listener();
 
     /** Connect to the current controller of the view shell as listener.
         This method is called once during initialization and every time a
@@ -96,23 +96,27 @@ public:
 
     //=====  lang::XEventListener  ============================================
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  document::XEventListener  ========================================
     virtual void SAL_CALL
         notifyEvent (
-            const css::document::EventObject& rEventObject) override;
+            const css::document::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  beans::XPropertySetListener  =====================================
     virtual void SAL_CALL
         propertyChange (
-            const css::beans::PropertyChangeEvent& rEvent) override;
+            const css::beans::PropertyChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== accessibility::XAccessibleEventListener  ==========================
     virtual void SAL_CALL
         notifyEvent (
             const css::accessibility::AccessibleEventObject&
-            rEvent) override;
+            rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== frame::XFrameActionListener  ======================================
     /** For certain actions the listener connects to a new controller of the
@@ -120,7 +124,8 @@ public:
         in the center pane is replaced by another view shell.
     */
     virtual void SAL_CALL
-        frameAction (const css::frame::FrameActionEvent& rEvent) override;
+        frameAction (const css::frame::FrameActionEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -165,7 +170,13 @@ private:
     */
     void HandleShapeModification (const SdrPage* pPage);
 
-    DECL_LINK(EventMultiplexerCallback, tools::EventMultiplexerEvent&, void);
+    /** This method throws a DisposedException when the object has already been
+        disposed.
+    */
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
+
+    DECL_LINK_TYPED(EventMultiplexerCallback, tools::EventMultiplexerEvent&, void);
 };
 
 } } } // end of namespace ::sd::slidesorter::controller

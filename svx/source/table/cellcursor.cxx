@@ -17,9 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "sal/config.h"
 
-#include "com/sun/star/lang/NoSupportException.hpp"
 #include "svx/svdotable.hxx"
 #include "cellcursor.hxx"
 #include "tablelayouter.hxx"
@@ -52,19 +50,19 @@ CellCursor::~CellCursor()
 // XCellCursor
 
 
-Reference< XCell > SAL_CALL CellCursor::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow )
+Reference< XCell > SAL_CALL CellCursor::getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     return CellRange::getCellByPosition( nColumn, nRow );
 }
 
 
-Reference< XCellRange > SAL_CALL CellCursor::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom )
+Reference< XCellRange > SAL_CALL CellCursor::getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     return CellRange::getCellRangeByPosition( nLeft, nTop, nRight, nBottom );
 }
 
 
-Reference< XCellRange > SAL_CALL CellCursor::getCellRangeByName( const OUString& aRange )
+Reference< XCellRange > SAL_CALL CellCursor::getCellRangeByName( const OUString& aRange ) throw (RuntimeException, std::exception)
 {
     return CellRange::getCellRangeByName( aRange );
 }
@@ -73,21 +71,21 @@ Reference< XCellRange > SAL_CALL CellCursor::getCellRangeByName( const OUString&
 // XCellCursor
 
 
-void SAL_CALL CellCursor::gotoStart(  )
+void SAL_CALL CellCursor::gotoStart(  ) throw (RuntimeException, std::exception)
 {
     mnRight = mnLeft;
     mnBottom = mnTop;
 }
 
 
-void SAL_CALL CellCursor::gotoEnd(  )
+void SAL_CALL CellCursor::gotoEnd(  ) throw (RuntimeException, std::exception)
 {
     mnLeft = mnRight;
     mnTop = mnBottom;
 }
 
 
-void SAL_CALL CellCursor::gotoNext(  )
+void SAL_CALL CellCursor::gotoNext(  ) throw (RuntimeException, std::exception)
 {
     if( mxTable.is() )
     {
@@ -115,7 +113,7 @@ void SAL_CALL CellCursor::gotoNext(  )
 }
 
 
-void SAL_CALL CellCursor::gotoPrevious(  )
+void SAL_CALL CellCursor::gotoPrevious(  ) throw (RuntimeException, std::exception)
 {
     if( mxTable.is() )
     {
@@ -135,7 +133,7 @@ void SAL_CALL CellCursor::gotoPrevious(  )
 }
 
 
-void SAL_CALL CellCursor::gotoOffset( ::sal_Int32 nColumnOffset, ::sal_Int32 nRowOffset )
+void SAL_CALL CellCursor::gotoOffset( ::sal_Int32 nColumnOffset, ::sal_Int32 nRowOffset ) throw (RuntimeException, std::exception)
 {
     if( mxTable.is() )
     {
@@ -233,7 +231,7 @@ bool CellCursor::GetMergedSelection( CellPos& rStart, CellPos& rEnd )
 }
 
 
-void SAL_CALL CellCursor::merge(  )
+void SAL_CALL CellCursor::merge(  ) throw (NoSupportException, RuntimeException, std::exception)
 {
     CellPos aStart, aEnd;
     if( !GetMergedSelection( aStart, aEnd ) )
@@ -495,7 +493,7 @@ void CellCursor::split_vertical( sal_Int32 nRows )
 }
 
 
-void SAL_CALL CellCursor::split( sal_Int32 nColumns, sal_Int32 nRows )
+void SAL_CALL CellCursor::split( sal_Int32 nColumns, sal_Int32 nRows ) throw (NoSupportException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( (nColumns < 0) || (nRows < 0) )
         throw IllegalArgumentException();
@@ -533,7 +531,7 @@ void SAL_CALL CellCursor::split( sal_Int32 nColumns, sal_Int32 nRows )
 }
 
 
-sal_Bool SAL_CALL CellCursor::isMergeable(  )
+sal_Bool SAL_CALL CellCursor::isMergeable(  ) throw (RuntimeException, std::exception)
 {
     CellPos aStart, aEnd;
     return GetMergedSelection( aStart, aEnd );

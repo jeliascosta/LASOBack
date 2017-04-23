@@ -42,22 +42,22 @@ OApplicationIconControl::OApplicationIconControl(vcl::Window* _pParent)
         ElementType eType;
         sal_uInt16      nImageResId;
     }   aCategories[] = {
-        { RID_STR_TABLES_CONTAINER,     E_TABLE,    BMP_TABLEFOLDER_TREE_L  },
-        { RID_STR_QUERIES_CONTAINER,    E_QUERY,    BMP_QUERYFOLDER_TREE_L  },
-        { RID_STR_FORMS_CONTAINER,      E_FORM,     BMP_FORMFOLDER_TREE_L   },
-        { RID_STR_REPORTS_CONTAINER,    E_REPORT,   BMP_REPORTFOLDER_TREE_L }
+        { RID_STR_TABLES_CONTAINER,     E_TABLE,    IMG_TABLEFOLDER_TREE_L  },
+        { RID_STR_QUERIES_CONTAINER,    E_QUERY,    IMG_QUERYFOLDER_TREE_L  },
+        { RID_STR_FORMS_CONTAINER,      E_FORM,     IMG_FORMFOLDER_TREE_L   },
+        { RID_STR_REPORTS_CONTAINER,    E_REPORT,   IMG_REPORTFOLDER_TREE_L }
     };
     for (const CategoryDescriptor& aCategorie : aCategories)
     {
         SvxIconChoiceCtrlEntry* pEntry = InsertEntry(
             OUString( ModuleRes( aCategorie.nLabelResId ) ) ,
-            Image(BitmapEx(ModuleRes(aCategorie.nImageResId))));
+            Image(  ModuleRes( aCategorie.nImageResId ) ) );
         if ( pEntry )
             pEntry->SetUserData( new ElementType( aCategorie.eType ) );
     }
 
     SetChoiceWithCursor();
-    SetSelectionMode(SelectionMode::Single);
+    SetSelectionMode(SINGLE_SELECTION);
 }
 
 OApplicationIconControl::~OApplicationIconControl()
@@ -77,7 +77,6 @@ void OApplicationIconControl::dispose()
             pEntry->SetUserData(nullptr);
         }
     }
-    DropTargetHelper::dispose();
     SvtIconChoiceCtrl::dispose();
 }
 

@@ -31,6 +31,7 @@
 #include <sfx2/viewsh.hxx>
 #include <svl/intitem.hxx>
 #include <svl/eitem.hxx>
+#include <svtools/stdctrl.hxx>
 #include <svl/slstitm.hxx>
 #include <svl/stritem.hxx>
 #include <svx/dialmgr.hxx>
@@ -50,6 +51,8 @@ class SvxPopupWindowListBox;
 
 class SvxPopupWindowListBox: public SfxPopupWindow
 {
+    using FloatingWindow::StateChanged;
+
     VclPtr<ListBox> m_pListBox;
     ToolBox &       rToolBox;
     bool            bUserSel;
@@ -57,14 +60,15 @@ class SvxPopupWindowListBox: public SfxPopupWindow
 
 public:
     SvxPopupWindowListBox( sal_uInt16 nSlotId, const OUString& rCommandURL, sal_uInt16 nTbxId, ToolBox& rTbx );
-    virtual ~SvxPopupWindowListBox() override;
+    virtual ~SvxPopupWindowListBox();
     virtual void dispose() override;
 
     // SfxPopupWindow
     virtual void                PopupModeEnd() override;
-    virtual void                statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
+    virtual void                StateChanged( sal_uInt16 nSID, SfxItemState eState,
+                                              const SfxPoolItem* pState ) override;
 
-    ListBox &            GetListBox()    { return *m_pListBox; }
+    inline ListBox &            GetListBox()    { return *m_pListBox; }
 
     bool                        IsUserSelected() const          { return bUserSel; }
     void                        SetUserSelected( bool bVal )    { bUserSel = bVal; }
@@ -81,7 +85,7 @@ SvxPopupWindowListBox::SvxPopupWindowListBox(sal_uInt16 nSlotId, const OUString&
     WinBits nBits(m_pListBox->GetStyle());
     nBits &= ~(WB_SIMPLEMODE);
     m_pListBox->SetStyle(nBits);
-    Size aSize(LogicToPixel(Size(100, 85), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(100, 85), MAP_APPFONT));
     m_pListBox->set_width_request(aSize.Width());
     m_pListBox->set_height_request(aSize.Height());
     m_pListBox->EnableMultiSelection( true, true );
@@ -115,13 +119,41 @@ void SvxPopupWindowListBox::PopupModeEnd()
 }
 
 
-void SvxPopupWindowListBox::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+void SvxPopupWindowListBox::StateChanged(
+        sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState )
 {
-    rToolBox.EnableItem( nTbxId, rEvent.IsEnabled );
-    SfxPopupWindow::statusChanged( rEvent );
+    rToolBox.EnableItem( nTbxId, ( SfxToolBoxControl::GetItemState( pState ) != SfxItemState::DISABLED) );
+    SfxPopupWindow::StateChanged( nSID, eState, pState );
 }
 
-IMPL_LINK_NOARG(SvxUndoRedoControl, PopupModeEndHdl, FloatingWindow*, void)
+SvxListBoxControl::SvxListBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx )
+    :SfxToolBoxControl( nSlotId, nId, rTbx ),
+    pPopupWin   ( nullptr )
+{
+    rTbx.SetItemBits( nId, ToolBoxItemBits::DROPDOWN | rTbx.GetItemBits( nId ) );
+    rTbx.Invalidate();
+}
+
+
+SvxListBoxControl::~SvxListBoxControl()
+{}
+
+VclPtr<SfxPopupWindow> SvxListBoxControl::CreatePopupWindow()
+{
+    OSL_FAIL( "not implemented" );
+    return nullptr;
+}
+
+
+void SvxListBoxControl::StateChanged(
+        sal_uInt16, SfxItemState, const SfxPoolItem* pState )
+{
+    GetToolBox().EnableItem( GetId(),
+                            SfxItemState::DISABLED != GetItemState(pState) );
+}
+
+
+IMPL_LINK_NOARG_TYPED(SvxListBoxControl, PopupModeEndHdl, FloatingWindow*, void)
 {
     if( pPopupWin && FloatWinPopupFlags::NONE == pPopupWin->GetPopupModeFlags()  &&
         pPopupWin->IsUserSelected() )
@@ -132,13 +164,13 @@ IMPL_LINK_NOARG(SvxUndoRedoControl, PopupModeEndHdl, FloatingWindow*, void)
 
         Sequence< PropertyValue > aArgs( 1 );
         aArgs[0].Name   = aObj.GetURLPath();
-        aArgs[0].Value  <<= sal_Int16( nCount );
+        aArgs[0].Value  = makeAny( sal_Int16( nCount ));
         SfxToolBoxControl::Dispatch( m_aCommandURL, aArgs );
     }
 }
 
 
-void SvxUndoRedoControl::Impl_SetInfo( sal_Int32 nCount )
+void SvxListBoxControl::Impl_SetInfo( sal_Int32 nCount )
 {
     DBG_ASSERT( pPopupWin, "NULL pointer, PopupWindow missing" );
 
@@ -157,7 +189,7 @@ void SvxUndoRedoControl::Impl_SetInfo( sal_Int32 nCount )
 }
 
 
-IMPL_LINK_NOARG(SvxUndoRedoControl, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvxListBoxControl, SelectHdl, ListBox&, void)
 {
     if (pPopupWin)
     {
@@ -178,8 +210,7 @@ IMPL_LINK_NOARG(SvxUndoRedoControl, SelectHdl, ListBox&, void)
 SFX_IMPL_TOOLBOX_CONTROL( SvxUndoRedoControl, SfxStringItem );
 
 SvxUndoRedoControl::SvxUndoRedoControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx )
-    :SfxToolBoxControl( nSlotId, nId, rTbx ),
-    pPopupWin   ( nullptr )
+    : SvxListBoxControl( nSlotId, nId, rTbx )
 {
     rTbx.SetItemBits( nId, ToolBoxItemBits::DROPDOWN | rTbx.GetItemBits( nId ) );
     rTbx.Invalidate();
@@ -207,8 +238,7 @@ void SvxUndoRedoControl::StateChanged(
             const OUString& aQuickHelpText = rItem.GetValue();
             rBox.SetQuickHelpText( GetId(), aQuickHelpText );
         }
-        GetToolBox().EnableItem( GetId(),
-                                SfxItemState::DISABLED != GetItemState(pState) );
+        SvxListBoxControl::StateChanged( nSID, eState, pState );
     }
     else
     {

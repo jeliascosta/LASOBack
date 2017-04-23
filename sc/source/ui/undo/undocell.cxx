@@ -76,7 +76,8 @@ ScUndoCursorAttr::ScUndoCursorAttr( ScDocShell* pNewDocShell,
     nRow( nNewRow ),
     nTab( nNewTab ),
     pOldEditData( static_cast<EditTextObject*>(nullptr) ),
-    pNewEditData( static_cast<EditTextObject*>(nullptr) )
+    pNewEditData( static_cast<EditTextObject*>(nullptr) ),
+    bIsAutomatic( false )
 {
     ScDocumentPool* pPool = pDocShell->GetDocument().GetPool();
     pNewPattern = const_cast<ScPatternAttr*>(static_cast<const ScPatternAttr*>( &pPool->Put( *pNewPat ) ));
@@ -133,13 +134,24 @@ void ScUndoCursorAttr::DoChange( const ScPatternAttr* pWhichPattern, const share
         nFlags |= SC_PF_LINES;
     if (bPaintRows)
         nFlags |= SC_PF_WHOLEROWS;
-    pDocShell->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PaintPartFlags::Grid, nFlags );
+    pDocShell->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PAINT_GRID, nFlags );
 }
 
 void ScUndoCursorAttr::Undo()
 {
     BeginUndo();
     DoChange(pOldPattern, pOldEditData);
+
+    if ( bIsAutomatic )
+    {
+        // if automatic formatting is reversed, then
+        // automatic formatting should also not continue to be done
+
+        ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
+        if (pViewShell)
+            pViewShell->ForgetFormatArea();
+    }
+
     EndUndo();
 }
 
@@ -230,7 +242,7 @@ void ScUndoEnterData::Undo()
     for (Value & rVal : maOldValues)
     {
         ScCellValue aNewCell;
-        aNewCell.assign(rVal.maCell, rDoc, ScCloneFlags::StartListening);
+        aNewCell.assign(rVal.maCell, rDoc, SC_CLONECELL_STARTLISTENING);
         ScAddress aPos = maPos;
         aPos.SetTab(rVal.mnTab);
         aNewCell.release(rDoc, aPos);
@@ -342,7 +354,7 @@ void ScUndoEnterValue::Undo()
 
     ScDocument& rDoc = pDocShell->GetDocument();
     ScCellValue aNewCell;
-    aNewCell.assign(maOldCell, rDoc, ScCloneFlags::StartListening);
+    aNewCell.assign(maOldCell, rDoc, SC_CLONECELL_STARTLISTENING);
     aNewCell.release(rDoc, aPos);
 
     pDocShell->PostPaintCell( aPos );
@@ -708,17 +720,8 @@ ScUndoReplaceNote::ScUndoReplaceNote( ScDocShell& rDocShell, const ScAddress& rP
     maPos( rPos ),
     mpDrawUndo( pDrawUndo )
 {
-    OSL_ENSURE( rNoteData.mxCaption, "ScUndoReplaceNote::ScUndoReplaceNote - missing note caption" );
-    if (bInsert)
-    {
-        maNewData = rNoteData;
-        maNewData.mxCaption.setNotOwner();
-    }
-    else
-    {
-        maOldData = rNoteData;
-        maOldData.mxCaption.setNotOwner();
-    }
+    OSL_ENSURE( rNoteData.mpCaption, "ScUndoReplaceNote::ScUndoReplaceNote - missing note caption" );
+    (bInsert ? maNewData : maOldData) = rNoteData;
 }
 
 ScUndoReplaceNote::ScUndoReplaceNote( ScDocShell& rDocShell, const ScAddress& rPos,
@@ -729,10 +732,8 @@ ScUndoReplaceNote::ScUndoReplaceNote( ScDocShell& rDocShell, const ScAddress& rP
     maNewData( rNewData ),
     mpDrawUndo( pDrawUndo )
 {
-    OSL_ENSURE( maOldData.mxCaption || maNewData.mxCaption, "ScUndoReplaceNote::ScUndoReplaceNote - missing note captions" );
+    OSL_ENSURE( maOldData.mpCaption || maNewData.mpCaption, "ScUndoReplaceNote::ScUndoReplaceNote - missing note captions" );
     OSL_ENSURE( !maOldData.mxInitData.get() && !maNewData.mxInitData.get(), "ScUndoReplaceNote::ScUndoReplaceNote - unexpected unitialized note" );
-    maOldData.mxCaption.setNotOwner();
-    maNewData.mxCaption.setNotOwner();
 }
 
 ScUndoReplaceNote::~ScUndoReplaceNote()
@@ -777,25 +778,24 @@ bool ScUndoReplaceNote::CanRepeat( SfxRepeatTarget& /*rTarget*/ ) const
 
 OUString ScUndoReplaceNote::GetComment() const
 {
-    return ScGlobal::GetRscString( maNewData.mxCaption ?
-        (maOldData.mxCaption ? STR_UNDO_EDITNOTE : STR_UNDO_INSERTNOTE) : STR_UNDO_DELETENOTE );
+    return ScGlobal::GetRscString( maNewData.mpCaption ?
+        (maOldData.mpCaption ? STR_UNDO_EDITNOTE : STR_UNDO_INSERTNOTE) : STR_UNDO_DELETENOTE );
 }
 
 void ScUndoReplaceNote::DoInsertNote( const ScNoteData& rNoteData )
 {
-    if( rNoteData.mxCaption )
+    if( rNoteData.mpCaption )
     {
         ScDocument& rDoc = pDocShell->GetDocument();
         OSL_ENSURE( !rDoc.GetNote(maPos), "ScUndoReplaceNote::DoInsertNote - unexpected cell note" );
         ScPostIt* pNote = new ScPostIt( rDoc, maPos, rNoteData, false );
         rDoc.SetNote( maPos, pNote );
-        ScDocShell::LOKCommentNotify(LOKCommentNotificationType::Add, &rDoc, maPos, pNote);
     }
 }
 
 void ScUndoReplaceNote::DoRemoveNote( const ScNoteData& rNoteData )
 {
-    if( rNoteData.mxCaption )
+    if( rNoteData.mpCaption )
     {
         ScDocument& rDoc = pDocShell->GetDocument();
         OSL_ENSURE( rDoc.GetNote(maPos), "ScUndoReplaceNote::DoRemoveNote - missing cell note" );
@@ -805,7 +805,6 @@ void ScUndoReplaceNote::DoRemoveNote( const ScNoteData& rNoteData )
                 caption object from the drawing layer while deleting pNote
                 (removing the caption is done by a drawing undo action). */
             pNote->ForgetCaption();
-            ScDocShell::LOKCommentNotify(LOKCommentNotificationType::Remove, &rDoc, maPos, nullptr);
             delete pNote;
         }
     }
@@ -999,7 +998,7 @@ void ScUndoRangeNames::DoChange( bool bUndo )
 
     rDoc.CompileHybridFormula();
 
-    SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScAreasChanged ) );
+    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
 }
 
 void ScUndoRangeNames::Undo()

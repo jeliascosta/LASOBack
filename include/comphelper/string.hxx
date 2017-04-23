@@ -50,6 +50,34 @@ inline bool equals(const OUString& rIn, sal_Unicode c)
 
 /** Removes all occurrences of a character from within the source string
 
+    @deprecated  Use OString::replaceAll(OString(c), OString())
+    instead.
+
+    @param rIn      The input OString
+    @param c        The character to be removed
+
+    @return         The resulting OString
+ */
+inline OString remove(const OString &rIn,
+    sal_Char c)
+{ return rIn.replaceAll(OString(c), OString()); }
+
+/** Removes all occurrences of a character from within the source string
+
+    @deprecated  Use
+    OUString::replaceAll(OUString(c), OUString()) instead.
+
+    @param rIn      The input OUString
+    @param c        The character to be removed
+
+    @return         The resulting OUString
+ */
+inline OUString remove(const OUString &rIn,
+    sal_Unicode c)
+{ return rIn.replaceAll(OUString(c), ""); }
+
+/** Removes all occurrences of a character from within the source string
+
     @param rIn      The input OUStringBuffer
     @param c        The character to be removed
 
@@ -253,16 +281,7 @@ COMPHELPER_DLLPUBLIC OUString setToken(const OUString& rIn, sal_Int32 nToken, sa
             or -1 if none of the code units occur in the string
  */
 COMPHELPER_DLLPUBLIC sal_Int32 indexOfAny(OUString const& rIn,
-        sal_Unicode const*const pChars, sal_Int32 const nPos);
-
-/** Remove any of a list of code units in the string.
-    @param rIn      OUString to search
-    @param pChars   0-terminated array of sal_Unicode code units to search for
-
-    @return OUString that has all of the pChars code units removed
- */
-COMPHELPER_DLLPUBLIC OUString removeAny(OUString const& rIn,
-        sal_Unicode const*const pChars);
+        sal_Unicode const*const pChars, sal_Int32 const nPos = 0);
 
 /** Convert a sequence of strings to a single comma separated string.
 
@@ -299,9 +318,6 @@ COMPHELPER_DLLPUBLIC OString join(const OString& rSeparator, const std::vector<O
  */
 COMPHELPER_DLLPUBLIC sal_uInt32 decimalStringToNumber(
     OUString const & str );
-
-COMPHELPER_DLLPUBLIC std::vector<OUString>
-    split(const OUString& rString, const sal_Unicode cSeparator);
 
 /** Convert a single comma separated string to a sequence of strings.
 

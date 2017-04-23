@@ -20,20 +20,20 @@
 #ifndef INCLUDED_SVX_CLIPBOARDCTL_HXX
 #define INCLUDED_SVX_CLIPBOARDCTL_HXX
 
-#include <sal/types.h>
 #include <sfx2/tbxctrl.hxx>
+#include <sfx2/ctrlitem.hxx>
 #include <svl/poolitem.hxx>
+
+
 #include <svx/svxdllapi.h>
-#include <vcl/vclptr.hxx>
 
 class PopupMenu;
-class SfxModule;
-class ToolBox;
+class SvxClipboardFormatItem;
 
 class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxClipBoardControl : public SfxToolBoxControl
 {
     SfxPoolItem*            pClipboardFmtItem;
-    VclPtr<PopupMenu>       pPopup;
+    PopupMenu*              pPopup;
     bool                    bDisabled;
 
     void                    DelPopup();
@@ -42,7 +42,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxClipBoardControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxClipBoardControl() override;
+    virtual ~SvxClipBoardControl();
 
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
     virtual void                StateChanged( sal_uInt16 nSID,

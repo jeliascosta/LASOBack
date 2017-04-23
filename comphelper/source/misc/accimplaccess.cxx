@@ -24,7 +24,6 @@
 
 #include <set>
 #include <string.h>
-#include <memory>
 
 
 namespace comphelper
@@ -50,6 +49,8 @@ namespace comphelper
 
     OAccessibleImplementationAccess::~OAccessibleImplementationAccess( )
     {
+        delete m_pImpl;
+        m_pImpl = nullptr;
     }
 
 
@@ -74,7 +75,7 @@ namespace comphelper
     }
 
 
-    sal_Int64 SAL_CALL OAccessibleImplementationAccess::getSomething( const Sequence< sal_Int8 >& _rIdentifier )
+    sal_Int64 SAL_CALL OAccessibleImplementationAccess::getSomething( const Sequence< sal_Int8 >& _rIdentifier ) throw (RuntimeException, std::exception)
     {
         sal_Int64 nReturn( 0 );
 

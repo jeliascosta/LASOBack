@@ -36,9 +36,11 @@ class ViewShellBase;
 
 namespace sd { namespace framework {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::framework::XConfigurationChangeListener
-    > ToolBarModuleInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::drawing::framework::XConfigurationChangeListener
+        > ToolBarModuleInterfaceBase;
+}
 
 /** This module is responsible for locking the ToolBarManager during
     configuration updates and for triggering ToolBarManager updates.
@@ -54,19 +56,21 @@ public:
     */
     explicit ToolBarModule (
         const css::uno::Reference<css::frame::XController>& rxController);
-    virtual ~ToolBarModule() override;
+    virtual ~ToolBarModule();
 
     virtual void SAL_CALL disposing() override;
 
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent) override;
+        const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<

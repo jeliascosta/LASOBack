@@ -137,9 +137,10 @@ namespace utl
     {
     private:
         typedef COMPONENT                           Component;
+        typedef std::shared_ptr<Component>          ComponentPointer;
 
     private:
-        std::shared_ptr<Component>                            m_xComponent;
+        ComponentPointer                            m_xComponent;
         css::uno::Reference< INTERFACE >            m_xTypedComponent;
 
     public:
@@ -150,16 +151,16 @@ namespace utl
         };
 
     public:
-        SharedUNOComponent()
+        inline  SharedUNOComponent()
         {
         }
 
-        explicit SharedUNOComponent( const css::uno::Reference< INTERFACE >& _rxComponent, AssignmentMode eMode = TakeOwnership )
+        explicit inline  SharedUNOComponent( const css::uno::Reference< INTERFACE >& _rxComponent, AssignmentMode eMode = TakeOwnership )
         {
             reset( _rxComponent, eMode );
         }
 
-        SharedUNOComponent( const css::uno::BaseReference & _rRef, css::uno::UnoReference_QueryThrow _queryThrow )
+        inline SharedUNOComponent( const css::uno::BaseReference & _rRef, css::uno::UnoReference_QueryThrow _queryThrow )
         {
             set( _rRef, _queryThrow );
         }

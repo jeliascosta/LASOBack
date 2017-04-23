@@ -45,14 +45,13 @@
 #include "tabprotection.hxx"
 #include "markdata.hxx"
 #include "inputopt.hxx"
-#include <comphelper/lok.hxx>
 
 namespace {
 
 bool isCellQualified(ScDocument* pDoc, SCCOL nCol, SCROW nRow, SCTAB nTab, bool bSelectLocked, bool bSelectUnlocked)
 {
     bool bCellProtected = pDoc->HasAttrib(
-        nCol, nRow, nTab, nCol, nRow, nTab, HasAttrFlags::Protected);
+        nCol, nRow, nTab, nCol, nRow, nTab, HASATTR_PROTECTED);
 
     if (bCellProtected && !bSelectLocked)
         return false;
@@ -323,7 +322,7 @@ void ScTabView::PaintMarks(SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCRO
 
     aViewData.GetDocument()->ExtendMerge( nStartCol, nStartRow, nEndCol, nEndRow,
                                             aViewData.GetTabNo() );
-    PaintArea( nStartCol, nStartRow, nEndCol, nEndRow, ScUpdateMode::Marks );
+    PaintArea( nStartCol, nStartRow, nEndCol, nEndRow, SC_UPDATE_MARKS );
 }
 
 bool ScTabView::IsMarking( SCCOL nCol, SCROW nRow, SCTAB nTab ) const
@@ -629,11 +628,6 @@ void ScTabView::GetPageMoveEndPosition(SCsCOL nMovX, SCsROW nMovY, SCsCOL& rPage
     ScHSplitPos eWhichX = WhichH( eWhich );
     ScVSplitPos eWhichY = WhichV( eWhich );
 
-    sal_uInt16 nScrSizeY = SC_SIZE_NONE;
-    if (comphelper::LibreOfficeKit::isActive() && aViewData.GetPageUpDownOffset() > 0) {
-        nScrSizeY = ScViewData::ToPixel( aViewData.GetPageUpDownOffset(), aViewData.GetPPTX() );
-    }
-
     SCsCOL nPageX;
     SCsROW nPageY;
     if (nMovX >= 0)
@@ -642,9 +636,9 @@ void ScTabView::GetPageMoveEndPosition(SCsCOL nMovX, SCsROW nMovY, SCsCOL& rPage
         nPageX = ((SCsCOL) aViewData.CellsAtX( nCurX, -1, eWhichX )) * nMovX;
 
     if (nMovY >= 0)
-        nPageY = ((SCsROW) aViewData.CellsAtY( nCurY, 1, eWhichY, nScrSizeY )) * nMovY;
+        nPageY = ((SCsROW) aViewData.CellsAtY( nCurY, 1, eWhichY )) * nMovY;
     else
-        nPageY = ((SCsROW) aViewData.CellsAtY( nCurY, -1, eWhichY, nScrSizeY )) * nMovY;
+        nPageY = ((SCsROW) aViewData.CellsAtY( nCurY, -1, eWhichY )) * nMovY;
 
     if (nMovX != 0 && nPageX == 0) nPageX = (nMovX>0) ? 1 : -1;
     if (nMovY != 0 && nPageY == 0) nPageY = (nMovY>0) ? 1 : -1;
@@ -750,9 +744,9 @@ void ScTabView::SkipCursorHorizontal(SCsCOL& rCurX, SCsROW& rCurY, SCsCOL nOldX,
     {
         bSkipCell = pDoc->ColHidden(rCurX, nTab) || pDoc->IsHorOverlapped(rCurX, rCurY, nTab);
         if (bSkipProtected && !bSkipCell)
-            bSkipCell = pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HasAttrFlags::Protected);
+            bSkipCell = pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HASATTR_PROTECTED);
         if (bSkipUnprotected && !bSkipCell)
-            bSkipCell = !pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HasAttrFlags::Protected);
+            bSkipCell = !pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HASATTR_PROTECTED);
 
         if (bSkipCell)
         {
@@ -810,9 +804,9 @@ void ScTabView::SkipCursorVertical(SCsCOL& rCurX, SCsROW& rCurY, SCsROW nOldY, S
         SCROW nLastRow = -1;
         bSkipCell = pDoc->RowHidden(rCurY, nTab, nullptr, &nLastRow) || pDoc->IsVerOverlapped( rCurX, rCurY, nTab );
         if (bSkipProtected && !bSkipCell)
-            bSkipCell = pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HasAttrFlags::Protected);
+            bSkipCell = pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HASATTR_PROTECTED);
         if (bSkipUnprotected && !bSkipCell)
-            bSkipCell = !pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HasAttrFlags::Protected);
+            bSkipCell = !pDoc->HasAttrib(rCurX, rCurY, nTab, rCurX, rCurY, nTab, HASATTR_PROTECTED);
 
         if (bSkipCell)
         {

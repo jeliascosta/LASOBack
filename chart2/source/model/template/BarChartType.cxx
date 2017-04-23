@@ -42,17 +42,20 @@ BarChartType::~BarChartType()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL BarChartType::createClone()
+    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new BarChartType( *this ));
 }
 
 // ____ XChartType ____
 OUString SAL_CALL BarChartType::getChartType()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(CHART2_SERVICE_NAME_CHARTTYPE_BAR);
 }
 
 uno::Sequence< OUString > BarChartType::getSupportedPropertyRoles()
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aPropRoles(2);
     aPropRoles[0] = "FillColor";
@@ -61,21 +64,36 @@ uno::Sequence< OUString > BarChartType::getSupportedPropertyRoles()
     return aPropRoles;
 }
 
+uno::Sequence< OUString > BarChartType::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aServices( 2 );
+    aServices[ 0 ] = CHART2_SERVICE_NAME_CHARTTYPE_BAR;
+    aServices[ 1 ] = "com.sun.star.chart2.ChartType";
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL BarChartType::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString BarChartType::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.BarChartType");
 }
 
 sal_Bool SAL_CALL BarChartType::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL BarChartType::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        CHART2_SERVICE_NAME_CHARTTYPE_BAR,
-        "com.sun.star.chart2.ChartType" };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace chart

@@ -36,6 +36,13 @@ namespace vcl { class Font; }
 class SwSortedObjs;
 class SwAnchoredObject;
 
+enum SwPageChg
+{
+    CHG_NEWPAGE,
+    CHG_CUTPAGE,
+    CHG_CHGPAGE
+};
+
 /// A page of the document layout.
 class SwPageFrame: public SwFootnoteBossFrame
 {
@@ -96,7 +103,7 @@ class SwPageFrame: public SwFootnoteBossFrame
                                      bool bRightSidebar );
 
     virtual void DestroyImpl() override;
-    virtual ~SwPageFrame() override;
+    virtual ~SwPageFrame();
 
 protected:
     virtual void MakeAll(vcl::RenderContext* pRenderContext) override;
@@ -188,8 +195,10 @@ public:
     void SetFootnotePage( bool b )                       { m_bFootnotePage = b; }
     void SetEndNotePage( bool b )                   { m_bEndNotePage = b; }
 
-    sal_uInt16 GetPhyPageNum() const        { return m_nPhyPageNum;}
-    void SetPhyPageNum( sal_uInt16 nNum )   { m_nPhyPageNum = nNum;}
+    inline  sal_uInt16 GetPhyPageNum() const        { return m_nPhyPageNum;}
+    inline  void SetPhyPageNum( sal_uInt16 nNum )   { m_nPhyPageNum = nNum;}
+    inline  void DecrPhyPageNum()               { --m_nPhyPageNum;     }
+    inline  void IncrPhyPageNum()               { ++m_nPhyPageNum;     }
 
     /// Validate, invalidate and query the Page status
     /// Layout/Content and Fly/non-Fly respectively are inspected separately

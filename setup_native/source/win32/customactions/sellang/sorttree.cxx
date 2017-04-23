@@ -22,33 +22,33 @@ extern "C" UINT __stdcall SortTree(MSIHANDLE)
 {
     // Sort items (languages) in SelectionTree control, fdo#46355
 
-    HWND hwndMSI = FindWindowW(L"MsiDialogCloseClass", nullptr);
-    if (hwndMSI == nullptr)
+    HWND hwndMSI = FindWindowW(L"MsiDialogCloseClass", NULL);
+    if (hwndMSI == NULL)
     {
         OutputDebugStringA("SortTree: MsiDialogCloseClass not found\n");
         return ERROR_SUCCESS;
     }
-    HWND hwndTV = FindWindowExW(hwndMSI, nullptr, L"SysTreeView32", nullptr);
-    if (hwndTV == nullptr)
+    HWND hwndTV = FindWindowExW(hwndMSI, NULL, L"SysTreeView32", NULL);
+    if (hwndTV == NULL)
     {
         OutputDebugStringA("SortTree: SysTreeView32 not found\n");
         return ERROR_SUCCESS;
     }
     HTREEITEM optional = TreeView_GetRoot(hwndTV);
-    if (optional == nullptr)
+    if (optional == NULL)
     {
         OutputDebugStringA("SortTree: Optional Components branch not found\n");
         return ERROR_SUCCESS;
     }
     HTREEITEM dicts = TreeView_GetChild(hwndTV, optional);
-    if (dicts == nullptr)
+    if (dicts == NULL)
     {
         OutputDebugStringA("SortTree: Dictionaries branch not found\n");
         return ERROR_SUCCESS;
     }
     TreeView_SortChildren(hwndTV, dicts, TRUE);
     HTREEITEM langs = TreeView_GetNextSibling(hwndTV, optional);
-    if (langs == nullptr)
+    if (langs == NULL)
     {
         OutputDebugStringA("SortTree: Additional UI Languages branch not found\n");
         return ERROR_SUCCESS;

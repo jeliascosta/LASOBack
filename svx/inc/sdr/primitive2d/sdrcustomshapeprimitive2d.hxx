@@ -39,6 +39,7 @@ namespace drawinglayer
             Primitive2DContainer                         maSubPrimitives;
             basegfx::B2DHomMatrix                       maTextBox;
 
+            // bitfield
             // defines if SdrTextWordWrapItem was set at SdrObjCustomShape which means
             // that the text needs to be block formatted
             bool                                        mbWordWrap : 1;
@@ -47,9 +48,12 @@ namespace drawinglayer
             // making exceptions with shadow generation
             bool                                        mb3DShape : 1;
 
+            // #SJ# Allow text clipping against TextBox in special cases (used for SC)
+            bool                                        mbForceTextClipToTextRange : 1;
+
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrCustomShapePrimitive2D(
@@ -65,6 +69,7 @@ namespace drawinglayer
             const basegfx::B2DHomMatrix& getTextBox() const { return maTextBox; }
             bool getWordWrap() const { return mbWordWrap; }
             bool get3DShape() const { return mb3DShape; }
+            bool isForceTextClipToTextRange() const { return mbForceTextClipToTextRange; }
 
             // compare operator
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;

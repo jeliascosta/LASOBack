@@ -16,9 +16,13 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
+#include "svx/sidebar/PopupContainer.hxx"
+#include "AreaTransparencyGradientControl.hxx"
 
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include <AreaPropertyPanel.hxx>
+#include <AreaPropertyPanel.hrc>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
 #include <sfx2/objsh.hxx>
@@ -53,7 +57,6 @@ AreaPropertyPanel::AreaPropertyPanel(
       maGradientListControl(SID_GRADIENT_LIST, *pBindings, *this),
       maHatchListControl(SID_HATCH_LIST, *pBindings, *this),
       maBitmapListControl(SID_BITMAP_LIST, *pBindings, *this),
-      maPatternListControl(SID_PATTERN_LIST, *pBindings, *this),
       maFillTransparenceController(SID_ATTR_FILL_TRANSPARENCE, *pBindings, *this),
       maFillFloatTransparenceController(SID_ATTR_FILL_FLOATTRANSPARENCE, *pBindings, *this),
       mpBindings(pBindings)
@@ -76,7 +79,6 @@ void AreaPropertyPanel::dispose()
     maGradientListControl.dispose();
     maHatchListControl.dispose();
     maBitmapListControl.dispose();
-    maPatternListControl.dispose();
     maFillTransparenceController.dispose();
     maFillFloatTransparenceController.dispose();
 

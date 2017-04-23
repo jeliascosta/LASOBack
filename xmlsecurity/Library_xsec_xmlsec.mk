@@ -30,7 +30,6 @@ $(eval $(call gb_Library_use_sdk_api,xsec_xmlsec))
 
 $(eval $(call gb_Library_add_defs,xsec_xmlsec,\
 	-DXMLSEC_NO_XSLT \
-	-DXSECXMLSEC_DLLIMPLEMENTATION \
 ))
 
 $(eval $(call gb_Library_set_precompiled_header,xsec_xmlsec,$(SRCDIR)/xmlsecurity/inc/pch/precompiled_xsec_xmlsec))
@@ -57,7 +56,7 @@ $(eval $(call gb_Library_use_externals,xsec_xmlsec,\
 
 $(eval $(call gb_Library_add_exception_objects,xsec_xmlsec,\
 	xmlsecurity/source/xmlsec/biginteger \
-	xmlsecurity/source/xmlsec/certificateextension_certextn \
+	xmlsecurity/source/xmlsec/certificateextension_xmlsecimpl \
 	xmlsecurity/source/xmlsec/errorcallback \
 	xmlsecurity/source/xmlsec/saxhelper \
 	xmlsecurity/source/xmlsec/serialnumberadapter \
@@ -71,7 +70,7 @@ $(eval $(call gb_Library_add_exception_objects,xsec_xmlsec,\
 	xmlsecurity/source/xmlsec/nss/xsec_nss \
 ))
 
-ifeq ($(OS),WNT)
+ifeq ($(OS)-$(COM),WNT-MSC)
 
 $(eval $(call gb_Library_add_defs,xsec_xmlsec,\
 	-DXMLSEC_CRYPTO_MSCRYPTO \
@@ -105,7 +104,12 @@ $(eval $(call gb_Library_add_defs,xsec_xmlsec,\
 	-DXMLSEC_CRYPTO_NSS \
 ))
 
-ifeq ($(OS),ANDROID)
+ifeq ($(OS)-$(COM),WNT-GCC)
+$(eval $(call gb_Library_add_libs,xsec_xmlsec,\
+	$(call gb_UnpackedTarball_get_dir,xmlsec)/src/nss/.libs/libxmlsec1-nss.dll.a \
+	$(call gb_UnpackedTarball_get_dir,xmlsec)/src/.libs/libxmlsec1.dll.a \
+))
+else ifeq ($(OS),ANDROID)
 $(eval $(call gb_Library_add_libs,xsec_xmlsec,\
 	$(call gb_UnpackedTarball_get_dir,xmlsec)/src/openssl/.libs/libxmlsec1-openssl.a \
 	$(call gb_UnpackedTarball_get_dir,xmlsec)/src/.libs/libxmlsec1.a \
@@ -132,7 +136,7 @@ $(eval $(call gb_Library_add_exception_objects,xsec_xmlsec,\
 	xmlsecurity/source/xmlsec/nss/xmlsignature_nssimpl \
 ))
 
-endif
+endif # ifeq ($(OS)-$(COM),WNT-GCC)
 
 ifeq ($(OS),SOLARIS)
 $(eval $(call gb_Library_add_libs,xsec_xmlsec,\

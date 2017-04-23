@@ -7,11 +7,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <grouptokenconverter.hxx>
-#include <compiler.hxx>
-
 #include <formula/token.hxx>
 #include <formula/vectortoken.hxx>
+
+#include "compiler.hxx"
+#include "grouptokenconverter.hxx"
 
 using namespace formula;
 
@@ -83,16 +83,13 @@ SCROW ScGroupTokenConverter::trimLength(SCTAB nTab, SCCOL nCol1, SCCOL nCol2, SC
     return nRowLen;
 }
 
-ScGroupTokenConverter::ScGroupTokenConverter(
-    ScTokenArray& rGroupTokens, ScDocument& rDoc, ScFormulaCell& rCell, const ScAddress& rPos) :
-    mrGroupTokens(rGroupTokens),
-    mrDoc(rDoc),
-    mrCell(rCell),
-    mrPos(rPos)
+ScGroupTokenConverter::ScGroupTokenConverter(ScTokenArray& rGroupTokens, ScDocument& rDoc, ScFormulaCell& rCell, const ScAddress& rPos) :
+        mrGroupTokens(rGroupTokens), mrDoc(rDoc), mrCell(rCell), mrPos(rPos)
+
 {
 }
 
-bool ScGroupTokenConverter::convert( ScTokenArray& rCode, sc::FormulaLogger::GroupScope& rScope )
+bool ScGroupTokenConverter::convert(ScTokenArray& rCode)
 {
 #if 0
     { // debug to start with:
@@ -138,7 +135,6 @@ bool ScGroupTokenConverter::convert( ScTokenArray& rCode, sc::FormulaLogger::Gro
 
                     formula::SingleVectorRefToken aTok(aArray, nLen, nTrimLen);
                     mrGroupTokens.AddToken(aTok);
-                    rScope.addRefMessage(mrPos, aRefPos, nLen, aArray);
 
                     if (nTrimLen && !mxFormulaGroupContext)
                     {
@@ -160,7 +156,6 @@ bool ScGroupTokenConverter::convert( ScTokenArray& rCode, sc::FormulaLogger::Gro
                         return false;
 
                     mrGroupTokens.AddToken(*pNewToken);
-                    rScope.addRefMessage(mrPos, aRefPos, *pNewToken);
                 }
             }
             break;
@@ -228,7 +223,6 @@ bool ScGroupTokenConverter::convert( ScTokenArray& rCode, sc::FormulaLogger::Gro
 
                 formula::DoubleVectorRefToken aTok(aArrays, nRequestedLength, nArrayLength, nRefRowSize, bAbsFirst, bAbsLast);
                 mrGroupTokens.AddToken(aTok);
-                rScope.addRefMessage(mrPos, aAbs.aStart, nRequestedLength, aArrays);
 
                 if (nArrayLength && !aArrays.empty() && !mxFormulaGroupContext)
                 {
@@ -260,7 +254,7 @@ bool ScGroupTokenConverter::convert( ScTokenArray& rCode, sc::FormulaLogger::Gro
 
                 mrGroupTokens.AddOpCode(ocOpen);
 
-                if (!convert(*pNamedTokens, rScope))
+                if (!convert(*pNamedTokens))
                     return false;
 
                 mrGroupTokens.AddOpCode(ocClose);

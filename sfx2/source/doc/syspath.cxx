@@ -18,7 +18,10 @@
  */
 
 #include "syspath.hxx"
-#include <syspathw32.hxx>
+
+#if defined(_WIN32)
+extern "C" bool GetUserTemplateLocation(sal_Unicode*, int nSize);
+#endif
 
 bool SystemPath::GetUserTemplateLocation(sal_Unicode* pFolder, int nSize )
 {

@@ -94,7 +94,7 @@ namespace drawinglayer
                 basegfx::BZPixelRaster& rBZPixelRaster,
                 sal_uInt32 nStartLine,
                 sal_uInt32 nStopLine);
-            virtual ~ZBufferProcessor3D() override;
+            virtual ~ZBufferProcessor3D();
 
             void finish();
         };

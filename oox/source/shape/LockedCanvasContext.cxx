@@ -25,7 +25,9 @@ LockedCanvasContext::LockedCanvasContext(ContextHandler2Helper& rParent)
 {
 }
 
-LockedCanvasContext::~LockedCanvasContext() = default;
+LockedCanvasContext::~LockedCanvasContext()
+{
+}
 
 ::oox::core::ContextHandlerRef LockedCanvasContext::onCreateContext(sal_Int32 aElementToken, const ::oox::AttributeList& /*rAttribs*/)
 {

@@ -20,7 +20,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCHYPERTEXT_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCHYPERTEXT_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleHypertext.hpp>
@@ -39,25 +39,21 @@ public:
     CAccHypertext()
     {
             }
+    ~CAccHypertext()
+    {
+            }
 
     BEGIN_COM_MAP(CAccHypertext)
     COM_INTERFACE_ENTRY(IAccessibleText)
     COM_INTERFACE_ENTRY(IAccessibleHypertext)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
-    static HRESULT WINAPI SmartQI_(void* pv,
+    static HRESULT WINAPI _SmartQI(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return static_cast<CAccHypertext*>(pv)->SmartQI(iid,ppvObject);
+        return ((CAccHypertext*)pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -73,77 +69,80 @@ public:
     // IAccessibleText
 
     // Adds a text selection.
-    STDMETHOD(addSelection)(long startOffset, long endOffset) override;//, unsigned char * success)
+    STDMETHOD(addSelection)(long startOffset, long endOffset);//, unsigned char * success)
 
     // Gets text attributes.
-    STDMETHOD(get_attributes)(long offset, long * startOffset, long * endOffset, BSTR * textAttributes) override;
+    STDMETHOD(get_attributes)(long offset, long * startOffset, long * endOffset, BSTR * textAttributes);
 
     // Gets caret offset.
-    STDMETHOD(get_caretOffset)(long * offset) override;
+    STDMETHOD(get_caretOffset)(long * offset);
+
+    // Gets total number of characters.
+    STDMETHOD(get_characterCount)(long * nCharacters);
 
     // Gets bounding rect containing the glyph(s) representing the character
     // at the specified text offset
-    STDMETHOD(get_characterExtents)(long offset, IA2CoordinateType coordType, long * x, long * y, long * width, long * height) override;
+    STDMETHOD(get_characterExtents)(long offset, IA2CoordinateType coordType, long * x, long * y, long * width, long * height);
 
     // Gets number of active non-contiguous selections.
-    STDMETHOD(get_nSelections)(long * nSelections) override;
+    STDMETHOD(get_nSelections)(long * nSelections);
 
     // Gets bounding rect for the glyph at a certain point.
-    STDMETHOD(get_offsetAtPoint)(long x, long y, IA2CoordinateType coordType, long * offset) override;
+    STDMETHOD(get_offsetAtPoint)(long x, long y, IA2CoordinateType coordType, long * offset);
 
     // Gets character offsets of N-th active text selection.
-    STDMETHOD(get_selection)(long selection, long * startOffset, long * endOffset) override;
+    STDMETHOD(get_selection)(long selection, long * startOffset, long * endOffset);
 
     // Gets a range of text by offset NOTE: returned string may be longer
     // than endOffset-startOffset bytes if text contains multi-byte characters.
-    STDMETHOD(get_text)(long startOffset, long endOffset, BSTR * text) override;
+    STDMETHOD(get_text)(long startOffset, long endOffset, BSTR * text);
 
     // Gets a specified amount of text that ends before a specified offset.
-    STDMETHOD(get_textBeforeOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text) override;
+    STDMETHOD(get_textBeforeOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text);
 
     // Gets a specified amount of text that spans the specified offset.
-    STDMETHOD(get_textAfterOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text) override;
+    STDMETHOD(get_textAfterOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text);
 
     // Gets a specified amount of text that starts after a specified offset.
-    STDMETHOD(get_textAtOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text) override;
+    STDMETHOD(get_textAtOffset)(long offset, IA2TextBoundaryType boundaryType, long * startOffset, long * endOffset, BSTR * text);
 
     // Unselects a range of text.
-    STDMETHOD(removeSelection)(long selectionIndex) override;
+    STDMETHOD(removeSelection)(long selectionIndex);
 
     // Moves text caret.
-    STDMETHOD(setCaretOffset)(long offset) override;
+    STDMETHOD(setCaretOffset)(long offset);
 
     // Changes the bounds of an existing selection.
-    STDMETHOD(setSelection)(long selectionIndex, long startOffset, long endOffset) override;
+    STDMETHOD(setSelection)(long selectionIndex, long startOffset, long endOffset);
 
     // Gets total number of characters.
     // NOTE: this may be different than the total number of bytes required
     // to store the text, if the text contains multi-byte characters.
-    STDMETHOD(get_nCharacters)(long * nCharacters) override;
+    STDMETHOD(get_nCharacters)(long * nCharacters);
 
     // Makes specific part of string visible on screen.
-    STDMETHOD(scrollSubstringTo)(long startIndex, long endIndex,enum IA2ScrollType scrollType) override;
+    STDMETHOD(scrollSubstringTo)(long startIndex, long endIndex,enum IA2ScrollType scrollType);
 
-    STDMETHOD(scrollSubstringToPoint)(long startIndex, long endIndex,enum IA2CoordinateType coordinateType, long x, long y ) override;
+    STDMETHOD(scrollSubstringToPoint)(long startIndex, long endIndex,enum IA2CoordinateType coordinateType, long x, long y );
 
-    STDMETHOD(get_newText)( IA2TextSegment *newText) override;
+    STDMETHOD(get_newText)( IA2TextSegment *newText);
 
-    STDMETHOD(get_oldText)( IA2TextSegment *oldText) override;
+    STDMETHOD(get_oldText)( IA2TextSegment *oldText);
 
     //IAccessibleHypertext
 
     // Gets the number of hyperlink.
-    STDMETHOD(get_nHyperlinks)(long *hyperlinkCount) override;
+    STDMETHOD(get_nHyperlinks)(long *hyperlinkCount);
 
     // Gets the hyperlink object via specified index.
-    STDMETHOD(get_hyperlink)(long index,IAccessibleHyperlink **hyperlink) override;
+    STDMETHOD(get_hyperlink)(long index,IAccessibleHyperlink **hyperlink);
 
     // Returns the index of the hyperlink that is associated with this
     // character index.
-    STDMETHOD(get_hyperlinkIndex)(long charIndex, long *hyperlinkIndex) override;
+    STDMETHOD(get_hyperlinkIndex)(long charIndex, long *hyperlinkIndex);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface) override;
+    STDMETHOD(put_XInterface)(hyper pXInterface);
 
 private:
 

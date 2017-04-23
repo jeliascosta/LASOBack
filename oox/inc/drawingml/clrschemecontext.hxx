@@ -38,7 +38,7 @@ class clrSchemeColorContext : private Color, public ColorContext
 {
 public:
     clrSchemeColorContext( ::oox::core::ContextHandler2Helper& rParent, ClrScheme& rClrScheme, sal_Int32 nColorToken );
-    virtual ~clrSchemeColorContext() override;
+    virtual ~clrSchemeColorContext();
 
 private:
     ClrScheme&      mrClrScheme;

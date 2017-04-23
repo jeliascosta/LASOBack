@@ -4,10 +4,6 @@
 &apos;Option Compatible
 
 Sub Main
-Dim a, b()
-	_ErrorHandler(False)
-	TraceConsole()
-	exit sub
 End Sub
 
 </script:module>

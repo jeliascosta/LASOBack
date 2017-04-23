@@ -11,17 +11,17 @@
 
 String SV_APP_CPUTHREADS
 {
-    Text [en-US] = "CPU threads: ";
+    Text [en-US] = "CPU Threads: ";
 };
 
 String SV_APP_OSVERSION
 {
-    Text [en-US] = "OS: ";
+    Text [en-US] = "OS Version: ";
 };
 
 String SV_APP_UIRENDER
 {
-    Text [en-US] = "UI render: ";
+    Text [en-US] = "UI Render: ";
 };
 
 String SV_APP_GL

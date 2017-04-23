@@ -68,7 +68,8 @@ class XMLOFF_DLLPUBLIC XMLEventExport
     bool bExtNamespace;
 
 public:
-    XMLEventExport(SvXMLExport& rExport);
+    XMLEventExport(SvXMLExport& rExport,
+                   const XMLEventNameTranslation* pTranslationTable = nullptr);
     ~XMLEventExport();
 
     /// register an EventExportHandler for a particular script type
@@ -82,11 +83,11 @@ public:
     /// register additional event names
     void AddTranslationTable( const XMLEventNameTranslation* pTransTable );
 
-    /// export the events (calls EventExport::Export(Reference<XNameAccess>) )
+    /// export the events (calls EventExport::Export(Reference<XNameAcess>) )
     void Export( css::uno::Reference<css::document::XEventsSupplier> & xAccess,
                 bool bUseWhitespace = true);
 
-    /// export the events (calls EventExport::Export(Reference<XNameAccess>) )
+    /// export the events (calls EventExport::Export(Reference<XNameAcess>) )
     void Export( css::uno::Reference<css::container::XNameReplace> & xAccess,
                 bool bUseWhitespace = true);
 

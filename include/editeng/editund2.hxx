@@ -46,13 +46,12 @@ public:
 class EDITENG_DLLPUBLIC EditUndo : public SfxUndoAction
 {
 private:
-    sal_uInt16   nId;
-    ViewShellId  mnViewShellId;
-    EditEngine*  mpEditEngine;
+    sal_uInt16          nId;
+    EditEngine* mpEditEngine;
 
 public:
     EditUndo(sal_uInt16 nI, EditEngine* pEE);
-    virtual ~EditUndo() override;
+    virtual ~EditUndo();
 
     EditEngine* GetEditEngine() { return mpEditEngine;}
 
@@ -61,9 +60,7 @@ public:
 
     virtual bool    CanRepeat(SfxRepeatTarget&) const override;
     virtual OUString GetComment() const override;
-    /// See SfxUndoAction::GetViewShellId().
-    ViewShellId GetViewShellId() const override;
-    sal_uInt16  GetId() const;
+    virtual sal_uInt16  GetId() const override;
 };
 
 #endif // INCLUDED_EDITENG_EDITUND2_HXX

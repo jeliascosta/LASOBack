@@ -48,31 +48,32 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject ) override;
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
-    virtual ULONG STDMETHODCALLTYPE Release() override;
+            void __RPC_FAR *__RPC_FAR *ppvObject );
+    virtual ULONG STDMETHODCALLTYPE AddRef();
+    virtual ULONG STDMETHODCALLTYPE Release();
 
 
     // IPropertyStore
 
-    virtual HRESULT STDMETHODCALLTYPE GetCount( DWORD *pcProps ) override;
-    virtual HRESULT STDMETHODCALLTYPE GetAt( DWORD iProp, PROPERTYKEY *pkey ) override;
-    virtual HRESULT STDMETHODCALLTYPE GetValue( REFPROPERTYKEY key, PROPVARIANT *pPropVar ) override;
-    virtual HRESULT STDMETHODCALLTYPE SetValue( REFPROPERTYKEY key, REFPROPVARIANT propVar ) override;
-    virtual HRESULT STDMETHODCALLTYPE Commit() override;
+    virtual HRESULT STDMETHODCALLTYPE GetCount( DWORD *pcProps );
+    virtual HRESULT STDMETHODCALLTYPE GetAt( DWORD iProp, PROPERTYKEY *pkey );
+    virtual HRESULT STDMETHODCALLTYPE GetValue( REFPROPERTYKEY key, PROPVARIANT *pPropVar );
+    virtual HRESULT STDMETHODCALLTYPE SetValue( REFPROPERTYKEY key, REFPROPVARIANT propVar );
+    virtual HRESULT STDMETHODCALLTYPE Commit();
 
 
     // IPropertyStoreCapabilities
 
-    virtual HRESULT STDMETHODCALLTYPE IsPropertyWritable( REFPROPERTYKEY key ) override;
+    virtual HRESULT STDMETHODCALLTYPE IsPropertyWritable( REFPROPERTYKEY key );
 
 
     // IInitializeWithStream
 
-    virtual HRESULT STDMETHODCALLTYPE Initialize(IStream *pStream, DWORD grfMode) override;
+    virtual HRESULT STDMETHODCALLTYPE Initialize(IStream *pStream, DWORD grfMode);
 
 private:
     void        LoadProperties( CMetaInfoReader *pMetaInfoReader );
+    HRESULT     GetItemData( CMetaInfoReader *pMetaInfoReader, UINT nIndex, PROPVARIANT *pVarData );
 
 private:
     long m_RefCnt;
@@ -90,9 +91,9 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject) override;
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
-    virtual ULONG STDMETHODCALLTYPE Release() override;
+            void __RPC_FAR *__RPC_FAR *ppvObject);
+    virtual ULONG STDMETHODCALLTYPE AddRef();
+    virtual ULONG STDMETHODCALLTYPE Release();
 
 
     // IClassFactory methods
@@ -100,9 +101,9 @@ public:
     virtual HRESULT STDMETHODCALLTYPE CreateInstance(
             IUnknown __RPC_FAR *pUnkOuter,
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject) override;
+            void __RPC_FAR *__RPC_FAR *ppvObject);
 
-    virtual HRESULT STDMETHODCALLTYPE LockServer( BOOL fLock ) override;
+    virtual HRESULT STDMETHODCALLTYPE LockServer( BOOL fLock );
     static bool IsLocked();
 
 private:

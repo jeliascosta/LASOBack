@@ -66,6 +66,8 @@
 #include "markdata.hxx"
 #include <documentlinkmgr.hxx>
 
+#include <config_orcus.h>
+
 #include <memory>
 
 using namespace com::sun::star;
@@ -179,7 +181,7 @@ static bool lcl_GetSortParam( const ScViewData* pData, ScSortParam& rSortParam )
         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-        ScopedVclPtr<AbstractScSortWarningDlg> pWarningDlg(pFact->CreateScSortWarningDlg( pTabViewShell->GetDialogParent(), aExtendStr, aCurrentStr ));
+        std::unique_ptr<AbstractScSortWarningDlg> pWarningDlg(pFact->CreateScSortWarningDlg( pTabViewShell->GetDialogParent(), aExtendStr, aCurrentStr ));
         OSL_ENSURE(pWarningDlg, "Dialog create fail!");
         short bResult = pWarningDlg->Execute();
         if( bResult == BTN_EXTEND_RANGE || bResult == BTN_CURRENT_SELECTION )
@@ -333,7 +335,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                ScopedVclPtr<AbstractScDataFormDlg> pDlg(pFact->CreateScDataFormDlg(
+                std::unique_ptr<AbstractScDataFormDlg> pDlg(pFact->CreateScDataFormDlg(
                     pTabViewShell->GetDialogParent(), pTabViewShell));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
 
@@ -377,7 +379,6 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                     aSortParam.bByRow           = true;
                     aSortParam.bCaseSens        = false;
                     aSortParam.bNaturalSort     = false;
-                    aSortParam.bIncludeComments = false;
                     aSortParam.bIncludePattern  = true;
                     aSortParam.bInplace         = true;
                     aSortParam.maKeyState[0].bDoSort = true;
@@ -431,8 +432,6 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                             aSortParam.bCaseSens = static_cast<const SfxBoolItem*>(pItem)->GetValue();
                         if ( pArgs->GetItemState( SID_SORT_NATURALSORT, true, &pItem ) == SfxItemState::SET )
                             aSortParam.bNaturalSort = static_cast<const SfxBoolItem*>(pItem)->GetValue();
-                        if ( pArgs->GetItemState( SID_SORT_INCCOMMENTS, true, &pItem ) == SfxItemState::SET )
-                            aSortParam.bIncludeComments = static_cast<const SfxBoolItem*>(pItem)->GetValue();
                         if ( pArgs->GetItemState( SID_SORT_ATTRIBS, true, &pItem ) == SfxItemState::SET )
                             aSortParam.bIncludePattern = static_cast<const SfxBoolItem*>(pItem)->GetValue();
                         if ( pArgs->GetItemState( SID_SORT_USERDEF, true, &pItem ) == SfxItemState::SET )
@@ -493,7 +492,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         assert(pFact); //ScAbstractFactory create fail!
 
-                        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScSortDlg(pTabViewShell->GetDialogParent(),  &aArgSet));
+                        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScSortDlg(pTabViewShell->GetDialogParent(),  &aArgSet));
                         assert(pDlg); //Dialog create fail!
                         pDlg->SetCurPageId("criteria");  // 1=sort field tab  2=sort options tab
 
@@ -517,8 +516,6 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                                     rOutParam.bCaseSens ) );
                                 rReq.AppendItem( SfxBoolItem( SID_SORT_NATURALSORT,
                                             rOutParam.bNaturalSort ) );
-                                rReq.AppendItem( SfxBoolItem( SID_SORT_INCCOMMENTS,
-                                            rOutParam.bIncludeComments ) );
                                 rReq.AppendItem( SfxBoolItem( SID_SORT_ATTRIBS,
                                     rOutParam.bIncludePattern ) );
                                 sal_uInt16 nUser = rOutParam.bUserDef ? ( rOutParam.nUserIndex + 1 ) : 0;
@@ -736,7 +733,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                        ScopedVclPtr<AbstractScSelEntryDlg> pDlg(pFact->CreateScSelEntryDlg( pTabViewShell->GetDialogParent(),
+                        std::unique_ptr<AbstractScSelEntryDlg> pDlg(pFact->CreateScSelEntryDlg( pTabViewShell->GetDialogParent(),
                                                                                                   aList ));
                         OSL_ENSURE(pDlg, "Dialog create fail!");
                         if ( pDlg->Execute() == RET_OK )
@@ -853,7 +850,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                     }
 
                     // cell range picker
-                    ScopedVclPtrInstance<ScValidationDlg> pDlg(nullptr, &aArgSet, pTabViewShell);
+                    ScopedVclPtr<ScValidationDlg> pDlg(VclPtr<ScValidationDlg>::Create(nullptr, &aArgSet, pTabViewShell));
 
                     short nResult = pDlg->Execute();
                     if ( nResult == RET_OK )
@@ -976,11 +973,11 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                     SvMemoryStream aStream;
                     aStream.SetStreamCharSet( RTL_TEXTENCODING_UNICODE );
                     ScImportExport::SetNoEndianSwap( aStream );
-                    aExport.ExportStream( aStream, OUString(), SotClipboardFormatId::STRING );
+                    aExport.ExportStream( aStream, OUString() );
 
                     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                     OSL_ENSURE( pFact, "ScCellShell::ExecuteDB: SID_TEXT_TO_COLUMNS - pFact is null!" );
-                    ScopedVclPtr<AbstractScImportAsciiDlg> pDlg(pFact->CreateScImportAsciiDlg(
+                    std::unique_ptr<AbstractScImportAsciiDlg> pDlg(pFact->CreateScImportAsciiDlg(
                         OUString(), &aStream, SC_TEXTTOCOLUMNS));
                     OSL_ENSURE( pDlg, "ScCellShell::ExecuteDB: SID_TEXT_TO_COLUMNS - pDlg is null!" );
 
@@ -990,7 +987,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                         OSL_ENSURE( pDocSh, "ScCellShell::ExecuteDB: SID_TEXT_TO_COLUMNS - pDocSh is null!" );
 
                         OUString aUndo = ScGlobal::GetRscString( STR_UNDO_TEXTTOCOLUMNS );
-                        pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pData->GetViewShell()->GetViewShellId() );
+                        pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
 
                         ScImportExport aImport( pDoc, aRange.aStart );
                         ScAsciiOptions aOptions;
@@ -1001,7 +998,7 @@ void ScCellShell::ExecuteDB( SfxRequest& rReq )
                         aImport.SetImportBroadcast( true );
                         aImport.SetOverwriting( true );
                         aStream.Seek( 0 );
-                        aImport.ImportStream( aStream, OUString(), SotClipboardFormatId::STRING );
+                        aImport.ImportStream( aStream, OUString() );
 
                         pDocSh->GetUndoManager()->LeaveListAction();
                     }
@@ -1206,9 +1203,11 @@ void ScCellShell::GetDBState( SfxItemSet& rSet )
                     }
                 }
                 break;
+#if !ENABLE_ORCUS
             case SID_MANAGE_XML_SOURCE:
                 rSet.DisableItem(nWhich);
             break;
+#endif
         }
         nWhich = aIter.NextWhich();
     }

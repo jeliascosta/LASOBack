@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +31,7 @@
 
 static bool hasOption(char const * szOption, int argc, char** argv);
 static OString getLD_LIBRARY_PATH(const rtl::ByteSequence & vendorData);
-static bool findAndSelect(std::unique_ptr<JavaInfo>*);
+static bool findAndSelect(JavaInfo**);
 
 #define HELP_TEXT    \
 "\njavaldx is necessary to make Java work on some UNIX platforms." \
@@ -54,7 +51,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             fprintf(stdout, HELP_TEXT);// default
             return 0;
         }
-        bool bEnabled = false;
+        sal_Bool bEnabled = false;
         javaFrameworkError errcode = jfw_getEnabled( & bEnabled);
         if (errcode == JFW_E_NONE && !bEnabled)
         {
@@ -67,8 +64,8 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             return -1;
         }
 
-        std::unique_ptr<JavaInfo> aInfo;
-        errcode = jfw_getSelectedJRE(&aInfo);
+        jfw::JavaInfoGuard aInfo;
+        errcode = jfw_getSelectedJRE(&aInfo.info);
 
         if (errcode != JFW_E_NONE && errcode != JFW_E_INVALID_SETTINGS)
         {
@@ -76,19 +73,19 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             return -1;
         }
 
-        if (!aInfo)
+        if (aInfo.info == nullptr)
         {
-            if (!findAndSelect(&aInfo))
+            if (!findAndSelect(&aInfo.info))
                 return -1;
         }
         else
         {
             //check if the JRE was not uninstalled
-            bool bExist = false;
-            errcode = jfw_existJRE(aInfo.get(), &bExist);
+            sal_Bool bExist = false;
+            errcode = jfw_existJRE(aInfo.info, &bExist);
             if (errcode == JFW_E_NONE)
             {
-                if (!bExist && !findAndSelect(&aInfo))
+                if (!bExist && !findAndSelect(&aInfo.info))
                     return -1;
             }
             else
@@ -98,7 +95,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             }
         }
 
-        OString sPaths = getLD_LIBRARY_PATH(aInfo->arVendorData);
+        OString sPaths = getLD_LIBRARY_PATH(aInfo.info->arVendorData);
         fprintf(stdout, "%s\n", sPaths.getStr());
     }
     catch (const std::exception&)
@@ -138,7 +135,7 @@ static bool hasOption(char const * szOption, int argc, char** argv)
     return retVal;
 }
 
-static bool findAndSelect(std::unique_ptr<JavaInfo> * ppInfo)
+static bool findAndSelect(JavaInfo ** ppInfo)
 {
     javaFrameworkError errcode = jfw_findAndSelectJRE(ppInfo);
     if (errcode == JFW_E_NO_JAVA_FOUND)

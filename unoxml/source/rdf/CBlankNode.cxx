@@ -39,17 +39,18 @@ class CBlankNode:
 {
 public:
     CBlankNode();
+    virtual ~CBlankNode() {}
 
     // css::lang::XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     // css::lang::XInitialization:
-    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any > & aArguments) override;
+    virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any > & aArguments) throw (css::uno::RuntimeException, css::uno::Exception, std::exception) override;
 
     // css::rdf::XNode:
-    virtual OUString SAL_CALL getStringValue() override;
+    virtual OUString SAL_CALL getStringValue() throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     CBlankNode(CBlankNode const&) = delete;
@@ -63,33 +64,35 @@ CBlankNode::CBlankNode() :
 {}
 
 // com.sun.star.uno.XServiceInfo:
-OUString SAL_CALL CBlankNode::getImplementationName()
+OUString SAL_CALL CBlankNode::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return comp_CBlankNode::_getImplementationName();
 }
 
-sal_Bool SAL_CALL CBlankNode::supportsService(OUString const & serviceName)
+sal_Bool SAL_CALL CBlankNode::supportsService(OUString const & serviceName) throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
-css::uno::Sequence< OUString > SAL_CALL CBlankNode::getSupportedServiceNames()
+css::uno::Sequence< OUString > SAL_CALL CBlankNode::getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception)
 {
     return comp_CBlankNode::_getSupportedServiceNames();
 }
 
 // css::lang::XInitialization:
-void SAL_CALL CBlankNode::initialize(const css::uno::Sequence< css::uno::Any > & aArguments)
+void SAL_CALL CBlankNode::initialize(const css::uno::Sequence< css::uno::Any > & aArguments) throw (css::uno::RuntimeException, css::uno::Exception, std::exception)
 {
     if (aArguments.getLength() != 1) {
         throw css::lang::IllegalArgumentException(
-            "CBlankNode::initialize: must give exactly 1 argument", *this, 1);
+            OUString("CBlankNode::initialize: "
+                "must give exactly 1 argument"), *this, 1);
     }
 
     OUString arg;
     if (!(aArguments[0] >>= arg)) {
         throw css::lang::IllegalArgumentException(
-            "CBlankNode::initialize: argument must be string", *this, 0);
+            OUString("CBlankNode::initialize: "
+                "argument must be string"), *this, 0);
     }
 
     //FIXME: what is legal?
@@ -97,12 +100,13 @@ void SAL_CALL CBlankNode::initialize(const css::uno::Sequence< css::uno::Any > &
         m_NodeID = arg;
     } else {
         throw css::lang::IllegalArgumentException(
-            "CBlankNode::initialize: argument is not valid blank node ID", *this, 0);
+            OUString("CBlankNode::initialize: "
+                "argument is not valid blank node ID"), *this, 0);
     }
 }
 
 // css::rdf::XNode:
-OUString SAL_CALL CBlankNode::getStringValue()
+OUString SAL_CALL CBlankNode::getStringValue() throw (css::uno::RuntimeException, std::exception)
 {
     return m_NodeID;
 }

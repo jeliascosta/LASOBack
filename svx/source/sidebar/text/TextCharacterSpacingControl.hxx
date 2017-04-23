@@ -19,6 +19,7 @@
 #ifndef INCLUDED_SVX_SOURCE_SIDEBAR_TEXT_TEXTCHARACTERSPACINGCONTROL_HXX
 #define INCLUDED_SVX_SOURCE_SIDEBAR_TEXT_TEXTCHARACTERSPACINGCONTROL_HXX
 
+#include "svx/sidebar/PopupControl.hxx"
 #include <sfx2/bindings.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/field.hxx>
@@ -35,9 +36,10 @@ class TextCharacterSpacingControl : public SfxPopupWindow
 {
 public:
     explicit TextCharacterSpacingControl(sal_uInt16 nId);
-    virtual ~TextCharacterSpacingControl() override;
+    virtual ~TextCharacterSpacingControl();
     virtual void dispose() override;
 
+    short GetLastCustomState() { return mnLastCus;}
     long  GetLastCustomValue() { return mnCustomKern;}
 
 private:
@@ -57,11 +59,11 @@ private:
     void Initialize();
     void ExecuteCharacterSpacing(long nValue, bool bClose = true);
 
-    DECL_LINK(PredefinedValuesHdl, Button*, void);
-    DECL_LINK(KerningSelectHdl, ListBox&, void);
-    DECL_LINK(KerningModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(PredefinedValuesHdl, Button*, void);
+    DECL_LINK_TYPED(KerningSelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(KerningModifyHdl, Edit&, void);
 
-    MapUnit GetCoreMetric() const;
+    SfxMapUnit GetCoreMetric() const;
 };
 }
 

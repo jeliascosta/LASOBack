@@ -20,10 +20,12 @@
 #ifndef INCLUDED_VCL_INC_IMPFONTMETRIC_HXX
 #define INCLUDED_VCL_INC_IMPFONTMETRIC_HXX
 
-class ImplFontCharMap;
-typedef tools::SvRef<ImplFontCharMap> ImplFontCharMapRef;
+#include <boost/intrusive_ptr.hpp>
 
-class ImplFontMetric : public SvRefBase
+class ImplFontCharMap;
+typedef boost::intrusive_ptr< ImplFontCharMap > ImplFontCharMapPtr;
+
+class ImplFontMetric
 {
 public:
     explicit            ImplFontMetric();
@@ -44,14 +46,20 @@ public:
     void                SetSlant( long nSlant )                     { mnSlant = nSlant; }
     void                SetBulletOffset( long nOffset )             { mnBulletOffset = nOffset; }
 
+    bool                IsScalable() const                          { return mbScalableFont; }
     bool                IsFullstopCentered() const                  { return mbFullstopCentered; }
+    bool                IsBuiltInFont() const                       { return mbDevice; }
 
+    void                SetScalableFlag( bool bScalable )           { mbScalableFont = bScalable; }
     void                SetFullstopCenteredFlag( bool bCentered )   { mbFullstopCentered = bCentered; }
+    void                SetBuiltInFontFlag( bool bIsBuiltInFont )   { mbDevice = bIsBuiltInFont; }
 
     bool                operator==( const ImplFontMetric& ) const;
 
 private:
     friend class FontMetric;
+    friend void intrusive_ptr_add_ref(ImplFontMetric* pImplFontMetric);
+    friend void intrusive_ptr_release(ImplFontMetric* pImplFontMetric);
 
     long                mnAscent;                      // Ascent
     long                mnDescent;                     // Descent
@@ -60,10 +68,24 @@ private:
     long                mnLineHeight;                  // Ascent+Descent+EmphasisMark
     long                mnSlant;                       // Slant
     long                mnBulletOffset;                // Offset for non-printing character
+    sal_uInt32          mnRefCount;                    // Reference Counter
 
+    bool                mbScalableFont;
     bool                mbFullstopCentered;
+    bool                mbDevice;
 
 };
+
+inline void intrusive_ptr_add_ref(ImplFontMetric* pImplFontMetric)
+{
+    ++pImplFontMetric->mnRefCount;
+}
+
+inline void intrusive_ptr_release(ImplFontMetric* pImplFontMetric)
+{
+    if (--pImplFontMetric->mnRefCount == 0)
+        delete pImplFontMetric;
+}
 
 #endif // INCLUDED_VCL_INC_IMPFONTMETRIC_HXX
 

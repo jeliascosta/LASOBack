@@ -41,6 +41,7 @@ public:
     SchXMLBodyContext_Impl( SchXMLImportHelper& rImpHelper,
                 SvXMLImport& rImport, sal_uInt16 nPrfx,
                 const OUString& rLName );
+    virtual ~SchXMLBodyContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
             const OUString& rLocalName,
@@ -52,6 +53,10 @@ SchXMLBodyContext_Impl::SchXMLBodyContext_Impl(
         sal_uInt16 nPrfx, const OUString& rLName ) :
     SvXMLImportContext( rImport, nPrfx, rLName ),
     mrImportHelper( rImpHelper )
+{
+}
+
+SchXMLBodyContext_Impl::~SchXMLBodyContext_Impl()
 {
 }
 
@@ -134,6 +139,8 @@ SchXMLFlatDocContext_Impl::SchXMLFlatDocContext_Impl(
         i_xDocProps)
 {
 }
+
+SchXMLFlatDocContext_Impl::~SchXMLFlatDocContext_Impl() { }
 
 SvXMLImportContext *SchXMLFlatDocContext_Impl::CreateChildContext(
     sal_uInt16 i_nPrefix, const OUString& i_rLocalName,

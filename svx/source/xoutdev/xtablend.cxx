@@ -32,17 +32,21 @@
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <memory>
-#include <o3tl/make_unique.hxx>
 
 using namespace com::sun::star;
 
 XLineEndList::XLineEndList( const OUString& rPath, const OUString& rReferer )
-    : XPropertyList( XPropertyListType::LineEnd, rPath, rReferer )
+    : XPropertyList( XLINE_END_LIST, rPath, rReferer )
 {
 }
 
 XLineEndList::~XLineEndList()
 {
+}
+
+XLineEndEntry* XLineEndList::Remove(long nIndex)
+{
+    return static_cast<XLineEndEntry*>( XPropertyList::Remove(nIndex) );
 }
 
 XLineEndEntry* XLineEndList::GetLineEnd(long nIndex) const
@@ -63,7 +67,7 @@ bool XLineEndList::Create()
     aTriangle.append(basegfx::B2DPoint(0.0, 30.0));
     aTriangle.append(basegfx::B2DPoint(20.0, 30.0));
     aTriangle.setClosed(true);
-    Insert( o3tl::make_unique<XLineEndEntry>( basegfx::B2DPolyPolygon(aTriangle), SVX_RESSTR( RID_SVXSTR_ARROW ) ) );
+    Insert( new XLineEndEntry( basegfx::B2DPolyPolygon(aTriangle), SVX_RESSTR( RID_SVXSTR_ARROW ) ) );
 
     basegfx::B2DPolygon aSquare;
     aSquare.append(basegfx::B2DPoint(0.0, 0.0));
@@ -71,10 +75,10 @@ bool XLineEndList::Create()
     aSquare.append(basegfx::B2DPoint(10.0, 10.0));
     aSquare.append(basegfx::B2DPoint(0.0, 10.0));
     aSquare.setClosed(true);
-    Insert( o3tl::make_unique<XLineEndEntry>( basegfx::B2DPolyPolygon(aSquare), SVX_RESSTR( RID_SVXSTR_SQUARE ) ) );
+    Insert( new XLineEndEntry( basegfx::B2DPolyPolygon(aSquare), SVX_RESSTR( RID_SVXSTR_SQUARE ) ) );
 
     basegfx::B2DPolygon aCircle(basegfx::tools::createPolygonFromCircle(basegfx::B2DPoint(0.0, 0.0), 100.0));
-    Insert( o3tl::make_unique<XLineEndEntry>( basegfx::B2DPolyPolygon(aCircle), SVX_RESSTR( RID_SVXSTR_CIRCLE ) ) );
+    Insert( new XLineEndEntry( basegfx::B2DPolyPolygon(aCircle), SVX_RESSTR( RID_SVXSTR_CIRCLE ) ) );
 
     return true;
 }

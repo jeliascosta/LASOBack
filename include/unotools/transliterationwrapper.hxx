@@ -30,7 +30,6 @@ namespace com { namespace sun { namespace star {
         class XComponentContext;
     }
 }}}
-enum class TransliterationFlags;
 
 namespace utl
 {
@@ -39,7 +38,7 @@ class UNOTOOLS_DLLPUBLIC TransliterationWrapper
 {
     css::uno::Reference< css::i18n::XExtendedTransliteration > xTrans;
     LanguageTag aLanguageTag;
-    TransliterationFlags nType;
+    sal_uInt32 nType;
     mutable bool bFirstCall;
 
     TransliterationWrapper( const TransliterationWrapper& ) = delete;
@@ -50,11 +49,11 @@ class UNOTOOLS_DLLPUBLIC TransliterationWrapper
 
 public:
     TransliterationWrapper( const css::uno::Reference< css::uno::XComponentContext > & rxContext,
-                    TransliterationFlags nType );
+                    sal_uInt32 nType );
 
     ~TransliterationWrapper();
 
-    TransliterationFlags getType() const { return nType; }
+    sal_uInt32 getType() const { return nType; }
 
     bool needLanguageForTheMode() const;
 
@@ -81,7 +80,8 @@ public:
         If for any reason the string can't be transliterated the original
         string is returned.  */
     OUString transliterate( const OUString& rStr,
-                        sal_Int32 nStart, sal_Int32 nLen ) const;
+                        sal_Int32 nStart, sal_Int32 nLen,
+                        css::uno::Sequence <sal_Int32>* pOffset ) const;
 
     // Wrapper implementations of class Transliteration
     OUString transliterate( const OUString& rStr, sal_uInt16 nLanguage,

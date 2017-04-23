@@ -40,10 +40,10 @@ enum SdrMeasureFieldKind {SDRMEASUREFIELD_VALUE,SDRMEASUREFIELD_UNIT,SDRMEASUREF
 class EDITENG_DLLPUBLIC SdrMeasureField: public SvxFieldData {
     SdrMeasureFieldKind eMeasureFieldKind;
 public:
-    SV_DECL_PERSIST1(SdrMeasureField, css::text::textfield::Type::MEASURE)
+    SV_DECL_PERSIST1(SdrMeasureField,SvxFieldData,css::text::textfield::Type::MEASURE)
     SdrMeasureField(): eMeasureFieldKind(SDRMEASUREFIELD_VALUE) {}
     SdrMeasureField(SdrMeasureFieldKind eNewKind): eMeasureFieldKind(eNewKind) {}
-    virtual ~SdrMeasureField() override;
+    virtual ~SdrMeasureField();
     virtual SvxFieldData* Clone() const override;
     virtual bool operator==(const SvxFieldData&) const override;
     SdrMeasureFieldKind GetMeasureFieldKind() const { return eMeasureFieldKind; }

@@ -21,6 +21,7 @@
 #define INCLUDED_SC_SOURCE_UI_INC_PFILTDLG_HXX
 
 #include <vcl/morebtn.hxx>
+#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/dialog.hxx>
@@ -38,7 +39,7 @@ class ScPivotFilterDlg : public ModalDialog
 {
 public:
     ScPivotFilterDlg(vcl::Window* pParent, const SfxItemSet& rArgSet, SCTAB nSourceTab);
-    virtual ~ScPivotFilterDlg() override;
+    virtual ~ScPivotFilterDlg();
     virtual void dispose() override;
 
     const ScQueryItem&  GetOutputItem();
@@ -89,9 +90,9 @@ private:
     sal_uInt16  GetFieldSelPos  ( SCCOL nField );
 
     // Handler:
-    DECL_LINK( LbSelectHdl, ListBox&, void );
-    DECL_LINK( ValModifyHdl, Edit&, void );
-    DECL_LINK( CheckBoxHdl, Button*, void );
+    DECL_LINK_TYPED( LbSelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( ValModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( CheckBoxHdl, Button*, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_PFILTDLG_HXX

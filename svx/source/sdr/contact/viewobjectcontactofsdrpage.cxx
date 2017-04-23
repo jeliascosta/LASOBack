@@ -438,7 +438,7 @@ bool ViewObjectContactOfPageGrid::isPrimitiveVisible(const DisplayInfo& rDisplay
         return false;
     }
 
-    if(static_cast< ViewContactOfGrid& >(GetViewContact()).getFront() != rView.IsGridFront())
+    if(static_cast< ViewContactOfGrid& >(GetViewContact()).getFront() != (bool)rView.IsGridFront())
     {
         return false;
     }
@@ -516,7 +516,7 @@ bool ViewObjectContactOfPageHelplines::isPrimitiveVisible(const DisplayInfo& rDi
         return false;
     }
 
-    if(static_cast< ViewContactOfHelplines& >(GetViewContact()).getFront() != rView.IsHlplFront())
+    if(static_cast< ViewContactOfHelplines& >(GetViewContact()).getFront() != (bool)rView.IsHlplFront())
     {
         return false;
     }
@@ -548,21 +548,21 @@ drawinglayer::primitive2d::Primitive2DContainer ViewObjectContactOfPageHelplines
 
                 switch(rHelpLine.GetKind())
                 {
-                    default : // SdrHelpLineKind::Point
+                    default : // SDRHELPLINE_POINT
                     {
                         xRetval[a] = drawinglayer::primitive2d::Primitive2DReference(new drawinglayer::primitive2d::HelplinePrimitive2D(
                             aPosition, basegfx::B2DVector(1.0, 0.0), drawinglayer::primitive2d::HelplineStyle2D::Point,
                             aRGBColorA, aRGBColorB, fDiscreteDashLength));
                         break;
                     }
-                    case SdrHelpLineKind::Vertical :
+                    case SDRHELPLINE_VERTICAL :
                     {
                         xRetval[a] = drawinglayer::primitive2d::Primitive2DReference(new drawinglayer::primitive2d::HelplinePrimitive2D(
                             aPosition, basegfx::B2DVector(0.0, 1.0), drawinglayer::primitive2d::HelplineStyle2D::Line,
                             aRGBColorA, aRGBColorB, fDiscreteDashLength));
                         break;
                     }
-                    case SdrHelpLineKind::Horizontal :
+                    case SDRHELPLINE_HORIZONTAL :
                     {
                         xRetval[a] = drawinglayer::primitive2d::Primitive2DReference(new drawinglayer::primitive2d::HelplinePrimitive2D(
                             aPosition, basegfx::B2DVector(1.0, 0.0), drawinglayer::primitive2d::HelplineStyle2D::Line,

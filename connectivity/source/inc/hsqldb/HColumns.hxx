@@ -28,7 +28,7 @@ namespace connectivity
         class OHSQLColumns : public OColumnsHelper
         {
         protected:
-            virtual css::uno::Reference< css::beans::XPropertySet > createDescriptor() override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > createDescriptor() override;
         public:
             OHSQLColumns(   ::cppu::OWeakObject& _rParent
                             ,::osl::Mutex& _rMutex
@@ -52,7 +52,7 @@ namespace connectivity
             OHSQLColumn();
             virtual void construct() override;
 
-            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+            virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         };
     }
 }

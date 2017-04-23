@@ -33,8 +33,8 @@ struct MenuItemData
     sal_uInt16      nId;                    // SV Id
     MenuItemType    eType;                  // MenuItem-Type
     MenuItemBits    nBits;                  // MenuItem-Bits
-    VclPtr<Menu>    pSubMenu;               // Pointer to SubMenu
-    VclPtr<Menu>    pAutoSubMenu;           // Pointer to SubMenu from Resource
+    Menu*           pSubMenu;               // Pointer to SubMenu
+    Menu*           pAutoSubMenu;           // Pointer to SubMenu from Resource
     OUString        aText;                  // Menu-Text
     OUString        aHelpText;              // Help-String
     OUString        aTipHelpText;           // TipHelp-String (eg, expanded filenames)
@@ -50,6 +50,8 @@ struct MenuItemData
     bool            bEnabled;               // Enabled
     bool            bVisible;               // Visible (note: this flag will not override MenuFlags::HideDisabledEntries when true)
     bool            bIsTemporary;           // Temporary inserted ('No selection possible')
+    bool            bMirrorMode;
+    long            nItemImageAngle;
     Size            aSz;                    // only temporarily valid
     OUString        aAccessibleName;        // accessible name
 
@@ -67,6 +69,8 @@ struct MenuItemData
         , bEnabled(false)
         , bVisible(false)
         , bIsTemporary(false)
+        , bMirrorMode(false)
+        , nItemImageAngle(0)
         , pSalMenuItem(nullptr)
     {
     }
@@ -84,6 +88,8 @@ struct MenuItemData
         , bEnabled(false)
         , bVisible(false)
         , bIsTemporary(false)
+        , bMirrorMode(false)
+        , nItemImageAngle(0)
         , pSalMenuItem(nullptr)
     {
     }
@@ -116,7 +122,6 @@ public:
                     );
     void            InsertSeparator(const OString &rIdent, size_t nPos);
     void            Remove( size_t nPos );
-    void            Clear();
 
     MenuItemData*   GetData( sal_uInt16 nSVId, size_t& rPos ) const;
     MenuItemData*   GetData( sal_uInt16 nSVId ) const
@@ -132,9 +137,9 @@ public:
     MenuItemData*   SearchItem(
                         sal_Unicode cSelectChar,
                         vcl::KeyCode aKeyCode,
-                        size_t& rPos,
-                        size_t& nDuplicates,
-                        size_t nCurrentPos
+                        sal_uInt16& rPos,
+                        sal_uInt16& nDuplicates,
+                        sal_uInt16 nCurrentPos
                     ) const;
     size_t          GetItemCount( sal_Unicode cSelectChar ) const;
     size_t          GetItemCount( vcl::KeyCode aKeyCode ) const;

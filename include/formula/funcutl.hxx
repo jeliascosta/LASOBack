@@ -20,21 +20,11 @@
 #ifndef INCLUDED_FORMULA_FUNCUTL_HXX
 #define INCLUDED_FORMULA_FUNCUTL_HXX
 
-#include <formula/formuladllapi.h>
-#include <rtl/ustring.hxx>
-#include <tools/link.hxx>
-#include <tools/wintypes.hxx>
+#include <vcl/fixed.hxx>
 #include <vcl/button.hxx>
 #include <vcl/edit.hxx>
 #include <vcl/idle.hxx>
-#include <vcl/image.hxx>
-#include <vcl/vclptr.hxx>
-
-class KeyEvent;
-
-namespace vcl {
-    class Window;
-}
+#include <formula/formuladllapi.h>
 
 namespace formula {
 
@@ -47,7 +37,7 @@ private:
     IControlReferenceHandler* pAnyRefDlg; // parent dialog
     VclPtr<vcl::Window>       pLabelWidget;
 
-    DECL_LINK( UpdateHdl, Timer*, void );
+    DECL_LINK_TYPED( UpdateHdl, Idle*, void );
 
 protected:
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
@@ -55,9 +45,10 @@ protected:
     virtual void LoseFocus() override;
 
 public:
+    RefEdit( vcl::Window* _pParent,IControlReferenceHandler* pParent, vcl::Window* pShrinkModeLabel, const ResId& rResId );
     RefEdit( vcl::Window* _pParent, vcl::Window* pShrinkModeLabel, WinBits nStyle = WB_BORDER );
 
-    virtual ~RefEdit() override;
+    virtual ~RefEdit();
     virtual void dispose() override;
 
     void SetRefString( const OUString& rStr );
@@ -101,8 +92,8 @@ protected:
     virtual void LoseFocus() override;
 
 public:
-    RefButton(vcl::Window* _pParent, WinBits nStyle);
-    virtual ~RefButton() override;
+    RefButton(vcl::Window* _pParent, WinBits nStyle = 0);
+    virtual ~RefButton();
     virtual void dispose() override;
     void SetReferences( IControlReferenceHandler* pDlg, RefEdit* pEdit );
     void SetStartImage();

@@ -28,11 +28,11 @@
 namespace chart
 {
 
-class TimerTriggeredControllerLock final
+class TimerTriggeredControllerLock
 {
 public:
     TimerTriggeredControllerLock( const css::uno::Reference< css::frame::XModel >& xModel );
-    ~TimerTriggeredControllerLock();
+    virtual ~TimerTriggeredControllerLock();
 
     void startTimer();
 
@@ -41,7 +41,7 @@ private:
     std::unique_ptr< ControllerLockGuardUNO > m_apControllerLockGuard;
     AutoTimer       m_aTimer;
 
-    DECL_LINK( TimerTimeout, Timer*, void );
+    DECL_LINK_TYPED( TimerTimeout, Timer*, void );
 };
 
 } //namespace chart

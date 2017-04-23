@@ -51,7 +51,7 @@ namespace dbaccess
         mutable ::boost::optional< sal_Int32 > m_nPrecision;
         mutable ::boost::optional< sal_Int32 > m_nScale;
 
-        virtual ~OResultColumn() override;
+        virtual ~OResultColumn();
     public:
         OResultColumn(
             const css::uno::Reference < css::sdbc::XResultSetMetaData >& _xMetaData,
@@ -59,11 +59,11 @@ namespace dbaccess
             const css::uno::Reference< css::sdbc::XDatabaseMetaData >& _rxDBMeta );
 
     // css::lang::XTypeProvider
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
 
     // css::lang::XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // cppu::OComponentHelper
         virtual void SAL_CALL disposing() override;

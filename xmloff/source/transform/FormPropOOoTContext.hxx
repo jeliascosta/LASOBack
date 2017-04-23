@@ -44,7 +44,7 @@ public:
     XMLFormPropOOoTransformerContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLFormPropOOoTransformerContext() override;
+    virtual ~XMLFormPropOOoTransformerContext();
 
     virtual rtl::Reference<XMLTransformerContext> CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,

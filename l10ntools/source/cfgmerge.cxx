@@ -266,7 +266,7 @@ void CfgParser::ExecuteAnalyzedToken( int nToken, char *pToken )
                 sError += sToken;
                 sError += sInFile;
                 sError += global::inputPathname;
-                yyerror(sError.getStr());
+                Error( sError );
                 std::exit(EXIT_FAILURE);
             }
         }
@@ -329,6 +329,11 @@ void CfgParser::Execute( int nToken, char * pToken )
         break;
     }
     ExecuteAnalyzedToken( nToken, pToken );
+}
+
+void CfgParser::Error(const OString& rError)
+{
+    yyerror(rError.getStr());
 }
 
 
@@ -471,7 +476,7 @@ void CfgMerge::WorkOnResourceEnd()
                 sCur = aLanguages[ i ];
 
                 OString sContent;
-                pEntrys->GetText( sContent, StringType::Text, sCur , true );
+                pEntrys->GetText( sContent, STRING_TYP_TEXT, sCur , true );
                 if (
                     ( !sCur.equalsIgnoreAsciiCase("en-US") ) && !sContent.isEmpty())
                 {

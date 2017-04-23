@@ -37,8 +37,11 @@ namespace framework
 class FWE_DLLPUBLIC AddonMenu : public PopupMenu
 {
     public:
-        AddonMenu();
-        virtual ~AddonMenu() override;
+        AddonMenu( const css::uno::Reference< css::frame::XFrame >& rFrame );
+        virtual ~AddonMenu();
+
+    protected:
+        css::uno::Reference< css::frame::XFrame > m_xFrame;
 };
 
 class AddonMenuManager;
@@ -46,7 +49,7 @@ class AddonMenuManager;
 class FWE_DLLPUBLIC AddonPopupMenu : public AddonMenu
 {
     public:
-        virtual ~AddonPopupMenu() override;
+        virtual ~AddonPopupMenu();
 
         // Check if command URL string has the unique prefix to identify addon popup menus
         static bool        IsCommandURLPrefix( const OUString& aCmdURL );
@@ -54,12 +57,11 @@ class FWE_DLLPUBLIC AddonPopupMenu : public AddonMenu
         void               SetCommandURL( const OUString& aCmdURL ) { m_aCommandURL = aCmdURL; }
 
     private:
-        AddonPopupMenu();
+        AddonPopupMenu( const css::uno::Reference< css::frame::XFrame >& rFrame );
 
         OUString               m_aCommandURL;
 
     friend class AddonMenuManager;
-    friend class ::VclPtr<AddonPopupMenu>;
 };
 
 class FWE_DLLPUBLIC AddonMenuManager
@@ -79,10 +81,10 @@ class FWE_DLLPUBLIC AddonMenuManager
         static bool IsCorrectContext(const OUString& rModuleIdentifier, const OUString& rContext);
 
         // Factory method to create different Add-On menu types
-        static VclPtr<PopupMenu> CreatePopupMenuType( MenuType eMenuType );
+        static PopupMenu* CreatePopupMenuType( MenuType eMenuType, const css::uno::Reference< css::frame::XFrame >& rFrame );
 
         // Create the Add-Ons menu
-        static VclPtr<AddonMenu> CreateAddonMenu( const css::uno::Reference< css::frame::XFrame >& rFrame,
+        static AddonMenu* CreateAddonMenu( const css::uno::Reference< css::frame::XFrame >& rFrame,
                                            const css::uno::Reference< css::uno::XComponentContext >& rContext );
 
         // Merge the Add-Ons help menu items into the given menu bar at a defined pos

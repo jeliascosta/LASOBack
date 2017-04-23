@@ -21,7 +21,7 @@
 #include <vcl/msgbox.hxx>
 
 #include "conflictsdlg.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "scresid.hxx"
 #include "viewdata.hxx"
 #include "dbfunc.hxx"
@@ -418,12 +418,11 @@ ScConflictsDlg::ScConflictsDlg( vcl::Window* pParent, ScViewData* pViewData, ScD
     m_pLbConflicts->InsertHeaderEntry( aHeader, HEADERBAR_APPEND, HeaderBarItemBits::LEFT | HeaderBarItemBits::LEFTIMAGE | HeaderBarItemBits::VCENTER );
 
     m_pLbConflicts->SetStyle( m_pLbConflicts->GetStyle() | WB_HASLINES | WB_CLIPCHILDREN | WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HSCROLL );
-    m_pLbConflicts->SetSelectionMode( SelectionMode::Multiple );
+    m_pLbConflicts->SetSelectionMode( MULTIPLE_SELECTION );
     m_pLbConflicts->SetHighlightRange();
 
-    maSelectionIdle.SetPriority( TaskPriority::LOW );
-    maSelectionIdle.SetInvokeHandler( LINK( this, ScConflictsDlg, UpdateSelectionHdl ) );
-    maSelectionIdle.SetDebugName( "ScConflictsDlg maSelectionIdle" );
+    maSelectionIdle.SetPriority( SchedulerPriority::LOW );
+    maSelectionIdle.SetIdleHdl( LINK( this, ScConflictsDlg, UpdateSelectionHdl ) );
 
     m_pLbConflicts->SetSelectHdl( LINK( this, ScConflictsDlg, SelectHandle ) );
     m_pLbConflicts->SetDeselectHdl( LINK( this, ScConflictsDlg, DeselectHandle ) );
@@ -539,7 +538,7 @@ void ScConflictsDlg::HandleListBoxSelection( bool bSelectHandle )
     }
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, SelectHandle, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, SelectHandle, SvTreeListBox*, void)
 {
     if ( mbInSelectHdl || mbInDeselectHdl )
     {
@@ -552,7 +551,7 @@ IMPL_LINK_NOARG(ScConflictsDlg, SelectHandle, SvTreeListBox*, void)
     mbInSelectHdl = false;
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, DeselectHandle, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, DeselectHandle, SvTreeListBox*, void)
 {
     if ( mbInDeselectHdl || mbInSelectHdl )
     {
@@ -564,7 +563,7 @@ IMPL_LINK_NOARG(ScConflictsDlg, DeselectHandle, SvTreeListBox*, void)
     mbInDeselectHdl = false;
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, UpdateSelectionHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, UpdateSelectionHdl, Idle *, void)
 {
     if ( !mpViewData || !mpOwnDoc )
     {
@@ -651,22 +650,22 @@ void ScConflictsDlg::KeepAllHandler( bool bMine )
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, KeepMineHandle, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, KeepMineHandle, Button*, void)
 {
     KeepHandler( true );
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, KeepOtherHandle, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, KeepOtherHandle, Button*, void)
 {
     KeepHandler( false );
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, KeepAllMineHandle, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, KeepAllMineHandle, Button*, void)
 {
     KeepAllHandler( true );
 }
 
-IMPL_LINK_NOARG(ScConflictsDlg, KeepAllOthersHandle, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScConflictsDlg, KeepAllOthersHandle, Button*, void)
 {
     KeepAllHandler( false );
 }

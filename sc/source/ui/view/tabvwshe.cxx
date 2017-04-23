@@ -97,7 +97,7 @@ OUString ScTabViewShell::GetSelectionText( bool bWholeWord )
             ScImportExport aObj( pDoc, aRange );
             aObj.SetFormulas( GetViewData().GetOptions().GetOption( VOPT_FORMULAS ) );
             OUString aExportOUString;
-            aObj.ExportString( aExportOUString, SotClipboardFormatId::STRING );
+            aObj.ExportString( aExportOUString );
             aStrSelection = convertLineEnd(aExportOUString, LINEEND_CR);
 
             // replace Tab/CR with space, if for dialog or through Basic/SelectionTextExt,
@@ -107,7 +107,7 @@ OUString ScTabViewShell::GetSelectionText( bool bWholeWord )
 
             if ( bInFormatDialog || bWholeWord || aRange.aEnd.Row() == aRange.aStart.Row() )
             {
-                aStrSelection = aStrSelection.replaceAll("\r", " ");
+                aStrSelection = aStrSelection.replaceAll(OUStringLiteral1<CHAR_CR>(), " ");
                 aStrSelection = aStrSelection.replaceAll("\t", " ");
                 aStrSelection = comphelper::string::stripEnd(aStrSelection, ' ');
             }
@@ -146,7 +146,7 @@ void ScTabViewShell::InsertURL( const OUString& rName, const OUString& rURL, con
     else
     {
         SC_MOD()->InputEnterHandler();
-        InsertURLButton( rName, rURL, rTarget, nullptr );
+        InsertURLButton( rName, rURL, rTarget );
     }
 }
 

@@ -39,6 +39,8 @@ class SwContentNode;
 class SfxPoolItem;
 class SwShareBoxFormats;
 class SwFormatFrameSize;
+struct CpyPara;
+struct InsULPara;
 
 void sw_LineSetHeadCondColl( const SwTableLine* pLine );
 
@@ -50,8 +52,8 @@ void InsTableBox( SwDoc* pDoc, SwTableNode* pTableNd,
                 SwTableLine* pLine, SwTableBoxFormat* pBoxFrameFormat,
                 SwTableBox* pBox, sal_uInt16 nInsPos, sal_uInt16 nCnt = 1 );
 
-SW_DLLPUBLIC void DeleteBox_( SwTable& rTable, SwTableBox* pBox, SwUndo* pUndo,
-                bool bCalcNewSize, const bool bCorrBorder,
+SW_DLLPUBLIC void DeleteBox_( SwTable& rTable, SwTableBox* pBox, SwUndo* pUndo = nullptr,
+                bool bCalcNewSize = true, const bool bCorrBorder = true,
                 SwShareBoxFormats* pShareFormats = nullptr );
 
 /**
@@ -66,13 +68,12 @@ class SwCollectTableLineBoxes
     std::vector<sal_uInt16> aPosArr;
     std::vector<SwTableBox*> m_Boxes;
     SwHistory* pHst;
-    SplitTable_HeadlineOption nMode;
-    sal_uInt16 nWidth;
+    sal_uInt16 nMode, nWidth;
     bool bGetFromTop : 1;
     bool bGetValues : 1;
 
 public:
-    SwCollectTableLineBoxes( bool bTop, SplitTable_HeadlineOption nMd = SplitTable_HeadlineOption::NONE, SwHistory* pHist=nullptr )
+    SwCollectTableLineBoxes( bool bTop, sal_uInt16 nMd = 0, SwHistory* pHist=nullptr )
         :
         pHst( pHist ), nMode( nMd ), nWidth( 0 ),
         bGetFromTop( bTop ), bGetValues( true )
@@ -96,7 +97,7 @@ public:
     bool IsGetFromTop() const           { return bGetFromTop; }
     bool IsGetValues() const            { return bGetValues; }
 
-    SplitTable_HeadlineOption GetMode() const { return nMode; }
+    sal_uInt16 GetMode() const              { return nMode; }
     void SetValues( bool bFlag )        { bGetValues = false; nWidth = 0;
                                           bGetFromTop = bFlag; }
     bool Resize( sal_uInt16 nOffset, sal_uInt16 nWidth );

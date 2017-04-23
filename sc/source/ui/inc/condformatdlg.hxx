@@ -47,7 +47,6 @@ private:
     EntryContainer maEntries;
 
     bool mbHasScrollBar;
-    bool mbFrozen;
     VclPtr<ScrollBar> mpScrollBar;
 
     ScDocument* mpDoc;
@@ -59,7 +58,7 @@ private:
 
 public:
     ScCondFormatList(vcl::Window* pParent, WinBits nStyle);
-    virtual ~ScCondFormatList() override;
+    virtual ~ScCondFormatList();
     virtual void dispose() override;
 
     void init(ScDocument* pDoc, ScCondFormatDlg* pDialogParent, const ScConditionalFormat* pFormat,
@@ -67,24 +66,19 @@ public:
         condformat::dialog::ScCondFormatDialogType eType);
 
     virtual Size GetOptimalSize() const override;
-    virtual void queue_resize(StateChangedType eReason = StateChangedType::Layout) override;
     virtual void Resize() override;
 
     ScConditionalFormat* GetConditionalFormat() const;
-    void Freeze() { mbFrozen = true; }
-    void Thaw() { mbFrozen = false; }
     void RecalcAll();
 
-    DECL_LINK( AddBtnHdl, Button*, void );
-    DECL_LINK( RemoveBtnHdl, Button*, void );
-    DECL_LINK( UpBtnHdl, Button*, void );
-    DECL_LINK( DownBtnHdl, Button*, void );
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
-    DECL_LINK( EntrySelectHdl, ScCondFrmtEntry&, void );
+    DECL_LINK_TYPED( AddBtnHdl, Button*, void );
+    DECL_LINK_TYPED( RemoveBtnHdl, Button*, void );
+    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( EntrySelectHdl, ScCondFrmtEntry&, void );
 
-    DECL_LINK( TypeListHdl, ListBox&, void );
-    DECL_LINK( AfterTypeListHdl, void*, void );
-    DECL_LINK( ColFormatTypeHdl, ListBox&, void );
+    DECL_LINK_TYPED( TypeListHdl, ListBox&, void );
+    DECL_LINK_TYPED( AfterTypeListHdl, void*, void );
+    DECL_LINK_TYPED( ColFormatTypeHdl, ListBox&, void );
 };
 
 class ScCondFormatDlg : public ScAnyRefDlg
@@ -93,8 +87,6 @@ private:
     VclPtr<PushButton> mpBtnOk;
     VclPtr<PushButton> mpBtnAdd;
     VclPtr<PushButton> mpBtnRemove;
-    VclPtr<PushButton> mpBtnUp;
-    VclPtr<PushButton> mpBtnDown;
     VclPtr<PushButton> mpBtnCancel;
     VclPtr<FixedText> mpFtRange;
     VclPtr<formula::RefEdit> mpEdRange;
@@ -113,7 +105,7 @@ private:
     OUString msBaseTitle;
     void updateTitle();
 
-    DECL_LINK( EdRangeModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( EdRangeModifyHdl, Edit&, void );
 protected:
 
     virtual void RefInputDone( bool bForced = false ) override;
@@ -123,7 +115,7 @@ protected:
 public:
     SC_DLLPUBLIC ScCondFormatDlg(SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pWindow,
                                  ScViewData* pViewData, const ScCondFormatDlgItem* pDlgItem);
-    virtual ~ScCondFormatDlg() override;
+    virtual ~ScCondFormatDlg();
     virtual void dispose() override;
 
     SC_DLLPUBLIC ScConditionalFormat* GetConditionalFormat() const;
@@ -135,10 +127,9 @@ public:
     virtual bool Close() override;
 
     void InvalidateRefData();
-    void OnSelectionChange(size_t nIndex, size_t nSize, bool bSelected = true);
 
-    DECL_LINK( BtnPressedHdl, Button*, void );
-    DECL_LINK( RangeGetFocusHdl, Control&, void );
+    DECL_LINK_TYPED( BtnPressedHdl, Button*, void );
+    DECL_LINK_TYPED( RangeGetFocusHdl, Control&, void );
 };
 
 #endif

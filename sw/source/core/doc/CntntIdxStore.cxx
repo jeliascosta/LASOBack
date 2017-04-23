@@ -170,7 +170,7 @@ namespace
             RestoreUnoCursors(aUpdater);
             RestoreShellCursors(aUpdater);
         }
-
+        virtual ~ContentIdxStoreImpl(){};
         private:
             inline void SaveBkmks(SwDoc* pDoc, sal_uLong nNode, sal_Int32 nContent);
             inline void RestoreBkmks(SwDoc* pDoc, updater_t& rUpdater);
@@ -182,9 +182,9 @@ namespace
             inline void RestoreUnoCursors(updater_t& rUpdater);
             inline void SaveShellCursors(SwDoc* pDoc, sal_uLong nNode, sal_Int32 nContent);
             inline void RestoreShellCursors(updater_t& rUpdater);
-            static const SwPosition& GetRightMarkPos(::sw::mark::IMark* pMark, bool bOther)
+            static inline const SwPosition& GetRightMarkPos(::sw::mark::IMark* pMark, bool bOther)
                 { return bOther ? pMark->GetOtherMarkPos() : pMark->GetMarkPos(); };
-            static void SetRightMarkPos(MarkBase* pMark, bool bOther, const SwPosition* const pPos)
+            static inline void SetRightMarkPos(MarkBase* pMark, bool bOther, const SwPosition* const pPos)
                 { bOther ? pMark->SetOtherMarkPos(*pPos) : pMark->SetMarkPos(*pPos); };
     };
     inline void lcl_ChkPaM( std::vector<PaMEntry>& rPaMEntries, const sal_uLong nNode, const sal_Int32 nContent, SwPaM& rPaM, const bool bGetPoint, bool bSetMark)
@@ -326,13 +326,13 @@ void ContentIdxStoreImpl::SaveFlys(SwDoc* pDoc, sal_uLong nNode, sal_Int32 nCont
             const SwFormatAnchor& rAnchor = pFrameFormat->GetAnchor();
             SwPosition const*const pAPos = rAnchor.GetContentAnchor();
             if ( pAPos && ( nNode == pAPos->nNode.GetIndex() ) &&
-                 ( RndStdIds::FLY_AT_PARA == rAnchor.GetAnchorId() ||
-                   RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId() ) )
+                 ( FLY_AT_PARA == rAnchor.GetAnchorId() ||
+                   FLY_AT_CHAR == rAnchor.GetAnchorId() ) )
             {
                 bool bSkip = false;
                 aSave.m_bOther = false;
                 aSave.m_nContent = pAPos->nContent.GetIndex();
-                if ( RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId() )
+                if ( FLY_AT_CHAR == rAnchor.GetAnchorId() )
                 {
                     if( nContent <= aSave.m_nContent )
                     {
@@ -364,7 +364,7 @@ void ContentIdxStoreImpl::RestoreFlys(SwDoc* pDoc, updater_t& rUpdater, bool bAu
                 SwFormatAnchor aNew( rFlyAnchor );
                 SwPosition aNewPos( *rFlyAnchor.GetContentAnchor() );
                 rUpdater(aNewPos, aEntry.m_nContent);
-                if ( RndStdIds::FLY_AT_CHAR != rFlyAnchor.GetAnchorId() )
+                if ( FLY_AT_CHAR != rFlyAnchor.GetAnchorId() )
                 {
                     aNewPos.nContent.Assign( nullptr, 0 );
                 }

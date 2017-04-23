@@ -32,6 +32,7 @@
 class SVX_DLLPUBLIC XLineEndWidthItem : public SfxMetricItem
 {
 public:
+                            static SfxPoolItem* CreateDefault();
                             XLineEndWidthItem(long nWidth = LINE_END_WIDTH_DEFAULT);
                             XLineEndWidthItem(SvStream& rIn);
     virtual SfxPoolItem*    Clone(SfxItemPool* pPool = nullptr) const override;
@@ -41,8 +42,8 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 };
 

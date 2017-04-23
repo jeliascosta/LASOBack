@@ -31,7 +31,7 @@
 
 using namespace com::sun::star;
 
-const GUID* const guidList[ SUPPORTED_FACTORIES_NUM ] = {
+const GUID* guidList[ SUPPORTED_FACTORIES_NUM ] = {
     &OID_WriterTextServer,
     &OID_WriterOASISTextServer,
     &OID_CalcServer,
@@ -50,7 +50,7 @@ class CurThreadData
         CurThreadData();
         virtual ~CurThreadData();
 
-        bool SAL_CALL setData(void *pData);
+        sal_Bool SAL_CALL setData(void *pData);
 
         void* SAL_CALL getData();
 
@@ -60,7 +60,7 @@ class CurThreadData
 
 CurThreadData::CurThreadData()
 {
-    m_hKey = osl_createThreadKey( nullptr );
+    m_hKey = osl_createThreadKey( (oslThreadKeyCallbackFunction)NULL );
 }
 
 CurThreadData::~CurThreadData()
@@ -68,7 +68,7 @@ CurThreadData::~CurThreadData()
     osl_destroyThreadKey(m_hKey);
 }
 
-bool CurThreadData::setData(void *pData)
+sal_Bool CurThreadData::setData(void *pData)
 {
     OSL_ENSURE( m_hKey, "No thread key!\n" );
     return (osl_setThreadKeyData(m_hKey, pData));
@@ -84,16 +84,16 @@ void o2u_attachCurrentThread()
 {
     static CurThreadData oleThreadData;
 
-    if ( oleThreadData.getData() != nullptr )
+    if ( oleThreadData.getData() != 0 )
     {
-        HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
         if (!SUCCEEDED(hr))
         {   // FIXME: is it a problem that this ends up in STA currently?
             assert(RPC_E_CHANGED_MODE == hr);
             SAL_INFO("embedserv.ole",
                     "CoInitializeEx fail: probably thread is in STA already?");
         }
-        oleThreadData.setData(reinterpret_cast<void*>(true));
+        oleThreadData.setData((void*)sal_True);
     }
 }
 
@@ -120,16 +120,19 @@ EmbedServer_Impl::~EmbedServer_Impl()
 }
 
 OUString EmbedServer_Impl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.ole.EmbedServer");
 }
 
 sal_Bool EmbedServer_Impl::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> EmbedServer_Impl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         "com.sun.star.document.OleEmbeddedServerRegistration"};
@@ -138,7 +141,7 @@ css::uno::Sequence<OUString> EmbedServer_Impl::getSupportedServiceNames()
 // EmbedProviderFactory_Impl
 
 EmbedProviderFactory_Impl::EmbedProviderFactory_Impl(const uno::Reference<lang::XMultiServiceFactory>& xFactory, const GUID* pGuid)
-    : m_refCount( 0 )
+    : m_refCount( 0L )
     , m_guid( *pGuid )
     , m_xFactory( xFactory )
 {
@@ -148,7 +151,7 @@ EmbedProviderFactory_Impl::~EmbedProviderFactory_Impl()
 {
 }
 
-bool EmbedProviderFactory_Impl::registerClass()
+sal_Bool EmbedProviderFactory_Impl::registerClass()
 {
     HRESULT hresult;
 
@@ -164,7 +167,7 @@ bool EmbedProviderFactory_Impl::registerClass()
     return (hresult == NOERROR);
 }
 
-bool EmbedProviderFactory_Impl::deregisterClass()
+sal_Bool EmbedProviderFactory_Impl::deregisterClass()
 {
     HRESULT hresult = CoRevokeClassObject( m_factoryHandle );
 
@@ -176,17 +179,17 @@ STDMETHODIMP EmbedProviderFactory_Impl::QueryInterface(REFIID riid, void FAR* FA
     if(IsEqualIID(riid, IID_IUnknown))
     {
         AddRef();
-        *ppv = static_cast<IUnknown*>(static_cast<IClassFactory*>(this));
+        *ppv = (IUnknown*) (IClassFactory*) this;
         return NOERROR;
     }
     else if (IsEqualIID(riid, IID_IClassFactory))
     {
         AddRef();
-        *ppv = static_cast<IClassFactory*>(this);
+        *ppv = (IClassFactory*) this;
         return NOERROR;
     }
 
-    *ppv = nullptr;
+    *ppv = NULL;
     return ResultFromScode(E_NOINTERFACE);
 }
 
@@ -211,9 +214,9 @@ STDMETHODIMP EmbedProviderFactory_Impl::CreateInstance(IUnknown FAR* punkOuter,
                                                        REFIID riid,
                                                        void FAR* FAR* ppv)
 {
-    punkOuter = nullptr;
+    punkOuter = NULL;
 
-    IUnknown* pEmbedDocument = static_cast<IUnknown*>(static_cast<IPersistStorage*>( new EmbedDocument_Impl( m_xFactory, &m_guid ) ));
+    IUnknown* pEmbedDocument = (IUnknown*)(IPersistStorage*)( new EmbedDocument_Impl( m_xFactory, &m_guid ) );
 
     return pEmbedDocument->QueryInterface( riid, ppv );
 }

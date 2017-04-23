@@ -20,6 +20,16 @@
 #include "annotation.hrc"
 #include "cmdid.h"
 
+String STR_POSTIT_TODAY
+{
+    Text [ en-US ] = "Today," ;
+};
+
+String STR_POSTIT_YESTERDAY
+{
+    Text [ en-US ] = "Yesterday," ;
+};
+
 String STR_DELETE_ALL_NOTES
 {
     Text [ en-US ] = "All Comments" ;

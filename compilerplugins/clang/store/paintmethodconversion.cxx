@@ -9,6 +9,7 @@
 
 #include "clang/Lex/Lexer.h"
 
+#include "compat.hxx"
 #include "plugin.hxx"
 #include <iostream>
 #include <fstream>

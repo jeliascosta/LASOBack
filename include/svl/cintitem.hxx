@@ -30,19 +30,21 @@ class SVL_DLLPUBLIC CntByteItem: public SfxPoolItem
 
 public:
 
-    CntByteItem(sal_uInt16 which, sal_uInt8 nTheValue):
+    CntByteItem(sal_uInt16 which = 0, sal_uInt8 nTheValue = 0):
         SfxPoolItem(which), m_nValue(nTheValue) {}
 
     CntByteItem(const CntByteItem & rItem):
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
+    virtual ~CntByteItem() {}
+
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                 MapUnit, MapUnit,
-                                 OUString & rText,
-                                 const IntlWrapper * = nullptr)
+                                                SfxMapUnit, SfxMapUnit,
+                                                OUString & rText,
+                                                const IntlWrapper * = nullptr)
         const override;
 
     virtual bool QueryValue(css::uno::Any& rVal,
@@ -74,7 +76,7 @@ class SVL_DLLPUBLIC CntUInt16Item: public SfxPoolItem
 
 public:
 
-    CntUInt16Item(sal_uInt16 which, sal_uInt16 nTheValue):
+    CntUInt16Item(sal_uInt16 which = 0, sal_uInt16 nTheValue = 0):
         SfxPoolItem(which), m_nValue(nTheValue)
     {}
 
@@ -84,12 +86,14 @@ public:
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
+    virtual ~CntUInt16Item() {}
+
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                 MapUnit, MapUnit,
-                                 OUString & rText,
-                                 const IntlWrapper * = nullptr)
+                                                SfxMapUnit, SfxMapUnit,
+                                                OUString & rText,
+                                                const IntlWrapper * = nullptr)
         const override;
 
     virtual bool QueryValue(css::uno::Any& rVal,
@@ -121,7 +125,7 @@ class SVL_DLLPUBLIC CntInt32Item: public SfxPoolItem
 
 public:
 
-    CntInt32Item(sal_uInt16 which, sal_Int32 nTheValue):
+    CntInt32Item(sal_uInt16 which = 0, sal_Int32 nTheValue = 0):
         SfxPoolItem(which), m_nValue(nTheValue)
     {}
 
@@ -131,12 +135,14 @@ public:
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
+    virtual ~CntInt32Item() {}
+
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                 MapUnit, MapUnit,
-                                 OUString & rText,
-                                 const IntlWrapper * = nullptr)
+                                                SfxMapUnit, SfxMapUnit,
+                                                OUString & rText,
+                                                const IntlWrapper * = nullptr)
         const override;
 
     virtual bool QueryValue(css::uno::Any& rVal,
@@ -168,7 +174,7 @@ class SVL_DLLPUBLIC CntUInt32Item: public SfxPoolItem
 
 public:
 
-    CntUInt32Item(sal_uInt16 which, sal_uInt32 nTheValue):
+    CntUInt32Item(sal_uInt16 which = 0, sal_uInt32 nTheValue = 0):
         SfxPoolItem(which), m_nValue(nTheValue)
     {}
 
@@ -178,12 +184,14 @@ public:
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
+    virtual ~CntUInt32Item() {}
+
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                 MapUnit, MapUnit,
-                                 OUString & rText,
-                                 const IntlWrapper * = nullptr)
+                                                SfxMapUnit, SfxMapUnit,
+                                                OUString & rText,
+                                                const IntlWrapper * = nullptr)
         const override;
 
     virtual bool QueryValue(css::uno::Any& rVal,

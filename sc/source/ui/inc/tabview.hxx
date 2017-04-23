@@ -20,7 +20,6 @@
 #define INCLUDED_SC_SOURCE_UI_INC_TABVIEW_HXX
 
 #include <vcl/scrbar.hxx>
-#include <vcl/help.hxx>
 
 #include <sfx2/ipclient.hxx>
 
@@ -49,6 +48,7 @@ class Splitter;
 class ScTabSplitter;
 class SdrView;
 class SdrObject;
+class ScHintWindow;
 class ScPageBreakData;
 class SdrHdlList;
 class TabBar;
@@ -67,54 +67,15 @@ private:
     bool            bAdd;
 
 protected:
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Resize() override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
 public:
                     ScCornerButton( vcl::Window* pParent, ScViewData* pData, bool bAdditional );
-                    virtual ~ScCornerButton() override;
+                    virtual ~ScCornerButton();
 
     virtual void    StateChanged( StateChangedType nType ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
-};
-
-class ScExtraEditViewManager
-{
-private:
-    enum ModifierTagType { Adder, Remover };
-
-public:
-    ScExtraEditViewManager(ScTabViewShell* pThisViewShell, VclPtr<ScGridWindow>* pGridWin)
-        : mpThisViewShell(pThisViewShell)
-        , mpGridWin(pGridWin)
-        , mpOtherEditView(nullptr)
-        , nTotalWindows(0)
-    {}
-
-    ~ScExtraEditViewManager();
-
-    void Add(SfxViewShell* pViewShell, ScSplitPos eWhich)
-    {
-        Apply<Adder>(pViewShell, eWhich);
-    }
-
-    void Remove(SfxViewShell* pViewShell, ScSplitPos eWhich)
-    {
-        Apply<Remover>(pViewShell, eWhich);
-    }
-
-private:
-    template<ModifierTagType ModifierTag>
-    void Apply(SfxViewShell* pViewShell, ScSplitPos eWhich);
-
-    template<ModifierTagType ModifierTag>
-    void Modifier(ScGridWindow* pWin);
-
-private:
-    ScTabViewShell* mpThisViewShell;
-    VclPtr<ScGridWindow>* mpGridWin;
-    EditView* mpOtherEditView;
-    int nTotalWindows;
 };
 
 class ScTabView
@@ -155,7 +116,7 @@ private:
     VclPtr<ScCornerButton>      aTopButton;
     VclPtr<ScrollBarBox>        aScrollBarBox;
 
-    std::unique_ptr<sdr::overlay::OverlayObjectList> mxInputHintOO; // help hint for data validation
+    VclPtr<ScHintWindow>        mpInputHintWindow; // popup window for data validation
 
     ScPageBreakData*    pPageBreakData;
     std::vector<ScHighlightEntry>   maHighlightRanges;
@@ -167,13 +128,7 @@ private:
     VclPtr<ScGridWindow>       pTimerWindow;
     MouseEvent          aTimerMEvt;
 
-    ScExtraEditViewManager aExtraEditViewManager;
-
     sal_uLong               nTipVisible;
-    tools::Rectangle               aTipRectangle;
-    QuickHelpFlags          nTipAlign;
-    OUString                sTipString;
-    VclPtr<vcl::Window>     sTopParent;
 
     long                nPrevDragPos;
 
@@ -213,20 +168,21 @@ private:
     void            DoAddWin( ScGridWindow* pWin );
 
     void            InitScrollBar( ScrollBar& rScrollBar, long nMaxVal );
-    DECL_LINK(ScrollHdl, ScrollBar*, void );
-    DECL_LINK(EndScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED(ScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED(EndScrollHdl, ScrollBar*, void );
 
-    DECL_LINK(SplitHdl, Splitter*, void);
+    DECL_LINK_TYPED(SplitHdl, Splitter*, void);
     void            DoHSplit(long nSplitPos);
     void            DoVSplit(long nSplitPos);
 
-    DECL_LINK( TimerHdl, Timer*, void );
+    DECL_LINK_TYPED( TimerHdl, Timer*, void );
 
     void            UpdateVarZoom();
 
     static void     SetScrollBar( ScrollBar& rScroll, long nRangeMax, long nVisible, long nPos, bool bLayoutRTL );
     static long     GetScrollBarPos( ScrollBar& rScroll );
 
+    void            GetPageMoveEndPosition(SCsCOL nMovX, SCsROW nMovY, SCsCOL& rPageX, SCsROW& rPageY);
     void            GetAreaMoveEndPosition(SCsCOL nMovX, SCsROW nMovY, ScFollowMode eMode,
                                            SCsCOL& rAreaX, SCsROW& rAreaY, ScFollowMode& rMode);
 
@@ -261,7 +217,7 @@ protected:
     bool            IsDrawTextEdit() const;
     void            DrawEnableAnim(bool bSet);
 
-    void            MakeDrawView( TriState nForceDesignMode );
+    void            MakeDrawView( TriState nForceDesignMode = TRISTATE_INDET );
 
     void            HideNoteMarker();
 
@@ -285,7 +241,7 @@ public:
     void            RemoveHintWindow();
     void            TestHintWindow();
 
-    DECL_LINK( TabBarResize, ::TabBar*, void );
+    DECL_LINK_TYPED( TabBarResize, ::TabBar*, void );
     /** Sets an absolute tab bar width (in pixels). */
     void            SetTabBarWidth( long nNewWidth );
     /** Sets a relative tab bar width.
@@ -297,7 +253,7 @@ public:
     /** Returns the current tab bar width in pixels. */
     long            GetTabBarWidth() const;
     /** Returns the current tab bar width relative to the frame window width (0.0 ... 1.0). */
-    SC_DLLPUBLIC static double   GetRelTabBarWidth();
+    SC_DLLPUBLIC double          GetRelTabBarWidth() const;
     /** Returns the pending tab bar width relative to the frame window width (0.0 ... 1.0). */
     double          GetPendingRelTabBarWidth() const { return mfPendingTabBarWidth;}
 
@@ -388,7 +344,7 @@ public:
     Point           GetInsertPos();
 
     Point           GetChartInsertPos( const Size& rSize, const ScRange& rCellRange );
-    Point           GetChartDialogPos( const Size& rDialogSize, const tools::Rectangle& rLogicChart );
+    Point           GetChartDialogPos( const Size& rDialogSize, const Rectangle& rLogicChart );
 
     void            UpdateAutoFillMark();
 
@@ -429,12 +385,10 @@ public:
 
     bool            MoveCursorKeyInput( const KeyEvent& rKeyEvent );
 
-    void            FindNextUnprot( bool bShift, bool bInSelection );
-
-    void            GetPageMoveEndPosition(SCsCOL nMovX, SCsROW nMovY, SCsCOL& rPageX, SCsROW& rPageY);
+    void            FindNextUnprot( bool bShift, bool bInSelection = true );
 
     SC_DLLPUBLIC void SetTabNo( SCTAB nTab, bool bNew = false, bool bExtendSelection = false, bool bSameTabButMoved = false );
-    void            SelectNextTab( short nDir, bool bExtendSelection );
+    void            SelectNextTab( short nDir, bool bExtendSelection = false );
     void            SelectTabPage( const sal_uInt16 nTab );
 
     void            ActivateView( bool bActivate, bool bFirst );
@@ -451,12 +405,12 @@ public:
     bool            ScrollCommand( const CommandEvent& rCEvt, ScSplitPos ePos );
 
     void            ScrollToObject( SdrObject* pDrawObj );
-    void            MakeVisible( const tools::Rectangle& rHMMRect );
+    void            MakeVisible( const Rectangle& rHMMRect );
 
                                     // Zeichnen
 
     void            PaintArea( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow,
-                                        ScUpdateMode eMode = ScUpdateMode::All );
+                                        ScUpdateMode eMode = SC_UPDATE_ALL );
 
     void            PaintGrid();
 
@@ -482,12 +436,11 @@ public:
     void            CheckNeedsRepaint();
     bool            NeedsRepaint();
 
-    void            PaintRangeFinder( long nNumber );
+    void            PaintRangeFinder( long nNumber = -1 );
     void            AddHighlightRange( const ScRange& rRange, const Color& rColor );
     void            ClearHighlightRanges();
 
     void            DoChartSelection( const css::uno::Sequence< css::chart2::data::HighlightedRange > & rHilightRanges );
-    void            DoDPFieldPopup(OUString const & rPivotTableName, sal_Int32 nDimensionIndex, Point aPoint, Size aSize);
 
     long            GetGridWidth( ScHSplitPos eWhich );
     long            GetGridHeight( ScVSplitPos eWhich );
@@ -497,9 +450,6 @@ public:
 
     void            InvalidateAttribs();
 
-    void            OnLibreOfficeKitTabChanged();
-    void            AddWindowToForeignEditView(SfxViewShell* pViewShell, ScSplitPos eWhich);
-    void            RemoveWindowFromForeignEditView(SfxViewShell* pViewShell, ScSplitPos eWhich);
     void            MakeEditView( ScEditEngineDefaulter* pEngine, SCCOL nCol, SCROW nRow );
     void            KillEditView( bool bNoPaint );
     void            UpdateEditView();
@@ -552,7 +502,7 @@ public:
     bool            IsMarking( SCCOL nCol, SCROW nRow, SCTAB nTab ) const;
 
     void            PaintMarks( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow );
-    void            PaintBlock( bool bReset );
+    void            PaintBlock( bool bReset = false );
 
     void            SetMarkData( const ScMarkData& rNew );
     void            MarkDataChanged();
@@ -560,7 +510,7 @@ public:
     void            LockModifiers( sal_uInt16 nModifiers );
     sal_uInt16          GetLockedModifiers() const;
     void            ViewOptionsHasChanged( bool bHScrollChanged,
-                                           bool bGraphicsChanged);
+                                           bool bGraphicsChanged = false);
 
     Point           GetMousePosPixel();
 
@@ -572,7 +522,7 @@ public:
 
     void            ErrorMessage( sal_uInt16 nGlobStrId );
 
-    void            EnableRefInput(bool bFlag);
+    void            EnableRefInput(bool bFlag = true);
 
     vcl::Window*         GetFrameWin() const { return pFrameWin; }
 
@@ -589,8 +539,7 @@ public:
     void ResetAutoSpell();
     void SetAutoSpellData( SCCOL nPosX, SCROW nPosY, const std::vector<editeng::MisspellRanges>* pRanges );
     /// @see ScModelObj::getRowColumnHeaders().
-    OUString getRowColumnHeaders(const tools::Rectangle& rRectangle);
-    static void OnLOKNoteStateChanged(const ScPostIt* pNote);
+    OUString getRowColumnHeaders(const Rectangle& rRectangle);
 };
 
 #endif

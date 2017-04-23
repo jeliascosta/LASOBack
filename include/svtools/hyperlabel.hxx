@@ -29,12 +29,14 @@
 
 namespace svt
 {
+
+
     class HyperLabelImpl;
 
     class HyperLabel : public FixedText
     {
     protected:
-        std::unique_ptr<HyperLabelImpl>     m_pImpl;
+        HyperLabelImpl*     m_pImpl;
         Link<HyperLabel*,void>  maClickHdl;
 
         virtual void        MouseMove( const MouseEvent& rMEvt ) override;
@@ -49,8 +51,8 @@ namespace svt
         void                implInit();
 
     public:
-        HyperLabel( vcl::Window* _pParent, WinBits _nWinStyle );
-        virtual ~HyperLabel( ) override;
+        HyperLabel( vcl::Window* _pParent, WinBits _nWinStyle = 0 );
+        virtual ~HyperLabel( );
         virtual void dispose() override;
 
         virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -68,7 +70,7 @@ namespace svt
 
         void                SetClickHdl( const Link<HyperLabel*,void>& rLink ) { maClickHdl = rLink; }
 
-        Size                CalcMinimumSize( long nMaxWidth ) const;
+        Size                CalcMinimumSize( long nMaxWidth = 0 ) const;
 
     private:
         using FixedText::CalcMinimumSize;

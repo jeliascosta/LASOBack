@@ -55,7 +55,7 @@ namespace slideshow
             The class is able to render the associated media shape on
             View implementations.
          */
-        class ViewMediaShape final
+        class ViewMediaShape
         {
         public:
             /** Create a ViewMediaShape for the given View
@@ -69,7 +69,7 @@ namespace slideshow
 
             /** destroy the object
              */
-            ~ViewMediaShape();
+            virtual ~ViewMediaShape();
 
             /// Forbid copy construction
             ViewMediaShape(const ViewMediaShape&) = delete;

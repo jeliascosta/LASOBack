@@ -48,7 +48,7 @@ SalMenu* WinSalInstance::CreateMenu( bool bMenuBar, Menu* )
     WinSalMenu *pSalMenu = new WinSalMenu();
 
     pSalMenu->mbMenuBar = bMenuBar;
-    pSalMenu->mhWnd     = nullptr;
+    pSalMenu->mhWnd     = NULL;
     if( bMenuBar )
         pSalMenu->mhMenu = ::CreateMenu();
     else
@@ -68,7 +68,7 @@ void WinSalInstance::DestroyMenu( SalMenu* pSalMenu )
 SalMenuItem* WinSalInstance::CreateMenuItem( const SalItemParams* pItemData )
 {
     if( !pItemData )
-        return nullptr;
+        return NULL;
 
     WinSalMenuItem *pSalMenuItem = new WinSalMenuItem();
     memset( &pSalMenuItem->mInfo, 0, sizeof( MENUITEMINFOW ) );
@@ -93,11 +93,11 @@ SalMenuItem* WinSalInstance::CreateMenuItem( const SalItemParams* pItemData )
 
         pSalMenuItem->mInfo.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID | MIIM_DATA;
         pSalMenuItem->mInfo.fType = MFT_STRING;
-        pSalMenuItem->mInfo.dwTypeData = SAL_W(const_cast<sal_Unicode *>(pSalMenuItem->mText.getStr()));
+        pSalMenuItem->mInfo.dwTypeData = (LPWSTR) pSalMenuItem->mText.getStr();
         pSalMenuItem->mInfo.cch = pSalMenuItem->mText.getLength();
 
         pSalMenuItem->mInfo.wID = pItemData->nId;
-        pSalMenuItem->mInfo.dwItemData = reinterpret_cast<ULONG_PTR>(pSalMenuItem); // user data
+        pSalMenuItem->mInfo.dwItemData = (ULONG_PTR) pSalMenuItem; // user data
     }
 
     return pSalMenuItem;
@@ -127,10 +127,10 @@ static void ImplDrawMenuBar( SalMenu *pMenu )
 
 WinSalMenu::WinSalMenu()
 {
-    mhMenu       = nullptr;
+    mhMenu       = NULL;
     mbMenuBar    = FALSE;
-    mhWnd        = nullptr;
-    mpParentMenu = nullptr;
+    mhWnd        = NULL;
+    mpParentMenu = NULL;
 }
 
 WinSalMenu::~WinSalMenu()
@@ -160,7 +160,7 @@ void WinSalMenu::SetFrame( const SalFrame *pFrame )
     if( pFrame )
         mhWnd = static_cast<const WinSalFrame*>(pFrame)->mhWnd;
     else
-        mhWnd = nullptr;
+        mhWnd = NULL;
 }
 
 void WinSalMenu::InsertItem( SalMenuItem* pSalMenuItem, unsigned nPos )
@@ -190,7 +190,7 @@ void WinSalMenu::RemoveItem( unsigned nPos )
     int num = ::GetMenuItemCount( mhMenu );
     if( num != -1 && nPos < (unsigned)num )
     {
-        WinSalMenuItem *pSalMenuItem = nullptr;
+        WinSalMenuItem *pSalMenuItem = NULL;
 
         MENUITEMINFOW mi;
         memset( &mi, 0, sizeof(mi) );
@@ -199,14 +199,14 @@ void WinSalMenu::RemoveItem( unsigned nPos )
         if( !GetMenuItemInfoW( mhMenu, nPos, TRUE, &mi) )
             myerr = GetLastError();
         else
-            pSalMenuItem = reinterpret_cast<WinSalMenuItem *>(mi.dwItemData);
+            pSalMenuItem = (WinSalMenuItem *) mi.dwItemData;
 
         if( !::RemoveMenu( mhMenu, nPos, MF_BYPOSITION ) )
             myerr = GetLastError();
         else
         {
             if( pSalMenuItem )
-                pSalMenuItem->mpSalMenu = nullptr;
+                pSalMenuItem->mpSalMenu = NULL;
             ImplDrawMenuBar( this );
         }
     }
@@ -217,7 +217,7 @@ void ImplRemoveItemById( WinSalMenu *pSalMenu, unsigned nItemId )
     if( !pSalMenu )
         return;
 
-    WinSalMenuItem *pSalMenuItem = nullptr;
+    WinSalMenuItem *pSalMenuItem = NULL;
 
     MENUITEMINFOW mi;
     memset( &mi, 0, sizeof(mi) );
@@ -226,14 +226,14 @@ void ImplRemoveItemById( WinSalMenu *pSalMenu, unsigned nItemId )
     if( !GetMenuItemInfoW( pSalMenu->mhMenu, nItemId, FALSE, &mi) )
         myerr = GetLastError();
     else
-        pSalMenuItem = reinterpret_cast<WinSalMenuItem *>(mi.dwItemData);
+        pSalMenuItem = (WinSalMenuItem *) mi.dwItemData;
 
     if( !::RemoveMenu( pSalMenu->mhMenu, nItemId, MF_BYCOMMAND ) )
         myerr = GetLastError();
     else
     {
         if( pSalMenuItem )
-            pSalMenuItem->mpSalMenu = nullptr;
+            pSalMenuItem->mpSalMenu = NULL;
         ImplDrawMenuBar( pSalMenu );
     }
 }
@@ -252,7 +252,7 @@ void WinSalMenu::SetSubMenu( SalMenuItem* pSalMenuItem, SalMenu* pSubMenu, unsig
 
         pWMenuItem->mInfo.fMask |= MIIM_SUBMENU;
         if( !pSubMenu )
-            pWMenuItem->mInfo.hSubMenu = nullptr;
+            pWMenuItem->mInfo.hSubMenu = NULL;
         else
         {
             pWMenuItem->mInfo.hSubMenu = pWSubMenu->mhMenu;
@@ -307,7 +307,7 @@ void WinSalMenu::SetItemText( unsigned nPos, SalMenuItem* pSalMenuItem, const OU
         {
             aStr += "\t" + pWItem->mAccelText;
         }
-        pWItem->mInfo.dwTypeData = SAL_W(const_cast<sal_Unicode *>(aStr.getStr()));
+        pWItem->mInfo.dwTypeData = (LPWSTR) aStr.getStr();
         pWItem->mInfo.cch = aStr.getLength();
 
         if(!::SetMenuItemInfoW( mhMenu, nPos, TRUE, &pWItem->mInfo ))
@@ -332,7 +332,7 @@ void WinSalMenu::SetAccelerator( unsigned nPos, SalMenuItem* pSalMenuItem, const
         {
             aStr += "\t" + pWItem->mAccelText;
         }
-        pWItem->mInfo.dwTypeData = SAL_W(const_cast<sal_Unicode *>(aStr.getStr()));
+        pWItem->mInfo.dwTypeData = (LPWSTR) aStr.getStr();
         pWItem->mInfo.cch = aStr.getLength();
 
         if(!::SetMenuItemInfoW( mhMenu, nPos, TRUE, &pWItem->mInfo ))
@@ -355,9 +355,9 @@ void WinSalMenu::GetSystemMenuData( SystemMenuData* pData )
 WinSalMenuItem::WinSalMenuItem()
 {
     memset( &mInfo, 0, sizeof( MENUITEMINFOW ) );
-    mpMenu = nullptr;
+    mpMenu = NULL;
     mnId  = 0xFFFF;
-    mpSalMenu = nullptr;
+    mpSalMenu = NULL;
 }
 
 WinSalMenuItem::~WinSalMenuItem()

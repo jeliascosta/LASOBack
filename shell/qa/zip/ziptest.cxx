@@ -61,7 +61,7 @@ public:
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Test);
 
-Test::Test() : documentName(), pStream(nullptr)
+Test::Test() : documentName(), pStream(NULL)
 {
     const char* pSrcRoot = getenv( "SRC_ROOT" );
     if (pSrcRoot)
@@ -72,14 +72,14 @@ Test::Test() : documentName(), pStream(nullptr)
     documentName.append("shell/qa/zip/simpledocument.odt");
 
     // Create an IStream pointer from the file
-    HANDLE hFile = CreateFileA(documentName.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    HANDLE hFile = CreateFileA(documentName.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 
-    DWORD dwFileSize = GetFileSize(hFile, nullptr);
+    DWORD dwFileSize = GetFileSize(hFile, NULL);
     HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, dwFileSize);
 
     LPVOID pvData = GlobalLock(hGlobal);
     DWORD dwBytesRead = 0;
-    BOOL bRead = ReadFile(hFile, pvData, dwFileSize, &dwBytesRead, nullptr);
+    BOOL bRead = ReadFile(hFile, pvData, dwFileSize, &dwBytesRead, NULL);
     CPPUNIT_ASSERT_MESSAGE("FileStream: ReadFile error.", bRead);
     GlobalUnlock(hGlobal);
     CloseHandle(hFile);

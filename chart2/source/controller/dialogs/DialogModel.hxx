@@ -64,19 +64,19 @@ public:
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
     ~DialogModel();
 
-    typedef std::pair<
+    typedef ::std::pair<
                 OUString,
-                std::pair< css::uno::Reference< css::chart2::XDataSeries >,
+                ::std::pair< css::uno::Reference< css::chart2::XDataSeries >,
                              css::uno::Reference< css::chart2::XChartType > > >
         tSeriesWithChartTypeByName;
 
-    typedef std::map< OUString, OUString >
+    typedef ::std::map< OUString, OUString >
         tRolesWithRanges;
 
     void setTemplate(
         const css::uno::Reference< css::chart2::XChartTypeTemplate > & xTemplate );
 
-    std::shared_ptr< RangeSelectionHelper > const &
+    std::shared_ptr< RangeSelectionHelper >
         getRangeSelectionHelper() const;
 
     css::uno::Reference< css::frame::XModel >
@@ -85,10 +85,10 @@ public:
     css::uno::Reference< css::chart2::data::XDataProvider >
         getDataProvider() const;
 
-    std::vector< css::uno::Reference< css::chart2::XDataSeriesContainer > >
+    ::std::vector< css::uno::Reference< css::chart2::XDataSeriesContainer > >
         getAllDataSeriesContainers() const;
 
-    std::vector< tSeriesWithChartTypeByName >
+    ::std::vector< tSeriesWithChartTypeByName >
         getAllDataSeriesWithLabel() const;
 
     static tRolesWithRanges getRolesWithRanges(
@@ -146,8 +146,6 @@ public:
     // relative ordering, to get e.g. x-values and y-values in the right order
     static sal_Int32 GetRoleIndexForSorting( const OUString & rInternalRoleString );
 
-    ChartModel& getModel() const;
-
 private:
     css::uno::Reference< css::chart2::XChartDocument >
         m_xChartDocument;
@@ -166,10 +164,11 @@ private:
 private:
     void applyInterpretedData(
         const css::chart2::InterpretedData & rNewData,
-        const std::vector< css::uno::Reference< css::chart2::XDataSeries > > & rSeriesToReUse );
+        const ::std::vector< css::uno::Reference< css::chart2::XDataSeries > > & rSeriesToReUse );
 
     sal_Int32 countSeries() const;
 
+    ChartModel& getModel() const;
     mutable DialogModelTimeBasedInfo maTimeBasedInfo;
 };
 

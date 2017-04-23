@@ -41,13 +41,14 @@ class InsCaptionOpt;
 enum class MailTextFormats
 {
     NONE      = 0x00,
-    HTML      = 0x01,
-    RTF       = 0x02,
-    OFFICE    = 0x04
+    ASCII     = 0x01,
+    HTML      = 0x02,
+    RTF       = 0x04,
+    OFFICE    = 0x08
 };
 namespace o3tl
 {
-    template<> struct typed_flags<MailTextFormats> : is_typed_flags<MailTextFormats, 0x07> {};
+    template<> struct typed_flags<MailTextFormats> : is_typed_flags<MailTextFormats, 0x0f> {};
 }
 
 
@@ -80,25 +81,18 @@ class SwRevisionConfig : public utl::ConfigItem
 
 public:
     SwRevisionConfig();
-    virtual ~SwRevisionConfig() override;
+    virtual ~SwRevisionConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
-};
-
-enum class SwCompareMode
-{
-    Auto = 0,
-    ByWord,
-    ByChar
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwCompareConfig : public utl::ConfigItem
 {
     friend class SwModuleOptions;
 
-    SwCompareMode  eCmpMode;       //Compare/CompareDocuments;
+    sal_uInt16      eCmpMode;       //Compare/CompareDocuments;
     bool            bUseRsid;       //Compare/Settings/Use RSID
     /// Compare/Settings/Store RSID
     bool            m_bStoreRsid;
@@ -111,11 +105,11 @@ class SwCompareConfig : public utl::ConfigItem
 
 public:
     SwCompareConfig();
-    virtual ~SwCompareConfig() override;
+    virtual ~SwCompareConfig();
 
     virtual void    Notify( const css::uno::Sequence< OUString >& ) override { };
     void            Load();
-    using ConfigItem::SetModified;
+    void            SetModified() {ConfigItem::SetModified(); }
 };
 
 class SwInsertConfig : public utl::ConfigItem
@@ -139,11 +133,11 @@ class SwInsertConfig : public utl::ConfigItem
 
 public:
     SwInsertConfig(bool bWeb);
-    virtual ~SwInsertConfig() override;
+    virtual ~SwInsertConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwTableConfig : public utl::ConfigItem
@@ -166,11 +160,11 @@ class SwTableConfig : public utl::ConfigItem
 
 public:
     SwTableConfig(bool bWeb);
-    virtual ~SwTableConfig() override;
+    virtual ~SwTableConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwMiscConfig : public utl::ConfigItem
@@ -196,11 +190,11 @@ class SwMiscConfig : public utl::ConfigItem
 
 public:
     SwMiscConfig();
-    virtual ~SwMiscConfig() override;
+    virtual ~SwMiscConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SW_DLLPUBLIC SwModuleOptions
@@ -355,8 +349,8 @@ public:
     bool    IsHideFieldTips() const {return bHideFieldTips;}
     void        SetHideFieldTips(bool bSet) {bHideFieldTips = bSet;}
 
-    SwCompareMode  GetCompareMode() const { return aCompareConfig.eCmpMode; }
-    void            SetCompareMode( SwCompareMode eMode ) { aCompareConfig.eCmpMode = eMode;
+    SvxCompareMode  GetCompareMode() const { return (SvxCompareMode)aCompareConfig.eCmpMode; }
+    void            SetCompareMode( SvxCompareMode eMode ) { aCompareConfig.eCmpMode = eMode;
                                                              aCompareConfig.SetModified(); }
 
     bool    IsUseRsid() const { return aCompareConfig.bUseRsid; }

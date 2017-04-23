@@ -96,7 +96,7 @@ namespace abp
     class ODataSource
     {
     private:
-        std::unique_ptr<ODataSourceImpl>    m_pImpl;
+        ODataSourceImpl*    m_pImpl;
 
     public:
 
@@ -113,11 +113,9 @@ namespace abp
         /// dtor
         ~ODataSource( );
 
-        /// copy assignment
+        /// assignment
         ODataSource& operator=( const ODataSource& _rSource );
 
-        /// move assignment
-        ODataSource& operator=( ODataSource&& _rSource );
 
         /// checks whether or not the object represents a valid data source
         bool    isValid() const;
@@ -160,7 +158,7 @@ namespace abp
 
 
         /** retrieves the tables names from the connection
-            <p>to be called when <method>isConnected</method> returns <TRUE/> only</p>
+            <p>to be called when <method>isConnection</method> returns <TRUE/> only</p>
         */
         const StringBag&    getTableNames() const;
 

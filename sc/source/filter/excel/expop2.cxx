@@ -64,11 +64,12 @@ ExportBiff5::ExportBiff5( XclExpRootData& rExpData, SvStream& rStrm ):
     pExcRoot = &GetOldRoot();
     pExcRoot->pER = this;   // ExcRoot -> XclExpRoot
     pExcRoot->eDateiTyp = Biff5;
-    pExcDoc.reset( new ExcDocument( *this ) );
+    pExcDoc = new ExcDocument( *this );
 }
 
 ExportBiff5::~ExportBiff5()
 {
+    delete pExcDoc;
 }
 
 FltError ExportBiff5::Write()
@@ -77,7 +78,7 @@ FltError ExportBiff5::Write()
     OSL_ENSURE( pDocShell, "ExportBiff5::Write - no document shell" );
 
     tools::SvRef<SotStorage> xRootStrg = GetRootStorage();
-    OSL_ENSURE( xRootStrg.is(), "ExportBiff5::Write - no root storage" );
+    OSL_ENSURE( xRootStrg.Is(), "ExportBiff5::Write - no root storage" );
 
     VBAExportMode eVbaExportMode = VBAExportMode::NONE;
     if( GetBiff() == EXC_BIFF8 )
@@ -92,27 +93,27 @@ FltError ExportBiff5::Write()
         }
     }
 
-    if ( pDocShell && xRootStrg.is() && eVbaExportMode == VBAExportMode::FULL_EXPORT)
+    if ( pDocShell && xRootStrg.Is() && eVbaExportMode == VBAExportMode::FULL_EXPORT)
     {
         VbaExport aExport(pDocShell->GetModel());
         if (aExport.containsVBAProject())
         {
-            tools::SvRef<SotStorage> xVBARoot = xRootStrg->OpenSotStorage("_VBA_PROJECT_CUR");
-            aExport.exportVBA( xVBARoot.get() );
+            SotStorage* pVBARoot = xRootStrg->OpenSotStorage("_VBA_PROJECT_CUR");
+            aExport.exportVBA(pVBARoot);
         }
     }
-    else if( pDocShell && xRootStrg.is() && eVbaExportMode == VBAExportMode::REEXPORT_STREAM )
+    else if( pDocShell && xRootStrg.Is() && eVbaExportMode == VBAExportMode::REEXPORT_STREAM )
     {
         SvxImportMSVBasic aBasicImport( *pDocShell, *xRootStrg );
         const ErrCode nErr = aBasicImport.SaveOrDelMSVBAStorage( true, EXC_STORAGE_VBA_PROJECT );
         if( nErr != ERRCODE_NONE )
-            pDocShell->SetError(nErr);
+            pDocShell->SetError( nErr, OSL_LOG_PREFIX );
     }
 
     pExcDoc->ReadDoc();         // ScDoc -> ExcDoc
     pExcDoc->Write( aOut );     // wechstreamen
 
-    if( pDocShell && xRootStrg.is() )
+    if( pDocShell && xRootStrg.Is() )
     {
         using namespace ::com::sun::star;
         uno::Reference<document::XDocumentPropertiesSupplier> xDPS(
@@ -125,10 +126,10 @@ FltError ExportBiff5::Write()
                 pDocShell->GetPreviewMetaFile();
             uno::Sequence<sal_Int8> metaFile(
                 sfx2::convertMetaFile(xMetaFile.get()));
-            sfx2::SaveOlePropertySet( xDocProps, xRootStrg.get(), &metaFile );
+            sfx2::SaveOlePropertySet(xDocProps, xRootStrg, &metaFile);
         }
         else
-            sfx2::SaveOlePropertySet( xDocProps, xRootStrg.get() );
+            sfx2::SaveOlePropertySet(xDocProps, xRootStrg );
     }
 
     const XclExpAddressConverter& rAddrConv = GetAddressConverter();

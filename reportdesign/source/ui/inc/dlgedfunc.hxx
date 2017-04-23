@@ -53,7 +53,7 @@ protected:
     bool            m_bUiActive;
     bool            m_bShowPropertyBrowser;
 
-    DECL_LINK( ScrollTimeout, Timer *, void );
+    DECL_LINK_TYPED( ScrollTimeout, Timer *, void );
     void    ForceScroll( const Point& rPos );
     /** checks that no other object is overlapped.
     *
@@ -108,7 +108,7 @@ public:
     */
     void    deactivateOle(bool _bSelect = false);
 
-    bool isUiActive() const { return m_bUiActive; }
+    inline bool isUiActive() const { return m_bUiActive; }
 protected:
     void colorizeOverlappedObject(SdrObject* _pOverlappedObj);
     void unColorizeOverlappedObj();
@@ -124,7 +124,7 @@ class DlgEdFuncInsert : public DlgEdFunc
 {
 public:
     DlgEdFuncInsert( OReportSection* pParent );
-    virtual ~DlgEdFuncInsert() override;
+    virtual ~DlgEdFuncInsert();
 
     virtual bool MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual bool MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -139,7 +139,7 @@ class DlgEdFuncSelect : public DlgEdFunc
 {
 public:
     DlgEdFuncSelect( OReportSection* pParent );
-    virtual ~DlgEdFuncSelect() override;
+    virtual ~DlgEdFuncSelect();
 
     virtual bool MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual bool MouseButtonUp( const MouseEvent& rMEvt ) override;

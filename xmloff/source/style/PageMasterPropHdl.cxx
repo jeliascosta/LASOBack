@@ -260,7 +260,9 @@ bool XMLPMPropHdl_PaperTrayNumber::exportXML(
             rStrExpValue = GetXMLToken( XML_DEFAULT );
         else
         {
-            rStrExpValue = OUString::number( nPaperTray );
+            OUStringBuffer aBuffer;
+            ::sax::Converter::convertNumber( aBuffer, nPaperTray );
+            rStrExpValue = aBuffer.makeStringAndClear();
         }
         bRet = true;
     }

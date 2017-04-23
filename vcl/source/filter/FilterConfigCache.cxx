@@ -20,7 +20,6 @@
 #include "FilterConfigCache.hxx"
 
 #include <vcl/graphicfilter.hxx>
-#include <unotools/configmgr.hxx>
 #include <com/sun/star/uno/Any.h>
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/uno/Exception.hpp>
@@ -43,8 +42,8 @@ const char* FilterConfigCache::FilterConfigCacheEntry::InternalPixelFilterNameLi
 
 const char* FilterConfigCache::FilterConfigCacheEntry::InternalVectorFilterNameList[] =
 {
-    IMP_SVMETAFILE, IMP_WMF, IMP_EMF, IMP_SVSGF, IMP_SVSGV, IMP_SVG, IMP_PDF,
-    EXP_SVMETAFILE, EXP_WMF, EXP_EMF, EXP_SVG, EXP_PDF, nullptr
+    IMP_SVMETAFILE, IMP_WMF, IMP_EMF, IMP_SVSGF, IMP_SVSGV, IMP_SVG,
+    EXP_SVMETAFILE, EXP_WMF, EXP_EMF, EXP_SVG, nullptr
 };
 
 const char* FilterConfigCache::FilterConfigCacheEntry::ExternalPixelFilterNameList[] =
@@ -70,7 +69,7 @@ void FilterConfigCache::FilterConfigCacheEntry::CreateFilterName( const OUString
     const char** pPtr;
     for ( pPtr = InternalPixelFilterNameList; *pPtr && !bIsInternalFilter; pPtr++ )
     {
-        if ( sFilterName.equalsIgnoreAsciiCaseAscii( *pPtr ) )
+        if ( sFilterName.equalsIgnoreAsciiCase( OUString(*pPtr, strlen(*pPtr), RTL_TEXTENCODING_ASCII_US) ) )
         {
             bIsInternalFilter = true;
             bIsPixelFormat = true;
@@ -78,14 +77,14 @@ void FilterConfigCache::FilterConfigCacheEntry::CreateFilterName( const OUString
     }
     for ( pPtr = InternalVectorFilterNameList; *pPtr && !bIsInternalFilter; pPtr++ )
     {
-        if ( sFilterName.equalsIgnoreAsciiCaseAscii( *pPtr ) )
+        if ( sFilterName.equalsIgnoreAsciiCase( OUString(*pPtr, strlen(*pPtr), RTL_TEXTENCODING_ASCII_US) ) )
             bIsInternalFilter = true;
     }
     if ( !bIsInternalFilter )
     {
         for ( pPtr = ExternalPixelFilterNameList; *pPtr && !bIsPixelFormat; pPtr++ )
         {
-            if ( sFilterName.equalsIgnoreAsciiCaseAscii( *pPtr ) )
+            if ( sFilterName.equalsIgnoreAsciiCase( OUString(*pPtr, strlen(*pPtr), RTL_TEXTENCODING_ASCII_US) ) )
                 bIsPixelFormat = true;
         }
         sExternalFilterName = sFilterName;
@@ -118,6 +117,7 @@ OUString FilterConfigCache::FilterConfigCacheEntry::GetShortName()
     @throws It let pass RuntimeExceptions only.
  */
 Reference< XInterface > openConfig(const char* sPackage)
+    throw(RuntimeException)
 {
     Reference< XComponentContext > xContext(
         comphelper::getProcessComponentContext() );
@@ -136,7 +136,7 @@ Reference< XInterface > openConfig(const char* sPackage)
             aParam.Value <<= OUString( "/org.openoffice.TypeDetection.Types/Types" );
         if (rtl_str_compareIgnoreAsciiCase(sPackage, "filters") == 0)
             aParam.Value <<= OUString( "/org.openoffice.TypeDetection.GraphicFilter/Filters" );
-        lParams[0] <<= aParam;
+        lParams[0] = makeAny(aParam);
 
         // get access to file
         xCfg = xConfigProvider->createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess", lParams);
@@ -297,9 +297,7 @@ void FilterConfigCache::ImplInitSmart()
 FilterConfigCache::FilterConfigCache( bool bConfig ) :
     bUseConfig ( bConfig )
 {
-    if (bUseConfig)
-        bUseConfig = !utl::ConfigManager::IsAvoidConfig();
-    if (bUseConfig)
+    if ( bUseConfig )
         ImplInit();
     else
         ImplInitSmart();
@@ -318,7 +316,7 @@ OUString FilterConfigCache::GetImportFilterName( sal_uInt16 nFormat )
 
 sal_uInt16 FilterConfigCache::GetImportFormatNumber( const OUString& rFormatName )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aImport.begin(), aEnd = aImport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->sUIName.equalsIgnoreAsciiCase( rFormatName ) )
@@ -330,7 +328,7 @@ sal_uInt16 FilterConfigCache::GetImportFormatNumber( const OUString& rFormatName
 /// get the index of the filter that matches this extension
 sal_uInt16 FilterConfigCache::GetImportFormatNumberForExtension( const OUString& rExt )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aImport.begin(), aEnd = aImport.end(); aIter != aEnd; ++aIter)
     {
         for ( sal_Int32 i = 0; i < aIter->lExtensionList.getLength(); i++ )
@@ -344,8 +342,8 @@ sal_uInt16 FilterConfigCache::GetImportFormatNumberForExtension( const OUString&
 
 sal_uInt16 FilterConfigCache::GetImportFormatNumberForShortName( const OUString& rShortName )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aEnd;
-    std::vector< FilterConfigCacheEntry >::iterator aIter;
+    CacheVector::const_iterator aEnd;
+    CacheVector::iterator aIter;
     for (aIter = aImport.begin(), aEnd = aImport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->GetShortName().equalsIgnoreAsciiCase( rShortName ) )
@@ -356,7 +354,7 @@ sal_uInt16 FilterConfigCache::GetImportFormatNumberForShortName( const OUString&
 
 sal_uInt16 FilterConfigCache::GetImportFormatNumberForTypeName( const OUString& rType )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aImport.begin(), aEnd = aImport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->sType.equalsIgnoreAsciiCase( rType ) )
@@ -444,7 +442,7 @@ OUString FilterConfigCache::GetExportFilterName( sal_uInt16 nFormat )
 
 sal_uInt16 FilterConfigCache::GetExportFormatNumber(const OUString& rFormatName)
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aExport.begin(), aEnd = aExport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->sUIName.equalsIgnoreAsciiCase( rFormatName ) )
@@ -455,7 +453,7 @@ sal_uInt16 FilterConfigCache::GetExportFormatNumber(const OUString& rFormatName)
 
 sal_uInt16 FilterConfigCache::GetExportFormatNumberForMediaType( const OUString& rMediaType )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aExport.begin(), aEnd = aExport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->sMediaType.equalsIgnoreAsciiCase( rMediaType ) )
@@ -466,8 +464,8 @@ sal_uInt16 FilterConfigCache::GetExportFormatNumberForMediaType( const OUString&
 
 sal_uInt16 FilterConfigCache::GetExportFormatNumberForShortName( const OUString& rShortName )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aEnd;
-    std::vector< FilterConfigCacheEntry >::iterator aIter;
+    CacheVector::const_iterator aEnd;
+    CacheVector::iterator aIter;
     for (aIter = aExport.begin(), aEnd = aExport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->GetShortName().equalsIgnoreAsciiCase( rShortName ) )
@@ -478,7 +476,7 @@ sal_uInt16 FilterConfigCache::GetExportFormatNumberForShortName( const OUString&
 
 sal_uInt16 FilterConfigCache::GetExportFormatNumberForTypeName( const OUString& rType )
 {
-    std::vector< FilterConfigCacheEntry >::const_iterator aIter, aEnd;
+    CacheVector::const_iterator aIter, aEnd;
     for (aIter = aExport.begin(), aEnd = aExport.end(); aIter != aEnd; ++aIter)
     {
         if ( aIter->sType.equalsIgnoreAsciiCase( rType ) )

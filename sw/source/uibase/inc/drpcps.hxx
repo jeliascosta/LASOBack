@@ -66,13 +66,13 @@ friend class SwDropCapsPict;
 
     SwWrtShell &rSh;
 
-    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
+    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
     void    FillSet( SfxItemSet &rSet );
 
-    DECL_LINK( ClickHdl, Button*, void );
-    DECL_LINK( ModifyHdl, Edit&, void );
-    DECL_LINK( SelectHdl, ListBox&, void );
-    DECL_LINK( WholeWordHdl, Button*, void );
+    DECL_LINK_TYPED( ClickHdl, Button*, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( WholeWordHdl, Button*, void );
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
@@ -81,7 +81,7 @@ friend class SwDropCapsPict;
 
 public:
     SwDropCapsPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwDropCapsPage() override;
+    virtual ~SwDropCapsPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);

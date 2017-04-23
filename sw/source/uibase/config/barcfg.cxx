@@ -62,26 +62,26 @@ SwToolbarConfigItem::~SwToolbarConfigItem()
 {
 }
 
-static sal_Int32 lcl_getArrayIndex(SelectionType nSelType)
+static sal_Int32 lcl_getArrayIndex(int nSelType)
 {
     sal_Int32 nRet = -1;
-    if(nSelType & SelectionType::NumberList)
+    if(nSelType & nsSelectionType::SEL_NUM)
     {
-        if(nSelType & SelectionType::Table)
+        if(nSelType & nsSelectionType::SEL_TBL)
             nRet = SEL_TYPE_TABLE_LIST;
         else
             nRet = SEL_TYPE_LIST_TEXT;
     }
-    else if(nSelType & SelectionType::Table)
+    else if(nSelType & nsSelectionType::SEL_TBL)
         nRet = SEL_TYPE_TABLE_TEXT;
-    else if(nSelType & SelectionType::Ornament)
+    else if(nSelType & nsSelectionType::SEL_BEZ)
         nRet = SEL_TYPE_BEZIER;
-    else if(nSelType & SelectionType::Graphic)
+    else if(nSelType & nsSelectionType::SEL_GRF)
         nRet = SEL_TYPE_GRAPHIC;
     return nRet;
 }
 
-void SwToolbarConfigItem::SetTopToolbar( SelectionType nSelType, sal_Int32 nBarId )
+void SwToolbarConfigItem::SetTopToolbar( sal_Int32 nSelType, sal_Int32 nBarId )
 {
     sal_Int32 nProp = lcl_getArrayIndex(nSelType);
     if(nProp >= 0)

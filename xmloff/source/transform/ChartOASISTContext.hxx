@@ -27,7 +27,7 @@ class XMLChartOASISTransformerContext : public XMLTransformerContext
 public:
     XMLChartOASISTransformerContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName    );
-    virtual ~XMLChartOASISTransformerContext() override;
+    virtual ~XMLChartOASISTransformerContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };

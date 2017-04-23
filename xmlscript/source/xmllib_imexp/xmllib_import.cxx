@@ -31,46 +31,55 @@ namespace xmlscript
 {
 
 Reference< xml::input::XElement > LibElementBase::getParent()
+    throw (RuntimeException, std::exception)
 {
-    return mxParent.get();
+    return static_cast< xml::input::XElement * >( _pParent );
 }
 
 OUString LibElementBase::getLocalName()
+    throw (RuntimeException, std::exception)
 {
     return _aLocalName;
 }
 
 sal_Int32 LibElementBase::getUid()
+    throw (RuntimeException, std::exception)
 {
-    return mxImport->XMLNS_LIBRARY_UID;
+    return _pImport->XMLNS_LIBRARY_UID;
 }
 
 Reference< xml::input::XAttributes > LibElementBase::getAttributes()
+    throw (RuntimeException, std::exception)
 {
     return _xAttributes;
 }
 
 void LibElementBase::ignorableWhitespace(
     OUString const & /*rWhitespaces*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void LibElementBase::characters( OUString const & /*rChars*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // not used, all characters ignored
 }
 
 void LibElementBase::processingInstruction(
     OUString const & /*rTarget*/, OUString const & /*rData*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void LibElementBase::endElement()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 Reference< xml::input::XElement > LibElementBase::startChildElement(
     sal_Int32 /*nUid*/, OUString const & /*rLocalName*/,
     Reference< xml::input::XAttributes > const & /*xAttributes*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     throw xml::sax::SAXException("unexpected element!", Reference< XInterface >(), Any() );
 }
@@ -79,15 +88,28 @@ LibElementBase::LibElementBase(
     OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes,
     LibElementBase * pParent, LibraryImport * pImport )
-    : mxImport( pImport )
-    , mxParent( pParent )
+    : _pImport( pImport )
+    , _pParent( pParent )
     , _aLocalName( rLocalName )
     , _xAttributes( xAttributes )
 {
+    _pImport->acquire();
+
+    if (_pParent)
+    {
+        _pParent->acquire();
+    }
 }
 
 LibElementBase::~LibElementBase()
 {
+    _pImport->release();
+
+    if (_pParent)
+    {
+        _pParent->release();
+    }
+
     SAL_INFO("xmlscript.xmllib", "LibElementBase::~LibElementBase(): " << _aLocalName );
 }
 
@@ -95,28 +117,33 @@ LibElementBase::~LibElementBase()
 
 void LibraryImport::startDocument(
     Reference< xml::input::XNamespaceMapping > const & xNamespaceMapping )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     XMLNS_LIBRARY_UID = xNamespaceMapping->getUidByUri( XMLNS_LIBRARY_URI );
     XMLNS_XLINK_UID = xNamespaceMapping->getUidByUri( XMLNS_XLINK_URI );
 }
 
 void LibraryImport::endDocument()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void LibraryImport::processingInstruction(
     OUString const & /*rTarget*/, OUString const & /*rData*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void LibraryImport::setDocumentLocator(
     Reference< xml::sax::XLocator > const & /*xLocator*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 Reference< xml::input::XElement > LibraryImport::startRootElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     if (XMLNS_LIBRARY_UID != nUid)
     {
@@ -124,7 +151,7 @@ Reference< xml::input::XElement > LibraryImport::startRootElement(
     }
     else if ( mpLibArray && rLocalName == "libraries" )
     {
-        return new LibrariesElement( rLocalName, xAttributes, this );
+        return new LibrariesElement( rLocalName, xAttributes, nullptr, this );
     }
     else if ( mpLibDesc && rLocalName == "library" )
     {
@@ -153,8 +180,9 @@ LibraryImport::~LibraryImport()
 Reference< xml::input::XElement > LibrariesElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (mxImport->XMLNS_LIBRARY_UID != nUid)
+    if (_pImport->XMLNS_LIBRARY_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
@@ -164,14 +192,14 @@ Reference< xml::input::XElement > LibrariesElement::startChildElement(
         LibDescriptor aDesc;
         aDesc.bLink = aDesc.bReadOnly = aDesc.bPasswordProtected = aDesc.bPreload = false;
 
-        aDesc.aName = xAttributes->getValueByUidName(mxImport->XMLNS_LIBRARY_UID, "name" );
-        aDesc.aStorageURL = xAttributes->getValueByUidName( mxImport->XMLNS_XLINK_UID, "href" );
-        getBoolAttr(&aDesc.bLink, "link", xAttributes, mxImport->XMLNS_LIBRARY_UID );
-        getBoolAttr(&aDesc.bReadOnly, "readonly", xAttributes, mxImport->XMLNS_LIBRARY_UID );
-        getBoolAttr(&aDesc.bPasswordProtected, "passwordprotected", xAttributes, mxImport->XMLNS_LIBRARY_UID );
+        aDesc.aName = xAttributes->getValueByUidName(_pImport->XMLNS_LIBRARY_UID, "name" );
+        aDesc.aStorageURL = xAttributes->getValueByUidName( _pImport->XMLNS_XLINK_UID, "href" );
+        getBoolAttr(&aDesc.bLink, "link", xAttributes, _pImport->XMLNS_LIBRARY_UID );
+        getBoolAttr(&aDesc.bReadOnly, "readonly", xAttributes, _pImport->XMLNS_LIBRARY_UID );
+        getBoolAttr(&aDesc.bPasswordProtected, "passwordprotected", xAttributes, _pImport->XMLNS_LIBRARY_UID );
 
         mLibDescriptors.push_back( aDesc );
-        return new LibraryElement( rLocalName, xAttributes, this, mxImport.get() );
+        return new LibraryElement( rLocalName, xAttributes, this, _pImport );
     }
     else
     {
@@ -180,14 +208,15 @@ Reference< xml::input::XElement > LibrariesElement::startChildElement(
 }
 
 void LibrariesElement::endElement()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    sal_Int32 nLibCount = mxImport->mpLibArray->mnLibCount = (sal_Int32)mLibDescriptors.size();
-    mxImport->mpLibArray->mpLibs.reset( new LibDescriptor[ nLibCount ] );
+    sal_Int32 nLibCount = _pImport->mpLibArray->mnLibCount = (sal_Int32)mLibDescriptors.size();
+    _pImport->mpLibArray->mpLibs = new LibDescriptor[ nLibCount ];
 
     for( sal_Int32 i = 0 ; i < nLibCount ; i++ )
     {
         const LibDescriptor& rLib = mLibDescriptors[i];
-        mxImport->mpLibArray->mpLibs[i] = rLib;
+        _pImport->mpLibArray->mpLibs[i] = rLib;
     }
 }
 
@@ -195,19 +224,20 @@ void LibrariesElement::endElement()
 Reference< xml::input::XElement > LibraryElement::startChildElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    if (mxImport->XMLNS_LIBRARY_UID != nUid)
+    if (_pImport->XMLNS_LIBRARY_UID != nUid)
     {
         throw xml::sax::SAXException( "illegal namespace!", Reference< XInterface >(), Any() );
     }
     // library
     else if ( rLocalName == "element" )
     {
-        OUString aValue( xAttributes->getValueByUidName(mxImport->XMLNS_LIBRARY_UID, "name" ) );
+        OUString aValue( xAttributes->getValueByUidName(_pImport->XMLNS_LIBRARY_UID, "name" ) );
         if (!aValue.isEmpty())
             mElements.push_back( aValue );
 
-        return new LibElementBase( rLocalName, xAttributes, this, mxImport.get() );
+        return new LibElementBase( rLocalName, xAttributes, this, _pImport );
     }
     else
     {
@@ -216,6 +246,7 @@ Reference< xml::input::XElement > LibraryElement::startChildElement(
 }
 
 void LibraryElement::endElement()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     sal_Int32 nElementCount = mElements.size();
     Sequence< OUString > aElementNames( nElementCount );
@@ -223,9 +254,9 @@ void LibraryElement::endElement()
     for( sal_Int32 i = 0 ; i < nElementCount ; i++ )
         pElementNames[i] = mElements[i];
 
-    LibDescriptor* pLib = mxImport->mpLibDesc;
+    LibDescriptor* pLib = _pImport->mpLibDesc;
     if( !pLib )
-        pLib = &static_cast< LibrariesElement* >( mxParent.get() )->mLibDescriptors.back();
+        pLib = &static_cast< LibrariesElement* >( _pParent )->mLibDescriptors.back();
     pLib->aElementNames = aElementNames;
 }
 
@@ -246,11 +277,12 @@ SAL_CALL importLibrary( LibDescriptor& rLib )
 LibDescriptorArray::LibDescriptorArray( sal_Int32 nLibCount )
 {
     mnLibCount = nLibCount;
-    mpLibs.reset( new LibDescriptor[ mnLibCount ] );
+    mpLibs = new LibDescriptor[ mnLibCount ];
 }
 
 LibDescriptorArray::~LibDescriptorArray()
 {
+    delete[] mpLibs;
 }
 
 }

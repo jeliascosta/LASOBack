@@ -71,7 +71,7 @@ import com.sun.star.util.XURLTransformer;
 * @see ifc.frame._XDispatchProvider
 */
 public class SdUnoOutlineView extends TestCase {
-    XDesktop xDesktop;
+    XDesktop the_Desk;
     XComponent xImpressDoc;
     XComponent xSecondDrawDoc;
 
@@ -81,7 +81,9 @@ public class SdUnoOutlineView extends TestCase {
     */
     @Override
     protected void initialize(TestParameters Param, PrintWriter log) throws Exception {
-        xDesktop = DesktopTools.createDesktop(Param.getMSF());
+        the_Desk = UnoRuntime.queryInterface(
+            XDesktop.class, DesktopTools.createDesktop(
+                                Param.getMSF()) );
     }
 
     /**
@@ -186,7 +188,7 @@ public class SdUnoOutlineView extends TestCase {
 
         tEnv.addObjRelation("XUserInputInterception.XModel", aModel);
 
-        XFrame the_frame = xDesktop.getCurrentFrame();
+        XFrame the_frame = the_Desk.getCurrentFrame();
         tEnv.addObjRelation("Frame", the_frame);
 
          aModel = UnoRuntime.queryInterface(XModel.class, xSecondDrawDoc);

@@ -102,6 +102,7 @@ void BaseContainer::impl_loadOnDemand()
 
 
 void BaseContainer::impl_initFlushMode()
+    throw (css::uno::RuntimeException)
 {
     // SAFE ->
     ::osl::ResettableMutexGuard aLock(m_aLock);
@@ -127,17 +128,20 @@ FilterCache* BaseContainer::impl_getWorkingCache() const
 
 
 OUString SAL_CALL BaseContainer::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return m_sImplementationName;
 }
 
 
 sal_Bool SAL_CALL BaseContainer::supportsService(const OUString& sServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL BaseContainer::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return m_lServiceNames;
 }
@@ -145,6 +149,10 @@ css::uno::Sequence< OUString > SAL_CALL BaseContainer::getSupportedServiceNames(
 
 void SAL_CALL BaseContainer::insertByName(const OUString& sItem ,
                                           const css::uno::Any&   aValue)
+    throw (css::lang::IllegalArgumentException  ,
+           css::container::ElementExistException,
+           css::lang::WrappedTargetException    ,
+           css::uno::RuntimeException, std::exception           )
 {
     if (sItem.isEmpty())
         throw css::lang::IllegalArgumentException("empty value not allowed as item name.",
@@ -180,6 +188,9 @@ void SAL_CALL BaseContainer::insertByName(const OUString& sItem ,
 
 
 void SAL_CALL BaseContainer::removeByName(const OUString& sItem)
+    throw (css::container::NoSuchElementException,
+           css::lang::WrappedTargetException     ,
+           css::uno::RuntimeException, std::exception            )
 {
     impl_loadOnDemand();
 
@@ -199,6 +210,10 @@ void SAL_CALL BaseContainer::removeByName(const OUString& sItem)
 
 void SAL_CALL BaseContainer::replaceByName(const OUString& sItem ,
                                            const css::uno::Any&   aValue)
+    throw (css::lang::IllegalArgumentException   ,
+           css::container::NoSuchElementException,
+           css::lang::WrappedTargetException     ,
+           css::uno::RuntimeException, std::exception            )
 {
     if (sItem.isEmpty())
         throw css::lang::IllegalArgumentException("empty value not allowed as item name.",
@@ -234,6 +249,9 @@ void SAL_CALL BaseContainer::replaceByName(const OUString& sItem ,
 
 
 css::uno::Any SAL_CALL BaseContainer::getByName(const OUString& sItem)
+    throw (css::container::NoSuchElementException,
+           css::lang::WrappedTargetException     ,
+           css::uno::RuntimeException, std::exception            )
 {
     if (sItem.isEmpty())
         throw css::container::NoSuchElementException( "An empty item can't be part of this cache!",
@@ -271,6 +289,7 @@ css::uno::Any SAL_CALL BaseContainer::getByName(const OUString& sItem)
 
 
 css::uno::Sequence< OUString > SAL_CALL BaseContainer::getElementNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< OUString > lNames;
 
@@ -298,6 +317,7 @@ css::uno::Sequence< OUString > SAL_CALL BaseContainer::getElementNames()
 
 
 sal_Bool SAL_CALL BaseContainer::hasByName(const OUString& sItem)
+    throw (css::uno::RuntimeException, std::exception)
 {
     bool bHasOne = false;
 
@@ -324,6 +344,7 @@ sal_Bool SAL_CALL BaseContainer::hasByName(const OUString& sItem)
 
 
 css::uno::Type SAL_CALL BaseContainer::getElementType()
+    throw (css::uno::RuntimeException, std::exception)
 {
     // no lock necessary - because the type of our items
     // is fix! no internal call or member needed ...
@@ -332,6 +353,7 @@ css::uno::Type SAL_CALL BaseContainer::getElementType()
 
 
 sal_Bool SAL_CALL BaseContainer::hasElements()
+    throw (css::uno::RuntimeException, std::exception)
 {
     bool bHasSome = false;
 
@@ -358,6 +380,7 @@ sal_Bool SAL_CALL BaseContainer::hasElements()
 
 
 css::uno::Reference< css::container::XEnumeration > SAL_CALL BaseContainer::createSubSetEnumerationByQuery(const OUString& /* sQuery */ )
+    throw (css::uno::RuntimeException, std::exception)
 {
     OSL_FAIL("not pure virtual ... but not really implemented .-)");
 
@@ -367,6 +390,7 @@ css::uno::Reference< css::container::XEnumeration > SAL_CALL BaseContainer::crea
 
 
 css::uno::Reference< css::container::XEnumeration > SAL_CALL BaseContainer::createSubSetEnumerationByProperties(const css::uno::Sequence< css::beans::NamedValue >& lProperties)
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::container::XEnumeration > xEnum;
     OUStringList                                        lKeys;
@@ -401,7 +425,7 @@ css::uno::Reference< css::container::XEnumeration > SAL_CALL BaseContainer::crea
     // It hold a reference to us ... and call our container interface directly.
     // be aware of some direct callbacks if it will be created :-)
 
-    /* Note: It's not allowed to return NULL. Because an empty enumeration
+    /* Note: Its not allowed to return NULL. Because an empty enumeration
              transport the same information but make no trouble outside.
              Further its easier to work directly with the return value
              instaed of checking of NULL returns! */
@@ -413,6 +437,7 @@ css::uno::Reference< css::container::XEnumeration > SAL_CALL BaseContainer::crea
 
 
 void SAL_CALL BaseContainer::flush()
+    throw (css::uno::RuntimeException, std::exception)
 {
     // SAFE ->
     ::osl::ResettableMutexGuard aLock(m_aLock);
@@ -459,7 +484,7 @@ void SAL_CALL BaseContainer::flush()
     // notify listener outside the lock!
     // The used listener helper lives if we live
     // and is threadsafe by itself.
-    // Further it's not a good idea to hold the own lock
+    // Further its not a good idea to hold the own lock
     // if an outside object is called :-)
     css::lang::EventObject             aSource    (static_cast< css::util::XFlushable* >(this));
     ::cppu::OInterfaceContainerHelper* pContainer = m_lListener.getContainer(cppu::UnoType<css::util::XFlushListener>::get());
@@ -487,6 +512,7 @@ void SAL_CALL BaseContainer::flush()
 
 
 void SAL_CALL BaseContainer::addFlushListener(const css::uno::Reference< css::util::XFlushListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // no locks necessary
     // used helper lives if we live and is threadsafe by itself ...
@@ -495,6 +521,7 @@ void SAL_CALL BaseContainer::addFlushListener(const css::uno::Reference< css::ut
 
 
 void SAL_CALL BaseContainer::removeFlushListener(const css::uno::Reference< css::util::XFlushListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // no locks necessary
     // used helper lives if we live and is threadsafe by itself ...

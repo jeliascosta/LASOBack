@@ -154,7 +154,7 @@ void LwpRowLayout::RegisterStyle()
 void LwpRowLayout::Read()
 {
     #define MAXUNIT (0x7fffffffL)               // Highest positive UNIT value
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
 
     LwpVirtualLayout::Read();
 
@@ -194,13 +194,13 @@ void LwpRowLayout::ConvertRow(rtl::Reference<XFTable> const & pXFTable,sal_uInt8
 
     //register connect row style
     sal_uInt16 nRowMark = crowid + GetCurMaxSpannedRows(nStartCol,nEndCol);
-    rtl::Reference<XFRow> xXFRow(new XFRow);
-    RegisterCurRowStyle(xXFRow.get(), nRowMark);
+    XFRow* pXFRow = new XFRow;
+    RegisterCurRowStyle(pXFRow,nRowMark);
 
     //if there is connected cell
     for (sal_uInt8 i=nStartCol; i<nEndCol; )
     {
-        rtl::Reference<XFCell> xXFCell;
+        XFCell* pXFCell;
         sal_uInt8 nColMark;
 
         if (nMarkConnCell == -1)
@@ -210,18 +210,18 @@ void LwpRowLayout::ConvertRow(rtl::Reference<XFTable> const & pXFTable,sal_uInt8
 
         if (nColMark > i)//create subtable
         {
-            xXFCell.set(new XFCell);
-            xXFCell->SetColumnSpaned(nColMark-i);
+            pXFCell = new XFCell;
+            pXFCell->SetColumnSpaned(nColMark-i);
             XFTable* pSubTable = new XFTable;
             pTableLayout->ConvertTable(pSubTable,crowid,nRowMark,i,nColMark);
-            xXFCell->Add(pSubTable);
+            pXFCell->Add(pSubTable);
             i = nColMark;
         }
         else
         {
             sal_uInt8 nColID = m_ConnCellList[nMarkConnCell]->GetColID()
                     +m_ConnCellList[nMarkConnCell]->GetNumcols()-1;
-            xXFCell = m_ConnCellList[nMarkConnCell]->ConvertCell(
+            pXFCell = m_ConnCellList[nMarkConnCell]->ConvertCell(
                 pTable->GetObjectID(),
                 crowid+m_ConnCellList[nMarkConnCell]->GetNumrows()-1,
                 m_ConnCellList[nMarkConnCell]->GetColID());
@@ -229,16 +229,16 @@ void LwpRowLayout::ConvertRow(rtl::Reference<XFTable> const & pXFTable,sal_uInt8
             //set all cell in this merge cell to cellsmap
             for (sal_uInt16 nRowLoop = crowid;nRowLoop<nRowMark ;nRowLoop++)
                 for (sal_uInt8 nColLoop = i;nColLoop<nColID+1;nColLoop++)
-                    pTableLayout->SetCellsMap(nRowLoop,nColLoop, xXFCell.get());
+                    pTableLayout->SetCellsMap(nRowLoop,nColLoop,pXFCell);
 
             i += m_ConnCellList[nMarkConnCell]->GetNumcols();
             nMarkConnCell = FindNextMarkConnCell(static_cast<sal_uInt16>(nMarkConnCell),nEndCol);
         }
 
-        if (xXFCell)
-            xXFRow->AddCell(xXFCell);
+        if (pXFCell)
+            pXFRow->AddCell(pXFCell);
     }
-    pXFTable->AddRow(xXFRow);
+    pXFTable->AddRow(pXFRow);
 }
 
 /**
@@ -367,9 +367,10 @@ void LwpRowLayout::ConvertCommonRow(rtl::Reference<XFTable> const & pXFTable, sa
     if (!pTableLayout)
         return;
 
-    rtl::Reference<XFRow> xRow(new XFRow);
-    xRow->SetStyleName(m_StyleName);
+    XFRow* pRow = new XFRow;
+    pRow->SetStyleName(m_StyleName);
 
+    XFCell * pCell = nullptr;
     LwpTable* pTable = pTableLayout->GetTable();
     sal_uInt8 nCellStartCol,nCellEndCol;
 
@@ -380,7 +381,6 @@ void LwpRowLayout::ConvertCommonRow(rtl::Reference<XFTable> const & pXFTable, sa
         LwpCellLayout * pCellLayout = dynamic_cast<LwpCellLayout *>(rCellID.obj().get());
         nCellStartCol = i;//mark the begin position of cell
         nCellEndCol = i;//mark the end position of cell
-        rtl::Reference<XFCell> xCell;
         while(pCellLayout)
         {
             if (pCellLayout->GetColID() == i)
@@ -391,7 +391,7 @@ void LwpRowLayout::ConvertCommonRow(rtl::Reference<XFTable> const & pXFTable, sa
                     nCellEndCol = i+pConnCell->GetNumcols()-1;
                     i = nCellEndCol;
                 }
-                xCell = pCellLayout->ConvertCell(pTable->GetObjectID(),crowid,i);
+                pCell = pCellLayout->ConvertCell(pTable->GetObjectID(),crowid,i);
                 break;
             }
             rCellID = pCellLayout->GetNext();
@@ -404,21 +404,21 @@ void LwpRowLayout::ConvertCommonRow(rtl::Reference<XFTable> const & pXFTable, sa
             LwpCellLayout * pDefaultCell = pTableLayout->GetDefaultCellLayout();
             if (pDefaultCell)
             {
-                xCell = pDefaultCell->ConvertCell(
+                pCell = pDefaultCell->ConvertCell(
                     pTable->GetObjectID(),crowid, i);
             }
             else
             {
-                xCell.set(new XFCell);
+                pCell = new XFCell;
             }
         }
-        xRow->AddCell(xCell);
+        pRow->AddCell(pCell);
 
         for (sal_uInt8 j=nCellStartCol;j<=nCellEndCol;j++)
-            pTableLayout->SetCellsMap(crowid,j, xCell.get());//set to cellsmap
+            pTableLayout->SetCellsMap(crowid,j,pCell);//set to cellsmap
     }
 
-    pXFTable->AddRow(xRow);
+    pXFTable->AddRow(pRow);
 }
 /**
  * @short   collect merge cell info when register row styles
@@ -475,7 +475,7 @@ void LwpRowHeadingLayout::Read()
 {
     LwpRowLayout::Read();
 
-    cRowLayout.ReadIndexed(m_pObjStrm.get());
+    cRowLayout.ReadIndexed(m_pObjStrm);
     m_pObjStrm->SkipExtra();
 }
 

@@ -25,6 +25,14 @@ String STR_NONAME
 {
     Text [ en-US ] = "Untitled" ;
 };
+String STR_CLOSE
+{
+    Text [ en-US ] = "Close" ;
+};
+String STR_STYLE_FILTER_AUTO
+{
+    Text [ en-US ] = "Automatic" ;
+};
 String STR_STANDARD_SHORTCUT
 {
     Text [ en-US ] = "Standard" ;
@@ -58,6 +66,11 @@ String STR_NO_WEBBROWSER_FOUND
 String STR_NO_ABS_URI_REF
 {
     Text [ en-US ] = "\"$(ARG1)\" is not an absolute URL that can be passed to an external application to open it." ;
+};
+
+Resource SID_UNKNOWN
+{
+    String 1 "-" ;
 };
 
 String GID_INTERN
@@ -190,6 +203,11 @@ String GID_CONTROLS
     Text [ en-US ] = "Controls" ;
 };
 
+String STR_ISMODIFIED
+{
+    Text [ en-US ] = "Do you want to save the changes to %1?" ;
+};
+
 String STR_QUITAPP
 {
     Text [ en-US ] = "E~xit %PRODUCTNAME" ;
@@ -198,6 +216,11 @@ String STR_QUITAPP
 String RID_STR_HELP
 {
     Text [ en-US ] = "Help" ;
+};
+
+String RID_STR_NOAUTOSTARTHELPAGENT
+{
+    Text [ en-US ] = "No automatic start at 'XX'" ;
 };
 
 String RID_STR_HLPFILENOTEXIST
@@ -315,10 +338,6 @@ String STR_SFX_FILTERNAME_ALL
 {
     Text [ en-US ] = "All files" ;
 };
-String STR_SFX_FILTERNAME_PDF
-{
-    Text [ en-US ] = "PDF files" ;
-};
 String RID_SVXSTR_EDITGRFLINK
 {
     Text [ en-US ] = "Link Image" ;
@@ -348,6 +367,10 @@ String RID_SVXSTR_GRFILTER_FILTERERROR
 {
     Text [ en-US ] = "Image filter not found" ;
 };
+String RID_SVXSTR_GRFILTER_TOOBIG
+{
+    Text [ en-US ] = "Not enough memory to insert image" ;
+};
 String RID_SVXSTR_END_REDLINING_WARNING
 {
     Text [ en-US ] = "This action will exit the change recording mode.\nAny information about changes will be lost.\n\nExit change recording mode?\n\n" ;
@@ -355,6 +378,10 @@ String RID_SVXSTR_END_REDLINING_WARNING
 String RID_SVXSTR_INCORRECT_PASSWORD
 {
     Text [ en-US ] = "Incorrect password" ;
+};
+String RID_SVXSTR_FORWARD_ERRMSSG
+{
+    Text [ en-US ] = "If you select the option \"%PLACEHOLDER%\", you must enter a URL." ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

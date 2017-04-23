@@ -56,7 +56,7 @@ void SwTableFUNC::ColWidthDlg( vcl::Window *pParent )
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateSwTableWidthDlg(pParent, *this));
+    std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateSwTableWidthDlg(pParent, *this));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlg->Execute();
 }
@@ -168,12 +168,18 @@ void SwTableFUNC::InitTabCols()
 
 SwTableFUNC::SwTableFUNC(SwWrtShell *pShell)
     : pFormat(pShell->GetTableFormat()),
-      pSh(pShell)
+      pSh(pShell),
+      bCopy(false)
 {
+    // if applicable copy the format for edit
+    if( pFormat && bCopy )
+        pFormat = new SwFrameFormat( *pFormat );
 }
 
 SwTableFUNC::~SwTableFUNC()
 {
+    if(bCopy)
+        delete pFormat;
 }
 
 void SwTableFUNC::UpdateChart()
@@ -196,7 +202,7 @@ uno::Reference< frame::XModel > SwTableFUNC::InsertChart(
         SwFlyFrameFormat** ppFlyFrameFormat )
 {
     uno::Reference< frame::XModel > xChartModel;
-    pSh->StartUndo( SwUndoId::UI_INSERT_CHART );
+    pSh->StartUndo( UNDO_UI_INSERT_CHART );
     pSh->StartAllAction();
 
     OUString aName;
@@ -204,7 +210,7 @@ uno::Reference< frame::XModel > SwTableFUNC::InsertChart(
     {
         aName = pSh->GetTableFormat()->GetName();
         // insert node before table
-        pSh->MoveTable( GotoCurrTable, fnTableStart );
+        pSh->MoveTable( fnTableCurr, fnTableStart );
         pSh->Up( false );
         if ( pSh->IsCursorInTable() )
         {
@@ -305,21 +311,21 @@ uno::Reference< frame::XModel > SwTableFUNC::InsertChart(
 
         uno::Sequence< beans::PropertyValue > aArgs( 4 );
         aArgs[0] = beans::PropertyValue(
-            "CellRangeRepresentation", -1,
+            OUString("CellRangeRepresentation"), -1,
             uno::makeAny( rCellRange ), beans::PropertyState_DIRECT_VALUE );
         aArgs[1] = beans::PropertyValue(
-            "HasCategories", -1,
+            OUString("HasCategories"), -1,
             uno::makeAny( bHasCategories ), beans::PropertyState_DIRECT_VALUE );
         aArgs[2] = beans::PropertyValue(
-            "FirstCellAsLabel", -1,
+            OUString("FirstCellAsLabel"), -1,
             uno::makeAny( bFirstCellAsLabel ), beans::PropertyState_DIRECT_VALUE );
         aArgs[3] = beans::PropertyValue(
-            "DataRowSource", -1,
+            OUString("DataRowSource"), -1,
             uno::makeAny( eDataRowSource ), beans::PropertyState_DIRECT_VALUE );
         xDataReceiver->setArguments( aArgs );
     }
 
-    pSh->EndUndo( SwUndoId::UI_INSERT_CHART );
+    pSh->EndUndo( UNDO_UI_INSERT_CHART );
 
     if( xChartModel.is() )
         xChartModel->unlockControllers(); //#i79578# don't request a new replacement image for charts to often

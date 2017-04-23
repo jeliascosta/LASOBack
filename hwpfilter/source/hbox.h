@@ -1,21 +1,21 @@
 /* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
- * This file is part of the LibreOffice project.
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * This file incorporates work covered by the following license notice:
- *
- *   Licensed to the Apache Software Foundation (ASF) under one or more
- *   contributor license agreements. See the NOTICE file distributed
- *   with this work for additional information regarding copyright
- *   ownership. The ASF licenses this file to you under the Apache
- *   License, Version 2.0 (the "License"); you may not use this file
- *   except in compliance with the License. You may obtain a copy of
- *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
- */
+* This file is part of the LibreOffice project.
+*
+* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*
+* This file incorporates work covered by the following license notice:
+*
+*   Licensed to the Apache Software Foundation (ASF) under one or more
+*   contributor license agreements. See the NOTICE file distributed
+*   with this work for additional information regarding copyright
+*   ownership. The ASF licenses this file to you under the Apache
+*   License, Version 2.0 (the "License"); you may not use this file
+*   except in compliance with the License. You may obtain a copy of
+*   the License at http://www.apache.org/licenses/LICENSE-2.0 .
+*/
 
 #ifndef INCLUDED_HWPFILTER_SOURCE_HBOX_H
 #define INCLUDED_HWPFILTER_SOURCE_HBOX_H
@@ -23,7 +23,6 @@
 #include <sal/config.h>
 
 #include <list>
-#include <memory>
 
 #include <sal/types.h>
 
@@ -33,47 +32,47 @@
 #include "hpara.h"
 
 /**
- * The HBox class is the base class for all date classes in hwp document.
- * For example, there are special character, table, image, etc.
- * It has one character. The ascii code value of special characters are smaller than 32. General character is greater than 32.
- *
- * @short Base class for characters
- */
+* The HBox class is the base class for all date classes in hwp document.
+* For example, there are special character, table, image, etc.
+* It has one character. The ascii code value of special characters are smaller than 32. General character is greater than 32.
+*
+* @short Base class for characters
+*/
 struct HBox
 {
-    public:
-        hchar hh;
+public:
+    hchar hh;
 
 /**
- * Construct a HBox object with parameter hch.
- * @param hch 16bit character being able to have Korean character.
- */
-        explicit HBox( hchar hch );
-        virtual ~HBox();
+* Construct a HBox object with parameter hch.
+* @param hch 16bit character being able to have Korean character.
+*/
+    explicit HBox( hchar hch );
+    virtual ~HBox();
 /**
- * @returns The Size of HBox object
- */
-        int           WSize();
+* @returns The Size of HBox object
+*/
+    int           WSize();
 /**
- * Read properties from HIODevice object like stream, file, memory.
- *
- * @param hwpf HWPFile Object having all information for a hwp file.
- * @returns True if reading from stream is successful.
- */
-        virtual bool Read(HWPFile &hwpf);
+* Read properties from HIODevice object like stream, file, memory.
+*
+* @param hwpf HWPFile Object having all information for a hwp file.
+* @returns True if reading from stream is successful.
+*/
+    virtual bool Read(HWPFile &hwpf);
 
-        virtual hchar_string GetString();
-    private:
-        static int boxCount;
+    virtual hchar_string GetString();
+private:
+    static int boxCount;
 };
 
 /**
- * @short Class for skipping data.
- */
+* @short Class for skipping data.
+*/
 struct SkipData: public HBox
 {
     explicit SkipData(hchar);
-    virtual ~SkipData() override;
+    virtual ~SkipData();
     virtual bool Read(HWPFile &hwpf) override;
 };
 
@@ -87,11 +86,12 @@ struct FieldCode : public HBox
     hchar *str1;
     hchar *str2;
     hchar *str3;
+    char *bin;
 
-    DateCode *m_pDate;
+     DateCode *m_pDate;
 
     FieldCode();
-    virtual ~FieldCode() override;
+    virtual ~FieldCode();
     virtual bool Read(HWPFile &hwpf) override;
 };
 /**
@@ -116,7 +116,7 @@ struct Bookmark: public HBox
     unsigned short    type;
 
     Bookmark();
-    virtual ~Bookmark() override;
+    virtual ~Bookmark();
     virtual bool Read(HWPFile &hwpf) override;
 };
 
@@ -278,7 +278,7 @@ struct FBoxStyle
         , boxnum(0)
         , boxtype(0)
         , cap_len(0)
-        , cell(nullptr)
+        , cell(NULL)
     {
         memset(margin, 0, sizeof(margin));
     }
@@ -319,7 +319,7 @@ struct FBox: public HBox
     FBox      *prev, *next;
 
     explicit FBox( hchar hch );
-    virtual ~FBox() override;
+    virtual ~FBox();
 };
 
 struct Table;
@@ -371,7 +371,12 @@ struct TxtBox: public FBox
     std::list<HWPPara*> caption;
 
     TxtBox();
-    virtual ~TxtBox() override;
+    virtual ~TxtBox();
+
+/**
+ * @returns Count of cell.
+ */
+    int NCell()   { return nCell; }
 
     virtual bool Read(HWPFile &hwpf) override;
 };
@@ -382,25 +387,27 @@ struct TxtBox: public FBox
 
 struct Columns
 {
-     std::unique_ptr<int[]> data;
+     int *data;
      size_t nCount;
      size_t nTotal;
      Columns(){
           nCount = 0;
           nTotal = INIT_SIZE;
-          data.reset(new int[nTotal]);
+          data = new int[nTotal];
      }
+     ~Columns(){ delete[] data; }
 
      void AddColumnsSize(){
+          int *tmp = data;
           if (nTotal + ADD_AMOUNT < nTotal) // overflow
           {
               throw ::std::bad_alloc();
           }
-          int* tmp = new int[nTotal + ADD_AMOUNT];
+          data = new int[nTotal + ADD_AMOUNT];
           for (size_t i = 0 ; i < nTotal ; i++)
-                tmp[i] = data[i];
+                data[i] = tmp[i];
           nTotal += ADD_AMOUNT;
-          data.reset(tmp);
+          delete[] tmp;
      }
 
      void insert(int pos){
@@ -441,25 +448,27 @@ struct Columns
 
 struct Rows
 {
-     std::unique_ptr<int[]> data;
+     int *data;
      size_t nCount;
      size_t nTotal;
      Rows(){
           nCount = 0;
           nTotal = INIT_SIZE;
-          data.reset( new int[nTotal] );
+          data = new int[nTotal];
      }
+     ~Rows(){ delete[] data; }
 
      void AddRowsSize(){
+          int *tmp = data;
           if (nTotal + ADD_AMOUNT < nTotal) // overflow
           {
               throw ::std::bad_alloc();
           }
-          int* tmp = new int[nTotal + ADD_AMOUNT];
+          data = new int[nTotal + ADD_AMOUNT];
           for (size_t i = 0 ; i < nTotal ; i++)
-                tmp[i] = data[i];
+                data[i] = tmp[i];
           nTotal += ADD_AMOUNT;
-          data.reset(tmp);
+          delete[] tmp;
      }
 
      void insert(int pos){
@@ -509,7 +518,7 @@ struct TCell
 
 struct Table
 {
-     Table() : box(nullptr) {};
+     Table() : box(NULL) {};
      ~Table() {
           std::list<TCell*>::iterator it = cells.begin();
           for( ; it != cells.end(); ++it)
@@ -635,7 +644,7 @@ struct Picture: public FBox
     bool ishyper;
 
     Picture();
-    virtual ~Picture() override;
+    virtual ~Picture();
 
     virtual bool Read    (HWPFile &hwpf) override;
 };
@@ -672,7 +681,7 @@ struct Hidden: public HBox
     std::list<HWPPara*> plist;
 
     Hidden();
-    virtual ~Hidden() override;
+    virtual ~Hidden();
 
     virtual bool Read(HWPFile &hwpf) override;
 };
@@ -701,7 +710,7 @@ struct HeaderFooter: public HBox
     std::list<HWPPara*> plist;
 
     HeaderFooter();
-    virtual ~HeaderFooter() override;
+    virtual ~HeaderFooter();
 
     virtual bool Read(HWPFile &hwpf) override;
 };
@@ -734,7 +743,7 @@ struct Footnote: public HBox
     std::list<HWPPara*> plist;
 
     Footnote();
-    virtual ~Footnote() override;
+    virtual ~Footnote();
 
     virtual bool Read(HWPFile &hwpf) override;
 };
@@ -840,7 +849,7 @@ struct MailMerge: public HBox
     virtual hchar_string GetString() override;
 };
 
-// char composition(23)
+// char compositon(23)
 /**
  * The compose struct displays characters at position. The maximum character count for composition is three.
  * @short Composition several characters

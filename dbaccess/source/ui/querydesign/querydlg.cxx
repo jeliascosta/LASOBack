@@ -55,7 +55,7 @@ DlgQryJoin::DlgQryJoin( OQueryTableView * pParent,
     , m_xConnection(_xConnection)
 {
     get(m_pML_HelpText, "helptext");
-    Size aSize(LogicToPixel(Size(179, 49), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(179, 49), MAP_APPFONT));
     //alternatively loop through the STR_QUERY_* strings with their STR_JOIN_TYPE_HINT
     //suffix to find the longest entry at runtime
     m_pML_HelpText->set_height_request(aSize.Height());
@@ -65,7 +65,7 @@ DlgQryJoin::DlgQryJoin( OQueryTableView * pParent,
     get(m_pPB_OK, "ok");
 
     m_pML_HelpText->SetControlBackground( GetSettings().GetStyleSettings().GetFaceColor() );
-    // Copy connection
+    // Connection kopieren
     m_pConnData.reset(_pData->NewInstance());
     m_pConnData->CopyFrom(*_pData);
 
@@ -114,7 +114,7 @@ DlgQryJoin::DlgQryJoin( OQueryTableView * pParent,
     m_pLB_JoinType->SetSelectHdl(LINK(this,DlgQryJoin,LBChangeHdl));
     m_pCBNatural->SetToggleHdl(LINK(this,DlgQryJoin,NaturalToggleHdl));
 
-    if ( pParent->getDesignView()->getController().isReadOnly() )
+    if ( static_cast<OQueryTableView*>(pParent)->getDesignView()->getController().isReadOnly() )
     {
         m_pLB_JoinType->Disable();
         m_pCBNatural->Disable();
@@ -154,7 +154,7 @@ void DlgQryJoin::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG( DlgQryJoin, LBChangeHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( DlgQryJoin, LBChangeHdl, ListBox&, void )
 {
     if (m_pLB_JoinType->GetSelectEntryPos() == m_pLB_JoinType->GetSavedValue() )
         return;
@@ -240,7 +240,7 @@ IMPL_LINK_NOARG( DlgQryJoin, LBChangeHdl, ListBox&, void )
     m_pML_HelpText->SetText( sHelpText );
 }
 
-IMPL_LINK_NOARG( DlgQryJoin, OKClickHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED( DlgQryJoin, OKClickHdl, Button*, void )
 {
     m_pConnData->Update();
     m_pOrigConnData->CopyFrom( *m_pConnData );
@@ -248,7 +248,7 @@ IMPL_LINK_NOARG( DlgQryJoin, OKClickHdl, Button*, void )
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG( DlgQryJoin, NaturalToggleHdl, CheckBox&, void )
+IMPL_LINK_NOARG_TYPED( DlgQryJoin, NaturalToggleHdl, CheckBox&, void )
 {
     bool bChecked = m_pCBNatural->IsChecked();
     static_cast<OQueryTableConnectionData*>(m_pConnData.get())->setNatural(bChecked);

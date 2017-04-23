@@ -30,9 +30,9 @@ $(eval $(call gb_Library_use_externals,chartcore,\
 	glm_headers \
 ))
 
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_Library_use_externals,chartcore,\
-    epoxy \
+    glew \
 ))
 endif
 
@@ -118,9 +118,8 @@ $(eval $(call gb_Library_add_exception_objects,chartcore,\
     chart2/source/view/main/VLineProperties \
     chart2/source/view/main/VPolarTransformation \
     chart2/source/view/main/VTitle \
-    chart2/source/view/main/VButton \
 ))
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_Library_add_exception_objects,chartcore,\
     chart2/source/view/main/3DChartObjects \
     chart2/source/view/main/GL3DPlotterBase \
@@ -212,6 +211,7 @@ $(eval $(call gb_Library_add_exception_objects,chartcore,\
     chart2/source/tools/LifeTime \
     chart2/source/tools/LinearRegressionCurveCalculator \
     chart2/source/tools/LinePropertiesHelper \
+    chart2/source/tools/LineProperties \
     chart2/source/tools/LogarithmicRegressionCurveCalculator \
     chart2/source/tools/MeanValueRegressionCurveCalculator \
     chart2/source/tools/MediaDescriptorHelper \
@@ -223,7 +223,6 @@ $(eval $(call gb_Library_add_exception_objects,chartcore,\
     chart2/source/tools/ObjectIdentifier \
     chart2/source/tools/OPropertySet \
     chart2/source/tools/PolynomialRegressionCurveCalculator \
-    chart2/source/tools/PopupRequest \
     chart2/source/tools/PotentialRegressionCurveCalculator \
     chart2/source/tools/PropertyHelper \
     chart2/source/tools/RangeHighlighter \
@@ -253,4 +252,26 @@ $(eval $(call gb_Library_add_exception_objects,chartcore,\
     chart2/source/tools/XMLRangeHelper \
 ))
  
+ifeq ($(strip $(OS)),WNT)
+$(eval $(call gb_Library_use_system_win32_libs,chartcore,\
+	opengl32 \
+	gdi32 \
+))
+else ifeq ($(OS),MACOSX)
+$(eval $(call gb_Library_use_system_darwin_frameworks,chartcore,\
+	OpenGL \
+))
+else ifeq ($(OS), $(filter LINUX %BSD SOLARIS, $(OS)))
+$(eval $(call gb_Library_add_libs,chartcore,\
+	$(DLOPEN_LIBS) \
+))
+ifeq ($(ENABLE_OPENGL),TRUE)
+$(eval $(call gb_Library_add_libs,chartcore,\
+    -lGL \
+    -lX11 \
+))
+endif #ENABLE_OPENGL
+
+endif
+
 # vim: set noet sw=4 ts=4:

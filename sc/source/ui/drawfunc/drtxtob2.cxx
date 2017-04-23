@@ -54,7 +54,7 @@ bool ScDrawTextObjectBar::IsNoteEdit()
     return ScDrawLayer::IsNoteCaption( pViewData->GetView()->GetSdrView()->GetTextEditObject() );
 }
 
-//  if no text edited, functions like in drawsh
+//  wenn kein Text editiert wird, Funktionen wie in drawsh
 
 void ScDrawTextObjectBar::ExecuteGlobal( SfxRequest &rReq )
 {
@@ -168,10 +168,10 @@ void ScDrawTextObjectBar::ExecuteExtra( SfxRequest &rReq )
                                     0 );
                 bool bLeft = ( nSlot == SID_ATTR_PARA_LEFT_TO_RIGHT );
                 aAttr.Put( SvxFrameDirectionItem(
-                                bLeft ? SvxFrameDirection::Horizontal_LR_TB : SvxFrameDirection::Horizontal_RL_TB,
+                                bLeft ? FRMDIR_HORI_LEFT_TOP : FRMDIR_HORI_RIGHT_TOP,
                                 EE_PARA_WRITINGDIR ) );
                 aAttr.Put( SvxAdjustItem(
-                                bLeft ? SvxAdjust::Left : SvxAdjust::Right,
+                                bLeft ? SVX_ADJUST_LEFT : SVX_ADJUST_RIGHT,
                                 EE_PARA_JUST ) );
                 pView->SetAttributes( aAttr );
                 pViewData->GetScDrawView()->InvalidateDrawTextAttrs();
@@ -202,8 +202,17 @@ void ScDrawTextObjectBar::ExecFormText(SfxRequest& rReq)
 void ScDrawTextObjectBar::GetFormTextState(SfxItemSet& rSet)
 {
     const SdrObject*    pObj        = nullptr;
+    SvxFontWorkDialog*  pDlg        = nullptr;
     ScDrawView*         pDrView     = pViewData->GetView()->GetScDrawView();
     const SdrMarkList&  rMarkList   = pDrView->GetMarkedObjectList();
+    sal_uInt16              nId = SvxFontWorkChildWindow::GetChildWindowId();
+
+    SfxViewFrame* pViewFrm = pViewData->GetViewShell()->GetViewFrame();
+    if (pViewFrm->HasChildWindow(nId))
+    {
+        SfxChildWindow* pWnd = pViewFrm->GetChildWindow(nId);
+        pDlg = pWnd ? static_cast<SvxFontWorkDialog*>(pWnd->GetWindow()) : nullptr;
+    }
 
     if ( rMarkList.GetMarkCount() == 1 )
         pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
@@ -231,6 +240,22 @@ void ScDrawTextObjectBar::GetFormTextState(SfxItemSet& rSet)
     }
     else
     {
+        if ( pDlg )
+        {
+            SfxObjectShell* pDocSh = SfxObjectShell::Current();
+
+            if ( pDocSh )
+            {
+                const SfxPoolItem*  pItem = pDocSh->GetItem( SID_COLOR_TABLE );
+                XColorListRef pColorList;
+
+                if ( pItem )
+                    pColorList = static_cast<const SvxColorListItem*>(pItem)->GetColorList();
+
+                if ( pColorList.is() )
+                    pDlg->SetColorList( pColorList );
+            }
+        }
         SfxItemSet aViewAttr(pDrView->GetModel()->GetItemPool());
         pDrView->GetAttributes(aViewAttr);
         rSet.Set(aViewAttr);

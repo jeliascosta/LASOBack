@@ -21,7 +21,6 @@
 #include <vcl/svapp.hxx>
 #include <editeng/scripttypeitem.hxx>
 #include "format.hxx"
-#include <cassert>
 
 
 // Latin default-fonts
@@ -69,20 +68,28 @@ static const DefaultFontType aCTLDefFnts[FNT_END] =
 
 OUString GetDefaultFontName( LanguageType nLang, sal_uInt16 nIdent )
 {
-    assert(nIdent < FNT_END);
-    const DefaultFontType *pTable;
-    switch ( SvtLanguageOptions::GetScriptTypeOfLanguage( nLang ) )
-    {
-        case SvtScriptType::LATIN :     pTable = aLatinDefFnts; break;
-        case SvtScriptType::ASIAN :     pTable = aCJKDefFnts; break;
-        case SvtScriptType::COMPLEX :   pTable = aCTLDefFnts; break;
-        default :
-            pTable = aLatinDefFnts;
-            SAL_WARN("starmath", "unknown script-type");
-    }
+    OSL_ENSURE( /*FNT_BEGIN <= nIdent  &&*/  nIdent <= FNT_END,
+            "index out opd range" );
 
-    return OutputDevice::GetDefaultFont(pTable[ nIdent ], nLang,
-                                        GetDefaultFontFlags::OnlyOne ).GetFamilyName();
+    if (FNT_MATH == nIdent)
+        return OUString(FNTNAME_MATH);
+    else
+    {
+        const DefaultFontType *pTable;
+        switch ( SvtLanguageOptions::GetScriptTypeOfLanguage( nLang ) )
+        {
+            case SvtScriptType::LATIN :     pTable = aLatinDefFnts; break;
+            case SvtScriptType::ASIAN :     pTable = aCJKDefFnts; break;
+            case SvtScriptType::COMPLEX :   pTable = aCTLDefFnts; break;
+            default :
+                pTable = aLatinDefFnts;
+                SAL_WARN("starmath", "unknown script-type");
+        }
+
+        return OutputDevice::GetDefaultFont(
+                        pTable[ nIdent ], nLang,
+                        GetDefaultFontFlags::OnlyOne ).GetFamilyName();
+    }
 }
 
 
@@ -128,10 +135,10 @@ SmFormat::SmFormat()
     vFont[FNT_FUNCTION] =
     vFont[FNT_NUMBER]   =
     vFont[FNT_TEXT]     =
-    vFont[FNT_SERIF]    = SmFace(FNTNAME_TIMES, aBaseSize);
-    vFont[FNT_SANS]     = SmFace(FNTNAME_HELV,  aBaseSize);
-    vFont[FNT_FIXED]    = SmFace(FNTNAME_COUR,  aBaseSize);
-    vFont[FNT_MATH]     = SmFace(FNTNAME_MATH,  aBaseSize);
+    vFont[FNT_SERIF]    = SmFace(OUString(FNTNAME_TIMES), aBaseSize);
+    vFont[FNT_SANS]     = SmFace(OUString(FNTNAME_HELV),  aBaseSize);
+    vFont[FNT_FIXED]    = SmFace(OUString(FNTNAME_COUR),  aBaseSize);
+    vFont[FNT_MATH]     = SmFace(OUString(FNTNAME_MATH),  aBaseSize);
 
     vFont[FNT_MATH].SetCharSet( RTL_TEXTENCODING_UNICODE );
 

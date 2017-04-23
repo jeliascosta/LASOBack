@@ -37,14 +37,14 @@ public:
 
     SvXMLAttrContainerItem( sal_uInt16 nWhich = 0 );
     SvXMLAttrContainerItem( const SvXMLAttrContainerItem& );
-    virtual ~SvXMLAttrContainerItem() override;
+    virtual ~SvXMLAttrContainerItem();
 
     virtual bool operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation(
                                 SfxItemPresentation ePresentation,
-                                MapUnit eCoreMetric,
-                                MapUnit ePresentationMetric,
+                                SfxMapUnit eCoreMetric,
+                                SfxMapUnit ePresentationMetric,
                                 OUString &rText,
                                 const IntlWrapper *pIntlWrapper = nullptr ) const override;
 

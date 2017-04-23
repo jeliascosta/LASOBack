@@ -20,29 +20,39 @@
 #include <vcl/idle.hxx>
 #include "saltimer.hxx"
 
-Idle::Idle( bool bAuto, const sal_Char *pDebugName )
-    : Timer( bAuto, pDebugName )
+void Idle::Invoke()
 {
-    SetPriority( TaskPriority::DEFAULT_IDLE );
+    maIdleHdl.Call( this );
 }
 
-Idle::Idle( const sal_Char *pDebugName )
-    : Idle( false, pDebugName )
+Idle& Idle::operator=( const Idle& rIdle )
 {
+    Scheduler::operator=(rIdle);
+    maIdleHdl = rIdle.maIdleHdl;
+    return *this;
+}
+
+Idle::Idle( const sal_Char *pDebugName ) : Scheduler( pDebugName )
+{
+}
+
+Idle::Idle( const Idle& rIdle ) : Scheduler(rIdle)
+{
+    maIdleHdl = rIdle.maIdleHdl;
 }
 
 void Idle::Start()
 {
-    Task::Start();
+    Scheduler::Start();
 
     sal_uInt64 nPeriod = Scheduler::ImmediateTimeoutMs;
     if (Scheduler::GetDeterministicMode())
     {
-        switch ( GetPriority() )
+        switch (mePriority)
         {
-            case TaskPriority::LOW:
-            case TaskPriority::LOWER:
-            case TaskPriority::LOWEST:
+            case SchedulerPriority::LOW:
+            case SchedulerPriority::LOWER:
+            case SchedulerPriority::LOWEST:
                 nPeriod = Scheduler::InfiniteTimeoutMs;
                 break;
             default:
@@ -50,13 +60,13 @@ void Idle::Start()
         }
     }
 
-    Task::StartTimer(nPeriod);
+    Scheduler::ImplStartTimer(nPeriod);
 }
 
-bool Idle::ReadyForSchedule( bool bIdle, sal_uInt64 /* nTimeNow */ ) const
+bool Idle::ReadyForSchedule( bool bTimerOnly, sal_uInt64 /* nTimeNow */ ) const
 {
     // always ready if not only looking for timers.
-    return bIdle;
+    return !bTimerOnly;
 }
 
 bool Idle::IsIdle() const
@@ -64,10 +74,10 @@ bool Idle::IsIdle() const
     return true;
 }
 
-sal_uInt64 Idle::UpdateMinPeriod( sal_uInt64 /* nMinPeriod */, sal_uInt64 /* nTimeNow */ ) const
+sal_uInt64 Idle::UpdateMinPeriod( sal_uInt64 /* nMinPeriod */, sal_uInt64 /* nTime */ ) const
 {
     assert(false); // idles currently don't hit this.
-    return Scheduler::ImmediateTimeoutMs;
+    return ImmediateTimeoutMs;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

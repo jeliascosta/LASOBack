@@ -23,6 +23,7 @@
 #include "JoinController.hxx"
 #include "JoinTableView.hxx"
 #include "querycontainerwindow.hxx"
+#include "queryview.hxx"
 #include "svx/ParseContext.hxx"
 #include "TableFieldDescription.hxx"
 
@@ -94,9 +95,9 @@ namespace dbaui
         css::uno::Reference< css::container::XNameAccess >
             getObjectContainer() const;
 
-        bool    editingView() const    { return m_nCommandType == css::sdb::CommandType::TABLE; }
-        bool    editingQuery() const   { return m_nCommandType == css::sdb::CommandType::QUERY; }
-        bool    editingCommand() const { return m_nCommandType == css::sdb::CommandType::COMMAND; }
+        inline  bool    editingView() const    { return m_nCommandType == css::sdb::CommandType::TABLE; }
+        inline  bool    editingQuery() const   { return m_nCommandType == css::sdb::CommandType::QUERY; }
+        inline  bool    editingCommand() const { return m_nCommandType == css::sdb::CommandType::COMMAND; }
 
         bool askForNewName( const css::uno::Reference< css::container::XNameAccess>& _xElements,
                             bool _bSaveAs);
@@ -128,7 +129,7 @@ namespace dbaui
     public:
         OQueryController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
-        virtual ~OQueryController() override;
+        virtual ~OQueryController();
         OTableFields&   getTableFieldDesc()         { return m_vTableFieldDesc; }
         OTableFields&   getUnUsedFields()           { return m_vUnUsedFieldsDesc; }
 
@@ -164,28 +165,26 @@ namespace dbaui
         DECLARE_XINTERFACE( )
         DECLARE_XTYPEPROVIDER( )
         // XPropertySet
-        virtual css::uno::Reference<css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() override;
+        virtual css::uno::Reference<css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
 
         // css::lang::XComponent
         virtual void        SAL_CALL disposing() override;
 
-        virtual OUString SAL_CALL getImplementationName() override;
-        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() override;
+        virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
         // need by registration
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_Static();
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+        static OUString getImplementationName_Static() throw( css::uno::RuntimeException );
+        static css::uno::Sequence< OUString > getSupportedServiceNames_Static() throw( css::uno::RuntimeException );
         static css::uno::Reference< css::uno::XInterface >
                 SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 
         // XController
-        virtual css::uno::Any SAL_CALL getViewData() override;
-        virtual void SAL_CALL restoreViewData(const css::uno::Any& Data) override;
+        virtual css::uno::Any SAL_CALL getViewData() throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL restoreViewData(const css::uno::Any& Data) throw( css::uno::RuntimeException, std::exception ) override;
 
     private:
         virtual void    onLoadedMenu(const css::uno::Reference< css::frame::XLayoutManager >& _xLayoutManager) override;
@@ -193,6 +192,16 @@ namespace dbaui
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
 
         // OPropertySetHelper
+        virtual sal_Bool SAL_CALL convertFastPropertyValue(
+                                    css::uno::Any& rConvertedValue,
+                                    css::uno::Any& rOldValue,
+                                    sal_Int32 nHandle,
+                                    const css::uno::Any& rValue
+                                ) throw (css::lang::IllegalArgumentException) override;
+        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
+                                    sal_Int32 nHandle,
+                                    const css::uno::Any& rValue
+                                ) throw (css::uno::Exception, std::exception ) override;
         virtual void SAL_CALL getFastPropertyValue(
                                     css::uno::Any& rValue,
                                     sal_Int32 nHandle
@@ -222,7 +231,7 @@ namespace dbaui
         virtual bool allowQueries() const override;
 
     private:
-        DECL_LINK( OnExecuteAddTable, void*, void );
+        DECL_LINK_TYPED( OnExecuteAddTable, void*, void );
 
     private:
         using OQueryController_PBase::getFastPropertyValue;

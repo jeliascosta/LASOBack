@@ -93,6 +93,7 @@ public:
     ReadContext (
         const Reference<XComponentContext>& rxContext,
         const Reference<rendering::XCanvas>& rxCanvas);
+    ~ReadContext();
 
     /** Read data describing a font from the node that can be reached from
         the given root via the given path.
@@ -125,6 +126,7 @@ class PaneStyle
 {
 public:
     PaneStyle();
+    ~PaneStyle();
 
     const SharedBitmapDescriptor GetBitmap (const OUString& sBitmapName) const;
 
@@ -165,6 +167,7 @@ class ViewStyle
 {
 public:
     ViewStyle();
+    ~ViewStyle();
 
     const SharedBitmapDescriptor GetBitmap (const OUString& sBitmapName) const;
 
@@ -230,6 +233,7 @@ public:
         const OUString& rsName,
         const Reference<container::XHierarchicalNameAccess>& rThemeRoot,
         const OUString& rsNodeName);
+    ~Theme();
 
     void Read (
         PresenterConfigurationAccess& rConfiguration,
@@ -281,7 +285,7 @@ std::shared_ptr<PresenterTheme::Theme> PresenterTheme::ReadTheme()
 
     PresenterConfigurationAccess aConfiguration (
         mxContext,
-        "/org.openoffice.Office.PresenterScreen/",
+        OUString("/org.openoffice.Office.PresenterScreen/"),
         PresenterConfigurationAccess::READ_ONLY);
 
     return aReadContext.ReadTheme(aConfiguration, msThemeName);
@@ -369,7 +373,7 @@ std::shared_ptr<PresenterConfigurationAccess> PresenterTheme::GetNodeForViewStyl
     std::shared_ptr<PresenterConfigurationAccess> pConfiguration (
         new PresenterConfigurationAccess(
             mxContext,
-            "/org.openoffice.Office.PresenterScreen/",
+            OUString("/org.openoffice.Office.PresenterScreen/"),
             PresenterConfigurationAccess::READ_WRITE));
 
     // Get configuration node for the view style container of the current
@@ -594,6 +598,10 @@ PresenterTheme::Theme::Theme (
 {
 }
 
+PresenterTheme::Theme::~Theme()
+{
+}
+
 void PresenterTheme::Theme::Read (
     PresenterConfigurationAccess& rConfiguration,
     ReadContext& rReadContext)
@@ -702,6 +710,10 @@ ReadContext::ReadContext (
                 rxContext),
             UNO_QUERY_THROW);
     }
+}
+
+ReadContext::~ReadContext()
+{
 }
 
 PresenterTheme::SharedFontDescriptor ReadContext::ReadFont (
@@ -939,6 +951,10 @@ PaneStyle::PaneStyle()
 {
 }
 
+PaneStyle::~PaneStyle()
+{
+}
+
 const SharedBitmapDescriptor PaneStyle::GetBitmap (const OUString& rsBitmapName) const
 {
     if (mpBitmaps.get() != nullptr)
@@ -1052,6 +1068,10 @@ ViewStyle::ViewStyle()
       mpParentStyle(),
       mpFont(),
       mpBackground()
+{
+}
+
+ViewStyle::~ViewStyle()
 {
 }
 

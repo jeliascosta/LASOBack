@@ -39,20 +39,20 @@ namespace frm
         ::cppu::OWeakObject&    m_rInstigator;
 
     protected:
-        EventListeners( ::cppu::OWeakObject& _rInstigator, ::osl::Mutex& _rMutex )
+        inline EventListeners( ::cppu::OWeakObject& _rInstigator, ::osl::Mutex& _rMutex )
             :EventListeners_Base( _rMutex )
             ,m_rInstigator( _rInstigator )
         {
         }
 
     public:
-        bool notify()
+        inline bool notify()
         {
             css::lang::EventObject aEvent( m_rInstigator );
             return EventListeners_Base::notify( aEvent );
         }
 
-        void disposing()
+        inline void disposing()
         {
             css::lang::EventObject aEvent( m_rInstigator );
             EventListeners_Base::disposing( aEvent );
@@ -75,7 +75,7 @@ namespace frm
         NotificationType        m_eCurrentNotificationType;
 
     public:
-        ResetListeners( ::cppu::OWeakObject& _rInstigator, ::osl::Mutex& _rMutex )
+        inline ResetListeners( ::cppu::OWeakObject& _rInstigator, ::osl::Mutex& _rMutex )
             :ResetListeners_Base( _rInstigator, _rMutex )
             ,m_eCurrentNotificationType( eApproval )
         {

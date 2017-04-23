@@ -48,6 +48,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::util;
 
 SfxMacroLoader::SfxMacroLoader(const css::uno::Sequence< css::uno::Any >& aArguments)
+    throw (css::uno::Exception, css::uno::RuntimeException)
 {
     Reference < XFrame > xFrame;
     if ( aArguments.getLength() )
@@ -58,16 +59,19 @@ SfxMacroLoader::SfxMacroLoader(const css::uno::Sequence< css::uno::Any >& aArgum
 }
 
 OUString SAL_CALL SfxMacroLoader::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.sfx2.SfxMacroLoader");
 }
 
 sal_Bool SAL_CALL SfxMacroLoader::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> SAL_CALL SfxMacroLoader::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.ProtocolHandler" };
     return aSeq;
@@ -97,7 +101,7 @@ SfxObjectShell* SfxMacroLoader::GetObjectShell_Impl()
 uno::Reference<frame::XDispatch> SAL_CALL SfxMacroLoader::queryDispatch(
     const util::URL&   aURL            ,
     const OUString&               /*sTargetFrameName*/,
-    sal_Int32                            /*nSearchFlags*/    )
+    sal_Int32                            /*nSearchFlags*/    ) throw( uno::RuntimeException, std::exception )
 {
     uno::Reference<frame::XDispatch> xDispatcher;
     if(aURL.Complete.startsWith("macro:"))
@@ -108,6 +112,7 @@ uno::Reference<frame::XDispatch> SAL_CALL SfxMacroLoader::queryDispatch(
 
 uno::Sequence< uno::Reference<frame::XDispatch> > SAL_CALL
                 SfxMacroLoader::queryDispatches( const uno::Sequence < frame::DispatchDescriptor >& seqDescriptor )
+                    throw( uno::RuntimeException, std::exception )
 {
     sal_Int32 nCount = seqDescriptor.getLength();
     uno::Sequence< uno::Reference<frame::XDispatch> > lDispatcher(nCount);
@@ -122,6 +127,7 @@ uno::Sequence< uno::Reference<frame::XDispatch> > SAL_CALL
 void SAL_CALL SfxMacroLoader::dispatchWithNotification(
     const util::URL& aURL, const uno::Sequence<beans::PropertyValue>& /*lArgs*/,
     const uno::Reference<frame::XDispatchResultListener>& xListener )
+              throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -145,30 +151,16 @@ void SAL_CALL SfxMacroLoader::dispatchWithNotification(
 
 uno::Any SAL_CALL SfxMacroLoader::dispatchWithReturnValue(
     const util::URL& aURL, const uno::Sequence<beans::PropertyValue>& )
+        throw (uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
-    ErrCode nErr = loadMacro( aURL.Complete, aRet, GetObjectShell_Impl() );
-
-    // aRet gets set to a different value only if nErr == ERRCODE_NONE
-    // Return it in such case to preserve the original behaviour
-
-    // In all other cases (nErr != ERRCODE_NONE), the calling code gets
-    // the actual error code back
-    if ( nErr != ERRCODE_NONE )
-    {
-        beans::PropertyValue aErrorCode;
-
-        aErrorCode.Name = "ErrorCode";
-        aErrorCode.Value <<= nErr;
-
-        aRet <<= aErrorCode;
-    }
-
+    loadMacro( aURL.Complete, aRet, GetObjectShell_Impl() );
     return aRet;
 }
 
 void SAL_CALL SfxMacroLoader::dispatch(
     const util::URL& aURL, const uno::Sequence<beans::PropertyValue>& /*lArgs*/ )
+        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -179,6 +171,7 @@ void SAL_CALL SfxMacroLoader::dispatch(
 void SAL_CALL SfxMacroLoader::addStatusListener(
     const uno::Reference< frame::XStatusListener >& ,
     const util::URL&                                                    )
+              throw (uno::RuntimeException, std::exception)
 {
     /* TODO
             How we can handle different listener for further coming or currently running dispatch() jobs
@@ -190,10 +183,12 @@ void SAL_CALL SfxMacroLoader::addStatusListener(
 void SAL_CALL SfxMacroLoader::removeStatusListener(
     const uno::Reference< frame::XStatusListener >&,
     const util::URL&                                                  )
+        throw (uno::RuntimeException, std::exception)
 {
 }
 
 ErrCode SfxMacroLoader::loadMacro( const OUString& rURL, css::uno::Any& rRetval, SfxObjectShell* pSh )
+    throw ( ucb::ContentCreationException, uno::RuntimeException, std::exception )
 {
 #if !HAVE_FEATURE_SCRIPTING
     (void) rURL;
@@ -221,7 +216,7 @@ ErrCode SfxMacroLoader::loadMacro( const OUString& rURL, css::uno::Any& rRetval,
     {
         // find BasicManager
         SfxObjectShell* pDoc = nullptr;
-        OUString aBasMgrName( INetURLObject::decode(aMacro.copy( 8, nHashPos-8 ), INetURLObject::DecodeMechanism::WithCharset) );
+        OUString aBasMgrName( INetURLObject::decode(aMacro.copy( 8, nHashPos-8 ), INetURLObject::DECODE_WITH_CHARSET) );
         if ( aBasMgrName.isEmpty() )
             pBasMgr = pAppMgr;
         else if ( aBasMgrName == "." )
@@ -258,7 +253,7 @@ ErrCode SfxMacroLoader::loadMacro( const OUString& rURL, css::uno::Any& rRetval,
             }
 
             // find BASIC method
-            OUString aQualifiedMethod( INetURLObject::decode(aMacro.copy( nHashPos+1 ), INetURLObject::DecodeMechanism::WithCharset) );
+            OUString aQualifiedMethod( INetURLObject::decode(aMacro.copy( nHashPos+1 ), INetURLObject::DECODE_WITH_CHARSET) );
             OUString aArgs;
             if ( -1 != nArgsPos )
             {
@@ -295,9 +290,9 @@ ErrCode SfxMacroLoader::loadMacro( const OUString& rURL, css::uno::Any& rRetval,
 
                     // execute the method
                     SbxVariableRef retValRef = new SbxVariable;
-                    nErr = pBasMgr->ExecuteMacro( aQualifiedMethod, aArgs, retValRef.get() );
+                    nErr = pBasMgr->ExecuteMacro( aQualifiedMethod, aArgs, retValRef );
                     if ( nErr == ERRCODE_NONE )
-                        rRetval = sbxToUnoValue( retValRef.get() );
+                        rRetval = sbxToUnoValue( retValRef );
                 }
 
                 if ( bSetGlobalThisComponent )
@@ -322,7 +317,7 @@ ErrCode SfxMacroLoader::loadMacro( const OUString& rURL, css::uno::Any& rRetval,
         // direct API call on a specified object
         OUStringBuffer aCall;
         aCall.append('[').append(INetURLObject::decode(aMacro.copy(6),
-            INetURLObject::DecodeMechanism::WithCharset));
+            INetURLObject::DECODE_WITH_CHARSET));
         aCall.append(']');
         pAppMgr->GetLib(0)->Execute(aCall.makeStringAndClear());
         nErr = SbxBase::GetError();

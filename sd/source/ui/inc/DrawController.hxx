@@ -99,7 +99,7 @@ public:
     */
     explicit DrawController (ViewShellBase& rBase) throw();
 
-    virtual ~DrawController() throw() override;
+    virtual ~DrawController() throw();
 
     /** Replace the currently used sub controller with the given one.  This
         new sub controller is used from now on for the view (that is the
@@ -116,7 +116,7 @@ public:
 
     /** Call this method when the VisArea has changed.
     */
-    void FireVisAreaChanged (const ::tools::Rectangle& rVisArea) throw();
+    void FireVisAreaChanged (const Rectangle& rVisArea) throw();
 
     /** Call this method when the selection has changed.
     */
@@ -167,64 +167,71 @@ public:
     DECLARE_XTYPEPROVIDER()
 
     // XComponent
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XController
-    virtual sal_Bool SAL_CALL suspend( sal_Bool Suspend ) override;
+    virtual sal_Bool SAL_CALL suspend( sal_Bool Suspend ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     // XSelectionSupplier
-    virtual sal_Bool SAL_CALL select( const css::uno::Any& aSelection ) override;
-    virtual css::uno::Any SAL_CALL getSelection(  ) override;
-    virtual void SAL_CALL addSelectionChangeListener( const css::uno::Reference< css::view::XSelectionChangeListener >& xListener ) override;
-    virtual void SAL_CALL removeSelectionChangeListener( const css::uno::Reference< css::view::XSelectionChangeListener >& xListener ) override;
+    virtual sal_Bool SAL_CALL select( const css::uno::Any& aSelection ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getSelection(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addSelectionChangeListener( const css::uno::Reference< css::view::XSelectionChangeListener >& xListener ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeSelectionChangeListener( const css::uno::Reference< css::view::XSelectionChangeListener >& xListener ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XFormLayerAccess
-    virtual css::uno::Reference< css::form::runtime::XFormController > SAL_CALL getFormController( const css::uno::Reference< css::form::XForm >& Form ) override;
-    virtual sal_Bool SAL_CALL isFormDesignMode(  ) override;
-    virtual void SAL_CALL setFormDesignMode( sal_Bool DesignMode ) override;
+    virtual css::uno::Reference< css::form::runtime::XFormController > SAL_CALL getFormController( const css::uno::Reference< css::form::XForm >& Form ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isFormDesignMode(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFormDesignMode( sal_Bool DesignMode ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XControlAccess
-    virtual css::uno::Reference< css::awt::XControl > SAL_CALL getControl( const css::uno::Reference< css::awt::XControlModel >& xModel ) override;
+    virtual css::uno::Reference< css::awt::XControl > SAL_CALL getControl( const css::uno::Reference< css::awt::XControlModel >& xModel ) throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
     virtual void SAL_CALL
         setCurrentPage (
             const css::uno::Reference<
-            css::drawing::XDrawPage >& xPage) override;
+            css::drawing::XDrawPage >& xPage)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<
         css::drawing::XDrawPage > SAL_CALL
-        getCurrentPage() override;
+        getCurrentPage()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // view::XSelectionChangeListener
     virtual void  SAL_CALL
-        selectionChanged (const css::lang::EventObject& rEvent) override;
+        selectionChanged (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XControllerManager
 
     virtual css::uno::Reference<css::drawing::framework::XConfigurationController> SAL_CALL
-        getConfigurationController() override;
+        getConfigurationController()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<css::drawing::framework::XModuleController> SAL_CALL
-        getModuleController() override;
+        getModuleController()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XUnoTunnel
 
-    virtual sal_Int64 SAL_CALL getSomething (const css::uno::Sequence<sal_Int8>& rId) override;
+    virtual sal_Int64 SAL_CALL getSomething (const css::uno::Sequence<sal_Int8>& rId)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     /** This method must return the name to index table. This table
@@ -261,21 +268,22 @@ protected:
         css::uno::Any & rConvertedValue,
         css::uno::Any & rOldValue,
         sal_Int32 nHandle,
-        const css::uno::Any& rValue ) override;
+        const css::uno::Any& rValue )
+        throw (css::lang::IllegalArgumentException) override;
 
     /** The same as setFastProperyValue, but no exception is thrown and nHandle
         is always valid. You must not broadcast the changes in this method.
      */
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
         sal_Int32 nHandle,
-        const css::uno::Any& rValue ) override;
+        const css::uno::Any& rValue )
+        throw (css::uno::Exception, std::exception) override;
 
     /** When the called object has been disposed already this method throws
         a Disposed exception and does not return.
-
-        @throws css::lang::DisposedException
     */
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const
+        throw (css::lang::DisposedException);
 
     using cppu::OPropertySetHelper::disposing;
     using cppu::OPropertySetHelper::getFastPropertyValue;
@@ -288,7 +296,7 @@ private:
     */
     ViewShellBase* mpBase;
 
-    ::tools::Rectangle maLastVisArea;
+    Rectangle maLastVisArea;
     ::tools::WeakReference<SdrPage> mpCurrentPage;
     bool mbMasterPageMode;
     bool mbLayerMode;

@@ -26,6 +26,7 @@
 #include <vcl/edit.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/lstbox.hxx>
+#include <svtools/stdctrl.hxx>
 #include <svx/langbox.hxx>
 
 #include "sortkeydlg.hxx"
@@ -48,7 +49,7 @@ class ScTabPageSortFields : public SfxTabPage
 public:
     ScTabPageSortFields( vcl::Window*             pParent,
             const SfxItemSet&   rArgSet );
-    virtual ~ScTabPageSortFields() override;
+    virtual ~ScTabPageSortFields();
     virtual void        dispose() override;
     static  VclPtr<SfxTabPage> Create      ( vcl::Window*               pParent,
                                       const SfxItemSet*     rArgSet );
@@ -63,7 +64,7 @@ protected:
     virtual void        ActivatePage    ( const SfxItemSet& rSet ) override;
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
-    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr) override;
 
 private:
     OUString            aStrUndefined;
@@ -78,6 +79,8 @@ private:
     sal_uInt16          nFieldCount;
     sal_uInt16          nSortKeyCount;
 
+    SCCOL               nFirstCol;
+    SCROW               nFirstRow;
     bool                bHasHeader;
     bool                bSortByRows;
 
@@ -91,7 +94,7 @@ private:
     void    SetLastSortKey( sal_uInt16 nItem );
 
     // Handler ------------------------
-    DECL_LINK( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
 };
 
 // Sort Options
@@ -105,7 +108,7 @@ class ScTabPageSortOptions : public SfxTabPage
 public:
     ScTabPageSortOptions( vcl::Window*            pParent,
             const SfxItemSet&  rArgSet );
-    virtual ~ScTabPageSortOptions() override;
+    virtual ~ScTabPageSortOptions();
     virtual void dispose() override;
 
 #undef SfxTabPage
@@ -119,7 +122,7 @@ protected:
     virtual void        ActivatePage    ( const SfxItemSet& rSet ) override;
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
-    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr) override;
 
 private:
 
@@ -142,8 +145,6 @@ private:
     VclPtr<RadioButton>        m_pBtnTopDown;
     VclPtr<RadioButton>        m_pBtnLeftRight;
 
-    VclPtr<CheckBox>           m_pBtnIncComments;
-
     OUString            aStrRowLabel;
     OUString            aStrColLabel;
     OUString            aStrUndefined;
@@ -163,11 +164,11 @@ private:
     void FillUserSortListBox    ();
 
     // Handler ------------------------
-    DECL_LINK( EnableHdl, Button*, void );
-    DECL_LINK( SelOutPosHdl, ListBox&, void );
+    DECL_LINK_TYPED( EnableHdl, Button*, void );
+    DECL_LINK_TYPED( SelOutPosHdl, ListBox&, void );
     void EdOutPosModHdl ( Edit* pEd );
-    DECL_LINK( SortDirHdl, Button *, void );
-    DECL_LINK( FillAlgorHdl, ListBox&, void );
+    DECL_LINK_TYPED( SortDirHdl, Button *, void );
+    DECL_LINK_TYPED( FillAlgorHdl, ListBox&, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TPSORT_HXX

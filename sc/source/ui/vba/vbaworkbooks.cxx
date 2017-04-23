@@ -68,6 +68,7 @@ getWorkbook( uno::Reference< uno::XComponentContext >& xContext, const uno::Refe
     uno::Reference< excel::XWorkbook > xWb( getVBADocument( xModel ), uno::UNO_QUERY );
     if ( xWb.is() )
     {
+        OSL_TRACE(" *** Returning Module uno Object *** ");
         return uno::Any( xWb );
     }
 
@@ -78,10 +79,9 @@ getWorkbook( uno::Reference< uno::XComponentContext >& xContext, const uno::Refe
 class WorkBookEnumImpl : public EnumerationHelperImpl
 {
 public:
-    /// @throws uno::RuntimeException
-    WorkBookEnumImpl( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ) {}
+    WorkBookEnumImpl( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration ) throw ( uno::RuntimeException ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ) {}
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         uno::Reference< sheet::XSpreadsheetDocument > xDoc( m_xEnumeration->nextElement(), uno::UNO_QUERY_THROW );
         return getWorkbook( m_xContext, xDoc, m_xParent );
@@ -94,12 +94,12 @@ ScVbaWorkbooks::ScVbaWorkbooks( const uno::Reference< XHelperInterface >& xParen
 }
 // XEnumerationAccess
 uno::Type
-ScVbaWorkbooks::getElementType()
+ScVbaWorkbooks::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<excel::XWorkbook>::get();
 }
 uno::Reference< container::XEnumeration >
-ScVbaWorkbooks::createEnumeration()
+ScVbaWorkbooks::createEnumeration() throw (uno::RuntimeException)
 {
     // #FIXME its possible the WorkBookEnumImpl here doesn't reflect
     // the state of this object ( although it should ) would be
@@ -117,7 +117,7 @@ ScVbaWorkbooks::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Any SAL_CALL
-ScVbaWorkbooks::Add( const uno::Any& Template )
+ScVbaWorkbooks::Add( const uno::Any& Template ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XSpreadsheetDocument > xSpreadDoc;
     sal_Int32 nWorkbookType = 0;
@@ -161,7 +161,7 @@ ScVbaWorkbooks::Add( const uno::Any& Template )
 }
 
 void SAL_CALL
-ScVbaWorkbooks::Close()
+ScVbaWorkbooks::Close() throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -200,7 +200,7 @@ ScVbaWorkbooks::getFileFilterType( const OUString& rFileName )
 
 // #TODO# #FIXME# can any of the unused params below be used?
 uno::Any SAL_CALL
-ScVbaWorkbooks::Open( const OUString& rFileName, const uno::Any& /*UpdateLinks*/, const uno::Any& ReadOnly, const uno::Any& Format, const uno::Any& /*Password*/, const uno::Any& /*WriteResPassword*/, const uno::Any& /*IgnoreReadOnlyRecommended*/, const uno::Any& /*Origin*/, const uno::Any& Delimiter, const uno::Any& /*Editable*/, const uno::Any& /*Notify*/, const uno::Any& /*Converter*/, const uno::Any& /*AddToMru*/ )
+ScVbaWorkbooks::Open( const OUString& rFileName, const uno::Any& /*UpdateLinks*/, const uno::Any& ReadOnly, const uno::Any& Format, const uno::Any& /*Password*/, const uno::Any& /*WriteResPassword*/, const uno::Any& /*IgnoreReadOnlyRecommended*/, const uno::Any& /*Origin*/, const uno::Any& Delimiter, const uno::Any& /*Editable*/, const uno::Any& /*Notify*/, const uno::Any& /*Converter*/, const uno::Any& /*AddToMru*/ ) throw (uno::RuntimeException, std::exception)
 {
     // we need to detect if this is a URL, if not then assume it's a file path
     OUString aURL;
@@ -230,6 +230,7 @@ ScVbaWorkbooks::Open( const OUString& rFileName, const uno::Any& /*UpdateLinks*/
         sProps.realloc( 3 );
         sProps[ nIndex ].Name = "FilterOptions";
         sal_Int16 delims[] = { 0 /*default not used*/, 9/*tab*/, 44/*comma*/, 32/*space*/, 59/*semicolon*/ };
+        static const char sRestOfFormat[] = ",34,0,1";
 
         OUString sFormat;
         sal_Int16 nFormat = 0; // default indicator
@@ -263,7 +264,7 @@ ScVbaWorkbooks::Open( const OUString& rFileName, const uno::Any& /*UpdateLinks*/
 
         getCurrentDelim() = nDelim; //set new current
 
-        sFormat = OUString::number( nDelim ) + ",34,0,1";
+        sFormat = OUString::number( nDelim ) + sRestOfFormat;
         sProps[ nIndex++ ].Value <<= sFormat;
         sProps[ nIndex ].Name = "FilterName";
         sProps[ nIndex++ ].Value <<= OUString( "Text - txt - csv (StarCalc)" );

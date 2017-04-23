@@ -22,6 +22,7 @@
 #include "UserDefinedProperties.hxx"
 #include "PropertyHelper.hxx"
 #include "macros.hxx"
+#include "ContainerHelper.hxx"
 #include <com/sun/star/style/XStyle.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -37,13 +38,15 @@ using ::com::sun::star::beans::Property;
 namespace
 {
 
+static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.GridProperties";
+
 enum
 {
     PROP_GRID_SHOW
 };
 
 void lcl_AddPropertiesToVector(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "Show",
@@ -89,12 +92,12 @@ struct StaticGridInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< Property > aProperties;
+        ::std::vector< Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -149,6 +152,7 @@ GridProperties::~GridProperties()
 
 // ____ OPropertySet ____
 uno::Any GridProperties::GetDefaultValue( sal_Int32 nHandle ) const
+    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticGridDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -164,18 +168,21 @@ uno::Any GridProperties::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL GridProperties::getPropertySetInfo()
+    throw (uno::RuntimeException, std::exception)
 {
     return *StaticGridInfo::get();
 }
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL GridProperties::createClone()
+    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new GridProperties( *this ));
 }
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL GridProperties::addModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -189,6 +196,7 @@ void SAL_CALL GridProperties::addModifyListener( const Reference< util::XModifyL
 }
 
 void SAL_CALL GridProperties::removeModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -203,12 +211,14 @@ void SAL_CALL GridProperties::removeModifyListener( const Reference< util::XModi
 
 // ____ XModifyListener ____
 void SAL_CALL GridProperties::modified( const lang::EventObject& aEvent )
+    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL GridProperties::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
@@ -216,25 +226,44 @@ void SAL_CALL GridProperties::disposing( const lang::EventObject& /* Source */ )
 // ____ OPropertySet ____
 void GridProperties::firePropertyChangeEvent()
 {
+    fireModifyEvent();
+}
+
+void GridProperties::fireModifyEvent()
+{
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
+}
+
+Sequence< OUString > GridProperties::getSupportedServiceNames_Static()
+{
+    Sequence< OUString > aServices( 2 );
+    aServices[ 0 ] = "com.sun.star.chart2.GridProperties";
+    aServices[ 1 ] = "com.sun.star.beans.PropertySet";
+    return aServices;
 }
 
 // implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL GridProperties::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return OUString("com.sun.star.comp.chart2.GridProperties");
+    return getImplementationName_Static();
+}
+
+OUString GridProperties::getImplementationName_Static()
+{
+    return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL GridProperties::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL GridProperties::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        "com.sun.star.chart2.GridProperties",
-        "com.sun.star.beans.PropertySet" };
+    return getSupportedServiceNames_Static();
 }
 
 // needed by MSC compiler

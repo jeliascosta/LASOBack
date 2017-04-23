@@ -31,11 +31,11 @@ private:
     VclPtr<VclFrame> m_pFrame;
     VclPtr<ListBox> m_pLb;
 
-    DECL_LINK( DblClkHdl, ListBox&, void );
+    DECL_LINK_TYPED( DblClkHdl, ListBox&, void );
 
 public:
     ScShowTabDlg( vcl::Window* pParent );
-    virtual ~ScShowTabDlg() override;
+    virtual ~ScShowTabDlg();
     virtual void dispose() override;
 
     /** Sets dialog title, fixed text for listbox and help IDs. */

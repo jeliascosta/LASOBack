@@ -39,7 +39,7 @@
 
 #include <cppuhelper/queryinterface.hxx>
 #include <cppuhelper/typeprovider.hxx>
-#include <com/sun/star/sdbc/SQLException.hpp>
+
 #include <com/sun/star/sdbc/XGeneratedResultSet.hpp>
 
 #include "pq_updateableresultset.hxx"
@@ -83,22 +83,23 @@ namespace pq_sdbc_driver
 {
 
 
-css::uno::Reference< css::sdbc::XCloseable > UpdateableResultSet::createFromPGResultSet(
+com::sun::star::uno::Reference< com::sun::star::sdbc::XCloseable > UpdateableResultSet::createFromPGResultSet(
     const ::rtl::Reference< RefCountedMutex > & mutex,
-    const css::uno::Reference< css::uno::XInterface > &owner,
+    const com::sun::star::uno::Reference< com::sun::star::uno::XInterface > &owner,
     ConnectionSettings **ppSettings,
     PGresult *result,
     const OUString &schema,
     const OUString &table,
     const std::vector< OUString > &primaryKey )
 {
+    ConnectionSettings *pSettings = *ppSettings;
     sal_Int32 columnCount = PQnfields( result );
     sal_Int32 rowCount = PQntuples( result );
     std::vector< OUString > columnNames( columnCount );
     for( int i = 0 ; i < columnCount ; i ++ )
     {
         char * name = PQfname( result, i );
-        columnNames[i] = OUString( name, strlen(name), ConnectionSettings::encoding );
+        columnNames[i] = OUString( name, strlen(name), pSettings->encoding );
     }
     std::vector< std::vector< Any > > data( rowCount );
 
@@ -113,8 +114,8 @@ css::uno::Reference< css::sdbc::XCloseable > UpdateableResultSet::createFromPGRe
             {
                 char * val = PQgetvalue( result, row, col );
 
-                aRow[col] <<=
-                    OUString( val, strlen( val ), ConnectionSettings::encoding );
+                aRow[col] = makeAny(
+                    OUString( val, strlen( val ) , (*ppSettings)->encoding ) );
             }
         }
         data[row] = aRow;
@@ -132,8 +133,9 @@ css::uno::Reference< css::sdbc::XCloseable > UpdateableResultSet::createFromPGRe
     return ret;
 }
 
-css::uno::Any  UpdateableResultSet::queryInterface(
-    const css::uno::Type & reqType )
+com::sun::star::uno::Any  UpdateableResultSet::queryInterface(
+    const com::sun::star::uno::Type & reqType )
+    throw (com::sun::star::uno::RuntimeException, std::exception)
 {
     Any ret = SequenceResultSet::queryInterface( reqType );
     if( ! ret.hasValue() )
@@ -145,7 +147,8 @@ css::uno::Any  UpdateableResultSet::queryInterface(
 }
 
 
-css::uno::Sequence< css::uno::Type > UpdateableResultSet::getTypes()
+com::sun::star::uno::Sequence< com::sun::star::uno::Type > UpdateableResultSet::getTypes()
+        throw( com::sun::star::uno::RuntimeException, std::exception )
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -164,7 +167,8 @@ css::uno::Sequence< css::uno::Type > UpdateableResultSet::getTypes()
 
 }
 
-css::uno::Sequence< sal_Int8> UpdateableResultSet::getImplementationId()
+com::sun::star::uno::Sequence< sal_Int8> UpdateableResultSet::getImplementationId()
+        throw( com::sun::star::uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -191,12 +195,12 @@ OUString UpdateableResultSet::buildWhereClause()
 }
 
 
-void UpdateableResultSet::insertRow(  )
+void UpdateableResultSet::insertRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
-    if (isLog(*m_ppSettings, LogLevel::Info))
+    if( isLog( *m_ppSettings, LogLevel::INFO ) )
     {
-        log(*m_ppSettings, LogLevel::Info, "UpdateableResultSet::insertRow got called");
+        log( *m_ppSettings, LogLevel::INFO,"UpdateableResultSet::insertRow got called"  );
     }
     if( ! m_insertRow )
         throw SQLException(
@@ -285,12 +289,12 @@ void UpdateableResultSet::insertRow(  )
     m_updateableField = UpdateableFieldVector();
 }
 
-void UpdateableResultSet::updateRow(  )
+void UpdateableResultSet::updateRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
-    if (isLog(*m_ppSettings, LogLevel::Info))
+    if( isLog( *m_ppSettings, LogLevel::INFO ) )
     {
-        log(*m_ppSettings, LogLevel::Info, "UpdateableResultSet::updateRow got called");
+        log( *m_ppSettings, LogLevel::INFO,"UpdateableResultSet::updateRow got called"  );
     }
     if( m_insertRow )
         throw SQLException(
@@ -335,11 +339,11 @@ void UpdateableResultSet::updateRow(  )
     m_updateableField = UpdateableFieldVector();
 }
 
-void UpdateableResultSet::deleteRow(  )
+void UpdateableResultSet::deleteRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
-    if (isLog(*m_ppSettings, LogLevel::Info))
+    if( isLog( *m_ppSettings, LogLevel::INFO ) )
     {
-        log(*m_ppSettings, LogLevel::Info, "UpdateableResultSet::deleteRow got called");
+        log( *m_ppSettings, LogLevel::INFO,"UpdateableResultSet::deleteRow got called"  );
     }
     if( m_insertRow )
         throw SQLException(
@@ -348,10 +352,11 @@ void UpdateableResultSet::deleteRow(  )
 
     if( m_row < 0 || m_row >= m_rowCount )
     {
-        throw SQLException(
-            "deleteRow cannot be called on invalid row ("
-            + OUString::number(m_row) + ")",
-            *this, OUString(), 0, Any() );
+        OUStringBuffer buf( 128 );
+        buf.append( "deleteRow cannot be called on invalid row (" );
+        buf.append( m_row );
+        buf.append( ")" );
+        throw SQLException( buf.makeStringAndClear() , *this, OUString(), 0, Any() );
     }
 
     Reference< XStatement > stmt = extractConnectionFromStatement(m_owner)->createStatement();
@@ -373,18 +378,18 @@ void UpdateableResultSet::deleteRow(  )
     m_data.resize( m_rowCount );
  }
 
-void UpdateableResultSet::cancelRowUpdates(  )
+void UpdateableResultSet::cancelRowUpdates(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     m_updateableField = UpdateableFieldVector();
 }
 
-void UpdateableResultSet::moveToInsertRow(  )
+void UpdateableResultSet::moveToInsertRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     m_insertRow = true;
 }
 
-void UpdateableResultSet::moveToCurrentRow(  )
+void UpdateableResultSet::moveToCurrentRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     m_insertRow = false;
 }
@@ -397,7 +402,7 @@ void UpdateableResultSet::checkUpdate( sal_Int32 columnIndex)
     m_updateableField[columnIndex-1].isTouched = true;
 }
 
-void UpdateableResultSet::updateNull( sal_Int32 columnIndex )
+void UpdateableResultSet::updateNull( sal_Int32 columnIndex ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -405,7 +410,7 @@ void UpdateableResultSet::updateNull( sal_Int32 columnIndex )
     m_updateableField[columnIndex-1].value = Any();
 }
 
-void UpdateableResultSet::updateBoolean( sal_Int32 columnIndex, sal_Bool x )
+void UpdateableResultSet::updateBoolean( sal_Int32 columnIndex, sal_Bool x ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -416,17 +421,17 @@ void UpdateableResultSet::updateBoolean( sal_Int32 columnIndex, sal_Bool x )
 
 }
 
-void UpdateableResultSet::updateByte( sal_Int32 columnIndex, sal_Int8 x )
+void UpdateableResultSet::updateByte( sal_Int32 columnIndex, sal_Int8 x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateInt(columnIndex,x);
 }
 
-void UpdateableResultSet::updateShort( sal_Int32 columnIndex, sal_Int16 x )
+void UpdateableResultSet::updateShort( sal_Int32 columnIndex, sal_Int16 x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateInt( columnIndex, x );
 }
 
-void UpdateableResultSet::updateInt( sal_Int32 columnIndex, sal_Int32 x )
+void UpdateableResultSet::updateInt( sal_Int32 columnIndex, sal_Int32 x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateLong( columnIndex, x );
 //     MutexGuard guard( m_refMutex->mutex );
@@ -437,7 +442,7 @@ void UpdateableResultSet::updateInt( sal_Int32 columnIndex, sal_Int32 x )
 
 }
 
-void UpdateableResultSet::updateLong( sal_Int32 columnIndex, sal_Int64 x )
+void UpdateableResultSet::updateLong( sal_Int32 columnIndex, sal_Int64 x ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -450,7 +455,7 @@ void UpdateableResultSet::updateLong( sal_Int32 columnIndex, sal_Int64 x )
     m_updateableField[columnIndex-1].value <<= OUString::number( x );
 }
 
-void UpdateableResultSet::updateFloat( sal_Int32 columnIndex, float x )
+void UpdateableResultSet::updateFloat( sal_Int32 columnIndex, float x ) throw (SQLException, RuntimeException, std::exception)
 {
 
     MutexGuard guard( m_refMutex->mutex );
@@ -460,7 +465,7 @@ void UpdateableResultSet::updateFloat( sal_Int32 columnIndex, float x )
     m_updateableField[columnIndex-1].value <<= OUString::number( x );
 }
 
-void UpdateableResultSet::updateDouble( sal_Int32 columnIndex, double x )
+void UpdateableResultSet::updateDouble( sal_Int32 columnIndex, double x ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -469,7 +474,7 @@ void UpdateableResultSet::updateDouble( sal_Int32 columnIndex, double x )
     m_updateableField[columnIndex-1].value <<= OUString::number( x );
 }
 
-void UpdateableResultSet::updateString( sal_Int32 columnIndex, const OUString& x )
+void UpdateableResultSet::updateString( sal_Int32 columnIndex, const OUString& x ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -478,7 +483,7 @@ void UpdateableResultSet::updateString( sal_Int32 columnIndex, const OUString& x
     m_updateableField[columnIndex-1].value <<= x;
 }
 
-void UpdateableResultSet::updateBytes( sal_Int32 columnIndex, const css::uno::Sequence< sal_Int8 >& x )
+void UpdateableResultSet::updateBytes( sal_Int32 columnIndex, const ::com::sun::star::uno::Sequence< sal_Int8 >& x ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -500,46 +505,47 @@ void UpdateableResultSet::updateBytes( sal_Int32 columnIndex, const css::uno::Se
     free( escapedString );
 }
 
-void UpdateableResultSet::updateDate( sal_Int32 columnIndex, const css::util::Date& x )
+void UpdateableResultSet::updateDate( sal_Int32 columnIndex, const ::com::sun::star::util::Date& x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateString( columnIndex, DBTypeConversion::toDateString( x ) );
 }
 
-void UpdateableResultSet::updateTime( sal_Int32 columnIndex, const css::util::Time& x )
+void UpdateableResultSet::updateTime( sal_Int32 columnIndex, const ::com::sun::star::util::Time& x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateString( columnIndex, DBTypeConversion::toTimeString( x ) );
 }
 
-void UpdateableResultSet::updateTimestamp( sal_Int32 columnIndex, const css::util::DateTime& x )
+void UpdateableResultSet::updateTimestamp( sal_Int32 columnIndex, const ::com::sun::star::util::DateTime& x ) throw (SQLException, RuntimeException, std::exception)
 {
     updateString( columnIndex, DBTypeConversion::toDateTimeString( x ) );
 }
 
-void UpdateableResultSet::updateBinaryStream( sal_Int32 /* columnIndex */, const css::uno::Reference< css::io::XInputStream >& /* x */, sal_Int32 /* length */ )
+void UpdateableResultSet::updateBinaryStream( sal_Int32 /* columnIndex */, const ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream >& /* x */, sal_Int32 /* length */ ) throw (SQLException, RuntimeException, std::exception)
 {
 }
 
-void UpdateableResultSet::updateCharacterStream( sal_Int32 /* columnIndex */, const css::uno::Reference< css::io::XInputStream >& /* x */, sal_Int32 /* length */ )
+void UpdateableResultSet::updateCharacterStream( sal_Int32 /* columnIndex */, const ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream >& /* x */, sal_Int32 /* length */ ) throw (SQLException, RuntimeException, std::exception)
 {
 }
 
-void UpdateableResultSet::updateObject( sal_Int32 /* columnIndex */, const css::uno::Any& /* x */ )
+void UpdateableResultSet::updateObject( sal_Int32 /* columnIndex */, const ::com::sun::star::uno::Any& /* x */ ) throw (SQLException, RuntimeException, std::exception)
 {
 }
 
-void UpdateableResultSet::updateNumericObject( sal_Int32 /* columnIndex */, const css::uno::Any& /* x */, sal_Int32 /* scale */ )
+void UpdateableResultSet::updateNumericObject( sal_Int32 /* columnIndex */, const ::com::sun::star::uno::Any& /* x */, sal_Int32 /* scale */ ) throw (SQLException, RuntimeException, std::exception)
 {
 }
 
 
 Sequence< Type > UpdateableResultSet::getStaticTypes( bool updateable )
+    throw( com::sun::star::uno::RuntimeException )
 {
     if( updateable )
     {
         cppu::OTypeCollection collection(
             cppu::UnoType<XResultSetUpdate>::get(),
             cppu::UnoType<XRowUpdate>::get(),
-//             cppu::UnoType<css::sdbcx::XRowLocate>::get(),
+//             cppu::UnoType<com::sun::star::sdbcx::XRowLocate>::get(),
             getStaticTypes( false /* updateable */ ) );
         return collection.getTypes();
     }
@@ -554,10 +560,10 @@ Sequence< Type > UpdateableResultSet::getStaticTypes( bool updateable )
             cppu::UnoType<XPropertySet>::get(),
             cppu::UnoType<XFastPropertySet>::get(),
             cppu::UnoType<XMultiPropertySet>::get(),
-            cppu::UnoType<css::lang::XComponent>::get(),  // OComponentHelper
-            cppu::UnoType<css::lang::XTypeProvider>::get(),
-            cppu::UnoType<css::uno::XAggregation>::get(),
-            cppu::UnoType<css::uno::XWeak>::get());
+            cppu::UnoType<com::sun::star::lang::XComponent>::get(),  // OComponentHelper
+            cppu::UnoType<com::sun::star::lang::XTypeProvider>::get(),
+            cppu::UnoType<com::sun::star::uno::XAggregation>::get(),
+            cppu::UnoType<com::sun::star::uno::XWeak>::get());
         return collection.getTypes();
     }
 }

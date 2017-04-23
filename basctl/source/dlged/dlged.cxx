@@ -59,6 +59,7 @@ using namespace ::com::sun::star::io;
 
 static const char aResourceResolverPropName[] = "ResourceResolver";
 static const char aDecorationPropName[] = "Decoration";
+static const char aTitlePropName[] = "Title";
 
 
 // DlgEdHint
@@ -122,8 +123,8 @@ void DlgEditor::ShowDialog()
             aDecorationAny >>= bDecoration;
             if( !bDecoration )
             {
-                xNewDlgModPropSet->setPropertyValue( aDecorationPropName, Any( true ) );
-                xNewDlgModPropSet->setPropertyValue( "Title", Any( OUString() ) );
+                xNewDlgModPropSet->setPropertyValue( aDecorationPropName, makeAny( true ) );
+                xNewDlgModPropSet->setPropertyValue( aTitlePropName, makeAny( OUString() ) );
             }
         }
         catch(const UnknownPropertyException& )
@@ -175,7 +176,7 @@ bool DlgEditor::RemarkDialog()
 DlgEditor::DlgEditor (
     vcl::Window& rWindow_, DialogWindowLayout& rLayout_,
     css::uno::Reference<css::frame::XModel> const& xModel,
-    css::uno::Reference<css::container::XNameContainer> const & xDialogModel
+    css::uno::Reference<css::container::XNameContainer> xDialogModel
 )
     :pHScroll(nullptr)
     ,pVScroll(nullptr)
@@ -191,6 +192,8 @@ DlgEditor::DlgEditor (
     ,eActObj( OBJ_DLG_PUSHBUTTON )
     ,bFirstDraw(false)
     ,aGridSize( 100, 100 )  // 100TH_MM
+    ,bGridVisible(false)
+    ,bGridSnap(true)
     ,bCreateOK(true)
     ,bDialogModelChanged(false)
     ,aMarkIdle("basctl DlgEditor Mark")
@@ -199,7 +202,7 @@ DlgEditor::DlgEditor (
 {
     pDlgEdModel->GetItemPool().FreezeIdRanges();
     pDlgEdView.reset(new DlgEdView(*pDlgEdModel, rWindow_, *this));
-    pDlgEdModel->SetScaleUnit( MapUnit::Map100thMM );
+    pDlgEdModel->SetScaleUnit( MAP_100TH_MM );
 
     SdrLayerAdmin& rAdmin = pDlgEdModel->GetLayerAdmin();
     rAdmin.NewLayer( rAdmin.GetControlLayerName() );
@@ -217,21 +220,21 @@ DlgEditor::DlgEditor (
     m_ClipboardDataFlavorsResource[1].HumanPresentableName = "Dialog 8.0" ;
     m_ClipboardDataFlavorsResource[1].DataType =             cppu::UnoType<Sequence< sal_Int8 >>::get();
 
-    aMarkIdle.SetPriority(TaskPriority::LOW);
-    aMarkIdle.SetInvokeHandler( LINK( this, DlgEditor, MarkTimeout ) );
+    aMarkIdle.SetPriority(SchedulerPriority::LOW);
+    aMarkIdle.SetIdleHdl( LINK( this, DlgEditor, MarkTimeout ) );
 
-    rWindow.SetMapMode( MapMode( MapUnit::Map100thMM ) );
+    rWindow.SetMapMode( MapMode( MAP_100TH_MM ) );
     pDlgEdPage->SetSize( rWindow.PixelToLogic( Size(DLGED_PAGE_WIDTH_MIN, DLGED_PAGE_HEIGHT_MIN) ) );
 
     pDlgEdView->ShowSdrPage(pDlgEdView->GetModel()->GetPage(0));
     pDlgEdView->SetLayerVisible( "HiddenLayer", false );
     pDlgEdView->SetMoveSnapOnlyTopLeft(true);
-    pDlgEdView->SetWorkArea( tools::Rectangle( Point( 0, 0 ), pDlgEdPage->GetSize() ) );
+    pDlgEdView->SetWorkArea( Rectangle( Point( 0, 0 ), pDlgEdPage->GetSize() ) );
 
     pDlgEdView->SetGridCoarse( aGridSize );
     pDlgEdView->SetSnapGridWidth(Fraction(aGridSize.Width(), 1), Fraction(aGridSize.Height(), 1));
-    pDlgEdView->SetGridSnap( true );
-    pDlgEdView->SetGridVisible( false );
+    pDlgEdView->SetGridSnap( bGridSnap );
+    pDlgEdView->SetGridVisible( bGridVisible );
     pDlgEdView->SetDragStripes(false);
 
     pDlgEdView->SetDesignMode();
@@ -250,7 +253,7 @@ DlgEditor::~DlgEditor()
 }
 
 
-Reference< awt::XControlContainer > const & DlgEditor::GetWindowControlContainer()
+Reference< awt::XControlContainer > DlgEditor::GetWindowControlContainer()
 {
     if (!m_xControlContainer.is())
         m_xControlContainer = VCLUnoHelper::CreateControlContainer(&rWindow);
@@ -469,7 +472,7 @@ bool DlgEditor::KeyInput( const KeyEvent& rKEvt )
 }
 
 
-void DlgEditor::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void DlgEditor::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     aPaintRect = rRect;
     mnPaintGuard++;
@@ -517,7 +520,7 @@ void DlgEditor::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle
                 }
 
                 // set dialog position and size
-                pDlgEdForm->SetSnapRect( tools::Rectangle( aPos, aSize ) );
+                pDlgEdForm->SetSnapRect( Rectangle( aPos, aSize ) );
                 pDlgEdForm->EndListening(false);
                 pDlgEdForm->SetPropsFromRect();
                 pDlgEdForm->GetDlgEditor().SetDialogModelChanged();
@@ -574,7 +577,7 @@ void DlgEditor::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle
 }
 
 
-IMPL_LINK_NOARG(DlgEditor, MarkTimeout, Timer *, void)
+IMPL_LINK_NOARG_TYPED(DlgEditor, MarkTimeout, Idle *, void)
 {
     rLayout.UpdatePropertyBrowser();
 }
@@ -606,7 +609,7 @@ void DlgEditor::SetInsertObj( sal_uInt16 eObj )
 {
     eActObj = eObj;
 
-    pDlgEdView->SetCurrentObj( eActObj, SdrInventor::BasicDialog );
+    pDlgEdView->SetCurrentObj( eActObj, DlgInventor );
 }
 
 void DlgEditor::CreateDefaultObject()
@@ -621,7 +624,7 @@ void DlgEditor::CreateDefaultObject()
         Point aPoint = (pDlgEdForm->GetSnapRect()).Center();
         aPoint.X() -= aSize.Width() / 2;
         aPoint.Y() -= aSize.Height() / 2;
-        pDlgEdObj->SetSnapRect( tools::Rectangle( aPoint, aSize ) );
+        pDlgEdObj->SetSnapRect( Rectangle( aPoint, aSize ) );
 
         // set default property values
         pDlgEdObj->SetDefaults();
@@ -792,7 +795,7 @@ void DlgEditor::Copy()
             memcpy( pCombinedData + 4, DialogModelBytes.getConstArray(), nDialogDataLen );
             memcpy( pCombinedData + nResOffset, aResData.getConstArray(), nResDataLen );
 
-            aSeqData[1] <<= aCombinedData;
+            aSeqData[1] = Any(aCombinedData);
 
             pTrans = new DlgEdTransferableImpl( m_ClipboardDataFlavorsResource, aSeqData );
         }
@@ -1120,7 +1123,7 @@ void lcl_PrintHeader( Printer* pPrinter, const OUString& rTitle ) // not working
     long const nXLeft = Print::nLeftMargin - Print::nBorder;
     long const nXRight = aSz.Width() - Print::nRightMargin + Print::nBorder;
 
-    pPrinter->DrawRect(tools::Rectangle(
+    pPrinter->DrawRect(Rectangle(
         Point(nXLeft, nYTop),
         Size(nXRight - nXLeft, aSz.Height() - nYTop - Print::nBottomMargin + Print::nBorder)
     ));
@@ -1149,7 +1152,7 @@ void DlgEditor::Print( Printer* pPrinter, const OUString& rTitle )    // not wor
         MapMode aOldMap( pPrinter->GetMapMode());
         vcl::Font aOldFont( pPrinter->GetFont() );
 
-        MapMode aMap( MapUnit::Map100thMM );
+        MapMode aMap( MAP_100TH_MM );
         pPrinter->SetMapMode( aMap );
         vcl::Font aFont;
         aFont.SetAlignment( ALIGN_BOTTOM );
@@ -1174,13 +1177,13 @@ void DlgEditor::Print( Printer* pPrinter, const OUString& rTitle )    // not wor
         Size aOutputSz;
         if( nBmpSzHeight * nScaleX <= nPaperSzHeight )
         {
-            aOutputSz.Width() = (long)(nBmpSzWidth * nScaleX);
-            aOutputSz.Height() = (long)(nBmpSzHeight * nScaleX);
+            aOutputSz.Width() = (long)(((double)nBmpSzWidth) * nScaleX);
+            aOutputSz.Height() = (long)(((double)nBmpSzHeight) * nScaleX);
         }
         else
         {
-            aOutputSz.Width() = (long)(nBmpSzWidth * nScaleY);
-            aOutputSz.Height() = (long)(nBmpSzHeight * nScaleY);
+            aOutputSz.Width() = (long)(((double)nBmpSzWidth) * nScaleY);
+            aOutputSz.Height() = (long)(((double)nBmpSzHeight) * nScaleY);
         }
 
         Point aPosOffs(
@@ -1214,13 +1217,13 @@ bool DlgEditor::AdjustPageSize()
         if ( pDlgEdForm && pDlgEdForm->TransformFormToSdrCoordinates( nFormXIn, nFormYIn, nFormWidthIn, nFormHeightIn, nFormX, nFormY, nFormWidth, nFormHeight ) )
         {
             Size aPageSizeDelta( 400, 300 );
-            aPageSizeDelta = rWindow.PixelToLogic( aPageSizeDelta, MapMode( MapUnit::Map100thMM ) );
+            aPageSizeDelta = rWindow.PixelToLogic( aPageSizeDelta, MapMode( MAP_100TH_MM ) );
 
             sal_Int32 nNewPageWidth = nFormX + nFormWidth + aPageSizeDelta.Width();
             sal_Int32 nNewPageHeight = nFormY + nFormHeight + aPageSizeDelta.Height();
 
             Size aPageSizeMin( DLGED_PAGE_WIDTH_MIN, DLGED_PAGE_HEIGHT_MIN );
-            aPageSizeMin = rWindow.PixelToLogic( aPageSizeMin, MapMode( MapUnit::Map100thMM ) );
+            aPageSizeMin = rWindow.PixelToLogic( aPageSizeMin, MapMode( MAP_100TH_MM ) );
             sal_Int32 nPageWidthMin = aPageSizeMin.Width();
             sal_Int32 nPageHeightMin = aPageSizeMin.Height();
 
@@ -1237,7 +1240,7 @@ bool DlgEditor::AdjustPageSize()
                 {
                     Size aNewPageSize( nNewPageWidth, nNewPageHeight );
                     pDlgEdPage->SetSize( aNewPageSize );
-                    pDlgEdView->SetWorkArea( tools::Rectangle( Point( 0, 0 ), aNewPageSize ) );
+                    pDlgEdView->SetWorkArea( Rectangle( Point( 0, 0 ), aNewPageSize ) );
                     bAdjustedPageSize = true;
                 }
             }

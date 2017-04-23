@@ -52,15 +52,16 @@ using namespace ::std;
 
 // ---- XBatchExecution - UNSUPPORTED ----------------------------------------
 void SAL_CALL OStatement::addBatch(const OUString& sql)
+    throw(SQLException, RuntimeException, std::exception)
 {
     (void) sql;
 }
 
-void SAL_CALL OStatement::clearBatch()
+void SAL_CALL OStatement::clearBatch() throw(SQLException, RuntimeException, std::exception)
 {
 }
 
-Sequence< sal_Int32 > SAL_CALL OStatement::executeBatch()
+Sequence< sal_Int32 > SAL_CALL OStatement::executeBatch() throw(SQLException, RuntimeException, std::exception)
 {
     return Sequence< sal_Int32 >();
 }
@@ -94,6 +95,7 @@ void OStatement::disposeResultSet()
 
 // ---- XStatement -----------------------------------------------------------
 sal_Int32 SAL_CALL OStatement::executeUpdate(const OUString& sql)
+    throw(SQLException, RuntimeException, std::exception)
 {
     execute(sql);
     return getStatementChangeCount();
@@ -101,6 +103,7 @@ sal_Int32 SAL_CALL OStatement::executeUpdate(const OUString& sql)
 
 
 uno::Reference< XResultSet > SAL_CALL OStatement::executeQuery(const OUString& sql)
+    throw(SQLException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OStatementCommonBase_Base::rBHelper.bDisposed);
@@ -126,7 +129,7 @@ uno::Reference< XResultSet > SAL_CALL OStatement::executeQuery(const OUString& s
                                   m_aMutex,
                                   uno::Reference< XInterface >(*this),
                                   m_aStatementHandle,
-                                  m_pSqlda );
+                                  m_pSqlda);
 
     // TODO: deal with cleanup
 
@@ -146,6 +149,7 @@ uno::Reference< XResultSet > SAL_CALL OStatement::executeQuery(const OUString& s
 }
 
 sal_Bool SAL_CALL OStatement::execute(const OUString& sql)
+    throw(SQLException, RuntimeException, std::exception)
 {
     uno::Reference< XResultSet > xResults = executeQuery(sql);
     return xResults.is();
@@ -153,6 +157,7 @@ sal_Bool SAL_CALL OStatement::execute(const OUString& sql)
 }
 
 uno::Reference< XConnection > SAL_CALL OStatement::getConnection()
+    throw(SQLException, RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OStatementCommonBase_Base::rBHelper.bDisposed);
@@ -160,7 +165,7 @@ uno::Reference< XConnection > SAL_CALL OStatement::getConnection()
     return uno::Reference<XConnection>(m_pConnection.get());
 }
 
-Any SAL_CALL OStatement::queryInterface( const Type & rType )
+Any SAL_CALL OStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = OStatement_Base::queryInterface(rType);
     if(!aRet.hasValue())
@@ -171,9 +176,15 @@ Any SAL_CALL OStatement::queryInterface( const Type & rType )
 }
 
 uno::Sequence< Type > SAL_CALL OStatement::getTypes()
+    throw(RuntimeException, std::exception)
 {
     return concatSequences(OStatement_Base::getTypes(),
                            OStatementCommonBase::getTypes());
+}
+
+void SAL_CALL OStatement::close() throw(SQLException, RuntimeException, std::exception)
+{
+    OStatementCommonBase::close();
 }
 
 void SAL_CALL OStatement::disposing()

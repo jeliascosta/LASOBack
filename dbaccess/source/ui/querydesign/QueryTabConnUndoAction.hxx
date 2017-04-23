@@ -34,7 +34,7 @@ namespace dbaui
 
     public:
         OQueryTabConnUndoAction(OQueryTableView* pOwner, sal_uInt16 nCommentID);
-        virtual ~OQueryTabConnUndoAction() override;
+        virtual ~OQueryTabConnUndoAction();
 
         virtual void Undo() override = 0;
         virtual void Redo() override = 0;

@@ -19,17 +19,17 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <rsctools.hxx>
 
 #include <rtl/textcvt.h>
 #include <rtl/textenc.h>
 #include <rtl/alloc.h>
-#include <rtl/character.hxx>
 
 char * RscChar::MakeUTF8( char * pStr, sal_uInt16 nTextEncoding )
 {
-    std::size_t nMaxUniCodeBuf = strlen( pStr ) + 1;
+    sal_Size nMaxUniCodeBuf = strlen( pStr ) + 1;
     if( nMaxUniCodeBuf * 6 > 0x0FFFFF )
         RscExit( 10 );
 
@@ -105,11 +105,11 @@ char * RscChar::MakeUTF8( char * pStr, sal_uInt16 nTextEncoding )
                         sal_uInt16  nChar = 0;
                         int  i = 0;
                         ++pStr;
-                        while( rtl::isAsciiHexDigit( static_cast<unsigned char>(*pStr) ) && i != 2 )
+                        while( isxdigit( *pStr ) && i != 2 )
                         {
-                            if( rtl::isAsciiDigit( static_cast<unsigned char>(*pStr) ) )
+                            if( isdigit( *pStr ) )
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'0';
-                            else if( rtl::isAsciiUpperCase( static_cast<unsigned char>(*pStr) ) )
+                            else if( isupper( *pStr ) )
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'A' +10;
                             else
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'a' +10;

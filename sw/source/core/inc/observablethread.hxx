@@ -41,15 +41,15 @@ class ObservableThread : public osl::Thread,
 {
     public:
 
-        virtual ~ObservableThread() override;
+        virtual ~ObservableThread();
 
-        void SetListener( std::weak_ptr< IFinishedThreadListener > const & pThreadListener,
+        void SetListener( std::weak_ptr< IFinishedThreadListener > pThreadListener,
                           const oslInterlockedCount nThreadID );
 
-        static void * operator new(std::size_t size)
+        static inline void * operator new(std::size_t size)
         { return SimpleReferenceObject::operator new(size); }
 
-        static void operator delete(void * pointer)
+        static inline void operator delete(void * pointer)
         { SimpleReferenceObject::operator delete(pointer); }
 
     protected:

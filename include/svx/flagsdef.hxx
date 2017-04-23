@@ -20,8 +20,10 @@
 #define INCLUDED_SVX_FLAGSDEF_HXX
 
 #include <o3tl/typed_flags_set.hxx>
-#include <o3tl/enumarray.hxx>
 
+// defines ---------------------------------------------------------------
+
+// copy from border.hxx
 // Border-Modes for SvxBorderTabPage
 enum class SwBorderModes
 {
@@ -30,7 +32,6 @@ enum class SwBorderModes
     TABLE    = 0x02,
     FRAME    = 0x04,
 };
-
 namespace o3tl
 {
     template<> struct typed_flags<SwBorderModes> : is_typed_flags<SwBorderModes, 0x07> {};
@@ -52,6 +53,7 @@ namespace o3tl
 // flags for SvxBorderTabPage
 #define SVX_HIDESHADOWCTL   0x01
 
+// copy from chardlg.hxx
 #define DISABLE_CASEMAP             ((sal_uInt16)0x0001)
 #define DISABLE_WORDLINE            ((sal_uInt16)0x0002)
 #define DISABLE_BLINK               ((sal_uInt16)0x0004)
@@ -68,31 +70,16 @@ namespace o3tl
 #define SVX_ENABLE_FLASH    0x04
 
 
-// Default values for Number Format Category List and Preview
-enum class SvxNumValCategory
-{
-    Standard = 0,
-    Percent,
-    Currency,
-    Date,
-    Time,
-    Scientific,
-    Fraction,
-    Boolean,
-    NoValue,
-    LAST = NoValue
-};
-const o3tl::enumarray<SvxNumValCategory, double> fSvxNumValConst = {
-    -1234.56789012345678,   // SvxNumValCategory::Standard
-    -0.1295,                // SvxNumValCategory::Percent
-    -1234.0,                // SvxNumValCategory::Currency
-    36525.5678935185,       // SvxNumValCategory::Date
-    36525.5678935185,       // SvxNumValCategory::Time
-    12345.67889,            // SvxNumValCategory::Scientific
-    123.456,                // SvxNumValCategory::Fraction
-    1.0,                    // SvxNumValCategory::Boolean
-    0.0                     // SvxNumValCategory::NoValue
-};
+// copy from numfmt.hxx
+#define SVX_NUMVAL_STANDARD     -1234.12345678901234
+#define SVX_NUMVAL_CURRENCY     -1234
+#define SVX_NUMVAL_PERCENT      -0.1295
+#define SVX_NUMVAL_TIME         36525.5678935185
+#define SVX_NUMVAL_DATE         36525.5678935185
+#define SVX_NUMVAL_BOOLEAN      1
+
+// copy from page.hxx
+// enum ------------------------------------------------------------------
 
 enum SvxModeType
 {
@@ -100,11 +87,13 @@ enum SvxModeType
     SVX_PAGE_MODE_CENTER,
     SVX_PAGE_MODE_PRESENTATION
 };
+// define ----------------------------------------------------------------
 
 // 1/2 cm in TWIPS
 // Is also used for minimum size of LayFrms of any kind
 #define MM50   283  //from original svx/inc/paragrph.hxx
 
+//--------------from original svx/inc/tabstpge.hxx
 enum class TabulatorDisableFlags {
     TypeLeft      = 0x0001,
     TypeRight     = 0x0002,
@@ -122,6 +111,7 @@ enum class TabulatorDisableFlags {
 namespace o3tl {
     template<> struct typed_flags<TabulatorDisableFlags> : is_typed_flags<TabulatorDisableFlags, 0x1ff> {};
 }
+
 
 #endif
 

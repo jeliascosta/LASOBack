@@ -47,23 +47,19 @@ namespace framework
 
         public:
             HeaderMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext, bool _bFooter = false );
-            virtual ~HeaderMenuController() override;
+            virtual ~HeaderMenuController();
 
             // XServiceInfo
-            DECLARE_XSERVICEINFO_NOFACTORY
-            /* Helper for registry */
-            /// @throws css::uno::Exception
-            static css::uno::Reference< css::uno::XInterface >             SAL_CALL impl_createInstance                ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
-            static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL impl_createFactory                 ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
+            DECLARE_XSERVICEINFO
 
             // XPopupMenuController
-            virtual void SAL_CALL updatePopupMenu() override;
+            virtual void SAL_CALL updatePopupMenu() throw (css::uno::RuntimeException, std::exception) override;
 
             // XStatusListener
-            virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
+            virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
 
             // XEventListener
-            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
 
         private:
             void fillPopupMenu( const css::uno::Reference< css::frame::XModel >& rModel, css::uno::Reference< css::awt::XPopupMenu >& rPopupMenu );

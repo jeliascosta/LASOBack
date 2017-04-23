@@ -33,14 +33,14 @@ class AxisPositionsTabPage : public SfxTabPage
 {
 public:
     AxisPositionsTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs );
-    virtual ~AxisPositionsTabPage() override;
+    virtual ~AxisPositionsTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rInAttrs );
     virtual bool FillItemSet( SfxItemSet* rOutAttrs ) override;
     virtual void Reset( const SfxItemSet* rInAttrs ) override;
     using TabPage::DeactivatePage;
-    virtual DeactivateRC DeactivatePage( SfxItemSet* pItemSet ) override;
+    virtual sfxpg DeactivatePage( SfxItemSet* pItemSet = nullptr ) override;
 
     void SetNumFormatter( SvNumberFormatter* pFormatter );
 
@@ -50,8 +50,8 @@ public:
     void SupportAxisPositioning( bool bSupportAxisPositioning );
 
 private: //methods:
-    DECL_LINK( CrossesAtSelectHdl, ListBox&, void );
-    DECL_LINK( PlaceLabelsSelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( CrossesAtSelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( PlaceLabelsSelectHdl, ListBox&, void );
 
 private: //member:
     VclPtr<VclFrame>       m_pFL_AxisLine;

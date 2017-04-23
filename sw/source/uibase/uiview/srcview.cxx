@@ -18,6 +18,9 @@
  */
 
 #include <hintids.hxx>
+#include <com/sun/star/util/SearchOptions2.hpp>
+#include <com/sun/star/util/SearchFlags.hpp>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
 #include <comphelper/string.hxx>
 #include <unotools/tempfile.hxx>
@@ -73,6 +76,7 @@
 #include <helpid.h>
 #include <globals.hrc>
 #include <shells.hrc>
+#include <popup.hrc>
 #include <web.hrc>
 #include <view.hrc>
 #include <com/sun/star/ui/dialogs/XFilePicker2.hpp>
@@ -92,8 +96,9 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::ui::dialogs;
 using namespace ::sfx2;
+using ::com::sun::star::util::SearchOptions2;
 
-#define SWSRCVIEWFLAGS SfxViewShellFlags::NO_NEWWINDOW
+#define SWSRCVIEWFLAGS ( SfxViewShellFlags::CAN_PRINT | SfxViewShellFlags::NO_NEWWINDOW )
 
 #define SRC_SEARCHOPTIONS (SearchOptionFlags::ALL & ~SearchOptionFlags(SearchOptionFlags::FORMAT|SearchOptionFlags::FAMILIES|SearchOptionFlags::SEARCHALL))
 
@@ -115,8 +120,7 @@ void SwSrcView::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("source");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS,
-                                            SfxVisibilityFlags::Standard|SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER,
                                             RID_WEBTOOLS_TOOLBOX);
 
     GetStaticInterface()->RegisterChildWindow(SvxSearchDialogWrapper::GetChildWindowId());
@@ -147,7 +151,7 @@ static void lcl_PrintHeader( vcl::RenderContext &rOutDev, sal_Int32 nPages, sal_
     long nXLeft = nLeftMargin-nBorder;
     long nXRight = aSz.Width()-RMARGPRN+nBorder;
 
-    rOutDev.DrawRect( tools::Rectangle(
+    rOutDev.DrawRect( Rectangle(
         Point( nXLeft, nYTop ),
         Size( nXRight-nXLeft, aSz.Height() - nYTop - BMARGPRN + nBorder ) ) );
 
@@ -251,6 +255,7 @@ void SwSrcView::SaveContentTo(SfxMedium& rMed)
 
 void SwSrcView::Init()
 {
+    SetHelpId(SW_SRC_VIEWSHELL);
     SetName("Source");
     SetWindow( aEditWin.get() );
     SwDocShell* pDocShell = GetDocShell();
@@ -351,7 +356,7 @@ void SwSrcView::Execute(SfxRequest& rReq)
                 pMed->CloseOutStream();
                 pMed->Commit();
                 pDocShell->GetDoc()->getIDocumentState().ResetModified();
-                bSourceSaved = true;
+                SourceSaved();
                 aEditWin->ClearModifyFlag();
             }
         }
@@ -565,7 +570,7 @@ void SwSrcView::StartSearchAndReplace(const SvxSearchItem& rSearchItem,
                                                   bool bApi,
                                                   bool bRecursive)
 {
-    TextView* pTextView = aEditWin->GetTextView();
+    ExtTextView* pTextView = aEditWin->GetTextView();
     TextSelection aSel;
     TextPaM aPaM;
 
@@ -575,7 +580,7 @@ void SwSrcView::StartSearchAndReplace(const SvxSearchItem& rSearchItem,
     if( !bForward )
         aPaM = TextPaM( TEXT_PARA_ALL, TEXT_INDEX_ALL );
 
-    i18nutil::SearchOptions2 aSearchOpt( rSearchItem.GetSearchOptions() );
+    util::SearchOptions2 aSearchOpt( rSearchItem.GetSearchOptions() );
     aSearchOpt.Locale = GetAppLanguageTag().getLocale();
 
     sal_uInt16 nFound;
@@ -683,10 +688,10 @@ sal_Int32 SwSrcView::PrintSource(
     pOutDev->Push();
 
     TextEngine* pTextEngine = aEditWin->GetTextEngine();
-    pOutDev->SetMapMode( MapUnit::Map100thMM );
+    pOutDev->SetMapMode( MAP_100TH_MM );
     vcl::Font aFont( aEditWin->GetOutWin()->GetFont() );
     Size aSize( aFont.GetFontSize() );
-    aSize = aEditWin->GetOutWin()->PixelToLogic( aSize, MapUnit::Map100thMM );
+    aSize = aEditWin->GetOutWin()->PixelToLogic( aSize, MAP_100TH_MM );
     aFont.SetFontSize( aSize );
     aFont.SetColor( COL_BLACK );
     pOutDev->SetFont( aFont );
@@ -747,10 +752,14 @@ sal_Int32 SwSrcView::PrintSource(
 
 void SwSrcView::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::ModeChanged ||
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint &&
             (
-             rHint.GetId() == SfxHintId::TitleChanged &&
-             !GetDocShell()->IsReadOnly() && aEditWin->IsReadonly()
+                pSimpleHint->GetId() == SFX_HINT_MODECHANGED ||
+                (
+                    pSimpleHint->GetId() == SFX_HINT_TITLECHANGED &&
+                    !GetDocShell()->IsReadOnly() && aEditWin->IsReadonly()
+                )
             )
        )
     {
@@ -806,7 +815,7 @@ void SwSrcView::Load(SwDocShell* pDocShell)
         else
         {
             vcl::Window *pTmpWindow = &GetViewFrame()->GetWindow();
-            ScopedVclPtrInstance<MessageDialog>(pTmpWindow, SW_RES(STR_ERR_SRCSTREAM), VclMessageType::Info)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(pTmpWindow, SW_RES(STR_ERR_SRCSTREAM), VCL_MESSAGE_INFO)->Execute();
         }
     }
     else
@@ -817,7 +826,7 @@ void SwSrcView::Load(SwDocShell* pDocShell)
         SvtSaveOptions aOpt;
 
         {
-            SfxMedium aMedium( sFileURL,StreamMode::READWRITE );
+            SfxMedium aMedium( sFileURL,STREAM_READWRITE );
             SwWriter aWriter( aMedium, *pDocShell->GetDoc() );
             WriterRef xWriter;
             ::GetHTMLWriter(OUString(), aMedium.GetBaseURL( true ), xWriter);

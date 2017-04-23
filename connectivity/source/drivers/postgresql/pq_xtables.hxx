@@ -46,39 +46,47 @@ class Tables : public Container
 {
 
 public: // instances Tables 'exception safe'
-    static css::uno::Reference< css::container::XNameAccess > create(
+    static com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > create(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings,
         Tables ** ppTables);
 
 protected:
     Tables(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings );
 
-    virtual ~Tables() override;
+    virtual ~Tables();
 
 public: // XAppend
     virtual void SAL_CALL appendByDescriptor(
-        const css::uno::Reference< css::beans::XPropertySet >& descriptor ) override;
+        const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& descriptor )
+        throw (::com::sun::star::sdbc::SQLException,
+               ::com::sun::star::container::ElementExistException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XDrop
 //     virtual void SAL_CALL dropByName( const OUString& elementName )
-//         throw (css::sdbc::SQLException,
-//                css::container::NoSuchElementException,
-//                css::uno::RuntimeException);
-    virtual void SAL_CALL dropByIndex( sal_Int32 index ) override;
+//         throw (::com::sun::star::sdbc::SQLException,
+//                ::com::sun::star::container::NoSuchElementException,
+//                ::com::sun::star::uno::RuntimeException);
+    virtual void SAL_CALL dropByIndex( sal_Int32 index )
+        throw (::com::sun::star::sdbc::SQLException,
+               ::com::sun::star::lang::IndexOutOfBoundsException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XRefreshable
-    virtual void SAL_CALL refresh(  ) override;
+    virtual void SAL_CALL refresh(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL createDataDescriptor(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL createDataDescriptor(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 protected:
-    using Container::disposing;
+    virtual void SAL_CALL disposing() override;
+
 };
 
 }

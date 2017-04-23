@@ -21,16 +21,10 @@
 #include <com/sun/star/beans/PropertyState.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
-#include <com/sun/star/awt/XDevice.hpp>
-#include <com/sun/star/graphic/XGraphic.hpp>
-#include <com/sun/star/graphic/XGraphicRenderer.hpp>
-#include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <osl/mutex.hxx>
-#include <tools/gen.hxx>
 #include <vcl/svapp.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
-#include <comphelper/propertysethelper.hxx>
 #include <comphelper/propertysetinfo.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <rtl/ref.hxx>
@@ -38,6 +32,7 @@
 #include <svtools/grfmgr.hxx>
 #include <comphelper/servicehelper.hxx>
 #include "graphic.hxx"
+#include "renderer.hxx"
 
 #define UNOGRAPHIC_DEVICE           1
 #define UNOGRAPHIC_DESTINATIONRECT  2
@@ -47,56 +42,21 @@ using namespace ::com::sun::star;
 
 namespace {
 
-class GraphicRendererVCL : public ::cppu::OWeakAggObject,
-                           public css::lang::XServiceInfo,
-                           public css::lang::XTypeProvider,
-                           public ::comphelper::PropertySetHelper,
-                           public css::graphic::XGraphicRenderer
-{
-    static ::comphelper::PropertySetInfo* createPropertySetInfo();
-
-public:
-
-    GraphicRendererVCL();
-
-    // XInterface
-    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type & rType ) override;
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
-    virtual void SAL_CALL acquire() throw() override;
-    virtual void SAL_CALL release() throw() override;
-
-    // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
-
-    // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
-
-    // PropertySetHelper
-    virtual void _setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const css::uno::Any* pValues ) override;
-    virtual void _getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, css::uno::Any* pValue ) override;
-
-    // XGraphicRenderer
-    virtual void SAL_CALL render( const css::uno::Reference< css::graphic::XGraphic >& Graphic ) override;
-
-private:
-
-    css::uno::Reference< css::awt::XDevice > mxDevice;
-
-    VclPtr<OutputDevice>        mpOutDev;
-    tools::Rectangle                   maDestRect;
-    css::uno::Any               maRenderData;
-};
-
 GraphicRendererVCL::GraphicRendererVCL() :
     ::comphelper::PropertySetHelper( createPropertySetInfo() ),
     mpOutDev( nullptr )
 {
 }
 
+
+GraphicRendererVCL::~GraphicRendererVCL()
+    throw()
+{
+}
+
+
 uno::Any SAL_CALL GraphicRendererVCL::queryAggregation( const uno::Type & rType )
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Any aAny;
 
@@ -113,13 +73,14 @@ uno::Any SAL_CALL GraphicRendererVCL::queryAggregation( const uno::Type & rType 
     else if( rType == cppu::UnoType<graphic::XGraphicRenderer>::get())
         aAny <<= uno::Reference< graphic::XGraphicRenderer >(this);
     else
-        aAny = OWeakAggObject::queryAggregation( rType );
+        aAny <<= OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
 
 
 uno::Any SAL_CALL GraphicRendererVCL::queryInterface( const uno::Type & rType )
+    throw( uno::RuntimeException, std::exception )
 {
     return OWeakAggObject::queryInterface( rType );
 }
@@ -140,17 +101,20 @@ void SAL_CALL GraphicRendererVCL::release()
 
 
 OUString SAL_CALL GraphicRendererVCL::getImplementationName()
+    throw( uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.graphic.GraphicRendererVCL" );
 }
 
 sal_Bool SAL_CALL GraphicRendererVCL::supportsService( const OUString& ServiceName )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL GraphicRendererVCL::getSupportedServiceNames()
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSeq { "com.sun.star.graphic.GraphicRendererVCL" };
     return aSeq;
@@ -158,6 +122,7 @@ uno::Sequence< OUString > SAL_CALL GraphicRendererVCL::getSupportedServiceNames(
 
 
 uno::Sequence< uno::Type > SAL_CALL GraphicRendererVCL::getTypes()
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence< uno::Type >  aTypes( 7 );
     uno::Type*                  pTypes = aTypes.getArray();
@@ -174,6 +139,7 @@ uno::Sequence< uno::Type > SAL_CALL GraphicRendererVCL::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL GraphicRendererVCL::getImplementationId()
+    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -200,6 +166,10 @@ uno::Sequence< sal_Int8 > SAL_CALL GraphicRendererVCL::getImplementationId()
 
 
 void GraphicRendererVCL::_setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const uno::Any* pValues )
+    throw( beans::UnknownPropertyException,
+           beans::PropertyVetoException,
+           lang::IllegalArgumentException,
+              lang::WrappedTargetException )
 {
     SolarMutexGuard aGuard;
 
@@ -230,7 +200,7 @@ void GraphicRendererVCL::_setPropertyValues( const comphelper::PropertyMapEntry*
 
                 if( *pValues >>= aAWTRect )
                 {
-                    maDestRect = tools::Rectangle( Point( aAWTRect.X, aAWTRect.Y ),
+                    maDestRect = Rectangle( Point( aAWTRect.X, aAWTRect.Y ),
                                             Size( aAWTRect.Width, aAWTRect.Height ) );
                 }
             }
@@ -238,7 +208,7 @@ void GraphicRendererVCL::_setPropertyValues( const comphelper::PropertyMapEntry*
 
             case UNOGRAPHIC_RENDERDATA:
             {
-                 maRenderData = *pValues;
+                *pValues >>= maRenderData;
             }
             break;
         }
@@ -250,6 +220,7 @@ void GraphicRendererVCL::_setPropertyValues( const comphelper::PropertyMapEntry*
 
 
 void GraphicRendererVCL::_getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, uno::Any* pValues )
+    throw( beans::UnknownPropertyException, lang::WrappedTargetException )
 {
     SolarMutexGuard aGuard;
 
@@ -275,7 +246,7 @@ void GraphicRendererVCL::_getPropertyValues( const comphelper::PropertyMapEntry*
 
             case UNOGRAPHIC_RENDERDATA:
             {
-                *pValues = maRenderData;
+                *pValues <<= maRenderData;
             }
             break;
         }
@@ -287,6 +258,7 @@ void GraphicRendererVCL::_getPropertyValues( const comphelper::PropertyMapEntry*
 
 
 void SAL_CALL GraphicRendererVCL::render( const uno::Reference< graphic::XGraphic >& rxGraphic )
+    throw (uno::RuntimeException, std::exception)
 {
     if( mpOutDev && mxDevice.is() && rxGraphic.is() )
     {

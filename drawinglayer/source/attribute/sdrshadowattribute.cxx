@@ -91,11 +91,6 @@ namespace drawinglayer
         {
         }
 
-        SdrShadowAttribute::SdrShadowAttribute(SdrShadowAttribute&& rCandidate)
-        :   mpSdrShadowAttribute(std::move(rCandidate.mpSdrShadowAttribute))
-        {
-        }
-
         SdrShadowAttribute::~SdrShadowAttribute()
         {
         }
@@ -108,12 +103,6 @@ namespace drawinglayer
         SdrShadowAttribute& SdrShadowAttribute::operator=(const SdrShadowAttribute& rCandidate)
         {
             mpSdrShadowAttribute = rCandidate.mpSdrShadowAttribute;
-            return *this;
-        }
-
-        SdrShadowAttribute& SdrShadowAttribute::operator=(SdrShadowAttribute&& rCandidate)
-        {
-            mpSdrShadowAttribute = std::move(rCandidate.mpSdrShadowAttribute);
             return *this;
         }
 

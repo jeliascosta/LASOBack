@@ -50,8 +50,8 @@ class ChartTypeTabPage : public ResourceChangeListener, public svt::OWizardPage,
 public:
     ChartTypeTabPage( vcl::Window* pParent
                 , const css::uno::Reference< css::chart2::XChartDocument >& xChartModel
-                , bool bShowDescription = true );
-    virtual ~ChartTypeTabPage() override;
+                , bool bDoLiveUpdate, bool bShowDescription = true );
+    virtual ~ChartTypeTabPage();
     virtual void        dispose() override;
 
     virtual void        initializePage() override;
@@ -70,8 +70,8 @@ protected:
     void commitToModel( const ChartTypeParameter& rParameter );
     void selectMainType();
 
-    DECL_LINK( SelectMainTypeHdl, ListBox&, void );
-    DECL_LINK( SelectSubTypeHdl, ValueSet*, void );
+    DECL_LINK_TYPED( SelectMainTypeHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectSubTypeHdl, ValueSet*, void );
 
 protected:
     VclPtr<FixedText>  m_pFT_ChooseType;
@@ -87,10 +87,11 @@ protected:
 
     css::uno::Reference< css::chart2::XChartDocument >   m_xChartModel;
 
-    std::vector< ChartTypeDialogController* > m_aChartTypeDialogControllerList;
+    ::std::vector< ChartTypeDialogController* > m_aChartTypeDialogControllerList;
     ChartTypeDialogController*                  m_pCurrentMainType;
 
     sal_Int32 m_nChangingCalls;
+    bool      m_bDoLiveUpdate;
 
     TimerTriggeredControllerLock   m_aTimerTriggeredControllerLock;
 };

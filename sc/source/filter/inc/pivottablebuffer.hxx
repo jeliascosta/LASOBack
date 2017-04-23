@@ -20,6 +20,7 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_PIVOTTABLEBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_PIVOTTABLEBUFFER_HXX
 
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include "pivotcachebuffer.hxx"
 #include "stylesbuffer.hxx"
 
@@ -152,7 +153,7 @@ public:
                             const css::uno::Reference< css::sheet::XDataPilotDescriptor >& rxDPDesc);
 
     /** Returns the name of the DataPilot field in the fields collection. */
-    const OUString& getDPFieldName() const { return maDPFieldName; }
+    inline const OUString& getDPFieldName() const { return maDPFieldName; }
 
     /** Converts dimension and other settings for a row field. */
     void                convertRowField();
@@ -270,7 +271,8 @@ struct PTDefinitionModel : public AutoFormatModel
 
 struct PTLocationModel
 {
-    ScRange             maRange;            /// Target cell range for the pivot table.
+    css::table::CellRangeAddress
+                        maRange;            /// Target cell range for the pivot table.
     sal_Int32           mnFirstHeaderRow;   /// First row of header cells (relative in pivot table).
     sal_Int32           mnFirstDataRow;     /// First row of data cells (relative in pivot table).
     sal_Int32           mnFirstDataCol;     /// First column of data cells (relative in pivot table).

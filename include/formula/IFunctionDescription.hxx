@@ -20,21 +20,15 @@
 #ifndef INCLUDED_FORMULA_IFUNCTIONDESCRIPTION_HXX
 #define INCLUDED_FORMULA_IFUNCTIONDESCRIPTION_HXX
 
-#include <memory>
 #include <vector>
-
-#include <com/sun/star/table/CellAddress.hpp>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/Sequence.hxx>
-#include <rtl/string.hxx>
+#include <memory>
+#include <formula/formuladllapi.h>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <tools/solar.h>
+#include <com/sun/star/sheet/XFormulaParser.hpp>
+#include <com/sun/star/sheet/XFormulaOpCodeMapper.hpp>
 
-namespace com { namespace sun { namespace star {
-    namespace sheet { struct FormulaToken; }
-    namespace sheet { class XFormulaOpCodeMapper; }
-    namespace sheet { class XFormulaParser; }
-} } }
+class SvTreeListEntry;
 
 namespace formula
 {
@@ -137,6 +131,7 @@ namespace formula
 
         virtual void clear() = 0;
         virtual void deleteFormData() = 0;
+        virtual void setReferenceInput(const FormEditData* _pData) = 0;
 
         virtual IFunctionManager*   getFunctionManager() = 0;
         virtual ::std::unique_ptr<FormulaTokenArray> convertToTokenArray(const css::uno::Sequence< css::sheet::FormulaToken >& _aTokenList) = 0;

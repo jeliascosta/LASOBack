@@ -56,25 +56,26 @@ namespace logging
         );
 
     public:
+        bool    getIsInitialized() const { return m_bInitialized; }
         void    setIsInitialized() { m_bInitialized = true; }
 
         bool    getEncoding(        OUString& _out_rEncoding ) const;
         bool    setEncoding( const  OUString& _rEncoding     );
 
-        rtl_TextEncoding
+        inline  rtl_TextEncoding
                 getTextEncoding() const { return m_eEncoding; }
 
         const css::uno::Reference< css::logging::XLogFormatter >&
                 getFormatter() const { return m_xFormatter; }
-        void
+        inline  void
                 setFormatter( const css::uno::Reference< css::logging::XLogFormatter >& _rxFormatter )
                 {
                     m_xFormatter = _rxFormatter;
                 }
 
-        sal_Int32
+        inline  sal_Int32
                 getLevel() const { return m_nLevel; }
-        void
+        inline  void
                 setLevel( const sal_Int32 _nLevel )
                 {
                     m_nLevel = _nLevel;

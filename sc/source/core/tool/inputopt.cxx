@@ -97,25 +97,35 @@ ScInputOptions& ScInputOptions::operator=( const ScInputOptions& rCpy )
 #define SCINPUTOPT_TEXTWYSIWYG             9
 #define SCINPUTOPT_REPLCELLSWARN          10
 #define SCINPUTOPT_LEGACY_CELL_SELECTION  11
+#define SCINPUTOPT_COUNT                  12
 
 Sequence<OUString> ScInputCfg::GetPropertyNames()
 {
-    return {"MoveSelectionDirection",   // SCINPUTOPT_MOVEDIR
-            "MoveSelection",            // SCINPUTOPT_MOVESEL
-            "SwitchToEditMode",         // SCINPUTOPT_EDTEREDIT
-            "ExpandFormatting",         // SCINPUTOPT_EXTENDFMT
-            "ShowReference",            // SCINPUTOPT_RANGEFIND
-            "ExpandReference",          // SCINPUTOPT_EXPANDREFS
-            "UpdateReferenceOnSort",    // SCINPUTOPT_SORT_REF_UPDATE
-            "HighlightSelection",       // SCINPUTOPT_MARKHEADER
-            "UseTabCol",                // SCINPUTOPT_USETABCOL
-            "UsePrinterMetrics",        // SCINPUTOPT_TEXTWYSIWYG
-            "ReplaceCellsWarning",      // SCINPUTOPT_REPLCELLSWARN
-            "LegacyCellSelection"};     // SCINPUTOPT_LEGACY_CELL_SELECTION
+    static const char* aPropNames[] =
+    {
+        "MoveSelectionDirection",   // SCINPUTOPT_MOVEDIR
+        "MoveSelection",            // SCINPUTOPT_MOVESEL
+        "SwitchToEditMode",         // SCINPUTOPT_EDTEREDIT
+        "ExpandFormatting",         // SCINPUTOPT_EXTENDFMT
+        "ShowReference",            // SCINPUTOPT_RANGEFIND
+        "ExpandReference",          // SCINPUTOPT_EXPANDREFS
+        "UpdateReferenceOnSort",    // SCINPUTOPT_SORT_REF_UPDATE
+        "HighlightSelection",       // SCINPUTOPT_MARKHEADER
+        "UseTabCol",                // SCINPUTOPT_USETABCOL
+        "UsePrinterMetrics",        // SCINPUTOPT_TEXTWYSIWYG
+        "ReplaceCellsWarning",      // SCINPUTOPT_REPLCELLSWARN
+        "LegacyCellSelection"       // SCINPUTOPT_LEGACY_CELL_SELECTION
+    };
+    Sequence<OUString> aNames(SCINPUTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCINPUTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 ScInputCfg::ScInputCfg() :
-    ConfigItem( CFGPATH_INPUT )
+    ConfigItem( OUString( CFGPATH_INPUT ) )
 {
     Sequence<OUString> aNames = GetPropertyNames();
     Sequence<Any> aValues = GetProperties(aNames);

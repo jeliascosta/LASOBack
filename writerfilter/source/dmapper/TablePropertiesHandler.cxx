@@ -46,6 +46,13 @@ namespace dmapper {
     {
     }
 
+
+    TablePropertiesHandler::~TablePropertiesHandler( )
+    {
+        // Do not delete the table manager... this will be done somewhere else
+        m_pTableManager = nullptr;
+    }
+
     bool TablePropertiesHandler::sprm(Sprm & rSprm)
     {
 #ifdef DEBUG_WRITERFILTER
@@ -195,7 +202,7 @@ namespace dmapper {
                     {
                         beans::PropertyValue aValue;
                         aValue.Name = "vAlign";
-                        aValue.Value <<= aVertOrient;
+                        aValue.Value = uno::makeAny(aVertOrient);
                         m_pCurrentInteropGrabBag->push_back(aValue);
                     }
                 }
@@ -369,7 +376,7 @@ namespace dmapper {
                     {
                         beans::PropertyValue aValue;
                         aValue.Name = (nSprmId == NS_ooxml::LN_CT_TblPrBase_tblStyleRowBandSize ? OUString("tblStyleRowBandSize") : OUString("tblStyleColBandSize"));
-                        aValue.Value <<= nIntValue;
+                        aValue.Value = uno::makeAny(nIntValue);
                         m_pCurrentInteropGrabBag->push_back(aValue);
                     }
                     break;

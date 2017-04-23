@@ -51,7 +51,7 @@ namespace rptui
         OPropertyMediator(OPropertyMediator&) = delete;
         void operator =(OPropertyMediator&) = delete;
     protected:
-        virtual ~OPropertyMediator() override;
+        virtual ~OPropertyMediator();
 
         /** this function is called upon disposing the component
         */
@@ -63,10 +63,10 @@ namespace rptui
                         ,bool _bReverse = false);
 
         // css::beans::XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw(css::uno::RuntimeException, std::exception) override;
 
         // css::lang::XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception) override;
 
         /** stop the listening mode.
          */

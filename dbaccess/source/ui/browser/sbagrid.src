@@ -20,29 +20,55 @@
 #include "dbaccess_helpid.hrc"
 #include "browserids.hxx"
 
-String RID_STR_COLUMN_FORMAT
+Menu RID_SBA_GRID_COLCTXMENU
 {
-    Text [ en-US ] = "Column ~Format...";
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = ID_BROWSER_COLATTRSET ;
+            HelpID = HID_BROWSER_COLUMNFORMAT ;
+            Text [ en-US ] = "Column ~Format..." ;
+        };
+        MenuItem
+        {
+            Identifier = ID_BROWSER_COLWIDTH ;
+            HelpID = HID_BROWSER_COLUMNWIDTH ;
+            Text [ en-US ] = "Column ~Width..." ;
+            HelpID = HID_BROWSER_COLUMNWIDTH;
+        };
+        MenuItem
+        {
+            Identifier = ID_BROWSER_COLUMNINFO ;
+            HelpID = HID_BROWSER_COLUMNINFO ;
+            Text [ en-US ] = "Copy Column D~escription";
+        };
+    };
 };
 
-String RID_STR_COLUMN_WIDTH
+Menu RID_SBA_GRID_ROWCTXMENU
 {
-    Text [ en-US ] = "Column ~Width...";
-};
-
-String RID_STR_TABLE_FORMAT
-{
-    Text [ en-US ] = "Table Format...";
-};
-
-String RID_STR_ROW_HEIGHT
-{
-    Text [ en-US ] = "Row Height...";
-};
-
-String RID_STR_COPY
-{
-    Text [ en-US ] = "~Copy";
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = ID_BROWSER_TABLEATTR ;
+            HelpID = HID_BROWSER_TABLEFORMAT ;
+            Text [ en-US ] = "Table Format..." ;
+        };
+        MenuItem
+        {
+            Identifier = ID_BROWSER_ROWHEIGHT ;
+            HelpID = HID_BROWSER_ROWHEIGHT ;
+            Text [ en-US ] = "Row Height..." ;
+        };
+        MenuItem
+        {
+            Identifier = SID_COPY ;
+            Command = ".uno:Copy" ;
+            Text [ en-US ] = "~Copy" ;
+        };
+    };
 };
 
 String RID_STR_UNDO_MODIFY_RECORD

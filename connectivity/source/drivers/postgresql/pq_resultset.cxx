@@ -61,6 +61,7 @@ namespace pq_sdbc_driver
 {
 
 void ResultSet::checkClosed()
+    throw ( com::sun::star::sdbc::SQLException, com::sun::star::uno::RuntimeException )
 {
     if( ! m_result )
     {
@@ -94,13 +95,16 @@ ResultSet::ResultSet( const ::rtl::Reference< RefCountedMutex > & refMutex,
     // Positioned update/delete not supported, so no cursor name
     // Fetch direction and size are cursor-specific things, so not used now.
     // Fetch size not set
-    m_props[ BASERESULTSET_FETCH_DIRECTION ] <<= css::sdbc::FetchDirection::UNKNOWN;
+    m_props[ BASERESULTSET_FETCH_DIRECTION ] = makeAny(
+        com::sun::star::sdbc::FetchDirection::UNKNOWN);
     // No escape processing for now
     m_props[ BASERESULTSET_ESCAPE_PROCESSING ] <<= false;
     // Bookmarks not implemented for now
     m_props[ BASERESULTSET_IS_BOOKMARKABLE ] <<= false;
-    m_props[ BASERESULTSET_RESULT_SET_CONCURRENCY ] <<= css::sdbc::ResultSetConcurrency::READ_ONLY;
-    m_props[ BASERESULTSET_RESULT_SET_TYPE ] <<= css::sdbc::ResultSetType::SCROLL_INSENSITIVE;
+    m_props[ BASERESULTSET_RESULT_SET_CONCURRENCY ] = makeAny(
+        com::sun::star::sdbc::ResultSetConcurrency::READ_ONLY );
+    m_props[ BASERESULTSET_RESULT_SET_TYPE ] = makeAny(
+        com::sun::star::sdbc::ResultSetType::SCROLL_INSENSITIVE );
 }
 
 
@@ -117,7 +121,7 @@ Any ResultSet::getValue( sal_Int32 columnIndex )
         ret <<= OUString(
             PQgetvalue( m_result, m_row , columnIndex -1 ) ,
             PQgetlength( m_result, m_row , columnIndex -1 ) ,
-            ConnectionSettings::encoding );
+            (*m_ppSettings)->encoding );
 
     }
     return ret;
@@ -126,7 +130,7 @@ Any ResultSet::getValue( sal_Int32 columnIndex )
 ResultSet::~ResultSet()
 {}
 
-void ResultSet::close(  )
+void ResultSet::close(  ) throw (SQLException, RuntimeException, std::exception)
 {
     Reference< XInterface > owner;
     {
@@ -142,7 +146,7 @@ void ResultSet::close(  )
     }
 }
 
-Reference< XResultSetMetaData > ResultSet::getMetaData(  )
+Reference< XResultSetMetaData > ResultSet::getMetaData(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -151,11 +155,12 @@ Reference< XResultSetMetaData > ResultSet::getMetaData(  )
 }
 
 sal_Int32 ResultSet::findColumn( const OUString& columnName )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     sal_Int32 res = PQfnumber( m_result,
-                               OUStringToOString( columnName, ConnectionSettings::encoding ).getStr());
+                               OUStringToOString( columnName, (*m_ppSettings)->encoding ).getStr());
     /* PQfnumber return -1 for not found, which is what we want
      * other than that we use col number as 1-based not 0-based */
     if(res >= 0)
@@ -255,7 +260,7 @@ static bool isTimestamp( const char * data, sal_Int32 len )
 sal_Int32 ResultSet::guessDataType( sal_Int32 column )
 {
     // we don't look into more than 100 rows ...
-    sal_Int32 ret = css::sdbc::DataType::INTEGER;
+    sal_Int32 ret = com::sun::star::sdbc::DataType::INTEGER;
 
     int maxRows = ( m_rowCount > 100 ? 100 : m_rowCount );
     for( int i = 0 ; i < maxRows ; i ++ )
@@ -265,37 +270,37 @@ sal_Int32 ResultSet::guessDataType( sal_Int32 column )
             const char * p = PQgetvalue( m_result, i , column -1 );
             int len = PQgetlength( m_result, i , column -1 );
 
-            if( css::sdbc::DataType::INTEGER == ret )
+            if( com::sun::star::sdbc::DataType::INTEGER == ret )
             {
                 if( ! isInteger( p,len ) )
-                    ret = css::sdbc::DataType::NUMERIC;
+                    ret = com::sun::star::sdbc::DataType::NUMERIC;
             }
-            if( css::sdbc::DataType::NUMERIC == ret )
+            if( com::sun::star::sdbc::DataType::NUMERIC == ret )
             {
                 if( ! isNumber( p,len ) )
                 {
-                    ret = css::sdbc::DataType::DATE;
+                    ret = com::sun::star::sdbc::DataType::DATE;
                 }
             }
-            if( css::sdbc::DataType::DATE == ret )
+            if( com::sun::star::sdbc::DataType::DATE == ret )
             {
                 if( ! isDate( p,len ) )
                 {
-                    ret = css::sdbc::DataType::TIME;
+                    ret = com::sun::star::sdbc::DataType::TIME;
                 }
             }
-            if( css::sdbc::DataType::TIME == ret )
+            if( com::sun::star::sdbc::DataType::TIME == ret )
             {
                 if( ! isTime( p,len ) )
                 {
-                    ret = css::sdbc::DataType::TIMESTAMP;
+                    ret = com::sun::star::sdbc::DataType::TIMESTAMP;
                 }
             }
-            if( css::sdbc::DataType::TIMESTAMP == ret )
+            if( com::sun::star::sdbc::DataType::TIMESTAMP == ret )
             {
                 if( ! isTimestamp( p,len ) )
                 {
-                    ret = css::sdbc::DataType::LONGVARCHAR;
+                    ret = com::sun::star::sdbc::DataType::LONGVARCHAR;
                     break;
                 }
             }

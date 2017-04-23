@@ -19,14 +19,16 @@
 
 #include <svx/dialogs.hrc>
 
-Bitmap RID_SVXBMP_NOTCHECKED
+Image RID_SVXIMG_NOTCHECKED
 {
-    File = "notcheck.png";
+    ImageBitmap = Bitmap { File = "notcheck.bmp" ; } ;
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
 };
 
-Bitmap RID_SVXBMP_CHECKED
+Image RID_SVXIMG_CHECKED
 {
-    File = "lngcheck.png";
+    ImageBitmap = Bitmap { File = "lngcheck.bmp" ; } ;
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

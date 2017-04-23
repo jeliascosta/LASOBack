@@ -70,7 +70,7 @@ public:
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
     virtual bool        PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool        EventNotify( NotifyEvent& rEvt ) override;
+    virtual bool        Notify( NotifyEvent& rEvt ) override;
     virtual void        Resize() override;
     virtual void        GetFocus() override;
     void                DoResize();
@@ -90,20 +90,20 @@ void SfxFrameWindow_Impl::DataChanged( const DataChangedEvent& rDCEvt )
         pWorkWin->DataChanged_Impl( rDCEvt );
 }
 
-bool SfxFrameWindow_Impl::EventNotify( NotifyEvent& rNEvt )
+bool SfxFrameWindow_Impl::Notify( NotifyEvent& rNEvt )
 {
     if ( pFrame->IsClosing_Impl() || !pFrame->GetFrameInterface().is() )
         return false;
 
     SfxViewFrame* pView = pFrame->GetCurrentViewFrame();
     if ( !pView || !pView->GetObjectShell() )
-        return Window::EventNotify( rNEvt );
+        return Window::Notify( rNEvt );
 
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
     {
         if ( pView->GetViewShell() && !pView->GetViewShell()->GetUIActiveIPClient_Impl() && !pFrame->IsInPlace() )
         {
-            SAL_INFO("sfx", "SfxFrame: GotFocus");
+            OSL_TRACE("SfxFrame: GotFocus");
             pView->MakeActive_Impl( false );
         }
 
@@ -128,7 +128,7 @@ bool SfxFrameWindow_Impl::EventNotify( NotifyEvent& rNEvt )
         return true;
     }
 
-    return Window::EventNotify( rNEvt );
+    return Window::Notify( rNEvt );
 }
 
 bool SfxFrameWindow_Impl::PreNotify( NotifyEvent& rNEvt )
@@ -218,7 +218,7 @@ Reference < XFrame > SfxFrame::CreateBlankFrame()
     return xFrame;
 }
 
-SfxFrame* SfxFrame::Create( SfxObjectShell& rDoc, vcl::Window& rWindow, SfxInterfaceId nViewId, bool bHidden )
+SfxFrame* SfxFrame::Create( SfxObjectShell& rDoc, vcl::Window& rWindow, sal_uInt16 nViewId, bool bHidden )
 {
     SfxFrame* pFrame = nullptr;
     try
@@ -242,8 +242,8 @@ SfxFrame* SfxFrame::Create( SfxObjectShell& rDoc, vcl::Window& rWindow, SfxInter
         ::comphelper::NamedValueCollection aArgs( aLoadArgs );
         aArgs.put( "Model", rDoc.GetModel() );
         aArgs.put( "Hidden", bHidden );
-        if ( nViewId != SFX_INTERFACE_NONE )
-            aArgs.put( "ViewId", (sal_uInt16)nViewId );
+        if ( nViewId )
+            aArgs.put( "ViewId", nViewId );
 
         aLoadArgs = aArgs.getPropertyValues();
 
@@ -280,7 +280,7 @@ SfxFrame* SfxFrame::Create( const Reference < XFrame >& i_rFrame )
 {
     // create a new TopFrame to an external XFrame object ( wrap controller )
     ENSURE_OR_THROW( i_rFrame.is(), "NULL frame not allowed" );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( i_rFrame->getContainerWindow() );
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow( i_rFrame->getContainerWindow() );
     ENSURE_OR_THROW( pWindow, "frame without container window not allowed" );
 
     SfxFrame* pFrame = new SfxFrame( *pWindow );
@@ -290,6 +290,7 @@ SfxFrame* SfxFrame::Create( const Reference < XFrame >& i_rFrame )
 
 SfxFrame::SfxFrame( vcl::Window& i_rContainerWindow )
     :SvCompatWeakBase<SfxFrame>( this )
+    ,pParentFrame( nullptr )
     ,pChildArr( nullptr )
     ,pWindow( nullptr )
 {
@@ -400,7 +401,7 @@ void SfxFrame::PrepareForDoc_Impl( SfxObjectShell& i_rDoc )
     // plugin mode
     sal_Int16 nPluginMode = aDocumentArgs.getOrDefault( "PluginMode", sal_Int16( 0 ) );
     if ( nPluginMode && ( nPluginMode != 2 ) )
-        pImpl->bInPlace = true;
+        SetInPlace_Impl( true );
 }
 
 bool SfxFrame::IsMarkedHidden_Impl() const

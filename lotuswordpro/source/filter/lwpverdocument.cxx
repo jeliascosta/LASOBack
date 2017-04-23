@@ -78,12 +78,12 @@ void LwpVerDocument::Read()
 
     if (m_pObjStrm->CheckExtra())
     {
-        LwpLineNumberOptions aLineNumberOptions(m_pObjStrm.get());
+        LwpLineNumberOptions aLineNumberOptions(m_pObjStrm);
 
         if (m_pObjStrm->CheckExtra())
         {
             LwpPropList aPropList;
-            aPropList.Read(m_pObjStrm.get());
+            aPropList.Read(m_pObjStrm);
             m_pObjStrm->SkipExtra();
         }
     }

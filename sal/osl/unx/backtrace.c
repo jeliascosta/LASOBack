@@ -19,7 +19,7 @@
 
 #include "sal/types.h"
 
-#ifdef __sun
+#ifdef SOLARIS
 
 #include <dlfcn.h>
 #include <pthread.h>
@@ -94,12 +94,6 @@ int backtrace( void **buffer, int max_frames )
     return i;
 }
 
-char ** backtrace_symbols(void * const * buffer, int size)
-{
-    (void)buffer; (void)size;
-    return NULL; /*TODO*/
-}
-
 void backtrace_symbols_fd( void **buffer, int size, int fd )
 {
     FILE    *fp = fdopen( fd, "w" );
@@ -134,8 +128,9 @@ void backtrace_symbols_fd( void **buffer, int size, int fd )
     }
 }
 
-#elif defined FREEBSD || defined NETBSD || defined OPENBSD || defined(DRAGONFLY)
+#endif /* defined SOLARIS */
 
+#if defined FREEBSD || defined NETBSD || defined OPENBSD || defined(DRAGONFLY)
 #include <dlfcn.h>
 #include <pthread.h>
 #include <setjmp.h>
@@ -143,17 +138,8 @@ void backtrace_symbols_fd( void **buffer, int size, int fd )
 #include <stdio.h>
 #include "backtrace.h"
 
-#if defined(POWERPC) || defined(POWERPC64)
-
-#define FRAME_PTR_OFFSET 1
-#define FRAME_OFFSET     0
-
-#else
-
 #define FRAME_PTR_OFFSET 3
 #define FRAME_OFFSET 0
-
-#endif
 
 int backtrace( void **buffer, int max_frames )
 {
@@ -176,12 +162,6 @@ int backtrace( void **buffer, int max_frames )
     return i;
 }
 
-char ** backtrace_symbols(void * const * buffer, int size)
-{
-    (void)buffer; (void)size;
-    return NULL; /*TODO*/
-}
-
 void backtrace_symbols_fd( void **buffer, int size, int fd )
 {
     FILE    *fp = fdopen( fd, "w" );
@@ -213,8 +193,17 @@ void backtrace_symbols_fd( void **buffer, int size, int fd )
         fclose( fp );
     }
 }
+#endif /* defined FREEBSD */
 
-#elif defined( MACOSX )
+#ifdef LINUX
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#endif /* defined LINUX */
+
+#if defined( MACOSX )
 
 #include <dlfcn.h>
 #include <stdio.h>
@@ -239,12 +228,6 @@ int backtrace( void **buffer, int max_frames )
     }
 
     return i;
-}
-
-char ** backtrace_symbols(void * const * buffer, int size)
-{
-    (void)buffer; (void)size;
-    return NULL; /*TODO*/
 }
 
 void backtrace_symbols_fd( void **buffer, int size, int fd )
@@ -282,25 +265,17 @@ void backtrace_symbols_fd( void **buffer, int size, int fd )
     }
 }
 
-#elif !defined LINUX
+#endif /* defined MACOSX */
 
+#if defined(AIX)
 int backtrace( void **buffer, int max_frames )
 {
-    (void)buffer; (void)max_frames;
     return 0;
-}
-
-char ** backtrace_symbols(void * const * buffer, int size)
-{
-    (void)buffer; (void)size;
-    return NULL; /*TODO*/
 }
 
 void backtrace_symbols_fd( void **buffer, int size, int fd )
 {
-    (void)buffer; (void)size; (void)fd;
 }
-
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

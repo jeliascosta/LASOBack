@@ -40,7 +40,7 @@ using namespace com::sun::star;
 
 
 // uno::XInterface
-uno::Any VCLXGraphics::queryInterface( const uno::Type & rType )
+uno::Any VCLXGraphics::queryInterface( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< css::awt::XGraphics* >(this)),
@@ -59,7 +59,7 @@ IMPL_XTYPEPROVIDER_END
 
 VCLXGraphics::VCLXGraphics()
     : mpOutputDevice(nullptr)
-    , meRasterOp(RasterOp::OverPaint)
+    , meRasterOp(ROP_OVERPAINT)
     , mpClipRegion(nullptr)
 {
 }
@@ -116,7 +116,7 @@ void VCLXGraphics::initAttrs()
     maTextFillColor = mpOutputDevice->GetTextFillColor(); /* COL_TRANSPARENT */
     maLineColor     = mpOutputDevice->GetLineColor(); /* COL_BLACK */
     maFillColor     = mpOutputDevice->GetFillColor(); /* COL_WHITE */
-    meRasterOp      = mpOutputDevice->GetRasterOp(); /* RasterOp::OverPaint */
+    meRasterOp      = mpOutputDevice->GetRasterOp(); /* ROP_OVERPAINT */
 }
 
 void VCLXGraphics::InitOutputDevice( InitOutDevFlags nFlags )
@@ -138,16 +138,22 @@ void VCLXGraphics::InitOutputDevice( InitOutDevFlags nFlags )
             mpOutputDevice->SetFillColor( maFillColor );
         }
 
-        mpOutputDevice->SetRasterOp( meRasterOp );
+        if ( nFlags & InitOutDevFlags::RASTEROP )
+        {
+            mpOutputDevice->SetRasterOp( meRasterOp );
+        }
 
-        if( mpClipRegion )
-            mpOutputDevice->SetClipRegion( *mpClipRegion );
-        else
-            mpOutputDevice->SetClipRegion();
+        if ( nFlags & InitOutDevFlags::CLIPREGION )
+        {
+            if( mpClipRegion )
+                mpOutputDevice->SetClipRegion( *mpClipRegion );
+            else
+                mpOutputDevice->SetClipRegion();
+        }
     }
 }
 
-uno::Reference< awt::XDevice > VCLXGraphics::getDevice()
+uno::Reference< awt::XDevice > VCLXGraphics::getDevice() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -160,7 +166,7 @@ uno::Reference< awt::XDevice > VCLXGraphics::getDevice()
     return mxDevice;
 }
 
-awt::SimpleFontMetric VCLXGraphics::getFontMetric()
+awt::SimpleFontMetric VCLXGraphics::getFontMetric() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -173,56 +179,56 @@ awt::SimpleFontMetric VCLXGraphics::getFontMetric()
     return aM;
 }
 
-void VCLXGraphics::setFont( const uno::Reference< awt::XFont >& rxFont )
+void VCLXGraphics::setFont( const uno::Reference< awt::XFont >& rxFont ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maFont = VCLUnoHelper::CreateFont( rxFont );
 }
 
-void VCLXGraphics::selectFont( const awt::FontDescriptor& rDescription )
+void VCLXGraphics::selectFont( const awt::FontDescriptor& rDescription ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maFont = VCLUnoHelper::CreateFont( rDescription, vcl::Font() );
 }
 
-void VCLXGraphics::setTextColor( sal_Int32 nColor )
+void VCLXGraphics::setTextColor( sal_Int32 nColor ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maTextColor = Color( (sal_uInt32)nColor );
 }
 
-void VCLXGraphics::setTextFillColor( sal_Int32 nColor )
+void VCLXGraphics::setTextFillColor( sal_Int32 nColor ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maTextFillColor = Color( (sal_uInt32)nColor );
 }
 
-void VCLXGraphics::setLineColor( sal_Int32 nColor )
+void VCLXGraphics::setLineColor( sal_Int32 nColor ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maLineColor = Color( (sal_uInt32)nColor );
 }
 
-void VCLXGraphics::setFillColor( sal_Int32 nColor )
+void VCLXGraphics::setFillColor( sal_Int32 nColor ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     maFillColor = Color( (sal_uInt32)nColor );
 }
 
-void VCLXGraphics::setRasterOp( awt::RasterOperation eROP )
+void VCLXGraphics::setRasterOp( awt::RasterOperation eROP ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     meRasterOp = (RasterOp)eROP;
 }
 
-void VCLXGraphics::setClipRegion( const uno::Reference< awt::XRegion >& rxRegion )
+void VCLXGraphics::setClipRegion( const uno::Reference< awt::XRegion >& rxRegion ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -233,7 +239,7 @@ void VCLXGraphics::setClipRegion( const uno::Reference< awt::XRegion >& rxRegion
         mpClipRegion = nullptr;
 }
 
-void VCLXGraphics::intersectClipRegion( const uno::Reference< awt::XRegion >& rxRegion )
+void VCLXGraphics::intersectClipRegion( const uno::Reference< awt::XRegion >& rxRegion ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -247,7 +253,7 @@ void VCLXGraphics::intersectClipRegion( const uno::Reference< awt::XRegion >& rx
     }
 }
 
-void VCLXGraphics::push(  )
+void VCLXGraphics::push(  ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -256,7 +262,7 @@ void VCLXGraphics::push(  )
         mpOutputDevice->Push();
 }
 
-void VCLXGraphics::pop(  )
+void VCLXGraphics::pop(  ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -267,17 +273,18 @@ void VCLXGraphics::pop(  )
 
 void VCLXGraphics::clear(
     const awt::Rectangle& aRect )
+throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        const ::tools::Rectangle aVCLRect = VCLUnoHelper::ConvertToVCLRect( aRect );
+        const ::Rectangle aVCLRect = VCLUnoHelper::ConvertToVCLRect( aRect );
         mpOutputDevice->Erase( aVCLRect );
     }
 }
 
-void VCLXGraphics::copy( const uno::Reference< awt::XDevice >& rxSource, sal_Int32 nSourceX, sal_Int32 nSourceY, sal_Int32 nSourceWidth, sal_Int32 nSourceHeight, sal_Int32 nDestX, sal_Int32 nDestY, sal_Int32 nDestWidth, sal_Int32 nDestHeight )
+void VCLXGraphics::copy( const uno::Reference< awt::XDevice >& rxSource, sal_Int32 nSourceX, sal_Int32 nSourceY, sal_Int32 nSourceWidth, sal_Int32 nSourceHeight, sal_Int32 nDestX, sal_Int32 nDestY, sal_Int32 nDestWidth, sal_Int32 nDestHeight ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -287,20 +294,20 @@ void VCLXGraphics::copy( const uno::Reference< awt::XDevice >& rxSource, sal_Int
         DBG_ASSERT( pFromDev, "VCLXGraphics::copy - invalid device" );
         if ( pFromDev )
         {
-            InitOutputDevice( InitOutDevFlags::NONE );
+            InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP );
             mpOutputDevice->DrawOutDev( Point( nDestX, nDestY ), Size( nDestWidth, nDestHeight ),
                                     Point( nSourceX, nSourceY ), Size( nSourceWidth, nSourceHeight ), *pFromDev->GetOutputDevice() );
         }
     }
 }
 
-void VCLXGraphics::draw( const uno::Reference< awt::XDisplayBitmap >& rxBitmapHandle, sal_Int32 nSourceX, sal_Int32 nSourceY, sal_Int32 nSourceWidth, sal_Int32 nSourceHeight, sal_Int32 nDestX, sal_Int32 nDestY, sal_Int32 nDestWidth, sal_Int32 nDestHeight )
+void VCLXGraphics::draw( const uno::Reference< awt::XDisplayBitmap >& rxBitmapHandle, sal_Int32 nSourceX, sal_Int32 nSourceY, sal_Int32 nSourceWidth, sal_Int32 nSourceHeight, sal_Int32 nDestX, sal_Int32 nDestY, sal_Int32 nDestWidth, sal_Int32 nDestHeight ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::NONE);
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP);
         uno::Reference< awt::XBitmap > xBitmap( rxBitmapHandle, uno::UNO_QUERY );
         BitmapEx aBmpEx = VCLUnoHelper::GetBitmap( xBitmap );
 
@@ -320,85 +327,85 @@ void VCLXGraphics::draw( const uno::Reference< awt::XDisplayBitmap >& rxBitmapHa
         }
 
         if(nSourceX || nSourceY || aSz.Width() != nSourceWidth || aSz.Height() != nSourceHeight)
-            mpOutputDevice->IntersectClipRegion(vcl::Region(tools::Rectangle(nDestX, nDestY, nDestX + nDestWidth - 1, nDestY + nDestHeight - 1)));
+            mpOutputDevice->IntersectClipRegion(vcl::Region(Rectangle(nDestX, nDestY, nDestX + nDestWidth - 1, nDestY + nDestHeight - 1)));
 
         mpOutputDevice->DrawBitmapEx( aPos, aSz, aBmpEx );
     }
 }
 
-void VCLXGraphics::drawPixel( sal_Int32 x, sal_Int32 y )
+void VCLXGraphics::drawPixel( sal_Int32 x, sal_Int32 y ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         mpOutputDevice->DrawPixel( Point( x, y ) );
     }
 }
 
-void VCLXGraphics::drawLine( sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 )
+void VCLXGraphics::drawLine( sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         mpOutputDevice->DrawLine( Point( x1, y1 ), Point( x2, y2 ) );
     }
 }
 
-void VCLXGraphics::drawRect( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height )
+void VCLXGraphics::drawRect( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawRect( tools::Rectangle( Point( x, y ), Size( width, height ) ) );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawRect( Rectangle( Point( x, y ), Size( width, height ) ) );
     }
 }
 
-void VCLXGraphics::drawRoundedRect( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 nHorzRound, sal_Int32 nVertRound )
+void VCLXGraphics::drawRoundedRect( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 nHorzRound, sal_Int32 nVertRound ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawRect( tools::Rectangle( Point( x, y ), Size( width, height ) ), nHorzRound, nVertRound );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawRect( Rectangle( Point( x, y ), Size( width, height ) ), nHorzRound, nVertRound );
     }
 }
 
-void VCLXGraphics::drawPolyLine( const uno::Sequence< sal_Int32 >& DataX, const uno::Sequence< sal_Int32 >& DataY )
+void VCLXGraphics::drawPolyLine( const uno::Sequence< sal_Int32 >& DataX, const uno::Sequence< sal_Int32 >& DataY ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         mpOutputDevice->DrawPolyLine( VCLUnoHelper::CreatePolygon( DataX, DataY ) );
     }
 }
 
-void VCLXGraphics::drawPolygon( const uno::Sequence< sal_Int32 >& DataX, const uno::Sequence< sal_Int32 >& DataY )
+void VCLXGraphics::drawPolygon( const uno::Sequence< sal_Int32 >& DataX, const uno::Sequence< sal_Int32 >& DataY ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         mpOutputDevice->DrawPolygon( VCLUnoHelper::CreatePolygon( DataX, DataY ) );
     }
 }
 
-void VCLXGraphics::drawPolyPolygon( const uno::Sequence< uno::Sequence< sal_Int32 > >& DataX, const uno::Sequence< uno::Sequence< sal_Int32 > >& DataY )
+void VCLXGraphics::drawPolyPolygon( const uno::Sequence< uno::Sequence< sal_Int32 > >& DataX, const uno::Sequence< uno::Sequence< sal_Int32 > >& DataY ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         sal_uInt16 nPolys = (sal_uInt16) DataX.getLength();
         tools::PolyPolygon aPolyPoly( nPolys );
         for ( sal_uInt16 n = 0; n < nPolys; n++ )
@@ -408,57 +415,57 @@ void VCLXGraphics::drawPolyPolygon( const uno::Sequence< uno::Sequence< sal_Int3
     }
 }
 
-void VCLXGraphics::drawEllipse( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height )
+void VCLXGraphics::drawEllipse( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawEllipse( tools::Rectangle( Point( x, y ), Size( width, height ) ) );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawEllipse( Rectangle( Point( x, y ), Size( width, height ) ) );
     }
 }
 
-void VCLXGraphics::drawArc( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 )
+void VCLXGraphics::drawArc( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawArc( tools::Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawArc( Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
     }
 }
 
-void VCLXGraphics::drawPie( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 )
+void VCLXGraphics::drawPie( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawPie( tools::Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawPie( Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
     }
 }
 
-void VCLXGraphics::drawChord( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 )
+void VCLXGraphics::drawChord( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int32 x1, sal_Int32 y1, sal_Int32 x2, sal_Int32 y2 ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
-        mpOutputDevice->DrawChord( tools::Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
+        mpOutputDevice->DrawChord( Rectangle( Point( x, y ), Size( width, height ) ), Point( x1, y1 ), Point( x2, y2 ) );
     }
 }
 
-void VCLXGraphics::drawGradient( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, const awt::Gradient& rGradient )
+void VCLXGraphics::drawGradient( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, const awt::Gradient& rGradient ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
         Gradient aGradient((GradientStyle)rGradient.Style, rGradient.StartColor, rGradient.EndColor);
         aGradient.SetAngle(rGradient.Angle);
         aGradient.SetBorder(rGradient.Border);
@@ -467,28 +474,28 @@ void VCLXGraphics::drawGradient( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_
         aGradient.SetStartIntensity(rGradient.StartIntensity);
         aGradient.SetEndIntensity(rGradient.EndIntensity);
         aGradient.SetSteps(rGradient.StepCount);
-        mpOutputDevice->DrawGradient( tools::Rectangle( Point( x, y ), Size( width, height ) ), aGradient );
+        mpOutputDevice->DrawGradient( Rectangle( Point( x, y ), Size( width, height ) ), aGradient );
     }
 }
 
-void VCLXGraphics::drawText( sal_Int32 x, sal_Int32 y, const OUString& rText )
+void VCLXGraphics::drawText( sal_Int32 x, sal_Int32 y, const OUString& rText ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS |InitOutDevFlags::FONT);
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS |InitOutDevFlags::FONT);
         mpOutputDevice->DrawText( Point( x, y ), rText );
     }
 }
 
-void VCLXGraphics::drawTextArray( sal_Int32 x, sal_Int32 y, const OUString& rText, const uno::Sequence< sal_Int32 >& rLongs )
+void VCLXGraphics::drawTextArray( sal_Int32 x, sal_Int32 y, const OUString& rText, const uno::Sequence< sal_Int32 >& rLongs ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     if( mpOutputDevice )
     {
-        InitOutputDevice( InitOutDevFlags::COLORS|InitOutDevFlags::FONT );
+        InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS|InitOutDevFlags::FONT );
         std::unique_ptr<long []> pDXA(new long[rText.getLength()]);
         for(int i = 0; i < rText.getLength(); i++)
         {
@@ -499,7 +506,7 @@ void VCLXGraphics::drawTextArray( sal_Int32 x, sal_Int32 y, const OUString& rTex
 }
 
 
-void VCLXGraphics::drawImage( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int16 nStyle, const uno::Reference< graphic::XGraphic >& xGraphic )
+void VCLXGraphics::drawImage( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int32 height, sal_Int16 nStyle, const uno::Reference< graphic::XGraphic >& xGraphic ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -508,7 +515,7 @@ void VCLXGraphics::drawImage( sal_Int32 x, sal_Int32 y, sal_Int32 width, sal_Int
         Image aImage( xGraphic );
         if ( !!aImage )
         {
-            InitOutputDevice( InitOutDevFlags::COLORS );
+            InitOutputDevice( InitOutDevFlags::CLIPREGION|InitOutDevFlags::RASTEROP|InitOutDevFlags::COLORS );
             mpOutputDevice->DrawImage( Point( x, y ), Size( width, height ), aImage, static_cast<DrawImageFlags>(nStyle) );
         }
     }

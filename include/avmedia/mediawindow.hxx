@@ -65,7 +65,7 @@ namespace avmedia
 
         vcl::Window*             getWindow() const;
 
-        void                setPosSize( const tools::Rectangle& rNewRect );
+        void                setPosSize( const Rectangle& rNewRect );
 
         void                setPointer( const Pointer& rPointer );
 
@@ -107,6 +107,9 @@ namespace avmedia
 
         static css::uno::Reference< css::graphic::XGraphic > grabFrame( const OUString& rURL, const OUString& rReferer,
             const OUString& sMimeType );
+
+        static BitmapEx getAudioLogo();
+        static BitmapEx getEmptyLogo();
 
     private:
         MediaWindow(const MediaWindow&) = delete;

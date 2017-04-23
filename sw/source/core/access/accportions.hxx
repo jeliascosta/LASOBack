@@ -38,15 +38,15 @@ namespace com { namespace sun { namespace star {
 class SwAccessiblePortionData : public SwPortionHandler
 {
     // the node this portion is referring to
-    const SwTextNode* m_pTextNode;
+    const SwTextNode* pTextNode;
 
     // variables used while collecting the data
-    OUStringBuffer m_aBuffer;
-    sal_Int32 m_nModelPosition;
-    const SwViewOption* m_pViewOptions;
+    OUStringBuffer aBuffer;
+    sal_Int32 nModelPosition;
+    const SwViewOption* pViewOptions;
 
     // the accessible string
-    OUString m_sAccessibleString;
+    OUString sAccessibleString;
 
     // positions array
     // instances of Position_t must always include the minimum and
@@ -54,20 +54,20 @@ class SwAccessiblePortionData : public SwPortionHandler
     // algorithms)
     typedef std::vector<sal_Int32> Positions_t;
 
-    Positions_t m_aLineBreaks;        /// position of line breaks
-    Positions_t m_aModelPositions;    /// position of portion breaks in the model
-    Positions_t m_aAccessiblePositions;   /// portion breaks in sAccessibleString
-    Positions_t m_aFieldPosition;
-    Positions_t m_aAttrFieldType;
+    Positions_t aLineBreaks;        /// position of line breaks
+    Positions_t aModelPositions;    /// position of portion breaks in the model
+    Positions_t aAccessiblePositions;   /// portion breaks in sAccessibleString
+    Positions_t aFieldPosition;
+    Positions_t aAttrFieldType;
 
     typedef std::vector<sal_uInt8> PortionAttrs_t;
-    PortionAttrs_t m_aPortionAttrs;   /// additional portion attributes
+    PortionAttrs_t aPortionAttrs;   /// additional portion attributes
 
-    std::unique_ptr<Positions_t> m_pSentences;    /// positions of sentence breaks
+    Positions_t* pSentences;    /// positions of sentence breaks
 
-    size_t m_nBeforePortions;     /// # of portions before first model character
-    bool m_bFinished;
-    bool m_bLastIsSpecial;    /// set if last portion was 'Special()'
+    size_t nBeforePortions;     /// # of portions before first model character
+    bool bFinished;
+    bool bLastIsSpecial;    /// set if last portion was 'Special()'
 
     /// returns the index of the first position whose value is smaller
     /// or equal, and whose following value is equal or larger
@@ -84,6 +84,7 @@ class SwAccessiblePortionData : public SwPortionHandler
     /// Access to portion attributes
     bool IsPortionAttrSet( size_t nPortionNo, sal_uInt8 nAttr ) const;
     bool IsSpecialPortion( size_t nPortionNo ) const;
+    bool IsReadOnlyPortion( size_t nPortionNo ) const;
     bool IsGrayPortionType( sal_uInt16 nType ) const;
 
     // helper method for GetEditableRange(...):
@@ -92,8 +93,8 @@ class SwAccessiblePortionData : public SwPortionHandler
 
 public:
     SwAccessiblePortionData( const SwTextNode* pTextNd,
-                             const SwViewOption* pViewOpt );
-    virtual ~SwAccessiblePortionData() override;
+                             const SwViewOption* pViewOpt = nullptr );
+    virtual ~SwAccessiblePortionData();
 
     // SwPortionHandler methods
     virtual void Text(sal_Int32 nLength, sal_uInt16 nType, sal_Int32 nHeight = 0, sal_Int32 nWidth = 0) override;

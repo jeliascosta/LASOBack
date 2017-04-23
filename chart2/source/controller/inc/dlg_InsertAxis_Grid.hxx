@@ -52,7 +52,7 @@ protected:
 
 public:
     SchAxisDlg(vcl::Window* pParent, const InsertAxisOrGridDialogData& rInput, bool bAxisDlg=true);
-    virtual ~SchAxisDlg() override;
+    virtual ~SchAxisDlg();
     virtual void dispose() override;
 
     void getResult( InsertAxisOrGridDialogData& rOutput );

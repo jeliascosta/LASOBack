@@ -51,7 +51,7 @@ enum RPResultInfo
 
 struct ReferencePathInfo
 {
-    VclPtr<Menu>       pPopupMenu;
+    Menu*              pPopupMenu;
     sal_uInt16         nPos;
     sal_Int32          nLevel;
     RPResultInfo       eResult;

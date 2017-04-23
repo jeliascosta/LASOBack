@@ -68,7 +68,7 @@ sdbcx::ObjectType OKeysHelper::createObject(const OUString& _rName)
     return xRet;
 }
 
-void OKeysHelper::impl_refresh()
+void OKeysHelper::impl_refresh() throw(RuntimeException)
 {
     m_pTable->refreshKeys();
 }

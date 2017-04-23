@@ -90,7 +90,7 @@ namespace slideshow
             @param bCCW
             When true, hue interpolation happens counter-clockwise
         */
-        HSLColor interpolate( const HSLColor& rFrom, const HSLColor& rTo, double t, bool bCCW );
+        HSLColor interpolate( const HSLColor& rFrom, const HSLColor& rTo, double t, bool bCCW=true );
     }
 }
 

@@ -54,16 +54,16 @@ protected:
     SwField*            GetCurField()               { return m_pCurField;}
     SwWrtShell*         GetWrtShell() { return m_pWrtShell;}
 
-    DECL_LINK( ListBoxInsertHdl, ListBox&, void );
-    DECL_LINK( TreeListBoxInsertHdl, SvTreeListBox*, bool );
-    DECL_LINK( NumFormatHdl, ListBox&, void );
+    DECL_LINK_TYPED( ListBoxInsertHdl, ListBox&, void );
+    DECL_LINK_TYPED( TreeListBoxInsertHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( NumFormatHdl, ListBox&, void );
     void                InsertHdl(void *);
 
     void                Init();
     void                SavePos( const ListBox* pLst1);
     void                RestorePos( ListBox* pLst1 );
-    void                EnableInsert(bool bEnable);
-    bool         IsFieldEdit() const   { return m_bFieldEdit; }
+    void                EnableInsert(bool bEnable = true);
+    inline bool         IsFieldEdit() const   { return m_bFieldEdit; }
 
     // insert field
     void                InsertField(  sal_uInt16 nTypeId,
@@ -80,11 +80,11 @@ public:
     SwFieldPage(vcl::Window *pParent, const OString& rID,
         const OUString& rUIXMLDescription, const SfxItemSet *pAttrSet);
 
-    virtual ~SwFieldPage() override;
+    virtual ~SwFieldPage();
 
     virtual void        ActivatePage() override;
 
-    SwFieldMgr&    GetFieldMgr()         { return m_aMgr; }
+    inline SwFieldMgr&    GetFieldMgr()         { return m_aMgr; }
     void                SetWrtShell( SwWrtShell* m_pWrtShell );
     void                EditNewField( bool bOnlyActivate = false );
     virtual sal_uInt16      GetGroup() = 0;

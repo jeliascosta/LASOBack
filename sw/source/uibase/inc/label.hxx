@@ -55,7 +55,7 @@ public:
 
      SwLabDlg( vcl::Window* pParent, const SfxItemSet& rSet,
                  SwDBManager* pDBManager, bool bLabel);
-    virtual ~SwLabDlg() override;
+    virtual ~SwLabDlg();
     virtual void dispose() override;
 
     SwLabRec*   GetRecord(const OUString &rRecName, bool bCont);

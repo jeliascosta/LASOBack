@@ -20,9 +20,7 @@
 #include <doc.hxx>
 #include <list.hxx>
 #include <numrule.hxx>
-
-#include <comphelper/random.hxx>
-
+#include <rtl/random.h>
 #include <vector>
 
 
@@ -85,25 +83,25 @@ SwList* DocumentListsManager::getListByName( const OUString& sListId ) const
     return pList;
 }
 
-void DocumentListsManager::createListForListStyle( const OUString& sListStyleName )
+SwList* DocumentListsManager::createListForListStyle( const OUString& sListStyleName )
 {
     if ( sListStyleName.isEmpty() )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - no list style name provided. Serious defect." );
-        return;
+        return nullptr;
     }
 
     if ( getListForListStyle( sListStyleName ) )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - a list for the provided list style name already exists. Serious defect." );
-        return;
+        return nullptr;
     }
 
     SwNumRule* pNumRule = m_rDoc.FindNumRulePtr( sListStyleName );
     if ( !pNumRule )
     {
         OSL_FAIL( "<DocumentListsManager::createListForListStyle(..)> - for provided list style name no list style is found. Serious defect." );
-        return;
+        return nullptr;
     }
 
     OUString sListId( pNumRule->GetDefaultListId() ); // can be empty String
@@ -114,6 +112,8 @@ void DocumentListsManager::createListForListStyle( const OUString& sListStyleNam
     SwList* pNewList = createList( sListId, sListStyleName );
     maListStyleLists[sListStyleName] = pNewList;
     pNumRule->SetDefaultListId( pNewList->GetListId() );
+
+    return pNewList;
 }
 
 SwList* DocumentListsManager::getListForListStyle( const OUString& sListStyleName ) const
@@ -232,9 +232,13 @@ const OUString DocumentListsManager::CreateUniqueListId()
     else
     {
         // #i92478#
-        unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
-                                std::numeric_limits<unsigned int>::max()));
-        OUString const aNewListId = "list" + OUString::number(n);
+        OUString aNewListId( "list" );
+        // #o12311627#
+        static rtlRandomPool s_RandomPool( rtl_random_createPool() );
+        sal_Int64 n;
+        rtl_random_getBytes( s_RandomPool, &n, sizeof(n) );
+        aNewListId += OUString::number( (n < 0 ? -n : n) );
+
         return MakeListIdUnique( aNewListId );
     }
 }

@@ -373,7 +373,7 @@ void SchXMLPlotAreaContext::StartElement( const uno::Reference< xml::sax::XAttri
                 {
                     if( maChartTypeServiceName == "com.sun.star.chart2.AreaChartType" || maChartTypeServiceName == "com.sun.star.chart2.LineChartType" )
                     {
-                        aDeepProperty <<= true;
+                        aDeepProperty <<= uno::makeAny( true );
                     }
                 }
             }
@@ -666,11 +666,18 @@ SchXMLPositionAttributesHelper::~SchXMLPositionAttributesHelper()
 {
 }
 
+bool SchXMLPositionAttributesHelper::hasSize() const
+{
+    return m_bHasSizeWidth && m_bHasSizeHeight;
+}
+bool SchXMLPositionAttributesHelper::hasPosition() const
+{
+    return m_bHasPositionX && m_bHasPositionY;
+}
 bool SchXMLPositionAttributesHelper::hasPosSize() const
 {
-    return (m_bHasPositionX && m_bHasPositionY) && (m_bHasSizeWidth && m_bHasSizeHeight);
+    return hasPosition() && hasSize();
 }
-
 bool SchXMLPositionAttributesHelper::isAutomatic() const
 {
     return m_bAutoSize || m_bAutoPosition;
@@ -791,9 +798,21 @@ void SchXMLWallFloorContext::StartElement( const uno::Reference< xml::sax::XAttr
                                                      ? mxWallFloorSupplier->getWall()
                                                      : mxWallFloorSupplier->getFloor(),
                                                      uno::UNO_QUERY );
+        if( xProp.is())
+        {
+            if( !sAutoStyleName.isEmpty())
+            {
+                const SvXMLStylesContext* pStylesCtxt = mrImportHelper.GetAutoStylesContext();
+                if( pStylesCtxt )
+                {
+                    const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
+                        SchXMLImportHelper::GetChartFamilyID(), sAutoStyleName );
 
-        if (!sAutoStyleName.isEmpty())
-            mrImportHelper.FillAutoStyle(sAutoStyleName, xProp);
+                    if( pStyle && dynamic_cast< const XMLPropStyleContext*>(pStyle) !=  nullptr)
+                        const_cast<XMLPropStyleContext*>( static_cast<const XMLPropStyleContext*>( pStyle ) )->FillPropertySet( xProp );
+                }
+            }
+        }
     }
 }
 
@@ -851,8 +870,18 @@ void SchXMLStockContext::StartElement( const uno::Reference< xml::sax::XAttribut
                     xProp = mxStockPropProvider->getMinMaxLine();
                     break;
             }
+            if( xProp.is())
+            {
+                const SvXMLStylesContext* pStylesCtxt = mrImportHelper.GetAutoStylesContext();
+                if( pStylesCtxt )
+                {
+                    const SvXMLStyleContext* pStyle = pStylesCtxt->FindStyleChildContext(
+                        SchXMLImportHelper::GetChartFamilyID(), sAutoStyleName );
 
-            mrImportHelper.FillAutoStyle(sAutoStyleName, xProp);
+                    if( pStyle && dynamic_cast< const XMLPropStyleContext*>(pStyle) !=  nullptr)
+                        const_cast<XMLPropStyleContext*>( static_cast<const XMLPropStyleContext*>( pStyle ) )->FillPropertySet( xProp );
+                }
+            }
         }
     }
 }
@@ -1114,9 +1143,9 @@ void SchXMLStatisticsObjectContext::StartElement( const uno::Reference< xml::sax
                                                                     uno::UNO_QUERY );
 
                     xBarProp->setPropertyValue("ErrorBarStyle",uno::makeAny(css::chart::ErrorBarStyle::NONE));
-                    xBarProp->setPropertyValue("PositiveError",uno::makeAny(0.0));
-                    xBarProp->setPropertyValue("NegativeError",uno::makeAny(0.0));
-                    xBarProp->setPropertyValue("Weight",uno::makeAny(1.0));
+                    xBarProp->setPropertyValue("PositiveError",uno::makeAny(static_cast<double>(0.0)));
+                    xBarProp->setPropertyValue("NegativeError",uno::makeAny(static_cast<double>(0.0)));
+                    xBarProp->setPropertyValue("Weight",uno::makeAny(static_cast<double>(1.0)));
                     xBarProp->setPropertyValue("ShowPositiveError",uno::makeAny(true));
                     xBarProp->setPropertyValue("ShowNegativeError",uno::makeAny(true));
 

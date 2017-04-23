@@ -43,8 +43,8 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
 {
     if(!xObjectProp.is())
         return false;
-    tools::Rectangle aObjectRect( Point(rNewPositionAndSize.X,rNewPositionAndSize.Y), Size(rNewPositionAndSize.Width,rNewPositionAndSize.Height) );
-    tools::Rectangle aPageRect( Point(rPageRectangle.X,rPageRectangle.Y), Size(rPageRectangle.Width,rPageRectangle.Height) );
+    Rectangle aObjectRect( Point(rNewPositionAndSize.X,rNewPositionAndSize.Y), Size(rNewPositionAndSize.Width,rNewPositionAndSize.Height) );
+    Rectangle aPageRect( Point(rPageRectangle.X,rPageRectangle.Y), Size(rPageRectangle.Width,rPageRectangle.Height) );
 
     if( OBJECTTYPE_TITLE==eObjectType )
     {
@@ -55,7 +55,7 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
         Point aPos = aObjectRect.TopLeft();
         aRelativePosition.Primary = (double(aPos.X())+double(aObjectRect.getWidth())/2.0)/double(aPageRect.getWidth());
         aRelativePosition.Secondary = (double(aPos.Y())+double(aObjectRect.getHeight())/2.0)/double(aPageRect.getHeight());
-        xObjectProp->setPropertyValue( "RelativePosition", uno::Any(aRelativePosition) );
+        xObjectProp->setPropertyValue( "RelativePosition", uno::makeAny(aRelativePosition) );
     }
     else if( OBJECTTYPE_DATA_CURVE_EQUATION==eObjectType )
     {
@@ -66,12 +66,12 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
         Point aPos = aObjectRect.TopLeft();
         aRelativePosition.Primary = double(aPos.X())/double(aPageRect.getWidth());
         aRelativePosition.Secondary = double(aPos.Y())/double(aPageRect.getHeight());
-        xObjectProp->setPropertyValue( "RelativePosition", uno::Any(aRelativePosition) );
+        xObjectProp->setPropertyValue( "RelativePosition", uno::makeAny(aRelativePosition) );
     }
     else if(OBJECTTYPE_LEGEND==eObjectType)
     {
-        xObjectProp->setPropertyValue( "AnchorPosition", uno::Any(LegendPosition(LegendPosition_CUSTOM)));
-        xObjectProp->setPropertyValue( "Expansion", uno::Any(css::chart::ChartLegendExpansion_CUSTOM));
+        xObjectProp->setPropertyValue( "AnchorPosition", uno::makeAny(LegendPosition(LegendPosition_CUSTOM)));
+        xObjectProp->setPropertyValue( "Expansion", uno::makeAny(css::chart::ChartLegendExpansion_CUSTOM));
         chart2::RelativePosition aRelativePosition;
         chart2::RelativeSize aRelativeSize;
         Point aAnchor = aObjectRect.TopLeft();
@@ -83,7 +83,7 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
             static_cast< double >( aAnchor.Y()) /
             static_cast< double >( aPageRect.getHeight());
 
-        xObjectProp->setPropertyValue( "RelativePosition", uno::Any(aRelativePosition) );
+        xObjectProp->setPropertyValue( "RelativePosition", uno::makeAny(aRelativePosition) );
 
         aRelativeSize.Primary =
             static_cast< double >( aObjectRect.getWidth()) /
@@ -96,7 +96,7 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
         if (aRelativeSize.Secondary > 1.0)
             aRelativeSize.Secondary = 1.0;
 
-        xObjectProp->setPropertyValue( "RelativeSize", uno::Any(aRelativeSize) );
+        xObjectProp->setPropertyValue( "RelativeSize", uno::makeAny(aRelativeSize) );
     }
     else if(OBJECTTYPE_DIAGRAM==eObjectType || OBJECTTYPE_DIAGRAM_WALL==eObjectType || OBJECTTYPE_DIAGRAM_FLOOR==eObjectType)
     {
@@ -109,7 +109,7 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
         Point aPos = aObjectRect.Center();
         aRelativePosition.Primary = double(aPos.X())/double(aPageRect.getWidth());
         aRelativePosition.Secondary = double(aPos.Y())/double(aPageRect.getHeight());
-        xObjectProp->setPropertyValue( "RelativePosition", uno::Any(aRelativePosition) );
+        xObjectProp->setPropertyValue( "RelativePosition", uno::makeAny(aRelativePosition) );
 
         //set size:
         RelativeSize aRelativeSize;
@@ -117,7 +117,7 @@ bool PositionAndSizeHelper::moveObject( ObjectType eObjectType
         //and in the middle of the page
         aRelativeSize.Primary = double(aObjectRect.getWidth())/double(aPageRect.getWidth());
         aRelativeSize.Secondary = double(aObjectRect.getHeight())/double(aPageRect.getHeight());
-        xObjectProp->setPropertyValue( "RelativeSize", uno::Any(aRelativeSize) );
+        xObjectProp->setPropertyValue( "RelativeSize", uno::makeAny(aRelativeSize) );
     }
     else
         return false;

@@ -45,7 +45,7 @@ OCheckBoxControl::OCheckBoxControl(const Reference<XComponentContext>& _rxFactor
 }
 
 
-css::uno::Sequence<OUString> SAL_CALL OCheckBoxControl::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OCheckBoxControl::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 2);
@@ -84,7 +84,7 @@ IMPLEMENT_DEFAULT_CLONING( OCheckBoxModel )
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL OCheckBoxModel::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OCheckBoxModel::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OReferenceValueComponent::getSupportedServiceNames();
 
@@ -117,13 +117,14 @@ void OCheckBoxModel::describeFixedProperties( Sequence< Property >& _rProps ) co
 }
 
 
-OUString SAL_CALL OCheckBoxModel::getServiceName()
+OUString SAL_CALL OCheckBoxModel::getServiceName() throw(RuntimeException, std::exception)
 {
     return OUString(FRM_COMPONENT_CHECKBOX);  // old (non-sun) name for compatibility !
 }
 
 
 void SAL_CALL OCheckBoxModel::write(const Reference<css::io::XObjectOutputStream>& _rxOutStream)
+    throw(css::io::IOException, RuntimeException, std::exception)
 {
     OReferenceValueComponent::write(_rxOutStream);
 
@@ -138,7 +139,7 @@ void SAL_CALL OCheckBoxModel::write(const Reference<css::io::XObjectOutputStream
 }
 
 
-void SAL_CALL OCheckBoxModel::read(const Reference<css::io::XObjectInputStream>& _rxInStream)
+void SAL_CALL OCheckBoxModel::read(const Reference<css::io::XObjectInputStream>& _rxInStream) throw(css::io::IOException, RuntimeException, std::exception)
 {
     OReferenceValueComponent::read(_rxInStream);
     osl::MutexGuard aGuard(m_aMutex);

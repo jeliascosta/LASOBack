@@ -113,11 +113,13 @@ namespace canvas
         virtual bool      isError() = 0;
     };
 
+    typedef std::shared_ptr< IRenderModule > IRenderModuleSharedPtr;
+
     /// Little RAII wrapper for guarding access to IRenderModule interface
     class RenderModuleGuard
     {
     public:
-        explicit RenderModuleGuard( const std::shared_ptr<IRenderModule>& rRenderModule ) :
+        explicit RenderModuleGuard( const IRenderModuleSharedPtr& rRenderModule ) :
             mpRenderModule( rRenderModule )
         {
             mpRenderModule->lock();
@@ -131,7 +133,7 @@ namespace canvas
         RenderModuleGuard(const RenderModuleGuard&) = delete;
         RenderModuleGuard& operator=( const RenderModuleGuard& ) = delete;
     private:
-        const std::shared_ptr<IRenderModule> mpRenderModule;
+        const IRenderModuleSharedPtr mpRenderModule;
     };
 }
 

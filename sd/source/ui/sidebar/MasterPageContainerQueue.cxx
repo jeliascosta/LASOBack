@@ -109,8 +109,8 @@ void MasterPageContainerQueue::LateInit()
 {
     // Set up the timer for the delayed creation of preview bitmaps.
     maDelayedPreviewCreationTimer.SetTimeout (snDelayedCreationTimeout);
-    maDelayedPreviewCreationTimer.SetInvokeHandler(
-        LINK(this,MasterPageContainerQueue,DelayedPreviewCreation) );
+    Link<Timer *, void> aLink (LINK(this,MasterPageContainerQueue,DelayedPreviewCreation));
+    maDelayedPreviewCreationTimer.SetTimeoutHdl(aLink);
 }
 
 bool MasterPageContainerQueue::RequestPreview (const SharedMasterPageDescriptor& rpDescriptor)
@@ -176,7 +176,7 @@ sal_Int32 MasterPageContainerQueue::CalculatePriority (
     return nPriority;
 }
 
-IMPL_LINK(MasterPageContainerQueue, DelayedPreviewCreation, Timer*, pTimer, void)
+IMPL_LINK_TYPED(MasterPageContainerQueue, DelayedPreviewCreation, Timer*, pTimer, void)
 {
     bool bIsShowingFullScreenShow (false);
     bool bWaitForMoreRequests (false);
@@ -187,10 +187,10 @@ IMPL_LINK(MasterPageContainerQueue, DelayedPreviewCreation, Timer*, pTimer, void
             break;
 
         // First check whether the system is idle.
-        tools::IdleState nIdleState (tools::IdleDetection::GetIdleState(nullptr));
-        if (nIdleState != tools::IdleState::Idle)
+        sal_Int32 nIdleState (tools::IdleDetection::GetIdleState());
+        if (nIdleState != tools::IdleDetection::IDET_IDLE)
         {
-            if (nIdleState & tools::IdleState::FullScreenShowActive)
+            if ((nIdleState&tools::IdleDetection::IDET_FULL_SCREEN_SHOW_ACTIVE) != 0)
                 bIsShowingFullScreenShow = true;
             break;
         }

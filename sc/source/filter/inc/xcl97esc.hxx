@@ -70,7 +70,7 @@ public:
                             XclExpObjectManager& rObjMgr,
                             SvStream& rStrm,
                             const XclEscherEx* pParent = nullptr );
-    virtual             ~XclEscherEx() override;
+    virtual             ~XclEscherEx();
 
     /** Called by MSODRAWING record constructors to initialize the DFF stream
         fragment they will own. returns the DFF fragment identifier. */
@@ -93,7 +93,7 @@ public:
 
     virtual EscherExHostAppData* StartShape(
                             const css::uno::Reference< css::drawing::XShape>& rxShape,
-                            const tools::Rectangle* pChildAnchor ) override;
+                            const Rectangle* pChildAnchor ) override;
     virtual void                EndShape( sal_uInt16 nShapeType, sal_uInt32 nShapeID ) override;
     virtual EscherExHostAppData*    EnterAdditionalTextGroup() override;
 
@@ -102,21 +102,21 @@ public:
     /** Creates an OCX form control OBJ record from the passed form control.
         @descr  Writes the form control data to the 'Ctls' stream. */
     std::unique_ptr<XclExpOcxControlObj> CreateOCXCtrlObj(
-                            css::uno::Reference< css::drawing::XShape > const & xShape,
-                            const tools::Rectangle* pChildAnchor );
+                            css::uno::Reference< css::drawing::XShape > xShape,
+                            const Rectangle* pChildAnchor );
 
 private:
     tools::SvRef<SotStorageStream>  mxCtlsStrm;         /// The 'Ctls' stream.
     /** Creates a TBX form control OBJ record from the passed form control. */
     std::unique_ptr<XclExpTbxControlObj> CreateTBXCtrlObj(
-                            css::uno::Reference< css::drawing::XShape > const & xShape,
-                            const tools::Rectangle* pChildAnchor );
+                            css::uno::Reference< css::drawing::XShape > xShape,
+                            const Rectangle* pChildAnchor );
 
 private:
     /** Tries to get the name of a Basic macro from a control. */
     void                ConvertTbxMacro(
                             XclExpTbxControlObj& rTbxCtrlObj,
-                            css::uno::Reference< css::awt::XControlModel > const & xCtrlModel );
+                            css::uno::Reference< css::awt::XControlModel > xCtrlModel );
 
     void                DeleteCurrAppData();
 
@@ -142,8 +142,8 @@ private:
 public:
                                 XclEscherHostAppData() : bStackedGroup( false )
                                     {}
-    void                SetStackedGroup( bool b )   { bStackedGroup = b; }
-    bool                IsStackedGroup() const  { return bStackedGroup; }
+    inline  void                SetStackedGroup( bool b )   { bStackedGroup = b; }
+    inline  bool                IsStackedGroup() const  { return bStackedGroup; }
 };
 
 // --- class XclEscherClientData -------------------------------------
@@ -172,7 +172,7 @@ public:
                             XclObj* pObj );
 
                                 //! ONLY for the AdditionalText mimic
-    void        SetXclObj( XclObj* p )  { pXclObj = p; }
+    inline  void        SetXclObj( XclObj* p )  { pXclObj = p; }
 
     virtual void        WriteData( EscherEx& rEx ) const override;
 };

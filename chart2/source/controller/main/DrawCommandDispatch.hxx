@@ -35,7 +35,10 @@ class DrawCommandDispatch: public FeatureCommandDispatchBase
 {
 public:
     DrawCommandDispatch( const css::uno::Reference< css::uno::XComponentContext >& rxContext, ChartController* pController );
-    virtual ~DrawCommandDispatch() override;
+    virtual ~DrawCommandDispatch();
+
+    // late initialisation, especially for adding as listener
+    virtual void initialize() override;
 
     virtual bool isFeatureSupported( const OUString& rCommandURL ) override;
 
@@ -47,7 +50,8 @@ protected:
     virtual void SAL_CALL disposing() override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // state of a feature
     virtual FeatureState getState( const OUString& rCommand ) override;

@@ -55,8 +55,8 @@ protected:
     OUString            m_UserName;
 
     // methods
-    DECL_LINK( ListDblClickHdl, ListBox&, void );
-    DECL_LINK( UserHdl,   Button *, void );
+    DECL_LINK_TYPED( ListDblClickHdl, ListBox&, void );
+    DECL_LINK_TYPED( UserHdl,   Button *, void );
 
     void        FillUserNames();
 
@@ -64,7 +64,7 @@ protected:
 public:
     static  VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* _rAttrSet );
 
-    virtual ~OUserAdmin() override;
+    virtual ~OUserAdmin();
     virtual void dispose() override;
     OUString GetUser();
 
@@ -72,10 +72,10 @@ public:
     virtual void implInitControls(const SfxItemSet& _rSet, bool _bSaveValue) override;
 
     // <method>OGenericAdministrationPage::fillControls</method>
-    virtual void fillControls(std::vector< ISaveValueWrapper* >& _rControlList) override;
+    virtual void fillControls(::std::vector< ISaveValueWrapper* >& _rControlList) override;
 
     // <method>OGenericAdministrationPage::fillWindows</method>
-    virtual void fillWindows(std::vector< ISaveValueWrapper* >& _rControlList) override;
+    virtual void fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) override;
 };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_DLG_USERADMIN_HXX

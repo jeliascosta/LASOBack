@@ -132,11 +132,11 @@ bool SwTextFrame::CalcPrepFootnoteAdjust()
         const SwFootnoteContFrame *pCont = pBoss->FindFootnoteCont();
         bool bReArrange = true;
 
-        SwRectFnSet aRectFnSet(this);
-        if ( pCont && aRectFnSet.YDiff( aRectFnSet.GetTop(pCont->Frame()),
-                                          aRectFnSet.GetBottom(Frame()) ) > 0 )
+        SWRECTFN( this )
+        if ( pCont && (*fnRect->fnYDiff)( (pCont->Frame().*fnRect->fnGetTop)(),
+                                          (Frame().*fnRect->fnGetBottom)() ) > 0 )
         {
-            pBoss->RearrangeFootnotes( aRectFnSet.GetBottom(Frame()), false,
+            pBoss->RearrangeFootnotes( (Frame().*fnRect->fnGetBottom)(), false,
                                   pFootnote->GetAttr() );
             ValidateBodyFrame();
             ValidateFrame();
@@ -165,7 +165,7 @@ static SwTwips lcl_GetFootnoteLower( const SwTextFrame* pFrame, SwTwips nLower )
 {
     // nLower is an absolute value. It denotes the bottom of the line
     // containing the footnote.
-    SwRectFnSet aRectFnSet(pFrame);
+    SWRECTFN( pFrame )
 
     OSL_ENSURE( !pFrame->IsVertical() || !pFrame->IsSwapped(),
             "lcl_GetFootnoteLower with swapped frame" );
@@ -197,21 +197,21 @@ static SwTwips lcl_GetFootnoteLower( const SwTextFrame* pFrame, SwTwips nLower )
 
         SwTwips nMin = 0;
         if ( bDontSplit )
-            nMin = aRectFnSet.GetBottom(pTabFrame->Frame());
+            nMin = (pTabFrame->Frame().*fnRect->fnGetBottom)();
         else if ( !static_cast<const SwRowFrame*>(pRow)->IsRowSplitAllowed() )
-            nMin = aRectFnSet.GetBottom(pRow->Frame());
+            nMin = (pRow->Frame().*fnRect->fnGetBottom)();
 
-        if ( nMin && aRectFnSet.YDiff( nMin, nLower ) > 0 )
+        if ( nMin && (*fnRect->fnYDiff)( nMin, nLower ) > 0 )
             nRet = nMin;
 
-        nAdd = aRectFnSet.GetBottomMargin(*pRow->GetUpper());
+        nAdd = (pRow->GetUpper()->*fnRect->fnGetBottomMargin)();
     }
     else
-        nAdd = aRectFnSet.GetBottomMargin(*pFrame);
+        nAdd = (pFrame->*fnRect->fnGetBottomMargin)();
 
     if( nAdd > 0 )
     {
-        if ( aRectFnSet.IsVert() )
+        if ( bVert )
             nRet -= nAdd;
         else
             nRet += nAdd;
@@ -221,7 +221,7 @@ static SwTwips lcl_GetFootnoteLower( const SwTextFrame* pFrame, SwTwips nLower )
     // the deadline should consider their lower borders.
     const SwFrame* pStartFrame = pFrame->GetUpper()->GetLower();
     OSL_ENSURE( pStartFrame, "Upper has no lower" );
-    SwTwips nFlyLower = aRectFnSet.IsVert() ? LONG_MAX : 0;
+    SwTwips nFlyLower = bVert ? LONG_MAX : 0;
     while ( pStartFrame != pFrame )
     {
         OSL_ENSURE( pStartFrame, "Frame chain is broken" );
@@ -235,8 +235,8 @@ static SwTwips lcl_GetFootnoteLower( const SwTextFrame* pFrame, SwTwips nLower )
                 if ( dynamic_cast< const SwFlyFrame *>( pAnchoredObj ) ==  nullptr ||
                      static_cast<SwFlyFrame*>(pAnchoredObj)->IsValid() )
                 {
-                    const SwTwips nBottom = aRectFnSet.GetBottom(aRect);
-                    if ( aRectFnSet.YDiff( nBottom, nFlyLower ) > 0 )
+                    const SwTwips nBottom = (aRect.*fnRect->fnGetBottom)();
+                    if ( (*fnRect->fnYDiff)( nBottom, nFlyLower ) > 0 )
                         nFlyLower = nBottom;
                 }
             }
@@ -245,7 +245,7 @@ static SwTwips lcl_GetFootnoteLower( const SwTextFrame* pFrame, SwTwips nLower )
         pStartFrame = pStartFrame->GetNext();
     }
 
-    if ( aRectFnSet.IsVert() )
+    if ( bVert )
         nRet = std::min( nRet, nFlyLower );
     else
         nRet = std::max( nRet, nFlyLower );
@@ -315,9 +315,9 @@ SwTwips SwTextFrame::GetFootnoteFrameHeight_() const
         const SwFrame *pCont = pFootnoteFrame->GetUpper();
 
         // Height within the Container which we're allowed to consume anyways
-        SwRectFnSet aRectFnSet(pCont);
-        SwTwips nTmp = aRectFnSet.YDiff( aRectFnSet.GetPrtBottom(*pCont),
-                                           aRectFnSet.GetTop(Frame()) );
+        SWRECTFN( pCont )
+        SwTwips nTmp = (*fnRect->fnYDiff)( (pCont->*fnRect->fnGetPrtBottom)(),
+                                           (Frame().*fnRect->fnGetTop)() );
 
 #if OSL_DEBUG_LEVEL > 0
         if( nTmp < 0 )
@@ -336,7 +336,7 @@ SwTwips SwTextFrame::GetFootnoteFrameHeight_() const
         }
 #endif
 
-        if ( aRectFnSet.YDiff( aRectFnSet.GetTop(pCont->Frame()), nHeight) > 0 )
+        if ( (*fnRect->fnYDiff)( (pCont->Frame().*fnRect->fnGetTop)(), nHeight) > 0 )
         {
             // Growth potential of the container
             if ( !pRef->IsInFootnoteConnect() )
@@ -353,7 +353,7 @@ SwTwips SwTextFrame::GetFootnoteFrameHeight_() const
         }
         else
         {   // The container has to shrink
-            nTmp += aRectFnSet.YDiff( aRectFnSet.GetTop(pCont->Frame()), nHeight);
+            nTmp += (*fnRect->fnYDiff)( (pCont->Frame().*fnRect->fnGetTop)(), nHeight);
             if( nTmp > 0 )
                 nHeight = nTmp;
             else
@@ -688,8 +688,8 @@ void SwTextFrame::ConnectFootnote( SwTextFootnote *pFootnote, const SwTwips nDea
         {
             SwFrame *pCont = pFootnoteFrame->GetUpper();
 
-            SwRectFnSet aRectFnSet(pCont);
-            long nDiff = aRectFnSet.YDiff( aRectFnSet.GetTop(pCont->Frame()),
+            SWRECTFN ( pCont )
+            long nDiff = (*fnRect->fnYDiff)( (pCont->Frame().*fnRect->fnGetTop)(),
                                              nDeadLine );
 
             if( nDiff >= 0 )
@@ -702,12 +702,12 @@ void SwTextFrame::ConnectFootnote( SwTextFootnote *pFootnote, const SwTwips nDea
                 // We have some room left, so the Footnote can grow
                 if ( pFootnoteFrame->GetFollow() && nDiff > 0 )
                 {
-                    SwTwips nHeight = aRectFnSet.GetHeight(pCont->Frame());
+                    SwTwips nHeight = (pCont->Frame().*fnRect->fnGetHeight)();
                     pBoss->RearrangeFootnotes( nDeadLine, false, pFootnote );
                     ValidateBodyFrame();
                     ValidateFrame();
                     SwViewShell *pSh = getRootFrame()->GetCurrShell();
-                    if ( pSh && nHeight == aRectFnSet.GetHeight(pCont->Frame()) )
+                    if ( pSh && nHeight == (pCont->Frame().*fnRect->fnGetHeight)() )
                         // So that we don't miss anything
                         pSh->InvalidateWindows( pCont->Frame() );
                 }
@@ -892,10 +892,10 @@ SwFootnotePortion *SwTextFormatter::NewFootnotePortion( SwTextFormatInfo &rInf,
                     if( bVertical )
                         nTmpBot = m_pFrame->SwitchHorizontalToVertical( nTmpBot );
 
-                    SwRectFnSet aRectFnSet(pFootnoteCont);
+                    SWRECTFN( pFootnoteCont )
 
-                    const long nDiff = aRectFnSet.YDiff(
-                                            aRectFnSet.GetTop(pFootnoteCont->Frame()),
+                    const long nDiff = (*fnRect->fnYDiff)(
+                                            (pFootnoteCont->Frame().*fnRect->fnGetTop)(),
                                              nTmpBot );
 
                     if( pScrFrame && nDiff < 0 )
@@ -1051,12 +1051,12 @@ sal_Int32 SwTextFormatter::FormatQuoVadis( const sal_Int32 nOffset )
 
     // A remark on QuoVadis/ErgoSum:
     // We use the Font set for the Paragraph for these texts.
-    // Thus, we initialize:
+    // Thus, we initialze:
     // TODO: ResetFont();
     FeedInf( rInf );
     SeekStartAndChg( rInf, true );
     if( GetRedln() && m_pCurr->HasRedline() )
-        GetRedln()->Seek( *m_pFont, nOffset, 0 );
+        GetRedln()->Seek( *pFnt, nOffset, 0 );
 
     // A tricky special case: Flyfrms extend into the Line and are at the
     // position we want to insert the Quovadis text
@@ -1139,7 +1139,7 @@ sal_Int32 SwTextFormatter::FormatQuoVadis( const sal_Int32 nOffset )
         {
             switch( GetAdjust() )
             {
-                case SvxAdjust::Block:
+                case SVX_ADJUST_BLOCK:
                 {
                     if( !m_pCurr->GetLen() ||
                         CH_BREAK != GetInfo().GetChar(m_nStart+m_pCurr->GetLen()-1))
@@ -1147,13 +1147,13 @@ sal_Int32 SwTextFormatter::FormatQuoVadis( const sal_Int32 nOffset )
                     nQuoWidth = nQuoWidth + nLastLeft;
                     break;
                 }
-                case SvxAdjust::Right:
+                case SVX_ADJUST_RIGHT:
                 {
                     nLastLeft = pQuo->GetAscent();
                     nQuoWidth = nQuoWidth + nLastLeft;
                     break;
                 }
-                case SvxAdjust::Center:
+                case SVX_ADJUST_CENTER:
                 {
                     nQuoWidth = nQuoWidth + pQuo->GetAscent();
                     long nDiff = nLastLeft - nQuoWidth;
@@ -1233,10 +1233,6 @@ class SwFootnoteSave
     SwTextSizeInfo *pInf;
     SwFont       *pFnt;
     SwFont       *pOld;
-
-    SwFootnoteSave(const SwFootnoteSave&) = delete;
-    SwFootnoteSave& operator=(const SwFootnoteSave&) = delete;
-
 public:
     SwFootnoteSave( const SwTextSizeInfo &rInf,
                const SwTextFootnote *pTextFootnote,
@@ -1286,8 +1282,8 @@ SwFootnoteSave::SwFootnoteSave( const SwTextSizeInfo &rInf,
         if ( ! pOld->GetEscapement() && 50 == pOld->GetPropr() )
         {
             Size aSize = pFnt->GetSize( pFnt->GetActual() );
-            pFnt->SetSize( Size( aSize.Width() / 2,
-                                 aSize.Height() / 2 ),
+            pFnt->SetSize( Size( (long)aSize.Width() / 2,
+                                 (long)aSize.Height() / 2 ),
                            pFnt->GetActual() );
         }
 
@@ -1438,7 +1434,7 @@ void SwQuoVadisPortion::HandlePortion( SwPortionHandler& rPH ) const
 
 void SwQuoVadisPortion::Paint( const SwTextPaintInfo &rInf ) const
 {
-    // We _always_ want to output per DrawStretchText, because nErgo
+    // We _always_ want to ouput per DrawStretchText, because nErgo
     // can quickly switch
     if( PrtWidth() )
     {

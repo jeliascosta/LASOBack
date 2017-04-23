@@ -30,10 +30,17 @@ namespace sdr
     {
         class ViewContactOfSdrCaptionObj : public ViewContactOfSdrRectObj
         {
+        protected:
+            // internal access to SdrCaptionObj
+            const SdrCaptionObj& GetCaptionObj() const
+            {
+                return static_cast<const SdrCaptionObj&>(GetSdrObject());
+            }
+
         public:
             // basic constructor, used from SdrObject.
             explicit ViewContactOfSdrCaptionObj(SdrCaptionObj& rCaptionObj);
-            virtual ~ViewContactOfSdrCaptionObj() override;
+            virtual ~ViewContactOfSdrCaptionObj();
 
         protected:
             // This method is responsible for creating the graphical visualisation data

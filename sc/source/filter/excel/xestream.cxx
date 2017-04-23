@@ -99,7 +99,7 @@ XclExpStream::~XclExpStream()
     mrStrm.Flush();
 }
 
-void XclExpStream::StartRecord( sal_uInt16 nRecId, std::size_t nRecSize )
+void XclExpStream::StartRecord( sal_uInt16 nRecId, sal_Size nRecSize )
 {
     OSL_ENSURE( !mbInRec, "XclExpStream::StartRecord - another record still open" );
     DisableEncryption();
@@ -206,21 +206,21 @@ XclExpStream& XclExpStream::operator<<( double fValue )
     return *this;
 }
 
-std::size_t XclExpStream::Write( const void* pData, std::size_t nBytes )
+sal_Size XclExpStream::Write( const void* pData, sal_Size nBytes )
 {
-    std::size_t nRet = 0;
+    sal_Size nRet = 0;
     if( pData && (nBytes > 0) )
     {
         if( mbInRec )
         {
             const sal_uInt8* pBuffer = static_cast< const sal_uInt8* >( pData );
-            std::size_t nBytesLeft = nBytes;
+            sal_Size nBytesLeft = nBytes;
             bool bValid = true;
 
             while( bValid && (nBytesLeft > 0) )
             {
-                std::size_t nWriteLen = ::std::min< std::size_t >( PrepareWrite(), nBytesLeft );
-                std::size_t nWriteRet = nWriteLen;
+                sal_Size nWriteLen = ::std::min< sal_Size >( PrepareWrite(), nBytesLeft );
+                sal_Size nWriteRet = nWriteLen;
                 if (mbUseEncrypter && HasValidEncrypter())
                 {
                     OSL_ENSURE(nWriteLen > 0, "XclExpStream::Write: write length is 0!");
@@ -231,7 +231,7 @@ std::size_t XclExpStream::Write( const void* pData, std::size_t nBytes )
                 }
                 else
                 {
-                    nWriteRet = mrStrm.WriteBytes(pBuffer, nWriteLen);
+                    nWriteRet = mrStrm.Write( pBuffer, nWriteLen );
                 bValid = (nWriteLen == nWriteRet);
                 OSL_ENSURE( bValid, "XclExpStream::Write - stream write error" );
                 }
@@ -242,19 +242,19 @@ std::size_t XclExpStream::Write( const void* pData, std::size_t nBytes )
             }
         }
         else
-            nRet = mrStrm.WriteBytes(pData, nBytes);
+            nRet = mrStrm.Write( pData, nBytes );
     }
     return nRet;
 }
 
-void XclExpStream::WriteZeroBytes( std::size_t nBytes )
+void XclExpStream::WriteZeroBytes( sal_Size nBytes )
 {
     if( mbInRec )
     {
-        std::size_t nBytesLeft = nBytes;
+        sal_Size nBytesLeft = nBytes;
         while( nBytesLeft > 0 )
         {
-            std::size_t nWriteLen = ::std::min< std::size_t >( PrepareWrite(), nBytesLeft );
+            sal_Size nWriteLen = ::std::min< sal_Size >( PrepareWrite(), nBytesLeft );
             WriteRawZeroBytes( nWriteLen );
             nBytesLeft -= nWriteLen;
             UpdateSizeVars( nWriteLen );
@@ -264,14 +264,14 @@ void XclExpStream::WriteZeroBytes( std::size_t nBytes )
         WriteRawZeroBytes( nBytes );
 }
 
-void XclExpStream::WriteZeroBytesToRecord( std::size_t nBytes )
+void XclExpStream::WriteZeroBytesToRecord( sal_Size nBytes )
 {
     if (!mbInRec)
         // not in record.
         return;
 
     sal_uInt8 nZero = 0;
-    for (std::size_t i = 0; i < nBytes; ++i)
+    for (sal_Size i = 0; i < nBytes; ++i)
         *this << nZero;
 }
 
@@ -281,16 +281,16 @@ void XclExpStream::CopyFromStream(SvStream& rInStrm, sal_uInt64 const nBytes)
     sal_uInt64 nBytesLeft = ::std::min(nBytes, nRemaining);
     if( nBytesLeft > 0 )
     {
-        const std::size_t nMaxBuffer = 4096;
+        const sal_Size nMaxBuffer = 4096;
         std::unique_ptr<sal_uInt8[]> pBuffer(
-            new sal_uInt8[ ::std::min<std::size_t>(nBytesLeft, nMaxBuffer) ]);
+            new sal_uInt8[ ::std::min<sal_Size>(nBytesLeft, nMaxBuffer) ]);
         bool bValid = true;
 
         while( bValid && (nBytesLeft > 0) )
         {
-            std::size_t nWriteLen = ::std::min<std::size_t>(nBytesLeft, nMaxBuffer);
-            rInStrm.ReadBytes(pBuffer.get(), nWriteLen);
-            std::size_t nWriteRet = Write( pBuffer.get(), nWriteLen );
+            sal_Size nWriteLen = ::std::min<sal_Size>(nBytesLeft, nMaxBuffer);
+            rInStrm.Read( pBuffer.get(), nWriteLen );
+            sal_Size nWriteRet = Write( pBuffer.get(), nWriteLen );
             bValid = (nWriteLen == nWriteRet);
             nBytesLeft -= nWriteRet;
         }
@@ -324,8 +324,8 @@ void XclExpStream::WriteUnicodeBuffer( const ScfUInt16Vec& rBuffer, sal_uInt8 nF
 void XclExpStream::WriteByteString( const OString& rString )
 {
     SetSliceSize( 0 );
-    std::size_t nLen = ::std::min< std::size_t >( rString.getLength(), 0x00FF );
-    nLen = ::std::min< std::size_t >( nLen, 0xFF );
+    sal_Size nLen = ::std::min< sal_Size >( rString.getLength(), 0x00FF );
+    nLen = ::std::min< sal_Size >( nLen, 0xFF );
 
     sal_uInt16 nLeft = PrepareWrite();
     if( mbInRec && (nLeft <= 1) )
@@ -341,7 +341,7 @@ void XclExpStream::WriteCharBuffer( const ScfUInt8Vec& rBuffer )
     Write( &rBuffer[ 0 ], rBuffer.size() );
 }
 
-void XclExpStream::SetEncrypter( XclExpEncrypterRef const & xEncrypter )
+void XclExpStream::SetEncrypter( XclExpEncrypterRef xEncrypter )
 {
     mxEncrypter = xEncrypter;
 }
@@ -375,7 +375,7 @@ void XclExpStream::InitRecord( sal_uInt16 nRecId )
     mrStrm.WriteUInt16( nRecId );
 
     mnLastSizePos = mrStrm.Tell();
-    mnHeaderSize = static_cast< sal_uInt16 >( ::std::min< std::size_t >( mnPredictSize, mnCurrMaxSize ) );
+    mnHeaderSize = static_cast< sal_uInt16 >( ::std::min< sal_Size >( mnPredictSize, mnCurrMaxSize ) );
     mrStrm.WriteUInt16( mnHeaderSize );
     mnCurrSize = mnSliceSize = 0;
 }
@@ -389,7 +389,7 @@ void XclExpStream::UpdateRecSize()
     }
 }
 
-void XclExpStream::UpdateSizeVars( std::size_t nSize )
+void XclExpStream::UpdateSizeVars( sal_Size nSize )
 {
     OSL_ENSURE( mnCurrSize + nSize <= mnCurrMaxSize, "XclExpStream::UpdateSizeVars - record overwritten" );
     mnCurrSize = mnCurrSize + static_cast< sal_uInt16 >( nSize );
@@ -437,17 +437,17 @@ sal_uInt16 XclExpStream::PrepareWrite()
     return nRet;
 }
 
-void XclExpStream::WriteRawZeroBytes( std::size_t nBytes )
+void XclExpStream::WriteRawZeroBytes( sal_Size nBytes )
 {
     const sal_uInt32 nData = 0;
-    std::size_t nBytesLeft = nBytes;
+    sal_Size nBytesLeft = nBytes;
     while( nBytesLeft >= sizeof( nData ) )
     {
         mrStrm.WriteUInt32( nData );
         nBytesLeft -= sizeof( nData );
     }
     if( nBytesLeft )
-        mrStrm.WriteBytes(&nData, nBytesLeft);
+        mrStrm.Write( &nData, nBytesLeft );
 }
 
 XclExpBiff8Encrypter::XclExpBiff8Encrypter( const XclExpRoot& rRoot ) :
@@ -565,12 +565,12 @@ void XclExpBiff8Encrypter::Init( const Sequence< NamedValue >& rEncryptionData )
     }
 }
 
-sal_uInt32 XclExpBiff8Encrypter::GetBlockPos( std::size_t nStrmPos )
+sal_uInt32 XclExpBiff8Encrypter::GetBlockPos( sal_Size nStrmPos )
 {
     return static_cast< sal_uInt32 >( nStrmPos / EXC_ENCR_BLOCKSIZE );
 }
 
-sal_uInt16 XclExpBiff8Encrypter::GetOffsetInBlock( std::size_t nStrmPos )
+sal_uInt16 XclExpBiff8Encrypter::GetOffsetInBlock( sal_Size nStrmPos )
 {
     return static_cast< sal_uInt16 >( nStrmPos % EXC_ENCR_BLOCKSIZE );
 }
@@ -623,7 +623,7 @@ void XclExpBiff8Encrypter::EncryptBytes( SvStream& rStrm, vector<sal_uInt8>& aBy
         OSL_ENSURE(bRet, "XclExpBiff8Encrypter::EncryptBytes: encryption failed!!");
         (void) bRet; // to remove a silly compiler warning.
 
-        std::size_t nRet = rStrm.WriteBytes(&aBytes[nPos], nEncBytes);
+        sal_Size nRet = rStrm.Write(&aBytes[nPos], nEncBytes);
         OSL_ENSURE(nRet == nEncBytes, "XclExpBiff8Encrypter::EncryptBytes: fail to write to stream!!");
         (void) nRet; // to remove a silly compiler warning.
 
@@ -639,7 +639,7 @@ void XclExpBiff8Encrypter::EncryptBytes( SvStream& rStrm, vector<sal_uInt8>& aBy
     mnOldPos = nStrmPos;
 }
 
-static const char* lcl_GetErrorString( FormulaError nScErrCode )
+static const char* lcl_GetErrorString( sal_uInt16 nScErrCode )
 {
     sal_uInt8 nXclErrCode = XclTools::GetXclErrorCode( nScErrCode );
     switch( nXclErrCode )
@@ -888,9 +888,9 @@ static const char* lcl_ToVerticalAlignmentRun( SvxEscapement eEscapement, bool& 
     bHaveAlignment = true;
     switch( eEscapement )
     {
-        case SvxEscapement::Superscript:    return "superscript";
-        case SvxEscapement::Subscript:      return "subscript";
-        case SvxEscapement::Off:
+        case SVX_ESCAPEMENT_SUPERSCRIPT:    return "superscript";
+        case SVX_ESCAPEMENT_SUBSCRIPT:      return "subscript";
+        case SVX_ESCAPEMENT_OFF:
         default:                            bHaveAlignment = false; return "baseline";
     }
 }
@@ -910,7 +910,7 @@ sax_fastparser::FSHelperPtr XclXmlUtils::WriteFontData( sax_fastparser::FSHelper
     lcl_WriteValue( pStream, XML_shadow,     rFontData.mbShadow ? XclXmlUtils::ToPsz( rFontData.mbShadow ) : nullptr );
     lcl_WriteValue( pStream, XML_u,          bHaveUnderline ? pUnderline : nullptr );
     lcl_WriteValue( pStream, XML_vertAlign,  bHaveVertAlign ? pVertAlign : nullptr );
-    lcl_WriteValue( pStream, XML_sz,         OString::number( rFontData.mnHeight / 20.0 ).getStr() );  // Twips->Pt
+    lcl_WriteValue( pStream, XML_sz,         OString::number( (double) (rFontData.mnHeight / 20.0) ).getStr() );  // Twips->Pt
     if( rFontData.maColor != Color( 0xFF, 0xFF, 0xFF, 0xFF ) )
         pStream->singleElement( XML_color,
                 // OOXTODO: XML_auto,       bool
@@ -944,7 +944,7 @@ sax_fastparser::FSHelperPtr& XclExpXmlStream::GetCurrentStream()
     return maStreams.top();
 }
 
-void XclExpXmlStream::PushStream( sax_fastparser::FSHelperPtr const & aStream )
+void XclExpXmlStream::PushStream( sax_fastparser::FSHelperPtr aStream )
 {
     maStreams.push( aStream );
 }
@@ -1050,6 +1050,9 @@ ScDocShell* XclExpXmlStream::getDocShell()
 }
 
 bool XclExpXmlStream::exportDocument()
+    throw (css::uno::RuntimeException,
+           css::ucb::ContentCreationException,
+           std::exception)
 {
     ScDocShell* pShell = getDocShell();
     ScDocument& rDoc = pShell->GetDocument();
@@ -1102,7 +1105,7 @@ bool XclExpXmlStream::exportDocument()
         {
             SvMemoryStream aVbaStream(4096, 4096);
             tools::SvRef<SotStorage> pVBAStorage(new SotStorage(aVbaStream));
-            aExport.exportVBA( pVBAStorage.get() );
+            aExport.exportVBA(pVBAStorage);
             aVbaStream.Seek(0);
             css::uno::Reference<css::io::XInputStream> xVBAStream(
                     new utl::OInputStreamWrapper(aVbaStream));
@@ -1142,7 +1145,7 @@ bool XclExpXmlStream::exportDocument()
     return new ::oox::xls::ExcelVbaProject( getComponentContext(), Reference< XSpreadsheetDocument >( getModel(), UNO_QUERY ) );
 }
 
-OUString XclExpXmlStream::getImplementationName()
+OUString XclExpXmlStream::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return OUString( "TODO" );
 }

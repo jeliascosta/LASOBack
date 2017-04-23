@@ -77,15 +77,15 @@ class SwSortDlg : public SvxStandardDialog
     virtual void        Apply() override;
     sal_Unicode         GetDelimChar() const;
 
-    DECL_LINK( CheckHdl, Button*, void );
-    DECL_LINK( DelimHdl, Button*, void );
-    DECL_LINK( LanguageListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( CheckHdl, Button*, void );
+    DECL_LINK_TYPED( DelimHdl, Button*, void );
+    DECL_LINK_TYPED( LanguageListBoxHdl, ListBox&, void );
     void LanguageHdl(ListBox*);
-    DECL_LINK(DelimCharHdl, Button*,void);
+    DECL_LINK_TYPED(DelimCharHdl, Button*,void);
 
 public:
     SwSortDlg(vcl::Window * pParent, SwWrtShell &rSh);
-    virtual ~SwSortDlg() override;
+    virtual ~SwSortDlg();
     virtual void dispose() override;
 };
 

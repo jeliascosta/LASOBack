@@ -26,6 +26,7 @@
 #include <vcl/split.hxx>
 #include <sfx2/childwin.hxx>
 #include <sfx2/viewfrm.hxx>
+#include <svl/smplhint.hxx>
 
 #include <algorithm>
 
@@ -120,7 +121,7 @@ void WindowUpdater::UpdateWindow (OutputDevice* pDevice) const
     }
 }
 
-void WindowUpdater::ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints )
+void WindowUpdater::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 )
 {
     // Set the current state at all registered output devices.
     tWindowList::iterator aWindowIterator (maWindowList.begin());

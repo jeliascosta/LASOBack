@@ -56,7 +56,7 @@ typedef std::unique_ptr<DataProvider> DataProviderPtr_t;
 class DataFlavorMapper
 {
 public:
-  /* Initialize a DataFavorMapper instance. Throws a RuntimeException in case the XMimeContentTypeFactory service
+  /* Initialialize a DataFavorMapper instance. Throws a RuntimeException in case the XMimeContentTypeFactory service
      cannot be created.
    */
   DataFlavorMapper();
@@ -85,7 +85,7 @@ public:
      be put on to the system clipboard.
    */
   DataProviderPtr_t getDataProvider( const NSString* systemFlavor,
-                                    const css::uno::Reference< css::datatransfer::XTransferable > & rTransferable) const;
+                                    const css::uno::Reference< css::datatransfer::XTransferable > rTransferable) const;
 
   /* Get a data provider which is able to provide 'systemData' in the OOo expected format.
    */

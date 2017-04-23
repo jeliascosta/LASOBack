@@ -50,7 +50,7 @@
                     e.g.:
                             NAMELIST[ PROPERTYHANDLE_xxx ] => VALUELIST[ PROPERTYHANDLE_xxx ]
 *//*-*************************************************************************************************************/
-#define ROOTNODE_FACTORIES                  "Setup/Office/Factories"
+#define ROOTNODE_FACTORIES                  OUString("Setup/Office/Factories")
 #define PATHSEPARATOR                       "/"
 
 // Attention: The property "ooSetupFactoryEmptyDocumentURL" is read from configuration but not used! There is
@@ -112,7 +112,10 @@ struct FactoryInfo
             sDefaultFilter.clear();
             nIcon                       = 0;
             bChangedTemplateFile        = false;
+            bChangedWindowAttributes    = false;
+            bChangedEmptyDocumentURL    = false;
             bChangedDefaultFilter       = false;
+            bChangedIcon                = false;
             bDefaultFilterReadonly      = false;
         }
 
@@ -144,16 +147,37 @@ struct FactoryInfo
 
                 ++nRealyChanged;
             }
+            if( bChangedWindowAttributes )
+            {
+                lProperties[nRealyChanged].Name    = sNodeBase + PROPERTYNAME_WINDOWATTRIBUTES;
+                lProperties[nRealyChanged].Value <<= sWindowAttributes;
+                ++nRealyChanged;
+            }
+            if( bChangedEmptyDocumentURL )
+            {
+                lProperties[nRealyChanged].Name    = sNodeBase + PROPERTYNAME_EMPTYDOCUMENTURL;
+                lProperties[nRealyChanged].Value <<= sEmptyDocumentURL;
+                ++nRealyChanged;
+            }
             if( bChangedDefaultFilter )
             {
                 lProperties[nRealyChanged].Name    = sNodeBase + PROPERTYNAME_DEFAULTFILTER;
                 lProperties[nRealyChanged].Value <<= sDefaultFilter;
                 ++nRealyChanged;
             }
+            if( bChangedIcon )
+            {
+                lProperties[nRealyChanged].Name    = sNodeBase + PROPERTYNAME_ICON;
+                lProperties[nRealyChanged].Value <<= nIcon;
+                ++nRealyChanged;
+            }
 
             // Don't forget to reset changed flags! Otherwise we save it again and again and ...
             bChangedTemplateFile        = false;
+            bChangedWindowAttributes    = false;
+            bChangedEmptyDocumentURL    = false;
             bChangedDefaultFilter       = false;
+            bChangedIcon                = false;
 
             lProperties.realloc( nRealyChanged );
             return lProperties;
@@ -171,7 +195,7 @@ struct FactoryInfo
 
         // If you call set-methods - we check for changes of values and mark it.
         // But if you wish to set it without that... you must initialize it!
-        void initInstalled        ()                                       { bInstalled        = true; }
+        void initInstalled        ( bool               bNewInstalled        ) { bInstalled        = bNewInstalled; }
         void initFactory          ( const OUString& sNewFactory          ) { sFactory          = sNewFactory; }
         void initShortName        ( const OUString& sNewShortName        ) { sShortName        = sNewShortName; }
         void initWindowAttributes ( const OUString& sNewWindowAttributes ) { sWindowAttributes = sNewWindowAttributes; }
@@ -211,7 +235,7 @@ struct FactoryInfo
         };
 
     private:
-        css::uno::Reference< css::util::XStringSubstitution > const & getStringSubstitution()
+        css::uno::Reference< css::util::XStringSubstitution > getStringSubstitution()
         {
             if ( !xSubstVars.is() )
             {
@@ -230,12 +254,25 @@ struct FactoryInfo
         sal_Int32    nIcon;
 
         bool            bChangedTemplateFile        :1;
+        bool            bChangedWindowAttributes    :1;
+        bool            bChangedEmptyDocumentURL    :1;
         bool            bChangedDefaultFilter       :1;
+        bool            bChangedIcon                :1;
         bool            bDefaultFilterReadonly      :1;
 
         css::uno::Reference< css::util::XStringSubstitution >  xSubstVars;
 };
 
+/*-************************************************************************************************************
+    @short          IMPL data container for wrapper class SvtModulOptions!
+    @descr          These class is used as a static data container of class SvtModuleOptions. The hold it by using
+                    a refcount and make it threadsafe by using an osl mutex. So we don't must do anything for that.
+                    We can implement pure functionality to read/write configuration data only.
+    @base           ConfigItem
+
+    @devstatus      ready to use
+    @threadsafe     no
+*//*-*************************************************************************************************************/
 class SvtModuleOptions_Impl : public ::utl::ConfigItem
 {
 
@@ -246,7 +283,7 @@ class SvtModuleOptions_Impl : public ::utl::ConfigItem
         //  constructor / destructor
 
          SvtModuleOptions_Impl();
-        virtual ~SvtModuleOptions_Impl() override;
+        virtual ~SvtModuleOptions_Impl();
 
         //  override methods of baseclass
 
@@ -319,12 +356,12 @@ SvtModuleOptions_Impl::~SvtModuleOptions_Impl()
 
 /*-************************************************************************************************************
     @short      called for notify of configmanager
-    @descr      This method is called from the ConfigManager before application ends or from the
+    @descr      These method is called from the ConfigManager before application ends or from the
                 PropertyChangeListener if the sub tree broadcasts changes. You must update our
                 internal values.
 
     @attention  We are registered for pure set node names only. So we can use our internal method "impl_Read()" to
-                update our info list. Because - this method expand given name list to full qualified property list
+                update our info list. Because - these method expand given name list to full qualified property list
                 and use it to read the values. These values are filled into our internal member list m_lFactories
                 at right position.
 
@@ -340,7 +377,7 @@ void SvtModuleOptions_Impl::Notify( const css::uno::Sequence< OUString >& )
 
 /*-****************************************************************************************************
     @short      write changes to configuration
-    @descr      This method writes the changed values into the sub tree
+    @descr      These method writes the changed values into the sub tree
                 and should always called in our destructor to guarantee consistency of config data.
 
     @attention  We clear complete set in configuration first and write it completely new! So we don't must
@@ -724,7 +761,7 @@ void SvtModuleOptions_Impl::impl_Read( const css::uno::Sequence< OUString >& lFa
             pInfo = &(m_lFactories[eFactory]);
             pInfo->free();
 
-            pInfo->initInstalled();
+            pInfo->initInstalled( true     );
             pInfo->initFactory  ( sFactoryName );
 
             if (lValues[nPropertyStart+PROPERTYHANDLE_SHORTNAME] >>= sTemp)
@@ -778,10 +815,12 @@ void SvtModuleOptions_Impl::MakeReadonlyStatesAvailable()
     m_bReadOnlyStatesWellKnown = true;
 }
 
-namespace {
-    //global
-    std::weak_ptr<SvtModuleOptions_Impl> g_pModuleOptions;
-}
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
+
+SvtModuleOptions_Impl*  SvtModuleOptions::m_pDataContainer  = nullptr;
+sal_Int32               SvtModuleOptions::m_nRefCount       = 0;
 
 /*-************************************************************************************************************
     @short      standard constructor and destructor
@@ -793,24 +832,25 @@ namespace {
 *//*-*************************************************************************************************************/
 SvtModuleOptions::SvtModuleOptions()
 {
-    // Global access, must be guarded (multithreading!)
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-
-    m_pImpl = g_pModuleOptions.lock();
-    if( !m_pImpl )
+    ++m_nRefCount;
+    if( m_nRefCount == 1 )
     {
-        m_pImpl = std::make_shared<SvtModuleOptions_Impl>();
-        g_pModuleOptions = m_pImpl;
-        ItemHolder1::holdConfigItem(EItem::ModuleOptions);
+        m_pDataContainer = new SvtModuleOptions_Impl();
+
+        ItemHolder1::holdConfigItem(E_MODULEOPTIONS);
     }
 }
 
 SvtModuleOptions::~SvtModuleOptions()
 {
-    // Global access, must be guarded (multithreading!)
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-
-    m_pImpl.reset();
+    --m_nRefCount;
+    if( m_nRefCount == 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 /*-************************************************************************************************************
@@ -824,19 +864,19 @@ SvtModuleOptions::~SvtModuleOptions()
 bool SvtModuleOptions::IsModuleInstalled( EModule eModule ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( eModule );
+    return m_pDataContainer->IsModuleInstalled( eModule );
 }
 
 OUString SvtModuleOptions::GetFactoryName( EFactory eFactory ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->GetFactoryName( eFactory );
+    return m_pDataContainer->GetFactoryName( eFactory );
 }
 
 OUString SvtModuleOptions::GetFactoryStandardTemplate( EFactory eFactory ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->GetFactoryStandardTemplate( eFactory );
+    return m_pDataContainer->GetFactoryStandardTemplate( eFactory );
 }
 
 OUString SvtModuleOptions::GetFactoryEmptyDocumentURL( EFactory eFactory ) const
@@ -848,20 +888,20 @@ OUString SvtModuleOptions::GetFactoryEmptyDocumentURL( EFactory eFactory ) const
 OUString SvtModuleOptions::GetFactoryDefaultFilter( EFactory eFactory ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->GetFactoryDefaultFilter( eFactory );
+    return m_pDataContainer->GetFactoryDefaultFilter( eFactory );
 }
 
 bool SvtModuleOptions::IsDefaultFilterReadonly( EFactory eFactory   ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    m_pImpl->MakeReadonlyStatesAvailable();
-    return m_pImpl->IsDefaultFilterReadonly( eFactory );
+    m_pDataContainer->MakeReadonlyStatesAvailable();
+    return m_pDataContainer->IsDefaultFilterReadonly( eFactory );
 }
 
 sal_Int32 SvtModuleOptions::GetFactoryIcon( EFactory eFactory ) const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->GetFactoryIcon( eFactory );
+    return m_pDataContainer->GetFactoryIcon( eFactory );
 }
 
 bool SvtModuleOptions::ClassifyFactoryByName( const OUString& sName    ,
@@ -875,56 +915,56 @@ void SvtModuleOptions::SetFactoryStandardTemplate(       EFactory         eFacto
                                                    const OUString& sTemplate  )
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    m_pImpl->SetFactoryStandardTemplate( eFactory, sTemplate );
+    m_pDataContainer->SetFactoryStandardTemplate( eFactory, sTemplate );
 }
 
 void SvtModuleOptions::SetFactoryDefaultFilter(       EFactory         eFactory,
                                                 const OUString& sFilter )
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    m_pImpl->SetFactoryDefaultFilter( eFactory, sFilter );
+    m_pDataContainer->SetFactoryDefaultFilter( eFactory, sFilter );
 }
 
 bool SvtModuleOptions::IsMath() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::MATH );
+    return m_pDataContainer->IsModuleInstalled( EModule::MATH );
 }
 
 bool SvtModuleOptions::IsChart() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::CHART );
+    return m_pDataContainer->IsModuleInstalled( EModule::CHART );
 }
 
 bool SvtModuleOptions::IsCalc() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::CALC );
+    return m_pDataContainer->IsModuleInstalled( EModule::CALC );
 }
 
 bool SvtModuleOptions::IsDraw() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::DRAW );
+    return m_pDataContainer->IsModuleInstalled( EModule::DRAW );
 }
 
 bool SvtModuleOptions::IsWriter() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::WRITER );
+    return m_pDataContainer->IsModuleInstalled( EModule::WRITER );
 }
 
 bool SvtModuleOptions::IsImpress() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::IMPRESS );
+    return m_pDataContainer->IsModuleInstalled( EModule::IMPRESS );
 }
 
 bool SvtModuleOptions::IsDataBase() const
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->IsModuleInstalled( EModule::DATABASE );
+    return m_pDataContainer->IsModuleInstalled( EModule::DATABASE );
 }
 
 namespace
@@ -1117,27 +1157,27 @@ SvtModuleOptions::EFactory SvtModuleOptions::ClassifyFactoryByModel(const css::u
 css::uno::Sequence < OUString > SvtModuleOptions::GetAllServiceNames()
 {
     ::osl::MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pImpl->GetAllServiceNames();
+    return m_pDataContainer->GetAllServiceNames();
 }
 
 OUString SvtModuleOptions::GetDefaultModuleName()
 {
     OUString aModule;
-    if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::WRITER))
+    if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::WRITER))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::WRITER);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::CALC))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::CALC))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::CALC);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::IMPRESS))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::IMPRESS))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::IMPRESS);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::DATABASE))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::DATABASE))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::DATABASE);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::DRAW))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::DRAW))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::DRAW);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::WEB))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::WEB))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::WRITERWEB);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::GLOBAL))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::GLOBAL))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::WRITERGLOBAL);
-    else if (m_pImpl->IsModuleInstalled(SvtModuleOptions::EModule::MATH))
+    else if (m_pDataContainer->IsModuleInstalled(SvtModuleOptions::EModule::MATH))
         aModule = GetFactoryShortName(SvtModuleOptions::EFactory::MATH);
     return aModule;
 }

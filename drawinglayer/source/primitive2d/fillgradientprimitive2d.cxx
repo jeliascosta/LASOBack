@@ -148,14 +148,17 @@ namespace drawinglayer
             }
         }
 
-        void FillGradientPrimitive2D::createOverlappingFill(
-            Primitive2DContainer& rContainer,
+        Primitive2DContainer FillGradientPrimitive2D::createOverlappingFill(
             const std::vector< drawinglayer::texture::B2DHomMatrixAndBColor >& rEntries,
             const basegfx::BColor& rOuterColor,
             const basegfx::B2DPolygon& rUnitPolygon) const
         {
+            // prepare return value
+            Primitive2DContainer aRetval;
+            aRetval.resize(rEntries.size() + 1);
+
             // create solid fill with outmost color
-            rContainer.push_back(
+            aRetval[0] = Primitive2DReference(
                 new PolyPolygonColorPrimitive2D(
                     basegfx::B2DPolyPolygon(
                         basegfx::tools::createPolygonFromRect(getOutputRange())),
@@ -170,19 +173,24 @@ namespace drawinglayer
                 aNewPoly.transform(rEntries[a].maB2DHomMatrix);
 
                 // create solid fill
-                rContainer.push_back(
+                aRetval[a + 1] = Primitive2DReference(
                     new PolyPolygonColorPrimitive2D(
                         basegfx::B2DPolyPolygon(aNewPoly),
                         rEntries[a].maBColor));
             }
+
+            return aRetval;
         }
 
-        void FillGradientPrimitive2D::createNonOverlappingFill(
-            Primitive2DContainer& rContainer,
+        Primitive2DContainer FillGradientPrimitive2D::createNonOverlappingFill(
             const std::vector< drawinglayer::texture::B2DHomMatrixAndBColor >& rEntries,
             const basegfx::BColor& rOuterColor,
             const basegfx::B2DPolygon& rUnitPolygon) const
         {
+            // prepare return value
+            Primitive2DContainer aRetval;
+            aRetval.resize(rEntries.size() + 1);
+
             // get outmost visible range from object
             basegfx::B2DRange aOutmostRange(getOutputRange());
             basegfx::B2DPolyPolygon aCombinedPolyPoly;
@@ -199,7 +207,7 @@ namespace drawinglayer
 
             // add outmost range to combined polypolygon (in 1st place), create first primitive
             aCombinedPolyPoly.insert(0, basegfx::tools::createPolygonFromRect(aOutmostRange));
-            rContainer.push_back(
+            aRetval[0] = Primitive2DReference(
                 new PolyPolygonColorPrimitive2D(
                     aCombinedPolyPoly,
                     rOuterColor));
@@ -218,7 +226,7 @@ namespace drawinglayer
                     aCombinedPolyPoly.append(aNextPoly);
 
                     // create primitive with correct color
-                    rContainer.push_back(
+                    aRetval[a + 1] = Primitive2DReference(
                         new PolyPolygonColorPrimitive2D(
                             aCombinedPolyPoly,
                             rEntries[a].maBColor));
@@ -228,14 +236,16 @@ namespace drawinglayer
                 }
 
                 // add last inner polygon with last color
-                rContainer.push_back(
+                aRetval[rEntries.size()] = Primitive2DReference(
                     new PolyPolygonColorPrimitive2D(
                         aCombinedPolyPoly,
                         rEntries[rEntries.size() - 1].maBColor));
             }
+
+            return aRetval;
         }
 
-        void FillGradientPrimitive2D::createFill(Primitive2DContainer& rContainer, bool bOverlapping) const
+        Primitive2DContainer FillGradientPrimitive2D::createFill(bool bOverlapping) const
         {
             // prepare shape of the Unit Polygon
             basegfx::B2DPolygon aUnitPolygon;
@@ -264,15 +274,15 @@ namespace drawinglayer
 
             if(bOverlapping)
             {
-                createOverlappingFill(rContainer, aEntries, aOuterColor, aUnitPolygon);
+                return createOverlappingFill(aEntries, aOuterColor, aUnitPolygon);
             }
             else
             {
-                createNonOverlappingFill(rContainer, aEntries, aOuterColor, aUnitPolygon);
+                return createNonOverlappingFill(aEntries, aOuterColor, aUnitPolygon);
             }
         }
 
-        void FillGradientPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer FillGradientPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             // default creates overlapping fill which works with AntiAliasing and without.
             // The non-overlapping version does not create single filled polygons, but
@@ -285,7 +295,11 @@ namespace drawinglayer
             {
                 static bool bOverlapping(true); // allow to test non-overlapping in the debugger
 
-                createFill(rContainer, bOverlapping);
+                return createFill(bOverlapping);
+            }
+            else
+            {
+                return Primitive2DContainer();
             }
         }
 

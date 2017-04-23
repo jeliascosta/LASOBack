@@ -50,8 +50,9 @@ class SVT_DLLPUBLIC SvViewDataEntry
     bool mbHighlighted:1;
     bool mbExpanded:1;
     bool mbFocused:1;
+    bool mbCursored:1;
     bool mbSelectable:1;
-    tools::Rectangle maPaintRectangle;
+    Rectangle maPaintRectangle;
 
 public:
     SvViewDataEntry();
@@ -62,6 +63,7 @@ public:
     bool IsHighlighted() const { return mbHighlighted;}
     bool IsExpanded() const { return mbExpanded;}
     bool HasFocus() const { return mbFocused;}
+    bool IsCursored() const { return mbCursored;}
     bool IsSelectable() const { return mbSelectable;}
     void SetFocus( bool bFocus );
     void SetSelected( bool bSelected );
@@ -74,8 +76,8 @@ public:
     const SvViewDataItem& GetItem(size_t nPos) const;
     SvViewDataItem& GetItem(size_t nPos);
 
-    void SetPaintRectangle(tools::Rectangle aRectangle);
-    const tools::Rectangle& GetPaintRectangle() const;
+    void SetPaintRectangle(Rectangle aRectangle);
+    const Rectangle& GetPaintRectangle() const;
 
 };
 

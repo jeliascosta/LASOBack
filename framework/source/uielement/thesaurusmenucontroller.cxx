@@ -30,13 +30,14 @@ class ThesaurusMenuController : public svt::PopupMenuControllerBase
 {
 public:
     explicit ThesaurusMenuController( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+    virtual ~ThesaurusMenuController();
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw ( css::uno::RuntimeException, std::exception ) override;
 
 private:
     void fillPopupMenu();
@@ -54,7 +55,12 @@ ThesaurusMenuController::ThesaurusMenuController( const css::uno::Reference< css
 {
 }
 
+ThesaurusMenuController::~ThesaurusMenuController()
+{
+}
+
 void ThesaurusMenuController::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     rEvent.State >>= m_aLastWord;
     m_xPopupMenu->clear();
@@ -99,7 +105,7 @@ void ThesaurusMenuController::fillPopupMenu()
 
         pVCLMenu->InsertSeparator();
         OUString aThesaurusDialogCmd( ".uno:ThesaurusDialog" );
-        pVCLMenu->InsertItem( nId, vcl::CommandInfoProvider::GetPopupLabelForCommand( aThesaurusDialogCmd, m_aModuleName ) );
+        pVCLMenu->InsertItem( nId, vcl::CommandInfoProvider::Instance().GetPopupLabelForCommand( aThesaurusDialogCmd, m_xFrame ) );
         pVCLMenu->SetItemCommand( nId, aThesaurusDialogCmd );
     }
 }
@@ -145,11 +151,13 @@ OUString ThesaurusMenuController::getThesImplName( const css::lang::Locale& rLoc
 }
 
 OUString ThesaurusMenuController::getImplementationName()
+    throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.framework.ThesaurusMenuController" );
 }
 
 css::uno::Sequence< OUString > ThesaurusMenuController::getSupportedServiceNames()
+    throw ( css::uno::RuntimeException, std::exception )
 {
     return { "com.sun.star.frame.PopupMenuController" };
 }

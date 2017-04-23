@@ -27,7 +27,6 @@
 #include <tools/weakbase.hxx>
 #include <tools/contnr.hxx>
 #include <cppuhelper/weakref.hxx>
-#include <svl/itemset.hxx>
 #include <svx/svdtypes.hxx>
 #include <svx/sdrpageuser.hxx>
 #include <svx/sdr/contact/viewobjectcontactredirector.hxx>
@@ -53,6 +52,24 @@ class Color;
 class SfxStyleSheet;
 class SvxUnoDrawPagesAccess;
 
+enum SdrInsertReasonKind {
+    SDRREASON_UNKNOWN,
+    SDRREASON_STREAMING,  /// importing document
+    SDRREASON_UNDO,       /// from Undo
+    SDRREASON_COPY,       /// something copied...
+    SDRREASON_VIEWCREATE, /// created by User interactively
+    SDRREASON_VIEWCALL    /// via SdrView::Group(), ...
+};
+
+class SdrInsertReason {
+    SdrInsertReasonKind eReason;
+public:
+    SdrInsertReason(SdrInsertReasonKind eR): eReason(eR) {}
+
+    SdrInsertReasonKind GetReason() const         { return eReason; }
+};
+
+
 // class SdrObjList
 
 class SVX_DLLPUBLIC SdrObjList
@@ -70,8 +87,8 @@ friend class SdrEditView;
     SdrModel*   pModel;    /// model to which the list belongs (Layer,ItemPool,Storage)
     SdrPage*    pPage;     /// Page containing the list, may be "this".
     SdrObject*  pOwnerObj; /// OwnerObject, if it's list of a Group object.
-    tools::Rectangle   aOutRect;
-    tools::Rectangle   aSnapRect;
+    Rectangle   aOutRect;
+    Rectangle   aSnapRect;
     SdrObjListKind eListKind;
     bool        bObjOrdNumsDirty;
     bool        bRectsDirty;
@@ -85,7 +102,7 @@ private:
     /// simple ActionChildInserted forwarder to have it on a central place
     static void impChildInserted(SdrObject& rChild);
 public:
-    SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage);
+    SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage, SdrObjList* pNewUpList=nullptr);
     virtual ~SdrObjList();
 
     virtual SdrObjList* Clone() const;
@@ -106,8 +123,10 @@ public:
     /// recalculate order numbers / ZIndex
     void           RecalcObjOrdNums();
     bool           IsObjOrdNumsDirty() const        { return bObjOrdNumsDirty; }
-    virtual void   NbcInsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE);
-    virtual void   InsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE);
+    virtual void   NbcInsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE,
+                                   const SdrInsertReason* pReason=nullptr);
+    virtual void   InsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE,
+                                const SdrInsertReason* pReason=nullptr);
     /// remove from list without delete
     virtual SdrObject* NbcRemoveObject(size_t nObjNum);
     virtual SdrObject* RemoveObject(size_t nObjNum);
@@ -121,8 +140,8 @@ public:
 
     void SetRectsDirty();
 
-    const tools::Rectangle& GetAllObjSnapRect() const;
-    const tools::Rectangle& GetAllObjBoundRect() const;
+    const Rectangle& GetAllObjSnapRect() const;
+    const Rectangle& GetAllObjBoundRect() const;
 
     /// reformat all text objects, e.g. when changing printer
     void NbcReformatAllTextObjects();
@@ -279,12 +298,12 @@ private:
 /// for the snap-to-grid in Writer
 class SdrPageGridFrame
 {
-    tools::Rectangle aPaper;
-    tools::Rectangle aUserArea;
+    Rectangle aPaper;
+    Rectangle aUserArea;
 public:
-    SdrPageGridFrame(const tools::Rectangle& rPaper, const tools::Rectangle& rUser): aPaper(rPaper), aUserArea(rUser) {}
-    const tools::Rectangle& GetPaperRect() const                  { return aPaper; }
-    const tools::Rectangle& GetUserArea() const                   { return aUserArea; }
+    SdrPageGridFrame(const Rectangle& rPaper, const Rectangle& rUser): aPaper(rPaper), aUserArea(rUser) {}
+    const Rectangle& GetPaperRect() const                  { return aPaper; }
+    const Rectangle& GetUserArea() const                   { return aUserArea; }
 };
 
 class SVX_DLLPUBLIC SdrPageGridFrameList {
@@ -313,7 +332,7 @@ private:
     // data
     SdrPage*                mpSdrPage;
     SfxStyleSheet*          mpStyleSheet;
-    SfxItemSet              maProperties;
+    SfxItemSet*             mpProperties;
 
     // internal helpers
     void ImpRemoveStyleSheet();
@@ -324,7 +343,7 @@ private:
 public:
     // construct/destruct
     SdrPageProperties(SdrPage& rSdrPage);
-    virtual ~SdrPageProperties() override;
+    virtual ~SdrPageProperties();
 
     // Notify(...) from baseclass SfxListener
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
@@ -332,7 +351,7 @@ public:
     virtual bool isUsedByModel() const override;
 
     // data read/write
-    const SfxItemSet& GetItemSet() const { return maProperties;}
+    const SfxItemSet& GetItemSet() const { return *mpProperties;}
     void PutItemSet(const SfxItemSet& rSet);
     void PutItem(const SfxPoolItem& rItem);
     void ClearItem(const sal_uInt16 nWhich = 0);
@@ -408,6 +427,7 @@ protected:
     SetOfByte           aPrefVisiLayers;
     sal_uInt16          nPageNum;
 
+    // bitfield
     bool                mbMaster : 1;               // flag if this is a MasterPage
     bool                mbInserted : 1;
     bool                mbObjectsNotPersistent : 1;
@@ -429,7 +449,7 @@ protected:
 
 public:
     explicit SdrPage(SdrModel& rNewModel, bool bMasterPage=false);
-    virtual ~SdrPage() override;
+    virtual ~SdrPage();
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone(SdrModel* pNewModel) const;
     bool             IsMasterPage() const       { return mbMaster; }
@@ -486,9 +506,9 @@ public:
     /// for snap-to-grid in Writer, also for AlignObjects if 1 object is marked
     /// if pRect != null, then the pages that are intersected by this Rect,
     /// otherwise the visible pages
-    virtual const SdrPageGridFrameList* GetGridFrameList(const SdrPageView* pPV, const tools::Rectangle* pRect) const;
+    virtual const SdrPageGridFrameList* GetGridFrameList(const SdrPageView* pPV, const Rectangle* pRect) const;
 
-    css::uno::Reference< css::uno::XInterface > const & getUnoPage();
+    css::uno::Reference< css::uno::XInterface > getUnoPage();
 
     virtual SfxStyleSheet* GetTextStyleSheetForObject( SdrObject* pObj ) const;
 
@@ -515,6 +535,22 @@ private:
 };
 
 typedef tools::WeakReference< SdrPage > SdrPageWeakRef;
+
+
+// use new redirector instead of pPaintProc
+
+class SVX_DLLPUBLIC StandardCheckVisisbilityRedirector : public sdr::contact::ViewObjectContactRedirector
+{
+public:
+    StandardCheckVisisbilityRedirector();
+    virtual ~StandardCheckVisisbilityRedirector();
+
+    // all default implementations just call the same methods at the original. To do something
+    // different, override the method and at least do what the method does.
+    virtual drawinglayer::primitive2d::Primitive2DContainer createRedirectedPrimitive2DSequence(
+        const sdr::contact::ViewObjectContact& rOriginal,
+        const sdr::contact::DisplayInfo& rDisplayInfo) override;
+};
 
 
 #endif // INCLUDED_SVX_SVDPAGE_HXX

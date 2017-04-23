@@ -22,7 +22,7 @@
 
 // ODFF, English, MapDupToInternal when writing ODFF, Programmatical, ODF_11
 // functions duplicated to internal when writing ODFF are listed in static const XclFunctionInfo saFuncTable_4[]
-const ScCompiler::AddInMap ScCompiler::g_aAddInMap[] =
+ScCompiler::AddInMap ScCompiler::maAddInMap[] =
 {
     { "ORG.OPENOFFICE.WEEKS", "WEEKS", "com.sun.star.sheet.addin.DateFunctions.getDiffWeeks", "COM.SUN.STAR.SHEET.ADDIN.DATEFUNCTIONS.GETDIFFWEEKS" },
     { "ORG.OPENOFFICE.MONTHS", "MONTHS", "com.sun.star.sheet.addin.DateFunctions.getDiffMonths", "COM.SUN.STAR.SHEET.ADDIN.DATEFUNCTIONS.GETDIFFMONTHS" },
@@ -95,14 +95,14 @@ const ScCompiler::AddInMap ScCompiler::g_aAddInMap[] =
     { "IMSECH", "IMSECH", "com.sun.star.sheet.addin.Analysis.getImsech", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETIMSECH" },
     { "IMCSCH", "IMCSCH", "com.sun.star.sheet.addin.Analysis.getImcsch", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETIMCSCH" },
     { "COMPLEX", "COMPLEX", "com.sun.star.sheet.addin.Analysis.getComplex", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETCOMPLEX" },
-    { "CONVERT", "CONVERT", "com.sun.star.sheet.addin.Analysis.getConvert", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETCONVERT" },
+    { "CONVERT", "CONVERT_ADD", "com.sun.star.sheet.addin.Analysis.getConvert", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETCONVERT" },
     { "AMORDEGRC", "AMORDEGRC", "com.sun.star.sheet.addin.Analysis.getAmordegrc", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETAMORDEGRC" },
     { "AMORLINC", "AMORLINC", "com.sun.star.sheet.addin.Analysis.getAmorlinc", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETAMORLINC" },
     { "ACCRINT", "ACCRINT", "com.sun.star.sheet.addin.Analysis.getAccrint", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETACCRINT" },
     { "ACCRINTM", "ACCRINTM", "com.sun.star.sheet.addin.Analysis.getAccrintm", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETACCRINTM" },
     { "RECEIVED", "RECEIVED", "com.sun.star.sheet.addin.Analysis.getReceived", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETRECEIVED" },
     { "DISC", "DISC", "com.sun.star.sheet.addin.Analysis.getDisc", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETDISC" },
-    { "DURATION", "DURATION", "com.sun.star.sheet.addin.Analysis.getDuration", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETDURATION" },
+    { "DURATION", "DURATION_ADD", "com.sun.star.sheet.addin.Analysis.getDuration", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETDURATION" },
     { "EFFECT", "EFFECT_ADD", "com.sun.star.sheet.addin.Analysis.getEffect", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETEFFECT" },
     { "CUMPRINC", "CUMPRINC_ADD", "com.sun.star.sheet.addin.Analysis.getCumprinc", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETCUMPRINC" },
     { "CUMIPMT", "CUMIPMT_ADD", "com.sun.star.sheet.addin.Analysis.getCumipmt", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETCUMIPMT" },
@@ -135,9 +135,14 @@ const ScCompiler::AddInMap ScCompiler::g_aAddInMap[] =
     { "FVSCHEDULE", "FVSCHEDULE", "com.sun.star.sheet.addin.Analysis.getFvschedule", "COM.SUN.STAR.SHEET.ADDIN.ANALYSIS.GETFVSCHEDULE" },
 };
 
+const ScCompiler::AddInMap* ScCompiler::GetAddInMap()
+{
+    return maAddInMap;
+}
+
 size_t ScCompiler::GetAddInMapCount()
 {
-    return SAL_N_ELEMENTS(g_aAddInMap);
+    return SAL_N_ELEMENTS(maAddInMap);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

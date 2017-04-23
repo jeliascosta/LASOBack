@@ -28,8 +28,11 @@ void AutocompleteEdit::ClearEntries()
     m_aMatching.clear();
 }
 
-IMPL_LINK_NOARG(AutocompleteEdit, AutoCompleteHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(AutocompleteEdit, AutoCompleteHdl_Impl, Edit&, void)
 {
+    if( GetAutocompleteAction() != AutocompleteAction::KeyInput )
+        return;
+
     if( Application::AnyInput( VclInputFlags::KEYBOARD ) )
         return;
 

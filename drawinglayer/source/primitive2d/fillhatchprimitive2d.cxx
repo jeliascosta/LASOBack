@@ -35,14 +35,16 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void FillHatchPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer FillHatchPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
+            Primitive2DContainer aRetval;
+
             if(!getFillHatch().isDefault())
             {
                 // create hatch
                 const basegfx::BColor aHatchColor(getFillHatch().getColor());
                 const double fAngle(getFillHatch().getAngle());
-                std::vector< basegfx::B2DHomMatrix > aMatrices;
+                ::std::vector< basegfx::B2DHomMatrix > aMatrices;
                 double fDistance(getFillHatch().getDistance());
                 const bool bAdaptDistance(0 != getFillHatch().getMinimalDiscreteDistance());
 
@@ -101,15 +103,17 @@ namespace drawinglayer
 
                 // prepare return value
                 const bool bFillBackground(getFillHatch().isFillBackground());
+                aRetval.resize(bFillBackground ? aMatrices.size() + 1L : aMatrices.size());
 
                 // evtl. create filled background
                 if(bFillBackground)
                 {
                     // create primitive for background
-                    rContainer.push_back(
+                    const Primitive2DReference xRef(
                         new PolyPolygonColorPrimitive2D(
                             basegfx::B2DPolyPolygon(
                                 basegfx::tools::createPolygonFromRect(getOutputRange())), getBColor()));
+                    aRetval[0] = xRef;
                 }
 
                 // create primitives
@@ -125,9 +129,12 @@ namespace drawinglayer
                     aNewLine.append(rMatrix * aEnd);
 
                     // create hairline
-                    rContainer.push_back(new PolygonHairlinePrimitive2D(aNewLine, aHatchColor));
+                    const Primitive2DReference xRef(new PolygonHairlinePrimitive2D(aNewLine, aHatchColor));
+                    aRetval[bFillBackground ? (a + 1) : a] = xRef;
                 }
             }
+
+            return aRetval;
         }
 
         FillHatchPrimitive2D::FillHatchPrimitive2D(
@@ -176,7 +183,7 @@ namespace drawinglayer
             return getOutputRange();
         }
 
-        void FillHatchPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer FillHatchPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
             bool bAdaptDistance(0 != getFillHatch().getMinimalDiscreteDistance());
@@ -184,12 +191,12 @@ namespace drawinglayer
             if(bAdaptDistance)
             {
                 // behave view-dependent
-                DiscreteMetricDependentPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+                return DiscreteMetricDependentPrimitive2D::get2DDecomposition(rViewInformation);
             }
             else
             {
                 // behave view-independent
-                BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+                return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
             }
         }
 

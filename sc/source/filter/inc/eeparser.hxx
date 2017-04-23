@@ -38,13 +38,15 @@ struct ScHTMLImage
     Size                aSize;
     Point               aSpace;
     OUString            aFilterName;
-    std::unique_ptr<Graphic>
-                        pGraphic;       // wird von WriteToDocument uebernommen
+    Graphic*            pGraphic;       // wird von WriteToDocument uebernommen
     sal_Char            nDir;           // 1==hori, 2==verti, 3==beides
 
     ScHTMLImage() :
-        aSize( 0, 0 ), aSpace( 0, 0 ), nDir( nHorizontal )
+        aSize( 0, 0 ), aSpace( 0, 0 ), pGraphic( nullptr ),
+        nDir( nHorizontal )
         {}
+
+    ~ScHTMLImage() { delete pGraphic; }
 };
 
 struct ScEEParseEntry
@@ -124,7 +126,7 @@ public:
     void                    GetDimensions( SCCOL& nCols, SCROW& nRows ) const
                                 { nCols = nColMax; nRows = nRowMax; }
 
-    size_t           ListSize() const{ return maList.size(); }
+    inline size_t           ListSize() const{ return maList.size(); }
     ScEEParseEntry*         ListEntry( size_t index ) { return maList[ index ]; }
     const ScEEParseEntry*   ListEntry( size_t index ) const { return maList[ index ]; }
 };

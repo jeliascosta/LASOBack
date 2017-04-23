@@ -40,7 +40,7 @@ namespace dbaui
             @param  _rUpScroll
                 the method to set
         */
-        void setUpScrollMethod( const Link<LinkParamNone*,void>& _rUpScroll )
+        inline void setUpScrollMethod( const Link<LinkParamNone*,void>& _rUpScroll )
         {
             m_aUpScroll = _rUpScroll;
         }
@@ -49,7 +49,7 @@ namespace dbaui
             @param  _rDownScroll
                 the method to set
         */
-        void setDownScrollMethod( const Link<LinkParamNone*,void>& _rDownScroll )
+        inline void setDownScrollMethod( const Link<LinkParamNone*,void>& _rDownScroll )
         {
             m_aDownScroll = _rDownScroll;
         }

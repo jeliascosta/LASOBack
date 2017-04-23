@@ -24,7 +24,7 @@
 #include <com/sun/star/report/XFixedText.hpp>
 #include "ReportControlModel.hxx"
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include "ReportHelperDefines.hxx"
 
@@ -39,7 +39,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OFixedText :  public cppu::BaseMutex,
+    class OFixedText :  public comphelper::OBaseMutex,
                             public FixedTextBase,
                             public FixedTextPropertySet
     {
@@ -81,7 +81,7 @@ namespace reportdesign
             l.notify();
         }
     protected:
-        virtual ~OFixedText() override;
+        virtual ~OFixedText();
     public:
         explicit OFixedText(css::uno::Reference< css::uno::XComponentContext > const & _xContext);
         explicit OFixedText(css::uno::Reference< css::uno::XComponentContext > const & _xContext
@@ -90,24 +90,22 @@ namespace reportdesign
 
         DECLARE_XINTERFACE( )
         // css::lang::XServiceInfo
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_Static();
+        static css::uno::Sequence< OUString > getSupportedServiceNames_Static() throw( css::uno::RuntimeException );
+        static OUString getImplementationName_Static() throw( css::uno::RuntimeException );
         static css::uno::Reference< css::uno::XInterface > SAL_CALL
             create(css::uno::Reference< css::uno::XComponentContext > const & xContext);
         // css::beans::XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
-        virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-        virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-        virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-        virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-        virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-        virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XReportComponent
         REPORTCOMPONENT_HEADER()
@@ -115,53 +113,53 @@ namespace reportdesign
         SHAPE_HEADER()
 
         // XShapeDescriptor
-        virtual OUString SAL_CALL getShapeType(  ) override;
+        virtual OUString SAL_CALL getShapeType(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XReportControlModel
         REPORTCONTROLMODEL_HEADER()
 
         // XCloneable
-        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XFixedText
-        virtual OUString SAL_CALL getLabel() override;
-        virtual void SAL_CALL setLabel( const OUString& _label ) override;
+        virtual OUString SAL_CALL getLabel() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setLabel( const OUString& _label ) throw (css::uno::RuntimeException, std::exception) override;
 
         // css::report::XReportControlFormat
         REPORTCONTROLFORMAT_HEADER()
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
-        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override
+        virtual void SAL_CALL dispose() throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override
         {
             cppu::WeakComponentImplHelperBase::addEventListener(aListener);
         }
-        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override
+        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override
         {
             cppu::WeakComponentImplHelperBase::removeEventListener(aListener);
         }
 
         // XChild
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) override;
-        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
         // XContainer
-        virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
-        virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
+        virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType(  ) override;
-        virtual sal_Bool SAL_CALL hasElements(  ) override;
+        virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XIndexReplace
-        virtual void SAL_CALL replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexContainer
-        virtual void SAL_CALL insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) override;
-        virtual void SAL_CALL removeByIndex( ::sal_Int32 Index ) override;
+        virtual void SAL_CALL insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexAccess
-        virtual ::sal_Int32 SAL_CALL getCount(  ) override;
-        virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override;
+        virtual ::sal_Int32 SAL_CALL getCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     };
 }
 #endif // INCLUDED_REPORTDESIGN_SOURCE_CORE_INC_FIXEDTEXT_HXX

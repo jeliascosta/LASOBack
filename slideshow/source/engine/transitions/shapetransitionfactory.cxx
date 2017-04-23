@@ -59,7 +59,7 @@ public:
         bool                                    bDirectionForward,
         bool                                    bModeIn );
 
-    virtual ~ClippingAnimation() override;
+    virtual ~ClippingAnimation();
 
     // Animation interface
 
@@ -110,9 +110,12 @@ ClippingAnimation::~ClippingAnimation()
     {
         end_();
     }
-    catch (const uno::Exception&)
+    catch (uno::Exception &)
     {
-        SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
+        OSL_FAIL( OUStringToOString(
+                        comphelper::anyToString(
+                            cppu::getCaughtException() ),
+                        RTL_TEXTENCODING_UTF8 ).getStr() );
     }
 }
 
@@ -348,9 +351,14 @@ AnimationActivitySharedPtr createShapeTransitionByType(
     {
         // No animation generated, maybe no table entry for given
         // transition?
-        SAL_WARN("slideshow",
-            "createShapeTransitionByType(): Unknown type/subtype combination encountered: "
-            << xTransition->getTransition() << " " << xTransition->getSubtype() );
+        OSL_TRACE(
+            "createShapeTransitionByType(): Unknown type/subtype (%d/%d) "
+            "combination encountered",
+            xTransition->getTransition(),
+            xTransition->getSubtype() );
+        OSL_FAIL(
+            "createShapeTransitionByType(): Unknown type/subtype "
+            "combination encountered" );
     }
 
     return pGeneratedActivity;

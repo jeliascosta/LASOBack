@@ -20,7 +20,6 @@
 #include "i18nutil/casefolding.hxx"
 #include "casefolding_data.h"
 #include "i18nutil/widthfolding.hxx"
-#include "i18nutil/transliteration.hxx"
 
 using namespace com::sun::star::lang;
 using namespace com::sun::star::uno;
@@ -57,7 +56,7 @@ static bool cased_letter(sal_Unicode ch)
 // whenever there are more accents above.
 #define accent_above(ch) (((ch) >= 0x0300 && (ch) <= 0x0314) || ((ch) >= 0x033D && (ch) <= 0x0344) || (ch) == 0x0346 || ((ch) >= 0x034A && (ch) <= 0x034C))
 
-Mapping& casefolding::getConditionalValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, Locale& aLocale, MappingType nMappingType)
+Mapping& casefolding::getConditionalValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, Locale& aLocale, MappingType nMappingType) throw (RuntimeException)
 {
         switch(str[pos]) {
         case 0x03a3:
@@ -86,7 +85,7 @@ Mapping& casefolding::getConditionalValue(const sal_Unicode* str, sal_Int32 pos,
         throw RuntimeException();
 }
 
-Mapping& casefolding::getValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, Locale& aLocale, MappingType nMappingType)
+Mapping& casefolding::getValue(const sal_Unicode* str, sal_Int32 pos, sal_Int32 len, Locale& aLocale, MappingType nMappingType) throw (RuntimeException)
 {
     static Mapping dummy = { 0, 1, { 0, 0, 0 } };
     sal_Int16 address = CaseMappingIndex[str[pos] >> 8];
@@ -130,7 +129,7 @@ is_ja_voice_sound_mark(sal_Unicode& current, sal_Unicode next)
         return c != 0;
 }
 
-sal_Unicode casefolding::getNextChar(const sal_Unicode *str, sal_Int32& idx, sal_Int32 len, MappingElement& e, Locale& aLocale, MappingType nMappingType, TransliterationFlags moduleLoaded)
+sal_Unicode casefolding::getNextChar(const sal_Unicode *str, sal_Int32& idx, sal_Int32 len, MappingElement& e, Locale& aLocale, MappingType nMappingType, TransliterationModules moduleLoaded) throw (RuntimeException)
 {
         if( idx >= len )
         {
@@ -140,7 +139,7 @@ sal_Unicode casefolding::getNextChar(const sal_Unicode *str, sal_Int32& idx, sal
 
         sal_Unicode c;
 
-        if (moduleLoaded & TransliterationFlags::IGNORE_CASE) {
+        if (moduleLoaded & TransliterationModules_IGNORE_CASE) {
             if( e.current >= e.element.nmap ) {
                 e.element = getValue(str, idx++, len, aLocale, nMappingType);
                 e.current = 0;
@@ -150,13 +149,13 @@ sal_Unicode casefolding::getNextChar(const sal_Unicode *str, sal_Int32& idx, sal
             c = *(str + idx++);
         }
 
-        if (moduleLoaded & TransliterationFlags::IGNORE_KANA) {
+        if (moduleLoaded & TransliterationModules_IGNORE_KANA) {
             if ((0x3040 <= c && c <= 0x3094) || (0x309d <= c && c <= 0x309f))
                 c += 0x60;
         }
 
         // composition: KA + voice-mark --> GA. see halfwidthToFullwidth.cxx for detail
-        if (moduleLoaded & TransliterationFlags::IGNORE_WIDTH) {
+        if (moduleLoaded & TransliterationModules_IGNORE_WIDTH) {
             static oneToOneMapping& half2fullTable = widthfolding::gethalf2fullTable();
             c = half2fullTable[c];
             if (0x3040 <= c && c <= 0x30ff && idx < len &&

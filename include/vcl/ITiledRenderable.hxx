@@ -102,6 +102,15 @@ public:
     virtual void initializeForTiledRendering(const css::uno::Sequence<css::beans::PropertyValue>& rArguments) = 0;
 
     /**
+     * Registers a callback that will be invoked whenever the tiled renderer
+     * wants to notify the client about an event.
+     *
+     * @param pCallback is the callback function
+     * @param pData is private data of the client that will be sent back when the callback is invoked
+     */
+    virtual void registerCallback(LibreOfficeKitCallback pCallback, void* pData) = 0;
+
+    /**
      * Posts a keyboard event on the document.
      *
      * @see lok::Document::postKeyEvent().
@@ -155,7 +164,7 @@ public:
      * @param rRectangle - if not empty, then limit the output only to the area of this rectangle
      * @return a JSON describing position/content of rows/columns
      */
-    virtual OUString getRowColumnHeaders(const tools::Rectangle& rRectangle)
+    virtual OUString getRowColumnHeaders(const Rectangle& rRectangle)
     {
         (void) rRectangle;
         return OUString();
@@ -201,30 +210,8 @@ public:
     }
 
     /// @see lok::Document::setClientVisibleArea().
-    virtual void setClientVisibleArea(const tools::Rectangle& /*rRectangle*/)
+    virtual void setClientVisibleArea(const Rectangle& /*rRectangle*/)
     {
-    }
-
-    /// Implementation for
-    /// lok::Document::getCommandValues(".uno:AcceptTrackedChanges") when there
-    /// is no matching UNO API.
-    virtual OUString getTrackedChanges()
-    {
-        return OUString();
-    }
-
-    /// Implementation for
-    /// lok::Document::getCommandValues(".uno:TrackedChangeAuthors").
-    virtual OUString getTrackedChangeAuthors()
-    {
-        return OUString();
-    }
-
-    /// Implementation for
-    /// lok::Document::getCommandValues(".uno:ViewAnnotations");
-    virtual OUString getPostIts()
-    {
-        return OUString();
     }
 };
 

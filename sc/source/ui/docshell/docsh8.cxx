@@ -34,7 +34,6 @@
 
 #include <com/sun/star/sdb/CommandType.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XConnection.hpp>
 #include <com/sun/star/sdbc/XDriver.hpp>
 #include <com/sun/star/sdbc/XDriverAccess.hpp>
@@ -108,11 +107,11 @@ namespace
         aURL.SetSmartProtocol( INetProtocol::File );
         aURL.SetSmartURL( rFullFileName );
         _rTabName = aURL.getBase( INetURLObject::LAST_SEGMENT, true,
-                INetURLObject::DecodeMechanism::Unambiguous );
+                INetURLObject::DECODE_UNAMBIGUOUS );
         OUString aExtension = aURL.getExtension();
         aURL.removeSegment();
         aURL.removeFinalSlash();
-        OUString aPath = aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE);
+        OUString aPath = aURL.GetMainURL(INetURLObject::NO_DECODE);
         uno::Reference<uno::XComponentContext> xContext = comphelper::getProcessComponentContext();
 
         _rDrvMgr.set( sdbc::DriverManager::create( xContext ) );
@@ -124,7 +123,7 @@ namespace
 
         ::std::vector< rtl_TextEncoding > aEncodings;
         svxform::charset_helper::getSupportedTextEncodings( aEncodings );
-        ::std::vector< rtl_TextEncoding >::iterator aIter = ::std::find(aEncodings.begin(),aEncodings.end(), eCharSet);
+        ::std::vector< rtl_TextEncoding >::iterator aIter = ::std::find(aEncodings.begin(),aEncodings.end(),(rtl_TextEncoding) eCharSet);
         if ( aIter == aEncodings.end() )
         {
             OSL_FAIL( "DBaseImport: dbtools::OCharsetMap doesn't know text encoding" );
@@ -170,7 +169,7 @@ bool ScDocShell::MoveFile( const INetURLObject& rSourceObj, const INetURLObject&
 
     try
     {
-        ::ucbhelper::Content aDestPath( aDestPathObj.GetMainURL(INetURLObject::DecodeMechanism::NONE),
+        ::ucbhelper::Content aDestPath( aDestPathObj.GetMainURL(INetURLObject::NO_DECODE),
                             uno::Reference< css::ucb::XCommandEnvironment >(),
                             comphelper::getProcessComponentContext() );
         uno::Reference< css::ucb::XCommandInfo > xInfo = aDestPath.getCommands();
@@ -178,7 +177,7 @@ bool ScDocShell::MoveFile( const INetURLObject& rSourceObj, const INetURLObject&
         if ( xInfo->hasCommandByName( aTransferName ) )
         {
             aDestPath.executeCommand( aTransferName, uno::makeAny(
-                css::ucb::TransferInfo( bMoveData, rSourceObj.GetMainURL(INetURLObject::DecodeMechanism::NONE), aName,
+                css::ucb::TransferInfo( bMoveData, rSourceObj.GetMainURL(INetURLObject::NO_DECODE), aName,
                                                        css::ucb::NameClash::ERROR ) ) );
         }
         else
@@ -203,7 +202,7 @@ bool ScDocShell::KillFile( const INetURLObject& rURL )
     bool bRet = true;
     try
     {
-        ::ucbhelper::Content aCnt( rURL.GetMainURL(INetURLObject::DecodeMechanism::NONE),
+        ::ucbhelper::Content aCnt( rURL.GetMainURL(INetURLObject::NO_DECODE),
                         uno::Reference< css::ucb::XCommandEnvironment >(),
                         comphelper::getProcessComponentContext() );
         aCnt.executeCommand( "delete", css::uno::Any( true ) );
@@ -222,7 +221,7 @@ bool ScDocShell::IsDocument( const INetURLObject& rURL )
     bool bRet = false;
     try
     {
-        ::ucbhelper::Content aCnt( rURL.GetMainURL(INetURLObject::DecodeMechanism::NONE),
+        ::ucbhelper::Content aCnt( rURL.GetMainURL(INetURLObject::NO_DECODE),
                         uno::Reference< css::ucb::XCommandEnvironment >(),
                         comphelper::getProcessComponentContext() );
         bRet = aCnt.isDocument();
@@ -251,7 +250,7 @@ static void lcl_setScalesToColumns(ScDocument& rDoc, const vector<long>& rScales
             continue;
 
         sal_uInt32 nOldFormat;
-        rDoc.GetNumberFormat(i, 0, 0, nOldFormat);
+        rDoc.GetNumberFormat(static_cast<SCCOL>(i), 0, 0, nOldFormat);
         const SvNumberformat* pOldEntry = pFormatter->GetEntry(nOldFormat);
         if (!pOldEntry)
             continue;
@@ -280,7 +279,7 @@ static void lcl_setScalesToColumns(ScDocument& rDoc, const vector<long>& rScales
         ScPatternAttr aNewAttrs( rDoc.GetPool() );
         SfxItemSet& rSet = aNewAttrs.GetItemSet();
         rSet.Put( SfxUInt32Item(ATTR_VALUE_FORMAT, nNewFormat) );
-        rDoc.ApplyPatternAreaTab(i, 0, i, MAXROW, 0, aNewAttrs);
+        rDoc.ApplyPatternAreaTab(static_cast<SCCOL>(i), 0, static_cast<SCCOL>(i), MAXROW, 0, aNewAttrs);
     }
 }
 
@@ -462,6 +461,16 @@ sal_uLong ScDocShell::DBaseImport( const OUString& rFullFileName, rtl_TextEncodi
 
 namespace {
 
+inline bool IsAsciiDigit( sal_Unicode c )
+{
+    return 0x30 <= c && c <= 0x39;
+}
+
+inline bool IsAsciiAlpha( sal_Unicode c )
+{
+    return (0x41 <= c && c <= 0x5a) || (0x61 <= c && c <= 0x7a);
+}
+
 void lcl_GetColumnTypes(
     ScDocShell& rDocShell, const ScRange& rDataRange, bool bHasFieldNames,
     OUString* pColNames, sal_Int32* pColTypes, sal_Int32* pColLengths,
@@ -501,7 +510,7 @@ void lcl_GetColumnTypes(
             if ( nToken > 1 )
             {
                 aFieldName = aString.getToken( 0, ',' );
-                aString = aString.replaceAll(" ", "");
+                aString = comphelper::string::remove(aString, ' ');
                 switch ( aString.getToken( 1, ',' )[0] )
                 {
                     case 'L' :
@@ -558,14 +567,14 @@ void lcl_GetColumnTypes(
             // "_DBASELOCK" is reserved (obsolete because first character is
             // not alphabetical).
             // No duplicated names.
-            if ( !rtl::isAsciiAlpha(aFieldName[0]) )
+            if ( !IsAsciiAlpha( aFieldName[0] ) )
                 aFieldName = "N" + aFieldName;
             OUString aTmpStr;
             sal_Unicode c;
             for ( const sal_Unicode* p = aFieldName.getStr(); ( c = *p ) != 0; p++ )
             {
-                if ( rtl::isAsciiAlpha(c) || rtl::isAsciiDigit(c) || c == '_' )
-                    aTmpStr += OUStringLiteral1(c);
+                if ( IsAsciiAlpha( c ) || IsAsciiDigit( c ) || c == '_' )
+                    aTmpStr += OUString(c);
                 else
                     aTmpStr += "_";
             }
@@ -784,7 +793,7 @@ sal_uLong ScDocShell::DBaseExport( const OUString& rFullFileName, rtl_TextEncodi
 
     bool bHasFieldNames = true;
     for ( SCCOL nDocCol = nFirstCol; nDocCol <= nLastCol && bHasFieldNames; nDocCol++ )
-    {   // only Strings in first row => are field names
+    {   // nur Strings in erster Zeile => sind Feldnamen
         if ( !aDocument.HasStringData( nDocCol, nFirstRow, nTab ) )
             bHasFieldNames = false;
     }
@@ -958,7 +967,7 @@ sal_uLong ScDocShell::DBaseExport( const OUString& rFullFileName, rtl_TextEncodi
                     case sdbc::DataType::DATE:
                         {
                             aDocument.GetValue( nDocCol, nDocRow, nTab, fVal );
-                            // differentiate between 0 with value and 0 no-value
+                            // zwischen 0 Wert und 0 kein Wert unterscheiden
                             bool bIsNull = (fVal == 0.0);
                             if ( bIsNull )
                                 bIsNull = !aDocument.HasValueData( nDocCol, nDocRow, nTab );
@@ -1004,7 +1013,11 @@ sal_uLong ScDocShell::DBaseExport( const OUString& rFullFileName, rtl_TextEncodi
             //! error handling and recovery of old
             //! ScDocShell::SbaSdbExport is still missing!
 
-            aProgress.SetStateOnPercent( nDocRow - nFirstRow );
+            if ( !aProgress.SetStateOnPercent( nDocRow - nFirstRow ) )
+            {   // UserBreak
+                nErr = SCERR_EXPORT_DATA;
+                break;
+            }
         }
 
         comphelper::disposeComponent( xRowSet );
@@ -1090,10 +1103,10 @@ sal_uLong ScDocShell::DBaseExport( const OUString& rFullFileName, rtl_TextEncodi
             OUString sEncoding( SvxTextEncodingTable().GetTextString( eCharSet));
             nErr = *new TwoStringErrorInfo( (bEncErr ? SCERR_EXPORT_ENCODING :
                         SCERR_EXPORT_FIELDWIDTH), sPosition, sEncoding,
-                    ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError);
+                    ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR);
         }
         else if ( !aException.Message.isEmpty() )
-            nErr = *new StringErrorInfo( SCERR_EXPORT_SQLEXCEPTION, aException.Message, ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError);
+            nErr = *new StringErrorInfo( (SCERR_EXPORT_SQLEXCEPTION), aException.Message, ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR);
         else
             nErr = SCERR_EXPORT_DATA;
     }

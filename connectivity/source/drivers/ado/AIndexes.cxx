@@ -43,7 +43,7 @@ sdbcx::ObjectType OIndexes::createObject(const OUString& _rName)
     return new OAdoIndex(isCaseSensitive(),m_pConnection,m_aCollection.GetItem(_rName));
 }
 
-void OIndexes::impl_refresh()
+void OIndexes::impl_refresh() throw(RuntimeException)
 {
     m_aCollection.Refresh();
 }
@@ -56,8 +56,8 @@ Reference< XPropertySet > OIndexes::createDescriptor()
 // XAppend
 sdbcx::ObjectType OIndexes::appendObject( const OUString& _rForName, const Reference< XPropertySet >& descriptor )
 {
-    OAdoIndex* pIndex = nullptr;
-    if ( !getImplementation(pIndex,descriptor) || pIndex == nullptr )
+    OAdoIndex* pIndex = NULL;
+    if ( !getImplementation(pIndex,descriptor) || pIndex == NULL )
         m_pConnection->throwGenericSQLException( STR_INVALID_INDEX_DESCRIPTOR_ERROR,static_cast<XTypeProvider*>(this) );
 
     ADOIndexes* pIndexes = m_aCollection;

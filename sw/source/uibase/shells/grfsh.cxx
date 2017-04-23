@@ -31,7 +31,7 @@
 #include <editeng/sizeitem.hxx>
 #include <editeng/protitem.hxx>
 #include <sfx2/request.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <svl/srchitem.hxx>
 #include <sfx2/htmlmode.hxx>
 #include <svx/sdgluitm.hxx>
@@ -64,6 +64,7 @@
 #include <edtwin.hxx>
 #include <swwait.hxx>
 #include <shells.hrc>
+#include <popup.hrc>
 #include <svx/extedit.hxx>
 #include <svx/graphichelper.hxx>
 #include <doc.hxx>
@@ -85,7 +86,7 @@ class SwGrfShell::SwExternalToolEdit
 {
 private:
     SwWrtShell *const m_pShell;
-    std::shared_ptr<SwUnoCursor> const m_pCursor;
+    ::std::shared_ptr<SwUnoCursor> const m_pCursor;
 
 public:
     explicit SwExternalToolEdit(SwWrtShell *const pShell)
@@ -113,7 +114,7 @@ void SwGrfShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("graphic");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_GRAFIK_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_GRAFIK_TOOLBOX);
 }
 
 void SwGrfShell::Execute(SfxRequest &rReq)
@@ -148,15 +149,15 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             if( pGraphic )
             {
                 Size aSize (
-                    convertTwipToMm100(rSh.GetAnyCurRect(CurRectType::FlyEmbedded).Width()),
-                    convertTwipToMm100(rSh.GetAnyCurRect(CurRectType::FlyEmbedded).Height()));
+                    convertTwipToMm100(rSh.GetAnyCurRect(RECT_FLY_EMBEDDED).Width()),
+                    convertTwipToMm100(rSh.GetAnyCurRect(RECT_FLY_EMBEDDED).Height()));
 
                 SfxItemSet aSet( rSh.GetAttrPool(), RES_GRFATR_MIRRORGRF, RES_GRFATR_CROPGRF );
                 rSh.GetCurAttr( aSet );
                 SwMirrorGrf aMirror( static_cast<const SwMirrorGrf&>( aSet.Get(RES_GRFATR_MIRRORGRF)) );
                 SwCropGrf aCrop( static_cast<const SwCropGrf&>( aSet.Get(RES_GRFATR_CROPGRF)) );
 
-                tools::Rectangle aCropRectangle(
+                Rectangle aCropRectangle(
                     convertTwipToMm100(aCrop.GetLeft()),
                     convertTwipToMm100(aCrop.GetTop()),
                     convertTwipToMm100(aCrop.GetRight()),
@@ -168,8 +169,8 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 if( aDialog->Execute() == RET_OK )
                 {
                     rSh.StartAllAction();
-                    rSh.StartUndo(SwUndoId::START);
-                    tools::Rectangle aScaledCropedRectangle = aDialog->GetScaledCropRectangle();
+                    rSh.StartUndo(UNDO_START);
+                    Rectangle aScaledCropedRectangle = aDialog->GetScaledCropRectangle();
 
                     aCrop.SetLeft(   convertMm100ToTwip( aScaledCropedRectangle.Left() ));
                     aCrop.SetTop(    convertMm100ToTwip( aScaledCropedRectangle.Top() ));
@@ -182,7 +183,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                     rSh.SetAttrItem(aCrop);
                     rSh.SetAttrItem(aMirror);
 
-                    rSh.EndUndo(SwUndoId::END);
+                    rSh.EndUndo(UNDO_END);
                     rSh.EndAllAction();
                 }
             }
@@ -218,12 +219,12 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             const SwViewOption* pVOpt = rSh.GetViewOptions();
             SwViewOption aUsrPref( *pVOpt );
 
-            SfxItemSet aSet(GetPool(), // sorted by indices
+            SfxItemSet aSet(GetPool(), //UUUU sorted by indices
 
                 RES_FRMATR_BEGIN,RES_FRMATR_END - 1,                            // [   82
                 RES_GRFATR_MIRRORGRF,RES_GRFATR_CROPGRF,                        // [  123
 
-                // FillAttribute support
+                //UUUU FillAttribute support
                 XATTR_FILL_FIRST,       XATTR_FILL_LAST,                        // [ 1014
 
                 SID_DOCFRAME,SID_DOCFRAME,                                      // [ 5598
@@ -232,10 +233,10 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 SID_ATTR_GRAF_KEEP_ZOOM,SID_ATTR_GRAF_KEEP_ZOOM,                // [10882
                 SID_ATTR_GRAF_FRMSIZE,SID_ATTR_GRAF_GRAPHIC,                    // [10884, contains SID_ATTR_GRAF_FRMSIZE_PERCENT
 
-                // items to hand over XPropertyList things like
+                //UUUU items to hand over XPropertyList things like
                 // XColorList, XHatchList, XGradientList and XBitmapList
                 // to the Area TabPage
-                SID_COLOR_TABLE,        SID_PATTERN_LIST,                        // [10179
+                SID_COLOR_TABLE,        SID_BITMAP_LIST,                        // [10179
 
                 SID_HTML_MODE,SID_HTML_MODE,                                    // [10414
                 FN_GET_PRINT_AREA,FN_GET_PRINT_AREA,                            // [21032
@@ -246,7 +247,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 SID_REFERER,            SID_REFERER,
                 0);
 
-            // create needed items for XPropertyList entries from the DrawModel so that
+            //UUUU create needed items for XPropertyList entries from the DrawModel so that
             // the Area TabPage can access them
             const SwDrawModel* pDrawModel = rSh.GetView().GetDocShell()->GetDoc()->getIDocumentDrawModelAccess().GetDrawModel();
 
@@ -254,14 +255,13 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             aSet.Put(SvxGradientListItem(pDrawModel->GetGradientList(), SID_GRADIENT_LIST));
             aSet.Put(SvxHatchListItem(pDrawModel->GetHatchList(), SID_HATCH_LIST));
             aSet.Put(SvxBitmapListItem(pDrawModel->GetBitmapList(), SID_BITMAP_LIST));
-            aSet.Put(SvxPatternListItem(pDrawModel->GetPatternList(), SID_PATTERN_LIST));
 
             sal_uInt16 nHtmlMode = ::GetHtmlMode(GetView().GetDocShell());
             aSet.Put(SfxUInt16Item(SID_HTML_MODE, nHtmlMode));
             FieldUnit eMetric = ::GetDfltMetric((0 != (nHtmlMode&HTMLMODE_ON)));
             SW_MOD()->PutItem(SfxUInt16Item(SID_ATTR_METRIC, static_cast< sal_uInt16 >(eMetric)) );
 
-            const SwRect* pRect = &rSh.GetAnyCurRect(CurRectType::Page);
+            const SwRect* pRect = &rSh.GetAnyCurRect(RECT_PAGE);
             SwFormatFrameSize aFrameSize( ATT_VAR_SIZE, pRect->Width(), pRect->Height());
             aFrameSize.SetWhich( GetPool().GetWhich( SID_ATTR_PAGE_SIZE ) );
             aSet.Put( aFrameSize );
@@ -273,7 +273,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 aSet.Put( SfxStringItem( FN_SET_FRM_ALT_NAME, rSh.GetObjTitle() ) );
             }
 
-            pRect = &rSh.GetAnyCurRect(CurRectType::PagePrt);
+            pRect = &rSh.GetAnyCurRect(RECT_PAGE_PRT);
             aFrameSize.SetWidth( pRect->Width() );
             aFrameSize.SetHeight( pRect->Height() );
             aFrameSize.SetWhich( GetPool().GetWhich(FN_GET_PRINT_AREA) );
@@ -285,9 +285,9 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             // At percentage values initialize size
             SwFormatFrameSize aSizeCopy = static_cast<const SwFormatFrameSize&>(aSet.Get(RES_FRM_SIZE));
             if (aSizeCopy.GetWidthPercent() && aSizeCopy.GetWidthPercent() != SwFormatFrameSize::SYNCED)
-                aSizeCopy.SetWidth(rSh.GetAnyCurRect(CurRectType::FlyEmbedded).Width());
+                aSizeCopy.SetWidth(rSh.GetAnyCurRect(RECT_FLY_EMBEDDED).Width());
             if (aSizeCopy.GetHeightPercent() && aSizeCopy.GetHeightPercent() != SwFormatFrameSize::SYNCED)
-                aSizeCopy.SetHeight(rSh.GetAnyCurRect(CurRectType::FlyEmbedded).Height());
+                aSizeCopy.SetHeight(rSh.GetAnyCurRect(RECT_FLY_EMBEDDED).Height());
             // and now set the size for "external" tabpages
             {
                 SvxSizeItem aSzItm( SID_ATTR_GRAF_FRMSIZE, aSizeCopy.GetSize() );
@@ -308,7 +308,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             if( !sGrfNm.isEmpty() )
             {
                 aSet.Put( SvxBrushItem( INetURLObject::decode( sGrfNm,
-                                           INetURLObject::DecodeMechanism::Unambiguous ),
+                                           INetURLObject::DECODE_UNAMBIGUOUS ),
                                         sFilterNm, GPOS_LT,
                                         SID_ATTR_GRAF_GRAPHIC ));
             }
@@ -336,7 +336,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             aSet.Put(SfxBoolItem(FN_KEEP_ASPECT_RATIO, aUsrPref.IsKeepRatio()));
             aSet.Put(SfxBoolItem( SID_ATTR_GRAF_KEEP_ZOOM, aUsrPref.IsGrfKeepZoom()));
 
-            aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetFrame()));
+            aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetTopFrame()));
 
             SfxObjectShell * sh = rSh.GetDoc()->GetPersist();
             if (sh != nullptr && sh->HasName())
@@ -347,7 +347,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
 
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "no dialog factory!");
-            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("PictureDialog",
+            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("PictureDialog",
                                                     GetView().GetViewFrame(),
                                                     GetView().GetWindow(),
                                                     aSet, false));
@@ -359,7 +359,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
             if (pDlg->Execute() == RET_OK)
             {
                 rSh.StartAllAction();
-                rSh.StartUndo(SwUndoId::START);
+                rSh.StartUndo(UNDO_START);
                 const SfxPoolItem* pItem;
                 SfxItemSet* pSet = const_cast<SfxItemSet*>(pDlg->GetOutputItemSet());
                 rReq.Done(*pSet);
@@ -461,7 +461,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
                 if( aGrfSet.Count() )
                     rSh.SetAttrSet( aGrfSet );
 
-                rSh.EndUndo(SwUndoId::END);
+                rSh.EndUndo(UNDO_END);
                 rSh.EndAllAction();
             }
         }
@@ -480,7 +480,7 @@ void SwGrfShell::Execute(SfxRequest &rReq)
         case SID_OBJECT_CROP:
         {
             GraphicObject const *pGraphicObject = rSh.GetGraphicObj();
-            if (nullptr != pGraphicObject  && SdrDragMode::Crop != rSh.GetDragMode()) {
+            if (nullptr != pGraphicObject  && SDRDRAG_CROP != rSh.GetDragMode()) {
                 rSh.StartCropImage();
             }
         }
@@ -494,11 +494,10 @@ void SwGrfShell::Execute(SfxRequest &rReq)
 
 void SwGrfShell::ExecAttr( SfxRequest &rReq )
 {
-    GraphicType nGrfType = GraphicType::NONE;
-    if (CNT_GRF == GetShell().GetCntType())
-        nGrfType = GetShell().GetGraphicType();
-    if (GraphicType::Bitmap == nGrfType ||
-        GraphicType::GdiMetafile == nGrfType)
+    sal_uInt16 nGrfType;
+    if( CNT_GRF == GetShell().GetCntType() &&
+        ( GRAPHIC_BITMAP == ( nGrfType = GetShell().GetGraphicType()) ||
+          GRAPHIC_GDIMETAFILE == nGrfType ))
     {
         SfxItemSet aGrfSet( GetShell().GetAttrPool(), RES_GRFATR_BEGIN,
                                                       RES_GRFATR_END -1 );
@@ -515,29 +514,29 @@ void SwGrfShell::ExecAttr( SfxRequest &rReq )
             {
                 GetShell().GetCurAttr( aGrfSet );
                 SwMirrorGrf aMirror( static_cast<const SwMirrorGrf&>(aGrfSet.Get( RES_GRFATR_MIRRORGRF )) );
-                MirrorGraph nMirror = aMirror.GetValue();
+                sal_uInt16 nMirror = aMirror.GetValue();
                 if ( nSlot==SID_FLIP_HORIZONTAL )
                     switch( nMirror )
                     {
-                    case MirrorGraph::Dont: nMirror = MirrorGraph::Vertical;
+                    case RES_MIRROR_GRAPH_DONT: nMirror = RES_MIRROR_GRAPH_VERT;
                                                 break;
-                    case MirrorGraph::Horizontal:  nMirror = MirrorGraph::Both;
+                    case RES_MIRROR_GRAPH_HOR:  nMirror = RES_MIRROR_GRAPH_BOTH;
                                                 break;
-                    case MirrorGraph::Vertical:   nMirror = MirrorGraph::Dont;
+                    case RES_MIRROR_GRAPH_VERT:   nMirror = RES_MIRROR_GRAPH_DONT;
                                                 break;
-                    case MirrorGraph::Both: nMirror = MirrorGraph::Horizontal;
+                    case RES_MIRROR_GRAPH_BOTH: nMirror = RES_MIRROR_GRAPH_HOR;
                                                 break;
                     }
                 else
                     switch( nMirror )
                     {
-                    case MirrorGraph::Dont: nMirror = MirrorGraph::Horizontal;
+                    case RES_MIRROR_GRAPH_DONT: nMirror = RES_MIRROR_GRAPH_HOR;
                                                 break;
-                    case MirrorGraph::Vertical: nMirror = MirrorGraph::Both;
+                    case RES_MIRROR_GRAPH_VERT: nMirror = RES_MIRROR_GRAPH_BOTH;
                                                 break;
-                    case MirrorGraph::Horizontal:    nMirror = MirrorGraph::Dont;
+                    case RES_MIRROR_GRAPH_HOR:    nMirror = RES_MIRROR_GRAPH_DONT;
                                                 break;
-                    case MirrorGraph::Both: nMirror = MirrorGraph::Vertical;
+                    case RES_MIRROR_GRAPH_BOTH: nMirror = RES_MIRROR_GRAPH_VERT;
                                                 break;
                     }
                 aMirror.SetValue( nMirror );
@@ -599,7 +598,7 @@ void SwGrfShell::ExecAttr( SfxRequest &rReq )
         case SID_ATTR_GRAF_MODE:
             if( pItem )
                 aGrfSet.Put( SwDrawModeGrf(
-                            (GraphicDrawMode)static_cast<const SfxUInt16Item*>(pItem)->GetValue() ));
+                            static_cast<const SfxUInt16Item*>(pItem)->GetValue() ));
             break;
 
         case SID_COLOR_SETTINGS:
@@ -621,7 +620,7 @@ void SwGrfShell::ExecAttr( SfxRequest &rReq )
         case SID_GRFFILTER_POPART:
         case SID_GRFFILTER_SEPIA:
         case SID_GRFFILTER_SOLARIZE:
-            if( GraphicType::Bitmap == nGrfType )
+            if( GRAPHIC_BITMAP == nGrfType )
             {
                 // #119353# - robust
                 const GraphicObject* pFilterObj( GetShell().GetGraphicObj() );
@@ -677,7 +676,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
 
         case SID_SAVE_GRAPHIC:
         case SID_EXTERNAL_EDIT:
-            if( rSh.GetGraphicType() == GraphicType::NONE )
+            if( rSh.GetGraphicType() == GRAPHIC_NONE )
                 bDisable = true;
             break;
 
@@ -699,17 +698,19 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                 MirrorGraph nState = static_cast< const MirrorGraph >(static_cast<const SwMirrorGrf &>( aCoreSet.Get(
                                         RES_GRFATR_MIRRORGRF )).GetValue());
 
-                rSet.Put(SfxBoolItem( nWhich, nState == MirrorGraph::Vertical ||
-                                              nState == MirrorGraph::Both));
+                rSet.Put(SfxBoolItem( nWhich, nState == RES_MIRROR_GRAPH_VERT ||
+                                              nState == RES_MIRROR_GRAPH_BOTH));
             }
             break;
 
         case SID_FLIP_VERTICAL:
             if( !bParentCntProt )
             {
-                MirrorGraph nState = aCoreSet.GetItem<SwMirrorGrf>( RES_GRFATR_MIRRORGRF )->GetValue();
-                rSet.Put(SfxBoolItem( nWhich, nState == MirrorGraph::Horizontal ||
-                                              nState == MirrorGraph::Both));
+                MirrorGraph nState = static_cast< MirrorGraph >(static_cast<const SwMirrorGrf &>( aCoreSet.Get(
+                                        RES_GRFATR_MIRRORGRF )).GetValue());
+
+                rSet.Put(SfxBoolItem( nWhich, nState == RES_MIRROR_GRAPH_HOR ||
+                                              nState == RES_MIRROR_GRAPH_BOTH));
             }
             break;
 
@@ -757,7 +758,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                 if ( pGrafObj )
                 {
                     if( pGrafObj->IsAnimated() ||
-                        GraphicType::GdiMetafile == pGrafObj->GetType() )
+                        GRAPHIC_GDIMETAFILE == pGrafObj->GetType() )
                         bDisable = true;
                     else
                         rSet.Put( SfxUInt16Item( nWhich, static_cast<const SwTransparencyGrf&>(
@@ -774,8 +775,8 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
 
         case SID_ATTR_GRAF_MODE:
             if( !bParentCntProt )
-                rSet.Put( SfxUInt16Item( nWhich, (sal_uInt16)static_cast<const SwDrawModeGrf&>(
-                              aCoreSet.Get(RES_GRFATR_DRAWMODE)).GetValue() ));
+                rSet.Put( SfxUInt16Item( nWhich, static_cast<const SwDrawModeGrf&>(
+                        aCoreSet.Get(RES_GRFATR_DRAWMODE)).GetValue() ));
             break;
 
         case SID_GRFFILTER:
@@ -796,9 +797,9 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                 // #i59688# load graphic only if type is unknown
                 else
                 {
-                    const GraphicType eGraphicType( rSh.GetGraphicType() );
-                    if ( ( eGraphicType == GraphicType::NONE ||
-                           eGraphicType == GraphicType::Default ) &&
+                    const sal_uInt16 eGraphicType( rSh.GetGraphicType() );
+                    if ( ( eGraphicType == GRAPHIC_NONE ||
+                           eGraphicType == GRAPHIC_DEFAULT ) &&
                          rSh.IsLinkedGrfSwapOut() )
                     {
                         rSet.DisableItem( nWhich );
@@ -807,7 +808,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
                     }
                     else
                     {
-                        bDisable = eGraphicType != GraphicType::Bitmap;
+                        bDisable = eGraphicType != GRAPHIC_BITMAP;
                     }
                 }
             }
@@ -816,7 +817,7 @@ void SwGrfShell::GetAttrState(SfxItemSet &rSet)
         case SID_OBJECT_CROP:
             {
                 bDisable = FlyProtectFlags::NONE != rSh.IsSelObjProtected( FlyProtectFlags::Content|FlyProtectFlags::Parent );
-                if( rSh.GetGraphicType() == GraphicType::NONE )
+                if( rSh.GetGraphicType() == GRAPHIC_NONE )
                     bDisable = true;
             }
             break;
@@ -846,17 +847,13 @@ void SwGrfShell::ExecuteRotation(SfxRequest &rReq)
     {
         aRotation = 2700;
     }
-    else if (rReq.GetSlot() == SID_ROTATE_GRAPHIC_180)
-    {
-        aRotation = 1800;
-    }
     else
     {
         return;
     }
 
     rShell.StartAllAction();
-    rShell.StartUndo(SwUndoId::START);
+    rShell.StartUndo(UNDO_START);
 
     Graphic aGraphic = *rShell.GetGraphic();
     GraphicNativeTransform aTransform(aGraphic);
@@ -864,18 +861,16 @@ void SwGrfShell::ExecuteRotation(SfxRequest &rReq)
     rShell.ReRead(OUString(), OUString(), const_cast<const Graphic*>(&aGraphic));
 
     SwFlyFrameAttrMgr aManager(false, &rShell, rShell.IsFrameSelected() ? Frmmgr_Type::NONE : Frmmgr_Type::GRF);
-
-    long nRotatedWidth = aManager.GetSize().Height();
-    long nRotatedHeight = aManager.GetSize().Width();
-    if (rReq.GetSlot() == SID_ROTATE_GRAPHIC_180)
-      std::swap(nRotatedWidth, nRotatedHeight);
+    const long nRotatedWidth = aManager.GetSize().Height();
+    const long nRotatedHeight = aManager.GetSize().Width();
     Size aSize(nRotatedWidth, nRotatedHeight);
     aManager.SetSize(aSize);
     aManager.UpdateFlyFrame();
+
     SfxItemSet aSet( rShell.GetAttrPool(), RES_GRFATR_CROPGRF, RES_GRFATR_CROPGRF );
     rShell.GetCurAttr( aSet );
     SwCropGrf aCrop( static_cast<const SwCropGrf&>( aSet.Get(RES_GRFATR_CROPGRF) ) );
-    tools::Rectangle aCropRectangle(aCrop.GetLeft(),  aCrop.GetTop(), aCrop.GetRight(), aCrop.GetBottom());
+    Rectangle aCropRectangle(aCrop.GetLeft(),  aCrop.GetTop(), aCrop.GetRight(), aCrop.GetBottom());
 
     if (rReq.GetSlot() == SID_ROTATE_GRAPHIC_LEFT)
     {
@@ -891,17 +886,10 @@ void SwGrfShell::ExecuteRotation(SfxRequest &rReq)
         aCrop.SetRight(  aCropRectangle.Top()    );
         aCrop.SetBottom( aCropRectangle.Right()  );
     }
-    else if (rReq.GetSlot() == SID_ROTATE_GRAPHIC_180)
-    {
-        aCrop.SetLeft(   aCropRectangle.Right() );
-        aCrop.SetTop(    aCropRectangle.Bottom()   );
-        aCrop.SetRight(  aCropRectangle.Left()    );
-        aCrop.SetBottom( aCropRectangle.Top()  );
-    }
 
     rShell.SetAttrItem(aCrop);
 
-    rShell.EndUndo(SwUndoId::END);
+    rShell.EndUndo(UNDO_END);
     rShell.EndAllAction();
 }
 
@@ -921,8 +909,7 @@ void SwGrfShell::GetAttrStateForRotation(SfxItemSet &rSet)
         {
         case SID_ROTATE_GRAPHIC_LEFT:
         case SID_ROTATE_GRAPHIC_RIGHT:
-        case SID_ROTATE_GRAPHIC_180:
-            if( rShell.GetGraphicType() == GraphicType::NONE )
+            if( rShell.GetGraphicType() == GRAPHIC_NONE )
             {
                 bDisable = true;
             }
@@ -955,7 +942,8 @@ SwGrfShell::SwGrfShell(SwView &_rView) :
     SwBaseShell(_rView)
 {
     SetName("Graphic");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Graphic));
+    SetHelpId(SW_GRFSHELL);
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Graphic));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

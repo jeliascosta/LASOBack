@@ -53,6 +53,7 @@ public:
 protected:
     // Cursor related
     bool mbPossiblyCursorOut;
+    CursorChainingEvent maCursorEvent;
     ESelection maOverflowPosSel;
     ESelection maPostChainingSel;
 
@@ -68,6 +69,9 @@ protected:
 
     virtual void impSetFlowOutlinerParams(SdrOutliner *, SdrOutliner *);
 
+    // impGetMergedUnderflowingParaObject merges underflowing text with the one in the next box
+    OutlinerParaObject *impGetMergedUnderflowParaObject(SdrOutliner *pOutliner);
+
 private:
     bool mbOFisUFinduced;
 
@@ -77,6 +81,8 @@ private:
     SdrTextObj *mpNextLink;
 
     TextChain *mpTextChain;
+
+    bool bCheckedFlowEvents;
 
     bool bUnderflow;
     bool bOverflow;

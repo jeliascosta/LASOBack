@@ -74,15 +74,14 @@ DocumentStatisticsManager::DocumentStatisticsManager( SwDoc& i_rSwdoc ) : m_rDoc
                                                                           mbInitialized( false )
 {
     maStatsUpdateTimer.SetTimeout( 1 );
-    maStatsUpdateTimer.SetPriority( TaskPriority::LOWEST );
-    maStatsUpdateTimer.SetInvokeHandler( LINK( this, DocumentStatisticsManager, DoIdleStatsUpdate ) );
-    maStatsUpdateTimer.SetDebugName( "sw::DocumentStatisticsManager maStatsUpdateTimer" );
+    maStatsUpdateTimer.SetPriority( SchedulerPriority::LOWEST );
+    maStatsUpdateTimer.SetTimeoutHdl( LINK( this, DocumentStatisticsManager, DoIdleStatsUpdate ) );
 }
 
 void DocumentStatisticsManager::DocInfoChgd(bool const isEnableSetModified)
 {
-    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::DocInfo )->UpdateFields();
-    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::TemplateName )->UpdateFields();
+    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_DOCINFOFLD )->UpdateFields();
+    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_TEMPLNAMEFLD )->UpdateFields();
     if (isEnableSetModified)
     {
         m_rDoc.getIDocumentState().SetModified();
@@ -121,7 +120,7 @@ void DocumentStatisticsManager::UpdateDocStat( bool bCompleteAsync, bool bFields
         if (!bCompleteAsync)
         {
             while (IncrementalDocStatCalculate(
-                        std::numeric_limits<long>::max(), bFields)) {}
+                        ::std::numeric_limits<long>::max(), bFields)) {}
             maStatsUpdateTimer.Stop();
         }
         else if (IncrementalDocStatCalculate(5000, bFields))
@@ -141,10 +140,10 @@ bool DocumentStatisticsManager::IncrementalDocStatCalculate(long nChars, bool bF
     // This is the inner loop - at least while the paras are dirty.
     for( sal_uLong i = m_rDoc.GetNodes().Count(); i > 0 && nChars > 0; )
     {
-        SwNode* pNd = m_rDoc.GetNodes()[ --i ];
-        switch( pNd->GetNodeType() )
+        SwNode* pNd;
+        switch( ( pNd = m_rDoc.GetNodes()[ --i ])->GetNodeType() )
         {
-        case SwNodeType::Text:
+        case ND_TEXTNODE:
         {
             long const nOldChars(mpDocStat->nChar);
             SwTextNode *pText = static_cast< SwTextNode * >( pNd );
@@ -154,17 +153,16 @@ bool DocumentStatisticsManager::IncrementalDocStatCalculate(long nChars, bool bF
             }
             break;
         }
-        case SwNodeType::Table:      ++mpDocStat->nTable;   break;
-        case SwNodeType::Grf:        ++mpDocStat->nGrf;   break;
-        case SwNodeType::Ole:        ++mpDocStat->nOLE;   break;
-        case SwNodeType::Section:    break;
-        default: break;
+        case ND_TABLENODE:      ++mpDocStat->nTable;   break;
+        case ND_GRFNODE:        ++mpDocStat->nGrf;   break;
+        case ND_OLENODE:        ++mpDocStat->nOLE;   break;
+        case ND_SECTIONNODE:    break;
         }
     }
 
     // #i93174#: notes contain paragraphs that are not nodes
     {
-        SwFieldType * const pPostits( m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::Postit) );
+        SwFieldType * const pPostits( m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_POSTITFLD) );
         SwIterator<SwFormatField,SwFieldType> aIter( *pPostits );
         for( SwFormatField* pFormatField = aIter.First(); pFormatField;  pFormatField = aIter.Next() )
         {
@@ -226,15 +224,16 @@ bool DocumentStatisticsManager::IncrementalDocStatCalculate(long nChars, bool bF
     // optionally update stat. fields
     if (bFields)
     {
-        SwFieldType *pType = m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::DocStat);
+        SwFieldType *pType = m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_DOCSTATFLD);
         pType->UpdateFields();
     }
 
     return nChars < 0;
 }
 
-IMPL_LINK_NOARG( DocumentStatisticsManager, DoIdleStatsUpdate, Timer *, void )
+IMPL_LINK_TYPED( DocumentStatisticsManager, DoIdleStatsUpdate, Timer *, pTimer, void )
 {
+    (void)pTimer;
     if (IncrementalDocStatCalculate(32000))
         maStatsUpdateTimer.Start();
 

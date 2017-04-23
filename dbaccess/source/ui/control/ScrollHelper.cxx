@@ -34,7 +34,7 @@ namespace dbaui
     void OScrollHelper::scroll(const Point& _rPoint, const Size& _rOutputSize)
     {
         // Scrolling Areas
-        tools::Rectangle aScrollArea( Point(0, _rOutputSize.Height() - LISTBOX_SCROLLING_AREA),
+        Rectangle aScrollArea( Point(0, _rOutputSize.Height() - LISTBOX_SCROLLING_AREA),
                                      Size(_rOutputSize.Width(), LISTBOX_SCROLLING_AREA) );
 
         // if pointer in bottom area begin scroll

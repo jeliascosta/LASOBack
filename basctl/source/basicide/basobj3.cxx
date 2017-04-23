@@ -58,7 +58,7 @@ SbMethod* CreateMacro( SbModule* pModule, const OUString& rMacroName )
         pDispatcher->Execute( SID_BASICIDE_STOREALLMODULESOURCES );
     }
 
-    if ( pModule->FindMethod( rMacroName, SbxClassType::Method ) )
+    if ( pModule->GetMethods()->Find( rMacroName, SbxClassType::Method ) )
         return nullptr;
 
     OUString aMacroName( rMacroName );
@@ -72,9 +72,10 @@ SbMethod* CreateMacro( SbModule* pModule, const OUString& rMacroName )
             sal_Int32 nMacro = 1;
             while ( !bValid )
             {
-                aMacroName = "Macro" + OUString::number( nMacro );
+                aMacroName = "Macro";
+                aMacroName += OUString::number( nMacro );
                 // test whether existing...
-                bValid = pModule->FindMethod( aMacroName, SbxClassType::Method ) == nullptr;
+                bValid = pModule->GetMethods()->Find( aMacroName, SbxClassType::Method ) == nullptr;
                 nMacro++;
             }
         }
@@ -95,34 +96,43 @@ SbMethod* CreateMacro( SbModule* pModule, const OUString& rMacroName )
             aOUSource = aOUSource.copy( 0, nSourceLen-1 );
     }
 
-    OUString aSubStr = "Sub " + aMacroName + "\n\nEnd Sub";
+    OUString aSubStr;
+    aSubStr = "Sub " ;
+    aSubStr += aMacroName;
+    aSubStr += "\n\nEnd Sub" ;
 
     aOUSource += aSubStr;
 
     // update module in library
+    ScriptDocument aDocument( ScriptDocument::NoDocument );
     StarBASIC* pBasic = dynamic_cast<StarBASIC*>(pModule->GetParent());
-    BasicManager* pBasMgr = pBasic ? FindBasicManager(pBasic) : nullptr;
-    SAL_WARN_IF(!pBasMgr, "basctl.basicide", "No BasicManager found!");
-    ScriptDocument aDocument = pBasMgr
-        ? ScriptDocument::getDocumentForBasicManager(pBasMgr)
-        : ScriptDocument(ScriptDocument::NoDocument);
-
-    if (aDocument.isValid())
+    DBG_ASSERT(pBasic, "basctl::CreateMacro: No Basic found!");
+    if ( pBasic )
     {
-        OUString aLibName = pBasic->GetName();
-        OUString aModName = pModule->GetName();
-        OSL_VERIFY( aDocument.updateModule( aLibName, aModName, aOUSource ) );
+        BasicManager* pBasMgr = FindBasicManager( pBasic );
+        DBG_ASSERT(pBasMgr, "basctl::CreateMacro: No BasicManager found!");
+        if ( pBasMgr )
+        {
+            aDocument = ScriptDocument::getDocumentForBasicManager( pBasMgr );
+            OSL_ENSURE( aDocument.isValid(), "basctl::CreateMacro: no document for the given BasicManager!" );
+            if ( aDocument.isValid() )
+            {
+                OUString aLibName = pBasic->GetName();
+                OUString aModName = pModule->GetName();
+                OSL_VERIFY( aDocument.updateModule( aLibName, aModName, aOUSource ) );
+            }
+        }
     }
 
-    SbMethod* pMethod = pModule->FindMethod( aMacroName, SbxClassType::Method );
+    SbMethod* pMethod = static_cast<SbMethod*>(pModule->GetMethods()->Find( aMacroName, SbxClassType::Method ));
 
     if( pDispatcher )
     {
         pDispatcher->Execute( SID_BASICIDE_UPDATEALLMODULESOURCES );
     }
 
-    if (aDocument.isAlive())
-        MarkDocumentModified(aDocument);
+    if ( aDocument.isAlive() )
+        MarkDocumentModified( aDocument );
 
     return pMethod;
 }
@@ -134,6 +144,7 @@ bool RenameDialog (
     OUString const& rOldName,
     OUString const& rNewName
 )
+    throw (ElementExistException, NoSuchElementException, RuntimeException, std::exception)
 {
     if ( !rDocument.hasDialog( rLibName, rOldName ) )
     {
@@ -157,7 +168,7 @@ bool RenameDialog (
     }
 
     Shell* pShell = GetShell();
-    VclPtr<DialogWindow> pWin = pShell ? pShell->FindDlgWin(rDocument, rLibName, rOldName) : nullptr;
+    DialogWindow* pWin = pShell ? pShell->FindDlgWin(rDocument, rLibName, rOldName) : nullptr;
     Reference< XNameContainer > xExistingDialog;
     if ( pWin )
         xExistingDialog = pWin->GetEditor().GetDialog();
@@ -194,7 +205,7 @@ bool RemoveDialog( const ScriptDocument& rDocument, const OUString& rLibName, co
 {
     if (Shell* pShell = GetShell())
     {
-        if (VclPtr<DialogWindow> pDlgWin = pShell->FindDlgWin(rDocument, rLibName, rDlgName))
+        if (DialogWindow* pDlgWin = pShell->FindDlgWin(rDocument, rLibName, rDlgName))
         {
             Reference< container::XNameContainer > xDialogModel = pDlgWin->GetDialog();
             LocalizationMgr::removeResourceForDialog( rDocument, rLibName, rDlgName, xDialogModel );
@@ -246,7 +257,7 @@ void MarkDocumentModified( const ScriptDocument& rDocument )
     {
         if (Shell* pShell = GetShell())
         {
-            pShell->SetAppBasicModified(true);
+            pShell->SetAppBasicModified();
             pShell->UpdateObjectCatalog();
         }
     }

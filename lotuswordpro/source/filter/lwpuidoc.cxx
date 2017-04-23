@@ -92,9 +92,11 @@ void LwpNamedProperties::Read(LwpObjectStream *pStrm)
 {
     sal_uInt16 numEntries = pStrm->QuickReaduInt16();
 
-    if (numEntries)
-        throw std::runtime_error("TODO: Read each NamedProperties");
-
+    for (sal_uInt16 k = 0 ; k < numEntries; k++)
+    {
+        assert(false);
+        // TODO: Read each NamedProperties
+    }
     pStrm->SkipExtra();
 }
 /**
@@ -119,8 +121,8 @@ void LwpMergeOptions::Read(LwpObjectStream *pStrm)
     m_nType = pStrm->QuickReaduInt16();
 
     //Does not process m_nType here. Assume m_nType is 0.
-    if (m_nType != 0)
-        throw std::runtime_error("TODO: Read the CMergeDataFile");
+    // TODO: Read the CMergeDataFile
+    assert(m_nType==0);
 
     m_nLastActionFlag = pStrm->QuickReaduInt16();
     pStrm->SkipExtra();

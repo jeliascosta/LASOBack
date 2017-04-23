@@ -64,6 +64,7 @@ TypeDetection::~TypeDetection()
 
 
 OUString SAL_CALL TypeDetection::queryTypeByURL(const OUString& sURL)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OUString sType;
 
@@ -242,7 +243,6 @@ int getFlatTypeRank(const OUString& rType)
         "calc_ODS_FlatXML",
         "impress_ODP_FlatXML",
         "draw_ODG_FlatXML",
-        "calc_ADO_rowset_XML",
         "calc_MS_Excel_2003_XML",
         "writer_MS_Word_2003_XML",
         "writer_DocBook_File",
@@ -269,6 +269,7 @@ int getFlatTypeRank(const OUString& rType)
 
         // Export only
         "writer_layout_dump_xml",
+        "pwp_PlaceWare",
         "graphic_SWF",
         "graphic_HTML",
 
@@ -368,6 +369,7 @@ void printFlatDetectionList(const char* caption, const FlatDetection& types)
 
 OUString SAL_CALL TypeDetection::queryTypeByDescriptor(css::uno::Sequence< css::beans::PropertyValue >& lDescriptor,
                                                               sal_Bool                                         bAllowDeep )
+    throw (css::uno::RuntimeException, std::exception)
 {
     // make the descriptor more useable :-)
     utl::MediaDescriptor stlDescriptor(lDescriptor);
@@ -672,7 +674,7 @@ bool TypeDetection::impl_getPreselectionForType(
         INetURLObject   aParser    (aParsedURL.Main);
         OUString sExtension = aParser.getExtension(INetURLObject::LAST_SEGMENT       ,
                                                           true                          ,
-                                                          INetURLObject::DecodeMechanism::WithCharset);
+                                                          INetURLObject::DECODE_WITH_CHARSET);
         sExtension = sExtension.toAsciiLowerCase();
 
         // otherwise we must know, if it matches to the given URL really.
@@ -883,7 +885,7 @@ OUString TypeDetection::impl_detectTypeFlatAndDeep(      utl::MediaDescriptor& r
     // step over all possible types for this URL.
     // solutions:
     // a) no types                                => no detection
-    // b) deep detection not allowed              => return first valid type of list (because it's the preferred or the first valid one)
+    // b) deep detection not allowed              => return first valid type of list (because its the preferred or the first valid one)
     //    or(!) match by URLPattern               => in such case a deep detection will be suppressed!
     // c) type has no detect service              => safe the first occurred type without a detect service
     //                                               as "last chance"(!). It will be used outside of this method
@@ -1107,9 +1109,9 @@ OUString TypeDetection::impl_askUserForTypeAndFilterIfAllowed(utl::MediaDescript
 
         // "OK" pressed => verify the selected filter, get its corresponding
         // type and return it. (BTW: We must update the media descriptor here ...)
-        // The user selected explicitly a filter ... but normally we are interested on
+        // The user selected explicitly a filter ... but normaly we are interested on
         // a type here only. But we must be sure, that the selected filter is used
-        // too and no ambiguous filter registration disturb us .-)
+        // too and no ambigous filter registration disturb us .-)
 
         OUString sFilter = aRequest.getFilter();
         if (!impl_validateAndSetFilterOnDescriptor(rDescriptor, sFilter))
@@ -1127,6 +1129,7 @@ OUString TypeDetection::impl_askUserForTypeAndFilterIfAllowed(utl::MediaDescript
 
 
 void TypeDetection::impl_openStream(utl::MediaDescriptor& rDescriptor)
+    throw (css::uno::Exception)
 {
     bool bSuccess = false;
     OUString sURL = rDescriptor.getUnpackedValueOrDefault( utl::MediaDescriptor::PROP_URL(), OUString() );

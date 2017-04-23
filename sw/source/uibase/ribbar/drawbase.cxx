@@ -33,12 +33,13 @@
 #include "drawbase.hxx"
 #include "edtwin.hxx"
 #include "caption.hxx"
-#include "swmodule.hxx"
 #include "swundo.hxx"
 #include <SwRewriter.hxx>
 #include "comcore.hrc"
 
 using namespace ::com::sun::star;
+
+extern bool g_bNoInterrupt;       // in swmodule.cxx
 
 SwDrawBase::SwDrawBase(SwWrtShell* pSwWrtShell, SwEditWin* pWindow, SwView* pSwView) :
     m_pView(pSwView),
@@ -85,7 +86,7 @@ bool SwDrawBase::MouseButtonDown(const MouseEvent& rMEvt)
     // Only new object, if not in the basic mode (or pure selection mode).
     if (rMEvt.IsLeft() && !m_pWin->IsDrawAction())
     {
-        if (IsCreateObj() && (eHit == SdrHitKind::UnmarkedObject || eHit == SdrHitKind::NONE || m_pSh->IsDrawCreate()))
+        if (IsCreateObj() && (eHit == SDRHIT_UNMARKEDOBJECT || eHit == SDRHIT_NONE || m_pSh->IsDrawCreate()))
         {
             g_bNoInterrupt = true;
             m_pWin->CaptureMouse();
@@ -106,21 +107,21 @@ bool SwDrawBase::MouseButtonDown(const MouseEvent& rMEvt)
             m_aStartPos = m_pWin->PixelToLogic(rMEvt.GetPosPixel());
             sal_uInt16 nEditMode = m_pWin->GetBezierMode();
 
-            if (eHit == SdrHitKind::Handle && aVEvt.pHdl->GetKind() == SdrHdlKind::BezierWeight)
+            if (eHit == SDRHIT_HANDLE && aVEvt.pHdl->GetKind() == HDL_BWGT)
             {
                 // Drag handle
                 g_bNoInterrupt = true;
                 bReturn = pSdrView->BegDragObj(m_aStartPos, nullptr, aVEvt.pHdl);
                 m_pWin->SetDrawAction(true);
             }
-            else if (eHit == SdrHitKind::MarkedObject && nEditMode == SID_BEZIER_INSERT)
+            else if (eHit == SDRHIT_MARKEDOBJECT && nEditMode == SID_BEZIER_INSERT)
             {
                 // Insert gluepoint
                 g_bNoInterrupt = true;
                 bReturn = pSdrView->BegInsObjPoint(m_aStartPos, rMEvt.IsMod1());
                 m_pWin->SetDrawAction(true);
             }
-            else if (eHit == SdrHitKind::MarkedObject && rMEvt.IsMod1())
+            else if (eHit == SDRHIT_MARKEDOBJECT && rMEvt.IsMod1())
             {
                 // Select gluepoint
                 if (!rMEvt.IsShift())
@@ -129,12 +130,12 @@ bool SwDrawBase::MouseButtonDown(const MouseEvent& rMEvt)
                 bReturn = pSdrView->BegMarkPoints(m_aStartPos);
                 m_pWin->SetDrawAction(true);
             }
-            else if (eHit == SdrHitKind::MarkedObject && !rMEvt.IsShift() && !rMEvt.IsMod2())
+            else if (eHit == SDRHIT_MARKEDOBJECT && !rMEvt.IsShift() && !rMEvt.IsMod2())
             {
-                // Move object
+                // Move objekt
                 return false;
             }
-            else if (eHit == SdrHitKind::Handle)
+            else if (eHit == SDRHIT_HANDLE)
             {
                 // Select gluepoint
                 if (pSdrView->HasMarkablePoints() && (!pSdrView->IsPointMarked(*aVEvt.pHdl) || rMEvt.IsShift()))
@@ -169,7 +170,7 @@ bool SwDrawBase::MouseButtonDown(const MouseEvent& rMEvt)
             else
             {
                 // Select or drag object
-                if (m_pSh->IsObjSelectable(m_aStartPos) && eHit == SdrHitKind::UnmarkedObject)
+                if (m_pSh->IsObjSelectable(m_aStartPos) && eHit == SDRHIT_UNMARKEDOBJECT)
                 {
                     if (pSdrView->HasMarkablePoints())
                         pSdrView->UnmarkAllPoints();
@@ -200,8 +201,7 @@ bool SwDrawBase::MouseButtonDown(const MouseEvent& rMEvt)
                 if (!m_pSh->IsSelFrameMode())
                     m_pSh->EnterSelFrameMode();
 
-                bReturn = m_pSh->BeginMark(m_aStartPos);
-                if( bReturn )
+                if( (bReturn = m_pSh->BeginMark(m_aStartPos)) )
                     m_pWin->SetDrawAction(true);
 
                 SetDrawPointer();
@@ -265,10 +265,10 @@ bool SwDrawBase::MouseButtonUp(const MouseEvent& rMEvt)
                 SwRewriter aRewriter;
 
                 aRewriter.AddRule(UndoArg1, SW_RES(STR_FRAME));
-                m_pSh->StartUndo(SwUndoId::INSERT, &aRewriter);
+                m_pSh->StartUndo(UNDO_INSERT, &aRewriter);
             }
 
-            m_pSh->EndCreate(SdrCreateCmd::ForceEnd);
+            m_pSh->EndCreate(SDRCREATE_FORCEEND);
             if (OBJ_NONE == nDrawMode)   // Text border inserted
             {
                uno::Reference< frame::XDispatchRecorder > xRecorder =
@@ -277,7 +277,7 @@ bool SwDrawBase::MouseButtonUp(const MouseEvent& rMEvt)
                 {
                     SfxRequest aReq(m_pSh->GetView().GetViewFrame(),FN_INSERT_FRAME);
                         aReq.AppendItem(SfxUInt16Item( FN_INSERT_FRAME,
-                                static_cast<sal_uInt16>(RndStdIds::FLY_AT_PARA) ));
+                                static_cast<sal_uInt16>(FLY_AT_PARA) ));
                         aReq.AppendItem(SfxPointItem( FN_PARAM_1, m_pSh->GetAnchorObjDiff()));
                         aReq.AppendItem(SvxSizeItem( FN_PARAM_2, m_pSh->GetObjSize()));
                     aReq.Done();
@@ -362,7 +362,7 @@ bool SwDrawBase::MouseButtonUp(const MouseEvent& rMEvt)
             if ( pSdrView->IsAction() )
             {
                 if ( pSdrView->IsInsObjPoint() )
-                    bReturn = pSdrView->EndInsObjPoint(SdrCreateCmd::ForceEnd);
+                    bReturn = pSdrView->EndInsObjPoint(SDRCREATE_FORCEEND);
                 else if (pSdrView->IsMarkPoints() )
                     bReturn = pSdrView->EndMarkPoints();
                 else
@@ -602,7 +602,7 @@ void SwDrawBase::CreateDefaultObject()
     aStartPos.Y() -= 4 * MM50;
     aEndPos.X() += 8 * MM50;
     aEndPos.Y() += 4 * MM50;
-    tools::Rectangle aRect(aStartPos, aEndPos);
+    Rectangle aRect(aStartPos, aEndPos);
     m_pSh->CreateDefaultShape( static_cast< sal_uInt16 >(m_pWin->GetSdrDrawMode()), aRect, m_nSlotId);
 }
 
@@ -621,7 +621,7 @@ Point  SwDrawBase::GetDefaultCenterPos()
 // #i33136#
 bool SwDrawBase::doConstructOrthogonal() const
 {
-    return ( m_nSlotId == SID_DRAW_XPOLYGON || m_nSlotId == SID_DRAW_XPOLYGON_NOFILL || m_nSlotId == SID_DRAW_XLINE );
+    return ( m_nSlotId == SID_DRAW_XPOLYGON || m_nSlotId == SID_DRAW_XPOLYGON_NOFILL );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -18,21 +18,20 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
 -->
 <toolbar:toolbar xmlns:toolbar="http://openoffice.org/2001/toolbar" xmlns:xlink="http://www.w3.org/1999/xlink">
- <toolbar:toolbaritem xlink:href=".uno:GraphicFilterToolbox"/>
+ <toolbar:toolbaritem xlink:href=".uno:GraphicFilterToolbox" toolbar:helpid="10469"/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:GrafMode"/>
+ <toolbar:toolbaritem xlink:href=".uno:GrafMode" toolbar:helpid="10871"/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:Crop"/>
+ <toolbar:toolbaritem xlink:href=".uno:Crop" toolbar:helpid=""/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:FlipVertical"/>
- <toolbar:toolbaritem xlink:href=".uno:FlipHorizontal"/>
- <toolbar:toolbaritem xlink:href=".uno:RotateLeft"/>
- <toolbar:toolbaritem xlink:href=".uno:RotateRight"/>
- <toolbar:toolbaritem xlink:href=".uno:Rotate180"/>
+ <toolbar:toolbaritem xlink:href=".uno:FlipVertical" toolbar:helpid="20426"/>
+ <toolbar:toolbaritem xlink:href=".uno:FlipHorizontal" toolbar:helpid="20425"/>
+ <toolbar:toolbaritem xlink:href=".uno:RotateLeft" toolbar:helpid=""/>
+ <toolbar:toolbaritem xlink:href=".uno:RotateRight" toolbar:helpid=""/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:GrafTransparence"/>
+ <toolbar:toolbaritem xlink:href=".uno:GrafTransparence" toolbar:helpid="10869"/>
  <toolbar:toolbarseparator/>
- <toolbar:toolbaritem xlink:href=".uno:ColorSettings"/>
+ <toolbar:toolbaritem xlink:href=".uno:ColorSettings" toolbar:helpid="11016"/>
  <toolbar:toolbarseparator/>
  <toolbar:toolbaritem xlink:href=".uno:InsertCaptionDialog" toolbar:visible="false"/>
  <toolbar:toolbaritem xlink:href=".uno:GraphicDialog" toolbar:visible="false"/>

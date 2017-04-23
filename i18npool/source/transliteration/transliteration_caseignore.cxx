@@ -18,11 +18,9 @@
  */
 
 #include <com/sun/star/uno/XComponentContext.hpp>
-#include <rtl/ref.hxx>
 
 #include <i18nutil/oneToOneMapping.hxx>
 #include <i18nutil/casefolding.hxx>
-#include <i18nutil/transliteration.hxx>
 
 #include "transliteration_caseignore.hxx"
 
@@ -34,19 +32,20 @@ namespace com { namespace sun { namespace star { namespace i18n {
 Transliteration_caseignore::Transliteration_caseignore()
 {
     nMappingType = MappingType::FullFolding;
-    moduleLoaded = TransliterationFlags::NONE;
+    moduleLoaded = (TransliterationModules)0;
     transliterationName = "case ignore (generic)";
     implementationName = "com.sun.star.i18n.Transliteration.Transliteration_caseignore";
 }
 
 void SAL_CALL
 Transliteration_caseignore::loadModule( TransliterationModules modName, const Locale& rLocale )
+    throw(RuntimeException, std::exception)
 {
-    moduleLoaded |= (TransliterationFlags)modName;
+    moduleLoaded = (TransliterationModules) (moduleLoaded|modName);
     aLocale = rLocale;
 }
 
-sal_Int16 SAL_CALL Transliteration_caseignore::getType()
+sal_Int16 SAL_CALL Transliteration_caseignore::getType() throw(RuntimeException, std::exception)
 {
     // It's NOT TransliterationType::ONE_TO_ONE because it's using casefolding
     return TransliterationType::IGNORE;
@@ -55,12 +54,13 @@ sal_Int16 SAL_CALL Transliteration_caseignore::getType()
 
 Sequence< OUString > SAL_CALL
 Transliteration_caseignore::transliterateRange( const OUString& str1, const OUString& str2 )
+    throw( RuntimeException, std::exception)
 {
     if (str1.getLength() != 1 || str2.getLength() != 1)
         throw RuntimeException();
 
-    static rtl::Reference< Transliteration_u2l > u2l(new Transliteration_u2l);
-    static rtl::Reference< Transliteration_l2u > l2u(new Transliteration_l2u);
+    static Reference< Transliteration_u2l > u2l(new Transliteration_u2l);
+    static Reference< Transliteration_l2u > l2u(new Transliteration_l2u);
 
     u2l->loadModule((TransliterationModules)0, aLocale);
     l2u->loadModule((TransliterationModules)0, aLocale);
@@ -89,6 +89,7 @@ sal_Bool SAL_CALL
 Transliteration_caseignore::equals(
     const OUString& str1, sal_Int32 pos1, sal_Int32 nCount1, sal_Int32& nMatch1,
     const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2)
+    throw(css::uno::RuntimeException, std::exception)
 {
     return (compare(str1, pos1, nCount1, nMatch1, str2, pos2, nCount2, nMatch2) == 0);
 }
@@ -97,6 +98,7 @@ sal_Int32 SAL_CALL
 Transliteration_caseignore::compareSubstring(
     const OUString& str1, sal_Int32 off1, sal_Int32 len1,
     const OUString& str2, sal_Int32 off2, sal_Int32 len2)
+    throw(RuntimeException, std::exception)
 {
     sal_Int32 nMatch1, nMatch2;
     return compare(str1, off1, len1, nMatch1, str2, off2, len2, nMatch2);
@@ -107,6 +109,7 @@ sal_Int32 SAL_CALL
 Transliteration_caseignore::compareString(
     const OUString& str1,
     const OUString& str2)
+    throw(RuntimeException, std::exception)
 {
     sal_Int32 nMatch1, nMatch2;
     return compare(str1, 0, str1.getLength(), nMatch1, str2, 0, str2.getLength(), nMatch2);
@@ -116,6 +119,7 @@ sal_Int32 SAL_CALL
 Transliteration_caseignore::compare(
     const OUString& str1, sal_Int32 pos1, sal_Int32 nCount1, sal_Int32& nMatch1,
     const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2)
+    throw(RuntimeException)
 {
     const sal_Unicode *unistr1 = const_cast<sal_Unicode*>(str1.getStr()) + pos1;
     const sal_Unicode *unistr2 = const_cast<sal_Unicode*>(str2.getStr()) + pos2;

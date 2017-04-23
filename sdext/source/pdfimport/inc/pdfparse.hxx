@@ -26,7 +26,6 @@
 
 #include <unordered_map>
 #include <vector>
-#include <memory>
 
 namespace pdfparse
 {
@@ -51,7 +50,7 @@ public:
 
 private:
     friend struct PDFEntry;
-    std::unique_ptr<EmitImplData> m_pImplData;
+    EmitImplData* m_pImplData;
 };
 
 struct PDFEntry
@@ -73,7 +72,7 @@ struct PDFComment : public PDFEntry
 
     explicit PDFComment( const OString& rComment )
     : PDFEntry(), m_aComment( rComment ) {}
-    virtual ~PDFComment() override;
+    virtual ~PDFComment();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -82,7 +81,7 @@ struct PDFValue : public PDFEntry
 {
     // abstract base class for simple values
     PDFValue() : PDFEntry() {}
-    virtual ~PDFValue() override;
+    virtual ~PDFValue();
 };
 
 struct PDFName : public PDFValue
@@ -91,7 +90,7 @@ struct PDFName : public PDFValue
 
     explicit PDFName( const OString& rName )
     : PDFValue(), m_aName( rName ) {}
-    virtual ~PDFName() override;
+    virtual ~PDFName();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 
@@ -104,7 +103,7 @@ struct PDFString : public PDFValue
 
     explicit PDFString( const OString& rString )
     : PDFValue(), m_aString( rString ) {}
-    virtual ~PDFString() override;
+    virtual ~PDFString();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 
@@ -117,7 +116,7 @@ struct PDFNumber : public PDFValue
 
     explicit PDFNumber( double fVal )
     : PDFValue(), m_fValue( fVal ) {}
-    virtual ~PDFNumber() override;
+    virtual ~PDFNumber();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -128,7 +127,7 @@ struct PDFBool : public PDFValue
 
     explicit PDFBool( bool bVal )
     : PDFValue(), m_bValue( bVal ) {}
-    virtual ~PDFBool() override;
+    virtual ~PDFBool();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -140,7 +139,7 @@ struct PDFObjectRef : public PDFValue
 
     PDFObjectRef( unsigned int nNr, unsigned int nGen )
     : PDFValue(), m_nNumber( nNr ), m_nGeneration( nGen ) {}
-    virtual ~PDFObjectRef() override;
+    virtual ~PDFObjectRef();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -148,7 +147,7 @@ struct PDFObjectRef : public PDFValue
 struct PDFNull : public PDFValue
 {
     PDFNull() {}
-    virtual ~PDFNull() override;
+    virtual ~PDFNull();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -162,7 +161,7 @@ struct PDFContainer : public PDFEntry
     // this is an abstract base class for identifying
     // entries that can contain sub elements besides comments
     PDFContainer() : PDFEntry(), m_nOffset( 0 ) {}
-    virtual ~PDFContainer() override;
+    virtual ~PDFContainer();
     bool emitSubElements( EmitContext& rWriteContext ) const;
     void cloneSubElements( std::vector<PDFEntry*>& rNewSubElements ) const;
 
@@ -174,7 +173,7 @@ struct PDFContainer : public PDFEntry
 struct PDFArray : public PDFContainer
 {
     PDFArray() {}
-    virtual ~PDFArray() override;
+    virtual ~PDFArray();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -185,7 +184,7 @@ struct PDFDict : public PDFContainer
     Map m_aMap;
 
     PDFDict() {}
-    virtual ~PDFDict() override;
+    virtual ~PDFDict();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 
@@ -207,11 +206,11 @@ struct PDFStream : public PDFEntry
 
     PDFStream( unsigned int nBegin, unsigned int nEnd, PDFDict* pStreamDict )
     : PDFEntry(), m_nBeginOffset( nBegin ), m_nEndOffset( nEnd ), m_pDict( pStreamDict ) {}
-    virtual ~PDFStream() override;
+    virtual ~PDFStream();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 
-    unsigned int getDictLength( const PDFContainer* pObjectContainer ) const; // get contents of the "Length" entry of the dict
+    unsigned int getDictLength( const PDFContainer* pObjectContainer = nullptr ) const; // get contents of the "Length" entry of the dict
 };
 
 struct PDFTrailer : public PDFContainer
@@ -219,7 +218,7 @@ struct PDFTrailer : public PDFContainer
     PDFDict*        m_pDict;
 
     PDFTrailer() : PDFContainer(), m_pDict( nullptr ) {}
-    virtual ~PDFTrailer() override;
+    virtual ~PDFTrailer();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -228,14 +227,18 @@ struct PDFFileImplData;
 struct PDFFile : public PDFContainer
 {
 private:
-    mutable std::unique_ptr<PDFFileImplData> m_pData;
+    mutable PDFFileImplData*    m_pData;
     PDFFileImplData*            impl_getData() const;
 public:
     unsigned int        m_nMajor;           // PDF major
     unsigned int        m_nMinor;           // PDF minor
 
-    PDFFile();
-    virtual ~PDFFile() override;
+    PDFFile()
+    : PDFContainer(),
+      m_pData( nullptr ),
+      m_nMajor( 0 ), m_nMinor( 0 )
+    {}
+    virtual ~PDFFile();
 
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
@@ -252,6 +255,8 @@ public:
     bool decrypt( const sal_uInt8* pInBuffer, sal_uInt32 nLen,
                   sal_uInt8* pOutBuffer,
                   unsigned int nObject, unsigned int nGeneration ) const;
+
+    OUString getDecryptionKey() const;
 };
 
 struct PDFObject : public PDFContainer
@@ -263,7 +268,7 @@ struct PDFObject : public PDFContainer
 
     PDFObject( unsigned int nNr, unsigned int nGen )
     : m_pObject( nullptr ), m_pStream( nullptr ), m_nNumber( nNr ), m_nGeneration( nGen ) {}
-    virtual ~PDFObject() override;
+    virtual ~PDFObject();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 
@@ -281,7 +286,7 @@ private:
 struct PDFPart : public PDFContainer
 {
     PDFPart() : PDFContainer() {}
-    virtual ~PDFPart() override;
+    virtual ~PDFPart();
     virtual bool emit( EmitContext& rWriteContext ) const override;
     virtual PDFEntry* clone() const override;
 };
@@ -290,6 +295,7 @@ class PDFReader
 {
 public:
     PDFReader() {}
+    ~PDFReader() {}
 
     static PDFEntry* read( const char* pFileName );
 #ifdef _WIN32

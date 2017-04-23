@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <cppuhelper/supportsservice.hxx>
 #include <textconversionImpl.hxx>
 #include <localedata.hxx>
@@ -32,6 +31,7 @@ namespace com { namespace sun { namespace star { namespace i18n {
 TextConversionResult SAL_CALL
 TextConversionImpl::getConversions( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& rLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     getLocaleSpecificTextConversion(rLocale);
 
@@ -44,6 +44,7 @@ TextConversionImpl::getConversions( const OUString& aText, sal_Int32 nStartPos, 
 OUString SAL_CALL
 TextConversionImpl::getConversion( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& rLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     getLocaleSpecificTextConversion(rLocale);
 
@@ -56,6 +57,7 @@ TextConversionImpl::getConversion( const OUString& aText, sal_Int32 nStartPos, s
 OUString SAL_CALL
 TextConversionImpl::getConversionWithOffset( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& rLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions, Sequence< sal_Int32>& offset)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     getLocaleSpecificTextConversion(rLocale);
 
@@ -67,6 +69,7 @@ TextConversionImpl::getConversionWithOffset( const OUString& aText, sal_Int32 nS
 
 sal_Bool SAL_CALL
 TextConversionImpl::interactiveConversion( const Locale& rLocale, sal_Int16 nTextConversionType, sal_Int32 nTextConversionOptions )
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     getLocaleSpecificTextConversion(rLocale);
 
@@ -74,7 +77,7 @@ TextConversionImpl::interactiveConversion( const Locale& rLocale, sal_Int16 nTex
 }
 
 void SAL_CALL
-TextConversionImpl::getLocaleSpecificTextConversion(const Locale& rLocale)
+TextConversionImpl::getLocaleSpecificTextConversion(const Locale& rLocale) throw( NoSupportException )
 {
     if (rLocale != aLocale) {
         aLocale = rLocale;
@@ -104,19 +107,20 @@ TextConversionImpl::getLocaleSpecificTextConversion(const Locale& rLocale)
 }
 
 OUString SAL_CALL
-TextConversionImpl::getImplementationName()
+TextConversionImpl::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.i18n.TextConversion");
 }
 
 sal_Bool SAL_CALL
 TextConversionImpl::supportsService(const OUString& rServiceName)
+                throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-TextConversionImpl::getSupportedServiceNames()
+TextConversionImpl::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.i18n.TextConversion" };
     return aRet;

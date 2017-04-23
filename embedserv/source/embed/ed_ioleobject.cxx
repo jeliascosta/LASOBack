@@ -25,6 +25,10 @@
 
 using namespace ::com::sun::star;
 
+
+extern OUString  getFilterNameFromGUID_Impl( GUID* );
+
+
 // IOleObject
 
 
@@ -46,9 +50,11 @@ STDMETHODIMP EmbedDocument_Impl::SetHostNames( LPCOLESTR szContainerApp, LPCOLES
     if ( !m_aFileName.getLength() )
     {
         m_pDocHolder->setTitle(
-            OUString(reinterpret_cast<sal_Unicode const *>(szContainerObj)));
+            OUString(
+                (sal_Unicode*)szContainerObj));
         m_pDocHolder->setContainerName(
-            OUString(reinterpret_cast<sal_Unicode const *>(szContainerApp)));
+            OUString(
+                (sal_Unicode*)szContainerApp));
     }
 
     return S_OK;
@@ -143,7 +149,7 @@ STDMETHODIMP EmbedDocument_Impl::DoVerb(
         return OLEOBJ_S_CANNOT_DOVERB_NOW;
 
     // an object can not handle any Verbs in Hands off mode
-    if ( m_pMasterStorage == nullptr || m_pOwnStream == nullptr )
+    if ( m_pMasterStorage == NULL || m_pOwnStream == NULL )
         return OLE_E_CANT_BINDTOSOURCE;
 
 
@@ -296,7 +302,7 @@ STDMETHODIMP EmbedDocument_Impl::Advise( IAdviseSink *pAdvSink, DWORD *pdwConnec
         return E_OUTOFMEMORY;
 
     pAdvSink->AddRef();
-    m_aAdviseHashMap.insert( std::pair< DWORD, IAdviseSink* >( m_nAdviseNum, pAdvSink ) );
+    m_aAdviseHashMap.insert( ::std::pair< DWORD, IAdviseSink* >( m_nAdviseNum, pAdvSink ) );
     *pdwConnection = m_nAdviseNum++;
 
     return S_OK;
@@ -421,9 +427,8 @@ HRESULT EmbedDocument_Impl::SaveObject()
         OUString aPreservFileName = m_aFileName;
 
         // in case of links the containers does not provide client site sometimes
-        hr = Save( static_cast<LPCOLESTR>(nullptr), FALSE ); // triggers saving to the link location
-        SaveCompleted(
-            reinterpret_cast<wchar_t const *>(aPreservFileName.getStr()));
+        hr = Save( (LPCOLESTR)NULL, FALSE ); // triggers saving to the link location
+        SaveCompleted( (LPCOLESTR)aPreservFileName.getStr() );
     }
 
     notify( false );
@@ -453,7 +458,7 @@ void EmbedDocument_Impl::notify( bool bDataChanged )
             iAdvise->second->OnViewChange( DVASPECT_CONTENT, -1 );
 
     if ( m_pDAdviseHolder && bDataChanged )
-        m_pDAdviseHolder->SendOnDataChange( static_cast<IDataObject*>(this), 0, 0 );
+        m_pDAdviseHolder->SendOnDataChange( (IDataObject*)this, 0, 0 );
 }
 
 void EmbedDocument_Impl::Deactivate()

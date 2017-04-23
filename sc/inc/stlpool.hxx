@@ -26,7 +26,7 @@
 class ScStyleSheet;
 class ScDocument;
 
-class SC_DLLPUBLIC ScStyleSheetPool : public SfxStyleSheetPool
+class ScStyleSheetPool : public SfxStyleSheetPool
 {
 public:
                         ScStyleSheetPool( SfxItemPool&  rPool,
@@ -43,21 +43,21 @@ public:
     SfxStyleSheetBase*  GetActualStyleSheet ()
                                 { return pActualStyleSheet; }
 
-    void                CreateStandardStyles();
+    void SC_DLLPUBLIC CreateStandardStyles();
     void                CopyStdStylesFrom( ScStyleSheetPool* pSrcPool );
 
     void                CopyStyleFrom( ScStyleSheetPool* pSrcPool,
                                        const OUString& rName, SfxStyleFamily eFamily );
 
-    bool                HasStandardStyles() { return bHasStandardStyles; }
-
     ScStyleSheet*       FindCaseIns( const OUString& rName, SfxStyleFamily eFam );
+
+    const OUString*     GetForceStdName() const { return pForceStdName; }
 
     virtual SfxStyleSheetBase& Make( const OUString&, SfxStyleFamily eFam,
                                      sal_uInt16 nMask = SFXSTYLEBIT_ALL) override;
 
 protected:
-    virtual             ~ScStyleSheetPool() override;
+    virtual             ~ScStyleSheetPool();
 
     using SfxStyleSheetPool::Create;    // calcwarnings: Create(const SfxStyleSheet&) - ever used?
 
@@ -69,7 +69,7 @@ protected:
 private:
     SfxStyleSheetBase*  pActualStyleSheet;
     ScDocument*         pDoc;
-    bool                bHasStandardStyles;
+    const OUString*       pForceStdName;
 };
 
 #endif // INCLUDED_SC_INC_STLPOOL_HXX

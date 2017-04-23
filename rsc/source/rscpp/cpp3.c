@@ -96,20 +96,21 @@ void setincdirs()
 
 #if HOST == SYS_UNKNOWN
 /*
- * Context: GenMake
- * Under DOS also the environment variable INCLUDE is used.
- * To make it difficult all entries separated by ';' have to be
- * included in the list and this is done with strtok().
- * Be careful using malloc() !!!
- * In savestring() as a matter of fact getmem() is used and probably these
- * two functions are getting in the way of each other.
- * When I used malloc() instead of savestring() an error occurred in strcpy().
+ * Kontext: GenMake
+ * Unter DOS wird nun auch die Environment-Variable INCLUDE ausgewetet.
+ * Es kommt erschwerend hinzu, dass alle Eintraege, die mit ';' getrennt
+ * sind, mit in die Liste aufenommen werden muessen.
+ * Dies wird mit der Funktion strtok() realisiert.
+ * Vorsicht bei der Benutzung von malloc !!!
+ * In savestring wird naemlich getmem() verwendet. Vermutlich kommen sich
+ * die beiden Funktion in die Quere. Als ich malloc statt savestring
+ * verwendete knallte es in strcpy() !
  */
 
 #if !defined(_WIN32) && !defined(UNX)
     extern char* getenv( char *pStr ); /* BP */
 #endif
-    char* pIncGetEnv = NULL;    /* Pointer to INCLUDE   */
+    char* pIncGetEnv = NULL;    /* Pointer auf INCLUDE   */
 
     if ( ( pIncGetEnv = getenv("INCLUDE") ) != NULL )
         AddInclude( pIncGetEnv );
@@ -119,18 +120,18 @@ void setincdirs()
 
 }
 
-
-/* Context: Extension of the INCLUDE service
- * So far the cpp couldn't use include statements in the command line
- * where the directories are separated with ';'.
- * This totally understandable because this cpp is fitted to UNIX
- * systems and under UNIX ';' is used to terminate commandos.
+/* Kontext: Erweiterung des INCLUDE-Services
+ * Bislang konnte der cpp keine Include-Angaben in der Kommandozeile
+ * vertragen, bei denen die directries mit ';' getrennt wurden.
+ * Dies ist auch verstaendlich, da dieses cpp fuer UNIX-Systeme
+ * massgeschneidert wurde und in UNI die ';' als Zeichen zum Abschluss
+ * von Kommandos gilt.
  */
 
 int AddInclude( char* pIncStr )
 {
-    char* pIncEnv    = NULL;    /* copy of INCLUDE     */
-    char* pIncPos;              /* goes to the next */
+    char* pIncEnv    = NULL;    /* Kopie des INCLUDE     */
+    char* pIncPos;              /* wandert zum naechsten */
 
     pIncEnv = savestring( pIncStr );
     pIncPos = strtok( pIncEnv, ";" );
@@ -173,7 +174,7 @@ int dooptions(int argc, char** argv)
         else
         {
             c = *ap++;                      /* Option byte          */
-            if (islower((unsigned char)c))                 /* Normalize case       */
+            if (islower(c))                 /* Normalize case       */
                 c = toupper(c);
             switch (c)                      /* Command character    */
             {
@@ -208,7 +209,7 @@ int dooptions(int argc, char** argv)
                 AddInclude( ap );           /* BP, 11.09.91 */
                 break;
 
-            case 'N':                       /* No predefined        */
+            case 'N':                       /* No predefineds       */
                 nflag++;                    /* Repeat to undefine   */
                 break;                      /* __LINE__, etc.       */
 
@@ -223,13 +224,13 @@ int dooptions(int argc, char** argv)
                 }
                 while (sizp->bits != endtest && *ap != EOS)
                 {
-                    if (!isdigit((unsigned char)*ap))      /* Skip to next digit   */
+                    if (!isdigit(*ap))      /* Skip to next digit   */
                     {
                         ap++;
                         continue;
                     }
                     size = 0;               /* Compile the value    */
-                    while (isdigit((unsigned char)*ap))
+                    while (isdigit(*ap))
                     {
                         size *= 10;
                         size += (*ap++ - '0');
@@ -253,7 +254,7 @@ int dooptions(int argc, char** argv)
 
 #if OSL_DEBUG_LEVEL > 1
             case 'X':                       /* Debug                */
-                debug = (isdigit((unsigned char)*ap)) ? atoi(ap) : 1;
+                debug = (isdigit(*ap)) ? atoi(ap) : 1;
 #if (HOST == SYS_UNIX)
                 signal(SIGINT, (void (*)(int)) abort); /* Trap "interrupt" */
 #endif
@@ -360,6 +361,27 @@ int readoptions(char* filename, char*** pfargv)
 
     return (back);
 }
+
+#if HOST != SYS_UNIX
+
+/*
+ * Dec operating systems mangle upper-lower case in command lines.
+ * This routine forces the -D and -U arguments to uppercase.
+ * It is called only on cpp startup by dooptions().
+ */
+void zap_uc(char* ap)
+{
+    while (*ap != EOS)
+    {
+        /*
+         * Don't use islower() here so it works with Multinational
+         */
+        if (*ap >= 'a' && *ap <= 'z')
+            *ap = (char)toupper(*ap);
+        ap++;
+    }
+}
+#endif
 
 /*
  * Initialize the built-in #define's.  There are two flavors:

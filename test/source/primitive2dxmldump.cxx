@@ -28,7 +28,6 @@
 #include <drawinglayer/primitive2d/svggradientprimitive2d.hxx>
 
 #include <drawinglayer/attribute/lineattribute.hxx>
-#include <drawinglayer/attribute/fontattribute.hxx>
 
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
@@ -65,7 +64,7 @@ xmlDocPtr Primitive2dXmlDump::dumpAndParse(
     if (rTempStreamName.isEmpty())
         pStream.reset(new SvMemoryStream());
     else
-        pStream.reset(new SvFileStream(rTempStreamName, StreamMode::STD_READWRITE | StreamMode::TRUNC));
+        pStream.reset(new SvFileStream(rTempStreamName, STREAM_STD_READWRITE | StreamMode::TRUNC));
 
     XmlWriter aWriter(pStream.get());
     aWriter.startDocument();
@@ -192,9 +191,6 @@ void Primitive2dXmlDump::decomposeAndWrite(
                 }
                 rWriter.attribute("text", rTextSimplePortionPrimitive2D.getText());
                 rWriter.attribute("fontcolor", convertColorToString(rTextSimplePortionPrimitive2D.getFontColor()));
-
-                drawinglayer::attribute::FontAttribute aFontAttribute = rTextSimplePortionPrimitive2D.getFontAttribute();
-                rWriter.attribute("familyname", aFontAttribute.getFamilyName());
                 rWriter.endElement();
             }
             break;

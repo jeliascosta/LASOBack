@@ -25,7 +25,6 @@
 #include <editeng/fontitem.hxx>
 #include <editeng/scripttypeitem.hxx>
 #include <editeng/hangulhanja.hxx>
-#include <i18nutil/transliteration.hxx>
 #include <SwSmartTagMgr.hxx>
 #include <linguistic/lngprops.hxx>
 #include <officecfg/Office/Writer.hxx>
@@ -70,8 +69,11 @@
 
 #include <unomid.h>
 
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/i18n/WordType.hpp>
 #include <com/sun/star/i18n/ScriptType.hpp>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
+#include <com/sun/star/i18n/TransliterationModulesExtra.hpp>
 
 #include <vector>
 #include <utility>
@@ -86,35 +88,10 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::linguistic2;
 using namespace ::com::sun::star::smarttags;
 
-struct SwParaIdleData_Impl
-{
-    SwWrongList* pWrong;                // for spell checking
-    SwGrammarMarkUp* pGrammarCheck;     // for grammar checking /  proof reading
-    SwWrongList* pSmartTags;
-    sal_uLong nNumberOfWords;
-    sal_uLong nNumberOfAsianWords;
-    sal_uLong nNumberOfChars;
-    sal_uLong nNumberOfCharsExcludingSpaces;
-    bool bWordCountDirty;
-    SwTextNode::WrongState eWrongDirty; ///< online spell checking needed/done?
-    bool bGrammarCheckDirty;
-    bool bSmartTagDirty;
-    bool bAutoComplDirty;               ///< auto complete list dirty
-
-    SwParaIdleData_Impl() :
-        pWrong              ( nullptr ),
-        pGrammarCheck       ( nullptr ),
-        pSmartTags          ( nullptr ),
-        nNumberOfWords      ( 0 ),
-        nNumberOfAsianWords ( 0 ),
-        nNumberOfChars      ( 0 ),
-        nNumberOfCharsExcludingSpaces ( 0 ),
-        bWordCountDirty     ( true ),
-        eWrongDirty         ( SwTextNode::WrongState::TODO ),
-        bGrammarCheckDirty  ( true ),
-        bSmartTagDirty      ( true ),
-        bAutoComplDirty     ( true ) {};
-};
+// Wir ersparen uns in Hyphenate ein GetFrame()
+// Achtung: in edlingu.cxx stehen die Variablen!
+extern const SwTextNode *pLinguNode;
+extern       SwTextFrame  *pLinguFrame;
 
 /*
  * This has basically the same function as SwScriptInfo::MaskHiddenRanges,
@@ -130,7 +107,7 @@ lcl_MaskRedlines( const SwTextNode& rNode, OUStringBuffer& rText,
 
     const SwDoc& rDoc = *rNode.GetDoc();
 
-    for ( SwRedlineTable::size_type nAct = rDoc.getIDocumentRedlineAccess().GetRedlinePos( rNode, USHRT_MAX ); nAct < rDoc.getIDocumentRedlineAccess().GetRedlineTable().size(); ++nAct )
+    for ( size_t nAct = rDoc.getIDocumentRedlineAccess().GetRedlinePos( rNode, USHRT_MAX ); nAct < rDoc.getIDocumentRedlineAccess().GetRedlineTable().size(); ++nAct )
     {
         const SwRangeRedline* pRed = rDoc.getIDocumentRedlineAccess().GetRedlineTable()[ nAct ];
 
@@ -174,7 +151,7 @@ lcl_MaskRedlinesAndHiddenText( const SwTextNode& rNode, OUStringBuffer& rText,
     sal_Int32 nHiddenCharsMasked = 0;
 
     const SwDoc& rDoc = *rNode.GetDoc();
-    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( rDoc.getIDocumentRedlineAccess().GetRedlineFlags() );
+    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( rDoc.getIDocumentRedlineAccess().GetRedlineMode() );
 
     // If called from word count or from spell checking, deleted redlines
     // should be masked:
@@ -222,14 +199,14 @@ static SwRect lcl_CalculateRepaintRect( SwTextFrame& rTextFrame, sal_Int32 nChgS
     if ( pEnd2Pos )
     {
         // we are inside a special portion, take left border
-        SwRectFnSet aRectFnSet(pEndFrame);
-        aRectFnSet.SetTop( aRect, aRectFnSet.GetTop(pEnd2Pos->aLine) );
+        SWRECTFN( pEndFrame )
+        (aRect.*fnRect->fnSetTop)( (pEnd2Pos->aLine.*fnRect->fnGetTop)() );
         if ( pEndFrame->IsRightToLeft() )
-            aRectFnSet.SetLeft( aRect, aRectFnSet.GetLeft(pEnd2Pos->aPortion) );
+            (aRect.*fnRect->fnSetLeft)( (pEnd2Pos->aPortion.*fnRect->fnGetLeft)() );
         else
-            aRectFnSet.SetLeft( aRect, aRectFnSet.GetRight(pEnd2Pos->aPortion) );
-        aRectFnSet.SetWidth( aRect, 1 );
-        aRectFnSet.SetHeight( aRect, aRectFnSet.GetHeight(pEnd2Pos->aLine) );
+            (aRect.*fnRect->fnSetLeft)( (pEnd2Pos->aPortion.*fnRect->fnGetRight)() );
+        (aRect.*fnRect->fnSetWidth)( 1 );
+        (aRect.*fnRect->fnSetHeight)( (pEnd2Pos->aLine.*fnRect->fnGetHeight)() );
         delete pEnd2Pos;
     }
 
@@ -255,14 +232,14 @@ static SwRect lcl_CalculateRepaintRect( SwTextFrame& rTextFrame, sal_Int32 nChgS
     if ( pSt2Pos )
     {
         // we are inside a special portion, take right border
-        SwRectFnSet aRectFnSet(pStartFrame);
-        aRectFnSet.SetTop( aTmp, aRectFnSet.GetTop(pSt2Pos->aLine) );
+        SWRECTFN( pStartFrame )
+        (aTmp.*fnRect->fnSetTop)( (pSt2Pos->aLine.*fnRect->fnGetTop)() );
         if ( pStartFrame->IsRightToLeft() )
-            aRectFnSet.SetLeft( aTmp, aRectFnSet.GetRight(pSt2Pos->aPortion) );
+            (aTmp.*fnRect->fnSetLeft)( (pSt2Pos->aPortion.*fnRect->fnGetRight)() );
         else
-            aRectFnSet.SetLeft( aTmp, aRectFnSet.GetLeft(pSt2Pos->aPortion) );
-        aRectFnSet.SetWidth( aTmp, 1 );
-        aRectFnSet.SetHeight( aTmp, aRectFnSet.GetHeight(pSt2Pos->aLine) );
+            (aTmp.*fnRect->fnSetLeft)( (pSt2Pos->aPortion.*fnRect->fnGetLeft)() );
+        (aTmp.*fnRect->fnSetWidth)( 1 );
+        (aTmp.*fnRect->fnSetHeight)( (pSt2Pos->aLine.*fnRect->fnGetHeight)() );
         delete pSt2Pos;
     }
 
@@ -275,17 +252,17 @@ static SwRect lcl_CalculateRepaintRect( SwTextFrame& rTextFrame, sal_Int32 nChgS
             bSameFrame = false;
             SwRect aStFrame( pStartFrame->PaintArea() );
             {
-                SwRectFnSet aRectFnSet(pStartFrame);
-                aRectFnSet.SetLeft( aTmp, aRectFnSet.GetLeft(aStFrame) );
-                aRectFnSet.SetRight( aTmp, aRectFnSet.GetRight(aStFrame) );
-                aRectFnSet.SetBottom( aTmp, aRectFnSet.GetBottom(aStFrame) );
+                SWRECTFN( pStartFrame )
+                (aTmp.*fnRect->fnSetLeft)( (aStFrame.*fnRect->fnGetLeft)() );
+                (aTmp.*fnRect->fnSetRight)( (aStFrame.*fnRect->fnGetRight)() );
+                (aTmp.*fnRect->fnSetBottom)( (aStFrame.*fnRect->fnGetBottom)() );
             }
             aStFrame = pEndFrame->PaintArea();
             {
-                SwRectFnSet aRectFnSet(pEndFrame);
-                aRectFnSet.SetTop( aRect, aRectFnSet.GetTop(aStFrame) );
-                aRectFnSet.SetLeft( aRect, aRectFnSet.GetLeft(aStFrame) );
-                aRectFnSet.SetRight( aRect, aRectFnSet.GetRight(aStFrame) );
+                SWRECTFN( pEndFrame )
+                (aRect.*fnRect->fnSetTop)( (aStFrame.*fnRect->fnGetTop)() );
+                (aRect.*fnRect->fnSetLeft)( (aStFrame.*fnRect->fnGetLeft)() );
+                (aRect.*fnRect->fnSetRight)( (aStFrame.*fnRect->fnGetRight)() );
             }
             aRect.Union( aTmp );
             while( true )
@@ -299,15 +276,15 @@ static SwRect lcl_CalculateRepaintRect( SwTextFrame& rTextFrame, sal_Int32 nChgS
     }
     if( bSameFrame )
     {
-        SwRectFnSet aRectFnSet(pStartFrame);
-        if( aRectFnSet.GetTop(aTmp) == aRectFnSet.GetTop(aRect) )
-            aRectFnSet.SetLeft( aRect, aRectFnSet.GetLeft(aTmp) );
+        SWRECTFN( pStartFrame )
+        if( (aTmp.*fnRect->fnGetTop)() == (aRect.*fnRect->fnGetTop)() )
+            (aRect.*fnRect->fnSetLeft)( (aTmp.*fnRect->fnGetLeft)() );
         else
         {
             SwRect aStFrame( pStartFrame->PaintArea() );
-            aRectFnSet.SetLeft( aRect, aRectFnSet.GetLeft(aStFrame) );
-            aRectFnSet.SetRight( aRect, aRectFnSet.GetRight(aStFrame) );
-            aRectFnSet.SetTop( aRect, aRectFnSet.GetTop(aTmp) );
+            (aRect.*fnRect->fnSetLeft)( (aStFrame.*fnRect->fnGetLeft)() );
+            (aRect.*fnRect->fnSetRight)( (aStFrame.*fnRect->fnGetRight)() );
+            (aRect.*fnRect->fnSetTop)( (aTmp.*fnRect->fnGetTop)() );
         }
 
         if( aTmp.Height() > aRect.Height() )
@@ -440,7 +417,7 @@ void SwTextNode::RstTextAttr(
 
     // iterate over attribute array until start of attribute is behind deletion range
     size_t i = 0;
-    sal_Int32 nAttrStart = sal_Int32();
+    sal_Int32 nAttrStart;
     SwTextAttr *pHt = nullptr;
     while ( (i < m_pSwpHints->Count())
             && ( ( ( nAttrStart = m_pSwpHints->Get(i)->GetStart()) < nEnd )
@@ -688,10 +665,12 @@ sal_Int32 clipIndexBounds(const OUString &rStr, sal_Int32 nPos)
     return nPos;
 }
 
-// Return current word:
-// Search from left to right, so find the word before nPos.
-// Except if at the start of the paragraph, then return the first word.
-// If the first word consists only of whitespace, return an empty string.
+// Aktuelles Wort zurueckliefern:
+// Wir suchen immer von links nach rechts, es wird also das Wort
+// vor nPos gesucht. Es sei denn, wir befinden uns am Anfang des
+// Absatzes, dann wird das erste Wort zurueckgeliefert.
+// Wenn dieses erste Wort nur aus Whitespaces besteht, returnen wir
+// einen leeren String.
 OUString SwTextNode::GetCurWord( sal_Int32 nPos ) const
 {
     assert(nPos <= m_Text.getLength()); // invalid index
@@ -959,9 +938,11 @@ bool SwScanner::NextWord()
     return true;
 }
 
-// Note: this is a clone of SwTextFrame::AutoSpell_, so keep them in sync when fixing things!
 bool SwTextNode::Spell(SwSpellArgs* pArgs)
 {
+    // Die Aehnlichkeiten zu SwTextFrame::AutoSpell_ sind beabsichtigt ...
+    // ACHTUNG: Ev. Bugs in beiden Routinen fixen!
+
     // modify string according to redline information and hidden text
     const OUString aOldText( m_Text );
     OUStringBuffer buf(m_Text);
@@ -1125,11 +1106,11 @@ bool SwTextNode::Convert( SwConversionArgs &rArgs )
     // (either all the text or the text within the selection
     // when the conversion was started)
     const sal_Int32 nTextBegin = ( rArgs.pStartNode == this )
-        ? std::min(rArgs.pStartIdx->GetIndex(), m_Text.getLength())
+        ? ::std::min(rArgs.pStartIdx->GetIndex(), m_Text.getLength())
         : 0;
 
     const sal_Int32 nTextEnd = ( rArgs.pEndNode == this )
-        ?  std::min(rArgs.pEndIdx->GetIndex(), m_Text.getLength())
+        ?  ::std::min(rArgs.pEndIdx->GetIndex(), m_Text.getLength())
         :  m_Text.getLength();
 
     rArgs.aConvText.clear();
@@ -1254,7 +1235,8 @@ bool SwTextNode::Convert( SwConversionArgs &rArgs )
     return !rArgs.aConvText.isEmpty();
 }
 
-// Note: this is a clone of SwTextNode::Spell, so keep them in sync when fixing things!
+// Die Aehnlichkeiten zu SwTextNode::Spell sind beabsichtigt ...
+// ACHTUNG: Ev. Bugs in beiden Routinen fixen!
 SwRect SwTextFrame::AutoSpell_( const SwContentNode* pActNode, sal_Int32 nActPos )
 {
     SwRect aRect;
@@ -1263,6 +1245,8 @@ SwRect SwTextFrame::AutoSpell_( const SwContentNode* pActNode, sal_Int32 nActPos
     if ( bStop )
         return aRect;
 #endif
+    // Die Aehnlichkeiten zu SwTextNode::Spell sind beabsichtigt ...
+    // ACHTUNG: Ev. Bugs in beiden Routinen fixen!
     SwTextNode *pNode = GetTextNode();
     if( pNode != pActNode || !nActPos )
         nActPos = COMPLETE_STRING;
@@ -1565,6 +1549,7 @@ SwRect SwTextFrame::SmartTagScan( SwContentNode* /*pActNode*/, sal_Int32 /*nActP
     return aRet;
 }
 
+// Wird vom CollectAutoCmplWords gerufen
 void SwTextFrame::CollectAutoCmplWrds( SwContentNode* pActNode, sal_Int32 nActPos )
 {
     SwTextNode *pNode = GetTextNode();
@@ -1614,10 +1599,10 @@ void SwTextFrame::CollectAutoCmplWrds( SwContentNode* pActNode, sal_Int32 nActPo
         pNode->SetAutoCompleteWordDirty( false );
 }
 
-/// Find the SwTextFrame and call its Hyphenate
+/** Findet den TextFrame und sucht dessen CalcHyph */
 bool SwTextNode::Hyphenate( SwInterHyphInfo &rHyphInf )
 {
-    // shortcut: paragraph doesn't have a language set:
+    // Abkuerzung: am Absatz ist keine Sprache eingestellt:
     if ( LANGUAGE_NONE == sal_uInt16( GetSwAttrSet().GetLanguage().GetLanguage() )
          && USHRT_MAX == GetLang(0, m_Text.getLength()))
     {
@@ -1636,9 +1621,9 @@ bool SwTextNode::Hyphenate( SwInterHyphInfo &rHyphInf )
         pFrame = &(pFrame->GetFrameAtOfst( rHyphInf.nStart ));
     else
     {
-        // There was a comment here that claimed that the following assertion
-        // shouldn't exist as it's triggered by "Trennung ueber Sonderbereiche",
-        // whatever that means.
+        // 4935: Seit der Trennung ueber Sonderbereiche sind Faelle
+        // moeglich, in denen kein Frame zum Node vorliegt.
+        // Also keinOSL_ENSURE
         OSL_ENSURE( pFrame, "!SwTextNode::Hyphenate: can't find any frame" );
         return false;
     }
@@ -1647,8 +1632,9 @@ bool SwTextNode::Hyphenate( SwInterHyphInfo &rHyphInf )
     {
         if( pFrame->Hyphenate( rHyphInf ) )
         {
-            // The layout is not robust wrt. "direct formatting"
-            // cf. layact.cxx, SwLayAction::TurboAction_(), if( !pCnt->IsValid() ...
+            // Das Layout ist nicht robust gegen "Direktformatierung"
+            // (7821, 7662, 7408); vgl. layact.cxx,
+            // SwLayAction::TurboAction_(), if( !pCnt->IsValid() ...
             pFrame->SetCompletePaint();
             return true;
         }
@@ -1697,7 +1683,7 @@ void SwTextNode::TransliterateText(
         std::vector< swTransliterationChgData >   aChanges;
         swTransliterationChgData                  aChgData;
 
-        if (rTrans.getType() == TransliterationFlags::TITLE_CASE)
+        if (rTrans.getType() == (sal_uInt32)TransliterationModulesExtra::TITLE_CASE)
         {
             // for 'capitalize every word' we need to iterate over each word
 
@@ -1761,7 +1747,7 @@ void SwTextNode::TransliterateText(
                         nWordType);
             }
         }
-        else if (rTrans.getType() == TransliterationFlags::SENTENCE_CASE)
+        else if (rTrans.getType() == (sal_uInt32)TransliterationModulesExtra::SENTENCE_CASE)
         {
             // for 'sentence case' we need to iterate sentence by sentence
 
@@ -1933,7 +1919,7 @@ void SwTextNode::ReplaceTextOnly( sal_Int32 nPos, sal_Int32 nLen,
 
     sal_Int32 nTLen = rText.getLength();
     const sal_Int32* pOffsets = rOffsets.getConstArray();
-    // now look for no 1-1 mapping -> move the indices!
+    // now look for no 1-1 mapping -> move the indizies!
     sal_Int32 nMyOff = nPos;
     for( sal_Int32 nI = 0; nI < nTLen; ++nI )
     {
@@ -2014,13 +2000,10 @@ bool SwTextNode::CountWords( SwDocStat& rStat,
     if ( bCountAll && !IsWordCountDirty() )
     {
         // accumulate into DocStat record to return the values
-        if (m_pParaIdleData_Impl)
-        {
-            rStat.nWord += m_pParaIdleData_Impl->nNumberOfWords;
-            rStat.nAsianWord += m_pParaIdleData_Impl->nNumberOfAsianWords;
-            rStat.nChar += m_pParaIdleData_Impl->nNumberOfChars;
-            rStat.nCharExcludingSpaces += m_pParaIdleData_Impl->nNumberOfCharsExcludingSpaces;
-        }
+        rStat.nWord += GetParaNumberOfWords();
+        rStat.nAsianWord += GetParaNumberOfAsianWords();
+        rStat.nChar += GetParaNumberOfChars();
+        rStat.nCharExcludingSpaces += GetParaNumberOfCharsExcludingSpaces();
         return false;
     }
 
@@ -2110,13 +2093,10 @@ bool SwTextNode::CountWords( SwDocStat& rStat,
     // If counting the whole para then update cached values and mark clean
     if ( bCountAll )
     {
-        if ( m_pParaIdleData_Impl )
-        {
-            m_pParaIdleData_Impl->nNumberOfWords = nTmpWords;
-            m_pParaIdleData_Impl->nNumberOfAsianWords = nTmpAsianWords;
-            m_pParaIdleData_Impl->nNumberOfChars = nTmpChars;
-            m_pParaIdleData_Impl->nNumberOfCharsExcludingSpaces = nTmpCharsExcludingSpaces;
-        }
+        SetParaNumberOfWords( nTmpWords );
+        SetParaNumberOfAsianWords( nTmpAsianWords );
+        SetParaNumberOfChars( nTmpChars );
+        SetParaNumberOfCharsExcludingSpaces( nTmpCharsExcludingSpaces );
         SetWordCountDirty( false );
     }
     // accumulate into DocStat record to return the values
@@ -2129,6 +2109,36 @@ bool SwTextNode::CountWords( SwDocStat& rStat,
 }
 
 // Paragraph statistics start -->
+
+struct SwParaIdleData_Impl
+{
+    SwWrongList* pWrong;                // for spell checking
+    SwGrammarMarkUp* pGrammarCheck;     // for grammar checking /  proof reading
+    SwWrongList* pSmartTags;
+    sal_uLong nNumberOfWords;
+    sal_uLong nNumberOfAsianWords;
+    sal_uLong nNumberOfChars;
+    sal_uLong nNumberOfCharsExcludingSpaces;
+    bool bWordCountDirty;
+    SwTextNode::WrongState eWrongDirty; ///< online spell checking needed/done?
+    bool bGrammarCheckDirty;
+    bool bSmartTagDirty;
+    bool bAutoComplDirty;               // die ACompl-Liste muss angepasst werden
+
+    SwParaIdleData_Impl() :
+        pWrong              ( nullptr ),
+        pGrammarCheck       ( nullptr ),
+        pSmartTags          ( nullptr ),
+        nNumberOfWords      ( 0 ),
+        nNumberOfAsianWords ( 0 ),
+        nNumberOfChars      ( 0 ),
+        nNumberOfCharsExcludingSpaces ( 0 ),
+        bWordCountDirty     ( true ),
+        eWrongDirty         ( SwTextNode::WrongState::TODO ),
+        bGrammarCheckDirty  ( true ),
+        bSmartTagDirty      ( true ),
+        bAutoComplDirty     ( true ) {};
+};
 
 void SwTextNode::InitSwParaStatistics( bool bNew )
 {
@@ -2206,11 +2216,63 @@ SwWrongList* SwTextNode::GetSmartTags()
     return m_pParaIdleData_Impl ? m_pParaIdleData_Impl->pSmartTags : nullptr;
 }
 
+void SwTextNode::SetParaNumberOfWords( sal_uLong nNew ) const
+{
+    if ( m_pParaIdleData_Impl )
+    {
+        m_pParaIdleData_Impl->nNumberOfWords = nNew;
+    }
+}
+
+sal_uLong SwTextNode::GetParaNumberOfWords() const
+{
+    return m_pParaIdleData_Impl ? m_pParaIdleData_Impl->nNumberOfWords : 0;
+}
+
+void SwTextNode::SetParaNumberOfAsianWords( sal_uLong nNew ) const
+{
+    if ( m_pParaIdleData_Impl )
+    {
+        m_pParaIdleData_Impl->nNumberOfAsianWords = nNew;
+    }
+}
+
+sal_uLong SwTextNode::GetParaNumberOfAsianWords() const
+{
+    return m_pParaIdleData_Impl ? m_pParaIdleData_Impl->nNumberOfAsianWords : 0;
+}
+
+void SwTextNode::SetParaNumberOfChars( sal_uLong nNew ) const
+{
+    if ( m_pParaIdleData_Impl )
+    {
+        m_pParaIdleData_Impl->nNumberOfChars = nNew;
+    }
+}
+
+sal_uLong SwTextNode::GetParaNumberOfChars() const
+{
+    return m_pParaIdleData_Impl ? m_pParaIdleData_Impl->nNumberOfChars : 0;
+}
+
 void SwTextNode::SetWordCountDirty( bool bNew ) const
 {
     if ( m_pParaIdleData_Impl )
     {
         m_pParaIdleData_Impl->bWordCountDirty = bNew;
+    }
+}
+
+sal_uLong SwTextNode::GetParaNumberOfCharsExcludingSpaces() const
+{
+    return m_pParaIdleData_Impl ? m_pParaIdleData_Impl->nNumberOfCharsExcludingSpaces : 0;
+}
+
+void SwTextNode::SetParaNumberOfCharsExcludingSpaces( sal_uLong nNew ) const
+{
+    if ( m_pParaIdleData_Impl )
+    {
+        m_pParaIdleData_Impl->nNumberOfCharsExcludingSpaces = nNew;
     }
 }
 

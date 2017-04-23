@@ -46,8 +46,8 @@ void java_util_Properties::setProperty(const OUString& key, const OUString& valu
         args[0].l = convertwchar_tToJavaString(t.pEnv,key);
         args[1].l = convertwchar_tToJavaString(t.pEnv,value);
         // Initialize temporary Variables
-        static const char * const cSignature = "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;";
-        static const char * const cMethodName = "setProperty";
+        static const char * cSignature = "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;";
+        static const char * cMethodName = "setProperty";
         // Turn off Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -82,7 +82,7 @@ java_util_Properties::java_util_Properties( ): java_lang_Object( nullptr, nullpt
         return;
     // Turn off Java-Call for the constructor
     // Initialize temperary Variables
-    static const char * const cSignature = "()V";
+    static const char * cSignature = "()V";
     jobject tempObj;
     static jmethodID mID(nullptr);
     obtainMethodId_throwSQL(t.pEnv, "<init>",cSignature, mID);
@@ -103,7 +103,7 @@ jstring connectivity::convertwchar_tToJavaString(JNIEnv *pEnv,const OUString& _r
 }
 
 
-java_util_Properties* connectivity::createStringPropertyArray(const Sequence< PropertyValue >& info )
+java_util_Properties* connectivity::createStringPropertyArray(const Sequence< PropertyValue >& info )  throw(SQLException, RuntimeException)
 {
     java_util_Properties* pProps = new java_util_Properties();
     const PropertyValue* pBegin = info.getConstArray();
@@ -173,11 +173,11 @@ OUString connectivity::JavaString2String(JNIEnv *pEnv,jstring Str)
     return aStr;
 }
 
-jobject connectivity::convertTypeMapToJavaMap(JNIEnv* /*pEnv*/,const Reference< css::container::XNameAccess > & _rMap)
+jobject connectivity::convertTypeMapToJavaMap(JNIEnv* /*pEnv*/,const Reference< ::com::sun::star::container::XNameAccess > & _rMap)
 {
     if ( _rMap.is() )
     {
-        css::uno::Sequence< OUString > aNames = _rMap->getElementNames();
+        ::com::sun::star::uno::Sequence< OUString > aNames = _rMap->getElementNames();
         if ( aNames.getLength() > 0 )
             ::dbtools::throwFeatureNotImplementedSQLException( "Type maps", nullptr );
     }
@@ -201,7 +201,7 @@ bool connectivity::isExceptionOccurred(JNIEnv *pEnv,bool _bClear)
     return bRet;
 }
 
-jobject connectivity::createByteInputStream(const css::uno::Reference< css::io::XInputStream >& x,sal_Int32 length)
+jobject connectivity::createByteInputStream(const ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream >& x,sal_Int32 length)
 {
     SDBThreadAttach t;
     if( !t.pEnv || !x.is() )
@@ -212,7 +212,7 @@ jobject connectivity::createByteInputStream(const css::uno::Reference< css::io::
     static jmethodID mID(nullptr);
     if  ( !mID )
     {
-        static const char * const cSignature = "([B)V";
+        static const char * cSignature = "([B)V";
         mID  = t.pEnv->GetMethodID( clazz, "<init>", cSignature );
         OSL_ENSURE( mID, cSignature );
         if  ( !mID )
@@ -228,7 +228,7 @@ jobject connectivity::createByteInputStream(const css::uno::Reference< css::io::
     return out;
 }
 
-jobject connectivity::createCharArrayReader(const css::uno::Reference< css::io::XInputStream >& x,sal_Int32 length)
+jobject connectivity::createCharArrayReader(const ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream >& x,sal_Int32 length)
 {
     SDBThreadAttach t;
     if( !t.pEnv || !x.is() )
@@ -239,7 +239,7 @@ jobject connectivity::createCharArrayReader(const css::uno::Reference< css::io::
     static jmethodID mID(nullptr);
     if  ( !mID )
     {
-        static const char * const cSignature = "([C)V";
+        static const char * cSignature = "([C)V";
         mID  = t.pEnv->GetMethodID( clazz, "<init>", cSignature );
         OSL_ENSURE( mID, cSignature );
         if  ( !mID )

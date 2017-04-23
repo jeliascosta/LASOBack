@@ -68,8 +68,8 @@ public:
         static bool parseStyleCommand(SfxStyleInfo_Impl& aStyle);
         void getLabel4Style(SfxStyleInfo_Impl& aStyle);
 
-        std::vector< SfxStyleInfo_Impl > getStyleFamilies();
-        std::vector< SfxStyleInfo_Impl > getStyles(const OUString& sFamily);
+        ::std::vector< SfxStyleInfo_Impl > getStyleFamilies();
+        ::std::vector< SfxStyleInfo_Impl > getStyles(const OUString& sFamily);
 
         static OUString generateCommand(const OUString& sFamily, const OUString& sStyle);
 };
@@ -108,7 +108,7 @@ class SfxConfigFunctionListBox : public SvTreeListBox
 
 public:
     SfxConfigFunctionListBox(vcl::Window*, WinBits nStyle);
-    virtual ~SfxConfigFunctionListBox() override;
+    virtual ~SfxConfigFunctionListBox();
     virtual void  dispose() override;
 
     void          ClearAll();
@@ -122,7 +122,7 @@ public:
 struct SvxConfigGroupBoxResource_Impl;
 class SfxConfigGroupListBox : public SvTreeListBox
 {
-    std::unique_ptr<SvxConfigGroupBoxResource_Impl> xImp;
+    SvxConfigGroupBoxResource_Impl* pImp;
     VclPtr<SfxConfigFunctionListBox>  pFunctionListBox;
     SfxGroupInfoArr_Impl            aArr;
 
@@ -135,12 +135,12 @@ class SfxConfigGroupListBox : public SvTreeListBox
 
     Image GetImage(
         const css::uno::Reference< css::script::browse::XBrowseNode >& node,
-        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
+        css::uno::Reference< css::uno::XComponentContext > xCtx,
         bool bIsRootNode
     );
 
     static css::uno::Reference< css::uno::XInterface  > getDocumentModel(
-        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
+        css::uno::Reference< css::uno::XComponentContext >& xCtx,
         OUString& docName
     );
 
@@ -157,7 +157,7 @@ protected:
 
 public:
     SfxConfigGroupListBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SfxConfigGroupListBox() override;
+    virtual ~SfxConfigGroupListBox();
     virtual void        dispose() override;
     void                ClearAll();
 

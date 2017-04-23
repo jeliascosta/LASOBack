@@ -61,7 +61,7 @@ ObjectType OEvoabTables::createObject(const OUString& aName)
         {
             OEvoabTable* pRet = new OEvoabTable(
                     this,
-                    static_cast<OEvoabCatalog&>(m_rParent).getConnection(),
+                    static_cast<OEvoabConnection*>(static_cast<OEvoabCatalog&>(m_rParent).getConnection()),
                     aName,
                     xRow->getString(4),
                     xRow->getString(5),
@@ -75,7 +75,7 @@ ObjectType OEvoabTables::createObject(const OUString& aName)
     return xRet;
 }
 
-void OEvoabTables::impl_refresh(  )
+void OEvoabTables::impl_refresh(  ) throw(RuntimeException)
 {
     static_cast<OEvoabCatalog&>(m_rParent).refreshTables();
 }

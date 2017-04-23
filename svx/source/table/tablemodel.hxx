@@ -26,11 +26,10 @@
 #include <basegfx/range/b2irectangle.hxx>
 #include <basegfx/tuple/b2ituple.hxx>
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/listenernotification.hxx>
 #include "celltypes.hxx"
 
-struct _xmlTextWriter;
 
 namespace sdr { namespace table {
 
@@ -52,7 +51,7 @@ protected:
 
 typedef ::cppu::WeakComponentImplHelper< css::table::XTable, css::util::XBroadcaster > TableModelBase;
 
-class TableModel : public ::cppu::BaseMutex,
+class TableModel : public ::comphelper::OBaseMutex,
                    public TableModelBase,
                    public ICellRange
 {
@@ -71,7 +70,7 @@ class TableModel : public ::cppu::BaseMutex,
 public:
     explicit TableModel( SdrTableObj* pTableObj );
     TableModel( SdrTableObj* pTableObj, const TableModelRef& xSourceTable );
-    virtual ~TableModel() override;
+    virtual ~TableModel();
 
     void init( sal_Int32 nColumns, sal_Int32 nRows );
 
@@ -85,8 +84,6 @@ public:
     /// Get the width of all columns in this table.
     std::vector<sal_Int32> getColumnWidths();
 
-    void dumpAsXml(struct _xmlTextWriter * pWriter) const;
-
     // ICellRange
     virtual sal_Int32 getLeft() override;
     virtual sal_Int32 getTop() override;
@@ -95,47 +92,49 @@ public:
     virtual css::uno::Reference< css::table::XTable > getTable() override;
 
     // XTable
-    virtual css::uno::Reference< css::table::XCellCursor > SAL_CALL createCursor(  ) override;
-    virtual css::uno::Reference< css::table::XCellCursor > SAL_CALL createCursorByRange( const css::uno::Reference< css::table::XCellRange >& rRange ) override;
-    virtual ::sal_Int32 SAL_CALL getRowCount() override;
-    virtual ::sal_Int32 SAL_CALL getColumnCount() override;
+    virtual css::uno::Reference< css::table::XCellCursor > SAL_CALL createCursor(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XCellCursor > SAL_CALL createCursorByRange( const css::uno::Reference< css::table::XCellRange >& rRange ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getRowCount() throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getColumnCount() throw (css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose(  ) override;
+    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifiable
-    virtual sal_Bool SAL_CALL isModified(  ) override;
-    virtual void SAL_CALL setModified( sal_Bool bModified ) override;
+    virtual sal_Bool SAL_CALL isModified(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setModified( sal_Bool bModified ) throw (css::beans::PropertyVetoException, css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XColumnRowRange
-    virtual css::uno::Reference< css::table::XTableColumns > SAL_CALL getColumns() override;
-    virtual css::uno::Reference< css::table::XTableRows > SAL_CALL getRows() override;
+    virtual css::uno::Reference< css::table::XTableColumns > SAL_CALL getColumns() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XTableRows > SAL_CALL getRows() throw (css::uno::RuntimeException, std::exception) override;
 
     // XCellRange
-    virtual css::uno::Reference< css::table::XCell > SAL_CALL getCellByPosition( ::sal_Int32 nColumn, ::sal_Int32 nRow ) override;
-    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByPosition( ::sal_Int32 nLeft, ::sal_Int32 nTop, ::sal_Int32 nRight, ::sal_Int32 nBottom ) override;
-    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByName( const OUString& aRange ) override;
+    virtual css::uno::Reference< css::table::XCell > SAL_CALL getCellByPosition( ::sal_Int32 nColumn, ::sal_Int32 nRow ) throw ( css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByPosition( ::sal_Int32 nLeft, ::sal_Int32 nTop, ::sal_Int32 nRight, ::sal_Int32 nBottom ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByName( const OUString& aRange ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XFastPropertySet
-    virtual void SAL_CALL setFastPropertyValue( ::sal_Int32 nHandle, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getFastPropertyValue( ::sal_Int32 nHandle ) override;
+    virtual void SAL_CALL setFastPropertyValue( ::sal_Int32 nHandle, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getFastPropertyValue( ::sal_Int32 nHandle ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XBroadcaster
-    virtual void SAL_CALL lockBroadcasts() override;
-    virtual void SAL_CALL unlockBroadcasts() override;
+    virtual void SAL_CALL lockBroadcasts() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL unlockBroadcasts() throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     void notifyModification();
@@ -162,10 +161,8 @@ private:
     */
     virtual void SAL_CALL disposing() override;
 
-    /// @throws css::lang::IndexOutOfBoundsException
-    TableRowRef getRow( sal_Int32 nRow ) const;
-    /// @throws css::lang::IndexOutOfBoundsException
-    TableColumnRef getColumn( sal_Int32 nColumn ) const;
+    TableRowRef getRow( sal_Int32 nRow ) const throw (css::lang::IndexOutOfBoundsException);
+    TableColumnRef getColumn( sal_Int32 nColumn ) const throw (css::lang::IndexOutOfBoundsException);
 
     void updateRows();
     void updateColumns();

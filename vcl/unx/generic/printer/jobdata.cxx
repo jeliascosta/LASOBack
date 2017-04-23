@@ -176,7 +176,7 @@ bool JobData::getStreamBuffer( void*& pData, sal_uInt32& bytes )
     sal_uLong nBytes;
     std::unique_ptr<char[]> pContextBuffer(m_aContext.getStreamableBuffer( nBytes ));
     if( nBytes )
-        aStream.WriteBytes( pContextBuffer.get(), nBytes );
+        aStream.Write( pContextBuffer.get(), nBytes );
     pContextBuffer.reset();
 
     // success
@@ -186,9 +186,9 @@ bool JobData::getStreamBuffer( void*& pData, sal_uInt32& bytes )
     return true;
 }
 
-bool JobData::constructFromStreamBuffer( const void* pData, sal_uInt32 bytes, JobData& rJobData )
+bool JobData::constructFromStreamBuffer( void* pData, sal_uInt32 bytes, JobData& rJobData )
 {
-    SvMemoryStream aStream( const_cast<void*>(pData), bytes, StreamMode::READ );
+    SvMemoryStream aStream( pData, bytes, StreamMode::READ );
     OString aLine;
     bool bVersion       = false;
     bool bPrinter       = false;
@@ -276,7 +276,7 @@ bool JobData::constructFromStreamBuffer( const void* pData, sal_uInt32 bytes, Jo
                     rJobData.m_aContext.setParser( rJobData.m_pParser );
                     const sal_uInt64 nBytes = bytes - aStream.Tell();
                     std::unique_ptr<char[]> pRemain(new char[bytes - aStream.Tell()]);
-                    aStream.ReadBytes( pRemain.get(), nBytes );
+                    aStream.Read( pRemain.get(), nBytes );
                     rJobData.m_aContext.rebuildFromStreamBuffer( pRemain.get(), nBytes );
                     bContext = true;
                 }

@@ -21,19 +21,25 @@
 
 #include <xmloff/xmlictxt.hxx>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 
-class ScXMLEmptyContext : public ScXMLImportContext
+class ScXMLEmptyContext : public SvXMLImportContext
 {
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
-    ScXMLEmptyContext( ScXMLImport& rImport, sal_Int32 nElement );
 
-    virtual ~ScXMLEmptyContext() override;
+    ScXMLEmptyContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
+                        const OUString& rLName);
 
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
+    virtual ~ScXMLEmptyContext();
+
+    virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
+                                     const OUString& rLocalName,
+                                     const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) override;
+
+    virtual void EndElement() override;
 };
 
 #endif

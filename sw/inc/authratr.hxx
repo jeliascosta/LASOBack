@@ -24,6 +24,8 @@
 #include <tools/color.hxx>
 #include "swdllapi.h"
 
+#define COL_NONE_COLOR    TRGB_COLORDATA( 0x80, 0xFF, 0xFF, 0xFF )
+
 class SW_DLLPUBLIC AuthorCharAttr
 {
 public:
@@ -33,7 +35,7 @@ public:
 
     AuthorCharAttr();
 
-    bool operator == ( const AuthorCharAttr& rAttr ) const
+    inline bool operator == ( const AuthorCharAttr& rAttr ) const
     {
         return  nItemId == rAttr.nItemId && nAttr == rAttr.nAttr &&
                 nColor == rAttr.nColor;

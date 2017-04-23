@@ -32,8 +32,8 @@
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
-SwPageFootnoteInfoItem::SwPageFootnoteInfoItem( SwPageFootnoteInfo& rInfo) :
-    SfxPoolItem( FN_PARAM_FTN_INFO ),
+SwPageFootnoteInfoItem::SwPageFootnoteInfoItem( const sal_uInt16 nId, SwPageFootnoteInfo& rInfo) :
+    SfxPoolItem( nId ),
     aFootnoteInfo(rInfo)
 {
 }
@@ -59,11 +59,11 @@ bool SwPageFootnoteInfoItem::operator==( const SfxPoolItem& rAttr ) const
     return ( aFootnoteInfo == static_cast<const SwPageFootnoteInfoItem&>(rAttr).GetPageFootnoteInfo());
 }
 
-bool SwPageFootnoteInfoItem::GetPresentation
+bool  SwPageFootnoteInfoItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             eCoreUnit,
-    MapUnit             ePresUnit,
+    SfxMapUnit          eCoreUnit,
+    SfxMapUnit          ePresUnit,
     OUString&           rText,
     const IntlWrapper*  pIntl
 )   const
@@ -101,10 +101,10 @@ bool SwPageFootnoteInfoItem::QueryValue( Any& rVal, sal_uInt8 nMemberId ) const
             switch ( aFootnoteInfo.GetLineStyle( ) )
             {
                 default:
-                case SvxBorderLineStyle::NONE : rVal <<= sal_Int8(0); break;
-                case SvxBorderLineStyle::SOLID: rVal <<= sal_Int8(1); break;
-                case SvxBorderLineStyle::DOTTED: rVal <<= sal_Int8(2); break;
-                case SvxBorderLineStyle::DASHED: rVal <<= sal_Int8(3); break;
+                case table::BorderLineStyle::NONE : rVal <<= sal_Int8(0); break;
+                case table::BorderLineStyle::SOLID: rVal <<= sal_Int8(1); break;
+                case table::BorderLineStyle::DOTTED: rVal <<= sal_Int8(2); break;
+                case table::BorderLineStyle::DASHED: rVal <<= sal_Int8(3); break;
             }
             break;
         }
@@ -166,21 +166,21 @@ bool SwPageFootnoteInfoItem::PutValue(const Any& rVal, sal_uInt8 nMemberId)
             sal_Int16 nSet = 0;
             rVal >>= nSet;
             if(nSet >= 0 && nSet < 3) //text::HorizontalAdjust
-                aFootnoteInfo.SetAdj((css::text::HorizontalAdjust)nSet);
+                aFootnoteInfo.SetAdj((SwFootnoteAdj)nSet);
             else
                 bRet = false;
         }
         break;
         case MID_FTN_LINE_STYLE:
         {
-            SvxBorderLineStyle eStyle = SvxBorderLineStyle::NONE;
+            ::editeng::SvxBorderStyle eStyle = table::BorderLineStyle::NONE;
             sal_Int8 nSet = 0;
             rVal >>= nSet;
             switch ( nSet )
             {
-                case 1: eStyle = SvxBorderLineStyle::SOLID; break;
-                case 2: eStyle = SvxBorderLineStyle::DOTTED; break;
-                case 3: eStyle = SvxBorderLineStyle::DASHED; break;
+                case 1: eStyle = table::BorderLineStyle::SOLID; break;
+                case 2: eStyle = table::BorderLineStyle::DOTTED; break;
+                case 3: eStyle = table::BorderLineStyle::DASHED; break;
                 default: break;
             }
             aFootnoteInfo.SetLineStyle( eStyle );
@@ -221,8 +221,8 @@ bool SwPtrItem::operator==( const SfxPoolItem& rAttr ) const
 
 // SwUINumRuleItem for the NumTabPages of the FormatNumRule/Styleists
 
-SwUINumRuleItem::SwUINumRuleItem( const SwNumRule& rRul )
-    : SfxPoolItem( FN_PARAM_ACT_NUMBER ), pRule( new SwNumRule( rRul ) )
+SwUINumRuleItem::SwUINumRuleItem( const SwNumRule& rRul, const sal_uInt16 nId )
+    : SfxPoolItem( nId ), pRule( new SwNumRule( rRul ) )
 {
 }
 
@@ -232,8 +232,9 @@ SwUINumRuleItem::SwUINumRuleItem( const SwUINumRuleItem& rItem )
 {
 }
 
-SwUINumRuleItem::~SwUINumRuleItem()
+ SwUINumRuleItem::~SwUINumRuleItem()
 {
+    delete pRule;
 }
 
 SfxPoolItem*  SwUINumRuleItem::Clone( SfxItemPool * /*pPool*/ ) const
@@ -250,7 +251,7 @@ bool SwUINumRuleItem::operator==( const SfxPoolItem& rAttr ) const
 bool SwUINumRuleItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/ ) const
 {
     uno::Reference< container::XIndexReplace >xRules = new SwXNumberingRules(*pRule);
-    rVal <<= xRules;
+    rVal.setValue(&xRules, cppu::UnoType<container::XIndexReplace>::get());
     return true;
 }
 bool SwUINumRuleItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/ )

@@ -20,100 +20,145 @@
 #include "dbu_dlg.hrc"
 #include "browserids.hxx"
 
-Bitmap BMP_FORMFOLDER_TREE_L
+#define MASKCOLOR MaskColor = Color { Red = 0xFFFF; Green = 0x0000; Blue = 0xFFFF; }
+
+#define IL_TOOL_2 \
+\
+    IdList = {\
+        ID_INDEX_NEW;\
+        ID_INDEX_DROP;\
+        ID_INDEX_RENAME;\
+        ID_INDEX_SAVE;\
+        ID_INDEX_RESET;\
+        };\
+    IdCount = {\
+    5;\
+    }
+
+ImageList IMG_INDEX_DLG_SC
 {
-    File = "forms_32";
+    MASKCOLOR;
+    prefix = "sc";
+    IL_TOOL_2 ;
 };
 
-Bitmap BMP_REPORTFOLDER_TREE_L
+ImageList IMG_INDEX_DLG_LC
 {
-    File = "reports_32";
+    MASKCOLOR;
+    prefix = "lc";
+    IL_TOOL_2 ;
 };
 
-Bitmap BMP_QUERYFOLDER_TREE_L
+Image IMG_FORMFOLDER_TREE_L
 {
-    File = "queries_32";
+    ImageBitmap = Bitmap { File = "forms_32"; };
+    MASKCOLOR;
 };
 
-Bitmap BMP_TABLEFOLDER_TREE_L
+Image IMG_REPORTFOLDER_TREE_L
 {
-    File = "tables_32";
+    ImageBitmap = Bitmap { File = "reports_32"; };
+    MASKCOLOR;
+};
+
+Image IMG_QUERYFOLDER_TREE_L
+{
+    ImageBitmap = Bitmap { File = "queries_32"; };
+    MASKCOLOR;
+};
+
+Image IMG_TABLEFOLDER_TREE_L
+{
+    ImageBitmap = Bitmap { File = "tables_32"; };
+    MASKCOLOR;
 };
 
 // database object icons
 
 // the whole database
 
-Bitmap DATABASE_TREE_ICON
+Image DATABASE_TREE_ICON
 {
-    File = "db.png";
+    ImageBitmap = Bitmap { File = "db.png"; };
+    MaskColor = Color { Red = 0xff00 ; Green = 0x0000 ; Blue = 0xff00 ; };
 };
 
 // tables and table folders
 
-Bitmap TABLE_TREE_ICON
+Image TABLE_TREE_ICON
 {
-    File = "sx03188.png";
+    ImageBitmap = Bitmap { File = "sx03188.png"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
-Bitmap TABLEFOLDER_TREE_ICON
+Image TABLEFOLDER_TREE_ICON
 {
-    File = "sx03187.png";
+    ImageBitmap = Bitmap { File = "sx03187.png"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
 // views
 
-Bitmap VIEW_TREE_ICON
+Image VIEW_TREE_ICON
 {
-    File = "sx16670.png";
+    ImageBitmap = Bitmap { File = "sx16670.png"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
 // queries and query folders
 
-Bitmap QUERY_TREE_ICON
+Image QUERY_TREE_ICON
 {
-    File = "sx03202.png";
+    ImageBitmap = Bitmap { File = "sx03202.png"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
-Bitmap QUERYFOLDER_TREE_ICON
+Image QUERYFOLDER_TREE_ICON
 {
-    File = "sx03201.png";
+    ImageBitmap = Bitmap { File = "sx03201.png"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
 // forms and form folders
 
-Bitmap FORM_TREE_ICON
+Image FORM_TREE_ICON
 {
-    File = "form_16";
+    ImageBitmap = Bitmap { File = "form_16"; };
+    MASKCOLOR;
 };
 
-Bitmap FORMFOLDER_TREE_ICON
+Image FORMFOLDER_TREE_ICON
 {
-    File = "forms_16";
+    ImageBitmap = Bitmap { File = "forms_16"; };
+    MASKCOLOR;
 };
 
 // reports and report folders
 
-Bitmap REPORT_TREE_ICON
+Image REPORT_TREE_ICON
 {
-    File = "report_16";
+    ImageBitmap = Bitmap { File = "report_16"; };
+    MASKCOLOR;
 };
 
-Bitmap REPORTFOLDER_TREE_ICON
+Image REPORTFOLDER_TREE_ICON
 {
-    File = "reports_16";
+    ImageBitmap = Bitmap { File = "reports_16"; };
+    MASKCOLOR;
 };
 
 // new folder and parent folder
 
-Bitmap BMP_NAVIGATION_BTN_UP_SC
+Image IMG_NAVIGATION_BTN_UP_SC
 {
-    File = "fp010";
+    ImageBitmap = Bitmap { File = "fp010"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
-Bitmap BMP_NAVIGATION_CREATEFOLDER_SC
+Image IMG_NAVIGATION_CREATEFOLDER_SC
 {
-    File = "fp015";
+    ImageBitmap = Bitmap { File = "fp015"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

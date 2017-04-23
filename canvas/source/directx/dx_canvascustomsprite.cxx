@@ -19,6 +19,8 @@
 
 #include <sal/config.h>
 
+#include <cctype>
+
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/point/b2dpoint.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -38,7 +40,7 @@ namespace dxcanvas
     CanvasCustomSprite::CanvasCustomSprite( const css::geometry::RealSize2D&   rSpriteSize,
                                             const SpriteCanvasRef&                          rRefDevice,
                                             const IDXRenderModuleSharedPtr&                 rRenderModule,
-                                            const std::shared_ptr<canvas::ISurfaceProxyManager>&  rSurfaceProxy,
+                                            const ::canvas::ISurfaceProxyManagerSharedPtr&  rSurfaceProxy,
                                             bool                                            bShowSpriteBounds ) :
         mpSpriteCanvas( rRefDevice ),
         mpSurface()
@@ -79,19 +81,21 @@ namespace dxcanvas
         CanvasCustomSpriteBaseT::disposeThis();
     }
 
-    OUString SAL_CALL CanvasCustomSprite::getImplementationName()
+    OUString SAL_CALL CanvasCustomSprite::getImplementationName() throw( uno::RuntimeException )
     {
         return OUString( "DXCanvas.CanvasCustomSprite" );
     }
 
-    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName ) throw( uno::RuntimeException )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()
+    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()  throw( uno::RuntimeException )
     {
-        return { "com.sun.star.rendering.CanvasCustomSprite" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasCustomSprite" };
+
+        return aRet;
     }
 
     void CanvasCustomSprite::redraw() const

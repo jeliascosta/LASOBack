@@ -35,6 +35,8 @@ class SvXMLUnitConverter;
 class EDITENG_DLLPUBLIC SvxOpaqueItem : public SfxBoolItem
 {
 public:
+    static SfxPoolItem* CreateDefault();
+
     explicit SvxOpaqueItem( const sal_uInt16 nId , const bool bOpa = true );
     inline SvxOpaqueItem &operator=( const SvxOpaqueItem &rCpy );
 
@@ -44,9 +46,9 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 };
 
 inline SvxOpaqueItem::SvxOpaqueItem( const sal_uInt16 nId, const bool bOpa )

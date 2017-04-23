@@ -31,7 +31,7 @@ class SvXMLExport;
 class XMLChartPropHdlFactory : public XMLPropertyHandlerFactory
 {
 public:
-    virtual ~XMLChartPropHdlFactory() override;
+    virtual ~XMLChartPropHdlFactory();
     virtual const XMLPropertyHandler* GetPropertyHandler( sal_Int32 nType ) const override;
 };
 
@@ -39,7 +39,7 @@ class XMLChartPropertySetMapper : public XMLPropertySetMapper
 {
 public:
     explicit XMLChartPropertySetMapper( bool bForExport );
-            virtual ~XMLChartPropertySetMapper() override;
+            virtual ~XMLChartPropertySetMapper();
 };
 
 class XMLChartExportPropertyMapper : public SvXMLExportPropertyMapper
@@ -59,20 +59,20 @@ private:
     virtual void handleElementItem(
         SvXMLExport& rExport,
         const XMLPropertyState& rProperty, SvXmlExportFlags nFlags,
-        const ::std::vector< XMLPropertyState > *pProperties,
-        sal_uInt32 nIdx  ) const override;
+        const ::std::vector< XMLPropertyState > *pProperties = nullptr,
+        sal_uInt32 nIdx = 0  ) const override;
 
     /// this method is called for every item that has the MID_FLAG_SPECIAL_ITEM_EXPORT flag set
     virtual void handleSpecialItem(
         SvXMLAttributeList& rAttrList, const XMLPropertyState& rProperty,
         const SvXMLUnitConverter& rUnitConverter, const SvXMLNamespaceMap& rNamespaceMap,
-        const ::std::vector< XMLPropertyState > *pProperties,
-        sal_uInt32 nIdx  ) const override;
+        const ::std::vector< XMLPropertyState > *pProperties = nullptr,
+        sal_uInt32 nIdx = 0  ) const override;
 
 public:
     XMLChartExportPropertyMapper( const rtl::Reference< XMLPropertySetMapper >& rMapper,
                                   SvXMLExport& rExport );
-    virtual ~XMLChartExportPropertyMapper() override;
+    virtual ~XMLChartExportPropertyMapper();
 
     void setChartDoc( const css::uno::Reference< css::chart2::XChartDocument >& xChartDoc );
 };
@@ -85,7 +85,7 @@ private:
 public:
     XMLChartImportPropertyMapper( const rtl::Reference< XMLPropertySetMapper >& rMapper,
                                   const SvXMLImport& rImport );
-    virtual ~XMLChartImportPropertyMapper() override;
+    virtual ~XMLChartImportPropertyMapper();
 
     virtual bool handleSpecialItem(
         XMLPropertyState& rProperty,

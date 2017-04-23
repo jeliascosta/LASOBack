@@ -19,8 +19,6 @@
 #include "vbalisthelper.hxx"
 #include <tools/diagnose_ex.h>
 #include <ooo/vba/word/WdListGalleryType.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
 #include <com/sun/star/style/NumberingType.hpp>
 #include <com/sun/star/container/XIndexReplace.hpp>
@@ -29,6 +27,10 @@ using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
 static const sal_Int32 LIST_LEVEL_COUNT = 9;
+
+static const char WORD_BULLET_GALLERY[] = "WdBullet";
+static const char WORD_NUMBER_GALLERY[] = "WdNumber";
+static const char WORD_OUTLINE_NUMBER_GALLERY[] = "WdOutlineNumber";
 
 static const char UNO_NAME_PARENT_NUMBERING[] = "ParentNumbering";
 static const char UNO_NAME_PREFIX[] = "Prefix";
@@ -46,29 +48,29 @@ static const sal_Int16 CHAR_DIAMOND = 10022;
 static const sal_Int16 CHAR_ARROW = 10146;
 static const sal_Int16 CHAR_CHECK_MARK = 10003;
 
-SwVbaListHelper::SwVbaListHelper( const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nGalleryType, sal_Int32 nTemplateType ) : mxTextDocument( xTextDoc ), mnGalleryType( nGalleryType ), mnTemplateType( nTemplateType )
+SwVbaListHelper::SwVbaListHelper( const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nGalleryType, sal_Int32 nTemplateType ) throw( css::uno::RuntimeException ) : mxTextDocument( xTextDoc ), mnGalleryType( nGalleryType ), mnTemplateType( nTemplateType )
 {
     Init();
 }
 
-void SwVbaListHelper::Init()
+void SwVbaListHelper::Init() throw( css::uno::RuntimeException )
 {
     // set the numbering style name
     switch( mnGalleryType )
     {
         case word::WdListGalleryType::wdBulletGallery:
         {
-            msStyleName = "WdBullet";
+            msStyleName = WORD_BULLET_GALLERY;
             break;
         }
         case word::WdListGalleryType::wdNumberGallery:
         {
-            msStyleName = "WdNumber";
+            msStyleName = WORD_NUMBER_GALLERY;
             break;
         }
         case word::WdListGalleryType::wdOutlineNumberGallery:
         {
-            msStyleName = "WdOutlineNumber";
+            msStyleName = WORD_OUTLINE_NUMBER_GALLERY;
             break;
         }
         default:
@@ -81,7 +83,7 @@ void SwVbaListHelper::Init()
     // get the numbering style
     uno::Reference< style::XStyleFamiliesSupplier > xStyleSupplier( mxTextDocument, uno::UNO_QUERY_THROW );
     mxStyleFamily.set( xStyleSupplier->getStyleFamilies()->getByName("NumberingStyles"), uno::UNO_QUERY_THROW );
-    SAL_INFO("sw", "numbering style name: " << msStyleName );
+    OSL_TRACE("SwVbaListHelper::Init: numbering style name: %s", OUStringToOString( msStyleName, RTL_TEXTENCODING_UTF8 ).getStr() );
     if( mxStyleFamily->hasByName( msStyleName ) )
     {
         mxStyleProps.set( mxStyleFamily->getByName( msStyleName ), uno::UNO_QUERY_THROW );
@@ -102,7 +104,7 @@ void SwVbaListHelper::Init()
     }
 }
 
-void SwVbaListHelper::CreateListTemplate()
+void SwVbaListHelper::CreateListTemplate() throw( css::uno::RuntimeException )
 {
     switch( mnGalleryType )
     {
@@ -128,7 +130,7 @@ void SwVbaListHelper::CreateListTemplate()
     }
 }
 
-void SwVbaListHelper::CreateBulletListTemplate()
+void SwVbaListHelper::CreateBulletListTemplate() throw( css::uno::RuntimeException )
 {
     // there is only 1 level for each bullet list in MSWord
     sal_Int32 nLevel = 0;
@@ -149,7 +151,7 @@ void SwVbaListHelper::CreateBulletListTemplate()
         }
         case 2:
         {
-            aBulletChar = OUStringLiteral1(CHAR_EMPTY_DOT);
+            aBulletChar = OUStringLiteral1<CHAR_EMPTY_DOT>();
             break;
         }
         case 3:
@@ -188,7 +190,7 @@ void SwVbaListHelper::CreateBulletListTemplate()
     mxNumberingRules->replaceByIndex( nLevel, uno::makeAny( aPropertyValues ) );
 }
 
-void SwVbaListHelper::CreateNumberListTemplate()
+void SwVbaListHelper::CreateNumberListTemplate() throw( css::uno::RuntimeException )
 {
     // there is only 1 level for each bullet list in MSWord
     sal_Int32 nLevel = 0;
@@ -253,7 +255,7 @@ void SwVbaListHelper::CreateNumberListTemplate()
     mxNumberingRules->replaceByIndex( nLevel, uno::makeAny( aPropertyValues ) );
 }
 
-void SwVbaListHelper::CreateOutlineNumberListTemplate()
+void SwVbaListHelper::CreateOutlineNumberListTemplate() throw( css::uno::RuntimeException )
 {
     switch( mnTemplateType )
     {
@@ -300,7 +302,7 @@ void SwVbaListHelper::CreateOutlineNumberListTemplate()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType1()
+void SwVbaListHelper::CreateOutlineNumberForType1() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = 0;
     OUString sPrefix;
@@ -377,7 +379,7 @@ void SwVbaListHelper::CreateOutlineNumberForType1()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType2()
+void SwVbaListHelper::CreateOutlineNumberForType2() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = style::NumberingType::ARABIC;
     sal_Int16 nParentNumbering = 0;
@@ -398,7 +400,7 @@ void SwVbaListHelper::CreateOutlineNumberForType2()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType3()
+void SwVbaListHelper::CreateOutlineNumberForType3() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = style::NumberingType::CHAR_SPECIAL;
     OUString sCharStyleName( "Bullet Symbols" );
@@ -447,7 +449,7 @@ void SwVbaListHelper::CreateOutlineNumberForType3()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType4()
+void SwVbaListHelper::CreateOutlineNumberForType4() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = 0;
     OUString sPrefix;
@@ -532,7 +534,7 @@ void SwVbaListHelper::CreateOutlineNumberForType4()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType5()
+void SwVbaListHelper::CreateOutlineNumberForType5() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = style::NumberingType::ARABIC;
     sal_Int16 nParentNumbering = 0;
@@ -551,7 +553,7 @@ void SwVbaListHelper::CreateOutlineNumberForType5()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType6()
+void SwVbaListHelper::CreateOutlineNumberForType6() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = 0;
     OUString sPrefix;
@@ -634,7 +636,7 @@ void SwVbaListHelper::CreateOutlineNumberForType6()
     }
 }
 
-void SwVbaListHelper::CreateOutlineNumberForType7()
+void SwVbaListHelper::CreateOutlineNumberForType7() throw( css::uno::RuntimeException )
 {
     sal_Int16 nNumberingType = style::NumberingType::ARABIC;
     uno::Sequence< beans::PropertyValue > aPropertyValues;
@@ -649,14 +651,14 @@ void SwVbaListHelper::CreateOutlineNumberForType7()
     }
 }
 
-uno::Any SwVbaListHelper::getPropertyValueWithNameAndLevel( sal_Int32 nLevel, const OUString& sName )
+uno::Any SwVbaListHelper::getPropertyValueWithNameAndLevel( sal_Int32 nLevel, const OUString& sName ) throw( css::uno::RuntimeException )
 {
     uno::Sequence< beans::PropertyValue > aPropertyValues;
     mxNumberingRules->getByIndex( nLevel ) >>= aPropertyValues;
     return getPropertyValue( aPropertyValues, sName );
 }
 
-void SwVbaListHelper::setPropertyValueWithNameAndLevel( sal_Int32 nLevel, const OUString& sName, const css::uno::Any& aValue )
+void SwVbaListHelper::setPropertyValueWithNameAndLevel( sal_Int32 nLevel, const OUString& sName, const css::uno::Any& aValue ) throw( css::uno::RuntimeException )
 {
     uno::Sequence< beans::PropertyValue > aPropertyValues;
     mxNumberingRules->getByIndex( nLevel ) >>= aPropertyValues;

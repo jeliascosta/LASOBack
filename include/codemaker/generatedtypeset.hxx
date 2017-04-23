@@ -38,6 +38,8 @@ class GeneratedTypeSet {
 public:
     GeneratedTypeSet() {}
 
+    ~GeneratedTypeSet() {}
+
     /**
        Add a type to the set of generated types.
 

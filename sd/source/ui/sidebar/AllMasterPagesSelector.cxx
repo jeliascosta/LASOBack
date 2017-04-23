@@ -53,7 +53,7 @@ class MasterPageDescriptorOrder
 public:
     bool operator() (
         const SharedMasterPageDescriptor& rp1,
-        const SharedMasterPageDescriptor& rp2) const
+        const SharedMasterPageDescriptor& rp2)
     {
         if (rp1->meOrigin == MasterPageContainer::DEFAULT)
             return true;
@@ -128,12 +128,13 @@ void AllMasterPagesSelector::NotifyContainerChangeEvent (
 {
     switch (rEvent.meEventType)
     {
-        case MasterPageContainerChangeEvent::EventType::CHILD_ADDED:
+        case MasterPageContainerChangeEvent::CHILD_ADDED:
             AddItem(rEvent.maChildToken);
             MasterPagesSelector::Fill();
             break;
 
-        case MasterPageContainerChangeEvent::EventType::INDEX_CHANGED:
+        case MasterPageContainerChangeEvent::INDEX_CHANGED:
+        case MasterPageContainerChangeEvent::INDEXES_CHANGED:
             mpSortedMasterPages->clear();
             MasterPagesSelector::Fill();
             break;

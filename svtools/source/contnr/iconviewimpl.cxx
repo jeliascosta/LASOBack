@@ -43,7 +43,7 @@ void IconViewImpl::CursorUp()
         ShowCursor( false );
         pView->Update();
         pStartEntry = pPrevFirstToDraw;
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         aArea.Bottom() -= nEntryHeight;
         pView->Scroll( 0, nEntryHeight, aArea, ScrollFlags::NoChildren );
         pView->Update();
@@ -68,7 +68,7 @@ void IconViewImpl::CursorDown()
         ShowCursor( false );
         pView->Update();
         pStartEntry = pNextFirstToDraw;
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         pView->Scroll( 0, -(pView->GetEntryHeight()), aArea, ScrollFlags::NoChildren );
         pView->Update();
         ShowCursor( true );
@@ -103,7 +103,7 @@ void IconViewImpl::PageDown( sal_uInt16 nDelta )
     }
     else
     {
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         long nScroll = pView->GetEntryHeight() * static_cast<long>(nRealDelta);
         nScroll = -nScroll;
         pView->Update();
@@ -141,7 +141,7 @@ void IconViewImpl::PageUp( sal_uInt16 nDelta )
     else
     {
         long nEntryHeight = pView->GetEntryHeight();
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         pView->Update();
         pView->Scroll( 0, nEntryHeight*nRealDelta, aArea, ScrollFlags::NoChildren );
         pView->Update();
@@ -300,7 +300,7 @@ void IconViewImpl::AdjustScrollBars( Size& rSize )
     // adapt Range, VisibleRange etc.
 
     // refresh output size, in case we have to scroll
-    tools::Rectangle aRect;
+    Rectangle aRect;
     aRect.SetSize( aOSize );
     aSelEng.SetVisibleArea( aRect );
 
@@ -367,7 +367,7 @@ void IconViewImpl::UpdateAll( bool bInvalidateCompleteView )
         pView->Invalidate( GetVisibleArea() );
 }
 
-void IconViewImpl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void IconViewImpl::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if (!pView->GetVisibleCount())
         return;
@@ -419,7 +419,7 @@ void IconViewImpl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
     if (!pCursor && ((nExtendedWinBits & EWB_NO_AUTO_CURENTRY) == 0))
     {
         // do not select if multiselection or explicit set
-        bool bNotSelect = (aSelEng.GetSelectionMode() == SelectionMode::Multiple ) || ((m_nStyle & WB_NOINITIALSELECTION) == WB_NOINITIALSELECTION);
+        bool bNotSelect = (aSelEng.GetSelectionMode() == MULTIPLE_SELECTION ) || ((m_nStyle & WB_NOINITIALSELECTION) == WB_NOINITIALSELECTION);
         SetCursor(pStartEntry, bNotSelect);
     }
 
@@ -445,7 +445,7 @@ void IconViewImpl::InvalidateEntry( long nId ) const
 {
     if( !(nFlags & LBoxFlags::InPaint ))
     {
-        tools::Rectangle aRect( GetVisibleArea() );
+        Rectangle aRect( GetVisibleArea() );
         long nMaxBottom = aRect.Bottom();
         aRect.Top() = nId / pView->GetColumnsCount() * pView->GetEntryHeight();
         aRect.Bottom() = aRect.Top(); aRect.Bottom() += pView->GetEntryHeight();

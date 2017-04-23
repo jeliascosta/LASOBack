@@ -185,7 +185,7 @@ bool ScValidationData::DoScript( const ScAddress& rPos, const OUString& rInput,
 {
     ScDocument* pDocument = GetDocument();
     SfxObjectShell* pDocSh = pDocument->GetDocumentShell();
-    if ( !pDocSh )
+    if ( !pDocSh || !ScDocument::CheckMacroWarn() )
         return false;
 
     bool bScriptReturnedFalse = false;  // default: do not abort
@@ -206,13 +206,13 @@ bool ScValidationData::DoScript( const ScAddress& rPos, const OUString& rInput,
             aValStr = pCell->GetString().getString();
     }
     if ( bIsValue )
-        aParams[0] <<= nValue;
+        aParams[0] = css::uno::makeAny( nValue );
     else
-        aParams[0] <<= aValStr;
+        aParams[0] = css::uno::makeAny( OUString( aValStr ) );
 
     //  2) Position of the cell
     OUString aPosStr(rPos.Format(ScRefFlags::VALID | ScRefFlags::TAB_3D, pDocument, pDocument->GetAddressConvention()));
-    aParams[1] <<= aPosStr;
+    aParams[1] = css::uno::makeAny(aPosStr);
 
     //  use link-update flag to prevent closing the document
     //  while the macro is running
@@ -271,14 +271,14 @@ bool ScValidationData::DoMacro( const ScAddress& rPos, const OUString& rInput,
 
     ScDocument* pDocument = GetDocument();
     SfxObjectShell* pDocSh = pDocument->GetDocumentShell();
-    if ( !pDocSh )
+    if ( !pDocSh || !ScDocument::CheckMacroWarn() )
         return false;
 
     bool bDone = false;
     bool bRet = false;                      // default: do not abort
 
     //  If the Doc was loaded during a Basic-Calls,
-    //  the Sbx-object may not be created (?)
+    //  the Sbx-Objekt may not be created (?)
 //  pDocSh->GetSbxObject();
 
 #if HAVE_FEATURE_SCRIPTING
@@ -340,7 +340,7 @@ bool ScValidationData::DoMacro( const ScAddress& rPos, const OUString& rInput,
         if ( pCell )
             pDocument->LockTable( rPos.Tab() );
         SbxVariableRef refRes = new SbxVariable;
-        ErrCode eRet = pDocSh->CallBasic( aMacroStr.makeStringAndClear(), aBasicStr, refPar.get(), refRes.get() );
+        ErrCode eRet = pDocSh->CallBasic( aMacroStr.makeStringAndClear(), aBasicStr, refPar, refRes );
         if ( pCell )
             pDocument->UnlockTable( rPos.Tab() );
 
@@ -555,7 +555,7 @@ namespace {
 class ScStringTokenIterator
 {
 public:
-    explicit             ScStringTokenIterator( ScTokenArray& rTokArr ) :
+    inline explicit             ScStringTokenIterator( ScTokenArray& rTokArr ) :
                                     mrTokArr( rTokArr ), mbSkipEmpty( true ), mbOk( true ) {}
 
     /** Returns the string of the first string token or NULL on error or empty token array. */
@@ -564,7 +564,7 @@ public:
     rtl_uString* Next();
 
     /** Returns false, if a wrong token has been found. Does NOT return false on end of token array. */
-    bool                 Ok() const { return mbOk; }
+    inline bool                 Ok() const { return mbOk; }
 
 private:
     svl::SharedString maCurString; /// Current string.
@@ -628,7 +628,7 @@ bool ScValidationData::GetSelectionFromFormula(
         return false;
 
     ScFormulaCell aValidationSrc(
-        pDocument, rPos, rTokArr, formula::FormulaGrammar::GRAM_DEFAULT, ScMatrixMode::Formula);
+        pDocument, rPos, rTokArr, formula::FormulaGrammar::GRAM_DEFAULT, MM_FORMULA);
 
     // Make sure the formula gets interpreted and a result is delivered,
     // regardless of the AutoCalc setting.
@@ -645,8 +645,8 @@ bool ScValidationData::GetSelectionFromFormula(
         // Use an interim matrix to create the TypedStrData below.
         xMatRef = new ScFullMatrix(1, 1, 0.0);
 
-        FormulaError nErrCode = aValidationSrc.GetErrCode();
-        if (nErrCode != FormulaError::NONE)
+        sal_uInt16 nErrCode = aValidationSrc.GetErrCode();
+        if (nErrCode)
         {
             /* TODO : to use later in an alert box?
              * OUString rStrResult = "...";
@@ -750,9 +750,9 @@ bool ScValidationData::GetSelectionFromFormula(
             }
             else
             {
-                FormulaError nErr = nMatVal.GetError();
+                sal_uInt16 nErr = nMatVal.GetError();
 
-                if( FormulaError::NONE != nErr )
+                if( 0 != nErr )
                 {
                     aValStr = ScGlobal::GetErrorString( nErr );
                 }

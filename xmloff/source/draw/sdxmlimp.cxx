@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <o3tl/make_unique.hxx>
 #include <osl/thread.h>
 #include <comphelper/processfactory.hxx>
 
@@ -61,6 +60,7 @@ public:
     SdXMLBodyContext_Impl( SdXMLImport& rImport, sal_uInt16 nPrfx,
                 const OUString& rLName,
                 const uno::Reference< xml::sax::XAttributeList > & xAttrList );
+    virtual ~SdXMLBodyContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                 const OUString& rLocalName,
@@ -71,6 +71,10 @@ SdXMLBodyContext_Impl::SdXMLBodyContext_Impl( SdXMLImport& rImport,
                 sal_uInt16 nPrfx, const OUString& rLName,
                 const uno::Reference< xml::sax::XAttributeList > & ) :
     SvXMLImportContext( rImport, nPrfx, rLName )
+{
+}
+
+SdXMLBodyContext_Impl::~SdXMLBodyContext_Impl()
 {
 }
 
@@ -95,6 +99,8 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference<xml::sax::XAttributeList>& xAttrList);
+    virtual ~SdXMLDocContext_Impl();
+
 
     virtual SvXMLImportContext *CreateChildContext(sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -109,6 +115,11 @@ SdXMLDocContext_Impl::SdXMLDocContext_Impl(
 :   SvXMLImportContext(rImport, nPrfx, rLName)
 {
 }
+
+SdXMLDocContext_Impl::~SdXMLDocContext_Impl()
+{
+}
+
 
 SvXMLImportContext *SdXMLDocContext_Impl::CreateChildContext(
     sal_uInt16 nPrefix,
@@ -203,6 +214,8 @@ public:
         const uno::Reference<xml::sax::XAttributeList>& i_xAttrList,
         const uno::Reference<document::XDocumentProperties>& i_xDocProps);
 
+    virtual ~SdXMLFlatDocContext_Impl();
+
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 i_nPrefix, const OUString& i_rLocalName,
         const uno::Reference<xml::sax::XAttributeList>& i_xAttrList) override;
@@ -218,6 +231,8 @@ SdXMLFlatDocContext_Impl::SdXMLFlatDocContext_Impl( SdXMLImport& i_rImport,
         i_xDocProps)
 {
 }
+
+SdXMLFlatDocContext_Impl::~SdXMLFlatDocContext_Impl() { }
 
 SvXMLImportContext *SdXMLFlatDocContext_Impl::CreateChildContext(
     sal_uInt16 i_nPrefix, const OUString& i_rLocalName,
@@ -243,7 +258,7 @@ OUString SAL_CALL classname##_getImplementationName() throw()\
 {\
     return OUString( implementationname );\
 }\
-uno::Reference< uno::XInterface > SAL_CALL classname##_createInstance(const uno::Reference< lang::XMultiServiceFactory > & rSMgr)\
+uno::Reference< uno::XInterface > SAL_CALL classname##_createInstance(const uno::Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )\
 {\
     return static_cast<cppu::OWeakObject*>(new SdXMLImport( comphelper::getComponentContext(rSMgr), implementationname, draw, flags )); \
 }
@@ -268,6 +283,17 @@ SdXMLImport::SdXMLImport(
     OUString const & implementationName,
     bool bIsDraw, SvXMLImportFlags nImportFlags )
 :   SvXMLImport( xContext, implementationName, nImportFlags ),
+    mpMasterStylesContext(nullptr),
+    mpDocElemTokenMap(nullptr),
+    mpBodyElemTokenMap(nullptr),
+    mpStylesElemTokenMap(nullptr),
+    mpMasterPageElemTokenMap(nullptr),
+    mpMasterPageAttrTokenMap(nullptr),
+    mpPageMasterAttrTokenMap(nullptr),
+    mpPageMasterStyleAttrTokenMap(nullptr),
+    mpDrawPageAttrTokenMap(nullptr),
+    mpDrawPageElemTokenMap(nullptr),
+    mpPresentationPlaceholderAttrTokenMap(nullptr),
     mnNewPageCount(0L),
     mnNewMasterPageCount(0L),
     mbIsDraw(bIsDraw),
@@ -295,6 +321,7 @@ SdXMLImport::SdXMLImport(
 
 // XImporter
 void SAL_CALL SdXMLImport::setTargetDocument( const uno::Reference< lang::XComponent >& xDoc )
+    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SvXMLImport::setTargetDocument( xDoc );
 
@@ -353,6 +380,7 @@ void SAL_CALL SdXMLImport::setTargetDocument( const uno::Reference< lang::XCompo
 
 // XInitialization
 void SAL_CALL SdXMLImport::initialize( const uno::Sequence< uno::Any >& aArguments )
+    throw( uno::Exception, uno::RuntimeException, std::exception)
 {
     SvXMLImport::initialize( aArguments );
 
@@ -380,6 +408,25 @@ void SAL_CALL SdXMLImport::initialize( const uno::Sequence< uno::Any >& aArgumen
     }
 }
 
+SdXMLImport::~SdXMLImport() throw ()
+{
+    // Styles or AutoStyles context?
+    if(mpMasterStylesContext)
+        mpMasterStylesContext->ReleaseRef();
+
+    // delete all token maps
+    delete mpDocElemTokenMap;
+    delete mpBodyElemTokenMap;
+    delete mpStylesElemTokenMap;
+    delete mpMasterPageElemTokenMap;
+    delete mpMasterPageAttrTokenMap;
+    delete mpPageMasterAttrTokenMap;
+    delete mpPageMasterStyleAttrTokenMap;
+    delete mpDrawPageAttrTokenMap;
+    delete mpDrawPageElemTokenMap;
+    delete mpPresentationPlaceholderAttrTokenMap;
+}
+
 const SvXMLTokenMap& SdXMLImport::GetDocElemTokenMap()
 {
     if(!mpDocElemTokenMap)
@@ -397,8 +444,8 @@ const SvXMLTokenMap& SdXMLImport::GetDocElemTokenMap()
     XML_TOKEN_MAP_END
 };
 
-        mpDocElemTokenMap = o3tl::make_unique<SvXMLTokenMap>(aDocElemTokenMap);
-    }
+        mpDocElemTokenMap = new SvXMLTokenMap(aDocElemTokenMap);
+    } // if(!mpDocElemTokenMap)
 
     return *mpDocElemTokenMap;
 }
@@ -408,18 +455,18 @@ const SvXMLTokenMap& SdXMLImport::GetBodyElemTokenMap()
     if(!mpBodyElemTokenMap)
     {
         static const SvXMLTokenMapEntry aBodyElemTokenMap[] =
-        {
-            { XML_NAMESPACE_DRAW,   XML_PAGE,               XML_TOK_BODY_PAGE   },
-            { XML_NAMESPACE_PRESENTATION, XML_SETTINGS,     XML_TOK_BODY_SETTINGS   },
-            { XML_NAMESPACE_PRESENTATION, XML_HEADER_DECL,  XML_TOK_BODY_HEADER_DECL    },
-            { XML_NAMESPACE_PRESENTATION, XML_FOOTER_DECL,  XML_TOK_BODY_FOOTER_DECL    },
-            { XML_NAMESPACE_PRESENTATION, XML_DATE_TIME_DECL,XML_TOK_BODY_DATE_TIME_DECL    },
+{
+    { XML_NAMESPACE_DRAW,   XML_PAGE,               XML_TOK_BODY_PAGE   },
+    { XML_NAMESPACE_PRESENTATION, XML_SETTINGS,     XML_TOK_BODY_SETTINGS   },
+    { XML_NAMESPACE_PRESENTATION, XML_HEADER_DECL,  XML_TOK_BODY_HEADER_DECL    },
+    { XML_NAMESPACE_PRESENTATION, XML_FOOTER_DECL,  XML_TOK_BODY_FOOTER_DECL    },
+    { XML_NAMESPACE_PRESENTATION, XML_DATE_TIME_DECL,XML_TOK_BODY_DATE_TIME_DECL    },
 
-            XML_TOKEN_MAP_END
-        };
+    XML_TOKEN_MAP_END
+};
 
-        mpBodyElemTokenMap = o3tl::make_unique<SvXMLTokenMap>(aBodyElemTokenMap);
-    }
+        mpBodyElemTokenMap = new SvXMLTokenMap(aBodyElemTokenMap);
+    } // if(!mpBodyElemTokenMap)
 
     return *mpBodyElemTokenMap;
 }
@@ -429,15 +476,15 @@ const SvXMLTokenMap& SdXMLImport::GetStylesElemTokenMap()
     if(!mpStylesElemTokenMap)
     {
         static const SvXMLTokenMapEntry aStylesElemTokenMap[] =
-        {
-            { XML_NAMESPACE_STYLE,  XML_PAGE_LAYOUT,                XML_TOK_STYLES_PAGE_MASTER              },
-            { XML_NAMESPACE_STYLE,  XML_PRESENTATION_PAGE_LAYOUT,   XML_TOK_STYLES_PRESENTATION_PAGE_LAYOUT },
-            { XML_NAMESPACE_STYLE,  XML_STYLE,                      XML_TOK_STYLES_STYLE    },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_STYLE,  XML_PAGE_LAYOUT,                XML_TOK_STYLES_PAGE_MASTER              },
+    { XML_NAMESPACE_STYLE,  XML_PRESENTATION_PAGE_LAYOUT,   XML_TOK_STYLES_PRESENTATION_PAGE_LAYOUT },
+    { XML_NAMESPACE_STYLE,  XML_STYLE,                      XML_TOK_STYLES_STYLE    },
+    XML_TOKEN_MAP_END
+};
 
-        mpStylesElemTokenMap = o3tl::make_unique<SvXMLTokenMap>(aStylesElemTokenMap);
-    }
+        mpStylesElemTokenMap = new SvXMLTokenMap(aStylesElemTokenMap);
+    } // if(!mpStylesElemTokenMap)
 
     return *mpStylesElemTokenMap;
 }
@@ -447,14 +494,14 @@ const SvXMLTokenMap& SdXMLImport::GetMasterPageElemTokenMap()
     if(!mpMasterPageElemTokenMap)
     {
         static const SvXMLTokenMapEntry aMasterPageElemTokenMap[] =
-        {
-            { XML_NAMESPACE_STYLE,          XML_STYLE,      XML_TOK_MASTERPAGE_STYLE    },
-            { XML_NAMESPACE_PRESENTATION,   XML_NOTES,      XML_TOK_MASTERPAGE_NOTES    },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_STYLE,          XML_STYLE,      XML_TOK_MASTERPAGE_STYLE    },
+    { XML_NAMESPACE_PRESENTATION,   XML_NOTES,      XML_TOK_MASTERPAGE_NOTES    },
+    XML_TOKEN_MAP_END
+};
 
-        mpMasterPageElemTokenMap = o3tl::make_unique<SvXMLTokenMap>(aMasterPageElemTokenMap);
-    }
+        mpMasterPageElemTokenMap = new SvXMLTokenMap(aMasterPageElemTokenMap);
+    } // if(!mpMasterPageElemTokenMap)
 
     return *mpMasterPageElemTokenMap;
 }
@@ -464,20 +511,20 @@ const SvXMLTokenMap& SdXMLImport::GetMasterPageAttrTokenMap()
     if(!mpMasterPageAttrTokenMap)
     {
         static const SvXMLTokenMapEntry aMasterPageAttrTokenMap[] =
-        {
-            { XML_NAMESPACE_STYLE,  XML_NAME,                       XML_TOK_MASTERPAGE_NAME },
-            { XML_NAMESPACE_STYLE,  XML_DISPLAY_NAME,               XML_TOK_MASTERPAGE_DISPLAY_NAME },
-            { XML_NAMESPACE_STYLE,  XML_PAGE_LAYOUT_NAME,           XML_TOK_MASTERPAGE_PAGE_MASTER_NAME },
-            { XML_NAMESPACE_DRAW,   XML_STYLE_NAME,                 XML_TOK_MASTERPAGE_STYLE_NAME       },
-            { XML_NAMESPACE_PRESENTATION,   XML_PRESENTATION_PAGE_LAYOUT_NAME,  XML_TOK_MASTERPAGE_PAGE_LAYOUT_NAME },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_HEADER_NAME,                XML_TOK_MASTERPAGE_USE_HEADER_NAME  },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_FOOTER_NAME,                XML_TOK_MASTERPAGE_USE_FOOTER_NAME  },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_DATE_TIME_NAME,             XML_TOK_MASTERPAGE_USE_DATE_TIME_NAME   },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_STYLE,  XML_NAME,                       XML_TOK_MASTERPAGE_NAME },
+    { XML_NAMESPACE_STYLE,  XML_DISPLAY_NAME,               XML_TOK_MASTERPAGE_DISPLAY_NAME },
+    { XML_NAMESPACE_STYLE,  XML_PAGE_LAYOUT_NAME,           XML_TOK_MASTERPAGE_PAGE_MASTER_NAME },
+    { XML_NAMESPACE_DRAW,   XML_STYLE_NAME,                 XML_TOK_MASTERPAGE_STYLE_NAME       },
+    { XML_NAMESPACE_PRESENTATION,   XML_PRESENTATION_PAGE_LAYOUT_NAME,  XML_TOK_MASTERPAGE_PAGE_LAYOUT_NAME },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_HEADER_NAME,                XML_TOK_MASTERPAGE_USE_HEADER_NAME  },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_FOOTER_NAME,                XML_TOK_MASTERPAGE_USE_FOOTER_NAME  },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_DATE_TIME_NAME,             XML_TOK_MASTERPAGE_USE_DATE_TIME_NAME   },
+    XML_TOKEN_MAP_END
+};
 
-        mpMasterPageAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>(aMasterPageAttrTokenMap);
-    }
+        mpMasterPageAttrTokenMap = new SvXMLTokenMap(aMasterPageAttrTokenMap);
+    } // if(!mpMasterPageAttrTokenMap)
 
     return *mpMasterPageAttrTokenMap;
 }
@@ -487,13 +534,13 @@ const SvXMLTokenMap& SdXMLImport::GetPageMasterAttrTokenMap()
     if(!mpPageMasterAttrTokenMap)
     {
         static const SvXMLTokenMapEntry aPageMasterAttrTokenMap[] =
-        {
-            { XML_NAMESPACE_STYLE,          XML_NAME,               XML_TOK_PAGEMASTER_NAME                 },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_STYLE,          XML_NAME,               XML_TOK_PAGEMASTER_NAME                 },
+    XML_TOKEN_MAP_END
+};
 
-        mpPageMasterAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>(aPageMasterAttrTokenMap);
-    }
+        mpPageMasterAttrTokenMap = new SvXMLTokenMap(aPageMasterAttrTokenMap);
+    } // if(!mpPageMasterAttrTokenMap)
 
     return *mpPageMasterAttrTokenMap;
 }
@@ -503,19 +550,19 @@ const SvXMLTokenMap& SdXMLImport::GetPageMasterStyleAttrTokenMap()
     if(!mpPageMasterStyleAttrTokenMap)
     {
         static const SvXMLTokenMapEntry aPageMasterStyleAttrTokenMap[] =
-        {
-            { XML_NAMESPACE_FO,             XML_MARGIN_TOP,         XML_TOK_PAGEMASTERSTYLE_MARGIN_TOP          },
-            { XML_NAMESPACE_FO,             XML_MARGIN_BOTTOM,      XML_TOK_PAGEMASTERSTYLE_MARGIN_BOTTOM       },
-            { XML_NAMESPACE_FO,             XML_MARGIN_LEFT,        XML_TOK_PAGEMASTERSTYLE_MARGIN_LEFT         },
-            { XML_NAMESPACE_FO,             XML_MARGIN_RIGHT,       XML_TOK_PAGEMASTERSTYLE_MARGIN_RIGHT        },
-            { XML_NAMESPACE_FO,             XML_PAGE_WIDTH,         XML_TOK_PAGEMASTERSTYLE_PAGE_WIDTH          },
-            { XML_NAMESPACE_FO,             XML_PAGE_HEIGHT,        XML_TOK_PAGEMASTERSTYLE_PAGE_HEIGHT         },
-            { XML_NAMESPACE_STYLE,          XML_PRINT_ORIENTATION,  XML_TOK_PAGEMASTERSTYLE_PAGE_ORIENTATION    },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_FO,             XML_MARGIN_TOP,         XML_TOK_PAGEMASTERSTYLE_MARGIN_TOP          },
+    { XML_NAMESPACE_FO,             XML_MARGIN_BOTTOM,      XML_TOK_PAGEMASTERSTYLE_MARGIN_BOTTOM       },
+    { XML_NAMESPACE_FO,             XML_MARGIN_LEFT,        XML_TOK_PAGEMASTERSTYLE_MARGIN_LEFT         },
+    { XML_NAMESPACE_FO,             XML_MARGIN_RIGHT,       XML_TOK_PAGEMASTERSTYLE_MARGIN_RIGHT        },
+    { XML_NAMESPACE_FO,             XML_PAGE_WIDTH,         XML_TOK_PAGEMASTERSTYLE_PAGE_WIDTH          },
+    { XML_NAMESPACE_FO,             XML_PAGE_HEIGHT,        XML_TOK_PAGEMASTERSTYLE_PAGE_HEIGHT         },
+    { XML_NAMESPACE_STYLE,          XML_PRINT_ORIENTATION,  XML_TOK_PAGEMASTERSTYLE_PAGE_ORIENTATION    },
+    XML_TOKEN_MAP_END
+};
 
-        mpPageMasterStyleAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>(aPageMasterStyleAttrTokenMap);
-    }
+        mpPageMasterStyleAttrTokenMap = new SvXMLTokenMap(aPageMasterStyleAttrTokenMap);
+    } // if(!mpPageMasterStyleAttrTokenMap)
 
     return *mpPageMasterStyleAttrTokenMap;
 }
@@ -525,23 +572,23 @@ const SvXMLTokenMap& SdXMLImport::GetDrawPageAttrTokenMap()
     if(!mpDrawPageAttrTokenMap)
     {
         static const SvXMLTokenMapEntry aDrawPageAttrTokenMap[] =
-        {
-            { XML_NAMESPACE_DRAW,           XML_NAME,                           XML_TOK_DRAWPAGE_NAME               },
-            { XML_NAMESPACE_DRAW,           XML_STYLE_NAME,                     XML_TOK_DRAWPAGE_STYLE_NAME         },
-            { XML_NAMESPACE_DRAW,           XML_MASTER_PAGE_NAME,               XML_TOK_DRAWPAGE_MASTER_PAGE_NAME   },
-            { XML_NAMESPACE_PRESENTATION,   XML_PRESENTATION_PAGE_LAYOUT_NAME,  XML_TOK_DRAWPAGE_PAGE_LAYOUT_NAME   },
-            { XML_NAMESPACE_DRAW,           XML_ID,                             XML_TOK_DRAWPAGE_DRAWID                 },
-            { XML_NAMESPACE_XML,            XML_ID,                             XML_TOK_DRAWPAGE_XMLID                  },
-            { XML_NAMESPACE_XLINK,          XML_HREF,                           XML_TOK_DRAWPAGE_HREF               },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_HEADER_NAME,                XML_TOK_DRAWPAGE_USE_HEADER_NAME    },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_FOOTER_NAME,                XML_TOK_DRAWPAGE_USE_FOOTER_NAME    },
-            { XML_NAMESPACE_PRESENTATION,   XML_USE_DATE_TIME_NAME,             XML_TOK_DRAWPAGE_USE_DATE_TIME_NAME },
+{
+    { XML_NAMESPACE_DRAW,           XML_NAME,                           XML_TOK_DRAWPAGE_NAME               },
+    { XML_NAMESPACE_DRAW,           XML_STYLE_NAME,                     XML_TOK_DRAWPAGE_STYLE_NAME         },
+    { XML_NAMESPACE_DRAW,           XML_MASTER_PAGE_NAME,               XML_TOK_DRAWPAGE_MASTER_PAGE_NAME   },
+    { XML_NAMESPACE_PRESENTATION,   XML_PRESENTATION_PAGE_LAYOUT_NAME,  XML_TOK_DRAWPAGE_PAGE_LAYOUT_NAME   },
+    { XML_NAMESPACE_DRAW,           XML_ID,                             XML_TOK_DRAWPAGE_DRAWID                 },
+    { XML_NAMESPACE_XML,            XML_ID,                             XML_TOK_DRAWPAGE_XMLID                  },
+    { XML_NAMESPACE_XLINK,          XML_HREF,                           XML_TOK_DRAWPAGE_HREF               },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_HEADER_NAME,                XML_TOK_DRAWPAGE_USE_HEADER_NAME    },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_FOOTER_NAME,                XML_TOK_DRAWPAGE_USE_FOOTER_NAME    },
+    { XML_NAMESPACE_PRESENTATION,   XML_USE_DATE_TIME_NAME,             XML_TOK_DRAWPAGE_USE_DATE_TIME_NAME },
 
-            XML_TOKEN_MAP_END
-        };
+    XML_TOKEN_MAP_END
+};
 
-        mpDrawPageAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>(aDrawPageAttrTokenMap);
-    }
+        mpDrawPageAttrTokenMap = new SvXMLTokenMap(aDrawPageAttrTokenMap);
+    } // if(!mpDrawPageAttrTokenMap)
 
     return *mpDrawPageAttrTokenMap;
 }
@@ -551,15 +598,15 @@ const SvXMLTokenMap& SdXMLImport::GetDrawPageElemTokenMap()
     if(!mpDrawPageElemTokenMap)
     {
         static const SvXMLTokenMapEntry aDrawPageElemTokenMap[] =
-        {
-            { XML_NAMESPACE_PRESENTATION,   XML_NOTES,              XML_TOK_DRAWPAGE_NOTES      },
-            { XML_NAMESPACE_ANIMATION,      XML_PAR,                XML_TOK_DRAWPAGE_PAR        },
-            { XML_NAMESPACE_ANIMATION,      XML_SEQ,                XML_TOK_DRAWPAGE_SEQ        },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_PRESENTATION,   XML_NOTES,              XML_TOK_DRAWPAGE_NOTES      },
+    { XML_NAMESPACE_ANIMATION,      XML_PAR,                XML_TOK_DRAWPAGE_PAR        },
+    { XML_NAMESPACE_ANIMATION,      XML_SEQ,                XML_TOK_DRAWPAGE_SEQ        },
+    XML_TOKEN_MAP_END
+};
 
-        mpDrawPageElemTokenMap = o3tl::make_unique<SvXMLTokenMap>(aDrawPageElemTokenMap);
-    }
+        mpDrawPageElemTokenMap = new SvXMLTokenMap(aDrawPageElemTokenMap);
+    } // if(!mpDrawPageElemTokenMap)
 
     return *mpDrawPageElemTokenMap;
 }
@@ -569,17 +616,17 @@ const SvXMLTokenMap& SdXMLImport::GetPresentationPlaceholderAttrTokenMap()
     if(!mpPresentationPlaceholderAttrTokenMap)
     {
         static const SvXMLTokenMapEntry aPresentationPlaceholderAttrTokenMap[] =
-        {
-            { XML_NAMESPACE_PRESENTATION,   XML_OBJECT,     XML_TOK_PRESENTATIONPLACEHOLDER_OBJECTNAME  },
-            { XML_NAMESPACE_SVG,            XML_X,          XML_TOK_PRESENTATIONPLACEHOLDER_X           },
-            { XML_NAMESPACE_SVG,            XML_Y,          XML_TOK_PRESENTATIONPLACEHOLDER_Y           },
-            { XML_NAMESPACE_SVG,            XML_WIDTH,      XML_TOK_PRESENTATIONPLACEHOLDER_WIDTH       },
-            { XML_NAMESPACE_SVG,            XML_HEIGHT,     XML_TOK_PRESENTATIONPLACEHOLDER_HEIGHT      },
-            XML_TOKEN_MAP_END
-        };
+{
+    { XML_NAMESPACE_PRESENTATION,   XML_OBJECT,     XML_TOK_PRESENTATIONPLACEHOLDER_OBJECTNAME  },
+    { XML_NAMESPACE_SVG,            XML_X,          XML_TOK_PRESENTATIONPLACEHOLDER_X           },
+    { XML_NAMESPACE_SVG,            XML_Y,          XML_TOK_PRESENTATIONPLACEHOLDER_Y           },
+    { XML_NAMESPACE_SVG,            XML_WIDTH,      XML_TOK_PRESENTATIONPLACEHOLDER_WIDTH       },
+    { XML_NAMESPACE_SVG,            XML_HEIGHT,     XML_TOK_PRESENTATIONPLACEHOLDER_HEIGHT      },
+    XML_TOKEN_MAP_END
+};
 
-        mpPresentationPlaceholderAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>(aPresentationPlaceholderAttrTokenMap);
-    }
+        mpPresentationPlaceholderAttrTokenMap = new SvXMLTokenMap(aPresentationPlaceholderAttrTokenMap);
+    } // if(!mpPresentationPlaceholderAttrTokenMap)
 
     return *mpPresentationPlaceholderAttrTokenMap;
 }
@@ -623,7 +670,7 @@ SvXMLImportContext *SdXMLImport::CreateMetaContext(const OUString& rLocalName,
         uno::Reference<document::XDocumentPropertiesSupplier> xDPS(
             GetModel(), uno::UNO_QUERY_THROW);
         uno::Reference<document::XDocumentProperties> const xDocProps(
-            !mbLoadDoc ? nullptr : xDPS->getDocumentProperties());
+            (IsStylesOnlyMode()) ? nullptr : xDPS->getDocumentProperties());
         pContext = new SvXMLMetaDocumentContext(*this,
                         XML_NAMESPACE_OFFICE, rLocalName,
                         xDocProps);
@@ -672,9 +719,14 @@ SvXMLStylesContext *SdXMLImport::CreateAutoStylesContext(const OUString& rLocalN
 SvXMLImportContext* SdXMLImport::CreateMasterStylesContext(const OUString& rLocalName,
     const uno::Reference<xml::sax::XAttributeList>&)
 {
-    if (!mxMasterStylesContext.is())
-        mxMasterStylesContext.set(new SdXMLMasterStylesContext(*this, rLocalName));
-    return mxMasterStylesContext.get();
+    if(mpMasterStylesContext)
+        return mpMasterStylesContext;
+
+    mpMasterStylesContext = new SdXMLMasterStylesContext(
+        *this, rLocalName);
+    mpMasterStylesContext->AddFirstRef();
+
+    return mpMasterStylesContext;
 }
 
 SvXMLImportContext *SdXMLImport::CreateFontDeclsContext(const OUString& rLocalName,

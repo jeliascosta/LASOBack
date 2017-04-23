@@ -53,7 +53,7 @@ public:
         const OUString& rLocalName,
         bool bTOC );
 
-    virtual ~XMLIndexChapterInfoEntryContext() override;
+    virtual ~XMLIndexChapterInfoEntryContext();
 
 protected:
 

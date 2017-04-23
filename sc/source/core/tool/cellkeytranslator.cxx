@@ -21,9 +21,10 @@
 #include <comphelper/processfactory.hxx>
 #include <i18nlangtag/mslangid.hxx>
 #include <i18nlangtag/lang.h>
-#include <i18nutil/transliteration.hxx>
 #include <rtl/ustring.hxx>
 #include <unotools/syslocale.hxx>
+
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 
 using ::com::sun::star::uno::Sequence;
 using ::std::list;
@@ -75,7 +76,7 @@ ScCellKeyword::ScCellKeyword(const sal_Char* pName, OpCode eOpCode, const lang::
 ::std::unique_ptr<ScCellKeywordTranslator> ScCellKeywordTranslator::spInstance;
 
 static void lclMatchKeyword(OUString& rName, const ScCellKeywordHashMap& aMap,
-                            OpCode eOpCode, const lang::Locale* pLocale)
+                            OpCode eOpCode = ocNone, const lang::Locale* pLocale = nullptr)
 {
     ScCellKeywordHashMap::const_iterator itrEnd = aMap.end();
     ScCellKeywordHashMap::const_iterator itr = aMap.find(rName);
@@ -170,7 +171,7 @@ void ScCellKeywordTranslator::transKeyword(OUString& rName, const lang::Locale* 
 
 ScCellKeywordTranslator::ScCellKeywordTranslator() :
     maTransWrapper( ::comphelper::getProcessComponentContext(),
-                    TransliterationFlags::LOWERCASE_UPPERCASE )
+                    i18n::TransliterationModules_LOWERCASE_UPPERCASE )
 {
     init();
 }

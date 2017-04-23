@@ -51,6 +51,9 @@ $(eval $(call gb_CppunitTest_use_externals,editeng_lookuptree,\
     icuuc \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,editeng_lookuptree))
+$(eval $(call gb_CppunitTest_use_api,editeng_lookuptree,\
+    offapi \
+    udkapi \
+))
 
 # vim: set noet sw=4 ts=4:

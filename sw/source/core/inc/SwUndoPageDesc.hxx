@@ -38,7 +38,7 @@ class SwUndoPageDesc : public SwUndo
 public:
     SwUndoPageDesc(const SwPageDesc & aOld, const SwPageDesc & aNew,
                    SwDoc * pDoc);
-    virtual ~SwUndoPageDesc() override;
+    virtual ~SwUndoPageDesc();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -56,7 +56,7 @@ class SwUndoPageDescCreate : public SwUndo
 
 public:
     SwUndoPageDescCreate(const SwPageDesc * pNew, SwDoc * pDoc);
-    virtual ~SwUndoPageDescCreate() override;
+    virtual ~SwUndoPageDescCreate();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -74,7 +74,7 @@ class SwUndoPageDescDelete : public SwUndo
 
 public:
     SwUndoPageDescDelete(const SwPageDesc & aOld, SwDoc * pDoc);
-    virtual ~SwUndoPageDescDelete() override;
+    virtual ~SwUndoPageDescDelete();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

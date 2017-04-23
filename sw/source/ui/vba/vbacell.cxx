@@ -30,7 +30,7 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaCell::SwVbaCell( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextTable >& xTextTable, sal_Int32 nColumn, sal_Int32 nRow ) :
+SwVbaCell::SwVbaCell( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextTable >& xTextTable, sal_Int32 nColumn, sal_Int32 nRow ) throw ( uno::RuntimeException ) :
     SwVbaCell_BASE( rParent, rContext ), mxTextTable( xTextTable ), mnColumn( nColumn ), mnRow( nRow )
 {
 }
@@ -39,49 +39,49 @@ SwVbaCell::~SwVbaCell()
 {
 }
 
-::sal_Int32 SAL_CALL SwVbaCell::getWidth()
+::sal_Int32 SAL_CALL SwVbaCell::getWidth() throw (css::uno::RuntimeException, std::exception)
 {
     SwVbaTableHelper aTableHelper( mxTextTable );
     return aTableHelper.GetColWidth( mnColumn, mnRow, true );
 }
 
-void SAL_CALL SwVbaCell::setWidth( ::sal_Int32 _width )
+void SAL_CALL SwVbaCell::setWidth( ::sal_Int32 _width ) throw (css::uno::RuntimeException, std::exception)
 {
     SwVbaTableHelper aTableHelper( mxTextTable );
     aTableHelper.SetColWidth( _width, mnColumn, mnRow, true );
 }
 
-uno::Any SAL_CALL SwVbaCell::getHeight()
+uno::Any SAL_CALL SwVbaCell::getHeight() throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< word::XRow > xRow( new SwVbaRow( getParent(), mxContext, mxTextTable, mnRow ) );
     return xRow->getHeight();
 }
 
-void SAL_CALL SwVbaCell::setHeight( const uno::Any& _height )
+void SAL_CALL SwVbaCell::setHeight( const uno::Any& _height ) throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< word::XRow > xRow( new SwVbaRow( getParent(), mxContext, mxTextTable, mnRow ) );
     xRow->setHeight( _height );
 }
 
-::sal_Int32 SAL_CALL SwVbaCell::getHeightRule()
+::sal_Int32 SAL_CALL SwVbaCell::getHeightRule() throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< word::XRow > xRow( new SwVbaRow( getParent(), mxContext, mxTextTable, mnRow ) );
     return xRow->getHeightRule();
 }
 
-void SAL_CALL SwVbaCell::setHeightRule( ::sal_Int32 _heightrule )
+void SAL_CALL SwVbaCell::setHeightRule( ::sal_Int32 _heightrule ) throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< word::XRow > xRow( new SwVbaRow( getParent(), mxContext, mxTextTable, mnRow ) );
     xRow->setHeightRule( _heightrule );
 }
 
-void SAL_CALL SwVbaCell::SetWidth( float width, sal_Int32 /*rulestyle*/ )
+void SAL_CALL SwVbaCell::SetWidth( float width, sal_Int32 /*rulestyle*/ ) throw (css::uno::RuntimeException, std::exception)
 {
     // FIXME: handle the argument: rulestyle
     setWidth( static_cast<sal_Int32>(width) );
 }
 
-void SAL_CALL SwVbaCell::SetHeight( float height, sal_Int32 heightrule )
+void SAL_CALL SwVbaCell::SetHeight( float height, sal_Int32 heightrule ) throw (css::uno::RuntimeException, std::exception)
 {
     // FIXME: handle the argument: heightrule
     setHeightRule( heightrule );

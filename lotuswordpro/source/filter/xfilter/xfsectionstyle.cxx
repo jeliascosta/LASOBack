@@ -64,11 +64,14 @@ XFSectionStyle::XFSectionStyle()
 {
     m_fMarginLeft = 0;
     m_fMarginRight = 0;
+    m_pBackImage = nullptr;
     m_pColumns = nullptr;
 }
 
 XFSectionStyle::~XFSectionStyle()
 {
+    delete m_pColumns;
+    delete m_pBackImage;
 }
 
 enumXFStyle XFSectionStyle::GetStyleFamily()
@@ -88,7 +91,8 @@ void XFSectionStyle::SetMarginRight(double right)
 
 void    XFSectionStyle::SetColumns(XFColumns *pColumns)
 {
-    m_pColumns.reset( pColumns );
+    delete m_pColumns;
+    m_pColumns = pColumns;
 }
 
 void XFSectionStyle::ToXml(IXFStream *pStrm)
@@ -110,7 +114,7 @@ void XFSectionStyle::ToXml(IXFStream *pStrm)
     {
         pAttrList->AddAttribute( "fo:margin-right", OUString::number(m_fMarginRight) + "cm" );
     }
-    if( m_aBackColor.IsValid() )
+    if( m_aBackColor.IsValid() && !m_pBackImage )
     {
         pAttrList->AddAttribute( "fo:background-color", m_aBackColor.ToString() );
     }
@@ -123,6 +127,8 @@ void XFSectionStyle::ToXml(IXFStream *pStrm)
 
     if( m_pColumns )
         m_pColumns->ToXml(pStrm);
+    if( m_pBackImage )
+        m_pBackImage->ToXml(pStrm);
 
     pStrm->EndElement( "style:properties" );
 

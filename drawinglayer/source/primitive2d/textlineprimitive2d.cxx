@@ -30,8 +30,10 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void TextLinePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer TextLinePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
+            Primitive2DContainer xRetval;
+
             if(TEXT_LINE_NONE != getTextLine())
             {
                 bool bDoubleLine(false);
@@ -171,7 +173,7 @@ namespace drawinglayer
 
                 if(pDotDashArray)
                 {
-                    std::vector< double > aDoubleArray;
+                    ::std::vector< double > aDoubleArray;
 
                     for(const int* p = pDotDashArray; *p; ++p)
                     {
@@ -216,7 +218,7 @@ namespace drawinglayer
                 }
 
                 // add primitive
-                rContainer.push_back(aNewPrimitive);
+                xRetval.push_back(aNewPrimitive);
 
                 if(bDoubleLine)
                 {
@@ -243,9 +245,11 @@ namespace drawinglayer
 
                     // add transform primitive
                     const Primitive2DContainer aContent { aNewPrimitive };
-                    rContainer.push_back( new TransformPrimitive2D(aTransform, aContent) );
+                    xRetval.push_back( Primitive2DReference(new TransformPrimitive2D(aTransform, aContent)));
                 }
             }
+
+            return xRetval;
         }
 
         TextLinePrimitive2D::TextLinePrimitive2D(

@@ -52,14 +52,11 @@
 #include <overlayrangesoutline.hxx>
 
 #include <memory>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include <comphelper/lok.hxx>
-#include <sfx2/lokhelper.hxx>
 #include <comphelper/string.hxx>
 #include <paintfrm.hxx>
-#include <PostItMgr.hxx>
 
 // Here static members are defined. They will get changed on alteration of the
 // MapMode. This is done so that on ShowCursor the same size does not have to be
@@ -96,7 +93,7 @@ void SwVisibleCursor::Show()
 
         // display at all?
         if( m_pCursorShell->VisArea().IsOver( m_pCursorShell->m_aCharRect ) || comphelper::LibreOfficeKit::isActive() )
-            SetPosAndShow(nullptr);
+            SetPosAndShow();
     }
 }
 
@@ -111,7 +108,7 @@ void SwVisibleCursor::Hide()
     }
 }
 
-void SwVisibleCursor::SetPosAndShow(SfxViewShell* pViewShell)
+void SwVisibleCursor::SetPosAndShow()
 {
     SwRect aRect;
     long nTmpY = m_pCursorShell->m_aCursorHeight.getY();
@@ -170,14 +167,10 @@ void SwVisibleCursor::SetPosAndShow(SfxViewShell* pViewShell)
         }
     }
 
-    if( aRect.Height())
+    if( aRect.Height() )
     {
         ::SwCalcPixStatics( m_pCursorShell->GetOut() );
-
-        // Disable pixel alignment when tiled rendering, so that twip values of
-        // the cursor don't depend on statics.
-        if (!comphelper::LibreOfficeKit::isActive())
-            ::SwAlignRect( aRect, static_cast<SwViewShell const *>(m_pCursorShell), m_pCursorShell->GetOut() );
+        ::SwAlignRect( aRect, static_cast<SwViewShell const *>(m_pCursorShell), m_pCursorShell->GetOut() );
     }
     if( !m_pCursorShell->IsOverwriteCursor() || m_bIsDragCursor ||
         m_pCursorShell->IsSelection() )
@@ -187,42 +180,25 @@ void SwVisibleCursor::SetPosAndShow(SfxViewShell* pViewShell)
 
     m_aTextCursor.SetPos( aRect.Pos() );
 
-    bool bPostItActive = false;
-    if (auto pView = dynamic_cast<SwView*>(m_pCursorShell->GetSfxViewShell()))
-    {
-        if (SwPostItMgr* pPostItMgr = pView->GetPostItMgr())
-            bPostItActive = pPostItMgr->GetActiveSidebarWin() != nullptr;
-    }
-
-    if (comphelper::LibreOfficeKit::isActive() && !bPostItActive)
+    if (comphelper::LibreOfficeKit::isActive())
     {
         // notify about page number change (if that happened)
         sal_uInt16 nPage, nVirtPage;
-        // bCalcFrame=false is important to avoid calculating the layout when
-        // we're in the middle of doing that already.
-        const_cast<SwCursorShell*>(m_pCursorShell)->GetPageNum(nPage, nVirtPage, /*bAtCursorPos=*/true, /*bCalcFrame=*/false);
+        const_cast<SwCursorShell*>(m_pCursorShell)->GetPageNum(nPage, nVirtPage);
         if (nPage != m_nPageLastTime)
         {
             m_nPageLastTime = nPage;
             OString aPayload = OString::number(nPage - 1);
-            m_pCursorShell->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
+            m_pCursorShell->libreOfficeKitCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
         }
 
         // notify about the cursor position & size
-        tools::Rectangle aSVRect(aRect.Pos().getX(), aRect.Pos().getY(), aRect.Pos().getX() + aRect.SSize().Width(), aRect.Pos().getY() + aRect.SSize().Height());
+        Rectangle aSVRect(aRect.Pos().getX(), aRect.Pos().getY(), aRect.Pos().getX() + aRect.SSize().Width(), aRect.Pos().getY() + aRect.SSize().Height());
         OString sRect = aSVRect.toString();
-        if (pViewShell)
-        {
-            if (pViewShell == m_pCursorShell->GetSfxViewShell())
-                pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_INVALIDATE_VISIBLE_CURSOR, sRect.getStr());
-            else
-                SfxLokHelper::notifyOtherView(m_pCursorShell->GetSfxViewShell(), pViewShell, LOK_CALLBACK_INVALIDATE_VIEW_CURSOR, "rectangle", sRect);
-        }
-        else
-        {
+        if (comphelper::LibreOfficeKit::isViewCallback())
             m_pCursorShell->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_INVALIDATE_VISIBLE_CURSOR, sRect.getStr());
-            SfxLokHelper::notifyOtherViews(m_pCursorShell->GetSfxViewShell(), LOK_CALLBACK_INVALIDATE_VIEW_CURSOR, "rectangle", sRect);
-        }
+        else
+            m_pCursorShell->libreOfficeKitCallback(LOK_CALLBACK_INVALIDATE_VISIBLE_CURSOR, sRect.getStr());
     }
 
     if ( !m_pCursorShell->IsCursorReadonly()  || m_pCursorShell->GetViewOptions()->IsSelectionInReadonly() )
@@ -338,7 +314,7 @@ void SwSelPaintRects::Show(std::vector<OString>* pSelectionRectangles)
         for(size_type a = 0; a < size(); ++a)
         {
             const SwRect aNextRect((*this)[a]);
-            const tools::Rectangle aPntRect(aNextRect.SVRect());
+            const Rectangle aPntRect(aNextRect.SVRect());
 
             aNewRanges.push_back(basegfx::B2DRange(
                 aPntRect.Left(), aPntRect.Top(),
@@ -370,7 +346,7 @@ void SwSelPaintRects::Show(std::vector<OString>* pSelectionRectangles)
 
                 // create correct selection
                 m_pCursorOverlay = new sdr::overlay::OverlaySelection(
-                    sdr::overlay::OverlayType::Transparent,
+                    sdr::overlay::OVERLAY_TRANSPARENT,
                     aHighlight,
                     aNewRanges,
                     true);
@@ -403,12 +379,18 @@ void SwSelPaintRects::Show(std::vector<OString>* pSelectionRectangles)
                 if (aStartRect.HasArea())
                 {
                     OString sRect = aStartRect.SVRect().toString();
-                    GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_START, sRect.getStr());
+                    if (comphelper::LibreOfficeKit::isViewCallback())
+                        GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_START, sRect.getStr());
+                    else
+                        GetShell()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION_START, sRect.getStr());
                 }
                 if (aEndRect.HasArea())
                 {
                     OString sRect = aEndRect.SVRect().toString();
-                    GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_END, sRect.getStr());
+                    if (comphelper::LibreOfficeKit::isViewCallback())
+                        GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_END, sRect.getStr());
+                    else
+                        GetShell()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION_END, sRect.getStr());
                 }
             }
 
@@ -421,8 +403,10 @@ void SwSelPaintRects::Show(std::vector<OString>* pSelectionRectangles)
             OString sRect = comphelper::string::join("; ", aRect);
             if (!pSelectionRectangles)
             {
-                GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, sRect.getStr());
-                SfxLokHelper::notifyOtherViews(GetShell()->GetSfxViewShell(), LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", sRect);
+                if (comphelper::LibreOfficeKit::isViewCallback())
+                    GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, sRect.getStr());
+                else
+                    GetShell()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, sRect.getStr());
             }
             else
                 pSelectionRectangles->push_back(sRect);
@@ -451,7 +435,7 @@ void SwSelPaintRects::HighlightInputField()
             SwRects* pRects = static_cast<SwRects*>(pCursorForInputTextField.get());
             for (const SwRect & rNextRect : *pRects)
             {
-                const tools::Rectangle aPntRect(rNextRect.SVRect());
+                const Rectangle aPntRect(rNextRect.SVRect());
 
                 aInputFieldRanges.push_back(basegfx::B2DRange(
                     aPntRect.Left(), aPntRect.Top(),
@@ -609,7 +593,7 @@ void SwShellCursor::FillRects()
         GetShell()->GetLayout()->CalcFrameRects( *this );
 }
 
-void SwShellCursor::Show(SfxViewShell* pViewShell)
+void SwShellCursor::Show()
 {
     std::vector<OString> aSelectionRectangles;
     for(SwPaM& rPaM : GetRingContainer())
@@ -629,17 +613,10 @@ void SwShellCursor::Show(SfxViewShell* pViewShell)
             aRect.push_back(rSelectionRectangle);
         }
         OString sRect = comphelper::string::join("; ", aRect);
-        if (pViewShell)
-        {
-            // Just notify pViewShell about our existing selection.
-            if (pViewShell != GetShell()->GetSfxViewShell())
-                SfxLokHelper::notifyOtherView(GetShell()->GetSfxViewShell(), pViewShell, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", sRect);
-        }
-        else
-        {
+        if (comphelper::LibreOfficeKit::isViewCallback())
             GetShell()->GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, sRect.getStr());
-            SfxLokHelper::notifyOtherViews(GetShell()->GetSfxViewShell(), LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", sRect);
-        }
+        else
+            GetShell()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, sRect.getStr());
     }
 }
 

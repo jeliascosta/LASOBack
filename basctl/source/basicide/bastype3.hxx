@@ -34,12 +34,12 @@ private:
     Link<ExtendedEdit*,void>  aLoseFocusHdl;
 
 protected:
-    DECL_LINK( EditAccHdl, Accelerator&, void );
-    DECL_LINK( ImplGetFocusHdl, Control&, void );
-    DECL_LINK( ImplLoseFocusHdl, Control&, void );
+    DECL_LINK_TYPED( EditAccHdl, Accelerator&, void );
+    DECL_LINK_TYPED( ImplGetFocusHdl, Control&, void );
+    DECL_LINK_TYPED( ImplLoseFocusHdl, Control&, void );
 
 public:
-    ExtendedEdit(vcl::Window* pParent, WinBits nStyle);
+                    ExtendedEdit( vcl::Window* pParent, IDEResId nRes );
 
     void            SetAccHdl( const Link<Accelerator&,void>& rLink )         { aAccHdl = rLink; }
     Accelerator&    GetAccelerator()                                          { return aAcc; }

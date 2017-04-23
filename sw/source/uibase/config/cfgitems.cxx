@@ -30,8 +30,8 @@
 #include "crstate.hxx"
 
 
-SwDocDisplayItem::SwDocDisplayItem() :
-        SfxPoolItem(FN_PARAM_DOCDISP)
+SwDocDisplayItem::SwDocDisplayItem( sal_uInt16 _nWhich ) :
+        SfxPoolItem(_nWhich)
 {
     bParagraphEnd       =
     bTab                =
@@ -52,8 +52,8 @@ SwDocDisplayItem::SwDocDisplayItem( const SwDocDisplayItem& rDocDisplayItem ):
     *this = rDocDisplayItem;
 };
 
-SwDocDisplayItem::SwDocDisplayItem(const SwViewOption& rVOpt ) :
-            SfxPoolItem( FN_PARAM_DOCDISP )
+SwDocDisplayItem::SwDocDisplayItem(const SwViewOption& rVOpt, sal_uInt16 _nWhich ) :
+            SfxPoolItem( _nWhich )
 {
     bParagraphEnd       = rVOpt.IsParagraph(true);
     bTab                = rVOpt.IsTab(true);
@@ -115,8 +115,8 @@ void SwDocDisplayItem::FillViewOptions( SwViewOption& rVOpt) const
     rVOpt.SetShowHiddenPara(bShowHiddenPara );
 }
 
-SwElemItem::SwElemItem() :
-    SfxPoolItem(FN_PARAM_ELEM)
+SwElemItem::SwElemItem( sal_uInt16 _nWhich ) :
+    SfxPoolItem(_nWhich)
 {
     bVertRuler     =
     bVertRulerRight=
@@ -135,8 +135,8 @@ SwElemItem::SwElemItem( const SwElemItem& rElemItem ):
     *this = rElemItem;
 }
 
-SwElemItem::SwElemItem(const SwViewOption& rVOpt) :
-            SfxPoolItem( FN_PARAM_ELEM )
+SwElemItem::SwElemItem(const SwViewOption& rVOpt, sal_uInt16 _nWhich) :
+            SfxPoolItem( _nWhich )
 {
     bVertRuler      = rVOpt.IsViewVRuler(true);
     bVertRulerRight = rVOpt.IsVRulerRight();
@@ -208,14 +208,14 @@ SwAddPrinterItem::SwAddPrinterItem( const SwAddPrinterItem& rAddPrinterItem ):
 }
 
 // CTOR for empty Item
-SwAddPrinterItem::SwAddPrinterItem():
-                SfxPoolItem(FN_PARAM_ADDPRINTER)
+SwAddPrinterItem::SwAddPrinterItem( sal_uInt16 _nWhich):
+                SfxPoolItem(_nWhich)
 {
 }
 
 // CTOR from SwPrintOptions
-SwAddPrinterItem::SwAddPrinterItem( const SwPrintData& rPrtData ) :
-    SfxPoolItem(FN_PARAM_ADDPRINTER)
+SwAddPrinterItem::SwAddPrinterItem( sal_uInt16 _nWhich, const SwPrintData& rPrtData ) :
+    SfxPoolItem(_nWhich)
 {
     SwPrintData::operator=(rPrtData);
 }
@@ -235,8 +235,8 @@ bool SwAddPrinterItem::operator==( const SfxPoolItem& rAttr ) const
 }
 
 // Item for Settings dialog, ShadowCursorPage
-SwShadowCursorItem::SwShadowCursorItem()
-    : SfxPoolItem( FN_PARAM_SHADOWCURSOR ),
+SwShadowCursorItem::SwShadowCursorItem( sal_uInt16 _nWhich )
+    : SfxPoolItem( _nWhich ),
     eMode( FILL_TAB )
     ,bOn( false )
 {
@@ -250,8 +250,8 @@ SwShadowCursorItem::SwShadowCursorItem( const SwShadowCursorItem& rCpy )
 {
 }
 
-SwShadowCursorItem::SwShadowCursorItem( const SwViewOption& rVOpt )
-    : SfxPoolItem( FN_PARAM_SHADOWCURSOR ),
+SwShadowCursorItem::SwShadowCursorItem( const SwViewOption& rVOpt, sal_uInt16 _nWhich )
+    : SfxPoolItem( _nWhich ),
     eMode( rVOpt.GetShdwCursorFillMode() )
     ,bOn( rVOpt.IsShadowCursor() )
 

@@ -46,7 +46,7 @@ namespace canvas
     public:
 
         Surface( const PageManagerSharedPtr&  rPageManager,
-                 const std::shared_ptr<IColorBuffer>& rColorBuffer,
+                 const IColorBufferSharedPtr& rColorBuffer,
                  const ::basegfx::B2IPoint&   rPos,
                  const ::basegfx::B2ISize&    rSize );
         ~Surface();
@@ -111,7 +111,7 @@ namespace canvas
                            const ::basegfx::B2DHomMatrix&   rTransform );
 
     private:
-        std::shared_ptr<IColorBuffer> mpColorBuffer;
+        IColorBufferSharedPtr mpColorBuffer;
 
         // invoking any of the above defined 'draw' methods
         // will forward primitive commands to the rendermodule.

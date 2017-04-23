@@ -113,14 +113,14 @@ namespace vclcanvas
                            const ::canvas::SpriteRedrawManager::UpdateArea&     rUpdateArea );
 
         void opaqueUpdate( const ::basegfx::B2DRange&                          rTotalArea,
-                           const std::vector< ::canvas::Sprite::Reference >& rSortedUpdateSprites );
+                           const ::std::vector< ::canvas::Sprite::Reference >& rSortedUpdateSprites );
 
         void genericUpdate( const ::basegfx::B2DRange&                          rTotalArea,
-                            const std::vector< ::canvas::Sprite::Reference >& rSortedUpdateSprites );
+                            const ::std::vector< ::canvas::Sprite::Reference >& rSortedUpdateSprites );
 
         css::uno::Any isUnsafeScrolling() const
         {
-            return css::uno::Any(mbIsUnsafeScrolling);
+            return css::uno::makeAny(mbIsUnsafeScrolling);
         }
         void enableUnsafeScrolling( const css::uno::Any& rAny )
         {
@@ -129,7 +129,7 @@ namespace vclcanvas
 
         css::uno::Any isSpriteBounds() const
         {
-            return css::uno::Any(mbShowSpriteBounds);
+            return css::uno::makeAny(mbShowSpriteBounds);
         }
         void enableSpriteBounds( const css::uno::Any& rAny )
         {

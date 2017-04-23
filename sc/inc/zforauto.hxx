@@ -39,20 +39,20 @@ public:
     void Save( SvStream& rStream, rtl_TextEncoding eByteStrSet ) const;   // saving of the numberformats
     void PutFormatIndex(sal_uInt32 nFormat, SvNumberFormatter& rFormatter);
     sal_uInt32 GetFormatIndex( SvNumberFormatter& rFormatter);
-    bool operator==(const ScNumFormatAbbrev& rNumFormat) const
+    inline bool operator==(const ScNumFormatAbbrev& rNumFormat) const
     {
         return ((sFormatstring == rNumFormat.sFormatstring)
             && (eLanguage == rNumFormat.eLanguage)
             && (eSysLanguage == rNumFormat.eSysLanguage));
     }
-    ScNumFormatAbbrev& operator=(const ScNumFormatAbbrev& rNumFormat)
+    inline ScNumFormatAbbrev& operator=(const ScNumFormatAbbrev& rNumFormat)
     {
         sFormatstring = rNumFormat.sFormatstring;
         eLanguage = rNumFormat.eLanguage;
         eSysLanguage = rNumFormat.eSysLanguage;
         return *this;
     }
-    LanguageType GetLanguage() const { return eLanguage; }
+    inline LanguageType GetLanguage() const { return eLanguage; }
 };
 
 #endif

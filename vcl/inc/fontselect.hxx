@@ -49,9 +49,6 @@ public:
         return !(*this == rOther);
     }
 
-    static const char FEAT_PREFIX;
-    static const char FEAT_SEPARATOR;
-
 public:
     OUString        maTargetName;               // name of the font name token that is chosen
     OUString        maSearchName;               // name of the font that matches best

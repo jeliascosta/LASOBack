@@ -50,25 +50,31 @@ public:
     // XSimpleMailClientSupplier
 
 
-    virtual css::uno::Reference< css::system::XSimpleMailClient > SAL_CALL querySimpleMailClient(  ) override;
+    virtual css::uno::Reference< css::system::XSimpleMailClient > SAL_CALL querySimpleMailClient(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XSimpleMailClient
 
 
-    virtual css::uno::Reference< css::system::XSimpleMailMessage > SAL_CALL createSimpleMailMessage(  ) override;
+    virtual css::uno::Reference< css::system::XSimpleMailMessage > SAL_CALL createSimpleMailMessage(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL sendSimpleMailMessage( const css::uno::Reference< css::system::XSimpleMailMessage >& xSimpleMailMessage, sal_Int32 aFlag ) override;
+    virtual void SAL_CALL sendSimpleMailMessage( const css::uno::Reference< css::system::XSimpleMailMessage >& xSimpleMailMessage, sal_Int32 aFlag )
+        throw (css::lang::IllegalArgumentException, css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
 
     // XServiceInfo
 
 
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

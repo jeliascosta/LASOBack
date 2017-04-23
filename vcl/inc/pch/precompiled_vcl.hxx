@@ -27,6 +27,7 @@
 #include <config_features.h>
 #include <config_folders.h>
 #include <config_global.h>
+#include <config_graphite.h>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -50,13 +51,13 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <window.h>
 #include <boost/functional/hash.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/math/special_functions/sinc.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/optional.hpp>
-#ifndef LIBO_HEADLESS
-#include <epoxy/gl.h>
-#endif
+#include <boost/shared_array.hpp>
 #include <osl/conditn.hxx>
 #include <osl/diagnose.h>
 #include <osl/diagnose.hxx>
@@ -152,7 +153,7 @@
 #include <vcl/help.hxx>
 #include <vcl/i18nhelp.hxx>
 #include <vcl/image.hxx>
-#include <vcl/ImageTree.hxx>
+#include <vcl/implimagetree.hxx>
 #include <vcl/keycod.hxx>
 #include <vcl/keycodes.hxx>
 #include <vcl/layout.hxx>
@@ -185,6 +186,7 @@
 #include <vcl/virdev.hxx>
 #include <vcl/window.hxx>
 #include <vcl/wrkwin.hxx>
+#include <GL/glew.h>
 #include <PhysicalFontCollection.hxx>
 #include <PhysicalFontFace.hxx>
 #include <PhysicalFontFamily.hxx>
@@ -299,6 +301,5 @@
 #include <unotools/configmgr.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <unotools/unotoolsdllapi.h>
-#include <window.h>
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

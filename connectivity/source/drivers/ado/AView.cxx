@@ -36,14 +36,14 @@ using namespace com::sun::star::sdbc;
 
 //  IMPLEMENT_SERVICE_INFO(OAdoView,"com.sun.star.sdbcx.AView","com.sun.star.sdbcx.View");
 
-OAdoView::OAdoView(bool _bCase,ADOView* _pView) : OView_ADO(_bCase,nullptr)
+OAdoView::OAdoView(sal_Bool _bCase,ADOView* _pView) : OView_ADO(_bCase,NULL)
 ,m_aView(_pView)
 {
 }
 
 Sequence< sal_Int8 > OAdoView::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = nullptr;
+    static ::cppu::OImplementationId * pId = 0;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -56,9 +56,9 @@ Sequence< sal_Int8 > OAdoView::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// css::lang::XUnoTunnel
+// com::sun::star::lang::XUnoTunnel
 
-sal_Int64 OAdoView::getSomething( const Sequence< sal_Int8 > & rId )
+sal_Int64 OAdoView::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -86,10 +86,10 @@ void OAdoView::getFastPropertyValue(Any& rValue,sal_Int32 nHandle) const
                     m_aView.get_Command(aVar);
                     if(!aVar.isNull() && !aVar.isEmpty())
                     {
-                        ADOCommand* pCom = static_cast<ADOCommand*>(aVar.getIDispatch());
+                        ADOCommand* pCom = (ADOCommand*)aVar.getIDispatch();
                         OLEString aBSTR;
-                        pCom->get_CommandText(aBSTR.getAddress());
-                        rValue <<= aBSTR.asOUString();
+                        pCom->get_CommandText(&aBSTR);
+                        rValue <<= aBSTR.operator OUString();
                     }
                 }
                 break;
@@ -98,5 +98,16 @@ void OAdoView::getFastPropertyValue(Any& rValue,sal_Int32 nHandle) const
     else
         OView_ADO::getFastPropertyValue(rValue,nHandle);
 }
+
+void SAL_CALL OAdoView::acquire() throw()
+{
+    OView_ADO::acquire();
+}
+
+void SAL_CALL OAdoView::release() throw()
+{
+    OView_ADO::release();
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

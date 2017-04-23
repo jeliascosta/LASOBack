@@ -47,7 +47,7 @@ class XclExpDelegatingRecord : public XclExpRecordBase
 {
 public:
                         XclExpDelegatingRecord( XclExpRecordBase* pRecord );
-                        virtual ~XclExpDelegatingRecord() override;
+                        virtual ~XclExpDelegatingRecord();
 
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 private:
@@ -58,7 +58,7 @@ class XclExpXmlElementRecord : public XclExpRecordBase
 {
 public:
     explicit            XclExpXmlElementRecord(sal_Int32 nElement);
-    virtual             ~XclExpXmlElementRecord() override;
+    virtual             ~XclExpXmlElementRecord();
 
 protected:
     sal_Int32           mnElement;
@@ -68,7 +68,7 @@ class XclExpXmlStartElementRecord : public XclExpXmlElementRecord
 {
 public:
     explicit            XclExpXmlStartElementRecord(sal_Int32 nElement);
-    virtual             ~XclExpXmlStartElementRecord() override;
+    virtual             ~XclExpXmlStartElementRecord();
 
     /** Starts the element nElement */
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -78,7 +78,7 @@ class XclExpXmlEndElementRecord : public XclExpXmlElementRecord
 {
 public:
     explicit            XclExpXmlEndElementRecord(sal_Int32 nElement);
-    virtual             ~XclExpXmlEndElementRecord() override;
+    virtual             ~XclExpXmlEndElementRecord();
 
     /** Ends the element nElement */
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -88,7 +88,7 @@ class XclExpXmlStartSingleElementRecord : public XclExpXmlElementRecord
 {
 public:
     explicit            XclExpXmlStartSingleElementRecord(sal_Int32 nElement);
-    virtual             ~XclExpXmlStartSingleElementRecord() override;
+    virtual             ~XclExpXmlStartSingleElementRecord();
 
     /** Starts the single element nElement */
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -98,7 +98,7 @@ class XclExpXmlEndSingleElementRecord : public XclExpRecordBase
 {
 public:
                         XclExpXmlEndSingleElementRecord();
-    virtual             ~XclExpXmlEndSingleElementRecord() override;
+    virtual             ~XclExpXmlEndSingleElementRecord();
 
     /** Ends the single element nElement */
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -120,23 +120,23 @@ public:
         @param nRecSize  The predicted record size. May be set later with SetRecSize(). */
     explicit            XclExpRecord(
                             sal_uInt16 nRecId = EXC_ID_UNKNOWN,
-                            std::size_t nRecSize = 0 );
+                            sal_Size nRecSize = 0 );
 
-    virtual             ~XclExpRecord() override;
+    virtual             ~XclExpRecord();
 
     /** Returns the current record ID. */
-    sal_uInt16   GetRecId() const { return mnRecId; }
+    inline sal_uInt16   GetRecId() const { return mnRecId; }
     /** Returns the current record size prediction. */
-    std::size_t  GetRecSize() const { return mnRecSize; }
+    inline sal_Size     GetRecSize() const { return mnRecSize; }
 
     /** Sets a new record ID. */
-    void         SetRecId( sal_uInt16 nRecId ) { mnRecId = nRecId; }
+    inline void         SetRecId( sal_uInt16 nRecId ) { mnRecId = nRecId; }
     /** Sets a new record size prediction. */
-    void         SetRecSize( std::size_t nRecSize ) { mnRecSize = nRecSize; }
+    inline void         SetRecSize( sal_Size nRecSize ) { mnRecSize = nRecSize; }
     /** Adds a size value to the record size prediction. */
-    void         AddRecSize( std::size_t nRecSize ) { mnRecSize += nRecSize; }
+    inline void         AddRecSize( sal_Size nRecSize ) { mnRecSize += nRecSize; }
     /** Sets record ID and size with one call. */
-    void                SetRecHeader( sal_uInt16 nRecId, std::size_t nRecSize );
+    void                SetRecHeader( sal_uInt16 nRecId, sal_Size nRecSize );
 
     /** Writes the record header and calls WriteBody(). */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -147,7 +147,7 @@ protected:
     virtual void        WriteBody( XclExpStream& rStrm );
 
 private:
-    std::size_t         mnRecSize;      /// The predicted record size.
+    sal_Size            mnRecSize;      /// The predicted record size.
     sal_uInt16          mnRecId;        /// The record ID.
 };
 
@@ -173,13 +173,13 @@ public:
     /** @param nRecId  The record ID of this record.
         @param rValue  The value for the record body.
         @param nSize  Record size. Uses sizeof( Type ), if this parameter is omitted. */
-    explicit     XclExpValueRecord( sal_uInt16 nRecId, const Type& rValue, std::size_t nSize = sizeof( Type ) ) :
+    inline explicit     XclExpValueRecord( sal_uInt16 nRecId, const Type& rValue, sal_Size nSize = sizeof( Type ) ) :
                             XclExpRecord( nRecId, nSize ), maValue( rValue ), mnAttribute( -1 ) {}
 
     /** Returns the value of the record. */
-    const Type&  GetValue() const { return maValue; }
+    inline const Type&  GetValue() const { return maValue; }
     /** Sets a new record value. */
-    void         SetValue( const Type& rValue ) { maValue = rValue; }
+    inline void         SetValue( const Type& rValue ) { maValue = rValue; }
 
     /** Sets the OOXML attribute this record corresponds to */
     XclExpValueRecord*  SetAttribute( sal_Int32 nId );
@@ -230,11 +230,11 @@ class XclExpBoolRecord : public XclExpRecord
 public:
     /** @param nRecId  The record ID of this record.
         @param nValue  The value for the record body. */
-    explicit     XclExpBoolRecord( sal_uInt16 nRecId, bool bValue, sal_Int32 nAttribute = -1 ) :
+    inline explicit     XclExpBoolRecord( sal_uInt16 nRecId, bool bValue, sal_Int32 nAttribute = -1 ) :
                             XclExpRecord( nRecId, 2 ), mbValue( bValue ), mnAttribute( nAttribute ) {}
 
     /** Returns the Boolean value of the record. */
-    bool         GetBool() const { return mbValue; }
+    inline bool         GetBool() const { return mbValue; }
 
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
 
@@ -255,10 +255,10 @@ public:
         @param pRecData  Pointer to the data array representing the record body.
         @param nRecSize  Size of the data array. */
     explicit            XclExpDummyRecord(
-                            sal_uInt16 nRecId, const void* pRecData, std::size_t nRecSize );
+                            sal_uInt16 nRecId, const void* pRecData, sal_Size nRecSize );
 
     /** Sets a data array. */
-    void                SetData( const void* pRecData, std::size_t nRecSize );
+    void                SetData( const void* pRecData, sal_Size nRecSize );
 
 private:
     /** Writes the body of the record. */
@@ -274,7 +274,7 @@ class XclExpFutureRecord : public XclExpRecord
 {
 public:
     explicit            XclExpFutureRecord( XclFutureRecType eRecType,
-                            sal_uInt16 nRecId, std::size_t nRecSize );
+                            sal_uInt16 nRecId, sal_Size nRecSize = 0 );
 
     /** Writes the extended record header and calls WriteBody(). */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -297,41 +297,41 @@ class XclExpRecordList : public XclExpRecordBase
 public:
     typedef std::shared_ptr< RecType > RecordRefType;
 
-    bool         IsEmpty() const { return maRecs.empty(); }
-    size_t       GetSize() const { return maRecs.size(); }
+    inline bool         IsEmpty() const { return maRecs.empty(); }
+    inline size_t       GetSize() const { return maRecs.size(); }
 
     /** Returns true, if the passed index points to an exiting record. */
-    bool         HasRecord( size_t nPos ) const
+    inline bool         HasRecord( size_t nPos ) const
                             { return nPos < maRecs.size(); }
     /** Returns reference to an existing record or empty reference on error. */
-    RecordRefType GetRecord( size_t nPos ) const
+    inline RecordRefType GetRecord( size_t nPos ) const
                             { return (nPos < maRecs.size()) ? maRecs[ nPos ] : RecordRefType(); }
     /** Returns reference to the first existing record or empty reference, if list is empty. */
-    RecordRefType GetFirstRecord() const
+    inline RecordRefType GetFirstRecord() const
                             { return maRecs.empty() ? RecordRefType() : maRecs.front(); }
     /** Returns reference to the last existing record or empty reference, if list is empty. */
-    RecordRefType GetLastRecord() const
+    inline RecordRefType GetLastRecord() const
                             { return maRecs.empty() ? RecordRefType() : maRecs.back(); }
 
     /** Inserts a record at the specified position into the list. */
-    void         InsertRecord( RecordRefType xRec, size_t nPos )
+    inline void         InsertRecord( RecordRefType xRec, size_t nPos )
                             { if( xRec.get() ) maRecs.insert( maRecs.begin() + ::std::min( nPos, maRecs.size() ), xRec ); }
     /** Appends a record to the list. */
-    void         AppendRecord( RecordRefType xRec )
+    inline void         AppendRecord( RecordRefType xRec )
                             { if( xRec.get() ) maRecs.push_back( xRec ); }
     /** Replaces the record at the specified position from the list with the passed record. */
-    void         ReplaceRecord( RecordRefType xRec, size_t nPos )
+    inline void         ReplaceRecord( RecordRefType xRec, size_t nPos )
                             { RemoveRecord( nPos ); InsertRecord( xRec, nPos ); }
 
     /** Appends a newly created record to the list. */
-    void         AppendNewRecord( RecType* pRec )
+    inline void         AppendNewRecord( RecType* pRec )
                             { if( pRec ) AppendRecord( RecordRefType( pRec ) ); }
 
     /** Removes the record at the specified position from the list. */
-    void         RemoveRecord( size_t nPos )
+    inline void         RemoveRecord( size_t nPos )
                             { if( nPos < maRecs.size() ) maRecs.erase( maRecs.begin() + nPos ); }
     /** Removes all records from the list. */
-    void         RemoveAllRecords() { maRecs.clear(); }
+    inline void         RemoveAllRecords() { maRecs.clear(); }
 
     /** Writes the complete record list. */
     virtual void Save( XclExpStream& rStrm ) override

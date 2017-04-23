@@ -102,8 +102,8 @@ ScServerObject::ScServerObject( ScDocShell* pShell, const OUString& rItem ) :
     pDocSh->GetDocument().GetLinkManager()->InsertServer( this );
     pDocSh->GetDocument().StartListeningArea( aRange, false, &aForwarder );
 
-    StartListening(*pDocSh);           // to notice if DocShell gets deleted
-    StartListening(*SfxGetpApp());     // for SfxHintId::ScAreasChanged
+    StartListening(*pDocSh);        // um mitzubekommen, wenn die DocShell geloescht wird
+    StartListening(*SfxGetpApp());     // for SC_HINT_AREAS_CHANGED
 }
 
 ScServerObject::~ScServerObject()
@@ -197,11 +197,12 @@ void ScServerObject::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     bool bDataChanged = false;
 
-    //  DocShell can't be tested via type info, because SfxHintId::Dying comes from the dtor
+    //  DocShell can't be tested via type info, because SFX_HINT_DYING comes from the dtor
     if ( &rBC == pDocSh )
     {
-        //  from DocShell, only SfxHintId::Dying is interesting
-        if ( rHint.GetId() == SfxHintId::Dying )
+        //  from DocShell, only SFX_HINT_DYING is interesting
+        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
+        if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
         {
             pDocSh = nullptr;
             EndListening(*SfxGetpApp());
@@ -210,7 +211,9 @@ void ScServerObject::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
     }
     else if (dynamic_cast<const SfxApplication*>( &rBC) !=  nullptr)
     {
-        if ( !aItemStr.isEmpty() && rHint.GetId() == SfxHintId::ScAreasChanged )
+        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
+        if ( !aItemStr.isEmpty() && pSimpleHint &&
+                pSimpleHint->GetId() == SC_HINT_AREAS_CHANGED )
         {
             //  check if named range was modified
             ScRange aNew;
@@ -223,7 +226,7 @@ void ScServerObject::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         //  must be from Area broadcasters
 
         const ScHint* pScHint = dynamic_cast<const ScHint*>( &rHint );
-        if (pScHint && (pScHint->GetId() == SfxHintId::ScDataChanged))
+        if (pScHint && (pScHint->GetId() & SC_HINT_DATACHANGED))
             bDataChanged = true;
         else if (const ScAreaChangedHint *pChgHint = dynamic_cast<const ScAreaChangedHint*>(&rHint))      // position of broadcaster changed
         {
@@ -234,9 +237,9 @@ void ScServerObject::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                 bDataChanged = true;
             }
         }
-        else
+        else if (const SfxSimpleHint *pSplHint = dynamic_cast<const SfxSimpleHint*>(&rHint))
         {
-            if (rHint.GetId() == SfxHintId::Dying)
+            if (pSplHint->GetId() == SFX_HINT_DYING)
             {
                 //  If the range is being deleted, listening must be restarted
                 //  after the deletion is complete (done in GetData)

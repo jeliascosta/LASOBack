@@ -41,7 +41,6 @@
 #include "AttrTransformerAction.hxx"
 #include "TransformerActions.hxx"
 #include "FamilyType.hxx"
-#include "XMLFilterRegistration.hxx"
 #include "facreg.hxx"
 #include <comphelper/servicehelper.hxx>
 #include "Oasis2OOo.hxx"
@@ -94,7 +93,7 @@ enum XMLUserDefinedTransformerAction
 #define ENTRY0( n, l, a ) \
     ENTRY3( n, l, a, 0, 0, 0 )
 
-// a macro to put two tokens into one sal_Int32 for the action
+// BM: a macro to put two tokens into one sal_Int32 for the action
 // XML_ATACTION_RENAME_ATTRIBUTE
 #define RENAME_ENTRY( f, s ) \
     (static_cast< sal_Int32 >(f) | (static_cast< sal_Int32 >(s) << 16))
@@ -369,8 +368,9 @@ static XMLTransformerActionInit aActionTable[] =
                 OASIS_TEXT_STYLE_REF_ACTIONS ), /* generated entry */
     ENTRY1( DRAW, PAGE, XML_ETACTION_PROC_ATTRS,
                 OASIS_MASTER_PAGE_REF_ACTIONS ), /* generated entry */
-    // Conversion of attribute <table:style-name> for <table:table-row> and
-    // <table:table-column> (#i40011#, #i40015#)
+    /* Conversion of attribute <table:style-name> for <table:table-row> and
+       <table:table-column> (#i40011#, #i40015#)
+    */
     ENTRY1( TABLE, TABLE_ROW, XML_ETACTION_PROC_ATTRS,
                 OASIS_TABLE_STYLE_REF_ACTIONS ),
     ENTRY1( TABLE, TABLE_COLUMN, XML_ETACTION_PROC_ATTRS,
@@ -747,7 +747,7 @@ static XMLTransformerActionInit aShapeActionTable[] =
                     XML_NAMESPACE_FORM, XML_ID ),
     ENTRY1( XLINK, HREF, XML_ATACTION_URI_OASIS, sal_uInt32(true) ),
 
-    // needed by chart:legend.  The legend needs also the draw actions.  As
+    // BM: needed by chart:legend.  The legend needs also the draw actions.  As
     // there is no merge mechanism, all actions have to be in the same table
     ENTRY2( CHART, LEGEND_POSITION, XML_ATACTION_RENAME_ATTRIBUTE,
             RENAME_ENTRY( XML_START, XML_LEFT ),
@@ -1150,6 +1150,8 @@ public:
     XMLTableTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLTableTransformerContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 };
@@ -1159,6 +1161,10 @@ XMLTableTransformerContext_Impl::XMLTableTransformerContext_Impl(
         const OUString& rQName ) :
     XMLTransformerContext( rImp, rQName ),
     m_aElemQName( rQName )
+{
+}
+
+XMLTableTransformerContext_Impl::~XMLTableTransformerContext_Impl()
 {
 }
 
@@ -1195,7 +1201,7 @@ void XMLTableTransformerContext_Impl::StartElement(
                     }
                     pMutableAttrList->RemoveAttributeByIndex( i );
                 }
-                // #i50521# - no break here for safety reason.
+                // OD 2005-07-05 #i50521# - no break here for savety reason.
             }
             // Convert attribute table:style-name for <table:table> (#i40011#, #i40015#)
             else if ( IsXMLToken( aLocalName, XML_STYLE_NAME ) )
@@ -1242,6 +1248,8 @@ public:
     XMLBodyOASISTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLBodyOASISTransformerContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
     virtual rtl::Reference<XMLTransformerContext> CreateChildContext( sal_uInt16 nPrefix,
@@ -1256,6 +1264,10 @@ XMLBodyOASISTransformerContext_Impl::XMLBodyOASISTransformerContext_Impl(
         const OUString& rQName ) :
     XMLTransformerContext( rImp, rQName ),
     m_bFirstChild( false )
+{
+}
+
+XMLBodyOASISTransformerContext_Impl::~XMLBodyOASISTransformerContext_Impl()
 {
 }
 
@@ -1292,6 +1304,8 @@ public:
     XMLTabStopOASISTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLTabStopOASISTContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -1299,6 +1313,10 @@ XMLTabStopOASISTContext_Impl::XMLTabStopOASISTContext_Impl(
         XMLTransformerBase& rImp,
         const OUString& rQName ) :
     XMLPersElemContentTContext( rImp, rQName )
+{
+}
+
+XMLTabStopOASISTContext_Impl::~XMLTabStopOASISTContext_Impl()
 {
 }
 
@@ -1416,6 +1434,8 @@ public:
     XMLConfigItemTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLConfigItemTContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 
@@ -1429,6 +1449,10 @@ XMLConfigItemTContext_Impl::XMLConfigItemTContext_Impl(
     m_bIsRedlineProtectionKey( false ),
     m_bIsCursorX( false ),
     m_bIsCursorY( false )
+{
+}
+
+XMLConfigItemTContext_Impl::~XMLConfigItemTContext_Impl()
 {
 }
 
@@ -1491,7 +1515,8 @@ void XMLConfigItemTContext_Impl::EndElement()
             GetTransformer().GetPropertySet();
         if( rPropSet.is() )
         {
-            OUString aPropName("RedlineProtectionKey");
+            const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
+            OUString aPropName(sRedlineProtectionKey);
             Reference< XPropertySetInfo > xPropSetInfo(
                         rPropSet->getPropertySetInfo() );
             if( xPropSetInfo.is() &&
@@ -1517,6 +1542,8 @@ public:
                                sal_uInt16 nPrefix,
                             XMLTokenEnum eToken );
 
+    virtual ~XMLTrackedChangesOASISTContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -1531,6 +1558,10 @@ XMLTrackedChangesOASISTContext_Impl::XMLTrackedChangesOASISTContext_Impl(
 {
 }
 
+XMLTrackedChangesOASISTContext_Impl::~XMLTrackedChangesOASISTContext_Impl()
+{
+}
+
 void XMLTrackedChangesOASISTContext_Impl::StartElement(
         const Reference< XAttributeList >& rAttrList )
 {
@@ -1539,7 +1570,8 @@ void XMLTrackedChangesOASISTContext_Impl::StartElement(
         GetTransformer().GetPropertySet();
     if( rPropSet.is() )
     {
-        OUString aPropName("RedlineProtectionKey");
+        const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
+        OUString aPropName(sRedlineProtectionKey);
         Reference< XPropertySetInfo > xPropSetInfo(
                     rPropSet->getPropertySetInfo() );
         if( xPropSetInfo.is() &&
@@ -1922,12 +1954,18 @@ namespace
     class theOasis2OOoTransformerUnoTunnelId : public rtl::Static< UnoTunnelIdInit, theOasis2OOoTransformerUnoTunnelId> {};
 }
 
+const Sequence< sal_Int8 > & Oasis2OOoTransformer::getUnoTunnelId() throw()
+{
+    return theOasis2OOoTransformerUnoTunnelId::get().getSeq();
+}
+
 // XUnoTunnel
 sal_Int64 SAL_CALL Oasis2OOoTransformer::getSomething( const Sequence< sal_Int8 >& rId )
+    throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
-        && 0 == memcmp( theOasis2OOoTransformerUnoTunnelId::get().getSeq().getConstArray(),
-                        rId.getConstArray(), 16 ) )
+        && 0 == memcmp( getUnoTunnelId().getConstArray(),
+                                        rId.getConstArray(), 16 ) )
     {
         return reinterpret_cast< sal_Int64 >( this );
     }
@@ -1939,16 +1977,19 @@ sal_Int64 SAL_CALL Oasis2OOoTransformer::getSomething( const Sequence< sal_Int8 
 
 // XServiceInfo
 OUString SAL_CALL Oasis2OOoTransformer::getImplementationName()
+    throw(RuntimeException, std::exception)
 {
     return Oasis2OOoTransformer_getImplementationName();
 }
 
 sal_Bool SAL_CALL Oasis2OOoTransformer::supportsService( const OUString& ServiceName )
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL Oasis2OOoTransformer::getSupportedServiceNames(  )
+    throw(RuntimeException, std::exception)
 {
     Sequence<OUString> aSeq(0);
     return aSeq;
@@ -1971,6 +2012,7 @@ Sequence< OUString > SAL_CALL Oasis2OOoTransformer_getSupportedServiceNames()
 
 Reference< XInterface > SAL_CALL Oasis2OOoTransformer_createInstance(
         const Reference< XMultiServiceFactory > &)
+    throw( Exception )
 {
     SAL_INFO("xmloff.transform", "Creating Oasis2OOoTransformer");
     return static_cast<cppu::OWeakObject*>(new Oasis2OOoTransformer);

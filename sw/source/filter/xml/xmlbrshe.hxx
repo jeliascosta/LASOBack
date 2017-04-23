@@ -30,6 +30,8 @@ class SwXMLBrushItemExport
 {
     SwXMLExport&        rExport;
 
+protected:
+
     SwXMLExport& GetExport() { return rExport; }
 public:
 

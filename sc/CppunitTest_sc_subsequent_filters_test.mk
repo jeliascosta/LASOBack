@@ -59,11 +59,13 @@ $(eval $(call gb_CppunitTest_use_libraries,sc_subsequent_filters_test, \
 $(eval $(call gb_CppunitTest_set_include,sc_subsequent_filters_test,\
     -I$(SRCDIR)/sc/source/ui/inc \
     -I$(SRCDIR)/sc/inc \
-	-I$(SRCDIR)/sc/source/filter/inc \
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sc_subsequent_filters_test))
+$(eval $(call gb_CppunitTest_use_api,sc_subsequent_filters_test,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_subsequent_filters_test))
 $(eval $(call gb_CppunitTest_use_vcl,sc_subsequent_filters_test))
@@ -103,9 +105,9 @@ $(eval $(call gb_CppunitTest_use_components,sc_subsequent_filters_test,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
     xmlsecurity/util/xmlsecurity \
+    xmlsecurity/util/xsec_fw \
 ))
 
 ifeq ($(OS),WNT)
@@ -117,15 +119,6 @@ $(eval $(call gb_CppunitTest_use_components,sc_subsequent_filters_test,\
     xmlsecurity/util/xsec_xmlsec \
 ))
 endif
-
-$(eval $(call gb_CppunitTest_use_externals,sc_subsequent_filters_test,\
-	orcus \
-	orcus-parser \
-	boost_filesystem \
-	boost_system \
-	boost_iostreams \
-	zlib \
-))
 
 $(eval $(call gb_CppunitTest_use_configuration,sc_subsequent_filters_test))
 

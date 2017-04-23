@@ -31,10 +31,17 @@ Public Sub TraceConsole()
 &apos;	Display the Trace dialog with current trace log values and parameter choices
 	If _ErrorHandler() Then On Local Error Goto Error_Sub
 
-Dim sLineBreak As String, oTraceDialog As Object
+Dim sLineBreak As String, oDialogLib As Object, oTraceDialog As Object
 	sLineBreak = vbNewLine
-
-	Set oTraceDialog = CreateUnoDialog(Utils._GetDialogLib().dlgTrace)
+	 
+	Set oDialogLib = DialogLibraries
+	If oDialogLib.hasByName(&quot;Access2BaseDev&quot;) Then
+		If Not oDialogLib.IsLibraryLoaded(&quot;Access2BaseDev&quot;) Then oDialogLib.loadLibrary(&quot;Access2BaseDev&quot;)
+		Set oTraceDialog = CreateUnoDialog(DialogLibraries.Access2BaseDev.dlgTrace)
+	Else
+		If Not oDialogLib.IsLibraryLoaded(&quot;Access2Base&quot;) Then oDialogLib.loadLibrary(&quot;Access2Base&quot;)
+		Set oTraceDialog = CreateUnoDialog(DialogLibraries.Access2Base.dlgTrace)
+	EndIf
 	oTraceDialog.Title = _GetLabel(&quot;DLGTRACE_TITLE&quot;)	&apos;	HelpText ???
 	
 Dim oEntries As Object, oTraceLog As Object, oClear As Object, oMinLevel As Object, oNbEntries As Object, oDump As Object
@@ -182,7 +189,7 @@ Public Sub TraceLevel(ByVal Optional psTraceLevel As String)
 		Case psTraceLevel = &quot;&quot;				:		psTraceLevel = &quot;ERROR&quot;
 		Case Utils._InList(UCase(psTraceLevel), Array( _
 			TRACEDEBUG, TRACEINFO, TRACEWARNING, TRACEERRORS, TRACEFATAL, TRACEABORT _
-			))
+			)
 		Case Else							:		Goto Exit_Sub
 	End Select
 	_A2B_.MinimalTraceLevel = _TraceLevel(psTraceLevel)

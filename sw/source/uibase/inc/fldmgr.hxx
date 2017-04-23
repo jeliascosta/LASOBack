@@ -43,7 +43,6 @@ class SbModule;
 class SvxMacroItem;
 class SvNumberFormatter;
 namespace vcl { class Window; }
-enum class SwFieldIds : sal_uInt16;
 
 // the groups of fields
 enum SwFieldGroups
@@ -111,7 +110,7 @@ private:
     SAL_DLLPRIVATE sal_uInt16            GetCurrLanguage() const;
 
     css::uno::Reference<css::text::XNumberingTypeInfo> xNumberingInfo;
-    SAL_DLLPRIVATE css::uno::Reference<css::text::XNumberingTypeInfo> const & GetNumberingInfo()const;
+    SAL_DLLPRIVATE css::uno::Reference<css::text::XNumberingTypeInfo> GetNumberingInfo()const;
 
 public:
     explicit SwFieldMgr(SwWrtShell* pSh = nullptr);
@@ -137,7 +136,7 @@ public:
 
     void            InsertFieldType(SwFieldType& rType);
 
-    bool            ChooseMacro(const OUString &rSelMacro);
+    bool            ChooseMacro(const OUString &rSelMacro = OUString());
     void            SetMacroPath(const OUString& rPath);
     const OUString& GetMacroPath() const         { return sMacroPath; }
     const OUString& GetMacroName() const         { return sMacroName; }
@@ -155,15 +154,15 @@ public:
 
     // access to field types via ResId
     size_t          GetFieldTypeCount() const;
-    SwFieldType*    GetFieldType(SwFieldIds nResId, size_t nField = 0) const;
-    SwFieldType*    GetFieldType(SwFieldIds nResId, const OUString& rName) const;
+    SwFieldType*    GetFieldType(sal_uInt16 nResId, size_t nField = 0) const;
+    SwFieldType*    GetFieldType(sal_uInt16 nResId, const OUString& rName) const;
 
-    void            RemoveFieldType(SwFieldIds nResId, const OUString& rName);
+    void            RemoveFieldType(sal_uInt16 nResId, const OUString& rName);
 
     // access via TypeId from the dialog
     // Ids for a range of fields
     static const SwFieldGroupRgn& GetGroupRange(bool bHtmlMode, sal_uInt16 nGrpId);
-    static sal_uInt16           GetGroup(sal_uInt16 nTypeId, sal_uInt16 nSubType);
+    static sal_uInt16           GetGroup(sal_uInt16 nTypeId, sal_uInt16 nSubType = 0);
 
     // the current field's TypeId
     sal_uInt16          GetCurTypeId() const;
@@ -189,7 +188,7 @@ public:
     // of many expression fields (see labels)
 
     inline void     SetEvalExpFields(bool bEval);
-    void            EvalExpFields(SwWrtShell* pSh);
+    void            EvalExpFields(SwWrtShell* pSh = nullptr);
 };
 
 inline void SwFieldMgr::SetEvalExpFields(bool bEval)

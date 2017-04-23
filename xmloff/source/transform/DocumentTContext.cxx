@@ -43,6 +43,10 @@ XMLDocumentTransformerContext::XMLDocumentTransformerContext( XMLTransformerBase
 {
 }
 
+XMLDocumentTransformerContext::~XMLDocumentTransformerContext()
+{
+}
+
 void XMLDocumentTransformerContext::StartElement( const Reference< XAttributeList >& rAttrList )
 {
     Reference< XAttributeList > xAttrList( rAttrList );

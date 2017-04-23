@@ -59,14 +59,14 @@ SfxInt16Item::SfxInt16Item(sal_uInt16 which, SvStream & rStream):
 // virtual
 bool SfxInt16Item::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT(SfxPoolItem::operator ==(rItem), "unequal type");
     return m_nValue == (static_cast< const SfxInt16Item * >(&rItem))->
                         m_nValue;
 }
 
 // virtual
 bool SfxInt16Item::GetPresentation(SfxItemPresentation,
-                                                  MapUnit, MapUnit,
+                                                  SfxMapUnit, SfxMapUnit,
                                                   OUString & rText,
                                                   const IntlWrapper *) const
 {
@@ -123,7 +123,7 @@ SfxPoolItem* SfxUInt16Item::CreateDefault()
 
 void SfxUInt16Item::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxUInt16Item"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("sfxUInt16Item"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);

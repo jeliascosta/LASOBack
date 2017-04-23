@@ -41,12 +41,12 @@
 #include <DocumentSettingManager.hxx>
 #include <IDocumentContentOperations.hxx>
 
-/// count field types with a ResId, if SwFieldIds::Unknown count all
-size_t SwEditShell::GetFieldTypeCount(SwFieldIds nResId ) const
+/// count field types with a ResId, if 0 count all
+size_t SwEditShell::GetFieldTypeCount(sal_uInt16 nResId ) const
 {
     const SwFieldTypes* pFieldTypes = GetDoc()->getIDocumentFieldsAccess().GetFieldTypes();
 
-    if(nResId == SwFieldIds::Unknown)
+    if(nResId == USHRT_MAX)
     {
         return static_cast<sal_uInt16>(pFieldTypes->size());
     }
@@ -63,11 +63,11 @@ size_t SwEditShell::GetFieldTypeCount(SwFieldIds nResId ) const
 }
 
 /// get field types with a ResId, if 0 get all
-SwFieldType* SwEditShell::GetFieldType(size_t nField, SwFieldIds nResId ) const
+SwFieldType* SwEditShell::GetFieldType(size_t nField, sal_uInt16 nResId ) const
 {
     const SwFieldTypes* pFieldTypes = GetDoc()->getIDocumentFieldsAccess().GetFieldTypes();
 
-    if(nResId == SwFieldIds::Unknown && nField < pFieldTypes->size())
+    if(nResId == USHRT_MAX && nField < pFieldTypes->size())
     {
         return (*pFieldTypes)[nField];
     }
@@ -87,7 +87,7 @@ SwFieldType* SwEditShell::GetFieldType(size_t nField, SwFieldIds nResId ) const
 }
 
 /// get first type with given ResId and name
-SwFieldType* SwEditShell::GetFieldType(SwFieldIds nResId, const OUString& rName) const
+SwFieldType* SwEditShell::GetFieldType(sal_uInt16 nResId, const OUString& rName) const
 {
     return GetDoc()->getIDocumentFieldsAccess().GetFieldType( nResId, rName, false );
 }
@@ -99,7 +99,7 @@ void SwEditShell::RemoveFieldType(size_t nField)
 }
 
 /// delete field type based on its name
-void SwEditShell::RemoveFieldType(SwFieldIds nResId, const OUString& rStr)
+void SwEditShell::RemoveFieldType(sal_uInt16 nResId, const OUString& rStr)
 {
     const SwFieldTypes* pFieldTypes = GetDoc()->getIDocumentFieldsAccess().GetFieldTypes();
     const SwFieldTypes::size_type nSize = pFieldTypes->size();
@@ -129,7 +129,7 @@ void SwEditShell::FieldToText( SwFieldType* pType )
 
     SET_CURR_SHELL( this );
     StartAllAction();
-    StartUndo( SwUndoId::DELETE );
+    StartUndo( UNDO_DELETE );
     Push();
     SwPaM* pPaM = GetCursor();
     // TODO: this is really hackish
@@ -143,7 +143,7 @@ void SwEditShell::FieldToText( SwFieldType* pType )
 
     Pop( false );
     EndAllAction();
-    EndUndo( SwUndoId::DELETE );
+    EndUndo( UNDO_DELETE );
 }
 
 /// add a field at the cursor position
@@ -172,7 +172,7 @@ static SwTextField* lcl_FindInputField( SwDoc* pDoc, SwField& rField )
 {
     // Search field via its address. For input fields this needs to be done in protected fields.
     SwTextField* pTField = nullptr;
-    if( SwFieldIds::Input == rField.Which() )
+    if( RES_INPUTFLD == rField.Which() )
     {
         const sal_uInt32 nMaxItems =
             pDoc->GetAttrPool().GetItemCount2( RES_TXTATR_INPUTFIELD );
@@ -187,7 +187,7 @@ static SwTextField* lcl_FindInputField( SwDoc* pDoc, SwField& rField )
             }
         }
     }
-    else if( SwFieldIds::SetExp == rField.Which()
+    else if( RES_SETEXPFLD == rField.Which()
         && static_cast<SwSetExpField&>(rField).GetInputFlag() )
     {
         const sal_uInt32 nMaxItems =
@@ -214,8 +214,8 @@ void SwEditShell::UpdateFields( SwField &rField )
         // If there are no selections so take the value of the current cursor position.
         SwMsgPoolItem* pMsgHint = nullptr;
         SwRefMarkFieldUpdate aRefMkHt( GetOut() );
-        SwFieldIds nFieldWhich = rField.GetTyp()->Which();
-        if( SwFieldIds::GetRef == nFieldWhich )
+        sal_uInt16 nFieldWhich = rField.GetTyp()->Which();
+        if( RES_GETREFFLD == nFieldWhich )
             pMsgHint = &aRefMkHt;
 
         SwPaM* pCursor = GetCursor();
@@ -402,10 +402,10 @@ bool SwEditShell::IsAnyDatabaseFieldInDoc()const
         {
             switch(pFieldType->Which())
             {
-                case SwFieldIds::Database:
-                case SwFieldIds::DbNextSet:
-                case SwFieldIds::DbNumSet:
-                case SwFieldIds::DbSetNumber:
+                case RES_DBFLD:
+                case RES_DBNEXTSETFLD:
+                case RES_DBNUMSETFLD:
+                case RES_DBSETNUMBERFLD:
                 {
                     SwIterator<SwFormatField,SwFieldType> aIter( *pFieldType );
                     SwFormatField* pField = aIter.First();
@@ -417,7 +417,6 @@ bool SwEditShell::IsAnyDatabaseFieldInDoc()const
                     }
                 }
                 break;
-                default: break;
             }
         }
     }

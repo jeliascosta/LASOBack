@@ -101,6 +101,17 @@ bool FuConstCustomShape::MouseButtonDown(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
+|* MouseMove-event
+|*
+\************************************************************************/
+
+bool FuConstCustomShape::MouseMove(const MouseEvent& rMEvt)
+{
+    return FuConstruct::MouseMove(rMEvt);
+}
+
+/*************************************************************************
+|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -114,10 +125,24 @@ bool FuConstCustomShape::MouseButtonUp(const MouseEvent& rMEvt)
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj(SdrCreateCmd::ForceEnd);
+        pView->EndCreateObj(SDRCREATE_FORCEEND);
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
+}
+
+/*************************************************************************
+|*
+|* Tastaturereignisse bearbeiten
+|*
+|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
+|* FALSE.
+|*
+\************************************************************************/
+
+bool FuConstCustomShape::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************
@@ -159,14 +184,14 @@ void FuConstCustomShape::Deactivate()
 }
 
 // Create default drawing objects via keyboard
-SdrObject* FuConstCustomShape::CreateDefaultObject(const sal_uInt16 /* nID */, const tools::Rectangle& rRectangle)
+SdrObject* FuConstCustomShape::CreateDefaultObject(const sal_uInt16 /* nID */, const Rectangle& rRectangle)
 {
     SdrObject* pObj = SdrObjFactory::MakeNewObject(
         pView->GetCurrentObjInventor(), pView->GetCurrentObjIdentifier(),
         nullptr, pDrDoc);
     if( pObj )
     {
-        tools::Rectangle aRectangle( rRectangle );
+        Rectangle aRectangle( rRectangle );
         SetAttributes( pObj );
         if ( SdrObjCustomShape::doConstructOrthogonal( aCustomShape ) )
             ImpForceQuadratic( aRectangle );
@@ -190,7 +215,8 @@ void FuConstCustomShape::SetAttributes( SdrObject* pObj )
         std::vector< OUString > aObjList;
         if ( GalleryExplorer::FillObjListTitle( GALLERY_THEME_POWERPOINT, aObjList ) )
         {
-            for ( std::vector<OUString>::size_type i = 0; i < aObjList.size(); i++ )
+            sal_uInt16 i;
+            for ( i = 0; i < aObjList.size(); i++ )
             {
                 if ( aObjList[ i ].equalsIgnoreAsciiCase( aCustomShape ) )
                 {
@@ -235,7 +261,7 @@ void FuConstCustomShape::SetAttributes( SdrObject* pObj )
     }
     if ( !bAttributesAppliedFromGallery )
     {
-        pObj->SetMergedItem( SvxAdjustItem( SvxAdjust::Center, 0 ) );
+        pObj->SetMergedItem( SvxAdjustItem( SVX_ADJUST_CENTER, 0 ) );
         pObj->SetMergedItem( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
         pObj->SetMergedItem( SdrTextHorzAdjustItem( SDRTEXTHORZADJUST_BLOCK ) );
         pObj->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );

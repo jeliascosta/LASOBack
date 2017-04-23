@@ -17,9 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
 
-#include <o3tl/any.hxx>
 #include <svl/itemprop.hxx>
 #include <svl/itempool.hxx>
 #include <svl/itemset.hxx>
@@ -115,6 +113,7 @@ uno::Sequence<beans::Property> SfxItemPropertyMap::getProperties() const
 }
 
 beans::Property SfxItemPropertyMap::getPropertyByName( const OUString & rName ) const
+    throw( beans::UnknownPropertyException )
 {
     SfxItemPropertyHashMap_t::const_iterator aIter = m_pImpl->find(rName);
     if( aIter == m_pImpl->end() )
@@ -174,34 +173,39 @@ SfxItemPropertySet::~SfxItemPropertySet()
 
 void SfxItemPropertySet::getPropertyValue( const SfxItemPropertySimpleEntry& rEntry,
             const SfxItemSet& rSet, Any& rAny ) const
+                        throw(RuntimeException)
 {
     // get the SfxPoolItem
     const SfxPoolItem* pItem = nullptr;
     SfxItemState eState = rSet.GetItemState( rEntry.nWID, true, &pItem );
-    if (SfxItemState::SET != eState && SfxItemPool::IsWhich(rEntry.nWID) )
+    if(SfxItemState::SET != eState && SFX_WHICH_MAX > rEntry.nWID )
         pItem = &rSet.GetPool()->GetDefaultItem(rEntry.nWID);
     // return item values as uno::Any
     if(eState >= SfxItemState::DEFAULT && pItem)
     {
         pItem->QueryValue( rAny, rEntry.nMemberId );
     }
-    else if(0 == (rEntry.nFlags & PropertyAttribute::MAYBEVOID))
+    else
     {
-        throw RuntimeException(
-            "Property not found in ItemSet but not MAYBEVOID?", nullptr);
+        SfxItemSet aSet(*rSet.GetPool(), rEntry.nWID, rEntry.nWID);
+        if(0 == (rEntry.nFlags & PropertyAttribute::MAYBEVOID))
+            throw RuntimeException(
+                    "Property not found in ItemSet but not MAYBEVOID?", nullptr);
     }
+
 
     // convert general SfxEnumItem values to specific values
     if( rEntry.aType.getTypeClass() == TypeClass_ENUM &&
          rAny.getValueTypeClass() == TypeClass_LONG )
     {
-        sal_Int32 nTmp = *o3tl::forceAccess<sal_Int32>(rAny);
+        sal_Int32 nTmp = *static_cast<sal_Int32 const *>(rAny.getValue());
         rAny.setValue( &nTmp, rEntry.aType );
     }
 }
 
 void SfxItemPropertySet::getPropertyValue( const OUString &rName,
                                            const SfxItemSet& rSet, Any& rAny ) const
+    throw(RuntimeException, UnknownPropertyException)
 {
     // detect which-id
     const SfxItemPropertySimpleEntry* pEntry = m_aMap.getByName( rName );
@@ -212,6 +216,7 @@ void SfxItemPropertySet::getPropertyValue( const OUString &rName,
 
 Any SfxItemPropertySet::getPropertyValue( const OUString &rName,
                                           const SfxItemSet& rSet ) const
+    throw(RuntimeException, UnknownPropertyException)
 {
     Any aVal;
     getPropertyValue( rName,rSet, aVal );
@@ -221,13 +226,20 @@ Any SfxItemPropertySet::getPropertyValue( const OUString &rName,
 void SfxItemPropertySet::setPropertyValue( const SfxItemPropertySimpleEntry& rEntry,
                                            const Any& aVal,
                                            SfxItemSet& rSet ) const
+    throw(RuntimeException,
+          IllegalArgumentException)
 {
     // get the SfxPoolItem
     const SfxPoolItem* pItem = nullptr;
     std::unique_ptr<SfxPoolItem> pNewItem;
     SfxItemState eState = rSet.GetItemState( rEntry.nWID, true, &pItem );
-    if (SfxItemState::SET != eState && SfxItemPool::IsWhich(rEntry.nWID))
+    if(SfxItemState::SET != eState && SFX_WHICH_MAX > rEntry.nWID )
         pItem = &rSet.GetPool()->GetDefaultItem(rEntry.nWID);
+    //maybe there's another way to find an Item
+    if(eState < SfxItemState::DEFAULT)
+    {
+        SfxItemSet aSet(*rSet.GetPool(), rEntry.nWID, rEntry.nWID);
+    }
     if(!pNewItem && pItem)
     {
         pNewItem.reset(pItem->Clone());
@@ -239,13 +251,16 @@ void SfxItemPropertySet::setPropertyValue( const SfxItemPropertySimpleEntry& rEn
             throw IllegalArgumentException();
         }
         // apply new item
-        rSet.Put( *pNewItem );
+        rSet.Put( *pNewItem, rEntry.nWID );
     }
 }
 
 void SfxItemPropertySet::setPropertyValue( const OUString &rName,
                                            const Any& aVal,
                                            SfxItemSet& rSet ) const
+    throw(RuntimeException,
+          IllegalArgumentException,
+          UnknownPropertyException)
 {
     const SfxItemPropertySimpleEntry* pEntry = m_aMap.getByName( rName );
     if ( !pEntry )
@@ -272,6 +287,7 @@ PropertyState SfxItemPropertySet::getPropertyState(const SfxItemPropertySimpleEn
 }
 
 PropertyState   SfxItemPropertySet::getPropertyState(const OUString& rName, const SfxItemSet& rSet) const
+    throw(UnknownPropertyException)
 {
     PropertyState eRet = PropertyState_DIRECT_VALUE;
 
@@ -293,7 +309,7 @@ PropertyState   SfxItemPropertySet::getPropertyState(const OUString& rName, cons
     return eRet;
 }
 
-Reference<XPropertySetInfo> const & SfxItemPropertySet::getPropertySetInfo() const
+Reference<XPropertySetInfo> SfxItemPropertySet::getPropertySetInfo() const
 {
     if( !m_xInfo.is() )
         m_xInfo = new SfxItemPropertySetInfo( m_aMap );
@@ -318,6 +334,7 @@ SfxItemPropertySetInfo::SfxItemPropertySetInfo(const SfxItemPropertyMapEntry *pE
 }
 
 Sequence< Property > SAL_CALL SfxItemPropertySetInfo::getProperties(  )
+    throw(RuntimeException, std::exception)
 {
     return m_pImpl->m_pOwnMap->getProperties();
 }
@@ -328,11 +345,13 @@ SfxItemPropertySetInfo::~SfxItemPropertySetInfo()
 }
 
 Property SAL_CALL SfxItemPropertySetInfo::getPropertyByName( const OUString& rName )
+    throw(UnknownPropertyException, RuntimeException, std::exception)
 {
     return m_pImpl->m_pOwnMap->getPropertyByName( rName );
 }
 
 sal_Bool SAL_CALL SfxItemPropertySetInfo::hasPropertyByName( const OUString& rName )
+    throw(RuntimeException, std::exception)
 {
     return m_pImpl->m_pOwnMap->hasPropertyByName( rName );
 }
@@ -348,17 +367,19 @@ SfxExtItemPropertySetInfo::~SfxExtItemPropertySetInfo()
 {
 }
 
-Sequence< Property > SAL_CALL SfxExtItemPropertySetInfo::getProperties(  )
+Sequence< Property > SAL_CALL SfxExtItemPropertySetInfo::getProperties(  ) throw(RuntimeException, std::exception)
 {
     return aExtMap.getProperties();
 }
 
 Property SAL_CALL SfxExtItemPropertySetInfo::getPropertyByName( const OUString& rPropertyName )
+    throw(UnknownPropertyException, RuntimeException, std::exception)
 {
     return aExtMap.getPropertyByName( rPropertyName );
 }
 
 sal_Bool SAL_CALL SfxExtItemPropertySetInfo::hasPropertyByName( const OUString& rPropertyName )
+    throw(RuntimeException, std::exception)
 {
     return aExtMap.hasPropertyByName( rPropertyName );
 }

@@ -52,9 +52,8 @@ public:
         The window is necessary, since our views can display on multiple windows
      */
     SvxTextEditSource( SdrObject& rObj, SdrText* pText, SdrView& rView, const vcl::Window& rViewWindow );
-    SvxTextEditSource(const SvxTextEditSource&) = delete;
-    SvxTextEditSource& operator=(const SvxTextEditSource&) = delete;
-    virtual ~SvxTextEditSource() override;
+
+    virtual ~SvxTextEditSource();
 
     virtual SvxEditSource*          Clone() const override;
     virtual SvxTextForwarder*       GetTextForwarder() override;
@@ -73,7 +72,7 @@ public:
 
     // the SvxViewForwarder interface
     virtual bool        IsValid() const override;
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point&, const MapMode& ) const override;
     virtual Point       PixelToLogic( const Point&, const MapMode& ) const override;
 
@@ -84,7 +83,7 @@ public:
 private:
     SVX_DLLPRIVATE SvxTextEditSource( SvxTextEditSourceImpl* pImpl );
 
-    rtl::Reference<SvxTextEditSourceImpl>  mpImpl;
+    SvxTextEditSourceImpl*  mpImpl;
 };
 
 #endif

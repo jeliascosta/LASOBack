@@ -80,7 +80,7 @@ struct ImpRCStack
     void            Init( ResMgr * pMgr, const Resource * pObj, sal_uInt32 nId );
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ResMgr
+class TOOLS_DLLPUBLIC ResMgr
 {
 private:
     InternalResMgr* pImpRes;
@@ -94,6 +94,10 @@ private:
     TOOLS_DLLPRIVATE void incStack();
     TOOLS_DLLPRIVATE void decStack();
 
+    TOOLS_DLLPRIVATE const ImpRCStack * StackTop( sal_uInt32 nOff = 0 ) const
+    {
+        return (((int)nOff >= nCurStack) ? nullptr : &aStack[nCurStack-nOff]);
+    }
     TOOLS_DLLPRIVATE void  Init( const OUString& rFileName );
 
     TOOLS_DLLPRIVATE ResMgr( InternalResMgr * pImp );
@@ -170,11 +174,11 @@ public:
     static sal_uInt32   GetStringSize( const sal_uInt8* pStr, sal_uInt32& nLen );
 
     /// Return a int64
-    static sal_uInt64   GetUInt64( void const * pDatum );
+    static sal_uInt64   GetUInt64( void* pDatum );
     /// Return a long
-    static sal_Int32    GetLong( void const * pLong );
+    static sal_Int32    GetLong( void * pLong );
     /// Return a short
-    static sal_Int16    GetShort( void const * pShort );
+    static sal_Int16    GetShort( void * pShort );
 
     /// Return a pointer to the resource
     void *              GetClass();
@@ -188,7 +192,10 @@ public:
     sal_Int16           ReadShort();
     sal_Int32           ReadLong();
     OUString            ReadString();
-    OString             ReadByteString();
+    OString        ReadByteString();
+
+    /// Generate auto help ID for current resource stack
+    OString        GetAutoHelpId();
 
     static void         SetReadStringHook( ResHookProc pProc );
     static ResHookProc  GetReadStringHook();
@@ -202,7 +209,7 @@ inline sal_uInt32 RSHEADER_TYPE::GetId()
 
 inline RESOURCE_TYPE RSHEADER_TYPE::GetRT()
 {
-    return RESOURCE_TYPE(ResMgr::GetLong( &nRT ));
+    return (RESOURCE_TYPE)ResMgr::GetLong( &nRT );
 }
 
 inline sal_uInt32 RSHEADER_TYPE::GetGlobOff()

@@ -19,7 +19,6 @@
 
 #include <com/sun/star/awt/XTextArea.hpp>
 #include <com/sun/star/awt/XVclWindowPeer.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/awt/PosSize.hpp>
@@ -119,7 +118,7 @@ UnoControlEditModel::UnoControlEditModel( const Reference< XComponentContext >& 
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXEdit );
 }
 
-OUString UnoControlEditModel::getServiceName( )
+OUString UnoControlEditModel::getServiceName( ) throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlEditModel );
 }
@@ -155,18 +154,20 @@ uno::Any UnoControlEditModel::ImplGetDefaultValue( sal_uInt16 nPropId ) const
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlEditModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlEditModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlEditModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlEditModel");
 }
 
 css::uno::Sequence<OUString> UnoControlEditModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -200,7 +201,7 @@ UnoEditControl::UnoEditControl()
     mbSetMaxTextLenInPeer = false;
 }
 
-uno::Any SAL_CALL UnoEditControl::queryAggregation( const uno::Type & rType )
+uno::Any SAL_CALL UnoEditControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aReturn = UnoControlBase::queryAggregation( rType );
     if ( !aReturn.hasValue() )
@@ -208,7 +209,7 @@ uno::Any SAL_CALL UnoEditControl::queryAggregation( const uno::Type & rType )
     return aReturn;
 }
 
-uno::Any SAL_CALL UnoEditControl::queryInterface( const uno::Type & rType )
+uno::Any SAL_CALL UnoEditControl::queryInterface( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     return UnoControlBase::queryInterface( rType );
 }
@@ -239,7 +240,7 @@ OUString UnoEditControl::GetComponentServiceName()
     return sName;
 }
 
-sal_Bool SAL_CALL UnoEditControl::setModel(const uno::Reference< awt::XControlModel >& _rModel)
+sal_Bool SAL_CALL UnoEditControl::setModel(const uno::Reference< awt::XControlModel >& _rModel) throw ( uno::RuntimeException, std::exception )
 {
     bool bReturn = UnoControlBase::setModel( _rModel );
     mbHasTextProperty = ImplHasProperty( BASEPROPERTY_TEXT );
@@ -267,14 +268,14 @@ void UnoEditControl::ImplSetPeerProperty( const OUString& rPropName, const uno::
         UnoControlBase::ImplSetPeerProperty( rPropName, rVal );
 }
 
-void UnoEditControl::dispose()
+void UnoEditControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt( *this );
     maTextListeners.disposeAndClear( aEvt );
     UnoControl::dispose();
 }
 
-void UnoEditControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoEditControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControl::createPeer( rxToolkit, rParentPeer );
 
@@ -290,7 +291,7 @@ void UnoEditControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolk
     }
 }
 
-void UnoEditControl::textChanged(const awt::TextEvent& e)
+void UnoEditControl::textChanged(const awt::TextEvent& e) throw(uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XTextComponent > xText( getPeer(), uno::UNO_QUERY );
 
@@ -307,17 +308,17 @@ void UnoEditControl::textChanged(const awt::TextEvent& e)
         maTextListeners.textChanged( e );
 }
 
-void UnoEditControl::addTextListener(const uno::Reference< awt::XTextListener > & l)
+void UnoEditControl::addTextListener(const uno::Reference< awt::XTextListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maTextListeners.addInterface( l );
 }
 
-void UnoEditControl::removeTextListener(const uno::Reference< awt::XTextListener > & l)
+void UnoEditControl::removeTextListener(const uno::Reference< awt::XTextListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maTextListeners.removeInterface( l );
 }
 
-void UnoEditControl::setText( const OUString& aText )
+void UnoEditControl::setText( const OUString& aText ) throw(uno::RuntimeException, std::exception)
 {
     if ( mbHasTextProperty )
     {
@@ -350,7 +351,7 @@ namespace
     }
 }
 
-void UnoEditControl::insertText( const awt::Selection& rSel, const OUString& rNewText )
+void UnoEditControl::insertText( const awt::Selection& rSel, const OUString& rNewText ) throw(uno::RuntimeException, std::exception)
 {
     // normalize the selection - OUString::replaceAt has a strange behaviour if the min is greater than the max
     awt::Selection aSelection( rSel );
@@ -377,7 +378,7 @@ void UnoEditControl::insertText( const awt::Selection& rSel, const OUString& rNe
     setSelection( aNewSelection );
 }
 
-OUString UnoEditControl::getText()
+OUString UnoEditControl::getText() throw(uno::RuntimeException, std::exception)
 {
     OUString aText = maText;
 
@@ -393,7 +394,7 @@ OUString UnoEditControl::getText()
     return aText;
 }
 
-OUString UnoEditControl::getSelectedText()
+OUString UnoEditControl::getSelectedText() throw(uno::RuntimeException, std::exception)
 {
     OUString sSelected;
         uno::Reference< awt::XTextComponent > xText( getPeer(), uno::UNO_QUERY );
@@ -403,14 +404,14 @@ OUString UnoEditControl::getSelectedText()
     return sSelected;
 }
 
-void UnoEditControl::setSelection( const awt::Selection& aSelection )
+void UnoEditControl::setSelection( const awt::Selection& aSelection ) throw(uno::RuntimeException, std::exception)
 {
         uno::Reference< awt::XTextComponent > xText( getPeer(), uno::UNO_QUERY );
     if ( xText.is() )
         xText->setSelection( aSelection );
 }
 
-awt::Selection UnoEditControl::getSelection()
+awt::Selection UnoEditControl::getSelection() throw(uno::RuntimeException, std::exception)
 {
     awt::Selection aSel;
         uno::Reference< awt::XTextComponent > xText( getPeer(), uno::UNO_QUERY );
@@ -419,17 +420,17 @@ awt::Selection UnoEditControl::getSelection()
     return aSel;
 }
 
-sal_Bool UnoEditControl::isEditable()
+sal_Bool UnoEditControl::isEditable() throw(uno::RuntimeException, std::exception)
 {
     return !ImplGetPropertyValue_BOOL( BASEPROPERTY_READONLY );
 }
 
-void UnoEditControl::setEditable( sal_Bool bEditable )
+void UnoEditControl::setEditable( sal_Bool bEditable ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_READONLY ), uno::Any(!bEditable), true );
 }
 
-sal_Int16 UnoEditControl::getMaxTextLen()
+sal_Int16 UnoEditControl::getMaxTextLen() throw(uno::RuntimeException, std::exception)
 {
     sal_Int16 nMaxLen = mnMaxTextLen;
 
@@ -439,11 +440,11 @@ sal_Int16 UnoEditControl::getMaxTextLen()
     return nMaxLen;
 }
 
-void UnoEditControl::setMaxTextLen( sal_Int16 nLen )
+void UnoEditControl::setMaxTextLen( sal_Int16 nLen ) throw(uno::RuntimeException, std::exception)
 {
     if ( ImplHasProperty( BASEPROPERTY_MAXTEXTLEN) )
     {
-        ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_MAXTEXTLEN ), uno::Any(nLen), true );
+        ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_MAXTEXTLEN ), uno::Any((sal_Int16)nLen), true );
     }
     else
     {
@@ -455,37 +456,37 @@ void UnoEditControl::setMaxTextLen( sal_Int16 nLen )
     }
 }
 
-awt::Size UnoEditControl::getMinimumSize(  )
+awt::Size UnoEditControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoEditControl::getPreferredSize(  )
+awt::Size UnoEditControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoEditControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoEditControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
-awt::Size UnoEditControl::getMinimumSize( sal_Int16 nCols, sal_Int16 nLines )
+awt::Size UnoEditControl::getMinimumSize( sal_Int16 nCols, sal_Int16 nLines ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize( nCols, nLines );
 }
 
-void UnoEditControl::getColumnsAndLines( sal_Int16& nCols, sal_Int16& nLines )
+void UnoEditControl::getColumnsAndLines( sal_Int16& nCols, sal_Int16& nLines ) throw(uno::RuntimeException, std::exception)
 {
     Impl_getColumnsAndLines( nCols, nLines );
 }
 
-OUString UnoEditControl::getImplementationName(  )
+OUString UnoEditControl::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return OUString( "stardiv.Toolkit.UnoEditControl" );
 }
 
-uno::Sequence< OUString > UnoEditControl::getSupportedServiceNames()
+uno::Sequence< OUString > UnoEditControl::getSupportedServiceNames() throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aNames = UnoControlBase::getSupportedServiceNames( );
     aNames.realloc( aNames.getLength() + 2 );
@@ -528,7 +529,7 @@ UnoControlFileControlModel::UnoControlFileControlModel( const Reference< XCompon
     ImplRegisterProperty( BASEPROPERTY_HIDEINACTIVESELECTION );
 }
 
-OUString UnoControlFileControlModel::getServiceName()
+OUString UnoControlFileControlModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlFileControlModel );
 }
@@ -554,19 +555,21 @@ uno::Any UnoControlFileControlModel::ImplGetDefaultValue( sal_uInt16 nPropId ) c
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlFileControlModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlFileControlModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlFileControlModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlFileControlModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlFileControlModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -597,11 +600,13 @@ OUString UnoFileControl::GetComponentServiceName()
 }
 
 OUString UnoFileControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoFileControl");
 }
 
 css::uno::Sequence<OUString> UnoFileControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoEditControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -629,7 +634,7 @@ uno::Any GraphicControlModel::ImplGetDefaultValue( sal_uInt16 nPropId ) const
     return UnoControlModel::ImplGetDefaultValue( nPropId );
 }
 
-void SAL_CALL GraphicControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue )
+void SAL_CALL GraphicControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue ) throw (css::uno::Exception, std::exception)
 {
     UnoControlModel::setFastPropertyValue_NoBroadcast( nHandle, rValue );
 
@@ -706,7 +711,7 @@ UnoControlButtonModel::UnoControlButtonModel( const Reference< XComponentContext
     osl_atomic_decrement( &m_refCount );
 }
 
-OUString UnoControlButtonModel::getServiceName()
+OUString UnoControlButtonModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlButtonModel );
 }
@@ -740,18 +745,20 @@ uno::Any UnoControlButtonModel::ImplGetDefaultValue( sal_uInt16 nPropId ) const
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlButtonModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlButtonModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlButtonModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlButtonModel");
 }
 
 css::uno::Sequence<OUString> UnoControlButtonModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(GraphicControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -805,7 +812,7 @@ OUString UnoButtonControl::GetComponentServiceName()
     return aName;
 }
 
-void UnoButtonControl::dispose()
+void UnoButtonControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -814,7 +821,7 @@ void UnoButtonControl::dispose()
     UnoControlBase::dispose();
 }
 
-void UnoButtonControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoButtonControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControlBase::createPeer( rxToolkit, rParentPeer );
 
@@ -828,7 +835,7 @@ void UnoButtonControl::createPeer( const uno::Reference< awt::XToolkit > & rxToo
         xPushButton->addItemListener( this );
 }
 
-void UnoButtonControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoButtonControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -838,7 +845,7 @@ void UnoButtonControl::addActionListener(const uno::Reference< awt::XActionListe
     }
 }
 
-void UnoButtonControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoButtonControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -848,22 +855,22 @@ void UnoButtonControl::removeActionListener(const uno::Reference< awt::XActionLi
     maActionListeners.removeInterface( l );
 }
 
-void UnoButtonControl::addItemListener(const uno::Reference< awt::XItemListener > & l)
+void UnoButtonControl::addItemListener(const uno::Reference< awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.addInterface( l );
 }
 
-void UnoButtonControl::removeItemListener(const uno::Reference< awt::XItemListener > & l)
+void UnoButtonControl::removeItemListener(const uno::Reference< awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.removeInterface( l );
 }
 
-void SAL_CALL UnoButtonControl::disposing( const lang::EventObject& Source )
+void SAL_CALL UnoButtonControl::disposing( const lang::EventObject& Source ) throw (uno::RuntimeException, std::exception)
 {
     UnoControlBase::disposing( Source );
 }
 
-void SAL_CALL UnoButtonControl::itemStateChanged( const awt::ItemEvent& rEvent )
+void SAL_CALL UnoButtonControl::itemStateChanged( const awt::ItemEvent& rEvent ) throw (uno::RuntimeException, std::exception)
 {
     // forward to model
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ), uno::Any((sal_Int16)rEvent.Selected), false );
@@ -874,12 +881,12 @@ void SAL_CALL UnoButtonControl::itemStateChanged( const awt::ItemEvent& rEvent )
     maItemListeners.itemStateChanged( aEvent );
 }
 
-void UnoButtonControl::setLabel( const OUString&  rLabel )
+void UnoButtonControl::setLabel( const OUString&  rLabel ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LABEL ), uno::Any(rLabel), true );
 }
 
-void UnoButtonControl::setActionCommand( const OUString& rCommand )
+void UnoButtonControl::setActionCommand( const OUString& rCommand ) throw(uno::RuntimeException, std::exception)
 {
     maActionCommand = rCommand;
     if ( getPeer().is() )
@@ -889,27 +896,29 @@ void UnoButtonControl::setActionCommand( const OUString& rCommand )
     }
 }
 
-awt::Size UnoButtonControl::getMinimumSize(  )
+awt::Size UnoButtonControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoButtonControl::getPreferredSize(  )
+awt::Size UnoButtonControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoButtonControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoButtonControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
 OUString UnoButtonControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoButtonControl");
 }
 
 css::uno::Sequence<OUString> UnoButtonControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -936,18 +945,20 @@ UnoControlImageControlModel::UnoControlImageControlModel( const Reference< XComp
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXImageControl );
 }
 
-OUString UnoControlImageControlModel::getServiceName()
+OUString UnoControlImageControlModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlImageControlModel );
 }
 
 OUString UnoControlImageControlModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlImageControlModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlImageControlModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(GraphicControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 4);
@@ -981,13 +992,13 @@ uno::Any UnoControlImageControlModel::ImplGetDefaultValue( sal_uInt16 nPropId ) 
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlImageControlModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlImageControlModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
-void SAL_CALL UnoControlImageControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const css::uno::Any& _rValue )
+void SAL_CALL UnoControlImageControlModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const css::uno::Any& _rValue ) throw (css::uno::Exception, std::exception)
 {
     GraphicControlModel::setFastPropertyValue_NoBroadcast( _nHandle, _rValue );
 
@@ -1050,7 +1061,7 @@ OUString UnoImageControlControl::GetComponentServiceName()
     return OUString("fixedimage");
 }
 
-void UnoImageControlControl::dispose()
+void UnoImageControlControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -1058,32 +1069,34 @@ void UnoImageControlControl::dispose()
     UnoControl::dispose();
 }
 
-sal_Bool UnoImageControlControl::isTransparent()
+sal_Bool UnoImageControlControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-awt::Size UnoImageControlControl::getMinimumSize(  )
+awt::Size UnoImageControlControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoImageControlControl::getPreferredSize(  )
+awt::Size UnoImageControlControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoImageControlControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoImageControlControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
 OUString UnoImageControlControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoImageControlControl");
 }
 
 css::uno::Sequence<OUString> UnoImageControlControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 4);
@@ -1111,7 +1124,7 @@ UnoControlRadioButtonModel::UnoControlRadioButtonModel( const Reference< XCompon
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXRadioButton );
 }
 
-OUString UnoControlRadioButtonModel::getServiceName()
+OUString UnoControlRadioButtonModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlRadioButtonModel );
 }
@@ -1142,19 +1155,21 @@ uno::Any UnoControlRadioButtonModel::ImplGetDefaultValue( sal_uInt16 nPropId ) c
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlRadioButtonModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlRadioButtonModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlRadioButtonModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlRadioButtonModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlRadioButtonModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(GraphicControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1188,7 +1203,7 @@ OUString UnoRadioButtonControl::GetComponentServiceName()
     return OUString("radiobutton");
 }
 
-void UnoRadioButtonControl::dispose()
+void UnoRadioButtonControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -1197,12 +1212,12 @@ void UnoRadioButtonControl::dispose()
 }
 
 
-sal_Bool UnoRadioButtonControl::isTransparent()
+sal_Bool UnoRadioButtonControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-void UnoRadioButtonControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoRadioButtonControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControlBase::createPeer( rxToolkit, rParentPeer );
 
@@ -1222,17 +1237,17 @@ void UnoRadioButtonControl::createPeer( const uno::Reference< awt::XToolkit > & 
         xVclWindowPeer->setProperty( GetPropertyName( BASEPROPERTY_AUTOTOGGLE ), css::uno::Any(true) );
 }
 
-void UnoRadioButtonControl::addItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoRadioButtonControl::addItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.addInterface( l );
 }
 
-void UnoRadioButtonControl::removeItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoRadioButtonControl::removeItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.removeInterface( l );
 }
 
-void UnoRadioButtonControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoRadioButtonControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -1242,7 +1257,7 @@ void UnoRadioButtonControl::addActionListener(const uno::Reference< awt::XAction
     }
 }
 
-void UnoRadioButtonControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoRadioButtonControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -1252,12 +1267,12 @@ void UnoRadioButtonControl::removeActionListener(const uno::Reference< awt::XAct
     maActionListeners.removeInterface( l );
 }
 
-void UnoRadioButtonControl::setLabel( const OUString&  rLabel )
+void UnoRadioButtonControl::setLabel( const OUString&  rLabel ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LABEL ), uno::Any(rLabel), true );
 }
 
-void UnoRadioButtonControl::setActionCommand( const OUString& rCommand )
+void UnoRadioButtonControl::setActionCommand( const OUString& rCommand ) throw(uno::RuntimeException, std::exception)
 {
     maActionCommand = rCommand;
     if ( getPeer().is() )
@@ -1267,13 +1282,13 @@ void UnoRadioButtonControl::setActionCommand( const OUString& rCommand )
     }
 }
 
-void UnoRadioButtonControl::setState( sal_Bool bOn )
+void UnoRadioButtonControl::setState( sal_Bool bOn ) throw(uno::RuntimeException, std::exception)
 {
     sal_Int16 nState = bOn ? 1 : 0;
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ), uno::Any(nState), true );
 }
 
-sal_Bool UnoRadioButtonControl::getState()
+sal_Bool UnoRadioButtonControl::getState() throw(uno::RuntimeException, std::exception)
 {
     sal_Int16 nState = 0;
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ) );
@@ -1281,7 +1296,7 @@ sal_Bool UnoRadioButtonControl::getState()
     return nState != 0;
 }
 
-void UnoRadioButtonControl::itemStateChanged( const awt::ItemEvent& rEvent )
+void UnoRadioButtonControl::itemStateChanged( const awt::ItemEvent& rEvent ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ), uno::Any((sal_Int16)rEvent.Selected), false );
 
@@ -1312,27 +1327,29 @@ void UnoRadioButtonControl::itemStateChanged( const awt::ItemEvent& rEvent )
         // to be inconsistent with.
 }
 
-awt::Size UnoRadioButtonControl::getMinimumSize(  )
+awt::Size UnoRadioButtonControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoRadioButtonControl::getPreferredSize(  )
+awt::Size UnoRadioButtonControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoRadioButtonControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoRadioButtonControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
 OUString UnoRadioButtonControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoRadioButtonControl");
 }
 
 css::uno::Sequence<OUString> UnoRadioButtonControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1358,7 +1375,7 @@ UnoControlCheckBoxModel::UnoControlCheckBoxModel( const Reference< XComponentCon
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXCheckBox );
 }
 
-OUString UnoControlCheckBoxModel::getServiceName()
+OUString UnoControlCheckBoxModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlCheckBoxModel );
 }
@@ -1389,18 +1406,20 @@ uno::Any UnoControlCheckBoxModel::ImplGetDefaultValue( sal_uInt16 nPropId ) cons
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlCheckBoxModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlCheckBoxModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlCheckBoxModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString( "stardiv.Toolkit.UnoControlCheckBoxModel");
 }
 
 css::uno::Sequence<OUString> UnoControlCheckBoxModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(GraphicControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1433,7 +1452,7 @@ OUString UnoCheckBoxControl::GetComponentServiceName()
     return OUString("checkbox");
 }
 
-void UnoCheckBoxControl::dispose()
+void UnoCheckBoxControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -1441,12 +1460,12 @@ void UnoCheckBoxControl::dispose()
     UnoControlBase::dispose();
 }
 
-sal_Bool UnoCheckBoxControl::isTransparent()
+sal_Bool UnoCheckBoxControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-void UnoCheckBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoCheckBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControlBase::createPeer( rxToolkit, rParentPeer );
 
@@ -1459,17 +1478,17 @@ void UnoCheckBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxT
         xButton->addActionListener( &maActionListeners );
 }
 
-void UnoCheckBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoCheckBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.addInterface( l );
 }
 
-void UnoCheckBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoCheckBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.removeInterface( l );
 }
 
-void UnoCheckBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoCheckBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -1479,7 +1498,7 @@ void UnoCheckBoxControl::addActionListener(const uno::Reference< awt::XActionLis
     }
 }
 
-void UnoCheckBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoCheckBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -1489,7 +1508,7 @@ void UnoCheckBoxControl::removeActionListener(const uno::Reference< awt::XAction
     maActionListeners.removeInterface( l );
 }
 
-void UnoCheckBoxControl::setActionCommand( const OUString& rCommand )
+void UnoCheckBoxControl::setActionCommand( const OUString& rCommand ) throw(uno::RuntimeException, std::exception)
 {
     maActionCommand = rCommand;
     if ( getPeer().is() )
@@ -1500,17 +1519,17 @@ void UnoCheckBoxControl::setActionCommand( const OUString& rCommand )
 }
 
 
-void UnoCheckBoxControl::setLabel( const OUString&  rLabel )
+void UnoCheckBoxControl::setLabel( const OUString&  rLabel ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LABEL ), uno::Any(rLabel), true );
 }
 
-void UnoCheckBoxControl::setState( short n )
+void UnoCheckBoxControl::setState( short n ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ), uno::Any((sal_Int16) n), true );
 }
 
-short UnoCheckBoxControl::getState()
+short UnoCheckBoxControl::getState() throw(uno::RuntimeException, std::exception)
 {
     short nState = 0;
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ) );
@@ -1518,12 +1537,12 @@ short UnoCheckBoxControl::getState()
     return nState;
 }
 
-void UnoCheckBoxControl::enableTriState( sal_Bool b )
+void UnoCheckBoxControl::enableTriState( sal_Bool b ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_TRISTATE ), uno::Any(b), true );
 }
 
-void UnoCheckBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
+void UnoCheckBoxControl::itemStateChanged( const awt::ItemEvent& rEvent ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STATE ), uno::Any((sal_Int16) rEvent.Selected), false );
 
@@ -1531,27 +1550,29 @@ void UnoCheckBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
         maItemListeners.itemStateChanged( rEvent );
 }
 
-awt::Size UnoCheckBoxControl::getMinimumSize(  )
+awt::Size UnoCheckBoxControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoCheckBoxControl::getPreferredSize(  )
+awt::Size UnoCheckBoxControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoCheckBoxControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoCheckBoxControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
 OUString UnoCheckBoxControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoCheckBoxControl");
 }
 
 css::uno::Sequence<OUString> UnoCheckBoxControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1577,7 +1598,7 @@ UnoControlFixedHyperlinkModel::UnoControlFixedHyperlinkModel( const Reference< X
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXFixedHyperlink );
 }
 
-OUString UnoControlFixedHyperlinkModel::getServiceName()
+OUString UnoControlFixedHyperlinkModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.awt.UnoControlFixedHyperlinkModel" );
 }
@@ -1612,7 +1633,7 @@ uno::Any UnoControlFixedHyperlinkModel::ImplGetDefaultValue( sal_uInt16 nPropId 
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlFixedHyperlinkModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlFixedHyperlinkModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -1643,7 +1664,7 @@ OUString UnoFixedHyperlinkControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoFixedHyperlinkControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoFixedHyperlinkControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XFixedHyperlink* >(this)),
@@ -1658,37 +1679,37 @@ IMPL_XTYPEPROVIDER_START( UnoFixedHyperlinkControl )
     UnoControlBase::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-sal_Bool UnoFixedHyperlinkControl::isTransparent()
+sal_Bool UnoFixedHyperlinkControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-void UnoFixedHyperlinkControl::setText( const OUString& Text )
+void UnoFixedHyperlinkControl::setText( const OUString& Text ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LABEL ), uno::Any(Text), true );
 }
 
-OUString UnoFixedHyperlinkControl::getText()
+OUString UnoFixedHyperlinkControl::getText() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_UString( BASEPROPERTY_LABEL );
 }
 
-void UnoFixedHyperlinkControl::setURL( const OUString& URL )
+void UnoFixedHyperlinkControl::setURL( const OUString& URL ) throw(css::uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_URL ), uno::Any(URL), true );
 }
 
-OUString UnoFixedHyperlinkControl::getURL(  )
+OUString UnoFixedHyperlinkControl::getURL(  ) throw(css::uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_UString( BASEPROPERTY_URL );
 }
 
-void UnoFixedHyperlinkControl::setAlignment( short nAlign )
+void UnoFixedHyperlinkControl::setAlignment( short nAlign ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_ALIGN ), uno::Any((sal_Int16) nAlign), true );
 }
 
-short UnoFixedHyperlinkControl::getAlignment()
+short UnoFixedHyperlinkControl::getAlignment() throw(uno::RuntimeException, std::exception)
 {
     short nAlign = 0;
     if ( mxModel.is() )
@@ -1699,22 +1720,22 @@ short UnoFixedHyperlinkControl::getAlignment()
     return nAlign;
 }
 
-awt::Size UnoFixedHyperlinkControl::getMinimumSize(  )
+awt::Size UnoFixedHyperlinkControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoFixedHyperlinkControl::getPreferredSize(  )
+awt::Size UnoFixedHyperlinkControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoFixedHyperlinkControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoFixedHyperlinkControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
-void UnoFixedHyperlinkControl::dispose()
+void UnoFixedHyperlinkControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -1722,7 +1743,7 @@ void UnoFixedHyperlinkControl::dispose()
     UnoControlBase::dispose();
 }
 
-void UnoFixedHyperlinkControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoFixedHyperlinkControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControlBase::createPeer( rxToolkit, rParentPeer );
 
@@ -1731,7 +1752,7 @@ void UnoFixedHyperlinkControl::createPeer( const uno::Reference< awt::XToolkit >
         xFixedHyperlink->addActionListener( &maActionListeners );
 }
 
-void UnoFixedHyperlinkControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoFixedHyperlinkControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -1741,7 +1762,7 @@ void UnoFixedHyperlinkControl::addActionListener(const uno::Reference< awt::XAct
     }
 }
 
-void UnoFixedHyperlinkControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoFixedHyperlinkControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -1768,7 +1789,7 @@ UnoControlFixedTextModel::UnoControlFixedTextModel( const Reference< XComponentC
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXFixedText );
 }
 
-OUString UnoControlFixedTextModel::getServiceName()
+OUString UnoControlFixedTextModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString( "stardiv.vcl.controlmodel.FixedText" );
 }
@@ -1799,19 +1820,21 @@ uno::Any UnoControlFixedTextModel::ImplGetDefaultValue( sal_uInt16 nPropId ) con
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlFixedTextModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlFixedTextModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlFixedTextModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlFixedTextModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlFixedTextModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1844,7 +1867,7 @@ OUString UnoFixedTextControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoFixedTextControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoFixedTextControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XFixedText* >(this)),
@@ -1859,27 +1882,27 @@ IMPL_XTYPEPROVIDER_START( UnoFixedTextControl )
     UnoControlBase::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-sal_Bool UnoFixedTextControl::isTransparent()
+sal_Bool UnoFixedTextControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-void UnoFixedTextControl::setText( const OUString& Text )
+void UnoFixedTextControl::setText( const OUString& Text ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LABEL ), uno::Any(Text), true );
 }
 
-OUString UnoFixedTextControl::getText()
+OUString UnoFixedTextControl::getText() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_UString( BASEPROPERTY_LABEL );
 }
 
-void UnoFixedTextControl::setAlignment( short nAlign )
+void UnoFixedTextControl::setAlignment( short nAlign ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_ALIGN ), uno::Any((sal_Int16) nAlign), true );
 }
 
-short UnoFixedTextControl::getAlignment()
+short UnoFixedTextControl::getAlignment() throw(uno::RuntimeException, std::exception)
 {
     short nAlign = 0;
     if ( mxModel.is() )
@@ -1890,27 +1913,29 @@ short UnoFixedTextControl::getAlignment()
     return nAlign;
 }
 
-awt::Size UnoFixedTextControl::getMinimumSize(  )
+awt::Size UnoFixedTextControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoFixedTextControl::getPreferredSize(  )
+awt::Size UnoFixedTextControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoFixedTextControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoFixedTextControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
 OUString UnoFixedTextControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoFixedTextControl");
 }
 
 css::uno::Sequence<OUString> UnoFixedTextControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -1945,7 +1970,7 @@ UnoControlGroupBoxModel::UnoControlGroupBoxModel( const Reference< XComponentCon
     ImplRegisterProperty( BASEPROPERTY_CONTEXT_WRITING_MODE );
 }
 
-OUString UnoControlGroupBoxModel::getServiceName()
+OUString UnoControlGroupBoxModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlGroupBoxModel );
 }
@@ -1971,18 +1996,20 @@ uno::Any UnoControlGroupBoxModel::ImplGetDefaultValue( sal_uInt16 nPropId ) cons
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlGroupBoxModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlGroupBoxModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlGroupBoxModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlGroupBoxModel");
 }
 
 css::uno::Sequence<OUString> UnoControlGroupBoxModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -2014,17 +2041,19 @@ OUString UnoGroupBoxControl::GetComponentServiceName()
     return OUString("groupbox");
 }
 
-sal_Bool UnoGroupBoxControl::isTransparent()
+sal_Bool UnoGroupBoxControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
 OUString UnoGroupBoxControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoGroupBoxControl");
 }
 
 css::uno::Sequence<OUString> UnoGroupBoxControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -2170,11 +2199,13 @@ UnoControlListBoxModel::~UnoControlListBoxModel()
 }
 
 OUString UnoControlListBoxModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlListBoxModel");
 }
 
 css::uno::Sequence<OUString> UnoControlListBoxModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -2183,7 +2214,7 @@ css::uno::Sequence<OUString> UnoControlListBoxModel::getSupportedServiceNames()
     return s;
 }
 
-OUString UnoControlListBoxModel::getServiceName()
+OUString UnoControlListBoxModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlListBoxModel );
 }
@@ -2212,7 +2243,7 @@ uno::Any UnoControlListBoxModel::ImplGetDefaultValue( sal_uInt16 nPropId ) const
 
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlListBoxModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlListBoxModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -2231,7 +2262,7 @@ namespace
 }
 
 
-void SAL_CALL UnoControlListBoxModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const uno::Any& rValue )
+void SAL_CALL UnoControlListBoxModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const uno::Any& rValue ) throw (uno::Exception, std::exception)
 {
     UnoControlModel::setFastPropertyValue_NoBroadcast( nHandle, rValue );
 
@@ -2277,21 +2308,19 @@ void UnoControlListBoxModel::ImplNormalizePropertySequence( const sal_Int32 _nCo
     // dependencies we know:
     // BASEPROPERTY_STRINGITEMLIST->BASEPROPERTY_SELECTEDITEMS
     ImplEnsureHandleOrder( _nCount, _pHandles, _pValues, BASEPROPERTY_STRINGITEMLIST, BASEPROPERTY_SELECTEDITEMS );
-    // BASEPROPERTY_STRINGITEMLIST->BASEPROPERTY_TYPEDITEMLIST
-    ImplEnsureHandleOrder( _nCount, _pHandles, _pValues, BASEPROPERTY_STRINGITEMLIST, BASEPROPERTY_TYPEDITEMLIST );
 
     UnoControlModel::ImplNormalizePropertySequence( _nCount, _pHandles, _pValues, _pValidHandles );
 }
 
 
-::sal_Int32 SAL_CALL UnoControlListBoxModel::getItemCount()
+::sal_Int32 SAL_CALL UnoControlListBoxModel::getItemCount() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     return m_xData->getItemCount();
 }
 
 
-void SAL_CALL UnoControlListBoxModel::insertItem( ::sal_Int32 i_nPosition, const OUString& i_rItemText, const OUString& i_rItemImageURL )
+void SAL_CALL UnoControlListBoxModel::insertItem( ::sal_Int32 i_nPosition, const OUString& i_rItemText, const OUString& i_rItemImageURL ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2304,7 +2333,7 @@ void SAL_CALL UnoControlListBoxModel::insertItem( ::sal_Int32 i_nPosition, const
 }
 
 
-void SAL_CALL UnoControlListBoxModel::insertItemText( ::sal_Int32 i_nPosition, const OUString& i_rItemText )
+void SAL_CALL UnoControlListBoxModel::insertItemText( ::sal_Int32 i_nPosition, const OUString& i_rItemText ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2316,7 +2345,7 @@ void SAL_CALL UnoControlListBoxModel::insertItemText( ::sal_Int32 i_nPosition, c
 }
 
 
-void SAL_CALL UnoControlListBoxModel::insertItemImage( ::sal_Int32 i_nPosition, const OUString& i_rItemImageURL )
+void SAL_CALL UnoControlListBoxModel::insertItemImage( ::sal_Int32 i_nPosition, const OUString& i_rItemImageURL ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2328,7 +2357,7 @@ void SAL_CALL UnoControlListBoxModel::insertItemImage( ::sal_Int32 i_nPosition, 
 }
 
 
-void SAL_CALL UnoControlListBoxModel::removeItem( ::sal_Int32 i_nPosition )
+void SAL_CALL UnoControlListBoxModel::removeItem( ::sal_Int32 i_nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2339,7 +2368,7 @@ void SAL_CALL UnoControlListBoxModel::removeItem( ::sal_Int32 i_nPosition )
 }
 
 
-void SAL_CALL UnoControlListBoxModel::removeAllItems(  )
+void SAL_CALL UnoControlListBoxModel::removeAllItems(  ) throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2350,7 +2379,7 @@ void SAL_CALL UnoControlListBoxModel::removeAllItems(  )
 }
 
 
-void SAL_CALL UnoControlListBoxModel::setItemText( ::sal_Int32 i_nPosition, const OUString& i_rItemText )
+void SAL_CALL UnoControlListBoxModel::setItemText( ::sal_Int32 i_nPosition, const OUString& i_rItemText ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2362,7 +2391,7 @@ void SAL_CALL UnoControlListBoxModel::setItemText( ::sal_Int32 i_nPosition, cons
 }
 
 
-void SAL_CALL UnoControlListBoxModel::setItemImage( ::sal_Int32 i_nPosition, const OUString& i_rItemImageURL )
+void SAL_CALL UnoControlListBoxModel::setItemImage( ::sal_Int32 i_nPosition, const OUString& i_rItemImageURL ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2374,7 +2403,7 @@ void SAL_CALL UnoControlListBoxModel::setItemImage( ::sal_Int32 i_nPosition, con
 }
 
 
-void SAL_CALL UnoControlListBoxModel::setItemTextAndImage( ::sal_Int32 i_nPosition, const OUString& i_rItemText, const OUString& i_rItemImageURL )
+void SAL_CALL UnoControlListBoxModel::setItemTextAndImage( ::sal_Int32 i_nPosition, const OUString& i_rItemText, const OUString& i_rItemImageURL ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // SYNCHRONIZED ----->
@@ -2387,7 +2416,7 @@ void SAL_CALL UnoControlListBoxModel::setItemTextAndImage( ::sal_Int32 i_nPositi
 }
 
 
-void SAL_CALL UnoControlListBoxModel::setItemData( ::sal_Int32 i_nPosition, const Any& i_rDataValue )
+void SAL_CALL UnoControlListBoxModel::setItemData( ::sal_Int32 i_nPosition, const Any& i_rDataValue ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     ListItem& rItem( m_xData->getItem( i_nPosition ) );
@@ -2395,7 +2424,7 @@ void SAL_CALL UnoControlListBoxModel::setItemData( ::sal_Int32 i_nPosition, cons
 }
 
 
-OUString SAL_CALL UnoControlListBoxModel::getItemText( ::sal_Int32 i_nPosition )
+OUString SAL_CALL UnoControlListBoxModel::getItemText( ::sal_Int32 i_nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     const ListItem& rItem( m_xData->getItem( i_nPosition ) );
@@ -2403,7 +2432,7 @@ OUString SAL_CALL UnoControlListBoxModel::getItemText( ::sal_Int32 i_nPosition )
 }
 
 
-OUString SAL_CALL UnoControlListBoxModel::getItemImage( ::sal_Int32 i_nPosition )
+OUString SAL_CALL UnoControlListBoxModel::getItemImage( ::sal_Int32 i_nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     const ListItem& rItem( m_xData->getItem( i_nPosition ) );
@@ -2411,7 +2440,7 @@ OUString SAL_CALL UnoControlListBoxModel::getItemImage( ::sal_Int32 i_nPosition 
 }
 
 
-beans::Pair< OUString, OUString > SAL_CALL UnoControlListBoxModel::getItemTextAndImage( ::sal_Int32 i_nPosition )
+beans::Pair< OUString, OUString > SAL_CALL UnoControlListBoxModel::getItemTextAndImage( ::sal_Int32 i_nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     const ListItem& rItem( m_xData->getItem( i_nPosition ) );
@@ -2419,7 +2448,7 @@ beans::Pair< OUString, OUString > SAL_CALL UnoControlListBoxModel::getItemTextAn
 }
 
 
-Any SAL_CALL UnoControlListBoxModel::getItemData( ::sal_Int32 i_nPosition )
+Any SAL_CALL UnoControlListBoxModel::getItemData( ::sal_Int32 i_nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     const ListItem& rItem( m_xData->getItem( i_nPosition ) );
@@ -2427,21 +2456,21 @@ Any SAL_CALL UnoControlListBoxModel::getItemData( ::sal_Int32 i_nPosition )
 }
 
 
-Sequence< beans::Pair< OUString, OUString > > SAL_CALL UnoControlListBoxModel::getAllItems(  )
+Sequence< beans::Pair< OUString, OUString > > SAL_CALL UnoControlListBoxModel::getAllItems(  ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     return m_xData->getAllItems();
 }
 
 
-void SAL_CALL UnoControlListBoxModel::addItemListListener( const uno::Reference< awt::XItemListListener >& i_Listener )
+void SAL_CALL UnoControlListBoxModel::addItemListListener( const uno::Reference< awt::XItemListListener >& i_Listener ) throw (uno::RuntimeException, std::exception)
 {
     if ( i_Listener.is() )
         m_aItemListListeners.addInterface( i_Listener );
 }
 
 
-void SAL_CALL UnoControlListBoxModel::removeItemListListener( const uno::Reference< awt::XItemListListener >& i_Listener )
+void SAL_CALL UnoControlListBoxModel::removeItemListListener( const uno::Reference< awt::XItemListListener >& i_Listener ) throw (uno::RuntimeException, std::exception)
 {
     if ( i_Listener.is() )
         m_aItemListListeners.removeInterface( i_Listener );
@@ -2619,11 +2648,13 @@ OUString UnoListBoxControl::GetComponentServiceName()
 }
 
 OUString UnoListBoxControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoListBoxControl");
 }
 
 css::uno::Sequence<OUString> UnoListBoxControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -2632,7 +2663,7 @@ css::uno::Sequence<OUString> UnoListBoxControl::getSupportedServiceNames()
     return s;
 }
 
-void UnoListBoxControl::dispose()
+void UnoListBoxControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -2681,7 +2712,7 @@ void UnoListBoxControl::ImplSetPeerProperty( const OUString& rPropName, const un
     UnoControl::ImplSetPeerProperty( rPropName, rVal );
 }
 
-void UnoListBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoListBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoControl::createPeer( rxToolkit, rParentPeer );
 
@@ -2692,7 +2723,7 @@ void UnoListBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxTo
         xListBox->addActionListener( &maActionListeners );
 }
 
-void UnoListBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoListBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -2702,7 +2733,7 @@ void UnoListBoxControl::addActionListener(const uno::Reference< awt::XActionList
     }
 }
 
-void UnoListBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoListBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -2712,23 +2743,23 @@ void UnoListBoxControl::removeActionListener(const uno::Reference< awt::XActionL
     maActionListeners.removeInterface( l );
 }
 
-void UnoListBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoListBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.addInterface( l );
 }
 
-void UnoListBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoListBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.removeInterface( l );
 }
 
-void UnoListBoxControl::addItem( const OUString& aItem, sal_Int16 nPos )
+void UnoListBoxControl::addItem( const OUString& aItem, sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence<OUString> aSeq { aItem };
     addItems( aSeq, nPos );
 }
 
-void UnoListBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_Int16 nPos )
+void UnoListBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -2742,25 +2773,25 @@ void UnoListBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_In
     OUString* pOldData = aSeq.getArray();
 
     if ( ( nPos < 0 ) || ( nPos > nOldLen ) )
-        nPos = nOldLen;
+        nPos = (sal_uInt16) nOldLen;
 
     sal_uInt16 n;
-    // Items before the Paste-Position
+    // Items vor der Einfuege-Position
     for ( n = 0; n < nPos; n++ )
         pNewData[n] = pOldData[n];
 
-    // New Items
+    // Neue Items
     for ( n = 0; n < nNewItems; n++ )
         pNewData[nPos+n] = aItems.getConstArray()[n];
 
-    // Rest of old Items
+    // Rest der alten Items
     for ( n = nPos; n < nOldLen; n++ )
         pNewData[nNewItems+n] = pOldData[n];
 
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ), uno::Any(aNewSeq), true );
 }
 
-void UnoListBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount )
+void UnoListBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -2778,11 +2809,11 @@ void UnoListBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount )
         OUString* pOldData = aSeq.getArray();
 
         sal_uInt16 n;
-        // Items before the Remove-Position
+        // Items vor der Entfern-Position
         for ( n = 0; n < nPos; n++ )
             pNewData[n] = pOldData[n];
 
-        // Rest of Items
+        // Rest der Items
         for ( n = nPos; n < (nOldLen-nCount); n++ )
             pNewData[n] = pOldData[n+nCount];
 
@@ -2790,7 +2821,7 @@ void UnoListBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount )
     }
 }
 
-sal_Int16 UnoListBoxControl::getItemCount()
+sal_Int16 UnoListBoxControl::getItemCount() throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -2798,7 +2829,7 @@ sal_Int16 UnoListBoxControl::getItemCount()
     return (sal_Int16)aSeq.getLength();
 }
 
-OUString UnoListBoxControl::getItem( sal_Int16 nPos )
+OUString UnoListBoxControl::getItem( sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     OUString aItem;
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
@@ -2809,7 +2840,7 @@ OUString UnoListBoxControl::getItem( sal_Int16 nPos )
     return aItem;
 }
 
-uno::Sequence< OUString> UnoListBoxControl::getItems()
+uno::Sequence< OUString> UnoListBoxControl::getItems() throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -2817,7 +2848,7 @@ uno::Sequence< OUString> UnoListBoxControl::getItems()
     return aSeq;
 }
 
-sal_Int16 UnoListBoxControl::getSelectedItemPos()
+sal_Int16 UnoListBoxControl::getSelectedItemPos() throw(uno::RuntimeException, std::exception)
 {
     sal_Int16 n = -1;
     if ( getPeer().is() )
@@ -2828,7 +2859,7 @@ sal_Int16 UnoListBoxControl::getSelectedItemPos()
     return n;
 }
 
-uno::Sequence<sal_Int16> UnoListBoxControl::getSelectedItemsPos()
+uno::Sequence<sal_Int16> UnoListBoxControl::getSelectedItemsPos() throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence<sal_Int16> aSeq;
     if ( getPeer().is() )
@@ -2839,7 +2870,7 @@ uno::Sequence<sal_Int16> UnoListBoxControl::getSelectedItemsPos()
     return aSeq;
 }
 
-OUString UnoListBoxControl::getSelectedItem()
+OUString UnoListBoxControl::getSelectedItem() throw(uno::RuntimeException, std::exception)
 {
     OUString aItem;
     if ( getPeer().is() )
@@ -2850,7 +2881,7 @@ OUString UnoListBoxControl::getSelectedItem()
     return aItem;
 }
 
-uno::Sequence< OUString> UnoListBoxControl::getSelectedItems()
+uno::Sequence< OUString> UnoListBoxControl::getSelectedItems() throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString> aSeq;
     if ( getPeer().is() )
@@ -2861,7 +2892,7 @@ uno::Sequence< OUString> UnoListBoxControl::getSelectedItems()
     return aSeq;
 }
 
-void UnoListBoxControl::selectItemPos( sal_Int16 nPos, sal_Bool bSelect )
+void UnoListBoxControl::selectItemPos( sal_Int16 nPos, sal_Bool bSelect ) throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -2871,7 +2902,7 @@ void UnoListBoxControl::selectItemPos( sal_Int16 nPos, sal_Bool bSelect )
     ImplUpdateSelectedItemsProperty();
 }
 
-void UnoListBoxControl::selectItemsPos( const uno::Sequence<sal_Int16>& aPositions, sal_Bool bSelect )
+void UnoListBoxControl::selectItemsPos( const uno::Sequence<sal_Int16>& aPositions, sal_Bool bSelect ) throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -2881,7 +2912,7 @@ void UnoListBoxControl::selectItemsPos( const uno::Sequence<sal_Int16>& aPositio
     ImplUpdateSelectedItemsProperty();
 }
 
-void UnoListBoxControl::selectItem( const OUString& aItem, sal_Bool bSelect )
+void UnoListBoxControl::selectItem( const OUString& aItem, sal_Bool bSelect ) throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -2891,7 +2922,7 @@ void UnoListBoxControl::selectItem( const OUString& aItem, sal_Bool bSelect )
     ImplUpdateSelectedItemsProperty();
 }
 
-void UnoListBoxControl::makeVisible( sal_Int16 nEntry )
+void UnoListBoxControl::makeVisible( sal_Int16 nEntry ) throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -2900,27 +2931,27 @@ void UnoListBoxControl::makeVisible( sal_Int16 nEntry )
     }
 }
 
-void UnoListBoxControl::setDropDownLineCount( sal_Int16 nLines )
+void UnoListBoxControl::setDropDownLineCount( sal_Int16 nLines ) throw(uno::RuntimeException, std::exception)
 {
-    ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LINECOUNT ), uno::Any(nLines), true );
+    ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LINECOUNT ), uno::Any((sal_Int16) nLines), true );
 }
 
-sal_Int16 UnoListBoxControl::getDropDownLineCount()
+sal_Int16 UnoListBoxControl::getDropDownLineCount() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_INT16( BASEPROPERTY_LINECOUNT );
 }
 
-sal_Bool UnoListBoxControl::isMutipleMode()
+sal_Bool UnoListBoxControl::isMutipleMode() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_MULTISELECTION );
 }
 
-void UnoListBoxControl::setMultipleMode( sal_Bool bMulti )
+void UnoListBoxControl::setMultipleMode( sal_Bool bMulti ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_MULTISELECTION ), uno::Any(bMulti), true );
 }
 
-void UnoListBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
+void UnoListBoxControl::itemStateChanged( const awt::ItemEvent& rEvent ) throw(uno::RuntimeException, std::exception)
 {
     ImplUpdateSelectedItemsProperty();
     if ( maItemListeners.getLength() )
@@ -2942,32 +2973,32 @@ void UnoListBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
     }
 }
 
-awt::Size UnoListBoxControl::getMinimumSize(  )
+awt::Size UnoListBoxControl::getMinimumSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize();
 }
 
-awt::Size UnoListBoxControl::getPreferredSize(  )
+awt::Size UnoListBoxControl::getPreferredSize(  ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getPreferredSize();
 }
 
-awt::Size UnoListBoxControl::calcAdjustedSize( const awt::Size& rNewSize )
+awt::Size UnoListBoxControl::calcAdjustedSize( const awt::Size& rNewSize ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_calcAdjustedSize( rNewSize );
 }
 
-awt::Size UnoListBoxControl::getMinimumSize( sal_Int16 nCols, sal_Int16 nLines )
+awt::Size UnoListBoxControl::getMinimumSize( sal_Int16 nCols, sal_Int16 nLines ) throw(uno::RuntimeException, std::exception)
 {
     return Impl_getMinimumSize( nCols, nLines );
 }
 
-void UnoListBoxControl::getColumnsAndLines( sal_Int16& nCols, sal_Int16& nLines )
+void UnoListBoxControl::getColumnsAndLines( sal_Int16& nCols, sal_Int16& nLines ) throw(uno::RuntimeException, std::exception)
 {
     Impl_getColumnsAndLines( nCols, nLines );
 }
 
-sal_Bool SAL_CALL UnoListBoxControl::setModel( const uno::Reference< awt::XControlModel >& i_rModel )
+sal_Bool SAL_CALL UnoListBoxControl::setModel( const uno::Reference< awt::XControlModel >& i_rModel ) throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
@@ -2987,7 +3018,7 @@ sal_Bool SAL_CALL UnoListBoxControl::setModel( const uno::Reference< awt::XContr
     return true;
 }
 
-void SAL_CALL UnoListBoxControl::listItemInserted( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoListBoxControl::listItemInserted( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoListBoxControl::listItemInserted: invalid peer!" );
@@ -2995,7 +3026,7 @@ void SAL_CALL UnoListBoxControl::listItemInserted( const awt::ItemListEvent& i_r
         xPeerListener->listItemInserted( i_rEvent );
 }
 
-void SAL_CALL UnoListBoxControl::listItemRemoved( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoListBoxControl::listItemRemoved( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoListBoxControl::listItemRemoved: invalid peer!" );
@@ -3003,7 +3034,7 @@ void SAL_CALL UnoListBoxControl::listItemRemoved( const awt::ItemListEvent& i_rE
         xPeerListener->listItemRemoved( i_rEvent );
 }
 
-void SAL_CALL UnoListBoxControl::listItemModified( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoListBoxControl::listItemModified( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoListBoxControl::listItemModified: invalid peer!" );
@@ -3011,7 +3042,7 @@ void SAL_CALL UnoListBoxControl::listItemModified( const awt::ItemListEvent& i_r
         xPeerListener->listItemModified( i_rEvent );
 }
 
-void SAL_CALL UnoListBoxControl::allItemsRemoved( const lang::EventObject& i_rEvent )
+void SAL_CALL UnoListBoxControl::allItemsRemoved( const lang::EventObject& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoListBoxControl::allItemsRemoved: invalid peer!" );
@@ -3019,7 +3050,7 @@ void SAL_CALL UnoListBoxControl::allItemsRemoved( const lang::EventObject& i_rEv
         xPeerListener->allItemsRemoved( i_rEvent );
 }
 
-void SAL_CALL UnoListBoxControl::itemListChanged( const lang::EventObject& i_rEvent )
+void SAL_CALL UnoListBoxControl::itemListChanged( const lang::EventObject& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoListBoxControl::itemListChanged: invalid peer!" );
@@ -3045,11 +3076,13 @@ UnoControlComboBoxModel::UnoControlComboBoxModel( const Reference< XComponentCon
 }
 
 OUString UnoControlComboBoxModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlComboBoxModel");
 }
 
 css::uno::Sequence<OUString> UnoControlComboBoxModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -3058,7 +3091,7 @@ css::uno::Sequence<OUString> UnoControlComboBoxModel::getSupportedServiceNames()
     return s;
 }
 
-uno::Reference< beans::XPropertySetInfo > UnoControlComboBoxModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlComboBoxModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -3076,11 +3109,11 @@ uno::Reference< beans::XPropertySetInfo > UnoControlComboBoxModel::getPropertySe
 }
 
 
-OUString UnoControlComboBoxModel::getServiceName()
+OUString UnoControlComboBoxModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlComboBoxModel );
 }
-void SAL_CALL UnoControlComboBoxModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const uno::Any& rValue )
+void SAL_CALL UnoControlComboBoxModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const uno::Any& rValue ) throw (uno::Exception, std::exception)
 {
     UnoControlModel::setFastPropertyValue_NoBroadcast( nHandle, rValue );
 
@@ -3142,11 +3175,13 @@ UnoComboBoxControl::UnoComboBoxControl()
 }
 
 OUString UnoComboBoxControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString( "stardiv.Toolkit.UnoComboBoxControl");
 }
 
 css::uno::Sequence<OUString> UnoComboBoxControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoEditControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -3160,7 +3195,7 @@ OUString UnoComboBoxControl::GetComponentServiceName()
     return OUString("combobox");
 }
 
-void UnoComboBoxControl::dispose()
+void UnoComboBoxControl::dispose() throw(uno::RuntimeException, std::exception)
 {
     lang::EventObject aEvt;
     aEvt.Source = static_cast<cppu::OWeakObject*>(this);
@@ -3168,7 +3203,7 @@ void UnoComboBoxControl::dispose()
     maItemListeners.disposeAndClear( aEvt );
     UnoControl::dispose();
 }
-uno::Any UnoComboBoxControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoComboBoxControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XComboBox* >(this)) );
@@ -3212,7 +3247,7 @@ void UnoComboBoxControl::ImplSetPeerProperty( const OUString& rPropName, const u
 
     UnoEditControl::ImplSetPeerProperty( rPropName, rVal );
 }
-void UnoComboBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoComboBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoEditControl::createPeer( rxToolkit, rParentPeer );
 
@@ -3223,7 +3258,7 @@ void UnoComboBoxControl::createPeer( const uno::Reference< awt::XToolkit > & rxT
         xComboBox->addItemListener( &maItemListeners );
 }
 
-void UnoComboBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoComboBoxControl::addActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maActionListeners.addInterface( l );
     if( getPeer().is() && maActionListeners.getLength() == 1 )
@@ -3233,7 +3268,7 @@ void UnoComboBoxControl::addActionListener(const uno::Reference< awt::XActionLis
     }
 }
 
-void UnoComboBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l)
+void UnoComboBoxControl::removeActionListener(const uno::Reference< awt::XActionListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maActionListeners.getLength() == 1 )
     {
@@ -3243,7 +3278,7 @@ void UnoComboBoxControl::removeActionListener(const uno::Reference< awt::XAction
     maActionListeners.removeInterface( l );
 }
 
-void UnoComboBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoComboBoxControl::addItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     maItemListeners.addInterface( l );
     if( getPeer().is() && maItemListeners.getLength() == 1 )
@@ -3253,7 +3288,7 @@ void UnoComboBoxControl::addItemListener(const uno::Reference < awt::XItemListen
     }
 }
 
-void UnoComboBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l)
+void UnoComboBoxControl::removeItemListener(const uno::Reference < awt::XItemListener > & l) throw(uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maItemListeners.getLength() == 1 )
     {
@@ -3263,7 +3298,7 @@ void UnoComboBoxControl::removeItemListener(const uno::Reference < awt::XItemLis
     }
     maItemListeners.removeInterface( l );
 }
-void UnoComboBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
+void UnoComboBoxControl::itemStateChanged( const awt::ItemEvent& rEvent ) throw(uno::RuntimeException, std::exception)
 {
     if ( maItemListeners.getLength() )
     {
@@ -3283,7 +3318,7 @@ void UnoComboBoxControl::itemStateChanged( const awt::ItemEvent& rEvent )
         }
     }
 }
-sal_Bool SAL_CALL UnoComboBoxControl::setModel( const uno::Reference< awt::XControlModel >& i_rModel )
+sal_Bool SAL_CALL UnoComboBoxControl::setModel( const uno::Reference< awt::XControlModel >& i_rModel ) throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
@@ -3303,7 +3338,7 @@ sal_Bool SAL_CALL UnoComboBoxControl::setModel( const uno::Reference< awt::XCont
     return true;
 }
 
-void SAL_CALL UnoComboBoxControl::listItemInserted( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoComboBoxControl::listItemInserted( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoComboBoxControl::listItemInserted: invalid peer!" );
@@ -3311,7 +3346,7 @@ void SAL_CALL UnoComboBoxControl::listItemInserted( const awt::ItemListEvent& i_
         xPeerListener->listItemInserted( i_rEvent );
 }
 
-void SAL_CALL UnoComboBoxControl::listItemRemoved( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoComboBoxControl::listItemRemoved( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoComboBoxControl::listItemRemoved: invalid peer!" );
@@ -3319,7 +3354,7 @@ void SAL_CALL UnoComboBoxControl::listItemRemoved( const awt::ItemListEvent& i_r
         xPeerListener->listItemRemoved( i_rEvent );
 }
 
-void SAL_CALL UnoComboBoxControl::listItemModified( const awt::ItemListEvent& i_rEvent )
+void SAL_CALL UnoComboBoxControl::listItemModified( const awt::ItemListEvent& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoComboBoxControl::listItemModified: invalid peer!" );
@@ -3327,7 +3362,7 @@ void SAL_CALL UnoComboBoxControl::listItemModified( const awt::ItemListEvent& i_
         xPeerListener->listItemModified( i_rEvent );
 }
 
-void SAL_CALL UnoComboBoxControl::allItemsRemoved( const lang::EventObject& i_rEvent )
+void SAL_CALL UnoComboBoxControl::allItemsRemoved( const lang::EventObject& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoComboBoxControl::allItemsRemoved: invalid peer!" );
@@ -3335,7 +3370,7 @@ void SAL_CALL UnoComboBoxControl::allItemsRemoved( const lang::EventObject& i_rE
         xPeerListener->allItemsRemoved( i_rEvent );
 }
 
-void SAL_CALL UnoComboBoxControl::itemListChanged( const lang::EventObject& i_rEvent )
+void SAL_CALL UnoComboBoxControl::itemListChanged( const lang::EventObject& i_rEvent ) throw (uno::RuntimeException, std::exception)
 {
     const Reference< XItemListListener > xPeerListener( getPeer(), UNO_QUERY );
     OSL_ENSURE( xPeerListener.is() || !getPeer().is(), "UnoComboBoxControl::itemListChanged: invalid peer!" );
@@ -3343,13 +3378,13 @@ void SAL_CALL UnoComboBoxControl::itemListChanged( const lang::EventObject& i_rE
         xPeerListener->itemListChanged( i_rEvent );
 }
 
-void UnoComboBoxControl::addItem( const OUString& aItem, sal_Int16 nPos )
+void UnoComboBoxControl::addItem( const OUString& aItem, sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence<OUString> aSeq { aItem };
     addItems( aSeq, nPos );
 }
 
-void UnoComboBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_Int16 nPos )
+void UnoComboBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -3363,7 +3398,7 @@ void UnoComboBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_I
     const OUString* pOldData = aSeq.getConstArray();
 
     if ( ( nPos < 0 ) || ( nPos > nOldLen ) )
-        nPos = nOldLen;
+        nPos = (sal_uInt16) nOldLen;
 
     sal_uInt16 n;
     // items before the insert position
@@ -3381,7 +3416,7 @@ void UnoComboBoxControl::addItems( const uno::Sequence< OUString>& aItems, sal_I
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ), Any(aNewSeq), true );
 }
 
-void UnoComboBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount )
+void UnoComboBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -3411,7 +3446,7 @@ void UnoComboBoxControl::removeItems( sal_Int16 nPos, sal_Int16 nCount )
     }
 }
 
-sal_Int16 UnoComboBoxControl::getItemCount()
+sal_Int16 UnoComboBoxControl::getItemCount() throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -3419,7 +3454,7 @@ sal_Int16 UnoComboBoxControl::getItemCount()
     return (sal_Int16)aSeq.getLength();
 }
 
-OUString UnoComboBoxControl::getItem( sal_Int16 nPos )
+OUString UnoComboBoxControl::getItem( sal_Int16 nPos ) throw(uno::RuntimeException, std::exception)
 {
     OUString aItem;
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
@@ -3430,7 +3465,7 @@ OUString UnoComboBoxControl::getItem( sal_Int16 nPos )
     return aItem;
 }
 
-uno::Sequence< OUString> UnoComboBoxControl::getItems()
+uno::Sequence< OUString> UnoComboBoxControl::getItems() throw(uno::RuntimeException, std::exception)
 {
     uno::Any aVal = ImplGetPropertyValue( GetPropertyName( BASEPROPERTY_STRINGITEMLIST ) );
     uno::Sequence< OUString> aSeq;
@@ -3438,12 +3473,12 @@ uno::Sequence< OUString> UnoComboBoxControl::getItems()
     return aSeq;
 }
 
-void UnoComboBoxControl::setDropDownLineCount( sal_Int16 nLines )
+void UnoComboBoxControl::setDropDownLineCount( sal_Int16 nLines ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LINECOUNT ), uno::Any(nLines), true );
 }
 
-sal_Int16 UnoComboBoxControl::getDropDownLineCount()
+sal_Int16 UnoComboBoxControl::getDropDownLineCount() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_INT16( BASEPROPERTY_LINECOUNT );
 }
@@ -3467,7 +3502,7 @@ UnoSpinFieldControl::UnoSpinFieldControl()
 }
 
 // uno::XInterface
-uno::Any UnoSpinFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoSpinFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XSpinField* >(this)) );
@@ -3480,7 +3515,7 @@ IMPL_XTYPEPROVIDER_START( UnoSpinFieldControl )
     UnoEditControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoSpinFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoSpinFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoEditControl::createPeer( rxToolkit, rParentPeer );
 
@@ -3491,7 +3526,7 @@ void UnoSpinFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rx
 }
 
     // css::awt::XSpinField
-void UnoSpinFieldControl::addSpinListener( const css::uno::Reference< css::awt::XSpinListener >& l )
+void UnoSpinFieldControl::addSpinListener( const css::uno::Reference< css::awt::XSpinListener >& l ) throw(css::uno::RuntimeException, std::exception)
 {
     maSpinListeners.addInterface( l );
     if( getPeer().is() && maSpinListeners.getLength() == 1 )
@@ -3501,7 +3536,7 @@ void UnoSpinFieldControl::addSpinListener( const css::uno::Reference< css::awt::
     }
 }
 
-void UnoSpinFieldControl::removeSpinListener( const css::uno::Reference< css::awt::XSpinListener >& l )
+void UnoSpinFieldControl::removeSpinListener( const css::uno::Reference< css::awt::XSpinListener >& l ) throw(css::uno::RuntimeException, std::exception)
 {
     if( getPeer().is() && maSpinListeners.getLength() == 1 )
     {
@@ -3511,35 +3546,35 @@ void UnoSpinFieldControl::removeSpinListener( const css::uno::Reference< css::aw
     maSpinListeners.removeInterface( l );
 }
 
-void UnoSpinFieldControl::up()
+void UnoSpinFieldControl::up() throw(css::uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XSpinField > xField( getPeer(), uno::UNO_QUERY );
     if ( xField.is() )
         xField->up();
 }
 
-void UnoSpinFieldControl::down()
+void UnoSpinFieldControl::down() throw(css::uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XSpinField > xField( getPeer(), uno::UNO_QUERY );
     if ( xField.is() )
         xField->down();
 }
 
-void UnoSpinFieldControl::first()
+void UnoSpinFieldControl::first() throw(css::uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XSpinField > xField( getPeer(), uno::UNO_QUERY );
     if ( xField.is() )
         xField->first();
 }
 
-void UnoSpinFieldControl::last()
+void UnoSpinFieldControl::last() throw(css::uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XSpinField > xField( getPeer(), uno::UNO_QUERY );
     if ( xField.is() )
         xField->last();
 }
 
-void UnoSpinFieldControl::enableRepeat( sal_Bool bRepeat )
+void UnoSpinFieldControl::enableRepeat( sal_Bool bRepeat ) throw(css::uno::RuntimeException, std::exception)
 {
     mbRepeat = bRepeat;
 
@@ -3557,7 +3592,7 @@ UnoControlDateFieldModel::UnoControlDateFieldModel( const Reference< XComponentC
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXDateField );
 }
 
-OUString UnoControlDateFieldModel::getServiceName()
+OUString UnoControlDateFieldModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlDateFieldModel );
 }
@@ -3584,19 +3619,21 @@ uno::Any UnoControlDateFieldModel::ImplGetDefaultValue( sal_uInt16 nPropId ) con
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlDateFieldModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlDateFieldModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlDateFieldModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlDateFieldModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlDateFieldModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -3630,7 +3667,7 @@ OUString UnoDateFieldControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoDateFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoDateFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XDateField* >(this)) );
@@ -3643,7 +3680,7 @@ IMPL_XTYPEPROVIDER_START( UnoDateFieldControl )
     UnoSpinFieldControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoDateFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoDateFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoSpinFieldControl::createPeer( rxToolkit, rParentPeer );
 
@@ -3655,7 +3692,7 @@ void UnoDateFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rx
 }
 
 
-void UnoDateFieldControl::textChanged( const awt::TextEvent& e )
+void UnoDateFieldControl::textChanged( const awt::TextEvent& e ) throw(uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XVclWindowPeer > xPeer( getPeer(), uno::UNO_QUERY );
 
@@ -3696,37 +3733,37 @@ void UnoDateFieldControl::textChanged( const awt::TextEvent& e )
         GetTextListeners().textChanged( e );
 }
 
-void UnoDateFieldControl::setDate( const util::Date& Date )
+void UnoDateFieldControl::setDate( const util::Date& Date ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_DATE ), uno::Any(Date), true );
 }
 
-util::Date UnoDateFieldControl::getDate()
+util::Date UnoDateFieldControl::getDate() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Date( BASEPROPERTY_DATE );
 }
 
-void UnoDateFieldControl::setMin( const util::Date& Date )
+void UnoDateFieldControl::setMin( const util::Date& Date ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_DATEMIN ), uno::Any(Date), true );
 }
 
-util::Date UnoDateFieldControl::getMin()
+util::Date UnoDateFieldControl::getMin() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Date( BASEPROPERTY_DATEMIN );
 }
 
-void UnoDateFieldControl::setMax( const util::Date& Date )
+void UnoDateFieldControl::setMax( const util::Date& Date ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_DATEMAX ), uno::Any(Date), true );
 }
 
-util::Date UnoDateFieldControl::getMax()
+util::Date UnoDateFieldControl::getMax() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Date( BASEPROPERTY_DATEMAX );
 }
 
-void UnoDateFieldControl::setFirst( const util::Date& Date )
+void UnoDateFieldControl::setFirst( const util::Date& Date ) throw(uno::RuntimeException, std::exception)
 {
     mnFirst = Date;
     if ( getPeer().is() )
@@ -3736,12 +3773,12 @@ void UnoDateFieldControl::setFirst( const util::Date& Date )
     }
 }
 
-util::Date UnoDateFieldControl::getFirst()
+util::Date UnoDateFieldControl::getFirst() throw(uno::RuntimeException, std::exception)
 {
     return mnFirst;
 }
 
-void UnoDateFieldControl::setLast( const util::Date& Date )
+void UnoDateFieldControl::setLast( const util::Date& Date ) throw(uno::RuntimeException, std::exception)
 {
     mnLast = Date;
     if ( getPeer().is() )
@@ -3751,12 +3788,12 @@ void UnoDateFieldControl::setLast( const util::Date& Date )
     }
 }
 
-util::Date UnoDateFieldControl::getLast()
+util::Date UnoDateFieldControl::getLast() throw(uno::RuntimeException, std::exception)
 {
     return mnLast;
 }
 
-void UnoDateFieldControl::setLongFormat( sal_Bool bLong )
+void UnoDateFieldControl::setLongFormat( sal_Bool bLong ) throw(uno::RuntimeException, std::exception)
 {
     mbLongFormat = bLong ? TRISTATE_TRUE : TRISTATE_FALSE;
     if ( getPeer().is() )
@@ -3766,12 +3803,12 @@ void UnoDateFieldControl::setLongFormat( sal_Bool bLong )
     }
 }
 
-sal_Bool UnoDateFieldControl::isLongFormat()
+sal_Bool UnoDateFieldControl::isLongFormat() throw(uno::RuntimeException, std::exception)
 {
     return mbLongFormat == TRISTATE_TRUE;
 }
 
-void UnoDateFieldControl::setEmpty()
+void UnoDateFieldControl::setEmpty() throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -3780,7 +3817,7 @@ void UnoDateFieldControl::setEmpty()
     }
 }
 
-sal_Bool UnoDateFieldControl::isEmpty()
+sal_Bool UnoDateFieldControl::isEmpty() throw(uno::RuntimeException, std::exception)
 {
     bool bEmpty = false;
     if ( getPeer().is() )
@@ -3791,22 +3828,24 @@ sal_Bool UnoDateFieldControl::isEmpty()
     return bEmpty;
 }
 
-void UnoDateFieldControl::setStrictFormat( sal_Bool bStrict )
+void UnoDateFieldControl::setStrictFormat( sal_Bool bStrict ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRICTFORMAT ), uno::Any(bStrict), true );
 }
 
-sal_Bool UnoDateFieldControl::isStrictFormat()
+sal_Bool UnoDateFieldControl::isStrictFormat() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_STRICTFORMAT );
 }
 
 OUString UnoDateFieldControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoDateFieldControl");
 }
 
 css::uno::Sequence<OUString> UnoDateFieldControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoSpinFieldControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -3832,7 +3871,7 @@ UnoControlTimeFieldModel::UnoControlTimeFieldModel( const Reference< XComponentC
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXTimeField );
 }
 
-OUString UnoControlTimeFieldModel::getServiceName()
+OUString UnoControlTimeFieldModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlTimeFieldModel );
 }
@@ -3859,19 +3898,21 @@ uno::Any UnoControlTimeFieldModel::ImplGetDefaultValue( sal_uInt16 nPropId ) con
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlTimeFieldModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlTimeFieldModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlTimeFieldModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlTimeFieldModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlTimeFieldModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -3904,7 +3945,7 @@ OUString UnoTimeFieldControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoTimeFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoTimeFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XTimeField* >(this)) );
@@ -3917,7 +3958,7 @@ IMPL_XTYPEPROVIDER_START( UnoTimeFieldControl )
     UnoSpinFieldControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoTimeFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoTimeFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoSpinFieldControl::createPeer( rxToolkit, rParentPeer );
 
@@ -3926,7 +3967,7 @@ void UnoTimeFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rx
     xField->setLast( mnLast );
 }
 
-void UnoTimeFieldControl::textChanged( const awt::TextEvent& e )
+void UnoTimeFieldControl::textChanged( const awt::TextEvent& e ) throw(uno::RuntimeException, std::exception)
 {
     // also change the text property (#i25106#)
     uno::Reference< awt::XVclWindowPeer > xPeer( getPeer(), uno::UNO_QUERY );
@@ -3945,37 +3986,37 @@ void UnoTimeFieldControl::textChanged( const awt::TextEvent& e )
         GetTextListeners().textChanged( e );
 }
 
-void UnoTimeFieldControl::setTime( const util::Time& Time )
+void UnoTimeFieldControl::setTime( const util::Time& Time ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_TIME ), Any(Time), true );
 }
 
-util::Time UnoTimeFieldControl::getTime()
+util::Time UnoTimeFieldControl::getTime() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Time( BASEPROPERTY_TIME );
 }
 
-void UnoTimeFieldControl::setMin( const util::Time& Time )
+void UnoTimeFieldControl::setMin( const util::Time& Time ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_TIMEMIN ), uno::Any(Time), true );
 }
 
-util::Time UnoTimeFieldControl::getMin()
+util::Time UnoTimeFieldControl::getMin() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Time( BASEPROPERTY_TIMEMIN );
 }
 
-void UnoTimeFieldControl::setMax( const util::Time& Time )
+void UnoTimeFieldControl::setMax( const util::Time& Time ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_TIMEMAX ), uno::Any(Time), true );
 }
 
-util::Time UnoTimeFieldControl::getMax()
+util::Time UnoTimeFieldControl::getMax() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_Time( BASEPROPERTY_TIMEMAX );
 }
 
-void UnoTimeFieldControl::setFirst( const util::Time& Time )
+void UnoTimeFieldControl::setFirst( const util::Time& Time ) throw(uno::RuntimeException, std::exception)
 {
     mnFirst = Time;
     if ( getPeer().is() )
@@ -3985,12 +4026,12 @@ void UnoTimeFieldControl::setFirst( const util::Time& Time )
     }
 }
 
-util::Time UnoTimeFieldControl::getFirst()
+util::Time UnoTimeFieldControl::getFirst() throw(uno::RuntimeException, std::exception)
 {
     return mnFirst;
 }
 
-void UnoTimeFieldControl::setLast( const util::Time& Time )
+void UnoTimeFieldControl::setLast( const util::Time& Time ) throw(uno::RuntimeException, std::exception)
 {
     mnLast = Time;
     if ( getPeer().is() )
@@ -4000,12 +4041,12 @@ void UnoTimeFieldControl::setLast( const util::Time& Time )
     }
 }
 
-util::Time UnoTimeFieldControl::getLast()
+util::Time UnoTimeFieldControl::getLast() throw(uno::RuntimeException, std::exception)
 {
     return mnLast;
 }
 
-void UnoTimeFieldControl::setEmpty()
+void UnoTimeFieldControl::setEmpty() throw(uno::RuntimeException, std::exception)
 {
     if ( getPeer().is() )
     {
@@ -4014,7 +4055,7 @@ void UnoTimeFieldControl::setEmpty()
     }
 }
 
-sal_Bool UnoTimeFieldControl::isEmpty()
+sal_Bool UnoTimeFieldControl::isEmpty() throw(uno::RuntimeException, std::exception)
 {
     bool bEmpty = false;
     if ( getPeer().is() )
@@ -4025,22 +4066,24 @@ sal_Bool UnoTimeFieldControl::isEmpty()
     return bEmpty;
 }
 
-void UnoTimeFieldControl::setStrictFormat( sal_Bool bStrict )
+void UnoTimeFieldControl::setStrictFormat( sal_Bool bStrict ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRICTFORMAT ), uno::Any(bStrict), true );
 }
 
-sal_Bool UnoTimeFieldControl::isStrictFormat()
+sal_Bool UnoTimeFieldControl::isStrictFormat() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_STRICTFORMAT );
 }
 
 OUString UnoTimeFieldControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoTimeFieldControl");
 }
 
 css::uno::Sequence<OUString> UnoTimeFieldControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoSpinFieldControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4066,7 +4109,7 @@ UnoControlNumericFieldModel::UnoControlNumericFieldModel( const Reference< XComp
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXNumericField );
 }
 
-OUString UnoControlNumericFieldModel::getServiceName()
+OUString UnoControlNumericFieldModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlNumericFieldModel );
 }
@@ -4093,19 +4136,21 @@ uno::Any UnoControlNumericFieldModel::ImplGetDefaultValue( sal_uInt16 nPropId ) 
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlNumericFieldModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlNumericFieldModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlNumericFieldModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlNumericFieldModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlNumericFieldModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4138,7 +4183,7 @@ OUString UnoNumericFieldControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoNumericFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoNumericFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XNumericField* >(this)) );
@@ -4151,7 +4196,7 @@ IMPL_XTYPEPROVIDER_START( UnoNumericFieldControl )
     UnoSpinFieldControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoNumericFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoNumericFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoSpinFieldControl::createPeer( rxToolkit, rParentPeer );
 
@@ -4161,7 +4206,7 @@ void UnoNumericFieldControl::createPeer( const uno::Reference< awt::XToolkit > &
 }
 
 
-void UnoNumericFieldControl::textChanged( const awt::TextEvent& e )
+void UnoNumericFieldControl::textChanged( const awt::TextEvent& e ) throw(uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XNumericField >  xField( getPeer(), uno::UNO_QUERY );
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUE_DOUBLE ), uno::Any(xField->getValue()), false );
@@ -4170,37 +4215,37 @@ void UnoNumericFieldControl::textChanged( const awt::TextEvent& e )
         GetTextListeners().textChanged( e );
 }
 
-void UnoNumericFieldControl::setValue( double Value )
+void UnoNumericFieldControl::setValue( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUE_DOUBLE ), uno::Any(Value), true );
 }
 
-double UnoNumericFieldControl::getValue()
+double UnoNumericFieldControl::getValue() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUE_DOUBLE );
 }
 
-void UnoNumericFieldControl::setMin( double Value )
+void UnoNumericFieldControl::setMin( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUEMIN_DOUBLE ), uno::Any(Value), true );
 }
 
-double UnoNumericFieldControl::getMin()
+double UnoNumericFieldControl::getMin() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUEMIN_DOUBLE );
 }
 
-void UnoNumericFieldControl::setMax( double Value )
+void UnoNumericFieldControl::setMax( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUEMAX_DOUBLE ), uno::Any(Value), true );
 }
 
-double UnoNumericFieldControl::getMax()
+double UnoNumericFieldControl::getMax() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUEMAX_DOUBLE );
 }
 
-void UnoNumericFieldControl::setFirst( double Value )
+void UnoNumericFieldControl::setFirst( double Value ) throw(uno::RuntimeException, std::exception)
 {
     mnFirst = Value;
     if ( getPeer().is() )
@@ -4210,12 +4255,12 @@ void UnoNumericFieldControl::setFirst( double Value )
     }
 }
 
-double UnoNumericFieldControl::getFirst()
+double UnoNumericFieldControl::getFirst() throw(uno::RuntimeException, std::exception)
 {
     return mnFirst;
 }
 
-void UnoNumericFieldControl::setLast( double Value )
+void UnoNumericFieldControl::setLast( double Value ) throw(uno::RuntimeException, std::exception)
 {
     mnLast = Value;
     if ( getPeer().is() )
@@ -4225,27 +4270,29 @@ void UnoNumericFieldControl::setLast( double Value )
     }
 }
 
-double UnoNumericFieldControl::getLast()
+double UnoNumericFieldControl::getLast() throw(uno::RuntimeException, std::exception)
 {
     return mnLast;
 }
 
-void UnoNumericFieldControl::setStrictFormat( sal_Bool bStrict )
+void UnoNumericFieldControl::setStrictFormat( sal_Bool bStrict ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRICTFORMAT ), uno::Any(bStrict), true );
 }
 
-sal_Bool UnoNumericFieldControl::isStrictFormat()
+sal_Bool UnoNumericFieldControl::isStrictFormat() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_STRICTFORMAT );
 }
 
 OUString UnoNumericFieldControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoNumericFieldControl");
 }
 
 css::uno::Sequence<OUString> UnoNumericFieldControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoSpinFieldControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4254,22 +4301,22 @@ css::uno::Sequence<OUString> UnoNumericFieldControl::getSupportedServiceNames()
     return s;
 }
 
-void UnoNumericFieldControl::setSpinSize( double Digits )
+void UnoNumericFieldControl::setSpinSize( double Digits ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUESTEP_DOUBLE ), uno::Any(Digits), true );
 }
 
-double UnoNumericFieldControl::getSpinSize()
+double UnoNumericFieldControl::getSpinSize() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUESTEP_DOUBLE );
 }
 
-void UnoNumericFieldControl::setDecimalDigits( sal_Int16 Digits )
+void UnoNumericFieldControl::setDecimalDigits( sal_Int16 Digits ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_DECIMALACCURACY ), uno::Any(Digits), true );
 }
 
-sal_Int16 UnoNumericFieldControl::getDecimalDigits()
+sal_Int16 UnoNumericFieldControl::getDecimalDigits() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_INT16( BASEPROPERTY_DECIMALACCURACY );
 }
@@ -4291,7 +4338,7 @@ UnoControlCurrencyFieldModel::UnoControlCurrencyFieldModel( const Reference< XCo
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXCurrencyField );
 }
 
-OUString UnoControlCurrencyFieldModel::getServiceName()
+OUString UnoControlCurrencyFieldModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlCurrencyFieldModel );
 }
@@ -4322,19 +4369,21 @@ uno::Any UnoControlCurrencyFieldModel::ImplGetDefaultValue( sal_uInt16 nPropId )
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlCurrencyFieldModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlCurrencyFieldModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlCurrencyFieldModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlCurrencyFieldModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlCurrencyFieldModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4367,7 +4416,7 @@ OUString UnoCurrencyFieldControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoCurrencyFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoCurrencyFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XCurrencyField* >(this)) );
@@ -4380,7 +4429,7 @@ IMPL_XTYPEPROVIDER_START( UnoCurrencyFieldControl )
     UnoSpinFieldControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoCurrencyFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer )
+void UnoCurrencyFieldControl::createPeer( const uno::Reference< awt::XToolkit > & rxToolkit, const uno::Reference< awt::XWindowPeer >  & rParentPeer ) throw(uno::RuntimeException, std::exception)
 {
     UnoSpinFieldControl::createPeer( rxToolkit, rParentPeer );
 
@@ -4389,7 +4438,7 @@ void UnoCurrencyFieldControl::createPeer( const uno::Reference< awt::XToolkit > 
     xField->setLast( mnLast );
 }
 
-void UnoCurrencyFieldControl::textChanged( const awt::TextEvent& e )
+void UnoCurrencyFieldControl::textChanged( const awt::TextEvent& e ) throw(uno::RuntimeException, std::exception)
 {
     uno::Reference < awt::XCurrencyField >  xField( getPeer(), uno::UNO_QUERY );
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUE_DOUBLE ), uno::Any(xField->getValue()), false );
@@ -4398,37 +4447,37 @@ void UnoCurrencyFieldControl::textChanged( const awt::TextEvent& e )
         GetTextListeners().textChanged( e );
 }
 
-void UnoCurrencyFieldControl::setValue( double Value )
+void UnoCurrencyFieldControl::setValue( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUE_DOUBLE ), Any(Value), true );
 }
 
-double UnoCurrencyFieldControl::getValue()
+double UnoCurrencyFieldControl::getValue() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUE_DOUBLE );
 }
 
-void UnoCurrencyFieldControl::setMin( double Value )
+void UnoCurrencyFieldControl::setMin( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUEMIN_DOUBLE ), uno::Any(Value), true );
 }
 
-double UnoCurrencyFieldControl::getMin()
+double UnoCurrencyFieldControl::getMin() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUEMIN_DOUBLE );
 }
 
-void UnoCurrencyFieldControl::setMax( double Value )
+void UnoCurrencyFieldControl::setMax( double Value ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUEMAX_DOUBLE ), uno::Any(Value), true );
 }
 
-double UnoCurrencyFieldControl::getMax()
+double UnoCurrencyFieldControl::getMax() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUEMAX_DOUBLE );
 }
 
-void UnoCurrencyFieldControl::setFirst( double Value )
+void UnoCurrencyFieldControl::setFirst( double Value ) throw(uno::RuntimeException, std::exception)
 {
     mnFirst = Value;
     if ( getPeer().is() )
@@ -4438,12 +4487,12 @@ void UnoCurrencyFieldControl::setFirst( double Value )
     }
 }
 
-double UnoCurrencyFieldControl::getFirst()
+double UnoCurrencyFieldControl::getFirst() throw(uno::RuntimeException, std::exception)
 {
     return mnFirst;
 }
 
-void UnoCurrencyFieldControl::setLast( double Value )
+void UnoCurrencyFieldControl::setLast( double Value ) throw(uno::RuntimeException, std::exception)
 {
     mnLast = Value;
     if ( getPeer().is() )
@@ -4453,28 +4502,30 @@ void UnoCurrencyFieldControl::setLast( double Value )
     }
 }
 
-double UnoCurrencyFieldControl::getLast()
+double UnoCurrencyFieldControl::getLast() throw(uno::RuntimeException, std::exception)
 {
     return mnLast;
 }
 
-void UnoCurrencyFieldControl::setStrictFormat( sal_Bool bStrict )
+void UnoCurrencyFieldControl::setStrictFormat( sal_Bool bStrict ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRICTFORMAT ), uno::Any(bStrict), true );
 }
 
-sal_Bool UnoCurrencyFieldControl::isStrictFormat()
+sal_Bool UnoCurrencyFieldControl::isStrictFormat() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_STRICTFORMAT );
 }
 
 OUString UnoCurrencyFieldControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoCurrencyFieldControl");
 }
 
 css::uno::Sequence<OUString>
 UnoCurrencyFieldControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoSpinFieldControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4483,22 +4534,22 @@ UnoCurrencyFieldControl::getSupportedServiceNames()
     return s;
 }
 
-void UnoCurrencyFieldControl::setSpinSize( double Digits )
+void UnoCurrencyFieldControl::setSpinSize( double Digits ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_VALUESTEP_DOUBLE ), uno::Any(Digits), true );
 }
 
-double UnoCurrencyFieldControl::getSpinSize()
+double UnoCurrencyFieldControl::getSpinSize() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_DOUBLE( BASEPROPERTY_VALUESTEP_DOUBLE );
 }
 
-void UnoCurrencyFieldControl::setDecimalDigits( sal_Int16 Digits )
+void UnoCurrencyFieldControl::setDecimalDigits( sal_Int16 Digits ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_DECIMALACCURACY ), uno::Any(Digits), true );
 }
 
-sal_Int16 UnoCurrencyFieldControl::getDecimalDigits()
+sal_Int16 UnoCurrencyFieldControl::getDecimalDigits() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_INT16( BASEPROPERTY_DECIMALACCURACY );
 }
@@ -4520,7 +4571,7 @@ UnoControlPatternFieldModel::UnoControlPatternFieldModel( const Reference< XComp
     UNO_CONTROL_MODEL_REGISTER_PROPERTIES( VCLXPatternField );
 }
 
-OUString UnoControlPatternFieldModel::getServiceName()
+OUString UnoControlPatternFieldModel::getServiceName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlPatternFieldModel );
 }
@@ -4546,19 +4597,21 @@ uno::Any UnoControlPatternFieldModel::ImplGetDefaultValue( sal_uInt16 nPropId ) 
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlPatternFieldModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlPatternFieldModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlPatternFieldModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlPatternFieldModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlPatternFieldModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4614,7 +4667,7 @@ void UnoPatternFieldControl::ImplSetPeerProperty( const OUString& rPropName, con
 
 
 // uno::XInterface
-uno::Any UnoPatternFieldControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoPatternFieldControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XPatternField* >(this)) );
@@ -4627,44 +4680,46 @@ IMPL_XTYPEPROVIDER_START( UnoPatternFieldControl )
     UnoSpinFieldControl::getTypes()
 IMPL_XTYPEPROVIDER_END
 
-void UnoPatternFieldControl::setString( const OUString& rString )
+void UnoPatternFieldControl::setString( const OUString& rString ) throw(uno::RuntimeException, std::exception)
 {
     setText( rString );
 }
 
-OUString UnoPatternFieldControl::getString()
+OUString UnoPatternFieldControl::getString() throw(uno::RuntimeException, std::exception)
 {
     return getText();
 }
 
-void UnoPatternFieldControl::setMasks( const OUString& EditMask, const OUString& LiteralMask )
+void UnoPatternFieldControl::setMasks( const OUString& EditMask, const OUString& LiteralMask ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_EDITMASK ), uno::Any(EditMask), true );
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_LITERALMASK ), uno::Any(LiteralMask), true );
 }
 
-void UnoPatternFieldControl::getMasks( OUString& EditMask, OUString& LiteralMask )
+void UnoPatternFieldControl::getMasks( OUString& EditMask, OUString& LiteralMask ) throw(uno::RuntimeException, std::exception)
 {
     EditMask = ImplGetPropertyValue_UString( BASEPROPERTY_EDITMASK );
     LiteralMask = ImplGetPropertyValue_UString( BASEPROPERTY_LITERALMASK );
 }
 
-void UnoPatternFieldControl::setStrictFormat( sal_Bool bStrict )
+void UnoPatternFieldControl::setStrictFormat( sal_Bool bStrict ) throw(uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_STRICTFORMAT ), uno::Any(bStrict), true );
 }
 
-sal_Bool UnoPatternFieldControl::isStrictFormat()
+sal_Bool UnoPatternFieldControl::isStrictFormat() throw(uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_BOOL( BASEPROPERTY_STRICTFORMAT );
 }
 
 OUString UnoPatternFieldControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoPatternFieldControl");
 }
 
 css::uno::Sequence<OUString> UnoPatternFieldControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoSpinFieldControl::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4702,7 +4757,7 @@ UnoControlProgressBarModel::UnoControlProgressBarModel( const Reference< XCompon
     ImplRegisterProperty( BASEPROPERTY_PROGRESSVALUE_MIN );
 }
 
-OUString UnoControlProgressBarModel::getServiceName( )
+OUString UnoControlProgressBarModel::getServiceName( ) throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlProgressBarModel );
 }
@@ -4729,19 +4784,21 @@ uno::Any UnoControlProgressBarModel::ImplGetDefaultValue( sal_uInt16 nPropId ) c
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlProgressBarModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlProgressBarModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlProgressBarModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlProgressBarModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlProgressBarModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4772,7 +4829,7 @@ OUString UnoProgressBarControl::GetComponentServiceName()
 }
 
 // uno::XInterface
-uno::Any UnoProgressBarControl::queryAggregation( const uno::Type & rType )
+uno::Any UnoProgressBarControl::queryAggregation( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< awt::XProgressBar* >(this)) );
@@ -4786,22 +4843,22 @@ IMPL_XTYPEPROVIDER_START( UnoProgressBarControl )
 IMPL_XTYPEPROVIDER_END
 
 // css::awt::XProgressBar
-void UnoProgressBarControl::setForegroundColor( sal_Int32 nColor )
+void UnoProgressBarControl::setForegroundColor( sal_Int32 nColor ) throw(css::uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_FILLCOLOR ), uno::Any(nColor), true );
 }
 
-void UnoProgressBarControl::setBackgroundColor( sal_Int32 nColor )
+void UnoProgressBarControl::setBackgroundColor( sal_Int32 nColor ) throw(css::uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_BACKGROUNDCOLOR ), uno::Any(nColor), true );
 }
 
-void UnoProgressBarControl::setValue( sal_Int32 nValue )
+void UnoProgressBarControl::setValue( sal_Int32 nValue ) throw(css::uno::RuntimeException, std::exception)
 {
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_PROGRESSVALUE ), uno::Any(nValue), true );
 }
 
-void UnoProgressBarControl::setRange( sal_Int32 nMin, sal_Int32 nMax )
+void UnoProgressBarControl::setRange( sal_Int32 nMin, sal_Int32 nMax ) throw(css::uno::RuntimeException, std::exception )
 {
     uno::Any aMin;
     uno::Any aMax;
@@ -4823,17 +4880,19 @@ void UnoProgressBarControl::setRange( sal_Int32 nMin, sal_Int32 nMax )
     ImplSetPropertyValue( GetPropertyName( BASEPROPERTY_PROGRESSVALUE_MAX ), aMax, true );
 }
 
-sal_Int32 UnoProgressBarControl::getValue()
+sal_Int32 UnoProgressBarControl::getValue() throw(css::uno::RuntimeException, std::exception)
 {
     return ImplGetPropertyValue_INT32( BASEPROPERTY_PROGRESSVALUE );
 }
 
 OUString UnoProgressBarControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoProgressBarControl");
 }
 
 css::uno::Sequence<OUString> UnoProgressBarControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4868,7 +4927,7 @@ UnoControlFixedLineModel::UnoControlFixedLineModel( const Reference< XComponentC
     ImplRegisterProperty( BASEPROPERTY_PRINTABLE );
 }
 
-OUString UnoControlFixedLineModel::getServiceName( )
+OUString UnoControlFixedLineModel::getServiceName( ) throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_UnoControlFixedLineModel );
 }
@@ -4894,19 +4953,21 @@ uno::Any UnoControlFixedLineModel::ImplGetDefaultValue( sal_uInt16 nPropId ) con
 }
 
 // beans::XMultiPropertySet
-uno::Reference< beans::XPropertySetInfo > UnoControlFixedLineModel::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > UnoControlFixedLineModel::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
     static uno::Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
 }
 
 OUString UnoControlFixedLineModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoControlFixedLineModel");
 }
 
 css::uno::Sequence<OUString>
 UnoControlFixedLineModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlModel::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);
@@ -4938,17 +4999,19 @@ OUString UnoFixedLineControl::GetComponentServiceName()
     return OUString("FixedLine");
 }
 
-sal_Bool UnoFixedLineControl::isTransparent()
+sal_Bool UnoFixedLineControl::isTransparent() throw(uno::RuntimeException, std::exception)
 {
     return true;
 }
 
 OUString UnoFixedLineControl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.UnoFixedLineControl");
 }
 
 css::uno::Sequence<OUString> UnoFixedLineControl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     auto s(UnoControlBase::getSupportedServiceNames());
     s.realloc(s.getLength() + 2);

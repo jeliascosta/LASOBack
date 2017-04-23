@@ -22,10 +22,8 @@
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 #include <SwSmartTagMgr.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/text/TextMarkupType.hpp>
 #include <com/sun/star/text/TextMarkupDescriptor.hpp>
-#include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/container/XStringKeyMap.hpp>
 #include <ndtxt.hxx>
 #include <SwGrammarMarkUp.hxx>
@@ -84,7 +82,7 @@ const ModelToViewHelper& SwXTextMarkup::GetConversionMap()
     return m_pImpl->m_ConversionMap;
 }
 
-uno::Reference< container::XStringKeyMap > SAL_CALL SwXTextMarkup::getMarkupInfoContainer()
+uno::Reference< container::XStringKeyMap > SAL_CALL SwXTextMarkup::getMarkupInfoContainer() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -93,7 +91,7 @@ uno::Reference< container::XStringKeyMap > SAL_CALL SwXTextMarkup::getMarkupInfo
 }
 
 void SAL_CALL SwXTextMarkup::commitTextRangeMarkup(::sal_Int32 nType, const OUString & aIdentifier, const uno::Reference< text::XTextRange> & xRange,
-                                                   const uno::Reference< container::XStringKeyMap > & xMarkupInfoContainer)
+                                                   const uno::Reference< container::XStringKeyMap > & xMarkupInfoContainer) throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -140,6 +138,7 @@ void SAL_CALL SwXTextMarkup::commitStringMarkup(
     ::sal_Int32 nStart,
     ::sal_Int32 nLength,
     const uno::Reference< container::XStringKeyMap > & xMarkupInfoContainer)
+    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -379,7 +378,7 @@ static void lcl_commitGrammarMarkUp(
     if ( bCommit )
     {
         if( nType == text::TextMarkupType::SENTENCE )
-            pWList->setSentence( nStart+nLength );
+            static_cast<SwGrammarMarkUp*>(pWList)->setSentence( nStart+nLength );
         else
             pWList->Insert( rIdentifier, xMarkupInfoContainer, nStart, nLength );
     }
@@ -387,6 +386,7 @@ static void lcl_commitGrammarMarkUp(
 
 void SAL_CALL SwXTextMarkup::commitMultiTextMarkup(
     const uno::Sequence< text::TextMarkupDescriptor > &rMarkups )
+throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -491,7 +491,7 @@ SwXStringKeyMap::SwXStringKeyMap()
 {
 }
 
-uno::Any SAL_CALL SwXStringKeyMap::getValue(const OUString & aKey)
+uno::Any SAL_CALL SwXStringKeyMap::getValue(const OUString & aKey) throw (uno::RuntimeException, container::NoSuchElementException, std::exception)
 {
     std::map< OUString, uno::Any >::const_iterator aIter = maMap.find( aKey );
     if ( aIter == maMap.end() )
@@ -500,12 +500,12 @@ uno::Any SAL_CALL SwXStringKeyMap::getValue(const OUString & aKey)
     return (*aIter).second;
 }
 
-sal_Bool SAL_CALL SwXStringKeyMap::hasValue(const OUString & aKey)
+sal_Bool SAL_CALL SwXStringKeyMap::hasValue(const OUString & aKey) throw (uno::RuntimeException, std::exception)
 {
     return maMap.find( aKey ) != maMap.end();
 }
 
-void SAL_CALL SwXStringKeyMap::insertValue(const OUString & aKey, const uno::Any & aValue)
+void SAL_CALL SwXStringKeyMap::insertValue(const OUString & aKey, const uno::Any & aValue) throw (uno::RuntimeException, lang::IllegalArgumentException, container::ElementExistException, std::exception)
 {
     std::map< OUString, uno::Any >::const_iterator aIter = maMap.find( aKey );
     if ( aIter != maMap.end() )
@@ -514,12 +514,12 @@ void SAL_CALL SwXStringKeyMap::insertValue(const OUString & aKey, const uno::Any
     maMap[ aKey ] = aValue;
 }
 
-::sal_Int32 SAL_CALL SwXStringKeyMap::getCount()
+::sal_Int32 SAL_CALL SwXStringKeyMap::getCount() throw (uno::RuntimeException, std::exception)
 {
     return maMap.size();
 }
 
-OUString SAL_CALL SwXStringKeyMap::getKeyByIndex(::sal_Int32 nIndex)
+OUString SAL_CALL SwXStringKeyMap::getKeyByIndex(::sal_Int32 nIndex) throw (uno::RuntimeException, lang::IndexOutOfBoundsException, std::exception)
 {
     if ( (sal_uInt32)nIndex >= maMap.size() )
         throw lang::IndexOutOfBoundsException();
@@ -527,7 +527,7 @@ OUString SAL_CALL SwXStringKeyMap::getKeyByIndex(::sal_Int32 nIndex)
     return OUString();
 }
 
-uno::Any SAL_CALL SwXStringKeyMap::getValueByIndex(::sal_Int32 nIndex)
+uno::Any SAL_CALL SwXStringKeyMap::getValueByIndex(::sal_Int32 nIndex) throw (uno::RuntimeException, lang::IndexOutOfBoundsException, std::exception)
 {
     if ( (sal_uInt32)nIndex >= maMap.size() )
         throw lang::IndexOutOfBoundsException();

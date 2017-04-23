@@ -61,6 +61,7 @@ void VPolarRadiusAxis::setTransformationSceneToScreen( const drawing::HomogenMat
 void VPolarRadiusAxis::setExplicitScaleAndIncrement(
               const ExplicitScaleData& rScale
             , const ExplicitIncrementData& rIncrement )
+            throw (uno::RuntimeException)
 {
     VPolarAxis::setExplicitScaleAndIncrement( rScale, rIncrement );
     m_apAxisWithLabels->setExplicitScaleAndIncrement( rScale, rIncrement );
@@ -70,6 +71,7 @@ void VPolarRadiusAxis::initPlotter(  const uno::Reference< drawing::XShapes >& x
        , const uno::Reference< drawing::XShapes >& xFinalTarget
        , const uno::Reference< lang::XMultiServiceFactory >& xShapeFactory
        , const OUString& rCID )
+            throw (uno::RuntimeException)
 {
     VPolarAxis::initPlotter(  xLogicTarget, xFinalTarget, xShapeFactory, rCID );
     m_apAxisWithLabels->initPlotter(  xLogicTarget, xFinalTarget, xShapeFactory, rCID );

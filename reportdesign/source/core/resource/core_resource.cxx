@@ -46,7 +46,8 @@ namespace reportdesign
         delete ResourceManager::m_pImpl;
     }
 
-    OUString ResourceManager::loadString(sal_uInt16 _nResId)
+
+    void ResourceManager::ensureImplExists(const uno::Reference< lang::XMultiComponentFactory >& /* _rM */)
     {
         if (!m_pImpl)
         {
@@ -55,7 +56,18 @@ namespace reportdesign
 
             m_pImpl = SimpleResMgr::Create("rpt", Application::GetSettings().GetUILanguageTag());
         }
-        return m_pImpl->ReadString(_nResId);
+    }
+
+
+    OUString ResourceManager::loadString(sal_uInt16 _nResId,const uno::Reference< lang::XMultiComponentFactory >& _rM)
+    {
+        OUString sReturn;
+
+        ensureImplExists(_rM);
+        if (m_pImpl)
+            sReturn = m_pImpl->ReadString(_nResId);
+
+        return sReturn;
     }
 
 

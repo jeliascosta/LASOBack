@@ -26,7 +26,6 @@
 #include "DrawViewWrapper.hxx"
 #include "ResId.hxx"
 #include "Strings.hrc"
-#include "ObjectIdentifier.hxx"
 
 #include <cppuhelper/supportsservice.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -58,14 +57,14 @@ SelectorListBox::SelectorListBox( vcl::Window* pParent, WinBits nStyle )
 {
 }
 
-void lcl_addObjectsToList( const ObjectHierarchy& rHierarchy, const  ObjectIdentifier & rParent, std::vector< ListBoxEntryData >& rEntries
+void lcl_addObjectsToList( const ObjectHierarchy& rHierarchy, const ObjectHierarchy::tOID & rParent, std::vector< ListBoxEntryData >& rEntries
                           , const sal_Int32 nHierarchyDepth, const Reference< chart2::XChartDocument >& xChartDoc )
 {
     ObjectHierarchy::tChildContainer aChildren( rHierarchy.getChildren(rParent) );
     ObjectHierarchy::tChildContainer::const_iterator aIt( aChildren.begin());
     while( aIt != aChildren.end() )
     {
-        ObjectIdentifier aOID = *aIt;
+        ObjectHierarchy::tOID aOID = *aIt;
         OUString aCID = aOID.getObjectCID();
         ListBoxEntryData aEntry;
         aEntry.OID = aOID;
@@ -91,7 +90,7 @@ void SelectorListBox::UpdateChartElementsListAndSelection()
     if( xChartController.is() )
     {
         Reference< view::XSelectionSupplier > xSelectionSupplier( xChartController, uno::UNO_QUERY);
-        ObjectIdentifier aSelectedOID;
+        ObjectHierarchy::tOID aSelectedOID;
         OUString aSelectedCID;
         if( xSelectionSupplier.is() )
         {
@@ -192,7 +191,7 @@ void SelectorListBox::Select()
         const sal_Int32 nPos = GetSelectEntryPos();
         if( static_cast<size_t>(nPos) < m_aEntries.size() )
         {
-            ObjectIdentifier aOID = m_aEntries[nPos].OID;
+            ObjectHierarchy::tOID aOID = m_aEntries[nPos].OID;
             Reference< view::XSelectionSupplier > xSelectionSupplier( m_xChartController.get(), uno::UNO_QUERY );
             if( xSelectionSupplier.is() )
                 xSelectionSupplier->select( aOID.getAny() );
@@ -201,7 +200,7 @@ void SelectorListBox::Select()
     }
 }
 
-bool SelectorListBox::EventNotify( NotifyEvent& rNEvt )
+bool SelectorListBox::Notify( NotifyEvent& rNEvt )
 {
     bool bHandled = false;
 
@@ -234,7 +233,7 @@ bool SelectorListBox::EventNotify( NotifyEvent& rNEvt )
             SelectEntryPos( GetSavedValue() );
     }
 
-    return bHandled || ListBox::EventNotify(rNEvt);
+    return bHandled || ListBox::Notify( rNEvt );
 }
 
 Reference< css::accessibility::XAccessible > SelectorListBox::CreateAccessible()
@@ -243,19 +242,34 @@ Reference< css::accessibility::XAccessible > SelectorListBox::CreateAccessible()
     return ListBox::CreateAccessible();
 }
 
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ElementSelectorToolbarController::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString ElementSelectorToolbarController::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL ElementSelectorToolbarController::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL ElementSelectorToolbarController::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.frame.ToolbarController" };
+    return getSupportedServiceNames_Static();
+}
+
+Sequence< OUString > ElementSelectorToolbarController::getSupportedServiceNames_Static()
+{
+    Sequence<OUString> aServices { "com.sun.star.frame.ToolbarController" };
+    return aServices;
 }
 ElementSelectorToolbarController::ElementSelectorToolbarController()
 {
@@ -264,7 +278,7 @@ ElementSelectorToolbarController::~ElementSelectorToolbarController()
 {
 }
 // XInterface
-Any SAL_CALL ElementSelectorToolbarController::queryInterface( const Type& _rType )
+Any SAL_CALL ElementSelectorToolbarController::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
 {
     Any aReturn = ToolboxController::queryInterface(_rType);
     if (!aReturn.hasValue())
@@ -279,7 +293,11 @@ void SAL_CALL ElementSelectorToolbarController::release() throw ()
 {
     ToolboxController::release();
 }
-void SAL_CALL ElementSelectorToolbarController::statusChanged( const frame::FeatureStateEvent& rEvent )
+void SAL_CALL ElementSelectorToolbarController::initialize( const Sequence< Any >& rArguments ) throw (Exception, RuntimeException, std::exception)
+{
+    ToolboxController::initialize(rArguments);
+}
+void SAL_CALL ElementSelectorToolbarController::statusChanged( const frame::FeatureStateEvent& rEvent ) throw ( RuntimeException, std::exception )
 {
     if( m_apSelectorListBox.get() )
     {
@@ -294,16 +312,17 @@ void SAL_CALL ElementSelectorToolbarController::statusChanged( const frame::Feat
     }
 }
 uno::Reference< awt::XWindow > SAL_CALL ElementSelectorToolbarController::createItemWindow( const uno::Reference< awt::XWindow >& xParent )
+        throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xItemWindow;
     if( !m_apSelectorListBox.get() )
     {
-        VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xParent );
+        vcl::Window* pParent = VCLUnoHelper::GetWindow( xParent );
         if( pParent )
         {
             m_apSelectorListBox.reset( VclPtr<SelectorListBox>::Create( pParent, WB_DROPDOWN|WB_AUTOHSCROLL|WB_BORDER ) );
             ::Size aLogicalSize( 95, 160 );
-            ::Size aPixelSize = m_apSelectorListBox->LogicToPixel( aLogicalSize, MapUnit::MapAppFont );
+            ::Size aPixelSize = m_apSelectorListBox->LogicToPixel( aLogicalSize, MAP_APPFONT );
             m_apSelectorListBox->SetSizePixel( aPixelSize );
             m_apSelectorListBox->SetDropDownLineCount( 5 );
         }

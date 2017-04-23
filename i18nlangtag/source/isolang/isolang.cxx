@@ -96,7 +96,6 @@ struct Bcp47CountryEntry
     const sal_Char* mpBcp47;
     sal_Char        maCountry[3];
     const sal_Char* mpFallback;
-    LanguageType    mnOverride;
 
     /** Obtain a language tag string with '-' separator. */
     OUString getTagString() const;
@@ -664,9 +663,6 @@ static IsoLanguageCountryEntry const aImplIsoLangEntries[] =
     { LANGUAGE_USER_APATANI,               "apt", "IN", 0     },
     { LANGUAGE_USER_ENGLISH_MAURITIUS,      "en", "MU", 0     },
     { LANGUAGE_USER_FRENCH_MAURITIUS,       "fr", "MU", 0     },
-    { LANGUAGE_USER_SILESIAN,              "szl", "PL", 0     },
-    { LANGUAGE_USER_MANCHU,                "mnc", "CN", 0     },
-    { LANGUAGE_USER_XIBE,                  "sjo", "CN", 0     },
     { LANGUAGE_MULTIPLE,                   "mul", ""  , 0     },    // multiple languages, many languages are used
     { LANGUAGE_UNDETERMINED,               "und", ""  , 0     },    // undetermined language, language cannot be identified
     { LANGUAGE_NONE,                       "zxx", ""  , 0     },    // added to ISO 639-2 on 2006-01-11: Used to declare the absence of linguistic information
@@ -750,19 +746,18 @@ static IsoLanguageScriptCountryEntry const aImplIsoLangScriptEntries[] =
     { LANGUAGE_USER_CREE_PLAINS_SYLLABICS,         "crk-Cans", "CA", 0     },
     { LANGUAGE_USER_CREE_PLAINS_LATIN,             "crk-Latn", "CN", kSAME },   // erroneous tdf#73973
     { LANGUAGE_USER_CREE_PLAINS_SYLLABICS,         "crk-Cans", "CN", kSAME },   // erroneous tdf#73973
-    { LANGUAGE_USER_HUNGARIAN_ROVAS,                "hu-Hung", "HU", 0     },
     { LANGUAGE_DONTKNOW,                            "",        ""  , 0     }    // marks end of table
 };
 
 static Bcp47CountryEntry const aImplBcp47CountryEntries[] =
 {
     // MS-LangID                              full BCP47, ISO3166, ISO639-Variant or other fallback
-    { LANGUAGE_CATALAN_VALENCIAN,        "ca-ES-valencia", "ES", "ca-valencia", 0 },
-    { LANGUAGE_OBSOLETE_USER_CATALAN_VALENCIAN, "ca-ES-valencia", "ES", "", 0 },   // In case MS format files using the old value escaped into the wild, map them back.
-    { LANGUAGE_USER_ENGLISH_UK_OXENDICT, "en-GB-oxendict", "GB", "", 0 },
-    { LANGUAGE_USER_ENGLISH_UK_OED,           "en-GB-oed", "GB", "", LANGUAGE_USER_ENGLISH_UK_OXENDICT },   // grandfathered, deprecated, prefer en-GB-oxendict
-//  { LANGUAGE_YUE_CHINESE_HONGKONG,         "zh-yue-HK", "HK", "", 0 },   // MS reserved, prefer yue-HK; do not add unless LanguageTag::simpleExtract() can handle it to not call liblangtag for rsc!
-    { LANGUAGE_DONTKNOW,                    "", "", "", 0 }    // marks end of table
+    { LANGUAGE_CATALAN_VALENCIAN,       "ca-ES-valencia", "ES", "ca-valencia" },
+    { LANGUAGE_OBSOLETE_USER_CATALAN_VALENCIAN, "ca-ES-valencia", "ES", "" },   // In case MS format files using the old value escaped into the wild, map them back.
+    { LANGUAGE_USER_ENGLISH_UK_OED,          "en-GB-oed", "GB", "" },   // grandfathered, deprecated, prefer en-GB-oxendict
+    { LANGUAGE_USER_ENGLISH_UK_OXENDICT,"en-GB-oxendict", "GB", "" },
+//  { LANGUAGE_YUE_CHINESE_HONGKONG,         "zh-yue-HK", "HK", "" },   // MS reserved, prefer yue-HK; do not add unless LanguageTag::simpleExtract() can handle it to not call liblangtag for rsc!
+    { LANGUAGE_DONTKNOW,                    "", "", "" }    // marks end of table
 };
 
 static IsoLanguageCountryEntry aLastResortFallbackEntry =
@@ -929,7 +924,6 @@ static IsoLangOtherEntry const aImplPrivateUseEntries[] =
 void MsLangId::Conversion::convertLanguageToLocaleImpl( LanguageType nLang,
         css::lang::Locale & rLocale, bool bIgnoreOverride )
 {
-    const Bcp47CountryEntry* pBcp47EntryOverride = nullptr;
     const IsoLanguageScriptCountryEntry* pScriptEntryOverride = nullptr;
     const IsoLanguageCountryEntry* pEntryOverride = nullptr;
 
@@ -941,19 +935,10 @@ Label_Override_Lang_Locale:
     {
         if (pBcp47Entry->mnLang == nLang)
         {
-            if (bIgnoreOverride || !pBcp47Entry->mnOverride)
-            {
-                rLocale.Language = I18NLANGTAG_QLT;
-                rLocale.Country  = OUString::createFromAscii( pBcp47Entry->maCountry);
-                rLocale.Variant  = pBcp47Entry->getTagString();
-                return;
-            }
-            else if (pBcp47Entry->mnOverride && pBcp47EntryOverride != pBcp47Entry)
-            {
-                pBcp47EntryOverride = pBcp47Entry;
-                nLang = getOverrideLang( pBcp47Entry->mnLang, pBcp47Entry->mnOverride);
-                goto Label_Override_Lang_Locale;
-            }
+            rLocale.Language = I18NLANGTAG_QLT;
+            rLocale.Country  = OUString::createFromAscii( pBcp47Entry->maCountry);
+            rLocale.Variant  = pBcp47Entry->getTagString();
+            return;
         }
     }
 
@@ -1045,19 +1030,6 @@ css::lang::Locale MsLangId::Conversion::getLocale( const IsoLanguageScriptCountr
 }
 
 // static
-css::lang::Locale MsLangId::Conversion::getLocale( const Bcp47CountryEntry * pEntry )
-{
-    if (pEntry->mnOverride)
-    {
-        lang::Locale aLocale;
-        convertLanguageToLocaleImpl( getOverrideLang( pEntry->mnLang, pEntry->mnOverride), aLocale, false);
-        return aLocale;
-    }
-    else
-        return pEntry->getLocale();
-}
-
-// static
 css::lang::Locale MsLangId::Conversion::lookupFallbackLocale(
         const css::lang::Locale & rLocale )
 {
@@ -1076,7 +1048,7 @@ css::lang::Locale MsLangId::Conversion::lookupFallbackLocale(
         {
             if (    rLocale.Variant.equalsIgnoreAsciiCase( pBcp47Entry->getTagString()) ||
                     rLocale.Variant.equalsIgnoreAsciiCaseAscii( pBcp47Entry->mpFallback))
-                return getLocale( pBcp47Entry);     // may override
+                return pBcp47Entry->getLocale();
         }
 
         // Search in ISO lll-Ssss-CC
@@ -1207,7 +1179,7 @@ LanguageType MsLangId::Conversion::convertLocaleToLanguageImpl(
                 pBcp47Entry->mnLang != LANGUAGE_DONTKNOW; ++pBcp47Entry)
         {
             if (rLocale.Variant.equalsIgnoreAsciiCase( pBcp47Entry->getTagString()))
-                return getOverrideLang( pBcp47Entry->mnLang, pBcp47Entry->mnOverride);
+                return pBcp47Entry->mnLang;
         }
 
         // Search in ISO lll-Ssss-CC
@@ -1254,7 +1226,7 @@ css::lang::Locale MsLangId::Conversion::getOverride( const css::lang::Locale& rL
                 pBcp47Entry->mnLang != LANGUAGE_DONTKNOW; ++pBcp47Entry)
         {
             if (rLocale.Variant.equalsIgnoreAsciiCase( pBcp47Entry->getTagString()))
-                return getLocale( pBcp47Entry);     // may override
+                return rLocale; // no overrides
         }
 
         // Search in ISO lll-Ssss-CC
@@ -1430,9 +1402,9 @@ LanguageType MsLangId::convertUnxByteStringToLanguage(
     OString  aCountry;
     OString  aAtString;
 
-    sal_Int32  nLangSepPos    = rString.indexOf( '_' );
-    sal_Int32  nCountrySepPos = rString.indexOf( '.' );
-    sal_Int32  nAtPos         = rString.indexOf( '@' );
+    sal_Int32  nLangSepPos    = rString.indexOf( (sal_Char)'_' );
+    sal_Int32  nCountrySepPos = rString.indexOf( (sal_Char)'.' );
+    sal_Int32  nAtPos         = rString.indexOf( (sal_Char)'@' );
 
     if (nCountrySepPos < 0)
         nCountrySepPos = nAtPos;

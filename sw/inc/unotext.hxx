@@ -63,10 +63,10 @@ private:
     virtual void PrepareForAttach(
             css::uno::Reference< css::text::XTextRange > & xRange,
             SwPaM const & rPam);
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
     virtual bool CheckForOwnMemberMeta(
-            const SwPaM & rPam, const bool bAbsorb);
+            const SwPaM & rPam, const bool bAbsorb)
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException);
 
 protected:
 
@@ -81,113 +81,170 @@ public: /*not protected because C++ is retarded*/
 
 public:
 
-    SwXText(SwDoc *const pDoc, const CursorType eType);
+    SwXText(SwDoc *const pDoc, const enum CursorType eType);
 
     const SwDoc*    GetDoc() const;
           SwDoc*    GetDoc();
 
-    /// @throws css::uno::RuntimeException
     virtual css::uno::Reference< css::text::XTextCursor >
-        CreateCursor();
+        CreateCursor()
+        throw (css::uno::RuntimeException);
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface(
-            const css::uno::Type& rType) override;
+            const css::uno::Type& rType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
     virtual css::uno::Sequence< css::uno::Type >
-        SAL_CALL getTypes() override;
+        SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     static const css::uno::Sequence< sal_Int8 >& getUnoTunnelId();
 
     // XUnoTunnel
     virtual sal_Int64 SAL_CALL getSomething(
-            const css::uno::Sequence< sal_Int8 >& rIdentifier) override;
+            const css::uno::Sequence< sal_Int8 >& rIdentifier)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setPropertyValue(
             const OUString& rPropertyName,
-            const css::uno::Any& rValue) override;
+            const css::uno::Any& rValue)
+        throw (css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::lang::IllegalArgumentException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-            const OUString& rPropertyName) override;
+            const OUString& rPropertyName)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addPropertyChangeListener(
             const OUString& rPropertyName,
             const css::uno::Reference<
-                css::beans::XPropertyChangeListener >& xListener) override;
+                css::beans::XPropertyChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removePropertyChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addVetoableChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeVetoableChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XTextRange
     virtual css::uno::Reference< css::text::XText >
-        SAL_CALL getText() override;
-    virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getStart() override;
-    virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getEnd() override;
-    virtual OUString SAL_CALL getString() override;
-    virtual void SAL_CALL setString(const OUString& rString) override;
+        SAL_CALL getText()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getStart()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getEnd()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getString()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setString(const OUString& rString)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XSimpleText
     virtual void SAL_CALL insertString(
             const css::uno::Reference< css::text::XTextRange > & xRange,
-            const OUString& aString, sal_Bool bAbsorb) override;
+            const OUString& aString, sal_Bool bAbsorb)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL insertControlCharacter(
             const css::uno::Reference< css::text::XTextRange > & xRange,
-            sal_Int16 nControlCharacter, sal_Bool bAbsorb) override;
+            sal_Int16 nControlCharacter, sal_Bool bAbsorb)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XText
     virtual void SAL_CALL insertTextContent(
             const css::uno::Reference< css::text::XTextRange > & xRange,
             const css::uno::Reference< css::text::XTextContent > & xContent,
-            sal_Bool bAbsorb) override;
+            sal_Bool bAbsorb)
+        throw (css::lang::IllegalArgumentException,
+            css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeTextContent(
-            const css::uno::Reference< css::text::XTextContent > & xContent) override;
+            const css::uno::Reference< css::text::XTextContent > & xContent)
+        throw (css::container::NoSuchElementException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XParagraphAppend
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         finishParagraph(
-            const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties) override;
+            const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         finishParagraphInsert(
             const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties,
-            const css::uno::Reference< css::text::XTextRange >&     xInsertPosition) override;
+            const css::uno::Reference< css::text::XTextRange >&     xInsertPosition)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XTextPortionAppend
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         appendTextPortion(
             const OUString& rText,
-            const css::uno::Sequence< css::beans::PropertyValue >& rCharacterAndParagraphProperties) override;
+            const css::uno::Sequence< css::beans::PropertyValue >& rCharacterAndParagraphProperties)
+        throw (css::lang::IllegalArgumentException,
+               css::beans::UnknownPropertyException,
+               css::beans::PropertyVetoException,
+               css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         insertTextPortion(
             const OUString& rText,
             const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties,
-            const css::uno::Reference< css::text::XTextRange >&     rTextRange) override;
+            const css::uno::Reference< css::text::XTextRange >&     rTextRange)
+        throw (css::lang::IllegalArgumentException,
+               css::beans::UnknownPropertyException,
+               css::beans::PropertyVetoException,
+               css::uno::RuntimeException,
+               std::exception) override;
 
     // XTextContentAppend
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         appendTextContent(
             const css::uno::Reference< css::text::XTextContent >&   xTextContent,
-            const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties) override;
+            const css::uno::Sequence< css::beans::PropertyValue >&  rCharacterAndParagraphProperties)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
         insertTextContentWithProperties(
             const css::uno::Reference< css::text::XTextContent >&  xTextContent,
             const css::uno::Sequence< css::beans::PropertyValue >& rCharacterAndParagraphProperties,
-            const css::uno::Reference< css::text::XTextRange >& xInsertPosition) override;
+            const css::uno::Reference< css::text::XTextRange >& xInsertPosition)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XTextConvert
     virtual css::uno::Reference< css::text::XTextContent > SAL_CALL
         convertToTextFrame(
             const css::uno::Reference< css::text::XTextRange >& xStart,
             const css::uno::Reference< css::text::XTextRange >& xEnd,
-            const css::uno::Sequence< css::beans::PropertyValue >& xFrameProperties) override;
+            const css::uno::Sequence< css::beans::PropertyValue >& xFrameProperties)
+        throw (css::lang::IllegalArgumentException,
+               css::beans::UnknownPropertyException,
+               css::beans::PropertyVetoException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
                 css::text::XTextTable > SAL_CALL
         convertToTable(
@@ -208,33 +265,48 @@ public:
                 rRowProperties,
            css::uno::Sequence<
                 css::beans::PropertyValue > const&
-                rTableProperties) override;
+                rTableProperties)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XTextCopy
     virtual void SAL_CALL copyText(
-            const css::uno::Reference< css::text::XTextCopy >& xSource ) override;
+            const css::uno::Reference< css::text::XTextCopy >& xSource )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTextRangeCompare
     sal_Int16 SAL_CALL compareRegionStarts(
             const css::uno::Reference< css::text::XTextRange >& xR1,
-            const css::uno::Reference< css::text::XTextRange >& xR2) override;
+            const css::uno::Reference< css::text::XTextRange >& xR2)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
     sal_Int16 SAL_CALL compareRegionEnds(
             const css::uno::Reference< css::text::XTextRange >& xR1,
-            const css::uno::Reference< css::text::XTextRange >& xR2) override;
+            const css::uno::Reference< css::text::XTextRange >& xR2)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XRelativeTextContentInsert
     virtual void SAL_CALL insertTextContentBefore(
             const css::uno::Reference< css::text::XTextContent>& xNewContent,
-            const css::uno::Reference< css::text::XTextContent>& xSuccessor) override;
+            const css::uno::Reference< css::text::XTextContent>& xSuccessor)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL insertTextContentAfter(
             const css::uno::Reference< css::text::XTextContent>& xNewContent,
-            const css::uno::Reference< css::text::XTextContent>& xPredecessor) override;
+            const css::uno::Reference< css::text::XTextContent>& xPredecessor)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XRelativeTextContentRemove
     virtual void SAL_CALL removeTextContentBefore(
-            const css::uno::Reference< css::text::XTextContent>& xSuccessor) override;
+            const css::uno::Reference< css::text::XTextContent>& xSuccessor)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeTextContentAfter(
-            const css::uno::Reference< css::text::XTextContent>& xPredecessor) override;
+            const css::uno::Reference< css::text::XTextContent>& xPredecessor)
+        throw (css::lang::IllegalArgumentException,
+                css::uno::RuntimeException, std::exception) override;
 };
 
 #endif // INCLUDED_SW_INC_UNOTEXT_HXX

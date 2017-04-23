@@ -22,7 +22,6 @@
 #include <swrect.hxx>
 #include <fmtfld.hxx>
 #include <redline.hxx>
-#include <cstddef>
 #include <vector>
 #include <vcl/window.hxx>
 #include <SidebarWindowsTypes.hxx>
@@ -32,11 +31,13 @@ class SwTextField;
 class SwRootFrame;
 class SwPostItMgr;
 class SwEditWin;
-namespace sw { namespace annotation {
-    class SwAnnotationWin;
+namespace sw { namespace sidebarwindows {
+    class SwSidebarWin;
 } }
 
 struct SwPosition;
+
+typedef sal_Int64 SwPostItBits;
 
 struct SwLayoutInfo
 {
@@ -53,7 +54,7 @@ struct SwLayoutInfo
 
     sw::sidebarwindows::SidebarPosition meSidebarPosition;
 
-    std::size_t mRedlineAuthor;
+    sal_uInt16 mRedlineAuthor;
 
     SwLayoutInfo()
         : mpAnchorFrame(nullptr)
@@ -88,10 +89,9 @@ namespace SwPostItHelper
 class SwSidebarItem
 {
 public:
-    VclPtr<sw::annotation::SwAnnotationWin> pPostIt;
+    VclPtr<sw::sidebarwindows::SwSidebarWin> pPostIt;
     bool bShow;
     bool bFocus;
-    bool bPendingLayout;
 
     SwPostItHelper::SwLayoutStatus mLayoutStatus;
     SwLayoutInfo maLayoutInfo;
@@ -100,7 +100,6 @@ public:
         : pPostIt(nullptr)
         , bShow(true)
         , bFocus(aFocus)
-        , bPendingLayout(false)
         , mLayoutStatus( SwPostItHelper::INVISIBLE )
         , maLayoutInfo()
     {
@@ -114,7 +113,8 @@ public:
     virtual bool UseElement() = 0;
     virtual const SwFormatField& GetFormatField() const = 0;
     virtual const SfxBroadcaster* GetBroadCaster() const = 0;
-    virtual VclPtr<sw::annotation::SwAnnotationWin> GetSidebarWindow( SwEditWin& rEditWin,
+    virtual VclPtr<sw::sidebarwindows::SwSidebarWin> GetSidebarWindow( SwEditWin& rEditWin,
+                                                                WinBits nBits,
                                                                 SwPostItMgr& aMgr) = 0;
 };
 
@@ -129,6 +129,10 @@ public:
     {
     }
 
+    virtual ~SwAnnotationItem()
+    {
+    }
+
     virtual SwPosition GetAnchorPosition() const override;
     virtual bool UseElement() override;
     virtual const SwFormatField& GetFormatField() const override
@@ -139,8 +143,9 @@ public:
     {
         return dynamic_cast<const SfxBroadcaster *> (&mrFormatField);
     }
-    virtual VclPtr<sw::annotation::SwAnnotationWin> GetSidebarWindow(
+    virtual VclPtr<sw::sidebarwindows::SwSidebarWin> GetSidebarWindow(
         SwEditWin& rEditWin,
+        WinBits nBits,
         SwPostItMgr& aMgr ) override;
 
 private:

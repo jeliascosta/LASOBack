@@ -39,10 +39,10 @@ namespace rptxml
     using namespace ::com::sun::star::report;
     using namespace ::com::sun::star::xml::sax;
 
-    sal_Int16 lcl_getKeepTogetherOption(const OUString& _sValue)
+    sal_uInt16 lcl_getKeepTogetherOption(const OUString& _sValue)
     {
-        sal_Int16 nRet = report::KeepTogether::NO;
-        const SvXMLEnumMapEntry<sal_Int16>* aXML_EnumMap = OXMLHelper::GetKeepTogetherOptions();
+        sal_uInt16 nRet = report::KeepTogether::NO;
+        const SvXMLEnumMapEntry* aXML_EnumMap = OXMLHelper::GetKeepTogetherOptions();
         (void)SvXMLUnitConverter::convertEnum( nRet, _sValue, aXML_EnumMap );
         return nRet;
     }
@@ -100,10 +100,11 @@ OXMLGroup::OXMLGroup( ORptFilter& _rImport
                             {
                                 nPos = strlen(s_sChanged);
                                 static const char s_sQuote[] = "\"\"";
+                                static const char s_sSingleQuote[] = "\"";
                                 sal_Int32 nIndex = sValue.indexOf(s_sQuote,nPos);
                                 while ( nIndex > -1 )
                                 {
-                                    sValue = sValue.replaceAt(nIndex,2, "\"");
+                                    sValue = sValue.replaceAt(nIndex,2,s_sSingleQuote);
                                     nIndex = sValue.indexOf(s_sQuote,nIndex+2);
                                 }
                                 nLen = sValue.getLength() - 1;

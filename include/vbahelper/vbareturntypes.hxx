@@ -19,13 +19,15 @@
 #ifndef INCLUDED_VBAHELPER_VBARETURNTYPES_HXX
 #define INCLUDED_VBAHELPER_VBARETURNTYPES_HXX
 
-#include <com/sun/star/script/XDefaultProperty.hpp>
-#include <com/sun/star/uno/RuntimeException.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <com/sun/star/script/XDefaultProperty.hpp>
 #include <ooo/vba/msforms/XReturnInteger.hpp>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <ooo/vba/msforms/XReturnBoolean.hpp>
+#include <ooo/vba/msforms/XReturnSingle.hpp>
+#include <ooo/vba/msforms/XReturnEffect.hpp>
+
 #include <vbahelper/vbahelper.hxx>
+#include <vbahelper/vbahelperinterface.hxx>
 
 namespace ooo
 {
@@ -37,9 +39,9 @@ namespace ooo
             T1 mnValue;
             public:
             DefaultReturnHelper( const T1& nValue ) : mnValue( nValue ) {}
-            virtual void  SAL_CALL setValue( T1 nValue ) SAL_OVERRIDE { mnValue = nValue; }
-            virtual T1  SAL_CALL getValue() SAL_OVERRIDE { return mnValue; }
-            OUString SAL_CALL getDefaultPropertyName(  ) SAL_OVERRIDE { return OUString("Value"); }
+            virtual void  SAL_CALL setValue( T1 nValue ) throw (css::uno::RuntimeException) SAL_OVERRIDE { mnValue = nValue; }
+            virtual T1  SAL_CALL getValue() throw (css::uno::RuntimeException) SAL_OVERRIDE { return mnValue; }
+            OUString SAL_CALL getDefaultPropertyName(  ) throw (css::uno::RuntimeException) SAL_OVERRIDE { return OUString("Value"); }
         };
 
         typedef DefaultReturnHelper< sal_Int32, ov::msforms::XReturnInteger > ReturnInteger_BASE;
@@ -49,6 +51,24 @@ namespace ooo
             ReturnInteger( sal_Int32 nValue ) : ReturnInteger_BASE( nValue ){}
         };
 
+        typedef DefaultReturnHelper< sal_Bool, ov::msforms::XReturnBoolean > ReturnBoolean_BASE;
+        class ReturnBoolean : public ReturnBoolean_BASE
+        {
+            public:
+            ReturnBoolean( bool bValue ) : ReturnBoolean_BASE( bValue ){}
+        };
+        typedef DefaultReturnHelper< float, ov::msforms::XReturnSingle > ReturnSingle_BASE;
+        class ReturnSingle : public ReturnSingle_BASE
+        {
+            public:
+            ReturnSingle( float nValue ) : ReturnSingle_BASE( nValue ){}
+        };
+        typedef DefaultReturnHelper< short, ov::msforms::XReturnEffect > ReturnEffect_BASE;
+        class ReturnEffect : public ReturnEffect_BASE
+        {
+            public:
+            ReturnEffect( short nValue ) : ReturnEffect_BASE( nValue ){}
+        };
     } // vba
 } // ooo
 

@@ -28,9 +28,10 @@
 class SvResizeHelper
 {
     Size        aBorder;
-    tools::Rectangle   aOuter;
+    Rectangle   aOuter;
     short       nGrab; // -1 no Grab,  0 - 7, 8 = Move, see FillHandle...
     Point       aSelPos;
+    bool        bResizeable;
 public:
     SvResizeHelper();
 
@@ -42,22 +43,22 @@ public:
     {
         aBorder = rBorderP;
     }
-    void SetOuterRectPixel(const tools::Rectangle& rRect)
+    void SetOuterRectPixel(const Rectangle& rRect)
     {
         aOuter = rRect;
     }
                 // Clockwise, start at upper left
 
-    void        FillHandleRectsPixel( tools::Rectangle aRects[ 8 ] ) const;
-    void        FillMoveRectsPixel( tools::Rectangle aRects[ 4 ] ) const;
+    void        FillHandleRectsPixel( Rectangle aRects[ 8 ] ) const;
+    void        FillMoveRectsPixel( Rectangle aRects[ 4 ] ) const;
     void        Draw(vcl::RenderContext& rRenderContext);
     void        InvalidateBorder( vcl::Window * );
     bool        SelectBegin( vcl::Window *, const Point & rPos );
     short       SelectMove( vcl::Window * pWin, const Point & rPos );
-    Point       GetTrackPosPixel( const tools::Rectangle & rRect ) const;
-    tools::Rectangle   GetTrackRectPixel( const Point & rTrackPos ) const;
-    void        ValidateRect( tools::Rectangle & rValidate ) const;
-    bool        SelectRelease( vcl::Window *, const Point & rPos, tools::Rectangle & rOutPosSize );
+    Point       GetTrackPosPixel( const Rectangle & rRect ) const;
+    Rectangle   GetTrackRectPixel( const Point & rTrackPos ) const;
+    void        ValidateRect( Rectangle & rValidate ) const;
+    bool        SelectRelease( vcl::Window *, const Point & rPos, Rectangle & rOutPosSize );
     void        Release( vcl::Window * pWin );
 };
 
@@ -83,8 +84,8 @@ public:
     virtual void    MouseButtonDown( const MouseEvent & rEvt ) override;
     virtual void    KeyInput( const KeyEvent & rEvt ) override;
     virtual void    Resize() override;
-    virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle & ) override;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle & ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
 };
 

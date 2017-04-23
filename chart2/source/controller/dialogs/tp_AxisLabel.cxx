@@ -123,17 +123,17 @@ bool SchAxisLabelTabPage::FillItemSet( SfxItemSet* rOutAttrs )
 
     if( m_bShowStaggeringControls )
     {
-        SvxChartTextOrder eOrder = SvxChartTextOrder::SideBySide;
+        SvxChartTextOrder eOrder = CHTXTORDER_SIDEBYSIDE;
         bool bRadioButtonChecked = true;
 
         if( m_pRbUpDown->IsChecked())
-            eOrder = SvxChartTextOrder::UpDown;
+            eOrder = CHTXTORDER_UPDOWN;
         else if( m_pRbDownUp->IsChecked())
-            eOrder = SvxChartTextOrder::DownUp;
+            eOrder = CHTXTORDER_DOWNUP;
         else if( m_pRbAuto->IsChecked())
-            eOrder = SvxChartTextOrder::Auto;
+            eOrder = CHTXTORDER_AUTO;
         else if( m_pRbSideBySide->IsChecked())
-            eOrder = SvxChartTextOrder::SideBySide;
+            eOrder = CHTXTORDER_SIDEBYSIDE;
         else
             bRadioButtonChecked = false;
 
@@ -258,16 +258,16 @@ void SchAxisLabelTabPage::Reset( const SfxItemSet* rInAttrs )
 
             switch( eOrder )
             {
-                case SvxChartTextOrder::SideBySide:
+                case CHTXTORDER_SIDEBYSIDE:
                     m_pRbSideBySide->Check();
                     break;
-                case SvxChartTextOrder::UpDown:
+                case CHTXTORDER_UPDOWN:
                     m_pRbUpDown->Check();
                     break;
-                case SvxChartTextOrder::DownUp:
+                case CHTXTORDER_DOWNUP:
                     m_pRbDownUp->Check();
                     break;
-                case SvxChartTextOrder::Auto:
+                case CHTXTORDER_AUTO:
                     m_pRbAuto->Check();
                     break;
             }
@@ -298,7 +298,7 @@ void SchAxisLabelTabPage::SetComplexCategories( bool bComplexCategories )
 
 // event handling routines
 
-IMPL_LINK_NOARG(SchAxisLabelTabPage, ToggleShowLabel, Button*, void)
+IMPL_LINK_NOARG_TYPED(SchAxisLabelTabPage, ToggleShowLabel, Button*, void)
 {
     bool bEnable = ( m_pCbShowDescription->GetState() != TRISTATE_FALSE );
 

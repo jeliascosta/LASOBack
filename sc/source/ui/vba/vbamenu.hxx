@@ -21,14 +21,13 @@ private:
     css::uno::Reference< ov::XCommandBarControl > m_xCommandBarControl;
 
 public:
-    /// @throws css::uno::RuntimeException
-    ScVbaMenu( const css::uno::Reference< ov::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< ov::XCommandBarControl >& rCommandBarControl );
+    ScVbaMenu( const css::uno::Reference< ov::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< ov::XCommandBarControl >& rCommandBarControl ) throw( css::uno::RuntimeException );
 
-    virtual OUString SAL_CALL getCaption() override;
-    virtual void SAL_CALL setCaption( const OUString& _caption ) override;
+    virtual OUString SAL_CALL getCaption() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCaption( const OUString& _caption ) throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL Delete(  ) override;
-    virtual css::uno::Any SAL_CALL MenuItems( const css::uno::Any& aIndex ) override;
+    virtual void SAL_CALL Delete(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL MenuItems( const css::uno::Any& aIndex ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

@@ -37,10 +37,11 @@ class ToggleButtonToolbarController : public ComplexToolbarController
 
 {
     public:
-        enum class Style
+        enum Style
         {
-            DropDownButton,
-            ToggleDropDownButton
+            STYLE_TOGGLEBUTTON,
+            STYLE_DROPDOWNBUTTON,
+            STYLE_TOGGLE_DROPDOWNBUTTON
         };
 
         ToggleButtonToolbarController( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
@@ -49,21 +50,22 @@ class ToggleButtonToolbarController : public ComplexToolbarController
                                        sal_uInt16 nID,
                                        Style eStyle,
                                        const OUString& aCommand );
-        virtual ~ToggleButtonToolbarController() override;
+        virtual ~ToggleButtonToolbarController();
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
 
         // XToolbarController
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createPopupWindow() override;
+        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createPopupWindow() throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
         virtual void executeControlCommand( const css::frame::ControlCommand& rControlCommand ) override;
         virtual css::uno::Sequence< css::beans::PropertyValue> getExecuteArgs(sal_Int16 KeyModifier) const override;
 
     private:
-        DECL_LINK( MenuSelectHdl, Menu *, bool);
+        DECL_LINK_TYPED( MenuSelectHdl, Menu *, bool);
 
+        Style                   m_eStyle;
         OUString                m_aCurrentSelection;
         std::vector< OUString > m_aDropdownMenuList;
 };

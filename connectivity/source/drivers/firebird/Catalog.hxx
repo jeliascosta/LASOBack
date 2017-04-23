@@ -19,11 +19,11 @@ namespace connectivity
         class Catalog: public ::connectivity::sdbcx::OCatalog
         {
         protected:
-            css::uno::Reference< css::sdbc::XConnection >
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >
                 m_xConnection;
 
         public:
-            explicit Catalog(const css::uno::Reference< css::sdbc::XConnection >& rConnection);
+            explicit Catalog(const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& rConnection);
 
             // OCatalog
             virtual void refreshTables() override;

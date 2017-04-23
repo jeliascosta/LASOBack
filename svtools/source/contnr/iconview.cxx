@@ -30,7 +30,10 @@ IconView::IconView( vcl::Window* pParent, WinBits nBits )
     SetEntryHeight( 100 );
     SetEntryWidth( 100 );
 
-    pImpl.reset( new IconViewImpl( this, GetModel(), GetStyle() ) );
+    if(pImp)
+        delete pImp;
+
+    pImp = new IconViewImpl( this, GetModel(), GetStyle() );
 }
 
 void IconView::Resize()
@@ -47,7 +50,7 @@ void IconView::Resize()
     SvTreeListBox::Resize();
 }
 
-tools::Rectangle IconView::GetFocusRect( SvTreeListEntry*, long nEntryPos )
+Rectangle IconView::GetFocusRect( SvTreeListEntry*, long nEntryPos )
 {
     Size aSize;
     aSize.Height() = nEntryHeight;
@@ -57,7 +60,7 @@ tools::Rectangle IconView::GetFocusRect( SvTreeListEntry*, long nEntryPos )
     aPos.X() = 0;
     aPos.Y() = 0;
 
-    tools::Rectangle aRect;
+    Rectangle aRect;
 
     short nCols = GetColumnsCount();
 
@@ -85,11 +88,11 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
                             vcl::RenderContext& rRenderContext)
 {
 
-    tools::Rectangle aRect; // multi purpose
+    Rectangle aRect; // multi purpose
 
     PreparePaint(rRenderContext, rEntry);
 
-    pImpl->UpdateContextBmpWidthMax(&rEntry);
+    pImp->UpdateContextBmpWidthMax(&rEntry);
 
     short nTempEntryHeight = GetEntryHeight();
     short nTempEntryWidth = GetEntryWidth();
@@ -121,9 +124,9 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
     while (nCurItem < nItemCount)
     {
         SvLBoxItem* pItem = nCurItem < nItemCount ? &rEntry.GetItem(nCurItem) : nullptr;
-        SvLBoxItemType nItemType = pItem->GetType();
+        sal_uInt16 nItemType = pItem->GetType();
 
-        if (nItemType == SvLBoxItemType::ContextBmp)
+        if(nItemType == SV_ITEM_ID_LBOXCONTEXTBMP)
         {
             nIconItem = nCurItem;
             nCurItem++;
@@ -139,7 +142,7 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
 
         Wallpaper aWallpaper = rRenderContext.GetBackground();
 
-        if (pViewDataEntry->IsHighlighted())
+        if (pViewDataEntry->IsHighlighted() && !pViewDataEntry->IsCursored())
         {
             Color aNewWallColor = rSettings.GetHighlightColor();
             if (!bInUse)

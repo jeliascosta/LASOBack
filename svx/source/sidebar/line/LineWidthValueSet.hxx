@@ -29,7 +29,7 @@ class LineWidthValueSet
 {
 public:
     explicit LineWidthValueSet(vcl::Window* pParent);
-    virtual ~LineWidthValueSet() override;
+    virtual ~LineWidthValueSet();
     virtual void dispose() override;
 
     void SetUnit(OUString* str);

@@ -44,10 +44,10 @@ public:
                 SwView& rVw,
                 const SfxItemSet&,
                 sal_uInt8 nDialogMode,
-                const OUString *pCollName,
+                const OUString *pCollName = nullptr,
                 bool bDraw = false,
                 const OString& sDefPage = OString());
-    virtual ~SwParaDlg() override;
+    virtual ~SwParaDlg();
 };
 
 #endif

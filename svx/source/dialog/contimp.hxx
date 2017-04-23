@@ -39,7 +39,7 @@ protected:
 
 public:
 
-    SvxContourDlgItem( SvxSuperContourDlg& rDlg, SfxBindings& rBindings );
+    SvxContourDlgItem( sal_uInt16 nId, SvxSuperContourDlg& rDlg, SfxBindings& rBindings );
 };
 
 class SvxSuperContourDlg : public SvxContourDlg
@@ -83,22 +83,22 @@ class SvxSuperContourDlg : public SvxContourDlg
 
     virtual bool        Close() override;
 
-                        DECL_LINK( Tbx1ClickHdl, ToolBox*, void );
-                        DECL_LINK( MousePosHdl, GraphCtrl*, void );
-                        DECL_LINK( GraphSizeHdl, GraphCtrl*, void );
-                        DECL_LINK( UpdateHdl, Timer *, void );
-                        DECL_LINK( CreateHdl, Timer *, void );
-                        DECL_LINK( StateHdl, GraphCtrl*, void );
-                        DECL_LINK( PipetteHdl, ContourWindow&, void );
-                        DECL_LINK( PipetteClickHdl, ContourWindow&, void );
-                        DECL_LINK( WorkplaceClickHdl, ContourWindow&, void );
-                        DECL_LINK( MiscHdl, LinkParamNone*, void );
+                        DECL_LINK_TYPED( Tbx1ClickHdl, ToolBox*, void );
+                        DECL_LINK_TYPED( MousePosHdl, GraphCtrl*, void );
+                        DECL_LINK_TYPED( GraphSizeHdl, GraphCtrl*, void );
+                        DECL_LINK_TYPED( UpdateHdl, Idle *, void );
+                        DECL_LINK_TYPED( CreateHdl, Idle *, void );
+                        DECL_LINK_TYPED( StateHdl, GraphCtrl*, void );
+                        DECL_LINK_TYPED( PipetteHdl, ContourWindow&, void );
+                        DECL_LINK_TYPED( PipetteClickHdl, ContourWindow&, void );
+                        DECL_LINK_TYPED( WorkplaceClickHdl, ContourWindow&, void );
+                        DECL_LINK_TYPED( MiscHdl, LinkParamNone*, void );
 
 public:
 
                         SvxSuperContourDlg(SfxBindings *pBindings, SfxChildWindow *pCW,
                                            vcl::Window* pParent);
-                        virtual ~SvxSuperContourDlg() override;
+                        virtual ~SvxSuperContourDlg();
     virtual void        dispose() override;
 
     void                SetExecState( bool bEnable );
@@ -110,11 +110,15 @@ public:
     void                SetPolyPolygon( const tools::PolyPolygon& rPolyPoly );
     tools::PolyPolygon  GetPolyPolygon();
 
+    void                SetEditingObject( void* pObj ) { pCheckObj = pObj; }
     const void*         GetEditingObject() const { return pCheckObj; }
 
+    bool                IsUndoPossible() const;
+    bool                IsRedoPossible() const;
+
     void                UpdateGraphic( const Graphic& rGraphic, bool bGraphicLinked,
-                                const tools::PolyPolygon* pPolyPoly,
-                                void* pEditingObj );
+                                const tools::PolyPolygon* pPolyPoly = nullptr,
+                                void* pEditingObj = nullptr );
 };
 
 

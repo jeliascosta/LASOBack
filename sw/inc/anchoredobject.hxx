@@ -68,7 +68,7 @@ class SW_DLLPUBLIC SwAnchoredObject
         SwTwips mnLastTopOfLine;
 
         // for to-paragraph and to-character anchored objects:
-        // Layout frame vertical position is orient at - typically it's the upper
+        // Layout frame vertical position is orient at - typically its the upper
         // of the anchor frame, but it could also by the upper of a follow or
         // a following layout frame in the text flow.
         const SwLayoutFrame* mpVertPosOrientFrame;
@@ -98,7 +98,7 @@ class SW_DLLPUBLIC SwAnchoredObject
         bool mbRestartLayoutProcess;
         bool mbClearedEnvironment;
 
-        // i#i3317 - boolean, indicating that temporarily
+        // i#i3317 - boolean, indicating that temporarly
         // the wrapping style influence of the anchored object has to be
         // considered during its positioning.
         // This boolean is used, if compatibility option 'Consider wrapping style
@@ -120,7 +120,7 @@ class SW_DLLPUBLIC SwAnchoredObject
             @author OD
         */
         friend class SwObjPositioningInProgress;
-        void SetPositioningInProgress( const bool _bPosInProgress )
+        inline void SetPositioningInProgress( const bool _bPosInProgress )
         {
             mbPositioningInProgress = _bPosInProgress;
         }
@@ -286,7 +286,7 @@ class SW_DLLPUBLIC SwAnchoredObject
             input parameter - boolean indicating, if check on paragraph portion
             information has to be done.
         */
-        void CheckCharRectAndTopOfLine( const bool _bCheckForParaPorInf );
+        void CheckCharRectAndTopOfLine( const bool _bCheckForParaPorInf = true );
 
         // accessors to member <maLastCharRect>
         const SwRect& GetLastCharRect() const { return maLastCharRect;}
@@ -316,7 +316,7 @@ class SW_DLLPUBLIC SwAnchoredObject
 
             @author OD
         */
-        bool IsPositioningInProgress() const
+        inline bool IsPositioningInProgress() const
         {
             return mbPositioningInProgress;
         }
@@ -380,7 +380,7 @@ class SW_DLLPUBLIC SwAnchoredObject
         */
         const SwRect& GetObjRectWithSpaces() const;
 
-        void InvalidateObjRectWithSpaces() const
+        inline void InvalidateObjRectWithSpaces() const
         {
             mbObjRectWithSpacesValid = false;
         }
@@ -399,11 +399,11 @@ class SW_DLLPUBLIC SwAnchoredObject
         bool ConsiderForTextWrap() const;
         void SetConsiderForTextWrap( const bool _bConsiderForTextWrap );
         bool PositionLocked() const;
-        void LockPosition()
+        inline void LockPosition()
         {
             mbPositionLocked = true;
         }
-        void UnlockPosition()
+        inline void UnlockPosition()
         {
             if ( !mbKeepPositionLockedForSection )
             {
@@ -411,7 +411,7 @@ class SW_DLLPUBLIC SwAnchoredObject
             }
         }
 
-        void SetKeepPosLocked( const bool _bKeepPosLocked )
+        inline void SetKeepPosLocked( const bool _bKeepPosLocked )
         {
             mbKeepPositionLockedForSection = _bKeepPosLocked;
         }
@@ -423,7 +423,7 @@ class SW_DLLPUBLIC SwAnchoredObject
         void SetClearedEnvironment( const bool _bClearedEnvironment );
 
         // reset booleans for layout process
-        void ResetLayoutProcessBools()
+        inline void ResetLayoutProcessBools()
         {
             mbPositioningInProgress = false;
             mbConsiderForTextWrap = false;

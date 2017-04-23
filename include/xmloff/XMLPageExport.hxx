@@ -85,7 +85,7 @@ protected:
 
 public:
     XMLPageExport( SvXMLExport& rExp );
-    virtual ~XMLPageExport() override;
+    virtual ~XMLPageExport();
 
     void    collectAutoStyles( bool bUsed )     { exportStyles( bUsed, true ); }
     void    exportAutoStyles();

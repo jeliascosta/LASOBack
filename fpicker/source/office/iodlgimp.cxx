@@ -91,12 +91,12 @@ SvtFileDialogFilter_Impl::~SvtFileDialogFilter_Impl()
 SvtFileDialogURLSelector::SvtFileDialogURLSelector( vcl::Window* _pParent, SvtFileDialog* _pDlg, WinBits nBits, sal_uInt16 _nButtonId )
     :MenuButton ( _pParent, nBits )
     ,m_pDlg     ( _pDlg )
-    ,m_pMenu    ( VclPtr<PopupMenu>::Create() )
+    ,m_pMenu    ( new PopupMenu )
 {
     SetStyle( GetStyle() | WB_NOPOINTERFOCUS | WB_RECTSTYLE | WB_SMALLSTYLE );
-    SetModeImage( SvtFileDialog::GetButtonImage( _nButtonId ) );
-    SetDelayMenu(true);
-    SetDropDown(PushButtonDropdownStyle::Toolbox);
+    SetModeImage( _pDlg->GetButtonImage( _nButtonId ) );
+    SetMenuMode( MENUBUTTON_MENUMODE_TIMED );
+    SetDropDown( PushButtonDropdownStyle::Toolbox );
 }
 
 
@@ -107,7 +107,7 @@ SvtFileDialogURLSelector::~SvtFileDialogURLSelector()
 
 void SvtFileDialogURLSelector::dispose()
 {
-    m_pMenu.disposeAndClear();
+    delete m_pMenu;
     m_pDlg.clear();
     MenuButton::dispose();
 }
@@ -127,7 +127,7 @@ void SvtFileDialogURLSelector::Activate()
 
 
 SvtUpButton_Impl::SvtUpButton_Impl( vcl::Window *pParent, SvtFileDialog* pDlg, WinBits nBits )
-    :SvtFileDialogURLSelector( pParent, pDlg, nBits, BMP_FILEDLG_BTN_UP )
+    :SvtFileDialogURLSelector( pParent, pDlg, nBits, IMG_FILEDLG_BTN_UP )
 {
 }
 
@@ -157,7 +157,7 @@ void SvtUpButton_Impl::FillURLMenu( PopupMenu* _pMenu )
     while ( nCount >= 1 )
     {
         aObject.removeSegment();
-        OUString aParentURL(aObject.GetMainURL(INetURLObject::DecodeMechanism::NONE));
+        OUString aParentURL(aObject.GetMainURL(INetURLObject::NO_DECODE));
 
         OUString aTitle;
         if (!GetDialogParent()->ContentGetTitle(aParentURL, aTitle) || aTitle.isEmpty())
@@ -199,7 +199,7 @@ void SvtUpButton_Impl::Click()
 
 Size SvtUpButton_Impl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(12, 12), MapUnit::MapAppFont);
+    return LogicToPixel(Size(12, 12), MAP_APPFONT);
 }
 
 // SvtExpFileDlg_Impl
@@ -265,6 +265,12 @@ namespace {
     }
 }
 
+void SvtExpFileDlg_Impl::ClearFilterList( )
+{
+    _pLbFilter->Clear();
+}
+
+
 void SvtExpFileDlg_Impl::SetCurFilter( SvtFileDialogFilter_Impl* pFilter, const OUString& rDisplayName )
 {
     DBG_ASSERT( pFilter, "SvtExpFileDlg_Impl::SetCurFilter: invalid filter!" );
@@ -294,7 +300,7 @@ void SvtExpFileDlg_Impl::InsertFilterListEntry( const SvtFileDialogFilter_Impl* 
 void SvtExpFileDlg_Impl::InitFilterList( )
 {
     // clear the current list
-    _pLbFilter->Clear();
+    ClearFilterList( );
 
     // reinit it
     sal_uInt16 nPos = m_aFilter.size();

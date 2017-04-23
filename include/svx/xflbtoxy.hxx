@@ -26,6 +26,7 @@
 class SVX_DLLPUBLIC XFillBmpTileOffsetXItem : public SfxUInt16Item
 {
 public:
+                            static SfxPoolItem* CreateDefault();
                             XFillBmpTileOffsetXItem( sal_uInt16 nOffX = 0 );
                             SVX_DLLPRIVATE XFillBmpTileOffsetXItem( SvStream& rIn );
 
@@ -33,14 +34,15 @@ public:
     SVX_DLLPRIVATE virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
 
     SVX_DLLPRIVATE virtual bool GetPresentation( SfxItemPresentation ePres,
-                                                 MapUnit eCoreMetric,
-                                                 MapUnit ePresMetric,
-                                                 OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 };
 
 class SVX_DLLPUBLIC XFillBmpTileOffsetYItem : public SfxUInt16Item
 {
 public:
+                            static SfxPoolItem* CreateDefault();
                             XFillBmpTileOffsetYItem( sal_uInt16 nOffX = 0 );
                             SVX_DLLPRIVATE XFillBmpTileOffsetYItem( SvStream& rIn );
 
@@ -48,9 +50,9 @@ public:
     SVX_DLLPRIVATE virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
 
     SVX_DLLPRIVATE virtual bool GetPresentation( SfxItemPresentation ePres,
-                                                 MapUnit eCoreMetric,
-                                                 MapUnit ePresMetric,
-                                                 OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 };
 
 #endif

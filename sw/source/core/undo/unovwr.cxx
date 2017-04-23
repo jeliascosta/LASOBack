@@ -42,17 +42,18 @@ using namespace ::com::sun::star::uno;
 
 SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
                                     sal_Unicode cIns )
-    : SwUndo(SwUndoId::OVERWRITE, pDoc),
+    : SwUndo(UNDO_OVERWRITE),
       pRedlSaveData( nullptr ), bGroup( false )
 {
     if( !pDoc->getIDocumentRedlineAccess().IsIgnoreRedline() && !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty() )
     {
         SwPaM aPam( rPos.nNode, rPos.nContent.GetIndex(),
                     rPos.nNode, rPos.nContent.GetIndex()+1 );
-        pRedlSaveData.reset( new SwRedlineSaveDatas );
+        pRedlSaveData = new SwRedlineSaveDatas;
         if( !FillSaveData( aPam, *pRedlSaveData, false ))
         {
-            pRedlSaveData.reset();
+            delete pRedlSaveData;
+            pRedlSaveData = nullptr;
         }
     }
 
@@ -66,10 +67,10 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
     sal_Int32 nTextNdLen = pTextNd->GetText().getLength();
     if( nSttContent < nTextNdLen )     // no pure insert?
     {
-        aDelStr += OUStringLiteral1( pTextNd->GetText()[nSttContent] );
+        aDelStr += OUString( pTextNd->GetText()[nSttContent] );
         if( !pHistory )
-            pHistory.reset( new SwHistory );
-        SwRegHistory aRHst( *pTextNd, pHistory.get() );
+            pHistory = new SwHistory;
+        SwRegHistory aRHst( *pTextNd, pHistory );
         pHistory->CopyAttr( pTextNd->GetpSwpHints(), nSttNode, 0,
                             nTextNdLen, false );
         ++rPos.nContent;
@@ -81,7 +82,7 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
 
     pTextNd->InsertText( OUString(cIns), rPos.nContent,
             SwInsertFlags::EMPTYEXPAND );
-    aInsStr += OUStringLiteral1( cIns );
+    aInsStr += OUString( cIns );
 
     if( !bInsChar )
     {
@@ -95,6 +96,7 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
 
 SwUndoOverwrite::~SwUndoOverwrite()
 {
+    delete pRedlSaveData;
 }
 
 bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
@@ -145,7 +147,7 @@ bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
     {
         if (rPos.nContent.GetIndex() < pDelTextNd->GetText().getLength())
         {
-            aDelStr += OUStringLiteral1( pDelTextNd->GetText()[rPos.nContent.GetIndex()] );
+            aDelStr += OUString( pDelTextNd->GetText()[rPos.nContent.GetIndex()] );
             ++rPos.nContent;
         }
         else
@@ -159,7 +161,7 @@ bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
             SwInsertFlags::EMPTYEXPAND) );
     assert(ins.getLength() == 1); // check in SwDoc::Overwrite => cannot fail
     (void) ins;
-    aInsStr += OUStringLiteral1( cIns );
+    aInsStr += OUString( cIns );
 
     if( !bInsChar )
     {
@@ -341,7 +343,7 @@ struct UndoTransliterate_Data
 SwUndoTransliterate::SwUndoTransliterate(
     const SwPaM& rPam,
     const utl::TransliterationWrapper& rTrans )
-    : SwUndo( SwUndoId::TRANSLITERATE, rPam.GetDoc() ), SwUndRng( rPam ), nType( rTrans.getType() )
+    : SwUndo( UNDO_TRANSLITERATE ), SwUndRng( rPam ), nType( rTrans.getType() )
 {
 }
 

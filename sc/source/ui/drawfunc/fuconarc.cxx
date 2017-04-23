@@ -79,6 +79,17 @@ bool FuConstArc::MouseButtonDown( const MouseEvent& rMEvt )
 
 /*************************************************************************
 |*
+|* MouseMove-event
+|*
+\************************************************************************/
+
+bool FuConstArc::MouseMove( const MouseEvent& rMEvt )
+{
+    return FuConstruct::MouseMove(rMEvt);
+}
+
+/*************************************************************************
+|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -92,10 +103,24 @@ bool FuConstArc::MouseButtonUp( const MouseEvent& rMEvt )
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj( SdrCreateCmd::NextPoint );
+        pView->EndCreateObj( SDRCREATE_NEXTPOINT );
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
+}
+
+/*************************************************************************
+|*
+|* Tastaturereignisse bearbeiten
+|*
+|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
+|* FALSE.
+|*
+\************************************************************************/
+
+bool FuConstArc::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************
@@ -152,7 +177,7 @@ void FuConstArc::Deactivate()
 }
 
 // Create default drawing objects via keyboard
-SdrObject* FuConstArc::CreateDefaultObject(const sal_uInt16 nID, const tools::Rectangle& rRectangle)
+SdrObject* FuConstArc::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
 {
     // case SID_DRAW_ARC:
     // case SID_DRAW_PIE:
@@ -166,7 +191,7 @@ SdrObject* FuConstArc::CreateDefaultObject(const sal_uInt16 nID, const tools::Re
     {
         if(dynamic_cast<const SdrCircObj*>( pObj) !=  nullptr)
         {
-            tools::Rectangle aRect(rRectangle);
+            Rectangle aRect(rRectangle);
 
             if(SID_DRAW_ARC == nID || SID_DRAW_CIRCLECUT == nID)
             {

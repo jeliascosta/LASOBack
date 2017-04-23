@@ -33,7 +33,7 @@ private:
 
 public:
     SwPrintOptions(bool bWeb);
-    virtual ~SwPrintOptions() override;
+    virtual ~SwPrintOptions();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     virtual void            doSetModified( ) override { m_bModified = true; SetModified();}

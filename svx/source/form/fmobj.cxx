@@ -323,9 +323,9 @@ void FmFormObj::SetPage(SdrPage* _pNewPage)
 }
 
 
-SdrInventor FmFormObj::GetObjInventor()   const
+sal_uInt32 FmFormObj::GetObjInventor()   const
 {
-    return SdrInventor::FmForm;
+    return FmFormInventor;
 }
 
 
@@ -483,8 +483,7 @@ Reference< XInterface >  FmFormObj::ensureModelEnv(const Reference< XInterface >
 
         // calc the number of (source) form siblings with the same DSS
         Reference< XPropertySet >  xCurrentSourceForm, xCurrentDestForm;
-        sal_Int16 nCurrentSourceIndex = 0;
-        sal_Int32 nCurrentDestIndex = 0;
+        sal_Int16 nCurrentSourceIndex = 0, nCurrentDestIndex = 0;
         while (nCurrentSourceIndex <= nIndex)
         {
             bool bEqualDSS = false;
@@ -634,7 +633,7 @@ void FmFormObj::SetUnoControlModel( const Reference< css::awt::XControlModel >& 
 bool FmFormObj::EndCreate( SdrDragStat& rStat, SdrCreateCmd eCmd )
 {
     bool bResult = SdrUnoObj::EndCreate(rStat, eCmd);
-    if ( bResult && SdrCreateCmd::ForceEnd == eCmd && rStat.GetView() )
+    if ( bResult && SDRCREATE_FORCEEND == eCmd && rStat.GetView() )
     {
         if ( pPage )
         {
@@ -686,5 +685,26 @@ void FmFormObj::BrkCreate( SdrDragStat& rStat )
         pViewImpl->breakCreateFormObject();
 }
 
+
+// #i70852# override Layer interface to force to FormControl layer
+
+SdrLayerID FmFormObj::GetLayer() const
+{
+    // #i72535#
+    // i70852 was too radical, in SW obects (and thus, FormControls, too)
+    // get moved to invisible layers to hide them (e.g. in hidden sections).
+    // This means that form controls ARE allowed to be on other layers than
+    // the form control layer ATM and that being member of form control layer
+    // is no criteria to find all FormControls of a document.
+    // To fix, use parent functionality
+    return SdrUnoObj::GetLayer();
+}
+
+void FmFormObj::NbcSetLayer(SdrLayerID nLayer)
+{
+    // #i72535#
+    // See above. To fix, use parent functionality
+    return SdrUnoObj::NbcSetLayer(nLayer);
+}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

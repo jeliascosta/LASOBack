@@ -21,7 +21,6 @@
 
 #include "externalrefmgr.hxx"
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 #include <xmloff/xmlictxt.hxx>
 #include <memory>
@@ -38,7 +37,7 @@ struct ScXMLExternalTabData
     ScXMLExternalTabData();
 };
 
-class ScXMLTableContext : public ScXMLImportContext
+class ScXMLTableContext : public SvXMLImportContext
 {
     OUString   sPrintRanges;
     ::std::unique_ptr<ScXMLExternalTabData> pExternalRefInfo;
@@ -46,32 +45,34 @@ class ScXMLTableContext : public ScXMLImportContext
     bool            bStartFormPage;
     bool            bPrintEntireSheet;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
 
-    ScXMLTableContext( ScXMLImport& rImport, sal_Int32 nElement,
-                        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList );
+    ScXMLTableContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
+                        const OUString& rLName,
+                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableContext() override;
+    virtual ~ScXMLTableContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
                                      const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) override;
 
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
-
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
+    virtual void EndElement() override;
 };
 
-class ScXMLTableProtectionContext : public ScXMLImportContext
+class ScXMLTableProtectionContext : public SvXMLImportContext
 {
+    ScXMLImport& GetScImport();
+
 public:
     ScXMLTableProtectionContext( ScXMLImport& rImport, sal_uInt16 nPrefix,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableProtectionContext() override;
+    virtual ~ScXMLTableProtectionContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

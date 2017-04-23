@@ -35,10 +35,10 @@
 #include <uno/data.h>
 #include <typelib/typedescription.hxx>
 
-#include "bridge.hxx"
-#include "cppinterfaceproxy.hxx"
-#include "types.hxx"
-#include "vtablefactory.hxx"
+#include "bridges/cpp_uno/shared/bridge.hxx"
+#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/types.hxx"
+#include "bridges/cpp_uno/shared/vtablefactory.hxx"
 
 #include "share.hxx"
 
@@ -121,7 +121,6 @@ void cpp2uno_call(
             case typelib_TypeClass_UNSIGNED_HYPER:
             case typelib_TypeClass_DOUBLE:
                 pCppStack += sizeof(sal_Int32); // extra long
-                SAL_FALLTHROUGH;
             default:
                 break;
             }
@@ -261,7 +260,7 @@ extern "C" void cpp_vtable_call(
               ", pThis=" << pThis << ", pCppI=" << pCppI <<
               std::dec << ", nFunctionIndex=" << nFunctionIndex << ", nVtableOffset=" << nVtableOffset );
 
-    SAL_INFO( "bridges.ios", "name=" << OUString::unacquired(&pTypeDescr->aBase.pTypeName) );
+    SAL_INFO( "bridges.ios", "name=" << pTypeDescr->aBase.pTypeName );
 
     assert( nFunctionIndex < pTypeDescr->nMapFunctionIndexToMemberIndex );
 
@@ -277,7 +276,7 @@ extern "C" void cpp_vtable_call(
 
     TypeDescription aMemberDescr( pTypeDescr->ppAllMembers[nMemberPos] );
 
-    SAL_INFO( "bridges.ios", "Calling " << OUString::unacquired(&aMemberDescr.get()->pTypeName) );
+    SAL_INFO( "bridges.ios", "Calling " << aMemberDescr.get()->pTypeName );
 
     switch (aMemberDescr.get()->eTypeClass)
     {
@@ -345,7 +344,6 @@ extern "C" void cpp_vtable_call(
                 TYPELIB_DANGER_RELEASE( pTD );
             }
         } // else perform queryInterface()
-        SAL_FALLTHROUGH;
         default:
             cpp2uno_call(
                 pCppI, aMemberDescr.get(),
@@ -427,7 +425,6 @@ unsigned char * codeSnippet(
                 break;
             }
         }
-        SAL_FALLTHROUGH;
         case typelib_TypeClass_STRING:
         case typelib_TypeClass_TYPE:
         case typelib_TypeClass_SEQUENCE:
@@ -465,7 +462,7 @@ bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block)
     return static_cast< Slot * >(block) + 2;
 }
 
-std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot);

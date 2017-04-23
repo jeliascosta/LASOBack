@@ -23,15 +23,24 @@ namespace svx { namespace sidebar { namespace NBOutlineTypeMgrFact {
 
 NBOTypeMgrBase* CreateInstance(const NBOType aType)
 {
-    if ( aType == NBOType::Bullets )
+    //NBOTypeMgrBase* pRet= 0;
+    if ( aType == eNBOType::BULLETS )
     {
         return &BulletsTypeMgr::GetInstance();
     }
-    else if ( aType == NBOType::Numbering )
+    else if ( aType == eNBOType::GRAPHICBULLETS )
+    {
+        return &GraphyicBulletsTypeMgr::GetInstance();
+    }
+    else if ( aType == eNBOType::MIXBULLETS )
+    {
+        return &MixBulletsTypeMgr::GetInstance();
+    }
+    else if ( aType == eNBOType::NUMBERING )
     {
         return &NumberingTypeMgr::GetInstance();
     }
-    else if ( aType == NBOType::Outline )
+    else if ( aType == eNBOType::OUTLINE )
     {
         return &OutlineTypeMgr::GetInstance();
     }

@@ -50,21 +50,26 @@ class FontIdentificator : public ::cppu::WeakAggImplHelper3< XMaterialHolder, XI
     Font        m_aFont;
 public:
 FontIdentificator() {}
+    virtual ~FontIdentificator();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& ) throw (Exception, RuntimeException, std::exception) override;
 
     // XMaterialHolder
-    virtual Any SAL_CALL getMaterial() override;
+    virtual Any SAL_CALL getMaterial() throw(RuntimeException, std::exception) override;
 
 };
 
-void SAL_CALL FontIdentificator::initialize( const Sequence<Any>& i_rArgs )
+FontIdentificator::~FontIdentificator()
+{
+}
+
+void SAL_CALL FontIdentificator::initialize( const Sequence<Any>& i_rArgs ) throw(Exception,RuntimeException, std::exception)
 {
     if( !ImplGetSVData() )
         return; // VCL not initialized
@@ -82,7 +87,7 @@ void SAL_CALL FontIdentificator::initialize( const Sequence<Any>& i_rArgs )
     }
 }
 
-Any SAL_CALL FontIdentificator::getMaterial()
+Any SAL_CALL FontIdentificator::getMaterial() throw(RuntimeException, std::exception)
 {
     if( !ImplGetSVData() )
         return Any(); // VCL not initialized
@@ -163,17 +168,17 @@ Reference< XInterface > SAL_CALL FontIdentificator_createInstance( const Referen
 }
 
 // XServiceInfo
-OUString SAL_CALL FontIdentificator::getImplementationName()
+OUString SAL_CALL FontIdentificator::getImplementationName() throw (RuntimeException, std::exception)
 {
     return FontIdentificator_getImplementationName();
 }
 
-sal_Bool SAL_CALL FontIdentificator::supportsService( const OUString& i_rServiceName )
+sal_Bool SAL_CALL FontIdentificator::supportsService( const OUString& i_rServiceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, i_rServiceName);
 }
 
-Sequence< OUString > SAL_CALL FontIdentificator::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL FontIdentificator::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
     return FontIdentificator_getSupportedServiceNames();
 }

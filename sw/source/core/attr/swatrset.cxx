@@ -46,9 +46,9 @@
 #include <svx/sdsxyitm.hxx>
 
 SwAttrPool::SwAttrPool( SwDoc* pD )
-    : SfxItemPool( "SWG",
+    : SfxItemPool( OUString("SWG"),
                     POOLATTR_BEGIN, POOLATTR_END-1,
-                    aSlotTab, &aAttrTab ),
+                    aSlotTab, aAttrTab ),
     m_pDoc( pD )
 {
     SetVersionMap( 1, 1, 60, pVersionMap1 );
@@ -60,16 +60,17 @@ SwAttrPool::SwAttrPool( SwDoc* pD )
     SetVersionMap( 6, 1,136, pVersionMap6 );
     SetVersionMap( 7, 1,144, pVersionMap7 );
 
-    // create secondary pools immediately
+    //UUUU create secondary pools immediately
     createAndAddSecondaryPools();
 }
 
 SwAttrPool::~SwAttrPool()
 {
-    // cleanup secondary pools first
+    //UUUU cleanup secondary pools first
     removeAndDeleteSecondaryPools();
 }
 
+//UUUU
 void SwAttrPool::createAndAddSecondaryPools()
 {
     const SfxItemPool* pCheckAlreadySet = GetSecondaryPool();
@@ -113,6 +114,7 @@ void SwAttrPool::createAndAddSecondaryPools()
     }
 }
 
+//UUUU
 void SwAttrPool::removeAndDeleteSecondaryPools()
 {
     SfxItemPool *pSdrPool = GetSecondaryPool();
@@ -176,7 +178,7 @@ SfxItemSet* SwAttrSet::Clone( bool bItems, SfxItemPool *pToPool ) const
                 {
                     const SfxPoolItem* pItem;
                     if ( SfxItemState::SET == GetItemState( nWhich, false, &pItem ) )
-                        pTmpSet->Put( *pItem );
+                        pTmpSet->Put( *pItem, pItem->Which() );
                     nWhich = aIter.NextWhich();
                 }
             }

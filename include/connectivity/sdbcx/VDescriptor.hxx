@@ -59,7 +59,7 @@ namespace connectivity
         public:
             ODescriptor(::cppu::OBroadcastHelper& _rBHelper, bool _bCase, bool _bNew = false);
 
-            virtual ~ODescriptor() override;
+            virtual ~ODescriptor();
 
             bool     isNew()  const         { return m_bNew;    }
             void     setNew(bool _bNew);
@@ -69,12 +69,11 @@ namespace connectivity
             virtual void construct();
 
             // XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
-            /// @throws css::uno::RuntimeException
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  );
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception);
 
             // css::lang::XUnoTunnel
-            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
             static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
 
             static ODescriptor* getImplementation( const css::uno::Reference< css::uno::XInterface >& _rxSomeComp );

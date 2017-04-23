@@ -43,7 +43,7 @@ public:
     explicit Reader(rtl::Reference< Bridge > const & bridge);
 
 private:
-    virtual ~Reader() override;
+    virtual ~Reader();
 
     virtual void execute() override;
 

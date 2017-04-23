@@ -38,7 +38,7 @@ private:
     VclPtr<RadioButton>  mpTwoFactorRadio;
     VclPtr<NumericField> mpRowsPerSampleField;
 
-    DECL_LINK(FactorChanged, RadioButton&, void);
+    DECL_LINK_TYPED(FactorChanged, RadioButton&, void);
     void FactorChanged();
 
     AnovaFactor meFactor;
@@ -55,7 +55,7 @@ public:
         SfxBindings* pB, SfxChildWindow* pCW,
         vcl::Window* pParent, ScViewData* pViewData );
 
-    virtual ~ScAnalysisOfVarianceDialog() override;
+    virtual ~ScAnalysisOfVarianceDialog();
     virtual void dispose() override;
 
     virtual bool Close() override;

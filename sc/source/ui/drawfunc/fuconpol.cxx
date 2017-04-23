@@ -64,10 +64,10 @@ bool FuConstPolygon::MouseButtonDown(const MouseEvent& rMEvt)
 
     SdrViewEvent aVEvt;
     (void)pView->PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
-    if (aVEvt.eEvent == SdrEventKind::BeginTextEdit)
+    if (aVEvt.eEvent == SDREVENT_BEGTEXTEDIT)
     {
-        // Text input not allowed here
-        aVEvt.eEvent = SdrEventKind::BeginDragObj;
+        // Texteingabe hier nicht zulassen
+        aVEvt.eEvent = SDREVENT_BEGDRAGOBJ;
         pView->EnableExtendedMouseEventDispatcher(false);
     }
     else
@@ -112,10 +112,10 @@ bool FuConstPolygon::MouseButtonUp(const MouseEvent& rMEvt)
 
     pView->MouseButtonUp(rMEvt, pWindow);
 
-    if (aVEvt.eEvent == SdrEventKind::EndCreate)
+    if (aVEvt.eEvent == SDREVENT_ENDCREATE)
     {
         bReturn = true;
-        bSimple = true;         // Do not pass on double-click
+        bSimple = true;         // Doppelklick nicht weiterreichen
     }
 
     bool bParent;
@@ -129,7 +129,21 @@ bool FuConstPolygon::MouseButtonUp(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* Activate function
+|* Tastaturereignisse bearbeiten
+|*
+|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
+|* FALSE.
+|*
+\************************************************************************/
+
+bool FuConstPolygon::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuConstruct::KeyInput(rKEvt);
+}
+
+/*************************************************************************
+|*
+|* Function aktivieren
 |*
 \************************************************************************/
 
@@ -188,7 +202,7 @@ void FuConstPolygon::Activate()
 
     pView->SetCurrentObj(sal::static_int_cast<sal_uInt16>(eKind));
 
-    pView->SetEditMode(SdrViewEditMode::Create);
+    pView->SetEditMode(SDREDITMODE_CREATE);
 
     FuConstruct::Activate();
 
@@ -205,7 +219,7 @@ void FuConstPolygon::Activate()
 
 void FuConstPolygon::Deactivate()
 {
-    pView->SetEditMode(SdrViewEditMode::Edit);
+    pView->SetEditMode(SDREDITMODE_EDIT);
 
     pView->EnableExtendedMouseEventDispatcher(false);
 
@@ -215,7 +229,7 @@ void FuConstPolygon::Deactivate()
 }
 
 // Create default drawing objects via keyboard
-SdrObject* FuConstPolygon::CreateDefaultObject(const sal_uInt16 nID, const tools::Rectangle& rRectangle)
+SdrObject* FuConstPolygon::CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle)
 {
     // case SID_DRAW_XPOLYGON:
     // case SID_DRAW_XPOLYGON_NOFILL:

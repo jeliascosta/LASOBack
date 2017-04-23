@@ -44,7 +44,7 @@ public:
 
         nCRC = rtl_crc32(nCRC, buf, num);
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("empty crc buffer", static_cast<sal_uInt32>(0), nCRC);
+        CPPUNIT_ASSERT_MESSAGE("empty crc buffer", nCRC == 0);
     }
 
     void rtl_crc32_002()
@@ -111,7 +111,7 @@ public:
 
         nCRC2 = rtl_crc32(nCRC2, buf2, num2);
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("checksum leave it's bounds", nCRC2, nCRC1);
+        CPPUNIT_ASSERT_MESSAGE("checksum leave it's bounds", nCRC1 == nCRC2);
     }
 
     /** check if the crc32 differ at same content in reverse order
@@ -150,5 +150,9 @@ public:
 
 CPPUNIT_TEST_SUITE_REGISTRATION(rtl_CRC32::test);
 } // namespace rtl_CRC32
+
+// this macro creates an empty function, which will called by the RegisterAllFunctions()
+// to let the user the possibility to also register some functions by hand.
+CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

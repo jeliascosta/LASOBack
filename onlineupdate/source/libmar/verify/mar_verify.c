@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <onlineupdate/mar_private.h>
-#include <onlineupdate/mar.h>
+#include "mar_private.h"
+#include "mar.h"
 #include "cryptox.h"
 
 int

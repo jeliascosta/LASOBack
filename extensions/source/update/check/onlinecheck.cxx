@@ -24,8 +24,6 @@
 #include <sal/types.h>
 #include <sal/macros.h>
 
-#include <onlinecheck.hxx>
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <wininet.h>
@@ -41,18 +39,22 @@ extern "C" bool SAL_CALL WNT_hasInternetConnection()
     DWORD   dwFlags;
     TCHAR   szConnectionName[1024];
 
+#ifndef __MINGW32__
     __try {
+#endif
     BOOL fIsConnected = InternetGetConnectedStateEx(
         &dwFlags,
         szConnectionName,
         SAL_N_ELEMENTS(szConnectionName),
         0 );
 
-    return fIsConnected;
+    return fIsConnected ? true : false;
 
+#ifndef __MINGW32__
     } __except( EXCEPTION_EXECUTE_HANDLER ) {
         return false;
     }
+#endif
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

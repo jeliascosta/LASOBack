@@ -46,53 +46,54 @@ private:
                             m_xListener;
 
     void                            prepareExecute( );
-    DECL_LINK(                DialogClosedHdl, Dialog&, void );
+    DECL_LINK_TYPED(                DialogClosedHdl, Dialog&, void );
 
 public:
                                     SvtFolderPicker();
-    virtual                        ~SvtFolderPicker() override;
+    virtual                        ~SvtFolderPicker();
 
 
     // XFolderPicker2 functions
 
 
-    virtual void SAL_CALL           setDisplayDirectory( const OUString& aDirectory ) override;
-    virtual OUString SAL_CALL       getDisplayDirectory() override;
-    virtual OUString SAL_CALL       getDirectory() override;
-    virtual void SAL_CALL           setDescription( const OUString& aDescription ) override;
+    virtual void SAL_CALL           setDisplayDirectory( const OUString& aDirectory ) throw( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL       getDisplayDirectory() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL       getDirectory() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setDescription( const OUString& aDescription ) throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL cancel() override;
+    virtual void SAL_CALL cancel()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XExecutableDialog functions
 
-    virtual void SAL_CALL setTitle( const OUString& _rTitle ) override;
-    virtual sal_Int16 SAL_CALL execute(  ) override;
+    virtual void SAL_CALL setTitle( const OUString& _rTitle ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL execute(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XAsynchronousExecutableDialog functions
 
-    virtual void SAL_CALL       setDialogTitle( const OUString& _rTitle ) override;
-    virtual void SAL_CALL       startExecuteModal( const css::uno::Reference< css::ui::dialogs::XDialogClosedListener >& xListener ) override;
+    virtual void SAL_CALL       setDialogTitle( const OUString& _rTitle ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL       startExecuteModal( const css::uno::Reference< css::ui::dialogs::XDialogClosedListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XServiceInfo functions
 
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL    getImplementationName() override;
-    virtual sal_Bool SAL_CALL       supportsService( const OUString& sServiceName ) override;
+    virtual OUString SAL_CALL    getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL       supportsService( const OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-                                    getSupportedServiceNames() override;
+                                    getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     /* Helper for XServiceInfo */
     static css::uno::Sequence< OUString > impl_getStaticSupportedServiceNames();
     static OUString impl_getStaticImplementationName();
 
     /* Helper for registry */
-    /// @throws css::uno::Exception
     static css::uno::Reference< css::uno::XInterface > SAL_CALL impl_createInstance (
-        const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+        const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+        throw( css::uno::Exception );
 
 protected:
 

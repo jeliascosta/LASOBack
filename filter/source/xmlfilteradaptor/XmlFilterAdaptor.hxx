@@ -60,11 +60,11 @@ protected:
     OUString msTemplateName;
     FilterType meType;
 
-    /// @throws css::uno::RuntimeException
-    bool SAL_CALL exportImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor );
+    bool SAL_CALL exportImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    bool SAL_CALL importImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor );
+    bool SAL_CALL importImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException, std::exception);
 
 
 public:
@@ -75,48 +75,72 @@ public:
     {
     }
 
+    virtual ~XmlFilterAdaptor() {}
+
+
     // XFilter
 
-    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) override;
+    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL cancel(  ) override;
+    virtual void SAL_CALL cancel(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XExporter
 
-    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 
     // XImporter
 
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 
     // XInitialization
 
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
 
     // XServiceInfo
 
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+
+        throw (css::uno::RuntimeException, std::exception) override;
+
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
-/// @throws css::uno::RuntimeException
-OUString XmlFilterAdaptor_getImplementationName();
 
-/// @throws css::uno::RuntimeException
-css::uno::Sequence< OUString > SAL_CALL XmlFilterAdaptor_getSupportedServiceNames(  );
+OUString XmlFilterAdaptor_getImplementationName()
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::Exception
+
+bool SAL_CALL XmlFilterAdaptor_supportsService( const OUString& ServiceName )
+    throw ( css::uno::RuntimeException );
+
+
+css::uno::Sequence< OUString > SAL_CALL XmlFilterAdaptor_getSupportedServiceNames(  )
+    throw ( css::uno::RuntimeException );
+
+
 css::uno::Reference< css::uno::XInterface >
 
-SAL_CALL XmlFilterAdaptor_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr);
+SAL_CALL XmlFilterAdaptor_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr)
+
+    throw ( css::uno::Exception );
 
 
 #endif

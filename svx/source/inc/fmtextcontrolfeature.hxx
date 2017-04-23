@@ -30,7 +30,6 @@
 
 namespace svx
 {
-    class FmTextControlShell;
 
     typedef ::cppu::WeakImplHelper <   css::frame::XStatusListener
                                     >   FmTextControlFeature_Base;
@@ -43,7 +42,7 @@ namespace svx
         css::util::URL                  m_aFeatureURL;
         css::uno::Any                   m_aFeatureState;
         SfxSlotId                       m_nSlotId;
-        FmTextControlShell*             m_pInvalidator;
+        ISlotInvalidator*               m_pInvalidator;
         bool                            m_bFeatureEnabled;
 
     public:
@@ -57,12 +56,12 @@ namespace svx
             const css::uno::Reference< css::frame::XDispatch >& _rxDispatcher,
             const css::util::URL& _rFeatureURL,
             SfxSlotId _nId,
-            FmTextControlShell* _pInvalidator
+            ISlotInvalidator* _pInvalidator
         );
 
         /// determines whether the feature we're responsible for is currently enabled
-        bool                                isFeatureEnabled( ) const { return m_bFeatureEnabled; }
-        const css::uno::Any&   getFeatureState( ) const { return m_aFeatureState; }
+        inline  bool                                isFeatureEnabled( ) const { return m_bFeatureEnabled; }
+        inline  const css::uno::Any&   getFeatureState( ) const { return m_aFeatureState; }
 
         /** dispatches the feature URL to the dispatcher
         */
@@ -76,12 +75,12 @@ namespace svx
         void    dispose();
 
     protected:
-        virtual ~FmTextControlFeature() override;
+        virtual ~FmTextControlFeature();
 
     protected:
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& State ) override;
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& State ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
     };
 
 

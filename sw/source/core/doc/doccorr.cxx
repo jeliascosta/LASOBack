@@ -109,7 +109,7 @@ void PaMCorrAbs( const SwPaM& rRange,
                 do {
                     lcl_PaMCorrAbs( *_pStackCursor, aStart, aEnd, aNewPos );
                 } while ( (_pStackCursor != nullptr ) &&
-                    ((_pStackCursor = _pStackCursor->GetNext()) != pCursorShell->GetStackCursor()) );
+                    ((_pStackCursor = static_cast<SwPaM *>(_pStackCursor->GetNext())) != pCursorShell->GetStackCursor()) );
 
             for(SwPaM& rPaM : const_cast<SwShellCursor*>(pCursorShell->GetCursor_())->GetRingContainer())
             {
@@ -121,7 +121,6 @@ void PaMCorrAbs( const SwPaM& rRange,
         }
     }
 
-    pDoc->cleanupUnoCursorTable();
     for(const auto& pWeakUnoCursor : pDoc->mvUnoCursorTable)
     {
         auto pUnoCursor(pWeakUnoCursor.lock());
@@ -159,8 +158,8 @@ void PaMCorrAbs( const SwPaM& rRange,
         if (bChange && bLeaveSection)
         {
             // the UNO cursor has left its section. We need to notify it!
-            sw::UnoCursorHint aHint;
-            pUnoCursor->m_aNotifier.Broadcast(aHint);
+            SwMsgPoolItem aHint( RES_UNOCURSOR_LEAVES_SECTION );
+            pUnoCursor->ModifyNotification( &aHint, nullptr );
         }
     }
 }
@@ -261,7 +260,7 @@ void PaMCorrRel( const SwNodeIndex &rOldNode,
                 do {
                     lcl_PaMCorrRel1( _pStackCursor, pOldNode, aNewPos, nCntIdx );
                 } while ( (_pStackCursor != nullptr ) &&
-                    ((_pStackCursor = _pStackCursor->GetNext()) != pCursorShell->GetStackCursor()) );
+                    ((_pStackCursor = static_cast<SwPaM *>(_pStackCursor->GetNext())) != pCursorShell->GetStackCursor()) );
 
             SwPaM* pStartPaM = pCursorShell->GetCursor_();
             for(SwPaM& rPaM : pStartPaM->GetRingContainer())
@@ -274,7 +273,6 @@ void PaMCorrRel( const SwNodeIndex &rOldNode,
        }
     }
 
-    pDoc->cleanupUnoCursorTable();
     for(const auto& pWeakUnoCursor : pDoc->mvUnoCursorTable)
     {
         auto pUnoCursor(pWeakUnoCursor.lock());

@@ -64,27 +64,27 @@ namespace rptui
     {
     }
 
-    OUString SAL_CALL DefaultComponentInspectorModel::getImplementationName(  )
+    OUString SAL_CALL DefaultComponentInspectorModel::getImplementationName(  ) throw(RuntimeException, std::exception)
     {
         return getImplementationName_Static();
     }
 
-    sal_Bool SAL_CALL DefaultComponentInspectorModel::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL DefaultComponentInspectorModel::supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    Sequence< OUString > SAL_CALL DefaultComponentInspectorModel::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL DefaultComponentInspectorModel::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
     {
         return getSupportedServiceNames_static();
     }
 
-    OUString DefaultComponentInspectorModel::getImplementationName_Static(  )
+    OUString DefaultComponentInspectorModel::getImplementationName_Static(  ) throw(RuntimeException)
     {
         return OUString("com.sun.star.comp.report.DefaultComponentInspectorModel");
     }
 
-    Sequence< OUString > DefaultComponentInspectorModel::getSupportedServiceNames_static(  )
+    Sequence< OUString > DefaultComponentInspectorModel::getSupportedServiceNames_static(  ) throw(RuntimeException)
     {
         Sequence< OUString > aSupported { "com.sun.star.report.inspection.DefaultComponentInspectorModel" };
         return aSupported;
@@ -96,7 +96,7 @@ namespace rptui
     }
 
 
-    Sequence< Any > SAL_CALL DefaultComponentInspectorModel::getHandlerFactories()
+    Sequence< Any > SAL_CALL DefaultComponentInspectorModel::getHandlerFactories() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -127,39 +127,39 @@ namespace rptui
         return aReturn;
     }
 
-    sal_Bool SAL_CALL DefaultComponentInspectorModel::getHasHelpSection()
+    sal_Bool SAL_CALL DefaultComponentInspectorModel::getHasHelpSection() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         return m_bHasHelpSection;
     }
 
 
-    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getMinHelpTextLines()
+    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getMinHelpTextLines() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         return m_nMinHelpTextLines;
     }
 
-    sal_Bool SAL_CALL DefaultComponentInspectorModel::getIsReadOnly()
+    sal_Bool SAL_CALL DefaultComponentInspectorModel::getIsReadOnly() throw (css::uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         return m_bIsReadOnly;
     }
 
-    void SAL_CALL DefaultComponentInspectorModel::setIsReadOnly( sal_Bool _isreadonly )
+    void SAL_CALL DefaultComponentInspectorModel::setIsReadOnly( sal_Bool _isreadonly ) throw (css::uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         m_bIsReadOnly = _isreadonly;
     }
 
 
-    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getMaxHelpTextLines()
+    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getMaxHelpTextLines() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         return m_nMaxHelpTextLines;
     }
 
-    void SAL_CALL DefaultComponentInspectorModel::initialize( const Sequence< Any >& _arguments )
+    void SAL_CALL DefaultComponentInspectorModel::initialize( const Sequence< Any >& _arguments ) throw (Exception, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         if ( m_bConstructed )
@@ -167,7 +167,7 @@ namespace rptui
 
         if ( !_arguments.hasElements() )
         {   // constructor: "createDefault()"
-            m_bConstructed = true;
+            createDefault();
             return;
         }
 
@@ -184,6 +184,11 @@ namespace rptui
     }
 
 
+    void DefaultComponentInspectorModel::createDefault()
+    {
+        m_bConstructed = true;
+    }
+
     void DefaultComponentInspectorModel::createWithHelpSection( sal_Int32 _nMinHelpTextLines, sal_Int32 _nMaxHelpTextLines )
     {
         if ( ( _nMinHelpTextLines <= 0 ) || ( _nMaxHelpTextLines <= 0 ) || ( _nMinHelpTextLines > _nMaxHelpTextLines ) )
@@ -195,7 +200,7 @@ namespace rptui
         m_bConstructed = true;
     }
 
-    Sequence< PropertyCategoryDescriptor > SAL_CALL DefaultComponentInspectorModel::describeCategories(  )
+    Sequence< PropertyCategoryDescriptor > SAL_CALL DefaultComponentInspectorModel::describeCategories(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -223,7 +228,7 @@ namespace rptui
     }
 
 
-    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getPropertyOrderIndex( const OUString& _rPropertyName )
+    ::sal_Int32 SAL_CALL DefaultComponentInspectorModel::getPropertyOrderIndex( const OUString& _rPropertyName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard(m_aMutex);
         const sal_Int32 nPropertyId( OPropertyInfoService::getPropertyId( _rPropertyName ) );

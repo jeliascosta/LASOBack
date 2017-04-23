@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/task/XStatusIndicator.hpp>
+#include <unotools/ucbstreamhelper.hxx>
 
 #include <osl/endian.h>
 #include <vcl/virdev.hxx>
@@ -31,7 +32,7 @@
 
 using namespace ::com::sun::star;
 
-CGM::CGM(uno::Reference< frame::XModel > const & rModel)
+CGM::CGM( sal_uInt32 nMode, uno::Reference< frame::XModel > const & rModel )
     : mnOutdx(28000)
     , mnOutdy(21000)
     , mnVDCXadd(0)
@@ -51,7 +52,6 @@ CGM::CGM(uno::Reference< frame::XModel > const & rModel)
     , mbPictureBody(false)
     , mbFigure(false)
     , mbFirstOutPut(false)
-    , mbInDefaultReplacement(false)
     , mnAct4PostReset(0)
     , mpBitmapInUse(nullptr)
     , mpChart(nullptr)
@@ -61,6 +61,7 @@ CGM::CGM(uno::Reference< frame::XModel > const & rModel)
     , mnParaSize(0)
     , mnActCount(0)
     , mpBuf(nullptr)
+    , mnMode(nMode | CGM_EXPORT_IMPRESS)
     , mnEscape(0)
     , mnElementClass(0)
     , mnElementID(0)
@@ -621,16 +622,8 @@ void CGM::ImplDoClass()
 
 void CGM::ImplDefaultReplacement()
 {
-    if (!maDefRepList.empty())
+    if ( !maDefRepList.empty() )
     {
-        if (mbInDefaultReplacement)
-        {
-            SAL_WARN("filter.icgm", "recursion in ImplDefaultReplacement");
-            return;
-        }
-
-        mbInDefaultReplacement = true;
-
         sal_uInt32  nOldEscape = mnEscape;
         sal_uInt32  nOldElementClass = mnElementClass;
         sal_uInt32  nOldElementID = mnElementID;
@@ -672,8 +665,6 @@ void CGM::ImplDefaultReplacement()
         mnParaSize = mnElementSize = nOldElementSize;
         mpSource = pOldBuf;
         mpEndValidSource = pOldEndValidSource;
-
-        mbInDefaultReplacement = false;
     }
 }
 
@@ -684,7 +675,7 @@ bool CGM::Write( SvStream& rIStm )
 
     mnParaSize = 0;
     mpSource = mpBuf;
-    if (rIStm.ReadBytes(mpSource, 2) != 2)
+    if (rIStm.Read(mpSource, 2) != 2)
         return false;
     mpEndValidSource = mpSource + 2;
     mnEscape = ImplGetUI16();
@@ -694,7 +685,7 @@ bool CGM::Write( SvStream& rIStm )
 
     if ( mnElementSize == 31 )
     {
-        if (rIStm.ReadBytes(mpSource + mnParaSize, 2) != 2)
+        if (rIStm.Read(mpSource + mnParaSize, 2) != 2)
             return false;
         mpEndValidSource = mpSource + mnParaSize + 2;
         mnElementSize = ImplGetUI16();
@@ -702,7 +693,7 @@ bool CGM::Write( SvStream& rIStm )
     mnParaSize = 0;
     if (mnElementSize)
     {
-        if (rIStm.ReadBytes(mpSource, mnElementSize) != mnElementSize)
+        if (rIStm.Read(mpSource, mnElementSize) != mnElementSize)
             return false;
         mpEndValidSource = mpSource + mnElementSize;
     }
@@ -716,7 +707,7 @@ bool CGM::Write( SvStream& rIStm )
 
 // GraphicImport - the exported function
 extern "C" SAL_DLLPUBLIC_EXPORT sal_uInt32 SAL_CALL
-ImportCGM(SvStream& rIn, uno::Reference< frame::XModel > const & rXModel, css::uno::Reference<css::task::XStatusIndicator> const & aXStatInd)
+ImportCGM( OUString const & rFileName, uno::Reference< frame::XModel > const & rXModel, sal_uInt32 nMode, css::uno::Reference<css::task::XStatusIndicator> const & aXStatInd )
 {
 
     sal_uInt32  nStatus = 0;            // retvalue == 0 -> ERROR
@@ -726,40 +717,47 @@ ImportCGM(SvStream& rIn, uno::Reference< frame::XModel > const & rXModel, css::u
     {
         try
         {
-            std::unique_ptr<CGM> pCGM(new CGM(rXModel));
-            if (pCGM && pCGM->IsValid())
+            std::unique_ptr<CGM> pCGM(new CGM( nMode, rXModel ));
+            if ( pCGM && pCGM->IsValid() )
             {
-                rIn.SetEndian(SvStreamEndian::BIG);
-                sal_uInt64 const nInSize = rIn.remainingSize();
-                rIn.Seek(0);
-
-                sal_uInt32  nNext = 0;
-                sal_uInt32  nAdd = nInSize / 20;
-                bool bProgressBar = aXStatInd.is();
-                if ( bProgressBar )
-                    aXStatInd->start( "CGM Import" , nInSize );
-
-                while (pCGM->IsValid() && (rIn.Tell() < nInSize) && !pCGM->IsFinished())
+                if ( nMode & CGM_IMPORT_CGM )
                 {
-                    if ( bProgressBar )
+                    std::unique_ptr<SvStream> pIn(::utl::UcbStreamHelper::CreateStream( rFileName, StreamMode::READ ));
+                    if ( pIn )
                     {
-                        sal_uInt32 nCurrentPos = rIn.Tell();
-                        if ( nCurrentPos >= nNext )
-                        {
-                            aXStatInd->setValue( nCurrentPos );
-                            nNext = nCurrentPos + nAdd;
-                        }
-                    }
+                        pIn->SetEndian( SvStreamEndian::BIG );
+                        sal_uInt64 const nInSize = pIn->remainingSize();
+                        pIn->Seek( 0 );
 
-                    if (!pCGM->Write(rIn))
-                        break;
+                        sal_uInt32  nNext = 0;
+                        sal_uInt32  nAdd = nInSize / 20;
+                        bool bProgressBar = aXStatInd.is();
+                        if ( bProgressBar )
+                            aXStatInd->start( "CGM Import" , nInSize );
+
+                        while ( pCGM->IsValid() && ( pIn->Tell() < nInSize ) && !pCGM->IsFinished() )
+                        {
+                            if ( bProgressBar )
+                            {
+                                sal_uInt32 nCurrentPos = pIn->Tell();
+                                if ( nCurrentPos >= nNext )
+                                {
+                                    aXStatInd->setValue( nCurrentPos );
+                                    nNext = nCurrentPos + nAdd;
+                                }
+                            }
+
+                            if ( !pCGM->Write( *pIn ) )
+                                break;
+                        }
+                        if ( pCGM->IsValid() )
+                        {
+                            nStatus = pCGM->GetBackGroundColor() | 0xff000000;
+                        }
+                        if ( bProgressBar )
+                            aXStatInd->end();
+                    }
                 }
-                if ( pCGM->IsValid() )
-                {
-                    nStatus = pCGM->GetBackGroundColor() | 0xff000000;
-                }
-                if ( bProgressBar )
-                    aXStatInd->end();
             }
         }
         catch (const css::uno::Exception&)

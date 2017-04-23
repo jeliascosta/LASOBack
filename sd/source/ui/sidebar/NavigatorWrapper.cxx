@@ -18,6 +18,7 @@
  */
 
 #include "NavigatorWrapper.hxx"
+#include "navigatr.hrc"
 #include "ViewShellBase.hxx"
 
 #include <sfx2/sidebar/Theme.hxx>
@@ -32,7 +33,9 @@ NavigatorWrapper::NavigatorWrapper (
     : Control(pParent, 0),
       mrViewShellBase(rViewShellBase),
       maNavigator(VclPtr<SdNavigatorWin>::Create(
-        this, pBindings))
+        this,
+        SdResId(FLT_NAVIGATOR),
+        pBindings))
 {
     maNavigator->SetUpdateRequestFunctor(
             [this] () { return this->UpdateNavigator(); });

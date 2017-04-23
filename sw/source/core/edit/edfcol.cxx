@@ -158,7 +158,7 @@ uno::Reference<drawing::XShape> lcl_getWatermark(const uno::Reference<text::XTex
 
 SwTextFormatColl& SwEditShell::GetDfltTextFormatColl() const
 {
-    return *GetDoc()->GetDfltTextFormatColl();
+    return *static_cast<SwTextFormatColl*>( (GetDoc()->GetDfltTextFormatColl()));
 }
 
 sal_uInt16 SwEditShell::GetTextFormatCollCount() const
@@ -315,7 +315,7 @@ void SwEditShell::SetClassification(const OUString& rName, SfxClassificationPoli
                     xPropertySet->setPropertyValue(UNO_NAME_TEXT_AUTOGROWWIDTH, uno::makeAny(false));
                     xPropertySet->setPropertyValue(UNO_NAME_TEXT_MINFRAMEHEIGHT, uno::makeAny(nHeight));
                     xPropertySet->setPropertyValue(UNO_NAME_TEXT_MINFRAMEWIDTH, uno::makeAny(nWidth));
-                    xPropertySet->setPropertyValue(UNO_NAME_TEXT_WRAP, uno::makeAny(text::WrapTextMode_THROUGH));
+                    xPropertySet->setPropertyValue(UNO_NAME_TEXT_WRAP, uno::makeAny(text::WrapTextMode_THROUGHT));
                     xPropertySet->setPropertyValue(UNO_NAME_VERT_ORIENT_RELATION, uno::makeAny(static_cast<sal_Int16>(text::RelOrientation::PAGE_PRINT_AREA)));
                     xPropertySet->setPropertyValue(UNO_NAME_CHAR_FONT_NAME, uno::makeAny(OUString("Liberation Sans")));
                     xPropertySet->setPropertyValue("Transformation", uno::makeAny(aMatrix));
@@ -385,7 +385,7 @@ void SwEditShell::SetTextFormatColl(SwTextFormatColl *pFormat,
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, pLocal->GetName());
 
-    GetDoc()->GetIDocumentUndoRedo().StartUndo(SwUndoId::SETFMTCOLL, &aRewriter);
+    GetDoc()->GetIDocumentUndoRedo().StartUndo(UNDO_SETFMTCOLL, &aRewriter);
     for(SwPaM& rPaM : GetCursor()->GetRingContainer())
     {
 
@@ -405,7 +405,7 @@ void SwEditShell::SetTextFormatColl(SwTextFormatColl *pFormat,
         }
 
     }
-    GetDoc()->GetIDocumentUndoRedo().EndUndo(SwUndoId::SETFMTCOLL, &aRewriter);
+    GetDoc()->GetIDocumentUndoRedo().EndUndo(UNDO_SETFMTCOLL, &aRewriter);
     EndAllAction();
 }
 

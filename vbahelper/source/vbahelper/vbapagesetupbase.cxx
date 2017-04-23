@@ -17,21 +17,19 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include <vbahelper/vbapagesetupbase.hxx>
-#include <basic/sberrors.hxx>
-#include <com/sun/star/beans/XPropertySet.hpp>
 
 using namespace ::com::sun::star;
 using namespace ::ooo::vba;
 
 VbaPageSetupBase::VbaPageSetupBase(const uno::Reference< XHelperInterface >& xParent,
-                const uno::Reference< uno::XComponentContext >& xContext )
+                const uno::Reference< uno::XComponentContext >& xContext ) throw (uno::RuntimeException)
     : VbaPageSetupBase_BASE( xParent, xContext )
     , mnOrientLandscape(0)
     , mnOrientPortrait(0)
 {
 }
 
-double SAL_CALL VbaPageSetupBase::getTopMargin()
+double SAL_CALL VbaPageSetupBase::getTopMargin() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 topMargin = 0;
 
@@ -60,7 +58,7 @@ double SAL_CALL VbaPageSetupBase::getTopMargin()
     return Millimeter::getInPoints( topMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setTopMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setTopMargin( double margin ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 topMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
 
@@ -86,7 +84,7 @@ void SAL_CALL VbaPageSetupBase::setTopMargin( double margin )
     }
 }
 
-double SAL_CALL VbaPageSetupBase::getBottomMargin()
+double SAL_CALL VbaPageSetupBase::getBottomMargin() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 bottomMargin = 0;
 
@@ -115,7 +113,7 @@ double SAL_CALL VbaPageSetupBase::getBottomMargin()
     return Millimeter::getInPoints( bottomMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setBottomMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setBottomMargin( double margin ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 bottomMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
 
@@ -141,7 +139,7 @@ void SAL_CALL VbaPageSetupBase::setBottomMargin( double margin )
     }
 }
 
-double SAL_CALL VbaPageSetupBase::getRightMargin()
+double SAL_CALL VbaPageSetupBase::getRightMargin() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 rightMargin = 0;
     try
@@ -156,7 +154,7 @@ double SAL_CALL VbaPageSetupBase::getRightMargin()
     return Millimeter::getInPoints( rightMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setRightMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setRightMargin( double margin ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 rightMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
     try
@@ -169,7 +167,7 @@ void SAL_CALL VbaPageSetupBase::setRightMargin( double margin )
 
 }
 
-double SAL_CALL VbaPageSetupBase::getLeftMargin()
+double SAL_CALL VbaPageSetupBase::getLeftMargin() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 leftMargin = 0;
     try
@@ -184,7 +182,7 @@ double SAL_CALL VbaPageSetupBase::getLeftMargin()
     return Millimeter::getInPoints( leftMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setLeftMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setLeftMargin( double margin ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 leftMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
     try
@@ -196,7 +194,7 @@ void SAL_CALL VbaPageSetupBase::setLeftMargin( double margin )
     }
 }
 
-double SAL_CALL VbaPageSetupBase::getHeaderMargin()
+double SAL_CALL VbaPageSetupBase::getHeaderMargin() throw (css::uno::RuntimeException)
 {
     sal_Int32 headerMargin = 0;
     try
@@ -211,7 +209,7 @@ double SAL_CALL VbaPageSetupBase::getHeaderMargin()
     return Millimeter::getInPoints( headerMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setHeaderMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setHeaderMargin( double margin ) throw (css::uno::RuntimeException)
 {
     sal_Int32 headerMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
     try
@@ -223,7 +221,7 @@ void SAL_CALL VbaPageSetupBase::setHeaderMargin( double margin )
     }
 }
 
-double SAL_CALL VbaPageSetupBase::getFooterMargin()
+double SAL_CALL VbaPageSetupBase::getFooterMargin() throw (css::uno::RuntimeException)
 {
     sal_Int32 footerMargin = 0;
     try
@@ -238,7 +236,7 @@ double SAL_CALL VbaPageSetupBase::getFooterMargin()
     return Millimeter::getInPoints( footerMargin );
 }
 
-void SAL_CALL VbaPageSetupBase::setFooterMargin( double margin )
+void SAL_CALL VbaPageSetupBase::setFooterMargin( double margin ) throw (css::uno::RuntimeException)
 {
     sal_Int32 footerMargin = Millimeter::getInHundredthsOfOneMillimeter( margin );
     try
@@ -250,7 +248,7 @@ void SAL_CALL VbaPageSetupBase::setFooterMargin( double margin )
     }
 }
 
-sal_Int32 SAL_CALL VbaPageSetupBase::getOrientation()
+sal_Int32 SAL_CALL VbaPageSetupBase::getOrientation() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 orientation = mnOrientPortrait;
     try
@@ -270,7 +268,7 @@ sal_Int32 SAL_CALL VbaPageSetupBase::getOrientation()
     return orientation;
 }
 
-void SAL_CALL VbaPageSetupBase::setOrientation( sal_Int32 orientation )
+void SAL_CALL VbaPageSetupBase::setOrientation( sal_Int32 orientation ) throw (css::uno::RuntimeException, std::exception)
 {
     if( ( orientation != mnOrientPortrait ) &&
         ( orientation != mnOrientLandscape ) )

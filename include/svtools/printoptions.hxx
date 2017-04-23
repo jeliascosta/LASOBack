@@ -45,7 +45,7 @@ public:
 public:
 
                 SvtBasePrintOptions();
-                virtual ~SvtBasePrintOptions() override;
+                virtual ~SvtBasePrintOptions();
 
     bool        IsReduceTransparency() const;
     sal_Int16   GetReducedTransparencyMode() const;
@@ -88,7 +88,7 @@ private:
 public:
 
     SvtPrinterOptions();
-    virtual ~SvtPrinterOptions() override;
+    virtual ~SvtPrinterOptions();
 };
 
 
@@ -102,7 +102,7 @@ private:
 public:
 
     SvtPrintFileOptions();
-    virtual ~SvtPrintFileOptions() override;
+    virtual ~SvtPrintFileOptions();
 };
 
 #endif // INCLUDED_SVTOOLS_PRINTOPTIONS_HXX

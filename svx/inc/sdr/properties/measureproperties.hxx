@@ -44,7 +44,7 @@ namespace sdr
             MeasureProperties(const MeasureProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~MeasureProperties() override;
+            virtual ~MeasureProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

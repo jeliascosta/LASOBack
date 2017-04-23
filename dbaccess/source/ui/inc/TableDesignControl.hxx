@@ -40,6 +40,9 @@ namespace dbaui
     private:
         sal_uInt16  m_nCurUndoActId;
 
+    protected:
+        bool    m_bClipboardFilled;
+
     public:
         OTableRowView(vcl::Window* pParent);
 

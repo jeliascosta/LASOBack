@@ -1,3 +1,4 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
  * This file is part of the LibreOffice project.
  *
@@ -23,8 +24,6 @@
 #include <tools/color.hxx>
 #include <tools/gen.hxx>
 #include <svx/svxdllapi.h>
-#include <svx/swframetypes.hxx>
-#include <com/sun/star/text/WrapTextMode.hpp>
 
 // class SwFrmPagePreview -------------------------------------------------------
 
@@ -40,14 +39,14 @@ class SVX_DLLPUBLIC SvxSwFrameExample : public vcl::Window
     Color       m_aBlankCol;        // area of symbol for blank
     Color       m_aBlankFrameCol;   // frame of symbol for blank
 
-    tools::Rectangle   aPage;
-    tools::Rectangle   aPagePrtArea;
-    tools::Rectangle   aTextLine;
-    tools::Rectangle   aPara;
-    tools::Rectangle   aParaPrtArea;
-    tools::Rectangle   aFrameAtFrame;
-    tools::Rectangle   aDrawObj;
-    tools::Rectangle   aAutoCharFrame;
+    Rectangle   aPage;
+    Rectangle   aPagePrtArea;
+    Rectangle   aTextLine;
+    Rectangle   aPara;
+    Rectangle   aParaPrtArea;
+    Rectangle   aFrameAtFrame;
+    Rectangle   aDrawObj;
+    Rectangle   aAutoCharFrame;
     Size        aFrmSize;
 
     short       nHAlign;
@@ -56,18 +55,18 @@ class SVX_DLLPUBLIC SvxSwFrameExample : public vcl::Window
     short       nVAlign;
     short       nVRel;
 
-    css::text::WrapTextMode nWrap;
-    RndStdIds   nAnchor;
+    short       nWrap;
+    short       nAnchor;
     bool        bTrans;
 
     Point       aRelPos;
 
     void InitColors_Impl();
     void InitAllRects_Impl(vcl::RenderContext& rRenderContext);
-    void CalcBoundRect_Impl(tools::Rectangle &rRect);
-    tools::Rectangle DrawInnerFrame_Impl(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect, const Color &rFillColor, const Color &rBorderColor);
+    void CalcBoundRect_Impl(Rectangle &rRect);
+    Rectangle DrawInnerFrame_Impl(vcl::RenderContext& rRenderContext, const Rectangle &rRect, const Color &rFillColor, const Color &rBorderColor);
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual Size GetOptimalSize() const override;
 protected:
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -75,16 +74,16 @@ public:
 
     SvxSwFrameExample(vcl::Window* pParent, WinBits nStyle);
 
-    void SetWrap(css::text::WrapTextMode nW) { nWrap     = nW; }
+    inline void SetWrap(sal_uInt16 nW)          { nWrap     = nW; }
 
-    void SetHAlign(short nH)          { nHAlign   = nH; }
-    void SetHoriRel(short nR)         { nHRel     = nR; }
+    inline void SetHAlign(short nH)          { nHAlign   = nH; }
+    inline void SetHoriRel(short nR)         { nHRel     = nR; }
 
-    void SetVAlign(short nV)          { nVAlign   = nV; }
-    void SetVertRel(short nR)         { nVRel     = nR; }
+    inline void SetVAlign(short nV)          { nVAlign   = nV; }
+    inline void SetVertRel(short nR)         { nVRel     = nR; }
 
-    void SetTransparent(bool bT)      { bTrans    = bT; }
-    void SetAnchor(RndStdIds nA) { nAnchor   = nA; }
+    inline void SetTransparent(bool bT)      { bTrans    = bT; }
+    inline void SetAnchor(short nA)          { nAnchor   = nA; }
 
     void SetRelPos(const Point& rP);
 };

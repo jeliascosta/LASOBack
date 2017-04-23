@@ -11,7 +11,7 @@ fetch_LOGFILE := $(TARFILE_LOCATION)/fetch.log
 
 ifneq (,$(WGET))
 define fetch_Download__wget_command
-&& bash -c '$(WGET) --progress=dot:mega -Q 0 -P "." -l 0 -nd -nH -N --no-use-server-timestamps $1/$2 2>&1 | tee -a $(fetch_LOGFILE) && [ $$PIPESTATUS -eq 0 ]'
+&& bash -c '$(WGET) --progress=dot:mega -4 -Q 0 -P "." -l 0 -nd -nH -N --no-use-server-timestamps $1/$2 2>&1 | tee -a $(fetch_LOGFILE) && [ $$PIPESTATUS -eq 0 ]'
 endef
 
 else
@@ -21,9 +21,9 @@ endef
 
 endif
 
-ifneq (,$(SHA256SUM))
+ifneq (,$(MD5SUM))
 define fetch_Download__checksum_command
-&& SUM=`$(SHA256SUM) $1 | sed "s/ .*//"` \
+&& SUM=`$(MD5SUM) $1 | sed "s/ .*//"` \
 && if test "$$SUM" != "$2"; then \
 	echo ERROR: expected checksum for $1 is $2 2>&1 | tee -a $(fetch_LOGFILE); \
 	false; \
@@ -35,7 +35,7 @@ fetch_Download__checksum_command :=
 
 endif
 
-# fetch__Download_item url tarball-name sha256sum
+# fetch__Download_item url tarball-name md5sum
 define fetch__Download_item
 $(if $(wildcard $(TARFILE_LOCATION)/$2),, \
 cd $(TARFILE_LOCATION)/tmp \
@@ -52,14 +52,17 @@ $(filter 32,$(words $(shell echo $(1) | sed -e 's/./& /g')))
 endef
 
 define fetch_Download__subst_var
-$(subst _DLL,_SHA256SUM,$(subst _TARBALL,_SHA256SUM,$(subst _PACK,_SHA256SUM,$(subst _JAR,_SHA256SUM,$(1)))))
+$(subst _DLL,_MD5SUM,$(subst _TARBALL,_MD5SUM,$(subst _PACK,_MD5SUM,$(1))))
 endef
 
 # fetch_Download_item url variable-name
 define fetch_Download_item
 $(if $(strip $($(2))),,$(error fetch__Download_item: $(2) is empty))
 $(if $(filter undefined,$(origin $(call fetch_Download__subst_var,$(2)))),\
-	$(error "fetch_Download_item: no checksum found for $($(2)). Please define $(call fetch_Download__subst_var,$(2)) in download.lst."),\
+	$(if $(call fetch_Download__is_checksum,$(firstword $(subst -, ,$($(2))))),\
+		$(call fetch__Download_item,$1,$($2),$(firstword $(subst -, ,$($(2))))),\
+		$(error "fetch_Download_item: no checksum found for $($(2)). Please define $(call fetch_Download__subst_var,$(2)) in download.lst.") \
+	),\
 	$(call fetch__Download_item,$(1),$($2),$($(call fetch_Download__subst_var,$(2)))) \
 )
 
@@ -126,9 +129,10 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,FONTCONFIG,FONTCONFIG_TARBALL) \
 		$(call fetch_Optional,FREEHAND,FREEHAND_TARBALL) \
 		$(call fetch_Optional,FREETYPE,FREETYPE_TARBALL) \
-		$(call fetch_Optional,EPOXY,EPOXY_TARBALL) \
+		$(call fetch_Optional,GLEW,GLEW_TARBALL) \
 		$(call fetch_Optional,GLM,GLM_TARBALL) \
-		$(call fetch_Optional,GPGMEPP,GPGME_TARBALL) \
+		$(call fetch_Optional,GLYPHY,GLYPHY_TARBALL) \
+		$(call fetch_Optional_pack,GOOGLE_DOCS_EXTENSION_PACK) \
 		$(call fetch_Optional,GRAPHITE,GRAPHITE_TARBALL) \
 		$(call fetch_Optional,HARFBUZZ,HARFBUZZ_TARBALL) \
 		$(call fetch_Optional,HSQLDB,HSQLDB_TARBALL) \
@@ -146,18 +150,16 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,JFREEREPORT,JFREEREPORT_LIBSERIALIZER_TARBALL) \
 		$(call fetch_Optional,JFREEREPORT,JFREEREPORT_LIBXML_TARBALL) \
 		$(call fetch_Optional,JFREEREPORT,JFREEREPORT_SAC_TARBALL) \
+		$(call fetch_Optional,JPEG,JPEG_TARBALL) \
 		$(call fetch_Optional,JPEG_TURBO,JPEG_TURBO_TARBALL) \
 		$(call fetch_Optional,LANGUAGETOOL,LANGUAGETOOL_TARBALL) \
 		$(call fetch_Optional,LCMS2,LCMS2_TARBALL) \
 		$(call fetch_Optional,LIBATOMIC_OPS,LIBATOMIC_OPS_TARBALL) \
-		$(call fetch_Optional,LIBASSUAN,LIBASSUAN_TARBALL) \
 		$(call fetch_Optional,LIBEOT,LIBEOT_TARBALL) \
 		$(call fetch_Optional,LIBEXTTEXTCAT,LIBEXTTEXTCAT_TARBALL) \
-		$(call fetch_Optional,LIBGPGERROR,LIBGPGERROR_TARBALL) \
 		$(call fetch_Optional,LIBLANGTAG,LANGTAGREG_TARBALL) \
 		$(call fetch_Optional,LIBLANGTAG,LIBLANGTAG_TARBALL) \
 		$(call fetch_Optional,LIBPNG,PNG_TARBALL) \
-		$(call fetch_Optional,LIBTOMMATH,LIBTOMMATH_TARBALL) \
 		$(call fetch_Optional,LIBXML2,LIBXML_TARBALL) \
 		LIBXMLSEC_TARBALL \
 		$(call fetch_Optional,LIBXSLT,LIBXSLT_TARBALL) \
@@ -176,7 +178,6 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,MORE_FONTS,FONT_PTSERIF_TARBALL) \
 		$(call fetch_Optional,MORE_FONTS,FONT_SOURCECODE_TARBALL) \
 		$(call fetch_Optional,MORE_FONTS,FONT_SOURCESANS_TARBALL) \
-		$(call fetch_Optional,MORE_FONTS,FONT_EMOJIONE_COLOR_TARBALL) \
 		$(call fetch_Optional,MSPUB,MSPUB_TARBALL) \
 		$(call fetch_Optional,MWAW,MWAW_TARBALL) \
 		$(call fetch_Optional,MYSQLCPPCONN,MYSQLCPPCONN_TARBALL) \
@@ -191,7 +192,6 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,ORCUS,ORCUS_TARBALL) \
 		$(call fetch_Optional,OWNCLOUD_ANDROID_LIB,OWNCLOUD_ANDROID_LIB_TARBALL) \
 		$(call fetch_Optional,PAGEMAKER,PAGEMAKER_TARBALL) \
-		$(call fetch_Optional,PDFIUM,PDFIUM_TARBALL) \
 		$(call fetch_Optional,POPPLER,POPPLER_TARBALL) \
 		$(call fetch_Optional,POSTGRESQL,POSTGRESQL_TARBALL) \
 		$(call fetch_Optional,PYTHON,PYTHON_TARBALL) \
@@ -202,7 +202,6 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,RHINO,RHINO_TARBALL) \
 		$(call fetch_Optional,RHINO,SWING_TARBALL) \
 		$(call fetch_Optional,SERF,SERF_TARBALL) \
-		$(call fetch_Optional,STAROFFICE,STAROFFICE_TARBALL) \
 		$(call fetch_Optional,UCPP,UCPP_TARBALL) \
 		$(call fetch_Optional,VISIO,VISIO_TARBALL) \
 		$(call fetch_Optional,WPD,WPD_TARBALL) \
@@ -210,13 +209,29 @@ $(WORKDIR)/download: $(BUILDDIR)/config_host.mk $(SRCDIR)/download.lst $(SRCDIR)
 		$(call fetch_Optional,WPS,WPS_TARBALL) \
 		$(call fetch_Optional,XSLTML,XSLTML_TARBALL) \
 		$(call fetch_Optional,ZLIB,ZLIB_TARBALL) \
-		$(call fetch_Optional,ZMF,ZMF_TARBALL) \
 	,$(call fetch_Download_item,http://dev-www.libreoffice.org/src,$(item)))
 	$(foreach item, \
+		$(call fetch_Optional,DBGHELP,DBGHELP_DLL) \
 		$(call fetch_Optional,ODK,UNOWINREG_DLL) \
-		$(call fetch_Optional,ODFVALIDATOR,ODFVALIDATOR_JAR) \
-		$(call fetch_Optional,OFFICEOTRON,OFFICEOTRON_JAR) \
 	,$(call fetch_Download_item,http://dev-www.libreoffice.org/extern,$(item)))
+	$(foreach item, \
+		$(call fetch_Optional_pack,BARCODE_EXTENSION_PACK) \
+		$(call fetch_Optional_pack,DIAGRAM_EXTENSION_PACK) \
+		$(call fetch_Optional_pack,HUNART_EXTENSION_PACK) \
+		$(call fetch_Optional_pack,OOOP_FONTS_PACK) \
+		$(call fetch_Optional_pack,OOOP_GALLERY_PACK) \
+		$(call fetch_Optional_pack,OOOP_SAMPLES_PACK) \
+		$(call fetch_Optional_pack,OOOP_TEMPLATES_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_DE_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_EN_US_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_ES_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_FR_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_HU_PACK) \
+		$(call fetch_Optional_pack,SUNTEMPLATES_IT_PACK) \
+		$(call fetch_Optional_pack,TYPO_EXTENSION_PACK) \
+		$(call fetch_Optional_pack,VALIDATOR_EXTENSION_PACK) \
+		$(call fetch_Optional_pack,WATCH_WINDOW_EXTENSION_PACK) \
+	,$(call fetch_Download_item,http://ooo.itc.hu/oxygenoffice/download/libreoffice,$(item)))
 	$(if $(call fetch_Optional,LIBGLTF,LIBGLTF_TARBALL) \
 	, $(call fetch_Download_item,http://dev-www.libreoffice.org/src/libgltf,$(call fetch_Optional,LIBGLTF,LIBGLTF_TARBALL)))
 	@mkdir -p $(dir $@) && touch $@

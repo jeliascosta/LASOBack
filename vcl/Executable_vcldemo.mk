@@ -19,9 +19,9 @@ $(eval $(call gb_Executable_use_externals,vcldemo,\
 	boost_headers \
 	glm_headers \
 ))
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_Executable_use_externals,vcldemo,\
-    epoxy \
+    glew \
 ))
 endif
 

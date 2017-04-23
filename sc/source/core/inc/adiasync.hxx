@@ -30,7 +30,7 @@ void CALLTYPE ScAddInAsyncCallBack( double& nHandle, void* pData );
 }
 
 class ScDocument;
-using ScAddInDocs = std::set<ScDocument*>;
+class ScAddInDocs : public std::set<ScDocument*> {};
 
 class ScAddInAsync : public SvtBroadcaster
 {
@@ -50,7 +50,9 @@ public:
     // cTor only if ScAddInAsync::Get fails.
     // nIndex: Index from FunctionCollection
     ScAddInAsync(sal_uLong nHandle, LegacyFuncData* pFuncData, ScDocument* pDoc);
-    virtual         ~ScAddInAsync() override;
+                    // default-cTor only for that single, global aSeekObj!
+                    ScAddInAsync();
+    virtual         ~ScAddInAsync();
     static ScAddInAsync*    Get( sal_uLong nHandle );
     static void     CallBack( sal_uLong nHandle, void* pData );
     static void     RemoveDocument( ScDocument* pDocument );
@@ -70,7 +72,7 @@ struct CompareScAddInAsync
 {
   bool operator()( ScAddInAsync* const& lhs, ScAddInAsync* const& rhs ) const { return (*lhs)<(*rhs); }
 };
-using ScAddInAsyncs = std::set<ScAddInAsync*, CompareScAddInAsync>;
+class ScAddInAsyncs : public std::set<ScAddInAsync*, CompareScAddInAsync> {};
 
 extern ScAddInAsyncs theAddInAsyncTbl;  // in adiasync.cxx
 

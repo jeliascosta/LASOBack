@@ -11,7 +11,6 @@
 #include <com/sun/star/document/DocumentProperties.hpp>
 #include <com/sun/star/drawing/XEnhancedCustomShapeDefaulter.hpp>
 #include <com/sun/star/graphic/GraphicProvider.hpp>
-#include <com/sun/star/io/WrongFormatException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
@@ -26,7 +25,6 @@
 #include <vcl/layout.hxx>
 #include <filter/msfilter/util.hxx>
 #include <comphelper/string.hxx>
-#include <svtools/grfmgr.hxx>
 #include <tools/globname.hxx>
 #include <tools/datetimeutils.hxx>
 #include <comphelper/classids.hxx>
@@ -51,29 +49,6 @@
 #include <rtffly.hxx>
 
 using namespace com::sun::star;
-
-namespace
-{
-/// Returns an util::DateTime from a 'YYYY. MM. DD.' string.
-util::DateTime getDateTimeFromUserProp(const OUString& rString)
-{
-    util::DateTime aRet;
-    sal_Int32 nLen = rString.getLength();
-    if (nLen >= 4)
-    {
-        aRet.Year = rString.copy(0, 4).toInt32();
-
-        if (nLen >= 8 && rString.copy(4, 2) == ". ")
-        {
-            aRet.Month = rString.copy(6, 2).toInt32();
-
-            if (nLen >= 12 && rString.copy(8, 2) == ". ")
-                aRet.Day = rString.copy(10, 2).toInt32();
-        }
-    }
-    return aRet;
-}
-} // anonymous namespace
 
 namespace writerfilter
 {
@@ -141,7 +116,7 @@ RTFSprms& getLastAttributes(RTFSprms& rSprms, Id nId)
         return p->getSprms().back().second->getAttributes();
     else
     {
-        SAL_WARN("writerfilter.rtf", "trying to set property when no type is defined");
+        SAL_WARN("writerfilter", "trying to set property when no type is defined");
         return rSprms;
     }
 }
@@ -153,7 +128,7 @@ void putBorderProperty(RTFStack& aStates, Id nId, const RTFValue::Pointer_t& pVa
         for (int i = 0; i < 4; i++)
         {
             RTFValue::Pointer_t p = aStates.top().aParagraphSprms.find(getParagraphBorder(i));
-            if (p)
+            if (p.get())
             {
                 RTFSprms& rAttributes = p->getAttributes();
                 rAttributes.set(nId, pValue);
@@ -162,7 +137,7 @@ void putBorderProperty(RTFStack& aStates, Id nId, const RTFValue::Pointer_t& pVa
     else if (aStates.top().nBorderState == RTFBorderState::CHARACTER)
     {
         RTFValue::Pointer_t pPointer = aStates.top().aCharacterSprms.find(NS_ooxml::LN_EG_RPrBase_bdr);
-        if (pPointer)
+        if (pPointer.get())
         {
             RTFSprms& rAttributes = pPointer->getAttributes();
             rAttributes.set(nId, pValue);
@@ -210,9 +185,8 @@ const char* keywordToString(RTFKeyword nKeyword)
 
 static util::DateTime lcl_getDateTime(RTFParserState& aState)
 {
-    return {0 /*100sec*/, 0 /*sec*/, aState.nMinute, aState.nHour,
-            aState.nDay, aState.nMonth, aState.nYear, false
-           };
+    return util::DateTime(0 /*100sec*/, 0 /*sec*/, aState.nMinute, aState.nHour,
+                          aState.nDay, aState.nMonth, aState.nYear, false);
 }
 
 static void lcl_DestinationToMath(OUStringBuffer* pDestinationText, oox::formulaimport::XmlStreamBuilder& rMathBuffer, bool& rMathNor)
@@ -252,12 +226,18 @@ RTFDocumentImpl::RTFDocumentImpl(uno::Reference<uno::XComponentContext> const& x
       m_pMapperStream(nullptr),
       m_aDefaultState(this),
       m_bSkipUnknown(false),
+      m_aFontIndexes(),
+      m_aColorTable(),
       m_bFirstRun(true),
       m_bNeedPap(true),
       m_bNeedCr(false),
       m_bNeedCrOrig(false),
       m_bNeedPar(true),
       m_bNeedFinalPar(false),
+      m_aListTableSprms(),
+      m_aSettingsTableAttributes(),
+      m_aSettingsTableSprms(),
+      m_xStorage(),
       m_nNestedCells(0),
       m_nTopLevelCells(0),
       m_nInheritingCells(0),
@@ -265,16 +245,28 @@ RTFDocumentImpl::RTFDocumentImpl(uno::Reference<uno::XComponentContext> const& x
       m_nTopLevelCurrentCellX(0),
       m_nBackupTopLevelCurrentCellX(0),
       m_aTableBufferStack(1), // create top-level buffer already
+      m_aSuperBuffer(),
       m_pSuperstream(nullptr),
       m_nStreamType(0),
+      m_nHeaderFooterPositions(),
       m_nGroupStartPos(0),
+      m_aBookmarks(),
+      m_aAuthors(),
+      m_aFormfieldSprms(),
+      m_aFormfieldAttributes(),
       m_nFormFieldType(RTFFormFieldType::NONE),
+      m_aOLEAttributes(),
+      m_aObjectAttributes(),
       m_bObject(false),
+      m_aFontTableEntries(),
       m_nCurrentFontIndex(0),
       m_nCurrentEncoding(-1),
       m_nDefaultFontIndex(-1),
+      m_aStyleTableEntries(),
       m_nCurrentStyleIndex(0),
       m_bFormField(false),
+      m_aUnicodeBuffer(),
+      m_aHexBuffer(),
       m_bMathNor(false),
       m_bIgnoreNextContSectBreak(false),
       m_nResetBreakOnSectBreak(RTF_invalid),
@@ -315,6 +307,21 @@ void RTFDocumentImpl::setSuperstream(RTFDocumentImpl* pSuperstream)
     m_pSuperstream = pSuperstream;
 }
 
+void RTFDocumentImpl::setStreamType(Id nId)
+{
+    m_nStreamType = nId;
+}
+
+void RTFDocumentImpl::setAuthor(OUString& rAuthor)
+{
+    m_aAuthor = rAuthor;
+}
+
+void RTFDocumentImpl::setAuthorInitials(OUString& rAuthorInitials)
+{
+    m_aAuthorInitials = rAuthorInitials;
+}
+
 bool RTFDocumentImpl::isSubstream() const
 {
     return m_pSuperstream != nullptr;
@@ -325,51 +332,52 @@ void RTFDocumentImpl::finishSubstream()
     checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
 }
 
-void RTFDocumentImpl::resolveSubstream(std::size_t nPos, Id nId)
+void RTFDocumentImpl::setIgnoreFirst(OUString& rIgnoreFirst)
+{
+    m_aIgnoreFirst = rIgnoreFirst;
+}
+
+void RTFDocumentImpl::resolveSubstream(sal_Size nPos, Id nId)
 {
     OUString aStr;
     resolveSubstream(nPos, nId, aStr);
 }
-void RTFDocumentImpl::resolveSubstream(std::size_t nPos, Id nId, OUString& rIgnoreFirst)
+void RTFDocumentImpl::resolveSubstream(sal_Size nPos, Id nId, OUString& rIgnoreFirst)
 {
-    sal_uInt64 const nCurrent = Strm().Tell();
+    sal_Size nCurrent = Strm().Tell();
     // Seek to header position, parse, then seek back.
     auto pImpl = std::make_shared<RTFDocumentImpl>(m_xContext, m_xInputStream, m_xDstDoc, m_xFrame, m_xStatusIndicator, m_rMediaDescriptor);
     pImpl->setSuperstream(this);
-    pImpl->m_nStreamType = nId;
-    pImpl->m_aIgnoreFirst = rIgnoreFirst;
+    pImpl->setStreamType(nId);
+    pImpl->setIgnoreFirst(rIgnoreFirst);
     if (!m_aAuthor.isEmpty())
     {
-        pImpl->m_aAuthor = m_aAuthor;
+        pImpl->setAuthor(m_aAuthor);
         m_aAuthor.clear();
     }
     if (!m_aAuthorInitials.isEmpty())
     {
-        pImpl->m_aAuthorInitials = m_aAuthorInitials;
+        pImpl->setAuthorInitials(m_aAuthorInitials);
         m_aAuthorInitials.clear();
     }
     pImpl->m_nDefaultFontIndex = m_nDefaultFontIndex;
-    pImpl->Strm().Seek(nPos);
-    SAL_INFO("writerfilter.rtf", "substream start");
+    pImpl->seek(nPos);
+    SAL_INFO("writerfilter", "substream start");
     Mapper().substream(nId, pImpl);
-    SAL_INFO("writerfilter.rtf", "substream end");
+    SAL_INFO("writerfilter", "substream end");
     Strm().Seek(nCurrent);
-}
-
-void RTFDocumentImpl::outputSettingsTable()
-{
-    writerfilter::Reference<Properties>::Pointer_t pProp = std::make_shared<RTFReferenceProperties>(m_aSettingsTableAttributes, m_aSettingsTableSprms);
-    RTFReferenceTable::Entries_t aSettingsTableEntries;
-    aSettingsTableEntries.insert(std::make_pair(0, pProp));
-    writerfilter::Reference<Table>::Pointer_t pTable = std::make_shared<RTFReferenceTable>(aSettingsTableEntries);
-    Mapper().table(NS_ooxml::LN_settings_settings, pTable);
 }
 
 void RTFDocumentImpl::checkFirstRun()
 {
     if (m_bFirstRun)
     {
-        outputSettingsTable();
+        // output settings table
+        writerfilter::Reference<Properties>::Pointer_t pProp = std::make_shared<RTFReferenceProperties>(m_aSettingsTableAttributes, m_aSettingsTableSprms);
+        RTFReferenceTable::Entries_t aSettingsTableEntries;
+        aSettingsTableEntries.insert(std::make_pair(0, pProp));
+        writerfilter::Reference<Table>::Pointer_t pTable = std::make_shared<RTFReferenceTable>(aSettingsTableEntries);
+        Mapper().table(NS_ooxml::LN_settings_settings, pTable);
         // start initial paragraph
         m_bFirstRun = false;
         assert(!m_bNeedSect);
@@ -534,7 +542,7 @@ void RTFDocumentImpl::runProps()
     // Delete the sprm, so the trackchange range will be started only once.
     // OTOH set a boolean flag, so we'll know we need to end the range later.
     RTFValue::Pointer_t pTrackchange = m_aStates.top().aCharacterSprms.find(NS_ooxml::LN_trackchange);
-    if (pTrackchange)
+    if (pTrackchange.get())
     {
         m_aStates.top().bStartedTrackchange = true;
         m_aStates.top().aCharacterSprms.erase(NS_ooxml::LN_trackchange);
@@ -573,7 +581,7 @@ void RTFDocumentImpl::parBreak()
 
 void RTFDocumentImpl::sectBreak(bool bFinal)
 {
-    SAL_INFO("writerfilter.rtf", OSL_THIS_FUNC << ": final? " << bFinal << ", needed? " << m_bNeedSect);
+    SAL_INFO("writerfilter", OSL_THIS_FUNC << ": final? " << bFinal << ", needed? " << m_bNeedSect);
     bool bNeedSect = m_bNeedSect;
     RTFValue::Pointer_t pBreak = m_aStates.top().aSectionSprms.find(NS_ooxml::LN_EG_SectPrContents_type);
     bool bContinuous = pBreak.get() && pBreak->getInt() == static_cast<sal_Int32>(NS_ooxml::LN_Value_ST_SectionMark_continuous);
@@ -591,7 +599,7 @@ void RTFDocumentImpl::sectBreak(bool bFinal)
     }
     while (!m_nHeaderFooterPositions.empty())
     {
-        std::pair<Id, std::size_t> aPair = m_nHeaderFooterPositions.front();
+        std::pair<Id, sal_Size> aPair = m_nHeaderFooterPositions.front();
         m_nHeaderFooterPositions.pop();
         resolveSubstream(aPair.second, aPair.first);
     }
@@ -624,6 +632,11 @@ void RTFDocumentImpl::sectBreak(bool bFinal)
         Mapper().endSectionGroup();
     m_bNeedPar = false;
     m_bNeedSect = false;
+}
+
+void RTFDocumentImpl::seek(sal_Size nPos)
+{
+    Strm().Seek(nPos);
 }
 
 sal_uInt32 RTFDocumentImpl::getColorTable(sal_uInt32 nIndex)
@@ -726,28 +739,28 @@ void RTFDocumentImpl::resolve(Stream& rMapper)
     switch (m_pTokenizer->resolveParse())
     {
     case RTFError::OK:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: finished without errors");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: finished without errors");
         break;
     case RTFError::GROUP_UNDER:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: unmatched '}'");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: unmatched '}'");
         break;
     case RTFError::GROUP_OVER:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: unmatched '{'");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: unmatched '{'");
         throw io::WrongFormatException(m_pTokenizer->getPosition());
         break;
     case RTFError::UNEXPECTED_EOF:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: unexpected end of file");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: unexpected end of file");
         throw io::WrongFormatException(m_pTokenizer->getPosition());
         break;
     case RTFError::HEX_INVALID:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: invalid hex char");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: invalid hex char");
         throw io::WrongFormatException(m_pTokenizer->getPosition());
         break;
     case RTFError::CHAR_OVER:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: characters after last '}'");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: characters after last '}'");
         break;
     case RTFError::CLASSIFICATION:
-        SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolve: classification prevented paste");
+        SAL_INFO("writerfilter", "RTFDocumentImpl::resolve: classification prevented paste");
         break;
     }
 }
@@ -832,8 +845,8 @@ void RTFDocumentImpl::resolvePict(bool const bInline, uno::Reference<drawing::XS
         {
             Graphic aGraphic = GraphicObject(aURLBS.copy(RTL_CONSTASCII_LENGTH(aURLBegin))).GetTransformedGraphic();
             Size aSize(aGraphic.GetPrefSize());
-            MapMode aMap(MapUnit::Map100thMM);
-            if (aGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel)
+            MapMode aMap(MAP_100TH_MM);
+            if (aGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL)
                 aSize = Application::GetDefaultDevice()->PixelToLogic(aSize, aMap);
             else
                 aSize = OutputDevice::LogicToLogic(aSize, aGraphic.GetPrefMapMode(), aMap);
@@ -1100,7 +1113,7 @@ RTFError RTFDocumentImpl::resolveChars(char ch)
                 {
                     // fdo#79384: Word will reject Shift-JIS following \loch
                     // but apparently OOo could read and (worse) write such documents
-                    SAL_INFO_IF(m_aStates.top().eRunType != RTFParserState::RunType::DBCH, "writerfilter.rtf", "invalid Shift-JIS without DBCH");
+                    SAL_INFO_IF(m_aStates.top().eRunType != RTFParserState::DBCH, "writerfilter.rtf", "invalid Shift-JIS without DBCH");
                     assert(bUnicodeChecked);
                     aBuf.append(ch);
                 }
@@ -1121,21 +1134,7 @@ RTFError RTFDocumentImpl::resolveChars(char ch)
     if (m_aStates.top().nInternalState == RTFInternalState::HEX && m_aStates.top().eDestination != Destination::LEVELNUMBERS)
     {
         if (!bSkipped)
-        {
-            // note: apparently \'0d\'0a is interpreted as 2 breaks, not 1
-            if ((ch == '\r' || ch == '\n')
-                    && m_aStates.top().eDestination != Destination::DOCCOMM
-                    && m_aStates.top().eDestination != Destination::LEVELNUMBERS
-                    && m_aStates.top().eDestination != Destination::LEVELTEXT)
-            {
-                checkUnicode(/*bUnicode =*/ false, /*bHex =*/ true);
-                dispatchSymbol(RTF_PAR);
-            }
-            else
-            {
-                m_aHexBuffer.append(ch);
-            }
-        }
+            m_aHexBuffer.append(ch);
         return RTFError::OK;
     }
 
@@ -1150,7 +1149,7 @@ RTFError RTFDocumentImpl::resolveChars(char ch)
     }
 
     OUString aOUStr(OStringToOUString(aStr, m_aStates.top().nCurrentEncoding));
-    SAL_INFO("writerfilter.rtf", "RTFDocumentImpl::resolveChars: collected '" << aOUStr << "'");
+    SAL_INFO("writerfilter", "RTFDocumentImpl::resolveChars: collected '" << aOUStr << "'");
 
     if (m_aStates.top().eDestination == Destination::COLORTABLE)
     {
@@ -1275,7 +1274,7 @@ void RTFDocumentImpl::text(OUString& rString)
                     m_aStyleTableEntries.insert(std::make_pair(m_nCurrentStyleIndex, pProp));
                 }
                 else
-                    SAL_INFO("writerfilter.rtf", "no RTF style type defined, ignoring");
+                    SAL_INFO("writerfilter", "no RTF style type defined, ignoring");
                 break;
             }
             case Destination::LISTNAME:
@@ -1356,7 +1355,7 @@ void RTFDocumentImpl::text(OUString& rString)
     if (m_aStates.top().aTableCellSprms.find(NS_ooxml::LN_CT_TcPrBase_vAlign).get() &&
             m_nTopLevelCells == 0)
     {
-        m_aTableBufferStack.back().emplace_back(Buf_t(BUFFER_UTEXT, std::make_shared<RTFValue>(rString), nullptr));
+        m_aTableBufferStack.back().push_back(Buf_t(BUFFER_UTEXT, std::make_shared<RTFValue>(rString), nullptr));
         return;
     }
 
@@ -1539,26 +1538,17 @@ void RTFDocumentImpl::replayBuffer(RTFBuffer_t& rBuffer,
         else if (std::get<0>(aTuple) == BUFFER_STARTSHAPE)
             m_pSdrImport->resolve(std::get<1>(aTuple)->getShape(), false, RTFSdrImport::SHAPE);
         else if (std::get<0>(aTuple) == BUFFER_RESOLVESHAPE)
-        {
-            // Make sure there is no current buffer while replaying the shape,
-            // otherwise it gets re-buffered.
-            RTFBuffer_t* pCurrentBuffer = m_aStates.top().pCurrentBuffer;
-            m_aStates.top().pCurrentBuffer = nullptr;
             m_pSdrImport->resolve(std::get<1>(aTuple)->getShape(), true, RTFSdrImport::SHAPE);
-            m_aStates.top().pCurrentBuffer = pCurrentBuffer;
-        }
         else if (std::get<0>(aTuple) == BUFFER_ENDSHAPE)
             m_pSdrImport->close();
         else if (std::get<0>(aTuple) == BUFFER_RESOLVESUBSTREAM)
         {
             RTFSprms& rAttributes = std::get<1>(aTuple)->getAttributes();
-            std::size_t nPos = rAttributes.find(0)->getInt();
+            sal_Size nPos = rAttributes.find(0)->getInt();
             Id nId = rAttributes.find(1)->getInt();
             OUString aCustomMark = rAttributes.find(2)->getString();
             resolveSubstream(nPos, nId, aCustomMark);
         }
-        else if (std::get<0>(aTuple) == BUFFER_PICTURE)
-            m_aStates.top().aPicture = std::get<1>(aTuple)->getPicture();
         else
             assert(false);
     }
@@ -1702,13 +1692,11 @@ RTFError RTFDocumentImpl::dispatchToggle(RTFKeyword nKeyword, bool bParam, int n
     {
     case RTF_B:
     case RTF_AB:
-        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
-                ? NS_ooxml::LN_EG_RPrBase_bCs : NS_ooxml::LN_EG_RPrBase_b;
+        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH) ? NS_ooxml::LN_EG_RPrBase_bCs : NS_ooxml::LN_EG_RPrBase_b;
         break;
     case RTF_I:
     case RTF_AI:
-        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
-                ? NS_ooxml::LN_EG_RPrBase_iCs : NS_ooxml::LN_EG_RPrBase_i;
+        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH) ? NS_ooxml::LN_EG_RPrBase_iCs : NS_ooxml::LN_EG_RPrBase_i;
         break;
     case RTF_OUTL:
         nSprm = NS_ooxml::LN_EG_RPrBase_outline;
@@ -1772,7 +1760,7 @@ RTFError RTFDocumentImpl::dispatchToggle(RTFKeyword nKeyword, bool bParam, int n
         break;
     default:
     {
-        SAL_INFO("writerfilter.rtf", "TODO handle toggle '" << keywordToString(nKeyword) << "'");
+        SAL_INFO("writerfilter", "TODO handle toggle '" << keywordToString(nKeyword) << "'");
         aSkip.setParsed(false);
     }
     break;
@@ -1782,7 +1770,7 @@ RTFError RTFDocumentImpl::dispatchToggle(RTFKeyword nKeyword, bool bParam, int n
 
 RTFError RTFDocumentImpl::pushState()
 {
-    //SAL_INFO("writerfilter.rtf", OSL_THIS_FUNC << " before push: " << m_pTokenizer->getGroup());
+    //SAL_INFO("writerfilter", OSL_THIS_FUNC << " before push: " << m_pTokenizer->getGroup());
 
     checkUnicode(/*bUnicode =*/ true, /*bHex =*/ true);
     m_nGroupStartPos = Strm().Tell();
@@ -1792,7 +1780,7 @@ RTFError RTFDocumentImpl::pushState()
     else
     {
         // fdo#85812 group resets run type of _current_ and new state (but not RTL)
-        m_aStates.top().eRunType = RTFParserState::RunType::LOCH;
+        m_aStates.top().eRunType = RTFParserState::LOCH;
 
         if (m_aStates.top().eDestination == Destination::MR)
             lcl_DestinationToMath(m_aStates.top().pDestinationText, m_aMathBuffer, m_bMathNor);
@@ -1990,7 +1978,7 @@ RTFError RTFDocumentImpl::popState()
             }
             catch (const rtl::MalformedUriException& rException)
             {
-                SAL_WARN("writerfilter.rtf", "rtl::Uri::convertRelToAbs() failed: " << rException.getMessage());
+                SAL_WARN("writerfilter", "rtl::Uri::convertRelToAbs() failed: " << rException.getMessage());
             }
 
             if (!aPictureURL.isEmpty())
@@ -2103,10 +2091,6 @@ RTFError RTFDocumentImpl::popState()
             else
             {
                 // Shape inside table: buffer the import to have correct anchor position.
-                // Also buffer the RTFPicture of the state stack as it contains
-                // the shape size.
-                auto pPictureValue = std::make_shared<RTFValue>(m_aStates.top().aPicture);
-                m_aStates.top().pCurrentBuffer->push_back(Buf_t(BUFFER_PICTURE, pPictureValue, nullptr));
                 auto pValue = std::make_shared<RTFValue>(m_aStates.top().aShape);
                 m_aStates.top().pCurrentBuffer->push_back(Buf_t(BUFFER_RESOLVESHAPE, pValue, nullptr));
             }
@@ -2343,7 +2327,7 @@ RTFError RTFDocumentImpl::popState()
         uno::Reference<drawing::XShape> xShape;
         RTFValue::Pointer_t pShape = m_aObjectAttributes.find(NS_ooxml::LN_shape);
         OSL_ASSERT(pShape.get());
-        if (pShape)
+        if (pShape.get())
             pShape->getAny() >>= xShape;
         if (xShape.is())
         {
@@ -2429,8 +2413,8 @@ RTFError RTFDocumentImpl::popState()
 
             if (bTextFrame)
             {
-                xPropertySet->setPropertyValue("HoriOrientPosition", uno::makeAny(rDrawing.nLeft));
-                xPropertySet->setPropertyValue("VertOrientPosition", uno::makeAny(rDrawing.nTop));
+                xPropertySet->setPropertyValue("HoriOrientPosition", uno::makeAny((sal_Int32)rDrawing.nLeft));
+                xPropertySet->setPropertyValue("VertOrientPosition", uno::makeAny((sal_Int32)rDrawing.nTop));
             }
             else
             {
@@ -2492,7 +2476,7 @@ RTFError RTFDocumentImpl::popState()
         // gcc4.4 (and 4.3 and possibly older) have a problem with dynamic_cast directly to the target class,
         // so help it with an intermediate cast. I'm not sure what exactly the problem is, seems to be unrelated
         // to RTLD_GLOBAL, so most probably a gcc bug.
-        auto& rImport = dynamic_cast<oox::FormulaImportBase&>(dynamic_cast<SfxBaseModel&>(*xComponent.get()));
+        oox::FormulaImportBase& rImport = dynamic_cast<oox::FormulaImportBase&>(dynamic_cast<SfxBaseModel&>(*xComponent.get()));
         rImport.readFormulaOoxml(m_aMathBuffer);
         auto pValue = std::make_shared<RTFValue>(xObject);
         RTFSprms aMathAttributes;
@@ -2720,15 +2704,7 @@ RTFError RTFDocumentImpl::popState()
             OUString aStaticVal = m_aStates.top().pDestinationText->makeStringAndClear();
             uno::Any aAny;
             if (m_aStates.top().aPropType == cppu::UnoType<OUString>::get())
-                aAny <<= aStaticVal;
-            else if (m_aStates.top().aPropType == cppu::UnoType<sal_Int32>::get())
-                aAny <<= aStaticVal.toInt32();
-            else if (m_aStates.top().aPropType == cppu::UnoType<bool>::get())
-                aAny <<= aStaticVal.toBoolean();
-            else if (m_aStates.top().aPropType == cppu::UnoType<util::DateTime>::get())
-                aAny <<= getDateTimeFromUserProp(aStaticVal);
-            else if (m_aStates.top().aPropType == cppu::UnoType<double>::get())
-                aAny <<= aStaticVal.toDouble();
+                aAny = uno::makeAny(aStaticVal);
 
             xPropertyContainer->addProperty(rKey, beans::PropertyAttribute::REMOVABLE, aAny);
         }
@@ -2777,7 +2753,7 @@ RTFError RTFDocumentImpl::popState()
                 }
                 catch (const uno::Exception& rException)
                 {
-                    SAL_WARN("writerfilter.rtf", "failed to set property " << rKey << ": " << rException.Message);
+                    SAL_WARN("writerfilter", "failed to set property " << rKey << ": " << rException.Message);
                 }
             }
         }
@@ -2832,11 +2808,11 @@ RTFError RTFDocumentImpl::popState()
             RTFSprms aLeveltextAttributes;
             OUString aTextValue;
             RTFValue::Pointer_t pTextBefore = aState.aTableAttributes.find(NS_ooxml::LN_CT_LevelText_val);
-            if (pTextBefore)
+            if (pTextBefore.get())
                 aTextValue += pTextBefore->getString();
             aTextValue += "%1";
             RTFValue::Pointer_t pTextAfter = aState.aTableAttributes.find(NS_ooxml::LN_CT_LevelSuffix_val);
-            if (pTextAfter)
+            if (pTextAfter.get())
                 aTextValue += pTextAfter->getString();
             auto pTextValue = std::make_shared<RTFValue>(aTextValue);
             aLeveltextAttributes.set(NS_ooxml::LN_CT_LevelText_val, pTextValue);
@@ -2847,17 +2823,17 @@ RTFError RTFDocumentImpl::popState()
             aLevelAttributes.set(NS_ooxml::LN_CT_Lvl_ilvl, pIlvlValue);
 
             RTFValue::Pointer_t pFmtValue = aState.aTableSprms.find(NS_ooxml::LN_CT_Lvl_numFmt);
-            if (pFmtValue)
+            if (pFmtValue.get())
                 aLevelSprms.set(NS_ooxml::LN_CT_Lvl_numFmt, pFmtValue);
 
             RTFValue::Pointer_t pStartatValue = aState.aTableSprms.find(NS_ooxml::LN_CT_Lvl_start);
-            if (pStartatValue)
+            if (pStartatValue.get())
                 aLevelSprms.set(NS_ooxml::LN_CT_Lvl_start, pStartatValue);
 
             auto pLeveltextValue = std::make_shared<RTFValue>(aLeveltextAttributes);
             aLevelSprms.set(NS_ooxml::LN_CT_Lvl_lvlText, pLeveltextValue);
             RTFValue::Pointer_t pRunProps = aState.aTableSprms.find(NS_ooxml::LN_CT_Lvl_rPr);
-            if (pRunProps)
+            if (pRunProps.get())
                 aLevelSprms.set(NS_ooxml::LN_CT_Lvl_rPr, pRunProps);
 
             RTFSprms aAbstractAttributes;
@@ -3208,14 +3184,33 @@ RTFParserState::RTFParserState(RTFDocumentImpl* pDocumentImpl)
       eDestination(Destination::NORMAL),
       eFieldStatus(RTFFieldStatus::NONE),
       nBorderState(RTFBorderState::NONE),
+      aTableSprms(),
+      aTableAttributes(),
+      aCharacterSprms(),
+      aCharacterAttributes(),
+      aParagraphSprms(),
+      aParagraphAttributes(),
+      aSectionSprms(),
+      aSectionAttributes(),
+      aTableRowSprms(),
+      aTableRowAttributes(),
+      aTableCellSprms(),
+      aTableCellAttributes(),
+      aTabAttributes(),
+      aCurrentColor(),
       nCurrentEncoding(rtl_getTextEncodingFromWindowsCharset(0)),
       nUc(1),
       nCharsToSkip(0),
       nBinaryToRead(0),
       nListLevelNum(0),
+      aListLevelEntries(),
+      aLevelNumbers(),
       bLevelNumbersValid(true),
+      aPicture(),
+      aShape(),
+      aDrawingObject(),
       aFrame(this),
-      eRunType(RunType::LOCH),
+      eRunType(LOCH),
       isRightToLeft(false),
       nYear(0),
       nMonth(0),
@@ -3274,7 +3269,7 @@ RTFShape::RTFShape()
       nVertOrientRelation(0),
       nHoriOrientRelationToken(0),
       nVertOrientRelationToken(0),
-      nWrap(text::WrapTextMode::WrapTextMode_MAKE_FIXED_SIZE),
+      nWrap(-1),
       bInBackground(false)
 {
 }
@@ -3454,7 +3449,7 @@ RTFSprms RTFFrame::getSprms()
             break;
         }
 
-        if (pValue)
+        if (pValue.get())
             sprms.set(nId, pValue);
     }
 

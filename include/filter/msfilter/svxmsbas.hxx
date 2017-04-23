@@ -20,10 +20,13 @@
 #ifndef INCLUDED_FILTER_MSFILTER_SVXMSBAS_HXX
 #define INCLUDED_FILTER_MSFILTER_SVXMSBAS_HXX
 
+#include <map>
+#include <unordered_map>
+
 #include <filter/msfilter/msfilterdllapi.h>
 #include <rtl/ustring.hxx>
 #include <sot/storage.hxx>
-#include <tools/errcode.hxx>
+#include <tools/solar.h>
 #include <tools/ref.hxx>
 
 class SfxObjectShell;

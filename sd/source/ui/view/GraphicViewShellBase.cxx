@@ -43,7 +43,7 @@ SfxViewShell* GraphicViewShellBase::CreateInstance (
     pBase->LateInit(framework::FrameworkHelper::msDrawViewURL);
     return pBase;
 }
-void GraphicViewShellBase::RegisterFactory( SfxInterfaceId nPrio )
+void GraphicViewShellBase::RegisterFactory( sal_uInt16 nPrio )
 {
     pFactory = new SfxViewFactory(&CreateInstance,nPrio,"Default");
     InitFactory();

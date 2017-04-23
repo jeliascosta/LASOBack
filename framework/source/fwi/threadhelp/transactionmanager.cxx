@@ -153,7 +153,7 @@ EWorkingMode TransactionManager::getWorkingMode() const
 
     @param      "eMode"     ,used to enable/disable throwing exceptions automatically for rejected calls
 *//*-*****************************************************************************************************/
-void  TransactionManager::registerTransaction( EExceptionMode eMode )
+void  TransactionManager::registerTransaction( EExceptionMode eMode ) throw( css::uno::RuntimeException, css::lang::DisposedException )
 {
     ::osl::MutexGuard aAccessGuard( m_aAccessLock );
     switch( m_eWorkingMode )
@@ -198,7 +198,7 @@ void  TransactionManager::registerTransaction( EExceptionMode eMode )
 
     @seealso    method registerTransaction()
 *//*-*****************************************************************************************************/
-void  TransactionManager::unregisterTransaction()
+void  TransactionManager::unregisterTransaction() throw( css::uno::RuntimeException, css::lang::DisposedException )
 {
     // This call could not rejected!
     // Safe access to internal member.

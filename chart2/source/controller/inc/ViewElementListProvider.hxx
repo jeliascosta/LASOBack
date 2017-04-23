@@ -29,12 +29,11 @@ namespace chart
 
 class DrawModelWrapper;
 
-class ViewElementListProvider final
+class ViewElementListProvider
 {
 public:
     ViewElementListProvider( DrawModelWrapper* pDrawModelWrapper );
-    ViewElementListProvider( ViewElementListProvider&& );
-    ~ViewElementListProvider();
+    virtual ~ViewElementListProvider();
 
     XColorListRef     GetColorTable() const;
     XDashListRef      GetDashList() const;
@@ -42,7 +41,6 @@ public:
     XGradientListRef  GetGradientList() const;
     XHatchListRef     GetHatchList() const;
     XBitmapListRef    GetBitmapList() const;
-    XPatternListRef   GetPatternList() const;
 
     //create chartspecific symbols for linecharts
     SdrObjList*     GetSymbolList() const;
@@ -52,8 +50,8 @@ public:
     //SfxPrinter*   getPrinter();
 
 private:
-    DrawModelWrapper*                  m_pDrawModelWrapper;
-    mutable std::unique_ptr<FontList>  m_pFontList;
+    DrawModelWrapper*   m_pDrawModelWrapper;
+    mutable FontList*   m_pFontList;
 };
 
 } //namespace chart

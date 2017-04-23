@@ -94,6 +94,7 @@ public:
                 explicit SvIdlDataBase( const SvCommand& rCmd );
                 ~SvIdlDataBase();
 
+    SvRefMemberList<SvMetaSlot *>&     GetSlotList() { return aSlotList; }
     SvRefMemberList<SvMetaType *>&     GetTypeList();
     SvRefMemberList<SvMetaClass *>&    GetClassList()  { return aClassList; }
     SvRefMemberList<SvMetaModule *>&   GetModuleList() { return aModuleList; }
@@ -121,7 +122,7 @@ public:
     void                    Push( SvMetaObject * pObj );
     sal_uInt32              GetUniqueId() { return ++nUniqueId; }
     bool                    FindId( const OString& rIdName, sal_uLong * pVal );
-    void                    InsertId( const OString& rIdName, sal_uLong nVal );
+    bool                    InsertId( const OString& rIdName, sal_uLong nVal );
     bool                    ReadIdFile( const OString& rFileName );
 
     SvMetaType *            FindType( const OString& rName );
@@ -129,7 +130,7 @@ public:
 
     SvMetaType *            ReadKnownType( SvTokenStream & rInStm );
     SvMetaAttribute *       ReadKnownAttr( SvTokenStream & rInStm,
-                                            SvMetaType * pType );
+                                            SvMetaType * pType = nullptr );
     SvMetaAttribute *       FindKnownAttr( const SvIdentifier& );
     SvMetaClass *           ReadKnownClass( SvTokenStream & rInStm );
     SvMetaClass *           FindKnownClass( const OString& aName );

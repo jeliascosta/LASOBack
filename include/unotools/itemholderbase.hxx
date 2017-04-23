@@ -30,58 +30,67 @@ struct ItemHolderMutexBase
     ::osl::Mutex m_aLock;
 };
 
-enum class EItem
+enum EItem
 {
-    AccessibilityOptions          ,   // 2
+    E_ACCESSIBILITYOPTIONS          ,   // 2
+    E_ADDXMLTOSTORAGEOPTIONS        ,
+    E_APEARCFG                      ,   // 2
 
-    CJKOptions                    ,   // 2
-    CmdOptions                    ,
-    ColorConfig                   ,   // 2
-    Compatibility                 ,
-    CTLOptions                    ,   // 2
+    E_CJKOPTIONS                    ,   // 2
+    E_CMDOPTIONS                    ,
+    E_COLORCFG                      ,   // 2
+    E_COMPATIBILITY                 ,
+    E_CTLOPTIONS                    ,   // 2
 
-    DefaultOptions                ,
-    DynamicMenuOptions            ,
+    E_DEFAULTOPTIONS                ,
+    E_DYNAMICMENUOPTIONS            ,
 
-    EventConfig                   ,
-    ExtendedSecurityOptions       ,
+    E_EVENTCFG                      ,
+    E_EXTENDEDSECURITYOPTIONS       ,
 
-    FontOptions                   ,
+    E_FLTRCFG                       ,
+    E_FONTOPTIONS                   ,
+    E_FONTSUBSTCONFIG               ,   // 2
 
-    HelpOptions                   ,   // 2
-    HistoryOptions                ,
+    E_HELPOPTIONS                   ,   // 2
+    E_HISTORYOPTIONS                ,
 
-    LinguConfig                   ,
+    E_LANGUAGEOPTIONS               ,   // 2
+    E_LINGUCFG                      ,
+    E_LOCALISATIONOPTIONS           ,
 
-    MenuOptions                   ,
-    MiscConfig                    ,   // 2
-    MiscOptions                   ,
-    ModuleOptions                 ,
+    E_MENUOPTIONS                   ,
+    E_MISCCFG                       ,   // 2
+    E_MISCOPTIONS                   ,
+    E_MODULEOPTIONS                 ,
 
-    OptionsDialogOptions          ,
+    E_OPTIONSDLGOPTIONS             ,
 
-    PathOptions                   ,
-    PrintOptions                  ,   // 2
-    PrintFileOptions              ,   // 2
-    PrintWarningOptions           ,
+    E_PATHOPTIONS                   ,
+    E_PRINTOPTIONS                  ,   // 2
+    E_PRINTFILEOPTIONS              ,   // 2
+    E_PRINTWARNINGOPTIONS           ,
 
-    SaveOptions                   ,
-    SecurityOptions               ,
-    SysLocaleOptions              ,   // 2
+    E_REGOPTIONS                    ,
 
-    UserOptions                   ,   // 2
+    E_SAVEOPTIONS                   ,
+    E_SEARCHOPT                     ,
+    E_SECURITYOPTIONS               ,
+    E_SYSLOCALEOPTIONS              ,   // 2
 
-    ViewOptionsDialog             ,
-    ViewOptionsTabDialog          ,
-    ViewOptionsTabPage            ,
-    ViewOptionsWindow
+    E_USEROPTIONS                   ,   // 2
+
+    E_VIEWOPTIONS_DIALOG            ,
+    E_VIEWOPTIONS_TABDIALOG         ,
+    E_VIEWOPTIONS_TABPAGE           ,
+    E_VIEWOPTIONS_WINDOW
 };
 
 struct TItemInfo
 {
     TItemInfo()
         : pItem(nullptr)
-        , eItem(EItem::UserOptions)
+        , eItem(E_USEROPTIONS)
     {
     }
 

@@ -32,7 +32,7 @@ private:
 public:
 
                     ScTabViewTarget( ScTabViewShell* pShell ) : pViewShell( pShell ) {}
-    virtual         ~ScTabViewTarget() override;
+    virtual         ~ScTabViewTarget();
 
     ScTabViewShell* GetViewShell() const { return pViewShell; }
 };

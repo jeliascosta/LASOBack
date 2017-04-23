@@ -41,19 +41,18 @@ class CommandBarEnumeration : public ::cppu::WeakImplHelper< container::XEnumera
     uno::Sequence< OUString > m_sNames;
     sal_Int32 m_nCurrentPosition;
 public:
-    /// @throws uno::RuntimeException
-    CommandBarEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const VbaCommandBarHelperRef& pHelper) : m_xParent( xParent ), m_xContext( xContext ), m_pCBarHelper( pHelper ) , m_nCurrentPosition( 0 )
+    CommandBarEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, VbaCommandBarHelperRef pHelper) throw ( uno::RuntimeException ) : m_xParent( xParent ), m_xContext( xContext ), m_pCBarHelper( pHelper ) , m_nCurrentPosition( 0 )
     {
         uno::Reference< container::XNameAccess > xNameAccess = m_pCBarHelper->getPersistentWindowState();
         m_sNames = xNameAccess->getElementNames();
     }
-    virtual sal_Bool SAL_CALL hasMoreElements() override
+    virtual sal_Bool SAL_CALL hasMoreElements() throw ( uno::RuntimeException, std::exception ) override
     {
         if( m_nCurrentPosition < m_sNames.getLength() )
             return true;
         return false;
     }
-    virtual uno::Any SAL_CALL nextElement() override
+    virtual uno::Any SAL_CALL nextElement() throw ( container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception ) override
     {
         // FIXME: should be add menubar
         if( hasMoreElements() )
@@ -76,7 +75,7 @@ public:
     }
 };
 
-ScVbaCommandBars::ScVbaCommandBars( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess >& xIndexAccess, const uno::Reference< frame::XModel >& xModel ) : CommandBars_BASE( xParent, xContext, xIndexAccess )
+ScVbaCommandBars::ScVbaCommandBars( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess >& xIndexAccess, const uno::Reference< frame::XModel >& xModel ) throw ( uno::RuntimeException ) : CommandBars_BASE( xParent, xContext, xIndexAccess )
 {
     m_pCBarHelper.reset( new VbaCommandBarHelper( mxContext, xModel ) );
     m_xNameAccess = m_pCBarHelper->getPersistentWindowState();
@@ -88,13 +87,13 @@ ScVbaCommandBars::~ScVbaCommandBars()
 
 // XEnumerationAccess
 uno::Type SAL_CALL
-ScVbaCommandBars::getElementType()
+ScVbaCommandBars::getElementType() throw ( uno::RuntimeException )
 {
     return cppu::UnoType<XCommandBar>::get();
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaCommandBars::createEnumeration()
+ScVbaCommandBars::createEnumeration() throw ( uno::RuntimeException )
 {
     return uno::Reference< container::XEnumeration >( new CommandBarEnumeration( this, mxContext, m_pCBarHelper ) );
 }
@@ -123,7 +122,7 @@ ScVbaCommandBars::createCollectionObject( const uno::Any& aSource )
             else if( sBarName.equalsIgnoreAsciiCase( "Cell" ) )
             {
                 // EVIL HACK (tm): spreadsheet cell context menu as dummy object without functionality
-                aRet <<= uno::Reference< XCommandBar >( new VbaDummyCommandBar( this, mxContext, sBarName ) );
+                aRet <<= uno::Reference< XCommandBar >( new VbaDummyCommandBar( this, mxContext, sBarName, office::MsoBarType::msoBarTypePopup ) );
             }
         }
         else if( m_pCBarHelper->getModuleId() == "com.sun.star.text.TextDocument" )
@@ -158,7 +157,7 @@ ScVbaCommandBars::createCollectionObject( const uno::Any& aSource )
 
 // XCommandBars
 uno::Reference< XCommandBar > SAL_CALL
-ScVbaCommandBars::Add( const css::uno::Any& Name, const css::uno::Any& /*Position*/, const css::uno::Any& /*MenuBar*/, const css::uno::Any& /*Temporary*/ )
+ScVbaCommandBars::Add( const css::uno::Any& Name, const css::uno::Any& /*Position*/, const css::uno::Any& /*MenuBar*/, const css::uno::Any& /*Temporary*/ ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     // FIXME: only support to add Toolbar
     // Position - MsoBar MenuBar - sal_Bool
@@ -186,7 +185,7 @@ ScVbaCommandBars::Add( const css::uno::Any& Name, const css::uno::Any& /*Positio
     return xCBar;
 }
 sal_Int32 SAL_CALL
-ScVbaCommandBars::getCount()
+ScVbaCommandBars::getCount() throw(css::uno::RuntimeException)
 {
     // Filter out all toolbars from the window collection
     sal_Int32 nCount = 1; // there is a Menubar in OOo
@@ -203,7 +202,7 @@ ScVbaCommandBars::getCount()
 
 // ScVbaCollectionBaseImpl
 uno::Any SAL_CALL
-ScVbaCommandBars::Item( const uno::Any& aIndex, const uno::Any& /*aIndex2*/ )
+ScVbaCommandBars::Item( const uno::Any& aIndex, const uno::Any& /*aIndex2*/ ) throw( uno::RuntimeException )
 {
     if( aIndex.getValueTypeClass() == uno::TypeClass_STRING )
     {

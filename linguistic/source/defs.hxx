@@ -36,24 +36,30 @@ struct LangSvcEntries
     css::uno::Sequence< OUString >   aSvcImplNames;
 
     sal_Int16   nLastTriedSvcIndex;
+    bool        bAlreadyWarned;
+    bool        bDoWarnAgain;
+
+    LangSvcEntries() : nLastTriedSvcIndex(-1), bAlreadyWarned(false), bDoWarnAgain(false) {}
 
     explicit LangSvcEntries( const css::uno::Sequence< OUString > &rSvcImplNames ) :
         aSvcImplNames(rSvcImplNames),
-        nLastTriedSvcIndex(-1)
+        nLastTriedSvcIndex(-1), bAlreadyWarned(false), bDoWarnAgain(false)
     {
     }
 
     explicit LangSvcEntries( const OUString &rSvcImplName ) :
-        nLastTriedSvcIndex(-1)
+        nLastTriedSvcIndex(-1), bAlreadyWarned(false), bDoWarnAgain(false)
     {
         aSvcImplNames.realloc(1);
         aSvcImplNames[0] = rSvcImplName;
     }
 
-    void Clear()
+    inline void Clear()
     {
         aSvcImplNames.realloc(0);
         nLastTriedSvcIndex  = -1;
+        bAlreadyWarned      = false;
+        bDoWarnAgain        = false;
     }
 };
 

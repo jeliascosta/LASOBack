@@ -75,26 +75,36 @@ struct TransitionInfo
         the target in the outer area (instead of in the inner
         area, as in normal mode).
     */
-    enum class ReverseMethod
+    enum ReverseMethod
     {
         /** Ignore direction attribute altogether
             (if it has no sensible meaning for this transition)
         */
-        Ignore,
+        REVERSEMETHOD_IGNORE,
 
-        /** Combination of ReverseMethod::InvertSweep and
-            ReverseMethod::SubtractPolygon.
+        /** Revert by changing the direction of the parameter sweep
+            (from 1->0 instead of 0->1)
         */
-        SubtractAndInvert,
+        REVERSEMETHOD_INVERT_SWEEP,
+
+        /** Revert by subtracting the generated polygon from the
+            target bound rect
+        */
+        REVERSEMETHOD_SUBTRACT_POLYGON,
+
+        /** Combination of REVERSEMETHOD_INVERT_SWEEP and
+            REVERSEMETHOD_SUBTRACT_POLYGON.
+        */
+        REVERSEMETHOD_SUBTRACT_AND_INVERT,
 
         /// Reverse by rotating polygon 180 degrees
-        Rotate180,
+        REVERSEMETHOD_ROTATE_180,
 
         /// Reverse by flipping polygon at the y (!) axis
-        FlipX,
+        REVERSEMETHOD_FLIP_X,
 
         /// Reverse by flipping polygon at the x (!) axis
-        FlipY
+        REVERSEMETHOD_FLIP_Y
     };
 
     /** Indicating the method to use when transition

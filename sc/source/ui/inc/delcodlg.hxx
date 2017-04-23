@@ -42,13 +42,13 @@ private:
     static bool         bPreviousAllCheck;
     static InsertDeleteFlags nPreviousChecks;
 
-    void DisableChecks( bool bDelAllChecked );
-    DECL_LINK( DelAllHdl, Button*, void );
+    void DisableChecks( bool bDelAllChecked = true );
+    DECL_LINK_TYPED( DelAllHdl, Button*, void );
 
 public:
             ScDeleteContentsDlg( vcl::Window* pParent,
-                                 InsertDeleteFlags nCheckDefaults );
-            virtual ~ScDeleteContentsDlg() override;
+                                 InsertDeleteFlags nCheckDefaults = InsertDeleteFlags::NONE );
+            virtual ~ScDeleteContentsDlg();
     virtual void dispose() override;
     void    DisableObjects();
 

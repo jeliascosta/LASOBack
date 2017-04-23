@@ -113,7 +113,7 @@ public:
         SfxViewFrame *pFrame,
         vcl::Window* pParentWindow,
         ViewShellBase& rViewShellBase);
-    virtual ~ViewShell() override;
+    virtual ~ViewShell();
 
     /** The Init method has to be called from the outside directly
         after a new object of this class has been created.  It can be
@@ -140,11 +140,9 @@ public:
     /** Return the window that is the parent of all controls of this view
         shell.  This may or may not be the window of the frame.
     */
-    vcl::Window* GetParentWindow() const { return mpParentWindow; }
+    inline vcl::Window* GetParentWindow() const { return mpParentWindow; }
 
-    sd::Window* GetContentWindow() const;
-
-    ::sd::View* GetView() const { return mpView; }
+    inline ::sd::View* GetView() const { return mpView; }
     inline SdrView* GetDrawView() const;
     SD_DLLPUBLIC DrawDocShell* GetDocSh() const;
 
@@ -170,11 +168,11 @@ public:
             The rectangle is returned in screen coordinates, i.e. pixel
             values relative to the upper left corner of the screen?.
     */
-    const ::tools::Rectangle& GetAllWindowRect();
+    const Rectangle& GetAllWindowRect();
 
     // Mouse- & Key-Events
     virtual void PrePaint();
-    virtual void Paint (const ::tools::Rectangle& rRect, ::sd::Window* pWin);
+    virtual void Paint (const Rectangle& rRect, ::sd::Window* pWin);
     virtual bool KeyInput(const KeyEvent& rKEvt, ::sd::Window* pWin);
     virtual void MouseMove(const MouseEvent& rMEvt, ::sd::Window* pWin);
     virtual void MouseButtonUp(const MouseEvent& rMEvt, ::sd::Window* pWin);
@@ -185,7 +183,7 @@ public:
 
     bool HandleScrollCommand(const CommandEvent& rCEvt, ::sd::Window* pWin);
 
-    void SetUIUnit(FieldUnit eUnit);
+    virtual void SetUIUnit(FieldUnit eUnit);
     void SetDefTabHRuler( sal_uInt16 nDefTab );
 
     const SfxPoolItem* GetNumBulletItem(SfxItemSet& aNewAttr, sal_uInt16& nNumItemId);
@@ -201,8 +199,7 @@ public:
     void    Scroll(long nX, long nY);
     void    ScrollLines(long nX, long nY);
     virtual void    SetZoom(long nZoom);
-    long    GetZoom() const;
-    virtual void    SetZoomRect(const ::tools::Rectangle& rZoomRect);
+    virtual void    SetZoomRect(const Rectangle& rZoomRect);
     void    InitWindows(const Point& rViewOrigin, const Size& rViewSize,
                         const Point& rWinPos, bool bUpdate = false);
     void    InvalidateWindows();
@@ -212,7 +209,7 @@ public:
     */
     virtual void UpdatePreview (SdPage* pPage, bool bInit = false);
 
-    void    DrawMarkRect(const ::tools::Rectangle& rRect) const;
+    void    DrawMarkRect(const Rectangle& rRect) const;
 
     void    ExecReq( SfxRequest &rReq );
 
@@ -260,7 +257,7 @@ public:
                             bool bScaleAll, Orientation eOrient, sal_uInt16 nPaperBin,
                             bool bBackgroundFullSize );
 
-    void    SetStartShowWithDialog( bool bIn ) { mbStartShowWithDialog = bIn; }
+    void    SetStartShowWithDialog( bool bIn = true ) { mbStartShowWithDialog = bIn; }
     bool    IsStartShowWithDialog() const { return mbStartShowWithDialog; }
 
     sal_uInt16 GetPrintedHandoutPageNum() const { return mnPrintedHandoutPageNum; }
@@ -278,11 +275,11 @@ public:
     virtual sal_Int8 ExecuteDrop( const ExecuteDropEvent& rEvt, DropTargetHelper& rTargetHelper,
                                   ::sd::Window* pTargetWindow, sal_uInt16 nPage, sal_uInt16 nLayer );
 
-    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse );
-    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse );
+    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false );
+    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false );
 
     /** this method is called when the visible area of the view from this viewshell is changed */
-    virtual void VisAreaChanged(const ::tools::Rectangle& rRect);
+    virtual void VisAreaChanged(const Rectangle& rRect);
 
     /** Create an accessible object representing the specified window.
         Override this method to provide view mode specific objects.  The
@@ -388,7 +385,7 @@ public:
     /** Show controls of the UI or hide them, depending on the given flag.
         As a result the border is adapted.
     */
-    virtual void ShowUIControls (bool bVisible);
+    virtual void ShowUIControls (bool bVisible = true);
     bool IsPageFlipMode() const;
 
     /** Set the given window as new parent window.  This is not possible for
@@ -477,6 +474,8 @@ protected:
     Size        maViewSize;
     Size        maScrBarWH;
 
+    bool        mbCenterAllowed;          // will be forwarded to window
+
     bool        mbStartShowWithDialog;    // presentation is started by dialog
     sal_uInt16      mnPrintedHandoutPageNum; // Page number of the handout page that is to be printed.
     sal_uInt16      mnPrintedHandoutPageCount; // Page count of the handout pages that are to be printed.
@@ -492,7 +491,7 @@ protected:
         GetAllWindowRectangle() into screen coordinates (relative to the
         upper left corner of the screen.
     */
-    ::tools::Rectangle maAllWindowRectangle;
+    Rectangle maAllWindowRectangle;
 
     /// The type of the shell.  Returned by GetShellType().
     ShellType meShellType;
@@ -506,16 +505,16 @@ protected:
     void ImpSidUndo(bool bDrawViewShell, SfxRequest& rReq);
     void ImpSidRedo(bool bDrawViewShell, SfxRequest& rReq);
 
-    DECL_LINK( HScrollHdl, ScrollBar *, void );
-    DECL_LINK( VScrollHdl, ScrollBar *, void );
+    DECL_LINK_TYPED( HScrollHdl, ScrollBar *, void );
+    DECL_LINK_TYPED( VScrollHdl, ScrollBar *, void );
 
     // virtual scroll handler, here, derivative classes can add themselves here
     virtual void VirtHScrollHdl(ScrollBar* pHScroll);
     virtual void VirtVScrollHdl(ScrollBar* pVScroll);
 
     // virtual functions ruler handling
-    virtual VclPtr<SvxRuler> CreateHRuler(::sd::Window* pWin);
-    virtual VclPtr<SvxRuler> CreateVRuler(::sd::Window* pWin);
+    virtual SvxRuler* CreateHRuler(::sd::Window* pWin);
+    virtual SvxRuler* CreateVRuler(::sd::Window* pWin);
     virtual void UpdateHRuler();
     virtual void UpdateVRuler();
 

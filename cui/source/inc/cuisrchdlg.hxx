@@ -19,6 +19,7 @@
 #ifndef INCLUDED_CUI_SOURCE_INC_CUISRCHDLG_HXX
 #define INCLUDED_CUI_SOURCE_INC_CUISRCHDLG_HXX
 
+#include <svtools/stdctrl.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/edit.hxx>
 #include <vcl/lstbox.hxx>
@@ -35,7 +36,7 @@ class SvxJSearchOptionsPage;
 
 class SvxJSearchOptionsDialog : public SfxSingleTabDialog
 {
-    TransliterationFlags          nInitialTlFlags;
+    sal_Int32                     nInitialTlFlags;
     VclPtr<SvxJSearchOptionsPage> pPage;
 
     SvxJSearchOptionsDialog( const SvxJSearchOptionsDialog & ) = delete;
@@ -43,14 +44,14 @@ class SvxJSearchOptionsDialog : public SfxSingleTabDialog
 
 public:
     SvxJSearchOptionsDialog(vcl::Window *pParent,
-        const SfxItemSet& rOptionsSet, TransliterationFlags nInitialFlags);
-    virtual ~SvxJSearchOptionsDialog() override;
+        const SfxItemSet& rOptionsSet, sal_Int32 nInitialFlags);
+    virtual ~SvxJSearchOptionsDialog();
     virtual void dispose() override;
 
     // Window
     virtual void    Activate() override;
 
-    TransliterationFlags  GetTransliterationFlags() const;
+    sal_Int32           GetTransliterationFlags() const;
 };
 
 #endif

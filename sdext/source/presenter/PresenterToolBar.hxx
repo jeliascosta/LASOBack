@@ -45,21 +45,23 @@
 
 #include <functional>
 
+namespace {
+    typedef cppu::WeakComponentImplHelper<
+        css::awt::XWindowListener,
+        css::awt::XPaintListener,
+        css::awt::XMouseListener,
+        css::awt::XMouseMotionListener,
+        css::drawing::XDrawView
+        > PresenterToolBarInterfaceBase;
+
+    typedef cppu::WeakComponentImplHelper<
+        css::awt::XPaintListener,
+        css::drawing::framework::XView,
+        css::drawing::XDrawView
+        > PresenterToolBarViewInterfaceBase;
+}
+
 namespace sdext { namespace presenter {
-
-typedef cppu::WeakComponentImplHelper<
-    css::awt::XWindowListener,
-    css::awt::XPaintListener,
-    css::awt::XMouseListener,
-    css::awt::XMouseMotionListener,
-    css::drawing::XDrawView
-    > PresenterToolBarInterfaceBase;
-
-typedef cppu::WeakComponentImplHelper<
-    css::awt::XPaintListener,
-    css::drawing::framework::XView,
-    css::drawing::XDrawView
-    > PresenterToolBarViewInterfaceBase;
 
 /** A simple tool bar that can display bitmapped buttons and labels.  At the
     moment there are buttons for moving to the next and previous slide and
@@ -74,7 +76,7 @@ class PresenterToolBar
 public:
     typedef ::std::function<void ()> Action;
 
-    enum Anchor { Left, Center };
+    enum Anchor { Left, Center, Right };
 
     PresenterToolBar (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
@@ -82,7 +84,7 @@ public:
         const css::uno::Reference<css::rendering::XCanvas>& rxCanvas,
         const ::rtl::Reference<PresenterController>& rpPresenterController,
         const Anchor eAnchor);
-    virtual ~PresenterToolBar() override;
+    virtual ~PresenterToolBar();
     PresenterToolBar(const PresenterToolBar&) = delete;
     PresenterToolBar& operator=(const PresenterToolBar&) = delete;
 
@@ -96,51 +98,65 @@ public:
         const bool bSynchronous);
 
     void RequestLayout();
-    css::geometry::RealSize2D const & GetMinimalSize();
+    css::geometry::RealSize2D GetMinimalSize();
     const ::rtl::Reference<PresenterController>& GetPresenterController() const;
     const css::uno::Reference<css::uno::XComponentContext>& GetComponentContext() const;
 
     // lang::XEventListener
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XMouseListener
 
-    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XMouseMotionListener
 
-    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     class Context;
 
@@ -193,10 +209,11 @@ private:
         const css::uno::Reference<css::beans::XPropertySet>& rProperties,
         Context& rContext);
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const
+        throw (css::lang::DisposedException);
 };
 
 /** View for the PresenterToolBar.
@@ -211,7 +228,7 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterToolBarView() override;
+    virtual ~PresenterToolBarView();
     PresenterToolBarView(const PresenterToolBarView&) = delete;
     PresenterToolBarView& operator=(const PresenterToolBarView&) = delete;
 
@@ -221,25 +238,31 @@ public:
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XResourceId
 
-    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
+    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     //    css::uno::Reference<css::uno::XComponentContext> mxComponentContext;

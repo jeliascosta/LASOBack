@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <limits>
 
-#include <o3tl/make_shared.hxx>
 #include <basegfx/vector/b2ivector.hxx>
 #include <tools/color.hxx>
 #include <vcl/bitmap.hxx>
@@ -107,9 +106,9 @@ QuartzSalBitmap::~QuartzSalBitmap()
 }
 
 bool QuartzSalBitmap::Create( CGLayerRef xLayer, int nBitmapBits,
-    int nX, int nY, int nWidth, int nHeight, bool bFlipped )
+    int nX, int nY, int nWidth, int nHeight )
 {
-    SAL_WARN_IF( !xLayer, "vcl", "QuartzSalBitmap::Create() from non-layered context" );
+    DBG_ASSERT( xLayer, "QuartzSalBitmap::Create() from non-layered context" );
 
     // sanitize input parameters
     if( nX < 0 ) {
@@ -146,14 +145,6 @@ bool QuartzSalBitmap::Create( CGLayerRef xLayer, int nBitmapBits,
     if(mxGraphicContext) // remove warning
     {
         SAL_INFO("vcl.cg", "CGContextDrawLayerAtPoint(" << mxGraphicContext << "," << aSrcPoint << "," << xLayer << ")" );
-        if( bFlipped )
-        {
-            SAL_INFO( "vcl.cg", "CGContextTranslateCTM(" << mxGraphicContext << ",0," << mnHeight << ")" );
-            CGContextTranslateCTM( mxGraphicContext, 0, +mnHeight );
-            SAL_INFO( "vcl.cg", "CGContextScaleCTM(" << mxGraphicContext << ",+1,-1)" );
-            CGContextScaleCTM( mxGraphicContext, +1, -1 );
-        }
-
         CGContextDrawLayerAtPoint( mxGraphicContext, aSrcPoint, xLayer );
     }
     return true;
@@ -185,7 +176,7 @@ bool QuartzSalBitmap::Create( const SalBitmap& rSalBmp, sal_uInt16 nNewBitCount 
 {
     const QuartzSalBitmap& rSourceBitmap = static_cast<const QuartzSalBitmap&>(rSalBmp);
 
-    if (isValidBitCount(nNewBitCount) && rSourceBitmap.m_pUserBuffer.get())
+    if( isValidBitCount( nNewBitCount ) &&  rSourceBitmap.maUserBuffer.get() )
     {
         mnBits = nNewBitCount;
         mnWidth = rSourceBitmap.mnWidth;
@@ -195,9 +186,9 @@ bool QuartzSalBitmap::Create( const SalBitmap& rSalBmp, sal_uInt16 nNewBitCount 
         if( AllocateUserData() )
         {
             ConvertBitmapData( mnWidth, mnHeight, mnBits, mnBytesPerRow, maPalette,
-                               m_pUserBuffer.get(), rSourceBitmap.mnBits,
+                               maUserBuffer.get(), rSourceBitmap.mnBits,
                                rSourceBitmap.mnBytesPerRow, rSourceBitmap.maPalette,
-                               rSourceBitmap.m_pUserBuffer.get() );
+                               rSourceBitmap.maUserBuffer.get() );
             return true;
         }
     }
@@ -213,7 +204,7 @@ bool QuartzSalBitmap::Create( const css::uno::Reference< css::rendering::XBitmap
 void QuartzSalBitmap::Destroy()
 {
     DestroyContext();
-    m_pUserBuffer.reset();
+    maUserBuffer.reset();
 }
 
 void QuartzSalBitmap::DestroyContext()
@@ -230,7 +221,7 @@ void QuartzSalBitmap::DestroyContext()
         SAL_INFO("vcl.cg", "CGContextRelease(" << mxGraphicContext << ")" );
         CGContextRelease( mxGraphicContext );
         mxGraphicContext = nullptr;
-        m_pContextBuffer.reset();
+        maContextBuffer.reset();
     }
 }
 
@@ -240,7 +231,7 @@ bool QuartzSalBitmap::CreateContext()
 
     // prepare graphics context
     // convert image from user input if available
-    const bool bSkipConversion = !m_pUserBuffer;
+    const bool bSkipConversion = !maUserBuffer;
     if( bSkipConversion )
         AllocateUserData();
 
@@ -254,12 +245,12 @@ bool QuartzSalBitmap::CreateContext()
     if( (mnBits == 16) || (mnBits == 32) )
     {
         // no conversion needed for truecolor
-        m_pContextBuffer = m_pUserBuffer;
+        maContextBuffer = maUserBuffer;
     }
     else if( mnBits == 8 && maPalette.IsGreyPalette() )
     {
         // no conversion needed for grayscale
-        m_pContextBuffer = m_pUserBuffer;
+        maContextBuffer = maUserBuffer;
         aCGColorSpace = GetSalData()->mxGraySpace;
         aCGBmpInfo = kCGImageAlphaNone;
         bitsPerComponent = mnBits;
@@ -271,17 +262,17 @@ bool QuartzSalBitmap::CreateContext()
         nContextBytesPerRow = mnWidth << 2;
         try
         {
-            m_pContextBuffer = o3tl::make_shared_array<sal_uInt8>(mnHeight * nContextBytesPerRow);
+            maContextBuffer.reset( new sal_uInt8[ mnHeight * nContextBytesPerRow ] );
 #ifdef DBG_UTIL
             for (size_t i = 0; i < mnHeight * nContextBytesPerRow; i++)
-                m_pContextBuffer.get()[i] = (i & 0xFF);
+                maContextBuffer.get()[i] = (i & 0xFF);
 #endif
 
             if( !bSkipConversion )
             {
                 ConvertBitmapData( mnWidth, mnHeight,
-                                   32, nContextBytesPerRow, maPalette, m_pContextBuffer.get(),
-                                   mnBits, mnBytesPerRow, maPalette, m_pUserBuffer.get() );
+                                   32, nContextBytesPerRow, maPalette, maContextBuffer.get(),
+                                   mnBits, mnBytesPerRow, maPalette, maUserBuffer.get() );
             }
         }
         catch( const std::bad_alloc& )
@@ -290,16 +281,16 @@ bool QuartzSalBitmap::CreateContext()
         }
     }
 
-    if (m_pContextBuffer.get())
+    if( maContextBuffer.get() )
     {
-        mxGraphicContext = CGBitmapContextCreate( m_pContextBuffer.get(), mnWidth, mnHeight,
+        mxGraphicContext = CGBitmapContextCreate( maContextBuffer.get(), mnWidth, mnHeight,
                                                   bitsPerComponent, nContextBytesPerRow,
                                                   aCGColorSpace, aCGBmpInfo );
         SAL_INFO("vcl.cg", "CGBitmapContextCreate(" << mnWidth << "x" << mnHeight << "x" << bitsPerComponent << ") = " << mxGraphicContext );
     }
 
     if( !mxGraphicContext )
-        m_pContextBuffer.reset();
+        maContextBuffer.reset();
 
     return mxGraphicContext != nullptr;
 }
@@ -331,7 +322,7 @@ bool QuartzSalBitmap::AllocateUserData()
     {
         try
         {
-            m_pUserBuffer = o3tl::make_shared_array<sal_uInt8>(mnBytesPerRow * mnHeight);
+            maUserBuffer.reset( new sal_uInt8[mnBytesPerRow * mnHeight] );
             alloc = true;
         }
         catch (std::bad_alloc &) {}
@@ -339,7 +330,7 @@ bool QuartzSalBitmap::AllocateUserData()
     if (!alloc)
     {
         SAL_WARN( "vcl.quartz", "bad alloc " << mnBytesPerRow << "x" << mnHeight);
-        m_pUserBuffer.reset( static_cast<sal_uInt8*>(nullptr) );
+        maUserBuffer.reset( static_cast<sal_uInt8*>(nullptr) );
         mnBytesPerRow = 0;
     }
 #ifdef DBG_UTIL
@@ -347,12 +338,12 @@ bool QuartzSalBitmap::AllocateUserData()
     {
         for (size_t i = 0; i < mnBytesPerRow * mnHeight; i++)
         {
-            m_pUserBuffer.get()[i] = (i & 0xFF);
+            maUserBuffer.get()[i] = (i & 0xFF);
         }
     }
 #endif
 
-    return m_pUserBuffer.get() != nullptr;
+    return maUserBuffer.get() != nullptr;
 }
 
 namespace {
@@ -759,16 +750,20 @@ const BitmapPalette& GetDefaultPalette( int mnBits, bool bMonochrome )
 
 BitmapBuffer* QuartzSalBitmap::AcquireBuffer( BitmapAccessMode /*nMode*/ )
 {
-    // TODO: AllocateUserData();
-    if (!m_pUserBuffer.get())
+    if( !maUserBuffer.get() )
+//  || maContextBuffer.get() && (maUserBuffer.get() != maContextBuffer.get()) )
+    {
+        // fprintf(stderr,"ASB::Acq(%dx%d,d=%d)\n",mnWidth,mnHeight,mnBits);
+        // TODO: AllocateUserData();
         return nullptr;
+    }
 
     BitmapBuffer* pBuffer = new BitmapBuffer;
     pBuffer->mnWidth = mnWidth;
     pBuffer->mnHeight = mnHeight;
     pBuffer->maPalette = maPalette;
     pBuffer->mnScanlineSize = mnBytesPerRow;
-    pBuffer->mpBits = m_pUserBuffer.get();
+    pBuffer->mpBits = maUserBuffer.get();
     pBuffer->mnBitCount = mnBits;
     switch( mnBits )
     {
@@ -932,7 +927,7 @@ CGImageRef QuartzSalBitmap::CreateColorMask( int nX, int nY, int nWidth,
                                              int nHeight, SalColor nMaskColor ) const
 {
     CGImageRef xMask = nullptr;
-    if (m_pUserBuffer.get() && (nX + nWidth <= mnWidth) && (nY + nHeight <= mnHeight))
+    if( maUserBuffer.get() && (nX + nWidth <= mnWidth) && (nY + nHeight <= mnHeight) )
     {
         const sal_uInt32 nDestBytesPerRow = nWidth << 2;
         sal_uInt32* pMaskBuffer = static_cast<sal_uInt32*>( rtl_allocateMemory( nHeight * nDestBytesPerRow ) );
@@ -948,7 +943,7 @@ CGImageRef QuartzSalBitmap::CreateColorMask( int nX, int nY, int nWidth,
             reinterpret_cast<sal_uInt8*>(&nColor)[2] = SALCOLOR_GREEN( nMaskColor );
             reinterpret_cast<sal_uInt8*>(&nColor)[3] = SALCOLOR_BLUE( nMaskColor );
 
-            sal_uInt8* pSource = m_pUserBuffer.get();
+            sal_uInt8* pSource = maUserBuffer.get();
             if( nY )
                 pSource += nY * mnBytesPerRow;
 
@@ -1002,7 +997,7 @@ bool QuartzSalBitmap::GetSystemData( BitmapSystemData& rData )
             /**
              * We need to hack things because VCL does not use kCGBitmapByteOrder32Host, while Cairo requires it.
              */
-            SAL_INFO("vcl.cg", "QuartzSalBitmap::" << __func__ << "(): kCGBitmapByteOrder32Host not found => inserting it.");
+            OSL_TRACE("QuartzSalBitmap::%s(): kCGBitmapByteOrder32Host not found => inserting it.",__func__);
 
             CGImageRef xImage = CGBitmapContextCreateImage (mxGraphicContext);
             SAL_INFO("vcl.cg", "CGBitmapContextCreateImage(" << mxGraphicContext << ") = " << xImage );
@@ -1046,11 +1041,6 @@ bool QuartzSalBitmap::GetSystemData( BitmapSystemData& rData )
     }
 
     return bRet;
-}
-
-bool QuartzSalBitmap::ScalingSupported() const
-{
-    return false;
 }
 
 bool QuartzSalBitmap::Scale( const double& /*rScaleX*/, const double& /*rScaleY*/, BmpScaleFlag /*nScaleFlag*/ )

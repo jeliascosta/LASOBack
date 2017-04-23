@@ -87,13 +87,14 @@ protected:
                    Id aType,
                    const sal_Int32 nNoteId);
 
+    void setIsSubstream( bool bSubstream ) { mbIsSubstream = bSubstream; };
     void resolveCustomXmlStream(Stream & rStream);
     void resolveActiveXStream(Stream & rStream);
     void resolveGlossaryStream(Stream & rStream);
     void resolveEmbeddingsStream(const OOXMLStream::Pointer_t& pStream);
 public:
-    OOXMLDocumentImpl(OOXMLStream::Pointer_t const & pStream, const css::uno::Reference<css::task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const css::uno::Sequence<css::beans::PropertyValue>& rDescriptor);
-    virtual ~OOXMLDocumentImpl() override;
+    OOXMLDocumentImpl(OOXMLStream::Pointer_t pStream, const css::uno::Reference<css::task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const css::uno::Sequence<css::beans::PropertyValue>& rDescriptor);
+    virtual ~OOXMLDocumentImpl();
 
     virtual void resolve(Stream & rStream) override;
 

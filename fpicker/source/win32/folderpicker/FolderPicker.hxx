@@ -49,37 +49,47 @@ public:
     // XExecutableDialog
 
 
-    virtual void SAL_CALL setTitle( const OUString& aTitle ) override;
+    virtual void SAL_CALL setTitle( const OUString& aTitle )
+        throw( css::uno::RuntimeException );
 
-    virtual sal_Int16 SAL_CALL execute(  ) override;
+    virtual sal_Int16 SAL_CALL execute(  )
+        throw( css::uno::RuntimeException );
 
 
     // XFolderPicker functions
 
 
-    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory ) override;
+    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory )
+        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    virtual OUString SAL_CALL getDisplayDirectory(  ) override;
+    virtual OUString SAL_CALL getDisplayDirectory(  )
+        throw( css::uno::RuntimeException );
 
-    virtual OUString SAL_CALL getDirectory( ) override;
+    virtual OUString SAL_CALL getDirectory( )
+        throw( css::uno::RuntimeException );
 
-    virtual void SAL_CALL setDescription( const OUString& aDescription ) override;
+    virtual void SAL_CALL setDescription( const OUString& aDescription )
+        throw( css::uno::RuntimeException );
 
 
     // XServiceInfo
 
 
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw(css::uno::RuntimeException);
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw(css::uno::RuntimeException);
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw(css::uno::RuntimeException);
 
 
     // XCancellable
 
 
-    virtual void SAL_CALL cancel( ) override;
+    virtual void SAL_CALL cancel( )
+        throw(css::uno::RuntimeException);
 
 
     // overwrite base class method, which is called

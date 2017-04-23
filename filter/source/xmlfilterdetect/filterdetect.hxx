@@ -43,18 +43,25 @@ public:
     explicit FilterDetect( const css::uno::Reference< css::uno::XComponentContext > &rxCtx)
         : mxCtx( rxCtx ) {}
 
+    virtual ~FilterDetect() {}
+
     //XExtendedFilterDetection
-    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& lDescriptor ) override;
+    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& lDescriptor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 OUString SAL_CALL FilterDetect_getImplementationName();

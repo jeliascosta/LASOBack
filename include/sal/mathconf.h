@@ -24,9 +24,9 @@
 
 #include <float.h>
 
-#if defined __sun
+#if defined SOLARIS
 #include <ieeefp.h>
-#endif /* __sun */
+#endif /* SOLARIS */
 
 #if defined(__cplusplus) && ( defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L )
 #include <cmath>
@@ -62,7 +62,7 @@ extern "C" {
 
 
 /* SAL_MATH_FINITE(d): test double d on INFINITY, NaN et al. */
-#if !defined __sun && !defined ANDROID \
+#if !defined SOLARIS && !defined ANDROID \
                      && defined(__cplusplus) \
                      && ( defined(__GXX_EXPERIMENTAL_CXX0X__) \
                           || __cplusplus >= 201103L \

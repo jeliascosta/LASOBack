@@ -34,7 +34,7 @@ namespace dmapper {
 
 class DomainMapper;
 
-class TablePropertiesHandler final
+class TablePropertiesHandler
 {
 private:
     PropertyMapPtr m_pCurrentProperties;
@@ -43,15 +43,16 @@ private:
 
 public:
     TablePropertiesHandler();
+    virtual ~TablePropertiesHandler( );
 
     bool sprm(Sprm & sprm);
 
-    void SetTableManager( TableManager* pTableManager )
+    inline void SetTableManager( TableManager* pTableManager )
     {
         m_pTableManager = pTableManager;
     };
 
-    void SetProperties( PropertyMapPtr pProperties )
+    inline void SetProperties( PropertyMapPtr pProperties )
     {
         m_pCurrentProperties = pProperties;
     };
@@ -60,7 +61,7 @@ public:
 
 private:
 
-    void cellProps( TablePropertyMapPtr pProps )
+    inline void cellProps( TablePropertyMapPtr pProps )
     {
         if ( m_pTableManager )
             m_pTableManager->cellProps( pProps );
@@ -68,7 +69,7 @@ private:
             m_pCurrentProperties->InsertProps(pProps);
     };
 
-    void insertRowProps( TablePropertyMapPtr pProps )
+    inline void insertRowProps( TablePropertyMapPtr pProps )
     {
         if ( m_pTableManager )
             m_pTableManager->insertRowProps( pProps );
@@ -76,7 +77,7 @@ private:
             m_pCurrentProperties->InsertProps(pProps);
     };
 
-    void insertTableProps( TablePropertyMapPtr pProps )
+    inline void insertTableProps( TablePropertyMapPtr pProps )
     {
         if ( m_pTableManager )
             m_pTableManager->insertTableProps( pProps );

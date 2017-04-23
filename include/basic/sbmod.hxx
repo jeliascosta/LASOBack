@@ -36,6 +36,7 @@ class SbProperty;
 class SbiRuntime;
 typedef std::deque< sal_uInt16 > SbiBreakpoints;
 class SbiImage;
+class SbProcedureProperty;
 class SbIfaceMapperMethod;
 class SbClassModuleObject;
 
@@ -54,7 +55,7 @@ class BASIC_DLLPUBLIC SbModule : public SbxObject
 
     std::vector< OUString > mModuleVariableNames;
 
-    BASIC_DLLPRIVATE static void implClearIfVarDependsOnDeletedBasic( SbxVariable* pVar, StarBASIC* pDeletedBasic );
+    BASIC_DLLPRIVATE void implClearIfVarDependsOnDeletedBasic( SbxVariable* pVar, StarBASIC* pDeletedBasic );
 
     SbModule(const SbModule&) = delete;
     SbModule& operator=(const SbModule&) = delete;
@@ -91,9 +92,9 @@ protected:
     virtual bool LoadCompleted() override;
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     void handleProcedureProperties( SfxBroadcaster& rBC, const SfxHint& rHint );
-    virtual ~SbModule() override;
+    virtual ~SbModule();
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_BASICMOD,2);
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_BASICMOD,2);
                     SbModule( const OUString&, bool bCompat = false );
     virtual void    SetParent( SbxObject* ) override;
     virtual void    Clear() override;
@@ -115,7 +116,7 @@ public:
     void ClearAllBP();
 
     // Store only image, no source (needed for new password protection)
-    void     StoreBinaryData( SvStream& );
+    void     StoreBinaryData( SvStream&, sal_uInt16 nVer );
     void     LoadBinaryData( SvStream& );
     bool     ExceedsLegacyModuleSize();
     void     fixUpMethodStart( bool bCvtToLegacy, SbiImage* pImg = nullptr ) const;
@@ -127,11 +128,10 @@ public:
     bool     isProxyModule() { return bIsProxyModule; }
     void     AddVarName( const OUString& aName );
     void     RemoveVars();
-    css::uno::Reference< css::script::XInvocation > const & GetUnoModule();
+    css::uno::Reference< css::script::XInvocation > GetUnoModule();
     bool     createCOMWrapperForIface( css::uno::Any& o_rRetAny, SbClassModuleObject* pProxyClassModuleObject );
     void     GetCodeCompleteDataFromParse(CodeCompleteDataCache& aCache);
     const SbxArrayRef& GetMethods() { return pMethods;}
-    SbMethod*       FindMethod( const OUString&, SbxClassType );
     static OUString GetKeywordCase( const OUString& sKeyword );
 };
 
@@ -146,7 +146,7 @@ class BASIC_DLLPUBLIC SbClassModuleObject : public SbModule
 
 public:
     SbClassModuleObject( SbModule* pClassModule );
-    virtual ~SbClassModuleObject() override;
+    virtual ~SbClassModuleObject();
 
     // Overridden to support NameAccess etc.
     virtual SbxVariable* Find( const OUString&, SbxClassType ) override;

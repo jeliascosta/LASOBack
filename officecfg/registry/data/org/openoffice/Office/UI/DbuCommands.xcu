@@ -114,9 +114,6 @@
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Open Database Object...</value>
         </prop>
-        <prop oor:name="PopupLabel" oor:type="xs:string">
-          <value xml:lang="en-US">Open...</value>
-        </prop>
       </node>
       <node oor:name=".uno:DBTableDelete" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
@@ -280,11 +277,6 @@
           <value xml:lang="en-US">Form Wizard...</value>
         </prop>
       </node>
-      <node oor:name=".uno:DBNewReportWithPreSelection" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Report...</value>
-        </prop>
-      </node>
       <node oor:name=".uno:DBNewReportAutoPilot" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Report Wizard...</value>
@@ -375,9 +367,6 @@
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Query (Design View)...</value>
         </prop>
-        <prop oor:name="PopupLabel" oor:type="xs:string">
-          <value xml:lang="en-US">New ~Query (Design View)</value>
-        </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
         </prop>
@@ -385,9 +374,6 @@
       <node oor:name=".uno:DBNewQuerySql" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Query (SQL View)...</value>
-        </prop>
-        <prop oor:name="PopupLabel" oor:type="xs:string">
-          <value xml:lang="en-US">New Query (~SQL View)</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -397,9 +383,6 @@
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Table Design...</value>
         </prop>
-        <prop oor:name="PopupLabel" oor:type="xs:string">
-          <value xml:lang="en-US">New ~Table Design</value>
-        </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
         </prop>
@@ -407,9 +390,6 @@
       <node oor:name=".uno:DBNewView" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">View Design...</value>
-        </prop>
-        <prop oor:name="PopupLabel" oor:type="xs:string">
-          <value xml:lang="en-US">New ~View Design</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -523,32 +503,12 @@
           <value xml:lang="en-US">Preview</value>
         </prop>
       </node>
-      <node oor:name=".uno:DBRebuildData" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Rebuild</value>
-        </prop>
-      </node>
       <node oor:name=".uno:DBNewReport" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Report...</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:DSBEditDB" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Edit ~Database File...</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:DSBCloseConnection" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Disco~nnect</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:DSBAdministrate" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Registered databases ...</value>
         </prop>
       </node>
     </node>

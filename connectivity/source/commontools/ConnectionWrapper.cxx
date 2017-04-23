@@ -105,13 +105,13 @@ OConnectionWrapper::~OConnectionWrapper()
 
 // XServiceInfo
 
-OUString SAL_CALL OConnectionWrapper::getImplementationName(  )
+OUString SAL_CALL OConnectionWrapper::getImplementationName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.sdbc.drivers.OConnectionWrapper" );
 }
 
 
-css::uno::Sequence< OUString > SAL_CALL OConnectionWrapper::getSupportedServiceNames(  )
+::com::sun::star::uno::Sequence< OUString > SAL_CALL OConnectionWrapper::getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     // first collect the services which are supported by our aggregate
     Sequence< OUString > aSupported;
@@ -132,19 +132,19 @@ css::uno::Sequence< OUString > SAL_CALL OConnectionWrapper::getSupportedServiceN
 }
 
 
-sal_Bool SAL_CALL OConnectionWrapper::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OConnectionWrapper::supportsService( const OUString& _rServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
 
-Any SAL_CALL OConnectionWrapper::queryInterface( const Type& _rType )
+Any SAL_CALL OConnectionWrapper::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
 {
     Any aReturn = OConnection_BASE::queryInterface(_rType);
     return aReturn.hasValue() ? aReturn : (m_xProxyConnection.is() ? m_xProxyConnection->queryAggregation(_rType) : aReturn);
 }
 
-Sequence< Type > SAL_CALL OConnectionWrapper::getTypes(  )
+Sequence< Type > SAL_CALL OConnectionWrapper::getTypes(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(
         OConnection_BASE::getTypes(),
@@ -152,8 +152,8 @@ Sequence< Type > SAL_CALL OConnectionWrapper::getTypes(  )
     );
 }
 
-// css::lang::XUnoTunnel
-sal_Int64 SAL_CALL OConnectionWrapper::getSomething( const Sequence< sal_Int8 >& rId )
+// com::sun::star::lang::XUnoTunnel
+sal_Int64 SAL_CALL OConnectionWrapper::getSomething( const Sequence< sal_Int8 >& rId ) throw(RuntimeException, std::exception)
 {
     if (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
         return reinterpret_cast< sal_Int64 >( this );
@@ -181,12 +181,12 @@ Sequence< sal_Int8 > OConnectionWrapper::getUnoTunnelImplementationId()
 
 namespace
 {
-    class TPropertyValueLessFunctor : public std::binary_function< css::beans::PropertyValue,css::beans::PropertyValue,bool>
+    class TPropertyValueLessFunctor : public ::std::binary_function< ::com::sun::star::beans::PropertyValue,::com::sun::star::beans::PropertyValue,bool>
     {
     public:
         TPropertyValueLessFunctor()
         {}
-        bool operator() (const css::beans::PropertyValue& lhs, const css::beans::PropertyValue& rhs) const
+        bool operator() (const ::com::sun::star::beans::PropertyValue& lhs, const ::com::sun::star::beans::PropertyValue& rhs) const
         {
             return lhs.Name.compareToIgnoreAsciiCase(rhs.Name) < 0;
         }
@@ -212,7 +212,7 @@ void OConnectionWrapper::createUniqueId( const OUString& _rURL
     // now we need to sort the properties
     PropertyValue* pBegin = _rInfo.getArray();
     PropertyValue* pEnd   = pBegin + _rInfo.getLength();
-    std::sort(pBegin,pEnd,TPropertyValueLessFunctor());
+    ::std::sort(pBegin,pEnd,TPropertyValueLessFunctor());
 
     pBegin = _rInfo.getArray();
     pEnd   = pBegin + _rInfo.getLength();

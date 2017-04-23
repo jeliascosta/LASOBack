@@ -91,26 +91,35 @@ class CompileFormulaContext;
 
 // constants and data types internal to compiler
 
-struct ScRawToken
+/*
+    OpCode              eOp;        // OpCode
+    formula::StackVar   eType;      // type of data
+ */
+
+struct ScRawTokenBase
+{
+protected:
+    OpCode   eOp;
+    formula::StackVar eType;
+};
+
+struct ScRawToken: private ScRawTokenBase
 {
     friend class ScCompiler;
     // Friends that use a temporary ScRawToken on the stack (and therefore need
     // the private dtor) and know what they're doing..
     friend class ScTokenArray;
-protected:
-    OpCode              eOp;
-    formula::StackVar   eType;  // type of data; this determines how the unions are used
 public:
     union {
         double       nValue;
         struct {
-            sal_uInt8   cByte;
+            sal_uInt8        cByte;
             bool        bIsInForceArray;
         } sbyte;
         ScComplexRefData aRef;
         struct {
-            sal_uInt16          nFileId;
-            sal_Unicode         cTabName[MAXSTRLEN+1];
+            sal_uInt16      nFileId;
+            sal_Unicode     cTabName[MAXSTRLEN+1];
             ScComplexRefData    aRef;
         } extref;
         struct {
@@ -130,13 +139,13 @@ public:
             rtl_uString* mpDataIgnoreCase;
         } sharedstring;
         ScMatrix*    pMat;
-        FormulaError nError;
+        sal_uInt16   nError;
         sal_Unicode  cStr[ MAXSTRLEN+1 ];   // string (up to 255 characters + 0)
         short        nJump[ FORMULA_MAXJUMPCOUNT + 1 ];     // If/Chose token
     };
 
-    // coverity[uninit_member] - members deliberately not initialized
-    ScRawToken() {}
+                //! members not initialized
+                ScRawToken() {}
 private:
                 ~ScRawToken() {}                //! only delete via Delete()
 public:
@@ -152,7 +161,7 @@ public:
     void SetSingleReference( const ScSingleRefData& rRef );
     void SetDoubleReference( const ScComplexRefData& rRef );
     void SetDouble( double fVal );
-    void SetErrorConstant( FormulaError nErr );
+    void SetErrorConstant( sal_uInt16 nErr );
 
     // These methods are ok to use, reference count not cleared.
     void SetName(sal_Int16 nSheet, sal_uInt16 nIndex);
@@ -171,6 +180,8 @@ public:
     formula::FormulaToken* CreateToken() const;   // create typified token
 
     static sal_Int32 GetStrLen( const sal_Unicode* pStr ); // as long as a "string" is an array
+    static size_t GetStrLenBytes( sal_Int32 nLen )
+        { return nLen * sizeof(sal_Unicode); }
 };
 
 class SC_DLLPUBLIC ScCompiler : public formula::FormulaCompiler
@@ -253,13 +264,14 @@ private:
     static CharClass            *pCharClassEnglish;                      // character classification for en_US locale
     static const Convention     *pConventions[ formula::FormulaGrammar::CONV_LAST ];
 
-    static const struct AddInMap
+    static struct AddInMap
     {
         const char* pODFF;
         const char* pEnglish;
         const char* pOriginal;              // programmatical name
         const char* pUpper;                 // upper case programmatical name
-    } g_aAddInMap[];
+    } maAddInMap[];
+    static const AddInMap* GetAddInMap();
     static size_t GetAddInMapCount();
 
     ScDocument* pDoc;
@@ -299,9 +311,9 @@ private:
     };
     std::vector<TableRefEntry> maTableRefs;     /// "stack" of currently active ocTableRef tokens
 
-    bool   NextNewToken(bool bInArray);
+    bool   NextNewToken(bool bInArray = false);
 
-    virtual void SetError(FormulaError nError) override;
+    virtual void SetError(sal_uInt16 nError) override;
     sal_Int32 NextSymbol(bool bInArray);
     bool IsValue( const OUString& );
     bool IsOpCode( const OUString&, bool bInArray );
@@ -341,7 +353,7 @@ public:
 
     ScCompiler( ScDocument* pDocument, const ScAddress&,ScTokenArray& rArr);
 
-    virtual ~ScCompiler() override;
+    virtual ~ScCompiler();
 
 public:
     static void DeInit();               /// all
@@ -463,7 +475,7 @@ private:
     virtual bool IsForceArrayParameter( const formula::FormulaToken* pToken, sal_uInt16 nParam ) const override;
 
     /// Access the CharTable flags
-    ScCharFlags GetCharTableFlags( sal_Unicode c, sal_Unicode cLast )
+    inline ScCharFlags GetCharTableFlags( sal_Unicode c, sal_Unicode cLast )
         { return c < 128 ? pConv->getCharTableFlags(c, cLast) : ScCharFlags::NONE; }
 };
 

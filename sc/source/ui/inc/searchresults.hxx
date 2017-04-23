@@ -27,10 +27,10 @@ class SearchResultsDlg : public ModelessDialog
     SfxBindings* mpBindings;
     ScDocument* mpDoc;
 
-    DECL_LINK( ListSelectHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( ListSelectHdl, SvTreeListBox*, void );
 public:
     SearchResultsDlg( SfxBindings* _pBindings, vcl::Window* pParent, sal_uInt16 nId );
-    virtual ~SearchResultsDlg() override;
+    virtual ~SearchResultsDlg();
     virtual void dispose() override;
 
     void FillResults( ScDocument* pDoc, const ScRangeList& rMatchedRanges, bool bCellNotes );
@@ -44,7 +44,7 @@ public:
     SearchResultsDlgWrapper(
         vcl::Window* _pParent, sal_uInt16 nId, SfxBindings* pBindings, SfxChildWinInfo* pInfo );
 
-    virtual ~SearchResultsDlgWrapper() override;
+    virtual ~SearchResultsDlgWrapper();
 
     SFX_DECL_CHILDWINDOW_WITHID(SearchResultsDlgWrapper);
 };

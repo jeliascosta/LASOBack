@@ -80,7 +80,8 @@ void SvxVertCTLTextTbxCtrl::StateChanged(
     {
         ToolBox& rTbx = GetToolBox();
         vcl::Window* pParent = rTbx.GetParent();
-        if(WindowType::FLOATINGWINDOW == pParent->GetType())
+        WindowType nWinType = pParent->GetType();
+        if(WINDOW_FLOATINGWINDOW == nWinType)
         {
             Size aSize(rTbx.CalcWindowSizePixel());
             rTbx.SetPosSizePixel( Point(), aSize );

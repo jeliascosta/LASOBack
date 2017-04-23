@@ -88,7 +88,7 @@ void ScInterpreter::ScFilterXML()
         OUString aString = GetString().getString();
         if(aString.isEmpty() || aXPathExpression.isEmpty())
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -105,7 +105,7 @@ void ScInterpreter::ScFilterXML()
 
         if(!pDoc)
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -117,7 +117,7 @@ void ScInterpreter::ScFilterXML()
 
         if(!pXPathObj)
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -130,7 +130,7 @@ void ScInterpreter::ScFilterXML()
                     xmlNodeSetPtr pNodeSet = pXPathObj->nodesetval;
                     if(!pNodeSet)
                     {
-                        PushError( FormulaError::NoValue );
+                        PushError( formula::errNoValue );
                         return;
                     }
 
@@ -138,7 +138,7 @@ void ScInterpreter::ScFilterXML()
                     if (nNode >= nSize)
                     {
                         // For pJumpMatrix
-                        PushError( FormulaError::NotAvailable);
+                        PushError( formula::NOTAVAILABLE);
                         return;
                     }
 
@@ -153,7 +153,7 @@ void ScInterpreter::ScFilterXML()
                         xResMat = GetNewMat( 1, nMatRows, true);
                         if (!xResMat)
                         {
-                            PushError( FormulaError::CodeOverflow);
+                            PushError( formula::errCodeOverflow);
                             return;
                         }
                     }
@@ -184,9 +184,9 @@ void ScInterpreter::ScFilterXML()
                         else
                         {
                             if (xResMat)
-                                xResMat->PutError( FormulaError::NotAvailable, 0, nNode);
+                                xResMat->PutError( formula::NOTAVAILABLE, 0, nNode);
                             else
-                                PushError( FormulaError::NotAvailable );
+                                PushError( formula::NOTAVAILABLE );
                         }
                     }
                     if (xResMat)
@@ -237,14 +237,14 @@ void ScInterpreter::ScWebservice()
 
         if(aURI.isEmpty())
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
         uno::Reference< ucb::XSimpleFileAccess3 > xFileAccess( ucb::SimpleFileAccess::create( comphelper::getProcessComponentContext() ), uno::UNO_QUERY );
         if(!xFileAccess.is())
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -255,12 +255,12 @@ void ScInterpreter::ScWebservice()
         catch (...)
         {
             // don't let any exceptions pass
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
         if ( !xStream.is() )
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -304,7 +304,7 @@ void ScInterpreter::ScEncodeURL()
         OUString aStr = GetString().getString();
         if ( aStr.isEmpty() )
         {
-            PushError( FormulaError::NoValue );
+            PushError( formula::errNoValue );
             return;
         }
 
@@ -335,7 +335,7 @@ void ScInterpreter::ScDebugVar()
     SvtMiscOptions aMiscOptions;
     if (!aMiscOptions.IsExperimentalMode())
     {
-        PushError(FormulaError::NoName);
+        PushError(formula::errNoName);
         return;
     }
 
@@ -367,11 +367,11 @@ void ScInterpreter::ScDebugVar()
         PushDouble(fVal);
     }
     else if (aStrUpper == "DATASTREAM_IMPORT")
-        PushDouble( sc::datastream_get_time( sc::DebugTime::Import ) );
+        PushDouble( sc::datastream_get_time( 0 ) );
     else if (aStrUpper == "DATASTREAM_RECALC")
-        PushDouble( sc::datastream_get_time( sc::DebugTime::Recalc ) );
+        PushDouble( sc::datastream_get_time( 1 ) );
     else if (aStrUpper == "DATASTREAM_RENDER")
-        PushDouble( sc::datastream_get_time( sc::DebugTime::Render ) );
+        PushDouble( sc::datastream_get_time( 2 ) );
     else
         PushIllegalParameter();
 }

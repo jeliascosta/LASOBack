@@ -43,51 +43,62 @@ class FWE_DLLPUBLIC RootActionTriggerContainer :  public PropertySetContainer,
 {
     public:
         RootActionTriggerContainer( const Menu* pMenu, const OUString* pMenuIdentifier);
-        virtual ~RootActionTriggerContainer() override;
+        virtual ~RootActionTriggerContainer();
 
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType )
+            throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL acquire() throw () override;
         virtual void SAL_CALL release() throw () override;
 
         // XMultiServiceFactory
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance( const OUString& aServiceSpecifier ) override;
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments( const OUString& ServiceSpecifier, const css::uno::Sequence< css::uno::Any >& Arguments ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServiceNames() override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance( const OUString& aServiceSpecifier )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments( const OUString& ServiceSpecifier, const css::uno::Sequence< css::uno::Any >& Arguments )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServiceNames()
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XIndexContainer
-        virtual void SAL_CALL insertByIndex( sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL insertByIndex( sal_Int32 Index, const css::uno::Any& Element )
+            throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL removeByIndex( sal_Int32 Index ) override;
+        virtual void SAL_CALL removeByIndex( sal_Int32 Index )
+            throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexReplace
-        virtual void SAL_CALL replaceByIndex( sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL replaceByIndex( sal_Int32 Index, const css::uno::Any& Element )
+            throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexAccess
-        virtual sal_Int32 SAL_CALL getCount() override;
+        virtual sal_Int32 SAL_CALL getCount()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+        virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
+            throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType() override;
+        virtual css::uno::Type SAL_CALL getElementType()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL hasElements() override;
+        virtual sal_Bool SAL_CALL hasElements()
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XNamed
-        virtual OUString SAL_CALL getName(  ) override;
-        virtual void SAL_CALL setName( const OUString& aName ) override;
+        virtual OUString SAL_CALL getName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         void FillContainer();
@@ -95,7 +106,7 @@ class FWE_DLLPUBLIC RootActionTriggerContainer :  public PropertySetContainer,
         bool            m_bContainerCreated;
         bool            m_bContainerChanged;
         bool            m_bInContainerCreation;
-        VclPtr<const Menu>  m_pMenu;
+        const Menu*     m_pMenu;
         const OUString* m_pMenuIdentifier;
 };
 

@@ -95,7 +95,6 @@
 
 #include "lwpdropcapmgr.hxx"
 #include "lwptable.hxx"
-#include <memory>
 
 LwpPara::LwpPara(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
     : LwpDLVList(objHdr, pStrm)
@@ -123,11 +122,17 @@ LwpPara::LwpPara(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
 
 LwpPara::~LwpPara()
 {
+
     if (m_pBreaks)
     {
         delete m_pBreaks;
         m_pBreaks = nullptr;
     }
+/*  if (m_pParaNumbering)
+    {
+        delete m_pParaNumbering;
+        m_pParaNumbering = NULL;
+    }*/
 
     if (m_pBullOver)
     {
@@ -189,9 +194,10 @@ void LwpPara::Read()
         {
             if (Notify)
             {
-                std::unique_ptr<LwpForked3NotifyList> pNotifyList( new LwpForked3NotifyList );
-                pNotifyList->GetExtraList().Read(m_pObjStrm.get());
-                pNotifyList->Read(m_pObjStrm.get());
+                LwpForked3NotifyList* pNotifyList = new LwpForked3NotifyList();
+                pNotifyList->GetExtraList().Read(m_pObjStrm);
+                pNotifyList->Read(m_pObjStrm);
+                delete pNotifyList;
             }
         }
     }
@@ -199,14 +205,14 @@ void LwpPara::Read()
         m_nOrdinal = 0x0001;
 
     m_nFlags = m_pObjStrm->QuickReaduInt16();
-    m_ParaStyle.ReadIndexed(m_pObjStrm.get());
+    m_ParaStyle.ReadIndexed(m_pObjStrm);
 
     if(!Simple)
     {
-        m_Hint.Read(m_pObjStrm.get());
+        m_Hint.Read(m_pObjStrm);
     }
 
-    m_Story.ReadIndexed(m_pObjStrm.get());
+    m_Story.ReadIndexed(m_pObjStrm);
     if(!Simple)
     {
         if(LwpFileHeader::m_nFileRevision<0x000B)
@@ -232,9 +238,9 @@ void LwpPara::Read()
         m_nLevel = 0x0001;
 
     m_Fribs.SetPara(this);// for silver bullet
-    m_Fribs.ReadPara(m_pObjStrm.get());
+    m_Fribs.ReadPara(m_pObjStrm);
 
-    ReadPropertyList(m_pObjStrm.get());
+    m_pProps = LwpParaProperty::ReadPropertyList(m_pObjStrm,this);
 }
 
 void LwpPara::Parse(IXFStream* pOutputStream)
@@ -742,7 +748,7 @@ void LwpPara::RegisterStyle()
     //register master page;
     RegisterMasterPage(GetXFParaStyle());
 
-    // reg auto style,lay here for pagebreak need overridden para style
+    // reg auto style,lay here for pagebreak need overrided para style
     m_Fribs.SetPara(this);
     m_Fribs.RegisterStyle();
 

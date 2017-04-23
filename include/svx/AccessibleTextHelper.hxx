@@ -21,19 +21,18 @@
 #define INCLUDED_SVX_ACCESSIBLETEXTHELPER_HXX
 
 #include <memory>
-#include <vector>
-
-#include <com/sun/star/uno/Reference.hxx>
 #include <sal/types.h>
+#include <tools/gen.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/accessibility/XAccessible.hpp>
+#include <com/sun/star/accessibility/XAccessibleContext.hpp>
+#include <com/sun/star/accessibility/XAccessibleComponent.hpp>
+#include <com/sun/star/accessibility/XAccessibleEventBroadcaster.hpp>
 #include <svx/svxdllapi.h>
 
-namespace com { namespace sun { namespace star {
-    namespace accessibility { class XAccessible; }
-    namespace accessibility { class XAccessibleEventListener; }
-    namespace awt { struct Point; }
-} } }
 
-class Point;
+class SvxTextForwarder;
+class SvxViewForwarder;
 class SvxEditSource;
 
 namespace accessibility
@@ -86,7 +85,7 @@ namespace accessibility
         AccessibleTextHelper will call the SvxEditSource and their
         forwarder to update it's state. Avoid being inconsistent in
         the facts you tell in the events, e.g. when sending a
-        SfxHintId::TextParaInserted event, the
+        TEXT_HINT_PARAINSERTED event, the
         SvxEditSource::GetTextForwarder().GetParagraphCount() should
         already include the newly inserted paragraph.
 
@@ -107,7 +106,7 @@ namespace accessibility
         @see SvxViewForwarder
         @see SvxEditViewForwarder
     */
-    class SVX_DLLPUBLIC AccessibleTextHelper final
+    class SVX_DLLPUBLIC AccessibleTextHelper
     {
 
     public:
@@ -125,11 +124,16 @@ namespace accessibility
         */
         explicit AccessibleTextHelper( ::std::unique_ptr< SvxEditSource > && pEditSource );
 
-        ~AccessibleTextHelper();
+        virtual ~AccessibleTextHelper();
 
-        AccessibleTextHelper( const AccessibleTextHelper& ) = delete;
-        AccessibleTextHelper& operator= ( const AccessibleTextHelper& ) = delete;
+    protected:
 
+        // declared, but not defined
+        AccessibleTextHelper( const AccessibleTextHelper& );
+        // declared, but not defined
+        AccessibleTextHelper& operator= ( const AccessibleTextHelper& );
+
+    public:
         /** Query the current edit source
 
             @attention This method returns by reference, so you are
@@ -148,23 +152,23 @@ namespace accessibility
             from the main office thread.
 
             The EditSource set here is required to broadcast out the
-            following hints: SfxHintId::EditSourceParasMoved,
-            SfxHintId::EditSourceSelectionChanged, SfxHintId::TextModified,
-            SfxHintId::TextParaInserted, SfxHintId::TextParaRemoved,
-            SfxHintId::TextHeightChanged,
-            SfxHintId::TextViewScrolled. Otherwise, not all state changes
+            following hints: EDITSOURCE_HINT_PARASMOVED,
+            EDITSOURCE_HINT_SELECTIONCHANGED, TEXT_HINT_MODIFIED,
+            TEXT_HINT_PARAINSERTED, TEXT_HINT_PARAREMOVED,
+            TEXT_HINT_TEXTHEIGHTCHANGED,
+            TEXT_HINT_VIEWSCROLLED. Otherwise, not all state changes
             will get noticed by the accessibility object. Further
             more, when the corresponding core object or the model is
             dying, either the edit source must be set to NULL or it
-            has to broadcast a SfxHintId::Dying hint.
+            has to broadcast a SFX_HINT_DYING hint.
 
             If the SvxEditSource's managed text can change between
             edit/non-edit mode (i.e. there are times when
             SvxEditSource::GetEditViewForwarder(sal_False) returns
             NULL), then the two additional hints are required:
-            SdrHintKind::BeginEdit and SdrHintKind::EndEdit. When the
-            AccessibleTextHelper receives a SdrHintKind::BeginEdit, it expects
-            the SvxEditSource already in edit mode. On a SdrHintKind::EndEdit,
+            HINT_BEGEDIT and HINT_ENDEDIT. When the
+            AccessibleTextHelper receives a HINT_BEGEDIT, it expects
+            the SvxEditSource already in edit mode. On a HINT_ENDEDIT,
             edit mode must already been left. The rationale for these
             events are the fact that focus and selection have to be
             updated in edit mode, and completely relinquished and
@@ -263,7 +267,7 @@ namespace accessibility
             children. Call this method if your visibility state has
             changed somehow, e.g. if the visible area has changed and
             the AccessibleTextHelper isn't notified internally
-            (e.g. via SfxHintId::TextViewScrolled). Normally, there should
+            (e.g. via TEXT_HINT_VIEWSCROLLED). Normally, there should
             not be a need to call this method.
         */
         void UpdateChildren();

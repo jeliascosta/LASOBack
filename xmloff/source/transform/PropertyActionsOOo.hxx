@@ -44,7 +44,8 @@ enum XMLPropOOOTransformerAction
     XML_ATACTION_SIZE_PROTECT,
     XML_ATACTION_PROTECT,
     // No image transparency info in label document (#i50322#)
-    XML_ATACTION_WRITER_BACK_GRAPHIC_TRANSPARENCY
+    XML_ATACTION_WRITER_BACK_GRAPHIC_TRANSPARENCY,
+    XML_PTACTION_END=XML_TACTION_END
 };
 
 extern XMLTransformerActionInit aGraphicPropertyOOoAttrActionTable[];

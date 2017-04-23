@@ -13,7 +13,6 @@
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
 
 #include <filter/msfilter/escherex.hxx>
-#include <rtl/character.hxx>
 #include <tools/stream.hxx>
 
 #include <dmapper/DomainMapperFactory.hxx>
@@ -62,7 +61,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
         case RTF_FLDINST:
         {
             // Look for the field type
-            sal_uInt64 const nPos = Strm().Tell();
+            sal_Size nPos = Strm().Tell();
             OStringBuffer aBuf;
             char ch = 0;
             bool bFoundCode = false;
@@ -72,16 +71,11 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
                 Strm().ReadChar(ch);
                 if ('\\' == ch)
                     bInKeyword = true;
-                if (!bInKeyword
-                        && rtl::isAsciiAlphanumeric(static_cast<unsigned char>(ch)))
+                if (!bInKeyword  && isalnum(ch))
                     aBuf.append(ch);
-                else if (bInKeyword
-                         && rtl::isAsciiWhiteSpace(
-                             static_cast<unsigned char>(ch)))
+                else if (bInKeyword && isspace(ch))
                     bInKeyword = false;
-                if (!aBuf.isEmpty()
-                        && !rtl::isAsciiAlphanumeric(
-                            static_cast<unsigned char>(ch)))
+                if (!aBuf.isEmpty() && !isalnum(ch))
                     bFoundCode = true;
             }
 
@@ -198,7 +192,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
             if (!m_pSuperstream)
             {
                 Id nId = 0;
-                std::size_t nPos = m_nGroupStartPos - 1;
+                sal_Size nPos = m_nGroupStartPos - 1;
                 switch (nKeyword)
                 {
                 case RTF_HEADER:
@@ -241,7 +235,7 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
                 // Check if this is an endnote.
                 OStringBuffer aBuf;
                 char ch;
-                sal_uInt64 const nCurrent = Strm().Tell();
+                sal_Size nCurrent = Strm().Tell();
                 for (int i = 0; i < 7; ++i)
                 {
                     Strm().ReadChar(ch);
@@ -338,8 +332,9 @@ RTFError RTFDocumentImpl::dispatchDestination(RTFKeyword nKeyword)
         case RTF_DPTXBXTEXT:
         {
             bool bPictureFrame = false;
-            for (auto& rProperty : m_aStates.top().aShape.aProperties)
+            for (std::size_t i = 0; i < m_aStates.top().aShape.aProperties.size(); ++i)
             {
+                std::pair<OUString, OUString>& rProperty = m_aStates.top().aShape.aProperties[i];
                 if (rProperty.first == "shapeType" && rProperty.second == OUString::number(ESCHER_ShpInst_PictureFrame))
                 {
                     bPictureFrame = true;

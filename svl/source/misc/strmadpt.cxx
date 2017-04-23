@@ -25,7 +25,6 @@
 #include <set>
 #include <string.h>
 
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
@@ -54,7 +53,6 @@ private:
         sal_uInt32 m_nOffset;
         sal_Int8 m_aBuffer[1];
     };
-    static const sal_uInt32 m_nPageSize = 1000;
 
     std::multiset< sal_uInt32 > m_aMarks;
     Page * m_pFirstPage;
@@ -63,13 +61,19 @@ private:
     sal_Int8 * m_pReadBuffer;
     sal_uInt32 m_nReadBufferSize;
     sal_uInt32 m_nReadBufferFilled;
+    sal_uInt32 m_nPageSize;
+    sal_uInt32 m_nMinPages;
+    sal_uInt32 m_nMaxPages;
     sal_uInt32 m_nPages;
     bool m_bEOF;
 
     void remove(Page * pPage);
 
 public:
-    inline SvDataPipe_Impl();
+    inline SvDataPipe_Impl(sal_uInt32 nThePageSize = 1000,
+                           sal_uInt32 nTheMinPages = 100,
+                           sal_uInt32 nTheMaxPages
+                               = std::numeric_limits< sal_uInt32 >::max());
 
     ~SvDataPipe_Impl();
 
@@ -88,13 +92,21 @@ public:
     SeekResult setReadPosition(sal_uInt32 nPosition);
 };
 
-SvDataPipe_Impl::SvDataPipe_Impl()
+SvDataPipe_Impl::SvDataPipe_Impl(sal_uInt32 nThePageSize,
+                                 sal_uInt32 nTheMinPages,
+                                 sal_uInt32 nTheMaxPages)
     : m_pFirstPage( nullptr )
     , m_pReadPage( nullptr )
     , m_pWritePage( nullptr )
     , m_pReadBuffer( nullptr )
     , m_nReadBufferSize( 0 )
     , m_nReadBufferFilled( 0 )
+    , m_nPageSize(std::min< sal_uInt32 >(
+                          std::max< sal_uInt32 >(nThePageSize, sal_uInt32(1)),
+                          sal_uInt32(std::numeric_limits< sal_uInt32 >::max()
+                                     - sizeof (Page) + 1)))
+    , m_nMinPages(std::max< sal_uInt32 >(nTheMinPages, sal_uInt32(1)))
+    , m_nMaxPages(std::max< sal_uInt32 >(nTheMaxPages, sal_uInt32(1)))
     , m_nPages( 0 )
     , m_bEOF( false )
 {}
@@ -136,7 +148,7 @@ bool SvInputStream::open()
 }
 
 // virtual
-std::size_t SvInputStream::GetData(void * pData, std::size_t const nSize)
+sal_uLong SvInputStream::GetData(void * pData, sal_uLong nSize)
 {
     if (!open())
     {
@@ -165,8 +177,8 @@ std::size_t SvInputStream::GetData(void * pData, std::size_t const nSize)
         {
             sal_Int32 nRemain
                 = sal_Int32(
-                    std::min(std::size_t(nSize - nRead),
-                             std::size_t(std::numeric_limits<sal_Int32>::max())));
+                    std::min(sal_uLong(nSize - nRead),
+                             sal_uLong(std::numeric_limits< sal_Int32 >::max())));
             if (nRemain == 0)
                 break;
             uno::Sequence< sal_Int8 > aBuffer;
@@ -202,8 +214,8 @@ std::size_t SvInputStream::GetData(void * pData, std::size_t const nSize)
                 sal_Int32 nRemain
                     = sal_Int32(
                         std::min(
-                            std::size_t(nSize - nRead),
-                            std::size_t(std::numeric_limits<sal_Int32>::max())));
+                            sal_uLong(nSize - nRead),
+                            sal_uLong(std::numeric_limits< sal_Int32 >::max())));
                 if (nRemain == 0)
                     break;
                 uno::Sequence< sal_Int8 > aBuffer;
@@ -232,7 +244,7 @@ std::size_t SvInputStream::GetData(void * pData, std::size_t const nSize)
 }
 
 // virtual
-std::size_t SvInputStream::PutData(void const *, std::size_t)
+sal_uLong SvInputStream::PutData(void const *, sal_uLong)
 {
     SetError(ERRCODE_IO_NOTSUPPORTED);
     return 0;
@@ -262,7 +274,7 @@ sal_uInt64 SvInputStream::SeekPos(sal_uInt64 const nPos)
                             < STREAM_SEEK_TO_END)
                         {
                             m_nSeekedFrom = Tell();
-                            return sal_uInt64(nLength);
+                            return sal_uLong(nLength);
                         }
                     }
                     catch (const io::IOException&)
@@ -344,27 +356,27 @@ SvInputStream::~SvInputStream()
 //  SvOutputStream
 
 // virtual
-std::size_t SvOutputStream::GetData(void *, std::size_t)
+sal_uLong SvOutputStream::GetData(void *, sal_uLong)
 {
     SetError(ERRCODE_IO_NOTSUPPORTED);
     return 0;
 }
 
 // virtual
-std::size_t SvOutputStream::PutData(void const * pData, std::size_t nSize)
+sal_uLong SvOutputStream::PutData(void const * pData, sal_uLong nSize)
 {
     if (!m_xStream.is())
     {
         SetError(ERRCODE_IO_CANTWRITE);
         return 0;
     }
-    std::size_t nWritten = 0;
+    sal_uLong nWritten = 0;
     for (;;)
     {
         sal_Int32 nRemain
             = sal_Int32(
-                std::min(std::size_t(nSize - nWritten),
-                         std::size_t(std::numeric_limits<sal_Int32>::max())));
+                std::min(sal_uLong(nSize - nWritten),
+                         sal_uLong(std::numeric_limits< sal_Int32 >::max())));
         if (nRemain == 0)
             break;
         try
@@ -456,7 +468,7 @@ void SvDataPipe_Impl::remove(Page * pPage)
 
     m_pFirstPage = m_pFirstPage->m_pNext;
 
-    if (m_nPages <= 100) // min pages
+    if (m_nPages <= m_nMinPages)
         return;
 
     pPage->m_pPrev->m_pNext = pPage->m_pNext;
@@ -588,7 +600,7 @@ void SvDataPipe_Impl::write(sal_Int8 const * pBuffer, sal_uInt32 nSize)
 
             if (m_pWritePage->m_pNext == m_pFirstPage)
             {
-                if (m_nPages == std::numeric_limits< sal_uInt32 >::max())
+                if (m_nPages == m_nMaxPages)
                     break;
 
                 Page * pNew

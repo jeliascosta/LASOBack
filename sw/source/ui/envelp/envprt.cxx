@@ -80,11 +80,10 @@ void SwEnvPrtPage::dispose()
     m_pDownField.clear();
     m_pPrinterInfo.clear();
     m_pPrtSetup.clear();
-    pPrt.clear();
     SfxTabPage::dispose();
 }
 
-IMPL_LINK_NOARG(SwEnvPrtPage, ClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwEnvPrtPage, ClickHdl, Button*, void)
 {
     if (m_pBottomButton->IsChecked())
     {
@@ -108,7 +107,7 @@ IMPL_LINK_NOARG(SwEnvPrtPage, ClickHdl, Button*, void)
     }
 }
 
-IMPL_LINK( SwEnvPrtPage, ButtonHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SwEnvPrtPage, ButtonHdl, Button *, pBtn, void )
 {
     if (pBtn == m_pPrtSetup)
     {
@@ -125,7 +124,7 @@ IMPL_LINK( SwEnvPrtPage, ButtonHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG(SwEnvPrtPage, AlignHdl, ToolBox *, void)
+IMPL_LINK_NOARG_TYPED(SwEnvPrtPage, AlignHdl, ToolBox *, void)
 {
     if (m_pAlignBox->GetCurItemId())
     {
@@ -152,11 +151,11 @@ void SwEnvPrtPage::ActivatePage(const SfxItemSet&)
         m_pPrinterInfo->SetText(pPrt->GetName());
 }
 
-DeactivateRC SwEnvPrtPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwEnvPrtPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if( _pSet )
         FillItemSet(_pSet);
-    return DeactivateRC::LeavePage;
+    return SfxTabPage::LEAVE_PAGE;
 }
 
 void SwEnvPrtPage::FillItem(SwEnvItem& rItem)

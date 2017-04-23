@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 
 #include <com/sun/star/chart2/DataPointLabel.hpp>
@@ -137,7 +138,7 @@ void setDataLabelPlacement(const css::uno::Reference<css::frame::XModel>& xModel
         }
     }
 
-    xSeries->setPropertyValue("LabelPlacement", css::uno::Any(nApi));
+    xSeries->setPropertyValue("LabelPlacement", css::uno::makeAny(nApi));
 }
 
 bool isTrendlineVisible(const css::uno::Reference<css::frame::XModel>& xModel,
@@ -166,7 +167,7 @@ void setTrendlineVisible(const css::uno::Reference<css::frame::XModel>&
         /* code */
         uno::Reference< chart2::XRegressionCurve > xCurve =
             RegressionCurveHelper::addRegressionCurve(
-                    SvxChartRegress::Linear,
+                    CHREGRESS_LINEAR,
                     xRegressionCurveContainer,
                     comphelper::getProcessComponentContext());
     }
@@ -199,7 +200,7 @@ void setErrorBarVisible(const css::uno::Reference<css::frame::XModel>&
 
     if (bVisible)
     {
-        StatisticsHelper::addErrorBars( xSeries,
+                StatisticsHelper::addErrorBars( xSeries, comphelper::getProcessComponentContext(),
                     css::chart::ErrorBarStyle::STANDARD_DEVIATION,
                     bYError);
     }
@@ -231,7 +232,7 @@ void setAttachedAxisType(const css::uno::Reference<css::frame::XModel>&
         return;
 
     sal_Int32 nIndex = bPrimary ? 0 : 1;
-    xSeries->setPropertyValue("AttachedAxisIndex", css::uno::Any(nIndex));
+    xSeries->setPropertyValue("AttachedAxisIndex", css::uno::makeAny(nIndex));
 }
 
 css::uno::Reference<css::chart2::XChartType> getChartType(
@@ -407,7 +408,7 @@ void ChartSeriesPanel::DataChanged(
 }
 
 void ChartSeriesPanel::HandleContextChange(
-    const vcl::EnumContext& )
+    const ::sfx2::sidebar::EnumContext& )
 {
     updateData();
 }
@@ -455,7 +456,7 @@ void ChartSeriesPanel::SelectionInvalid()
 {
 }
 
-IMPL_LINK(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
 {
     CheckBox* pCheckBox = static_cast<CheckBox*>(pButton);
     bool bChecked = pCheckBox->IsChecked();
@@ -470,7 +471,7 @@ IMPL_LINK(ChartSeriesPanel, CheckBoxHdl, Button*, pButton, void)
         setErrorBarVisible(mxModel, aCID, true, bChecked);
 }
 
-IMPL_LINK_NOARG(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
 {
     OUString aCID = getCID(mxModel);
     bool bChecked = mpRBPrimaryAxis->IsChecked();
@@ -478,7 +479,7 @@ IMPL_LINK_NOARG(ChartSeriesPanel, RadioBtnHdl, RadioButton&, void)
     setAttachedAxisType(mxModel, aCID, bChecked);
 }
 
-IMPL_LINK_NOARG(ChartSeriesPanel, ListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ChartSeriesPanel, ListBoxHdl, ListBox&, void)
 {
     OUString aCID = getCID(mxModel);
 

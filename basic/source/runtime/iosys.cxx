@@ -29,6 +29,7 @@
 
 #include "runtime.hxx"
 
+#include <ctype.h>
 #include <rtl/byteseq.hxx>
 #include <rtl/textenc.h>
 #include <rtl/strbuf.hxx>
@@ -65,11 +66,11 @@ class SbiInputDialog : public ModalDialog {
     VclPtr<OKButton> aOk;
     VclPtr<CancelButton> aCancel;
     OUString aText;
-    DECL_LINK( Ok, Button *, void );
-    DECL_LINK( Cancel, Button *, void );
+    DECL_LINK_TYPED( Ok, Button *, void );
+    DECL_LINK_TYPED( Cancel, Button *, void );
 public:
     SbiInputDialog( vcl::Window*, const OUString& );
-    virtual ~SbiInputDialog() override { disposeOnce(); }
+    virtual ~SbiInputDialog() { disposeOnce(); }
     virtual void dispose() override;
     const OUString& GetInput() { return aText; }
 };
@@ -82,7 +83,7 @@ SbiInputDialog::SbiInputDialog( vcl::Window* pParent, const OUString& rPrompt )
     SetText( rPrompt );
     aOk->SetClickHdl( LINK( this, SbiInputDialog, Ok ) );
     aCancel->SetClickHdl( LINK( this, SbiInputDialog, Cancel ) );
-    SetMapMode( MapMode( MapUnit::MapAppFont ) );
+    SetMapMode( MapMode( MAP_APPFONT ) );
 
     Point aPt = LogicToPixel( Point( 50, 50 ) );
     Size  aSz = LogicToPixel( Size( 145, 65 ) );
@@ -110,13 +111,13 @@ void SbiInputDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG( SbiInputDialog, Ok, Button *, void )
+IMPL_LINK_NOARG_TYPED( SbiInputDialog, Ok, Button *, void )
 {
     aText = aInput->GetText();
     EndDialog( 1 );
 }
 
-IMPL_LINK_NOARG( SbiInputDialog, Cancel, Button *, void )
+IMPL_LINK_NOARG_TYPED( SbiInputDialog, Cancel, Button *, void )
 {
     EndDialog();
 }
@@ -134,6 +135,7 @@ SbiStream::SbiStream()
 
 SbiStream::~SbiStream()
 {
+    delete pStrm;
 }
 
 // map an SvStream-error to StarBASIC-code
@@ -210,9 +212,9 @@ class OslStream : public SvStream
 
 public:
                         OslStream( const OUString& rName, StreamMode nStrmMode );
-                       virtual ~OslStream() override;
-    virtual std::size_t GetData(void* pData, std::size_t nSize) override;
-    virtual std::size_t PutData(const void* pData, std::size_t nSize) override;
+                       virtual ~OslStream();
+    virtual sal_Size GetData( void* pData, sal_Size nSize ) override;
+    virtual sal_Size PutData( const void* pData, sal_Size nSize ) override;
     virtual sal_uInt64 SeekPos( sal_uInt64 nPos ) override;
     virtual void        FlushData() override;
     virtual void        SetSize( sal_uInt64 nSize) override;
@@ -255,14 +257,14 @@ OslStream::~OslStream()
     maFile.close();
 }
 
-std::size_t OslStream::GetData(void* pData, std::size_t nSize)
+sal_Size OslStream::GetData(void* pData, sal_Size nSize)
 {
     sal_uInt64 nBytesRead = nSize;
     maFile.read( pData, nBytesRead, nBytesRead );
     return nBytesRead;
 }
 
-std::size_t OslStream::PutData(const void* pData, std::size_t nSize)
+sal_Size OslStream::PutData(const void* pData, sal_Size nSize)
 {
     sal_uInt64 nBytesWritten;
     maFile.write( pData, nSize, nBytesWritten );
@@ -280,7 +282,7 @@ sal_uInt64 OslStream::SeekPos( sal_uInt64 nPos )
     }
     else
     {
-        rc = maFile.setPos( osl_Pos_Absolut, nPos );
+        rc = maFile.setPos( osl_Pos_Absolut, (sal_uInt64)nPos );
     }
     OSL_VERIFY(rc == ::osl::FileBase::E_None);
     sal_uInt64 nRealPos(0);
@@ -306,9 +308,9 @@ class UCBStream : public SvStream
 public:
     explicit UCBStream( Reference< XInputStream > & xIS );
     explicit UCBStream( Reference< XStream > & xS );
-                       virtual ~UCBStream() override;
-    virtual std::size_t GetData( void* pData, std::size_t nSize ) override;
-    virtual std::size_t PutData( const void* pData, std::size_t nSize ) override;
+                       virtual ~UCBStream();
+    virtual sal_Size GetData( void* pData, sal_Size nSize ) override;
+    virtual sal_Size PutData( const void* pData, sal_Size nSize ) override;
     virtual sal_uInt64 SeekPos( sal_uInt64 nPos ) override;
     virtual void        FlushData() override;
     virtual void        SetSize( sal_uInt64 nSize ) override;
@@ -350,7 +352,7 @@ UCBStream::~UCBStream()
     }
 }
 
-std::size_t UCBStream::GetData(void* pData, std::size_t nSize)
+sal_Size UCBStream::GetData(void* pData, sal_Size nSize)
 {
     try
     {
@@ -381,7 +383,7 @@ std::size_t UCBStream::GetData(void* pData, std::size_t nSize)
     return 0;
 }
 
-std::size_t UCBStream::PutData(const void* pData, std::size_t nSize)
+sal_Size UCBStream::PutData(const void* pData, sal_Size nSize)
 {
     try
     {
@@ -490,17 +492,17 @@ SbError SbiStream::Open
         if( (nStrmMode & (StreamMode::READ | StreamMode::WRITE)) == (StreamMode::READ | StreamMode::WRITE) )
         {
             Reference< XStream > xIS = xSFI->openFileReadWrite( aNameStr );
-            pStrm.reset( new UCBStream( xIS ) );
+            pStrm = new UCBStream( xIS );
         }
         else if( nStrmMode & StreamMode::WRITE )
         {
             Reference< XStream > xIS = xSFI->openFileReadWrite( aNameStr );
-            pStrm.reset( new UCBStream( xIS ) );
+            pStrm = new UCBStream( xIS );
         }
         else //if( nStrmMode & StreamMode::READ )
         {
             Reference< XInputStream > xIS = xSFI->openFileRead( aNameStr );
-            pStrm.reset( new UCBStream( xIS ) );
+            pStrm = new UCBStream( xIS );
         }
 
         }
@@ -512,7 +514,7 @@ SbError SbiStream::Open
 
     if( !pStrm )
     {
-        pStrm.reset( new OslStream( aNameStr, nStrmMode ) );
+        pStrm = new OslStream( aNameStr, nStrmMode );
     }
     if( IsAppend() )
     {
@@ -521,7 +523,8 @@ SbError SbiStream::Open
     MapError();
     if( nError )
     {
-        pStrm.reset();
+        delete pStrm;
+        pStrm = nullptr;
     }
     return nError;
 }
@@ -531,7 +534,8 @@ SbError SbiStream::Close()
     if( pStrm )
     {
         MapError();
-        pStrm.reset();
+        delete pStrm;
+        pStrm = nullptr;
     }
     nChan = 0;
     return nError;
@@ -644,7 +648,7 @@ SbError SbiStream::Write( const OString& rBuf )
         {
             return nError = ERRCODE_BASIC_BAD_RECORD_LENGTH;
         }
-        pStrm->WriteBytes(rBuf.getStr(), nLen);
+        pStrm->Write(rBuf.getStr(), nLen);
         MapError();
     }
     return nError;
@@ -740,7 +744,7 @@ void SbiIoSystem::Shutdown()
         vcl::Window* pParent = Application::GetDefDialogParent();
         ScopedVclPtrInstance<MessBox>( pParent, WinBits( WB_OK ), OUString(), aOut )->Execute();
 #else
-        ScopedVclPtrInstance<MessBox>( Application::GetDefDialogParent(), WinBits( WB_OK ), OUString(), aOut )->Execute();
+        ScopedVclPtrInstance<MessBox>( GetpApp()->GetDefDialogParent(), WinBits( WB_OK ), OUString(), aOut )->Execute();
 #endif
     }
     aOut.clear();

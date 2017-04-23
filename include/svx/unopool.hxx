@@ -21,9 +21,8 @@
 #define INCLUDED_SVX_UNOPOOL_HXX
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/lang/XTypeProvider.hpp>
 #include <comphelper/propertysethelper.hxx>
-#include <cppuhelper/weakagg.hxx>
+#include <cppuhelper/implbase4.hxx>
 #include <svx/svxdllapi.h>
 
 class SdrModel;
@@ -45,45 +44,41 @@ public:
 
     /** deprecated */
     SvxUnoDrawPool(SdrModel* pModel);
-    virtual ~SvxUnoDrawPool() throw() override;
+    virtual ~SvxUnoDrawPool() throw();
 
     /** This returns the item pool from the given model, or the default pool if there is no model and bReadOnly is true.
         If bReadOnly is false and there is no model the default implementation returns NULL.
     */
     virtual SfxItemPool* getModelPool( bool bReadOnly ) throw();
 
-    // overridden helpers from comphelper::PropertySetHelper
-    virtual void _setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const css::uno::Any* pValues ) override;
-    virtual void _getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, css::uno::Any* pValue ) override;
+    // overriden helpers from comphelper::PropertySetHelper
+    virtual void _setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const css::uno::Any* pValues ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException ) override;
+    virtual void _getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, css::uno::Any* pValue ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException ) override;
 
-    virtual void _getPropertyStates( const comphelper::PropertyMapEntry** ppEntries, css::beans::PropertyState* pStates ) override;
-    virtual void _setPropertyToDefault( const comphelper::PropertyMapEntry* pEntry ) override;
-    virtual css::uno::Any _getPropertyDefault( const comphelper::PropertyMapEntry* pEntry ) override;
+    virtual void _getPropertyStates( const comphelper::PropertyMapEntry** ppEntries, css::beans::PropertyState* pStates ) throw(css::beans::UnknownPropertyException ) override;
+    virtual void _setPropertyToDefault( const comphelper::PropertyMapEntry* pEntry )  throw(css::beans::UnknownPropertyException ) override;
+    virtual css::uno::Any _getPropertyDefault( const comphelper::PropertyMapEntry* pEntry ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException ) override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type & rType ) override;
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
 protected:
     void init();
 
-    /// @throws css::beans::UnknownPropertyException
-    static void getAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, css::uno::Any& rValue );
-    /// @throws css::beans::UnknownPropertyException
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    virtual void putAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, const css::uno::Any& rValue );
+    static void getAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException);
+    virtual void putAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception);
 
 protected:
     SdrModel* mpModel;

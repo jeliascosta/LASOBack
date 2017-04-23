@@ -33,13 +33,13 @@ class FormCache;
 
 struct LotusContext
 {
-    static const sal_uInt16 nBOF = 0x0000;
+    const sal_uInt16 nBOF;
     WKTYP            eTyp;          // type of file being processed
     bool             bEOF;          // shows end of file
     rtl_TextEncoding eCharVon;
     ScDocument*      pDoc;          // pointer to access document
     static OPCODE_FKT pOpFkt[ FKT_LIMIT ];
-    static OPCODE_FKT pOpFkt123[ FKT_LIMIT123 ]; // -> optab.cxx; table of possible Opcodes
+    static OPCODE_FKT pOpFkt123[ FKT_LIMIT123 ]; // -> optab.cxx, table of possible Opcodes
     LOTUS_ROOT*      pLotusRoot;
     std::map<sal_uInt16, ScPatternAttr> aLotusPatternPool;
 
@@ -51,7 +51,8 @@ struct LotusContext
     FormCache*       pValueFormCache; // -> in memory.cxx initialisiert
 
     LotusContext()
-        : eTyp(eWK_UNKNOWN)
+        : nBOF(0x0000)
+        , eTyp(eWK_UNKNOWN)
         , bEOF(false)
         , eCharVon(RTL_TEXTENCODING_DONTKNOW)
         , pDoc(nullptr)

@@ -43,6 +43,7 @@ void SAL_CALL Accessible::disposing()
 }
 
 Reference<accessibility::XAccessibleContext> SAL_CALL Accessible::getAccessibleContext()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return mxContext;
 }

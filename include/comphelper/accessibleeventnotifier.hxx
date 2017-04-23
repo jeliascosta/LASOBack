@@ -25,87 +25,98 @@
 
 #include <comphelper/comphelperdllapi.h>
 
-namespace comphelper {
 
-class COMPHELPER_DLLPUBLIC AccessibleEventNotifier
+namespace comphelper
 {
-public:
-    typedef sal_uInt32 TClientId;
 
-public:
-    AccessibleEventNotifier() = delete;
-    ~AccessibleEventNotifier() = delete;
-    AccessibleEventNotifier( const AccessibleEventNotifier& ) = delete;
-    AccessibleEventNotifier& operator=( const AccessibleEventNotifier& ) = delete;
 
-    /** registers a client of this class, means a broadcaster of AccessibleEvents
+    //= AccessibleEventNotifier
 
-        <p>No precaution is taken to care for disposal of this component. When the component
-        dies, it <b>must</b> call <member>revokeClient</member> or <member>revokeClientNotifyDisposing</member>
-        explicitly itself.</p>
-    */
-    static TClientId registerClient();
+    class COMPHELPER_DLLPUBLIC AccessibleEventNotifier
+    {
+    // typedefs
+    public:
+        typedef sal_uInt32  TClientId;
 
-    /** revokes a broadcaster of AccessibleEvents
+    public:
+        AccessibleEventNotifier() = delete;
+        ~AccessibleEventNotifier() = delete;
+        AccessibleEventNotifier( const AccessibleEventNotifier& ) = delete;
+        AccessibleEventNotifier& operator=( const AccessibleEventNotifier& ) = delete;
 
-        <p>Note that no disposing event is fired when you use this method, the client is simply revoked.
-        You can for instance revoke a client if the last listener for it is revoked, but the client
-        itself is not disposed.<br/>
-        When the client is disposed, you should prefer <member>revokeClientNotifyDisposing</member></p>
+        /** registers a client of this class, means a broadcaster of AccessibleEvents
 
-        <p>Any possibly pending events for this client are removed from the queue.</p>
+            <p>No precaution is taken to care for disposal of this component. When the component
+            dies, it <b>must</b> call <member>revokeClient</member> or <member>revokeClientNotifyDisposing</member>
+            explicitly itself.</p>
+        */
+        static  TClientId   registerClient( );
 
-        @seealso revokeClientNotifyDisposing
-    */
-    static void revokeClient( const TClientId _nClient );
+        /** revokes a broadcaster of AccessibleEvents
 
-    /** revokes a client, with additionally notifying a disposing event to all listeners registered for
-        this client
+            <p>Note that no disposing event is fired when you use this method, the client is simply revoked.
+            You can for instance revoke a client if the last listener for it is revoked, but the client
+            itself is not disposed.<br/>
+            When the client is disposed, you should prefer <member>revokeClientNotifyDisposing</member></p>
 
-        <p>Any other possibly pending events for this client are removed from the queue</p>
+            <p>Any possibly pending events for this client are removed from the queue.</p>
 
-        @param _nClient
-            the id of the client which should be revoked
-        @param _rxEventSource
-            the source to be notified together with the <member scope="com.sun.star.lang">XComponent::disposing</member>
-            call.
-    */
-    static void revokeClientNotifyDisposing(
-        const TClientId _nClient,
-        const css::uno::Reference< css::uno::XInterface >& _rxEventSource );
+            @seealso revokeClientNotifyDisposing
+        */
+        static  void        revokeClient( const TClientId _nClient );
 
-    /** registers a listener for the given client
+        /** revokes a client, with additionally notifying a disposing event to all listeners registered for
+            this client
 
-        @param _nClient
-            the id of the client for which a listener should be registered
-        @return
-            the number of event listeners currently registered for this client
-    */
-    static sal_Int32 addEventListener(
-        const TClientId _nClient,
-        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& _rxListener );
+            <p>Any other possibly pending events for this client are removed from the queue</p>
 
-    /** revokes a listener for the given client
+            @param _nClient
+                the id of the client which should be revoked
+            @param _rxEventSource
+                the source to be notified together with the <member scope="com.sun.star.lang">XComponent::disposing</member>
+                call.
+        */
+        static  void        revokeClientNotifyDisposing(
+                        const TClientId _nClient,
+                        const css::uno::Reference< css::uno::XInterface >& _rxEventSource
+                    );
 
-        @param _nClient
-            the id of the client for which a listener should be revoked
-        @return
-            the number of event listeners currently registered for this client
-    */
-    static sal_Int32 removeEventListener(
-        const TClientId _nClient,
-        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& _rxListener );
+        /** registers a listener for the given client
 
-    /** adds an event, which is to be broadcasted, to the queue
+            @param _nClient
+                the id of the client for which a listener should be registered
+            @return
+                the number of event listeners currently registered for this client
+        */
+        static sal_Int32 addEventListener(
+                        const TClientId _nClient,
+                        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& _rxListener
+                    );
 
-        @param _nClient
-            the id of the client which needs to broadcast the event
-    */
-    static void addEvent(
-        const TClientId _nClient,
-        const css::accessibility::AccessibleEventObject& _rEvent );
+        /** revokes a listener for the given client
 
-};
+            @param _nClient
+                the id of the client for which a listener should be revoked
+            @return
+                the number of event listeners currently registered for this client
+        */
+        static sal_Int32 removeEventListener(
+                        const TClientId _nClient,
+                        const css::uno::Reference< css::accessibility::XAccessibleEventListener >& _rxListener
+                    );
+
+        /** adds an event, which is to be broadcasted, to the queue
+
+            @param _nClient
+                the id of the client which needs to broadcast the event
+        */
+        static void addEvent(
+                        const TClientId _nClient,
+                        const css::accessibility::AccessibleEventObject& _rEvent
+                    );
+
+    };
+
 
 }   // namespace comphelper
 

@@ -59,7 +59,7 @@ namespace basprov
     // XBrowseNode
 
 
-    OUString BasicModuleNodeImpl::getName(  )
+    OUString BasicModuleNodeImpl::getName(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -71,7 +71,7 @@ namespace basprov
     }
 
 
-    Sequence< Reference< browse::XBrowseNode > > BasicModuleNodeImpl::getChildNodes(  )
+    Sequence< Reference< browse::XBrowseNode > > BasicModuleNodeImpl::getChildNodes(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -79,7 +79,7 @@ namespace basprov
 
         if ( m_pModule )
         {
-            SbxArray* pMethods = m_pModule->GetMethods().get();
+            SbxArray* pMethods = m_pModule->GetMethods();
             if ( pMethods )
             {
                 sal_Int32 nCount = pMethods->Count();
@@ -107,14 +107,14 @@ namespace basprov
     }
 
 
-    sal_Bool BasicModuleNodeImpl::hasChildNodes(  )
+    sal_Bool BasicModuleNodeImpl::hasChildNodes(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
         bool bReturn = false;
         if ( m_pModule )
         {
-            SbxArray* pMethods = m_pModule->GetMethods().get();
+            SbxArray* pMethods = m_pModule->GetMethods();
             if ( pMethods && pMethods->Count() > 0 )
                 bReturn = true;
         }
@@ -123,7 +123,7 @@ namespace basprov
     }
 
 
-    sal_Int16 BasicModuleNodeImpl::getType(  )
+    sal_Int16 BasicModuleNodeImpl::getType(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 

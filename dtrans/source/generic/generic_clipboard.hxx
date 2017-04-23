@@ -46,8 +46,8 @@ namespace dtrans
         css::uno::Reference< css::datatransfer::XTransferable > m_aContents;
         css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner > m_aOwner;
 
-        bool m_bInitialized;
-        virtual ~GenericClipboard() override;
+        sal_Bool m_bInitialized;
+        virtual ~GenericClipboard();
 
     public:
 
@@ -57,45 +57,55 @@ namespace dtrans
          * XInitialization
          */
 
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+            throw(css::uno::Exception, css::uno::RuntimeException);
 
         /*
          * XServiceInfo
          */
 
-        virtual OUString SAL_CALL getImplementationName(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  )
+            throw(css::uno::RuntimeException);
 
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw(css::uno::RuntimeException);
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+            throw(css::uno::RuntimeException);
 
         /*
          * XClipboard
          */
 
-        virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents() override;
+        virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents()
+            throw(css::uno::RuntimeException);
 
         virtual void SAL_CALL setContents(
             const css::uno::Reference< css::datatransfer::XTransferable >& xTrans,
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner ) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner )
+            throw(css::uno::RuntimeException);
 
-        virtual OUString SAL_CALL getName() override;
+        virtual OUString SAL_CALL getName()
+            throw(css::uno::RuntimeException);
 
         /*
          * XClipboardEx
          */
 
-        virtual sal_Int8 SAL_CALL getRenderingCapabilities() override;
+        virtual sal_Int8 SAL_CALL getRenderingCapabilities()
+            throw(css::uno::RuntimeException);
 
         /*
          * XClipboardNotifier
          */
 
         virtual void SAL_CALL addClipboardListener(
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
+            throw(css::uno::RuntimeException);
 
         virtual void SAL_CALL removeClipboardListener(
-            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
+            const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
+            throw(css::uno::RuntimeException);
 
     };
 

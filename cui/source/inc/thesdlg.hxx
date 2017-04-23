@@ -42,10 +42,10 @@ class LookUpComboBox : public ComboBox
 
 public:
     LookUpComboBox(vcl::Window *pParent);
-    virtual ~LookUpComboBox() override;
+    virtual ~LookUpComboBox();
     virtual void dispose() override;
 
-    DECL_LINK( ModifyTimer_Hdl, Timer *, void );
+    DECL_LINK_TYPED( ModifyTimer_Hdl, Idle *, void );
 
     void init(SvxThesaurusDialog *pDialog);
 
@@ -85,7 +85,7 @@ public:
     ThesaurusAlternativesCtrl(vcl::Window* pParent);
 
     void init(SvxThesaurusDialog *pDialog);
-    virtual ~ThesaurusAlternativesCtrl() override;
+    virtual ~ThesaurusAlternativesCtrl();
     virtual void dispose() override;
 
     SvTreeListEntry *   AddEntry( sal_Int32 nVal, const OUString &rText, bool bIsHeader );
@@ -95,7 +95,7 @@ public:
     AlternativesExtraData * GetExtraData( const SvTreeListEntry *pEntry );
 
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 };
 
 class ReplaceEdit : public Edit
@@ -107,7 +107,7 @@ class ReplaceEdit : public Edit
 
 public:
     ReplaceEdit(vcl::Window *pParent);
-    virtual ~ReplaceEdit() override;
+    virtual ~ReplaceEdit();
     virtual void dispose() override;
 
     void init(Button *pBtn)  { m_pBtn = pBtn; }
@@ -135,26 +135,24 @@ class SvxThesaurusDialog : public SvxStandardDialog
     bool                    m_bWordFound;
 
 public:
-    virtual ~SvxThesaurusDialog() override;
+    virtual ~SvxThesaurusDialog();
     virtual void dispose() override;
 
     bool                    WordFound() const { return m_bWordFound; }
     const OUString&         getErrStr() const { return m_aErrStr; }
 
     // Handler
-    DECL_LINK( ReplaceBtnHdl_Impl, Button *, void );
-    DECL_LINK( LeftBtnHdl_Impl, Button *, void );
-    DECL_LINK( LanguageHdl_Impl, ListBox&, void );
-    DECL_LINK( WordSelectHdl_Impl, ComboBox&, void );
-    DECL_LINK( AlternativesSelectHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK( AlternativesDoubleClickHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( ReplaceBtnHdl_Impl, Button *, void );
+    DECL_LINK_TYPED( LeftBtnHdl_Impl, Button *, void );
+    DECL_LINK_TYPED( LanguageHdl_Impl, ListBox&, void );
+    DECL_LINK_TYPED( WordSelectHdl_Impl, ComboBox&, void );
+    DECL_LINK_TYPED( AlternativesSelectHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( AlternativesDoubleClickHdl_Impl, SvTreeListBox*, bool );
 
-    DECL_STATIC_LINK( SvxThesaurusDialog, SelectFirstHdl_Impl, void*, void );
+    DECL_STATIC_LINK_TYPED( SvxThesaurusDialog, SelectFirstHdl_Impl, void*, void );
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
     css::uno::Sequence< css::uno::Reference< css::linguistic2::XMeaning > >
-            queryMeanings_Impl( OUString& rTerm, const css::lang::Locale& rLocale, const css::beans::PropertyValues& rProperties );
+            queryMeanings_Impl( OUString& rTerm, const css::lang::Locale& rLocale, const css::beans::PropertyValues& rProperties ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException);
 
     bool    UpdateAlternativesBox_Impl();
     void    LookUp( const OUString &rText );
@@ -163,7 +161,7 @@ public:
 
 public:
     SvxThesaurusDialog( vcl::Window* pParent,
-                        css::uno::Reference< css::linguistic2::XThesaurus > const & xThesaurus,
+                        css::uno::Reference< css::linguistic2::XThesaurus >  xThesaurus,
                         const OUString &rWord, LanguageType nLanguage );
 
     void            SetWindowTitle( LanguageType nLanguage );

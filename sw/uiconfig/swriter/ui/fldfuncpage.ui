@@ -151,7 +151,6 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="row_spacing">12</property>
-        <property name="hexpand">True</property>
         <child>
           <object class="GtkButton" id="macro">
             <property name="label" translatable="yes">_Macro...</property>
@@ -173,7 +172,6 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="row_spacing">6</property>
-            <property name="hexpand">True</property>
             <child>
               <object class="GtkLabel" id="valueft">
                 <property name="visible">True</property>
@@ -195,7 +193,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">•</property>
-                <property name="hexpand">True</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -217,7 +214,6 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="row_spacing">6</property>
-            <property name="hexpand">True</property>
             <child>
               <object class="GtkLabel" id="nameft">
                 <property name="visible">True</property>
@@ -240,7 +236,6 @@
                 <property name="can_focus">True</property>
                 <property name="invisible_char">•</property>
                 <property name="invisible_char_set">True</property>
-                <property name="hexpand">True</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -262,7 +257,6 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="row_spacing">6</property>
-            <property name="hexpand">True</property>
             <child>
               <object class="GtkLabel" id="cond1ft">
                 <property name="visible">True</property>
@@ -285,7 +279,6 @@
                 <property name="can_focus">True</property>
                 <property name="invisible_char">•</property>
                 <property name="invisible_char_set">True</property>
-                <property name="hexpand">True</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -329,7 +322,6 @@
                 <property name="can_focus">True</property>
                 <property name="invisible_char">•</property>
                 <property name="invisible_char_set">True</property>
-                <property name="hexpand">True</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -356,7 +348,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="row_spacing">6</property>
-                <property name="hexpand">True</property>
                 <child>
                   <object class="GtkLabel" id="itemft">
                     <property name="visible">True</property>
@@ -379,7 +370,6 @@
                     <property name="can_focus">True</property>
                     <property name="invisible_char">•</property>
                     <property name="invisible_char_set">True</property>
-                    <property name="hexpand">True</property>
                   </object>
                   <packing>
                     <property name="left_attach">0</property>
@@ -535,7 +525,6 @@
                         <property name="can_focus">True</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="hexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>

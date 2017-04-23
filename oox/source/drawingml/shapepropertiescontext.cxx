@@ -27,7 +27,7 @@
 
 #include "drawingml/scene3dcontext.hxx"
 #include "drawingml/linepropertiescontext.hxx"
-#include "drawingml/misccontexts.hxx"
+#include "drawingml/fillpropertiesgroupcontext.hxx"
 #include "drawingml/transform2dcontext.hxx"
 #include "drawingml/customshapegeometry.hxx"
 #include "effectpropertiescontext.hxx"
@@ -104,6 +104,7 @@ ContextHandlerRef ShapePropertiesContext::onCreateContext( sal_Int32 aElementTok
         break;
     }
 
+    // FillPropertiesGroupContext
     return FillPropertiesContext::createFillContext( *this, aElementToken, rAttribs, mrShape.getFillProperties() );
 }
 

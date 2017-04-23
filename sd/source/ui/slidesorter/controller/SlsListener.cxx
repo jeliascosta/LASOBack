@@ -126,7 +126,13 @@ Listener::Listener (
         }
 
         Link<tools::EventMultiplexerEvent&,void> aLink (LINK(this, Listener, EventMultiplexerCallback));
-        mpBase->GetEventMultiplexer()->AddEventListener(aLink);
+        mpBase->GetEventMultiplexer()->AddEventListener(
+            aLink,
+            tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
+            | tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
+            | tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED
+            | tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED
+            | tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED);
     }
 }
 
@@ -180,7 +186,13 @@ void Listener::ReleaseListeners()
     if (mpBase != nullptr)
     {
         Link<sd::tools::EventMultiplexerEvent&,void> aLink (LINK(this, Listener, EventMultiplexerCallback));
-        mpBase->GetEventMultiplexer()->RemoveEventListener(aLink);
+        mpBase->GetEventMultiplexer()->RemoveEventListener(
+            aLink,
+            tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
+            | tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
+            | tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED
+            | tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED
+            | tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED);
     }
 }
 
@@ -270,14 +282,14 @@ void Listener::Notify (
     {
         switch (pSdrHint->GetKind())
         {
-            case SdrHintKind::ModelCleared:
+            case HINT_MODELCLEARED:
                 if (&rBroadcaster == mrSlideSorter.GetModel().GetDocument())
                 {   // rhbz#965646 stop listening to dying document
                     EndListening(rBroadcaster);
                     return;
                 }
                 break;
-            case SdrHintKind::PageOrderChange:
+            case HINT_PAGEORDERCHG:
                 if (&rBroadcaster == mrSlideSorter.GetModel().GetDocument())
                     HandleModelChange(pSdrHint->GetPage());
                 break;
@@ -320,18 +332,24 @@ void Listener::Notify (
                 break;
         }
     }
-    else if (rHint.GetId() == SfxHintId::DocChanged)
+    else if (dynamic_cast<const SfxSimpleHint*>(&rHint))
     {
-        mrController.CheckForMasterPageAssignment();
-        mrController.CheckForSlideTransitionAssignment();
+        const SfxSimpleHint& rSfxSimpleHint = static_cast<const SfxSimpleHint&>(rHint);
+        switch (rSfxSimpleHint.GetId())
+        {
+            case SFX_HINT_DOCCHANGED:
+                mrController.CheckForMasterPageAssignment();
+                mrController.CheckForSlideTransitionAssignment();
+                break;
+        }
     }
 }
 
-IMPL_LINK(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
+IMPL_LINK_TYPED(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case EventMultiplexerEventId::MainViewRemoved:
+        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
         {
             if (mpBase != nullptr)
             {
@@ -342,11 +360,11 @@ IMPL_LINK(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent
         }
         break;
 
-        case EventMultiplexerEventId::MainViewAdded:
+        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
             mbIsMainViewChangePending = true;
             break;
 
-        case EventMultiplexerEventId::ConfigurationUpdated:
+        case tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED:
             if (mbIsMainViewChangePending && mpBase != nullptr)
             {
                 mbIsMainViewChangePending = false;
@@ -359,7 +377,7 @@ IMPL_LINK(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent
             }
             break;
 
-        case EventMultiplexerEventId::ControllerAttached:
+        case tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED:
         {
             ConnectToController();
             //            mrController.GetPageSelector().GetCoreSelection();
@@ -367,17 +385,17 @@ IMPL_LINK(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent
         }
         break;
 
-        case EventMultiplexerEventId::ControllerDetached:
+        case tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED:
             DisconnectFromController();
             break;
 
-        case EventMultiplexerEventId::ShapeChanged:
-        case EventMultiplexerEventId::ShapeInserted:
-        case EventMultiplexerEventId::ShapeRemoved:
+        case tools::EventMultiplexerEvent::EID_SHAPE_CHANGED:
+        case tools::EventMultiplexerEvent::EID_SHAPE_INSERTED:
+        case tools::EventMultiplexerEvent::EID_SHAPE_REMOVED:
             HandleShapeModification(static_cast<const SdrPage*>(rEvent.mpUserData));
             break;
 
-        case EventMultiplexerEventId::EndTextEdit:
+        case tools::EventMultiplexerEvent::EID_END_TEXT_EDIT:
             if (rEvent.mpUserData != nullptr)
             {
                 const SdrObject* pObject = static_cast<const SdrObject*>(rEvent.mpUserData);
@@ -394,6 +412,7 @@ IMPL_LINK(Listener, EventMultiplexerCallback, ::sd::tools::EventMultiplexerEvent
 
 void SAL_CALL Listener::disposing (
     const lang::EventObject& rEventObject)
+    throw (RuntimeException, std::exception)
 {
     if ((mbListeningToDocument || mbListeningToUNODocument)
         && mrSlideSorter.GetModel().GetDocument()!=nullptr
@@ -417,6 +436,7 @@ void SAL_CALL Listener::disposing (
 
 void SAL_CALL Listener::notifyEvent (
     const document::EventObject& )
+    throw (RuntimeException, std::exception)
 {
 }
 
@@ -424,14 +444,14 @@ void SAL_CALL Listener::notifyEvent (
 
 void SAL_CALL Listener::propertyChange (
     const PropertyChangeEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
-    if (rBHelper.bDisposed || rBHelper.bInDispose)
-    {
-        throw lang::DisposedException ("SlideSorterController object has already been disposed",
-            static_cast<uno::XWeak*>(this));
-    }
+    ThrowIfDisposed();
 
-    if (rEvent.PropertyName == "CurrentPage")
+    static const char sCurrentPagePropertyName[] = "CurrentPage";
+    static const char sEditModePropertyName[] = "IsMasterPageMode";
+
+    if (rEvent.PropertyName == sCurrentPagePropertyName)
     {
         Any aCurrentPage = rEvent.NewValue;
         Reference<beans::XPropertySet> xPageSet (aCurrentPage, UNO_QUERY);
@@ -460,18 +480,19 @@ void SAL_CALL Listener::propertyChange (
             }
         }
     }
-    else if (rEvent.PropertyName == "IsMasterPageMode")
+    else if (rEvent.PropertyName == sEditModePropertyName)
     {
         bool bIsMasterPageMode = false;
         rEvent.NewValue >>= bIsMasterPageMode;
         mrController.ChangeEditMode (
-            bIsMasterPageMode ? EditMode::MasterPage : EditMode::Page);
+            bIsMasterPageMode ? EM_MASTERPAGE : EM_PAGE);
     }
 }
 
 //===== frame::XFrameActionListener  ==========================================
 
 void SAL_CALL Listener::frameAction (const frame::FrameActionEvent& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     switch (rEvent.Action)
     {
@@ -496,6 +517,7 @@ void SAL_CALL Listener::frameAction (const frame::FrameActionEvent& rEvent)
 
 void SAL_CALL Listener::notifyEvent (
     const AccessibleEventObject& )
+    throw (RuntimeException, std::exception)
 {
 }
 
@@ -526,7 +548,7 @@ void Listener::UpdateEditMode()
         }
     }
     mrController.ChangeEditMode (
-        bIsMasterPageMode ? EditMode::MasterPage : EditMode::Page);
+        bIsMasterPageMode ? EM_MASTERPAGE : EM_PAGE);
 }
 
 void Listener::HandleModelChange (const SdrPage* pPage)
@@ -550,7 +572,7 @@ void Listener::HandleModelChange (const SdrPage* pPage)
     // in a sane state, not just in the middle of a larger change.
     SdDrawDocument* pDocument (mrSlideSorter.GetModel().GetDocument());
     if (pDocument != nullptr
-        && pDocument->GetMasterSdPageCount(PageKind::Standard) == pDocument->GetMasterSdPageCount(PageKind::Notes))
+        && pDocument->GetMasterSdPageCount(PK_STANDARD) == pDocument->GetMasterSdPageCount(PK_NOTES))
     {
         // A model change can make updates of some text fields necessary
         // (like page numbers and page count.)  Invalidate all previews in
@@ -585,11 +607,11 @@ void Listener::HandleShapeModification (const SdrPage* pPage)
     // pages that are linked to this master page.
     if (pPage->IsMasterPage())
     {
-        for (sal_uInt16 nIndex=0,nCount=pDocument->GetSdPageCount(PageKind::Standard);
+        for (sal_uInt16 nIndex=0,nCount=pDocument->GetSdPageCount(PK_STANDARD);
              nIndex<nCount;
              ++nIndex)
         {
-            const SdPage* pCandidate = pDocument->GetSdPage(nIndex, PageKind::Standard);
+            const SdPage* pCandidate = pDocument->GetSdPage(nIndex, PK_STANDARD);
             if (pCandidate!=nullptr && pCandidate->TRG_HasMasterPage())
             {
                 if (&pCandidate->TRG_GetMasterPage() == pPage)
@@ -600,6 +622,16 @@ void Listener::HandleShapeModification (const SdrPage* pPage)
                 OSL_ASSERT(pCandidate!=nullptr && pCandidate->TRG_HasMasterPage());
             }
         }
+    }
+}
+
+void Listener::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
+{
+    if (rBHelper.bDisposed || rBHelper.bInDispose)
+    {
+        throw lang::DisposedException ("SlideSorterController object has already been disposed",
+            static_cast<uno::XWeak*>(this));
     }
 }
 

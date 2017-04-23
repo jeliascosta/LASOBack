@@ -19,9 +19,7 @@
 
 #include <o3tl/make_unique.hxx>
 #include <vcl/dialog.hxx>
-#include <vcl/field.hxx>
 #include <vcl/layout.hxx>
-#include <vcl/lstbox.hxx>
 #include <vcl/svapp.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/module.hxx>
@@ -172,7 +170,8 @@ void SvxRedlinTable::SetCalcView()
 void SvxRedlinTable::UpdateFilterTest()
 {
     Date aDateMax( Date::SYSTEM );
-    aDateMax.AddYears(100);
+    sal_uInt16 nYEAR=aDateMax.GetYear()+100;
+    aDateMax.SetYear(nYEAR);
     Date aDateMin(1,1,1989);
     tools::Time aTMin(0);
     tools::Time aTMax(23,59,59);
@@ -381,7 +380,7 @@ SvxTPView::SvxTPView(vcl::Window *pParent, VclBuilderContainer *pTopLevel)
 
     SvSimpleTableContainer* pTable = get<SvSimpleTableContainer>("changes");
     Size aControlSize(80, 65);
-    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
     pTable->set_width_request(aControlSize.Width());
     pTable->set_height_request(aControlSize.Height());
     m_pViewData = VclPtr<SvxRedlinTable>::Create(*pTable, 0);
@@ -433,36 +432,36 @@ void SvxTPView::dispose()
 
 void SvxTPView::InsertWriterHeader()
 {
-    const long pTabs[] = { 4 /* Length of rest of the array */, 10, 20, 70, 120 };
+    const long pTabs[] = { 5, 10, 20, 70, 120, 170 };
     m_pViewData->SetTabs(pTabs);
 
     OUString aStrTab('\t');
-    OUString aString = get<FixedText>("action")->GetText()
-                     + aStrTab
-                     + get<FixedText>("author")->GetText()
-                     + aStrTab
-                     + get<FixedText>("date")->GetText()
-                     + aStrTab
-                     + get<FixedText>("comment")->GetText();
+    OUString aString(get<FixedText>("action")->GetText());
+    aString += aStrTab;
+    aString += get<FixedText>("author")->GetText();
+    aString += aStrTab;
+    aString += get<FixedText>("date")->GetText();
+    aString += aStrTab;
+    aString += get<FixedText>("comment")->GetText();
     m_pViewData->ClearHeader();
     m_pViewData->InsertHeaderEntry(aString);
 }
 
 void SvxTPView::InsertCalcHeader()
 {
-    const long pTabs[] = { 5 /* Length of rest of the array */, 10, 65, 120, 170, 220 };
+    const long pTabs[] = { 5, 10, 65, 120, 170, 220 };
     m_pViewData->SetTabs(pTabs);
 
     OUString aStrTab('\t');
-    OUString aString = get<FixedText>("action")->GetText()
-                     + aStrTab
-                     + get<FixedText>("position")->GetText()
-                     + aStrTab
-                     + get<FixedText>("author")->GetText()
-                     + aStrTab
-                     + get<FixedText>("date")->GetText()
-                     + aStrTab
-                     + get<FixedText>("comment")->GetText();
+    OUString aString(get<FixedText>("action")->GetText());
+    aString += aStrTab;
+    aString += get<FixedText>("position")->GetText();
+    aString += aStrTab;
+    aString += get<FixedText>("author")->GetText();
+    aString += aStrTab;
+    aString += get<FixedText>("date")->GetText();
+    aString += aStrTab;
+    aString += get<FixedText>("comment")->GetText();
     m_pViewData->ClearHeader();
     m_pViewData->InsertHeaderEntry(aString);
 }
@@ -503,7 +502,7 @@ void SvxTPView::EnableUndo(bool bFlag)
 }
 
 
-IMPL_LINK( SvxTPView, PbClickHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SvxTPView, PbClickHdl, Button*, pButton, void )
 {
     PushButton* pPushB = static_cast<PushButton*>(pButton);
     if (pPushB == m_pAccept)
@@ -551,6 +550,9 @@ SvxTPFilter::SvxTPFilter( vcl::Window * pParent)
     get(m_pLbAction, "actionlist");
     get(m_pCbComment, "comment");
     get(m_pEdComment, "commentedit");
+
+    m_pLbAuthor->SetAccessibleName(m_pCbAuthor->GetText());
+    m_pEdComment->SetAccessibleName(m_pCbComment->GetText());
 
     m_pDfDate->SetShowDateCentury( true );
     m_pDfDate2->SetShowDateCentury( true );
@@ -629,6 +631,43 @@ void SvxTPFilter::dispose()
 void SvxTPFilter::SetRedlinTable(SvxRedlinTable* pTable)
 {
     pRedlinTable=pTable;
+}
+
+void SvxTPFilter::ShowDateFields(SvxRedlinDateMode nKind)
+{
+    switch(nKind)
+    {
+        case SvxRedlinDateMode::BEFORE:
+                EnableDateLine1(true);
+                EnableDateLine2(false);
+                break;
+        case SvxRedlinDateMode::SINCE:
+                EnableDateLine1(true);
+                EnableDateLine2(false);
+                break;
+        case SvxRedlinDateMode::EQUAL:
+                EnableDateLine1(true);
+                m_pTfDate->Disable();
+                m_pTfDate->SetText(OUString());
+                EnableDateLine2(false);
+                break;
+        case SvxRedlinDateMode::NOTEQUAL:
+                EnableDateLine1(true);
+                m_pTfDate->Disable();
+                m_pTfDate->SetText(OUString());
+                EnableDateLine2(false);
+                break;
+        case SvxRedlinDateMode::BETWEEN:
+                EnableDateLine1(true);
+                EnableDateLine2(true);
+                break;
+        case SvxRedlinDateMode::SAVE:
+                EnableDateLine1(false);
+                EnableDateLine2(false);
+                break;
+        case SvxRedlinDateMode::NONE:
+                break;
+    }
 }
 
 void SvxTPFilter::EnableDateLine1(bool bFlag)
@@ -861,46 +900,13 @@ void SvxTPFilter::ShowAction(bool bShow)
 }
 
 
-IMPL_LINK_NOARG( SvxTPFilter, SelDateHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( SvxTPFilter, SelDateHdl, ListBox&, void )
 {
-    SvxRedlinDateMode nKind = static_cast<SvxRedlinDateMode>(m_pLbDate->GetSelectEntryPos());
-    switch(nKind)
-    {
-        case SvxRedlinDateMode::BEFORE:
-                EnableDateLine1(true);
-                EnableDateLine2(false);
-                break;
-        case SvxRedlinDateMode::SINCE:
-                EnableDateLine1(true);
-                EnableDateLine2(false);
-                break;
-        case SvxRedlinDateMode::EQUAL:
-                EnableDateLine1(true);
-                m_pTfDate->Disable();
-                m_pTfDate->SetText(OUString());
-                EnableDateLine2(false);
-                break;
-        case SvxRedlinDateMode::NOTEQUAL:
-                EnableDateLine1(true);
-                m_pTfDate->Disable();
-                m_pTfDate->SetText(OUString());
-                EnableDateLine2(false);
-                break;
-        case SvxRedlinDateMode::BETWEEN:
-                EnableDateLine1(true);
-                EnableDateLine2(true);
-                break;
-        case SvxRedlinDateMode::SAVE:
-                EnableDateLine1(false);
-                EnableDateLine2(false);
-                break;
-        case SvxRedlinDateMode::NONE:
-                break;
-    }
+    ShowDateFields(static_cast<SvxRedlinDateMode>(m_pLbDate->GetSelectEntryPos()));
     bModified=true;
 }
 
-IMPL_LINK( SvxTPFilter, RowEnableHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SvxTPFilter, RowEnableHdl, Button*, pButton, void )
 {
     CheckBox* pCB = static_cast<CheckBox*>(pButton);
     if (pCB == m_pCbDate)
@@ -936,7 +942,7 @@ IMPL_LINK( SvxTPFilter, RowEnableHdl, Button*, pButton, void )
         bModified=true;
 }
 
-IMPL_LINK( SvxTPFilter, TimeHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SvxTPFilter, TimeHdl, Button*, pButton, void )
 {
     ImageButton* pIB = static_cast<ImageButton*>(pButton);
     Date aDate( Date::SYSTEM );
@@ -953,11 +959,11 @@ IMPL_LINK( SvxTPFilter, TimeHdl, Button*, pButton, void )
     }
     bModified=true;
 }
-IMPL_LINK_NOARG( SvxTPFilter, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED( SvxTPFilter, ModifyHdl, Edit&, void)
 {
     bModified=true;
 }
-IMPL_LINK_NOARG( SvxTPFilter, ModifyListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED( SvxTPFilter, ModifyListBoxHdl, ListBox&, void)
 {
     bModified=true;
 }
@@ -979,7 +985,7 @@ void SvxTPFilter::DeactivatePage()
             pRedlinTable->SetFilterComment(IsComment());
 
             utl::SearchParam aSearchParam( m_pEdComment->GetText(),
-                    utl::SearchParam::SearchType::Regexp,false );
+                    utl::SearchParam::SRCH_REGEXP,false );
 
             pRedlinTable->SetCommentParams(&aSearchParam);
 
@@ -1008,7 +1014,7 @@ void SvxTPFilter::Disable()
     Enable( false );
 }
 
-IMPL_LINK( SvxTPFilter, ModifyDate, Edit&, rTF, void)
+IMPL_LINK_TYPED( SvxTPFilter, ModifyDate, Edit&, rTF, void)
 {
     Date aDate( Date::SYSTEM );
     tools::Time aTime(0);
@@ -1048,7 +1054,7 @@ IMPL_LINK( SvxTPFilter, ModifyDate, Edit&, rTF, void)
     ModifyHdl(*m_pDfDate);
 }
 
-IMPL_LINK( SvxTPFilter, RefHandle, Button*, pRef, void )
+IMPL_LINK_TYPED( SvxTPFilter, RefHandle, Button*, pRef, void )
 {
     if(pRef!=nullptr)
     {
@@ -1059,7 +1065,7 @@ IMPL_LINK( SvxTPFilter, RefHandle, Button*, pRef, void )
 SvxAcceptChgCtr::SvxAcceptChgCtr(vcl::Window* pParent, VclBuilderContainer* pTopLevel)
     : TabControl(pParent, WB_TABSTOP | WB_DIALOGCONTROL)
 {
-    m_pUIBuilder.reset(new VclBuilder(this, getUIRootDir(), "svx/ui/redlinecontrol.ui", "RedlineControl"));
+    m_pUIBuilder = new VclBuilder(this, getUIRootDir(), "svx/ui/redlinecontrol.ui", "RedlineControl");
 
     pTPFilter = VclPtr<SvxTPFilter>::Create(this);
     pTPView = VclPtr<SvxTPView>::Create(this, pTopLevel);
@@ -1069,9 +1075,9 @@ SvxAcceptChgCtr::SvxAcceptChgCtr(vcl::Window* pParent, VclBuilderContainer* pTop
     SetTabPage(m_nViewPageId, pTPView);
     SetTabPage(m_nFilterPageId, pTPFilter);
 
-    pTPFilter->SetRedlinTable(pTPView->GetTableControl());
+    pTPFilter->SetRedlinTable(GetViewTable());
 
-    SetCurPageId(m_nViewPageId);
+    ShowViewPage();
 
     Show();
 }
@@ -1092,6 +1098,16 @@ void SvxAcceptChgCtr::dispose()
 void SvxAcceptChgCtr::ShowFilterPage()
 {
     SetCurPageId(m_nFilterPageId);
+}
+
+void SvxAcceptChgCtr::ShowViewPage()
+{
+    SetCurPageId(m_nViewPageId);
+}
+
+SvxRedlinTable* SvxAcceptChgCtr::GetViewTable()
+{
+    return pTPView ? pTPView->GetTableControl() : nullptr;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

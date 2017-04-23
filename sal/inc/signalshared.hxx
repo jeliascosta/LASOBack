@@ -30,6 +30,7 @@ struct oslSignalHandlerImpl
     oslSignalHandlerImpl*       pNext;
 };
 
+extern bool                     bErrorReportingEnabled;
 extern bool                     bInitSignal;
 
 oslSignalAction callSignalHandler(oslSignalInfo* pInfo);
@@ -37,6 +38,7 @@ oslSignalAction callSignalHandler(oslSignalInfo* pInfo);
 // platform-specific functions that need to be implemented
 bool onInitSignal();
 bool onDeInitSignal();
+void onErrorReportingChanged(bool enabled);
 
 #endif
 

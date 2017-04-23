@@ -61,18 +61,18 @@ public:
     void                SetSymbol( const OUString& rValue );
 
     /** Returns the original name (title) of this defined name. */
-    const OUString& GetOrigName() const { return maOrigName; }
+    inline const OUString& GetOrigName() const { return maOrigName; }
     /** Returns the Excel built-in name index of this defined name.
         @return  The built-in name index or EXC_BUILTIN_UNKNOWN for user-defined names. */
-    sal_Unicode  GetBuiltInName() const { return mcBuiltIn; }
+    inline sal_Unicode  GetBuiltInName() const { return mcBuiltIn; }
 
     /** Returns the token array for this defined name. */
     const XclTokenArrayRef& GetTokenArray() const { return mxTokArr; }
 
     /** Returns true, if this is a document-global defined name. */
-    bool         IsGlobal() const { return mnXclTab == EXC_NAME_GLOBAL; }
+    inline bool         IsGlobal() const { return mnXclTab == EXC_NAME_GLOBAL; }
     /** Returns the Calc sheet of a local defined name. */
-    SCTAB        GetScTab() const { return mnScTab; }
+    inline SCTAB        GetScTab() const { return mnScTab; }
 
     /** Returns true, if this defined name is volatile. */
     bool                IsVolatile() const;

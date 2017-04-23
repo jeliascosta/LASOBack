@@ -64,25 +64,33 @@ class SvBaseLinksDlg : public ModalDialog
     bool            bHtmlMode;
     Idle aUpdateIdle;
 
-    DECL_LINK( LinksSelectHdl, SvTreeListBox*, void );
-    DECL_LINK( LinksDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK( AutomaticClickHdl, Button *, void );
-    DECL_LINK( ManualClickHdl, Button *, void );
-    DECL_LINK( UpdateNowClickHdl, Button *, void);
-    DECL_LINK( ChangeSourceClickHdl, Button *, void );
-    DECL_LINK( BreakLinkClickHdl, Button *, void );
-    DECL_LINK( UpdateWaitingHdl, Timer *, void );
-    DECL_LINK( EndEditHdl, sfx2::SvBaseLink&, void );
+    DECL_LINK_TYPED( LinksSelectHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( LinksDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( AutomaticClickHdl, Button *, void );
+    DECL_LINK_TYPED( ManualClickHdl, Button *, void );
+    DECL_LINK_TYPED( UpdateNowClickHdl, Button *, void);
+    DECL_LINK_TYPED( ChangeSourceClickHdl, Button *, void );
+    DECL_LINK_TYPED( BreakLinkClickHdl, Button *, void );
+    DECL_LINK_TYPED( UpdateWaitingHdl, Idle *, void );
+    DECL_LINK_TYPED( EndEditHdl, sfx2::SvBaseLink&, void );
     sfx2::SvBaseLink* GetSelEntry( sal_uLong* pPos );
     OUString ImplGetStateStr( const sfx2::SvBaseLink& );
     void SetType( sfx2::SvBaseLink& rLink, sal_uLong nPos, SfxLinkUpdateMode nType );
     void InsertEntry( const sfx2::SvBaseLink& rLink, sal_uLong nPos = TREELIST_APPEND, bool bSelect = false);
 
+    void StartUpdateTimer()         { aUpdateIdle.Start(); }
+
+    OUString&       Autolink()      { return aStrAutolink; }
+    OUString&       Manuallink()    { return aStrManuallink; }
+    OUString&       Brokenlink()    { return aStrBrokenlink; }
+    OUString&       Closelinkmsg()  { return aStrCloselinkmsg; }
+    OUString&       CloselinkmsgMulti() { return aStrCloselinkmsgMulti; }
+    OUString&       Waitinglink()   { return aStrWaitinglink; }
     void SetManager( sfx2::LinkManager* );
 
 public:
     SvBaseLinksDlg( vcl::Window * pParent, sfx2::LinkManager*, bool bHtml = false );
-    virtual ~SvBaseLinksDlg() override;
+    virtual ~SvBaseLinksDlg();
     virtual void dispose() override;
     void SetActLink( sfx2::SvBaseLink * pLink );
 };

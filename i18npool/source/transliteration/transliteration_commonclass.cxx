@@ -33,12 +33,13 @@ transliteration_commonclass::transliteration_commonclass()
     useOffset = true;
 }
 
-OUString SAL_CALL transliteration_commonclass::getName()
+OUString SAL_CALL transliteration_commonclass::getName() throw(RuntimeException, std::exception)
 {
     return OUString::createFromAscii(transliterationName);
 }
 
 void SAL_CALL transliteration_commonclass::loadModule( TransliterationModules /*modName*/, const Locale& rLocale )
+throw(RuntimeException, std::exception)
 {
     aLocale = rLocale;
 }
@@ -46,6 +47,7 @@ void SAL_CALL transliteration_commonclass::loadModule( TransliterationModules /*
 
 void SAL_CALL
 transliteration_commonclass::loadModuleNew( const Sequence < TransliterationModulesNew >& /*modName*/, const Locale& /*rLocale*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
@@ -53,18 +55,21 @@ transliteration_commonclass::loadModuleNew( const Sequence < TransliterationModu
 
 void SAL_CALL
 transliteration_commonclass::loadModuleByImplName( const OUString& /*implName*/, const Locale& /*rLocale*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
 
 void SAL_CALL
 transliteration_commonclass::loadModulesByImplNames(const Sequence< OUString >& /*modNamelist*/, const Locale& /*rLocale*/)
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
 
 Sequence< OUString > SAL_CALL
 transliteration_commonclass::getAvailableModules( const Locale& /*rLocale*/, sal_Int16 /*sType*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
@@ -73,6 +78,7 @@ sal_Int32 SAL_CALL
 transliteration_commonclass::compareSubstring(
         const OUString& str1, sal_Int32 off1, sal_Int32 len1,
         const OUString& str2, sal_Int32 off2, sal_Int32 len2)
+throw(RuntimeException, std::exception)
 {
     Sequence <sal_Int32> offset1(2*len1);
     Sequence <sal_Int32> offset2(2*len2);
@@ -99,13 +105,13 @@ transliteration_commonclass::compareSubstring(
 }
 
 sal_Int32 SAL_CALL
-transliteration_commonclass::compareString( const OUString& str1, const OUString& str2 )
+transliteration_commonclass::compareString( const OUString& str1, const OUString& str2 ) throw ( RuntimeException, std::exception)
 {
     return( this->compareSubstring(str1, 0, str1.getLength(), str2, 0, str2.getLength()));
 }
 
 OUString SAL_CALL
-transliteration_commonclass::transliterateString2String( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount )
+transliteration_commonclass::transliterateString2String( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount ) throw(RuntimeException, std::exception)
 {
     Sequence < sal_Int32 > dummy_offset;
     useOffset = false;
@@ -115,22 +121,22 @@ transliteration_commonclass::transliterateString2String( const OUString& inStr, 
 }
 
 OUString SAL_CALL
-transliteration_commonclass::transliterateChar2String( sal_Unicode inChar )
+transliteration_commonclass::transliterateChar2String( sal_Unicode inChar ) throw(RuntimeException, std::exception)
 {
     return transliteration_commonclass::transliterateString2String(OUString(&inChar, 1), 0, 1);
 }
 
-OUString SAL_CALL transliteration_commonclass::getImplementationName()
+OUString SAL_CALL transliteration_commonclass::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString::createFromAscii(implementationName);
 }
 
-sal_Bool SAL_CALL transliteration_commonclass::supportsService(const OUString& rServiceName)
+sal_Bool SAL_CALL transliteration_commonclass::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SAL_CALL transliteration_commonclass::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL transliteration_commonclass::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.i18n.Transliteration.l10n" };
     return aRet;

@@ -13,7 +13,7 @@ $(eval $(call gb_Module_add_targets,breakpad,\
 	UnpackedTarball_breakpad \
 ))
 
-ifneq ($(OS),WNT)
+ifneq ($(OS)$(COM),WNTMSC)
 $(eval $(call gb_Module_add_targets,breakpad,\
 	ExternalProject_breakpad \
 ))

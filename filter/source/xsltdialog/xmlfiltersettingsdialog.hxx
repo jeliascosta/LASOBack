@@ -49,10 +49,10 @@ public:
     explicit SvxPathControl(vcl::Window* pParent);
     HeaderBar* getHeaderBar() { return m_pHeaderBar; }
     XMLFilterListBox* getListBox() { return m_pFocusCtrl; }
-    virtual ~SvxPathControl() override;
+    virtual ~SvxPathControl();
     virtual void dispose() override;
 
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool Notify( NotifyEvent& rNEvt ) override;
 };
 
 class HeaderBar;
@@ -62,20 +62,22 @@ class XMLFilterListBox : public SvTabListBox
 private:
     VclPtr<HeaderBar>  m_pHeaderBar;
 
-    DECL_LINK( TabBoxScrollHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK( HeaderEndDrag_Impl, HeaderBar*, void );
+    DECL_LINK_TYPED( TabBoxScrollHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( HeaderEndDrag_Impl, HeaderBar*, void );
 
     static OUString getEntryString( const filter_info_impl* pInfo );
 
 public:
     XMLFilterListBox(Window* pParent, SvxPathControl* pPathControl);
-    virtual ~XMLFilterListBox() override;
+    virtual ~XMLFilterListBox();
     virtual void dispose() override;
 
     /** adds a new filter info entry to the ui filter list */
     void addFilterEntry( const filter_info_impl* pInfo );
 
     void changeEntry( const filter_info_impl* pInfo );
+
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 };
 
 
@@ -85,12 +87,12 @@ public:
     XMLFilterSettingsDialog(vcl::Window* pParent,
         const css::uno::Reference< css::uno::XComponentContext >& rxContext,
         Dialog::InitFlag eFlag = Dialog::InitFlag::Default);
-    virtual ~XMLFilterSettingsDialog() override;
+    virtual ~XMLFilterSettingsDialog();
     virtual void dispose() override;
 
-    DECL_LINK(ClickHdl_Impl, Button *, void );
-    DECL_LINK(SelectionChangedHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK(DoubleClickHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED(ClickHdl_Impl, Button *, void );
+    DECL_LINK_TYPED(SelectionChangedHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK_TYPED(DoubleClickHdl_Impl, SvTreeListBox*, bool );
 
     virtual short Execute() override;
 
@@ -100,10 +102,11 @@ public:
     void    onDelete();
     void    onSave();
     void    onOpen();
+    void    onClose();
 
     void    updateStates();
 
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool Notify( NotifyEvent& rNEvt ) override;
 
     bool    isClosable() { return m_bIsClosable;}
 

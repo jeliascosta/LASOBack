@@ -48,7 +48,7 @@ namespace {
 
 struct MatrixAdd : public ::std::binary_function<double,double,double>
 {
-    double operator() (const double& lhs, const double& rhs) const
+    inline double operator() (const double& lhs, const double& rhs) const
     {
         return ::rtl::math::approxAdd( lhs,rhs);
     }
@@ -56,7 +56,7 @@ struct MatrixAdd : public ::std::binary_function<double,double,double>
 
 struct MatrixSub : public ::std::binary_function<double,double,double>
 {
-    double operator() (const double& lhs, const double& rhs) const
+    inline double operator() (const double& lhs, const double& rhs) const
     {
         return ::rtl::math::approxSub( lhs,rhs);
     }
@@ -64,7 +64,7 @@ struct MatrixSub : public ::std::binary_function<double,double,double>
 
 struct MatrixMul : public ::std::binary_function<double,double,double>
 {
-    double operator() (const double& lhs, const double& rhs) const
+    inline double operator() (const double& lhs, const double& rhs) const
     {
         return lhs * rhs;
     }
@@ -72,7 +72,7 @@ struct MatrixMul : public ::std::binary_function<double,double,double>
 
 struct MatrixDiv : public ::std::binary_function<double,double,double>
 {
-    double operator() (const double& lhs, const double& rhs) const
+    inline double operator() (const double& lhs, const double& rhs) const
     {
         return ScInterpreter::div( lhs,rhs);
     }
@@ -80,7 +80,7 @@ struct MatrixDiv : public ::std::binary_function<double,double,double>
 
 struct MatrixPow : public ::std::binary_function<double,double,double>
 {
-    double operator() (const double& lhs, const double& rhs) const
+    inline double operator() (const double& lhs, const double& rhs) const
     {
         return ::pow( lhs,rhs);
     }
@@ -134,7 +134,7 @@ void ScInterpreter::ScGCD()
         double fx, fy = 0.0;
         ScRange aRange;
         size_t nRefInList = 0;
-        while (nGlobalError == FormulaError::NONE && nParamCount-- > 0)
+        while (!nGlobalError && nParamCount-- > 0)
         {
             switch (GetStackType())
             {
@@ -154,7 +154,7 @@ void ScInterpreter::ScGCD()
                 case svDoubleRef :
                 case svRefList :
                 {
-                    FormulaError nErr = FormulaError::NONE;
+                    sal_uInt16 nErr = 0;
                     PopDoubleRef( aRange, nParamCount, nRefInList);
                     double nCellVal;
                     ScValueIterator aValIter( pDok, aRange, mnSubTotalFlags );
@@ -169,7 +169,7 @@ void ScInterpreter::ScGCD()
                                 return;
                             }
                             fy = ScGetGCD(fx, fy);
-                        } while (nErr == FormulaError::NONE && aValIter.GetNext(nCellVal, nErr));
+                        } while (nErr == 0 && aValIter.GetNext(nCellVal, nErr));
                     }
                     SetError(nErr);
                 }
@@ -184,16 +184,32 @@ void ScInterpreter::ScGCD()
                         SCSIZE nC, nR;
                         pMat->GetDimensions(nC, nR);
                         if (nC == 0 || nR == 0)
-                            SetError(FormulaError::IllegalArgument);
+                            SetError(errIllegalArgument);
                         else
                         {
-                         double nVal = pMat->GetGcd();
-                         fy = ScGetGCD(nVal,fy);
+                            for ( SCSIZE j = 0; j < nC; j++ )
+                            {
+                                for (SCSIZE k = 0; k < nR; ++k)
+                                {
+                                    if (!pMat->IsValue(j,k))
+                                    {
+                                        PushIllegalArgument();
+                                        return;
+                                    }
+                                    fx = ::rtl::math::approxFloor( pMat->GetDouble(j,k));
+                                    if (fx < 0.0)
+                                    {
+                                        PushIllegalArgument();
+                                        return;
+                                    }
+                                    fy = ScGetGCD(fx, fy);
+                                }
+                            }
                         }
                     }
                 }
                 break;
-                default : SetError(FormulaError::IllegalParameter); break;
+                default : SetError(errIllegalParameter); break;
             }
         }
         PushDouble(fy);
@@ -208,7 +224,7 @@ void ScInterpreter:: ScLCM()
         double fx, fy = 1.0;
         ScRange aRange;
         size_t nRefInList = 0;
-        while (nGlobalError == FormulaError::NONE && nParamCount-- > 0)
+        while (!nGlobalError && nParamCount-- > 0)
         {
             switch (GetStackType())
             {
@@ -231,7 +247,7 @@ void ScInterpreter:: ScLCM()
                 case svDoubleRef :
                 case svRefList :
                 {
-                    FormulaError nErr = FormulaError::NONE;
+                    sal_uInt16 nErr = 0;
                     PopDoubleRef( aRange, nParamCount, nRefInList);
                     double nCellVal;
                     ScValueIterator aValIter( pDok, aRange, mnSubTotalFlags );
@@ -249,7 +265,7 @@ void ScInterpreter:: ScLCM()
                                 fy = 0.0;
                             else
                                 fy = fx * fy / ScGetGCD(fx, fy);
-                        } while (nErr == FormulaError::NONE && aValIter.GetNext(nCellVal, nErr));
+                        } while (nErr == 0 && aValIter.GetNext(nCellVal, nErr));
                     }
                     SetError(nErr);
                 }
@@ -264,16 +280,35 @@ void ScInterpreter:: ScLCM()
                         SCSIZE nC, nR;
                         pMat->GetDimensions(nC, nR);
                         if (nC == 0 || nR == 0)
-                            SetError(FormulaError::IllegalArgument);
+                            SetError(errIllegalArgument);
                         else
                         {
-                         double nVal = pMat->GetLcm();
-                         fy = (nVal * fy ) / ScGetGCD(nVal, fy);
+                            for ( SCSIZE j = 0; j < nC; j++ )
+                            {
+                                for (SCSIZE k = 0; k < nR; ++k)
+                                {
+                                    if (!pMat->IsValue(j,k))
+                                    {
+                                        PushIllegalArgument();
+                                        return;
+                                    }
+                                    fx = ::rtl::math::approxFloor( pMat->GetDouble(j,k));
+                                    if (fx < 0.0)
+                                    {
+                                        PushIllegalArgument();
+                                        return;
+                                    }
+                                    if (fx == 0.0 || fy == 0.0)
+                                        fy = 0.0;
+                                    else
+                                        fy = fx * fy / ScGetGCD(fx, fy);
+                                }
+                            }
                         }
                     }
                 }
                 break;
-                default : SetError(FormulaError::IllegalParameter); break;
+                default : SetError(errIllegalParameter); break;
             }
         }
         PushDouble(fy);
@@ -291,12 +326,12 @@ ScMatrixRef ScInterpreter::GetNewMat(SCSIZE nC, SCSIZE nR, bool bEmpty)
     pMat->SetErrorInterpreter( this);
     // A temporary matrix is mutable and ScMatrix::CloneIfConst() returns the
     // very matrix.
-    pMat->SetMutable();
+    pMat->SetImmutable( false);
     SCSIZE nCols, nRows;
     pMat->GetDimensions( nCols, nRows);
     if ( nCols != nC || nRows != nR )
     {   // arbitray limit of elements exceeded
-        SetError( FormulaError::MatrixSize);
+        SetError( errMatrixSize);
         pMat.reset();
     }
     return pMat;
@@ -306,10 +341,10 @@ ScMatrixRef ScInterpreter::CreateMatrixFromDoubleRef( const FormulaToken* pToken
         SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
         SCCOL nCol2, SCROW nRow2, SCTAB nTab2 )
 {
-    if (nTab1 != nTab2 || nGlobalError != FormulaError::NONE)
+    if (nTab1 != nTab2 || nGlobalError)
     {
         // Not a 2D matrix.
-        SetError(FormulaError::IllegalParameter);
+        SetError(errIllegalParameter);
         return nullptr;
     }
 
@@ -318,30 +353,26 @@ ScMatrixRef ScInterpreter::CreateMatrixFromDoubleRef( const FormulaToken* pToken
 
     if (!ScMatrix::IsSizeAllocatable( nMatCols, nMatRows))
     {
-        SetError(FormulaError::MatrixSize);
+        SetError(errMatrixSize);
         return nullptr;
     }
 
     ScTokenMatrixMap::const_iterator aIter;
-    if (pTokenMatrixMap && ((aIter = pTokenMatrixMap->find( pToken)) != pTokenMatrixMap->end()))
+    if (pTokenMatrixMap && ((aIter = pTokenMatrixMap->find( pToken))
+                != pTokenMatrixMap->end()))
     {
-        /* XXX casting const away here is ugly; ScMatrixToken (to which the
-         * result of this function usually is assigned) should not be forced to
-         * carry a ScConstMatrixRef though.
-         * TODO: a matrix already stored in pTokenMatrixMap should be
-         * read-only and have a copy-on-write mechanism. Previously all tokens
-         * were modifiable so we're already better than before ... */
-        return const_cast<FormulaToken*>((*aIter).second.get())->GetMatrix();
+        return (*aIter).second.get()->GetMatrix();
     }
 
     ScMatrixRef pMat = GetNewMat( nMatCols, nMatRows, true);
-    if (!pMat || nGlobalError != FormulaError::NONE)
+    if (!pMat || nGlobalError)
         return nullptr;
 
     pDok->FillMatrix(*pMat, nTab1, nCol1, nRow1, nCol2, nRow2);
 
     if (pTokenMatrixMap)
-        pTokenMatrixMap->insert( ScTokenMatrixMap::value_type( pToken, new ScMatrixToken( pMat)));
+        pTokenMatrixMap->insert( ScTokenMatrixMap::value_type(
+                    pToken, new ScMatrixToken( pMat)));
 
     return pMat;
 }
@@ -394,10 +425,10 @@ ScMatrixRef ScInterpreter::GetMatrix()
             pMat = GetNewMat( 1, 1);
             if ( pMat )
             {
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                 {
                     fVal = CreateDoubleError( nGlobalError);
-                    nGlobalError = FormulaError::NONE;
+                    nGlobalError = 0;
                 }
                 pMat->PutDouble( fVal, 0);
             }
@@ -409,11 +440,11 @@ ScMatrixRef ScInterpreter::GetMatrix()
             pMat = GetNewMat( 1, 1);
             if ( pMat )
             {
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                 {
                     double fVal = CreateDoubleError( nGlobalError);
                     pMat->PutDouble( fVal, 0);
-                    nGlobalError = FormulaError::NONE;
+                    nGlobalError = 0;
                 }
                 else
                     pMat->PutString(aStr, 0);
@@ -427,13 +458,20 @@ ScMatrixRef ScInterpreter::GetMatrix()
             pMat = GetNewMat( 1, 1, true);
             if (!pMat)
             {
-                SetError( FormulaError::IllegalArgument);
+                SetError( errIllegalArgument);
                 break;
             }
-            if (nGlobalError != FormulaError::NONE)
+            if (!pToken)
+            {
+                SetError( errIllegalArgument);
+                pMat->PutError( nGlobalError, 0, 0);
+                nGlobalError = 0;
+                break;
+            }
+            if (nGlobalError)
             {
                 pMat->PutError( nGlobalError, 0, 0);
-                nGlobalError = FormulaError::NONE;
+                nGlobalError = 0;
                 break;
             }
             switch (pToken->GetType())
@@ -457,7 +495,7 @@ ScMatrixRef ScInterpreter::GetMatrix()
         break;
         default:
             PopError();
-            SetError( FormulaError::IllegalArgument);
+            SetError( errIllegalArgument);
         break;
     }
     return pMat;
@@ -482,15 +520,8 @@ void ScInterpreter::ScMatValue()
     if ( MustHaveParamCount( GetByte(), 3 ) )
     {
         // 0 to count-1
-        // Theoretically we could have GetSize() instead of GetUInt32(), but
-        // really, practically ...
-        SCSIZE nR = static_cast<SCSIZE>(GetUInt32());
-        SCSIZE nC = static_cast<SCSIZE>(GetUInt32());
-        if (nGlobalError != FormulaError::NONE)
-        {
-            PushError( nGlobalError);
-            return;
-        }
+        SCSIZE nR = static_cast<SCSIZE>(::rtl::math::approxFloor(GetDouble()));
+        SCSIZE nC = static_cast<SCSIZE>(::rtl::math::approxFloor(GetDouble()));
         switch (GetStackType())
         {
             case svSingleRef :
@@ -500,8 +531,8 @@ void ScInterpreter::ScMatValue()
                 ScRefCellValue aCell(*pDok, aAdr);
                 if (aCell.meType == CELLTYPE_FORMULA)
                 {
-                    FormulaError nErrCode = aCell.mpFormula->GetErrCode();
-                    if (nErrCode != FormulaError::NONE)
+                    sal_uInt16 nErrCode = aCell.mpFormula->GetErrCode();
+                    if (nErrCode != 0)
                         PushError( nErrCode);
                     else
                     {
@@ -582,11 +613,11 @@ void ScInterpreter::ScEMat()
 {
     if ( MustHaveParamCount( GetByte(), 1 ) )
     {
-        SCSIZE nDim = static_cast<SCSIZE>(GetUInt32());
-        if (nGlobalError != FormulaError::NONE || nDim == 0)
+        SCSIZE nDim = static_cast<SCSIZE>(::rtl::math::approxFloor(GetDouble()));
+        if (nDim == 0)
             PushIllegalArgument();
         else if (!ScMatrix::IsSizeAllocatable( nDim, nDim))
-            PushError( FormulaError::MatrixSize);
+            PushError( errMatrixSize);
         else
         {
             ScMatrixRef pRMat = GetNewMat(nDim, nDim);
@@ -649,7 +680,7 @@ static int lcl_LUP_decompose( ScMatrix* mA, const SCSIZE n,
     // Represent identity permutation, P[i]=i
     for (SCSIZE i=0; i < n; ++i)
         P[i] = i;
-    // "Recursion" on the diagonal.
+    // "Recursion" on the diagonale.
     SCSIZE l = n - 1;
     for (SCSIZE k=0; k < l; ++k)
     {
@@ -759,7 +790,7 @@ static void lcl_LUP_solve( const ScMatrix* mLU, const SCSIZE n,
             fSum -= mLU->GetDouble( j, i) * X[j];       // X[j] === x[j]
         X[i] = fSum / mLU->GetDouble( i, i);            // X[i] === x[i]
     }
-#ifdef DEBUG_SC_LUP_DECOMPOSITION
+#if OSL_DEBUG_LEVEL >1
     fprintf( stderr, "\n%s\n", "lcl_LUP_solve():");
     for (SCSIZE i=0; i < n; ++i)
         fprintf( stderr, "%8.2g  ", X[i]);
@@ -787,13 +818,13 @@ void ScInterpreter::ScMatDet()
         if ( nC != nR || nC == 0 )
             PushIllegalArgument();
         else if (!ScMatrix::IsSizeAllocatable( nC, nR))
-            PushError( FormulaError::MatrixSize);
+            PushError( errMatrixSize);
         else
         {
             // LUP decomposition is done inplace, use copy.
             ScMatrixRef xLU = pMat->Clone();
             if (!xLU)
-                PushError( FormulaError::CodeOverflow);
+                PushError( errCodeOverflow);
             else
             {
                 ::std::vector< SCSIZE> P(nR);
@@ -822,7 +853,7 @@ void ScInterpreter::ScModalValue_Multi()
     vector<double> aSortArray;
     GetSortArray( nParamCount, aSortArray, nullptr, false, false );
     SCSIZE nSize = aSortArray.size();
-    if ( aSortArray.empty() || nSize == 0 || nGlobalError != FormulaError::NONE )
+    if ( aSortArray.empty() || nSize == 0 || nGlobalError )
         PushNoValue();
     else
     {
@@ -912,7 +943,7 @@ void ScInterpreter::ScMatInv()
         if ( nC != nR || nC == 0 )
             PushIllegalArgument();
         else if (!ScMatrix::IsSizeAllocatable( nC, nR))
-            PushError( FormulaError::MatrixSize);
+            PushError( errMatrixSize);
         else
         {
             // LUP decomposition is done inplace, use copy.
@@ -920,7 +951,7 @@ void ScInterpreter::ScMatInv()
             // The result matrix.
             ScMatrixRef xY = GetNewMat( nR, nR);
             if (!xLU || !xY)
-                PushError( FormulaError::CodeOverflow);
+                PushError( errCodeOverflow);
             else
             {
                 ::std::vector< SCSIZE> P(nR);
@@ -973,13 +1004,13 @@ void ScInterpreter::ScMatInv()
                                 double fTmp = pR->GetDouble( j, i);
                                 fprintf( stderr, "%8.2g  ", fTmp);
                                 if (fabs( fTmp - (i == j)) > fInvEpsilon)
-                                    SetError( FormulaError::IllegalArgument);
+                                    SetError( errIllegalArgument);
                             }
                         fprintf( stderr, "\n%s\n", "");
                         }
                     }
 #endif
-                    if (nGlobalError != FormulaError::NONE)
+                    if (nGlobalError)
                         PushError( nGlobalError);
                     else
                         PushMatrix( xY);
@@ -1100,32 +1131,32 @@ static ScMatrixRef lcl_MatrixCalculation(
             {
                 bool bVal1 = rMat1.IsValueOrEmpty(i,j);
                 bool bVal2 = rMat2.IsValueOrEmpty(i,j);
-                FormulaError nErr;
+                sal_uInt16 nErr;
                 if (bVal1 && bVal2)
                 {
                     double d = Op(rMat1.GetDouble(i,j), rMat2.GetDouble(i,j));
                     xResMat->PutDouble( d, i, j);
                 }
-                else if (((nErr = rMat1.GetErrorIfNotString(i,j)) != FormulaError::NONE) ||
-                         ((nErr = rMat2.GetErrorIfNotString(i,j)) != FormulaError::NONE))
+                else if (((nErr = rMat1.GetErrorIfNotString(i,j)) != 0) ||
+                         ((nErr = rMat2.GetErrorIfNotString(i,j)) != 0))
                 {
                     xResMat->PutError( nErr, i, j);
                 }
                 else if ((!bVal1 && rMat1.IsString(i,j)) || (!bVal2 && rMat2.IsString(i,j)))
                 {
-                    FormulaError nError1 = FormulaError::NONE;
+                    sal_uInt16 nError1 = 0;
                     short nFmt1 = 0;
                     double fVal1 = (bVal1 ? rMat1.GetDouble(i,j) :
                             pInterpreter->ConvertStringToValue( rMat1.GetString(i,j).getString(), nError1, nFmt1));
 
-                    FormulaError nError2 = FormulaError::NONE;
+                    sal_uInt16 nError2 = 0;
                     short nFmt2 = 0;
                     double fVal2 = (bVal2 ? rMat2.GetDouble(i,j) :
                             pInterpreter->ConvertStringToValue( rMat2.GetString(i,j).getString(), nError2, nFmt2));
 
-                    if (nError1 != FormulaError::NONE)
+                    if (nError1)
                         xResMat->PutError( nError1, i, j);
-                    else if (nError2 != FormulaError::NONE)
+                    else if (nError2)
                         xResMat->PutError( nError2, i, j);
                     else
                     {
@@ -1134,7 +1165,7 @@ static ScMatrixRef lcl_MatrixCalculation(
                     }
                 }
                 else
-                    xResMat->PutError( FormulaError::NoValue, i, j);
+                    xResMat->PutError( errNoValue, i, j);
             }
         }
     }
@@ -1296,24 +1327,20 @@ void ScInterpreter::CalculateAddSub(bool _bSub)
         else
             PushIllegalArgument();
     }
+    else if ( _bSub )
+        PushDouble( ::rtl::math::approxSub( fVal1, fVal2 ) );
+    else
+        PushDouble( ::rtl::math::approxAdd( fVal1, fVal2 ) );
+    if ( nFmtCurrencyType == css::util::NumberFormat::CURRENCY )
+    {
+        nFuncFmtType = nFmtCurrencyType;
+        nFuncFmtIndex = nFmtCurrencyIndex;
+    }
     else
     {
-        // Determine nFuncFmtType type before PushDouble().
-        if ( nFmtCurrencyType == css::util::NumberFormat::CURRENCY )
-        {
-            nFuncFmtType = nFmtCurrencyType;
-            nFuncFmtIndex = nFmtCurrencyIndex;
-        }
-        else
-        {
-            lcl_GetDiffDateTimeFmtType( nFuncFmtType, nFmt1, nFmt2 );
-            if (nFmtPercentType == css::util::NumberFormat::PERCENT && nFuncFmtType == css::util::NumberFormat::NUMBER)
-                nFuncFmtType = css::util::NumberFormat::PERCENT;
-        }
-        if ( _bSub )
-            PushDouble( ::rtl::math::approxSub( fVal1, fVal2 ) );
-        else
-            PushDouble( ::rtl::math::approxAdd( fVal1, fVal2 ) );
+        lcl_GetDiffDateTimeFmtType( nFuncFmtType, nFmt1, nFmt2 );
+        if ( nFmtPercentType == css::util::NumberFormat::PERCENT && nFuncFmtType == css::util::NumberFormat::NUMBER )
+            nFuncFmtType = css::util::NumberFormat::PERCENT;
     }
 }
 
@@ -1359,7 +1386,7 @@ void ScInterpreter::ScAmpersand()
         ScMatrixRef pResMat = GetNewMat(nC, nR);
         if (pResMat)
         {
-            if (nGlobalError != FormulaError::NONE)
+            if (nGlobalError)
             {
                 for (SCSIZE i = 0; i < nC; ++i)
                     for (SCSIZE j = 0; j < nR; ++j)
@@ -1370,8 +1397,8 @@ void ScInterpreter::ScAmpersand()
                 for (SCSIZE i = 0; i < nC; ++i)
                     for (SCSIZE j = 0; j < nR; ++j)
                     {
-                        FormulaError nErr = pMat->GetErrorIfNotString( i, j);
-                        if (nErr != FormulaError::NONE)
+                        sal_uInt16 nErr = pMat->GetErrorIfNotString( i, j);
+                        if (nErr)
                             pResMat->PutError( nErr, i, j);
                         else
                         {
@@ -1386,8 +1413,8 @@ void ScInterpreter::ScAmpersand()
                 for (SCSIZE i = 0; i < nC; ++i)
                     for (SCSIZE j = 0; j < nR; ++j)
                     {
-                        FormulaError nErr = pMat->GetErrorIfNotString( i, j);
-                        if (nErr != FormulaError::NONE)
+                        sal_uInt16 nErr = pMat->GetErrorIfNotString( i, j);
+                        if (nErr)
                             pResMat->PutError( nErr, i, j);
                         else
                         {
@@ -1479,14 +1506,11 @@ void ScInterpreter::ScMul()
             PushIllegalArgument();
     }
     else
-    {
-        // Determine nFuncFmtType type before PushDouble().
-        if ( nFmtCurrencyType == css::util::NumberFormat::CURRENCY )
-        {
-            nFuncFmtType = nFmtCurrencyType;
-            nFuncFmtIndex = nFmtCurrencyIndex;
-        }
         PushDouble(fVal1 * fVal2);
+    if ( nFmtCurrencyType == css::util::NumberFormat::CURRENCY )
+    {
+        nFuncFmtType = nFmtCurrencyType;
+        nFuncFmtIndex = nFmtCurrencyIndex;
     }
 }
 
@@ -1556,14 +1580,12 @@ void ScInterpreter::ScDiv()
     }
     else
     {
-        // Determine nFuncFmtType type before PushDouble().
-        if (    nFmtCurrencyType  == css::util::NumberFormat::CURRENCY &&
-                nFmtCurrencyType2 != css::util::NumberFormat::CURRENCY)
-        {   // even USD/USD is not USD
-            nFuncFmtType = nFmtCurrencyType;
-            nFuncFmtIndex = nFmtCurrencyIndex;
-        }
         PushDouble( div( fVal1, fVal2) );
+    }
+    if ( nFmtCurrencyType == css::util::NumberFormat::CURRENCY && nFmtCurrencyType2 != css::util::NumberFormat::CURRENCY )
+    {   // even USD/USD is not USD
+        nFuncFmtType = nFmtCurrencyType;
+        nFuncFmtIndex = nFmtCurrencyIndex;
     }
 }
 
@@ -1626,7 +1648,7 @@ void ScInterpreter::ScPow()
         if (fVal1 < 0 && fVal2 != 0.0)
         {
             int i = (int) (1 / fVal2 + ((fVal2 < 0) ? -0.5 : 0.5));
-            if (i % 2 != 0 && rtl::math::approxEqual(1 / ((double) i), fVal2))
+            if (rtl::math::approxEqual(1 / ((double) i), fVal2) && i % 2 != 0)
                 PushDouble(-pow(-fVal1, fVal2));
             else
                 PushDouble(pow(fVal1, fVal2));
@@ -1652,10 +1674,10 @@ public:
         if (mbError)
             return;
 
-        FormulaError nErr = GetDoubleErrorValue(f);
-        if (nErr == FormulaError::NONE)
+        sal_uInt16 nErr = GetDoubleErrorValue(f);
+        if (!nErr)
             mfSum += f;
-        else if (nErr != FormulaError::ElementNaN)
+        else if (nErr != errElementNaN)
         {
             // Propagate the first error encountered, ignore "this is not a
             // number" elements.
@@ -1807,7 +1829,7 @@ void ScInterpreter::ScFrequency()
 
     GetSortArray( 1, aBinArray, &aBinIndexOrder, false, false );
     SCSIZE nBinSize = aBinArray.size();
-    if (nGlobalError != FormulaError::NONE)
+    if (nGlobalError)
     {
         PushNoValue();
         return;
@@ -1817,7 +1839,7 @@ void ScInterpreter::ScFrequency()
     GetSortArray( 1, aDataArray, nullptr, false, false );
     SCSIZE nDataSize = aDataArray.size();
 
-    if (aDataArray.empty() || nGlobalError != FormulaError::NONE)
+    if (aDataArray.empty() || nGlobalError)
     {
         PushNoValue();
         return;
@@ -2399,7 +2421,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
         pResMat = GetNewMat(K+1,1);
     if (!pResMat)
     {
-        PushError(FormulaError::CodeOverflow);
+        PushError(errCodeOverflow);
         return;
     }
     // Fill unused cells in pResMat; order (column,row)
@@ -2407,9 +2429,9 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
     {
         for (SCSIZE i=2; i<K+1; i++)
         {
-            pResMat->PutError( FormulaError::NotAvailable, i, 2);
-            pResMat->PutError( FormulaError::NotAvailable, i, 3);
-            pResMat->PutError( FormulaError::NotAvailable, i, 4);
+            pResMat->PutError( NOTAVAILABLE, i, 2);
+            pResMat->PutError( NOTAVAILABLE, i, 3);
+            pResMat->PutError( NOTAVAILABLE, i, 4);
         }
     }
 
@@ -2422,7 +2444,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
         ScMatrixRef pNewY = pMatY->CloneIfConst();
         if (!pNewX || !pNewY)
         {
-            PushError(FormulaError::CodeOverflow);
+            PushError(errCodeOverflow);
             return;
         }
         pMatX = pNewX;
@@ -2476,13 +2498,13 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
             {   // exact fit; test SSreg too, because SSresid might be
                 // unequal zero due to round of errors
                 pResMat->PutDouble(0.0, 1, 4); // SSresid
-                pResMat->PutError( FormulaError::NotAvailable, 0, 3); // F
+                pResMat->PutError( NOTAVAILABLE, 0, 3); // F
                 pResMat->PutDouble(0.0, 1, 2); // RMSE
                 pResMat->PutDouble(0.0, 0, 1); // SigmaSlope
                 if (bConstant)
                     pResMat->PutDouble(0.0, 1, 1); //SigmaIntercept
                 else
-                    pResMat->PutError( FormulaError::NotAvailable, 1, 1);
+                    pResMat->PutError( NOTAVAILABLE, 1, 1);
                 pResMat->PutDouble(1.0, 0, 2); // R^2
             }
             else
@@ -2506,7 +2528,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                 }
                 else
                 {
-                    pResMat->PutError( FormulaError::NotAvailable, 1, 1);
+                    pResMat->PutError( NOTAVAILABLE, 1, 1);
                 }
 
                 double fR2 = fSSreg / (fSSreg + fSSresid);
@@ -2532,7 +2554,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
             ScMatrixRef pSlopes = GetNewMat(1,K); // from b1 to bK
             if (!pMeans || !pMatZ || !pSlopes)
             {
-                PushError(FormulaError::CodeOverflow);
+                PushError(errCodeOverflow);
                 return;
             }
             if (bConstant)
@@ -2604,7 +2626,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                 {   // exact fit; incl. observed values Y are identical
                     pResMat->PutDouble(0.0, 1, 4); // SSresid
                     // F = (SSreg/K) / (SSresid/df) = #DIV/0!
-                    pResMat->PutError( FormulaError::NotAvailable, 0, 3); // F
+                    pResMat->PutError( NOTAVAILABLE, 0, 3); // F
                     // RMSE = sqrt(SSresid / df) = sqrt(0 / df) = 0
                     pResMat->PutDouble(0.0, 1, 2); // RMSE
                     // SigmaSlope[i] = RMSE * sqrt(matrix[i,i]) = 0 * sqrt(...) = 0
@@ -2615,7 +2637,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                     if (bConstant)
                         pResMat->PutDouble(0.0, K, 1); //SigmaIntercept
                     else
-                        pResMat->PutError( FormulaError::NotAvailable, K, 1);
+                        pResMat->PutError( NOTAVAILABLE, K, 1);
 
                     //  R^2 = SSreg / (SSreg + SSresid) = 1.0
                     pResMat->PutDouble(1.0, 0, 2); // R^2
@@ -2665,7 +2687,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                     }
                     else
                     {
-                        pResMat->PutError( FormulaError::NotAvailable, K, 1);
+                        pResMat->PutError( NOTAVAILABLE, K, 1);
                     }
 
                     double fR2 = fSSreg / (fSSreg + fSSresid);
@@ -2687,7 +2709,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
             ScMatrixRef pSlopes = GetNewMat(K,1); // from b1 to bK
             if (!pMeans || !pMatZ || !pSlopes)
             {
-                PushError(FormulaError::CodeOverflow);
+                PushError(errCodeOverflow);
                 return;
             }
             if (bConstant)
@@ -2761,7 +2783,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                 {   // exact fit; incl. case observed values Y are identical
                     pResMat->PutDouble(0.0, 1, 4); // SSresid
                     // F = (SSreg/K) / (SSresid/df) = #DIV/0!
-                    pResMat->PutError( FormulaError::NotAvailable, 0, 3); // F
+                    pResMat->PutError( NOTAVAILABLE, 0, 3); // F
                     // RMSE = sqrt(SSresid / df) = sqrt(0 / df) = 0
                     pResMat->PutDouble(0.0, 1, 2); // RMSE
                     // SigmaSlope[i] = RMSE * sqrt(matrix[i,i]) = 0 * sqrt(...) = 0
@@ -2772,7 +2794,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                     if (bConstant)
                         pResMat->PutDouble(0.0, K, 1); //SigmaIntercept
                     else
-                        pResMat->PutError( FormulaError::NotAvailable, K, 1);
+                        pResMat->PutError( NOTAVAILABLE, K, 1);
 
                     //  R^2 = SSreg / (SSreg + SSresid) = 1.0
                     pResMat->PutDouble(1.0, 0, 2); // R^2
@@ -2822,7 +2844,7 @@ void ScInterpreter::CalculateRGPRKP(bool _bRKP)
                     }
                     else
                     {
-                        pResMat->PutError( FormulaError::NotAvailable, K, 1);
+                        pResMat->PutError( NOTAVAILABLE, K, 1);
                     }
 
                     double fR2 = fSSreg / (fSSreg + fSSresid);
@@ -2956,7 +2978,7 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
     }
     if (!pResMat)
     {
-        PushError(FormulaError::CodeOverflow);
+        PushError(errCodeOverflow);
         return;
     }
     // Uses sum(x-MeanX)^2 and not [sum x^2]-N * MeanX^2 in case bConstant.
@@ -2968,7 +2990,7 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
         ScMatrixRef pCopyY = pMatY->CloneIfConst();
         if (!pCopyX || !pCopyY)
         {
-            PushError(FormulaError::MatrixSize);
+            PushError(errMatrixSize);
             return;
         }
         pMatX = pCopyX;
@@ -3030,7 +3052,7 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
             ScMatrixRef pSlopes = GetNewMat(1,K); // from b1 to bK
             if (!pMeans || !pSlopes)
             {
-                PushError(FormulaError::CodeOverflow);
+                PushError(errCodeOverflow);
                 return;
             }
             if (bConstant)
@@ -3089,7 +3111,7 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
             ScMatrixRef pSlopes = GetNewMat(K,1); // row from b1 to bK
             if (!pMeans || !pSlopes)
             {
-                PushError(FormulaError::CodeOverflow);
+                PushError(errCodeOverflow);
                 return;
             }
             if (bConstant)
@@ -3145,8 +3167,8 @@ void ScInterpreter::CalculateTrendGrowth(bool _bGrowth)
 
 void ScInterpreter::ScMatRef()
 {
-    // In case it contains relative references resolve them as usual.
-    Push( *pCur );
+    // Falls Deltarefs drin sind...
+    Push( (FormulaToken&)*pCur );
     ScAddress aAdr;
     PopSingleRef( aAdr );
 
@@ -3154,7 +3176,7 @@ void ScInterpreter::ScMatRef()
 
     if (aCell.meType != CELLTYPE_FORMULA)
     {
-        PushError( FormulaError::NoRef );
+        PushError( errNoRef );
         return;
     }
 
@@ -3163,8 +3185,8 @@ void ScInterpreter::ScMatRef()
         // Twisted odd corner case where an array element's cell tries to
         // access the top left matrix while it is still running, see tdf#88737
         // This is a hackish workaround, not a general solution, the matrix
-        // isn't available anyway and FormulaError::CircularReference would be set.
-        PushError( FormulaError::RetryCircular );
+        // isn't available anyway and errCircularReference would be set.
+        PushError( errRetryCircular );
         return;
     }
 
@@ -3199,23 +3221,18 @@ void ScInterpreter::ScMatRef()
             }
             else
             {
-                // Determine nFuncFmtType type before PushDouble().
+                PushDouble(nMatVal.fVal);  // handles DoubleError
                 pDok->GetNumberFormatInfo(nCurFmtType, nCurFmtIndex, aAdr);
                 nFuncFmtType = nCurFmtType;
                 nFuncFmtIndex = nCurFmtIndex;
-                PushDouble(nMatVal.fVal);  // handles DoubleError
             }
         }
     }
     else
     {
-        // Determine nFuncFmtType type before PushDouble().
-        pDok->GetNumberFormatInfo(nCurFmtType, nCurFmtIndex, aAdr);
-        nFuncFmtType = nCurFmtType;
-        nFuncFmtIndex = nCurFmtIndex;
         // If not a result matrix, obtain the cell value.
-        FormulaError nErr = aCell.mpFormula->GetErrCode();
-        if (nErr != FormulaError::NONE)
+        sal_uInt16 nErr = aCell.mpFormula->GetErrCode();
+        if (nErr)
             PushError( nErr );
         else if (aCell.mpFormula->IsValue())
             PushDouble(aCell.mpFormula->GetValue());
@@ -3224,6 +3241,9 @@ void ScInterpreter::ScMatRef()
             svl::SharedString aVal = aCell.mpFormula->GetString();
             PushString( aVal );
         }
+        pDok->GetNumberFormatInfo(nCurFmtType, nCurFmtIndex, aAdr);
+        nFuncFmtType = nCurFmtType;
+        nFuncFmtIndex = nCurFmtIndex;
     }
 }
 

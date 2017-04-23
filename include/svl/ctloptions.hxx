@@ -22,7 +22,6 @@
 #include <svl/svldllapi.h>
 #include <sal/types.h>
 #include <unotools/options.hxx>
-#include <memory>
 
 class SvtCTLOptions_Impl;
 
@@ -31,13 +30,13 @@ class SvtCTLOptions_Impl;
 class SVL_DLLPUBLIC SvtCTLOptions : public utl::detail::Options
 {
 private:
-    std::shared_ptr<SvtCTLOptions_Impl>    m_pImpl;
+    SvtCTLOptions_Impl*    m_pImp;
 
 public:
 
     // bDontLoad is for referencing purposes only
     SvtCTLOptions( bool bDontLoad = false );
-    virtual ~SvtCTLOptions() override;
+    virtual ~SvtCTLOptions();
 
     void        SetCTLFontEnabled( bool _bEnabled );
     bool        IsCTLFontEnabled() const;

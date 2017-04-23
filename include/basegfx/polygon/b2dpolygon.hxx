@@ -41,7 +41,7 @@ namespace basegfx
 
 namespace basegfx
 {
-    class SAL_WARN_UNUSED BASEGFX_DLLPUBLIC B2DPolygon
+    class BASEGFX_DLLPUBLIC B2DPolygon
     {
     public:
         typedef o3tl::cow_wrapper< ImplB2DPolygon > ImplType;
@@ -54,15 +54,11 @@ namespace basegfx
         /// diverse constructors
         B2DPolygon();
         B2DPolygon(const B2DPolygon& rPolygon);
-        B2DPolygon(B2DPolygon&& rPolygon);
         B2DPolygon(const B2DPolygon& rPolygon, sal_uInt32 nIndex, sal_uInt32 nCount);
-        B2DPolygon(std::initializer_list<basegfx::B2DPoint> rPoints);
-
         ~B2DPolygon();
 
         /// assignment operator
         B2DPolygon& operator=(const B2DPolygon& rPolygon);
-        B2DPolygon& operator=(B2DPolygon&& rPolygon);
 
         /// unshare this polygon with all internally shared instances
         void makeUnique();
@@ -136,7 +132,7 @@ namespace basegfx
             usually pretty usable for processing purposes. There is no parameter
             passing here ATM but it may be changed on demand. If needed, a TYPE
             and PARAMETER (both defaulted) may be added to allow for switching
-            between the different kinds of subdivisioned and passing them one
+            between the different kinds of subdivisiond and passing them one
             parameter.
 
             The lifetime of the buffered subdivision is based on polygon changes.

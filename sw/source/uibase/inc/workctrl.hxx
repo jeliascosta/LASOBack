@@ -21,6 +21,7 @@
 
 #include <sfx2/tbxctrl.hxx>
 #include <vcl/toolbox.hxx>
+#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 
 class PopupMenu;
@@ -53,18 +54,21 @@ class SwView;
 
 class SwTbxAutoTextCtrl : public SfxToolBoxControl
 {
+    PopupMenu*              pPopup;
+
+    void                    DelPopup();
 public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SwTbxAutoTextCtrl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SwTbxAutoTextCtrl() override;
+    virtual ~SwTbxAutoTextCtrl();
 
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
     virtual void                StateChanged( sal_uInt16 nSID,
                                               SfxItemState eState,
                                               const SfxPoolItem* pState ) override;
 
-    DECL_STATIC_LINK(SwTbxAutoTextCtrl, PopupHdl, Menu*, bool);
+    DECL_STATIC_LINK_TYPED(SwTbxAutoTextCtrl, PopupHdl, Menu*, bool);
 };
 
 class SwScrollNaviPopup;
@@ -82,7 +86,7 @@ public:
         , m_pNaviPopup(pNaviPopup)
     {
     }
-    virtual ~SwScrollNaviToolBox() override;
+    virtual ~SwScrollNaviToolBox();
     virtual void dispose() override;
 };
 
@@ -90,18 +94,24 @@ class SwScrollNaviPopup : public SfxPopupWindow
 {
     VclPtr<SwScrollNaviToolBox> m_pToolBox;
     VclPtr<FixedText>           m_pInfoField;
+    ImageList       aIList;
 
     OUString        sQuickHelp[2 * NID_COUNT];
 
+    void            ApplyImageList();
+
+    using Window::GetQuickHelpText;
+
 protected:
-    DECL_LINK(SelectHdl, ToolBox*, void);
+        DECL_LINK_TYPED(SelectHdl, ToolBox*, void);
+        virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 public:
     SwScrollNaviPopup( sal_uInt16 nId, const css::uno::Reference< css::frame::XFrame >& rFrame, vcl::Window *pParent );
-    virtual ~SwScrollNaviPopup() override;
+    virtual ~SwScrollNaviPopup();
     virtual void dispose() override;
 
-    static OUString     GetToolTip(bool bNext);
+    static OUString         GetQuickHelpText(bool bNext);
 
     void                GrabFocus() { m_pToolBox->GrabFocus(); }
 };
@@ -112,7 +122,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SwPreviewZoomControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SwPreviewZoomControl() override;
+    virtual ~SwPreviewZoomControl();
 
     virtual void            StateChanged( sal_uInt16 nSID,
                                               SfxItemState eState,
@@ -127,7 +137,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SwJumpToSpecificPageControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SwJumpToSpecificPageControl() override;
+    virtual ~SwJumpToSpecificPageControl();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window *pParent ) SAL_OVERRIDE;
 };

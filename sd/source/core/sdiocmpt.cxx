@@ -37,6 +37,11 @@ old_SdrDownCompat::~old_SdrDownCompat()
         CloseSubRecord();
 }
 
+void old_SdrDownCompat::Read()
+{
+    rStream.ReadUInt32( nSubRecSiz );
+}
+
 void old_SdrDownCompat::Write()
 {
     rStream.WriteUInt32( nSubRecSiz );
@@ -51,7 +56,7 @@ void old_SdrDownCompat::OpenSubRecord()
 
     if(nMode == StreamMode::READ)
     {
-        rStream.ReadUInt32( nSubRecSiz );
+        Read();
     }
     else if(nMode == StreamMode::WRITE)
     {

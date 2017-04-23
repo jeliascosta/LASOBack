@@ -28,8 +28,8 @@
 
 bool FmInterfaceItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
-    return xInterface == static_cast<const FmInterfaceItem&>(rAttr).xInterface;
+    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
+    return( xInterface == static_cast<const FmInterfaceItem&>(rAttr).GetInterface() );
 }
 
 

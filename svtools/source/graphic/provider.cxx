@@ -33,20 +33,17 @@
 #include <svl/solar.hrc>
 #include <vcl/virdev.hxx>
 #include <vcl/settings.hxx>
-#include <com/sun/star/awt/XBitmap.hpp>
-#include <com/sun/star/graphic/XGraphicProvider.hpp>
 #include <com/sun/star/io/XStream.hpp>
-#include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/text/GraphicCrop.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <comphelper/servicehelper.hxx>
-#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
 #include "descriptor.hxx"
 #include "graphic.hxx"
 #include <rtl/ref.hxx>
 #include <svtools/grfmgr.hxx>
+#include "provider.hxx"
 #include <vcl/dibtools.hxx>
 #include <memory>
 
@@ -56,60 +53,35 @@ namespace {
 
 #define UNO_NAME_GRAPHOBJ_URLPREFIX                             "vnd.sun.star.GraphicObject:"
 
-class GraphicProvider : public ::cppu::WeakImplHelper< css::graphic::XGraphicProvider,
-                                                        css::lang::XServiceInfo >
-{
-public:
-
-    GraphicProvider();
-
-protected:
-
-    // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
-
-    // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
-
-    // XGraphicProvider
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL queryGraphicDescriptor( const css::uno::Sequence< css::beans::PropertyValue >& MediaProperties ) override;
-    virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL queryGraphic( const css::uno::Sequence< css::beans::PropertyValue >& MediaProperties ) override;
-    virtual void SAL_CALL storeGraphic( const css::uno::Reference< css::graphic::XGraphic >& Graphic, const css::uno::Sequence< css::beans::PropertyValue >& MediaProperties ) override;
-
-private:
-
-    static css::uno::Reference< css::graphic::XGraphic > implLoadMemory( const OUString& rResourceURL );
-    static css::uno::Reference< css::graphic::XGraphic > implLoadGraphicObject( const OUString& rResourceURL );
-    static css::uno::Reference< css::graphic::XGraphic > implLoadResource( const OUString& rResourceURL );
-    static css::uno::Reference< css::graphic::XGraphic > implLoadRepositoryImage( const OUString& rResourceURL );
-    static css::uno::Reference< css::graphic::XGraphic > implLoadBitmap( const css::uno::Reference< css::awt::XBitmap >& rBitmap );
-    static css::uno::Reference< css::graphic::XGraphic > implLoadStandardImage( const OUString& rResourceURL );
-};
-
 GraphicProvider::GraphicProvider()
 {
 }
 
+GraphicProvider::~GraphicProvider()
+{
+}
+
 OUString SAL_CALL GraphicProvider::getImplementationName()
+    throw( uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.graphic.GraphicProvider" );
 }
 
 sal_Bool SAL_CALL GraphicProvider::supportsService( const OUString& ServiceName )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService( this, ServiceName );
 }
 
 uno::Sequence< OUString > SAL_CALL GraphicProvider::getSupportedServiceNames()
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSeq { "com.sun.star.graphic.GraphicProvider" };
     return aSeq;
 }
 
 uno::Sequence< uno::Type > SAL_CALL GraphicProvider::getTypes()
+    throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< uno::Type >  aTypes( 3 );
     uno::Type*                  pTypes = aTypes.getArray();
@@ -122,6 +94,7 @@ uno::Sequence< uno::Type > SAL_CALL GraphicProvider::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL GraphicProvider::getImplementationId()
+    throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -179,7 +152,8 @@ uno::Reference< ::graphic::XGraphic > GraphicProvider::implLoadRepositoryImage( 
         BitmapEx aBitmap;
         if ( vcl::ImageRepository::loadImage( sPathName, aBitmap, false ) )
         {
-            xRet = Graphic(aBitmap).GetXGraphic();
+            Image aImage( aBitmap );
+            xRet = aImage.GetXGraphic();
         }
     }
     return xRet;
@@ -196,19 +170,19 @@ uno::Reference< ::graphic::XGraphic > GraphicProvider::implLoadStandardImage( co
         OUString sImageName( rResourceURL.copy( nIndex ) );
         if ( sImageName == "info" )
         {
-            xRet = Graphic(InfoBox::GetStandardImage().GetBitmapEx()).GetXGraphic();
+            xRet = InfoBox::GetStandardImage().GetXGraphic();
         }
         else if ( sImageName == "warning" )
         {
-            xRet = Graphic(WarningBox::GetStandardImage().GetBitmapEx()).GetXGraphic();
+            xRet = WarningBox::GetStandardImage().GetXGraphic();
         }
         else if ( sImageName == "error" )
         {
-            xRet = Graphic(ErrorBox::GetStandardImage().GetBitmapEx()).GetXGraphic();
+            xRet = ErrorBox::GetStandardImage().GetXGraphic();
         }
         else if ( sImageName == "query" )
         {
-            xRet = Graphic(QueryBox::GetStandardImage().GetBitmapEx()).GetXGraphic();
+            xRet = QueryBox::GetStandardImage().GetXGraphic();
         }
     }
     return xRet;
@@ -278,6 +252,36 @@ uno::Reference< ::graphic::XGraphic > GraphicProvider::implLoadResource( const O
                         aBmpEx = BitmapEx( aResId );
                     }
                 }
+                else if( aResourceType == "image" )
+                {
+                    aResId.SetRT( RSC_IMAGE );
+
+                    if( pResMgr->IsAvailable( aResId ) )
+                    {
+                        const Image aImage( aResId );
+                        aBmpEx = aImage.GetBitmapEx();
+                    }
+                }
+                else if( aResourceType == "imagelist" )
+                {
+                    aResId.SetRT( RSC_IMAGELIST );
+
+                    if( pResMgr->IsAvailable( aResId ) )
+                    {
+                        const ImageList aImageList( aResId );
+                        sal_Int32       nImageId = ( nIndex > -1 ) ? rResourceURL.getToken( 0, '/', nIndex ).toInt32() : 0;
+
+                        if( 0 < nImageId )
+                        {
+                            const Image aImage( aImageList.GetImage( sal::static_int_cast< sal_uInt16 >(nImageId) ) );
+                            aBmpEx = aImage.GetBitmapEx();
+                        }
+                        else
+                        {
+                            aBmpEx = aImageList.GetAsHorizontalStrip();
+                        }
+                    }
+                }
 
                 if( !aBmpEx.IsEmpty() )
                 {
@@ -295,6 +299,7 @@ uno::Reference< ::graphic::XGraphic > GraphicProvider::implLoadResource( const O
 
 
 uno::Reference< beans::XPropertySet > SAL_CALL GraphicProvider::queryGraphicDescriptor( const uno::Sequence< beans::PropertyValue >& rMediaProperties )
+    throw ( io::IOException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     uno::Reference< beans::XPropertySet > xRet;
 
@@ -366,6 +371,7 @@ uno::Reference< beans::XPropertySet > SAL_CALL GraphicProvider::queryGraphicDesc
 
 
 uno::Reference< ::graphic::XGraphic > SAL_CALL GraphicProvider::queryGraphic( const uno::Sequence< ::beans::PropertyValue >& rMediaProperties )
+    throw ( io::IOException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     uno::Reference< ::graphic::XGraphic >   xRet;
     OUString                                aPath;
@@ -472,7 +478,7 @@ uno::Reference< ::graphic::XGraphic > SAL_CALL GraphicProvider::queryGraphic( co
 
             if( ( rFilter.ImportGraphic( aVCLGraphic, aPath, *pIStm,
                                          GRFILTER_FORMAT_DONTKNOW, nullptr, GraphicFilterImportFlags::NONE, pExtHeader ) == GRFILTER_OK ) &&
-                ( aVCLGraphic.GetType() != GraphicType::NONE ) )
+                ( aVCLGraphic.GetType() != GRAPHIC_NONE ) )
             {
                 ::unographic::Graphic* pUnoGraphic = new ::unographic::Graphic;
 
@@ -485,7 +491,7 @@ uno::Reference< ::graphic::XGraphic > SAL_CALL GraphicProvider::queryGraphic( co
     return xRet;
 }
 
-void ImplCalculateCropRect( ::Graphic& rGraphic, const text::GraphicCrop& rGraphicCropLogic, tools::Rectangle& rGraphicCropPixel )
+void ImplCalculateCropRect( ::Graphic& rGraphic, const text::GraphicCrop& rGraphicCropLogic, Rectangle& rGraphicCropPixel )
 {
     if ( rGraphicCropLogic.Left || rGraphicCropLogic.Top || rGraphicCropLogic.Right || rGraphicCropLogic.Bottom )
     {
@@ -495,13 +501,13 @@ void ImplCalculateCropRect( ::Graphic& rGraphic, const text::GraphicCrop& rGraph
             if ( rGraphicCropLogic.Left || rGraphicCropLogic.Top || rGraphicCropLogic.Right || rGraphicCropLogic.Bottom )
             {
                 Size aSize100thMM( 0, 0 );
-                if( rGraphic.GetPrefMapMode().GetMapUnit() != MapUnit::MapPixel )
+                if( rGraphic.GetPrefMapMode().GetMapUnit() != MAP_PIXEL )
                 {
-                    aSize100thMM = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(), rGraphic.GetPrefMapMode(), MapUnit::Map100thMM );
+                    aSize100thMM = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(), rGraphic.GetPrefMapMode(), MAP_100TH_MM );
                 }
                 else
                 {
-                    aSize100thMM = Application::GetDefaultDevice()->PixelToLogic( rGraphic.GetPrefSize(), MapUnit::Map100thMM );
+                    aSize100thMM = Application::GetDefaultDevice()->PixelToLogic( rGraphic.GetPrefSize(), MAP_100TH_MM );
                 }
                 if ( aSize100thMM.Width() && aSize100thMM.Height() )
                 {
@@ -596,7 +602,7 @@ void ImplApplyFilterData( ::Graphic& rGraphic, uno::Sequence< beans::PropertyVal
         else if (aName == "ImageResolution")
             aValue >>= nImageResolution;
     }
-    if ( rGraphic.GetType() == GraphicType::Bitmap )
+    if ( rGraphic.GetType() == GRAPHIC_BITMAP )
     {
         if(rGraphic.getSvgData().get())
         {
@@ -604,7 +610,7 @@ void ImplApplyFilterData( ::Graphic& rGraphic, uno::Sequence< beans::PropertyVal
         }
         else
         {
-            tools::Rectangle aCropPixel( Point( 0, 0 ), rGraphic.GetSizePixel() );
+            Rectangle aCropPixel( Point( 0, 0 ), rGraphic.GetSizePixel() );
             ImplCalculateCropRect( rGraphic, aCropLogic, aCropPixel );
             if ( bRemoveCropArea )
             {
@@ -617,14 +623,14 @@ void ImplApplyFilterData( ::Graphic& rGraphic, uno::Sequence< beans::PropertyVal
             ImplApplyBitmapScaling( rGraphic, nPixelWidth, nPixelHeight );
         }
     }
-    else if ( ( rGraphic.GetType() == GraphicType::GdiMetafile ) && nImageResolution )
+    else if ( ( rGraphic.GetType() == GRAPHIC_GDIMETAFILE ) && nImageResolution )
     {
         ScopedVclPtrInstance< VirtualDevice > aDummyVDev;
         GDIMetaFile aMtf( rGraphic.GetGDIMetaFile() );
-        Size aMtfSize( OutputDevice::LogicToLogic( aMtf.GetPrefSize(), aMtf.GetPrefMapMode(), MapUnit::Map100thMM ) );
+        Size aMtfSize( OutputDevice::LogicToLogic( aMtf.GetPrefSize(), aMtf.GetPrefMapMode(), MAP_100TH_MM ) );
         if ( aMtfSize.Width() && aMtfSize.Height() )
         {
-            MapMode aNewMapMode( MapUnit::Map100thMM );
+            MapMode aNewMapMode( MAP_100TH_MM );
             aNewMapMode.SetScaleX( static_cast< double >( aLogicalSize.Width ) / static_cast< double >( aMtfSize.Width() ) );
             aNewMapMode.SetScaleY( static_cast< double >( aLogicalSize.Height ) / static_cast< double >( aMtfSize.Height() ) );
             aDummyVDev->EnableOutput( false );
@@ -674,7 +680,7 @@ void ImplApplyFilterData( ::Graphic& rGraphic, uno::Sequence< beans::PropertyVal
                         }
                         ::Graphic aGraphic( aBmpEx );
                         const Size aSize100thmm( aDummyVDev->LogicToPixel( aSize ) );
-                        Size aSize100thmm2( aDummyVDev->PixelToLogic( aSize100thmm, MapUnit::Map100thMM ) );
+                        Size aSize100thmm2( aDummyVDev->PixelToLogic( aSize100thmm, MAP_100TH_MM ) );
 
                         ImplApplyBitmapResolution( aGraphic, nImageResolution,
                             aGraphic.GetSizePixel(), awt::Size( aSize100thmm2.Width(), aSize100thmm2.Height() ) );
@@ -707,6 +713,7 @@ void ImplApplyFilterData( ::Graphic& rGraphic, uno::Sequence< beans::PropertyVal
 
 
 void SAL_CALL GraphicProvider::storeGraphic( const uno::Reference< ::graphic::XGraphic >& rxGraphic, const uno::Sequence< beans::PropertyValue >& rMediaProperties )
+    throw ( io::IOException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -805,7 +812,7 @@ void SAL_CALL GraphicProvider::storeGraphic( const uno::Reference< ::graphic::XG
                 const uno::Reference< XInterface >  xIFace( rxGraphic, uno::UNO_QUERY );
                 const ::Graphic*                    pGraphic = ::unographic::Graphic::getImplementation( xIFace );
 
-                if( pGraphic && ( pGraphic->GetType() != GraphicType::NONE ) )
+                if( pGraphic && ( pGraphic->GetType() != GRAPHIC_NONE ) )
                 {
                     ::Graphic aGraphic( *pGraphic );
                     ImplApplyFilterData( aGraphic, aFilterDataSeq );
@@ -823,7 +830,7 @@ void SAL_CALL GraphicProvider::storeGraphic( const uno::Reference< ::graphic::XG
                                                     ( aFilterDataSeq.getLength() ? &aFilterDataSeq : nullptr ) );
                     }
                     aMemStrm.Seek( STREAM_SEEK_TO_END );
-                    pOStm->WriteBytes( aMemStrm.GetData(), aMemStrm.Tell() );
+                    pOStm->Write( aMemStrm.GetData(), aMemStrm.Tell() );
                 }
             }
         }

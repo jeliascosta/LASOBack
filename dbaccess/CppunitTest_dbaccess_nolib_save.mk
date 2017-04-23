@@ -55,6 +55,10 @@ $(eval $(call gb_CppunitTest_use_libraries,dbaccess_nolib_save, \
 	$(gb_UWINAPI) \
 ))
 
+$(eval $(call gb_CppunitTest_set_include,dbaccess_nolib_save,\
+    $$(INCLUDE) \
+))
+
 $(eval $(call gb_CppunitTest_use_api,dbaccess_nolib_save,\
     offapi \
     oovbaapi \
@@ -94,7 +98,6 @@ $(eval $(call gb_CppunitTest_use_components,dbaccess_nolib_save,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
 ))
 

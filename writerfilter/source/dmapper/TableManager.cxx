@@ -68,7 +68,7 @@ void TableManager::insertTableProps(const TablePropertyMapPtr& pProps)
     if (getTableProps().get() && getTableProps() != pProps)
         getTableProps()->InsertProps(pProps);
     else
-        mState.setTableProps(pProps);
+        setTableProps(pProps);
 
 #ifdef DEBUG_WRITERFILTER
     TagLogger::getInstance().endElement();
@@ -84,7 +84,7 @@ void TableManager::insertRowProps(const TablePropertyMapPtr& pProps)
     if (getRowProps().get())
         getRowProps()->InsertProps(pProps);
     else
-        mState.setRowProps(pProps);
+        setRowProps(pProps);
 
 #ifdef DEBUG_WRITERFILTER
     TagLogger::getInstance().endElement();
@@ -113,7 +113,7 @@ void TableManager::cellProps(const TablePropertyMapPtr& pProps)
     if (getCellProps().get())
         getCellProps()->InsertProps(pProps);
     else
-        mState.setCellProps(pProps);
+        setCellProps(pProps);
 
 #ifdef DEBUG_WRITERFILTER
     TagLogger::getInstance().endElement();
@@ -214,7 +214,7 @@ void TableManager::ensureOpenCell(const TablePropertyMapPtr& pProps)
     {
         TableData::Pointer_t pTableData = mTableDataStack.top();
 
-        if (pTableData != nullptr)
+        if (pTableData.get() != nullptr)
         {
             if (!pTableData->isCellOpen())
                 openCell(getHandle(), pProps);
@@ -257,20 +257,20 @@ void TableManager::endParagraphGroup()
         {
             endOfRowAction();
             mTableDataStack.top()->endRow(getRowProps());
-            mState.resetRowProps();
+            resetRowProps();
         }
 
         else if (isInCell())
         {
             ensureOpenCell(getCellProps());
 
-            if (mState.isCellEnd())
+            if (isCellEnd())
             {
                 endOfCellAction();
                 closeCell(getHandle());
             }
         }
-        mState.resetCellProps();
+        resetCellProps();
     }
 }
 
@@ -286,7 +286,7 @@ void TableManager::resolveCurrentTable()
     TagLogger::getInstance().startElement("tablemanager.resolveCurrentTable");
 #endif
 
-    if (mpTableDataHandler != nullptr)
+    if (mpTableDataHandler.get() != nullptr)
     {
         try
         {
@@ -321,7 +321,7 @@ void TableManager::resolveCurrentTable()
             SAL_WARN("writerfilter", "resolving of current table failed with: " << e.Message);
         }
     }
-    mState.resetTableProps();
+    resetTableProps();
     clearData();
 
 #ifdef DEBUG_WRITERFILTER
@@ -331,7 +331,7 @@ void TableManager::resolveCurrentTable()
 
 void TableManager::endLevel()
 {
-    if (mpTableDataHandler != nullptr)
+    if (mpTableDataHandler.get() != nullptr)
         resolveCurrentTable();
 
     // Store the unfinished row as it will be used for the next table
@@ -349,7 +349,7 @@ void TableManager::endLevel()
     TagLogger::getInstance().startElement("tablemanager.endLevel");
     TagLogger::getInstance().attribute("level", mTableDataStack.size());
 
-    if (pTableData != nullptr)
+    if (pTableData.get() != nullptr)
         TagLogger::getInstance().attribute("openCell", pTableData->isCellOpen() ? "yes" : "no");
 
     TagLogger::getInstance().endElement();
@@ -367,7 +367,7 @@ void TableManager::startLevel()
     TagLogger::getInstance().startElement("tablemanager.startLevel");
     TagLogger::getInstance().attribute("level", mTableDataStack.size());
 
-    if (pTableData != nullptr)
+    if (pTableData.get() != nullptr)
         TagLogger::getInstance().attribute("openCell", pTableData->isCellOpen() ? "yes" : "no");
 
     TagLogger::getInstance().endElement();

@@ -10,7 +10,7 @@
 #ifndef INCLUDED_CANVAS_SOURCE_OPENGL_OGL_BUFFERCONTEXT_HXX
 #define INCLUDED_CANVAS_SOURCE_OPENGL_OGL_BUFFERCONTEXT_HXX
 
-#include <epoxy/gl.h>
+#include <GL/glew.h>
 
 #include <sal/config.h>
 #include <memory>

@@ -96,7 +96,7 @@ namespace slideshow
                 If the subset is currently revoked, this method
                 returns the original shape.
              */
-            AttributableShapeSharedPtr const &  getSubsetShape() const;
+            AttributableShapeSharedPtr  getSubsetShape() const;
 
             /** Enable the subset shape.
 

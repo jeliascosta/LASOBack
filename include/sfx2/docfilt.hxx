@@ -111,12 +111,13 @@ public:
     static std::shared_ptr<const SfxFilter> GetDefaultFilterFromFactory( const OUString& rServiceName );
 
     static OUString GetTypeFromStorage( const SotStorage& rStg );
-    /// @throws css::beans::UnknownPropertyException
-    /// @throws css::lang::WrappedTargetException
-    /// @throws css::uno::RuntimeException
     static OUString GetTypeFromStorage(
         const css::uno::Reference<css::embed::XStorage>& xStorage,
-        bool bTemplate = false );
+        bool bTemplate = false )
+            throw ( css::beans::UnknownPropertyException,
+                    css::lang::WrappedTargetException,
+                    css::uno::RuntimeException,
+                    std::exception );
 };
 
 #endif

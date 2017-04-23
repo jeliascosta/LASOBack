@@ -30,23 +30,30 @@ class MathTypeFilter : public cppu::WeakImplHelper
 
 public:
     MathTypeFilter();
+    virtual ~MathTypeFilter();
 
     // XFilter
-    sal_Bool SAL_CALL filter(const uno::Sequence<beans::PropertyValue>& rDescriptor) override;
-    void SAL_CALL cancel() override;
+    virtual sal_Bool SAL_CALL filter(const uno::Sequence<beans::PropertyValue>& rDescriptor) throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel() throw (uno::RuntimeException, std::exception) override;
 
     // XImporter
-    void SAL_CALL setTargetDocument(const uno::Reference<lang::XComponent>& xDoc) override;
+    virtual void SAL_CALL setTargetDocument(const uno::Reference<lang::XComponent>& xDoc) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName() override;
-    sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw (uno::RuntimeException, std::exception) override;
 };
 
-MathTypeFilter::MathTypeFilter() = default;
+MathTypeFilter::MathTypeFilter()
+{
+}
 
-sal_Bool MathTypeFilter::filter(const uno::Sequence<beans::PropertyValue>& rDescriptor)
+MathTypeFilter::~MathTypeFilter()
+{
+}
+
+sal_Bool MathTypeFilter::filter(const uno::Sequence<beans::PropertyValue>& rDescriptor) throw(uno::RuntimeException, std::exception)
 {
     bool bSuccess = false;
     try
@@ -64,12 +71,12 @@ sal_Bool MathTypeFilter::filter(const uno::Sequence<beans::PropertyValue>& rDesc
                 // Is this a MathType Storage?
                 if (aStorage->IsStream("Equation Native"))
                 {
-                    if (auto pModel = dynamic_cast<SmModel*>(m_xDstDoc.get()))
+                    if (SmModel* pModel = dynamic_cast<SmModel*>(m_xDstDoc.get()))
                     {
-                        auto pDocShell = static_cast<SmDocShell*>(pModel->GetObjectShell());
+                        SmDocShell* pDocShell = static_cast<SmDocShell*>(pModel->GetObjectShell());
                         OUString aText = pDocShell->GetText();
                         MathType aEquation(aText);
-                        bSuccess = aEquation.Parse(aStorage.get());
+                        bSuccess = aEquation.Parse(aStorage);
                         if (bSuccess)
                         {
                             pDocShell->SetText(aText);
@@ -87,26 +94,26 @@ sal_Bool MathTypeFilter::filter(const uno::Sequence<beans::PropertyValue>& rDesc
     return bSuccess;
 }
 
-void MathTypeFilter::cancel()
+void MathTypeFilter::cancel() throw(uno::RuntimeException, std::exception)
 {
 }
 
-void MathTypeFilter::setTargetDocument(const uno::Reference< lang::XComponent >& xDoc)
+void MathTypeFilter::setTargetDocument(const uno::Reference< lang::XComponent >& xDoc) throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     m_xDstDoc = xDoc;
 }
 
-OUString MathTypeFilter::getImplementationName()
+OUString MathTypeFilter::getImplementationName() throw(uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Math.MathTypeFilter");
 }
 
-sal_Bool MathTypeFilter::supportsService(const OUString& rServiceName)
+sal_Bool MathTypeFilter::supportsService(const OUString& rServiceName) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence<OUString> MathTypeFilter::getSupportedServiceNames()
+uno::Sequence<OUString> MathTypeFilter::getSupportedServiceNames() throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence<OUString> aRet =
     {

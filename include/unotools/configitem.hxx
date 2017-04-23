@@ -58,10 +58,14 @@ namespace o3tl
 namespace utl
 {
 
-    enum class ConfigNameFormat
+    enum  ConfigNameFormat
     {
-        LocalNode,     // local node name, for use in XNameAccess etc. ("Item", "Q & A")
-        LocalPath,     // one-level relative path, for use when building paths etc.  ("Item", "Typ['Q &amp; A']")
+        CONFIG_NAME_PLAINTEXT_NAME, // unescaped local node name, for user display etc.
+        CONFIG_NAME_LOCAL_NAME,     // local node name, for use in XNameAccess etc. ("Item", "Q & A")
+        CONFIG_NAME_LOCAL_PATH,     // one-level relative path, for use when building paths etc.  ("Item", "Typ['Q &amp; A']")
+        CONFIG_NAME_FULL_PATH,       // full absolute path. ("/org.openoffice.Sample/Group/Item", "/org.openoffice.Sample/Set/Typ['Q &amp; A']")
+
+        CONFIG_NAME_DEFAULT = CONFIG_NAME_LOCAL_PATH // default format
     };
 
     class ConfigChangeListener_Impl;
@@ -163,7 +167,7 @@ namespace utl
             bool                AddNode(const OUString& rNode, const OUString& rNewNode);
 
         public:
-            virtual ~ConfigItem() override;
+            virtual ~ConfigItem();
 
             /** is called from the ConfigManager before application ends of from the
                 PropertyChangeListener if the sub tree broadcasts changes. */
@@ -174,6 +178,8 @@ namespace utl
             bool IsModified() const { return m_bIsModified;}
 
             void                    Commit();
+
+            bool IsInValueChange() const { return m_nInValueChange > 0;}
 
             ConfigItemMode GetMode() const { return m_nMode;}
     };

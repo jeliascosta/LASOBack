@@ -46,21 +46,25 @@ class SourceContext: public MutexDummy,
 
 public:
     SourceContext( DragSource* pSource, const Reference<XDragSourceListener>& listener);
-    ~SourceContext() override;
+    ~SourceContext();
     SourceContext(const SourceContext&) = delete;
     SourceContext &operator= (const SourceContext&) = delete;
 
-    /// @throws RuntimeException
-    virtual void SAL_CALL addDragSourceListener( const Reference<XDragSourceListener >& dsl );
-    /// @throws RuntimeException
-    virtual void SAL_CALL removeDragSourceListener( const Reference<XDragSourceListener >& dsl );
-    virtual sal_Int32 SAL_CALL getCurrentCursor(  ) override;
-    virtual void SAL_CALL setCursor( sal_Int32 cursorId ) override;
-    virtual void SAL_CALL setImage( sal_Int32 imageId ) override;
-    virtual void SAL_CALL transferablesFlavorsChanged(  ) override;
+    virtual void SAL_CALL addDragSourceListener( const Reference<XDragSourceListener >& dsl )
+        throw( RuntimeException);
+    virtual void SAL_CALL removeDragSourceListener( const Reference<XDragSourceListener >& dsl )
+        throw( RuntimeException);
+    virtual sal_Int32 SAL_CALL getCurrentCursor(  )
+        throw( RuntimeException);
+    virtual void SAL_CALL setCursor( sal_Int32 cursorId )
+        throw( RuntimeException);
+    virtual void SAL_CALL setImage( sal_Int32 imageId )
+        throw( RuntimeException);
+    virtual void SAL_CALL transferablesFlavorsChanged(  )
+        throw( RuntimeException);
 
     // non - interface functions
-    void fire_dragDropEnd( bool success, sal_Int8 byte);
+    void fire_dragDropEnd( sal_Bool success, sal_Int8 byte);
     void fire_dropActionChanged( sal_Int8 dropAction, sal_Int8 userAction);
 
 };

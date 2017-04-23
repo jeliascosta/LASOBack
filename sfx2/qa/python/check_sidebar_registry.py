@@ -1,4 +1,4 @@
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
+# -*- Mode: makefile-gmake; tab-width: 4; indent-tabs-mode: t -*-
 #
 # This file is part of the LibreOffice project.
 #
@@ -14,6 +14,8 @@ from org.libreoffice.unotest import UnoInProcess
 import uno
 
 class CheckSidebarRegistry(unittest.TestCase):
+    _uno = None
+    _xDoc = None
 
     @classmethod
     def setUpClass(cls):
@@ -31,7 +33,7 @@ class CheckSidebarRegistry(unittest.TestCase):
         result = True
 
         #open registry node in Sidebar.xcu
-        config_provider = self.createUnoService("com.sun.star.configuration.ConfigurationProvider")
+        configProvider = self.createUnoService("com.sun.star.configuration.ConfigurationProvider")
 
         param = uno.createUnoStruct('com.sun.star.beans.PropertyValue')
         param.Name = "nodepath"
@@ -41,11 +43,11 @@ class CheckSidebarRegistry(unittest.TestCase):
 
         param.Value = "org.openoffice.Office.UI.Sidebar/Content/DeckList"
 
-        sidebar_decks_settings = config_provider.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess",
+        sidebarDecksSettings = configProvider.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess",
                                                                     (param, ))
-        for nodeName in sidebar_decks_settings:
+        for nodeName in sidebarDecksSettings:
 
-            node = sidebar_decks_settings[nodeName]
+            node = sidebarDecksSettings.getByName(nodeName)
 
             if (node.Id != nodeName):
                 print("\nNon-consistent sidebar.xcu Deck registry names", nodeName, node.Id)
@@ -55,11 +57,11 @@ class CheckSidebarRegistry(unittest.TestCase):
 
         param.Value = "org.openoffice.Office.UI.Sidebar/Content/PanelList"
 
-        sidebar_panels_settings = config_provider.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess",
+        sidebarPanelsSettings = configProvider.createInstanceWithArguments("com.sun.star.configuration.ConfigurationAccess",
                                                                     (param, ))
-        for nodeName in sidebar_panels_settings:
+        for nodeName in sidebarPanelsSettings:
 
-            node = sidebar_panels_settings[nodeName]
+            node = sidebarPanelsSettings.getByName(nodeName)
 
             if (node.Id != nodeName):
                 print("\nNon-consistent sidebar.xcu Panel registry names", nodeName, node.Id)
@@ -67,9 +69,9 @@ class CheckSidebarRegistry(unittest.TestCase):
 
             # is panel bound to an existing Deck ?
             FoundDeckId = False
-            for deckNodeName in sidebar_decks_settings:
-                deck_node = sidebar_decks_settings[deckNodeName]
-                if (node.DeckId == deck_node.Id):
+            for deckNodeName in sidebarDecksSettings:
+                deckNode = sidebarDecksSettings.getByName(deckNodeName)
+                if (node.DeckId == deckNode.Id):
                     FoundDeckId = True
             if not FoundDeckId:
                 print("\nNon existing DeckId for the panel ",node.Id)
@@ -87,4 +89,4 @@ class CheckSidebarRegistry(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# vim: set shiftwidth=4 softtabstop=4 expandtab:
+# vim: set noet sw=4 ts=4:

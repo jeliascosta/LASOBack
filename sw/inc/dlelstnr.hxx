@@ -59,17 +59,17 @@ class SwLinguServiceEventListener :
 
 public:
     SwLinguServiceEventListener();
-    virtual ~SwLinguServiceEventListener() override;
+    virtual ~SwLinguServiceEventListener();
 
     /// XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& rEventObj ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& rEventObj ) throw(css::uno::RuntimeException, std::exception) override;
 
     /// XLinguServiceEventListener
-    virtual void SAL_CALL processLinguServiceEvent( const css::linguistic2::LinguServiceEvent& rLngSvcEvent ) override;
+    virtual void SAL_CALL processLinguServiceEvent( const css::linguistic2::LinguServiceEvent& rLngSvcEvent ) throw(css::uno::RuntimeException, std::exception) override;
 
     /// XTerminateListener
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& rEventObj ) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& rEventObj ) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& rEventObj ) throw(css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& rEventObj ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

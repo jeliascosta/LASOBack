@@ -39,16 +39,17 @@ GalleryControl::GalleryControl (
     : Window(pParentWindow, WB_SIZEABLE|WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE),
       mpGallery (Gallery::GetGalleryInstance()),
       mpSplitter(VclPtr<GallerySplitter>::Create(
+
               this,
               WB_HSCROLL,
               [this] () { return this->InitSettings(); })),
       mpBrowser1(VclPtr<GalleryBrowser1>::Create(
+
               this,
               mpGallery,
               [this] (KeyEvent const& rEvent, vcl::Window *const pWindow)
                   { return this->GalleryKeyInput(rEvent, pWindow); },
-              [this] ()
-                  { return mpBrowser2->SelectTheme(mpBrowser1->GetSelectedTheme()); })),
+              [this] () { return this->ThemeSelectionHasChanged(); })),
       mpBrowser2(VclPtr<GalleryBrowser2>::Create(this, mpGallery)),
       maLastSize(GetOutputSizePixel()),
       mbIsInitialResize(true)
@@ -132,7 +133,7 @@ void GalleryControl::Resize()
     }
     mbIsInitialResize = false;
 
-    const long nFrameLen = LogicToPixel( Size( 3, 0 ), MapUnit::MapAppFont ).Width();
+    const long nFrameLen = LogicToPixel( Size( 3, 0 ), MAP_APPFONT ).Width();
     const long nFrameLen2 = nFrameLen << 1;
 
     if(bNewLayoutHorizontal)
@@ -146,7 +147,7 @@ void GalleryControl::Resize()
             Size( nSplitSize, aNewSize.Height() ) );
 
         mpSplitter->SetDragRectPixel(
-            tools::Rectangle(
+            Rectangle(
                 Point( nFrameLen2, 0 ),
                 Size( aNewSize.Width() - ( nFrameLen2 << 1 ) - nSplitSize, aNewSize.Height() ) ) );
 
@@ -165,7 +166,7 @@ void GalleryControl::Resize()
             Size( aNewSize.Width(), nSplitSize ) );
 
         mpSplitter->SetDragRectPixel(
-            tools::Rectangle(
+            Rectangle(
                 Point( 0, nFrameLen2 ),
                 Size( aNewSize.Width(), aNewSize.Height() - ( nFrameLen2 << 1 ) - nSplitSize ) ));
 
@@ -219,7 +220,12 @@ void GalleryControl::GetFocus()
         mpBrowser1->GrabFocus();
 }
 
-IMPL_LINK_NOARG( GalleryControl, SplitHdl, Splitter*, void )
+void GalleryControl::ThemeSelectionHasChanged()
+{
+    mpBrowser2->SelectTheme(mpBrowser1->GetSelectedTheme());
+}
+
+IMPL_LINK_NOARG_TYPED( GalleryControl, SplitHdl, Splitter*, void )
 {
     if(mpSplitter->IsHorizontal())
     {

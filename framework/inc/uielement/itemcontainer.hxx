@@ -45,7 +45,7 @@ class FWI_DLLPUBLIC ItemContainer :   public ::cppu::WeakImplHelper< css::contai
         ItemContainer( const ShareableMutex& );
         ItemContainer( const ConstItemContainer& rConstItemContainer, const ShareableMutex& rMutex );
         ItemContainer( const css::uno::Reference< css::container::XIndexAccess >& rItemAccessContainer, const ShareableMutex& rMutex );
-        virtual ~ItemContainer() override;
+        virtual ~ItemContainer();
 
         //  XInterface, XTypeProvider
 
@@ -54,25 +54,32 @@ class FWI_DLLPUBLIC ItemContainer :   public ::cppu::WeakImplHelper< css::contai
         static ItemContainer*                                       GetImplementation( const css::uno::Reference< css::uno::XInterface >& rxIFace ) throw();
 
         // XIndexContainer
-        virtual void SAL_CALL insertByIndex( sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL insertByIndex( sal_Int32 Index, const css::uno::Any& Element )
+            throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL removeByIndex( sal_Int32 Index ) override;
+        virtual void SAL_CALL removeByIndex( sal_Int32 Index )
+            throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexReplace
-        virtual void SAL_CALL replaceByIndex( sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL replaceByIndex( sal_Int32 Index, const css::uno::Any& Element )
+            throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XIndexAccess
-        virtual sal_Int32 SAL_CALL getCount() override;
+        virtual sal_Int32 SAL_CALL getCount()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+        virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
+            throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType() override
+        virtual css::uno::Type SAL_CALL getElementType()
+            throw (css::uno::RuntimeException, std::exception) override
         {
             return cppu::UnoType<css::uno::Sequence< css::beans::PropertyValue >>::get();
         }
 
-        virtual sal_Bool SAL_CALL hasElements() override;
+        virtual sal_Bool SAL_CALL hasElements()
+            throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         void copyItemContainer( const std::vector< css::uno::Sequence< css::beans::PropertyValue > >& rSourceVector, const ShareableMutex& rMutex );

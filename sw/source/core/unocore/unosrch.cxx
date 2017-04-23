@@ -24,13 +24,13 @@
 #include <unobaseclass.hxx>
 #include <unomid.h>
 
-#include <i18nutil/searchopt.hxx>
-#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 #include <editeng/unolingu.hxx>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -42,18 +42,12 @@ class SwSearchProperties_Impl
     beans::PropertyValue**          pValueArr;
     sal_uInt32                      nArrLen;
     const PropertyEntryVector_t     aPropertyEntries;
-
-    SwSearchProperties_Impl(const SwSearchProperties_Impl&) = delete;
-    SwSearchProperties_Impl& operator=(const SwSearchProperties_Impl&) = delete;
-
 public:
     SwSearchProperties_Impl();
     ~SwSearchProperties_Impl();
 
-    /// @throws beans::UnknownPropertyException
-    /// @throws lang::IllegalArgumentException
-    /// @throws uno::RuntimeException
-    void    SetProperties(const uno::Sequence< beans::PropertyValue >& aSearchAttribs);
+    void    SetProperties(const uno::Sequence< beans::PropertyValue >& aSearchAttribs)
+        throw( beans::UnknownPropertyException, lang::IllegalArgumentException, uno::RuntimeException );
     const uno::Sequence< beans::PropertyValue > GetProperties() const;
 
     void    FillItemSet(SfxItemSet& rSet, bool bIsValueSearch) const;
@@ -78,6 +72,7 @@ SwSearchProperties_Impl::~SwSearchProperties_Impl()
 }
 
 void    SwSearchProperties_Impl::SetProperties(const uno::Sequence< beans::PropertyValue >& aSearchAttribs)
+                throw( beans::UnknownPropertyException, lang::IllegalArgumentException, uno::RuntimeException )
 {
     const beans::PropertyValue* pProps = aSearchAttribs.getConstArray();
 
@@ -480,28 +475,28 @@ bool    SwSearchProperties_Impl::HasAttributes() const
 }
 
 SwXTextSearch::SwXTextSearch() :
-    m_pSearchProperties( new SwSearchProperties_Impl),
-    m_pReplaceProperties( new SwSearchProperties_Impl),
+    pSearchProperties( new SwSearchProperties_Impl),
+    pReplaceProperties( new SwSearchProperties_Impl),
     m_pPropSet(aSwMapProvider.GetPropertySet(PROPERTY_MAP_TEXT_SEARCH)),
-    m_bAll(false),
-    m_bWord(false),
-    m_bBack(false),
-    m_bExpr(false),
-    m_bCase(false),
-    m_bStyles(false),
-    m_bSimilarity(false),
-    m_bLevRelax(false),
-    m_nLevExchange(2),
-    m_nLevAdd(2),
-    m_nLevRemove(2),
-    m_bIsValueSearch(true)
+    bAll(false),
+    bWord(false),
+    bBack(false),
+    bExpr(false),
+    bCase(false),
+    bStyles(false),
+    bSimilarity(false),
+    bLevRelax(false),
+    nLevExchange(2),
+    nLevAdd(2),
+    nLevRemove(2),
+    bIsValueSearch(true)
 {
 }
 
 SwXTextSearch::~SwXTextSearch()
 {
-    delete m_pSearchProperties;
-    delete m_pReplaceProperties;
+    delete pSearchProperties;
+    delete pReplaceProperties;
 }
 
 namespace
@@ -515,6 +510,7 @@ const uno::Sequence< sal_Int8 > & SwXTextSearch::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL SwXTextSearch::getSomething( const uno::Sequence< sal_Int8 >& rId )
+    throw(uno::RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -525,37 +521,40 @@ sal_Int64 SAL_CALL SwXTextSearch::getSomething( const uno::Sequence< sal_Int8 >&
     return 0;
 }
 
-OUString SwXTextSearch::getSearchString()
+OUString SwXTextSearch::getSearchString() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    return m_sSearchText;
+    return sSearchText;
 }
 
 void SwXTextSearch::setSearchString(const OUString& rString)
+                                        throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    m_sSearchText = rString;
+    sSearchText = rString;
 }
 
-OUString SwXTextSearch::getReplaceString()
+OUString SwXTextSearch::getReplaceString() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    return m_sReplaceText;
+    return sReplaceText;
 }
 
-void SwXTextSearch::setReplaceString(const OUString& rReplaceString)
+void SwXTextSearch::setReplaceString(const OUString& rReplaceString) throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    m_sReplaceText = rReplaceString;
+    sReplaceText = rReplaceString;
 }
 
-uno::Reference< beans::XPropertySetInfo >  SwXTextSearch::getPropertySetInfo()
+uno::Reference< beans::XPropertySetInfo >  SwXTextSearch::getPropertySetInfo() throw( uno::RuntimeException, std::exception )
 {
     static uno::Reference< beans::XPropertySetInfo >  aRef = m_pPropSet->getPropertySetInfo();
     return aRef;
 }
 
 void SwXTextSearch::setPropertyValue(const OUString& rPropertyName, const uno::Any& aValue)
+    throw( beans::UnknownPropertyException, beans::PropertyVetoException,
+        lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     const SfxItemPropertySimpleEntry*  pEntry = m_pPropSet->getPropertyMap().getByName(rPropertyName);
@@ -564,29 +563,29 @@ void SwXTextSearch::setPropertyValue(const OUString& rPropertyName, const uno::A
         if ( pEntry->nFlags & beans::PropertyAttribute::READONLY)
             throw beans::PropertyVetoException ("Property is read-only: " + rPropertyName, static_cast < cppu::OWeakObject * > ( this ) );
         bool bVal = false;
-        if(auto b = o3tl::tryAccess<bool>(aValue))
-            bVal = *b;
+        if(aValue.getValueType() == cppu::UnoType<bool>::get())
+            bVal = *static_cast<sal_Bool const *>(aValue.getValue());
         switch(pEntry->nWID)
         {
-            case WID_SEARCH_ALL :           m_bAll        = bVal; break;
-            case WID_WORDS:                 m_bWord       = bVal; break;
-            case WID_BACKWARDS :            m_bBack       = bVal; break;
-            case WID_REGULAR_EXPRESSION :   m_bExpr       = bVal; break;
-            case WID_CASE_SENSITIVE  :      m_bCase       = bVal; break;
+            case WID_SEARCH_ALL :           bAll        = bVal; break;
+            case WID_WORDS:                 bWord       = bVal; break;
+            case WID_BACKWARDS :            bBack       = bVal; break;
+            case WID_REGULAR_EXPRESSION :   bExpr       = bVal; break;
+            case WID_CASE_SENSITIVE  :      bCase       = bVal; break;
             //case WID_IN_SELECTION  :      bInSel      = bVal; break;
-            case WID_STYLES          :      m_bStyles     = bVal; break;
-            case WID_SIMILARITY      :      m_bSimilarity = bVal; break;
-            case WID_SIMILARITY_RELAX:      m_bLevRelax   = bVal; break;
-            case WID_SIMILARITY_EXCHANGE:   aValue >>= m_nLevExchange; break;
-            case WID_SIMILARITY_ADD:        aValue >>= m_nLevAdd; break;
-            case WID_SIMILARITY_REMOVE :    aValue >>= m_nLevRemove;break;
+            case WID_STYLES          :      bStyles     = bVal; break;
+            case WID_SIMILARITY      :      bSimilarity = bVal; break;
+            case WID_SIMILARITY_RELAX:      bLevRelax   = bVal; break;
+            case WID_SIMILARITY_EXCHANGE:   aValue >>= nLevExchange; break;
+            case WID_SIMILARITY_ADD:        aValue >>= nLevAdd; break;
+            case WID_SIMILARITY_REMOVE :    aValue >>= nLevRemove;break;
         };
     }
     else
         throw beans::UnknownPropertyException("Unknown property: " + rPropertyName, static_cast < cppu::OWeakObject * > ( this ) );
 }
 
-uno::Any SwXTextSearch::getPropertyValue(const OUString& rPropertyName)
+uno::Any SwXTextSearch::getPropertyValue(const OUString& rPropertyName) throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -598,21 +597,21 @@ uno::Any SwXTextSearch::getPropertyValue(const OUString& rPropertyName)
         sal_Int16 nSet = 0;
         switch(pEntry->nWID)
         {
-            case WID_SEARCH_ALL :           bSet = m_bAll; goto SET_BOOL;
-            case WID_WORDS:                 bSet = m_bWord; goto SET_BOOL;
-            case WID_BACKWARDS :            bSet = m_bBack; goto SET_BOOL;
-            case WID_REGULAR_EXPRESSION :   bSet = m_bExpr; goto SET_BOOL;
-            case WID_CASE_SENSITIVE  :      bSet = m_bCase; goto SET_BOOL;
+            case WID_SEARCH_ALL :           bSet = bAll; goto SET_BOOL;
+            case WID_WORDS:                 bSet = bWord; goto SET_BOOL;
+            case WID_BACKWARDS :            bSet = bBack; goto SET_BOOL;
+            case WID_REGULAR_EXPRESSION :   bSet = bExpr; goto SET_BOOL;
+            case WID_CASE_SENSITIVE  :      bSet = bCase; goto SET_BOOL;
             //case WID_IN_SELECTION  :      bSet = bInSel; goto SET_BOOL;
-            case WID_STYLES          :      bSet = m_bStyles; goto SET_BOOL;
-            case WID_SIMILARITY      :      bSet = m_bSimilarity; goto SET_BOOL;
-            case WID_SIMILARITY_RELAX:      bSet = m_bLevRelax;
+            case WID_STYLES          :      bSet = bStyles; goto SET_BOOL;
+            case WID_SIMILARITY      :      bSet = bSimilarity; goto SET_BOOL;
+            case WID_SIMILARITY_RELAX:      bSet = bLevRelax;
 SET_BOOL:
             aRet <<= bSet;
             break;
-            case WID_SIMILARITY_EXCHANGE:   nSet = m_nLevExchange; goto SET_UINT16;
-            case WID_SIMILARITY_ADD:        nSet = m_nLevAdd; goto SET_UINT16;
-            case WID_SIMILARITY_REMOVE :    nSet = m_nLevRemove;
+            case WID_SIMILARITY_EXCHANGE:   nSet = nLevExchange; goto SET_UINT16;
+            case WID_SIMILARITY_ADD:        nSet = nLevAdd; goto SET_UINT16;
+            case WID_SIMILARITY_REMOVE :    nSet = nLevRemove;
 SET_UINT16:
             aRet <<= nSet;
             break;
@@ -623,89 +622,92 @@ SET_UINT16:
     return aRet;
 }
 
-void SwXTextSearch::addPropertyChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*xListener*/)
+void SwXTextSearch::addPropertyChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*xListener*/) throw(beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
-void SwXTextSearch::removePropertyChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*xListener*/)
+void SwXTextSearch::removePropertyChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XPropertyChangeListener > & /*xListener*/) throw(beans::UnknownPropertyException, lang::WrappedTargetException,uno::RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
-void SwXTextSearch::addVetoableChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*xListener*/)
+void SwXTextSearch::addVetoableChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*xListener*/) throw(beans::UnknownPropertyException, lang::WrappedTargetException,uno::RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
-void SwXTextSearch::removeVetoableChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*xListener*/)
+void SwXTextSearch::removeVetoableChangeListener(const OUString& /*rPropertyName*/, const uno::Reference< beans::XVetoableChangeListener > & /*xListener*/) throw(beans::UnknownPropertyException, lang::WrappedTargetException,uno::RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
-sal_Bool SwXTextSearch::getValueSearch()
+sal_Bool SwXTextSearch::getValueSearch() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    return m_bIsValueSearch;
+    return bIsValueSearch;
 }
 
-void SwXTextSearch::setValueSearch(sal_Bool ValueSearch_)
+void SwXTextSearch::setValueSearch(sal_Bool ValueSearch_) throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    m_bIsValueSearch = ValueSearch_;
+    bIsValueSearch = ValueSearch_;
 }
 
-uno::Sequence< beans::PropertyValue > SwXTextSearch::getSearchAttributes()
+uno::Sequence< beans::PropertyValue > SwXTextSearch::getSearchAttributes() throw( uno::RuntimeException, std::exception )
 {
-    return  m_pSearchProperties->GetProperties();
+    return  pSearchProperties->GetProperties();
 }
 
 void SwXTextSearch::setSearchAttributes(const uno::Sequence< beans::PropertyValue >& rSearchAttribs)
+    throw( beans::UnknownPropertyException, lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
-    m_pSearchProperties->SetProperties(rSearchAttribs);
+    pSearchProperties->SetProperties(rSearchAttribs);
 }
 
 uno::Sequence< beans::PropertyValue > SwXTextSearch::getReplaceAttributes()
+    throw( uno::RuntimeException, std::exception )
 {
-    return m_pReplaceProperties->GetProperties();
+    return pReplaceProperties->GetProperties();
 }
 
 void SwXTextSearch::setReplaceAttributes(const uno::Sequence< beans::PropertyValue >& rReplaceAttribs)
+    throw( beans::UnknownPropertyException, lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
-    m_pReplaceProperties->SetProperties(rReplaceAttribs);
+    pReplaceProperties->SetProperties(rReplaceAttribs);
 }
 
 void    SwXTextSearch::FillSearchItemSet(SfxItemSet& rSet) const
 {
-    m_pSearchProperties->FillItemSet(rSet, m_bIsValueSearch);
+    pSearchProperties->FillItemSet(rSet, bIsValueSearch);
 }
 
 void    SwXTextSearch::FillReplaceItemSet(SfxItemSet& rSet) const
 {
-    m_pReplaceProperties->FillItemSet(rSet, m_bIsValueSearch);
+    pReplaceProperties->FillItemSet(rSet, bIsValueSearch);
 }
 
 bool    SwXTextSearch::HasSearchAttributes() const
 {
-    return m_pSearchProperties->HasAttributes();
+    return pSearchProperties->HasAttributes();
 }
 
 bool    SwXTextSearch::HasReplaceAttributes() const
 {
-    return m_pReplaceProperties->HasAttributes();
+    return pReplaceProperties->HasAttributes();
 }
 
-OUString SwXTextSearch::getImplementationName()
+OUString SwXTextSearch::getImplementationName() throw( uno::RuntimeException, std::exception )
 {
     return OUString("SwXTextSearch");
 }
 
-sal_Bool SwXTextSearch::supportsService(const OUString& rServiceName)
+sal_Bool SwXTextSearch::supportsService(const OUString& rServiceName) throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-uno::Sequence< OUString > SwXTextSearch::getSupportedServiceNames()
+uno::Sequence< OUString > SwXTextSearch::getSupportedServiceNames() throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence< OUString > aRet(2);
     OUString* pArray = aRet.getArray();
@@ -714,19 +716,19 @@ uno::Sequence< OUString > SwXTextSearch::getSupportedServiceNames()
     return aRet;
 }
 
-void SwXTextSearch::FillSearchOptions( i18nutil::SearchOptions2& rSearchOpt ) const
+void SwXTextSearch::FillSearchOptions( util::SearchOptions2& rSearchOpt ) const
 {
-    if( m_bSimilarity )
+    if( bSimilarity )
     {
         rSearchOpt.algorithmType = util::SearchAlgorithms_APPROXIMATE;
         rSearchOpt.AlgorithmType2 = util::SearchAlgorithms2::APPROXIMATE;
-        rSearchOpt.changedChars = m_nLevExchange;
-        rSearchOpt.deletedChars = m_nLevRemove;
-        rSearchOpt.insertedChars = m_nLevAdd;
-        if( m_bLevRelax )
+        rSearchOpt.changedChars = nLevExchange;
+        rSearchOpt.deletedChars = nLevRemove;
+        rSearchOpt.insertedChars = nLevAdd;
+        if( bLevRelax )
             rSearchOpt.searchFlag |= util::SearchFlags::LEV_RELAXED;
     }
-    else if( m_bExpr )
+    else if( bExpr )
     {
         rSearchOpt.algorithmType = util::SearchAlgorithms_REGEXP;
         rSearchOpt.AlgorithmType2 = util::SearchAlgorithms2::REGEXP;
@@ -738,12 +740,12 @@ void SwXTextSearch::FillSearchOptions( i18nutil::SearchOptions2& rSearchOpt ) co
     }
 
     rSearchOpt.Locale = GetAppLanguageTag().getLocale();
-    rSearchOpt.searchString = m_sSearchText;
-    rSearchOpt.replaceString = m_sReplaceText;
+    rSearchOpt.searchString = sSearchText;
+    rSearchOpt.replaceString = sReplaceText;
 
-    if( !m_bCase )
-        rSearchOpt.transliterateFlags |= TransliterationFlags::IGNORE_CASE;
-    if( m_bWord )
+    if( !bCase )
+        rSearchOpt.transliterateFlags |= i18n::TransliterationModules_IGNORE_CASE;
+    if( bWord )
         rSearchOpt.searchFlag |= util::SearchFlags::NORM_WORD_ONLY;
 
 //  bInSel: 1;  // wie geht das?

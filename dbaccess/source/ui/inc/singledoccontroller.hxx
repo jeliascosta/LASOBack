@@ -41,7 +41,7 @@ namespace dbaui
     {
     protected:
         OSingleDocumentController( const css::uno::Reference< css::uno::XComponentContext>& _rxORB );
-        virtual ~OSingleDocumentController() override;
+        virtual ~OSingleDocumentController();
 
         // OComponentHelper
         virtual void SAL_CALL disposing() override;
@@ -64,13 +64,13 @@ namespace dbaui
         virtual void            Execute( sal_uInt16 nId, const css::uno::Sequence< css::beans::PropertyValue>& aArgs ) override;
 
         // XUndoManagerSupplier
-        virtual css::uno::Reference< css::document::XUndoManager > SAL_CALL getUndoManager(  ) override;
+        virtual css::uno::Reference< css::document::XUndoManager > SAL_CALL getUndoManager(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        using OSingleDocumentController_Base::disposing;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
 
     private:
-        std::unique_ptr< OSingleDocumentController_Data >   m_pData;
+        ::std::unique_ptr< OSingleDocumentController_Data >   m_pData;
     };
 
 } // namespace dbaui

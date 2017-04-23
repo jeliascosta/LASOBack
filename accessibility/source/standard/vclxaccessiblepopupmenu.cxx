@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblepopupmenu.hxx>
+#include <accessibility/standard/vclxaccessiblepopupmenu.hxx>
 
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <vcl/svapp.hxx>
@@ -51,22 +51,23 @@ bool VCLXAccessiblePopupMenu::IsFocused()
 // XServiceInfo
 
 
-OUString VCLXAccessiblePopupMenu::getImplementationName()
+OUString VCLXAccessiblePopupMenu::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessiblePopupMenu" );
 }
 
 
-Sequence< OUString > VCLXAccessiblePopupMenu::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessiblePopupMenu::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessiblePopupMenu" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessiblePopupMenu" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int32 VCLXAccessiblePopupMenu::getAccessibleIndexInParent(  )
+sal_Int32 VCLXAccessiblePopupMenu::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -74,7 +75,7 @@ sal_Int32 VCLXAccessiblePopupMenu::getAccessibleIndexInParent(  )
 }
 
 
-sal_Int16 VCLXAccessiblePopupMenu::getAccessibleRole(  )
+sal_Int16 VCLXAccessiblePopupMenu::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -85,7 +86,7 @@ sal_Int16 VCLXAccessiblePopupMenu::getAccessibleRole(  )
 // XAccessibleExtendedComponent
 
 
-sal_Int32 VCLXAccessiblePopupMenu::getBackground(  )
+sal_Int32 VCLXAccessiblePopupMenu::getBackground(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

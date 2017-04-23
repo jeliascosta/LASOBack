@@ -91,7 +91,7 @@ private:
             }
         }
 
-        virtual ~TerminateListener() override
+        virtual ~TerminateListener()
         {
             if ( m_xComponent.is() )
             {
@@ -104,7 +104,8 @@ private:
         }
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& rEvt ) override
+        virtual void SAL_CALL disposing( const css::lang::EventObject& rEvt )
+            throw (css::uno::RuntimeException, std::exception) override
         {
             bool shutDown = (rEvt.Source == m_xComponent);
 
@@ -123,16 +124,20 @@ private:
         }
 
         // XTerminateListener
-        virtual void SAL_CALL queryTermination( const css::lang::EventObject& ) override
+        virtual void SAL_CALL queryTermination( const css::lang::EventObject& )
+            throw(css::frame::TerminationVetoException,
+                  css::uno::RuntimeException, std::exception) override
         {
         }
 
-        virtual void SAL_CALL notifyTermination( const css::lang::EventObject& rEvt ) override
+        virtual void SAL_CALL notifyTermination( const css::lang::EventObject& rEvt )
+            throw (css::uno::RuntimeException, std::exception) override
         {
             disposing(rEvt);
         }
 
-        virtual OUString SAL_CALL getImplementationName() override
+        virtual OUString SAL_CALL getImplementationName()
+            throw (css::uno::RuntimeException, std::exception) override
         {
             if (mbComponentDLL)
                 return OUString("com.sun.star.comp.ComponentDLLListener");
@@ -140,12 +145,14 @@ private:
                 return OUString("com.sun.star.comp.DisposingTerminateListener");
         }
 
-        virtual sal_Bool SAL_CALL supportsService(const OUString& /*rName*/) override
+        virtual sal_Bool SAL_CALL supportsService(const OUString& /*rName*/)
+            throw (css::uno::RuntimeException, std::exception) override
         {
             return false;
         }
 
-        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+        virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+            throw (css::uno::RuntimeException, std::exception) override
         {
             return css::uno::Sequence<OUString>();
         }

@@ -21,7 +21,7 @@
 
 #include <tools/errcode.hxx>
 
-// error codes
+// Fehler Codes
 #define RID_SO_ERROR_HANDLER    32000
 
 #define SO_ERR() (ERRCODE_AREA_SO | ERRCODE_CLASS_SO)
@@ -62,7 +62,7 @@
 #define ERRCODE_SO_NOTIMPL                  (SO_ERR() | 33)
 #define ERRCODE_SO_MK_CANTOPENFILE          (SO_ERR() | 34)
 
-// error contexts
+// Fehler Contexte
 #define RID_SO_ERRCTX           32001
 
 #define ERRCTX_SO_DOVERB        1

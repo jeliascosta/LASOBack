@@ -42,8 +42,8 @@ public:
     const OUString& getTemplate();
 
     void      autoReplaceRange(const OUString& aVariable, const ScRange& rRange);
-    void      autoReplaceAddress(const OUString& aVariable, ScAddress const & aAddress);
-    void      autoReplaceUses3D(bool bUse3D) { mbUse3D = bUse3D; }
+    void      autoReplaceAddress(const OUString& aVariable, ScAddress aAddress);
+    void      autoReplaceUses3D(bool bUse3D = true) { mbUse3D = bUse3D; }
 
     void      applyRange(const OUString& aVariable, const ScRange& aRange, bool b3D = true);
     void      applyRangeList(const OUString& aVariable, const ScRangeList& aRangeList);
@@ -60,6 +60,7 @@ public:
     ScAddress mCurrentAddress;
     ScAddress mMinimumAddress;
     ScAddress mMaximumAddress;
+    bool      mTrackRange;
 
     AddressWalker(ScAddress aInitialAddress);
 
@@ -92,7 +93,7 @@ public:
     void writeValue(double aValue);
 };
 
-class DataCellIterator final
+class DataCellIterator
 {
 private:
     ScRange mInputRange;
@@ -102,7 +103,7 @@ private:
 
 public:
     DataCellIterator(ScRange aInputRange, bool aByColumn);
-    ~DataCellIterator();
+    virtual ~DataCellIterator();
 
     bool hasNext();
     ScAddress get();

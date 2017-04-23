@@ -36,7 +36,7 @@ namespace framework{
             data from the code place where the job was finished
             to the outside code, where e.g. listener must be notified.
  */
-class JobResult final
+class JobResult
 {
 
     // types
@@ -107,7 +107,7 @@ class JobResult final
                  JobResult(                                         );
                  JobResult( const css::uno::Any& aResult );
                  JobResult( const JobResult&                rCopy   );
-                 ~JobResult(                                         );
+        virtual ~JobResult(                                         );
 
         JobResult& operator=( const JobResult& rCopy );
 

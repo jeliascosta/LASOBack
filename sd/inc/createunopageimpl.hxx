@@ -20,10 +20,7 @@
 #ifndef INCLUDED_SD_INC_CREATEUNOPAGEIMPL_HXX
 #define INCLUDED_SD_INC_CREATEUNOPAGEIMPL_HXX
 
-#include <com/sun/star/uno/Reference.hxx>
-
-namespace com { namespace sun { namespace star { namespace uno { class XInterface; } } } }
-class SdPage;
+#include <sal/config.h>
 
 css::uno::Reference< css::uno::XInterface > createUnoPageImpl( SdPage* pPage );
 

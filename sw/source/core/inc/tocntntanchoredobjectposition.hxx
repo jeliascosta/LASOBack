@@ -72,7 +72,7 @@ namespace objectpositioning
 
         public:
             SwToContentAnchoredObjectPosition( SdrObject& _rDrawObj );
-            virtual ~SwToContentAnchoredObjectPosition() override;
+            virtual ~SwToContentAnchoredObjectPosition();
 
             /** calculate position of object
             */

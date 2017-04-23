@@ -27,7 +27,7 @@
 #include "types.hxx"
 #include "address.hxx"
 
-typedef ::std::vector< const formula::FormulaToken*> ScTokenVec;
+typedef ::std::vector< formula::FormulaToken*> ScTokenVec;
 
 struct ScJumpMatrixEntry
 {
@@ -45,7 +45,7 @@ struct ScJumpMatrixEntry
                     nNext = nNextP;
                     nStop = nStopP;
                 }
-    void    GetJump( double& rBool, short& rStart, short& rNext, short& rStop ) const
+    void    GetJump( double& rBool, short& rStart, short& rNext, short& rStop )
                 {
                     rBool = fBool;
                     rStart = nStart;
@@ -56,7 +56,7 @@ struct ScJumpMatrixEntry
 
 class ScJumpMatrix
 {
-    std::vector<ScJumpMatrixEntry> mvJump;      // the jumps
+    ScJumpMatrixEntry*  pJump;      // the jumps
     ScMatrixRef         pMat;       // the results
     ScTokenVec*         pParams;    // parameter stack
     SCSIZE              nCols;

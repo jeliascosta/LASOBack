@@ -51,8 +51,13 @@ public:
         @param libraryUrl
         [in|out] receives the URL of the module.
 
-        @retval true on success
-        @retval false can not get the URL from the specified function address or the parameter is invalid.
+        @return
+        <dl>
+        <dt>true</dt>
+        <dd>on success</dd>
+        <dt>false</dt>
+        <dd>can not get the URL from the specified function address or the parameter is invalid.</dd>
+        </dl>
 
         @see getUrlFromAddress
     */
@@ -137,8 +142,13 @@ public:
         @param ustrFunctionSymbolName
         [in] Function name to be looked up.
 
-        @retval oslGenericFunction format function address on success
-        @retval NULL lookup failed or parameter is somewhat invalid
+        @return
+        <dl>
+        <dt>oslGenericFunction format function address</dt>
+        <dd>on success</dd>
+        <dt>NULL</dt>
+        <dd>lookup failed or parameter is somewhat invalid</dd>
+        </dl>
 
         @see getSymbol
     */

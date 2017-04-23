@@ -26,11 +26,14 @@
 
 namespace com { namespace sun { namespace star {
     namespace frame { class XModel; }
+    namespace lang { class XMultiServiceFactory; }
     namespace text { class XAutoTextContainer; }
     namespace text { class XAutoTextGroup; }
     namespace text { class XAutoTextEntry; }
     namespace uno { template<class X> class Reference; }
     namespace uno { template<class X> class Sequence; }
+    namespace uno { class XInterface; }
+    namespace uno { class Exception; }
     namespace xml { namespace sax { class XDocumentHandler; } }
 } } }
 
@@ -44,11 +47,14 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext
         ) throw();
 
-    virtual ~XMLAutoTextEventImport() throw() override;
+    virtual ~XMLAutoTextEventImport() throw();
 
     // XInitialization
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any> & rArguments ) override;
+        const css::uno::Sequence<css::uno::Any> & rArguments )
+        throw(
+            css::uno::Exception,
+            css::uno::RuntimeException, std::exception) override;
 
 protected:
 
@@ -58,6 +64,21 @@ protected:
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList ) override;
 
 };
+
+
+// global functions to support the component
+
+css::uno::Sequence< OUString > SAL_CALL
+    XMLAutoTextEventImport_getSupportedServiceNames()
+    throw();
+
+OUString SAL_CALL XMLAutoTextEventImport_getImplementationName()
+    throw();
+
+css::uno::Reference< css::uno::XInterface > SAL_CALL
+    XMLAutoTextEventImport_createInstance(
+        const css::uno::Reference< css::lang::XMultiServiceFactory > & )
+    throw( css::uno::Exception );
 
 #endif
 

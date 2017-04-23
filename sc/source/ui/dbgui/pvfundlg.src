@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "scres.hrc"
+#include "sc.hrc"
 
 StringArray SCSTR_DPFUNCLISTBOX
 {
@@ -26,7 +26,6 @@ StringArray SCSTR_DPFUNCLISTBOX
         < "Sum" ; Default ; > ;
         < "Count" ; Default ; > ;
         < "Average" ; Default ; > ;
-        < "Median" ; Default ; > ;
         < "Max" ; Default ; > ;
         < "Min" ; Default ; > ;
         < "Product" ; Default ; > ;

@@ -31,10 +31,10 @@
 #include <uno/data.h>
 #include <typelib/typedescription.hxx>
 
-#include "bridge.hxx"
-#include "cppinterfaceproxy.hxx"
-#include "types.hxx"
-#include "vtablefactory.hxx"
+#include "bridges/cpp_uno/shared/bridge.hxx"
+#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/types.hxx"
+#include "bridges/cpp_uno/shared/vtablefactory.hxx"
 
 #include "abi.hxx"
 #include "call.hxx"
@@ -239,7 +239,7 @@ static typelib_TypeClass cpp2uno_call(
         }
         if ( pReturnTypeDescr )
         {
-            typelib_TypeClass eRet = pReturnTypeDescr->eTypeClass;
+            typelib_TypeClass eRet = (typelib_TypeClass)pReturnTypeDescr->eTypeClass;
             TYPELIB_DANGER_RELEASE( pReturnTypeDescr );
             return eRet;
         }
@@ -444,7 +444,7 @@ bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block)
     return static_cast< Slot * >(block) + 2;
 }
 
-std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;

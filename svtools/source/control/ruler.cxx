@@ -88,6 +88,7 @@ private:
 
 public:
     ImplRulerData();
+    ~ImplRulerData();
 
     ImplRulerData& operator=( const ImplRulerData& rData );
 };
@@ -109,6 +110,9 @@ ImplRulerData::ImplRulerData() :
     bTextRTL          (false)
 {
 }
+
+ImplRulerData::~ImplRulerData()
+{}
 
 ImplRulerData& ImplRulerData::operator=( const ImplRulerData& rData )
 {
@@ -175,17 +179,17 @@ ImplRulerData& ImplRulerData::operator=( const ImplRulerData& rData )
 
 static const RulerUnitData aImplRulerUnitTab[RULER_UNIT_COUNT] =
 {
-{ MapUnit::Map100thMM,        100,    25.0,    25.0,     50.0,    100.0,  " mm"    }, // MM
-{ MapUnit::Map100thMM,       1000,   100.0,   500.0,   1000.0,   1000.0,  " cm"    }, // CM
-{ MapUnit::MapMM,             1000,    10.0,   250.0,    500.0,   1000.0,  " m"     }, // M
-{ MapUnit::MapCM,           100000, 12500.0, 25000.0,  50000.0, 100000.0,  " km"    }, // KM
-{ MapUnit::Map1000thInch,    1000,    62.5,   125.0,    500.0,   1000.0,  "\""     }, // INCH
-{ MapUnit::Map100thInch,     1200,   120.0,   120.0,    600.0,   1200.0,  "'"      }, // FOOT
-{ MapUnit::Map10thInch,    633600, 63360.0, 63360.0, 316800.0, 633600.0,  " miles" }, // MILE
-{ MapUnit::MapPoint,             1,    12.0,    12.0,     12.0,     36.0,  " pt"    }, // POINT
-{ MapUnit::Map100thMM,        423,   423.0,   423.0,    423.0,    846.0,  " pi"    }, // PICA
-{ MapUnit::Map100thMM,        371,   371.0,   371.0,    371.0,    743.0,  " ch"    }, // CHAR
-{ MapUnit::Map100thMM,        551,   551.0,   551.0,    551.0,   1102.0,  " li"    }  // LINE
+{ MAP_100TH_MM,        100,    25.0,    25.0,     50.0,    100.0,  " mm"    }, // MM
+{ MAP_100TH_MM,       1000,   100.0,   500.0,   1000.0,   1000.0,  " cm"    }, // CM
+{ MAP_MM,             1000,    10.0,   250.0,    500.0,   1000.0,  " m"     }, // M
+{ MAP_CM,           100000, 12500.0, 25000.0,  50000.0, 100000.0,  " km"    }, // KM
+{ MAP_1000TH_INCH,    1000,    62.5,   125.0,    500.0,   1000.0,  "\""     }, // INCH
+{ MAP_100TH_INCH,     1200,   120.0,   120.0,    600.0,   1200.0,  "'"      }, // FOOT
+{ MAP_10TH_INCH,    633600, 63360.0, 63360.0, 316800.0, 633600.0,  " miles" }, // MILE
+{ MAP_POINT,             1,    12.0,    12.0,     12.0,     36.0,  " pt"    }, // POINT
+{ MAP_100TH_MM,        423,   423.0,   423.0,    423.0,    846.0,  " pi"    }, // PICA
+{ MAP_100TH_MM,        371,   371.0,   371.0,    371.0,    743.0,  " ch"    }, // CHAR
+{ MAP_100TH_MM,        551,   551.0,   551.0,    551.0,   1102.0,  " li"    }  // LINE
 };
 
 static RulerTabData ruler_tab =
@@ -256,7 +260,7 @@ void Ruler::ImplInit( WinBits nWinBits )
     mnUnitIndex     = RULER_UNIT_CM;
     meUnit          = FUNIT_CM;
     maZoom          = Fraction( 1, 1 );
-    meSourceUnit    = MapUnit::Map100thMM;
+    meSourceUnit    = MAP_100TH_MM;
 
     // Recalculate border widths
     if ( nWinBits & WB_BORDER )
@@ -268,7 +272,7 @@ void Ruler::ImplInit( WinBits nWinBits )
     ImplInitSettings( true, true, true );
 
     // Setup the default size
-    tools::Rectangle aRect;
+    Rectangle aRect;
     GetTextBoundRect( aRect, "0123456789" );
     long nDefHeight = aRect.GetHeight() + RULER_OFF * 2 + ruler_tab.textoff * 2 + mnBorderWidth;
 
@@ -278,13 +282,14 @@ void Ruler::ImplInit( WinBits nWinBits )
     else
         aDefSize.Width() = nDefHeight;
     SetOutputSizePixel( aDefSize );
-    SetType(WindowType::RULER);
+    SetType(WINDOW_RULER);
+    pAccContext = nullptr;
 }
 
 Ruler::Ruler( vcl::Window* pParent, WinBits nWinStyle ) :
     Window( pParent, nWinStyle & WB_3DLOOK ),
     maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
-    maMapMode( MapUnit::Map100thMM ),
+    maMapMode( MAP_100TH_MM ),
     mpSaveData(new ImplRulerData),
     mpData(nullptr),
     mpDragData(new ImplRulerData)
@@ -329,7 +334,11 @@ void Ruler::dispose()
     mpSaveData = nullptr;
     delete mpDragData;
     mpDragData = nullptr;
-    mxAccContext.clear();
+    if( pAccContext )
+    {
+        pAccContext->release();
+        pAccContext = nullptr;
+    }
     Window::dispose();
 }
 
@@ -372,14 +381,14 @@ void Ruler::ImplVDrawRect(vcl::RenderContext& rRenderContext, long nX1, long nY1
     }
 
     if ( mnWinStyle & WB_HORZ )
-        rRenderContext.DrawRect(tools::Rectangle(nX1, nY1, nX2, nY2));
+        rRenderContext.DrawRect(Rectangle(nX1, nY1, nX2, nY2));
     else
-        rRenderContext.DrawRect(tools::Rectangle(nY1, nX1, nY2, nX2));
+        rRenderContext.DrawRect(Rectangle(nY1, nX1, nY2, nX2));
 }
 
 void Ruler::ImplVDrawText(vcl::RenderContext& rRenderContext, long nX, long nY, const OUString& rText, long nMin, long nMax)
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     rRenderContext.GetTextBoundRect(aRect, rText);
 
     long nShiftX = ( aRect.GetWidth() / 2 ) + aRect.Left();
@@ -405,7 +414,7 @@ void Ruler::ImplInvertLines(vcl::RenderContext& rRenderContext)
         long nY          = (RULER_OFF * 2) + mnVirHeight - 1;
 
         // Calculate rectangle
-        tools::Rectangle aRect;
+        Rectangle aRect;
         if (mnWinStyle & WB_HORZ)
             aRect.Bottom() = nY;
         else
@@ -427,7 +436,7 @@ void Ruler::ImplInvertLines(vcl::RenderContext& rRenderContext)
                     aRect.Top()    = n;
                     aRect.Bottom() = n;
                 }
-                tools::Rectangle aTempRect = aRect;
+                Rectangle aTempRect = aRect;
 
                 if (mnWinStyle & WB_HORZ)
                     aTempRect.Bottom() = RULER_OFF - 1;
@@ -688,8 +697,9 @@ void Ruler::ImplDrawBorders(vcl::RenderContext& rRenderContext, long nMin, long 
     long    n2;
     long    nTemp1;
     long    nTemp2;
+    sal_uInt32  i;
 
-    for (std::vector<RulerBorder>::size_type i = 0; i < mpData->pBorders.size(); i++)
+    for (i = 0; i < mpData->pBorders.size(); i++)
     {
         if (mpData->pBorders[i].nStyle & RulerBorderStyle::Invisible)
             continue;
@@ -792,13 +802,14 @@ void Ruler::ImplDrawIndent(vcl::RenderContext& rRenderContext, const tools::Poly
 
 void Ruler::ImplDrawIndents(vcl::RenderContext& rRenderContext, long nMin, long nMax, long nVirTop, long nVirBottom)
 {
+    sal_uInt32  j;
     long n;
     long nIndentHeight = (mnVirHeight / 2) - 1;
     long nIndentWidth2 = nIndentHeight-3;
 
     tools::Polygon aPoly(5);
 
-    for (std::vector<RulerIndent>::size_type j = 0; j < mpData->pIndents.size(); j++)
+    for (j = 0; j < mpData->pIndents.size(); j++)
     {
         if (mpData->pIndents[j].bInvisible)
             continue;
@@ -809,7 +820,13 @@ void Ruler::ImplDrawIndents(vcl::RenderContext& rRenderContext, long nMin, long 
 
         if ((n >= nMin) && (n <= nMax))
         {
-            if (nIndentStyle == RulerIndentStyle::Bottom)
+            if (nIndentStyle == RulerIndentStyle::Border)
+            {
+                const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
+                rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
+                ImplVDrawLine(rRenderContext, n, nVirTop + 1, n, nVirBottom - 1);
+            }
+            else if (nIndentStyle == RulerIndentStyle::Bottom)
             {
                 aPoly.SetPoint(Point(n + 0, nVirBottom - nIndentHeight), 0);
                 aPoly.SetPoint(Point(n - nIndentWidth2, nVirBottom - 3), 1);
@@ -836,16 +853,19 @@ void Ruler::ImplDrawIndents(vcl::RenderContext& rRenderContext, long nMin, long 
                     aPoly[i] = aSet;
                 }
             }
-            bool bIsHit = false;
-            if(mxCurrentHitTest.get() != nullptr && mxCurrentHitTest->eType == RulerType::Indent)
+            if (RulerIndentStyle::Border != nIndentStyle)
             {
-                bIsHit = mxCurrentHitTest->nAryPos == j;
+                bool bIsHit = false;
+                if(mxCurrentHitTest.get() != nullptr && mxCurrentHitTest->eType == RulerType::Indent)
+                {
+                    bIsHit = mxCurrentHitTest->nAryPos == j;
+                }
+                else if(mbDrag && meDragType == RulerType::Indent)
+                {
+                    bIsHit = mnDragAryPos == j;
+                }
+                ImplDrawIndent(rRenderContext, aPoly, bIsHit);
             }
-            else if(mbDrag && meDragType == RulerType::Indent)
-            {
-                bIsHit = mnDragAryPos == j;
-            }
-            ImplDrawIndent(rRenderContext, aPoly, bIsHit);
         }
     }
 }
@@ -868,11 +888,11 @@ static void ImplCenterTabPos(Point& rPos, sal_uInt16 nTabStyle)
     }
 }
 
-static void lcl_RotateRect_Impl(tools::Rectangle& rRect, const long nReference, bool bRightAligned)
+static void lcl_RotateRect_Impl(Rectangle& rRect, const long nReference, bool bRightAligned)
 {
     if (!rRect.IsEmpty())
     {
-        tools::Rectangle aTmp(rRect);
+        Rectangle aTmp(rRect);
         rRect.Top()    = aTmp.Left();
         rRect.Bottom() = aTmp.Right();
         rRect.Left()   = aTmp.Top();
@@ -901,9 +921,9 @@ static void ImplDrawRulerTab(vcl::RenderContext& rRenderContext, const Point& rP
     // drawn become asymmetric due to the +1 offsets
     sal_uInt16 DPIOffset = rRenderContext.GetDPIScaleFactor() - 1;
 
-    tools::Rectangle aRect1;
-    tools::Rectangle aRect2;
-    tools::Rectangle aRect3;
+    Rectangle aRect1;
+    Rectangle aRect2;
+    Rectangle aRect3;
 
     aRect3.SetEmpty();
 
@@ -1377,7 +1397,7 @@ void Ruler::ImplDraw(vcl::RenderContext& rRenderContext)
 void Ruler::ImplDrawExtra(vcl::RenderContext& rRenderContext)
 {
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
-    tools::Rectangle aRect = maExtraRect;
+    Rectangle aRect = maExtraRect;
     bool bEraseRect = false;
 
     aRect.Left()   += 2;
@@ -1495,6 +1515,7 @@ bool Ruler::ImplHitTest( const Point& rPos, RulerSelection* pHitTest,
 
     // test if outside
     nX -= mnVirOff;
+    long nXTemp = nX;
     if ( (nX < mpData->nRulVirOff - nXExtraOff) ||
          (nX > mpData->nRulVirOff + mpData->nRulWidth + nXExtraOff) ||
          (nY < 0) ||
@@ -1510,7 +1531,7 @@ bool Ruler::ImplHitTest( const Point& rPos, RulerSelection* pHitTest,
     pHitTest->eType = RulerType::DontKnow;
 
     // first test the tabs
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if ( !mpData->pTabs.empty() )
     {
         aRect.Bottom()  = nHitBottom;
@@ -1592,6 +1613,14 @@ bool Ruler::ImplHitTest( const Point& rPos, RulerSelection* pHitTest,
                 }
             }
         }
+    }
+
+    // everything left and right is outside and don't take this into account
+    if ( (nXTemp < mpData->nRulVirOff) || (nXTemp > mpData->nRulVirOff+mpData->nRulWidth) )
+    {
+        pHitTest->nPos = 0;
+        pHitTest->eType = RulerType::Outside;
+        return false;
     }
 
     // test the borders
@@ -2096,7 +2125,7 @@ void Ruler::Tracking( const TrackingEvent& rTEvt )
         ImplDrag( rTEvt.GetMouseEvent().GetPosPixel() );
 }
 
-void Ruler::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void Ruler::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     ImplDraw(rRenderContext);
 
@@ -2159,7 +2188,7 @@ void Ruler::Resize()
         else if ( mpData->bAutoPageWidth )
         {
             // only at AutoPageWidth muss we redraw
-            tools::Rectangle aRect;
+            Rectangle aRect;
 
             if ( mnWinStyle & WB_HORZ )
             {
@@ -2265,7 +2294,7 @@ void Ruler::Activate()
 {
     mbActive = true;
 
-    // update positionlines - draw is delayed
+    // update positionlies - draw is delayed
     mnUpdateFlags |= RULER_UPDATE_LINES;
     Invalidate(InvalidateFlags::NoErase);
 }
@@ -2743,7 +2772,7 @@ void Ruler::DrawTab(vcl::RenderContext& rRenderContext, const Color &rFillColor,
 
 void Ruler::SetTextRTL(bool bRTL)
 {
-    if(mpData->bTextRTL != bRTL)
+    if(mpData->bTextRTL != (bool) bRTL)
     {
         mpData->bTextRTL = bRTL;
         if ( IsReallyVisible() && IsUpdateMode() )
@@ -2807,9 +2836,10 @@ uno::Reference< XAccessible > Ruler::CreateAccessible()
         {
             aStr = SvtResId(STR_SVT_ACC_RULER_VERT_NAME);
         }
-        mxAccContext = new SvtRulerAccessible( xAccParent, *this, aStr );
-        this->SetAccessible(mxAccContext.get());
-        return mxAccContext.get();
+        pAccContext = new SvtRulerAccessible( xAccParent, *this, aStr );
+        pAccContext->acquire();
+        this->SetAccessible(pAccContext);
+        return pAccContext;
     }
     else
         return uno::Reference< XAccessible >();

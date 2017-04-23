@@ -18,19 +18,17 @@
  */
 
 #include <sal/config.h>
-
-#include <com/sun/star/xml/crypto/XMLEncryptionException.hpp>
 #include <rtl/uuid.h>
 #include "xmlencryption_nssimpl.hxx"
 
-#include "xmlsec/xmldocumentwrapper_xmlsecimpl.hxx"
+#include "xmldocumentwrapper_xmlsecimpl.hxx"
 
 #include "xmlelementwrapper_xmlsecimpl.hxx"
 
 #include "securityenvironment_nssimpl.hxx"
 #include "errorcallback.hxx"
 
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 
 using namespace ::com::sun::star::uno ;
 using namespace ::com::sun::star::lang ;
@@ -56,7 +54,9 @@ Reference< XXMLEncryptionTemplate >
 SAL_CALL XMLEncryption_NssImpl::encrypt(
     const Reference< XXMLEncryptionTemplate >& aTemplate ,
     const Reference< XSecurityEnvironment >& aEnvironment
-)
+) throw (css::xml::crypto::XMLEncryptionException,
+         css::uno::SecurityException,
+         css::uno::RuntimeException, std::exception)
 {
     xmlSecKeysMngrPtr pMngr = nullptr ;
     xmlSecEncCtxPtr pEncCtx = nullptr ;
@@ -70,7 +70,11 @@ SAL_CALL XMLEncryption_NssImpl::encrypt(
         throw RuntimeException() ;
 
     //Get Keys Manager
-    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY_THROW ) ;
+    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY ) ;
+    if( !xSecTunnel.is() ) {
+         throw RuntimeException() ;
+    }
+
     SecurityEnvironment_NssImpl* pSecEnv =
         reinterpret_cast<SecurityEnvironment_NssImpl*>(
             sal::static_int_cast<sal_uIntPtr>(xSecTunnel->getSomething( SecurityEnvironment_NssImpl::getUnoTunnelId() ))) ;
@@ -83,7 +87,11 @@ SAL_CALL XMLEncryption_NssImpl::encrypt(
         throw RuntimeException() ;
     }
 
-    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY_THROW ) ;
+    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY ) ;
+    if( !xTplTunnel.is() ) {
+        throw RuntimeException() ;
+    }
+
     XMLElementWrapper_XmlSecImpl* pTemplate =
         reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(
             sal::static_int_cast<sal_uIntPtr>(
@@ -185,7 +193,9 @@ Reference< XXMLEncryptionTemplate >
 SAL_CALL XMLEncryption_NssImpl::decrypt(
     const Reference< XXMLEncryptionTemplate >& aTemplate ,
     const Reference< XXMLSecurityContext >& aSecurityCtx
-)
+) throw (css::xml::crypto::XMLEncryptionException ,
+         css::uno::SecurityException,
+         css::uno::RuntimeException, std::exception)
 {
     xmlSecKeysMngrPtr pMngr = nullptr ;
     xmlSecEncCtxPtr pEncCtx = nullptr ;
@@ -203,7 +213,11 @@ SAL_CALL XMLEncryption_NssImpl::decrypt(
         throw RuntimeException() ;
     }
 
-    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY_THROW ) ;
+    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY ) ;
+    if( !xTplTunnel.is() ) {
+        throw RuntimeException() ;
+    }
+
     XMLElementWrapper_XmlSecImpl* pTemplate =
         reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(
             sal::static_int_cast<sal_uIntPtr>(
@@ -239,7 +253,11 @@ SAL_CALL XMLEncryption_NssImpl::decrypt(
         Reference< XSecurityEnvironment > aEnvironment = aSecurityCtx->getSecurityEnvironmentByIndex(i);
 
         //Get Keys Manager
-        Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY_THROW ) ;
+        Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY ) ;
+        if( !aEnvironment.is() ) {
+             throw RuntimeException() ;
+        }
+
         SecurityEnvironment_NssImpl* pSecEnv =
             reinterpret_cast<SecurityEnvironment_NssImpl*>(
                 sal::static_int_cast<sal_uIntPtr>(
@@ -292,12 +310,12 @@ SAL_CALL XMLEncryption_NssImpl::decrypt(
 }
 
 /* XServiceInfo */
-OUString SAL_CALL XMLEncryption_NssImpl::getImplementationName() {
+OUString SAL_CALL XMLEncryption_NssImpl::getImplementationName() throw( RuntimeException, std::exception ) {
     return impl_getImplementationName() ;
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL XMLEncryption_NssImpl::supportsService( const OUString& serviceName) {
+sal_Bool SAL_CALL XMLEncryption_NssImpl::supportsService( const OUString& serviceName) throw( RuntimeException, std::exception ) {
     Sequence< OUString > seqServiceNames = getSupportedServiceNames() ;
     const OUString* pArray = seqServiceNames.getConstArray() ;
     for( sal_Int32 i = 0 ; i < seqServiceNames.getLength() ; i ++ ) {
@@ -308,7 +326,7 @@ sal_Bool SAL_CALL XMLEncryption_NssImpl::supportsService( const OUString& servic
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL XMLEncryption_NssImpl::getSupportedServiceNames() {
+Sequence< OUString > SAL_CALL XMLEncryption_NssImpl::getSupportedServiceNames() throw( RuntimeException, std::exception ) {
     return impl_getSupportedServiceNames() ;
 }
 
@@ -319,16 +337,19 @@ Sequence< OUString > XMLEncryption_NssImpl::impl_getSupportedServiceNames() {
     return seqServiceNames ;
 }
 
-OUString XMLEncryption_NssImpl::impl_getImplementationName() {
+OUString XMLEncryption_NssImpl::impl_getImplementationName() throw( RuntimeException ) {
     return OUString("com.sun.star.xml.security.bridge.xmlsec.XMLEncryption_NssImpl") ;
 }
 
 //Helper for registry
-Reference< XInterface > SAL_CALL XMLEncryption_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >&  ) {
+Reference< XInterface > SAL_CALL XMLEncryption_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >&  ) throw( RuntimeException ) {
     return Reference< XInterface >( *new XMLEncryption_NssImpl ) ;
 }
 
 Reference< XSingleServiceFactory > XMLEncryption_NssImpl::impl_createFactory( const Reference< XMultiServiceFactory >& aServiceManager ) {
+    //Reference< XSingleServiceFactory > xFactory ;
+    //xFactory = ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName , impl_createInstance , impl_getSupportedServiceNames ) ;
+    //return xFactory ;
     return ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName() , impl_createInstance , impl_getSupportedServiceNames() ) ;
 }
 

@@ -39,7 +39,7 @@ public:
     SwFormatHeader( bool bOn = false );
     SwFormatHeader( SwFrameFormat *pHeaderFormat );
     SwFormatHeader( const SwFormatHeader &rCpy );
-    virtual ~SwFormatHeader() override;
+    virtual ~SwFormatHeader();
     SwFormatHeader& operator=( const SwFormatHeader &rCpy );
 
 
@@ -47,10 +47,10 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
 
     const SwFrameFormat *GetHeaderFormat() const { return static_cast<const SwFrameFormat*>(GetRegisteredIn()); }
           SwFrameFormat *GetHeaderFormat()       { return static_cast<SwFrameFormat*>(GetRegisteredIn()); }
@@ -70,7 +70,7 @@ public:
     SwFormatFooter( bool bOn = false );
     SwFormatFooter( SwFrameFormat *pFooterFormat );
     SwFormatFooter( const SwFormatFooter &rCpy );
-    virtual ~SwFormatFooter() override;
+    virtual ~SwFormatFooter();
     SwFormatFooter& operator=( const SwFormatFooter &rCpy );
 
 
@@ -78,10 +78,10 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
 
     const SwFrameFormat *GetFooterFormat() const { return static_cast<const SwFrameFormat*>(GetRegisteredIn()); }
           SwFrameFormat *GetFooterFormat()       { return static_cast<SwFrameFormat*>(GetRegisteredIn()); }

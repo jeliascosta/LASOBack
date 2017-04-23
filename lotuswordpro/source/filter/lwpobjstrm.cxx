@@ -70,17 +70,31 @@ LwpObjectStream::LwpObjectStream(LwpSvStream *pStrm, bool isCompressed, sal_uInt
 {
     if (size >= IO_BUFFERSIZE)
         throw std::range_error("bad Object size");
-    // read object data from stream
-    if (m_nBufSize > 0)
-        Read2Buffer();
+    ReadStream();
 }
-
+/**
+ * @descr  read object data from stream
+ */
+void LwpObjectStream::ReadStream()
+{
+    if(m_nBufSize == 0)
+    {
+        m_pContentBuf = nullptr;
+    }
+    else
+    {
+        Read2Buffer();
+    }
+}
 /**
  * @descr  read object data from stream to buffer
  */
 void LwpObjectStream::Read2Buffer()
 {
-    ReleaseBuffer();
+    if( m_pContentBuf )
+    {
+        ReleaseBuffer();
+    }
 
     m_nReadPos = 0;
 
@@ -90,7 +104,7 @@ void LwpObjectStream::Read2Buffer()
 
         sal_uInt8* pCompressBuffer = xCompressBuf.get();
         memset(pCompressBuffer, 0, m_nBufSize);
-        m_nBufSize = m_pStrm->Read(pCompressBuffer, m_nBufSize);
+        m_pStrm->Read(pCompressBuffer, m_nBufSize);
 
         sal_uInt8 pTempDst[IO_BUFFERSIZE];
         m_nBufSize = DecompressBuffer(pTempDst, pCompressBuffer, m_nBufSize);
@@ -98,11 +112,13 @@ void LwpObjectStream::Read2Buffer()
 
         m_pContentBuf = AllocBuffer(m_nBufSize);
         memcpy(m_pContentBuf, pTempDst, m_nBufSize);
+        //delete [] pTempDst;
+
     }
     else
     {
         m_pContentBuf = AllocBuffer(m_nBufSize);
-        m_nBufSize = m_pStrm->Read(m_pContentBuf, m_nBufSize);
+        m_pStrm->Read(m_pContentBuf, m_nBufSize);
     }
 }
 /**
@@ -110,12 +126,14 @@ void LwpObjectStream::Read2Buffer()
  */
 sal_uInt8* LwpObjectStream::AllocBuffer(sal_uInt16 size)
 {
-    if (size<=100)
+    if(size<=100)
     {
         return m_SmallBuffer;
     }
-    m_BigBuffer.resize(size);
-    return m_BigBuffer.data();
+    else
+    {
+        return new sal_uInt8[size];
+    }
 }
 /**
  * @descr  signal complete to release object buffer
@@ -134,8 +152,15 @@ LwpObjectStream::~LwpObjectStream()
  */
 void LwpObjectStream::ReleaseBuffer()
 {
-    m_BigBuffer.clear();
-    m_pContentBuf = nullptr;
+
+    if(m_nBufSize>100)
+    {
+        if(m_pContentBuf)
+        {
+            delete [] m_pContentBuf;
+            m_pContentBuf = nullptr;
+        }
+    }
 }
 
 sal_uInt16 LwpObjectStream::remainingSize() const
@@ -151,6 +176,7 @@ sal_uInt16 LwpObjectStream::QuickRead(void* buf, sal_uInt16 len)
     memset(buf, 0, len);
     if( len > m_nBufSize - m_nReadPos )
     {
+        SAL_WARN("lwp", "read request longer than buffer");
         len = m_nBufSize - m_nReadPos;
     }
     if( m_pContentBuf && len)

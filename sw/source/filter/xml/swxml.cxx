@@ -23,6 +23,7 @@
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/xml/sax/InputSource.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
+#include <com/sun/star/io/XActiveDataControl.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/document/NamedPropertyValues.hpp>
@@ -30,11 +31,11 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
+#include <com/sun/star/task/XStatusIndicatorFactory.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/packages/zip/ZipIOException.hpp>
 #include <com/sun/star/packages/WrongPasswordException.hpp>
 #include <com/sun/star/ucb/InteractiveAugmentedIOException.hpp>
-#include <o3tl/any.hxx>
 #include <sfx2/docfile.hxx>
 #include <svtools/sfxecode.hxx>
 #include <svl/stritem.hxx>
@@ -108,7 +109,7 @@ static void lcl_EnsureValidPam( SwPaM& rPam )
         rPam.GetPoint()->nNode =
             *rPam.GetDoc()->GetNodes().GetEndOfContent().StartOfSectionNode();
         ++ rPam.GetPoint()->nNode;
-        rPam.Move( fnMoveForward, GoInContent ); // go into content
+        rPam.Move( fnMoveForward, fnGoContent ); // go into content
     }
 }
 
@@ -126,8 +127,8 @@ namespace
 
 /// read a component (file + filter version)
 sal_Int32 ReadThroughComponent(
-    uno::Reference<io::XInputStream> const & xInputStream,
-    uno::Reference<XComponent> const & xModelComponent,
+    uno::Reference<io::XInputStream> xInputStream,
+    uno::Reference<XComponent> xModelComponent,
     const OUString& rStreamName,
     uno::Reference<uno::XComponentContext> & rxContext,
     const sal_Char* pFilterName,
@@ -154,7 +155,7 @@ sal_Int32 ReadThroughComponent(
     uno::Reference< xml::sax::XDocumentHandler > xFilter(
         rxContext->getServiceManager()->createInstanceWithArgumentsAndContext(aFilterName, rFilterArguments, rxContext),
         UNO_QUERY);
-    SAL_WARN_IF(!xFilter.is(), "sw.filter", "Can't instantiate filter component: " << aFilterName);
+    SAL_WARN_IF(!xFilter.is(), "sw", "Can't instantiate filter component: " << aFilterName);
     if( !xFilter.is() )
         return ERR_SWG_READ_ERROR;
     SAL_INFO( "sw.filter", "" << pFilterName << " created" );
@@ -210,13 +211,13 @@ sal_Int32 ReadThroughComponent(
                             (bMustBeSuccessfull ? ERR_FORMAT_FILE_ROWCOL
                                                     : WARN_FORMAT_FILE_ROWCOL),
                             rStreamName, sErr,
-                            ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                            ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         }
         else
         {
             OSL_ENSURE( bMustBeSuccessfull, "Warnings are not supported" );
             return *new StringErrorInfo( ERR_FORMAT_ROWCOL, sErr,
-                             ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                             ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         }
     }
     catch(const xml::sax::SAXException& r)
@@ -277,8 +278,8 @@ sal_Int32 ReadThroughComponent(
 
 // read a component (storage version)
 sal_Int32 ReadThroughComponent(
-    uno::Reference<embed::XStorage> const & xStorage,
-    uno::Reference<XComponent> const & xModelComponent,
+    uno::Reference<embed::XStorage> xStorage,
+    uno::Reference<XComponent> xModelComponent,
     const sal_Char* pStreamName,
     const sal_Char* pCompatibilityStreamName,
     uno::Reference<uno::XComponentContext> & rxContext,
@@ -342,8 +343,8 @@ sal_Int32 ReadThroughComponent(
 
         Any aAny = xProps->getPropertyValue("Encrypted");
 
-        auto b = o3tl::tryAccess<bool>(aAny);
-        bool bEncrypted = b && *b;
+        bool bEncrypted = aAny.getValueType() == cppu::UnoType<bool>::get() &&
+                *static_cast<sal_Bool const *>(aAny.getValue());
 
         uno::Reference <io::XInputStream> xInputStream = xStream->getInputStream();
 
@@ -518,7 +519,7 @@ sal_uLong XMLReader::Read( SwDoc &rDoc, const OUString& rBaseURL, SwPaM &rPaM, c
         return ERR_SWG_READ_ERROR;
 
     pGraphicHelper = SvXMLGraphicHelper::Create( xStorage,
-                                                 SvXMLGraphicHelperMode::Read,
+                                                 GRAPHICHELPER_MODE_READ,
                                                  false );
     xGraphicResolver = pGraphicHelper;
     SfxObjectShell *pPersist = rDoc.GetPersist();
@@ -526,7 +527,7 @@ sal_uLong XMLReader::Read( SwDoc &rDoc, const OUString& rBaseURL, SwPaM &rPaM, c
     {
         pObjectHelper = SvXMLEmbeddedObjectHelper::Create(
                                         xStorage, *pPersist,
-                                        SvXMLEmbeddedObjectHelperMode::Read,
+                                        EMBEDDEDOBJECTHELPER_MODE_READ,
                                         false );
         xObjectResolver = pObjectHelper;
     }
@@ -782,14 +783,14 @@ sal_uLong XMLReader::Read( SwDoc &rDoc, const OUString& rBaseURL, SwPaM &rPaM, c
     const OUString sRecordChanges("RecordChanges");
     const OUString sRedlineProtectionKey("RedlineProtectionKey");
     xInfoSet->setPropertyValue( sShowChanges,
-        makeAny(IDocumentRedlineAccess::IsShowChanges(rDoc.getIDocumentRedlineAccess().GetRedlineFlags())) );
+        makeAny(IDocumentRedlineAccess::IsShowChanges(rDoc.getIDocumentRedlineAccess().GetRedlineMode())) );
     xInfoSet->setPropertyValue( sRecordChanges,
-        makeAny(IDocumentRedlineAccess::IsRedlineOn(rDoc.getIDocumentRedlineAccess().GetRedlineFlags())) );
+        makeAny(IDocumentRedlineAccess::IsRedlineOn(rDoc.getIDocumentRedlineAccess().GetRedlineMode())) );
     xInfoSet->setPropertyValue( sRedlineProtectionKey,
         makeAny(rDoc.getIDocumentRedlineAccess().GetRedlinePassword()) );
 
     // force redline mode to "none"
-    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::NONE );
+    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_NONE );
 
     const bool bOASIS = ( SotStorage::GetVersion( xStorage ) > SOFFICE_FILEFORMAT_60 );
     // #i28749# - set property <ShapePositionInHoriL2R>
@@ -907,19 +908,21 @@ sal_uLong XMLReader::Read( SwDoc &rDoc, const OUString& rBaseURL, SwPaM &rPaM, c
     rDoc.getIDocumentRedlineAccess().SetRedlinePassword( aKey );
 
     // restore redline mode from import info property set
-    RedlineFlags nRedlineFlags = RedlineFlags::ShowInsert;
+    sal_Int16 nRedlineMode = nsRedlineMode_t::REDLINE_SHOW_INSERT;
     aAny = xInfoSet->getPropertyValue( sShowChanges );
-    if ( *o3tl::doAccess<bool>(aAny) )
-        nRedlineFlags |= RedlineFlags::ShowDelete;
+    if ( *static_cast<sal_Bool const *>(aAny.getValue()) )
+        nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_DELETE;
     aAny = xInfoSet->getPropertyValue( sRecordChanges );
-    if ( *o3tl::doAccess<bool>(aAny) || (aKey.getLength() > 0) )
-        nRedlineFlags |= RedlineFlags::On;
+    if ( *static_cast<sal_Bool const *>(aAny.getValue()) || (aKey.getLength() > 0) )
+        nRedlineMode |= nsRedlineMode_t::REDLINE_ON;
+    else
+        nRedlineMode |= nsRedlineMode_t::REDLINE_NONE;
 
     // ... restore redline mode
-    // (First set bogus mode to make sure the mode in getIDocumentRedlineAccess().SetRedlineFlags()
+    // (First set bogus mode to make sure the mode in getIDocumentRedlineAccess().SetRedlineMode()
     //  is different from its previous mode.)
-    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( ~nRedlineFlags );
-    rDoc.getIDocumentRedlineAccess().SetRedlineFlags(  nRedlineFlags );
+    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)( ~nRedlineMode ));
+    rDoc.getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)( nRedlineMode ));
 
     lcl_EnsureValidPam( rPaM ); // move Pam into valid content
 

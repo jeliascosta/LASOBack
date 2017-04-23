@@ -29,7 +29,7 @@ public:
         vcl::Window* pParent, ScViewData* pViewData,
         const OUString& rID, const OUString& rUiXmlDescription );
 
-    virtual ~ScMatrixComparisonGenerator() override;
+    virtual ~ScMatrixComparisonGenerator();
 
 protected:
     virtual sal_Int16 GetUndoNameId() override;

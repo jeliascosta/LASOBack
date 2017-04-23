@@ -20,8 +20,20 @@
 #include "hintids.hxx"
 #include <swtypes.hxx>
 #include "unomid.h"
+#include <com/sun/star/style/LineSpacingMode.hpp>
+#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <com/sun/star/style/DropCapFormat.hpp>
-#include <o3tl/any.hxx>
+#include <com/sun/star/style/LineSpacing.hpp>
+#include <com/sun/star/text/RelOrientation.hpp>
+#include <com/sun/star/text/VertOrientation.hpp>
+#include <com/sun/star/text/HorizontalAdjust.hpp>
+#include <com/sun/star/text/DocumentStatistic.hpp>
+#include <com/sun/star/text/HoriOrientation.hpp>
+#include <com/sun/star/text/HoriOrientationFormat.hpp>
+#include <com/sun/star/text/NotePrintMode.hpp>
+#include <com/sun/star/text/SizeType.hpp>
+#include <com/sun/star/text/VertOrientationFormat.hpp>
+#include <com/sun/star/text/WrapTextMode.hpp>
 #include <unostyle.hxx>
 #include <SwStyleNameMapper.hxx>
 #include "paratr.hxx"
@@ -41,6 +53,7 @@ SwFormatDrop::SwFormatDrop()
     SwClient( nullptr ),
     pDefinedIn( nullptr ),
     nDistance( 0 ),
+    nReadFormat( USHRT_MAX ),
     nLines( 0 ),
     nChars( 0 ),
     bWholeWord( false )
@@ -52,6 +65,7 @@ SwFormatDrop::SwFormatDrop( const SwFormatDrop &rCpy )
     SwClient( rCpy.GetRegisteredInNonConst() ),
     pDefinedIn( nullptr ),
     nDistance( rCpy.GetDistance() ),
+    nReadFormat( rCpy.nReadFormat ),
     nLines( rCpy.GetLines() ),
     nChars( rCpy.GetChars() ),
     bWholeWord( rCpy.GetWholeWord() )
@@ -69,6 +83,7 @@ void SwFormatDrop::SetCharFormat( SwCharFormat *pNew )
         GetRegisteredInNonConst()->Remove( this );
     if(pNew)
         pNew->Add( this );
+    nReadFormat = USHRT_MAX;
 }
 
 void SwFormatDrop::Modify( const SfxPoolItem*, const SfxPoolItem * )
@@ -121,7 +136,7 @@ bool SwFormatDrop::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
             aDrop.Lines = nLines   ;
             aDrop.Count = nChars   ;
             aDrop.Distance  = convertTwipToMm100(nDistance);
-            rVal <<= aDrop;
+            rVal.setValue(&aDrop, ::cppu::UnoType<style::DropCapFormat>::get());
         }
         break;
         case MID_DROPCAP_WHOLE_WORD:
@@ -132,7 +147,7 @@ bool SwFormatDrop::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
             OUString sName;
             if(GetCharFormat())
                 sName = SwStyleNameMapper::GetProgName(
-                        GetCharFormat()->GetName(), SwGetPoolIdFromName::ChrFmt );
+                        GetCharFormat()->GetName(), nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
             rVal <<= sName;
         }
         break;
@@ -173,7 +188,7 @@ bool SwFormatDrop::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
         {
             if(rVal.getValueType()  == ::cppu::UnoType<style::DropCapFormat>::get())
             {
-                auto pDrop = o3tl::doAccess<style::DropCapFormat>(rVal);
+                const style::DropCapFormat* pDrop = static_cast<const style::DropCapFormat*>(rVal.getValue());
                 nLines      = pDrop->Lines;
                 nChars      = pDrop->Count;
                 nDistance   = convertMm100ToTwip(pDrop->Distance);
@@ -183,7 +198,7 @@ bool SwFormatDrop::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
         }
         break;
         case MID_DROPCAP_WHOLE_WORD:
-            bWholeWord = *o3tl::doAccess<bool>(rVal);
+            bWholeWord = *static_cast<sal_Bool const *>(rVal.getValue());
         break;
         case MID_DROPCAP_CHAR_STYLE_NAME :
             OSL_FAIL("char format cannot be set in PutValue()!");
@@ -210,7 +225,7 @@ bool SwNumRuleItem::operator==( const SfxPoolItem& rAttr ) const
 
 bool    SwNumRuleItem::QueryValue( uno::Any& rVal, sal_uInt8 ) const
 {
-    OUString sRet = SwStyleNameMapper::GetProgName(GetValue(), SwGetPoolIdFromName::NumRule );
+    OUString sRet = SwStyleNameMapper::GetProgName(GetValue(), nsSwGetPoolIdFromName::GET_POOLID_NUMRULE );
     rVal <<= sRet;
     return true;
 }
@@ -219,13 +234,13 @@ bool    SwNumRuleItem::PutValue( const uno::Any& rVal, sal_uInt8 )
 {
     OUString uName;
     rVal >>= uName;
-    SetValue(SwStyleNameMapper::GetUIName(uName, SwGetPoolIdFromName::NumRule));
+    SetValue(SwStyleNameMapper::GetUIName(uName, nsSwGetPoolIdFromName::GET_POOLID_NUMRULE));
     return true;
 }
 
 void SwNumRuleItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRuleItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRuleItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(GetValue().toUtf8().getStr()));
     xmlTextWriterEndElement(pWriter);

@@ -49,17 +49,17 @@ void ImplDrawArrow(vcl::RenderContext& rRenderContext, long nX, long nY, const C
     rRenderContext.SetFillColor(rColor);
     if (bPointRight)
     {
-        rRenderContext.DrawRect(tools::Rectangle(nX + 0, nY + 0, nX + 0, nY + 6) );
-        rRenderContext.DrawRect(tools::Rectangle(nX + 1, nY + 1, nX + 1, nY + 5) );
-        rRenderContext.DrawRect(tools::Rectangle(nX + 2, nY + 2, nX + 2, nY + 4) );
-        rRenderContext.DrawRect(tools::Rectangle(nX + 3, nY + 3, nX + 3, nY + 3) );
+        rRenderContext.DrawRect(Rectangle(nX + 0, nY + 0, nX + 0, nY + 6) );
+        rRenderContext.DrawRect(Rectangle(nX + 1, nY + 1, nX + 1, nY + 5) );
+        rRenderContext.DrawRect(Rectangle(nX + 2, nY + 2, nX + 2, nY + 4) );
+        rRenderContext.DrawRect(Rectangle(nX + 3, nY + 3, nX + 3, nY + 3) );
     }
     else
     {
-        rRenderContext.DrawRect(tools::Rectangle(nX + 0, nY + 3, nX + 0, nY + 3));
-        rRenderContext.DrawRect(tools::Rectangle(nX + 1, nY + 2, nX + 1, nY + 4));
-        rRenderContext.DrawRect(tools::Rectangle(nX + 2, nY + 1, nX + 2, nY + 5));
-        rRenderContext.DrawRect(tools::Rectangle(nX + 3, nY + 0, nX + 3, nY + 6));
+        rRenderContext.DrawRect(Rectangle(nX + 0, nY + 3, nX + 0, nY + 3));
+        rRenderContext.DrawRect(Rectangle(nX + 1, nY + 2, nX + 1, nY + 4));
+        rRenderContext.DrawRect(Rectangle(nX + 2, nY + 1, nX + 2, nY + 5));
+        rRenderContext.DrawRect(Rectangle(nX + 3, nY + 0, nX + 3, nY + 6));
     }
 }
 
@@ -76,8 +76,7 @@ SwCommentRuler::SwCommentRuler( SwViewShell* pViewSh, vcl::Window* pParent, SwEd
 {
     // Set fading timeout: 5 x 40ms = 200ms
     maFadeTimer.SetTimeout(40);
-    maFadeTimer.SetInvokeHandler( LINK( this, SwCommentRuler, FadeHandler ) );
-    maFadeTimer.SetDebugName( "sw::SwCommentRuler maFadeTimer" );
+    maFadeTimer.SetTimeoutHdl( LINK( this, SwCommentRuler, FadeHandler ) );
 }
 
 // Destructor
@@ -92,7 +91,7 @@ void SwCommentRuler::dispose()
     SvxRuler::dispose();
 }
 
-void SwCommentRuler::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void SwCommentRuler::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     SvxRuler::Paint(rRenderContext, rRect);
 
@@ -106,7 +105,7 @@ void SwCommentRuler::DrawCommentControl(vcl::RenderContext& rRenderContext)
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
     bool bIsCollapsed = ! mpViewShell->GetPostItMgr()->ShowNotes();
 
-    tools::Rectangle aControlRect = GetCommentControlRegion();
+    Rectangle aControlRect = GetCommentControlRegion();
     maVirDev->SetOutputSizePixel(aControlRect.GetSize());
 
     // Paint comment control background
@@ -125,7 +124,7 @@ void SwCommentRuler::DrawCommentControl(vcl::RenderContext& rRenderContext)
         maVirDev->SetLineColor();
     }
 
-    maVirDev->DrawRect( tools::Rectangle( Point(), aControlRect.GetSize() ) );
+    maVirDev->DrawRect( Rectangle( Point(), aControlRect.GetSize() ) );
 
     // Label and arrow tip
     OUString aLabel( SW_RESSTR ( STR_COMMENTS_LABEL ) );
@@ -248,7 +247,7 @@ void SwCommentRuler::MouseButtonDown( const MouseEvent& rMEvt )
 
 void SwCommentRuler::Update()
 {
-    tools::Rectangle aPreviousControlRect = GetCommentControlRegion();
+    Rectangle aPreviousControlRect = GetCommentControlRegion();
     SvxRuler::Update();
     if (aPreviousControlRect != GetCommentControlRegion())
         Invalidate();
@@ -265,7 +264,7 @@ void SwCommentRuler::UpdateCommentHelpText()
 }
 
 // TODO Make Ruler return its central rectangle instead of margins.
-tools::Rectangle SwCommentRuler::GetCommentControlRegion()
+Rectangle SwCommentRuler::GetCommentControlRegion()
 {
     long nLeft = 0;
     SwPostItMgr *pPostItMgr = mpViewShell->GetPostItMgr();
@@ -274,7 +273,7 @@ tools::Rectangle SwCommentRuler::GetCommentControlRegion()
     //triggers an update of the uiview, but the result of the ctor hasn't been
     //set into the mpViewShell yet, so GetPostItMgr is temporarily still NULL
     if (!pPostItMgr)
-        return tools::Rectangle();
+        return Rectangle();
 
     unsigned long nSidebarWidth = pPostItMgr->GetSidebarWidth(true);
     //FIXME When the page width is larger then screen, the ruler is misplaced by one pixel
@@ -287,7 +286,7 @@ tools::Rectangle SwCommentRuler::GetCommentControlRegion()
     long nRight  = nLeft + nSidebarWidth + pPostItMgr->GetSidebarBorderWidth(true);
     long nBottom = nTop + GetRulerVirHeight() - 3;
 
-    tools::Rectangle aRect(nLeft, nTop, nRight, nBottom);
+    Rectangle aRect(nLeft, nTop, nRight, nBottom);
     return aRect;
 }
 
@@ -301,7 +300,7 @@ Color SwCommentRuler::GetFadedColor(const Color &rHighColor, const Color &rLowCo
     return aColor;
 }
 
-IMPL_LINK_NOARG(SwCommentRuler, FadeHandler, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SwCommentRuler, FadeHandler, Timer *, void)
 {
     const int nStep = 25;
     if ( mbIsHighlighted && mnFadeRate < 100 )

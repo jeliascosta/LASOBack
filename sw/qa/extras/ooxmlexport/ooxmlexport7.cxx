@@ -22,6 +22,10 @@
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
 #include <com/sun/star/style/LineSpacing.hpp>
 #include <com/sun/star/style/LineSpacingMode.hpp>
+#include <com/sun/star/text/GraphicCrop.hpp>
+#include <com/sun/star/text/HoriOrientation.hpp>
+#include <com/sun/star/text/RelOrientation.hpp>
+#include <com/sun/star/graphic/XGraphic.hpp>
 #include <pagedesc.hxx>
 
 #include <comphelper/sequenceashashmap.hxx>
@@ -56,6 +60,14 @@ DECLARE_OOXMLEXPORT_TEST( testChildNodesOfCubicBezierTo, "FDO74774.docx")
         "/w:document/w:body/w:p[2]/w:r[1]/mc:AlternateContent[1]/mc:Choice/w:drawing[1]/wp:inline[1]/a:graphic[1]/a:graphicData[1]/wpg:wgp[1]/wps:wsp[3]/wps:spPr[1]/a:custGeom[1]/a:pathLst[1]/a:path[1]/a:cubicBezTo[2]/a:pt[3]");
 }
 
+DECLARE_OOXMLEXPORT_TEST(testTdf79329, "tdf79329.docx")
+{
+    uno::Reference<text::XTextTablesSupplier> xTablesSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XIndexAccess> xTables(xTablesSupplier->getTextTables(), uno::UNO_QUERY);
+    // This was 1: only the inner, not the outer table was created.
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(2), xTables->getCount());
+}
+
 DECLARE_OOXMLEXPORT_TEST(testMSwordHang,"test_msword_hang.docx")
 {
     // fdo#74771:
@@ -63,6 +75,15 @@ DECLARE_OOXMLEXPORT_TEST(testMSwordHang,"test_msword_hang.docx")
     if (!pXmlDoc)
         return;
     assertXPath(pXmlDoc, "/w:document/w:body/w:p[2]/w:r[1]/mc:AlternateContent/mc:Choice/w:drawing/wp:anchor/a:graphic/a:graphicData/wps:wsp/wps:txbx/w:txbxContent/w:p/w:r[2]/w:drawing/wp:inline", "distT", "0");
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf103651, "tdf103651.docx")
+{
+    uno::Reference<beans::XPropertySet> xTextField = getProperty< uno::Reference<beans::XPropertySet> >(getRun(getParagraph(1), 1), "TextField");
+    OUString sContent;
+    xTextField->getPropertyValue("Content") >>= sContent;
+    // Comment in the first paragraph should not have smiley ( 0xf04a ).
+    CPPUNIT_ASSERT_EQUAL( sal_Int32( -1 ) , sContent.indexOf( sal_Unicode( 0xf04a ) ));
 }
 
 DECLARE_OOXMLEXPORT_TEST(testGroupshapeThemeFont, "groupshape-theme-font.docx")
@@ -1123,6 +1144,62 @@ DECLARE_OOXMLEXPORT_TEST(testFlipAndRotateCustomShape, "flip_and_rotate.odt")
     assertXPath(pXmlDoc, "//a:custGeom/a:pathLst/a:path/a:lnTo[3]/a:pt", "x", "1695");
     assertXPath(pXmlDoc, "//a:custGeom/a:pathLst/a:path/a:lnTo[3]/a:pt", "y", "1701");
 #endif
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf103389, "tdf103389.docx")
+{
+    xmlDocPtr pXmlDoc = parseExport("word/document.xml");
+    if (!pXmlDoc)
+        return;
+    // No geometry was exported for the second canvas
+    // Check both canvases' geometry
+    assertXPath(pXmlDoc, "/w:document/w:body/w:p[1]/w:r/mc:AlternateContent/mc:Choice/w:drawing/wp:inline/a:graphic/a:graphicData/wpg:wgp/wps:wsp/wps:spPr/a:prstGeom", "prst", "rect");
+    assertXPath(pXmlDoc, "/w:document/w:body/w:p[2]/w:r/mc:AlternateContent/mc:Choice/w:drawing/wp:inline/a:graphic/a:graphicData/wpg:wgp/wps:wsp/wps:spPr/a:prstGeom", "prst", "rect");
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf95031, "tdf95031.docx")
+{
+    // This was 494, in-numbering paragraph's automating spacing was handled as visible spacing, while it should not.
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), getProperty<sal_Int32>(getParagraph(2), "ParaBottomMargin"));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), getProperty<sal_Int32>(getParagraph(3), "ParaTopMargin"));
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf103573, "tdf103573.docx")
+{
+    // Relative positions to the left or right margin (MS Word naming) was not handled.
+    uno::Reference<beans::XPropertySet> xShapeProperties( getShape(1), uno::UNO_QUERY );
+    sal_Int16 nValue;
+    xShapeProperties->getPropertyValue("HoriOrient") >>= nValue;
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Not centered horizontally", text::HoriOrientation::CENTER, nValue);
+    xShapeProperties->getPropertyValue("HoriOrientRelation") >>= nValue;
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Not centered horizontally relatively to left page border", text::RelOrientation::PAGE_LEFT, nValue);
+
+    xShapeProperties.set( getShape(2), uno::UNO_QUERY );
+    xShapeProperties->getPropertyValue("HoriOrient") >>= nValue;
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Not centered horizontally", text::HoriOrientation::CENTER, nValue);
+    xShapeProperties->getPropertyValue("HoriOrientRelation") >>= nValue;
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Not centered horizontally relatively to right page border", text::RelOrientation::PAGE_RIGHT, nValue);
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf103544, "tdf103544.docx")
+{
+    // We have two shapes: a frame and an image
+    uno::Reference<drawing::XDrawPageSupplier> xDrawPageSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<drawing::XDrawPage> xDrawPage = xDrawPageSupplier->getDrawPage();
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(2), xDrawPage->getCount());
+
+    // Image was lost because of the frame export
+    uno::Reference<beans::XPropertySet> xImage(getShape(1), uno::UNO_QUERY);
+    auto xGraphic = getProperty<uno::Reference<graphic::XGraphic> >(xImage, "Graphic");
+    CPPUNIT_ASSERT(xGraphic.is());
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf104162, "tdf104162.docx")
+{
+    // This crashed: the comment field contained a table with a <w:hideMark/>.
+    uno::Reference<text::XTextFieldsSupplier> xTextFieldsSupplier(mxComponent, uno::UNO_QUERY);
+    uno::Reference<container::XElementAccess> xTextFields(xTextFieldsSupplier->getTextFields());
+    CPPUNIT_ASSERT(xTextFields->hasElements());
 }
 
 #endif

@@ -61,71 +61,70 @@
 #include "frmfmt.hxx"
 #include "wrthtml.hxx"
 #include "css1kywd.hxx"
-#include "htmlatr.hxx"
 #include "htmlfly.hxx"
 
 using namespace css;
 
-const HtmlFrmOpts HTML_FRMOPTS_IMG_ALL        =
-    HtmlFrmOpts::Alt |
-    HtmlFrmOpts::Size |
-    HtmlFrmOpts::AnySize |
-    HtmlFrmOpts::Border |
-    HtmlFrmOpts::Name;
-const HtmlFrmOpts HTML_FRMOPTS_IMG_CNTNR      =
+const sal_uLong HTML_FRMOPTS_IMG_ALL        =
+    HTML_FRMOPT_ALT |
+    HTML_FRMOPT_SIZE |
+    HTML_FRMOPT_ANYSIZE |
+    HTML_FRMOPT_BORDER |
+    HTML_FRMOPT_NAME;
+const sal_uLong HTML_FRMOPTS_IMG_CNTNR      =
     HTML_FRMOPTS_IMG_ALL |
-    HtmlFrmOpts::AbsSize;
-const HtmlFrmOpts HTML_FRMOPTS_IMG            =
+    HTML_FRMOPT_ABSSIZE;
+const sal_uLong HTML_FRMOPTS_IMG            =
     HTML_FRMOPTS_IMG_ALL |
-    HtmlFrmOpts::Align |
-    HtmlFrmOpts::Space |
-    HtmlFrmOpts::BrClear;
-const HtmlFrmOpts HTML_FRMOPTS_IMG_CSS1       =
-    HtmlFrmOpts::SAlign |
-    HtmlFrmOpts::SSpace;
+    HTML_FRMOPT_ALIGN |
+    HTML_FRMOPT_SPACE |
+    HTML_FRMOPT_BRCLEAR;
+const sal_uLong HTML_FRMOPTS_IMG_CSS1       =
+    HTML_FRMOPT_S_ALIGN |
+    HTML_FRMOPT_S_SPACE;
 
-const HtmlFrmOpts HTML_FRMOPTS_DIV            =
-    HtmlFrmOpts::Id |
-    HtmlFrmOpts::SAlign |
-    HtmlFrmOpts::SSize |
-    HtmlFrmOpts::AnySize |
-    HtmlFrmOpts::AbsSize |
-    HtmlFrmOpts::SSpace |
-    HtmlFrmOpts::SBorder |
-    HtmlFrmOpts::SBackground |
-    HtmlFrmOpts::BrClear |
-    HtmlFrmOpts::Dir;
+const sal_uLong HTML_FRMOPTS_DIV            =
+    HTML_FRMOPT_ID |
+    HTML_FRMOPT_S_ALIGN |
+    HTML_FRMOPT_S_SIZE |
+    HTML_FRMOPT_ANYSIZE |
+    HTML_FRMOPT_ABSSIZE |
+    HTML_FRMOPT_S_SPACE |
+    HTML_FRMOPT_S_BORDER |
+    HTML_FRMOPT_S_BACKGROUND |
+    HTML_FRMOPT_BRCLEAR |
+    HTML_FRMOPT_DIR;
 
-const HtmlFrmOpts HTML_FRMOPTS_MULTICOL       =
-    HtmlFrmOpts::Id |
-    HtmlFrmOpts::Width |
-    HtmlFrmOpts::AnySize |
-    HtmlFrmOpts::AbsSize |
-    HtmlFrmOpts::Dir;
-const HtmlFrmOpts HTML_FRMOPTS_MULTICOL_CNTNR =
+const sal_uLong HTML_FRMOPTS_MULTICOL       =
+    HTML_FRMOPT_ID |
+    HTML_FRMOPT_WIDTH |
+    HTML_FRMOPT_ANYSIZE |
+    HTML_FRMOPT_ABSSIZE |
+    HTML_FRMOPT_DIR;
+const sal_uLong HTML_FRMOPTS_MULTICOL_CNTNR =
     HTML_FRMOPTS_MULTICOL;
-const HtmlFrmOpts HTML_FRMOPTS_MULTICOL_CSS1  =
-    HtmlFrmOpts::SAlign |
-    HtmlFrmOpts::SSize |
-    HtmlFrmOpts::SSpace |
-    HtmlFrmOpts::SBorder|
-    HtmlFrmOpts::SBackground;
+const sal_uLong HTML_FRMOPTS_MULTICOL_CSS1  =
+    HTML_FRMOPT_S_ALIGN |
+    HTML_FRMOPT_S_SIZE |
+    HTML_FRMOPT_S_SPACE |
+    HTML_FRMOPT_S_BORDER|
+    HTML_FRMOPT_S_BACKGROUND;
 
-const HtmlFrmOpts HTML_FRMOPTS_SPACER         =
-    HtmlFrmOpts::Align |
-    HtmlFrmOpts::Size |
-    HtmlFrmOpts::AnySize |
-    HtmlFrmOpts::BrClear |
-    HtmlFrmOpts::MarginSize |
-    HtmlFrmOpts::AbsSize;
+const sal_uLong HTML_FRMOPTS_SPACER         =
+    HTML_FRMOPT_ALIGN |
+    HTML_FRMOPT_SIZE |
+    HTML_FRMOPT_ANYSIZE |
+    HTML_FRMOPT_BRCLEAR |
+    HTML_FRMOPT_MARGINSIZE |
+    HTML_FRMOPT_ABSSIZE;
 
-const HtmlFrmOpts HTML_FRMOPTS_CNTNR          =
-    HtmlFrmOpts::SAlign |
-    HtmlFrmOpts::SSpace |
-    HtmlFrmOpts::SWidth |
-    HtmlFrmOpts::AnySize |
-    HtmlFrmOpts::AbsSize |
-    HtmlFrmOpts::SPixSize;
+const sal_uLong HTML_FRMOPTS_CNTNR          =
+    HTML_FRMOPT_S_ALIGN |
+    HTML_FRMOPT_S_SPACE |
+    HTML_FRMOPT_S_WIDTH |
+    HTML_FRMOPT_ANYSIZE |
+    HTML_FRMOPT_ABSSIZE |
+    HTML_FRMOPT_S_PIXSIZE;
 
 static Writer& OutHTML_FrameFormatTableNode( Writer& rWrt, const SwFrameFormat& rFrameFormat );
 static Writer& OutHTML_FrameFormatAsMulticol( Writer& rWrt, const SwFrameFormat& rFormat,
@@ -141,6 +140,8 @@ static Writer& OutHTML_FrameFormatGrfNode( Writer& rWrt, const SwFrameFormat& rF
 
 static Writer& OutHTML_FrameFormatAsMarquee( Writer& rWrt, const SwFrameFormat& rFrameFormat,
                                         const SdrObject& rSdrObj    );
+
+extern HTMLOutEvent aAnchorEventTable[];
 
 static HTMLOutEvent aImageEventTable[] =
 {
@@ -164,14 +165,14 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
 
     if( RES_DRAWFRMFMT == rFrameFormat.Which() )
     {
-        // use an arbitrary draw object as the default value
+        // Als Default irgendein Zeichen-Objekt
         eType = HTML_FRMTYPE_DRAW;
 
         const SdrObject *pObj =
             SwHTMLWriter::GetMarqueeTextObj( static_cast<const SwDrawFrameFormat &>(rFrameFormat) );
         if( pObj )
         {
-            // scrolling text
+            // Laufschrift
             rpSdrObj = pObj;
             eType = HTML_FRMTYPE_MARQUEE;
         }
@@ -181,7 +182,7 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
 
             if( pObj )
             {
-                // Form control
+                // Form-Control
                 rpSdrObj = pObj;
                 eType = HTML_FRMTYPE_CONTROL;
             }
@@ -189,7 +190,7 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
     }
     else
     {
-        // use a text frame as the default value
+        // Als Default ein Textrahmen
         eType = HTML_FRMTYPE_TEXT;
 
         const SwFormatContent& rFlyContent = rFrameFormat.GetContent();
@@ -198,12 +199,12 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
 
         if( pNd->IsGrfNode() )
         {
-            // graphic node
+            // Grafik - Node
             eType = HTML_FRMTYPE_GRF;
         }
         else if( pNd->IsOLENode() )
         {
-            // applet, plugin, floating frame
+            // Applet, Plugin, Floating-Frame
             eType = (SwHTMLFrameType)GuessOLENodeFrameType( *pNd );
         }
         else
@@ -216,7 +217,7 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
                                                        true, &pItem ) &&
                 static_cast<const SwFormatCol *>(pItem)->GetNumCols() > 1 )
             {
-                // frame with columns
+                // spaltiger Rahmen
                 eType = HTML_FRMTYPE_MULTICOL;
             }
             else if( pNd->IsTableNode() )
@@ -226,12 +227,12 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
 
                 if( nTableEnd+1 == nEnd )
                 {
-                    // table
+                    // Tabelle
                     eType = HTML_FRMTYPE_TABLE;
                 }
                 else if( nTableEnd+2 == nEnd )
                 {
-                    // table with caption
+                    // Tabelle mit Unterschrft
                     eType = HTML_FRMTYPE_TABLE_CAP;
                 }
             }
@@ -242,8 +243,8 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
                 bool bEmpty = false;
                 if( nStt==nEnd-1 && !pTextNd->Len() )
                 {
-                    // empty frame? Only if no frame is
-                    // anchored to the text or start node.
+                    // leerer Rahmen? Nur wenn kein Rahmen am
+                    // Text- oder Start-Node verankert ist.
                     bEmpty = true;
                     if( m_pHTMLPosFlyFrames )
                     {
@@ -267,7 +268,7 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
                 }
                 if( bEmpty )
                 {
-                    // empty frame
+                    // leerer Rahmen
                     eType = HTML_FRMTYPE_EMPTY;
                 }
                 else if( pDoc->GetNodes()[nStt+1]->IsTableNode() )
@@ -276,7 +277,7 @@ sal_uInt16 SwHTMLWriter::GuessFrameType( const SwFrameFormat& rFrameFormat,
                         pDoc->GetNodes()[nStt+1]->GetTableNode();
                     if( pTableNd->EndOfSectionIndex()+1 == nEnd )
                     {
-                        // table with heading
+                        // Tabelle mit Ueberschrift
                         eType = HTML_FRMTYPE_TABLE_CAP;
                     }
                 }
@@ -302,20 +303,20 @@ void SwHTMLWriter::CollectFlyFrames()
         const SwContentNode *pACNd;
         SwHTMLFrameType eType = (SwHTMLFrameType)GuessFrameType( rFrameFormat, pSdrObj );
 
-        AllHtmlFlags nMode;
+        sal_uInt8 nMode;
         const SwFormatAnchor& rAnchor = rFrameFormat.GetAnchor();
         sal_Int16 eHoriRel = rFrameFormat.GetHoriOrient().GetRelationOrient();
         switch( rAnchor.GetAnchorId() )
         {
-        case RndStdIds::FLY_AT_PAGE:
-        case RndStdIds::FLY_AT_FLY:
+        case FLY_AT_PAGE:
+        case FLY_AT_FLY:
             nMode = aHTMLOutFramePageFlyTable[eType][m_nExportMode];
             break;
 
-        case RndStdIds::FLY_AT_PARA:
-            // frames that are anchored to a paragraph are only placed
-            // before the paragraph, if the paragraph has a
-            // spacing.
+        case FLY_AT_PARA:
+            // Absatz-gebundene Rahmen werden nur dann vor den
+            // Absatz geschrieben, wenn der Absatz einen Abstand
+            // hat.
             if( text::RelOrientation::FRAME == eHoriRel &&
                 (pAPos = rAnchor.GetContentAnchor()) != nullptr &&
                 (pACNd = pAPos->nNode.GetNode().GetContentNode()) != nullptr )
@@ -331,7 +332,7 @@ void SwHTMLWriter::CollectFlyFrames()
             nMode = aHTMLOutFrameParaPrtAreaTable[eType][m_nExportMode];
             break;
 
-        case RndStdIds::FLY_AT_CHAR:
+        case FLY_AT_CHAR:
             if( text::RelOrientation::FRAME == eHoriRel || text::RelOrientation::PRINT_AREA == eHoriRel )
                 nMode = aHTMLOutFrameParaPrtAreaTable[eType][m_nExportMode];
             else
@@ -351,19 +352,20 @@ void SwHTMLWriter::CollectFlyFrames()
     }
 }
 
-bool SwHTMLWriter::OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx, HtmlPosition nPos,
+bool SwHTMLWriter::OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx, sal_uInt8 nPos,
                               HTMLOutContext *pContext )
 {
-    bool bFlysLeft = false; // Are there still Flys left at the current node position?
+    bool bFlysLeft = false; // Noch Flys an aktueller Node-Position da?
 
-    // OutFlyFrame can be called recursively. Thus, sometimes it is
-    // necessary to start over after a Fly was returned.
+    // OutFlyFrame kan rekursiv aufgerufen werden. Deshalb muss man
+    // manchmal wieder von vorne anfangen, nachdem ein Fly ausgegeben
+    // wurde.
     bool bRestart = true;
     while( m_pHTMLPosFlyFrames && bRestart )
     {
         bFlysLeft = bRestart = false;
 
-        // search for the beginning of the FlyFrames
+        // suche nach dem Anfang der FlyFrames
         size_t i {0};
 
         for( ; i < m_pHTMLPosFlyFrames->size() &&
@@ -373,20 +375,21 @@ bool SwHTMLWriter::OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx, HtmlPos
             (*m_pHTMLPosFlyFrames)[i]->GetNdIndex().GetIndex() == nNdIdx; i++ )
         {
             SwHTMLPosFlyFrame *pPosFly = (*m_pHTMLPosFlyFrames)[i];
-            if( ( HtmlPosition::Any == nPos ||
+            if( ( HTML_POS_ANY == nPos ||
                   pPosFly->GetOutPos() == nPos ) &&
                 pPosFly->GetContentIndex() == nContentIdx )
             {
-                // It is important to remove it first, because additional
-                // elements or the whole array could be deleted on
-                // deeper recursion levels.
+                // Erst entfernen ist wichtig, weil in tieferen
+                // Rekursionen evtl. weitere Eintraege oder das
+                // ganze Array geloscht werden koennte.
                 m_pHTMLPosFlyFrames->erase(i);
                 i--;
                 if( m_pHTMLPosFlyFrames->empty() )
                 {
                     delete m_pHTMLPosFlyFrames;
                     m_pHTMLPosFlyFrames = nullptr;
-                    bRestart = true;    // not really, only exit the loop
+                    bRestart = true;    // nicht wirklich, nur raus
+                                        // aus der Schleife
                 }
 
                 if( pContext )
@@ -396,16 +399,15 @@ bool SwHTMLWriter::OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx, HtmlPos
                 }
 
                 OutFrameFormat( pPosFly->GetOutMode(), pPosFly->GetFormat(),
-                                pPosFly->GetSdrObject() );
+                           pPosFly->GetSdrObject() );
                 switch( pPosFly->GetOutFn() )
                 {
-                case HtmlOut::Div:
-                case HtmlOut::Span:
-                case HtmlOut::MultiCol:
-                case HtmlOut::TableNode:
-                    bRestart = true; // It could become recursive here
+                case HTML_OUT_DIV:
+                case HTML_OUT_SPAN:
+                case HTML_OUT_MULTICOL:
+                case HTML_OUT_TBLNODE:
+                    bRestart = true; // Hier wird's evtl rekursiv
                     break;
-                default: break;
                 }
                 delete pPosFly;
             }
@@ -419,20 +421,20 @@ bool SwHTMLWriter::OutFlyFrame( sal_uLong nNdIdx, sal_Int32 nContentIdx, HtmlPos
     return bFlysLeft;
 }
 
-void SwHTMLWriter::OutFrameFormat( AllHtmlFlags nMode, const SwFrameFormat& rFrameFormat,
+void SwHTMLWriter::OutFrameFormat( sal_uInt8 nMode, const SwFrameFormat& rFrameFormat,
                               const SdrObject *pSdrObject )
 {
-    HtmlContainerFlags nCntnrMode = nMode.nContainer;
-    HtmlOut nOutMode = nMode.nOut;
+    sal_uInt8 nCntnrMode = SwHTMLPosFlyFrame::GetOutCntnr( nMode );
+    sal_uInt8 nOutMode = SwHTMLPosFlyFrame::GetOutFn(nMode);
     const sal_Char *pCntnrStr = nullptr;
-    if( HtmlContainerFlags::NONE != nCntnrMode )
+    if( HTML_CNTNR_NONE != nCntnrMode )
     {
 
-        if( m_bLFPossible && HtmlContainerFlags::Div == nCntnrMode )
+        if( m_bLFPossible && HTML_CNTNR_DIV == nCntnrMode )
             OutNewLine();
 
         OStringBuffer sOut;
-        pCntnrStr = (HtmlContainerFlags::Div == nCntnrMode)
+        pCntnrStr = (HTML_CNTNR_DIV == nCntnrMode)
                             ? OOO_STRING_SVTOOLS_HTML_division
                             : OOO_STRING_SVTOOLS_HTML_span;
         sOut.append('<').append(pCntnrStr).append(' ')
@@ -440,19 +442,19 @@ void SwHTMLWriter::OutFrameFormat( AllHtmlFlags nMode, const SwFrameFormat& rFra
             .append("sd-abs-pos").append('\"');
         Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
 
-        // Output a width for non-draw objects
-        HtmlFrmOpts nFrameFlags = HTML_FRMOPTS_CNTNR;
+        // Fuer Nicht-Zeichenobekte eine Breite ausgeben
+        sal_uLong nFrameFlags = HTML_FRMOPTS_CNTNR;
 
-        // For frames with columns we can also output the background
-        if( HtmlOut::MultiCol == nOutMode )
-            nFrameFlags |= HtmlFrmOpts::SBackground|HtmlFrmOpts::SBorder;
+        // Fuer spaltige Rahmen koennen wir auch noch den Hintergrund ausgeben.
+        if( HTML_OUT_MULTICOL == nOutMode )
+            nFrameFlags |= HTML_FRMOPT_S_BACKGROUND|HTML_FRMOPT_S_BORDER;
 
         if( IsHTMLMode( HTMLMODE_BORDER_NONE ) )
-           nFrameFlags |= HtmlFrmOpts::SNoBorder;
+           nFrameFlags |= HTML_FRMOPT_S_NOBORDER;
         OutCSS1_FrameFormatOptions( rFrameFormat, nFrameFlags, pSdrObject );
         Strm().WriteChar( '>' );
 
-        if( HtmlContainerFlags::Div == nCntnrMode )
+        if( HTML_CNTNR_DIV == nCntnrMode )
         {
             IncIndentLevel();
             m_bLFPossible = true;
@@ -461,50 +463,50 @@ void SwHTMLWriter::OutFrameFormat( AllHtmlFlags nMode, const SwFrameFormat& rFra
 
     switch( nOutMode )
     {
-    case HtmlOut::TableNode:      // OK
-        OSL_ENSURE( !pCntnrStr, "Table: Container is not supposed to be here" );
+    case HTML_OUT_TBLNODE:      // OK
+        OSL_ENSURE( !pCntnrStr, "Table: Container ist hier nicht vorgesehen" );
         OutHTML_FrameFormatTableNode( *this, rFrameFormat );
         break;
-    case HtmlOut::GraphicNode:      // OK
+    case HTML_OUT_GRFNODE:      // OK
         OutHTML_FrameFormatGrfNode( *this, rFrameFormat, pCntnrStr != nullptr );
         break;
-    case HtmlOut::OleNode:      // OK
+    case HTML_OUT_OLENODE:      // OK
         OutHTML_FrameFormatOLENode( *this, rFrameFormat, pCntnrStr != nullptr );
         break;
-    case HtmlOut::OleGraphic:       // OK
+    case HTML_OUT_OLEGRF:       // OK
         OutHTML_FrameFormatOLENodeGrf( *this, rFrameFormat, pCntnrStr != nullptr );
         break;
-    case HtmlOut::Div:
-    case HtmlOut::Span:
-        OSL_ENSURE( !pCntnrStr, "Div: Container is not supposed to be here" );
-        OutHTML_FrameFormatAsDivOrSpan( *this, rFrameFormat, HtmlOut::Span==nOutMode );
+    case HTML_OUT_DIV:
+    case HTML_OUT_SPAN:
+        OSL_ENSURE( !pCntnrStr, "Div: Container ist hier nicht vorgesehen" );
+        OutHTML_FrameFormatAsDivOrSpan( *this, rFrameFormat, HTML_OUT_SPAN==nOutMode );
         break;
-    case HtmlOut::MultiCol:     // OK
+    case HTML_OUT_MULTICOL:     // OK
         OutHTML_FrameFormatAsMulticol( *this, rFrameFormat, pCntnrStr != nullptr );
         break;
-    case HtmlOut::Spacer:       // OK
-        OSL_ENSURE( !pCntnrStr, "Spacer: Container is not supposed to be here" );
+    case HTML_OUT_SPACER:       // OK
+        OSL_ENSURE( !pCntnrStr, "Spacer: Container ist hier nicht vorgesehen" );
         OutHTML_FrameFormatAsSpacer( *this, rFrameFormat );
         break;
-    case HtmlOut::Control:      // OK
+    case HTML_OUT_CONTROL:      // OK
         OutHTML_DrawFrameFormatAsControl( *this,
                                     static_cast<const SwDrawFrameFormat &>(rFrameFormat), dynamic_cast<const SdrUnoObj&>(*pSdrObject),
                                     pCntnrStr != nullptr );
         break;
-    case HtmlOut::AMarquee:
+    case HTML_OUT_AMARQUEE:
         OutHTML_FrameFormatAsMarquee( *this, rFrameFormat, *pSdrObject );
         break;
-    case HtmlOut::Marquee:
-        OSL_ENSURE( !pCntnrStr, "Marquee: Container is not supposed to be here" );
+    case HTML_OUT_MARQUEE:
+        OSL_ENSURE( !pCntnrStr, "Marquee: Container ist hier nicht vorgesehen" );
         OutHTML_DrawFrameFormatAsMarquee( *this,
                     static_cast<const SwDrawFrameFormat &>(rFrameFormat), *pSdrObject );
         break;
-    case HtmlOut::GraphicFrame:
+    case HTML_OUT_GRFFRM:
         OutHTML_FrameFormatAsImage( *this, rFrameFormat, pCntnrStr != nullptr );
         break;
     }
 
-    if( HtmlContainerFlags::Div == nCntnrMode )
+    if( HTML_CNTNR_DIV == nCntnrMode )
     {
         DecIndentLevel();
         if( m_bLFPossible )
@@ -512,25 +514,26 @@ void SwHTMLWriter::OutFrameFormat( AllHtmlFlags nMode, const SwFrameFormat& rFra
         HTMLOutFuncs::Out_AsciiTag( Strm(), OOO_STRING_SVTOOLS_HTML_division, false );
         m_bLFPossible = true;
     }
-    else if( HtmlContainerFlags::Span == nCntnrMode )
+    else if( HTML_CNTNR_SPAN == nCntnrMode )
         HTMLOutFuncs::Out_AsciiTag( Strm(), OOO_STRING_SVTOOLS_HTML_span, false );
 }
 
 OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
                                      const OUString& rAlternateText,
-                                     HtmlFrmOpts nFrameOpts )
+                                     sal_uInt32 nFrameOpts,
+                                     const OString &rEndTags )
 {
-    OString sRetEndTags;
+    OString sRetEndTags(rEndTags);
     OStringBuffer sOut;
     const SfxPoolItem* pItem;
     const SfxItemSet& rItemSet = rFrameFormat.GetAttrSet();
 
     // Name
-    if( (nFrameOpts & (HtmlFrmOpts::Id|HtmlFrmOpts::Name)) &&
+    if( (nFrameOpts & (HTML_FRMOPT_ID|HTML_FRMOPT_NAME)) &&
         !rFrameFormat.GetName().isEmpty() )
     {
         const sal_Char *pStr =
-            (nFrameOpts & HtmlFrmOpts::Id) ? OOO_STRING_SVTOOLS_HTML_O_id : OOO_STRING_SVTOOLS_HTML_O_name;
+            (nFrameOpts & HTML_FRMOPT_ID) ? OOO_STRING_SVTOOLS_HTML_O_id : OOO_STRING_SVTOOLS_HTML_O_name;
         sOut.append(' ').append(pStr).
             append("=\"");
         Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
@@ -539,15 +542,15 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
     }
 
     // Name
-    if( nFrameOpts & HtmlFrmOpts::Dir )
+    if( nFrameOpts & HTML_FRMOPT_DIR )
     {
-        SvxFrameDirection nDir = GetHTMLDirection( rItemSet );
+        sal_uInt16 nDir = GetHTMLDirection( rItemSet );
         Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
         OutDirection( nDir );
     }
 
     // ALT
-    if( (nFrameOpts & HtmlFrmOpts::Alt) && !rAlternateText.isEmpty() )
+    if( (nFrameOpts & HTML_FRMOPT_ALT) && !rAlternateText.isEmpty() )
     {
         sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_alt).
             append("=\"");
@@ -559,14 +562,14 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
     // ALIGN
     const sal_Char *pStr = nullptr;
     RndStdIds eAnchorId = rFrameFormat.GetAnchor().GetAnchorId();
-    if( (nFrameOpts & HtmlFrmOpts::Align) &&
-        ((RndStdIds::FLY_AT_PARA == eAnchorId) || (RndStdIds::FLY_AT_CHAR == eAnchorId)) )
+    if( (nFrameOpts & HTML_FRMOPT_ALIGN) &&
+        ((FLY_AT_PARA == eAnchorId) || (FLY_AT_CHAR == eAnchorId)) )
     {
-        // MIB 12.3.98: Wouldn't it be more clever to left-align frames that
-        // are anchored to a paragraph if necessary, instead of inserting them
-        // as being anchored to characters?
+        // MIB 12.3.98: Ist es nicht schlauer, absatzgebundene
+        // Rahmen notfalls links auszurichten als sie
+        // zeichengebunden einzufuegen???
         const SwFormatHoriOrient& rHoriOri = rFrameFormat.GetHoriOrient();
-        if( !(nFrameOpts & HtmlFrmOpts::SAlign) ||
+        if( !(nFrameOpts & HTML_FRMOPT_S_ALIGN) ||
             text::RelOrientation::FRAME == rHoriOri.GetRelationOrient() ||
             text::RelOrientation::PRINT_AREA == rHoriOri.GetRelationOrient() )
         {
@@ -575,21 +578,21 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
                         : OOO_STRING_SVTOOLS_HTML_AL_left;
         }
     }
-    if( (nFrameOpts & HtmlFrmOpts::Align) && !pStr &&
-        ( !(nFrameOpts & HtmlFrmOpts::SAlign) ||
-          (RndStdIds::FLY_AS_CHAR == eAnchorId) ) &&
+    if( (nFrameOpts & HTML_FRMOPT_ALIGN) && !pStr &&
+        ( (nFrameOpts & HTML_FRMOPT_S_ALIGN) == 0 ||
+          (FLY_AS_CHAR == eAnchorId) ) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_VERT_ORIENT, true, &pItem ))
     {
         switch( static_cast<const SwFormatVertOrient*>(pItem)->GetVertOrient() )
         {
         case text::VertOrientation::LINE_TOP:     pStr = OOO_STRING_SVTOOLS_HTML_VA_top;        break;
         case text::VertOrientation::CHAR_TOP:
-        case text::VertOrientation::BOTTOM:       pStr = OOO_STRING_SVTOOLS_HTML_VA_texttop;    break;  // not possible
+        case text::VertOrientation::BOTTOM:       pStr = OOO_STRING_SVTOOLS_HTML_VA_texttop;    break;  // geht nicht
         case text::VertOrientation::LINE_CENTER:
-        case text::VertOrientation::CHAR_CENTER:  pStr = OOO_STRING_SVTOOLS_HTML_VA_absmiddle;  break;  // not possible
+        case text::VertOrientation::CHAR_CENTER:  pStr = OOO_STRING_SVTOOLS_HTML_VA_absmiddle;  break;  // geht nicht
         case text::VertOrientation::CENTER:       pStr = OOO_STRING_SVTOOLS_HTML_VA_middle;     break;
         case text::VertOrientation::LINE_BOTTOM:
-        case text::VertOrientation::CHAR_BOTTOM:  pStr = OOO_STRING_SVTOOLS_HTML_VA_absbottom;  break;  // not possible
+        case text::VertOrientation::CHAR_BOTTOM:  pStr = OOO_STRING_SVTOOLS_HTML_VA_absbottom;  break;  // geht nicht
         case text::VertOrientation::TOP:          pStr = OOO_STRING_SVTOOLS_HTML_VA_bottom;     break;
         case text::VertOrientation::NONE:     break;
         }
@@ -600,9 +603,9 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
             append(pStr).append("\"");
     }
 
-    // HSPACE and VSPACE
+    // HSPACE und VSPACE
     Size aTwipSpc( 0, 0 );
-    if( (nFrameOpts & (HtmlFrmOpts::Space|HtmlFrmOpts::MarginSize)) &&
+    if( (nFrameOpts & (HTML_FRMOPT_SPACE|HTML_FRMOPT_MARGINSIZE)) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_LR_SPACE, true, &pItem ))
     {
         aTwipSpc.Width() =
@@ -610,7 +613,7 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
                 static_cast<const SvxLRSpaceItem*>(pItem)->GetRight() ) / 2;
         m_nDfltLeftMargin = m_nDfltRightMargin = aTwipSpc.Width();
     }
-    if( (nFrameOpts & (HtmlFrmOpts::Space|HtmlFrmOpts::MarginSize)) &&
+    if( (nFrameOpts & (HTML_FRMOPT_SPACE|HTML_FRMOPT_MARGINSIZE)) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_UL_SPACE, true, &pItem ))
     {
         aTwipSpc.Height()  =
@@ -619,13 +622,13 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         m_nDfltTopMargin = m_nDfltBottomMargin = (sal_uInt16)aTwipSpc.Height();
     }
 
-    if( (nFrameOpts & HtmlFrmOpts::Space) &&
+    if( (nFrameOpts & HTML_FRMOPT_SPACE) &&
         (aTwipSpc.Width() || aTwipSpc.Height()) &&
         Application::GetDefaultDevice() )
     {
         Size aPixelSpc =
             Application::GetDefaultDevice()->LogicToPixel( aTwipSpc,
-                                                MapMode(MapUnit::MapTwip) );
+                                                MapMode(MAP_TWIP) );
         if( !aPixelSpc.Width() && aTwipSpc.Width() )
             aPixelSpc.Width() = 1;
         if( !aPixelSpc.Height() && aTwipSpc.Height() )
@@ -644,9 +647,9 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         }
     }
 
-    // The spacing must be considered for the size, if the corresponding flag
-    // is set.
-    if( (nFrameOpts & HtmlFrmOpts::MarginSize) )
+    // Der Abstand muss bei der Groesse beruecksichtigt, wenn das entsprechende
+    // Flag gesetzt ist.
+    if( (nFrameOpts & HTML_FRMOPT_MARGINSIZE) )
     {
         aTwipSpc.Width() *= -2;
         aTwipSpc.Height() *= -2;
@@ -657,7 +660,7 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         aTwipSpc.Height() = 0;
     }
 
-    if( !(nFrameOpts & HtmlFrmOpts::AbsSize) &&
+    if( !(nFrameOpts & HTML_FRMOPT_ABSSIZE) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_BOX, true, &pItem ))
     {
         const SvxBoxItem* pBoxItem = static_cast<const SvxBoxItem*>(pItem);
@@ -668,25 +671,25 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         aTwipSpc.Height() += pBoxItem->CalcLineSpace( SvxBoxItemLine::BOTTOM );
     }
 
-    // WIDTH and/or HEIGHT
-    // Output ATT_VAR_SIZE/ATT_MIN_SIZE only, if ANYSIZE is set
-    if( (nFrameOpts & HtmlFrmOpts::Size) &&
+    // WIDTH und/oder HEIGHT
+    // ATT_VAR_SIZE/ATT_MIN_SIZE nur ausgeben, wenn ANYSIZE gesezut ist
+    if( (nFrameOpts & HTML_FRMOPT_SIZE) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_FRM_SIZE, true, &pItem ) &&
-        ( (nFrameOpts & HtmlFrmOpts::AnySize) ||
+        ( (nFrameOpts & HTML_FRMOPT_ANYSIZE) ||
           ATT_FIX_SIZE == static_cast<const SwFormatFrameSize *>(pItem)->GetHeightSizeType()) )
     {
         const SwFormatFrameSize *pFSItem = static_cast<const SwFormatFrameSize *>(pItem);
         sal_uInt8 nPrcWidth = pFSItem->GetWidthPercent();
         sal_uInt8 nPrcHeight = pFSItem->GetHeightPercent();
 
-        // Size of the object in Twips without margins
+        // Groesse des Objekts Twips ohne Raender
         Size aTwipSz( (nPrcWidth ? 0
                                  : pFSItem->GetWidth()-aTwipSpc.Width()),
                       (nPrcHeight ? 0
                                   : pFSItem->GetHeight()-aTwipSpc.Height()) );
 
         OSL_ENSURE( aTwipSz.Width() >= 0 && aTwipSz.Height() >= 0,
-                "Frame size minus spacing  < 0!!!???" );
+                "Rahmengroesse minus Abstand < 0!!!???" );
         if( aTwipSz.Width() < 0 )
             aTwipSz.Width() = 0;
         if( aTwipSz.Height() < 0 )
@@ -698,14 +701,14 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         {
             aPixelSz =
                 Application::GetDefaultDevice()->LogicToPixel( aTwipSz,
-                                                    MapMode(MapUnit::MapTwip) );
+                                                    MapMode(MAP_TWIP) );
             if( !aPixelSz.Width() && aTwipSz.Width() )
                 aPixelSz.Width() = 1;
             if( !aPixelSz.Height() && aTwipSz.Height() )
                 aPixelSz.Height() = 1;
         }
 
-        if( (nFrameOpts & HtmlFrmOpts::Width) &&
+        if( (nFrameOpts & HTML_FRMOPT_WIDTH) &&
             ((nPrcWidth && nPrcWidth!=255) || aPixelSz.Width()) )
         {
             sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_width).
@@ -717,7 +720,7 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
             sOut.append("\"");
         }
 
-        if( (nFrameOpts & HtmlFrmOpts::Height) &&
+        if( (nFrameOpts & HTML_FRMOPT_HEIGHT) &&
             ((nPrcHeight && nPrcHeight!=255) || aPixelSz.Height()) )
         {
             sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_height).
@@ -733,17 +736,17 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
     if (!sOut.isEmpty())
         Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
 
-    // Insert wrap for graphics that are anchored to a paragraph as
-    // <BR CLEAR=...> in the string
-    if( (nFrameOpts & HtmlFrmOpts::BrClear) &&
-        ((RndStdIds::FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) ||
-         (RndStdIds::FLY_AT_CHAR == rFrameFormat.GetAnchor().GetAnchorId())) &&
+    // Umlauf fuer absatzgeb. Grafiken als <BR CLEAR=...> in den String
+    // schreiben
+    if( (nFrameOpts & HTML_FRMOPT_BRCLEAR) &&
+        ((FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) ||
+         (FLY_AT_CHAR == rFrameFormat.GetAnchor().GetAnchorId())) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_SURROUND, true, &pItem ))
     {
         const SwFormatSurround* pSurround = static_cast<const SwFormatSurround*>(pItem);
         sal_Int16 eHoriOri =    rFrameFormat.GetHoriOrient().GetHoriOrient();
         pStr = nullptr;
-        css::text::WrapTextMode eSurround = pSurround->GetSurround();
+        SwSurround eSurround = pSurround->GetSurround();
         bool bAnchorOnly = pSurround->IsAnchorOnly();
         switch( eHoriOri )
         {
@@ -751,12 +754,12 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
             {
                 switch( eSurround )
                 {
-                case css::text::WrapTextMode_NONE:
-                case css::text::WrapTextMode_RIGHT:
+                case SURROUND_NONE:
+                case SURROUND_RIGHT:
                     pStr = OOO_STRING_SVTOOLS_HTML_AL_right;
                     break;
-                case css::text::WrapTextMode_LEFT:
-                case css::text::WrapTextMode_PARALLEL:
+                case SURROUND_LEFT:
+                case SURROUND_PARALLEL:
                     if( bAnchorOnly )
                         m_bClearRight = true;
                     break;
@@ -772,12 +775,12 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
             {
                 switch( eSurround )
                 {
-                case css::text::WrapTextMode_NONE:
-                case css::text::WrapTextMode_LEFT:
+                case SURROUND_NONE:
+                case SURROUND_LEFT:
                     pStr = OOO_STRING_SVTOOLS_HTML_AL_left;
                     break;
-                case css::text::WrapTextMode_RIGHT:
-                case css::text::WrapTextMode_PARALLEL:
+                case SURROUND_RIGHT:
+                case SURROUND_PARALLEL:
                     if( bAnchorOnly )
                         m_bClearLeft = true;
                     break;
@@ -793,36 +796,37 @@ OString SwHTMLWriter::OutFrameFormatOptions( const SwFrameFormat &rFrameFormat,
         {
             sOut.append('<').append(OOO_STRING_SVTOOLS_HTML_linebreak).
                 append(' ').append(OOO_STRING_SVTOOLS_HTML_O_clear).
-                append("=\"").append(pStr).append("\">");
+                append("=\"").append(pStr).append("\">").append(rEndTags);
             sRetEndTags = sOut.makeStringAndClear();
         }
     }
+    assert(sRetEndTags.endsWith(rEndTags)); // fdo#58286
     return sRetEndTags;
 }
 
-void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameFormat& rFrameFormat, const OUString& rAlternateText, HtmlFrmOpts nFrameOptions)
+void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameFormat& rFrameFormat, const OUString& rAlternateText, sal_uInt32 nFrameOptions)
 {
     const SfxPoolItem* pItem;
     const SfxItemSet& rItemSet = rFrameFormat.GetAttrSet();
 
     // Name
-    if( (nFrameOptions & (HtmlFrmOpts::Id|HtmlFrmOpts::Name)) &&
+    if( (nFrameOptions & (HTML_FRMOPT_ID|HTML_FRMOPT_NAME)) &&
         !rFrameFormat.GetName().isEmpty() )
     {
-        const sal_Char* pAttributeName = (nFrameOptions & HtmlFrmOpts::Id) ? OOO_STRING_SVTOOLS_HTML_O_id : OOO_STRING_SVTOOLS_HTML_O_name;
+        const sal_Char* pAttributeName = (nFrameOptions & HTML_FRMOPT_ID) ? OOO_STRING_SVTOOLS_HTML_O_id : OOO_STRING_SVTOOLS_HTML_O_name;
         aHtml.attribute(pAttributeName, rFrameFormat.GetName());
     }
 
     // Name
-    if (nFrameOptions & HtmlFrmOpts::Dir)
+    if (nFrameOptions & HTML_FRMOPT_DIR)
     {
-        SvxFrameDirection nCurrentDirection = GetHTMLDirection(rItemSet);
+        sal_uInt16 nCurrentDirection = GetHTMLDirection(rItemSet);
         OString sDirection = convertDirection(nCurrentDirection);
         aHtml.attribute(OOO_STRING_SVTOOLS_HTML_O_dir, sDirection);
     }
 
     // alt
-    if( (nFrameOptions & HtmlFrmOpts::Alt) && !rAlternateText.isEmpty() )
+    if( (nFrameOptions & HTML_FRMOPT_ALT) && !rAlternateText.isEmpty() )
     {
         aHtml.attribute(OOO_STRING_SVTOOLS_HTML_O_alt, rAlternateText);
     }
@@ -830,11 +834,11 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
     // align
     const sal_Char* pAlignString = nullptr;
     RndStdIds eAnchorId = rFrameFormat.GetAnchor().GetAnchorId();
-    if( (nFrameOptions & HtmlFrmOpts::Align) &&
-        ((RndStdIds::FLY_AT_PARA == eAnchorId) || (RndStdIds::FLY_AT_CHAR == eAnchorId)) )
+    if( (nFrameOptions & HTML_FRMOPT_ALIGN) &&
+        ((FLY_AT_PARA == eAnchorId) || (FLY_AT_CHAR == eAnchorId)) )
     {
         const SwFormatHoriOrient& rHoriOri = rFrameFormat.GetHoriOrient();
-        if( !(nFrameOptions & HtmlFrmOpts::SAlign) ||
+        if( !(nFrameOptions & HTML_FRMOPT_S_ALIGN) ||
             text::RelOrientation::FRAME == rHoriOri.GetRelationOrient() ||
             text::RelOrientation::PRINT_AREA == rHoriOri.GetRelationOrient() )
         {
@@ -843,9 +847,9 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
                         : OOO_STRING_SVTOOLS_HTML_AL_left;
         }
     }
-    if( (nFrameOptions & HtmlFrmOpts::Align) && !pAlignString &&
-        ( !(nFrameOptions & HtmlFrmOpts::SAlign) ||
-          (RndStdIds::FLY_AS_CHAR == eAnchorId) ) &&
+    if( (nFrameOptions & HTML_FRMOPT_ALIGN) && !pAlignString &&
+        ( (nFrameOptions & HTML_FRMOPT_S_ALIGN) == 0 ||
+          (FLY_AS_CHAR == eAnchorId) ) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_VERT_ORIENT, true, &pItem ))
     {
         switch( static_cast<const SwFormatVertOrient*>(pItem)->GetVertOrient() )
@@ -867,9 +871,9 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         aHtml.attribute(OOO_STRING_SVTOOLS_HTML_O_align, pAlignString);
     }
 
-    // hspace and vspace
+    // hspace und vspace
     Size aTwipSpc( 0, 0 );
-    if( (nFrameOptions & (HtmlFrmOpts::Space | HtmlFrmOpts::MarginSize)) &&
+    if( (nFrameOptions & (HTML_FRMOPT_SPACE | HTML_FRMOPT_MARGINSIZE)) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_LR_SPACE, true, &pItem ))
     {
         aTwipSpc.Width() =
@@ -877,7 +881,7 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
                 static_cast<const SvxLRSpaceItem*>(pItem)->GetRight() ) / 2;
         m_nDfltLeftMargin = m_nDfltRightMargin = aTwipSpc.Width();
     }
-    if( (nFrameOptions & (HtmlFrmOpts::Space|HtmlFrmOpts::MarginSize)) &&
+    if( (nFrameOptions & (HTML_FRMOPT_SPACE|HTML_FRMOPT_MARGINSIZE)) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_UL_SPACE, true, &pItem ))
     {
         aTwipSpc.Height()  =
@@ -886,13 +890,13 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         m_nDfltTopMargin = m_nDfltBottomMargin = (sal_uInt16)aTwipSpc.Height();
     }
 
-    if( (nFrameOptions & HtmlFrmOpts::Space) &&
+    if( (nFrameOptions & HTML_FRMOPT_SPACE) &&
         (aTwipSpc.Width() || aTwipSpc.Height()) &&
         Application::GetDefaultDevice() )
     {
         Size aPixelSpc =
             Application::GetDefaultDevice()->LogicToPixel( aTwipSpc,
-                                                MapMode(MapUnit::MapTwip) );
+                                                MapMode(MAP_TWIP) );
         if( !aPixelSpc.Width() && aTwipSpc.Width() )
             aPixelSpc.Width() = 1;
         if( !aPixelSpc.Height() && aTwipSpc.Height() )
@@ -909,9 +913,9 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         }
     }
 
-    // The spacing must be considered for the size, if the corresponding flag
-    // is set.
-    if( (nFrameOptions & HtmlFrmOpts::MarginSize) )
+    // Der Abstand muss bei der Groesse beruecksichtigt, wenn das entsprechende
+    // Flag gesetzt ist.
+    if( (nFrameOptions & HTML_FRMOPT_MARGINSIZE) )
     {
         aTwipSpc.Width() *= -2;
         aTwipSpc.Height() *= -2;
@@ -922,7 +926,7 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         aTwipSpc.Height() = 0;
     }
 
-    if( !(nFrameOptions & HtmlFrmOpts::AbsSize) &&
+    if( !(nFrameOptions & HTML_FRMOPT_ABSSIZE) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_BOX, true, &pItem ))
     {
         const SvxBoxItem* pBoxItem = static_cast<const SvxBoxItem*>(pItem);
@@ -934,24 +938,24 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
     }
 
     // "width" and/or "height"
-    // Only output ATT_VAR_SIZE/ATT_MIN_SIZE if ANYSIZE is set
-    if( (nFrameOptions & HtmlFrmOpts::Size) &&
+    // ATT_VAR_SIZE/ATT_MIN_SIZE nur ausgeben, wenn ANYSIZE gesezut ist
+    if( (nFrameOptions & HTML_FRMOPT_SIZE) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_FRM_SIZE, true, &pItem ) &&
-        ( (nFrameOptions & HtmlFrmOpts::AnySize) ||
+        ( (nFrameOptions & HTML_FRMOPT_ANYSIZE) ||
           ATT_FIX_SIZE == static_cast<const SwFormatFrameSize *>(pItem)->GetHeightSizeType()) )
     {
         const SwFormatFrameSize *pFSItem = static_cast<const SwFormatFrameSize *>(pItem);
         sal_uInt8 nPrcWidth = pFSItem->GetWidthPercent();
         sal_uInt8 nPrcHeight = pFSItem->GetHeightPercent();
 
-        // Size of the object in Twips without margins
+        // Groesse des Objekts Twips ohne Raender
         Size aTwipSz( (nPrcWidth ? 0
                                  : pFSItem->GetWidth()-aTwipSpc.Width()),
                       (nPrcHeight ? 0
                                   : pFSItem->GetHeight()-aTwipSpc.Height()) );
 
         OSL_ENSURE( aTwipSz.Width() >= 0 && aTwipSz.Height() >= 0,
-                "Frame size minus spacing < 0!!!???" );
+                "Rahmengroesse minus Abstand < 0!!!???" );
         if( aTwipSz.Width() < 0 )
             aTwipSz.Width() = 0;
         if( aTwipSz.Height() < 0 )
@@ -963,14 +967,14 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         {
             aPixelSz =
                 Application::GetDefaultDevice()->LogicToPixel( aTwipSz,
-                                                    MapMode(MapUnit::MapTwip) );
+                                                    MapMode(MAP_TWIP) );
             if( !aPixelSz.Width() && aTwipSz.Width() )
                 aPixelSz.Width() = 1;
             if( !aPixelSz.Height() && aTwipSz.Height() )
                 aPixelSz.Height() = 1;
         }
 
-        if( (nFrameOptions & HtmlFrmOpts::Width) &&
+        if( (nFrameOptions & HTML_FRMOPT_WIDTH) &&
             ((nPrcWidth && nPrcWidth!=255) || aPixelSz.Width()) )
         {
             OString sWidth;
@@ -981,7 +985,7 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
             aHtml.attribute(OOO_STRING_SVTOOLS_HTML_O_width, sWidth);
         }
 
-        if( (nFrameOptions & HtmlFrmOpts::Height) &&
+        if( (nFrameOptions & HTML_FRMOPT_HEIGHT) &&
             ((nPrcHeight && nPrcHeight!=255) || aPixelSz.Height()) )
         {
             OString sHeight;
@@ -993,19 +997,19 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
         }
     }
 
-    // Insert wrap for graphics that are anchored to a paragraph as
-    // <BR CLEAR=...> in the string
+    // Umlauf fuer absatzgeb. Grafiken als <BR CLEAR=...> in den String
+    // schreiben
 
-    if( (nFrameOptions & HtmlFrmOpts::BrClear) &&
-        ((RndStdIds::FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) ||
-         (RndStdIds::FLY_AT_CHAR == rFrameFormat.GetAnchor().GetAnchorId())) &&
+    if( (nFrameOptions & HTML_FRMOPT_BRCLEAR) &&
+        ((FLY_AT_PARA == rFrameFormat.GetAnchor().GetAnchorId()) ||
+         (FLY_AT_CHAR == rFrameFormat.GetAnchor().GetAnchorId())) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_SURROUND, true, &pItem ))
     {
         const sal_Char* pSurroundString = nullptr;
 
         const SwFormatSurround* pSurround = static_cast<const SwFormatSurround*>(pItem);
         sal_Int16 eHoriOri = rFrameFormat.GetHoriOrient().GetHoriOrient();
-        css::text::WrapTextMode eSurround = pSurround->GetSurround();
+        SwSurround eSurround = pSurround->GetSurround();
         bool bAnchorOnly = pSurround->IsAnchorOnly();
         switch( eHoriOri )
         {
@@ -1013,12 +1017,12 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
             {
                 switch( eSurround )
                 {
-                case css::text::WrapTextMode_NONE:
-                case css::text::WrapTextMode_RIGHT:
+                case SURROUND_NONE:
+                case SURROUND_RIGHT:
                     pSurroundString = OOO_STRING_SVTOOLS_HTML_AL_right;
                     break;
-                case css::text::WrapTextMode_LEFT:
-                case css::text::WrapTextMode_PARALLEL:
+                case SURROUND_LEFT:
+                case SURROUND_PARALLEL:
                     if( bAnchorOnly )
                         m_bClearRight = true;
                     break;
@@ -1034,12 +1038,12 @@ void SwHTMLWriter::writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameForma
             {
                 switch( eSurround )
                 {
-                case css::text::WrapTextMode_NONE:
-                case css::text::WrapTextMode_LEFT:
+                case SURROUND_NONE:
+                case SURROUND_LEFT:
                     pSurroundString = OOO_STRING_SVTOOLS_HTML_AL_left;
                     break;
-                case css::text::WrapTextMode_RIGHT:
-                case css::text::WrapTextMode_PARALLEL:
+                case SURROUND_RIGHT:
+                case SURROUND_PARALLEL:
                     if( bAnchorOnly )
                         m_bClearLeft = true;
                     break;
@@ -1069,13 +1073,14 @@ OUString lclWriteOutImap(SwHTMLWriter& rHTMLWrt, const SfxItemSet& rItemSet, con
 
     const SfxPoolItem* pItem;
 
-    // Only consider the URL attribute if no ImageMap was supplied
+    // das URL-Attribut nur beruecksichtigen, wenn keine Image-Map
+    // uebergeben wurde
     if (!pAltImgMap && SfxItemState::SET == rItemSet.GetItemState( RES_URL, true, &pItem))
     {
         pURLItem = static_cast<const SwFormatURL*>( pItem);
     }
 
-    // write ImageMap
+    // Image-Map rausschreiben
     const ImageMap* pIMap = pAltImgMap;
     if( !pIMap && pURLItem )
     {
@@ -1084,7 +1089,7 @@ OUString lclWriteOutImap(SwHTMLWriter& rHTMLWrt, const SfxItemSet& rItemSet, con
 
     if (pIMap)
     {
-        // make the name unique
+        // den Namen eindeutig machen
         aIMapName = pIMap->GetName();
         OUString aNameBase;
         if (!aIMapName.isEmpty())
@@ -1128,8 +1133,8 @@ OUString lclWriteOutImap(SwHTMLWriter& rHTMLWrt, const SfxItemSet& rItemSet, con
             SwTwips nWidth = rFrameSize.GetWidth();
             nWidth -= rBox.CalcLineSpace(SvxBoxItemLine::LEFT) + rBox.CalcLineSpace(SvxBoxItemLine::RIGHT);
 
-            OSL_ENSURE( nWidth > 0, "Are there any graphics that are 0 twip wide!?" );
-            if (nWidth <= 0) // should not happen
+            OSL_ENSURE( nWidth > 0, "Gibt es 0 twip breite Grafiken!?" );
+            if (nWidth <= 0) // sollte nicht passieren
                 nWidth = 1;
 
             if (rRealSize.Width() != nWidth)
@@ -1145,7 +1150,7 @@ OUString lclWriteOutImap(SwHTMLWriter& rHTMLWrt, const SfxItemSet& rItemSet, con
 
             nHeight -= rBox.CalcLineSpace(SvxBoxItemLine::TOP) + rBox.CalcLineSpace(SvxBoxItemLine::BOTTOM);
 
-            OSL_ENSURE( nHeight > 0, "Are there any graphics that are 0 twip high!?" );
+            OSL_ENSURE( nHeight > 0, "Gibt es 0 twip hohe Grafiken!?" );
             if (nHeight <= 0)
                 nHeight = 1;
 
@@ -1199,7 +1204,7 @@ OUString lclWriteOutImap(SwHTMLWriter& rHTMLWrt, const SfxItemSet& rItemSet, con
 Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
                        const OUString& rGraphicURL,
                        Graphic& rGraphic, const OUString& rAlternateText,
-                       const Size &rRealSize, HtmlFrmOpts nFrameOpts,
+                       const Size &rRealSize, sal_uInt32 nFrameOpts,
                        const sal_Char *pMarkType,
                        const ImageMap *pAltImgMap )
 {
@@ -1208,7 +1213,7 @@ Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
     if (rHTMLWrt.mbSkipImages)
         return rHTMLWrt;
 
-    // if necessary, temporarily close an open attribute
+    // ggf. ein noch offenes Attribut voruebergehend beenden
     if( !rHTMLWrt.m_aINetFormats.empty() )
     {
         SwFormatINetFormat* pINetFormat = rHTMLWrt.m_aINetFormats.back();
@@ -1292,7 +1297,7 @@ Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
 
     // <font color = ...>...<img ... >...</font>
     sal_uInt16 nBorderWidth = 0;
-    if( (nFrameOpts & HtmlFrmOpts::Border) &&
+    if( (nFrameOpts & HTML_FRMOPT_BORDER) &&
         SfxItemState::SET == rItemSet.GetItemState( RES_BOX, true, &pItem ))
     {
         Size aTwipBorder( 0, 0 );
@@ -1335,7 +1340,7 @@ Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
         {
             Size aPixelBorder =
                 Application::GetDefaultDevice()->LogicToPixel( aTwipBorder,
-                                                    MapMode(MapUnit::MapTwip) );
+                                                    MapMode(MAP_TWIP) );
             if( !aPixelBorder.Width() && aTwipBorder.Width() )
                 aPixelBorder.Width() = 1;
             if( !aPixelBorder.Height() && aTwipBorder.Height() )
@@ -1392,7 +1397,7 @@ Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
     if( rHTMLWrt.IsHTMLMode( HTMLMODE_ABS_POS_FLY ) )
         rHTMLWrt.OutCSS1_FrameFormatOptions( rFrameFormat, nFrameOpts );
 
-    if( nFrameOpts & HtmlFrmOpts::Border )
+    if( nFrameOpts & HTML_FRMOPT_BORDER )
     {
         aHtml.attribute(OOO_STRING_SVTOOLS_HTML_O_border, nBorderWidth);
     }
@@ -1411,7 +1416,8 @@ Writer& OutHTML_Image( Writer& rWrt, const SwFrameFormat &rFrameFormat,
 
     if( !rHTMLWrt.m_aINetFormats.empty() )
     {
-        // There is still an attribute on the stack that has to be reopened
+        // es ist noch ein Attribut auf dem Stack, das wieder geoeffnet
+        // werden muss
         SwFormatINetFormat *pINetFormat = rHTMLWrt.m_aINetFormats.back();
         OutHTML_INetFormat( rWrt, *pINetFormat, true );
     }
@@ -1501,23 +1507,23 @@ static Writer& OutHTML_FrameFormatTableNode( Writer& rWrt, const SwFrameFormat& 
     OUString aCaption;
     bool bTopCaption = false;
 
-    // Not const, because GetTable won't be const sometime later
+    // Nicht const, weil GetTable spater mal nicht const ist
     SwNode *pNd = rHTMLWrt.pDoc->GetNodes()[ nStt ];
     SwTableNode *pTableNd = pNd->GetTableNode();
     const SwTextNode *pTextNd = pNd->GetTextNode();
     if( !pTableNd && pTextNd )
     {
-        // Table with heading
+        // Tabelle mit Ueberschrift
         bTopCaption = true;
         pTableNd = rHTMLWrt.pDoc->GetNodes()[nStt+1]->GetTableNode();
     }
-    OSL_ENSURE( pTableNd, "Frame does not contain a table" );
+    OSL_ENSURE( pTableNd, "Rahmen enthaelt keine Tabelle" );
     if( pTableNd )
     {
         sal_uLong nTableEnd = pTableNd->EndOfSectionIndex();
         OSL_ENSURE( nTableEnd == nEnd - 1 ||
                 (nTableEnd == nEnd - 2 && !bTopCaption),
-                "Invalid frame content for a table" );
+                "Ungeuelter Rahmen-Inhalt fuer Tabelle" );
 
         if( nTableEnd == nEnd - 2 )
             pTextNd = rHTMLWrt.pDoc->GetNodes()[nTableEnd+1]->GetTextNode();
@@ -1546,10 +1552,10 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
 
     rHTMLWrt.ChangeParaToken( 0 );
 
-    // Close the current <DL>!
+    // Die aktulle <DL> beenden!
     rHTMLWrt.OutAndSetDefList( 0 );
 
-    // output as Multicol
+    // als Multicol ausgeben
     if( rHTMLWrt.m_bLFPossible )
         rHTMLWrt.OutNewLine();
 
@@ -1558,7 +1564,7 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
 
     const SwFormatCol& rFormatCol = rFrameFormat.GetCol();
 
-    // output the number of columns as COLS
+    // die Anzahl der Spalten als COLS ausgeben
     sal_uInt16 nCols = rFormatCol.GetNumCols();
     if( nCols )
     {
@@ -1566,7 +1572,7 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
             append("=\"").append(static_cast<sal_Int32>(nCols)).append("\"");
     }
 
-    // the Gutter width (minimum value) as GUTTER
+    // die Gutter-Breite (Minimalwert) als GUTTER
     sal_uInt16 nGutter = rFormatCol.GetGutterWidth( true );
     if( nGutter!=USHRT_MAX )
     {
@@ -1574,7 +1580,7 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
         {
             nGutter = (sal_uInt16)Application::GetDefaultDevice()
                             ->LogicToPixel( Size(nGutter,0),
-                                            MapMode(MapUnit::MapTwip) ).Width();
+                                            MapMode(MAP_TWIP) ).Width();
         }
         sOut.append(' ').append(OOO_STRING_SVTOOLS_HTML_O_gutter).
             append("=\"").append(static_cast<sal_Int32>(nGutter)).append("\"");
@@ -1583,7 +1589,7 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
     rWrt.Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
 
     // WIDTH
-    HtmlFrmOpts nFrameFlags = bInCntnr ? HTML_FRMOPTS_MULTICOL_CNTNR
+    sal_uLong nFrameFlags = bInCntnr ? HTML_FRMOPTS_MULTICOL_CNTNR
                                 : HTML_FRMOPTS_MULTICOL;
     if( rHTMLWrt.IsHTMLMode( HTMLMODE_ABS_POS_FLY ) && !bInCntnr )
         nFrameFlags |= HTML_FRMOPTS_MULTICOL_CSS1;
@@ -1594,16 +1600,16 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
     rWrt.Strm().WriteChar( '>' );
 
     rHTMLWrt.m_bLFPossible = true;
-    rHTMLWrt.IncIndentLevel();  // indent the content of Multicol
+    rHTMLWrt.IncIndentLevel();  // den Inhalt von Multicol einruecken;
 
     const SwFormatContent& rFlyContent = rFrameFormat.GetContent();
     sal_uLong nStt = rFlyContent.GetContentIdx()->GetIndex();
     const SwStartNode* pSttNd = rWrt.pDoc->GetNodes()[nStt]->GetStartNode();
-    OSL_ENSURE( pSttNd, "Where is the start node" );
+    OSL_ENSURE( pSttNd, "Wo ist der Start-Node" );
 
     {
-        // in a block, so that the old state can be restored in time
-        // before the end
+        // in einem Block damit rechtzeitig vor dem Ende der alte Zustand
+        // wieder hergestellt wird.
         HTMLSaveData aSaveData( rHTMLWrt, nStt+1,
                                 pSttNd->EndOfSectionIndex(),
                                    true, &rFrameFormat );
@@ -1611,7 +1617,7 @@ static Writer & OutHTML_FrameFormatAsMulticol( Writer& rWrt,
         rHTMLWrt.Out_SwDoc( rWrt.pCurPam );
     }
 
-    rHTMLWrt.DecIndentLevel();  // indent the content of Multicol;
+    rHTMLWrt.DecIndentLevel();  // den Inhalt von Multicol einruecken;
     if( rHTMLWrt.m_bLFPossible )
         rHTMLWrt.OutNewLine();
     HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), OOO_STRING_SVTOOLS_HTML_multicol, false );
@@ -1624,7 +1630,7 @@ static Writer& OutHTML_FrameFormatAsSpacer( Writer& rWrt, const SwFrameFormat& r
 {
     SwHTMLWriter & rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
 
-    // if possible, output a line break before the graphic
+    // wenn meoglich vor der Grafik einen Zeilen-Umbruch ausgeben
     if( rHTMLWrt.m_bLFPossible )
         rHTMLWrt.OutNewLine( true );
 
@@ -1654,14 +1660,14 @@ static Writer& OutHTML_FrameFormatAsDivOrSpan( Writer& rWrt,
     {
         rHTMLWrt.ChangeParaToken( 0 );
 
-        // Close the current <DL>!
+        // Die aktulle <DL> beenden!
         rHTMLWrt.OutAndSetDefList( 0 );
         pStr = OOO_STRING_SVTOOLS_HTML_division;
     }
     else
         pStr = OOO_STRING_SVTOOLS_HTML_span;
 
-    // output as DIV
+    // als DIV ausgeben
     if( rHTMLWrt.m_bLFPossible )
         rHTMLWrt.OutNewLine();
 
@@ -1669,28 +1675,28 @@ static Writer& OutHTML_FrameFormatAsDivOrSpan( Writer& rWrt,
     sOut.append('<').append(pStr);
 
     rWrt.Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
-    HtmlFrmOpts nFrameFlags = HTML_FRMOPTS_DIV;
+    sal_uLong nFrameFlags = HTML_FRMOPTS_DIV;
     if( rHTMLWrt.IsHTMLMode( HTMLMODE_BORDER_NONE ) )
-       nFrameFlags |= HtmlFrmOpts::SNoBorder;
+       nFrameFlags |= HTML_FRMOPT_S_NOBORDER;
     OString aEndTags = rHTMLWrt.OutFrameFormatOptions( rFrameFormat, aEmptyOUStr, nFrameFlags );
     rHTMLWrt.OutCSS1_FrameFormatOptions( rFrameFormat, nFrameFlags );
     rWrt.Strm().WriteChar( '>' );
 
-    rHTMLWrt.IncIndentLevel();  // indent the content
+    rHTMLWrt.IncIndentLevel();  // den Inhalt einruecken
     rHTMLWrt.m_bLFPossible = true;
 
     const SwFormatContent& rFlyContent = rFrameFormat.GetContent();
     sal_uLong nStt = rFlyContent.GetContentIdx()->GetIndex();
 
-    // Output frame-anchored frames that are anchored to the start node
-    rHTMLWrt.OutFlyFrame( nStt, 0, HtmlPosition::Any );
+    // Am Start-Node verankerte Rahmen-gebundene Rahmen ausgeben
+    rHTMLWrt.OutFlyFrame( nStt, 0, HTML_POS_ANY );
 
     const SwStartNode* pSttNd = rWrt.pDoc->GetNodes()[nStt]->GetStartNode();
-    OSL_ENSURE( pSttNd, "Where is the start node" );
+    OSL_ENSURE( pSttNd, "Wo ist der Start-Node" );
 
     {
-        // in a block, so that the old state can be restored in time
-        // before the end
+        // in einem Block damit rechtzeitig vor dem Ende der alte Zustand
+        // wieder hergestellt wird.
         HTMLSaveData aSaveData( rHTMLWrt, nStt+1,
                                 pSttNd->EndOfSectionIndex(),
                                    true, &rFrameFormat );
@@ -1698,7 +1704,7 @@ static Writer& OutHTML_FrameFormatAsDivOrSpan( Writer& rWrt,
         rHTMLWrt.Out_SwDoc( rWrt.pCurPam );
     }
 
-    rHTMLWrt.DecIndentLevel();  // indent the content of Multicol;
+    rHTMLWrt.DecIndentLevel();  // den Inhalt von Multicol einruecken;
     if( rHTMLWrt.m_bLFPossible )
         rHTMLWrt.OutNewLine();
     HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), pStr, false );
@@ -1725,13 +1731,13 @@ static Writer & OutHTML_FrameFormatAsImage( Writer& rWrt, const SwFrameFormat& r
     {
         if( rHTMLWrt.GetOrigFileName() )
             GraphicURL = *rHTMLWrt.GetOrigFileName();
-        if( aGraphic.GetType() == GraphicType::NONE ||
+        if( aGraphic.GetType() == GRAPHIC_NONE ||
             XOutBitmap::WriteGraphic( aGraphic, GraphicURL,
                                       "JPG",
                                       (XOutFlags::UseGifIfPossible|
                                        XOutFlags::UseNativeIfPossible) ) != 0 )
         {
-            // empty or incorrect, because there is nothing to output
+            // leer oder fehlerhaft, da ist nichts auszugeben
             rHTMLWrt.m_nWarn = WARN_SWG_POOR_LOAD | WARN_SW_WRITE_BASE;
             return rWrt;
         }
@@ -1742,7 +1748,7 @@ static Writer & OutHTML_FrameFormatAsImage( Writer& rWrt, const SwFrameFormat& r
 
     }
     OutHTML_Image( rWrt, rFrameFormat, GraphicURL, aGraphic, rFrameFormat.GetName(), aSz,
-                    HtmlFrmOpts::GenImgMask, "frame",
+                    HTML_FRMOPTS_GENIMG, "frame",
                     aIMap.GetIMapObjectCount() ? &aIMap : nullptr );
 
     return rWrt;
@@ -1759,11 +1765,11 @@ static Writer& OutHTML_FrameFormatGrfNode( Writer& rWrt, const SwFrameFormat& rF
     const SwFormatContent& rFlyContent = rFrameFormat.GetContent();
     sal_uLong nStt = rFlyContent.GetContentIdx()->GetIndex()+1;
     SwGrfNode *pGrfNd = rHTMLWrt.pDoc->GetNodes()[ nStt ]->GetGrfNode();
-    OSL_ENSURE( pGrfNd, "Grf node expected" );
+    OSL_ENSURE( pGrfNd, "Grf-Node erwartet" );
     if( !pGrfNd )
         return rWrt;
 
-    HtmlFrmOpts nFrameFlags = bInCntnr ? HTML_FRMOPTS_IMG_CNTNR : HTML_FRMOPTS_IMG;
+    sal_uLong nFrameFlags = bInCntnr ? HTML_FRMOPTS_IMG_CNTNR : HTML_FRMOPTS_IMG;
     if( rHTMLWrt.IsHTMLMode( HTMLMODE_ABS_POS_FLY ) && !bInCntnr )
          nFrameFlags |= HTML_FRMOPTS_IMG_CSS1;
 
@@ -1773,7 +1779,7 @@ static Writer& OutHTML_FrameFormatGrfNode( Writer& rWrt, const SwFrameFormat& rF
     {
         const SwMirrorGrf& rMirror = pGrfNd->GetSwAttrSet().GetMirrorGrf();
 
-        if( !pGrfNd->IsLinkedFile() || MirrorGraph::Dont != rMirror.GetValue() )
+        if( !pGrfNd->IsLinkedFile() || RES_MIRROR_GRAPH_DONT != rMirror.GetValue() )
         {
             // create a (mirrored) jpeg file
             if( rHTMLWrt.GetOrigFileName() )
@@ -1784,18 +1790,17 @@ static Writer& OutHTML_FrameFormatGrfNode( Writer& rWrt, const SwFrameFormat& rF
                            XOutFlags::UseNativeIfPossible;
             switch( rMirror.GetValue() )
             {
-            case MirrorGraph::Vertical: nFlags = XOutFlags::MirrorHorz; break;
-            case MirrorGraph::Horizontal:    nFlags = XOutFlags::MirrorVert; break;
-            case MirrorGraph::Both:
+            case RES_MIRROR_GRAPH_VERT: nFlags = XOutFlags::MirrorHorz; break;
+            case RES_MIRROR_GRAPH_HOR:    nFlags = XOutFlags::MirrorVert; break;
+            case RES_MIRROR_GRAPH_BOTH:
                 nFlags = XOutFlags::MirrorVert | XOutFlags::MirrorHorz;
                 break;
-            default: break;
             }
 
             Size aMM100Size;
             const SwFormatFrameSize& rSize = rFrameFormat.GetFrameSize();
             aMM100Size = OutputDevice::LogicToLogic( rSize.GetSize(),
-                            MapMode( MapUnit::MapTwip ), MapMode( MapUnit::Map100thMM ));
+                            MapMode( MAP_TWIP ), MapMode( MAP_100TH_MM ));
 
             sal_uInt16 nErr = XOutBitmap::WriteGraphic( pGrfNd->GetGrf(), aGraphicURL,
                     "JPG", nFlags, &aMM100Size );
@@ -1827,8 +1832,8 @@ static Writer& OutHTML_FrameFormatAsMarquee( Writer& rWrt, const SwFrameFormat& 
 {
     SwHTMLWriter & rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
 
-    // get the edit engine attributes of the object as SW attributes and
-    // sort them as Hints
+    // die Edit-Engine-Attribute des Objekts als SW-Attribute holen
+    // und als Hints einsortieren
     const SfxItemSet& rFormatItemSet = rFrameFormat.GetAttrSet();
     SfxItemSet aItemSet( *rFormatItemSet.GetPool(), RES_CHRATR_BEGIN,
                                                  RES_CHRATR_END );
@@ -1857,7 +1862,7 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
 {
     SwHTMLWriter & rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
 
-    // output as Multicol
+    // als Multicol ausgeben
     rHTMLWrt.OutNewLine();
     OStringBuffer sOut;
     sOut.append(OOO_STRING_SVTOOLS_HTML_division).append(' ')
@@ -1865,11 +1870,11 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
         .append( bHeader ? "header" : "footer" ).append("\"");
     HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), sOut.makeStringAndClear().getStr() );
 
-    rHTMLWrt.IncIndentLevel();  // indent the content of Multicol;
+    rHTMLWrt.IncIndentLevel();  // den Inhalt von Multicol einruecken;
 
-    // Piece a spacer for the spacing together. Because the
-    // <DL> or </DL> always produces a space between paragraphs, it is
-    // subtracted if necessary.
+    // Einen Spacer fuer den Absatnd zusammenbasteln. Da durch das
+    // <DL> bzw. </DL> immer einer Absatz-Abstand entsteht, wird der
+    // ggf. abgezogen.
     const SvxULSpaceItem& rULSpace = rFrameFormat.GetULSpace();
     sal_uInt16 nSize = bHeader ? rULSpace.GetLower() : rULSpace.GetUpper();
     rHTMLWrt.m_nHeaderFooterSpace = nSize;
@@ -1880,7 +1885,7 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
     {
         nSize -= HTML_PARSPACE;
         nSize = (sal_Int16)Application::GetDefaultDevice()
-            ->LogicToPixel( Size(nSize,0), MapMode(MapUnit::MapTwip) ).Width();
+            ->LogicToPixel( Size(nSize,0), MapMode(MAP_TWIP) ).Width();
 
         aSpacer = OStringBuffer(OOO_STRING_SVTOOLS_HTML_spacer).
             append(' ').append(OOO_STRING_SVTOOLS_HTML_O_type).
@@ -1893,7 +1898,7 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
     const SwFormatContent& rFlyContent = rFrameFormat.GetContent();
     sal_uLong nStt = rFlyContent.GetContentIdx()->GetIndex();
     const SwStartNode* pSttNd = rWrt.pDoc->GetNodes()[nStt]->GetStartNode();
-    OSL_ENSURE( pSttNd, "Where is the start node" );
+    OSL_ENSURE( pSttNd, "Wo ist der Start-Node" );
 
     if( !bHeader && !aSpacer.isEmpty() )
     {
@@ -1902,9 +1907,9 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
     }
 
     {
-        // in a block, so that the old state can be restored in time
-        // before the end. pFlyFormat doesn't need to be set here, because
-        // PageDesc attributes cannot occur here
+        // in einem Block damit rechtzeitig vor dem Ende der alte Zustand
+        // wieder hergestellt wird. pFlyFormat braucht hier nicht gestzt zu
+        // werden, denn PageDesc-Attribute koennen hier nicht vorkommen
         HTMLSaveData aSaveData( rHTMLWrt, nStt+1,
                                 pSttNd->EndOfSectionIndex() );
 
@@ -1922,7 +1927,7 @@ Writer& OutHTML_HeaderFooter( Writer& rWrt, const SwFrameFormat& rFrameFormat,
         HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), aSpacer.getStr() );
     }
 
-    rHTMLWrt.DecIndentLevel();  // indent the content of Multicol;
+    rHTMLWrt.DecIndentLevel();  // den Inhalt von Multicol einruecken;
     rHTMLWrt.OutNewLine();
     HTMLOutFuncs::Out_AsciiTag( rWrt.Strm(), OOO_STRING_SVTOOLS_HTML_division, false );
 
@@ -1960,13 +1965,14 @@ void SwHTMLWriter::AddLinkTarget( const OUString& rURL )
                 bEncoded = true;
         }
     }
-    if( !bFound || nPos < 2 ) // at least "#a|..."
+    if( !bFound || nPos < 2 ) // mindetsens "#a|..."
         return;
 
     OUString aURL( rURL.copy( 1 ) );
 
-    // nPos-1+1/3 (-1 because of Erase)
-    OUString sCmp = aURL.copy(bEncoded ? nPos+2 : nPos).replaceAll(" ","");
+    // nPos-1+1/3 (-1 wg. Erase)
+    OUString sCmp(comphelper::string::remove(aURL.copy(bEncoded ? nPos+2 : nPos),
+        ' '));
     if( sCmp.isEmpty() )
         return;
 
@@ -1978,7 +1984,7 @@ void SwHTMLWriter::AddLinkTarget( const OUString& rURL )
         sCmp == "ole" ||
         sCmp == "table" )
     {
-        // Just remember it in a sorted array
+        // Einfach nur in einem sortierten Array merken
         if( bEncoded )
         {
             aURL = aURL.replaceAt( nPos - 1, 3, OUString(cMarkSeparator)  );
@@ -1987,15 +1993,15 @@ void SwHTMLWriter::AddLinkTarget( const OUString& rURL )
     }
     else if( sCmp == "outline" )
     {
-        // Here, we need position and name. That's why we sort a
-        // sal_uInt16 and a string array ourselves.
+        // Hier brauchen wir Position und Name. Deshalb sortieren wir
+        // ein sal_uInt16 und ein String-Array selbst
         OUString aOutline( aURL.copy( 0, nPos-1 ) );
         SwPosition aPos( *pCurPam->GetPoint() );
         if( pDoc->GotoOutline( aPos, aOutline ) )
         {
             sal_uInt32 nIdx = aPos.nNode.GetIndex();
 
-            decltype(m_aOutlineMarkPoss)::size_type nIns=0;
+            sal_uInt32 nIns=0;
             while( nIns < m_aOutlineMarkPoss.size() &&
                    m_aOutlineMarkPoss[nIns] < nIdx )
                 nIns++;

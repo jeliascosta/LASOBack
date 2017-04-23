@@ -40,8 +40,8 @@ class ScTabDeletedHint : public SfxHint
 private:
     SCTAB   nTab;
 public:
-            ScTabDeletedHint( SCTAB nTabNo );
-    virtual ~ScTabDeletedHint() override;
+            ScTabDeletedHint( SCTAB nTabNo = SCTAB_MAX );
+    virtual ~ScTabDeletedHint();
 
     SCTAB   GetTab() const { return nTab; }
 };
@@ -51,8 +51,8 @@ class ScTabSizeChangedHint : public SfxHint
 private:
     SCTAB   nTab;
 public:
-            ScTabSizeChangedHint( SCTAB nTabNo );
-    virtual ~ScTabSizeChangedHint() override;
+            ScTabSizeChangedHint( SCTAB nTabNo = SCTAB_MAX );
+    virtual ~ScTabSizeChangedHint();
 
     SCTAB   GetTab() const  { return nTab; }
 };
@@ -70,7 +70,7 @@ private:
 public:
                 ScUndoObjData( SdrObject* pObj, const ScAddress& rOS, const ScAddress& rOE,
                                                 const ScAddress& rNS, const ScAddress& rNE );
-                virtual ~ScUndoObjData() override;
+                virtual ~ScUndoObjData();
 
     virtual void     Undo() override;
     virtual void     Redo() override;
@@ -84,7 +84,7 @@ private:
     SCTAB                   mnTab;
 public:
                 ScUndoAnchorData( SdrObject* pObj, ScDocument* pDoc, SCTAB nTab );
-                virtual ~ScUndoAnchorData() override;
+                virtual ~ScUndoAnchorData();
 
     virtual void     Undo() override;
     virtual void     Redo() override;
@@ -109,7 +109,7 @@ private:
 
 public:
                     ScDrawLayer( ScDocument* pDocument, const OUString& rName );
-    virtual         ~ScDrawLayer() override;
+    virtual         ~ScDrawLayer();
 
     virtual SdrPage*  AllocPage(bool bMasterPage) override;
     virtual SdrModel* AllocModel() const override;
@@ -132,7 +132,7 @@ public:
 
                     //      automatic adjustments
 
-    void            EnableAdjust( bool bSet )    { bAdjustEnabled = bSet; }
+    void            EnableAdjust( bool bSet = true )    { bAdjustEnabled = bSet; }
 
     void            BeginCalcUndo(bool bDisableTextEditUsesCommonUndoManager);
     SdrUndoGroup*   GetCalcUndo();
@@ -140,7 +140,7 @@ public:
     void            AddCalcUndo( SdrUndoAction* pUndo );
 
     void            MoveArea( SCTAB nTab, SCCOL nCol1,SCROW nRow1, SCCOL nCol2,SCROW nRow2,
-                                SCsCOL nDx,SCsROW nDy, bool bInsDel, bool bUpdateNoteCaptionPos );
+                                SCsCOL nDx,SCsROW nDy, bool bInsDel, bool bUpdateNoteCaptionPos = true );
 
     bool            HasObjectsInRows( SCTAB nTab, SCROW nStartRow, SCROW nEndRow );
 
@@ -148,20 +148,20 @@ public:
                                             SCCOL nCol2,SCROW nRow2 );
     void            DeleteObjectsInSelection( const ScMarkData& rMark );
 
-    void            CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const tools::Rectangle& rRange );
+    void            CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const Rectangle& rRange );
     void            CopyFromClip( ScDrawLayer* pClipModel,
-                                    SCTAB nSourceTab, const tools::Rectangle& rSourceRange,
-                                    const ScAddress& rDestPos, const tools::Rectangle& rDestRange );
+                                    SCTAB nSourceTab, const Rectangle& rSourceRange,
+                                    const ScAddress& rDestPos, const Rectangle& rDestRange );
 
-    void            SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpdateNoteCaptionPos );
+    void            SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpdateNoteCaptionPos = true );
 
                     //  mirror or move between positive and negative positions for RTL
     void            MirrorRTL( SdrObject* pObj );
-    static void     MirrorRectRTL( tools::Rectangle& rRect );      // for bounding rectangles etc.
+    static void     MirrorRectRTL( Rectangle& rRect );      // for bounding rectangles etc.
 
     /** Returns the rectangle for the passed cell address in 1/100 mm.
         @param bMergedCell  True = regards merged cells. False = use single column/row size. */
-    static tools::Rectangle GetCellRect( ScDocument& rDoc, const ScAddress& rPos, bool bMergedCell );
+    static Rectangle GetCellRect( ScDocument& rDoc, const ScAddress& rPos, bool bMergedCell );
 
                     //  GetVisibleName: name for navigator etc: GetPersistName or GetName
                     //  (ChartListenerCollection etc. must use GetPersistName directly)
@@ -215,8 +215,6 @@ public:
 protected:
     virtual css::uno::Reference< css::uno::XInterface > createUnoModel() override;
 };
-
-extern bool bDrawIsInUndo; // somewhere as member!
 
 #endif
 

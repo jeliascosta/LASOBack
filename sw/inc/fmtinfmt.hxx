@@ -21,7 +21,6 @@
 
 #include <svl/poolitem.hxx>
 #include "swdllapi.h"
-#include <memory>
 
 class SvxMacro;
 class SvxMacroTableDtor;
@@ -39,7 +38,7 @@ class SW_DLLPUBLIC SwFormatINetFormat: public SfxPoolItem
     OUString msINetFormatName;
     OUString msVisitedFormatName;
     OUString msHyperlinkName;        ///< Name of the link.
-    std::unique_ptr<SvxMacroTableDtor> mpMacroTable;
+    SvxMacroTableDtor* mpMacroTable;
     SwTextINetFormat* mpTextAttr;         ///< My TextAttribute.
     sal_uInt16 mnINetFormatId;
     sal_uInt16 mnVisitedFormatId;
@@ -47,7 +46,7 @@ public:
     SwFormatINetFormat( const OUString& rURL, const OUString& rTarget );
     SwFormatINetFormat( const SwFormatINetFormat& rAttr );
     SwFormatINetFormat();                     ///< For TypeInfo.
-    virtual ~SwFormatINetFormat() override;
+    virtual ~SwFormatINetFormat();
 
     static SfxPoolItem* CreateDefault();
 
@@ -55,10 +54,10 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper* pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper* pIntl = nullptr ) const override;
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -124,10 +123,10 @@ public:
     }
 
     /// Set a new MacroTable or clear the current one.
-    void SetMacroTable( const SvxMacroTableDtor* pTable );
+    void SetMacroTable( const SvxMacroTableDtor* pTable = nullptr );
     const SvxMacroTableDtor* GetMacroTable() const
     {
-        return mpMacroTable.get();
+        return mpMacroTable;
     }
 
     /// Macro getter and setter.

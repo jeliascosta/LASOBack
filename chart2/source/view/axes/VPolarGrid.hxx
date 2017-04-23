@@ -39,7 +39,7 @@ public:
         , const css::uno::Sequence<
             css::uno::Reference< css::beans::XPropertySet > > & rGridPropertiesList //main grid, subgrid, subsubgrid etc
         );
-    virtual ~VPolarGrid() override;
+    virtual ~VPolarGrid();
 
     virtual void createShapes() override;
 
@@ -57,14 +57,14 @@ private: //member
     css::uno::Sequence<
         css::uno::Reference< css::beans::XPropertySet > > m_aGridPropertiesList;//main grid, subgrid, subsubgrid etc
     PolarPlottingPositionHelper* m_pPosHelper;
-    std::vector< ExplicitIncrementData >   m_aIncrements;
+    ::std::vector< ExplicitIncrementData >   m_aIncrements;
 
     void getAllTickInfos( sal_Int32 nDimensionIndex, TickInfoArraysType& rAllTickInfos ) const;
 
     void create2DRadiusGrid( const css::uno::Reference<css::drawing::XShapes>& xLogicTarget
                     , TickInfoArraysType& rRadiusTickInfos
                     , TickInfoArraysType& rAngleTickInfos
-                    , const std::vector<VLineProperties>& rLinePropertiesList );
+                    , const ::std::vector<VLineProperties>& rLinePropertiesList );
 };
 
 } //namespace chart

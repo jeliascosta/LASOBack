@@ -45,11 +45,10 @@ class Window
 {
 public:
     Window (vcl::Window* pParent);
-    virtual ~Window () override;
+    virtual ~Window ();
     virtual void dispose() override;
 
     void    SetViewShell (ViewShell* pViewSh);
-    ViewShell* GetViewShell();
 
     /** Set the zoom factor to the specified value and center the display
         area around the zoom center.
@@ -83,9 +82,9 @@ public:
         @return
             The new zoom factor is returned as integral percent value.
     */
-    long SetZoomRect (const ::tools::Rectangle& rZoomRect);
+    long SetZoomRect (const Rectangle& rZoomRect);
 
-    long GetZoomForRect( const ::tools::Rectangle& rZoomRect );
+    long GetZoomForRect( const Rectangle& rZoomRect );
 
     void SetMinZoomAutoCalc (bool bAuto);
 
@@ -162,6 +161,7 @@ protected:
         depending on the current zoom factor.  Its default value is now false.
     */
     bool mbMinZoomAutoCalc;
+    bool mbCalcMinZoomByMinSide;
     bool mbCenterAllowed;
     long mnTicks;
 
@@ -170,14 +170,14 @@ protected:
 
     virtual void Resize() override;
     virtual void PrePaint(vcl::RenderContext& rRenderContext) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void MouseMove(const MouseEvent& rMEvt) override;
     virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void Command(const CommandEvent& rCEvt) override;
     virtual void RequestHelp( const HelpEvent& rEvt ) override;
     virtual void LoseFocus() override;
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool Notify( NotifyEvent& rNEvt ) override;
 
     /** Create an accessibility object that makes this window accessible.
 
@@ -191,9 +191,7 @@ protected:
     OUString GetSurroundingText() const override;
     Selection GetSurroundingTextSelection() const override;
     /// @see OutputDevice::LogicInvalidate().
-    void LogicInvalidate(const ::tools::Rectangle* pRectangle) override;
-
-    FactoryFunction GetUITestFactory() const override;
+    void LogicInvalidate(const Rectangle* pRectangle) override;
 };
 
 } // end of namespace sd

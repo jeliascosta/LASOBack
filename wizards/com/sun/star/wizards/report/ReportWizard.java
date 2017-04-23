@@ -413,10 +413,7 @@ public class ReportWizard extends DatabaseObjectWizard implements XTextListener
             {
                 a = Class.forName("com.sun.star.wizards.reportbuilder.ReportBuilderImplementation");
             }
-            catch (ClassNotFoundException e)
-            {
-                System.err.println("ReportBuilderImplementation is unavailable");
-            }
+            catch (ClassNotFoundException e) {}
             if (a != null)
             {
                 try

@@ -71,7 +71,7 @@ class SbUnoStructRefObject: public SbxObject
             return rProp.toAsciiUpperCase().compareTo( rOtherProp.toAsciiUpperCase() ) < 0;
         }
     };
-    typedef std::map< OUString, StructRefInfo*, caseLessComp > StructFieldInfo;
+    typedef ::std::map< OUString, StructRefInfo*, caseLessComp > StructFieldInfo;
     StructFieldInfo maFields;
     StructRefInfo maMemberInfo;
     bool mbMemberCacheInit;
@@ -84,7 +84,7 @@ public:
     StructRefInfo getStructMember( const OUString& rMember );
     const StructRefInfo& getStructInfo() { return maMemberInfo; }
     SbUnoStructRefObject( const OUString& aName_, const StructRefInfo& rMemberInfo );
-    virtual ~SbUnoStructRefObject() override;
+    virtual ~SbUnoStructRefObject();
 
     // override Find to support e. g. NameAccess
     virtual SbxVariable* Find( const OUString&, SbxClassType ) override;
@@ -119,7 +119,7 @@ class SbUnoObject: public SbxObject
 public:
     static bool getDefaultPropName( SbUnoObject* pUnoObj, OUString& sDfltProp );
     SbUnoObject( const OUString& aName_, const css::uno::Any& aUnoObj_ );
-    virtual ~SbUnoObject() override;
+    virtual ~SbUnoObject();
 
     // #76470 do introspection on demand
     void doIntrospection();
@@ -164,9 +164,9 @@ class SbUnoMethod : public SbxMethod
 
 public:
 
-    SbUnoMethod( const OUString& aName_, SbxDataType eSbxType, css::uno::Reference< css::reflection::XIdlMethod > const & xUnoMethod_,
+    SbUnoMethod( const OUString& aName_, SbxDataType eSbxType, css::uno::Reference< css::reflection::XIdlMethod > xUnoMethod_,
         bool bInvocation );
-    virtual ~SbUnoMethod() override;
+    virtual ~SbUnoMethod();
     virtual SbxInfo* GetInfo() override;
 
     const css::uno::Sequence< css::reflection::ParamInfo >& getParamInfos();
@@ -186,7 +186,7 @@ class SbUnoProperty : public SbxProperty
 
     bool mbInvocation;      // Property is based on invocation
     SbxDataType mRealType;
-    virtual ~SbUnoProperty() override;
+    virtual ~SbUnoProperty();
     bool mbUnoStruct;
     SbUnoProperty( const SbUnoProperty&) = delete;
     SbUnoProperty& operator = ( const SbUnoProperty&) = delete;
@@ -205,7 +205,7 @@ public:
 class SbUnoFactory : public SbxFactory
 {
 public:
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 };
 
@@ -268,10 +268,12 @@ class SbUnoServiceCtor : public SbxMethod
 
     css::uno::Reference< css::reflection::XServiceConstructorDescription > m_xServiceCtorDesc;
 
+    SbUnoServiceCtor* pNext;
+
 public:
 
-    SbUnoServiceCtor( const OUString& aName_, css::uno::Reference< css::reflection::XServiceConstructorDescription > const & xServiceCtorDesc );
-    virtual ~SbUnoServiceCtor() override;
+    SbUnoServiceCtor( const OUString& aName_, css::uno::Reference< css::reflection::XServiceConstructorDescription > xServiceCtorDesc );
+    virtual ~SbUnoServiceCtor();
     virtual SbxInfo* GetInfo() override;
 
     const css::uno::Reference< css::reflection::XServiceConstructorDescription >& getServiceCtorDesc()
@@ -351,7 +353,7 @@ class BasicCollection : public SbxObject
     static SbxInfoRef xItemInfo;
 
     void Initialize();
-    virtual ~BasicCollection() override;
+    virtual ~BasicCollection();
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     sal_Int32 implGetIndex( SbxVariable* pIndexVar );
     sal_Int32 implGetIndexForName( const OUString& rName );

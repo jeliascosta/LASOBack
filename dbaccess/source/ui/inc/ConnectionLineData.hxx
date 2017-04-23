@@ -46,7 +46,7 @@ namespace dbaui
         friend bool operator==(const OConnectionLineData& lhs, const OConnectionLineData& rhs);
         friend bool operator!=(const OConnectionLineData& lhs, const OConnectionLineData& rhs) { return !(lhs == rhs); }
     protected:
-        virtual ~OConnectionLineData() override;
+        virtual ~OConnectionLineData();
     public:
         OConnectionLineData();
         OConnectionLineData( const OUString& rSourceFieldName, const OUString& rDestFieldName );
@@ -75,7 +75,7 @@ namespace dbaui
     };
 
     typedef ::rtl::Reference< OConnectionLineData >     OConnectionLineDataRef;
-    typedef std::vector< OConnectionLineDataRef > OConnectionLineDataVec;
+    typedef ::std::vector< OConnectionLineDataRef > OConnectionLineDataVec;
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_CONNECTIONLINEDATA_HXX
 

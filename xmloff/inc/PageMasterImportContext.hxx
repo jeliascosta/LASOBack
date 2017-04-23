@@ -27,6 +27,8 @@ class PageStyleContext : public XMLPropStyleContext
 {
 private:
     OUString sPageUsage;
+
+    //UUUU
     bool                m_bIsFillStyleAlreadyConverted : 1;
 
 protected:
@@ -42,8 +44,8 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             SvXMLStylesContext& rStyles,
-            bool bDefaultStyle);
-    virtual ~PageStyleContext() override;
+            bool bDefaultStyle=false);
+    virtual ~PageStyleContext();
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,

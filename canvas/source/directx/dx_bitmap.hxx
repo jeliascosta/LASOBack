@@ -41,29 +41,29 @@ namespace dxcanvas
         DXBitmap( const ::basegfx::B2IVector& rSize,
                   bool                        bWithAlpha );
 
-        virtual GraphicsSharedPtr         getGraphics() override;
+        virtual GraphicsSharedPtr         getGraphics();
 
-        virtual BitmapSharedPtr           getBitmap() const override;
-        virtual ::basegfx::B2IVector      getSize() const override;
-        virtual bool                      hasAlpha() const override;
+        virtual BitmapSharedPtr           getBitmap() const;
+        virtual ::basegfx::B2IVector      getSize() const;
+        virtual bool                      hasAlpha() const;
 
         css::uno::Sequence< sal_Int8 > getData(
             css::rendering::IntegerBitmapLayout&       bitmapLayout,
-            const css::geometry::IntegerRectangle2D&   rect ) override;
+            const css::geometry::IntegerRectangle2D&   rect );
 
         void setData(
             const css::uno::Sequence< sal_Int8 >&      data,
             const css::rendering::IntegerBitmapLayout& bitmapLayout,
-            const css::geometry::IntegerRectangle2D&   rect ) override;
+            const css::geometry::IntegerRectangle2D&   rect );
 
         void setPixel(
             const css::uno::Sequence< sal_Int8 >&      color,
             const css::rendering::IntegerBitmapLayout& bitmapLayout,
-            const css::geometry::IntegerPoint2D&       pos ) override;
+            const css::geometry::IntegerPoint2D&       pos );
 
         css::uno::Sequence< sal_Int8 > getPixel(
             css::rendering::IntegerBitmapLayout&       bitmapLayout,
-            const css::geometry::IntegerPoint2D&       pos ) override;
+            const css::geometry::IntegerPoint2D&       pos );
 
     private:
         // Refcounted global GDI+ state container

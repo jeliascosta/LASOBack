@@ -36,6 +36,8 @@
 #define SC_SELENG_REFMODE_UPDATE_INTERVAL_MIN 65
 #endif
 
+extern sal_uInt16 nScFillModeMouseModifier;             // global.cxx
+
 using namespace com::sun::star;
 
 static Point aSwitchPos;                //! Member
@@ -64,7 +66,7 @@ sal_uLong ScViewFunctionSet::CalcUpdateInterval( const Size& rWinSize, const Poi
 {
     sal_uLong nUpdateInterval = SELENG_AUTOREPEAT_INTERVAL_MAX;
     vcl::Window* pWin = pEngine->GetWindow();
-    tools::Rectangle aScrRect = pWin->GetDesktopRectPixel();
+    Rectangle aScrRect = pWin->GetDesktopRectPixel();
     Point aRootPos = pWin->OutputToAbsoluteScreenPixel(Point(0,0));
     if (bRightScroll)
     {
@@ -310,21 +312,16 @@ bool ScViewFunctionSet::SetCursorAtPoint( const Point& rPointPixel, bool /* bDon
 
     //  Scrolling
     Size aWinSize = pEngine->GetWindow()->GetOutputSizePixel();
+    bool bRightScroll  = ( aEffPos.X() >= aWinSize.Width() );
     bool bLeftScroll  = ( aEffPos.X() < 0 );
+    bool bBottomScroll = ( aEffPos.Y() >= aWinSize.Height() );
     bool bTopScroll = ( aEffPos.Y() < 0 );
+    bool bScroll = bRightScroll || bBottomScroll || bLeftScroll || bTopScroll;
 
     SCsCOL  nPosX;
     SCsROW  nPosY;
     pViewData->GetPosFromPixel( aEffPos.X(), aEffPos.Y(), GetWhich(),
                                 nPosX, nPosY, true, true );     // with Repair
-
-    tools::Rectangle aEditArea = pViewData->GetEditArea(GetWhich(), nPosX, nPosY,
-                                                 pEngine->GetWindow(),
-                                                 nullptr, false);
-
-    bool bBottomScroll = ( aEditArea.Bottom() >= aWinSize.Height() );
-    bool bRightScroll  = ( aEditArea.Right() >= aWinSize.Width() );
-    bool bScroll = bRightScroll || bBottomScroll || bLeftScroll || bTopScroll;
 
     // for Autofill switch in the center of cell
     // thereby don't prevent scrolling to bottom/right
@@ -425,7 +422,7 @@ bool ScViewFunctionSet::SetCursorAtCell( SCsCOL nPosX, SCsROW nPosY, bool bScrol
         if ( bSkipProtected && bSkipUnprotected )
             return false;
 
-        bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HasAttrFlags::Protected);
+        bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HASATTR_PROTECTED);
         if ( (bCellProtected && bSkipProtected) || (!bCellProtected && bSkipUnprotected) )
             // Don't select this cell!
             return false;
@@ -517,7 +514,7 @@ bool ScViewFunctionSet::SetCursorAtCell( SCsCOL nPosX, SCsROW nPosY, bool bScrol
             pViewData->GetView()->UpdateShrinkOverlay();
 
             pViewData->GetView()->
-                PaintArea( nStartX,nDelStartY, nEndX,nEndY, ScUpdateMode::Marks );
+                PaintArea( nStartX,nDelStartY, nEndX,nEndY, SC_UPDATE_MARKS );
 
             nPosX = nEndX;      // keep red border around range
             nPosY = nEndY;
@@ -679,7 +676,7 @@ bool ScViewFunctionSet::SetCursorAtCell( SCsCOL nPosX, SCsROW nPosY, bool bScrol
                 SCROW nOldY = pViewData->GetCurY();
 
                 pView->InitBlockMode( nOldX, nOldY, nTab, true );
-                pView->MarkCursor( nOldX, nOldY, nTab );
+                pView->MarkCursor( (SCCOL) nOldX, (SCROW) nOldY, nTab );
 
                 if ( nOldX != nPosX || nOldY != nPosY )
                 {
@@ -755,7 +752,7 @@ ScViewSelectionEngine::ScViewSelectionEngine( vcl::Window* pWindow, ScTabView* p
         SelectionEngine( pWindow, &pView->GetFunctionSet() ),
         eWhich( eSplitPos )
 {
-    SetSelectionMode( SelectionMode::Multiple );
+    SetSelectionMode( MULTIPLE_SELECTION );
     EnableDrag( true );
 }
 
@@ -949,7 +946,7 @@ void ScHeaderFunctionSet::DeselectAll()
 ScHeaderSelectionEngine::ScHeaderSelectionEngine( vcl::Window* pWindow, ScHeaderFunctionSet* pFuncSet ) :
         SelectionEngine( pWindow, pFuncSet )
 {
-    SetSelectionMode( SelectionMode::Multiple );
+    SetSelectionMode( MULTIPLE_SELECTION );
     EnableDrag( false );
 }
 

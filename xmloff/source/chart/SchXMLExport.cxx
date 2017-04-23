@@ -90,7 +90,6 @@
 #include <com/sun/star/chart2/data/XDataReceiver.hpp>
 #include <com/sun/star/chart2/data/XDataProvider.hpp>
 #include <com/sun/star/chart2/data/XDatabaseDataProvider.hpp>
-#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
 #include <com/sun/star/chart2/data/XRangeXMLConversion.hpp>
 #include <com/sun/star/chart2/data/XTextualDataSequence.hpp>
 #include <com/sun/star/chart2/data/XNumericalDataSequence.hpp>
@@ -130,12 +129,14 @@ public:
     SchXMLExportHelper_Impl( SvXMLExport& rExport,
                         SvXMLAutoStylePoolP& rASPool );
 
+    virtual ~SchXMLExportHelper_Impl();
+
     SchXMLExportHelper_Impl(const SchXMLExportHelper_Impl&) = delete;
     SchXMLExportHelper_Impl& operator=(const SchXMLExportHelper_Impl&) = delete;
 
     // auto-styles
     /// parse chart and collect all auto-styles used in current pool
-    void collectAutoStyles( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc );
+    void collectAutoStyles( css::uno::Reference< css::chart::XChartDocument > rChartDoc );
 
     /// write the styles collected into the current pool as <style:style> elements
     void exportAutoStyles();
@@ -151,7 +152,7 @@ public:
         which is the outer element of a chart. So these attributes can easily
         be parsed again by the container
      */
-    void exportChart( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc,
+    void exportChart( css::uno::Reference< css::chart::XChartDocument > rChartDoc,
                       bool bIncludeTable );
 
     const rtl::Reference<XMLPropertySetMapper>& GetPropertySetMapper() const;
@@ -180,7 +181,7 @@ public:
     { return mrAutoStylePool; }
 
     /// if bExportContent is false the auto-styles are collected
-    void parseDocument( css::uno::Reference< css::chart::XChartDocument > const & rChartDoc,
+    void parseDocument( css::uno::Reference< css::chart::XChartDocument >& rChartDoc,
                         bool bExportContent,
                         bool bIncludeTable = false );
     void exportTable();
@@ -385,7 +386,7 @@ Sequence< Reference< chart2::data::XLabeledDataSequence > > lcl_getAllSeriesSequ
         }
     }
 
-    return comphelper::containerToSequence( aContainer );
+    return comphelper::containerToSequence< Reference< chart2::data::XLabeledDataSequence > >( aContainer );
 }
 
 Reference< chart2::data::XLabeledDataSequence >
@@ -427,7 +428,7 @@ Reference< chart2::data::XDataSource > lcl_pressUsedDataIntoRectangularFormat( c
         aLabeledSeqVector.push_back( xXValues );
 
     //add all other sequences now without x-values
-    lcl_MatchesRole aHasXValues( "values-x" );
+    lcl_MatchesRole aHasXValues( OUString( "values-x" ) );
     for( sal_Int32 nN=0; nN<aSeriesSeqVector.getLength(); nN++ )
     {
         if( !aHasXValues( aSeriesSeqVector[nN] ) )
@@ -740,13 +741,12 @@ void lcl_ReorderInternalSequencesAccordingToTheirRangeName(
         if( aIt->first < 0 )
             continue;
         // fill empty columns
-        rInOutSequences.insert(
-                rInOutSequences.end(),
-                aIt->first - nIndex,
+        for( ; nIndex < aIt->first; ++nIndex )
+            rInOutSequences.push_back(
                 SchXMLExportHelper_Impl::tDataSequenceCont::value_type(
                     uno::Reference< chart2::data::XDataSequence >(),
                     uno::Reference< chart2::data::XDataSequence >() ));
-        nIndex = aIt->first;
+        OSL_ASSERT( nIndex == aIt->first );
         rInOutSequences.push_back( aIt->second );
     }
 }
@@ -876,7 +876,7 @@ lcl_TableData lcl_getDataForLocalTable(
             Sequence< Any >& rTarget = rComplexAnyLabels[nN];
             rTarget.realloc( rSource.getLength() );
             for( sal_Int32 i=0; i<rSource.getLength(); i++ )
-                rTarget[i] <<= rSource[i];
+                rTarget[i] = uno::makeAny( rSource[i] );
         }
     }
     catch( const uno::Exception & rEx )
@@ -1031,7 +1031,7 @@ SchXMLExportHelper_Impl::SchXMLExportHelper_Impl(
         mbHasSeriesLabels( false ),
         mbHasCategoryLabels( false ),
         mbRowSourceColumns( true ),
-        msCLSID( SvGlobalName( SO3_SCH_CLASSID ).GetHexName() )
+        msCLSID( OUString( SvGlobalName( SO3_SCH_CLASSID ).GetHexName()))
 {
     msTableName = "local-table";
 
@@ -1066,12 +1066,16 @@ SchXMLExportHelper_Impl::SchXMLExportHelper_Impl(
         OUString( 'T' ));
 }
 
-void SchXMLExportHelper_Impl::collectAutoStyles( Reference< chart::XChartDocument > const & rChartDoc )
+SchXMLExportHelper_Impl::~SchXMLExportHelper_Impl()
+{
+}
+
+void SchXMLExportHelper_Impl::collectAutoStyles( Reference< chart::XChartDocument > rChartDoc )
 {
     parseDocument( rChartDoc, false );
 }
 
-void SchXMLExportHelper_Impl::exportChart( Reference< chart::XChartDocument > const & rChartDoc,
+void SchXMLExportHelper_Impl::exportChart( Reference< chart::XChartDocument > rChartDoc,
                                       bool bIncludeTable )
 {
     parseDocument( rChartDoc, true, bIncludeTable );
@@ -1102,7 +1106,7 @@ static OUString lcl_GetStringFromNumberSequence( const css::uno::Sequence< sal_I
 }
 
 /// if bExportContent is false the auto-styles are collected
-void SchXMLExportHelper_Impl::parseDocument( Reference< chart::XChartDocument > const & rChartDoc,
+void SchXMLExportHelper_Impl::parseDocument( Reference< chart::XChartDocument >& rChartDoc,
                                         bool bExportContent,
                                         bool bIncludeTable )
 {
@@ -1212,13 +1216,6 @@ void SchXMLExportHelper_Impl::parseDocument( Reference< chart::XChartDocument > 
             }
             mrExport.AddAttribute( XML_NAMESPACE_XLINK, XML_HREF, aDataProviderURL );
             mrExport.AddAttribute( XML_NAMESPACE_XLINK, XML_TYPE, XML_SIMPLE );
-        }
-
-        Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider(xNewDoc->getDataProvider(), uno::UNO_QUERY);
-        if (xPivotTableDataProvider.is())
-        {
-            OUString sPivotTableName = xPivotTableDataProvider->getPivotTableName();
-            mrExport.AddAttribute(XML_NAMESPACE_LO_EXT, XML_DATA_PILOT_SOURCE, sPivotTableName);
         }
 
         OUString sChartType( xDiagram->getDiagramType() );
@@ -2138,15 +2135,18 @@ void SchXMLExportHelper_Impl::exportDateScale( const Reference< beans::XProperty
         if( aIncrement.TimeResolution >>= nTimeResolution )
             mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_BASE_TIME_UNIT, lcl_getTimeUnitToken( nTimeResolution ) );
 
+        OUStringBuffer aValue;
         chart::TimeInterval aInterval;
         if( aIncrement.MajorTimeInterval >>= aInterval )
         {
-            mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MAJOR_INTERVAL_VALUE, OUString::number(aInterval.Number) );
+            ::sax::Converter::convertNumber( aValue, aInterval.Number );
+            mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MAJOR_INTERVAL_VALUE, aValue.makeStringAndClear() );
             mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MAJOR_INTERVAL_UNIT, lcl_getTimeUnitToken( aInterval.TimeUnit ) );
         }
         if( aIncrement.MinorTimeInterval >>= aInterval )
         {
-            mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MINOR_INTERVAL_VALUE, OUString::number(aInterval.Number) );
+            ::sax::Converter::convertNumber( aValue, aInterval.Number );
+            mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MINOR_INTERVAL_VALUE, aValue.makeStringAndClear() );
             mrExport.AddAttribute( XML_NAMESPACE_CHART, XML_MINOR_INTERVAL_UNIT, lcl_getTimeUnitToken( aInterval.TimeUnit ) );
         }
 
@@ -3549,6 +3549,11 @@ sal_uInt32 SchXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     return SvXMLExport::exportDoc( eClass );
 }
 
+void SchXMLExport::ExportStyles_( bool bUsed )
+{
+    SvXMLExport::ExportStyles_( bUsed );
+}
+
 void SchXMLExport::ExportMasterStyles_()
 {
     // not available in chart
@@ -3707,7 +3712,7 @@ OUString SAL_CALL SchXMLExport_getImplementationName() throw()
     return OUString(  "SchXMLExport.Compact"  );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     // #103997# removed some flags from EXPORT_ALL
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_getImplementationName(), SvXMLExportFlags::ALL ^ ( SvXMLExportFlags::SETTINGS | SvXMLExportFlags::MASTERSTYLES | SvXMLExportFlags::SCRIPTS )));
@@ -3724,7 +3729,7 @@ OUString SAL_CALL SchXMLExport_Oasis_getImplementationName() throw()
     return OUString(  "SchXMLExport.Oasis.Compact"  );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     // #103997# removed some flags from EXPORT_ALL
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr),
@@ -3744,7 +3749,7 @@ OUString SAL_CALL SchXMLExport_Styles_getImplementationName() throw()
     return OUString(  "SchXMLExport.Styles" );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Styles_createInstance(const Reference< lang::XMultiServiceFactory >& rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Styles_createInstance(const Reference< lang::XMultiServiceFactory >& rSMgr) throw( uno::Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_Styles_getImplementationName(), SvXMLExportFlags::STYLES ));
 }
@@ -3760,7 +3765,7 @@ OUString SAL_CALL SchXMLExport_Oasis_Styles_getImplementationName() throw()
     return OUString( "SchXMLExport.Oasis.Styles" );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Styles_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Styles_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_Oasis_Styles_getImplementationName(), SvXMLExportFlags::STYLES | SvXMLExportFlags::OASIS ));
 }
@@ -3775,7 +3780,7 @@ OUString SAL_CALL SchXMLExport_Content_getImplementationName() throw()
     return OUString(  "SchXMLExport.Content" );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Content_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Content_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_Content_getImplementationName(), SvXMLExportFlags::AUTOSTYLES | SvXMLExportFlags::CONTENT | SvXMLExportFlags::FONTDECLS ));
 }
@@ -3791,7 +3796,7 @@ OUString SAL_CALL SchXMLExport_Oasis_Content_getImplementationName() throw()
     return OUString(  "SchXMLExport.Oasis.Content" );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Content_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Content_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_Oasis_Content_getImplementationName(), SvXMLExportFlags::AUTOSTYLES | SvXMLExportFlags::CONTENT | SvXMLExportFlags::FONTDECLS | SvXMLExportFlags::OASIS ));
 }
@@ -3807,7 +3812,7 @@ OUString SAL_CALL SchXMLExport_Oasis_Meta_getImplementationName() throw()
     return OUString(  "SchXMLExport.Oasis.Meta" );
 }
 
-Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Meta_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr)
+Reference< uno::XInterface > SAL_CALL SchXMLExport_Oasis_Meta_createInstance(const Reference< lang::XMultiServiceFactory > & rSMgr) throw( uno::Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SchXMLExport( comphelper::getComponentContext(rSMgr), SchXMLExport_Oasis_Meta_getImplementationName(), SvXMLExportFlags::META | SvXMLExportFlags::OASIS  ));
 }

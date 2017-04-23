@@ -25,9 +25,8 @@
 
 using namespace ::com::sun::star;
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleValue>
-    getValue( AtkValue *pValue )
+    getValue( AtkValue *pValue ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pValue );
     if( pWrap )

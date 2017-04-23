@@ -39,6 +39,8 @@
 using namespace com::sun::star::uno;
 using namespace com::sun::star::beans;
 
+static const char aRootName[] = "Office.Math";
+
 #define SYMBOL_LIST         "SymbolList"
 #define FONT_FORMAT_LIST    "FontFormatList"
 
@@ -330,7 +332,7 @@ const OUString SmFontFormatList::GetNewFontFormatId() const
 
 
 SmMathConfig::SmMathConfig() :
-    ConfigItem("Office.Math")
+    ConfigItem(OUString(aRootName))
     , pFormat()
     , pOther()
     , pFontFormatList()
@@ -356,6 +358,13 @@ void SmMathConfig::SetOtherModified( bool bVal )
 void SmMathConfig::SetFormatModified( bool bVal )
 {
     bIsFormatModified = bVal;
+}
+
+
+void SmMathConfig::SetFontFormatListModified( bool bVal )
+{
+    if (pFontFormatList)
+        pFontFormatList->SetModified( bVal );
 }
 
 
@@ -518,7 +527,7 @@ void SmMathConfig::SetSymbols( const std::vector< SmSym > &rNewSymbols )
         // Char
         pVal->Name  = aNodeNameDelim;
         pVal->Name += *pName++;
-        pVal->Value <<= rSymbol.GetCharacter();
+        pVal->Value <<= static_cast< sal_UCS4 >( rSymbol.GetCharacter() );
         pVal++;
         // Set
         pVal->Name  = aNodeNameDelim;
@@ -576,7 +585,11 @@ void SmMathConfig::LoadFontFormatList()
         SmFontFormat aFntFmt;
         ReadFontFormat( aFntFmt, pNode[i], FONT_FORMAT_LIST );
         if (!pFontFormatList->GetFontFormat( pNode[i] ))
+        {
+            OSL_ENSURE( nullptr == pFontFormatList->GetFontFormat( pNode[i] ),
+                    "FontFormat ID already exists" );
             pFontFormatList->AddFontFormat( pNode[i], aFntFmt );
+        }
     }
     pFontFormatList->SetModified( false );
 }
@@ -903,7 +916,7 @@ void SmMathConfig::SaveFormat()
     // StandardFormat/Textmode
     *pValue++ <<= pFormat->IsTextmode();
     // StandardFormat/GreekCharStyle
-    *pValue++ <<= pFormat->GetGreekCharStyle();
+    *pValue++ <<= static_cast<sal_Int16>(pFormat->GetGreekCharStyle());
     // StandardFormat/ScaleNormalBracket
     *pValue++ <<= pFormat->IsScaleNormalBrackets();
     // StandardFormat/HorizontalAlignment
@@ -961,8 +974,7 @@ void SmMathConfig::SetStandardFormat( const SmFormat &rFormat, bool bSaveFontFor
         if (bSaveFontFormatList)
         {
             // needed for SmFontTypeDialog's DefaultButtonClickHdl
-            if (pFontFormatList)
-                pFontFormatList->SetModified( true );
+            SetFontFormatListModified( true );
             SaveFontFormatList();
         }
     }
@@ -1184,7 +1196,7 @@ void SmMathConfig::ItemSetToConfig(const SfxItemSet &rSet)
             SetIgnoreSpacesRight( bVal );
 
             // reformat (displayed) formulas accordingly
-            Broadcast(SfxHint(SfxHintId::MathFormatChanged));
+            Broadcast(SfxSimpleHint(HINT_FORMATCHANGED));
         }
     }
     if (rSet.GetItemState(SID_SAVE_ONLY_USED_SYMBOLS, true, &pItem) == SfxItemState::SET)

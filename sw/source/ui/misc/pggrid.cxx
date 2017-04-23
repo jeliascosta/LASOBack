@@ -23,7 +23,6 @@
 #include <hintids.hxx>
 #include <swtypes.hxx>
 #include <globals.hrc>
-#include <svx/colorbox.hxx>
 #include <svx/xtable.hxx>
 #include <uitool.hxx>
 #include <editeng/sizeitem.hxx>
@@ -103,12 +102,23 @@ SwTextGridPage::SwTextGridPage(vcl::Window *pParent, const SfxItemSet &rSet) :
     m_pLinesGridRB->SetClickHdl(aGridTypeHdl);
     m_pCharsGridRB->SetClickHdl(aGridTypeHdl);
 
-    m_pColorLB->SetSelectHdl(LINK(this, SwTextGridPage, ColorModifyHdl));
+    m_pColorLB->SetSelectHdl(LINK(this, SwTextGridPage, GridModifyHdl));
     m_pPrintCB->SetClickHdl(LINK(this, SwTextGridPage, GridModifyClickHdl));
     m_pRubyBelowCB->SetClickHdl(LINK(this, SwTextGridPage, GridModifyClickHdl));
 
     m_pDisplayCB->SetClickHdl(LINK(this, SwTextGridPage, DisplayGridHdl));
 
+    XColorListRef pColorLst = XColorList::GetStdColorList();
+    m_pColorLB->InsertAutomaticEntryColor( Color( COL_AUTO ) );
+    const long nCount = pColorLst->Count();
+    for( long i = 0; i < nCount; ++i )
+    {
+        XColorEntry* pEntry = pColorLst->GetColor( i );
+        Color aColor = pEntry->GetColor();
+        OUString sName = pEntry->GetName();
+        m_pColorLB->InsertEntry( aColor, sName );
+    }
+    m_pColorLB->SetUpdateMode( true );
     //Get the default paper mode
     SwView *pView   = ::GetActiveView();
     if( pView )
@@ -257,9 +267,9 @@ void    SwTextGridPage::ActivatePage( const SfxItemSet& rSet )
     m_pExampleWN->Invalidate();
 }
 
-DeactivateRC SwTextGridPage::DeactivatePage( SfxItemSet* )
+SfxTabPage::sfxpg SwTextGridPage::DeactivatePage( SfxItemSet* )
 {
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void SwTextGridPage::PutGridItem(SfxItemSet& rSet)
@@ -300,8 +310,8 @@ void SwTextGridPage::UpdatePageSize(const SfxItemSet& rSet)
     {
         const SvxFrameDirectionItem& rDirItem =
                     static_cast<const SvxFrameDirectionItem&>(rSet.Get(RES_FRAMEDIR));
-        m_bVertical = rDirItem.GetValue() == SvxFrameDirection::Vertical_RL_TB||
-                    rDirItem.GetValue() == SvxFrameDirection::Vertical_LR_TB;
+        m_bVertical = rDirItem.GetValue() == FRMDIR_VERT_TOP_RIGHT||
+                    rDirItem.GetValue() == FRMDIR_VERT_TOP_LEFT;
     }
 
     if( SfxItemState::SET == rSet.GetItemState( SID_ATTR_PAGE_SIZE ))
@@ -377,11 +387,11 @@ const sal_uInt16* SwTextGridPage::GetRanges()
     return aPageRg;
 }
 
-IMPL_LINK(SwTextGridPage, CharorLineLoseFocusdHdl, Control&, rControl, void)
+IMPL_LINK_TYPED(SwTextGridPage, CharorLineLoseFocusdHdl, Control&, rControl, void)
 {
     CharorLineChangedHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK(SwTextGridPage, CharorLineChangedHdl, SpinField&, rField, void)
+IMPL_LINK_TYPED(SwTextGridPage, CharorLineChangedHdl, SpinField&, rField, void)
 {
     //if in squared mode
     if ( m_bSquaredMode )
@@ -424,14 +434,14 @@ IMPL_LINK(SwTextGridPage, CharorLineChangedHdl, SpinField&, rField, void)
             SetLinesOrCharsRanges( *m_pCharsRangeFT , m_pCharsPerLineNF->GetMax() );
         }
     }
-    GridModifyHdl();
+    GridModifyHdl(*m_pColorLB);
 }
 
-IMPL_LINK(SwTextGridPage, TextSizeLoseFocusHdl, Control&, rControl, void)
+IMPL_LINK_TYPED(SwTextGridPage, TextSizeLoseFocusHdl, Control&, rControl, void)
 {
     TextSizeChangedHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK(SwTextGridPage, TextSizeChangedHdl, SpinField&, rField, void)
+IMPL_LINK_TYPED(SwTextGridPage, TextSizeChangedHdl, SpinField&, rField, void)
 {
     //if in squared mode
     if( m_bSquaredMode )
@@ -479,10 +489,10 @@ IMPL_LINK(SwTextGridPage, TextSizeChangedHdl, SpinField&, rField, void)
         }
         //rubySize is disabled
     }
-    GridModifyHdl();
+    GridModifyHdl(*m_pColorLB);
 }
 
-IMPL_LINK(SwTextGridPage, GridTypeHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwTextGridPage, GridTypeHdl, Button*, pButton, void)
 {
     bool bEnable = m_pNoGridRB.get() != pButton;
     m_pLayoutFL->Enable(bEnable);
@@ -505,27 +515,21 @@ IMPL_LINK(SwTextGridPage, GridTypeHdl, Button*, pButton, void)
         m_pCharWidthMF->Enable(false);
     }
 
-    GridModifyHdl();
+    GridModifyHdl(*m_pColorLB);
 }
 
-IMPL_LINK_NOARG(SwTextGridPage, DisplayGridHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwTextGridPage, DisplayGridHdl, Button*, void)
 {
     bool bChecked = m_pDisplayCB->IsChecked();
     m_pPrintCB->Enable(bChecked);
     m_pPrintCB->Check(bChecked);
 }
 
-IMPL_LINK_NOARG(SwTextGridPage, GridModifyClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwTextGridPage, GridModifyClickHdl, Button*, void)
 {
-    GridModifyHdl();
+    GridModifyHdl(*m_pColorLB);
 }
-
-IMPL_LINK_NOARG(SwTextGridPage, ColorModifyHdl, SvxColorListBox&, void)
-{
-    GridModifyHdl();
-}
-
-void SwTextGridPage::GridModifyHdl()
+IMPL_LINK_NOARG_TYPED(SwTextGridPage, GridModifyHdl, ListBox&, void)
 {
     const SfxItemSet& rOldSet = GetItemSet();
     SfxItemSet aSet(rOldSet);

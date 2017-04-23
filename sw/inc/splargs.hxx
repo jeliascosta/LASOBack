@@ -121,12 +121,13 @@ public:
     sal_Int32 nWordStart;
     sal_Int32 nWordLen;
 
-    SwInterHyphInfo( const Point &rCursorPos )
+    SwInterHyphInfo( const Point &rCursorPos, sal_Int32 nStartPos = 0,
+        sal_Int32 nLength = SAL_MAX_INT32 )
         : aCursorPos(rCursorPos)
         , bNoLang(false)
         , bCheck(false)
-        , nStart(0)
-        , nEnd(SAL_MAX_INT32)
+        , nStart(nStartPos)
+        , nEnd(nLength == SAL_MAX_INT32 ? SAL_MAX_INT32 : nStartPos + nLength)
         , nWordStart(0), nWordLen(0)
     {
     }

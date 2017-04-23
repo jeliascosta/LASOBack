@@ -21,7 +21,6 @@
 
 #include <svx/svxids.hrc>
 #include "sc.hrc"
-#include "mid.hrc"
 #include "scitems.hxx"
 #include <editeng/memberids.hrc>
 
@@ -100,9 +99,10 @@
 #include <svx/sdprcitm.hxx>
 #include <svx/sdmetitm.hxx>
 
+#define SvxDrawAlignItem            SfxAllEnumItem
 #define avmedia_MediaItem           ::avmedia::MediaItem
 
-#ifdef DISABLE_DYNLOADING
+#if defined(IOS)
 /* Avoid clash with the ones from svx/source/form/typemap.cxx */
 #define aSfxBoolItem_Impl sc_source_ui_appl_typemap_aSfxBoolItem_Impl
 #define aSfxInt32Item_Impl sc_source_ui_appl_typemap_aSfxInt32Item_Impl
@@ -128,7 +128,7 @@
 #define SFX_TYPEMAP
 #include "scslots.hxx"
 
-#ifdef DISABLE_DYNLOADING
+#if defined(IOS)
 #undef aSfxBoolItem_Impl
 #undef aSfxInt32Item_Impl
 #undef aSfxObjectItem_Impl

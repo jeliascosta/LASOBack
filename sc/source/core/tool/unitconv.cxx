@@ -26,7 +26,7 @@
 using namespace utl;
 using namespace com::sun::star::uno;
 
-const sal_Unicode cDelim = 0x01;        // delimiter between From and To
+const sal_Unicode cDelim = 0x01;        // Delimiter zwischen From und To
 
 // ScUnitConverterData
 ScUnitConverterData::ScUnitConverterData(
@@ -60,7 +60,7 @@ ScUnitConverter::ScUnitConverter()
     // read from configuration - "convert.ini" is no longer used
     //TODO: config item as member to allow change of values
 
-    ScLinkConfigItem aConfigItem( CFGPATH_UNIT );
+    ScLinkConfigItem aConfigItem( OUString( CFGPATH_UNIT ) );
 
     // empty node name -> use the config item's path itself
     OUString aEmptyString;

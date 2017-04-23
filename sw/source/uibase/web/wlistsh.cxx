@@ -41,7 +41,7 @@ SFX_IMPL_INTERFACE(SwWebListShell, SwListShell)
 
 void SwWebListShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_NUM_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_NUM_TOOLBOX);
 }
 
 
@@ -49,6 +49,7 @@ SwWebListShell::SwWebListShell(SwView &_rView) :
     SwListShell(_rView)
 {
     SetName("List");
+    SetHelpId(SW_LISTSHELL);
 }
 
 SwWebListShell::~SwWebListShell()

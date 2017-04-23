@@ -45,7 +45,7 @@ OComponentEnumeration::~OComponentEnumeration()
 }
 
 //  XEventListener
-void SAL_CALL OComponentEnumeration::disposing( const EventObject& aEvent )
+void SAL_CALL OComponentEnumeration::disposing( const EventObject& aEvent ) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -59,7 +59,7 @@ void SAL_CALL OComponentEnumeration::disposing( const EventObject& aEvent )
 }
 
 //  XEnumeration
-sal_Bool SAL_CALL OComponentEnumeration::hasMoreElements()
+sal_Bool SAL_CALL OComponentEnumeration::hasMoreElements() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -72,7 +72,9 @@ sal_Bool SAL_CALL OComponentEnumeration::hasMoreElements()
 
 //  XEnumeration
 
-Any SAL_CALL OComponentEnumeration::nextElement()
+Any SAL_CALL OComponentEnumeration::nextElement() throw(    NoSuchElementException  ,
+                                                             WrappedTargetException ,
+                                                            RuntimeException, std::exception        )
 {
     SolarMutexGuard g;
 
@@ -93,7 +95,7 @@ Any SAL_CALL OComponentEnumeration::nextElement()
     return aComponent;
 }
 
-//  protected method
+//  proteced method
 
 void OComponentEnumeration::impl_resetObject()
 {

@@ -39,7 +39,6 @@
 #include <com/sun/star/awt/XControlModel.hpp>
 #include <com/sun/star/container/XIndexContainer.hpp>
 
-#include <i18nutil/searchopt.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/docfilt.hxx>
 #include <sfx2/docfile.hxx>
@@ -203,21 +202,21 @@ void SwMacrosTest::testBookmarkDeleteAndJoin()
     rIDCO.AppendTextNode(*aPaM.GetPoint());
     rIDCO.InsertString(aPaM, "A");
     rIDCO.AppendTextNode(*aPaM.GetPoint());
-    aPaM.Move(fnMoveBackward, GoInNode);
-    aPaM.Move(fnMoveBackward, GoInNode);
-    aPaM.Move(fnMoveBackward, GoInContent);
+    aPaM.Move(fnMoveBackward, fnGoNode);
+    aPaM.Move(fnMoveBackward, fnGoNode);
+    aPaM.Move(fnMoveBackward, fnGoContent);
     aPaM.SetMark();
-    aPaM.Move(fnMoveForward, GoInDoc);
+    aPaM.Move(fnMoveForward, fnGoDoc);
     IDocumentMarkAccess & rIDMA = *pDoc->getIDocumentMarkAccess();
     sw::mark::IMark *pMark =
             rIDMA.makeMark(aPaM, "test", IDocumentMarkAccess::MarkType::BOOKMARK);
     CPPUNIT_ASSERT(pMark);
     // select so pMark start position is on a node that is fully deleted
-    aPaM.Move(fnMoveBackward, GoInNode);
+    aPaM.Move(fnMoveBackward, fnGoNode);
     // must leave un-selected content in last node to get the bJoinPrev flag!
-    aPaM.Move(fnMoveBackward, GoInContent);
+    aPaM.Move(fnMoveBackward, fnGoContent);
     aPaM.Exchange();
-    aPaM.Move(fnMoveBackward, GoInDoc);
+    aPaM.Move(fnMoveBackward, fnGoDoc);
     // delete
     rIDCO.DeleteAndJoin(aPaM);
 
@@ -239,9 +238,9 @@ void SwMacrosTest::testBookmarkDeleteTdf90816()
     IDocumentContentOperations & rIDCO(pDoc->getIDocumentContentOperations());
     rIDCO.AppendTextNode(*aPaM.GetPoint());
     rIDCO.InsertString(aPaM, "ABC");
-    aPaM.Move(fnMoveBackward, GoInContent);
+    aPaM.Move(fnMoveBackward, fnGoContent);
     aPaM.SetMark();
-    aPaM.Move(fnMoveBackward, GoInContent);
+    aPaM.Move(fnMoveBackward, fnGoContent);
     IDocumentMarkAccess & rIDMA = *pDoc->getIDocumentMarkAccess();
     sw::mark::IMark *pMark =
         rIDMA.makeMark(aPaM, "test", IDocumentMarkAccess::MarkType::BOOKMARK);
@@ -541,10 +540,10 @@ void SwMacrosTest::testFindReplace()
     rIDCO.InsertString(*pPaM, "bar");
     rIDCO.AppendTextNode(*pPaM->GetPoint());
     rIDCO.InsertString(*pPaM, "baz");
-    pPaM->Move(fnMoveBackward, GoInDoc);
+    pPaM->Move(fnMoveBackward, fnGoDoc);
 
     bool bCancel(false);
-    i18nutil::SearchOptions2 opts(
+    util::SearchOptions2 opts(
             util::SearchAlgorithms_REGEXP,
             65536,
             "$",
@@ -553,14 +552,13 @@ void SwMacrosTest::testFindReplace()
             2,
             2,
             2,
-            TransliterationFlags::IGNORE_CASE | TransliterationFlags::IGNORE_WIDTH |
-            TransliterationFlags::IGNORE_KASHIDA_CTL | TransliterationFlags::IGNORE_DIACRITICS_CTL,
+            1073745152,
             util::SearchAlgorithms2::REGEXP,
             '\\');
 
     // find newline on 1st paragraph
     bool bFound = pPaM->Find(
-            opts, false, SwDocPositions::Curr, SwDocPositions::End, bCancel);
+            opts, false, DOCPOS_CURR, DOCPOS_END, bCancel);
     CPPUNIT_ASSERT(bFound);
     CPPUNIT_ASSERT(pPaM->HasMark());
     CPPUNIT_ASSERT_EQUAL(OUString(""), pPaM->GetText());
@@ -568,7 +566,7 @@ void SwMacrosTest::testFindReplace()
     // now do another Find, inside the selection from the first Find
 //    opts.searchFlags = 71680;
     bFound = pPaM->Find(
-            opts, false, SwDocPositions::Curr, SwDocPositions::End, bCancel, FindRanges::InSel);
+            opts, false, DOCPOS_CURR, DOCPOS_END, bCancel, FND_IN_SEL);
     CPPUNIT_ASSERT(bFound);
     CPPUNIT_ASSERT(pPaM->HasMark());
     CPPUNIT_ASSERT_EQUAL(OUString(""), pPaM->GetText());
@@ -576,12 +574,12 @@ void SwMacrosTest::testFindReplace()
     rIDCO.ReplaceRange(*pPaM, " ", true);
 
     pPaM->DeleteMark();
-    pPaM->Move(fnMoveBackward, GoInDoc);
+    pPaM->Move(fnMoveBackward, fnGoDoc);
 
     // problem was that after the 2nd Find, the wrong newline was selected
     CPPUNIT_ASSERT_EQUAL(OUString("foo bar"),
             pPaM->Start()->nNode.GetNode().GetTextNode()->GetText());
-    pPaM->Move(fnMoveForward, GoInNode);
+    pPaM->Move(fnMoveForward, fnGoNode);
     CPPUNIT_ASSERT_EQUAL(OUString("baz"),
             pPaM->End()->nNode.GetNode().GetTextNode()->GetText());
 }

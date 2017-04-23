@@ -21,14 +21,11 @@
 #include <set>
 #include <comphelper/servicehelper.hxx>
 #include <com/sun/star/drawing/XShapes.hpp>
-#include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/xml/sax/FastShapeContextHandler.hpp>
-#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <ooxml/QNameToString.hxx>
 #include <ooxml/resourceids.hxx>
 #include <oox/token/namespaces.hxx>
 #include <comphelper/embeddedobjectcontainer.hxx>
-#include <cppuhelper/exc_hlp.hxx>
 #include <tools/globname.hxx>
 #include <comphelper/classids.hxx>
 #include <sfx2/sfxbasemodel.hxx>
@@ -54,7 +51,7 @@ using namespace ::com::sun::star;
 using namespace oox;
 using namespace ::std;
 
-static set<OOXMLFastContextHandler *> aSetContexts;
+set<OOXMLFastContextHandler *> aSetContexts;
 
 /*
   class OOXMLFastContextHandler
@@ -158,6 +155,7 @@ bool OOXMLFastContextHandler::prepareMceContext(Token_t nElement, const uno::Ref
 void SAL_CALL OOXMLFastContextHandler::startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (oox::getNamespace(Element) == static_cast<sal_Int32>(NMSP_mce))
         m_bDiscardChildren = prepareMceContext(Element, Attribs);
@@ -172,10 +170,12 @@ void SAL_CALL OOXMLFastContextHandler::startFastElement
 void SAL_CALL OOXMLFastContextHandler::startUnknownElement
 (const OUString & /*Namespace*/, const OUString & /*Name*/,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
 }
 
 void SAL_CALL OOXMLFastContextHandler::endFastElement(Token_t Element)
+throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (Element == (NMSP_mce | XML_Choice) || Element == (NMSP_mce | XML_Fallback))
         m_bDiscardChildren = false;
@@ -193,6 +193,7 @@ void SAL_CALL OOXMLFastContextHandler::endFastElement(Token_t Element)
 void OOXMLFastContextHandler::lcl_startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     OOXMLFactory::startAction(this, Element);
     if( Element == (NMSP_dmlWordDr|XML_positionV) )
@@ -204,12 +205,14 @@ void OOXMLFastContextHandler::lcl_startFastElement
 
 void OOXMLFastContextHandler::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     OOXMLFactory::endAction(this, Element);
 }
 
 void SAL_CALL OOXMLFastContextHandler::endUnknownElement
 (const OUString & , const OUString & )
+throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
 }
 
@@ -217,6 +220,7 @@ uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
  OOXMLFastContextHandler::createFastChildContext
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xResult;
     if (oox::getNamespace(Element) != NMSP_mce && !m_bDiscardChildren)
@@ -231,6 +235,7 @@ uno::Reference< xml::sax::XFastContextHandler >
  OOXMLFastContextHandler::lcl_createFastChildContext
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     return OOXMLFactory::createFastChildContext(this, Element);
 }
@@ -240,6 +245,7 @@ OOXMLFastContextHandler::createUnknownChildContext
 (const OUString &,
  const OUString &,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     return uno::Reference< xml::sax::XFastContextHandler >
         (new OOXMLFastContextHandler(*const_cast<const OOXMLFastContextHandler *>(this)));
@@ -247,12 +253,14 @@ OOXMLFastContextHandler::createUnknownChildContext
 
 void SAL_CALL OOXMLFastContextHandler::characters
 (const OUString & aChars)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     lcl_characters(aChars);
 }
 
 void OOXMLFastContextHandler::lcl_characters
 (const OUString & rString)
+throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (!m_bDiscardChildren)
         OOXMLFactory::characters(this, rString);
@@ -270,6 +278,7 @@ OOXMLValue::Pointer_t OOXMLFastContextHandler::getValue() const
 
 void OOXMLFastContextHandler::attributes
 (const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+ throw (uno::RuntimeException, xml::sax::SAXException)
 {
     OOXMLFactory::attributes(this, Attribs);
 }
@@ -857,6 +866,7 @@ void OOXMLFastContextHandler::sendPropertiesToParent()
     }
 }
 
+
 /*
   class OOXMLFastContextHandlerStream
  */
@@ -904,7 +914,6 @@ void OOXMLFastContextHandlerStream::handleHyperlink()
 {
     OOXMLHyperlinkHandler aHyperlinkHandler(this);
     getPropertySetAttrs()->resolve(aHyperlinkHandler);
-    aHyperlinkHandler.writetext();
 }
 
 /*
@@ -925,35 +934,20 @@ OOXMLFastContextHandlerProperties::~OOXMLFastContextHandlerProperties()
 
 void OOXMLFastContextHandlerProperties::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
-    try
-    {
-        endAction(Element);
+    endAction(Element);
 
-        if (mbResolve)
+    if (mbResolve)
+    {
+        if (isForwardEvents())
         {
-            if (isForwardEvents())
-            {
-                mpStream->props(mpPropertySet);
-            }
-        }
-        else
-        {
-            sendPropertiesToParent();
+            mpStream->props(mpPropertySet);
         }
     }
-    catch (const uno::RuntimeException&)
+    else
     {
-        throw;
-    }
-    catch (const xml::sax::SAXException&)
-    {
-        throw;
-    }
-    catch (const uno::Exception& e)
-    {
-        auto a = cppu::getCaughtException();
-        throw lang::WrappedTargetRuntimeException(e.Message, e.Context, a);
+        sendPropertiesToParent();
     }
 }
 
@@ -1050,11 +1044,6 @@ void OOXMLFastContextHandlerProperties::handleFontRel()
     getPropertySet()->resolve(handler);
 }
 
-void OOXMLFastContextHandlerProperties::handleHyperlinkURL() {
-    OOXMLHyperlinkURLHandler aHyperlinkURLHandler(this);
-    getPropertySet()->resolve(aHyperlinkURLHandler);
-}
-
 void OOXMLFastContextHandlerProperties::setParent
 (OOXMLFastContextHandler * pParent)
 {
@@ -1093,6 +1082,7 @@ OOXMLFastContextHandlerPropertyTable::~OOXMLFastContextHandlerPropertyTable()
 
 void OOXMLFastContextHandlerPropertyTable::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     OOXMLPropertySet::Pointer_t pPropSet(mpPropertySet->clone());
     OOXMLTable::ValuePointer_t pTmpVal
@@ -1133,6 +1123,7 @@ OOXMLValue::Pointer_t OOXMLFastContextHandlerValue::getValue() const
 
 void OOXMLFastContextHandlerValue::lcl_endFastElement
 (Token_t Element)
+throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     sendPropertyToParent();
 
@@ -1192,6 +1183,7 @@ uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
 OOXMLFastContextHandlerTable::createFastChildContext
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     addCurrentChild();
 
@@ -1202,6 +1194,7 @@ OOXMLFastContextHandlerTable::createFastChildContext
 
 void OOXMLFastContextHandlerTable::lcl_endFastElement
 (Token_t /*Element*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     addCurrentChild();
 
@@ -1247,6 +1240,7 @@ OOXMLFastContextHandlerXNote::~OOXMLFastContextHandlerXNote()
 void OOXMLFastContextHandlerXNote::lcl_startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     mbForwardEventsSaved = isForwardEvents();
 
@@ -1261,6 +1255,7 @@ void OOXMLFastContextHandlerXNote::lcl_startFastElement
 
 void OOXMLFastContextHandlerXNote::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     endAction(Element);
 
@@ -1498,6 +1493,7 @@ OOXMLFastContextHandlerTextTable::~OOXMLFastContextHandlerTextTable()
 void OOXMLFastContextHandlerTextTable::lcl_startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & /*Attribs*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     mpParserState->startTable();
     mnTableDepth++;
@@ -1516,6 +1512,7 @@ void OOXMLFastContextHandlerTextTable::lcl_startFastElement
 
 void OOXMLFastContextHandlerTextTable::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     endAction(Element);
 
@@ -1567,6 +1564,7 @@ OOXMLFastContextHandlerShape::~OOXMLFastContextHandlerShape()
 void OOXMLFastContextHandlerShape::lcl_startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     startAction(Element);
 
@@ -1580,6 +1578,7 @@ void SAL_CALL OOXMLFastContextHandlerShape::startUnknownElement
 (const OUString & Namespace,
  const OUString & Name,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mrShapeContext.is())
         mrShapeContext->startUnknownElement(Namespace, Name, Attribs);
@@ -1621,6 +1620,7 @@ void OOXMLFastContextHandlerShape::sendShape( Token_t Element )
 
 void OOXMLFastContextHandlerShape::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mrShapeContext.is())
     {
@@ -1639,6 +1639,7 @@ void OOXMLFastContextHandlerShape::lcl_endFastElement
 void SAL_CALL OOXMLFastContextHandlerShape::endUnknownElement
 (const OUString & Namespace,
  const OUString & Name)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mrShapeContext.is())
         mrShapeContext->endUnknownElement(Namespace, Name);
@@ -1648,6 +1649,7 @@ uno::Reference< xml::sax::XFastContextHandler >
 OOXMLFastContextHandlerShape::lcl_createFastChildContext
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xContextHandler;
 
@@ -1706,6 +1708,7 @@ OOXMLFastContextHandlerShape::createUnknownChildContext
 (const OUString & Namespace,
  const OUString & Name,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xResult;
 
@@ -1718,6 +1721,7 @@ OOXMLFastContextHandlerShape::createUnknownChildContext
 
 void OOXMLFastContextHandlerShape::lcl_characters
 (const OUString & aChars)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mrShapeContext.is())
         mrShapeContext->characters(aChars);
@@ -1729,7 +1733,7 @@ void OOXMLFastContextHandlerShape::lcl_characters
 
 OOXMLFastContextHandlerWrapper::OOXMLFastContextHandlerWrapper
 (OOXMLFastContextHandler * pParent,
- uno::Reference<XFastContextHandler> const & xContext)
+ uno::Reference<XFastContextHandler> xContext)
 : OOXMLFastContextHandler(pParent), mxContext(xContext)
 {
     setId(pParent->getId());
@@ -1745,6 +1749,7 @@ void SAL_CALL OOXMLFastContextHandlerWrapper::startUnknownElement
 (const OUString & Namespace,
  const OUString & Name,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mxContext.is())
         mxContext->startUnknownElement(Namespace, Name, Attribs);
@@ -1753,6 +1758,7 @@ void SAL_CALL OOXMLFastContextHandlerWrapper::startUnknownElement
 void SAL_CALL OOXMLFastContextHandlerWrapper::endUnknownElement
 (const OUString & Namespace,
  const OUString & Name)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mxContext.is())
         mxContext->endUnknownElement(Namespace, Name);
@@ -1763,6 +1769,7 @@ OOXMLFastContextHandlerWrapper::createUnknownChildContext
 (const OUString & Namespace,
  const OUString & Name,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xResult;
 
@@ -1777,6 +1784,7 @@ OOXMLFastContextHandlerWrapper::createUnknownChildContext
 
 void OOXMLFastContextHandlerWrapper::attributes
 (const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+throw (uno::RuntimeException, xml::sax::SAXException)
 {
     if (mxContext.is())
     {
@@ -1805,6 +1813,7 @@ void OOXMLFastContextHandlerWrapper::addToken( Token_t Token )
 void OOXMLFastContextHandlerWrapper::lcl_startFastElement
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mxContext.is())
         mxContext->startFastElement(Element, Attribs);
@@ -1812,6 +1821,7 @@ void OOXMLFastContextHandlerWrapper::lcl_startFastElement
 
 void OOXMLFastContextHandlerWrapper::lcl_endFastElement
 (Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mxContext.is())
         mxContext->endFastElement(Element);
@@ -1821,6 +1831,7 @@ uno::Reference< xml::sax::XFastContextHandler >
 OOXMLFastContextHandlerWrapper::lcl_createFastChildContext
 (Token_t Element,
  const uno::Reference< xml::sax::XFastAttributeList > & Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xResult;
 
@@ -1857,6 +1868,7 @@ OOXMLFastContextHandlerWrapper::lcl_createFastChildContext
 
 void OOXMLFastContextHandlerWrapper::lcl_characters
 (const OUString & aChars)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if (mxContext.is())
         mxContext->characters(aChars);
@@ -1991,12 +2003,14 @@ OOXMLFastContextHandlerLinear::OOXMLFastContextHandlerLinear(OOXMLFastContextHan
 
 void OOXMLFastContextHandlerLinear::lcl_startFastElement(Token_t Element,
     const uno::Reference< xml::sax::XFastAttributeList >& Attribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     buffer.appendOpeningTag( Element, Attribs );
     ++depthCount;
 }
 
 void OOXMLFastContextHandlerLinear::lcl_endFastElement(Token_t Element)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     buffer.appendClosingTag( Element );
     if( --depthCount == 0 )
@@ -2006,6 +2020,7 @@ void OOXMLFastContextHandlerLinear::lcl_endFastElement(Token_t Element)
 uno::Reference< xml::sax::XFastContextHandler >
 OOXMLFastContextHandlerLinear::lcl_createFastChildContext(Token_t,
     const uno::Reference< xml::sax::XFastAttributeList >&)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     uno::Reference< xml::sax::XFastContextHandler > xContextHandler;
     xContextHandler.set( this );
@@ -2013,6 +2028,7 @@ OOXMLFastContextHandlerLinear::lcl_createFastChildContext(Token_t,
 }
 
 void OOXMLFastContextHandlerLinear::lcl_characters(const OUString& aChars)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     buffer.appendCharacters( aChars );
 }

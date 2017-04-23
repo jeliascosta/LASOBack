@@ -45,18 +45,13 @@ namespace dbaui
         css::uno::Reference< css::sdbc::XConnection > m_xActiveConnection;
     protected:
         explicit ODirectSQLDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
-        virtual ~ODirectSQLDialog() override;
+        virtual ~ODirectSQLDialog();
 
     public:
-        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
+        virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        DECLARE_SERVICE_INFO();
-        /// @throws css::uno::RuntimeException
-        static OUString SAL_CALL getImplementationName_Static(  );
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_Static(  );
-        static css::uno::Reference< css::uno::XInterface >
-        SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
+        DECLARE_SERVICE_INFO_STATIC( );
 
         DECLARE_PROPERTYCONTAINER_DEFAULTS( );
 

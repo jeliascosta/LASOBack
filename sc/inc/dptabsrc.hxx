@@ -28,12 +28,12 @@
 #include <com/sun/star/sheet/XDataPilotResults.hpp>
 #include <com/sun/star/sheet/XDataPilotMemberResults.hpp>
 #include <com/sun/star/sheet/MemberResult.hpp>
+#include <com/sun/star/sheet/GeneralFunction.hpp>
 #include <com/sun/star/sheet/DataPilotFieldAutoShowInfo.hpp>
 #include <com/sun/star/sheet/DataPilotFieldLayoutInfo.hpp>
 #include <com/sun/star/sheet/DataPilotFieldLayoutMode.hpp>
 #include <com/sun/star/sheet/DataPilotFieldReference.hpp>
 #include <com/sun/star/sheet/DataPilotFieldSortInfo.hpp>
-#include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 #include <com/sun/star/util/XRefreshable.hpp>
 #include <com/sun/star/sheet/XDrillDownDataSupplier.hpp>
 #include <com/sun/star/util/XCloneable.hpp>
@@ -66,6 +66,9 @@ class ScDPResultMember;
 class ScDPResultData;
 class ScDPItemData;
 class ScDPTableData;
+
+//  implementation of DataPilotSource using ScDPTableData
+
 class ScDPDimensions;
 class ScDPDimension;
 class ScDPHierarchies;
@@ -74,9 +77,6 @@ class ScDPLevels;
 class ScDPLevel;
 class ScDPMembers;
 class ScDPMember;
-enum class ScGeneralFunction;
-
-//  implementation of DataPilotSource using ScDPTableData
 
 class ScDPSource : public cppu::WeakImplHelper<
                             css::sheet::XDimensionsSupplier,
@@ -88,7 +88,7 @@ class ScDPSource : public cppu::WeakImplHelper<
 {
 private:
     ScDPTableData*          pData;              // data source (ScDPObject manages its life time)
-    rtl::Reference<ScDPDimensions> pDimensions; // api objects
+    ScDPDimensions*         pDimensions;        // api objects
                                                 // settings:
 
     std::vector<long> maColDims;
@@ -119,7 +119,7 @@ private:
 
     void                    CreateRes_Impl();
     void                    FillMemberResults();
-    void                    FillLevelList( css::sheet::DataPilotFieldOrientation nOrientation, std::vector<ScDPLevel*> &rList );
+    void                    FillLevelList( sal_uInt16 nOrientation, std::vector<ScDPLevel*> &rList );
     void                    FillCalcInfo(bool bIsRow, ScDPTableData::CalcInfo& rInfo, bool &bHasAutoShow);
 
     /**
@@ -145,16 +145,15 @@ private:
 
 public:
                                 ScDPSource( ScDPTableData* pD );
-    virtual                     ~ScDPSource() override;
+    virtual                     ~ScDPSource();
 
     ScDPTableData*          GetData()       { return pData; }
     const ScDPTableData*    GetData() const { return pData; }
 
     const OUString*  GetGrandTotalName() const;
 
-    css::sheet::DataPilotFieldOrientation
-                            GetOrientation(long nColumn);
-    void                    SetOrientation(long nColumn, css::sheet::DataPilotFieldOrientation nNew);
+    sal_uInt16                  GetOrientation(long nColumn);
+    void                    SetOrientation(long nColumn, sal_uInt16 nNew);
     long                    GetPosition(long nColumn);
 
     long                    GetDataDimensionCount();
@@ -162,9 +161,9 @@ public:
     OUString GetDataDimName(long nIndex);
     const ScDPCache* GetCache();
     const ScDPItemData*         GetItemDataById( long nDim, long nId );
+    SCROW                       GetMemberId(  long  nDim, const ScDPItemData& rData );
     bool                        IsDataLayoutDimension(long nDim);
-    css::sheet::DataPilotFieldOrientation
-                                GetDataLayoutOrientation();
+    sal_uInt16                  GetDataLayoutOrientation();
 
     bool                        IsDateDimension(long nDim);
 
@@ -182,47 +181,77 @@ public:
 
                             // XDimensionsSupplier
     virtual css::uno::Reference< css::container::XNameAccess >
-                            SAL_CALL getDimensions(  ) override;
+                            SAL_CALL getDimensions(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XDataPilotResults
-    virtual css::uno::Sequence< css::uno::Sequence< css::sheet::DataResult > > SAL_CALL getResults(  ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::sheet::DataResult > > SAL_CALL getResults(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<double> SAL_CALL
         getFilteredResults(
-            const css::uno::Sequence<css::sheet::DataPilotFieldFilter>& aFilters ) override;
+            const css::uno::Sequence<css::sheet::DataPilotFieldFilter>& aFilters )
+                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XRefreshable
-    virtual void SAL_CALL   refresh() override;
-    virtual void SAL_CALL   addRefreshListener( const css::uno::Reference< css::util::XRefreshListener >& l ) override;
-    virtual void SAL_CALL   removeRefreshListener( const css::uno::Reference< css::util::XRefreshListener >& l ) override;
+    virtual void SAL_CALL   refresh() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   addRefreshListener( const css::uno::Reference< css::util::XRefreshListener >& l )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeRefreshListener( const css::uno::Reference< css::util::XRefreshListener >& l )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XDrillDownDataSupplier
     virtual css::uno::Sequence< css::uno::Sequence< css::uno::Any > >
         SAL_CALL getDrillDownData(const css::uno::Sequence<
-                                      css::sheet::DataPilotFieldFilter >& aFilters ) override;
+                                      css::sheet::DataPilotFieldFilter >& aFilters )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo(  ) override;
+                            SAL_CALL getPropertySetInfo(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue ) override;
+                                    const css::uno::Any& aValue )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
-#if DUMP_PIVOT_TABLE
+#if DEBUG_PIVOT_TABLE
     void DumpResults() const;
 #endif
 };
@@ -234,27 +263,36 @@ class ScDPDimensions : public cppu::WeakImplHelper<
 private:
     ScDPSource*         pSource;
     long                nDimCount;
-    rtl::Reference<ScDPDimension>* ppDims;
+    ScDPDimension**     ppDims;
 
 public:
                             ScDPDimensions( ScDPSource* pSrc );
-    virtual                 ~ScDPDimensions() override;
+    virtual                 ~ScDPDimensions();
 
     void                    CountChanged();
 
                             // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     long            getCount() const;
     ScDPDimension*  getByIndex(long nIndex) const;
@@ -269,8 +307,9 @@ class ScDPDimension : public cppu::WeakImplHelper<
 {
     ScDPSource*         pSource;
     long                nDim;               // dimension index (== column ID)
-    rtl::Reference<ScDPHierarchies> mxHierarchies;
-    ScGeneralFunction   nFunction;
+    ScDPHierarchies*    pHierarchies;
+    long                nUsedHier;
+    sal_uInt16          nFunction;          // enum GeneralFunction
     OUString            aName;              // if empty, take from source
     std::unique_ptr<OUString> mpLayoutName;
     std::unique_ptr<OUString> mpSubtotalName;
@@ -279,13 +318,12 @@ class ScDPDimension : public cppu::WeakImplHelper<
                         aReferenceValue;    // settings for "show data as" / "displayed value"
     bool                bHasSelectedPage;
     OUString            aSelectedPage;
-    std::unique_ptr<ScDPItemData>
-                        pSelectedData;      // internal, temporary, created from aSelectedPage
+    ScDPItemData*       pSelectedData;      // internal, temporary, created from aSelectedPage
     bool                mbHasHiddenMember;
 
 public:
                             ScDPDimension( ScDPSource* pSrc, long nD );
-    virtual                 ~ScDPDimension() override;
+    virtual                 ~ScDPDimension();
                             ScDPDimension(const ScDPDimension&) = delete;
     ScDPDimension&          operator=(const ScDPDimension&) = delete;
 
@@ -299,44 +337,71 @@ public:
     const OUString*  GetSubtotalName() const;
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XHierarchiesSupplier
     virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL
-                            getHierarchies() override;
+                            getHierarchies() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCloneable
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL
-                            createClone() override;
+                            createClone() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo(  ) override;
+                            SAL_CALL getPropertySetInfo(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue ) override;
+                                    const css::uno::Any& aValue )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
                                     const css::uno::Reference<
-                                        css::beans::XPropertyChangeListener >& xListener ) override;
+                                        css::beans::XPropertyChangeListener >& xListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
-    css::sheet::DataPilotFieldOrientation getOrientation() const;
+    sal_uInt16 getOrientation() const;
+    void setOrientation(sal_uInt16 nNew);
+    long getPosition() const;
     bool getIsDataLayoutDimension() const;
-    ScGeneralFunction getFunction() const { return nFunction;}
-    void setFunction(ScGeneralFunction nNew);       // for data dimension
-    static long getUsedHierarchy() { return 0;}
+    sal_uInt16 getFunction() const { return nFunction;}
+    void setFunction(sal_uInt16 nNew);       // for data dimension
+    long getUsedHierarchy() const { return nUsedHier;}
 
     bool                        HasSelectedPage() const     { return bHasSelectedPage; }
     const ScDPItemData&         GetSelectedData();
@@ -351,30 +416,37 @@ class ScDPHierarchies : public cppu::WeakImplHelper<
 private:
     ScDPSource*         pSource;
     long                nDim;
-    //  date columns have 3 hierarchies (flat/quarter/week), other columns only one
-    // #i52547# don't offer the incomplete date hierarchy implementation
-    static const long   nHierCount = 1;
-    rtl::Reference<ScDPHierarchy>* ppHiers;
+    long                nHierCount;
+    ScDPHierarchy**     ppHiers;
 
 public:
                             ScDPHierarchies( ScDPSource* pSrc, long nD );
-    virtual                 ~ScDPHierarchies() override;
+    virtual                 ~ScDPHierarchies();
 
                             // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
-    static long     getCount();
+    long            getCount() const;
     ScDPHierarchy*  getByIndex(long nIndex) const;
 };
 
@@ -387,26 +459,30 @@ private:
     ScDPSource*     pSource;
     long            nDim;
     long            nHier;
-    rtl::Reference<ScDPLevels> mxLevels;
+    ScDPLevels*     pLevels;
 
 public:
                             ScDPHierarchy( ScDPSource* pSrc, long nD, long nH );
-    virtual                 ~ScDPHierarchy() override;
+    virtual                 ~ScDPHierarchy();
 
     ScDPLevels*             GetLevelsObject();
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XLevelsSupplier
     virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL
-                            getLevels() override;
+                            getLevels() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScDPLevels : public cppu::WeakImplHelper<
@@ -418,25 +494,34 @@ private:
     long            nDim;
     long            nHier;
     long            nLevCount;
-    rtl::Reference<ScDPLevel>* ppLevs;
+    ScDPLevel**     ppLevs;
 
 public:
                             ScDPLevels( ScDPSource* pSrc, long nD, long nH );
-    virtual                 ~ScDPLevels() override;
+    virtual                 ~ScDPLevels();
 
                             // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     long            getCount() const;
     ScDPLevel*      getByIndex(long nIndex) const;
@@ -454,8 +539,8 @@ private:
     long                        nDim;
     long                        nHier;
     long                        nLev;
-    rtl::Reference<ScDPMembers> mxMembers;
-    css::uno::Sequence<sal_Int16> aSubTotals;
+    ScDPMembers*                pMembers;
+    css::uno::Sequence<css::sheet::GeneralFunction> aSubTotals;
     css::sheet::DataPilotFieldSortInfo     aSortInfo;      // stored user settings
     css::sheet::DataPilotFieldAutoShowInfo aAutoShowInfo;  // stored user settings
     css::sheet::DataPilotFieldLayoutInfo   aLayoutInfo;    // stored user settings
@@ -469,44 +554,69 @@ private:
 
 public:
                             ScDPLevel( ScDPSource* pSrc, long nD, long nH, long nL );
-    virtual                 ~ScDPLevel() override;
+    virtual                 ~ScDPLevel();
 
     ScDPMembers*            GetMembersObject();
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XMembersSupplier
-    virtual css::uno::Reference< css::sheet::XMembersAccess > SAL_CALL
-                            getMembers() override;
+    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL
+                            getMembers() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XDataPilotMemberResults
     virtual css::uno::Sequence< css::sheet::MemberResult > SAL_CALL
-                            getResults() override;
+                            getResults() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo(  ) override;
+                            SAL_CALL getPropertySetInfo(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue ) override;
+                                    const css::uno::Any& aValue )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<sal_Int16> getSubTotals() const;
+    css::uno::Sequence<css::sheet::GeneralFunction> getSubTotals() const;
     bool getShowEmpty() const { return bShowEmpty;}
     bool getRepeatItemLabels() const { return bRepeatItemLabels; }
 
@@ -547,7 +657,7 @@ public:
 typedef std::unordered_map< OUString, sal_Int32, OUStringHash > ScDPMembersHashMap;
 
 class ScDPMembers : public cppu::WeakImplHelper<
-                            css::sheet::XMembersAccess,
+                            css::container::XNameAccess,
                             css::lang::XServiceInfo >
 {
 private:
@@ -562,24 +672,30 @@ private:
 
 public:
                             ScDPMembers( ScDPSource* pSrc, long nD, long nH, long nL );
-    virtual                 ~ScDPMembers() override;
-
-                            // XMembersAccess
-    virtual css::uno::Sequence< OUString > SAL_CALL getLocaleIndependentElementNames() override;
+    virtual                 ~ScDPMembers();
 
                             // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     long                    getCount() const { return nMbrCount;}
     ScDPMember*             getByIndex(long nIndex) const;
@@ -588,10 +704,7 @@ public:
 
     sal_Int32               GetIndexFromName( const OUString& rName ) const;     // <0 if not found
     const ScDPItemData*     GetSrcItemDataByIndex(  SCROW nIndex);
-
-private:
-    /// @throws css::uno::RuntimeException
-    css::uno::Sequence< OUString > getElementNames( bool bLocaleIndependent ) const;
+    SCROW                   GetSrcItemsCount();
 };
 
 class ScDPMember : public cppu::WeakImplHelper<
@@ -614,12 +727,12 @@ private:
 
 public:
     ScDPMember(ScDPSource* pSrc, long nD, long nH, long nL, SCROW nIndex);
-    virtual                 ~ScDPMember() override;
+    virtual                 ~ScDPMember();
     ScDPMember(const ScDPMember&) = delete;
     ScDPMember& operator=(const ScDPMember&) = delete;
 
-    OUString GetNameStr( bool bLocaleIndependent ) const;
-    ScDPItemData FillItemData() const;
+    OUString GetNameStr() const;
+    void                    FillItemData( ScDPItemData& rData ) const;
     const ScDPItemData*  GetItemData() const;
     SCROW GetItemDataId() const { return mnDataId; }
     bool IsNamedItem(SCROW nIndex) const;
@@ -630,29 +743,54 @@ public:
     sal_Int32               Compare( const ScDPMember& rOther ) const;      // visible order
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo(  ) override;
+                            SAL_CALL getPropertySetInfo(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue ) override;
+                                    const css::uno::Any& aValue )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName(  )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     bool isVisible() const { return bVisible;}
     bool getShowDetails() const { return bShowDet;}

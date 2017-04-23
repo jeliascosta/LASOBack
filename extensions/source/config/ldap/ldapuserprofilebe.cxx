@@ -62,7 +62,7 @@ LdapUserProfileBe::LdapUserProfileBe( const uno::Reference<uno::XComponentContex
                         xContext, &aDefinition, &loggedOnUser))
                 {
                     throw css::uno::RuntimeException(
-                        "LdapUserProfileBe- LDAP not configured",
+                        OUString("LdapUserProfileBe- LDAP not configured"),
                         nullptr);
                 }
 
@@ -108,7 +108,7 @@ bool LdapUserProfileBe::readLdapConfiguration(
         uno::Reference< lang::XMultiServiceFactory > xCfgProvider(
             css::configuration::theDefaultProvider::get(context));
 
-        css::beans::NamedValue aPath("nodepath", uno::makeAny(kComponent) );
+        css::beans::NamedValue aPath(OUString("nodepath"), uno::makeAny(kComponent) );
 
         uno::Sequence< uno::Any > aArgs(1);
         aArgs[0] <<=  aPath;
@@ -140,17 +140,21 @@ bool LdapUserProfileBe::readLdapConfiguration(
     }
     catch (const uno::Exception & e)
     {
-        SAL_WARN("extensions.config", "LdapUserProfileBackend: access to configuration data failed: " << e.Message);
+        OSL_TRACE("LdapUserProfileBackend: access to configuration data failed: %s",
+                OUStringToOString( e.Message, RTL_TEXTENCODING_ASCII_US ).getStr() );
         return false;
     }
 
     osl::Security aSecurityContext;
     if (!aSecurityContext.getUserName(*loggedOnUser))
-        SAL_WARN("extensions.config", "LdapUserProfileBackend - could not get Logged on user from system");
+        OSL_TRACE("LdapUserProfileBackend - could not get Logged on user from system");
 
     sal_Int32 nIndex = loggedOnUser->indexOf('/');
     if (nIndex > 0)
         *loggedOnUser = loggedOnUser->copy(nIndex+1);
+
+    //Remember to remove
+    OSL_TRACE("Logged on user is %s", OUStringToOString(*loggedOnUser,RTL_TEXTENCODING_ASCII_US).getStr());
 
     return true;
 }
@@ -168,14 +172,21 @@ bool LdapUserProfileBe::getLdapStringParam(
 
 void LdapUserProfileBe::setPropertyValue(
     OUString const &, css::uno::Any const &)
+    throw (
+        css::beans::UnknownPropertyException, css::beans::PropertyVetoException,
+        css::lang::IllegalArgumentException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     throw css::lang::IllegalArgumentException(
-        "setPropertyValue not supported",
+        OUString("setPropertyValue not supported"),
         static_cast< cppu::OWeakObject * >(this), -1);
 }
 
 css::uno::Any LdapUserProfileBe::getPropertyValue(
     OUString const & PropertyName)
+    throw (
+        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     for (sal_Int32 i = 0;;) {
         sal_Int32 j = PropertyName.indexOf(',', i);
@@ -207,6 +218,7 @@ OUString SAL_CALL LdapUserProfileBe::getLdapUserProfileBeName() {
 
 
 OUString SAL_CALL LdapUserProfileBe::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return getLdapUserProfileBeName() ;
 }
@@ -219,12 +231,14 @@ uno::Sequence<OUString> SAL_CALL LdapUserProfileBe::getLdapUserProfileBeServiceN
 }
 
 sal_Bool SAL_CALL LdapUserProfileBe::supportsService(const OUString& aServiceName)
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, aServiceName);
 }
 
 uno::Sequence<OUString>
 SAL_CALL LdapUserProfileBe::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     return getLdapUserProfileBeServiceNames() ;
 }

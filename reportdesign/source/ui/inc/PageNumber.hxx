@@ -56,7 +56,7 @@ public:
     OPageNumberDialog( vcl::Window* pParent
                         ,const css::uno::Reference< css::report::XReportDefinition>& _xHoldAlive
                         ,::rptui::OReportController* _pController);
-    virtual ~OPageNumberDialog() override;
+    virtual ~OPageNumberDialog();
     virtual void    dispose() override;
     virtual short   Execute() override;
 };

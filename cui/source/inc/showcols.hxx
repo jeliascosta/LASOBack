@@ -42,13 +42,13 @@ class FmShowColsDialog : public ModalDialog
 
 public:
     FmShowColsDialog(vcl::Window* pParent);
-    virtual ~FmShowColsDialog() override;
+    virtual ~FmShowColsDialog();
     virtual void dispose() override;
 
     void SetColumns(const css::uno::Reference< css::container::XIndexContainer>& xCols);
 
 protected:
-    DECL_LINK(OnClickedOk, Button*, void);
+    DECL_LINK_TYPED(OnClickedOk, Button*, void);
 };
 
 #endif // INCLUDED_CUI_SOURCE_INC_SHOWCOLS_HXX

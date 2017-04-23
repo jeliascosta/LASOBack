@@ -19,6 +19,8 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGEMARGINCONTROL_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGEMARGINCONTROL_HXX
 
+#include <svx/sidebar/PopupControl.hxx>
+
 #include <tools/fldunit.hxx>
 #include <svl/poolitem.hxx>
 #include <svx/rulritem.hxx>
@@ -27,9 +29,6 @@
 #include <vcl/field.hxx>
 #include <svtools/unitconv.hxx>
 #include <vector>
-#include <vcl/layout.hxx>
-
-#include <svx/tbxctl.hxx>
 
 #define SWPAGE_NARROW_VALUE    720
 #define SWPAGE_NORMAL_VALUE    1136
@@ -37,76 +36,84 @@
 #define SWPAGE_WIDE_VALUE2     2880
 #define SWPAGE_WIDE_VALUE3     1800
 
+namespace svx { namespace sidebar {
+    class ValueSetWithTextControl;
+} }
+class ValueSet;
+
 static const long MINBODY = 284; //0.5 cm in twips
 
 namespace sw { namespace sidebar {
 
-class PageMarginControl : public SfxPopupWindow
+class PagePropertyPanel;
+
+class PageMarginControl
+    : public svx::sidebar::PopupControl
 {
 public:
-    explicit PageMarginControl( sal_uInt16 nId );
-    virtual ~PageMarginControl() override;
+    PageMarginControl(
+        vcl::Window* pParent,
+        PagePropertyPanel& rPanel,
+        const SvxLongLRSpaceItem& aPageLRMargin,
+        const SvxLongULSpaceItem& aPageULMargin,
+        const bool bMirrored,
+        const Size& rPageSize,
+        const bool bLandscape,
+        const FieldUnit eFUnit,
+        const SfxMapUnit eUnit );
+    virtual ~PageMarginControl();
     virtual void dispose() override;
 
 private:
-    VclPtr<PushButton> m_pNarrow;
-    VclPtr<PushButton> m_pNormal;
-    VclPtr<PushButton> m_pWide;
-    VclPtr<PushButton> m_pMirrored;
-    VclPtr<PushButton> m_pLast;
+    VclPtr< svx::sidebar::ValueSetWithTextControl> mpMarginValueSet;
 
-    VclPtr<FixedText> m_pLeft;
-    VclPtr<FixedText> m_pRight;
-    VclPtr<FixedText> m_pInner;
-    VclPtr<FixedText> m_pOuter;
-
-    VclPtr<VclVBox> m_pContainer;
-
-    VclPtr<MetricField> m_pLeftMarginEdit;
-    VclPtr<MetricField> m_pRightMarginEdit;
-    VclPtr<MetricField> m_pTopMarginEdit;
-    VclPtr<MetricField> m_pBottomMarginEdit;
+    VclPtr<FixedText> maCustom;
+    VclPtr<FixedText> maLeft;
+    VclPtr<FixedText> maInner;
+    VclPtr<MetricField> maLeftMarginEdit;
+    VclPtr<FixedText> maRight;
+    VclPtr<FixedText> maOuter;
+    VclPtr<MetricField> maRightMarginEdit;
+    VclPtr<FixedText> maTop;
+    VclPtr<MetricField> maTopMarginEdit;
+    VclPtr<FixedText> maBottom;
+    VclPtr<MetricField> maBottomMarginEdit;
 
     // hidden metric field
-    VclPtr<MetricField> m_pWidthHeightField;
+    VclPtr<MetricField> maWidthHeightField;
 
-    long m_nPageLeftMargin;
-    long m_nPageRightMargin;
-    long m_nPageTopMargin;
-    long m_nPageBottomMargin;
-    bool m_bMirrored;
+    long mnPageLeftMargin;
+    long mnPageRightMargin;
+    long mnPageTopMargin;
+    long mnPageBottomMargin;
+    bool mbMirrored;
 
-    const MapUnit m_eUnit;
+    const SfxMapUnit meUnit;
 
-    Size m_aPageSize;
+    bool mbUserCustomValuesAvailable;
+    long mnUserCustomPageLeftMargin;
+    long mnUserCustomPageRightMargin;
+    long mnUserCustomPageTopMargin;
+    long mnUserCustomPageBottomMargin;
+    bool mbUserCustomMirrored;
 
-    bool m_bUserCustomValuesAvailable;
-    long m_nUserCustomPageLeftMargin;
-    long m_nUserCustomPageRightMargin;
-    long m_nUserCustomPageTopMargin;
-    long m_nUserCustomPageBottomMargin;
-    bool m_bUserCustomMirrored;
+    bool mbCustomValuesUsed;
 
-    bool m_bCustomValuesUsed;
+    PagePropertyPanel& mrPagePropPanel;
 
-    DECL_LINK( SelectMarginHdl, Button*, void );
-    DECL_LINK( ModifyLRMarginHdl, Edit&, void );
-    DECL_LINK( ModifyULMarginHdl, Edit&, void );
-
-    static void ExecuteMarginLRChange(
-        const long nPageLeftMargin,
-        const long nPageRightMargin );
-    static void ExecuteMarginULChange(
-        const long nPageTopMargin,
-        const long nPageBottomMargin );
-    static void ExecutePageLayoutChange( const bool bMirrored );
+    DECL_LINK_TYPED( ImplMarginHdl, ValueSet*, void );
+    DECL_LINK_TYPED( ModifyLRMarginHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyULMarginHdl, Edit&, void );
 
     void SetMetricFieldMaxValues(const Size& rPageSize);
 
     bool GetUserCustomValues();
     void StoreUserCustomValues();
 
-    void FillHelpText( const bool bUserCustomValuesAvailable );
+    void FillValueSet(
+        const bool bLandscape,
+        const bool bUserCustomValuesAvailable );
+    void SelectValueSetItem();
 };
 
 } } // end of namespace sw::sidebar

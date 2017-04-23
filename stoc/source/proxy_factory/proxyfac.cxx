@@ -75,15 +75,20 @@ struct FactoryImpl : public ::cppu::WeakImplHelper< lang::XServiceInfo,
         typelib_InterfaceTypeDescription * pTypeDescr );
 
     FactoryImpl();
+    virtual ~FactoryImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (RuntimeException, std::exception) override;
 
     // XProxyFactory
     virtual Reference< XAggregation > SAL_CALL createProxy(
-        Reference< XInterface > const & xTarget ) override;
+        Reference< XInterface > const & xTarget )
+        throw (RuntimeException, std::exception) override;
 };
 
 
@@ -161,8 +166,10 @@ UnoInterfaceReference FactoryImpl::binuno_queryInterface(
 struct ProxyRoot : public ::cppu::OWeakAggObject
 {
     // XAggregation
-    virtual Any SAL_CALL queryAggregation( Type const & rType ) override;
+    virtual Any SAL_CALL queryAggregation( Type const & rType )
+        throw (RuntimeException, std::exception) override;
 
+    virtual ~ProxyRoot();
     inline ProxyRoot( ::rtl::Reference< FactoryImpl > const & factory,
                       Reference< XInterface > const & xTarget );
 
@@ -296,6 +303,12 @@ inline binuno_Proxy::binuno_Proxy(
     uno_Interface::pDispatcher = binuno_proxy_dispatch;
 }
 
+
+ProxyRoot::~ProxyRoot()
+{
+}
+
+
 inline ProxyRoot::ProxyRoot(
     ::rtl::Reference< FactoryImpl > const & factory,
     Reference< XInterface > const & xTarget )
@@ -309,6 +322,7 @@ inline ProxyRoot::ProxyRoot(
 
 
 Any ProxyRoot::queryAggregation( Type const & rType )
+    throw (RuntimeException, std::exception)
 {
     Any ret( OWeakAggObject::queryAggregation( rType ) );
     if (! ret.hasValue())
@@ -403,10 +417,14 @@ FactoryImpl::FactoryImpl()
     OSL_ENSURE( m_cpp2uno.is(), "### cannot get bridge C++ <-> uno!" );
 }
 
+
+FactoryImpl::~FactoryImpl() {}
+
 // XProxyFactory
 
 Reference< XAggregation > FactoryImpl::createProxy(
     Reference< XInterface > const & xTarget )
+    throw (RuntimeException, std::exception)
 {
     return new ProxyRoot( this, xTarget );
 }
@@ -414,23 +432,27 @@ Reference< XAggregation > FactoryImpl::createProxy(
 // XServiceInfo
 
 OUString FactoryImpl::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return proxyfac_getImplementationName();
 }
 
 sal_Bool FactoryImpl::supportsService( const OUString & rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > FactoryImpl::getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return proxyfac_getSupportedServiceNames();
 }
 
-/// @throws Exception
+
 Reference< XInterface > SAL_CALL proxyfac_create(
     SAL_UNUSED_PARAMETER Reference< XComponentContext > const & )
+    throw (Exception)
 {
     Reference< XInterface > xRet;
     {

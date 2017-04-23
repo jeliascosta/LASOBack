@@ -19,32 +19,16 @@
 #ifndef INCLUDED_SVX_CHARMAP_HXX
 #define INCLUDED_SVX_CHARMAP_HXX
 
+#include <vcl/ctrl.hxx>
+#include <vcl/metric.hxx>
+#include <vcl/scrbar.hxx>
+#include <vcl/vclptr.hxx>
 #include <map>
 #include <memory>
-
-#include <sal/types.h>
-#include <rtl/ref.hxx>
 #include <svx/svxdllapi.h>
-#include <tools/gen.hxx>
-#include <tools/link.hxx>
-#include <vcl/ctrl.hxx>
-#include <vcl/event.hxx>
-#include <vcl/outdev.hxx>
-#include <vcl/metric.hxx>
-#include <vcl/vclptr.hxx>
-#include <vcl/window.hxx>
-
-namespace com { namespace sun { namespace star {
-    namespace accessibility { class XAccessible; }
-} } }
-
-namespace vcl { class Font; }
 
 #define COLUMN_COUNT    16
 #define ROW_COUNT        8
-
-class CommandEvent;
-class ScrollBar;
 
 namespace svx
 {
@@ -56,7 +40,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxShowCharSet : public Control
 {
 public:
                     SvxShowCharSet( vcl::Window* pParent );
-                    virtual ~SvxShowCharSet() override;
+                    virtual ~SvxShowCharSet();
     virtual void    dispose() override;
     virtual void    ApplySettings(vcl::RenderContext& rRenderContext) override;
 
@@ -79,8 +63,8 @@ public:
     void                        SelectIndex( int index, bool bFocus = false );
     void                        OutputIndex( int index );
     void                        DeSelect();
-    bool                 IsSelected(sal_uInt16 _nPos) const { return _nPos == nSelectedIndex; }
-    sal_uInt16           GetSelectIndexId() const { return sal::static_int_cast<sal_uInt16>(nSelectedIndex); }
+    inline bool                 IsSelected(sal_uInt16 _nPos) const { return _nPos == nSelectedIndex; }
+    inline sal_uInt16           GetSelectIndexId() const { return sal::static_int_cast<sal_uInt16>(nSelectedIndex); }
     static sal_uInt16           GetRowPos(sal_uInt16 _nPos);
     static sal_uInt16           GetColumnPos(sal_uInt16 _nPos);
 
@@ -90,10 +74,8 @@ public:
 
     virtual void    Resize() override;
 
-    virtual FactoryFunction GetUITestFactory() const override;
-
 protected:
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
@@ -113,7 +95,8 @@ private:
     Link<SvxShowCharSet*,void>     aSelectHdl;
     Link<SvxShowCharSet*,void>     aHighHdl;
     Link<SvxShowCharSet*,void>     aPreSelectHdl;
-    rtl::Reference<svx::SvxShowCharSetVirtualAcc> m_xAccessible;
+    svx::SvxShowCharSetVirtualAcc* m_pAccessible;
+    css::uno::Reference<css::accessibility::XAccessible> m_xAccessible;
     long            nX;
     long            nY;
     long            m_nXGap;
@@ -122,7 +105,7 @@ private:
 
     sal_Int32       nSelectedIndex;
 
-    FontCharMapRef  mxFontCharMap;
+    FontCharMapPtr  mxFontCharMap;
     Size            maFontSize;
     VclPtr<ScrollBar>  aVscrollSB;
 
@@ -136,10 +119,10 @@ private:
     void            InitSettings(vcl::RenderContext& rRenderContext);
     // abstraction layers are: Unicode<->MapIndex<->Pixel
     Point           MapIndexToPixel( int) const;
-    DECL_LINK(VscrollHdl, ScrollBar*, void);
+    DECL_LINK_TYPED(VscrollHdl, ScrollBar*, void);
 
     void            init();
-    tools::Rectangle       getGridRectangle(const Point &rPointUL, const Size &rOutputSize);
+    Rectangle       getGridRectangle(const Point &rPointUL, const Size &rOutputSize);
 };
 
 #endif

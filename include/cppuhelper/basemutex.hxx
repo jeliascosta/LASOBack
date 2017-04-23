@@ -27,12 +27,12 @@ namespace cppu
     /** base class for all classes who want derive from
      cppu::WeakComponentImplHelperXX.
 
-     Implementation classes have first to derive from BaseMutex and then from
+     Implmentation classes have first to derive from BaseMutex and then from
      cppu::WeakComponentImplHelperXX to ensure that the BaseMutex is completely
-     initialized when the mutex is used to initialize the
+     initialized when the mutex is used to intialize the
      cppu::WeakComponentImplHelperXX
     */
-    class SAL_WARN_UNUSED BaseMutex
+    class BaseMutex
     {
     protected:
         mutable ::osl::Mutex m_aMutex;

@@ -33,7 +33,7 @@ class OOXMLValue : public Value
 public:
     typedef std::shared_ptr<OOXMLValue> Pointer_t;
     OOXMLValue();
-    virtual ~OOXMLValue() override;
+    virtual ~OOXMLValue();
 
     virtual int getInt() const override;
     ;
@@ -58,7 +58,7 @@ private:
     Type_t meType;
 
 public:
-    OOXMLProperty(Id id, const OOXMLValue::Pointer_t& pValue, Type_t eType);
+    OOXMLProperty(Id id, OOXMLValue::Pointer_t pValue, Type_t eType);
     OOXMLProperty(const OOXMLProperty & rSprm);
     virtual ~OOXMLProperty();
 
@@ -77,8 +77,8 @@ class OOXMLBinaryValue : public OOXMLValue
 protected:
     mutable OOXMLBinaryObjectReference::Pointer_t mpBinaryObj;
 public:
-    explicit OOXMLBinaryValue(OOXMLBinaryObjectReference::Pointer_t const & pBinaryObj);
-    virtual ~OOXMLBinaryValue() override;
+    explicit OOXMLBinaryValue(OOXMLBinaryObjectReference::Pointer_t pBinaryObj);
+    virtual ~OOXMLBinaryValue();
 
     virtual writerfilter::Reference<BinaryObj>::Pointer_t getBinary() override;
 #ifdef DEBUG_WRITERFILTER
@@ -93,10 +93,10 @@ protected:
     bool mbValue;
     explicit OOXMLBooleanValue(bool bValue);
 public:
-    static OOXMLValue::Pointer_t const & Create (bool bValue);
+    static OOXMLValue::Pointer_t Create (bool bValue);
     static OOXMLValue::Pointer_t Create (const char *pValue);
 
-    virtual ~OOXMLBooleanValue() override;
+    virtual ~OOXMLBooleanValue();
 
     virtual int getInt() const override;
     virtual css::uno::Any getAny() const override;
@@ -112,7 +112,7 @@ protected:
     OUString mStr;
 public:
     explicit OOXMLStringValue(const OUString & rStr);
-    virtual ~OOXMLStringValue() override;
+    virtual ~OOXMLStringValue();
 
     virtual css::uno::Any getAny() const override;
     virtual OUString getString() const override;
@@ -128,8 +128,8 @@ protected:
     css::uno::Reference<css::io::XInputStream> mxInputStream;
 
 public:
-    explicit OOXMLInputStreamValue(css::uno::Reference<css::io::XInputStream> const & xInputStream);
-    virtual ~OOXMLInputStreamValue() override;
+    explicit OOXMLInputStreamValue(css::uno::Reference<css::io::XInputStream> xInputStream);
+    virtual ~OOXMLInputStreamValue();
 
     virtual css::uno::Any getAny() const override;
 #ifdef DEBUG_WRITERFILTER
@@ -186,8 +186,8 @@ class OOXMLPropertySetValue : public OOXMLValue
 {
     OOXMLPropertySet::Pointer_t mpPropertySet;
 public:
-    explicit OOXMLPropertySetValue(const OOXMLPropertySet::Pointer_t& pPropertySet);
-    virtual ~OOXMLPropertySetValue() override;
+    explicit OOXMLPropertySetValue(OOXMLPropertySet::Pointer_t pPropertySet);
+    virtual ~OOXMLPropertySetValue();
 
     virtual writerfilter::Reference<Properties>::Pointer_t getProperties() override;
 #ifdef DEBUG_WRITERFILTER
@@ -203,7 +203,7 @@ protected:
     explicit OOXMLIntegerValue(sal_Int32 nValue);
 public:
     static OOXMLValue::Pointer_t Create (sal_Int32 nValue);
-    virtual ~OOXMLIntegerValue() override;
+    virtual ~OOXMLIntegerValue();
 
     virtual int getInt() const override;
     virtual css::uno::Any getAny() const override;
@@ -220,7 +220,7 @@ protected:
 public:
     explicit OOXMLHexValue(sal_uInt32 nValue);
     explicit OOXMLHexValue(const char * pValue);
-    virtual ~OOXMLHexValue() override;
+    virtual ~OOXMLHexValue();
 
     virtual int getInt() const override;
 #ifdef DEBUG_WRITERFILTER
@@ -236,7 +236,7 @@ protected:
     sal_uInt32 mnValue;
 public:
     explicit OOXMLUniversalMeasureValue(const char * pValue);
-    virtual ~OOXMLUniversalMeasureValue() override;
+    virtual ~OOXMLUniversalMeasureValue();
 
     virtual int getInt() const override;
 #ifdef DEBUG_WRITERFILTER
@@ -250,8 +250,8 @@ class OOXMLShapeValue : public OOXMLValue
 protected:
     css::uno::Reference<css::drawing::XShape> mrShape;
 public:
-    explicit OOXMLShapeValue(css::uno::Reference<css::drawing::XShape> const & rShape);
-    virtual ~OOXMLShapeValue() override;
+    explicit OOXMLShapeValue(css::uno::Reference<css::drawing::XShape> rShape);
+    virtual ~OOXMLShapeValue();
 
     virtual css::uno::Any getAny() const override;
 #ifdef DEBUG_WRITERFILTER
@@ -265,8 +265,8 @@ class OOXMLStarMathValue : public OOXMLValue
 protected:
     css::uno::Reference< css::embed::XEmbeddedObject > component;
 public:
-    explicit OOXMLStarMathValue( css::uno::Reference< css::embed::XEmbeddedObject > const & component );
-    virtual ~OOXMLStarMathValue() override;
+    explicit OOXMLStarMathValue( css::uno::Reference< css::embed::XEmbeddedObject > component );
+    virtual ~OOXMLStarMathValue();
 
     virtual css::uno::Any getAny() const override;
 #ifdef DEBUG_WRITERFILTER

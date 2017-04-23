@@ -20,9 +20,9 @@ class SwDashedLine : public FixedLine
 
 public:
     SwDashedLine( vcl::Window* pParent, Color& ( *pColorFn )() );
-    virtual ~SwDashedLine( ) override;
+    virtual ~SwDashedLine( );
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 };
 
 #endif

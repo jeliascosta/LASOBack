@@ -98,12 +98,12 @@ private:
     void    UpdateDrawView();
     void    DoPrint( ScPreviewLocationData* pFillLocation );
 
-    void    InvalidateLocationData( SfxHintId nId );
+    void    InvalidateLocationData( sal_uLong nId );
 
     using Window::SetZoom;
 
 protected:
-    virtual void   Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void   Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void   Command( const CommandEvent& rCEvt ) override;
     virtual void   KeyInput( const KeyEvent& rKEvt ) override;
     virtual void   MouseMove( const MouseEvent& rMEvt ) override;
@@ -117,12 +117,12 @@ protected:
 
 public:
             ScPreview( vcl::Window* pParent, ScDocShell* pDocSh, ScPreviewShell* pViewSh );
-            virtual ~ScPreview() override;
+            virtual ~ScPreview();
     virtual void dispose() override;
 
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    SC_DLLPUBLIC void    DataChanged(bool bNewTime);             //  Instead of calling Invalidate
+    SC_DLLPUBLIC void    DataChanged(bool bNewTime = false);             //  Instead of calling Invalidate
     void    DoInvalidate();
 
     void    SetXOffset( long nX );
@@ -154,7 +154,7 @@ public:
     void    CalcAll()           { CalcPages(); }
     void    SetInGetState(bool bSet) { bInGetState = bSet; }
 
-    DECL_STATIC_LINK( ScPreview, InvalidateHdl, void*, void );
+    DECL_STATIC_LINK_TYPED( ScPreview, InvalidateHdl, void*, void );
     static void StaticInvalidate();
 
     FmFormView* GetDrawView() { return pDrawView; }

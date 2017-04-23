@@ -179,7 +179,7 @@ void SdXMLImplSetEffect( AnimationEffect eEffect, XMLEffect& eKind, XMLEffectDir
         eEffect = AnimationEffect_NONE;
     }
 
-    const Effect& rEffect = AnimationEffectMap[(int)eEffect];
+    const Effect& rEffect = AnimationEffectMap[eEffect];
     eKind = rEffect.meKind;
     eDirection = rEffect.meDirection;
     nStartScale = rEffect.mnStartScale;
@@ -440,7 +440,7 @@ void XMLAnimationsExporter::exportAnimations( SvXMLExport& rExport )
         {
             XMLEffectHint& rEffect = *aIter;
 
-            SAL_WARN_IF( !rEffect.mxShape.is(), "xmloff", "shape id creation failed for animation effect?" );
+            DBG_ASSERT( rEffect.mxShape.is(), "shape id creation failed for animation effect?" );
 
             rExport.AddAttribute( XML_NAMESPACE_DRAW, XML_SHAPE_ID, rExport.getInterfaceToIdentifierMapper().getIdentifier( rEffect.mxShape ) );
 

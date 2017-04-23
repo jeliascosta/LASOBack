@@ -61,7 +61,7 @@ RegionBand& RegionBand::operator=(const RegionBand& rRef)
     return *this;
 }
 
-RegionBand::RegionBand(const tools::Rectangle& rRect)
+RegionBand::RegionBand(const Rectangle& rRect)
 :   mpFirstBand(nullptr),
     mpLastCheckedBand(nullptr)
 {
@@ -386,7 +386,7 @@ void RegionBand::ImplAddMissingBands(const long nTop, const long nBottom)
 
     // We still have to cover two cases:
     // 1. The region does not yet contain any bands.
-    // 2. The interval nTop->nBottom extends past the bottom most band.
+    // 2. The intervall nTop->nBottom extends past the bottom most band.
     if (nCurrentTop <= nBottom
         && (pBand==nullptr || nBottom>pBand->mnYBottom))
     {
@@ -474,8 +474,8 @@ void RegionBand::InsertLine(const Point& rStartPt, const Point& rEndPt, long nLi
         const long  nStartY = rStartPt.Y();
         const long  nEndX = rEndPt.X();
         const long  nEndY = rEndPt.Y();
-        const long  nXInc = ( nStartX < nEndX ) ? 1 : -1;
-        const long  nYInc = ( nStartY < nEndY ) ? 1 : -1;
+        const long  nXInc = ( nStartX < nEndX ) ? 1L : -1L;
+        const long  nYInc = ( nStartY < nEndY ) ? 1L : -1L;
 
         if ( nDX >= nDY )
         {
@@ -487,7 +487,7 @@ void RegionBand::InsertLine(const Point& rStartPt, const Point& rEndPt, long nLi
             {
                 InsertPoint( Point( nX, nY ), nLineId, nStartX == nX, eLineType );
 
-                if ( nD < 0 )
+                if ( nD < 0L )
                     nD += nDY2;
                 else
                 {
@@ -506,7 +506,7 @@ void RegionBand::InsertLine(const Point& rStartPt, const Point& rEndPt, long nLi
             {
                 InsertPoint( Point( nX, nY ), nLineId, nStartY == nY, eLineType );
 
-                if ( nD < 0 )
+                if ( nD < 0L )
                     nD += nDY2;
                 else
                 {
@@ -523,7 +523,7 @@ void RegionBand::InsertLine(const Point& rStartPt, const Point& rEndPt, long nLi
 
 void RegionBand::InsertPoint(const Point &rPoint, long nLineID, bool bEndPoint, LineType eLineType)
 {
-    SAL_WARN_IF( mpFirstBand == nullptr, "vcl", "RegionBand::InsertPoint - no bands available!" );
+    DBG_ASSERT( mpFirstBand != nullptr, "RegionBand::InsertPoint - no bands available!" );
 
     if ( rPoint.Y() == mpLastCheckedBand->mnYTop )
     {
@@ -636,7 +636,7 @@ bool RegionBand::OptimizeBandList()
     pBand = mpFirstBand;
     while ( pBand )
     {
-        SAL_WARN_IF( pBand->mpFirstSep == nullptr, "vcl", "Exiting RegionBand::OptimizeBandList(): empty band in region!" );
+        DBG_ASSERT( pBand->mpFirstSep != nullptr, "Exiting RegionBand::OptimizeBandList(): empty band in region!" );
 
         if ( pBand->mnYBottom < pBand->mnYTop )
             OSL_ENSURE(false, "RegionBand::OptimizeBandList(): YBottomBoundary < YTopBoundary" );
@@ -867,8 +867,8 @@ bool RegionBand::InsertSingleBand(ImplRegionBand* pBand, long nYBandPosition)
 
 void RegionBand::Union(long nLeft, long nTop, long nRight, long nBottom)
 {
-    SAL_WARN_IF( nLeft > nRight, "vcl", "RegionBand::Union() - nLeft > nRight" );
-    SAL_WARN_IF( nTop > nBottom, "vcl", "RegionBand::Union() - nTop > nBottom" );
+    DBG_ASSERT( nLeft <= nRight, "RegionBand::Union() - nLeft > nRight" );
+    DBG_ASSERT( nTop <= nBottom, "RegionBand::Union() - nTop > nBottom" );
 
     // process union
     ImplRegionBand* pBand = mpFirstBand;
@@ -963,8 +963,8 @@ void RegionBand::Union(const RegionBand& rSource)
 
 void RegionBand::Exclude(long nLeft, long nTop, long nRight, long nBottom)
 {
-    SAL_WARN_IF( nLeft > nRight, "vcl", "RegionBand::Exclude() - nLeft > nRight" );
-    SAL_WARN_IF( nTop > nBottom, "vcl", "RegionBand::Exclude() - nTop > nBottom" );
+    DBG_ASSERT( nLeft <= nRight, "RegionBand::Exclude() - nLeft > nRight" );
+    DBG_ASSERT( nTop <= nBottom, "RegionBand::Exclude() - nTop > nBottom" );
 
     // process exclude
     ImplRegionBand* pBand = mpFirstBand;
@@ -1004,8 +1004,8 @@ void RegionBand::Exclude(long nLeft, long nTop, long nRight, long nBottom)
 
 void RegionBand::XOr(long nLeft, long nTop, long nRight, long nBottom)
 {
-    SAL_WARN_IF( nLeft > nRight, "vcl", "RegionBand::Exclude() - nLeft > nRight" );
-    SAL_WARN_IF( nTop > nBottom, "vcl", "RegionBand::Exclude() - nTop > nBottom" );
+    DBG_ASSERT( nLeft <= nRight, "RegionBand::Exclude() - nLeft > nRight" );
+    DBG_ASSERT( nTop <= nBottom, "RegionBand::Exclude() - nTop > nBottom" );
 
     // process xor
     ImplRegionBand* pBand = mpFirstBand;
@@ -1155,7 +1155,7 @@ bool RegionBand::Exclude(const RegionBand& rSource)
     return true;
 }
 
-tools::Rectangle RegionBand::GetBoundRect() const
+Rectangle RegionBand::GetBoundRect() const
 {
 
     // get the boundaries of the first band
@@ -1176,7 +1176,7 @@ tools::Rectangle RegionBand::GetBoundRect() const
         pBand = pBand->mpNextBand;
     }
 
-    return tools::Rectangle( nXLeft, nYTop, nXRight, nYBottom );
+    return Rectangle( nXLeft, nYTop, nXRight, nYBottom );
 }
 
 void RegionBand::XOr(const RegionBand& rSource)
@@ -1234,7 +1234,7 @@ void RegionBand::GetRegionRectangles(RectangleVector& rTarget) const
     // clear result vector
     rTarget.clear();
     ImplRegionBand* pCurrRectBand = mpFirstBand;
-    tools::Rectangle aRectangle;
+    Rectangle aRectangle;
 
     while(pCurrRectBand)
     {

@@ -36,17 +36,24 @@ class XMLCodeNameProvider : public ::cppu::WeakImplHelper< css::container::XName
 
 public:
     explicit XMLCodeNameProvider(ScDocument* pDoc);
-    virtual ~XMLCodeNameProvider() override;
+    virtual ~XMLCodeNameProvider();
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+        throw (css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+        throw (css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw (css::uno::RuntimeException, std::exception ) override;
 
     static void set( const css::uno::Reference< css::container::XNameAccess>& xNameAccess, ScDocument *pDoc );
 };

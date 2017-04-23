@@ -42,11 +42,13 @@ struct SwCursorMoveState;
 struct SwFillData;
 class SwPortionHandler;
 class SwScriptInfo;
+class SwViewOption;
+class SwWrongList;
 
 #define NON_PRINTING_CHARACTER_COLOR RGB_COLORDATA(0x26, 0x8b, 0xd2)
 
 /// Represents the visualization of a paragraph.
-class SW_DLLPUBLIC SwTextFrame: public SwContentFrame
+class SwTextFrame: public SwContentFrame
 {
     friend class SwTextIter;
     friend class SwTestFormat;
@@ -94,7 +96,7 @@ class SW_DLLPUBLIC SwTextFrame: public SwContentFrame
 
     // Evaluates the Preps in Format()
     bool CalcPreps();
-    void PrepWidows( const sal_uInt16 nNeed, bool bNotify );
+    void PrepWidows( const sal_uInt16 nNeed, bool bNotify = true );
     void InvalidateRange_( const SwCharRange &, const long = 0);
     inline void InvalidateRange( const SwCharRange &, const long = 0);
 
@@ -121,12 +123,12 @@ class SW_DLLPUBLIC SwTextFrame: public SwContentFrame
     bool mbFollowFormatAllowed : 1;
 
     void ResetPreps();
-    void Lock() { mbLocked = true; }
-    void Unlock() { mbLocked = false; }
-    void SetWidow( const bool bNew ) { mbWidow = bNew; }
-    void SetJustWidow( const bool bNew ) { mbJustWidow = bNew; }
-    void SetEmpty( const bool bNew ) { mbEmpty = bNew; }
-    void SetFieldFollow( const bool bNew ) { mbFieldFollow = bNew; }
+    inline void Lock() { mbLocked = true; }
+    inline void Unlock() { mbLocked = false; }
+    inline void SetWidow( const bool bNew ) { mbWidow = bNew; }
+    inline void SetJustWidow( const bool bNew ) { mbJustWidow = bNew; }
+    inline void SetEmpty( const bool bNew ) { mbEmpty = bNew; }
+    inline void SetFieldFollow( const bool bNew ) { mbFieldFollow = bNew; }
 
     bool IsIdxInside( const sal_Int32 nPos, const sal_Int32 nLen ) const;
 
@@ -197,7 +199,7 @@ class SW_DLLPUBLIC SwTextFrame: public SwContentFrame
     void CalcHeightOfLastLine( const bool _bUseFont = false );
 
     virtual void DestroyImpl() override;
-    virtual ~SwTextFrame() override;
+    virtual ~SwTextFrame();
 
 protected:
     virtual void Modify( const SfxPoolItem*, const SfxPoolItem* ) override;
@@ -228,7 +230,7 @@ public:
      * Returns false if rPos > number of character is string
      */
     virtual bool GetCharRect( SwRect& rRect, const SwPosition& rPos,
-                                SwCursorMoveState* pCMS = nullptr, bool bAllowFarAway = true ) const override;
+                                SwCursorMoveState* pCMS = nullptr ) const override;
 
     /// A slimmer version of GetCharRect for autopositioning Frames
     bool GetAutoPos( SwRect &, const SwPosition& ) const;
@@ -273,7 +275,7 @@ public:
      * Makes sure that the Frame is not switched (e.g. switched for a
      * character-bound Frame)
      */
-    bool GetKeyCursorOfst(SwPosition *pPos, const Point &rPoint ) const
+    inline bool GetKeyCursorOfst(SwPosition *pPos, const Point &rPoint ) const
             { return GetCursorOfst_( pPos, rPoint, false ); }
 
     void   PaintExtraData( const SwRect & rRect ) const; /// Page number etc.
@@ -290,13 +292,13 @@ public:
     virtual bool LeftMargin(SwPaM *) const override;
     virtual bool RightMargin(SwPaM *, bool bAPI = false) const override;
 
-    virtual bool UnitUp(SwPaM *, const SwTwips nOffset,
-                            bool bSetInReadOnly ) const override;
-    virtual bool UnitDown(SwPaM *, const SwTwips nOffset,
-                            bool bSetInReadOnly ) const override;
-    bool UnitUp_(SwPaM *, const SwTwips nOffset,
+    virtual bool UnitUp(SwPaM *, const SwTwips nOffset = 0,
+                            bool bSetInReadOnly = false ) const override;
+    virtual bool UnitDown(SwPaM *, const SwTwips nOffset = 0,
+                            bool bSetInReadOnly = false ) const override;
+    bool UnitUp_(SwPaM *, const SwTwips nOffset = 0,
                             bool bSetInReadOnly = false ) const;
-    bool UnitDown_(SwPaM *, const SwTwips nOffset,
+    bool UnitDown_(SwPaM *, const SwTwips nOffset = 0,
                             bool bSetInReadOnly = false ) const;
 
     /**
@@ -309,22 +311,22 @@ public:
     /// Methods to manage the FollowFrame
     void            SplitFrame( const sal_Int32 nTextPos );
     SwContentFrame *JoinFrame();
-    sal_Int32  GetOfst() const { return mnOffset; }
+    inline sal_Int32  GetOfst() const { return mnOffset; }
            void        SetOfst_( const sal_Int32 nNewOfst );
     inline void        SetOfst ( const sal_Int32 nNewOfst );
-    void        ManipOfst ( const sal_Int32 nNewOfst ){ mnOffset = nNewOfst; }
+    inline void        ManipOfst ( const sal_Int32 nNewOfst ){ mnOffset = nNewOfst; }
            SwTextFrame   *GetFrameAtPos ( const SwPosition &rPos);
     inline const SwTextFrame *GetFrameAtPos ( const SwPosition &rPos) const;
     SwTextFrame&   GetFrameAtOfst( const sal_Int32 nOfst );
     /// If there's a Follow and we don't contain text ourselves
-    bool IsEmptyMaster() const
+    inline bool IsEmptyMaster() const
         { return GetFollow() && !GetFollow()->GetOfst(); }
 
     /// Returns the text portion we want to edit (for inline see underneath)
     const OUString& GetText() const;
-    SwTextNode *GetTextNode()
+    inline SwTextNode *GetTextNode()
         { return static_cast< SwTextNode* >( SwContentFrame::GetNode()); }
-    const SwTextNode *GetTextNode() const
+    inline const SwTextNode *GetTextNode() const
         { return static_cast< const SwTextNode* >( SwContentFrame::GetNode()); }
 
     SwTextFrame(SwTextNode * const, SwFrame* );
@@ -377,26 +379,26 @@ public:
     DECL_FIXEDMEMPOOL_NEWDEL(SwTextFrame)
 
     // Locking
-    bool IsLocked()      const { return mbLocked;     }
+    inline bool IsLocked()      const { return mbLocked;     }
 
-    bool IsWidow()       const { return mbWidow;      }
-    bool IsJustWidow()   const { return mbJustWidow;  }
-    bool IsEmpty()       const { return mbEmpty;      }
-    bool HasFootnote()        const { return mbFootnote;        }
-    bool IsInFootnoteConnect()const { return mbInFootnoteConnect;}
-    bool IsFieldFollow() const { return mbFieldFollow;}
+    inline bool IsWidow()       const { return mbWidow;      }
+    inline bool IsJustWidow()   const { return mbJustWidow;  }
+    inline bool IsEmpty()       const { return mbEmpty;      }
+    inline bool HasFootnote()        const { return mbFootnote;        }
+    inline bool IsInFootnoteConnect()const { return mbInFootnoteConnect;}
+    inline bool IsFieldFollow() const { return mbFieldFollow;}
 
     inline void SetRepaint() const;
     inline void ResetRepaint() const;
-    bool HasRepaint() const { return mbRepaint; }
+    inline bool HasRepaint() const { return mbRepaint; }
     inline void SetBlinkPor() const;
     inline void ResetBlinkPor() const;
-    bool HasBlinkPor() const { return mbHasBlinkPortions; }
-    void SetAnimation() const
+    inline bool HasBlinkPor() const { return mbHasBlinkPortions; }
+    inline void SetAnimation() const
         { const_cast<SwTextFrame*>(this)->mbHasAnimation = true; }
-    bool HasAnimation() const { return mbHasAnimation; }
+    inline bool HasAnimation() const { return mbHasAnimation; }
 
-    bool IsSwapped() const { return mbIsSwapped; }
+    inline bool IsSwapped() const { return mbIsSwapped; }
 
     /// Does the Frame have a local footnote (in this Frame or Follow)?
 #ifdef DBG_UTIL
@@ -418,11 +420,11 @@ public:
     void HideAndShowObjects();
 
     /// Footnote
-    void RemoveFootnote( const sal_Int32 nStart,
+    void RemoveFootnote( const sal_Int32 nStart = 0,
                     const sal_Int32 nLen = COMPLETE_STRING );
     inline SwTwips GetFootnoteFrameHeight() const;
     SwTextFrame *FindFootnoteRef( const SwTextFootnote *pFootnote );
-    const SwTextFrame *FindFootnoteRef( const SwTextFootnote *pFootnote ) const
+    inline const SwTextFrame *FindFootnoteRef( const SwTextFootnote *pFootnote ) const
     { return const_cast<SwTextFrame *>(this)->FindFootnoteRef( pFootnote ); }
     void ConnectFootnote( SwTextFootnote *pFootnote, const SwTwips nDeadLine );
 
@@ -455,7 +457,7 @@ public:
     SwTextFrame* GetFormatted( bool bForceQuickFormat = false );
 
     /// Will be moved soon
-    void SetFootnote( const bool bNew ) { mbFootnote = bNew; }
+    inline void SetFootnote( const bool bNew ) { mbFootnote = bNew; }
 
     /// Respect the Follows
     inline bool IsInside( const sal_Int32 nPos ) const;
@@ -463,7 +465,7 @@ public:
     const SwBodyFrame   *FindBodyFrame()   const;
 
     /// DropCaps and selections
-    bool GetDropRect( SwRect &rRect ) const
+    inline bool GetDropRect( SwRect &rRect ) const
     { return HasPara() && GetDropRect_( rRect ); }
 
     static SwCache *GetTextCache() { return pTextCache; }
@@ -471,14 +473,14 @@ public:
 
     static long GetMinPrtLine() { return nMinPrtLine; }
 
-    sal_uInt16 GetCacheIdx() const { return mnCacheIndex; }
-    void   SetCacheIdx( const sal_uInt16 nNew ) { mnCacheIndex = nNew; }
+    inline sal_uInt16 GetCacheIdx() const { return mnCacheIndex; }
+    inline void   SetCacheIdx( const sal_uInt16 nNew ) { mnCacheIndex = nNew; }
 
     /// Removes the Line information from the Cache
     void ClearPara();
 
     /// Am I a FootnoteFrame, with a number at the start of the paragraph?
-    bool IsFootnoteNumFrame() const
+    inline bool IsFootnoteNumFrame() const
     { return IsInFootnote() && !GetIndPrev() && IsFootnoteNumFrame_(); }
 
     /**
@@ -495,7 +497,7 @@ public:
      */
     void CalcAdditionalFirstLineOffset();
 
-    SwTwips GetAdditionalFirstLineOffset() const
+    inline SwTwips GetAdditionalFirstLineOffset() const
     {
         return mnAdditionalFirstLineOffset;
     }
@@ -591,25 +593,25 @@ public:
      * Calculates the coordinates of a rectangle when switching from
      * RTL to LTR layout
      */
-    void SwitchRTLtoLTR( SwRect& rRect ) const { SwitchLTRtoRTL( rRect ); }
+    inline void SwitchRTLtoLTR( SwRect& rRect ) const { SwitchLTRtoRTL( rRect ); }
 
     /**
      * Calculates the coordinates of a point when switching from
      * RTL to LTR layout
      */
-    void SwitchRTLtoLTR( Point& rPoint ) const { SwitchLTRtoRTL( rPoint ); };
+    inline void SwitchRTLtoLTR( Point& rPoint ) const { SwitchLTRtoRTL( rPoint ); };
 
-    bool FollowFormatAllowed() const
+    inline bool FollowFormatAllowed() const
     {
         return mbFollowFormatAllowed;
     }
 
-    void AllowFollowFormat()
+    inline void AllowFollowFormat()
     {
         mbFollowFormatAllowed = true;
     }
 
-    void ForbidFollowFormat()
+    inline void ForbidFollowFormat()
     {
         mbFollowFormatAllowed = false;
     }
@@ -623,7 +625,7 @@ public:
 
     SwTwips GetBaseVertOffsetForFly(bool bIgnoreFlysAnchoredAtThisFrame) const;
 
-    SwTwips GetHeightOfLastLine() const
+    inline SwTwips GetHeightOfLastLine() const
     {
         return mnHeightOfLastLine;
     }
@@ -791,8 +793,8 @@ public:
 
 class SwLayoutModeModifier
 {
-    const OutputDevice& m_rOut;
-    ComplexTextLayoutFlags m_nOldLayoutMode;
+    const OutputDevice& rOut;
+    ComplexTextLayoutMode nOldLayoutMode;
 public:
     SwLayoutModeModifier( const OutputDevice& rOutp );
     ~SwLayoutModeModifier();

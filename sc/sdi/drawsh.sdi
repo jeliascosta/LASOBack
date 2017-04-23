@@ -20,7 +20,7 @@ interface TableDraw
     // support assign macro for shape objects
     SID_ASSIGNMACRO             [ ExecMethod = ExecDrawAttr; StateMethod = NoState; Export = FALSE; ]
 
-    // drawing is not possible from Basic, therefore everything with Export = FALSE
+     // Drawing geht von Basic aus gar nicht, darum alles mit Export = FALSE
 
     FID_DEFINE_NAME             [ StateMethod = StateDisableItems; Export = FALSE; ]
     FID_ADD_NAME                [ StateMethod = StateDisableItems; Export = FALSE; ]
@@ -34,7 +34,7 @@ interface TableDraw
     SID_DEFINE_DBNAME           [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_OPENDLG_CONSOLIDATE     [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_OPENDLG_EDIT_PRINTAREA  [ StateMethod = StateDisableItems; Export = FALSE; ]
-    // others:
+     // andere:
     SID_DRAW_CHART              [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_STYLE_FAMILY2           [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_STYLE_FAMILY4           [ StateMethod = StateDisableItems; Export = FALSE; ]
@@ -52,16 +52,15 @@ interface TableDraw
     SID_TEXT_STANDARD       [ ExecMethod = ExecDrawAttr; StateMethod = NoState; Export = FALSE; ]
     SID_DRAWTEXT_ATTR_DLG   [ ExecMethod = ExecDrawAttr; StateMethod = NoState; Export = FALSE; ]
 
-    // ---- Slot-IDs for Objectbar:
+     // ---- Slot-IDs fuer Objectbar:
     SID_COLOR_TABLE         [ StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_GRADIENT_LIST       [ StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_HATCH_LIST          [ StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_BITMAP_LIST         [ StateMethod = GetDrawAttrState; Export = FALSE; ]
-    SID_PATTERN_LIST        [ StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_DASH_LIST           [ StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_LINEEND_LIST        [ StateMethod = GetDrawAttrState; Export = FALSE; ]
 
-    // area attributes
+     // Flaechen-Attribute
     SID_ATTR_FILL_STYLE     [ ExecMethod = ExecDrawAttr; StateMethod = GetDrawAttrState; Export = FALSE; ]
 
     // #i25616#
@@ -87,7 +86,7 @@ interface TableDraw
     SID_ATTR_FILL_TRANSPARENCE [ ExecMethod = ExecDrawAttr; StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_ATTR_FILL_FLOATTRANSPARENCE [ ExecMethod = ExecDrawAttr; StateMethod = GetDrawAttrState; Export = FALSE; ]
 
-    // lines attributes:
+     // ---- Linien-Attribute:
     SID_ATTR_LINE_STYLE     [ ExecMethod = ExecDrawAttr; StateMethod = GetDrawAttrState; Export = FALSE; ]
     SID_ATTR_LINEEND_STYLE  [ ExecMethod = ExecDrawAttr; StateMethod = GetAttrFuncState; Export = FALSE; ]
     SID_ATTR_LINE_START [ ExecMethod = ExecDrawAttr; StateMethod = GetDrawAttrState; Export = FALSE; ]
@@ -115,8 +114,17 @@ interface TableDraw
     SID_ATTR_TRANSFORM_AUTOWIDTH [ StateMethod = GetDrawAttrStateForIFBX; Export = FALSE; ]
     SID_ATTR_TRANSFORM_AUTOHEIGHT [ StateMethod = GetDrawAttrStateForIFBX; Export = FALSE; ]
 
-    // alignment functions:
-    SID_OBJECT_ALIGN        [ StateMethod = GetDrawFuncState; Export = FALSE; ]
+     // ---- Ausrichtungs - Funktionen:
+     //!    PseudoSlots gibt Aerger mit Referenz-Dialogen ???
+    SID_OBJECT_ALIGN
+    [
+        PseudoSlots = FALSE ;
+        Export = FALSE ;
+        ExecMethod = ExecDrawFunc ;
+        StateMethod = GetDrawFuncState ;
+        GroupId = GID_FORMAT ;
+        ToolBoxConfig ;
+    ]
     SID_OBJECT_ALIGN_LEFT   [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_OBJECT_ALIGN_CENTER [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_OBJECT_ALIGN_RIGHT  [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
@@ -132,7 +140,7 @@ interface TableDraw
     SID_ALIGN_ANY_VCENTER   [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_ALIGN_ANY_BOTTOM    [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
 
-    // other functions:
+     // ---- andere Funktionen:
     SID_OBJECT_HEAVEN   [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_OBJECT_HELL     [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_FRAME_TO_TOP    [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
@@ -143,7 +151,7 @@ interface TableDraw
     SID_UNGROUP         [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_ENTER_GROUP     [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_LEAVE_GROUP     [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
-    // !!! special
+     // !!! special
     SID_DELETE          [ExecMethod = ExecDrawFunc ;StateMethod = GetDrawFuncState; Export = FALSE ;]
 
     SID_DELETE_CONTENTS [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
@@ -161,7 +169,7 @@ interface TableDraw
     SID_ANCHOR_PAGE         [ ExecMethod = ExecDrawFunc; StateMethod = GetState; Export = FALSE; ]
     SID_ANCHOR_TOGGLE       [ ExecMethod = ExecDrawFunc; StateMethod = GetDrawFuncState; Export = FALSE; ]
     SID_ANCHOR_CELL         [ ExecMethod = ExecDrawFunc; StateMethod = GetState; Export = FALSE; ]
-    // FontWork:
+     // ---- FontWork:
     SID_FONTWORK            [ ExecMethod = ExecDrawFunc; StateMethod = GetState; Export = FALSE; ]
     SID_FORMTEXT_STYLE      [ ExecMethod = ExecFormText; StateMethod = GetFormTextState; Export = FALSE; ]
     SID_FORMTEXT_ADJUST     [ ExecMethod = ExecFormText; StateMethod = GetFormTextState; Export = FALSE; ]

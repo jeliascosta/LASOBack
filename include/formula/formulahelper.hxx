@@ -20,21 +20,17 @@
 #ifndef INCLUDED_FORMULA_FORMULAHELPER_HXX
 #define INCLUDED_FORMULA_FORMULAHELPER_HXX
 
-#include <memory>
-#include <vector>
-
+#include <formula/IFunctionDescription.hxx>
 #include <formula/formuladllapi.h>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
-#include <unotools/syslocale.hxx>
+#include <vector>
+#include <memory>
 
+class SvtSysLocale;
 class CharClass;
 
 namespace formula
 {
-    class IFunctionDescription;
-    class IFunctionManager;
-
     class FORMULA_DLLPUBLIC FormulaHelper
     {
         ::std::unique_ptr<SvtSysLocale> m_pSysLocale;
@@ -48,11 +44,11 @@ namespace formula
     public:
         FormulaHelper(const IFunctionManager* _pFunctionManager);
 
-        const CharClass* GetCharClass() const { return m_pCharClass; }
+        inline const CharClass* GetCharClass() const { return m_pCharClass; }
 
         bool                GetNextFunc( const OUString&     rFormula,
                                                bool          bBack,
-                                               sal_Int32&    rFStart, // input and output
+                                               sal_Int32&    rFStart, // Ein- und Ausgabe
                                                sal_Int32*    pFEnd = nullptr,
                                          const IFunctionDescription** ppFDesc = nullptr,
                                                ::std::vector< OUString>*      pArgs = nullptr ) const;

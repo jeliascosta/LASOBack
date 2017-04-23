@@ -244,8 +244,9 @@ namespace toolkitform
         */
         void getStringItemVector( const Reference< XPropertySet >& _rxModel, ::std::vector< OUString >& _rVector )
         {
+            static const char FM_PROP_STRINGITEMLIST[] = "StringItemList";
             Sequence< OUString > aListEntries;
-            OSL_VERIFY( _rxModel->getPropertyValue( "StringItemList" ) >>= aListEntries );
+            OSL_VERIFY( _rxModel->getPropertyValue( FM_PROP_STRINGITEMLIST ) >>= aListEntries );
             ::std::copy( aListEntries.begin(), aListEntries.end(),
                          ::std::back_insert_iterator< ::std::vector< OUString > >( _rVector ) );
         }
@@ -283,7 +284,8 @@ namespace toolkitform
 
             // Name, Description, Text
             OSL_VERIFY( xModelProps->getPropertyValue( FM_PROP_NAME ) >>= Descriptor->Name );
-            OSL_VERIFY( xModelProps->getPropertyValue( "HelpText" ) >>= Descriptor->Description );
+            static const char FM_PROP_HELPTEXT[] = "HelpText";
+            OSL_VERIFY( xModelProps->getPropertyValue( FM_PROP_HELPTEXT ) >>= Descriptor->Description );
             Any aText;
             static const char FM_PROP_TEXT[] = "Text";
             static const char FM_PROP_LABEL[] = "Label";
@@ -313,9 +315,9 @@ namespace toolkitform
                     OUString sBorderColorPropertyName( "BorderColor" );
                     if ( xPSI->hasPropertyByName( sBorderColorPropertyName ) )
                     {
-                        sal_Int32 nBorderColor = COL_TRANSPARENT;
-                        if ( xModelProps->getPropertyValue( sBorderColorPropertyName ) >>= nBorderColor )
-                            Descriptor->BorderColor = Color( nBorderColor );
+                        sal_Int32 nBoderColor = COL_TRANSPARENT;
+                        if ( xModelProps->getPropertyValue( sBorderColorPropertyName ) >>= nBoderColor )
+                            Descriptor->BorderColor = Color( nBoderColor );
                         else
                             Descriptor->BorderColor = Color( COL_BLACK );
                     }
@@ -382,7 +384,7 @@ namespace toolkitform
                 OUString sVertAlignPropertyName( "VerticalAlign" );
                 if ( xPSI->hasPropertyByName( sVertAlignPropertyName ) )
                 {
-                    VerticalAlignment nAlign = VerticalAlignment_MIDDLE;
+                    sal_Int16 nAlign = VerticalAlignment_MIDDLE;
                     xModelProps->getPropertyValue( sVertAlignPropertyName ) >>= nAlign;
                     switch ( nAlign )
                     {
@@ -434,7 +436,8 @@ namespace toolkitform
                 }
 
                 // file select
-                if ( xSI->supportsService( "com.sun.star.form.component.FileControl" ) )
+                static const char FM_SUN_COMPONENT_FILECONTROL[] = "com.sun.star.form.component.FileControl";
+                if ( xSI->supportsService( FM_SUN_COMPONENT_FILECONTROL ) )
                     pEditWidget->FileSelect = true;
 
                 // maximum text length
@@ -536,7 +539,8 @@ namespace toolkitform
                 pRadioWidget->RadioGroup = determineRadioGroupId( xModelProps );
                 try
                 {
-                    xModelProps->getPropertyValue( "RefValue" ) >>= pRadioWidget->OnValue;
+                    static const char FM_PROP_REFVALUE[] = "RefValue";
+                    xModelProps->getPropertyValue( FM_PROP_REFVALUE ) >>= pRadioWidget->OnValue;
                 }
                 catch(...)
                 {
@@ -551,13 +555,17 @@ namespace toolkitform
                 vcl::PDFWriter::ListBoxWidget* pListWidget = static_cast< vcl::PDFWriter::ListBoxWidget* >( Descriptor.get() );
 
                 // drop down
-                OSL_VERIFY( xModelProps->getPropertyValue( "Dropdown" ) >>= pListWidget->DropDown );
+                static const char FM_PROP_DROPDOWN[] = "Dropdown";
+                OSL_VERIFY( xModelProps->getPropertyValue( FM_PROP_DROPDOWN ) >>= pListWidget->DropDown );
 
                 // multi selection
                 OSL_VERIFY( xModelProps->getPropertyValue("MultiSelection") >>= pListWidget->MultiSelect );
 
                 // entries
                 getStringItemVector( xModelProps, pListWidget->Entries );
+                // since we explicitly list the entries in the order in which they appear, they should not be
+                // resorted by the PDF viewer
+                pListWidget->Sort = false;
 
                 // get selected items
                 Sequence< sal_Int16 > aSelectIndices;
@@ -582,6 +590,8 @@ namespace toolkitform
 
                 // entries
                 getStringItemVector( xModelProps, pComboWidget->Entries );
+                // same reasoning as above
+                pComboWidget->Sort = false;
             }
 
 

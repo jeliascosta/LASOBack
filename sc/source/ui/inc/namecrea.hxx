@@ -33,10 +33,10 @@ protected:
     VclPtr<CheckBox> m_pBottomBox;
     VclPtr<CheckBox> m_pRightBox;
 public:
-    ScNameCreateDlg( vcl::Window * pParent, CreateNameFlags nFlags );
-    virtual ~ScNameCreateDlg() override;
+    ScNameCreateDlg( vcl::Window * pParent, sal_uInt16 nFlags );
+    virtual ~ScNameCreateDlg();
     virtual void dispose() override;
-    CreateNameFlags GetFlags() const;
+    sal_uInt16          GetFlags() const;
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_NAMECREA_HXX

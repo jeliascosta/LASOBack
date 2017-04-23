@@ -40,6 +40,9 @@ using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Any;
 using ::com::sun::star::xml::sax::XAttributeList;
 
+const sal_Char sAPI_CreateFromChapter[] = "CreateFromChapter";
+const sal_Char sAPI_IsRelativeTabstops[] = "IsRelativeTabstops";
+
 static const SvXMLTokenMapEntry aIndexSourceTokenMap[] =
 {
     { XML_NAMESPACE_TEXT,
@@ -148,6 +151,8 @@ XMLIndexSourceBaseContext::XMLIndexSourceBaseContext(
     Reference<XPropertySet> & rPropSet,
     bool bLevelFormats)
 :   SvXMLImportContext(rImport, nPrfx, rLocalName)
+,   sCreateFromChapter(sAPI_CreateFromChapter)
+,   sIsRelativeTabstops(sAPI_IsRelativeTabstops)
 ,   bUseLevelFormats(bLevelFormats)
 ,   bChapterIndex(false)
 ,   bRelativeTabs(true)
@@ -211,8 +216,8 @@ void XMLIndexSourceBaseContext::ProcessAttribute(
 
 void XMLIndexSourceBaseContext::EndElement()
 {
-    rIndexPropertySet->setPropertyValue("IsRelativeTabstops", css::uno::Any(bRelativeTabs));
-    rIndexPropertySet->setPropertyValue("CreateFromChapter", css::uno::Any(bChapterIndex));
+    rIndexPropertySet->setPropertyValue(sIsRelativeTabstops, css::uno::Any(bRelativeTabs));
+    rIndexPropertySet->setPropertyValue(sCreateFromChapter, css::uno::Any(bChapterIndex));
 }
 
 SvXMLImportContext* XMLIndexSourceBaseContext::CreateChildContext(

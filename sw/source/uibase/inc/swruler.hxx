@@ -33,14 +33,14 @@ public:
         SvxRulerSupportFlags nRulerFlags,
         SfxBindings& rBindings,
         WinBits nWinStyle);
-    virtual ~SwCommentRuler () override;
+    virtual ~SwCommentRuler ();
     virtual void dispose() override;
 
     /**
      * Paint the ruler.
      * \param rRect ignored
      */
-    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
 protected:
     SwViewShell * mpViewShell;     //< Shell to check if there is any comments on doc and their visibility
@@ -82,7 +82,7 @@ protected:
      * It is horizontally aligned to the SideBar panel.
      * \return The area where the comment control is.
      */
-    tools::Rectangle GetCommentControlRegion();
+    Rectangle GetCommentControlRegion();
 
     /**
      * Paint the comment control on VirtualDevice.
@@ -107,7 +107,7 @@ protected:
     Color GetFadedColor(const Color &rHighColor, const Color &rLowColor);
 
     /// Fade timer callback.
-    DECL_LINK(FadeHandler, Timer *, void);
+    DECL_LINK_TYPED(FadeHandler, Timer *, void);
 };
 
 #endif

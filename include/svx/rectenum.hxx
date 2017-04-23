@@ -19,18 +19,21 @@
 #ifndef INCLUDED_SVX_RECTENUM_HXX
 #define INCLUDED_SVX_RECTENUM_HXX
 
-enum class RectPoint
+// enum ------------------------------------------------------------------
+
+enum RECT_POINT
 {
-    LT, // top left
-    MT, // top center
-    RT, // top right
-    LM, // left center
-    MM, // center
-    RM, // right center
-    LB, // bottom left
-    MB, // bottom center
-    RB  // bottom right
+    RP_LT, RP_MT, RP_RT, RP_LM, RP_MM, RP_RM, RP_LB, RP_MB, RP_RB
 };
+
+enum CTL_STYLE
+{
+    CS_RECT,
+    CS_LINE,
+    CS_ANGLE,
+    CS_SHADOW
+};
+
 
 #endif
 

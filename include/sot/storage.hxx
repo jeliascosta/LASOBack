@@ -38,14 +38,14 @@ class SOT_DLLPUBLIC SotStorageStream : virtual public SotObject, public SvStream
 friend class SotStorage;
     BaseStorageStream * pOwnStm; // pointer to the own stream
 protected:
-    virtual std::size_t GetData(void* pData, std::size_t nSize) override;
-    virtual std::size_t PutData(const void* pData, std::size_t nSize) override;
+    virtual sal_uLong       GetData( void* pData, sal_uLong nSize ) override;
+    virtual sal_uLong       PutData( const void* pData, sal_uLong nSize ) override;
     virtual sal_uInt64      SeekPos(sal_uInt64 nPos) override;
     virtual void        FlushData() override;
-                        virtual ~SotStorageStream() override;
+                        virtual ~SotStorageStream();
 public:
                         SotStorageStream( const OUString &,
-                                          StreamMode = StreamMode::STD_READWRITE );
+                                          StreamMode = STREAM_STD_READWRITE );
                         SotStorageStream( BaseStorageStream *pStm );
 
     virtual void        ResetError() override;
@@ -73,13 +73,13 @@ friend class SotStorageStream;
     long            m_nVersion;
 
 protected:
-                        virtual ~SotStorage() override;
+                        virtual ~SotStorage();
    void                 CreateStorage( bool bUCBStorage, StreamMode );
 public:
                         SotStorage( const OUString &,
-                                    StreamMode = StreamMode::STD_READWRITE );
+                                    StreamMode = STREAM_STD_READWRITE );
                         SotStorage( bool bUCBStorage, const OUString &,
-                                    StreamMode = StreamMode::STD_READWRITE );
+                                    StreamMode = STREAM_STD_READWRITE );
                         SotStorage( BaseStorage * );
                         SotStorage( SvStream & rStm );
                         SotStorage( bool bUCBStorage, SvStream & rStm );
@@ -112,7 +112,7 @@ public:
                                 m_nError = nErrorCode;
                         }
 
-    void                SignAsRoot( bool b ) { m_bIsRoot = b; }
+    void                SignAsRoot( bool b = true ) { m_bIsRoot = b; }
 
                         // own data sector
     void                SetClass( const SvGlobalName & rClass,
@@ -130,9 +130,9 @@ public:
                         // create stream with connection to Storage,
                         // more or less a Parent-Child relationship
     SotStorageStream *  OpenSotStream( const OUString & rEleName,
-                                       StreamMode = StreamMode::STD_READWRITE );
+                                       StreamMode = STREAM_STD_READWRITE );
     SotStorage *        OpenSotStorage( const OUString & rEleName,
-                                        StreamMode = StreamMode::STD_READWRITE,
+                                        StreamMode = STREAM_STD_READWRITE,
                                         bool transacted = true );
                         // query whether Storage or Stream
     bool                IsStream( const OUString & rEleName ) const;
@@ -148,7 +148,7 @@ public:
     static bool         IsOLEStorage( SvStream* pStream );
 
     static SotStorage*  OpenOLEStorage( const css::uno::Reference < css::embed::XStorage >& xStorage,
-                                        const OUString& rEleName, StreamMode = StreamMode::STD_READWRITE );
+                                        const OUString& rEleName, StreamMode = STREAM_STD_READWRITE );
     static SotClipboardFormatId  GetFormatID( const css::uno::Reference < css::embed::XStorage >& xStorage );
     static sal_Int32    GetVersion( const css::uno::Reference < css::embed::XStorage >& xStorage );
 };

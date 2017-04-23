@@ -110,7 +110,7 @@ void FuSnapLine::DoExecute( SfxRequest& rReq )
         aNewAttr.Put(SfxInt32Item(ATTR_SNAPLINE_Y, aLinePos.Y()));
 
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        ScopedVclPtr<AbstractSdSnapLineDlg> pDlg(pFact ? pFact->CreateSdSnapLineDlg(mpViewShell->GetActiveWindow(), aNewAttr, mpView) : nullptr);
+        std::unique_ptr<AbstractSdSnapLineDlg> pDlg(pFact ? pFact->CreateSdSnapLineDlg(mpViewShell->GetActiveWindow(), aNewAttr, mpView) : nullptr);
         OSL_ASSERT(pDlg);
         if (!pDlg)
             return;
@@ -121,7 +121,7 @@ void FuSnapLine::DoExecute( SfxRequest& rReq )
 
             const SdrHelpLine& rHelpLine = (pPV->GetHelpLines())[nHelpLine];
 
-            if ( rHelpLine.GetKind() == SdrHelpLineKind::Point )
+            if ( rHelpLine.GetKind() == SDRHELPLINE_POINT )
             {
                 pDlg->SetText(SD_RESSTR(STR_SNAPDLG_SETPOINT));
                 pDlg->SetInputFields(true, true);
@@ -130,7 +130,7 @@ void FuSnapLine::DoExecute( SfxRequest& rReq )
             {
                 pDlg->SetText(SD_RESSTR(STR_SNAPDLG_SETLINE));
 
-                if ( rHelpLine.GetKind() == SdrHelpLineKind::Vertical )
+                if ( rHelpLine.GetKind() == SDRHELPLINE_VERTICAL )
                     pDlg->SetInputFields(true, false);
                 else
                     pDlg->SetInputFields(false, true);
@@ -143,7 +143,7 @@ void FuSnapLine::DoExecute( SfxRequest& rReq )
         sal_uInt16 nResult = pDlg->Execute();
 
         pDlg->GetAttr(aNewAttr);
-        pDlg.disposeAndClear();
+        pDlg.reset();
 
         switch( nResult )
         {
@@ -176,9 +176,9 @@ void FuSnapLine::DoExecute( SfxRequest& rReq )
         switch ( (SnapKind) static_cast<const SfxAllEnumItem&>(
                  pArgs->Get(ATTR_SNAPLINE_KIND)).GetValue() )
         {
-            case SK_HORIZONTAL  : eKind = SdrHelpLineKind::Horizontal;   break;
-            case SK_VERTICAL    : eKind = SdrHelpLineKind::Vertical;     break;
-            default             : eKind = SdrHelpLineKind::Point;        break;
+            case SK_HORIZONTAL  : eKind = SDRHELPLINE_HORIZONTAL;   break;
+            case SK_VERTICAL    : eKind = SDRHELPLINE_VERTICAL;     break;
+            default             : eKind = SDRHELPLINE_POINT;        break;
         }
         pPV->InsertHelpLine(SdrHelpLine(eKind, aHlpPos));
     }

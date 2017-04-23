@@ -49,7 +49,6 @@ struct SC_DLLPUBLIC ScSortParam
     bool        bByRow;
     bool        bCaseSens;
     bool        bNaturalSort;
-    bool        bIncludeComments;
     bool        bUserDef;
     bool        bIncludePattern;
     bool        bInplace;
@@ -75,7 +74,7 @@ struct SC_DLLPUBLIC ScSortParam
     void            Clear       ();
     void            MoveToDest();
 
-    sal_uInt16 GetSortKeyCount() const { return maKeyState.size(); }
+    inline sal_uInt16 GetSortKeyCount() const { return maKeyState.size(); }
 };
 
 namespace sc {

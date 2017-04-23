@@ -75,7 +75,7 @@ namespace dbaui
         VclPtr<ListBox>        m_aColumnList[DOG_ROWS];
         VclPtr<ListBox>        m_aValueList[DOG_ROWS];
 
-        DECL_LINK( FieldListSelectHdl, ListBox&, void );
+        DECL_LINK_TYPED( FieldListSelectHdl, ListBox&, void );
         void            EnableLines();
 
     public:
@@ -83,7 +83,7 @@ namespace dbaui
                         const css::uno::Reference< css::sdbc::XConnection>& _rxConnection,
                         const css::uno::Reference< css::sdb::XSingleSelectQueryComposer>& _rxComposer,
                         const css::uno::Reference< css::container::XNameAccess>& _rxCols);
-        virtual ~DlgOrderCrit() override;
+        virtual ~DlgOrderCrit();
         virtual void dispose() override;
 
         void            BuildOrderPart();

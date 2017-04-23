@@ -43,45 +43,45 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject) override;
+            void __RPC_FAR *__RPC_FAR *ppvObject);
 
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
+    virtual ULONG STDMETHODCALLTYPE AddRef();
 
-    virtual ULONG STDMETHODCALLTYPE Release() override;
+    virtual ULONG STDMETHODCALLTYPE Release();
 
 
     // IQueryInfo methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE GetInfoTip(DWORD dwFlags, wchar_t** ppwszTip) override;
+    virtual HRESULT STDMETHODCALLTYPE GetInfoTip(DWORD dwFlags, wchar_t** ppwszTip);
 
-    virtual HRESULT STDMETHODCALLTYPE GetInfoFlags(DWORD *pdwFlags) override;
+    virtual HRESULT STDMETHODCALLTYPE GetInfoFlags(DWORD *pdwFlags);
 
 
     // IPersist methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE GetClassID(CLSID* pClassID) override;
+    virtual HRESULT STDMETHODCALLTYPE GetClassID(CLSID* pClassID);
 
 
     // IPersistFile methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE IsDirty() override;
+    virtual HRESULT STDMETHODCALLTYPE IsDirty();
 
     virtual HRESULT STDMETHODCALLTYPE Load(
             /* [in] */ LPCOLESTR pszFileName,
-            /* [in] */ DWORD dwMode) override;
+            /* [in] */ DWORD dwMode);
 
     virtual HRESULT STDMETHODCALLTYPE Save(
             /* [unique][in] */ LPCOLESTR pszFileName,
-            /* [in] */ BOOL fRemember) override;
+            /* [in] */ BOOL fRemember);
 
     virtual HRESULT STDMETHODCALLTYPE SaveCompleted(
-            /* [unique][in] */ LPCOLESTR pszFileName) override;
+            /* [unique][in] */ LPCOLESTR pszFileName);
 
     virtual HRESULT STDMETHODCALLTYPE GetCurFile(
-            /* [out] */ LPOLESTR __RPC_FAR *ppszFileName) override;
+            /* [out] */ LPOLESTR __RPC_FAR *ppszFileName);
 
 private:
     long         m_RefCnt;

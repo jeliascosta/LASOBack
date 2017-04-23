@@ -55,6 +55,10 @@ $(eval $(call gb_CppunitTest_use_libraries,dbaccess_macros_test, \
 	$(gb_UWINAPI) \
 ))
 
+$(eval $(call gb_CppunitTest_set_include,dbaccess_macros_test,\
+    $$(INCLUDE) \
+))
+
 $(eval $(call gb_CppunitTest_use_api,dbaccess_macros_test,\
     offapi \
     oovbaapi \
@@ -93,7 +97,6 @@ $(eval $(call gb_CppunitTest_use_components,dbaccess_macros_test,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
 ))
 

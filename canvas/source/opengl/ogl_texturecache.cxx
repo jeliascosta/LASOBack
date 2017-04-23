@@ -9,7 +9,7 @@
 
 #include <sal/config.h>
 
-#include <epoxy/gl.h>
+#include <GL/glew.h>
 
 #include <com/sun/star/geometry/IntegerSize2D.hpp>
 

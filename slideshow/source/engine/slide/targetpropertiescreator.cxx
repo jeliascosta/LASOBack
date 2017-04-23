@@ -311,7 +311,7 @@ namespace internal
                                             1,
                                             beans::NamedValue(
                                                 //xAnimateNode->getAttributeName(),
-                                                "visibility",
+                                                OUString("visibility"),
                                                 uno::makeAny( bVisible ) ) ) ) );
                     break;
                     }
@@ -323,7 +323,7 @@ namespace internal
             uno::Reference< drawing::XShape >   mxTargetShape;
             sal_Int16                           mnParagraphIndex;
 
-            // get initial or final state
+            // get initial or filal state
             bool                                mbInitial;
         };
     }
@@ -360,14 +360,14 @@ namespace internal
 
             if( rIter.first.mnParagraphIndex == -1 )
             {
-                rCurrProps.Target <<= rIter.first.mxRef;
+                rCurrProps.Target = uno::makeAny( rIter.first.mxRef );
             }
             else
             {
-                rCurrProps.Target <<=
+                rCurrProps.Target = uno::makeAny(
                     presentation::ParagraphTarget(
                         rIter.first.mxRef,
-                        rIter.first.mnParagraphIndex );
+                        rIter.first.mnParagraphIndex ) );
             }
 
             rCurrProps.Properties = ::comphelper::containerToSequence( rIter.second );

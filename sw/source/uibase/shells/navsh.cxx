@@ -22,6 +22,7 @@
 #include "helpid.h"
 #include "globals.hrc"
 #include "navsh.hxx"
+#include "popup.hrc"
 #include "shells.hrc"
 #define SwNavigationShell
 #include "swslots.hxx"
@@ -38,6 +39,7 @@ SwNavigationShell::SwNavigationShell(SwView &_rView)
     : SwBaseShell( _rView )
 {
     SetName("Navigation");
+    SetHelpId(SW_NAVIGATIONSHELL);
 }
 
 void SwNavigationShell::Execute(SfxRequest &rReq)

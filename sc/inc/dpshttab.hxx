@@ -99,7 +99,7 @@ private:
 
 public:
     ScSheetDPData(ScDocument* pD, const ScSheetSourceDesc& rDesc, const ScDPCache& rCache);
-    virtual ~ScSheetDPData() override;
+    virtual ~ScSheetDPData();
 
     virtual long                    GetColumnCount() override;
     virtual OUString                getDimensionName(long nColumn) override;
@@ -119,10 +119,6 @@ public:
     virtual void                    CalcResults(CalcInfo& rInfo, bool bAutoShow) override;
     virtual const ScDPFilteredCache&   GetCacheTable() const override;
     virtual void ReloadCacheTable() override;
-
-#if DUMP_PIVOT_TABLE
-    virtual void Dump() const override;
-#endif
 };
 
 #endif

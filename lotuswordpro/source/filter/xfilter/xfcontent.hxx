@@ -110,7 +110,7 @@ protected:
 
     virtual void ToXml(IXFStream* stream) = 0;
 
-    virtual ~XFContent() override {}
+    virtual ~XFContent() {}
 
     OUString m_strStyleName;
 private:

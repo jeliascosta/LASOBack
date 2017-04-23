@@ -20,7 +20,6 @@
 #include <config_features.h>
 
 #include <com/sun/star/ui/dialogs/XSLTFilterDialog.hpp>
-#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 
 #include "scitems.hxx"
@@ -86,8 +85,7 @@
 #include "docsh.hxx"
 #include "drwlayer.hxx"
 #include "uiitems.hxx"
-#include "globstr.hrc"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "cfgids.hxx"
 #include "inputhdl.hxx"
 #include "inputwin.hxx"
@@ -125,15 +123,14 @@ SFX_IMPL_INTERFACE(ScModule, SfxShell)
 
 void ScModule::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_APPLICATION,
-                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::Client | SfxVisibilityFlags::Viewer,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_APPLICATION | SFX_VISIBILITY_DESKTOP | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_CLIENT | SFX_VISIBILITY_VIEWER,
                                             RID_OBJECTBAR_APP);
 
     GetStaticInterface()->RegisterStatusBar(SCCFG_STATUSBAR);
 }
 
 ScModule::ScModule( SfxObjectFactory* pFact ) :
-    SfxModule( ResMgr::CreateResMgr( "sc" ), {pFact} ),
+    SfxModule( ResMgr::CreateResMgr( "sc" ), false, pFact, nullptr ),
     aIdleTimer("sc ScModule IdleTimer"),
     aSpellIdle("sc ScModule SpellIdle"),
     mpDragData(new ScDragData),
@@ -163,7 +160,7 @@ ScModule::ScModule( SfxObjectFactory* pFact ) :
     mbIsInSharedDocLoading( false ),
     mbIsInSharedDocSaving( false )
 {
-    // The ResManager (DLL data) is not yet initialized in the ctor!
+    // The ResManager (DLL data) is not yet initalized in the ctor!
     SetName("StarCalc"); // for Basic
 
     ResetDragObject();
@@ -179,13 +176,10 @@ ScModule::ScModule( SfxObjectFactory* pFact ) :
                                         ERRCODE_AREA_APP2-1,
                                         GetResMgr() );
 
-    aSpellIdle.SetPriority(TaskPriority::LOWER);
-    aSpellIdle.SetInvokeHandler( LINK( this, ScModule, SpellTimerHdl ) );
-    aSpellIdle.SetDebugName( "sc::ScModule aSpellIdle" );
-
+    aSpellIdle.SetPriority(SchedulerPriority::LOWER);
+    aSpellIdle.SetIdleHdl( LINK( this, ScModule, SpellTimerHdl ) );
     aIdleTimer.SetTimeout(SC_IDLE_MIN);
-    aIdleTimer.SetInvokeHandler( LINK( this, ScModule, IdleHandler ) );
-    aIdleTimer.SetDebugName( "sc::ScModule aIdleTimer" );
+    aIdleTimer.SetTimeoutHdl( LINK( this, ScModule, IdleHandler ) );
     aIdleTimer.Start();
 
     pMessagePool = new ScMessagePool;
@@ -193,7 +187,7 @@ ScModule::ScModule( SfxObjectFactory* pFact ) :
     SetPool( pMessagePool );
     ScGlobal::InitTextHeight( pMessagePool );
 
-    StartListening( *SfxGetpApp() );       // for SfxHintId::Deinitializing
+    StartListening( *SfxGetpApp() );       // for SFX_HINT_DEINITIALIZING
 }
 
 ScModule::~ScModule()
@@ -215,7 +209,7 @@ ScModule::~ScModule()
     DeleteCfg(); // Called from Exit()
 }
 
-void ScModule::ConfigurationChanged( utl::ConfigurationBroadcaster* p, ConfigurationHints )
+void ScModule::ConfigurationChanged( utl::ConfigurationBroadcaster* p, sal_uInt32 )
 {
     if ( p == pColorConfig || p == pAccessOptions )
     {
@@ -325,7 +319,8 @@ void ScModule::ConfigurationChanged( utl::ConfigurationBroadcaster* p, Configura
 
 void ScModule::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Deinitializing )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DEINITIALIZING )
     {
         // ConfigItems must be removed before ConfigManager
         DeleteCfg();
@@ -1256,7 +1251,7 @@ void ScModule::ModifyOptions( const SfxItemSet& rOptSet )
         SetPrintOptions( rNewOpt );
 
         // broadcast causes all previews to recalc page numbers
-        SfxGetpApp()->Broadcast( SfxHint( SfxHintId::ScPrintOptions ) );
+        SfxGetpApp()->Broadcast( SfxSimpleHint( SID_SCPRINTOPTIONS ) );
     }
 
     if ( bSaveAppOptions )
@@ -1271,7 +1266,7 @@ void ScModule::ModifyOptions( const SfxItemSet& rOptSet )
         // Re-compile cells with name error, and recalc if at least one cell
         // has been re-compiled.  In the future we may want to find a way to
         // recalc only those that are affected.
-        if (pDoc->CompileErrorCells(FormulaError::NoName))
+        if (pDoc->CompileErrorCells(formula::errNoName))
             bCalcAll = true;
     }
 
@@ -1375,12 +1370,12 @@ ScInputHandler* ScModule::GetInputHdl( ScTabViewShell* pViewSh, bool bUseRef )
     return pHdl;
 }
 
-void ScModule::ViewShellChanged(bool bStopEditing /*=true*/)
+void ScModule::ViewShellChanged()
 {
     ScInputHandler* pHdl   = GetInputHdl();
     ScTabViewShell* pShell = ScTabViewShell::GetActiveViewShell();
     if ( pShell && pHdl )
-        pShell->UpdateInputHandler(false, bStopEditing);
+        pShell->UpdateInputHandler();
 }
 
 void ScModule::SetInputMode( ScInputMode eMode, const OUString* pInitText )
@@ -1436,7 +1431,7 @@ void ScModule::InputChanged( EditView* pView )
 {
     ScInputHandler* pHdl = GetInputHdl();
     if (pHdl)
-        pHdl->InputChanged( pView, false );
+        pHdl->InputChanged( pView );
 }
 
 void ScModule::ViewShellGone( ScTabViewShell* pViewSh )
@@ -1558,7 +1553,7 @@ void ScModule::SetRefDialog( sal_uInt16 nId, bool bVis, SfxViewFrame* pViewFrm )
         }
 
         SfxApplication* pSfxApp = SfxGetpApp();
-        pSfxApp->Broadcast( SfxHint( SfxHintId::ScRefModeChanged ) );
+        pSfxApp->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
     }
 }
 
@@ -1834,7 +1829,7 @@ static void lcl_CheckNeedsRepaint( ScDocShell* pDocShell )
     }
 }
 
-IMPL_LINK_NOARG(ScModule, IdleHandler, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ScModule, IdleHandler, Timer *, void)
 {
     if ( Application::AnyInput( VclInputFlags::MOUSE | VclInputFlags::KEYBOARD ) )
     {
@@ -1905,7 +1900,7 @@ IMPL_LINK_NOARG(ScModule, IdleHandler, Timer *, void)
     aIdleTimer.Start();
 }
 
-IMPL_LINK_NOARG(ScModule, SpellTimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ScModule, SpellTimerHdl, Idle *, void)
 {
     if ( Application::AnyInput( VclInputFlags::KEYBOARD ) )
     {
@@ -1983,7 +1978,7 @@ SfxItemSet*  ScModule::CreateItemSet( sal_uInt16 nId )
         pRet->Put( ScTpCalcItem( SID_SCDOCOPTIONS, aCalcOpt ) );
 
         // TP_VIEW
-        pRet->Put( ScTpViewItem( aViewOpt ) );
+        pRet->Put( ScTpViewItem( SID_SCVIEWOPTIONS, aViewOpt ) );
         pRet->Put( SfxBoolItem( SID_SC_OPT_SYNCZOOM, rAppOpt.GetSynchronizeZoom() ) );
 
         // TP_INPUT
@@ -2011,7 +2006,7 @@ SfxItemSet*  ScModule::CreateItemSet( sal_uInt16 nId )
                     rInpOpt.GetLegacyCellSelection() ) );
 
         // RID_SC_TP_PRINT
-        pRet->Put( ScTpPrintItem( GetPrintOptions() ) );
+        pRet->Put( ScTpPrintItem( SID_SCPRINTOPTIONS, GetPrintOptions() ) );
 
         // TP_GRID
         SvxGridItem* pSvxGridItem = aViewOpt.CreateGridItem();
@@ -2030,7 +2025,7 @@ SfxItemSet*  ScModule::CreateItemSet( sal_uInt16 nId )
                                    rAppOpt.GetKeyBindingType() ) );
 
         // TP_DEFAULTS
-        pRet->Put( ScTpDefaultsItem( GetDefaultsOptions() ) );
+        pRet->Put( ScTpDefaultsItem( SID_SCDEFAULTSOPTIONS, GetDefaultsOptions() ) );
 
         // TP_FORMULA
         ScFormulaOptions aOptions = GetFormulaOptions();
@@ -2040,7 +2035,7 @@ SfxItemSet*  ScModule::CreateItemSet( sal_uInt16 nId )
             aConfig.MergeDocumentSpecific( pDocSh->GetDocument().GetCalcConfig());
             aOptions.SetCalcConfig( aConfig);
         }
-        pRet->Put( ScTpFormulaItem( aOptions ) );
+        pRet->Put( ScTpFormulaItem( SID_SCFORMULAOPTIONS, aOptions ) );
     }
     return pRet;
 }
@@ -2061,71 +2056,69 @@ VclPtr<SfxTabPage> ScModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
     switch(nId)
     {
         case SID_SC_TP_LAYOUT:
-        {
-            ::CreateTabPage ScTpLayoutOptionsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_LAYOUT);
-            if (ScTpLayoutOptionsCreate)
-                pRet = (*ScTpLayoutOptionsCreate)(pParent, &rSet);
-            break;
-        }
+                                {
+                                    ::CreateTabPage ScTpLayoutOptionsCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_LAYOUT );
+                                    if ( ScTpLayoutOptionsCreate )
+                                        pRet = (*ScTpLayoutOptionsCreate) (pParent, &rSet);
+                                }
+                                break;
         case SID_SC_TP_CONTENT:
-        {
-            ::CreateTabPage ScTpContentOptionsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_CONTENT);
-            if (ScTpContentOptionsCreate)
-                pRet = (*ScTpContentOptionsCreate)(pParent, &rSet);
-            break;
-        }
-        case SID_SC_TP_GRID:
-            pRet = SvxGridTabPage::Create(pParent, rSet);
-            break;
+                                {
+                                    ::CreateTabPage ScTpContentOptionsCreate = pFact->GetTabPageCreatorFunc(RID_SCPAGE_CONTENT);
+                                    if ( ScTpContentOptionsCreate )
+                                        pRet = (*ScTpContentOptionsCreate)(pParent, &rSet);
+                                }
+                                break;
+        case SID_SC_TP_GRID:            pRet = SvxGridTabPage::Create(pParent, rSet); break;
         case SID_SC_TP_USERLISTS:
-        {
-            ::CreateTabPage ScTpUserListsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_USERLISTS);
-            if (ScTpUserListsCreate)
-                pRet = (*ScTpUserListsCreate)(pParent, &rSet);
-            break;
-        }
+                                {
+                                    ::CreateTabPage ScTpUserListsCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_USERLISTS );
+                                    if ( ScTpUserListsCreate )
+                                            pRet = (*ScTpUserListsCreate)( pParent, &rSet);
+                                }
+                                break;
         case SID_SC_TP_CALC:
-        {
-            ::CreateTabPage ScTpCalcOptionsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_CALC);
-            if (ScTpCalcOptionsCreate)
-                pRet = (*ScTpCalcOptionsCreate)(pParent, &rSet);
-            break;
-        }
+                                {
+                                    ::CreateTabPage ScTpCalcOptionsCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_CALC );
+                                    if ( ScTpCalcOptionsCreate )
+                                            pRet = (*ScTpCalcOptionsCreate)(pParent, &rSet);
+                                }
+                                break;
         case SID_SC_TP_FORMULA:
         {
-            ::CreateTabPage ScTpFormulaOptionsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_FORMULA);
+            ::CreateTabPage ScTpFormulaOptionsCreate = pFact->GetTabPageCreatorFunc (RID_SCPAGE_FORMULA);
             if (ScTpFormulaOptionsCreate)
                 pRet = (*ScTpFormulaOptionsCreate)(pParent, &rSet);
-            break;
         }
+        break;
         case SID_SC_TP_COMPATIBILITY:
         {
-            ::CreateTabPage ScTpCompatOptionsCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_COMPATIBILITY);
+            ::CreateTabPage ScTpCompatOptionsCreate = pFact->GetTabPageCreatorFunc (RID_SCPAGE_COMPATIBILITY);
             if (ScTpCompatOptionsCreate)
                 pRet = (*ScTpCompatOptionsCreate)(pParent, &rSet);
-            break;
         }
+        break;
         case SID_SC_TP_CHANGES:
-        {
-            ::CreateTabPage ScRedlineOptionsTabPageCreate = pFact->GetTabPageCreatorFunc(SID_SC_TP_CHANGES);
-            if (ScRedlineOptionsTabPageCreate)
-                pRet =(*ScRedlineOptionsTabPageCreate)(pParent, &rSet);
-            break;
-        }
+                                {
+                                   ::CreateTabPage ScRedlineOptionsTabPageCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_OPREDLINE );
+                                   if ( ScRedlineOptionsTabPageCreate )
+                                           pRet =(*ScRedlineOptionsTabPageCreate)(pParent, &rSet);
+                                }
+                        break;
         case RID_SC_TP_PRINT:
-        {
-            ::CreateTabPage ScTpPrintOptionsCreate = pFact->GetTabPageCreatorFunc(RID_SC_TP_PRINT);
-            if (ScTpPrintOptionsCreate)
-                pRet = (*ScTpPrintOptionsCreate)(pParent, &rSet);
+                                {
+                                   ::CreateTabPage ScTpPrintOptionsCreate =    pFact->GetTabPageCreatorFunc( RID_SCPAGE_PRINT );
+                                   if ( ScTpPrintOptionsCreate )
+                                          pRet = (*ScTpPrintOptionsCreate)( pParent, &rSet);
+                                }
             break;
-        }
         case RID_SC_TP_DEFAULTS:
-        {
-            ::CreateTabPage ScTpDefaultsOptionsCreate = pFact->GetTabPageCreatorFunc(RID_SC_TP_DEFAULTS);
-            if (ScTpDefaultsOptionsCreate)
-                pRet = (*ScTpDefaultsOptionsCreate)(pParent, &rSet);
+            {
+                ::CreateTabPage ScTpDefaultsOptionsCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_DEFAULTS );
+                if ( ScTpDefaultsOptionsCreate )
+                    pRet = (*ScTpDefaultsOptionsCreate)( pParent, &rSet);
+            }
             break;
-        }
     }
 
     OSL_ENSURE( pRet, "ScModule::CreateTabPage(): no valid ID for TabPage!" );
@@ -2133,7 +2126,7 @@ VclPtr<SfxTabPage> ScModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
     return pRet;
 }
 
-IMPL_LINK( ScModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void )
+IMPL_LINK_TYPED( ScModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void )
 {
     //TODO: Merge with ScFieldEditEngine!
     if (!pInfo)
@@ -2273,23 +2266,6 @@ bool ScModule::HasThesaurusLanguage( sal_uInt16 nLang )
     }
 
     return bHasLang;
-}
-
-SfxStyleFamilies* ScModule::CreateStyleFamilies()
-{
-    SfxStyleFamilies *pStyleFamilies = new SfxStyleFamilies;
-
-    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Para,
-                                                    ScGlobal::GetRscString(STR_STYLE_FAMILY_CELL),
-                                                    Image(BitmapEx(ScResId(BMP_STYLES_FAMILY_CELL))),
-                                                    ScResId(RID_CELLSTYLEFAMILY)));
-
-    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Page,
-                                                    ScGlobal::GetRscString(STR_STYLE_FAMILY_PAGE),
-                                                    Image(BitmapEx(ScResId(BMP_STYLES_FAMILY_PAGE))),
-                                                    ScResId(RID_PAGESTYLEFAMILY)));
-
-    return pStyleFamilies;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

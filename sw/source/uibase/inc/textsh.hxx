@@ -44,8 +44,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    DECL_LINK( RedlineNextHdl, AbstractSvxPostItDialog&, void );
-    DECL_LINK( RedlinePrevHdl, AbstractSvxPostItDialog&, void );
+    DECL_LINK_TYPED( RedlineNextHdl, AbstractSvxPostItDialog&, void );
+    DECL_LINK_TYPED( RedlinePrevHdl, AbstractSvxPostItDialog&, void );
 
     void    Execute(SfxRequest &);
     void    GetState(SfxItemSet &);
@@ -78,7 +78,7 @@ public:
     void    GetAttrState(SfxItemSet &);
 
              SwTextShell(SwView &rView);
-    virtual ~SwTextShell() override;
+    virtual ~SwTextShell();
     /// Create item set for the insert frame dialog.
     SfxItemSet CreateInsertFrameItemSet(SwFlyFrameAttrMgr& rMgr);
 };

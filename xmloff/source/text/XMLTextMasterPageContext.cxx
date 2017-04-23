@@ -21,7 +21,6 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/style/PageStyleLayout.hpp>
 #include <com/sun/star/beans/XMultiPropertyStates.hpp>
-#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlnmspe.hxx>
@@ -74,6 +73,10 @@ XMLTextMasterPageContext::XMLTextMasterPageContext( SvXMLImport& rImport,
 ,   bInsertFooterFirst( false )
 ,   bHeaderInserted( false )
 ,   bFooterInserted( false )
+,   bHeaderLeftInserted( false )
+,   bFooterLeftInserted( false )
+,   bHeaderFirstInserted( false )
+,   bFooterFirstInserted( false )
 {
     OUString sName, sDisplayName;
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -144,7 +147,7 @@ XMLTextMasterPageContext::XMLTextMasterPageContext( SvXMLImport& rImport,
     if( !bNew && xPropSetInfo->hasPropertyByName( sIsPhysical ) )
     {
         aAny = xPropSet->getPropertyValue( sIsPhysical );
-        bNew = !*o3tl::doAccess<bool>(aAny);
+        bNew = !*static_cast<sal_Bool const *>(aAny.getValue());
     }
     SetNew( bNew );
 
@@ -195,19 +198,19 @@ SvXMLImportContext *XMLTextMasterPageContext::CreateChildContext(
         }
         break;
     case XML_TOK_TEXT_MP_HEADER_LEFT:
-        if( bInsertHeaderLeft && bHeaderInserted )
+        if( bInsertHeaderLeft && bHeaderInserted && !bHeaderLeftInserted )
             bInsert = bLeft = true;
         break;
     case XML_TOK_TEXT_MP_FOOTER_LEFT:
-        if( bInsertFooterLeft && bFooterInserted )
+        if( bInsertFooterLeft && bFooterInserted && !bFooterLeftInserted )
             bInsert = bFooter = bLeft = true;
         break;
     case XML_TOK_TEXT_MP_HEADER_FIRST:
-        if( bInsertHeaderFirst && bHeaderInserted )
+        if( bInsertHeaderFirst && bHeaderInserted && !bHeaderFirstInserted )
             bInsert = bFirst = true;
         break;
     case XML_TOK_TEXT_MP_FOOTER_FIRST:
-        if( bInsertFooterFirst && bFooterInserted )
+        if( bInsertFooterFirst && bFooterInserted && !bFooterFirstInserted )
             bInsert = bFooter = bFirst = true;
         break;
     }

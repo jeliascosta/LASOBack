@@ -98,7 +98,7 @@ namespace dxcanvas
             aRightBottom*= aTextureTransform;
 
             Gdiplus::RectF aBounds;
-            rFillPath->GetBounds( &aBounds );
+            rFillPath->GetBounds( &aBounds, NULL, NULL );
 
             // now, we potentially have to enlarge our gradient area
             // atop and below the transformed [0,1]x[0,1] unit rect,
@@ -186,9 +186,9 @@ namespace dxcanvas
 
         int numColorSteps( const Gdiplus::Color& rColor1, const Gdiplus::Color& rColor2 )
         {
-            return std::max(
+            return ::std::max(
                 labs( rColor1.GetRed() - rColor2.GetRed() ),
-                std::max(
+                ::std::max(
                     labs( rColor1.GetGreen() - rColor2.GetGreen() ),
                     labs( rColor1.GetBlue()  - rColor2.GetBlue() ) ) );
         }
@@ -602,7 +602,7 @@ namespace dxcanvas
         }
 
         // TODO(P1): Provide caching here.
-        return uno::Reference< rendering::XCachedPrimitive >(nullptr);
+        return uno::Reference< rendering::XCachedPrimitive >(NULL);
     }
 }
 

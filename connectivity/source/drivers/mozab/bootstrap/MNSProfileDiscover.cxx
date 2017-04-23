@@ -26,21 +26,15 @@ namespace connectivity
 {
     namespace mozab
     {
-        ProfileStruct::ProfileStruct()
-            : product(css::mozilla::MozillaProductType_Default)
+        ProfileStruct::ProfileStruct(MozillaProductType aProduct, const OUString& aProfileName,
+            const OUString& aProfilePath
+          )
         {
+            product=aProduct;
+            profileName = aProfileName;
+            profilePath = aProfilePath;
         }
-
-        ProfileStruct::ProfileStruct(MozillaProductType aProduct,
-                                     const OUString& aProfileName,
-                                     const OUString& aProfilePath)
-            : product(aProduct)
-            , profileName(aProfileName)
-            , profilePath(aProfilePath)
-        {
-        }
-
-        const OUString& ProfileStruct::getProfilePath() const
+        const OUString& ProfileStruct::getProfilePath()
         {
             return profilePath;
         }
@@ -48,29 +42,29 @@ namespace connectivity
         ProfileAccess::~ProfileAccess()
         {
         }
-
         ProfileAccess::ProfileAccess()
         {
             LoadProductsInfo();
         }
 
-        void ProfileAccess::LoadProductsInfo()
+        sal_Int32 ProfileAccess::LoadProductsInfo()
         {
             //tdf#39279: LO should search Thunderbird first then Seamonkey and finally Firefox
             //load thunderbird profiles to m_ProductProfileList
-            LoadXPToolkitProfiles(MozillaProductType_Thunderbird);
+            sal_Int32 count = LoadXPToolkitProfiles(MozillaProductType_Thunderbird);
 
             //load SeaMonkey 2 profiles to m_ProductProfileList
-            LoadXPToolkitProfiles(MozillaProductType_Mozilla);
+            count += LoadXPToolkitProfiles(MozillaProductType_Mozilla);
 
             //load firefox profiles to m_ProductProfileList
             //firefox profile does not containt address book, but maybe others need them
-            LoadXPToolkitProfiles(MozillaProductType_Firefox);
+            count += LoadXPToolkitProfiles(MozillaProductType_Firefox);
+            return count;
         }
         //Thunderbird and firefox profiles are saved in profiles.ini
-        void ProfileAccess::LoadXPToolkitProfiles(MozillaProductType product)
+        sal_Int32 ProfileAccess::LoadXPToolkitProfiles(MozillaProductType product)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
 
             OUString regDir = getRegistryDir(product);
@@ -128,7 +122,10 @@ namespace connectivity
                         fullProfilePath = profilePath;
                     }
 
-                    rProduct.mProfileList[profileName] = ProfileStruct(product,profileName,fullProfilePath);
+                    ProfileStruct*  profileItem     = new ProfileStruct(product,profileName,
+                            fullProfilePath
+                        );
+                    rProduct.mProfileList[profileName] = profileItem;
 
                     sal_Int32 isDefault = 0;
                     if (!sIsDefault.isEmpty())
@@ -141,11 +138,12 @@ namespace connectivity
                 }
 
             }
+            return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
 
-        OUString ProfileAccess::getProfilePath( css::mozilla::MozillaProductType product, const OUString& profileName )
+        OUString ProfileAccess::getProfilePath( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             if (rProduct.mProfileList.empty() || rProduct.mProfileList.find(profileName) == rProduct.mProfileList.end())
             {
@@ -153,18 +151,18 @@ namespace connectivity
                 return OUString();
             }
             else
-                return rProduct.mProfileList[profileName].getProfilePath();
+                return rProduct.mProfileList[profileName]->getProfilePath();
         }
 
-        ::sal_Int32 ProfileAccess::getProfileCount( css::mozilla::MozillaProductType product)
+        ::sal_Int32 ProfileAccess::getProfileCount( ::com::sun::star::mozilla::MozillaProductType product) throw (::com::sun::star::uno::RuntimeException)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
-        ::sal_Int32 ProfileAccess::getProfileList( css::mozilla::MozillaProductType product, css::uno::Sequence< OUString >& list )
+        ::sal_Int32 ProfileAccess::getProfileList( ::com::sun::star::mozilla::MozillaProductType product, ::com::sun::star::uno::Sequence< OUString >& list ) throw (::com::sun::star::uno::RuntimeException)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             list.realloc(static_cast<sal_Int32>(rProduct.mProfileList.size()));
             sal_Int32 i=0;
@@ -172,21 +170,21 @@ namespace connectivity
                 itor != rProduct.mProfileList.end();
                 ++itor)
             {
-                const ProfileStruct& rProfile = (*itor).second;
-                list[i] = rProfile.getProfileName();
+                ProfileStruct * aProfile = (*itor).second;
+                list[i] = aProfile->getProfileName();
                 i++;
             }
 
             return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
 
-        OUString ProfileAccess::getDefaultProfile( css::mozilla::MozillaProductType product )
+        OUString ProfileAccess::getDefaultProfile( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             if (!rProduct.mCurrentProfileName.isEmpty())
             {
-                //default profile set in mozilla registry
+                //default profile setted in mozilla registry
                 return rProduct.mCurrentProfileName;
             }
             if (rProduct.mProfileList.empty())
@@ -194,19 +192,19 @@ namespace connectivity
                 //there are not any profiles
                 return OUString();
             }
-            const ProfileStruct& rProfile = (*rProduct.mProfileList.begin()).second;
-            return rProfile.getProfileName();
+            ProfileStruct * aProfile = (*rProduct.mProfileList.begin()).second;
+            return aProfile->getProfileName();
         }
-        bool ProfileAccess::isProfileLocked( css::mozilla::MozillaProductType product, const OUString& profileName )
+        bool ProfileAccess::isProfileLocked( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
         {
             (void)product; /* avoid warning about unused parameter */
             (void)profileName; /* avoid warning about unused parameter */
             return true;
         }
 
-        bool ProfileAccess::getProfileExists( css::mozilla::MozillaProductType product, const OUString& profileName )
+        bool ProfileAccess::getProfileExists( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
         {
-            sal_Int32 index=(sal_Int32)product;
+            sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             if (rProduct.mProfileList.empty() || rProduct.mProfileList.find(profileName) == rProduct.mProfileList.end())
             {

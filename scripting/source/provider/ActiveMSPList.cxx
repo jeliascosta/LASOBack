@@ -103,7 +103,7 @@ ActiveMSPList::getMSPFromAnyContext( const Any& aContext )
         try
         {
             // the component supports executing scripts embedded in a - possibly foreign document.
-            // Check whether this other document it's the component itself.
+            // Check whether this other document its the component itself.
             if ( !xModel.is() || ( xModel != xScriptContext->getScriptContainer() ) )
             {
                 msp = getMSPFromInvocationContext( xScriptContext );
@@ -137,10 +137,10 @@ Reference< provider::XScriptProvider >
         xScripts.set( xContext->getScriptContainer() );
     if ( !xScripts.is() )
     {
-        throw lang::IllegalArgumentException(
-            "Failed to create MasterScriptProvider for ScriptInvocationContext: "
-            "Component supporting XEmbeddScripts interface not found.",
-            nullptr, 1 );
+        OUStringBuffer buf;
+        buf.append( "Failed to create MasterScriptProvider for ScriptInvocationContext: " );
+        buf.append( "Component supporting XEmbeddScripts interface not found." );
+        throw lang::IllegalArgumentException( buf.makeStringAndClear(), nullptr, 1 );
     }
 
     ::osl::MutexGuard guard( m_mutex );
@@ -175,11 +175,11 @@ Reference< provider::XScriptProvider >
             Reference< document::XScriptInvocationContext > xScriptsContext( xModel, UNO_QUERY );
             if ( !xScripts.is() && !xScriptsContext.is() )
             {
-                throw lang::IllegalArgumentException(
-                    "Failed to create MasterScriptProvider for '"
-                    + context +
-                    "': Either XEmbeddScripts or XScriptInvocationContext need to be supported by the document.",
-                    nullptr, 1 );
+                OUStringBuffer buf;
+                buf.append( "Failed to create MasterScriptProvider for '" );
+                buf.append     ( context );
+                buf.append( "': Either XEmbeddScripts or XScriptInvocationContext need to be supported by the document." );
+                throw lang::IllegalArgumentException( buf.makeStringAndClear(), nullptr, 1 );
             }
 
             ::osl::MutexGuard guard( m_mutex );
@@ -221,10 +221,12 @@ Reference< provider::XScriptProvider >
     }
     catch( const Exception& )
     {
+        OUStringBuffer aMessage;
+        aMessage.append( "Failed to create MasterScriptProvider for context '" );
+        aMessage.append     ( context );
+        aMessage.append( "'." );
         throw lang::WrappedTargetRuntimeException(
-            "Failed to create MasterScriptProvider for context '"
-            + context + "'.",
-            *this, ::cppu::getCaughtException() );
+            aMessage.makeStringAndClear(), *this, ::cppu::getCaughtException() );
     }
     return msp;
 }
@@ -257,6 +259,7 @@ ActiveMSPList::addActiveMSP( const Reference< uno::XInterface >& xComponent,
 
 
 void SAL_CALL ActiveMSPList::disposing( const css::lang::EventObject& Source )
+throw ( css::uno::RuntimeException, std::exception )
 
 {
     try

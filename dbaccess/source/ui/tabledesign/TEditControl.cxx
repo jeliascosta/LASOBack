@@ -37,7 +37,6 @@
 #include <vcl/msgbox.hxx>
 #include "TableUndo.hxx"
 #include "TableController.hxx"
-#include <connectivity/dbmetadata.hxx>
 #include <connectivity/dbtools.hxx>
 #include "SqlNameEdit.hxx"
 #include "TableRowExchange.hxx"
@@ -73,12 +72,12 @@ using namespace ::com::sun::star::sdb;
 // Maximum length in description field
 #define MAX_DESCR_LEN       256
 
-OTableEditorCtrl::ClipboardInvalidator::ClipboardInvalidator(OTableEditorCtrl* _pOwner)
+OTableEditorCtrl::ClipboardInvalidator::ClipboardInvalidator(sal_uLong nTimeout,OTableEditorCtrl* _pOwner)
 : m_pOwner(_pOwner)
 {
 
-    m_aInvalidateTimer.SetTimeout(500);
-    m_aInvalidateTimer.SetInvokeHandler(LINK(this, OTableEditorCtrl::ClipboardInvalidator, OnInvalidate));
+    m_aInvalidateTimer.SetTimeout(nTimeout);
+    m_aInvalidateTimer.SetTimeoutHdl(LINK(this, OTableEditorCtrl::ClipboardInvalidator, OnInvalidate));
     m_aInvalidateTimer.Start();
 }
 
@@ -92,7 +91,7 @@ void OTableEditorCtrl::ClipboardInvalidator::Stop()
     m_aInvalidateTimer.Stop();
 }
 
-IMPL_LINK_NOARG(OTableEditorCtrl::ClipboardInvalidator, OnInvalidate, Timer *, void)
+IMPL_LINK_NOARG_TYPED(OTableEditorCtrl::ClipboardInvalidator, OnInvalidate, Timer *, void)
 {
     m_pOwner->GetView()->getController().InvalidateFeature(SID_CUT);
     m_pOwner->GetView()->getController().InvalidateFeature(SID_COPY);
@@ -144,7 +143,7 @@ OTableEditorCtrl::OTableEditorCtrl(vcl::Window* pWindow)
     ,nOldDataPos(-1)
     ,bSaveOnMove(true)
     ,bReadOnly(true)
-    ,m_aInvalidate(this)
+    ,m_aInvalidate(500,this)
 {
 
     SetHelpId(HID_TABDESIGN_BACKGROUND);
@@ -304,7 +303,7 @@ bool OTableEditorCtrl::SeekRow(long _nRow)
     return SetDataPtr(_nRow);
 }
 
-void OTableEditorCtrl::PaintCell(OutputDevice& rDev, const tools::Rectangle& rRect,
+void OTableEditorCtrl::PaintCell(OutputDevice& rDev, const Rectangle& rRect,
                                    sal_uInt16 nColumnId ) const
 {
     const OUString aText( GetCellText( m_nCurrentPos, nColumnId ));
@@ -483,8 +482,8 @@ sal_Int32 OTableEditorCtrl::HasFieldName( const OUString& rFieldName )
 
     ::comphelper::UStringMixEqual bCase(!xMetaData.is() || xMetaData->supportsMixedCaseQuotedIdentifiers());
 
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
     sal_Int32 nCount(0);
     for(;aIter != aEnd;++aIter)
     {
@@ -623,7 +622,7 @@ bool OTableEditorCtrl::CursorMoving(long nNewRow, sal_uInt16 nNewCol)
     return true;
 }
 
-IMPL_LINK_NOARG( OTableEditorCtrl, InvalidateFieldType, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, InvalidateFieldType, void*, void )
 {
     nInvalidateTypeEvent = nullptr;
     Invalidate( GetFieldRectPixel(nOldDataPos, FIELD_TYPE) );
@@ -648,7 +647,7 @@ void OTableEditorCtrl::CellModified( long nRow, sal_uInt16 nColId )
     default:            sActionDescription = ModuleRes( STR_CHANGE_COLUMN_ATTRIBUTE ); break;
     }
 
-    GetUndoManager().EnterListAction( sActionDescription, OUString(), 0, ViewShellId(-1) );
+    GetUndoManager().EnterListAction( sActionDescription, OUString() );
     if (!pActFieldDescr)
     {
         const OTypeInfoMap& rTypeInfoMap = GetView()->getController().getTypeInfo();
@@ -681,7 +680,7 @@ void OTableEditorCtrl::CellModified( long nRow, sal_uInt16 nColId )
     GetUndoManager().LeaveListAction();
     RowModified(nRow);
     CellControllerRef xController(Controller());
-    if(xController.is())
+    if(xController.Is())
         xController->SetModified();
 
     // Set the Modify flag
@@ -719,7 +718,7 @@ void OTableEditorCtrl::CopyRows()
     // Copy selected rows to the ClipboardList
      std::shared_ptr<OTableRow>  pClipboardRow;
      std::shared_ptr<OTableRow>  pRow;
-    std::vector< std::shared_ptr<OTableRow> > vClipboardList;
+    ::std::vector< std::shared_ptr<OTableRow> > vClipboardList;
     vClipboardList.reserve(GetSelectRowCount());
 
     for( long nIndex=FirstSelectedRow(); nIndex >= 0 && nIndex < static_cast<long>(m_pRowList->size()); nIndex=NextSelectedRow() )
@@ -769,14 +768,14 @@ OUString OTableEditorCtrl::GenerateName( const OUString& rName )
 void OTableEditorCtrl::InsertRows( long nRow )
 {
 
-    std::vector<  std::shared_ptr<OTableRow> > vInsertedUndoRedoRows; // need for undo/redo handling
+    ::std::vector<  std::shared_ptr<OTableRow> > vInsertedUndoRedoRows; // need for undo/redo handling
     // get rows from clipboard
     TransferableDataHelper aTransferData(TransferableDataHelper::CreateFromSystemClipboard(GetParent()));
     if(aTransferData.HasFormat(SotClipboardFormatId::SBA_TABED))
     {
         ::tools::SvRef<SotStorageStream> aStreamRef;
         bool bOk = aTransferData.GetSotStorageStream(SotClipboardFormatId::SBA_TABED,aStreamRef);
-        if (bOk && aStreamRef.is())
+        if (bOk && aStreamRef.Is())
         {
             aStreamRef->Seek(STREAM_SEEK_TO_BEGIN);
             aStreamRef->ResetError();
@@ -876,7 +875,7 @@ void OTableEditorCtrl::SetControlText( long nRow, sal_uInt16 nColId, const OUStr
         GoToRow( nRow );
         GoToColumnId( nColId );
         CellControllerRef xController = Controller();
-        if(xController.is())
+        if(xController.Is())
             xController->GetWindow().SetText( rText );
         else
             RowModified(nRow,nColId);
@@ -920,7 +919,7 @@ void OTableEditorCtrl::SetCellData( long nRow, sal_uInt16 nColId, const css::uno
         return;
 
     OUString sValue;
-    // Set individual fields
+    // Set indvidual fields
     switch( nColId )
     {
         case FIELD_NAME:
@@ -1329,13 +1328,13 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                     sal_uInt16 nSelId = GetColumnId(
                         sal::static_int_cast< sal_uInt16 >(
                             FirstSelectedColumn() ) );
-                    ::tools::Rectangle aColRect( GetFieldRectPixel( 0, nSelId, false ) );
+                    ::Rectangle aColRect( GetFieldRectPixel( 0, nSelId, false ) );
 
                     aMenuPos = aColRect.TopCenter();
                 }
                 else if ( GetSelectRowCount() > 0 )
                 {
-                    ::tools::Rectangle aColRect( GetFieldRectPixel( FirstSelectedRow(), HANDLE_ID ) );
+                    ::Rectangle aColRect( GetFieldRectPixel( FirstSelectedRow(), HANDLE_ID ) );
 
                     aMenuPos = aColRect.TopCenter();
                 }
@@ -1361,29 +1360,32 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                             if ( !IsColumnSelected( nColId ) )
                                 SelectColumnId( nColId );
 
-                            VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "dbaccess/ui/querycolmenu.ui", "");
-                            VclPtr<PopupMenu> aContextMenu(aBuilder.get_menu("menu"));
-                            aContextMenu->EnableItem(aContextMenu->GetItemId("delete"), false);
-                            aContextMenu->RemoveDisabledEntries(true, true);
-                            if (aContextMenu->Execute(this, aMenuPos) == aContextMenu->GetItemId("width"))
-                                adjustBrowseBoxColumnWidth( this, nColId );
+                            PopupMenu aContextMenu( ModuleRes( RID_QUERYCOLPOPUPMENU ) );
+                            aContextMenu.EnableItem( SID_DELETE, false );
+                            aContextMenu.RemoveDisabledEntries(true, true);
+                            switch ( aContextMenu.Execute( this, aMenuPos ) )
+                            {
+                                case ID_BROWSER_COLWIDTH:
+                                    adjustBrowseBoxColumnWidth( this, nColId );
+                                    break;
+                            }
                         }
                     }
                 }
                 else
                 {
-                    ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
+                    PopupMenu aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
 
-                    aContextMenu->EnableItem( SID_CUT, IsCutAllowed(nRow) );
-                    aContextMenu->EnableItem( SID_COPY, IsCopyAllowed(nRow) );
-                    aContextMenu->EnableItem( SID_PASTE, IsPasteAllowed(nRow) );
-                    aContextMenu->EnableItem( SID_DELETE, IsDeleteAllowed(nRow) );
-                    aContextMenu->EnableItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsPrimaryKeyAllowed(nRow) );
-                    aContextMenu->EnableItem( SID_TABLEDESIGN_INSERTROWS, IsInsertNewAllowed(nRow) );
-                    aContextMenu->CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsRowSelected(GetCurRow()) && IsPrimaryKey() );
+                    aContextMenu.EnableItem( SID_CUT, IsCutAllowed(nRow) );
+                    aContextMenu.EnableItem( SID_COPY, IsCopyAllowed(nRow) );
+                    aContextMenu.EnableItem( SID_PASTE, IsPasteAllowed(nRow) );
+                    aContextMenu.EnableItem( SID_DELETE, IsDeleteAllowed(nRow) );
+                    aContextMenu.EnableItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsPrimaryKeyAllowed(nRow) );
+                    aContextMenu.EnableItem( SID_TABLEDESIGN_INSERTROWS, IsInsertNewAllowed(nRow) );
+                    aContextMenu.CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsRowSelected(GetCurRow()) && IsPrimaryKey() );
 
                     // remove all the disable entries
-                    aContextMenu->RemoveDisabledEntries(true, true);
+                    aContextMenu.RemoveDisabledEntries(true, true);
 
                     if( SetDataPtr(m_nDataPos) )
                         pDescrWin->SaveData( pActRow->GetActFieldDescr() );
@@ -1391,7 +1393,7 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                     // All actions which change the number of rows must be run asynchronously
                     // otherwise there may be problems between the Context menu and the Browser
                     m_nDataPos = GetCurRow();
-                    switch (aContextMenu->Execute(this, aMenuPos))
+                    switch (aContextMenu.Execute(this, aMenuPos))
                     {
                         case SID_CUT:
                             cut();
@@ -1428,13 +1430,13 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
 
 }
 
-IMPL_LINK_NOARG( OTableEditorCtrl, DelayedCut, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedCut, void*, void )
 {
     nCutEvent = nullptr;
     OTableRowView::cut();
 }
 
-IMPL_LINK_NOARG( OTableEditorCtrl, DelayedPaste, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedPaste, void*, void )
 {
     nPasteEvent = nullptr;
 
@@ -1446,7 +1448,7 @@ IMPL_LINK_NOARG( OTableEditorCtrl, DelayedPaste, void*, void )
     {   // Insertion is not allowed, only appending, so test if there are full cells after the PastePosition
 
         sal_Int32 nFreeFromPos; // from here on there are only empty rows
-        std::vector< std::shared_ptr<OTableRow> >::const_reverse_iterator aIter = m_pRowList->rbegin();
+        ::std::vector< std::shared_ptr<OTableRow> >::const_reverse_iterator aIter = m_pRowList->rbegin();
         for(nFreeFromPos = m_pRowList->size();
             aIter != m_pRowList->rend() && (!(*aIter) || !(*aIter)->GetActFieldDescr() || (*aIter)->GetActFieldDescr()->GetName().isEmpty());
             --nFreeFromPos, ++aIter)
@@ -1460,13 +1462,13 @@ IMPL_LINK_NOARG( OTableEditorCtrl, DelayedPaste, void*, void )
     GoToRow( nPastePosition );
 }
 
-IMPL_LINK_NOARG( OTableEditorCtrl, DelayedDelete, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedDelete, void*, void )
 {
     nDeleteEvent = nullptr;
     DeleteRows();
 }
 
-IMPL_LINK_NOARG( OTableEditorCtrl, DelayedInsNewRows, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedInsNewRows, void*, void )
 {
     nInsNewRowsEvent = nullptr;
     sal_Int32 nPastePosition = GetView()->getController().getFirstEmptyRowPosition();
@@ -1511,8 +1513,8 @@ void OTableEditorCtrl::SetPrimaryKey( bool bSet )
     MultiSelection aDeletedPrimKeys;
     aDeletedPrimKeys.SetTotalRange( Range(0,GetRowCount()) );
 
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
     for(sal_Int32 nRow = 0;aIter != aEnd;++aIter,++nRow)
     {
         OFieldDescription* pFieldDescr = (*aIter)->GetActFieldDescr();
@@ -1554,8 +1556,8 @@ bool OTableEditorCtrl::IsPrimaryKey()
 {
     // Are all marked fields part of the Primary Key ?
     long nPrimaryKeys = 0;
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_pRowList->begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_pRowList->end();
     for(sal_Int32 nRow=0;aIter != aEnd;++aIter,++nRow)
     {
         if( IsRowSelected(nRow) && !(*aIter)->IsPrimaryKey() )

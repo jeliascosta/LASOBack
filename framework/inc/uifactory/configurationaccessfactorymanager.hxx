@@ -39,7 +39,7 @@ namespace framework {
 {
     public:
                       ConfigurationAccess_FactoryManager( const css::uno::Reference< css::uno::XComponentContext>& rxContext, const OUString& _sRoot );
-        virtual       ~ConfigurationAccess_FactoryManager() override;
+        virtual       ~ConfigurationAccess_FactoryManager();
 
         void          readConfigurationData();
 
@@ -49,12 +49,12 @@ namespace framework {
         css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > >   getFactoriesDescription() const;
 
         // container.XContainerListener
-    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) override;
-    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) override;
-    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) override;
+    virtual void SAL_CALL elementInserted( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementRemoved( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementReplaced( const css::container::ContainerEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // lang.XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         class FactoryManagerMap : public std::unordered_map<OUString,

@@ -66,7 +66,7 @@ sal_Int32 sw_CalcCaseMap( const SwFont& rFnt,
     OSL_ENSURE( nEnd <= rOrigString.getLength(), "sw_CalcCaseMap: Wrong parameters" );
 
     // special case for title case:
-    const bool bTitle = SvxCaseMap::Capitalize == rFnt.GetCaseMap() &&
+    const bool bTitle = SVX_CASEMAP_TITEL == rFnt.GetCaseMap() &&
                         g_pBreakIt->GetBreakIter().is();
     for ( sal_Int32 i = nOfst; i < nEnd; ++i )
     {
@@ -99,10 +99,10 @@ protected:
 public:
     virtual void Init( SwFntObj *pUpperFont, SwFntObj *pLowerFont ) = 0;
     virtual void Do() = 0;
-    OutputDevice& GetOut() { return rInf.GetOut(); }
-    SwDrawTextInfo& GetInf() { return rInf; }
-    SwCapitalInfo* GetCapInf() const { return pCapInf; }
-    void SetCapInf( SwCapitalInfo& rNew ) { pCapInf = &rNew; }
+    inline OutputDevice& GetOut() { return rInf.GetOut(); }
+    inline SwDrawTextInfo& GetInf() { return rInf; }
+    inline SwCapitalInfo* GetCapInf() const { return pCapInf; }
+    inline void SetCapInf( SwCapitalInfo& rNew ) { pCapInf = &rNew; }
 };
 
 class SwDoGetCapitalSize : public SwDoCapitals
@@ -282,9 +282,9 @@ void SwDoDrawCapital::DrawSpace( Point &rPos )
     if ( bSwitchL2R )
        rInf.GetFrame()->SwitchLTRtoRTL( aPos );
 
-    const ComplexTextLayoutFlags nMode = rInf.GetpOut()->GetLayoutMode();
+    const ComplexTextLayoutMode nMode = rInf.GetpOut()->GetLayoutMode();
     const bool bBidiPor = ( bSwitchL2R !=
-                            ( ComplexTextLayoutFlags::Default != ( ComplexTextLayoutFlags::BiDiRtl & nMode ) ) );
+                            ( TEXT_LAYOUT_DEFAULT != ( TEXT_LAYOUT_BIDI_RTL & nMode ) ) );
 
     if ( bBidiPor )
         nDiff = -nDiff;
@@ -303,8 +303,8 @@ void SwDoDrawCapital::DrawSpace( Point &rPos )
 
 void SwSubFont::DrawCapital( SwDrawTextInfo &rInf )
 {
-    // Precondition: rInf.GetPos() has already been calculated
-
+    // Es wird vorausgesetzt, dass rPos bereits kalkuliert ist!
+    // hochgezogen in SwFont: const Point aPos( CalcPos(rPos) );
     rInf.SetDrawSpace( GetUnderline() != LINESTYLE_NONE ||
                        GetOverline()  != LINESTYLE_NONE ||
                        GetStrikeout() != STRIKEOUT_NONE );
@@ -327,7 +327,7 @@ public:
     virtual void Init( SwFntObj *pUpperFont, SwFntObj *pLowerFont ) override;
     virtual void Do() override;
 
-    sal_Int32 GetCursor(){ return nCursor; }
+    inline sal_Int32 GetCursor(){ return nCursor; }
 };
 
 void SwDoCapitalCursorOfst::Init( SwFntObj *pUpperFont, SwFntObj *pLowerFont )
@@ -400,6 +400,8 @@ public:
               nCapWidth( nCapitalWidth ),
               nOrgWidth( rInfo.GetWidth() )
         { }
+
+    virtual ~SwDoDrawStretchCapital() {}
 };
 
 void SwDoDrawStretchCapital::Do()
@@ -409,7 +411,7 @@ void SwDoDrawStretchCapital::Do()
 
     if( rInf.GetLen() )
     {
-        // small caps and kerning
+        // 4023: Kapitaelchen und Kerning.
         long nDiff = long(nOrgWidth) - long(nCapWidth);
         if( nDiff )
         {
@@ -432,7 +434,7 @@ void SwDoDrawStretchCapital::Do()
         if ( rInf.GetFrame()->IsVertical() )
             rInf.GetFrame()->SwitchHorizontalToVertical( aPos );
 
-        // Optimise:
+        // Optimierung:
         if( 1 >= rInf.GetLen() )
             GetOut().DrawText( aPos, rInf.GetText(), rInf.GetIdx(),
                 rInf.GetLen() );
@@ -445,7 +447,8 @@ void SwDoDrawStretchCapital::Do()
 
 void SwSubFont::DrawStretchCapital( SwDrawTextInfo &rInf )
 {
-    // Precondition: rInf.GetPos() has already been calculated
+    // Es wird vorausgesetzt, dass rPos bereits kalkuliert ist!
+    // hochgezogen in SwFont: const Point aPos( CalcPos(rPos) );
 
     if( rInf.GetLen() == COMPLETE_STRING )
         rInf.SetLen( rInf.GetText().getLength() );
@@ -515,7 +518,7 @@ void SwSubFont::DoOnCapitals( SwDoCapitals &rDo )
         else
             pSpaceFont = pLastFont;
 
-        // Construct a font for the capitals:
+        // Wir basteln uns einen Font fuer die Grossbuchstaben:
         aFont.SetUnderline( LINESTYLE_NONE );
         aFont.SetOverline( LINESTYLE_NONE );
         aFont.SetStrikeout( STRIKEOUT_NONE );
@@ -731,7 +734,7 @@ void SwSubFont::DoOnCapitals( SwDoCapitals &rDo )
 #endif
     }
 
-    // clean up:
+    // Aufraeumen:
     if( pBigFont != pOldLast )
         delete pBigFontAccess;
 

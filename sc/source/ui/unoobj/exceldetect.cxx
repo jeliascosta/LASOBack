@@ -27,17 +27,17 @@ using utl::MediaDescriptor;
 ScExcelBiffDetect::ScExcelBiffDetect( const uno::Reference<uno::XComponentContext>& /*xContext*/ ) {}
 ScExcelBiffDetect::~ScExcelBiffDetect() {}
 
-OUString ScExcelBiffDetect::getImplementationName()
+OUString ScExcelBiffDetect::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.calc.ExcelBiffFormatDetector");
 }
 
-sal_Bool ScExcelBiffDetect::supportsService( const OUString& aName )
+sal_Bool ScExcelBiffDetect::supportsService( const OUString& aName ) throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, aName);
 }
 
-uno::Sequence<OUString> ScExcelBiffDetect::getSupportedServiceNames()
+uno::Sequence<OUString> ScExcelBiffDetect::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence<OUString> aNames { "com.sun.star.frame.ExtendedTypeDetection" };
     return aNames;
@@ -55,7 +55,7 @@ bool hasStream(const uno::Reference<io::XInputStream>& xInStream, const OUString
         return false;
 
     pStream->Seek(STREAM_SEEK_TO_END);
-    sal_uInt64 const nSize = pStream->Tell();
+    sal_Size nSize = pStream->Tell();
     pStream->Seek(0);
 
     if (!nSize)
@@ -67,7 +67,7 @@ bool hasStream(const uno::Reference<io::XInputStream>& xInStream, const OUString
     try
     {
         tools::SvRef<SotStorage> xStorage = new SotStorage(pStream, false);
-        if (!xStorage.is() || xStorage->GetError())
+        if (!xStorage.Is() || xStorage->GetError())
             return false;
         return xStorage->IsStream(rName);
     }
@@ -93,7 +93,7 @@ bool isExcel40(const uno::Reference<io::XInputStream>& xInStream)
         return false;
 
     pStream->Seek(STREAM_SEEK_TO_END);
-    sal_uInt64 const nSize = pStream->Tell();
+    sal_Size nSize = pStream->Tell();
     pStream->Seek(0);
 
     if (nSize < 4)
@@ -117,7 +117,7 @@ bool isExcel40(const uno::Reference<io::XInputStream>& xInStream)
         // BOF record must be sized between 4 and 16 for BIFF 2, 3 and 4.
         return false;
 
-    sal_uInt64 const nPos = pStream->Tell();
+    sal_Size nPos = pStream->Tell();
     if (nSize - nPos < nBofSize)
         // BOF record doesn't have required bytes.
         return false;
@@ -133,6 +133,7 @@ bool isTemplate(const OUString& rType)
 }
 
 OUString ScExcelBiffDetect::detect( uno::Sequence<beans::PropertyValue>& lDescriptor )
+    throw (uno::RuntimeException, std::exception)
 {
     MediaDescriptor aMediaDesc(lDescriptor);
     OUString aType;

@@ -31,7 +31,6 @@
 #include <com/sun/star/animations/XIterateContainer.hpp>
 #include <com/sun/star/animations/XAnimationNodeSupplier.hpp>
 #include <com/sun/star/animations/XTimeContainer.hpp>
-#include <com/sun/star/animations/XTransitionFilter.hpp>
 #include <com/sun/star/animations/AnimationNodeType.hpp>
 #include <com/sun/star/animations/Event.hpp>
 #include <com/sun/star/animations/EventTrigger.hpp>
@@ -154,7 +153,7 @@ namespace oox { namespace ppt {
                                     {
                                         // first effect does not start on click, so correct
                                         // first click nodes begin to 0s
-                                        xClickNode->setBegin( makeAny( 0.0 ) );
+                                        xClickNode->setBegin( makeAny( (double)0.0 ) );
                                         break;
                                     }
                                 }
@@ -203,7 +202,8 @@ namespace oox { namespace ppt {
         }
         catch( const Exception& e )
         {
-            SAL_INFO("oox.ppt","OOX: exception raised in TimeNode::addNode() - " << e.Message );
+            SAL_INFO("oox.ppt","OOX: exception raised in TimeNode::addNode() - " <<
+                                 OUStringToOString( e.Message, RTL_TEXTENCODING_ASCII_US ).getStr() );
         }
     }
 
@@ -577,7 +577,7 @@ namespace oox { namespace ppt {
         }
         catch( const Exception& e )
         {
-            SAL_INFO("oox.ppt", "OOX: exception raised in TimeNode::createAndInsert() trying to create a service " << rServiceName << " = " << e.Message );
+            SAL_INFO("oox.ppt","OOX: exception raised in TimeNode::createAndInsert() trying to create a service " <<  OUStringToOString( rServiceName, RTL_TEXTENCODING_ASCII_US).getStr() << " = " << OUStringToOString( e.Message, RTL_TEXTENCODING_ASCII_US ).getStr() );
         }
 
         return Reference< XAnimationNode >();

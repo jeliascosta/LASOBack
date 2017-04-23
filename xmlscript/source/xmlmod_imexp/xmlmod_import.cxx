@@ -19,7 +19,6 @@
 
 #include <sal/config.h>
 
-#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <sal/log.hxx>
 
 #include "imp_share.hxx"
@@ -32,46 +31,55 @@ namespace xmlscript
 {
 
 Reference< xml::input::XElement > ModuleElement::getParent()
+    throw (RuntimeException, std::exception)
 {
-    return nullptr;
+    return static_cast< xml::input::XElement * >( _pParent );
 }
 OUString ModuleElement::getLocalName()
+    throw (RuntimeException, std::exception)
 {
     return _aLocalName;
 }
 sal_Int32 ModuleElement::getUid()
+    throw (RuntimeException, std::exception)
 {
-    return mxImport->XMLNS_SCRIPT_UID;
+    return _pImport->XMLNS_SCRIPT_UID;
 }
 Reference< xml::input::XAttributes > ModuleElement::getAttributes()
+    throw (RuntimeException, std::exception)
 {
     return _xAttributes;
 }
 
 void ModuleElement::ignorableWhitespace(
     OUString const & /*rWhitespaces*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // not used
 }
 
 void ModuleElement::characters( OUString const & rChars )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     _strBuffer.append( rChars );
 }
 
 void ModuleElement::processingInstruction(
     OUString const & /*rTarget*/, OUString const & /*rData*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void ModuleElement::endElement()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    mxImport->mrModuleDesc.aCode = _strBuffer.makeStringAndClear();
+    _pImport->mrModuleDesc.aCode = _strBuffer.makeStringAndClear();
 }
 
 Reference< xml::input::XElement > ModuleElement::startChildElement(
     sal_Int32 /*nUid*/, OUString const & /*rLocalName*/,
     Reference< xml::input::XAttributes > const & /*xAttributes*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     throw xml::sax::SAXException("unexpected element!", Reference< XInterface >(), Any() );
 }
@@ -79,15 +87,29 @@ Reference< xml::input::XElement > ModuleElement::startChildElement(
 ModuleElement::ModuleElement(
     OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes,
-    ModuleImport * pImport )
-    : mxImport( pImport )
+    ModuleElement * pParent, ModuleImport * pImport )
+    : _pImport( pImport )
+    , _pParent( pParent )
     , _aLocalName( rLocalName )
     , _xAttributes( xAttributes )
 {
+    _pImport->acquire();
+
+    if (_pParent)
+    {
+        _pParent->acquire();
+    }
 }
 
 ModuleElement::~ModuleElement()
 {
+    _pImport->release();
+
+    if (_pParent)
+    {
+        _pParent->release();
+    }
+
     SAL_INFO("xmlscript.xmlmod", "ModuleElement::~ModuleElement(): " << _aLocalName );
 }
 
@@ -95,6 +117,7 @@ ModuleElement::~ModuleElement()
 
 void ModuleImport::startDocument(
     Reference< xml::input::XNamespaceMapping > const & xNamespaceMapping )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     XMLNS_SCRIPT_UID = xNamespaceMapping->getUidByUri( XMLNS_SCRIPT_URI );
     XMLNS_LIBRARY_UID = xNamespaceMapping->getUidByUri( XMLNS_LIBRARY_URI );
@@ -102,23 +125,27 @@ void ModuleImport::startDocument(
 }
 
 void ModuleImport::endDocument()
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     // ignored
 }
 
 void ModuleImport::processingInstruction(
     OUString const & /*rTarget*/, OUString const & /*rData*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 void ModuleImport::setDocumentLocator(
     Reference< xml::sax::XLocator > const & /*xLocator*/ )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
 }
 
 Reference< xml::input::XElement > ModuleImport::startRootElement(
     sal_Int32 nUid, OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes )
+    throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
     if (XMLNS_SCRIPT_UID != nUid)
     {
@@ -131,7 +158,7 @@ Reference< xml::input::XElement > ModuleImport::startRootElement(
         mrModuleDesc.aLanguage = xAttributes->getValueByUidName( XMLNS_SCRIPT_UID, "language" );
         mrModuleDesc.aModuleType = xAttributes->getValueByUidName( XMLNS_SCRIPT_UID, "moduleType" );
 
-        return new ModuleElement( rLocalName, xAttributes, this );
+        return new ModuleElement( rLocalName, xAttributes, nullptr, this );
     }
     else
     {

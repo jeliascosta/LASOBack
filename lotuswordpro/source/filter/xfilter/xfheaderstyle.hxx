@@ -76,13 +76,13 @@ class XFHeaderStyle : public XFStyle
 public:
     explicit XFHeaderStyle(bool isFooter=false);
 
-    virtual ~XFHeaderStyle() override;
+    virtual ~XFHeaderStyle();
 
 public:
     /**
      * @descr   Set margins for header style.
      */
-    void    SetMargins(double left, double right, double bottom);
+    void    SetMargins(double left = -1, double right = -1, double bottom = -1);
 
     void    SetDynamicSpace(bool dynamic);
 

@@ -80,7 +80,7 @@ public:
         RegistryKey const & key);
 
 private:
-    virtual ~Cursor() throw () override {}
+    virtual ~Cursor() throw () {}
 
     virtual rtl::Reference< Entity > getNext(OUString * name) override;
 
@@ -135,7 +135,7 @@ public:
     {}
 
 private:
-    virtual ~Module() throw () override {}
+    virtual ~Module() throw () {}
 
     virtual std::vector< OUString > getMemberNames() const override;
 

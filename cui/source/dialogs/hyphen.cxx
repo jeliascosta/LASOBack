@@ -339,7 +339,7 @@ void SvxHyphenWordDialog::SelRight()
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, CutHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, CutHdl_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -350,13 +350,13 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, CutHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG( SvxHyphenWordDialog, HyphenateAllHdl_Impl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SvxHyphenWordDialog, HyphenateAllHdl_Impl, Button *, void )
 {
     if( !m_bBusy )
     {
         try
         {
-            uno::Reference< linguistic2::XLinguProperties >  xProp( LinguMgr::GetLinguPropertySet() );
+            uno::Reference< linguistic2::XLinguProperties >  xProp( SvxGetLinguPropertySet() );
 
             xProp->setIsHyphAuto( true );
 
@@ -369,13 +369,13 @@ IMPL_LINK_NOARG( SvxHyphenWordDialog, HyphenateAllHdl_Impl, Button *, void )
         catch (uno::Exception &e)
         {
             (void) e;
-            SAL_WARN( "cui.dialogs", "Hyphenate All failed" );
+            DBG_ASSERT( false, "Hyphenate All failed" );
         }
     }
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, DeleteHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, DeleteHdl_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -386,7 +386,7 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, DeleteHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, ContinueHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, ContinueHdl_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -397,7 +397,7 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, ContinueHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, CancelHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, CancelHdl_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -408,7 +408,7 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, CancelHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, Left_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, Left_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -419,7 +419,7 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, Left_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, Right_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, Right_Impl, Button*, void)
 {
     if( !m_bBusy )
     {
@@ -430,7 +430,7 @@ IMPL_LINK_NOARG(SvxHyphenWordDialog, Right_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxHyphenWordDialog, GetFocusHdl_Impl, Control&, void)
+IMPL_LINK_NOARG_TYPED(SvxHyphenWordDialog, GetFocusHdl_Impl, Control&, void)
 {
     m_pWordEdit->SetSelection( Selection( m_nOldPos, m_nOldPos + 1 ) );
 }

@@ -53,6 +53,7 @@ BreakIterator_CTL::~BreakIterator_CTL()
 sal_Int32 SAL_CALL BreakIterator_CTL::previousCharacters( const OUString& Text,
     sal_Int32 nStartPos, const lang::Locale& rLocale,
     sal_Int16 nCharacterIteratorMode, sal_Int32 nCount, sal_Int32& nDone )
+    throw(RuntimeException, std::exception)
 {
     if (nCharacterIteratorMode == CharacterIteratorMode::SKIPCELL ) {
         nDone = 0;
@@ -79,6 +80,7 @@ sal_Int32 SAL_CALL BreakIterator_CTL::previousCharacters( const OUString& Text,
 sal_Int32 SAL_CALL BreakIterator_CTL::nextCharacters(const OUString& Text,
     sal_Int32 nStartPos, const lang::Locale& rLocale,
     sal_Int16 nCharacterIteratorMode, sal_Int32 nCount, sal_Int32& nDone)
+    throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
     if (nCharacterIteratorMode == CharacterIteratorMode::SKIPCELL ) {
@@ -105,6 +107,7 @@ sal_Int32 SAL_CALL BreakIterator_CTL::nextCharacters(const OUString& Text,
 
 // This method should be overwritten by derived language specific class.
 void SAL_CALL BreakIterator_CTL::makeIndex(const OUString& /*text*/, sal_Int32 /*pos*/)
+    throw(RuntimeException)
 {
     throw RuntimeException();
 }
@@ -114,7 +117,7 @@ LineBreakResults SAL_CALL BreakIterator_CTL::getLineBreak(
     const OUString& Text, sal_Int32 nStartPos,
     const lang::Locale& rLocale, sal_Int32 nMinBreakPos,
     const LineBreakHyphenationOptions& hOptions,
-    const LineBreakUserOptions& bOptions )
+    const LineBreakUserOptions& bOptions ) throw(RuntimeException, std::exception)
 {
     LineBreakResults lbr = BreakIterator_Unicode::getLineBreak(Text, nStartPos,
                     rLocale, nMinBreakPos, hOptions, bOptions );

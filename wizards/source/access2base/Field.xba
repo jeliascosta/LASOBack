@@ -16,7 +16,6 @@ REM ----------------------------------------------------------------------------
 
 Private	_Type					As String				&apos;	Must be FIELD
 Private _Name					As String
-Private _Precision				As Long
 Private _ParentName				As String
 Private _ParentType				As String
 Private _ParentDatabase			As Object
@@ -152,7 +151,7 @@ Dim iChunkType As Integer
 		Select Case Column.Type			&apos;	DOES NOT WORK FOR CHARACTER TYPES
 &apos;			Case .CHAR, .VARCHAR, .LONGVARCHAR, .CLOB
 &apos;				iChunkType = vbString
-			Case .BINARY, .VARBINARY, .LONGVARBINARY, .BLOB, .CHAR	&apos;	.CHAR added for Sqlite3
+			Case .BINARY, .VARBINARY, .LONGVARBINARY, .BLOB
 				iChunkType = vbByte
 			Case Else
 				Goto Trace_Error
@@ -399,11 +398,12 @@ Dim cstThisSub As String
 
 	If Not hasProperty(psProperty) Then Goto Trace_Error
 
-Dim bCond1 As Boolean, bCond2 As Boolean, vValue As Variant, oValue As Object, sValue As String
+Dim vEMPTY As Variant, bCond1 As Boolean, bCond2 As Boolean, vValue As Variant, oValue As Object, sValue As String
 Dim oSize As Object, lSize As Long, bNullable As Boolean, bNull As Boolean
+Const cstMaxTextLength = 65535
 Const cstMaxBinlength = 2 * 65535
 
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	
 	Select Case UCase(psProperty)
 		Case UCase(&quot;DataType&quot;)
@@ -490,7 +490,7 @@ Const cstMaxBinlength = 2 * 65535
 				End If
 				oSize.closeInput()
 			Else
-				_PropertyGet = EMPTY
+				_PropertyGet = vEMPTY
 			End If
 		Case UCase(&quot;Name&quot;)
 			_PropertyGet = _Name
@@ -551,6 +551,7 @@ Const cstMaxBinlength = 2 * 65535
 						If Not bNull Then
 							lSize = CLng(oValue.getLength())
 							oValue.closeInput()
+							If lSize &gt; cstMaxTextLength Then Goto Trace_Length
 							vValue = Column.getString()									&apos;	vbString
 						Else
 							oValue.closeInput()
@@ -593,15 +594,15 @@ Exit_Function:
 	Exit Function
 Trace_Error:
 	TraceError(TRACEWARNING, ERRPROPERTY, Utils._CalledSub(), 0, , psProperty)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	Goto Exit_Function
 Trace_Length:
 	TraceError(TRACEFATAL, ERROVERFLOW, Utils._CalledSub(), 0, , Array(lSize, &quot;GetChunk&quot;))
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	Goto Exit_Function
 Error_Function:
 	TraceError(TRACEABORT, Err, cstThisSub, Erl)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	GoTo Exit_Function
 End Function		&apos;	_PropertyGet	V1.1.0
 
@@ -685,7 +686,6 @@ Dim oParent As Object
 							End If
 						Case .CHAR, .VARCHAR, .LONGVARCHAR, .CLOB
 							If Not Utils._CheckArgument(pvValue, iArgNr, vbString, , False) Then Goto Trace_Error_Value
-							If Len(pvValue) &gt; _Precision Then Goto Trace_Error_Length
 							Column.updateString(pvValue)						&apos;	vbString
 						Case .DATE
 							If Not Utils._CheckArgument(pvValue, iArgNr, vbDate, , False) Then Goto Trace_Error_Value
@@ -754,10 +754,6 @@ Trace_Error_Update:
 	Goto Exit_Function
 Trace_Error_Updatable:
 	TraceError(TRACEFATAL, ERRNOTUPDATABLE, Utils._CalledSub(), 0, 1)
-	_PropertySet = False
-	Goto Exit_Function
-Trace_Error_Length:
-	TraceError(TRACEFATAL, ERROVERFLOW, Utils._CalledSub(), 0, , Array(lSize, &quot;AppendChunk&quot;))
 	_PropertySet = False
 	Goto Exit_Function
 Error_Function:

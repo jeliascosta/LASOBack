@@ -33,7 +33,7 @@
 #include <sfx2/printer.hxx>
 #include <svl/itempool.hxx>
 #include <svl/itemset.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include "attrib.hxx"
 
 #include <vcl/svapp.hxx>
@@ -94,7 +94,7 @@ bool ScStyleSheet::SetParent( const OUString& rParentName )
     SfxStyleSheetBase* pStyle = pPool->Find( aEffName, nFamily );
     if (!pStyle)
     {
-        std::shared_ptr<SfxStyleSheetIterator> pIter = pPool->CreateIterator( nFamily, SFXSTYLEBIT_ALL );
+        SfxStyleSheetIteratorPtr pIter = pPool->CreateIterator( nFamily, SFXSTYLEBIT_ALL );
         pStyle = pIter->First();
         if (pStyle)
             aEffName = pStyle->GetName();
@@ -192,21 +192,19 @@ SfxItemSet& ScStyleSheet::GetItemSet()
                         rHFSet.Put( aHFDistItem );
                         rHFSet.Put( SvxLRSpaceItem( 0,0,0,0, ATTR_LRSPACE ) ); // Set border to Null
 
-                        aHFSetItem.SetWhich(ATTR_PAGE_HEADERSET);
-                        pSet->Put( aHFSetItem );
-                        aHFSetItem.SetWhich(ATTR_PAGE_FOOTERSET);
-                        pSet->Put( aHFSetItem );
+                        pSet->Put( aHFSetItem, ATTR_PAGE_HEADERSET );
+                        pSet->Put( aHFSetItem, ATTR_PAGE_FOOTERSET );
                         pSet->Put( aBoxInfoItem ); // Do not overwrite PoolDefault
                                                    // due to format templates
 
 
                         //  Writing direction: not as pool default because the default for cells
-                        //  must remain SvxFrameDirection::Environment, and each page style's setting is
+                        //  must remain FRMDIR_ENVIRONMENT, and each page style's setting is
                         //  supposed to be saved in the file format.
                         //  The page default depends on the system language.
                         SvxFrameDirection eDirection = ScGlobal::IsSystemRTL() ?
-                                        SvxFrameDirection::Horizontal_RL_TB : SvxFrameDirection::Horizontal_LR_TB;
-                        pSet->Put( SvxFrameDirectionItem( eDirection, ATTR_WRITINGDIR ) );
+                                        FRMDIR_HORI_RIGHT_TOP : FRMDIR_HORI_LEFT_TOP;
+                        pSet->Put( SvxFrameDirectionItem( eDirection, ATTR_WRITINGDIR ), ATTR_WRITINGDIR );
 
                         rItemPool.SetPoolDefaultItem( aPageItem );
                         rItemPool.SetPoolDefaultItem( aPaperSizeItem );
@@ -269,8 +267,42 @@ bool ScStyleSheet::IsUsed() const
 
 void ScStyleSheet::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
         GetItemSet().SetParent( nullptr );
+}
+
+// Dirty tricks, to always save the default template as "standard"
+// even though when shown to the user it is renamed:
+
+const OUString& ScStyleSheet::GetName() const
+{
+    const OUString& rBase = SfxStyleSheet::GetName();
+    const OUString* pForceStdName = static_cast<ScStyleSheetPool*>(pPool)->GetForceStdName();
+    if ( pForceStdName && rBase == ScGlobal::GetRscString(STR_STYLENAME_STANDARD) )
+        return *pForceStdName;
+    else
+        return rBase;
+}
+
+const OUString& ScStyleSheet::GetParent() const
+{
+    const OUString& rBase = SfxStyleSheet::GetParent();
+    const OUString* pForceStdName = static_cast<ScStyleSheetPool*>(pPool)->GetForceStdName();
+    if ( pForceStdName && rBase == ScGlobal::GetRscString(STR_STYLENAME_STANDARD) )
+        return *pForceStdName;
+    else
+        return rBase;
+}
+
+const OUString& ScStyleSheet::GetFollow() const
+{
+    const OUString& rBase = SfxStyleSheet::GetFollow();
+    const OUString* pForceStdName = static_cast<ScStyleSheetPool*>(pPool)->GetForceStdName();
+    if ( pForceStdName && rBase == ScGlobal::GetRscString(STR_STYLENAME_STANDARD) )
+        return *pForceStdName;
+    else
+        return rBase;
 }
 
 // Avoid creating a Style "Standard" if this is not the Standard-Name;

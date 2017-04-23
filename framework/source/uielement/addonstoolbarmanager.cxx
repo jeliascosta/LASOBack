@@ -72,6 +72,8 @@ using namespace ::com::sun::star::ui;
 namespace framework
 {
 
+static const char   TOOLBOXITEM_SEPARATOR_STR[] = "private:separator";
+
 AddonsToolBarManager::AddonsToolBarManager( const Reference< XComponentContext >& rxContext,
                                 const Reference< XFrame >& rFrame,
                                 const OUString& rResourceName,
@@ -82,6 +84,7 @@ AddonsToolBarManager::AddonsToolBarManager( const Reference< XComponentContext >
     m_pToolBar->SetSelectHdl( LINK( this, AddonsToolBarManager, Select) );
     m_pToolBar->SetClickHdl( LINK( this, AddonsToolBarManager, Click ) );
     m_pToolBar->SetDoubleClickHdl( LINK( this, AddonsToolBarManager, DoubleClick ) );
+    m_pToolBar->SetCommandHdl( LINK( this, AddonsToolBarManager, Command ) );
     m_pToolBar->SetStateChangedHdl( LINK( this, AddonsToolBarManager, StateChanged ) );
     m_pToolBar->SetDataChangedHdl( LINK( this, AddonsToolBarManager, DataChanged ) );
 }
@@ -110,10 +113,6 @@ static Image RetrieveImage( Reference< css::frame::XFrame >& rFrame,
                             bool bBigImage
 )
 {
-    vcl::ImageType eImageType = vcl::ImageType::Size16;
-    if (bBigImage)
-        eImageType = vcl::ImageType::Size26;
-
     Image aImage;
 
     if ( !aImageId.isEmpty() )
@@ -122,27 +121,27 @@ static Image RetrieveImage( Reference< css::frame::XFrame >& rFrame,
         if ( !!aImage )
             return aImage;
         else
-            aImage = vcl::CommandInfoProvider::GetImageForCommand(aImageId, rFrame, eImageType);
+            aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(aImageId, bBigImage, rFrame );
         if ( !!aImage )
             return aImage;
     }
 
     aImage = framework::AddonsOptions().GetImageFromURL( aURL, bBigImage );
     if ( !aImage )
-        aImage = vcl::CommandInfoProvider::GetImageForCommand(aImageId, rFrame, eImageType);
+        aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(aImageId, bBigImage, rFrame );
 
     return aImage;
 }
 
 // XComponent
-void SAL_CALL AddonsToolBarManager::dispose()
+void SAL_CALL AddonsToolBarManager::dispose() throw( RuntimeException, std::exception )
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
     {
         // Remove addon specific data from toolbar items.
         SolarMutexGuard g;
-        for ( ToolBox::ImplToolItems::size_type n = 0; n < m_pToolBar->GetItemCount(); n++ )
+        for ( sal_uInt16 n = 0; n < m_pToolBar->GetItemCount(); n++ )
         {
             sal_uInt16 nId( m_pToolBar->GetItemId( n ) );
 
@@ -171,7 +170,7 @@ bool AddonsToolBarManager::MenuItemAllowed( sal_uInt16 nId ) const
 void AddonsToolBarManager::RefreshImages()
 {
     bool  bBigImages( SvtMiscOptions().AreCurrentSymbolsLarge() );
-    for ( ToolBox::ImplToolItems::size_type nPos = 0; nPos < m_pToolBar->GetItemCount(); nPos++ )
+    for ( sal_uInt16 nPos = 0; nPos < m_pToolBar->GetItemCount(); nPos++ )
     {
         sal_uInt16 nId( m_pToolBar->GetItemId( nPos ) );
 
@@ -189,7 +188,7 @@ void AddonsToolBarManager::RefreshImages()
             );
         }
     }
-    m_pToolBar->SetToolboxButtonSize( bBigImages ? ToolBoxButtonSize::Large : ToolBoxButtonSize::Small );
+    m_pToolBar->SetToolboxButtonSize( bBigImages ? TOOLBOX_BUTTONSIZE_LARGE : TOOLBOX_BUTTONSIZE_SMALL );
     ::Size aSize = m_pToolBar->CalcWindowSizePixel();
     m_pToolBar->SetOutputSizePixel( aSize );
 }
@@ -237,9 +236,9 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
 
         if ( IsCorrectContext( aModuleIdentifier, aContext ))
         {
-            if ( aURL == "private:separator" ) // toolbox item separator
+            if ( aURL == TOOLBOXITEM_SEPARATOR_STR )
             {
-                ToolBox::ImplToolItems::size_type nCount = m_pToolBar->GetItemCount();
+                sal_uInt16 nCount = m_pToolBar->GetItemCount();
                 if ( nCount > 0 && ( m_pToolBar->GetItemType( nCount-1 ) != ToolBoxItemType::SEPARATOR ) && nElements > 0 )
                 {
                     nElements = 0;
@@ -248,7 +247,7 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
             }
             else
             {
-                ToolBox::ImplToolItems::size_type nCount = m_pToolBar->GetItemCount();
+                sal_uInt16 nCount = m_pToolBar->GetItemCount();
                 if ( bAppendSeparator && nCount > 0 && ( m_pToolBar->GetItemType( nCount-1 ) != ToolBoxItemType::SEPARATOR ))
                 {
                     // We have to append a separator first if the last item is not a separator
@@ -259,7 +258,7 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
 
                 m_pToolBar->InsertItem( nId, aTitle );
 
-                OUString aShortcut(vcl::CommandInfoProvider::GetCommandShortcut(aURL, m_xFrame));
+                OUString aShortcut(vcl::CommandInfoProvider::Instance().GetCommandShortcut(aURL, m_xFrame));
                 if (!aShortcut.isEmpty())
                     m_pToolBar->SetQuickHelpText(nId, aTitle + " (" + aShortcut + ")");
 
@@ -297,7 +296,7 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
                     aPropValue.Value    <<= xToolbarWindow;
                     aArgs[3] <<= aPropValue;
                     aPropValue.Name     = "ItemId";
-                    aPropValue.Value    <<= sal_Int32( nId );
+                    aPropValue.Value    = makeAny( sal_Int32( nId ));
                     aArgs[4] <<= aPropValue;
 
                     try
@@ -352,11 +351,11 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
                     Reference< XWindow > xWindow = xTbxController->createItemWindow( xToolbarWindow );
                     if ( xWindow.is() )
                     {
-                        VclPtr<vcl::Window> pItemWin = VCLUnoHelper::GetWindow( xWindow );
+                        vcl::Window* pItemWin = VCLUnoHelper::GetWindow( xWindow );
                         if ( pItemWin )
                         {
                             WindowType nType = pItemWin->GetType();
-                            if ( nType == WindowType::LISTBOX || nType == WindowType::MULTILISTBOX || nType == WindowType::COMBOBOX )
+                            if ( nType == WINDOW_LISTBOX || nType == WINDOW_MULTILISTBOX || nType == WINDOW_COMBOBOX )
                                 pItemWin->SetAccessibleName( m_pToolBar->GetItemText( nId ) );
                             m_pToolBar->SetItemWindow( nId, pItemWin );
                         }
@@ -385,7 +384,7 @@ void AddonsToolBarManager::FillToolbar( const Sequence< Sequence< PropertyValue 
     AddFrameActionListener();
 }
 
-IMPL_LINK_NOARG(AddonsToolBarManager, Click, ToolBox *, void)
+IMPL_LINK_NOARG_TYPED(AddonsToolBarManager, Click, ToolBox *, void)
 {
     if ( m_bDisposed )
         return;
@@ -401,7 +400,7 @@ IMPL_LINK_NOARG(AddonsToolBarManager, Click, ToolBox *, void)
     }
 }
 
-IMPL_LINK_NOARG(AddonsToolBarManager, DoubleClick, ToolBox *, void)
+IMPL_LINK_NOARG_TYPED(AddonsToolBarManager, DoubleClick, ToolBox *, void)
 {
     if ( m_bDisposed )
         return;
@@ -417,7 +416,7 @@ IMPL_LINK_NOARG(AddonsToolBarManager, DoubleClick, ToolBox *, void)
     }
 }
 
-IMPL_LINK_NOARG(AddonsToolBarManager, Select, ToolBox *, void)
+IMPL_LINK_NOARG_TYPED(AddonsToolBarManager, Select, ToolBox *, void)
 {
     if ( m_bDisposed )
         return;
@@ -434,7 +433,7 @@ IMPL_LINK_NOARG(AddonsToolBarManager, Select, ToolBox *, void)
     }
 }
 
-IMPL_LINK( AddonsToolBarManager, StateChanged, StateChangedType const *, pStateChangedType, void )
+IMPL_LINK_TYPED( AddonsToolBarManager, StateChanged, StateChangedType const *, pStateChangedType, void )
 {
     if ( *pStateChangedType == StateChangedType::ControlBackground )
     {
@@ -442,7 +441,7 @@ IMPL_LINK( AddonsToolBarManager, StateChanged, StateChangedType const *, pStateC
     }
 }
 
-IMPL_LINK( AddonsToolBarManager, DataChanged, DataChangedEvent const *, pDataChangedEvent, void )
+IMPL_LINK_TYPED( AddonsToolBarManager, DataChanged, DataChangedEvent const *, pDataChangedEvent, void )
 {
     if ((( pDataChangedEvent->GetType() == DataChangedEventType::SETTINGS )   ||
         (  pDataChangedEvent->GetType() == DataChangedEventType::DISPLAY  ))  &&
@@ -451,7 +450,7 @@ IMPL_LINK( AddonsToolBarManager, DataChanged, DataChangedEvent const *, pDataCha
         CheckAndUpdateImages();
     }
 
-    for ( ToolBox::ImplToolItems::size_type nPos = 0; nPos < m_pToolBar->GetItemCount(); ++nPos )
+    for ( sal_uInt16 nPos = 0; nPos < m_pToolBar->GetItemCount(); ++nPos )
     {
         const sal_uInt16 nId = m_pToolBar->GetItemId(nPos);
         vcl::Window* pWindow = m_pToolBar->GetItemWindow( nId );

@@ -58,7 +58,7 @@ CFilePickerState::~CFilePickerState( )
 
 
 CNonExecuteFilePickerState::CNonExecuteFilePickerState( ) :
-    m_FirstControlCommand( nullptr )
+    m_FirstControlCommand( NULL )
 {
 }
 
@@ -118,7 +118,7 @@ Any SAL_CALL CNonExecuteFilePickerState::getValue( sal_Int16 aControlId, sal_Int
 }
 
 
-void SAL_CALL CNonExecuteFilePickerState::enableControl( sal_Int16 aControlId, bool bEnable )
+void SAL_CALL CNonExecuteFilePickerState::enableControl( sal_Int16 aControlId, sal_Bool bEnable )
 {
     CEnableControlCommand* enable_command = new CEnableControlCommand(
         aControlId, bEnable );
@@ -281,7 +281,7 @@ void SAL_CALL CNonExecuteFilePickerState::reset( )
         currentCommand = nextCommand;
     }
 
-    m_FirstControlCommand = nullptr;
+    m_FirstControlCommand = NULL;
 }
 
 
@@ -300,7 +300,7 @@ void SAL_CALL CNonExecuteFilePickerState::addControlCommand( CControlCommand* aC
 {
     OSL_ASSERT( aControlCommand );
 
-    if ( nullptr == m_FirstControlCommand )
+    if ( NULL == m_FirstControlCommand )
     {
         m_FirstControlCommand = aControlCommand;
     }
@@ -308,7 +308,7 @@ void SAL_CALL CNonExecuteFilePickerState::addControlCommand( CControlCommand* aC
     {
         CControlCommand* pNextControlCommand = m_FirstControlCommand;
 
-        while ( pNextControlCommand->getNextCommand( ) != nullptr )
+        while ( pNextControlCommand->getNextCommand( ) != NULL )
             pNextControlCommand = pNextControlCommand->getNextCommand( );
 
         pNextControlCommand->setNextCommand( aControlCommand );
@@ -397,7 +397,7 @@ Any SAL_CALL CExecuteFilePickerState::getValue( sal_Int16 aControlId, sal_Int16 
 }
 
 
-void SAL_CALL CExecuteFilePickerState::enableControl( sal_Int16 aControlId, bool bEnable )
+void SAL_CALL CExecuteFilePickerState::enableControl( sal_Int16 aControlId, sal_Bool bEnable )
 {
     HWND hwndCtrl = GetHwndDlgItem( aControlId );
 
@@ -420,7 +420,7 @@ void SAL_CALL CExecuteFilePickerState::setLabel( sal_Int16 aControlId, const OUS
 
     // somewhat risky because we don't know if OUString
     // has a terminating '\0'
-    SetWindowTextW( hwndCtrl, reinterpret_cast<PCWSTR>(aWinLabel.getStr( )) );
+    SetWindowText( hwndCtrl, reinterpret_cast<LPCTSTR>(aWinLabel.getStr( )) );
 }
 
 
@@ -434,7 +434,7 @@ OUString SAL_CALL CExecuteFilePickerState::getLabel( sal_Int16 aControlId )
         hwndCtrl = GetListboxLabelItem( aControlId );
 
     sal_Unicode aLabel[MAX_LABEL];
-    int nRet = GetWindowTextW( hwndCtrl, reinterpret_cast<PWSTR>(aLabel), MAX_LABEL );
+    int nRet = GetWindowText( hwndCtrl, reinterpret_cast<LPTSTR>(aLabel), MAX_LABEL );
 
     OUString ctrlLabel;
     if ( nRet )
@@ -568,7 +568,7 @@ void SAL_CALL CExecuteFilePickerState::setHwnd( HWND hwndDlg )
 }
 
 
-inline bool SAL_CALL CExecuteFilePickerState::IsListboxControl( HWND hwndControl )
+inline sal_Bool SAL_CALL CExecuteFilePickerState::IsListboxControl( HWND hwndControl ) const
 {
     OSL_PRECOND( IsWindow( hwndControl ), "invalid parameter" );
 
@@ -584,7 +584,7 @@ inline bool SAL_CALL CExecuteFilePickerState::IsListboxControl( HWND hwndControl
 // is the id of the listbox + 100
 
 
-inline sal_Int16 SAL_CALL CExecuteFilePickerState::ListboxIdToListboxLabelId( sal_Int16 aListboxId )
+inline sal_Int16 SAL_CALL CExecuteFilePickerState::ListboxIdToListboxLabelId( sal_Int16 aListboxId ) const
 {
     return ( aListboxId + LISTBOX_LABEL_OFFSET );
 }
@@ -601,7 +601,7 @@ inline HWND SAL_CALL CExecuteFilePickerState::GetListboxLabelItem( sal_Int16 aCo
 }
 
 
-HWND SAL_CALL CExecuteFilePickerState::GetHwndDlgItem( sal_Int16 aControlId, bool bIncludeStdCtrls ) const
+HWND SAL_CALL CExecuteFilePickerState::GetHwndDlgItem( sal_Int16 aControlId, sal_Bool bIncludeStdCtrls ) const
 {
     OSL_ENSURE( IsWindow( m_hwndDlg ), "no valid parent window set before" );
 

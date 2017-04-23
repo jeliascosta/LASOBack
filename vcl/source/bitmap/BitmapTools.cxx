@@ -21,10 +21,6 @@
 
 #include <com/sun/star/rendering/XIntegerReadOnlyBitmap.hpp>
 
-#include <tools/resmgr.hxx>
-#include <tools/rc.h>
-#include <vcl/svapp.hxx>
-
 using namespace css;
 
 using drawinglayer::primitive2d::Primitive2DSequence;
@@ -33,41 +29,14 @@ using drawinglayer::primitive2d::Primitive2DReference;
 namespace vcl
 {
 
-namespace bitmap
-{
-
-BitmapEx loadFromName(const OUString& rFileName, const ImageLoadFlags eFlags)
-{
-    BitmapEx aBitmapEx;
-
-    OUString aIconTheme = Application::GetSettings().GetStyleSettings().DetermineIconTheme();
-
-    ImageTree::get().loadImage(rFileName, aIconTheme, aBitmapEx, true, eFlags);
-
-    return aBitmapEx;
-}
-
-BitmapEx loadFromResource(const ResId& rResId, const ImageLoadFlags eFlags)
-{
-    ResMgr* pResMgr = nullptr;
-
-    ResMgr::GetResourceSkipHeader(rResId.SetRT( RSC_BITMAP ), &pResMgr);
-    pResMgr->ReadLong();
-    pResMgr->ReadLong();
-
-    const OUString aFileName(pResMgr->ReadString());
-
-    return loadFromName(aFileName, eFlags);
-}
-
-void loadFromSvg(SvStream& rStream, const OUString& sPath, BitmapEx& rBitmapEx, double fScalingFactor)
+void BitmapTools::loadFromSvg(SvStream& rStream, const OUString& sPath, BitmapEx& rBitmapEx, double fScalingFactor)
 {
     uno::Reference<uno::XComponentContext> xContext(comphelper::getProcessComponentContext());
     const uno::Reference<graphic::XSvgParser> xSvgParser = graphic::SvgTools::create(xContext);
 
-    std::size_t nSize = rStream.remainingSize();
+    sal_Size nSize = rStream.remainingSize();
     std::vector<sal_Int8> aBuffer(nSize + 1);
-    rStream.ReadBytes(aBuffer.data(), nSize);
+    rStream.Read(aBuffer.data(), nSize);
     aBuffer[nSize] = 0;
 
     uno::Sequence<sal_Int8> aData(aBuffer.data(), nSize + 1);
@@ -82,7 +51,7 @@ void loadFromSvg(SvStream& rStream, const OUString& sPath, BitmapEx& rBitmapEx, 
         const sal_Int32 nCount(aPrimitiveSequence.getLength());
         geometry::RealRectangle2D aRealRect;
         basegfx::B2DRange aRange;
-        for (sal_Int32 a = 0; a < nCount; ++a)
+        for (sal_Int32 a = 0L; a < nCount; ++a)
         {
             const Primitive2DReference xReference(aPrimitiveSequence[a]);
 
@@ -98,7 +67,7 @@ void loadFromSvg(SvStream& rStream, const OUString& sPath, BitmapEx& rBitmapEx, 
         aRealRect.X2 = aRange.getMaxX() - aRange.getMinX();
         aRealRect.Y2 = aRange.getMaxY() - aRange.getMinY();
 
-        double nDPI = 96 * fScalingFactor;
+        double nDPI = 90 * fScalingFactor;
 
         const css::uno::Reference<css::graphic::XPrimitive2DRenderer> xPrimitive2DRenderer = css::graphic::Primitive2DTools::create(xContext);
         const css::uno::Reference<css::rendering::XBitmap> xBitmap(
@@ -116,6 +85,6 @@ void loadFromSvg(SvStream& rStream, const OUString& sPath, BitmapEx& rBitmapEx, 
     }
 }
 
-}} // end vcl::bitmap
+}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

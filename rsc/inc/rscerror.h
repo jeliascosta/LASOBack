@@ -93,11 +93,11 @@ public:
     ERRTYPE( sal_uInt32 nErr )   { nError = nErr; }
     ERRTYPE( const ERRTYPE & ) = default;
     ERRTYPE& operator = ( const ERRTYPE & rError );
-    sal_uInt32 GetError() const { return nError; }
+    operator sal_uInt32() const { return nError; }
     bool IsError() const     { return nError <= ERR_ERROREND; }
     bool IsOk() const        { return !IsError(); }
     bool IsWarning() const   { return nError >= ERR_WARNINGSTART && nError <= ERR_WARNINGEND;}
-    void Clear()             { nError = ERR_OK; }
+    void Clear(){ nError = ERR_OK; }
 };
 
 // Rsc Error
@@ -111,7 +111,7 @@ enum RscVerbosity
     RscVerbosityVerbose = 2
 };
 
-class RscError final
+class RscError
 {
     FILE *  fListing;
     RscVerbosity m_verbosity;
@@ -122,11 +122,12 @@ class RscError final
     void ErrorFormat( const ERRTYPE& rError, RscTop * pClass,
                       const RscId & aId );
 public:
+    virtual ~RscError() {}
 
-    sal_uInt32  nErrors;    // Number of errors
+    sal_uInt32  nErrors;// Anzahl der Fehler
                     RscError( RscVerbosity _verbosity )
                         {
-                            fListing = nullptr;
+                            fListing = NULL;
                             nErrors = 0;
                             m_verbosity = _verbosity;
                         }
@@ -137,11 +138,11 @@ public:
     static void     StdErr( const char * );
     void            LstOut( const char * );
     void            Error( const ERRTYPE& rError, RscTop* pClass, const RscId &aId,
-                           const char * pMessage = nullptr );
-    // The error should only happen in compile mode,
-    // the program will terminated with exit()
+                           const char * pMessage = NULL );
+    // Dieser Fehler sollte nur im Compilermodus auftreten,
+    // das Programm wird mit exit() verlassen
     void            FatalError( const ERRTYPE& rError, const RscId &aId,
-                                const char * pMessage = nullptr );
+                                const char * pMessage = NULL );
 };
 
 #endif // INCLUDED_RSC_INC_RSCERROR_H

@@ -107,7 +107,7 @@ void OColumnPeer::setConnection(const Reference< XConnection>& _xCon)
         pFieldControl->setConnection(_xCon);
 }
 
-void OColumnPeer::setProperty( const OUString& _rPropertyName, const Any& Value)
+void OColumnPeer::setProperty( const OUString& _rPropertyName, const Any& Value) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -125,7 +125,7 @@ void OColumnPeer::setProperty( const OUString& _rPropertyName, const Any& Value)
         VCLXWindow::setProperty(_rPropertyName,Value);
 }
 
-Any OColumnPeer::getProperty( const OUString& _rPropertyName )
+Any OColumnPeer::getProperty( const OUString& _rPropertyName ) throw( RuntimeException, std::exception )
 {
     Any aProp;
     VclPtr< OFieldDescControl > pFieldControl = GetAs< OFieldDescControl >();

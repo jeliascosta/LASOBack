@@ -31,10 +31,10 @@ bool GetMathTypeVersion( SotStorage* pStor, sal_uInt8 &nVersion )
 
     tools::SvRef<SotStorageStream> xSrc = pStor->OpenSotStream(
         "Equation Native",
-        StreamMode::STD_READ);
-    if ( (!xSrc.is()) || (SVSTREAM_OK != xSrc->GetError()))
+        STREAM_STD_READ | StreamMode::NOCREATE);
+    if ( (!xSrc.Is()) || (SVSTREAM_OK != xSrc->GetError()))
         return bSuccess;
-    SotStorageStream *pS = xSrc.get();
+    SotStorageStream *pS = &xSrc;
     pS->SetEndian( SvStreamEndian::LITTLE );
 
     EQNOLEFILEHDR aHdr;

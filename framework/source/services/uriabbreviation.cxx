@@ -48,14 +48,14 @@ UriAbbreviation::UriAbbreviation(css::uno::Reference< css::uno::XComponentContex
 }
 
 // css::util::XStringAbbreviation:
-OUString SAL_CALL UriAbbreviation::abbreviateString(const css::uno::Reference< css::util::XStringWidth > & xStringWidth, ::sal_Int32 nWidth, const OUString & aString)
+OUString SAL_CALL UriAbbreviation::abbreviateString(const css::uno::Reference< css::util::XStringWidth > & xStringWidth, ::sal_Int32 nWidth, const OUString & aString) throw (css::uno::RuntimeException, std::exception)
 {
     OUString aResult( aString );
     if ( xStringWidth.is() )
     {
         // Use INetURLObject to abbreviate URLs
         INetURLObject aURL( aString );
-        aResult = aURL.getAbbreviated( xStringWidth, nWidth, INetURLObject::DecodeMechanism::Unambiguous );
+        aResult = aURL.getAbbreviated( xStringWidth, nWidth, INetURLObject::DECODE_UNAMBIGUOUS );
     }
 
     return aResult;

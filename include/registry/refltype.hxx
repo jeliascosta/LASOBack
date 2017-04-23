@@ -53,6 +53,9 @@ public:
     {
         m_value.aDouble = 0.0;
     }
+
+    /// Destructor
+    ~RTConstValue() {}
 };
 
 /** deprecated.

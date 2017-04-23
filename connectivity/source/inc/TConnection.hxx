@@ -33,24 +33,24 @@
 
 namespace connectivity
 {
-    typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XConnection,
-                                               css::sdbc::XWarningsSupplier,
-                                               css::lang::XServiceInfo,
-                                               css::lang::XUnoTunnel
+    typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XConnection,
+                                               ::com::sun::star::sdbc::XWarningsSupplier,
+                                               ::com::sun::star::lang::XServiceInfo,
+                                               ::com::sun::star::lang::XUnoTunnel
                                            > OMetaConnection_BASE;
 
     class OOO_DLLPUBLIC_DBTOOLS OMetaConnection : public OMetaConnection_BASE
     {
     protected:
         ::osl::Mutex                    m_aMutex;
-        css::uno::Sequence< css::beans::PropertyValue >
+        ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >
                                         m_aConnectionInfo;
         connectivity::OWeakRefArray     m_aStatements;  //  vector containing a list
                                                         //  of all the Statement objects
                                                         //  for this Connection
-        OUString                        m_sURL;
+        OUString                 m_sURL;
         rtl_TextEncoding                m_nTextEncoding; // the encoding which is used for all text conversions
-        css::uno::WeakReference< css::sdbc::XDatabaseMetaData >
+        ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XDatabaseMetaData >
                                         m_xMetaData;
         SharedResources                 m_aResources;
     public:
@@ -59,22 +59,22 @@ namespace connectivity
 
         OMetaConnection();
 
-        rtl_TextEncoding getTextEncoding() const { return m_nTextEncoding; }
+        inline rtl_TextEncoding getTextEncoding() const { return m_nTextEncoding; }
         const OUString&         getURL() const  { return m_sURL; }
-        void             setURL(const OUString& _rsUrl) { m_sURL = _rsUrl; }
-        void                    throwGenericSQLException( sal_uInt16 _nErrorResourceId,const css::uno::Reference< css::uno::XInterface>& _xContext  );
+        inline void             setURL(const OUString& _rsUrl) { m_sURL = _rsUrl; }
+        void                    throwGenericSQLException( sal_uInt16 _nErrorResourceId,const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface>& _xContext  );
         const SharedResources& getResources() const { return m_aResources;}
 
-        void setConnectionInfo(const css::uno::Sequence< css::beans::PropertyValue >& _aInfo) { m_aConnectionInfo = _aInfo; }
-        const css::uno::Sequence< css::beans::PropertyValue >&
+        inline void setConnectionInfo(const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& _aInfo) { m_aConnectionInfo = _aInfo; }
+        inline const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >&
             getConnectionInfo() const { return m_aConnectionInfo; }
 
         // OComponentHelper
         virtual void SAL_CALL disposing() override;
 
         //XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
-        static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+        virtual sal_Int64 SAL_CALL getSomething( const ::com::sun::star::uno::Sequence< sal_Int8 >& aIdentifier ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+        static ::com::sun::star::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
     };
 }
 #endif // INCLUDED_CONNECTIVITY_SOURCE_INC_TCONNECTION_HXX

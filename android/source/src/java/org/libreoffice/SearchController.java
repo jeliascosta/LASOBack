@@ -7,28 +7,28 @@ import android.widget.ImageButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class SearchController implements View.OnClickListener {
+public class SearchController implements View.OnClickListener {
     private LibreOfficeMainActivity mActivity;
 
-    private enum SearchDirection {
+    private enum SearchDriection {
         UP, DOWN
-    }
+    };
 
-    SearchController(LibreOfficeMainActivity activity) {
+    public SearchController(LibreOfficeMainActivity activity) {
         mActivity = activity;
 
-        activity.findViewById(R.id.button_search_up).setOnClickListener(this);
-        activity.findViewById(R.id.button_search_down).setOnClickListener(this);
+        ((ImageButton) activity.findViewById(R.id.button_search_up)).setOnClickListener(this);
+        ((ImageButton) activity.findViewById(R.id.button_search_down)).setOnClickListener(this);
     }
 
-    private void search(String searchString, SearchDirection direction, float x, float y) {
+    private void search(String searchString, SearchDriection direction, float x, float y) {
         try {
             JSONObject rootJson = new JSONObject();
 
             addProperty(rootJson, "SearchItem.SearchString", "string", searchString);
-            addProperty(rootJson, "SearchItem.Backward", "boolean", direction == SearchDirection.DOWN ? "true" : "false");
-            addProperty(rootJson, "SearchItem.SearchStartPointX", "long", String.valueOf((long) UnitConverter.pixelToTwip(x, LOKitShell.getDpi(mActivity))));
-            addProperty(rootJson, "SearchItem.SearchStartPointY", "long", String.valueOf((long) UnitConverter.pixelToTwip(y, LOKitShell.getDpi(mActivity))));
+            addProperty(rootJson, "SearchItem.Backward", "boolean", direction == SearchDriection.DOWN ? "true" : "false");
+            addProperty(rootJson, "SearchItem.SearchStartPointX", "long", String.valueOf((long) UnitConverter.pixelToTwip(x, LOKitShell.getDpi())));
+            addProperty(rootJson, "SearchItem.SearchStartPointY", "long", String.valueOf((long) UnitConverter.pixelToTwip(y, LOKitShell.getDpi())));
             addProperty(rootJson, "SearchItem.Command", "long", String.valueOf(0)); // search all == 1
 
             LOKitShell.sendEvent(new LOEvent(LOEvent.UNO_COMMAND, ".uno:ExecuteSearch", rootJson.toString()));
@@ -49,13 +49,13 @@ class SearchController implements View.OnClickListener {
     public void onClick(View view) {
         ImageButton button = (ImageButton) view;
 
-        SearchDirection direction = SearchDirection.DOWN;
+        SearchDriection direction = SearchDriection.DOWN;
         switch(button.getId()) {
             case R.id.button_search_down:
-                direction = SearchDirection.DOWN;
+                direction = SearchDriection.DOWN;
                 break;
             case R.id.button_search_up:
-                direction = SearchDirection.UP;
+                direction = SearchDriection.UP;
                 break;
             default:
                 break;

@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/i18n/ScriptType.hpp>
 #include <vcl/outdev.hxx>
 #include <IDocumentSettingAccess.hxx>
 
@@ -162,8 +163,8 @@ static bool lcl_CheckKashidaPositions( SwScriptInfo& rSI, SwTextSizeInfo& rInf, 
             }
             else
             {
-                ComplexTextLayoutFlags nOldLayout = rInf.GetOut()->GetLayoutMode();
-                rInf.GetOut()->SetLayoutMode ( nOldLayout | ComplexTextLayoutFlags::BiDiRtl );
+                ComplexTextLayoutMode nOldLayout = rInf.GetOut()->GetLayoutMode();
+                rInf.GetOut()->SetLayoutMode ( nOldLayout | TEXT_LAYOUT_BIDI_RTL );
                 nKashidasDropped = rInf.GetOut()->ValidateKashidas ( rInf.GetText(), nIdx, nNext - nIdx,
                                                nKashidasInAttr, pKashidaPos.get() + nKashidaIdx,
                                                pKashidaPosDropped.get() );
@@ -246,7 +247,7 @@ static bool lcl_CheckKashidaWidth ( SwScriptInfo& rSI, SwTextSizeInfo& rInf, SwT
 void SwTextAdjuster::CalcNewBlock( SwLineLayout *pCurrent,
                                   const SwLinePortion *pStopAt, SwTwips nReal, bool bSkipKashida )
 {
-    OSL_ENSURE( GetInfo().IsMulti() || SvxAdjust::Block == GetAdjust(),
+    OSL_ENSURE( GetInfo().IsMulti() || SVX_ADJUST_BLOCK == GetAdjust(),
             "CalcNewBlock: Why?" );
     OSL_ENSURE( pCurrent->Height(), "SwTextAdjuster::CalcBlockAdjust: missing CalcLine()" );
 
@@ -395,7 +396,7 @@ SwTwips SwTextAdjuster::CalcKanaAdj( SwLineLayout* pCurrent )
     OSL_ENSURE( pCurrent->Height(), "SwTextAdjuster::CalcBlockAdjust: missing CalcLine()" );
     OSL_ENSURE( !pCurrent->GetpKanaComp(), "pKanaComp already exists!!" );
 
-    std::deque<sal_uInt16> *pNewKana = new std::deque<sal_uInt16>;
+    std::deque<sal_uInt16> *pNewKana = new std::deque<sal_uInt16>();
     pCurrent->SetKanaComp( pNewKana );
 
     const sal_uInt16 nNull = 0;
@@ -557,7 +558,7 @@ SwMarginPortion *SwTextAdjuster::CalcRightMargin( SwLineLayout *pCurrent,
         delete pFly;
     }
 
-    SwMarginPortion *pRight = new SwMarginPortion;
+    SwMarginPortion *pRight = new SwMarginPortion( 0 );
     pLast->Append( pRight );
 
     if( long( nPrtWidth )< nRealWidth )
@@ -602,7 +603,7 @@ void SwTextAdjuster::CalcFlyAdjust( SwLineLayout *pCurrent )
             // in tab compat mode we do not want to change tab portions
             // in non tab compat mode we do not want to change margins if we
             // found a multi portion with tabs
-            if( SvxAdjust::Right == GetAdjust() )
+            if( SVX_ADJUST_RIGHT == GetAdjust() )
                 static_cast<SwGluePortion*>(pPos)->MoveAllGlue( pGlue );
             else
             {
@@ -644,7 +645,7 @@ void SwTextAdjuster::CalcFlyAdjust( SwLineLayout *pCurrent )
         pPos = pPos->GetPortion();
      }
 
-     if( ! bTabCompat && ! bMultiTab && SvxAdjust::Right == GetAdjust() )
+     if( ! bTabCompat && ! bMultiTab && SVX_ADJUST_RIGHT == GetAdjust() )
         // portions are moved to the right if possible
         pLeft->AdjustRight( pCurrent );
 }
@@ -659,14 +660,14 @@ void SwTextAdjuster::CalcAdjLine( SwLineLayout *pCurrent )
 
     switch( GetAdjust() )
     {
-        case SvxAdjust::Right:
-        case SvxAdjust::Center:
+        case SVX_ADJUST_RIGHT:
+        case SVX_ADJUST_CENTER:
         {
             CalcFlyAdjust( pCurrent );
             pPara->GetRepaint().SetOfst( 0 );
             break;
         }
-        case SvxAdjust::Block:
+        case SVX_ADJUST_BLOCK:
         {
             FormatBlock();
             break;
@@ -726,7 +727,7 @@ SwFlyPortion *SwTextAdjuster::CalcFlyPortion( const long nRealWidth,
 // CalcDropAdjust is called at the end by Format() if needed
 void SwTextAdjuster::CalcDropAdjust()
 {
-    OSL_ENSURE( 1<GetDropLines() && SvxAdjust::Left!=GetAdjust() && SvxAdjust::Block!=GetAdjust(),
+    OSL_ENSURE( 1<GetDropLines() && SVX_ADJUST_LEFT!=GetAdjust() && SVX_ADJUST_BLOCK!=GetAdjust(),
             "CalcDropAdjust: No reason for DropAdjustment." );
 
     const sal_uInt16 nLineNumber = GetLineNr();

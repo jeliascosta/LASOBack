@@ -41,12 +41,12 @@ public:
     {
         mxIndexAccess.set( mxTextTable->getColumns(), uno::UNO_QUERY );
     }
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return ( nIndex < mxIndexAccess->getCount() );
     }
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if( nIndex < mxIndexAccess->getCount() )
         {
@@ -56,30 +56,30 @@ public:
     }
 };
 
-SwVbaColumns::SwVbaColumns( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< text::XTextTable >& xTextTable, const uno::Reference< table::XTableColumns >& xTableColumns ) : SwVbaColumns_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( xTableColumns, uno::UNO_QUERY_THROW ) ), mxTextTable( xTextTable )
+SwVbaColumns::SwVbaColumns( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< text::XTextTable >& xTextTable, const uno::Reference< table::XTableColumns >& xTableColumns ) throw (uno::RuntimeException) : SwVbaColumns_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( xTableColumns, uno::UNO_QUERY_THROW ) ), mxTextTable( xTextTable )
 {
     mnStartColumnIndex = 0;
     SwVbaTableHelper aTableHelper( mxTextTable );
     mnEndColumnIndex = aTableHelper.getTabColumnsMaxCount( ) - 1;
 }
 
-SwVbaColumns::SwVbaColumns( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< text::XTextTable >& xTextTable, const uno::Reference< table::XTableColumns >& xTableColumns, sal_Int32 nStartCol, sal_Int32 nEndCol ) : SwVbaColumns_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( xTableColumns, uno::UNO_QUERY_THROW ) ), mxTextTable( xTextTable ), mnStartColumnIndex( nStartCol ), mnEndColumnIndex( nEndCol )
+SwVbaColumns::SwVbaColumns( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext > & xContext, const uno::Reference< text::XTextTable >& xTextTable, const uno::Reference< table::XTableColumns >& xTableColumns, sal_Int32 nStartCol, sal_Int32 nEndCol ) throw (uno::RuntimeException) : SwVbaColumns_BASE( xParent, xContext, uno::Reference< container::XIndexAccess >( xTableColumns, uno::UNO_QUERY_THROW ) ), mxTextTable( xTextTable ), mnStartColumnIndex( nStartCol ), mnEndColumnIndex( nEndCol )
 {
     if( mnEndColumnIndex < mnStartColumnIndex )
         throw uno::RuntimeException();
 }
 
-uno::Reference< word::XColumn > SwVbaColumns::getColumnAtIndex( sal_Int32 index )
+uno::Reference< word::XColumn > SwVbaColumns::getColumnAtIndex( sal_Int32 index ) throw (uno::RuntimeException)
 {
     return uno::Reference< word::XColumn >( new SwVbaColumn( this, mxContext, mxTextTable, index ) );
 }
 
-::sal_Int32 SAL_CALL SwVbaColumns::getWidth()
+::sal_Int32 SAL_CALL SwVbaColumns::getWidth() throw (uno::RuntimeException, std::exception)
 {
     return getColumnAtIndex( mnStartColumnIndex )->getWidth();
 }
 
-void SAL_CALL SwVbaColumns::setWidth( ::sal_Int32 _width )
+void SAL_CALL SwVbaColumns::setWidth( ::sal_Int32 _width ) throw (uno::RuntimeException, std::exception)
 {
     for( sal_Int32 index = mnStartColumnIndex; index <= mnEndColumnIndex; index++ )
     {
@@ -87,17 +87,17 @@ void SAL_CALL SwVbaColumns::setWidth( ::sal_Int32 _width )
     }
 }
 
-void SAL_CALL SwVbaColumns::Select(  )
+void SAL_CALL SwVbaColumns::Select(  ) throw (uno::RuntimeException, std::exception)
 {
     SwVbaColumn::SelectColumn( getCurrentWordDoc(mxContext), mxTextTable, mnStartColumnIndex, mnEndColumnIndex );
 }
 
-::sal_Int32 SAL_CALL SwVbaColumns::getCount()
+::sal_Int32 SAL_CALL SwVbaColumns::getCount() throw (uno::RuntimeException)
 {
     return ( mnEndColumnIndex - mnStartColumnIndex + 1 );
 }
 
-uno::Any SAL_CALL SwVbaColumns::Item( const uno::Any& Index1, const uno::Any& /*not processed in this base class*/ )
+uno::Any SAL_CALL SwVbaColumns::Item( const uno::Any& Index1, const uno::Any& /*not processed in this base class*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
 {
     sal_Int32 nIndex = 0;
     if( ( Index1 >>= nIndex ) )
@@ -113,12 +113,12 @@ uno::Any SAL_CALL SwVbaColumns::Item( const uno::Any& Index1, const uno::Any& /*
 
 // XEnumerationAccess
 uno::Type
-SwVbaColumns::getElementType()
+SwVbaColumns::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<word::XColumn>::get();
 }
 uno::Reference< container::XEnumeration >
-SwVbaColumns::createEnumeration()
+SwVbaColumns::createEnumeration() throw (uno::RuntimeException)
 {
     return new ColumnsEnumWrapper( this, mxContext, mxTextTable );
 }

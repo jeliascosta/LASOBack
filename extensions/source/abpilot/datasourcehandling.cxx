@@ -63,7 +63,7 @@ OUString lcl_getOwnURL(SfxObjectShell* pObjectShell)
         return aRet;
 
     const INetURLObject& rURLObject = pObjectShell->GetMedium()->GetURLObject();
-    aRet = rURLObject.GetMainURL(INetURLObject::DecodeMechanism::WithCharset);
+    aRet = rURLObject.GetMainURL(INetURLObject::DECODE_WITH_CHARSET);
     return aRet;
 }
 
@@ -328,28 +328,27 @@ namespace abp
         *this = _rSource;
     }
 
+
     ODataSource& ODataSource::operator=( const ODataSource& _rSource )
     {
         if( this != &_rSource )
         {
-            m_pImpl.reset( new ODataSourceImpl( *_rSource.m_pImpl ) );
+            delete m_pImpl;
+            m_pImpl = new ODataSourceImpl( *_rSource.m_pImpl );
         }
         return *this;
     }
 
-    ODataSource& ODataSource::operator=( ODataSource&& _rSource )
-    {
-        m_pImpl = std::move(_rSource.m_pImpl);
-        return *this;
-    }
 
     ODataSource::ODataSource( const Reference< XComponentContext >& _rxORB )
         :m_pImpl(new ODataSourceImpl(_rxORB))
     {
     }
 
+
     ODataSource::~ODataSource( )
     {
+        delete m_pImpl;
     }
 
     void ODataSource::store(const AddressSettings& rSettings)
@@ -369,7 +368,7 @@ namespace abp
                 SfxViewFrame* pFrame = SfxViewFrame::Current();
                 SfxObjectShell* pObjectShell = pFrame ? pFrame->GetObjectShell() : nullptr;
                 OUString aOwnURL = lcl_getOwnURL(pObjectShell);
-                if (aOwnURL.isEmpty() || !rSettings.bEmbedDataSource || !pObjectShell)
+                if (aOwnURL.isEmpty() || !rSettings.bEmbedDataSource)
                 {
                     // Cannot or should not embed.
                     xStorable->storeAsURL(m_pImpl->sName,Sequence<PropertyValue>());
@@ -379,7 +378,7 @@ namespace abp
                     // Embed.
                     OUString aStreamRelPath = "EmbeddedDatabase";
                     OUString sTmpName = "vnd.sun.star.pkg://";
-                    sTmpName += INetURLObject::encode(aOwnURL, INetURLObject::PART_AUTHORITY, INetURLObject::EncodeMechanism::All);
+                    sTmpName += INetURLObject::encode(aOwnURL, INetURLObject::PART_AUTHORITY, INetURLObject::ENCODE_ALL);
                     sTmpName += "/" + aStreamRelPath;
                     uno::Reference<embed::XStorage> xStorage = pObjectShell->GetStorage();
                     uno::Sequence<beans::PropertyValue> aSequence = comphelper::InitPropertySequence(

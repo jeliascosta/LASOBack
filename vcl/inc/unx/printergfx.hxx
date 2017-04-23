@@ -20,14 +20,13 @@
 #ifndef INCLUDED_VCL_INC_GENERIC_PRINTERGFX_HXX
 #define INCLUDED_VCL_INC_GENERIC_PRINTERGFX_HXX
 
-#include <unx/helper.hxx>
+#include <vcl/helper.hxx>
 #include "sallayout.hxx"
 #include "osl/file.hxx"
 #include "tools/gen.hxx"
 #include "vclpluginapi.h"
 
 #include <list>
-#include <vector>
 
 namespace psp {
 
@@ -71,6 +70,8 @@ public:
             mnBlue  ((nRGB & 0x000000ff)      ),
             meColorspace (eRGB)
     {}
+    ~PrinterColor ()
+    {}
 
     bool        Is () const
     { return meColorspace != eInvalid; }
@@ -90,6 +91,15 @@ public:
     }
     bool        operator!= (const PrinterColor& aColor) const
     { return ! (aColor==*this); }
+    PrinterColor&   operator= (const PrinterColor& aColor)
+    {
+        meColorspace = aColor.meColorspace;
+        mnRed   = aColor.mnRed;
+        mnGreen = aColor.mnGreen;
+        mnBlue  = aColor.mnBlue;
+
+        return *this;
+    }
 
     PrinterColor&   operator= (sal_uInt32 nRGB)
     {
@@ -102,6 +112,7 @@ public:
     }
 };
 
+class Font2;
 class GlyphSet;
 class PrinterJob;
 class PrintFontManager;
@@ -128,6 +139,7 @@ public:
 };
 
 enum class ImageType {
+    Invalid = 0,
     TrueColorImage,
     MonochromeImage,
     PaletteImage,
@@ -151,6 +163,8 @@ struct GraphicsStatus
 
     GraphicsStatus();
 };
+
+class Font2;
 
 class VCL_DLLPUBLIC PrinterGfx
 {
@@ -178,27 +192,31 @@ private:
        glyph in one of the subfonts, the mapping from unicode to the
        glyph has to be remembered */
 
+    std::list< sal_Int32 > maPS1Font;
     std::list< GlyphSet > maPS3Font;
 
     sal_Int32       mnFontID;
+    sal_Int32       mnFallbackID;
     sal_Int32       mnTextAngle;
-    bool            mbTextVertical;
+    bool           mbTextVertical;
     PrintFontManager& mrFontMgr;
 
     /* bitmap drawing implementation */
 
-    void    DrawPS1GrayImage      (const PrinterBmp& rBitmap, const tools::Rectangle& rArea);
-    void    writePS2ImageHeader   (const tools::Rectangle& rArea, psp::ImageType nType);
+    bool    mbCompressBmp;
+
+    void    DrawPS1GrayImage      (const PrinterBmp& rBitmap, const Rectangle& rArea);
+    void    writePS2ImageHeader   (const Rectangle& rArea, psp::ImageType nType);
     void    writePS2Colorspace    (const PrinterBmp& rBitmap, psp::ImageType nType);
-    void    DrawPS2GrayImage      (const PrinterBmp& rBitmap, const tools::Rectangle& rArea);
-    void    DrawPS2PaletteImage   (const PrinterBmp& rBitmap, const tools::Rectangle& rArea);
-    void    DrawPS2TrueColorImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea);
-    void    DrawPS2MonoImage      (const PrinterBmp& rBitmap, const tools::Rectangle& rArea);
+    void    DrawPS2GrayImage      (const PrinterBmp& rBitmap, const Rectangle& rArea);
+    void    DrawPS2PaletteImage   (const PrinterBmp& rBitmap, const Rectangle& rArea);
+    void    DrawPS2TrueColorImage (const PrinterBmp& rBitmap, const Rectangle& rArea);
+    void    DrawPS2MonoImage      (const PrinterBmp& rBitmap, const Rectangle& rArea);
 
     /* clip region */
 
-    std::list< tools::Rectangle > maClipRegion;
-    bool JoinVerticalClipRectangles( std::list< tools::Rectangle >::iterator& it,
+    std::list< Rectangle > maClipRegion;
+    bool JoinVerticalClipRectangles( std::list< Rectangle >::iterator& it,
                                          Point& aOldPoint, sal_Int32& nColumn );
 
     /* color settings */
@@ -211,6 +229,14 @@ private:
     std::list< GraphicsStatus >     maGraphicsStack;
     GraphicsStatus& currentState() { return maGraphicsStack.front(); }
 
+    /* font */
+    friend class Font2;
+    int             getCharWidth (bool b_vert, sal_Unicode n_char,
+                                  CharacterMetric *p_bbox);
+    fontID          getCharMetric (const Font2 &rFont, sal_Unicode n_char,
+                                   CharacterMetric *p_bbox);
+    fontID          getFallbackID () const { return mnFallbackID; }
+
 public:
     /* graphics status update */
     void            PSSetColor ();
@@ -221,8 +247,9 @@ public:
     void            PSSetColor (const PrinterColor& rColor)
     { maVirtualStatus.maColor = rColor; }
 
+    void            PSUploadPS1Font (sal_Int32 nFontID);
     void            PSSetFont (const OString& rName,
-                               rtl_TextEncoding nEncoding)
+                               rtl_TextEncoding nEncoding = RTL_TEXTENCODING_DONTKNOW)
     { maVirtualStatus.maFont = rName; maVirtualStatus.maEncoding = nEncoding; }
 
     /* graphics status stack */
@@ -248,15 +275,31 @@ public:
     void            PSLineTo(const Point& rPoint );
     void            PSPointOp (const Point& rPoint, const sal_Char* pOperator);
     void            PSHexString (const unsigned char* pString, sal_Int16 nLen);
-    void            PSShowGlyph (const unsigned char nGlyphId);
+    void            PSDeltaArray (const sal_Int32 *pArray, sal_Int16 nEntries);
+    void            PSShowText (const unsigned char* pString,
+                                sal_Int16 nGlyphs, sal_Int16 nBytes,
+                                const sal_Int32* pDeltaArray = nullptr);
+    void            PSComment (const sal_Char* pComment );
+    void            LicenseWarning (const Point& rPoint, const sal_Unicode* pStr,
+                                    sal_Int16 nLen, const sal_Int32* pDeltaArray);
 
     void            OnEndJob ();
     void            writeResources( osl::File* pFile, std::list< OString >& rSuppliedFonts );
     PrintFontManager& GetFontMgr () { return mrFontMgr; }
 
-    void            drawGlyph(const Point& rPoint,
-                              sal_GlyphId aGlyphId,
-                              sal_Int32 nDelta);
+    void            drawVerticalizedText (const Point& rPoint,
+                                          const sal_Unicode* pStr,
+                                          sal_Int16 nLen,
+                                          const sal_Int32* pDeltaArray );
+    void            drawText (const Point& rPoint,
+                              const sal_Unicode* pStr, sal_Int16 nLen,
+                              const sal_Int32* pDeltaArray = nullptr);
+
+    void            drawGlyphs( const Point& rPoint,
+                                sal_GlyphId* pGlyphIds,
+                                sal_Unicode* pUnicodes,
+                                sal_Int16 nLen,
+                                sal_Int32* pDeltaArray );
 public:
     PrinterGfx();
     ~PrinterGfx();
@@ -285,7 +328,7 @@ public:
     void            DrawPixel (const Point& rPoint)
     { DrawPixel (rPoint, maLineColor); }
     void            DrawLine  (const Point& rFrom, const Point& rTo);
-    void            DrawRect  (const tools::Rectangle& rRectangle);
+    void            DrawRect  (const Rectangle& rRectangle);
     void            DrawPolyLine (sal_uInt32 nPoints, const Point* pPath );
     void            DrawPolygon  (sal_uInt32 nPoints, const Point* pPath);
     void            DrawPolyPolygon (sal_uInt32 nPoly,
@@ -293,24 +336,24 @@ public:
                                      const Point** pPolygonList);
     void            DrawPolyLineBezier (sal_uInt32 nPoints,
                                      const Point* pPath,
-                                     const PolyFlags* pFlgAry );
+                                     const sal_uInt8* pFlgAry );
     void            DrawPolygonBezier  (sal_uInt32 nPoints,
                                      const Point* pPath,
-                                     const PolyFlags* pFlgAry);
+                                     const sal_uInt8* pFlgAry);
     void            DrawPolyPolygonBezier  (sal_uInt32 nPoly,
                                      const sal_uInt32* pPoints,
                                      const Point* const* pPtAry,
-                                     const PolyFlags* const* pFlgAry);
+                                     const sal_uInt8* const* pFlgAry);
 
     // eps
-    bool        DrawEPS ( const tools::Rectangle& rBoundingBox, void* pPtr, sal_uInt32 nSize);
+    bool        DrawEPS ( const Rectangle& rBoundingBox, void* pPtr, sal_uInt32 nSize);
 
     // image drawing
-    void            DrawBitmap (const tools::Rectangle& rDest, const tools::Rectangle& rSrc,
+    void            DrawBitmap (const Rectangle& rDest, const Rectangle& rSrc,
                                 const PrinterBmp& rBitmap);
 
     // font and text handling
-    void            SetFont (
+    sal_uInt16      SetFont (
                              sal_Int32 nFontID,
                              sal_Int32 nPointHeight,
                              sal_Int32 nPointWidth,
@@ -319,6 +362,8 @@ public:
                              bool bArtItalic,
                              bool bArtBold
                              );
+    sal_Int32       GetFontAngle () const
+    { return mnTextAngle; }
     sal_Int32       GetFontID () const
     { return mnFontID; }
     bool            GetFontVertical() const
@@ -331,12 +376,19 @@ public:
     { return maVirtualStatus.mbArtItalic; }
     bool            GetArtificialBold() const
     { return maVirtualStatus.mbArtBold; }
+    void            DrawText (const Point& rPoint,
+                              const sal_Unicode* pStr, sal_Int16 nLen,
+                              const sal_Int32* pDeltaArray = nullptr);
     void            SetTextColor (PrinterColor& rTextColor)
     { maTextColor = rTextColor; }
-
-    void            DrawGlyph(const Point& rPoint,
-                              const GlyphItem& rGlyph,
-                              sal_Int32 nDelta);
+    sal_Int32       GetCharWidth (sal_uInt16 nFrom, sal_uInt16 nTo,
+                                  long *pWidthArray);
+    // for CTL
+    void            DrawGlyphs( const Point& rPoint,
+                                sal_GlyphId* pGlyphIds,
+                                sal_Unicode* pUnicodes,
+                                sal_Int16 nLen,
+                                sal_Int32* pDeltaArray );
 
 };
 

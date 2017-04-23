@@ -63,7 +63,7 @@ class ScPageBreakData
 private:
     size_t              nAlloc;
     size_t              nUsed;
-    std::unique_ptr<ScPrintRangeData[]>   pData;
+    ScPrintRangeData*   pData;          // Array
 
 public:
                 ScPageBreakData(size_t nMax);

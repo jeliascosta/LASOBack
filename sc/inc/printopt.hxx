@@ -54,9 +54,11 @@ public:
 class SC_DLLPUBLIC ScTpPrintItem : public SfxPoolItem
 {
 public:
-                ScTpPrintItem( const ScPrintOptions& rOpt );
+                static SfxPoolItem* CreateDefault();
+                ScTpPrintItem( sal_uInt16 nWhich,
+                               const ScPrintOptions& rOpt );
                 ScTpPrintItem( const ScTpPrintItem& rItem );
-                virtual ~ScTpPrintItem() override;
+                virtual ~ScTpPrintItem();
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;

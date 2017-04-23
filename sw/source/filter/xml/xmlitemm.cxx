@@ -39,7 +39,7 @@ using namespace ::xmloff::token;
 
 #define M_END { 0, XML_TOKEN_INVALID, 0, 0 }
 
-SvXMLItemMapEntry const aXMLTableItemMap[] =
+SvXMLItemMapEntry aXMLTableItemMap[] =
 {
     // RES_FILL_ORDER
     // not required
@@ -119,14 +119,14 @@ SvXMLItemMapEntry const aXMLTableItemMap[] =
     M_END
 };
 
-SvXMLItemMapEntry const aXMLTableColItemMap[] =
+SvXMLItemMapEntry aXMLTableColItemMap[] =
 {
     M_E_SI( STYLE,  COLUMN_WIDTH,     RES_FRM_SIZE, MID_FRMSIZE_COL_WIDTH ),
     MAP_ENTRY( STYLE,        REL_COLUMN_WIDTH, RES_FRM_SIZE, MID_FRMSIZE_REL_COL_WIDTH ),
     M_END
 };
 
-SvXMLItemMapEntry const aXMLTableRowItemMap[] =
+SvXMLItemMapEntry aXMLTableRowItemMap[] =
 {
     // RES_FILL_ORDER
     // not required
@@ -198,7 +198,7 @@ SvXMLItemMapEntry const aXMLTableRowItemMap[] =
     M_END
 };
 
-SvXMLItemMapEntry const aXMLTableCellItemMap[] =
+SvXMLItemMapEntry aXMLTableCellItemMap[] =
 {
     // RES_FILL_ORDER
     // not required

@@ -25,6 +25,7 @@
 #include "custsdlg.hxx"
 #include "dlg_char.hxx"
 #include "dlgpage.hxx"
+#include "dlgass.hxx"
 #include "dlgfield.hxx"
 #include "dlgsnap.hxx"
 #include "layeroptionsdlg.hxx"
@@ -52,9 +53,11 @@ IMPL_ABSTDLG_BASE(AbstractCopyDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdCustomShowDlg_Impl);
 IMPL_ABSTDLG_BASE(SdAbstractTabDialog_Impl);
 IMPL_ABSTDLG_BASE(SdPresLayoutTemplateDlg_Impl);
+IMPL_ABSTDLG_BASE(AbstractAssistentDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdModifyFieldDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdSnapLineDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdInsertLayerDlg_Impl);
+IMPL_ABSTDLG_BASE(AbstractSdInsertPasteDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdInsertPagesObjsDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractMorphDlg_Impl);
 IMPL_ABSTDLG_BASE(AbstractSdStartPresDlg_Impl);
@@ -186,6 +189,46 @@ OUString SdPresLayoutTemplateDlg_Impl::GetText() const
     return pDlg->GetText();
 }
 
+SfxObjectShellLock AbstractAssistentDlg_Impl::GetDocument()
+{
+    return pDlg->GetDocument();
+}
+
+OutputType AbstractAssistentDlg_Impl::GetOutputMedium() const
+{
+    return pDlg->GetOutputMedium();
+}
+
+bool AbstractAssistentDlg_Impl::IsSummary() const
+{
+    return pDlg->IsSummary();
+}
+
+StartType AbstractAssistentDlg_Impl::GetStartType() const
+{
+    return pDlg->GetStartType();
+}
+
+OUString AbstractAssistentDlg_Impl::GetDocPath() const
+{
+    return pDlg->GetDocPath();
+}
+
+bool AbstractAssistentDlg_Impl::GetStartWithFlag() const
+{
+    return pDlg->GetStartWithFlag();
+}
+
+bool AbstractAssistentDlg_Impl::IsDocEmpty() const
+{
+    return pDlg->IsDocEmpty();
+}
+
+css::uno::Sequence< css::beans::NamedValue > AbstractAssistentDlg_Impl::GetPassword()
+{
+    return pDlg->GetPassword();
+}
+
 SvxFieldData* AbstractSdModifyFieldDlg_Impl::GetField()
 {
     return pDlg->GetField();
@@ -303,112 +346,118 @@ void AbstractSdPublishingDlg_Impl::GetParameterSequence( css::uno::Sequence< css
 
 //-------------- SdAbstractDialogFactory implementation--------------
 
-VclPtr<VclAbstractDialog> SdAbstractDialogFactory_Impl::CreateBreakDlg(
+VclAbstractDialog * SdAbstractDialogFactory_Impl::CreateBreakDlg(
                                             vcl::Window* pParent,
                                             ::sd::DrawView* pDrView,
                                             ::sd::DrawDocShell* pShell,
                                             sal_uLong nSumActionCount,
                                             sal_uLong nObjCount )
 {
-    return VclPtr<SdVclAbstractDialog_Impl>::Create( VclPtr<::sd::BreakDlg>::Create( pParent, pDrView, pShell, nSumActionCount, nObjCount ) );
+    return new SdVclAbstractDialog_Impl( VclPtr< ::sd::BreakDlg>::Create( pParent, pDrView, pShell, nSumActionCount, nObjCount ) );
 }
 
-VclPtr<AbstractCopyDlg> SdAbstractDialogFactory_Impl::CreateCopyDlg(vcl::Window* pParent,
+AbstractCopyDlg * SdAbstractDialogFactory_Impl::CreateCopyDlg(vcl::Window* pParent,
                                             const SfxItemSet& rInAttrs,
+                                            const rtl::Reference<XColorList> &pColTab,
                                             ::sd::View* pView )
 {
-    return VclPtr<AbstractCopyDlg_Impl>::Create( VclPtr<::sd::CopyDlg>::Create( pParent, rInAttrs, pView ) );
+    return new AbstractCopyDlg_Impl( VclPtr< ::sd::CopyDlg>::Create( pParent, rInAttrs, pColTab, pView ) );
 }
 
-VclPtr<AbstractSdCustomShowDlg> SdAbstractDialogFactory_Impl::CreateSdCustomShowDlg(vcl::Window* pParent, SdDrawDocument& rDrawDoc )
+AbstractSdCustomShowDlg * SdAbstractDialogFactory_Impl::CreateSdCustomShowDlg(vcl::Window* pParent, SdDrawDocument& rDrawDoc )
 {
-    return VclPtr<AbstractSdCustomShowDlg_Impl>::Create( VclPtr<SdCustomShowDlg>::Create(pParent, rDrawDoc) );
+    return new AbstractSdCustomShowDlg_Impl( VclPtr<SdCustomShowDlg>::Create(pParent, rDrawDoc) );
 }
 
-VclPtr<SfxAbstractTabDialog>  SdAbstractDialogFactory_Impl::CreateSdTabCharDialog(vcl::Window* pParent, const SfxItemSet* pAttr, SfxObjectShell* pDocShell )
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdTabCharDialog(vcl::Window* pParent, const SfxItemSet* pAttr, SfxObjectShell* pDocShell )
 {
-    return VclPtr<SdAbstractTabDialog_Impl>::Create( VclPtr<SdCharDlg>::Create(pParent, pAttr, pDocShell) );
+    return new SdAbstractTabDialog_Impl( VclPtr<SdCharDlg>::Create(pParent, pAttr, pDocShell) );
 }
 
-VclPtr<SfxAbstractTabDialog>  SdAbstractDialogFactory_Impl::CreateSdTabPageDialog(vcl::Window* pParent, const SfxItemSet* pAttr, SfxObjectShell* pDocShell, bool bAreaPage )
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdTabPageDialog(vcl::Window* pParent, const SfxItemSet* pAttr, SfxObjectShell* pDocShell, bool bAreaPage )
 {
-    return VclPtr<SdAbstractTabDialog_Impl>::Create( VclPtr<SdPageDlg>::Create( pDocShell, pParent, pAttr, bAreaPage ) );
+    return new SdAbstractTabDialog_Impl( VclPtr<SdPageDlg>::Create( pDocShell, pParent, pAttr, bAreaPage ) );
 }
 
-VclPtr<AbstractSdModifyFieldDlg> SdAbstractDialogFactory_Impl::CreateSdModifyFieldDlg( vcl::Window* pParent, const SvxFieldData* pInField, const SfxItemSet& rSet )
+AbstractAssistentDlg * SdAbstractDialogFactory_Impl::CreateAssistentDlg(bool bAutoPilot)
 {
-    return VclPtr<AbstractSdModifyFieldDlg_Impl>::Create( VclPtr<SdModifyFieldDlg>::Create( pParent, pInField, rSet ) );
+    return new AbstractAssistentDlg_Impl( VclPtr<AssistentDlg>::Create( nullptr, bAutoPilot ) );
 }
 
-VclPtr<AbstractSdSnapLineDlg> SdAbstractDialogFactory_Impl::CreateSdSnapLineDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs, ::sd::View* pView)
+AbstractSdModifyFieldDlg * SdAbstractDialogFactory_Impl::CreateSdModifyFieldDlg( vcl::Window* pParent, const SvxFieldData* pInField, const SfxItemSet& rSet )
 {
-    return VclPtr<AbstractSdSnapLineDlg_Impl>::Create( VclPtr<SdSnapLineDlg>::Create( pParent, rInAttrs, pView ) );
+    return new AbstractSdModifyFieldDlg_Impl( VclPtr<SdModifyFieldDlg>::Create( pParent, pInField, rSet ) );
 }
 
-VclPtr<AbstractSdInsertLayerDlg> SdAbstractDialogFactory_Impl::CreateSdInsertLayerDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs, bool bDeletable, const OUString& aStr )
+AbstractSdSnapLineDlg * SdAbstractDialogFactory_Impl::CreateSdSnapLineDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs, ::sd::View* pView)
 {
-    return VclPtr<AbstractSdInsertLayerDlg_Impl>::Create( VclPtr<SdInsertLayerDlg>::Create( pParent, rInAttrs, bDeletable, aStr ) );
+    return new AbstractSdSnapLineDlg_Impl( VclPtr<SdSnapLineDlg>::Create( pParent, rInAttrs, pView ) );
 }
 
-VclPtr<AbstractSdInsertPagesObjsDlg> SdAbstractDialogFactory_Impl::CreateSdInsertPagesObjsDlg( vcl::Window* pParent, const SdDrawDocument* pDoc, SfxMedium* pSfxMedium, const OUString& rFileName )
+AbstractSdInsertLayerDlg * SdAbstractDialogFactory_Impl::CreateSdInsertLayerDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs, bool bDeletable, const OUString& aStr )
 {
-    return VclPtr<AbstractSdInsertPagesObjsDlg_Impl>::Create( VclPtr<SdInsertPagesObjsDlg>::Create( pParent, pDoc, pSfxMedium, rFileName ) );
+    return new AbstractSdInsertLayerDlg_Impl( VclPtr<SdInsertLayerDlg>::Create( pParent, rInAttrs, bDeletable, aStr ) );
 }
 
-VclPtr<AbstractMorphDlg> SdAbstractDialogFactory_Impl::CreateMorphDlg( vcl::Window* pParent, const SdrObject* pObj1, const SdrObject* pObj2)
+AbstractSdInsertPagesObjsDlg * SdAbstractDialogFactory_Impl::CreateSdInsertPagesObjsDlg( vcl::Window* pParent, const SdDrawDocument* pDoc, SfxMedium* pSfxMedium, const OUString& rFileName )
 {
-    return VclPtr<AbstractMorphDlg_Impl>::Create( VclPtr<::sd::MorphDlg>::Create( pParent, pObj1, pObj2 ) );
+    return new AbstractSdInsertPagesObjsDlg_Impl( VclPtr<SdInsertPagesObjsDlg>::Create( pParent, pDoc, pSfxMedium, rFileName ) );
 }
 
-VclPtr<SfxAbstractTabDialog>  SdAbstractDialogFactory_Impl::CreateSdOutlineBulletTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView )
+AbstractMorphDlg * SdAbstractDialogFactory_Impl::CreateMorphDlg( vcl::Window* pParent, const SdrObject* pObj1, const SdrObject* pObj2)
 {
-    return VclPtr<AbstractBulletDialog_Impl>::Create( VclPtr<::sd::OutlineBulletDlg>::Create( pParent, pAttr, pView ) );
+    return new AbstractMorphDlg_Impl( VclPtr< ::sd::MorphDlg>::Create( pParent, pObj1, pObj2 ) );
 }
 
-VclPtr<SfxAbstractTabDialog> SdAbstractDialogFactory_Impl::CreateSdParagraphTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr )
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdOutlineBulletTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView )
 {
-    return VclPtr<SdAbstractTabDialog_Impl>::Create( VclPtr<SdParagraphDlg>::Create( pParent, pAttr ) );
+    return new AbstractBulletDialog_Impl( VclPtr< ::sd::OutlineBulletDlg>::Create( pParent, pAttr, pView ) );
 }
 
-VclPtr<AbstractSdStartPresDlg> SdAbstractDialogFactory_Impl::CreateSdStartPresentationDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs,
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdParagraphTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr )
+{
+    return new SdAbstractTabDialog_Impl( VclPtr<SdParagraphDlg>::Create( pParent, pAttr ) );
+}
+
+AbstractSdStartPresDlg *  SdAbstractDialogFactory_Impl::CreateSdStartPresentationDlg( vcl::Window* pParent, const SfxItemSet& rInAttrs,
                                                                                      const std::vector<OUString> &rPageNames, SdCustomShowList* pCSList )
 {
-    return VclPtr<AbstractSdStartPresDlg_Impl>::Create( VclPtr<SdStartPresentationDlg>::Create( pParent, rInAttrs, rPageNames, pCSList ) );
+    return new AbstractSdStartPresDlg_Impl( VclPtr<SdStartPresentationDlg>::Create( pParent, rInAttrs, rPageNames, pCSList ) );
 }
 
-VclPtr<VclAbstractDialog> SdAbstractDialogFactory_Impl::CreateRemoteDialog( vcl::Window* pParent )
+VclAbstractDialog * SdAbstractDialogFactory_Impl::CreateRemoteDialog( vcl::Window* pParent )
 {
-     return VclPtr<SdVclAbstractDialog_Impl>::Create( VclPtr<::sd::RemoteDialog>::Create( pParent ) );
+     return new SdVclAbstractDialog_Impl( VclPtr< ::sd::RemoteDialog>::Create( pParent ) );
 }
 
-VclPtr<SfxAbstractTabDialog>  SdAbstractDialogFactory_Impl::CreateSdPresLayoutTemplateDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SdResId& DlgId, SfxStyleSheetBase& rStyleBase, PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool )
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdPresLayoutTemplateDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SdResId& DlgId, SfxStyleSheetBase& rStyleBase, PresentationObjects ePO, SfxStyleSheetBasePool* pSSPool )
 {
-    return VclPtr<SdPresLayoutTemplateDlg_Impl>::Create( VclPtr<SdPresLayoutTemplateDlg>::Create( pDocSh, pParent, DlgId, rStyleBase, ePO, pSSPool ) );
+    return new SdPresLayoutTemplateDlg_Impl( VclPtr<SdPresLayoutTemplateDlg>::Create( pDocSh, pParent, DlgId, rStyleBase, ePO, pSSPool ) );
 }
 
-VclPtr<AbstractSdPresLayoutDlg>  SdAbstractDialogFactory_Impl::CreateSdPresLayoutDlg(  ::sd::DrawDocShell* pDocShell, const SfxItemSet& rInAttrs)
+AbstractSdPresLayoutDlg *  SdAbstractDialogFactory_Impl::CreateSdPresLayoutDlg(  ::sd::DrawDocShell* pDocShell, vcl::Window* pParent, const SfxItemSet& rInAttrs)
 {
-    return VclPtr<AbstractSdPresLayoutDlg_Impl>::Create( VclPtr<SdPresLayoutDlg>::Create( pDocShell, nullptr, rInAttrs ) );
+    return new AbstractSdPresLayoutDlg_Impl( VclPtr<SdPresLayoutDlg>::Create( pDocShell, pParent, rInAttrs ) );
 }
 
-VclPtr<SfxAbstractTabDialog>  SdAbstractDialogFactory_Impl::CreateSdTabTemplateDlg(vcl::Window* pParent, const SfxObjectShell* pDocShell, SfxStyleSheetBase& rStyleBase, SdrModel* pModel, SdrView* pView )
+SfxAbstractTabDialog *  SdAbstractDialogFactory_Impl::CreateSdTabTemplateDlg(vcl::Window* pParent, const SfxObjectShell* pDocShell, SfxStyleSheetBase& rStyleBase, SdrModel* pModel, SdrView* pView )
 {
-    return VclPtr<SdAbstractTabDialog_Impl>::Create( VclPtr<SdTabTemplateDlg>::Create( pParent, pDocShell, rStyleBase, pModel, pView ) );
+    return new SdAbstractTabDialog_Impl( VclPtr<SdTabTemplateDlg>::Create( pParent, pDocShell, rStyleBase, pModel, pView ) );
 }
 
-VclPtr<SfxAbstractDialog> SdAbstractDialogFactory_Impl::CreatSdActionDialog(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView )
+SfxAbstractDialog* SdAbstractDialogFactory_Impl::CreatSdActionDialog(vcl::Window* pParent, const SfxItemSet* pAttr, ::sd::View* pView )
 {
-    return VclPtr<SdAbstractSfxDialog_Impl>::Create( VclPtr<SdActionDlg>::Create( pParent, pAttr, pView ) );
+    return new SdAbstractSfxDialog_Impl( VclPtr<SdActionDlg>::Create( pParent, pAttr, pView ) );
 }
 
-VclPtr<AbstractSdVectorizeDlg>  SdAbstractDialogFactory_Impl::CreateSdVectorizeDlg( vcl::Window* pParent, const Bitmap& rBmp, ::sd::DrawDocShell* pDocShell )
+AbstractSdVectorizeDlg *  SdAbstractDialogFactory_Impl::CreateSdVectorizeDlg( vcl::Window* pParent, const Bitmap& rBmp, ::sd::DrawDocShell* pDocShell )
 {
-    return VclPtr<AbstractSdVectorizeDlg_Impl>::Create( VclPtr<SdVectorizeDlg>::Create( pParent, rBmp, pDocShell ) );
+    return new AbstractSdVectorizeDlg_Impl( VclPtr<SdVectorizeDlg>::Create( pParent, rBmp, pDocShell ) );
 }
 
-VclPtr<AbstractSdPublishingDlg>  SdAbstractDialogFactory_Impl::CreateSdPublishingDlg( vcl::Window* pParent, DocumentType eDocType)
+AbstractSdPublishingDlg *  SdAbstractDialogFactory_Impl::CreateSdPublishingDlg( vcl::Window* pParent, DocumentType eDocType)
 {
-    return VclPtr<AbstractSdPublishingDlg_Impl>::Create( VclPtr<SdPublishingDlg>::Create( pParent, eDocType ) );
+    return new AbstractSdPublishingDlg_Impl( VclPtr<SdPublishingDlg>::Create( pParent, eDocType ) );
 }
 
 // Factories for TabPages
@@ -432,21 +481,21 @@ CreateTabPage SdAbstractDialogFactory_Impl::GetSdOptionsSnapTabPageCreatorFunc()
     return SdTpOptionsSnap::Create;
 }
 
-VclPtr<VclAbstractDialog> SdAbstractDialogFactory_Impl::CreateMasterLayoutDialog( vcl::Window* pParent,
+VclAbstractDialog* SdAbstractDialogFactory_Impl::CreateMasterLayoutDialog( vcl::Window* pParent,
     SdDrawDocument* pDoc, SdPage* pCurrentPage )
 {
-  return VclPtr<SdVclAbstractDialog_Impl>::Create( VclPtr<::sd::MasterLayoutDialog>::Create( pParent, pDoc, pCurrentPage ));
+  return new SdVclAbstractDialog_Impl( VclPtr< ::sd::MasterLayoutDialog>::Create( pParent, pDoc, pCurrentPage ));
 }
 
-VclPtr<AbstractHeaderFooterDialog> SdAbstractDialogFactory_Impl::CreateHeaderFooterDialog( sd::ViewShell* pViewShell,
+AbstractHeaderFooterDialog* SdAbstractDialogFactory_Impl::CreateHeaderFooterDialog( sd::ViewShell* pViewShell,
   vcl::Window* pParent, SdDrawDocument* pDoc, SdPage* pCurrentPage )
 {
-    return VclPtr<AbstractHeaderFooterDialog_Impl>::Create( VclPtr<::sd::HeaderFooterDialog>::Create( pViewShell, pParent, pDoc, pCurrentPage ));
+    return new AbstractHeaderFooterDialog_Impl( VclPtr< ::sd::HeaderFooterDialog>::Create( pViewShell, pParent, pDoc, pCurrentPage ));
 }
 
-VclPtr<VclAbstractDialog> SdAbstractDialogFactory_Impl::CreateSdPhotoAlbumDialog( vcl::Window* pParent, SdDrawDocument* pDoc )
+VclAbstractDialog * SdAbstractDialogFactory_Impl::CreateSdPhotoAlbumDialog( vcl::Window* pParent, SdDrawDocument* pDoc )
 {
-    return VclPtr<SdVclAbstractDialog_Impl>::Create( VclPtr<::sd::SdPhotoAlbumDialog>::Create( pParent, pDoc ) );
+     return new SdVclAbstractDialog_Impl( VclPtr< ::sd::SdPhotoAlbumDialog>::Create( pParent, pDoc ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

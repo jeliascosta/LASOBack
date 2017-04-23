@@ -369,6 +369,8 @@ void FrameFinit()
 
 // RootFrame::Everything that belongs to CurrShell
 
+class SwCurrShells : public std::set<CurrShell*> {};
+
 CurrShell::CurrShell( SwViewShell *pNew )
 {
     OSL_ENSURE( pNew, "insert 0-Shell?" );
@@ -553,7 +555,7 @@ void SwRootFrame::Init( SwFrameFormat* pFormat )
     //Remove masters that haven't been replaced yet from the list.
     RemoveMasterObjs( mpDrawPage );
     if( rSettingAccess.get(DocumentSettingId::GLOBAL_DOCUMENT) )
-        rFieldsAccess.UpdateRefFields();
+        rFieldsAccess.UpdateRefFields( nullptr );
     //b6433357: Update page fields after loading
     if ( !mpCurrShell || !mpCurrShell->Imp()->IsUpdateExpFields() )
     {

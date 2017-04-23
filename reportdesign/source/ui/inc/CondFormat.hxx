@@ -90,7 +90,7 @@ namespace rptui
             const css::uno::Reference< css::report::XReportControlModel>& _xHoldAlive,
             ::rptui::OReportController& _rController
         );
-        virtual ~ConditionalFormattingDialog() override;
+        virtual ~ConditionalFormattingDialog();
         virtual void dispose() override;
         // Dialog overridables
         virtual short   Execute() override;
@@ -107,7 +107,7 @@ namespace rptui
         virtual bool        PreNotify( NotifyEvent& rNEvt ) override;
 
     private:
-        DECL_LINK( OnScroll, ScrollBar*, void );
+        DECL_LINK_TYPED( OnScroll, ScrollBar*, void );
 
     private:
         /// returns the current number of conditions
@@ -154,6 +154,9 @@ namespace rptui
 
         /// updates the scrollbar range. (does not update the scrollbar visibility)
         void    impl_updateScrollBarRange();
+
+        /// determines whether we need a scrollbar for the conditions
+        bool    impl_needScrollBar() const { return m_aConditions.size() > MAX_CONDITIONS; }
 
         /// scrolls the condition with the given index to the top position
         void    impl_scrollTo( size_t _nTopCondIndex );

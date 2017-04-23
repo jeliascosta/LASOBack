@@ -27,7 +27,6 @@
 #include <vcl/layout.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-#include <vcl/uitest/uiobject.hxx>
 
 #include <window.h>
 #include <svdata.hxx>
@@ -74,7 +73,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 
 // - Redo
-// - if Tracking-Cancel recreate DefaultSelection
+// - Bei Tracking-Cancel DefaultSelection wieder herstellen
 
 static FncGetSpecialChars pImplFncGetSpecialChars = nullptr;
 
@@ -113,14 +112,14 @@ struct DDInfo
 struct Impl_IMEInfos
 {
     OUString      aOldTextAfterStartPos;
-    std::unique_ptr<ExtTextInputAttr[]>
-                  pAttribs;
+    ExtTextInputAttr* pAttribs;
     sal_Int32     nPos;
     sal_Int32     nLen;
     bool          bCursor;
     bool          bWasCursorOverwrite;
 
     Impl_IMEInfos(sal_Int32 nPos, const OUString& rOldTextAfterStartPos);
+    ~Impl_IMEInfos();
 
     void        CopyAttribs(const ExtTextInputAttr* pA, sal_Int32 nL);
     void        DestroyAttribs();
@@ -136,16 +135,23 @@ Impl_IMEInfos::Impl_IMEInfos(sal_Int32 nP, const OUString& rOldTextAfterStartPos
     bWasCursorOverwrite = false;
 }
 
+Impl_IMEInfos::~Impl_IMEInfos()
+{
+    delete[] pAttribs;
+}
+
 void Impl_IMEInfos::CopyAttribs(const ExtTextInputAttr* pA, sal_Int32 nL)
 {
     nLen = nL;
-    pAttribs.reset(new ExtTextInputAttr[ nL ]);
-    memcpy( pAttribs.get(), pA, nL*sizeof(ExtTextInputAttr) );
+    delete[] pAttribs;
+    pAttribs = new ExtTextInputAttr[ nL ];
+    memcpy( pAttribs, pA, nL*sizeof(ExtTextInputAttr) );
 }
 
 void Impl_IMEInfos::DestroyAttribs()
 {
-    pAttribs.reset();
+    delete[] pAttribs;
+    pAttribs = nullptr;
     nLen = 0;
 }
 
@@ -156,10 +162,23 @@ Edit::Edit( WindowType nType )
 }
 
 Edit::Edit( vcl::Window* pParent, WinBits nStyle )
-    : Control( WindowType::EDIT )
+    : Control( WINDOW_EDIT )
 {
     ImplInitEditData();
     ImplInit( pParent, nStyle );
+}
+
+Edit::Edit( vcl::Window* pParent, const ResId& rResId )
+    : Control( WINDOW_EDIT )
+{
+    rResId.SetRT( RSC_EDIT );
+    WinBits nStyle = ImplInitRes( rResId );
+    ImplInitEditData();
+    ImplInit( pParent, nStyle );
+    ImplLoadRes( rResId );
+
+    if ( !(nStyle & WB_HIDE) )
+        Show();
 }
 
 void Edit::SetWidthInChars(sal_Int32 nWidthInChars)
@@ -226,8 +245,6 @@ Edit::~Edit()
 
 void Edit::dispose()
 {
-    mpUIBuilder.reset();
-
     delete mpDDInfo;
     mpDDInfo = nullptr;
 
@@ -262,7 +279,7 @@ void Edit::dispose()
         mxDnDListener.clear();
     }
 
-    SetType(WindowType::WINDOW);
+    SetType(WINDOW_WINDOW);
 
     mpSubEdit.disposeAndClear();
     Control::dispose();
@@ -278,6 +295,7 @@ void Edit::ImplInitEditData()
     mnMaxTextLen            = EDIT_NOLIMIT;
     mnWidthInChars          = -1;
     mnMaxWidthChars         = -1;
+    meAutocompleteAction    = AutocompleteAction::KeyInput;
     mbModified              = false;
     mbInternModified        = false;
     mbReadOnly              = false;
@@ -442,7 +460,7 @@ OUString Edit::ImplGetText() const
         if ( mcEchoChar )
             cEchoChar = mcEchoChar;
         else
-            cEchoChar = sal_Unicode(0x2022);
+            cEchoChar = '*';
         OUStringBuffer aText;
         comphelper::string::padToLength(aText, maText.getLength(), cEchoChar);
         return aText.makeStringAndClear();
@@ -473,7 +491,7 @@ long Edit::ImplGetTextYPosition() const
     return ( GetOutputSizePixel().Height() - GetTextHeight() ) / 2;
 }
 
-void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRectangle)
+void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const Rectangle& rRectangle)
 {
     if (!IsReallyVisible())
         return;
@@ -522,7 +540,7 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
         rRenderContext.Push(PushFlags::FILLCOLOR | PushFlags::LINECOLOR);
         rRenderContext.SetLineColor();
         rRenderContext.SetFillColor(GetControlBackground());
-        rRenderContext.DrawRect(tools::Rectangle(aPos, Size(GetOutputSizePixel().Width() - 2 * mnXOffset, GetOutputSizePixel().Height())));
+        rRenderContext.DrawRect(Rectangle(aPos, Size(GetOutputSizePixel().Width() - 2 * mnXOffset, GetOutputSizePixel().Height())));
         rRenderContext.Pop();
 
         rRenderContext.SetTextFillColor(GetControlBackground());
@@ -549,15 +567,15 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
     {
         // save graphics state
         rRenderContext.Push();
-        // first calculate highlighted and non highlighted clip regions
-        vcl::Region aHighlightClipRegion;
+        // first calculate higlighted and non highlighted clip regions
+        vcl::Region aHiglightClipRegion;
         vcl::Region aNormalClipRegion;
         Selection aTmpSel(maSelection);
         aTmpSel.Justify();
         // selection is highlighted
         for(sal_Int32 i = 0; i < nLen; ++i)
         {
-            tools::Rectangle aRect(aPos, Size(10, nTH));
+            Rectangle aRect(aPos, Size(10, nTH));
             aRect.Left() = pDX[2 * i] + mnXOffset + ImplGetExtraXOffset();
             aRect.Right() = pDX[2 * i + 1] + mnXOffset + ImplGetExtraXOffset();
             aRect.Justify();
@@ -573,7 +591,7 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
             }
 
             if (bHighlight)
-                aHighlightClipRegion.Union(aRect);
+                aHiglightClipRegion.Union(aRect);
             else
                 aNormalClipRegion.Union(aRect);
         }
@@ -601,7 +619,7 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
         rRenderContext.DrawText(aPos, aText, 0, nLen);
 
         // draw highlighted text
-        rRenderContext.SetClipRegion(aHighlightClipRegion);
+        rRenderContext.SetClipRegion(aHiglightClipRegion);
         rRenderContext.SetTextColor(rStyleSettings.GetHighlightTextColor());
         rRenderContext.SetTextFillColor(rStyleSettings.GetHighlightColor());
         rRenderContext.DrawText(aPos, aText, 0, nLen);
@@ -625,7 +643,7 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
                 {
                     rRenderContext.SetTextColor(rStyleSettings.GetHighlightTextColor());
                     rRenderContext.SetTextFillColor(rStyleSettings.GetHighlightColor());
-                    aRegion = aHighlightClipRegion;
+                    aRegion = aHiglightClipRegion;
                 }
 
                 for(int i = 0; i < mpIMEInfos->nLen; )
@@ -635,7 +653,7 @@ void Edit::ImplRepaint(vcl::RenderContext& rRenderContext, const tools::Rectangl
                     int nIndex = i;
                     while (nIndex < mpIMEInfos->nLen && mpIMEInfos->pAttribs[nIndex] == nAttr)  // #112631# check nIndex before using it
                     {
-                        tools::Rectangle aRect( aPos, Size( 10, nTH ) );
+                        Rectangle aRect( aPos, Size( 10, nTH ) );
                         aRect.Left() = pDX[2 * (nIndex + mpIMEInfos->nPos)] + mnXOffset + ImplGetExtraXOffset();
                         aRect.Right() = pDX[2 * (nIndex + mpIMEInfos->nPos) + 1] + mnXOffset + ImplGetExtraXOffset();
                         aRect.Justify();
@@ -750,15 +768,16 @@ void Edit::ImplDelete( const Selection& rSelection, sal_uInt8 nDirection, sal_uI
     mbInternModified = true;
 }
 
-OUString Edit::ImplGetValidString( const OUString& rString )
+OUString Edit::ImplGetValidString( const OUString& rString ) const
 {
     OUString aValidString( rString );
-    aValidString = aValidString.replaceAll("\n", "").replaceAll("\r", "");
+    aValidString = comphelper::string::remove(aValidString, '\n');
+    aValidString = comphelper::string::remove(aValidString, '\r');
     aValidString = aValidString.replace('\t', ' ');
     return aValidString;
 }
 
-uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator()
+uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator() const
 {
     //!! since we don't want to become incompatible in the next minor update
     //!! where this code will get integrated into, xISC will be a local
@@ -767,7 +786,7 @@ uno::Reference < i18n::XBreakIterator > Edit::ImplGetBreakIterator()
     return i18n::BreakIterator::create(xContext);
 }
 
-uno::Reference < i18n::XExtendedInputSequenceChecker > const & Edit::ImplGetInputSequenceChecker()
+uno::Reference < i18n::XExtendedInputSequenceChecker > Edit::ImplGetInputSequenceChecker()
 {
     if ( !mxISC.is() )
     {
@@ -782,7 +801,7 @@ void Edit::ShowTruncationWarning( vcl::Window* pParent )
     ResMgr* pResMgr = ImplGetResMgr();
     if( pResMgr )
     {
-        ScopedVclPtrInstance< MessageDialog > aBox( pParent, ResId(SV_EDIT_WARNING_STR, *pResMgr), VclMessageType::Warning );
+        ScopedVclPtrInstance< MessageDialog > aBox( pParent, ResId(SV_EDIT_WARNING_STR, *pResMgr), VCL_MESSAGE_WARNING );
         aBox->Execute();
     }
 }
@@ -817,7 +836,7 @@ void Edit::ImplInsertText( const OUString& rStr, const Selection* pNewSel, bool 
     // take care of input-sequence-checking now
     if (bIsUserInput && !rStr.isEmpty())
     {
-        SAL_WARN_IF( rStr.getLength() != 1, "vcl", "unexpected string length. User input is expected to provide 1 char only!" );
+        DBG_ASSERT( rStr.getLength() == 1, "unexpected string length. User input is expected to provide 1 char only!" );
 
         // determine if input-sequence-checking should be applied or not
 
@@ -928,7 +947,7 @@ void Edit::ImplSetText( const OUString& rText, const Selection* pNewSelection )
         else
             ImplInsertText( rText, pNewSelection );
 
-        CallEventListeners( VclEventId::EditModify );
+        CallEventListeners( VCLEVENT_EDIT_MODIFY );
     }
 }
 
@@ -939,33 +958,33 @@ ControlType Edit::ImplGetNativeControlType() const
 
     switch (pControl->GetType())
     {
-        case WindowType::COMBOBOX:
-        case WindowType::PATTERNBOX:
-        case WindowType::NUMERICBOX:
-        case WindowType::METRICBOX:
-        case WindowType::CURRENCYBOX:
-        case WindowType::DATEBOX:
-        case WindowType::TIMEBOX:
-        case WindowType::LONGCURRENCYBOX:
+        case WINDOW_COMBOBOX:
+        case WINDOW_PATTERNBOX:
+        case WINDOW_NUMERICBOX:
+        case WINDOW_METRICBOX:
+        case WINDOW_CURRENCYBOX:
+        case WINDOW_DATEBOX:
+        case WINDOW_TIMEBOX:
+        case WINDOW_LONGCURRENCYBOX:
             nCtrl = ControlType::Combobox;
             break;
 
-        case WindowType::MULTILINEEDIT:
+        case WINDOW_MULTILINEEDIT:
             if ( GetWindow( GetWindowType::Border ) != this )
                 nCtrl = ControlType::MultilineEditbox;
             else
                 nCtrl = ControlType::EditboxNoBorder;
             break;
 
-        case WindowType::EDIT:
-        case WindowType::PATTERNFIELD:
-        case WindowType::METRICFIELD:
-        case WindowType::CURRENCYFIELD:
-        case WindowType::DATEFIELD:
-        case WindowType::TIMEFIELD:
-        case WindowType::LONGCURRENCYFIELD:
-        case WindowType::NUMERICFIELD:
-        case WindowType::SPINFIELD:
+        case WINDOW_EDIT:
+        case WINDOW_PATTERNFIELD:
+        case WINDOW_METRICFIELD:
+        case WINDOW_CURRENCYFIELD:
+        case WINDOW_DATEFIELD:
+        case WINDOW_TIMEFIELD:
+        case WINDOW_LONGCURRENCYFIELD:
+        case WINDOW_NUMERICFIELD:
+        case WINDOW_SPINFIELD:
             if (pControl->GetStyle() & WB_SPIN)
                 nCtrl = ControlType::Spinbox;
             else
@@ -983,13 +1002,13 @@ ControlType Edit::ImplGetNativeControlType() const
     return nCtrl;
 }
 
-void Edit::ImplClearBackground(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRectangle, long nXStart, long nXEnd )
+void Edit::ImplClearBackground(vcl::RenderContext& rRenderContext, const Rectangle& rRectangle, long nXStart, long nXEnd )
 {
     /*
     * note: at this point the cursor must be switched off already
     */
     Point aTmpPoint;
-    tools::Rectangle aRect(aTmpPoint, GetOutputSizePixel());
+    Rectangle aRect(aTmpPoint, GetOutputSizePixel());
     aRect.Left() = nXStart;
     aRect.Right() = nXEnd;
 
@@ -1011,7 +1030,7 @@ void Edit::ImplPaintBorder(vcl::RenderContext& rRenderContext, long nXStart, lon
         return;
 
     Point aTmpPoint;
-    tools::Rectangle aRect(aTmpPoint, GetOutputSizePixel());
+    Rectangle aRect(aTmpPoint, GetOutputSizePixel());
     aRect.Left() = nXStart;
     aRect.Right() = nXEnd;
 
@@ -1040,7 +1059,7 @@ void Edit::ImplPaintBorder(vcl::RenderContext& rRenderContext, long nXStart, lon
                     // need to mirror in case border is not RTL but edit is (or vice versa)
 
                     // mirror
-                    tools::Rectangle aBounds(aClipRgn.GetBoundRect());
+                    Rectangle aBounds(aClipRgn.GetBoundRect());
                     int xNew = GetOutputSizePixel().Width() - aBounds.GetWidth() - aBounds.Left();
                     aClipRgn.Move(xNew - aBounds.Left(), 0);
 
@@ -1060,13 +1079,13 @@ void Edit::ImplPaintBorder(vcl::RenderContext& rRenderContext, long nXStart, lon
                 vcl::Region oldRgn(pBorder->GetClipRegion());
                 pBorder->SetClipRegion(aClipRgn);
 
-                pBorder->Paint(*pBorder, tools::Rectangle());
+                pBorder->Paint(*pBorder, Rectangle());
 
                 pBorder->SetClipRegion(oldRgn);
             }
             else
             {
-                pBorder->Paint(*pBorder, tools::Rectangle());
+                pBorder->Paint(*pBorder, Rectangle());
             }
         }
     }
@@ -1124,18 +1143,18 @@ void Edit::ImplShowCursor( bool bOnlyIfVisible )
         else
         {
             mnXOffset = (aOutSize.Width()-ImplGetExtraXOffset()) - nTextPos;
-            // Something more?
+            // Etwas mehr?
             if ( (aOutSize.Width()-ImplGetExtraXOffset()) < nTextPos )
             {
                 long nMaxNegX = (aOutSize.Width()-ImplGetExtraXOffset()) - GetTextWidth( aText );
                 mnXOffset -= aOutSize.Width() / 5;
-                if ( mnXOffset < nMaxNegX )  // both negativ...
+                if ( mnXOffset < nMaxNegX )  // beides negativ...
                     mnXOffset = nMaxNegX;
             }
         }
 
         nCursorPosX = nTextPos + mnXOffset + ImplGetExtraXOffset();
-        if ( nCursorPosX == aOutSize.Width() )  // then invisible...
+        if ( nCursorPosX == aOutSize.Width() )  // dann nicht sichtbar...
             nCursorPosX--;
 
         if ( mnXOffset != nOldXOffset )
@@ -1212,7 +1231,7 @@ sal_Int32 Edit::ImplGetCharPos( const Point& rWindowPos ) const
 
     GetCaretPositions( aText, pDX, 0, aText.getLength() );
     long nX = rWindowPos.X() - mnXOffset - ImplGetExtraXOffset();
-    for (sal_Int32 i = 0; i < aText.getLength(); aText.iterateCodePoints(&i))
+    for( sal_Int32 i = 0; i < aText.getLength(); i++ )
     {
         if( (pDX[2*i] >= nX && pDX[2*i+1] <= nX) ||
             (pDX[2*i+1] >= nX && pDX[2*i] <= nX))
@@ -1221,12 +1240,12 @@ sal_Int32 Edit::ImplGetCharPos( const Point& rWindowPos ) const
             if( pDX[2*i] < pDX[2*i+1] )
             {
                 if( nX > (pDX[2*i]+pDX[2*i+1])/2 )
-                    aText.iterateCodePoints(&nIndex);
+                    nIndex++;
             }
             else
             {
                 if( nX < (pDX[2*i]+pDX[2*i+1])/2 )
-                    aText.iterateCodePoints(&nIndex);
+                    nIndex++;
             }
             break;
         }
@@ -1234,14 +1253,8 @@ sal_Int32 Edit::ImplGetCharPos( const Point& rWindowPos ) const
     if( nIndex == EDIT_NOLIMIT )
     {
         nIndex = 0;
-        sal_Int32 nFinalIndex = 0;
         long nDiff = std::abs( pDX[0]-nX );
-        sal_Int32 i = 0;
-        if (!aText.isEmpty())
-        {
-            aText.iterateCodePoints(&i);    //skip the first character
-        }
-        while (i < aText.getLength())
+        for( sal_Int32 i = 1; i < aText.getLength(); i++ )
         {
             long nNewDiff = std::abs( pDX[2*i]-nX );
 
@@ -1250,12 +1263,8 @@ sal_Int32 Edit::ImplGetCharPos( const Point& rWindowPos ) const
                 nIndex = i;
                 nDiff = nNewDiff;
             }
-
-            nFinalIndex = i;
-
-            aText.iterateCodePoints(&i);
         }
-        if (nIndex == nFinalIndex && std::abs( pDX[2*nIndex+1] - nX ) < nDiff)
+        if( nIndex == aText.getLength()-1 && std::abs( pDX[2*nIndex+1] - nX ) < nDiff )
             nIndex = EDIT_NOLIMIT;
     }
 
@@ -1269,6 +1278,15 @@ void Edit::ImplSetCursorPos( sal_Int32 nChar, bool bSelect )
     if ( !bSelect )
         aSelection.Min() = aSelection.Max();
     ImplSetSelection( aSelection );
+}
+
+void Edit::ImplLoadRes( const ResId& rResId )
+{
+    Control::ImplLoadRes( rResId );
+
+    sal_uInt16 nTextLength = ReadShortRes();
+    if ( nTextLength )
+        SetMaxTextLen( nTextLength );
 }
 
 void Edit::ImplCopyToSelectionClipboard()
@@ -1370,6 +1388,13 @@ void Edit::MouseButtonUp( const MouseEvent& rMEvt )
         sal_Int32 nCharPos = ImplGetCharPos( rMEvt.GetPosPixel() );
         ImplSetCursorPos( nCharPos, false );
         mbClickedInSelection = false;
+    }
+    else if ( rMEvt.IsMiddle() && !mbReadOnly &&
+              ( GetSettings().GetMouseSettings().GetMiddleButtonAction() == MouseMiddleButtonAction::PasteSelection ) )
+    {
+        css::uno::Reference<css::datatransfer::clipboard::XClipboard> aSelection(Window::GetPrimarySelection());
+        ImplPaste( aSelection );
+        ImplModified();
     }
 }
 
@@ -1616,6 +1641,7 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
                     {
                         if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
                         {
+                            meAutocompleteAction = AutocompleteAction::KeyInput;
                             maAutocompleteHdl.Call(*this);
                         }
                     }
@@ -1677,6 +1703,32 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
             }
             break;
 
+            /* #i101255# disable autocomplete tab forward/backward
+               users expect tab/shift-tab to move the focus to other controls
+               not suddenly to cycle the autocompletion
+            case KEY_TAB:
+            {
+                if ( !mbReadOnly && !autocompleteSignal.empty() &&
+                     maSelection.Min() && (maSelection.Min() == maText.Len()) &&
+                     !rKEvt.GetKeyCode().IsMod1() && !rKEvt.GetKeyCode().IsMod2() )
+                {
+                    // Kein Autocomplete wenn alles Selektiert oder Edit leer, weil dann
+                    // keine vernuenftige Tab-Steuerung!
+                    if ( rKEvt.GetKeyCode().IsShift() )
+                        meAutocompleteAction = AutocompleteAction::TabBackward;
+                    else
+                        meAutocompleteAction = AutocompleteAction::TabForward;
+
+                    autocompleteSignal( this );
+
+                    // Wurde nichts veraendert, dann TAB fuer DialogControl
+                    if ( GetSelection().Len() )
+                        bDone = true;
+                }
+            }
+            break;
+            */
+
             default:
             {
                 if ( IsCharInput( rKEvt ) )
@@ -1689,6 +1741,7 @@ bool Edit::ImplHandleKeyEvent( const KeyEvent& rKEvt )
                         {
                             if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
                             {
+                                meAutocompleteAction = AutocompleteAction::KeyInput;
                                 maAutocompleteHdl.Call(*this);
                             }
                         }
@@ -1715,11 +1768,11 @@ void Edit::KeyInput( const KeyEvent& rKEvt )
 
 void Edit::FillLayoutData() const
 {
-    mpControlData->mpLayoutData.reset( new vcl::ControlLayoutData );
+    mpControlData->mpLayoutData = new vcl::ControlLayoutData();
     const_cast<Edit*>(this)->Invalidate();
 }
 
-void Edit::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRectangle)
+void Edit::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRectangle)
 {
     if (!mpSubEdit)
         ImplRepaint(rRenderContext, rRectangle);
@@ -1759,7 +1812,7 @@ void Edit::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawF
     bool bBackground = !(nFlags & DrawFlags::NoBackground) && IsControlBackground();
     if ( bBorder || bBackground )
     {
-        tools::Rectangle aRect( aPos, aSize );
+        Rectangle aRect( aPos, aSize );
         if ( bBorder )
         {
             ImplDrawFrame( pDev, aRect );
@@ -1787,24 +1840,11 @@ void Edit::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawF
         }
     }
 
-    const long nOnePixel = GetDrawPixel( pDev, 1 );
-    const long nOffX = 3*nOnePixel;
-    DrawTextFlags nTextStyle = DrawTextFlags::VCenter;
-    tools::Rectangle aTextRect( aPos, aSize );
-
-    if ( GetStyle() & WB_CENTER )
-        nTextStyle |= DrawTextFlags::Center;
-    else if ( GetStyle() & WB_RIGHT )
-        nTextStyle |= DrawTextFlags::Right;
-    else
-        nTextStyle |= DrawTextFlags::Left;
-
-    aTextRect.Left() += nOffX;
-    aTextRect.Right() -= nOffX;
-
     OUString    aText = ImplGetText();
     long        nTextHeight = pDev->GetTextHeight();
     long        nTextWidth = pDev->GetTextWidth( aText );
+    long        nOnePixel = GetDrawPixel( pDev, 1 );
+    long        nOffX = 3*nOnePixel;
     long        nOffY = (aSize.Height() - nTextHeight) / 2;
 
     // Clipping?
@@ -1812,13 +1852,24 @@ void Edit::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawF
          ((nOffY+nTextHeight) > aSize.Height()) ||
          ((nOffX+nTextWidth) > aSize.Width()) )
     {
-        tools::Rectangle aClip( aPos, aSize );
+        Rectangle aClip( aPos, aSize );
         if ( nTextHeight > aSize.Height() )
             aClip.Bottom() += nTextHeight-aSize.Height()+1;  // prevent HP printers from 'optimizing'
         pDev->IntersectClipRegion( aClip );
     }
 
-    pDev->DrawText( aTextRect, aText, nTextStyle );
+    if ( GetStyle() & WB_CENTER )
+    {
+        aPos.X() += (aSize.Width() - nTextWidth) / 2;
+        nOffX = 0;
+    }
+    else if ( GetStyle() & WB_RIGHT )
+    {
+        aPos.X() += aSize.Width() - nTextWidth;
+        nOffX = -nOffX;
+    }
+
+    pDev->DrawText( Point( aPos.X() + nOffX, aPos.Y() + nOffY ), aText );
     pDev->Pop();
 
     if ( GetSubEdit() )
@@ -1863,9 +1914,9 @@ void Edit::GetFocus()
                 maSelection.Max() = maText.getLength();
             }
             if ( mbIsSubEdit )
-                static_cast<Edit*>(GetParent())->CallEventListeners( VclEventId::EditSelectionChanged );
+                static_cast<Edit*>(GetParent())->CallEventListeners( VCLEVENT_EDIT_SELECTIONCHANGED );
             else
-                CallEventListeners( VclEventId::EditSelectionChanged );
+                CallEventListeners( VCLEVENT_EDIT_SELECTIONCHANGED );
         }
 
         ImplShowCursor();
@@ -1899,7 +1950,7 @@ void Edit::LoseFocus()
     {
         //notify an update latest when the focus is lost
         mpUpdateDataTimer->Stop();
-        mpUpdateDataTimer->Invoke();
+        mpUpdateDataTimer->Timeout();
     }
 
     if ( !mpSubEdit )
@@ -1924,27 +1975,21 @@ void Edit::Command( const CommandEvent& rCEvt )
 {
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        VclPtr<PopupMenu> pPopup = Edit::CreatePopupMenu();
-
-        bool bEnableCut = true;
-        bool bEnableCopy = true;
-        bool bEnableDelete = true;
-        bool bEnablePaste = true;
-        bool bEnableSpecialChar = true;
+        PopupMenu* pPopup = Edit::CreatePopupMenu();
 
         if ( !maSelection.Len() )
         {
-            bEnableCut = false;
-            bEnableCopy = false;
-            bEnableDelete = false;
+            pPopup->EnableItem( SV_MENU_EDIT_CUT, false );
+            pPopup->EnableItem( SV_MENU_EDIT_COPY, false );
+            pPopup->EnableItem( SV_MENU_EDIT_DELETE, false );
         }
 
         if ( IsReadOnly() )
         {
-            bEnableCut = false;
-            bEnablePaste = false;
-            bEnableDelete = false;
-            bEnableSpecialChar = false;
+            pPopup->EnableItem( SV_MENU_EDIT_CUT, false );
+            pPopup->EnableItem( SV_MENU_EDIT_PASTE, false );
+            pPopup->EnableItem( SV_MENU_EDIT_DELETE, false );
+            pPopup->EnableItem( SV_MENU_EDIT_INSERTSYMBOL, false );
         }
         else
         {
@@ -1966,18 +2011,19 @@ void Edit::Command( const CommandEvent& rCEvt )
                     bData = xDataObj->isDataFlavorSupported( aFlavor );
                 }
             }
-            bEnablePaste = bData;
+            pPopup->EnableItem( SV_MENU_EDIT_PASTE, bData );
         }
 
-        pPopup->EnableItem(pPopup->GetItemId("cut"), bEnableCut);
-        pPopup->EnableItem(pPopup->GetItemId("copy"), bEnableCopy);
-        pPopup->EnableItem(pPopup->GetItemId("delete"), bEnableDelete);
-        pPopup->EnableItem(pPopup->GetItemId("paste"), bEnablePaste);
-        pPopup->EnableItem(pPopup->GetItemId("specialchar"), bEnableSpecialChar);
-        pPopup->EnableItem(pPopup->GetItemId("undo"), maUndoText != maText.getStr());
-        bool bAllSelected = maSelection.Min() == 0 && maSelection.Max() == maText.getLength();
-        pPopup->EnableItem(pPopup->GetItemId("selectall"), !bAllSelected);
-        pPopup->ShowItem(pPopup->GetItemId("specialchar"), pImplFncGetSpecialChars);
+        if ( maUndoText == maText.getStr() )
+            pPopup->EnableItem( SV_MENU_EDIT_UNDO, false );
+        if ( ( maSelection.Min() == 0 ) && ( maSelection.Max() == maText.getLength() ) )
+            pPopup->EnableItem( SV_MENU_EDIT_SELECTALL, false );
+        if ( !pImplFncGetSpecialChars )
+        {
+            sal_uInt16 nPos = pPopup->GetItemPos( SV_MENU_EDIT_INSERTSYMBOL );
+            pPopup->RemoveItem( nPos );
+            pPopup->RemoveItem( nPos-1 );
+        }
 
         mbActivePopup = true;
         Selection aSaveSel = GetSelection(); // if someone changes selection in Get/LoseFocus, e.g. URL bar
@@ -1989,47 +2035,44 @@ void Edit::Command( const CommandEvent& rCEvt )
             aPos = Point( aSize.Width()/2, aSize.Height()/2 );
         }
         sal_uInt16 n = pPopup->Execute( this, aPos );
+        Edit::DeletePopupMenu( pPopup );
         SetSelection( aSaveSel );
-        OString sCommand = pPopup->GetItemIdent(n);
-        if (sCommand == "undo")
+        switch ( n )
         {
-            Undo();
-            ImplModified();
-        }
-        else if (sCommand == "cut")
-        {
-            Cut();
-            ImplModified();
-        }
-        else if (sCommand == "copy")
-        {
-            Copy();
-        }
-        else if (sCommand == "paste")
-        {
-            Paste();
-            ImplModified();
-        }
-        else if (sCommand == "delete")
-        {
-            DeleteSelected();
-            ImplModified();
-        }
-        else if (sCommand == "selectall")
-        {
-            ImplSetSelection( Selection( 0, maText.getLength() ) );
-        }
-        else if (sCommand == "specialchar" && pImplFncGetSpecialChars)
-        {
-            OUString aChars = pImplFncGetSpecialChars( this, GetFont() );
-            SetSelection( aSaveSel );
-            if (!aChars.isEmpty())
-            {
-                ImplInsertText( aChars );
+            case SV_MENU_EDIT_UNDO:
+                Undo();
                 ImplModified();
-            }
+                break;
+            case SV_MENU_EDIT_CUT:
+                Cut();
+                ImplModified();
+                break;
+            case SV_MENU_EDIT_COPY:
+                Copy();
+                break;
+            case SV_MENU_EDIT_PASTE:
+                Paste();
+                ImplModified();
+                break;
+            case SV_MENU_EDIT_DELETE:
+                DeleteSelected();
+                ImplModified();
+                break;
+            case SV_MENU_EDIT_SELECTALL:
+                ImplSetSelection( Selection( 0, maText.getLength() ) );
+                break;
+            case SV_MENU_EDIT_INSERTSYMBOL:
+                {
+                    OUString aChars = pImplFncGetSpecialChars( this, GetFont() );
+                    SetSelection( aSaveSel );
+                    if ( !aChars.isEmpty() )
+                    {
+                        ImplInsertText( aChars );
+                        ImplModified();
+                    }
+                }
+                break;
         }
-        pPopup.clear();
         mbActivePopup = false;
     }
     else if ( rCEvt.GetCommand() == CommandEventId::StartExtTextInput )
@@ -2056,6 +2099,7 @@ void Edit::Command( const CommandEvent& rCEvt )
         {
             if ( (maSelection.Min() == maSelection.Max()) && (maSelection.Min() == maText.getLength()) )
             {
+                meAutocompleteAction = AutocompleteAction::KeyInput;
                 maAutocompleteHdl.Call(*this);
             }
         }
@@ -2146,10 +2190,10 @@ void Edit::Command( const CommandEvent& rCEvt )
             long    nTH = GetTextHeight();
             Point   aPos( mnXOffset, ImplGetTextYPosition() );
 
-            std::unique_ptr<tools::Rectangle[]> aRects(new tools::Rectangle[ mpIMEInfos->nLen ]);
+            std::unique_ptr<Rectangle[]> aRects(new Rectangle[ mpIMEInfos->nLen ]);
             for ( int nIndex = 0; nIndex < mpIMEInfos->nLen; ++nIndex )
             {
-                tools::Rectangle aRect( aPos, Size( 10, nTH ) );
+                Rectangle aRect( aPos, Size( 10, nTH ) );
                 aRect.Left() = pDX[2*(nIndex+mpIMEInfos->nPos)] + mnXOffset + ImplGetExtraXOffset();
                 aRects[ nIndex ] = aRect;
             }
@@ -2201,12 +2245,12 @@ void Edit::StateChanged( StateChangedType nType )
             if (GetParent()->GetStyle() & WB_LEFT)
                 mnAlign = EDIT_ALIGN_RIGHT;
             if (nType == StateChangedType::Mirroring)
-                SetLayoutMode(ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft);
+                SetLayoutMode(TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT);
         }
         else if (mbIsSubEdit && !GetParent()->IsRTLEnabled())
         {
             if (nType == StateChangedType::Mirroring)
-                SetLayoutMode(ComplexTextLayoutFlags::TextOriginLeft);
+                SetLayoutMode(TEXT_LAYOUT_TEXTORIGIN_LEFT);
         }
 
         if (nStyle & WB_RIGHT)
@@ -2282,7 +2326,7 @@ void Edit::ImplShowDDCursor()
     {
         long nTextWidth = GetTextWidth( maText.toString(), 0, mpDDInfo->nDropPos );
         long nTextHeight = GetTextHeight();
-        tools::Rectangle aCursorRect( Point( nTextWidth + mnXOffset, (GetOutputSize().Height()-nTextHeight)/2 ), Size( 2, nTextHeight ) );
+        Rectangle aCursorRect( Point( nTextWidth + mnXOffset, (GetOutputSize().Height()-nTextHeight)/2 ), Size( 2, nTextHeight ) );
         mpDDInfo->aCursor.SetWindow( this );
         mpDDInfo->aCursor.SetPos( aCursorRect.TopLeft() );
         mpDDInfo->aCursor.SetSize( aCursorRect.GetSize() );
@@ -2314,7 +2358,7 @@ OUString TextFilter::filter(const OUString &rText)
     OUString sTemp(rText);
     for (sal_Int32 i = 0; i < sForbiddenChars.getLength(); ++i)
     {
-        sTemp = sTemp.replaceAll(OUStringLiteral1(sForbiddenChars[i]), "");
+        sTemp = comphelper::string::remove(sTemp, sForbiddenChars[i]);
     }
     return sTemp;
 }
@@ -2351,12 +2395,12 @@ void Edit::Modify()
         if ( mpUpdateDataTimer )
             mpUpdateDataTimer->Start();
 
-        if ( ImplCallEventListenersAndHandler( VclEventId::EditModify, [this] () { maModifyHdl.Call(*this); } ) )
+        if ( ImplCallEventListenersAndHandler( VCLEVENT_EDIT_MODIFY, [this] () { maModifyHdl.Call(*this); } ) )
             // have been destroyed while calling into the handlers
             return;
 
         // #i13677# notify edit listeners about caret position change
-        CallEventListeners( VclEventId::EditCaretChanged );
+        CallEventListeners( VCLEVENT_EDIT_CARETCHANGED );
         // FIXME: this is currently only on OS X
         // check for other platforms that need similar handling
         if( ImplGetSVData()->maNWFData.mbNoFocusRects &&
@@ -2373,7 +2417,7 @@ void Edit::UpdateData()
     maUpdateDataHdl.Call( *this );
 }
 
-IMPL_LINK_NOARG(Edit, ImplUpdateDataHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(Edit, ImplUpdateDataHdl, Timer *, void)
 {
     UpdateData();
 }
@@ -2387,8 +2431,7 @@ void Edit::EnableUpdateData( sal_uLong nTimeout )
         if ( !mpUpdateDataTimer )
         {
             mpUpdateDataTimer = new Timer("UpdateDataTimer");
-            mpUpdateDataTimer->SetInvokeHandler( LINK( this, Edit, ImplUpdateDataHdl ) );
-            mpUpdateDataTimer->SetDebugName( "vcl::Edit mpUpdateDataTimer" );
+            mpUpdateDataTimer->SetTimeoutHdl( LINK( this, Edit, ImplUpdateDataHdl ) );
         }
 
         mpUpdateDataTimer->SetTimeout( nTimeout );
@@ -2506,22 +2549,22 @@ void Edit::ImplSetSelection( const Selection& rSelection, bool bPaint )
                 if (bSelection)
                 {
                     if ( mbIsSubEdit )
-                        static_cast<Edit*>(GetParent())->CallEventListeners( VclEventId::EditSelectionChanged );
+                        static_cast<Edit*>(GetParent())->CallEventListeners( VCLEVENT_EDIT_SELECTIONCHANGED );
                     else
-                        CallEventListeners( VclEventId::EditSelectionChanged );
+                        CallEventListeners( VCLEVENT_EDIT_SELECTIONCHANGED );
                 }
 
                 if (bCaret)
                 {
                     if ( mbIsSubEdit )
-                        static_cast<Edit*>(GetParent())->CallEventListeners( VclEventId::EditCaretChanged );
+                        static_cast<Edit*>(GetParent())->CallEventListeners( VCLEVENT_EDIT_CARETCHANGED );
                     else
-                        CallEventListeners( VclEventId::EditCaretChanged );
+                        CallEventListeners( VCLEVENT_EDIT_CARETCHANGED );
                 }
 
                 // #103511# notify combobox listeners of deselection
-                if( !maSelection && GetParent() && GetParent()->GetType() == WindowType::COMBOBOX )
-                    static_cast<Edit*>(GetParent())->CallEventListeners( VclEventId::ComboboxDeselect );
+                if( !maSelection && GetParent() && GetParent()->GetType() == WINDOW_COMBOBOX )
+                    static_cast<Edit*>(GetParent())->CallEventListeners( VCLEVENT_COMBOBOX_DESELECT );
             }
         }
     }
@@ -2678,7 +2721,7 @@ void Edit::SetSubEdit(Edit* pEdit)
 
     if (mpSubEdit)
     {
-        SetPointer(PointerStyle::Arrow);    // Only SubEdit has the BEAM...
+        SetPointer(PointerStyle::Arrow);    // Nur das SubEdit hat den BEAM...
         mpSubEdit->mbIsSubEdit = true;
 
         mpSubEdit->SetReadOnly(mbReadOnly);
@@ -2725,8 +2768,8 @@ Size Edit::CalcMinimumSizeForText(const OUString &rString) const
 
     // ask NWF what if it has an opinion, too
     ImplControlValue aControlValue;
-    tools::Rectangle aRect( Point( 0, 0 ), aSize );
-    tools::Rectangle aContent, aBound;
+    Rectangle aRect( Point( 0, 0 ), aSize );
+    Rectangle aContent, aBound;
     if (GetNativeControlRegion(eCtrlType, ControlPart::Entire, aRect, ControlState::NONE,
                                aControlValue, OUString(), aBound, aContent))
     {
@@ -2788,39 +2831,48 @@ FncGetSpecialChars Edit::GetGetSpecialCharsFunction()
     return pImplFncGetSpecialChars;
 }
 
-VclPtr<PopupMenu> Edit::CreatePopupMenu()
+PopupMenu* Edit::CreatePopupMenu()
 {
-    if (!mpUIBuilder)
-        mpUIBuilder.reset(new VclBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "vcl/ui/editmenu.ui", ""));
-    VclPtr<PopupMenu> pPopup = mpUIBuilder->get_menu("menu");
+    ResMgr* pResMgr = ImplGetResMgr();
+    if( ! pResMgr )
+        return new PopupMenu();
+
+    PopupMenu* pPopup = new PopupMenu( ResId( SV_RESID_MENU_EDIT, *pResMgr ) );
     const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
-    if (rStyleSettings.GetHideDisabledMenuItems())
+    if ( rStyleSettings.GetHideDisabledMenuItems() )
         pPopup->SetMenuFlags( MenuFlags::HideDisabledEntries );
     else
         pPopup->SetMenuFlags ( MenuFlags::AlwaysShowDisabledEntries );
-    if (rStyleSettings.GetContextMenuShortcuts())
+    if ( rStyleSettings.GetAcceleratorsInContextMenus() )
     {
-        pPopup->SetAccelKey(pPopup->GetItemId("undo"), vcl::KeyCode( KeyFuncType::UNDO));
-        pPopup->SetAccelKey(pPopup->GetItemId("cut"), vcl::KeyCode( KeyFuncType::CUT));
-        pPopup->SetAccelKey(pPopup->GetItemId("copy"), vcl::KeyCode( KeyFuncType::COPY));
-        pPopup->SetAccelKey(pPopup->GetItemId("paste"), vcl::KeyCode( KeyFuncType::PASTE));
-        pPopup->SetAccelKey(pPopup->GetItemId("delete"), vcl::KeyCode( KeyFuncType::DELETE));
+        pPopup->SetAccelKey( SV_MENU_EDIT_UNDO, vcl::KeyCode( KeyFuncType::UNDO ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_CUT, vcl::KeyCode( KeyFuncType::CUT ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_COPY, vcl::KeyCode( KeyFuncType::COPY ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_PASTE, vcl::KeyCode( KeyFuncType::PASTE ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_DELETE, vcl::KeyCode( KeyFuncType::DELETE ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_SELECTALL, vcl::KeyCode( KEY_A, false, true, false, false ) );
+        pPopup->SetAccelKey( SV_MENU_EDIT_INSERTSYMBOL, vcl::KeyCode( KEY_S, true, true, false, false ) );
     }
     return pPopup;
 }
 
+void Edit::DeletePopupMenu( PopupMenu* pMenu )
+{
+    delete pMenu;
+}
+
 // css::datatransfer::dnd::XDragGestureListener
-void Edit::dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent& rDGE )
+void Edit::dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent& rDGE ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aVclGuard;
 
     if ( !IsTracking() && maSelection.Len() &&
-         !(GetStyle() & WB_PASSWORD) && (!mpDDInfo || !mpDDInfo->bStarterOfDD) ) // no repeated D&D
+         !(GetStyle() & WB_PASSWORD) && (!mpDDInfo || !mpDDInfo->bStarterOfDD) ) // Kein Mehrfach D&D
     {
         Selection aSel( maSelection );
         aSel.Justify();
 
-        // only if mouse in the selection...
+        // Nur wenn Maus in der Selektion...
         Point aMousePos( rDGE.DragOriginX, rDGE.DragOriginY );
         sal_Int32 nCharPos = ImplGetCharPos( aMousePos );
         if ( (nCharPos >= aSel.Min()) && (nCharPos < aSel.Max()) )
@@ -2832,7 +2884,7 @@ void Edit::dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent
             mpDDInfo->aDndStartSel = aSel;
 
             if ( IsTracking() )
-                EndTracking();  // before D&D disable tracking
+                EndTracking();  // Vor D&D Tracking ausschalten
 
             vcl::unohelper::TextDataObject* pDataObj = new vcl::unohelper::TextDataObject( GetSelected() );
             sal_Int8 nActions = datatransfer::dnd::DNDConstants::ACTION_COPY;
@@ -2847,7 +2899,7 @@ void Edit::dragGestureRecognized( const css::datatransfer::dnd::DragGestureEvent
 }
 
 // css::datatransfer::dnd::XDragSourceListener
-void Edit::dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& rDSDE )
+void Edit::dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& rDSDE ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aVclGuard;
 
@@ -2873,7 +2925,7 @@ void Edit::dragDropEnd( const css::datatransfer::dnd::DragSourceDropEvent& rDSDE
 }
 
 // css::datatransfer::dnd::XDropTargetListener
-void Edit::drop( const css::datatransfer::dnd::DropTargetDropEvent& rDTDE )
+void Edit::drop( const css::datatransfer::dnd::DropTargetDropEvent& rDTDE ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aVclGuard;
 
@@ -2920,7 +2972,7 @@ void Edit::drop( const css::datatransfer::dnd::DropTargetDropEvent& rDTDE )
     rDTDE.Context->dropComplete( bChanges );
 }
 
-void Edit::dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& rDTDE )
+void Edit::dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& rDTDE ) throw (css::uno::RuntimeException, std::exception)
 {
     if ( !mpDDInfo )
     {
@@ -2942,14 +2994,14 @@ void Edit::dragEnter( const css::datatransfer::dnd::DropTargetDragEnterEvent& rD
     }
 }
 
-void Edit::dragExit( const css::datatransfer::dnd::DropTargetEvent& )
+void Edit::dragExit( const css::datatransfer::dnd::DropTargetEvent& ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aVclGuard;
 
     ImplHideDDCursor();
 }
 
-void Edit::dragOver( const css::datatransfer::dnd::DropTargetDragEvent& rDTDE )
+void Edit::dragOver( const css::datatransfer::dnd::DropTargetDragEvent& rDTDE ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aVclGuard;
 
@@ -2998,11 +3050,6 @@ OUString Edit::GetSurroundingText() const
 Selection Edit::GetSurroundingTextSelection() const
 {
   return GetSelection();
-}
-
-FactoryFunction Edit::GetUITestFactory() const
-{
-    return EditUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

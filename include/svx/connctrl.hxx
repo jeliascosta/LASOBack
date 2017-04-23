@@ -19,15 +19,8 @@
 #ifndef INCLUDED_SVX_CONNCTRL_HXX
 #define INCLUDED_SVX_CONNCTRL_HXX
 
-#include <sal/types.h>
-#include <svx/svxdllapi.h>
-#include <tools/gen.hxx>
-#include <tools/wintypes.hxx>
 #include <vcl/ctrl.hxx>
-#include <vcl/event.hxx>
-#include <vcl/outdev.hxx>
-
-namespace vcl { class Window; }
+#include <svx/svxdllapi.h>
 
 class SfxItemSet;
 class SdrEdgeObj;
@@ -52,10 +45,10 @@ private:
     SVX_DLLPRIVATE void AdaptSize();
 public:
     SvxXConnectionPreview( vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxXConnectionPreview() override;
+    virtual ~SvxXConnectionPreview();
     virtual void dispose() override;
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;

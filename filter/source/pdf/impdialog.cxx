@@ -28,8 +28,6 @@
 #include "sfx2/passwd.hxx"
 #include "svtools/miscopt.hxx"
 
-#include "comphelper/propertyvalue.hxx"
-#include "comphelper/sequence.hxx"
 #include "comphelper/storagehelper.hxx"
 
 #include "com/sun/star/text/XTextRange.hpp"
@@ -71,7 +69,6 @@ ImpPDFTabDialog::ImpPDFTabDialog(vcl::Window* pParent, Sequence< PropertyValue >
     mnViewPageId(0),
     mnGeneralPageId(0),
     mbIsPresentation( false ),
-    mbIsSpreadsheet( false ),
     mbIsWriter( false ),
 
     mbSelectionPresent( false ),
@@ -83,7 +80,6 @@ ImpPDFTabDialog::ImpPDFTabDialog(vcl::Window* pParent, Sequence< PropertyValue >
     mbUseTaggedPDF( false ),
     mbExportNotes( true ),
     mbViewPDF( false ),
-    mbUseReferenceXObject( false ),
     mbExportNotesPages( false ),
     mbExportOnlyNotesPages( false ),
     mbUseTransitionEffects( false ),
@@ -137,7 +133,7 @@ ImpPDFTabDialog::ImpPDFTabDialog(vcl::Window* pParent, Sequence< PropertyValue >
         {
             Reference< view::XSelectionSupplier > xView( xController, UNO_QUERY );
             if( xView.is() )
-                maSelection = xView->getSelection();
+                xView->getSelection() >>= maSelection;
         }
     }
     catch(const RuntimeException &)
@@ -166,7 +162,7 @@ ImpPDFTabDialog::ImpPDFTabDialog(vcl::Window* pParent, Sequence< PropertyValue >
         }
     }
 
-    // check if source document is a presentation or a spreadsheet or a textdocument
+    // check if source document is a presentation
     try
     {
         Reference< XServiceInfo > xInfo( rxDoc, UNO_QUERY );
@@ -174,8 +170,6 @@ ImpPDFTabDialog::ImpPDFTabDialog(vcl::Window* pParent, Sequence< PropertyValue >
         {
             if ( xInfo->supportsService( "com.sun.star.presentation.PresentationDocument" ) )
                 mbIsPresentation = true;
-            if ( xInfo->supportsService( "com.sun.star.sheet.SpreadsheetDocument" ) )
-                mbIsSpreadsheet = true;
             if ( xInfo->supportsService( "com.sun.star.text.GenericTextDocument" ) )
                 mbIsWriter = true;
         }
@@ -313,7 +307,7 @@ ImpPDFTabGeneralPage* ImpPDFTabDialog::getGeneralPage() const
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabDialog, CancelHdl, Button*, void)
 {
     EndDialog();
 }
@@ -455,27 +449,72 @@ Sequence< PropertyValue > ImpPDFTabDialog::GetFilterData()
     maConfigItem.WriteBool( "EnableCopyingOfContent", mbCanCopyOrExtract );
     maConfigItem.WriteBool( "EnableTextAccessForAccessibilityTools", mbCanExtractForAccessibility );
 
-    std::vector<beans::PropertyValue> aRet;
+    Sequence< PropertyValue > aRet( maConfigItem.GetFilterData() );
 
-    aRet.push_back(comphelper::makePropertyValue("Watermark", maWatermarkText));
-    aRet.push_back(comphelper::makePropertyValue("EncryptFile", mbEncrypt));
-    aRet.push_back(comphelper::makePropertyValue("PreparedPasswords", mxPreparedPasswords));
-    aRet.push_back(comphelper::makePropertyValue("RestrictPermissions", mbRestrictPermissions));
-    aRet.push_back(comphelper::makePropertyValue("PreparedPermissionPassword", maPreparedOwnerPassword));
+    // FIXME: OMG, this is horrible coding style...
+    int nElementAdded = 12;
+
+    aRet.realloc( aRet.getLength() + nElementAdded );
+
+    sal_uInt32 const nLength(aRet.getLength());
+    aRet[ nLength - nElementAdded ].Name = "Watermark";
+    aRet[ nLength - nElementAdded ].Value <<= maWatermarkText;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "EncryptFile";
+    aRet[ nLength - nElementAdded ].Value <<= mbEncrypt;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "PreparedPasswords";
+    aRet[ nLength - nElementAdded ].Value <<= mxPreparedPasswords;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "RestrictPermissions";
+    aRet[ nLength - nElementAdded ].Value <<= mbRestrictPermissions;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "PreparedPermissionPassword";
+    aRet[ nLength - nElementAdded ].Value <<= maPreparedOwnerPassword;
+    nElementAdded--;
+
     if( mbIsRangeChecked )
-        aRet.push_back(comphelper::makePropertyValue("PageRange", msPageRange));
+    {
+        aRet[ nLength - nElementAdded ].Name = "PageRange";
+        aRet[ nLength - nElementAdded ].Value <<= msPageRange;
+        nElementAdded--;
+    }
     else if( mbSelectionIsChecked )
-        aRet.push_back(comphelper::makePropertyValue("Selection", maSelection));
+    {
+        aRet[ nLength - nElementAdded ].Name = "Selection";
+        aRet[ nLength - nElementAdded ].Value <<= maSelection;
+        nElementAdded--;
+    }
 
-    aRet.push_back(comphelper::makePropertyValue("SignatureLocation", msSignLocation));
-    aRet.push_back(comphelper::makePropertyValue("SignatureReason", msSignReason));
-    aRet.push_back(comphelper::makePropertyValue("SignatureContactInfo", msSignContact));
-    aRet.push_back(comphelper::makePropertyValue("SignaturePassword", msSignPassword));
-    aRet.push_back(comphelper::makePropertyValue("SignatureCertificate", maSignCertificate));
-    aRet.push_back(comphelper::makePropertyValue("SignatureTSA", msSignTSA));
-    aRet.push_back(comphelper::makePropertyValue("UseReferenceXObject", mbUseReferenceXObject));
+    aRet[ nLength - nElementAdded ].Name = "SignatureLocation";
+    aRet[ nLength - nElementAdded ].Value <<= msSignLocation;
+    nElementAdded--;
 
-    return comphelper::concatSequences(maConfigItem.GetFilterData(), comphelper::containerToSequence(aRet));
+    aRet[ nLength - nElementAdded ].Name = "SignatureReason";
+    aRet[ nLength - nElementAdded ].Value <<= msSignReason;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "SignatureContactInfo";
+    aRet[ nLength - nElementAdded ].Value <<= msSignContact;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "SignaturePassword";
+    aRet[ nLength - nElementAdded ].Value <<= msSignPassword;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "SignatureCertificate";
+    aRet[ nLength - nElementAdded ].Value <<= maSignCertificate;
+    nElementAdded--;
+
+    aRet[ nLength - nElementAdded ].Name = "SignatureTSA";
+    aRet[ nLength - nElementAdded ].Value <<= msSignTSA;
+    nElementAdded--;
+
+    return aRet;
 }
 
 
@@ -484,14 +523,12 @@ ImpPDFTabGeneralPage::ImpPDFTabGeneralPage(vcl::Window* pParent, const SfxItemSe
     , mbTaggedPDFUserSelection(false)
     , mbExportFormFieldsUserSelection(false)
     , mbIsPresentation(false)
-    , mbIsSpreadsheet(false)
     , mbIsWriter(false)
     , mpaParent(nullptr)
 {
     get(mpRbAll, "all");
     get(mpRbRange, "range");
     get(mpRbSelection, "selection");
-    get(mpSelectedSheets, "selectedsheets");
     get(mpEdPages, "pages");
 
     get(mpRbLosslessCompression, "losslesscompress");
@@ -518,7 +555,6 @@ ImpPDFTabGeneralPage::ImpPDFTabGeneralPage(vcl::Window* pParent, const SfxItemSe
     get(mpCbExportEmptyPages, "emptypages");
     get(mpCbExportPlaceholders, "exportplaceholders" );
     get(mpCbViewPDF, "viewpdf");
-    get(mpCbUseReferenceXObject, "usereferencexobject");
 
     get(mpCbWatermark, "watermark");
     get(mpFtWatermark, "watermarklabel");
@@ -537,7 +573,6 @@ void ImpPDFTabGeneralPage::dispose()
     mpRbAll.clear();
     mpRbRange.clear();
     mpRbSelection.clear();
-    mpSelectedSheets.clear();
     mpEdPages.clear();
     mpRbLosslessCompression.clear();
     mpRbJPEGCompression.clear();
@@ -555,7 +590,6 @@ void ImpPDFTabGeneralPage::dispose()
     mpCbExportHiddenSlides.clear();
     mpCbExportNotes.clear();
     mpCbViewPDF.clear();
-    mpCbUseReferenceXObject.clear();
     mpCbExportNotesPages.clear();
     mpCbExportOnlyNotesPages.clear();
     mpCbExportEmptyPages.clear();
@@ -585,7 +619,6 @@ void ImpPDFTabGeneralPage::SetFilterConfigItem( ImpPDFTabDialog* paParent )
         mpRbSelection->SetToggleHdl( LINK( this, ImpPDFTabGeneralPage, ToggleSelectionHdl ) );
     mbIsPresentation = paParent->mbIsPresentation;
     mbIsWriter = paParent->mbIsWriter;
-    mbIsSpreadsheet = paParent->mbIsSpreadsheet;
 
     mpCbExportEmptyPages->Enable( mbIsWriter );
     mpCbExportPlaceholders->Enable( mbIsWriter );
@@ -662,12 +695,6 @@ void ImpPDFTabGeneralPage::SetFilterConfigItem( ImpPDFTabDialog* paParent )
         mpCbExportHiddenSlides->Show(false);
         mpCbExportHiddenSlides->Check(false);
     }
-
-    if( mbIsSpreadsheet )
-    {
-        mpRbSelection->SetText(get<FixedText>("selectedsheets")->GetText());
-    }
-
     mpCbExportPlaceholders->Show(mbIsWriter);
     if( !mbIsWriter )
     {
@@ -693,7 +720,6 @@ void ImpPDFTabGeneralPage::GetFilterConfigItem( ImpPDFTabDialog* paParent )
     paParent->mnMaxImageResolution = mpCoReduceImageResolution->GetText().toInt32();
     paParent->mbExportNotes = mpCbExportNotes->IsChecked();
     paParent->mbViewPDF = mpCbViewPDF->IsChecked();
-    paParent->mbUseReferenceXObject = mpCbUseReferenceXObject->IsChecked();
     if ( mbIsPresentation )
     {
         paParent->mbExportNotesPages = mpCbExportNotesPages->IsChecked();
@@ -737,7 +763,7 @@ void ImpPDFTabGeneralPage::GetFilterConfigItem( ImpPDFTabDialog* paParent )
     * FIXME: the entries are only implicitly defined by the resource file. Should there
     * ever be an additional form submit format this could get invalid.
     */
-    paParent->mnFormsType = mpLbFormsFormat->GetSelectEntryPos();
+    paParent->mnFormsType = (sal_Int32) mpLbFormsFormat->GetSelectEntryPos();
     paParent->mbAllowDuplicateFieldNames = mpCbAllowDuplicateFieldNames->IsChecked();
 }
 
@@ -749,18 +775,18 @@ VclPtr<SfxTabPage> ImpPDFTabGeneralPage::Create( vcl::Window* pParent,
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleAllHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleAllHdl, RadioButton&, void)
 {
     EnableExportNotesPages();
 }
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, TogglePagesHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, TogglePagesHdl, RadioButton&, void)
 {
     TogglePagesHdl();
     EnableExportNotesPages();
 }
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleSelectionHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleSelectionHdl, RadioButton&, void)
 {
     EnableExportNotesPages();
 }
@@ -781,29 +807,29 @@ void ImpPDFTabGeneralPage::EnableExportNotesPages()
     }
 }
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleExportFormFieldsHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleExportFormFieldsHdl, CheckBox&, void)
 {
     mpFormsFrame->Enable(mpCbExportFormFields->IsChecked());
 }
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleExportNotesPagesHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleExportNotesPagesHdl, CheckBox&, void)
 {
     mpCbExportOnlyNotesPages->Enable(mpCbExportNotesPages->IsChecked());
 }
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleCompressionHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleCompressionHdl, RadioButton&, void)
 {
     mpQualityFrame->Enable(mpRbJPEGCompression->IsChecked());
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleReduceImageResolutionHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleReduceImageResolutionHdl, CheckBox&, void)
 {
     mpCoReduceImageResolution->Enable( mpCbReduceImageResolution->IsChecked() );
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleWatermarkHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleWatermarkHdl, CheckBox&, void)
 {
     mpEdWatermark->Enable( mpCbWatermark->IsChecked() );
     mpFtWatermark->Enable (mpCbWatermark->IsChecked() );
@@ -812,7 +838,7 @@ IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleWatermarkHdl, CheckBox&, void)
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleAddStreamHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleAddStreamHdl, CheckBox&, void)
 {
     if( mpCbAddStream->IsVisible() )
     {
@@ -834,7 +860,7 @@ IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleAddStreamHdl, CheckBox&, void)
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleExportPDFAHdl, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabGeneralPage, ToggleExportPDFAHdl, CheckBox&, void)
 {
     // set the security page status (and its controls as well)
     ImpPDFTabSecurityPage* pSecPage = mpaParent ? mpaParent->getSecurityPage() : nullptr;
@@ -874,7 +900,7 @@ IMPL_LINK_NOARG(ImpPDFTabGeneralPage, ToggleExportPDFAHdl, CheckBox&, void)
     // if a password was set, inform the user that this will not be used in PDF/A case
     if( mpCbPDFA1b->IsChecked() && pSecPage && pSecPage->hasPassword() )
     {
-        ScopedVclPtrInstance< MessageDialog > aBox(this, PDFFilterResId(STR_WARN_PASSWORD_PDFA), VclMessageType::Warning);
+        ScopedVclPtrInstance< MessageDialog > aBox(this, PDFFilterResId(STR_WARN_PASSWORD_PDFA), VCL_MESSAGE_WARNING);
         aBox->Execute();
     }
 }
@@ -1051,7 +1077,7 @@ void ImpPDFTabOpnFtrPage::SetFilterConfigItem( const  ImpPDFTabDialog* paParent 
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabOpnFtrPage, ToggleRbPgLyContinueFacingHdl, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabOpnFtrPage, ToggleRbPgLyContinueFacingHdl, RadioButton&, void)
 {
     ToggleRbPgLyContinueFacingHdl();
 }
@@ -1063,7 +1089,7 @@ void ImpPDFTabOpnFtrPage::ToggleRbPgLyContinueFacingHdl()
 }
 
 
-IMPL_LINK_NOARG( ImpPDFTabOpnFtrPage, ToggleRbMagnHdl, RadioButton&, void )
+IMPL_LINK_NOARG_TYPED( ImpPDFTabOpnFtrPage, ToggleRbMagnHdl, RadioButton&, void )
 {
     mpNumZoom->Enable( mpRbMagnZoom->IsChecked() );
 }
@@ -1115,7 +1141,7 @@ void ImpPDFTabViewerPage::dispose()
 }
 
 
-IMPL_LINK_NOARG( ImpPDFTabViewerPage, ToggleRbBookmarksHdl, RadioButton&, void )
+IMPL_LINK_NOARG_TYPED( ImpPDFTabViewerPage, ToggleRbBookmarksHdl, RadioButton&, void )
 {
     m_pNumBookmarkLevels->Enable( m_pRbVisibleBookmarkLevels->IsChecked() );
 }
@@ -1331,7 +1357,7 @@ void ImpPDFTabSecurityPage::SetFilterConfigItem( const  ImpPDFTabDialog* paParen
 }
 
 
-IMPL_LINK_NOARG(ImpPDFTabSecurityPage, ClickmaPbSetPwdHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabSecurityPage, ClickmaPbSetPwdHdl, Button*, void)
 {
     ScopedVclPtrInstance< SfxPasswordDialog > aPwdDialog( this, &msUserPwdTitle );
     aPwdDialog->SetMinLen( 0 );
@@ -1572,7 +1598,7 @@ void ImpPDFTabLinksPage::ImplPDFALinkControl( bool bEnableLaunch )
 
 
 /// Reset the memory of Launch action present when PDF/A-1 was requested
-IMPL_LINK_NOARG(ImpPDFTabLinksPage, ClickRbOpnLnksDefaultHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabLinksPage, ClickRbOpnLnksDefaultHdl, Button*, void)
 {
     mbOpnLnksDefaultUserState = m_pRbOpnLnksDefault->IsChecked();
     mbOpnLnksLaunchUserState = m_pRbOpnLnksLaunch->IsChecked();
@@ -1581,7 +1607,7 @@ IMPL_LINK_NOARG(ImpPDFTabLinksPage, ClickRbOpnLnksDefaultHdl, Button*, void)
 
 
 /// Reset the memory of a launch action present when PDF/A-1 was requested
-IMPL_LINK_NOARG(ImpPDFTabLinksPage, ClickRbOpnLnksBrowserHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ImpPDFTabLinksPage, ClickRbOpnLnksBrowserHdl, Button*, void)
 {
     mbOpnLnksDefaultUserState = m_pRbOpnLnksDefault->IsChecked();
     mbOpnLnksLaunchUserState = m_pRbOpnLnksLaunch->IsChecked();
@@ -1595,7 +1621,7 @@ ImplErrorDialog::ImplErrorDialog(const std::set< vcl::PDFWriter::ErrorCode >& rE
     get(m_pErrors, "errors");
     get(m_pExplanation, "message");
 
-    Size aSize(LogicToPixel(Size(100, 75), MapMode(MapUnit::MapAppFont)));
+    Size aSize(LogicToPixel(Size(100, 75), MapMode(MAP_APPFONT)));
     m_pErrors->set_width_request(aSize.Width());
     m_pErrors->set_height_request(aSize.Height());
     m_pExplanation->set_width_request(aSize.Width());
@@ -1678,7 +1704,7 @@ void ImplErrorDialog::dispose()
 }
 
 
-IMPL_LINK_NOARG(ImplErrorDialog, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ImplErrorDialog, SelectHdl, ListBox&, void)
 {
     OUString* pStr = static_cast<OUString*>(m_pErrors->GetSelectEntryData());
     m_pExplanation->SetText( pStr ? *pStr : OUString() );
@@ -1720,21 +1746,18 @@ void ImpPDFTabSigningPage::dispose()
     mpEdSignLocation.clear();
     mpEdSignContactInfo.clear();
     mpEdSignReason.clear();
-    mpLBSignTSA.clear();
     SfxTabPage::dispose();
 }
 
 
-IMPL_LINK_NOARG( ImpPDFTabSigningPage, ClickmaPbSignCertSelect, Button*, void )
+IMPL_LINK_NOARG_TYPED( ImpPDFTabSigningPage, ClickmaPbSignCertSelect, Button*, void )
 {
 
     Reference< security::XDocumentDigitalSignatures > xSigner(
         security::DocumentDigitalSignatures::createWithVersion(
             comphelper::getProcessComponentContext(), "1.2" ) );
 
-    // The use may provide a description while choosing a certificate.
-    OUString aDescription;
-    maSignCertificate = xSigner->chooseCertificate(aDescription);
+    maSignCertificate = xSigner->chooseCertificate();
 
     if (maSignCertificate.is())
     {
@@ -1744,7 +1767,6 @@ IMPL_LINK_NOARG( ImpPDFTabSigningPage, ClickmaPbSignCertSelect, Button*, void )
         mpEdSignPassword->Enable();
         mpEdSignContactInfo->Enable();
         mpEdSignReason->Enable();
-        mpEdSignReason->SetText(aDescription);
 
         try
         {
@@ -1770,7 +1792,7 @@ IMPL_LINK_NOARG( ImpPDFTabSigningPage, ClickmaPbSignCertSelect, Button*, void )
 }
 
 
-IMPL_LINK_NOARG( ImpPDFTabSigningPage, ClickmaPbSignCertClear, Button*, void )
+IMPL_LINK_NOARG_TYPED( ImpPDFTabSigningPage, ClickmaPbSignCertClear, Button*, void )
 {
     mpEdSignCert->SetText("");
     maSignCertificate.clear();

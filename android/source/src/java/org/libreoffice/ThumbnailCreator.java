@@ -108,7 +108,7 @@ public class ThumbnailCreator {
 
         public void applyBitmap(final Bitmap bitmap) {
             // run on UI thread
-            LibreOfficeApplication.getMainHandler().post(new Runnable() {
+            LibreOfficeMainActivity.mAppContext.mMainHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     changeBitmap(bitmap);

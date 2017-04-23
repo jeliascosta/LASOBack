@@ -9,8 +9,6 @@
  */
 
 #include <cwchar>
-#include <memory>
-
 #ifdef _MSC_VER
 #pragma warning(push, 1) /* disable warnings within system headers */
 #endif
@@ -81,20 +79,17 @@ namespace {
 //     </prop>
 // </item>
 
-void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFileHandle)
+void dumpWindowsRegistryKey(HKEY hKey, OUString aKeyName, TempFile &aFileHandle)
 {
     HKEY hCurKey;
 
-    if(RegOpenKeyExW(
-           hKey, reinterpret_cast<wchar_t const *>(aKeyName.getStr()), 0,
-           KEY_READ, &hCurKey)
-       == ERROR_SUCCESS)
+    if(RegOpenKeyExW(hKey, aKeyName.getStr(), 0, KEY_READ, &hCurKey) == ERROR_SUCCESS)
     {
         DWORD nSubKeys = 0;
         DWORD nValues = 0;
         DWORD nLongestValueNameLen, nLongestValueLen;
         // Query the number of subkeys
-        RegQueryInfoKeyW(hCurKey, nullptr, nullptr, nullptr, &nSubKeys, nullptr, nullptr, &nValues, &nLongestValueNameLen, &nLongestValueLen, nullptr, nullptr);
+        RegQueryInfoKeyW(hCurKey, NULL, NULL, NULL, &nSubKeys, NULL, NULL, &nValues, &nLongestValueNameLen, &nLongestValueLen, NULL, NULL);
         if(nSubKeys)
         {
             //Look for subkeys in this key
@@ -105,17 +100,13 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
                 DWORD buffSize=MAX_KEY_LENGTH;
                 OUString aSubkeyName;
                 //Get subkey name
-                RegEnumKeyExW(hCurKey, i, buffKeyName, &buffSize, nullptr, nullptr, nullptr, nullptr);
+                RegEnumKeyExW(hCurKey, i, buffKeyName, &buffSize, NULL, NULL, NULL, NULL);
 
                 //Make up full key name
                 if(aKeyName.isEmpty())
-                    aSubkeyName = aKeyName
-                        + OUString(
-                            reinterpret_cast<sal_Unicode const *>(buffKeyName));
+                    aSubkeyName = aKeyName + OUString(buffKeyName);
                 else
-                    aSubkeyName = aKeyName + "\\"
-                        + OUString(
-                            reinterpret_cast<sal_Unicode const *>(buffKeyName));
+                    aSubkeyName = aKeyName + "\\" + OUString(buffKeyName);
 
                 //Recursion, until no more subkeys are found
                 dumpWindowsRegistryKey(hKey, aSubkeyName, aFileHandle);
@@ -124,10 +115,8 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
         else if(nValues)
         {
             // No more subkeys, we are at a leaf
-            auto pValueName = std::unique_ptr<wchar_t[]>(
-                new wchar_t[nLongestValueNameLen + 1]);
-            auto pValue = std::unique_ptr<unsigned char[]>(
-                new unsigned char[(nLongestValueLen + 1) * sizeof (wchar_t)]);
+            wchar_t* pValueName = new wchar_t[nLongestValueNameLen + 1];
+            wchar_t* pValue = new wchar_t[nLongestValueLen + 1];
 
             bool bFinal = false;
             OUString aValue;
@@ -138,18 +127,16 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
                 DWORD nValueNameLen = nLongestValueNameLen + 1;
                 DWORD nValueLen = nLongestValueLen + 1;
 
-                RegEnumValueW(hCurKey, i, pValueName.get(), &nValueNameLen, nullptr, nullptr, pValue.get(), &nValueLen);
+                RegEnumValueW(hCurKey, i, pValueName, &nValueNameLen, NULL, NULL, (LPBYTE)pValue, &nValueLen);
                 const wchar_t wsValue[] = L"Value";
                 const wchar_t wsFinal[] = L"Final";
                 const wchar_t wsType[] = L"Type";
 
-                if(!wcscmp(pValueName.get(), wsValue))
-                    aValue = OUString(
-                        reinterpret_cast<sal_Unicode const *>(pValue.get()));
-                if (!wcscmp(pValueName.get(), wsType))
-                    aType = OUString(
-                        reinterpret_cast<sal_Unicode const *>(pValue.get()));
-                if(!wcscmp(pValueName.get(), wsFinal) && *reinterpret_cast<DWORD*>(pValue.get()) == 1)
+                if(!wcscmp(pValueName, wsValue))
+                    aValue = OUString(pValue);
+                if(!wcscmp(pValueName, wsType))
+                    aType = OUString(pValue);
+                if(!wcscmp(pValueName, wsFinal) && *(DWORD*)pValue == 1)
                     bFinal = true;
             }
             sal_Int32 aLastSeparator = aKeyName.lastIndexOf('\\');
@@ -158,7 +145,7 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
             bool bHasNode = false;
             sal_Int32 nCloseNode = 0;
 
-            aFileHandle.writeString("<item oor:path=\"");
+            writeData(aFileHandle, "<item oor:path=\"");
             for(sal_Int32 nIndex = 0;; ++nIndex)
             {
                 OUString aNextPathPart = aPathAndNodes.getToken(nIndex, '\\');
@@ -169,13 +156,13 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
                     {
                         bHasNode = true;
                         nCloseNode++;
-                        aFileHandle.writeString("\"><node oor:name=\"");
+                        writeData(aFileHandle, "\"><node oor:name=\"");
                         sal_Int32 nCommandSeparator = aNextPathPart.lastIndexOf('#');
                         if(nCommandSeparator != -1)
                         {
                             OUString aNodeOp = aNextPathPart.copy(nCommandSeparator + 1);
                             writeAttributeValue(aFileHandle, aNextPathPart.copy(0, nCommandSeparator - 1));
-                            aFileHandle.writeString("\" oor:op=\"");
+                            writeData(aFileHandle, "\" oor:op=\"");
                             writeAttributeValue(aFileHandle, aNodeOp);
                         }
                         else
@@ -185,34 +172,35 @@ void dumpWindowsRegistryKey(HKEY hKey, OUString const & aKeyName, TempFile &aFil
                     }
                     else
                     {
-                        writeAttributeValue(
-                            aFileHandle, OUString("/" + aNextPathPart));
+                        writeAttributeValue(aFileHandle, "/" + aNextPathPart);
                     }
                 }
                 else
                 {
-                    aFileHandle.writeString("\">");
+                    writeData(aFileHandle, "\">");
                     break;
                 }
             }
 
-            aFileHandle.writeString("<prop oor:name=\"");
+            writeData(aFileHandle, "<prop oor:name=\"");
             writeAttributeValue(aFileHandle, aProp);
-            aFileHandle.writeString("\"");
+            writeData(aFileHandle, "\"");
             if(!aType.isEmpty())
             {
-                aFileHandle.writeString(" oor:type=\"");
+                writeData(aFileHandle, " oor:type=\"");
                 writeAttributeValue(aFileHandle, aType);
-                aFileHandle.writeString("\"");
+                writeData(aFileHandle, "\"");
             }
             if(bFinal)
-                aFileHandle.writeString(" oor:finalized=\"true\"");
-            aFileHandle.writeString("><value>");
+                writeData(aFileHandle, " oor:finalized=\"true\"");
+            writeData(aFileHandle, "><value>");
             writeValueContent(aFileHandle, aValue);
-            aFileHandle.writeString("</value></prop>");
+            writeData(aFileHandle, "</value></prop>");
             for(; nCloseNode > 0; nCloseNode--)
-                aFileHandle.writeString("</node>");
-            aFileHandle.writeString("</item>\n");
+                writeData(aFileHandle, "</node>");
+            writeData(aFileHandle, "</item>\n");
+            delete[] pValueName;
+            delete[] pValue;
         }
         RegCloseKey(hCurKey);
     }
@@ -232,7 +220,7 @@ bool dumpWindowsRegistry(OUString* pFileURL, WinRegType eType)
     }
 
     TempFile aFileHandle;
-    switch (osl::FileBase::createTempFile(nullptr, &aFileHandle.handle, pFileURL)) {
+    switch (osl::FileBase::createTempFile(0, &aFileHandle.handle, pFileURL)) {
     case osl::FileBase::E_None:
         break;
     case osl::FileBase::E_ACCES:
@@ -245,13 +233,14 @@ bool dumpWindowsRegistry(OUString* pFileURL, WinRegType eType)
             "cannot create temporary file");
     }
     aFileHandle.url = *pFileURL;
-    aFileHandle.writeString(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<oor:items"
-        " xmlns:oor=\"http://openoffice.org/2001/registry\""
-        " xmlns:xs=\"http://www.w3.org/2001/XMLSchema\""
-        " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+    writeData(
+        aFileHandle,
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<oor:items"
+            " xmlns:oor=\"http://openoffice.org/2001/registry\""
+            " xmlns:xs=\"http://www.w3.org/2001/XMLSchema\""
+            " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
     dumpWindowsRegistryKey(hKey, "", aFileHandle);
-    aFileHandle.writeString("</oor:items>");
+    writeData(aFileHandle, "</oor:items>");
     oslFileError e = aFileHandle.closeWithoutUnlink();
     if (e != osl_File_E_None)
         SAL_WARN("configmgr", "osl_closeFile failed with " << +e);

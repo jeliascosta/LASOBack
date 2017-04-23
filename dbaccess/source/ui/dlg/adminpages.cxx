@@ -26,7 +26,7 @@
 #include "dbustrings.hrc"
 #include "dsitems.hxx"
 #include "dsselect.hxx"
-#include "moduledbu.hxx"
+#include "localresaccess.hxx"
 #include "odbcconfig.hxx"
 #include "optionalboolitem.hxx"
 #include "sqlmessage.hxx"
@@ -66,16 +66,16 @@ namespace dbaui
         SetExchangeSupport();
     }
 
-    DeactivateRC OGenericAdministrationPage::DeactivatePage(SfxItemSet* _pSet)
+    SfxTabPage::sfxpg OGenericAdministrationPage::DeactivatePage(SfxItemSet* _pSet)
     {
         if (_pSet)
         {
             if (!prepareLeave())
-                return DeactivateRC::KeepPage;
+                return KEEP_PAGE;
             FillItemSet(_pSet);
         }
 
-        return DeactivateRC::LeavePage;
+        return LEAVE_PAGE;
     }
 
     void OGenericAdministrationPage::Reset(const SfxItemSet* _rCoreAttrs)
@@ -102,19 +102,19 @@ namespace dbaui
         _rReadonly = !_rValid || (pReadonly && pReadonly->GetValue());
     }
 
-    IMPL_LINK(OGenericAdministrationPage, OnControlModified, void*, pCtrl, void)
+    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlModified, void*, pCtrl, void)
     {
         callModifiedHdl(pCtrl);
     }
-    IMPL_LINK(OGenericAdministrationPage, OnControlModifiedClick, Button*, pCtrl, void)
+    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlModifiedClick, Button*, pCtrl, void)
     {
         callModifiedHdl(pCtrl);
     }
-    IMPL_LINK(OGenericAdministrationPage, ControlModifiedCheckBoxHdl, CheckBox&, rCtrl, void)
+    IMPL_LINK_TYPED(OGenericAdministrationPage, ControlModifiedCheckBoxHdl, CheckBox&, rCtrl, void)
     {
         callModifiedHdl(&rCtrl);
     }
-    IMPL_LINK(OGenericAdministrationPage, OnControlEditModifyHdl, Edit&, rCtrl, void)
+    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlEditModifyHdl, Edit&, rCtrl, void)
     {
         callModifiedHdl(&rCtrl);
     }
@@ -151,7 +151,7 @@ namespace dbaui
         bool bValid, bReadonly;
         getFlags(_rSet, bValid, bReadonly);
 
-        std::vector< ISaveValueWrapper* > aControlList;
+        ::std::vector< ISaveValueWrapper* > aControlList;
         if ( _bSaveValue )
         {
             fillControls(aControlList);
@@ -229,7 +229,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG(OGenericAdministrationPage, OnTestConnectionClickHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(OGenericAdministrationPage, OnTestConnectionClickHdl, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         bool bSuccess = false;
@@ -240,7 +240,7 @@ namespace dbaui
             bool bShowMessage = true;
             try
             {
-                std::pair< Reference<XConnection>,sal_Bool> aConnectionPair = m_pAdminDialog->createConnection();
+                ::std::pair< Reference<XConnection>,sal_Bool> aConnectionPair = m_pAdminDialog->createConnection();
                 bShowMessage = aConnectionPair.second;
                 bSuccess = aConnectionPair.first.is();
                 ::comphelper::disposeComponent(aConnectionPair.first);
@@ -278,7 +278,7 @@ namespace dbaui
         aReference.Y() += _rReference.GetSizePixel().Height();
 
         const vcl::Window* pConverter = _rControl.GetParent();
-        Size aOffset = pConverter->LogicToPixel( Size( _nIndentAppFont, ( _eRelation == RelatedControls ? 3 : 6 ) ), MapUnit::MapAppFont );
+        Size aOffset = pConverter->LogicToPixel( Size( _nIndentAppFont, ( _eRelation == RelatedControls ? 3 : 6 ) ), MAP_APPFONT );
 
         Point aControlPos( aReference.X() + aOffset.Width(), aReference.Y() + aOffset.Height() );
         _rControl.SetPosPixel( aControlPos );

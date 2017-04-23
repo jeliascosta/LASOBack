@@ -88,7 +88,7 @@ namespace connectivity
             // Closes and kills the index file and throws an error
             void impl_killFileAndthrowError_throw(sal_uInt16 _nErrorId,const OUString& _sFile);
         protected:
-            virtual ~ODbaseIndex() override;
+            virtual ~ODbaseIndex();
         public:
             ODbaseIndex(ODbaseTable* _pTable);
             ODbaseIndex(ODbaseTable* _pTable,const NDXHeader& _aHeader,const OUString& Name);
@@ -96,9 +96,12 @@ namespace connectivity
             bool openIndexFile();
             virtual void refreshColumns() override;
 
-            // css::lang::XUnoTunnel
-            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
-            static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+            // com::sun::star::lang::XUnoTunnel
+            virtual sal_Int64 SAL_CALL getSomething( const com::sun::star::uno::Sequence< sal_Int8 >& aIdentifier ) throw(com::sun::star::uno::RuntimeException, std::exception) override;
+            static com::sun::star::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+
+            virtual void SAL_CALL acquire() throw() override;
+            virtual void SAL_CALL release() throw() override;
 
             const ODbaseTable* getTable() const { return m_pTable; }
             const NDXHeader& getHeader() const { return m_aHeader; }
@@ -125,7 +128,7 @@ namespace connectivity
 
             ONDXPage* CreatePage(sal_uInt32 nPagePos, ONDXPage* pParent = nullptr, bool bLoad = false);
             void Collect(ONDXPage*);
-            ONDXPagePtr const & getRoot();
+            ONDXPagePtr getRoot();
 
             bool isUnique() const { return m_IsUnique; }
             bool UseCollector() const {return m_bUseCollector;}

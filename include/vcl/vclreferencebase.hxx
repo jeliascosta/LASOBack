@@ -20,28 +20,29 @@
 #define INCLUDED_VCL_Reference_HXX
 
 #include <vcl/dllapi.h>
-#include <tools/debug.hxx>
-#include <osl/interlck.h>
-
+#include <vcl/vclptr.hxx>
 #include <cassert>
 
 class VclReferenceBase;
 
 class VCL_DLLPUBLIC VclReferenceBase
 {
-    mutable oslInterlockedCount mnRefCnt;
+    mutable int mnRefCnt;
 
-    template<typename T> friend class VclPtr;
+    template<typename T> friend class ::rtl::Reference;
+    template<typename T> friend class ::VclPtr;
 
 public:
-    void acquire() const
+    inline void acquire() const
     {
-        osl_atomic_increment(&mnRefCnt);
+        assert(mnRefCnt>0);
+        mnRefCnt++;
     }
 
-    void release() const
+    inline void release() const
     {
-        if (osl_atomic_decrement(&mnRefCnt) == 0)
+        assert(mnRefCnt>0);
+        if (!--mnRefCnt)
             delete this;
     }
 private:
@@ -52,7 +53,7 @@ private:
 
 protected:
                                 VclReferenceBase();
-protected:
+public:
     virtual                     ~VclReferenceBase();
 
 protected:

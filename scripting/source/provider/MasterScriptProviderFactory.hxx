@@ -51,24 +51,28 @@ private:
     const rtl::Reference< ActiveMSPList > & getActiveMSPList() const;
 
 protected:
-    virtual ~MasterScriptProviderFactory() override;
+    virtual ~MasterScriptProviderFactory();
 
 public:
     explicit MasterScriptProviderFactory(
         css::uno::Reference< css::uno::XComponentContext > const & xComponentContext );
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-        supportsService( OUString const & serviceName ) override;
+        supportsService( OUString const & serviceName )
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XScriptProviderFactory
     virtual css::uno::Reference< css::script::provider::XScriptProvider >
-        SAL_CALL createScriptProvider( const css::uno::Any& context ) override;
+        SAL_CALL createScriptProvider( const css::uno::Any& context )
+            throw ( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 };
 
 

@@ -20,7 +20,7 @@
 #ifndef INCLUDED_VCL_THREADEX_HXX
 #define INCLUDED_VCL_THREADEX_HXX
 
-#include <osl/conditn.hxx>
+#include <osl/conditn.h>
 #include <osl/thread.h>
 #include <tools/link.hxx>
 #include <vcl/dllapi.h>
@@ -33,19 +33,22 @@ namespace vcl
 {
     class VCL_DLLPUBLIC SolarThreadExecutor
     {
-        osl::Condition          m_aStart;
-        osl::Condition          m_aFinish;
+        oslCondition            m_aStart;
+        oslCondition            m_aFinish;
         long                    m_nReturn;
         bool                    m_bTimeout;
 
-        DECL_DLLPRIVATE_LINK( worker, void*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( worker, void*, void );
 
     public:
         SolarThreadExecutor();
         virtual ~SolarThreadExecutor();
 
         virtual long doIt() = 0;
-        void execute();
+        long execute() { return impl_execute(); }
+
+    private:
+        long impl_execute();
     };
 
 namespace solarthread {
@@ -115,6 +118,35 @@ private:
 
     css::uno::Any m_exc;
     FuncT const m_func;
+};
+
+template <typename T>
+class copy_back_wrapper
+{
+public:
+    operator T *() const { return &m_holder->m_value; }
+    operator T &() const { return m_holder->m_value; }
+
+    explicit copy_back_wrapper( T * p ) : m_holder( new data_holder(p) ) {}
+
+    // no thread-safe counting needed here, because calling thread blocks
+    // until solar thread has executed the functor.
+    copy_back_wrapper( copy_back_wrapper<T> const& r )
+        : m_holder(r.m_holder) { ++m_holder->m_refCount; }
+    ~copy_back_wrapper() {
+        --m_holder->m_refCount;
+        if (m_holder->m_refCount == 0) {
+            delete m_holder;
+        }
+    }
+private:
+    struct data_holder {
+        T m_value;
+        T * const m_ptr;
+        data_holder( T * p ) : m_value(*p), m_ptr(p) {}
+        ~data_holder() { *m_ptr = m_value; }
+    };
+    data_holder * const m_holder;
 };
 
 } // namespace detail

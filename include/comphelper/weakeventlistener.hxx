@@ -21,10 +21,10 @@
 #define INCLUDED_COMPHELPER_WEAKEVENTLISTENER_HXX
 
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/uno/XWeak.hpp>
 #include <cppuhelper/weakref.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/comphelperdllapi.h>
 
 
@@ -41,7 +41,7 @@ namespace comphelper
         holds it's listener hard. The adapter itself knows the real listener as weak reference,
         thus not affecting its life time.</p>
     */
-    class OWeakListenerAdapterBase : public cppu::BaseMutex
+    class OWeakListenerAdapterBase : public OBaseMutex
     {
     private:
         css::uno::WeakReference< css::uno::XInterface >
@@ -50,26 +50,26 @@ namespace comphelper
                 m_xBroadcaster;
 
     protected:
-        css::uno::Reference< css::uno::XInterface >
+        inline css::uno::Reference< css::uno::XInterface >
                 getListener( ) const
         {
             return m_aListener.get();
         }
 
-        const css::uno::Reference< css::uno::XInterface >&
+        inline const css::uno::Reference< css::uno::XInterface >&
                 getBroadcaster( ) const
         {
             return m_xBroadcaster;
         }
 
-        void resetListener( )
+        inline void resetListener( )
         {
             m_aListener.clear();
         }
 
 
     protected:
-        OWeakListenerAdapterBase(
+        inline OWeakListenerAdapterBase(
             const css::uno::Reference< css::uno::XWeak >& _rxListener,
             const css::uno::Reference< css::uno::XInterface >& _rxBroadcaster
         )
@@ -109,13 +109,13 @@ namespace comphelper
         );
 
     protected:
-        css::uno::Reference< LISTENER > getListener( ) const
+        inline  css::uno::Reference< LISTENER > getListener( ) const
         {
             return  css::uno::Reference< LISTENER >( OWeakListenerAdapterBase::getListener(), css::uno::UNO_QUERY );
         }
 
         // XEventListener overridables
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException) override;
 
     protected:
         // OComponentHelper overridables
@@ -135,8 +135,8 @@ namespace comphelper
     {
     public:
         OWeakEventListenerAdapter(
-            css::uno::Reference< css::uno::XWeak > const & _rxListener,
-            css::uno::Reference< css::lang::XComponent > const & _rxBroadcaster
+            css::uno::Reference< css::uno::XWeak > _rxListener,
+            css::uno::Reference< css::lang::XComponent > _rxBroadcaster
         );
 
         // nothing to do except an own ctor - the forwarding of the "disposing" is already done
@@ -163,7 +163,7 @@ namespace comphelper
 
 
     template< class BROADCASTER, class LISTENER >
-    void SAL_CALL OWeakListenerAdapter< BROADCASTER, LISTENER >::disposing( const css::lang::EventObject& _rSource )
+    void SAL_CALL OWeakListenerAdapter< BROADCASTER, LISTENER >::disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException)
     {
         css::uno::Reference< LISTENER > xListener( getListener() );
         if ( xListener.is() )

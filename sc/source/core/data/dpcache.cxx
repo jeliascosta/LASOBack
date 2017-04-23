@@ -33,11 +33,10 @@
 #include <rtl/math.hxx>
 #include <unotools/textsearch.hxx>
 #include <unotools/localedatawrapper.hxx>
-#include <formula/errorcodes.hxx>
 #include <svl/zforlist.hxx>
 #include <o3tl/make_unique.hxx>
 
-#if DUMP_PIVOT_TABLE
+#if DEBUG_PIVOT_TABLE
 #include <com/sun/star/sheet/DataPilotFieldGroupBy.hpp>
 #endif
 
@@ -55,7 +54,7 @@ ScDPCache::Field::Field() : mnNumFormat(0) {}
 ScDPCache::ScDPCache(ScDocument* pDoc) :
     mpDoc( pDoc ),
     mnColumnCount ( 0 ),
-    maEmptyRows(0, MAXROWCOUNT, true),
+    maEmptyRows(0, MAXROW, true),
     mnDataSize(-1),
     mnRowCount(0),
     mbDisposing(false)
@@ -123,14 +122,14 @@ OUString createLabelString(ScDocument* pDoc, SCCOL nCol, SCROW nRow, SCTAB nTab)
 
 void initFromCell(
     ScDPCache& rCache, ScDocument* pDoc, SCCOL nCol, SCROW nRow, SCTAB nTab,
-    ScDPItemData& rData, sal_uInt32& rNumFormat)
+    ScDPItemData& rData, sal_uLong& rNumFormat)
 {
     OUString aDocStr = pDoc->GetString(nCol, nRow, nTab);
     rNumFormat = 0;
 
     ScAddress aPos(nCol, nRow, nTab);
 
-    if (pDoc->GetErrCode(aPos) != FormulaError::NONE)
+    if (pDoc->GetErrCode(aPos))
     {
         rData.SetErrorString(rCache.InternString(aDocStr));
     }
@@ -153,8 +152,9 @@ struct Bucket
     ScDPItemData maValue;
     SCROW mnOrderIndex;
     SCROW mnDataIndex;
+    SCROW mnValueSortIndex;
     Bucket(const ScDPItemData& rValue, SCROW nData) :
-        maValue(rValue), mnOrderIndex(0), mnDataIndex(nData) {}
+        maValue(rValue), mnOrderIndex(0), mnDataIndex(nData), mnValueSortIndex(0) {}
 };
 
 #if DEBUG_PIVOT_TABLE
@@ -166,7 +166,7 @@ struct PrintBucket : std::unary_function<Bucket, void>
 {
     void operator() (const Bucket& v) const
     {
-        cout << "value: " << v.maValue.GetValue() << "  order index: " << v.mnOrderIndex << "  data index: " << v.mnDataIndex << endl;
+        cout << "value: " << v.maValue.GetValue() << "  order index: " << v.mnOrderIndex << "  data index: " << v.mnDataIndex << "  value sort index: " << v.mnValueSortIndex << endl;
     }
 };
 
@@ -180,11 +180,11 @@ struct LessByValue : std::binary_function<Bucket, Bucket, bool>
     }
 };
 
-struct LessByOrderIndex : std::binary_function<Bucket, Bucket, bool>
+struct LessByValueSortIndex : std::binary_function<Bucket, Bucket, bool>
 {
     bool operator() (const Bucket& left, const Bucket& right) const
     {
-        return left.mnOrderIndex < right.mnOrderIndex;
+        return left.mnValueSortIndex < right.mnValueSortIndex;
     }
 };
 
@@ -226,6 +226,17 @@ public:
     }
 };
 
+class TagValueSortOrder : public std::unary_function<Bucket, void>
+{
+    SCROW mnCurIndex;
+public:
+    TagValueSortOrder() : mnCurIndex(0) {}
+    void operator() (Bucket& v)
+    {
+        v.mnValueSortIndex = mnCurIndex++;
+    }
+};
+
 void processBuckets(std::vector<Bucket>& aBuckets, ScDPCache::Field& rField)
 {
     if (aBuckets.empty())
@@ -233,6 +244,9 @@ void processBuckets(std::vector<Bucket>& aBuckets, ScDPCache::Field& rField)
 
     // Sort by the value.
     std::sort(aBuckets.begin(), aBuckets.end(), LessByValue());
+
+    // Remember this sort order.
+    std::for_each(aBuckets.begin(), aBuckets.end(), TagValueSortOrder());
 
     {
         // Set order index such that unique values have identical index value.
@@ -258,7 +272,7 @@ void processBuckets(std::vector<Bucket>& aBuckets, ScDPCache::Field& rField)
     std::for_each(aBuckets.begin(), aBuckets.end(), PushBackOrderIndex(rField.maData));
 
     // Sort by the value again.
-    std::sort(aBuckets.begin(), aBuckets.end(), LessByOrderIndex());
+    std::sort(aBuckets.begin(), aBuckets.end(), LessByValueSortIndex());
 
     // Unique by value.
     std::vector<Bucket>::iterator itUniqueEnd =
@@ -334,7 +348,7 @@ void ScDPCache::InitFromDoc(ScDocument* pDoc, const ScRange& rRange)
         for (SCROW i = 0, n = nEndRow-nStartRow; i < n; ++i)
         {
             SCROW nRow = i + nOffset;
-            sal_uInt32 nNumFormat = 0;
+            sal_uLong nNumFormat = 0;
             initFromCell(*this, pDoc, nCol, nRow, nDocTab, aData, nNumFormat);
             aBuckets.push_back(Bucket(aData, i));
 
@@ -512,7 +526,7 @@ bool ScDPCache::ValidQuery( SCROW nRow, const ScQueryParam &rParam) const
         {   // by String
             OUString  aCellStr = pCellData->GetString();
 
-            bool bRealWildOrRegExp = (rParam.eSearchType != utl::SearchParam::SearchType::Normal &&
+            bool bRealWildOrRegExp = (rParam.eSearchType != utl::SearchParam::SRCH_NORMAL &&
                     ((rEntry.eOp == SC_EQUAL) || (rEntry.eOp == SC_NOT_EQUAL)));
             bool bTestWildOrRegExp = false;
             if (bRealWildOrRegExp || bTestWildOrRegExp)
@@ -520,8 +534,8 @@ bool ScDPCache::ValidQuery( SCROW nRow, const ScQueryParam &rParam) const
                 sal_Int32 nStart = 0;
                 sal_Int32 nEnd   = aCellStr.getLength();
 
-                bool bMatch = rEntry.GetSearchTextPtr( rParam.eSearchType, rParam.bCaseSens, bMatchWholeCell )
-                                ->SearchForward( aCellStr, &nStart, &nEnd );
+                bool bMatch = (bool) rEntry.GetSearchTextPtr( rParam.eSearchType, rParam.bCaseSens, bMatchWholeCell )
+                              ->SearchForward( aCellStr, &nStart, &nEnd );
                 // from 614 on, nEnd is behind the found text
                 if (bMatch && bMatchWholeCell
                     && (nStart != 0 || nEnd != aCellStr.getLength()))
@@ -848,7 +862,7 @@ const ScDPCache::ScDPItemDataVec& ScDPCache::GetDimMemberValues(SCCOL nDim) cons
     return maFields.at(nDim)->maItems;
 }
 
-sal_uInt32 ScDPCache::GetNumberFormat( long nDim ) const
+sal_uLong ScDPCache::GetNumberFormat( long nDim ) const
 {
     if ( nDim >= mnColumnCount )
         return 0;
@@ -962,50 +976,7 @@ SCROW ScDPCache::GetIdByItemData(long nDim, const ScDPItemData& rItem) const
     return -1;
 }
 
-// static
-sal_uInt32 ScDPCache::GetLocaleIndependentFormat( SvNumberFormatter& rFormatter, sal_uInt32 nNumFormat )
-{
-    // For a date or date+time format use ISO format so it works across locales
-    // and can be matched against string based item queries. For time use 24h
-    // format. All others use General format, no currency, percent, ...
-    // Use en-US locale for all.
-    switch (rFormatter.GetType( nNumFormat))
-    {
-        case css::util::NumberFormat::DATE:
-            return rFormatter.GetFormatIndex( NF_DATE_ISO_YYYYMMDD, LANGUAGE_ENGLISH_US);
-        break;
-        case css::util::NumberFormat::TIME:
-            return rFormatter.GetFormatIndex( NF_TIME_HHMMSS, LANGUAGE_ENGLISH_US);
-        break;
-        case css::util::NumberFormat::DATETIME:
-            return rFormatter.GetFormatIndex( NF_DATETIME_ISO_YYYYMMDD_HHMMSS, LANGUAGE_ENGLISH_US);
-        break;
-        default:
-            return rFormatter.GetFormatIndex( NF_NUMBER_STANDARD, LANGUAGE_ENGLISH_US);
-    }
-}
-
-// static
-OUString ScDPCache::GetLocaleIndependentFormattedNumberString( double fValue )
-{
-    return rtl::math::doubleToUString( fValue, rtl_math_StringFormat_Automatic, rtl_math_DecimalPlaces_Max, '.', true);
-}
-
-// static
-OUString ScDPCache::GetLocaleIndependentFormattedString( double fValue,
-        SvNumberFormatter& rFormatter, sal_uInt32 nNumFormat )
-{
-    nNumFormat = GetLocaleIndependentFormat( rFormatter, nNumFormat);
-    if ((nNumFormat % SV_COUNTRY_LANGUAGE_OFFSET) == 0)
-        return GetLocaleIndependentFormattedNumberString( fValue);
-
-    OUString aStr;
-    Color* pColor = nullptr;
-    rFormatter.GetOutputString( fValue, nNumFormat, aStr, &pColor);
-    return aStr;
-}
-
-OUString ScDPCache::GetFormattedString(long nDim, const ScDPItemData& rItem, bool bLocaleIndependent) const
+OUString ScDPCache::GetFormattedString(long nDim, const ScDPItemData& rItem) const
 {
     if (nDim < 0)
         return rItem.GetString();
@@ -1014,21 +985,15 @@ OUString ScDPCache::GetFormattedString(long nDim, const ScDPItemData& rItem, boo
     if (eType == ScDPItemData::Value)
     {
         // Format value using the stored number format.
+        sal_uLong nNumFormat = GetNumberFormat(nDim);
         SvNumberFormatter* pFormatter = mpDoc->GetFormatTable();
         if (pFormatter)
         {
-            sal_uInt32 nNumFormat = GetNumberFormat(nDim);
-            if (bLocaleIndependent)
-                return GetLocaleIndependentFormattedString( rItem.GetValue(), *pFormatter, nNumFormat);
-
-            OUString aStr;
             Color* pColor = nullptr;
+            OUString aStr;
             pFormatter->GetOutputString(rItem.GetValue(), nNumFormat, aStr, &pColor);
             return aStr;
         }
-
-        // Last resort..
-        return GetLocaleIndependentFormattedNumberString( rItem.GetValue());
     }
 
     if (eType == ScDPItemData::GroupValue)
@@ -1057,11 +1022,6 @@ OUString ScDPCache::GetFormattedString(long nDim, const ScDPItemData& rItem, boo
     }
 
     return rItem.GetString();
-}
-
-SvNumberFormatter* ScDPCache::GetNumberFormatter() const
-{
-    return mpDoc->GetFormatTable();
 }
 
 long ScDPCache::AppendGroupField()
@@ -1211,7 +1171,7 @@ SCROW ScDPCache::GetOrder(long /*nDim*/, SCROW nIndex)
 }
 
 
-#if DUMP_PIVOT_TABLE
+#if DEBUG_PIVOT_TABLE
 
 namespace {
 
@@ -1223,14 +1183,14 @@ std::ostream& operator<< (::std::ostream& os, const OUString& str)
 void dumpItems(const ScDPCache& rCache, long nDim, const ScDPCache::ScDPItemDataVec& rItems, size_t nOffset)
 {
     for (size_t i = 0; i < rItems.size(); ++i)
-        cout << "      " << (i+nOffset) << ": " << rCache.GetFormattedString(nDim, rItems[i], false) << endl;
+        cout << "      " << (i+nOffset) << ": " << rCache.GetFormattedString(nDim, rItems[i]) << endl;
 }
 
 void dumpSourceData(const ScDPCache& rCache, long nDim, const ScDPCache::ScDPItemDataVec& rItems, const ScDPCache::IndexArrayType& rArray)
 {
     ScDPCache::IndexArrayType::const_iterator it = rArray.begin(), itEnd = rArray.end();
     for (; it != itEnd; ++it)
-        cout << "      '" << rCache.GetFormattedString(nDim, rItems[*it], false) << "'" << endl;
+        cout << "      '" << rCache.GetFormattedString(nDim, rItems[*it]) << "'" << endl;
 }
 
 const char* getGroupTypeName(sal_Int32 nType)
@@ -1268,7 +1228,7 @@ void ScDPCache::Dump() const
         FieldsType::const_iterator it = maFields.begin(), itEnd = maFields.end();
         for (size_t i = 0; it != itEnd; ++it, ++i)
         {
-            const Field& fld = *(*it);
+            const Field& fld = *it;
             cout << "* source dimension: " << GetDimensionName(i) << " (ID = " << i << ")" << endl;
             cout << "    item count: " << fld.maItems.size() << endl;
             if (bDumpItems)
@@ -1293,7 +1253,7 @@ void ScDPCache::Dump() const
         GroupFieldsType::const_iterator it = maGroupFields.begin(), itEnd = maGroupFields.end();
         for (size_t i = maFields.size(); it != itEnd; ++it, ++i)
         {
-            const GroupItems& gi = *(*it);
+            const GroupItems& gi = *it;
             cout << "* group dimension: (unnamed) (ID = " << i << ")" << endl;
             cout << "    item count: " << gi.maItems.size() << endl;
             cout << "    group type: " << getGroupTypeName(gi.mnGroupType) << endl;
@@ -1310,14 +1270,15 @@ void ScDPCache::Dump() const
         {
             aRange.start = it->first;
             aRange.empty = it->second;
+            ++it;
+        }
 
-            for (++it; it != itEnd; ++it)
-            {
-                aRange.end = it->first-1;
-                cout << "    rows " << aRange.start << "-" << aRange.end << ": " << (aRange.empty ? "empty" : "not-empty") << endl;
-                aRange.start = it->first;
-                aRange.empty = it->second;
-            }
+        for (; it != itEnd; ++it)
+        {
+            aRange.end = it->first-1;
+            cout << "    rows " << aRange.start << "-" << aRange.end << ": " << (aRange.empty ? "empty" : "not-empty") << endl;
+            aRange.start = it->first;
+            aRange.empty = it->second;
         }
     }
 

@@ -33,7 +33,7 @@ class SwFontCache : public SwCache
 {
 public:
 
-    SwFontCache() : SwCache(50
+    inline SwFontCache() : SwCache(50
 #ifdef DBG_UTIL
     , "Global AttributSet/Font-Cache pSwFontCache"
 #endif
@@ -57,11 +57,11 @@ public:
 
     SwFontObj( const void* pOwner, SwViewShell *pSh );
 
-    virtual ~SwFontObj() override;
+    virtual ~SwFontObj();
 
-    SwFont& GetFont()        { return aSwFont; }
-    const SwFont& GetFont() const  { return aSwFont; }
-    const SfxPoolItem** GetDefault() { return pDefaultArray; }
+    inline       SwFont& GetFont()        { return aSwFont; }
+    inline const SwFont& GetFont() const  { return aSwFont; }
+    inline const SfxPoolItem** GetDefault() { return pDefaultArray; }
 };
 
 class SwFontAccess : public SwCacheAccess

@@ -62,13 +62,13 @@ namespace drawinglayer
             {
                 // prepare values for new portion
                 basegfx::B2DHomMatrix aNewTransform;
-                std::vector< double > aNewDXArray;
+                ::std::vector< double > aNewDXArray;
                 const bool bNewStartIsNotOldStart(nIndex > mrSource.getTextPosition());
 
                 if(!mbNoDXArray)
                 {
                     // prepare new DXArray for the single word
-                    aNewDXArray = std::vector< double >(
+                    aNewDXArray = ::std::vector< double >(
                         mrSource.getDXArray().begin() + (nIndex - mrSource.getTextPosition()),
                         mrSource.getDXArray().begin() + ((nIndex + nLength) - mrSource.getTextPosition()));
                 }
@@ -258,6 +258,24 @@ namespace drawinglayer
                         {
                             breakupPortion(aTempResult, nCurrent, a - nCurrent, true);
                         }
+                        break;
+                    }
+                    case BreakupUnit::Sentence:
+                    {
+                        sal_Int32 nNextSentenceBreak(xBreakIterator->endOfSentence(rTxt, nTextPosition, rLocale));
+                        sal_Int32 a(nTextPosition);
+
+                        for(; a < nTextPosition + nTextLength; a++)
+                        {
+                            if(a == nNextSentenceBreak)
+                            {
+                                breakupPortion(aTempResult, nCurrent, a - nCurrent, false);
+                                nCurrent = a;
+                                nNextSentenceBreak = xBreakIterator->endOfSentence(rTxt, a + 1, rLocale);
+                            }
+                        }
+
+                        breakupPortion(aTempResult, nCurrent, a - nCurrent, false);
                         break;
                     }
                 }

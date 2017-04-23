@@ -112,7 +112,7 @@ OUString generateGUIDString()
 
 }
 
-VBACompressionChunk::VBACompressionChunk(SvStream& rCompressedStream, const sal_uInt8* pData, std::size_t nChunkSize)
+VBACompressionChunk::VBACompressionChunk(SvStream& rCompressedStream, const sal_uInt8* pData, sal_Size nChunkSize)
     : mrCompressedStream(rCompressedStream)
     , mpUncompressedData(pData)
     , mpCompressedChunkStream(nullptr)
@@ -177,7 +177,7 @@ void VBACompressionChunk::write()
         sal_uInt16 nHeader = handleHeader(true);
         setUInt16(pCompressedChunkStream, 0, nHeader);
         // copy the compressed stream to our output stream
-        mrCompressedStream.WriteBytes(pCompressedChunkStream, mnCompressedCurrent);
+        mrCompressedStream.Write(pCompressedChunkStream, mnCompressedCurrent);
     }
 }
 
@@ -356,8 +356,8 @@ void VBACompressionChunk::writeRawChunk()
 {
     // we need to use up to 4096 bytes of the original stream
     // and fill the rest with padding
-    mrCompressedStream.WriteBytes(mpUncompressedData, mnChunkSize);
-    std::size_t nPadding = 4096 - mnChunkSize;
+    mrCompressedStream.Write(mpUncompressedData, mnChunkSize);
+    sal_Size nPadding = 4096 - mnChunkSize;
     for (size_t i = 0; i < nPadding; ++i)
     {
         mrCompressedStream.WriteUInt8(0);
@@ -378,11 +378,11 @@ void VBACompression::write()
     mrCompressedStream.WriteUInt8(0x01); // signature byte of a compressed container
     bool bStreamNotEnded = true;
     const sal_uInt8* pData = static_cast<const sal_uInt8*>(mrUncompressedStream.GetData());
-    std::size_t nSize = mrUncompressedStream.GetEndOfData();
-    std::size_t nRemainingSize = nSize;
+    sal_Size nSize = mrUncompressedStream.GetEndOfData();
+    sal_Size nRemainingSize = nSize;
     while(bStreamNotEnded)
     {
-        std::size_t nChunkSize = nRemainingSize > 4096 ? 4096 : nRemainingSize;
+        sal_Size nChunkSize = nRemainingSize > 4096 ? 4096 : nRemainingSize;
         VBACompressionChunk aChunk(mrCompressedStream, &pData[nSize - nRemainingSize], nChunkSize);
         aChunk.write();
 
@@ -395,22 +395,26 @@ void VBACompression::write()
 // section 2.4.3
 #if VBA_ENCRYPTION
 
-VBAEncryption::VBAEncryption(const sal_uInt8* pData, const sal_uInt16 length, SvStream& rEncryptedData, sal_uInt8 nProjKey)
+VBAEncryption::VBAEncryption(const sal_uInt8* pData, const sal_uInt16 length, SvStream& rEncryptedData, sal_uInt8* pSeed, sal_uInt8 nProjKey)
     :mpData(pData)
     ,mnLength(length)
     ,mrEncryptedData(rEncryptedData)
     ,mnUnencryptedByte1(0)
     ,mnEncryptedByte1(0)
     ,mnEncryptedByte2(0)
+    ,mnVersion(2)
     ,mnProjKey(nProjKey)
     ,mnIgnoredLength(0)
-    ,mnSeed(0x00)
+    ,mnSeed(pSeed ? *pSeed : 0x00)
     ,mnVersionEnc(0)
 {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 255);
-    mnSeed = dis(gen);
+    if (!pSeed)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 255);
+        mnSeed = dis(gen);
+    }
 }
 
 void VBAEncryption::writeSeed()
@@ -420,7 +424,6 @@ void VBAEncryption::writeSeed()
 
 void VBAEncryption::writeVersionEnc()
 {
-    static const sal_uInt8 mnVersion = 2; // the encrypted version
     mnVersionEnc = mnSeed ^ mnVersion;
     exportString(mrEncryptedData, createHexStringFromDigit(mnVersionEnc));
 }
@@ -506,7 +509,7 @@ void VBAEncryption::write()
 
 #endif
 
-VbaExport::VbaExport(css::uno::Reference<css::frame::XModel> const & xModel):
+VbaExport::VbaExport(css::uno::Reference<css::frame::XModel> xModel):
     mxModel(xModel)
 {
 }
@@ -797,7 +800,7 @@ void exportDirStream(SvStream& rStrm, const css::uno::Reference<css::container::
 
 #if VBA_EXPORT_DEBUG
     const OUString aDirFileName("/tmp/vba_dir_out.bin");
-    SvFileStream aDirStreamDebug(aDirFileName, StreamMode::READWRITE);
+    SvFileStream aDirStreamDebug(aDirFileName, STREAM_READWRITE);
 
     aDirStreamDebug.WriteStream(aDirStream);
     aDirStream.Seek(0);
@@ -842,7 +845,7 @@ void exportModuleStream(SvStream& rStrm, const OUString& rSourceCode, const OUSt
 
 #if VBA_EXPORT_DEBUG
     OUString aModuleFileName("/tmp/vba_" + aElementName + "_out.bin");
-    SvFileStream aModuleStreamDebug(aModuleFileName, StreamMode::READWRITE);
+    SvFileStream aModuleStreamDebug(aModuleFileName, STREAM_READWRITE);
     aModuleStreamDebug.WriteStream(aModuleStream);
     aModuleStream.Seek(0);
 #endif
@@ -912,7 +915,7 @@ void exportPROJECTStream(SvStream& rStrm, const css::uno::Reference<css::contain
     aProtectedStream.WriteUInt32(0x00000000);
     const sal_uInt8* pData = static_cast<const sal_uInt8*>(aProtectedStream.GetData());
     sal_uInt8 nProjKey = VBAEncryption::calculateProjKey(aProjectID);
-    VBAEncryption aProtectionState(pData, 4, rStrm, nProjKey);
+    VBAEncryption aProtectionState(pData, 4, rStrm, nullptr, nProjKey);
     aProtectionState.write();
     exportString(rStrm, "\"\r\n");
 #else
@@ -925,7 +928,7 @@ void exportPROJECTStream(SvStream& rStrm, const css::uno::Reference<css::contain
     aProtectedStream.Seek(0);
     aProtectedStream.WriteUInt8(0x00);
     pData = static_cast<const sal_uInt8*>(aProtectedStream.GetData());
-    VBAEncryption aProjectPassword(pData, 1, rStrm, nProjKey);
+    VBAEncryption aProjectPassword(pData, 1, rStrm, nullptr, nProjKey);
     aProjectPassword.write();
     exportString(rStrm, "\"\r\n");
 #else
@@ -938,7 +941,7 @@ void exportPROJECTStream(SvStream& rStrm, const css::uno::Reference<css::contain
     aProtectedStream.Seek(0);
     aProtectedStream.WriteUInt8(0xFF);
     pData = static_cast<const sal_uInt8*>(aProtectedStream.GetData());
-    VBAEncryption aVisibilityState(pData, 1, rStrm, nProjKey);
+    VBAEncryption aVisibilityState(pData, 1, rStrm, nullptr, nProjKey);
     aVisibilityState.write();
     exportString(rStrm, "\"\r\n\r\n");
 #else
@@ -1044,7 +1047,7 @@ void getCorrectExportOrder(const css::uno::Reference<css::container::XNameContai
     || VBA_USE_ORIGINAL_DIR_STREAM
 void addFileStreamToSotStream(const OUString& rPath, SotStorageStream* pStream)
 {
-    SvFileStream aFileStream(rPath, StreamMode::READWRITE);
+    SvFileStream aFileStream(rPath, STREAM_READWRITE);
     pStream->WriteStream(aFileStream);
 }
 #endif
@@ -1063,12 +1066,12 @@ void VbaExport::exportVBA(SotStorage* pRootStorage)
     getCorrectExportOrder(xNameContainer, aLibraryMap);
 
     // start here with the VBA export
-    tools::SvRef<SotStorage> xVBAStream = pRootStorage->OpenSotStorage("VBA", StreamMode::READWRITE);
-    SotStorageStream* pDirStream = xVBAStream->OpenSotStream("dir", StreamMode::READWRITE);
+    SotStorage* pVBAStream = pRootStorage->OpenSotStorage("VBA", STREAM_READWRITE);
+    SotStorageStream* pDirStream = pVBAStream->OpenSotStream("dir", STREAM_READWRITE);
 
-    SotStorageStream* pVBAProjectStream = xVBAStream->OpenSotStream("_VBA_PROJECT", StreamMode::READWRITE);
-    SotStorageStream* pPROJECTStream = pRootStorage->OpenSotStream("PROJECT", StreamMode::READWRITE);
-    SotStorageStream* pPROJECTwmStream = pRootStorage->OpenSotStream("PROJECTwm", StreamMode::READWRITE);
+    SotStorageStream* pVBAProjectStream = pVBAStream->OpenSotStream("_VBA_PROJECT", STREAM_READWRITE);
+    SotStorageStream* pPROJECTStream = pRootStorage->OpenSotStream("PROJECT", STREAM_READWRITE);
+    SotStorageStream* pPROJECTwmStream = pRootStorage->OpenSotStream("PROJECTwm", STREAM_READWRITE);
 
 #if VBA_USE_ORIGINAL_WM_STREAM
     OUString aProjectwmPath = "/home/moggi/Documents/testfiles/vba/PROJECTwm";
@@ -1104,11 +1107,11 @@ void VbaExport::exportVBA(SotStorage* pRootStorage)
     OUString aSheet2Path = "/home/moggi/Documents/testfiles/vba/VBA/Sheet2";
     OUString aSheet3Path = "/home/moggi/Documents/testfiles/vba/VBA/Sheet3";
     OUString aWorkbookPath = "/home/moggi/Documents/testfiles/vba/VBA/ThisWorkbook";
-    SotStorageStream* pModule1Stream = xVBAStream->OpenSotStream("Module1", StreamMode::READWRITE);
-    SotStorageStream* pSheet1Stream = xVBAStream->OpenSotStream("Sheet1", StreamMode::READWRITE);
-    SotStorageStream* pSheet2Stream = xVBAStream->OpenSotStream("Sheet2", StreamMode::READWRITE);
-    SotStorageStream* pSheet3Stream = xVBAStream->OpenSotStream("Sheet3", StreamMode::READWRITE);
-    SotStorageStream* pWorkbookStream = xVBAStream->OpenSotStream("ThisWorkbook", StreamMode::READWRITE);
+    SotStorageStream* pModule1Stream = pVBAStream->OpenSotStream("Module1", STREAM_READWRITE);
+    SotStorageStream* pSheet1Stream = pVBAStream->OpenSotStream("Sheet1", STREAM_READWRITE);
+    SotStorageStream* pSheet2Stream = pVBAStream->OpenSotStream("Sheet2", STREAM_READWRITE);
+    SotStorageStream* pSheet3Stream = pVBAStream->OpenSotStream("Sheet3", STREAM_READWRITE);
+    SotStorageStream* pWorkbookStream = pVBAStream->OpenSotStream("ThisWorkbook", STREAM_READWRITE);
     addFileStreamToSotStream(aModule1Path, pModule1Stream);
     addFileStreamToSotStream(aSheet1Path, pSheet1Stream);
     addFileStreamToSotStream(aSheet2Path, pSheet2Stream);
@@ -1126,7 +1129,7 @@ void VbaExport::exportVBA(SotStorage* pRootStorage)
     for (sal_Int32 i = 0; i < n; ++i)
     {
         const OUString& rModuleName = aElementNames[aLibraryMap[i]];
-        SotStorageStream* pModuleStream = xVBAStream->OpenSotStream(rModuleName, StreamMode::READWRITE);
+        SotStorageStream* pModuleStream = pVBAStream->OpenSotStream(rModuleName, STREAM_READWRITE);
         css::uno::Any aCode = xNameContainer->getByName(rModuleName);
         css::script::ModuleInfo aModuleInfo = xModuleInfo->getModuleInfo(rModuleName);
         OUString aSourceCode;
@@ -1140,7 +1143,7 @@ void VbaExport::exportVBA(SotStorage* pRootStorage)
     pVBAProjectStream->Commit();
 
     pDirStream->Commit();
-    xVBAStream->Commit();
+    pVBAStream->Commit();
     pPROJECTStream->Commit();
     pPROJECTwmStream->Commit();
     pRootStorage->Commit();

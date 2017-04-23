@@ -36,16 +36,36 @@ public:
                                 SfxRangeItem( const SfxRangeItem& rItem );
     virtual bool                operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper * = nullptr ) const override;
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
-    sal_uInt16&          From() { return nFrom; }
+    inline sal_uInt16&          From() { return nFrom; }
     virtual SfxPoolItem*        Create( SvStream &, sal_uInt16 nVersion ) const override;
     virtual SvStream&           Store( SvStream &, sal_uInt16 nItemVersion ) const override;
 };
 
+
+class SVL_DLLPUBLIC SfxUShortRangesItem : public SfxPoolItem
+{
+private:
+    sal_uInt16*                 _pRanges;
+
+public:
+                                SfxUShortRangesItem( sal_uInt16 nWID, SvStream &rStream );
+                                SfxUShortRangesItem( const SfxUShortRangesItem& rItem );
+    virtual                     ~SfxUShortRangesItem();
+    virtual bool                operator==( const SfxPoolItem& ) const override;
+    virtual bool GetPresentation( SfxItemPresentation ePres,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper * = nullptr ) const override;
+    virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
+    virtual SfxPoolItem*        Create( SvStream &, sal_uInt16 nVersion ) const override;
+    virtual SvStream&           Store( SvStream &, sal_uInt16 nItemVersion ) const override;
+};
 
 #endif
 

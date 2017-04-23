@@ -52,7 +52,7 @@ namespace basegfx
         BASEGFX_DLLPUBLIC B2DPolyPolygon correctOutmostPolygon(const B2DPolyPolygon& rCandidate);
 
         // Subdivide all contained curves. Use distanceBound value if given.
-        BASEGFX_DLLPUBLIC B2DPolyPolygon adaptiveSubdivideByDistance(const B2DPolyPolygon& rCandidate, double fDistanceBound);
+        BASEGFX_DLLPUBLIC B2DPolyPolygon adaptiveSubdivideByDistance(const B2DPolyPolygon& rCandidate, double fDistanceBound = 0.0);
 
         // Subdivide all contained curves. Use distanceBound value if given. Else, a convenient one
         // is created.
@@ -162,6 +162,12 @@ namespace basegfx
         // with the given amount. Value may be negative.
         BASEGFX_DLLPUBLIC B2DPolyPolygon growInNormalDirection(const B2DPolyPolygon& rCandidate, double fValue);
 
+        // This method will correct a pair of polyPolygons where the goal is to keep same point count
+        // to allow direct point association and also to remove self-intersections produced by shrinks.
+        // This method might possibly change both polyPolygons to reach that goal because there are cases
+        // where it is necessary to add new cut points to the original
+        BASEGFX_DLLPUBLIC void correctGrowShrinkPolygonPair(B2DPolyPolygon& rOriginal, B2DPolyPolygon& rGrown);
+
         // force all sub-polygons to a point count of nSegments
         BASEGFX_DLLPUBLIC B2DPolyPolygon reSegmentPolyPolygon(const B2DPolyPolygon& rCandidate, sal_uInt32 nSegments);
 
@@ -259,7 +265,7 @@ namespace basegfx
             are 'lit' for the given number. Return un-lit segments
             otherwise.
          */
-        B2DPolyPolygon createSevenSegmentPolyPolygon(sal_Char cNumber, bool bLitSegments);
+        B2DPolyPolygon createSevenSegmentPolyPolygon(sal_Char cNumber, bool bLitSegments=true);
 
         /** snap some polygon coordinates to discrete coordinates
 

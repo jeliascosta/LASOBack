@@ -25,7 +25,6 @@
 #include <editeng/fontitem.hxx>
 #include "OutlineViewShell.hxx"
 #include "DrawViewShell.hxx"
-#include "ViewShellBase.hxx"
 #include "Window.hxx"
 #include "drawdoc.hxx"
 #include "strings.hrc"
@@ -129,7 +128,7 @@ void FuBullet::InsertFormattingMark( sal_Unicode cMark )
         // prepare undo
         ::svl::IUndoManager& rUndoMgr =  pOL->GetUndoManager();
         rUndoMgr.EnterListAction(SD_RESSTR(STR_UNDO_INSERT_SPECCHAR),
-                                    "", 0, mpViewShell->GetViewShellBase().GetViewShellId() );
+                                    "" );
 
         // insert given text
         OUString aStr( cMark );
@@ -190,7 +189,7 @@ void FuBullet::InsertSpecialCharacter( SfxRequest& rReq )
             aSet.Put( *pFontItem );
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact ? pFact->CreateSfxDialog( &mpView->GetViewShell()->GetViewFrame()->GetWindow(), aSet,
+        std::unique_ptr<SfxAbstractDialog> pDlg(pFact ? pFact->CreateSfxDialog( &mpView->GetViewShell()->GetViewFrame()->GetWindow(), aSet,
             mpView->GetViewShell()->GetViewFrame()->GetFrame().GetFrameInterface(),
             RID_SVXDLG_CHARMAP ) : nullptr);
         if( !pDlg )
@@ -256,9 +255,8 @@ void FuBullet::InsertSpecialCharacter( SfxRequest& rReq )
             aOldSet.Put( pOV->GetAttribs() );
 
             ::svl::IUndoManager& rUndoMgr =  pOL->GetUndoManager();
-            ViewShellId nViewShellId = mpViewShell ? mpViewShell->GetViewShellBase().GetViewShellId() : ViewShellId(-1);
             rUndoMgr.EnterListAction(SD_RESSTR(STR_UNDO_INSERT_SPECCHAR),
-                                     "", 0, nViewShellId );
+                                     "" );
             pOV->InsertText(aChars, true);
 
             // set attributes (set font)
@@ -268,10 +266,8 @@ void FuBullet::InsertSpecialCharacter( SfxRequest& rReq )
                                    aFont.GetCharSet(),
                                    EE_CHAR_FONTINFO);
             aSet.Put(aFontItem);
-            aFontItem.SetWhich(EE_CHAR_FONTINFO_CJK);
-            aSet.Put(aFontItem);
-            aFontItem.SetWhich(EE_CHAR_FONTINFO_CTL);
-            aSet.Put(aFontItem);
+            aSet.Put(aFontItem, EE_CHAR_FONTINFO_CJK);
+            aSet.Put(aFontItem, EE_CHAR_FONTINFO_CTL);
             pOV->SetAttribs(aSet);
 
             ESelection aSel = pOV->GetSelection();

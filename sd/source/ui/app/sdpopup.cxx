@@ -60,7 +60,7 @@ void SdFieldPopup::Fill( LanguageType eLanguage )
         const SvxDateField* pDateField = static_cast<const SvxDateField*>( pField );
         SvxDateField aDateField( *pDateField );
 
-        if( pDateField->GetType() == SvxDateType::Fix )
+        if( pDateField->GetType() == SVXDATETYPE_FIX )
             CheckItem( 1 );
         else
             CheckItem( 2 );
@@ -174,9 +174,9 @@ SvxFieldData* SdFieldPopup::GetField()
         sal_uInt16 i;
 
         if( IsItemChecked( 1 ) )
-            eType = SvxDateType::Fix;
+            eType = SVXDATETYPE_FIX;
         else
-            eType = SvxDateType::Var;
+            eType = SVXDATETYPE_VAR;
 
         for( i = 3; i <= nCount; i++ )
         {
@@ -192,7 +192,7 @@ SvxFieldData* SdFieldPopup::GetField()
             static_cast<SvxDateField*>( pNewField )->SetType( eType );
             static_cast<SvxDateField*>( pNewField )->SetFormat( eFormat );
 
-            if( (pDateField->GetType() == SvxDateType::Var) && (eType == SvxDateType::Fix) )
+            if( (pDateField->GetType() == SVXDATETYPE_VAR) && (eType == SVXDATETYPE_FIX) )
             {
                 Date aDate( Date::SYSTEM );
                 static_cast<SvxDateField*>( pNewField )->SetFixDate( aDate );

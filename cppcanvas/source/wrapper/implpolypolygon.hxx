@@ -46,7 +46,7 @@ namespace cppcanvas
                              const css::uno::Reference<
                                  css::rendering::XPolyPolygon2D >& rPolyPoly );
 
-            virtual ~ImplPolyPolygon() override;
+            virtual ~ImplPolyPolygon();
 
             virtual void            setRGBAFillColor( Color::IntSRGBA ) override;
             virtual void            setRGBALineColor( Color::IntSRGBA ) override;

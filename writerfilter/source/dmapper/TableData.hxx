@@ -33,7 +33,7 @@ namespace dmapper
 /**
    Class containing the data to describe a table cell.
  */
-class CellData final
+class CellData
 {
     /**
        Handle to start of cell.
@@ -55,17 +55,19 @@ class CellData final
 public:
     typedef std::shared_ptr<CellData> Pointer_t;
 
-    CellData(css::uno::Reference<css::text::XTextRange> const & start, TablePropertyMapPtr pProps)
+    CellData(css::uno::Reference<css::text::XTextRange> start, TablePropertyMapPtr pProps)
     : mStart(start), mEnd(start), mpProps(pProps), mbOpen(true)
     {
     }
+
+    virtual ~CellData() {}
 
     /**
        Set the end handle of a cell.
 
        @param end     the end handle of the cell
     */
-    void setEnd(css::uno::Reference<css::text::XTextRange> const & end) { mEnd = end; mbOpen = false; }
+    void setEnd(css::uno::Reference<css::text::XTextRange> end) { mEnd = end; mbOpen = false; }
 
     /**
        Adds properties to the cell.
@@ -101,7 +103,7 @@ public:
 /**
    Class to handle data of a table row.
  */
-class RowData final
+class RowData
 {
     typedef ::std::vector<CellData::Pointer_t> Cells;
 
@@ -124,6 +126,8 @@ public:
     : mCells(rRowData.mCells), mpProperties(rRowData.mpProperties)
     {
     }
+
+    virtual ~RowData() {}
 
     /**
        Add a cell to the row.
@@ -263,7 +267,8 @@ class TableData
 public:
     typedef std::shared_ptr<TableData> Pointer_t;
 
-    explicit TableData(unsigned int nDepth) : mnDepth(nDepth) { newRow(); }
+    TableData(unsigned int nDepth) : mnDepth(nDepth) { newRow(); }
+    ~TableData() {}
 
     /**
        End the current row.

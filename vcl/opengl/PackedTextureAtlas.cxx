@@ -19,26 +19,26 @@
 
 struct Node
 {
-    tools::Rectangle mRectangle;
+    Rectangle mRectangle;
     std::unique_ptr<Node> mLeftNode;
     std::unique_ptr<Node> mRightNode;
     bool mOccupied;
 
     explicit Node(int nWidth, int nHeight);
-    explicit Node(tools::Rectangle& aRectangle);
+    explicit Node(Rectangle& aRectangle);
 
     bool isLeaf();
     Node* insert(int nWidth, int nHeight, int nPadding);
 };
 
 Node::Node(int nWidth, int nHeight)
-    : mRectangle(tools::Rectangle(Point(), Size(nWidth, nHeight)))
+    : mRectangle(Rectangle(Point(), Size(nWidth, nHeight)))
     , mLeftNode()
     , mRightNode()
     , mOccupied(false)
 {}
 
-Node::Node(tools::Rectangle& aRectangle)
+Node::Node(Rectangle& aRectangle)
     : mRectangle(aRectangle)
     , mLeftNode()
     , mRightNode()
@@ -83,20 +83,20 @@ Node* Node::insert(int nWidth, int nHeight, int nPadding)
         int dw = mRectangle.GetWidth() - nWidth;
         int dh = mRectangle.GetHeight() - nHeight;
 
-        tools::Rectangle aLeftRect;
-        tools::Rectangle aRightRect;
+        Rectangle aLeftRect;
+        Rectangle aRightRect;
         if (dw > dh)
         {
-            aLeftRect = tools::Rectangle(Point(mRectangle.Left(), mRectangle.Top()),
+            aLeftRect = Rectangle(Point(mRectangle.Left(), mRectangle.Top()),
                                   Size(nWidth, mRectangle.GetHeight()));
-            aRightRect = tools::Rectangle(Point(nPadding + mRectangle.Left() + nWidth, mRectangle.Top()),
+            aRightRect = Rectangle(Point(nPadding + mRectangle.Left() + nWidth, mRectangle.Top()),
                                    Size(mRectangle.GetWidth() - nWidth - nPadding, mRectangle.GetHeight()));
         }
         else
         {
-            aLeftRect = tools::Rectangle(Point(mRectangle.Left(), mRectangle.Top()),
+            aLeftRect = Rectangle(Point(mRectangle.Left(), mRectangle.Top()),
                                   Size(mRectangle.GetWidth(), nHeight));
-            aRightRect = tools::Rectangle(Point(mRectangle.Left(), nPadding + mRectangle.Top() + nHeight),
+            aRightRect = Rectangle(Point(mRectangle.Left(), nPadding + mRectangle.Top() + nHeight),
                                    Size(mRectangle.GetWidth(), mRectangle.GetHeight() - nHeight - nPadding));
         }
 
@@ -109,12 +109,14 @@ Node* Node::insert(int nWidth, int nHeight, int nPadding)
 
 struct PackedTexture
 {
-    std::shared_ptr<ImplOpenGLTexture> mpTexture;
+    std::unique_ptr<ImplOpenGLTexture> mpTexture;
     std::unique_ptr<Node> mpRootNode;
+    int mnDeallocatedArea;
 
     PackedTexture(int nWidth, int nHeight)
         : mpTexture(new ImplOpenGLTexture(nWidth, nHeight, true))
         , mpRootNode(new Node(nWidth, nHeight))
+        , mnDeallocatedArea(0)
     {}
 };
 
@@ -149,7 +151,7 @@ OpenGLTexture PackedTextureAtlasManager::Reserve(int nWidth, int nHeight)
         Node* pNode = pPackedTexture->mpRootNode->insert(nWidth, nHeight, 1);
         if (pNode != nullptr)
         {
-            return OpenGLTexture(pPackedTexture->mpTexture, pNode->mRectangle, -1);
+            return OpenGLTexture(pPackedTexture->mpTexture.get(), pNode->mRectangle, -1);
         }
     }
     CreateNewTexture();
@@ -157,7 +159,7 @@ OpenGLTexture PackedTextureAtlasManager::Reserve(int nWidth, int nHeight)
     Node* pNode = pPackedTexture->mpRootNode->insert(nWidth, nHeight, 1);
     if (pNode != nullptr)
     {
-        return OpenGLTexture(pPackedTexture->mpTexture, pNode->mRectangle, -1);
+        return OpenGLTexture(pPackedTexture->mpTexture.get(), pNode->mRectangle, -1);
     }
     return OpenGLTexture();
 }

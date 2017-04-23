@@ -148,9 +148,22 @@ SwSortDlg::SwSortDlg(vcl::Window* pParent, SwWrtShell &rShell)
     get(m_pLangLB, "langlb");
     get(m_pCaseCB, "matchcase");
 
+    m_pColEdt1->SetAccessibleName(m_pColLbl->GetText());
+    m_pColEdt2->SetAccessibleName(m_pColLbl->GetText());
+    m_pColEdt3->SetAccessibleName(m_pColLbl->GetText());
+    m_pTypDLB1->SetAccessibleName(m_pTypLbl->GetText());
+    m_pTypDLB2->SetAccessibleName(m_pTypLbl->GetText());
+    m_pTypDLB3->SetAccessibleName(m_pTypLbl->GetText());
+    m_pSortUp1RB->SetAccessibleRelationMemberOf(m_pKeyCB1);
+    m_pSortDn1RB->SetAccessibleRelationMemberOf(m_pKeyCB1);
+    m_pSortUp2RB->SetAccessibleRelationMemberOf(m_pKeyCB2);
+    m_pSortDn2RB->SetAccessibleRelationMemberOf(m_pKeyCB2);
+    m_pSortUp3RB->SetAccessibleRelationMemberOf(m_pKeyCB3);
+    m_pSortDn3RB->SetAccessibleRelationMemberOf(m_pKeyCB3);
+
     m_pDelimEdt->SetMaxTextLen( 1 );
     if(rSh.GetSelectionType() &
-            (SelectionType::Table|SelectionType::TableCell) )
+            (nsSelectionType::SEL_TBL|nsSelectionType::SEL_TBL_CELLS) )
     {
         m_pColumnRB->Check(bCol);
         m_pColLbl->SetText(bCol ? aRowText : aColText);
@@ -165,12 +178,6 @@ SwSortDlg::SwSortDlg(vcl::Window* pParent, SwWrtShell &rShell)
         m_pRowRB->Check();
         m_pColLbl->SetText(aColText);
     }
-
-    // Set accessible names here because text of m_pColLbl may be changed
-    // by the if-else block above
-    m_pColEdt1->SetAccessibleName(m_pColLbl->GetText());
-    m_pColEdt2->SetAccessibleName(m_pColLbl->GetText());
-    m_pColEdt3->SetAccessibleName(m_pColLbl->GetText());
 
     // initialise
     Link<Button*,void> aLk = LINK(this,SwSortDlg, CheckHdl);
@@ -230,6 +237,17 @@ SwSortDlg::SwSortDlg(vcl::Window* pParent, SwWrtShell &rShell)
         m_pColEdt2->SetMax(nMax);
         m_pColEdt3->SetMax(nMax);
     }
+
+    m_pDelimPB->SetAccessibleRelationMemberOf(m_pDelimFreeRB);
+
+    m_pColEdt1->SetAccessibleRelationMemberOf(m_pKeyCB1);
+    m_pTypDLB1->SetAccessibleRelationMemberOf(m_pKeyCB1);
+
+    m_pColEdt2->SetAccessibleRelationMemberOf(m_pKeyCB2);
+    m_pTypDLB2->SetAccessibleRelationMemberOf(m_pKeyCB2);
+
+    m_pColEdt3->SetAccessibleRelationMemberOf(m_pKeyCB3);
+    m_pTypDLB3->SetAccessibleRelationMemberOf(m_pKeyCB3);
 }
 
 SwSortDlg::~SwSortDlg()
@@ -358,31 +376,30 @@ void SwSortDlg::Apply()
     {
         SwWait aWait( *rSh.GetView().GetDocShell(), true );
         rSh.StartAllAction();
-        bRet = rSh.Sort( aOptions );
-        if( bRet )
+        if( (bRet = rSh.Sort( aOptions )))
             rSh.SetModified();
         rSh.EndAllAction();
     }
 
     if( !bRet )
-        ScopedVclPtrInstance<MessageDialog>(this->GetParent(), SW_RES(STR_SRTERR), VclMessageType::Info)->Execute();
+        ScopedVclPtrInstance<MessageDialog>( this->GetParent(), SW_RES(STR_SRTERR), VCL_MESSAGE_INFO)->Execute();
 }
 
-IMPL_LINK( SwSortDlg, DelimHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SwSortDlg, DelimHdl, Button*, pButton, void )
 {
     bool bEnable = pButton == m_pDelimFreeRB && m_pDelimFreeRB->IsEnabled();
     m_pDelimEdt->Enable( bEnable );
     m_pDelimPB->Enable( bEnable );
 }
 
-IMPL_LINK_NOARG(SwSortDlg, DelimCharHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwSortDlg, DelimCharHdl, Button*, void)
 {
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     if(pFact)
     {
         SfxAllItemSet aSet( rSh.GetAttrPool() );
         aSet.Put( SfxInt32Item( SID_ATTR_CHAR, GetDelimChar() ) );
-        ScopedVclPtr<SfxAbstractDialog> pMap(pFact->CreateSfxDialog( m_pDelimPB, aSet,
+        std::unique_ptr<SfxAbstractDialog> pMap(pFact->CreateSfxDialog( m_pDelimPB, aSet,
             rSh.GetView().GetViewFrame()->GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
         if( RET_OK == pMap->Execute() )
         {
@@ -393,7 +410,7 @@ IMPL_LINK_NOARG(SwSortDlg, DelimCharHdl, Button*, void)
     }
 }
 
-IMPL_LINK( SwSortDlg, CheckHdl, Button*, pControl, void )
+IMPL_LINK_TYPED( SwSortDlg, CheckHdl, Button*, pControl, void )
 {
     if( pControl == m_pRowRB.get())
     {
@@ -423,7 +440,7 @@ IMPL_LINK( SwSortDlg, CheckHdl, Button*, pControl, void )
         static_cast<CheckBox *>(pControl)->Check();
 }
 
-IMPL_LINK( SwSortDlg, LanguageListBoxHdl, ListBox&, rLBox, void )
+IMPL_LINK_TYPED( SwSortDlg, LanguageListBoxHdl, ListBox&, rLBox, void )
 {
     LanguageHdl(&rLBox);
 }

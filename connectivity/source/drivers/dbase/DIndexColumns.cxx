@@ -56,6 +56,9 @@ sdbcx::ObjectType ODbaseIndexColumns::createObject(const OUString& _rName)
                                                     ,getINT32(xCol->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_PRECISION)))
                                                     ,getINT32(xCol->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_SCALE)))
                                                     ,getINT32(xCol->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_TYPE)))
+                                                    ,false
+                                                    ,false
+                                                    ,false
                                                     ,pTable->getConnection()->getMetaData()->supportsMixedCaseQuotedIdentifiers()
                                                     ,getString(xCol->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CATALOGNAME)))
                                                     ,getString(xCol->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_SCHEMANAME)))
@@ -65,7 +68,7 @@ sdbcx::ObjectType ODbaseIndexColumns::createObject(const OUString& _rName)
 }
 
 
-void ODbaseIndexColumns::impl_refresh()
+void ODbaseIndexColumns::impl_refresh() throw(RuntimeException)
 {
     m_pIndex->refreshColumns();
 }

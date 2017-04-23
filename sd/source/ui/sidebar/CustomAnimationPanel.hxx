@@ -32,7 +32,7 @@ public:
         vcl::Window* pParentWindow,
         ViewShellBase& rViewShellBase,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
-    virtual ~CustomAnimationPanel() override;
+    virtual ~CustomAnimationPanel();
 
     // ILayoutableWindow
     virtual css::ui::LayoutSize GetHeightForWidth (const sal_Int32 nWidth) override;

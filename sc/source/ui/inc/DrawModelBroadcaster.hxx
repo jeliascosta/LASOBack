@@ -37,10 +37,12 @@ class ScDrawModelBroadcaster : public SfxListener,
 public:
 
     ScDrawModelBroadcaster( SdrModel *pDrawModel );
-    virtual ~ScDrawModelBroadcaster() override;
+    virtual ~ScDrawModelBroadcaster();
 
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::document::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::document::XEventListener >& xListener ) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::document::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::document::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 };

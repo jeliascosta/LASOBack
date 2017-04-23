@@ -348,7 +348,8 @@ bool DlgFilterCrit::getCondition(const ListBox& _rField,const ListBox& _rComp,co
                 _rFilter.Name = ::dbtools::quoteName(aQuote,_rFilter.Name);
                 if ( !sTableName.isEmpty() )
                 {
-                    sTableName += ".";
+                    static const char sSep[] = ".";
+                    sTableName += sSep;
                     sTableName += _rFilter.Name;
                     _rFilter.Name = sTableName;
                 }
@@ -452,7 +453,7 @@ Reference< XPropertySet > DlgFilterCrit::getMatchingColumn( const Edit& _rValueI
     return getColumn( sField );
 }
 
-IMPL_LINK( DlgFilterCrit, PredicateLoseFocus, Control&, rControl, void )
+IMPL_LINK_TYPED( DlgFilterCrit, PredicateLoseFocus, Control&, rControl, void )
 {
     Edit* _pField = static_cast<Edit*>(&rControl);
     // retrieve the field affected
@@ -468,14 +469,51 @@ IMPL_LINK( DlgFilterCrit, PredicateLoseFocus, Control&, rControl, void )
 
 void DlgFilterCrit::SetLine( sal_uInt16 nIdx,const PropertyValue& _rItem,bool _bOr  )
 {
-    OUString aStr;
-    _rItem.Value >>= aStr;
+    OUString aCondition;
+    _rItem.Value >>= aCondition;
+    OUString aStr = aCondition;
     if ( _rItem.Handle == SQLFilterOperator::LIKE ||
          _rItem.Handle == SQLFilterOperator::NOT_LIKE )
         ::Replace_SQL_PlaceHolder(aStr);
     aStr = comphelper::string::stripEnd(aStr, ' ');
 
     Reference< XPropertySet > xColumn = getColumn( _rItem.Name );
+
+    // remove the predicate from the condition
+    switch(_rItem.Handle)
+    {
+        case SQLFilterOperator::EQUAL:
+            //  aStr.Erase(0,1);
+            break;
+        case SQLFilterOperator::NOT_EQUAL:
+            aStr = aStr.copy(2);
+            break;
+        case SQLFilterOperator::LESS:
+            aStr = aStr.copy(1);
+            break;
+        case SQLFilterOperator::LESS_EQUAL:
+            aStr = aStr.copy(2);
+            break;
+        case SQLFilterOperator::GREATER:
+            aStr = aStr.copy(1);
+            break;
+        case SQLFilterOperator::GREATER_EQUAL:
+            aStr = aStr.copy(2);
+            break;
+        case SQLFilterOperator::NOT_LIKE:
+            aStr = aStr.copy(8);
+            break;
+        case SQLFilterOperator::LIKE:
+            aStr = aStr.copy(4);
+            break;
+        case SQLFilterOperator::SQLNULL:
+            aStr = aStr.copy(7);
+            break;
+        case SQLFilterOperator::NOT_SQLNULL:
+            aStr = aStr.copy(11);
+            break;
+    }
+    aStr = comphelper::string::stripStart(aStr, ' ');
 
     // to make sure that we only set first three
     ListBox* pColumnListControl =  nullptr;
@@ -643,7 +681,7 @@ void DlgFilterCrit::EnableLines()
         m_pET_WHEREVALUE3->Disable();
 }
 
-IMPL_LINK( DlgFilterCrit, ListSelectHdl, ListBox&, rListBox, void )
+IMPL_LINK_TYPED( DlgFilterCrit, ListSelectHdl, ListBox&, rListBox, void )
 {
     OUString aName;
     ListBox* pComp;
@@ -700,7 +738,7 @@ IMPL_LINK( DlgFilterCrit, ListSelectHdl, ListBox&, rListBox, void )
     EnableLines();
 }
 
-IMPL_LINK_NOARG( DlgFilterCrit, ListSelectCompHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( DlgFilterCrit, ListSelectCompHdl, ListBox&, void )
 {
     EnableLines();
 }

@@ -24,7 +24,6 @@
 #include <sfx2/linkmgr.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/objsh.hxx>
-#include <sfx2/viewsh.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/PasswordHelper.hxx>
 #include <vcl/svapp.hxx>
@@ -152,7 +151,7 @@ void ScDocument::SetAllRangeNames(const std::map<OUString, std::unique_ptr<ScRan
     }
 }
 
-void ScDocument::GetRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
+void ScDocument::GetTabRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
 {
     for (SCTAB i = 0; i < static_cast<SCTAB>(maTabs.size()); ++i)
     {
@@ -168,6 +167,11 @@ void ScDocument::GetRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap
         maTabs[i]->GetName(aTableName);
         aRangeNameMap.insert(std::pair<OUString, ScRangeName*>(aTableName,p));
     }
+}
+
+void ScDocument::GetRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
+{
+    GetTabRangeNameMap(aRangeNameMap);
     if (!pRangeName)
     {
         pRangeName = new ScRangeName();
@@ -413,7 +417,7 @@ bool ScDocument::IsScenario( SCTAB nTab ) const
 }
 
 void ScDocument::SetScenarioData( SCTAB nTab, const OUString& rComment,
-                                        const Color& rColor, ScScenarioFlags nFlags )
+                                        const Color& rColor, sal_uInt16 nFlags )
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
     {
@@ -444,7 +448,7 @@ bool ScDocument::IsDefaultTabBgColor( SCTAB nTab ) const
 }
 
 void ScDocument::GetScenarioData( SCTAB nTab, OUString& rComment,
-                                        Color& rColor, ScScenarioFlags& rFlags ) const
+                                        Color& rColor, sal_uInt16& rFlags ) const
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
     {
@@ -454,7 +458,7 @@ void ScDocument::GetScenarioData( SCTAB nTab, OUString& rComment,
     }
 }
 
-void ScDocument::GetScenarioFlags( SCTAB nTab, ScScenarioFlags& rFlags ) const
+void ScDocument::GetScenarioFlags( SCTAB nTab, sal_uInt16& rFlags ) const
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
         rFlags = maTabs[nTab]->GetScenarioFlags();
@@ -463,7 +467,7 @@ void ScDocument::GetScenarioFlags( SCTAB nTab, ScScenarioFlags& rFlags ) const
 bool ScDocument::IsLinked( SCTAB nTab ) const
 {
     return ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsLinked();
-    // equivalent to
+    // euqivalent to
     //if (ValidTab(nTab) && pTab[nTab])
     //  return pTab[nTab]->IsLinked();
     //return false;
@@ -808,7 +812,7 @@ void ScDocument::CopyScenario( SCTAB nSrcTab, SCTAB nDestTab, bool bNewScenario 
                 if (bTouched)
                 {
                     maTabs[nTab]->SetActiveScenario(false);
-                    if ( maTabs[nTab]->GetScenarioFlags() & ScScenarioFlags::TwoWay )
+                    if ( maTabs[nTab]->GetScenarioFlags() & SC_SCENARIO_TWOWAY )
                         maTabs[nTab]->CopyScenarioFrom( maTabs[nDestTab] );
                 }
             }
@@ -827,7 +831,7 @@ void ScDocument::CopyScenario( SCTAB nSrcTab, SCTAB nDestTab, bool bNewScenario 
 }
 
 void ScDocument::MarkScenario( SCTAB nSrcTab, SCTAB nDestTab, ScMarkData& rDestMark,
-                                bool bResetMark, ScScenarioFlags nNeededBits ) const
+                                bool bResetMark, sal_uInt16 nNeededBits ) const
 {
     if (bResetMark)
         rDestMark.ResetMark();
@@ -935,8 +939,9 @@ void ScDocument::BroadcastUno( const SfxHint &rHint )
         // The listener calls must be processed after completing the broadcast,
         // because they can add or remove objects from pUnoBroadcaster.
 
-        if ( pUnoListenerCalls &&
-                rHint.GetId() == SfxHintId::DataChanged &&
+        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+        if ( pUnoListenerCalls && pSimpleHint &&
+                pSimpleHint->GetId() == SFX_HINT_DATACHANGED &&
                 !bInUnoListenerCall )
         {
             // Listener calls may lead to BroadcastUno calls again. The listener calls
@@ -1315,11 +1320,10 @@ bool ScDocument::SearchAndReplace(
                                     rSearchItem, nCol, nRow );
 
                                 // notify LibreOfficeKit about changed page
-                                if (comphelper::LibreOfficeKit::isActive())
+                                if ( comphelper::LibreOfficeKit::isActive() )
                                 {
                                     OString aPayload = OString::number(nTab);
-                                    if (SfxViewShell* pViewShell = SfxViewShell::Current())
-                                        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
+                                    GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
                                 }
                             }
                         }
@@ -1346,11 +1350,10 @@ bool ScDocument::SearchAndReplace(
                                     rSearchItem, nCol, nRow );
 
                                 // notify LibreOfficeKit about changed page
-                                if (comphelper::LibreOfficeKit::isActive())
+                                if ( comphelper::LibreOfficeKit::isActive() )
                                 {
                                     OString aPayload = OString::number(nTab);
-                                    if(SfxViewShell* pViewShell = SfxViewShell::Current())
-                                        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
+                                    GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
                                 }
                             }
                         }
@@ -1395,7 +1398,7 @@ void ScDocument::Sort(
     }
 }
 
-void ScDocument::Reorder( const sc::ReorderParam& rParam )
+void ScDocument::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress )
 {
     ScTable* pTab = FetchTable(rParam.maSortRange.aStart.Tab());
     if (!pTab)
@@ -1403,7 +1406,7 @@ void ScDocument::Reorder( const sc::ReorderParam& rParam )
 
     bool bOldEnableIdle = IsIdleEnabled();
     EnableIdle(false);
-    pTab->Reorder(rParam);
+    pTab->Reorder(rParam, pProgress);
     EnableIdle(bOldEnableIdle);
 }
 
@@ -1424,17 +1427,13 @@ void ScDocument::GetUpperCellString(SCCOL nCol, SCROW nRow, SCTAB nTab, OUString
         rStr.clear();
 }
 
-bool ScDocument::CreateQueryParam( const ScRange& rRange, ScQueryParam& rQueryParam )
+bool ScDocument::CreateQueryParam(SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2, SCTAB nTab, ScQueryParam& rQueryParam)
 {
-    ScTable* pTab = FetchTable(rRange.aStart.Tab());
-    if (!pTab)
-    {
-        OSL_FAIL("missing tab");
-        return false;
-    }
+    if ( ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] )
+        return maTabs[nTab]->CreateQueryParam(nCol1, nRow1, nCol2, nRow2, rQueryParam);
 
-    return pTab->CreateQueryParam(
-        rRange.aStart.Col(), rRange.aStart.Row(), rRange.aEnd.Col(), rRange.aEnd.Row(), rQueryParam);
+    OSL_FAIL("missing tab");
+    return false;
 }
 
 bool ScDocument::HasAutoFilter( SCCOL nCurCol, SCROW nCurRow, SCTAB nCurTab )
@@ -1653,9 +1652,9 @@ void ScDocument::GetEmbedded( ScRange& rRange ) const
     rRange = aEmbedRange;
 }
 
-tools::Rectangle ScDocument::GetEmbeddedRect() const // 1/100 mm
+Rectangle ScDocument::GetEmbeddedRect() const // 1/100 mm
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     ScTable* pTable = nullptr;
     if ( aEmbedRange.aStart.Tab() < static_cast<SCTAB>(maTabs.size()) )
         pTable = maTabs[aEmbedRange.aStart.Tab()];
@@ -1702,7 +1701,7 @@ void ScDocument::ResetEmbedded()
     while result is less than nStopTwips.
     @return true if advanced at least one row.
  */
-static bool lcl_AddTwipsWhile( long & rTwips, long nStopTwips, SCROW & rPosY, SCROW nEndRow, const ScTable * pTable, bool bHiddenAsZero )
+static bool lcl_AddTwipsWhile( long & rTwips, long nStopTwips, SCROW & rPosY, SCROW nEndRow, const ScTable * pTable, bool bHiddenAsZero = true )
 {
     SCROW nRow = rPosY;
     bool bAdded = false;
@@ -1745,7 +1744,7 @@ static bool lcl_AddTwipsWhile( long & rTwips, long nStopTwips, SCROW & rPosY, SC
     return bAdded;
 }
 
-ScRange ScDocument::GetRange( SCTAB nTab, const tools::Rectangle& rMMRect, bool bHiddenAsZero ) const
+ScRange ScDocument::GetRange( SCTAB nTab, const Rectangle& rMMRect, bool bHiddenAsZero ) const
 {
     ScTable* pTable = nullptr;
     if (nTab < static_cast<SCTAB>(maTabs.size()))
@@ -1758,7 +1757,7 @@ ScRange ScDocument::GetRange( SCTAB nTab, const tools::Rectangle& rMMRect, bool 
         return ScRange();
     }
 
-    tools::Rectangle aPosRect = rMMRect;
+    Rectangle aPosRect = rMMRect;
     if ( IsNegativePage( nTab ) )
         ScDrawLayer::MirrorRectRTL( aPosRect ); // Always with positive (LTR) values
 
@@ -1818,7 +1817,7 @@ ScRange ScDocument::GetRange( SCTAB nTab, const tools::Rectangle& rMMRect, bool 
     return ScRange( nX1,nY1,nTab, nX2,nY2,nTab );
 }
 
-void ScDocument::SetEmbedded( SCTAB nTab, const tools::Rectangle& rRect ) // From VisArea (1/100 mm)
+void ScDocument::SetEmbedded( SCTAB nTab, const Rectangle& rRect ) // From VisArea (1/100 mm)
 {
     bIsEmbedded = true;
     aEmbedRange = GetRange( nTab, rRect );
@@ -1930,16 +1929,16 @@ void ScDocument::SetLanguage( LanguageType eLatin, LanguageType eCjk, LanguageTy
     UpdateDrawLanguages(); // Set edit engine defaults in drawing layer pool
 }
 
-tools::Rectangle ScDocument::GetMMRect( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow, SCTAB nTab, bool bHiddenAsZero ) const
+Rectangle ScDocument::GetMMRect( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow, SCTAB nTab, bool bHiddenAsZero ) const
 {
     if (!ValidTab(nTab) || nTab >= static_cast<SCTAB>(maTabs.size()) || !maTabs[nTab])
     {
         OSL_FAIL("GetMMRect: wrong table");
-        return tools::Rectangle(0,0,0,0);
+        return Rectangle(0,0,0,0);
     }
 
     SCCOL i;
-    tools::Rectangle aRect;
+    Rectangle aRect;
 
     for (i=0; i<nStartCol; i++)
         aRect.Left() += GetColWidth(i,nTab, bHiddenAsZero );
@@ -1996,19 +1995,6 @@ void ScDocument::DoMergeContents( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
         }
 
     SetString(nStartCol,nStartRow,nTab,aTotal.makeStringAndClear());
-}
-
-void ScDocument::DoEmptyBlock( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
-                               SCCOL nEndCol, SCROW nEndRow )
-{
-    SCCOL nCol;
-    SCROW nRow;
-    for (nRow=nStartRow; nRow<=nEndRow; nRow++)
-        for (nCol=nStartCol; nCol<=nEndCol; nCol++)
-        {  // empty block except first cell
-            if (nCol != nStartCol || nRow != nStartRow)
-                SetString(nCol,nRow,nTab,"");
-        }
 }
 
 void ScDocument::DoMerge( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,

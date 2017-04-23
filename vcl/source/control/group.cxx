@@ -87,7 +87,7 @@ void GroupBox::ImplInitSettings( bool bFont,
 }
 
 GroupBox::GroupBox( vcl::Window* pParent, WinBits nStyle ) :
-    Control( WindowType::GROUPBOX )
+    Control( WINDOW_GROUPBOX )
 {
     ImplInit( pParent, nStyle );
 }
@@ -99,7 +99,7 @@ void GroupBox::ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
     long                    nTextOff;
     const StyleSettings&    rStyleSettings = GetSettings().GetStyleSettings();
     OUString                aText( GetText() );
-    tools::Rectangle               aRect( rPos, rSize );
+    Rectangle               aRect( rPos, rSize );
     DrawTextFlags           nTextStyle = DrawTextFlags::Left | DrawTextFlags::Top | DrawTextFlags::EndEllipsis | DrawTextFlags::Mnemonic;
 
     if ( GetStyle() & WB_NOLABEL )
@@ -184,11 +184,11 @@ void GroupBox::ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
 
 void GroupBox::FillLayoutData() const
 {
-    mpControlData->mpLayoutData.reset( new vcl::ControlLayoutData );
+    mpControlData->mpLayoutData = new vcl::ControlLayoutData();
     const_cast<GroupBox*>(this)->ImplDraw( const_cast<GroupBox*>(this), DrawFlags::NONE, Point(), GetOutputSizePixel(), true );
 }
 
-void GroupBox::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& )
+void GroupBox::Paint( vcl::RenderContext& rRenderContext, const Rectangle& )
 {
     ImplDraw(&rRenderContext, DrawFlags::NONE, Point(), GetOutputSizePixel());
 }

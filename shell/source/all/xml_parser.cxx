@@ -34,7 +34,7 @@ namespace /* private */
 
     /*  Extracts the local part of tag without
         namespace decoration e.g. meta:creator -> creator */
-    const XML_Char COLON = ':';
+    const XML_Char COLON = (XML_Char)':';
 
     const XML_Char* get_local_name(const XML_Char* rawname)
     {
@@ -69,9 +69,9 @@ namespace /* private */
     }
 }
 
-xml_parser::xml_parser() :
+xml_parser::xml_parser(const XML_Char* EncodingName) :
     document_handler_(nullptr),
-    xml_parser_(XML_ParserCreate(nullptr))
+    xml_parser_(XML_ParserCreate(EncodingName))
 {
     init();
 }

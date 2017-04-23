@@ -19,7 +19,6 @@
 
 #include "compressedarray.hxx"
 #include "address.hxx"
-#include "global.hxx"
 
 #include <algorithm>
 
@@ -393,7 +392,7 @@ A ScBitMaskCompressedArray<A,D>::GetLastAnyBitAccess( const D& rBitMask ) const
     size_t nIndex = this->nCount-1;
     while (true)
     {
-        if (this->pData[nIndex].aValue & rBitMask)
+        if ((this->pData[nIndex].aValue & rBitMask) != 0)
         {
             nEnd = this->pData[nIndex].nEnd;
             break;  // while
@@ -415,7 +414,7 @@ A ScBitMaskCompressedArray<A,D>::GetLastAnyBitAccess( const D& rBitMask ) const
 
 // === Force instantiation of specializations ================================
 
-template class ScCompressedArray< SCROW, CRFlags>;             // flags, base class
-template class ScBitMaskCompressedArray< SCROW, CRFlags>;      // flags
+template class ScCompressedArray< SCROW, sal_uInt8>;             // flags, base class
+template class ScBitMaskCompressedArray< SCROW, sal_uInt8>;      // flags
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -30,7 +30,6 @@
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/form/submission/XSubmissionSupplier.hpp>
 #include <com/sun/star/inspection/XObjectInspectorUI.hpp>
-#include <com/sun/star/lang/NullPointerException.hpp>
 #include <tools/debug.hxx>
 #include <rtl/ustrbuf.hxx>
 
@@ -94,6 +93,7 @@ namespace pcr
     SubmissionPropertyHandler::SubmissionPropertyHandler( const Reference< XComponentContext >& _rxContext )
         :EditPropertyHandler_Base( _rxContext )
         ,OPropertyChangeListener( m_aMutex )
+        ,m_pPropChangeMultiplexer( nullptr )
     {
     }
 
@@ -104,20 +104,20 @@ namespace pcr
     }
 
 
-    OUString SAL_CALL SubmissionPropertyHandler::getImplementationName_static(  )
+    OUString SAL_CALL SubmissionPropertyHandler::getImplementationName_static(  ) throw (RuntimeException)
     {
         return OUString( "com.sun.star.comp.extensions.SubmissionPropertyHandler" );
     }
 
 
-    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getSupportedServiceNames_static(  )
+    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getSupportedServiceNames_static(  ) throw (RuntimeException)
     {
         Sequence<OUString> aSupported { "com.sun.star.form.inspection.SubmissionPropertyHandler" };
         return aSupported;
     }
 
 
-    Any SAL_CALL SubmissionPropertyHandler::getPropertyValue( const OUString& _rPropertyName )
+    Any SAL_CALL SubmissionPropertyHandler::getPropertyValue( const OUString& _rPropertyName ) throw (UnknownPropertyException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -166,7 +166,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL SubmissionPropertyHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue )
+    void SAL_CALL SubmissionPropertyHandler::setPropertyValue( const OUString& _rPropertyName, const Any& _rValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
@@ -209,7 +209,7 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getActuatingProperties( )
+    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getActuatingProperties( ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !m_pHelper.get() )
@@ -220,7 +220,7 @@ namespace pcr
     }
 
 
-    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getSupersededProperties( )
+    Sequence< OUString > SAL_CALL SubmissionPropertyHandler::getSupersededProperties( ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !m_pHelper.get() )
@@ -236,10 +236,11 @@ namespace pcr
 
     void SubmissionPropertyHandler::onNewComponent()
     {
-        if ( m_xPropChangeMultiplexer.is() )
+        if ( m_pPropChangeMultiplexer )
         {
-            m_xPropChangeMultiplexer->dispose();
-            m_xPropChangeMultiplexer.clear();
+            m_pPropChangeMultiplexer->dispose();
+            m_pPropChangeMultiplexer->release();
+            m_pPropChangeMultiplexer = nullptr;
         }
 
         EditPropertyHandler_Base::onNewComponent();
@@ -253,15 +254,16 @@ namespace pcr
         {
             m_pHelper.reset( new SubmissionHelper( m_aMutex, m_xComponent, xDocument ) );
 
-            m_xPropChangeMultiplexer = new OPropertyChangeMultiplexer( this, m_xComponent );
-            m_xPropChangeMultiplexer->addProperty( PROPERTY_BUTTONTYPE );
+            m_pPropChangeMultiplexer = new OPropertyChangeMultiplexer( this, m_xComponent );
+            m_pPropChangeMultiplexer->acquire();
+            m_pPropChangeMultiplexer->addProperty( PROPERTY_BUTTONTYPE );
         }
     }
 
 
     Sequence< Property > SAL_CALL SubmissionPropertyHandler::doDescribeSupportedProperties() const
     {
-        std::vector< Property > aProperties;
+        ::std::vector< Property > aProperties;
         if ( m_pHelper.get() )
         {
             implAddPropertyDescription( aProperties, PROPERTY_SUBMISSION_ID, cppu::UnoType<submission::XSubmission>::get() );
@@ -275,6 +277,7 @@ namespace pcr
 
     LineDescriptor SAL_CALL SubmissionPropertyHandler::describePropertyLine( const OUString& _rPropertyName,
         const Reference< XPropertyControlFactory >& _rxControlFactory )
+        throw (UnknownPropertyException, NullPointerException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !_rxControlFactory.is() )
@@ -282,7 +285,7 @@ namespace pcr
         if ( !m_pHelper.get() )
             RuntimeException();
 
-        std::vector< OUString > aListEntries;
+        ::std::vector< OUString > aListEntries;
         PropertyId nPropId( impl_getPropertyId_throwUnknownProperty( _rPropertyName ) );
         switch ( nPropId )
         {
@@ -313,7 +316,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL SubmissionPropertyHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool )
+    void SAL_CALL SubmissionPropertyHandler::actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const Any& _rNewValue, const Any& /*_rOldValue*/, const Reference< XObjectInspectorUI >& _rxInspectorUI, sal_Bool ) throw (NullPointerException, RuntimeException, std::exception)
     {
         if ( !_rxInspectorUI.is() )
             throw NullPointerException();
@@ -339,7 +342,7 @@ namespace pcr
     }
 
 
-    Any SAL_CALL SubmissionPropertyHandler::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue )
+    Any SAL_CALL SubmissionPropertyHandler::convertToPropertyValue( const OUString& _rPropertyName, const Any& _rControlValue ) throw (UnknownPropertyException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         Any aPropertyValue;
@@ -378,7 +381,7 @@ namespace pcr
     }
 
 
-    Any SAL_CALL SubmissionPropertyHandler::convertToControlValue( const OUString& _rPropertyName, const Any& _rPropertyValue, const Type& _rControlValueType )
+    Any SAL_CALL SubmissionPropertyHandler::convertToControlValue( const OUString& _rPropertyName, const Any& _rPropertyValue, const Type& _rControlValueType ) throw (UnknownPropertyException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         Any aControlValue;
@@ -419,7 +422,7 @@ namespace pcr
     }
 
 
-    void SubmissionPropertyHandler::_propertyChanged( const PropertyChangeEvent& _rEvent )
+    void SubmissionPropertyHandler::_propertyChanged( const PropertyChangeEvent& _rEvent ) throw(RuntimeException)
     {
         if ( _rEvent.PropertyName == PROPERTY_BUTTONTYPE )
             firePropertyChange( PROPERTY_XFORMS_BUTTONTYPE, PROPERTY_ID_XFORMS_BUTTONTYPE, _rEvent.OldValue, _rEvent.NewValue );

@@ -166,7 +166,8 @@ ScHFEditActiveDlg::ScHFEditActiveDlg(
                 rCoreSet.Get(
                     rCoreSet.GetPool()->GetWhich(SID_ATTR_PAGE) ));
 
-    bool bRightPage = SvxPageUsage::Left != rPageItem.GetPageUsage();
+    bool bRightPage = ( SVX_PAGE_LEFT !=
+                        SvxPageUsage(rPageItem.GetPageUsage()) );
 
     if ( bRightPage )
     {
@@ -193,7 +194,7 @@ ScHFEditActiveDlg::ScHFEditActiveDlg(
 
 void ScHFEditDlg::PageCreated( sal_uInt16 /* nId */, SfxTabPage& rPage )
 {
-    // Can only be a ScHFEditPage...
+    // kann ja nur ne ScHFEditPage sein...
 
     static_cast<ScHFEditPage&>(rPage).SetNumType(eNumType);
 }

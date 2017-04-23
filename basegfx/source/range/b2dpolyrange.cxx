@@ -87,13 +87,6 @@ namespace basegfx
             return tools::solveCrossovers(maRanges,maOrient);
         }
 
-        void transform(const basegfx::B2DHomMatrix& rTranslate)
-        {
-            maBounds.transform(rTranslate);
-            for (auto &a : maRanges)
-                a.transform(rTranslate);
-        }
-
     private:
         B2DRange                         maBounds;
         std::vector<B2DRange>            maRanges;
@@ -153,11 +146,6 @@ namespace basegfx
     bool B2DPolyRange::overlaps( const B2DRange& rRange ) const
     {
         return mpImpl->overlaps(rRange);
-    }
-
-    void B2DPolyRange::transform(const basegfx::B2DHomMatrix& rTranslate)
-    {
-        mpImpl->transform(rTranslate);
     }
 
     B2DPolyPolygon B2DPolyRange::solveCrossovers() const

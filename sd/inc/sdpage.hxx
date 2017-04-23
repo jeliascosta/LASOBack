@@ -30,7 +30,6 @@
 #include <vector>
 #include <svx/svdobj.hxx>
 #include <svx/fmpage.hxx>
-#include <xmloff/autolayout.hxx>
 #include "fadedef.h"
 #include "diadef.h"
 #include "pres.hxx"
@@ -46,7 +45,10 @@ class SfxStyleSheet;
 class SdDrawDocument;
 class SdrTextObj;
 class SdPageLink;
+class StarBASIC;
 class SfxItemSet;
+struct StyleRequestData;
+class SdPage;
 class Paragraph;
 class Outliner;
 class SdStyleSheet;
@@ -152,8 +154,8 @@ protected:
 
 public:
 
-    SdPage(SdDrawDocument& rNewDoc, bool bMasterPage);
-    virtual ~SdPage() override;
+    SdPage(SdDrawDocument& rNewDoc, bool bMasterPage=false);
+    virtual ~SdPage();
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone(SdrModel* pNewModel) const override;
 
@@ -169,7 +171,7 @@ public:
     sd::ShapeList&  GetPresentationShapeList() { return maPresentationShapeList; }
 
     void EnsureMasterPageDefaultBackground();
-    SdrObject*      CreatePresObj(PresObjKind eObjKind, bool bVertical, const ::tools::Rectangle& rRect, bool bInsert=false);
+    SdrObject*      CreatePresObj(PresObjKind eObjKind, bool bVertical, const Rectangle& rRect, bool bInsert=false);
     SdrObject*      CreateDefaultPresObj(PresObjKind eObjKind);
     void            DestroyDefaultPresObj(PresObjKind eObjKind);
     SdrObject*      GetPresObj(PresObjKind eObjKind, int nIndex = 1, bool bFuzzySearch = false );
@@ -192,9 +194,10 @@ public:
     void            SetAutoLayout(AutoLayout eLayout, bool bInit=false, bool bCreate=false);
     AutoLayout      GetAutoLayout() const { return meAutoLayout; }
     void            CreateTitleAndLayout(bool bInit=false, bool bCreate=false);
-    SdrObject*      InsertAutoLayoutShape(SdrObject* pObj, PresObjKind eObjKind, bool bVertical, const ::tools::Rectangle& rRect, bool bInit);
+    SdrObject*      InsertAutoLayoutShape(SdrObject* pObj, PresObjKind eObjKind, bool bVertical, const Rectangle& rRect, bool bInit);
 
-    virtual void       NbcInsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE) override;
+    virtual void       NbcInsertObject(SdrObject* pObj, size_t nPos=SAL_MAX_SIZE,
+                                       const SdrInsertReason* pReason=nullptr) override;
     virtual SdrObject* NbcRemoveObject(size_t nObjNum) override;
     virtual SdrObject* RemoveObject(size_t nObjNum) override;
 
@@ -253,7 +256,7 @@ public:
     void        setTransitionDuration( double fTranstionDuration );
 
     virtual void Changed(const SdrObject& rObj, SdrUserCallType eType,
-                         const ::tools::Rectangle& rOldBoundRect) override;
+                         const Rectangle& rOldBoundRect) override;
 
     void             SetLayoutName(const OUString& aName);
     virtual OUString GetLayoutName() const override       { return maLayoutName; }
@@ -266,7 +269,7 @@ public:
     void            ConnectLink();
     void            DisconnectLink();
 
-    void            ScaleObjects(const Size& rNewPageSize, const ::tools::Rectangle& rNewBorderRect,
+    void            ScaleObjects(const Size& rNewPageSize, const Rectangle& rNewBorderRect,
                          bool bScaleAllObj);
 
     const OUString& GetName() const;
@@ -291,20 +294,14 @@ public:
     bool setAlienAttributes( const css::uno::Any& rAttributes );
     void getAlienAttributes( css::uno::Any& rAttributes );
 
-    /** @return the main animation node
+    /** @return the main animation node */
+    css::uno::Reference< css::animations::XAnimationNode > getAnimationNode() throw (css::uno::RuntimeException);
 
-        @throws css::uno::RuntimeException
-    */
-    css::uno::Reference< css::animations::XAnimationNode > const & getAnimationNode();
-
-    /** sets the main animation node
-
-        @throws css::uno::RuntimeException
-    */
-    void setAnimationNode( css::uno::Reference< css::animations::XAnimationNode >& xNode );
+    /** sets the main animation node */
+    void setAnimationNode( css::uno::Reference< css::animations::XAnimationNode >& xNode ) throw (css::uno::RuntimeException);
 
     /// @return a helper class to manipulate effects inside the main sequence
-    std::shared_ptr< sd::MainSequence > const & getMainSequence();
+    std::shared_ptr< sd::MainSequence > getMainSequence();
 
     /** quick check if this slide has an animation node.
         This can be used to have a cost free check if there are no animations ad this slide.
@@ -353,10 +350,10 @@ public:
     /** removes all empty presentation objects from this slide */
     void RemoveEmptyPresentationObjects();
 
-    ::tools::Rectangle   GetTitleRect() const;
-    ::tools::Rectangle   GetLayoutRect() const;
+    Rectangle   GetTitleRect() const;
+    Rectangle   GetLayoutRect() const;
 
-    static void CalculateHandoutAreas( SdDrawDocument& rModel, AutoLayout eLayout, bool bHorizontal, std::vector< ::tools::Rectangle >& rAreas );
+    static void CalculateHandoutAreas( SdDrawDocument& rModel, AutoLayout eLayout, bool bHorizontal, std::vector< Rectangle >& rAreas );
 
     /** Set the "precious" flag to the given value.
     */
@@ -372,7 +369,7 @@ public:
     bool IsPrecious() const { return mbIsPrecious; }
 
     void createAnnotation( css::uno::Reference< css::office::XAnnotation >& xAnnotation );
-    void addAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, int nIndex );
+    void addAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, int nIndex = -1 );
     void removeAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation );
     const sd::AnnotationVector& getAnnotations() const { return maAnnotations; }
     OString stringify() const;

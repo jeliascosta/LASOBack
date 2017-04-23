@@ -50,10 +50,6 @@ namespace osl
          */
         inline SocketAddr(const SocketAddr& Addr);
 
-#if defined LIBO_INTERNAL_ONLY
-        inline SocketAddr(SocketAddr && other);
-#endif
-
         /** The SocketAddr takes over the responsibility of the handle ( which means,
             that the handle gets destructed by the destructor of this reference)
             @param Addr a handle
@@ -102,12 +98,12 @@ namespace osl
         inline sal_Int32 SAL_CALL getPort() const;
 
         /** Sets the port number of the address.
-           @return true if successful.
+           @return true if successfule.
          */
         inline bool SAL_CALL setPort( sal_Int32 nPort );
 
         /** Sets the address of the underlying socket address struct in network byte order.
-            @return true on success, false signals failure.
+            @return true on success, false signales failure.
          */
         inline bool SAL_CALL setAddr( const ::rtl::ByteSequence & address );
 
@@ -122,10 +118,6 @@ namespace osl
         /**
          */
         inline SocketAddr & SAL_CALL operator= (const SocketAddr& Addr);
-
-#if defined LIBO_INTERNAL_ONLY
-        inline SocketAddr & operator =(SocketAddr && other);
-#endif
 
         /** Assigns the socket addr without copyconstructing it.
             @param Addr the socket address.
@@ -283,7 +275,7 @@ namespace osl
             will NOT block; <code>false</code> if it would block or if an error occurred.
 
             @param pTimeout if 0, the operation will block without a timeout. Otherwise
-            the specified amount of time.
+            the specified amout of time.
         */
         inline bool SAL_CALL isRecvReady(const TimeValue *pTimeout = NULL) const;
 
@@ -295,7 +287,7 @@ namespace osl
             will NOT block; <code>false</code> if it would block or if an error occurred.
 
             @param pTimeout if 0, the operation will block without a timeout. Otherwise
-            the specified amount of time.
+            the specified amout of time.
         */
         inline bool SAL_CALL isSendReady(const TimeValue *pTimeout = NULL) const;
 
@@ -310,7 +302,7 @@ namespace osl
             an error occurred.
 
             @param pTimeout if 0, the operation will block without a timeout. Otherwise
-            the specified amount of time.
+            the specified amout of time.
         */
         inline bool SAL_CALL isExceptionPending(const TimeValue *pTimeout = NULL) const;
 

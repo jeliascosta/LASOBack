@@ -84,7 +84,7 @@ void MorphDlg::LoadSettings()
     sal_uInt16              nSteps;
     bool                bOrient, bAttrib;
 
-    if( xIStm.is() )
+    if( xIStm.Is() )
     {
         SdIOCompat aCompat( *xIStm, StreamMode::READ );
 
@@ -106,7 +106,7 @@ void MorphDlg::SaveSettings() const
     tools::SvRef<SotStorageStream> xOStm( SD_MOD()->GetOptionStream( SD_OPTION_MORPHING ,
                                SD_OPTION_STORE ) );
 
-    if( xOStm.is() )
+    if( xOStm.Is() )
     {
         SdIOCompat aCompat( *xOStm, StreamMode::WRITE, 1 );
 

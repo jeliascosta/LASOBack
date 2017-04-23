@@ -30,7 +30,6 @@
 #include <breakit.hxx>
 #include <unicode/uchar.h>
 #include <com/sun/star/i18n/ScriptType.hpp>
-#include <com/sun/star/i18n/CharacterIteratorMode.hpp>
 #include <com/sun/star/i18n/CTLScriptType.hpp>
 #include <com/sun/star/i18n/WordType.hpp>
 #include <paratr.hxx>
@@ -38,7 +37,6 @@
 #include <editeng/scripttypeitem.hxx>
 #include <editeng/charhiddenitem.hxx>
 #include <vcl/outdev.hxx>
-#include <svl/asiancfg.hxx>
 #include <editeng/blinkitem.hxx>
 #include <tools/multisel.hxx>
 #include <unotools/charclass.hxx>
@@ -63,72 +61,23 @@ using namespace i18n::ScriptType;
 #define IS_JOINING_GROUP(c, g) ( u_getIntPropertyValue( (c), UCHAR_JOINING_GROUP ) == U_JG_##g )
 #define isAinChar(c)        IS_JOINING_GROUP((c), AIN)
 #define isAlefChar(c)       IS_JOINING_GROUP((c), ALEF)
+#define isBaaChar(c)        IS_JOINING_GROUP((c), BEH)
 #define isDalChar(c)        IS_JOINING_GROUP((c), DAL)
-#if U_ICU_VERSION_MAJOR_NUM >= 58
-#define isFehChar(c)       (IS_JOINING_GROUP((c), FEH) || IS_JOINING_GROUP((c), AFRICAN_FEH))
-#else
 #define isFehChar(c)        IS_JOINING_GROUP((c), FEH)
-#endif
 #define isGafChar(c)        IS_JOINING_GROUP((c), GAF)
-#define isHehChar(c)        IS_JOINING_GROUP((c), HEH)
+#define isHahChar(c)        IS_JOINING_GROUP((c), HAH)
 #define isKafChar(c)        IS_JOINING_GROUP((c), KAF)
 #define isLamChar(c)        IS_JOINING_GROUP((c), LAM)
-#if U_ICU_VERSION_MAJOR_NUM >= 58
-#define isQafChar(c)       (IS_JOINING_GROUP((c), QAF) || IS_JOINING_GROUP((c), AFRICAN_QAF))
-#else
 #define isQafChar(c)        IS_JOINING_GROUP((c), QAF)
-#endif
 #define isRehChar(c)        IS_JOINING_GROUP((c), REH)
-#define isTahChar(c)        IS_JOINING_GROUP((c), TAH)
 #define isTehMarbutaChar(c) IS_JOINING_GROUP((c), TEH_MARBUTA)
 #define isWawChar(c)        IS_JOINING_GROUP((c), WAW)
-#define isSeenOrSadChar(c)  (IS_JOINING_GROUP((c), SAD) || IS_JOINING_GROUP((c), SEEN))
-
-// Beh and charters that behave like Beh in medial form.
-bool isBehChar(sal_Unicode cCh)
-{
-    bool bRet = false;
-    switch (u_getIntPropertyValue(cCh, UCHAR_JOINING_GROUP))
-    {
-    case U_JG_BEH:
-    case U_JG_NOON:
-#if U_ICU_VERSION_MAJOR_NUM >= 58
-    case U_JG_AFRICAN_NOON:
+#if (U_ICU_VERSION_MAJOR_NUM > 4) || (U_ICU_VERSION_MAJOR_NUM == 4 && U_ICU_VERSION_MINOR_NUM >= 4)
+#define isYehChar(c)        (IS_JOINING_GROUP((c), YEH) || IS_JOINING_GROUP((c), FARSI_YEH))
+#else
+#define isYehChar(c)        IS_JOINING_GROUP((c), YEH)
 #endif
-    case U_JG_NYA:
-    case U_JG_YEH:
-    case U_JG_FARSI_YEH:
-    case U_JG_BURUSHASKI_YEH_BARREE:
-        bRet = true;
-        break;
-    default:
-        bRet = false;
-        break;
-    }
-
-    return bRet;
-}
-
-// Yeh and charters that behave like Yeh in final form.
-bool isYehChar(sal_Unicode cCh)
-{
-    bool bRet = false;
-    switch (u_getIntPropertyValue(cCh, UCHAR_JOINING_GROUP))
-    {
-    case U_JG_YEH:
-    case U_JG_FARSI_YEH:
-    case U_JG_YEH_BARREE:
-    case U_JG_BURUSHASKI_YEH_BARREE:
-    case U_JG_YEH_WITH_TAIL:
-        bRet = true;
-        break;
-    default:
-        bRet = false;
-        break;
-    }
-
-    return bRet;
-}
+#define isSeenOrSadChar(c)  (IS_JOINING_GROUP((c), SAD) || IS_JOINING_GROUP((c), SEEN))
 
 bool isTransparentChar ( sal_Unicode cCh )
 {
@@ -238,7 +187,7 @@ SwMarginPortion *SwLineLayout::CalcLeftMargin()
          SetPortion(SwTextPortion::CopyLinePortion(*this));
     if( !pLeft )
     {
-        pLeft = new SwMarginPortion;
+        pLeft = new SwMarginPortion( 0 );
         pLeft->SetPortion( GetPortion() );
         SetPortion( pLeft );
     }
@@ -461,17 +410,15 @@ void SwLineLayout::CalcLine( SwTextFormatter &rLine, SwTextFormatInfo &rInf )
                                 // Just care about the portion height.
                                 Height(nPosHeight);
                         }
-                        SwFlyCntPortion* pAsFly(nullptr);
-                        if(pPos->IsFlyCntPortion())
-                            pAsFly = static_cast<SwFlyCntPortion*>(pPos);
-                        if( pAsFly || ( pPos->IsMultiPortion()
+                        if( pPos->IsFlyCntPortion() || ( pPos->IsMultiPortion()
                             && static_cast<SwMultiPortion*>(pPos)->HasFlyInContent() ) )
                             rLine.SetFlyInCntBase();
-                        if(pAsFly && pAsFly->GetAlign() != sw::LineAlign::NONE)
+                        if( pPos->IsFlyCntPortion() &&
+                            static_cast<SwFlyCntPortion*>(pPos)->GetAlign() )
                         {
-                            pAsFly->SetMax(false);
+                            static_cast<SwFlyCntPortion*>(pPos)->SetMax( false );
                             if( !pFlyCnt || pPos->Height() > pFlyCnt->Height() )
-                                pFlyCnt = pAsFly;
+                                pFlyCnt = static_cast<SwFlyCntPortion*>(pPos);
                         }
                         else
                         {
@@ -511,9 +458,9 @@ void SwLineLayout::CalcLine( SwTextFormatter &rLine, SwTextFormatInfo &rInf )
                     pFlyCnt->SetMax( true );
                     if( Height() > nMaxDescent + nAscent )
                     {
-                        if( sw::LineAlign::BOTTOM == pFlyCnt->GetAlign() )
+                        if( 3 == pFlyCnt->GetAlign() ) // Bottom
                             nAscent = Height() - nMaxDescent;
-                        else if( sw::LineAlign::CENTER == pFlyCnt->GetAlign() )
+                        else if( 2 == pFlyCnt->GetAlign() ) // Center
                             nAscent = ( Height() + nAscent - nMaxDescent ) / 2;
                     }
                     pFlyCnt->SetAscent( nAscent );
@@ -620,27 +567,6 @@ void SwLineLayout::MaxAscentDescent( SwTwips& _orAscent,
     }
 }
 
-void SwLineLayout::ResetFlags()
-{
-    m_bFormatAdj = m_bDummy = m_bFntChg = m_bTab = m_bEndHyph = m_bMidHyph = m_bFly
-    = m_bRest = m_bBlinking = m_bClipping = m_bContent = m_bRedline
-    = m_bForcedLeftMargin = m_bHanging = false;
-}
-
-SwLineLayout::SwLineLayout()
-    : m_pNext( nullptr ), m_pLLSpaceAdd( nullptr ), m_pKanaComp( nullptr ), m_nRealHeight( 0 ),
-      m_bUnderscore( false )
-{
-    ResetFlags();
-    SetWhichPor( POR_LAY );
-}
-
-SwLinePortion *SwLineLayout::GetFirstPortion() const
-{
-    const SwLinePortion *pRet = pPortion ? pPortion : this;
-    return const_cast<SwLinePortion*>(pRet);
-}
-
 SwCharRange &SwCharRange::operator+=(const SwCharRange &rRange)
 {
     if(0 != rRange.nLen ) {
@@ -740,10 +666,10 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
     sal_Int16 nScript = i18n::ScriptType::LATIN;
 
     // compression type
-    const CharCompressType aCompEnum = rNode.getIDocumentSettingAccess()->getCharacterCompressionType();
+    const SwCharCompressType aCompEnum = rNode.getIDocumentSettingAccess()->getCharacterCompressionType();
 
     // justification type
-    const bool bAdjustBlock = SvxAdjust::Block ==
+    const bool bAdjustBlock = SVX_ADJUST_BLOCK ==
                                   rNode.GetSwAttrSet().GetAdjust().GetAdjust();
 
     // FIND INVALID RANGES IN SCRIPT INFO ARRAYS:
@@ -764,7 +690,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                 break;
             }
         }
-        if( CharCompressType::NONE != aCompEnum )
+        if( CHARCOMPRESS_NONE != aCompEnum )
         {
             while( nCntComp < CountCompChg() )
             {
@@ -927,7 +853,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
 
         // if current script is asian, we search for compressable characters
         // in this range
-        if ( CharCompressType::NONE != aCompEnum &&
+        if ( CHARCOMPRESS_NONE != aCompEnum &&
              i18n::ScriptType::ASIAN == nScript )
         {
             CompType ePrevState = NONE;
@@ -967,7 +893,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     if ( ePrevState != NONE )
                     {
                         // insert start and type
-                        if ( CharCompressType::PunctuationAndKana == aCompEnum ||
+                        if ( CHARCOMPRESS_PUNCTUATION_KANA == aCompEnum ||
                              ePrevState != KANA )
                         {
                             aCompressionChanges.push_back( CompressionChangeInfo(nPrevChg, nLastCompression - nPrevChg, ePrevState) );
@@ -985,7 +911,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
             if ( ePrevState != NONE )
             {
                 // insert start and type
-                if ( CharCompressType::PunctuationAndKana == aCompEnum ||
+                if ( CHARCOMPRESS_PUNCTUATION_KANA == aCompEnum ||
                      ePrevState != KANA )
                 {
                     aCompressionChanges.push_back( CompressionChangeInfo(nPrevChg, nLastCompression - nPrevChg, ePrevState) );
@@ -1044,12 +970,12 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     }
 
                     // 3. Priority:
-                    // before final form of Teh Marbuta, Heh, Dal
+                    // before final form of Teh Marbuta, Hah, Dal
                     if ( nPriorityLevel >= 2 && nIdx > 0 )
                     {
                         if ( isTehMarbutaChar ( cCh ) || // Teh Marbuta (right joining)
                              isDalChar ( cCh ) ||        // Dal (right joining) final form may appear in the middle of word
-                             ( isHehChar ( cCh ) && nIdx == nWordLen - 1))  // Heh (dual joining) only at end of word
+                             ( isHahChar ( cCh ) && nIdx == nWordLen - 1))  // Hah (dual joining) only at end of word
                         {
 
                             SAL_WARN_IF( 0 == cPrevCh, "sw.core", "No previous character" );
@@ -1063,13 +989,12 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     }
 
                     // 4. Priority:
-                    // before final form of Alef, Tah, Lam, Kaf or Gaf
+                    // before final form of Alef, Lam or Kaf
                     if ( nPriorityLevel >= 3 && nIdx > 0 )
                     {
                         if ( isAlefChar ( cCh ) ||   // Alef (right joining) final form may appear in the middle of word
-                             (( isLamChar ( cCh ) || // Lam,
-                              isTahChar ( cCh )   || // Tah,
-                              isKafChar ( cCh )   || // Kaf (all dual joining)
+                             (( isLamChar ( cCh ) || // Lam
+                              isKafChar ( cCh )   || // Kaf (both dual joining)
                               isGafChar ( cCh ) )
                               && nIdx == nWordLen - 1))  // only at end of word
                         {
@@ -1084,12 +1009,12 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     }
 
                     // 5. Priority:
-                    // before medial Beh-like
+                    // before media Bah
                     if ( nPriorityLevel >= 4 && nIdx > 0 && nIdx < nWordLen - 1 )
                     {
-                        if ( isBehChar ( cCh ) )
+                        if ( isBaaChar ( cCh )) // Bah
                         {
-                            // check if next character is Reh or Yeh-like
+                            // check if next character is Reh, Yeh or Alef Maksura
                             sal_Unicode cNextCh = rWord[ nIdx + 1 ];
                             if ( isRehChar ( cNextCh ) || isYehChar ( cNextCh ))
                            {
@@ -1105,7 +1030,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     }
 
                     // 6. Priority:
-                    // before the final form of Waw, Ain, Qaf and Feh
+                    // before the final form of Waw, Ain, Qaf and Fa
                     if ( nPriorityLevel >= 5 && nIdx > 0 )
                     {
                         if ( isWawChar ( cCh )   || // Wav (right joining)
@@ -1128,8 +1053,12 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                     // other connecting possibilities
                     if ( nPriorityLevel >= 6 && nIdx > 0 )
                     {
-                        // Reh, Zain
-                        if ( isRehChar ( cCh ) )
+                        // remaining right joiners
+                        // Reh, Zain, Thal,
+                        if ( isRehChar ( cCh ) ||   // Reh Zain (right joining)
+                                                    // final form may appear in the middle of word
+                             ( 0x60C <= cCh && 0x6FE >= cCh // all others
+                              && nIdx == nWordLen - 1))   // only at end of word
                         {
                             SAL_WARN_IF( 0 == cPrevCh, "sw.core", "No previous character" );
                             // check if character is connectable to previous character,
@@ -1141,8 +1070,9 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
                         }
                     }
 
-                    // Do not consider vowel marks when checking if a character
-                    // can be connected to previous character.
+                    // Do not consider Fathatan, Dammatan, Kasratan, Fatha,
+                    // Damma, Kasra, Shadda and Sukun when checking if
+                    // a character can be connected to previous character.
                     if ( !isTransparentChar ( cCh) )
                         cPrevCh = cCh;
 
@@ -1205,7 +1135,7 @@ void SwScriptInfo::InitScriptInfo( const SwTextNode& rNode, bool bRTL )
         for ( size_t nDirIdx = 0; nDirIdx < aDirectionChanges.size(); ++nDirIdx )
         {
             const sal_uInt8 nCurrDirType = GetDirType( nDirIdx );
-                // nStart is start of RTL run:
+                // nStart ist start of RTL run:
                 const sal_Int32 nStart = nDirIdx > 0 ? GetDirChg( nDirIdx - 1 ) : 0;
                 // nEnd is end of RTL run:
                 const sal_Int32 nEnd = GetDirChg( nDirIdx );
@@ -1279,7 +1209,7 @@ void SwScriptInfo::UpdateBidiInfo( const OUString& rText )
     UBiDi* pBidi = ubidi_openSized( rText.getLength(), 0, &nError );
     nError = U_ZERO_ERROR;
 
-    ubidi_setPara( pBidi, reinterpret_cast<const UChar *>(rText.getStr()), rText.getLength(),
+    ubidi_setPara( pBidi, reinterpret_cast<const UChar *>(rText.getStr()), rText.getLength(),    // UChar != sal_Unicode in MinGW
                    nDefaultDir, nullptr, &nError );
     nError = U_ZERO_ERROR;
     int nCount = ubidi_countRuns( pBidi, &nError );
@@ -1785,8 +1715,8 @@ bool SwScriptInfo::IsArabicText( const OUString& rText, sal_Int32 nStt, sal_Int3
 {
     using namespace ::com::sun::star::i18n;
     static const ScriptTypeList typeList[] = {
-        { UnicodeScript_kArabic, UnicodeScript_kArabic, (sal_Int16)UnicodeScript_kArabic },        // 11,
-        { UnicodeScript_kScriptCount, UnicodeScript_kScriptCount, (sal_Int16)UnicodeScript_kScriptCount }    // 88
+        { UnicodeScript_kArabic, UnicodeScript_kArabic, UnicodeScript_kArabic },        // 11,
+        { UnicodeScript_kScriptCount, UnicodeScript_kScriptCount, UnicodeScript_kScriptCount }    // 88
     };
 
     // go forward if current position does not hold a regular character:
@@ -1811,8 +1741,8 @@ bool SwScriptInfo::IsArabicText( const OUString& rText, sal_Int32 nStt, sal_Int3
     if( nIdx >= 0 )
     {
         const sal_Unicode cCh = rText[nIdx];
-        const sal_Int16 type = unicode::getUnicodeScriptType( cCh, typeList, (sal_Int16)UnicodeScript_kScriptCount );
-        return type == (sal_Int16)UnicodeScript_kArabic;
+        const sal_Int16 type = unicode::getUnicodeScriptType( cCh, typeList, UnicodeScript_kScriptCount );
+        return type == UnicodeScript_kArabic;
     }
     return false;
 }
@@ -2160,9 +2090,9 @@ void SwScriptInfo::selectRedLineDeleted(const SwTextNode& rNode, MultiSelection 
         || (rNode.GetText().getLength() == rHiddenMulti.GetTotalRange().Len()));
 
     const IDocumentRedlineAccess& rIDRA = rNode.getIDocumentRedlineAccess();
-    if ( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
+    if ( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
     {
-        SwRedlineTable::size_type nAct = rIDRA.GetRedlinePos( rNode, USHRT_MAX );
+        sal_uInt16 nAct = rIDRA.GetRedlinePos( rNode, USHRT_MAX );
 
         for ( ; nAct < rIDRA.GetRedlineTable().size(); nAct++ )
         {
@@ -2212,54 +2142,4 @@ void SwScriptInfo::CalcHiddenRanges( const SwTextNode& rNode, MultiSelection& rH
     rNode.SetHiddenCharAttribute( bNewHiddenCharsHidePara, bNewContainsHiddenChars );
 }
 
-sal_Int32 SwScriptInfo::CountCJKCharacters( const OUString &rText, sal_Int32 nPos, sal_Int32 nEnd, LanguageType aLang)
-{
-    sal_Int32 nCount = 0;
-    if ( nEnd > nPos && g_pBreakIt->GetBreakIter().is() )
-    {
-        sal_Int32 nDone = 0;
-        const lang::Locale &rLocale = g_pBreakIt->GetLocale( aLang );
-        while ( nPos < nEnd )
-        {
-            nPos = g_pBreakIt->GetBreakIter()->nextCharacters( rText, nPos,
-                    rLocale,
-                    i18n::CharacterIteratorMode::SKIPCELL, 1, nDone );
-            nCount++;
-        }
-    }
-    else
-        nCount = nEnd - nPos ;
-
-    return nCount;
-}
-
-void SwScriptInfo::CJKJustify( const OUString& rText, long* pKernArray,
-                                     long* pScrArray, sal_Int32 nStt,
-                                     sal_Int32 nLen, LanguageType aLang,
-                                     long nSpaceAdd )
-{
-    assert( pKernArray != nullptr && nStt >= 0 );
-    if ( nLen > 0 && g_pBreakIt->GetBreakIter().is() )
-    {
-        long nSpaceSum = nSpaceAdd;
-        const lang::Locale &rLocale = g_pBreakIt->GetLocale( aLang );
-        sal_Int32 nDone = 0;
-        sal_Int32 nNext = g_pBreakIt->GetBreakIter()->nextCharacters( rText, nStt,
-                        rLocale,
-                        i18n::CharacterIteratorMode::SKIPCELL, 1, nDone );
-        for ( sal_Int32 nI = 0; nI < nLen ; ++nI )
-        {
-            if ( nI + nStt == nNext )
-            {
-                nNext = g_pBreakIt->GetBreakIter()->nextCharacters( rText, nNext,
-                        rLocale,
-                        i18n::CharacterIteratorMode::SKIPCELL, 1, nDone );
-                nSpaceSum += nSpaceAdd;
-            }
-            pKernArray[ nI ] += nSpaceSum;
-            if ( pScrArray )
-                pScrArray[ nI ] += nSpaceSum;
-        }
-    }
-}
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -66,7 +66,6 @@ void ScDocStatPage::dispose()
     m_pFtTables.clear();
     m_pFtCells.clear();
     m_pFtPages.clear();
-    m_pFtFormula.clear();
     SfxTabPage::dispose();
 }
 

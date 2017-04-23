@@ -28,14 +28,13 @@
 #include <svx/strarray.hxx>
 
 class ScViewOptions;
-class SvxColorListBox;
 
 class ScTpContentOptions : public SfxTabPage
 {
     friend class VclPtr<ScTpContentOptions>;
     VclPtr<ListBox>         pGridLB;
     VclPtr<FixedText>       pColorFT;
-    VclPtr<SvxColorListBox> pColorLB;
+    VclPtr<ColorListBox>    pColorLB;
     VclPtr<CheckBox>        pBreakCB;
     VclPtr<CheckBox>        pGuideLineCB;
 
@@ -62,13 +61,13 @@ class ScTpContentOptions : public SfxTabPage
     ScViewOptions*  pLocalOptions;
 
     void    InitGridOpt();
-    DECL_LINK( GridHdl, ListBox&, void );
-    DECL_LINK( SelLbObjHdl, ListBox&, void );
-    DECL_LINK( CBHdl, Button*, void );
+    DECL_LINK_TYPED( GridHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelLbObjHdl, ListBox&, void );
+    DECL_LINK_TYPED( CBHdl, Button*, void );
 
             ScTpContentOptions( vcl::Window*         pParent,
                              const SfxItemSet&  rArgSet );
-            virtual ~ScTpContentOptions() override;
+            virtual ~ScTpContentOptions();
     virtual void dispose() override;
 
 public:
@@ -79,7 +78,7 @@ public:
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
     virtual void        ActivatePage( const SfxItemSet& ) override;
-    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
 
 };
 
@@ -107,15 +106,15 @@ class ScTpLayoutOptions : public SfxTabPage
 
     SvxStringArray  aUnitArr;
 
-    DECL_LINK(MetricHdl, ListBox&, void );
-    DECL_LINK( AlignHdl, Button*, void );
+    DECL_LINK_TYPED(MetricHdl, ListBox&, void );
+    DECL_LINK_TYPED( AlignHdl, Button*, void );
 
     ScDocument *pDoc;
 
             ScTpLayoutOptions( vcl::Window*          pParent,
                              const SfxItemSet&  rArgSet );
 public:
-    virtual ~ScTpLayoutOptions() override;
+    virtual ~ScTpLayoutOptions();
     virtual void        dispose() override;
     static  VclPtr<SfxTabPage> Create          ( vcl::Window*               pParent,
                                           const SfxItemSet*     rCoreSet );
@@ -124,7 +123,10 @@ public:
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
     virtual void        ActivatePage( const SfxItemSet& ) override;
-    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+
+    void                SetDocument(ScDocument* pPtr){pDoc = pPtr;}
+
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TPVIEW_HXX

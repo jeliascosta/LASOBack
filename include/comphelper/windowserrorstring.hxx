@@ -21,21 +21,18 @@ inline OUString WindowsErrorString(DWORD nErrorCode)
     LPWSTR pMsgBuf;
 
     if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                       nullptr,
+                       NULL,
                        nErrorCode,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       reinterpret_cast<LPWSTR>(&pMsgBuf),
+                       (LPWSTR)&pMsgBuf,
                        0,
-                       nullptr) == 0)
+                       NULL) == 0)
         return OUString::number(nErrorCode, 16);
 
     if (pMsgBuf[wcslen(pMsgBuf)-1] == '\n')
         pMsgBuf[wcslen(pMsgBuf)-1] = '\0';
 
-    if (pMsgBuf[wcslen(pMsgBuf)-1] == '\r')
-        pMsgBuf[wcslen(pMsgBuf)-1] = '\0';
-
-    OUString result(SAL_U(pMsgBuf));
+    OUString result(pMsgBuf);
 
     LocalFree(pMsgBuf);
 

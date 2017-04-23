@@ -39,7 +39,7 @@ bool ChkChain( SwLinePortion *pStart )
                 "ChkChain(): lost in chains" );
         if( nCount >= 200 || pPor == pStart )
         {
-            // the lifesaver
+            // der Lebensretter
             pPor = pStart->GetPortion();
             pStart->SetPortion(nullptr);
             pPor->Truncate();
@@ -99,7 +99,7 @@ void SwLinePortion::PrePaint( const SwTextPaintInfo& rInf,
     SwTextPaintInfo aInf( rInf );
 
     const bool bBidiPor = rInf.GetTextFrame()->IsRightToLeft() !=
-                          bool( ComplexTextLayoutFlags::BiDiRtl & rInf.GetOut()->GetLayoutMode() );
+                          bool( TEXT_LAYOUT_BIDI_RTL & rInf.GetOut()->GetLayoutMode() );
 
     sal_uInt16 nDir = bBidiPor ?
                   1800 :
@@ -151,7 +151,7 @@ void SwLinePortion::CalcTextSize( const SwTextSizeInfo &rInf )
     }
 }
 
-// all following portions will be deleted
+// Es werden alle nachfolgenden Portions geloescht.
 void SwLinePortion::Truncate_()
 {
     SwLinePortion *pPos = pPortion;
@@ -167,7 +167,7 @@ void SwLinePortion::Truncate_()
     pPortion = nullptr;
 }
 
-// It always will be inserted after us.
+// Es wird immer hinter uns eingefuegt.
 SwLinePortion *SwLinePortion::Insert( SwLinePortion *pIns )
 {
     pIns->FindLastPortion()->SetPortion( pPortion );
@@ -181,7 +181,7 @@ SwLinePortion *SwLinePortion::Insert( SwLinePortion *pIns )
 SwLinePortion *SwLinePortion::FindLastPortion()
 {
     SwLinePortion *pPos = this;
-    // Find the end and link pLinPortion to the last one...
+    // An das Ende wandern und pLinPortion an den letzten haengen ...
     while( pPos->GetPortion() )
     {
         pPos = pPos->GetPortion();
@@ -250,8 +250,8 @@ bool SwLinePortion::Format( SwTextFormatInfo &rInf )
     Height( pLast->Height() );
     SetAscent( pLast->GetAscent() );
     const sal_uInt16 nNewWidth = static_cast<sal_uInt16>(rInf.X() + PrtWidth());
-    // Only portions with true width can return true
-    // Notes for example never set bFull==true
+    // Nur Portions mit echter Breite koennen ein true zurueckliefern
+    // Notizen beispielsweise setzen niemals bFull==true
     if( rInf.Width() <= nNewWidth && PrtWidth() && ! IsKernPortion() )
     {
         Truncate();

@@ -11,6 +11,7 @@
 #include <string>
 #include <set>
 
+#include "compat.hxx"
 #include "plugin.hxx"
 
 // Check for some basic naming mismatches which make the code harder to read

@@ -73,7 +73,7 @@ namespace svxform
     }
 
 
-    void SAL_CALL OLocalExchange::lostOwnership( const Reference< clipboard::XClipboard >& _rxClipboard, const Reference< XTransferable >& _rxTrans )
+    void SAL_CALL OLocalExchange::lostOwnership( const Reference< clipboard::XClipboard >& _rxClipboard, const Reference< XTransferable >& _rxTrans ) throw(RuntimeException, std::exception)
     {
         TransferableHelper::implCallOwnLostOwnership( _rxClipboard, _rxTrans );
         m_bClipboardOwner = false;
@@ -359,6 +359,7 @@ namespace svxform
 
     OLocalExchangeHelper::OLocalExchangeHelper(vcl::Window* _pDragSource)
         :m_pDragSource(_pDragSource)
+        ,m_pTransferable(nullptr)
     {
     }
 
@@ -371,34 +372,36 @@ namespace svxform
 
     void OLocalExchangeHelper::startDrag( sal_Int8 nDragSourceActions )
     {
-        DBG_ASSERT(m_xTransferable.is(), "OLocalExchangeHelper::startDrag: not prepared!");
-        m_xTransferable->startDrag( m_pDragSource, nDragSourceActions, OLocalExchange::GrantAccess() );
+        DBG_ASSERT(m_pTransferable, "OLocalExchangeHelper::startDrag: not prepared!");
+        m_pTransferable->startDrag( m_pDragSource, nDragSourceActions, OLocalExchange::GrantAccess() );
     }
 
 
     void OLocalExchangeHelper::copyToClipboard( ) const
     {
-        DBG_ASSERT( m_xTransferable.is(), "OLocalExchangeHelper::copyToClipboard: not prepared!" );
-        m_xTransferable->copyToClipboard( m_pDragSource, OLocalExchange::GrantAccess() );
+        DBG_ASSERT( m_pTransferable, "OLocalExchangeHelper::copyToClipboard: not prepared!" );
+        m_pTransferable->copyToClipboard( m_pDragSource, OLocalExchange::GrantAccess() );
     }
 
 
     void OLocalExchangeHelper::implReset()
     {
-        if (m_xTransferable.is())
+        if (m_pTransferable)
         {
-            m_xTransferable->setClipboardListener( Link<OLocalExchange&,void>() );
-            m_xTransferable.clear();
+            m_pTransferable->setClipboardListener( Link<OLocalExchange&,void>() );
+            m_pTransferable->release();
+            m_pTransferable = nullptr;
         }
     }
 
 
     void OLocalExchangeHelper::prepareDrag( )
     {
-        DBG_ASSERT(!m_xTransferable.is() || !m_xTransferable->isDragging(), "OLocalExchangeHelper::prepareDrag: recursive DnD?");
+        DBG_ASSERT(!m_pTransferable || !m_pTransferable->isDragging(), "OLocalExchangeHelper::prepareDrag: recursive DnD?");
 
         implReset();
-        m_xTransferable = createExchange();
+        m_pTransferable = createExchange();
+        m_pTransferable->acquire();
     }
 
 

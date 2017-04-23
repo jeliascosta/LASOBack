@@ -33,6 +33,7 @@ private:
     Bool    mbUseable; // system supports current locale ?
     XIC     maContext;
 
+    XIMStyle mnSupportedStatusStyle;
     XIMStyle mnSupportedPreeditStyle;
     XIMStyle mnStatusStyle;
     XIMStyle mnPreeditStyle;
@@ -66,7 +67,7 @@ public:
     void HandleDestroyIM();
 
     void EndExtTextInput( EndExtTextInputFlags nFlags );        // unused
-    void  CommitKeyEvent( sal_Unicode* pText, std::size_t nLength );
+    void  CommitKeyEvent( sal_Unicode* pText, sal_Size nLength );
     int  UpdateSpotLocation();
 
     void Map( SalFrame *pFrame );

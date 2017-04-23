@@ -34,12 +34,14 @@
 #include <com/sun/star/text/MailMergeType.hpp>
 #include <com/sun/star/text/MailMergeEvent.hpp>
 #include <com/sun/star/text/XMailMergeListener.hpp>
+#include <com/sun/star/text/XMailMergeBroadcaster.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/sdbc/XResultSet.hpp>
 #include <com/sun/star/sdbc/XConnection.hpp>
 #include <com/sun/star/sdbc/XRowSet.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
+#include <com/sun/star/frame/XComponentLoader.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/sdbcx/XRowLocate.hpp>
@@ -126,12 +128,12 @@ static CloseResult CloseModelAndDocSh(
     return eResult;
 }
 
-/// @throws RuntimeException
 static bool LoadFromURL_impl(
         Reference< frame::XModel > &rxModel,
         SfxObjectShellRef &rxDocSh,
         const OUString &rURL,
         bool bClose )
+    throw (RuntimeException)
 {
     // try to open the document readonly and hidden
     Reference< frame::XModel > xTmpModel;
@@ -198,18 +200,18 @@ namespace
                              const OUString& _rTemporaryFile );
 
     protected:
-        virtual ~DelayedFileDeletion( ) override;
+        virtual ~DelayedFileDeletion( );
 
         // XCloseListener
-        virtual void SAL_CALL queryClosing( const EventObject& _rSource, sal_Bool _bGetsOwnership ) override;
-        virtual void SAL_CALL notifyClosing( const EventObject& _rSource ) override;
+        virtual void SAL_CALL queryClosing( const EventObject& _rSource, sal_Bool _bGetsOwnership ) throw (util::CloseVetoException, RuntimeException, std::exception) override;
+        virtual void SAL_CALL notifyClosing( const EventObject& _rSource ) throw (RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const EventObject& Source ) throw (RuntimeException, std::exception) override;
 
     private:
         void implTakeOwnership( );
-        DECL_LINK( OnTryDeleteFile, Timer*, void );
+        DECL_LINK_TYPED( OnTryDeleteFile, Timer*, void );
     };
 
     DelayedFileDeletion::DelayedFileDeletion( const Reference< XModel >& _rxModel, const OUString& _rTemporaryFile )
@@ -238,7 +240,7 @@ namespace
         osl_atomic_decrement( &m_refCount );
     }
 
-    IMPL_LINK_NOARG(DelayedFileDeletion, OnTryDeleteFile, Timer *, void)
+    IMPL_LINK_NOARG_TYPED(DelayedFileDeletion, OnTryDeleteFile, Timer *, void)
     {
         ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -291,12 +293,12 @@ namespace
         }
 
         m_aDeleteTimer.SetTimeout( 3000 );  // 3 seconds
-        m_aDeleteTimer.SetInvokeHandler( LINK( this, DelayedFileDeletion, OnTryDeleteFile ) );
+        m_aDeleteTimer.SetTimeoutHdl( LINK( this, DelayedFileDeletion, OnTryDeleteFile ) );
         m_nPendingDeleteAttempts = 3;   // try 3 times at most
         m_aDeleteTimer.Start( );
     }
 
-    void SAL_CALL DelayedFileDeletion::queryClosing( const EventObject& , sal_Bool _bGetsOwnership )
+    void SAL_CALL DelayedFileDeletion::queryClosing( const EventObject& , sal_Bool _bGetsOwnership ) throw (util::CloseVetoException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( _bGetsOwnership )
@@ -307,7 +309,7 @@ namespace
         throw util::CloseVetoException( );
     }
 
-    void SAL_CALL DelayedFileDeletion::notifyClosing( const EventObject&  )
+    void SAL_CALL DelayedFileDeletion::notifyClosing( const EventObject&  ) throw (RuntimeException, std::exception)
     {
         OSL_FAIL("DelayedFileDeletion::notifyClosing: how this?" );
         // this should not happen:
@@ -315,7 +317,7 @@ namespace
         // Or, we ourself close the document, then we should not be a listener anymore
     }
 
-    void SAL_CALL DelayedFileDeletion::disposing( const EventObject&  )
+    void SAL_CALL DelayedFileDeletion::disposing( const EventObject&  ) throw (RuntimeException, std::exception)
     {
         OSL_FAIL("DelayedFileDeletion::disposing: how this?" );
         // this should not happen:
@@ -342,7 +344,7 @@ static bool DeleteTmpFile_Impl(
             // somebody vetoed the closing, and took the ownership of the document
             // -> ensure that the temporary file is deleted later on
             Reference< XEventListener > xEnsureDelete( new DelayedFileDeletion( rxModel, rTmpFileURL ) );
-                // note: as soon as #106931# is fixed, the whole DelayedFileDeletion is to be superseded by
+                // note: as soon as #106931# is fixed, the whole DelayedFileDeletion is to be superseeded by
                 // a better solution
             bDelete = false;
         }
@@ -384,7 +386,7 @@ SwXMailMerge::SwXMailMerge() :
     // like in: SwModule::InsertEnv (appenv.cxx)
     m_xDocSh = new SwDocShell( SfxObjectCreateMode::STANDARD );
     m_xDocSh->DoInitNew();
-    SfxViewFrame *pFrame = SfxViewFrame::LoadHiddenDocument( *m_xDocSh, SFX_INTERFACE_NONE );
+    SfxViewFrame *pFrame = SfxViewFrame::LoadHiddenDocument( *m_xDocSh, 0 );
     SwView *pView = static_cast<SwView*>( pFrame->GetViewShell() );
     pView->AttrChangedNotify( &pView->GetWrtShell() ); //So that SelectShell is called.
     m_xModel = m_xDocSh->GetModel();
@@ -431,6 +433,8 @@ private:
 
 uno::Any SAL_CALL SwXMailMerge::execute(
         const uno::Sequence< beans::NamedValue >& rArguments )
+    throw (IllegalArgumentException, Exception,
+           RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     MailMergeExecuteFinalizer aFinalizer(this);
@@ -595,7 +599,7 @@ uno::Any SAL_CALL SwXMailMerge::execute(
         aCurSelection = aTranslated;
     }
 
-    SfxViewFrame*   pFrame = SfxViewFrame::GetFirst( xCurDocSh.get(), false);
+    SfxViewFrame*   pFrame = SfxViewFrame::GetFirst( xCurDocSh, false);
     SwView *pView = pFrame ? dynamic_cast<SwView*>( pFrame->GetViewShell()  ) : nullptr;
     if (!pView)
         throw RuntimeException();
@@ -650,14 +654,14 @@ uno::Any SAL_CALL SwXMailMerge::execute(
 
     svx::ODataAccessDescriptor aDescriptor;
     aDescriptor.setDataSource(aCurDataSourceName);
-    aDescriptor[ svx::DataAccessDescriptorProperty::Connection ]         <<= xCurConnection;
-    aDescriptor[ svx::DataAccessDescriptorProperty::Command ]            <<= aCurDataCommand;
-    aDescriptor[ svx::DataAccessDescriptorProperty::CommandType ]        <<= nCurDataCommandType;
-    aDescriptor[ svx::DataAccessDescriptorProperty::EscapeProcessing ]   <<= bCurEscapeProcessing;
-    aDescriptor[ svx::DataAccessDescriptorProperty::Cursor ]             <<= xCurResultSet;
-    // aDescriptor[ svx::DataAccessDescriptorProperty::ColumnName ]      not used
-    // aDescriptor[ svx::DataAccessDescriptorProperty::ColumnObject ]    not used
-    aDescriptor[ svx::DataAccessDescriptorProperty::Selection ]          <<= aCurSelection;
+    aDescriptor[ svx::daConnection ]         <<= xCurConnection;
+    aDescriptor[ svx::daCommand ]            <<= aCurDataCommand;
+    aDescriptor[ svx::daCommandType ]        <<= nCurDataCommandType;
+    aDescriptor[ svx::daEscapeProcessing ]   <<= bCurEscapeProcessing;
+    aDescriptor[ svx::daCursor ]             <<= xCurResultSet;
+    // aDescriptor[ svx::daColumnName ]      not used
+    // aDescriptor[ svx::daColumnObject ]    not used
+    aDescriptor[ svx::daSelection ]          <<= aCurSelection;
 
     DBManagerOptions nMergeType;
     switch (nCurOutputType)
@@ -690,8 +694,9 @@ uno::Any SAL_CALL SwXMailMerge::execute(
             rIDDA.setPrintData( aPrtData );
             // #i25686# printing should not be done asynchronously to prevent dangling offices
             // when mail merge is called as command line macro
+            aMergeDesc.bPrintAsync = false;
             aMergeDesc.aPrintOptions = m_aPrintSettings;
-            aMergeDesc.bCreateSingleFile = true;
+            aMergeDesc.bCreateSingleFile = false;
         }
         break;
     case MailMergeType::SHELL:
@@ -714,7 +719,7 @@ uno::Any SAL_CALL SwXMailMerge::execute(
                 if (aCurOutputURL.isEmpty())
                 {
                     aURLObj.removeSegment();
-                    aCurOutputURL = aURLObj.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+                    aCurOutputURL = aURLObj.GetMainURL( INetURLObject::DECODE_TO_IURI );
                 }
             }
             else    // default empty document without URL
@@ -724,7 +729,7 @@ uno::Any SAL_CALL SwXMailMerge::execute(
             }
 
             aURLObj.SetSmartURL( aCurOutputURL );
-            OUString aPath = aURLObj.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+            OUString aPath = aURLObj.GetMainURL( INetURLObject::DECODE_TO_IURI );
 
             const OUString aDelim( "/" );
             if (!aPath.isEmpty() && !aPath.endsWith(aDelim))
@@ -799,9 +804,9 @@ uno::Any SAL_CALL SwXMailMerge::execute(
     OSL_ENSURE( !pOldSrc || pOldSrc == this, "Ooops... different event source already set." );
     pMgr->SetMailMergeEvtSrc( this );   // launch events for listeners
 
-    SfxGetpApp()->NotifyEvent(SfxEventHint(SfxEventHintId::SwMailMerge, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE), xCurDocSh.get()));
+    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE), xCurDocSh));
     bool bSucc = pMgr->Merge( aMergeDesc );
-    SfxGetpApp()->NotifyEvent(SfxEventHint(SfxEventHintId::SwMailMergeEnd, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE_END), xCurDocSh.get()));
+    SfxGetpApp()->NotifyEvent(SfxEventHint(SW_EVENT_MAIL_MERGE_END, SwDocShell::GetEventName(STR_SW_EVENT_MAIL_MERGE_END), xCurDocSh));
 
     pMgr->SetMailMergeEvtSrc( pOldSrc );
 
@@ -829,7 +834,7 @@ uno::Any SAL_CALL SwXMailMerge::execute(
         return makeAny( true );
 }
 
-void SAL_CALL SwXMailMerge::cancel()
+void SAL_CALL SwXMailMerge::cancel() throw (css::uno::RuntimeException, std::exception)
 {
     // Cancel may be called from a second thread, so this protects from m_pMgr
     /// cleanup in the execute function.
@@ -866,6 +871,7 @@ void SwXMailMerge::launchEvent( const PropertyChangeEvent &rEvt ) const
 }
 
 uno::Reference< beans::XPropertySetInfo > SAL_CALL SwXMailMerge::getPropertySetInfo(  )
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static Reference< XPropertySetInfo > aRef = m_pPropSet->getPropertySetInfo();
@@ -874,6 +880,7 @@ uno::Reference< beans::XPropertySetInfo > SAL_CALL SwXMailMerge::getPropertySetI
 
 void SAL_CALL SwXMailMerge::setPropertyValue(
         const OUString& rPropertyName, const uno::Any& rValue )
+    throw (UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1027,6 +1034,7 @@ void SAL_CALL SwXMailMerge::setPropertyValue(
 
 uno::Any SAL_CALL SwXMailMerge::getPropertyValue(
         const OUString& rPropertyName )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1081,6 +1089,7 @@ uno::Any SAL_CALL SwXMailMerge::getPropertyValue(
 void SAL_CALL SwXMailMerge::addPropertyChangeListener(
         const OUString& rPropertyName,
         const uno::Reference< beans::XPropertyChangeListener >& rListener )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rListener.is())
@@ -1096,6 +1105,7 @@ void SAL_CALL SwXMailMerge::addPropertyChangeListener(
 void SAL_CALL SwXMailMerge::removePropertyChangeListener(
         const OUString& rPropertyName,
         const uno::Reference< beans::XPropertyChangeListener >& rListener )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rListener.is())
@@ -1111,6 +1121,7 @@ void SAL_CALL SwXMailMerge::removePropertyChangeListener(
 void SAL_CALL SwXMailMerge::addVetoableChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XVetoableChangeListener >& /*rListener*/ )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     // no vetoable property, thus no support for vetoable change listeners
     OSL_FAIL("not implemented");
@@ -1119,12 +1130,14 @@ void SAL_CALL SwXMailMerge::addVetoableChangeListener(
 void SAL_CALL SwXMailMerge::removeVetoableChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XVetoableChangeListener >& /*rListener*/ )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     // no vetoable property, thus no support for vetoable change listeners
     OSL_FAIL("not implemented");
 }
 
 void SAL_CALL SwXMailMerge::dispose()
+    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1141,6 +1154,7 @@ void SAL_CALL SwXMailMerge::dispose()
 
 void SAL_CALL SwXMailMerge::addEventListener(
         const Reference< XEventListener >& rxListener )
+    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rxListener.is())
@@ -1149,6 +1163,7 @@ void SAL_CALL SwXMailMerge::addEventListener(
 
 void SAL_CALL SwXMailMerge::removeEventListener(
         const Reference< XEventListener >& rxListener )
+    throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rxListener.is())
@@ -1157,6 +1172,7 @@ void SAL_CALL SwXMailMerge::removeEventListener(
 
 void SAL_CALL SwXMailMerge::addMailMergeEventListener(
         const uno::Reference< XMailMergeListener >& rxListener )
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rxListener.is())
@@ -1165,6 +1181,7 @@ void SAL_CALL SwXMailMerge::addMailMergeEventListener(
 
 void SAL_CALL SwXMailMerge::removeMailMergeEventListener(
         const uno::Reference< XMailMergeListener >& rxListener )
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (!m_bDisposing && rxListener.is())
@@ -1172,16 +1189,19 @@ void SAL_CALL SwXMailMerge::removeMailMergeEventListener(
 }
 
 OUString SAL_CALL SwXMailMerge::getImplementationName()
+    throw(RuntimeException, std::exception)
 {
     return OUString( "SwXMailMerge" );
 }
 
 sal_Bool SAL_CALL SwXMailMerge::supportsService( const OUString& rServiceName )
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL SwXMailMerge::getSupportedServiceNames()
+    throw(RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aNames(2);
     OUString *pName = aNames.getArray();

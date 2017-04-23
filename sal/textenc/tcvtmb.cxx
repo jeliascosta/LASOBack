@@ -72,12 +72,13 @@ sal_Size ImplDBCSToUnicode( const void* pData, SAL_UNUSED_PARAMETER void*,
                     *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                     break;
                 }
-                if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_IGNORE )
+                else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_IGNORE )
                 {
                     pSrcBuf++;
                     continue;
                 }
-                cConv = ImplGetUndefinedUnicodeChar(cLead, nFlags);
+                else
+                    cConv = ImplGetUndefinedUnicodeChar(cLead, nFlags);
             }
         }
         else
@@ -119,27 +120,33 @@ sal_Size ImplDBCSToUnicode( const void* pData, SAL_UNUSED_PARAMETER void*,
                                     (cTrail-pEUDCTab->mnTrail1Start);
                                 break;
                             }
-                            sal_uInt16 nTrailCount = pEUDCTab->mnTrail1End-pEUDCTab->mnTrail1Start+1;
-                            if ( (pEUDCTab->mnTrailCount >= 2) &&
-                                 (cTrail >= pEUDCTab->mnTrail2Start) &&
-                                 (cTrail <= pEUDCTab->mnTrail2End) )
+                            else
                             {
-                                cConv = pEUDCTab->mnUniStart+
-                                    ((cLead-pEUDCTab->mnLeadStart)*pEUDCTab->mnTrailRangeCount)+
-                                    nTrailCount+
-                                    (cTrail-pEUDCTab->mnTrail2Start);
-                                break;
-                            }
-                            nTrailCount = pEUDCTab->mnTrail2End-pEUDCTab->mnTrail2Start+1;
-                            if ( (pEUDCTab->mnTrailCount >= 3) &&
-                                 (cTrail >= pEUDCTab->mnTrail3Start) &&
-                                 (cTrail <= pEUDCTab->mnTrail3End) )
-                            {
-                                cConv = pEUDCTab->mnUniStart+
-                                      ((cLead-pEUDCTab->mnLeadStart)*pEUDCTab->mnTrailRangeCount)+
-                                      nTrailCount+
-                                      (cTrail-pEUDCTab->mnTrail3Start);
-                                break;
+                                sal_uInt16 nTrailCount = pEUDCTab->mnTrail1End-pEUDCTab->mnTrail1Start+1;
+                                if ( (pEUDCTab->mnTrailCount >= 2) &&
+                                     (cTrail >= pEUDCTab->mnTrail2Start) &&
+                                     (cTrail <= pEUDCTab->mnTrail2End) )
+                                {
+                                    cConv = pEUDCTab->mnUniStart+
+                                        ((cLead-pEUDCTab->mnLeadStart)*pEUDCTab->mnTrailRangeCount)+
+                                        nTrailCount+
+                                        (cTrail-pEUDCTab->mnTrail2Start);
+                                    break;
+                                }
+                                else
+                                {
+                                    nTrailCount = pEUDCTab->mnTrail2End-pEUDCTab->mnTrail2Start+1;
+                                    if ( (pEUDCTab->mnTrailCount >= 3) &&
+                                         (cTrail >= pEUDCTab->mnTrail3Start) &&
+                                         (cTrail <= pEUDCTab->mnTrail3End) )
+                                    {
+                                        cConv = pEUDCTab->mnUniStart+
+                                            ((cLead-pEUDCTab->mnLeadStart)*pEUDCTab->mnTrailRangeCount)+
+                                            nTrailCount+
+                                            (cTrail-pEUDCTab->mnTrail3Start);
+                                        break;
+                                    }
+                                }
                             }
                         }
 
@@ -165,12 +172,13 @@ sal_Size ImplDBCSToUnicode( const void* pData, SAL_UNUSED_PARAMETER void*,
                                 *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                                 break;
                             }
-                            if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) == RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
+                            else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) == RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
                             {
                                 pSrcBuf++;
                                 continue;
                             }
-                            cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
+                            else
+                                cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
                         }
                     }
                 }
@@ -183,12 +191,13 @@ sal_Size ImplDBCSToUnicode( const void* pData, SAL_UNUSED_PARAMETER void*,
                     *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                     break;
                 }
-                if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_IGNORE )
+                else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_IGNORE )
                 {
                     pSrcBuf++;
                     continue;
                 }
-                cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
+                else
+                    cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
             }
         }
 
@@ -325,7 +334,8 @@ sal_Size ImplUnicodeToDBCS( const void* pData, SAL_UNUSED_PARAMETER void*,
                     &pSrcBuf, pEndSrcBuf, &pDestBuf, pEndDestBuf, nFlags,
                     pInfo))
                 continue;
-            break;
+            else
+                break;
         }
 
         /* SingleByte */
@@ -485,12 +495,13 @@ sal_Size ImplEUCJPToUnicode( const void* pData,
                         *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                         break;
                     }
-                    if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) == RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
+                    else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) == RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
                     {
                         pSrcBuf++;
                         continue;
                     }
-                    cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
+                    else
+                        cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
                 }
                 else
                 {
@@ -500,12 +511,13 @@ sal_Size ImplEUCJPToUnicode( const void* pData,
                         *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                         break;
                     }
-                    if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_IGNORE )
+                    else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_MBUNDEFINED_IGNORE )
                     {
                         pSrcBuf++;
                         continue;
                     }
-                    cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
+                    else
+                        cConv = RTL_TEXTENC_UNICODE_REPLACEMENT_CHARACTER;
                 }
             }
         }
@@ -604,7 +616,8 @@ sal_Size ImplUnicodeToEUCJP( const void* pData,
                             &pSrcBuf, pEndSrcBuf, &pDestBuf, pEndDestBuf,
                             nFlags, pInfo))
                         continue;
-                    break;
+                    else
+                        break;
                 }
             }
         }

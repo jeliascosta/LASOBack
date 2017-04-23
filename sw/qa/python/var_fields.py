@@ -1,12 +1,3 @@
-#! /usr/bin/env python
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
-#
-# This file is part of the LibreOffice project.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
 import unittest
 import os
 from org.libreoffice.unotest import UnoInProcess
@@ -89,10 +80,10 @@ class TestVarFields(unittest.TestCase):
         # Note: we have only one field here, that why nextElement() is just fine here
         xField = xFieldEnum.nextElement()
         # check
-        read_content = xField.getPropertyValue("Content")
-        self.assertEqual("0", read_content)
-        read_content = xField.getPropertyValue("Value")
-        self.assertEqual(0.0, read_content)
+        readContent = xField.getPropertyValue("Content")
+        self.assertEqual("0", readContent)
+        readContent = xField.getPropertyValue("Value")
+        self.assertEqual(0.0, readContent)
         # 16. change the value of the field from 0 to 1 and check
         self.__class__._uno.checkProperties(
             xField,
@@ -109,12 +100,12 @@ class TestVarFields(unittest.TestCase):
         # 19. retrieve the section
         xSection = xDoc.getTextSections().getByIndex(0)
         # 20. retrieve the condition property of that section
-        read_content = xSection.getPropertyValue("Condition")
+        readContent = xSection.getPropertyValue("Condition")
         # 21. check
         # expected:
         # self.assertEqual("foo EQ 1", readContent)
         # reality:
-        self.assertEqual("0", read_content)
+        self.assertEqual("0", readContent)
 
 if __name__ == '__main__':
     unittest.main()

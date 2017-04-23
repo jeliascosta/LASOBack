@@ -20,6 +20,7 @@
 #if OSL_DEBUG_LEVEL > 1
 #include <stdio.h>
 #endif
+#include <sal/alloca.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -30,7 +31,7 @@
 #include <unx/i18n_ic.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
-#include <unx/salinst.h>
+#include <unx/saldata.hxx>
 
 #include <vcl/wrkwin.hxx>
 #include <vcl/fixed.hxx>
@@ -90,10 +91,10 @@ class XIMStatusWindow : public StatusWindow
     void layout();
     bool checkLastParent() const;
 
-    DECL_LINK( DelayedShowHdl, void*, void );
+    DECL_LINK_TYPED( DelayedShowHdl, void*, void );
 public:
     explicit XIMStatusWindow( bool bOn );
-    virtual ~XIMStatusWindow() override;
+    virtual ~XIMStatusWindow();
 
     virtual void setPosition( SalFrame* ) override;
     virtual void setText( const OUString & ) override;
@@ -256,7 +257,7 @@ void XIMStatusWindow::setPosition( SalFrame* pParent )
     }
 }
 
-IMPL_LINK_NOARG(XIMStatusWindow, DelayedShowHdl, void*, void)
+IMPL_LINK_NOARG_TYPED(XIMStatusWindow, DelayedShowHdl, void*, void)
 {
     m_nDelayedEvent = nullptr;
     const SystemEnvData* pData = GetSystemData();
@@ -298,12 +299,12 @@ namespace vcl {
 class IIIMPStatusWindow : public StatusWindow
 {
     VclPtr<MenuButton>      m_aStatusBtn;
-    ScopedVclPtrInstance<PopupMenu> m_aMenu;
+    PopupMenu               m_aMenu;
     SalFrame*               m_pResetFocus;
     bool                    m_bShow;
     bool                    m_bOn;
 
-    DECL_LINK( SelectHdl, MenuButton*, void );
+    DECL_LINK_TYPED( SelectHdl, MenuButton*, void );
 
     void show();
 
@@ -313,7 +314,7 @@ public:
     virtual void setText( const OUString & ) override;
     virtual void show( bool bShow, I18NStatus::ShowReason eReason ) override;
     virtual void toggle( bool bOn ) override;
-    virtual ~IIIMPStatusWindow() override { disposeOnce(); }
+    virtual ~IIIMPStatusWindow() { disposeOnce(); }
     virtual void dispose() override;
     void layout();
 
@@ -337,13 +338,13 @@ IIIMPStatusWindow::IIIMPStatusWindow( SalFrame* pParent, bool bOn ) :
     layout();
 
     m_aStatusBtn->SetSelectHdl( LINK( this, IIIMPStatusWindow, SelectHdl ) );
-    m_aStatusBtn->SetPopupMenu( m_aMenu.get() );
+    m_aStatusBtn->SetPopupMenu( &m_aMenu );
     m_aStatusBtn->Show();
 
     const ::std::vector< I18NStatus::ChoiceData >& rChoices( I18NStatus::get().getChoices() );
     int i = 1;
     for( ::std::vector< I18NStatus::ChoiceData >::const_iterator it = rChoices.begin(); it != rChoices.end(); ++it, i++ )
-        m_aMenu->InsertItem( i, it->aString );
+        m_aMenu.InsertItem( i, it->aString );
 
     if( pParent )
     {
@@ -457,7 +458,7 @@ void IIIMPStatusWindow::GetFocus()
     }
 }
 
-IMPL_LINK( IIIMPStatusWindow, SelectHdl, MenuButton*, pBtn, void )
+IMPL_LINK_TYPED( IIIMPStatusWindow, SelectHdl, MenuButton*, pBtn, void )
 {
     if( pBtn == m_aStatusBtn )
     {
@@ -560,8 +561,7 @@ void I18NStatus::setStatusText( const OUString& rText )
          *  #93614# convert fullwidth ASCII forms to ascii
          */
         int nChars = rText.getLength();
-        rtl_uString *pStr = rtl_uString_alloc(nChars);
-        sal_Unicode *pBuffer = pStr->buffer;
+        sal_Unicode* pBuffer = static_cast<sal_Unicode*>(alloca( nChars*sizeof( sal_Unicode ) ));
         for( int i = 0; i < nChars; i++ )
         {
             if( rText[i] >=0xff00 && rText[i] <= 0xff5f )
@@ -569,7 +569,7 @@ void I18NStatus::setStatusText( const OUString& rText )
             else
                 pBuffer[i] = rText[i];
         }
-        OUString aText(pStr, SAL_NO_ACQUIRE);
+        OUString aText( pBuffer, nChars );
         m_pStatusWindow->setText( aText );
         m_pStatusWindow->setPosition( m_pParent );
 

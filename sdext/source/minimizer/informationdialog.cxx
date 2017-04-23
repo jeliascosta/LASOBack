@@ -189,7 +189,7 @@ OUString InsertButton( InformationDialog& rInformationDialog, const OUString& rC
 }
 
 
-static OUString ImpValueOfInMB( sal_Int64 rVal )
+static OUString ImpValueOfInMB( const sal_Int64& rVal )
 {
     double fVal( static_cast<double>( rVal ) );
     fVal /= ( 1 << 20 );
@@ -306,7 +306,7 @@ void InformationDialog::InitDialog()
 
 InformationDialog::InformationDialog( const Reference< XComponentContext > &rxContext, Reference< XFrame >& rxFrame, const OUString& rSaveAsURL, bool& rbOpenNewDocument, sal_Int64 rSourceSize, sal_Int64 rDestSize, sal_Int64 rApproxSize ) :
     UnoDialog( rxContext, rxFrame ),
-    ConfigurationAccess( rxContext ),
+    ConfigurationAccess( rxContext, nullptr ),
     mxActionListener( new OKActionListener( *this ) ),
     mnSourceSize( rSourceSize ),
     mnDestSize( rDestSize ),
@@ -346,6 +346,7 @@ void InformationDialog::execute()
 
 
 void OKActionListener::actionPerformed( const ActionEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     if ( rEvent.ActionCommand == "button" )
     {
@@ -353,6 +354,7 @@ void OKActionListener::actionPerformed( const ActionEvent& rEvent )
     }
 }
 void OKActionListener::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 

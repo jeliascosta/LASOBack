@@ -52,11 +52,12 @@ protected:
 
 public:
     OverlayTableEdge( const basegfx::B2DPolyPolygon& rPolyPolygon, bool bVisible );
+    virtual ~OverlayTableEdge();
 };
 
 
 TableEdgeHdl::TableEdgeHdl( const Point& rPnt, bool bHorizontal, sal_Int32 nMin, sal_Int32 nMax, sal_Int32 nEdges )
-: SdrHdl( rPnt, SdrHdlKind::User )
+: SdrHdl( rPnt, HDL_USER )
 , mbHorizontal( bHorizontal )
 , mnMin( nMin )
 , mnMax( nMax )
@@ -176,7 +177,7 @@ void TableEdgeHdl::CreateB2dIAObject()
                                 // create overlay object for visible parts
                                 sdr::overlay::OverlayObject* pOverlayObject = new OverlayTableEdge(aVisible, true);
                                 xManager->add(*pOverlayObject);
-                                maOverlayGroup.append(pOverlayObject);
+                                maOverlayGroup.append(*pOverlayObject);
                             }
 
                             if(aInvisible.count())
@@ -186,7 +187,7 @@ void TableEdgeHdl::CreateB2dIAObject()
                                 // (see OverlayTableEdge implementation)
                                 sdr::overlay::OverlayObject* pOverlayObject = new OverlayTableEdge(aInvisible, false);
                                 xManager->add(*pOverlayObject);
-                                maOverlayGroup.append(pOverlayObject);
+                                maOverlayGroup.append(*pOverlayObject);
                             }
                         }
                     }
@@ -201,6 +202,10 @@ OverlayTableEdge::OverlayTableEdge( const basegfx::B2DPolyPolygon& rPolyPolygon,
 :   OverlayObject(Color(COL_GRAY))
 ,   maPolyPolygon( rPolyPolygon )
 ,   mbVisible(bVisible)
+{
+}
+
+OverlayTableEdge::~OverlayTableEdge()
 {
 }
 
@@ -238,9 +243,9 @@ drawinglayer::primitive2d::Primitive2DContainer OverlayTableEdge::createOverlayO
 
 
 TableBorderHdl::TableBorderHdl(
-    const tools::Rectangle& rRect,
+    const Rectangle& rRect,
     bool bAnimate)
-:   SdrHdl(rRect.TopLeft(), SdrHdlKind::Move),
+:   SdrHdl(rRect.TopLeft(), HDL_MOVE),
     maRectangle(rRect),
     mbAnimate(bAnimate)
 {
@@ -285,15 +290,15 @@ void TableBorderHdl::CreateB2dIAObject()
                     const bool bAnimate = getAnimate();
 
                     OutputDevice& rOutDev = rPageWindow.GetPaintWindow().GetOutputDevice();
-                    float fScaleFactor = rOutDev.GetDPIScaleFactor();
-                    double fWidth = fScaleFactor * 6.0;
+                    sal_Int32 nScaleFactor = rOutDev.GetDPIScaleFactor();
+                    double fWidth = nScaleFactor * 6.0;
 
                     sdr::overlay::OverlayObject* pOverlayObject =
                         new sdr::overlay::OverlayRectangle(aRange.getMinimum(), aRange.getMaximum(),
                                                            aHilightColor, fTransparence,
-                                                           fWidth, 0.0, 0.0, bAnimate);
+                                                           fWidth, 0.0, 0.0, 500, bAnimate);
                     xManager->add(*pOverlayObject);
-                    maOverlayGroup.append(pOverlayObject);
+                    maOverlayGroup.append(*pOverlayObject);
                 }
             }
         }

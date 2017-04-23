@@ -33,14 +33,13 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/implbase1.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/sequence.hxx>
 #include <comphelper/uno3.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/accessibleeventnotifier.hxx>
 #include <comphelper/stl_types.hxx>
 #include <comphelper/comphelperdllapi.h>
-#include <rtl/ref.hxx>
 
 
 namespace comphelper
@@ -102,7 +101,7 @@ namespace comphelper
 
     protected:
         virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL
-                    getAccessibleContext(  ) override;
+                    getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         const css::uno::Reference< css::accessibility::XAccessible >&
                     getParent() const { return m_xParentAccessible; }
@@ -113,7 +112,7 @@ namespace comphelper
             );
 
     protected:
-        virtual ~OAccessibleWrapper( ) override;
+        virtual ~OAccessibleWrapper( );
 
     private:
         OAccessibleWrapper( const OAccessibleWrapper& ) = delete;
@@ -130,7 +129,7 @@ namespace comphelper
     /** Helper for wrapping an XAccessibleContext by aggregating a proxy for it.
 
         <p>This class does not have own ref counting. In addition, it does not implement
-        the XAccessibleContext interface, but provides all the methods from this interface
+        the XAccesibleContext interface, but provides all the methods from this interface
         which must be implemented using the inner context (such as getAccessibleChild*).</p>
 
         <p>Children of the aggregated XAccessibleContext are wrapped, too.</p>
@@ -157,7 +156,7 @@ namespace comphelper
         css::uno::Reference< css::accessibility::XAccessible >
                                                             m_xParentAccessible;
 
-        rtl::Reference<OWrappedAccessibleChildrenManager>   m_xChildMapper;     // for mapping children from our inner context to our callers
+        OWrappedAccessibleChildrenManager*                  m_pChildMapper;         // for mapping children from our inner context to our callers
 
     protected:
         /** ctor
@@ -193,28 +192,24 @@ namespace comphelper
 
     protected:
         // XInterface
-        css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) override;
+        css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XTypeProvider
         DECLARE_XTYPEPROVIDER( )
 
         // XAccessibleContext
-        /// @throws css::uno::RuntimeException
-        sal_Int32 baseGetAccessibleChildCount(  );
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::uno::RuntimeException
-        css::uno::Reference< css::accessibility::XAccessible > baseGetAccessibleChild( sal_Int32 i );
-        /// @throws css::uno::RuntimeException
-        css::uno::Reference< css::accessibility::XAccessibleRelationSet > baseGetAccessibleRelationSet(  );
+        sal_Int32 baseGetAccessibleChildCount(  ) throw (css::uno::RuntimeException, std::exception);
+        css::uno::Reference< css::accessibility::XAccessible > baseGetAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception);
+        css::uno::Reference< css::accessibility::XAccessibleRelationSet > baseGetAccessibleRelationSet(  ) throw (css::uno::RuntimeException, std::exception);
 
         // XAccessibleEventListener
-        virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
+        virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent/OComponentProxyAggregationHelper
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) override;
 
         // own overridables
         /** notify an accessible event which has been translated (if necessary)
@@ -224,13 +219,11 @@ namespace comphelper
 
             <p>The mutex of the BroadcastHelper passed to the instance's ctor is <em>not</em> locked when calling
             into this method</p>
-
-            @throws css::uno::RuntimeException
         */
-        virtual void notifyTranslatedEvent( const css::accessibility::AccessibleEventObject& _rEvent ) = 0;
+        virtual void notifyTranslatedEvent( const css::accessibility::AccessibleEventObject& _rEvent ) throw (css::uno::RuntimeException) = 0;
 
     protected:
-        virtual ~OAccessibleContextWrapperHelper( ) override;
+        virtual ~OAccessibleContextWrapperHelper( );
 
         OAccessibleContextWrapperHelper(const OAccessibleContextWrapperHelper&) = delete;
         OAccessibleContextWrapperHelper& operator=(const OAccessibleContextWrapperHelper&) = delete;
@@ -244,7 +237,7 @@ namespace comphelper
                                             >   OAccessibleContextWrapper_CBase;
 
     class COMPHELPER_DLLPUBLIC OAccessibleContextWrapper
-                    :public cppu::BaseMutex
+                    :public OBaseMutex
                     ,public OAccessibleContextWrapper_CBase
                     ,public OAccessibleContextWrapperHelper
     {
@@ -282,30 +275,30 @@ namespace comphelper
         DECLARE_XTYPEPROVIDER( )
 
         // XAccessibleContext
-        virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) override;
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
-        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) override;
-        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) override;
-        virtual sal_Int16 SAL_CALL getAccessibleRole(  ) override;
-        virtual OUString SAL_CALL getAccessibleDescription(  ) override;
-        virtual OUString SAL_CALL getAccessibleName(  ) override;
-        virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) override;
-        virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) override;
-        virtual css::lang::Locale SAL_CALL getLocale(  ) override;
+        virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int16 SAL_CALL getAccessibleRole(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getAccessibleDescription(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getAccessibleName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::lang::Locale SAL_CALL getLocale(  ) throw (css::accessibility::IllegalAccessibleComponentStateException, css::uno::RuntimeException, std::exception) override;
 
         // XAccessibleEventBroadcaster
-        virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
-        virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
+        virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // OAccessibleContextWrapper
-        virtual void notifyTranslatedEvent( const css::accessibility::AccessibleEventObject& _rEvent ) override;
+        virtual void notifyTranslatedEvent( const css::accessibility::AccessibleEventObject& _rEvent ) throw (css::uno::RuntimeException) override;
 
         // OComponentHelper
         using OAccessibleContextWrapperHelper::disposing;
-        virtual void SAL_CALL disposing() override;
+        virtual void SAL_CALL disposing()  throw (css::uno::RuntimeException) override;
 
     protected:
-        virtual ~OAccessibleContextWrapper() override;
+        virtual ~OAccessibleContextWrapper();
 
     private:
         OAccessibleContextWrapper( const OAccessibleContextWrapper& ) = delete;
@@ -345,7 +338,7 @@ namespace comphelper
         /** specifies if the children are to be considered transient (i.e.: not cached)
             <p>to be called only once per lifetime</p>
         */
-        void    setTransientChildren( bool _bSet );
+        void    setTransientChildren( bool _bSet = true );
 
         /** sets the XAccessible which belongs to the XAccessibleContext which we work for
             <p>to be called only once per lifetime</p>
@@ -385,13 +378,13 @@ namespace comphelper
 
     protected:
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
         void    implTranslateChildEventValue( const css::uno::Any& _rInValue, css::uno::Any& _rOutValue );
 
     protected:
-        virtual ~OWrappedAccessibleChildrenManager( ) override;
+        virtual ~OWrappedAccessibleChildrenManager( );
 
     private:
         OWrappedAccessibleChildrenManager( const OWrappedAccessibleChildrenManager& ) = delete;

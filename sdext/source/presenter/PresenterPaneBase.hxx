@@ -42,12 +42,14 @@ namespace sdext { namespace presenter {
 
 class PresenterController;
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::framework::XPane,
-    css::lang::XInitialization,
-    css::awt::XWindowListener,
-    css::awt::XPaintListener
-> PresenterPaneBaseInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::drawing::framework::XPane,
+        css::lang::XInitialization,
+        css::awt::XWindowListener,
+        css::awt::XPaintListener
+    > PresenterPaneBaseInterfaceBase;
+}
 
 /** Base class of the panes used by the presenter screen.  Pane objects are
     stored in the PresenterPaneContainer.  Sizes and positions are
@@ -63,7 +65,7 @@ public:
     PresenterPaneBase (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterPaneBase() override;
+    virtual ~PresenterPaneBase();
     PresenterPaneBase(const PresenterPaneBase&) = delete;
     PresenterPaneBase& operator=(const PresenterPaneBase&) = delete;
 
@@ -74,31 +76,40 @@ public:
     void SetTitle (const OUString& rsTitle);
     const OUString& GetTitle() const;
     const css::uno::Reference<css::drawing::framework::XPaneBorderPainter>& GetPaneBorderPainter() const;
+    void SetCalloutAnchor (const css::awt::Point& rAnchorPosition);
     const css::awt::Point& GetCalloutAnchor() const;
 
     // XInitialization
 
-    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments) override;
+    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XResourceId
 
-    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
+    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
 
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     ::rtl::Reference<PresenterController> mpPresenterController;
@@ -113,6 +124,7 @@ protected:
     OUString msTitle;
     css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
     SharedBitmapDescriptor mpViewBackground;
+    bool mbHasCallout;
     css::awt::Point maCalloutAnchor;
 
     virtual void CreateCanvases (
@@ -130,10 +142,11 @@ protected:
     void LayoutContextWindow();
     bool IsVisible() const;
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sd::presenter

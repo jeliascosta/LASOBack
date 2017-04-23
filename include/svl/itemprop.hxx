@@ -22,7 +22,7 @@
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <com/sun/star/beans/PropertyState.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <svl/itemset.hxx>
 #include <svl/svldllapi.h>
 #include <vector>
@@ -96,8 +96,8 @@ public:
 
     const SfxItemPropertySimpleEntry*  getByName( const OUString &rName ) const;
     css::uno::Sequence< css::beans::Property > getProperties() const;
-    /// @throws css::beans::UnknownPropertyException
-    css::beans::Property getPropertyByName( const OUString & rName ) const;
+    css::beans::Property getPropertyByName( const OUString & rName ) const
+        throw( css::beans::UnknownPropertyException );
     bool hasPropertyByName( const OUString& rName ) const;
 
     void mergeProperties( const css::uno::Sequence< css::beans::Property >& rPropSeq );
@@ -106,7 +106,7 @@ public:
 
 };
 
-class SVL_DLLPUBLIC SfxItemPropertySet final
+class SVL_DLLPUBLIC SfxItemPropertySet
 {
     SfxItemPropertyMap                                        m_aMap;
     mutable css::uno::Reference<css::beans::XPropertySetInfo> m_xInfo;
@@ -114,84 +114,91 @@ class SVL_DLLPUBLIC SfxItemPropertySet final
 public:
                             SfxItemPropertySet( const SfxItemPropertyMapEntry *pMap ) :
                                 m_aMap(pMap) {}
-                            ~SfxItemPropertySet();
+                            virtual ~SfxItemPropertySet();
 
-    /// @throws css::uno::RuntimeException
     void getPropertyValue( const SfxItemPropertySimpleEntry& rEntry,
                                           const SfxItemSet& rSet,
-                                          css::uno::Any& rAny) const;
-    /// @throws css::uno::RuntimeException
-    /// @throws css::beans::UnknownPropertyException
+                                          css::uno::Any& rAny) const
+                                          throw(css::uno::RuntimeException);
     void getPropertyValue( const OUString &rName,
                                             const SfxItemSet& rSet,
-                                            css::uno::Any& rAny) const;
-    /// @throws css::uno::RuntimeException
-    /// @throws css::beans::UnknownPropertyException
+                                            css::uno::Any& rAny) const
+                                            throw(css::uno::RuntimeException,
+                                                    css::beans::UnknownPropertyException);
     css::uno::Any
         getPropertyValue( const OUString &rName,
-                                            const SfxItemSet& rSet ) const;
-    /// @throws css::uno::RuntimeException
-    /// @throws css::lang::IllegalArgumentException
+                                            const SfxItemSet& rSet ) const
+                                            throw(css::uno::RuntimeException,
+                                                    css::beans::UnknownPropertyException);
     void                setPropertyValue( const SfxItemPropertySimpleEntry& rEntry,
                                           const css::uno::Any& aVal,
-                                          SfxItemSet& rSet ) const;
-    /// @throws css::uno::RuntimeException
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::beans::UnknownPropertyException
+                                          SfxItemSet& rSet ) const
+                                          throw(css::uno::RuntimeException,
+                                                  css::lang::IllegalArgumentException);
     void                  setPropertyValue( const OUString& rPropertyName,
                                             const css::uno::Any& aVal,
-                                            SfxItemSet& rSet ) const;
+                                            SfxItemSet& rSet ) const
+                                            throw(css::uno::RuntimeException,
+                                                    css::lang::IllegalArgumentException,
+                                                    css::beans::UnknownPropertyException);
 
-    /// @throws css::beans::UnknownPropertyException
     css::beans::PropertyState
-        getPropertyState(const OUString& rName, const SfxItemSet& rSet)const;
+        getPropertyState(const OUString& rName, const SfxItemSet& rSet)const
+                                    throw(css::beans::UnknownPropertyException);
     css::beans::PropertyState
         getPropertyState(const SfxItemPropertySimpleEntry& rEntry, const SfxItemSet& rSet) const
                                     throw();
 
-    css::uno::Reference<css::beans::XPropertySetInfo> const &
+    css::uno::Reference<css::beans::XPropertySetInfo>
         getPropertySetInfo() const;
     const SfxItemPropertyMap& getPropertyMap() const {return m_aMap;}
 };
 
 struct SfxItemPropertySetInfo_Impl;
-class SVL_DLLPUBLIC SfxItemPropertySetInfo : public cppu::WeakImplHelper<css::beans::XPropertySetInfo>
+class SVL_DLLPUBLIC SfxItemPropertySetInfo : public cppu::WeakImplHelper1<css::beans::XPropertySetInfo>
 {
     std::unique_ptr<SfxItemPropertySetInfo_Impl> m_pImpl;
 
 public:
     SfxItemPropertySetInfo(const SfxItemPropertyMap &rMap );
     SfxItemPropertySetInfo(const SfxItemPropertyMapEntry *pEntries );
-    virtual ~SfxItemPropertySetInfo() override;
+    virtual ~SfxItemPropertySetInfo();
 
     virtual css::uno::Sequence< css::beans::Property > SAL_CALL
-        getProperties(  ) override;
+        getProperties(  )
+            throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::beans::Property SAL_CALL
-        getPropertyByName( const OUString& aName ) override;
+        getPropertyByName( const OUString& aName )
+            throw(css::beans::UnknownPropertyException,
+                    css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Bool SAL_CALL
-        hasPropertyByName( const OUString& Name ) override;
+        hasPropertyByName( const OUString& Name )
+            throw(css::uno::RuntimeException, std::exception) override;
 
 };
 
-class SVL_DLLPUBLIC SfxExtItemPropertySetInfo: public cppu::WeakImplHelper<css::beans::XPropertySetInfo>
+class SVL_DLLPUBLIC SfxExtItemPropertySetInfo: public cppu::WeakImplHelper1<css::beans::XPropertySetInfo >
 {
     SfxItemPropertyMap aExtMap;
 public:
                             SfxExtItemPropertySetInfo(
                                 const SfxItemPropertyMapEntry *pMap,
                                 const css::uno::Sequence<css::beans::Property>& rPropSeq );
-                            virtual ~SfxExtItemPropertySetInfo() override;
+                            virtual ~SfxExtItemPropertySetInfo();
 
     virtual css::uno::Sequence< css::beans::Property > SAL_CALL
-        getProperties(  ) override;
+        getProperties(  )
+            throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::beans::Property SAL_CALL
-        getPropertyByName( const OUString& aName ) override;
+        getPropertyByName( const OUString& aName )
+            throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Bool SAL_CALL
-        hasPropertyByName( const OUString& Name ) override;
+        hasPropertyByName( const OUString& Name )
+            throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

@@ -34,6 +34,7 @@ namespace drawinglayer
             css::drawing::ProjectionMode   maProjectionMode;
             css::drawing::ShadeMode        maShadeMode;
 
+            // bitfield
             bool                           mbTwoSidedLighting : 1;
 
         public:
@@ -61,6 +62,7 @@ namespace drawinglayer
             }
 
             // data read access
+            double getDistance() const { return mfDistance; }
             double getShadowSlant() const { return mfShadowSlant; }
             css::drawing::ProjectionMode getProjectionMode() const { return maProjectionMode; }
             css::drawing::ShadeMode getShadeMode() const { return maShadeMode; }
@@ -68,7 +70,7 @@ namespace drawinglayer
 
             bool operator==(const ImpSdrSceneAttribute& rCandidate) const
             {
-                return (mfDistance == rCandidate.mfDistance
+                return (getDistance() == rCandidate.getDistance()
                     && getShadowSlant() == rCandidate.getShadowSlant()
                     && getProjectionMode() == rCandidate.getProjectionMode()
                     && getShadeMode() == rCandidate.getShadeMode()
@@ -103,11 +105,6 @@ namespace drawinglayer
         {
         }
 
-        SdrSceneAttribute::SdrSceneAttribute(SdrSceneAttribute&& rCandidate)
-        :   mpSdrSceneAttribute(std::move(rCandidate.mpSdrSceneAttribute))
-        {
-        }
-
         SdrSceneAttribute::~SdrSceneAttribute()
         {
         }
@@ -120,12 +117,6 @@ namespace drawinglayer
         SdrSceneAttribute& SdrSceneAttribute::operator=(const SdrSceneAttribute& rCandidate)
         {
             mpSdrSceneAttribute = rCandidate.mpSdrSceneAttribute;
-            return *this;
-        }
-
-        SdrSceneAttribute& SdrSceneAttribute::operator=(SdrSceneAttribute&& rCandidate)
-        {
-            mpSdrSceneAttribute = std::move(rCandidate.mpSdrSceneAttribute);
             return *this;
         }
 

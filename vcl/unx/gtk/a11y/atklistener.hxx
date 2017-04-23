@@ -33,18 +33,20 @@ public:
     explicit AtkListener(AtkObjectWrapper * pWrapper);
 
     // XEventListener
-    virtual void disposing( const css::lang::EventObject& Source ) override;
+    virtual void disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleEventListener
-    virtual void notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
-
-private:
+    virtual void notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     AtkObjectWrapper *mpWrapper;
     std::vector< css::uno::Reference< css::accessibility::XAccessible > >
                       m_aChildList;
 
-    virtual ~AtkListener() override;
+private:
+
+    virtual ~AtkListener();
 
     // Updates the child list held to provide the old IndexInParent on children_changed::remove
     void updateChildList(

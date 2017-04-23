@@ -18,6 +18,7 @@
  */
 
 #include "WrapPropertyPanel.hxx"
+#include "PropertyPanel.hrc"
 
 #include <cmdid.h>
 #include <swtypes.hxx>
@@ -76,6 +77,7 @@ WrapPropertyPanel::WrapPropertyPanel(
     , nRight(0)
     // resources
     , aCustomEntry()
+    , aWrapIL()
     // controller items
     , maSwNoWrapControl(FN_FRAME_NOWRAP, *pBindings, *this)
     , maSwWrapLeftControl(FN_FRAME_WRAP, *pBindings, *this)
@@ -148,22 +150,42 @@ void WrapPropertyPanel::Initialize()
     mpEnableContour->SetClickHdl(EnableContourLink);
     mpSpacingLB->SetSelectHdl(LINK(this, WrapPropertyPanel, SpacingLBHdl));
 
-    mpRBNoWrap->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPOFF, false));
+    aWrapIL.AddImage( UNO_WRAPOFF,
+                      ::GetImage( mxFrame, UNO_WRAPOFF, false ) );
+    aWrapIL.AddImage( UNO_WRAPLEFT,
+                      ::GetImage( mxFrame, UNO_WRAPLEFT, false ) );
+    aWrapIL.AddImage( UNO_WRAPRIGHT,
+                      ::GetImage( mxFrame, UNO_WRAPRIGHT, false ) );
+    aWrapIL.AddImage( UNO_WRAPON,
+                      ::GetImage( mxFrame, UNO_WRAPON, false ) );
+    aWrapIL.AddImage( UNO_WRAPTHROUGH,
+                      ::GetImage( mxFrame, UNO_WRAPTHROUGH, false ) );
+    aWrapIL.AddImage( UNO_WRAPIDEAL,
+                      ::GetImage( mxFrame, UNO_WRAPIDEAL, false ) );
+
+    mpRBNoWrap->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPOFF) );
     if ( AllSettings::GetLayoutRTL() )
     {
-        mpRBWrapLeft->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPRIGHT, false));
-        mpRBWrapRight->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPLEFT, false));
+        mpRBWrapLeft->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPRIGHT) );
+        mpRBWrapRight->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPLEFT) );
     }
     else
     {
-        mpRBWrapLeft->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPLEFT, false));
-        mpRBWrapRight->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPRIGHT, false));
+        mpRBWrapLeft->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPLEFT) );
+        mpRBWrapRight->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPRIGHT) );
     }
-    mpRBWrapParallel->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPON, false));
-    mpRBWrapThrough->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPTHROUGH, false));
-    mpRBIdealWrap->SetModeRadioImage(::GetImage(mxFrame, UNO_WRAPIDEAL, false));
+    mpRBWrapParallel->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPON) );
+    mpRBWrapThrough->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPTHROUGH) );
+    mpRBIdealWrap->SetModeRadioImage( aWrapIL.GetImage(UNO_WRAPIDEAL) );
 
     aCustomEntry = mpCustomEntry->GetText();
+
+    mpRBNoWrap->SetAccessibleName(mpRBNoWrap->GetQuickHelpText());
+    mpRBWrapLeft->SetAccessibleName(mpRBWrapLeft->GetQuickHelpText());
+    mpRBWrapRight->SetAccessibleName(mpRBWrapRight->GetQuickHelpText());
+    mpRBWrapParallel->SetAccessibleName(mpRBWrapParallel->GetQuickHelpText());
+    mpRBWrapThrough->SetAccessibleName(mpRBWrapThrough->GetQuickHelpText());
+    mpRBIdealWrap->SetAccessibleName(mpRBIdealWrap->GetQuickHelpText());
 
     mpBindings->Update( FN_FRAME_NOWRAP );
     mpBindings->Update( FN_FRAME_WRAP );
@@ -197,14 +219,14 @@ void WrapPropertyPanel::UpdateSpacingLB()
     mpSpacingLB->SelectEntry(aCustomEntry);
 }
 
-IMPL_LINK_NOARG(WrapPropertyPanel, EditContourHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(WrapPropertyPanel, EditContourHdl, Button*, void)
 {
     SfxBoolItem aItem(SID_CONTOUR_DLG, true);
     mpBindings->GetDispatcher()->ExecuteList(SID_CONTOUR_DLG,
             SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK_NOARG(WrapPropertyPanel, EnableContourHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(WrapPropertyPanel, EnableContourHdl, Button*, void)
 {
     bool IsContour = mpEnableContour->IsChecked();
     SfxBoolItem aItem(FN_FRAME_WRAP_CONTOUR, IsContour);
@@ -212,7 +234,7 @@ IMPL_LINK_NOARG(WrapPropertyPanel, EnableContourHdl, Button*, void)
             SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK(WrapPropertyPanel, SpacingLBHdl, ListBox&, rBox, void)
+IMPL_LINK_TYPED(WrapPropertyPanel, SpacingLBHdl, ListBox&, rBox, void)
 {
     sal_uInt16 nVal = (sal_uInt16)reinterpret_cast<sal_uLong>(rBox.GetSelectEntryData());
 
@@ -226,7 +248,7 @@ IMPL_LINK(WrapPropertyPanel, SpacingLBHdl, ListBox&, rBox, void)
             SfxCallMode::RECORD, { &aULItem });
 }
 
-IMPL_LINK_NOARG(WrapPropertyPanel, WrapTypeHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(WrapPropertyPanel, WrapTypeHdl, Button*, void)
 {
     sal_uInt16 nSlot = 0;
     if ( mpRBWrapLeft->IsChecked() )

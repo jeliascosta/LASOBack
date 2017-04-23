@@ -53,7 +53,7 @@ namespace pdfi
 {
 
  PDFIProcessor::PDFIProcessor( const uno::Reference< task::XStatusIndicator >& xStat ,
-            css::uno::Reference< css::uno::XComponentContext > const & xContext) :
+            css::uno::Reference< css::uno::XComponentContext >  xContext) :
 
     m_xContext(xContext),
     prevCharWidth(0),
@@ -68,6 +68,7 @@ namespace pdfi
     m_aIdToGC(),
     m_aGCToId(),
     m_aImages(),
+    m_eTextDirection( LrTb ),
     m_nPages(0),
     m_nNextZOrder( 1 ),
     m_xStatusIndicator( xStat ),
@@ -141,7 +142,7 @@ void PDFIProcessor::setLineCap(sal_Int8 nCap)
 
 void PDFIProcessor::setMiterLimit(double)
 {
-    SAL_WARN("sdext.pdfimport", "PDFIProcessor::setMiterLimit(): not supported by ODF");
+    OSL_TRACE("PDFIProcessor::setMiterLimit(): not supported by ODF");
 }
 
 void PDFIProcessor::setLineWidth(double nWidth)
@@ -349,12 +350,8 @@ void PDFIProcessor::setupImage(ImageId nImage)
     pFrame->h = pImageElement->h = aScale.getY();
     pFrame->ZOrder = m_nNextZOrder++;
 
-    // Poppler wrapper takes into account that vertical axes of PDF and ODF are opposite,
-    // and it flips matrix vertically (see poppler's GfxState::GfxState()).
-    // But image internal vertical axis is independent of PDF vertical axis direction,
-    // so arriving matrix is extra-flipped relative to image.
-    // We force vertical flip here to compensate that.
-    pFrame->MirrorVertical = true;
+    if (aScale.getY() < 0)
+        pFrame->MirrorVertical = pImageElement->MirrorVertical = true;
 }
 
 void PDFIProcessor::drawMask(const uno::Sequence<beans::PropertyValue>& xBitmap,
@@ -609,12 +606,12 @@ void PDFIProcessor::startIndicator( const OUString& rText  )
     sal_Int32 nElements = m_nPages;
     if( m_xStatusIndicator.is() )
     {
-        sal_Int32 nLength = rText.getLength();
-        OUStringBuffer aStr( nLength*2 );
+        sal_Int32 nUnicodes = rText.getLength();
+        OUStringBuffer aStr( nUnicodes*2 );
         const sal_Unicode* pText = rText.getStr();
-        for( int i = 0; i < nLength; i++ )
+        for( int i = 0; i < nUnicodes; i++ )
         {
-            if( nLength-i > 1&&
+            if( nUnicodes-i > 1&&
                 pText[i]   == '%' &&
                 pText[i+1] == 'd'
             )
@@ -646,41 +643,29 @@ static bool lr_tb_sort( Element* pLeft, Element* pRight )
     // Note: allow for 10% overlap on text lines since text lines are usually
     // of the same order as font height whereas the real paint area
     // of text is usually smaller
-    double fudge_factor_left = 0.0, fudge_factor_right = 0.0;
-    if( dynamic_cast< TextElement* >(pLeft) )
-        fudge_factor_left = 0.1;
-    if (dynamic_cast< TextElement* >(pRight))
-        fudge_factor_right = 0.1;
+    double fudge_factor = 1.0;
+    if( dynamic_cast< TextElement* >(pLeft) || dynamic_cast< TextElement* >(pRight) )
+        fudge_factor = 0.9;
 
-    // Allow negative height
-    double lower_boundary_left  = pLeft->y  + std::max(pLeft->h, 0.0)  - fabs(pLeft->h)  * fudge_factor_left;
-    double lower_boundary_right = pRight->y + std::max(pRight->h, 0.0) - fabs(pRight->h) * fudge_factor_right;
-    double upper_boundary_left  = pLeft->y  + std::min(pLeft->h, 0.0);
-    double upper_boundary_right = pRight->y + std::min(pRight->h, 0.0);
     // if left's lower boundary is above right's upper boundary
     // then left is smaller
-    if( lower_boundary_left < upper_boundary_right )
+    if( pLeft->y+pLeft->h*fudge_factor < pRight->y )
         return true;
     // if right's lower boundary is above left's upper boundary
     // then left is definitely not smaller
-    if( lower_boundary_right < upper_boundary_left )
+    if( pRight->y+pRight->h*fudge_factor < pLeft->y )
         return false;
 
-    // Allow negative width
-    double left_boundary_left   = pLeft->y  + std::min(pLeft->w, 0.0);
-    double left_boundary_right  = pRight->y + std::min(pRight->w, 0.0);
-    double right_boundary_left  = pLeft->y  + std::max(pLeft->w, 0.0);
-    double right_boundary_right = pRight->y + std::max(pRight->w, 0.0);
     // by now we have established that left and right are inside
     // a "line", that is they have vertical overlap
     // second: left-right sorting
     // if left's right boundary is left to right's left boundary
     // then left is smaller
-    if( right_boundary_left < left_boundary_right )
+    if( pLeft->x+pLeft->w < pRight->x )
         return true;
     // if right's right boundary is left to left's left boundary
     // then left is definitely not smaller
-    if( right_boundary_right < left_boundary_left )
+    if( pRight->x+pRight->w < pLeft->x )
         return false;
 
     // here we have established vertical and horizontal overlap
@@ -721,7 +706,13 @@ void PDFIProcessor::sortElements( Element* pEle, bool bDeep )
         aChildren.push_back( pEle->Children.front() );
         pEle->Children.pop_front();
     }
-    std::stable_sort( aChildren.begin(), aChildren.end(), lr_tb_sort );
+    switch( m_eTextDirection )
+    {
+        case LrTb:
+        default:
+        std::stable_sort( aChildren.begin(), aChildren.end(), lr_tb_sort );
+        break;
+    }
     int nChildren = aChildren.size();
     for( int i = 0; i < nChildren; i++ )
         pEle->Children.push_back( aChildren[i] );

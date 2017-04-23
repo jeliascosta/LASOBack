@@ -20,12 +20,12 @@
 #ifndef INCLUDED_SC_SOURCE_UI_UNOOBJ_CELLLISTSOURCE_HXX
 #define INCLUDED_SC_SOURCE_UI_UNOOBJ_CELLLISTSOURCE_HXX
 
-#include <com/sun/star/form/binding/XListEntryTypedSource.hpp>
+#include <com/sun/star/form/binding/XListEntrySource.hpp>
 #include <cppuhelper/compbase4.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/interfacecontainer2.hxx>
 #include <comphelper/propertycontainer.hxx>
 #include <comphelper/uno3.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <com/sun/star/table/XCellRange.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
@@ -42,7 +42,7 @@ namespace calc
 
     class OCellListSource;
     // the base for our interfaces
-    typedef ::cppu::WeakAggComponentImplHelper4 <   css::form::binding::XListEntryTypedSource
+    typedef ::cppu::WeakAggComponentImplHelper4 <   css::form::binding::XListEntrySource
                                                 ,   css::util::XModifyListener
                                                 ,   css::lang::XServiceInfo
                                                 ,   css::lang::XInitialization
@@ -53,7 +53,7 @@ namespace calc
     typedef ::comphelper::OPropertyArrayUsageHelper< OCellListSource >
                                                     OCellListSource_PABase;
 
-    class OCellListSource :public ::cppu::BaseMutex
+    class OCellListSource :public ::comphelper::OBaseMutex
                             ,public OCellListSource_Base      // order matters! before OCellListSource_PBase, so rBHelper gets initialized
                             ,public OCellListSource_PBase
                             ,public OCellListSource_PABase
@@ -75,7 +75,7 @@ namespace calc
         using OCellListSource_PBase::getFastPropertyValue;
 
     protected:
-        virtual ~OCellListSource( ) override;
+        virtual ~OCellListSource( );
 
     protected:
         // XInterface
@@ -85,25 +85,22 @@ namespace calc
         DECLARE_XTYPEPROVIDER()
 
         // XListEntrySource
-        virtual sal_Int32 SAL_CALL getListEntryCount(  ) override;
-        virtual OUString SAL_CALL getListEntry( sal_Int32 Position ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getAllListEntries(  ) override;
-        virtual void SAL_CALL addListEntryListener( const css::uno::Reference< css::form::binding::XListEntryListener >& Listener ) override;
-        virtual void SAL_CALL removeListEntryListener( const css::uno::Reference< css::form::binding::XListEntryListener >& Listener ) override;
-
-        // XListEntryTypedSource
-        virtual css::uno::Sequence< OUString > SAL_CALL getAllListEntriesTyped( css::uno::Sequence< css::uno::Any >& rDataValues ) override;
+        virtual sal_Int32 SAL_CALL getListEntryCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getListEntry( sal_Int32 Position ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getAllListEntries(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addListEntryListener( const css::uno::Reference< css::form::binding::XListEntryListener >& Listener ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeListEntryListener( const css::uno::Reference< css::form::binding::XListEntryListener >& Listener ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
 
         // OComponentHelper/XComponent
         virtual void SAL_CALL disposing() override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         // OPropertySetHelper
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
@@ -113,11 +110,11 @@ namespace calc
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
 
         // XModifyListener
-        virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     private:
         void    checkDisposed( ) const;
@@ -133,15 +130,12 @@ namespace calc
         /** retrievs the text of a cell within our range
             @param _nRangeRelativeRow
                 the relative row index of the cell within our range
-            @param pAny
-                if not <NULL/> then the underlying data value is returned in the Any
             @precond
                 our m_xRange is not <NULL/>
         */
         OUString
                 getCellTextContent_noCheck(
-                    sal_Int32 _nRangeRelativeRow,
-                    css::uno::Any* pAny
+                    sal_Int32 _nRangeRelativeRow
                 );
 
         void    notifyModified();

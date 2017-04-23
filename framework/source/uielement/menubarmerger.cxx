@@ -180,7 +180,7 @@ bool MenuBarMerger::CreateSubMenu(
                 pSubMenu->SetItemCommand( nItemId, rMenuItem.aURL );
                 if ( !rMenuItem.aSubMenu.empty() )
                 {
-                    VclPtr<PopupMenu> pPopupMenu = VclPtr<PopupMenu>::Create();
+                    PopupMenu* pPopupMenu = new PopupMenu();
                     pSubMenu->SetPopupMenu( nItemId, pPopupMenu );
                     ++nItemId;
 
@@ -221,7 +221,7 @@ bool MenuBarMerger::MergeMenuItems(
                 pMenu->SetItemCommand( nItemId, rMenuItem.aURL );
                 if ( !rMenuItem.aSubMenu.empty() )
                 {
-                    VclPtr<PopupMenu> pSubMenu = VclPtr<PopupMenu>::Create();
+                    PopupMenu* pSubMenu = new PopupMenu();
                     pMenu->SetPopupMenu( nItemId, pSubMenu );
                     ++nItemId;
 
@@ -352,7 +352,7 @@ bool MenuBarMerger::ProcessFallbackOperation(
                 const OUString aCmd( rReferencePath[nLevel] );
 
                 sal_uInt16 nInsPos( MENU_APPEND );
-                VclPtr<PopupMenu> pPopupMenu = VclPtr<PopupMenu>::Create();
+                PopupMenu* pPopupMenu( new PopupMenu );
 
                 if ( bFirstLevel && ( aRefPathInfo.eResult == RP_MENUITEM_INSTEAD_OF_POPUPMENU_FOUND ))
                 {

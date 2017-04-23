@@ -34,25 +34,25 @@ namespace connectivity
 {
     namespace kab
     {
-        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XStatement,
-                                                   css::sdbc::XWarningsSupplier,
-                                                   css::util::XCancellable,
-                                                   css::sdbc::XCloseable> KabCommonStatement_BASE;
+        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XStatement,
+                                                   ::com::sun::star::sdbc::XWarningsSupplier,
+                                                   ::com::sun::star::util::XCancellable,
+                                                   ::com::sun::star::sdbc::XCloseable> KabCommonStatement_BASE;
 
 
         // Class KabCommonStatement
         // is a base class for the normal statement and for the prepared statement
 
-        class KabCommonStatement :  public cppu::BaseMutex,
+        class KabCommonStatement :  public comphelper::OBaseMutex,
                         public  KabCommonStatement_BASE,
                         public  ::cppu::OPropertySetHelper,
                         public  comphelper::OPropertyArrayUsageHelper<KabCommonStatement>
 
         {
-            css::sdbc::SQLWarning               m_aLastWarning;
+            ::com::sun::star::sdbc::SQLWarning  m_aLastWarning;
 
         protected:
-            std::list< OUString>              m_aBatchList;
+            ::std::list< OUString>       m_aBatchList;
             connectivity::OSQLParser            m_aParser;
             connectivity::OSQLParseTreeIterator m_aSQLIterator;
             connectivity::OSQLParseNode*        m_pParseTree;
@@ -60,13 +60,13 @@ namespace connectivity
 
         protected:
             class KabCondition *analyseWhereClause(
-                const OSQLParseNode *pParseNode) const;
+                const OSQLParseNode *pParseNode) const throw(::com::sun::star::sdbc::SQLException);
             class KabOrder *analyseOrderByClause(
-                const OSQLParseNode *pParseNode) const;
+                const OSQLParseNode *pParseNode) const throw(::com::sun::star::sdbc::SQLException);
             bool isTableKnown(class KabResultSet *pResult) const;
-            void setKabFields(class KabResultSet *pResult) const;
-            void selectAddressees(KabResultSet *pResult) const;
-            void sortAddressees(KabResultSet *pResult) const;
+            void setKabFields(class KabResultSet *pResult) const throw(::com::sun::star::sdbc::SQLException);
+            void selectAddressees(KabResultSet *pResult) const throw(::com::sun::star::sdbc::SQLException);
+            void sortAddressees(KabResultSet *pResult) const throw(::com::sun::star::sdbc::SQLException);
 
             // OPropertyArrayUsageHelper
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper() const override;
@@ -74,81 +74,81 @@ namespace connectivity
             // OPropertySetHelper
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
             virtual sal_Bool SAL_CALL convertFastPropertyValue(
-                    css::uno::Any & rConvertedValue,
-                    css::uno::Any & rOldValue,
+                    ::com::sun::star::uno::Any & rConvertedValue,
+                    ::com::sun::star::uno::Any & rOldValue,
                     sal_Int32 nHandle,
-                    const css::uno::Any& rValue) override;
+                    const ::com::sun::star::uno::Any& rValue) throw (::com::sun::star::lang::IllegalArgumentException) override;
             virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                     sal_Int32 nHandle,
-                    const css::uno::Any& rValue) override;
+                    const ::com::sun::star::uno::Any& rValue) throw (::com::sun::star::uno::Exception, std::exception) override;
             virtual void SAL_CALL getFastPropertyValue(
-                    css::uno::Any& rValue,
+                    ::com::sun::star::uno::Any& rValue,
                     sal_Int32 nHandle) const override;
             using OPropertySetHelper::getFastPropertyValue;
 
-            virtual void resetParameters() const;
-            virtual void getNextParameter(OUString &rParameter) const;
-            virtual ~KabCommonStatement() override;
+            virtual void resetParameters() const throw(::com::sun::star::sdbc::SQLException);
+            virtual void getNextParameter(OUString &rParameter) const throw(::com::sun::star::sdbc::SQLException);
+            virtual ~KabCommonStatement();
 
         public:
-            using KabCommonStatement_BASE::rBHelper;
+            ::cppu::OBroadcastHelper& rBHelper;
 
             explicit KabCommonStatement(KabConnection *_pConnection);
-            using KabCommonStatement_BASE::operator css::uno::Reference< css::uno::XInterface >;
+            using KabCommonStatement_BASE::operator ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >;
 
             // OComponentHelper
-            using KabCommonStatement_BASE::disposing;
+            virtual void SAL_CALL disposing() override;
 
             // XInterface
             virtual void SAL_CALL release() throw() override;
             virtual void SAL_CALL acquire() throw() override;
-            virtual css::uno::Any SAL_CALL queryInterface(
-                    const css::uno::Type & rType
-                    ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface(
+                    const ::com::sun::star::uno::Type & rType
+                    ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(
-                    ) override;
+            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(
+                    ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(
-                    ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(
+                    ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XStatement
-            virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL executeQuery(
-                    const OUString& sql ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL executeQuery(
+                    const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
             virtual sal_Int32 SAL_CALL executeUpdate(
-                     const OUString& sql ) override;
+                     const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
             virtual sal_Bool SAL_CALL execute(
-                    const OUString& sql ) override;
-            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL getConnection(
-                    ) override;
+                    const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL getConnection(
+                    ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XWarningsSupplier
-            virtual css::uno::Any SAL_CALL getWarnings(
-                    ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(
+                    ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL clearWarnings(
-                    ) override;
+                    ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XCancellable
             virtual void SAL_CALL cancel(
-                    ) override;
+                    ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XCloseable
             virtual void SAL_CALL close(
-                    ) override;
+                    ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         };
 
 
         // Class KabStatement
 
         typedef ::cppu::ImplInheritanceHelper<
-                KabCommonStatement, css::lang::XServiceInfo > KabStatement_BASE;
+                KabCommonStatement, ::com::sun::star::lang::XServiceInfo > KabStatement_BASE;
 
         class KabStatement : public KabStatement_BASE
         {
         protected:
-            virtual ~KabStatement() override { }
+            virtual ~KabStatement() { }
 
         public:
             explicit KabStatement(KabConnection* _pConnection);

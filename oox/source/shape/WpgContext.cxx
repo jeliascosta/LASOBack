@@ -28,7 +28,9 @@ WpgContext::WpgContext(ContextHandler2Helper& rParent)
     mpShape->setWps(true);
 }
 
-WpgContext::~WpgContext() = default;
+WpgContext::~WpgContext()
+{
+}
 
 oox::core::ContextHandlerRef WpgContext::onCreateContext(sal_Int32 nElementToken, const oox::AttributeList& /*rAttribs*/)
 {

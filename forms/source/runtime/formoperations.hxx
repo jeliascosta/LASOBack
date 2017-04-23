@@ -78,9 +78,13 @@ namespace frm
     public:
         explicit FormOperations( const css::uno::Reference< css::uno::XComponentContext >& _rxContext );
 
+        // XServiceInfo - static versions
+        static OUString getImplementationName_Static(  ) throw(css::uno::RuntimeException);
+        static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw(css::uno::RuntimeException);
+
         struct MethodAccess { friend class MethodGuard; private: MethodAccess() { } };
 
-        void enterMethod( MethodAccess ) const
+        inline void enterMethod( MethodAccess ) const
         {
             m_aMutex.acquire();
             impl_checkDisposed_throw();
@@ -89,7 +93,7 @@ namespace frm
         #endif
         }
 
-        void leaveMethod( MethodAccess ) const
+        inline void leaveMethod( MethodAccess ) const
         {
             m_aMutex.release();
         #ifdef DBG_UTIL
@@ -98,44 +102,44 @@ namespace frm
         }
 
     protected:
-        virtual ~FormOperations() override;
+        virtual ~FormOperations();
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XFormOperations
-        virtual css::uno::Reference< css::sdbc::XRowSet > SAL_CALL getCursor() override;
-        virtual css::uno::Reference< css::sdbc::XResultSetUpdate > SAL_CALL getUpdateCursor() override;
-        virtual css::uno::Reference< css::form::runtime::XFormController > SAL_CALL getController() override;
-        virtual css::uno::Reference< css::form::runtime::XFeatureInvalidation > SAL_CALL getFeatureInvalidation() override;
-        virtual void SAL_CALL setFeatureInvalidation(const css::uno::Reference< css::form::runtime::XFeatureInvalidation > & the_value) override;
-        virtual css::form::runtime::FeatureState SAL_CALL getState(::sal_Int16 Feature) override;
-        virtual sal_Bool SAL_CALL isEnabled(::sal_Int16 Feature) override;
-        virtual void SAL_CALL execute(::sal_Int16 Feature) override;
-        virtual void SAL_CALL executeWithArguments(::sal_Int16 Feature, const css::uno::Sequence< css::beans::NamedValue >& Arguments) override;
-        virtual sal_Bool SAL_CALL commitCurrentRecord(sal_Bool & RecordInserted) override;
-        virtual sal_Bool SAL_CALL commitCurrentControl() override;
-        virtual sal_Bool SAL_CALL isInsertionRow() override;
-        virtual sal_Bool SAL_CALL isModifiedRow() override;
+        virtual css::uno::Reference< css::sdbc::XRowSet > SAL_CALL getCursor() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::sdbc::XResultSetUpdate > SAL_CALL getUpdateCursor() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::form::runtime::XFormController > SAL_CALL getController() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::form::runtime::XFeatureInvalidation > SAL_CALL getFeatureInvalidation() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setFeatureInvalidation(const css::uno::Reference< css::form::runtime::XFeatureInvalidation > & the_value) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::form::runtime::FeatureState SAL_CALL getState(::sal_Int16 Feature) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isEnabled(::sal_Int16 Feature) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL execute(::sal_Int16 Feature) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::sdbc::SQLException, css::lang::WrappedTargetException, std::exception) override;
+        virtual void SAL_CALL executeWithArguments(::sal_Int16 Feature, const css::uno::Sequence< css::beans::NamedValue >& Arguments) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::sdbc::SQLException, css::lang::WrappedTargetException, std::exception) override;
+        virtual sal_Bool SAL_CALL commitCurrentRecord(sal_Bool & RecordInserted) throw (css::uno::RuntimeException, css::sdbc::SQLException, std::exception) override;
+        virtual sal_Bool SAL_CALL commitCurrentControl() throw (css::uno::RuntimeException, css::sdbc::SQLException, std::exception) override;
+        virtual sal_Bool SAL_CALL isInsertionRow() throw (css::uno::RuntimeException, css::lang::WrappedTargetException, std::exception) override;
+        virtual sal_Bool SAL_CALL isModifiedRow() throw (css::uno::RuntimeException, css::lang::WrappedTargetException, std::exception) override;
 
         // XRowSetListener
-        virtual void SAL_CALL cursorMoved( const css::lang::EventObject& event ) override;
-        virtual void SAL_CALL rowChanged( const css::lang::EventObject& event ) override;
-        virtual void SAL_CALL rowSetChanged( const css::lang::EventObject& event ) override;
+        virtual void SAL_CALL cursorMoved( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL rowChanged( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL rowSetChanged( const css::lang::EventObject& event ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XModifyListener
-        virtual void SAL_CALL modified( const css::lang::EventObject& _rSource ) override;
+        virtual void SAL_CALL modified( const css::lang::EventObject& _rSource ) throw( css::uno::RuntimeException, std::exception ) override;
 
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent/OComponentHelper
         virtual void SAL_CALL disposing() override;
@@ -144,6 +148,10 @@ namespace frm
         // service constructors
         void    createWithFormController( const css::uno::Reference< css::form::runtime::XFormController >& _rxController );
         void    createWithForm( const css::uno::Reference< css::form::XForm >& _rxForm );
+
+        /** determines whether or not we're already disposed
+        */
+        inline bool impl_isDisposed_nothrow() const { return !m_xCursor.is(); }
 
         /** checks whether the instance is already disposed, and throws an exception if so
         */
@@ -209,7 +217,7 @@ namespace frm
         /// determines whether our form is in "insert-only" mode
         bool        impl_isInsertOnlyForm_throw() const;
 
-        /** retrieves the column to which the current control of our controller is bound
+        /** retrieces the column to which the current control of our controller is bound
             @precond
                 m_xController.is()
         */
@@ -228,14 +236,14 @@ namespace frm
                     impl_getCurrentControlModel_throw() const;
 
         /// determines if we have a valid cursor
-        bool    impl_hasCursor_nothrow() const { return m_xCursorProperties.is(); }
+        inline  bool    impl_hasCursor_nothrow() const { return m_xCursorProperties.is(); }
 
         /** determines the model position from a grid control column's view position
 
             A grid control can have columns which are currently hidden, so the index of a
             column in the view is not necessarily the same as its index in the model.
         */
-        static sal_Int32   impl_gridView2ModelPos_nothrow( const css::uno::Reference< css::container::XIndexAccess >& _rxColumns, sal_Int16 _nViewPos );
+        static sal_Int16   impl_gridView2ModelPos_nothrow( const css::uno::Reference< css::container::XIndexAccess >& _rxColumns, sal_Int16 _nViewPos );
 
         /** moves our cursor one position to the left, caring for different possible
             cursor states.
@@ -301,7 +309,7 @@ namespace frm
         {
         public:
             impl_appendOrderByColumn_throw(const FormOperations *pFO,
-                                           css::uno::Reference< css::beans::XPropertySet > const & xField,
+                                           css::uno::Reference< css::beans::XPropertySet > xField,
                                            bool bUp)
                 : m_pFO(pFO)
                 , m_xField(xField)
@@ -320,7 +328,7 @@ namespace frm
         {
         public:
             impl_appendFilterByColumn_throw(const FormOperations *pFO,
-                                            css::uno::Reference< css::beans::XPropertySet > const & xField)
+                                            css::uno::Reference< css::beans::XPropertySet > xField)
                 : m_pFO(pFO)
                 , m_xField(xField)
             {};
@@ -349,12 +357,12 @@ namespace frm
                 m_rOwner.enterMethod( FormOperations::MethodAccess() );
             }
 
-            ~MethodGuard()
+            inline ~MethodGuard()
             {
                 clear();
             }
 
-            void clear()
+            inline void clear()
             {
                 if ( !m_bCleared )
                     m_rOwner.leaveMethod( FormOperations::MethodAccess() );

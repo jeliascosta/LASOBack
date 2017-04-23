@@ -23,7 +23,7 @@
 #include <sfx2/objface.hxx>
 #include <sfx2/objsh.hxx>
 #include <sfx2/request.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 
 #include "auditsh.hxx"
 #include "tabvwsh.hxx"
@@ -54,8 +54,9 @@ ScAuditingShell::ScAuditingShell(ScViewData* pData) :
     {
         pMgr->SetMaxUndoActionCount( 0 );
     }
+    SetHelpId( HID_SCSHELL_AUDIT );
     SetName("Auditing");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Auditing));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Auditing));
 }
 
 ScAuditingShell::~ScAuditingShell()

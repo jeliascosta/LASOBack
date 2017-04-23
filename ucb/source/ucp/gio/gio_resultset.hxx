@@ -28,7 +28,7 @@ namespace gio
 
     class DynamicResultSet : public ::ucbhelper::ResultSetImplHelper
     {
-        rtl::Reference< Content > m_xContent;
+        css::uno::Reference< Content > m_xContent;
         css::uno::Reference< css::ucb::XCommandEnvironment > m_xEnv;
 
     private:
@@ -38,7 +38,7 @@ namespace gio
     public:
         DynamicResultSet(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext,
-            const rtl::Reference< Content >& rxContent,
+            const css::uno::Reference< Content >& rxContent,
             const css::ucb::OpenCommandArgument2& rCommand,
             const css::uno::Reference< css::ucb::XCommandEnvironment >& rxEnv );
     };

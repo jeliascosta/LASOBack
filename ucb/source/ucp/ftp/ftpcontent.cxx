@@ -47,17 +47,11 @@
 #include <ucbhelper/propertyvalueset.hxx>
 #include <ucbhelper/simpleauthenticationrequest.hxx>
 #include <com/sun/star/lang/IllegalAccessException.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/ucb/ContentInfoAttribute.hpp>
-#include <com/sun/star/ucb/UnsupportedCommandException.hpp>
-#include <com/sun/star/beans/IllegalTypeException.hpp>
 #include <com/sun/star/beans/UnknownPropertyException.hpp>
 #include <com/sun/star/beans/Property.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/ucb/XCommandInfo.hpp>
-#include <com/sun/star/io/BufferSizeExceededException.hpp>
-#include <com/sun/star/io/IOException.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/XActiveDataSink.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/io/XActiveDataStreamer.hpp>
@@ -131,6 +125,7 @@ void SAL_CALL FTPContent::release()
 }
 
 css::uno::Any SAL_CALL FTPContent::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< XTypeProvider* >(this)),
@@ -146,11 +141,15 @@ css::uno::Any SAL_CALL FTPContent::queryInterface( const css::uno::Type & rType 
 // XTypeProvider methods.
 
 css::uno::Sequence< sal_Int8 > SAL_CALL FTPContent::getImplementationId()
+    throw( css::uno::RuntimeException,
+           std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 css::uno::Sequence< css::uno::Type > SAL_CALL FTPContent::getTypes()
+    throw( css::uno::RuntimeException,
+           std::exception )
 {
     static cppu::OTypeCollection* pCollection = nullptr;
     if ( !pCollection )
@@ -176,18 +175,32 @@ css::uno::Sequence< css::uno::Type > SAL_CALL FTPContent::getTypes()
 // XServiceInfo methods.
 
 OUString SAL_CALL FTPContent::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString FTPContent::getImplementationName_Static()
 {
     return OUString( "com.sun.star.comp.FTPContent");
 }
 
 sal_Bool SAL_CALL FTPContent::supportsService( const OUString& ServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService( this, ServiceName );
 }
 
 css::uno::Sequence< OUString > SAL_CALL FTPContent::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.ucb.FTPContent" };
+    return getSupportedServiceNames_Static();
+}
+
+css::uno::Sequence< OUString > FTPContent::getSupportedServiceNames_Static()
+{
+    css::uno::Sequence<OUString> aSNS { "com.sun.star.ucb.FTPContent" };
+    return aSNS;
 }
 
 
@@ -195,6 +208,7 @@ css::uno::Sequence< OUString > SAL_CALL FTPContent::getSupportedServiceNames()
 
 // virtual
 OUString SAL_CALL FTPContent::getContentType()
+    throw( RuntimeException, std::exception )
 {
     return OUString(FTP_CONTENT_TYPE);
 }
@@ -203,30 +217,46 @@ OUString SAL_CALL FTPContent::getContentType()
 
 //virtual
 void SAL_CALL FTPContent::abort( sal_Int32 /*CommandId*/ )
+    throw( RuntimeException, std::exception )
 {
 }
 
+/***************************************************************************/
+/*                                                                         */
+/*                     Internal implementation class.                      */
+/*                                                                         */
+/***************************************************************************/
 
-ResultSetFactory::ResultSetFactory(const Reference<XComponentContext >&  rxContext,
-                  const Reference<XContentProvider >&  xProvider,
-                  const Sequence<Property>& seq,
-                  const std::vector<FTPDirentry>& dirvec)
+class ResultSetFactoryI : public ResultSetFactory
+{
+public:
+
+    ResultSetFactoryI(const Reference<XComponentContext >&  rxContext,
+                      const Reference<XContentProvider >&  xProvider,
+                      const Sequence<Property>& seq,
+                      const std::vector<FTPDirentry>& dirvec)
         : m_xContext(rxContext),
           m_xProvider(xProvider),
           m_seq(seq),
           m_dirvec(dirvec)
-{
-}
+    {
+    }
 
+    virtual ResultSetBase* createResultSet() override
+    {
+        return new ResultSetI(m_xContext,
+                              m_xProvider,
+                              m_seq,
+                              m_dirvec);
+    }
 
-ResultSetBase* ResultSetFactory::createResultSet()
-{
-    return new ResultSetI(m_xContext,
-                          m_xProvider,
-                          m_seq,
-                          m_dirvec);
-}
+public:
 
+    Reference< XComponentContext >                  m_xContext;
+    Reference< XContentProvider >                   m_xProvider;
+    Sequence< Property >                            m_seq;
+    std::vector<FTPDirentry>                        m_dirvec;
+};
 
 // XCommandProcessor methods.
 
@@ -244,6 +274,10 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                                   sal_Int32 /*CommandId*/,
                                   const Reference<
                                   XCommandEnvironment >& Environment)
+    throw( Exception,
+           CommandAbortedException,
+           RuntimeException,
+           std::exception)
 {
     ACTION action(NOACTION);
     Any aRet;
@@ -392,7 +426,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                 if(!(aCommand.Argument >>= Properties))
                 {
                     aRet <<= IllegalArgumentException(
-                                "Wrong argument type!",
+                                OUString( "Wrong argument type!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1);
                     ucbhelper::cancelCommandExecution(aRet,Environment);
@@ -406,7 +440,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
 
                 if( ! ( aCommand.Argument >>= propertyValues ) ) {
                     aRet <<= IllegalArgumentException(
-                                "Wrong argument type!",
+                                OUString( "Wrong argument type!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1);
                     ucbhelper::cancelCommandExecution(aRet,Environment);
@@ -427,7 +461,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                 InsertCommandArgument aInsertArgument;
                 if ( ! ( aCommand.Argument >>= aInsertArgument ) ) {
                     aRet <<= IllegalArgumentException(
-                                "Wrong argument type!",
+                                OUString( "Wrong argument type!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1);
                     ucbhelper::cancelCommandExecution(aRet,Environment);
@@ -442,7 +476,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                 OpenCommandArgument2 aOpenCommand;
                 if ( !( aCommand.Argument >>= aOpenCommand ) ) {
                     aRet <<= IllegalArgumentException(
-                                "Wrong argument type!",
+                                OUString( "Wrong argument type!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1);
 
@@ -513,10 +547,10 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                         = new DynamicResultSet(
                             m_xContext,
                             aOpenCommand,
-                            new ResultSetFactory(m_xContext,
-                                                 m_xProvider.get(),
-                                                 aOpenCommand.Properties,
-                                                 resvec));
+                            new ResultSetFactoryI(m_xContext,
+                                                  m_xProvider.get(),
+                                                  aOpenCommand.Properties,
+                                                  resvec));
                     aRet <<= xSet;
                 }
                 else if(aOpenCommand.Mode ==
@@ -532,7 +566,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                 }
                 else {
                     aRet <<= IllegalArgumentException(
-                                "Unexpected OpenMode!",
+                                OUString( "Unexpected OpenMode!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1);
 
@@ -544,7 +578,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                     ucbhelper::cancelCommandExecution(
                         makeAny(
                             IllegalArgumentException(
-                                "Wrong argument type!",
+                                OUString( "Wrong argument type!" ),
                                 static_cast< cppu::OWeakObject * >(this),
                                 -1)),
                         Environment);
@@ -590,6 +624,7 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
 
 Sequence<ContentInfo > SAL_CALL
 FTPContent::queryCreatableContentsInfo(  )
+    throw (RuntimeException, std::exception)
 {
     return queryCreatableContentsInfo_Static();
 }
@@ -597,6 +632,7 @@ FTPContent::queryCreatableContentsInfo(  )
 // static
 Sequence<ContentInfo >
 FTPContent::queryCreatableContentsInfo_Static(  )
+    throw (RuntimeException)
 {
     Sequence< ContentInfo > seq(2);
 
@@ -605,7 +641,7 @@ FTPContent::queryCreatableContentsInfo_Static(  )
         | ContentInfoAttribute::KIND_DOCUMENT;
     Sequence< Property > props( 1 );
     props[0] = Property(
-        "Title",
+        OUString("Title"),
         -1,
         cppu::UnoType<OUString>::get(),
         PropertyAttribute::MAYBEVOID
@@ -622,6 +658,7 @@ FTPContent::queryCreatableContentsInfo_Static(  )
 
 Reference<XContent > SAL_CALL
 FTPContent::createNewContent( const ContentInfo& Info )
+    throw (RuntimeException, std::exception)
 {
     if( Info.Type =="application/vnd.sun.staroffice.ftp-file" || Info.Type == "application/vnd.sun.staroffice.ftp-folder" )
         return new FTPContent(m_xContext,
@@ -634,6 +671,7 @@ FTPContent::createNewContent( const ContentInfo& Info )
 
 Reference<XInterface > SAL_CALL
 FTPContent::getParent(  )
+    throw (RuntimeException, std::exception)
 {
     Reference<XContentIdentifier>
         xIdent(new FTPContentIdentifier(m_aFTPURL.parent()));
@@ -643,6 +681,8 @@ FTPContent::getParent(  )
 
 void SAL_CALL
 FTPContent::setParent(const Reference<XInterface >& /*Parent*/ )
+    throw (NoSupportException,
+           RuntimeException, std::exception)
 {
     throw NoSupportException();
 }
@@ -715,7 +755,13 @@ void FTPContent::insert(const InsertCommandArgument& aInsertCommand,
         } else if(m_aInfo.Type == FTP_FOLDER)
             m_aFTPURL.mkdir(bReplace);
     } catch(const curl_exception& e) {
-        if(e.code() == FOLDER_MIGHT_EXIST_DURING_INSERT ||
+        if(e.code() == FILE_EXIST_DURING_INSERT ||
+           e.code() == FOLDER_EXIST_DURING_INSERT) {
+            // Deprecated, not used anymore:
+            NameClashException excep;
+            excep.Name = m_aFTPURL.child();
+            ucbhelper::cancelCommandExecution(Any(excep), Env);
+        } else if(e.code() == FOLDER_MIGHT_EXIST_DURING_INSERT ||
                   e.code() == FILE_MIGHT_EXIST_DURING_INSERT) {
             // Interact
             Reference<XInteractionHandler> xInt;
@@ -770,7 +816,7 @@ Reference< XRow > FTPContent::getPropertyValues(
         else if(aDirEntry.m_nMode != INETCOREFTP_FILEMODE_UNKNOWN) {
             if(Name == "ContentType")
                 xRow->appendString(seqProp[i],
-                                   (aDirEntry.m_nMode & INETCOREFTP_FILEMODE_ISDIR)
+                                   aDirEntry.m_nMode&INETCOREFTP_FILEMODE_ISDIR
                                    ? OUString(FTP_FOLDER)
                                    : OUString(FTP_FILE) );
             else if(Name == "IsReadOnly")
@@ -849,7 +895,7 @@ Sequence<Any> FTPContent::setPropertyValues(
             for(sal_Int32 j = 0; j < props.getLength(); ++j)
                 if(props[j].Name == seqPropVal[i].Name) {
                     ret[i] <<= IllegalAccessException(
-                        "Property is read-only!",
+                        OUString( "Property is read-only!"),
                             //props[j].Attributes & PropertyAttribute::READONLY
                             //    ? "Property is read-only!"
                             //    : "Access denied!"),

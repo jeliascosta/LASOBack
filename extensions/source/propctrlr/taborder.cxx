@@ -40,46 +40,6 @@ namespace pcr
     using namespace ::com::sun::star::beans;
     using namespace ::com::sun::star::datatransfer;
 
-    namespace {
-
-    Image GetImage( const Reference< XPropertySet >& _rxSet )
-    {
-        sal_uInt16 nImageId = RID_EXTBMP_CONTROL;
-        // TODO: classify controls also in Basic propbrw
-        if ( _rxSet.is() && ::comphelper::hasProperty( PROPERTY_CLASSID, _rxSet ) )
-        {
-            switch( ::comphelper::getINT16( _rxSet->getPropertyValue( PROPERTY_CLASSID ) ) )
-            {
-            case FormComponentType::COMMANDBUTTON:  nImageId = RID_EXTBMP_BUTTON; break;
-            case FormComponentType::FIXEDTEXT:      nImageId = RID_EXTBMP_FIXEDTEXT; break;
-            case FormComponentType::TEXTFIELD:      nImageId = RID_EXTBMP_EDITBOX; break;
-            case FormComponentType::RADIOBUTTON:    nImageId = RID_EXTBMP_RADIOBUTTON; break;
-            case FormComponentType::CHECKBOX:       nImageId = RID_EXTBMP_CHECKBOX; break;
-            case FormComponentType::LISTBOX:        nImageId = RID_EXTBMP_LISTBOX; break;
-            case FormComponentType::COMBOBOX:       nImageId = RID_EXTBMP_COMBOBOX; break;
-            case FormComponentType::GROUPBOX:       nImageId = RID_EXTBMP_GROUPBOX; break;
-            case FormComponentType::IMAGEBUTTON:    nImageId = RID_EXTBMP_IMAGEBUTTON; break;
-            case FormComponentType::FILECONTROL:    nImageId = RID_EXTBMP_FILECONTROL; break;
-            case FormComponentType::HIDDENCONTROL:  nImageId = RID_EXTBMP_HIDDEN; break;
-            case FormComponentType::DATEFIELD:      nImageId = RID_EXTBMP_DATEFIELD; break;
-            case FormComponentType::TIMEFIELD:      nImageId = RID_EXTBMP_TIMEFIELD; break;
-            case FormComponentType::NUMERICFIELD:   nImageId = RID_EXTBMP_NUMERICFIELD; break;
-            case FormComponentType::CURRENCYFIELD:  nImageId = RID_EXTBMP_CURRENCYFIELD; break;
-            case FormComponentType::PATTERNFIELD:   nImageId = RID_EXTBMP_PATTERNFIELD; break;
-            case FormComponentType::IMAGECONTROL:   nImageId = RID_EXTBMP_IMAGECONTROL; break;
-            case FormComponentType::GRIDCONTROL:    nImageId = RID_EXTBMP_GRID; break;
-            case FormComponentType::SCROLLBAR:      nImageId = RID_EXTBMP_SCROLLBAR; break;
-            case FormComponentType::SPINBUTTON:     nImageId = RID_EXTBMP_SPINBUTTON; break;
-            case FormComponentType::NAVIGATIONBAR:  nImageId = RID_EXTBMP_NAVIGATIONBAR; break;
-            default:
-                OSL_FAIL( "TabOrderDialog::GetImage: unknown control type" );
-            }
-        }
-
-        return Image(BitmapEx(PcrRes(nImageId)));;
-    }
-
-    }
 
     //= OSimpleTabModel
 
@@ -94,14 +54,14 @@ namespace pcr
         }
 
         // XTabControllerModel
-        virtual void SAL_CALL setControlModels(const Sequence< Reference< XControlModel > >& rModels) override {m_aModels = rModels;}
-        virtual Sequence< Reference< XControlModel > > SAL_CALL getControlModels() override {return m_aModels;}
-        virtual void SAL_CALL setGroup(const Sequence< Reference< XControlModel > >& /*Group*/, const OUString& /*GroupName*/) override {}
-        virtual sal_Int32 SAL_CALL getGroupCount() override {return 0;}
-        virtual void SAL_CALL getGroup(sal_Int32 /*nGroup*/, Sequence< Reference< XControlModel > >& /*Group*/, OUString& /*Name*/) override {}
-        virtual void SAL_CALL getGroupByName(const OUString& /*Name*/, Sequence< Reference< XControlModel > >& /*Group*/) override {}
-        virtual sal_Bool SAL_CALL getGroupControl() override {return false;} ;
-        virtual void SAL_CALL setGroupControl(sal_Bool /*GroupControl*/) override {};
+        virtual void SAL_CALL setControlModels(const Sequence< Reference< XControlModel > >& rModels) throw( RuntimeException, std::exception ) override {m_aModels = rModels;}
+        virtual Sequence< Reference< XControlModel > > SAL_CALL getControlModels() throw( RuntimeException, std::exception ) override {return m_aModels;}
+        virtual void SAL_CALL setGroup(const Sequence< Reference< XControlModel > >& /*Group*/, const OUString& /*GroupName*/) throw( RuntimeException, std::exception ) override {}
+        virtual sal_Int32 SAL_CALL getGroupCount() throw( RuntimeException, std::exception ) override {return 0;}
+        virtual void SAL_CALL getGroup(sal_Int32 /*nGroup*/, Sequence< Reference< XControlModel > >& /*Group*/, OUString& /*Name*/) throw( RuntimeException, std::exception ) override {}
+        virtual void SAL_CALL getGroupByName(const OUString& /*Name*/, Sequence< Reference< XControlModel > >& /*Group*/) throw( RuntimeException, std::exception ) override {}
+        virtual sal_Bool SAL_CALL getGroupControl() throw( RuntimeException, std::exception ) override {return false;} ;
+        virtual void SAL_CALL setGroupControl(sal_Bool /*GroupControl*/) throw( RuntimeException, std::exception ) override {};
     };
 
 
@@ -114,6 +74,7 @@ namespace pcr
         ,m_xModel( _rxTabModel )
         ,m_xControlContainer( _rxControlCont )
         ,m_xORB( _rxORB )
+        ,pImageList( nullptr )
     {
         get(m_pLB_Controls, "CTRLtree");
         get(m_pPB_OK, "ok");
@@ -127,6 +88,8 @@ namespace pcr
         m_pPB_AutoOrder->SetClickHdl( LINK( this, TabOrderDialog, AutoOrderClickHdl ) );
         m_pPB_OK->SetClickHdl( LINK( this, TabOrderDialog, OKClickHdl ) );
         m_pPB_OK->Disable();
+
+        pImageList = new ImageList( PcrRes( RID_IL_FORMEXPLORER ) );
 
         if ( m_xModel.is() )
             m_xTempModel = new OSimpleTabModel( m_xModel->getControlModels() );
@@ -158,6 +121,8 @@ namespace pcr
     void TabOrderDialog::dispose()
     {
         m_pLB_Controls->Hide();
+        //  delete pLB_Controls;
+        delete pImageList;
         m_pLB_Controls.clear();
         m_pPB_OK.clear();
         m_pPB_MoveUp.clear();
@@ -165,6 +130,45 @@ namespace pcr
         m_pPB_AutoOrder.clear();
         ModalDialog::dispose();
     }
+
+
+    Image TabOrderDialog::GetImage( const Reference< XPropertySet >& _rxSet ) const
+    {
+        sal_uInt16 nImageId = RID_SVXIMG_CONTROL;
+        // TODO: classify controls also in Basic propbrw
+        if ( _rxSet.is() && ::comphelper::hasProperty( PROPERTY_CLASSID, _rxSet ) )
+        {
+            switch( ::comphelper::getINT16( _rxSet->getPropertyValue( PROPERTY_CLASSID ) ) )
+            {
+            case FormComponentType::COMMANDBUTTON:  nImageId = RID_SVXIMG_BUTTON; break;
+            case FormComponentType::FIXEDTEXT:      nImageId = RID_SVXIMG_FIXEDTEXT; break;
+            case FormComponentType::TEXTFIELD:      nImageId = RID_SVXIMG_EDIT; break;
+            case FormComponentType::RADIOBUTTON:    nImageId = RID_SVXIMG_RADIOBUTTON; break;
+            case FormComponentType::CHECKBOX:       nImageId = RID_SVXIMG_CHECKBOX; break;
+            case FormComponentType::LISTBOX:        nImageId = RID_SVXIMG_LISTBOX; break;
+            case FormComponentType::COMBOBOX:       nImageId = RID_SVXIMG_COMBOBOX; break;
+            case FormComponentType::GROUPBOX:       nImageId = RID_SVXIMG_GROUPBOX; break;
+            case FormComponentType::IMAGEBUTTON:    nImageId = RID_SVXIMG_IMAGEBUTTON; break;
+            case FormComponentType::FILECONTROL:    nImageId = RID_SVXIMG_FILECONTROL; break;
+            case FormComponentType::HIDDENCONTROL:  nImageId = RID_SVXIMG_HIDDEN; break;
+            case FormComponentType::DATEFIELD:      nImageId = RID_SVXIMG_DATEFIELD; break;
+            case FormComponentType::TIMEFIELD:      nImageId = RID_SVXIMG_TIMEFIELD; break;
+            case FormComponentType::NUMERICFIELD:   nImageId = RID_SVXIMG_NUMERICFIELD; break;
+            case FormComponentType::CURRENCYFIELD:  nImageId = RID_SVXIMG_CURRENCYFIELD; break;
+            case FormComponentType::PATTERNFIELD:   nImageId = RID_SVXIMG_PATTERNFIELD; break;
+            case FormComponentType::IMAGECONTROL:   nImageId = RID_SVXIMG_IMAGECONTROL; break;
+            case FormComponentType::GRIDCONTROL:    nImageId = RID_SVXIMG_GRID; break;
+            case FormComponentType::SCROLLBAR:      nImageId = RID_SVXIMG_SCROLLBAR; break;
+            case FormComponentType::SPINBUTTON:     nImageId = RID_SVXIMG_SPINBUTTON; break;
+            case FormComponentType::NAVIGATIONBAR:  nImageId = RID_SVXIMG_NAVIGATIONBAR; break;
+            default:
+                OSL_FAIL( "TabOrderDialog::GetImage: unknown control type" );
+            }
+        }
+
+        return pImageList->GetImage( nImageId );
+    }
+
 
     void TabOrderDialog::FillList()
     {
@@ -220,19 +224,19 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG( TabOrderDialog, MoveUpClickHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( TabOrderDialog, MoveUpClickHdl, Button*, void )
     {
         m_pLB_Controls->MoveSelection( -1 );
     }
 
 
-    IMPL_LINK_NOARG( TabOrderDialog, MoveDownClickHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( TabOrderDialog, MoveDownClickHdl, Button*, void )
     {
         m_pLB_Controls->MoveSelection( 1 );
     }
 
 
-    IMPL_LINK_NOARG( TabOrderDialog, AutoOrderClickHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( TabOrderDialog, AutoOrderClickHdl, Button*, void )
     {
         try
         {
@@ -254,7 +258,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG( TabOrderDialog, OKClickHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( TabOrderDialog, OKClickHdl, Button*, void )
     {
         sal_uLong nEntryCount = m_pLB_Controls->GetEntryCount();
         Sequence< Reference< XControlModel > > aSortedControlModelSeq( nEntryCount );
@@ -293,10 +297,17 @@ namespace pcr
         SetDragDropMode(DragDropMode::ALL/*DragDropMode::CTRL_MOVE*/);
             // Hmm. The flag alone is not enough, so to be on the safe side ...
 
-        SetSelectionMode( SelectionMode::Multiple );
+        SetSelectionMode( MULTIPLE_SELECTION );
     }
 
-    VCL_BUILDER_FACTORY_CONSTRUCTOR(TabOrderListBox, WB_TABSTOP)
+    VCL_BUILDER_DECL_FACTORY(TabOrderListBox)
+    {
+         WinBits nWinStyle = WB_TABSTOP;
+         OString sBorder = VclBuilder::extractCustomProperty(rMap);
+         if (!sBorder.isEmpty())
+             nWinStyle |= WB_BORDER;
+         rRet = VclPtr<TabOrderListBox>::Create(pParent, nWinStyle);
+    }
 
     TabOrderListBox::~TabOrderListBox()
     {
@@ -378,9 +389,9 @@ namespace pcr
                 long nFirstVisible = GetModel()->GetAbsPos( FirstVisible());
 
                 if ( ( nThumbPos + nVisibleSize + 1 ) < (long)( nLastSelPos + 3 ) )
-                    GetVScroll()->DoScrollAction(ScrollType::LineDown);
+                    GetVScroll()->DoScrollAction(SCROLL_LINEDOWN);
                 else if((nThumbPos+nVisibleSize+1) >= (nFirstVisible))
-                    GetVScroll()->DoScrollAction(ScrollType::LineUp);
+                    GetVScroll()->DoScrollAction(SCROLL_LINEUP);
             }
         }
     }

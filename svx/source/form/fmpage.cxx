@@ -73,6 +73,7 @@ void FmFormPage::lateInit(const FmFormPage& rPage, FmFormModel* const pNewModel)
 
 FmFormPage::~FmFormPage()
 {
+    delete m_pImpl;
 }
 
 
@@ -129,10 +130,11 @@ SdrPage* FmFormPage::Clone(SdrModel* const pNewModel) const
 }
 
 
-void FmFormPage::InsertObject(SdrObject* pObj, size_t nPos)
+void FmFormPage::InsertObject(SdrObject* pObj, size_t nPos,
+                              const SdrInsertReason* pReason)
 {
-    SdrPage::InsertObject( pObj, nPos );
-    if (GetModel())
+    SdrPage::InsertObject( pObj, nPos, pReason );
+    if (GetModel() && (!pReason || pReason->GetReason() != SDRREASON_STREAMING))
         static_cast<FmFormModel*>(GetModel())->GetUndoEnv().Inserted(pObj);
 }
 
@@ -159,9 +161,9 @@ bool FmFormPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
     aPos = pWindow->ScreenToOutputPixel( aPos );
     aPos = pWindow->PixelToLogic( aPos );
 
+    SdrObject* pObj = nullptr;
     SdrPageView* pPV = nullptr;
-    SdrObject* pObj = pView->PickObj(aPos, 0, pPV, SdrSearchOptions::DEEP);
-    if (!pObj)
+    if ( !pView->PickObj( aPos, 0, pObj, pPV, SdrSearchOptions::DEEP ) )
         return false;
 
     FmFormObj* pFormObject = FmFormObj::GetFormObject( pObj );
@@ -190,7 +192,7 @@ bool FmFormPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
             for (const INetProtocol& i : s_aQuickHelpSupported)
                 if (i == aProtocol)
                 {
-                    aHelpText = INetURLObject::decode(aUrl.GetURLNoPass(), INetURLObject::DecodeMechanism::Unambiguous);
+                    aHelpText = INetURLObject::decode(aUrl.GetURLNoPass(), INetURLObject::DECODE_UNAMBIGUOUS);
                     break;
                 }
         }
@@ -198,7 +200,7 @@ bool FmFormPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
     if ( !aHelpText.isEmpty() )
     {
         // Hilfe anzeigen
-        tools::Rectangle aItemRect = pObj->GetCurrentBoundRect();
+        Rectangle aItemRect = pObj->GetCurrentBoundRect();
         aItemRect = pWindow->LogicToPixel( aItemRect );
         Point aPt = pWindow->OutputToScreenPixel( aItemRect.TopLeft() );
         aItemRect.Left()   = aPt.X();

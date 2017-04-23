@@ -23,20 +23,18 @@
 
 #include <rtl/ustring.hxx>
 #include <editeng/editengdllapi.h>
-#include <memory>
 
 class SfxItemSet;
 class SfxPoolItem;
 class SvParser;
 class SvxFieldItem;
-class SvxRTFItemStackType;
 
 enum EETextFormat       { EE_FORMAT_TEXT = 0x20, EE_FORMAT_RTF, EE_FORMAT_BIN = 0x31, EE_FORMAT_HTML, EE_FORMAT_XML };
 enum EEHorizontalTextDirection { EE_HTEXTDIR_DEFAULT, EE_HTEXTDIR_L2R, EE_HTEXTDIR_R2L };
 enum EESelectionMode    { EE_SELMODE_STD, EE_SELMODE_TXTONLY, EE_SELMODE_HIDDEN };
     // EE_SELMODE_HIDDEN can be used to completely hide the selection. This is useful e.g. when you want show the selection
     // only as long as your window (which the edit view works on) has the focus
-enum class EESpellState  { Ok, LanguageNotInstalled, NoSpeller, ErrorFound };
+enum EESpellState       { EE_SPELL_OK, EE_SPELL_NOLANGUAGE, EE_SPELL_LANGUAGENOTINSTALLED, EE_SPELL_NOSPELLER, EE_SPELL_ERRORFOUND };
 enum EVAnchorMode       {
             ANCHOR_TOP_LEFT,    ANCHOR_VCENTER_LEFT,    ANCHOR_BOTTOM_LEFT,
             ANCHOR_TOP_HCENTER, ANCHOR_VCENTER_HCENTER, ANCHOR_BOTTOM_HCENTER,
@@ -190,9 +188,9 @@ inline void ESelection::Adjust()
 
 struct EDITENG_DLLPUBLIC EFieldInfo
 {
-    std::unique_ptr<SvxFieldItem>   pFieldItem;
-    OUString                        aCurrentText;
-    EPosition                       aPosition;
+    SvxFieldItem*   pFieldItem;
+    OUString        aCurrentText;
+    EPosition       aPosition;
 
     EFieldInfo();
     EFieldInfo( const SvxFieldItem& rFieldItem, sal_Int32 nPara, sal_Int32 nPos );
@@ -202,53 +200,34 @@ struct EDITENG_DLLPUBLIC EFieldInfo
     EFieldInfo& operator= ( const EFieldInfo& );
 };
 
-enum class RtfImportState {
-                    Start, End,               // only pParser, nPara, nIndex
-                    NextToken, UnknownAttr,   // nToken+nTokenValue
-                    SetAttr,                  // pAttrs
-                    InsertText,               // aText
-                    InsertPara,               // -
-                    };
-enum class HtmlImportState {
-                    Start, End,               // only pParser, nPara, nIndex
-                    NextToken,                // nToken
-                    SetAttr,                  // pAttrs
-                    InsertText,               // aText
-                    InsertPara, InsertField   // -
+enum ImportState {
+                    RTFIMP_START, RTFIMP_END,               // only pParser, nPara, nIndex
+                    RTFIMP_NEXTTOKEN, RTFIMP_UNKNOWNATTR,   // nToken+nTokenValue
+                    RTFIMP_SETATTR,                         // pAttrs
+                    RTFIMP_INSERTTEXT,                      // aText
+                    RTFIMP_INSERTPARA,                      // -
+                    HTMLIMP_START, HTMLIMP_END,             // only pParser, nPara, nIndex
+                    HTMLIMP_NEXTTOKEN, HTMLIMP_UNKNOWNATTR, // nToken
+                    HTMLIMP_SETATTR,                        // pAttrs
+                    HTMLIMP_INSERTTEXT,                     // aText
+                    HTMLIMP_INSERTPARA, HTMLIMP_INSERTFIELD // -
                     };
 
-struct HtmlImportInfo
+struct ImportInfo
 {
     SvParser*               pParser;
     ESelection              aSelection;
-    HtmlImportState         eState;
+    ImportState             eState;
 
     int                     nToken;
     short                   nTokenValue;
 
     OUString                aText;
 
-    SfxItemSet*             pAttrs;
+    void*                   pAttrs; // RTF: SvxRTFItemStackType*, HTML: SfxItemSet*
 
-    HtmlImportInfo( HtmlImportState eState, SvParser* pPrsrs, const ESelection& rSel );
-    ~HtmlImportInfo();
-};
-
-struct RtfImportInfo
-{
-    SvParser*               pParser;
-    ESelection              aSelection;
-    RtfImportState          eState;
-
-    int                     nToken;
-    short                   nTokenValue;
-
-    OUString                aText;
-
-    SvxRTFItemStackType*    pAttrs;
-
-    RtfImportInfo( RtfImportState eState, SvParser* pPrsrs, const ESelection& rSel );
-    ~RtfImportInfo();
+    ImportInfo( ImportState eState, SvParser* pPrsrs, const ESelection& rSel );
+    ~ImportInfo();
 };
 
 struct ParagraphInfos
@@ -318,7 +297,7 @@ enum EENotifyType
     EE_NOTIFY_PARAGRAPHSMOVED,
 
     /// The height of at least one paragraph has changed
-    EE_NOTIFY_TextHeightChanged,
+    EE_NOTIFY_TEXTHEIGHTCHANGED,
 
     /// The view area of the EditEngine scrolled
     EE_NOTIFY_TEXTVIEWSCROLLED,

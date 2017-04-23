@@ -58,9 +58,6 @@ bool MWAWPresentationImportFilter::doDetectFormat(librevenge::RVNGInputStream &r
             case MWAWDocument::MWAW_T_CLARISWORKS:
                 rTypeName = "impress_ClarisWorks";
                 break;
-            case MWAWDocument::MWAW_T_RESERVED8:
-                rTypeName = "impress_PowerPoint3";
-                break;
             default:
                 rTypeName = "MWAW_Presentation";
                 break;
@@ -79,14 +76,17 @@ void MWAWPresentationImportFilter::doRegisterHandlers(OdpGenerator &rGenerator)
 
 // XServiceInfo
 OUString SAL_CALL MWAWPresentationImportFilter::getImplementationName()
+throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Impress.MWAWPresentationImportFilter");
 }
 sal_Bool SAL_CALL MWAWPresentationImportFilter::supportsService(const OUString &rServiceName)
+throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 Sequence< OUString > SAL_CALL MWAWPresentationImportFilter::getSupportedServiceNames()
+throw (RuntimeException, std::exception)
 {
     Sequence < OUString > aRet(2);
     OUString *pArray = aRet.getArray();

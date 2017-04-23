@@ -102,8 +102,8 @@ bool SdrTextObj::BegTextEdit(SdrOutliner& rOutl)
     }
     if (bFitToSize)
     {
-        tools::Rectangle aAnchorRect;
-        tools::Rectangle aTextRect;
+        Rectangle aAnchorRect;
+        Rectangle aTextRect;
         TakeTextRect(rOutl, aTextRect, false,
             &aAnchorRect);
         Fraction aFitXKorreg(1,1);
@@ -134,7 +134,7 @@ void ImpUpdateOutlParamsForOverflow(SdrOutliner *pOutl, SdrTextObj *pTextObj)
      // Code from ImpSetTextEditParams
     Size aPaperMin;
     Size aPaperMax;
-    tools::Rectangle aEditArea;
+    Rectangle aEditArea;
     pTextObj->TakeTextEditArea(&aPaperMin,&aPaperMax,&aEditArea,nullptr);
 
     pOutl->SetMinAutoPaperSize(aPaperMin);
@@ -142,11 +142,11 @@ void ImpUpdateOutlParamsForOverflow(SdrOutliner *pOutl, SdrTextObj *pTextObj)
     pOutl->SetPaperSize(Size());
 }
 
-void SdrTextObj::TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Rectangle* pViewInit, tools::Rectangle* pViewMin) const
+void SdrTextObj::TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const
 {
     bool bFitToSize(IsFitToSize());
     Size aPaperMin,aPaperMax;
-    tools::Rectangle aViewInit;
+    Rectangle aViewInit;
     TakeTextAnchorRect(aViewInit);
     if (aGeo.nRotationAngle!=0) {
         Point aCenter(aViewInit.Center());
@@ -198,11 +198,11 @@ void SdrTextObj::TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Recta
 
             bool bInEditMode = IsInEditMode();
 
-            if (!bInEditMode && (eAniKind==SdrTextAniKind::Scroll || eAniKind==SdrTextAniKind::Alternate || eAniKind==SdrTextAniKind::Slide))
+            if (!bInEditMode && (eAniKind==SDRTEXTANI_SCROLL || eAniKind==SDRTEXTANI_ALTERNATE || eAniKind==SDRTEXTANI_SLIDE))
             {
                 // ticker text uses an unlimited paper size
-                if (eAniDirection==SdrTextAniDirection::Left || eAniDirection==SdrTextAniDirection::Right) nMaxWdt=1000000;
-                if (eAniDirection==SdrTextAniDirection::Up || eAniDirection==SdrTextAniDirection::Down) nMaxHgt=1000000;
+                if (eAniDirection==SDRTEXTANI_LEFT || eAniDirection==SDRTEXTANI_RIGHT) nMaxWdt=1000000;
+                if (eAniDirection==SDRTEXTANI_UP || eAniDirection==SDRTEXTANI_DOWN) nMaxHgt=1000000;
             }
 
             bool bChainedFrame = IsChainable();
@@ -383,14 +383,14 @@ void SdrTextObj::ImpSetTextEditParams() const
         if (bUpdMerk) pEdtOutl->SetUpdateMode(false);
         Size aPaperMin;
         Size aPaperMax;
-        tools::Rectangle aEditArea;
+        Rectangle aEditArea;
         TakeTextEditArea(&aPaperMin,&aPaperMax,&aEditArea,nullptr);
         bool bContourFrame=IsContourTextFrame();
         pEdtOutl->SetMinAutoPaperSize(aPaperMin);
         pEdtOutl->SetMaxAutoPaperSize(aPaperMax);
         pEdtOutl->SetPaperSize(Size());
         if (bContourFrame) {
-            tools::Rectangle aAnchorRect;
+            Rectangle aAnchorRect;
             TakeTextAnchorRect(aAnchorRect);
             ImpSetContourPolygon(*pEdtOutl,aAnchorRect, true);
         }

@@ -40,6 +40,7 @@ ChartSidebarSelectionListener::~ChartSidebarSelectionListener()
 }
 
 void ChartSidebarSelectionListener::selectionChanged(const css::lang::EventObject& rEvent)
+        throw (::css::uno::RuntimeException, ::std::exception)
 {
     bool bCorrectObjectSelected = false;
 
@@ -65,6 +66,7 @@ void ChartSidebarSelectionListener::selectionChanged(const css::lang::EventObjec
 }
 
 void ChartSidebarSelectionListener::disposing(const css::lang::EventObject& /*rEvent*/)
+        throw (::css::uno::RuntimeException, ::std::exception)
 {
     mpParent->SelectionInvalid();
 }

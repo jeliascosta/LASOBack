@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "StdAfx2.h"
+#include "stdafx2.h"
 
 HRESULT ExecuteFunc( IDispatch* idispUnoObject,
                      OLECHAR const * sFuncName,

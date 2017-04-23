@@ -36,10 +36,10 @@ class AccDescendantManagerEventListener: public AccComponentEventListener
 
 public:
     AccDescendantManagerEventListener(css::accessibility::XAccessible* pAcc, AccObjectManagerAgent* Agent);
-    virtual ~AccDescendantManagerEventListener() override;
+    virtual ~AccDescendantManagerEventListener();
 
     // XAccessibleEventListener
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException);
 
     //for selection changed event
     virtual void HandleSelectionChangedEvent(

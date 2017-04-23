@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 // DVO: always use standard headers:
 #include <istream>
@@ -31,8 +32,6 @@ using namespace std;
 #include <sal/types.h>
 #include <sal/macros.h>
 
-#include <rtl/character.hxx>
-
 /* @Man: change the hwp formula to LaTeX */
 #ifdef _WIN32
 # define ENDL  "\r\n"
@@ -40,21 +39,14 @@ using namespace std;
 # define ENDL  "\n"
 #endif
 
+#define WS  " \t\r\n\v\f"
+
 #define EQ_CASE 0x01    // case sensitive cmd
 #define EQ_ENV  0x02    // equiv to latex environment
 #define EQ_ATOP 0x04    // must revert order
 
-static bool IS_WS(std::istream::int_type ch) {
-    return ch != std::istream::traits_type::eof()
-        && rtl::isAsciiWhiteSpace(
-            static_cast<unsigned char>(
-                std::istream::traits_type::to_char_type(ch)));
-}
-
-static bool IS_BINARY(std::istream::int_type ch) {
-    return ch != std::istream::traits_type::eof()
-        && strchr("+-<=>", std::istream::traits_type::to_char_type(ch));
-}
+#define IS_WS(ch)   (strchr(WS, ch))
+#define IS_BINARY(ch)   (strchr("+-<=>", ch))
 
 #ifdef _WIN32
 #define STRICMP stricmp
@@ -424,16 +416,15 @@ void make_keyword( char *keyword, const char *token)
     memcpy(keyword, token, len);
     keyword[len] = 0;
 
-    if( (token[0] & 0x80) || rtl::isAsciiLowerCase(static_cast<unsigned char>(token[0])) || strlen(token) < 2 )
+    if( (token[0] & 0x80) || islower(token[0]) || strlen(token) < 2 )
         return;
 
-    bool capital = rtl::isAsciiUpperCase(
-        static_cast<unsigned char>(keyword[1]));
+    int capital = isupper(keyword[1]);
     for( ptr = keyword + 2; *ptr && result; ptr++ )
     {
         if( (*ptr & 0x80) ||
-            (!capital && rtl::isAsciiUpperCase(static_cast<unsigned char>(*ptr))) ||
-            (capital && rtl::isAsciiLowerCase(static_cast<unsigned char>(*ptr))) )
+            (!capital && isupper(*ptr)) ||
+            (capital && islower(*ptr)) )
         {
             result = false;
         }
@@ -444,9 +435,8 @@ void make_keyword( char *keyword, const char *token)
         ptr = keyword;
         while( *ptr )
         {
-            if( rtl::isAsciiUpperCase(static_cast<unsigned char>(*ptr)) )
-                *ptr = sal::static_int_cast<char>(
-                    rtl::toAsciiLowerCase(static_cast<unsigned char>(*ptr)));
+            if( isupper(*ptr) )
+                *ptr = sal::static_int_cast<char>(tolower(*ptr));
             ptr++;
         }
     }
@@ -485,7 +475,7 @@ void push_token(MzString &white, MzString &token, istream *strm)
  * alphabet string, sigle character */
 static int next_token(MzString &white, MzString &token, istream *strm)
 {
-  std::istream::int_type ch = 0;
+  int  ch = 0;
 
   if( stk->state(strm) ) {
     white = stk->white;
@@ -497,7 +487,7 @@ static int next_token(MzString &white, MzString &token, istream *strm)
 
   token = nullptr;
   white = nullptr;
-  if( !strm->good() || (ch = strm->get()) == std::istream::traits_type::eof() )
+  if( !strm->good() || (ch = strm->get()) == EOF )
     return 0;
 
   // read preceding ws
@@ -506,9 +496,7 @@ static int next_token(MzString &white, MzString &token, istream *strm)
     while( IS_WS(ch = strm->get()) );
   }
 
-  if( ch == '\\' || ch & 0x80
-      || (ch != std::istream::traits_type::eof() && rtl::isAsciiAlpha(ch)) )
-  {
+  if( ch == '\\' || ch & 0x80 || isalpha(ch) ) {
     if( ch == '\\' ) {
       token << (char) ch;
       ch = strm->get();
@@ -516,9 +504,8 @@ static int next_token(MzString &white, MzString &token, istream *strm)
     do {
       token << (char) ch;
       ch = strm->get();
-    } while( ch != std::istream::traits_type::eof()
-             && (ch & 0x80 || rtl::isAsciiAlpha(ch)) ) ;
-    strm->putback(static_cast<char>(ch));
+    } while( ch != EOF && (ch & 0x80 || isalpha(ch)) ) ;
+    strm->putback(sal::static_int_cast<char>(ch));
     /* special treatment of sub, sub, over, atop
        The reason for this is that affect next_state().
      */
@@ -539,14 +526,12 @@ static int next_token(MzString &white, MzString &token, istream *strm)
   else if( IS_BINARY(ch) ) {
     do token << (char) ch;
     while( IS_BINARY(ch = strm->get()) );
-    strm->putback(static_cast<char>(ch));
+    strm->putback(sal::static_int_cast<char>(ch));
   }
-  else if( ch != std::istream::traits_type::eof() && rtl::isAsciiDigit(ch) ) {
-    do {
-        token << (char) ch;
-        ch = strm->get();
-    } while( ch != std::istream::traits_type::eof() && rtl::isAsciiDigit(ch) );
-    strm->putback(static_cast<char>(ch));
+  else if( isdigit(ch) ) {
+    do token << (char) ch;
+    while( isdigit(ch = strm->get()) );
+    strm->putback(sal::static_int_cast<char>(ch));
   }
   else
     token << (char) ch;
@@ -554,20 +539,20 @@ static int next_token(MzString &white, MzString &token, istream *strm)
   return token.length();
 }
 
-static std::istream::int_type read_white_space(MzString& outs, istream *strm)
+static int read_white_space(MzString& outs, istream *strm)
 {
-  std::istream::int_type result;
+  int   result;
 
   if( stk->state(strm) ) {
     outs << stk->white;
     stk->white = nullptr;
-    result = std::istream::traits_type::to_int_type(stk->token[0]);
+    result = stk->token[0];
   }
   else {
-    std::istream::int_type ch;
+    int ch;
     while( IS_WS(ch = strm->get()) )
       outs << (char )ch;
-    strm->putback(static_cast<char>(ch));
+    strm->putback(sal::static_int_cast<char>(ch));
     result = ch;
   }
   return result;
@@ -629,7 +614,7 @@ static int eq_word(MzString& outs, istream *strm, int status)
       if( nullptr != (eq = lookup_eqn(keyword)) ) {
         int nargs = eq->nargs;
         while( nargs-- ) {
-          const std::istream::int_type ch = read_white_space(state, strm);
+          const int ch = read_white_space(state, strm);
           if( ch != '{' ) state << '{';
           eq_word(state, strm, script_status);
           if( ch != '{' ) state << '}';
@@ -688,8 +673,7 @@ static char eq2ltxconv(MzString& sstr, istream *strm, const char *sentinel)
 {
   MzString  white, token;
   char      key[256];
-  std::istream::int_type ch;
-  int       result;
+  int       ch, result;
 
   while( 0 != (result = next_token(white, token, strm)) ) {
     if( sentinel && (result == 1) && strchr(sentinel, token[0]) )
@@ -703,10 +687,8 @@ static char eq2ltxconv(MzString& sstr, istream *strm, const char *sentinel)
         key[0] = '\\';
         strcpy(key + 1, eq->key);
       }
-      if( (eq->flag & EQ_CASE)
-          && rtl::isAsciiUpperCase(static_cast<unsigned char>(token[0])) )
-        key[1] = sal::static_int_cast<char>(
-            rtl::toAsciiUpperCase(static_cast<unsigned char>(key[1])));
+      if( (eq->flag & EQ_CASE) && isupper(token[0]) )
+        key[1] = sal::static_int_cast<char>(toupper(key[1]));
       token = key;
     }
 
@@ -734,8 +716,7 @@ static char eq2ltxconv(MzString& sstr, istream *strm, const char *sentinel)
           sstr.replace(pos, ' ');
       }
       sstr << token;
-      while( (ch = strm->get()) != std::istream::traits_type::eof()
-             && IS_WS(ch) )
+      while( (ch = strm->get()) != EOF && IS_WS(ch) )
         sstr << (char)ch;
       if( ch != '{' )
         sstr << "{}";

@@ -154,11 +154,6 @@ interface ImpressEditView : DrawView
         ExecMethod = ExecuteAnnotation;
         StateMethod = GetAnnotationState;
     ]
-    SID_EDIT_POSTIT
-    [
-        ExecMethod = ExecuteAnnotation;
-        StateMethod = GetAnnotationState;
-    ]
     SID_REPLYTO_POSTIT
     [
         ExecMethod = ExecuteAnnotation;

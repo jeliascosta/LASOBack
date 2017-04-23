@@ -50,7 +50,7 @@ class ImpLBSelEng : public FunctionSet
 public:
     ImpLBSelEng( SvImpLBox* pImp, SelectionEngine* pSelEng,
                  SvTreeListBox* pView );
-    virtual ~ImpLBSelEng() override;
+    virtual ~ImpLBSelEng();
     void        BeginDrag() override;
     void        CreateAnchor() override;
     void        DestroyAnchor() override;
@@ -148,9 +148,9 @@ private:
 
     std::vector< short > aContextBmpWidthVector;
 
-    DECL_LINK(EditTimerCall, Timer *, void);
+    DECL_LINK_TYPED(EditTimerCall, Idle *, void);
 
-    DECL_LINK( BeginDragHdl, Timer*, void );
+    DECL_LINK_TYPED( BeginDragHdl, Idle*, void );
 
     void                InvalidateEntriesFrom( long nY ) const;
     bool                IsLineVisible( long nY ) const;
@@ -159,9 +159,9 @@ private:
     void                DrawNet(vcl::RenderContext& rRenderContext);
 
     // ScrollBar-Handler
-    DECL_LINK( ScrollUpDownHdl, ScrollBar*, void );
-    DECL_LINK( ScrollLeftRightHdl, ScrollBar*, void );
-    DECL_LINK( EndScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( ScrollUpDownHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( ScrollLeftRightHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( EndScrollHdl, ScrollBar*, void );
 
     void                SetNodeBmpYOffset( const Image& );
     void                SetNodeBmpTabDistance();
@@ -189,6 +189,9 @@ private:
     // if element at cursor can be expanded in general
     bool IsExpandable() const;
 
+    // if element at cursor can be expanded at this moment
+    bool IsNowExpandable() const;
+
     static  void        implInitDefaultNodeImages();
 
     void UpdateStringSorter();
@@ -197,10 +200,10 @@ private:
     void                UpdateContextBmpWidthMax( SvTreeListEntry* pEntry );
     void                UpdateContextBmpWidthVectorFromMovedEntry( SvTreeListEntry* pEntry );
 
-    void                CalcCellFocusRect( SvTreeListEntry* pEntry, tools::Rectangle& rRect );
+    void                CalcCellFocusRect( SvTreeListEntry* pEntry, Rectangle& rRect );
 
     bool AreChildrenTransient() const { return bAreChildrenTransient; }
-    void         SetChildrenNotTransient() { bAreChildrenTransient = false; }
+    inline void         SetChildrenNotTransient() { bAreChildrenTransient = false; }
 
 protected:
     VclPtr<SvTreeListBox>   pView;
@@ -215,7 +218,7 @@ protected:
     SelectionEngine         aSelEng;
     sal_uLong               nVisibleCount;  // Number of lines in control
     bool                    bInVScrollHdl : 1;
-    bool                    bSimpleTravel : 1; // is true if SelectionMode::Single
+    bool                    bSimpleTravel : 1; // ist true bei SINGLE_SELECTION
     long                    nNextVerVisSize;
     long                    nNodeBmpTabDistance; // typical smaller than 0
 
@@ -224,12 +227,12 @@ protected:
     virtual void        CursorUp();
     virtual void        PageDown( sal_uInt16 nDelta );
     virtual void        PageUp( sal_uInt16 nDelta );
-    // set Thumb to FirstEntryToDraw
+    // setzt Thumb auf FirstEntryToDraw
     virtual void        SyncVerThumb();
     virtual void        AdjustScrollBars( Size& rSize );
     virtual void        InvalidateEntry( long nY ) const;
 
-    tools::Rectangle           GetVisibleArea() const;
+    Rectangle           GetVisibleArea() const;
     void                SetCursor( SvTreeListEntry* pEntry, bool bForceNoSelect = false );
     void                BeginScroll();
     void                EndScroll();
@@ -239,7 +242,7 @@ protected:
     void                ShowVerSBar();
     void                StopUserEvent();
 
-    DECL_LINK( MyUserEvent,  void*, void);
+    DECL_LINK_TYPED( MyUserEvent,  void*, void);
 
 public:
     SvImpLBox( SvTreeListBox* pView, SvTreeList*, WinBits nWinStyle );
@@ -262,7 +265,7 @@ public:
     void                CollapsingEntry( SvTreeListEntry* pEntry );
     void                EntrySelected( SvTreeListEntry* pEntry, bool bSelect );
 
-    virtual void        Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+    virtual void        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
     void                MouseButtonDown( const MouseEvent& );
     void                MouseButtonUp( const MouseEvent& );
     void                MouseMove( const MouseEvent&);
@@ -270,10 +273,10 @@ public:
     void                Resize();
     void                GetFocus();
     void                LoseFocus();
-    virtual void        UpdateAll( bool bInvalidateCompleteView );
+    virtual void        UpdateAll( bool bInvalidateCompleteView= true );
     void                SetEntryHeight( short nHeight );
     void                InvalidateEntry( SvTreeListEntry* );
-    void                RecalcFocusRect();
+    virtual void        RecalcFocusRect();
 
     void SelectEntry( SvTreeListEntry* pEntry, bool bSelect );
     void                SetDragDropMode( DragDropMode eDDMode );
@@ -326,16 +329,16 @@ public:
     void EnableAsyncDrag( bool b ) { bAsyncBeginDrag = b; }
     void SetUpdateMode( bool bMode );
     bool GetUpdateMode() const { return bUpdateMode; }
-    tools::Rectangle           GetClipRegionRect() const;
+    Rectangle           GetClipRegionRect() const;
     bool HasHorScrollBar() const { return aHorSBar->IsVisible(); }
     void                ShowFocusRect( const SvTreeListEntry* pEntry );
-    void                CallEventListeners( VclEventId nEvent, void* pData = nullptr );
+    void                CallEventListeners( sal_uLong nEvent, void* pData = nullptr );
 
     /** Enables, that one cell of a tablistbox entry can be focused */
     bool IsCellFocusEnabled() const { return bIsCellFocusEnabled; }
-    void         EnableCellFocus() { bIsCellFocusEnabled = true; }
+    inline void         EnableCellFocus() { bIsCellFocusEnabled = true; }
     bool                SetCurrentTabPos( sal_uInt16 _nNewPos );
-    sal_uInt16       GetCurrentTabPos() const { return nCurTabPos; }
+    inline sal_uInt16       GetCurrentTabPos() const { return nCurTabPos; }
 
     bool                IsSelectable( const SvTreeListEntry* pEntry );
 };

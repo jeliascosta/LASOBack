@@ -25,34 +25,64 @@
 #include <vcl/bitmap.hxx>
 #include <vcl/image.hxx>
 #include <tools/rc.hxx>
-#include <tools/resary.hxx>
 #include <rsc/rscsfx.hxx>
 #include <vector>
 
-struct SFX2_DLLPUBLIC SfxFilterTupel
-{
+struct SfxFilterTupel {
     OUString aName;
     sal_uInt16 nFlags;
 };
-typedef std::vector<SfxFilterTupel> SfxStyleFilter;
+typedef ::std::vector< SfxFilterTupel* > SfxStyleFilter;
 
-class SFX2_DLLPUBLIC SfxStyleFamilyItem
+// CLASS -----------------------------------------------------------------
+
+class SfxStyleFamilyItem: public Resource
 {
-    SfxStyleFamily  nFamily;
-    OUString        aText;
     Image           aImage;
+    Bitmap          aBitmap;
+    OUString        aText;
+    OUString        aHelpText;
+    SfxStyleFamily  nFamily;
     SfxStyleFilter  aFilterList;
 
 public:
-    SfxStyleFamilyItem(SfxStyleFamily nFamily, const OUString &rName, const Image& rImage, const ResId &rStringArray);
+                    SfxStyleFamilyItem( const ResId &rId );
+                    ~SfxStyleFamilyItem();
 
     const OUString& GetText() const { return aText; }
     SfxStyleFamily  GetFamily() const { return nFamily; }
     const SfxStyleFilter& GetFilterList() const { return aFilterList; }
     const Image&    GetImage() const { return aImage; }
+
+
+    class GrantAccess { friend class SfxStyleFamilies; };
+    void            SetImage( const Image& _rImg ) { aImage = _rImg; }
 };
 
-using SfxStyleFamilies = std::vector<SfxStyleFamilyItem>;
+class SFX2_DLLPUBLIC SfxStyleFamilies: public Resource
+{
+    ::std::vector< SfxStyleFamilyItem* >  aEntryList;
+
+public:
+                        SfxStyleFamilies( const ResId &);
+                        SfxStyleFamilies( ) {};
+                        ~SfxStyleFamilies();
+
+    size_t              size() const
+                        { return aEntryList.size(); }
+
+    const SfxStyleFamilyItem* at(size_t nIdx) const
+                        { return aEntryList.empty() ? nullptr : aEntryList[nIdx]; }
+
+    /** updates the images of all single SfxStyleFamilyItems with new images from the given resource
+
+        <p>The resource must contain a local image lists, with the id being the integer equivalent for the
+        requested bitmap mode, incremented by 1.</p>
+
+        <p>Usually, you will use the same resource which originally constructed the object.</p>
+    */
+    void    updateImages( const ResId& _rId );
+};
 
 #endif
 

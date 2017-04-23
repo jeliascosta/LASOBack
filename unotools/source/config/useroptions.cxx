@@ -47,7 +47,7 @@ using namespace utl;
 using namespace com::sun::star;
 
 // vOptionNames[] -- names of the user option entries
-// The order must correspond to the enum class UserOptToken in useroptions.hxx.
+// The order corresponds to the #define USER_OPT_* list in useroptions.hxx.
 static o3tl::enumarray<UserOptToken, char const *> vOptionNames = {
     "l",                         // UserOptToken::City
     "o",                         // UserOptToken::Company
@@ -76,9 +76,9 @@ public:
     explicit ChangeListener (Impl& rParent): m_rParent(rParent) { }
 
     // XChangesListener
-    virtual void SAL_CALL changesOccurred (util::ChangesEvent const& Event) override;
+    virtual void SAL_CALL changesOccurred (util::ChangesEvent const& Event) throw(uno::RuntimeException, std::exception) override;
     // XEventListener
-    virtual void SAL_CALL disposing (lang::EventObject const& Source) override;
+    virtual void SAL_CALL disposing (lang::EventObject const& Source) throw(uno::RuntimeException, std::exception) override;
 
 private:
     Impl& m_rParent;
@@ -102,13 +102,13 @@ private:
     uno::Reference<beans::XPropertySet>    m_xData;
 };
 
-void SvtUserOptions::ChangeListener::changesOccurred (util::ChangesEvent const& rEvent)
+void SvtUserOptions::ChangeListener::changesOccurred (util::ChangesEvent const& rEvent) throw(uno::RuntimeException, std::exception)
 {
     if (rEvent.Changes.getLength())
         m_rParent.Notify();
 }
 
-void SvtUserOptions::ChangeListener::disposing (lang::EventObject const& rSource)
+void SvtUserOptions::ChangeListener::disposing (lang::EventObject const& rSource) throw(uno::RuntimeException, std::exception)
 {
     try
     {
@@ -217,7 +217,7 @@ OUString SvtUserOptions::Impl::GetFullName () const
 
 void SvtUserOptions::Impl::Notify ()
 {
-    NotifyListeners(ConfigurationHints::NONE);
+    NotifyListeners(0);
 }
 
 bool SvtUserOptions::Impl::IsTokenReadonly (UserOptToken nToken) const
@@ -238,7 +238,7 @@ SvtUserOptions::SvtUserOptions ()
     {
         xImpl.reset(new Impl);
         xSharedImpl = xImpl;
-        ItemHolder1::holdConfigItem(EItem::UserOptions);
+        ItemHolder1::holdConfigItem(E_USEROPTIONS);
     }
     xImpl = xSharedImpl.lock();
     xImpl->AddListener(this);

@@ -48,62 +48,86 @@ class ChartDataWrapper : public MutexContainer, public
     css::lang::XComponent >
 {
 public:
-    explicit ChartDataWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
-    ChartDataWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact
+    explicit ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    ChartDataWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact
         , const css::uno::Reference< css::chart::XChartData >& xNewData );
-    virtual ~ChartDataWrapper() override;
+    virtual ~ChartDataWrapper();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
 protected:
     // ____ XDateCategories ____
-    virtual css::uno::Sequence< double > SAL_CALL getDateCategories() override;
-    virtual void SAL_CALL setDateCategories( const css::uno::Sequence< double >& rDates ) override;
+    virtual css::uno::Sequence< double > SAL_CALL getDateCategories() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDateCategories( const css::uno::Sequence< double >& rDates ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XAnyDescriptionAccess ____
     virtual css::uno::Sequence< css::uno::Sequence< css::uno::Any > > SAL_CALL
-        getAnyRowDescriptions() override;
+        getAnyRowDescriptions() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setAnyRowDescriptions(
-        const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aRowDescriptions ) override;
+        const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aRowDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::uno::Sequence< css::uno::Any > > SAL_CALL
-        getAnyColumnDescriptions() override;
+        getAnyColumnDescriptions() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setAnyColumnDescriptions(
-        const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aColumnDescriptions ) override;
+        const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aColumnDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XComplexDescriptionAccess (base of XAnyDescriptionAccess) ____
     virtual css::uno::Sequence< css::uno::Sequence< OUString > > SAL_CALL
-        getComplexRowDescriptions() override;
+        getComplexRowDescriptions() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setComplexRowDescriptions(
-        const css::uno::Sequence< css::uno::Sequence< OUString > >& aRowDescriptions ) override;
+        const css::uno::Sequence< css::uno::Sequence< OUString > >& aRowDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::uno::Sequence< OUString > > SAL_CALL
-        getComplexColumnDescriptions() override;
+        getComplexColumnDescriptions() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setComplexColumnDescriptions(
-        const css::uno::Sequence< css::uno::Sequence< OUString > >& aColumnDescriptions ) override;
+        const css::uno::Sequence< css::uno::Sequence< OUString > >& aColumnDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XChartDataArray (base of XComplexDescriptionAccess) ____
-    virtual css::uno::Sequence< css::uno::Sequence< double > > SAL_CALL getData() override;
-    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Sequence< double > >& aData ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getRowDescriptions() override;
-    virtual void SAL_CALL setRowDescriptions( const css::uno::Sequence< OUString >& aRowDescriptions ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getColumnDescriptions() override;
-    virtual void SAL_CALL setColumnDescriptions( const css::uno::Sequence< OUString >& aColumnDescriptions ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< double > > SAL_CALL getData()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Sequence< double > >& aData )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getRowDescriptions()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setRowDescriptions( const css::uno::Sequence< OUString >& aRowDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getColumnDescriptions()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setColumnDescriptions( const css::uno::Sequence< OUString >& aColumnDescriptions )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XChartData (base of XChartDataArray) ____
-    virtual void SAL_CALL addChartDataChangeEventListener( const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener ) override;
-    virtual void SAL_CALL removeChartDataChangeEventListener( const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener ) override;
-    virtual double SAL_CALL getNotANumber() override;
-    virtual sal_Bool SAL_CALL isNotANumber( double nNumber ) override;
+    virtual void SAL_CALL addChartDataChangeEventListener( const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeChartDataChangeEventListener( const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual double SAL_CALL getNotANumber()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isNotANumber( double nNumber )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XComponent ____
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener ____
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     void fireChartDataChangeEvent( css::chart::ChartDataChangeEvent& aEvent );
 

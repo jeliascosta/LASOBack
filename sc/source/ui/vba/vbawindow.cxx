@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include <vbahelper/helperdecl.hxx>
-#include "service.hxx"
 #include "vbawindow.hxx"
 #include "vbaworksheets.hxx"
 #include "vbaworksheet.hxx"
@@ -34,7 +33,6 @@
 #include <com/sun/star/awt/XWindow.hpp>
 #include <com/sun/star/awt/XWindow2.hpp>
 #include <com/sun/star/awt/PosSize.hpp>
-#include <basic/sberrors.hxx>
 #include <cppuhelper/implbase.hxx>
 
 #include <docsh.hxx>
@@ -69,17 +67,16 @@ public:
     uno::Reference< frame::XModel > m_xModel;
     Sheets::const_iterator m_it;
 
-    /// @throws uno::RuntimeException
-    SelectedSheetsEnum( const uno::Reference< uno::XComponentContext >& xContext, const Sheets& sheets, const uno::Reference< frame::XModel >& xModel ) :  m_xContext( xContext ), m_sheets( sheets ), m_xModel( xModel )
+    SelectedSheetsEnum( const uno::Reference< uno::XComponentContext >& xContext, const Sheets& sheets, const uno::Reference< frame::XModel >& xModel ) throw ( uno::RuntimeException ) :  m_xContext( xContext ), m_sheets( sheets ), m_xModel( xModel )
     {
         m_it = m_sheets.begin();
     }
     // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return m_it != m_sheets.end();
     }
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( !hasMoreElements() )
         {
@@ -128,16 +125,16 @@ public:
     }
 
     //XEnumerationAccess
-    virtual uno::Reference< container::XEnumeration > SAL_CALL createEnumeration(  ) override
+    virtual uno::Reference< container::XEnumeration > SAL_CALL createEnumeration(  ) throw (uno::RuntimeException, std::exception) override
     {
         return new SelectedSheetsEnum( m_xContext, sheets, m_xModel  );
     }
     // XIndexAccess
-    virtual ::sal_Int32 SAL_CALL getCount(  ) override
+    virtual ::sal_Int32 SAL_CALL getCount(  ) throw (uno::RuntimeException, std::exception) override
     {
         return sheets.size();
     }
-    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override
+    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw ( lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( Index < 0
         || static_cast< Sheets::size_type >( Index ) >= sheets.size() )
@@ -147,18 +144,18 @@ public:
     }
 
     //XElementAccess
-    virtual uno::Type SAL_CALL getElementType(  ) override
+    virtual uno::Type SAL_CALL getElementType(  ) throw (uno::RuntimeException, std::exception) override
     {
         return cppu::UnoType<excel::XWorksheet>::get();
     }
 
-    virtual sal_Bool SAL_CALL hasElements(  ) override
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return ( !sheets.empty() );
     }
 
     //XNameAccess
-    virtual uno::Any SAL_CALL getByName( const OUString& aName ) override
+    virtual uno::Any SAL_CALL getByName( const OUString& aName ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         NameIndexHash::const_iterator it = namesToIndices.find( aName );
         if ( it == namesToIndices.end() )
@@ -167,12 +164,12 @@ public:
 
     }
 
-    virtual uno::Sequence< OUString > SAL_CALL getElementNames(  ) override
+    virtual uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (uno::RuntimeException, std::exception) override
     {
         return comphelper::mapKeysToSequence( namesToIndices );
     }
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (uno::RuntimeException, std::exception) override
     {
         NameIndexHash::const_iterator it = namesToIndices.find( aName );
         return (it != namesToIndices.end());
@@ -184,7 +181,7 @@ ScVbaWindow::ScVbaWindow(
         const uno::Reference< XHelperInterface >& xParent,
         const uno::Reference< uno::XComponentContext >& xContext,
         const uno::Reference< frame::XModel >& xModel,
-        const uno::Reference< frame::XController >& xController ) :
+        const uno::Reference< frame::XController >& xController ) throw (uno::RuntimeException) :
     WindowImpl_BASE( xParent, xContext, xModel, xController )
 {
     init();
@@ -192,7 +189,7 @@ ScVbaWindow::ScVbaWindow(
 
 ScVbaWindow::ScVbaWindow(
         const uno::Sequence< uno::Any >& args,
-        const uno::Reference< uno::XComponentContext >& xContext ) :
+        const uno::Reference< uno::XComponentContext >& xContext ) throw (uno::RuntimeException) :
     WindowImpl_BASE( args, xContext )
 {
     init();
@@ -219,25 +216,25 @@ ScVbaWindow::init()
 }
 
 uno::Reference< beans::XPropertySet >
-ScVbaWindow::getControllerProps()
+ScVbaWindow::getControllerProps() throw (uno::RuntimeException)
 {
     return uno::Reference< beans::XPropertySet >( getController(), uno::UNO_QUERY_THROW );
 }
 
 uno::Reference< beans::XPropertySet >
-ScVbaWindow::getFrameProps()
+ScVbaWindow::getFrameProps() throw (uno::RuntimeException)
 {
     return uno::Reference< beans::XPropertySet >( getController()->getFrame(), uno::UNO_QUERY_THROW );
 }
 
 uno::Reference< awt::XDevice >
-ScVbaWindow::getDevice()
+ScVbaWindow::getDevice() throw (uno::RuntimeException)
 {
     return uno::Reference< awt::XDevice >( getWindow(), uno::UNO_QUERY_THROW );
 }
 
 void
-ScVbaWindow::Scroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft, bool bLargeScroll )
+ScVbaWindow::Scroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft, bool bLargeScroll ) throw (uno::RuntimeException)
 {
     if( !m_xPane.is() )
         throw uno::RuntimeException();
@@ -248,19 +245,19 @@ ScVbaWindow::Scroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& T
 }
 
 void SAL_CALL
-ScVbaWindow::SmallScroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft )
+ScVbaWindow::SmallScroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft ) throw (uno::RuntimeException, std::exception)
 {
-    Scroll( Down, Up, ToRight, ToLeft, false );
+    Scroll( Down, Up, ToRight, ToLeft );
 }
 
 void SAL_CALL
-ScVbaWindow::LargeScroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft )
+ScVbaWindow::LargeScroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft ) throw (uno::RuntimeException, std::exception)
 {
     Scroll( Down, Up, ToRight, ToLeft, true );
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::SelectedSheets( const uno::Any& aIndex )
+ScVbaWindow::SelectedSheets( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< container::XEnumerationAccess > xEnumAccess( new SelectedSheetsEnumAccess( mxContext, m_xModel ) );
     // #FIXME needs a workbook as a parent
@@ -274,7 +271,7 @@ ScVbaWindow::SelectedSheets( const uno::Any& aIndex )
 }
 
 void SAL_CALL
-ScVbaWindow::ScrollWorkbookTabs( const uno::Any& /*Sheets*/, const uno::Any& /*Position*/ )
+ScVbaWindow::ScrollWorkbookTabs( const uno::Any& /*Sheets*/, const uno::Any& /*Position*/ ) throw (uno::RuntimeException, std::exception)
 {
 // #TODO #FIXME need some implementation to scroll through the tabs
 // but where is this done?
@@ -294,7 +291,7 @@ ScVbaWindow::ScrollWorkbookTabs( const uno::Any& /*Sheets*/, const uno::Any& /*P
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getCaption()
+ScVbaWindow::getCaption() throw (uno::RuntimeException, std::exception)
 {
     static const char sCrud[] = " - OpenOffice.org Calc";
     static const sal_Int32 nCrudLen = strlen(sCrud);
@@ -310,7 +307,7 @@ ScVbaWindow::getCaption()
         if ( ( nCrudLen + nCrudIndex ) == sTitle.getLength() )
         {
             sTitle = sTitle.copy( 0, nCrudIndex );
-            rtl::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+            uno::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
             OUString sName = workbook->getName();
             // rather bizarre hack to make sure the name behavior
             // is like XL
@@ -321,10 +318,11 @@ ScVbaWindow::getCaption()
 
             if ( !sTitle.equals( sName ) )
             {
+                static const char sDot[] = ".";
                 // starts with title
                 if ( sName.startsWith( sTitle ) )
                     // extension starts immediately after
-                    if ( sName.match( ".", sTitle.getLength() ) )
+                    if ( sName.match( sDot, sTitle.getLength() ) )
                         sTitle = sName;
             }
         }
@@ -333,13 +331,13 @@ ScVbaWindow::getCaption()
 }
 
 void SAL_CALL
-ScVbaWindow::setCaption( const uno::Any& _caption )
+ScVbaWindow::setCaption( const uno::Any& _caption ) throw (uno::RuntimeException, std::exception)
 {
     getFrameProps()->setPropertyValue( SC_UNONAME_TITLE, _caption );
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getScrollRow()
+ScVbaWindow::getScrollRow() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nValue = 0;
     // !! TODO !! get view shell from controller
@@ -354,7 +352,7 @@ ScVbaWindow::getScrollRow()
 }
 
 void SAL_CALL
-ScVbaWindow::setScrollRow( const uno::Any& _scrollrow )
+ScVbaWindow::setScrollRow( const uno::Any& _scrollrow ) throw (uno::RuntimeException, std::exception)
 {
     // !! TODO !! get view shell from controller
     ScTabViewShell* pViewShell = excel::getBestViewShell( m_xModel );
@@ -369,7 +367,7 @@ ScVbaWindow::setScrollRow( const uno::Any& _scrollrow )
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getScrollColumn()
+ScVbaWindow::getScrollColumn() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nValue = 0;
     // !! TODO !! get view shell from controller
@@ -384,7 +382,7 @@ ScVbaWindow::getScrollColumn()
 }
 
 void SAL_CALL
-ScVbaWindow::setScrollColumn( const uno::Any& _scrollcolumn )
+ScVbaWindow::setScrollColumn( const uno::Any& _scrollcolumn ) throw (uno::RuntimeException, std::exception)
 {
     // !! TODO !! get view shell from controller
     ScTabViewShell* pViewShell = excel::getBestViewShell( m_xModel );
@@ -399,7 +397,7 @@ ScVbaWindow::setScrollColumn( const uno::Any& _scrollcolumn )
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getWindowState()
+ScVbaWindow::getWindowState() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nwindowState = xlNormal;
     // !! TODO !! get view shell from controller
@@ -417,7 +415,7 @@ ScVbaWindow::getWindowState()
 }
 
 void SAL_CALL
-ScVbaWindow::setWindowState( const uno::Any& _windowstate )
+ScVbaWindow::setWindowState( const uno::Any& _windowstate ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nwindowState = xlMaximized;
     _windowstate >>= nwindowState;
@@ -439,43 +437,43 @@ ScVbaWindow::setWindowState( const uno::Any& _windowstate )
 }
 
 void
-ScVbaWindow::Activate()
+ScVbaWindow::Activate() throw (css::uno::RuntimeException, std::exception)
 {
-    rtl::Reference<ScVbaWorkbook> workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+    uno::Reference<ScVbaWorkbook> workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
 
     workbook->Activate();
 }
 
 void
-ScVbaWindow::Close( const uno::Any& SaveChanges, const uno::Any& FileName, const uno::Any& RouteWorkBook )
+ScVbaWindow::Close( const uno::Any& SaveChanges, const uno::Any& FileName, const uno::Any& RouteWorkBook ) throw (uno::RuntimeException, std::exception)
 {
-    rtl::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+    uno::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
     workbook->Close(SaveChanges, FileName, RouteWorkBook );
 }
 
 uno::Reference< excel::XPane > SAL_CALL
-ScVbaWindow::ActivePane()
+ScVbaWindow::ActivePane() throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewPane > xViewPane( getController(), uno::UNO_QUERY_THROW );
     return new ScVbaPane( this, mxContext, m_xModel, xViewPane );
 }
 
 uno::Reference< excel::XRange > SAL_CALL
-ScVbaWindow::ActiveCell(  )
+ScVbaWindow::ActiveCell(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< excel::XApplication > xApplication( Application(), uno::UNO_QUERY_THROW );
     return xApplication->getActiveCell();
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::Selection(  )
+ScVbaWindow::Selection(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< excel::XApplication > xApplication( Application(), uno::UNO_QUERY_THROW );
     return xApplication->getSelection();
 }
 
 uno::Reference< excel::XRange > SAL_CALL
-ScVbaWindow::RangeSelection()
+ScVbaWindow::RangeSelection() throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     /*  TODO / FIXME: According to documentation, this method returns the range
         selection even if shapes are selected. */
@@ -483,7 +481,7 @@ ScVbaWindow::RangeSelection()
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayGridlines()
+ScVbaWindow::getDisplayGridlines() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_SHOWGRID );
     bool bGrid = true;
@@ -492,14 +490,14 @@ ScVbaWindow::getDisplayGridlines()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayGridlines( sal_Bool _displaygridlines )
+ScVbaWindow::setDisplayGridlines( sal_Bool _displaygridlines ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_SHOWGRID );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _displaygridlines ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayHeadings()
+ScVbaWindow::getDisplayHeadings() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_COLROWHDR );
     bool bHeading = true;
@@ -508,14 +506,14 @@ ScVbaWindow::getDisplayHeadings()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayHeadings( sal_Bool _bDisplayHeadings )
+ScVbaWindow::setDisplayHeadings( sal_Bool _bDisplayHeadings ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_COLROWHDR );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _bDisplayHeadings ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayHorizontalScrollBar()
+ScVbaWindow::getDisplayHorizontalScrollBar() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_HORSCROLL );
     bool bHorizontalScrollBar = true;
@@ -524,14 +522,14 @@ ScVbaWindow::getDisplayHorizontalScrollBar()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayHorizontalScrollBar( sal_Bool _bDisplayHorizontalScrollBar )
+ScVbaWindow::setDisplayHorizontalScrollBar( sal_Bool _bDisplayHorizontalScrollBar ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_HORSCROLL );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _bDisplayHorizontalScrollBar ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayOutline()
+ScVbaWindow::getDisplayOutline() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_OUTLSYMB );
     bool bOutline = true;
@@ -540,14 +538,14 @@ ScVbaWindow::getDisplayOutline()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayOutline( sal_Bool _bDisplayOutline )
+ScVbaWindow::setDisplayOutline( sal_Bool _bDisplayOutline ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_OUTLSYMB );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _bDisplayOutline ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayVerticalScrollBar()
+ScVbaWindow::getDisplayVerticalScrollBar() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_VERTSCROLL );
     bool bVerticalScrollBar = true;
@@ -556,14 +554,14 @@ ScVbaWindow::getDisplayVerticalScrollBar()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayVerticalScrollBar( sal_Bool _bDisplayVerticalScrollBar )
+ScVbaWindow::setDisplayVerticalScrollBar( sal_Bool _bDisplayVerticalScrollBar ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_VERTSCROLL );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _bDisplayVerticalScrollBar ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getDisplayWorkbookTabs()
+ScVbaWindow::getDisplayWorkbookTabs() throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_SHEETTABS );
     bool bWorkbookTabs = true;
@@ -572,21 +570,21 @@ ScVbaWindow::getDisplayWorkbookTabs()
 }
 
 void SAL_CALL
-ScVbaWindow::setDisplayWorkbookTabs( sal_Bool _bDisplayWorkbookTabs )
+ScVbaWindow::setDisplayWorkbookTabs( sal_Bool _bDisplayWorkbookTabs ) throw (uno::RuntimeException, std::exception)
 {
     OUString sName( SC_UNO_SHEETTABS );
     getControllerProps()->setPropertyValue( sName, uno::makeAny( _bDisplayWorkbookTabs ));
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getFreezePanes()
+ScVbaWindow::getFreezePanes() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewFreezable > xViewFreezable( getController(), uno::UNO_QUERY_THROW );
     return xViewFreezable->hasFrozenPanes();
 }
 
 void SAL_CALL
-ScVbaWindow::setFreezePanes( sal_Bool _bFreezePanes )
+ScVbaWindow::setFreezePanes( sal_Bool _bFreezePanes ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewPane > xViewPane( getController(), uno::UNO_QUERY_THROW );
     uno::Reference< sheet::XViewSplitable > xViewSplitable( xViewPane, uno::UNO_QUERY_THROW );
@@ -617,14 +615,14 @@ ScVbaWindow::setFreezePanes( sal_Bool _bFreezePanes )
 }
 
 sal_Bool SAL_CALL
-ScVbaWindow::getSplit()
+ScVbaWindow::getSplit() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     return xViewSplitable->getIsWindowSplit();
 }
 
 void SAL_CALL
-ScVbaWindow::setSplit( sal_Bool _bSplit )
+ScVbaWindow::setSplit( sal_Bool _bSplit ) throw (uno::RuntimeException, std::exception)
 {
     if( !_bSplit )
     {
@@ -642,14 +640,14 @@ ScVbaWindow::setSplit( sal_Bool _bSplit )
 }
 
 sal_Int32 SAL_CALL
-ScVbaWindow::getSplitColumn()
+ScVbaWindow::getSplitColumn() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     return xViewSplitable->getSplitColumn();
 }
 
 void SAL_CALL
-ScVbaWindow::setSplitColumn( sal_Int32 _splitcolumn )
+ScVbaWindow::setSplitColumn( sal_Int32 _splitcolumn ) throw (uno::RuntimeException, std::exception)
 {
     if( getSplitColumn() != _splitcolumn )
     {
@@ -660,14 +658,14 @@ ScVbaWindow::setSplitColumn( sal_Int32 _splitcolumn )
 }
 
 double SAL_CALL
-ScVbaWindow::getSplitHorizontal()
+ScVbaWindow::getSplitHorizontal() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     return PixelsToPoints( getDevice(), xViewSplitable->getSplitHorizontal(), true );
 }
 
 void SAL_CALL
-ScVbaWindow::setSplitHorizontal( double _splithorizontal )
+ScVbaWindow::setSplitHorizontal( double _splithorizontal ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     double fHoriPixels = PointsToPixels( getDevice(), _splithorizontal, true );
@@ -675,14 +673,14 @@ ScVbaWindow::setSplitHorizontal( double _splithorizontal )
 }
 
 sal_Int32 SAL_CALL
-ScVbaWindow::getSplitRow()
+ScVbaWindow::getSplitRow() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     return xViewSplitable->getSplitRow();
 }
 
 void SAL_CALL
-ScVbaWindow::setSplitRow( sal_Int32 _splitrow )
+ScVbaWindow::setSplitRow( sal_Int32 _splitrow ) throw (uno::RuntimeException, std::exception)
 {
     if( getSplitRow() != _splitrow )
     {
@@ -693,14 +691,14 @@ ScVbaWindow::setSplitRow( sal_Int32 _splitrow )
 }
 
 double SAL_CALL
-ScVbaWindow::getSplitVertical()
+ScVbaWindow::getSplitVertical() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     return PixelsToPoints( getDevice(), xViewSplitable->getSplitVertical(), false );
 }
 
 void SAL_CALL
-ScVbaWindow::setSplitVertical(double _splitvertical )
+ScVbaWindow::setSplitVertical(double _splitvertical ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XViewSplitable > xViewSplitable( getController(), uno::UNO_QUERY_THROW );
     double fVertiPixels = PointsToPixels( getDevice(), _splitvertical, false );
@@ -734,7 +732,7 @@ void ScVbaWindow::SplitAtDefinedPosition( sal_Int32 nColumns, sal_Int32 nRows )
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getZoom()
+ScVbaWindow::getZoom() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< beans::XPropertySet > xProps = getControllerProps();
     OUString sName( SC_UNO_ZOOMTYPE );
@@ -755,6 +753,7 @@ ScVbaWindow::getZoom()
 }
 
 void SAL_CALL ScVbaWindow::setZoom(const uno::Any& _zoom)
+    throw (uno::RuntimeException, std::exception)
 {
     sal_Int16 nZoom = 100;
     _zoom >>= nZoom;
@@ -769,14 +768,14 @@ void SAL_CALL ScVbaWindow::setZoom(const uno::Any& _zoom)
 }
 
 uno::Reference< excel::XWorksheet > SAL_CALL
-ScVbaWindow::ActiveSheet(  )
+ScVbaWindow::ActiveSheet(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< excel::XApplication > xApplication( Application(), uno::UNO_QUERY_THROW );
     return xApplication->getActiveSheet();
 }
 
 uno::Any SAL_CALL
-ScVbaWindow::getView()
+ScVbaWindow::getView() throw (uno::RuntimeException, std::exception)
 {
     bool bPageBreak = false;
     sal_Int32 nWindowView = excel::XlWindowView::xlNormalView;
@@ -794,7 +793,7 @@ ScVbaWindow::getView()
 }
 
 void SAL_CALL
-ScVbaWindow::setView( const uno::Any& _view)
+ScVbaWindow::setView( const uno::Any& _view) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nWindowView = excel::XlWindowView::xlNormalView;
     _view >>= nWindowView;
@@ -817,7 +816,7 @@ ScVbaWindow::setView( const uno::Any& _view)
 }
 
 uno::Reference< excel::XRange > SAL_CALL
-ScVbaWindow::getVisibleRange()
+ScVbaWindow::getVisibleRange() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< container::XIndexAccess > xPanesIA( getController(), uno::UNO_QUERY_THROW );
     uno::Reference< sheet::XViewPane > xTopLeftPane( xPanesIA->getByIndex( 0 ), uno::UNO_QUERY_THROW );
@@ -826,7 +825,7 @@ ScVbaWindow::getVisibleRange()
 }
 
 sal_Int32 SAL_CALL
-ScVbaWindow::PointsToScreenPixelsX(sal_Int32 _points)
+ScVbaWindow::PointsToScreenPixelsX(sal_Int32 _points) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nHundredthsofOneMillimeters = Millimeter::getInHundredthsOfOneMillimeter( _points );
     double fConvertFactor = (getDevice()->getInfo().PixelPerMeterX/100000);
@@ -834,7 +833,7 @@ ScVbaWindow::PointsToScreenPixelsX(sal_Int32 _points)
 }
 
 sal_Int32 SAL_CALL
-ScVbaWindow::PointsToScreenPixelsY(sal_Int32 _points)
+ScVbaWindow::PointsToScreenPixelsY(sal_Int32 _points) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nHundredthsofOneMillimeters = Millimeter::getInHundredthsOfOneMillimeter( _points );
     double fConvertFactor = (getDevice()->getInfo().PixelPerMeterY/100000);
@@ -842,7 +841,7 @@ ScVbaWindow::PointsToScreenPixelsY(sal_Int32 _points)
 }
 
 void SAL_CALL
-ScVbaWindow::PrintOut( const css::uno::Any& From, const css::uno::Any&To, const css::uno::Any& Copies, const css::uno::Any& Preview, const css::uno::Any& ActivePrinter, const css::uno::Any& PrintToFile, const css::uno::Any& Collate, const css::uno::Any& PrToFileName )
+ScVbaWindow::PrintOut( const css::uno::Any& From, const css::uno::Any&To, const css::uno::Any& Copies, const css::uno::Any& Preview, const css::uno::Any& ActivePrinter, const css::uno::Any& PrintToFile, const css::uno::Any& Collate, const css::uno::Any& PrToFileName ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     // need test, print current active sheet
     // !! TODO !! get view shell from controller
@@ -850,26 +849,26 @@ ScVbaWindow::PrintOut( const css::uno::Any& From, const css::uno::Any&To, const 
 }
 
 void SAL_CALL
-ScVbaWindow::PrintPreview( const css::uno::Any& EnableChanges )
+ScVbaWindow::PrintPreview( const css::uno::Any& EnableChanges ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     // need test, print preview current active sheet
     // !! TODO !! get view shell from controller
     PrintPreviewHelper( EnableChanges, excel::getBestViewShell( m_xModel ) );
 }
 
-double SAL_CALL ScVbaWindow::getTabRatio()
+double SAL_CALL ScVbaWindow::getTabRatio() throw (css::uno::RuntimeException, std::exception)
 {
     ScTabViewShell* pViewShell = excel::getBestViewShell( m_xModel );
     if ( pViewShell && pViewShell->GetViewData().GetView() )
     {
-        double fRatio = ScTabView::GetRelTabBarWidth();
+        double fRatio = pViewShell->GetViewData().GetView()->GetRelTabBarWidth();
         if ( fRatio >= 0.0 && fRatio <= 1.0 )
             return fRatio;
     }
     return 0.0;
 }
 
-void SAL_CALL ScVbaWindow::setTabRatio( double fRatio )
+void SAL_CALL ScVbaWindow::setTabRatio( double fRatio ) throw (css::uno::RuntimeException, std::exception)
 {
     ScTabViewShell* pViewShell = excel::getBestViewShell( m_xModel );
     if ( pViewShell && pViewShell->GetViewData().GetView() )
@@ -899,8 +898,8 @@ ScVbaWindow::getServiceNames()
 namespace window
 {
 namespace sdecl = comphelper::service_decl;
-sdecl::vba_service_class_<ScVbaWindow, sdecl::with_args<true> > const serviceImpl;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::vba_service_class_<ScVbaWindow, sdecl::with_args<true> > serviceImpl;
+extern sdecl::ServiceDecl const serviceDecl(
     serviceImpl,
     "ScVbaWindow",
     "ooo.vba.excel.Window" );

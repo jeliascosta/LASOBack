@@ -47,11 +47,19 @@ using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Any;
 using ::com::sun::star::xml::sax::XAttributeList;
 
+const sal_Char sAPI_CreateFromLabels[] = "CreateFromLabels";
+const sal_Char sAPI_LabelCategory[] = "LabelCategory";
+const sal_Char sAPI_LabelDisplayType[] = "LabelDisplayType";
+
+
 XMLIndexTableSourceContext::XMLIndexTableSourceContext(
     SvXMLImport& rImport, sal_uInt16 nPrfx,
     const OUString& rLocalName, Reference<XPropertySet> & rPropSet)
     : XMLIndexSourceBaseContext(rImport, nPrfx, rLocalName,
                                   rPropSet, false)
+    , sCreateFromLabels(sAPI_CreateFromLabels)
+    , sLabelCategory(sAPI_LabelCategory)
+    , sLabelDisplayType(sAPI_LabelDisplayType)
     , nDisplayFormat(0)
     , bSequenceOK(false)
     , bDisplayFormatOK(false)
@@ -63,7 +71,7 @@ XMLIndexTableSourceContext::~XMLIndexTableSourceContext()
 {
 }
 
-static SvXMLEnumMapEntry<sal_uInt16> const lcl_aReferenceTypeTokenMap[] =
+static SvXMLEnumMapEntry const lcl_aReferenceTypeTokenMap[] =
 {
 
     { XML_TEXT,                 ReferenceFieldPart::TEXT },
@@ -118,16 +126,16 @@ void XMLIndexTableSourceContext::ProcessAttribute(
 
 void XMLIndexTableSourceContext::EndElement()
 {
-    rIndexPropertySet->setPropertyValue("CreateFromLabels", css::uno::Any(bUseCaption));
+    rIndexPropertySet->setPropertyValue(sCreateFromLabels, css::uno::Any(bUseCaption));
 
     if (bSequenceOK)
     {
-        rIndexPropertySet->setPropertyValue("LabelCategory", css::uno::Any(sSequence));
+        rIndexPropertySet->setPropertyValue(sLabelCategory, css::uno::Any(sSequence));
     }
 
     if (bDisplayFormatOK)
     {
-        rIndexPropertySet->setPropertyValue("LabelDisplayType", css::uno::Any(nDisplayFormat));
+        rIndexPropertySet->setPropertyValue(sLabelDisplayType, css::uno::Any(nDisplayFormat));
     }
 
     XMLIndexSourceBaseContext::EndElement();

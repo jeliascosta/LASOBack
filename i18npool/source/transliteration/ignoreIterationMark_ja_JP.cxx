@@ -27,7 +27,7 @@ using namespace com::sun::star::lang;
 
 namespace com { namespace sun { namespace star { namespace i18n {
 
-OneToOneMappingTable_t const ignoreIterationMark_ja_JP_mappingTable[] = {
+OneToOneMappingTable_t ignoreIterationMark_ja_JP_mappingTable[] = {
     { 0x3046, 0x3094 },  // HIRAGANA LETTER U --> HIRAGANA LETTER VU
     { 0x304B, 0x304C },  // HIRAGANA LETTER KA --> HIRAGANA LETTER GA
     { 0x304D, 0x304E },  // HIRAGANA LETTER KI --> HIRAGANA LETTER GI
@@ -81,6 +81,7 @@ OneToOneMappingTable_t const ignoreIterationMark_ja_JP_mappingTable[] = {
 
 OUString SAL_CALL
 ignoreIterationMark_ja_JP::folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
+  throw(RuntimeException, std::exception)
 {
     oneToOneMapping aTable(ignoreIterationMark_ja_JP_mappingTable, sizeof(ignoreIterationMark_ja_JP_mappingTable));
 

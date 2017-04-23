@@ -92,39 +92,39 @@ void SfxObjectShell::OnDocumentPrinterChanged( Printer* /*pNewPrinter*/ )
 }
 
 
-tools::Rectangle SfxObjectShell::GetVisArea( sal_uInt16 nAspect ) const
+Rectangle SfxObjectShell::GetVisArea( sal_uInt16 nAspect ) const
 {
     if( nAspect == ASPECT_CONTENT )
-        return pImpl->m_aVisArea;
+        return pImp->m_aVisArea;
     else if( nAspect == ASPECT_THUMBNAIL )
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         aRect.SetSize( OutputDevice::LogicToLogic( Size( 5000, 5000 ),
-                                         MapUnit::Map100thMM, GetMapUnit() ) );
+                                         MAP_100TH_MM, GetMapUnit() ) );
         return aRect;
     }
-    return tools::Rectangle();
+    return Rectangle();
 }
 
 
-const tools::Rectangle& SfxObjectShell::GetVisArea() const
+const Rectangle& SfxObjectShell::GetVisArea() const
 {
-    pImpl->m_aVisArea = GetVisArea( ASPECT_CONTENT );
-    return pImpl->m_aVisArea;
+    pImp->m_aVisArea = GetVisArea( ASPECT_CONTENT );
+    return pImp->m_aVisArea;
 }
 
 
-void SfxObjectShell::SetVisArea( const tools::Rectangle & rVisArea )
+void SfxObjectShell::SetVisArea( const Rectangle & rVisArea )
 {
-    if( pImpl->m_aVisArea != rVisArea )
+    if( pImp->m_aVisArea != rVisArea )
     {
-        pImpl->m_aVisArea = rVisArea;
+        pImp->m_aVisArea = rVisArea;
         if ( GetCreateMode() == SfxObjectCreateMode::EMBEDDED )
         {
             if ( IsEnableSetModified() )
                 SetModified();
 
-            SfxGetpApp()->NotifyEvent(SfxEventHint( SfxEventHintId::VisAreaChanged, GlobalEventConfig::GetEventName(GlobalEventId::VISAREACHANGED), this));
+            SfxGetpApp()->NotifyEvent(SfxEventHint( SFX_EVENT_VISAREACHANGED, GlobalEventConfig::GetEventName(GlobalEventId::VISAREACHANGED), this));
         }
     }
 }
@@ -132,7 +132,7 @@ void SfxObjectShell::SetVisArea( const tools::Rectangle & rVisArea )
 
 void SfxObjectShell::SetVisAreaSize( const Size & rVisSize )
 {
-    SetVisArea( tools::Rectangle( GetVisArea().TopLeft(), rVisSize ) );
+    SetVisArea( Rectangle( GetVisArea().TopLeft(), rVisSize ) );
 }
 
 
@@ -144,13 +144,13 @@ sal_uIntPtr SfxObjectShell::GetMiscStatus() const
 
 MapUnit SfxObjectShell::GetMapUnit() const
 {
-    return pImpl->m_nMapUnit;
+    return pImp->m_nMapUnit;
 }
 
 
 void SfxObjectShell::SetMapUnit( MapUnit nMapUnit )
 {
-    pImpl->m_nMapUnit = nMapUnit;
+    pImp->m_nMapUnit = nMapUnit;
 }
 
 
@@ -162,9 +162,10 @@ void SfxObjectShell::FillTransferableObjectDescriptor( TransferableObjectDescrip
 
     rDesc.mnViewAspect = ASPECT_CONTENT;
     rDesc.mnOle2Misc = GetMiscStatus();
-    rDesc.maSize = OutputDevice::LogicToLogic( GetVisArea().GetSize(), GetMapUnit(), MapUnit::Map100thMM );
+    rDesc.maSize = OutputDevice::LogicToLogic( GetVisArea().GetSize(), GetMapUnit(), MAP_100TH_MM );
     rDesc.maDragStartPos = Point();
     rDesc.maDisplayName.clear();
+    rDesc.mbCanLink = false;
 }
 
 
@@ -195,7 +196,7 @@ void SfxObjectShell::DoDraw_Impl( OutputDevice* pDev,
                                const JobSetup & rSetup,
                                sal_uInt16 nAspect )
 {
-    tools::Rectangle aVisArea  = GetVisArea( nAspect );
+    Rectangle aVisArea  = GetVisArea( nAspect );
     // MapUnit des Ziels
     MapMode aMapMode( GetMapUnit() );
     aMapMode.SetScaleX( rScaleX );
@@ -245,15 +246,15 @@ void SfxObjectShell::DoDraw_Impl( OutputDevice* pDev,
 
 comphelper::EmbeddedObjectContainer& SfxObjectShell::GetEmbeddedObjectContainer() const
 {
-    if ( !pImpl->mpObjectContainer )
-        pImpl->mpObjectContainer = new comphelper::EmbeddedObjectContainer( const_cast<SfxObjectShell*>(this)->GetStorage(), GetModel() );
-    return *pImpl->mpObjectContainer;
+    if ( !pImp->mpObjectContainer )
+        pImp->mpObjectContainer = new comphelper::EmbeddedObjectContainer( const_cast<SfxObjectShell*>(this)->GetStorage(), GetModel() );
+    return *pImp->mpObjectContainer;
 }
 
 void SfxObjectShell::ClearEmbeddedObjects()
 {
-    // frees all space taken by embedded objects
-    DELETEZ( pImpl->mpObjectContainer );
+    // frees alle space taken by embedded objects
+    DELETEZ( pImp->mpObjectContainer );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

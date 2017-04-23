@@ -21,6 +21,7 @@
 #include "view.hrc"
 #include "shells.hrc"
 #include "globals.hrc"
+#include "popup.hrc"
 #include "helpid.h"
 #include "cmdid.h"
 
@@ -60,6 +61,10 @@ String STR_NUM_OUTLINE
 {
     Text [ en-US ] = "Outline ";
 };
+String STR_ERROR_NOLANG
+{
+    Text [ en-US ] = "No language is selected in the proofed section." ;
+};
 String STR_EDIT_FOOTNOTE
 {
     Text [ en-US ] = "Edit Footnote/Endnote" ;
@@ -79,6 +84,22 @@ String STR_SRCVIEW_ROW
 String STR_SRCVIEW_COL
 {
     Text [ en-US ] = "Column " ;
+};
+String STR_PRINT_TITLE
+{
+    Text [ en-US ] = "Printing selection";
+};
+String STR_PRINT_MSG
+{
+    Text [ en-US ] = "Do you want to print the selection or the entire document?";
+};
+String STR_PRINT_ALL
+{
+    Text [ en-US ] = "All";
+};
+String STR_PRINT_SELECTION
+{
+    Text [ en-US ] = "Selection";
 };
 String STR_SAVEAS_SRC
 {

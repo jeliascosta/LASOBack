@@ -174,7 +174,7 @@ bool SvxChartColorTable::operator==( const SvxChartColorTable & _rOther ) const
 
 
 SvxChartOptions::SvxChartOptions() :
-    ::utl::ConfigItem( "Office.Chart" ),
+    ::utl::ConfigItem( OUString("Office.Chart") ),
     mbIsInitialized( false )
 {
     maPropertyNames.realloc( 1 );
@@ -293,7 +293,7 @@ SfxPoolItem* SvxChartColorTableItem::Clone( SfxItemPool * ) const
 
 bool SvxChartColorTableItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
+    DBG_ASSERT( SfxPoolItem::operator==( rAttr ), "SvxChartColorTableItem::operator== : types differ" );
 
     const SvxChartColorTableItem * rCTItem( dynamic_cast<const SvxChartColorTableItem * >( & rAttr ));
     if( rCTItem )

@@ -62,7 +62,7 @@ namespace objectpositioning
             starting point for the search of the layout frame.
 
             @return reference to the layout frame, which determines the
-            horizontal environment the object has to be positioned in.
+            the horizontal environment the object has to be positioned in.
         */
         const SwLayoutFrame& GetHoriEnvironmentLayoutFrame( const SwFrame& _rHoriOrientFrame ) const;
 
@@ -87,7 +87,7 @@ namespace objectpositioning
             starting point for the search of the layout frame.
 
             @return reference to the layout frame, which determines the
-            vertical environment the object has to be positioned in.
+            the vertical environment the object has to be positioned in.
         */
         const SwLayoutFrame& GetVertEnvironmentLayoutFrame( const SwFrame& _rVertOrientFrame ) const;
     };

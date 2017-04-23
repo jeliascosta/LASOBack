@@ -32,7 +32,8 @@
 
 //      modify style (cell or page style)
 
-ScStyleSaveData::ScStyleSaveData()
+ScStyleSaveData::ScStyleSaveData() :
+    pItems( nullptr )
 {
 }
 
@@ -40,15 +41,27 @@ ScStyleSaveData::ScStyleSaveData( const ScStyleSaveData& rOther ) :
     aName( rOther.aName ),
     aParent( rOther.aParent )
 {
-    if (rOther.xItems)
-        xItems.reset(new SfxItemSet(*rOther.xItems));
+    if (rOther.pItems)
+        pItems = new SfxItemSet( *rOther.pItems );
+    else
+        pItems = nullptr;
+}
+
+ScStyleSaveData::~ScStyleSaveData()
+{
+    delete pItems;
 }
 
 ScStyleSaveData& ScStyleSaveData::operator=( const ScStyleSaveData& rOther )
 {
     aName   = rOther.aName;
     aParent = rOther.aParent;
-    xItems.reset(rOther.xItems ? new SfxItemSet(*rOther.xItems) : nullptr);
+
+    delete pItems;
+    if (rOther.pItems)
+        pItems = new SfxItemSet( *rOther.pItems );
+    else
+        pItems = nullptr;
 
     return *this;
 }
@@ -59,7 +72,8 @@ void ScStyleSaveData::InitFromStyle( const SfxStyleSheetBase* pSource )
     {
         aName   = pSource->GetName();
         aParent = pSource->GetParent();
-        xItems.reset(new SfxItemSet(const_cast<SfxStyleSheetBase*>(pSource)->GetItemSet()));
+        delete pItems;
+        pItems = new SfxItemSet( const_cast<SfxStyleSheetBase*>(pSource)->GetItemSet() );
     }
     else
         *this = ScStyleSaveData();      // empty
@@ -91,7 +105,7 @@ static void lcl_DocStyleChanged( ScDocument* pDoc, SfxStyleSheetBase* pStyle, bo
     //! move to document or docshell
 
     ScopedVclPtrInstance< VirtualDevice > pVDev;
-    Point aLogic = pVDev->LogicToPixel( Point(1000,1000), MapUnit::MapTwip );
+    Point aLogic = pVDev->LogicToPixel( Point(1000,1000), MAP_TWIP );
     double nPPTX = aLogic.X() / 1000.0;
     double nPPTY = aLogic.Y() / 1000.0;
     Fraction aZoom(1,1);
@@ -178,7 +192,7 @@ void ScUndoModifyStyle::DoChange( ScDocShell* pDocSh, const OUString& rName,
         }
     }
 
-    pDocSh->PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PaintPartFlags::Grid|PaintPartFlags::Left );
+    pDocSh->PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PAINT_GRID|PAINT_LEFT );
 
     //! undo/redo document modifications for deleted styles
     //! undo/redo modifications of number formatter

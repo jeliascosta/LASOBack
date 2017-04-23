@@ -33,10 +33,10 @@ enum class SvtScriptType;
 class SW_DLLPUBLIC SwBreakIt
 {
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
-    css::uno::Reference<css::i18n::XBreakIterator> m_xBreak;
+    mutable css::uno::Reference< css::i18n::XBreakIterator > xBreak;
 
-    std::unique_ptr<LanguageTag> m_xLanguageTag;   ///< language tag of the current locale
-    std::unique_ptr<css::i18n::ForbiddenCharacters> m_xForbidden;
+    LanguageTag * m_pLanguageTag;   ///< language tag of the current locale
+    css::i18n::ForbiddenCharacters * m_pForbidden;
 
     LanguageType aForbiddenLang; ///< language of the current forbiddenChar struct
 
@@ -44,11 +44,15 @@ class SW_DLLPUBLIC SwBreakIt
     void GetLocale_( const LanguageTag& rLanguageTag );
     void GetForbidden_( const LanguageType  aLang );
 
+    void createBreakIterator() const;
+
     SwBreakIt(SwBreakIt const&) = delete;
     SwBreakIt& operator=(SwBreakIt const&) = delete;
 
     // private (see @ Create_, Delete_).
-    explicit SwBreakIt(const css::uno::Reference<css::uno::XComponentContext> & rxContext);
+    explicit SwBreakIt(
+        const css::uno::Reference< css::uno::XComponentContext > & rxContext);
+    ~SwBreakIt();
 
 public:
     // private (see @ source/core/bastyp/init.cxx).
@@ -59,16 +63,17 @@ public:
 public:
     static SwBreakIt * Get();
 
-    css::uno::Reference< css::i18n::XBreakIterator > const & GetBreakIter()
+    css::uno::Reference< css::i18n::XBreakIterator > GetBreakIter()
     {
-        return m_xBreak;
+        createBreakIterator();
+        return xBreak;
     }
 
     const css::lang::Locale& GetLocale( const LanguageType aLang )
     {
-        if (!m_xLanguageTag || m_xLanguageTag->getLanguageType() != aLang)
-            GetLocale_(aLang);
-        return m_xLanguageTag->getLocale();
+        if( !m_pLanguageTag || m_pLanguageTag->getLanguageType() != aLang )
+            GetLocale_( aLang );
+        return m_pLanguageTag->getLocale();
     }
 
     const css::lang::Locale& GetLocale( const LanguageTag& rLanguageTag )
@@ -77,16 +82,16 @@ public:
         // because here the LanguageTag is already a known LanguageType value
         // assigned, so LanguageTag does not need to convert to BCP47 for
         // comparison.
-        if (!m_xLanguageTag || m_xLanguageTag->getLanguageType() != rLanguageTag.getLanguageType())
-            GetLocale_(rLanguageTag);
-        return m_xLanguageTag->getLocale();
+        if( !m_pLanguageTag || m_pLanguageTag->getLanguageType() != rLanguageTag.getLanguageType() )
+            GetLocale_( rLanguageTag );
+        return m_pLanguageTag->getLocale();
     }
 
     const LanguageTag& GetLanguageTag( const LanguageType aLang )
     {
-        if (!m_xLanguageTag || m_xLanguageTag->getLanguageType() != aLang)
-            GetLocale_(aLang);
-        return *m_xLanguageTag;
+        if( !m_pLanguageTag || m_pLanguageTag->getLanguageType() != aLang )
+            GetLocale_( aLang );
+        return *m_pLanguageTag;
     }
 
     const LanguageTag& GetLanguageTag( const LanguageTag& rLanguageTag )
@@ -95,16 +100,16 @@ public:
         // because here the LanguageTag is already a known LanguageType value
         // assigned, so LanguageTag does not need to convert to BCP47 for
         // comparison.
-        if (!m_xLanguageTag || m_xLanguageTag->getLanguageType() != rLanguageTag.getLanguageType())
+        if( !m_pLanguageTag || m_pLanguageTag->getLanguageType() != rLanguageTag.getLanguageType() )
             GetLocale_( rLanguageTag );
-        return *m_xLanguageTag;
+        return *m_pLanguageTag;
     }
 
     const css::i18n::ForbiddenCharacters& GetForbidden( const LanguageType aLang )
     {
-        if (!m_xForbidden || aForbiddenLang != aLang)
+        if( !m_pForbidden || aForbiddenLang != aLang )
             GetForbidden_( aLang );
-        return *m_xForbidden;
+        return *m_pForbidden;
     }
 
     sal_uInt16 GetRealScriptOfText( const OUString& rText, sal_Int32 nPos ) const;

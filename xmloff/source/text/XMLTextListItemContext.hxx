@@ -44,8 +44,8 @@ public:
             const sal_uInt16 nPrfx,
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
-            const bool bIsHeader );
-    virtual ~XMLTextListItemContext() override;
+            const bool bIsHeader = false );
+    virtual ~XMLTextListItemContext();
 
     virtual void EndElement() override;
 
@@ -56,11 +56,11 @@ public:
     bool HasStartValue() const { return -1 != nStartValue; }
     sal_Int16 GetStartValue() const { return nStartValue; }
 
-    bool HasNumRulesOverride() const
+    inline bool HasNumRulesOverride() const
     {
         return mxNumRulesOverride.is();
     }
-    const css::uno::Reference < css::container::XIndexReplace >& GetNumRulesOverride() const
+    inline const css::uno::Reference < css::container::XIndexReplace >& GetNumRulesOverride() const
     {
         return mxNumRulesOverride;
     }

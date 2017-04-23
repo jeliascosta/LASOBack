@@ -20,15 +20,12 @@
 #ifndef INCLUDED_XMLOFF_SOURCE_CHART_MULTIPROPERTYSETHANDLER_HXX
 #define INCLUDED_XMLOFF_SOURCE_CHART_MULTIPROPERTYSETHANDLER_HXX
 
-#include <memory>
-
-#include <o3tl/make_unique.hxx>
 #include <rtl/ustring.hxx>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/XMultiPropertySet.hpp>
 
 /** @descr  MultiPropertySetHandler handles the two slightly different
-        interfaces XPropertySet and XMultiPropertySet for accessing
+        interfaces XPropertySet and XMultiPorpertySet for accessing
         properties of an object.
 
         It uses the classes PropertyWrapperBase and the template
@@ -94,7 +91,7 @@ class   OUStringComparison
 {
 public:
     /// Compare two strings.  Returns true if the first is before the second.
-    bool    operator()  (const OUString & a, const OUString & b) const
+    inline  bool    operator()  (const OUString & a, const OUString & b) const
     {
         return (a.compareTo (b) < 0);
     }
@@ -125,7 +122,8 @@ public:
             is casted later to one of the two of them.
     */
     explicit MultiPropertySetHandler (css::uno::Reference<
-        css::uno::XInterface> const & xObject);
+        css::uno::XInterface> xObject);
+    ~MultiPropertySetHandler();
     /** @descr  Add a property to handle.  The type given implicitly by the
             reference to a variable is used to create an instance of
             the PropertyWrapper template class.
@@ -135,7 +133,7 @@ public:
     */
     template<class T> void  Add (const OUString & sName, T& rValue)
     {
-        aPropertyList[sName] = o3tl::make_unique<PropertyWrapper<T>>(sName, rValue);
+        aPropertyList[sName] = new PropertyWrapper<T> (sName, rValue);
     }
 
     /** @descr  Try to get the values for all properties added with the Add
@@ -170,23 +168,31 @@ private:
             PropertyWrapper.  It uses OUStringComparison for sorting
             the property names.
     */
-    ::std::map< OUString, std::unique_ptr<PropertyWrapperBase>, OUStringComparison> aPropertyList;
+    ::std::map< OUString, PropertyWrapperBase*, OUStringComparison> aPropertyList;
 
     /// The object from which to get the property values.
     css::uno::Reference< css::uno::XInterface>    mxObject;
 };
 
 MultiPropertySetHandler::MultiPropertySetHandler (css::uno::Reference<
-    css::uno::XInterface> const & xObject)
+    css::uno::XInterface> xObject)
         :   mxObject (xObject)
 {
 }
 
+MultiPropertySetHandler::~MultiPropertySetHandler()
+{
+    ::std::map< OUString, PropertyWrapperBase*, OUStringComparison>::iterator I;
+    for (I=aPropertyList.begin(); I!=aPropertyList.end(); ++I)
+        delete I->second;
+}
+
 bool    MultiPropertySetHandler::GetProperties()
 {
+    ::std::map< OUString, PropertyWrapperBase*, OUStringComparison>::iterator I;
     css::uno::Sequence< OUString> aNameList (aPropertyList.size());
-    int i = 0;
-    for (auto I=aPropertyList.begin(); I!=aPropertyList.end(); ++I)
+    int i;
+    for (I=aPropertyList.begin(),i=0; I!=aPropertyList.end(); ++I)
         aNameList[i++] = I->second->msName;
     if ( ! MultiGet(aNameList))
         if ( ! SingleGet(aNameList))
@@ -202,10 +208,11 @@ bool    MultiPropertySetHandler::MultiGet   (const css::uno::Sequence<
     if (xMultiSet.is())
         try
         {
-            int i = 0;
+            ::std::map< OUString, PropertyWrapperBase*, OUStringComparison>::iterator I;
+            int i;
             css::uno::Sequence< css::uno::Any> aValueList =
                 xMultiSet->getPropertyValues (rNameList);
-            for (auto I=aPropertyList.begin(); I!=aPropertyList.end(); ++I)
+            for (I=aPropertyList.begin(),i=0; I!=aPropertyList.end(); ++I)
                 I->second->SetValue (aValueList[i++]);
         }
         catch (const css::beans::UnknownPropertyException&)
@@ -226,8 +233,9 @@ bool    MultiPropertySetHandler::SingleGet  (const css::uno::Sequence<
     if (xSingleSet.is())
         try
         {
-            int i = 0;
-            for (auto I=aPropertyList.begin(); I!=aPropertyList.end(); ++I)
+            ::std::map< OUString, PropertyWrapperBase*, OUStringComparison>::iterator I;
+            int i;
+            for (I=aPropertyList.begin(),i=0; I!=aPropertyList.end(); ++I)
                 I->second->SetValue (xSingleSet->getPropertyValue (rNameList[i++]));
         }
         catch (const css::beans::UnknownPropertyException&)

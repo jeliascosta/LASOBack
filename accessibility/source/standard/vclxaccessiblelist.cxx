@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblelist.hxx>
-#include <standard/vclxaccessiblelistitem.hxx>
-#include <helper/listboxhelper.hxx>
+#include <accessibility/standard/vclxaccessiblelist.hxx>
+#include <accessibility/standard/vclxaccessiblelistitem.hxx>
+#include <accessibility/helper/listboxhelper.hxx>
 
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
@@ -27,7 +27,6 @@
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRelationType.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <vcl/svapp.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/lstbox.hxx>
@@ -42,11 +41,11 @@ using namespace ::accessibility;
 
 namespace
 {
-    /// @throws css::lang::IndexOutOfBoundsException
     void checkSelection_Impl( sal_Int32 _nIndex, const IComboListBoxHelper& _rListBox, bool bSelected )
+        throw (css::lang::IndexOutOfBoundsException)
     {
-        sal_Int32 nCount = bSelected ? _rListBox.GetSelectEntryCount()
-                                     : _rListBox.GetEntryCount();
+        sal_Int32 nCount = bSelected ? (sal_Int32)_rListBox.GetSelectEntryCount()
+                                     : (sal_Int32)_rListBox.GetEntryCount();
         if ( _nIndex < 0 || _nIndex >= nCount )
             throw css::lang::IndexOutOfBoundsException();
     }
@@ -75,7 +74,7 @@ VCLXAccessibleList::VCLXAccessibleList (VCLXWindow* pVCLWindow, BoxType aBoxType
         {
             VclPtr< ComboBox > pBox = GetAs< ComboBox >();
             if ( pBox )
-                m_pListBoxHelper.reset( new VCLListBoxHelper<ComboBox> (*pBox) );
+                m_pListBoxHelper = new VCLListBoxHelper<ComboBox> (*pBox);
             break;
         }
 
@@ -83,14 +82,14 @@ VCLXAccessibleList::VCLXAccessibleList (VCLXWindow* pVCLWindow, BoxType aBoxType
         {
             VclPtr< ListBox > pBox = GetAs< ListBox >();
             if ( pBox )
-                m_pListBoxHelper.reset( new VCLListBoxHelper<ListBox> (*pBox) );
+                m_pListBoxHelper = new VCLListBoxHelper<ListBox> (*pBox);
             break;
         }
     }
     UpdateVisibleLineCount();
     if(m_pListBoxHelper)
     {
-        m_nCurSelectedPos=m_pListBoxHelper->GetSelectEntryPos(0);
+        m_nCurSelectedPos=m_pListBoxHelper->GetSelectEntryPos();
     }
     sal_uInt16 nCount = static_cast<sal_uInt16>(getAccessibleChildCount());
     m_aAccessibleChildren.reserve(nCount);
@@ -99,6 +98,7 @@ VCLXAccessibleList::VCLXAccessibleList (VCLXWindow* pVCLWindow, BoxType aBoxType
 
 VCLXAccessibleList::~VCLXAccessibleList()
 {
+    delete m_pListBoxHelper;
 }
 
 
@@ -115,7 +115,8 @@ void SAL_CALL VCLXAccessibleList::disposing()
     // Dispose all items in the list.
     clearItems();
 
-    m_pListBoxHelper.reset();
+    delete m_pListBoxHelper;
+    m_pListBoxHelper = nullptr;
 }
 
 
@@ -164,23 +165,19 @@ void VCLXAccessibleList::notifyVisibleStates(bool _bSetNew )
     NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, aOldValue, aNewValue );
 
     ListItems::iterator aIter = m_aAccessibleChildren.begin();
+    ListItems::iterator aEnd = m_aAccessibleChildren.end();
     UpdateVisibleLineCount();
     // adjust the index inside the VCLXAccessibleListItem
-    for ( ; aIter != m_aAccessibleChildren.end(); )
+    for (;aIter != aEnd ; ++aIter)
     {
         Reference< XAccessible > xHold = *aIter;
-        if (!xHold.is())
+        VCLXAccessibleListItem* pItem = static_cast<VCLXAccessibleListItem*>(xHold.get());
+        if ( pItem )
         {
-            aIter = m_aAccessibleChildren.erase(aIter);
-        }
-        else
-        {
-            VCLXAccessibleListItem* pItem = static_cast<VCLXAccessibleListItem*>(xHold.get());
             const sal_Int32 nTopEntry = m_pListBoxHelper ? m_pListBoxHelper->GetTopEntry() : 0;
             const sal_Int32 nPos = static_cast<sal_Int32>(aIter - m_aAccessibleChildren.begin());
             bool bVisible = ( nPos>=nTopEntry && nPos<( nTopEntry + m_nVisibleLineCount ) );
             pItem->SetVisible( m_bVisible && bVisible );
-            ++aIter;
         }
 
     }
@@ -254,7 +251,7 @@ void VCLXAccessibleList::UpdateSelection_Impl_Acc(bool bHasDropDownList)
             if ( xNewAcc.is() && GetWindow()->HasFocus() )
             {
                 if ( m_nLastSelectedPos != LISTBOX_ENTRY_NOTFOUND )
-                    aOldValue <<= getAccessibleChild( m_nLastSelectedPos );
+                    aOldValue <<= getAccessibleChild( (sal_Int32)m_nLastSelectedPos );
                 aNewValue <<= xNewAcc;
             }
         }
@@ -310,18 +307,44 @@ void VCLXAccessibleList::NotifyListItem(css::uno::Any& val)
     }
 }
 
+void VCLXAccessibleList::UpdateFocus_Impl_Acc (sal_Int32 nPos ,bool b_IsDropDownList)
+{
+    if (!(m_aBoxType == LISTBOX && !b_IsDropDownList))
+    {
+        return ;
+    }
+    Reference<XAccessible> xChild= CreateChild(nPos);
+    if ( !xChild.is() )
+    {
+        return ;
+    }
+    m_nCurSelectedPos = nPos;
+    uno::Any aOldValue, aNewValue;
+    aNewValue <<= xChild;
+
+    NotifyAccessibleEvent(
+            AccessibleEventId::ACTIVE_DESCENDANT_CHANGED,
+            aOldValue,
+            aNewValue );
+}
+
+
 void VCLXAccessibleList::ProcessWindowEvent (const VclWindowEvent& rVclWindowEvent,  bool b_IsDropDownList)
 {
     switch ( rVclWindowEvent.GetId() )
       {
-        case VclEventId::DropdownSelect:
-        case VclEventId::ListboxSelect:
+        case VCLEVENT_DROPDOWN_SELECT:
+        case VCLEVENT_LISTBOX_SELECT:
             if ( !m_bDisableProcessEvent )
                 UpdateSelection_Impl_Acc(b_IsDropDownList);
             break;
-        case VclEventId::WindowGetFocus:
+        case VCLEVENT_LISTBOX_FOCUSITEMCHANGED:
+            if ( !m_bDisableProcessEvent )
+                UpdateFocus_Impl_Acc((sal_uInt16)reinterpret_cast<sal_uIntPtr>(rVclWindowEvent.GetData()),b_IsDropDownList);
             break;
-        case VclEventId::ControlGetFocus:
+        case VCLEVENT_WINDOW_GETFOCUS:
+            break;
+        case VCLEVENT_CONTROL_GETFOCUS:
             {
                 VCLXAccessibleComponent::ProcessWindowEvent (rVclWindowEvent);
                 if (m_aBoxType == COMBOBOX && b_IsDropDownList)
@@ -359,27 +382,28 @@ void VCLXAccessibleList::ProcessWindowEvent (const VclWindowEvent& rVclWindowEve
 void VCLXAccessibleList::ProcessWindowEvent (const VclWindowEvent& rVclWindowEvent)
 {
     // Create a reference to this object to prevent an early release of the
-    // listbox (VclEventId::ObjectDying).
+    // listbox (VCLEVENT_OBJECT_DYING).
     Reference< XAccessible > xTemp = this;
 
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::DropdownOpen:
+        case VCLEVENT_DROPDOWN_OPEN:
             notifyVisibleStates(true);
             break;
-        case VclEventId::DropdownClose:
+        case VCLEVENT_DROPDOWN_CLOSE:
             notifyVisibleStates(false);
             break;
-        case VclEventId::ListboxScrolled:
+        case VCLEVENT_LISTBOX_SCROLLED:
+        case VCLEVENT_COMBOBOX_SCROLLED:
             UpdateEntryRange_Impl();
             break;
 
-        // The selection events VclEventId::ComboboxSelect and
-        // VclEventId::ComboboxDeselect are not handled here because here we
+        // The selection events VCLEVENT_COMBOBOX_SELECT and
+        // VCLEVENT_COMBOBOX_DESELECT are not handled here because here we
         // have no access to the edit field.  Its text is necessary to
         // identify the currently selected item.
 
-        case VclEventId::ObjectDying:
+        case VCLEVENT_OBJECT_DYING:
         {
             dispose();
 
@@ -387,18 +411,18 @@ void VCLXAccessibleList::ProcessWindowEvent (const VclWindowEvent& rVclWindowEve
             break;
         }
 
-        case VclEventId::ListboxItemRemoved:
-        case VclEventId::ComboboxItemRemoved:
+        case VCLEVENT_LISTBOX_ITEMREMOVED:
+        case VCLEVENT_COMBOBOX_ITEMREMOVED:
             HandleChangedItemList (false, reinterpret_cast<sal_IntPtr>(
                 rVclWindowEvent.GetData()));
             break;
 
-        case VclEventId::ListboxItemAdded:
-        case VclEventId::ComboboxItemAdded:
+        case VCLEVENT_LISTBOX_ITEMADDED:
+        case VCLEVENT_COMBOBOX_ITEMADDED:
             HandleChangedItemList (true, reinterpret_cast<sal_IntPtr>(
                 rVclWindowEvent.GetData()));
             break;
-        case VclEventId::ControlGetFocus:
+        case VCLEVENT_CONTROL_GETFOCUS:
             {
                 VCLXAccessibleComponent::ProcessWindowEvent (rVclWindowEvent);
                 // Added by IBM Symphony Acc team to handle the list item focus when List control get focus
@@ -531,6 +555,7 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2(VCLXAccessibleList, VCLXAccessibleComponent, VC
 
 Reference<XAccessibleContext> SAL_CALL
     VCLXAccessibleList::getAccessibleContext()
+    throw (RuntimeException, std::exception)
 {
     return this;
 }
@@ -539,6 +564,7 @@ Reference<XAccessibleContext> SAL_CALL
 // XAccessibleContext
 
 sal_Int32 SAL_CALL VCLXAccessibleList::getAccessibleChildCount()
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -551,6 +577,7 @@ sal_Int32 SAL_CALL VCLXAccessibleList::getAccessibleChildCount()
 }
 
 Reference<XAccessible> SAL_CALL VCLXAccessibleList::getAccessibleChild (sal_Int32 i)
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -573,6 +600,7 @@ Reference<XAccessible> SAL_CALL VCLXAccessibleList::getAccessibleChild (sal_Int3
 }
 
 Reference< XAccessible > SAL_CALL VCLXAccessibleList::getAccessibleParent(  )
+    throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -580,6 +608,7 @@ Reference< XAccessible > SAL_CALL VCLXAccessibleList::getAccessibleParent(  )
 }
 
 sal_Int32 SAL_CALL VCLXAccessibleList::getAccessibleIndexInParent()
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (m_nIndexInParent != DEFAULT_INDEX_IN_PARENT)
         return m_nIndexInParent;
@@ -588,17 +617,20 @@ sal_Int32 SAL_CALL VCLXAccessibleList::getAccessibleIndexInParent()
 }
 
 sal_Int16 SAL_CALL VCLXAccessibleList::getAccessibleRole()
+    throw (RuntimeException, std::exception)
 {
     return AccessibleRole::LIST;
 }
 
 // XServiceInfo
 OUString VCLXAccessibleList::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleList" );
 }
 
 Sequence< OUString > VCLXAccessibleList::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aNames = VCLXAccessibleComponent::getSupportedServiceNames();
     sal_Int32 nLength = aNames.getLength();
@@ -720,7 +752,7 @@ void VCLXAccessibleList::UpdateSelection_Impl(sal_Int32)
             if ( xNewAcc.is() && GetWindow()->HasFocus() )
             {
                 if ( m_nLastSelectedPos != LISTBOX_ENTRY_NOTFOUND )
-                    aOldValue <<= getAccessibleChild( m_nLastSelectedPos );
+                    aOldValue <<= getAccessibleChild( (sal_Int32)m_nLastSelectedPos );
                 aNewValue <<= xNewAcc;
             }
             if (m_pListBoxHelper->IsInDropDown())
@@ -740,7 +772,7 @@ void VCLXAccessibleList::UpdateSelection_Impl(sal_Int32)
 
 // XAccessibleSelection
 
-void SAL_CALL VCLXAccessibleList::selectAccessibleChild( sal_Int32 nChildIndex )
+void SAL_CALL VCLXAccessibleList::selectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     bool bNotify = false;
 
@@ -765,7 +797,7 @@ void SAL_CALL VCLXAccessibleList::selectAccessibleChild( sal_Int32 nChildIndex )
         UpdateSelection_Impl();
 }
 
-sal_Bool SAL_CALL VCLXAccessibleList::isAccessibleChildSelected( sal_Int32 nChildIndex )
+sal_Bool SAL_CALL VCLXAccessibleList::isAccessibleChildSelected( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -780,7 +812,7 @@ sal_Bool SAL_CALL VCLXAccessibleList::isAccessibleChildSelected( sal_Int32 nChil
     return bRet;
 }
 
-void SAL_CALL VCLXAccessibleList::clearAccessibleSelection(  )
+void SAL_CALL VCLXAccessibleList::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)
 {
     bool bNotify = false;
 
@@ -799,7 +831,7 @@ void SAL_CALL VCLXAccessibleList::clearAccessibleSelection(  )
         UpdateSelection_Impl();
 }
 
-void SAL_CALL VCLXAccessibleList::selectAllAccessibleChildren(  )
+void SAL_CALL VCLXAccessibleList::selectAllAccessibleChildren(  ) throw (RuntimeException, std::exception)
 {
     bool bNotify = false;
 
@@ -824,7 +856,7 @@ void SAL_CALL VCLXAccessibleList::selectAllAccessibleChildren(  )
         UpdateSelection_Impl();
 }
 
-sal_Int32 SAL_CALL VCLXAccessibleList::getSelectedAccessibleChildCount(  )
+sal_Int32 SAL_CALL VCLXAccessibleList::getSelectedAccessibleChildCount(  ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -835,7 +867,7 @@ sal_Int32 SAL_CALL VCLXAccessibleList::getSelectedAccessibleChildCount(  )
     return nCount;
 }
 
-Reference< XAccessible > SAL_CALL VCLXAccessibleList::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
+Reference< XAccessible > SAL_CALL VCLXAccessibleList::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -843,13 +875,13 @@ Reference< XAccessible > SAL_CALL VCLXAccessibleList::getSelectedAccessibleChild
     if ( m_pListBoxHelper )
     {
         checkSelection_Impl(nSelectedChildIndex,*m_pListBoxHelper,true);
-        return getAccessibleChild( m_pListBoxHelper->GetSelectEntryPos( (sal_uInt16)nSelectedChildIndex ) );
+        return getAccessibleChild( (sal_Int32)m_pListBoxHelper->GetSelectEntryPos( (sal_uInt16)nSelectedChildIndex ) );
     }
 
     return nullptr;
 }
 
-void SAL_CALL VCLXAccessibleList::deselectAccessibleChild( sal_Int32 nSelectedChildIndex )
+void SAL_CALL VCLXAccessibleList::deselectAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     bool bNotify = false;
 
@@ -874,7 +906,7 @@ void SAL_CALL VCLXAccessibleList::deselectAccessibleChild( sal_Int32 nSelectedCh
         UpdateSelection_Impl();
 }
 
-awt::Rectangle VCLXAccessibleList::implGetBounds()
+awt::Rectangle VCLXAccessibleList::implGetBounds() throw (uno::RuntimeException)
 {
     awt::Rectangle aBounds ( 0, 0, 0, 0 );
     if ( m_pListBoxHelper
@@ -904,7 +936,7 @@ awt::Rectangle VCLXAccessibleList::implGetBounds()
 }
 
 
-awt::Point VCLXAccessibleList::getLocationOnScreen(  )
+awt::Point VCLXAccessibleList::getLocationOnScreen(  ) throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );

@@ -52,8 +52,9 @@ using namespace com::sun::star::util;
 
 IMPLEMENT_SERVICE_INFO(OPreparedStatement,"com.sun.star.sdbcx.APreparedStatement","com.sun.star.sdbc.PreparedStatement");
 
-OPreparedStatement::OPreparedStatement( OConnection* _pConnection, const OUString& sql)
+OPreparedStatement::OPreparedStatement( OConnection* _pConnection,const OTypeInfoMap& _TypeInfo,const OUString& sql)
     : OStatement_Base( _pConnection )
+    ,m_aTypeInfo(_TypeInfo)
 {
     osl_atomic_increment( &m_refCount );
 
@@ -88,11 +89,11 @@ OPreparedStatement::~OPreparedStatement()
     {
         OSL_FAIL( "OPreparedStatement::~OPreparedStatement: not disposed!" );
         m_pParameters->Release();
-        m_pParameters = nullptr;
+        m_pParameters = NULL;
     }
 }
 
-Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType )
+Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType ) throw(RuntimeException)
 {
     Any aRet = OStatement_Base::queryInterface(rType);
     return aRet.hasValue() ? aRet : ::cppu::queryInterface( rType,
@@ -101,7 +102,7 @@ Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType )
                                         static_cast< XResultSetMetaDataSupplier*>(this));
 }
 
-css::uno::Sequence< css::uno::Type > SAL_CALL OPreparedStatement::getTypes(  )
+::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(::com::sun::star::uno::RuntimeException)
 {
     ::cppu::OTypeCollection aTypes( cppu::UnoType<XPreparedStatement>::get(),
                                     cppu::UnoType<XParameters>::get(),
@@ -110,7 +111,7 @@ css::uno::Sequence< css::uno::Type > SAL_CALL OPreparedStatement::getTypes(  )
     return ::comphelper::concatSequences(aTypes.getTypes(),OStatement_Base::getTypes());
 }
 
-Reference< XResultSetMetaData > SAL_CALL OPreparedStatement::getMetaData(  )
+Reference< XResultSetMetaData > SAL_CALL OPreparedStatement::getMetaData(  ) throw(SQLException, RuntimeException)
 {
     if(!m_xMetaData.is() && m_RecordSet.IsValid())
         m_xMetaData = new OResultSetMetaData(m_RecordSet);
@@ -123,12 +124,12 @@ m_xMetaData.clear();
     if (m_pParameters)
     {
         m_pParameters->Release();
-        m_pParameters = nullptr;
+        m_pParameters = NULL;
     }
     OStatement_Base::disposing();
 }
 
-void SAL_CALL OPreparedStatement::close(  )
+void SAL_CALL OPreparedStatement::close(  ) throw(SQLException, RuntimeException)
 {
 
     {
@@ -140,7 +141,7 @@ void SAL_CALL OPreparedStatement::close(  )
 
 }
 
-sal_Bool SAL_CALL OPreparedStatement::execute(  )
+sal_Bool SAL_CALL OPreparedStatement::execute(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -150,7 +151,7 @@ sal_Bool SAL_CALL OPreparedStatement::execute(  )
 
     // Call SQLExecute
     try {
-        ADORecordset* pSet=nullptr;
+        ADORecordset* pSet=NULL;
         CHECK_RETURN(m_Command.Execute(m_RecordsAffected,m_Parameters,adCmdUnknown,&pSet))
         m_RecordSet = WpADORecordset(pSet);
     }
@@ -164,13 +165,13 @@ sal_Bool SAL_CALL OPreparedStatement::execute(  )
     return m_RecordSet.IsValid();
 }
 
-sal_Int32 SAL_CALL OPreparedStatement::executeUpdate(  )
+sal_Int32 SAL_CALL OPreparedStatement::executeUpdate(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
 
 
-    ADORecordset* pSet=nullptr;
+    ADORecordset* pSet=NULL;
     CHECK_RETURN(m_Command.Execute(m_RecordsAffected,m_Parameters,adCmdUnknown,&pSet))
     if ( VT_ERROR == m_RecordsAffected.getType() )
     {
@@ -179,11 +180,11 @@ sal_Int32 SAL_CALL OPreparedStatement::executeUpdate(  )
         throw SQLException();
     }
     m_RecordSet = WpADORecordset(pSet);
-    return m_RecordsAffected.getInt32();
+    return  static_cast<sal_Int32>(m_RecordsAffected);
 }
 
 void OPreparedStatement::setParameter(sal_Int32 parameterIndex, const DataTypeEnum& _eType,
-                                      sal_Int32 _nSize,const OLEVariant& Val)
+                                      const sal_Int32& _nSize,const OLEVariant& _Val) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -193,13 +194,14 @@ void OPreparedStatement::setParameter(sal_Int32 parameterIndex, const DataTypeEn
     m_pParameters->get_Count(&nCount);
     if(nCount < (parameterIndex-1))
     {
-        OUString sDefaultName = "parame" + OUString::number(parameterIndex);
-        ADOParameter* pParam = m_Command.CreateParameter(sDefaultName,_eType,adParamInput,_nSize,Val);
+        OUString sDefaultName( "parame" );
+        sDefaultName += OUString::number(parameterIndex);
+        ADOParameter* pParam = m_Command.CreateParameter(sDefaultName,_eType,adParamInput,_nSize,_Val);
         if(pParam)
         {
             m_pParameters->Append(pParam);
 #if OSL_DEBUG_LEVEL > 0
-            pParam = nullptr;
+            pParam = NULL;
             m_pParameters->get_Item(OLEVariant(sal_Int32(parameterIndex-1)),&pParam);
             WpADOParameter aParam(pParam);
             if(pParam)
@@ -212,7 +214,7 @@ void OPreparedStatement::setParameter(sal_Int32 parameterIndex, const DataTypeEn
     }
     else
     {
-        ADOParameter* pParam = nullptr;
+        ADOParameter* pParam = NULL;
         m_pParameters->get_Item(OLEVariant(sal_Int32(parameterIndex-1)),&pParam);
         WpADOParameter aParam(pParam);
         if(pParam)
@@ -227,29 +229,29 @@ void OPreparedStatement::setParameter(sal_Int32 parameterIndex, const DataTypeEn
 
             if ( adVarBinary == eType && aParam.GetAttributes() == adParamLong )
             {
-                aParam.AppendChunk(Val);
+                aParam.AppendChunk(_Val);
             }
             else
-                CHECK_RETURN(aParam.PutValue(Val));
+                CHECK_RETURN(aParam.PutValue(_Val));
         }
     }
     ADOS::ThrowException(*m_pConnection->getConnection(),*this);
 }
 
-void SAL_CALL OPreparedStatement::setString( sal_Int32 parameterIndex, const OUString& x )
+void SAL_CALL OPreparedStatement::setString( sal_Int32 parameterIndex, const OUString& x ) throw(SQLException, RuntimeException)
 {
-    setParameter( parameterIndex, adLongVarWChar, std::numeric_limits< sal_Int32 >::max(), x );
+    setParameter( parameterIndex, adLongVarWChar, ::std::numeric_limits< sal_Int32 >::max(), x );
 }
 
-Reference< XConnection > SAL_CALL OPreparedStatement::getConnection(  )
+Reference< XConnection > SAL_CALL OPreparedStatement::getConnection(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
 
-    return static_cast<Reference< XConnection >>(m_pConnection);
+    return (Reference< XConnection >)m_pConnection;
 }
 
-Reference< XResultSet > SAL_CALL OPreparedStatement::executeQuery(  )
+Reference< XResultSet > SAL_CALL OPreparedStatement::executeQuery(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -284,79 +286,79 @@ Reference< XResultSet > SAL_CALL OPreparedStatement::executeQuery(  )
     return xRs;
 }
 
-void SAL_CALL OPreparedStatement::setBoolean( sal_Int32 parameterIndex, sal_Bool x )
+void SAL_CALL OPreparedStatement::setBoolean( sal_Int32 parameterIndex, sal_Bool x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adBoolean,sizeof(x),bool(x));
 }
 
-void SAL_CALL OPreparedStatement::setByte( sal_Int32 parameterIndex, sal_Int8 x )
+void SAL_CALL OPreparedStatement::setByte( sal_Int32 parameterIndex, sal_Int8 x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adTinyInt,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setDate( sal_Int32 parameterIndex, const Date& x )
+void SAL_CALL OPreparedStatement::setDate( sal_Int32 parameterIndex, const Date& x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adDBDate,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setTime( sal_Int32 parameterIndex, const css::util::Time& x )
+void SAL_CALL OPreparedStatement::setTime( sal_Int32 parameterIndex, const css::util::Time& x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adDBTime,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setTimestamp( sal_Int32 parameterIndex, const DateTime& x )
+void SAL_CALL OPreparedStatement::setTimestamp( sal_Int32 parameterIndex, const DateTime& x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adDBTimeStamp,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setDouble( sal_Int32 parameterIndex, double x )
+void SAL_CALL OPreparedStatement::setDouble( sal_Int32 parameterIndex, double x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adDouble,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setFloat( sal_Int32 parameterIndex, float x )
+void SAL_CALL OPreparedStatement::setFloat( sal_Int32 parameterIndex, float x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adSingle,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setInt( sal_Int32 parameterIndex, sal_Int32 x )
+void SAL_CALL OPreparedStatement::setInt( sal_Int32 parameterIndex, sal_Int32 x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adInteger,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setLong( sal_Int32 parameterIndex, sal_Int64 x )
+void SAL_CALL OPreparedStatement::setLong( sal_Int32 parameterIndex, sal_Int64 x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adBigInt,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setNull( sal_Int32 parameterIndex, sal_Int32 /*sqlType*/ )
+void SAL_CALL OPreparedStatement::setNull( sal_Int32 parameterIndex, sal_Int32 /*sqlType*/ ) throw(SQLException, RuntimeException)
 {
     OLEVariant aVal;
     aVal.setNull();
     setParameter(parameterIndex,adEmpty,0,aVal);
 }
 
-void SAL_CALL OPreparedStatement::setClob( sal_Int32 /*parameterIndex*/, const Reference< XClob >& /*x*/ )
+void SAL_CALL OPreparedStatement::setClob( sal_Int32 /*parameterIndex*/, const Reference< XClob >& /*x*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRowUpdate::setClob", *this );
 }
 
-void SAL_CALL OPreparedStatement::setBlob( sal_Int32 /*parameterIndex*/, const Reference< XBlob >& /*x*/ )
+void SAL_CALL OPreparedStatement::setBlob( sal_Int32 /*parameterIndex*/, const Reference< XBlob >& /*x*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRowUpdate::setBlob", *this );
 }
 
-void SAL_CALL OPreparedStatement::setArray( sal_Int32 /*parameterIndex*/, const Reference< XArray >& /*x*/ )
+void SAL_CALL OPreparedStatement::setArray( sal_Int32 /*parameterIndex*/, const Reference< XArray >& /*x*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRowUpdate::setArray", *this );
 }
 
-void SAL_CALL OPreparedStatement::setRef( sal_Int32 /*parameterIndex*/, const Reference< XRef >& /*x*/ )
+void SAL_CALL OPreparedStatement::setRef( sal_Int32 /*parameterIndex*/, const Reference< XRef >& /*x*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRowUpdate::setRef", *this );
 }
 
-void SAL_CALL OPreparedStatement::setObjectWithInfo( sal_Int32 parameterIndex, const Any& x, sal_Int32 sqlType, sal_Int32 scale )
+void SAL_CALL OPreparedStatement::setObjectWithInfo( sal_Int32 parameterIndex, const Any& x, sal_Int32 sqlType, sal_Int32 scale ) throw(SQLException, RuntimeException)
 {
     switch(sqlType)
     {
@@ -370,12 +372,12 @@ void SAL_CALL OPreparedStatement::setObjectWithInfo( sal_Int32 parameterIndex, c
     }
 }
 
-void SAL_CALL OPreparedStatement::setObjectNull( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& /*typeName*/ )
+void SAL_CALL OPreparedStatement::setObjectNull( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& /*typeName*/ ) throw(SQLException, RuntimeException)
 {
     setNull(parameterIndex,sqlType);
 }
 
-void SAL_CALL OPreparedStatement::setObject( sal_Int32 parameterIndex, const Any& x )
+void SAL_CALL OPreparedStatement::setObject( sal_Int32 parameterIndex, const Any& x ) throw(SQLException, RuntimeException)
 {
     if(!::dbtools::implSetObject(this,parameterIndex,x))
     {
@@ -387,22 +389,22 @@ void SAL_CALL OPreparedStatement::setObject( sal_Int32 parameterIndex, const Any
     }
 }
 
-void SAL_CALL OPreparedStatement::setShort( sal_Int32 parameterIndex, sal_Int16 x )
+void SAL_CALL OPreparedStatement::setShort( sal_Int32 parameterIndex, sal_Int16 x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adSmallInt,sizeof(x),x);
 }
 
-void SAL_CALL OPreparedStatement::setBytes( sal_Int32 parameterIndex, const Sequence< sal_Int8 >& x )
+void SAL_CALL OPreparedStatement::setBytes( sal_Int32 parameterIndex, const Sequence< sal_Int8 >& x ) throw(SQLException, RuntimeException)
 {
     setParameter(parameterIndex,adVarBinary,sizeof(sal_Int8)*x.getLength(),x);
 }
 
-void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 /*parameterIndex*/, const Reference< css::io::XInputStream >& /*x*/, sal_Int32 /*length*/ )
+void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 /*parameterIndex*/, const Reference< ::com::sun::star::io::XInputStream >& /*x*/, sal_Int32 /*length*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XParameters::setCharacterStream", *this );
 }
 
-void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< css::io::XInputStream >& x, sal_Int32 length )
+void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, const Reference< ::com::sun::star::io::XInputStream >& x, sal_Int32 length ) throw(SQLException, RuntimeException)
 {
     if(x.is())
     {
@@ -412,7 +414,7 @@ void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 parameterIndex, con
     }
 }
 
-void SAL_CALL OPreparedStatement::clearParameters(  )
+void SAL_CALL OPreparedStatement::clearParameters(  ) throw(SQLException, RuntimeException)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OStatement_BASE::rBHelper.bDisposed);
@@ -426,7 +428,7 @@ void SAL_CALL OPreparedStatement::clearParameters(  )
         aVal.setEmpty();
         for(sal_Int32 i=0;i<nCount;++i)
         {
-            ADOParameter* pParam = nullptr;
+            ADOParameter* pParam = NULL;
             m_pParameters->get_Item(OLEVariant(i),&pParam);
             WpADOParameter aParam(pParam);
             if(pParam)
@@ -459,7 +461,8 @@ void OPreparedStatement::replaceParameterNodeName(OSQLParseNode* _pNode,
         {
             OSQLParseNode* pNewNode = new OSQLParseNode(OUString(":") ,SQLNodeType::Punctuation,0);
             delete pChildNode->replace(pChildNode->getChild(0),pNewNode);
-            OUString sParameterName = _sDefaultName + OUString::number(++_rParameterCount);
+            OUString sParameterName = _sDefaultName;
+            sParameterName += OUString::number(++_rParameterCount);
             pChildNode->append(new OSQLParseNode( sParameterName,SQLNodeType::Name,0));
         }
         else

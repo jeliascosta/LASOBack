@@ -45,19 +45,19 @@ public:
     Options();
     virtual ~Options();
 
-    /// @throws IllegalArgument
-    virtual bool initOptions(int ac, char* av[], bool bCmdFile=false) = 0;
+    virtual bool initOptions(int ac, char* av[], bool bCmdFile=false)
+        throw( IllegalArgument ) = 0;
 
     virtual ::rtl::OString  prepareHelp() = 0;
 
     const ::rtl::OString&   getProgramName() const { return m_program;}
     bool                isValid(const ::rtl::OString& option) const;
-    /// @throws IllegalArgument
-    const OString&      getOption(const ::rtl::OString& option) const;
+    const ::rtl::OString    getOption(const ::rtl::OString& option) const
+        throw( IllegalArgument );
 
     const StringVector& getInputFiles() { return m_inputFiles;}
 
-    const StringVector& getExtraInputFiles() const
+    inline const StringVector& getExtraInputFiles() const
         { return m_extra_input_files; }
 protected:
     ::rtl::OString  m_program;

@@ -36,13 +36,14 @@ public:
     ToolPanelModule (
         const css::uno::Reference<css::frame::XController>& rxController,
         const OUString& rsRightPaneURL);
-    virtual ~ToolPanelModule() override;
+    virtual ~ToolPanelModule();
 
     virtual void SaveResourceState() override;
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } } // end of namespace sd::framework

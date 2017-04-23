@@ -27,15 +27,14 @@
 class ImageMap;
 class IntlWrapper;
 
-// URL, ServerMap and ClientMap
+// URL, ServerMap und ClientMap
 
 class SW_DLLPUBLIC SwFormatURL: public SfxPoolItem
 {
     OUString  sTargetFrameName; ///< Target frame for URL.
     OUString  sURL;             ///< Simple URL.
     OUString  sName;            ///< Name of the anchor.
-    std::unique_ptr<ImageMap>
-              pMap;             ///< ClientSide images.
+    ImageMap *pMap;             ///< ClientSide images.
 
     bool      bIsServerMap;     ///< A ServerSideImageMap with the URL.
 
@@ -44,19 +43,19 @@ class SW_DLLPUBLIC SwFormatURL: public SfxPoolItem
 public:
     SwFormatURL();
 
-    /// @@@ copy construction allowed, but assignment is not? @@@
+    /// @@@ copy construction allowed, but assigment is not? @@@
     SwFormatURL( const SwFormatURL& );
 
-    virtual ~SwFormatURL() override;
+    virtual ~SwFormatURL();
 
     /// "Pure virtual methods" of SfxPoolItem.
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
@@ -67,8 +66,8 @@ public:
     const OUString& GetTargetFrameName()const { return sTargetFrameName; }
     const OUString& GetURL()            const { return sURL; }
           bool      IsServerMap()       const { return bIsServerMap; }
-    const ImageMap *GetMap()            const { return pMap.get(); }
-          ImageMap *GetMap()                  { return pMap.get(); }
+    const ImageMap *GetMap()            const { return pMap; }
+          ImageMap *GetMap()                  { return pMap; }
 
     const OUString& GetName() const                { return sName; }
     void SetName( const OUString& rNm )     { sName = rNm; }

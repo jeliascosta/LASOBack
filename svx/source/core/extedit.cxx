@@ -167,9 +167,9 @@ void SdrExternalToolEdit::Notify(SfxBroadcaster & rBC, SfxHint const& rHint)
 {
     SdrHint const*const pSdrHint(dynamic_cast<SdrHint const*>(&rHint));
     if (pSdrHint
-        && (SdrHintKind::ModelCleared == pSdrHint->GetKind()
+        && (HINT_MODELCLEARED == pSdrHint->GetKind()
             || (pSdrHint->GetObject() == m_pObj
-                && SdrHintKind::ObjectRemoved == pSdrHint->GetKind())))
+                && HINT_OBJREMOVED == pSdrHint->GetKind())))
     {
         m_pView = nullptr;
         m_pObj = nullptr;

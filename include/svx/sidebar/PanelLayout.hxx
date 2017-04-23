@@ -27,19 +27,20 @@ class SVX_DLLPUBLIC PanelLayout : public Control, public VclBuilderContainer
 private:
     Idle m_aPanelLayoutIdle;
     bool m_bInClose;
+    bool hasPanelPendingLayout() const;
 
-    DECL_DLLPRIVATE_LINK(ImplHandlePanelLayoutTimerHdl, Timer*, void);
+    DECL_DLLPRIVATE_LINK_TYPED( ImplHandlePanelLayoutTimerHdl, Idle*, void );
 
 public:
     PanelLayout(vcl::Window* pParent, const OString& rID, const OUString& rUIXMLDescription,
             const css::uno::Reference<css::frame::XFrame> &rFrame);
-    virtual ~PanelLayout() override;
+    virtual ~PanelLayout();
     virtual void dispose() override;
 
     virtual Size GetOptimalSize() const override;
     virtual void setPosSizePixel(long nX, long nY, long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All) override;
     virtual void queue_resize(StateChangedType eReason = StateChangedType::Layout) override;
-    virtual bool EventNotify(NotifyEvent& rNEvt) override;
+
 };
 
 #endif

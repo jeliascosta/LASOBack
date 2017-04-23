@@ -99,52 +99,45 @@ namespace connectivity
         class OOO_DLLPUBLIC_ODBCBASE OTools
         {
         public:
-            /// @throws css::sdbc::SQLException
             static void ThrowException( const OConnection* _pConnection,
                                         SQLRETURN _rRetCode,
                                         SQLHANDLE _pContext,
                                         SQLSMALLINT _nHandleType,
-                                        const css::uno::Reference< css::uno::XInterface >& _xInterface,
+                                        const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
                                         bool _bNoFound=true,
-                                        rtl_TextEncoding _nTextEncoding = RTL_TEXTENCODING_MS_1252);
+                                        rtl_TextEncoding _nTextEncoding = RTL_TEXTENCODING_MS_1252)
+                                        throw(::com::sun::star::sdbc::SQLException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static void GetInfo(OConnection* _pConnection,
                                 SQLHANDLE _aConnectionHandle,
                                 SQLUSMALLINT _nInfo,
                                 OUString &_rValue,
-                                const css::uno::Reference< css::uno::XInterface >& _xInterface,
-                                rtl_TextEncoding _nTextEncoding);
+                                const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
+                                rtl_TextEncoding _nTextEncoding)
+                                throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static void GetInfo(OConnection* _pConnection,
                                 SQLHANDLE _aConnectionHandle,
                                 SQLUSMALLINT _nInfo,
                                 sal_Int32 &_rValue,
-                                const css::uno::Reference< css::uno::XInterface >& _xInterface);
+                                const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static void GetInfo(OConnection* _pConnection,
                                 SQLHANDLE _aConnectionHandle,
                                 SQLUSMALLINT _nInfo,
                                 SQLUSMALLINT &_rValue,
-                                const css::uno::Reference< css::uno::XInterface >& _xInterface);
+                                const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static void GetInfo(OConnection* _pConnection,
                                 SQLHANDLE _aConnectionHandle,
                                 SQLUSMALLINT _nInfo,
                                 SQLUINTEGER &_rValue,
-                                const css::uno::Reference< css::uno::XInterface >& _xInterface);
+                                const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
             static sal_Int32 MapOdbcType2Jdbc(SQLSMALLINT _nType);
             static SQLSMALLINT jdbcTypeToOdbc(sal_Int32 jdbcType);
 
-            static DATE_STRUCT DateToOdbcDate(const css::util::Date& x)
+            static DATE_STRUCT DateToOdbcDate(const ::com::sun::star::util::Date& x)
             {
                 DATE_STRUCT aVal;
                 aVal.year   = x.Year;
@@ -152,7 +145,7 @@ namespace connectivity
                 aVal.day    = x.Day;
                 return aVal;
             }
-            static TIME_STRUCT TimeToOdbcTime(const css::util::Time& x)
+            static TIME_STRUCT TimeToOdbcTime(const ::com::sun::star::util::Time& x)
             {
                 TIME_STRUCT aVal;
                 aVal.hour   = x.Hours;
@@ -160,7 +153,7 @@ namespace connectivity
                 aVal.second = x.Seconds;
                 return aVal;
             }
-            static TIMESTAMP_STRUCT DateTimeToTimestamp(const css::util::DateTime& x)
+            static TIMESTAMP_STRUCT DateTimeToTimestamp(const ::com::sun::star::util::DateTime& x)
             {
                 TIMESTAMP_STRUCT aVal;
                 aVal.year       = x.Year;
@@ -186,37 +179,29 @@ namespace connectivity
                                      SQLSMALLINT& fCType,
                                      SQLSMALLINT& fSqlType);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static OUString getStringValue(  OConnection* _pConnection,
                                                     SQLHANDLE _aStatementHandle,
                                                     sal_Int32 columnIndex,
                                                     SQLSMALLINT _fSqlType,
                                                     bool &_bWasNull,
-                                                    const css::uno::Reference< css::uno::XInterface >& _xInterface,
-                                                    rtl_TextEncoding _nTextEncoding);
+                                                    const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
+                                                    rtl_TextEncoding _nTextEncoding) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            static  css::uno::Sequence<sal_Int8> getBytesValue(const OConnection* _pConnection,
+            static  ::com::sun::star::uno::Sequence<sal_Int8> getBytesValue(const OConnection* _pConnection,
                                                                             SQLHANDLE _aStatementHandle,
                                                                             sal_Int32 columnIndex,
                                                                             SQLSMALLINT _fSqlType,
                                                                             bool &_bWasNull,
-                                                                            const css::uno::Reference< css::uno::XInterface >& _xInterface);
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
+                                                                            const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
             static void getValue(   OConnection* _pConnection,
                                     SQLHANDLE _aStatementHandle,
                                     sal_Int32 columnIndex,
                                     SQLSMALLINT _nType,
                                     bool &_bWasNull,
-                                    const css::uno::Reference< css::uno::XInterface >& _xInterface,
+                                    const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
                                     void* _pValue,
-                                    SQLLEN _nSize);
+                                    SQLLEN _nSize) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static void bindValue(  OConnection* _pConnection,
                                     SQLHANDLE _aStatementHandle,
                                     sal_Int32 columnIndex,
@@ -225,20 +210,18 @@ namespace connectivity
                                     const void* _pValue,
                                     void*       _pData,
                                     SQLLEN *pLen,
-                                    const css::uno::Reference< css::uno::XInterface >& _xInterface,
+                                    const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
                                     rtl_TextEncoding _nTextEncoding,
-                                    bool _bUseOldTimeDate);
+                                    bool _bUseOldTimeDate) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
         };
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
         template <class T> void getValue(   OConnection* _pConnection,
                                             SQLHANDLE _aStatementHandle,
                                             sal_Int32 columnIndex,
                                             SQLSMALLINT _nType,
                                             bool &_bWasNull,
-                                            const css::uno::Reference< css::uno::XInterface >& _xInterface,
-                                            T& _rValue)
+                                            const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface,
+                                            T& _rValue) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException)
         {
             OTools::getValue(_pConnection,_aStatementHandle,columnIndex,_nType,_bWasNull,_xInterface,&_rValue,sizeof _rValue);
         }

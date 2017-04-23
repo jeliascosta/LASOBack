@@ -79,13 +79,16 @@ namespace slideshow
                 // if not done yet: revoke subset from original
                 disableSubsetShape();
             }
-            catch (const uno::Exception&)
+            catch (uno::Exception &)
             {
-                SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
+                OSL_FAIL( OUStringToOString(
+                                comphelper::anyToString(
+                                    cppu::getCaughtException() ),
+                                RTL_TEXTENCODING_UTF8 ).getStr() );
             }
         }
 
-        AttributableShapeSharedPtr const & ShapeSubset::getSubsetShape() const
+        AttributableShapeSharedPtr ShapeSubset::getSubsetShape() const
         {
             return mpSubsetShape ? mpSubsetShape : mpOriginalShape;
         }

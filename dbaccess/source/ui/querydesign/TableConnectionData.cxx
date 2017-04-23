@@ -42,7 +42,7 @@ OTableConnectionData::OTableConnectionData(const TTableWindowData::value_type& _
 void OTableConnectionData::Init()
 {
     // initialise linedatalist with defaults
-    OSL_ENSURE(m_vConnLineData.empty(), "OTableConnectionData::Init() : call only with empty line list!");
+    OSL_ENSURE(m_vConnLineData.empty(), "OTableConnectionData::Init() : nur mit leere Linienliste aufzurufen !");
     ResetConnLines();
         // this creates the defaults
 }
@@ -71,7 +71,7 @@ OTableConnectionData& OTableConnectionData::operator=( const OTableConnectionDat
 
     m_pReferencingTable = rConnData.m_pReferencingTable;
     m_pReferencedTable = rConnData.m_pReferencedTable;
-    m_aConnName = rConnData.m_aConnName;
+    m_aConnName = rConnData.GetConnName();
 
     // clear line list
     ResetConnLines();

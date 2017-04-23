@@ -24,7 +24,7 @@
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/viewsh.hxx>
 #include <sfx2/bindings.hxx>
-#include <com/sun/star/lang/NoSupportException.hpp>
+
 #include <comphelper/anytostring.hxx>
 #include <comphelper/flagguard.hxx>
 #include <svl/undo.hxx>
@@ -42,10 +42,15 @@ namespace sfx2
     using ::com::sun::star::uno::XInterface;
     using ::com::sun::star::uno::RuntimeException;
     using ::com::sun::star::uno::Sequence;
+    using ::com::sun::star::util::InvalidStateException;
+    using ::com::sun::star::document::EmptyUndoStackException;
+    using ::com::sun::star::util::NotLockedException;
+    using ::com::sun::star::document::UndoContextNotClosedException;
     using ::com::sun::star::document::XUndoAction;
     using ::com::sun::star::lang::IllegalArgumentException;
     using ::com::sun::star::lang::NotInitializedException;
     using ::com::sun::star::document::XUndoManagerListener;
+    using ::com::sun::star::document::UndoFailedException;
     using ::com::sun::star::document::XUndoManager;
     using ::com::sun::star::lang::NoSupportException;
     using ::com::sun::star::frame::XModel;
@@ -73,6 +78,8 @@ namespace sfx2
         virtual ~DocumentUndoManager_Impl()
         {
         };
+
+              SfxObjectShell* getObjectShell()       { return rAntiImpl.getBaseModel().GetObjectShell(); }
 
         // IUndoManagerImplementation
         virtual ::svl::IUndoManager&        getImplUndoManager() override;
@@ -127,7 +134,7 @@ namespace sfx2
     {
         SfxModelGuard aGuard( rAntiImpl );
 
-        const SfxObjectShell* pDocShell = rAntiImpl.getBaseModel().GetObjectShell();
+        const SfxObjectShell* pDocShell = getObjectShell();
         ENSURE_OR_THROW( pDocShell != nullptr, "lcl_invalidateUndo: no access to the doc shell!" );
         SfxViewFrame* pViewFrame = SfxViewFrame::GetFirst( pDocShell );
         while ( pViewFrame )
@@ -240,7 +247,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::enterUndoContext( const OUString& i_title )
+    void SAL_CALL DocumentUndoManager::enterUndoContext( const OUString& i_title ) throw (RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -250,7 +257,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::enterHiddenUndoContext(  )
+    void SAL_CALL DocumentUndoManager::enterHiddenUndoContext(  ) throw (EmptyUndoStackException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -260,7 +267,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::leaveUndoContext(  )
+    void SAL_CALL DocumentUndoManager::leaveUndoContext(  ) throw (InvalidStateException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -270,7 +277,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::addUndoAction( const Reference< XUndoAction >& i_action )
+    void SAL_CALL DocumentUndoManager::addUndoAction( const Reference< XUndoAction >& i_action ) throw (RuntimeException, IllegalArgumentException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -280,7 +287,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::undo(  )
+    void SAL_CALL DocumentUndoManager::undo(  ) throw (EmptyUndoStackException, UndoContextNotClosedException, UndoFailedException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -290,7 +297,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::redo(  )
+    void SAL_CALL DocumentUndoManager::redo(  ) throw (EmptyUndoStackException, UndoContextNotClosedException, UndoFailedException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -300,49 +307,49 @@ namespace sfx2
     }
 
 
-    sal_Bool SAL_CALL DocumentUndoManager::isUndoPossible(  )
+    sal_Bool SAL_CALL DocumentUndoManager::isUndoPossible(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.isUndoPossible();
     }
 
 
-    sal_Bool SAL_CALL DocumentUndoManager::isRedoPossible(  )
+    sal_Bool SAL_CALL DocumentUndoManager::isRedoPossible(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.isRedoPossible();
     }
 
 
-    OUString SAL_CALL DocumentUndoManager::getCurrentUndoActionTitle(  )
+    OUString SAL_CALL DocumentUndoManager::getCurrentUndoActionTitle(  ) throw (EmptyUndoStackException, RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.getCurrentUndoActionTitle();
     }
 
 
-    OUString SAL_CALL DocumentUndoManager::getCurrentRedoActionTitle(  )
+    OUString SAL_CALL DocumentUndoManager::getCurrentRedoActionTitle(  ) throw (EmptyUndoStackException, RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.getCurrentRedoActionTitle();
     }
 
 
-    Sequence< OUString > SAL_CALL DocumentUndoManager::getAllUndoActionTitles(  )
+    Sequence< OUString > SAL_CALL DocumentUndoManager::getAllUndoActionTitles(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.getAllUndoActionTitles();
     }
 
 
-    Sequence< OUString > SAL_CALL DocumentUndoManager::getAllRedoActionTitles(  )
+    Sequence< OUString > SAL_CALL DocumentUndoManager::getAllRedoActionTitles(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.getAllRedoActionTitles();
     }
 
 
-    void SAL_CALL DocumentUndoManager::clear(  )
+    void SAL_CALL DocumentUndoManager::clear(  ) throw (UndoContextNotClosedException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -352,7 +359,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::clearRedo(  )
+    void SAL_CALL DocumentUndoManager::clearRedo(  ) throw (UndoContextNotClosedException, RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -362,7 +369,7 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::reset()
+    void SAL_CALL DocumentUndoManager::reset() throw (RuntimeException, std::exception)
     {
         // SYNCHRONIZED --->
         UndoManagerGuard aGuard( *this );
@@ -372,49 +379,49 @@ namespace sfx2
     }
 
 
-    void SAL_CALL DocumentUndoManager::lock(  )
+    void SAL_CALL DocumentUndoManager::lock(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         m_pImpl->aUndoHelper.lock();
     }
 
 
-    void SAL_CALL DocumentUndoManager::unlock(  )
+    void SAL_CALL DocumentUndoManager::unlock(  ) throw (RuntimeException, NotLockedException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         m_pImpl->aUndoHelper.unlock();
     }
 
 
-    sal_Bool SAL_CALL DocumentUndoManager::isLocked(  )
+    sal_Bool SAL_CALL DocumentUndoManager::isLocked(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.isLocked();
     }
 
 
-    void SAL_CALL DocumentUndoManager::addUndoManagerListener( const Reference< XUndoManagerListener >& i_listener )
+    void SAL_CALL DocumentUndoManager::addUndoManagerListener( const Reference< XUndoManagerListener >& i_listener ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.addUndoManagerListener( i_listener );
     }
 
 
-    void SAL_CALL DocumentUndoManager::removeUndoManagerListener( const Reference< XUndoManagerListener >& i_listener )
+    void SAL_CALL DocumentUndoManager::removeUndoManagerListener( const Reference< XUndoManagerListener >& i_listener ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return m_pImpl->aUndoHelper.removeUndoManagerListener( i_listener );
     }
 
 
-    Reference< XInterface > SAL_CALL DocumentUndoManager::getParent(  )
+    Reference< XInterface > SAL_CALL DocumentUndoManager::getParent(  ) throw (RuntimeException, std::exception)
     {
         UndoManagerGuard aGuard( *this );
         return static_cast< XModel* >( &getBaseModel() );
     }
 
 
-    void SAL_CALL DocumentUndoManager::setParent( const Reference< XInterface >& i_parent )
+    void SAL_CALL DocumentUndoManager::setParent( const Reference< XInterface >& i_parent ) throw (NoSupportException, RuntimeException, std::exception)
     {
         (void)i_parent;
         throw NoSupportException( OUString(), m_pImpl->getThis() );

@@ -24,7 +24,6 @@
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/beans/PropertyValue.hpp>
-#include <o3tl/any.hxx>
 
 using namespace utl;
 using namespace vcl;
@@ -44,7 +43,9 @@ SettingsConfigItem* SettingsConfigItem::get()
 }
 
 SettingsConfigItem::SettingsConfigItem()
- :  ConfigItem( SETTINGS_CONFIGNODE, ConfigItemMode::DelayedUpdate ),
+        :
+        ConfigItem( OUString( SETTINGS_CONFIGNODE ),
+                    ConfigItemMode::DelayedUpdate ),
     m_aSettings( 0 )
 {
     getValues();
@@ -93,7 +94,9 @@ void SettingsConfigItem::getValues()
     for( int j = 0; j < aNames.getLength(); j++ )
     {
 #if OSL_DEBUG_LEVEL > 2
-        SAL_INFO( "vcl", "found settings data for " << aNames.getConstArray()[j] );
+        OSL_TRACE( "found settings data for \"%s\"\n",
+                 OUStringToOString( aNames.getConstArray()[j], RTL_TEXTENCODING_ASCII_US ).getStr()
+                 );
 #endif
         OUString aKeyName( aNames.getConstArray()[j] );
         Sequence< OUString > aKeys( GetNodeNames( aKeyName ) );
@@ -108,12 +111,16 @@ void SettingsConfigItem::getValues()
         const Any* pValue = aValues.getConstArray();
         for( int i = 0; i < aValues.getLength(); i++, pValue++ )
         {
-            if( auto pLine = o3tl::tryAccess<OUString>(*pValue) )
+            if( pValue->getValueTypeClass() == TypeClass_STRING )
             {
+                const OUString* pLine = static_cast<const OUString*>(pValue->getValue());
                 if( !pLine->isEmpty() )
                     m_aSettings[ aKeyName ][ pFrom[i] ] = *pLine;
 #if OSL_DEBUG_LEVEL > 2
-                SAL_INFO( "vcl", "   \"" << aKeys.getConstArray()[i] << "\"=\"" << *pLine << "\"\n" );
+                OSL_TRACE( "   \"%s\"=\"%.30s\"\n",
+                         OUStringToOString( aKeys.getConstArray()[i], RTL_TEXTENCODING_ASCII_US ).getStr(),
+                         OUStringToOString( *pLine, RTL_TEXTENCODING_ASCII_US ).getStr()
+                         );
 #endif
             }
         }

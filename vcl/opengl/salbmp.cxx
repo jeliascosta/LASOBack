@@ -69,7 +69,6 @@ inline bool determineTextureFormat(sal_uInt16 nBits, GLenum& nFormat, GLenum& nT
     default:
         break;
     }
-    SAL_WARN("vcl.opengl", "Could not determine the appropriate texture format for input bits '" << nBits << "'");
     return false;
 }
 
@@ -95,7 +94,7 @@ sal_uInt16 lclBytesPerRow(sal_uInt16 nBits, int nWidth)
 }
 
 typedef std::vector<std::unique_ptr< FixedTextureAtlasManager > > TextureAtlasVector;
-static vcl::DeleteOnDeinit< TextureAtlasVector > gTextureAtlases(new TextureAtlasVector);
+static vcl::DeleteOnDeinit< TextureAtlasVector > gTextureAtlases(new TextureAtlasVector());
 
 }
 
@@ -218,6 +217,8 @@ OpenGLTexture& OpenGLSalBitmap::GetTexture() const
     OpenGLSalBitmap* pThis = const_cast<OpenGLSalBitmap*>(this);
     if( !maTexture || mbDirtyTexture )
         pThis->CreateTexture();
+    else if( !maPendingOps.empty() )
+        pThis->ExecuteOperations();
     VCL_GL_INFO( "Got texture " << maTexture.Id() );
     return pThis->maTexture;
 }
@@ -227,6 +228,7 @@ void OpenGLSalBitmap::Destroy()
     OpenGLZone aZone;
 
     VCL_GL_INFO("Destroy OpenGLSalBitmap texture:" << maTexture.Id());
+    maPendingOps.clear();
     maTexture = OpenGLTexture();
     mpUserBuffer.reset();
 }
@@ -421,7 +423,7 @@ public:
         , mnX(0)
     {}
 
-    void writeRGB(sal_uInt8 nR, sal_uInt8 nG, sal_uInt8 nB)
+    inline void writeRGB(sal_uInt8 nR, sal_uInt8 nG, sal_uInt8 nB)
     {
         // calculate to which index we will write
         long nScanlineIndex = mnX / mnColorsPerByte;
@@ -435,7 +437,7 @@ public:
         mnX++;
     }
 
-    void nextLine(sal_uInt8* pScanline)
+    inline void nextLine(sal_uInt8* pScanline)
     {
         mnX = 0;
         mpCurrentScanline = pScanline;
@@ -446,7 +448,25 @@ public:
 
 Size OpenGLSalBitmap::GetSize() const
 {
-    return Size(mnWidth, mnHeight);
+    OpenGLZone aZone;
+
+    std::deque< OpenGLSalBitmapOp* >::const_iterator it = maPendingOps.begin();
+    Size aSize( mnWidth, mnHeight );
+
+    while( it != maPendingOps.end() )
+        (*it++)->GetSize( aSize );
+
+    return aSize;
+}
+
+void OpenGLSalBitmap::ExecuteOperations()
+{
+    while( !maPendingOps.empty() )
+    {
+        OpenGLSalBitmapOp* pOp = maPendingOps.front();
+        pOp->Execute();
+        maPendingOps.pop_front();
+    }
 }
 
 GLuint OpenGLSalBitmap::CreateTexture()
@@ -528,6 +548,7 @@ GLuint OpenGLSalBitmap::CreateTexture()
     if( bAllocated )
         delete[] pData;
 
+    ExecuteOperations();
     mbDirtyTexture = false;
 
     CHECK_GL_ERROR();
@@ -549,8 +570,8 @@ bool OpenGLSalBitmap::ReadTexture()
     OpenGLVCLContextZone aContextZone;
 
     rtl::Reference<OpenGLContext> xContext = OpenGLContext::getVCLContext();
-    xContext->state().scissor().disable();
-    xContext->state().stencil().disable();
+    xContext->state()->scissor().disable();
+    xContext->state()->stencil().disable();
 
     if (mnBits == 8 || mnBits == 16 || mnBits == 24 || mnBits == 32)
     {
@@ -632,8 +653,8 @@ bool OpenGLSalBitmap::calcChecksumGL(OpenGLTexture& rInputTexture, ChecksumType&
     OUString FragShader("areaHashCRC64TFragmentShader");
 
     rtl::Reference< OpenGLContext > xContext = OpenGLContext::getVCLContext();
-    xContext->state().scissor().disable();
-    xContext->state().stencil().disable();
+    xContext->state()->scissor().disable();
+    xContext->state()->stencil().disable();
 
     static vcl::DeleteOnDeinit<OpenGLTexture> gCRCTableTexture(
         new OpenGLTexture(512, 1, GL_RGBA, GL_UNSIGNED_BYTE,
@@ -725,6 +746,11 @@ void OpenGLSalBitmap::updateChecksum() const
         SalBitmap::updateChecksum();
 }
 
+rtl::Reference<OpenGLContext> OpenGLSalBitmap::GetBitmapContext()
+{
+    return ImplGetDefaultWindow()->GetGraphics()->GetOpenGLContext();
+}
+
 BitmapBuffer* OpenGLSalBitmap::AcquireBuffer( BitmapAccessMode nMode )
 {
     OpenGLVCLContextZone aContextZone;
@@ -736,6 +762,13 @@ BitmapBuffer* OpenGLSalBitmap::AcquireBuffer( BitmapAccessMode nMode )
             if( !AllocateUserData() )
                 return nullptr;
             if( maTexture && !ReadTexture() )
+                return nullptr;
+        }
+
+        if( !maPendingOps.empty() )
+        {
+            VCL_GL_INFO( "** Creating texture and reading it back immediately" );
+            if( !CreateTexture() || !AllocateUserData() || !ReadTexture() )
                 return nullptr;
         }
     }
@@ -864,8 +897,8 @@ bool OpenGLSalBitmap::Replace( const Color& rSearchColor, const Color& rReplaceC
 
     OpenGLZone aZone;
     rtl::Reference<OpenGLContext> xContext = OpenGLContext::getVCLContext();
-    xContext->state().scissor().disable();
-    xContext->state().stencil().disable();
+    xContext->state()->scissor().disable();
+    xContext->state()->stencil().disable();
 
     OpenGLFramebuffer* pFramebuffer;
     OpenGLProgram* pProgram;
@@ -904,8 +937,8 @@ bool OpenGLSalBitmap::ConvertToGreyscale()
 
     OpenGLZone aZone;
     rtl::Reference<OpenGLContext> xContext = OpenGLContext::getVCLContext();
-    xContext->state().scissor().disable();
-    xContext->state().stencil().disable();
+    xContext->state()->scissor().disable();
+    xContext->state()->stencil().disable();
 
     OpenGLFramebuffer* pFramebuffer;
     OpenGLProgram* pProgram;

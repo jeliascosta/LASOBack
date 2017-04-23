@@ -45,8 +45,8 @@ ChildrenManager::~ChildrenManager()
 {
     mpImpl->dispose();
 
-    // empty
-    SAL_INFO("svx", "~ChildrenManager");
+    // emtpy
+    OSL_TRACE ("~ChildrenManager");
 }
 
 long ChildrenManager::GetChildCount() const throw ()
@@ -55,16 +55,21 @@ long ChildrenManager::GetChildCount() const throw ()
 }
 
 css::uno::Reference<XAccessible> ChildrenManager::GetChild (long nIndex)
+    throw (css::uno::RuntimeException,
+           css::lang::IndexOutOfBoundsException)
 {
     return mpImpl->GetChild (nIndex);
 }
 
 Reference<XAccessible> ChildrenManager::GetChild (const Reference<drawing::XShape>& xShape)
+    throw (css::uno::RuntimeException)
 {
     return mpImpl->GetChild (xShape);
 }
 
 css::uno::Reference<css::drawing::XShape> ChildrenManager::GetChildShape(long nIndex)
+    throw (css::uno::RuntimeException,
+           css::lang::IndexOutOfBoundsException)
 {
     return mpImpl->GetChildShape(nIndex);
 }
@@ -110,9 +115,11 @@ void ChildrenManager::RemoveFocus()
 }
 
 // IAccessibleViewForwarderListener
-void ChildrenManager::ViewForwarderChanged()
+void ChildrenManager::ViewForwarderChanged(
+    IAccessibleViewForwarderListener::ChangeType aChangeType,
+    const IAccessibleViewForwarder* pViewForwarder)
 {
-    mpImpl->ViewForwarderChanged();
+    mpImpl->ViewForwarderChanged (aChangeType, pViewForwarder);
 }
 
 } // end of namespace accessibility

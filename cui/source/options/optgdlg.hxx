@@ -57,15 +57,15 @@ private:
 
     VclPtr<CheckBox>     m_pCollectUsageInfo;
 
-    DECL_LINK( TwoFigureHdl, Edit&, void );
-    DECL_LINK( TwoFigureConfigHdl, SpinField&, void );
-    DECL_LINK( TwoFigureConfigFocusHdl, Control&, void );
+    DECL_LINK_TYPED( TwoFigureHdl, Edit&, void );
+    DECL_LINK_TYPED( TwoFigureConfigHdl, SpinField&, void );
+    DECL_LINK_TYPED( TwoFigureConfigFocusHdl, Control&, void );
 protected:
-    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
 
 public:
     OfaMiscTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~OfaMiscTabPage() override;
+    virtual ~OfaMiscTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );
@@ -79,9 +79,8 @@ class SvtTabAppearanceCfg;
 class OfaViewTabPage : public SfxTabPage
 {
 private:
+    VclPtr<MetricField>    m_pWindowSizeMF;
     VclPtr<ListBox>        m_pIconSizeLB;
-    VclPtr<ListBox>        m_pSidebarIconSizeLB;
-    VclPtr<ListBox>        m_pNotebookbarIconSizeLB;
     VclPtr<ListBox>        m_pIconStyleLB;
 
     VclPtr<CheckBox>       m_pFontAntiAliasing;
@@ -89,7 +88,6 @@ private:
     VclPtr<MetricField>    m_pAAPointLimit;
 
     VclPtr<ListBox>        m_pMenuIconsLB;
-    VclPtr<ListBox>        m_pContextMenuShortcutsLB;
 
     VclPtr<CheckBox>       m_pFontShowCB;
 
@@ -105,8 +103,6 @@ private:
     VclPtr<ListBox>        m_pMouseMiddleLB;
 
     sal_Int32      nSizeLB_InitialSelection;
-    sal_Int32      nSidebarSizeLB_InitialSelection;
-    sal_Int32      nNotebookbarSizeLB_InitialSelection;
     sal_Int32      nStyleLB_InitialSelection;
 
     SvtTabAppearanceCfg*    pAppearanceCfg;
@@ -117,13 +113,13 @@ private:
     std::vector<vcl::IconThemeInfo> mInstalledIconThemes;
 
 #if defined( UNX )
-    DECL_LINK( OnAntialiasingToggled, CheckBox&, void );
+    DECL_LINK_TYPED( OnAntialiasingToggled, CheckBox&, void );
 #endif
     void UpdateOGLStatus();
 
 public:
     OfaViewTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~OfaViewTabPage() override;
+    virtual ~OfaViewTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );
@@ -163,13 +159,13 @@ class OfaLanguagesTabPage : public SfxTabPage
 
     bool            m_bDatePatternsValid;
 
-    DECL_LINK(  SupportHdl, Button*, void ) ;
-    DECL_LINK(  LocaleSettingHdl, ListBox&, void ) ;
-    DECL_LINK(  DatePatternsHdl, Edit&, void ) ;
+    DECL_LINK_TYPED(  SupportHdl, Button*, void ) ;
+    DECL_LINK_TYPED(  LocaleSettingHdl, ListBox&, void ) ;
+    DECL_LINK_TYPED(  DatePatternsHdl, Edit&, void ) ;
 
 public:
     OfaLanguagesTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~OfaLanguagesTabPage() override;
+    virtual ~OfaLanguagesTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

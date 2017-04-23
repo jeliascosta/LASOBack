@@ -53,7 +53,7 @@ void FormulaTemplate::autoReplaceRange(const OUString& aVariable, const ScRange&
     mRangeReplacementMap[aVariable] = rRange;
 }
 
-void FormulaTemplate::autoReplaceAddress(const OUString& aVariable, ScAddress const & aAddress)
+void FormulaTemplate::autoReplaceAddress(const OUString& aVariable, ScAddress aAddress)
 {
 
     mAddressReplacementMap[aVariable] = aAddress;
@@ -93,7 +93,8 @@ void FormulaTemplate::applyNumber(const OUString& aVariable, sal_Int32 aValue)
 AddressWalker::AddressWalker(ScAddress aInitialAddress) :
     mCurrentAddress(aInitialAddress),
     mMinimumAddress(aInitialAddress),
-    mMaximumAddress(aInitialAddress)
+    mMaximumAddress(aInitialAddress),
+    mTrackRange(true)
 {
     mAddressStack.push_back(mCurrentAddress);
 }
@@ -131,15 +132,21 @@ void AddressWalker::nextColumn()
 {
     mCurrentAddress.IncCol();
 
-    if(mMaximumAddress.Col() < mCurrentAddress.Col())
-        mMaximumAddress.SetCol(mCurrentAddress.Col());
+    if (mTrackRange)
+    {
+        if(mMaximumAddress.Col() < mCurrentAddress.Col())
+            mMaximumAddress.SetCol(mCurrentAddress.Col());
+    }
 }
 
 void AddressWalker::nextRow()
 {
     mCurrentAddress.IncRow();
-    if(mMaximumAddress.Row() < mCurrentAddress.Row())
-        mMaximumAddress.SetRow(mCurrentAddress.Row());
+    if (mTrackRange)
+    {
+        if(mMaximumAddress.Row() < mCurrentAddress.Row())
+            mMaximumAddress.SetRow(mCurrentAddress.Row());
+    }
 }
 
 void AddressWalker::push(SCCOL aRelativeCol, SCROW aRelativeRow, SCTAB aRelativeTab)

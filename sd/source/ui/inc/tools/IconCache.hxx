@@ -63,7 +63,7 @@ private:
 
     /** This destructor is called by SdGlobalResourceContainer.
     */
-    virtual ~IconCache() override;
+    virtual ~IconCache();
 };
 
 } // end of namespace sd

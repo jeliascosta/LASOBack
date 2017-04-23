@@ -846,10 +846,7 @@ atk_object_wrapper_new( const css::uno::Reference< css::accessibility::XAccessib
         {
             uno::Reference< accessibility::XAccessibleEventBroadcaster > xBroadcaster(xContext, uno::UNO_QUERY);
             if( xBroadcaster.is() )
-            {
-                uno::Reference<accessibility::XAccessibleEventListener> xListener(new AtkListener(pWrap));
-                xBroadcaster->addAccessibleEventListener(xListener);
-            }
+                xBroadcaster->addAccessibleEventListener( static_cast< accessibility::XAccessibleEventListener * > ( new AtkListener(pWrap) ) );
             else
                 OSL_ASSERT( false );
         }

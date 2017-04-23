@@ -42,7 +42,7 @@ sdbcx::ObjectType OUsers::createObject(const OUString& _rName)
     return new OAdoUser(m_pCatalog,isCaseSensitive(),_rName);
 }
 
-void OUsers::impl_refresh()
+void OUsers::impl_refresh() throw(RuntimeException)
 {
     m_aCollection.Refresh();
 }
@@ -55,12 +55,12 @@ Reference< XPropertySet > OUsers::createDescriptor()
 // XAppend
 sdbcx::ObjectType OUsers::appendObject( const OUString& _rForName, const Reference< XPropertySet >& descriptor )
 {
-    OUserExtend* pUser = nullptr;
-    if ( !getImplementation( pUser, descriptor ) || pUser == nullptr )
+    OUserExtend* pUser = NULL;
+    if ( !getImplementation( pUser, descriptor ) || pUser == NULL )
         m_pCatalog->getConnection()->throwGenericSQLException( STR_INVALID_USER_DESCRIPTOR_ERROR,static_cast<XTypeProvider*>(this) );
 
-    ADOUsers* pUsers = static_cast<ADOUsers*>(m_aCollection);
-    pUsers->Append(OLEVariant(pUser->getImpl()),OLEString(pUser->getPassword()).asBSTR());
+    ADOUsers* pUsers = (ADOUsers*)m_aCollection;
+    pUsers->Append(OLEVariant(pUser->getImpl()),OLEString(pUser->getPassword()));
 
     return createObject( _rForName );
 }

@@ -37,7 +37,7 @@ public:
         : ::sfx2::SvBaseLink( nMode, nFormat ), pContentNode( pNode ),
         bSwapIn( false ), bNoDataFlag( false ), bIgnoreDataChanged( false )
     {}
-    virtual ~SwBaseLink() override;
+    virtual ~SwBaseLink();
 
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
         const OUString& rMimeType, const css::uno::Any & rValue ) override;
@@ -52,7 +52,7 @@ public:
     bool Connect() { return nullptr != SvBaseLink::GetRealObject(); }
 
     // Only for graphics-links (for switching between DDE / Grf-link).
-    using SvBaseLink::SetObjType;
+    void SetObjType( sal_uInt16 nType ) { SvBaseLink::SetObjType( nType ); }
 
     bool IsRecursion( const SwBaseLink* pChkLnk ) const;
     virtual bool IsInRange( sal_uLong nSttNd, sal_uLong nEndNd, sal_Int32 nStt = 0,

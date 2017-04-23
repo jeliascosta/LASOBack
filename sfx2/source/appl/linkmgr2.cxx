@@ -63,16 +63,18 @@ public:
     virtual bool Connect( sfx2::SvBaseLink* ) override;
 };
 
+
 LinkManager::LinkManager(SfxObjectShell* p)
     : pPersist( p )
 {
 }
 
+
 LinkManager::~LinkManager()
 {
     for(tools::SvRef<SvBaseLink> & rTmp : aLinkTbl)
     {
-        if( rTmp.is() )
+        if( rTmp.Is() )
         {
             rTmp->Disconnect();
             rTmp->SetLinkManager( nullptr );
@@ -99,6 +101,7 @@ void LinkManager::CloseCachedComps()
     maCachedComps.clear();
 }
 
+
 void LinkManager::Remove( SvBaseLink *pLink )
 {
     // No duplicate links inserted
@@ -110,12 +113,12 @@ void LinkManager::Remove( SvBaseLink *pLink )
         {
             rTmp->Disconnect();
             rTmp->SetLinkManager( nullptr );
-            rTmp.clear();
+            rTmp.Clear();
             bFound = true;
         }
 
         // Remove empty ones if they exist
-        if( !rTmp.is() )
+        if( !rTmp.Is() )
         {
             aLinkTbl.erase( aLinkTbl.begin() + n );
             if( bFound )
@@ -125,6 +128,7 @@ void LinkManager::Remove( SvBaseLink *pLink )
             ++n;
     }
 }
+
 
 void LinkManager::Remove( size_t nPos, size_t nCnt )
 {
@@ -136,7 +140,7 @@ void LinkManager::Remove( size_t nPos, size_t nCnt )
         for( size_t n = nPos; n < nPos + nCnt; ++n)
         {
             tools::SvRef<SvBaseLink>& rTmp = aLinkTbl[ n ];
-            if( rTmp.is() )
+            if( rTmp.Is() )
             {
                 rTmp->Disconnect();
                 rTmp->SetLinkManager( nullptr );
@@ -146,12 +150,13 @@ void LinkManager::Remove( size_t nPos, size_t nCnt )
     }
 }
 
+
 bool LinkManager::Insert( SvBaseLink* pLink )
 {
     for( size_t n = 0; n < aLinkTbl.size(); ++n )
     {
         tools::SvRef<SvBaseLink>& rTmp = aLinkTbl[ n ];
-        if( !rTmp.is() )
+        if( !rTmp.Is() )
         {
             aLinkTbl.erase( aLinkTbl.begin() + n-- );
         }
@@ -163,6 +168,7 @@ bool LinkManager::Insert( SvBaseLink* pLink )
     aLinkTbl.push_back( tools::SvRef<SvBaseLink>(pLink) );
     return true;
 }
+
 
 bool LinkManager::InsertLink( SvBaseLink * pLink,
                                 sal_uInt16 nObjType,
@@ -176,6 +182,7 @@ bool LinkManager::InsertLink( SvBaseLink * pLink,
     pLink->SetUpdateMode( nUpdateMode );
     return Insert( pLink );
 }
+
 
 void LinkManager::InsertDDELink( SvBaseLink * pLink,
                                     const OUString& rServer,
@@ -193,6 +200,7 @@ void LinkManager::InsertDDELink( SvBaseLink * pLink,
     Insert( pLink );
 }
 
+
 void LinkManager::InsertDDELink( SvBaseLink * pLink )
 {
     DBG_ASSERT( OBJECT_CLIENT_SO & pLink->GetObjType(), "no OBJECT_CLIENT_SO" );
@@ -204,6 +212,7 @@ void LinkManager::InsertDDELink( SvBaseLink * pLink )
 
     Insert( pLink );
 }
+
 
 // Obtain the string for the dialog
 bool LinkManager::GetDisplayNames( const SvBaseLink * pLink,
@@ -279,7 +288,7 @@ void LinkManager::UpdateAllLinks(
     for( size_t n = 0; n < aLinkTbl.size(); ++n )
     {
         tools::SvRef<SvBaseLink>& rLink = aLinkTbl[ n ];
-        if( !rLink.is() )
+        if( !rLink.Is() )
         {
             Remove( n-- );
             continue;
@@ -329,6 +338,7 @@ void LinkManager::UpdateAllLinks(
     CloseCachedComps();
 }
 
+
 SvLinkSourceRef LinkManager::CreateObj( SvBaseLink * pLink )
 {
     switch( pLink->GetObjType() )
@@ -355,30 +365,34 @@ bool LinkManager::InsertServer( SvLinkSource* pObj )
     return aServerTbl.insert( pObj ).second;
 }
 
+
 void LinkManager::RemoveServer( SvLinkSource* pObj )
 {
     aServerTbl.erase( pObj );
 }
+
 
 void MakeLnkName( OUString& rName, const OUString* pType, const OUString& rFile,
                     const OUString& rLink, const OUString* pFilter )
 {
     if( pType )
     {
-        rName = comphelper::string::strip(*pType, ' ')
-            + OUStringLiteral1(cTokenSeparator);
+        rName = comphelper::string::strip(*pType, ' ');
+        rName += OUString(cTokenSeparator);
     }
-    else
+    else if( !rName.isEmpty() )
         rName.clear();
 
     rName += rFile;
 
-    rName = comphelper::string::strip(rName, ' ')
-        + OUStringLiteral1(cTokenSeparator);
-    rName = comphelper::string::strip(rName, ' ') + rLink;
+    rName = comphelper::string::strip(rName, ' ');
+    rName += OUString(cTokenSeparator);
+    rName = comphelper::string::strip(rName, ' ');
+    rName += rLink;
     if( pFilter )
     {
-        rName += OUStringLiteral1(cTokenSeparator) + *pFilter;
+        rName += OUString(cTokenSeparator);
+        rName += *pFilter;
         rName = comphelper::string::strip(rName, ' ');
     }
 }
@@ -472,12 +486,11 @@ void LinkManager::CancelTransfers()
             nullptr != ( pFileObj = static_cast<SvFileObject*>(pLnk->GetObj()) ) )
             pFileObj->CancelTransfers();
 }
-
-// For the purpose of sending Status information from the file object to
-// the base link, there exist a dedicated ClipBoardId. The SvData-object
-// gets the appropriate information as a string
-// For now this is required for file object in conjunction with JavaScript
-// - needs information about Load/Abort/Error
+    // For the purpose of sending Status information from the file object to
+    // the base link, there exist a dedicated ClipBoardId. The SvData-object
+    // gets the appropriate information as a string
+    // For now this is required for file object in conjunction with JavaScript
+    // - needs information about Load/Abort/Error
 SotClipboardFormatId LinkManager::RegisterStatusInfoId()
 {
     static SotClipboardFormatId nFormat = SotClipboardFormatId::NONE;
@@ -489,6 +502,7 @@ SotClipboardFormatId LinkManager::RegisterStatusInfoId()
     }
     return nFormat;
 }
+
 
 bool LinkManager::GetGraphicFromAny( const OUString& rMimeType,
                                 const css::uno::Any & rValue,
@@ -531,6 +545,7 @@ bool LinkManager::GetGraphicFromAny( const OUString& rMimeType,
     }
     return bRet;
 }
+
 
 OUString lcl_DDE_RelToAbs( const OUString& rTopic, const OUString& rBaseURL )
 {
@@ -667,6 +682,8 @@ bool SvxInternalLink::Connect( sfx2::SvBaseLink* pLink )
     return false;
 }
 
+
 }
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -84,7 +84,7 @@ namespace dbtools
         const OUString&  getFilterComponent( FilterComponent _eWhich ) const;
         void             setFilterComponent( FilterComponent _eWhich, const OUString& _rComponent );
 
-        bool     isApplyPublicFilter( ) const { return m_bApplyPublicFilter; }
+        inline bool     isApplyPublicFilter( ) const { return m_bApplyPublicFilter; }
                void     setApplyPublicFilter( bool _bApply );
 
     private:
@@ -97,7 +97,7 @@ namespace dbtools
         static void      appendFilterComponent( OUStringBuffer& io_appendTo, const OUString& i_component );
 
         /// checks whether there is only one (or even no) non-empty filter component
-        bool    isThereAtMostOneComponent( OUString& o_singleComponent ) const;
+        bool    isThereAtMostOneComponent( OUStringBuffer& o_singleComponent ) const;
     };
 
 

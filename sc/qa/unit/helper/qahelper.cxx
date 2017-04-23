@@ -18,14 +18,18 @@
 #include <svx/svdoole2.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/justifyitem.hxx>
-#include <formula/errorcodes.hxx>
+
 #include <cppunit/Asserter.h>
 #include <cppunit/AdditionalMessage.h>
 
+#include <config_orcus.h>
+
+#if ENABLE_ORCUS
 #if defined(_WIN32)
 #define __ORCUS_STATIC_LIB
 #endif
 #include <orcus/csv_parser.hpp>
+#endif
 
 #include <fstream>
 
@@ -116,6 +120,8 @@ void loadFile(const OUString& aFileName, std::string& aContent)
     aContent = aOStream.str();
 }
 
+#if ENABLE_ORCUS
+
 void testFile(OUString& aFileName, ScDocument& rDoc, SCTAB nTab, StringType aStringFormat)
 {
     csv_handler aHandler(&rDoc, nTab, aStringFormat);
@@ -164,12 +170,19 @@ void testCondFile(OUString& aFileName, ScDocument* pDoc, SCTAB nTab)
     }
 }
 
+#else
+
+void testFile(OUString&, ScDocument&, SCTAB, StringType) {}
+void testCondFile(OUString&, ScDocument*, SCTAB) {}
+
+#endif
+
 void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
 {
     //test Sheet1 with csv file
     OUString aCSVFileName;
     pTest->createCSVPath("numberFormat.", aCSVFileName);
-    testFile(aCSVFileName, *pDoc, 0, StringType::PureString);
+    testFile(aCSVFileName, *pDoc, 0, PureString);
     //need to test the color of B3
     //it's not a font color!
     //formatting for B5: # ??/100 gets lost during import
@@ -225,17 +238,17 @@ void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
     }
     pPattern = pDoc->GetPattern(1,4,1);
     Color aColor = static_cast<const SvxBrushItem&>(pPattern->GetItem(ATTR_BACKGROUND)).GetColor();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("background color should be green", Color(COL_LIGHTGREEN), aColor);
+    CPPUNIT_ASSERT_MESSAGE("background color should be green", aColor == COL_LIGHTGREEN);
     pPattern = pDoc->GetPattern(2,0,1);
-    SvxCellHorJustify eHorJustify = static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned centre horizontally", SvxCellHorJustify::Center, eHorJustify);
+    SvxCellHorJustify eHorJustify = static_cast<SvxCellHorJustify>(static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned centre horizontally", SVX_HOR_JUSTIFY_CENTER, eHorJustify);
     //test alignment
     pPattern = pDoc->GetPattern(2,1,1);
-    eHorJustify = static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned right horizontally", SvxCellHorJustify::Right, eHorJustify);
+    eHorJustify = static_cast<SvxCellHorJustify>(static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned right horizontally", SVX_HOR_JUSTIFY_RIGHT, eHorJustify);
     pPattern = pDoc->GetPattern(2,2,1);
-    eHorJustify = static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned block horizontally", SvxCellHorJustify::Block, eHorJustify);
+    eHorJustify = static_cast<SvxCellHorJustify>(static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("cell content should be aligned block horizontally", SVX_HOR_JUSTIFY_BLOCK, eHorJustify);
 
     //test Sheet3 only for ods and xlsx
     if ( nFormat == FORMAT_ODS || nFormat == FORMAT_XLSX )
@@ -253,8 +266,8 @@ void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
             CPPUNIT_ASSERT_EQUAL_MESSAGE("parent style for Sheet4.B2 is 'Excel Built-in Date'", sExpected, sResult);
             // check  align of style
             SfxItemSet& rItemSet = pStyleSheet->GetItemSet();
-            eHorJustify = static_cast< const SvxHorJustifyItem& >(rItemSet.Get( ATTR_HOR_JUSTIFY ) ).GetValue();
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("'Excel Built-in Date' style should be aligned centre horizontally", SvxCellHorJustify::Center, eHorJustify);
+            eHorJustify = static_cast<SvxCellHorJustify>(static_cast< const SvxHorJustifyItem& >(rItemSet.Get( ATTR_HOR_JUSTIFY ) ).GetValue() );
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("'Excel Built-in Date' style should be aligned centre horizontally", SVX_HOR_JUSTIFY_CENTER, eHorJustify);
             // check date format ( should be just month e.g. 29 )
             sResult =pDoc->GetString( 1,1,3 );
             sExpected = "29";
@@ -262,8 +275,8 @@ void testFormats(ScBootstrapFixture* pTest, ScDocument* pDoc, sal_Int32 nFormat)
 
             // check actual align applied to cell, should be the same as
             // the style
-            eHorJustify = static_cast< const SvxHorJustifyItem& >(pPattern->GetItem( ATTR_HOR_JUSTIFY ) ).GetValue();
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("cell with 'Excel Built-in Date' style should be aligned centre horizontally", SvxCellHorJustify::Center, eHorJustify);
+            eHorJustify = static_cast<SvxCellHorJustify>(static_cast< const SvxHorJustifyItem& >(pPattern->GetItem( ATTR_HOR_JUSTIFY ) ).GetValue() );
+            CPPUNIT_ASSERT_EQUAL_MESSAGE("cell with 'Excel Built-in Date' style should be aligned centre horizontally", SVX_HOR_JUSTIFY_CENTER, eHorJustify);
         }
     }
 
@@ -484,44 +497,6 @@ ScTokenArray* compileFormula(
     return aComp.CompileString(rFormula);
 }
 
-bool checkOutput(
-    ScDocument* pDoc, const ScRange& aOutRange,
-    const std::vector<std::vector<const char*>>& aCheck, const char* pCaption )
-{
-    bool bResult = true;
-    const ScAddress& s = aOutRange.aStart;
-    const ScAddress& e = aOutRange.aEnd;
-    svl::GridPrinter printer(e.Row() - s.Row() + 1, e.Col() - s.Col() + 1, CALC_DEBUG_OUTPUT != 0);
-    SCROW nOutRowSize = e.Row() - s.Row() + 1;
-    SCCOL nOutColSize = e.Col() - s.Col() + 1;
-    for (SCROW nRow = 0; nRow < nOutRowSize; ++nRow)
-    {
-        for (SCCOL nCol = 0; nCol < nOutColSize; ++nCol)
-        {
-            OUString aVal = pDoc->GetString(nCol + s.Col(), nRow + s.Row(), s.Tab());
-            printer.set(nRow, nCol, aVal);
-            const char* p = aCheck[nRow][nCol];
-            if (p)
-            {
-                OUString aCheckVal = OUString::createFromAscii(p);
-                bool bEqual = aCheckVal.equals(aVal);
-                if (!bEqual)
-                {
-                    std::cout << "Expected: " << aCheckVal << "  Actual: " << aVal << std::endl;
-                    bResult = false;
-                }
-            }
-            else if (!aVal.isEmpty())
-            {
-                std::cout << "Empty cell expected" << std::endl;
-                bResult = false;
-            }
-        }
-    }
-    printer.print(pCaption);
-    return bResult;
-}
-
 void clearFormulaCellChangedFlag( ScDocument& rDoc, const ScRange& rRange )
 {
     const ScAddress& s = rRange.aStart;
@@ -547,7 +522,7 @@ bool isFormulaWithoutError(ScDocument& rDoc, const ScAddress& rPos)
     if (!pFC)
         return false;
 
-    return pFC->GetErrCode() == FormulaError::NONE;
+    return pFC->GetErrCode() == 0;
 }
 
 OUString toString(
@@ -568,12 +543,12 @@ ScDocShellRef ScBootstrapFixture::load( bool bReadWrite,
     std::shared_ptr<const SfxFilter> pFilter(new SfxFilter(
         rFilter,
         OUString(), nFilterFlags, nClipboardID, rTypeName, 0, OUString(),
-        rUserData, "private:factory/scalc"));
+        rUserData, OUString("private:factory/scalc*")));
     const_cast<SfxFilter*>(pFilter.get())->SetVersion(nFilterVersion);
 
     ScDocShellRef xDocShRef = new ScDocShell;
     xDocShRef->GetDocument().EnableUserInteraction(false);
-    SfxMedium* pSrcMed = new SfxMedium(rURL, bReadWrite ? StreamMode::STD_READWRITE : StreamMode::STD_READ );
+    SfxMedium* pSrcMed = new SfxMedium(rURL, bReadWrite ? STREAM_STD_READWRITE : STREAM_STD_READ );
     pSrcMed->SetFilter(pFilter);
     pSrcMed->UseInteractionHandler(false);
     SfxItemSet* pSet = pSrcMed->GetItemSet();
@@ -587,7 +562,7 @@ ScDocShellRef ScBootstrapFixture::load( bool bReadWrite,
     {
         xDocShRef->DoClose();
         // load failed.
-        xDocShRef.clear();
+        xDocShRef.Clear();
     }
 
     return xDocShRef;
@@ -653,14 +628,14 @@ ScDocShellRef ScBootstrapFixture::saveAndReload(
 {
 
     utl::TempFile aTempFile;
-    SfxMedium aStoreMedium( aTempFile.GetURL(), StreamMode::STD_WRITE );
+    SfxMedium aStoreMedium( aTempFile.GetURL(), STREAM_STD_WRITE );
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     if (nFormatType == ODS_FORMAT_TYPE)
         nExportFormat = SotClipboardFormatId::STARCHART_8;
     std::shared_ptr<const SfxFilter> pExportFilter(new SfxFilter(
         rFilter,
         OUString(), nFormatType, nExportFormat, rTypeName, 0, OUString(),
-        rUserData, "private:factory/scalc*" ));
+        rUserData, OUString("private:factory/scalc*") ));
     const_cast<SfxFilter*>(pExportFilter.get())->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
     aStoreMedium.SetFilter(pExportFilter);
     pShell->DoSaveAs( aStoreMedium );
@@ -687,7 +662,7 @@ ScDocShellRef ScBootstrapFixture::saveAndReload( ScDocShell* pShell, sal_Int32 n
     OUString aFilterType(aFileFormats[nFormat].pTypeName, strlen(aFileFormats[nFormat].pTypeName), RTL_TEXTENCODING_UTF8);
     ScDocShellRef xDocSh = saveAndReload(pShell, aFilterName, OUString(), aFilterType, aFileFormats[nFormat].nFormatType);
 
-    CPPUNIT_ASSERT(xDocSh.is());
+    CPPUNIT_ASSERT(xDocSh.Is());
     return xDocSh;
 }
 
@@ -698,7 +673,7 @@ std::shared_ptr<utl::TempFile> ScBootstrapFixture::exportTo( ScDocShell* pShell,
 
     std::shared_ptr<utl::TempFile> pTempFile(new utl::TempFile());
     pTempFile->EnableKillingFile();
-    SfxMedium aStoreMedium( pTempFile->GetURL(), StreamMode::STD_WRITE );
+    SfxMedium aStoreMedium( pTempFile->GetURL(), STREAM_STD_WRITE );
     SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
     SfxFilterFlags nFormatType = aFileFormats[nFormat].nFormatType;
     if (nFormatType == ODS_FORMAT_TYPE)
@@ -706,7 +681,7 @@ std::shared_ptr<utl::TempFile> ScBootstrapFixture::exportTo( ScDocShell* pShell,
     std::shared_ptr<SfxFilter> pExportFilter(new SfxFilter(
         aFilterName,
         OUString(), nFormatType, nExportFormat, aFilterType, 0, OUString(),
-        OUString(), "private:factory/scalc*" ));
+        OUString(), OUString("private:factory/scalc*") ));
     pExportFilter.get()->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
     aStoreMedium.SetFilter(pExportFilter);
     pShell->DoSaveAs( aStoreMedium );
@@ -729,12 +704,12 @@ void ScBootstrapFixture::miscRowHeightsTest( TestParam* aTestValues, unsigned in
         int nImportType =  aTestValues[ index ].nImportType;
         int nExportType =  aTestValues[ index ].nExportType;
         ScDocShellRef xShell = loadDoc( sFileName, nImportType );
-        CPPUNIT_ASSERT(xShell.is());
+        CPPUNIT_ASSERT(xShell.Is());
 
         if ( nExportType != -1 )
             xShell = saveAndReload(&(*xShell), nExportType );
 
-        CPPUNIT_ASSERT(xShell.is());
+        CPPUNIT_ASSERT(xShell.Is());
 
         ScDocument& rDoc = xShell->GetDocument();
 
@@ -753,7 +728,7 @@ void ScBootstrapFixture::miscRowHeightsTest( TestParam* aTestValues, unsigned in
                 int nHeight = sc::TwipsToHMM( rDoc.GetRowHeight(nRow, nTab, false) );
                 if ( bCheckOpt )
                 {
-                    bool bOpt = !(rDoc.GetRowFlags( nRow, nTab ) & CRFlags::ManualSize);
+                    bool bOpt = !(rDoc.GetRowFlags( nRow, nTab ) & CR_MANUALSIZE);
                     CPPUNIT_ASSERT_EQUAL(aTestValues[ index ].pData[ i ].bOptimal, bOpt);
                 }
                 CPPUNIT_ASSERT_EQUAL(nExpectedHeight, nHeight);
@@ -772,7 +747,7 @@ std::string to_std_string(const OUString& rStr)
 
 }
 
-void checkFormula(ScDocument& rDoc, const ScAddress& rPos, const char* expected, const char* msg, CppUnit::SourceLine const & sourceLine)
+void checkFormula(ScDocument& rDoc, const ScAddress& rPos, const char* expected, const char* msg, CppUnit::SourceLine sourceLine)
 {
     ScTokenArray* pCode = getTokens(rDoc, rPos);
     if (!pCode)

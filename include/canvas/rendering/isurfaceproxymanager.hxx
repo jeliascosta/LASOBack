@@ -56,12 +56,15 @@ namespace canvas
             real hardware surfaces.
         */
         virtual std::shared_ptr< ISurfaceProxy > createSurfaceProxy(
-            const std::shared_ptr<IColorBuffer>& pBuffer ) const = 0;
+            const IColorBufferSharedPtr& pBuffer ) const = 0;
     };
+
+    typedef std::shared_ptr< ISurfaceProxyManager > ISurfaceProxyManagerSharedPtr;
+
 
     /** Create a surface proxy for the given render module.
      */
-    CANVASTOOLS_DLLPUBLIC std::shared_ptr<ISurfaceProxyManager> createSurfaceProxyManager( const std::shared_ptr<IRenderModule>& rRenderModule );
+    CANVASTOOLS_DLLPUBLIC ISurfaceProxyManagerSharedPtr createSurfaceProxyManager( const IRenderModuleSharedPtr& rRenderModule );
 }
 
 #endif // INCLUDED_CANVAS_RENDERING_ISURFACEPROXYMANAGER_HXX

@@ -29,8 +29,24 @@ class LocaleDataWrapper;
 
 class VCL_DLLPUBLIC LongCurrencyFormatter : public FormatterBase
 {
+private:
+    SAL_DLLPRIVATE friend bool ImplLongCurrencyReformat( const OUString&, BigInt, BigInt, sal_uInt16, const LocaleDataWrapper&, OUString&, LongCurrencyFormatter& );
+    SAL_DLLPRIVATE void        ImpInit();
+
+protected:
+    BigInt                  mnFieldValue;
+    BigInt                  mnLastValue;
+    BigInt                  mnMin;
+    BigInt                  mnMax;
+    BigInt                  mnCorrectedValue;
+    OUString                maCurrencySymbol;
+    sal_uInt16              mnType;
+    sal_uInt16              mnDecimalDigits;
+    bool                mbThousandSep;
+
+                            LongCurrencyFormatter();
 public:
-                            virtual ~LongCurrencyFormatter() override;
+                            virtual ~LongCurrencyFormatter();
 
     virtual void            Reformat() override;
     virtual void            ReformatAll() override;
@@ -39,7 +55,7 @@ public:
     bool                    IsUseThousandSep() const { return mbThousandSep; }
 
     void                    SetCurrencySymbol( const OUString& rStr );
-    OUString const &        GetCurrencySymbol() const;
+    OUString                GetCurrencySymbol() const;
 
     void                    SetMin(const BigInt& rNewMin);
     const BigInt&           GetMin() const { return mnMin; }
@@ -51,23 +67,6 @@ public:
     void                    SetValue(const BigInt& rNewValue);
     void                    SetUserValue( BigInt nNewValue );
     BigInt                  GetValue() const;
-
-protected:
-    BigInt                  mnLastValue;
-    BigInt                  mnMin;
-    BigInt                  mnMax;
-
-                            LongCurrencyFormatter();
-private:
-    friend bool ImplLongCurrencyReformat( const OUString&, BigInt const &, BigInt const &, sal_uInt16, const LocaleDataWrapper&, OUString&, LongCurrencyFormatter& );
-    SAL_DLLPRIVATE void        ImpInit();
-
-    BigInt                  mnFieldValue;
-    BigInt                  mnCorrectedValue;
-    OUString                maCurrencySymbol;
-    sal_uInt16              mnDecimalDigits;
-    bool                    mbThousandSep;
-
 };
 
 
@@ -84,7 +83,7 @@ public:
                     LongCurrencyField( vcl::Window* pParent, WinBits nWinStyle );
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
 
     void            Modify() override;
     void            Up() override;
@@ -107,7 +106,7 @@ public:
                     LongCurrencyBox( vcl::Window* pParent, WinBits nWinStyle );
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
 
     void            Modify() override;
     void            ReformatAll() override;

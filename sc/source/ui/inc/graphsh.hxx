@@ -43,7 +43,7 @@ private:
 
 public:
     ScGraphicShell(ScViewData* pData);
-    virtual ~ScGraphicShell() override;
+    virtual ~ScGraphicShell();
 
     void    Execute(SfxRequest& rReq);
     void    GetAttrState(SfxItemSet &rSet);

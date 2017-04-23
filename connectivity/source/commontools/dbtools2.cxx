@@ -638,9 +638,9 @@ bool isDataSourcePropertyEnabled(const Reference<XInterface>& _xProp, const OUSt
         {
             Sequence< PropertyValue > aInfo;
             xProp->getPropertyValue("Info") >>= aInfo;
-            const PropertyValue* pValue =std::find_if(aInfo.getConstArray(),
+            const PropertyValue* pValue =::std::find_if(aInfo.getConstArray(),
                                                 aInfo.getConstArray() + aInfo.getLength(),
-                                                std::bind2nd(TPropertyValueEqualFunctor(),_sProperty));
+                                                ::std::bind2nd(TPropertyValueEqualFunctor(),_sProperty));
             if ( pValue && pValue != (aInfo.getConstArray() + aInfo.getLength()) )
                 pValue->Value >>= bEnabled;
         }
@@ -927,7 +927,7 @@ sal_Int32 DBTypeConversion::convertUnicodeString( const OUString& _rSource, OStr
         throw SQLException(
             sMessage,
             nullptr,
-            "22018",
+            OUString( "22018" ),
             22018,
             Any()
         );
@@ -953,7 +953,7 @@ sal_Int32 DBTypeConversion::convertUnicodeStringToLength( const OUString& _rSour
         throw SQLException(
             sMessage,
             nullptr,
-            "22001",
+            OUString( "22001" ),
             22001,
             Any()
         );

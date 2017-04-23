@@ -57,9 +57,11 @@ namespace unographic {
 GraphicDescriptor::GraphicDescriptor() :
     ::comphelper::PropertySetHelper( createPropertySetInfo(), SAL_NO_ACQUIRE ),
     mpGraphic( nullptr ),
-    meType( GraphicType::NONE ),
+    meType( GRAPHIC_NONE ),
     mnBitsPerPixel ( 0 ),
-    mbTransparent ( false )
+    mbTransparent ( false ),
+    mbAlpha( false ),
+    mbAnimated( false )
 {
 }
 
@@ -98,7 +100,7 @@ void GraphicDescriptor::implCreate( SvStream& rIStm, const OUString* pURL )
 
     mpGraphic = nullptr;
     maMimeType.clear();
-    meType = GraphicType::NONE;
+    meType = GRAPHIC_NONE;
     mnBitsPerPixel = 0;
     mbTransparent = false;
 
@@ -142,18 +144,35 @@ void GraphicDescriptor::implCreate( SvStream& rIStm, const OUString* pURL )
 
         if( graphic::GraphicType::EMPTY != cType )
         {
-            meType = ( ( graphic::GraphicType::PIXEL == cType ) ? GraphicType::Bitmap : GraphicType::GdiMetafile );
+            meType = ( ( graphic::GraphicType::PIXEL == cType ) ? GRAPHIC_BITMAP : GRAPHIC_GDIMETAFILE );
             maMimeType = OUString( pMimeType, strlen(pMimeType), RTL_TEXTENCODING_ASCII_US );
             maSizePixel = aDescriptor.GetSizePixel();
             maSize100thMM = aDescriptor.GetSize_100TH_MM();
             mnBitsPerPixel = aDescriptor.GetBitsPerPixel();
             mbTransparent = ( graphic::GraphicType::VECTOR == cType );
+            mbAlpha = mbAnimated = false;
         }
     }
 }
 
 
+OUString GraphicDescriptor::getImplementationName_Static()
+    throw()
+{
+    return OUString( "com.sun.star.comp.graphic.GraphicDescriptor"  );
+}
+
+
+uno::Sequence< OUString > GraphicDescriptor::getSupportedServiceNames_Static()
+    throw(  )
+{
+    uno::Sequence< OUString > aSeq { "com.sun.star.graphic.GraphicDescriptor" };
+    return aSeq;
+}
+
+
 uno::Any SAL_CALL GraphicDescriptor::queryAggregation( const uno::Type & rType )
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Any aAny;
 
@@ -168,13 +187,14 @@ uno::Any SAL_CALL GraphicDescriptor::queryAggregation( const uno::Type & rType )
     else if( rType == cppu::UnoType<beans::XMultiPropertySet>::get())
         aAny <<= uno::Reference< beans::XMultiPropertySet >(this);
     else
-        aAny = OWeakAggObject::queryAggregation( rType );
+        aAny <<= OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
 
 
 uno::Any SAL_CALL GraphicDescriptor::queryInterface( const uno::Type & rType )
+    throw( uno::RuntimeException, std::exception )
 {
     return OWeakAggObject::queryInterface( rType );
 }
@@ -195,23 +215,27 @@ void SAL_CALL GraphicDescriptor::release()
 
 
 OUString SAL_CALL GraphicDescriptor::getImplementationName()
+    throw( uno::RuntimeException, std::exception )
 {
-    return OUString( "com.sun.star.comp.graphic.GraphicDescriptor"  );
+    return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL GraphicDescriptor::supportsService( const OUString& ServiceName )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL GraphicDescriptor::getSupportedServiceNames()
+    throw( uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.graphic.GraphicDescriptor" };
+    return getSupportedServiceNames_Static();
 }
 
 
 uno::Sequence< uno::Type > SAL_CALL GraphicDescriptor::getTypes()
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence< uno::Type >  aTypes( 6 );
     uno::Type*                  pTypes = aTypes.getArray();
@@ -227,6 +251,7 @@ uno::Sequence< uno::Type > SAL_CALL GraphicDescriptor::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL GraphicDescriptor::getImplementationId()
+    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -258,12 +283,17 @@ uno::Sequence< sal_Int8 > SAL_CALL GraphicDescriptor::getImplementationId()
 
 
 void GraphicDescriptor::_setPropertyValues( const comphelper::PropertyMapEntry** /*ppEntries*/, const uno::Any* /*pValues*/ )
+    throw( beans::UnknownPropertyException,
+           beans::PropertyVetoException,
+           lang::IllegalArgumentException,
+              lang::WrappedTargetException )
 {
     // we only have readonly attributes
 }
 
 
 void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, uno::Any* pValues )
+    throw( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -276,8 +306,8 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
             {
                 const GraphicType eType( mpGraphic ? mpGraphic->GetType() : meType );
 
-                *pValues <<= ( ( eType == GraphicType::Bitmap ? graphic::GraphicType::PIXEL :
-                                ( eType == GraphicType::GdiMetafile ? graphic::GraphicType::VECTOR :
+                *pValues <<= ( ( eType == GRAPHIC_BITMAP ? graphic::GraphicType::PIXEL :
+                                ( eType == GRAPHIC_GDIMETAFILE ? graphic::GraphicType::VECTOR :
                                 graphic::GraphicType::EMPTY ) ) );
             }
             break;
@@ -294,19 +324,19 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
 
                         switch( mpGraphic->GetLink().GetType() )
                         {
-                            case GfxLinkType::NativeGif: pMimeType = MIMETYPE_GIF; break;
+                            case GFX_LINK_TYPE_NATIVE_GIF: pMimeType = MIMETYPE_GIF; break;
 
                             // #i15508# added BMP type for better exports (checked, works)
-                            case GfxLinkType::NativeBmp: pMimeType = MIMETYPE_BMP; break;
+                            case GFX_LINK_TYPE_NATIVE_BMP: pMimeType = MIMETYPE_BMP; break;
 
-                            case GfxLinkType::NativeJpg: pMimeType = MIMETYPE_JPG; break;
-                            case GfxLinkType::NativePng: pMimeType = MIMETYPE_PNG; break;
-                            case GfxLinkType::NativeWmf: pMimeType = MIMETYPE_WMF; break;
-                            case GfxLinkType::NativeMet: pMimeType = MIMETYPE_MET; break;
-                            case GfxLinkType::NativePct: pMimeType = MIMETYPE_PCT; break;
+                            case GFX_LINK_TYPE_NATIVE_JPG: pMimeType = MIMETYPE_JPG; break;
+                            case GFX_LINK_TYPE_NATIVE_PNG: pMimeType = MIMETYPE_PNG; break;
+                            case GFX_LINK_TYPE_NATIVE_WMF: pMimeType = MIMETYPE_WMF; break;
+                            case GFX_LINK_TYPE_NATIVE_MET: pMimeType = MIMETYPE_MET; break;
+                            case GFX_LINK_TYPE_NATIVE_PCT: pMimeType = MIMETYPE_PCT; break;
 
                             // added Svg mimetype support
-                            case GfxLinkType::NativeSvg: pMimeType = MIMETYPE_SVG; break;
+                            case GFX_LINK_TYPE_NATIVE_SVG: pMimeType = MIMETYPE_SVG; break;
 
                             default:
                                 pMimeType = nullptr;
@@ -317,7 +347,7 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
                             aMimeType = OUString::createFromAscii( pMimeType );
                     }
 
-                    if( aMimeType.isEmpty() && ( mpGraphic->GetType() != GraphicType::NONE ) )
+                    if( aMimeType.isEmpty() && ( mpGraphic->GetType() != GRAPHIC_NONE ) )
                         aMimeType = MIMETYPE_VCLGRAPHIC;
                 }
                 else
@@ -333,7 +363,7 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
 
                 if( mpGraphic )
                 {
-                    if( mpGraphic->GetType() == GraphicType::Bitmap )
+                    if( mpGraphic->GetType() == GRAPHIC_BITMAP )
                     {
                         const Size aSizePix( mpGraphic->GetBitmapEx().GetSizePixel() );
                         aAWTSize = awt::Size( aSizePix.Width(), aSizePix.Height() );
@@ -352,9 +382,9 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
 
                 if( mpGraphic )
                 {
-                    if( mpGraphic->GetPrefMapMode().GetMapUnit() != MapUnit::MapPixel )
+                    if( mpGraphic->GetPrefMapMode().GetMapUnit() != MAP_PIXEL )
                     {
-                        const Size aSizeLog( OutputDevice::LogicToLogic( mpGraphic->GetPrefSize(), mpGraphic->GetPrefMapMode(), MapUnit::Map100thMM ) );
+                        const Size aSizeLog( OutputDevice::LogicToLogic( mpGraphic->GetPrefSize(), mpGraphic->GetPrefMapMode(), MAP_100TH_MM ) );
                         aAWTSize = awt::Size( aSizeLog.Width(), aSizeLog.Height() );
                     }
                 }
@@ -371,7 +401,7 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
 
                 if( mpGraphic )
                 {
-                    if( mpGraphic->GetType() == GraphicType::Bitmap )
+                    if( mpGraphic->GetType() == GRAPHIC_BITMAP )
                         nBitsPerPixel = mpGraphic->GetBitmapEx().GetBitmap().GetBitCount();
                 }
                 else
@@ -389,13 +419,13 @@ void GraphicDescriptor::_getPropertyValues( const comphelper::PropertyMapEntry**
 
             case UnoGraphicProperty::Alpha:
             {
-                *pValues <<= mpGraphic && mpGraphic->IsAlpha();
+                *pValues <<= mpGraphic ? mpGraphic->IsAlpha() : mbAlpha;
             }
             break;
 
             case UnoGraphicProperty::Animated:
             {
-                *pValues <<= mpGraphic && mpGraphic->IsAnimated();
+                *pValues <<= mpGraphic ? mpGraphic->IsAnimated() : mbAnimated;
             }
             break;
         }

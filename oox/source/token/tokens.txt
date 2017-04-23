@@ -647,9 +647,12 @@ array
 arrow
 arrowok
 artDeco
+artisticBackgroundRemoval
 artisticBlur
+artisticBrightnessContrast
 artisticCement
 artisticChalkSketch
+artisticColorTemperature
 artisticCrisscrossEtching
 artisticCutout
 artisticFilmGrain
@@ -667,6 +670,8 @@ artisticPencilGrayscale
 artisticPencilSketch
 artisticPhotocopy
 artisticPlasticWrap
+artisticSaturation
+artisticSharpenSoften
 artisticTexturizer
 artisticWatercolorSponge
 asDisplayed
@@ -771,7 +776,6 @@ background1
 background2
 backgroundQuery
 backgroundRefresh
-backgroundRemoval
 backupFile
 backward
 backwardCompatible
@@ -971,7 +975,6 @@ breadthByNode
 bright
 brightRoom
 brightness
-brightnessContrast
 brk
 brkBin
 brkBinSub
@@ -1291,7 +1294,6 @@ colorFilter
 colorId
 colorScale
 colorTemp
-colorTemperature
 colormenu
 colormode
 colormru
@@ -4438,7 +4440,6 @@ sans-serif
 sat
 satMod
 satOff
-saturation
 saveData
 saveExternalLinkValues
 saveFormsData
@@ -4565,7 +4566,6 @@ shapetype
 shared
 sharedItems
 sharksTeeth
-sharpenSoften
 shd
 shdw1
 shdw10
@@ -5781,7 +5781,6 @@ writeProtection
 wsDr
 wsp
 x
-x12ac
 x14
 xAlign
 xIllusions

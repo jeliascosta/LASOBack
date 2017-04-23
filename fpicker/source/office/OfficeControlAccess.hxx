@@ -24,24 +24,6 @@
 #include <vcl/lstbox.hxx>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include "pickercallbacks.hxx"
-#include <o3tl/typed_flags_set.hxx>
-
-
-enum class PropFlags {
-    Unknown           =     -1, // used as an error sentinel
-    NONE              = 0x0000,
-    Text              = 0x0001,
-    Enabled           = 0x0002,
-    Visible           = 0x0004,
-    HelpUrl           = 0x0008,
-    ListItems         = 0x0010,
-    SelectedItem      = 0x0020,
-    SelectedItemIndex = 0x0040,
-    Checked           = 0x0080,
-};
-namespace o3tl {
-    template<> struct typed_flags<PropFlags> : is_typed_flags<PropFlags, 0x00ff> {};
-}
 
 
 namespace svt
@@ -97,7 +79,7 @@ namespace svt
                 the affected control. Must be the same as referred by <arg>_nControlId</arg>, or NULL.
             @param _nProperty
                 the property to set
-                See PropFlags::*
+                See PROPERTY_FLAG_*
             @param _rValue
                 the value to set
             @param _bIgnoreIllegalArgument
@@ -105,10 +87,10 @@ namespace svt
         */
         void                        implSetControlProperty(
                                         sal_Int16 _nControlId,
-                                        Control* _pControl, PropFlags _nProperty, const css::uno::Any& _rValue,
+                                        Control* _pControl, sal_Int16 _nProperty, const css::uno::Any& _rValue,
                                         bool _bIgnoreIllegalArgument = true );
 
-        Control* implGetControl( const OUString& _rControlName, sal_Int16* _pId, PropFlags* _pPropertyMask = nullptr ) const;
+        Control* implGetControl( const OUString& _rControlName, sal_Int16* _pId = nullptr, sal_Int32* _pPropertyMask = nullptr ) const;
 
         /** implements the various methods for retrieving properties from controls
 
@@ -117,10 +99,10 @@ namespace svt
                 @PRECOND not <NULL/>
             @param _nProperty
                 the property to retrieve
-                See PropFlags::*
+                See PROPERTY_FLAG_*
             @return
         */
-        css::uno::Any  implGetControlProperty( Control* _pControl, PropFlags _nProperty ) const;
+        css::uno::Any  implGetControlProperty( Control* _pControl, sal_Int16 _nProperty ) const;
 
         static void implDoListboxAction( ListBox* _pListbox, sal_Int16 _nCtrlAction, const css::uno::Any& _rValue );
 

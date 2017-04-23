@@ -4,7 +4,7 @@
 #include <sfx2/sidebar/SidebarPanelBase.hxx>
 #include <sfx2/sidebar/ControllerItem.hxx>
 #include <sfx2/sidebar/IContextChangeReceiver.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <svtools/ctrlbox.hxx>
 #include <editeng/fhgtitem.hxx>
 #include <com/sun/star/ui/XUIElement.hpp>
@@ -19,7 +19,8 @@ class StylesPropertyPanel:
     public PanelLayout
 {
 public:
-    virtual ~StylesPropertyPanel() override;
+    virtual ~StylesPropertyPanel();
+    virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create (
         vcl::Window* pParent,

@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/ucb/XSimpleFileAccess.hpp>
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/ucb/InsertCommandArgument.hpp>
@@ -64,7 +63,7 @@ LockFileCommon::LockFileCommon( const OUString& aOrigURL, const OUString& aPrefi
     aShareURLString += aPrefix;
     aShareURLString += aDocURL.GetName();
     aShareURLString += "%23"; // '#'
-    m_aURL = INetURLObject( aShareURLString ).GetMainURL( INetURLObject::DecodeMechanism::NONE );
+    m_aURL = INetURLObject( aShareURLString ).GetMainURL( INetURLObject::NO_DECODE );
 }
 
 
@@ -78,7 +77,7 @@ INetURLObject LockFileCommon::ResolveLinks( const INetURLObject& aDocURL )
     if ( aDocURL.HasError() )
         throw lang::IllegalArgumentException();
 
-    OUString aURLToCheck = aDocURL.GetMainURL(INetURLObject::DecodeMechanism::NONE);
+    OUString aURLToCheck = aDocURL.GetMainURL(INetURLObject::NO_DECODE);
 
     // there is currently no UCB functionality to resolve the symbolic links;
     // since the lock files are used only for local file systems the osl

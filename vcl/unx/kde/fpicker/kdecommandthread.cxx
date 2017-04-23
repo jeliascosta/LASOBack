@@ -63,7 +63,7 @@ KDECommandEvent::KDECommandEvent( const QString &qCommand, QStringList *pStringL
         { "setDefaultName",    SetDefaultName },
         { "setMultiSelection", SetMultiSelection },
         { "exec",              Exec },
-        { nullptr, Unknown }
+        { 0, Unknown }
     };
 
     for ( pIdx = pMapping; pIdx->pName && qCommand != pIdx->pName; ++pIdx )
@@ -159,7 +159,7 @@ void KDECommandThread::handleCommand( const QString &rString, bool &bQuit )
         return;
     if ( pTokens->empty() )
     {
-        delete pTokens; pTokens = nullptr;
+        delete pTokens, pTokens = NULL;
         return;
     }
 

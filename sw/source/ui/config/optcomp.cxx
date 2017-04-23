@@ -34,22 +34,66 @@
 #include <sfx2/fcontnr.hxx>
 #include <svtools/treelistentry.hxx>
 #include <IDocumentSettingAccess.hxx>
-#include <vector>
 
 using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::document;
 using namespace ::com::sun::star::uno;
 using namespace ::std;
 
+struct CompatibilityItem
+{
+    OUString    m_sName;
+    OUString    m_sModule;
+    bool        m_bUsePrtMetrics;
+    bool        m_bAddSpacing;
+    bool        m_bAddSpacingAtPages;
+    bool        m_bUseOurTabStops;
+    bool        m_bNoExtLeading;
+    bool        m_bUseLineSpacing;
+    bool        m_bAddTableSpacing;
+    bool        m_bUseObjPos;
+    bool        m_bUseOurTextWrapping;
+    bool        m_bConsiderWrappingStyle;
+    bool        m_bExpandWordSpace;
+    bool        m_bProtectForm;
+    bool        m_bIsDefault;
+
+    CompatibilityItem( const OUString& _rName, const OUString& _rModule,
+                       bool _bUsePrtMetrics, bool _bAddSpacing, bool _bAddSpacingAtPages,
+                       bool _bUseOurTabStops, bool _bNoExtLeading, bool _bUseLineSpacing,
+                       bool _bAddTableSpacing, bool _bUseObjPos, bool _bUseOurTextWrapping,
+                       bool _bConsiderWrappingStyle, bool _bExpandWordSpace, bool _bProtectForm,
+                       bool _bIsDefault ) :
+
+        m_sName                 ( _rName ),
+        m_sModule               ( _rModule ),
+        m_bUsePrtMetrics        ( _bUsePrtMetrics ),
+        m_bAddSpacing           ( _bAddSpacing ),
+        m_bAddSpacingAtPages    ( _bAddSpacingAtPages ),
+        m_bUseOurTabStops       ( _bUseOurTabStops ),
+        m_bNoExtLeading         ( _bNoExtLeading ),
+        m_bUseLineSpacing       ( _bUseLineSpacing ),
+        m_bAddTableSpacing      ( _bAddTableSpacing ),
+        m_bUseObjPos            ( _bUseObjPos ),
+        m_bUseOurTextWrapping   ( _bUseOurTextWrapping ),
+        m_bConsiderWrappingStyle( _bConsiderWrappingStyle ),
+        m_bExpandWordSpace      ( _bExpandWordSpace ),
+        m_bProtectForm          ( _bProtectForm),
+        m_bIsDefault            ( _bIsDefault ) {}
+};
+
+#include <vector>
+
 struct SwCompatibilityOptPage_Impl
 {
-    typedef vector< SvtCompatibilityEntry > SwCompatibilityItemList;
+    typedef vector< CompatibilityItem > SwCompatibilityItemList;
 
-    SwCompatibilityItemList m_aList;
+    SwCompatibilityItemList     m_aList;
 };
 
 SwCompatibilityOptPage::SwCompatibilityOptPage(vcl::Window* pParent, const SfxItemSet& rSet)
-    : SfxTabPage(pParent, "OptCompatPage", "modules/swriter/ui/optcompatpage.ui", &rSet)
+    : SfxTabPage(pParent, "OptCompatPage",
+        "modules/swriter/ui/optcompatpage.ui", &rSet)
     , m_pWrtShell(nullptr)
     , m_pImpl(new SwCompatibilityOptPage_Impl)
     , m_nSavedOptions(0)
@@ -59,18 +103,15 @@ SwCompatibilityOptPage::SwCompatibilityOptPage(vcl::Window* pParent, const SfxIt
     get(m_pOptionsLB, "options");
     get(m_pDefaultPB, "default");
 
-    for ( int i = (static_cast<int>(SvtCompatibilityEntry::Index::Module) + 1); i < static_cast<int>(SvtCompatibilityEntry::Index::INVALID); ++i )
+    for (sal_Int32 nId = COPT_USE_PRINTERDEVICE; nId <= COPT_PROTECT_FORM; ++nId)
     {
-        int nCoptIdx = i - 2; /* Do not consider "Name" & "Module" indexes */
-
-        const OUString sEntry = m_pFormattingLB->GetEntry( nCoptIdx );
+        const OUString sEntry = m_pFormattingLB->GetEntry(nId);
         SvTreeListEntry* pEntry = m_pOptionsLB->SvTreeListBox::InsertEntry( sEntry );
         if ( pEntry )
         {
             m_pOptionsLB->SetCheckButtonState( pEntry, SvButtonState::Unchecked );
         }
     }
-
     m_sUserEntry = m_pFormattingLB->GetEntry(m_pFormattingLB->GetEntryCount()-1);
 
     m_pFormattingLB->Clear();
@@ -92,7 +133,7 @@ SwCompatibilityOptPage::~SwCompatibilityOptPage()
 
 void SwCompatibilityOptPage::dispose()
 {
-    m_pImpl.reset();
+    delete m_pImpl;
     m_pMain.clear();
     m_pFormattingLB.clear();
     m_pOptionsLB.clear();
@@ -113,8 +154,7 @@ sal_uLong convertBools2Ulong_Impl
     bool _bUseOurTextWrapping,
     bool _bConsiderWrappingStyle,
     bool _bExpandWordSpace,
-    bool _bProtectForm,
-    bool _bMsWordCompTrailingBlanks
+    bool _bProtectForm
 )
 {
     sal_uLong nRet = 0;
@@ -155,9 +195,6 @@ sal_uLong convertBools2Ulong_Impl
     nSetBit = nSetBit << 1;
     if ( _bProtectForm )
         nRet |= nSetBit;
-    nSetBit = nSetBit << 1;
-    if ( _bMsWordCompTrailingBlanks )
-        nRet |= nSetBit;
 
     return nRet;
 }
@@ -185,10 +222,20 @@ void SwCompatibilityOptPage::InitControls( const SfxItemSet& rSet )
 
     // loading file formats
     Sequence< Sequence< PropertyValue > > aList = m_aConfigItem.GetList();
-
-    SvtCompatibilityEntry aEntry;
-    aEntry.setValue<bool>( SvtCompatibilityEntry::Index::ExpandWordSpace, false );
-
+    OUString sName;
+    OUString sModule;
+    bool bUsePrtMetrics = false;
+    bool bAddSpacing = false;
+    bool bAddSpacingAtPages = false;
+    bool bUseOurTabStops = false;
+    bool bNoExtLeading = false;
+    bool bUseLineSpacing = false;
+    bool bAddTableSpacing = false;
+    bool bUseObjPos = false;
+    bool bUseOurTextWrapping = false;
+    bool bConsiderWrappingStyle = false;
+    bool bExpandWordSpace = false;
+    bool bProtectForm = false;
     const sal_Int32 nCount = aList.getLength();
     for ( sal_Int32 i = 0; i < nCount; ++i )
     {
@@ -197,82 +244,118 @@ void SwCompatibilityOptPage::InitControls( const SfxItemSet& rSet )
         for ( sal_Int32 j = 0; j < nEntries; j++ )
         {
             PropertyValue aValue = rEntry[j];
-            aEntry.setValue( SvtCompatibilityEntry::getIndex(aValue.Name), aValue.Value );
+            if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_NAME )
+                aValue.Value >>= sName;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_MODULE )
+                aValue.Value >>= sModule;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_USEPRTMETRICS )
+                aValue.Value >>= bUsePrtMetrics;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_ADDSPACING )
+                aValue.Value >>= bAddSpacing;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_ADDSPACINGATPAGES )
+                aValue.Value >>= bAddSpacingAtPages;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_USEOURTABSTOPS )
+                aValue.Value >>= bUseOurTabStops;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_NOEXTLEADING )
+                aValue.Value >>= bNoExtLeading;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_USELINESPACING )
+                aValue.Value >>= bUseLineSpacing;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_ADDTABLESPACING )
+                aValue.Value >>= bAddTableSpacing;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_USEOBJECTPOSITIONING )
+                aValue.Value >>= bUseObjPos;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_USEOURTEXTWRAPPING )
+                aValue.Value >>= bUseOurTextWrapping;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_CONSIDERWRAPPINGSTYLE )
+                aValue.Value >>= bConsiderWrappingStyle;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_EXPANDWORDSPACE )
+                aValue.Value >>= bExpandWordSpace;
+            else if ( aValue.Name == COMPATIBILITY_PROPERTYNAME_PROTECTFORM )
+                aValue.Value >>= bProtectForm;
         }
 
-        const OUString sEntryName = aEntry.getValue<OUString>( SvtCompatibilityEntry::Index::Name );
+        const bool bIsUserEntry = sName == "_user";
+        const bool bIsDefaultEntry = sName == COMPATIBILITY_DEFAULT_NAME;
 
-        const bool bIsUserEntry    = ( sEntryName == SvtCompatibilityEntry::getUserEntryName() );
-        const bool bIsDefaultEntry = ( sEntryName == SvtCompatibilityEntry::getDefaultEntryName() );
+        CompatibilityItem aItem(
+            sName, sModule, bUsePrtMetrics, bAddSpacing,
+            bAddSpacingAtPages, bUseOurTabStops, bNoExtLeading,
+            bUseLineSpacing, bAddTableSpacing, bUseObjPos,
+            bUseOurTextWrapping, bConsiderWrappingStyle, bExpandWordSpace, bProtectForm,
+            bIsDefaultEntry );
+        m_pImpl->m_aList.push_back( aItem );
 
-        aEntry.setDefaultEntry( bIsDefaultEntry );
-
-        m_pImpl->m_aList.push_back( aEntry );
-
-        if ( aEntry.isDefaultEntry() )
+        if ( aItem.m_bIsDefault )
             continue;
 
         OUString sNewEntry;
         if ( bIsUserEntry )
             sNewEntry = m_sUserEntry;
-
-        else if ( pObjShell && !sEntryName.isEmpty() )
+        else if ( pObjShell && !sName.isEmpty() )
         {
             SfxFilterContainer* pFacCont = pObjShell->GetFactory().GetFilterContainer();
-            std::shared_ptr<const SfxFilter> pFilter = pFacCont->GetFilter4FilterName( sEntryName );
+            std::shared_ptr<const SfxFilter> pFilter = pFacCont->GetFilter4FilterName( sName );
             if ( pFilter )
                 sNewEntry = pFilter->GetUIName();
         }
 
         if ( sNewEntry.isEmpty() )
-            sNewEntry = sEntryName;
+            sNewEntry = sName;
 
         const sal_Int32 nPos = m_pFormattingLB->InsertEntry( sNewEntry );
         sal_uLong nOptions = convertBools2Ulong_Impl(
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::UsePrtMetrics ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::AddSpacing ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::AddSpacingAtPages ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::UseOurTabStops ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::NoExtLeading ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::UseLineSpacing ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::AddTableSpacing ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::UseObjectPositioning ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::UseOurTextWrapping ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::ConsiderWrappingStyle ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::ExpandWordSpace ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::ProtectForm ),
-            aEntry.getValue<bool>( SvtCompatibilityEntry::Index::MsWordTrailingBlanks ) );
+            bUsePrtMetrics, bAddSpacing, bAddSpacingAtPages,
+            bUseOurTabStops, bNoExtLeading, bUseLineSpacing,
+            bAddTableSpacing, bUseObjPos, bUseOurTextWrapping,
+            bConsiderWrappingStyle, bExpandWordSpace, bProtectForm );
         m_pFormattingLB->SetEntryData( nPos, reinterpret_cast<void*>((sal_IntPtr)nOptions) );
     }
 
     m_pFormattingLB->SetDropDownLineCount( m_pFormattingLB->GetEntryCount() );
 }
 
-IMPL_LINK_NOARG(SwCompatibilityOptPage, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwCompatibilityOptPage, SelectHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pFormattingLB->GetSelectEntryPos();
     sal_uLong nOptions = reinterpret_cast<sal_uLong>(m_pFormattingLB->GetEntryData( nPos ));
     SetCurrentOptions( nOptions );
 }
 
-IMPL_LINK_NOARG(SwCompatibilityOptPage, UseAsDefaultHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwCompatibilityOptPage, UseAsDefaultHdl, Button*, void)
 {
     ScopedVclPtrInstance<MessageDialog> aQuery(this, "QueryDefaultCompatDialog",
                                                "modules/swriter/ui/querydefaultcompatdialog.ui");
     if (aQuery->Execute() == RET_YES)
     {
-        for ( vector< SvtCompatibilityEntry >::iterator pItem = m_pImpl->m_aList.begin();
+        for ( vector< CompatibilityItem >::iterator pItem = m_pImpl->m_aList.begin();
               pItem != m_pImpl->m_aList.end(); ++pItem )
         {
-            if ( pItem->isDefaultEntry() )
+            if ( pItem->m_bIsDefault )
             {
                 const sal_Int32 nCount = m_pOptionsLB->GetEntryCount();
                 for ( sal_Int32 i = 0; i < nCount; ++i )
                 {
                     bool bChecked = m_pOptionsLB->IsChecked(static_cast< sal_uLong >( i ));
-
-                    int nCoptIdx = i + 2; /* Consider "Name" & "Module" indexes */
-                    pItem->setValue<bool>( SvtCompatibilityEntry::Index(nCoptIdx), bChecked );
+                    CompatibilityOptions eOption = static_cast< CompatibilityOptions >(i);
+                    switch ( eOption )
+                    {
+                        case COPT_USE_PRINTERDEVICE : pItem->m_bUsePrtMetrics = bChecked; break;
+                        case COPT_ADD_SPACING : pItem->m_bAddSpacing = bChecked; break;
+                        case COPT_ADD_SPACING_AT_PAGES : pItem->m_bAddSpacingAtPages = bChecked; break;
+                        case COPT_USE_OUR_TABSTOPS : pItem->m_bUseOurTabStops = bChecked; break;
+                        case COPT_NO_EXTLEADING : pItem->m_bNoExtLeading = bChecked; break;
+                        case COPT_USE_LINESPACING : pItem->m_bUseLineSpacing = bChecked; break;
+                        case COPT_ADD_TABLESPACING : pItem->m_bAddTableSpacing = bChecked; break;
+                        case COPT_USE_OBJECTPOSITIONING: pItem->m_bUseObjPos = bChecked; break;
+                        case COPT_USE_OUR_TEXTWRAPPING: pItem->m_bUseOurTextWrapping = bChecked; break;
+                        case COPT_CONSIDER_WRAPPINGSTYLE: pItem->m_bConsiderWrappingStyle = bChecked; break;
+                        case COPT_EXPAND_WORDSPACE:  pItem->m_bExpandWordSpace = bChecked; break;
+                        case COPT_PROTECT_FORM: pItem->m_bProtectForm = bChecked; break;
+                        default:
+                        {
+                            OSL_FAIL("SwCompatibilityOptPage::UseAsDefaultHdl(): wrong option" );
+                        }
+                    }
                 }
                 break;
             }
@@ -301,19 +384,18 @@ sal_uLong SwCompatibilityOptPage::GetDocumentOptions() const
     {
         const IDocumentSettingAccess& rIDocumentSettingAccess = m_pWrtShell->getIDocumentSettingAccess();
         nRet = convertBools2Ulong_Impl(
-            !rIDocumentSettingAccess.get( DocumentSettingId::USE_VIRTUAL_DEVICE ),
-            rIDocumentSettingAccess.get( DocumentSettingId::PARA_SPACE_MAX ),
-            rIDocumentSettingAccess.get( DocumentSettingId::PARA_SPACE_MAX_AT_PAGES ),
-            !rIDocumentSettingAccess.get( DocumentSettingId::TAB_COMPAT ),
-            !rIDocumentSettingAccess.get( DocumentSettingId::ADD_EXT_LEADING ),
-            rIDocumentSettingAccess.get( DocumentSettingId::OLD_LINE_SPACING ),
-            rIDocumentSettingAccess.get( DocumentSettingId::ADD_PARA_SPACING_TO_TABLE_CELLS ),
-            rIDocumentSettingAccess.get( DocumentSettingId::USE_FORMER_OBJECT_POS ),
-            rIDocumentSettingAccess.get( DocumentSettingId::USE_FORMER_TEXT_WRAPPING ),
-            rIDocumentSettingAccess.get( DocumentSettingId::CONSIDER_WRAP_ON_OBJECT_POSITION ),
-            !rIDocumentSettingAccess.get( DocumentSettingId::DO_NOT_JUSTIFY_LINES_WITH_MANUAL_BREAK ),
-            rIDocumentSettingAccess.get( DocumentSettingId::PROTECT_FORM ),
-            rIDocumentSettingAccess.get( DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS ) );
+                !rIDocumentSettingAccess.get(DocumentSettingId::USE_VIRTUAL_DEVICE),
+                rIDocumentSettingAccess.get(DocumentSettingId::PARA_SPACE_MAX),
+                rIDocumentSettingAccess.get(DocumentSettingId::PARA_SPACE_MAX_AT_PAGES),
+                !rIDocumentSettingAccess.get(DocumentSettingId::TAB_COMPAT),
+                !rIDocumentSettingAccess.get(DocumentSettingId::ADD_EXT_LEADING),
+                rIDocumentSettingAccess.get(DocumentSettingId::OLD_LINE_SPACING),
+                rIDocumentSettingAccess.get(DocumentSettingId::ADD_PARA_SPACING_TO_TABLE_CELLS),
+                rIDocumentSettingAccess.get(DocumentSettingId::USE_FORMER_OBJECT_POS),
+                rIDocumentSettingAccess.get(DocumentSettingId::USE_FORMER_TEXT_WRAPPING),
+                rIDocumentSettingAccess.get(DocumentSettingId::CONSIDER_WRAP_ON_OBJECT_POSITION),
+                !rIDocumentSettingAccess.get(DocumentSettingId::DO_NOT_JUSTIFY_LINES_WITH_MANUAL_BREAK),
+                rIDocumentSettingAccess.get(DocumentSettingId::PROTECT_FORM));
     }
     return nRet;
 }
@@ -321,9 +403,15 @@ sal_uLong SwCompatibilityOptPage::GetDocumentOptions() const
 void SwCompatibilityOptPage::WriteOptions()
 {
     m_aConfigItem.Clear();
-    for ( vector< SvtCompatibilityEntry >::const_iterator pItem = m_pImpl->m_aList.begin();
+    for ( vector< CompatibilityItem >::const_iterator pItem = m_pImpl->m_aList.begin();
           pItem != m_pImpl->m_aList.end(); ++pItem )
-        m_aConfigItem.AppendItem(*pItem);
+        m_aConfigItem.AppendItem(
+            pItem->m_sName, pItem->m_sModule, pItem->m_bUsePrtMetrics, pItem->m_bAddSpacing,
+            pItem->m_bAddSpacingAtPages, pItem->m_bUseOurTabStops,
+            pItem->m_bNoExtLeading, pItem->m_bUseLineSpacing,
+            pItem->m_bAddTableSpacing, pItem->m_bUseObjPos,
+            pItem->m_bUseOurTextWrapping, pItem->m_bConsiderWrappingStyle,
+            pItem->m_bExpandWordSpace, pItem->m_bProtectForm );
 }
 
 VclPtr<SfxTabPage> SwCompatibilityOptPage::Create( vcl::Window* pParent, const SfxItemSet* rAttrSet )
@@ -340,74 +428,77 @@ bool SwCompatibilityOptPage::FillItemSet( SfxItemSet*  )
         const sal_uLong nCount = m_pOptionsLB->GetEntryCount();
         OSL_ENSURE( nCount <= 32, "SwCompatibilityOptPage::Reset(): entry overflow" );
 
+        bool bSetParaSpaceMax = false;
+
         for ( sal_uLong i = 0; i < nCount; ++i )
         {
+            CompatibilityOptions nOption = static_cast< CompatibilityOptions >(i);
             bool bChecked = m_pOptionsLB->IsChecked(i);
             bool bSavedChecked = ( ( nSavedOptions & 0x00000001 ) == 0x00000001 );
             if ( bChecked != bSavedChecked )
             {
-                int nCoptIdx = i + 2; /* Consider "Name" & "Module" indexes */
-                switch ( SvtCompatibilityEntry::Index(nCoptIdx) )
+                if ( COPT_USE_PRINTERDEVICE == nOption )
                 {
-                    case SvtCompatibilityEntry::Index::UsePrtMetrics:
-                        m_pWrtShell->SetUseVirDev( !bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::AddSpacing:
-                        m_pWrtShell->SetParaSpaceMax( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::AddSpacingAtPages:
-                        m_pWrtShell->SetParaSpaceMaxAtPages( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::UseOurTabStops:
-                        m_pWrtShell->SetTabCompat( !bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::NoExtLeading:
-                        m_pWrtShell->SetAddExtLeading( !bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::UseLineSpacing:
-                        m_pWrtShell->SetUseFormerLineSpacing( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::AddTableSpacing:
-                        m_pWrtShell->SetAddParaSpacingToTableCells( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::UseObjectPositioning:
-                        m_pWrtShell->SetUseFormerObjectPositioning( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::UseOurTextWrapping:
-                        m_pWrtShell->SetUseFormerTextWrapping( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::ConsiderWrappingStyle:
-                        m_pWrtShell->SetConsiderWrapOnObjPos( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::ExpandWordSpace:
-                        m_pWrtShell->SetDoNotJustifyLinesWithManualBreak( !bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::ProtectForm:
-                        m_pWrtShell->SetProtectForm( bChecked );
-                        break;
-
-                    case SvtCompatibilityEntry::Index::MsWordTrailingBlanks:
-                        m_pWrtShell->SetMsWordCompTrailingBlanks( bChecked );
-                        break;
-
-                    default:
-                        break;
+                    m_pWrtShell->SetUseVirDev( !bChecked );
+                    bModified = true;
                 }
-                bModified = true;
+                else if ( ( COPT_ADD_SPACING == nOption || COPT_ADD_SPACING_AT_PAGES == nOption ) && !bSetParaSpaceMax )
+                    bSetParaSpaceMax = true;
+                else if ( COPT_USE_OUR_TABSTOPS == nOption )
+                {
+                    m_pWrtShell->SetTabCompat( !bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_NO_EXTLEADING == nOption )
+                {
+                    m_pWrtShell->SetAddExtLeading( !bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_USE_LINESPACING == nOption )
+                {
+                       m_pWrtShell->SetUseFormerLineSpacing( bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_ADD_TABLESPACING == nOption )
+                {
+                    m_pWrtShell->SetAddParaSpacingToTableCells( bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_USE_OBJECTPOSITIONING == nOption )
+                {
+                    m_pWrtShell->SetUseFormerObjectPositioning( bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_USE_OUR_TEXTWRAPPING == nOption )
+                {
+                    m_pWrtShell->SetUseFormerTextWrapping( bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_CONSIDER_WRAPPINGSTYLE == nOption )
+                {
+                    m_pWrtShell->SetConsiderWrapOnObjPos( bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_EXPAND_WORDSPACE == nOption )
+                {
+                    m_pWrtShell->SetDoNotJustifyLinesWithManualBreak( !bChecked );
+                    bModified = true;
+                }
+                else if ( COPT_PROTECT_FORM == nOption )
+                {
+                    m_pWrtShell->SetProtectForm( bChecked );
+                    bModified = true;
+                }
             }
 
             nSavedOptions = nSavedOptions >> 1;
+        }
+
+        if ( bSetParaSpaceMax )
+        {
+            m_pWrtShell->SetParaSpaceMax( m_pOptionsLB->IsChecked( (sal_uLong)COPT_ADD_SPACING ) );
+            m_pWrtShell->SetParaSpaceMaxAtPages( m_pOptionsLB->IsChecked( (sal_uLong)COPT_ADD_SPACING_AT_PAGES ) );
+            bModified = true;
         }
     }
 

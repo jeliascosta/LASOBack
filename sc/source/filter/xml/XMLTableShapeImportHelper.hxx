@@ -21,28 +21,28 @@
 #define INCLUDED_SC_SOURCE_FILTER_XML_XMLTABLESHAPEIMPORTHELPER_HXX
 
 #include <xmloff/shapeimport.hxx>
-#include "address.hxx"
+#include <com/sun/star/table/CellAddress.hpp>
 
 class ScXMLImport;
 class ScXMLAnnotationContext;
 
 class XMLTableShapeImportHelper : public XMLShapeImportHelper
 {
-    ScAddress aStartCell;
+    css::table::CellAddress aStartCell;
     ScXMLAnnotationContext* pAnnotationContext;
     bool bOnTable;
 
 public:
 
-    explicit XMLTableShapeImportHelper( ScXMLImport& rImp );
-    virtual ~XMLTableShapeImportHelper() override;
+    XMLTableShapeImportHelper( ScXMLImport& rImp, SvXMLImportPropertyMapper *pImpMapper=nullptr );
+    virtual ~XMLTableShapeImportHelper();
 
     static void SetLayer(css::uno::Reference<css::drawing::XShape>& rShape, sal_Int16 nLayerID, const OUString& sType);
     virtual void finishShape(css::uno::Reference< css::drawing::XShape >& rShape,
             const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
             css::uno::Reference< css::drawing::XShapes >& rShapes) override;
 
-    void SetCell (const ScAddress& rAddress) { aStartCell = rAddress; }
+    void SetCell (const css::table::CellAddress& rAddress) { aStartCell = rAddress; }
     void SetOnTable (const bool bTempOnTable) { bOnTable = bTempOnTable; }
     void SetAnnotation(ScXMLAnnotationContext* pAnnotation) { pAnnotationContext = pAnnotation; }
 

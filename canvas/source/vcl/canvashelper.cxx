@@ -168,7 +168,7 @@ namespace vclcanvas
             rOutDev.SetLineColor( COL_WHITE );
             rOutDev.SetFillColor( COL_WHITE );
             rOutDev.SetClipRegion();
-            rOutDev.DrawRect( ::tools::Rectangle( Point(),
+            rOutDev.DrawRect( Rectangle( Point(),
                                          rOutDev.GetOutputSizePixel()) );
 
             if( mp2ndOutDev )
@@ -181,7 +181,7 @@ namespace vclcanvas
                 rOutDev2.SetLineColor( COL_WHITE );
                 rOutDev2.SetFillColor( COL_WHITE );
                 rOutDev2.SetClipRegion();
-                rOutDev2.DrawRect( ::tools::Rectangle( Point(),
+                rOutDev2.DrawRect( Rectangle( Point(),
                                               rOutDev2.GetOutputSizePixel()) );
                 rOutDev2.SetDrawMode( DrawModeFlags::BlackLine | DrawModeFlags::BlackFill | DrawModeFlags::BlackText |
                                       DrawModeFlags::BlackGradient | DrawModeFlags::BlackBitmap );
@@ -261,13 +261,13 @@ namespace vclcanvas
 
             ::tools::Polygon aPoly(4);
             aPoly.SetPoint( rStartPoint, 0 );
-            aPoly.SetFlags( 0, PolyFlags::Normal );
+            aPoly.SetFlags( 0, POLY_NORMAL );
             aPoly.SetPoint( rCtrlPoint1, 1 );
-            aPoly.SetFlags( 1, PolyFlags::Control );
+            aPoly.SetFlags( 1, POLY_CONTROL );
             aPoly.SetPoint( rCtrlPoint2, 2 );
-            aPoly.SetFlags( 2, PolyFlags::Control );
+            aPoly.SetFlags( 2, POLY_CONTROL );
             aPoly.SetPoint( rEndPoint, 3 );
-            aPoly.SetFlags( 3, PolyFlags::Normal );
+            aPoly.SetFlags( 3, POLY_NORMAL );
 
             // TODO(F2): alpha
             mpOutDev->getOutDev().DrawPolygon( aPoly );
@@ -357,8 +357,8 @@ namespace vclcanvas
             // apply dashing, if any
             if( strokeAttributes.DashArray.getLength() )
             {
-                const std::vector<double>& aDashArray(
-                    ::comphelper::sequenceToContainer< std::vector<double> >(strokeAttributes.DashArray) );
+                const ::std::vector<double>& aDashArray(
+                    ::comphelper::sequenceToContainer< ::std::vector<double> >(strokeAttributes.DashArray) );
 
                 ::basegfx::B2DPolyPolygon aDashedPolyPoly;
 
@@ -596,22 +596,22 @@ namespace vclcanvas
                 return uno::Reference< rendering::XCachedPrimitive >(nullptr); // no output necessary
 
             // change text direction and layout mode
-            ComplexTextLayoutFlags nLayoutMode(ComplexTextLayoutFlags::Default);
+            ComplexTextLayoutMode nLayoutMode(TEXT_LAYOUT_DEFAULT);
             switch( textDirection )
             {
                 case rendering::TextDirection::WEAK_LEFT_TO_RIGHT:
                     // FALLTHROUGH intended
                 case rendering::TextDirection::STRONG_LEFT_TO_RIGHT:
-                    nLayoutMode |= ComplexTextLayoutFlags::BiDiStrong;
-                    nLayoutMode |= ComplexTextLayoutFlags::TextOriginLeft;
+                    nLayoutMode |= TEXT_LAYOUT_BIDI_STRONG;
+                    nLayoutMode |= TEXT_LAYOUT_TEXTORIGIN_LEFT;
                     break;
 
                 case rendering::TextDirection::WEAK_RIGHT_TO_LEFT:
-                    nLayoutMode |= ComplexTextLayoutFlags::BiDiRtl;
+                    nLayoutMode |= TEXT_LAYOUT_BIDI_RTL;
                     SAL_FALLTHROUGH;
                 case rendering::TextDirection::STRONG_RIGHT_TO_LEFT:
-                    nLayoutMode |= ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::BiDiStrong;
-                    nLayoutMode |= ComplexTextLayoutFlags::TextOriginRight;
+                    nLayoutMode |= TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_BIDI_STRONG;
+                    nLayoutMode |= TEXT_LAYOUT_TEXTORIGIN_RIGHT;
                     break;
             }
 
@@ -830,7 +830,9 @@ namespace vclcanvas
                     // complex transformation, use generic affine bitmap
                     // transformation
                     aBmpEx = tools::transformBitmap( aBmpEx,
-                                                     aMatrix );
+                                                     aMatrix,
+                                                     renderState.DeviceColor,
+                                                     tools::MODULATE_NONE );
 
                     pGrfObj.reset( new GraphicObject( aBmpEx ) );
 
@@ -946,7 +948,7 @@ namespace vclcanvas
         rLayout = getMemoryLayout();
 
         // TODO(F2): Support alpha canvas here
-        const ::tools::Rectangle aRect( vcl::unotools::rectangleFromIntegerRectangle2D(rect) );
+        const Rectangle aRect( vcl::unotools::rectangleFromIntegerRectangle2D(rect) );
 
         OutputDevice& rOutDev( mpOutDev->getOutDev() );
 
@@ -1007,8 +1009,9 @@ namespace vclcanvas
         rOutDev.EnableMapMode( false );
         rOutDev.SetAntialiasing( AntialiasingFlags::EnableB2dDraw );
 
-        const ::tools::Rectangle aRect( vcl::unotools::rectangleFromIntegerRectangle2D(rect) );
-        const sal_uInt16 nBitCount( std::min( (sal_uInt16)24, rOutDev.GetBitCount() ) );
+        const Rectangle aRect( vcl::unotools::rectangleFromIntegerRectangle2D(rect) );
+        const sal_uInt16    nBitCount( ::std::min( (sal_uInt16)24U,
+                                               (sal_uInt16)rOutDev.GetBitCount() ) );
         const BitmapPalette* pPalette = nullptr;
 
         if( nBitCount <= 8 )

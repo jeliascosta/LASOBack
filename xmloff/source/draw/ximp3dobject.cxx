@@ -95,6 +95,13 @@ void SdXML3DObjectContext::StartElement(const uno::Reference< xml::sax::XAttribu
     }
 }
 
+void SdXML3DObjectContext::EndElement()
+{
+    // call parent
+    SdXMLShapeContext::EndElement();
+}
+
+
 SdXML3DCubeObjectShapeContext::SdXML3DCubeObjectShapeContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
@@ -185,6 +192,13 @@ void SdXML3DCubeObjectShapeContext::StartElement(const uno::Reference< xml::sax:
     }
 }
 
+void SdXML3DCubeObjectShapeContext::EndElement()
+{
+    // call parent
+    SdXML3DObjectContext::EndElement();
+}
+
+
 SdXML3DSphereObjectShapeContext::SdXML3DSphereObjectShapeContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
@@ -193,7 +207,7 @@ SdXML3DSphereObjectShapeContext::SdXML3DSphereObjectShapeContext(
     uno::Reference< drawing::XShapes >& rShapes)
 :   SdXML3DObjectContext( rImport, nPrfx, rLocalName, xAttrList, rShapes ),
     maCenter(0.0, 0.0, 0.0),
-    maSphereSize(5000.0, 5000.0, 5000.0),
+    maSize(5000.0, 5000.0, 5000.0),
     mbCenterUsed(false),
     mbSizeUsed(false)
 {
@@ -225,9 +239,9 @@ SdXML3DSphereObjectShapeContext::SdXML3DSphereObjectShapeContext(
                 ::basegfx::B3DVector aNewVec;
                 SvXMLUnitConverter::convertB3DVector(aNewVec, sValue);
 
-                if(aNewVec != maSphereSize)
+                if(aNewVec != maSize)
                 {
-                    maSphereSize = aNewVec;
+                    maSize = aNewVec;
                     mbSizeUsed = true;
                 }
                 break;
@@ -262,15 +276,22 @@ void SdXML3DSphereObjectShapeContext::StartElement(const uno::Reference< xml::sa
             aPosition3D.PositionY = maCenter.getY();
             aPosition3D.PositionZ = maCenter.getZ();
 
-            aDirection3D.DirectionX = maSphereSize.getX();
-            aDirection3D.DirectionY = maSphereSize.getY();
-            aDirection3D.DirectionZ = maSphereSize.getZ();
+            aDirection3D.DirectionX = maSize.getX();
+            aDirection3D.DirectionY = maSize.getY();
+            aDirection3D.DirectionZ = maSize.getZ();
 
             xPropSet->setPropertyValue("D3DPosition", uno::Any(aPosition3D));
             xPropSet->setPropertyValue("D3DSize", uno::Any(aDirection3D));
         }
     }
 }
+
+void SdXML3DSphereObjectShapeContext::EndElement()
+{
+    // call parent
+    SdXML3DObjectContext::EndElement();
+}
+
 
 SdXML3DPolygonBasedShapeContext::SdXML3DPolygonBasedShapeContext(
     SvXMLImport& rImport,
@@ -348,6 +369,12 @@ void SdXML3DPolygonBasedShapeContext::StartElement(const uno::Reference< xml::sa
     }
 }
 
+void SdXML3DPolygonBasedShapeContext::EndElement()
+{
+    // call parent
+    SdXML3DObjectContext::EndElement();
+}
+
 
 SdXML3DLatheObjectShapeContext::SdXML3DLatheObjectShapeContext(
     SvXMLImport& rImport,
@@ -375,6 +402,13 @@ void SdXML3DLatheObjectShapeContext::StartElement(const uno::Reference< xml::sax
     }
 }
 
+void SdXML3DLatheObjectShapeContext::EndElement()
+{
+    // call parent
+    SdXML3DPolygonBasedShapeContext::EndElement();
+}
+
+
 SdXML3DExtrudeObjectShapeContext::SdXML3DExtrudeObjectShapeContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrfx,
@@ -400,5 +434,12 @@ void SdXML3DExtrudeObjectShapeContext::StartElement(const uno::Reference< xml::s
     }
 }
 
+void SdXML3DExtrudeObjectShapeContext::EndElement()
+{
+    // call parent
+    SdXML3DPolygonBasedShapeContext::EndElement();
+}
+
+// EOF
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

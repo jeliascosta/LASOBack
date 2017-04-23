@@ -21,11 +21,11 @@ class SfxCheckinDialog : public ModalDialog
 
         VclPtr<OKButton>   m_pOKBtn;
 
-        DECL_LINK(OKHdl, Button*, void);
+        DECL_DLLPRIVATE_LINK_TYPED(OKHdl, Button*, void);
 
     public:
         SfxCheckinDialog( vcl::Window* pParent );
-        virtual ~SfxCheckinDialog() override;
+        virtual ~SfxCheckinDialog();
         virtual void dispose() override;
 
         OUString GetComment( );

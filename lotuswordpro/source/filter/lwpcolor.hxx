@@ -71,6 +71,7 @@ class LwpColor
 {
 public:
     LwpColor():m_nRed(0), m_nGreen(0), m_nBlue(0), m_nExtra(0){}
+    ~LwpColor(){}
 public:
     void Read(LwpObjectStream *pStrm);
     sal_uInt16 GetRed();
@@ -78,6 +79,7 @@ public:
     sal_uInt16 GetBlue();
     bool IsValidColor();
     sal_uInt32 To24Color();
+    LwpColor& operator = (const LwpColor& rOther);
     bool IsTransparent();
 private:
     sal_uInt16 m_nRed;          // When extra is AGLRGB_INDEX, m_nRed holds the
@@ -98,6 +100,7 @@ private:
           AGLRGB_INVALID = 99,
           AGLRGB_TRANSPARENT = 100
     };
+    void ResolveRGB();
 };
 inline sal_uInt16 LwpColor::GetRed()
 {

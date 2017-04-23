@@ -89,13 +89,13 @@ private:
     double mfMSE;                       // mean squared error (variation)
     double mfRMSE;                      // root mean squared error (standard deviation)
     double mfSMAPE;                     // symmetric mean absolute error
-    FormulaError mnErrorValue;
-    bool bAdditive;                     // true: additive method, false: multiplicative method
+    sal_uInt16 mnErrorValue;
+    bool bAdditive;                     // true: additive method, false: mulitplicative method
     bool bEDS;                          // true: EDS, false: ETS
 
     // constants used in determining best fit for alpha, beta, gamma
     const double cfMinABCResolution = 0.001;  // minimum change of alpha, beta, gamma
-    static const SCSIZE cnScenarios = 1000;   // No. of scenarios to calculate for PI calculations
+    const SCSIZE cnScenarios = 1000;          // No. of scenarios to calculate for PI calculations
 
     bool initData();
     bool prefillBaseData();
@@ -119,7 +119,7 @@ public:
     bool PreprocessDataRange( const ScMatrixRef& rMatX, const ScMatrixRef& rMatY, int& rSmplInPrd,
                               bool bDataCompletion, int nAggregation, const ScMatrixRef& rTMat,
                               ScETSType eETSType );
-    FormulaError GetError() { return mnErrorValue; };
+    sal_uInt16 GetError() { return mnErrorValue; };
     bool GetForecastRange( const ScMatrixRef& rTMat, const ScMatrixRef& rFcMat );
     bool GetStatisticValue( const ScMatrixRef& rTypeMat, const ScMatrixRef& rStatMat );
     bool GetSamplesInPeriod( double& rVal );
@@ -146,7 +146,7 @@ ScETSForecastCalculation::ScETSForecastCalculation( SCSIZE nSize, SvNumberFormat
     , mfMSE(0.0)
     , mfRMSE(0.0)
     , mfSMAPE(0.0)
-    , mnErrorValue(FormulaError::NONE)
+    , mnErrorValue(0)
     , bAdditive(false)
     , bEDS(false)
 {
@@ -180,7 +180,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
             if ( rTMat->GetDouble( 0 ) < maRange[ 0 ].X )
             {
                 // target cannot be less than start of X-range
-                mnErrorValue = FormulaError::IllegalFPOperation;
+                mnErrorValue = errIllegalFPOperation;
                 return false;
             }
         }
@@ -189,7 +189,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
             if ( rTMat->GetDouble( 0 ) < maRange[ mnCount - 1 ].X )
             {
                 // target cannot be before end of X-range
-                mnErrorValue = FormulaError::IllegalFPOperation;
+                mnErrorValue = errIllegalFPOperation;
                 return false;
             }
         }
@@ -230,7 +230,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
             if ( nAggregation == 0 )
             {
                 // identical X-values are not allowed
-                mnErrorValue = FormulaError::NoValue;
+                mnErrorValue = errNoValue;
                 return false;
             }
             double fTmp = maRange[ i - 1 ].Y;
@@ -327,7 +327,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
             if ( fmod( fStep, mfStepSize ) != 0.0 )
             {
                 // step not constant nor multiple of mfStepSize in case of gaps
-                mnErrorValue = FormulaError::NoValue;
+                mnErrorValue = errNoValue;
                 return false;
             }
             bHasGap = true;
@@ -366,7 +366,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
                     if ( static_cast< double >( nMissingXCount ) / fOriginalCount > 0.3 )
                     {
                         // maximum of 30% missing points exceeded
-                        mnErrorValue = FormulaError::NoValue;
+                        mnErrorValue = errNoValue;
                         return false;
                     }
                 }
@@ -391,7 +391,7 @@ bool ScETSForecastCalculation::PreprocessDataRange( const ScMatrixRef& rMatX, co
 
 bool ScETSForecastCalculation::initData( )
 {
-    // give various vectors size and initial value
+    // give variuous vectors size and initial value
     mpBase     = new double[ mnCount ];
     mpTrend    = new double[ mnCount ];
     if ( !bEDS )
@@ -419,7 +419,7 @@ bool ScETSForecastCalculation::prefillTrendData()
         // we need at least 2 periods in the data range
         if ( mnCount < 2 * mnSmplInPrd )
         {
-            mnErrorValue = FormulaError::NoValue;
+            mnErrorValue = errNoValue;
             return false;
         }
 
@@ -442,7 +442,7 @@ bool ScETSForecastCalculation::prefillPerIdx()
         if ( mnSmplInPrd == 0 )
         {
             // should never happen; if mnSmplInPrd equals 0, bEDS is true
-            mnErrorValue = FormulaError::UnknownState;
+            mnErrorValue = errUnknownState;
             return false;
         }
         SCSIZE nPeriods = mnCount / mnSmplInPrd;
@@ -455,7 +455,7 @@ bool ScETSForecastCalculation::prefillPerIdx()
             if ( aPeriodAverage[ i ] == 0.0 )
             {
                 SAL_WARN( "sc.core", "prefillPerIdx(), average of 0 will cause divide by zero error, quitting calculation" );
-                mnErrorValue = FormulaError::DivisionByZero;
+                mnErrorValue = errDivisionByZero;
                 return false;
             }
         }
@@ -1237,7 +1237,7 @@ void ScInterpreter::ScForecast_Ets( ScETSType eETSType )
         double fVal = GetDoubleWithDefault( 1.0 );
         if ( fmod( fVal, 1.0 ) != 0 || fVal < 0.0 )
         {
-            PushError( FormulaError::IllegalFPOperation );
+            PushError( errIllegalFPOperation );
             return;
         }
         nSmplInPrd = static_cast< int >( fVal );
@@ -1393,7 +1393,7 @@ void ScInterpreter::ScConcat_MS()
     ReverseStack( nParamCount );
 
     size_t nRefInList = 0;
-    while ( nParamCount-- > 0 && nGlobalError == FormulaError::NONE )
+    while ( nParamCount-- > 0 && !nGlobalError )
     {
         switch ( GetStackType() )
         {
@@ -1405,7 +1405,7 @@ void ScInterpreter::ScConcat_MS()
             {
                 ScAddress aAdr;
                 PopSingleRef( aAdr );
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                     break;
                 ScRefCellValue aCell( *pDok, aAdr );
                 if ( !aCell.isEmpty() )
@@ -1424,7 +1424,7 @@ void ScInterpreter::ScConcat_MS()
             {
                 ScRange aRange;
                 PopDoubleRef( aRange, nParamCount, nRefInList);
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                     break;
                 // we need to read row for row, so we can't use ScCellIter
                 SCCOL nCol1, nCol2;
@@ -1433,7 +1433,7 @@ void ScInterpreter::ScConcat_MS()
                 aRange.GetVars( nCol1, nRow1, nTab1, nCol2, nRow2, nTab2 );
                 if ( nTab1 != nTab2 )
                 {
-                    SetError( FormulaError::IllegalParameter);
+                    SetError( errIllegalParameter);
                     break;
                 }
                 if ( nRow1 > nRow2 )
@@ -1472,7 +1472,7 @@ void ScInterpreter::ScConcat_MS()
                     SCSIZE nC, nR;
                     pMat->GetDimensions(nC, nR);
                     if (nC == 0 || nR == 0)
-                        SetError(FormulaError::IllegalArgument);
+                        SetError(errIllegalArgument);
                     else
                     {
                         for ( SCSIZE j = 0; j < nC; j++ )
@@ -1494,7 +1494,7 @@ void ScInterpreter::ScConcat_MS()
             break;
             default:
                 PopError();
-                SetError( FormulaError::IllegalArgument);
+                SetError( errIllegalArgument);
                 break;
         }
     }
@@ -1523,7 +1523,7 @@ void ScInterpreter::ScTextJoin_MS()
             {
                 ScAddress aAdr;
                 PopSingleRef( aAdr );
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                     break;
                 ScRefCellValue aCell( *pDok, aAdr );
                 if ( !aCell.isEmpty() )
@@ -1542,7 +1542,7 @@ void ScInterpreter::ScTextJoin_MS()
             {
                 ScRange aRange;
                 PopDoubleRef( aRange, nParamCount, nRefInList);
-                if ( nGlobalError != FormulaError::NONE )
+                if ( nGlobalError )
                     break;
                 // we need to read row for row, so we can't use ScCellIterator
                 SCCOL nCol1, nCol2;
@@ -1551,7 +1551,7 @@ void ScInterpreter::ScTextJoin_MS()
                 aRange.GetVars( nCol1, nRow1, nTab1, nCol2, nRow2, nTab2 );
                 if ( nTab1 != nTab2 )
                 {
-                    SetError( FormulaError::IllegalParameter);
+                    SetError( errIllegalParameter);
                     break;
                 }
                 if ( nRow1 > nRow2 )
@@ -1592,7 +1592,7 @@ void ScInterpreter::ScTextJoin_MS()
                     SCSIZE nC, nR;
                     pMat->GetDimensions(nC, nR);
                     if (nC == 0 || nR == 0)
-                        SetError(FormulaError::IllegalArgument);
+                        SetError(errIllegalArgument);
                     else
                     {
                         for ( SCSIZE j = 0; j < nC; j++ )
@@ -1619,7 +1619,7 @@ void ScInterpreter::ScTextJoin_MS()
             break;
             default:
                 PopError();
-                SetError( FormulaError::IllegalArgument);
+                SetError( errIllegalArgument);
                 break;
         }
         if ( aDelimiters.empty() )
@@ -1636,7 +1636,7 @@ void ScInterpreter::ScTextJoin_MS()
         SCSIZE nIdx = 0;
         nRefInList = 0;
         // get the strings to be joined
-        while ( nParamCount-- > 0 && nGlobalError == FormulaError::NONE )
+        while ( nParamCount-- > 0 && !nGlobalError )
         {
             switch ( GetStackType() )
             {
@@ -1665,7 +1665,7 @@ void ScInterpreter::ScTextJoin_MS()
                 {
                     ScAddress aAdr;
                     PopSingleRef( aAdr );
-                    if ( nGlobalError != FormulaError::NONE )
+                    if ( nGlobalError )
                         break;
                     ScRefCellValue aCell( *pDok, aAdr );
                     OUString aStr;
@@ -1702,7 +1702,7 @@ void ScInterpreter::ScTextJoin_MS()
                 {
                     ScRange aRange;
                     PopDoubleRef( aRange, nParamCount, nRefInList);
-                    if ( nGlobalError != FormulaError::NONE )
+                    if ( nGlobalError )
                         break;
                     // we need to read row for row, so we can't use ScCellIterator
                     SCCOL nCol1, nCol2;
@@ -1711,7 +1711,7 @@ void ScInterpreter::ScTextJoin_MS()
                     aRange.GetVars( nCol1, nRow1, nTab1, nCol2, nRow2, nTab2 );
                     if ( nTab1 != nTab2 )
                     {
-                        SetError( FormulaError::IllegalParameter);
+                        SetError( errIllegalParameter);
                         break;
                     }
                     if ( nRow1 > nRow2 )
@@ -1768,7 +1768,7 @@ void ScInterpreter::ScTextJoin_MS()
                         SCSIZE nC, nR;
                         pMat->GetDimensions(nC, nR);
                         if (nC == 0 || nR == 0)
-                            SetError(FormulaError::IllegalArgument);
+                            SetError(errIllegalArgument);
                         else
                         {
                             OUString aStr;
@@ -1829,7 +1829,7 @@ void ScInterpreter::ScTextJoin_MS()
                 break;
                 default:
                     PopError();
-                    SetError( FormulaError::IllegalArgument);
+                    SetError( errIllegalArgument);
                     break;
             }
         }
@@ -1844,9 +1844,9 @@ void ScInterpreter::ScIfs_MS()
 
     ReverseStack( nParamCount );
 
-    nGlobalError = FormulaError::NONE;   // propagate only for condition or active result path
+    nGlobalError = 0;   // propagate only for condition or active result path
     bool bFinished = false;
-    while ( nParamCount > 0 && !bFinished && nGlobalError == FormulaError::NONE )
+    while ( nParamCount > 0 && !bFinished && !nGlobalError )
     {
         bool bVal = GetBool();
         nParamCount--;
@@ -1879,17 +1879,17 @@ void ScInterpreter::ScIfs_MS()
         }
     }
 
-    if ( nGlobalError != FormulaError::NONE || !bFinished  )
+    if ( nGlobalError || !bFinished  )
     {
         if ( !bFinished )
             PushNA(); // no true expression found
-        if ( nGlobalError != FormulaError::NONE )
+        if ( nGlobalError )
             PushNoValue(); // expression returned something other than true or false
         return;
     }
 
     //push result :
-    FormulaConstTokenRef xToken( PopToken() );
+    FormulaTokenRef xToken( PopToken() );
     if ( xToken )
     {
         // Remove unused arguments of IFS from the stack before pushing the result.
@@ -1898,10 +1898,10 @@ void ScInterpreter::ScIfs_MS()
             Pop();
             nParamCount--;
         }
-        PushTokenRef( xToken );
+        PushTempToken( xToken.get() );
     }
     else
-        PushError( FormulaError::UnknownStackVariable );
+        PushError( errUnknownStackVariable );
 }
 
 
@@ -1914,7 +1914,7 @@ void ScInterpreter::ScSwitch_MS()
 
     ReverseStack( nParamCount );
 
-    nGlobalError = FormulaError::NONE;   // propagate only for match or active result path
+    nGlobalError = 0;   // propagate only for match or active result path
     bool isValue = false;
     double fRefVal = 0;
     svl::SharedString aRefStr;
@@ -1954,7 +1954,7 @@ void ScInterpreter::ScSwitch_MS()
     }
     nParamCount--;
     bool bFinished = false;
-    while ( nParamCount > 1 && !bFinished && nGlobalError == FormulaError::NONE )
+    while ( nParamCount > 1 && !bFinished && !nGlobalError )
     {
         double fVal = 0;
         svl::SharedString aStr;
@@ -1963,7 +1963,7 @@ void ScInterpreter::ScSwitch_MS()
         else
             aStr = GetString();
         nParamCount--;
-        if ( nGlobalError != FormulaError::NONE || (( isValue && rtl::math::approxEqual( fRefVal, fVal ) ) ||
+        if ( nGlobalError || (( isValue && rtl::math::approxEqual( fRefVal, fVal ) ) ||
              ( !isValue && aRefStr.getDataIgnoreCase() == aStr.getDataIgnoreCase() )) )
         {
             // TRUE
@@ -1986,11 +1986,11 @@ void ScInterpreter::ScSwitch_MS()
                 PushNA();
                 return;
             }
-            nGlobalError = FormulaError::NONE;
+            nGlobalError = 0;
         }
     }
 
-    if ( nGlobalError != FormulaError::NONE || !bFinished  )
+    if ( nGlobalError || !bFinished  )
     {
         if ( !bFinished )
             PushNA(); // no true expression found
@@ -2000,7 +2000,7 @@ void ScInterpreter::ScSwitch_MS()
     }
 
     // push result
-    FormulaConstTokenRef xToken( PopToken() );
+    FormulaTokenRef xToken( PopToken() );
     if ( xToken )
     {
         // Remove unused arguments of SWITCH from the stack before pushing the result.
@@ -2009,10 +2009,10 @@ void ScInterpreter::ScSwitch_MS()
             Pop();
             nParamCount--;
         }
-        PushTokenRef( xToken );
+        PushTempToken( xToken.get() );
     }
     else
-        PushError( FormulaError::UnknownStackVariable );
+        PushError( errUnknownStackVariable );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

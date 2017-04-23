@@ -37,7 +37,7 @@ protected:
 public:
     // basic constructor, used from SdrObject.
     explicit ViewContactOfSdrRectObj(SdrRectObj& rTextObj);
-    virtual ~ViewContactOfSdrRectObj() override;
+    virtual ~ViewContactOfSdrRectObj();
 
 protected:
     // This method is responsible for creating the graphical visualisation data

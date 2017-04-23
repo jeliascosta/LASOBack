@@ -58,7 +58,7 @@ std::shared_ptr<CacheConfiguration> CacheConfiguration::Instance()
             rInstancePtr.reset(new CacheConfiguration());
             mpWeakInstance = rInstancePtr;
             // Prepare to release this instance in the near future.
-            maReleaseTimer.SetInvokeHandler(
+            maReleaseTimer.SetTimeoutHdl(
                 LINK(rInstancePtr.get(),CacheConfiguration,TimerCallback));
             maReleaseTimer.SetTimeout(5000 /* 5s */);
             maReleaseTimer.Start();
@@ -81,21 +81,21 @@ CacheConfiguration::CacheConfiguration()
 
         // Obtain access to Impress configuration.
         Sequence<Any> aCreationArguments(3);
-        aCreationArguments[0] <<= beans::PropertyValue(
+        aCreationArguments[0] = makeAny(beans::PropertyValue(
             "nodepath",
             0,
             makeAny(sPathToImpressConfigurationRoot),
-            beans::PropertyState_DIRECT_VALUE);
-        aCreationArguments[1] <<= beans::PropertyValue(
+            beans::PropertyState_DIRECT_VALUE));
+        aCreationArguments[1] = makeAny(beans::PropertyValue(
             "depth",
             0,
             makeAny((sal_Int32)-1),
-            beans::PropertyState_DIRECT_VALUE);
-        aCreationArguments[2] <<= beans::PropertyValue(
+            beans::PropertyState_DIRECT_VALUE));
+        aCreationArguments[2] = makeAny(beans::PropertyValue(
             "lazywrite",
             0,
             makeAny(true),
-            beans::PropertyState_DIRECT_VALUE);
+            beans::PropertyState_DIRECT_VALUE));
 
         Reference<XInterface> xRoot (xProvider->createInstanceWithArguments(
             "com.sun.star.configuration.ConfigurationAccess",
@@ -135,7 +135,7 @@ Any CacheConfiguration::GetValue (const OUString& rName)
     return aResult;
 }
 
-IMPL_STATIC_LINK_NOARG(CacheConfiguration, TimerCallback, Timer *, void)
+IMPL_STATIC_LINK_NOARG_TYPED(CacheConfiguration, TimerCallback, Timer *, void)
 {
     CacheConfigSharedPtr &rInstancePtr = theInstance::get();
     // Release our reference to the instance.

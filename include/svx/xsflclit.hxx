@@ -28,15 +28,17 @@
 class SVX_DLLPUBLIC XSecondaryFillColorItem : public XColorItem
 {
 public:
-    XSecondaryFillColorItem(const OUString& rName, const Color& rTheColor);
-    SVX_DLLPRIVATE XSecondaryFillColorItem(SvStream& rIn);
+            static SfxPoolItem* CreateDefault();
+            SVX_DLLPRIVATE XSecondaryFillColorItem() {}
+            XSecondaryFillColorItem(const OUString& rName, const Color& rTheColor);
+            SVX_DLLPRIVATE XSecondaryFillColorItem(SvStream& rIn);
 
     SVX_DLLPRIVATE virtual SfxPoolItem*    Clone(SfxItemPool* pPool = nullptr) const override;
     SVX_DLLPRIVATE virtual SfxPoolItem*    Create(SvStream& rIn, sal_uInt16 nVer) const override;
 
     SVX_DLLPRIVATE virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    MapUnit eCoreMetric,
-                                    MapUnit ePresMetric,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     SVX_DLLPRIVATE virtual sal_uInt16 GetVersion( sal_uInt16 nFileFormatVersion ) const override;

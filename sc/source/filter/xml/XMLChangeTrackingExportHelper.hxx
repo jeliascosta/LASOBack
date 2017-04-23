@@ -23,7 +23,6 @@
 #include <xmloff/xmltoken.hxx>
 #include <list>
 #include <map>
-#include <memory>
 #include <tools/solar.h>
 #include <com/sun/star/text/XText.hpp>
 #include <rtl/ustrbuf.hxx>
@@ -44,10 +43,11 @@ class ScChangeTrackingExportHelper
 
     ScChangeTrack*  pChangeTrack;
     ScEditEngineTextObj* pEditTextObj;
-    std::unique_ptr<ScChangeActionMap> pDependings;
+    ScChangeActionMap* pDependings;
+    OUString   sChangeIDPrefix;
     css::uno::Reference<css::text::XText> xText;
 
-    static OUString GetChangeID(const sal_uInt32 nActionNumber);
+    OUString GetChangeID(const sal_uInt32 nActionNumber);
     void GetAcceptanceState(const ScChangeAction* pAction);
 
     void WriteBigRange(const ScBigRange& rBigRange, xmloff::token::XMLTokenEnum aName);

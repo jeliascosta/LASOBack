@@ -49,6 +49,28 @@ namespace {
 
 OUString foundLocale;
 
+OUString getInstalledLocale(
+    css::uno::Sequence<OUString> const & installed, OUString const & locale)
+{
+    if (locale.isEmpty())
+        return OUString();  // do not attempt to resolve anything
+
+    for (sal_Int32 i = 0; i != installed.getLength(); ++i) {
+        if (installed[i] == locale) {
+            return installed[i];
+        }
+    }
+    ::std::vector<OUString> fallbacks( LanguageTag( locale).getFallbackStrings( false));
+    for (OUString & rf : fallbacks) {
+        for (sal_Int32 i = 0; i != installed.getLength(); ++i) {
+            if (installed[i] == rf) {
+                return installed[i];
+            }
+        }
+    }
+    return OUString();
+}
+
 void setMsLangIdFallback(OUString const & locale) {
     // #i32939# setting of default document language
     // See #i42730# for rules for determining source of settings
@@ -79,15 +101,23 @@ OUString getEmergencyLocale() {
             officecfg::Setup::Office::InstalledLocales::get()->
             getElementNames());
         OUString locale(
-            getInstalledLocaleForLanguage(
+            getInstalledLocale(
                 inst,
                 officecfg::Office::Linguistic::General::UILocale::get()));
         if (!locale.isEmpty()) {
             return locale;
         }
-        locale = getInstalledLocaleForSystemUILanguage(inst);
+        locale = getInstalledLocale(
+            inst, officecfg::System::L10N::UILocale::get());
         if (!locale.isEmpty()) {
             return locale;
+        }
+        locale = getInstalledLocale(inst, "en-US");
+        if (!locale.isEmpty()) {
+            return locale;
+        }
+        if (inst.hasElements()) {
+            return inst[0];
         }
     } catch (css::uno::Exception & e) {
         SAL_WARN("desktop.app", "ignoring Exception \"" << e.Message << "\"");
@@ -105,7 +135,7 @@ bool prepareLocale() {
         officecfg::Setup::Office::InstalledLocales::get()->getElementNames());
     OUString locale(officecfg::Office::Linguistic::General::UILocale::get());
     if (!locale.isEmpty()) {
-        locale = getInstalledLocaleForLanguage(inst, locale);
+        locale = getInstalledLocale(inst, locale);
         if (locale.isEmpty()) {
             // Selected language is not/no longer installed:
             try {
@@ -123,14 +153,21 @@ bool prepareLocale() {
     }
     bool cmdLanguage = false;
     if (locale.isEmpty()) {
-        locale = getInstalledLocaleForLanguage(
+        locale = getInstalledLocale(
             inst, Desktop::GetCommandLineArgs().GetLanguage());
         if (!locale.isEmpty()) {
             cmdLanguage = true;
         }
     }
     if (locale.isEmpty()) {
-        locale = getInstalledLocaleForSystemUILanguage(inst);
+        locale = getInstalledLocale(
+            inst, officecfg::System::L10N::UILocale::get());
+    }
+    if (locale.isEmpty()) {
+        locale = getInstalledLocale(inst, "en-US");
+    }
+    if (locale.isEmpty() && inst.hasElements()) {
+        locale = inst[0];
     }
     if (locale.isEmpty()) {
         return false;
@@ -155,7 +192,6 @@ bool prepareLocale() {
         }
     }
     MsLangId::setConfiguredSystemUILanguage(tag.getLanguageType(false));
-
     OUString setupSysLoc(officecfg::Setup::L10N::ooSetupSystemLocale::get());
     LanguageTag::setConfiguredSystemLanguage(
         setupSysLoc.isEmpty()
@@ -163,11 +199,7 @@ bool prepareLocale() {
         : LanguageTag(setupSysLoc).getLanguageType(false));
     // #i32939# setting of default document locale
     // #i32939# this should not be based on the UI language
-    // So obtain the system locale now configured just above and pass it on,
-    // resolved of course.
-    LanguageTag docTag(LANGUAGE_SYSTEM);
-    setMsLangIdFallback(docTag.getBcp47());
-
+    setMsLangIdFallback(locale);
     foundLocale = locale;
     return true;
 }

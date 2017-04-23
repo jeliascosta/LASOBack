@@ -26,15 +26,15 @@ private:
     OUString    m_sAddDialogText;
     OUString    m_sManual;
 
-    DECL_LINK(CheckHdl_Impl, SvTreeListBox*, void);
-    DECL_LINK(AddHdl_Impl, Button*, void);
-    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(CheckHdl_Impl, SvTreeListBox*, void);
+    DECL_LINK_TYPED(AddHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
 
     void HandleCheckEntry(SvTreeListEntry* _pEntry);
     void AddCertPath(const OUString &rProfile, const OUString &rPath);
 public:
     explicit CertPathDialog(vcl::Window* pParent);
-    virtual ~CertPathDialog() override;
+    virtual ~CertPathDialog();
     virtual void dispose() override;
 
     OUString getDirectory() const;

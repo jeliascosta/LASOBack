@@ -31,13 +31,13 @@ class SvxUnoShapeModifyListener : public ::cppu::WeakAggImplHelper1< css::util::
 
 public:
     SvxUnoShapeModifyListener( SdrObject* pObj ) throw();
-    virtual ~SvxUnoShapeModifyListener() throw() override;
+    virtual ~SvxUnoShapeModifyListener() throw();
 
     // css::util::XModifyListener
-    virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) override;
+    virtual void SAL_CALL modified(const css::lang::EventObject& aEvent) throw(  css::uno::RuntimeException, std::exception) override;
 
     // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw(  css::uno::RuntimeException, std::exception) override;
 
     // internal
     void invalidate() throw();

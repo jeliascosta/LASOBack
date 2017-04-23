@@ -38,7 +38,7 @@ namespace dbtools
     /** a class which helps retrieving and setting the value of a database column
         as formatted string.
     */
-    class OOO_DLLPUBLIC_DBTOOLS FormattedColumnValue final
+    class OOO_DLLPUBLIC_DBTOOLS FormattedColumnValue
     {
     public:
         /** constructs an instance
@@ -71,7 +71,12 @@ namespace dbtools
             const css::uno::Reference< css::beans::XPropertySet >& i_rColumn
         );
 
-        ~FormattedColumnValue();
+        // note that all methods of this class need to be virtual, since it's
+        // used in a load-on-demand context in module SVX
+
+        virtual ~FormattedColumnValue();
+
+        void        clear();
 
         // access to the details of the formatting we determined
         sal_Int16   getKeyType() const;

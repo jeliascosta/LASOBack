@@ -30,16 +30,16 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/frame/XStatusListener.hpp>
 
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase2.hxx>
 
-class SFX2_DLLPUBLIC SfxStatusListener : public cppu::WeakImplHelper<
+class SFX2_DLLPUBLIC SfxStatusListener : public ::cppu::WeakImplHelper2<
                           css::frame::XStatusListener,
                           css::lang::XComponent>
 {
     public:
 
         SfxStatusListener( const css::uno::Reference< css::frame::XDispatchProvider >& rDispatchProvider, sal_uInt16 nSlotId, const OUString& aCommand );
-        virtual ~SfxStatusListener() override;
+        virtual ~SfxStatusListener();
 
         // old methods from SfxControllerItem
         sal_uInt16  GetId() const { return m_nSlotID; }
@@ -49,15 +49,15 @@ class SFX2_DLLPUBLIC SfxStatusListener : public cppu::WeakImplHelper<
         virtual void StateChanged( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState );
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
-        virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+        virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) override;
+        virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
 
         // XStatusListener
-        virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& Event) override;
+        virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& Event) throw( css::uno::RuntimeException, std::exception ) override;
 
     private:
         SfxStatusListener( const SfxStatusListener& ) = delete;

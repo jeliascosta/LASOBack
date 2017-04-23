@@ -9,6 +9,20 @@
 
 #include "templateview.hrc"
 
+PushButton BTN_ALL_TEMPLATES
+{
+    Pos = MAP_APPFONT( 1, 1 );
+    Size = MAP_APPFONT( 50, 14 );
+    Text [ en-US ] = "All Templates";
+    TabStop = True;
+};
+
+FixedText FT_NAME
+{
+    Pos = MAP_APPFONT( 52, 4 );
+    Size = MAP_APPFONT( 238, 12 );
+};
+
 String STR_WELCOME_LINE1
 {
     Text [ en-US ] = "Welcome to %PRODUCTNAME.";
@@ -19,22 +33,22 @@ String STR_WELCOME_LINE2
     Text [ en-US ] = "Drop a document here or pick an app from the left side to create one.";
 };
 
-Bitmap BMP_WELCOME
+Image IMG_WELCOME
 {
-    File = "logo.png";
+    ImageBitmap = Bitmap { File = "logo.png" ; };
 };
 
-Bitmap BMP_RECENTDOC_REMOVE
+Bitmap IMG_RECENTDOC_REMOVE
 {
     File = "recentdoc_remove.png";
 };
 
-Bitmap BMP_RECENTDOC_REMOVE_HIGHLIGHTED
+Bitmap IMG_RECENTDOC_REMOVE_HIGHLIGHTED
 {
     File = "recentdoc_remove_highlighted.png";
 };
 
-Bitmap BMP_DEFAULT
+Bitmap IMG_DEFAULT
 {
     File = "templatestar.png";
 };

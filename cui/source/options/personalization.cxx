@@ -36,7 +36,6 @@
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include "ucbhelper/content.hxx"
 #include <comphelper/simplefileaccessinteraction.hxx>
-#include <tools/resary.hxx>
 
 #define MAX_RESULTS 9
 
@@ -52,19 +51,28 @@ SelectPersonaDialog::SelectPersonaDialog( vcl::Window *pParent )
     m_pSearchButton->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
 
     get( m_vSearchSuggestions[0], "suggestion1" );
-    get( m_vSearchSuggestions[1], "suggestion2" );
-    get( m_vSearchSuggestions[2], "suggestion3" );
-    get( m_vSearchSuggestions[3], "suggestion4" );
-    get( m_vSearchSuggestions[4], "suggestion5" );
-    get( m_vSearchSuggestions[5], "suggestion6" );
+    m_vSearchSuggestions[0]->SetText( "LibreOffice" );
+    m_vSearchSuggestions[0]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
 
-    ResStringArray aCategoriesArr(CUI_RES(RID_SVXSTR_PERSONA_CATEGORIES));
-    assert(aCategoriesArr.Count() >= CATEGORYCOUNT);
-    for(sal_uInt32 i = 0; i < CATEGORYCOUNT; ++i)
-    {
-        m_vSearchSuggestions[i]->SetText( aCategoriesArr.GetString(i) );
-        m_vSearchSuggestions[i]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
-    }
+    get( m_vSearchSuggestions[1], "suggestion2" );
+    m_vSearchSuggestions[1]->SetText( CUI_RES ( RID_SVXSTR_PERSONA_ABSTRACT ) );
+    m_vSearchSuggestions[1]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
+
+    get( m_vSearchSuggestions[2], "suggestion3" );
+    m_vSearchSuggestions[2]->SetText( CUI_RES ( RID_SVXSTR_PERSONA_COLOR ) );
+    m_vSearchSuggestions[2]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
+
+    get( m_vSearchSuggestions[3], "suggestion4" );
+    m_vSearchSuggestions[3]->SetText( CUI_RES( RID_SVXSTR_PERSONA_MUSIC ) );
+    m_vSearchSuggestions[3]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
+
+    get( m_vSearchSuggestions[4], "suggestion5" );
+    m_vSearchSuggestions[4]->SetText( CUI_RES( RID_SVXSTR_PERSONA_NATURE ) );
+    m_vSearchSuggestions[4]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
+
+    get( m_vSearchSuggestions[5], "suggestion6" );
+    m_vSearchSuggestions[5]->SetText( CUI_RES( RID_SVXSTR_PERSONA_SOLID ) );
+    m_vSearchSuggestions[5]->SetClickHdl( LINK( this, SelectPersonaDialog, SearchPersonas ) );
 
     get( m_pEdit, "search_term" );
 
@@ -99,8 +107,8 @@ SelectPersonaDialog::~SelectPersonaDialog()
 
 void SelectPersonaDialog::dispose()
 {
-    if (m_pSearchThread.is())
-        m_pSearchThread->join();
+    if (m_rSearchThread.is())
+        m_rSearchThread->join();
 
     m_pEdit.clear();
     m_pSearchButton.clear();
@@ -122,30 +130,22 @@ OUString SelectPersonaDialog::GetSelectedPersona() const
     return OUString();
 }
 
-IMPL_LINK( SelectPersonaDialog, SearchPersonas, Button*, pButton, void )
+IMPL_LINK_TYPED( SelectPersonaDialog, SearchPersonas, Button*, pButton, void )
 {
-    /*
-     * English category names should be used for search.
-     * These strings should be in sync with the strings of
-     * RID_SVXSTR_PERSONA_CATEGORIES in personalization.src
-     */
-    static const OUStringLiteral vSuggestionCategories[] =
-        {"LibreOffice", "Abstract", "Color", "Music", "Nature", "Solid"};
-
     OUString searchTerm;
-    if( m_pSearchThread.is() )
-        m_pSearchThread->StopExecution();
+    if( m_rSearchThread.is() )
+        m_rSearchThread->StopExecution();
 
     if( pButton ==  m_pSearchButton )
         searchTerm = m_pEdit->GetText();
     else
     {
-        for ( sal_uInt32 i = 0; i < CATEGORYCOUNT; ++i)
+        for( VclPtr<PushButton> & i : m_vSearchSuggestions )
         {
-            if( pButton == m_vSearchSuggestions[i] )
+            if( pButton == i )
             {
-                // Use the category name in English as search term
-                searchTerm = vSuggestionCategories[i];
+                // GetDisplayText() is returning a blank string, thus removing mnemonics explicitly.
+                searchTerm = MnemonicGenerator::EraseAllMnemonicChars(i->GetText());
                 break;
             }
         }
@@ -154,50 +154,50 @@ IMPL_LINK( SelectPersonaDialog, SearchPersonas, Button*, pButton, void )
     if( searchTerm.isEmpty( ) )
         return;
 
-    // 15 results so that invalid and duplicate search results whose names can't be retrieved can be skipped
-    OUString rSearchURL = "https://services.addons.mozilla.org/en-US/firefox/api/1.5/search/" + searchTerm + "/9/15";
+    // 15 results so that invalid and duplicate search results whose names can't be retreived can be skipped
+    OUString rSearchURL = "https://services.addons.allizom.org/en-US/firefox/api/1.5/search/" + searchTerm + "/9/15";
 
     if ( searchTerm.startsWith( "https://addons.mozilla.org/" ) )
     {
         searchTerm = "https://addons.mozilla.org/en-US/" + searchTerm.copy( searchTerm.indexOf( "firefox" ) );
-        m_pSearchThread = new SearchAndParseThread( this, searchTerm, true );
+        m_rSearchThread = new SearchAndParseThread( this, searchTerm, true );
     }
     else
-        m_pSearchThread = new SearchAndParseThread( this, rSearchURL, false );
+        m_rSearchThread = new SearchAndParseThread( this, rSearchURL, false );
 
-    m_pSearchThread->launch();
+    m_rSearchThread->launch();
 }
 
-IMPL_LINK_NOARG( SelectPersonaDialog, ActionOK, Button*, void )
+IMPL_LINK_NOARG_TYPED( SelectPersonaDialog, ActionOK, Button*, void )
 {
     OUString aSelectedPersona = GetSelectedPersona();
 
     if( !aSelectedPersona.isEmpty() )
     {
-        m_pSearchThread = new SearchAndParseThread( this, aSelectedPersona, false );
-        m_pSearchThread->launch();
+        m_rSearchThread = new SearchAndParseThread( this, aSelectedPersona, false );
+        m_rSearchThread->launch();
     }
 
     else
     {
-        if( m_pSearchThread.is() )
-            m_pSearchThread->StopExecution();
+        if( m_rSearchThread.is() )
+            m_rSearchThread->StopExecution();
         EndDialog( RET_OK );
     }
 }
 
-IMPL_LINK_NOARG( SelectPersonaDialog, ActionCancel, Button*, void )
+IMPL_LINK_NOARG_TYPED( SelectPersonaDialog, ActionCancel, Button*, void )
 {
-    if( m_pSearchThread.is() )
-        m_pSearchThread->StopExecution();
+    if( m_rSearchThread.is() )
+        m_rSearchThread->StopExecution();
 
     EndDialog();
 }
 
-IMPL_LINK( SelectPersonaDialog, SelectPersona, Button*, pButton, void )
+IMPL_LINK_TYPED( SelectPersonaDialog, SelectPersona, Button*, pButton, void )
 {
-    if( m_pSearchThread.is() )
-        m_pSearchThread->StopExecution();
+    if( m_rSearchThread.is() )
+        m_rSearchThread->StopExecution();
 
     for( sal_Int32 index = 0; index < 9; index++ )
     {
@@ -209,7 +209,8 @@ IMPL_LINK( SelectPersonaDialog, SelectPersona, Button*, pButton, void )
                 // get the persona name from the setting variable to show in the progress.
                 sal_Int32 nNameIndex = m_aSelectedPersona.indexOf( ';' );
                 OUString aName = m_aSelectedPersona.copy( 0, nNameIndex );
-                OUString aProgress = CUI_RESSTR( RID_SVXSTR_SELECTEDPERSONA ) + aName;
+                OUString aProgress( CUI_RES( RID_SVXSTR_SELECTEDPERSONA ) );
+                aProgress += aName;
                 SetProgress( aProgress );
             }
             break;
@@ -313,7 +314,6 @@ void SvxPersonalizationTabPage::dispose()
     m_pExtensionPersonaPreview.clear();
     m_pPersonaList.clear();
     m_pExtensionLabel.clear();
-    m_pAppliedThemeLabel.clear();
     SfxTabPage::dispose();
 }
 
@@ -411,8 +411,9 @@ void SvxPersonalizationTabPage::LoadDefaultImages()
 {
     // Load the pre saved personas
 
-    OUString gallery
-        = "$BRAND_BASE_DIR/" LIBO_SHARE_FOLDER "/gallery/personas/";
+    OUString gallery( "" );
+    gallery = "$BRAND_BASE_DIR/" LIBO_SHARE_FOLDER;
+    gallery += "/gallery/personas/";
     rtl::Bootstrap::expandMacros( gallery );
     OUString aPersonasList = gallery + "personas_list.txt";
     SvFileStream aStream( aPersonasList, StreamMode::READ );
@@ -483,7 +484,7 @@ void SvxPersonalizationTabPage::LoadExtensionThemes()
     }
 }
 
-IMPL_LINK_NOARG( SvxPersonalizationTabPage, SelectPersona, Button*, void )
+IMPL_LINK_NOARG_TYPED( SvxPersonalizationTabPage, SelectPersona, Button*, void )
 {
     ScopedVclPtrInstance< SelectPersonaDialog > aDialog(nullptr);
 
@@ -497,13 +498,13 @@ IMPL_LINK_NOARG( SvxPersonalizationTabPage, SelectPersona, Button*, void )
     }
 }
 
-IMPL_LINK( SvxPersonalizationTabPage, ForceSelect, Button*, pButton, void )
+IMPL_LINK_TYPED( SvxPersonalizationTabPage, ForceSelect, Button*, pButton, void )
 {
     if ( pButton == m_pOwnPersona && m_aPersonaSettings.isEmpty() )
         SelectPersona( m_pSelectPersona );
 }
 
-IMPL_LINK( SvxPersonalizationTabPage, DefaultPersona, Button*, pButton, void )
+IMPL_LINK_TYPED( SvxPersonalizationTabPage, DefaultPersona, Button*, pButton, void )
 {
     m_pDefaultPersona->Check();
     for( sal_Int32 nIndex = 0; nIndex < 3; nIndex++ )
@@ -513,7 +514,7 @@ IMPL_LINK( SvxPersonalizationTabPage, DefaultPersona, Button*, pButton, void )
     }
 }
 
-IMPL_LINK_NOARG( SvxPersonalizationTabPage, SelectInstalledPersona, ListBox&, void)
+IMPL_LINK_NOARG_TYPED( SvxPersonalizationTabPage, SelectInstalledPersona, ListBox&, void)
 {
     m_pOwnPersona->Check();
 
@@ -654,7 +655,8 @@ bool getPreviewFile( const OUString& rURL, OUString *pPreviewFile, OUString *pPe
     // copy the images to the user's gallery
     OUString gallery = "${$BRAND_BASE_DIR/" LIBO_ETC_FOLDER "/" SAL_CONFIGFILE( "bootstrap") "::UserInstallation}";
     rtl::Bootstrap::expandMacros( gallery );
-    gallery += "/user/gallery/personas/" + aName + "/";
+    gallery += "/user/gallery/personas/";
+    gallery += aName + "/";
     osl::Directory::createPath( gallery );
 
     OUString aPreviewFile( INetURLObject( aPreviewURL ).getName() );

@@ -44,7 +44,7 @@ namespace canvas
 
         @tpl Mutex
         Lock strategy to use. Defaults to using the
-        BaseMutex-provided lock.  Every time one of the methods is
+        OBaseMutex-provided lock.  Every time one of the methods is
         entered, an object of type Mutex is created with m_aMutex as
         the sole parameter, and destroyed again when the method scope
         is left.
@@ -68,20 +68,20 @@ namespace canvas
         typedef CanvasBase< Base, CanvasHelper, Mutex, UnambiguousBase >    BaseType;
 
         // XBitmap
-        virtual css::geometry::IntegerSize2D SAL_CALL getSize(  ) override
+        virtual css::geometry::IntegerSize2D SAL_CALL getSize(  ) throw (css::uno::RuntimeException) override
         {
             typename BaseType::MutexType aGuard( BaseType::m_aMutex );
 
             return BaseType::maCanvasHelper.getSize();
         }
 
-        virtual sal_Bool SAL_CALL hasAlpha(  ) override
+        virtual sal_Bool SAL_CALL hasAlpha(  ) throw (css::uno::RuntimeException) override
         {
             return true;
         }
 
         virtual css::uno::Reference< css::rendering::XBitmap > SAL_CALL getScaledBitmap( const css::geometry::RealSize2D& newSize,
-                                                                                                                   sal_Bool                                      beFast ) override
+                                                                                                                   sal_Bool                                      beFast ) throw (css::uno::RuntimeException, std::exception) override
         {
             typename BaseType::MutexType aGuard( BaseType::m_aMutex );
 
@@ -107,7 +107,8 @@ namespace canvas
                                         const css::rendering::RenderState&                                         sourceRenderState,
                                         const css::geometry::RealRectangle2D&                                      destRect,
                                         const css::rendering::ViewState&                                           destViewState,
-                                        const css::rendering::RenderState&                                         destRenderState ) override
+                                        const css::rendering::RenderState&                                         destRenderState ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                                         css::uno::RuntimeException) override
         {
             tools::verifyArgs(sourceCanvas, sourceRect, sourceViewState, sourceRenderState,
                               destRect, destViewState, destRenderState,

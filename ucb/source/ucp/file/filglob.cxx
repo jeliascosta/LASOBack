@@ -19,7 +19,7 @@
 
 #include "filglob.hxx"
 #include "filerror.hxx"
-#include "filtask.hxx"
+#include "shell.hxx"
 #include "bc.hxx"
 #include <osl/file.hxx>
 #include <vector>
@@ -120,25 +120,25 @@ namespace {
                                     (bRemoveProperty ? 1 : 0) );
         sal_Int32 i = 0;
         aArguments[i++]
-            <<= PropertyValue("Uri",
+            <<= PropertyValue(OUString( "Uri"),
                               -1,
                               makeAny(rPhysicalUrl),
                               PropertyState_DIRECT_VALUE);
         if (bResourceName)
             aArguments[i++]
-                <<= PropertyValue("ResourceName",
+                <<= PropertyValue(OUString( "ResourceName"),
                                   -1,
                                   makeAny(aResourceName),
                                   PropertyState_DIRECT_VALUE);
         if (bResourceType)
             aArguments[i++]
-                <<= PropertyValue("ResourceType",
+                <<= PropertyValue(OUString( "ResourceType"),
                                   -1,
                                   makeAny(aResourceType),
                                   PropertyState_DIRECT_VALUE);
         if (bRemoveProperty)
             aArguments[i++]
-                <<= PropertyValue("Removable",
+                <<= PropertyValue(OUString( "Removable"),
                                   -1,
                                   makeAny(bRemovable),
                                   PropertyState_DIRECT_VALUE);
@@ -506,7 +506,8 @@ namespace fileaccess {
                 OUString("ContentType");
 
             aAny <<= MissingPropertiesException(
-                "a property is missing, necessary to create a content",
+                OUString( "a property is missing necessary"
+                               "to create a content"),
                 xComProc,
                 aSeq);
             cancelCommandExecution(aAny,xEnv);
@@ -537,7 +538,8 @@ namespace fileaccess {
         {
             aAny <<=
                 MissingInputStreamException(
-                    "the inputstream is missing, necessary to create a content",
+                    OUString( "the inputstream is missing necessary"
+                                   "to create a content"),
                     xComProc);
             cancelCommandExecution(aAny,xEnv);
         }
@@ -779,9 +781,10 @@ namespace fileaccess {
         }
         else if( errorCode == TASKHANDLING_TRANSFER_INVALIDSCHEME )
         {
-            aAny <<= InteractiveBadTransferURLException(
-                        "bad transfer url",
-                        xComProc);
+            aAny <<=
+                InteractiveBadTransferURLException(
+                    OUString( "bad transfer url"),
+                    xComProc);
             cancelCommandExecution( aAny,xEnv );
         }
         else if( errorCode == TASKHANDLING_OVERWRITE_FOR_MOVE      ||

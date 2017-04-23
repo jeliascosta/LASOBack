@@ -70,7 +70,7 @@ class LwpCharacterBorderOverride : public LwpOverride
 public:
     LwpCharacterBorderOverride();
 
-    virtual ~LwpCharacterBorderOverride() override;
+    virtual ~LwpCharacterBorderOverride();
 
     virtual LwpCharacterBorderOverride* clone() const override;
 

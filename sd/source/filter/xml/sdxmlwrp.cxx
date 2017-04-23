@@ -30,7 +30,7 @@
 #include <unotools/streamwrap.hxx>
 #include <svx/xmlgrhlp.hxx>
 
-#include "DrawDocShell.hxx"
+#include "../../ui/inc/DrawDocShell.hxx"
 
 #include "sdxmlwrp.hxx"
 #include "strmname.h"
@@ -43,7 +43,6 @@
 #include <com/sun/star/document/XGraphicObjectResolver.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
-#include <com/sun/star/packages/WrongPasswordException.hpp>
 #include <com/sun/star/packages/zip/ZipIOException.hpp>
 
 #include <com/sun/star/xml/sax/XErrorHandler.hpp>
@@ -78,6 +77,11 @@ using namespace com::sun::star::document;
 using namespace comphelper;
 
 #define SD_XML_READERROR 1234
+
+char const sXML_metaStreamName[] = "meta.xml";
+char const sXML_styleStreamName[] = "styles.xml";
+char const sXML_contentStreamName[] = "content.xml";
+char const sXML_settingsStreamName[] = "settings.xml";
 
 char const sXML_export_impress_meta_oasis_service[] = "com.sun.star.comp.Impress.XMLOasisMetaExporter";
 char const sXML_export_impress_styles_oasis_service[] = "com.sun.star.comp.Impress.XMLOasisStylesExporter";
@@ -249,13 +253,13 @@ sal_Int32 ReadThroughComponent(
                             (bMustBeSuccessfull ? ERR_FORMAT_FILE_ROWCOL
                                                     : WARN_FORMAT_FILE_ROWCOL),
                             rStreamName, sErr,
-                            ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                            ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         }
         else
         {
             DBG_ASSERT( bMustBeSuccessfull, "Warnings are not supported" );
             return *new StringErrorInfo( ERR_FORMAT_ROWCOL, sErr,
-                             ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                             ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         }
     }
     catch (const xml::sax::SAXException& r)
@@ -359,8 +363,8 @@ sal_Int32 ReadThroughComponent(
 
         Any aAny = xProps->getPropertyValue( "Encrypted" );
 
-        bool bEncrypted = false;
-        aAny >>= bEncrypted;
+        bool bEncrypted = aAny.getValueType() == cppu::UnoType<bool>::get() &&
+                *static_cast<sal_Bool const *>(aAny.getValue());
 
         Reference <io::XInputStream> xInputStream = xStream->getInputStream();
 
@@ -398,16 +402,16 @@ sal_Int32 ReadThroughComponent(
 //numbering level matches that of the outline level it previews
 void fixupOutlinePlaceholderNumberingDepths(SdDrawDocument* pDoc)
 {
-    for (sal_uInt16 i = 0; i < pDoc->GetMasterSdPageCount(PageKind::Standard); ++i)
+    for (sal_uInt16 i = 0; i < pDoc->GetMasterSdPageCount(PK_STANDARD); ++i)
     {
-        SdPage *pMasterPage = pDoc->GetMasterSdPage(i, PageKind::Standard);
+        SdPage *pMasterPage = pDoc->GetMasterSdPage(i, PK_STANDARD);
         SdrObject* pMasterOutline = pMasterPage->GetPresObj(PRESOBJ_OUTLINE);
         if (!pMasterOutline)
             continue;
         OutlinerParaObject* pOutlParaObj = pMasterOutline->GetOutlinerParaObject();
         if (!pOutlParaObj)
             continue;
-        SdOutliner* pOutliner = pDoc->GetInternalOutliner();
+        ::sd::Outliner* pOutliner = pDoc->GetInternalOutliner();
         pOutliner->Clear();
         pOutliner->SetText(*pOutlParaObj);
         bool bInconsistent = false;
@@ -554,12 +558,12 @@ bool SdXMLFilter::Import( ErrCode& nError )
     if( 0 == nRet )
     {
         pGraphicHelper = SvXMLGraphicHelper::Create( xStorage,
-                                                     SvXMLGraphicHelperMode::Read,
+                                                     GRAPHICHELPER_MODE_READ,
                                                      false );
         xGraphicResolver = pGraphicHelper;
         pObjectHelper = SvXMLEmbeddedObjectHelper::Create(
                                     xStorage, *pDoc->GetPersist(),
-                                    SvXMLEmbeddedObjectHelperMode::Read,
+                                    EMBEDDEDOBJECTHELPER_MODE_READ,
                                     false );
         xObjectResolver = pObjectHelper;
     }
@@ -882,10 +886,10 @@ bool SdXMLFilter::Export()
             // create helper for graphic and ole export if we have a storage
             if( xStorage.is() )
             {
-                pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *mrDocShell.GetDoc()->GetPersist(), SvXMLEmbeddedObjectHelperMode::Write, false );
+                pObjectHelper = SvXMLEmbeddedObjectHelper::Create( xStorage, *mrDocShell.GetDoc()->GetPersist(), EMBEDDEDOBJECTHELPER_MODE_WRITE, false );
                 xObjectResolver = pObjectHelper;
 
-                pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Write, false );
+                pGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_WRITE, false );
                 xGrfResolver = pGraphicHelper;
             }
 
@@ -914,18 +918,18 @@ bool SdXMLFilter::Export()
 
             XML_SERVICEMAP aServices[5]; sal_uInt16 i = 0;
             aServices[i  ].mpService = pServiceNames->mpStyles;
-            aServices[i++].mpStream  = "styles.xml";
+            aServices[i++].mpStream  = sXML_styleStreamName;
 
             aServices[i  ].mpService = pServiceNames->mpContent;
-            aServices[i++].mpStream  = "content.xml";
+            aServices[i++].mpStream  = sXML_contentStreamName;
 
             aServices[i  ].mpService = pServiceNames->mpSettings;
-            aServices[i++].mpStream  = "settings.xml";
+            aServices[i++].mpStream  = sXML_settingsStreamName;
 
             if( mrDocShell.GetCreateMode() != SfxObjectCreateMode::EMBEDDED )
             {
                 aServices[i  ].mpService = pServiceNames->mpMeta;
-                aServices[i++].mpStream  = "meta.xml";
+                aServices[i++].mpStream  = sXML_metaStreamName;
             };
 
             aServices[i].mpService = nullptr;

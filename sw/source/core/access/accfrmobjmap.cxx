@@ -103,24 +103,27 @@ SwAccessibleChildMap::SwAccessibleChildMap( const SwRect& rVisArea,
                 if ( pAccImpl &&
                      pAccImpl->HasAdditionalAccessibleChildren() )
                 {
-                    std::vector< vcl::Window* > aAdditionalChildren;
-                    pAccImpl->GetAdditionalAccessibleChildren( &aAdditionalChildren );
+                    std::vector< vcl::Window* >* pAdditionalChildren =
+                                                new std::vector< vcl::Window* >();
+                    pAccImpl->GetAdditionalAccessibleChildren( pAdditionalChildren );
 
                     sal_Int32 nCounter( 0 );
-                    for ( std::vector< vcl::Window* >::iterator aIter = aAdditionalChildren.begin();
-                          aIter != aAdditionalChildren.end();
+                    for ( std::vector< vcl::Window* >::iterator aIter = pAdditionalChildren->begin();
+                          aIter != pAdditionalChildren->end();
                           ++aIter )
                     {
                         aLower = (*aIter);
                         insert( ++nCounter, SwAccessibleChildMapKey::XWINDOW, aLower );
                     }
+
+                    delete pAdditionalChildren;
                 }
             }
         }
     }
 }
 
-std::pair< SwAccessibleChildMap::iterator, bool > SwAccessibleChildMap::insert(
+::std::pair< SwAccessibleChildMap::iterator, bool > SwAccessibleChildMap::insert(
                                                 const sal_uInt32 nPos,
                                                 const SwAccessibleChildMapKey::LayerId eLayerId,
                                                 const SwAccessibleChild& rLower )
@@ -130,7 +133,7 @@ std::pair< SwAccessibleChildMap::iterator, bool > SwAccessibleChildMap::insert(
     return insert( aEntry );
 }
 
-std::pair< SwAccessibleChildMap::iterator, bool > SwAccessibleChildMap::insert(
+::std::pair< SwAccessibleChildMap::iterator, bool > SwAccessibleChildMap::insert(
                                                 const SdrObject *pObj,
                                                 const SwAccessibleChild& rLower )
 {

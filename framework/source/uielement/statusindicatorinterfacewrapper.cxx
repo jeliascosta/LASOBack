@@ -44,6 +44,7 @@ StatusIndicatorInterfaceWrapper::~StatusIndicatorInterfaceWrapper()
 void SAL_CALL StatusIndicatorInterfaceWrapper::start(
     const OUString& sText,
     sal_Int32              nRange )
+throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XComponent > xComp( m_xStatusIndicatorImpl );
     if ( xComp.is() )
@@ -55,6 +56,7 @@ void SAL_CALL StatusIndicatorInterfaceWrapper::start(
 }
 
 void SAL_CALL StatusIndicatorInterfaceWrapper::end()
+throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XComponent > xComp( m_xStatusIndicatorImpl );
     if ( xComp.is() )
@@ -66,6 +68,7 @@ void SAL_CALL StatusIndicatorInterfaceWrapper::end()
 }
 
 void SAL_CALL StatusIndicatorInterfaceWrapper::reset()
+throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XComponent > xComp( m_xStatusIndicatorImpl );
     if ( xComp.is() )
@@ -78,6 +81,7 @@ void SAL_CALL StatusIndicatorInterfaceWrapper::reset()
 
 void SAL_CALL StatusIndicatorInterfaceWrapper::setText(
     const OUString& sText )
+throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XComponent > xComp( m_xStatusIndicatorImpl );
     if ( xComp.is() )
@@ -90,6 +94,7 @@ void SAL_CALL StatusIndicatorInterfaceWrapper::setText(
 
 void SAL_CALL StatusIndicatorInterfaceWrapper::setValue(
     sal_Int32 nValue )
+throw( css::uno::RuntimeException, std::exception )
 {
     Reference< XComponent > xComp( m_xStatusIndicatorImpl );
     if ( xComp.is() )

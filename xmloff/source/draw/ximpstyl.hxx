@@ -25,7 +25,6 @@
 #include "ximppage.hxx"
 #include <xmloff/xmlstyle.hxx>
 #include <com/sun/star/view/PaperOrientation.hpp>
-#include <memory>
 #include <vector>
 
 class SvNumberFormatter;
@@ -53,7 +52,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
-    virtual ~SdXMLPageMasterStyleContext() override;
+    virtual ~SdXMLPageMasterStyleContext();
 
     sal_Int32 GetBorderBottom() const { return mnBorderBottom; }
     sal_Int32 GetBorderLeft() const { return mnBorderLeft; }
@@ -69,7 +68,7 @@ public:
 class SdXMLPageMasterContext: public SvXMLStyleContext
 {
     OUString               msName;
-    rtl::Reference<SdXMLPageMasterStyleContext> mxPageMasterStyle;
+    SdXMLPageMasterStyleContext*mpPageMasterStyle;
 
     const SdXMLImport& GetSdImport() const { return static_cast<const SdXMLImport&>(GetImport()); }
     SdXMLImport& GetSdImport() { return static_cast<SdXMLImport&>(GetImport()); }
@@ -81,12 +80,13 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
+    virtual ~SdXMLPageMasterContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
-    const SdXMLPageMasterStyleContext* GetPageMasterStyle() const { return mxPageMasterStyle.get(); }
+    const SdXMLPageMasterStyleContext* GetPageMasterStyle() const { return mpPageMasterStyle; }
 };
 
 // style:masterpage context
@@ -106,7 +106,7 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXMLMasterPageContext() override;
+    virtual ~SdXMLMasterPageContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -137,7 +137,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
-    virtual ~SdXMLPresentationPlaceholderContext() override;
+    virtual ~SdXMLPresentationPlaceholderContext();
 
     const OUString& GetName() const { return msName; }
     sal_Int32 GetX() const { return mnX; }
@@ -148,7 +148,7 @@ public:
 class SdXMLPresentationPageLayoutContext: public SvXMLStyleContext
 {
     OUString               msName;
-    std::vector< rtl::Reference< SdXMLPresentationPlaceholderContext > >
+    std::vector< SdXMLPresentationPlaceholderContext* >
                            maList;
     sal_uInt16             mnTypeId;
 
@@ -162,6 +162,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
+    virtual ~SdXMLPresentationPageLayoutContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -177,8 +178,8 @@ class SdXMLStylesContext : public SvXMLStylesContext
 {
     rtl::Reference< SvXMLImportPropertyMapper > xPresImpPropMapper;
     bool                    mbIsAutoStyle;
-    std::unique_ptr<SvXMLNumFmtHelper> mpNumFmtHelper;
-    std::unique_ptr<SvNumberFormatter> mpNumFormatter;
+    SvXMLNumFmtHelper*          mpNumFmtHelper;
+    SvNumberFormatter*          mpNumFormatter;
 
     const SdXMLImport& GetSdImport() const { return static_cast<const SdXMLImport&>(GetImport()); }
     SdXMLImport& GetSdImport() { return static_cast<SdXMLImport&>(GetImport()); }
@@ -212,7 +213,9 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
         bool bIsAutoStyle);
+    virtual ~SdXMLStylesContext();
 
+    virtual sal_uInt16 GetFamily( const OUString& rFamily ) const override;
     virtual void EndElement() override;
     virtual rtl::Reference< SvXMLImportPropertyMapper > GetImportPropertyMapper(sal_uInt16 nFamily) const override;
 
@@ -225,7 +228,7 @@ public:
 
 class SdXMLMasterStylesContext : public SvXMLImportContext
 {
-    std::vector< rtl::Reference< SdXMLMasterPageContext > > maMasterPageList;
+    std::vector< SdXMLMasterPageContext* > maMasterPageList;
 
     const SdXMLImport& GetSdImport() const { return static_cast<const SdXMLImport&>(GetImport()); }
     SdXMLImport& GetSdImport() { return static_cast<SdXMLImport&>(GetImport()); }
@@ -235,6 +238,7 @@ public:
     SdXMLMasterStylesContext(
         SdXMLImport& rImport,
         const OUString& rLName);
+    virtual ~SdXMLMasterStylesContext();
 
     virtual SvXMLImportContext* CreateChildContext(
         sal_uInt16 nPrefix,

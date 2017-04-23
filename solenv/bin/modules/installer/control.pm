@@ -70,6 +70,12 @@ sub check_system_path
     # All platforms: zip
     # Windows only: "msiinfo.exe", "msidb.exe", "uuidgen.exe", "makecab.exe", "msitran.exe", "expand.exe" for msi database and packaging
 
+    if ($ENV{'CROSS_COMPILING'} eq 'TRUE')
+    {
+        # we build our own msi* etc. tools when cross-compiling
+        $ENV{'PATH'} .= $installer::globals::pathseparator . $ENV{'WORKDIR_FOR_BUILD'} . '/LinkTarget/Executable';
+    }
+
     my $onefile;
     my $error = 0;
     my $pathvariable = $ENV{'PATH'};
@@ -94,6 +100,10 @@ sub check_system_path
     {
         @needed_files_in_path = ("zip.exe", "msiinfo.exe", "msidb.exe", "uuidgen", "makecab.exe", "msitran.exe", "expand.exe");
     }
+    elsif ($installer::globals::isunix && $installer::globals::packageformat eq 'msi')
+    {
+        @needed_files_in_path = ("zip", "msiinfo.exe", "msidb.exe", "uuidgen", "makecab.exe", "msitran.exe", "cabextract");
+    }
     elsif ($installer::globals::iswin)
     {
         @needed_files_in_path = ("zip.exe");
@@ -117,7 +127,7 @@ sub check_system_path
         else
         {
             installer::logger::print_message( "\tFound: $$fileref\n" );
-            # Saving the absolute path for msitran.exe. This is required for the determination of the checksum.
+            # Saving the absolut path for msitran.exe. This is required for the determination of the checksum.
             if ( $onefile eq "msitran.exe" ) { $installer::globals::msitranpath = $$fileref; }
         }
     }
@@ -157,6 +167,10 @@ sub get_makecab_version
     my $makecabversion = -1;
 
     my $systemcall = "makecab.exe |";
+    if ( $installer::globals::isunix )
+    {
+        $systemcall = "$ENV{'WORKDIR_FOR_BUILD'}/LinkTarget/Executable/makecab.exe |";
+    }
     my @makecaboutput = ();
 
     open (CAB, $systemcall);
@@ -311,7 +325,7 @@ sub check_logfile
         $compareline =~ s/Error\.html//g;   # removing all occurrences of "Error.html"
         $compareline =~ s/error\.py//g;     # removing all occurrences of "error.py"
         $compareline =~ s/error\.cpython\-3.(\.opt\-.|)\.py[co]//g;  # removing all occurrences of "error-cpython"
-        $compareline =~ s/libgpg-error//g;
+        $compareline =~ s/libgpg-error-0.dll//g;
         $compareline =~ s/Error-xref\.html//g;
 
         if ( $compareline =~ /\bError\b/i )

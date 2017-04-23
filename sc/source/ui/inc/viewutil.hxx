@@ -27,6 +27,7 @@ class SfxBindings;
 class SvxFontItem;
 class SfxViewShell;
 class SfxViewFrame;
+
 class ScChangeAction;
 class ScChangeViewSettings;
 class ScDocument;
@@ -34,10 +35,7 @@ class ScAddress;
 class ScRange;
 class ScMarkData;
 enum class SvtScriptType;
-enum class TransliterationFlags;
-
-
-enum class ScUpdateMode { All, Marks };
+enum ScUpdateMode { SC_UPDATE_ALL, SC_UPDATE_CHANGED, SC_UPDATE_MARKS };
 
 class SC_DLLPUBLIC ScViewUtil
 {
@@ -56,7 +54,7 @@ public:
 
     static sal_uInt16 GetEffLanguage( ScDocument* pDoc, const ScAddress& rPos );
 
-    static TransliterationFlags GetTransliterationType( sal_uInt16 nSlotID );
+    static sal_Int32 GetTransliterationType( sal_uInt16 nSlotID );
 
     static bool HasFiltered( const ScRange& rRange, ScDocument* pDoc );
     /** Fit a range to cover nRows number of unfiltered rows.

@@ -50,7 +50,7 @@ class DataBrowser : public ::svt::EditBrowseBox
 {
 protected:
     // EditBrowseBox overridables
-    virtual void PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId ) const override;
+    virtual void PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId ) const override;
     virtual bool SeekRow( long nRow ) override;
     virtual bool IsTabAllowed( bool bForward ) const override;
     virtual ::svt::CellController* GetController( long nRow, sal_uInt16 nCol ) override;
@@ -67,7 +67,7 @@ protected:
 
 public:
     DataBrowser( vcl::Window* pParent, WinBits nStyle, bool bLiveUpdate );
-    virtual ~DataBrowser() override;
+    virtual ~DataBrowser();
     virtual void dispose() override;
 
     /** GetCellText returns the text at the given position
@@ -107,10 +107,8 @@ public:
     bool MayDeleteRow() const;
     bool MayDeleteColumn() const;
 
-    bool MayMoveUpRows() const;
-    bool MayMoveDownRows() const;
-    bool MayMoveRightColumns() const;
-    bool MayMoveLeftColumns() const;
+    bool MaySwapRows() const;
+    bool MaySwapColumns() const;
 
     // mutators mutating data
     void InsertRow();
@@ -122,15 +120,16 @@ public:
     using BrowseBox::RemoveColumn;
     using BrowseBox::MouseButtonDown;
 
-    void MoveUpRow();
-    void MoveDownRow();
-    void MoveLeftColumn();
-    void MoveRightColumn();
+    void SwapRow();
+    void SwapColumn();
 
     void SetCursorMovedHdl( const Link<DataBrowser*,void>& rLink );
 
     /// confirms all pending changes to be ready to be closed
     bool EndEditing();
+
+    // calls the protected inline-function BrowseBox::GetFirstVisibleColNumber()
+    sal_Int16 GetFirstVisibleColumNumber() const;
 
     bool CellContainsNumbers( sal_Int32 nRow, sal_uInt16 nCol ) const;
 
@@ -147,7 +146,7 @@ private:
     css::uno::Reference< css::chart2::XChartDocument > m_xChartDoc;
     std::unique_ptr< DataBrowserModel > m_apDataBrowserModel;
 
-    typedef std::vector< std::shared_ptr< impl::SeriesHeader > > tSeriesHeaderContainer;
+    typedef ::std::vector< std::shared_ptr< impl::SeriesHeader > > tSeriesHeaderContainer;
     tSeriesHeaderContainer m_aSeriesHeaders;
 
     std::shared_ptr< NumberFormatterWrapper >  m_spNumberFormatterWrapper;
@@ -174,9 +173,10 @@ private:
     void ImplAdjustHeaderControls();
 
     OUString GetColString( sal_Int32 nColumnId ) const;
+    static OUString GetRowString( sal_Int32 nRow );
 
-    DECL_LINK( SeriesHeaderGotFocus, Control&, void );
-    DECL_LINK( SeriesHeaderChanged,  impl::SeriesHeaderEdit*, void );
+    DECL_LINK_TYPED( SeriesHeaderGotFocus, Control&, void );
+    DECL_LINK_TYPED( SeriesHeaderChanged,  impl::SeriesHeaderEdit*, void );
 
     DataBrowser( const DataBrowser & ) = delete;
 };

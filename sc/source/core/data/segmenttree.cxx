@@ -42,9 +42,9 @@ public:
 
     ScFlatSegmentsImpl(SCCOLROW nMax, ValueType nDefault);
     ScFlatSegmentsImpl(const ScFlatSegmentsImpl& r);
+    ~ScFlatSegmentsImpl();
 
     bool setValue(SCCOLROW nPos1, SCCOLROW nPos2, ValueType nValue);
-    void setValueIf(SCCOLROW nPos1, SCCOLROW nPos2, ValueType nValue, const std::function<bool(ValueType)>& rPredicate);
     ValueType getValue(SCCOLROW nPos);
     ExtValueType getSumValue(SCCOLROW nPos1, SCCOLROW nPos2);
     bool getRangeData(SCCOLROW nPos, RangeData& rData);
@@ -86,31 +86,17 @@ ScFlatSegmentsImpl<ValueType_, ExtValueType_>::ScFlatSegmentsImpl(const ScFlatSe
 }
 
 template<typename ValueType_, typename ExtValueType_>
+ScFlatSegmentsImpl<ValueType_, ExtValueType_>::~ScFlatSegmentsImpl()
+{
+}
+
+template<typename ValueType_, typename ExtValueType_>
 bool ScFlatSegmentsImpl<ValueType_, ExtValueType_>::setValue(SCCOLROW nPos1, SCCOLROW nPos2, ValueType nValue)
 {
     ::std::pair<typename fst_type::const_iterator, bool> ret;
     ret = maSegments.insert(maItr, nPos1, nPos2+1, nValue);
     maItr = ret.first;
     return ret.second;
-}
-
-template<typename ValueType_, typename ExtValueType_>
-void ScFlatSegmentsImpl<ValueType_, ExtValueType_>::setValueIf(SCCOLROW nPos1, SCCOLROW nPos2,
-        ValueType nValue, const std::function<bool(ValueType)>& rPredicate)
-{
-    SCCOLROW nCurrentStartRow = nPos1;
-    while (nCurrentStartRow <= nPos2)
-    {
-        RangeData aRangeData;
-        getRangeData(nCurrentStartRow, aRangeData);
-        if (rPredicate(aRangeData.mnValue))
-        {
-            setValue(nPos1, std::min<SCCOLROW>(nPos2, aRangeData.mnPos2), nValue);
-        }
-
-        // even if nPos2 is bigger than nPos2 this should terminate the loop
-        nCurrentStartRow = aRangeData.mnPos2 + 1;
-    }
 }
 
 template<typename ValueType_, typename ExtValueType_>
@@ -394,7 +380,7 @@ void ScFlatBoolRowSegments::insertSegment(SCROW nRow, SCROW nSize)
 
 SCROW ScFlatBoolRowSegments::findLastTrue() const
 {
-    return mpImpl->findLastTrue(false);
+    return static_cast<SCROW>(mpImpl->findLastTrue(false));
 }
 
 ScFlatBoolColSegments::ScFlatBoolColSegments() :
@@ -522,17 +508,12 @@ void ScFlatUInt16RowSegments::insertSegment(SCROW nRow, SCROW nSize)
 
 SCROW ScFlatUInt16RowSegments::findLastTrue(sal_uInt16 nValue) const
 {
-    return mpImpl->findLastTrue(nValue);
+    return static_cast<SCROW>(mpImpl->findLastTrue(nValue));
 }
 
 void ScFlatUInt16RowSegments::enableTreeSearch(bool bEnable)
 {
     mpImpl->enableTreeSearch(bEnable);
-}
-
-void ScFlatUInt16RowSegments::setValueIf(SCROW nRow1, SCROW nRow2, sal_uInt16 nValue, const std::function<bool(sal_uInt16)>& rPredicate)
-{
-    mpImpl->setValueIf(static_cast<SCCOLROW>(nRow1), static_cast<SCCOLROW>(nRow2), nValue, rPredicate);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

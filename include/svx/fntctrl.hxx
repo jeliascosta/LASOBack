@@ -22,6 +22,8 @@
 #include <vcl/window.hxx>
 #include <editeng/svxfont.hxx>
 #include <svx/svxdllapi.h>
+#include <svl/itempool.hxx>
+#include <svl/itemset.hxx>
 
 #include <rtl/ustring.hxx>
 
@@ -39,12 +41,13 @@ private:
     SVX_DLLPRIVATE void ResetSettings(bool bForeground, bool bBackground);
     SVX_DLLPRIVATE void ApplySettings(vcl::RenderContext& rRenderContext) override;
     SVX_DLLPRIVATE void Init ();
-    SVX_DLLPRIVATE static void SetFontSize(const SfxItemSet& rSet, sal_uInt16 nSlot, SvxFont& rFont);
-    SVX_DLLPRIVATE static void SetFontLang(const SfxItemSet& rSet, sal_uInt16 nSlot, SvxFont& rFont);
+    SVX_DLLPRIVATE void SetFontSize(const SfxItemSet& rSet, sal_uInt16 nSlot, SvxFont& rFont);
+    SVX_DLLPRIVATE void SetFontLang(const SfxItemSet& rSet, sal_uInt16 nSlot, SvxFont& rFont);
 
 public:
+                        SvxFontPrevWindow(vcl::Window* pParent, const ResId& rId);
                         SvxFontPrevWindow(vcl::Window* pParent, WinBits nStyle);
-    virtual             ~SvxFontPrevWindow() override;
+    virtual             ~SvxFontPrevWindow();
     virtual void        dispose() override;
 
     virtual void        StateChanged( StateChangedType nStateChange ) override;
@@ -62,7 +65,7 @@ public:
     void                ResetColor();
     void                SetBackColor( const Color& rColor );
     void                UseResourceText();
-    void                Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    void                Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
 
     bool                IsTwoLines() const;
     void                SetTwoLines(bool bSet);
@@ -82,7 +85,7 @@ public:
     void                SetFontEscapement( sal_uInt8 nProp, sal_uInt8 nEscProp, short nEsc );
 
     void                SetFromItemSet( const SfxItemSet &rSet,
-                                        bool bPreviewBackgroundToCharacter );
+                                        bool bPreviewBackgroundToCharacter = false );
 
     virtual Size GetOptimalSize() const override;
 };

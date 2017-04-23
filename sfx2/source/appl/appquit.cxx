@@ -62,7 +62,7 @@ using ::basic::BasicManagerRepository;
 
 void SfxApplication::Deinitialize()
 {
-    if ( pImpl->bDowning )
+    if ( pAppData_Impl->bDowning )
         return;
 
 #if HAVE_FEATURE_SCRIPTING
@@ -71,67 +71,70 @@ void SfxApplication::Deinitialize()
     SaveBasicAndDialogContainer();
 #endif
 
-    pImpl->bDowning = true; // due to Timer from DecAliveCount and QueryExit
+    pAppData_Impl->bDowning = true; // due to Timer from DecAliveCount and QueryExit
 
-    DELETEZ( pImpl->pTemplates );
+    DELETEZ( pAppData_Impl->pTemplates );
 
     // By definition there shouldn't be any open view frames when we reach
     // this method. Therefore this call makes no sense and is the source of
     // some stack traces, which we don't understand.
     // For more information see:
-    pImpl->bDowning = false;
+    pAppData_Impl->bDowning = false;
     DBG_ASSERT( !SfxViewFrame::GetFirst(),
                 "existing SfxViewFrame after Execute" );
     DBG_ASSERT( !SfxObjectShell::GetFirst(),
                 "existing SfxObjectShell after Execute" );
-    pImpl->pAppDispat->Pop( *this, SfxDispatcherPopFlags::POP_UNTIL );
-    pImpl->pAppDispat->Flush();
-    pImpl->bDowning = true;
-    pImpl->pAppDispat->DoDeactivate_Impl( true, nullptr );
+    pAppData_Impl->pAppDispat->Pop( *this, SfxDispatcherPopFlags::POP_UNTIL );
+    pAppData_Impl->pAppDispat->Flush();
+    pAppData_Impl->bDowning = true;
+    pAppData_Impl->pAppDispat->DoDeactivate_Impl( true, nullptr );
 
     // Release Controller and others
     // then the remaining components should also disappear ( Beamer! )
 
 #if HAVE_FEATURE_SCRIPTING
     BasicManagerRepository::resetApplicationBasicManager();
-    pImpl->pBasicManager->reset( nullptr );
+    pAppData_Impl->pBasicManager->reset( nullptr );
         // this will also delete pBasMgr
 #endif
 
-    DBG_ASSERT( pImpl->pViewFrame == nullptr, "active foreign ViewFrame" );
+    DBG_ASSERT( pAppData_Impl->pViewFrame == nullptr, "active foreign ViewFrame" );
+
+    delete[] pAppData_Impl->pInterfaces;
+    pAppData_Impl->pInterfaces = nullptr;
 
     // free administration managers
-    DELETEZ(pImpl->pAppDispat);
+    DELETEZ(pAppData_Impl->pAppDispat);
     SfxResId::DeleteResMgr();
     SvtResId::DeleteResMgr();
 
     // from here no SvObjects have to exists
-    DELETEZ(pImpl->pMatcher);
+    DELETEZ(pAppData_Impl->pMatcher);
 
-    DELETEX(SfxSlotPool, pImpl->pSlotPool);
-    DELETEX(SfxChildWinFactArr_Impl, pImpl->pFactArr);
+    DELETEX(SfxSlotPool, pAppData_Impl->pSlotPool);
+    DELETEX(SfxChildWinFactArr_Impl, pAppData_Impl->pFactArr);
 
-    DELETEX(SfxTbxCtrlFactArr_Impl, pImpl->pTbxCtrlFac);
-    DELETEX(SfxStbCtrlFactArr_Impl, pImpl->pStbCtrlFac);
-    DELETEX(SfxViewFrameArr_Impl, pImpl->pViewFrames);
-    DELETEX(SfxViewShellArr_Impl, pImpl->pViewShells);
-    DELETEX(SfxObjectShellArr_Impl, pImpl->pObjShells);
+    DELETEX(SfxTbxCtrlFactArr_Impl, pAppData_Impl->pTbxCtrlFac);
+    DELETEX(SfxStbCtrlFactArr_Impl, pAppData_Impl->pStbCtrlFac);
+    DELETEX(SfxViewFrameArr_Impl, pAppData_Impl->pViewFrames);
+    DELETEX(SfxViewShellArr_Impl, pAppData_Impl->pViewShells);
+    DELETEX(SfxObjectShellArr_Impl, pAppData_Impl->pObjShells);
 
     //TODO/CLEANUP
     //ReleaseArgs could be used instead!
-    pImpl->pPool = nullptr;
+    pAppData_Impl->pPool = nullptr;
     NoChaos::ReleaseItemPool();
 
 #if HAVE_FEATURE_SCRIPTING
-    DELETEZ(pImpl->pBasicResMgr);
+    DELETEZ(pAppData_Impl->pBasicResMgr);
 #endif
-    DELETEZ(pImpl->pSvtResMgr);
+    DELETEZ(pAppData_Impl->pSvtResMgr);
 
 #if HAVE_FEATURE_SCRIPTING
-    delete pImpl->m_pSbxErrorHdl;
+    delete pAppData_Impl->m_pSbxErrorHdl;
 #endif
-    delete pImpl->m_pSoErrorHdl;
-    delete pImpl->m_pToolsErrorHdl;
+    delete pAppData_Impl->m_pSoErrorHdl;
+    delete pAppData_Impl->m_pToolsErrorHdl;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

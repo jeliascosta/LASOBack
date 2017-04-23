@@ -54,11 +54,4 @@ public interface IDocumentProvider {
      * @return Unique ID for a document provider instance.
      */
     int getId();
-
-    /**
-     * Checks if the Document Provider is available or not.
-     *
-     * @return A boolean value based on provider availability.
-     */
-    boolean checkProviderAvailability();
 }

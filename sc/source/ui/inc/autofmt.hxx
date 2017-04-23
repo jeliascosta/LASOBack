@@ -45,13 +45,13 @@ class SC_DLLPUBLIC ScAutoFmtPreview : public vcl::Window
 public:
     ScAutoFmtPreview(vcl::Window* pParent);
     void DetectRTL(ScViewData *pViewData);
-    virtual ~ScAutoFmtPreview() override;
+    virtual ~ScAutoFmtPreview();
     virtual void dispose() override;
 
     void NotifyChange( ScAutoFormatData* pNewData );
 
 protected:
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void Resize() override;
 
 private:
@@ -76,7 +76,7 @@ private:
     SvNumberFormatter*      pNumFmt;
 
     SAL_DLLPRIVATE void Init();
-    SAL_DLLPRIVATE void DoPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+    SAL_DLLPRIVATE void DoPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
     SAL_DLLPRIVATE void CalcCellArray(bool bFitWidth);
     SAL_DLLPRIVATE void CalcLineMap();
     SAL_DLLPRIVATE void PaintCells(vcl::RenderContext& rRenderContext);
@@ -90,6 +90,7 @@ private:
     SAL_DLLPRIVATE const SvxLineItem& GetDiagItem( size_t nCol, size_t nRow, bool bTLBR ) const;
 
     SAL_DLLPRIVATE void DrawString(vcl::RenderContext& rRenderContext, size_t nCol, size_t nRow);
+    SAL_DLLPRIVATE void DrawStrings(vcl::RenderContext& rRenderContext);
     SAL_DLLPRIVATE void DrawBackground(vcl::RenderContext& rRenderContext);
 
     SAL_DLLPRIVATE void MakeFonts(sal_uInt16 nIndex, vcl::Font& rFont,

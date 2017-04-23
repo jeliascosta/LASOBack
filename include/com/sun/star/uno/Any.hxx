@@ -21,7 +21,6 @@
 
 #include <sal/config.h>
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iomanip>
@@ -121,38 +120,6 @@ inline Any & Any::operator = ( const Any & rAny )
     return *this;
 }
 
-#if defined LIBO_INTERNAL_ONLY
-
-namespace detail {
-
-inline void moveAnyInternals(Any & from, Any & to) {
-    uno_any_construct(&to, nullptr, nullptr, &cpp_acquire);
-    std::swap(from.pType, to.pType);
-    std::swap(from.pData, to.pData);
-    std::swap(from.pReserved, to.pReserved);
-    if (to.pData == &from.pReserved) {
-        to.pData = &to.pReserved;
-    }
-    // This leaves to.pData (where "to" is now VOID) dangling to somewhere (cf.
-    // CONSTRUCT_EMPTY_ANY, cppu/source/uno/prim.hxx), but what's relevant is
-    // only that it isn't a nullptr (as e.g. >>= -> uno_type_assignData ->
-    // _assignData takes a null pSource to mean "construct a default value").
-}
-
-}
-
-Any::Any(Any && other) {
-    detail::moveAnyInternals(other, *this);
-}
-
-Any & Any::operator =(Any && other) {
-    uno_any_destruct(this, &cpp_release);
-    detail::moveAnyInternals(other, *this);
-    return *this;
-}
-
-#endif
-
 inline ::rtl::OUString Any::getValueTypeName() const
 {
     return ::rtl::OUString( pType->pTypeName );
@@ -203,10 +170,6 @@ inline bool Any::has() const
         cpp_release );
 }
 
-#if defined LIBO_INTERNAL_ONLY
-template<> bool Any::has<Any>() const = delete;
-#endif
-
 inline bool Any::operator == ( const Any & rAny ) const
 {
     return ::uno_type_equalData(
@@ -236,21 +199,6 @@ template<> Any makeAny(sal_uInt16 const & value)
 template<typename T> Any toAny(T const & value) { return makeAny(value); }
 
 template<> Any toAny(Any const & value) { return value; }
-
-#if defined LIBO_INTERNAL_ONLY
-
-template<typename T> bool fromAny(Any const & any, T * value) {
-    assert(value != nullptr);
-    return any >>= *value;
-}
-
-template<> bool fromAny(Any const & any, Any * value) {
-    assert(value != nullptr);
-    *value = any;
-    return true;
-}
-
-#endif
 
 template< class C >
 inline void SAL_CALL operator <<= ( Any & rAny, const C & value )
@@ -283,10 +231,6 @@ inline void SAL_CALL operator <<= ( Any & rAny, const rtl::OUStringConcat< C1, C
         &rAny, const_cast< rtl::OUString * >( &str ), rType.getTypeLibType(),
         cpp_acquire, cpp_release );
 }
-#endif
-
-#if defined LIBO_INTERNAL_ONLY
-template<> void SAL_CALL operator <<=(Any &, Any const &) = delete;
 #endif
 
 template< class C >
@@ -589,9 +533,6 @@ inline bool SAL_CALL operator == ( const Any & rAny, const Type & value )
 }
 // any
 
-#if defined LIBO_INTERNAL_ONLY
-template<> bool SAL_CALL operator >>=(Any const &, Any &) = delete;
-#else
 template<>
 inline bool SAL_CALL operator >>= ( const Any & rAny, Any & value )
 {
@@ -603,7 +544,6 @@ inline bool SAL_CALL operator >>= ( const Any & rAny, Any & value )
     }
     return true;
 }
-#endif
 // interface
 
 template<>
@@ -649,10 +589,6 @@ T Any::get() const
     }
     return value;
 }
-
-#if defined LIBO_INTERNAL_ONLY
-template<> Any Any::get() const = delete;
-#endif
 
 /**
    Support for Any in std::ostream (and thus in CPPUNIT_ASSERT or SAL_INFO

@@ -26,9 +26,12 @@
  *
  ************************************************************************/
 
-#include <sal/config.h>
 
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
+/**************************************************************************
+                                TODO
+ **************************************************************************
+
+ *************************************************************************/
 #include <comphelper/processfactory.hxx>
 #include <ucbhelper/contentidentifier.hxx>
 #include "webdavprovider.hxx"
@@ -46,7 +49,7 @@ using namespace webdav_ucp;
 ContentProvider::ContentProvider(
                 const uno::Reference< uno::XComponentContext >& rxContext )
 : ::ucbhelper::ContentProviderImplHelper( rxContext ),
-  m_xDAVSessionFactory( new DAVSessionFactory ),
+  m_xDAVSessionFactory( new DAVSessionFactory() ),
   m_pProps( nullptr )
 {
 }
@@ -55,6 +58,7 @@ ContentProvider::ContentProvider(
 // virtual
 ContentProvider::~ContentProvider()
 {
+    delete m_pProps;
 }
 
 
@@ -73,6 +77,7 @@ void SAL_CALL ContentProvider::release()
 }
 
 css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
     (static_cast< lang::XTypeProvider* >(this)),
@@ -93,23 +98,11 @@ XTYPEPROVIDER_IMPL_3( ContentProvider,
 
 // XServiceInfo methods.
 
-XSERVICEINFO_COMMOM_IMPL( ContentProvider,
-                          OUString( "com.sun.star.comp.WebDAVContentProvider" ) )
-/// @throws css::uno::Exception
-static css::uno::Reference< css::uno::XInterface > SAL_CALL
-ContentProvider_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
-{
-    css::lang::XServiceInfo* pX =
-        static_cast<css::lang::XServiceInfo*>(new ContentProvider( ucbhelper::getComponentContext(rSMgr) ));
-    return css::uno::Reference< css::uno::XInterface >::query( pX );
-}
 
-css::uno::Sequence< OUString >
-ContentProvider::getSupportedServiceNames_Static()
-{
-    css::uno::Sequence< OUString > aSNS { WEBDAV_CONTENT_PROVIDER_SERVICE_NAME };
-    return aSNS;
-}
+XSERVICEINFO_IMPL_1_CTX( ContentProvider,
+                     OUString( "com.sun.star.comp.WebDAVContentProvider" ),
+                     WEBDAV_CONTENT_PROVIDER_SERVICE_NAME );
+
 
 // Service factory implementation.
 
@@ -125,6 +118,8 @@ uno::Reference< ucb::XContent > SAL_CALL
 ContentProvider::queryContent(
             const uno::Reference<
                     ucb::XContentIdentifier >& Identifier )
+    throw( ucb::IllegalIdentifierException,
+           uno::RuntimeException, std::exception )
 {
     // Check URL scheme...
 

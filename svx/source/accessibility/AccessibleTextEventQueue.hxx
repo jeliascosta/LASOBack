@@ -27,7 +27,7 @@
 class SfxHint;
 class SdrHint;
 class TextHint;
-class SvxViewChangedHint;
+class SvxViewHint;
 class SvxEditSourceHint;
 
 namespace accessibility
@@ -51,7 +51,7 @@ namespace accessibility
         /// Append event to end of queue
         void Append( const TextHint& rHint );
         /// Append event to end of queue
-        void Append( const SvxViewChangedHint& rHint );
+        void Append( const SvxViewHint& rHint );
         /// Append event to end of queue
         void Append( const SvxEditSourceHint& rHint );
 

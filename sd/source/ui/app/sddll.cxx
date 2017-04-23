@@ -91,11 +91,9 @@
 #include <sfx2/docfilt.hxx>
 #include <sfx2/docfile.hxx>
 #include <sfx2/fcontnr.hxx>
-#include <sfx2/emojipopup.hxx>
 #include <sfx2/sidebar/SidebarChildWindow.hxx>
 #include <vcl/FilterConfigItem.hxx>
 #include <comphelper/processfactory.hxx>
-#include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star;
 
@@ -121,9 +119,10 @@ void SdDLL::RegisterFactorys()
 
 // Register all Interfaces
 
-void SdDLL::RegisterInterfaces(SdModule* pMod)
+void SdDLL::RegisterInterfaces()
 {
     // Module
+    SfxModule* pMod = SD_MOD();
     SdModule::RegisterInterface(pMod);
 
     // View shell base.
@@ -158,8 +157,10 @@ void SdDLL::RegisterInterfaces(SdModule* pMod)
 
 // Register all Controllers
 
-void SdDLL::RegisterControllers(SdModule* pMod)
+void SdDLL::RegisterControllers()
 {
+    SfxModule* pMod = SD_MOD();
+
     SdTbxCtlDiaPages::RegisterControl( SID_PAGES_PER_ROW, pMod );
     SdTbxCtlGlueEscDir::RegisterControl( SID_GLUE_ESCDIR, pMod );
 
@@ -186,7 +187,10 @@ void SdDLL::RegisterControllers(SdModule* pMod)
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_LINE_COLOR, pMod);
     SvxColorToolBoxControl::RegisterControl(SID_ATTR_FILL_COLOR, pMod);
 
+    SvxLineEndToolBoxControl::RegisterControl( SID_ATTR_LINEEND_STYLE, pMod );
+
     SvxStyleToolBoxControl::RegisterControl(0, pMod);
+    SvxFontNameToolBoxControl::RegisterControl(0, pMod);
     SvxColorToolBoxControl::RegisterControl( SID_ATTR_CHAR_COLOR, pMod );
     SvxColorToolBoxControl::RegisterControl( SID_ATTR_CHAR_BACK_COLOR, pMod );
 
@@ -232,15 +236,15 @@ void SdDLL::RegisterControllers(SdModule* pMod)
     XmlSecStatusBarControl::RegisterControl( SID_SIGNATURE, pMod );
     SdTemplateControl::RegisterControl( SID_STATUS_LAYOUT, pMod );
     SvxTableToolBoxControl::RegisterControl(SID_INSERT_TABLE, pMod );
+    SvxFrameLineStyleToolBoxControl::RegisterControl(SID_FRAME_LINESTYLE, pMod );
     SvxColorToolBoxControl::RegisterControl(SID_FRAME_LINECOLOR, pMod );
+    SvxFrameToolBoxControl::RegisterControl(SID_ATTR_BORDER, pMod );
     SvxTbxCtlDraw::RegisterControl(SID_INSERT_DRAW, pMod );
-
-    EmojiPopup::RegisterControl(SID_EMOJI_CONTROL, pMod );
 }
 
 void SdDLL::Init()
 {
-    if ( SfxApplication::GetModule(SfxToolsModule::Draw) )    // Module already active
+    if ( SD_MOD() )
         return;
 
     SfxObjectFactory* pDrawFact = nullptr;
@@ -252,9 +256,20 @@ void SdDLL::Init()
     if (!utl::ConfigManager::IsAvoidConfig() && SvtModuleOptions().IsDraw())
         pDrawFact = &::sd::GraphicDocShell::Factory();
 
-    auto pUniqueModule = o3tl::make_unique<SdModule>(pImpressFact, pDrawFact);
-    SdModule* pModule = pUniqueModule.get();
-    SfxApplication::SetModule(SfxToolsModule::Draw, std::move(pUniqueModule));
+    // the SdModule must be created
+     SdModule** ppShlPtr = reinterpret_cast<SdModule**>(GetAppData(SHL_DRAW));
+
+     // #i46427#
+     // The SfxModule::SfxModule stops when the first given factory
+     // is 0, so we must not give a 0 as first factory
+     if( pImpressFact )
+     {
+        (*ppShlPtr) = new SdModule( pImpressFact, pDrawFact );
+     }
+     else
+     {
+        (*ppShlPtr) = new SdModule( pDrawFact, pImpressFact );
+     }
 
     if (!utl::ConfigManager::IsAvoidConfig() && SvtModuleOptions().IsImpress())
     {
@@ -272,15 +287,15 @@ void SdDLL::Init()
     RegisterFactorys();
 
     // register your shell-interfaces here
-    RegisterInterfaces(pModule);
+    RegisterInterfaces();
 
     // register your controllers here
-    RegisterControllers(pModule);
+    RegisterControllers();
 
     // register SvDraw-Fields
     SdrRegisterFieldClasses();
 
-    // register 3D-object-factory
+    // register 3D-Objekt-Factory
     E3dObjFactory();
 
     // register css::form::component::Form-Object-Factory

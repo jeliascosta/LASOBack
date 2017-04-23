@@ -519,11 +519,16 @@ void StringHelper::appendToken( OUStringBuffer& rStr, const OUString& rToken, sa
     rStr.append( rToken );
 }
 
+void StringHelper::appendIndex( OUStringBuffer& rStr, const OUString& rIdx )
+{
+    rStr.append( '[' ).append( rIdx ).append( ']' );
+}
+
 void StringHelper::appendIndex( OUStringBuffer& rStr, sal_Int64 nIdx )
 {
     OUStringBuffer aToken;
     appendDec( aToken, nIdx );
-    rStr.append( '[' ).append( aToken.makeStringAndClear() ).append( ']' );
+    appendIndex( rStr, aToken.makeStringAndClear() );
 }
 
 OUString StringHelper::getToken( const OUString& rData, sal_Int32& rnPos, sal_Unicode cSep )
@@ -945,7 +950,7 @@ void ConstList::implProcessConfigItemStr(
         TextInputStream& rStrm, const OUString& rKey, const OUString& rData )
 {
     if ( rKey == "default" )
-        maDefName = rData; // Sets a default name for unknown keys.
+        setDefaultName( rData );
     else if ( rKey == "quote-names" )
         setQuoteNames( StringHelper::convertStringToBool( rData ) );
     else
@@ -1255,7 +1260,8 @@ SharedConfigData::SharedConfigData( const OUString& rFileName,
     mxContext( rxContext ),
     mxRootStrg( rxRootStrg ),
     maSysFileName( rSysFileName ),
-    mbLoaded( false )
+    mbLoaded( false ),
+    mbPwCancelled( false )
 {
     OUString aFileUrl = InputOutputHelper::convertFileNameToUrl( rFileName );
     if( !aFileUrl.isEmpty() )
@@ -1268,6 +1274,11 @@ SharedConfigData::SharedConfigData( const OUString& rFileName,
 
 SharedConfigData::~SharedConfigData()
 {
+}
+
+void SharedConfigData::setOption( const OUString& rKey, const OUString& rData )
+{
+    maConfigData[ rKey ] = rData;
 }
 
 const OUString* SharedConfigData::getOption( const OUString& rKey ) const
@@ -1319,7 +1330,7 @@ void SharedConfigData::implProcessConfigItemStr(
     else if ( rKey == "unitconverter" )
         createUnitConverter( rData );
     else
-        maConfigData[ rKey ] = rData;
+        setOption( rKey, rData );
 }
 
 bool SharedConfigData::readConfigFile( const OUString& rFileUrl )
@@ -1385,7 +1396,7 @@ void SharedConfigData::createUnitConverter( const OUString& rData )
 Config::Config( const Config& rParent ) :
     Base()  // c'tor needs to be called explicitly to avoid compiler warning
 {
-    *this = rParent;
+    construct( rParent );
 }
 
 Config::Config( const sal_Char* pcEnvVar, const FilterBase& rFilter )
@@ -1400,6 +1411,11 @@ Config::Config( const sal_Char* pcEnvVar, const Reference< XComponentContext >& 
 
 Config::~Config()
 {
+}
+
+void Config::construct( const Config& rParent )
+{
+    *this = rParent;
 }
 
 void Config::construct( const sal_Char* pcEnvVar, const FilterBase& rFilter )
@@ -1444,7 +1460,12 @@ void Config::eraseNameList( const String& rListName )
 
 NameListRef Config::getNameList( const String& rListName ) const
 {
-    return mxCfgData->getNameList( rListName );
+    return implGetNameList( rListName );
+}
+
+bool Config::isPasswordCancelled() const
+{
+    return mxCfgData->isPasswordCancelled();
 }
 
 bool Config::implIsValid() const
@@ -1455,6 +1476,11 @@ bool Config::implIsValid() const
 const OUString* Config::implGetOption( const OUString& rKey ) const
 {
     return mxCfgData->getOption( rKey );
+}
+
+NameListRef Config::implGetNameList( const OUString& rListName ) const
+{
+    return mxCfgData->getNameList( rListName );
 }
 
 Output::Output( const Reference< XComponentContext >& rxContext, const OUString& rFileName ) :
@@ -1639,7 +1665,7 @@ void Output::writeString( const OUString& rStr )
     StringHelper::appendEncString( maLine, rStr );
 }
 
-void Output::writeArray( const sal_uInt8* pnData, std::size_t nSize, sal_Unicode cSep )
+void Output::writeArray( const sal_uInt8* pnData, sal_Size nSize, sal_Unicode cSep )
 {
     const sal_uInt8* pnEnd = pnData ? (pnData + nSize) : nullptr;
     for( const sal_uInt8* pnByte = pnData; pnByte < pnEnd; ++pnByte )
@@ -1965,7 +1991,7 @@ void OutputObjectBase::writeStringItem( const String& rName, const OUString& rDa
         mxOut->writeAscii( ",cut" );
 }
 
-void OutputObjectBase::writeArrayItem( const String& rName, const sal_uInt8* pnData, std::size_t nSize, sal_Unicode cSep )
+void OutputObjectBase::writeArrayItem( const String& rName, const sal_uInt8* pnData, sal_Size nSize, sal_Unicode cSep )
 {
     ItemGuard aItem( mxOut, rName );
     mxOut->writeArray( pnData, nSize, cSep );
@@ -2143,10 +2169,10 @@ OUString InputObjectBase::dumpCharArray( const String& rName, sal_Int32 nLen, rt
     OUString aString;
     if( nDumpSize > 0 )
     {
-        ::std::vector< sal_Char > aBuffer( static_cast< std::size_t >( nLen ) + 1 );
-        sal_Int32 nCharsRead = mxStrm->readMemory(aBuffer.data(), nLen);
+        ::std::vector< sal_Char > aBuffer( static_cast< sal_Size >( nLen ) + 1 );
+        sal_Int32 nCharsRead = mxStrm->readMemory( &aBuffer.front(), nLen );
         aBuffer[ nCharsRead ] = 0;
-        aString = OStringToOUString(OString(aBuffer.data()), eTextEnc);
+        aString = OStringToOUString( OString( &aBuffer.front() ), eTextEnc );
     }
     if( bHideTrailingNul )
         aString = StringHelper::trimTrailingNul( aString );
@@ -2448,7 +2474,7 @@ bool RecordObjectBase::implIsValid() const
 
 void RecordObjectBase::implDump()
 {
-    NameListRef xRecNames = maRecNames.getNameList( cfg() );
+    NameListRef xRecNames = getRecNames();
     ItemFormatMap aSimpleRecs( maSimpleRecs.getNameList( cfg() ) );
 
     while( implStartRecord( *mxBaseStrm, mnRecPos, mnRecId, mnRecSize ) )
@@ -2550,6 +2576,11 @@ DumperBase::~DumperBase()
 bool DumperBase::isImportEnabled() const
 {
     return !isValid() || cfg().isImportEnabled();
+}
+
+bool DumperBase::isImportCancelled() const
+{
+    return isValid() && cfg().isPasswordCancelled();
 }
 
 void DumperBase::construct( const ConfigRef& rxConfig )

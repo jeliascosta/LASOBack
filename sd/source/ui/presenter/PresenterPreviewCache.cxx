@@ -36,6 +36,7 @@ class PresenterPreviewCache::PresenterCacheContext : public CacheContext
 {
 public:
     PresenterCacheContext();
+    virtual ~PresenterCacheContext();
 
     void SetDocumentSlides (
         const Reference<container::XIndexAccess>& rxSlides,
@@ -87,6 +88,7 @@ PresenterPreviewCache::~PresenterPreviewCache()
 //----- XInitialize -----------------------------------------------------------
 
 void SAL_CALL PresenterPreviewCache::initialize (const Sequence<Any>& rArguments)
+    throw(Exception, RuntimeException, std::exception)
 {
     if (rArguments.getLength() != 0)
         throw RuntimeException();
@@ -97,6 +99,7 @@ void SAL_CALL PresenterPreviewCache::initialize (const Sequence<Any>& rArguments
 void SAL_CALL PresenterPreviewCache::setDocumentSlides (
     const Reference<container::XIndexAccess>& rxSlides,
     const Reference<XInterface>& rxDocument)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCacheContext.get()!=nullptr);
@@ -107,6 +110,7 @@ void SAL_CALL PresenterPreviewCache::setDocumentSlides (
 void SAL_CALL PresenterPreviewCache::setVisibleRange (
     sal_Int32 nFirstVisibleSlideIndex,
     sal_Int32 nLastVisibleSlideIndex)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCacheContext.get()!=nullptr);
@@ -116,6 +120,7 @@ void SAL_CALL PresenterPreviewCache::setVisibleRange (
 
 void SAL_CALL PresenterPreviewCache::setPreviewSize (
     const css::geometry::IntegerSize2D& rSize)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCache.get()!=nullptr);
@@ -127,6 +132,7 @@ void SAL_CALL PresenterPreviewCache::setPreviewSize (
 Reference<rendering::XBitmap> SAL_CALL PresenterPreviewCache::getSlidePreview (
     sal_Int32 nSlideIndex,
     const Reference<rendering::XCanvas>& rxCanvas)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCacheContext.get()!=nullptr);
@@ -149,6 +155,7 @@ Reference<rendering::XBitmap> SAL_CALL PresenterPreviewCache::getSlidePreview (
 
 void SAL_CALL PresenterPreviewCache::addPreviewCreationNotifyListener (
     const Reference<drawing::XSlidePreviewCacheListener>& rxListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
         return;
@@ -158,12 +165,14 @@ void SAL_CALL PresenterPreviewCache::addPreviewCreationNotifyListener (
 
 void SAL_CALL PresenterPreviewCache::removePreviewCreationNotifyListener (
     const css::uno::Reference<css::drawing::XSlidePreviewCacheListener>& rxListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     mpCacheContext->RemovePreviewCreationNotifyListener(rxListener);
 }
 
 void SAL_CALL PresenterPreviewCache::pause()
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCache.get()!=nullptr);
@@ -171,6 +180,7 @@ void SAL_CALL PresenterPreviewCache::pause()
 }
 
 void SAL_CALL PresenterPreviewCache::resume()
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     OSL_ASSERT(mpCache.get()!=nullptr);
@@ -178,6 +188,7 @@ void SAL_CALL PresenterPreviewCache::resume()
 }
 
 void PresenterPreviewCache::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
@@ -194,6 +205,10 @@ PresenterPreviewCache::PresenterCacheContext::PresenterCacheContext()
       mnFirstVisibleSlideIndex(-1),
       mnLastVisibleSlideIndex(-1),
       maListeners()
+{
+}
+
+PresenterPreviewCache::PresenterCacheContext::~PresenterCacheContext()
 {
 }
 
@@ -271,7 +286,7 @@ bool PresenterPreviewCache::PresenterCacheContext::IsVisible (CacheKey aKey)
     for (sal_Int32 nIndex=mnFirstVisibleSlideIndex; nIndex<=mnLastVisibleSlideIndex; ++nIndex)
     {
         const SdrPage* pPage = GetPage(nIndex);
-        if (pPage == aKey)
+        if (pPage == static_cast<const SdrPage*>(aKey))
             return true;
     }
     return false;
@@ -279,13 +294,13 @@ bool PresenterPreviewCache::PresenterCacheContext::IsVisible (CacheKey aKey)
 
 const SdrPage* PresenterPreviewCache::PresenterCacheContext::GetPage (CacheKey aKey)
 {
-    return aKey;
+    return static_cast<const SdrPage*>(aKey);
 }
 
 std::shared_ptr<std::vector<CacheKey> >
     PresenterPreviewCache::PresenterCacheContext::GetEntryList (bool bVisible)
 {
-    std::shared_ptr<std::vector<CacheKey> > pKeys (new std::vector<CacheKey>);
+    std::shared_ptr<std::vector<CacheKey> > pKeys (new std::vector<CacheKey>());
 
     if ( ! mxSlides.is())
         return pKeys;

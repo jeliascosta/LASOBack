@@ -45,25 +45,32 @@ class OfficeInstallationDirectories : public mutex_holder, public UnoImplBase
 public:
     explicit OfficeInstallationDirectories(
         const css::uno::Reference< css::uno::XComponentContext > & xCtx );
-    virtual ~OfficeInstallationDirectories() override;
+    virtual ~OfficeInstallationDirectories();
 
     // XOfficeInstallationDirectories
     virtual OUString SAL_CALL
-    getOfficeInstallationDirectoryURL() override;
+    getOfficeInstallationDirectoryURL()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL
-    getOfficeUserDataDirectoryURL() override;
+    getOfficeUserDataDirectoryURL()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL
-    makeRelocatableURL( const OUString& URL ) override;
+    makeRelocatableURL( const OUString& URL )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL
-    makeAbsoluteURL( const OUString& URL ) override;
+    makeAbsoluteURL( const OUString& URL )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
     virtual OUString SAL_CALL
-    getImplementationName() override;
+    getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL
-    supportsService( const OUString& ServiceName ) override;
+    supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     void initDirs();

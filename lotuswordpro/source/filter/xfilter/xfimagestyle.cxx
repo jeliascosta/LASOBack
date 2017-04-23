@@ -64,10 +64,18 @@
 XFImageStyle::XFImageStyle()
     : m_nBrightness(0)
     , m_nContrast(0)
+    , m_nGamma(0)
+    , m_nTransparent(0)
+    , m_nAdjustRed(0)
+    , m_nAdjustGreen(0)
+    , m_nAdjustBlue(0)
     , m_fClipLeft(0)
     , m_fClipRight(0)
     , m_fClipTop(0)
     , m_fClipBottom(0)
+    , m_bHoriFlip(false)
+    , m_bVertFlip(false)
+    , m_eColorMode(enumXFColorStandard)
 {}
 
 void XFImageStyle::ToXml(IXFStream *pStrm)
@@ -114,13 +122,35 @@ void XFImageStyle::ToXml(IXFStream *pStrm)
     m_aPad.ToXml(pStrm);
     //margin:
     m_aMargins.ToXml(pStrm);
+    //flip
+    if( m_bHoriFlip || m_bVertFlip )
+    {
+        if( m_bHoriFlip && m_bVertFlip )
+            pAttrList->AddAttribute( "style:mirror", "horizontal-on-right-pages vertical" );
+        else if( m_bHoriFlip && !m_bVertFlip )
+            pAttrList->AddAttribute( "style:mirror", "horizontal-on-right-pages" );
+        else if( !m_bHoriFlip && m_bVertFlip )
+            pAttrList->AddAttribute( "style:mirror", "vertical" );
+    }
+    //color adjust
+    if( m_nAdjustRed )
+        pAttrList->AddAttribute( "draw:red", OUString::number(m_nAdjustRed) + "%" );
+    if( m_nAdjustGreen )
+        pAttrList->AddAttribute( "draw:green", OUString::number(m_nAdjustGreen) + "%" );
+    if( m_nAdjustBlue )
+        pAttrList->AddAttribute( "draw:blue", OUString::number(m_nAdjustBlue) + "%" );
 
+    if( m_nGamma )
+        pAttrList->AddAttribute( "draw:gamma", OUString::number(m_nGamma) );
     if( m_nBrightness )
         pAttrList->AddAttribute( "draw:luminance", OUString::number(m_nBrightness) + "%" );
     if( m_nContrast )
         pAttrList->AddAttribute( "draw:contrast", OUString::number(m_nContrast) + "%" );
 
-    pAttrList->AddAttribute("draw:color-mode", GetColorMode(enumXFColorStandard));
+    if( m_nTransparent )
+        pAttrList->AddAttribute( "draw:transparency", OUString::number(m_nTransparent) + "%" );
+
+    pAttrList->AddAttribute("draw:color-mode", GetColorMode(m_eColorMode));
     //border
     if( m_pBorders )
         m_pBorders->ToXml(pStrm);
@@ -128,7 +158,8 @@ void XFImageStyle::ToXml(IXFStream *pStrm)
     if( m_pShadow )
         m_pShadow->ToXml(pStrm);
 
-    pAttrList->AddAttribute( "style:print-content", "true" );
+    if( m_bPrintable )
+        pAttrList->AddAttribute( "style:print-content", "true" );
     //protect:
     if( m_bProtectContent || m_bProtectSize || m_bProtectPos )
     {

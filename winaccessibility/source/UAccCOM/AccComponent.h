@@ -20,7 +20,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCCOMPONENT_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCCOMPONENT_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
@@ -42,24 +42,20 @@ public:
     CAccComponent()
     {
             }
+    ~CAccComponent()
+    {
+            }
 
     BEGIN_COM_MAP(CAccComponent)
     COM_INTERFACE_ENTRY(IAccessibleComponent)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
-    static HRESULT WINAPI SmartQI_(void* pv,
+    static HRESULT WINAPI _SmartQI(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return static_cast<CAccComponent*>(pv)->SmartQI(iid,ppvObject);
+        return ((CAccComponent*)pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -76,13 +72,17 @@ public:
 
     // Returns the location of the upper left corner of the object's bounding
     // box relative to the parent.
-    STDMETHOD(get_locationInParent)(long *x, long *y) override;
+    STDMETHOD(get_locationInParent)(long *x, long *y);
 
     // Returns the foreground color of this object.
-    STDMETHOD(get_foreground)(IA2Color * foreground) override;
+    STDMETHOD(get_foreground)(IA2Color * foreground);
 
     // Returns the background color of this object.
-    STDMETHOD(get_background)(IA2Color * background) override;
+    STDMETHOD(get_background)(IA2Color * background);
+
+    // Override of IUNOXWrapper.
+    STDMETHOD(put_XInterface)(hyper pXInterface);
+
 };
 
 #endif // INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCCOMPONENT_H

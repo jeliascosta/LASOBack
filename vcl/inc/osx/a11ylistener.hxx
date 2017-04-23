@@ -35,13 +35,15 @@ class AquaA11yEventListener :
 
 public:
     AquaA11yEventListener(id wrapperObject, sal_Int16 role);
-    virtual ~AquaA11yEventListener() override;
+    virtual ~AquaA11yEventListener();
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleEventListener
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     const id m_wrapperObject;

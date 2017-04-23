@@ -20,7 +20,7 @@
 #include "notesuno.hxx"
 
 #include <vcl/svapp.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <editeng/unotext.hxx>
 #include <editeng/unoprnms.hxx>
 #include <svx/svdpool.hxx>
@@ -57,7 +57,8 @@ SC_SIMPLE_SERVICE_INFO( ScAnnotationObj, "ScAnnotationObj", "com.sun.star.sheet.
 
 ScAnnotationObj::ScAnnotationObj(ScDocShell* pDocSh, const ScAddress& rPos) :
     pDocShell( pDocSh ),
-    aCellPos( rPos )
+    aCellPos( rPos ),
+    pUnoText( nullptr )
 {
     pDocShell->GetDocument().AddUnoObject(*this);
 
@@ -71,6 +72,9 @@ ScAnnotationObj::~ScAnnotationObj()
 
     if (pDocShell)
         pDocShell->GetDocument().RemoveUnoObject(*this);
+
+    if (pUnoText)
+        pUnoText->release();
 }
 
 void ScAnnotationObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
@@ -81,20 +85,21 @@ void ScAnnotationObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 
         //! Ref-Update
     }
-    else if ( rHint.GetId() == SfxHintId::Dying )
+    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
+            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
     {
-        pDocShell = nullptr;       // became invalid
+        pDocShell = nullptr;       // ungueltig geworden
     }
 }
 
 // XChild
 
-uno::Reference<uno::XInterface> SAL_CALL ScAnnotationObj::getParent()
+uno::Reference<uno::XInterface> SAL_CALL ScAnnotationObj::getParent() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    //  parent of note is the related cell
-    //! find and reset existing object ???
+    //  Parent der Notiz ist die zugehoerige Zelle
+    //! existierendes Objekt finden und zurueckgeben ???
 
     if (pDocShell)
         return static_cast<cppu::OWeakObject*>(new ScCellObj( pDocShell, aCellPos ));
@@ -103,35 +108,38 @@ uno::Reference<uno::XInterface> SAL_CALL ScAnnotationObj::getParent()
 }
 
 void SAL_CALL ScAnnotationObj::setParent( const uno::Reference<uno::XInterface>& /* Parent */ )
+                                    throw(lang::NoSupportException, uno::RuntimeException, std::exception)
 {
-    //  ain't there
-    //! exception or what ??!
+    //  hamma nich
+    //! Exception oder so ??!
 }
 
 // XSimpleText
 
 uno::Reference<text::XTextCursor> SAL_CALL ScAnnotationObj::createTextCursor()
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    //  notes does not need special treatment
+    //  Notizen brauchen keine Extrawurst
     return GetUnoText().createTextCursor();
 }
 
 uno::Reference<text::XTextCursor> SAL_CALL ScAnnotationObj::createTextCursorByRange(
                                     const uno::Reference<text::XTextRange>& aTextPosition )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
-    //  notes does not need special treatment
+    //  Notizen brauchen keine Extrawurst
     return GetUnoText().createTextCursorByRange(aTextPosition);
 }
 
-OUString SAL_CALL ScAnnotationObj::getString()
+OUString SAL_CALL ScAnnotationObj::getString() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return GetUnoText().getString();
 }
 
-void SAL_CALL ScAnnotationObj::setString( const OUString& aText )
+void SAL_CALL ScAnnotationObj::setString( const OUString& aText ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     GetUnoText().setString(aText);
@@ -139,6 +147,7 @@ void SAL_CALL ScAnnotationObj::setString( const OUString& aText )
 
 void SAL_CALL ScAnnotationObj::insertString( const uno::Reference<text::XTextRange>& xRange,
                                             const OUString& aString, sal_Bool bAbsorb )
+                                throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     GetUnoText().insertString( xRange, aString, bAbsorb );
@@ -146,24 +155,25 @@ void SAL_CALL ScAnnotationObj::insertString( const uno::Reference<text::XTextRan
 
 void SAL_CALL ScAnnotationObj::insertControlCharacter( const uno::Reference<text::XTextRange>& xRange,
                                             sal_Int16 nControlCharacter, sal_Bool bAbsorb )
+                                throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     GetUnoText().insertControlCharacter( xRange, nControlCharacter, bAbsorb );
 }
 
-uno::Reference<text::XText> SAL_CALL ScAnnotationObj::getText()
+uno::Reference<text::XText> SAL_CALL ScAnnotationObj::getText() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return GetUnoText().getText();
 }
 
-uno::Reference<text::XTextRange> SAL_CALL ScAnnotationObj::getStart()
+uno::Reference<text::XTextRange> SAL_CALL ScAnnotationObj::getStart() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return GetUnoText().getStart();
 }
 
-uno::Reference<text::XTextRange> SAL_CALL ScAnnotationObj::getEnd()
+uno::Reference<text::XTextRange> SAL_CALL ScAnnotationObj::getEnd() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return GetUnoText().getEnd();
@@ -171,7 +181,7 @@ uno::Reference<text::XTextRange> SAL_CALL ScAnnotationObj::getEnd()
 
 // XSheetAnnotation
 
-table::CellAddress SAL_CALL ScAnnotationObj::getPosition()
+table::CellAddress SAL_CALL ScAnnotationObj::getPosition() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     table::CellAddress aAdr;
@@ -182,6 +192,7 @@ table::CellAddress SAL_CALL ScAnnotationObj::getPosition()
 }
 
 OUString SAL_CALL ScAnnotationObj::getAuthor()
+    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     const ScPostIt* pNote = ImplGetNote();
@@ -189,20 +200,21 @@ OUString SAL_CALL ScAnnotationObj::getAuthor()
 }
 
 OUString SAL_CALL ScAnnotationObj::getDate()
+    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     const ScPostIt* pNote = ImplGetNote();
     return pNote ? pNote->GetDate() : OUString();
 }
 
-sal_Bool SAL_CALL ScAnnotationObj::getIsVisible()
+sal_Bool SAL_CALL ScAnnotationObj::getIsVisible() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     const ScPostIt* pNote = ImplGetNote();
     return pNote && pNote->IsCaptionShown();
 }
 
-void SAL_CALL ScAnnotationObj::setIsVisible( sal_Bool bIsVisible )
+void SAL_CALL ScAnnotationObj::setIsVisible( sal_Bool bIsVisible ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     // show/hide note with undo action
@@ -212,6 +224,8 @@ void SAL_CALL ScAnnotationObj::setIsVisible( sal_Bool bIsVisible )
 
 // XSheetAnnotationShapeSupplier
 uno::Reference < drawing::XShape > SAL_CALL ScAnnotationObj::getAnnotationShape()
+                                throw(css::uno::RuntimeException,
+                                      std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Reference < drawing::XShape > xShape;
@@ -223,13 +237,14 @@ uno::Reference < drawing::XShape > SAL_CALL ScAnnotationObj::getAnnotationShape(
 
 SvxUnoText& ScAnnotationObj::GetUnoText()
 {
-    if (!pUnoText.is())
+    if (!pUnoText)
     {
         ScAnnotationEditSource aEditSource( pDocShell, aCellPos );
         pUnoText = new SvxUnoText( &aEditSource, lcl_GetAnnotationPropertySet(),
                                     uno::Reference<text::XText>() );
+        pUnoText->acquire();
     }
-    return *pUnoText.get();
+    return *pUnoText;
 }
 
 const ScPostIt* ScAnnotationObj::ImplGetNote() const

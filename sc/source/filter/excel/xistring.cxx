@@ -79,7 +79,7 @@ void XclImpString::Read( XclImpStream& rStrm, XclStrFlags nFlags )
 
             // --- formatting ---
             if( nRunCount > 0 )
-                ReadFormats( rStrm, maFormats, nRunCount );
+                ReadFormats( rStrm, nRunCount );
 
             // --- extended (FarEast) information ---
             rStrm.Ignore( nExtInf );

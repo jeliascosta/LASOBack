@@ -26,7 +26,7 @@ class SVL_DLLPUBLIC GridPrinter
     std::unique_ptr<Impl> mpImpl;
 
 public:
-    GridPrinter( size_t nRows, size_t nCols, bool bPrint );
+    GridPrinter( size_t nRows, size_t nCols, bool bPrint = true );
     ~GridPrinter();
     void set( size_t nRow, size_t nCol, const OUString& rStr );
     void print( const char* pHeader ) const;

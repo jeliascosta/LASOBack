@@ -42,10 +42,10 @@ namespace sw
                 const Color& rColor,
                 const std::vector< basegfx::B2DRange >& rRanges );
 
-            virtual ~OverlayRangesOutline() override;
+            virtual ~OverlayRangesOutline();
 
             // data read access
-            const std::vector< basegfx::B2DRange >& getRanges() const
+            inline const std::vector< basegfx::B2DRange >& getRanges() const
             {
                 return maRanges;
             }

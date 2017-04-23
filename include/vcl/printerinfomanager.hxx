@@ -24,9 +24,9 @@
 #include <unordered_map>
 
 #include <vcl/dllapi.h>
+#include <vcl/helper.hxx>
 #include <vcl/jobdata.hxx>
 #include <osl/file.hxx>
-#include <unx/helper.hxx>
 
 #include <cstdio>
 
@@ -61,7 +61,7 @@ struct PrinterInfo : JobData
 class VCL_DLLPUBLIC PrinterInfoManager
 {
 public:
-    enum class Type { Default = 0, CUPS = 1 };
+    enum Type { Default = 0, CUPS = 1 };
 
     struct SystemPrintQueue
     {
@@ -107,15 +107,14 @@ protected:
 
     std::list< SystemPrintQueue >     m_aSystemPrintQueues;
 
-    std::unique_ptr<SystemQueueInfo>
-                                      m_pQueueInfo;
+    SystemQueueInfo*                  m_pQueueInfo;
 
     Type                              m_eType;
     bool                              m_bUseIncludeFeature;
     bool                              m_bUseJobPatch;
     OUString                     m_aSystemDefaultPaper;
 
-    PrinterInfoManager( Type eType = Type::Default );
+    PrinterInfoManager( Type eType = Default );
 
     virtual void initialize();
 
@@ -124,6 +123,7 @@ protected:
     // if a paper is already set it will not be overwritten
     void setDefaultPaper( PPDContext& rInfo ) const;
 
+    void initSystemDefaultPaper();
 public:
 
     // there can only be one
@@ -145,6 +145,9 @@ public:
 
     virtual void setupJobContextData( JobData& rData );
 
+    // changes the info about a named printer
+    virtual void changePrinterInfo( const OUString& rPrinter, const PrinterInfo& rNewInfo );
+
     // check if the printer configuration has changed
     // if bwait is true, then this method waits for eventual asynchronous
     // printer discovery to finish
@@ -162,7 +165,7 @@ public:
     // is not writeable
     // if bCheckOnly is true, the printer is not really removed;
     // this is for checking if the removal would fail
-    virtual bool removePrinter( const OUString& rPrinterName, bool bCheckOnly );
+    virtual bool removePrinter( const OUString& rPrinterName, bool bCheckOnly = false );
 
     // save the changes to all printers. this fails if there
     // is no writable config file at all
@@ -171,6 +174,10 @@ public:
     // set a new default printer
     // fails if the specified printer does not exist
     virtual bool setDefaultPrinter( const OUString& rPrinterName );
+
+    // primarily used internally
+    // returns the printer queue names
+    const std::list< SystemPrintQueue >& getSystemPrintQueues();
 
     // abstract print command
     // returns a stdio FILE* that a postscript file may be written to

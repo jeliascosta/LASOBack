@@ -36,6 +36,7 @@ import lib.MultiMethodTest;
 import lib.Status;
 
 import com.sun.star.task.XInteractionHandler;
+import com.sun.star.task.XInteractionRequest;
 
 /**
 * <code>com.sun.star.task.XInteractionHandler</code> interface testing.

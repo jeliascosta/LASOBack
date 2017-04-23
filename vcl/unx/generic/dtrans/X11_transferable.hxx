@@ -33,18 +33,24 @@ namespace x11 {
         SelectionManager&               m_rManager;
         Atom                m_aSelection;
     public:
-        X11Transferable( SelectionManager& rManager, Atom selection );
-        virtual ~X11Transferable() override;
+        X11Transferable( SelectionManager& rManager, Atom selection = None );
+        virtual ~X11Transferable();
 
         /*
          * XTransferable
          */
 
-        virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor ) override;
+        virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor )
+            throw(css::datatransfer::UnsupportedFlavorException,
+                  css::io::IOException,
+                  css::uno::RuntimeException, std::exception
+                  ) override;
 
-        virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  ) override;
+        virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  )
+            throw(css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor ) override;
+        virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor )
+            throw(css::uno::RuntimeException, std::exception) override;
     };
 
 } // namespace

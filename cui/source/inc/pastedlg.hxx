@@ -42,19 +42,20 @@ class SvPasteObjectDialog : public ModalDialog
     VclPtr<FixedText> m_pFtObjectSource;
     VclPtr<ListBox> m_pLbInsertList;
     VclPtr<OKButton> m_pOKButton;
-    std::map< SotClipboardFormatId, OUString > aSupplementMap;
+    ::std::map< SotClipboardFormatId, OUString > aSupplementMap;
     SvGlobalName    aObjClassName;
     OUString        aObjName;
 
     ListBox&        ObjectLB()      { return *m_pLbInsertList; }
+    FixedText&      ObjectSource()  { return *m_pFtObjectSource; }
 
     void            SelectObject();
-    DECL_LINK( SelectHdl, ListBox&, void );
-    DECL_LINK( DoubleClickHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( DoubleClickHdl, ListBox&, void );
 
 public:
                 SvPasteObjectDialog( vcl::Window* pParent );
-    virtual     ~SvPasteObjectDialog() override;
+    virtual     ~SvPasteObjectDialog();
     virtual void dispose() override;
 
     void        Insert( SotClipboardFormatId nFormat, const OUString & rFormatName );

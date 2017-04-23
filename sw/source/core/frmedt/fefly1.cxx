@@ -18,7 +18,6 @@
  */
 
 #include <hintids.hxx>
-#include <o3tl/any.hxx>
 #include <svl/itemiter.hxx>
 #include <svtools/imapobj.hxx>
 #include <svtools/soerr.hxx>
@@ -72,8 +71,6 @@
 #include <ndole.hxx>
 #include <editeng/opaqitem.hxx>
 #include <fefly.hxx>
-#include <fmtcnct.hxx>
-
 
 using namespace ::com::sun::star;
 
@@ -97,7 +94,7 @@ static bool lcl_SetNewFlyPos( const SwNode& rNode, SwFormatAnchor& rAnchor,
         const SwPageFrame *pPg = pCFrame ? pCFrame->FindPageFrame() : nullptr;
 
         rAnchor.SetPageNum( pPg ? pPg->GetPhyPageNum() : 1 );
-        rAnchor.SetType( RndStdIds::FLY_AT_PAGE );
+        rAnchor.SetType( FLY_AT_PAGE );
     }
     return bRet;
 }
@@ -117,9 +114,9 @@ static bool lcl_FindAnchorPos(
     Point aTmpPnt( rPt );
     switch( nNew )
     {
-    case RndStdIds::FLY_AS_CHAR:  // also include this?
-    case RndStdIds::FLY_AT_PARA:
-    case RndStdIds::FLY_AT_CHAR: // LAYER_IMPL
+    case FLY_AS_CHAR:  // also include this?
+    case FLY_AT_PARA:
+    case FLY_AT_CHAR: // LAYER_IMPL
         {
             // starting from the upper-left corner of the Fly,
             // search nearest ContentFrame
@@ -133,7 +130,7 @@ static bool lcl_FindAnchorPos(
             }
 
             SwPosition aPos( *static_cast<const SwContentFrame*>(pNewAnch)->GetNode() );
-            if ((RndStdIds::FLY_AT_CHAR == nNew) || (RndStdIds::FLY_AS_CHAR == nNew))
+            if ((FLY_AT_CHAR == nNew) || (FLY_AS_CHAR == nNew))
             {
                 // textnode should be found, as only in those
                 // a content bound frame can be anchored
@@ -159,7 +156,7 @@ static bool lcl_FindAnchorPos(
         }
         break;
 
-    case RndStdIds::FLY_AT_FLY: // LAYER_IMPL
+    case FLY_AT_FLY: // LAYER_IMPL
         {
             // starting from the upper-left corner of the Fly
             // search nearest SwFlyFrame
@@ -180,10 +177,10 @@ static bool lcl_FindAnchorPos(
             }
         }
 
-        aNewAnch.SetType( nNew = RndStdIds::FLY_AT_PAGE );
+        aNewAnch.SetType( nNew = FLY_AT_PAGE );
         SAL_FALLTHROUGH;
 
-    case RndStdIds::FLY_AT_PAGE:
+    case FLY_AT_PAGE:
         pNewAnch = rFrame.FindPageFrame();
         aNewAnch.SetPageNum( pNewAnch->GetPhyPageNum() );
         break;
@@ -214,8 +211,8 @@ bool sw_ChkAndSetNewAnchor(
     SwDoc* pDoc = const_cast<SwDoc*>(rFormat.GetDoc());
 
 #if OSL_DEBUG_LEVEL > 0
-    OSL_ENSURE( !(nNew == RndStdIds::FLY_AT_PAGE &&
-        (RndStdIds::FLY_AT_PARA==nOld || RndStdIds::FLY_AT_CHAR==nOld || RndStdIds::FLY_AS_CHAR==nOld ) &&
+    OSL_ENSURE( !(nNew == FLY_AT_PAGE &&
+        (FLY_AT_PARA==nOld || FLY_AT_CHAR==nOld || FLY_AS_CHAR==nOld ) &&
         pDoc->IsInHeaderFooter( rOldAnch.GetContentAnchor()->nNode )),
             "forbidden anchor change in Head/Foot." );
 #endif
@@ -316,7 +313,7 @@ const SwFrameFormat* SwFEShell::IsFlyInFly()
     SdrObject *pObj = rMrkList.GetMark( 0 )->GetMarkedSdrObj();
 
     SwFrameFormat *pFormat = FindFrameFormat( pObj );
-    if( pFormat && RndStdIds::FLY_AT_FLY == pFormat->GetAnchor().GetAnchorId() )
+    if( pFormat && FLY_AT_FLY == pFormat->GetAnchor().GetAnchorId() )
     {
         const SwFrame* pFly;
         if (SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj *>(pObj))
@@ -405,7 +402,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
     SwFrameFormat& rFormat = pAnchoredObj->GetFrameFormat();
     const RndStdIds nAnchorId = rFormat.GetAnchor().GetAnchorId();
 
-    if ( RndStdIds::FLY_AS_CHAR == nAnchorId )
+    if ( FLY_AS_CHAR == nAnchorId )
         return aRet;
 
     bool bFlyFrame = dynamic_cast<SwVirtFlyDrawObj *>(pObj) != nullptr;
@@ -425,7 +422,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
         const SwFrame* pOldAnch = pFly->GetAnchorFrame();
         if( !pOldAnch )
             return aRet;
-        if ( RndStdIds::FLY_AT_PAGE != nAnchorId )
+        if ( FLY_AT_PAGE != nAnchorId )
         {
             pFooterOrHeader = pContent->FindFooterOrHeader();
         }
@@ -450,7 +447,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
         Point aTmpPnt( rAbsPos );
         GetLayout()->GetCursorOfst( &aPos, aTmpPnt, &aState );
         if (aPos.nNode != GetDoc()->GetNodes().GetEndOfExtras().GetIndex()
-            && (nAnchorId != RndStdIds::FLY_AT_CHAR || !PosInsideInputField(aPos)))
+            && (nAnchorId != FLY_AT_CHAR || !PosInsideInputField(aPos)))
         {
             SwContentNode* pCNode = aPos.nNode.GetNode().GetContentNode();
             assert(pCNode);
@@ -460,7 +457,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
     const SwFrame *pNewAnch = nullptr;
     if( pTextFrame != nullptr )
     {
-        if ( RndStdIds::FLY_AT_PAGE == nAnchorId )
+        if ( FLY_AT_PAGE == nAnchorId )
         {
             pNewAnch = pTextFrame->FindPageFrame();
         }
@@ -468,7 +465,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
         {
             pNewAnch = ::FindAnchor( pTextFrame, rAbsPos );
 
-            if( RndStdIds::FLY_AT_FLY == nAnchorId ) // LAYER_IMPL
+            if( FLY_AT_FLY == nAnchorId ) // LAYER_IMPL
             {
                 pNewAnch = pNewAnch->FindFlyFrame();
             }
@@ -495,12 +492,12 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
         {
             aRet = pNewAnch->GetFrameAnchorPos( ::HasWrap( pObj ) );
 
-            if ( bMoveIt || (nAnchorId == RndStdIds::FLY_AT_CHAR) )
+            if ( bMoveIt || (nAnchorId == FLY_AT_CHAR) )
             {
                 SwFormatAnchor aAnch( rFormat.GetAnchor() );
                 switch ( nAnchorId )
                 {
-                    case RndStdIds::FLY_AT_PARA:
+                    case FLY_AT_PARA:
                     {
                         SwPosition pos = *aAnch.GetContentAnchor();
                         pos.nNode = *pTextFrame->GetNode();
@@ -508,14 +505,14 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
                         aAnch.SetAnchor( &pos );
                         break;
                     }
-                    case RndStdIds::FLY_AT_PAGE:
+                    case FLY_AT_PAGE:
                     {
                         aAnch.SetPageNum( static_cast<const SwPageFrame*>(pNewAnch)->
                                           GetPhyPageNum() );
                         break;
                     }
 
-                    case RndStdIds::FLY_AT_FLY:
+                    case FLY_AT_FLY:
                     {
                         SwPosition aPos( *static_cast<const SwFlyFrame*>(pNewAnch)->GetFormat()->
                                                   GetContent().GetContentIdx() );
@@ -523,7 +520,7 @@ Point SwFEShell::FindAnchorPos( const Point& rAbsPos, bool bMoveIt )
                         break;
                     }
 
-                    case RndStdIds::FLY_AT_CHAR:
+                    case FLY_AT_CHAR:
                         {
                             SwPosition pos = *aAnch.GetContentAnchor();
                             Point aTmpPnt( rAbsPos );
@@ -631,24 +628,24 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
     RndStdIds eRndId = rAnch.GetAnchorId();
     switch( eRndId )
     {
-    case RndStdIds::FLY_AT_PAGE:
+    case FLY_AT_PAGE:
         if( !rAnch.GetPageNum() )       //HotFix: Bug in UpdateByExample
             rAnch.SetPageNum( 1 );
         break;
 
-    case RndStdIds::FLY_AT_FLY:
-    case RndStdIds::FLY_AT_PARA:
-    case RndStdIds::FLY_AT_CHAR:
-    case RndStdIds::FLY_AS_CHAR:
+    case FLY_AT_FLY:
+    case FLY_AT_PARA:
+    case FLY_AT_CHAR:
+    case FLY_AS_CHAR:
         if( !bAnchValid )
         {
-            if( RndStdIds::FLY_AT_FLY != eRndId )
+            if( FLY_AT_FLY != eRndId )
             {
                 rAnch.SetAnchor( &rPos );
             }
             else if( lcl_SetNewFlyPos( rPos.nNode.GetNode(), rAnch, aPt ) )
             {
-                eRndId = RndStdIds::FLY_AT_PAGE;
+                eRndId = FLY_AT_PAGE;
             }
         }
         break;
@@ -661,20 +658,20 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
     SwFlyFrameFormat *pRet;
     if( bMoveContent )
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::INSLAYFMT, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_INSLAYFMT, nullptr );
         SwFormatAnchor* pOldAnchor = nullptr;
         bool bHOriChgd = false, bVOriChgd = false;
         SwFormatVertOrient aOldV;
         SwFormatHoriOrient aOldH;
 
-        if ( RndStdIds::FLY_AT_PAGE != eRndId )
+        if ( FLY_AT_PAGE != eRndId )
         {
            // First as with page link. Paragraph/character link on if
             // everything was shifted. Then the position is valid!
             // JP 13.05.98: if necessary also convert the horizontal/vertical
             //              orientation, to prevent correction during re-anchoring
             pOldAnchor = new SwFormatAnchor( rAnch );
-            const_cast<SfxItemSet&>(rSet).Put( SwFormatAnchor( RndStdIds::FLY_AT_PAGE, 1 ) );
+            const_cast<SfxItemSet&>(rSet).Put( SwFormatAnchor( FLY_AT_PAGE, 1 ) );
 
             const SfxPoolItem* pItem;
             if( SfxItemState::SET == rSet.GetItemState( RES_HORI_ORIENT, false, &pItem )
@@ -708,7 +705,7 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
 
                 const SwFrame* pAnch = ::FindAnchor( GetLayout(), aPt );
                 SwPosition aPos( *static_cast<const SwContentFrame*>(pAnch)->GetNode() );
-                if ( RndStdIds::FLY_AS_CHAR == eRndId )
+                if ( FLY_AS_CHAR == eRndId )
                 {
                     aPos.nContent.Assign( const_cast<SwContentFrame*>(static_cast<const SwContentFrame*>(pAnch))->GetNode(), 0 );
                 }
@@ -718,12 +715,12 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
                 // changing the anchors should not be recorded
                 bool const bDoesUndo =
                     GetDoc()->GetIDocumentUndoRedo().DoesUndo();
-                SwUndoId nLastUndoId(SwUndoId::EMPTY);
+                SwUndoId nLastUndoId(UNDO_EMPTY);
                 if (bDoesUndo &&
                     GetDoc()->GetIDocumentUndoRedo().GetLastUndoInfo(nullptr,
                         & nLastUndoId))
                 {
-                    if (SwUndoId::INSLAYFMT == nLastUndoId)
+                    if (UNDO_INSLAYFMT == nLastUndoId)
                     {
                         GetDoc()->GetIDocumentUndoRedo().DoUndo(false);
                     }
@@ -741,7 +738,7 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
             }
             delete pOldAnchor;
         }
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::INSLAYFMT, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_INSLAYFMT, nullptr );
     }
     else
         /* If called from a shell try to propagate an
@@ -767,7 +764,9 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
 
 void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
                         const Graphic* pGraphic,
-                        const SfxItemSet* pFlyAttrSet )
+                        const SfxItemSet* pFlyAttrSet,
+                        const SfxItemSet* pGrfAttrSet,
+                        SwFrameFormat* pFrameFormat )
 {
     SwFlyFrameFormat* pFormat = nullptr;
     SET_CURR_SHELL( this );
@@ -789,22 +788,22 @@ void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
                 SwFormatAnchor* pAnchor = const_cast<SwFormatAnchor*>(static_cast<const SwFormatAnchor*>(pItem));
                 switch( pAnchor->GetAnchorId())
                 {
-                case RndStdIds::FLY_AT_PARA:
-                case RndStdIds::FLY_AT_CHAR: // LAYER_IMPL
-                case RndStdIds::FLY_AS_CHAR:
+                case FLY_AT_PARA:
+                case FLY_AT_CHAR: // LAYER_IMPL
+                case FLY_AS_CHAR:
                     if( !pAnchor->GetContentAnchor() )
                     {
                         pAnchor->SetAnchor( pCursor->GetPoint() );
                     }
                     break;
-                case RndStdIds::FLY_AT_FLY:
+                case FLY_AT_FLY:
                     if( !pAnchor->GetContentAnchor() )
                     {
                         lcl_SetNewFlyPos( pCursor->GetNode(),
                                 *pAnchor, GetCursorDocPos() );
                     }
                     break;
-                case RndStdIds::FLY_AT_PAGE:
+                case FLY_AT_PAGE:
                     if( !pAnchor->GetPageNum() )
                     {
                         pAnchor->SetPageNum( pCursor->GetPageNum(
@@ -819,7 +818,7 @@ void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
         pFormat = GetDoc()->getIDocumentContentOperations().Insert(*pCursor, rGrfName,
                                 rFltName, pGraphic,
                                 pFlyAttrSet,
-                                nullptr, nullptr );
+                                pGrfAttrSet, pFrameFormat );
         OSL_ENSURE( pFormat, "Doc->getIDocumentContentOperations().Insert(notxt) failed." );
 
         pCursor = dynamic_cast<SwShellCursor*>(pCursor->GetNext());
@@ -848,7 +847,9 @@ void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
 }
 
 SwFlyFrameFormat* SwFEShell::InsertObject( const svt::EmbeddedObjectRef&  xObj,
-                        const SfxItemSet* pFlyAttrSet )
+                        const SfxItemSet* pFlyAttrSet,
+                        const SfxItemSet* pGrfAttrSet,
+                        SwFrameFormat* pFrameFormat )
 {
     SwFlyFrameFormat* pFormat = nullptr;
     SET_CURR_SHELL( this );
@@ -856,7 +857,7 @@ SwFlyFrameFormat* SwFEShell::InsertObject( const svt::EmbeddedObjectRef&  xObj,
         for(SwPaM& rPaM : GetCursor()->GetRingContainer())
         {
             pFormat = GetDoc()->getIDocumentContentOperations().Insert(rPaM, xObj,
-                                    pFlyAttrSet );
+                                    pFlyAttrSet, pGrfAttrSet, pFrameFormat );
             OSL_ENSURE( pFormat, "Doc->getIDocumentContentOperations().Insert(notxt) failed." );
 
         }
@@ -882,9 +883,9 @@ void SwFEShell::InsertDrawObj( SdrObject& rDrawObj,
     SET_CURR_SHELL( this );
 
     SfxItemSet rFlyAttrSet( GetDoc()->GetAttrPool(), aFrameFormatSetRange );
-    rFlyAttrSet.Put( SwFormatAnchor( RndStdIds::FLY_AT_PARA ));
+    rFlyAttrSet.Put( SwFormatAnchor( FLY_AT_PARA ));
     // #i89920#
-    rFlyAttrSet.Put( SwFormatSurround( css::text::WrapTextMode_THROUGH ) );
+    rFlyAttrSet.Put( SwFormatSurround( SURROUND_THROUGHT ) );
     rDrawObj.SetLayer( getIDocumentDrawModelAccess().GetHeavenId() );
 
     // find anchor position
@@ -926,7 +927,7 @@ void SwFEShell::GetPageObjs( std::vector<SwFrameFormat*>& rFillArr )
 
     for( auto pFormat : *mpDoc->GetSpzFrameFormats() )
     {
-        if (RndStdIds::FLY_AT_PAGE == pFormat->GetAnchor().GetAnchorId())
+        if (FLY_AT_PAGE == pFormat->GetAnchor().GetAnchorId())
         {
             rFillArr.push_back( pFormat );
         }
@@ -952,7 +953,7 @@ void SwFEShell::SetPageObjsNewPage( std::vector<SwFrameFormat*>& rFillArr )
             // FlyFormat is still valid, therefore process
 
             SwFormatAnchor aNewAnchor( pFormat->GetAnchor() );
-            if ((RndStdIds::FLY_AT_PAGE != aNewAnchor.GetAnchorId()) ||
+            if ((FLY_AT_PAGE != aNewAnchor.GetAnchorId()) ||
                 0 >= ( nNewPage = aNewAnchor.GetPageNum() + 1 ) )
                 // chaos::Anchor has been changed or invalid page number,
                 // therefore: do not change!
@@ -961,7 +962,11 @@ void SwFEShell::SetPageObjsNewPage( std::vector<SwFrameFormat*>& rFillArr )
             if( sal_uInt16(nNewPage) > nMaxPage )
             {
                 if ( RES_DRAWFRMFMT == pFormat->Which() )
-                    pFormat->CallSwClientNotify(sw::DrawFrameFormatHint(sw::DrawFrameFormatHintId::PAGE_OUT_OF_BOUNDS));
+                {
+                    SwContact *pCon = pFormat->FindContactObj();
+                    if( pCon )
+                        static_cast<SwDrawContact*>(pCon)->DisconnectFromLayout();
+                }
                 else
                     pFormat->DelFrames();
                 bTmpAssert = true;
@@ -990,7 +995,7 @@ bool SwFEShell::GetFlyFrameAttr( SfxItemSet &rSet ) const
         return false;
     }
 
-    SET_CURR_SHELL( const_cast<SwFEShell*>(this) );
+    SET_CURR_SHELL( const_cast<SwViewShell*>(static_cast<SwViewShell const *>(this)) );
 
     if( !rSet.Set( pFly->GetFormat()->GetAttrSet() ) )
         return false;
@@ -1003,11 +1008,11 @@ bool SwFEShell::GetFlyFrameAttr( SfxItemSet &rSet ) const
         const SwFormatAnchor* pAnchor = static_cast<const SwFormatAnchor*>(pItem);
         RndStdIds eType = pAnchor->GetAnchorId();
 
-        if ( RndStdIds::FLY_AT_PAGE != eType )
+        if ( FLY_AT_PAGE != eType )
         {
             // OD 12.11.2003 #i22341# - content anchor of anchor item is needed.
             // Thus, don't overwrite anchor item by default contructed anchor item.
-            if ( RndStdIds::FLY_AS_CHAR == eType )
+            if ( FLY_AS_CHAR == eType )
             {
                 rSet.ClearItem( RES_OPAQUE );
                 rSet.ClearItem( RES_SURROUND );
@@ -1032,8 +1037,8 @@ bool SwFEShell::SetFlyFrameAttr( SfxItemSet& rSet )
     if( rSet.Count() )
     {
         SwFlyFrame *pFly = GetSelectedOrCurrFlyFrame();
-        OSL_ENSURE(pFly, "SetFlyFrameAttr, no Fly selected.");
-        if (pFly)
+        OSL_ENSURE( pFly, "SetFlyFrameAttr, no Fly selected." );
+        if( pFly )
         {
             StartAllAction();
             const Point aPt( pFly->Frame().Pos() );
@@ -1449,6 +1454,7 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
     if( !Imp()->HasDrawView() )
         return nullptr;
 
+    SdrObject* pObj;
     SdrPageView* pPV;
     const SwFrameFormat* pRet = nullptr;
     SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1456,8 +1462,11 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
     const auto nOld = pDView->GetHitTolerancePixel();
     pDView->SetHitTolerancePixel( 2 );
 
-    SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPV, SdrSearchOptions::PICKMACRO);
-    SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
+    SwVirtFlyDrawObj* pFlyObj(nullptr);
+    if (pDView->PickObj(rPt, pDView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKMACRO))
+    {
+        pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
+    }
     if (pFlyObj)
     {
         SwFlyFrame *pFly = pFlyObj->GetFlyFrame();
@@ -1498,7 +1507,7 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
                         aPt -= pFly->Frame().Pos();
                         // without MapMode-Offset, without Offset, o ... !!!!!
                         aPt = GetOut()->LogicToPixel(
-                                aPt, MapMode( MapUnit::MapTwip ) );
+                                aPt, MapMode( MAP_TWIP ) );
                         ((( *pURL += "?" ) += OUString::number( aPt.getX() ))
                                   += "," ) += OUString::number(aPt.getY() );
                     }
@@ -1521,11 +1530,15 @@ const Graphic *SwFEShell::GetGrfAtPos( const Point &rPt,
     if( !Imp()->HasDrawView() )
         return nullptr;
 
+    SdrObject* pObj;
     SdrPageView* pPV;
     SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
 
-    SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPV);
-    SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
+    SwVirtFlyDrawObj* pFlyObj(nullptr);
+    if (pDView->PickObj(rPt, pDView->getHitTolLog(), pObj, pPV))
+    {
+        pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
+    }
     if (pFlyObj)
     {
         SwFlyFrame *pFly = pFlyObj->GetFlyFrame();
@@ -1559,6 +1572,7 @@ const SwFrameFormat* SwFEShell::GetFormatFromObj( const Point& rPt, SwRect** pRe
 
     if( Imp()->HasDrawView() )
     {
+        SdrObject* pObj;
         SdrPageView* pPView;
 
         SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1567,8 +1581,7 @@ const SwFrameFormat* SwFEShell::GetFormatFromObj( const Point& rPt, SwRect** pRe
         // tolerance for Drawing-SS
         pDView->SetHitTolerancePixel( pDView->GetMarkHdlSizePixel()/2 );
 
-        SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPView, SdrSearchOptions::PICKMARKABLE);
-        if (pObj)
+        if( pDView->PickObj( rPt, pDView->getHitTolLog(), pObj, pPView, SdrSearchOptions::PICKMARKABLE ) )
         {
            // first check it:
             if (SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj))
@@ -1599,7 +1612,7 @@ const SwFrameFormat* SwFEShell::GetFormatFromAnyObj( const Point& rPt ) const
     return pRet;
 }
 
-ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj )
+ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj ) const
 {
     ObjCntType eType = OBJCNT_NONE;
 
@@ -1615,7 +1628,7 @@ ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj )
         pInvestigatedObj = &rObj;
     }
 
-    if( SdrInventor::FmForm == pInvestigatedObj->GetObjInventor() )
+    if( FmFormInventor == pInvestigatedObj->GetObjInventor() )
     {
         eType = OBJCNT_CONTROL;
         uno::Reference< awt::XControlModel >  xModel =
@@ -1630,7 +1643,7 @@ ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj )
             if(xInfo->hasPropertyByName( sName ))
             {
                 aVal = xSet->getPropertyValue( sName );
-                if( aVal.hasValue() && form::FormButtonType_URL == *o3tl::doAccess<form::FormButtonType>(aVal) )
+                if( aVal.getValue() && form::FormButtonType_URL == *static_cast<form::FormButtonType const *>(aVal.getValue()) )
                     eType = OBJCNT_URLBUTTON;
             }
         }
@@ -1664,7 +1677,7 @@ ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj )
                 OSL_FAIL( "<SwFEShell::GetObjCntType(..)> - missing frame format" );
                 eType = OBJCNT_NONE;
             }
-            else if ( RndStdIds::FLY_AS_CHAR != pFrameFormat->GetAnchor().GetAnchorId() )
+            else if ( FLY_AS_CHAR != pFrameFormat->GetAnchor().GetAnchorId() )
             {
                 eType = OBJCNT_GROUPOBJ;
             }
@@ -1681,6 +1694,7 @@ ObjCntType SwFEShell::GetObjCntType( const Point &rPt, SdrObject *&rpObj ) const
 
     if( Imp()->HasDrawView() )
     {
+        SdrObject* pObj;
         SdrPageView* pPView;
 
         SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1689,8 +1703,7 @@ ObjCntType SwFEShell::GetObjCntType( const Point &rPt, SdrObject *&rpObj ) const
         // tolerance for Drawing-SS
         pDView->SetHitTolerancePixel( pDView->GetMarkHdlSizePixel()/2 );
 
-        SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPView, SdrSearchOptions::PICKMARKABLE);
-        if (pObj)
+        if( pDView->PickObj( rPt, pDView->getHitTolLog(), pObj, pPView, SdrSearchOptions::PICKMARKABLE ) )
             eType = GetObjCntType( *(rpObj = pObj) );
 
         pDView->SetHitTolerancePixel( nOld );
@@ -1748,7 +1761,7 @@ bool SwFEShell::ReplaceSdrObj( const OUString& rGrfName, const OUString& rFltNam
         if( dynamic_cast<const SwVirtFlyDrawObj*>( pObj) == nullptr )
         {
             // then let's do it:
-            const tools::Rectangle &rBound = pObj->GetSnapRect();
+            const Rectangle &rBound = pObj->GetSnapRect();
             Point aRelPos( pObj->GetRelativePos() );
 
             const long nWidth = rBound.Right()  - rBound.Left();
@@ -1798,13 +1811,15 @@ static sal_uInt16 SwFormatGetPageNum(const SwFlyFrameFormat * pFormat)
     return aResult;
 }
 
+#include <fmtcnct.hxx>
+
 void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
                                       const OUString & rReference,
                                       bool bSuccessors,
-                                      std::vector< OUString > & aPrevPageVec,
-                                      std::vector< OUString > & aThisPageVec,
-                                      std::vector< OUString > & aNextPageVec,
-                                      std::vector< OUString > & aRestVec)
+                                      ::std::vector< OUString > & aPrevPageVec,
+                                      ::std::vector< OUString > & aThisPageVec,
+                                      ::std::vector< OUString > & aNextPageVec,
+                                      ::std::vector< OUString > & aRestVec)
 {
     StartAction();
 
@@ -1821,7 +1836,7 @@ void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
     const size_t nCnt = mpDoc->GetFlyCount(FLYCNTTYPE_FRM);
 
     /* potential successors resp. predecessors */
-    std::vector< const SwFrameFormat * > aTmpSpzArray;
+    ::std::vector< const SwFrameFormat * > aTmpSpzArray;
 
     mpDoc->FindFlyByName(rReference);
 
@@ -1862,7 +1877,7 @@ void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
         /* number of page rFormat resides on */
         sal_uInt16 nPageNum = SwFormatGetPageNum(static_cast<SwFlyFrameFormat *>(&rFormat));
 
-        std::vector< const SwFrameFormat * >::const_iterator aIt;
+        ::std::vector< const SwFrameFormat * >::const_iterator aIt;
 
         for (aIt = aTmpSpzArray.begin(); aIt != aTmpSpzArray.end(); ++aIt)
         {
@@ -1998,7 +2013,7 @@ void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedO
     SwFrameFormat * pFrameFormat = pFly ? pFly->GetFormat() : nullptr;
 
     // baseline to baseline alignment should only be applied to formulas anchored as char
-    if ( pFly && pFrameFormat && RndStdIds::FLY_AS_CHAR == pFrameFormat->GetAnchor().GetAnchorId() )
+    if ( pFly && pFrameFormat && FLY_AS_CHAR == pFrameFormat->GetAnchor().GetAnchorId() )
     {
         // get baseline from Math object
         uno::Any aBaseline;
@@ -2019,8 +2034,8 @@ void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedO
         }
 
         sal_Int32 nBaseline = ::comphelper::getINT32(aBaseline);
-        const MapMode aSourceMapMode( MapUnit::Map100thMM );
-        const MapMode aTargetMapMode( MapUnit::MapTwip );
+        const MapMode aSourceMapMode( MAP_100TH_MM );
+        const MapMode aTargetMapMode( MAP_TWIP );
         nBaseline = OutputDevice::LogicToLogic( nBaseline, aSourceMapMode.GetMapUnit(), aTargetMapMode.GetMapUnit() );
 
         OSL_ENSURE( nBaseline > 0, "Wrong value of Baseline while retrieving from Starmath!" );

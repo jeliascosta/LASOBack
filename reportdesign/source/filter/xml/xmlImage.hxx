@@ -36,7 +36,7 @@ namespace rptxml
                     const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList
                     ,const css::uno::Reference< css::report::XImageControl >& _xComponent
                     ,OXMLTable* _pContainer);
-        virtual ~OXMLImage() override;
+        virtual ~OXMLImage();
     };
 
 } // namespace rptxml

@@ -25,8 +25,6 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <vcl/msgbox.hxx>
-#include <memory>
-#include <o3tl/typed_flags_set.hxx>
 
 namespace com { namespace sun { namespace star {
     namespace sdbc {
@@ -34,16 +32,13 @@ namespace com { namespace sun { namespace star {
     }
 }}}
 
-enum class SADFlags {
-    NONE                  = 0x0000,
-    AdditionalDescription = 0x0001,
-    TitlePasteAs          = 0x0100,
-    TitleRename           = 0x0200,
-};
-namespace o3tl {
-    template<> struct typed_flags<SADFlags> : is_typed_flags<SADFlags, 0x0301> {};
-}
 
+#define SAD_DEFAULT                 0x0000
+#define SAD_ADDITIONAL_DESCRIPTION  0x0001
+
+#define SAD_TITLE_STORE_AS          0x0000
+#define SAD_TITLE_PASTE_AS          0x0100
+#define SAD_TITLE_RENAME            0x0200
 
 class Button;
 class Edit;
@@ -54,7 +49,7 @@ namespace dbaui
     class OSaveAsDlg : public ModalDialog
     {
     private:
-        std::unique_ptr<OSaveAsDlgImpl> m_pImpl;
+        OSaveAsDlgImpl* m_pImpl;
         css::uno::Reference< css::uno::XComponentContext >    m_xContext;
     public:
         OSaveAsDlg( vcl::Window * pParent, sal_Int32 _rType,
@@ -62,23 +57,23 @@ namespace dbaui
                     const css::uno::Reference< css::sdbc::XConnection>& _xConnection,
                     const OUString& rDefault,
                     const IObjectNameCheck& _rObjectNameCheck,
-                    SADFlags _nFlags = SADFlags::NONE);
+                    sal_Int32 _nFlags = SAD_DEFAULT | SAD_TITLE_STORE_AS);
 
         OSaveAsDlg( vcl::Window* _pParent,
                     const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
                     const OUString& _rDefault,
                     const OUString& _sLabel,
                     const IObjectNameCheck& _rObjectNameCheck,
-                    SADFlags _nFlags = SADFlags::NONE);
-        virtual ~OSaveAsDlg() override;
+                    sal_Int32 _nFlags = SAD_DEFAULT | SAD_TITLE_STORE_AS);
+        virtual ~OSaveAsDlg();
         virtual void dispose() override;
 
         const OUString& getName() const;
         OUString getCatalog() const;
         OUString getSchema() const;
     private:
-        DECL_LINK(ButtonClickHdl, Button *, void);
-        DECL_LINK(EditModifyHdl,  Edit&, void);
+        DECL_LINK_TYPED(ButtonClickHdl, Button *, void);
+        DECL_LINK_TYPED(EditModifyHdl,  Edit&, void);
 
         void implInitOnlyTitle(const OUString& _rLabel);
         void implInit();

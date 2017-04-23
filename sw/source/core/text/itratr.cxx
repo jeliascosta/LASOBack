@@ -52,6 +52,7 @@
 #include <itrtxt.hxx>
 #include <breakit.hxx>
 #include <com/sun/star/i18n/WordType.hpp>
+#include <com/sun/star/i18n/ScriptType.hpp>
 #include <editeng/lrspitem.hxx>
 #include <calbck.hxx>
 
@@ -60,29 +61,29 @@ using namespace ::com::sun::star;
 
 void SwAttrIter::Chg( SwTextAttr *pHt )
 {
-    assert(pHt && m_pFont && "No attribute of font available for change");
-    if( m_pRedline && m_pRedline->IsOn() )
-        m_pRedline->ChangeTextAttr( m_pFont, *pHt, true );
+    assert(pHt && pFnt && "No attribute of font available for change");
+    if( pRedln && pRedln->IsOn() )
+        pRedln->ChangeTextAttr( pFnt, *pHt, true );
     else
-        m_aAttrHandler.PushAndChg( *pHt, *m_pFont );
-    m_nChgCnt++;
+        aAttrHandler.PushAndChg( *pHt, *pFnt );
+    nChgCnt++;
 }
 
 void SwAttrIter::Rst( SwTextAttr *pHt )
 {
-    assert(pHt && m_pFont && "No attribute of font available for reset");
+    assert(pHt && pFnt && "No attribute of font available for reset");
     // get top from stack after removing pHt
-    if( m_pRedline && m_pRedline->IsOn() )
-        m_pRedline->ChangeTextAttr( m_pFont, *pHt, false );
+    if( pRedln && pRedln->IsOn() )
+        pRedln->ChangeTextAttr( pFnt, *pHt, false );
     else
-        m_aAttrHandler.PopAndChg( *pHt, *m_pFont );
-    m_nChgCnt--;
+        aAttrHandler.PopAndChg( *pHt, *pFnt );
+    nChgCnt--;
 }
 
 SwAttrIter::~SwAttrIter()
 {
-    delete m_pRedline;
-    delete m_pFont;
+    delete pRedln;
+    delete pFnt;
 }
 
 /**
@@ -107,20 +108,20 @@ SwTextAttr *SwAttrIter::GetAttr( const sal_Int32 nPosition ) const
 
 bool SwAttrIter::SeekAndChgAttrIter( const sal_Int32 nNewPos, OutputDevice* pOut )
 {
-    bool bChg = m_nStartIndex && nNewPos == m_nPosition ? m_pFont->IsFntChg() : Seek( nNewPos );
-    if ( m_pLastOut.get() != pOut )
+    bool bChg = nStartIndex && nNewPos == nPos ? pFnt->IsFntChg() : Seek( nNewPos );
+    if ( pLastOut.get() != pOut )
     {
-        m_pLastOut = pOut;
-        m_pFont->SetFntChg( true );
+        pLastOut = pOut;
+        pFnt->SetFntChg( true );
         bChg = true;
     }
     if( bChg )
     {
         // if the change counter is zero, we know the MagicNo of the wanted font
-        if ( !m_nChgCnt && !m_nPropFont )
-            m_pFont->SetMagic( m_aMagicNo[ m_pFont->GetActual() ],
-                m_aFontIdx[ m_pFont->GetActual() ], m_pFont->GetActual() );
-        m_pFont->ChgPhysFnt( m_pViewShell, *pOut );
+        if ( !nChgCnt && !nPropFont )
+            pFnt->SetMagic( aMagicNo[ pFnt->GetActual() ],
+                aFntIdx[ pFnt->GetActual() ], pFnt->GetActual() );
+        pFnt->ChgPhysFnt( pShell, *pOut );
     }
 
     return bChg;
@@ -129,63 +130,63 @@ bool SwAttrIter::SeekAndChgAttrIter( const sal_Int32 nNewPos, OutputDevice* pOut
 bool SwAttrIter::IsSymbol( const sal_Int32 nNewPos )
 {
     Seek( nNewPos );
-    if ( !m_nChgCnt && !m_nPropFont )
-        m_pFont->SetMagic( m_aMagicNo[ m_pFont->GetActual() ],
-            m_aFontIdx[ m_pFont->GetActual() ], m_pFont->GetActual() );
-    return m_pFont->IsSymbol( m_pViewShell );
+    if ( !nChgCnt && !nPropFont )
+        pFnt->SetMagic( aMagicNo[ pFnt->GetActual() ],
+            aFntIdx[ pFnt->GetActual() ], pFnt->GetActual() );
+    return pFnt->IsSymbol( pShell );
 }
 
 bool SwAttrIter::SeekStartAndChgAttrIter( OutputDevice* pOut, const bool bParaFont )
 {
-    if ( m_pRedline && m_pRedline->ExtOn() )
-        m_pRedline->LeaveExtend( *m_pFont, 0 );
+    if ( pRedln && pRedln->ExtOn() )
+        pRedln->LeaveExtend( *pFnt, 0 );
 
     // reset font to its original state
-    m_aAttrHandler.Reset();
-    m_aAttrHandler.ResetFont( *m_pFont );
+    aAttrHandler.Reset();
+    aAttrHandler.ResetFont( *pFnt );
 
-    m_nStartIndex = 0;
-    m_nEndIndex = 0;
-    m_nPosition = 0;
-    m_nChgCnt = 0;
-    if( m_nPropFont )
-        m_pFont->SetProportion( m_nPropFont );
-    if( m_pRedline )
+    nStartIndex = 0;
+    nEndIndex = 0;
+    nPos = 0;
+    nChgCnt = 0;
+    if( nPropFont )
+        pFnt->SetProportion( nPropFont );
+    if( pRedln )
     {
-        m_pRedline->Clear( m_pFont );
+        pRedln->Clear( pFnt );
         if( !bParaFont )
-            m_nChgCnt = m_nChgCnt + m_pRedline->Seek( *m_pFont, 0, USHRT_MAX );
+            nChgCnt = nChgCnt + pRedln->Seek( *pFnt, 0, USHRT_MAX );
         else
-            m_pRedline->Reset();
+            pRedln->Reset();
     }
 
-    if ( m_pHints && !bParaFont )
+    if ( pHints && !bParaFont )
     {
         SwTextAttr *pTextAttr;
         // While we've not reached the end of the StartArray && the TextAttribute starts at position 0...
-        while ( ( m_nStartIndex < m_pHints->Count() ) &&
-                !((pTextAttr = m_pHints->Get(m_nStartIndex))->GetStart()) )
+        while ( ( nStartIndex < pHints->Count() ) &&
+                !((pTextAttr = pHints->Get(nStartIndex))->GetStart()) )
         {
             // open the TextAttributes
             Chg( pTextAttr );
-            m_nStartIndex++;
+            nStartIndex++;
         }
     }
 
-    bool bChg = m_pFont->IsFntChg();
-    if ( m_pLastOut.get() != pOut )
+    bool bChg = pFnt->IsFntChg();
+    if ( pLastOut.get() != pOut )
     {
-        m_pLastOut = pOut;
-        m_pFont->SetFntChg( true );
+        pLastOut = pOut;
+        pFnt->SetFntChg( true );
         bChg = true;
     }
     if( bChg )
     {
         // if the application counter is zero, we know the MagicNo of the wanted font
-        if ( !m_nChgCnt && !m_nPropFont )
-            m_pFont->SetMagic( m_aMagicNo[ m_pFont->GetActual() ],
-                m_aFontIdx[ m_pFont->GetActual() ], m_pFont->GetActual() );
-        m_pFont->ChgPhysFnt( m_pViewShell, *pOut );
+        if ( !nChgCnt && !nPropFont )
+            pFnt->SetMagic( aMagicNo[ pFnt->GetActual() ],
+                aFntIdx[ pFnt->GetActual() ], pFnt->GetActual() );
+        pFnt->ChgPhysFnt( pShell, *pOut );
     }
     return bChg;
 }
@@ -195,99 +196,99 @@ void SwAttrIter::SeekFwd( const sal_Int32 nNewPos )
 {
     SwTextAttr *pTextAttr;
 
-    if ( m_nStartIndex ) // If attributes have been opened at all ...
+    if ( nStartIndex ) // If attributes have been opened at all ...
     {
         // Close attributes that are currently open, but stop at nNewPos+1
 
         // As long as we've not yet reached the end of EndArray and the
         // TextAttribute ends before or at the new position ...
-        while ( ( m_nEndIndex < m_pHints->Count() ) &&
-                (*(pTextAttr=m_pHints->GetSortedByEnd(m_nEndIndex))->GetAnyEnd()<=nNewPos))
+        while ( ( nEndIndex < pHints->Count() ) &&
+                (*(pTextAttr=pHints->GetSortedByEnd(nEndIndex))->GetAnyEnd()<=nNewPos))
         {
             // Close the TextAttributes, whose StartPos were before or at
             // the old nPos and are currently open
-            if (pTextAttr->GetStart() <= m_nPosition)  Rst( pTextAttr );
-            m_nEndIndex++;
+            if (pTextAttr->GetStart() <= nPos)  Rst( pTextAttr );
+            nEndIndex++;
         }
     }
     else // skip the not opended ends
     {
-        while ( (m_nEndIndex < m_pHints->Count()) &&
-                (*m_pHints->GetSortedByEnd(m_nEndIndex)->GetAnyEnd() <= nNewPos) )
+        while ( (nEndIndex < pHints->Count()) &&
+                (*pHints->GetSortedByEnd(nEndIndex)->GetAnyEnd() <= nNewPos) )
         {
-            m_nEndIndex++;
+            nEndIndex++;
         }
     }
 
     // As long as we've not yet reached the end of EndArray and the
     // TextAttribute ends before or at the new position ...
-    while ( ( m_nStartIndex < m_pHints->Count() ) &&
-            ((pTextAttr=m_pHints->Get(m_nStartIndex))->GetStart()<=nNewPos) )
+    while ( ( nStartIndex < pHints->Count() ) &&
+            ((pTextAttr=pHints->Get(nStartIndex))->GetStart()<=nNewPos) )
     {
 
         // open the TextAttributes, whose ends lie behind the new position
         if ( *pTextAttr->GetAnyEnd() > nNewPos )  Chg( pTextAttr );
-        m_nStartIndex++;
+        nStartIndex++;
     }
 
 }
 
 bool SwAttrIter::Seek( const sal_Int32 nNewPos )
 {
-    if ( m_pRedline && m_pRedline->ExtOn() )
-        m_pRedline->LeaveExtend( *m_pFont, nNewPos );
+    if ( pRedln && pRedln->ExtOn() )
+        pRedln->LeaveExtend( *pFnt, nNewPos );
 
-    if( m_pHints )
+    if( pHints )
     {
-        if( !nNewPos || nNewPos < m_nPosition )
+        if( !nNewPos || nNewPos < nPos )
         {
-            if( m_pRedline )
-                m_pRedline->Clear( nullptr );
+            if( pRedln )
+                pRedln->Clear( nullptr );
 
             // reset font to its original state
-            m_aAttrHandler.Reset();
-            m_aAttrHandler.ResetFont( *m_pFont );
+            aAttrHandler.Reset();
+            aAttrHandler.ResetFont( *pFnt );
 
-            if( m_nPropFont )
-                m_pFont->SetProportion( m_nPropFont );
-            m_nStartIndex = 0;
-            m_nEndIndex = 0;
-            m_nPosition = 0;
-            m_nChgCnt = 0;
+            if( nPropFont )
+                pFnt->SetProportion( nPropFont );
+            nStartIndex = 0;
+            nEndIndex = 0;
+            nPos = 0;
+            nChgCnt = 0;
 
             // Attention!
             // resetting the font here makes it necessary to apply any
             // changes for extended input directly to the font
-            if ( m_pRedline && m_pRedline->ExtOn() )
+            if ( pRedln && pRedln->ExtOn() )
             {
-                m_pRedline->UpdateExtFont( *m_pFont );
-                ++m_nChgCnt;
+                pRedln->UpdateExtFont( *pFnt );
+                ++nChgCnt;
             }
         }
         SeekFwd( nNewPos );
     }
 
-    m_pFont->SetActual( SwScriptInfo::WhichFont( nNewPos, nullptr, m_pScriptInfo ) );
+    pFnt->SetActual( SwScriptInfo::WhichFont( nNewPos, nullptr, pScriptInfo ) );
 
-    if( m_pRedline )
-        m_nChgCnt = m_nChgCnt + m_pRedline->Seek( *m_pFont, nNewPos, m_nPosition );
-    m_nPosition = nNewPos;
+    if( pRedln )
+        nChgCnt = nChgCnt + pRedln->Seek( *pFnt, nNewPos, nPos );
+    nPos = nNewPos;
 
-    if( m_nPropFont )
-        m_pFont->SetProportion( m_nPropFont );
+    if( nPropFont )
+        pFnt->SetProportion( nPropFont );
 
-    return m_pFont->IsFntChg();
+    return pFnt->IsFntChg();
 }
 
 sal_Int32 SwAttrIter::GetNextAttr( ) const
 {
     sal_Int32 nNext = COMPLETE_STRING;
-    if( m_pHints )
+    if( pHints )
     {
         // are there attribute starts left?
-        for (size_t i = m_nStartIndex; i < m_pHints->Count(); ++i)
+        for (size_t i = nStartIndex; i < pHints->Count(); ++i)
         {
-            SwTextAttr *const pAttr(m_pHints->Get(i));
+            SwTextAttr *const pAttr(pHints->Get(i));
             if (!pAttr->IsFormatIgnoreStart())
             {
                 nNext = pAttr->GetStart();
@@ -295,9 +296,9 @@ sal_Int32 SwAttrIter::GetNextAttr( ) const
             }
         }
         // are there attribute ends left?
-        for (size_t i = m_nEndIndex; i < m_pHints->Count(); ++i)
+        for (size_t i = nEndIndex; i < pHints->Count(); ++i)
         {
-            SwTextAttr *const pAttr(m_pHints->GetSortedByEnd(i));
+            SwTextAttr *const pAttr(pHints->GetSortedByEnd(i));
             if (!pAttr->IsFormatIgnoreEnd())
             {
                 sal_Int32 const nNextEnd = *pAttr->GetAnyEnd();
@@ -309,7 +310,7 @@ sal_Int32 SwAttrIter::GetNextAttr( ) const
     if (m_pTextNode!=nullptr) {
         // TODO: maybe use hints like FieldHints for this instead of looking at the text...
         const sal_Int32 l = nNext<m_pTextNode->Len() ? nNext : m_pTextNode->Len();
-        sal_Int32 p=m_nPosition;
+        sal_Int32 p=nPos;
         const sal_Unicode* aStr = m_pTextNode->GetText().getStr();
         while (p<l)
         {
@@ -324,13 +325,13 @@ sal_Int32 SwAttrIter::GetNextAttr( ) const
                 break;
             }
         }
-        if ((p<l && p>m_nPosition) || nNext<=p)
+        if ((p<l && p>nPos) || nNext<=p)
         nNext=p;
         else
         nNext=p+1;
     }
-    if( m_pRedline )
-        return m_pRedline->GetNextRedln( nNext );
+    if( pRedln )
+        return pRedln->GetNextRedln( nNext );
     return nNext;
 }
 
@@ -432,8 +433,8 @@ static void lcl_MinMaxNode( SwFrameFormat* pNd, SwMinMaxNodeArgs* pIn )
 {
     const SwFormatAnchor& rFormatA = pNd->GetAnchor();
 
-    if ((RndStdIds::FLY_AT_PARA != rFormatA.GetAnchorId()) &&
-        (RndStdIds::FLY_AT_CHAR != rFormatA.GetAnchorId()))
+    if ((FLY_AT_PARA != rFormatA.GetAnchorId()) &&
+        (FLY_AT_CHAR != rFormatA.GetAnchorId()))
     {
         return;
     }
@@ -501,7 +502,7 @@ static void lcl_MinMaxNode( SwFrameFormat* pNd, SwMinMaxNodeArgs* pIn )
     nMax += rLR.GetLeft();
     nMax += rLR.GetRight();
 
-    if( css::text::WrapTextMode_THROUGH == pNd->GetSurround().GetSurround() )
+    if( SURROUND_THROUGHT == pNd->GetSurround().GetSurround() )
     {
         pIn->Minimum( nMin );
         return;
@@ -564,7 +565,7 @@ void SwTextNode::GetMinMaxSize( sal_uLong nIndex, sal_uLong& rMin, sal_uLong &rM
         pOut = Application::GetDefaultDevice();
 
     MapMode aOldMap( pOut->GetMapMode() );
-    pOut->SetMapMode( MapMode( MapUnit::MapTwip ) );
+    pOut->SetMapMode( MapMode( MAP_TWIP ) );
 
     rMin = 0;
     rMax = 0;
@@ -803,7 +804,7 @@ sal_uInt16 SwTextNode::GetScalingOfSelectedText( sal_Int32 nStt, sal_Int32 nEnd 
     OSL_ENSURE( pOut, "GetScalingOfSelectedText without outdev" );
 
     MapMode aOldMap( pOut->GetMapMode() );
-    pOut->SetMapMode( MapMode( MapUnit::MapTwip ) );
+    pOut->SetMapMode( MapMode( MAP_TWIP ) );
 
     if ( nStt == nEnd )
     {
@@ -1017,12 +1018,12 @@ SwTwips SwTextNode::GetWidthOfLeadingTabs() const
             // Only consider master frames:
             if ( !pFrame->IsFollow() )
             {
-                SwRectFnSet aRectFnSet(pFrame);
+                SWRECTFN( pFrame )
                 SwRect aRect;
                 pFrame->GetCharRect( aRect, aPos );
                 nRet = pFrame->IsRightToLeft() ?
-                            aRectFnSet.GetPrtRight(*pFrame) - aRectFnSet.GetRight(aRect) :
-                            aRectFnSet.GetLeft(aRect) - aRectFnSet.GetPrtLeft(*pFrame);
+                            (pFrame->*fnRect->fnGetPrtRight)() - (aRect.*fnRect->fnGetRight)() :
+                            (aRect.*fnRect->fnGetLeft)() - (pFrame->*fnRect->fnGetPrtLeft)();
                 break;
             }
         }

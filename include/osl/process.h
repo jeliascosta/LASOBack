@@ -140,10 +140,17 @@ typedef void* oslProcess;
     [out] Pointer to a oslProcess variable, which receives the handle of the newly created process.
     This parameter must not be NULL.
 
-    @retval osl_Process_E_None on success
-    @retval osl_Process_E_NotFound if the specified executable could not be found</dd>
-    @retval osl_Process_E_InvalidError if invalid parameters will be detected</dd>
-    @retval osl_Process_E_Unknown if arbitrary other errors occur</dd>
+    @return
+    <dl>
+    <dt>osl_Process_E_None</dt>
+    <dd>on success</dd>
+    <dt>osl_Process_E_NotFound</dt>
+    <dd>if the specified executable could not be found</dd>
+    <dt>osl_Process_E_InvalidError</dt>
+    <dd>if invalid parameters will be detected</dd>
+    <dt>osl_Process_E_Unknown</dt>
+    <dd>if arbitrary other errors occur</dd>
+    </dl>
 
     @see oslProcessOption
     @see osl_executeProcess_WithRedirectedIO
@@ -218,10 +225,17 @@ SAL_DLLPUBLIC oslProcessError SAL_CALL osl_executeProcess(
     the child process standard error device. The returned handle is not random accessible.
     The Handle has to be closed with osl_closeFile if no longer used. This parameter can be NULL.
 
-    @retval osl_Process_E_None on success
-    @retval osl_Process_E_NotFound if the specified executable could not be found
-    @retval osl_Process_E_InvalidError if invalid parameters will be detected
-    @retval osl_Process_E_Unknown if arbitrary other errors occur
+    @return
+    <dl>
+    <dt>osl_Process_E_None</dt>
+    <dd>on success</dd>
+    <dt>osl_Process_E_NotFound</dt>
+    <dd>if the specified executable could not be found</dd>
+    <dt>osl_Process_E_InvalidError</dt>
+    <dd>if invalid parameters will be detected</dd>
+    <dt>osl_Process_E_Unknown</dt>
+    <dd>if arbitrary other errors occur</dd>
+    </dl>
 
     @see oslProcessOption
     @see osl_executeProcess
@@ -273,7 +287,7 @@ SAL_DLLPUBLIC void SAL_CALL osl_freeProcessHandle(
 
 /** Wait for completion of the specified childprocess.
     @param Process [in]
-    @retval ols_Process_E_None
+    @return ols_Process_E_None
     @see osl_executeProcess
 */
 SAL_DLLPUBLIC oslProcessError SAL_CALL osl_joinProcess(
@@ -289,9 +303,10 @@ SAL_DLLPUBLIC oslProcessError SAL_CALL osl_joinProcess(
     A timeout value or NULL for infinite waiting.
     The unit of resolution is second.
 
-    @retval osl_Process_E_None on success
-    @retval osl_Process_E_TimedOut waiting for the child process timed out
-    @retval osl_Process_E_Unknown an error occurred or the parameter are invalid
+    @return
+    osl_Process_E_None on success
+    osl_Process_E_TimedOut waiting for the child process timed out
+    osl_Process_E_Unknown an error occurred or the parameter are invalid
 
     @see osl_executeProcess
 */
@@ -311,8 +326,7 @@ SAL_DLLPUBLIC oslProcessError SAL_CALL osl_joinProcessWithTimeout(
                         of the oslProcessInfo structure.
                         on success the Field member holds the (or'ed)
                         retrieved valid information fields.
-    @retval osl_Process_E_None on success
-    @retval osl_Process_E_Unknown on failure
+    @return osl_Process_E_None on success, osl_Process_E_Unknown on failure.
  */
 SAL_DLLPUBLIC oslProcessError SAL_CALL osl_getProcessInfo(
         oslProcess Process, oslProcessData Fields, oslProcessInfo* pInfo);
@@ -396,7 +410,11 @@ SAL_DLLPUBLIC oslProcessError SAL_CALL osl_getProcessWorkingDir(
 
 /** Get the locale the process is currently running in.
 
+    The unix implementation caches the value it returns, so if you have to change the locale
+    your are running in, you will have to use osl_setProcessLocale
+
     @param  ppLocale [out] a pointer that receives the currently selected locale structure
+    @see osl_setProcessLocale
 */
 
 SAL_DLLPUBLIC oslProcessError SAL_CALL osl_getProcessLocale(
@@ -405,9 +423,7 @@ SAL_DLLPUBLIC oslProcessError SAL_CALL osl_getProcessLocale(
 /** Change the locale of the process.
 
     @param  pLocale [in] a pointer to the locale to be set
-
-    @deprecated  LibreOffice itself does not use this, and client code should
-    not have good use for it either.  It may eventually be removed.
+    @see osl_getProcessLocale
 */
 
 SAL_DLLPUBLIC oslProcessError SAL_CALL osl_setProcessLocale(

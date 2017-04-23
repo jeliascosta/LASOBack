@@ -37,6 +37,7 @@
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
 
 #include <connectivity/dbtools.hxx>
+#include <svl/smplhint.hxx>
 #include <tools/diagnose_ex.h>
 #include <comphelper/stl_types.hxx>
 #include <vcl/svapp.hxx>

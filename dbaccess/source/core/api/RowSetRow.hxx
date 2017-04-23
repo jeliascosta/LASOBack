@@ -29,7 +29,7 @@ namespace dbaccess
 {
     typedef connectivity::ORowVector< connectivity::ORowSetValue >  ORowSetValueVector;
     typedef ::rtl::Reference< ORowSetValueVector >                      ORowSetRow;
-    typedef std::vector< ORowSetRow >                             ORowSetMatrix;
+    typedef ::std::vector< ORowSetRow >                             ORowSetMatrix;
 
     class ORowSetOldRowHelper : public salhelper::SimpleReferenceObject
     {
@@ -43,8 +43,8 @@ namespace dbaccess
         {}
 
         const ORowSetRow& getRow() const { return m_aRow; }
-        void clearRow() { m_aRow = nullptr; }
-        void setRow(const ORowSetRow& _rRow) { m_aRow = _rRow; }
+        inline void clearRow() { m_aRow = nullptr; }
+        inline void setRow(const ORowSetRow& _rRow) { m_aRow = _rRow; }
     };
 
     typedef ::rtl::Reference< ORowSetOldRowHelper > TORowSetOldRowHelperRef;

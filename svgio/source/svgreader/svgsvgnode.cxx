@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgsvgnode.hxx>
+#include <svgio/svgreader/svgsvgnode.hxx>
 #include <drawinglayer/geometry/viewinformation2d.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/maskprimitive2d.hxx>
@@ -106,6 +106,7 @@ namespace svgio
 
         SvgSvgNode::~SvgSvgNode()
         {
+            delete mpViewBox;
         }
 
         const SvgStyleAttributes* SvgSvgNode::getSvgStyleAttributes() const
@@ -142,7 +143,7 @@ namespace svgio
                 }
                 case SVGTokenPreserveAspectRatio:
                 {
-                    maSvgAspectRatio = readSvgAspectRatio(aContent);
+                    setSvgAspectRatio(readSvgAspectRatio(aContent));
                     break;
                 }
                 case SVGTokenX:
@@ -151,7 +152,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX = aNum;
+                        setX(aNum);
                     }
                     break;
                 }
@@ -161,7 +162,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY = aNum;
+                        setY(aNum);
                     }
                     break;
                 }
@@ -173,7 +174,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maWidth = aNum;
+                            setWidth(aNum);
                         }
                     }
                     break;
@@ -186,7 +187,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maHeight = aNum;
+                            setHeight(aNum);
                         }
                     }
                     break;
@@ -197,7 +198,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maVersion = aNum;
+                        setVersion(aNum);
                     }
                     break;
                 }

@@ -88,7 +88,7 @@ const sal_uInt16 SvxSlantTabPage::pSlantRanges[] =
 \************************************************************************/
 
 SvxTransformTabDialog::SvxTransformTabDialog( vcl::Window* pParent, const SfxItemSet* pAttr,
-                                const SdrView* pSdrView, SvxAnchorIds nAnchorTypes )
+                                const SdrView* pSdrView, sal_uInt16 nAnchorTypes )
     : SfxTabDialog( pParent
                   ,"PositionAndSizeDialog"
                   ,"cui/ui/positionsizedialog.ui"
@@ -101,7 +101,7 @@ SvxTransformTabDialog::SvxTransformTabDialog( vcl::Window* pParent, const SfxIte
     DBG_ASSERT(pView, "no valid view (!)");
 
     //different positioning page in Writer
-    if(nAnchorCtrls & (SvxAnchorIds::Paragraph | SvxAnchorIds::Character | SvxAnchorIds::Page | SvxAnchorIds::Fly))
+    if(nAnchorCtrls & 0x00ff)
     {
         nSWPosSize = AddTabPage("RID_SVXPAGE_SWPOSSIZE", SvxSwPosSizeTabPage::Create, SvxSwPosSizeTabPage::GetRanges);
         RemoveTabPage("RID_SVXPAGE_POSITION_SIZE");
@@ -125,12 +125,12 @@ void SvxTransformTabDialog::PageCreated(sal_uInt16 nId, SfxTabPage &rPage)
             rSvxPos.SetView(pView);
             rSvxPos.Construct();
 
-            if(nAnchorCtrls & SvxAnchorIds::NoResize)
+            if(nAnchorCtrls & SVX_OBJ_NORESIZE)
             {
                 rSvxPos.DisableResize();
             }
 
-            if(nAnchorCtrls & SvxAnchorIds::NoProtect)
+            if(nAnchorCtrls & SVX_OBJ_NOPROTECT)
             {
                 rSvxPos.DisableProtect();
                 rSvxPos.UpdateControlStates();
@@ -228,7 +228,7 @@ void SvxAngleTabPage::Construct()
     }
 
     { // #i75273#
-        ::tools::Rectangle aTempRect(pView->GetAllMarkedRect());
+        Rectangle aTempRect(pView->GetAllMarkedRect());
         pView->GetSdrPageView()->LogicToPagePos(aTempRect);
         maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
     }
@@ -253,7 +253,7 @@ void SvxAngleTabPage::Construct()
 
     // take UI units into account
     sal_uInt16 nDigits(m_pMtrPosX->GetDecimalDigits());
-    TransfrmHelper::ConvertRect(maRange, nDigits, ePoolUnit, eDlgUnit);
+    TransfrmHelper::ConvertRect(maRange, nDigits, (MapUnit)ePoolUnit, eDlgUnit);
 
     if(!pView->IsRotateAllowed())
     {
@@ -333,72 +333,72 @@ void SvxAngleTabPage::ActivatePage(const SfxItemSet& /*rSet*/)
 }
 
 
-DeactivateRC SvxAngleTabPage::DeactivatePage( SfxItemSet* _pSet )
+SfxTabPage::sfxpg SvxAngleTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if(_pSet)
     {
         FillItemSet(_pSet);
     }
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 
-void SvxAngleTabPage::PointChanged(vcl::Window* pWindow, RectPoint eRP)
+void SvxAngleTabPage::PointChanged(vcl::Window* pWindow, RECT_POINT eRP)
 {
     if(pWindow == m_pCtlRect)
     {
         switch(eRP)
         {
-            case RectPoint::LT:
+            case RP_LT:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMinX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMinY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::MT:
+            case RP_MT:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getCenter().getX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMinY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::RT:
+            case RP_RT:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMaxX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMinY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::LM:
+            case RP_LM:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMinX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getCenter().getY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::MM:
+            case RP_MM:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getCenter().getX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getCenter().getY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::RM:
+            case RP_RM:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMaxX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getCenter().getY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::LB:
+            case RP_LB:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMinX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMaxY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::MB:
+            case RP_MB:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getCenter().getX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMaxY()), FUNIT_NONE );
                 break;
             }
-            case RectPoint::RB:
+            case RP_RB:
             {
                 m_pMtrPosX->SetUserValue( basegfx::fround64(maRange.getMaxX()), FUNIT_NONE );
                 m_pMtrPosY->SetUserValue( basegfx::fround64(maRange.getMaxY()), FUNIT_NONE );
@@ -473,7 +473,7 @@ void SvxSlantTabPage::Construct()
     SetFieldUnit(*m_pMtrRadius, eDlgUnit, true);
 
     { // #i75273#
-        ::tools::Rectangle aTempRect(pView->GetAllMarkedRect());
+        Rectangle aTempRect(pView->GetAllMarkedRect());
         pView->GetSdrPageView()->LogicToPagePos(aTempRect);
         maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
     }
@@ -507,7 +507,7 @@ bool SvxSlantTabPage::FillItemSet(SfxItemSet* rAttrs)
     if( bModified )
     {
         // set reference points
-        ::tools::Rectangle aObjectRect(pView->GetAllMarkedRect());
+        Rectangle aObjectRect(pView->GetAllMarkedRect());
         pView->GetSdrPageView()->LogicToPagePos(aObjectRect);
         Point aPt = aObjectRect.Center();
 
@@ -536,7 +536,7 @@ bool SvxSlantTabPage::FillItemSet(SfxItemSet* rAttrs)
         pModel->BegUndo(pUndo->GetComment());
 
     EnhancedCustomShape2d aShape(pObj);
-    ::tools::Rectangle aLogicRect = aShape.GetLogicRect();
+    Rectangle aLogicRect = aShape.GetLogicRect();
 
     for (int i = 0; i < 2; ++i)
     {
@@ -651,7 +651,7 @@ void SvxSlantTabPage::Reset(const SfxItemSet* rAttrs)
                 Point aMinPosition;
                 aShape.GetHandlePosition(i, aMinPosition);
 
-                ::tools::Rectangle aLogicRect = aShape.GetLogicRect();
+                Rectangle aLogicRect = aShape.GetLogicRect();
                 aInitialPosition.Move(-aLogicRect.Left(), -aLogicRect.Top());
                 aMaxPosition.Move(-aLogicRect.Left(), -aLogicRect.Top());
                 aMinPosition.Move(-aLogicRect.Left(), -aLogicRect.Top());
@@ -697,24 +697,24 @@ void SvxSlantTabPage::ActivatePage( const SfxItemSet& rSet )
 
     if( SfxItemState::SET == rSet.GetItemState( GetWhich( SID_ATTR_TRANSFORM_INTERN ) , false, reinterpret_cast<SfxPoolItem const **>(&pRectItem) ) )
     {
-        const ::tools::Rectangle aTempRect(pRectItem->GetValue());
+        const Rectangle aTempRect(pRectItem->GetValue());
         maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
     }
 }
 
 
-DeactivateRC SvxSlantTabPage::DeactivatePage( SfxItemSet* _pSet )
+SfxTabPage::sfxpg SvxSlantTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if(_pSet)
     {
         FillItemSet(_pSet);
     }
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 
-void SvxSlantTabPage::PointChanged( vcl::Window* , RectPoint  )
+void SvxSlantTabPage::PointChanged( vcl::Window* , RECT_POINT  )
 {
 }
 
@@ -765,9 +765,9 @@ SvxPositionSizeTabPage::SvxPositionSizeTabPage(vcl::Window* pParent, const SfxIt
     DBG_ASSERT( pPool, "no pool (!)" );
     mePoolUnit = pPool->GetMetric( SID_ATTR_TRANSFORM_POS_X );
 
-    m_pCtlPos->SetActualRP(RectPoint::LT);
-    m_pCtlSize->SetActualRP(RectPoint::LT);
-    meRP = RectPoint::LT; // see above
+    m_pCtlPos->SetActualRP(RP_LT);
+    m_pCtlSize->SetActualRP(RP_LT);
+    meRP = RP_LT; // see above
 
     m_pMtrWidth->SetModifyHdl( LINK( this, SvxPositionSizeTabPage, ChangeWidthHdl ) );
     m_pMtrHeight->SetModifyHdl( LINK( this, SvxPositionSizeTabPage, ChangeHeightHdl ) );
@@ -829,13 +829,13 @@ void SvxPositionSizeTabPage::Construct()
     }
 
     { // #i75273#
-        ::tools::Rectangle aTempRect(mpView->GetAllMarkedRect());
+        Rectangle aTempRect(mpView->GetAllMarkedRect());
         mpView->GetSdrPageView()->LogicToPagePos(aTempRect);
         maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
     }
 
     { // #i75273#
-        ::tools::Rectangle aTempRect(mpView->GetWorkArea());
+        Rectangle aTempRect(mpView->GetWorkArea());
         mpView->GetSdrPageView()->LogicToPagePos(aTempRect);
         maWorkRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
     }
@@ -876,7 +876,7 @@ void SvxPositionSizeTabPage::Construct()
         const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
         const SdrObjKind eKind((SdrObjKind)pObj->GetObjIdentifier());
 
-        if((pObj->GetObjInventor() == SdrInventor::Default) &&
+        if((pObj->GetObjInventor() == SdrInventor) &&
             (OBJ_TEXT == eKind || OBJ_TITLETEXT == eKind || OBJ_OUTLINETEXT == eKind) &&
             pObj->HasText())
         {
@@ -900,8 +900,8 @@ void SvxPositionSizeTabPage::Construct()
 
     // take UI units into account
     const sal_uInt16 nDigits(m_pMtrPosX->GetDecimalDigits());
-    TransfrmHelper::ConvertRect( maWorkRange, nDigits, mePoolUnit, meDlgUnit );
-    TransfrmHelper::ConvertRect( maRange, nDigits, mePoolUnit, meDlgUnit );
+    TransfrmHelper::ConvertRect( maWorkRange, nDigits, (MapUnit) mePoolUnit, meDlgUnit );
+    TransfrmHelper::ConvertRect( maRange, nDigits, (MapUnit) mePoolUnit, meDlgUnit );
 
     SetMinMaxPosition();
 }
@@ -930,7 +930,7 @@ bool SvxPositionSizeTabPage::FillItemSet( SfxItemSet* rOutAttrs )
             double fY((GetCoreValue( *m_pMtrPosY, mePoolUnit ) + maAnchor.getY()) * fUIScale);
 
             { // #i75273#
-                ::tools::Rectangle aTempRect(mpView->GetAllMarkedRect());
+                Rectangle aTempRect(mpView->GetAllMarkedRect());
                 mpView->GetSdrPageView()->LogicToPagePos(aTempRect);
                 maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
             }
@@ -969,14 +969,14 @@ bool SvxPositionSizeTabPage::FillItemSet( SfxItemSet* rOutAttrs )
         double nWidth = static_cast<double>(m_pMtrWidth->GetValue( meDlgUnit ));
         nWidth = MetricField::ConvertDoubleValue( nWidth, m_pMtrWidth->GetBaseValue(), m_pMtrWidth->GetDecimalDigits(), meDlgUnit, FUNIT_100TH_MM );
         long lWidth = long(nWidth * (double)aUIScale);
-        lWidth = OutputDevice::LogicToLogic( lWidth, MapUnit::Map100thMM, mePoolUnit );
+        lWidth = OutputDevice::LogicToLogic( lWidth, MAP_100TH_MM, (MapUnit)mePoolUnit );
         lWidth = static_cast<long>(m_pMtrWidth->Denormalize( lWidth ));
 
         // get Height
         double nHeight = static_cast<double>(m_pMtrHeight->GetValue( meDlgUnit ));
         nHeight = MetricField::ConvertDoubleValue( nHeight, m_pMtrHeight->GetBaseValue(), m_pMtrHeight->GetDecimalDigits(), meDlgUnit, FUNIT_100TH_MM );
         long lHeight = long(nHeight * (double)aUIScale);
-        lHeight = OutputDevice::LogicToLogic( lHeight, MapUnit::Map100thMM, mePoolUnit );
+        lHeight = OutputDevice::LogicToLogic( lHeight, MAP_100TH_MM, (MapUnit)mePoolUnit );
         lHeight = static_cast<long>(m_pMtrHeight->Denormalize( lHeight ));
 
         // put Width & Height to itemset
@@ -1073,7 +1073,7 @@ void SvxPositionSizeTabPage::Reset( const SfxItemSet*  )
     { // #i75273# set width
         pItem = GetItem( mrOutAttrs, SID_ATTR_TRANSFORM_WIDTH );
         mfOldWidth = std::max( pItem ? (double)static_cast<const SfxUInt32Item*>(pItem)->GetValue() : 0.0, 1.0 );
-        double fTmpWidth((OutputDevice::LogicToLogic(static_cast<sal_Int32>(mfOldWidth), mePoolUnit, MapUnit::Map100thMM)) / fUIScale);
+        double fTmpWidth((OutputDevice::LogicToLogic(static_cast<sal_Int32>(mfOldWidth), (MapUnit)mePoolUnit, MAP_100TH_MM)) / fUIScale);
 
         if(m_pMtrWidth->GetDecimalDigits())
             fTmpWidth *= pow(10.0, m_pMtrWidth->GetDecimalDigits());
@@ -1085,7 +1085,7 @@ void SvxPositionSizeTabPage::Reset( const SfxItemSet*  )
     { // #i75273# set height
         pItem = GetItem( mrOutAttrs, SID_ATTR_TRANSFORM_HEIGHT );
         mfOldHeight = std::max( pItem ? (double)static_cast<const SfxUInt32Item*>(pItem)->GetValue() : 0.0, 1.0 );
-        double fTmpHeight((OutputDevice::LogicToLogic(static_cast<sal_Int32>(mfOldHeight), mePoolUnit, MapUnit::Map100thMM)) / fUIScale);
+        double fTmpHeight((OutputDevice::LogicToLogic(static_cast<sal_Int32>(mfOldHeight), (MapUnit)mePoolUnit, MAP_100TH_MM)) / fUIScale);
 
         if(m_pMtrHeight->GetDecimalDigits())
             fTmpHeight *= pow(10.0, m_pMtrHeight->GetDecimalDigits());
@@ -1149,7 +1149,7 @@ void SvxPositionSizeTabPage::ActivatePage( const SfxItemSet& rSet )
     if( SfxItemState::SET == rSet.GetItemState( GetWhich( SID_ATTR_TRANSFORM_INTERN ) , false, reinterpret_cast<SfxPoolItem const **>(&pRectItem) ) )
     {
         { // #i75273#
-            const ::tools::Rectangle aTempRect(pRectItem->GetValue());
+            const Rectangle aTempRect(pRectItem->GetValue());
             maRange = basegfx::B2DRange(aTempRect.Left(), aTempRect.Top(), aTempRect.Right(), aTempRect.Bottom());
         }
 
@@ -1158,7 +1158,7 @@ void SvxPositionSizeTabPage::ActivatePage( const SfxItemSet& rSet )
 }
 
 
-DeactivateRC SvxPositionSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
+SfxTabPage::sfxpg SvxPositionSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if( _pSet )
     {
@@ -1166,7 +1166,7 @@ DeactivateRC SvxPositionSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
         double fY((double)m_pMtrPosY->GetValue());
 
         GetTopLeftPosition(fX, fY, maRange);
-        const ::tools::Rectangle aOutRectangle(
+        const Rectangle aOutRectangle(
             basegfx::fround(fX), basegfx::fround(fY),
             basegfx::fround(fX + maRange.getWidth()), basegfx::fround(fY + maRange.getHeight()));
         _pSet->Put(SfxRectangleItem(SID_ATTR_TRANSFORM_INTERN, aOutRectangle));
@@ -1174,11 +1174,11 @@ DeactivateRC SvxPositionSizeTabPage::DeactivatePage( SfxItemSet* _pSet )
         FillItemSet(_pSet);
     }
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangePosProtectHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ChangePosProtectHdl, Button*, void)
 {
     // #106572# Remember user's last choice
     m_pTsbSizeProtect->SetState( m_pTsbPosProtect->GetState() == TRISTATE_TRUE ?  TRISTATE_TRUE : mnProtectSizeState );
@@ -1219,7 +1219,7 @@ void SvxPositionSizeTabPage::UpdateControlStates()
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangeSizeProtectHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ChangeSizeProtectHdl, Button*, void)
 {
     if( m_pTsbSizeProtect->IsEnabled() )
     {
@@ -1248,33 +1248,33 @@ void SvxPositionSizeTabPage::SetMinMaxPosition()
 
     switch ( m_pCtlPos->GetActualRP() )
     {
-        case RectPoint::LT:
+        case RP_LT:
         {
             fRight  -= maRange.getWidth();
             fBottom -= maRange.getHeight();
             break;
         }
-        case RectPoint::MT:
+        case RP_MT:
         {
             fLeft   += maRange.getWidth() / 2.0;
             fRight  -= maRange.getWidth() / 2.0;
             fBottom -= maRange.getHeight();
             break;
         }
-        case RectPoint::RT:
+        case RP_RT:
         {
             fLeft   += maRange.getWidth();
             fBottom -= maRange.getHeight();
             break;
         }
-        case RectPoint::LM:
+        case RP_LM:
         {
             fRight  -= maRange.getWidth();
             fTop    += maRange.getHeight() / 2.0;
             fBottom -= maRange.getHeight() / 2.0;
             break;
         }
-        case RectPoint::MM:
+        case RP_MM:
         {
             fLeft   += maRange.getWidth() / 2.0;
             fRight  -= maRange.getWidth() / 2.0;
@@ -1282,27 +1282,27 @@ void SvxPositionSizeTabPage::SetMinMaxPosition()
             fBottom -= maRange.getHeight() / 2.0;
             break;
         }
-        case RectPoint::RM:
+        case RP_RM:
         {
             fLeft   += maRange.getWidth();
             fTop    += maRange.getHeight() / 2.0;
             fBottom -= maRange.getHeight() / 2.0;
             break;
         }
-        case RectPoint::LB:
+        case RP_LB:
         {
             fRight  -= maRange.getWidth();
             fTop    += maRange.getHeight();
             break;
         }
-        case RectPoint::MB:
+        case RP_MB:
         {
             fLeft   += maRange.getWidth() / 2.0;
             fRight  -= maRange.getWidth() / 2.0;
             fTop    += maRange.getHeight();
             break;
         }
-        case RectPoint::RB:
+        case RP_RB:
         {
             fLeft   += maRange.getWidth();
             fTop    += maRange.getHeight();
@@ -1310,7 +1310,7 @@ void SvxPositionSizeTabPage::SetMinMaxPosition()
         }
     }
 
-    const double fMaxLong((double)(MetricField::ConvertValue( LONG_MAX, 0, MapUnit::Map100thMM, meDlgUnit ) - 1L));
+    const double fMaxLong((double)(MetricField::ConvertValue( LONG_MAX, 0, MAP_100TH_MM, meDlgUnit ) - 1L));
     fLeft = basegfx::clamp(fLeft, -fMaxLong, fMaxLong);
     fRight = basegfx::clamp(fRight, -fMaxLong, fMaxLong);
     fTop = basegfx::clamp(fTop, - fMaxLong, fMaxLong);
@@ -1336,31 +1336,31 @@ void SvxPositionSizeTabPage::SetMinMaxPosition()
 
     switch ( m_pCtlSize->GetActualRP() )
     {
-        case RectPoint::LT:
+        case RP_LT:
         {
             fNewX = maWorkRange.getWidth() - ( maRange.getMinX() - fLeft );
             fNewY = maWorkRange.getHeight() - ( maRange.getMinY() - fTop );
             break;
         }
-        case RectPoint::MT:
+        case RP_MT:
         {
             fNewX = std::min( maRange.getCenter().getX() - fLeft, fRight - maRange.getCenter().getX() ) * 2.0;
             fNewY = maWorkRange.getHeight() - ( maRange.getMinY() - fTop );
             break;
         }
-        case RectPoint::RT:
+        case RP_RT:
         {
             fNewX = maWorkRange.getWidth() - ( fRight - maRange.getMaxX() );
             fNewY = maWorkRange.getHeight() - ( maRange.getMinY() - fTop );
             break;
         }
-        case RectPoint::LM:
+        case RP_LM:
         {
             fNewX = maWorkRange.getWidth() - ( maRange.getMinX() - fLeft );
             fNewY = std::min( maRange.getCenter().getY() - fTop, fBottom - maRange.getCenter().getY() ) * 2.0;
             break;
         }
-        case RectPoint::MM:
+        case RP_MM:
         {
             const double f1(maRange.getCenter().getX() - fLeft);
             const double f2(fRight - maRange.getCenter().getX());
@@ -1374,25 +1374,25 @@ void SvxPositionSizeTabPage::SetMinMaxPosition()
 
             break;
         }
-        case RectPoint::RM:
+        case RP_RM:
         {
             fNewX = maWorkRange.getWidth() - ( fRight - maRange.getMaxX() );
             fNewY = std::min( maRange.getCenter().getY() - fTop, fBottom - maRange.getCenter().getY() ) * 2.0;
             break;
         }
-        case RectPoint::LB:
+        case RP_LB:
         {
             fNewX = maWorkRange.getWidth() - ( maRange.getMinX() - fLeft );
             fNewY = maWorkRange.getHeight() - ( fBottom - maRange.getMaxY() );
             break;
         }
-        case RectPoint::MB:
+        case RP_MB:
         {
             fNewX = std::min( maRange.getCenter().getX() - fLeft, fRight - maRange.getCenter().getX() ) * 2.0;
             fNewY = maWorkRange.getHeight() - ( maRange.getMaxY() - fBottom );
             break;
         }
-        case RectPoint::RB:
+        case RP_RB:
         {
             fNewX = maWorkRange.getWidth() - ( fRight - maRange.getMaxX() );
             fNewY = maWorkRange.getHeight() - ( fBottom - maRange.getMaxY() );
@@ -1412,49 +1412,49 @@ void SvxPositionSizeTabPage::GetTopLeftPosition(double& rfX, double& rfY, const 
 {
     switch (m_pCtlPos->GetActualRP())
     {
-        case RectPoint::LT:
+        case RP_LT:
         {
             break;
         }
-        case RectPoint::MT:
+        case RP_MT:
         {
             rfX -= rRange.getCenter().getX() - rRange.getMinX();
             break;
         }
-        case RectPoint::RT:
+        case RP_RT:
         {
             rfX -= rRange.getWidth();
             break;
         }
-        case RectPoint::LM:
+        case RP_LM:
         {
             rfY -= rRange.getCenter().getY() - rRange.getMinY();
             break;
         }
-        case RectPoint::MM:
+        case RP_MM:
         {
             rfX -= rRange.getCenter().getX() - rRange.getMinX();
             rfY -= rRange.getCenter().getY() - rRange.getMinY();
             break;
         }
-        case RectPoint::RM:
+        case RP_RM:
         {
             rfX -= rRange.getWidth();
             rfY -= rRange.getCenter().getY() - rRange.getMinY();
             break;
         }
-        case RectPoint::LB:
+        case RP_LB:
         {
             rfY -= rRange.getHeight();
             break;
         }
-        case RectPoint::MB:
+        case RP_MB:
         {
             rfX -= rRange.getCenter().getX() - rRange.getMinX();
             rfY -= rRange.getHeight();
             break;
         }
-        case RectPoint::RB:
+        case RP_RB:
         {
             rfX -= rRange.getWidth();
             rfY -= rRange.getHeight();
@@ -1464,62 +1464,62 @@ void SvxPositionSizeTabPage::GetTopLeftPosition(double& rfX, double& rfY, const 
 }
 
 
-void SvxPositionSizeTabPage::PointChanged( vcl::Window* pWindow, RectPoint eRP )
+void SvxPositionSizeTabPage::PointChanged( vcl::Window* pWindow, RECT_POINT eRP )
 {
     if( pWindow == m_pCtlPos )
     {
         SetMinMaxPosition();
         switch( eRP )
         {
-            case RectPoint::LT:
+            case RP_LT:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMinX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMinY()) );
                 break;
             }
-            case RectPoint::MT:
+            case RP_MT:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getCenter().getX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMinY()) );
                 break;
             }
-            case RectPoint::RT:
+            case RP_RT:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMaxX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMinY()) );
                 break;
             }
-            case RectPoint::LM:
+            case RP_LM:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMinX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getCenter().getY()) );
                 break;
             }
-            case RectPoint::MM:
+            case RP_MM:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getCenter().getX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getCenter().getY()) );
                 break;
             }
-            case RectPoint::RM:
+            case RP_RM:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMaxX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getCenter().getY()) );
                 break;
             }
-            case RectPoint::LB:
+            case RP_LB:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMinX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMaxY()) );
                 break;
             }
-            case RectPoint::MB:
+            case RP_MB:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getCenter().getX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMaxY()) );
                 break;
             }
-            case RectPoint::RB:
+            case RP_RB:
             {
                 m_pMtrPosX->SetValue( basegfx::fround64(maRange.getMaxX()) );
                 m_pMtrPosY->SetValue( basegfx::fround64(maRange.getMaxY()) );
@@ -1547,7 +1547,7 @@ void SvxPositionSizeTabPage::DisableProtect()
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangeWidthHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ChangeWidthHdl, Edit&, void)
 {
     if( m_pCbxScale->IsChecked() && m_pCbxScale->IsEnabled() )
     {
@@ -1569,7 +1569,7 @@ IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangeWidthHdl, Edit&, void)
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangeHeightHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ChangeHeightHdl, Edit&, void)
 {
     if( m_pCbxScale->IsChecked() && m_pCbxScale->IsEnabled() )
     {
@@ -1591,13 +1591,13 @@ IMPL_LINK_NOARG(SvxPositionSizeTabPage, ChangeHeightHdl, Edit&, void)
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ClickSizeProtectHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ClickSizeProtectHdl, Button*, void)
 {
     UpdateControlStates();
 }
 
 
-IMPL_LINK_NOARG(SvxPositionSizeTabPage, ClickAutoHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxPositionSizeTabPage, ClickAutoHdl, Button*, void)
 {
     if( m_pCbxScale->IsChecked() )
     {

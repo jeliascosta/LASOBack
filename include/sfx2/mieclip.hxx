@@ -31,11 +31,11 @@ class SvData;
 
 class SFX2_DLLPUBLIC MSE40HTMLClipFormatObj
 {
-    std::unique_ptr<SvStream> pStrm;
-    OUString                  sBaseURL;
+    SvStream* pStrm;
+    OUString  sBaseURL;
 
 public:
-    MSE40HTMLClipFormatObj() {}
+    MSE40HTMLClipFormatObj() : pStrm(nullptr)         {}
     ~MSE40HTMLClipFormatObj();
 
     SvStream* IsValid( SvStream& );

@@ -82,49 +82,45 @@ class SwStyleNameMapper
 
 protected:
     // UI Name tables
-    static std::vector<OUString> *s_pTextUINameArray,
-                            *s_pListsUINameArray,
-                            *s_pExtraUINameArray,
-                            *s_pRegisterUINameArray,
-                            *s_pDocUINameArray,
-                            *s_pHTMLUINameArray,
-                            *s_pFrameFormatUINameArray,
-                            *s_pChrFormatUINameArray,
-                            *s_pHTMLChrFormatUINameArray,
-                            *s_pPageDescUINameArray,
-                            *s_pNumRuleUINameArray,
-                            *s_pTableStyleUINameArray,
-                            *s_pCellStyleUINameArray,
+    static ::std::vector<OUString> *m_pTextUINameArray,
+                            *m_pListsUINameArray,
+                            *m_pExtraUINameArray,
+                            *m_pRegisterUINameArray,
+                            *m_pDocUINameArray,
+                            *m_pHTMLUINameArray,
+                            *m_pFrameFormatUINameArray,
+                            *m_pChrFormatUINameArray,
+                            *m_pHTMLChrFormatUINameArray,
+                            *m_pPageDescUINameArray,
+                            *m_pNumRuleUINameArray,
+                            *m_pTableStyleUINameArray,
     // Programmatic Name tables
-                            *s_pTextProgNameArray,
-                            *s_pListsProgNameArray,
-                            *s_pExtraProgNameArray,
-                            *s_pRegisterProgNameArray,
-                            *s_pDocProgNameArray,
-                            *s_pHTMLProgNameArray,
-                            *s_pFrameFormatProgNameArray,
-                            *s_pChrFormatProgNameArray,
-                            *s_pHTMLChrFormatProgNameArray,
-                            *s_pPageDescProgNameArray,
-                            *s_pNumRuleProgNameArray,
-                            *s_pTableStyleProgNameArray,
-                            *s_pCellStyleProgNameArray;
+                            *m_pTextProgNameArray,
+                            *m_pListsProgNameArray,
+                            *m_pExtraProgNameArray,
+                            *m_pRegisterProgNameArray,
+                            *m_pDocProgNameArray,
+                            *m_pHTMLProgNameArray,
+                            *m_pFrameFormatProgNameArray,
+                            *m_pChrFormatProgNameArray,
+                            *m_pHTMLChrFormatProgNameArray,
+                            *m_pPageDescProgNameArray,
+                            *m_pNumRuleProgNameArray,
+                            *m_pTableStyleProgNameArray;
 
-    static NameToIdHash     *s_pParaUIMap,
-                            *s_pCharUIMap,
-                            *s_pPageUIMap,
-                            *s_pFrameUIMap,
-                            *s_pNumRuleUIMap,
-                            *s_pTableStyleUIMap,
-                            *s_pCellStyleUIMap,
+    static NameToIdHash     *m_pParaUIMap,
+                            *m_pCharUIMap,
+                            *m_pPageUIMap,
+                            *m_pFrameUIMap,
+                            *m_pNumRuleUIMap,
+                            *m_pTableStyleUIMap,
 
-                            *s_pParaProgMap,
-                            *s_pCharProgMap,
-                            *s_pPageProgMap,
-                            *s_pFrameProgMap,
-                            *s_pNumRuleProgMap,
-                            *s_pTableStyleProgMap,
-                            *s_pCellStyleProgMap;
+                            *m_pParaProgMap,
+                            *m_pCharProgMap,
+                            *m_pPageProgMap,
+                            *m_pFrameProgMap,
+                            *m_pNumRuleProgMap,
+                            *m_pTableStyleProgMap;
 
     static void fillNameFromId(sal_uInt16 nId, OUString &rName, bool bProgName);
     static const OUString& getNameFromId(sal_uInt16 nId, const OUString &rName,
@@ -138,13 +134,13 @@ public:
     // This gets the UI Name from the programmatic name
     static const OUString& GetUIName(const OUString& rName, SwGetPoolIdFromName);
     static         void FillUIName(const OUString& rName, OUString& rFillName,
-                            SwGetPoolIdFromName, bool bDisambiguate);
+                            SwGetPoolIdFromName, bool bDisambiguate = false);
 
     // Get the programmatic Name from the UI name
     static const OUString& GetProgName(const OUString& rName,
                                        SwGetPoolIdFromName);
     static         void FillProgName(const OUString& rName, OUString& rFillName,
-                            SwGetPoolIdFromName, bool bDisambiguate);
+                            SwGetPoolIdFromName, bool bDisambiguate = false);
 
     // This gets the UI Name from the Pool ID
     SW_DLLPUBLIC static void FillUIName(sal_uInt16 nId, OUString& rFillName);
@@ -173,33 +169,31 @@ public:
                     const OUString& rExtraUIName);
     static const OUString GetSpecialExtraUIName(const OUString& rExtraProgName);
 
-    static const std::vector<OUString>& GetTextUINameArray();
-    static const std::vector<OUString>& GetListsUINameArray();
-    static const std::vector<OUString>& GetExtraUINameArray();
-    static const std::vector<OUString>& GetRegisterUINameArray();
-    static const std::vector<OUString>& GetDocUINameArray();
-    static const std::vector<OUString>& GetHTMLUINameArray();
-    static const std::vector<OUString>& GetFrameFormatUINameArray();
-    static const std::vector<OUString>& GetChrFormatUINameArray();
-    static const std::vector<OUString>& GetHTMLChrFormatUINameArray();
-    static const std::vector<OUString>& GetPageDescUINameArray();
-    static const std::vector<OUString>& GetNumRuleUINameArray();
-    static const std::vector<OUString>& GetTableStyleUINameArray();
-    static const std::vector<OUString>& GetCellStyleUINameArray();
+    static const ::std::vector<OUString>& GetTextUINameArray();
+    static const ::std::vector<OUString>& GetListsUINameArray();
+    static const ::std::vector<OUString>& GetExtraUINameArray();
+    static const ::std::vector<OUString>& GetRegisterUINameArray();
+    static const ::std::vector<OUString>& GetDocUINameArray();
+    static const ::std::vector<OUString>& GetHTMLUINameArray();
+    static const ::std::vector<OUString>& GetFrameFormatUINameArray();
+    static const ::std::vector<OUString>& GetChrFormatUINameArray();
+    static const ::std::vector<OUString>& GetHTMLChrFormatUINameArray();
+    static const ::std::vector<OUString>& GetPageDescUINameArray();
+    static const ::std::vector<OUString>& GetNumRuleUINameArray();
+    static const ::std::vector<OUString>& GetTableStyleUINameArray();
 
-    static const std::vector<OUString>& GetTextProgNameArray();
-    static const std::vector<OUString>& GetListsProgNameArray();
-    static const std::vector<OUString>& GetExtraProgNameArray();
-    static const std::vector<OUString>& GetRegisterProgNameArray();
-    static const std::vector<OUString>& GetDocProgNameArray();
-    static const std::vector<OUString>& GetHTMLProgNameArray();
-    static const std::vector<OUString>& GetFrameFormatProgNameArray();
-    static const std::vector<OUString>& GetChrFormatProgNameArray();
-    static const std::vector<OUString>& GetHTMLChrFormatProgNameArray();
-    static const std::vector<OUString>& GetPageDescProgNameArray();
-    static const std::vector<OUString>& GetNumRuleProgNameArray();
-    static const std::vector<OUString>& GetTableStyleProgNameArray();
-    static const std::vector<OUString>& GetCellStyleProgNameArray();
+    static const ::std::vector<OUString>& GetTextProgNameArray();
+    static const ::std::vector<OUString>& GetListsProgNameArray();
+    static const ::std::vector<OUString>& GetExtraProgNameArray();
+    static const ::std::vector<OUString>& GetRegisterProgNameArray();
+    static const ::std::vector<OUString>& GetDocProgNameArray();
+    static const ::std::vector<OUString>& GetHTMLProgNameArray();
+    static const ::std::vector<OUString>& GetFrameFormatProgNameArray();
+    static const ::std::vector<OUString>& GetChrFormatProgNameArray();
+    static const ::std::vector<OUString>& GetHTMLChrFormatProgNameArray();
+    static const ::std::vector<OUString>& GetPageDescProgNameArray();
+    static const ::std::vector<OUString>& GetNumRuleProgNameArray();
+    static const ::std::vector<OUString>& GetTableStyleProgNameArray();
 };
 #endif // _NAME_MAPPER_HXX
 

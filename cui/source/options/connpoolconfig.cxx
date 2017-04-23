@@ -93,7 +93,7 @@ namespace offapp
                 ++aLoopDrivers
             )
         {
-            aSettings.push_back(DriverPooling(*aLoopDrivers));
+            aSettings.push_back(DriverPooling(*aLoopDrivers, 120));
         }
 
         // then look for which of them settings are stored in the configuration
@@ -121,7 +121,7 @@ namespace offapp
 
             if (aLookup == aSettings.end())
             {   // do not know the driver - add it
-                aSettings.push_back(DriverPooling(sThisDriverName));
+                aSettings.push_back(DriverPooling(sThisDriverName, 120));
 
                 // and the position of the new entry
                 aLookup = aSettings.end();
@@ -185,9 +185,9 @@ namespace offapp
                     aThisDriverSettings = aDriverSettings.createNode(aLoop->sName);
 
                 // set the values
-                aThisDriverSettings.setNodeValue(getDriverNameNodeName(), Any(sThisDriverName));
+                aThisDriverSettings.setNodeValue(getDriverNameNodeName(), makeAny(sThisDriverName));
                 aThisDriverSettings.setNodeValue(getEnableNodeName(), Any(aLoop->bEnabled));
-                aThisDriverSettings.setNodeValue(getTimeoutNodeName(), Any(aLoop->nTimeoutSeconds));
+                aThisDriverSettings.setNodeValue(getTimeoutNodeName(), makeAny(aLoop->nTimeoutSeconds));
             }
             bNeedCommit = true;
         }

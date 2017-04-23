@@ -66,13 +66,13 @@
 // EditView
 
 
-void SdrEditView::SetMarkedObjRect(const tools::Rectangle& rRect)
+void SdrEditView::SetMarkedObjRect(const Rectangle& rRect)
 {
     DBG_ASSERT(!rRect.IsEmpty(),"SetMarkedObjRect() with an empty Rect does not make sense.");
     if (rRect.IsEmpty()) return;
     const size_t nCount=GetMarkedObjectCount();
     if (nCount==0) return;
-    tools::Rectangle aR0(GetMarkedObjRect());
+    Rectangle aR0(GetMarkedObjRect());
     DBG_ASSERT(!aR0.IsEmpty(),"SetMarkedObjRect(): GetMarkedObjRect() is empty.");
     if (aR0.IsEmpty()) return;
     long x0=aR0.Left();
@@ -97,7 +97,7 @@ void SdrEditView::SetMarkedObjRect(const tools::Rectangle& rRect)
         if( bUndo )
             AddUndo( GetModel()->GetSdrUndoFactory().CreateUndoGeoObject(*pO));
 
-        tools::Rectangle aR1(pO->GetSnapRect());
+        Rectangle aR1(pO->GetSnapRect());
         if (!aR1.IsEmpty())
         {
             if (aR1==aR0)
@@ -147,7 +147,7 @@ std::vector< SdrUndoAction* > SdrEditView::CreateConnectorUndo( SdrObject& rO )
         const SdrPage* pPage = rO.GetPage();
         if ( pPage )
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
             while( aIter.IsMore() )
             {
                 SdrObject* pPartObj = aIter.Next();
@@ -182,7 +182,7 @@ void SdrEditView::MoveMarkedObj(const Size& rSiz, bool bCopy)
         if (bCopy)
             aStr += ImpGetResStr(STR_EditWithCopy);
         // needs its own UndoGroup because of its parameters
-        BegUndo(aStr,GetDescriptionOfMarkedObjects(),SdrRepeatFunc::Move);
+        BegUndo(aStr,GetDescriptionOfMarkedObjects(),SDRREPFUNC_OBJ_MOVE);
     }
 
     if (bCopy)
@@ -241,6 +241,7 @@ void SdrEditView::ResizeMarkedObj(const Point& rRef, const Fraction& xFact, cons
 void SdrEditView::ResizeMultMarkedObj(const Point& rRef,
     const Fraction& xFact,
     const Fraction& yFact,
+    const bool bCopy,
     const bool bWdh,
     const bool bHgt)
 {
@@ -249,8 +250,13 @@ void SdrEditView::ResizeMultMarkedObj(const Point& rRef,
     {
         OUString aStr;
         ImpTakeDescriptionStr(STR_EditResize,aStr);
+        if (bCopy)
+            aStr+=ImpGetResStr(STR_EditWithCopy);
         BegUndo(aStr);
     }
+
+    if (bCopy)
+        CopyMarkedObj();
 
     const size_t nMarkCount=GetMarkedObjectCount();
     for (size_t nm=0; nm<nMarkCount; ++nm)
@@ -494,7 +500,7 @@ void SdrEditView::ShearMarkedObj(const Point& rRef, long nAngle, bool bVShear, b
 }
 
 void SdrEditView::ImpCrookObj(SdrObject* pO, const Point& rRef, const Point& rRad,
-    SdrCrookMode eMode, bool bVertical, bool bNoContortion, bool bRotate, const tools::Rectangle& rMarkRect)
+    SdrCrookMode eMode, bool bVertical, bool bNoContortion, bool bRotate, const Rectangle& rMarkRect)
 {
     SdrPathObj* pPath=dynamic_cast<SdrPathObj*>( pO );
     bool bDone = false;
@@ -503,9 +509,9 @@ void SdrEditView::ImpCrookObj(SdrObject* pO, const Point& rRef, const Point& rRa
     {
         XPolyPolygon aXPP(pPath->GetPathPoly());
         switch (eMode) {
-            case SdrCrookMode::Rotate : CrookRotatePoly (aXPP,rRef,rRad,bVertical);           break;
-            case SdrCrookMode::Slant  : CrookSlantPoly  (aXPP,rRef,rRad,bVertical);           break;
-            case SdrCrookMode::Stretch: CrookStretchPoly(aXPP,rRef,rRad,bVertical,rMarkRect); break;
+            case SDRCROOK_ROTATE : CrookRotatePoly (aXPP,rRef,rRad,bVertical);           break;
+            case SDRCROOK_SLANT  : CrookSlantPoly  (aXPP,rRef,rRad,bVertical);           break;
+            case SDRCROOK_STRETCH: CrookStretchPoly(aXPP,rRef,rRad,bVertical,rMarkRect); break;
         } // switch
         pPath->SetPathPoly(aXPP.getB2DPolyPolygon());
         bDone = true;
@@ -526,9 +532,9 @@ void SdrEditView::ImpCrookObj(SdrObject* pO, const Point& rRef, const Point& rRa
 
         switch (eMode)
         {
-            case SdrCrookMode::Rotate : CrookRotatePoly (aXP,rRef,rRad,bVertical);           break;
-            case SdrCrookMode::Slant  : CrookSlantPoly  (aXP,rRef,rRad,bVertical);           break;
-            case SdrCrookMode::Stretch: CrookStretchPoly(aXP,rRef,rRad,bVertical,rMarkRect); break;
+            case SDRCROOK_ROTATE : CrookRotatePoly (aXP,rRef,rRad,bVertical);           break;
+            case SDRCROOK_SLANT  : CrookSlantPoly  (aXP,rRef,rRad,bVertical);           break;
+            case SDRCROOK_STRETCH: CrookStretchPoly(aXP,rRef,rRad,bVertical,rMarkRect); break;
         }
 
         for(nPtNum = 0L; nPtNum < nPointCount; nPtNum++)
@@ -556,9 +562,9 @@ void SdrEditView::ImpCrookObj(SdrObject* pO, const Point& rRef, const Point& rRa
 
             switch (eMode)
             {
-                case SdrCrookMode::Rotate : nAngle=CrookRotateXPoint (aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical); bRotOk=bRotate; break;
-                case SdrCrookMode::Slant  : nAngle=CrookSlantXPoint  (aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical);           break;
-                case SdrCrookMode::Stretch: nAngle=CrookStretchXPoint(aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical,rMarkRect); break;
+                case SDRCROOK_ROTATE : nAngle=CrookRotateXPoint (aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical); bRotOk=bRotate; break;
+                case SDRCROOK_SLANT  : nAngle=CrookSlantXPoint  (aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical);           break;
+                case SDRCROOK_STRETCH: nAngle=CrookStretchXPoint(aCtr1,nullptr,nullptr,rRef,rRad,nSin,nCos,bVertical,rMarkRect); break;
             }
         }
 
@@ -574,10 +580,10 @@ void SdrEditView::ImpCrookObj(SdrObject* pO, const Point& rRef, const Point& rRa
 void SdrEditView::CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookMode eMode,
     bool bVertical, bool bNoContortion, bool bCopy)
 {
-    tools::Rectangle aMarkRect(GetMarkedObjRect());
+    Rectangle aMarkRect(GetMarkedObjRect());
     const bool bUndo = IsUndoEnabled();
 
-    bool bRotate=bNoContortion && eMode==SdrCrookMode::Rotate && IsRotateAllowed();
+    bool bRotate=bNoContortion && eMode==SDRCROOK_ROTATE && IsRotateAllowed();
 
     if( bUndo )
     {
@@ -603,7 +609,7 @@ void SdrEditView::CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookM
         if (bNoContortion || pOL==nullptr) {
             ImpCrookObj(pO,rRef,rRad,eMode,bVertical,bNoContortion,bRotate,aMarkRect);
         } else {
-            SdrObjListIter aIter(*pOL,SdrIterMode::DeepNoGroups);
+            SdrObjListIter aIter(*pOL,IM_DEEPNOGROUPS);
             while (aIter.IsMore()) {
                 SdrObject* pO1=aIter.Next();
                 ImpCrookObj(pO1,rRef,rRad,eMode,bVertical,bNoContortion,bRotate,aMarkRect);
@@ -615,7 +621,7 @@ void SdrEditView::CrookMarkedObj(const Point& rRef, const Point& rRad, SdrCrookM
         EndUndo();
 }
 
-void SdrEditView::ImpDistortObj(SdrObject* pO, const tools::Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion)
+void SdrEditView::ImpDistortObj(SdrObject* pO, const Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion)
 {
     SdrPathObj* pPath = dynamic_cast<SdrPathObj*>( pO );
 
@@ -649,7 +655,7 @@ void SdrEditView::ImpDistortObj(SdrObject* pO, const tools::Rectangle& rRef, con
     }
 }
 
-void SdrEditView::DistortMarkedObj(const tools::Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion, bool bCopy)
+void SdrEditView::DistortMarkedObj(const Rectangle& rRef, const XPolygon& rDistortedRect, bool bNoContortion, bool bCopy)
 {
     const bool bUndo = IsUndoEnabled();
 
@@ -673,12 +679,12 @@ void SdrEditView::DistortMarkedObj(const tools::Rectangle& rRef, const XPolygon&
         if( bUndo )
             AddUndo( GetModel()->GetSdrUndoFactory().CreateUndoGeoObject(*pO));
 
-        tools::Rectangle aRefRect(rRef);
+        Rectangle aRefRect(rRef);
         const SdrObjList* pOL=pO->GetSubList();
         if (bNoContortion || pOL==nullptr) {
             ImpDistortObj(pO,aRefRect,rDistortedRect,bNoContortion);
         } else {
-            SdrObjListIter aIter(*pOL,SdrIterMode::DeepNoGroups);
+            SdrObjListIter aIter(*pOL,IM_DEEPNOGROUPS);
             while (aIter.IsMore()) {
                 SdrObject* pO1=aIter.Next();
                 ImpDistortObj(pO1,aRefRect,rDistortedRect,bNoContortion);
@@ -693,7 +699,7 @@ void SdrEditView::DistortMarkedObj(const tools::Rectangle& rRef, const XPolygon&
 void SdrEditView::SetNotPersistAttrToMarked(const SfxItemSet& rAttr, bool /*bReplaceAll*/)
 {
     // bReplaceAll has no effect here
-    tools::Rectangle aAllSnapRect(GetMarkedObjRect());
+    Rectangle aAllSnapRect(GetMarkedObjRect());
     const SfxPoolItem *pPoolItem=nullptr;
     if (rAttr.GetItemState(SDRATTR_TRANSFORMREF1X,true,&pPoolItem)==SfxItemState::SET) {
         long n=static_cast<const SdrTransformRef1XItem*>(pPoolItem)->GetValue();
@@ -733,7 +739,7 @@ void SdrEditView::SetNotPersistAttrToMarked(const SfxItemSet& rAttr, bool /*bRep
         bAllHgt=true; bDoIt=true;
     }
     if (bDoIt) {
-        tools::Rectangle aRect(aAllSnapRect); // TODO: change this for PolyPt's and GluePt's!!!
+        Rectangle aRect(aAllSnapRect); // TODO: change this for PolyPt's and GluePt's!!!
         if (bAllPosX) aRect.Move(nAllPosX-aRect.Left(),0);
         if (bAllPosY) aRect.Move(0,nAllPosY-aRect.Top());
         if (bAllWdt)  aRect.Right()=aAllSnapRect.Left()+nAllWdt;
@@ -780,7 +786,7 @@ void SdrEditView::MergeNotPersistAttrFromMarked(SfxItemSet& rAttr, bool /*bOnlyH
 {
     // bOnlyHardAttr has no effect here.
     // TODO: Take into account the origin and PvPos.
-    tools::Rectangle aAllSnapRect(GetMarkedObjRect()); // TODO: change this for PolyPt's and GluePt's!!!
+    Rectangle aAllSnapRect(GetMarkedObjRect()); // TODO: change this for PolyPt's and GluePt's!!!
     long nAllSnapPosX=aAllSnapRect.Left();
     long nAllSnapPosY=aAllSnapRect.Top();
     long nAllSnapWdt=aAllSnapRect.GetWidth()-1;
@@ -801,8 +807,8 @@ void SdrEditView::MergeNotPersistAttrFromMarked(SfxItemSet& rAttr, bool /*bOnlyH
     long nLogicHgt=0;      bool bLogicHgtDC=false,bLogicHgtDiff=false;
     long nRotAngle=0;      bool bRotAngleDC=false;
     long nShrAngle=0;      bool bShrAngleDC=false;
-    tools::Rectangle aSnapRect;
-    tools::Rectangle aLogicRect;
+    Rectangle aSnapRect;
+    Rectangle aLogicRect;
     const size_t nMarkCount=GetMarkedObjectCount();
     for (size_t nm=0; nm<nMarkCount; ++nm) {
         const SdrMark* pM=GetSdrMarkByIndex(nm);
@@ -813,8 +819,8 @@ void SdrEditView::MergeNotPersistAttrFromMarked(SfxItemSet& rAttr, bool /*bOnlyH
             bSizProtect=pObj->IsResizeProtect();
             bPrintable =pObj->IsPrintable();
             bVisible = pObj->IsVisible();
-            tools::Rectangle aSnapRect2(pObj->GetSnapRect());
-            tools::Rectangle aLogicRect2(pObj->GetLogicRect());
+            Rectangle aSnapRect2(pObj->GetSnapRect());
+            Rectangle aLogicRect2(pObj->GetLogicRect());
             nSnapPosX=aSnapRect2.Left();
             nSnapPosY=aSnapRect2.Top();
             nSnapWdt=aSnapRect2.GetWidth()-1;
@@ -880,13 +886,13 @@ void SdrEditView::MergeNotPersistAttrFromMarked(SfxItemSet& rAttr, bool /*bOnlyH
         rAttr.Put(SdrVertShearAllItem());
     }
 
-    if(meDragMode == SdrDragMode::Rotate || meDragMode == SdrDragMode::Mirror)
+    if(meDragMode == SDRDRAG_ROTATE || meDragMode == SDRDRAG_MIRROR)
     {
         rAttr.Put(SdrTransformRef1XItem(GetRef1().X()));
         rAttr.Put(SdrTransformRef1YItem(GetRef1().Y()));
     }
 
-    if(meDragMode == SdrDragMode::Mirror)
+    if(meDragMode == SDRDRAG_MIRROR)
     {
         rAttr.Put(SdrTransformRef2XItem(GetRef2().X()));
         rAttr.Put(SdrTransformRef2YItem(GetRef2().Y()));
@@ -1127,7 +1133,7 @@ void SdrEditView::SetAttrToMarked(const SfxItemSet& rAttr, bool bReplaceAll)
 
                 if(!aCharWhichIds.empty())
                 {
-                    tools::Rectangle aOldBoundRect = pTextObj->GetLastBoundRect();
+                    Rectangle aOldBoundRect = pTextObj->GetLastBoundRect();
 
                     // #110094#-14 pTextObj->SendRepaintBroadcast(pTextObj->GetBoundRect());
                     pTextObj->RemoveOutlinerCharacterAttribs( aCharWhichIds );
@@ -1138,7 +1144,7 @@ void SdrEditView::SetAttrToMarked(const SfxItemSet& rAttr, bool bReplaceAll)
                     pTextObj->SetChanged();
 
                     pTextObj->BroadcastObjectChange();
-                    pTextObj->SendUserCall(SdrUserCallType::ChangeAttr, aOldBoundRect);
+                    pTextObj->SendUserCall(SDRUSERCALL_CHGATTR, aOldBoundRect);
                 }
             }
 
@@ -1278,7 +1284,7 @@ SfxItemSet SdrEditView::GetGeoAttrFromMarked() const
     if (AreObjectsMarked())
     {
         SfxItemSet aMarkAttr(GetAttrFromMarked(false)); // because of AutoGrowHeight and corner radius
-        tools::Rectangle aRect(GetMarkedObjRect());
+        Rectangle aRect(GetMarkedObjRect());
         // restore position to that before calc hack
         aRect -= GetGridOffset();
 
@@ -1294,7 +1300,7 @@ SfxItemSet SdrEditView::GetGeoAttrFromMarked() const
         // size
         long nResizeRefX=aRect.Left();
         long nResizeRefY=aRect.Top();
-        if (meDragMode==SdrDragMode::Rotate) { // use rotation axis as a reference for resizing, too
+        if (meDragMode==SDRDRAG_ROTATE) { // use rotation axis as a reference for resizing, too
             nResizeRefX=maRef1.X();
             nResizeRefY=maRef1.Y();
         }
@@ -1313,7 +1319,7 @@ SfxItemSet SdrEditView::GetGeoAttrFromMarked() const
         // rotation
         long nRotateRefX=aRect.Center().X();
         long nRotateRefY=aRect.Center().Y();
-        if (meDragMode==SdrDragMode::Rotate) {
+        if (meDragMode==SDRDRAG_ROTATE) {
             nRotateRefX=aRotateAxe.X();
             nRotateRefY=aRotateAxe.Y();
         }
@@ -1324,7 +1330,7 @@ SfxItemSet SdrEditView::GetGeoAttrFromMarked() const
         // shearing
         long nShearRefX=aRect.Left();
         long nShearRefY=aRect.Bottom();
-        if (meDragMode==SdrDragMode::Rotate) { // use rotation axis as a reference for shearing, too
+        if (meDragMode==SDRDRAG_ROTATE) { // use rotation axis as a reference for shearing, too
             nShearRefX=aRotateAxe.X();
             nShearRefY=aRotateAxe.Y();
         }
@@ -1428,25 +1434,25 @@ SfxItemSet SdrEditView::GetGeoAttrFromMarked() const
     return aRetSet;
 }
 
-Point ImpGetPoint(const tools::Rectangle& rRect, RectPoint eRP)
+Point ImpGetPoint(const Rectangle& rRect, RECT_POINT eRP)
 {
     switch(eRP) {
-        case RectPoint::LT: return rRect.TopLeft();
-        case RectPoint::MT: return rRect.TopCenter();
-        case RectPoint::RT: return rRect.TopRight();
-        case RectPoint::LM: return rRect.LeftCenter();
-        case RectPoint::MM: return rRect.Center();
-        case RectPoint::RM: return rRect.RightCenter();
-        case RectPoint::LB: return rRect.BottomLeft();
-        case RectPoint::MB: return rRect.BottomCenter();
-        case RectPoint::RB: return rRect.BottomRight();
+        case RP_LT: return rRect.TopLeft();
+        case RP_MT: return rRect.TopCenter();
+        case RP_RT: return rRect.TopRight();
+        case RP_LM: return rRect.LeftCenter();
+        case RP_MM: return rRect.Center();
+        case RP_RM: return rRect.RightCenter();
+        case RP_LB: return rRect.BottomLeft();
+        case RP_MB: return rRect.BottomCenter();
+        case RP_RB: return rRect.BottomRight();
     }
     return Point(); // Should not happen!
 }
 
 void SdrEditView::SetGeoAttrToMarked(const SfxItemSet& rAttr)
 {
-    tools::Rectangle aRect(GetMarkedObjRect());
+    Rectangle aRect(GetMarkedObjRect());
 
     if(GetSdrPageView())
     {
@@ -1459,14 +1465,14 @@ void SdrEditView::SetGeoAttrToMarked(const SfxItemSet& rAttr)
     const size_t nMarkCount=rMarkList.GetMarkCount();
     SdrObject* pObj=nullptr;
 
-    RectPoint eSizePoint=RectPoint::MM;
+    RECT_POINT eSizePoint=RP_MM;
     long nPosDX=0;
     long nPosDY=0;
     long nSizX=0;
     long nSizY=0;
     long nRotateAngle=0;
 
-    bool bModeIsRotate(meDragMode == SdrDragMode::Rotate);
+    bool bModeIsRotate(meDragMode == SDRDRAG_ROTATE);
     long nRotateX(0);
     long nRotateY(0);
     long nOldRotateX(0);
@@ -1522,7 +1528,7 @@ void SdrEditView::SetGeoAttrToMarked(const SfxItemSet& rAttr)
         bChgHgt=true;
     }
     if (bChgSiz) {
-        eSizePoint=(RectPoint)static_cast<const SfxAllEnumItem&>(rAttr.Get(SID_ATTR_TRANSFORM_SIZE_POINT)).GetValue();
+        eSizePoint=(RECT_POINT)static_cast<const SfxAllEnumItem&>(rAttr.Get(SID_ATTR_TRANSFORM_SIZE_POINT)).GetValue();
     }
 
     // rotation
@@ -1607,7 +1613,7 @@ void SdrEditView::SetGeoAttrToMarked(const SfxItemSet& rAttr)
             GetSdrPageView()->PagePosToLogic(aRef);
         }
 
-        ResizeMultMarkedObj(aRef, aWdt, aHgt, bChgWdh, bChgHgt);
+        ResizeMultMarkedObj(aRef, aWdt, aHgt, false, bChgWdh, bChgHgt);
     }
 
     // rotate
@@ -1742,7 +1748,7 @@ bool SdrEditView::IsAlignPossible() const
 
 void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
 {
-    if (eHor==SdrHorAlign::NONE && eVert==SdrVertAlign::NONE)
+    if (eHor==SDRHALIGN_NONE && eVert==SDRVALIGN_NONE)
         return;
 
     SortMarkedObjects();
@@ -1753,27 +1759,27 @@ void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
     if( bUndo )
     {
         OUString aStr(GetDescriptionOfMarkedObjects());
-        if (eHor==SdrHorAlign::NONE)
+        if (eHor==SDRHALIGN_NONE)
         {
             switch (eVert)
             {
-                case SdrVertAlign::Top   : ImpTakeDescriptionStr(STR_EditAlignVTop   ,aStr); break;
-                case SdrVertAlign::Bottom: ImpTakeDescriptionStr(STR_EditAlignVBottom,aStr); break;
-                case SdrVertAlign::Center: ImpTakeDescriptionStr(STR_EditAlignVCenter,aStr); break;
+                case SDRVALIGN_TOP   : ImpTakeDescriptionStr(STR_EditAlignVTop   ,aStr); break;
+                case SDRVALIGN_BOTTOM: ImpTakeDescriptionStr(STR_EditAlignVBottom,aStr); break;
+                case SDRVALIGN_CENTER: ImpTakeDescriptionStr(STR_EditAlignVCenter,aStr); break;
                 default: break;
             }
         }
-        else if (eVert==SdrVertAlign::NONE)
+        else if (eVert==SDRVALIGN_NONE)
         {
             switch (eHor)
             {
-                case SdrHorAlign::Left  : ImpTakeDescriptionStr(STR_EditAlignHLeft  ,aStr); break;
-                case SdrHorAlign::Right : ImpTakeDescriptionStr(STR_EditAlignHRight ,aStr); break;
-                case SdrHorAlign::Center: ImpTakeDescriptionStr(STR_EditAlignHCenter,aStr); break;
+                case SDRHALIGN_LEFT  : ImpTakeDescriptionStr(STR_EditAlignHLeft  ,aStr); break;
+                case SDRHALIGN_RIGHT : ImpTakeDescriptionStr(STR_EditAlignHRight ,aStr); break;
+                case SDRHALIGN_CENTER: ImpTakeDescriptionStr(STR_EditAlignHCenter,aStr); break;
                 default: break;
             }
         }
-        else if (eHor==SdrHorAlign::Center && eVert==SdrVertAlign::Center)
+        else if (eHor==SDRHALIGN_CENTER && eVert==SDRVALIGN_CENTER)
         {
             ImpTakeDescriptionStr(STR_EditAlignCenter,aStr);
         }
@@ -1784,7 +1790,7 @@ void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
         BegUndo(aStr);
     }
 
-    tools::Rectangle aBound;
+    Rectangle aBound;
     const size_t nMarkCount=GetMarkedObjectCount();
     bool bHasFixed=false;
     for (size_t nm=0; nm<nMarkCount; ++nm)
@@ -1795,7 +1801,7 @@ void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
         pObj->TakeObjInfo(aInfo);
         if (!aInfo.bMoveAllowed || pObj->IsMoveProtect())
         {
-            tools::Rectangle aObjRect(pObj->GetSnapRect());
+            Rectangle aObjRect(pObj->GetSnapRect());
             aBound.Union(aObjRect);
             bHasFixed=true;
         }
@@ -1819,7 +1825,7 @@ void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
             }
             else
             {
-                aBound=tools::Rectangle(pPage->GetLftBorder(),pPage->GetUppBorder(),
+                aBound=Rectangle(pPage->GetLftBorder(),pPage->GetUppBorder(),
                                  pPage->GetWdt()-pPage->GetRgtBorder(),
                                  pPage->GetHgt()-pPage->GetLwrBorder());
             }
@@ -1840,19 +1846,19 @@ void SdrEditView::AlignMarkedObjects(SdrHorAlign eHor, SdrVertAlign eVert)
         {
             long nXMov=0;
             long nYMov=0;
-            tools::Rectangle aObjRect(pObj->GetSnapRect());
+            Rectangle aObjRect(pObj->GetSnapRect());
             switch (eVert)
             {
-                case SdrVertAlign::Top   : nYMov=aBound.Top()   -aObjRect.Top()       ; break;
-                case SdrVertAlign::Bottom: nYMov=aBound.Bottom()-aObjRect.Bottom()    ; break;
-                case SdrVertAlign::Center: nYMov=aCenter.Y()    -aObjRect.Center().Y(); break;
+                case SDRVALIGN_TOP   : nYMov=aBound.Top()   -aObjRect.Top()       ; break;
+                case SDRVALIGN_BOTTOM: nYMov=aBound.Bottom()-aObjRect.Bottom()    ; break;
+                case SDRVALIGN_CENTER: nYMov=aCenter.Y()    -aObjRect.Center().Y(); break;
                 default: break;
             }
             switch (eHor)
             {
-                case SdrHorAlign::Left  : nXMov=aBound.Left()  -aObjRect.Left()      ; break;
-                case SdrHorAlign::Right : nXMov=aBound.Right() -aObjRect.Right()     ; break;
-                case SdrHorAlign::Center: nXMov=aCenter.X()    -aObjRect.Center().X(); break;
+                case SDRHALIGN_LEFT  : nXMov=aBound.Left()  -aObjRect.Left()      ; break;
+                case SDRHALIGN_RIGHT : nXMov=aBound.Right() -aObjRect.Right()     ; break;
+                case SDRHALIGN_CENTER: nXMov=aCenter.X()    -aObjRect.Center().X(); break;
                 default: break;
             }
             if (nXMov!=0 || nYMov!=0)

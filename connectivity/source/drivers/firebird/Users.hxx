@@ -25,21 +25,22 @@ namespace connectivity
         class Users: public ::connectivity::sdbcx::OCollection
         {
         protected:
-            css::uno::Reference< css::sdbc::XDatabaseMetaData >
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >
                 m_xMetaData;
 
             // OCollection
-            virtual void impl_refresh() override;
+            virtual void impl_refresh()
+                throw(::com::sun::star::uno::RuntimeException) override;
             virtual ::connectivity::sdbcx::ObjectType createObject(
                                                 const ::rtl::OUString& rName) override;
-            virtual css::uno::Reference< css::beans::XPropertySet >
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >
                     createDescriptor() override;
             virtual ::connectivity::sdbcx::ObjectType appendObject(
                         const OUString& rName,
-                        const css::uno::Reference< css::beans::XPropertySet >& rDescriptor) override;
+                        const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& rDescriptor) override;
 
         public:
-            Users(const css::uno::Reference< css::sdbc::XDatabaseMetaData >& rMetaData,
+            Users(const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >& rMetaData,
                   ::cppu::OWeakObject& rParent,
                   ::osl::Mutex& rMutex,
                   ::connectivity::TStringVector& rNames);

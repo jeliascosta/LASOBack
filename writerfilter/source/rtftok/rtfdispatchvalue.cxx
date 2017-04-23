@@ -24,24 +24,7 @@
 #include <rtfreferenceproperties.hxx>
 #include <rtfskipdestination.hxx>
 
-#include "officecfg/Setup.hxx"
-#include "officecfg/Office/Linguistic.hxx"
-#include "unotools/wincodepage.hxx"
-
 using namespace com::sun::star;
-
-namespace
-{
-
-OUString getLODefaultLanguage()
-{
-    OUString result(::officecfg::Office::Linguistic::General::DefaultLocale::get());
-    if (result.isEmpty())
-        result = ::officecfg::Setup::L10N::ooSetupSystemLocale::get();
-    return result;
-}
-
-}
 
 namespace writerfilter
 {
@@ -168,8 +151,10 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_FS:
     case RTF_AFS:
-        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
-                ? NS_ooxml::LN_EG_RPrBase_szCs : NS_ooxml::LN_EG_RPrBase_sz;
+        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH) ? NS_ooxml::LN_EG_RPrBase_szCs : NS_ooxml::LN_EG_RPrBase_sz;
+        break;
+    case RTF_ANIMTEXT:
+        nSprm = NS_ooxml::LN_EG_RPrBase_effect;
         break;
     case RTF_EXPNDTW:
         nSprm = NS_ooxml::LN_EG_RPrBase_spacing;
@@ -193,17 +178,17 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_LANG:
     case RTF_ALANG:
-        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
+        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH)
         {
             nSprm = NS_ooxml::LN_CT_Language_bidi;
         }
-        else if (m_aStates.top().eRunType == RTFParserState::RunType::DBCH)
+        else if (m_aStates.top().eRunType == RTFParserState::DBCH)
         {
             nSprm = NS_ooxml::LN_CT_Language_eastAsia;
         }
         else
         {
-            assert(m_aStates.top().eRunType == RTFParserState::RunType::LOCH);
+            assert(m_aStates.top().eRunType == RTFParserState::LOCH);
             nSprm = NS_ooxml::LN_CT_Language_val;
         }
         break;
@@ -239,7 +224,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
         {
             while (m_aTableBufferStack.size() < sal::static_int_cast<std::size_t>(nParam))
             {
-                m_aTableBufferStack.emplace_back(RTFBuffer_t());
+                m_aTableBufferStack.push_back(RTFBuffer_t());
             }
             // Invalid tables may omit INTBL after ITAP
             dispatchFlag(RTF_INTBL); // sets newly pushed buffer as current
@@ -328,17 +313,17 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_F:
     case RTF_AF:
-        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
+        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH)
         {
             nSprm = NS_ooxml::LN_CT_Fonts_cs;
         }
-        else if (m_aStates.top().eRunType == RTFParserState::RunType::DBCH)
+        else if (m_aStates.top().eRunType == RTFParserState::DBCH)
         {
             nSprm = NS_ooxml::LN_CT_Fonts_eastAsia;
         }
         else
         {
-            assert(m_aStates.top().eRunType == RTFParserState::RunType::LOCH);
+            assert(m_aStates.top().eRunType == RTFParserState::LOCH);
             nSprm = NS_ooxml::LN_CT_Fonts_ascii;
         }
         if (m_aStates.top().eDestination == Destination::FONTTABLE || m_aStates.top().eDestination == Destination::FONTENTRY)
@@ -391,18 +376,15 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     }
     break;
     case RTF_ANSICPG:
-    case RTF_CPG:
     {
-        rtl_TextEncoding nEncoding = (nParam == 0) ?
-                                     utl_getWinTextEncodingFromLangStr(getLODefaultLanguage().toUtf8().getStr()) :
-                                     rtl_getTextEncodingFromWindowsCodePage(nParam);
-        if (nKeyword == RTF_ANSICPG)
-            m_aDefaultState.nCurrentEncoding = nEncoding;
-        else
-            m_nCurrentEncoding = nEncoding;
-        m_aStates.top().nCurrentEncoding = nEncoding;
+        m_aDefaultState.nCurrentEncoding = rtl_getTextEncodingFromWindowsCodePage(nParam);
+        m_aStates.top().nCurrentEncoding = rtl_getTextEncodingFromWindowsCodePage(nParam);
     }
     break;
+    case RTF_CPG:
+        m_nCurrentEncoding = rtl_getTextEncodingFromWindowsCodePage(nParam);
+        m_aStates.top().nCurrentEncoding = m_nCurrentEncoding;
+        break;
     case RTF_CF:
     {
         RTFSprms aAttributes;
@@ -768,7 +750,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
             m_aStates.top().aShape.nWrap = text::WrapTextMode_PARALLEL;
             break;
         case 3:
-            m_aStates.top().aShape.nWrap = text::WrapTextMode_THROUGH;
+            m_aStates.top().aShape.nWrap = text::WrapTextMode_THROUGHT;
             m_aStates.top().aCharacterSprms.set(NS_ooxml::LN_EG_WrapType_wrapNone, std::make_shared<RTFValue>());
             break;
         case 4:
@@ -776,7 +758,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
             m_aStates.top().aCharacterSprms.set(NS_ooxml::LN_EG_WrapType_wrapTight, std::make_shared<RTFValue>());
             break;
         case 5:
-            m_aStates.top().aShape.nWrap = text::WrapTextMode_THROUGH;
+            m_aStates.top().aShape.nWrap = text::WrapTextMode_THROUGHT;
             break;
         }
     }
@@ -1040,7 +1022,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
             }
             if (!aName.isEmpty())
             {
-                aSeq[aName] <<= sal_Int32(nParam);
+                aSeq[aName] = uno::makeAny(sal_Int32(nParam));
                 m_xDocumentProperties->setDocumentStatistics(aSeq.getAsConstNamedValueList());
             }
         }
@@ -1251,7 +1233,7 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
         if (rDrawingObject.aPolyLinePoints.empty())
             dispatchValue(RTF_DPPOLYCOUNT, 2);
 
-        rDrawingObject.aPolyLinePoints.emplace_back(awt::Point(convertTwipToMm100(nParam), 0));
+        rDrawingObject.aPolyLinePoints.push_back(awt::Point(convertTwipToMm100(nParam), 0));
     }
     break;
     case RTF_DPPTY:
@@ -1411,20 +1393,8 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
         switch (nParam)
         {
-        case 3:
-            m_aStates.top().aPropType = cppu::UnoType<sal_Int32>::get();
-            break;
-        case 5:
-            m_aStates.top().aPropType = cppu::UnoType<double>::get();
-            break;
-        case 11:
-            m_aStates.top().aPropType = cppu::UnoType<bool>::get();
-            break;
         case 30:
             m_aStates.top().aPropType = cppu::UnoType<OUString>::get();
-            break;
-        case 64:
-            m_aStates.top().aPropType = cppu::UnoType<util::DateTime>::get();
             break;
         }
     }
@@ -1435,31 +1405,6 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     case RTF_TRWWIDTHA:
         m_aStates.top().nTableRowWidthAfter = nParam;
         break;
-    case RTF_ANIMTEXT:
-    {
-        nId = 0;
-        switch (nParam)
-        {
-        case 0:
-            nId = NS_ooxml::LN_Value_ST_TextEffect_none;
-            break;
-        case 2:
-            nId = NS_ooxml::LN_Value_ST_TextEffect_blinkBackground;
-            break;
-        }
-
-        if (nId > 0)
-            m_aStates.top().aCharacterSprms.set(NS_ooxml::LN_EG_RPrBase_effect, std::make_shared<RTFValue>(nId));
-        break;
-    }
-    case RTF_VIEWBKSP:
-    {
-        m_aSettingsTableSprms.set(NS_ooxml::LN_CT_Settings_displayBackgroundShape, pIntValue);
-        // Send this token immediately, if it only appears before the first
-        // run, it will be too late, we ignored the background shape already by then.
-        outputSettingsTable();
-        break;
-    }
     default:
     {
         SAL_INFO("writerfilter", "TODO handle value '" << keywordToString(nKeyword) << "'");

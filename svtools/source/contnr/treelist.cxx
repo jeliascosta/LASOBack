@@ -391,9 +391,14 @@ SvTreeListEntry* SvTreeList::CloneEntry( SvTreeListEntry* pSource ) const
 {
     if( aCloneLink.IsSet() )
         return aCloneLink.Call( pSource );
-    SvTreeListEntry* pEntry = new SvTreeListEntry;
+    SvTreeListEntry* pEntry = CreateEntry();
     pEntry->Clone(pSource);
     return pEntry;
+}
+
+SvTreeListEntry* SvTreeList::CreateEntry()
+{
+    return new SvTreeListEntry;
 }
 
 SvTreeListEntry* SvTreeList::Clone( SvTreeListEntry* pEntry, sal_uLong& nCloneCount ) const

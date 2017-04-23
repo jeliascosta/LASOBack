@@ -29,7 +29,6 @@
 
 #include <com/sun/star/rendering/ColorSpaceType.hpp>
 #include <com/sun/star/rendering/RenderingIntent.hpp>
-#include <com/sun/star/rendering/VolatileContentDestroyedException.hpp>
 #include <com/sun/star/rendering/XGraphicDevice.hpp>
 #include <com/sun/star/rendering/XBitmap.hpp>
 #include <com/sun/star/rendering/XPolyPolygon2D.hpp>
@@ -221,7 +220,7 @@ namespace vcl
                     const uno::Sequence<sal_Int8> aTags(
                         aLayout.ColorSpace->getComponentTags() );
                     const sal_Int8* pStart(aTags.getConstArray());
-                    const std::size_t  nLen(aTags.getLength());
+                    const sal_Size  nLen(aTags.getLength());
                     const sal_Int8* pEnd(pStart+nLen);
 
                     const std::ptrdiff_t nAlphaIndex =
@@ -345,12 +344,16 @@ namespace vcl
 
         ::Point pointFromB2DPoint( const basegfx::B2DPoint& rPoint )
         {
-            return pointFromB2IPoint(basegfx::fround(rPoint));
+            return ::Point( FRound( rPoint.getX() ),
+                            FRound( rPoint.getY() ) );
         }
 
-        ::tools::Rectangle rectangleFromB2DRectangle( const basegfx::B2DRange& rRect )
+        ::Rectangle rectangleFromB2DRectangle( const basegfx::B2DRange& rRect )
         {
-            return rectangleFromB2IRectangle(basegfx::fround(rRect));
+            return ::Rectangle( FRound( rRect.getMinX() ),
+                                FRound( rRect.getMinY() ),
+                                FRound( rRect.getMaxX() ),
+                                FRound( rRect.getMaxY() ) );
         }
 
         Point pointFromB2IPoint( const basegfx::B2IPoint& rPoint )
@@ -359,23 +362,12 @@ namespace vcl
                             rPoint.getY() );
         }
 
-        basegfx::B2IPoint b2IPointFromPoint(Point const& rPoint)
+        Rectangle rectangleFromB2IRectangle( const basegfx::B2IRange& rRect )
         {
-            return basegfx::B2IPoint(rPoint.X(), rPoint.Y());
-        }
-
-        tools::Rectangle rectangleFromB2IRectangle( const basegfx::B2IRange& rRect )
-        {
-            return ::tools::Rectangle( rRect.getMinX(),
+            return ::Rectangle( rRect.getMinX(),
                                 rRect.getMinY(),
                                 rRect.getMaxX(),
                                 rRect.getMaxY() );
-        }
-
-        basegfx::B2IRectangle b2IRectangleFromRectangle(tools::Rectangle const& rRect)
-        {
-            return basegfx::B2IRectangle(rRect.Left(), rRect.Top(),
-                                         rRect.Right(), rRect.Bottom());
         }
 
         basegfx::B2DVector b2DSizeFromSize( const ::Size& rSize )
@@ -390,7 +382,7 @@ namespace vcl
                                         rPoint.Y() );
         }
 
-        basegfx::B2DRange b2DRectangleFromRectangle( const ::tools::Rectangle& rRect )
+        basegfx::B2DRange b2DRectangleFromRectangle( const ::Rectangle& rRect )
         {
             return basegfx::B2DRange( rRect.Left(),
                                         rRect.Top(),
@@ -416,9 +408,9 @@ namespace vcl
                           rPoint.Y );
         }
 
-        tools::Rectangle rectangleFromIntegerRectangle2D( const geometry::IntegerRectangle2D& rRectangle )
+        Rectangle rectangleFromIntegerRectangle2D( const geometry::IntegerRectangle2D& rRectangle )
         {
-            return tools::Rectangle( rRectangle.X1, rRectangle.Y1,
+            return Rectangle( rRectangle.X1, rRectangle.Y1,
                               rRectangle.X2, rRectangle.Y2 );
         }
 
@@ -429,24 +421,25 @@ namespace vcl
             private:
                 uno::Sequence< sal_Int8 > m_aComponentTags;
 
-                virtual ::sal_Int8 SAL_CALL getType(  ) override
+                virtual ::sal_Int8 SAL_CALL getType(  ) throw (uno::RuntimeException, std::exception) override
                 {
                     return rendering::ColorSpaceType::RGB;
                 }
-                virtual uno::Sequence< ::sal_Int8 > SAL_CALL getComponentTags(  ) override
+                virtual uno::Sequence< ::sal_Int8 > SAL_CALL getComponentTags(  ) throw (uno::RuntimeException, std::exception) override
                 {
                     return m_aComponentTags;
                 }
-                virtual ::sal_Int8 SAL_CALL getRenderingIntent(  ) override
+                virtual ::sal_Int8 SAL_CALL getRenderingIntent(  ) throw (uno::RuntimeException, std::exception) override
                 {
                     return rendering::RenderingIntent::PERCEPTUAL;
                 }
-                virtual uno::Sequence< beans::PropertyValue > SAL_CALL getProperties(  ) override
+                virtual uno::Sequence< beans::PropertyValue > SAL_CALL getProperties(  ) throw (uno::RuntimeException, std::exception) override
                 {
                     return uno::Sequence< beans::PropertyValue >();
                 }
                 virtual uno::Sequence< double > SAL_CALL convertColorSpace( const uno::Sequence< double >& deviceColor,
-                                                                            const uno::Reference< rendering::XColorSpace >& targetColorSpace ) override
+                                                                            const uno::Reference< rendering::XColorSpace >& targetColorSpace ) throw (lang::IllegalArgumentException,
+                                                                                                                                                      uno::RuntimeException, std::exception) override
                 {
                     // TODO(P3): if we know anything about target
                     // colorspace, this can be greatly sped up
@@ -454,65 +447,65 @@ namespace vcl
                         convertToARGB(deviceColor));
                     return targetColorSpace->convertFromARGB(aIntermediate);
                 }
-                virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertToRGB( const uno::Sequence< double >& deviceColor ) override
+                virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertToRGB( const uno::Sequence< double >& deviceColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const double*  pIn( deviceColor.getConstArray() );
-                    const std::size_t nLen( deviceColor.getLength() );
+                    const sal_Size nLen( deviceColor.getLength() );
                     ENSURE_ARG_OR_THROW2(nLen%4==0,
                                          "number of channels no multiple of 4",
                                          static_cast<rendering::XColorSpace*>(this), 0);
 
                     uno::Sequence< rendering::RGBColor > aRes(nLen/4);
                     rendering::RGBColor* pOut( aRes.getArray() );
-                    for( std::size_t i=0; i<nLen; i+=4 )
+                    for( sal_Size i=0; i<nLen; i+=4 )
                     {
                         *pOut++ = rendering::RGBColor(pIn[0],pIn[1],pIn[2]);
                         pIn += 4;
                     }
                     return aRes;
                 }
-                virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToARGB( const uno::Sequence< double >& deviceColor ) override
+                virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToARGB( const uno::Sequence< double >& deviceColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const double*  pIn( deviceColor.getConstArray() );
-                    const std::size_t nLen( deviceColor.getLength() );
+                    const sal_Size nLen( deviceColor.getLength() );
                     ENSURE_ARG_OR_THROW2(nLen%4==0,
                                          "number of channels no multiple of 4",
                                          static_cast<rendering::XColorSpace*>(this), 0);
 
                     uno::Sequence< rendering::ARGBColor > aRes(nLen/4);
                     rendering::ARGBColor* pOut( aRes.getArray() );
-                    for( std::size_t i=0; i<nLen; i+=4 )
+                    for( sal_Size i=0; i<nLen; i+=4 )
                     {
                         *pOut++ = rendering::ARGBColor(pIn[3],pIn[0],pIn[1],pIn[2]);
                         pIn += 4;
                     }
                     return aRes;
                 }
-                virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToPARGB( const uno::Sequence< double >& deviceColor ) override
+                virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToPARGB( const uno::Sequence< double >& deviceColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const double*  pIn( deviceColor.getConstArray() );
-                    const std::size_t nLen( deviceColor.getLength() );
+                    const sal_Size nLen( deviceColor.getLength() );
                     ENSURE_ARG_OR_THROW2(nLen%4==0,
                                          "number of channels no multiple of 4",
                                          static_cast<rendering::XColorSpace*>(this), 0);
 
                     uno::Sequence< rendering::ARGBColor > aRes(nLen/4);
                     rendering::ARGBColor* pOut( aRes.getArray() );
-                    for( std::size_t i=0; i<nLen; i+=4 )
+                    for( sal_Size i=0; i<nLen; i+=4 )
                     {
                         *pOut++ = rendering::ARGBColor(pIn[3],pIn[3]*pIn[0],pIn[3]*pIn[1],pIn[3]*pIn[2]);
                         pIn += 4;
                     }
                     return aRes;
                 }
-                virtual uno::Sequence< double > SAL_CALL convertFromRGB( const uno::Sequence< rendering::RGBColor >& rgbColor ) override
+                virtual uno::Sequence< double > SAL_CALL convertFromRGB( const uno::Sequence< rendering::RGBColor >& rgbColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const rendering::RGBColor* pIn( rgbColor.getConstArray() );
-                    const std::size_t             nLen( rgbColor.getLength() );
+                    const sal_Size             nLen( rgbColor.getLength() );
 
                     uno::Sequence< double > aRes(nLen*4);
                     double* pColors=aRes.getArray();
-                    for( std::size_t i=0; i<nLen; ++i )
+                    for( sal_Size i=0; i<nLen; ++i )
                     {
                         *pColors++ = pIn->Red;
                         *pColors++ = pIn->Green;
@@ -522,14 +515,14 @@ namespace vcl
                     }
                     return aRes;
                 }
-                virtual uno::Sequence< double > SAL_CALL convertFromARGB( const uno::Sequence< rendering::ARGBColor >& rgbColor ) override
+                virtual uno::Sequence< double > SAL_CALL convertFromARGB( const uno::Sequence< rendering::ARGBColor >& rgbColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const rendering::ARGBColor* pIn( rgbColor.getConstArray() );
-                    const std::size_t              nLen( rgbColor.getLength() );
+                    const sal_Size              nLen( rgbColor.getLength() );
 
                     uno::Sequence< double > aRes(nLen*4);
                     double* pColors=aRes.getArray();
-                    for( std::size_t i=0; i<nLen; ++i )
+                    for( sal_Size i=0; i<nLen; ++i )
                     {
                         *pColors++ = pIn->Red;
                         *pColors++ = pIn->Green;
@@ -539,14 +532,14 @@ namespace vcl
                     }
                     return aRes;
                 }
-                virtual uno::Sequence< double > SAL_CALL convertFromPARGB( const uno::Sequence< rendering::ARGBColor >& rgbColor ) override
+                virtual uno::Sequence< double > SAL_CALL convertFromPARGB( const uno::Sequence< rendering::ARGBColor >& rgbColor ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception) override
                 {
                     const rendering::ARGBColor* pIn( rgbColor.getConstArray() );
-                    const std::size_t              nLen( rgbColor.getLength() );
+                    const sal_Size              nLen( rgbColor.getLength() );
 
                     uno::Sequence< double > aRes(nLen*4);
                     double* pColors=aRes.getArray();
-                    for( std::size_t i=0; i<nLen; ++i )
+                    for( sal_Size i=0; i<nLen; ++i )
                     {
                         *pColors++ = pIn->Red/pIn->Alpha;
                         *pColors++ = pIn->Green/pIn->Alpha;

@@ -58,7 +58,7 @@ SwFieldInputDlg::SwFieldInputDlg( vcl::Window *pParent, SwWrtShell &rS,
 
     // evaluation here
     OUString aStr;
-    if( SwFieldIds::Input == pField->GetTyp()->Which() )
+    if( RES_INPUTFLD == pField->GetTyp()->Which() )
     {   // it is an input field
 
         pInpField = static_cast<SwInputField*>(pField);
@@ -74,7 +74,7 @@ SwFieldInputDlg::SwFieldInputDlg( vcl::Window *pParent, SwWrtShell &rS,
             case INP_USR:
                 // user field
                 if( nullptr != ( pUsrType = static_cast<SwUserFieldType*>(rSh.GetFieldType(
-                            SwFieldIds::User, pInpField->GetPar1() ) )  ) )
+                            RES_USERFLD, pInpField->GetPar1() ) )  ) )
                     aStr = pUsrType->GetContent();
                 break;
         }
@@ -130,7 +130,7 @@ void SwFieldInputDlg::StateChanged( StateChangedType nType )
 // Close
 void SwFieldInputDlg::Apply()
 {
-    OUString aTmp = m_pEditED->GetText().replaceAll("\r", "");
+    OUString aTmp(comphelper::string::remove(m_pEditED->GetText(), '\r'));
     rSh.StartAllAction();
     bool bModified = false;
     if(pInpField)
@@ -164,7 +164,7 @@ void SwFieldInputDlg::Apply()
     rSh.EndAllAction();
 }
 
-IMPL_LINK_NOARG(SwFieldInputDlg, NextHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwFieldInputDlg, NextHdl, Button*, void)
 {
     EndDialog(RET_OK);
 }

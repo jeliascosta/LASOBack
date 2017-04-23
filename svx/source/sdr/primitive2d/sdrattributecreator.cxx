@@ -23,7 +23,6 @@
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <svx/xlineit0.hxx>
 #include <svx/xfillit0.hxx>
-#include <svx/xflbmpit.hxx>
 #include <svx/xlntrit.hxx>
 #include <svx/xlnwtit.hxx>
 #include <svx/xlinjoit.hxx>
@@ -157,20 +156,20 @@ namespace drawinglayer
             }
         }
 
-        basegfx::B2DVector RectPointToB2DVector(RectPoint eRectPoint)
+        basegfx::B2DVector RectPointToB2DVector(RECT_POINT eRectPoint)
         {
             basegfx::B2DVector aRetval(0.0, 0.0);
 
             // position changes X
             switch(eRectPoint)
             {
-                case RectPoint::LT: case RectPoint::LM: case RectPoint::LB:
+                case RP_LT: case RP_LM: case RP_LB:
                 {
                     aRetval.setX(-1.0);
                     break;
                 }
 
-                case RectPoint::RT: case RectPoint::RM: case RectPoint::RB:
+                case RP_RT: case RP_RM: case RP_RB:
                 {
                     aRetval.setX(1.0);
                     break;
@@ -185,13 +184,13 @@ namespace drawinglayer
             // position changes Y
             switch(eRectPoint)
             {
-                case RectPoint::LT: case RectPoint::MT: case RectPoint::RT:
+                case RP_LT: case RP_MT: case RP_RT:
                 {
                     aRetval.setY(-1.0);
                     break;
                 }
 
-                case RectPoint::LB: case RectPoint::MB: case RectPoint::RB:
+                case RP_LB: case RP_MB: case RP_RB:
                 {
                     aRetval.setY(1.0);
                     break;
@@ -518,6 +517,7 @@ namespace drawinglayer
             const SdrTextObj& rTextObj = rText.GetObject();
 
             // Save chaining attributes
+            bool bToBeChained = rTextObj.IsToBeChained();
             bool bChainable = rTextObj.IsChainable();
 
 
@@ -575,11 +575,12 @@ namespace drawinglayer
                     rTextObj.IsFitToSize(),
                     rTextObj.IsAutoFit(),
                     static_cast<const XFormTextHideFormItem&>(rSet.Get(XATTR_FORMTXTHIDEFORM)).GetValue(),
-                    SdrTextAniKind::Blink == eAniKind,
-                    SdrTextAniKind::Scroll == eAniKind || SdrTextAniKind::Alternate == eAniKind || SdrTextAniKind::Slide == eAniKind,
+                    SDRTEXTANI_BLINK == eAniKind,
+                    SDRTEXTANI_SCROLL == eAniKind || SDRTEXTANI_ALTERNATE == eAniKind || SDRTEXTANI_SLIDE == eAniKind,
                     bInEditMode,
                     static_cast<const SdrTextFixedCellHeightItem&>(rSet.Get(SDRATTR_TEXT_USEFIXEDCELLHEIGHT)).GetValue(),
                     bWrongSpell,
+                    bToBeChained,
                     bChainable);
             }
 
@@ -628,7 +629,7 @@ namespace drawinglayer
         {
             Graphic aGraphic(static_cast<const XFillBitmapItem&>(rSet.Get(XATTR_FILLBITMAP)).GetGraphicObject().GetGraphic());
 
-            if(!(GraphicType::Bitmap == aGraphic.GetType() || GraphicType::GdiMetafile == aGraphic.GetType()))
+            if(!(GRAPHIC_BITMAP == aGraphic.GetType() || GRAPHIC_GDIMETAFILE == aGraphic.GetType()))
             {
                 // no content if not bitmap or metafile
                 OSL_ENSURE(false, "No fill graphic in SfxItemSet (!)");
@@ -640,10 +641,10 @@ namespace drawinglayer
             if(!aPrefSize.Width() || !aPrefSize.Height())
             {
                 // if there is no logical size, create a size from pixel size and set MapMode accordingly
-                if(GraphicType::Bitmap == aGraphic.GetType())
+                if(GRAPHIC_BITMAP == aGraphic.GetType())
                 {
                     aGraphic.SetPrefSize(aGraphic.GetBitmapEx().GetSizePixel());
-                    aGraphic.SetPrefMapMode(MapUnit::MapPixel);
+                    aGraphic.SetPrefMapMode(MAP_PIXEL);
                 }
             }
 
@@ -655,16 +656,16 @@ namespace drawinglayer
             }
 
             // convert size and MapMode to destination logical size and MapMode
-            const MapUnit aDestinationMapUnit(rSet.GetPool()->GetMetric(0));
+            const MapUnit aDestinationMapUnit((MapUnit)rSet.GetPool()->GetMetric(0));
             basegfx::B2DVector aGraphicLogicSize(aGraphic.GetPrefSize().Width(), aGraphic.GetPrefSize().Height());
 
             if(aGraphic.GetPrefMapMode() != aDestinationMapUnit)
             {
-                // #i100360# for MapUnit::MapPixel, LogicToLogic will not work properly,
+                // #i100360# for MAP_PIXEL, LogicToLogic will not work properly,
                 // so fallback to Application::GetDefaultDevice()
                 Size aNewSize(0, 0);
 
-                if(MapUnit::MapPixel == aGraphic.GetPrefMapMode().GetMapUnit())
+                if(MAP_PIXEL == aGraphic.GetPrefMapMode().GetMapUnit())
                 {
                     aNewSize = Application::GetDefaultDevice()->PixelToLogic(
                         aGraphic.GetPrefSize(),
@@ -700,10 +701,11 @@ namespace drawinglayer
                 aSize,
                 aOffset,
                 aOffsetPosition,
-                RectPointToB2DVector(rSet.GetItem<XFillBmpPosItem>(XATTR_FILLBMP_POS)->GetValue()),
-                static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_TILE)).GetValue(),
-                static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_STRETCH)).GetValue(),
-                static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_SIZELOG)).GetValue());
+                RectPointToB2DVector(
+                    (RECT_POINT)static_cast<const SfxEnumItem&>(rSet.Get(XATTR_FILLBMP_POS)).GetValue()),
+                    static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_TILE)).GetValue(),
+                    static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_STRETCH)).GetValue(),
+                    static_cast<const SfxBoolItem&>(rSet.Get(XATTR_FILLBMP_SIZELOG)).GetValue());
         }
 
         attribute::SdrShadowTextAttribute createNewSdrShadowTextAttribute(

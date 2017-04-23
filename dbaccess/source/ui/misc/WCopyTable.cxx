@@ -152,9 +152,9 @@ void ObjectCopySource::copyUISettingsTo( const Reference< XPropertySet >& _rxObj
 
 void ObjectCopySource::copyFilterAndSortingTo( const Reference< XConnection >& _xConnection,const Reference< XPropertySet >& _rxObject ) const
 {
-    std::pair< OUString, OUString > aProperties[] = {
-                 std::pair< OUString, OUString >(PROPERTY_FILTER,OUString(" AND "))
-                ,std::pair< OUString, OUString >(PROPERTY_ORDER,OUString(" ORDER BY "))
+    ::std::pair< OUString, OUString > aProperties[] = {
+                 ::std::pair< OUString, OUString >(PROPERTY_FILTER,OUString(" AND "))
+                ,::std::pair< OUString, OUString >(PROPERTY_ORDER,OUString(" ORDER BY "))
     };
 
     try
@@ -330,7 +330,7 @@ void NamedTableCopySource::impl_ensureColumnInfo_throw()
     }
 }
 
-::utl::SharedUNOComponent< XPreparedStatement > const & NamedTableCopySource::impl_ensureStatement_throw()
+::utl::SharedUNOComponent< XPreparedStatement > NamedTableCopySource::impl_ensureStatement_throw()
 {
     if ( !m_xStatement.is() )
         m_xStatement.set( m_xConnection->prepareStatement( getSelectStatement() ), UNO_SET_THROW );
@@ -340,7 +340,7 @@ void NamedTableCopySource::impl_ensureColumnInfo_throw()
 Sequence< OUString > NamedTableCopySource::getColumnNames() const
 {
     Sequence< OUString > aNames( m_aColumnInfo.size() );
-    for (   std::vector< OFieldDescription >::const_iterator col = m_aColumnInfo.begin();
+    for (   ::std::vector< OFieldDescription >::const_iterator col = m_aColumnInfo.begin();
             col != m_aColumnInfo.end();
             ++col
         )
@@ -374,7 +374,7 @@ Sequence< OUString > NamedTableCopySource::getPrimaryKeyColumnNames() const
 
 OFieldDescription* NamedTableCopySource::createFieldDescription( const OUString& _rColumnName ) const
 {
-    for (   std::vector< OFieldDescription >::const_iterator col = m_aColumnInfo.begin();
+    for (   ::std::vector< OFieldDescription >::const_iterator col = m_aColumnInfo.begin();
             col != m_aColumnInfo.end();
             ++col
         )
@@ -548,7 +548,7 @@ OCopyTableWizard::OCopyTableWizard( vcl::Window * pParent, const OUString& _rDef
 
     ::dbaui::fillTypeInfo( _xSourceConnection, m_sTypeNames, m_aTypeInfo, m_aTypeInfoIndex );
     ::dbaui::fillTypeInfo( m_xDestConnection, m_sTypeNames, m_aDestTypeInfo, m_aDestTypeInfoIndex );
-    loadData( m_rSourceObject, m_vSourceColumns, m_vSourceVec );
+    impl_loadSourceData();
 
     bool bAllowViews = true;
     // if the source is a, don't allow creating views
@@ -637,7 +637,7 @@ OCopyTableWizard::OCopyTableWizard( vcl::Window* pParent, const OUString& _rDefa
 
 void OCopyTableWizard::construct()
 {
-    SetSizePixel(Size(700, 350));
+    SetSizePixel(Size(580, 350));
 
     AddButton( m_pbHelp = VclPtr<HelpButton>::Create(this, WB_TABSTOP) );
     AddButton( m_pbCancel = VclPtr<CancelButton>::Create(this, WB_TABSTOP) );
@@ -645,11 +645,11 @@ void OCopyTableWizard::construct()
     AddButton( m_pbNext = VclPtr<PushButton>::Create(this, WB_TABSTOP));
     AddButton( m_pbFinish = VclPtr<PushButton>::Create(this, WB_TABSTOP));
 
-    m_pbHelp->SetSizePixel( LogicToPixel( Size( 50, 14 ), MapUnit::MapAppFont ) );
-    m_pbCancel->SetSizePixel( LogicToPixel( Size( 50, 14 ), MapUnit::MapAppFont ) );
-    m_pbPrev->SetSizePixel( LogicToPixel( Size( 50, 14 ), MapUnit::MapAppFont ) );
-    m_pbNext->SetSizePixel( LogicToPixel( Size( 50, 14 ), MapUnit::MapAppFont ) );
-    m_pbFinish->SetSizePixel( LogicToPixel( Size( 50, 14 ), MapUnit::MapAppFont ) );
+    m_pbHelp->SetSizePixel( LogicToPixel( Size( 50, 14 ), MAP_APPFONT ) );
+    m_pbCancel->SetSizePixel( LogicToPixel( Size( 50, 14 ), MAP_APPFONT ) );
+    m_pbPrev->SetSizePixel( LogicToPixel( Size( 50, 14 ), MAP_APPFONT ) );
+    m_pbNext->SetSizePixel( LogicToPixel( Size( 50, 14 ), MAP_APPFONT ) );
+    m_pbFinish->SetSizePixel( LogicToPixel( Size( 50, 14 ), MAP_APPFONT ) );
 
     m_pbPrev->SetText(ModuleRes(STR_WIZ_PB_PREV));
     m_pbNext->SetText(ModuleRes(STR_WIZ_PB_NEXT));
@@ -717,7 +717,7 @@ void OCopyTableWizard::dispose()
     WizardDialog::dispose();
 }
 
-IMPL_LINK_NOARG(OCopyTableWizard, ImplPrevHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(OCopyTableWizard, ImplPrevHdl, Button*, void)
 {
     m_ePressed = WIZARD_PREV;
     if ( GetCurLevel() )
@@ -734,7 +734,7 @@ IMPL_LINK_NOARG(OCopyTableWizard, ImplPrevHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(OCopyTableWizard, ImplNextHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(OCopyTableWizard, ImplNextHdl, Button*, void)
 {
     m_ePressed = WIZARD_NEXT;
     if ( GetCurLevel() < MAX_PAGES )
@@ -795,7 +795,7 @@ bool OCopyTableWizard::CheckColumns(sal_Int32& _rnBreakPos)
 
                 if ( aDestIter != m_vDestColumns.end() )
                 {
-                    ODatabaseExport::TColumnVector::const_iterator aFind = std::find(m_aDestVec.begin(),m_aDestVec.end(),aDestIter);
+                    ODatabaseExport::TColumnVector::const_iterator aFind = ::std::find(m_aDestVec.begin(),m_aDestVec.end(),aDestIter);
                     sal_Int32 nPos = (aFind - m_aDestVec.begin())+1;
                     m_vColumnPos.push_back(ODatabaseExport::TPositions::value_type(nPos,nPos));
                     m_vColumnTypes.push_back((*aFind)->second->GetType());
@@ -834,7 +834,7 @@ bool OCopyTableWizard::CheckColumns(sal_Int32& _rnBreakPos)
     return bRet;
 }
 
-IMPL_LINK_NOARG(OCopyTableWizard, ImplOKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(OCopyTableWizard, ImplOKHdl, Button*, void)
 {
     m_ePressed = WIZARD_FINISH;
     bool bFinish = DeactivatePage();
@@ -873,7 +873,7 @@ IMPL_LINK_NOARG(OCopyTableWizard, ImplOKHdl, Button*, void)
                 {
                     if ( supportsPrimaryKey() )
                     {
-                        ODatabaseExport::TColumns::const_iterator aFind = std::find_if(m_vDestColumns.begin(),m_vDestColumns.end(),
+                        ODatabaseExport::TColumns::const_iterator aFind = ::std::find_if(m_vDestColumns.begin(),m_vDestColumns.end(),
                             [] (const ODatabaseExport::TColumns::value_type& tCol) { return tCol.second->IsPrimaryKey(); });
                         if ( aFind == m_vDestColumns.end() && m_xInteractionHandler.is() )
                         {
@@ -937,7 +937,7 @@ void OCopyTableWizard::setCreatePrimaryKey( bool _bDoCreate, const OUString& _rS
         pSettingsPage->setCreatePrimaryKey( _bDoCreate, _rSuggestedName );
 }
 
-IMPL_LINK_NOARG(OCopyTableWizard, ImplActivateHdl, WizardDialog*, void)
+IMPL_LINK_NOARG_TYPED(OCopyTableWizard, ImplActivateHdl, WizardDialog*, void)
 {
     OWizardPage* pCurrent = static_cast<OWizardPage*>(GetPage(GetCurLevel()));
     if(pCurrent)
@@ -1023,6 +1023,11 @@ void OCopyTableWizard::replaceColumn(sal_Int32 _nPos,OFieldDescription* _pField,
         m_aDestVec[_nPos] =
             m_vDestColumns.insert(ODatabaseExport::TColumns::value_type(_pField->GetName(),_pField)).first;
     }
+}
+
+void OCopyTableWizard::impl_loadSourceData()
+{
+    loadData( m_rSourceObject, m_vSourceColumns, m_vSourceVec );
 }
 
 void OCopyTableWizard::loadData(  const ICopyTableSourceObject& _rSourceObject, ODatabaseExport::TColumns& _rColumns, ODatabaseExport::TColumnVector& _rColVector )
@@ -1270,10 +1275,10 @@ Reference< XPropertySet > OCopyTableWizard::createTable()
 
                 if ( aDestIter != m_vDestColumns.end() )
                 {
-                    ODatabaseExport::TColumnVector::const_iterator aFind = std::find(m_aDestVec.begin(),m_aDestVec.end(),aDestIter);
+                    ODatabaseExport::TColumnVector::const_iterator aFind = ::std::find(m_aDestVec.begin(),m_aDestVec.end(),aDestIter);
                     sal_Int32 nPos = (aFind - m_aDestVec.begin())+1;
 
-                    ODatabaseExport::TPositions::iterator aPosFind = std::find_if(
+                    ODatabaseExport::TPositions::iterator aPosFind = ::std::find_if(
                         m_vColumnPos.begin(),
                         m_vColumnPos.end(),
                         [nPos] (const ODatabaseExport::TPositions::value_type& tPos) {

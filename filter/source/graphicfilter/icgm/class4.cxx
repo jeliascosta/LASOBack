@@ -56,7 +56,7 @@ void CGM::ImplGetVector( double* pVector )
     {
         for ( sal_uInt32 i = 0; i < 4; i++ )
         {
-            pVector[ i ] = ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
+            pVector[ i ] = (double)ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
         }
     }
     else
@@ -411,9 +411,9 @@ void CGM::ImplDoClass4()
 
                     if ( mbFigure )
                     {
-                        tools::Rectangle aBoundingBox( Point( (long)( aCenterPoint.X - fRadius ), long( aCenterPoint.Y - fRadius ) ),
+                        Rectangle aBoundingBox( Point( (long)( aCenterPoint.X - fRadius ), long( aCenterPoint.Y - fRadius ) ),
                             Size( ( static_cast< long >( 2 * fRadius ) ), (long)( 2 * fRadius) ) );
-                        tools::Polygon aPolygon( aBoundingBox, Point( (long)aStartingPoint.X, (long)aStartingPoint.Y ) ,Point( (long)aEndingPoint.X, (long)aEndingPoint.Y ), PolyStyle::Arc );
+                        tools::Polygon aPolygon( aBoundingBox, Point( (long)aStartingPoint.X, (long)aStartingPoint.Y ) ,Point( (long)aEndingPoint.X, (long)aEndingPoint.Y ), POLY_ARC );
                         if ( nSwitch )
                             mpOutAct->RegPolyLine( aPolygon, true );
                         else
@@ -504,7 +504,7 @@ void CGM::ImplDoClass4()
 
                 if ( pElement->eVDCType == VDC_REAL )
                 {
-                    aRadius.X = ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
+                    aRadius.X = (double)ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
                 }
                 else
                 {
@@ -527,12 +527,12 @@ void CGM::ImplDoClass4()
 
                 if ( mbFigure )
                 {
-                    tools::Rectangle aBoundingBox(
+                    Rectangle aBoundingBox(
                         Point( (long)( aCenter.X - aRadius.X ), long( aCenter.Y - aRadius.X ) ),
                         Size( static_cast< long >( 2 * aRadius.X ), (long)( 2 * aRadius.X ) ) );
                     tools::Polygon aPolygon( aBoundingBox,
                         Point( (long)vector[ 0 ], (long)vector[ 1 ] ),
-                        Point( (long)vector[ 2 ], (long)vector[ 3 ] ), PolyStyle::Arc );
+                        Point( (long)vector[ 2 ], (long)vector[ 3 ] ), POLY_ARC );
                     mpOutAct->RegPolyLine( aPolygon );
                 }
                 else
@@ -557,7 +557,7 @@ void CGM::ImplDoClass4()
                 ImplGetVector( &vector[ 0 ] );
                 if ( pElement->eVDCType == VDC_REAL )
                 {
-                    aRadius.X = ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
+                    aRadius.X = (double)ImplGetFloat( pElement->eVDCRealPrecision, pElement->nVDCRealSize );
                 }
                 else
                 {
@@ -722,9 +722,9 @@ void CGM::ImplDoClass4()
                     for ( sal_uInt16 i = 0; i < nNumberOfPoints; i++ )
                     {
                         if ( ( i % 3 ) == 0 )
-                            aPolygon.SetFlags( i, PolyFlags::Normal );
+                            aPolygon.SetFlags( i, POLY_NORMAL );
                         else
-                            aPolygon.SetFlags( i, PolyFlags::Control );
+                            aPolygon.SetFlags( i, POLY_CONTROL );
                     }
                 }
                 else
@@ -734,8 +734,8 @@ void CGM::ImplDoClass4()
                         switch ( i & 3 )
                         {
                             case 0 :
-                            case 3 : aPolygon.SetFlags( i, PolyFlags::Normal ); break;
-                            default : aPolygon.SetFlags( i, PolyFlags::Control ); break;
+                            case 3 : aPolygon.SetFlags( i, POLY_NORMAL ); break;
+                            default : aPolygon.SetFlags( i, POLY_CONTROL ); break;
                         }
                     }
                 }

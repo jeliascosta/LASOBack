@@ -27,7 +27,6 @@
 #include <cppuhelper/supportsservice.hxx>
 #include <osl/endian.h>
 
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/XObjectInputStream.hpp>
 #include <com/sun/star/io/XObjectOutputStream.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
@@ -63,40 +62,52 @@ public:
         {
         }
 
+    virtual ~ODataInputStream();
 public: // XInputStream
-    virtual sal_Int32 SAL_CALL readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) override;
-    virtual sal_Int32 SAL_CALL readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) override;
-    virtual void SAL_CALL skipBytes(sal_Int32 nBytesToSkip) override;
-    virtual sal_Int32 SAL_CALL available() override;
-    virtual void SAL_CALL closeInput() override;
+    virtual sal_Int32 SAL_CALL readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+                                                            throw ( NotConnectedException,
+                                                                        BufferSizeExceededException,
+                                                                        RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead)
+                                                            throw ( NotConnectedException,
+                                                                        BufferSizeExceededException,
+                                                                        RuntimeException, std::exception) override;
+    virtual void SAL_CALL skipBytes(sal_Int32 nBytesToSkip)                 throw ( NotConnectedException,
+                                                                        BufferSizeExceededException,
+                                                                        RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL available()                          throw ( NotConnectedException,
+                                                                        RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeInput()                          throw ( NotConnectedException,
+                                                                        RuntimeException, std::exception) override;
 
 public: // XDataInputStream
-    virtual sal_Int8 SAL_CALL readBoolean() override;
-    virtual sal_Int8 SAL_CALL readByte() override;
-    virtual sal_Unicode SAL_CALL readChar() override;
-    virtual sal_Int16 SAL_CALL readShort() override;
-    virtual sal_Int32 SAL_CALL readLong() override;
-    virtual sal_Int64 SAL_CALL readHyper() override;
-    virtual float SAL_CALL readFloat() override;
-    virtual double SAL_CALL readDouble() override;
-    virtual OUString SAL_CALL readUTF() override;
+    virtual sal_Int8 SAL_CALL readBoolean() throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int8 SAL_CALL readByte() throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Unicode SAL_CALL readChar() throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL readShort() throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readLong() throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL readHyper() throw (IOException, RuntimeException, std::exception) override;
+    virtual float SAL_CALL readFloat() throw (IOException, RuntimeException, std::exception) override;
+    virtual double SAL_CALL readDouble() throw (IOException, RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL readUTF() throw (IOException, RuntimeException, std::exception) override;
 
 
 public: // XActiveDataSink
-    virtual void SAL_CALL setInputStream(const Reference< XInputStream > & aStream) override;
-    virtual Reference< XInputStream > SAL_CALL getInputStream() override;
+    virtual void SAL_CALL setInputStream(const Reference< XInputStream > & aStream)
+        throw (RuntimeException, std::exception) override;
+    virtual Reference< XInputStream > SAL_CALL getInputStream() throw (RuntimeException, std::exception) override;
 
 public: // XConnectable
-    virtual void SAL_CALL setPredecessor(const Reference < XConnectable >& aPredecessor) override;
-    virtual Reference < XConnectable > SAL_CALL getPredecessor() override;
-    virtual void SAL_CALL setSuccessor(const Reference < XConnectable >& aSuccessor) override;
-    virtual Reference < XConnectable > SAL_CALL getSuccessor() override ;
+    virtual void SAL_CALL setPredecessor(const Reference < XConnectable >& aPredecessor) throw (RuntimeException, std::exception) override;
+    virtual Reference < XConnectable > SAL_CALL getPredecessor() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSuccessor(const Reference < XConnectable >& aSuccessor) throw (RuntimeException, std::exception) override;
+    virtual Reference < XConnectable > SAL_CALL getSuccessor() throw (RuntimeException, std::exception) override ;
 
 
 public: // XServiceInfo
-    OUString                     SAL_CALL getImplementationName() override;
-    Sequence< OUString >         SAL_CALL getSupportedServiceNames() override;
-    sal_Bool                        SAL_CALL supportsService(const OUString& ServiceName) override;
+    OUString                     SAL_CALL getImplementationName() throw (std::exception) override;
+    Sequence< OUString >         SAL_CALL getSupportedServiceNames() throw (std::exception) override;
+    sal_Bool                        SAL_CALL supportsService(const OUString& ServiceName) throw (std::exception) override;
 
 protected:
 
@@ -106,8 +117,15 @@ protected:
     bool m_bValidStream;
 };
 
+ODataInputStream::~ODataInputStream()
+{
+}
+
 // XInputStream
 sal_Int32 ODataInputStream::readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
      sal_Int32 nRead;
 
@@ -124,6 +142,9 @@ sal_Int32 ODataInputStream::readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBy
 }
 
 sal_Int32 ODataInputStream::readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead)
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
      sal_Int32 nRead;
      if( m_bValidStream ) {
@@ -136,6 +157,9 @@ sal_Int32 ODataInputStream::readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32
      return nRead;
 }
 void ODataInputStream::skipBytes(sal_Int32 nBytesToSkip)
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
      if( m_bValidStream ) {
          m_input->skipBytes( nBytesToSkip );
@@ -148,6 +172,8 @@ void ODataInputStream::skipBytes(sal_Int32 nBytesToSkip)
 
 
 sal_Int32 ODataInputStream::available()
+    throw ( NotConnectedException,
+            RuntimeException, std::exception)
 {
      sal_Int32 nAvail;
 
@@ -163,6 +189,8 @@ sal_Int32 ODataInputStream::available()
 }
 
 void ODataInputStream::closeInput()
+    throw ( NotConnectedException,
+            RuntimeException, std::exception)
 {
      if( m_bValidStream ) {
          m_input->closeInput( );
@@ -181,12 +209,12 @@ void ODataInputStream::closeInput()
 //== XDataInputStream ===========================================
 
 // XDataInputStream
-sal_Int8 ODataInputStream::readBoolean()
+sal_Int8 ODataInputStream::readBoolean() throw (IOException, RuntimeException, std::exception)
 {
     return readByte();
 }
 
-sal_Int8 ODataInputStream::readByte()
+sal_Int8 ODataInputStream::readByte()    throw (IOException, RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp(1);
     if( 1 != readBytes( aTmp, 1 ) )
@@ -196,7 +224,7 @@ sal_Int8 ODataInputStream::readByte()
     return aTmp.getArray()[0];
 }
 
-sal_Unicode ODataInputStream::readChar()
+sal_Unicode ODataInputStream::readChar() throw (IOException, RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp(2);
     if( 2 != readBytes( aTmp, 2 ) )
@@ -208,7 +236,7 @@ sal_Unicode ODataInputStream::readChar()
     return ((sal_Unicode)pBytes[0] << 8) + pBytes[1];
 }
 
-sal_Int16 ODataInputStream::readShort()
+sal_Int16 ODataInputStream::readShort() throw (IOException, RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp(2);
     if( 2 != readBytes( aTmp, 2 ) )
@@ -221,7 +249,7 @@ sal_Int16 ODataInputStream::readShort()
 }
 
 
-sal_Int32 ODataInputStream::readLong()
+sal_Int32 ODataInputStream::readLong() throw (IOException, RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp(4);
     if( 4 != readBytes( aTmp, 4 ) )
@@ -234,7 +262,7 @@ sal_Int32 ODataInputStream::readLong()
 }
 
 
-sal_Int64 ODataInputStream::readHyper()
+sal_Int64 ODataInputStream::readHyper() throw (IOException, RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp(8);
     if( 8 != readBytes( aTmp, 8 ) )
@@ -254,14 +282,14 @@ sal_Int64 ODataInputStream::readHyper()
         pBytes[7];
 }
 
-float ODataInputStream::readFloat()
+float ODataInputStream::readFloat() throw (IOException, RuntimeException, std::exception)
 {
     union { float f; sal_uInt32 n; } a;
     a.n = readLong();
     return a.f;
 }
 
-double ODataInputStream::readDouble()
+double ODataInputStream::readDouble() throw (IOException, RuntimeException, std::exception)
 {
     union { double d; struct { sal_uInt32 n1; sal_uInt32 n2; } ad; } a;
 #if defined OSL_LITENDIAN
@@ -274,7 +302,7 @@ double ODataInputStream::readDouble()
     return a.d;
 }
 
-OUString ODataInputStream::readUTF()
+OUString ODataInputStream::readUTF() throw (IOException, RuntimeException, std::exception)
 {
     sal_uInt16              nShortLen = (sal_uInt16)readShort();
     sal_Int32               nUTFLen;
@@ -355,6 +383,7 @@ OUString ODataInputStream::readUTF()
 
 // XActiveDataSource
 void ODataInputStream::setInputStream(const Reference< XInputStream > & aStream)
+    throw (RuntimeException, std::exception)
 {
 
     if( m_input != aStream ) {
@@ -367,14 +396,14 @@ void ODataInputStream::setInputStream(const Reference< XInputStream > & aStream)
     m_bValidStream = m_input.is();
 }
 
-Reference< XInputStream > ODataInputStream::getInputStream()
+Reference< XInputStream > ODataInputStream::getInputStream() throw (RuntimeException, std::exception)
 {
     return m_input;
 }
 
 
 // XDataSink
-void ODataInputStream::setSuccessor( const Reference < XConnectable > &r )
+void ODataInputStream::setSuccessor( const Reference < XConnectable > &r ) throw (RuntimeException, std::exception)
 {
      /// if the references match, nothing needs to be done
      if( m_succ != r ) {
@@ -389,7 +418,7 @@ void ODataInputStream::setSuccessor( const Reference < XConnectable > &r )
      }
 }
 
-Reference < XConnectable > ODataInputStream::getSuccessor()
+Reference < XConnectable > ODataInputStream::getSuccessor() throw (RuntimeException, std::exception)
 {
     return m_succ;
 }
@@ -397,6 +426,7 @@ Reference < XConnectable > ODataInputStream::getSuccessor()
 
 // XDataSource
 void ODataInputStream::setPredecessor( const Reference < XConnectable > &r )
+    throw (RuntimeException, std::exception)
 {
     if( r != m_pred ) {
         m_pred = r;
@@ -406,25 +436,25 @@ void ODataInputStream::setPredecessor( const Reference < XConnectable > &r )
         }
     }
 }
-Reference < XConnectable > ODataInputStream::getPredecessor()
+Reference < XConnectable > ODataInputStream::getPredecessor() throw (RuntimeException, std::exception)
 {
     return m_pred;
 }
 
 // XServiceInfo
-OUString ODataInputStream::getImplementationName()
+OUString ODataInputStream::getImplementationName() throw (std::exception)
 {
     return ODataInputStream_getImplementationName();
 }
 
 // XServiceInfo
-sal_Bool ODataInputStream::supportsService(const OUString& ServiceName)
+sal_Bool ODataInputStream::supportsService(const OUString& ServiceName) throw (std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > ODataInputStream::getSupportedServiceNames()
+Sequence< OUString > ODataInputStream::getSupportedServiceNames() throw (std::exception)
 {
     return ODataInputStream_getSupportedServiceNames();
 }
@@ -438,6 +468,7 @@ Sequence< OUString > ODataInputStream::getSupportedServiceNames()
 
 Reference< XInterface > SAL_CALL ODataInputStream_CreateInstance(
     SAL_UNUSED_PARAMETER const Reference < XComponentContext > & )
+    throw( Exception)
 {
     ODataInputStream *p = new ODataInputStream;
     return Reference< XInterface > ( static_cast<OWeakObject *>(p) );
@@ -467,37 +498,52 @@ public:
         : m_bValidStream( false )
         {
         }
+    virtual ~ODataOutputStream();
 
 public: // XOutputStream
-    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData) override;
-    virtual void SAL_CALL flush() override;
-    virtual void SAL_CALL closeOutput() override;
+    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData)
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override;
+    virtual void SAL_CALL flush()
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeOutput()
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override;
 
 public: // XDataOutputStream
-    virtual void SAL_CALL writeBoolean(sal_Bool Value) override;
-    virtual void SAL_CALL writeByte(sal_Int8 Value) override;
-    virtual void SAL_CALL writeChar(sal_Unicode Value) override;
-    virtual void SAL_CALL writeShort(sal_Int16 Value) override;
-    virtual void SAL_CALL writeLong(sal_Int32 Value) override;
-    virtual void SAL_CALL writeHyper(sal_Int64 Value) override;
-    virtual void SAL_CALL writeFloat(float Value) override;
-    virtual void SAL_CALL writeDouble(double Value) override;
-    virtual void SAL_CALL writeUTF(const OUString& Value) override;
+    virtual void SAL_CALL writeBoolean(sal_Bool Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeByte(sal_Int8 Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeChar(sal_Unicode Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeShort(sal_Int16 Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeLong(sal_Int32 Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeHyper(sal_Int64 Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeFloat(float Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeDouble(double Value) throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL writeUTF(const OUString& Value) throw (IOException, RuntimeException, std::exception) override;
 
 public: // XActiveDataSource
-    virtual void SAL_CALL setOutputStream(const Reference< XOutputStream > & aStream) override;
-    virtual Reference < XOutputStream > SAL_CALL getOutputStream() override;
+    virtual void SAL_CALL setOutputStream(const Reference< XOutputStream > & aStream)
+        throw (RuntimeException, std::exception) override;
+    virtual Reference < XOutputStream > SAL_CALL getOutputStream() throw (RuntimeException, std::exception) override;
 
 public: // XConnectable
-    virtual void SAL_CALL setPredecessor(const Reference < XConnectable >& aPredecessor) override;
-    virtual Reference < XConnectable > SAL_CALL getPredecessor() override;
-    virtual void SAL_CALL setSuccessor(const Reference < XConnectable >& aSuccessor) override;
-    virtual Reference < XConnectable > SAL_CALL getSuccessor() override;
+    virtual void SAL_CALL setPredecessor(const Reference < XConnectable >& aPredecessor)
+        throw (RuntimeException, std::exception) override;
+    virtual Reference < XConnectable > SAL_CALL getPredecessor()
+        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSuccessor(const Reference < XConnectable >& aSuccessor)
+        throw (RuntimeException, std::exception) override;
+    virtual Reference < XConnectable > SAL_CALL getSuccessor()
+        throw (RuntimeException, std::exception) override;
 
 public: // XServiceInfo
-    OUString                     SAL_CALL getImplementationName() override;
-    Sequence< OUString >         SAL_CALL getSupportedServiceNames() override;
-    sal_Bool                     SAL_CALL supportsService(const OUString& ServiceName) override;
+    OUString                     SAL_CALL getImplementationName() throw (std::exception) override;
+    Sequence< OUString >         SAL_CALL getSupportedServiceNames() throw (std::exception) override;
+    sal_Bool                     SAL_CALL supportsService(const OUString& ServiceName) throw (std::exception) override;
 
 protected:
     Reference < XConnectable >  m_succ;
@@ -506,8 +552,16 @@ protected:
     bool m_bValidStream;
 };
 
+ODataOutputStream::~ODataOutputStream()
+{
+}
+
+
 // XOutputStream
 void ODataOutputStream::writeBytes(const Sequence< sal_Int8 >& aData)
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
     if( m_bValidStream )
     {
@@ -519,6 +573,9 @@ void ODataOutputStream::writeBytes(const Sequence< sal_Int8 >& aData)
 }
 
 void ODataOutputStream::flush()
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
     if( m_bValidStream )
     {
@@ -533,6 +590,9 @@ void ODataOutputStream::flush()
 
 
 void ODataOutputStream::closeOutput()
+    throw ( NotConnectedException,
+            BufferSizeExceededException,
+            RuntimeException, std::exception)
 {
     if( m_bValidStream )
     {
@@ -549,6 +609,8 @@ void ODataOutputStream::closeOutput()
 
 // XDataOutputStream
 void ODataOutputStream::writeBoolean(sal_Bool Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     if( Value )
     {
@@ -562,6 +624,8 @@ void ODataOutputStream::writeBoolean(sal_Bool Value)
 
 
 void ODataOutputStream::writeByte(sal_Int8 Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp( 1 );
     aTmp.getArray()[0] = Value;
@@ -569,6 +633,8 @@ void ODataOutputStream::writeByte(sal_Int8 Value)
 }
 
 void ODataOutputStream::writeChar(sal_Unicode Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp( 2 );
     sal_Int8 * pBytes = aTmp.getArray();
@@ -579,6 +645,8 @@ void ODataOutputStream::writeChar(sal_Unicode Value)
 
 
 void ODataOutputStream::writeShort(sal_Int16 Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp( 2 );
     sal_Int8 * pBytes = aTmp.getArray();
@@ -588,6 +656,8 @@ void ODataOutputStream::writeShort(sal_Int16 Value)
 }
 
 void ODataOutputStream::writeLong(sal_Int32 Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp( 4 );
     sal_Int8 * pBytes = aTmp.getArray();
@@ -599,6 +669,8 @@ void ODataOutputStream::writeLong(sal_Int32 Value)
 }
 
 void ODataOutputStream::writeHyper(sal_Int64 Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     Sequence<sal_Int8> aTmp( 8 );
     sal_Int8 * pBytes = aTmp.getArray();
@@ -615,6 +687,8 @@ void ODataOutputStream::writeHyper(sal_Int64 Value)
 
 
 void ODataOutputStream::writeFloat(float Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     union { float f; sal_uInt32 n; } a;
     a.f = Value;
@@ -622,6 +696,8 @@ void ODataOutputStream::writeFloat(float Value)
 }
 
 void ODataOutputStream::writeDouble(double Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     union { double d; struct { sal_uInt32 n1; sal_uInt32 n2; } ad; } a;
     a.d = Value;
@@ -635,6 +711,8 @@ void ODataOutputStream::writeDouble(double Value)
 }
 
 void ODataOutputStream::writeUTF(const OUString& Value)
+    throw ( IOException,
+            RuntimeException, std::exception)
 {
     sal_Int32 nStrLen = Value.getLength();
     const sal_Unicode * pStr = Value.getStr();
@@ -693,6 +771,7 @@ void ODataOutputStream::writeUTF(const OUString& Value)
 
 // XActiveDataSource
 void ODataOutputStream::setOutputStream(const Reference< XOutputStream > & aStream)
+    throw (RuntimeException, std::exception)
 {
     if( m_output != aStream ) {
         m_output = aStream;
@@ -704,6 +783,7 @@ void ODataOutputStream::setOutputStream(const Reference< XOutputStream > & aStre
 }
 
 Reference< XOutputStream > ODataOutputStream::getOutputStream()
+    throw (RuntimeException, std::exception)
 {
     return m_output;
 }
@@ -711,6 +791,7 @@ Reference< XOutputStream > ODataOutputStream::getOutputStream()
 
 // XDataSink
 void ODataOutputStream::setSuccessor( const Reference < XConnectable > &r )
+    throw (RuntimeException, std::exception)
 {
      /// if the references match, nothing needs to be done
      if( m_succ != r )
@@ -726,14 +807,14 @@ void ODataOutputStream::setSuccessor( const Reference < XConnectable > &r )
          }
      }
 }
-Reference < XConnectable > ODataOutputStream::getSuccessor()
+Reference < XConnectable > ODataOutputStream::getSuccessor()    throw (RuntimeException, std::exception)
 {
     return m_succ;
 }
 
 
 // XDataSource
-void ODataOutputStream::setPredecessor( const Reference < XConnectable > &r )
+void ODataOutputStream::setPredecessor( const Reference < XConnectable > &r )   throw (RuntimeException, std::exception)
 {
     if( r != m_pred ) {
         m_pred = r;
@@ -743,32 +824,33 @@ void ODataOutputStream::setPredecessor( const Reference < XConnectable > &r )
         }
     }
 }
-Reference < XConnectable > ODataOutputStream::getPredecessor()
+Reference < XConnectable > ODataOutputStream::getPredecessor()  throw (RuntimeException, std::exception)
 {
     return m_pred;
 }
 
 
 // XServiceInfo
-OUString ODataOutputStream::getImplementationName()
+OUString ODataOutputStream::getImplementationName() throw (std::exception)
 {
     return ODataOutputStream_getImplementationName();
 }
 
 // XServiceInfo
-sal_Bool ODataOutputStream::supportsService(const OUString& ServiceName)
+sal_Bool ODataOutputStream::supportsService(const OUString& ServiceName) throw (std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > ODataOutputStream::getSupportedServiceNames()
+Sequence< OUString > ODataOutputStream::getSupportedServiceNames() throw (std::exception)
 {
     return ODataOutputStream_getSupportedServiceNames();
 }
 
 Reference< XInterface > SAL_CALL ODataOutputStream_CreateInstance(
     SAL_UNUSED_PARAMETER const Reference < XComponentContext > & )
+    throw(Exception)
 {
     ODataOutputStream *p = new ODataOutputStream;
     Reference< XInterface > xService = *p;
@@ -826,52 +908,64 @@ public:
         {
         }
 
+    virtual ~OObjectOutputStream();
+
 public:
     // XOutputStream
-    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData) override
+    virtual void SAL_CALL writeBytes(const Sequence< sal_Int8 >& aData)
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { ODataOutputStream::writeBytes( aData ); }
 
-    virtual void SAL_CALL flush() override
+    virtual void SAL_CALL flush()
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { ODataOutputStream::flush(); }
 
-    virtual void SAL_CALL closeOutput() override
+    virtual void SAL_CALL closeOutput()
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { ODataOutputStream::closeOutput(); }
 
 public:
     // XDataOutputStream
-    virtual void SAL_CALL writeBoolean(sal_Bool Value) override
+    virtual void SAL_CALL writeBoolean(sal_Bool Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeBoolean( Value ); }
-    virtual void SAL_CALL writeByte(sal_Int8 Value) override
+    virtual void SAL_CALL writeByte(sal_Int8 Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeByte( Value ); }
-    virtual void SAL_CALL writeChar(sal_Unicode Value) override
+    virtual void SAL_CALL writeChar(sal_Unicode Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeChar( Value ); }
-    virtual void SAL_CALL writeShort(sal_Int16 Value) override
+    virtual void SAL_CALL writeShort(sal_Int16 Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeShort( Value ); }
-    virtual void SAL_CALL writeLong(sal_Int32 Value) override
+    virtual void SAL_CALL writeLong(sal_Int32 Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeLong( Value ); }
-    virtual void SAL_CALL writeHyper(sal_Int64 Value) override
+    virtual void SAL_CALL writeHyper(sal_Int64 Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeHyper( Value ); }
-    virtual void SAL_CALL writeFloat(float Value) override
+    virtual void SAL_CALL writeFloat(float Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeFloat( Value ); }
-    virtual void SAL_CALL writeDouble(double Value) override
+    virtual void SAL_CALL writeDouble(double Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeDouble( Value ); }
-    virtual void SAL_CALL writeUTF(const OUString& Value) override
+    virtual void SAL_CALL writeUTF(const OUString& Value) throw (IOException, RuntimeException, std::exception) override
                 { ODataOutputStream::writeUTF( Value );}
 
     // XObjectOutputStream
-        virtual void SAL_CALL writeObject( const Reference< XPersistObject > & r ) override;
+        virtual void SAL_CALL writeObject( const Reference< XPersistObject > & r ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
 public: // XMarkableStream
-    virtual sal_Int32 SAL_CALL createMark() override;
-    virtual void SAL_CALL deleteMark(sal_Int32 Mark) override;
-    virtual void SAL_CALL jumpToMark(sal_Int32 nMark) override;
-    virtual void SAL_CALL jumpToFurthest() override;
-    virtual sal_Int32 SAL_CALL offsetToMark(sal_Int32 nMark) override;
+    virtual sal_Int32 SAL_CALL createMark()                 throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL deleteMark(sal_Int32 Mark)            throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL jumpToMark(sal_Int32 nMark)       throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL jumpToFurthest()          throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL offsetToMark(sal_Int32 nMark)
+        throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
 
 public: // XServiceInfo
-    OUString                   SAL_CALL   getImplementationName() override;
-    Sequence< OUString >       SAL_CALL   getSupportedServiceNames() override;
-    sal_Bool                   SAL_CALL   supportsService(const OUString& ServiceName) override;
+    OUString                   SAL_CALL   getImplementationName() throw (std::exception) override;
+    Sequence< OUString >       SAL_CALL   getSupportedServiceNames() throw (std::exception) override;
+    sal_Bool                   SAL_CALL   supportsService(const OUString& ServiceName) throw (std::exception) override;
 
 private:
     void connectToMarkable();
@@ -882,7 +976,11 @@ private:
     bool                            m_bValidMarkable;
 };
 
-void OObjectOutputStream::writeObject( const Reference< XPersistObject > & xPObj )
+OObjectOutputStream::~OObjectOutputStream()
+{
+}
+
+void OObjectOutputStream::writeObject( const Reference< XPersistObject > & xPObj ) throw (css::io::IOException, css::uno::RuntimeException, std::exception)
 {
 
     connectToMarkable();
@@ -978,6 +1076,7 @@ void OObjectOutputStream::connectToMarkable()
 
 
 sal_Int32 OObjectOutputStream::createMark()
+    throw (IOException, RuntimeException, std::exception)
 {
     connectToMarkable();    // throws an exception, if a markable is not connected !
 
@@ -985,6 +1084,7 @@ sal_Int32 OObjectOutputStream::createMark()
 }
 
 void OObjectOutputStream::deleteMark(sal_Int32 Mark)
+    throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -994,6 +1094,7 @@ void OObjectOutputStream::deleteMark(sal_Int32 Mark)
 }
 
 void OObjectOutputStream::jumpToMark(sal_Int32 nMark)
+    throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -1004,12 +1105,14 @@ void OObjectOutputStream::jumpToMark(sal_Int32 nMark)
 
 
 void OObjectOutputStream::jumpToFurthest()
+    throw (IOException, RuntimeException, std::exception)
 {
     connectToMarkable();
     m_rMarkable->jumpToFurthest();
 }
 
 sal_Int32 OObjectOutputStream::offsetToMark(sal_Int32 nMark)
+    throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -1021,6 +1124,7 @@ sal_Int32 OObjectOutputStream::offsetToMark(sal_Int32 nMark)
 
 Reference< XInterface > SAL_CALL OObjectOutputStream_CreateInstance(
     SAL_UNUSED_PARAMETER const Reference < XComponentContext > & )
+    throw(Exception)
 {
     OObjectOutputStream *p = new OObjectOutputStream;
     return  Reference< XInterface > ( (static_cast< OWeakObject *  >(p)) );
@@ -1038,19 +1142,19 @@ Sequence<OUString> OObjectOutputStream_getSupportedServiceNames()
 }
 
 // XServiceInfo
-OUString OObjectOutputStream::getImplementationName()
+OUString OObjectOutputStream::getImplementationName() throw (std::exception)
 {
     return OObjectOutputStream_getImplementationName();
 }
 
 // XServiceInfo
-sal_Bool OObjectOutputStream::supportsService(const OUString& ServiceName)
+sal_Bool OObjectOutputStream::supportsService(const OUString& ServiceName) throw (std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > OObjectOutputStream::getSupportedServiceNames()
+Sequence< OUString > OObjectOutputStream::getSupportedServiceNames() throw (std::exception)
 {
     return OObjectOutputStream_getSupportedServiceNames();
 }
@@ -1067,57 +1171,73 @@ public:
         , m_bValidMarkable(false)
         {
         }
+    virtual ~OObjectInputStream();
 
 public: // XInputStream
-    virtual sal_Int32 SAL_CALL readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) override
+    virtual sal_Int32 SAL_CALL readBytes(Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { return ODataInputStream::readBytes( aData , nBytesToRead ); }
 
-    virtual sal_Int32 SAL_CALL readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) override
+    virtual sal_Int32 SAL_CALL readSomeBytes(Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead)
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { return ODataInputStream::readSomeBytes( aData, nMaxBytesToRead ); }
 
-    virtual void SAL_CALL skipBytes(sal_Int32 nBytesToSkip) override
+    virtual void SAL_CALL skipBytes(sal_Int32 nBytesToSkip)
+        throw ( NotConnectedException,
+                BufferSizeExceededException,
+                RuntimeException, std::exception) override
         { ODataInputStream::skipBytes( nBytesToSkip ); }
 
-    virtual sal_Int32 SAL_CALL available() override
+    virtual sal_Int32 SAL_CALL available()
+        throw ( NotConnectedException,
+                RuntimeException, std::exception) override
         { return ODataInputStream::available(); }
 
-    virtual void SAL_CALL closeInput() override
+    virtual void SAL_CALL closeInput()
+        throw ( NotConnectedException,
+                RuntimeException, std::exception) override
         { ODataInputStream::closeInput(); }
 
 public: // XDataInputStream
-    virtual sal_Int8 SAL_CALL readBoolean() override
+    virtual sal_Int8 SAL_CALL readBoolean() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readBoolean(); }
-    virtual sal_Int8 SAL_CALL readByte() override
+    virtual sal_Int8 SAL_CALL readByte() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readByte(); }
-    virtual sal_Unicode SAL_CALL readChar() override
+    virtual sal_Unicode SAL_CALL readChar() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readChar(); }
-    virtual sal_Int16 SAL_CALL readShort() override
+    virtual sal_Int16 SAL_CALL readShort() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readShort(); }
-    virtual sal_Int32 SAL_CALL readLong() override
+    virtual sal_Int32 SAL_CALL readLong() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readLong(); }
-    virtual sal_Int64 SAL_CALL readHyper() override
+    virtual sal_Int64 SAL_CALL readHyper() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readHyper(); }
-    virtual float SAL_CALL readFloat() override
+    virtual float SAL_CALL readFloat() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readFloat(); }
-    virtual double SAL_CALL readDouble() override
+    virtual double SAL_CALL readDouble() throw (IOException, RuntimeException, std::exception) override
         { return ODataInputStream::readDouble(); }
-    virtual OUString SAL_CALL readUTF() override
+    virtual OUString SAL_CALL readUTF() throw (IOException, RuntimeException, std::exception) override
                 { return ODataInputStream::readUTF(); }
 
 public: // XObjectInputStream
-        virtual Reference< XPersistObject > SAL_CALL readObject( ) override;
+        virtual Reference< XPersistObject > SAL_CALL readObject( ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
 public: // XMarkableStream
-    virtual sal_Int32 SAL_CALL createMark() override;
-    virtual void SAL_CALL deleteMark(sal_Int32 Mark) override;
-    virtual void SAL_CALL jumpToMark(sal_Int32 nMark) override;
-    virtual void SAL_CALL jumpToFurthest() override;
-    virtual sal_Int32 SAL_CALL offsetToMark(sal_Int32 nMark) override;
+    virtual sal_Int32 SAL_CALL createMark()
+        throw (IOException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL deleteMark(sal_Int32 Mark)            throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL jumpToMark(sal_Int32 nMark)       throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL jumpToFurthest()          throw (IOException, RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL offsetToMark(sal_Int32 nMark)
+        throw (IOException, IllegalArgumentException, RuntimeException, std::exception) override;
 
 public: // XServiceInfo
-    OUString                     SAL_CALL getImplementationName() override;
-    Sequence< OUString >         SAL_CALL getSupportedServiceNames() override;
-    sal_Bool                     SAL_CALL supportsService(const OUString& ServiceName) override;
+    OUString                     SAL_CALL getImplementationName() throw (std::exception) override;
+    Sequence< OUString >         SAL_CALL getSupportedServiceNames() throw (std::exception) override;
+    sal_Bool                     SAL_CALL supportsService(const OUString& ServiceName) throw (std::exception) override;
 
 private:
     void connectToMarkable();
@@ -1130,7 +1250,11 @@ private:
 
 };
 
-Reference< XPersistObject >  OObjectInputStream::readObject()
+OObjectInputStream::~OObjectInputStream()
+{
+}
+
+Reference< XPersistObject >  OObjectInputStream::readObject() throw (css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     // check if chain contains a XMarkableStream
     connectToMarkable();
@@ -1199,7 +1323,7 @@ Reference< XPersistObject >  OObjectInputStream::readObject()
             }
             else
             {
-                // Object has already been read,
+                // Object has alread been read,
                 xLoadedObj = m_aPersistVector[nId];
             }
         }
@@ -1245,14 +1369,14 @@ void OObjectInputStream::connectToMarkable()
     }
 }
 
-sal_Int32 OObjectInputStream::createMark()
+sal_Int32 OObjectInputStream::createMark()              throw (IOException, RuntimeException, std::exception)
 {
     connectToMarkable();    // throws an exception, if a markable is not connected !
 
     return m_rMarkable->createMark();
 }
 
-void OObjectInputStream::deleteMark(sal_Int32 Mark)
+void OObjectInputStream::deleteMark(sal_Int32 Mark)         throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -1261,7 +1385,7 @@ void OObjectInputStream::deleteMark(sal_Int32 Mark)
     m_rMarkable->deleteMark( Mark );
 }
 
-void OObjectInputStream::jumpToMark(sal_Int32 nMark)
+void OObjectInputStream::jumpToMark(sal_Int32 nMark)        throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -1269,13 +1393,14 @@ void OObjectInputStream::jumpToMark(sal_Int32 nMark)
     }
     m_rMarkable->jumpToMark( nMark );
 }
-void OObjectInputStream::jumpToFurthest()
+void OObjectInputStream::jumpToFurthest()           throw (IOException, RuntimeException, std::exception)
 {
     connectToMarkable();
     m_rMarkable->jumpToFurthest();
 }
 
 sal_Int32 OObjectInputStream::offsetToMark(sal_Int32 nMark)
+    throw (IOException, IllegalArgumentException, RuntimeException, std::exception)
 {
     if( ! m_bValidMarkable )
     {
@@ -1285,24 +1410,24 @@ sal_Int32 OObjectInputStream::offsetToMark(sal_Int32 nMark)
 }
 
 // XServiceInfo
-OUString OObjectInputStream::getImplementationName()
+OUString OObjectInputStream::getImplementationName() throw (std::exception)
 {
     return OObjectInputStream_getImplementationName();
 }
 
 // XServiceInfo
-sal_Bool OObjectInputStream::supportsService(const OUString& ServiceName)
+sal_Bool OObjectInputStream::supportsService(const OUString& ServiceName) throw (std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > OObjectInputStream::getSupportedServiceNames()
+Sequence< OUString > OObjectInputStream::getSupportedServiceNames() throw (std::exception)
 {
     return OObjectInputStream_getSupportedServiceNames();
 }
 
-Reference< XInterface > SAL_CALL OObjectInputStream_CreateInstance( const Reference < XComponentContext > & rCtx )
+Reference< XInterface > SAL_CALL OObjectInputStream_CreateInstance( const Reference < XComponentContext > & rCtx ) throw(Exception)
 {
     OObjectInputStream *p = new OObjectInputStream( rCtx );
     return Reference< XInterface> ( (static_cast< OWeakObject * >(p)) );

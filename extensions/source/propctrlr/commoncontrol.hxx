@@ -23,7 +23,7 @@
 #include <com/sun/star/inspection/XPropertyControl.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <tools/link.hxx>
 #include <vcl/window.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -32,7 +32,6 @@
 class NotifyEvent;
 class Control;
 class ListBox;
-class SvxColorListBox;
 class Edit;
 
 namespace pcr
@@ -74,16 +73,11 @@ namespace pcr
         virtual void setModified() { m_bModified = true; }
 
         // XPropertyControl
-        /// @throws css::uno::RuntimeException
-        ::sal_Int16 SAL_CALL getControlType() { return m_nControlType; }
-        /// @throws css::uno::RuntimeException
-        const css::uno::Reference< css::inspection::XPropertyControlContext >& SAL_CALL getControlContext() { return m_xContext; }
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL setControlContext( const css::uno::Reference< css::inspection::XPropertyControlContext >& _controlcontext );
-        /// @throws css::uno::RuntimeException
-        bool SAL_CALL isModified(  ) { return m_bModified; }
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL notifyModifiedValue(  );
+        ::sal_Int16 SAL_CALL getControlType() throw (css::uno::RuntimeException) { return m_nControlType; }
+        const css::uno::Reference< css::inspection::XPropertyControlContext >& SAL_CALL getControlContext() throw (css::uno::RuntimeException) { return m_xContext; }
+        void SAL_CALL setControlContext( const css::uno::Reference< css::inspection::XPropertyControlContext >& _controlcontext ) throw (css::uno::RuntimeException);
+        bool SAL_CALL isModified(  ) throw (css::uno::RuntimeException) { return m_bModified; }
+        void SAL_CALL notifyModifiedValue(  ) throw (css::uno::RuntimeException);
 
         /** (fail-safe) wrapper around calling our context's activateNextControl
         */
@@ -95,11 +89,10 @@ namespace pcr
         virtual vcl::Window* getVclWindow() = 0;
 
         /// may be used by derived classes, they forward the event to the PropCtrListener
-        DECL_LINK( ModifiedHdl, ListBox&, void );
-        DECL_LINK( ColorModifiedHdl, SvxColorListBox&, void );
-        DECL_LINK( EditModifiedHdl, Edit&, void );
-        DECL_LINK( GetFocusHdl, Control&, void );
-        DECL_LINK( LoseFocusHdl, Control&, void );
+        DECL_LINK_TYPED( ModifiedHdl, ListBox&, void );
+        DECL_LINK_TYPED( EditModifiedHdl, Edit&, void );
+        DECL_LINK_TYPED( GetFocusHdl, Control&, void );
+        DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
     };
 
 
@@ -114,7 +107,7 @@ namespace pcr
             a class which is derived from vcl::Window
     */
     template < class TControlInterface, class TControlWindow >
-    class CommonBehaviourControl    :public ::cppu::BaseMutex
+    class CommonBehaviourControl    :public ::comphelper::OBaseMutex
                                     ,public ::cppu::WeakComponentImplHelper< TControlInterface >
                                     ,public CommonBehaviourControlHelper
     {
@@ -124,17 +117,17 @@ namespace pcr
         inline CommonBehaviourControl( sal_Int16 _nControlType, vcl::Window* _pParentWindow, WinBits _nWindowStyle, bool _bDoSetHandlers = true );
 
         // XPropertyControl - delegated to ->m_aImplControl
-        virtual ::sal_Int16 SAL_CALL getControlType() override
+        virtual ::sal_Int16 SAL_CALL getControlType() throw (css::uno::RuntimeException) override
             { return CommonBehaviourControlHelper::getControlType(); }
-        virtual css::uno::Reference< css::inspection::XPropertyControlContext > SAL_CALL getControlContext() override
+        virtual css::uno::Reference< css::inspection::XPropertyControlContext > SAL_CALL getControlContext() throw (css::uno::RuntimeException) override
             { return CommonBehaviourControlHelper::getControlContext(); }
-        virtual void SAL_CALL setControlContext( const css::uno::Reference< css::inspection::XPropertyControlContext >& _controlcontext ) override
+        virtual void SAL_CALL setControlContext( const css::uno::Reference< css::inspection::XPropertyControlContext >& _controlcontext ) throw (css::uno::RuntimeException) override
             { CommonBehaviourControlHelper::setControlContext( _controlcontext ); }
-        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL getControlWindow() override
+        virtual css::uno::Reference< css::awt::XWindow > SAL_CALL getControlWindow() throw (css::uno::RuntimeException) override
             { return VCLUnoHelper::GetInterface( m_pControlWindow ); }
-        virtual sal_Bool SAL_CALL isModified(  ) override
+        virtual sal_Bool SAL_CALL isModified(  ) throw (css::uno::RuntimeException) override
             { return CommonBehaviourControlHelper::isModified(); }
-        virtual void SAL_CALL notifyModifiedValue(  ) override
+        virtual void SAL_CALL notifyModifiedValue(  ) throw (css::uno::RuntimeException) override
             { CommonBehaviourControlHelper::notifyModifiedValue(); }
 
         // XComponent
@@ -157,9 +150,8 @@ namespace pcr
         inline void impl_checkDisposed_throw();
     private:
         VclPtr<TControlWindow>         m_pControlWindow;
-        void implSetModifyHandler(const Edit&);
-        void implSetModifyHandler(const ListBox&);
-        void implSetModifyHandler(const SvxColorListBox&);
+        void implSetModifyHandler(std::true_type);
+        void implSetModifyHandler(std::false_type);
     };
 
 
@@ -169,11 +161,11 @@ namespace pcr
     inline CommonBehaviourControl< TControlInterface, TControlWindow >::CommonBehaviourControl ( sal_Int16 _nControlType, vcl::Window* _pParentWindow, WinBits _nWindowStyle, bool _bDoSetHandlers)
         :ComponentBaseClass( m_aMutex )
         ,CommonBehaviourControlHelper( _nControlType, *this )
-        ,m_pControlWindow( VclPtr<TControlWindow>::Create( _pParentWindow, _nWindowStyle ) )
+        ,m_pControlWindow( new TControlWindow( _pParentWindow, _nWindowStyle ) )
     {
         if ( _bDoSetHandlers )
         {
-            implSetModifyHandler(*m_pControlWindow);
+            implSetModifyHandler(std::is_base_of<::Edit,TControlWindow>());
             m_pControlWindow->SetGetFocusHdl( LINK( this, CommonBehaviourControlHelper, GetFocusHdl ) );
             m_pControlWindow->SetLoseFocusHdl( LINK( this, CommonBehaviourControlHelper, LoseFocusHdl ) );
         }
@@ -181,21 +173,15 @@ namespace pcr
     }
 
     template< class TControlInterface, class TControlWindow >
-    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const Edit&)
+    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(std::true_type)
     {
         m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, EditModifiedHdl ) );
     }
 
     template< class TControlInterface, class TControlWindow >
-    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const ListBox&)
+    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(std::false_type)
     {
         m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, ModifiedHdl ) );
-    }
-
-    template< class TControlInterface, class TControlWindow >
-    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const SvxColorListBox&)
-    {
-        m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, ColorModifiedHdl ) );
     }
 
     template< class TControlInterface, class TControlWindow >

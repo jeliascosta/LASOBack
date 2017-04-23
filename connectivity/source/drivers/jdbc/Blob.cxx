@@ -48,15 +48,15 @@ jclass java_sql_Blob::getMyClass() const
     return theClass;
 }
 
-sal_Int64 SAL_CALL java_sql_Blob::length(  )
+sal_Int64 SAL_CALL java_sql_Blob::length(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     jlong out(0);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
         // initialize temporary variable
-        static const char * const cSignature = "()J";
-        static const char * const cMethodName = "length";
+        static const char * cSignature = "()J";
+        static const char * cMethodName = "length";
         // submit Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -65,15 +65,15 @@ sal_Int64 SAL_CALL java_sql_Blob::length(  )
     } //t.pEnv
     return (sal_Int64)out;
 }
-css::uno::Sequence< sal_Int8 > SAL_CALL java_sql_Blob::getBytes( sal_Int64 pos, sal_Int32 count )
+::com::sun::star::uno::Sequence< sal_Int8 > SAL_CALL java_sql_Blob::getBytes( sal_Int64 pos, sal_Int32 count ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
 
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
-    css::uno::Sequence< sal_Int8 > aSeq;
+    ::com::sun::star::uno::Sequence< sal_Int8 > aSeq;
     {
         // initialize temporary variable
-        static const char * const cSignature = "(JI)[B";
-        static const char * const cMethodName = "getBytes";
+        static const char * cSignature = "(JI)[B";
+        static const char * cMethodName = "getBytes";
         // submit Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -91,7 +91,7 @@ css::uno::Sequence< sal_Int8 > SAL_CALL java_sql_Blob::getBytes( sal_Int64 pos, 
     return  aSeq;
 }
 
-css::uno::Reference< css::io::XInputStream > SAL_CALL java_sql_Blob::getBinaryStream(  )
+::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream > SAL_CALL java_sql_Blob::getBinaryStream(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     static jmethodID mID(nullptr);
@@ -100,15 +100,15 @@ css::uno::Reference< css::io::XInputStream > SAL_CALL java_sql_Blob::getBinarySt
     return out==nullptr ? nullptr : new java_io_InputStream( t.pEnv, out );
 }
 
-sal_Int64 SAL_CALL java_sql_Blob::position( const css::uno::Sequence< sal_Int8 >& pattern, sal_Int64 start )
+sal_Int64 SAL_CALL java_sql_Blob::position( const ::com::sun::star::uno::Sequence< sal_Int8 >& pattern, sal_Int64 start ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     jlong out(0);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
         // initialize temporary variable
-        static const char * const cSignature = "([BI)J";
-        static const char * const cMethodName = "position";
+        static const char * cSignature = "([BI)J";
+        static const char * cMethodName = "position";
         // submit Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -130,7 +130,7 @@ sal_Int64 SAL_CALL java_sql_Blob::position( const css::uno::Sequence< sal_Int8 >
     return (sal_Int64)out;
 }
 
-sal_Int64 SAL_CALL java_sql_Blob::positionOfBlob( const css::uno::Reference< css::sdbc::XBlob >& /*pattern*/, sal_Int64 /*start*/ )
+sal_Int64 SAL_CALL java_sql_Blob::positionOfBlob( const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XBlob >& /*pattern*/, sal_Int64 /*start*/ ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XBlob::positionOfBlob", *this );
     // this was put here in CWS warnings01. The previous implementation was defective, as it did ignore

@@ -23,7 +23,6 @@
 #include <rscerror.h>
 #include <rschash.hxx>
 #include <rsctop.hxx>
-#include <tools/resid.hxx>
 
 class RscConst : public RscTop
 {
@@ -36,8 +35,8 @@ protected:
     VarEle *        pVarArray;  // pointer to the field with constant
     sal_uInt32      nEntries;   // number of entries in field
 public:
-                    RscConst( Atom nId, RESOURCE_TYPE nTypId );
-                    virtual ~RscConst() override;
+                    RscConst( Atom nId, sal_uInt32 nTypId );
+                    virtual ~RscConst();
     virtual RSCCLASS_TYPE   GetClassType() const override;
                     // sets the allowed values
     void            SetConstant( Atom nVarName, sal_Int32 lValue );
@@ -53,10 +52,11 @@ class RscEnum : public RscConst
         sal_uInt32  nValue; // constant position in the array
         bool        bDflt;  // is default
     };
+    sal_uInt32      nSize;
 public:
-                    RscEnum( Atom nId, RESOURCE_TYPE nTypId );
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool bOwnClass = false ) override;
-    sal_uInt32      Size() const override { return ALIGNED_SIZE(sizeof(RscEnumInst)); }
+                    RscEnum( Atom nId, sal_uInt32 nTypId );
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool ) override;
+    sal_uInt32      Size() override { return nSize; }
 
     virtual void    SetToDefault( const RSCINST & rInst ) override
                     {
@@ -77,7 +77,7 @@ public:
     void            WriteSrc( const RSCINST &rInst, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32 ) override;
+                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
 };
 
 class RscNameTable;

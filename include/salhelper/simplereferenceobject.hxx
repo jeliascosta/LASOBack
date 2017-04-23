@@ -57,7 +57,7 @@ namespace salhelper {
 class SALHELPER_DLLPUBLIC SimpleReferenceObject
 {
 public:
-    SimpleReferenceObject(): m_nCount(0) {}
+    inline SimpleReferenceObject(): m_nCount(0) {}
 
     /** @attention
         The results are undefined if, for any individual instance of
@@ -65,10 +65,10 @@ public:
         the total number of calls to release() by a platform dependent amount
         (which, hopefully, is quite large).
      */
-    void acquire()
+    inline void acquire()
     { osl_atomic_increment(&m_nCount); }
 
-    void release()
+    inline void release()
     { if (osl_atomic_decrement(&m_nCount) == 0) delete this; }
 
     /** see general class documentation

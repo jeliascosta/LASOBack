@@ -132,16 +132,17 @@ class SwInsertDBColAutoPilot : public SfxModalDialog, public utl::ConfigItem
     SwTableRep*     pRep;
     sal_Int32       nGBFormatLen;
 
-    DECL_LINK( PageHdl, Button*, void );
-    DECL_LINK( AutoFormatHdl, Button*, void );
-    DECL_LINK( TableFormatHdl, Button*, void );
-    DECL_LINK( DBFormatHdl, Button*, void );
-    DECL_LINK( TableToFromHdl, Button*, void );
-    DECL_LINK( SelectHdl, ListBox&, void );
-    DECL_LINK( DblClickHdl, ListBox&, void );
-    DECL_LINK( HeaderHdl, Button*, void );
+    DECL_LINK_TYPED( PageHdl, Button*, void );
+    DECL_LINK_TYPED( AutoFormatHdl, Button*, void );
+    DECL_LINK_TYPED( TableFormatHdl, Button*, void );
+    DECL_LINK_TYPED( DBFormatHdl, Button*, void );
+    DECL_LINK_TYPED( TableToFromHdl, Button*, void );
+    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( DblClickHdl, ListBox&, void );
+    DECL_LINK_TYPED( HeaderHdl, Button*, void );
 
     bool SplitTextToColArr( const OUString& rText, DB_Columns& rColArr, bool bInsField );
+        using SfxModalDialog::Notify;
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     virtual void            ImplCommit() override;
     void                    Load();
@@ -151,17 +152,17 @@ class SwInsertDBColAutoPilot : public SfxModalDialog, public utl::ConfigItem
 
 public:
     SwInsertDBColAutoPilot( SwView& rView,
-        css::uno::Reference< css::sdbc::XDataSource> const & rxSource,
-        css::uno::Reference<css::sdbcx::XColumnsSupplier> const & xColSupp,
+        css::uno::Reference< css::sdbc::XDataSource> rxSource,
+        css::uno::Reference<css::sdbcx::XColumnsSupplier>,
         const SwDBData& rData  );
 
-    virtual ~SwInsertDBColAutoPilot() override;
+    virtual ~SwInsertDBColAutoPilot();
     virtual void dispose() override;
 
     void DataToDoc( const css::uno::Sequence< css::uno::Any >& rSelection,
-        css::uno::Reference< css::sdbc::XDataSource> const & rxSource,
-        css::uno::Reference< css::sdbc::XConnection> const & xConnection,
-        css::uno::Reference< css::sdbc::XResultSet > const & xResultSet);
+        css::uno::Reference< css::sdbc::XDataSource> rxSource,
+        css::uno::Reference< css::sdbc::XConnection> xConnection,
+        css::uno::Reference< css::sdbc::XResultSet > xResultSet);
 
 };
 

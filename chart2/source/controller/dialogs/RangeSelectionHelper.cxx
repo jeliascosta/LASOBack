@@ -20,7 +20,18 @@
 #include "RangeSelectionHelper.hxx"
 #include "RangeSelectionListener.hxx"
 #include "macros.hxx"
+#include "ControllerLockGuard.hxx"
+#include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/awt/XTopWindow.hpp>
+#include <com/sun/star/text/XText.hpp>
+#include <com/sun/star/embed/XEmbeddedObject.hpp>
+#include <com/sun/star/embed/EmbedStates.hpp>
+#include <com/sun/star/embed/XComponentSupplier.hpp>
+#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
+#include <com/sun/star/sheet/XCellRangesAccess.hpp>
+#include <com/sun/star/chart2/data/XRangeXMLConversion.hpp>
+#include <rtl/ustrbuf.hxx>
 
 using namespace ::com::sun::star;
 
@@ -43,7 +54,7 @@ bool RangeSelectionHelper::hasRangeSelection()
     return getRangeSelection().is();
 }
 
-Reference< sheet::XRangeSelection > const & RangeSelectionHelper::getRangeSelection()
+Reference< sheet::XRangeSelection > RangeSelectionHelper::getRangeSelection()
 {
     if( !m_xRangeSelection.is() &&
         m_xChartDocument.is() )
@@ -109,17 +120,17 @@ bool RangeSelectionHelper::chooseRange(
         {
             Sequence< beans::PropertyValue > aArgs( 4 );
             aArgs[0] = beans::PropertyValue(
-                "InitialValue", -1, uno::Any( aCurrentRange ),
+                "InitialValue", -1, uno::makeAny( aCurrentRange ),
                 beans::PropertyState_DIRECT_VALUE );
             aArgs[1] = beans::PropertyValue(
                 "Title", -1,
-                uno::Any( aUIString ),
+                uno::makeAny( aUIString ),
                 beans::PropertyState_DIRECT_VALUE );
             aArgs[2] = beans::PropertyValue(
-                "CloseOnMouseRelease", -1, uno::Any( true ),
+                "CloseOnMouseRelease", -1, uno::makeAny( true ),
                 beans::PropertyState_DIRECT_VALUE );
             aArgs[3] = beans::PropertyValue(
-                "MultiSelectionMode", -1, uno::Any( true ),
+                "MultiSelectionMode", -1, uno::makeAny( true ),
                 beans::PropertyState_DIRECT_VALUE );
 
             if( m_xRangeSelectionListener.is() )

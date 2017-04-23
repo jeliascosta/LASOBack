@@ -46,7 +46,7 @@ class SwAddressTable : public SvSimpleTable
 {
 public:
     explicit SwAddressTable(SvSimpleTableContainer& rParent);
-    void InsertHeaderItem(sal_uInt16 nColumn, const OUString& rText);
+    void InsertHeaderItem(sal_uInt16 nColumn, const OUString& rText, HeaderBarItemBits nBits);
     virtual void Resize() override;
     void setColSizes();
 };
@@ -55,14 +55,14 @@ SwAddressTable::SwAddressTable(SvSimpleTableContainer& rParent)
     : SvSimpleTable(rParent, 0)
 {
     SetSpaceBetweenEntries(3);
-    SetSelectionMode(SelectionMode::Single);
+    SetSelectionMode(SINGLE_SELECTION);
     SetDragDropMode(DragDropMode::NONE);
     EnableAsyncDrag(false);
 }
 
-void SwAddressTable::InsertHeaderItem(sal_uInt16 nColumn, const OUString& rText)
+void SwAddressTable::InsertHeaderItem(sal_uInt16 nColumn, const OUString& rText, HeaderBarItemBits nBits)
 {
-    GetTheHeaderBar().InsertItem( nColumn, rText, 0, HeaderBarItemBits::LEFT | HeaderBarItemBits::VCENTER );
+    GetTheHeaderBar().InsertItem( nColumn, rText, 0, nBits );
 }
 
 void SwAddressTable::Resize()
@@ -86,7 +86,7 @@ void SwAddressTable::setColSizes()
     nTabs_Impl[1] = 0;
     nTabs_Impl[2] = nWidth;
 
-    SvSimpleTable::SetTabs(&nTabs_Impl[0], MapUnit::MapPixel);
+    SvSimpleTable::SetTabs(&nTabs_Impl[0], MAP_PIXEL);
 }
 
 SwSelectDBTableDialog::SwSelectDBTableDialog(vcl::Window* pParent,
@@ -101,14 +101,14 @@ SwSelectDBTableDialog::SwSelectDBTableDialog(vcl::Window* pParent,
     get(m_pPreviewPB, "preview");
 
     SvSimpleTableContainer *pHeaderTreeContainer = get<SvSimpleTableContainer>("table");
-    Size aSize = pHeaderTreeContainer->LogicToPixel(Size(238 , 50), MapUnit::MapAppFont);
+    Size aSize = pHeaderTreeContainer->LogicToPixel(Size(238 , 50), MAP_APPFONT);
     pHeaderTreeContainer->set_width_request(aSize.Width());
     pHeaderTreeContainer->set_height_request(aSize.Height());
     m_pTable = VclPtr<SwAddressTable>::Create(*pHeaderTreeContainer);
     long aStaticTabs[]= { 2, 0, 0 };
     m_pTable->SetTabs( aStaticTabs );
-    m_pTable->InsertHeaderItem(1, m_sName );
-    m_pTable->InsertHeaderItem(2, m_sType );
+    m_pTable->InsertHeaderItem(1, m_sName, HeaderBarItemBits::LEFT | HeaderBarItemBits::VCENTER);
+    m_pTable->InsertHeaderItem(2, m_sType, HeaderBarItemBits::LEFT | HeaderBarItemBits::VCENTER);
 
     m_pPreviewPB->SetClickHdl(LINK(this, SwSelectDBTableDialog, PreviewHdl));
 
@@ -156,7 +156,7 @@ void SwSelectDBTableDialog::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK(SwSelectDBTableDialog, PreviewHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwSelectDBTableDialog, PreviewHdl, Button*, pButton, void)
 {
     SvTreeListEntry* pEntry = m_pTable->FirstSelected();
     if(pEntry)

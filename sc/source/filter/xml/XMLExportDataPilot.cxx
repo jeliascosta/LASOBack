@@ -51,7 +51,6 @@
 #include <com/sun/star/sheet/DataPilotFieldSortMode.hpp>
 #include <com/sun/star/sheet/DataPilotFieldLayoutMode.hpp>
 #include <com/sun/star/sheet/DataPilotFieldGroupBy.hpp>
-#include <com/sun/star/sheet/GeneralFunction2.hpp>
 
 using namespace com::sun::star;
 using namespace xmloff::token;
@@ -73,14 +72,14 @@ OUString ScXMLExportDataPilot::getDPOperatorXML(
     {
         case SC_EQUAL :
         {
-            if (eSearchType == utl::SearchParam::SearchType::Regexp)
+            if (eSearchType == utl::SearchParam::SRCH_REGEXP)
                 return GetXMLToken(XML_MATCH);
             else
                 return OUString("=");
         }
         case SC_NOT_EQUAL :
         {
-            if (eSearchType == utl::SearchParam::SearchType::Regexp)
+            if (eSearchType == utl::SearchParam::SRCH_REGEXP)
                 return GetXMLToken(XML_NOMATCH);
             else
                 return OUString("!=");
@@ -391,7 +390,9 @@ void ScXMLExportDataPilot::WriteAutoShowInfo(ScDPSaveDimension* pDim)
         if (!sValueStr.isEmpty())
             rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_DISPLAY_MEMBER_MODE, sValueStr);
 
-        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_MEMBER_COUNT, OUString::number(pAutoInfo->ItemCount));
+        OUStringBuffer sBuffer;
+        ::sax::Converter::convertNumber(sBuffer, pAutoInfo->ItemCount);
+        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_MEMBER_COUNT, sBuffer.makeStringAndClear());
 
         rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_DATA_FIELD, pAutoInfo->DataField);
 
@@ -430,6 +431,8 @@ void ScXMLExportDataPilot::WriteLayoutInfo(ScDPSaveDimension* pDim)
 
 void ScXMLExportDataPilot::WriteSubTotals(ScDPSaveDimension* pDim)
 {
+    using sheet::GeneralFunction;
+
     sal_Int32 nSubTotalCount = pDim->GetSubTotalsCount();
     const OUString* pLayoutName = nullptr;
     if (rExport.getDefaultVersion() > SvtSaveOptions::ODFVER_012)
@@ -443,10 +446,10 @@ void ScXMLExportDataPilot::WriteSubTotals(ScDPSaveDimension* pDim)
         for (sal_Int32 nSubTotal = 0; nSubTotal < nSubTotalCount; nSubTotal++)
         {
             OUString sFunction;
-            sal_Int16 nFunc = static_cast<sal_Int16>(pDim->GetSubTotalFunc(nSubTotal));
+            GeneralFunction nFunc = static_cast<GeneralFunction>(pDim->GetSubTotalFunc(nSubTotal));
             ScXMLConverter::GetStringFromFunction( sFunction, nFunc);
             rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_FUNCTION, sFunction);
-            if (pLayoutName && nFunc == sheet::GeneralFunction2::AUTO)
+            if (pLayoutName && nFunc == sheet::GeneralFunction_AUTO)
                 rExport.AddAttribute(XML_NAMESPACE_TABLE_EXT, XML_DISPLAY_NAME, *pLayoutName);
             SvXMLElementExport aElemST(rExport, XML_NAMESPACE_TABLE, XML_DATA_PILOT_SUBTOTAL, true, true);
         }
@@ -692,9 +695,12 @@ void ScXMLExportDataPilot::WriteDimension(ScDPSaveDimension* pDim, const ScDPDim
         rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_ORIENTATION, sValueStr );
     if (pDim->GetUsedHierarchy() != 1)
     {
-        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_USED_HIERARCHY, OUString::number(pDim->GetUsedHierarchy()));
+        OUStringBuffer sBuffer;
+        ::sax::Converter::convertNumber(sBuffer, pDim->GetUsedHierarchy());
+        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_USED_HIERARCHY, sBuffer.makeStringAndClear());
     }
-    ScXMLConverter::GetStringFromFunction( sValueStr, static_cast<sal_Int16>(pDim->GetFunction()) );
+    ScXMLConverter::GetStringFromFunction( sValueStr,
+        (sheet::GeneralFunction) pDim->GetFunction() );
     rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_FUNCTION, sValueStr);
 
     if (eOrientation == sheet::DataPilotFieldOrientation_PAGE)
@@ -880,7 +886,6 @@ void ScXMLExportDataPilot::WriteDataPilots(const uno::Reference <sheet::XSpreads
                     rExport.CheckAttrList();
                 }
                 break;
-                default: break;
             }
         }
         else if ((*pDPs)[i].IsServiceData())

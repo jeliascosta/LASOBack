@@ -67,32 +67,32 @@ class VistaFilePickerEventHandler : public ::cppu::BaseMutex
         // IUnknown
 
         virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID rIID    ,
-                                                         void** ppObject) override;
-        virtual ULONG STDMETHODCALLTYPE AddRef() override;
-        virtual ULONG STDMETHODCALLTYPE Release() override;
+                                                         void** ppObject);
+        virtual ULONG STDMETHODCALLTYPE AddRef();
+        virtual ULONG STDMETHODCALLTYPE Release();
 
 
         // IFileDialogEvents
 
 
-        STDMETHODIMP OnFileOk(IFileDialog* pDialog) override;
+        STDMETHODIMP OnFileOk(IFileDialog* pDialog);
 
         STDMETHODIMP OnFolderChanging(IFileDialog* pDialog,
-                                      IShellItem*  pFolder) override;
+                                      IShellItem*  pFolder);
 
-        STDMETHODIMP OnFolderChange(IFileDialog* pDialog) override;
+        STDMETHODIMP OnFolderChange(IFileDialog* pDialog);
 
-        STDMETHODIMP OnSelectionChange(IFileDialog* pDialog) override;
+        STDMETHODIMP OnSelectionChange(IFileDialog* pDialog);
 
         STDMETHODIMP OnShareViolation(IFileDialog*                 pDialog  ,
                                       IShellItem*                  pItem    ,
-                                      FDE_SHAREVIOLATION_RESPONSE* pResponse) override;
+                                      FDE_SHAREVIOLATION_RESPONSE* pResponse);
 
-        STDMETHODIMP OnTypeChange(IFileDialog* pDialog) override;
+        STDMETHODIMP OnTypeChange(IFileDialog* pDialog);
 
         STDMETHODIMP OnOverwrite(IFileDialog*            pDialog  ,
                                  IShellItem*             pItem    ,
-                                 FDE_OVERWRITE_RESPONSE* pResponse) override;
+                                 FDE_OVERWRITE_RESPONSE* pResponse);
 
 
         // IFileDialogControlEvents
@@ -100,26 +100,27 @@ class VistaFilePickerEventHandler : public ::cppu::BaseMutex
 
         STDMETHODIMP OnItemSelected(IFileDialogCustomize* pCustomize,
                                     DWORD                 nIDCtl    ,
-                                    DWORD                 nIDItem   ) override;
+                                    DWORD                 nIDItem   );
 
         STDMETHODIMP OnButtonClicked(IFileDialogCustomize* pCustomize,
-                                     DWORD                 nIDCtl    ) override;
+                                     DWORD                 nIDCtl    );
 
         STDMETHODIMP OnCheckButtonToggled(IFileDialogCustomize* pCustomize,
                                           DWORD                 nIDCtl    ,
-                                          BOOL                  bChecked  ) override;
+                                          BOOL                  bChecked  );
 
         STDMETHODIMP OnControlActivating(IFileDialogCustomize* pCustomize,
-                                         DWORD                 nIDCtl    ) override;
+                                         DWORD                 nIDCtl    );
 
 
         // XFilePickerNotifier
 
-        /// @throws css::uno::RuntimeException
-        virtual void SAL_CALL addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener );
 
-        /// @throws css::uno::RuntimeException
-        virtual void SAL_CALL removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener );
+        virtual void SAL_CALL addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
+            throw( css::uno::RuntimeException );
+
+        virtual void SAL_CALL removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
+            throw( css::uno::RuntimeException );
 
 
         // native interface
@@ -142,7 +143,7 @@ class VistaFilePickerEventHandler : public ::cppu::BaseMutex
 
         /** stop listening for file picker events on the internally cached dialog COM object.
          *
-         *  The COM dialog provided on the startListening() call was cached internally.
+         *  The  COM dialog provided on the startListeneing() call was cached internally.
          *  And now its used to deregister this listener. Doing so the also internally cached
          *  listener handle is used. If listener was not already registered - nothing will happen.
          */

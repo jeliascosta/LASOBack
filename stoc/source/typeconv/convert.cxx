@@ -17,9 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
 
-#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <cppuhelper/factory.hxx>
 #include <cppuhelper/implementationentry.hxx>
@@ -38,7 +36,6 @@
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
-#include <com/sun/star/script/CannotConvertException.hpp>
 #include <com/sun/star/script/XTypeConverter.hpp>
 #include <com/sun/star/script/FailReason.hpp>
 #include <com/sun/star/container/XSet.hpp>
@@ -244,41 +241,48 @@ static bool getHyperValue( sal_Int64 & rnVal, const OUString & rStr )
 class TypeConverter_Impl : public WeakImplHelper< XTypeConverter, XServiceInfo >
 {
     // ...misc helpers...
-    /// @throws CannotConvertException
     static sal_Int64 toHyper(
-        const Any& rAny, sal_Int64 min, sal_uInt64 max = SAL_UINT64_MAX );
-    /// @throws CannotConvertException
-    static double toDouble( const Any& rAny, double min = -DBL_MAX, double max = DBL_MAX );
+        const Any& rAny, sal_Int64 min = SAL_INT64_MIN, sal_uInt64 max = SAL_UINT64_MAX )
+        throw( CannotConvertException );
+    static double toDouble( const Any& rAny, double min = -DBL_MAX, double max = DBL_MAX )
+        throw( CannotConvertException );
 
 public:
     TypeConverter_Impl();
+    virtual ~TypeConverter_Impl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual  Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw( RuntimeException, std::exception ) override;
+    virtual  Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( RuntimeException, std::exception ) override;
 
     // XTypeConverter
-    virtual Any SAL_CALL convertTo( const Any& aFrom, const Type& DestinationType ) override;
-    virtual Any SAL_CALL convertToSimpleType( const Any& aFrom, TypeClass aDestinationType ) override;
+    virtual Any SAL_CALL convertTo( const Any& aFrom, const Type& DestinationType )
+        throw( IllegalArgumentException, CannotConvertException, RuntimeException, std::exception) override;
+    virtual Any SAL_CALL convertToSimpleType( const Any& aFrom, TypeClass aDestinationType )
+        throw( IllegalArgumentException, CannotConvertException, RuntimeException, std::exception) override;
 };
 
 TypeConverter_Impl::TypeConverter_Impl() {}
 
+TypeConverter_Impl::~TypeConverter_Impl() {}
+
 // XServiceInfo
-OUString TypeConverter_Impl::getImplementationName()
+OUString TypeConverter_Impl::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.stoc.TypeConverter");
 }
 
 // XServiceInfo
-sal_Bool TypeConverter_Impl::supportsService(const OUString& ServiceName)
+sal_Bool TypeConverter_Impl::supportsService(const OUString& ServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > TypeConverter_Impl::getSupportedServiceNames()
+Sequence< OUString > TypeConverter_Impl::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > seqNames { "com.sun.star.script.Converter" };
     return seqNames;
@@ -286,6 +290,7 @@ Sequence< OUString > TypeConverter_Impl::getSupportedServiceNames()
 
 
 sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt64 max )
+    throw( CannotConvertException )
 {
     sal_Int64 nRet;
     TypeClass aDestinationClass = rAny.getValueTypeClass();
@@ -298,39 +303,39 @@ sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt6
         break;
     // BOOL
     case TypeClass_BOOLEAN:
-        nRet = *o3tl::forceAccess<bool>(rAny) ? 1 : 0;
+        nRet = (*static_cast<sal_Bool const *>(rAny.getValue()) ? 1 : 0);
         break;
     // CHAR, BYTE
     case TypeClass_CHAR:
-        nRet = *o3tl::forceAccess<sal_Unicode>(rAny);
+        nRet = *static_cast<sal_Unicode const *>(rAny.getValue());
         break;
     case TypeClass_BYTE:
-        nRet = *o3tl::forceAccess<sal_Int8>(rAny);
+        nRet = *static_cast<sal_Int8 const *>(rAny.getValue());
         break;
     // SHORT
     case TypeClass_SHORT:
-        nRet = *o3tl::forceAccess<sal_Int16>(rAny);
+        nRet = *static_cast<sal_Int16 const *>(rAny.getValue());
         break;
     // UNSIGNED SHORT
     case TypeClass_UNSIGNED_SHORT:
-        nRet = *o3tl::forceAccess<sal_uInt16>(rAny);
+        nRet = *static_cast<sal_uInt16 const *>(rAny.getValue());
         break;
     // LONG
     case TypeClass_LONG:
-        nRet = *o3tl::forceAccess<sal_Int32>(rAny);
+        nRet = *static_cast<sal_Int32 const *>(rAny.getValue());
         break;
     // UNSIGNED LONG
     case TypeClass_UNSIGNED_LONG:
-        nRet = *o3tl::forceAccess<sal_uInt32>(rAny);
+        nRet = *static_cast<sal_uInt32 const *>(rAny.getValue());
         break;
     // HYPER
     case TypeClass_HYPER:
-        nRet = *o3tl::forceAccess<sal_Int64>(rAny);
+        nRet = *static_cast<sal_Int64 const *>(rAny.getValue());
         break;
     // UNSIGNED HYPER
     case TypeClass_UNSIGNED_HYPER:
     {
-        nRet = static_cast<sal_Int64>(*o3tl::forceAccess<sal_uInt64>(rAny));
+        nRet = *static_cast<sal_Int64 const *>(rAny.getValue());
         if ((min < 0 || (sal_uInt64)nRet >= (sal_uInt64)min) && // lower bound
             (sal_uInt64)nRet <= max)                            // upper bound
         {
@@ -344,7 +349,7 @@ sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt6
     // FLOAT, DOUBLE
     case TypeClass_FLOAT:
     {
-        double fVal = round( *o3tl::forceAccess<float>(rAny) );
+        double fVal = round( *static_cast<float const *>(rAny.getValue()) );
         nRet = (fVal > SAL_INT64_MAX ? (sal_Int64)(sal_uInt64)fVal : (sal_Int64)fVal);
         if (fVal >= min && fVal <= unsigned_int64_to_double( max ))
         {
@@ -356,7 +361,7 @@ sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt6
     }
     case TypeClass_DOUBLE:
     {
-        double fVal = round( *o3tl::forceAccess<double>(rAny) );
+        double fVal = round( *static_cast<double const *>(rAny.getValue()) );
         nRet = (fVal > SAL_INT64_MAX ? (sal_Int64)(sal_uInt64)fVal : (sal_Int64)fVal);
         if (fVal >= min && fVal <= unsigned_int64_to_double( max ))
         {
@@ -371,7 +376,7 @@ sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt6
     case TypeClass_STRING:
     {
         sal_Int64 nVal = SAL_CONST_INT64(0);
-        if (! getHyperValue( nVal, *o3tl::forceAccess<OUString>(rAny) ))
+        if (! getHyperValue( nVal, *static_cast<OUString const *>(rAny.getValue()) ))
         {
             throw CannotConvertException(
                 "invalid STRING value!",
@@ -400,6 +405,7 @@ sal_Int64 TypeConverter_Impl::toHyper( const Any& rAny, sal_Int64 min, sal_uInt6
 
 
 double TypeConverter_Impl::toDouble( const Any& rAny, double min, double max )
+    throw( CannotConvertException )
 {
     double fRet;
     TypeClass aDestinationClass = rAny.getValueTypeClass();
@@ -412,51 +418,51 @@ double TypeConverter_Impl::toDouble( const Any& rAny, double min, double max )
         break;
     // BOOL
     case TypeClass_BOOLEAN:
-        fRet = *o3tl::forceAccess<bool>(rAny) ? 1.0 : 0.0;
+        fRet = (*static_cast<sal_Bool const *>(rAny.getValue()) ? 1.0 : 0.0);
         break;
     // CHAR, BYTE
     case TypeClass_CHAR:
-        fRet = *o3tl::forceAccess<sal_Unicode>(rAny);
+        fRet = *static_cast<sal_Unicode const *>(rAny.getValue());
         break;
     case TypeClass_BYTE:
-        fRet = *o3tl::forceAccess<sal_Int8>(rAny);
+        fRet = *static_cast<sal_Int8 const *>(rAny.getValue());
         break;
     // SHORT
     case TypeClass_SHORT:
-        fRet = *o3tl::forceAccess<sal_Int16>(rAny);
+        fRet = *static_cast<sal_Int16 const *>(rAny.getValue());
         break;
     // UNSIGNED SHORT
     case TypeClass_UNSIGNED_SHORT:
-        fRet = *o3tl::forceAccess<sal_uInt16>(rAny);
+        fRet = *static_cast<sal_uInt16 const *>(rAny.getValue());
         break;
     // LONG
     case TypeClass_LONG:
-        fRet = *o3tl::forceAccess<sal_Int32>(rAny);
+        fRet = *static_cast<sal_Int32 const *>(rAny.getValue());
         break;
     // UNSIGNED LONG
     case TypeClass_UNSIGNED_LONG:
-        fRet = *o3tl::forceAccess<sal_uInt32>(rAny);
+        fRet = *static_cast<sal_uInt32 const *>(rAny.getValue());
         break;
     // HYPER
     case TypeClass_HYPER:
-        fRet = (double)*o3tl::forceAccess<sal_Int64>(rAny);
+        fRet = (double)*static_cast<sal_Int64 const *>(rAny.getValue());
         break;
     // UNSIGNED HYPER
     case TypeClass_UNSIGNED_HYPER:
-        fRet = unsigned_int64_to_double( *o3tl::forceAccess<sal_uInt64>(rAny) );
+        fRet = unsigned_int64_to_double( *static_cast<sal_uInt64 const *>(rAny.getValue()) );
         break;
     // FLOAT, DOUBLE
     case TypeClass_FLOAT:
-        fRet = *o3tl::forceAccess<float>(rAny);
+        fRet = *static_cast<float const *>(rAny.getValue());
         break;
     case TypeClass_DOUBLE:
-        fRet = *o3tl::forceAccess<double>(rAny);
+        fRet = *static_cast<double const *>(rAny.getValue());
         break;
 
     // STRING
     case TypeClass_STRING:
     {
-        if (! getNumericValue( fRet, *o3tl::forceAccess<OUString>(rAny) ))
+        if (! getNumericValue( fRet, *static_cast<OUString const *>(rAny.getValue()) ))
         {
             throw CannotConvertException(
                 "invalid STRING value!",
@@ -480,6 +486,7 @@ double TypeConverter_Impl::toDouble( const Any& rAny, double min, double max )
 
 
 Any SAL_CALL TypeConverter_Impl::convertTo( const Any& rVal, const Type& aDestType )
+    throw( IllegalArgumentException, CannotConvertException, RuntimeException, std::exception)
 {
     const Type& aSourceType = rVal.getValueType();
     if (aSourceType == aDestType)
@@ -531,18 +538,18 @@ Any SAL_CALL TypeConverter_Impl::convertTo( const Any& rVal, const Type& aDestTy
             break;
         }
 
-        auto ifc = o3tl::tryAccess<css::uno::Reference<css::uno::XInterface>>(
-            rVal);
-        if (!ifc || !ifc->is())
+        if (rVal.getValueTypeClass() != TypeClass_INTERFACE ||
+            !*static_cast<XInterface * const *>(rVal.getValue()))
         {
             throw CannotConvertException(
-                "value is not interface",
+                "value is no interface!",
                 Reference< XInterface >(), aDestinationClass, FailReason::NO_SUCH_INTERFACE, 0 );
         }
-        if (! (aRet = (*ifc)->queryInterface(aDestType )).hasValue())
+        if (! (aRet = (*static_cast<XInterface * const *>(rVal.getValue()))->queryInterface(
+                   aDestType )).hasValue())
         {
             throw CannotConvertException(
-                "value does not implement " + aDestType.getTypeName(),
+                "value has no such interface!",
                 Reference< XInterface >(), aDestinationClass, FailReason::NO_SUCH_INTERFACE, 0 );
         }
         break;
@@ -619,7 +626,7 @@ Any SAL_CALL TypeConverter_Impl::convertTo( const Any& rVal, const Type& aDestTy
         {
             for ( nPos = reinterpret_cast<typelib_EnumTypeDescription *>(aEnumTD.get())->nEnumValues; nPos--; )
             {
-                if (o3tl::forceAccess<OUString>(rVal)->equalsIgnoreAsciiCase(
+                if (static_cast<const OUString *>(rVal.getValue())->equalsIgnoreAsciiCase(
                         reinterpret_cast<typelib_EnumTypeDescription *>(aEnumTD.get())->ppEnumNames[nPos] ))
                     break;
             }
@@ -673,6 +680,7 @@ Any SAL_CALL TypeConverter_Impl::convertTo( const Any& rVal, const Type& aDestTy
 
 
 Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestinationClass )
+    throw( IllegalArgumentException, CannotConvertException, RuntimeException, std::exception )
 {
     switch (aDestinationClass)
     {
@@ -729,7 +737,7 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
 
         case TypeClass_STRING:
         {
-            const OUString & aStr = *o3tl::forceAccess<OUString>(rVal);
+            const OUString & aStr = *static_cast<const OUString *>(rVal.getValue());
             if ( aStr == "0" || aStr.equalsIgnoreAsciiCase( "false" ))
             {
                 aRet <<= false;
@@ -741,7 +749,7 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
             else
             {
                 throw CannotConvertException(
-                    "STRING has no boolean value, " + aStr,
+                    "STRING has no boolean value!",
                     Reference< XInterface >(), aDestinationClass, FailReason::IS_NOT_BOOL, 0 );
             }
         }
@@ -753,14 +761,14 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
     {
         if (aSourceClass==TypeClass_STRING)
         {
-            auto const s = o3tl::forceAccess<OUString>(rVal);
-            if (s->getLength() == 1)      // single char
-                aRet <<= (*s)[0];
+            if ((*static_cast<const OUString *>(rVal.getValue())).getLength() == 1)      // single char
+                aRet.setValue( (*static_cast<const OUString *>(rVal.getValue())).getStr(), cppu::UnoType<cppu::UnoCharType>::get() );
         }
         else if (aSourceClass!=TypeClass_ENUM &&        // exclude enums, chars
                  aSourceClass!=TypeClass_CHAR)
         {
-            aRet <<= sal_Unicode(toHyper( rVal, 0, 0xffff ));    // range
+             sal_Unicode cRet = (sal_Unicode)toHyper( rVal, 0, 0xffff );    // range
+            aRet.setValue( &cRet, cppu::UnoType<cppu::UnoCharType>::get() );
         }
         break;
     }
@@ -797,7 +805,7 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
         aRet <<= (float)( toDouble( rVal, -FLT_MAX, FLT_MAX ) );
         break;
     case TypeClass_DOUBLE:
-        aRet <<= toDouble( rVal, -DBL_MAX, DBL_MAX );
+        aRet <<= (double)( toDouble( rVal, -DBL_MAX, DBL_MAX ) );
         break;
 
     // --- to STRING ----------------------------------------------------------------------------
@@ -817,8 +825,9 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
             }
             if (nPos >= 0)
             {
-                aRet <<= OUString::unacquired(
-                    &reinterpret_cast<typelib_EnumTypeDescription *>(aEnumTD.get())->ppEnumNames[nPos]);
+                aRet.setValue(
+                    &reinterpret_cast<typelib_EnumTypeDescription *>(aEnumTD.get())->ppEnumNames[nPos],
+                    cppu::UnoType<OUString>::get());
             }
             else
             {
@@ -830,31 +839,31 @@ Any TypeConverter_Impl::convertToSimpleType( const Any& rVal, TypeClass aDestina
         }
 
         case TypeClass_BOOLEAN:
-            aRet <<= *o3tl::forceAccess<bool>(rVal) ?
+            aRet <<= *static_cast<sal_Bool const *>(rVal.getValue()) ?
                 OUString("true") :
                 OUString("false");
             break;
         case TypeClass_CHAR:
-            aRet <<= OUString(*o3tl::forceAccess<sal_Unicode>(rVal));
+            aRet <<= OUString( static_cast<sal_Unicode const *>(rVal.getValue()), 1 );
             break;
 
         case TypeClass_BYTE:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_Int8>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_Int8 const *>(rVal.getValue()) );
             break;
         case TypeClass_SHORT:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_Int16>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_Int16 const *>(rVal.getValue()) );
             break;
         case TypeClass_UNSIGNED_SHORT:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_uInt16>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_uInt16 const *>(rVal.getValue()) );
             break;
         case TypeClass_LONG:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_Int32>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_Int32 const *>(rVal.getValue()) );
             break;
         case TypeClass_UNSIGNED_LONG:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_uInt32>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_uInt32 const *>(rVal.getValue()) );
             break;
         case TypeClass_HYPER:
-            aRet <<= OUString::number( *o3tl::forceAccess<sal_Int64>(rVal) );
+            aRet <<= OUString::number( *static_cast<sal_Int64 const *>(rVal.getValue()) );
             break;
 //      case TypeClass_UNSIGNED_HYPER:
 //             aRet <<= OUString::valueOf( (sal_Int64)*(sal_uInt64 const *)rVal.getValue() );

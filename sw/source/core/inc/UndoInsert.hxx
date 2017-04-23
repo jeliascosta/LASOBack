@@ -32,9 +32,7 @@ class Graphic;
 class SwGrfNode;
 class SwUndoDelete;
 class SwUndoFormatAttr;
-class SwDoc;
 namespace sw { class DocumentContentOperationsManager; }
-enum class MirrorGraph;
 
 class SwUndoInsert: public SwUndo, private SwUndoSaveContent
 {
@@ -64,7 +62,7 @@ public:
                   const SwInsertFlags nInsertFlags,
                   bool bWDelim = true );
     SwUndoInsert( const SwNodeIndex& rNode );
-    virtual ~SwUndoInsert() override;
+    virtual ~SwUndoInsert();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -99,7 +97,7 @@ public:
     SwUndoReplace(SwPaM const& rPam,
             OUString const& rInsert, bool const bRegExp);
 
-    virtual ~SwUndoReplace() override;
+    virtual ~SwUndoReplace();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -129,7 +127,7 @@ public:
 
 private:
     class Impl;
-    std::unique_ptr<Impl> m_pImpl;
+    ::std::unique_ptr<Impl> m_pImpl;
 };
 
 class SwUndoReRead : public SwUndo
@@ -138,7 +136,7 @@ class SwUndoReRead : public SwUndo
     OUString *pNm;
     OUString *pFltr;
     sal_uLong nPos;
-    MirrorGraph nMirr;
+    sal_uInt16 nMirr;
 
     void SaveGraphicData( const SwGrfNode& );
     void SetAndSave( ::sw::UndoRedoContext & );
@@ -146,7 +144,7 @@ class SwUndoReRead : public SwUndo
 public:
     SwUndoReRead( const SwPaM& rPam, const SwGrfNode& pGrfNd );
 
-    virtual ~SwUndoReRead() override;
+    virtual ~SwUndoReRead();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -187,9 +185,8 @@ public:
                         const OUString& rNumberSeparator, //#i61007# order of captions
                         const bool bBefore, const sal_uInt16 nId,
                         const OUString& rCharacterStyle,
-                        const bool bCpyBrd,
-                        const SwDoc* pDoc );
-    virtual ~SwUndoInsertLabel() override;
+                        const bool bCpyBrd );
+    virtual ~SwUndoInsertLabel();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

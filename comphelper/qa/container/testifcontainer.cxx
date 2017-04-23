@@ -23,7 +23,7 @@
 #include "cppunit/plugin/TestPlugIn.h"
 #include <osl/mutex.hxx>
 #include <comphelper/interfacecontainer2.hxx>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <com/sun/star/beans/XVetoableChangeListener.hpp>
 
 using namespace ::osl;
@@ -44,16 +44,17 @@ public:
     CPPUNIT_TEST_SUITE_END();
 };
 
-class TestListener : public cppu::WeakImplHelper< XVetoableChangeListener >
+class TestListener : public cppu::WeakImplHelper1< XVetoableChangeListener >
 {
 public:
     // Methods
-    virtual void SAL_CALL disposing( const css::lang::EventObject& /*Source*/ ) override
+    virtual void SAL_CALL disposing( const css::lang::EventObject& /*Source*/ ) throw(css::uno::RuntimeException) override
         {
 
         }
 
-    virtual void SAL_CALL vetoableChange( const css::beans::PropertyChangeEvent& /*aEvent*/ ) override
+    virtual void SAL_CALL vetoableChange( const css::beans::PropertyChangeEvent& /*aEvent*/ )
+       throw(css::beans::PropertyVetoException, css::uno::RuntimeException) override
         {
 
         }
@@ -66,9 +67,9 @@ void TestInterfaceContainer2::test1()
     {
         comphelper::OInterfaceContainerHelper2 helper( mutex );
 
-        Reference< XVetoableChangeListener > r1 = new TestListener;
-        Reference< XVetoableChangeListener > r2 = new TestListener;
-        Reference< XVetoableChangeListener > r3 = new TestListener;
+        Reference< XVetoableChangeListener > r1 = new TestListener();
+        Reference< XVetoableChangeListener > r2 = new TestListener();
+        Reference< XVetoableChangeListener > r3 = new TestListener();
 
         helper.addInterface( r1 );
         helper.addInterface( r2 );
@@ -80,9 +81,9 @@ void TestInterfaceContainer2::test1()
     {
         comphelper::OInterfaceContainerHelper2 helper( mutex );
 
-        Reference< XVetoableChangeListener > r1 = new TestListener;
-        Reference< XVetoableChangeListener > r2 = new TestListener;
-        Reference< XVetoableChangeListener > r3 = new TestListener;
+        Reference< XVetoableChangeListener > r1 = new TestListener();
+        Reference< XVetoableChangeListener > r2 = new TestListener();
+        Reference< XVetoableChangeListener > r3 = new TestListener();
 
         helper.addInterface( r1 );
         helper.addInterface( r2 );
@@ -99,9 +100,9 @@ void TestInterfaceContainer2::test1()
     {
         comphelper::OInterfaceContainerHelper2 helper( mutex );
 
-        Reference< XVetoableChangeListener > r1 = new TestListener;
-        Reference< XVetoableChangeListener > r2 = new TestListener;
-        Reference< XVetoableChangeListener > r3 = new TestListener;
+        Reference< XVetoableChangeListener > r1 = new TestListener();
+        Reference< XVetoableChangeListener > r2 = new TestListener();
+        Reference< XVetoableChangeListener > r3 = new TestListener();
 
         helper.addInterface( r1 );
         helper.addInterface( r2 );
@@ -116,16 +117,16 @@ void TestInterfaceContainer2::test1()
         static_cast<XVetoableChangeListener*>(iterator.next())->vetoableChange( PropertyChangeEvent() );
         iterator.remove();
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<sal_Int32>(0), helper.getLength() );
+        CPPUNIT_ASSERT( helper.getLength() == 0 );
         helper.disposeAndClear( EventObject() );
     }
 
     {
         comphelper::OInterfaceContainerHelper2 helper( mutex );
 
-        Reference< XVetoableChangeListener > r1 = new TestListener;
-        Reference< XVetoableChangeListener > r2 = new TestListener;
-        Reference< XVetoableChangeListener > r3 = new TestListener;
+        Reference< XVetoableChangeListener > r1 = new TestListener();
+        Reference< XVetoableChangeListener > r2 = new TestListener();
+        Reference< XVetoableChangeListener > r3 = new TestListener();
 
         helper.addInterface( r1 );
         helper.addInterface( r2 );
@@ -140,7 +141,7 @@ void TestInterfaceContainer2::test1()
                     iterator.remove();
             }
         }
-        CPPUNIT_ASSERT_EQUAL( static_cast<sal_Int32>(2), helper.getLength() );
+        CPPUNIT_ASSERT( helper.getLength() == 2 );
         {
             comphelper::OInterfaceIteratorHelper2 iterator( helper );
             while( iterator.hasMoreElements() )

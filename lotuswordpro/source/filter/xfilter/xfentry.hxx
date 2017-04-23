@@ -85,7 +85,7 @@ public:
     /**
      * @descr   Set entry key. The keys is available only for enumXFEntryAlphabetical.
      */
-    void    SetKey(const OUString& key1, const OUString& key2);
+    void    SetKey(const OUString& key1, const OUString& key2="");
 
     /**
      * @descr   Set outline level. This is available for enumXFEntryTOC and enumXFEntryUserIndex.
@@ -95,12 +95,13 @@ public:
     virtual void    ToXml(IXFStream *pStrm) override;
 
 private:
-    enumXFEntry    m_eType;
-    OUString       m_strValue;
-    OUString       m_strKey1;
-    OUString       m_strKey2;
-    OUString       m_strName;
-    sal_Int32      m_nOutlineLevel;
+    enumXFEntry     m_eType;
+    OUString   m_strValue;
+    OUString   m_strKey1;
+    OUString   m_strKey2;
+    OUString   m_strName;
+    bool        m_bMainEntry;
+    sal_Int32       m_nOutlineLevel;
 };
 
 inline void XFEntry::SetEntryType(enumXFEntry type)

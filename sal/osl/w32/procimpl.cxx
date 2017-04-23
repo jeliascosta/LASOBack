@@ -32,12 +32,10 @@
 #   include <tchar.h>
 #   undef WIN32_LEAN_AND_MEAN
 #endif
-
-#include <file-impl.hxx>
-#include "procimpl.hxx"
+#include "procimpl.h"
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
-#include "secimpl.hxx"
+#include "secimpl.h"
 #include <osl/file.hxx>
 
 #include <vector>
@@ -45,8 +43,10 @@
 #include <string>
 #include <string.h>
 
+extern "C" oslFileHandle SAL_CALL osl_createFileHandleFromOSHandle( HANDLE hFile, sal_uInt32 uFlags );
+
 const sal_Unicode NAME_VALUE_SEPARATOR = TEXT('=');
-const sal_Char SPACE[] = " ";
+const sal_Char* SPACE = " ";
 const rtl::OUString ENV_COMSPEC ("COMSPEC");
 const rtl::OUString QUOTE("\"");
 
@@ -69,8 +69,8 @@ namespace /* private */
     {
         bool operator() (const rtl::OUString& lhs, const rtl::OUString& rhs) const
         {
-            OSL_ENSURE((lhs.indexOf(NAME_VALUE_SEPARATOR) > -1) &&
-                        (rhs.indexOf(NAME_VALUE_SEPARATOR) > -1),
+            OSL_ENSURE((lhs.indexOf(NAME_VALUE_SEPARATOR) > -1) && \
+                        (rhs.indexOf(NAME_VALUE_SEPARATOR) > -1), \
                         "Malformed environment variable");
 
             // Windows compares environment variables uppercase
@@ -124,7 +124,7 @@ namespace /* private */
 
         while (size_t l = _tcslen(p))
         {
-            environment->push_back(SAL_U(p));
+            environment->push_back(p);
             p += l + 1;
         }
         FreeEnvironmentStrings(env);
@@ -201,7 +201,10 @@ namespace /* private */
             OSL_ASSERT(envv.getLength());
 
             sal_uInt32 n = envv.getLength() + 1; // copy the final '\0', too
-            memcpy(&environment[pos], envv.getStr(), n * sizeof(sal_Unicode));
+            memcpy(
+                reinterpret_cast<void*>(&environment[pos]),
+                reinterpret_cast<const void*>(envv.getStr()),
+                n * sizeof(sal_Unicode));
             pos += n;
         }
         environment[pos] = 0; // append a final '\0'
@@ -291,7 +294,7 @@ namespace /* private */
             std::vector<sal_Unicode> vec(path.getLength() + 1);
             //GetShortPathNameW only works if the file can be found!
             const DWORD len = GetShortPathNameW(
-                SAL_W(path.getStr()), SAL_W(&vec[0]), path.getLength() + 1);
+                path.getStr(), &vec[0], path.getLength() + 1);
 
             if (!len && GetLastError() == ERROR_FILE_NOT_FOUND
                 && extension.getLength())
@@ -300,7 +303,7 @@ namespace /* private */
                 std::vector<sal_Unicode> vec2(
                     extPath.getLength() + 1);
                 const DWORD len2 = GetShortPathNameW(
-                    SAL_W(extPath.getStr()), SAL_W(&vec2[0]), extPath.getLength() + 1);
+                    extPath.getStr(), &vec2[0], extPath.getLength() + 1);
                 ret = rtl::OUString(&vec2[0], len2);
             }
             else
@@ -336,7 +339,7 @@ namespace /* private */
         if (osl::FileBase::E_None != osl::FileBase::getSystemPathFromFileURL(exe_url, exe_path))
             return rtl::OUString();
 
-        exe_path = getShortPath(exe_path, ".exe");
+        exe_path = getShortPath(exe_path, rtl::OUString(".exe"));
 
         if (exe_path.indexOf(' ') != -1)
             exe_path = quote_string(exe_path);
@@ -417,7 +420,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
     oslFileHandle *pProcessErrorRead)
 {
     rtl::OUString exe_path = get_executable_path(
-        ustrImageName, ustrArguments, nArguments, (Options & osl_Process_SEARCHPATH) != 0);
+        ustrImageName, ustrArguments, nArguments, (Options & osl_Process_SEARCHPATH));
 
     if (0 == exe_path.getLength())
         return osl_Process_E_NotFound;
@@ -439,7 +442,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
                 flags |= CREATE_NEW_CONSOLE;
 
             command_line.append(batch_processor);
-            command_line.append(" /c ");
+            command_line.appendAscii(" /c ");
         }
         else
             // should we return here in case of error?
@@ -453,7 +456,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
        start at 1 instead of 0 */
     for (sal_uInt32 n = (nullptr != ustrImageName) ? 0 : 1; n < nArguments; n++)
     {
-        command_line.append(SPACE);
+        command_line.appendAscii(SPACE);
 
         /* Quote arguments containing blanks */
         if (rtl::OUString(ustrArguments[n]).indexOf(' ') != -1)
@@ -479,7 +482,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
     if (ustrDirectory && ustrDirectory->length && (osl::FileBase::E_None != osl::FileBase::getSystemPathFromFileURL(ustrDirectory, cwd)))
            return osl_Process_E_InvalidError;
 
-    LPCWSTR p_cwd = (cwd.getLength()) ? SAL_W(cwd.getStr()) : nullptr;
+    LPCWSTR p_cwd = (cwd.getLength()) ? cwd.getStr() : nullptr;
 
     if ((Options & osl_Process_DETACHED) && !(flags & CREATE_NEW_CONSOLE))
         flags |= DETACHED_PROCESS;
@@ -540,18 +543,18 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
     PROCESS_INFORMATION process_info;
     BOOL bRet = FALSE;
 
-    if ((Security != nullptr) && (static_cast<oslSecurityImpl*>(Security)->m_hToken != nullptr))
+    if ((Security != nullptr) && (((oslSecurityImpl*)Security)->m_hToken != nullptr))
     {
         bRet = CreateProcessAsUser(
-            static_cast<oslSecurityImpl*>(Security)->m_hToken,
-            nullptr, const_cast<LPWSTR>(SAL_W(cmdline.getStr())), nullptr,  nullptr,
+            ((oslSecurityImpl*)Security)->m_hToken,
+            nullptr, const_cast<LPWSTR>(cmdline.getStr()), nullptr,  nullptr,
             b_inherit_handles, flags, p_environment, p_cwd,
             &startup_info, &process_info);
     }
     else
     {
         bRet = CreateProcess(
-            nullptr, const_cast<LPWSTR>(SAL_W(cmdline.getStr())), nullptr,  nullptr,
+            nullptr, const_cast<LPWSTR>(cmdline.getStr()), nullptr,  nullptr,
             b_inherit_handles, flags, p_environment, p_cwd,
             &startup_info, &process_info);
     }
@@ -571,7 +574,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
     {
         CloseHandle(process_info.hThread);
 
-        oslProcessImpl* pProcImpl = static_cast<oslProcessImpl*>(
+        oslProcessImpl* pProcImpl = reinterpret_cast<oslProcessImpl*>(
             rtl_allocateMemory(sizeof(oslProcessImpl)));
 
         if (pProcImpl != nullptr)
@@ -579,7 +582,7 @@ oslProcessError SAL_CALL osl_executeProcess_WithRedirectedIO(
             pProcImpl->m_hProcess  = process_info.hProcess;
             pProcImpl->m_IdProcess = process_info.dwProcessId;
 
-            *pProcess = static_cast<oslProcess>(pProcImpl);
+            *pProcess = (oslProcess)pProcImpl;
 
             if (Options & osl_Process_WAIT)
                 WaitForSingleObject(pProcImpl->m_hProcess, INFINITE);

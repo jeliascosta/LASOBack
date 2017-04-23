@@ -32,7 +32,7 @@ class CDummyTag;
 class CMetaInfoReader : public CBaseReader
 {
 public:
-    virtual ~CMetaInfoReader() override;
+    virtual ~CMetaInfoReader();
 
     CMetaInfoReader( const std::string& DocumentName );
 
@@ -89,7 +89,7 @@ protected: // protected because its only an implementation relevant class
     virtual void start_element(
         const std::wstring& raw_name,
         const std::wstring& local_name,
-        const XmlTagAttributes_t& attributes) override;
+        const XmlTagAttributes_t& attributes);
 
     /** end_element occurs when a tag is closed
 
@@ -99,14 +99,14 @@ protected: // protected because its only an implementation relevant class
         local name of the tag.
     */
     virtual void end_element(
-        const std::wstring& raw_name, const std::wstring& local_name) override;
+        const std::wstring& raw_name, const std::wstring& local_name);
 
     /** characters occurs when receiving characters
 
         @param character
         content of the information received.
     */
-    virtual void characters(const std::wstring& character) override;
+    virtual void characters(const std::wstring& character);
 
 protected:
     /** choose an appropriate tag reader to handle the tag.

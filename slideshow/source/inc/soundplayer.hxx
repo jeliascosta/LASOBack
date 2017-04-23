@@ -66,7 +66,7 @@ namespace slideshow
                 const OUString& rSoundURL,
                 const css::uno::Reference< css::uno::XComponentContext>& rComponentContext );
 
-            virtual ~SoundPlayer() override;
+            virtual ~SoundPlayer();
 
             /** Query duration of sound playback.
 

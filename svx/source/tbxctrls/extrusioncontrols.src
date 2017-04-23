@@ -20,59 +20,72 @@
 #include <svx/dialogs.hrc>
 #include "extrusioncontrols.hrc"
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_NW
+#define MASKCOLOR   MaskColor = Color { Red=0xFFFF; Green=0x0000; Blue=0xFFFF; };
+
+Image RID_SVXIMG_DIRECTION + DIRECTION_NW
 {
-    File = "directionnorthwest_22.bmp";
+    ImageBitmap = Bitmap { File = "directionnorthwest_22.bmp" ; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_N
+Image RID_SVXIMG_DIRECTION + DIRECTION_N
 {
-    File = "directionnorth_22.bmp";
+    ImageBitmap = Bitmap { File = "directionnorth_22.bmp" ; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_NE
+Image RID_SVXIMG_DIRECTION + DIRECTION_NE
 {
-    File = "directionnortheast_22.bmp";
+    ImageBitmap = Bitmap { File = "directionnortheast_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_W
+Image RID_SVXIMG_DIRECTION + DIRECTION_W
 {
-    File = "directionwest_22.bmp";
+    ImageBitmap = Bitmap { File = "directionwest_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_NONE
+Image RID_SVXIMG_DIRECTION + DIRECTION_NONE
 {
-    File = "directionstraight_22.bmp";
+    ImageBitmap = Bitmap { File = "directionstraight_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_E
+Image RID_SVXIMG_DIRECTION + DIRECTION_E
 {
-    File = "directioneast_22.bmp";
+    ImageBitmap = Bitmap { File = "directioneast_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_SW
+Image RID_SVXIMG_DIRECTION + DIRECTION_SW
 {
-    File = "directionsouthwest_22.bmp";
+    ImageBitmap = Bitmap { File = "directionsouthwest_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_S
+Image RID_SVXIMG_DIRECTION + DIRECTION_S
 {
-    File = "directionsouth_22.bmp";
+    ImageBitmap = Bitmap { File = "directionsouth_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DIRECTION + DIRECTION_SE
+Image RID_SVXIMG_DIRECTION + DIRECTION_SE
 {
-    File = "directionsoutheast_22.bmp";
+    ImageBitmap = Bitmap { File = "directionsoutheast_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_PERSPECTIVE
+Image RID_SVXIMG_PERSPECTIVE
 {
-    File = "perspective_16.bmp";
+    ImageBitmap = Bitmap { File = "perspective_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_PARALLEL
+Image RID_SVXIMG_PARALLEL
 {
-    File = "parallel_16.bmp";
+    ImageBitmap = Bitmap { File = "parallel_16.bmp"; };
+    MASKCOLOR
 };
 
 String RID_SVXSTR_PERSPECTIVE
@@ -130,144 +143,172 @@ String RID_SVXSTR_DIRECTION + DIRECTION_SE
     Text [ en-US ] = "Extrusion South-East";
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_TOP_LEFT
+Image RID_SVXIMG_LIGHT_OFF + FROM_TOP_LEFT
 {
-    File = "lightofffromtopleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffromtopleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_TOP
+Image RID_SVXIMG_LIGHT_OFF + FROM_TOP
 {
-    File = "lightofffromtop_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffromtop_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_TOP_RIGHT
+Image RID_SVXIMG_LIGHT_OFF + FROM_TOP_RIGHT
 {
-    File = "lightofffromtopright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffromtopright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_LEFT
+Image RID_SVXIMG_LIGHT_OFF + FROM_LEFT
 {
-    File = "lightofffromleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffromleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_RIGHT
+Image RID_SVXIMG_LIGHT_OFF + FROM_RIGHT
 {
-    File = "lightofffromright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffromright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_BOTTOM_LEFT
+Image RID_SVXIMG_LIGHT_OFF + FROM_BOTTOM_LEFT
 {
-    File = "lightofffrombottomleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffrombottomleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_BOTTOM
+Image RID_SVXIMG_LIGHT_OFF + FROM_BOTTOM
 {
-    File = "lightofffrombottom_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffrombottom_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_OFF + FROM_BOTTOM_RIGHT
+Image RID_SVXIMG_LIGHT_OFF + FROM_BOTTOM_RIGHT
 {
-    File = "lightofffrombottomright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightofffrombottomright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_TOP_LEFT
+Image RID_SVXIMG_LIGHT_ON + FROM_TOP_LEFT
 {
-    File = "lightonfromtopleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfromtopleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_TOP
+Image RID_SVXIMG_LIGHT_ON + FROM_TOP
 {
-    File = "lightonfromtop_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfromtop_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_TOP_RIGHT
+Image RID_SVXIMG_LIGHT_ON + FROM_TOP_RIGHT
 {
-    File = "lightonfromtopright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfromtopright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_LEFT
+Image RID_SVXIMG_LIGHT_ON + FROM_LEFT
 {
-    File = "lightonfromleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfromleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_RIGHT
+Image RID_SVXIMG_LIGHT_ON + FROM_RIGHT
 {
-    File = "lightonfromright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfromright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_BOTTOM_LEFT
+Image RID_SVXIMG_LIGHT_ON + FROM_BOTTOM_LEFT
 {
-    File = "lightonfrombottomleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfrombottomleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_BOTTOM
+Image RID_SVXIMG_LIGHT_ON + FROM_BOTTOM
 {
-    File = "lightonfrombottom_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfrombottom_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_ON + FROM_BOTTOM_RIGHT
+Image RID_SVXIMG_LIGHT_ON + FROM_BOTTOM_RIGHT
 {
-    File = "lightonfrombottomright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightonfrombottomright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_TOP_LEFT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_TOP_LEFT
 {
-    File = "lightfromtopleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromtopleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_TOP
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_TOP
 {
-    File = "lightfromtop_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromtop_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_TOP_RIGHT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_TOP_RIGHT
 {
-    File = "lightfromtopright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromtopright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_LEFT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_LEFT
 {
-    File = "lightfromleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_RIGHT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_RIGHT
 {
-    File = "lightfromright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_FRONT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_FRONT
 {
-    File = "lightfromfront_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfromfront_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_BOTTOM_LEFT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_BOTTOM_LEFT
 {
-    File = "lightfrombottomleft_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfrombottomleft_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_BOTTOM
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_BOTTOM
 {
-    File = "lightfrombottom_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfrombottom_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHT_PREVIEW + FROM_BOTTOM_RIGHT
+Image RID_SVXIMG_LIGHT_PREVIEW + FROM_BOTTOM_RIGHT
 {
-    File = "lightfrombottomright_22.bmp";
+    ImageBitmap = Bitmap { File = "lightfrombottomright_22.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHTING_BRIGHT
+Image RID_SVXIMG_LIGHTING_BRIGHT
 {
-    File = "brightlit_16.png";
+    ImageBitmap = Bitmap { File = "brightlit_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHTING_NORMAL
+Image RID_SVXIMG_LIGHTING_NORMAL
 {
-    File = "normallit_16.png";
+    ImageBitmap = Bitmap { File = "normallit_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_LIGHTING_DIM
+Image RID_SVXIMG_LIGHTING_DIM
 {
-    File = "dimlit_16.png";
+    ImageBitmap = Bitmap { File = "dimlit_16.bmp"; };
+    MASKCOLOR
 };
 
 String RID_SVXSTR_BRIGHT
@@ -305,54 +346,69 @@ String RID_SVXSTR_METAL
     Text [ en-US ] = "Me~tal";
 };
 
-Bitmap RID_SVXBMP_WIRE_FRAME
+Image RID_SVXIMG_WIRE_FRAME
 {
-    File = "wireframe_16.bmp";
+    ImageBitmap = Bitmap { File = "wireframe_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_MATTE
+Image RID_SVXIMG_MATTE
 {
-    File = "matte_16.bmp";
+    ImageBitmap = Bitmap { File = "matte_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_PLASTIC
+Image RID_SVXIMG_PLASTIC
 {
-    File = "plastic_16.bmp";
+    ImageBitmap = Bitmap { File = "plastic_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_METAL
+Image RID_SVXIMG_METAL
 {
-    File = "metal_16.bmp";
+    ImageBitmap = Bitmap { File = "metal_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_0
+Image RID_SVXIMG_DEPTH_0
 {
-    File = "extrusion0inch_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusion0inch_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_1
+Image RID_SVXIMG_DEPTH_1
 {
-    File = "extrusion05inch_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusion05inch_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_2
+Image RID_SVXIMG_DEPTH_2
 {
-    File = "extrusion1inch_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusion1inch_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_3
+Image RID_SVXIMG_DEPTH_3
 {
-    File = "extrusion2inch_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusion2inch_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_4
+Image RID_SVXIMG_DEPTH_4
 {
-    File = "extrusion4inch_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusion4inch_16.bmp"; };
+    MASKCOLOR
 };
 
-Bitmap RID_SVXBMP_DEPTH_INFINITY
+Image RID_SVXIMG_DEPTH_INFINITY
 {
-    File = "extrusioninfinity_16.bmp";
+    ImageBitmap = Bitmap { File = "extrusioninfinity_16.bmp"; };
+    MASKCOLOR
+};
+
+String RID_SVXSTR_EXTRUSION_COLOR
+{
+    Text [ en-US ] = "Extrusion Color";
 };
 
 String RID_SVXSTR_DEPTH_0

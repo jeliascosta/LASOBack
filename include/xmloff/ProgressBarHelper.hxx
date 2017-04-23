@@ -53,7 +53,7 @@ public:
             void SetReference(sal_Int32 nVal) { nReference = nVal; }
             void SetValue(sal_Int32 nValue);
             void SetRepeat(bool bValue) { bRepeat = bValue; }
-            void Increment(sal_Int32 nInc = 1) { SetValue( nValue+nInc ); }
+            inline void Increment(sal_Int32 nInc = 1) { SetValue( nValue+nInc ); }
             void End() { if (xStatusIndicator.is()) xStatusIndicator->end(); }
 
             // set the new reference and returns the new value which gives the

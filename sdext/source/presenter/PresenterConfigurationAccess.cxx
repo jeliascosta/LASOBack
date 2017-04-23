@@ -46,21 +46,21 @@ PresenterConfigurationAccess::PresenterConfigurationAccess (
         if (rxContext.is())
         {
             Sequence<Any> aCreationArguments(3);
-            aCreationArguments[0] <<= beans::PropertyValue(
+            aCreationArguments[0] = makeAny(beans::PropertyValue(
                 "nodepath",
                 0,
                 makeAny(rsRootName),
-                beans::PropertyState_DIRECT_VALUE);
-            aCreationArguments[1] <<= beans::PropertyValue(
+                beans::PropertyState_DIRECT_VALUE));
+            aCreationArguments[1] = makeAny(beans::PropertyValue(
                 "depth",
                 0,
                 makeAny((sal_Int32)-1),
-                beans::PropertyState_DIRECT_VALUE);
-            aCreationArguments[2] <<= beans::PropertyValue(
+                beans::PropertyState_DIRECT_VALUE));
+            aCreationArguments[2] = makeAny(beans::PropertyValue(
                 "lazywrite",
                 0,
                 makeAny(true),
-                beans::PropertyState_DIRECT_VALUE);
+                beans::PropertyState_DIRECT_VALUE));
 
             OUString sAccessService;
             if (eMode == READ_ONLY)
@@ -77,7 +77,9 @@ PresenterConfigurationAccess::PresenterConfigurationAccess (
     }
     catch (const Exception& rException)
     {
-        SAL_WARN("sdext.presenter", "caught exception while opening configuration: " << rException.Message);
+        OSL_TRACE ("caught exception while opening configuration: %s",
+            OUStringToOString(rException.Message,
+                RTL_TEXTENCODING_UTF8).getStr());
     }
 }
 
@@ -159,7 +161,9 @@ Any PresenterConfigurationAccess::GetConfigurationNode (
     }
     catch (const Exception& rException)
     {
-        SAL_WARN("sdext.presenter", "caught exception while getting configuration node " << sPathToNode << " : " << rException.Message);
+        OSL_TRACE ("caught exception while getting configuration node %s: %s",
+            OUStringToOString(sPathToNode, RTL_TEXTENCODING_UTF8).getStr(),
+            OUStringToOString(rException.Message, RTL_TEXTENCODING_UTF8).getStr());
     }
 
     return Any();

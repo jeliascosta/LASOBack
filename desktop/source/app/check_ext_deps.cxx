@@ -38,13 +38,10 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/sequence.hxx>
 #include <cppuhelper/bootstrap.hxx>
-#include <com/sun/star/ucb/CommandAbortedException.hpp>
-#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/configuration/theDefaultProvider.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/deployment/XPackage.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
 #include <com/sun/star/deployment/LicenseException.hpp>
@@ -59,7 +56,7 @@
 
 #include "app.hxx"
 
-#include "dp_misc.h"
+#include "../deployment/inc/dp_misc.h"
 
 using namespace desktop;
 using namespace com::sun::star;
@@ -84,22 +81,25 @@ public:
     SilentCommandEnv(
         uno::Reference<uno::XComponentContext> const & xContext,
         Desktop* pDesktop );
-    virtual ~SilentCommandEnv() override;
+    virtual ~SilentCommandEnv();
 
     // XCommandEnvironment
     virtual uno::Reference<task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() override;
+    getInteractionHandler() throw (uno::RuntimeException, std::exception) override;
     virtual uno::Reference<ucb::XProgressHandler >
-    SAL_CALL getProgressHandler() override;
+    SAL_CALL getProgressHandler() throw (uno::RuntimeException, std::exception) override;
 
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        uno::Reference<task::XInteractionRequest > const & xRequest ) override;
+        uno::Reference<task::XInteractionRequest > const & xRequest )
+        throw (uno::RuntimeException, std::exception) override;
 
     // XProgressHandler
-    virtual void SAL_CALL push( uno::Any const & Status ) override;
-    virtual void SAL_CALL update( uno::Any const & Status ) override;
-    virtual void SAL_CALL pop() override;
+    virtual void SAL_CALL push( uno::Any const & Status )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL update( uno::Any const & Status )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL pop() throw (uno::RuntimeException, std::exception) override;
 };
 
 
@@ -120,12 +120,14 @@ SilentCommandEnv::~SilentCommandEnv()
 
 
 Reference<task::XInteractionHandler> SilentCommandEnv::getInteractionHandler()
+    throw (uno::RuntimeException, std::exception)
 {
     return this;
 }
 
 
 Reference<ucb::XProgressHandler> SilentCommandEnv::getProgressHandler()
+    throw (uno::RuntimeException, std::exception)
 {
     return this;
 }
@@ -133,6 +135,7 @@ Reference<ucb::XProgressHandler> SilentCommandEnv::getProgressHandler()
 
 // XInteractionHandler
 void SilentCommandEnv::handle( Reference< task::XInteractionRequest> const & xRequest )
+    throw (uno::RuntimeException, std::exception)
 {
     deployment::LicenseException licExc;
 
@@ -181,6 +184,7 @@ void SilentCommandEnv::handle( Reference< task::XInteractionRequest> const & xRe
 
 // XProgressHandler
 void SilentCommandEnv::push( uno::Any const & rStatus )
+    throw (uno::RuntimeException, std::exception)
 {
     OUString sText;
     mnLevel += 1;
@@ -196,6 +200,7 @@ void SilentCommandEnv::push( uno::Any const & rStatus )
 
 
 void SilentCommandEnv::update( uno::Any const & rStatus )
+    throw (uno::RuntimeException, std::exception)
 {
     OUString sText;
     if ( rStatus.hasValue() && ( rStatus >>= sText) )
@@ -205,7 +210,7 @@ void SilentCommandEnv::update( uno::Any const & rStatus )
 }
 
 
-void SilentCommandEnv::pop()
+void SilentCommandEnv::pop() throw (uno::RuntimeException, std::exception)
 {
     mnLevel -= 1;
 }
@@ -323,7 +328,7 @@ static void impl_setNeedsCompatCheck()
                 comphelper::getProcessComponentContext() ) );
 
         Sequence< Any > theArgs(1);
-        beans::NamedValue v( "nodepath",
+        beans::NamedValue v( OUString("nodepath"),
                       makeAny( OUString("org.openoffice.Setup/Office") ) );
         theArgs[0] <<= v;
         Reference< beans::XPropertySet > pset(
@@ -354,7 +359,7 @@ static bool impl_needsCompatCheck()
                 comphelper::getProcessComponentContext() ) );
 
         Sequence< Any > theArgs(1);
-        beans::NamedValue v( "nodepath",
+        beans::NamedValue v( OUString("nodepath"),
                       makeAny( OUString("org.openoffice.Setup/Office") ) );
         theArgs[0] <<= v;
         Reference< beans::XPropertySet > pset(

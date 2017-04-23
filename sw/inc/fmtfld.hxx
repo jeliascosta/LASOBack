@@ -25,6 +25,7 @@
 #include <cppuhelper/weakref.hxx>
 #include <svl/poolitem.hxx>
 #include <svl/SfxBroadcaster.hxx>
+#include <svl/smplhint.hxx>
 
 #include "swdllapi.h"
 #include <calbck.hxx>
@@ -63,7 +64,7 @@ public:
     /// @@@ copy construction allowed, but copy assignment is not? @@@
     SwFormatField( const SwFormatField& rAttr );
 
-    virtual ~SwFormatField() override;
+    virtual ~SwFormatField();
 
     /// "Pure virtual methods" of SfxPoolItem.
     virtual bool            operator==( const SfxPoolItem& ) const override;

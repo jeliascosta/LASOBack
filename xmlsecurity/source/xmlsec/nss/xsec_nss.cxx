@@ -48,34 +48,34 @@ void* SAL_CALL nss_component_getFactory( const sal_Char* pImplName , void* pServ
     if( pImplName != nullptr && pServiceManager != nullptr )
     {
 #ifdef XMLSEC_CRYPTO_NSS
-        if( SEInitializer_NssImpl_getImplementationName().equalsAscii( pImplName ) )
+        if( SEInitializer_NssImpl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory.set( createSingleFactory(
                 static_cast< XMultiServiceFactory * >( pServiceManager ),
                 OUString::createFromAscii( pImplName ),
                 SEInitializer_NssImpl_createInstance, SEInitializer_NssImpl_getSupportedServiceNames() ) );
         }
-        else if( XMLSignature_NssImpl::impl_getImplementationName().equalsAscii( pImplName ) )
+        else if( XMLSignature_NssImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = XMLSignature_NssImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
         }
-        else if( XMLSecurityContext_NssImpl::impl_getImplementationName().equalsAscii( pImplName ) )
+        else if( XMLSecurityContext_NssImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = XMLSecurityContext_NssImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
         }
-        else if( SecurityEnvironment_NssImpl::impl_getImplementationName().equalsAscii( pImplName ) )
+        else if( SecurityEnvironment_NssImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = SecurityEnvironment_NssImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
         }
-        else if( XMLEncryption_NssImpl::impl_getImplementationName().equalsAscii( pImplName ) )
+        else if( XMLEncryption_NssImpl::impl_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory = XMLEncryption_NssImpl::impl_createFactory( static_cast< XMultiServiceFactory* >( pServiceManager ) ) ;
         }
 #else
-        if( ONSSInitializer_getImplementationName().equalsAscii( pImplName ) )
+        if( ONSSInitializer_getImplementationName().equals( OUString::createFromAscii( pImplName ) ) )
         {
             xFactory.set( createSingleFactory(
-                static_cast< XMultiServiceFactory * >( pServiceManager ),
+                reinterpret_cast< XMultiServiceFactory * >( pServiceManager ),
                 OUString::createFromAscii( pImplName ),
                 ONSSInitializer_createInstance, ONSSInitializer_getSupportedServiceNames() ) );
         }

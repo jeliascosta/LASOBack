@@ -28,7 +28,14 @@ SwFieldRefTreeListBox::SwFieldRefTreeListBox(vcl::Window* pParent, WinBits nStyl
 {
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SwFieldRefTreeListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(SwFieldRefTreeListBox)
+{
+    WinBits nWinStyle = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<SwFieldRefTreeListBox>::Create(pParent, nWinStyle);
+}
 
 void SwFieldRefTreeListBox::RequestHelp( const HelpEvent& rHEvt )
 {
@@ -53,7 +60,7 @@ void SwFieldRefTreeListBox::RequestHelp( const HelpEvent& rHEvt )
                     aSize.Width() = GetSizePixel().Width() - aPos.X();
 
                 aPos = OutputToScreenPixel(aPos);
-                tools::Rectangle aItemRect( aPos, aSize );
+                Rectangle aItemRect( aPos, aSize );
                 Help::ShowQuickHelp( this, aItemRect, sEntry,
                     QuickHelpFlags::Left|QuickHelpFlags::VCenter );
                 bCallBase = false;

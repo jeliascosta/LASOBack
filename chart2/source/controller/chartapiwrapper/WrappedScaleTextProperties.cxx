@@ -36,23 +36,32 @@ namespace wrapper
 class WrappedScaleTextProperty : public WrappedProperty
 {
 public:
-    explicit WrappedScaleTextProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    explicit WrappedScaleTextProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~WrappedScaleTextProperty();
 
-    virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const override;
-    virtual Any getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const override;
-    virtual Any getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const override;
+    virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                                    throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException) override;
+    virtual Any getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                                    throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException) override;
+    virtual Any getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                                    throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException) override;
 
 private:
     std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;
 };
 
-WrappedScaleTextProperty::WrappedScaleTextProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+WrappedScaleTextProperty::WrappedScaleTextProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
     : ::chart::WrappedProperty( "ScaleText" , OUString() )
     , m_spChart2ModelContact( spChart2ModelContact )
 {
 }
 
+WrappedScaleTextProperty::~WrappedScaleTextProperty()
+{
+}
+
 void WrappedScaleTextProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     static const char aRefSizeName[] = "ReferencePageSize";
 
@@ -70,7 +79,7 @@ void WrappedScaleTextProperty::setPropertyValue( const Any& rOuterValue, const R
             if( bNewValue )
             {
                 awt::Size aRefSize( m_spChart2ModelContact->GetPageSize() );
-                xInnerPropertySet->setPropertyValue( aRefSizeName, uno::Any( aRefSize ) );
+                xInnerPropertySet->setPropertyValue( aRefSizeName, uno::makeAny( aRefSize ) );
             }
             else
                 xInnerPropertySet->setPropertyValue( aRefSizeName, Any() );
@@ -83,11 +92,14 @@ void WrappedScaleTextProperty::setPropertyValue( const Any& rOuterValue, const R
 }
 
 Any WrappedScaleTextProperty::getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
+    static const char aRefSizeName[] = "ReferencePageSize";
+
     Any aRet( getPropertyDefault( Reference< beans::XPropertyState >( xInnerPropertySet, uno::UNO_QUERY ) ) );
     if( xInnerPropertySet.is() )
     {
-        if( xInnerPropertySet->getPropertyValue( "ReferencePageSize" ).hasValue() )
+        if( xInnerPropertySet->getPropertyValue( aRefSizeName ).hasValue() )
             aRet <<= true;
         else
             aRet <<= false;
@@ -97,6 +109,7 @@ Any WrappedScaleTextProperty::getPropertyValue( const Reference< beans::XPropert
 }
 
 Any WrappedScaleTextProperty::getPropertyDefault( const Reference< beans::XPropertyState >& /*xInnerPropertyState*/ ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
     aRet <<= false;
@@ -112,7 +125,7 @@ enum
 
 }//anonymous namespace
 
-void WrappedScaleTextProperties::addProperties( std::vector< Property > & rOutProperties )
+void WrappedScaleTextProperties::addProperties( ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "ScaleText",

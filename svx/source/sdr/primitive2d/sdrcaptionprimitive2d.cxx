@@ -32,7 +32,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void SdrCaptionPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*aViewInformation*/) const
+        Primitive2DContainer SdrCaptionPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*aViewInformation*/) const
         {
             Primitive2DContainer aRetval;
 
@@ -120,7 +120,7 @@ namespace drawinglayer
                 aRetval = createEmbeddedShadowPrimitive(aRetval, getSdrLFSTAttribute().getShadow());
             }
 
-            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
+            return aRetval;
         }
 
         SdrCaptionPrimitive2D::SdrCaptionPrimitive2D(

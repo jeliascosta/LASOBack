@@ -133,13 +133,13 @@ Writer& Out( const SwNodeFnTab pTab, SwNode& rNode, Writer & rWrt )
     sal_uInt16 nId = RES_TXTNODE;
     switch (pCNd->GetNodeType())
     {
-        case SwNodeType::Text:
+        case ND_TEXTNODE:
             nId = RES_TXTNODE;
              break;
-        case SwNodeType::Grf:
+        case ND_GRFNODE:
             nId = RES_GRFNODE;
             break;
-        case SwNodeType::Ole:
+        case ND_OLENODE:
             nId = RES_OLENODE;
             break;
         default:

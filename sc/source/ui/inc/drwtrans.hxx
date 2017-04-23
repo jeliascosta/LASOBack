@@ -36,7 +36,6 @@ class SdrObject;
 class SdrView;
 class ScDrawView;
 class SdrOle2Obj;
-enum class ScDragSrc;
 
 class ScDrawTransferObj : public TransferableHelper
 {
@@ -56,7 +55,7 @@ private:
                                     // source information for drag&drop:
                                     // (view is needed to handle drawing obejcts)
     SdrView*                        pDragSourceView;
-    ScDragSrc                       nDragSourceFlags;
+    sal_uInt16                      nDragSourceFlags;
     bool                            bDragWasInternal;
 
     sal_uInt32                      nSourceDocID;
@@ -73,7 +72,7 @@ private:
 public:
             ScDrawTransferObj( SdrModel* pClipModel, ScDocShell* pContainerShell,
                                 const TransferableObjectDescriptor& rDesc );
-    virtual ~ScDrawTransferObj() override;
+    virtual ~ScDrawTransferObj();
 
     virtual void        AddSupportedFormats() override;
     virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;
@@ -87,16 +86,16 @@ public:
     void                SetDrawPersist( const SfxObjectShellRef& rRef );
     void                SetDragSource( ScDrawView* pView );
     void                SetDragSourceObj( SdrObject* pObj, SCTAB nTab );
-    void                SetDragSourceFlags( ScDragSrc nFlags );
+    void                SetDragSourceFlags( sal_uInt16 nFlags );
     void                SetDragWasInternal();
 
     const OUString& GetShellID() const;
 
     SdrView*            GetDragSourceView()             { return pDragSourceView; }
-    ScDragSrc           GetDragSourceFlags() const      { return nDragSourceFlags; }
+    sal_uInt16              GetDragSourceFlags() const      { return nDragSourceFlags; }
 
     static ScDrawTransferObj* GetOwnClipboard( vcl::Window* pUIWin );
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw( css::uno::RuntimeException, std::exception ) override;
     static const css::uno::Sequence< sal_Int8 >& getUnoTunnelId();
 
     const ScRangeListVector& GetProtectedChartRangesVector() const { return m_aProtectedChartRangesVector; }

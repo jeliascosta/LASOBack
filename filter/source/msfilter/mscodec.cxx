@@ -60,23 +60,23 @@ inline void lclRotateLeft( Type& rnValue, sal_uInt8 nBits, sal_uInt8 nWidth )
         ((rnValue << nBits) | ((rnValue & nMask) >> (nWidth - nBits))) & nMask );
 }
 
-std::size_t lclGetLen( const sal_uInt8* pnPassData, std::size_t nBufferSize )
+sal_Size lclGetLen( const sal_uInt8* pnPassData, sal_Size nBufferSize )
 {
-    std::size_t nLen = 0;
+    sal_Size nLen = 0;
     while( (nLen < nBufferSize) && pnPassData[ nLen ] ) ++nLen;
     return nLen;
 }
 
-sal_uInt16 lclGetKey( const sal_uInt8* pnPassData, std::size_t nBufferSize )
+sal_uInt16 lclGetKey( const sal_uInt8* pnPassData, sal_Size nBufferSize )
 {
-    std::size_t nLen = lclGetLen( pnPassData, nBufferSize );
+    sal_Size nLen = lclGetLen( pnPassData, nBufferSize );
     if( !nLen ) return 0;
 
     sal_uInt16 nKey = 0;
     sal_uInt16 nKeyBase = 0x8000;
     sal_uInt16 nKeyEnd = 0xFFFF;
     const sal_uInt8* pnChar = pnPassData + nLen - 1;
-    for( std::size_t nIndex = 0; nIndex < nLen; ++nIndex, --pnChar )
+    for( sal_Size nIndex = 0; nIndex < nLen; ++nIndex, --pnChar )
     {
         sal_uInt8 cChar = *pnChar & 0x7F;
         for( sal_uInt8 nBit = 0; nBit < 8; ++nBit )
@@ -92,16 +92,16 @@ sal_uInt16 lclGetKey( const sal_uInt8* pnPassData, std::size_t nBufferSize )
     return nKey ^ nKeyEnd;
 }
 
-sal_uInt16 lclGetHash( const sal_uInt8* pnPassData, std::size_t nBufferSize )
+sal_uInt16 lclGetHash( const sal_uInt8* pnPassData, sal_Size nBufferSize )
 {
-    std::size_t nLen = lclGetLen( pnPassData, nBufferSize );
+    sal_Size nLen = lclGetLen( pnPassData, nBufferSize );
 
     sal_uInt16 nHash = static_cast< sal_uInt16 >( nLen );
     if( nLen )
         nHash ^= 0xCE4B;
 
     const sal_uInt8* pnChar = pnPassData;
-    for( std::size_t nIndex = 0; nIndex < nLen; ++nIndex, ++pnChar )
+    for( sal_Size nIndex = 0; nIndex < nLen; ++nIndex, ++pnChar )
     {
         sal_uInt16 cChar = *pnChar;
         sal_uInt8 nRot = static_cast< sal_uInt8 >( (nIndex + 1) % 15 );
@@ -145,15 +145,16 @@ void MSCodec_Xor95::InitKey( const sal_uInt8 pnPassData[ 16 ] )
         0xBF, 0x0F, 0x00, 0x00
     };
 
-    std::size_t nLen = lclGetLen( pnPassData, 16 );
+    sal_Size nIndex;
+    sal_Size nLen = lclGetLen( pnPassData, 16 );
     const sal_uInt8* pnFillChar = spnFillChars;
-    for (std::size_t nIndex = nLen; nIndex < sizeof(mpnKey); ++nIndex, ++pnFillChar)
+    for( nIndex = nLen; nIndex < sizeof( mpnKey ); ++nIndex, ++pnFillChar )
         mpnKey[ nIndex ] = *pnFillChar;
 
     SVBT16 pnOrigKey;
     ShortToSVBT16( mnKey, pnOrigKey );
     sal_uInt8* pnKeyChar = mpnKey;
-    for (std::size_t nIndex = 0; nIndex < sizeof(mpnKey); ++nIndex, ++pnKeyChar)
+    for( nIndex = 0; nIndex < sizeof( mpnKey ); ++nIndex, ++pnKeyChar )
     {
         *pnKeyChar ^= pnOrigKey[ nIndex & 0x01 ];
         lclRotateLeft( *pnKeyChar, mnRotateDistance );
@@ -201,7 +202,7 @@ void MSCodec_Xor95::InitCipher()
     mnOffset = 0;
 }
 
-void MSCodec_XorXLS95::Decode( sal_uInt8* pnData, std::size_t nBytes )
+void MSCodec_XorXLS95::Decode( sal_uInt8* pnData, sal_Size nBytes )
 {
     const sal_uInt8* pnCurrKey = mpnKey + mnOffset;
     const sal_uInt8* pnKeyLast = mpnKey + 0x0F;
@@ -217,7 +218,7 @@ void MSCodec_XorXLS95::Decode( sal_uInt8* pnData, std::size_t nBytes )
     Skip( nBytes );
 }
 
-void MSCodec_XorWord95::Decode( sal_uInt8* pnData, std::size_t nBytes )
+void MSCodec_XorWord95::Decode( sal_uInt8* pnData, sal_Size nBytes )
 {
     const sal_uInt8* pnCurrKey = mpnKey + mnOffset;
     const sal_uInt8* pnKeyLast = mpnKey + 0x0F;
@@ -239,7 +240,7 @@ void MSCodec_XorWord95::Decode( sal_uInt8* pnData, std::size_t nBytes )
 }
 
 
-void MSCodec_Xor95::Skip( std::size_t nBytes )
+void MSCodec_Xor95::Skip( sal_Size nBytes )
 {
     mnOffset = (mnOffset + nBytes) & 0x0F;
 }
@@ -247,10 +248,10 @@ void MSCodec_Xor95::Skip( std::size_t nBytes )
 MSCodec97::MSCodec97(size_t nHashLen)
     : m_nHashLen(nHashLen)
     , m_hCipher(rtl_cipher_create(rtl_Cipher_AlgorithmARCFOUR, rtl_Cipher_ModeStream))
-    , m_aDocId(16, 0)
     , m_aDigestValue(nHashLen, 0)
 {
     assert(m_hCipher != nullptr);
+    (void)memset (m_pDocId, 0, sizeof(m_pDocId));
 }
 
 MSCodec_Std97::MSCodec_Std97()
@@ -268,7 +269,7 @@ MSCodec_CryptoAPI::MSCodec_CryptoAPI()
 MSCodec97::~MSCodec97()
 {
     (void)memset(m_aDigestValue.data(), 0, m_aDigestValue.size());
-    (void)memset(m_aDocId.data(), 0, m_aDocId.size());
+    (void)memset(m_pDocId, 0, sizeof(m_pDocId));
     rtl_cipher_destroy(m_hCipher);
 }
 
@@ -308,11 +309,10 @@ bool MSCodec97::InitCodec( const uno::Sequence< beans::NamedValue >& aData )
         uno::Sequence< sal_Int8 > aUniqueID = aHashData.getUnpackedValueOrDefault("STD97UniqueID", uno::Sequence< sal_Int8 >() );
         if ( aUniqueID.getLength() == 16 )
         {
-            assert(m_aDocId.size() == static_cast<size_t>(aUniqueID.getLength()));
-            (void)memcpy(m_aDocId.data(), aUniqueID.getConstArray(), m_aDocId.size());
+            (void)memcpy( m_pDocId, aUniqueID.getConstArray(), 16 );
             bResult = true;
             lcl_PrintDigest(m_aDigestValue.data(), "digest value");
-            lcl_PrintDigest(m_aDocId.data(), "DocId value");
+            lcl_PrintDigest(m_pDocId, "DocId value");
         }
         else
             OSL_FAIL( "Unexpected document ID!\n" );
@@ -328,7 +328,7 @@ uno::Sequence< beans::NamedValue > MSCodec97::GetEncryptionData()
     ::comphelper::SequenceAsHashMap aHashData;
     assert(m_aDigestValue.size() == m_nHashLen);
     aHashData[ OUString( "STD97EncryptionKey" ) ] <<= uno::Sequence< sal_Int8 >( reinterpret_cast<sal_Int8*>(m_aDigestValue.data()), m_nHashLen );
-    aHashData[ OUString( "STD97UniqueID" ) ] <<= uno::Sequence< sal_Int8 >( reinterpret_cast<sal_Int8*>(m_aDocId.data()), m_aDocId.size() );
+    aHashData[ OUString( "STD97UniqueID" ) ] <<= uno::Sequence< sal_Int8 >( reinterpret_cast<sal_Int8*>(m_pDocId), 16 );
 
     return aHashData.getAsConstNamedValueList();
 }
@@ -351,9 +351,9 @@ void MSCodec_Std97::InitKey (
 
     lcl_PrintDigest(m_aDigestValue.data(), "digest value");
 
-    (void)memcpy (m_aDocId.data(), pDocId, 16);
+    (void)memcpy (m_pDocId, pDocId, 16);
 
-    lcl_PrintDigest(m_aDocId.data(), "DocId value");
+    lcl_PrintDigest(m_pDocId, "DocId value");
 }
 
 void MSCodec_CryptoAPI::InitKey (
@@ -377,9 +377,9 @@ void MSCodec_CryptoAPI::InitKey (
 
     lcl_PrintDigest(m_aDigestValue.data(), "digest value");
 
-    (void)memcpy(m_aDocId.data(), pDocId, 16);
+    (void)memcpy (m_pDocId, pDocId, 16);
 
-    lcl_PrintDigest(m_aDocId.data(), "DocId value");
+    lcl_PrintDigest(m_pDocId, "DocId value");
 }
 
 bool MSCodec97::VerifyKey(const sal_uInt8* pSaltData, const sal_uInt8* pSaltDigest)
@@ -517,12 +517,12 @@ bool MSCodec97::Decode (
 bool MSCodec97::Skip(std::size_t nDatLen)
 {
     sal_uInt8 pnDummy[ 1024 ];
-    std::size_t nDatLeft = nDatLen;
+    sal_Size nDatLeft = nDatLen;
     bool bResult = true;
 
     while (bResult && nDatLeft)
     {
-        std::size_t nBlockLen = ::std::min< std::size_t >( nDatLeft, sizeof(pnDummy) );
+        sal_Size nBlockLen = ::std::min< sal_Size >( nDatLeft, sizeof(pnDummy) );
         bResult = Decode( pnDummy, nBlockLen, pnDummy, nBlockLen );
         nDatLeft -= nBlockLen;
     }
@@ -591,8 +591,8 @@ void MSCodec_Std97::GetEncryptKey (
 
 void MSCodec97::GetDocId( sal_uInt8 pDocId[16] )
 {
-    assert(m_aDocId.size() == 16);
-    (void)memcpy(pDocId, m_aDocId.data(), 16);
+    if ( sizeof( m_pDocId ) == 16 )
+        (void)memcpy( pDocId, m_pDocId, 16 );
 }
 
 EncryptionStandardHeader::EncryptionStandardHeader()

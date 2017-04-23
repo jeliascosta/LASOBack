@@ -425,7 +425,6 @@ mimetypes = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.template': 'dotx',
     'application/vnd.visio': 'vsd',
     'application/visio.drawing': 'vsd',
-    'application/vnd.visio2013': 'vsdx',
     'application/vnd.visio.xml': 'vdx',
     'application/x-mspublisher': 'pub',
 # W3C
@@ -463,12 +462,6 @@ mimetypes = {
     'application/x-abiword': 'abw',
     'application/x-pagemaker': 'pmd',
     'application/x-gnumeric': 'gnumeric',
-    'application/vnd.stardivision.calc': 'sdc',
-    'application/vnd.stardivision.draw': 'sda',
-    'application/vnd.stardivision.writer': 'sdw',
-    'application/x-starcalc': 'sdc',
-    'application/x-stardraw': 'sdd',
-    'application/x-starwriter': 'sdw',
 # relatively uncommon image mimetypes
     'image/x-freehand': 'fh',
     'image/cgm': 'cgm',

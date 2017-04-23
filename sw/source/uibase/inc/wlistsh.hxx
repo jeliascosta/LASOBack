@@ -33,7 +33,7 @@ private:
 public:
 
     SwWebListShell(SwView &rView);
-    virtual ~SwWebListShell() override;
+    virtual ~SwWebListShell();
 };
 
 #endif

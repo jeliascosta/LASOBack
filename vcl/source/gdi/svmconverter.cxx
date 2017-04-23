@@ -33,10 +33,9 @@
 #include "svmconverter.hxx"
 
 #include <memory>
-#include <o3tl/make_unique.hxx>
 
 // Inlines
-void ImplReadRect( SvStream& rIStm, tools::Rectangle& rRect )
+void ImplReadRect( SvStream& rIStm, Rectangle& rRect )
 {
     Point aTL;
     Point aBR;
@@ -44,56 +43,38 @@ void ImplReadRect( SvStream& rIStm, tools::Rectangle& rRect )
     ReadPair( rIStm, aTL );
     ReadPair( rIStm, aBR );
 
-    rRect = tools::Rectangle( aTL, aBR );
+    rRect = Rectangle( aTL, aBR );
 }
 
-void ImplWriteRect( SvStream& rOStm, const tools::Rectangle& rRect )
+void ImplWriteRect( SvStream& rOStm, const Rectangle& rRect )
 {
     WritePair( rOStm, rRect.TopLeft() );
     WritePair( rOStm, rRect.BottomRight() );
 }
 
-bool ImplReadPoly(SvStream& rIStm, tools::Polygon& rPoly)
+void ImplReadPoly( SvStream& rIStm, tools::Polygon& rPoly )
 {
-    sal_Int32 nSize32(0);
-    rIStm.ReadInt32(nSize32);
-    sal_uInt16 nSize = nSize32;
+    sal_Int32   nSize;
 
-    const size_t nMaxPossiblePoints = rIStm.remainingSize() / 2 * sizeof(sal_Int32);
-    if (nSize > nMaxPossiblePoints)
-    {
-        SAL_WARN("vcl.gdi", "svm record claims to have: " << nSize << " points, but only " << nMaxPossiblePoints << " possible");
-        return false;
-    }
+    rIStm.ReadInt32( nSize );
+    rPoly = tools::Polygon( (sal_uInt16) nSize );
 
-    rPoly = tools::Polygon(nSize);
-
-    for (sal_uInt16 i = 0; i < nSize && rIStm.good(); ++i)
-        ReadPair(rIStm, rPoly[i]);
-
-    return rIStm.good();
+    for( sal_uInt16 i = 0; i < (sal_uInt16) nSize; i++ )
+        ReadPair( rIStm, rPoly[ i ] );
 }
 
-bool ImplReadPolyPoly(SvStream& rIStm, tools::PolyPolygon& rPolyPoly)
+void ImplReadPolyPoly( SvStream& rIStm, tools::PolyPolygon& rPolyPoly )
 {
-    bool bSuccess = true;
-
     tools::Polygon aPoly;
-    sal_Int32 nPolyCount32(0);
-    rIStm.ReadInt32(nPolyCount32);
-    sal_uInt16 nPolyCount = (sal_uInt16)nPolyCount32;
+    sal_Int32   nPolyCount;
 
-    for (sal_uInt16 i = 0; i < nPolyCount && rIStm.good(); ++i)
+    rIStm.ReadInt32( nPolyCount );
+
+    for( sal_uInt16 i = 0; i < (sal_uInt16) nPolyCount; i++ )
     {
-        if (!ImplReadPoly(rIStm, aPoly))
-        {
-            bSuccess = false;
-            break;
-        }
-        rPolyPoly.Insert(aPoly);
+        ImplReadPoly( rIStm, aPoly );
+        rPolyPoly.Insert( aPoly );
     }
-
-    return bSuccess && rIStm.good();
 }
 
 void ImplWritePolyPolyAction( SvStream& rOStm, const tools::PolyPolygon& rPolyPoly )
@@ -127,7 +108,7 @@ void ImplWritePolyPolyAction( SvStream& rOStm, const tools::PolyPolygon& rPolyPo
 
 void ImplReadColor( SvStream& rIStm, Color& rColor )
 {
-    sal_Int16 nVal(0);
+    sal_Int16 nVal;
 
     rIStm.ReadInt16( nVal ); rColor.SetRed( sal::static_int_cast<sal_uInt8>((sal_uInt16)nVal >> 8) );
     rIStm.ReadInt16( nVal ); rColor.SetGreen( sal::static_int_cast<sal_uInt8>((sal_uInt16)nVal >> 8) );
@@ -159,26 +140,20 @@ bool ImplReadMapMode(SvStream& rIStm, MapMode& rMapMode)
     sal_Int32 nXNum(0), nXDenom(0), nYNum(0), nYDenom(0);
     rIStm.ReadInt32(nXNum).ReadInt32(nXDenom).ReadInt32(nYNum).ReadInt32(nYDenom);
 
-    if (!rIStm.good() || nXDenom <= 0 || nYDenom <= 0 || nXNum <= 0 || nYNum <= 0)
+    if (!rIStm.good() || nXDenom == 0 || nYDenom == 0)
     {
         SAL_WARN("vcl.gdi", "Parsing error: invalid mapmode fraction");
         return false;
     }
 
-    if (nUnit < sal_Int16(MapUnit::Map100thMM) || nUnit > sal_Int16(MapUnit::LAST))
-    {
-        SAL_WARN("vcl.gdi", "Parsing error: invalid mapmode");
-        return false;
-    }
-
-    rMapMode = MapMode((MapUnit) nUnit, aOrg, Fraction(nXNum, nXDenom), Fraction(nYNum, nYDenom));
+    rMapMode = MapMode( (MapUnit) nUnit, aOrg, Fraction( nXNum, nXDenom ), Fraction( nYNum, nYDenom ) );
 
     return true;
 }
 
 void ImplWriteMapMode( SvStream& rOStm, const MapMode& rMapMode )
 {
-    rOStm.WriteInt16( (sal_uInt16)rMapMode.GetMapUnit() );
+    rOStm.WriteInt16( rMapMode.GetMapUnit() );
     WritePair( rOStm, rMapMode.GetOrigin() );
     rOStm.WriteInt32( rMapMode.GetScaleX().GetNumerator() );
     rOStm.WriteInt32( rMapMode.GetScaleX().GetDenominator() );
@@ -274,7 +249,7 @@ void ImplWriteFont( SvStream& rOStm, const vcl::Font& rFont,
     rActualCharSet = GetStoreCharSet( rFont.GetCharSet() );
     ImplWriteColor( rOStm, rFont.GetColor() );
     ImplWriteColor( rOStm, rFont.GetFillColor() );
-    rOStm.WriteBytes( aName, 32 );
+    rOStm.Write( aName, 32 );
     WritePair( rOStm, rFont.GetFontSize() );
     rOStm.WriteInt16( 0 ); // no character orientation anymore
     rOStm.WriteInt16( rFont.GetOrientation() );
@@ -319,7 +294,7 @@ void ImplReadUnicodeComment( sal_uInt32 nStrmPos, SvStream& rIStm, OUString& rSt
     {
         sal_uInt16  nType;
         sal_uInt32  nActionSize;
-        std::size_t nStringLen;
+        sal_Size    nStringLen;
 
         rIStm.Seek( nStrmPos );
         rIStm  .ReadUInt16( nType )
@@ -333,16 +308,15 @@ void ImplReadUnicodeComment( sal_uInt32 nStrmPos, SvStream& rIStm, OUString& rSt
     rIStm.Seek( nOld );
 }
 
-void ImplSkipActions(SvStream& rIStm, sal_uLong nSkipCount)
+void ImplSkipActions( SvStream& rIStm, sal_uLong nSkipCount )
 {
     sal_Int32 nActionSize;
     sal_Int16 nType;
-    for (sal_uLong i = 0UL; i < nSkipCount; ++i)
+
+    for( sal_uLong i = 0UL; i < nSkipCount; i++ )
     {
-        rIStm.ReadInt16(nType).ReadInt32(nActionSize);
-        if (!rIStm.good() || nActionSize < 4)
-            break;
-        rIStm.SeekRel(nActionSize - 4);
+        rIStm.ReadInt16( nType ).ReadInt32( nActionSize );
+        rIStm.SeekRel( nActionSize - 4L );
     }
 }
 
@@ -409,7 +383,7 @@ bool ImplWriteExtendedPolyPolygonAction(SvStream& rOStm, const tools::PolyPolygo
 
                         for(sal_uInt16 c(0); c < nPointCount; c++)
                         {
-                            rOStm.WriteUChar( (sal_uInt8)rCandidate.GetFlags(c) );
+                            rOStm.WriteUChar( rCandidate.GetFlags(c) );
                         }
                     }
                     else
@@ -497,17 +471,6 @@ SVMConverter::SVMConverter( SvStream& rStm, GDIMetaFile& rMtf, sal_uLong nConver
     }
 }
 
-namespace
-{
-    sal_Int32 SkipActions(sal_Int32 i, sal_Int32 nFollowingActionCount, sal_Int32 nActions)
-    {
-        sal_Int32 remainingActions = nActions - i;
-        if (nFollowingActionCount < 0)
-            nFollowingActionCount = remainingActions;
-        return std::min(remainingActions, nFollowingActionCount);
-    }
-}
-
 #define LF_FACESIZE 32
 
 void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
@@ -521,7 +484,7 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
     Size    aPrefSz;
 
     // read header
-    rIStm.ReadBytes(aCode, sizeof(aCode));  // Identifier
+    rIStm.Read( aCode, sizeof( aCode ) );  // Identifier
     sal_Int16 nSize(0);
     rIStm.ReadInt16( nSize );                                 // Size
     sal_Int16 nVersion(0);
@@ -543,156 +506,139 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
         return;
     }
 
-    LineInfo            aLineInfo( LineStyle::NONE, 0 );
-    std::stack<std::unique_ptr<LineInfo>> aLIStack;
+    LineInfo            aLineInfo( LINE_NONE, 0 );
+    ::std::stack< LineInfo* >    aLIStack;
     ScopedVclPtrInstance< VirtualDevice > aFontVDev;
     rtl_TextEncoding    eActualCharSet = osl_getThreadTextEncoding();
     bool                bFatLine = false;
 
-    tools::Polygon     aActionPoly;
-    tools::Rectangle   aRect;
-    Point       aPt, aPt1;
-    Size        aSz;
-    Color       aActionColor;
+    // TODO: fix reindentation below if you can accept being blamed by the SCM
+        tools::Polygon     aActionPoly;
+        Rectangle   aRect;
+        Point       aPt, aPt1;
+        Size        aSz;
+        Color       aActionColor;
 
-    sal_uInt32  nUnicodeCommentStreamPos = 0;
-    sal_Int32       nUnicodeCommentActionNumber = 0;
+        sal_uInt32  nUnicodeCommentStreamPos = 0;
+        sal_Int32       nUnicodeCommentActionNumber = 0;
 
-    rMtf.SetPrefSize(aPrefSz);
+        rMtf.SetPrefSize( aPrefSz );
 
-    MapMode aMapMode;
-    if (ImplReadMapMode(rIStm, aMapMode))           // MapMode
-        rMtf.SetPrefMapMode(aMapMode);
+        MapMode aMapMode;
+        if (ImplReadMapMode(rIStm, aMapMode))           // MapMode
+            rMtf.SetPrefMapMode(aMapMode);
 
-    sal_Int32 nActions(0);
-    rIStm.ReadInt32(nActions);                      // Action count
-    if (nActions < 0)
-    {
-        SAL_WARN("vcl.gdi", "svm claims negative action count (" << nActions << ")");
-        nActions = 0;
-    }
-
-    const size_t nMinActionSize = sizeof(sal_uInt16) + sizeof(sal_Int32);
-    const size_t nMaxPossibleActions = rIStm.remainingSize() / nMinActionSize;
-    if (static_cast<sal_uInt32>(nActions) > nMaxPossibleActions)
-    {
-        SAL_WARN("vcl.gdi", "svm claims more actions (" << nActions << ") than stream could provide, truncating");
-        nActions = nMaxPossibleActions;
-    }
-
-    size_t nLastPolygonAction(0);
-
-    for (sal_Int32 i = 0; i < nActions && rIStm.good(); ++i)
-    {
-        sal_Int16 nType(0);
-        rIStm.ReadInt16(nType);
-        sal_Int32 nActBegin = rIStm.Tell();
-        sal_Int32 nActionSize(0);
-        rIStm.ReadInt32(nActionSize);
-
-        SAL_WARN_IF( ( nType > 33 ) && ( nType < 1024 ), "vcl.gdi", "Unknown GDIMetaAction while converting!" );
-
-        switch( nType )
+        sal_Int32 nActions(0);
+        rIStm.ReadInt32( nActions );                    // Action count
+        if (nActions < 0)
         {
-            case GDI_PIXEL_ACTION:
+            SAL_WARN("vcl.gdi", "svm claims negative action count (" << nActions << ")");
+            nActions = 0;
+        }
+
+        const size_t nMinActionSize = sizeof(sal_uInt16) + sizeof(sal_Int32);
+        const size_t nMaxPossibleActions = rIStm.remainingSize() / nMinActionSize;
+        if (static_cast<sal_uInt32>(nActions) > nMaxPossibleActions)
+        {
+            SAL_WARN("vcl.gdi", "svm claims more actions (" << nActions << ") than stream could provide, truncating");
+            nActions = nMaxPossibleActions;
+        }
+
+        size_t nLastPolygonAction(0);
+
+        for (sal_Int32 i = 0; i < nActions && rIStm.good(); ++i)
+        {
+            sal_Int16 nType(0);
+            rIStm.ReadInt16( nType );
+            sal_Int32 nActBegin = rIStm.Tell();
+            sal_Int32 nActionSize(0);
+            rIStm.ReadInt32( nActionSize );
+
+            DBG_ASSERT( ( nType <= 33 ) || ( nType >= 1024 ), "Unknown GDIMetaAction while converting!" );
+
+            switch( nType )
             {
-                ReadPair( rIStm, aPt );
-                ImplReadColor( rIStm, aActionColor );
-                rMtf.AddAction( new MetaPixelAction( aPt, aActionColor ) );
-            }
-            break;
-
-            case GDI_POINT_ACTION:
-            {
-                ReadPair( rIStm, aPt );
-                rMtf.AddAction( new MetaPointAction( aPt ) );
-            }
-            break;
-
-            case GDI_LINE_ACTION:
-            {
-                ReadPair( rIStm, aPt );
-                ReadPair( rIStm, aPt1 );
-                rMtf.AddAction( new MetaLineAction( aPt, aPt1, aLineInfo ) );
-            }
-            break;
-
-            case GDI_LINEJOIN_ACTION :
-            {
-                sal_Int16 nLineJoin(0);
-                rIStm.ReadInt16( nLineJoin );
-                aLineInfo.SetLineJoin((basegfx::B2DLineJoin)nLineJoin);
-            }
-            break;
-
-            case GDI_LINECAP_ACTION :
-            {
-                sal_Int16 nLineCap(0);
-                rIStm.ReadInt16( nLineCap );
-                aLineInfo.SetLineCap((css::drawing::LineCap)nLineCap);
-            }
-            break;
-
-            case GDI_LINEDASHDOT_ACTION :
-            {
-                sal_Int16 a(0);
-                sal_Int32 b(0);
-
-                rIStm.ReadInt16( a ); aLineInfo.SetDashCount(a);
-                rIStm.ReadInt32( b ); aLineInfo.SetDashLen(b);
-                rIStm.ReadInt16( a ); aLineInfo.SetDotCount(a);
-                rIStm.ReadInt32( b ); aLineInfo.SetDotLen(b);
-                rIStm.ReadInt32( b ); aLineInfo.SetDistance(b);
-
-                if(((aLineInfo.GetDashCount() && aLineInfo.GetDashLen())
-                    || (aLineInfo.GetDotCount() && aLineInfo.GetDotLen()))
-                    && aLineInfo.GetDistance())
+                case GDI_PIXEL_ACTION:
                 {
-                    aLineInfo.SetStyle(LineStyle::Dash);
+                    ReadPair( rIStm, aPt );
+                    ImplReadColor( rIStm, aActionColor );
+                    rMtf.AddAction( new MetaPixelAction( aPt, aActionColor ) );
                 }
-            }
-            break;
+                break;
 
-            case GDI_EXTENDEDPOLYGON_ACTION :
-            {
-                // read the tools::PolyPolygon in every case
-                tools::PolyPolygon aInputPolyPolygon;
-                ImplReadExtendedPolyPolygonAction(rIStm, aInputPolyPolygon);
-
-                // now check if it can be set somewhere
-                if(nLastPolygonAction < rMtf.GetActionSize())
+                case GDI_POINT_ACTION:
                 {
-                    MetaPolyLineAction* pPolyLineAction = dynamic_cast< MetaPolyLineAction* >(rMtf.GetAction(nLastPolygonAction));
+                    ReadPair( rIStm, aPt );
+                    rMtf.AddAction( new MetaPointAction( aPt ) );
+                }
+                break;
 
-                    if(pPolyLineAction)
+                case GDI_LINE_ACTION:
+                {
+                    ReadPair( rIStm, aPt );
+                    ReadPair( rIStm, aPt1 );
+                    rMtf.AddAction( new MetaLineAction( aPt, aPt1, aLineInfo ) );
+                }
+                break;
+
+                case GDI_LINEJOIN_ACTION :
+                {
+                    sal_Int16 nLineJoin(0);
+                    rIStm.ReadInt16( nLineJoin );
+                    aLineInfo.SetLineJoin((basegfx::B2DLineJoin)nLineJoin);
+                }
+                break;
+
+                case GDI_LINECAP_ACTION :
+                {
+                    sal_Int16 nLineCap(0);
+                    rIStm.ReadInt16( nLineCap );
+                    aLineInfo.SetLineCap((css::drawing::LineCap)nLineCap);
+                }
+                break;
+
+                case GDI_LINEDASHDOT_ACTION :
+                {
+                    sal_Int16 a(0);
+                    sal_Int32 b(0);
+
+                    rIStm.ReadInt16( a ); aLineInfo.SetDashCount(a);
+                    rIStm.ReadInt32( b ); aLineInfo.SetDashLen(b);
+                    rIStm.ReadInt16( a ); aLineInfo.SetDotCount(a);
+                    rIStm.ReadInt32( b ); aLineInfo.SetDotLen(b);
+                    rIStm.ReadInt32( b ); aLineInfo.SetDistance(b);
+
+                    if(((aLineInfo.GetDashCount() && aLineInfo.GetDashLen())
+                        || (aLineInfo.GetDotCount() && aLineInfo.GetDotLen()))
+                        && aLineInfo.GetDistance())
                     {
-                        // replace MetaPolyLineAction when we have a single polygon. Do not rely on the
-                        // same point count; the originally written GDI_POLYLINE_ACTION may have been
-                        // Subdivided for better quality for older usages
-                        if(1 == aInputPolyPolygon.Count())
-                        {
-                            MetaAction* pAction = rMtf.ReplaceAction(
-                                new MetaPolyLineAction(
-                                    aInputPolyPolygon.GetObject(0),
-                                    pPolyLineAction->GetLineInfo()),
-                                nLastPolygonAction);
-                            if(pAction)
-                                pAction->Delete();
-                        }
+                        aLineInfo.SetStyle(LINE_DASH);
                     }
-                    else
-                    {
-                        MetaPolyPolygonAction* pPolyPolygonAction = dynamic_cast< MetaPolyPolygonAction* >(rMtf.GetAction(nLastPolygonAction));
+                }
+                break;
 
-                        if(pPolyPolygonAction)
+                case GDI_EXTENDEDPOLYGON_ACTION :
+                {
+                    // read the tools::PolyPolygon in every case
+                    tools::PolyPolygon aInputPolyPolygon;
+                    ImplReadExtendedPolyPolygonAction(rIStm, aInputPolyPolygon);
+
+                    // now check if it can be set somewhere
+                    if(nLastPolygonAction < rMtf.GetActionSize())
+                    {
+                        MetaPolyLineAction* pPolyLineAction = dynamic_cast< MetaPolyLineAction* >(rMtf.GetAction(nLastPolygonAction));
+
+                        if(pPolyLineAction)
                         {
-                            // replace MetaPolyPolygonAction when we have a curved polygon. Do rely on the
-                            // same sub-polygon count
-                            if(pPolyPolygonAction->GetPolyPolygon().Count() == aInputPolyPolygon.Count())
+                            // replace MetaPolyLineAction when we have a single polygon. Do not rely on the
+                            // same point count; the originally written GDI_POLYLINE_ACTION may have been
+                            // Subdivided for better quality for older usages
+                            if(1 == aInputPolyPolygon.Count())
                             {
                                 MetaAction* pAction = rMtf.ReplaceAction(
-                                    new MetaPolyPolygonAction(
-                                        aInputPolyPolygon),
+                                    new MetaPolyLineAction(
+                                        aInputPolyPolygon.GetObject(0),
+                                        pPolyLineAction->GetLineInfo()),
                                     nLastPolygonAction);
                                 if(pAction)
                                     pAction->Delete();
@@ -700,121 +646,138 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
                         }
                         else
                         {
-                            MetaPolygonAction* pPolygonAction = dynamic_cast< MetaPolygonAction* >(rMtf.GetAction(nLastPolygonAction));
+                            MetaPolyPolygonAction* pPolyPolygonAction = dynamic_cast< MetaPolyPolygonAction* >(rMtf.GetAction(nLastPolygonAction));
 
-                            if(pPolygonAction)
+                            if(pPolyPolygonAction)
                             {
-                                // replace MetaPolygonAction
-                                if(1 == aInputPolyPolygon.Count())
+                                // replace MetaPolyPolygonAction when we have a curved polygon. Do rely on the
+                                // same sub-polygon count
+                                if(pPolyPolygonAction->GetPolyPolygon().Count() == aInputPolyPolygon.Count())
                                 {
                                     MetaAction* pAction = rMtf.ReplaceAction(
-                                        new MetaPolygonAction(
-                                            aInputPolyPolygon.GetObject(0)),
+                                        new MetaPolyPolygonAction(
+                                            aInputPolyPolygon),
                                         nLastPolygonAction);
                                     if(pAction)
                                         pAction->Delete();
                                 }
                             }
+                            else
+                            {
+                                MetaPolygonAction* pPolygonAction = dynamic_cast< MetaPolygonAction* >(rMtf.GetAction(nLastPolygonAction));
+
+                                if(pPolygonAction)
+                                {
+                                    // replace MetaPolygonAction
+                                    if(1 == aInputPolyPolygon.Count())
+                                    {
+                                        MetaAction* pAction = rMtf.ReplaceAction(
+                                            new MetaPolygonAction(
+                                                aInputPolyPolygon.GetObject(0)),
+                                            nLastPolygonAction);
+                                        if(pAction)
+                                            pAction->Delete();
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
-            break;
+                break;
 
-            case GDI_RECT_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-                sal_Int32 nTmp(0), nTmp1(0);
-                rIStm.ReadInt32( nTmp ).ReadInt32( nTmp1 );
-
-                if( nTmp || nTmp1 )
-                    rMtf.AddAction( new MetaRoundRectAction( aRect, nTmp, nTmp1 ) );
-                else
+                case GDI_RECT_ACTION:
                 {
-                    rMtf.AddAction( new MetaRectAction( aRect ) );
+                    ImplReadRect( rIStm, aRect );
+                    sal_Int32 nTmp(0), nTmp1(0);
+                    rIStm.ReadInt32( nTmp ).ReadInt32( nTmp1 );
+
+                    if( nTmp || nTmp1 )
+                        rMtf.AddAction( new MetaRoundRectAction( aRect, nTmp, nTmp1 ) );
+                    else
+                    {
+                        rMtf.AddAction( new MetaRectAction( aRect ) );
+
+                        if( bFatLine )
+                            rMtf.AddAction( new MetaPolyLineAction( aRect, aLineInfo ) );
+                    }
+                }
+                break;
+
+                case GDI_ELLIPSE_ACTION:
+                {
+                    ImplReadRect( rIStm, aRect );
 
                     if( bFatLine )
-                        rMtf.AddAction( new MetaPolyLineAction( aRect, aLineInfo ) );
+                    {
+                        const tools::Polygon aPoly( aRect.Center(), aRect.GetWidth() >> 1, aRect.GetHeight() >> 1 );
+
+                        rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
+                        rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
+                        rMtf.AddAction( new MetaPolygonAction( aPoly ) );
+                        rMtf.AddAction( new MetaPopAction() );
+                        rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
+                    }
+                    else
+                        rMtf.AddAction( new MetaEllipseAction( aRect ) );
                 }
-            }
-            break;
+                break;
 
-            case GDI_ELLIPSE_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-
-                if( bFatLine )
+                case GDI_ARC_ACTION:
                 {
-                    const tools::Polygon aPoly( aRect.Center(), aRect.GetWidth() >> 1, aRect.GetHeight() >> 1 );
+                    ImplReadRect( rIStm, aRect );
+                    ReadPair( rIStm, aPt );
+                    ReadPair( rIStm, aPt1 );
 
-                    rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
-                    rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
-                    rMtf.AddAction( new MetaPolygonAction( aPoly ) );
+                    if( bFatLine )
+                    {
+                        const tools::Polygon aPoly( aRect, aPt, aPt1, POLY_ARC );
+
+                        rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
+                        rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
+                        rMtf.AddAction( new MetaPolygonAction( aPoly ) );
+                        rMtf.AddAction( new MetaPopAction() );
+                        rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
+                    }
+                    else
+                        rMtf.AddAction( new MetaArcAction( aRect, aPt, aPt1 ) );
+                }
+                break;
+
+                case GDI_PIE_ACTION:
+                {
+                    ImplReadRect( rIStm, aRect );
+                    ReadPair( rIStm, aPt );
+                    ReadPair( rIStm, aPt1 );
+
+                    if( bFatLine )
+                    {
+                        const tools::Polygon aPoly( aRect, aPt, aPt1, POLY_PIE );
+
+                        rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
+                        rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
+                        rMtf.AddAction( new MetaPolygonAction( aPoly ) );
+                        rMtf.AddAction( new MetaPopAction() );
+                        rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
+                    }
+                    else
+                        rMtf.AddAction( new MetaPieAction( aRect, aPt, aPt1 ) );
+                }
+                break;
+
+                case GDI_INVERTRECT_ACTION:
+                case GDI_HIGHLIGHTRECT_ACTION:
+                {
+                    ImplReadRect( rIStm, aRect );
+                    rMtf.AddAction( new MetaPushAction( PushFlags::RASTEROP ) );
+                    rMtf.AddAction( new MetaRasterOpAction( ROP_INVERT ) );
+                    rMtf.AddAction( new MetaRectAction( aRect ) );
                     rMtf.AddAction( new MetaPopAction() );
-                    rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
                 }
-                else
-                    rMtf.AddAction( new MetaEllipseAction( aRect ) );
-            }
-            break;
+                break;
 
-            case GDI_ARC_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-                ReadPair( rIStm, aPt );
-                ReadPair( rIStm, aPt1 );
-
-                if( bFatLine )
+                case GDI_POLYLINE_ACTION:
                 {
-                    const tools::Polygon aPoly( aRect, aPt, aPt1, PolyStyle::Arc );
-
-                    rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
-                    rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
-                    rMtf.AddAction( new MetaPolygonAction( aPoly ) );
-                    rMtf.AddAction( new MetaPopAction() );
-                    rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
-                }
-                else
-                    rMtf.AddAction( new MetaArcAction( aRect, aPt, aPt1 ) );
-            }
-            break;
-
-            case GDI_PIE_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-                ReadPair( rIStm, aPt );
-                ReadPair( rIStm, aPt1 );
-
-                if( bFatLine )
-                {
-                    const tools::Polygon aPoly( aRect, aPt, aPt1, PolyStyle::Pie );
-
-                    rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
-                    rMtf.AddAction( new MetaLineColorAction( COL_TRANSPARENT, false ) );
-                    rMtf.AddAction( new MetaPolygonAction( aPoly ) );
-                    rMtf.AddAction( new MetaPopAction() );
-                    rMtf.AddAction( new MetaPolyLineAction( aPoly, aLineInfo ) );
-                }
-                else
-                    rMtf.AddAction( new MetaPieAction( aRect, aPt, aPt1 ) );
-            }
-            break;
-
-            case GDI_INVERTRECT_ACTION:
-            case GDI_HIGHLIGHTRECT_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-                rMtf.AddAction( new MetaPushAction( PushFlags::RASTEROP ) );
-                rMtf.AddAction( new MetaRasterOpAction( RasterOp::Invert ) );
-                rMtf.AddAction( new MetaRectAction( aRect ) );
-                rMtf.AddAction( new MetaPopAction() );
-            }
-            break;
-
-            case GDI_POLYLINE_ACTION:
-            {
-                if (ImplReadPoly(rIStm, aActionPoly))
-                {
+                    ImplReadPoly( rIStm, aActionPoly );
                     nLastPolygonAction = rMtf.GetActionSize();
 
                     if( bFatLine )
@@ -822,13 +785,12 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
                     else
                         rMtf.AddAction( new MetaPolyLineAction( aActionPoly ) );
                 }
-            }
-            break;
+                break;
 
-            case GDI_POLYGON_ACTION:
-            {
-                if (ImplReadPoly(rIStm, aActionPoly))
+                case GDI_POLYGON_ACTION:
                 {
+                    ImplReadPoly( rIStm, aActionPoly );
+
                     if( bFatLine )
                     {
                         rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
@@ -843,15 +805,14 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
                         rMtf.AddAction( new MetaPolygonAction( aActionPoly ) );
                     }
                 }
-            }
-            break;
+                break;
 
-            case GDI_POLYPOLYGON_ACTION:
-            {
-                tools::PolyPolygon aPolyPoly;
-
-                if (ImplReadPolyPoly(rIStm, aPolyPoly))
+                case GDI_POLYPOLYGON_ACTION:
                 {
+                    tools::PolyPolygon aPolyPoly;
+
+                    ImplReadPolyPoly( rIStm, aPolyPoly );
+
                     if( bFatLine )
                     {
                         rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR ) );
@@ -868,617 +829,591 @@ void SVMConverter::ImplConvertFromSVM1( SvStream& rIStm, GDIMetaFile& rMtf )
                         rMtf.AddAction( new MetaPolyPolygonAction( aPolyPoly ) );
                     }
                 }
-            }
-            break;
+                break;
 
-            case GDI_FONT_ACTION:
-            {
-                vcl::Font   aFont;
-                char        aName[LF_FACESIZE+1];
-
-                ImplReadColor( rIStm, aActionColor ); aFont.SetColor( aActionColor );
-                ImplReadColor( rIStm, aActionColor ); aFont.SetFillColor( aActionColor );
-                size_t nRet = rIStm.ReadBytes(aName, LF_FACESIZE);
-                aName[nRet] = 0;
-                aFont.SetFamilyName( OUString( aName, strlen(aName), rIStm.GetStreamCharSet() ) );
-
-                sal_Int32 nWidth(0), nHeight(0);
-                rIStm.ReadInt32(nWidth).ReadInt32(nHeight);
-                sal_Int16 nCharOrient(0), nLineOrient(0);
-                rIStm.ReadInt16(nCharOrient).ReadInt16(nLineOrient);
-                sal_Int16 nCharSet(0), nFamily(0), nPitch(0), nAlign(0), nWeight(0), nUnderline(0), nStrikeout(0);
-                rIStm.ReadInt16(nCharSet).ReadInt16(nFamily).ReadInt16(nPitch).ReadInt16(nAlign).ReadInt16(nWeight).ReadInt16(nUnderline).ReadInt16(nStrikeout);
-                bool bItalic(false), bOutline(false), bShadow(false), bTransparent(false);
-                rIStm.ReadCharAsBool(bItalic).ReadCharAsBool(bOutline).ReadCharAsBool(bShadow).ReadCharAsBool(bTransparent);
-
-                aFont.SetFontSize( Size( nWidth, nHeight ) );
-                aFont.SetCharSet( (rtl_TextEncoding) nCharSet );
-                aFont.SetFamily( (FontFamily) nFamily );
-                aFont.SetPitch( (FontPitch) nPitch );
-                aFont.SetAlignment( (FontAlign) nAlign );
-                aFont.SetWeight( ( nWeight == 1 ) ? WEIGHT_LIGHT : ( nWeight == 2 ) ? WEIGHT_NORMAL :
-                                 ( nWeight == 3 ) ? WEIGHT_BOLD : WEIGHT_DONTKNOW );
-                aFont.SetUnderline( (FontLineStyle) nUnderline );
-                aFont.SetStrikeout( (FontStrikeout) nStrikeout );
-                aFont.SetItalic( bItalic ? ITALIC_NORMAL : ITALIC_NONE );
-                aFont.SetOutline( bOutline );
-                aFont.SetShadow( bShadow );
-                aFont.SetOrientation( nLineOrient );
-                aFont.SetTransparent( bTransparent );
-
-                eActualCharSet = aFont.GetCharSet();
-                if ( eActualCharSet == RTL_TEXTENCODING_DONTKNOW )
-                    eActualCharSet = osl_getThreadTextEncoding();
-
-                rMtf.AddAction( new MetaFontAction( aFont ) );
-                rMtf.AddAction( new MetaTextAlignAction( aFont.GetAlignment() ) );
-                rMtf.AddAction( new MetaTextColorAction( aFont.GetColor() ) );
-                rMtf.AddAction( new MetaTextFillColorAction( aFont.GetFillColor(), !aFont.IsTransparent() ) );
-
-                // #106172# Track font relevant data in shadow VDev
-                aFontVDev->SetFont( aFont );
-            }
-            break;
-
-            case GDI_TEXT_ACTION:
-            {
-                sal_Int32 nIndex(0), nLen(0), nTmp(0);
-
-                ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp );
-                if (nTmp > 0)
+                case GDI_FONT_ACTION:
                 {
-                    OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
-                    sal_uInt8 nTerminator = 0;
-                    rIStm.ReadUChar( nTerminator );
-                    SAL_WARN_IF( nTerminator != 0, "vcl.gdi", "expected string to be NULL terminated" );
+                    vcl::Font   aFont;
+                    char        aName[LF_FACESIZE+1];
+                    sal_Int32   nWidth, nHeight;
+                    sal_Int16   nCharSet, nFamily, nPitch, nAlign, nWeight, nUnderline, nStrikeout;
+                    sal_Int16   nCharOrient, nLineOrient;
+                    bool    bItalic, bOutline, bShadow, bTransparent;
 
-                    OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
-                    if ( nUnicodeCommentActionNumber == i )
-                        ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
-                    rMtf.AddAction( new MetaTextAction( aPt, aStr, nIndex, nLen ) );
-                }
+                    ImplReadColor( rIStm, aActionColor ); aFont.SetColor( aActionColor );
+                    ImplReadColor( rIStm, aActionColor ); aFont.SetFillColor( aActionColor );
+                    size_t nRet = rIStm.Read(aName, LF_FACESIZE);
+                    aName[nRet] = 0;
+                    aFont.SetFamilyName( OUString( aName, strlen(aName), rIStm.GetStreamCharSet() ) );
+                    rIStm.ReadInt32( nWidth ).ReadInt32( nHeight );
+                    rIStm.ReadInt16( nCharOrient ).ReadInt16( nLineOrient );
+                    rIStm.ReadInt16( nCharSet ).ReadInt16( nFamily ).ReadInt16( nPitch ).ReadInt16( nAlign ).ReadInt16( nWeight ).ReadInt16( nUnderline ).ReadInt16( nStrikeout );
+                    rIStm.ReadCharAsBool( bItalic ).ReadCharAsBool( bOutline ).ReadCharAsBool( bShadow ).ReadCharAsBool( bTransparent );
 
-                if (nActionSize < 24)
-                    rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-                else
-                    rIStm.Seek(nActBegin + nActionSize);
-            }
-            break;
+                    aFont.SetFontSize( Size( nWidth, nHeight ) );
+                    aFont.SetCharSet( (rtl_TextEncoding) nCharSet );
+                    aFont.SetFamily( (FontFamily) nFamily );
+                    aFont.SetPitch( (FontPitch) nPitch );
+                    aFont.SetAlignment( (FontAlign) nAlign );
+                    aFont.SetWeight( ( nWeight == 1 ) ? WEIGHT_LIGHT : ( nWeight == 2 ) ? WEIGHT_NORMAL :
+                                     ( nWeight == 3 ) ? WEIGHT_BOLD : WEIGHT_DONTKNOW );
+                    aFont.SetUnderline( (FontLineStyle) nUnderline );
+                    aFont.SetStrikeout( (FontStrikeout) nStrikeout );
+                    aFont.SetItalic( bItalic ? ITALIC_NORMAL : ITALIC_NONE );
+                    aFont.SetOutline( bOutline );
+                    aFont.SetShadow( bShadow );
+                    aFont.SetOrientation( nLineOrient );
+                    aFont.SetTransparent( bTransparent );
 
-            case GDI_TEXTARRAY_ACTION:
-            {
-                sal_Int32 nIndex(0), nLen(0), nAryLen(0), nTmp(0);
+                    eActualCharSet = aFont.GetCharSet();
+                    if ( eActualCharSet == RTL_TEXTENCODING_DONTKNOW )
+                        eActualCharSet = osl_getThreadTextEncoding();
 
-                ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp ).ReadInt32( nAryLen );
-                if (nTmp > 0)
-                {
-                    OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
-                    sal_uInt8 nTerminator = 0;
-                    rIStm.ReadUChar( nTerminator );
-                    SAL_WARN_IF( nTerminator != 0, "vcl.gdi", "expected string to be NULL terminated" );
-
-                    OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
-
-                    std::unique_ptr<long[]> pDXAry;
-                    sal_Int32 nDXAryLen = 0;
-                    if (nAryLen > 0)
-                    {
-                        const size_t nMinRecordSize = sizeof(sal_Int32);
-                        const size_t nMaxRecords = rIStm.remainingSize() / nMinRecordSize;
-                        if (static_cast<sal_uInt32>(nAryLen) > nMaxRecords)
-                        {
-                            SAL_WARN("vcl.gdi", "Parsing error: " << nMaxRecords <<
-                                     " max possible entries, but " << nAryLen << " claimed, truncating");
-                            nAryLen = nMaxRecords;
-                        }
-
-                        sal_Int32 nStrLen( aStr.getLength() );
-
-                        nDXAryLen = std::max(nAryLen, nStrLen);
-
-                        if (nDXAryLen < nLen)
-                        {
-                            //MetaTextArrayAction ctor expects pDXAry to be >= nLen if set, so if this can't
-                            //be achieved, don't read it, it's utterly broken.
-                            SAL_WARN("vcl.gdi", "dxary too short, discarding completely");
-                            rIStm.SeekRel(sizeof(sal_Int32) * nDXAryLen);
-                            nLen = 0;
-                            nIndex = 0;
-                        }
-                        else
-                        {
-                            pDXAry.reset(new long[nDXAryLen]);
-
-                            for (sal_Int32 j = 0; j < nAryLen; ++j)
-                                rIStm.ReadInt32( nTmp ), pDXAry[ j ] = nTmp;
-
-                            // #106172# Add last DX array elem, if missing
-                            if( nAryLen != nStrLen )
-                            {
-                                if (nAryLen+1 == nStrLen && nIndex >= 0)
-                                {
-                                    std::unique_ptr<long[]> pTmpAry(new long[nStrLen]);
-
-                                    aFontVDev->GetTextArray( aStr, pTmpAry.get(), nIndex, nLen );
-
-                                    // now, the difference between the
-                                    // last and the second last DX array
-                                    // is the advancement for the last
-                                    // glyph. Thus, to complete our meta
-                                    // action's DX array, just add that
-                                    // difference to last elem and store
-                                    // in very last.
-                                    if( nStrLen > 1 )
-                                        pDXAry[ nStrLen-1 ] = pDXAry[ nStrLen-2 ] + pTmpAry[ nStrLen-1 ] - pTmpAry[ nStrLen-2 ];
-                                    else
-                                        pDXAry[ nStrLen-1 ] = pTmpAry[ nStrLen-1 ]; // len=1: 0th position taken to be 0
-                                }
-#ifdef DBG_UTIL
-                                else
-                                    OSL_FAIL("More than one DX array element missing on SVM import");
-#endif
-                            }
-                        }
-                    }
-                    if ( nUnicodeCommentActionNumber == i )
-                        ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
-                    rMtf.AddAction( new MetaTextArrayAction( aPt, aStr, pDXAry.get(), nIndex, nLen ) );
-                }
-
-                if (nActionSize < 24)
-                    rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-                else
-                    rIStm.Seek(nActBegin + nActionSize);
-            }
-            break;
-
-            case GDI_STRETCHTEXT_ACTION:
-            {
-                sal_Int32 nIndex(0), nLen(0), nWidth(0), nTmp(0);
-
-                ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp ).ReadInt32( nWidth );
-                if (nTmp > 0)
-                {
-                    OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
-                    sal_uInt8 nTerminator = 0;
-                    rIStm.ReadUChar( nTerminator );
-                    SAL_WARN_IF( nTerminator != 0, "vcl.gdi", "expected string to be NULL terminated" );
-
-                    OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
-                    if ( nUnicodeCommentActionNumber == i )
-                        ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
-                    rMtf.AddAction( new MetaStretchTextAction( aPt, nWidth, aStr, nIndex, nLen ) );
-                }
-
-                if (nActionSize < 28)
-                    rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-                else
-                    rIStm.Seek(nActBegin + nActionSize);
-            }
-            break;
-
-            case GDI_BITMAP_ACTION:
-            {
-                Bitmap aBmp;
-
-                ReadPair( rIStm, aPt );
-                ReadDIB(aBmp, rIStm, true);
-                rMtf.AddAction( new MetaBmpAction( aPt, aBmp ) );
-            }
-            break;
-
-            case GDI_BITMAPSCALE_ACTION:
-            {
-                Bitmap aBmp;
-
-                ReadPair( rIStm, aPt );
-                ReadPair( rIStm, aSz );
-                ReadDIB(aBmp, rIStm, true);
-                rMtf.AddAction( new MetaBmpScaleAction( aPt, aSz, aBmp ) );
-            }
-            break;
-
-            case GDI_BITMAPSCALEPART_ACTION:
-            {
-                Bitmap  aBmp;
-                Size    aSz2;
-
-                ReadPair( rIStm, aPt );
-                ReadPair( rIStm, aSz );
-                ReadPair( rIStm, aPt1 );
-                ReadPair( rIStm, aSz2 );
-                ReadDIB(aBmp, rIStm, true);
-                rMtf.AddAction( new MetaBmpScalePartAction( aPt, aSz, aPt1, aSz2, aBmp ) );
-            }
-            break;
-
-            case GDI_PEN_ACTION:
-            {
-                sal_Int32 nPenWidth;
-                sal_Int16 nPenStyle;
-
-                ImplReadColor( rIStm, aActionColor );
-                rIStm.ReadInt32( nPenWidth ).ReadInt16( nPenStyle );
-
-                aLineInfo.SetStyle( nPenStyle ? LineStyle::Solid : LineStyle::NONE );
-                aLineInfo.SetWidth( nPenWidth );
-                bFatLine = nPenStyle && !aLineInfo.IsDefault();
-
-                rMtf.AddAction( new MetaLineColorAction( aActionColor, nPenStyle != 0 ) );
-            }
-            break;
-
-            case GDI_FILLBRUSH_ACTION:
-            {
-                sal_Int16 nBrushStyle;
-
-                ImplReadColor( rIStm, aActionColor );
-                rIStm.SeekRel( 6 );
-                rIStm.ReadInt16( nBrushStyle );
-                rMtf.AddAction( new MetaFillColorAction( aActionColor, nBrushStyle != 0 ) );
-                rIStm.SeekRel( 2 );
-            }
-            break;
-
-            case GDI_MAPMODE_ACTION:
-            {
-                if (ImplReadMapMode(rIStm, aMapMode))
-                {
-                    rMtf.AddAction(new MetaMapModeAction(aMapMode));
+                    rMtf.AddAction( new MetaFontAction( aFont ) );
+                    rMtf.AddAction( new MetaTextAlignAction( aFont.GetAlignment() ) );
+                    rMtf.AddAction( new MetaTextColorAction( aFont.GetColor() ) );
+                    rMtf.AddAction( new MetaTextFillColorAction( aFont.GetFillColor(), !aFont.IsTransparent() ) );
 
                     // #106172# Track font relevant data in shadow VDev
-                    aFontVDev->SetMapMode(aMapMode);
-                };
-            }
-            break;
+                    aFontVDev->SetFont( aFont );
+                }
+                break;
 
-            case GDI_CLIPREGION_ACTION:
-            {
-                vcl::Region  aRegion;
-                sal_Int16   nRegType;
-                sal_Int16   bIntersect;
-                bool    bClip = false;
-
-                rIStm.ReadInt16( nRegType ).ReadInt16( bIntersect );
-                ImplReadRect( rIStm, aRect );
-
-                switch( nRegType )
+                case GDI_TEXT_ACTION:
                 {
-                    case 0:
-                    break;
+                    sal_Int32 nIndex(0), nLen(0), nTmp(0);
 
-                    case 1:
+                    ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp );
+                    if (nTmp > 0)
                     {
-                        tools::Rectangle aRegRect;
+                        OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
+                        sal_uInt8 nTerminator = 0;
+                        rIStm.ReadUChar( nTerminator );
+                        DBG_ASSERT( nTerminator == 0, "expected string to be NULL terminated" );
 
-                        ImplReadRect( rIStm, aRegRect );
-                        aRegion = vcl::Region( aRegRect );
-                        bClip = true;
+                        OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
+                        if ( nUnicodeCommentActionNumber == i )
+                            ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
+                        rMtf.AddAction( new MetaTextAction( aPt, aStr, nIndex, nLen ) );
                     }
-                    break;
+                    rIStm.Seek( nActBegin + nActionSize );
+                }
+                break;
 
-                    case 2:
+                case GDI_TEXTARRAY_ACTION:
+                {
+                    sal_Int32 nIndex(0), nLen(0), nAryLen(0), nTmp(0);
+
+                    ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp ).ReadInt32( nAryLen );
+                    if (nTmp > 0)
                     {
-                        if (ImplReadPoly(rIStm, aActionPoly))
+                        OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
+                        sal_uInt8 nTerminator = 0;
+                        rIStm.ReadUChar( nTerminator );
+                        DBG_ASSERT( nTerminator == 0, "expected string to be NULL terminated" );
+
+                        OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
+
+                        std::unique_ptr<long[]> pDXAry;
+                        sal_Int32 nDXAryLen = 0;
+                        if (nAryLen > 0)
                         {
+                            const size_t nMinRecordSize = sizeof(sal_Int32);
+                            const size_t nMaxRecords = rIStm.remainingSize() / nMinRecordSize;
+                            if (static_cast<sal_uInt32>(nAryLen) > nMaxRecords)
+                            {
+                                SAL_WARN("vcl.gdi", "Parsing error: " << nMaxRecords <<
+                                         " max possible entries, but " << nAryLen << " claimed, truncating");
+                                nAryLen = nMaxRecords;
+                            }
+
+                            sal_Int32 nStrLen( aStr.getLength() );
+
+                            nDXAryLen = std::max(nAryLen, nStrLen);
+                            pDXAry.reset(new long[nDXAryLen]);
+
+                            if (nDXAryLen < nLen)
+                            {
+                                //MetaTextArrayAction ctor expects pDXAry to be >= nLen if set, so if this can't
+                                //be achieved, don't read it, it's utterly broken.
+                                SAL_WARN("vcl.gdi", "dxary too short, discarding completely");
+                                rIStm.SeekRel(sizeof(sal_Int32) * nDXAryLen);
+                                nLen = 0;
+                                nIndex = 0;
+                            }
+                            else
+                            {
+                                for (sal_Int32 j = 0; j < nAryLen; ++j)
+                                    rIStm.ReadInt32( nTmp ), pDXAry[ j ] = nTmp;
+
+                                // #106172# Add last DX array elem, if missing
+                                if( nAryLen != nStrLen )
+                                {
+                                    if (nAryLen+1 == nStrLen && nIndex >= 0)
+                                    {
+                                        std::unique_ptr<long[]> pTmpAry(new long[nStrLen]);
+
+                                        aFontVDev->GetTextArray( aStr, pTmpAry.get(), nIndex, nLen );
+
+                                        // now, the difference between the
+                                        // last and the second last DX array
+                                        // is the advancement for the last
+                                        // glyph. Thus, to complete our meta
+                                        // action's DX array, just add that
+                                        // difference to last elem and store
+                                        // in very last.
+                                        if( nStrLen > 1 )
+                                            pDXAry[ nStrLen-1 ] = pDXAry[ nStrLen-2 ] + pTmpAry[ nStrLen-1 ] - pTmpAry[ nStrLen-2 ];
+                                        else
+                                            pDXAry[ nStrLen-1 ] = pTmpAry[ nStrLen-1 ]; // len=1: 0th position taken to be 0
+                                    }
+        #ifdef DBG_UTIL
+                                    else
+                                        OSL_FAIL("More than one DX array element missing on SVM import");
+        #endif
+                                }
+                            }
+                        }
+                        if ( nUnicodeCommentActionNumber == i )
+                            ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
+                        rMtf.AddAction( new MetaTextArrayAction( aPt, aStr, pDXAry.get(), nIndex, nLen ) );
+                    }
+                    rIStm.Seek( nActBegin + nActionSize );
+                }
+                break;
+
+                case GDI_STRETCHTEXT_ACTION:
+                {
+                    sal_Int32 nIndex(0), nLen(0), nWidth(0), nTmp(0);
+
+                    ReadPair( rIStm, aPt ).ReadInt32( nIndex ).ReadInt32( nLen ).ReadInt32( nTmp ).ReadInt32( nWidth );
+                    if (nTmp > 0)
+                    {
+                        OString aByteStr = read_uInt8s_ToOString(rIStm, nTmp);
+                        sal_uInt8 nTerminator = 0;
+                        rIStm.ReadUChar( nTerminator );
+                        DBG_ASSERT( nTerminator == 0, "expected string to be NULL terminated" );
+
+                        OUString aStr(OStringToOUString(aByteStr, eActualCharSet));
+                        if ( nUnicodeCommentActionNumber == i )
+                            ImplReadUnicodeComment( nUnicodeCommentStreamPos, rIStm, aStr );
+                        rMtf.AddAction( new MetaStretchTextAction( aPt, nWidth, aStr, nIndex, nLen ) );
+                    }
+                    rIStm.Seek( nActBegin + nActionSize );
+                }
+                break;
+
+                case GDI_BITMAP_ACTION:
+                {
+                    Bitmap aBmp;
+
+                    ReadPair( rIStm, aPt );
+                    ReadDIB(aBmp, rIStm, true);
+                    rMtf.AddAction( new MetaBmpAction( aPt, aBmp ) );
+                }
+                break;
+
+                case GDI_BITMAPSCALE_ACTION:
+                {
+                    Bitmap aBmp;
+
+                    ReadPair( rIStm, aPt );
+                    ReadPair( rIStm, aSz );
+                    ReadDIB(aBmp, rIStm, true);
+                    rMtf.AddAction( new MetaBmpScaleAction( aPt, aSz, aBmp ) );
+                }
+                break;
+
+                case GDI_BITMAPSCALEPART_ACTION:
+                {
+                    Bitmap  aBmp;
+                    Size    aSz2;
+
+                    ReadPair( rIStm, aPt );
+                    ReadPair( rIStm, aSz );
+                    ReadPair( rIStm, aPt1 );
+                    ReadPair( rIStm, aSz2 );
+                    ReadDIB(aBmp, rIStm, true);
+                    rMtf.AddAction( new MetaBmpScalePartAction( aPt, aSz, aPt1, aSz2, aBmp ) );
+                }
+                break;
+
+                case GDI_PEN_ACTION:
+                {
+                    sal_Int32 nPenWidth;
+                    sal_Int16 nPenStyle;
+
+                    ImplReadColor( rIStm, aActionColor );
+                    rIStm.ReadInt32( nPenWidth ).ReadInt16( nPenStyle );
+
+                    aLineInfo.SetStyle( nPenStyle ? LINE_SOLID : LINE_NONE );
+                    aLineInfo.SetWidth( nPenWidth );
+                    bFatLine = nPenStyle && !aLineInfo.IsDefault();
+
+                    rMtf.AddAction( new MetaLineColorAction( aActionColor, nPenStyle != 0 ) );
+                }
+                break;
+
+                case GDI_FILLBRUSH_ACTION:
+                {
+                    sal_Int16 nBrushStyle;
+
+                    ImplReadColor( rIStm, aActionColor );
+                    rIStm.SeekRel( 6L );
+                    rIStm.ReadInt16( nBrushStyle );
+                    rMtf.AddAction( new MetaFillColorAction( aActionColor, nBrushStyle != 0 ) );
+                    rIStm.SeekRel( 2L );
+                }
+                break;
+
+                case GDI_MAPMODE_ACTION:
+                {
+                    if (ImplReadMapMode(rIStm, aMapMode))
+                    {
+                        rMtf.AddAction(new MetaMapModeAction(aMapMode));
+
+                        // #106172# Track font relevant data in shadow VDev
+                        aFontVDev->SetMapMode(aMapMode);
+                    }
+                }
+                break;
+
+                case GDI_CLIPREGION_ACTION:
+                {
+                    vcl::Region  aRegion;
+                    sal_Int16   nRegType;
+                    sal_Int16   bIntersect;
+                    bool    bClip = false;
+
+                    rIStm.ReadInt16( nRegType ).ReadInt16( bIntersect );
+                    ImplReadRect( rIStm, aRect );
+
+                    switch( nRegType )
+                    {
+                        case 0:
+                        break;
+
+                        case 1:
+                        {
+                            Rectangle aRegRect;
+
+                            ImplReadRect( rIStm, aRegRect );
+                            aRegion = vcl::Region( aRegRect );
+                            bClip = true;
+                        }
+                        break;
+
+                        case 2:
+                        {
+                            ImplReadPoly( rIStm, aActionPoly );
                             aRegion = vcl::Region( aActionPoly );
                             bClip = true;
                         }
-                    }
-                    break;
+                        break;
 
-                    case 3:
-                    {
-                        bool bSuccess = true;
-                        tools::PolyPolygon aPolyPoly;
-                        sal_Int32 nPolyCount32(0);
-                        rIStm.ReadInt32(nPolyCount32);
-                        sal_uInt16 nPolyCount(nPolyCount32);
-
-                        for (sal_uInt16 j = 0; j < nPolyCount && rIStm.good(); ++j)
+                        case 3:
                         {
-                            if (!ImplReadPoly(rIStm, aActionPoly))
+                            tools::PolyPolygon aPolyPoly;
+                            sal_Int32       nPolyCount;
+
+                            rIStm.ReadInt32( nPolyCount );
+
+                            for( sal_uInt16 j = 0; j < (sal_uInt16) nPolyCount; j++ )
                             {
-                                bSuccess = false;
-                                break;
+                                ImplReadPoly( rIStm, aActionPoly );
+                                aPolyPoly.Insert( aActionPoly );
                             }
-                            aPolyPoly.Insert(aActionPoly);
-                        }
 
-                        if (bSuccess)
-                        {
                             aRegion = vcl::Region( aPolyPoly );
                             bClip = true;
                         }
+                        break;
                     }
-                    break;
+
+                    if( bIntersect )
+                        aRegion.Intersect( aRect );
+
+                    rMtf.AddAction( new MetaClipRegionAction( aRegion, bClip ) );
                 }
+                break;
 
-                if( bIntersect )
-                    aRegion.Intersect( aRect );
-
-                rMtf.AddAction( new MetaClipRegionAction( aRegion, bClip ) );
-            }
-            break;
-
-            case GDI_MOVECLIPREGION_ACTION:
-            {
-                sal_Int32 nTmp(0), nTmp1(0);
-                rIStm.ReadInt32( nTmp ).ReadInt32( nTmp1 );
-                rMtf.AddAction( new MetaMoveClipRegionAction( nTmp, nTmp1 ) );
-            }
-            break;
-
-            case GDI_ISECTCLIPREGION_ACTION:
-            {
-                ImplReadRect( rIStm, aRect );
-                rMtf.AddAction( new MetaISectRectClipRegionAction( aRect ) );
-            }
-            break;
-
-            case GDI_RASTEROP_ACTION:
-            {
-                RasterOp    eRasterOp;
-                sal_Int16       nRasterOp;
-
-                rIStm.ReadInt16( nRasterOp );
-
-                switch( nRasterOp )
+                case GDI_MOVECLIPREGION_ACTION:
                 {
-                    case 1:
-                        eRasterOp = RasterOp::Invert;
-                    break;
-
-                    case 4:
-                    case 5:
-                        eRasterOp = RasterOp::Xor;
-                    break;
-
-                    default:
-                        eRasterOp = RasterOp::OverPaint;
-                    break;
+                    sal_Int32 nTmp(0), nTmp1(0);
+                    rIStm.ReadInt32( nTmp ).ReadInt32( nTmp1 );
+                    rMtf.AddAction( new MetaMoveClipRegionAction( nTmp, nTmp1 ) );
                 }
+                break;
 
-                rMtf.AddAction( new MetaRasterOpAction( eRasterOp ) );
-            }
-            break;
-
-            case GDI_PUSH_ACTION:
-            {
-                aLIStack.push(o3tl::make_unique<LineInfo>(aLineInfo));
-                rMtf.AddAction( new MetaPushAction( PushFlags::ALL ) );
-
-                // #106172# Track font relevant data in shadow VDev
-                aFontVDev->Push();
-            }
-            break;
-
-            case GDI_POP_ACTION:
-            {
-
-                std::unique_ptr<LineInfo> xLineInfo;
-                if (!aLIStack.empty())
+                case GDI_ISECTCLIPREGION_ACTION:
                 {
-                    xLineInfo = std::move(aLIStack.top());
-                    aLIStack.pop();
+                    ImplReadRect( rIStm, aRect );
+                    rMtf.AddAction( new MetaISectRectClipRegionAction( aRect ) );
                 }
+                break;
 
-                // restore line info
-                if (xLineInfo)
+                case GDI_RASTEROP_ACTION:
                 {
-                    aLineInfo = *xLineInfo;
-                    xLineInfo.reset();
-                    bFatLine = ( LineStyle::NONE != aLineInfo.GetStyle() ) && !aLineInfo.IsDefault();
-                }
+                    RasterOp    eRasterOp;
+                    sal_Int16       nRasterOp;
 
-                rMtf.AddAction( new MetaPopAction() );
+                    rIStm.ReadInt16( nRasterOp );
 
-                // #106172# Track font relevant data in shadow VDev
-                aFontVDev->Pop();
-            }
-            break;
-
-            case GDI_GRADIENT_ACTION:
-            {
-                Color   aStartCol;
-                Color   aEndCol;
-                sal_Int16   nStyle;
-                sal_Int16   nAngle;
-                sal_Int16   nBorder;
-                sal_Int16   nOfsX;
-                sal_Int16   nOfsY;
-                sal_Int16   nIntensityStart;
-                sal_Int16   nIntensityEnd;
-
-                ImplReadRect( rIStm, aRect );
-                rIStm.ReadInt16( nStyle );
-                ImplReadColor( rIStm, aStartCol );
-                ImplReadColor( rIStm, aEndCol );
-                rIStm.ReadInt16( nAngle ).ReadInt16( nBorder ).ReadInt16( nOfsX ).ReadInt16( nOfsY ).ReadInt16( nIntensityStart ).ReadInt16( nIntensityEnd );
-
-                Gradient aGrad( (GradientStyle) nStyle, aStartCol, aEndCol );
-
-                aGrad.SetAngle( nAngle );
-                aGrad.SetBorder( nBorder );
-                aGrad.SetOfsX( nOfsX );
-                aGrad.SetOfsY( nOfsY );
-                aGrad.SetStartIntensity( nIntensityStart );
-                aGrad.SetEndIntensity( nIntensityEnd );
-                rMtf.AddAction( new MetaGradientAction( aRect, aGrad ) );
-            }
-            break;
-
-            case GDI_TRANSPARENT_COMMENT:
-            {
-                tools::PolyPolygon aPolyPoly;
-                sal_Int32 nFollowingActionCount(0);
-                sal_Int16 nTrans(0);
-
-                ReadPolyPolygon( rIStm, aPolyPoly );
-                rIStm.ReadInt16( nTrans ).ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaTransparentAction( aPolyPoly, nTrans ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_FLOATTRANSPARENT_COMMENT:
-            {
-                GDIMetaFile aMtf;
-                Point       aPos;
-                Size        aSize;
-                Gradient    aGradient;
-                sal_Int32   nFollowingActionCount(0);
-
-                ReadGDIMetaFile( rIStm, aMtf );
-                ReadPair( rIStm, aPos );
-                ReadPair( rIStm, aSize );
-                ReadGradient( rIStm, aGradient );
-                rIStm.ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaFloatTransparentAction( aMtf, aPos, aSize, aGradient ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_HATCH_COMMENT:
-            {
-                tools::PolyPolygon aPolyPoly;
-                Hatch       aHatch;
-                sal_Int32   nFollowingActionCount(0);
-
-                ReadPolyPolygon( rIStm, aPolyPoly );
-                ReadHatch( rIStm, aHatch );
-                rIStm.ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaHatchAction( aPolyPoly, aHatch ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_REFPOINT_COMMENT:
-            {
-                Point   aRefPoint;
-                bool    bSet;
-                sal_Int32 nFollowingActionCount(0);
-
-                ReadPair( rIStm, aRefPoint );
-                rIStm.ReadCharAsBool( bSet ).ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaRefPointAction( aRefPoint, bSet ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-
-                // #106172# Track font relevant data in shadow VDev
-                if( bSet )
-                    aFontVDev->SetRefPoint( aRefPoint );
-                else
-                    aFontVDev->SetRefPoint();
-            }
-            break;
-
-            case GDI_TEXTLINECOLOR_COMMENT:
-            {
-                Color   aColor;
-                bool    bSet;
-                sal_Int32 nFollowingActionCount(0);
-
-                ReadColor( rIStm, aColor );
-                rIStm.ReadCharAsBool( bSet ).ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaTextLineColorAction( aColor, bSet ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_TEXTLINE_COMMENT:
-            {
-                Point   aStartPt;
-                sal_Int32  nWidth(0);
-                sal_uInt32 nStrikeout(0);
-                sal_uInt32 nUnderline(0);
-                sal_Int32  nFollowingActionCount(0);
-
-                ReadPair( rIStm, aStartPt );
-                rIStm.ReadInt32(nWidth ).ReadUInt32(nStrikeout).ReadUInt32(nUnderline).ReadInt32(nFollowingActionCount);
-                ImplSkipActions(rIStm, nFollowingActionCount);
-                rMtf.AddAction( new MetaTextLineAction( aStartPt, nWidth,
-                                                        (FontStrikeout) nStrikeout,
-                                                        (FontLineStyle) nUnderline,
-                                                        LINESTYLE_NONE ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_GRADIENTEX_COMMENT:
-            {
-                tools::PolyPolygon aPolyPoly;
-                Gradient    aGradient;
-                sal_Int32 nFollowingActionCount(0);
-
-                ReadPolyPolygon( rIStm, aPolyPoly );
-                ReadGradient( rIStm, aGradient );
-                rIStm.ReadInt32( nFollowingActionCount );
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction( new MetaGradientExAction( aPolyPoly, aGradient ) );
-
-                i = SkipActions(i, nFollowingActionCount, nActions);
-            }
-            break;
-
-            case GDI_COMMENT_COMMENT:
-            {
-                std::vector<sal_uInt8> aData;
-
-                OString aComment = read_uInt16_lenPrefixed_uInt8s_ToOString(rIStm);
-                sal_Int32 nValue(0);
-                sal_uInt32 nDataSize(0);
-                rIStm.ReadInt32(nValue).ReadUInt32(nDataSize);
-
-                if (nDataSize)
-                {
-                    const size_t nMaxPossibleData = rIStm.remainingSize();
-                    if (nDataSize > nMaxPossibleActions)
+                    switch( nRasterOp )
                     {
-                        SAL_WARN("vcl.gdi", "svm record claims to have: " << nDataSize << " data, but only " << nMaxPossibleData << " possible");
-                        nDataSize = nMaxPossibleActions;
+                        case 1:
+                            eRasterOp = ROP_INVERT;
+                        break;
+
+                        case 4:
+                        case 5:
+                            eRasterOp = ROP_XOR;
+                        break;
+
+                        default:
+                            eRasterOp = ROP_OVERPAINT;
+                        break;
                     }
-                    aData.resize(nDataSize);
-                    nDataSize = rIStm.ReadBytes(aData.data(), nDataSize);
+
+                    rMtf.AddAction( new MetaRasterOpAction( eRasterOp ) );
                 }
+                break;
 
-                sal_Int32 nFollowingActionCount(0);
-                rIStm.ReadInt32(nFollowingActionCount);
-                ImplSkipActions( rIStm, nFollowingActionCount );
-                rMtf.AddAction(new MetaCommentAction(aComment, nValue, aData.data(), nDataSize));
+                case GDI_PUSH_ACTION:
+                {
+                    aLIStack.push( new LineInfo( aLineInfo ) );
+                    rMtf.AddAction( new MetaPushAction( PushFlags::ALL ) );
 
-                i = SkipActions(i, nFollowingActionCount, nActions);
+                    // #106172# Track font relevant data in shadow VDev
+                    aFontVDev->Push();
+                }
+                break;
+
+                case GDI_POP_ACTION:
+                {
+
+                    LineInfo* pLineInfo;
+                    if (aLIStack.empty())
+                        pLineInfo = nullptr;
+                    else
+                    {
+                        pLineInfo = aLIStack.top();
+                        aLIStack.pop();
+                    }
+
+                    // restore line info
+                    if( pLineInfo )
+                    {
+                        aLineInfo = *pLineInfo;
+                        delete pLineInfo;
+                        bFatLine = ( LINE_NONE != aLineInfo.GetStyle() ) && !aLineInfo.IsDefault();
+                    }
+
+                    rMtf.AddAction( new MetaPopAction() );
+
+                    // #106172# Track font relevant data in shadow VDev
+                    aFontVDev->Pop();
+                }
+                break;
+
+                case GDI_GRADIENT_ACTION:
+                {
+                    Color   aStartCol;
+                    Color   aEndCol;
+                    sal_Int16   nStyle;
+                    sal_Int16   nAngle;
+                    sal_Int16   nBorder;
+                    sal_Int16   nOfsX;
+                    sal_Int16   nOfsY;
+                    sal_Int16   nIntensityStart;
+                    sal_Int16   nIntensityEnd;
+
+                    ImplReadRect( rIStm, aRect );
+                    rIStm.ReadInt16( nStyle );
+                    ImplReadColor( rIStm, aStartCol );
+                    ImplReadColor( rIStm, aEndCol );
+                    rIStm.ReadInt16( nAngle ).ReadInt16( nBorder ).ReadInt16( nOfsX ).ReadInt16( nOfsY ).ReadInt16( nIntensityStart ).ReadInt16( nIntensityEnd );
+
+                    Gradient aGrad( (GradientStyle) nStyle, aStartCol, aEndCol );
+
+                    aGrad.SetAngle( nAngle );
+                    aGrad.SetBorder( nBorder );
+                    aGrad.SetOfsX( nOfsX );
+                    aGrad.SetOfsY( nOfsY );
+                    aGrad.SetStartIntensity( nIntensityStart );
+                    aGrad.SetEndIntensity( nIntensityEnd );
+                    rMtf.AddAction( new MetaGradientAction( aRect, aGrad ) );
+                }
+                break;
+
+                case GDI_TRANSPARENT_COMMENT:
+                {
+                    tools::PolyPolygon aPolyPoly;
+                    sal_Int32       nFollowingActionCount;
+                    sal_Int16       nTrans;
+
+                    ReadPolyPolygon( rIStm, aPolyPoly );
+                    rIStm.ReadInt16( nTrans ).ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaTransparentAction( aPolyPoly, nTrans ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_FLOATTRANSPARENT_COMMENT:
+                {
+                    GDIMetaFile aMtf;
+                    Point       aPos;
+                    Size        aSize;
+                    Gradient    aGradient;
+                    sal_Int32       nFollowingActionCount;
+
+                    ReadGDIMetaFile( rIStm, aMtf );
+                    ReadPair( rIStm, aPos );
+                    ReadPair( rIStm, aSize );
+                    ReadGradient( rIStm, aGradient );
+                    rIStm.ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaFloatTransparentAction( aMtf, aPos, aSize, aGradient ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_HATCH_COMMENT:
+                {
+                    tools::PolyPolygon aPolyPoly;
+                    Hatch       aHatch;
+                    sal_Int32       nFollowingActionCount;
+
+                    ReadPolyPolygon( rIStm, aPolyPoly );
+                    ReadHatch( rIStm, aHatch );
+                    rIStm.ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaHatchAction( aPolyPoly, aHatch ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_REFPOINT_COMMENT:
+                {
+                    Point   aRefPoint;
+                    bool    bSet;
+                    sal_Int32   nFollowingActionCount;
+
+                    ReadPair( rIStm, aRefPoint );
+                    rIStm.ReadCharAsBool( bSet ).ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaRefPointAction( aRefPoint, bSet ) );
+
+                    i += nFollowingActionCount;
+
+                    // #106172# Track font relevant data in shadow VDev
+                    if( bSet )
+                        aFontVDev->SetRefPoint( aRefPoint );
+                    else
+                        aFontVDev->SetRefPoint();
+                }
+                break;
+
+                case GDI_TEXTLINECOLOR_COMMENT:
+                {
+                    Color   aColor;
+                    bool    bSet;
+                    sal_Int32   nFollowingActionCount;
+
+                    ReadColor( rIStm, aColor );
+                    rIStm.ReadCharAsBool( bSet ).ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaTextLineColorAction( aColor, bSet ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_TEXTLINE_COMMENT:
+                {
+                    Point   aStartPt;
+                    sal_Int32  nWidth;
+                    sal_uInt32 nStrikeout;
+                    sal_uInt32 nUnderline;
+                    sal_Int32   nFollowingActionCount;
+
+                    ReadPair( rIStm, aStartPt );
+                    rIStm.ReadInt32( nWidth ).ReadUInt32( nStrikeout ).ReadUInt32( nUnderline ).ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaTextLineAction( aStartPt, nWidth,
+                                                            (FontStrikeout) nStrikeout,
+                                                            (FontLineStyle) nUnderline,
+                                                            LINESTYLE_NONE ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_GRADIENTEX_COMMENT:
+                {
+                    tools::PolyPolygon aPolyPoly;
+                    Gradient    aGradient;
+                    sal_Int32       nFollowingActionCount;
+
+                    ReadPolyPolygon( rIStm, aPolyPoly );
+                    ReadGradient( rIStm, aGradient );
+                    rIStm.ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaGradientExAction( aPolyPoly, aGradient ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_COMMENT_COMMENT:
+                {
+                    sal_Int32   nValue;
+                    sal_uInt32  nDataSize;
+                    sal_uInt8*      pData;
+                    sal_Int32       nFollowingActionCount;
+
+                    OString aComment = read_uInt16_lenPrefixed_uInt8s_ToOString(rIStm);
+                    rIStm.ReadInt32( nValue ).ReadUInt32( nDataSize );
+
+                    if( nDataSize )
+                    {
+                        pData = new sal_uInt8[ nDataSize ];
+                        rIStm.Read( pData, nDataSize );
+                    }
+                    else
+                        pData = nullptr;
+
+                    rIStm.ReadInt32( nFollowingActionCount );
+                    ImplSkipActions( rIStm, nFollowingActionCount );
+                    rMtf.AddAction( new MetaCommentAction( aComment, nValue, pData, nDataSize ) );
+
+                    i += nFollowingActionCount;
+                }
+                break;
+
+                case GDI_UNICODE_COMMENT:
+                {
+                    nUnicodeCommentActionNumber = i + 1;
+                    nUnicodeCommentStreamPos = rIStm.Tell() - 6;
+                    rIStm.SeekRel( nActionSize - 4 );
+                }
+                break;
+
+                default:
+                    rIStm.SeekRel( nActionSize - 4L );
+                break;
             }
-            break;
-
-            case GDI_UNICODE_COMMENT:
-            {
-                nUnicodeCommentActionNumber = i + 1;
-                nUnicodeCommentStreamPos = rIStm.Tell() - 6;
-                if (nActionSize < 4)
-                    rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-                else
-                    rIStm.SeekRel(nActionSize - 4);
-            }
-            break;
-
-            default:
-                if (nActionSize < 4)
-                    rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-                else
-                    rIStm.SeekRel(nActionSize - 4);
-            break;
         }
+
+    // cleanup push-pop stack if necessary
+    while( !aLIStack.empty() )
+    {
+        delete aLIStack.top();
+        aLIStack.pop();
     }
 
     rIStm.SetEndian( nOldFormat );
@@ -1508,7 +1443,7 @@ void SVMConverter::ImplConvertToSVM1( SvStream& rOStm, GDIMetaFile& rMtf )
 
     // ActionCount will be written later
     nCountPos = rOStm.Tell();
-    rOStm.SeekRel( 4 );
+    rOStm.SeekRel( 4L );
 
     const sal_Int32 nActCount = ImplWriteActions( rOStm, rMtf, *aSaveVDev.get(), bRop_0_1, aLineCol, aLineColStack, eActualCharSet );
     const sal_uLong nActPos = rOStm.Tell();
@@ -1565,10 +1500,10 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
             {
                 const MetaLineAction* pAct = static_cast<const MetaLineAction*>(pAction);
                 const LineInfo& rInfo = pAct->GetLineInfo();
-                const bool bFatLine(!rInfo.IsDefault() && (LineStyle::NONE != rInfo.GetStyle()));
+                const bool bFatLine(!rInfo.IsDefault() && (LINE_NONE != rInfo.GetStyle()));
                 const bool bLineJoin(bFatLine && basegfx::B2DLineJoin::Round != rInfo.GetLineJoin());
                 const bool bLineCap(bFatLine && css::drawing::LineCap_BUTT != rInfo.GetLineCap());
-                const bool bLineDashDot(LineStyle::Dash == rInfo.GetStyle());
+                const bool bLineDashDot(LINE_DASH == rInfo.GetStyle());
 
                 if( bFatLine )
                 {
@@ -1586,7 +1521,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                     {
                         rOStm.WriteInt16( GDI_LINECAP_ACTION );
                         rOStm.WriteInt32( 6 );
-                        rOStm.WriteInt16( (sal_Int16)rInfo.GetLineCap() );
+                        rOStm.WriteInt16( rInfo.GetLineCap() );
                     }
                 }
 
@@ -1697,7 +1632,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
             {
                 const MetaChordAction* pAct = static_cast<const MetaChordAction*>(pAction);
                 tools::Polygon aChordPoly( pAct->GetRect(), pAct->GetStartPoint(),
-                                           pAct->GetEndPoint(), PolyStyle::Chord );
+                                           pAct->GetEndPoint(), POLY_CHORD );
                 const sal_uInt16       nPoints = aChordPoly.GetSize();
 
                 rOStm.WriteInt16( GDI_POLYGON_ACTION );
@@ -1721,10 +1656,10 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 pAct->GetPolygon().AdaptiveSubdivide(aSimplePoly);
                 const LineInfo& rInfo = pAct->GetLineInfo();
                 const sal_uInt16 nPoints(aSimplePoly.GetSize());
-                const bool bFatLine(!rInfo.IsDefault() && (LineStyle::NONE != rInfo.GetStyle()));
+                const bool bFatLine(!rInfo.IsDefault() && (LINE_NONE != rInfo.GetStyle()));
                 const bool bLineJoin(bFatLine && basegfx::B2DLineJoin::Round != rInfo.GetLineJoin());
                 const bool bLineCap(bFatLine && css::drawing::LineCap_BUTT != rInfo.GetLineCap());
-                const bool bLineDashDot(LineStyle::Dash == rInfo.GetStyle());
+                const bool bLineDashDot(LINE_DASH == rInfo.GetStyle());
 
                 if( bFatLine )
                 {
@@ -1742,7 +1677,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                     {
                         rOStm.WriteInt16( GDI_LINECAP_ACTION );
                         rOStm.WriteInt32( 6 );
-                        rOStm.WriteInt16( (sal_Int16)rInfo.GetLineCap() );
+                        rOStm.WriteInt16( rInfo.GetLineCap() );
                     }
                 }
 
@@ -1853,7 +1788,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 rOStm.WriteInt32( pAct->GetIndex() );
                 rOStm.WriteInt32( pAct->GetLen() );
                 rOStm.WriteInt32( nStrLen );
-                rOStm.WriteBytes( aText.getStr(), nStrLen + 1 );
+                rOStm.Write( aText.getStr(), nStrLen + 1 );
                 nCount++;
             }
             break;
@@ -1893,7 +1828,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 rOStm.WriteInt32( nLen );
                 rOStm.WriteInt32( nLen );
                 rOStm.WriteInt32( nAryLen );
-                rOStm.WriteBytes( aText.getStr()+pAct->GetIndex(), nLen + 1 );
+                rOStm.Write( aText.getStr()+pAct->GetIndex(), nLen + 1 );
 
                 for (sal_Int32 n = 0; n < nAryLen; ++n)
                     rOStm.WriteInt32( pDXArray[ n ] );
@@ -1919,7 +1854,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 rOStm.WriteInt32( pAct->GetLen() );
                 rOStm.WriteInt32( nStrLen );
                 rOStm.WriteInt32( pAct->GetWidth() );
-                rOStm.WriteBytes( aText.getStr(), nStrLen + 1 );
+                rOStm.Write( aText.getStr(), nStrLen + 1 );
                 nCount++;
             }
             break;
@@ -2015,7 +1950,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 rOStm.WriteInt16( GDI_GRADIENT_ACTION );
                 rOStm.WriteInt32( 46 );
                 ImplWriteRect( rOStm, pAct->GetRect() );
-                rOStm.WriteInt16( (sal_Int16)rGrad.GetStyle() );
+                rOStm.WriteInt16( rGrad.GetStyle() );
                 ImplWriteColor( rOStm, rGrad.GetStartColor() );
                 ImplWriteColor( rOStm, rGrad.GetEndColor() );
                 rOStm.WriteInt16( rGrad.GetAngle() );
@@ -2079,7 +2014,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
             {
                 const MetaClipRegionAction* pAct = static_cast<const MetaClipRegionAction*>(pAction);
                 const vcl::Region&          rRegion = pAct->GetRegion();
-                tools::Rectangle                   aClipRect;
+                Rectangle                   aClipRect;
 
                 rOStm.WriteInt16( GDI_CLIPREGION_ACTION );
                 rOStm.WriteInt32( 24 );
@@ -2234,11 +2169,11 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
             {
                 const MetaRasterOpAction* pAct = static_cast<const MetaRasterOpAction*>(pAction);
 
-                if( ( pAct->GetRasterOp() != RasterOp::N0 ) && ( pAct->GetRasterOp() != RasterOp::N1 ) )
+                if( ( pAct->GetRasterOp() != ROP_0 ) && ( pAct->GetRasterOp() != ROP_1 ) )
                 {
                     sal_Int16 nRasterOp;
 
-                    // If RasterOp::N0/1 was set earlier, restore old state
+                    // If ROP_0/1 was set earlier, restore old state
                     // via a Pop first
                     if( rRop_0_1 )
                     {
@@ -2250,10 +2185,10 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
 
                     switch( pAct->GetRasterOp() )
                     {
-                        case RasterOp::OverPaint : nRasterOp = 0; break;
-                        case RasterOp::Xor :       nRasterOp = 4; break;
-                        case RasterOp::Invert:     nRasterOp = 1; break;
-                        default:                   nRasterOp = 0; break;
+                        case ROP_OVERPAINT : nRasterOp = 0; break;
+                        case ROP_XOR :       nRasterOp = 4; break;
+                        case ROP_INVERT:     nRasterOp = 1; break;
+                        default:                nRasterOp = 0; break;
                     }
 
                     ImplWriteRasterOpAction( rOStm, nRasterOp );
@@ -2264,7 +2199,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                     ImplWritePushAction( rOStm );
                     rSaveVDev.Push();
 
-                    if( pAct->GetRasterOp() == RasterOp::N0 )
+                    if( pAct->GetRasterOp() == ROP_0 )
                     {
                         ImplWriteLineColor( rOStm, COL_BLACK, 1 );
                         ImplWriteFillColor( rOStm, COL_BLACK, 1 );
@@ -2558,7 +2493,7 @@ sal_uLong SVMConverter::ImplWriteActions( SvStream& rOStm, GDIMetaFile& rMtf,
                 rOStm.WriteInt32( pA->GetValue() ).WriteUInt32( nDataSize );
 
                 if( nDataSize )
-                    rOStm.WriteBytes( pA->GetData(), nDataSize );
+                    rOStm.Write( pA->GetData(), nDataSize );
 
                 rOStm.WriteInt32( 0 ); // number of actions that follow this comment
 

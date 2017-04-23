@@ -17,17 +17,16 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblescrollbar.hxx>
+#include <accessibility/standard/vclxaccessiblescrollbar.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/awt/ScrollBarOrientation.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/sequence.hxx>
 #include <vcl/scrbar.hxx>
@@ -59,7 +58,7 @@ void VCLXAccessibleScrollBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::ScrollbarScroll:
+        case VCLEVENT_SCROLLBAR_SCROLL:
         {
             NotifyAccessibleEvent( AccessibleEventId::VALUE_CHANGED, Any(), Any() );
         }
@@ -102,22 +101,23 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleScrollBar, VCLXAccessibleCompone
 // XServiceInfo
 
 
-OUString VCLXAccessibleScrollBar::getImplementationName()
+OUString VCLXAccessibleScrollBar::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleScrollBar" );
 }
 
 
-Sequence< OUString > VCLXAccessibleScrollBar::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleScrollBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleScrollBar" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleScrollBar" };
+    return aNames;
 }
 
 
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( )
+sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -125,7 +125,7 @@ sal_Int32 VCLXAccessibleScrollBar::getAccessibleActionCount( )
 }
 
 
-sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex )
+sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -139,11 +139,11 @@ sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex )
         ScrollType eScrollType;
         switch ( nIndex )
         {
-            case 0:     eScrollType = ScrollType::LineUp;    break;
-            case 1:     eScrollType = ScrollType::LineDown;  break;
-            case 2:     eScrollType = ScrollType::PageUp;    break;
-            case 3:     eScrollType = ScrollType::PageDown;  break;
-            default:    eScrollType = ScrollType::DontKnow;  break;
+            case 0:     eScrollType = SCROLL_LINEUP;    break;
+            case 1:     eScrollType = SCROLL_LINEDOWN;  break;
+            case 2:     eScrollType = SCROLL_PAGEUP;    break;
+            case 3:     eScrollType = SCROLL_PAGEDOWN;  break;
+            default:    eScrollType = SCROLL_DONTKNOW;  break;
         }
         if ( pScrollBar->DoScrollAction( eScrollType ) )
             bReturn = true;
@@ -153,7 +153,7 @@ sal_Bool VCLXAccessibleScrollBar::doAccessibleAction ( sal_Int32 nIndex )
 }
 
 
-OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIndex )
+OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -175,7 +175,7 @@ OUString VCLXAccessibleScrollBar::getAccessibleActionDescription ( sal_Int32 nIn
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -189,7 +189,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleScrollBar::getAccessibleActionK
 // XAccessibleValue
 
 
-Any VCLXAccessibleScrollBar::getCurrentValue(  )
+Any VCLXAccessibleScrollBar::getCurrentValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -197,13 +197,13 @@ Any VCLXAccessibleScrollBar::getCurrentValue(  )
 
     VCLXScrollBar* pVCLXScrollBar = static_cast< VCLXScrollBar* >( GetVCLXWindow() );
     if ( pVCLXScrollBar )
-        aValue <<=  pVCLXScrollBar->getValue();
+        aValue <<= (sal_Int32) pVCLXScrollBar->getValue();
 
     return aValue;
 }
 
 
-sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber )
+sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -230,7 +230,7 @@ sal_Bool VCLXAccessibleScrollBar::setCurrentValue( const Any& aNumber )
 }
 
 
-Any VCLXAccessibleScrollBar::getMaximumValue(  )
+Any VCLXAccessibleScrollBar::getMaximumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -238,13 +238,13 @@ Any VCLXAccessibleScrollBar::getMaximumValue(  )
 
     VCLXScrollBar* pVCLXScrollBar = static_cast< VCLXScrollBar* >( GetVCLXWindow() );
     if ( pVCLXScrollBar )
-        aValue <<= pVCLXScrollBar->getMaximum();
+        aValue <<= (sal_Int32) pVCLXScrollBar->getMaximum();
 
     return aValue;
 }
 
 
-Any VCLXAccessibleScrollBar::getMinimumValue(  )
+Any VCLXAccessibleScrollBar::getMinimumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -255,7 +255,7 @@ Any VCLXAccessibleScrollBar::getMinimumValue(  )
 }
 
 
-OUString VCLXAccessibleScrollBar::getAccessibleName(  )
+OUString VCLXAccessibleScrollBar::getAccessibleName(  ) throw (uno::RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

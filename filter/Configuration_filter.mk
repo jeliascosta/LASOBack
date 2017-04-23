@@ -352,7 +352,6 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_writer_types.xcu
 	writer_ApplePages \
 	MWAW_Text_Document \
 	Palm_Text_Document \
-	StarOffice_Writer \
 ))
 
 $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_writer_filters.xcu,filter/source/config/fragments/filters,\
@@ -398,7 +397,6 @@ $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_writer_filters
 	ApplePages \
 	MWAW_Text_Document \
 	Palm_Text_Document \
-	StarOffice_Writer \
 ))
 
 # fcfg_web
@@ -488,7 +486,6 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_calc_types.xcu,f
 	calc_AppleNumbers \
 	MWAW_Database \
 	MWAW_Spreadsheet \
-	StarOffice_Spreadsheet \
 ))
 
 $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_calc_filters.xcu,filter/source/config/fragments/filters,\
@@ -531,7 +528,6 @@ $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_calc_filters.x
 	AppleNumbers \
 	MWAW_Database \
 	MWAW_Spreadsheet \
-	StarOffice_Spreadsheet \
 ))
 
 # fcfg_draw
@@ -551,10 +547,8 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_draw_types.xcu,f
 	draw_Visio_Document \
 	draw_ClarisWorks \
 	draw_PageMaker_Document \
-	draw_ZMF_Document \
 	MWAW_Bitmap \
 	MWAW_Drawing \
-	StarOffice_Drawing \
 ))
 
 $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_draw_filters.xcu,filter/source/config/fragments/filters,\
@@ -572,10 +566,8 @@ $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_draw_filters.x
 	FreehandDocument \
 	ClarisWorks_Draw \
 	PageMakerDocument \
-	ZMFDocument \
 	MWAW_Bitmap \
 	MWAW_Drawing \
-	StarOffice_Drawing \
 ))
 
 # fcfg_impress
@@ -589,6 +581,7 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_impress_types.xc
 	impress_StarOffice_XML_Impress \
 	impress_StarOffice_XML_Impress_Template \
 	pdf_Portable_Document_Format \
+	pwp_PlaceWare \
 	impress8 \
 	impress8_template \
 	draw8 \
@@ -599,9 +592,7 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_impress_types.xc
 	impress_OOXML_Presentation_Template \
 	impress_OOXML_Presentation_AutoPlay \
 	impress_ClarisWorks \
-	StarOffice_Presentation \
 	MWAW_Presentation \
-	impress_PowerPoint3 \
 ))
 
 $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_impress_filters.xcu,filter/source/config/fragments/filters,\
@@ -614,6 +605,7 @@ $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_impress_filter
 	StarOffice_XML__Impress_ \
 	impress_StarOffice_XML_Impress_Template \
 	impress_pdf_Export \
+	placeware_Export \
 	impress8 \
 	impress8_template \
 	impress8_draw \
@@ -624,9 +616,7 @@ $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_impress_filter
 	impress_OOXML_Template \
 	impress_OOXML_AutoPlay \
 	ClarisWorks_Impress \
-	StarOffice_Presentation \
 	MWAW_Presentation \
-	PowerPoint3 \
 ))
 
 # fcfg_chart
@@ -847,8 +837,6 @@ $(eval $(call filter_Configuration_add_internal_filters,fcfg_langpack,fcfg_inter
 	pcd_Import_Base16 \
 	pct_Import \
 	pcx_Import \
-	pdf_Export \
-	pdf_Import \
 	pgm_Import \
 	png_Export \
 	png_Import \
@@ -873,7 +861,6 @@ $(eval $(call filter_Configuration_add_internal_filters,fcfg_langpack,fcfg_inter
 
 # fcfg_xslt
 $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_xslt_types.xcu,filter/source/config/fragments/types,\
-	calc_ADO_rowset_XML \
 	calc_MS_Excel_2003_XML \
 	writer_DocBook_File \
 	writer_MS_Word_2003_XML \
@@ -884,7 +871,6 @@ $(eval $(call filter_Configuration_add_types,fcfg_langpack,fcfg_xslt_types.xcu,f
 ))
 
 $(eval $(call filter_Configuration_add_filters,fcfg_langpack,fcfg_xslt_filters.xcu,filter/source/config/fragments/filters,\
-	ADO_rowset_XML \
 	DocBook_File \
 	MS_Excel_2003_XML \
 	MS_Word_2003_XML \

@@ -33,6 +33,7 @@ UnxFilePickerNotifyThread::UnxFilePickerNotifyThread( UnxFilePicker *pUnxFilePic
 }
 
 void SAL_CALL UnxFilePickerNotifyThread::addFilePickerListener( const uno::Reference< ui::dialogs::XFilePickerListener >& xListener )
+    throw( uno::RuntimeException )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -40,6 +41,7 @@ void SAL_CALL UnxFilePickerNotifyThread::addFilePickerListener( const uno::Refer
 }
 
 void SAL_CALL UnxFilePickerNotifyThread::removeFilePickerListener( const uno::Reference< ui::dialogs::XFilePickerListener >& /*xListener*/ )
+    throw( uno::RuntimeException )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 

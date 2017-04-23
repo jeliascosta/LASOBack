@@ -91,7 +91,7 @@ struct WID_Name
 
 //! order of entries is import (see LinguOptions::GetName)
 //! since the WID is used as index in this table!
-WID_Name const aWID_Name[] =
+WID_Name aWID_Name[] =
 {
     { 0,                                  nullptr },
     { UPH_IS_USE_DICTIONARY_LIST,         UPN_IS_USE_DICTIONARY_LIST },
@@ -209,15 +209,16 @@ void LinguProps::launchEvent( const PropertyChangeEvent &rEvt ) const
     }
 }
 
-/// @throws Exception
 Reference< XInterface > SAL_CALL LinguProps_CreateInstance(
             const Reference< XMultiServiceFactory > & /*rSMgr*/ )
+        throw(Exception)
 {
     Reference< XInterface > xService = static_cast<cppu::OWeakObject*>(new LinguProps);
     return xService;
 }
 
 Reference< XPropertySetInfo > SAL_CALL LinguProps::getPropertySetInfo()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -228,6 +229,8 @@ Reference< XPropertySetInfo > SAL_CALL LinguProps::getPropertySetInfo()
 
 void SAL_CALL LinguProps::setPropertyValue(
             const OUString& rPropertyName, const Any& rValue )
+        throw(UnknownPropertyException, PropertyVetoException,
+              IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -245,6 +248,7 @@ void SAL_CALL LinguProps::setPropertyValue(
 }
 
 Any SAL_CALL LinguProps::getPropertyValue( const OUString& rPropertyName )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -262,6 +266,7 @@ Any SAL_CALL LinguProps::getPropertyValue( const OUString& rPropertyName )
 void SAL_CALL LinguProps::addPropertyChangeListener(
             const OUString& rPropertyName,
             const Reference< XPropertyChangeListener >& rxListener )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -276,6 +281,7 @@ void SAL_CALL LinguProps::addPropertyChangeListener(
 void SAL_CALL LinguProps::removePropertyChangeListener(
             const OUString& rPropertyName,
             const Reference< XPropertyChangeListener >& rxListener )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -290,17 +296,21 @@ void SAL_CALL LinguProps::removePropertyChangeListener(
 void SAL_CALL LinguProps::addVetoableChangeListener(
             const OUString& /*rPropertyName*/,
             const Reference< XVetoableChangeListener >& /*xListener*/ )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL LinguProps::removeVetoableChangeListener(
             const OUString& /*rPropertyName*/,
             const Reference< XVetoableChangeListener >& /*xListener*/ )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL LinguProps::setFastPropertyValue( sal_Int32 nHandle, const Any& rValue )
+        throw(UnknownPropertyException, PropertyVetoException,
+              IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -315,6 +325,7 @@ void SAL_CALL LinguProps::setFastPropertyValue( sal_Int32 nHandle, const Any& rV
 
 
 Any SAL_CALL LinguProps::getFastPropertyValue( sal_Int32 nHandle )
+        throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -325,6 +336,7 @@ Any SAL_CALL LinguProps::getFastPropertyValue( sal_Int32 nHandle )
 
 Sequence< PropertyValue > SAL_CALL
     LinguProps::getPropertyValues()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -348,6 +360,8 @@ Sequence< PropertyValue > SAL_CALL
 
 void SAL_CALL
     LinguProps::setPropertyValues( const Sequence< PropertyValue >& rProps )
+        throw(UnknownPropertyException, PropertyVetoException,
+              IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -362,6 +376,7 @@ void SAL_CALL
 
 void SAL_CALL
     LinguProps::dispose()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -381,6 +396,7 @@ void SAL_CALL
 
 void SAL_CALL
     LinguProps::addEventListener( const Reference< XEventListener >& rxListener )
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -390,6 +406,7 @@ void SAL_CALL
 
 void SAL_CALL
     LinguProps::removeEventListener( const Reference< XEventListener >& rxListener )
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -402,18 +419,21 @@ void SAL_CALL
 
 // XServiceInfo
 OUString SAL_CALL LinguProps::getImplementationName()
+        throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 // XServiceInfo
 sal_Bool SAL_CALL LinguProps::supportsService( const OUString& ServiceName )
+        throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
 uno::Sequence< OUString > SAL_CALL LinguProps::getSupportedServiceNames()
+        throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -426,7 +446,7 @@ uno::Sequence< OUString > LinguProps::getSupportedServiceNames_Static()
     return aSNS;
 }
 
-bool LinguProps::getPropertyBool(const OUString& aPropertyName)
+bool LinguProps::getPropertyBool(const OUString& aPropertyName) throw (css::uno::RuntimeException)
 {
    uno::Any any = getPropertyValue(aPropertyName);
    bool b = false;
@@ -434,7 +454,7 @@ bool LinguProps::getPropertyBool(const OUString& aPropertyName)
    return b;
 }
 
-sal_Int16 LinguProps::getPropertyInt16(const OUString& aPropertyName)
+sal_Int16 LinguProps::getPropertyInt16(const OUString& aPropertyName) throw (css::uno::RuntimeException)
 {
    uno::Any any = getPropertyValue(aPropertyName);
    sal_Int16 b = 0;
@@ -442,7 +462,7 @@ sal_Int16 LinguProps::getPropertyInt16(const OUString& aPropertyName)
    return b;
 }
 
-Locale LinguProps::getPropertyLocale(const OUString& aPropertyName)
+Locale LinguProps::getPropertyLocale(const OUString& aPropertyName) throw (css::uno::RuntimeException)
 {
    uno::Any any = getPropertyValue(aPropertyName);
    css::lang::Locale b;

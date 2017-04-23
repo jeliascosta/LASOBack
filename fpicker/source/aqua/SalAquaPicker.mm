@@ -40,10 +40,15 @@
 #pragma mark DEFINES
 #define kSetHideExtensionStateKey @"NSNavLastUserSetHideExtensionButtonState"
 
+
+// namespace directives
+
+
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::uno;
 
+// constructor
 SalAquaPicker::SalAquaPicker()
 : m_pDialog(nullptr)
 , m_pControlHelper(new ControlHelper())
@@ -186,6 +191,7 @@ int SalAquaPicker::runandwaitforresult()
 }
 
 void SAL_CALL SalAquaPicker::implsetDisplayDirectory( const rtl::OUString& aDirectory )
+    throw( lang::IllegalArgumentException, uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -194,12 +200,12 @@ void SAL_CALL SalAquaPicker::implsetDisplayDirectory( const rtl::OUString& aDire
     }
 }
 
-rtl::OUString const & SAL_CALL SalAquaPicker::implgetDisplayDirectory()
+rtl::OUString const & SAL_CALL SalAquaPicker::implgetDisplayDirectory() throw( uno::RuntimeException )
 {
     return m_sDisplayDirectory;
 }
 
-void SAL_CALL SalAquaPicker::implsetTitle( const rtl::OUString& aTitle )
+void SAL_CALL SalAquaPicker::implsetTitle( const rtl::OUString& aTitle ) throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 

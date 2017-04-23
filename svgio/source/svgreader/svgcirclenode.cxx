@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgcirclenode.hxx>
+#include <svgio/svgreader/svgcirclenode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
@@ -39,6 +39,7 @@ namespace svgio
 
         SvgCircleNode::~SvgCircleNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgCircleNode::getSvgStyleAttributes() const
@@ -68,7 +69,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maCx = aNum;
+                        setCx(aNum);
                     }
                     break;
                 }
@@ -78,7 +79,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maCy = aNum;
+                        setCy(aNum);
                     }
                     break;
                 }
@@ -90,7 +91,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maR = aNum;
+                            setR(aNum);
                         }
                     }
                     break;

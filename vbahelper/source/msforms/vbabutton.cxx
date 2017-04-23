@@ -29,7 +29,7 @@ VbaButton::VbaButton( const uno::Reference< XHelperInterface >& xParent, const u
 
 // Attributes
 OUString SAL_CALL
-VbaButton::getCaption()
+VbaButton::getCaption() throw (css::uno::RuntimeException, std::exception)
 {
     OUString Label;
     m_xProps->getPropertyValue( "Label" ) >>= Label;
@@ -37,73 +37,73 @@ VbaButton::getCaption()
 }
 
 void SAL_CALL
-VbaButton::setCaption( const OUString& _caption )
+VbaButton::setCaption( const OUString& _caption ) throw (css::uno::RuntimeException, std::exception)
 {
     m_xProps->setPropertyValue( "Label", uno::makeAny( _caption ) );
 }
 
-sal_Bool SAL_CALL VbaButton::getAutoSize()
+sal_Bool SAL_CALL VbaButton::getAutoSize() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getAutoSize();
 }
 
-void SAL_CALL VbaButton::setAutoSize( sal_Bool bAutoSize )
+void SAL_CALL VbaButton::setAutoSize( sal_Bool bAutoSize ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setAutoSize( bAutoSize );
 }
 
-sal_Bool SAL_CALL VbaButton::getLocked()
+sal_Bool SAL_CALL VbaButton::getLocked() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getLocked();
 }
 
-void SAL_CALL VbaButton::setLocked( sal_Bool bLocked )
+void SAL_CALL VbaButton::setLocked( sal_Bool bLocked ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setLocked( bLocked );
 }
 
-sal_Bool SAL_CALL VbaButton::getCancel()
+sal_Bool SAL_CALL VbaButton::getCancel() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL VbaButton::setCancel( sal_Bool /*bCancel*/ )
+void SAL_CALL VbaButton::setCancel( sal_Bool /*bCancel*/ ) throw (uno::RuntimeException, std::exception)
 {
     // #STUB
 }
 
-sal_Bool SAL_CALL VbaButton::getDefault()
+sal_Bool SAL_CALL VbaButton::getDefault() throw (uno::RuntimeException, std::exception)
 {
     // #STUB
     return false;
 }
 
-void SAL_CALL VbaButton::setDefault( sal_Bool /*bDefault*/ )
+void SAL_CALL VbaButton::setDefault( sal_Bool /*bDefault*/ ) throw (uno::RuntimeException, std::exception)
 {
     // #STUB
 }
 
-sal_Int32 SAL_CALL VbaButton::getBackColor()
+sal_Int32 SAL_CALL VbaButton::getBackColor() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getBackColor();
 }
 
-void SAL_CALL VbaButton::setBackColor( sal_Int32 nBackColor )
+void SAL_CALL VbaButton::setBackColor( sal_Int32 nBackColor ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setBackColor( nBackColor );
 }
 
-sal_Int32 SAL_CALL VbaButton::getForeColor()
+sal_Int32 SAL_CALL VbaButton::getForeColor() throw (uno::RuntimeException)
 {
     return ScVbaControl::getForeColor();
 }
 
-void SAL_CALL VbaButton::setForeColor( sal_Int32 /*nForeColor*/ )
+void SAL_CALL VbaButton::setForeColor( sal_Int32 /*nForeColor*/ ) throw (uno::RuntimeException)
 {
     // #STUB
 }
 
-uno::Reference< msforms::XNewFont > SAL_CALL VbaButton::getFont()
+uno::Reference< msforms::XNewFont > SAL_CALL VbaButton::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new VbaNewFont( m_xProps );
 }

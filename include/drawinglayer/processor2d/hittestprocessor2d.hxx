@@ -46,8 +46,17 @@ namespace drawinglayer
             /// discrete HitTolerance
             double                      mfDiscreteHitTolerance;
 
+            /// bitfield
             bool                        mbHit : 1;
             bool                        mbHitToleranceUsed : 1;
+
+            /*  this flag decides if primitives which are embedded to an
+                UnifiedTransparencePrimitive2D and are invisible will be taken into account for
+                HitTesting or not. Those primitives are created for objects which are else
+                completely invisible and normally their content exists of hairline
+                primitives describing the object's contour
+             */
+            bool                        mbUseInvisiblePrimitiveContent : 1;
 
             /// flag to concentrate on text hits only
             bool                        mbHitTextOnly : 1;
@@ -68,12 +77,13 @@ namespace drawinglayer
                 const basegfx::B2DPoint& rLogicHitPosition,
                 double fLogicHitTolerance,
                 bool bHitTextOnly);
-            virtual ~HitTestProcessor2D() override;
+            virtual ~HitTestProcessor2D();
 
             /// data read access
             const basegfx::B2DPoint& getDiscreteHitPosition() const { return maDiscreteHitPosition; }
             double getDiscreteHitTolerance() const { return mfDiscreteHitTolerance; }
             bool getHit() const { return mbHit; }
+            bool getUseInvisiblePrimitiveContent() const { return mbUseInvisiblePrimitiveContent;}
             bool getHitTextOnly() const { return mbHitTextOnly; }
         };
     } // end of namespace processor2d

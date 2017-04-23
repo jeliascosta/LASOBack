@@ -499,29 +499,29 @@ bool ScColRowNameRangesDlg::IsRefInputMode() const
 
 // handler called when OK is clicked, calls the add button handler before
 // passing the range lists to the document
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, OkBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, OkBtnHdl, Button*, void)
 {
     AddBtnHdl( nullptr );
 
-    // assign RangeLists to the references in the document
+    // assign RangeLists to the den references in the document
     pDoc->GetColNameRangesRef() = xColNameRanges;
     pDoc->GetRowNameRangesRef() = xRowNameRanges;
     // changed ranges need to take effect
     pDoc->CompileColRowNameFormula();
     ScDocShell* pDocShell = pViewData->GetDocShell();
-    pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PaintPartFlags::Grid);
+    pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PAINT_GRID);
     pDocShell->SetDocumentModified();
 
     Close();
 }
 
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, CancelBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, CancelBtnHdl, Button*, void)
 {
     Close();
 }
 
 // handler called when add button clicked: set ranges and add to listbox
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, AddBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, AddBtnHdl, Button*, void)
 {
     OUString aNewArea( pEdAssign->GetText() );
     OUString aNewData( pEdAssign2->GetText() );
@@ -539,10 +539,12 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, AddBtnHdl, Button*, void)
             if ( ( pPair = xColNameRanges->Find( theCurArea ) ) != nullptr )
             {
                 xColNameRanges->Remove( pPair );
+                delete pPair;
             }
             if ( ( pPair = xRowNameRanges->Find( theCurArea ) ) != nullptr )
             {
                 xRowNameRanges->Remove( pPair );
+                delete pPair;
             }
             if ( pBtnColHead->IsChecked() )
                 xColNameRanges->Join( ScRangePair( theCurArea, theCurData ) );
@@ -573,7 +575,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, AddBtnHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, RemoveBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, RemoveBtnHdl, Button*, void)
 {
     OUString aRangeStr = pLbRange->GetSelectEntry();
     sal_Int32 nSelectPos = pLbRange->GetSelectEntryPos();
@@ -593,9 +595,10 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, RemoveBtnHdl, Button*, void)
     if ( bFound )
     {
         OUString aStrDelMsg = ScGlobal::GetRscString( STR_QUERY_DELENTRY );
-        OUString aMsg       = aStrDelMsg.getToken( 0, '#' )
-                            + aRangeStr
-                            + aStrDelMsg.getToken( 1, '#' );
+        OUString aMsg       = aStrDelMsg.getToken( 0, '#' );
+
+        aMsg += aRangeStr;
+        aMsg += aStrDelMsg.getToken( 1, '#' );
 
         if ( RET_YES == QUERYBOX(aMsg) )
         {
@@ -603,6 +606,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, RemoveBtnHdl, Button*, void)
                 xColNameRanges->Remove( pPair );
             else
                 xRowNameRanges->Remove( pPair );
+            delete pPair;
 
             UpdateNames();
             const sal_Int32 nCnt = pLbRange->GetEntryCount();
@@ -632,7 +636,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, RemoveBtnHdl, Button*, void)
 }
 
 // handler called when a row in the listbox is selected, updates form input fields
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range1SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, Range1SelectHdl, ListBox&, void)
 {
     sal_Int32 nSelectPos = pLbRange->GetSelectEntryPos();
     const sal_Int32 nCnt = pLbRange->GetEntryCount();
@@ -700,7 +704,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range1SelectHdl, ListBox&, void)
 }
 
 // handler called when the label range has changed
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range1DataModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, Range1DataModifyHdl, Edit&, void)
 {
     OUString aNewArea( pEdAssign->GetText() );
     bool bValid = false;
@@ -733,7 +737,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range1DataModifyHdl, Edit&, void)
 }
 
 // handler called when the data range has changed
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range2DataModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, Range2DataModifyHdl, Edit&, void)
 {
     OUString aNewData( pEdAssign2->GetText() );
     if ( !aNewData.isEmpty() )
@@ -754,7 +758,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, Range2DataModifyHdl, Edit&, void)
 }
 
 // handler for the radio button for columns, adjust ranges
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, ColClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, ColClickHdl, Button*, void)
 {
     if ( !pBtnColHead->GetSavedValue() )
     {
@@ -774,7 +778,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, ColClickHdl, Button*, void)
 }
 
 // handler for the radio button for columns, adjust range
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, RowClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, RowClickHdl, Button*, void)
 {
     if ( !pBtnRowHead->GetSavedValue() )
     {
@@ -793,7 +797,7 @@ IMPL_LINK_NOARG(ScColRowNameRangesDlg, RowClickHdl, Button*, void)
     }
 }
 
-IMPL_LINK( ScColRowNameRangesDlg, GetFocusHdl, Control&, rCtrl, void )
+IMPL_LINK_TYPED( ScColRowNameRangesDlg, GetFocusHdl, Control&, rCtrl, void )
 {
     if( (&rCtrl == static_cast<Control*>(pEdAssign)) || (&rCtrl == static_cast<Control*>(pRbAssign)) )
         pEdActive = pEdAssign;
@@ -806,7 +810,7 @@ IMPL_LINK( ScColRowNameRangesDlg, GetFocusHdl, Control&, rCtrl, void )
         pEdActive->SetSelection( Selection( 0, SELECTION_MAX ) );
 }
 
-IMPL_LINK_NOARG(ScColRowNameRangesDlg, LoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(ScColRowNameRangesDlg, LoseFocusHdl, Control&, void)
 {
     bDlgLostFocus = !IsActive();
 }

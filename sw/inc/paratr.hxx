@@ -54,6 +54,7 @@ class SW_DLLPUBLIC SwFormatDrop: public SfxPoolItem, public SwClient
     SwModify* pDefinedIn;       /**< Modify-Object, that contains DropCaps.
                                   Can only be TextFormatCollection/TextNode. */
     sal_uInt16 nDistance;       ///< Distance to beginning of text.
+    sal_uInt16 nReadFormat;        ///< For Sw3-Reader: CharFormat-Id (load Pool!).
     sal_uInt8  nLines;          ///< Line count.
     sal_uInt8  nChars;          ///< Character count.
     bool   bWholeWord;      ///< First word with initials.
@@ -61,7 +62,7 @@ public:
     static SfxPoolItem* CreateDefault();
 
     SwFormatDrop();
-    virtual ~SwFormatDrop() override;
+    virtual ~SwFormatDrop();
 
     // @@@ public copy ctor, but no copy assignment?
     SwFormatDrop( const SwFormatDrop & );
@@ -78,34 +79,34 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr) const override;
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    sal_uInt8 GetLines() const { return nLines; }
-    sal_uInt8 &GetLines() { return nLines; }
+    inline sal_uInt8 GetLines() const { return nLines; }
+    inline sal_uInt8 &GetLines() { return nLines; }
 
-    sal_uInt8 GetChars() const { return nChars; }
-    sal_uInt8 &GetChars() { return nChars; }
+    inline sal_uInt8 GetChars() const { return nChars; }
+    inline sal_uInt8 &GetChars() { return nChars; }
 
-    bool GetWholeWord() const { return bWholeWord; }
-    bool &GetWholeWord() { return bWholeWord; }
+    inline bool GetWholeWord() const { return bWholeWord; }
+    inline bool &GetWholeWord() { return bWholeWord; }
 
-    sal_uInt16 GetDistance() const { return nDistance; }
-    sal_uInt16 &GetDistance() { return nDistance; }
+    inline sal_uInt16 GetDistance() const { return nDistance; }
+    inline sal_uInt16 &GetDistance() { return nDistance; }
 
-    const SwCharFormat *GetCharFormat() const { return static_cast<const SwCharFormat*>(GetRegisteredIn()); }
-    SwCharFormat *GetCharFormat()       { return static_cast<SwCharFormat*>(GetRegisteredIn()); }
+    inline const SwCharFormat *GetCharFormat() const { return static_cast<const SwCharFormat*>(GetRegisteredIn()); }
+    inline SwCharFormat *GetCharFormat()       { return static_cast<SwCharFormat*>(GetRegisteredIn()); }
     void SetCharFormat( SwCharFormat *pNew );
     /// Get information from Client.
     virtual bool GetInfo( SfxPoolItem& ) const override;
 
     /// Get and set Modify pointer.
-    const SwModify* GetDefinedIn() const { return pDefinedIn; }
-    void ChgDefinedIn( const SwModify* pNew )
+    inline const SwModify* GetDefinedIn() const { return pDefinedIn; }
+    inline void ChgDefinedIn( const SwModify* pNew )
     { pDefinedIn = const_cast<SwModify*>(pNew); }
 };
 
@@ -122,10 +123,10 @@ public:
     /// "pure virtual methods" of SfxPoolItem
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
 };
 
 inline SwRegisterItem::SwRegisterItem( const bool bRegister ) :
@@ -160,12 +161,12 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
 
-    virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
+    virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
@@ -183,10 +184,10 @@ public:
     /// "pure virtual methods" of SfxPoolItem
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
 };
 
 inline SwParaConnectBorderItem::SwParaConnectBorderItem( const bool bConnect ) :

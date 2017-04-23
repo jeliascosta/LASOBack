@@ -72,7 +72,7 @@ static OUString invadp_getImplementationName()
 
 struct hash_ptr
 {
-    size_t operator() ( void * p ) const
+    inline size_t operator() ( void * p ) const
         { return reinterpret_cast<size_t>(p); }
 };
 typedef std::unordered_set< void *, hash_ptr > t_ptr_set;
@@ -100,20 +100,25 @@ public:
     t_ptr_map m_receiver2adapters;
 
     explicit FactoryImpl( Reference< XComponentContext > const & xContext );
-    virtual ~FactoryImpl() override;
+    virtual ~FactoryImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (RuntimeException, std::exception) override;
 
     // XInvocationAdapterFactory
     virtual Reference< XInterface > SAL_CALL createAdapter(
-        const Reference< script::XInvocation > & xReceiver, const Type & rType ) override;
+        const Reference< script::XInvocation > & xReceiver, const Type & rType )
+        throw (RuntimeException, std::exception) override;
     // XInvocationAdapterFactory2
     virtual Reference< XInterface > SAL_CALL createAdapter(
         const Reference< script::XInvocation > & xReceiver,
-        const Sequence< Type > & rTypes ) override;
+        const Sequence< Type > & rTypes )
+        throw (RuntimeException, std::exception) override;
 };
 struct AdapterImpl;
 
@@ -805,6 +810,7 @@ static inline AdapterImpl * lookup_adapter(
 Reference< XInterface > FactoryImpl::createAdapter(
     const Reference< script::XInvocation > & xReceiver,
     const Sequence< Type > & rTypes )
+    throw (RuntimeException, std::exception)
 {
     Reference< XInterface > xRet;
     if (xReceiver.is() && rTypes.getLength())
@@ -863,6 +869,7 @@ Reference< XInterface > FactoryImpl::createAdapter(
 
 Reference< XInterface > FactoryImpl::createAdapter(
     const Reference< script::XInvocation > & xReceiver, const Type & rType )
+    throw (RuntimeException, std::exception)
 {
     return createAdapter( xReceiver, Sequence< Type >( &rType, 1 ) );
 }
@@ -870,23 +877,27 @@ Reference< XInterface > FactoryImpl::createAdapter(
 // XServiceInfo
 
 OUString FactoryImpl::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return invadp_getImplementationName();
 }
 
 sal_Bool FactoryImpl::supportsService( const OUString & rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > FactoryImpl::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return invadp_getSupportedServiceNames();
 }
 
-/// @throws Exception
+
 static Reference< XInterface > SAL_CALL FactoryImpl_create(
     const Reference< XComponentContext > & xContext )
+    throw (Exception)
 {
     return static_cast<cppu::OWeakObject *>(new FactoryImpl( xContext ));
 }

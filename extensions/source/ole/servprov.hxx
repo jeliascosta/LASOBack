@@ -33,14 +33,16 @@ using namespace std;
 
 namespace ole_adapter
 {
-/// @throws Exception
-Reference< XInterface> SAL_CALL ConverterProvider_CreateInstance2(  const Reference<XMultiServiceFactory> & xSMgr);
-/// @throws Exception
-Reference< XInterface> SAL_CALL ConverterProvider_CreateInstanceVar1(   const Reference<XMultiServiceFactory> & xSMgr);
-/// @throws Exception
-Reference<XInterface> SAL_CALL OleClient_CreateInstance( const Reference<XMultiServiceFactory> & xSMgr);
-/// @throws Exception
-Reference<XInterface> SAL_CALL OleServer_CreateInstance( const Reference<XMultiServiceFactory> & xSMgr);
+Reference< XInterface> SAL_CALL ConverterProvider_CreateInstance(   const Reference<XMultiServiceFactory> & xSMgr)
+                            throw( Exception);
+Reference< XInterface> SAL_CALL ConverterProvider_CreateInstance2(  const Reference<XMultiServiceFactory> & xSMgr)
+                            throw( Exception);
+Reference< XInterface> SAL_CALL ConverterProvider_CreateInstanceVar1(   const Reference<XMultiServiceFactory> & xSMgr)
+                            throw( Exception);
+Reference<XInterface> SAL_CALL OleClient_CreateInstance( const Reference<XMultiServiceFactory> & xSMgr)
+                            throw( Exception);
+Reference<XInterface> SAL_CALL OleServer_CreateInstance( const Reference<XMultiServiceFactory> & xSMgr)
+                            throw( Exception);
 /*****************************************************************************
 
     class declaration IClassFactoryWrapper
@@ -55,8 +57,8 @@ class IClassFactoryWrapper : public IClassFactory
 {
 public:
 
-    virtual bool registerClass() = 0;
-    virtual bool deregisterClass() = 0;
+    virtual sal_Bool registerClass() = 0;
+    virtual sal_Bool deregisterClass() = 0;
 
 protected:
     ~IClassFactoryWrapper() {}
@@ -84,17 +86,17 @@ public:
                              const Reference<XSingleServiceFactory>& xSFactory, GUID* pGuid);
     virtual ~ProviderOleWrapper_Impl();
 
-    bool registerClass() override;
-    bool deregisterClass() override;
+    sal_Bool registerClass();
+    sal_Bool deregisterClass();
 
     /* IUnknown methods */
-    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj) override;
-    STDMETHOD_(ULONG, AddRef)() override;
-    STDMETHOD_(ULONG, Release)() override;
+    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     /* IClassFactory methods */
-    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv) override;
-    STDMETHOD(LockServer)(int fLock) override;
+    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv);
+    STDMETHOD(LockServer)(int fLock);
 
 protected:
 
@@ -126,17 +128,17 @@ public:
     OneInstanceOleWrapper_Impl( const Reference<XMultiServiceFactory>& smgr, const Reference<XInterface>& xInst, GUID* pGuid );
     virtual ~OneInstanceOleWrapper_Impl();
 
-    bool registerClass() override;
-    bool deregisterClass() override;
+    sal_Bool registerClass();
+    sal_Bool deregisterClass();
 
     /* IUnknown methods */
-    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj) override;
-    STDMETHOD_(ULONG, AddRef)() override;
-    STDMETHOD_(ULONG, Release)() override;
+    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     /* IClassFactory methods */
-    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv) override;
-    STDMETHOD(LockServer)(int fLock) override;
+    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv);
+    STDMETHOD(LockServer)(int fLock);
 
 protected:
 
@@ -172,23 +174,27 @@ class OleConverter_Impl2 : public WeakImplHelper<XBridgeSupplier2, XInitializati
 public:
     explicit OleConverter_Impl2( const Reference<XMultiServiceFactory>& smgr);
     OleConverter_Impl2( const  Reference<XMultiServiceFactory>& smgr, sal_uInt8 unoWrapperClass, sal_uInt8 comWrapperClass );
-    virtual ~OleConverter_Impl2() override;
+    virtual ~OleConverter_Impl2();
 
     // XBridgeSupplier2 ---------------------------------------------------
 
     Any SAL_CALL createBridge(const Any& modelDepObject,
                                 const Sequence<sal_Int8>& ProcessId,
                                 sal_Int16 sourceModelType,
-                                sal_Int16 destModelType) override;
+                                sal_Int16 destModelType)
+            throw (IllegalArgumentException, RuntimeException) override;
 
     // XInitialization
-    void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException) override;
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Abstract struct UnoConversionUtilities
     Reference< XInterface > createUnoWrapperInstance() override;
@@ -212,18 +218,21 @@ class OleClient_Impl : public WeakImplHelper<XMultiServiceFactory, css::lang::XS
 {
 public:
     explicit OleClient_Impl( const Reference<XMultiServiceFactory>& smgr);
-    ~OleClient_Impl() override;
+    ~OleClient_Impl();
 
     // XMultiServiceFactory
-    Reference<XInterface> SAL_CALL createInstance(const OUString& ServiceSpecifier) override;
-    Reference<XInterface> SAL_CALL createInstanceWithArguments(const OUString& ServiceSpecifier, const Sequence< Any >& Arguments) override;
-    Sequence< OUString >    SAL_CALL getAvailableServiceNames() override;
+    Reference<XInterface> SAL_CALL createInstance(const OUString& ServiceSpecifier) throw( Exception, RuntimeException) override;
+    Reference<XInterface> SAL_CALL createInstanceWithArguments(const OUString& ServiceSpecifier, const Sequence< Any >& Arguments) throw (Exception, RuntimeException) override;
+    Sequence< OUString >    SAL_CALL getAvailableServiceNames() throw (RuntimeException) override;
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Abstract struct UnoConversionUtilities
     Reference< XInterface > createUnoWrapperInstance() override;
@@ -248,18 +257,21 @@ class OleServer_Impl : public cppu::WeakImplHelper<css::lang::XServiceInfo>
 {
 public:
     explicit OleServer_Impl( const Reference<XMultiServiceFactory> &smgr);
-    ~OleServer_Impl() override;
+    ~OleServer_Impl();
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
 
-    bool provideService(const Reference<XSingleServiceFactory>& xMulFact, GUID* guid);
-    bool provideInstance(const Reference<XInterface>& xInst, GUID* guid);
+    sal_Bool provideService(const Reference<XSingleServiceFactory>& xMulFact, GUID* guid);
+    sal_Bool provideInstance(const Reference<XInterface>& xInst, GUID* guid);
 
     list< IClassFactoryWrapper* > m_wrapperList;
     Reference< XBridgeSupplier2 >   m_bridgeSupplier;

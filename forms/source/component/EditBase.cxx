@@ -85,7 +85,7 @@ OEditBaseModel::~OEditBaseModel( )
 
 // XPersist
 
-void OEditBaseModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
+void OEditBaseModel::write(const Reference<XObjectOutputStream>& _rxOutStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     OBoundControlModel::write(_rxOutStream);
 
@@ -159,7 +159,7 @@ sal_uInt16 OEditBaseModel::getPersistenceFlags() const
 }
 
 
-void OEditBaseModel::read(const Reference<XObjectInputStream>& _rxInStream)
+void OEditBaseModel::read(const Reference<XObjectInputStream>& _rxInStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     OBoundControlModel::read(_rxInStream);
     ::osl::MutexGuard aGuard(m_aMutex);
@@ -184,12 +184,12 @@ void OEditBaseModel::read(const Reference<XObjectInputStream>& _rxInStream)
         if ((nAnyMask & DEFAULT_LONG) == DEFAULT_LONG)
         {
             sal_Int32 nValue = _rxInStream->readLong();
-            m_aDefault <<= nValue;
+            m_aDefault <<= (sal_Int32)nValue;
         }
         else if ((nAnyMask & DEFAULT_DOUBLE) == DEFAULT_DOUBLE)
         {
             double fValue = _rxInStream->readDouble();
-            m_aDefault <<= fValue;
+            m_aDefault <<= (double)fValue;
         }
         else if ((nAnyMask & DEFAULT_TIME) == DEFAULT_TIME)
         {
@@ -291,8 +291,9 @@ void OEditBaseModel::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) cons
     }
 }
 
+
 sal_Bool OEditBaseModel::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue,
-                                            sal_Int32 nHandle, const Any& rValue )
+                                            sal_Int32 nHandle, const Any& rValue ) throw( IllegalArgumentException )
 {
     bool bModified(false);
     switch (nHandle)
@@ -325,7 +326,8 @@ sal_Bool OEditBaseModel::convertFastPropertyValue( Any& rConvertedValue, Any& rO
     return bModified;
 }
 
-void OEditBaseModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue )
+
+void OEditBaseModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw ( css::uno::Exception, std::exception)
 {
     switch (nHandle)
     {

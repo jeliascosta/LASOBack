@@ -72,17 +72,24 @@ protected:
 
 public:
     explicit FilePolicy( Reference< XComponentContext > const & xComponentContext );
+    virtual ~FilePolicy();
 
     // XPolicy impl
     virtual Sequence< Any > SAL_CALL getPermissions(
-        OUString const & userId ) override;
-    virtual Sequence< Any > SAL_CALL getDefaultPermissions() override;
-    virtual void SAL_CALL refresh() override;
+        OUString const & userId )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence< Any > SAL_CALL getDefaultPermissions()
+        throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL refresh()
+        throw (RuntimeException, std::exception) override;
 
     // XServiceInfo impl
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (RuntimeException, std::exception) override;
 };
 
 FilePolicy::FilePolicy( Reference< XComponentContext > const & xComponentContext )
@@ -90,6 +97,9 @@ FilePolicy::FilePolicy( Reference< XComponentContext > const & xComponentContext
     , m_xComponentContext( xComponentContext )
     , m_ac( xComponentContext )
     , m_init( false )
+{}
+
+FilePolicy::~FilePolicy()
 {}
 
 void FilePolicy::disposing()
@@ -102,6 +112,7 @@ void FilePolicy::disposing()
 
 Sequence< Any > FilePolicy::getPermissions(
     OUString const & userId )
+    throw (RuntimeException, std::exception)
 {
     if (! m_init)
     {
@@ -122,6 +133,7 @@ Sequence< Any > FilePolicy::getPermissions(
 }
 
 Sequence< Any > FilePolicy::getDefaultPermissions()
+    throw (RuntimeException, std::exception)
 {
     if (! m_init)
     {
@@ -145,14 +157,14 @@ class PolicyReader
     sal_Unicode m_back;
 
     sal_Unicode get();
-    void back( sal_Unicode c )
+    inline void back( sal_Unicode c )
         { m_back = c; }
 
-    static bool isWhiteSpace( sal_Unicode c )
+    static inline bool isWhiteSpace( sal_Unicode c )
         { return (' ' == c || '\t' == c || '\n' == c || '\r' == c); }
     void skipWhiteSpace();
 
-    static bool isCharToken( sal_Unicode c )
+    static inline bool isCharToken( sal_Unicode c )
         { return (';' == c || ',' == c || '{' == c || '}' == c); }
 
 public:
@@ -328,11 +340,16 @@ sal_Unicode PolicyReader::get()
 
 void PolicyReader::error( OUString const & msg )
 {
-    throw RuntimeException(
-        "error processing file \"" + m_fileName +
-        "\" [line " + OUString::number(m_linepos) +
-        ", column " + OUString::number(m_pos) +
-        "] " + msg);
+    OUStringBuffer buf( 32 );
+    buf.append( "error processing file \"" );
+    buf.append( m_fileName );
+    buf.append( "\" [line " );
+    buf.append( m_linepos );
+    buf.append( ", column " );
+    buf.append( m_pos );
+    buf.append( "] " );
+    buf.append( msg );
+    throw RuntimeException( buf.makeStringAndClear() );
 }
 
 PolicyReader::PolicyReader( OUString const & fileName, AccessControl & ac )
@@ -344,7 +361,11 @@ PolicyReader::PolicyReader( OUString const & fileName, AccessControl & ac )
     ac.checkFilePermission( m_fileName, "read" );
     if (osl_File_E_None != ::osl_openFile( m_fileName.pData, &m_file, osl_File_OpenFlag_Read ))
     {
-        throw RuntimeException( "cannot open file \"" + m_fileName + "\"!" );
+        OUStringBuffer buf( 32 );
+        buf.append( "cannot open file \"" );
+        buf.append( m_fileName );
+        buf.append( "\"!" );
+        throw RuntimeException( buf.makeStringAndClear() );
     }
 }
 
@@ -368,6 +389,7 @@ PolicyReader::~PolicyReader()
 
 
 void FilePolicy::refresh()
+    throw (RuntimeException, std::exception)
 {
     // read out file (the .../file-name value had originally been set in
     // cppu::add_access_control_entries (cppuhelper/source/servicefactory.cxx)
@@ -473,16 +495,19 @@ void FilePolicy::refresh()
 
 
 OUString FilePolicy::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString(IMPL_NAME);
 }
 
 sal_Bool FilePolicy::supportsService( OUString const & serviceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 Sequence< OUString > FilePolicy::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     Sequence<OUString> aSNS { "com.sun.star.security.Policy" };
     return aSNS;

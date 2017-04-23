@@ -30,7 +30,7 @@ namespace svl {
  */
 struct StyleSheetPredicate {
     virtual bool Check(const SfxStyleSheetBase& styleSheet) = 0;
-    virtual ~StyleSheetPredicate() {}
+    virtual ~StyleSheetPredicate() {;}
 };
 
 /** Function object for cleanup-Strategy for IndexedSfxStyleSheets::Clear().
@@ -38,7 +38,7 @@ struct StyleSheetPredicate {
  */
 struct StyleSheetDisposer {
     virtual void Dispose(rtl::Reference<SfxStyleSheetBase> styleSheet) = 0;
-    virtual ~StyleSheetDisposer() {}
+    virtual ~StyleSheetDisposer() {;}
 };
 
 /** Function object to apply a method on all style sheets.
@@ -46,7 +46,7 @@ struct StyleSheetDisposer {
  */
 struct StyleSheetCallback {
     virtual void DoIt(const SfxStyleSheetBase& styleSheet) = 0;
-    virtual ~StyleSheetCallback() {}
+    virtual ~StyleSheetCallback() {;}
 };
 
 /** This class holds SfxStyleSheets and allows for access via an id and a name.
@@ -124,14 +124,14 @@ public:
     std::vector<unsigned>
     FindPositionsByName(const rtl::OUString& name) const;
 
-    enum class SearchBehavior { ReturnAll, ReturnFirst };
+    enum SearchBehavior { RETURN_ALL, RETURN_FIRST };
     /** Obtain the positions of all styles which have a certain name and fulfill a certain condition.
      *
      * This method is fast because it can use the name-based index
      */
     std::vector<unsigned>
     FindPositionsByNameAndPredicate(const rtl::OUString& name, StyleSheetPredicate& predicate,
-            SearchBehavior behavior = SearchBehavior::ReturnAll) const;
+            SearchBehavior behavior = RETURN_ALL) const;
 
     /** Obtain the positions of all styles which fulfill a certain condition.
      *

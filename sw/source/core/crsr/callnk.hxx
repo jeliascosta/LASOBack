@@ -32,13 +32,13 @@ public:
     SwCursorShell & rShell;
     sal_uLong nNode;
     sal_Int32 nContent;
-    SwNodeType nNdTyp;
+    sal_uInt8 nNdTyp;
     long nLeftFramePos;
     bool bHasSelection;
 
     explicit SwCallLink( SwCursorShell & rSh );
     SwCallLink( SwCursorShell & rSh, sal_uLong nAktNode, sal_Int32 nAktContent,
-                                    SwNodeType nAktNdTyp, long nLRPos,
+                                    sal_uInt8 nAktNdTyp, long nLRPos,
                                     bool bAktSelection );
     ~SwCallLink();
 

@@ -45,7 +45,6 @@ private:
     std::vector< GtkSalMenuItem* >  maItems;
     Idle                            maUpdateMenuBarIdle;
 
-    bool                            mbInActivateCallback;
     bool                            mbMenuBar;
     bool                            mbNeedsUpdate;
     bool                            mbReturnFocusToDocument;
@@ -53,7 +52,7 @@ private:
     GtkWidget*                      mpMenuBarContainerWidget;
     GtkWidget*                      mpMenuBarWidget;
     GtkWidget*                      mpCloseButton;
-    VclPtr<Menu>                    mpVCLMenu;
+    Menu*                           mpVCLMenu;
     GtkSalMenu*                     mpParentSalMenu;
     GtkSalFrame*                    mpFrame;
 
@@ -64,11 +63,11 @@ private:
     void                        ImplUpdate(bool bRecurse, bool bRemoveDisabledEntries);
     void                        ActivateAllSubmenus(Menu* pMenuBar);
 
-    DECL_LINK(MenuBarHierarchyChangeHandler, Timer*, void);
+    DECL_LINK_TYPED(MenuBarHierarchyChangeHandler, Idle*, void);
 
 public:
     GtkSalMenu( bool bMenuBar );
-    virtual ~GtkSalMenu() override;
+    virtual ~GtkSalMenu();
 
     virtual bool                VisibleMenuBar() override;   // must return TRUE to actually DISPLAY native menu bars
                                                     // otherwise only menu messages are processed (eg, OLE on Windows)
@@ -126,7 +125,7 @@ public:
     gboolean SignalKey(GdkEventKey* pEvent);
     void ReturnFocus();
 
-    virtual bool ShowNativePopupMenu(FloatingWindow * pWin, const tools::Rectangle& rRect, FloatWinPopupFlags nFlags) override;
+    virtual bool ShowNativePopupMenu(FloatingWindow * pWin, const Rectangle& rRect, FloatWinPopupFlags nFlags) override;
     virtual void ShowCloseButton(bool bShow) override;
     virtual bool CanGetFocus() const override;
     virtual bool TakeFocus() override;
@@ -136,11 +135,12 @@ class GtkSalMenuItem : public SalMenuItem
 {
 public:
     GtkSalMenuItem( const SalItemParams* );
-    virtual ~GtkSalMenuItem() override;
+    virtual ~GtkSalMenuItem();
 
     sal_uInt16          mnId;               // Item ID
     MenuItemType        mnType;             // Item type
     bool                mbVisible;          // Item visibility.
+    Menu*               mpVCLMenu;          // VCL Menu into which this menu item is inserted
     GtkSalMenu*         mpParentMenu;       // The menu into which this menu item is inserted
     GtkSalMenu*         mpSubMenu;          // Submenu of this item (if defined)
 };

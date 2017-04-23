@@ -33,7 +33,7 @@ namespace chart
 class SeriesEntry : public ::SvTreeListEntry
 {
 public:
-    virtual ~SeriesEntry() override;
+    virtual ~SeriesEntry();
 
     /// the corresponding data series
     css::uno::Reference< css::chart2::XDataSeries > m_xDataSeries;

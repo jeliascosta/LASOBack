@@ -34,7 +34,7 @@ public:
     VPolarAngleAxis( const AxisProperties& rAxisProperties
            , const css::uno::Reference< css::util::XNumberFormatsSupplier >& xNumberFormatsSupplier
            , sal_Int32 nDimensionCount );
-    virtual ~VPolarAngleAxis() override;
+    virtual ~VPolarAngleAxis();
 
     virtual void createMaximumLabels() override;
     virtual void createLabels() override;

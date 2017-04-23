@@ -33,7 +33,7 @@ class SvxDoCapitals;
 class OutputDevice;
 class Printer;
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class Size;
 
 class EDITENG_DLLPUBLIC SvxFont : public vcl::Font
@@ -49,26 +49,26 @@ public:
     SvxFont( const SvxFont &rFont );
 
     // Methods for Superscript/Subscript
-    short GetEscapement() const { return nEsc; }
-    void SetEscapement( const short nNewEsc ) { nEsc = nNewEsc; }
+    inline short GetEscapement() const { return nEsc; }
+    inline void SetEscapement( const short nNewEsc ) { nEsc = nNewEsc; }
 
-    sal_uInt8 GetPropr() const { return nPropr; }
-    void SetPropr( const sal_uInt8 nNewPropr ) { nPropr = nNewPropr; }
-    void SetProprRel( const sal_uInt8 nNewPropr )
+    inline sal_uInt8 GetPropr() const { return nPropr; }
+    inline void SetPropr( const sal_uInt8 nNewPropr ) { nPropr = nNewPropr; }
+    inline void SetProprRel( const sal_uInt8 nNewPropr )
         { SetPropr( (sal_uInt8)( (long)nNewPropr * (long)nPropr / 100L ) ); }
 
     // Kerning
-    short GetFixKerning() const { return nKern; }
-    void  SetFixKerning( const short nNewKern ) { nKern = nNewKern; }
+    inline short GetFixKerning() const { return nKern; }
+    inline void  SetFixKerning( const short nNewKern ) { nKern = nNewKern; }
 
-    SvxCaseMap GetCaseMap() const { return eCaseMap; }
-    void    SetCaseMap( const SvxCaseMap eNew ) { eCaseMap = eNew; }
+    inline SvxCaseMap GetCaseMap() const { return eCaseMap; }
+    inline void    SetCaseMap( const SvxCaseMap eNew ) { eCaseMap = eNew; }
 
     // Is-Methods:
-    bool IsCaseMap() const { return SvxCaseMap::NotMapped != eCaseMap; }
-    bool IsCapital() const { return SvxCaseMap::SmallCaps == eCaseMap; }
-    bool IsKern() const { return 0 != nKern; }
-    bool IsEsc() const { return 0 != nEsc; }
+    inline bool IsCaseMap() const { return SVX_CASEMAP_NOT_MAPPED != eCaseMap; }
+    inline bool IsCapital() const { return SVX_CASEMAP_KAPITAELCHEN == eCaseMap; }
+    inline bool IsKern() const { return 0 != nKern; }
+    inline bool IsEsc() const { return 0 != nEsc; }
 
     // Consider Upper case, Lower case letters etc.
     OUString CalcCaseMap(const OUString &rTxt) const;
@@ -102,7 +102,7 @@ public:
                    const Point &rPos, const OUString &rTxt,
                    const sal_Int32 nIdx = 0, const sal_Int32 nLen = SAL_MAX_INT32 ) const;
 
-    static void DrawArrow( OutputDevice &rOut, const tools::Rectangle& rRect,
+    static void DrawArrow( OutputDevice &rOut, const Rectangle& rRect,
                            const Size& rSize, const Color& rCol, bool bLeft );
     SvxFont&    operator=( const SvxFont& rFont );
     SvxFont&    operator=( const Font& rFont );

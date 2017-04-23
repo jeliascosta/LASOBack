@@ -18,6 +18,11 @@
 
 shell TableObjectBar
 {
+    SID_TABLE_TOOLBOX // ole : no, status : ?
+    [
+        ExecMethod = Execute ;
+        StateMethod = GetState ;
+    ]
     SID_FRAME_LINESTYLE
     [
         ExecMethod = Execute;

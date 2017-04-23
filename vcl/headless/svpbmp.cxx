@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#ifndef IOS
+
 #include <sal/config.h>
 
 #include <cstring>
@@ -53,101 +55,87 @@ BitmapBuffer* ImplCreateDIB(
         || nBitCount == 32)
         && "Unsupported BitCount!");
 
-    if (!rSize.Width() || !rSize.Height())
-        return nullptr;
-
     BitmapBuffer* pDIB = nullptr;
 
-    try
+    if( rSize.Width() && rSize.Height() )
     {
-        pDIB = new BitmapBuffer;
-    }
-    catch (const std::bad_alloc&)
-    {
-        pDIB = nullptr;
-    }
-
-    if(!pDIB)
-        return nullptr;
-
-    const sal_uInt16 nColors = ( nBitCount <= 8 ) ? ( 1 << nBitCount ) : 0;
-
-    switch (nBitCount)
-    {
-        case 1:
-            pDIB->mnFormat = ScanlineFormat::N1BitLsbPal;
-            break;
-        case 4:
-            pDIB->mnFormat = ScanlineFormat::N4BitMsnPal;
-            break;
-        case 8:
-            pDIB->mnFormat = ScanlineFormat::N8BitPal;
-            break;
-        case 16:
+        try
         {
-#ifdef OSL_BIGENDIAN
-            pDIB->mnFormat= ScanlineFormat::N16BitTcMsbMask;
-#else
-            pDIB->mnFormat= ScanlineFormat::N16BitTcLsbMask;
-#endif
-            ColorMaskElement aRedMask(0xf800);
-            aRedMask.CalcMaskShift();
-            ColorMaskElement aGreenMask(0x07e0);
-            aGreenMask.CalcMaskShift();
-            ColorMaskElement aBlueMask(0x001f);
-            aBlueMask.CalcMaskShift();
-            pDIB->maColorMask = ColorMask(aRedMask, aGreenMask, aBlueMask);
-            break;
+            pDIB = new BitmapBuffer;
         }
-        default:
-            nBitCount = 32;
-            SAL_FALLTHROUGH;
-        case 32:
+        catch (const std::bad_alloc&)
         {
-            pDIB->mnFormat = SVP_CAIRO_FORMAT;
-            break;
-        }
-    }
-
-    pDIB->mnFormat |= ScanlineFormat::TopDown;
-    pDIB->mnWidth = rSize.Width();
-    pDIB->mnHeight = rSize.Height();
-    pDIB->mnScanlineSize = AlignedWidth4Bytes( pDIB->mnWidth * nBitCount );
-    pDIB->mnBitCount = nBitCount;
-
-    if( nColors )
-    {
-        pDIB->maPalette = rPal;
-        pDIB->maPalette.SetEntryCount( nColors );
-    }
-
-    const size_t size = pDIB->mnScanlineSize * pDIB->mnHeight;
-    if (size > SAL_MAX_INT32/2)
-    {
-        delete pDIB;
-        return nullptr;
-    }
-
-    try
-    {
-        pDIB->mpBits = new sal_uInt8[size];
-#ifdef __SANITIZE_ADDRESS__
-        if (!pDIB->mpBits)
-        {   // can only happen with ASAN allocator_may_return_null=1
-            delete pDIB;
             pDIB = nullptr;
         }
-        else
-#endif
+
+        if( pDIB )
         {
-            std::memset(pDIB->mpBits, 0, size);
+            const sal_uInt16 nColors = ( nBitCount <= 8 ) ? ( 1 << nBitCount ) : 0;
+
+            switch (nBitCount)
+            {
+                case 1:
+                    pDIB->mnFormat = ScanlineFormat::N1BitLsbPal;
+                    break;
+                case 4:
+                    pDIB->mnFormat = ScanlineFormat::N4BitMsnPal;
+                    break;
+                case 8:
+                    pDIB->mnFormat = ScanlineFormat::N8BitPal;
+                    break;
+                case 16:
+                {
+#ifdef OSL_BIGENDIAN
+                    pDIB->mnFormat= ScanlineFormat::N16BitTcMsbMask;
+#else
+                    pDIB->mnFormat= ScanlineFormat::N16BitTcLsbMask;
+#endif
+                    ColorMaskElement aRedMask(0xf800);
+                    aRedMask.CalcMaskShift();
+                    ColorMaskElement aGreenMask(0x07e0);
+                    aGreenMask.CalcMaskShift();
+                    ColorMaskElement aBlueMask(0x001f);
+                    aBlueMask.CalcMaskShift();
+                    pDIB->maColorMask = ColorMask(aRedMask, aGreenMask, aBlueMask);
+                    break;
+                }
+                default:
+                    nBitCount = 32;
+                    SAL_FALLTHROUGH;
+                case 32:
+                {
+                    pDIB->mnFormat = SVP_CAIRO_FORMAT;
+                    break;
+                }
+            }
+
+            pDIB->mnFormat |= ScanlineFormat::TopDown;
+            pDIB->mnWidth = rSize.Width();
+            pDIB->mnHeight = rSize.Height();
+            pDIB->mnScanlineSize = AlignedWidth4Bytes( pDIB->mnWidth * nBitCount );
+            pDIB->mnBitCount = nBitCount;
+
+            if( nColors )
+            {
+                pDIB->maPalette = rPal;
+                pDIB->maPalette.SetEntryCount( nColors );
+            }
+
+            try
+            {
+                size_t size = pDIB->mnScanlineSize * pDIB->mnHeight;
+                pDIB->mpBits = new sal_uInt8[size];
+                std::memset(pDIB->mpBits, 0, size);
+            }
+            catch (const std::bad_alloc&)
+            {
+                delete pDIB;
+                pDIB = nullptr;
+            }
         }
     }
-    catch (const std::bad_alloc&)
-    {
-        delete pDIB;
+    else
         pDIB = nullptr;
-    }
 
     return pDIB;
 }
@@ -176,18 +164,10 @@ bool SvpSalBitmap::Create(const SalBitmap& rBmp)
     {
         // TODO: reference counting...
         mpDIB = new BitmapBuffer( *rSalBmp.mpDIB );
-
-        const size_t size = mpDIB->mnScanlineSize * mpDIB->mnHeight;
-        if (size > SAL_MAX_INT32/2)
-        {
-            delete mpDIB;
-            mpDIB = nullptr;
-            return false;
-        }
-
         // TODO: get rid of this when BitmapBuffer gets copy constructor
         try
         {
+            size_t size = mpDIB->mnScanlineSize * mpDIB->mnHeight;
             mpDIB->mpBits = new sal_uInt8[size];
             std::memcpy(mpDIB->mpBits, rSalBmp.mpDIB->mpBits, size);
         }
@@ -267,11 +247,6 @@ bool SvpSalBitmap::GetSystemData( BitmapSystemData& )
     return false;
 }
 
-bool SvpSalBitmap::ScalingSupported() const
-{
-    return false;
-}
-
 bool SvpSalBitmap::Scale( const double& /*rScaleX*/, const double& /*rScaleY*/, BmpScaleFlag /*nScaleFlag*/ )
 {
     return false;
@@ -281,5 +256,7 @@ bool SvpSalBitmap::Replace( const ::Color& /*rSearchColor*/, const ::Color& /*rR
 {
     return false;
 }
+
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

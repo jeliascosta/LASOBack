@@ -91,7 +91,6 @@
 #include <vcl/dndhelp.hxx>
 #include <vcl/dockwin.hxx>
 #include <vcl/edit.hxx>
-#include <vcl/EnumContext.hxx>
 #include <vcl/field.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/fntstyle.hxx>
@@ -356,6 +355,7 @@
 #include <sfx2/printer.hxx>
 #include <sfx2/progress.hxx>
 #include <sfx2/request.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <sfx2/sidebar/Sidebar.hxx>
 #include <sfx2/sidebar/SidebarChildWindow.hxx>
 #include <sfx2/sidebar/Theme.hxx>
@@ -384,7 +384,7 @@
 #include <svl/poolitem.hxx>
 #include <svl/ptitem.hxx>
 #include <svl/slstitm.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/srchitem.hxx>
 #include <svl/stritem.hxx>
 #include <svl/style.hxx>
@@ -417,6 +417,7 @@
 #include <svx/hyperdlg.hxx>
 #include <svx/imapdlg.hxx>
 #include <svx/obj3d.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/ruler.hxx>
 #include <svx/sdmetitm.hxx>
 #include <svx/sdooitm.hxx>

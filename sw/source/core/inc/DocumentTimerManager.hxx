@@ -48,9 +48,9 @@ public:
     void StartBackgroundJobs() override;
 
     // Our own 'IdleTimer' calls the following method
-    DECL_LINK( DoIdleJobs, Timer *, void );
+    DECL_LINK_TYPED( DoIdleJobs, Idle *, void );
 
-    virtual ~DocumentTimerManager() override;
+    virtual ~DocumentTimerManager();
 
 private:
 

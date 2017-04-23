@@ -22,7 +22,6 @@
 #include <sal/config.h>
 #include <xmloff/dllapi.h>
 
-#include <memory>
 #include <vector>
 
 #include <xmloff/xmlstyle.hxx>
@@ -36,12 +35,12 @@ class XMLFontEncodingPropHdl;
 
 class XMLOFF_DLLPUBLIC XMLFontStylesContext : public SvXMLStylesContext
 {
-    std::unique_ptr<XMLFontFamilyNamePropHdl>    pFamilyNameHdl;
-    std::unique_ptr<XMLFontFamilyPropHdl>        pFamilyHdl;
-    std::unique_ptr<XMLFontPitchPropHdl>         pPitchHdl;
-    std::unique_ptr<XMLFontEncodingPropHdl>      pEncHdl;
+    XMLFontFamilyNamePropHdl    *pFamilyNameHdl;
+    XMLFontFamilyPropHdl        *pFamilyHdl;
+    XMLFontPitchPropHdl         *pPitchHdl;
+    XMLFontEncodingPropHdl      *pEncHdl;
 
-    std::unique_ptr<SvXMLTokenMap>           pFontStyleAttrTokenMap;
+    SvXMLTokenMap           *pFontStyleAttrTokenMap;
 
     rtl_TextEncoding        eDfltEncoding;
 
@@ -58,8 +57,7 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             rtl_TextEncoding eDfltEnc );
-
-    ~XMLFontStylesContext() override;
+    virtual ~XMLFontStylesContext();
 
     const SvXMLTokenMap& GetFontStyleAttrTokenMap() const
     {

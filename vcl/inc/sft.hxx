@@ -50,7 +50,6 @@
 #include <vcl/fontcapabilities.hxx>
 
 #include <vector>
-#include <cstdint>
 
 namespace vcl
 {
@@ -108,7 +107,7 @@ namespace vcl
         KT_MICROSOFT    = 2                 /**< Microsoft table                    */
     };
 
-/** Composite glyph flags definition */
+/* Composite glyph flags definition */
     enum CompositeFlags {
         ARG_1_AND_2_ARE_WORDS     = 1,
         ARGS_ARE_XY_VALUES        = 1<<1,
@@ -120,6 +119,22 @@ namespace vcl
         WE_HAVE_INSTRUCTIONS      = 1<<8,
         USE_MY_METRICS            = 1<<9,
         OVERLAP_COMPOUND          = 1<<10
+    };
+
+/** Flags for TrueType generation */
+    enum TTCreationFlags {
+        TTCF_AutoName = 1,                  /**< Automatically generate a compact 'name' table.
+                                               If this flag is not set, name table is generated
+                                               either from an array of NameRecord structs passed as
+                                               arguments or if the array is NULL, 'name' table
+                                               of the generated TrueType file will be a copy
+                                               of the name table of the original file.
+                                               If this flag is set the array of NameRecord structs
+                                               is ignored and a very compact 'name' table is automatically
+                                               generated. */
+
+        TTCF_IncludeOS2 = 2                 /** If this flag is set OS/2 table from the original font will be
+                                                copied to the subset */
     };
 
 /** Structure used by GetTTSimpleGlyphMetrics() and GetTTSimpleCharMetrics() functions */
@@ -183,13 +198,12 @@ namespace vcl
         int   winDescent;         /**< descender metric for Windows                            */
         bool  symbolEncoded;      /**< true: MS symbol encoded */
         int   rangeFlag;          /**< if set to 1 Unicode Range flags are applicable          */
-        sal_uInt32 ur1;           /**< bits 0 - 31 of Unicode Range flags                      */
-        sal_uInt32 ur2;           /**< bits 32 - 63 of Unicode Range flags                     */
-        sal_uInt32 ur3;           /**< bits 64 - 95 of Unicode Range flags                     */
-        sal_uInt32 ur4;           /**< bits 96 - 127 of Unicode Range flags                    */
-        sal_uInt8  panose[10];    /**< PANOSE classification number                            */
-        sal_uInt32 typeFlags;     /**< type flags (copyright bits + PS-OpenType flag)       */
-        sal_uInt16 fsSelection;   /**< OS/2 fsSelection */
+        sal_uInt32 ur1;               /**< bits 0 - 31 of Unicode Range flags                      */
+        sal_uInt32 ur2;               /**< bits 32 - 63 of Unicode Range flags                     */
+        sal_uInt32 ur3;               /**< bits 64 - 95 of Unicode Range flags                     */
+        sal_uInt32 ur4;               /**< bits 96 - 127 of Unicode Range flags                    */
+        sal_uInt8   panose[10];        /**< PANOSE classification number                            */
+        sal_uInt32 typeFlags;         /**< type flags (copyright bits + PS-OpenType flag)       */
     } TTGlobalFontInfo;
 
 #define TYPEFLAG_INVALID        0x8000000
@@ -253,6 +267,7 @@ namespace vcl
     int VCL_DLLPUBLIC OpenTTFontFile(const char *fname, sal_uInt32 facenum, TrueTypeFont** ttf);
 #endif
 
+    void getTTScripts(std::vector< sal_uInt32 > &rScriptTags, const unsigned char* pTable, size_t nLength);
     bool getTTCoverage(
         boost::optional<std::bitset<UnicodeCoverage::MAX_UC_ENUM>> & rUnicodeCoverage,
         boost::optional<std::bitset<CodePageCoverage::MAX_CP_ENUM>> & rCodePageCoverage,
@@ -374,11 +389,12 @@ namespace vcl
  */
     int  CreateTTFromTTGlyphs(TrueTypeFont  *ttf,
                               const char    *fname,
-                              sal_uInt16    *glyphArray,
-                              sal_uInt8     *encoding,
+                              sal_uInt16        *glyphArray,
+                              sal_uInt8          *encoding,
                               int            nGlyphs,
                               int            nNameRecs,
-                              NameRecord    *nr);
+                              NameRecord    *nr,
+                              sal_uInt32        flags);
 
 /**
  * Generates a new PostScript Type42 font and dumps it to <b>outf</b> file.
@@ -419,6 +435,43 @@ namespace vcl
  */
     TTSimpleGlyphMetrics *GetTTSimpleGlyphMetrics(TrueTypeFont *ttf, sal_uInt16 *glyphArray, int nGlyphs, bool vertical);
 
+/**
+ * Queries glyph metrics. Allocates an array of TTSimpleGlyphMetrics structs and returns it.
+ * This function behaves just like GetTTSimpleGlyphMetrics() but it takes a range of Unicode
+ * characters instead of an array of glyphs.
+ *
+ * @param ttf         pointer to the TrueTypeFont structure
+ * @param firstChar   Unicode value of the first character in the range
+ * @param nChars      number of Unicode characters in the range
+ * @param vertical    writing mode: false - horizontal, true - vertical
+ *
+ * @see GetTTSimpleGlyphMetrics
+ * @ingroup sft
+ *
+ */
+    TTSimpleGlyphMetrics *GetTTSimpleCharMetrics(TrueTypeFont *ttf, sal_uInt16 firstChar, int nChars, bool vertical);
+
+/**
+ * Maps a Unicode (UCS-2) string to a glyph array. Returns the number of glyphs in the array,
+ * which for TrueType fonts is always the same as the number of input characters.
+ *
+ * @param ttf         pointer to the TrueTypeFont structure
+ * @param str         pointer to a UCS-2 string
+ * @param nchars      number of characters in <b>str</b>
+ * @param glyphArray  pointer to the glyph array where glyph IDs are to be recorded.
+ * @param bvertical   vertical text
+ *
+ * @return MapString() returns -1 if the TrueType font has no usable 'cmap' tables.
+ *         Otherwise it returns the number of characters processed: <b>nChars</b>
+ *
+ * glyphIDs of TrueType fonts are 2 byte positive numbers. glyphID of 0 denotes a missing
+ * glyph and traditionally defaults to an empty square.
+ * glyphArray should be at least sizeof(sal_uInt16) * nchars bytes long. If glyphArray is NULL
+ * MapString() replaces the UCS-2 characters in str with glyphIDs.
+ * @ingroup sft
+ */
+    int VCL_DLLPUBLIC MapString(TrueTypeFont *ttf, sal_uInt16 *str, int nchars, sal_uInt16 *glyphArray, bool bvertical);
+
 #if defined(_WIN32) || defined(MACOSX) || defined(IOS)
 /**
  * Maps a Unicode (UCS-2) character to a glyph ID and returns it. Missing glyph has
@@ -426,11 +479,22 @@ namespace vcl
  *
  * @param ttf         pointer to the TrueTypeFont structure
  * @param ch          Unicode (UCS-2) character
+ * @param bvertical   flag to function that we want to find the vertical
+ *                    GlobalSUBstitution attribute
  * @return glyph ID, if the character is missing in the font, the return value is 0.
  * @ingroup sft
  */
-    sal_uInt16 MapChar(TrueTypeFont *ttf, sal_uInt16 ch);
+    sal_uInt16 MapChar(TrueTypeFont *ttf, sal_uInt16 ch, bool bvertical);
 #endif
+
+/**
+ * Returns 0 when the font does not substitute vertical glyphs
+ *
+ * @param ttf         pointer to the TrueTypeFont structure
+ * @param bvertical   flag to function that we want to find the vertical
+ *                    GlobalSUBstitution attribute
+ */
+    int DoesVerticalSubstitution( TrueTypeFont *ttf, int bvertical);
 
 /**
  * Returns global font information about the TrueType font.
@@ -442,20 +506,6 @@ namespace vcl
  *
  */
     void GetTTGlobalFontInfo(TrueTypeFont *ttf, TTGlobalFontInfo *info);
-
-/**
- * Returns fonts metrics.
- * @see TTGlobalFontInfo
- *
- * @param hhea        hhea table data
- * @param os2         OS/2 table data
- * @param info        pointer to a TTGlobalFontInfo structure
- * @ingroup sft
- *
- */
- void GetTTFontMterics(const std::vector<uint8_t>& hhea,
-                       const std::vector<uint8_t>& os2,
-                       TTGlobalFontInfo *info);
 
 /**
  * returns the number of glyphs in a font

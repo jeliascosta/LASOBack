@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <astenum.hxx>
+#include <idlc/astenum.hxx>
 
 #include <registry/version.h>
 #include <registry/writer.hxx>
@@ -43,7 +43,7 @@ AstConstant* AstEnum::checkValue(AstExpression* pExpr)
         AstDeclaration* pDecl = *iter;
         AstConstant* pConst = static_cast<AstConstant*>(pDecl);
 
-        if (pConst->getConstValue()->compareLong(pExpr))
+        if (pConst->getConstValue()->compare(pExpr))
             return pConst;
 
         ++iter;
@@ -102,6 +102,11 @@ bool AstEnum::dump(RegistryKey& rKey)
     }
 
     return true;
+}
+
+AstDeclaration* AstEnum::addDeclaration(AstDeclaration* pDecl)
+{
+    return AstScope::addDeclaration(pDecl);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

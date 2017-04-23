@@ -115,8 +115,8 @@ void CntContentTypeItem::SetValue( const OUString& rNewVal )
 
 bool CntContentTypeItem::GetPresentation(
     SfxItemPresentation ePres,
-    MapUnit          eCoreMetric,
-    MapUnit          ePresMetric,
+    SfxMapUnit          eCoreMetric,
+    SfxMapUnit          ePresMetric,
     OUString          & rText,
     const IntlWrapper * pIntlWrapper) const
 {

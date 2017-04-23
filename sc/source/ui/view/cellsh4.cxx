@@ -27,14 +27,8 @@
 #include "inputwin.hxx"
 #include "document.hxx"
 #include "sc.hrc"
-#include "scabstdlg.hxx"
 
 #include <vcl/svapp.hxx>
-
-VclPtr<vcl::Window> ScCellShell::GetFrameWin()
-{
-    return pFrameWin;
-}
 
 void ScCellShell::ExecuteCursor( SfxRequest& rReq )
 {
@@ -90,6 +84,12 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
             case SID_CURSORPAGEUP:
                 rReq.SetSlot(SID_CURSORPAGEUP_SEL);
             break;
+            case SID_CURSORPAGERIGHT:
+                rReq.SetSlot(SID_CURSORPAGERIGHT_SEL);
+            break;
+            case SID_CURSORPAGELEFT:
+                rReq.SetSlot(SID_CURSORPAGELEFT_SEL);
+            break;
             case SID_CURSORBLKDOWN:
                 rReq.SetSlot(SID_CURSORBLKDOWN_SEL);
             break;
@@ -125,22 +125,12 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
     else
         pTabViewShell->SetForceFocusOnCurCell(false);
 
-    // If ScrollLock key is active, cell cursor stays on the current cell while
-    // scrolling the grid.
-    bool bScrollLock = false;
-    KeyIndicatorState eState = GetFrameWin()->GetIndicatorState();
-    if (eState & KeyIndicatorState::SCROLLLOCK)
-        bScrollLock = true;
-
     //OS: once for all should do, however!
     pTabViewShell->ExecuteInputDirect();
     switch ( nSlotId )
     {
         case SID_CURSORDOWN:
-            if (bScrollLock)
-                pTabViewShell->ScrollY( nRepeat, SC_SPLIT_BOTTOM );
-            else
-                pTabViewShell->MoveCursorRel( 0, nRepeat, SC_FOLLOW_LINE, bSel, bKeep );
+            pTabViewShell->MoveCursorRel(   0,  nRepeat, SC_FOLLOW_LINE, bSel, bKeep );
             break;
 
         case SID_CURSORBLKDOWN:
@@ -148,10 +138,7 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
             break;
 
         case SID_CURSORUP:
-            if (bScrollLock)
-                pTabViewShell->ScrollY( -nRepeat, SC_SPLIT_BOTTOM);
-            else
-                pTabViewShell->MoveCursorRel( 0, -nRepeat, SC_FOLLOW_LINE, bSel, bKeep );
+            pTabViewShell->MoveCursorRel(   0,  -nRepeat, SC_FOLLOW_LINE, bSel, bKeep );
             break;
 
         case SID_CURSORBLKUP:
@@ -159,10 +146,7 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
             break;
 
         case SID_CURSORLEFT:
-            if (bScrollLock)
-                pTabViewShell->ScrollX( static_cast<SCsCOL>(-nRepeat * nRTLSign), SC_SPLIT_LEFT);
-            else
-                pTabViewShell->MoveCursorRel( static_cast<SCsCOL>(-nRepeat * nRTLSign), 0, SC_FOLLOW_LINE, bSel, bKeep );
+            pTabViewShell->MoveCursorRel( static_cast<SCsCOL>(-nRepeat * nRTLSign), 0, SC_FOLLOW_LINE, bSel, bKeep );
             break;
 
         case SID_CURSORBLKLEFT:
@@ -170,10 +154,7 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
             break;
 
         case SID_CURSORRIGHT:
-            if (bScrollLock)
-                pTabViewShell->ScrollX( static_cast<SCsCOL>(nRepeat * nRTLSign), SC_SPLIT_LEFT);
-            else
-                pTabViewShell->MoveCursorRel( static_cast<SCsCOL>(nRepeat * nRTLSign), 0, SC_FOLLOW_LINE, bSel, bKeep );
+            pTabViewShell->MoveCursorRel(   static_cast<SCsCOL>(nRepeat * nRTLSign), 0, SC_FOLLOW_LINE, bSel, bKeep );
             break;
 
         case SID_CURSORBLKRIGHT:
@@ -181,51 +162,19 @@ void ScCellShell::ExecuteCursor( SfxRequest& rReq )
             break;
 
         case SID_CURSORPAGEDOWN:
-            if (bScrollLock)
-            {
-                SCsCOL nPageX;
-                SCsROW nPageY;
-                pTabViewShell->GetPageMoveEndPosition( 0, nRepeat, nPageX, nPageY);
-                pTabViewShell->ScrollY( nPageY, SC_SPLIT_BOTTOM);
-            }
-            else
-                pTabViewShell->MoveCursorPage( 0, nRepeat, SC_FOLLOW_FIX, bSel, bKeep );
+            pTabViewShell->MoveCursorPage(  0, nRepeat, SC_FOLLOW_FIX, bSel, bKeep );
             break;
 
         case SID_CURSORPAGEUP:
-            if (bScrollLock)
-            {
-                SCsCOL nPageX;
-                SCsROW nPageY;
-                pTabViewShell->GetPageMoveEndPosition( 0, nRepeat, nPageX, nPageY);
-                pTabViewShell->ScrollY( -nPageY, SC_SPLIT_BOTTOM);
-            }
-            else
-                pTabViewShell->MoveCursorPage( 0, -nRepeat, SC_FOLLOW_FIX, bSel, bKeep );
+            pTabViewShell->MoveCursorPage(  0, -nRepeat, SC_FOLLOW_FIX, bSel, bKeep );
             break;
 
         case SID_CURSORPAGERIGHT_: //XXX !!!
-            if (bScrollLock)
-            {
-                SCsCOL nPageX;
-                SCsROW nPageY;
-                pTabViewShell->GetPageMoveEndPosition( static_cast<SCsCOL>(nRepeat), 0, nPageX, nPageY);
-                pTabViewShell->ScrollX( nPageX, SC_SPLIT_LEFT);
-            }
-            else
-                pTabViewShell->MoveCursorPage( static_cast<SCsCOL>(nRepeat), 0, SC_FOLLOW_FIX, bSel, bKeep );
+            pTabViewShell->MoveCursorPage( static_cast<SCsCOL>(nRepeat), 0, SC_FOLLOW_FIX, bSel, bKeep );
             break;
 
         case SID_CURSORPAGELEFT_: //XXX !!!
-            if (bScrollLock)
-            {
-                SCsCOL nPageX;
-                SCsROW nPageY;
-                pTabViewShell->GetPageMoveEndPosition( static_cast<SCsCOL>(nRepeat), 0, nPageX, nPageY);
-                pTabViewShell->ScrollX( -nPageX, SC_SPLIT_LEFT);
-            }
-            else
-                pTabViewShell->MoveCursorPage( static_cast<SCsCOL>(-nRepeat), 0, SC_FOLLOW_FIX, bSel, bKeep );
+            pTabViewShell->MoveCursorPage( static_cast<SCsCOL>(-nRepeat), 0, SC_FOLLOW_FIX, bSel, bKeep );
             break;
 
         default:
@@ -374,8 +323,8 @@ void ScCellShell::ExecuteMove( SfxRequest& rReq )
                 if ( pReqArgs && pReqArgs->HasItem( FN_PARAM_1, &pColItem ) &&
                      pReqArgs->HasItem( FN_PARAM_2, &pModifierItem ) )
                 {
-                    SCCOL nCol = static_cast<SCCOL>(static_cast<const SfxInt32Item*>(pColItem)->GetValue());
-                    sal_Int16 nModifier = static_cast<const SfxInt16Item*>(pModifierItem)->GetValue();
+                    SCCOL nCol = static_cast<SCCOL>(static_cast<const SfxInt32Item*>(pColItem)->GetValue());;
+                    sal_Int16 nModifier = static_cast<sal_Int16>(static_cast<const SfxInt16Item*>(pModifierItem)->GetValue());
 
                     pTabViewShell->MarkColumns( nCol, nModifier );
                 }
@@ -391,8 +340,8 @@ void ScCellShell::ExecuteMove( SfxRequest& rReq )
                 if ( pReqArgs && pReqArgs->HasItem( FN_PARAM_1, &pRowItem ) &&
                      pReqArgs->HasItem( FN_PARAM_2, &pModifierItem ) )
                 {
-                    SCROW nRow = static_cast<SCROW>(static_cast<const SfxInt32Item*>(pRowItem)->GetValue());
-                    sal_Int16 nModifier = static_cast<const SfxInt16Item*>(pModifierItem)->GetValue();
+                    SCROW nRow = static_cast<SCROW>(static_cast<const SfxInt32Item*>(pRowItem)->GetValue());;
+                    sal_Int16 nModifier = static_cast<sal_Int16>(static_cast<const SfxInt16Item*>(pModifierItem)->GetValue());
 
                     pTabViewShell->MarkRows( nRow, nModifier );
                 }

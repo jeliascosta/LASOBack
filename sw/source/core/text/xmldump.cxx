@@ -22,7 +22,6 @@
 #include <anchoredobject.hxx>
 #include <libxml/xmlwriter.h>
 #include <SwPortionHandler.hxx>
-#include <view.hxx>
 #include <svx/svdobj.hxx>
 
 class XmlPortionDumper:public SwPortionHandler
@@ -104,6 +103,10 @@ class XmlPortionDumper:public SwPortionHandler
   public:
 
     explicit XmlPortionDumper( xmlTextWriterPtr some_writer ):writer( some_writer ), ofs( 0 )
+    {
+    }
+
+    virtual ~ XmlPortionDumper(  )
     {
     }
 
@@ -212,8 +215,6 @@ namespace
     xmlTextWriterPtr lcl_createDefaultWriter()
     {
         xmlTextWriterPtr writer = xmlNewTextWriterFilename( "layout.xml", 0 );
-        xmlTextWriterSetIndent(writer,1);
-        xmlTextWriterSetIndentString(writer, BAD_CAST("  "));
         xmlTextWriterStartDocument( writer, nullptr, nullptr, nullptr );
         return writer;
     }
@@ -292,14 +293,9 @@ void SwFrame::dumpAsXml( xmlTextWriterPtr writer ) const
         if (IsRootFrame())
         {
             const SwRootFrame* pRootFrame = static_cast<const SwRootFrame*>(this);
-            xmlTextWriterStartElement(writer, BAD_CAST("sfxViewShells"));
-            SwView* pView = static_cast<SwView*>(SfxViewShell::GetFirst(true, checkSfxViewShell<SwView>));
-            while (pView)
-            {
-                if (pView->GetObjectShell() == pRootFrame->GetCurrShell()->GetSfxViewShell()->GetObjectShell())
-                    pView->dumpAsXml(writer);
-                pView = static_cast<SwView*>(SfxViewShell::GetNext(*pView, true, checkSfxViewShell<SwView>));
-            }
+            xmlTextWriterStartElement(writer, BAD_CAST("shells"));
+            for (SwViewShell& rViewShell : pRootFrame->GetCurrShell()->GetRingContainer())
+                rViewShell.dumpAsXml(writer);
             xmlTextWriterEndElement(writer);
         }
 
@@ -370,8 +366,8 @@ void SwFrame::dumpInfosAsXml( xmlTextWriterPtr writer ) const
 }
 
 // Hack: somehow conversion from "..." to va_list does
-// bomb on two string literals in the format.
-static const char* const TMP_FORMAT = "%" SAL_PRIuUINTPTR;
+// bomb on two string litterals in the format.
+static const char* TMP_FORMAT = "%" SAL_PRIuUINTPTR;
 
 void SwFrame::dumpAsXmlAttributes( xmlTextWriterPtr writer ) const
 {
@@ -437,7 +433,7 @@ void SwAnchoredObject::dumpAsXml( xmlTextWriterPtr writer ) const
 
 void SwFont::dumpAsXml(xmlTextWriterPtr writer) const
 {
-    xmlTextWriterStartElement(writer, BAD_CAST("SwFont"));
+    xmlTextWriterStartElement(writer, BAD_CAST("pFont"));
     xmlTextWriterWriteFormatAttribute(writer, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteFormatAttribute(writer, BAD_CAST("color"), "%s", GetColor().AsRGBHexString().toUtf8().getStr());
     xmlTextWriterEndElement(writer);

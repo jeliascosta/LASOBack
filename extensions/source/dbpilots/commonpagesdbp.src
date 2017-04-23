@@ -19,14 +19,17 @@
 
 #include "dbpresid.hrc"
 
-Bitmap BMP_TABLE
+
+Image IMG_TABLE
 {
-    File = "sx03188.png";
+    ImageBitmap = Bitmap { File = "sx03188.bmp"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
-Bitmap BMP_QUERY
+Image IMG_QUERY
 {
-    File = "sx03202.png";
+    ImageBitmap = Bitmap { File = "sx03202.bmp"; };
+    MaskColor = Color { Red = 0xFFFF; Green = 0x0; Blue = 0xFFFF; };
 };
 
 String RID_STR_OPTION_DB_FIELD_TITLE

@@ -82,10 +82,10 @@ class OGroupsSortingDialog :    public FloatingWindow
     css::uno::Reference< css::container::XNameAccess >    m_xColumns;
     bool                                                  m_bReadOnly;
 private:
-    DECL_LINK( OnControlFocusLost, Control&, void );
-    DECL_LINK( OnControlFocusGot, Control&, void );
-    DECL_LINK( LBChangeHdl, ListBox&, void );
-    DECL_LINK( OnFormatAction, ToolBox*, void );
+    DECL_LINK_TYPED( OnControlFocusLost, Control&, void );
+    DECL_LINK_TYPED( OnControlFocusGot, Control&, void );
+    DECL_LINK_TYPED( LBChangeHdl, ListBox&, void );
+    DECL_LINK_TYPED( OnFormatAction, ToolBox*, void );
 
     /** returns the groups
         @return the groups which now have to check which one changes
@@ -117,6 +117,10 @@ private:
     */
     sal_Int32 getColumnDataType(const OUString& _sColumnName);
 
+    /** shows the text given by the id in the multiline edit
+        @param  _nResId the string id
+    */
+    void showHelpText(sal_uInt16 _nResId);
     /** display the group props
         @param  _xGroup the group to display
     */
@@ -135,12 +139,12 @@ private:
     void operator =(OGroupsSortingDialog&) = delete;
 protected:
     // OPropertyChangeListener
-    virtual void    _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) override;
+    virtual void    _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException, std::exception) override;
 public:
     OGroupsSortingDialog( vcl::Window* pParent
                         ,bool _bReadOnly
                         ,::rptui::OReportController* _pController);
-    virtual ~OGroupsSortingDialog() override;
+    virtual ~OGroupsSortingDialog();
     virtual void dispose() override;
 
     /* updates the current view

@@ -18,7 +18,6 @@
  */
 
 #include <limits.h>
-#include <vcl/builder.hxx>
 #include <vcl/status.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/image.hxx>
@@ -74,7 +73,7 @@ OUString SvxPosSizeStatusBarControl::GetMetricStr_Impl( long nVal )
 
     if( FUNIT_NONE != eOutUnit )
     {
-        sMetric += OUStringLiteral1(cSep);
+        sMetric += OUString(cSep);
         sal_Int64 nFract = nConvVal % 100;
 
         if ( nFract < 0 )
@@ -90,78 +89,33 @@ OUString SvxPosSizeStatusBarControl::GetMetricStr_Impl( long nVal )
 
 SFX_IMPL_STATUSBAR_CONTROL(SvxPosSizeStatusBarControl, SvxSizeItem);
 
-class FunctionPopup_Impl
+class FunctionPopup_Impl : public PopupMenu
 {
-    VclBuilder        m_aBuilder;
-    VclPtr<PopupMenu> m_xMenu;
-    sal_uInt32        m_nSelected;
-    static sal_uInt16 id_to_function(const OString& rIdent);
-    sal_uInt16 function_to_id(sal_uInt16 nFunc) const;
 public:
     explicit FunctionPopup_Impl( sal_uInt32 nCheckEncoded );
-    sal_uInt16 Execute(vcl::Window* pWindow, const Point& rPopupPos) { return m_xMenu->Execute(pWindow, rPopupPos); }
-    sal_uInt32 GetSelected() const;
+
+    sal_uInt32          GetSelected() const { return nSelected; }
+
+private:
+    sal_uInt32          nSelected;
+
+    virtual void    Select() override;
 };
 
-sal_uInt16 FunctionPopup_Impl::id_to_function(const OString& rIdent)
-{
-    if (rIdent == "avg")
-        return PSZ_FUNC_AVG;
-    else if (rIdent == "counta")
-        return PSZ_FUNC_COUNT2;
-    else if (rIdent == "count")
-        return PSZ_FUNC_COUNT;
-    else if (rIdent == "max")
-        return PSZ_FUNC_MAX;
-    else if (rIdent == "min")
-        return PSZ_FUNC_MIN;
-    else if (rIdent == "sum")
-        return PSZ_FUNC_SUM;
-    else if (rIdent == "selection")
-        return PSZ_FUNC_SELECTION_COUNT;
-    else if (rIdent == "none")
-        return PSZ_FUNC_NONE;
-    return 0;
-}
 
-sal_uInt16 FunctionPopup_Impl::function_to_id(sal_uInt16 nFunc) const
-{
-    switch (nFunc)
-    {
-        case PSZ_FUNC_AVG:
-            return m_xMenu->GetItemId("avg");
-        case PSZ_FUNC_COUNT2:
-            return m_xMenu->GetItemId("counta");
-        case PSZ_FUNC_COUNT:
-            return m_xMenu->GetItemId("count");
-        case PSZ_FUNC_MAX:
-            return m_xMenu->GetItemId("max");
-        case PSZ_FUNC_MIN:
-            return m_xMenu->GetItemId("min");
-        case PSZ_FUNC_SUM:
-            return m_xMenu->GetItemId("sum");
-        case PSZ_FUNC_SELECTION_COUNT:
-            return m_xMenu->GetItemId("selection");
-        case PSZ_FUNC_NONE:
-            return m_xMenu->GetItemId("none");
-    }
-    return 0;
-}
-
-FunctionPopup_Impl::FunctionPopup_Impl(sal_uInt32 nCheckEncoded)
-    : m_aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/functionmenu.ui", "")
-    , m_xMenu(m_aBuilder.get_menu("menu"))
-    , m_nSelected(nCheckEncoded)
+FunctionPopup_Impl::FunctionPopup_Impl( sal_uInt32 nCheckEncoded ) :
+    PopupMenu( ResId( RID_SVXMNU_PSZ_FUNC, DIALOG_MGR() ) ),
+    nSelected( nCheckEncoded )
 {
     for ( sal_uInt16 nCheck = 1; nCheck < 32; ++nCheck )
         if ( nCheckEncoded & (1 << nCheck) )
-            m_xMenu->CheckItem(function_to_id(nCheck));
+            CheckItem( nCheck );
 }
 
-sal_uInt32 FunctionPopup_Impl::GetSelected() const
+
+void FunctionPopup_Impl::Select()
 {
-    sal_uInt32 nSelected = m_nSelected;
-    sal_uInt16 nCurItemId = id_to_function(m_xMenu->GetCurItemIdent());
+    sal_uInt16 nCurItemId = GetCurItemId();
     if ( nCurItemId == PSZ_FUNC_NONE )
         nSelected = ( 1 << PSZ_FUNC_NONE );
     else
@@ -171,7 +125,6 @@ sal_uInt32 FunctionPopup_Impl::GetSelected() const
         if ( !nSelected )
             nSelected = ( 1 << PSZ_FUNC_NONE );
     }
-    return nSelected;
 }
 
 struct SvxPosSizeStatusBarControl_Impl
@@ -221,13 +174,25 @@ SvxPosSizeStatusBarControl::SvxPosSizeStatusBarControl( sal_uInt16 _nSlotId,
     pImpl->bTable = false;
     pImpl->bHasMenu = false;
     pImpl->nFunctionSet = 0;
-    pImpl->aPosImage = Image(BitmapEx(ResId(RID_SVXBMP_POSITION, DIALOG_MGR())));
-    pImpl->aSizeImage = Image(BitmapEx(ResId(RID_SVXBMP_SIZE, DIALOG_MGR())));
+    pImpl->aPosImage = Image( ResId( RID_SVXBMP_POSITION, DIALOG_MGR() ) );
+    pImpl->aSizeImage = Image( ResId( RID_SVXBMP_SIZE, DIALOG_MGR() ) );
+
+    if ( rStb.GetDPIScaleFactor() > 1)
+    {
+        BitmapEx b = pImpl->aPosImage.GetBitmapEx();
+        b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
+        pImpl->aPosImage = Image(b);
+
+        b = pImpl->aSizeImage.GetBitmapEx();
+        b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
+        pImpl->aSizeImage = Image(b);
+    }
 
     addStatusListener( STR_POSITION);         // SID_ATTR_POSITION
     addStatusListener( STR_TABLECELL);   // SID_TABLE_CELL
     addStatusListener( STR_FUNC);    // SID_PSZ_FUNCTION
 }
+
 
 /*  [Description]
 
@@ -352,8 +317,8 @@ void SvxPosSizeStatusBarControl::Command( const CommandEvent& rCEvt )
         sal_uInt32 nSelect = pImpl->nFunctionSet;
         if (!nSelect)
             nSelect = ( 1 << PSZ_FUNC_NONE );
-        FunctionPopup_Impl aMenu(nSelect);
-        if (aMenu.Execute(&GetStatusBar(), rCEvt.GetMousePosPixel()))
+        FunctionPopup_Impl aMenu( nSelect );
+        if ( aMenu.Execute( &GetStatusBar(), rCEvt.GetMousePosPixel() ) )
         {
             nSelect = aMenu.GetSelected();
             if (nSelect)
@@ -370,6 +335,7 @@ void SvxPosSizeStatusBarControl::Command( const CommandEvent& rCEvt )
                 aArgs[0].Value = a;
 
                 execute( ".uno:StatusBarFunc", aArgs );
+//              GetBindings().GetDispatcher()->Execute( SID_PSZ_FUNCTION, SfxCallMode::RECORD, &aItem, 0L );
             }
         }
     }
@@ -388,7 +354,7 @@ void SvxPosSizeStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
 {
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
 
-    const tools::Rectangle& rRect = rUsrEvt.GetRect();
+    const Rectangle& rRect = rUsrEvt.GetRect();
     StatusBar& rBar = GetStatusBar();
     Point aItemPos = rBar.GetItemTextPos( GetId() );
     Color aOldLineColor = pDev->GetLineColor();
@@ -411,12 +377,9 @@ void SvxPosSizeStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
         OUString aStr = GetMetricStr_Impl( pImpl->aPos.X());
         aStr += " / ";
         aStr += GetMetricStr_Impl( pImpl->aPos.Y());
-        tools::Rectangle aRect(aPnt, Point(nSizePosX, rRect.Bottom()));
-        pDev->DrawRect(aRect);
-        vcl::Region aOrigRegion(pDev->GetClipRegion());
-        pDev->SetClipRegion(vcl::Region(aRect));
-        pDev->DrawText(aPnt, aStr);
-        pDev->SetClipRegion(aOrigRegion);
+        pDev->DrawRect(
+            Rectangle( aPnt, Point( nSizePosX, rRect.Bottom() ) ) );
+        pDev->DrawText( aPnt, aStr );
 
         // draw the size, when available
         aPnt.X() = nSizePosX;
@@ -430,15 +393,11 @@ void SvxPosSizeStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
             aStr = GetMetricStr_Impl( pImpl->aSize.Width() );
             aStr += " x ";
             aStr += GetMetricStr_Impl( pImpl->aSize.Height() );
-            aRect = tools::Rectangle(aDrwPnt, rRect.BottomRight());
-            pDev->DrawRect(aRect);
-            aOrigRegion = pDev->GetClipRegion();
-            pDev->SetClipRegion(vcl::Region(aRect));
-            pDev->DrawText(aPnt, aStr);
-            pDev->SetClipRegion(aOrigRegion);
+            pDev->DrawRect( Rectangle( aDrwPnt, rRect.BottomRight() ) );
+            pDev->DrawText( aPnt, aStr );
         }
         else
-            pDev->DrawRect( tools::Rectangle( aPnt, rRect.BottomRight() ) );
+            pDev->DrawRect( Rectangle( aPnt, rRect.BottomRight() ) );
     }
     else if ( pImpl->bTable )
     {

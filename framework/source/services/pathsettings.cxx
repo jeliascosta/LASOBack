@@ -183,174 +183,184 @@ public:
     explicit PathSettings(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
     /** free all used resources ... if it was not already done. */
-    virtual ~PathSettings() override;
+    virtual ~PathSettings();
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.framework.PathSettings");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         css::uno::Sequence< OUString > aSeq { "com.sun.star.util.PathSettings" };
         return aSeq;
     }
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& type) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& type) throw ( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire() throw () override
         { OWeakObject::acquire(); }
     virtual void SAL_CALL release() throw () override
         { OWeakObject::release(); }
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::util::XChangesListener
-    virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent) override;
+    virtual void SAL_CALL changesOccurred(const css::util::ChangesEvent& aEvent) throw (css::uno::RuntimeException, std::exception) override;
 
     // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& aSource) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& aSource)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     /**
      * XPathSettings attribute methods
      */
-    virtual OUString SAL_CALL getAddin() override
+    virtual OUString SAL_CALL getAddin() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Addin"); }
-    virtual void SAL_CALL setAddin(const OUString& p1) override
+    virtual void SAL_CALL setAddin(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Addin", p1); }
-    virtual OUString SAL_CALL getAutoCorrect() override
+    virtual OUString SAL_CALL getAutoCorrect() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("AutoCorrect"); }
-    virtual void SAL_CALL setAutoCorrect(const OUString& p1) override
+    virtual void SAL_CALL setAutoCorrect(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("AutoCorrect", p1); }
-    virtual OUString SAL_CALL getAutoText() override
+    virtual OUString SAL_CALL getAutoText() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("AutoText"); }
-    virtual void SAL_CALL setAutoText(const OUString& p1) override
+    virtual void SAL_CALL setAutoText(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("AutoText", p1); }
-    virtual OUString SAL_CALL getBackup() override
+    virtual OUString SAL_CALL getBackup() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Backup"); }
-    virtual void SAL_CALL setBackup(const OUString& p1) override
+    virtual void SAL_CALL setBackup(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Backup", p1); }
-    virtual OUString SAL_CALL getBasic() override
+    virtual OUString SAL_CALL getBasic() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Basic"); }
-    virtual void SAL_CALL setBasic(const OUString& p1) override
+    virtual void SAL_CALL setBasic(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Basic", p1); }
-    virtual OUString SAL_CALL getBitmap() override
+    virtual OUString SAL_CALL getBitmap() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Bitmap"); }
-    virtual void SAL_CALL setBitmap(const OUString& p1) override
+    virtual void SAL_CALL setBitmap(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Bitmap", p1); }
-    virtual OUString SAL_CALL getConfig() override
+    virtual OUString SAL_CALL getConfig() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Config"); }
-    virtual void SAL_CALL setConfig(const OUString& p1) override
+    virtual void SAL_CALL setConfig(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Config", p1); }
-    virtual OUString SAL_CALL getDictionary() override
+    virtual OUString SAL_CALL getDictionary() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Dictionary"); }
-    virtual void SAL_CALL setDictionary(const OUString& p1) override
+    virtual void SAL_CALL setDictionary(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Dictionary", p1); }
-    virtual OUString SAL_CALL getFavorite() override
+    virtual OUString SAL_CALL getFavorite() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Favorite"); }
-    virtual void SAL_CALL setFavorite(const OUString& p1) override
+    virtual void SAL_CALL setFavorite(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Favorite", p1); }
-    virtual OUString SAL_CALL getFilter() override
+    virtual OUString SAL_CALL getFilter() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Filter"); }
-    virtual void SAL_CALL setFilter(const OUString& p1) override
+    virtual void SAL_CALL setFilter(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Filter", p1); }
-    virtual OUString SAL_CALL getGallery() override
+    virtual OUString SAL_CALL getGallery() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Gallery"); }
-    virtual void SAL_CALL setGallery(const OUString& p1) override
+    virtual void SAL_CALL setGallery(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Gallery", p1); }
-    virtual OUString SAL_CALL getGraphic() override
+    virtual OUString SAL_CALL getGraphic() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Graphic"); }
-    virtual void SAL_CALL setGraphic(const OUString& p1) override
+    virtual void SAL_CALL setGraphic(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Graphic", p1); }
-    virtual OUString SAL_CALL getHelp() override
+    virtual OUString SAL_CALL getHelp() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Help"); }
-    virtual void SAL_CALL setHelp(const OUString& p1) override
+    virtual void SAL_CALL setHelp(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Help", p1); }
-    virtual OUString SAL_CALL getLinguistic() override
+    virtual OUString SAL_CALL getLinguistic() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Linguistic"); }
-    virtual void SAL_CALL setLinguistic(const OUString& p1) override
+    virtual void SAL_CALL setLinguistic(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Linguistic", p1); }
-    virtual OUString SAL_CALL getModule() override
+    virtual OUString SAL_CALL getModule() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Module"); }
-    virtual void SAL_CALL setModule(const OUString& p1) override
+    virtual void SAL_CALL setModule(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Module", p1); }
-    virtual OUString SAL_CALL getPalette() override
+    virtual OUString SAL_CALL getPalette() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Palette"); }
-    virtual void SAL_CALL setPalette(const OUString& p1) override
+    virtual void SAL_CALL setPalette(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Palette", p1); }
-    virtual OUString SAL_CALL getPlugin() override
+    virtual OUString SAL_CALL getPlugin() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Plugin"); }
-    virtual void SAL_CALL setPlugin(const OUString& p1) override
+    virtual void SAL_CALL setPlugin(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Plugin", p1); }
-    virtual OUString SAL_CALL getStorage() override
+    virtual OUString SAL_CALL getStorage() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Storage"); }
-    virtual void SAL_CALL setStorage(const OUString& p1) override
+    virtual void SAL_CALL setStorage(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Storage", p1); }
-    virtual OUString SAL_CALL getTemp() override
+    virtual OUString SAL_CALL getTemp() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Temp"); }
-    virtual void SAL_CALL setTemp(const OUString& p1) override
+    virtual void SAL_CALL setTemp(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Temp", p1); }
-    virtual OUString SAL_CALL getTemplate() override
+    virtual OUString SAL_CALL getTemplate() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Template"); }
-    virtual void SAL_CALL setTemplate(const OUString& p1) override
+    virtual void SAL_CALL setTemplate(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Template", p1); }
-    virtual OUString SAL_CALL getUIConfig() override
+    virtual OUString SAL_CALL getUIConfig() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("UIConfig"); }
-    virtual void SAL_CALL setUIConfig(const OUString& p1) override
+    virtual void SAL_CALL setUIConfig(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("UIConfig", p1); }
-    virtual OUString SAL_CALL getUserConfig() override
+    virtual OUString SAL_CALL getUserConfig() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("UserConfig"); }
-    virtual void SAL_CALL setUserConfig(const OUString& p1) override
+    virtual void SAL_CALL setUserConfig(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("UserConfig", p1); }
-    virtual OUString SAL_CALL getUserDictionary() override
+    virtual OUString SAL_CALL getUserDictionary() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("UserDictionary"); }
-    virtual void SAL_CALL setUserDictionary(const OUString& p1) override
+    virtual void SAL_CALL setUserDictionary(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("UserDictionary", p1); }
-    virtual OUString SAL_CALL getWork() override
+    virtual OUString SAL_CALL getWork() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("Work"); }
-    virtual void SAL_CALL setWork(const OUString& p1) override
+    virtual void SAL_CALL setWork(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("Work", p1); }
-    virtual OUString SAL_CALL getBasePathShareLayer() override
+    virtual OUString SAL_CALL getBasePathShareLayer() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("UIConfig"); }
-    virtual void SAL_CALL setBasePathShareLayer(const OUString& p1) override
+    virtual void SAL_CALL setBasePathShareLayer(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("UIConfig", p1); }
-    virtual OUString SAL_CALL getBasePathUserLayer() override
+    virtual OUString SAL_CALL getBasePathUserLayer() throw (css::uno::RuntimeException, std::exception) override
         { return getStringProperty("UserConfig"); }
-    virtual void SAL_CALL setBasePathUserLayer(const OUString& p1) override
+    virtual void SAL_CALL setBasePathUserLayer(const OUString& p1) throw (css::uno::RuntimeException, std::exception) override
         { setStringProperty("UserConfig", p1); }
 
     /**
      * overrides to resolve inheritance ambiguity
      */
-    virtual void SAL_CALL setPropertyValue(const OUString& p1, const css::uno::Any& p2) override
+    virtual void SAL_CALL setPropertyValue(const OUString& p1, const css::uno::Any& p2)
+        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { ::cppu::OPropertySetHelper::setPropertyValue(p1, p2); }
-    virtual css::uno::Any SAL_CALL getPropertyValue(const OUString& p1) override
+    virtual css::uno::Any SAL_CALL getPropertyValue(const OUString& p1)
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { return ::cppu::OPropertySetHelper::getPropertyValue(p1); }
-    virtual void SAL_CALL addPropertyChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XPropertyChangeListener>& p2) override
+    virtual void SAL_CALL addPropertyChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XPropertyChangeListener>& p2)
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { ::cppu::OPropertySetHelper::addPropertyChangeListener(p1, p2); }
-    virtual void SAL_CALL removePropertyChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XPropertyChangeListener>& p2) override
+    virtual void SAL_CALL removePropertyChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XPropertyChangeListener>& p2)
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { ::cppu::OPropertySetHelper::removePropertyChangeListener(p1, p2); }
-    virtual void SAL_CALL addVetoableChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XVetoableChangeListener>& p2) override
+    virtual void SAL_CALL addVetoableChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XVetoableChangeListener>& p2)
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { ::cppu::OPropertySetHelper::addVetoableChangeListener(p1, p2); }
-    virtual void SAL_CALL removeVetoableChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XVetoableChangeListener>& p2) override
+    virtual void SAL_CALL removeVetoableChangeListener(const OUString& p1, const css::uno::Reference<css::beans::XVetoableChangeListener>& p2)
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
         { ::cppu::OPropertySetHelper::removeVetoableChangeListener(p1, p2); }
     /** read all configured paths and create all needed internal structures. */
     void impl_readAll();
 
 private:
-    virtual void SAL_CALL disposing() final override;
+    virtual void SAL_CALL disposing() override;
 
-    /// @throws css::uno::RuntimeException
-    OUString getStringProperty(const OUString& p1);
+    OUString getStringProperty(const OUString& p1)
+        throw(css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    void setStringProperty(const OUString& p1, const OUString& p2);
+    void setStringProperty(const OUString& p1, const OUString& p2)
+        throw(css::uno::RuntimeException);
 
     /** read a path info using the old cfg schema.
         This is needed for "migration on demand" reasons only.
@@ -426,9 +436,9 @@ private:
     virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any&  aConvertedValue,
             css::uno::Any& aOldValue,
             sal_Int32 nHandle,
-            const css::uno::Any& aValue ) override;
+            const css::uno::Any& aValue ) throw(css::lang::IllegalArgumentException) override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle,
-            const css::uno::Any&  aValue ) override;
+            const css::uno::Any&  aValue ) throw(css::uno::Exception, std::exception) override;
     virtual void SAL_CALL getFastPropertyValue( css::uno::Any&  aValue,
             sal_Int32 nHandle ) const override;
     // Avoid:
@@ -436,7 +446,7 @@ private:
     // warning:   by ‘virtual void {anonymous}::PathSettings::getFastPropertyValue(css::uno::Any&, sal_Int32) const’ [-Woverloaded-virtual]
     using cppu::OPropertySetHelper::getFastPropertyValue;
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
 
     /** factory methods to guarantee right (but on demand) initialized members ... */
     css::uno::Reference< css::util::XStringSubstitution > fa_getSubstitution();
@@ -477,6 +487,7 @@ void SAL_CALL PathSettings::disposing()
 }
 
 css::uno::Any SAL_CALL PathSettings::queryInterface( const css::uno::Type& _rType )
+    throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Any aRet = PathSettings_BASE::queryInterface( _rType );
     if ( !aRet.hasValue() )
@@ -485,6 +496,7 @@ css::uno::Any SAL_CALL PathSettings::queryInterface( const css::uno::Type& _rTyp
 }
 
 css::uno::Sequence< css::uno::Type > SAL_CALL PathSettings::getTypes(  )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return comphelper::concatSequences(
         PathSettings_BASE::getTypes(),
@@ -493,6 +505,7 @@ css::uno::Sequence< css::uno::Type > SAL_CALL PathSettings::getTypes(  )
 }
 
 void SAL_CALL PathSettings::changesOccurred(const css::util::ChangesEvent& aEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 c                 = aEvent.Changes.getLength();
     sal_Int32 i                 = 0;
@@ -522,6 +535,7 @@ void SAL_CALL PathSettings::changesOccurred(const css::util::ChangesEvent& aEven
 }
 
 void SAL_CALL PathSettings::disposing(const css::lang::EventObject& aSource)
+    throw(css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(cppu::WeakComponentImplHelperBase::rBHelper.rMutex);
 
@@ -530,6 +544,7 @@ void SAL_CALL PathSettings::disposing(const css::lang::EventObject& aSource)
 }
 
 OUString PathSettings::getStringProperty(const OUString& p1)
+    throw(css::uno::RuntimeException)
 {
     css::uno::Any a = ::cppu::OPropertySetHelper::getPropertyValue(p1);
     OUString s;
@@ -538,6 +553,7 @@ OUString PathSettings::getStringProperty(const OUString& p1)
 }
 
 void PathSettings::setStringProperty(const OUString& p1, const OUString& p2)
+    throw(css::uno::RuntimeException)
 {
     ::cppu::OPropertySetHelper::setPropertyValue(p1, css::uno::Any(p2));
 }
@@ -1225,10 +1241,12 @@ void PathSettings::impl_setPathValue(      sal_Int32      nID ,
              {
                 if (aChangePath.bIsSinglePath)
                 {
-                    throw css::uno::Exception(
-                        "The path '" + aChangePath.sPathName
-                        + "' is defined as SINGLE_PATH. It's sub set of internal paths can't be set.",
-                        static_cast< ::cppu::OWeakObject* >(this));
+                    OUStringBuffer sMsg(256);
+                    sMsg.append("The path '"    );
+                    sMsg.append     (aChangePath.sPathName);
+                    sMsg.append("' is defined as SINGLE_PATH. It's sub set of internal paths can't be set.");
+                    throw css::uno::Exception(sMsg.makeStringAndClear(),
+                                              static_cast< ::cppu::OWeakObject* >(this));
                 }
 
                 css::uno::Sequence<OUString> lTmpList;
@@ -1244,10 +1262,12 @@ void PathSettings::impl_setPathValue(      sal_Int32      nID ,
              {
                 if (aChangePath.bIsSinglePath)
                 {
-                    throw css::uno::Exception(
-                        "The path '" + aChangePath.sPathName
-                        + "' is defined as SINGLE_PATH. It's sub set of internal paths can't be set.",
-                        static_cast< ::cppu::OWeakObject* >(this));
+                    OUStringBuffer sMsg(256);
+                    sMsg.append("The path '"    );
+                    sMsg.append     (aChangePath.sPathName);
+                    sMsg.append("' is defined as SINGLE_PATH. It's sub set of internal paths can't be set.");
+                    throw css::uno::Exception(sMsg.makeStringAndClear(),
+                                              static_cast< ::cppu::OWeakObject* >(this));
                 }
 
                 css::uno::Sequence<OUString> lTmpList;
@@ -1365,6 +1385,7 @@ sal_Bool SAL_CALL PathSettings::convertFastPropertyValue(      css::uno::Any& aC
                                                                css::uno::Any& aOldValue      ,
                                                                sal_Int32      nHandle        ,
                                                          const css::uno::Any& aValue         )
+    throw(css::lang::IllegalArgumentException)
 {
     // throws NoSuchElementException !
     css::uno::Any aCurrentVal = impl_getPathValue(nHandle);
@@ -1378,6 +1399,7 @@ sal_Bool SAL_CALL PathSettings::convertFastPropertyValue(      css::uno::Any& aC
 
 void SAL_CALL PathSettings::setFastPropertyValue_NoBroadcast(      sal_Int32      nHandle,
                                                              const css::uno::Any& aValue )
+    throw(css::uno::Exception, std::exception)
 {
     // throws NoSuchElement- and IllegalArgumentException !
     impl_setPathValue(nHandle, aValue);
@@ -1395,6 +1417,7 @@ void SAL_CALL PathSettings::getFastPropertyValue(css::uno::Any& aValue ,
 }
 
 css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL PathSettings::getPropertySetInfo()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return css::uno::Reference< css::beans::XPropertySetInfo >(
             ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper()));

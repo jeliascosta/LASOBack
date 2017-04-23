@@ -23,7 +23,6 @@
 #include "saxbuilder.hxx"
 
 #include <com/sun/star/xml/dom/DocumentBuilder.hpp>
-#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
@@ -65,21 +64,25 @@ namespace DOM
     }
 
     Sequence< OUString > SAL_CALL CSAXDocumentBuilder::getSupportedServiceNames()
+        throw (RuntimeException, std::exception)
     {
         return CSAXDocumentBuilder::_getSupportedServiceNames();
     }
 
     OUString SAL_CALL CSAXDocumentBuilder::getImplementationName()
+        throw (RuntimeException, std::exception)
     {
         return CSAXDocumentBuilder::_getImplementationName();
     }
 
     sal_Bool SAL_CALL CSAXDocumentBuilder::supportsService(const OUString& aServiceName)
+        throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, aServiceName);
     }
 
     SAXDocumentBuilderState SAL_CALL CSAXDocumentBuilder::getState()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -87,6 +90,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::reset()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -98,6 +102,7 @@ namespace DOM
     }
 
     Reference< XDocument > SAL_CALL CSAXDocumentBuilder::getDocument()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -108,6 +113,7 @@ namespace DOM
     }
 
     Reference< XDocumentFragment > SAL_CALL CSAXDocumentBuilder::getDocumentFragment()
+         throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -117,6 +123,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::startDocumentFragment(const Reference< XDocument >& ownerDoc)
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -133,6 +140,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::endDocumentFragment()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -149,7 +157,7 @@ namespace DOM
 
     // document handler
 
-    void SAL_CALL  CSAXDocumentBuilder::startDocument()
+    void SAL_CALL  CSAXDocumentBuilder::startDocument() throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -165,7 +173,7 @@ namespace DOM
         m_aState = SAXDocumentBuilderState_BUILDING_DOCUMENT;
     }
 
-    void SAL_CALL CSAXDocumentBuilder::endDocument()
+    void SAL_CALL CSAXDocumentBuilder::endDocument() throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -181,6 +189,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::startElement(const OUString& aName, const Reference< XAttributeList>& attribs)
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -281,6 +290,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::endElement(const OUString& aName)
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -309,6 +319,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::characters(const OUString& aChars)
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -322,6 +333,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::ignorableWhitespace(const OUString& )
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -332,6 +344,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::processingInstruction(const OUString& aTarget, const OUString& aData)
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 
@@ -346,6 +359,7 @@ namespace DOM
     }
 
     void SAL_CALL CSAXDocumentBuilder::setDocumentLocator(const Reference< XLocator >& aLocator)
+        throw (RuntimeException, SAXException, std::exception)
     {
         ::osl::MutexGuard g(m_Mutex);
 

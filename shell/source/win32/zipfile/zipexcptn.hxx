@@ -31,7 +31,7 @@ class RuntimeException : public std::exception
 {
 public:
     explicit RuntimeException(int Error);
-    virtual ~RuntimeException() throw() override;
+    virtual ~RuntimeException() throw();
 
     int GetErrorCode() const;
 
@@ -47,7 +47,7 @@ class ZipException : public RuntimeException
 public:
     explicit ZipException(int Error);
 
-    virtual const char* what() const throw() override;
+    virtual const char* what() const throw();
 };
 
 
@@ -57,12 +57,12 @@ class Win32Exception : public RuntimeException
 {
 public:
     explicit Win32Exception(int Error);
-    virtual ~Win32Exception() throw() override;
+    virtual ~Win32Exception() throw();
 
-    virtual const char* what() const throw() override;
+    virtual const char* what() const throw();
 
 private:
-    mutable char* m_MsgBuff;
+    void* m_MsgBuff;
 };
 
 

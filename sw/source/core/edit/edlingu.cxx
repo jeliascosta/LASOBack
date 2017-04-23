@@ -18,11 +18,11 @@
  */
 
 #include <com/sun/star/linguistic2/ProofreadingResult.hpp>
+#include <com/sun/star/linguistic2/XProofreader.hpp>
 #include <com/sun/star/linguistic2/XProofreadingIterator.hpp>
 #include <com/sun/star/text/XFlatParagraph.hpp>
 #include <com/sun/star/i18n/ScriptType.hpp>
 #include <comphelper/string.hxx>
-#include <o3tl/any.hxx>
 
 #include <unoflatpara.hxx>
 
@@ -42,7 +42,6 @@
 #include <IDocumentRedlineAccess.hxx>
 #include <rootfrm.hxx>
 #include <pam.hxx>
-#include <pamtyp.hxx>
 #include <swundo.hxx>
 #include <ndtxt.hxx>
 #include <viewopt.hxx>
@@ -75,21 +74,21 @@ class SwLinguIter
 public:
     SwLinguIter();
 
-    SwEditShell *GetSh()             { return pSh; }
+    inline SwEditShell *GetSh()             { return pSh; }
 
-    const SwPosition *GetEnd() const { return pEnd; }
-    void SetEnd( SwPosition* pNew ){ delete pEnd; pEnd = pNew; }
+    inline const SwPosition *GetEnd() const { return pEnd; }
+    inline void SetEnd( SwPosition* pNew ){ delete pEnd; pEnd = pNew; }
 
-    const SwPosition *GetStart() const { return pStart; }
-    void SetStart( SwPosition* pNew ){ delete pStart; pStart = pNew; }
+    inline const SwPosition *GetStart() const { return pStart; }
+    inline void SetStart( SwPosition* pNew ){ delete pStart; pStart = pNew; }
 
-    const SwPosition *GetCurr() const { return pCurr; }
-    void SetCurr( SwPosition* pNew ){ delete pCurr; pCurr = pNew; }
+    inline const SwPosition *GetCurr() const { return pCurr; }
+    inline void SetCurr( SwPosition* pNew ){ delete pCurr; pCurr = pNew; }
 
-    const SwPosition *GetCurrX() const { return pCurrX; }
-    void SetCurrX( SwPosition* pNew ){ delete pCurrX; pCurrX = pNew; }
+    inline const SwPosition *GetCurrX() const { return pCurrX; }
+    inline void SetCurrX( SwPosition* pNew ){ delete pCurrX; pCurrX = pNew; }
 
-    sal_uInt16& GetCursorCnt(){ return nCursorCnt; }
+    inline sal_uInt16& GetCursorCnt(){ return nCursorCnt; }
 
     // for the UI:
     void Start_( SwEditShell *pSh, SwDocPositions eStart,
@@ -116,11 +115,11 @@ class SwSpellIter : public SwLinguIter
     bool                                bBackToStartOfSentence;
     bool                                bMoveToEndOfSentence;
 
-    void    CreatePortion(uno::Reference< XSpellAlternatives > const & xAlt,
+    void    CreatePortion(uno::Reference< XSpellAlternatives > xAlt,
                 linguistic2::ProofreadingResult* pGrammarResult,
                 bool bIsField, bool bIsHidden);
 
-    void    AddPortion(uno::Reference< XSpellAlternatives > const & xAlt,
+    void    AddPortion(uno::Reference< XSpellAlternatives > xAlt,
                        linguistic2::ProofreadingResult* pGrammarResult,
                        const SpellContentPositions& rDeletedRedlines);
 public:
@@ -413,8 +412,8 @@ uno::Any SwConvIter::Continue( sal_uInt16* pPageCnt, sal_uInt16* pPageSt )
 bool SwHyphIter::IsAuto()
 {
     uno::Reference< beans::XPropertySet >  xProp( ::GetLinguPropertySet() );
-    return xProp.is() && *o3tl::doAccess<bool>(xProp->getPropertyValue(
-                                UPN_IS_HYPH_AUTO ));
+    return xProp.is() && *static_cast<sal_Bool const *>(xProp->getPropertyValue(
+                                UPN_IS_HYPH_AUTO ).getValue());
 }
 
 void SwHyphIter::ShowSelection()
@@ -617,7 +616,7 @@ bool SwEditShell::HasHyphIter()
 void SwEditShell::SetLinguRange( SwDocPositions eStart, SwDocPositions eEnd )
 {
     SwPaM *pCursor = GetCursor();
-    MakeFindRange( eStart, eEnd, pCursor );
+    MakeFindRange( static_cast<sal_uInt16>(eStart), static_cast<sal_uInt16>(eEnd), pCursor );
     if( *pCursor->GetPoint() > *pCursor->GetMark() )
         pCursor->Exchange();
 }
@@ -631,12 +630,14 @@ void SwEditShell::SpellStart(
     // do not spell if interactive spelling is active elsewhere
     if (!pConvArgs && !g_pSpellIter)
     {
+        OSL_ENSURE( !g_pSpellIter, "wer ist da schon am spellen?" );
         g_pSpellIter = new SwSpellIter;
         pLinguIter = g_pSpellIter;
     }
     // do not do text conversion if it is active elsewhere
     if (pConvArgs && !g_pConvIter)
     {
+        OSL_ENSURE( !g_pConvIter, "text conversion already active!" );
         g_pConvIter = new SwConvIter( *pConvArgs );
         pLinguIter = g_pConvIter;
     }
@@ -663,12 +664,14 @@ void SwEditShell::SpellEnd( SwConversionArgs *pConvArgs, bool bRestoreSelection 
 {
     if (!pConvArgs && g_pSpellIter && g_pSpellIter->GetSh() == this)
     {
+        OSL_ENSURE( g_pSpellIter, "where is my Iterator?" );
         g_pSpellIter->End_(bRestoreSelection);
         delete g_pSpellIter;
         g_pSpellIter = nullptr;
     }
     if (pConvArgs && g_pConvIter && g_pConvIter->GetSh() == this)
     {
+        OSL_ENSURE( g_pConvIter, "where is my Iterator?" );
         g_pConvIter->End_();
         delete g_pConvIter;
         g_pConvIter = nullptr;
@@ -751,6 +754,7 @@ void SwEditShell::HyphStart( SwDocPositions eStart, SwDocPositions eEnd )
     // do not hyphenate if interactive hyphenation is active elsewhere
     if (!g_pHyphIter)
     {
+        OSL_ENSURE( !g_pHyphIter, "who is already hyphenating?" );
         g_pHyphIter = new SwHyphIter;
         g_pHyphIter->Start( this, eStart, eEnd );
     }
@@ -759,9 +763,9 @@ void SwEditShell::HyphStart( SwDocPositions eStart, SwDocPositions eEnd )
 /// restore selections
 void SwEditShell::HyphEnd()
 {
-    assert(g_pHyphIter);
     if (g_pHyphIter->GetSh() == this)
     {
+        OSL_ENSURE( g_pHyphIter, "No Iterator" );
         g_pHyphIter->End();
         delete g_pHyphIter;
         g_pHyphIter = nullptr;
@@ -772,7 +776,6 @@ void SwEditShell::HyphEnd()
 uno::Reference< uno::XInterface >
     SwEditShell::HyphContinue( sal_uInt16* pPageCnt, sal_uInt16* pPageSt )
 {
-    assert(g_pHyphIter);
     if (g_pHyphIter->GetSh() != this)
         return nullptr;
 
@@ -789,6 +792,7 @@ uno::Reference< uno::XInterface >
             *pPageSt = 1;
     }
 
+    OSL_ENSURE( g_pHyphIter, "No Iterator" );
     //JP 18.07.95: prevent displaying selection on error messages. NO StartAction so that all
     //             Paints are also disabled.
     ++mnStartAction;
@@ -808,14 +812,14 @@ uno::Reference< uno::XInterface >
  */
 void SwEditShell::InsertSoftHyph( const sal_Int32 nHyphPos )
 {
-    assert(g_pHyphIter);
+    OSL_ENSURE( g_pHyphIter, "where is my Iterator?" );
     g_pHyphIter->InsertSoftHyph( nHyphPos );
 }
 
 /// ignore hyphenation
 void SwEditShell::HyphIgnore()
 {
-    assert(g_pHyphIter);
+    OSL_ENSURE( g_pHyphIter, "No Iterator" );
     //JP 18.07.95: prevent displaying selection on error messages. NO StartAction so that all
     //             Paints are also disabled.
     ++mnStartAction;
@@ -844,21 +848,21 @@ uno::Reference< XSpellAlternatives >
     SwPosition aPos( *pCursor->GetPoint() );
      Point aPt( *pPt );
     SwCursorMoveState eTmpState( MV_SETONLYTEXT );
-    SwTextNode *pNode = nullptr;
-    SwWrongList *pWrong = nullptr;
-    if (GetLayout()->GetCursorOfst( &aPos, aPt, &eTmpState ))
-        pNode = aPos.nNode.GetNode().GetTextNode();
-    if (nullptr != pNode)
-        pWrong = pNode->GetWrong();
-    if (nullptr != pWrong && !pNode->IsInProtectSect())
+    SwTextNode *pNode;
+    SwWrongList *pWrong;
+    if( GetLayout()->GetCursorOfst( &aPos, aPt, &eTmpState ) &&
+        nullptr != (pNode = aPos.nNode.GetNode().GetTextNode()) &&
+        nullptr != (pWrong = pNode->GetWrong()) &&
+        !pNode->IsInProtectSect() )
     {
         sal_Int32 nBegin = aPos.nContent.GetIndex();
         sal_Int32 nLen = 1;
         if( pWrong->InWrongWord(nBegin,nLen) && !pNode->IsSymbol(nBegin) )
         {
             const OUString aText(pNode->GetText().copy(nBegin, nLen));
-            OUString aWord = aText.replaceAll(OUStringLiteral1(CH_TXTATR_BREAKWORD), "")
-                                  .replaceAll(OUStringLiteral1(CH_TXTATR_INWORD), "");
+            OUString aWord( aText );
+            aWord = comphelper::string::remove(aWord, CH_TXTATR_BREAKWORD);
+            aWord = comphelper::string::remove(aWord, CH_TXTATR_INWORD);
 
             uno::Reference< XSpellChecker1 >  xSpell( ::GetSpellChecker() );
             if( xSpell.is() )
@@ -871,7 +875,7 @@ uno::Reference< XSpellAlternatives >
                     // Note: That could of course be done by clipping the
                     // resulting sequence but the current third party
                     // implementations result differs greatly if the number of
-                    // suggestions to be returned gets changed. Statistically
+                    // suggestions to be retuned gets changed. Statistically
                     // it gets much better if told to return e.g. only 7 strings
                     // than returning e.g. 16 suggestions and using only the
                     // first 7. Thus we hand down the value to use to that
@@ -956,13 +960,12 @@ bool SwEditShell::GetGrammarCorrection(
     SwPosition aPos( *pCursor->GetPoint() );
     Point aPt( *pPt );
     SwCursorMoveState eTmpState( MV_SETONLYTEXT );
-    SwTextNode *pNode = nullptr;
-    SwGrammarMarkUp *pWrong = nullptr;
-    if (GetLayout()->GetCursorOfst( &aPos, aPt, &eTmpState ))
-        pNode = aPos.nNode.GetNode().GetTextNode();
-    if (nullptr != pNode)
-        pWrong = pNode->GetGrammarCheck();
-    if (nullptr != pWrong && !pNode->IsInProtectSect())
+    SwTextNode *pNode;
+    SwGrammarMarkUp *pWrong;
+    if( GetLayout()->GetCursorOfst( &aPos, aPt, &eTmpState ) &&
+        nullptr != (pNode = aPos.nNode.GetNode().GetTextNode()) &&
+        nullptr != (pWrong = pNode->GetGrammarCheck()) &&
+        !pNode->IsInProtectSect() )
     {
         sal_Int32 nBegin = aPos.nContent.GetIndex();
         sal_Int32 nLen = 1;
@@ -1130,7 +1133,7 @@ void SwEditShell::ApplyChangedSentence(const svx::SpellPortions& rNewPortions, b
         // iterate over the new portions, beginning at the end to take advantage of the previously
         // saved content positions
 
-        mpDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::UI_TEXT_CORRECTION, nullptr );
+        mpDoc->GetIDocumentUndoRedo().StartUndo( UNDO_UI_TEXT_CORRECTION, nullptr );
         StartAction();
 
         SwPaM *pCursor = GetCursor();
@@ -1260,7 +1263,7 @@ void SwEditShell::ApplyChangedSentence(const svx::SpellPortions& rNewPortions, b
         // set continuation position for spell/grammar checking to the end of this sentence
         g_pSpellIter->SetCurr( new SwPosition(*pCursor->Start()) );
 
-        mpDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::UI_TEXT_CORRECTION, nullptr );
+        mpDoc->GetIDocumentUndoRedo().EndUndo( UNDO_UI_TEXT_CORRECTION, nullptr );
         EndAction();
     }
 }
@@ -1271,14 +1274,14 @@ static SpellContentPositions lcl_CollectDeletedRedlines(SwEditShell* pSh)
 {
     SpellContentPositions aRedlines;
     SwDoc* pDoc = pSh->GetDoc();
-    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineFlags() );
+    const bool bShowChg = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineMode() );
     if ( bShowChg )
     {
         SwPaM *pCursor = pSh->GetCursor();
         const SwPosition* pStartPos = pCursor->Start();
         const SwTextNode* pTextNode = pCursor->GetNode().GetTextNode();
 
-        SwRedlineTable::size_type nAct = pDoc->getIDocumentRedlineAccess().GetRedlinePos( *pTextNode, USHRT_MAX );
+        sal_uInt16 nAct = pDoc->getIDocumentRedlineAccess().GetRedlinePos( *pTextNode, USHRT_MAX );
         const sal_Int32 nStartIndex = pStartPos->nContent.GetIndex();
         for ( ; nAct < pDoc->getIDocumentRedlineAccess().GetRedlineTable().size(); nAct++ )
         {
@@ -1566,7 +1569,7 @@ static LanguageType lcl_GetLanguage(SwEditShell& rSh)
 }
 
 /// create a text portion at the given position
-void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > const & xAlt,
+void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > xAlt,
                         linguistic2::ProofreadingResult* pGrammarResult,
         bool bIsField, bool bIsHidden)
 {
@@ -1612,7 +1615,7 @@ void SwSpellIter::CreatePortion(uno::Reference< XSpellAlternatives > const & xAl
     }
 }
 
-void    SwSpellIter::AddPortion(uno::Reference< XSpellAlternatives > const & xAlt,
+void    SwSpellIter::AddPortion(uno::Reference< XSpellAlternatives > xAlt,
                                 linguistic2::ProofreadingResult* pGrammarResult,
                                 const SpellContentPositions& rDeletedRedlines)
 {

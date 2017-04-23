@@ -134,13 +134,19 @@ public:
     void                readVbaModules( StorageBase& rVbaPrjStrg );
     /** Imports (and creates) vba modules and user forms from the vba project records previously read.
       Note: ( expects that readVbaModules was already called ) */
-    void                importModulesAndForms( StorageBase& rVbaPrjStrg, const GraphicHelper& rGraphicHelper );
+    void                importModulesAndForms( StorageBase& rVbaPrjStrg, const GraphicHelper& rGraphicHelper, bool bDefaultColorBgr = true );
     /** Registers a macro attacher object. For details, see description of the
         VbaMacroAttacherBase class. */
     void                registerMacroAttacher( const VbaMacroAttacherRef& rxAttacher );
 
     /** Attaches VBA macros to objects registered via registerMacroAttacher(). */
     void                attachMacros();
+
+    /** Returns true, if the document contains at least one code module. */
+    bool                hasModules() const;
+
+    /** Returns true, if the document contains at least one dialog. */
+    bool                hasDialogs() const;
 
     void                setOleOverridesSink( css::uno::Reference< css::container::XNameContainer >&  rxOleOverridesSink ){ mxOleOverridesSink = rxOleOverridesSink; }
 
@@ -159,20 +165,21 @@ private:
     /** Returns the Basic or dialog library container. */
     css::uno::Reference< css::script::XLibraryContainer >
                         getLibraryContainer( sal_Int32 nPropId );
-    /** Opens a Basic or dialog library, creates missing if not found. */
+    /** Opens a Basic or dialog library (creates missing if specified). */
     css::uno::Reference< css::container::XNameContainer >
-                        openLibrary( sal_Int32 nPropId );
+                        openLibrary( sal_Int32 nPropId, bool bCreateMissing );
     /** Creates and returns the Basic library of the document used for import. */
-    css::uno::Reference< css::container::XNameContainer > const &
+    css::uno::Reference< css::container::XNameContainer >
                         createBasicLibrary();
     /** Creates and returns the dialog library of the document used for import. */
-    css::uno::Reference< css::container::XNameContainer > const &
+    css::uno::Reference< css::container::XNameContainer >
                         createDialogLibrary();
 
     /** Imports the VBA code modules and forms. */
     void                importVba(
                             StorageBase& rVbaPrjStrg,
-                            const GraphicHelper& rGraphicHelper );
+                            const GraphicHelper& rGraphicHelper,
+                            bool bDefaultColorBgr );
 
     /** Copies the entire VBA project storage to the passed document model. */
     void                copyStorage( StorageBase& rVbaPrjStrg );

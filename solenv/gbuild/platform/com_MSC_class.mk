@@ -40,15 +40,11 @@ $(call gb_Helper_abbreviate_dirs,\
 	mkdir -p $(dir $(1)) $(dir $(4)) && \
 	unset INCLUDE && \
 	$(if $(filter YES,$(CXXOBJECT_X64)), $(CXX_X64_BINARY), \
-		$(if $(filter %.c,$(3)), $(gb_CC), \
-			$(if $(filter -clr,$(2)), \
-				$(MSVC_CXX) -I$(SRCDIR)/solenv/clang-cl,$(gb_CXX)))) \
+		$(if $(filter %.c,$(3)), $(gb_CC), $(gb_CXX))) \
 		$(DEFS) \
 		$(gb_LTOFLAGS) \
 		$(2) \
-		$(if $(EXTERNAL_CODE), \
-			$(if $(filter -clr,$(2)),,$(if $(COM_IS_CLANG),-Wno-undef)), \
-			$(gb_DEFS_INTERNAL)) \
+		$(if $(EXTERNAL_CODE),$(if $(COM_IS_CLANG),-Wno-undef),$(gb_DEFS_INTERNAL)) \
 		$(if $(WARNINGS_NOT_ERRORS),,$(gb_CFLAGS_WERROR)) \
 		-Fd$(PDBFILE) \
 		$(PCHFLAGS) \
@@ -57,8 +53,7 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(INCLUDE) \
 		$(if $(filter YES,$(CXXOBJECT_X64)), -U_X86_ -D_AMD64_,) \
 		-c $(3) \
-		-Fo$(1)) $(if $(filter $(true),$(gb_SYMBOL)),/link /DEBUG:FASTLINK) \
-		$(call gb_create_deps,$(4),$(1),$(3))
+		-Fo$(1)) $(call gb_create_deps,$(4),$(1),$(3))
 endef
 
 # PrecompiledHeader class
@@ -110,7 +105,6 @@ endef
 
 gb_LinkTarget_CFLAGS := $(gb_CFLAGS)
 gb_LinkTarget_CXXFLAGS := $(gb_CXXFLAGS)
-gb_LinkTarget_CXXCLRFLAGS := $(gb_CXXCLRFLAGS)
 
 gb_LinkTarget_INCLUDE :=\
 	$(subst -I. , ,$(SOLARINC)) \
@@ -163,7 +157,6 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(foreach object,$(GENCXXOBJECTS),$(call gb_GenCxxObject_get_target,$(object))) \
 		$(foreach object,$(COBJECTS),$(call gb_CObject_get_target,$(object))) \
 		$(foreach object,$(GENCOBJECTS),$(call gb_GenCObject_get_target,$(object))) \
-		$(foreach object,$(CXXCLROBJECTS),$(call gb_CxxClrObject_get_target,$(object))) \
 		$(foreach object,$(ASMOBJECTS),$(call gb_AsmObject_get_target,$(object))) \
 		$(foreach extraobjectlist,$(EXTRAOBJECTLISTS),$(shell cat $(extraobjectlist))) \
 		$(PCHOBJS) $(NATIVERES)) && \
@@ -176,7 +169,7 @@ $(call gb_Helper_abbreviate_dirs,\
 		$(if $(filter YES,$(LIBRARY_X64)),,$(if $(filter YES,$(TARGETGUI)), -SUBSYSTEM:WINDOWS$(MSC_SUBSYSTEM_VERSION), -SUBSYSTEM:CONSOLE$(MSC_SUBSYSTEM_VERSION))) \
 		$(if $(filter YES,$(LIBRARY_X64)), -MACHINE:X64) \
 		$(if $(filter YES,$(LIBRARY_X64)), \
-			-LIBPATH:$(COMPATH)/lib/$(if $(filter 140,$(VCVER)),amd64,x64) \
+			-LIBPATH:$(COMPATH)/lib/amd64 \
 			-LIBPATH:$(WINDOWS_SDK_HOME)/lib/x64 \
 		    $(if $(filter 80 81 10,$(WINDOWS_SDK_VERSION)),-LIBPATH:$(WINDOWS_SDK_HOME)/lib/$(WINDOWS_SDK_LIB_SUBDIR)/um/x64) \
 		    $(if $(filter-out 120,$(VCVER)),-LIBPATH:$(UCRTSDKDIR)lib/$(UCRTVERSION)/ucrt/x64)) \
@@ -445,7 +438,7 @@ endef
 # PythonTest class
 
 gb_PythonTest_PRECOMMAND := $(gb_CppunitTest_CPPTESTPRECOMMAND)
-gb_PythonTest_DEPS := $(call gb_Package_get_target,python3) $(call gb_Executable_get_target,python)
+gb_PythonTest_DEPS := $(call gb_Package_get_target,python3)
 
 ifeq ($(strip $(CPPUNITTRACE)),TRUE)
 gb_CppunitTest_GDBTRACE := '$(DEVENV)' /debugexe
@@ -604,7 +597,7 @@ gb_UIMenubarTarget_UIMenubarTarget_platform :=
 
 # Python
 gb_Python_PRECOMMAND := PATH="$(shell cygpath -w $(INSTDIR)/program)" PYTHONHOME="$(INSTDIR)/program/python-core-$(PYTHON_VERSION)" PYTHONPATH="$(INSTDIR)/program/python-core-$(PYTHON_VERSION)/lib;$(INSTDIR)/program/python-core-$(PYTHON_VERSION)/lib/lib-dynload:$(INSTDIR)/program"
-gb_Python_INSTALLED_EXECUTABLE := $(INSTROOT)/$(LIBO_BIN_FOLDER)/python.exe
+gb_Python_INSTALLED_EXECUTABLE := $(INSTROOT)/$(LIBO_BIN_FOLDER)/python-core-$(PYTHON_VERSION)/bin/python.exe
 
 gb_ICU_PRECOMMAND := PATH="$(shell cygpath -w $(WORKDIR_FOR_BUILD)/UnpackedTarball/icu/source/lib)"
 

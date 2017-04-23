@@ -42,7 +42,7 @@ SvStream& WritePair( SvStream& rOStream, const Pair& rPair )
     return rOStream;
 }
 
-void tools::Rectangle::SetSize( const Size& rSize )
+void Rectangle::SetSize( const Size& rSize )
 {
     if ( rSize.Width() < 0 )
         nRight  = nLeft + rSize.Width() +1;
@@ -59,7 +59,7 @@ void tools::Rectangle::SetSize( const Size& rSize )
         nBottom = RECT_EMPTY;
 }
 
-tools::Rectangle& tools::Rectangle::Union( const tools::Rectangle& rRect )
+Rectangle& Rectangle::Union( const Rectangle& rRect )
 {
     if ( rRect.IsEmpty() )
         return *this;
@@ -77,18 +77,18 @@ tools::Rectangle& tools::Rectangle::Union( const tools::Rectangle& rRect )
     return *this;
 }
 
-tools::Rectangle& tools::Rectangle::Intersection( const tools::Rectangle& rRect )
+Rectangle& Rectangle::Intersection( const Rectangle& rRect )
 {
     if ( IsEmpty() )
         return *this;
     if ( rRect.IsEmpty() )
     {
-        *this = tools::Rectangle();
+        *this = Rectangle();
         return *this;
     }
 
     // Justify rectangle
-    tools::Rectangle aTmpRect( rRect );
+    Rectangle aTmpRect( rRect );
     Justify();
     aTmpRect.Justify();
 
@@ -100,12 +100,12 @@ tools::Rectangle& tools::Rectangle::Intersection( const tools::Rectangle& rRect 
 
     // Determine if intersection is empty
     if ( nRight < nLeft || nBottom < nTop )
-        *this = tools::Rectangle();
+        *this = Rectangle();
 
     return *this;
 }
 
-void tools::Rectangle::Justify()
+void Rectangle::Justify()
 {
     long nHelp;
 
@@ -124,7 +124,7 @@ void tools::Rectangle::Justify()
     }
 }
 
-bool tools::Rectangle::IsInside( const Point& rPoint ) const
+bool Rectangle::IsInside( const Point& rPoint ) const
 {
     if ( IsEmpty() )
         return false;
@@ -152,7 +152,7 @@ bool tools::Rectangle::IsInside( const Point& rPoint ) const
     return true;
 }
 
-bool tools::Rectangle::IsInside( const tools::Rectangle& rRect ) const
+bool Rectangle::IsInside( const Rectangle& rRect ) const
 {
     if ( IsInside( rRect.TopLeft() ) && IsInside( rRect.BottomRight() ) )
         return true;
@@ -160,15 +160,13 @@ bool tools::Rectangle::IsInside( const tools::Rectangle& rRect ) const
         return false;
 }
 
-bool tools::Rectangle::IsOver( const tools::Rectangle& rRect ) const
+bool Rectangle::IsOver( const Rectangle& rRect ) const
 {
     // If there's no intersection, they don't overlap
     return !GetIntersection( rRect ).IsEmpty();
 }
 
-namespace tools
-{
-SvStream& ReadRectangle( SvStream& rIStream, tools::Rectangle& rRect )
+SvStream& ReadRectangle( SvStream& rIStream, Rectangle& rRect )
 {
     sal_Int32 nTmpL(0), nTmpT(0), nTmpR(0), nTmpB(0);
 
@@ -182,7 +180,7 @@ SvStream& ReadRectangle( SvStream& rIStream, tools::Rectangle& rRect )
     return rIStream;
 }
 
-SvStream& WriteRectangle( SvStream& rOStream, const tools::Rectangle& rRect )
+SvStream& WriteRectangle( SvStream& rOStream, const Rectangle& rRect )
 {
     rOStream.WriteInt32( rRect.nLeft )
             .WriteInt32( rRect.nTop )
@@ -191,14 +189,10 @@ SvStream& WriteRectangle( SvStream& rOStream, const tools::Rectangle& rRect )
 
     return rOStream;
 }
-}
 
-OString tools::Rectangle::toString() const
+OString Rectangle::toString() const
 {
     std::stringstream ss;
-    // Note that this is not just used for debugging output but the
-    // format is parsed by external code (passed in callbacks to
-    // LibreOfficeKit clients). So don't change.
     ss << getX() << ", " << getY() << ", " << getWidth() << ", " << getHeight();
     return ss.str().c_str();
 }

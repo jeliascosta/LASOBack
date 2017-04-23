@@ -90,14 +90,14 @@ static sal_Int16 GetFilterFormat(const OUString& rExt)
 
 static MapUnit GetMapUnit( sal_Int32 nUnit )
 {
-    MapUnit aMapUnit( MapUnit::MapPixel );
+    MapUnit aMapUnit( MAP_PIXEL );
     switch( nUnit )
     {
-        case UNIT_INCH  :   aMapUnit = MapUnit::MapInch; break;
-        case UNIT_CM    :   aMapUnit = MapUnit::MapCM; break;
-        case UNIT_MM    :   aMapUnit = MapUnit::MapMM; break;
-        case UNIT_POINT :   aMapUnit = MapUnit::MapPoint; break;
-        case UNIT_PIXEL :   aMapUnit = MapUnit::MapPixel; break;
+        case UNIT_INCH  :   aMapUnit = MAP_INCH; break;
+        case UNIT_CM    :   aMapUnit = MAP_CM; break;
+        case UNIT_MM    :   aMapUnit = MAP_MM; break;
+        case UNIT_POINT :   aMapUnit = MAP_POINT; break;
+        case UNIT_PIXEL :   aMapUnit = MAP_PIXEL; break;
     }
     return aMapUnit;
 }
@@ -538,6 +538,7 @@ ExportDialog::ExportDialog(FltCallDialogParameter& rPara,
     , maOriginalSize(awt::Size(0, 0))
     , mbIsPixelFormat(bIsPixelFormat)
     , mbExportSelection(bExportSelection)
+    , mbPreserveAspectRatio(true)
 {
     get(mpMfSizeX, "widthmf-nospin");
     get(mpMfSizeY, "heightmf-nospin");
@@ -600,7 +601,7 @@ ExportDialog::ExportDialog(FltCallDialogParameter& rPara,
 
     mnFormat = GetFilterFormat( maExt );
 
-    Size aResolution( Application::GetDefaultDevice()->LogicToPixel( Size( 100, 100 ), MapUnit::MapCM ) );
+    Size aResolution( Application::GetDefaultDevice()->LogicToPixel( Size( 100, 100 ), MAP_CM ) );
     maResolution.Width = aResolution.Width();
     maResolution.Height= aResolution.Height();
     maOriginalSize = GetOriginalSize();
@@ -621,7 +622,7 @@ ExportDialog::ExportDialog(FltCallDialogParameter& rPara,
     mpLbSizeX->SetSelectHdl( LINK( this, ExportDialog, SelectListBoxHdl ) );
 
     if (mpSbCompression)
-        mpSbCompression->SetSlideHdl(LINK(this, ExportDialog, SbCompressionUpdateHdl));
+        mpSbCompression->SetScrollHdl(LINK(this, ExportDialog, SbCompressionUpdateHdl));
     if (mpNfCompression)
         mpNfCompression->SetModifyHdl(LINK(this, ExportDialog, SelectHdl));
 
@@ -716,7 +717,7 @@ void ExportDialog::createFilterOptions()
             if ((nQuality < 1 ) || (nQuality > 100))
                 nQuality = 75;
             get(mpSbCompression, "compressionjpgsb");
-            get(mpNfCompression, "compressionjpgnf");
+            get(mpNfCompression, "compressionjpgnf-nospin");
             mpSbCompression->SetRangeMin( 1 );
             mpSbCompression->SetRangeMax( 100 );
             mpNfCompression->SetMin( 1 );
@@ -734,7 +735,7 @@ void ExportDialog::createFilterOptions()
                 nCompression = 6;
 
             get(mpSbCompression, "compressionpngsb");
-            get(mpNfCompression, "compressionpngnf");
+            get(mpNfCompression, "compressionpngnf-nospin");
             mpSbCompression->SetRangeMin( 1 );
             mpSbCompression->SetRangeMax( 9 );
             mpNfCompression->SetMin( 1 );
@@ -820,7 +821,7 @@ void ExportDialog::setupControls()
         mpInfo->Show();
 }
 
-static OUString ImpValueOfInKB( sal_Int64 rVal )
+static OUString ImpValueOfInKB( const sal_Int64& rVal )
 {
     double fVal( static_cast<double>( rVal ) );
     fVal /= ( 1 << 10 );
@@ -834,11 +835,13 @@ static OUString ImpValueOfInKB( sal_Int64 rVal )
 
 void ExportDialog::updateControls()
 {
+    GetGraphicStream();
+
     // Size Controls
     if ( !mbIsPixelFormat )
     {
         awt::Size aSize100thmm( maSize );
-        Size aSize( LogicToLogic( Size( aSize100thmm.Width * 100, aSize100thmm.Height * 100 ), MapUnit::Map100thMM,
+        Size aSize( LogicToLogic( Size( aSize100thmm.Width * 100, aSize100thmm.Height * 100 ), MAP_100TH_MM,
             MapMode( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ) ) ) );
         mpMfSizeX->SetValue( aSize.Width() );
         mpMfSizeY->SetValue( aSize.Height() );
@@ -846,7 +849,7 @@ void ExportDialog::updateControls()
     else
     {
         MapUnit aMapUnit( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ) );
-        if ( aMapUnit == MapUnit::MapPixel )
+        if ( aMapUnit == MAP_PIXEL )
         {   // calculating pixel count via resolution and original graphic size
             mpMfSizeX->SetDecimalDigits( 0 );
             mpMfSizeY->SetDecimalDigits( 0 );
@@ -860,11 +863,11 @@ void ExportDialog::updateControls()
             double fRatio;
             switch( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ) )
             {
-                case MapUnit::MapInch : fRatio = static_cast< double >( maResolution.Width ) * 0.0254; break;
-                case MapUnit::MapMM :   fRatio = static_cast< double >( maResolution.Width ) * 0.001; break;
-                case MapUnit::MapPoint :fRatio = ( static_cast< double >( maResolution.Width ) * 0.0254 ) / 72.0; break;
+                case MAP_INCH : fRatio = static_cast< double >( maResolution.Width ) * 0.0254; break;
+                case MAP_MM :   fRatio = static_cast< double >( maResolution.Width ) * 0.001; break;
+                case MAP_POINT :fRatio = ( static_cast< double >( maResolution.Width ) * 0.0254 ) / 72.0; break;
                 default:
-                case MapUnit::MapCM :   fRatio = static_cast< double >( maResolution.Width ) * 0.01; break;
+                case MAP_CM :   fRatio = static_cast< double >( maResolution.Width ) * 0.01; break;
             }
             mpMfSizeX->SetValue( static_cast< sal_Int32 >( ( static_cast< double >( maSize.Width * 100 ) / fRatio ) + 0.5 ) );
             mpMfSizeY->SetValue( static_cast< sal_Int32 >( ( static_cast< double >( maSize.Height * 100 ) / fRatio ) + 0.5 ) );
@@ -882,8 +885,6 @@ void ExportDialog::updateControls()
 
     if (mpSbCompression && mpSbCompression->IsVisible() && mpNfCompression)
         mpSbCompression->SetThumbPos(mpNfCompression->GetValue());
-
-    GetGraphicStream();
 
     // updating estimated size
     sal_Int64 nRealFileSize( mpTempStream->Tell() );
@@ -977,20 +978,20 @@ void ExportDialog::dispose()
 |* stores values set in the ini-file
 |*
 \************************************************************************/
-IMPL_LINK_NOARG(ExportDialog, SelectHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, SelectHdl, Edit&, void)
 {
     updateControls();
 }
-IMPL_LINK_NOARG(ExportDialog, SelectListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, SelectListBoxHdl, ListBox&, void)
 {
     updateControls();
 }
-IMPL_LINK_NOARG(ExportDialog, UpdateHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, UpdateHdl, Button*, void)
 {
     updateControls();
 }
 
-IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeX, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, UpdateHdlMtfSizeX, Edit&, void)
 {
     double fRatio = static_cast< double >( maOriginalSize.Height ) / maOriginalSize.Width;
 
@@ -998,12 +999,12 @@ IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeX, Edit&, void)
     {
         switch( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ) )
         {
-            case MapUnit::MapInch :     maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.0254 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapCM :       maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.01 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapMM :       maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.001 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapPoint :    maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.0254 * mpMfSizeX->GetValue() / 100.0 * 72 + 0.5 ); break;
+            case MAP_INCH :     maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.0254 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_CM :       maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.01 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_MM :       maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.001 * mpMfSizeX->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_POINT :    maSize.Width = static_cast< sal_Int32 >( static_cast< double >( maResolution.Width ) * 0.0254 * mpMfSizeX->GetValue() / 100.0 * 72 + 0.5 ); break;
             default:
-            case MapUnit::MapPixel :    maSize.Width = mpMfSizeX->GetValue(); break;
+            case MAP_PIXEL :    maSize.Width = mpMfSizeX->GetValue(); break;
         }
         maSize.Height = static_cast< sal_Int32 >( fRatio * maSize.Width + 0.5 );
     }
@@ -1012,17 +1013,18 @@ IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeX, Edit&, void)
         Fraction aFract( 1, 100 );
         sal_Int32 nWidth = mpMfSizeX->GetValue();
         sal_Int32 nHeight= static_cast< sal_Int32 >( nWidth * fRatio );
-        const Size aSource( nWidth, nHeight );
+        const Size aSource( static_cast< sal_Int32 >( nWidth ), static_cast< sal_Int32 >( nHeight ) );
         MapMode aSourceMapMode( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ),Point(), aFract, aFract );
-        Size aDest( LogicToLogic( aSource, aSourceMapMode, MapUnit::Map100thMM ) );
+        Size aDest( LogicToLogic( aSource, aSourceMapMode, MAP_100TH_MM ) );
 
         maSize.Width = aDest.Width();
-        maSize.Height = aDest.Height();
+        if ( mbPreserveAspectRatio )
+            maSize.Height = aDest.Height();
     }
     updateControls();
 }
 
-IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeY, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, UpdateHdlMtfSizeY, Edit&, void)
 {
     double fRatio = static_cast< double >( maOriginalSize.Width ) / maOriginalSize.Height;
 
@@ -1030,12 +1032,12 @@ IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeY, Edit&, void)
     {
         switch( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ) )
         {
-            case MapUnit::MapInch :     maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.0254 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapCM :       maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.01 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapMM :       maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.001 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
-            case MapUnit::MapPoint :    maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.0254 * mpMfSizeY->GetValue() / 100.0 * 72 + 0.5 ); break;
+            case MAP_INCH :     maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.0254 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_CM :       maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.01 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_MM :       maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.001 * mpMfSizeY->GetValue() / 100.0 + 0.5 ); break;
+            case MAP_POINT :    maSize.Height = static_cast< sal_Int32 >( static_cast< double >( maResolution.Height ) * 0.0254 * mpMfSizeY->GetValue() / 100.0 * 72 + 0.5 ); break;
             default:
-            case MapUnit::MapPixel :    maSize.Height = mpMfSizeY->GetValue(); break;
+            case MAP_PIXEL :    maSize.Height = mpMfSizeY->GetValue(); break;
         }
         maSize.Width = static_cast< sal_Int32 >( fRatio * maSize.Height + 0.5 );
     }
@@ -1044,17 +1046,18 @@ IMPL_LINK_NOARG(ExportDialog, UpdateHdlMtfSizeY, Edit&, void)
         Fraction aFract( 1, 100 );
         sal_Int32 nHeight= mpMfSizeY->GetValue();
         sal_Int32 nWidth = static_cast< sal_Int32 >( nHeight * fRatio );
-        const Size aSource( nWidth, nHeight );
+        const Size aSource( static_cast< sal_Int32 >( nWidth ), static_cast< sal_Int32 >( nHeight ) );
         MapMode aSourceMapMode( GetMapUnit( mpLbSizeX->GetSelectEntryPos() ),Point(), aFract, aFract );
-        Size aDest( LogicToLogic( aSource, aSourceMapMode, MapUnit::Map100thMM ) );
+        Size aDest( LogicToLogic( aSource, aSourceMapMode, MAP_100TH_MM ) );
 
         maSize.Height = aDest.Height();
-        maSize.Width = aDest.Width();
+        if ( mbPreserveAspectRatio )
+            maSize.Width = aDest.Width();
     }
     updateControls();
 }
 
-IMPL_LINK_NOARG(ExportDialog, UpdateHdlNfResolution, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, UpdateHdlNfResolution, Edit&, void)
 {
     sal_Int32 nResolution = mpNfResolution->GetValue();
     if ( mpLbResolution->GetSelectEntryPos() == 0 )      // pixels / cm
@@ -1067,13 +1070,13 @@ IMPL_LINK_NOARG(ExportDialog, UpdateHdlNfResolution, Edit&, void)
     updateControls();
 }
 
-IMPL_LINK_NOARG(ExportDialog, SbCompressionUpdateHdl, Slider*, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, SbCompressionUpdateHdl, ScrollBar*, void)
 {
     mpNfCompression->SetValue( mpSbCompression->GetThumbPos() );
     updateControls();
 }
 
-IMPL_LINK_NOARG(ExportDialog, OK, Button*, void)
+IMPL_LINK_NOARG_TYPED(ExportDialog, OK, Button*, void)
 {
     // writing config parameter
 

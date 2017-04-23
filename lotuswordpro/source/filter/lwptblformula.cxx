@@ -125,8 +125,8 @@ bool LwpFormulaInfo::ReadCellID()
     LwpColumnSpecifier ColumnSpecifier;
     bool readSucceeded = true;
 
-    RowSpecifier.QuickRead(m_pObjStrm.get());
-    ColumnSpecifier.QuickRead(m_pObjStrm.get());
+    RowSpecifier.QuickRead(m_pObjStrm);
+    ColumnSpecifier.QuickRead(m_pObjStrm);
 
     m_aStack.push_back( new LwpFormulaCellAddr(ColumnSpecifier.ColumnID(cColumn),
                                                 RowSpecifier.RowID(m_nFormulaRow)) );
@@ -194,9 +194,9 @@ void LwpFormulaInfo::ReadExpression()
             case TK_MAXIMUM:
             case TK_AVERAGE:
                 {
-                    std::unique_ptr<LwpFormulaFunc> xFunc(new LwpFormulaFunc(TokenType));
-                    ReadArguments(*xFunc);
-                    m_aStack.push_back(xFunc.release());
+                    LwpFormulaFunc* pFunc = new LwpFormulaFunc(TokenType);
+                    ReadArguments(*pFunc);
+                    m_aStack.push_back(pFunc);
                 }
                 break;
 
@@ -262,11 +262,13 @@ void LwpFormulaInfo::MarkUnsupported(sal_uInt16 TokenType)
 void LwpFormulaInfo::ReadArguments(LwpFormulaFunc& aFunc)
 {
     sal_uInt16 NumberOfArguments = m_pObjStrm->QuickReaduInt16();
+    sal_uInt16 ArgumentDiskLength, Count;
+    sal_uInt8 ArgumentType;
 
-    for (sal_uInt16 Count = 0; Count < NumberOfArguments; Count++)
+    for (Count = 0; Count < NumberOfArguments; Count++)
     {
-        sal_uInt8 ArgumentType = (sal_uInt8) m_pObjStrm->QuickReaduInt16(); // written as lushort
-        sal_uInt16 ArgumentDiskLength = m_pObjStrm->QuickReaduInt16();
+        ArgumentType = (sal_uInt8) m_pObjStrm->QuickReaduInt16(); // written as lushort
+        ArgumentDiskLength = m_pObjStrm->QuickReaduInt16();
         bool bArgument = true;
 
         switch(ArgumentType)
@@ -297,9 +299,9 @@ void LwpFormulaInfo::ReadArguments(LwpFormulaFunc& aFunc)
                 break;
         }
 
-        if (bArgument && !m_aStack.empty())
+        if (bArgument)
         {
-            aFunc.AddArg(m_aStack.back());
+            aFunc.AddArg( m_aStack.back() );
             m_aStack.pop_back();
         }
     }
@@ -322,7 +324,7 @@ void LwpFormulaInfo::Read()
     m_pObjStrm->SeekRel(2);//flags, size in file: sal_uInt16
 
     LwpNotifyListPersistent cNotifyList;
-    cNotifyList.Read(m_pObjStrm.get());
+    cNotifyList.Read(m_pObjStrm);
 
     ReadExpression();
 

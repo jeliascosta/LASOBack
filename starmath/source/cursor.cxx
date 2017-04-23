@@ -16,58 +16,55 @@
 
 void SmCursor::Move(OutputDevice* pDev, SmMovementDirection direction, bool bMoveAnchor){
     SmCaretPosGraphEntry* NewPos = nullptr;
-    switch(direction)
-    {
+    switch(direction){
         case MoveLeft:
-            if (mpPosition)
-                NewPos = mpPosition->Left;
+        {
+            NewPos = mpPosition->Left;
             OSL_ENSURE(NewPos, "NewPos shouldn't be NULL here!");
-            break;
+        }break;
         case MoveRight:
-            if (mpPosition)
-                NewPos = mpPosition->Right;
+        {
+            NewPos = mpPosition->Right;
             OSL_ENSURE(NewPos, "NewPos shouldn't be NULL here!");
-            break;
+        }break;
         case MoveUp:
             //Implementation is practically identical to MoveDown, except for a single if statement
             //so I've implemented them together and added a direction == MoveDown to the if statements.
         case MoveDown:
-            if (mpPosition)
-            {
-                SmCaretLine from_line = SmCaretPos2LineVisitor(pDev, mpPosition->CaretPos).GetResult(),
-                            best_line,  //Best approximated line found so far
-                            curr_line;  //Current line
-                long dbp_sq = 0;        //Distance squared to best line
-                for(auto &pEntry : *mpGraph)
-                {
-                    //Reject it if it's the current position
-                    if(pEntry->CaretPos == mpPosition->CaretPos) continue;
-                    //Compute caret line
-                    curr_line = SmCaretPos2LineVisitor(pDev, pEntry->CaretPos).GetResult();
-                    //Reject anything above if we're moving down
-                    if(curr_line.GetTop() <= from_line.GetTop() && direction == MoveDown) continue;
-                    //Reject anything below if we're moving up
-                    if(curr_line.GetTop() + curr_line.GetHeight() >= from_line.GetTop() + from_line.GetHeight()
-                            && direction == MoveUp) continue;
-                    //Compare if it to what we have, if we have anything yet
-                    if(NewPos){
-                        //Compute distance to current line squared, multiplied with a horizontal factor
-                        long dp_sq = curr_line.SquaredDistanceX(from_line) * HORIZONTICAL_DISTANCE_FACTOR +
-                                     curr_line.SquaredDistanceY(from_line);
-                        //Discard current line if best line is closer
-                        if(dbp_sq <= dp_sq) continue;
-                    }
-                    //Take current line as the best
-                    best_line = curr_line;
-                    NewPos = pEntry.get();
-                    //Update distance to best line
-                    dbp_sq = best_line.SquaredDistanceX(from_line) * HORIZONTICAL_DISTANCE_FACTOR +
-                             best_line.SquaredDistanceY(from_line);
+        {
+            SmCaretLine from_line = SmCaretPos2LineVisitor(pDev, mpPosition->CaretPos).GetResult(),
+                        best_line,  //Best approximated line found so far
+                        curr_line;  //Current line
+            long dbp_sq = 0;        //Distance squared to best line
+            SmCaretPosGraphIterator it = mpGraph->GetIterator();
+            while(it.Next()){
+                //Reject it if it's the current position
+                if(it->CaretPos == mpPosition->CaretPos) continue;
+                //Compute caret line
+                curr_line = SmCaretPos2LineVisitor(pDev, it->CaretPos).GetResult();
+                //Reject anything above if we're moving down
+                if(curr_line.GetTop() <= from_line.GetTop() && direction == MoveDown) continue;
+                //Reject anything below if we're moving up
+                if(curr_line.GetTop() + curr_line.GetHeight() >= from_line.GetTop() + from_line.GetHeight()
+                        && direction == MoveUp) continue;
+                //Compare if it to what we have, if we have anything yet
+                if(NewPos){
+                    //Compute distance to current line squared, multiplied with a horizontal factor
+                    long dp_sq = curr_line.SquaredDistanceX(from_line) * HORIZONTICAL_DISTANCE_FACTOR +
+                                 curr_line.SquaredDistanceY(from_line);
+                    //Discard current line if best line is closer
+                    if(dbp_sq <= dp_sq) continue;
                 }
+                //Take current line as the best
+                best_line = curr_line;
+                NewPos = it.Current();
+                //Update distance to best line
+                dbp_sq = best_line.SquaredDistanceX(from_line) * HORIZONTICAL_DISTANCE_FACTOR +
+                         best_line.SquaredDistanceY(from_line);
             }
-            break;
+        }break;
         default:
-            assert(false);
+            SAL_WARN("starmath", "Movement direction not supported!");
     }
     if(NewPos){
         mpPosition = NewPos;
@@ -77,27 +74,29 @@ void SmCursor::Move(OutputDevice* pDev, SmMovementDirection direction, bool bMov
     }
 }
 
-void SmCursor::MoveTo(OutputDevice* pDev, const Point& pos, bool bMoveAnchor)
-{
+void SmCursor::MoveTo(OutputDevice* pDev, Point pos, bool bMoveAnchor){
+    SmCaretLine best_line,  //Best line found so far, when iterating
+                curr_line;  //Current line, when iterating
     SmCaretPosGraphEntry* NewPos = nullptr;
     long dp_sq = 0,     //Distance to current line squared
          dbp_sq = 1;    //Distance to best line squared
-    for(auto &pEntry : *mpGraph)
-    {
-        OSL_ENSURE(pEntry->CaretPos.IsValid(), "The caret position graph may not have invalid positions!");
+    SmCaretPosGraphIterator it = mpGraph->GetIterator();
+    while(it.Next()){
+        OSL_ENSURE(it->CaretPos.IsValid(), "The caret position graph may not have invalid positions!");
         //Compute current line
-        SmCaretLine curr_line = SmCaretPos2LineVisitor(pDev, pEntry->CaretPos).GetResult();
-        //Compute squared distance to current line
-        dp_sq = curr_line.SquaredDistanceX(pos) + curr_line.SquaredDistanceY(pos);
+        curr_line = SmCaretPos2LineVisitor(pDev, it->CaretPos).GetResult();
         //If we have a position compare to it
         if(NewPos){
+            //Compute squared distance to current line
+            dp_sq = curr_line.SquaredDistanceX(pos) + curr_line.SquaredDistanceY(pos);
             //If best line is closer, reject current line
             if(dbp_sq <= dp_sq) continue;
         }
         //Accept current position as the best
-        NewPos = pEntry.get();
+        best_line = curr_line;
+        NewPos = it.Current();
         //Update distance to best line
-        dbp_sq = dp_sq;
+        dbp_sq = best_line.SquaredDistanceX(pos) + best_line.SquaredDistanceY(pos);
     }
     if(NewPos){
         mpPosition = NewPos;
@@ -127,35 +126,31 @@ void SmCursor::BuildGraph(){
 
     //Restore anchor and position pointers
     if(_anchor.IsValid() || _position.IsValid()){
-        for(auto &pEntry : *mpGraph)
-        {
-            if(_anchor == pEntry->CaretPos)
-                mpAnchor = pEntry.get();
-            if(_position == pEntry->CaretPos)
-                mpPosition = pEntry.get();
+        SmCaretPosGraphIterator it = mpGraph->GetIterator();
+        while(it.Next()){
+            if(_anchor == it->CaretPos)
+                mpAnchor = it.Current();
+            if(_position == it->CaretPos)
+                mpPosition = it.Current();
         }
     }
     //Set position and anchor to first caret position
-    auto it = mpGraph->begin();
-    assert(it != mpGraph->end());
+    SmCaretPosGraphIterator it = mpGraph->GetIterator();
     if(!mpPosition)
-        mpPosition = it->get();
+        mpPosition = it.Next();
     if(!mpAnchor)
         mpAnchor = mpPosition;
 
-    assert(mpPosition);
-    assert(mpAnchor);
     OSL_ENSURE(mpPosition->CaretPos.IsValid(), "Position must be valid");
     OSL_ENSURE(mpAnchor->CaretPos.IsValid(), "Anchor must be valid");
 }
 
 bool SmCursor::SetCaretPosition(SmCaretPos pos){
-    for(auto &pEntry : *mpGraph)
-    {
-        if(pEntry->CaretPos == pos)
-        {
-            mpPosition = pEntry.get();
-            mpAnchor = pEntry.get();
+    SmCaretPosGraphIterator it = mpGraph->GetIterator();
+    while(it.Next()){
+        if(it->CaretPos == pos){
+            mpPosition = it.Current();
+            mpAnchor = it.Current();
             return true;
         }
     }
@@ -184,7 +179,7 @@ void SmCursor::DeletePrev(OutputDevice* pDev){
     assert(nLineOffset >= 0);
 
     //If we're in front of a node who's parent is a TABLE
-    if(pLineParent->GetType() == NTABLE && mpPosition->CaretPos.nIndex == 0 && nLineOffset > 0){
+    if(pLineParent->GetType() == NTABLE && mpPosition->CaretPos.Index == 0 && nLineOffset > 0){
         //Now we can merge with nLineOffset - 1
         BeginEdit();
         //Line to merge things into, so we can delete pLine
@@ -258,7 +253,7 @@ void SmCursor::Delete(){
 
     //Find an arbitrary selected node
     SmNode* pSNode = FindSelectedNode(mpTree);
-    assert(pSNode);
+    OSL_ENSURE(pSNode != nullptr, "There must be a selection when HasSelection is true!");
 
     //Find the topmost node of the line that holds the selection
     SmNode* pLine = FindTopMostNodeInLine(pSNode, true);
@@ -294,6 +289,9 @@ void SmCursor::InsertNodes(SmNodeList* pNewNodes){
     //Begin edit section
     BeginEdit();
 
+    //Position after insert should be after pNewNode
+    SmCaretPos PosAfterInsert = SmCaretPos(pNewNodes->back(), 1);
+
     //Get the current position
     const SmCaretPos pos = mpPosition->CaretPos;
 
@@ -319,10 +317,14 @@ void SmCursor::InsertNodes(SmNodeList* pNewNodes){
         insIt = pLineList->insert(it, *newIt);
         if(newIt == pNewNodes->begin())
             patchIt = insIt;
+        if((*newIt)->GetType() == NTEXT)
+            PosAfterInsert = SmCaretPos(*newIt, static_cast<SmTextNode*>(*newIt)->GetText().getLength());
+        else
+            PosAfterInsert = SmCaretPos(*newIt, 1);
     }
     //Patch the places we've changed stuff
                         PatchLineList(pLineList, patchIt);
-    SmCaretPos PosAfterInsert = PatchLineList(pLineList, it);
+    PosAfterInsert =    PatchLineList(pLineList, it);
     //Release list, we've taken the nodes
     delete pNewNodes;
     pNewNodes = nullptr;
@@ -331,31 +333,25 @@ void SmCursor::InsertNodes(SmNodeList* pNewNodes){
     FinishEdit(pLineList, pLineParent, nParentIndex, PosAfterInsert);
 }
 
-SmNodeList::iterator SmCursor::FindPositionInLineList(SmNodeList* pLineList,
-                                                      const SmCaretPos& rCaretPos)
-{
+SmNodeList::iterator SmCursor::FindPositionInLineList(SmNodeList* pLineList, SmCaretPos aCaretPos) {
     //Find iterator for position
     SmNodeList::iterator it;
     for(it = pLineList->begin(); it != pLineList->end(); ++it){
-        if(*it == rCaretPos.pSelectedNode)
-        {
-            if((*it)->GetType() == NTEXT)
-            {
+        if(*it == aCaretPos.pSelectedNode){
+            if((*it)->GetType() == NTEXT){
                 //Split textnode if needed
-                if(rCaretPos.nIndex > 0)
-                {
-                    SmTextNode* pText = static_cast<SmTextNode*>(rCaretPos.pSelectedNode);
-                    if (rCaretPos.nIndex == pText->GetText().getLength())
-                        return ++it;
-                    OUString str1 = pText->GetText().copy(0, rCaretPos.nIndex);
-                    OUString str2 = pText->GetText().copy(rCaretPos.nIndex);
+                if(aCaretPos.Index > 0){
+                    SmTextNode* pText = static_cast<SmTextNode*>(aCaretPos.pSelectedNode);
+                    OUString str1 = pText->GetText().copy(0, aCaretPos.Index);
+                    OUString str2 = pText->GetText().copy(aCaretPos.Index);
                     pText->ChangeText(str1);
                     ++it;
                     //Insert str2 as new text node
-                    assert(!str2.isEmpty());
-                    SmTextNode* pNewText = new SmTextNode(pText->GetToken(), pText->GetFontDesc());
-                    pNewText->ChangeText(str2);
-                    it = pLineList->insert(it, pNewText);
+                    if(!str2.isEmpty()){
+                        SmTextNode* pNewText = new SmTextNode(pText->GetToken(), pText->GetFontDesc());
+                        pNewText->ChangeText(str2);
+                        it = pLineList->insert(it, pNewText);
+                    }
                 }
             }else
                 ++it;
@@ -409,18 +405,24 @@ SmCaretPos SmCursor::PatchLineList(SmNodeList* pLineList, SmNodeList::iterator a
             --aIter; //Thus find node before aIter
         if(aIter == pLineList->begin())
             return SmCaretPos();
-        return SmCaretPos::GetPosAfter(*aIter);
+        if((*aIter)->GetType() == NTEXT)
+            return SmCaretPos(*aIter, static_cast<SmTextNode*>(*aIter)->GetText().getLength());
+        return SmCaretPos(*aIter, 1);
     }
     if(prev && next && next->GetType() == NPLACE && !SmNodeListParser::IsOperator(prev->GetToken())){
         aIter = pLineList->erase(aIter);
         delete next;
-        return SmCaretPos::GetPosAfter(prev);
+        if(prev->GetType() == NTEXT)
+            return SmCaretPos(prev, static_cast<SmTextNode*>(prev)->GetText().getLength());
+        return SmCaretPos(prev, 1);
     }
 
     //If we didn't do anything return
     if(!prev) //return an invalid to indicate we're in front of line
         return SmCaretPos();
-    return SmCaretPos::GetPosAfter(prev);
+    if(prev->GetType() == NTEXT)
+        return SmCaretPos(prev, static_cast<SmTextNode*>(prev)->GetText().getLength());
+    return SmCaretPos(prev, 1);
 }
 
 SmNodeList::iterator SmCursor::TakeSelectedNodesFromList(SmNodeList *pLineList,
@@ -488,7 +490,7 @@ void SmCursor::InsertSubSup(SmSubSup eSubSup) {
     SmNode *pLine;
     if(HasSelection()) {
         SmNode *pSNode = FindSelectedNode(mpTree);
-        assert(pSNode);
+        OSL_ENSURE(pSNode != nullptr, "There must be a selected node when HasSelection is true!");
         pLine = FindTopMostNodeInLine(pSNode, true);
     } else
         pLine = FindTopMostNodeInLine(mpPosition->CaretPos.pSelectedNode);
@@ -508,7 +510,7 @@ void SmCursor::InsertSubSup(SmSubSup eSubSup) {
     SmNodeList* pLineList = NodeToList(pLine);
 
     //Take the selection, and/or find iterator for current position
-    SmNodeList* pSelectedNodesList = new SmNodeList;
+    SmNodeList* pSelectedNodesList = new SmNodeList();
     SmNodeList::iterator it;
     if(HasSelection())
         it = TakeSelectedNodesFromList(pLineList, pSelectedNodesList);
@@ -517,7 +519,7 @@ void SmCursor::InsertSubSup(SmSubSup eSubSup) {
 
     //Find node that this should be applied to
     SmNode* pSubject;
-    bool bPatchLine = !pSelectedNodesList->empty(); //If the line should be patched later
+    bool bPatchLine = pSelectedNodesList->size() > 0; //If the line should be patched later
     if(it != pLineList->begin()) {
         --it;
         pSubject = *it;
@@ -569,7 +571,7 @@ void SmCursor::InsertSubSup(SmSubSup eSubSup) {
 
     //Find caret pos, that should be used after sub-/superscription.
     SmCaretPos PosAfterScript; //Leave invalid for first position
-    if (!pScriptLineList->empty())
+    if(pScriptLineList->size() > 0)
         PosAfterScript = SmCaretPos::GetPosAfter(pScriptLineList->back());
 
     //Parse pScriptLineList
@@ -629,7 +631,7 @@ bool SmCursor::InsertLimit(SmSubSup eSubSup) {
     } else {
         pLine = pSubSup->GetSubSup(eSubSup);
         SmNodeList* pLineList = NodeToList(pLine);
-        if (!pLineList->empty())
+        if(pLineList->size() > 0)
             PosAfterLimit = SmCaretPos::GetPosAfter(pLineList->back());
         pLine = SmNodeListParser().Parse(pLineList);
         delete pLineList;
@@ -658,7 +660,7 @@ void SmCursor::InsertBrackets(SmBracketType eBracketType) {
     SmNode *pLine;
     if(HasSelection()) {
         SmNode *pSNode = FindSelectedNode(mpTree);
-        assert(pSNode);
+        OSL_ENSURE(pSNode != nullptr, "There must be a selected node if HasSelection()");
         pLine = FindTopMostNodeInLine(pSNode, true);
     } else
         pLine = FindTopMostNodeInLine(mpPosition->CaretPos.pSelectedNode);
@@ -672,7 +674,7 @@ void SmCursor::InsertBrackets(SmBracketType eBracketType) {
     SmNodeList *pLineList = NodeToList(pLine);
 
     //Take the selection, and/or find iterator for current position
-    SmNodeList *pSelectedNodesList = new SmNodeList;
+    SmNodeList *pSelectedNodesList = new SmNodeList();
     SmNodeList::iterator it;
     if(HasSelection())
         it = TakeSelectedNodesFromList(pLineList, pSelectedNodesList);
@@ -716,26 +718,68 @@ SmNode *SmCursor::CreateBracket(SmBracketType eBracketType, bool bIsLeft) {
     SmToken aTok;
     if(bIsLeft){
         switch(eBracketType){
-            case SmBracketType::Round:
+            case NoneBrackets:
+                aTok = SmToken(TNONE, '\0', "none", TG::LBrace | TG::RBrace, 0);
+                break;
+            case RoundBrackets:
                 aTok = SmToken(TLPARENT, MS_LPARENT, "(", TG::LBrace, 5);
                 break;
-            case SmBracketType::Square:
+            case SquareBrackets:
                 aTok = SmToken(TLBRACKET, MS_LBRACKET, "[", TG::LBrace, 5);
                 break;
-            case SmBracketType::Curly:
+            case DoubleSquareBrackets:
+                aTok = SmToken(TLDBRACKET, MS_LDBRACKET, "ldbracket", TG::LBrace, 5);
+                break;
+            case LineBrackets:
+                aTok = SmToken(TLLINE, MS_VERTLINE, "lline", TG::LBrace, 5);
+                break;
+            case DoubleLineBrackets:
+                aTok = SmToken(TLDLINE, MS_DVERTLINE, "ldline", TG::LBrace, 5);
+                break;
+            case CurlyBrackets:
                 aTok = SmToken(TLBRACE, MS_LBRACE, "lbrace", TG::LBrace, 5);
+                break;
+            case AngleBrackets:
+                aTok = SmToken(TLANGLE, MS_LMATHANGLE, "langle", TG::LBrace, 5);
+                break;
+            case CeilBrackets:
+                aTok = SmToken(TLCEIL, MS_LCEIL, "lceil", TG::LBrace, 5);
+                break;
+            case FloorBrackets:
+                aTok = SmToken(TLFLOOR, MS_LFLOOR, "lfloor", TG::LBrace, 5);
                 break;
         }
     } else {
         switch(eBracketType) {
-            case SmBracketType::Round:
+            case NoneBrackets:
+                aTok = SmToken(TNONE, '\0', "none", TG::LBrace | TG::RBrace, 0);
+                break;
+            case RoundBrackets:
                 aTok = SmToken(TRPARENT, MS_RPARENT, ")", TG::RBrace, 5);
                 break;
-            case SmBracketType::Square:
+            case SquareBrackets:
                 aTok = SmToken(TRBRACKET, MS_RBRACKET, "]", TG::RBrace, 5);
                 break;
-            case SmBracketType::Curly:
+            case DoubleSquareBrackets:
+                aTok = SmToken(TRDBRACKET, MS_RDBRACKET, "rdbracket", TG::RBrace, 5);
+                break;
+            case LineBrackets:
+                aTok = SmToken(TRLINE, MS_VERTLINE, "rline", TG::RBrace, 5);
+                break;
+            case DoubleLineBrackets:
+                aTok = SmToken(TRDLINE, MS_DVERTLINE, "rdline", TG::RBrace, 5);
+                break;
+            case CurlyBrackets:
                 aTok = SmToken(TRBRACE, MS_RBRACE, "rbrace", TG::RBrace, 5);
+                break;
+            case AngleBrackets:
+                aTok = SmToken(TRANGLE, MS_RMATHANGLE, "rangle", TG::RBrace, 5);
+                break;
+            case CeilBrackets:
+                aTok = SmToken(TRCEIL, MS_RCEIL, "rceil", TG::RBrace, 5);
+                break;
+            case FloorBrackets:
+                aTok = SmToken(TRFLOOR, MS_RFLOOR, "rfloor", TG::RBrace, 5);
                 break;
         }
     }
@@ -751,7 +795,7 @@ bool SmCursor::InsertRow() {
     SmNode *pLine;
     if(HasSelection()) {
         SmNode *pSNode = FindSelectedNode(mpTree);
-        assert(pSNode);
+        OSL_ENSURE(pSNode != nullptr, "There must be a selected node if HasSelection()");
         pLine = FindTopMostNodeInLine(pSNode, true);
     } else
         pLine = FindTopMostNodeInLine(mpPosition->CaretPos.pSelectedNode);
@@ -802,7 +846,7 @@ bool SmCursor::InsertRow() {
 
     //If we're in the context of a table
     if(pTable) {
-        SmNodeList *pNewLineList = new SmNodeList;
+        SmNodeList *pNewLineList = new SmNodeList();
         //Move elements from pLineList to pNewLineList
         pNewLineList->splice(pNewLineList->begin(), *pLineList, it, pLineList->end());
         //Make sure it is valid again
@@ -857,7 +901,7 @@ bool SmCursor::InsertRow() {
 
     //Finish editing
     FinishEdit(pLineList, pLineParent, nParentIndex, PosAfterInsert);
-    //FinishEdit is actually used to handle situations where parent is an instance of
+    //FinishEdit is actually used to handle siturations where parent is an instance of
     //SmSubSupNode. In this case parent should always be a table or matrix, however, for
     //code reuse we just use FinishEdit() here too.
     return true;
@@ -870,7 +914,7 @@ void SmCursor::InsertFraction() {
     SmNode *pLine;
     if(HasSelection()) {
         SmNode *pSNode = FindSelectedNode(mpTree);
-        assert(pSNode);
+        OSL_ENSURE(pSNode != nullptr, "There must be a selected node when HasSelection is true!");
         pLine = FindTopMostNodeInLine(pSNode, true);
     } else
         pLine = FindTopMostNodeInLine(mpPosition->CaretPos.pSelectedNode);
@@ -887,7 +931,7 @@ void SmCursor::InsertFraction() {
     SmNodeList* pLineList = NodeToList(pLine);
 
     //Take the selection, and/or find iterator for current position
-    SmNodeList* pSelectedNodesList = new SmNodeList;
+    SmNodeList* pSelectedNodesList = new SmNodeList();
     SmNodeList::iterator it;
     if(HasSelection())
         it = TakeSelectedNodesFromList(pLineList, pSelectedNodesList);
@@ -932,11 +976,12 @@ void SmCursor::InsertText(const OUString& aString)
     token.aText = aString;
 
     SmTextNode* pText = new SmTextNode(token, FNT_VARIABLE);
-    pText->SetText(aString);
-    pText->AdjustFontDesc();
-    pText->Prepare(mpDocShell->GetFormat(), *mpDocShell);
 
-    SmNodeList* pList = new SmNodeList;
+    //Prepare the new node
+    pText->Prepare(mpDocShell->GetFormat(), *mpDocShell);
+    pText->AdjustFontDesc();
+
+    SmNodeList* pList = new SmNodeList();
     pList->push_front(pText);
     InsertNodes(pList);
 
@@ -954,12 +999,9 @@ void SmCursor::InsertElement(SmFormulaElement element){
         case BlankElement:
         {
             SmToken token;
-            token.eType = TBLANK;
             token.nGroup = TG::Blank;
             token.aText = "~";
-            SmBlankNode* pBlankNode = new SmBlankNode(token);
-            pBlankNode->IncreaseBy(token);
-            pNewNode = pBlankNode;
+            pNewNode = new SmBlankNode(token);
         }break;
         case FactorialElement:
         {
@@ -1038,7 +1080,7 @@ void SmCursor::InsertElement(SmFormulaElement element){
     pNewNode->Prepare(mpDocShell->GetFormat(), *mpDocShell);
 
     //Insert new node
-    SmNodeList* pList = new SmNodeList;
+    SmNodeList* pList = new SmNodeList();
     pList->push_front(pNewNode);
     InsertNodes(pList);
 
@@ -1065,7 +1107,7 @@ void SmCursor::InsertSpecial(const OUString& _aString)
     pSpecial->Prepare(mpDocShell->GetFormat(), *mpDocShell);
 
     //Insert the node
-    SmNodeList* pList = new SmNodeList;
+    SmNodeList* pList = new SmNodeList();
     pList->push_front(pSpecial);
     InsertNodes(pList);
 
@@ -1121,60 +1163,77 @@ void SmCursor::Copy(){
     AnnotateSelection();
     //Find selected node
     SmNode* pSNode = FindSelectedNode(mpTree);
-    assert(pSNode);
     //Find visual line
     SmNode* pLine = FindTopMostNodeInLine(pSNode, true);
     assert(pLine);
 
     //Clone selected nodes
-    SmClipboard aClipboard;
+    SmNodeList* pList;
     if(IsLineCompositionNode(pLine))
-        CloneLineToClipboard(static_cast<SmStructureNode*>(pLine), &aClipboard);
+        pList = CloneLineToList(static_cast<SmStructureNode*>(pLine), true);
     else{
+        pList = new SmNodeList();
         //Special care to only clone selected text
         if(pLine->GetType() == NTEXT) {
             SmTextNode *pText = static_cast<SmTextNode*>(pLine);
-            std::unique_ptr<SmTextNode> pClone(new SmTextNode( pText->GetToken(), pText->GetFontDesc() ));
+            SmTextNode *pClone = new SmTextNode( pText->GetToken(), pText->GetFontDesc() );
             int start  = pText->GetSelectionStart(),
                 length = pText->GetSelectionEnd() - pText->GetSelectionStart();
             pClone->ChangeText(pText->GetText().copy(start, length));
             pClone->SetScaleMode(pText->GetScaleMode());
-            aClipboard.push_front(std::move(pClone));
+            pList->push_front(pClone);
         } else {
             SmCloningVisitor aCloneFactory;
-            aClipboard.push_front(std::unique_ptr<SmNode>(aCloneFactory.Clone(pLine)));
+            pList->push_front(aCloneFactory.Clone(pLine));
         }
     }
 
     //Set clipboard
-    if (!aClipboard.empty())
-        maClipboard = std::move(aClipboard);
+    if (pList->size() > 0)
+        SetClipboard(pList);
+    else
+        delete pList;
 }
 
 void SmCursor::Paste() {
     BeginEdit();
     Delete();
 
-    if (!maClipboard.empty())
-        InsertNodes(CloneList(maClipboard));
+    if(mpClipboard && mpClipboard->size() > 0)
+        InsertNodes(CloneList(mpClipboard));
 
     EndEdit();
 }
 
-SmNodeList* SmCursor::CloneList(SmClipboard &rClipboard){
+SmNodeList* SmCursor::CloneList(SmNodeList* pList){
     SmCloningVisitor aCloneFactory;
-    SmNodeList* pClones = new SmNodeList;
+    SmNodeList* pClones = new SmNodeList();
 
-    for(auto &xNode : rClipboard){
-        SmNode *pClone = aCloneFactory.Clone(xNode.get());
+    SmNodeList::iterator it;
+    for(it = pList->begin(); it != pList->end(); ++it){
+        SmNode *pClone = aCloneFactory.Clone(*it);
         pClones->push_back(pClone);
     }
 
     return pClones;
 }
 
+void SmCursor::SetClipboard(SmNodeList* pList){
+    if(mpClipboard){
+        //Delete all nodes on the clipboard
+        SmNodeList::iterator it;
+        for(it = mpClipboard->begin(); it != mpClipboard->end(); ++it)
+            delete (*it);
+        delete mpClipboard;
+    }
+    mpClipboard = pList;
+}
+
 SmNode* SmCursor::FindTopMostNodeInLine(SmNode* pSNode, bool MoveUpIfSelected){
-    assert(pSNode);
+    //If we haven't got a subnode
+    if(!pSNode)
+        return nullptr;
+
     //Move up parent until we find a node who's
     //parent is NULL or isn't selected and not a type of:
     //      SmExpressionNode
@@ -1193,15 +1252,11 @@ SmNode* SmCursor::FindTopMostNodeInLine(SmNode* pSNode, bool MoveUpIfSelected){
 }
 
 SmNode* SmCursor::FindSelectedNode(SmNode* pNode){
-    if(pNode->GetNumSubNodes() == 0)
-        return nullptr;
-    for(auto pChild : *static_cast<SmStructureNode*>(pNode))
-    {
-        if(!pChild)
-            continue;
-        if(pChild->IsSelected())
-            return pChild;
-        SmNode* pRetVal = FindSelectedNode(pChild);
+    SmNodeIterator it(pNode);
+    while(it.Next()){
+        if(it->IsSelected())
+            return it.Current();
+        SmNode* pRetVal = FindSelectedNode(it.Current());
         if(pRetVal)
             return pRetVal;
     }
@@ -1209,24 +1264,22 @@ SmNode* SmCursor::FindSelectedNode(SmNode* pNode){
 }
 
 SmNodeList* SmCursor::LineToList(SmStructureNode* pLine, SmNodeList* list){
-    for(auto pChild : *pLine)
-    {
-        if (!pChild)
-            continue;
-        switch(pChild->GetType()){
+    SmNodeIterator it(pLine);
+    while(it.Next()){
+        switch(it->GetType()){
             case NLINE:
             case NUNHOR:
             case NEXPRESSION:
             case NBINHOR:
             case NALIGN:
             case NFONT:
-                LineToList(static_cast<SmStructureNode*>(pChild), list);
+                LineToList(static_cast<SmStructureNode*>(it.Current()), list);
                 break;
             case NERROR:
-                delete pChild;
+                delete it.Current();
                 break;
             default:
-                list->push_back(pChild);
+                list->push_back(it.Current());
         }
     }
     SmNodeArray emptyArray(0);
@@ -1235,28 +1288,27 @@ SmNodeList* SmCursor::LineToList(SmStructureNode* pLine, SmNodeList* list){
     return list;
 }
 
-void SmCursor::CloneLineToClipboard(SmStructureNode* pLine, SmClipboard* pClipboard){
+SmNodeList* SmCursor::CloneLineToList(SmStructureNode* pLine, bool bOnlyIfSelected, SmNodeList* pList){
     SmCloningVisitor aCloneFactory;
-    for(auto pChild : *pLine)
-    {
-        if (!pChild)
-            continue;
-        if( IsLineCompositionNode( pChild ) )
-            CloneLineToClipboard( static_cast<SmStructureNode*>(pChild), pClipboard );
-        else if( pChild->IsSelected() && pChild->GetType() != NERROR ) {
+    SmNodeIterator it(pLine);
+    while(it.Next()){
+        if( IsLineCompositionNode( it.Current() ) )
+            CloneLineToList( static_cast<SmStructureNode*>(it.Current()), bOnlyIfSelected, pList );
+        else if( (!bOnlyIfSelected || it->IsSelected()) && it->GetType() != NERROR ) {
             //Only clone selected text from SmTextNode
-            if(pChild->GetType() == NTEXT) {
-                SmTextNode *pText = static_cast<SmTextNode*>(pChild);
-                std::unique_ptr<SmTextNode> pClone(new SmTextNode( pChild->GetToken(), pText->GetFontDesc() ));
+            if(it->GetType() == NTEXT) {
+                SmTextNode *pText = static_cast<SmTextNode*>(it.Current());
+                SmTextNode *pClone = new SmTextNode( it->GetToken(), pText->GetFontDesc() );
                 int start = pText->GetSelectionStart(),
                     length = pText->GetSelectionEnd() - pText->GetSelectionStart();
                 pClone->ChangeText(pText->GetText().copy(start, length));
                 pClone->SetScaleMode(pText->GetScaleMode());
-                pClipboard->push_back(std::move(pClone));
+                pList->push_back(pClone);
             } else
-                pClipboard->push_back(std::unique_ptr<SmNode>(aCloneFactory.Clone(pChild)));
+                pList->push_back(aCloneFactory.Clone(it.Current()));
         }
     }
+    return pList;
 }
 
 bool SmCursor::IsLineCompositionNode(SmNode* pNode){
@@ -1274,16 +1326,12 @@ bool SmCursor::IsLineCompositionNode(SmNode* pNode){
 }
 
 int SmCursor::CountSelectedNodes(SmNode* pNode){
-    if(pNode->GetNumSubNodes() == 0)
-        return 0;
     int nCount = 0;
-    for(auto pChild : *static_cast<SmStructureNode*>(pNode))
-    {
-        if (!pChild)
-            continue;
-        if(pChild->IsSelected() && !IsLineCompositionNode(pChild))
+    SmNodeIterator it(pNode);
+    while(it.Next()){
+        if(it->IsSelected() && !IsLineCompositionNode(it.Current()))
             nCount++;
-        nCount += CountSelectedNodes(pChild);
+        nCount += CountSelectedNodes(it.Current());
     }
     return nCount;
 }
@@ -1317,8 +1365,8 @@ void SmCursor::FinishEdit(SmNodeList* pLineList,
         SmToken aTok(TLEFT, '\0', "left", TG::NONE, 5);
         SmBraceNode *pBrace = new SmBraceNode(aTok);
         pBrace->SetScaleMode(SCALE_HEIGHT);
-        SmNode *pLeft  = CreateBracket(SmBracketType::Round, true),
-               *pRight = CreateBracket(SmBracketType::Round, false);
+        SmNode *pLeft  = CreateBracket(RoundBrackets, true),
+               *pRight = CreateBracket(RoundBrackets, false);
         SmBracebodyNode *pBody = new SmBracebodyNode(SmToken());
         pBody->SetSubNodes(pLine, nullptr);
         pBrace->SetSubNodes(pLeft, pBody, pRight);
@@ -1378,10 +1426,10 @@ void SmCursor::EndEdit(){
     if ( mbIsEnabledSetModifiedSmDocShell )
         mpDocShell->EnableSetModified( mbIsEnabledSetModifiedSmDocShell );
     //I think this notifies people around us that we've modified this document...
-    mpDocShell->SetModified();
+    mpDocShell->SetModified(true);
     //I think SmDocShell uses this value when it sends an update graphics event
     //Anyway comments elsewhere suggests it need to be updated...
-    mpDocShell->mnModifyCount++;
+    mpDocShell->nModifyCount++;
 
     //TODO: Consider copying the update accessibility code from SmDocShell::SetText in here...
     //This somehow updates the size of SmGraphicView if it is running in embedded mode
@@ -1395,7 +1443,7 @@ void SmCursor::EndEdit(){
     OUString formula;
     SmNodeToTextVisitor(mpTree, formula);
     //mpTree->CreateTextFromNode(formula);
-    mpDocShell->maText = formula;
+    mpDocShell->aText = formula;
     mpDocShell->GetEditEngine().QuickInsertText( formula, ESelection( 0, 0, EE_PARA_ALL, EE_TEXTPOS_ALL ) );
     mpDocShell->GetEditEngine().QuickFormatDoc();
 }
@@ -1420,12 +1468,12 @@ bool SmCursor::IsAtTailOfBracket(SmBracketType eBracketType, SmBraceNode** ppBra
 
     if (pNode->GetType() == NTEXT) {
         SmTextNode* pTextNode = static_cast<SmTextNode*>(pNode);
-        if (pos.nIndex < pTextNode->GetText().getLength()) {
+        if (pos.Index < pTextNode->GetText().getLength()) {
             // The cursor is on a text node and at the middle of it.
             return false;
         }
     } else {
-        if (pos.nIndex < 1) {
+        if (pos.Index < 1) {
             return false;
         }
     }
@@ -1467,9 +1515,16 @@ bool SmCursor::IsAtTailOfBracket(SmBracketType eBracketType, SmBraceNode** ppBra
     // Check if the closing brace matches eBracketType.
     SmTokenType eClosingTokenType = pClosingNode->GetToken().eType;
     switch (eBracketType) {
-    case SmBracketType::Round:        if (eClosingTokenType != TRPARENT)   { return false; } break;
-    case SmBracketType::Square:       if (eClosingTokenType != TRBRACKET)  { return false; } break;
-    case SmBracketType::Curly:        if (eClosingTokenType != TRBRACE)    { return false; } break;
+    case NoneBrackets:         if (eClosingTokenType != TNONE)      { return false; } break;
+    case RoundBrackets:        if (eClosingTokenType != TRPARENT)   { return false; } break;
+    case SquareBrackets:       if (eClosingTokenType != TRBRACKET)  { return false; } break;
+    case DoubleSquareBrackets: if (eClosingTokenType != TRDBRACKET) { return false; } break;
+    case LineBrackets:         if (eClosingTokenType != TRLINE)     { return false; } break;
+    case DoubleLineBrackets:   if (eClosingTokenType != TRDLINE)    { return false; } break;
+    case CurlyBrackets:        if (eClosingTokenType != TRBRACE)    { return false; } break;
+    case AngleBrackets:        if (eClosingTokenType != TRANGLE)    { return false; } break;
+    case CeilBrackets:         if (eClosingTokenType != TRCEIL)     { return false; } break;
+    case FloorBrackets:        if (eClosingTokenType != TRFLOOR)    { return false; } break;
     default:
         return false;
     }
@@ -1484,9 +1539,9 @@ bool SmCursor::IsAtTailOfBracket(SmBracketType eBracketType, SmBraceNode** ppBra
 void SmCursor::MoveAfterBracket(SmBraceNode* pBraceNode)
 {
     mpPosition->CaretPos.pSelectedNode = pBraceNode;
-    mpPosition->CaretPos.nIndex = 1;
+    mpPosition->CaretPos.Index = 1;
     mpAnchor->CaretPos.pSelectedNode = pBraceNode;
-    mpAnchor->CaretPos.nIndex = 1;
+    mpAnchor->CaretPos.Index = 1;
     RequestRepaint();
 }
 
@@ -1615,7 +1670,7 @@ SmNode* SmNodeListParser::Postfix(){
 }
 
 SmNode* SmNodeListParser::Error(){
-    return new SmErrorNode(SmToken());
+    return new SmErrorNode(PE_UNEXPECTED_TOKEN, SmToken());
 }
 
 bool SmNodeListParser::IsOperator(const SmToken &token) {

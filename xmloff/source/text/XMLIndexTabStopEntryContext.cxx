@@ -46,7 +46,7 @@ XMLIndexTabStopEntryContext::XMLIndexTabStopEntryContext(
     XMLIndexTemplateContext& rTemplate,
     sal_uInt16 nPrfx,
     const OUString& rLocalName ) :
-        XMLIndexSimpleEntryContext(rImport, "TokenTabStop",
+        XMLIndexSimpleEntryContext(rImport, rTemplate.sTokenTabStop,
                                    rTemplate, nPrfx, rLocalName),
         sLeaderChar(),
         nTabPosition(0),
@@ -128,14 +128,14 @@ void XMLIndexTabStopEntryContext::FillPropertyValues(
     PropertyValue* pValues = rValues.getArray();
 
     // right aligned?
-    pValues[nNextEntry].Name = "TabStopRightAligned";
+    pValues[nNextEntry].Name = rTemplateContext.sTabStopRightAligned;
     pValues[nNextEntry].Value <<= bTabRightAligned;
     nNextEntry++;
 
     // position
     if (bTabPositionOK)
     {
-        pValues[nNextEntry].Name = "TabStopPosition";
+        pValues[nNextEntry].Name = rTemplateContext.sTabStopPosition;
         pValues[nNextEntry].Value <<= nTabPosition;
         nNextEntry++;
     }
@@ -143,7 +143,7 @@ void XMLIndexTabStopEntryContext::FillPropertyValues(
     // leader char
     if (bLeaderCharOK)
     {
-        pValues[nNextEntry].Name = "TabStopFillCharacter";
+        pValues[nNextEntry].Name = rTemplateContext.sTabStopFillCharacter;
         pValues[nNextEntry].Value <<= sLeaderChar;
         nNextEntry++;
     }
@@ -154,8 +154,8 @@ void XMLIndexTabStopEntryContext::FillPropertyValues(
     nNextEntry++;
 
     // check whether we really filled all elements of the sequence
-    SAL_WARN_IF( nNextEntry != rValues.getLength(), "xmloff",
-                "length incorrectly precomputed!" );
+    DBG_ASSERT( nNextEntry == rValues.getLength(),
+                "length incorrectly precumputed!" );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

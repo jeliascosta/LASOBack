@@ -79,14 +79,14 @@ namespace dbaui
         get(m_pTables, "TablesFilterPage");
 
         get(m_pTablesList, "treeview");
-        m_pTablesList->init();
+        m_pTablesList->init(true);
         m_pTablesList->set_width_request(56 * m_pTablesList->approximate_char_width());
         m_pTablesList->set_height_request(12 * m_pTablesList->GetTextHeight());
 
         m_pTablesList->SetCheckHandler(LINK(this,OGenericAdministrationPage,OnControlModified));
 
         // initialize the TabListBox
-        m_pTablesList->SetSelectionMode( SelectionMode::Multiple );
+        m_pTablesList->SetSelectionMode( MULTIPLE_SELECTION );
         m_pTablesList->SetDragDropMode( DragDropMode::NONE );
         m_pTablesList->EnableInplaceEditing( false );
         m_pTablesList->SetStyle(m_pTablesList->GetStyle() | WB_BORDER | WB_HASLINES | WB_HASLINESATROOT | WB_SORT | WB_HASBUTTONS | WB_HSCROLL |WB_HASBUTTONSATROOT);
@@ -384,9 +384,9 @@ namespace dbaui
             m_pTablesList->checkWildcard(m_pTablesList->getAllObjectsEntry());
     }
 
-    DeactivateRC OTableSubscriptionPage::DeactivatePage(SfxItemSet* _pSet)
+    SfxTabPage::sfxpg OTableSubscriptionPage::DeactivatePage(SfxItemSet* _pSet)
     {
-        DeactivateRC nResult = OGenericAdministrationPage::DeactivatePage(_pSet);
+        sfxpg nResult = OGenericAdministrationPage::DeactivatePage(_pSet);
 
         // dispose the connection, we don't need it anymore, so we're not wasting resources
         try
@@ -397,22 +397,22 @@ namespace dbaui
 
         return nResult;
     }
-    IMPL_LINK_NOARG( OTableSubscriptionPage, OnTreeEntryButtonChecked, SvTreeListBox*, void )
+    IMPL_LINK_NOARG_TYPED( OTableSubscriptionPage, OnTreeEntryButtonChecked, SvTreeListBox*, void )
     {
         callModifiedHdl();
     }
-    IMPL_LINK( OTableSubscriptionPage, OnTreeEntryChecked, void*, _pControl, void )
+    IMPL_LINK_TYPED( OTableSubscriptionPage, OnTreeEntryChecked, void*, _pControl, void )
     {
         OnControlModified(_pControl);
     }
-    IMPL_LINK( OTableSubscriptionPage, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
+    IMPL_LINK_TYPED( OTableSubscriptionPage, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
     {
         const SvTreeListEntry* pLHS = static_cast<const SvTreeListEntry*>(_rSortData.pLeft);
         const SvTreeListEntry* pRHS = static_cast<const SvTreeListEntry*>(_rSortData.pRight);
         OSL_ENSURE(pLHS && pRHS, "SbaTableQueryBrowser::OnTreeEntryCompare: invalid tree entries!");
 
-        const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SvLBoxItemType::String));
-        const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SvLBoxItemType::String));
+        const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
+        const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
         OSL_ENSURE(pLeftTextItem && pRightTextItem, "SbaTableQueryBrowser::OnTreeEntryCompare: invalid text items!");
 
         OUString sLeftText = pLeftTextItem->GetText();
@@ -440,6 +440,7 @@ namespace dbaui
     Sequence< OUString > OTableSubscriptionPage::collectDetailedSelection() const
     {
         Sequence< OUString > aTableFilter;
+        static const char sDot[] = ".";
         static const char sWildcard[] = "%";
 
         OUString sComposedName;
@@ -478,7 +479,8 @@ namespace dbaui
                                 bCatalogWildcard = OTableTreeListBox::isWildcardChecked(pCatalog);
                                 if (m_bCatalogAtStart)
                                 {
-                                    sComposedName += m_pTablesList->GetEntryText( pCatalog ) + m_sCatalogSeparator;
+                                    sComposedName += m_pTablesList->GetEntryText( pCatalog );
+                                    sComposedName += m_sCatalogSeparator;
                                     if (bCatalogWildcard)
                                         sComposedName += sWildcard;
                                 }
@@ -488,12 +490,14 @@ namespace dbaui
                                         sCatalog = sWildcard;
                                     else
                                         sCatalog.clear();
-                                    sCatalog += m_sCatalogSeparator + m_pTablesList->GetEntryText( pCatalog );
+                                    sCatalog += m_sCatalogSeparator;
+                                    sCatalog += m_pTablesList->GetEntryText( pCatalog );
                                 }
                             }
                         }
                         bSchemaWildcard = OTableTreeListBox::isWildcardChecked(pSchema);
-                        sComposedName += m_pTablesList->GetEntryText( pSchema ) + ".";
+                        sComposedName += m_pTablesList->GetEntryText( pSchema );
+                        sComposedName += sDot;
                     }
 
                     if (bSchemaWildcard)
@@ -566,11 +570,11 @@ namespace dbaui
         return true;
     }
 
-    void OTableSubscriptionPage::fillControls(std::vector< ISaveValueWrapper* >& /*_rControlList*/)
+    void OTableSubscriptionPage::fillControls(::std::vector< ISaveValueWrapper* >& /*_rControlList*/)
     {
     }
 
-    void OTableSubscriptionPage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OTableSubscriptionPage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back(new ODisableWrapper<VclContainer>(m_pTables));
     }

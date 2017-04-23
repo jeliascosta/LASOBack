@@ -126,7 +126,7 @@ protected:
     ExtEnv_acquireInterface        * m_env_acquireInterface;
     ExtEnv_releaseInterface        * m_env_releaseInterface;
 
-    virtual  ~Base() override;
+    virtual  ~Base();
 };
 
 extern "C" {

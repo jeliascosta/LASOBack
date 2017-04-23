@@ -86,7 +86,7 @@ class AnimationExporter
     void exportAnimateSet( SvStream& rStrm, const css::uno::Reference< css::animations::XAnimationNode >&  xNode, int nAfterEffectType );
     static void exportAnimAction( SvStream& rStrm, const css::uno::Reference< css::animations::XAnimationNode >& xNode );
     void exportAnimEvent( SvStream& rStrm, const css::uno::Reference< css::animations::XAnimationNode >& xNode, const sal_Int32 nFlags = 0 );
-    void exportNode( SvStream& rStrm, css::uno::Reference< css::animations::XAnimationNode > const & xNode,
+    void exportNode( SvStream& rStrm, css::uno::Reference< css::animations::XAnimationNode > xNode,
                         const css::uno::Reference< css::animations::XAnimationNode >* xParent,
                             const sal_uInt16 nContainerRecType, const sal_uInt16 nInstance, const sal_Int32 nGroupLevel, const bool bTakeBackInteractiveSequenceTiming,
                                 const sal_Int16 nFillDefault );
@@ -122,7 +122,7 @@ public:
     static css::uno::Any convertAnimateValue( const css::uno::Any& rSource, const OUString& rAttributeName );
         static bool GetNodeType( const css::uno::Reference< css::animations::XAnimationNode >& xNode, sal_Int16& nType );
         static sal_Int16 GetFillMode( const css::uno::Reference< css::animations::XAnimationNode >& xNode, const sal_Int16 nFillDefault );
-        static void GetUserData( const css::uno::Sequence< css::beans::NamedValue >& rUserData, const css::uno::Any ** pAny, std::size_t nLen );
+        static void GetUserData( const css::uno::Sequence< css::beans::NamedValue >& rUserData, const css::uno::Any ** pAny, sal_Size nLen );
         static sal_uInt32 TranslatePresetSubType( const sal_uInt32 nPresetClass, const sal_uInt32 nPresetId, const OUString& rPresetSubType );
         static sal_uInt32 GetPresetID( const OUString& rPreset, sal_uInt32 nAPIPresetClass, bool& bPresetId );
         static sal_uInt32 GetValueTypeForAttributeName( const OUString& rAttributeName );

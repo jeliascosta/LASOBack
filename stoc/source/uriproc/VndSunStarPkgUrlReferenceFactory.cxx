@@ -54,34 +54,40 @@ public:
     Factory(const Factory&) = delete;
     Factory& operator=(const Factory&) = delete;
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & serviceName) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & serviceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::uri::XUriReference > SAL_CALL
     createVndSunStarPkgUrlReference(
-        css::uno::Reference< css::uri::XUriReference > const & authority) override;
+        css::uno::Reference< css::uri::XUriReference > const & authority)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
-    virtual ~Factory() override {}
+    virtual ~Factory() {}
 
     css::uno::Reference< css::uno::XComponentContext > m_context;
 };
 
 OUString Factory::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.uri.VndSunStarPkgUrlReferenceFactory");
 }
 
 sal_Bool Factory::supportsService(OUString const & serviceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 css::uno::Sequence< OUString > Factory::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence< OUString > s { "com.sun.star.uri.VndSunStarPkgUrlReferenceFactory" };
     return s;
@@ -90,6 +96,7 @@ css::uno::Sequence< OUString > Factory::getSupportedServiceNames()
 css::uno::Reference< css::uri::XUriReference >
 Factory::createVndSunStarPkgUrlReference(
     css::uno::Reference< css::uri::XUriReference > const & authority)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OSL_ASSERT(authority.is());
     if (authority->isAbsolute() && !authority->hasFragment()) {

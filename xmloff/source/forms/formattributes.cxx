@@ -86,9 +86,11 @@ namespace xmloff
         switch (_eAttrib)
         {
             case faName:                return "name";
+            case faServiceName:         return "service-name";
             case faAction:              return "href";      // the only special thing here: Action is represented by an xlink:href attribute
             case faEnctype:             return "enctype";
             case faMethod:              return "method";
+            case faTargetFrame:         return "target-frame";
             case faAllowDeletes:        return "allow-deletes";
             case faAllowInserts:        return "allow-inserts";
             case faAllowUpdates:        return "allow-updates";
@@ -97,6 +99,7 @@ namespace xmloff
             case faCommandType:         return "command-type";
             case faEscapeProcessing:    return "escape-processing";
             case faDatasource:          return "datasource";
+            case faConnectionResource:  return "connection-resource";
             case faDetailFiels:         return "detail-fields";
             case faFilter:              return "filter";
             case faIgnoreResult:        return "ignore-result";
@@ -114,6 +117,9 @@ namespace xmloff
     {
         if (faAction == _eAttrib)
             return XML_NAMESPACE_XLINK;
+
+        if (faTargetFrame == _eAttrib)
+            return XML_NAMESPACE_OFFICE;
 
         return XML_NAMESPACE_FORM;
     }
@@ -237,19 +243,23 @@ namespace xmloff
         const sal_Char* _pAttributeName, const OUString& _rPropertyName,
         const sal_Int16 _nAttributeDefault)
     {
-        implAdd(_pAttributeName, _rPropertyName, ::cppu::UnoType<sal_Int16>::get(), OUString::number(_nAttributeDefault));
+        OUStringBuffer aDefault;
+        ::sax::Converter::convertNumber(aDefault, (sal_Int32)_nAttributeDefault);
+        implAdd(_pAttributeName, _rPropertyName, ::cppu::UnoType<sal_Int16>::get(), aDefault.makeStringAndClear());
     }
 
     void OAttribute2Property::addInt32Property(
         const sal_Char* _pAttributeName, const OUString& _rPropertyName,
         const sal_Int32 _nAttributeDefault)
     {
-        implAdd( _pAttributeName, _rPropertyName, ::cppu::UnoType<sal_Int32>::get(), OUString::number( _nAttributeDefault ) );
+        OUStringBuffer aDefault;
+        ::sax::Converter::convertNumber( aDefault, _nAttributeDefault );
+        implAdd( _pAttributeName, _rPropertyName, ::cppu::UnoType<sal_Int32>::get(), aDefault.makeStringAndClear() );
     }
 
-    void OAttribute2Property::addEnumPropertyImpl(
+    void OAttribute2Property::addEnumProperty(
             const sal_Char* _pAttributeName, const OUString& _rPropertyName,
-            const sal_uInt16 _nAttributeDefault, const SvXMLEnumMapEntry<sal_uInt16>* _pValueMap,
+            const sal_uInt16 _nAttributeDefault, const SvXMLEnumMapEntry* _pValueMap,
             const css::uno::Type* _pType)
     {
         OUStringBuffer aDefault;

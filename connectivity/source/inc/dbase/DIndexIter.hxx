@@ -31,11 +31,12 @@ namespace connectivity
 
         // IndexIterator
 
-        class OIndexIterator final
+        class OIndexIterator
         {
+        protected:
             file::OBoolOperator*    m_pOperator;
             const file::OOperand*   m_pOperand;
-            rtl::Reference<ODbaseIndex> m_xIndex;
+            ODbaseIndex*            m_pIndex;
             ONDXPagePtr             m_aRoot,
                                     m_aCurLeaf;
             sal_uInt16              m_nCurNode;
@@ -51,15 +52,18 @@ namespace connectivity
             ONDXKey* GetNextKey();
 
         public:
-            OIndexIterator(ODbaseIndex* pInd)
-                :m_pOperator(nullptr)
-                ,m_pOperand(nullptr)
-                ,m_xIndex(pInd)
+            OIndexIterator(ODbaseIndex* pInd,
+                            file::OBoolOperator* pOp,
+                            const file::OOperand* pOper)
+                :m_pOperator(pOp)
+                ,m_pOperand(pOper)
+                ,m_pIndex(pInd)
                 ,m_nCurNode(NODE_NOTFOUND)
             {
+                pInd->acquire();
             }
 
-            ~OIndexIterator();
+            virtual ~OIndexIterator();
             sal_uInt32 First();
             sal_uInt32 Next();
 

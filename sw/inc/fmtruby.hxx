@@ -20,7 +20,6 @@
 #define INCLUDED_SW_INC_FMTRUBY_HXX
 
 #include <svl/poolitem.hxx>
-#include <com/sun/star/text/RubyAdjust.hpp>
 
 class SwTextRuby;
 
@@ -28,17 +27,17 @@ class SW_DLLPUBLIC SwFormatRuby : public SfxPoolItem
 {
     friend class SwTextRuby;
 
-    OUString sRubyText;                     ///< The ruby txt.
-    OUString sCharFormatName;               ///< Name of the charformat.
-    SwTextRuby* pTextAttr;                  ///< The TextAttribute.
-    sal_uInt16 nCharFormatId;               ///< PoolId of the charformat.
+    OUString sRubyText;                      ///< The ruby txt.
+    OUString sCharFormatName;                  ///< Name of the charformat.
+    SwTextRuby* pTextAttr;                    ///< The TextAttribute.
+    sal_uInt16 nCharFormatId;                  ///< PoolId of the charformat.
     sal_uInt16 nPosition;                   ///< Position of the Ruby-character.
-    css::text::RubyAdjust nAdjustment;      ///< Specific adjustment of the Ruby-ch.
+    sal_uInt16 nAdjustment;                 ///< Specific adjustment of the Ruby-ch.
 
 public:
     SwFormatRuby( const OUString& rRubyText );
     SwFormatRuby( const SwFormatRuby& rAttr );
-    virtual ~SwFormatRuby() override;
+    virtual ~SwFormatRuby();
 
     SwFormatRuby& operator=( const SwFormatRuby& rAttr );
 
@@ -47,10 +46,10 @@ public:
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper* pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper* pIntl = nullptr ) const override;
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -69,8 +68,8 @@ public:
     sal_uInt16 GetPosition() const                  { return nPosition; }
     void SetPosition( sal_uInt16 nNew )             { nPosition = nNew; }
 
-    css::text::RubyAdjust GetAdjustment() const       { return nAdjustment; }
-    void SetAdjustment( css::text::RubyAdjust nNew )  { nAdjustment = nNew; }
+    sal_uInt16 GetAdjustment() const                { return nAdjustment; }
+    void SetAdjustment( sal_uInt16 nNew )           { nAdjustment = nNew; }
 };
 
 #endif

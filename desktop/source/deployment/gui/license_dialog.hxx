@@ -41,8 +41,9 @@ public:
                  css::uno::Reference<css::uno::XComponentContext> const & xComponentContext );
 
     // XExecutableDialog
-    virtual void SAL_CALL setTitle( OUString const & title ) override;
-    virtual sal_Int16 SAL_CALL execute() override;
+    virtual void SAL_CALL setTitle( OUString const & title )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL execute() throw (css::uno::RuntimeException, std::exception) override;
 };
 }
 #endif

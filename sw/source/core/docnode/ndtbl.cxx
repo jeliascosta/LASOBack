@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/chart2/XChartDocument.hpp>
 #include <fesh.hxx>
 #include <hintids.hxx>
 #include <editeng/lrspitem.hxx>
@@ -121,11 +122,10 @@ static void lcl_SetDfltBoxAttr( SwFrameFormat& rFormat, sal_uInt8 nId )
     SvxBorderLine aLine( &aCol, DEF_LINE_WIDTH_0 );
     if ( bHTML )
     {
-        aLine.SetBorderLineStyle(SvxBorderLineStyle::DOUBLE);
+        aLine.SetBorderLineStyle(table::BorderLineStyle::DOUBLE);
         aLine.SetWidth( DEF_LINE_WIDTH_0 );
     }
-    SvxBoxItem aBox(RES_BOX);
-    aBox.SetAllDistances(55);
+    SvxBoxItem aBox(RES_BOX); aBox.SetDistance( 55 );
     if ( bTop )
         aBox.SetLine( &aLine, SvxBoxItemLine::TOP );
     if ( bBottom )
@@ -290,7 +290,7 @@ bool SwNodes::InsBoxen( SwTableNode* pTableNd,
     SwNodeIndex aEndIdx( *this, nIdxPos );
     for( sal_uInt16 n = 0; n < nCnt; ++n )
     {
-        SwStartNode* pSttNd = new SwStartNode( aEndIdx, SwNodeType::Start,
+        SwStartNode* pSttNd = new SwStartNode( aEndIdx, ND_STARTNODE,
                                                 SwTableBoxStartNode );
         pSttNd->m_pStartOfSection = pTableNd;
         new SwEndNode( aEndIdx, *pSttNd );
@@ -335,8 +335,8 @@ const SwTable* SwDoc::InsertTable( const SwInsertTableOptions& rInsTableOpts,
                                    bool bCalledFromShell,
                                    bool bNewModel )
 {
-    assert(nRows && "Table without line?");
-    assert(nCols && "Table without rows?");
+    OSL_ENSURE( nRows, "Table without line?" );
+    OSL_ENSURE( nCols, "Table without rows?" );
 
     {
         // Do not copy into Footnotes!
@@ -427,7 +427,7 @@ const SwTable* SwDoc::InsertTable( const SwInsertTableOptions& rInsTableOpts,
         }
         nWidth = nLastPos - nSttPos;
     }
-    else
+    else if( nCols )
     {
         nWidth /= nCols;
         nWidth *= nCols; // to avoid rounding problems
@@ -584,7 +584,7 @@ SwTableNode* SwNodes::InsertTable( const SwNodeIndex& rNdIdx,
     {
         for( sal_uInt16 nB = 0; nB < nBoxes; ++nB )
         {
-            SwStartNode* pSttNd = new SwStartNode( aIdx, SwNodeType::Start,
+            SwStartNode* pSttNd = new SwStartNode( aIdx, ND_STARTNODE,
                                                     SwTableBoxStartNode );
             pSttNd->m_pStartOfSection = pTableNd;
 
@@ -645,7 +645,7 @@ const SwTable* SwDoc::TextToTable( const SwInsertTableOptions& rInsTableOpts,
     SwUndoTextToTable* pUndo = nullptr;
     if( GetIDocumentUndoRedo().DoesUndo() )
     {
-        GetIDocumentUndoRedo().StartUndo( SwUndoId::TEXTTOTABLE, nullptr );
+        GetIDocumentUndoRedo().StartUndo( UNDO_TEXTTOTABLE, nullptr );
         pUndo = new SwUndoTextToTable( aOriginal, rInsTableOpts, cCh,
                     static_cast<sal_uInt16>(eAdjust), pTAFormat );
         GetIDocumentUndoRedo().AppendUndo( pUndo );
@@ -876,7 +876,7 @@ const SwTable* SwDoc::TextToTable( const SwInsertTableOptions& rInsTableOpts,
 
     if( pUndo )
     {
-        GetIDocumentUndoRedo().EndUndo( SwUndoId::TEXTTOTABLE, nullptr );
+        GetIDocumentUndoRedo().EndUndo( UNDO_TEXTTOTABLE, nullptr );
     }
 
     getIDocumentState().SetEnableSetModified(bEnableSetModified);
@@ -1080,7 +1080,7 @@ SwTableNode* SwNodes::TextToTable( const SwNodeRange& rRange, sal_Unicode cCh,
 
                     // Set the TableNode as StartNode for all TextNodes in the Table
                     const SwNodeIndex aTmpIdx( aCntPos.nNode, -1 );
-                    pSttNd = new SwStartNode( aTmpIdx, SwNodeType::Start,
+                    pSttNd = new SwStartNode( aTmpIdx, ND_STARTNODE,
                                                 SwTableBoxStartNode );
                     new SwEndNode( aCntPos.nNode, *pSttNd );
                     pNewNd->m_pStartOfSection = pSttNd;
@@ -1100,7 +1100,7 @@ SwTableNode* SwNodes::TextToTable( const SwNodeRange& rRange, sal_Unicode cCh,
         if( !pContentStore->Empty())
             pContentStore->Restore( *pTextNd, pTextNd->GetText().getLength(), pTextNd->GetText().getLength()+1 );
 
-        pSttNd = new SwStartNode( aCntPos.nNode, SwNodeType::Start, SwTableBoxStartNode );
+        pSttNd = new SwStartNode( aCntPos.nNode, ND_STARTNODE, SwTableBoxStartNode );
         const SwNodeIndex aTmpIdx( aCntPos.nNode, 1 );
         new SwEndNode( aTmpIdx, *pSttNd  );
         pTextNd->m_pStartOfSection = pSttNd;
@@ -1342,7 +1342,8 @@ lcl_SetTableBoxWidths2(SwTable & rTable, size_t const nMaxBoxes,
     for (size_t nTmpLine = 0; nTmpLine < rLines.size(); ++nTmpLine)
     {
         SwTableBoxes & rBoxes = rLines[nTmpLine]->GetTabBoxes();
-        assert(!rBoxes.empty()); // ensured by convertToTable
+        if (rBoxes.empty())
+            continue;
         size_t const nMissing = nMaxBoxes - rBoxes.size();
         if (nMissing)
         {
@@ -1417,7 +1418,7 @@ SwTableNode* SwNodes::TextToTable( const SwNodes::TableRanges_t & rTableNodes,
 
                SwNodeIndex aCellEndIdx(aCellIter->aEnd);
                ++aCellEndIdx;
-               SwStartNode* pSttNd = new SwStartNode( aTmpIdx, SwNodeType::Start,
+               SwStartNode* pSttNd = new SwStartNode( aTmpIdx, ND_STARTNODE,
                                             SwTableBoxStartNode );
 
                 // Quotation of http://nabble.documentfoundation.org/Some-strange-lines-by-taking-a-look-at-the-bt-of-fdo-51916-tp3994561p3994639.html
@@ -1432,7 +1433,7 @@ SwTableNode* SwNodes::TextToTable( const SwNodes::TableRanges_t & rTableNodes,
                     aCellNodeIdx.GetNode().m_pStartOfSection = pSttNd;
                     //skip start/end node pairs
                     if( aCellNodeIdx.GetNode().IsStartNode() )
-                        aCellNodeIdx.Assign(*aCellNodeIdx.GetNode().EndOfSectionNode());
+                        aCellNodeIdx = SwNodeIndex( *aCellNodeIdx.GetNode().EndOfSectionNode() );
                 }
 
                 // assign Section to the Box
@@ -1543,10 +1544,9 @@ static void lcl_DelBox( SwTableBox* pBox, DelTabPara* pDelPara )
                             *pBox->GetSttNd()->EndOfSectionNode() );
         // Delete the Section
         pDelPara->rNds.SectionUp( &aDelRg );
-        const SwTextNode* pCurTextNd = nullptr;
-        if (T2T_PARA != pDelPara->cCh && pDelPara->pLastNd)
-            pCurTextNd = aDelRg.aStart.GetNode().GetTextNode();
-        if (nullptr != pCurTextNd)
+        const SwTextNode* pCurTextNd;
+        if( T2T_PARA != pDelPara->cCh && pDelPara->pLastNd &&
+            nullptr != ( pCurTextNd = aDelRg.aStart.GetNode().GetTextNode() ))
         {
             // Join the current text node with the last from the previous box if possible
             sal_uLong nNdIdx = aDelRg.aStart.GetIndex();
@@ -1592,10 +1592,9 @@ bool SwNodes::TableToText( const SwNodeRange& rRange, sal_Unicode cCh,
                             SwUndoTableToText* pUndo )
 {
     // Is a Table selected?
-    if (rRange.aStart.GetIndex() >= rRange.aEnd.GetIndex())
-        return false;
-    SwTableNode *const pTableNd(rRange.aStart.GetNode().GetTableNode());
-    if (nullptr == pTableNd ||
+    SwTableNode* pTableNd;
+    if( rRange.aStart.GetIndex() >= rRange.aEnd.GetIndex() ||
+        nullptr == ( pTableNd = rRange.aStart.GetNode().GetTableNode()) ||
         &rRange.aEnd.GetNode() != pTableNd->EndOfSectionNode() )
         return false;
 
@@ -1689,8 +1688,8 @@ bool SwNodes::TableToText( const SwNodeRange& rRange, sal_Unicode cCh,
         const SwFormatAnchor& rAnchor = pFormat->GetAnchor();
         SwPosition const*const pAPos = rAnchor.GetContentAnchor();
         if (pAPos &&
-            ((RndStdIds::FLY_AT_PARA == rAnchor.GetAnchorId()) ||
-             (RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId())) &&
+            ((FLY_AT_PARA == rAnchor.GetAnchorId()) ||
+             (FLY_AT_CHAR == rAnchor.GetAnchorId())) &&
             nStt <= pAPos->nNode.GetIndex() &&
             pAPos->nNode.GetIndex() < nEnd )
         {
@@ -1706,12 +1705,12 @@ bool SwNodes::TableToText( const SwNodeRange& rRange, sal_Unicode cCh,
  */
 bool SwDoc::InsertCol( const SwCursor& rCursor, sal_uInt16 nCnt, bool bBehind )
 {
-    if( !::CheckSplitCells( rCursor, nCnt + 1, SwTableSearchType::Col ) )
+    if( !::CheckSplitCells( rCursor, nCnt + 1, nsSwTableSearchType::TBLSEARCH_COL ) )
         return false;
 
     // Find the Boxes via the Layout
     SwSelBoxes aBoxes;
-    ::GetTableSel( rCursor, aBoxes, SwTableSearchType::Col );
+    ::GetTableSel( rCursor, aBoxes, nsSwTableSearchType::TBLSEARCH_COL );
 
     bool bRet = false;
     if( !aBoxes.empty() )
@@ -1734,7 +1733,7 @@ bool SwDoc::InsertCol( const SwSelBoxes& rBoxes, sal_uInt16 nCnt, bool bBehind )
     SwUndoTableNdsChg* pUndo = nullptr;
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        pUndo = new SwUndoTableNdsChg( SwUndoId::TABLE_INSCOL, rBoxes, *pTableNd,
+        pUndo = new SwUndoTableNdsChg( UNDO_TABLE_INSCOL, rBoxes, *pTableNd,
                                      0, 0, nCnt, bBehind, false );
         aTmpLst.insert( rTable.GetTabSortBoxes() );
     }
@@ -1773,7 +1772,7 @@ bool SwDoc::InsertRow( const SwCursor& rCursor, sal_uInt16 nCnt, bool bBehind )
 {
     // Find the Boxes via the Layout
     SwSelBoxes aBoxes;
-    GetTableSel( rCursor, aBoxes, SwTableSearchType::Row );
+    GetTableSel( rCursor, aBoxes, nsSwTableSearchType::TBLSEARCH_ROW );
 
     bool bRet = false;
     if( !aBoxes.empty() )
@@ -1796,7 +1795,7 @@ bool SwDoc::InsertRow( const SwSelBoxes& rBoxes, sal_uInt16 nCnt, bool bBehind )
     SwUndoTableNdsChg* pUndo = nullptr;
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        pUndo = new SwUndoTableNdsChg( SwUndoId::TABLE_INSROW,rBoxes, *pTableNd,
+        pUndo = new SwUndoTableNdsChg( UNDO_TABLE_INSROW,rBoxes, *pTableNd,
                                      0, 0, nCnt, bBehind, false );
         aTmpLst.insert( rTable.GetTabSortBoxes() );
     }
@@ -1839,7 +1838,7 @@ bool SwDoc::DeleteRow( const SwCursor& rCursor )
 {
     // Find the Boxes via the Layout
     SwSelBoxes aBoxes;
-    GetTableSel( rCursor, aBoxes, SwTableSearchType::Row );
+    GetTableSel( rCursor, aBoxes, nsSwTableSearchType::TBLSEARCH_ROW );
     if( ::HasProtectedCells( aBoxes ))
         return false;
 
@@ -1867,7 +1866,7 @@ bool SwDoc::DeleteRow( const SwCursor& rCursor )
         if( pESh )
         {
             pESh->KillPams();
-            // FIXME: actually we should be iterating over all Shells!
+            // FIXME: Actually we should be interating over all Shells!
         }
 
         FndBox_* pFndBox = &aFndBox;
@@ -1930,9 +1929,9 @@ bool SwDoc::DeleteRow( const SwCursor& rCursor )
     }
 
     // Thus delete the Rows
-    GetIDocumentUndoRedo().StartUndo(SwUndoId::ROW_DELETE, nullptr);
+    GetIDocumentUndoRedo().StartUndo(UNDO_ROW_DELETE, nullptr);
     bool bResult = DeleteRowCol( aBoxes );
-    GetIDocumentUndoRedo().EndUndo(SwUndoId::ROW_DELETE, nullptr);
+    GetIDocumentUndoRedo().EndUndo(UNDO_ROW_DELETE, nullptr);
 
     return bResult;
 }
@@ -1941,7 +1940,7 @@ bool SwDoc::DeleteCol( const SwCursor& rCursor )
 {
     // Find the Boxes via the Layout
     SwSelBoxes aBoxes;
-    GetTableSel( rCursor, aBoxes, SwTableSearchType::Col );
+    GetTableSel( rCursor, aBoxes, nsSwTableSearchType::TBLSEARCH_COL );
     if( ::HasProtectedCells( aBoxes ))
         return false;
 
@@ -1956,9 +1955,9 @@ bool SwDoc::DeleteCol( const SwCursor& rCursor )
     }
 
     // Thus delete the Columns
-    GetIDocumentUndoRedo().StartUndo(SwUndoId::COL_DELETE, nullptr);
+    GetIDocumentUndoRedo().StartUndo(UNDO_COL_DELETE, nullptr);
     bool bResult = DeleteRowCol( aBoxes, true );
-    GetIDocumentUndoRedo().EndUndo(SwUndoId::COL_DELETE, nullptr);
+    GetIDocumentUndoRedo().EndUndo(UNDO_COL_DELETE, nullptr);
 
     return bResult;
 }
@@ -2038,10 +2037,10 @@ bool SwDoc::DeleteRowCol( const SwSelBoxes& rBoxes, bool bColumn )
 
             // Save the cursors (UNO and otherwise)
             SwPaM aSavePaM( SwNodeIndex( *pTableNd->EndOfSectionNode() ) );
-            if( ! aSavePaM.Move( fnMoveForward, GoInNode ) )
+            if( ! aSavePaM.Move( fnMoveForward, fnGoNode ) )
             {
                 *aSavePaM.GetMark() = SwPosition( *pTableNd );
-                aSavePaM.Move( fnMoveBackward, GoInNode );
+                aSavePaM.Move( fnMoveBackward, fnGoNode );
             }
             {
                 SwPaM const tmpPaM(*pTableNd, *pTableNd->EndOfSectionNode());
@@ -2090,10 +2089,10 @@ bool SwDoc::DeleteRowCol( const SwSelBoxes& rBoxes, bool bColumn )
 
             // Save the cursors (UNO and otherwise)
             SwPaM aSavePaM( SwNodeIndex( *pTableNd->EndOfSectionNode() ) );
-            if( ! aSavePaM.Move( fnMoveForward, GoInNode ) )
+            if( ! aSavePaM.Move( fnMoveForward, fnGoNode ) )
             {
                 *aSavePaM.GetMark() = SwPosition( *pTableNd );
-                aSavePaM.Move( fnMoveBackward, GoInNode );
+                aSavePaM.Move( fnMoveBackward, fnGoNode );
             }
             {
                 SwPaM const tmpPaM(*pTableNd, *pTableNd->EndOfSectionNode());
@@ -2130,7 +2129,7 @@ bool SwDoc::DeleteRowCol( const SwSelBoxes& rBoxes, bool bColumn )
     SwUndoTableNdsChg* pUndo = nullptr;
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        pUndo = new SwUndoTableNdsChg( SwUndoId::TABLE_DELBOX, aSelBoxes, *pTableNd,
+        pUndo = new SwUndoTableNdsChg( UNDO_TABLE_DELBOX, aSelBoxes, *pTableNd,
                                      nMin, nMax, 0, false, false );
     }
 
@@ -2193,7 +2192,7 @@ bool SwDoc::SplitTable( const SwSelBoxes& rBoxes, bool bVert, sal_uInt16 nCnt,
     SwUndoTableNdsChg* pUndo = nullptr;
     if (GetIDocumentUndoRedo().DoesUndo())
     {
-        pUndo = new SwUndoTableNdsChg( SwUndoId::TABLE_SPLIT, rBoxes, *pTableNd, 0, 0,
+        pUndo = new SwUndoTableNdsChg( UNDO_TABLE_SPLIT, rBoxes, *pTableNd, 0, 0,
                                      nCnt, bVert, bSameHeight );
 
         aTmpLst.insert( rTable.GetTabSortBoxes() );
@@ -2247,29 +2246,29 @@ bool SwDoc::SplitTable( const SwSelBoxes& rBoxes, bool bVert, sal_uInt16 nCnt,
     return bRet;
 }
 
-TableMergeErr SwDoc::MergeTable( SwPaM& rPam )
+sal_uInt16 SwDoc::MergeTable( SwPaM& rPam )
 {
     // Check if the current cursor's Point/Mark are inside a Table
     SwTableNode* pTableNd = rPam.GetNode().FindTableNode();
     if( !pTableNd )
-        return TableMergeErr::NoSelection;
+        return TBLMERGE_NOSELECTION;
     SwTable& rTable = pTableNd->GetTable();
     if( dynamic_cast<const SwDDETable*>( &rTable) !=  nullptr )
-        return TableMergeErr::NoSelection;
-    TableMergeErr nRet = TableMergeErr::NoSelection;
+        return TBLMERGE_NOSELECTION;
+    sal_uInt16 nRet = TBLMERGE_NOSELECTION;
     if( !rTable.IsNewModel() )
     {
         nRet =::CheckMergeSel( rPam );
-        if( TableMergeErr::Ok != nRet )
+        if( TBLMERGE_OK != nRet )
             return nRet;
-        nRet = TableMergeErr::NoSelection;
+        nRet = TBLMERGE_NOSELECTION;
     }
 
     // #i33394#
-    GetIDocumentUndoRedo().StartUndo( SwUndoId::TABLE_MERGE, nullptr );
+    GetIDocumentUndoRedo().StartUndo( UNDO_TABLE_MERGE, nullptr );
 
-    RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
-    getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
+    RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
+    getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
 
     SwUndoTableMerge *const pUndo( (GetIDocumentUndoRedo().DoesUndo())
         ?   new SwUndoTableMerge( rPam )
@@ -2282,13 +2281,13 @@ TableMergeErr SwDoc::MergeTable( SwPaM& rPam )
 
     if( !rTable.PrepareMerge( rPam, aBoxes, aMerged, &pMergeBox, pUndo ) )
     {   // No cells found to merge
-        getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
+        getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
         if( pUndo )
         {
             delete pUndo;
-            SwUndoId nLastUndoId(SwUndoId::EMPTY);
+            SwUndoId nLastUndoId(UNDO_EMPTY);
             if (GetIDocumentUndoRedo().GetLastUndoInfo(nullptr, & nLastUndoId)
-                && (SwUndoId::REDLINE == nLastUndoId))
+                && (UNDO_REDLINE == nLastUndoId))
             {
                 // FIXME: why is this horrible cleanup necessary?
                 SwUndoRedline *const pU = dynamic_cast<SwUndoRedline*>(
@@ -2319,7 +2318,7 @@ TableMergeErr SwDoc::MergeTable( SwPaM& rPam )
             rPam.DeleteMark();
 
             SwPaM* pTmp = &rPam;
-            while( &rPam != ( pTmp = pTmp->GetNext() ))
+            while( &rPam != ( pTmp = static_cast<SwPaM*>(pTmp->GetNext()) ))
                 for( int i = 0; i < 2; ++i )
                     pTmp->GetBound( (bool)i ) = *rPam.GetPoint();
         }
@@ -2331,7 +2330,7 @@ TableMergeErr SwDoc::MergeTable( SwPaM& rPam )
 
         if( pTableNd->GetTable().Merge( this, aBoxes, aMerged, pMergeBox, pUndo ))
         {
-            nRet = TableMergeErr::Ok;
+            nRet = TBLMERGE_OK;
 
             getIDocumentState().SetModified();
             getIDocumentFieldsAccess().SetFieldsDirty( true, nullptr, 0 );
@@ -2347,16 +2346,16 @@ TableMergeErr SwDoc::MergeTable( SwPaM& rPam )
         rPam.Move();
 
         ::ClearFEShellTabCols();
-        getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
+        getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
     }
-    GetIDocumentUndoRedo().EndUndo( SwUndoId::TABLE_MERGE, nullptr );
+    GetIDocumentUndoRedo().EndUndo( UNDO_TABLE_MERGE, nullptr );
     return nRet;
 }
 
 SwTableNode::SwTableNode( const SwNodeIndex& rIdx )
-    : SwStartNode( rIdx, SwNodeType::Table )
+    : SwStartNode( rIdx, ND_TABLENODE )
 {
-    m_pTable = new SwTable;
+    m_pTable = new SwTable( nullptr );
 }
 
 SwTableNode::~SwTableNode()
@@ -2545,16 +2544,16 @@ void SwDoc::GetTabCols( SwTabCols &rFill, const SwCursor* pCursor,
     }
 
     // Set fixed points, LeftMin in Document coordinates, all others relative
-    SwRectFnSet aRectFnSet(pTab);
+    SWRECTFN( pTab )
     const SwPageFrame* pPage = pTab->FindPageFrame();
-    const sal_uLong nLeftMin = aRectFnSet.GetLeft(pTab->Frame()) -
-                           aRectFnSet.GetLeft(pPage->Frame());
-    const sal_uLong nRightMax = aRectFnSet.GetRight(pTab->Frame()) -
-                            aRectFnSet.GetLeft(pPage->Frame());
+    const sal_uLong nLeftMin = (pTab->Frame().*fnRect->fnGetLeft)() -
+                           (pPage->Frame().*fnRect->fnGetLeft)();
+    const sal_uLong nRightMax = (pTab->Frame().*fnRect->fnGetRight)() -
+                            (pPage->Frame().*fnRect->fnGetLeft)();
 
     rFill.SetLeftMin ( nLeftMin );
-    rFill.SetLeft    ( aRectFnSet.GetLeft(pTab->Prt()) );
-    rFill.SetRight   ( aRectFnSet.GetRight(pTab->Prt()));
+    rFill.SetLeft    ( (pTab->Prt().*fnRect->fnGetLeft)() );
+    rFill.SetRight   ( (pTab->Prt().*fnRect->fnGetRight)());
     rFill.SetRightMax( nRightMax - nLeftMin );
 
     pTab->GetTable()->GetTabCols( rFill, pBox );
@@ -2605,7 +2604,7 @@ void SwDoc::GetTabRows( SwTabCols &rFill, const SwCursor* ,
     {
         const SwPosition aPos( *static_cast<const SwTextFrame*>(pContent)->GetTextNode() );
         const SwCursor aTmpCursor( aPos, nullptr );
-        ::GetTableSel( aTmpCursor, aBoxes, SwTableSearchType::Col );
+        ::GetTableSel( aTmpCursor, aBoxes, nsSwTableSearchType::TBLSEARCH_COL );
     }
 
     // Make code robust:
@@ -2624,14 +2623,14 @@ void SwDoc::GetTabRows( SwTabCols &rFill, const SwCursor* ,
     const SwFrame* pFrame = pTab->GetNextLayoutLeaf();
 
     // Set fixed points, LeftMin in Document coordinates, all others relative
-    SwRectFnSet aRectFnSet(pTab);
+    SWRECTFN( pTab )
     const SwPageFrame* pPage = pTab->FindPageFrame();
-    const long nLeftMin  = ( aRectFnSet.IsVert() ?
+    const long nLeftMin  = ( bVert ?
                              pTab->GetPrtLeft() - pPage->Frame().Left() :
                              pTab->GetPrtTop() - pPage->Frame().Top() );
-    const long nLeft     = aRectFnSet.IsVert() ? LONG_MAX : 0;
-    const long nRight    = aRectFnSet.GetHeight(pTab->Prt());
-    const long nRightMax = aRectFnSet.IsVert() ? nRight : LONG_MAX;
+    const long nLeft     = bVert ? LONG_MAX : 0;
+    const long nRight    = (pTab->Prt().*fnRect->fnGetHeight)();
+    const long nRightMax = bVert ? nRight : LONG_MAX;
 
     rFill.SetLeftMin( nLeftMin );
     rFill.SetLeft( nLeft );
@@ -2652,8 +2651,8 @@ void SwDoc::GetTabRows( SwTabCols &rFill, const SwCursor* ,
         if ( pFrame->IsCellFrame() && pFrame->FindTabFrame() == pTab )
         {
             // upper and lower borders of current cell frame:
-            long nUpperBorder = aRectFnSet.GetTop(pFrame->Frame());
-            long nLowerBorder = aRectFnSet.GetBottom(pFrame->Frame());
+            long nUpperBorder = (pFrame->Frame().*fnRect->fnGetTop)();
+            long nLowerBorder = (pFrame->Frame().*fnRect->fnGetBottom)();
 
             // get boundaries for nUpperBorder:
             aIter = aBoundaries.find( nUpperBorder );
@@ -2701,10 +2700,10 @@ void SwDoc::GetTabRows( SwTabCols &rFill, const SwCursor* ,
     size_t nIdx = 0;
     for ( aIter = aBoundaries.begin(); aIter != aBoundaries.end(); ++aIter )
     {
-        const long nTabTop = aRectFnSet.GetPrtTop(*pTab);
-        const long nKey = aRectFnSet.YDiff( (*aIter).first, nTabTop );
+        const long nTabTop = (pTab->*fnRect->fnGetPrtTop)();
+        const long nKey = (*fnRect->fnYDiff)( (*aIter).first, nTabTop );
         const std::pair< long, long > aTmpPair = (*aIter).second;
-        const long nFirst = aRectFnSet.YDiff( aTmpPair.first, nTabTop );
+        const long nFirst = (*fnRect->fnYDiff)( aTmpPair.first, nTabTop );
         const long nSecond = aTmpPair.second;
 
         aHiddenIter = aHidden.find( (*aIter).first );
@@ -2722,7 +2721,7 @@ void SwDoc::GetTabRows( SwTabCols &rFill, const SwCursor* ,
 }
 
 void SwDoc::SetTabCols( const SwTabCols &rNew, bool bCurRowOnly,
-                        const SwCellFrame* pBoxFrame )
+                        const SwCursor* pCursor, const SwCellFrame* pBoxFrame )
 {
     const SwTableBox* pBox = nullptr;
     SwTabFrame *pTab = nullptr;
@@ -2732,9 +2731,29 @@ void SwDoc::SetTabCols( const SwTabCols &rNew, bool bCurRowOnly,
         pTab = const_cast<SwFrame*>(static_cast<SwFrame const *>(pBoxFrame))->ImplFindTabFrame();
         pBox = pBoxFrame->GetTabBox();
     }
-    else
+    else if( pCursor )
     {
-        OSL_ENSURE( false, "must specify pBoxFrame" );
+        const SwContentNode* pCNd = pCursor->GetContentNode();
+        if( !pCNd )
+            return ;
+
+        Point aPt;
+        const SwShellCursor *pShCursor = dynamic_cast<const SwShellCursor*>(pCursor);
+        if( pShCursor )
+            aPt = pShCursor->GetPtPos();
+
+        const SwFrame* pTmpFrame = pCNd->getLayoutFrame( pCNd->GetDoc()->getIDocumentLayoutAccess().GetCurrentLayout(), &aPt, nullptr, false );
+        do {
+            pTmpFrame = pTmpFrame->GetUpper();
+        } while ( !pTmpFrame->IsCellFrame() );
+
+        pBoxFrame = static_cast<const SwCellFrame*>(pTmpFrame);
+        pTab = const_cast<SwFrame*>(static_cast<SwFrame const *>(pBoxFrame))->ImplFindTabFrame();
+        pBox = pBoxFrame->GetTabBox();
+    }
+    else if( !pCursor && !pBoxFrame )
+    {
+        OSL_ENSURE( false, "One of them needs to be specified!" );
         return ;
     }
 
@@ -2742,11 +2761,11 @@ void SwDoc::SetTabCols( const SwTabCols &rNew, bool bCurRowOnly,
     // we need to switch to absolute ones.
     SwTable& rTab = *pTab->GetTable();
     const SwFormatFrameSize& rTableFrameSz = rTab.GetFrameFormat()->GetFrameSize();
-    SwRectFnSet aRectFnSet(pTab);
+    SWRECTFN( pTab )
     // #i17174# - With fix for #i9040# the shadow size is taken
     // from the table width. Thus, add its left and right size to current table
     // printing area width in order to get the correct table size attribute.
-    SwTwips nPrtWidth = aRectFnSet.GetWidth(pTab->Prt());
+    SwTwips nPrtWidth = (pTab->Prt().*fnRect->fnGetWidth)();
     {
         SvxShadowItem aShadow( rTab.GetFrameFormat()->GetShadow() );
         nPrtWidth += aShadow.CalcShadowSpace( SvxShadowItemSide::LEFT ) +
@@ -2762,47 +2781,41 @@ void SwDoc::SetTabCols( const SwTabCols &rNew, bool bCurRowOnly,
     SwTabCols aOld( rNew.Count() );
 
     const SwPageFrame* pPage = pTab->FindPageFrame();
-    const sal_uLong nLeftMin = aRectFnSet.GetLeft(pTab->Frame()) -
-                           aRectFnSet.GetLeft(pPage->Frame());
-    const sal_uLong nRightMax = aRectFnSet.GetRight(pTab->Frame()) -
-                            aRectFnSet.GetLeft(pPage->Frame());
+    const sal_uLong nLeftMin = (pTab->Frame().*fnRect->fnGetLeft)() -
+                           (pPage->Frame().*fnRect->fnGetLeft)();
+    const sal_uLong nRightMax = (pTab->Frame().*fnRect->fnGetRight)() -
+                            (pPage->Frame().*fnRect->fnGetLeft)();
 
     // Set fixed points, LeftMin in Document coordinates, all others relative
     aOld.SetLeftMin ( nLeftMin );
-    aOld.SetLeft    ( aRectFnSet.GetLeft(pTab->Prt()) );
-    aOld.SetRight   ( aRectFnSet.GetRight(pTab->Prt()));
+    aOld.SetLeft    ( (pTab->Prt().*fnRect->fnGetLeft)() );
+    aOld.SetRight   ( (pTab->Prt().*fnRect->fnGetRight)());
     aOld.SetRightMax( nRightMax - nLeftMin );
 
     rTab.GetTabCols( aOld, pBox );
     SetTabCols(rTab, rNew, aOld, pBox, bCurRowOnly );
 }
 
-void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
+void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly, const SwCursor*,
                         const SwCellFrame* pBoxFrame )
 {
-    SwTabFrame *pTab = nullptr;
+    SwTabFrame *pTab;
 
-    if( pBoxFrame )
-    {
-        pTab = const_cast<SwFrame*>(static_cast<SwFrame const *>(pBoxFrame))->ImplFindTabFrame();
-    }
-    else
-    {
-        OSL_ENSURE( false, "must specify pBoxFrame" );
-        return ;
-    }
+    OSL_ENSURE( pBoxFrame, "SetTabRows called without pBoxFrame" );
+
+    pTab = const_cast<SwFrame*>(static_cast<SwFrame const *>(pBoxFrame))->ImplFindTabFrame();
 
     // If the Table is still using relative values (USHRT_MAX)
     // we need to switch to absolute ones.
-    SwRectFnSet aRectFnSet(pTab);
+    SWRECTFN( pTab )
     SwTabCols aOld( rNew.Count() );
 
     // Set fixed points, LeftMin in Document coordinates, all others relative
     const SwPageFrame* pPage = pTab->FindPageFrame();
 
-    aOld.SetRight( aRectFnSet.GetHeight(pTab->Prt()) );
+    aOld.SetRight( (pTab->Prt().*fnRect->fnGetHeight)() );
     long nLeftMin;
-    if ( aRectFnSet.IsVert() )
+    if ( bVert )
     {
         nLeftMin = pTab->GetPrtLeft() - pPage->Frame().Left();
         aOld.SetLeft    ( LONG_MAX );
@@ -2819,7 +2832,7 @@ void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
 
     GetTabRows( aOld, nullptr, pBoxFrame );
 
-    GetIDocumentUndoRedo().StartUndo( SwUndoId::TABLE_ATTR, nullptr );
+    GetIDocumentUndoRedo().StartUndo( UNDO_TABLE_ATTR, nullptr );
 
     // check for differences between aOld and rNew:
     const size_t nCount = rNew.Count();
@@ -2828,8 +2841,8 @@ void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
 
     for ( size_t i = 0; i <= nCount; ++i )
     {
-        const size_t nIdxStt = aRectFnSet.IsVert() ? nCount - i : i - 1;
-        const size_t nIdxEnd = aRectFnSet.IsVert() ? nCount - i - 1 : i;
+        const size_t nIdxStt = bVert ? nCount - i : i - 1;
+        const size_t nIdxEnd = bVert ? nCount - i - 1 : i;
 
         const long nOldRowStart = i == 0  ? 0 : aOld[ nIdxStt ];
         const long nOldRowEnd =   i == nCount ? aOld.GetRight() : aOld[ nIdxEnd ];
@@ -2856,9 +2869,9 @@ void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
             {
                 if ( pFrame->IsCellFrame() && pFrame->FindTabFrame() == pTab )
                 {
-                    const long nLowerBorder = aRectFnSet.GetBottom(pFrame->Frame());
-                    const sal_uLong nTabTop = aRectFnSet.GetPrtTop(*pTab);
-                    if ( std::abs( aRectFnSet.YInc( nTabTop, nOldRowEnd ) - nLowerBorder ) <= ROWFUZZY )
+                    const long nLowerBorder = (pFrame->Frame().*fnRect->fnGetBottom)();
+                    const sal_uLong nTabTop = (pTab->*fnRect->fnGetPrtTop)();
+                    if ( std::abs( (*fnRect->fnYInc)( nTabTop, nOldRowEnd ) - nLowerBorder ) <= ROWFUZZY )
                     {
                         if ( !bCurColOnly || pFrame == pBoxFrame )
                         {
@@ -2876,7 +2889,7 @@ void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
                                 {
                                     // The new row height must not to be calculated from a overlapping box
                                     SwFormatFrameSize aNew( pLine->GetFrameFormat()->GetFrameSize() );
-                                    const long nNewSize = aRectFnSet.GetHeight(pFrame->Frame()) + nDiff;
+                                    const long nNewSize = (pFrame->Frame().*fnRect->fnGetHeight)() + nDiff;
                                     if( nNewSize != aNew.GetHeight() )
                                     {
                                         aNew.SetHeight( nNewSize );
@@ -2902,7 +2915,7 @@ void SwDoc::SetTabRows( const SwTabCols &rNew, bool bCurColOnly,
         }
     }
 
-    GetIDocumentUndoRedo().EndUndo( SwUndoId::TABLE_ATTR, nullptr );
+    GetIDocumentUndoRedo().EndUndo( UNDO_TABLE_ATTR, nullptr );
 
     ::ClearFEShellTabCols();
 }
@@ -2943,7 +2956,7 @@ void SwDoc::SetRowsToRepeat( SwTable &rTable, sal_uInt16 nSet )
 void SwCollectTableLineBoxes::AddToUndoHistory( const SwContentNode& rNd )
 {
     if( pHst )
-        pHst->Add( rNd.GetFormatColl(), rNd.GetIndex(), SwNodeType::Text );
+        pHst->Add( rNd.GetFormatColl(), rNd.GetIndex(), ND_TEXTNODE );
 }
 
 void SwCollectTableLineBoxes::AddBox( const SwTableBox& rBox )
@@ -3070,7 +3083,7 @@ void sw_BoxSetSplitBoxFormats( SwTableBox* pBox, SwCollectTableLineBoxes* pSplPa
         const SwTableBox* pSrcBox = pSplPara->GetBoxOfPos( *pBox );
         SwFrameFormat* pFormat = pSrcBox->GetFrameFormat();
 
-        if( SplitTable_HeadlineOption::BorderCopy == pSplPara->GetMode() )
+        if( HEADLINE_BORDERCOPY == pSplPara->GetMode() )
         {
             const SvxBoxItem& rBoxItem = pBox->GetFrameFormat()->GetBox();
             if( !rBoxItem.GetTop() )
@@ -3096,7 +3109,7 @@ void sw_BoxSetSplitBoxFormats( SwTableBox* pBox, SwCollectTableLineBoxes* pSplPa
             if( aTmpSet.Count() )
                 pBox->ClaimFrameFormat()->SetFormatAttr( aTmpSet );
 
-            if( SplitTable_HeadlineOption::BoxAttrAllCopy == pSplPara->GetMode() )
+            if( HEADLINE_BOXATRCOLLCOPY == pSplPara->GetMode() )
             {
                 SwNodeIndex aIdx( *pSrcBox->GetSttNd(), 1 );
                 SwContentNode* pCNd = aIdx.GetNode().GetContentNode();
@@ -3129,7 +3142,7 @@ void sw_BoxSetSplitBoxFormats( SwTableBox* pBox, SwCollectTableLineBoxes* pSplPa
  *                     Boxes' Max; but only if Size is using absolute
  *                     values (USHRT_MAX)
  */
-bool SwDoc::SplitTable( const SwPosition& rPos, SplitTable_HeadlineOption eHdlnMode,
+bool SwDoc::SplitTable( const SwPosition& rPos, sal_uInt16 eHdlnMode,
                         bool bCalcNewSize )
 {
     SwNode* pNd = &rPos.nNode.GetNode();
@@ -3196,7 +3209,7 @@ bool SwDoc::SplitTable( const SwPosition& rPos, SplitTable_HeadlineOption eHdlnM
         {
         // Set the lower Border of the preceding Line to
         // the upper Border of the current one
-        case SplitTable_HeadlineOption::BorderCopy:
+        case HEADLINE_BORDERCOPY:
             {
                 SwCollectTableLineBoxes aPara( false, eHdlnMode );
                 SwTableLine* pLn = rTable.GetTabLines()[
@@ -3217,11 +3230,11 @@ bool SwDoc::SplitTable( const SwPosition& rPos, SplitTable_HeadlineOption eHdlnM
             break;
 
         // Take over the Attributes of the first Line to the new one
-        case SplitTable_HeadlineOption::BoxAttrCopy:
-        case SplitTable_HeadlineOption::BoxAttrAllCopy:
+        case HEADLINE_BOXATTRCOPY:
+        case HEADLINE_BOXATRCOLLCOPY:
             {
                 SwHistory* pHst = nullptr;
-                if( SplitTable_HeadlineOption::BoxAttrAllCopy == eHdlnMode && pUndo )
+                if( HEADLINE_BOXATRCOLLCOPY == eHdlnMode && pUndo )
                     pHst = pUndo->GetHistory();
 
                 SwCollectTableLineBoxes aPara( true, eHdlnMode, pHst );
@@ -3238,13 +3251,13 @@ bool SwDoc::SplitTable( const SwPosition& rPos, SplitTable_HeadlineOption eHdlnM
             }
             break;
 
-        case SplitTable_HeadlineOption::ContentCopy:
+        case HEADLINE_CNTNTCOPY:
             rTable.CopyHeadlineIntoTable( *pNew );
             if( pUndo )
                 pUndo->SetTableNodeOffset( pNew->GetIndex() );
             break;
 
-        case SplitTable_HeadlineOption::NONE:
+        case HEADLINE_NONE:
             // Switch off repeating the Header
             pNew->GetTable().SetRowsToRepeat( 0 );
             break;
@@ -3407,7 +3420,7 @@ SwTableNode* SwNodes::SplitTable( const SwNodeIndex& rPos, bool bAfter,
     SwTableNode * pNewTableNd;
     {
         SwEndNode* pOldTableEndNd = pTNd->EndOfSectionNode()->GetEndNode();
-        assert(pOldTableEndNd && "Where is the EndNode?");
+        OSL_ENSURE( pOldTableEndNd, "Where is the EndNode?" );
 
         SwNodeIndex aIdx( *pBox->GetSttNd() );
         new SwEndNode( aIdx, *pTNd );
@@ -3695,7 +3708,7 @@ static bool lcl_SetAFormatBox(FndBox_ & rBox, SetAFormatTabPara *pSetPara, bool 
 
     if (rBox.GetBox()->GetSttNd())
     {
-        SwTableBox* pSetBox = rBox.GetBox();
+        SwTableBox* pSetBox = static_cast<SwTableBox*>(rBox.GetBox());
         if (!pSetBox->HasDirectFormatting() || bResetDirect)
         {
             if (bResetDirect)
@@ -3920,8 +3933,8 @@ OUString SwDoc::GetUniqueTableName() const
 
     const size_t nFlagSize = ( mpTableFrameFormatTable->size() / 8 ) + 2;
 
-    std::unique_ptr<sal_uInt8[]> pSetFlags( new sal_uInt8[ nFlagSize ] );
-    memset( pSetFlags.get(), 0, nFlagSize );
+    sal_uInt8* pSetFlags = new sal_uInt8[ nFlagSize ];
+    memset( pSetFlags, 0, nFlagSize );
 
     for( size_t n = 0; n < mpTableFrameFormatTable->size(); ++n )
     {
@@ -3955,6 +3968,7 @@ OUString SwDoc::GetUniqueTableName() const
         }
     }
 
+    delete [] pSetFlags;
     return aName + OUString::number( ++nNum );
 }
 
@@ -3980,13 +3994,13 @@ SwTableFormat* SwDoc::FindTableFormatByName( const OUString& rName, bool bAll ) 
     return const_cast<SwTableFormat*>(static_cast<const SwTableFormat*>(pRet));
 }
 
-bool SwDoc::SetColRowWidthHeight( SwTableBox& rAktBox, TableChgWidthHeightType eType,
+bool SwDoc::SetColRowWidthHeight( SwTableBox& rAktBox, sal_uInt16 eType,
                                     SwTwips nAbsDiff, SwTwips nRelDiff )
 {
     SwTableNode* pTableNd = const_cast<SwTableNode*>(rAktBox.GetSttNd()->FindTableNode());
     SwUndo* pUndo = nullptr;
 
-    if( (TableChgWidthHeightType::InsertDeleteMode & eType) && dynamic_cast<const SwDDETable*>( &pTableNd->GetTable()) !=  nullptr)
+    if( nsTableChgWidthHeightType::WH_FLAG_INSDEL & eType && dynamic_cast<const SwDDETable*>( &pTableNd->GetTable()) !=  nullptr)
         return false;
 
     SwTableFormulaUpdate aMsgHint( &pTableNd->GetTable() );
@@ -3995,27 +4009,26 @@ bool SwDoc::SetColRowWidthHeight( SwTableBox& rAktBox, TableChgWidthHeightType e
 
     bool const bUndo(GetIDocumentUndoRedo().DoesUndo());
     bool bRet = false;
-    switch( extractPosition(eType) )
+    switch( eType & 0xff )
     {
-    case TableChgWidthHeightType::ColLeft:
-    case TableChgWidthHeightType::ColRight:
-    case TableChgWidthHeightType::CellLeft:
-    case TableChgWidthHeightType::CellRight:
+    case nsTableChgWidthHeightType::WH_COL_LEFT:
+    case nsTableChgWidthHeightType::WH_COL_RIGHT:
+    case nsTableChgWidthHeightType::WH_CELL_LEFT:
+    case nsTableChgWidthHeightType::WH_CELL_RIGHT:
         {
              bRet = pTableNd->GetTable().SetColWidth( rAktBox,
                                 eType, nAbsDiff, nRelDiff,
                                 (bUndo) ? &pUndo : nullptr );
         }
         break;
-    case TableChgWidthHeightType::RowTop:
-    case TableChgWidthHeightType::RowBottom:
-    case TableChgWidthHeightType::CellTop:
-    case TableChgWidthHeightType::CellBottom:
+    case nsTableChgWidthHeightType::WH_ROW_TOP:
+    case nsTableChgWidthHeightType::WH_ROW_BOTTOM:
+    case nsTableChgWidthHeightType::WH_CELL_TOP:
+    case nsTableChgWidthHeightType::WH_CELL_BOTTOM:
         bRet = pTableNd->GetTable().SetRowHeight( rAktBox,
                             eType, nAbsDiff, nRelDiff,
                             (bUndo) ? &pUndo : nullptr );
         break;
-    default: break;
     }
 
     GetIDocumentUndoRedo().DoUndo(bUndo); // SetColWidth can turn it off
@@ -4027,7 +4040,7 @@ bool SwDoc::SetColRowWidthHeight( SwTableBox& rAktBox, TableChgWidthHeightType e
     if( bRet )
     {
         getIDocumentState().SetModified();
-        if( TableChgWidthHeightType::InsertDeleteMode & eType )
+        if( nsTableChgWidthHeightType::WH_FLAG_INSDEL & eType )
             getIDocumentFieldsAccess().SetFieldsDirty( true, nullptr, 0 );
     }
     return bRet;
@@ -4056,7 +4069,7 @@ void SwDoc::ChkBoxNumFormat( SwTableBox& rBox, bool bCallUpdate )
         {
             if (GetIDocumentUndoRedo().DoesUndo())
             {
-                GetIDocumentUndoRedo().StartUndo( SwUndoId::TABLE_AUTOFMT, nullptr );
+                GetIDocumentUndoRedo().StartUndo( UNDO_TABLE_AUTOFMT, nullptr );
                 pUndo = new SwUndoTableNumFormat( rBox );
                 pUndo->SetNumFormat( nFormatIdx, fNumber );
             }
@@ -4129,7 +4142,7 @@ void SwDoc::ChkBoxNumFormat( SwTableBox& rBox, bool bCallUpdate )
         {
             if (GetIDocumentUndoRedo().DoesUndo())
             {
-                GetIDocumentUndoRedo().StartUndo( SwUndoId::TABLE_AUTOFMT, nullptr );
+                GetIDocumentUndoRedo().StartUndo( UNDO_TABLE_AUTOFMT, nullptr );
                 pUndo = new SwUndoTableNumFormat( rBox );
             }
 
@@ -4157,7 +4170,7 @@ void SwDoc::ChkBoxNumFormat( SwTableBox& rBox, bool bCallUpdate )
         {
             pUndo->SetBox( rBox );
             GetIDocumentUndoRedo().AppendUndo(pUndo);
-            GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+            GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
         }
 
         const SwTableNode* pTableNd = rBox.GetSttNd()->FindTableNode();
@@ -4305,7 +4318,7 @@ bool SwDoc::InsCopyOfTable( SwPosition& rInsPos, const SwSelBoxes& rBoxes,
         if (bUndo)
         {
             GetIDocumentUndoRedo().ClearRedo();
-            pUndo = new SwUndoCpyTable(this);
+            pUndo = new SwUndoCpyTable;
         }
 
         {
@@ -4332,17 +4345,17 @@ bool SwDoc::InsCopyOfTable( SwPosition& rInsPos, const SwSelBoxes& rBoxes,
     }
     else
     {
-        RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
+        RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
         if( getIDocumentRedlineAccess().IsRedlineOn() )
-            getIDocumentRedlineAccess().SetRedlineFlags( RedlineFlags::On |
-                                  RedlineFlags::ShowInsert |
-                                  RedlineFlags::ShowDelete );
+            getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON |
+                                  nsRedlineMode_t::REDLINE_SHOW_INSERT |
+                                  nsRedlineMode_t::REDLINE_SHOW_DELETE));
 
         SwUndoTableCpyTable* pUndo = nullptr;
         if (bUndo)
         {
             GetIDocumentUndoRedo().ClearRedo();
-            pUndo = new SwUndoTableCpyTable(this);
+            pUndo = new SwUndoTableCpyTable;
             GetIDocumentUndoRedo().DoUndo(false);
         }
 
@@ -4430,7 +4443,7 @@ bool SwDoc::InsCopyOfTable( SwPosition& rInsPos, const SwSelBoxes& rBoxes,
             rInsPos.nNode = *pSttNd;
             rInsPos.nContent.Assign( GetNodes().GoNext( &rInsPos.nNode ), 0 );
         }
-        getIDocumentRedlineAccess().SetRedlineFlags( eOld );
+        getIDocumentRedlineAccess().SetRedlineMode( eOld );
     }
 
     if( bRet )
@@ -4531,7 +4544,7 @@ bool SwDoc::UnProtectCells( const SwSelBoxes& rBoxes )
 
 bool SwDoc::UnProtectTables( const SwPaM& rPam )
 {
-    GetIDocumentUndoRedo().StartUndo(SwUndoId::EMPTY, nullptr);
+    GetIDocumentUndoRedo().StartUndo(UNDO_EMPTY, nullptr);
 
     bool bChgd = false, bHasSel = rPam.HasMark() ||
                                     rPam.GetNext() != &rPam;
@@ -4556,7 +4569,7 @@ bool SwDoc::UnProtectTables( const SwPaM& rPam )
                     bFound = pStt->nNode.GetIndex() < nTableIdx &&
                             nTableIdx < pEnd->nNode.GetIndex();
 
-                } while( !bFound && &rPam != ( pTmp = pTmp->GetNext() ) );
+                } while( !bFound && &rPam != ( pTmp = static_cast<SwPaM*>(pTmp->GetNext()) ) );
                 if( !bFound )
                     continue; // Continue searching
             }
@@ -4565,7 +4578,7 @@ bool SwDoc::UnProtectTables( const SwPaM& rPam )
             bChgd |= UnProtectTableCells( *pTable );
         }
 
-    GetIDocumentUndoRedo().EndUndo(SwUndoId::EMPTY, nullptr);
+    GetIDocumentUndoRedo().EndUndo(UNDO_EMPTY, nullptr);
     if( bChgd )
         getIDocumentState().SetModified();
 
@@ -4611,91 +4624,6 @@ bool SwDoc::HasTableAnyProtection( const SwPosition* pPos,
         }
     }
     return bHasProtection;
-}
-
-SwTableAutoFormat* SwDoc::MakeTableStyle(const OUString& rName, bool bBroadcast)
-{
-    SwTableAutoFormat aTableFormat(rName);
-    GetTableStyles().AddAutoFormat(aTableFormat);
-    SwTableAutoFormat* pTableFormat = GetTableStyles().FindAutoFormat(rName);
-
-    getIDocumentState().SetModified();
-
-    if (GetIDocumentUndoRedo().DoesUndo())
-    {
-        SwUndo * pUndo = new SwUndoTableStyleMake(rName, this);
-
-        GetIDocumentUndoRedo().AppendUndo(pUndo);
-    }
-
-    if (bBroadcast)
-        BroadcastStyleOperation(rName, SfxStyleFamily::Table, SfxHintId::StyleSheetCreated);
-
-    return pTableFormat;
-}
-
-std::unique_ptr<SwTableAutoFormat> SwDoc::DelTableStyle(const OUString& rName, bool bBroadcast)
-{
-    if (bBroadcast)
-        BroadcastStyleOperation(rName, SfxStyleFamily::Table, SfxHintId::StyleSheetErased);
-
-    std::unique_ptr<SwTableAutoFormat> pReleasedFormat = GetTableStyles().ReleaseAutoFormat(rName);
-
-    std::vector<SwTable*> vAffectedTables;
-    if (pReleasedFormat.get())
-    {
-        size_t nTableCount = GetTableFrameFormatCount(true);
-        for (size_t i=0; i < nTableCount; ++i)
-        {
-            SwFrameFormat* pFrameFormat = &GetTableFrameFormat(i, true);
-            SwTable* pTable = SwTable::FindTable(pFrameFormat);
-            if (pTable->GetTableStyleName() == pReleasedFormat->GetName())
-            {
-                pTable->SetTableStyleName("");
-                vAffectedTables.push_back(pTable);
-            }
-        }
-
-        getIDocumentState().SetModified();
-
-        if (GetIDocumentUndoRedo().DoesUndo())
-        {
-            SwUndo * pUndo = new SwUndoTableStyleDelete(std::move(pReleasedFormat), vAffectedTables, this);
-
-            GetIDocumentUndoRedo().AppendUndo(pUndo);
-        }
-    }
-
-    return pReleasedFormat;
-}
-
-void SwDoc::ChgTableStyle(const OUString& rName, const SwTableAutoFormat& rNewFormat)
-{
-    SwTableAutoFormat* pFormat = GetTableStyles().FindAutoFormat(rName);
-    if (pFormat)
-    {
-        SwTableAutoFormat aOldFormat = *pFormat;
-        *pFormat = rNewFormat;
-        pFormat->SetName(rName);
-
-        size_t nTableCount = GetTableFrameFormatCount(true);
-        for (size_t i=0; i < nTableCount; ++i)
-        {
-            SwFrameFormat* pFrameFormat = &GetTableFrameFormat(i, true);
-            SwTable* pTable = SwTable::FindTable(pFrameFormat);
-            if (pTable->GetTableStyleName() == rName)
-                GetDocShell()->GetFEShell()->UpdateTableStyleFormatting(pTable->GetTableNode());
-        }
-
-        getIDocumentState().SetModified();
-
-        if (GetIDocumentUndoRedo().DoesUndo())
-        {
-            SwUndo * pUndo = new SwUndoTableStyleUpdate(rName, aOldFormat, this);
-
-            GetIDocumentUndoRedo().AppendUndo(pUndo);
-        }
-    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

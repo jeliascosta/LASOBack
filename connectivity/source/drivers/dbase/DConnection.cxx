@@ -53,7 +53,7 @@ ODbaseConnection::~ODbaseConnection()
 IMPLEMENT_SERVICE_INFO(ODbaseConnection, "com.sun.star.sdbc.drivers.dbase.Connection", "com.sun.star.sdbc.Connection")
 
 
-Reference< XDatabaseMetaData > SAL_CALL ODbaseConnection::getMetaData(  )
+Reference< XDatabaseMetaData > SAL_CALL ODbaseConnection::getMetaData(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -69,7 +69,7 @@ Reference< XDatabaseMetaData > SAL_CALL ODbaseConnection::getMetaData(  )
     return xMetaData;
 }
 
-css::uno::Reference< XTablesSupplier > ODbaseConnection::createCatalog()
+::com::sun::star::uno::Reference< XTablesSupplier > ODbaseConnection::createCatalog()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     Reference< XTablesSupplier > xTab = m_xCatalog;
@@ -82,7 +82,7 @@ css::uno::Reference< XTablesSupplier > ODbaseConnection::createCatalog()
     return xTab;
 }
 
-Reference< XStatement > SAL_CALL ODbaseConnection::createStatement(  )
+Reference< XStatement > SAL_CALL ODbaseConnection::createStatement(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -93,7 +93,7 @@ Reference< XStatement > SAL_CALL ODbaseConnection::createStatement(  )
     return xReturn;
 }
 
-Reference< XPreparedStatement > SAL_CALL ODbaseConnection::prepareStatement( const OUString& sql )
+Reference< XPreparedStatement > SAL_CALL ODbaseConnection::prepareStatement( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -106,7 +106,7 @@ Reference< XPreparedStatement > SAL_CALL ODbaseConnection::prepareStatement( con
     return pStmt;
 }
 
-Reference< XPreparedStatement > SAL_CALL ODbaseConnection::prepareCall( const OUString& /*sql*/ )
+Reference< XPreparedStatement > SAL_CALL ODbaseConnection::prepareCall( const OUString& /*sql*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::prepareCall", *this );
     return nullptr;

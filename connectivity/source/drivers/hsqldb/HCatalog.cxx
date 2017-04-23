@@ -21,7 +21,6 @@
 #include "hsqldb/HUsers.hxx"
 #include "hsqldb/HTables.hxx"
 #include "hsqldb/HViews.hxx"
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/sdbc/XResultSet.hpp>
 #include <comphelper/types.hxx>
@@ -53,10 +52,12 @@ void OHCatalog::refreshObjects(const Sequence< OUString >& _sKindOfObject,TStrin
 void OHCatalog::refreshTables()
 {
     TStringVector aVector;
+    static const char s_sTableTypeView[] = "VIEW";
+    static const char s_sTableTypeTable[] = "TABLE";
 
     Sequence< OUString > sTableTypes(2);
-    sTableTypes[0] = "VIEW";
-    sTableTypes[1] = "TABLE";
+    sTableTypes[0] = s_sTableTypeView;
+    sTableTypes[1] = s_sTableTypeTable;
 
     refreshObjects(sTableTypes,aVector);
 
@@ -122,7 +123,7 @@ void OHCatalog::refreshUsers()
         m_pUsers = new OUsers(*this,m_aMutex,aVector,m_xConnection,this);
 }
 
-Any SAL_CALL OHCatalog::queryInterface( const Type & rType )
+Any SAL_CALL OHCatalog::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     if ( rType == cppu::UnoType<XGroupsSupplier>::get())
         return Any();
@@ -130,10 +131,10 @@ Any SAL_CALL OHCatalog::queryInterface( const Type & rType )
     return OCatalog::queryInterface(rType);
 }
 
-Sequence< Type > SAL_CALL OHCatalog::getTypes(  )
+Sequence< Type > SAL_CALL OHCatalog::getTypes(  ) throw(RuntimeException, std::exception)
 {
     Sequence< Type > aTypes = OCatalog::getTypes();
-    std::vector<Type> aOwnTypes;
+    ::std::vector<Type> aOwnTypes;
     aOwnTypes.reserve(aTypes.getLength());
     const Type* pBegin = aTypes.getConstArray();
     const Type* pEnd = pBegin + aTypes.getLength();

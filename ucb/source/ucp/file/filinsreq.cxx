@@ -18,7 +18,7 @@
  */
 
 #include "filinsreq.hxx"
-#include "filtask.hxx"
+#include "shell.hxx"
 #include "filglob.hxx"
 
 #include <comphelper/interaction.hxx>
@@ -42,7 +42,7 @@ using namespace fileaccess;
 XInteractionRequestImpl::XInteractionRequestImpl(
     const OUString& aClashingName,
     const Reference<XInterface>& xOrigin,
-    TaskManager *pShell,sal_Int32 CommandId)
+    shell *pShell,sal_Int32 CommandId)
     : p1( new XInteractionSupplyNameImpl ),
       p2( new XInteractionAbortImpl ),
       m_nErrorCode(0),

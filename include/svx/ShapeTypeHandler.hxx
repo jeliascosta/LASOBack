@@ -75,7 +75,7 @@ struct ShapeTypeDescriptor
         service names of shapes and associated enum values and to create new
         accessible objects for given shapes.
 */
-class SVX_DLLPUBLIC ShapeTypeHandler final
+class SVX_DLLPUBLIC ShapeTypeHandler
 {
 public:
     enum { UNKNOWN_SHAPE_TYPE = 0 };
@@ -136,12 +136,11 @@ public:
         ShapeTypeDescriptor aDescriptorList[]);
 
     /// get the accessible base name for an object
-    ///
-    /// @throws css::uno::RuntimeException
     static OUString CreateAccessibleBaseName (
-        const css::uno::Reference< css::drawing::XShape >& rxShape);
+        const css::uno::Reference< css::drawing::XShape >& rxShape)
+            throw (css::uno::RuntimeException, std::exception);
 
-private:
+protected:
     // Declare default constructor, copy constructor, destructor, and
     // assignment operation protected so that no one accidentally creates a
     // second instance of this singleton class or deletes it.
@@ -152,8 +151,9 @@ private:
     /** This destructor is never called at the moment.  But because this
         class is a singleton this is not a problem.
     */
-    ~ShapeTypeHandler();
+    virtual ~ShapeTypeHandler();
 
+private:
     /// Pointer to the only instance of this class.
     static ShapeTypeHandler* instance;
 

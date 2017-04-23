@@ -22,25 +22,17 @@
 
 #include <sal/config.h>
 
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
 #include <rtl/ref.hxx>
 #include <svx/IAccessibleViewForwarderListener.hxx>
+#include <svx/AccessibleShapeTreeInfo.hxx>
+#include <com/sun/star/drawing/XShape.hpp>
+#include <com/sun/star/drawing/XShapes.hpp>
 #include <svx/svxdllapi.h>
-
-namespace com { namespace sun { namespace star {
-     namespace accessibility { class XAccessible; }
-     namespace drawing { class XShape; }
-     namespace drawing { class XShapes; }
-} } }
 
 namespace accessibility {
 
 class AccessibleContextBase;
-class AccessibleShapeTreeInfo;
 class ChildrenManagerImpl;
-class IAccessibleViewForwarder;
 
 /** The AccessibleChildrenManager class acts as a cache of the
     accessible objects of the currently visible shapes of a draw page and as
@@ -126,17 +118,18 @@ public:
             requested accessible child.  This reference is empty if it has
             not been possible to create the accessible object of the
             corresponding shape.
-        @throws
+        @raises
             Throws an IndexOutOfBoundsException if the index is not valid.
     */
     css::uno::Reference<
             css::accessibility::XAccessible>
-        GetChild (long nIndex);
-        /// @throws css::uno::RuntimeException
-        css::uno::Reference< css::accessibility::XAccessible> GetChild (const css::uno::Reference< css::drawing::XShape>& xShape);
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::uno::RuntimeException
-        css::uno::Reference< css::drawing::XShape> GetChildShape (long nIndex);
+        GetChild (long nIndex)
+        throw (css::uno::RuntimeException,
+               css::lang::IndexOutOfBoundsException);
+        css::uno::Reference< css::accessibility::XAccessible> GetChild (const css::uno::Reference< css::drawing::XShape>& xShape) throw (css::uno::RuntimeException);
+        css::uno::Reference< css::drawing::XShape> GetChildShape (long nIndex)
+            throw (css::lang::IndexOutOfBoundsException,
+                   css::uno::RuntimeException);
 
     /** Update the child manager.  Take care of a modified set of children
         and modified visible area.  This method can optimize the update
@@ -199,7 +192,9 @@ public:
     */
     void RemoveFocus();
 
-    void ViewForwarderChanged();
+    void ViewForwarderChanged(
+        IAccessibleViewForwarderListener::ChangeType aChangeType,
+        const IAccessibleViewForwarder* pViewForwarder);
 
 private:
     rtl::Reference<ChildrenManagerImpl> mpImpl;

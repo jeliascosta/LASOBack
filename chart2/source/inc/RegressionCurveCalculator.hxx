@@ -33,7 +33,7 @@ class RegressionCurveCalculator : public
 {
 public:
     RegressionCurveCalculator();
-    virtual ~RegressionCurveCalculator() override;
+    virtual ~RegressionCurveCalculator();
 
     static bool isLinearScaling(
         const css::uno::Reference< css::chart2::XScaling >& xScaling );
@@ -50,7 +50,7 @@ protected:
         const css::uno::Reference< css::util::XNumberFormatter >& xNumFormatter,
         sal_Int32 nNumberFormatKey,
         double fNumber,
-        sal_Int32* pStringLength );
+        sal_Int32* pStringLength = nullptr );
 
     static void addStringToEquation( OUStringBuffer& aStrEquation, sal_Int32& nLineLength, OUStringBuffer& aAddString, sal_Int32* pMaxLength );
 
@@ -60,20 +60,23 @@ protected:
     bool  mForceIntercept;
     double    mInterceptValue;
     sal_Int32 mPeriod;
-    OUString mXName, mYName;
 
     // ____ XRegressionCurveCalculator ____
     virtual void SAL_CALL setRegressionProperties(
         sal_Int32 aDegree,
         sal_Bool  aForceIntercept,
         double    aInterceptValue,
-        sal_Int32 aPeriod) override;
+        sal_Int32 aPeriod)
+            throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL recalculateRegression(
         const css::uno::Sequence< double >& aXValues,
-        const css::uno::Sequence< double >& aYValues ) override = 0;
+        const css::uno::Sequence< double >& aYValues )
+        throw (css::uno::RuntimeException, std::exception) override = 0;
 
-    virtual double SAL_CALL getCurveValue( double x ) override = 0;
+    virtual double SAL_CALL getCurveValue( double x )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override = 0;
 
     virtual css::uno::Sequence< css::geometry::RealPoint2D > SAL_CALL getCurveValues(
         double min,
@@ -81,18 +84,20 @@ protected:
         sal_Int32 nPointCount,
         const css::uno::Reference< css::chart2::XScaling >& xScalingX,
         const css::uno::Reference< css::chart2::XScaling >& xScalingY,
-        sal_Bool bMaySkipPointsInCalculation ) override;
+        sal_Bool bMaySkipPointsInCalculation )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
-    virtual double SAL_CALL getCorrelationCoefficient() override;
+    virtual double SAL_CALL getCorrelationCoefficient()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getRepresentation() override;
+    virtual OUString SAL_CALL getRepresentation()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual OUString SAL_CALL getFormattedRepresentation(
         const css::uno::Reference< css::util::XNumberFormatsSupplier >& xNumFmtSupplier,
-        sal_Int32 nNumberFormatKey, sal_Int32 nFormulaLength ) override;
-
-    virtual void SAL_CALL setXYNames(
-        const OUString& aXName, const OUString& aYName ) override;
+        sal_Int32 nNumberFormatKey, sal_Int32 nFormulaLength )
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } //  namespace chart

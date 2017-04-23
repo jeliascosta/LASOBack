@@ -21,7 +21,6 @@
 #define INCLUDED_SC_SOURCE_FILTER_XML_XMLCOLUMNROWGROUPEXPORT_HXX
 
 #include <list>
-#include <vector>
 #include <rtl/ustring.hxx>
 #include <sal/types.h>
 
@@ -35,8 +34,8 @@ struct ScMyColumnRowGroup
     bool operator< (const ScMyColumnRowGroup& rGroup) const;
 };
 
-typedef std::list<ScMyColumnRowGroup> ScMyColumnRowGroupVec;
-typedef std::vector<sal_Int32> ScMyFieldGroupVec;
+typedef std::list <ScMyColumnRowGroup> ScMyColumnRowGroupVec;
+typedef std::list <sal_Int32> ScMyFieldGroupVec;
 
 class ScXMLExport;
 class ScMyOpenCloseColumnRowGroup
@@ -47,6 +46,7 @@ class ScMyOpenCloseColumnRowGroup
     ScMyFieldGroupVec           aTableEnd;
 
     void OpenGroup(const ScMyColumnRowGroup& rGroup);
+    void CloseGroup();
 public:
     ScMyOpenCloseColumnRowGroup(ScXMLExport& rExport, sal_uInt32 nToken);
     ~ScMyOpenCloseColumnRowGroup();

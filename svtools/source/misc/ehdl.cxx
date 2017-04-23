@@ -19,7 +19,6 @@
 
 #include <osl/mutex.hxx>
 #include <tools/rcid.h>
-#include <tools/resary.hxx>
 #include <tools/wintypes.hxx>
 #include <vcl/msgbox.hxx>
 #include <vcl/svapp.hxx>
@@ -32,9 +31,9 @@
 #include <memory>
 
 
-static ErrorHandlerFlags aWndFunc(
+static sal_uInt16 aWndFunc(
     vcl::Window *pWin,            // Parent of the dialog
-    ErrorHandlerFlags nFlags,
+    sal_uInt16 nFlags,
     const OUString &rErr,      // error text
     const OUString &rAction)   // action text
 
@@ -53,35 +52,34 @@ static ErrorHandlerFlags aWndFunc(
 
     // determine necessary WinBits from the flags
     WinBits eBits=0;
-    if ( nFlags & (ErrorHandlerFlags::ButtonsCancel | ErrorHandlerFlags::ButtonsRetry) )
+    if ( (ERRCODE_BUTTON_CANCEL|ERRCODE_BUTTON_RETRY) == (nFlags & (ERRCODE_BUTTON_CANCEL|ERRCODE_BUTTON_RETRY)) )
         eBits = WB_RETRY_CANCEL;
-    else if ( nFlags & ErrorHandlerFlags::ButtonsOkCancel )
+    else if ( ERRCODE_BUTTON_OK_CANCEL == (nFlags & ERRCODE_BUTTON_OK_CANCEL) )
         eBits = WB_OK_CANCEL;
-    else if ( nFlags & ErrorHandlerFlags::ButtonsOk )
+    else if ( ERRCODE_BUTTON_OK == (nFlags & ERRCODE_BUTTON_OK) )
         eBits = WB_OK;
-    else if ( nFlags & ErrorHandlerFlags::ButtonsYesNoCancel )
+    else if ( ERRCODE_BUTTON_YES_NO_CANCEL == (nFlags & ERRCODE_BUTTON_YES_NO_CANCEL) )
         eBits = WB_YES_NO_CANCEL;
-    else if ( nFlags & ErrorHandlerFlags::ButtonsYesNo )
+    else if ( ERRCODE_BUTTON_YES_NO == (nFlags & ERRCODE_BUTTON_YES_NO) )
         eBits = WB_YES_NO;
 
-    switch(nFlags & ErrorHandlerFlags(0x0f00))
+    switch(nFlags & 0x0f00)
     {
-      case ErrorHandlerFlags::ButtonDefaultsOk:
+      case ERRCODE_BUTTON_DEF_OK:
             eBits |= WB_DEF_OK;
             break;
 
-      case ErrorHandlerFlags::ButtonDefaultsCancel:
+      case ERRCODE_BUTTON_DEF_CANCEL:
             eBits |= WB_DEF_CANCEL;
             break;
 
-      case ErrorHandlerFlags::ButtonDefaultsYes:
+      case ERRCODE_BUTTON_DEF_YES:
             eBits |= WB_DEF_YES;
             break;
 
-      case ErrorHandlerFlags::ButtonDefaultsNo:
+      case ERRCODE_BUTTON_DEF_NO:
             eBits |= WB_DEF_NO;
             break;
-      default: break;
     }
 
     OUString aErr(SvtResId(STR_ERR_HDLMESS).toString());
@@ -92,44 +90,48 @@ static ErrorHandlerFlags aWndFunc(
     aErr = aErr.replaceAll("$(ERROR)", rErr);
 
     VclPtr<MessBox> pBox;
-    switch ( nFlags & ErrorHandlerFlags(0xf000) )
+    switch ( nFlags & 0xf000 )
     {
-        case ErrorHandlerFlags::MessageError:
+        case ERRCODE_MSG_ERROR:
             pBox.reset(VclPtr<ErrorBox>::Create(pWin, eBits, aErr));
             break;
 
-        case ErrorHandlerFlags::MessageWarning:
+        case ERRCODE_MSG_WARNING:
             pBox.reset(VclPtr<WarningBox>::Create(pWin, eBits, aErr));
             break;
 
-        case ErrorHandlerFlags::MessageInfo:
+        case ERRCODE_MSG_INFO:
             pBox.reset(VclPtr<InfoBox>::Create(pWin, aErr));
+            break;
+
+        case ERRCODE_MSG_QUERY:
+            pBox.reset(VclPtr<QueryBox>::Create(pWin, eBits, aErr));
             break;
 
         default:
         {
             SAL_WARN( "svtools.misc", "no MessBox type");
-            return ErrorHandlerFlags::ButtonsOk;
+            return ERRCODE_BUTTON_OK;
         }
     }
 
-    ErrorHandlerFlags nRet = ErrorHandlerFlags::NONE;
+    sal_uInt16 nRet = RET_CANCEL;
     switch ( pBox->Execute() )
     {
         case RET_OK:
-            nRet = ErrorHandlerFlags::ButtonsOk;
+            nRet = ERRCODE_BUTTON_OK;
             break;
         case RET_CANCEL:
-            nRet = ErrorHandlerFlags::ButtonsCancel;
+            nRet = ERRCODE_BUTTON_CANCEL;
             break;
         case RET_RETRY:
-            nRet = ErrorHandlerFlags::ButtonsRetry;
+            nRet = ERRCODE_BUTTON_RETRY;
             break;
         case RET_YES:
-            nRet = ErrorHandlerFlags::ButtonsYes;
+            nRet = ERRCODE_BUTTON_YES;
             break;
         case RET_NO:
-            nRet = ErrorHandlerFlags::ButtonsNo;
+            nRet = ERRCODE_BUTTON_NO;
             break;
         default:
             SAL_WARN( "svtools.misc", "Unknown MessBox return value" );
@@ -148,18 +150,19 @@ SfxErrorHandler::SfxErrorHandler(sal_uInt16 nIdP, sal_uLong lStartP, sal_uLong l
     RegisterDisplay(&aWndFunc);
     if( ! pMgr )
     {
-        pMgr = ResMgr::CreateResMgr("ofa", Application::GetSettings().GetUILanguageTag() );
-        pFreeMgr.reset(pMgr);
+        pFreeMgr = pMgr = ResMgr::CreateResMgr("ofa", Application::GetSettings().GetUILanguageTag() );
     }
 }
 
 
 SfxErrorHandler::~SfxErrorHandler()
 {
+    delete pFreeMgr;
 }
 
 
-bool SfxErrorHandler::CreateString(const ErrorInfo *pErr, OUString &rStr) const
+bool SfxErrorHandler::CreateString(
+    const ErrorInfo *pErr, OUString &rStr, sal_uInt16& nFlags) const
 
 /*  [Description]
 
@@ -171,7 +174,7 @@ bool SfxErrorHandler::CreateString(const ErrorInfo *pErr, OUString &rStr) const
     sal_uLong nErrCode = pErr->GetErrorCode() & ERRCODE_ERROR_MASK;
     if( nErrCode>=lEnd || nErrCode<=lStart )
         return false;
-    if(GetErrorString(nErrCode, rStr))
+    if(GetErrorString(nErrCode, rStr, nFlags))
     {
         const StringErrorInfo *pStringInfo = dynamic_cast<const StringErrorInfo *>(pErr);
         if(pStringInfo)
@@ -192,7 +195,61 @@ bool SfxErrorHandler::CreateString(const ErrorInfo *pErr, OUString &rStr) const
     return false;
 }
 
-void SfxErrorHandler::GetClassString(sal_uLong lClassId, OUString &rStr)
+
+class ResString: public OUString
+
+/*  [Description]
+
+    Helpclass to read a string and optional ExtraData from
+    a string Resource.
+
+    */
+
+{
+    sal_uInt16 nFlags;
+  public:
+    sal_uInt16 GetFlags() const {return nFlags;}
+    const OUString & GetString() const {return *this;}
+    explicit ResString( ResId &rId);
+};
+
+
+ResString::ResString(ResId & rId):
+    OUString(rId.SetAutoRelease(false).toString()),
+    nFlags(0)
+{
+    ResMgr * pResMgr = rId.GetResMgr();
+     // String ctor temporarily sets global ResManager
+    if (pResMgr->GetRemainSize())
+        nFlags = sal_uInt16(pResMgr->ReadShort());
+    rId.SetAutoRelease(true);
+    pResMgr->PopContext();
+}
+
+
+struct ErrorResource_Impl : private Resource
+
+/*  [Description]
+
+    Helpclass for access to string sub-resources of a resource
+    */
+
+{
+
+    ResId aResId;
+
+    ErrorResource_Impl(ResId& rErrIdP, sal_uInt16 nId)
+        : Resource(rErrIdP),aResId(nId,*rErrIdP.GetResMgr()){}
+
+    ~ErrorResource_Impl() { FreeResource(); }
+
+    operator ResString() { return ResString( aResId ); }
+    operator bool()      { return IsAvailableRes(aResId.SetRT(RSC_STRING)); }
+
+};
+
+
+void SfxErrorHandler::GetClassString(sal_uLong lClassId, OUString &rStr) const
 
 /*  [Description]
 
@@ -205,16 +262,46 @@ void SfxErrorHandler::GetClassString(sal_uLong lClassId, OUString &rStr)
     std::unique_ptr<ResMgr> pResMgr(ResMgr::CreateResMgr("ofa", Application::GetSettings().GetUILanguageTag() ));
     if( pResMgr )
     {
-        ResStringArray aEr(ResId(RID_ERRHDL, *pResMgr));
-        sal_uInt32 nErrIdx = aEr.FindIndex((sal_uInt16)lClassId);
-        if (nErrIdx != RESARRAY_INDEX_NOTFOUND)
+        ResId aId(RID_ERRHDL, *pResMgr );
+        ErrorResource_Impl aEr(aId, (sal_uInt16)lClassId);
+        if(aEr)
         {
-            rStr = aEr.GetString(nErrIdx);
+            rStr = static_cast<ResString>(aEr).GetString();
         }
     }
 }
 
-bool SfxErrorHandler::GetErrorString(sal_uLong lErrId, OUString &rStr) const
+
+bool SfxErrorHandler::GetMessageString(
+    sal_uLong lErrId, OUString &rStr, sal_uInt16 &nFlags) const
+
+/*  [Description]
+
+    Creates the string to output a message box
+
+    */
+
+{
+    bool bRet = false;
+    std::unique_ptr<ResId> pResId(new ResId(nId, *pMgr));
+
+    ErrorResource_Impl aEr(*pResId, (sal_uInt16)lErrId);
+    if(aEr)
+    {
+        ResString aErrorString(aEr);
+        sal_uInt16 nResFlags = aErrorString.GetFlags();
+        if( nResFlags )
+            nFlags=aErrorString.GetFlags();
+        rStr = aErrorString.GetString();
+        bRet = true;
+    }
+
+    return bRet;
+}
+
+
+bool SfxErrorHandler::GetErrorString(
+    sal_uLong lErrId, OUString &rStr, sal_uInt16 &nFlags) const
 
 /*  [Description]
 
@@ -228,16 +315,23 @@ bool SfxErrorHandler::GetErrorString(sal_uLong lErrId, OUString &rStr) const
 
     bool bRet = false;
     rStr = SvtResId(RID_ERRHDL_CLASS).toString();
+    ResId aResId(nId, *pMgr);
 
-    ResStringArray aEr(ResId(nId, *pMgr));
-    sal_uInt32 nErrIdx = aEr.FindIndex((sal_uInt16)lErrId);
-    if (nErrIdx != RESARRAY_INDEX_NOTFOUND)
     {
-        rStr = rStr.replaceAll("$(ERROR)", aEr.GetString(nErrIdx));
-        bRet = true;
+        ErrorResource_Impl aEr(aResId, (sal_uInt16)lErrId);
+        if(aEr)
+        {
+            ResString aErrorString(aEr);
+
+            sal_uInt16 nResFlags = aErrorString.GetFlags();
+            if ( nResFlags )
+                nFlags = nResFlags;
+            rStr = rStr.replaceAll("$(ERROR)", aErrorString.GetString());
+            bRet = true;
+        }
+        else
+            bRet = false;
     }
-    else
-        bRet = false;
 
     if( bRet )
     {
@@ -251,6 +345,7 @@ bool SfxErrorHandler::GetErrorString(sal_uLong lErrId, OUString &rStr) const
 
     return bRet;
 }
+
 
 SfxErrorContext::SfxErrorContext(
     sal_uInt16 nCtxIdP, vcl::Window *pWindow, sal_uInt16 nResIdP, ResMgr *pMgrP)
@@ -290,11 +385,12 @@ bool SfxErrorContext::GetString(sal_uLong nErrId, OUString &rStr)
     {
         SolarMutexGuard aGuard;
 
-        ResStringArray aTestEr(ResId(nResId, *pMgr));
-        sal_uInt32 nErrIdx = aTestEr.FindIndex(nCtxId);
-        if (nErrIdx != RESARRAY_INDEX_NOTFOUND)
+        ResId aResId( nResId, *pMgr );
+
+        ErrorResource_Impl aTestEr( aResId, nCtxId );
+        if ( aTestEr )
         {
-            rStr = aTestEr.GetString(nErrIdx);
+            rStr = static_cast<ResString>(aTestEr).GetString();
             rStr = rStr.replaceAll("$(ARG1)", aArg1);
             bRet = true;
         }
@@ -307,8 +403,9 @@ bool SfxErrorContext::GetString(sal_uLong nErrId, OUString &rStr)
         if ( bRet )
         {
             sal_uInt16 nId = ( nErrId & ERRCODE_WARNING_MASK ) ? ERRCTX_WARNING : ERRCTX_ERROR;
-            ResStringArray aEr(ResId(RID_ERRCTX, *pMgr));
-            rStr = rStr.replaceAll("$(ERR)", aEr.GetString(nId));
+            ResId aSfxResId( RID_ERRCTX, *pMgr );
+            ErrorResource_Impl aEr( aSfxResId, nId );
+            rStr = rStr.replaceAll("$(ERR)", static_cast<ResString>(aEr).GetString());
         }
     }
 

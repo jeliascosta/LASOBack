@@ -51,7 +51,7 @@ namespace connectivity
             void clear();
 
 
-            bool IsValid() const;
+            sal_Bool IsValid() const;
             operator IDispatch*();
 
         };
@@ -74,7 +74,7 @@ namespace connectivity
             T* pInterface;
 
         public:
-            WpOLEBase(T* pInt = nullptr) : WpBase(pInt),pInterface(pInt){}
+            WpOLEBase(T* pInt = NULL) : WpBase(pInt),pInterface(pInt){}
 
 
             //inline
@@ -95,6 +95,10 @@ namespace connectivity
             WpOLEBase(const WpOLEBase<T>& aWrapper)
                 : WpBase( aWrapper )
                 , pInterface( aWrapper.pInterface )
+            {
+            }
+
+            virtual ~WpOLEBase()
             {
             }
 
@@ -128,21 +132,21 @@ namespace connectivity
             using WpOLEBase<Ts>::IsValid;
             // Ctors, operator=
             // They only call the superclass
-            WpOLECollection(Ts* pInt=nullptr):WpOLEBase<Ts>(pInt){}
+            WpOLECollection(Ts* pInt=NULL):WpOLEBase<Ts>(pInt){}
             WpOLECollection(const WpOLECollection& rhs) : WpOLEBase<Ts>(rhs) {}
-            WpOLECollection& operator=(const WpOLECollection& rhs)
+            inline WpOLECollection& operator=(const WpOLECollection& rhs)
                 {WpOLEBase<Ts>::operator=(rhs); return *this;};
 
 
-            void Refresh(){pInterface->Refresh();}
+            inline void Refresh(){pInterface->Refresh();}
 
-            sal_Int32 GetItemCount() const
+            inline sal_Int32 GetItemCount() const
             {
                 sal_Int32 nCount = 0;
                 return pInterface ? (SUCCEEDED(pInterface->get_Count(&nCount)) ? nCount : sal_Int32(0)) : sal_Int32(0);
             }
 
-            WrapT GetItem(sal_Int32 index) const
+            inline WrapT GetItem(sal_Int32 index) const
             {
                 OSL_ENSURE(index >= 0 && index<GetItemCount(),"Wrong index for field!");
                 T* pT = NULL;
@@ -152,7 +156,7 @@ namespace connectivity
                 return aRet;
             }
 
-            WrapT GetItem(const OLEVariant& index) const
+            inline WrapT GetItem(const OLEVariant& index) const
             {
                 T* pT = NULL;
                 WrapT aRet(NULL);
@@ -161,7 +165,7 @@ namespace connectivity
                 return aRet;
             }
 
-            WrapT GetItem(const OUString& sStr) const
+            inline WrapT GetItem(const OUString& sStr) const
             {
                 WrapT aRet(NULL);
                 T* pT = NULL;
@@ -177,7 +181,7 @@ namespace connectivity
                     aRet.setWithOutAddRef(pT);
                 return aRet;
             }
-            void fillElementNames(TStringVector& _rVector)
+            inline void fillElementNames(TStringVector& _rVector)
             {
                 if(IsValid())
                 {
@@ -202,18 +206,18 @@ namespace connectivity
             // Ctors, operator=
             // They only call the superclass
             using WpOLEBase<Ts>::pInterface;
-            WpOLEAppendCollection(Ts* pInt=nullptr):WpOLECollection<Ts,T,WrapT>(pInt){}
+            WpOLEAppendCollection(Ts* pInt=NULL):WpOLECollection<Ts,T,WrapT>(pInt){}
             WpOLEAppendCollection(const WpOLEAppendCollection& rhs) : WpOLECollection<Ts, T, WrapT>(rhs) {}
-            WpOLEAppendCollection& operator=(const WpOLEAppendCollection& rhs)
+            inline WpOLEAppendCollection& operator=(const WpOLEAppendCollection& rhs)
                 {WpOLEBase<Ts>::operator=(rhs); return *this;};
 
 
-            bool Append(const WrapT& aWrapT)
+            inline sal_Bool Append(const WrapT& aWrapT)
             {
-                return SUCCEEDED(pInterface->Append(OLEVariant(static_cast<T*>(aWrapT))));
+                return SUCCEEDED(pInterface->Append(OLEVariant((T*)aWrapT)));
             };
 
-            bool Delete(const OUString& sName)
+            inline sal_Bool Delete(const OUString& sName)
             {
                 return SUCCEEDED(pInterface->Delete(OLEVariant(sName)));
             };

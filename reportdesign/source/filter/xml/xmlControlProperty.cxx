@@ -220,7 +220,7 @@ Any OXMLControlProperty::convertString(const css::uno::Type& _rExpectedType, con
                 if (TypeClass_SHORT == _rExpectedType.getTypeClass())
                     aReturn <<= (sal_Int16)nValue;
                 else
-                    aReturn <<= nValue;
+                    aReturn <<= (sal_Int32)nValue;
                 break;
             }
         case TypeClass_HYPER:
@@ -237,7 +237,7 @@ Any OXMLControlProperty::convertString(const css::uno::Type& _rExpectedType, con
                     OStringBuffer("OXMLControlProperty::convertString: could not convert \"").
                 append(OUStringToOString(_rReadCharacters, RTL_TEXTENCODING_ASCII_US)).
                 append("\" into a double!").getStr());
-            aReturn <<= nValue;
+            aReturn <<= (double)nValue;
         }
         break;
         case TypeClass_STRING:

@@ -21,7 +21,6 @@
 #include <tools/debug.hxx>
 #include "ReportController.hxx"
 #include <comphelper/types.hxx>
-#include <svtools/acceleratorexecute.hxx>
 #include <unotools/syslocale.hxx>
 #include <unotools/viewoptions.hxx>
 #include "RptDef.hxx"
@@ -63,10 +62,10 @@ class OTaskWindow : public vcl::Window
     VclPtr<PropBrw> m_pPropWin;
 public:
     explicit OTaskWindow(vcl::Window* _pParent) : Window(_pParent),m_pPropWin(nullptr){}
-    virtual ~OTaskWindow() override { disposeOnce(); }
+    virtual ~OTaskWindow() { disposeOnce(); }
     virtual void dispose() override { m_pPropWin.clear(); vcl::Window::dispose(); }
 
-    void setPropertyBrowser(PropBrw* _pPropWin)
+    inline void setPropertyBrowser(PropBrw* _pPropWin)
     {
         m_pPropWin = _pPropWin;
     }
@@ -94,16 +93,17 @@ ODesignView::ODesignView(   vcl::Window* pParent,
     ,m_pAddField(nullptr)
     ,m_pCurrentView(nullptr)
     ,m_pReportExplorer(nullptr)
-    ,m_eMode( DlgEdMode::Select )
+    ,m_eMode( RPTUI_SELECT )
     ,m_eActObj( OBJ_NONE )
     ,m_aGridSizeCoarse( 1000, 1000 )    // #i93595# 100TH_MM changed to grid using coarse 1 cm grid
     ,m_aGridSizeFine( 250, 250 )        // and a 0,25 cm subdivision for better visualisation
+    ,m_bGridSnap(true)
     ,m_bDeleted( false )
 {
     SetHelpId(UID_RPT_RPT_APP_VIEW);
     ImplInitSettings();
 
-    SetMapMode( MapMode( MapUnit::Map100thMM ) );
+    SetMapMode( MapMode( MAP_100TH_MM ) );
 
     // now create the task pane on the right side :-)
     m_pTaskPane = VclPtr<OTaskWindow>::Create(this);
@@ -113,11 +113,12 @@ ODesignView::ODesignView(   vcl::Window* pParent,
 
     // Splitter einrichten
     m_aSplitWin->SetSplitHdl(LINK(this, ODesignView,SplitHdl));
+    m_aSplitWin->ShowAutoHideButton();
     m_aSplitWin->SetAlign(WindowAlign::Left);
     m_aSplitWin->Show();
 
-    m_aMarkIdle.SetPriority( TaskPriority::LOW );
-    m_aMarkIdle.SetInvokeHandler( LINK( this, ODesignView, MarkTimeout ) );
+    m_aMarkIdle.SetPriority( SchedulerPriority::LOW );
+    m_aMarkIdle.SetIdleHdl( LINK( this, ODesignView, MarkTimeout ) );
 }
 
 
@@ -139,14 +140,14 @@ void ODesignView::dispose()
     }
     if ( m_pAddField )
     {
-        SvtViewOptions aDlgOpt( EViewType::Window, UID_RPT_RPT_APP_VIEW );
+        SvtViewOptions aDlgOpt( E_WINDOW, OUString( UID_RPT_RPT_APP_VIEW ) );
         aDlgOpt.SetWindowState(OStringToOUString(m_pAddField->GetWindowState(), RTL_TEXTENCODING_ASCII_US));
         notifySystemWindow(this,m_pAddField,::comphelper::mem_fun(&TaskPaneList::RemoveWindow));
         m_pAddField.disposeAndClear();
     }
     if ( m_pReportExplorer )
     {
-        SvtViewOptions aDlgOpt(EViewType::Window, OStringToOUString(m_pReportExplorer->GetHelpId(), RTL_TEXTENCODING_UTF8));
+        SvtViewOptions aDlgOpt(E_WINDOW, OStringToOUString(m_pReportExplorer->GetHelpId(), RTL_TEXTENCODING_UTF8));
         aDlgOpt.SetWindowState(OStringToOUString(m_pReportExplorer->GetWindowState(), RTL_TEXTENCODING_ASCII_US));
         notifySystemWindow(this,m_pReportExplorer,::comphelper::mem_fun(&TaskPaneList::RemoveWindow));
         m_pReportExplorer.disposeAndClear();
@@ -160,7 +161,7 @@ void ODesignView::dispose()
 
 void ODesignView::initialize()
 {
-    SetMapMode( MapMode( MapUnit::Map100thMM ) );
+    SetMapMode( MapMode( MAP_100TH_MM ) );
     m_aScrollWindow->initialize();
     m_aScrollWindow->Show();
 }
@@ -183,26 +184,26 @@ bool ODesignView::PreNotify( NotifyEvent& rNEvt )
     switch(rNEvt.GetType())
     {
         case MouseNotifyEvent::KEYINPUT:
-        {
-            if ( m_pPropWin && m_pPropWin->HasChildPathFocus() )
+            if ( (m_pPropWin && m_pPropWin->HasChildPathFocus()) )
                 return false;
-            if ( m_pAddField && m_pAddField->HasChildPathFocus() )
+            if ( (m_pAddField && m_pAddField->HasChildPathFocus()) )
                 return false;
-            if ( m_pReportExplorer && m_pReportExplorer->HasChildPathFocus() )
+            if ( (m_pReportExplorer && m_pReportExplorer->HasChildPathFocus()) )
                 return false;
-            const KeyEvent* pKeyEvent = rNEvt.GetKeyEvent();
-            if ( handleKeyEvent(*pKeyEvent) )
-                bRet = true;
-            else if ( bRet && m_pAccel.get() )
             {
-                const vcl::KeyCode& rCode = pKeyEvent->GetKeyCode();
-                util::URL aUrl;
-                aUrl.Complete = m_pAccel->findCommand(svt::AcceleratorExecute::st_VCLKey2AWTKey(rCode));
-                if ( aUrl.Complete.isEmpty() || !m_xController->isCommandEnabled( aUrl.Complete ) )
-                    bRet = false;
+                const KeyEvent* pKeyEvent = rNEvt.GetKeyEvent();
+                if ( handleKeyEvent(*pKeyEvent) )
+                    bRet = true;
+                else if ( bRet && m_pAccel.get() )
+                {
+                    const vcl::KeyCode& rCode = pKeyEvent->GetKeyCode();
+                    util::URL aUrl;
+                    aUrl.Complete = m_pAccel->findCommand(svt::AcceleratorExecute::st_VCLKey2AWTKey(rCode));
+                    if ( aUrl.Complete.isEmpty() || !m_xController->isCommandEnabled( aUrl.Complete ) )
+                        bRet = false;
+                }
             }
             break;
-        }
         default:
             break;
     }
@@ -210,7 +211,7 @@ bool ODesignView::PreNotify( NotifyEvent& rNEvt )
     return bRet;
 }
 
-void ODesignView::resizeDocumentView(tools::Rectangle& _rPlayground)
+void ODesignView::resizeDocumentView(Rectangle& _rPlayground)
 {
     if ( !_rPlayground.IsEmpty() )
     {
@@ -265,7 +266,7 @@ void ODesignView::resizeDocumentView(tools::Rectangle& _rPlayground)
 
 }
 
-IMPL_LINK_NOARG(ODesignView, MarkTimeout, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ODesignView, MarkTimeout, Idle *, void)
 {
     if ( m_pPropWin && m_pPropWin->IsVisible() )
     {
@@ -284,7 +285,7 @@ IMPL_LINK_NOARG(ODesignView, MarkTimeout, Timer *, void)
 void ODesignView::SetMode( DlgEdMode _eNewMode )
 {
     m_eMode = _eNewMode;
-    if ( m_eMode == DlgEdMode::Select )
+    if ( m_eMode == RPTUI_SELECT )
         m_eActObj = OBJ_NONE;
 
     m_aScrollWindow->SetMode(_eNewMode);
@@ -398,7 +399,7 @@ void ODesignView::ImplInitSettings()
     SetTextFillColor( Application::GetSettings().GetStyleSettings().GetFaceColor() );
 }
 
-IMPL_LINK_NOARG( ODesignView, SplitHdl, SplitWindow*, void )
+IMPL_LINK_NOARG_TYPED( ODesignView, SplitHdl, SplitWindow*, void )
 {
     const Size aOutputSize = GetOutputSizePixel();
     const long nTest = aOutputSize.Width() * m_aSplitWin->GetItemSize(TASKPANE_ID) / 100;
@@ -421,7 +422,7 @@ void ODesignView::SelectAll(const sal_uInt16 _nObjectType)
 
 void ODesignView::unmarkAllObjects()
 {
-    m_aScrollWindow->unmarkAllObjects();
+    m_aScrollWindow->unmarkAllObjects(nullptr);
 }
 
 void ODesignView::togglePropertyBrowser(bool _bToogleOn)
@@ -476,7 +477,7 @@ void ODesignView::toggleReportExplorer()
     {
         OReportController& rReportController = getController();
         m_pReportExplorer = VclPtr<ONavigator>::Create(this,rReportController);
-        SvtViewOptions aDlgOpt(EViewType::Window, OStringToOUString(m_pReportExplorer->GetHelpId(), RTL_TEXTENCODING_UTF8));
+        SvtViewOptions aDlgOpt(E_WINDOW, OStringToOUString(m_pReportExplorer->GetHelpId(), RTL_TEXTENCODING_UTF8));
         if ( aDlgOpt.Exists() )
             m_pReportExplorer->SetWindowState(OUStringToOString(aDlgOpt.GetWindowState(), RTL_TEXTENCODING_ASCII_US));
         m_pReportExplorer->AddEventListener(LINK(&rReportController,OReportController,EventLstHdl));
@@ -513,7 +514,7 @@ void ODesignView::toggleAddField()
         uno::Reference < beans::XPropertySet > xSet(rReportController.getRowSet(),uno::UNO_QUERY);
         m_pAddField = VclPtr<OAddFieldWindow>::Create(this,xSet);
         m_pAddField->SetCreateHdl(LINK( &rReportController, OReportController, OnCreateHdl ) );
-        SvtViewOptions aDlgOpt( EViewType::Window, UID_RPT_RPT_APP_VIEW );
+        SvtViewOptions aDlgOpt( E_WINDOW, OUString( UID_RPT_RPT_APP_VIEW ) );
         if ( aDlgOpt.Exists() )
             m_pAddField->SetWindowState(OUStringToOString(aDlgOpt.GetWindowState(), RTL_TEXTENCODING_ASCII_US));
         m_pAddField->Update();
@@ -580,7 +581,7 @@ void ODesignView::setCurrentPage(const OUString& _sLastActivePage)
         m_pPropWin->setCurrentPage(_sLastActivePage);
 }
 
-void ODesignView::alignMarkedObjects(ControlModification _nControlModification,bool _bAlignAtSection)
+void ODesignView::alignMarkedObjects(sal_Int32 _nControlModification,bool _bAlignAtSection)
 {
     m_aScrollWindow->alignMarkedObjects(_nControlModification, _bAlignAtSection);
 }

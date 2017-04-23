@@ -34,7 +34,7 @@
 #include "XMLTextOrientationHdl.hxx"
 #include "XMLSymbolTypePropertyHdl.hxx"
 #include "XMLAxisPositionPropertyHdl.hxx"
-#include "propimp0.hxx"
+#include "../draw/propimp0.hxx"
 
 #include <xmloff/EnumPropertyHdl.hxx>
 #include <xmloff/XMLConstantsPropertyHandler.hxx>
@@ -69,12 +69,12 @@ using namespace ::xmloff::token;
 
 namespace {
 
-SvXMLEnumMapEntry<drawing::LineStyle> const aLineStyleMap[] =
+SvXMLEnumMapEntry const aLineStyleMap[] =
 {
     { XML_NONE,     drawing::LineStyle_NONE },
     { XML_SOLID,    drawing::LineStyle_SOLID },
     { XML_DASH,     drawing::LineStyle_DASH },
-    { XML_TOKEN_INVALID, (drawing::LineStyle)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
 }
@@ -106,20 +106,24 @@ const XMLPropertyHandler* XMLChartPropHdlFactory::GetPropertyHandler( sal_Int32 
                 break;
 
             case XML_SCH_TYPE_AXIS_LABEL_POSITION:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisLabelPositionEnumMap);
+                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisLabelPositionEnumMap,
+                                               cppu::UnoType<chart::ChartAxisLabelPosition>::get());
                 break;
 
             case XML_SCH_TYPE_TICK_MARK_POSITION:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisMarkPositionEnumMap);
+                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisMarkPositionEnumMap,
+                                               cppu::UnoType<chart::ChartAxisMarkPosition>::get());
                 break;
 
             case XML_SCH_TYPE_AXIS_ARRANGEMENT:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisArrangementEnumMap);
+                pHdl = new XMLEnumPropertyHdl( aXMLChartAxisArrangementEnumMap,
+                                               cppu::UnoType<chart::ChartAxisArrangeOrderType>::get());
                 break;
 
             case XML_SCH_TYPE_ERROR_BAR_STYLE:
                 // here we have a constant rather than an enum
-                pHdl = new XMLErrorBarStylePropertyHdl( aXMLChartErrorBarStyleEnumMap );
+                pHdl = new XMLErrorBarStylePropertyHdl( aXMLChartErrorBarStyleEnumMap,
+                                               ::cppu::UnoType<sal_Int32>::get() );
                 break;
 
             case XML_SCH_TYPE_ERROR_INDICATOR_LOWER:
@@ -131,21 +135,25 @@ const XMLPropertyHandler* XMLChartPropHdlFactory::GetPropertyHandler( sal_Int32 
 
             case XML_SCH_TYPE_SOLID_TYPE:
                 // here we have a constant rather than an enum
-                pHdl = new XMLEnumPropertyHdl( aXMLChartSolidTypeEnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXMLChartSolidTypeEnumMap,
+                                               ::cppu::UnoType<sal_Int32>::get() );
                 break;
             case XML_SCH_TYPE_LABEL_PLACEMENT_TYPE:
                 // here we have a constant rather than an enum
-                pHdl = new XMLEnumPropertyHdl( aXMLChartDataLabelPlacementEnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXMLChartDataLabelPlacementEnumMap,
+                                                ::cppu::UnoType<sal_Int32>::get() );
                 break;
             case XML_SCH_TYPE_DATAROWSOURCE:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartDataRowSourceTypeEnumMap);
+                pHdl = new XMLEnumPropertyHdl( aXMLChartDataRowSourceTypeEnumMap,
+                                               cppu::UnoType<chart::ChartDataRowSource>::get());
                 break;
             case XML_SCH_TYPE_TEXT_ORIENTATION:
-                pHdl = new XMLTextOrientationHdl;
+                pHdl = new XMLTextOrientationHdl();
                 break;
 
             case XML_SCH_TYPE_INTERPOLATION:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartInterpolationTypeEnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXMLChartInterpolationTypeEnumMap,
+                                               ::cppu::UnoType<sal_Int32>::get() );
                 break;
             case XML_SCH_TYPE_SYMBOL_TYPE:
                 pHdl = new XMLSymbolTypePropertyHdl( false );
@@ -156,10 +164,11 @@ const XMLPropertyHandler* XMLChartPropHdlFactory::GetPropertyHandler( sal_Int32 
                 break;
 
             case XML_SCH_TYPE_MISSING_VALUE_TREATMENT:
-                pHdl = new XMLEnumPropertyHdl( aXMLChartMissingValueTreatmentEnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXMLChartMissingValueTreatmentEnumMap,
+                                               ::cppu::UnoType<sal_Int32>::get() );
                 break;
             case XML_SCH_TYPE_LABEL_BORDER_STYLE:
-                pHdl = new XMLEnumPropertyHdl( aLineStyleMap );
+                pHdl = new XMLEnumPropertyHdl(aLineStyleMap, cppu::UnoType<drawing::LineStyle>::get());
             break;
             case XML_SCH_TYPE_LABEL_BORDER_OPACITY:
                 pHdl = new XMLOpacityPropertyHdl(nullptr);
@@ -555,7 +564,7 @@ bool XMLChartImportPropertyMapper::handleSpecialItem(
         {
             case XML_SCH_CONTEXT_SPECIAL_TICKS_MAJ_INNER:
             case XML_SCH_CONTEXT_SPECIAL_TICKS_MIN_INNER:
-                (void)::sax::Converter::convertBool( bValue, rValue );
+                ::sax::Converter::convertBool( bValue, rValue );
                 // modify old value
                 rProperty.maValue >>= nValue;
                 if( bValue )
@@ -566,7 +575,7 @@ bool XMLChartImportPropertyMapper::handleSpecialItem(
                 break;
             case XML_SCH_CONTEXT_SPECIAL_TICKS_MAJ_OUTER:
             case XML_SCH_CONTEXT_SPECIAL_TICKS_MIN_OUTER:
-                (void)::sax::Converter::convertBool( bValue, rValue );
+                ::sax::Converter::convertBool( bValue, rValue );
                 // modify old value
                 rProperty.maValue >>= nValue;
                 if( bValue )
@@ -601,7 +610,7 @@ bool XMLChartImportPropertyMapper::handleSpecialItem(
                 break;
             case XML_SCH_CONTEXT_SPECIAL_DATA_LABEL_TEXT:
                 rProperty.maValue >>= nValue;
-                (void)::sax::Converter::convertBool( bValue, rValue );
+                ::sax::Converter::convertBool( bValue, rValue );
                 if( bValue )
                     SCH_XML_SETFLAG( nValue, chart::ChartDataCaption::TEXT );
                 else
@@ -610,7 +619,7 @@ bool XMLChartImportPropertyMapper::handleSpecialItem(
                 break;
             case XML_SCH_CONTEXT_SPECIAL_DATA_LABEL_SYMBOL:
                 rProperty.maValue >>= nValue;
-                (void)::sax::Converter::convertBool( bValue, rValue );
+                ::sax::Converter::convertBool( bValue, rValue );
                 if( bValue )
                     SCH_XML_SETFLAG( nValue, chart::ChartDataCaption::SYMBOL );
                 else

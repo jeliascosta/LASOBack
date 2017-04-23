@@ -20,8 +20,6 @@
 
 #include "inputstream.hxx"
 
-#include <com/sun/star/io/IOException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <cppuhelper/queryinterface.hxx>
 
 
@@ -37,14 +35,17 @@ XInputStream_impl::XInputStream_impl( const OUString& aUncPath )
     m_bIsOpen = ( osl::FileBase::E_None == m_aFile.open( osl_File_OpenFlag_Read ) );
 }
 
+
 XInputStream_impl::~XInputStream_impl()
 {
-    if (m_bIsOpen)
-        m_aFile.close();
+    closeInput();
 }
 
+
 uno::Any SAL_CALL
-XInputStream_impl::queryInterface( const uno::Type& rType )
+XInputStream_impl::queryInterface(
+    const uno::Type& rType )
+    throw( uno::RuntimeException, std::exception)
 {
     uno::Any aRet = cppu::queryInterface( rType,
                                           (static_cast< io::XInputStream* >(this)),
@@ -54,7 +55,8 @@ XInputStream_impl::queryInterface( const uno::Type& rType )
 
 
 void SAL_CALL
-XInputStream_impl::acquire()
+XInputStream_impl::acquire(
+    void )
     throw()
 {
     OWeakObject::acquire();
@@ -62,7 +64,8 @@ XInputStream_impl::acquire()
 
 
 void SAL_CALL
-XInputStream_impl::release()
+XInputStream_impl::release(
+    void )
     throw()
 {
     OWeakObject::release();
@@ -73,6 +76,10 @@ sal_Int32 SAL_CALL
 XInputStream_impl::readBytes(
                  uno::Sequence< sal_Int8 >& aData,
                  sal_Int32 nBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     if( ! m_bIsOpen )
         throw io::IOException();
@@ -97,6 +104,10 @@ sal_Int32 SAL_CALL
 XInputStream_impl::readSomeBytes(
     uno::Sequence< sal_Int8 >& aData,
     sal_Int32 nMaxBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     return readBytes( aData,nMaxBytesToRead );
 }
@@ -105,6 +116,10 @@ XInputStream_impl::readSomeBytes(
 void SAL_CALL
 XInputStream_impl::skipBytes(
     sal_Int32 nBytesToSkip )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     if (m_aFile.setPos(osl_Pos_Current, sal_uInt64(nBytesToSkip)) != osl::FileBase::E_None)
     {
@@ -114,14 +129,22 @@ XInputStream_impl::skipBytes(
 
 
 sal_Int32 SAL_CALL
-XInputStream_impl::available()
+XInputStream_impl::available(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     return 0;
 }
 
 
 void SAL_CALL
-XInputStream_impl::closeInput()
+XInputStream_impl::closeInput(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if( m_bIsOpen )
     {
@@ -134,7 +157,11 @@ XInputStream_impl::closeInput()
 
 
 void SAL_CALL
-XInputStream_impl::seek( sal_Int64 location )
+XInputStream_impl::seek(
+    sal_Int64 location )
+    throw( lang::IllegalArgumentException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if( location < 0 )
         throw lang::IllegalArgumentException();
@@ -144,7 +171,10 @@ XInputStream_impl::seek( sal_Int64 location )
 
 
 sal_Int64 SAL_CALL
-XInputStream_impl::getPosition()
+XInputStream_impl::getPosition(
+    void )
+    throw( io::IOException,
+           uno::RuntimeException, std::exception )
 {
     sal_uInt64 uPos;
     if( osl::FileBase::E_None != m_aFile.getPos( uPos ) )
@@ -153,7 +183,10 @@ XInputStream_impl::getPosition()
 }
 
 sal_Int64 SAL_CALL
-XInputStream_impl::getLength()
+XInputStream_impl::getLength(
+    void )
+    throw( io::IOException,
+           uno::RuntimeException, std::exception )
 {
     osl::FileBase::RC   err;
     sal_uInt64          uCurrentPos, uEndPos;

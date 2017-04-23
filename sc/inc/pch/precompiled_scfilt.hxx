@@ -48,6 +48,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <boost/checked_delete.hpp>
 #include <boost/optional/optional.hpp>
 #include <osl/conditn.hxx>
 #include <osl/diagnose.h>

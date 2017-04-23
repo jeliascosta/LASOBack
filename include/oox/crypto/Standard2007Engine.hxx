@@ -33,7 +33,8 @@ class Standard2007Engine : public CryptoEngine
     bool calculateEncryptionKey(const OUString& rPassword);
 
 public:
-    Standard2007Engine() = default;
+    Standard2007Engine();
+    virtual ~Standard2007Engine();
 
     msfilter::StandardEncryptionInfo& getInfo() { return mInfo;}
 

@@ -47,19 +47,19 @@ public:
     virtual css::uno::Sequence< OUString > getStringsForLevel( sal_Int32 nIndex ) const = 0;
 };
 
-class OOO_DLLPUBLIC_CHARTTOOLS ExplicitCategoriesProvider final
+class OOO_DLLPUBLIC_CHARTTOOLS ExplicitCategoriesProvider
 {
 public:
     ExplicitCategoriesProvider( const css::uno::Reference< css::chart2::XCoordinateSystem >& xCooSysModel
                        , ChartModel& rChartModel
                        );
-    ~ExplicitCategoriesProvider();
+    virtual ~ExplicitCategoriesProvider();
 
     void init();
 
     css::uno::Reference< css::chart2::data::XDataSequence > getOriginalCategories();
 
-    css::uno::Sequence< OUString > const & getSimpleCategories();
+    css::uno::Sequence< OUString > getSimpleCategories();
     const std::vector<ComplexCategory>* getCategoriesByLevel( sal_Int32 nLevel );
 
     static OUString getCategoryByIndex(
@@ -91,7 +91,7 @@ private: //member
 
     bool m_bIsExplicitCategoriesInited;
     css::uno::Sequence< OUString >  m_aExplicitCategories;
-    std::vector< std::vector< ComplexCategory > >   m_aComplexCats;
+    ::std::vector< ::std::vector< ComplexCategory > >   m_aComplexCats;
     css::uno::Sequence< css::uno::Reference<
         css::chart2::data::XLabeledDataSequence> > m_aSplitCategoriesList;
 

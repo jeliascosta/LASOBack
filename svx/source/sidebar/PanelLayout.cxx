@@ -24,12 +24,9 @@ PanelLayout::PanelLayout(vcl::Window* pParent, const OString& rID, const OUStrin
     , m_bInClose(false)
 {
     SetStyle(GetStyle() | WB_DIALOGCONTROL);
-    m_pUIBuilder.reset(new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID, rFrame));
-    m_aPanelLayoutIdle.SetPriority(TaskPriority::RESIZE);
-    m_aPanelLayoutIdle.SetInvokeHandler( LINK( this, PanelLayout, ImplHandlePanelLayoutTimerHdl ) );
-    m_aPanelLayoutIdle.SetDebugName( "svx::PanelLayout  m_aPanelLayoutIdle" );
-    if (GetSettings().GetStyleSettings().GetAutoMnemonic())
-       Accelerator::GenerateAutoMnemonicsOnHierarchy(this);
+    m_pUIBuilder = new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID, rFrame);
+    m_aPanelLayoutIdle.SetPriority(SchedulerPriority::RESIZE);
+    m_aPanelLayoutIdle.SetIdleHdl( LINK( this, PanelLayout, ImplHandlePanelLayoutTimerHdl ) );
 }
 
 PanelLayout::~PanelLayout()
@@ -58,11 +55,16 @@ Size PanelLayout::GetOptimalSize() const
     return Control::GetOptimalSize();
 }
 
+bool PanelLayout::hasPanelPendingLayout() const
+{
+    return m_aPanelLayoutIdle.IsActive();
+}
+
 void PanelLayout::queue_resize(StateChangedType /*eReason*/)
 {
     if (m_bInClose)
         return;
-    if (m_aPanelLayoutIdle.IsActive())
+    if (hasPanelPendingLayout())
         return;
     if (!isLayoutEnabled(this))
         return;
@@ -70,7 +72,7 @@ void PanelLayout::queue_resize(StateChangedType /*eReason*/)
     m_aPanelLayoutIdle.Start();
 }
 
-IMPL_LINK_NOARG( PanelLayout, ImplHandlePanelLayoutTimerHdl, Timer*, void )
+IMPL_LINK_NOARG_TYPED( PanelLayout, ImplHandlePanelLayoutTimerHdl, Idle*, void )
 {
     vcl::Window *pChild = GetWindow(GetWindowType::FirstChild);
     assert(pChild);
@@ -85,7 +87,7 @@ void PanelLayout::setPosSizePixel(long nX, long nY, long nWidth, long nHeight, P
     bool bIsLayoutEnabled = isLayoutEnabled(this);
     vcl::Window *pChild = GetWindow(GetWindowType::FirstChild);
 
-    if (bIsLayoutEnabled && pChild->GetType() == WindowType::SCROLLWINDOW)
+    if (bIsLayoutEnabled && pChild->GetType() == WINDOW_SCROLLWINDOW)
     {
         WinBits nStyle = pChild->GetStyle();
         if (nStyle & (WB_AUTOHSCROLL | WB_HSCROLL))
@@ -104,13 +106,6 @@ void PanelLayout::setPosSizePixel(long nX, long nY, long nWidth, long nHeight, P
 
     if (bIsLayoutEnabled && (nFlags & PosSizeFlags::Size))
         VclContainer::setLayoutAllocation(*pChild, Point(0, 0), Size(nWidth, nHeight));
-}
-
-bool PanelLayout::EventNotify(NotifyEvent& rNEvt)
-{
-    if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
-        Accelerator::ToggleMnemonicsOnHierarchy(*rNEvt.GetCommandEvent(), this);
-    return Control::EventNotify( rNEvt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -56,32 +56,42 @@ private:
     static OUString getLanguagePath(const OUString& rLanguagePart);
 
 public:
-    /// @throws css::uno::RuntimeException
-    explicit ScriptingFrameworkURIHelper(
-        const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-    virtual ~ScriptingFrameworkURIHelper() override;
+    explicit ScriptingFrameworkURIHelper(
+        const css::uno::Reference< css::uno::XComponentContext >& xContext )
+            throw( css::uno::RuntimeException );
+
+    virtual ~ScriptingFrameworkURIHelper();
 
     virtual void SAL_CALL
-        initialize( const css::uno::Sequence < css::uno::Any > & args ) override;
+        initialize( const css::uno::Sequence < css::uno::Any > & args )
+            throw ( css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     virtual OUString SAL_CALL
-        getRootStorageURI() override;
+        getRootStorageURI()
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-        getScriptURI( const OUString& rStorageURI ) override;
+        getScriptURI( const OUString& rStorageURI )
+            throw( css::lang::IllegalArgumentException,
+                   css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-        getStorageURI( const OUString& rScriptURI ) override;
+        getStorageURI( const OUString& rScriptURI )
+            throw( css::lang::IllegalArgumentException,
+                   css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 } // namespace func_provider

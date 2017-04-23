@@ -33,7 +33,7 @@ namespace drawinglayer
             const basegfx::BColor& rRGBColorLeft,
             const basegfx::BColor& rRGBColorGap,
             bool bHasGapColor,
-            SvxBorderLineStyle nStyle,
+            const short nStyle,
             double fPatternScale)
         :   BorderLinePrimitive2D( rStart, rEnd, fLeftWidth,fDistance, fRightWidth,
                         0.0, 0.0, 0.0, 0.0, rRGBColorRight, rRGBColorLeft,

@@ -18,7 +18,7 @@
  */
 
 #include "stdafx.h"
-#include "Resource.h"
+#include "resource.h"
 #include <initguid.h>
 #include <accHelper.hxx>
 
@@ -54,7 +54,7 @@
 #include "AccValue.h"
 #include "AccTable.h"
 #include "AccHyperLink.h"
-#include "AccHypertext.h"
+#include "AccHyperText.h"
 
 
 CComModule _Module;
@@ -115,9 +115,9 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 
 IMAccessible * UAccCOMCreateInstance()
 {
-    IMAccessible * pIMA = nullptr;
+    IMAccessible * pIMA = 0;
     HRESULT hr = createInstance<CMAccessible>(IID_IMAccessible, &pIMA);
-    return (S_OK == hr) ? pIMA : nullptr;
+    return (S_OK == hr) ? pIMA : 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

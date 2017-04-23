@@ -66,18 +66,21 @@ SwFEShell* SwAccessibleSelectionHelper::GetFEShell()
 }
 
 void SwAccessibleSelectionHelper::throwIndexOutOfBoundsException()
+        throw ( lang::IndexOutOfBoundsException )
 {
     Reference < XAccessibleContext > xThis( &m_rContext );
     Reference < XAccessibleSelection >xSelThis( xThis, UNO_QUERY );
     lang::IndexOutOfBoundsException aExcept(
-                "index out of bounds",
-                xSelThis );
+                OUString( "index out of bounds" ),
+                xSelThis );                                     \
     throw aExcept;
 }
 
 // XAccessibleSelection
 void SwAccessibleSelectionHelper::selectAccessibleChild(
     sal_Int32 nChildIndex )
+    throw ( lang::IndexOutOfBoundsException,
+            RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -99,7 +102,7 @@ void SwAccessibleSelectionHelper::selectAccessibleChild(
     // no frame shell, or no frame, or no fly frame -> can't select
 }
 
-//When the selected state of the SwFrameOrObj is set, return true.
+//When the selected state of the SwFrameOrObj is setted, return true.
 static bool lcl_getSelectedState(const SwAccessibleChild& aChild,
                                      SwAccessibleContext* pContext,
                                      SwAccessibleMap* pMap)
@@ -136,6 +139,8 @@ static bool lcl_getSelectedState(const SwAccessibleChild& aChild,
 
 bool SwAccessibleSelectionHelper::isAccessibleChildSelected(
     sal_Int32 nChildIndex )
+    throw ( lang::IndexOutOfBoundsException,
+            RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -170,6 +175,7 @@ bool SwAccessibleSelectionHelper::isAccessibleChildSelected(
 }
 
 void SwAccessibleSelectionHelper::selectAllAccessibleChildren(  )
+    throw ( RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -179,11 +185,11 @@ void SwAccessibleSelectionHelper::selectAllAccessibleChildren(  )
     SwFEShell* pFEShell = GetFEShell();
     if( pFEShell )
     {
-        std::list< SwAccessibleChild > aChildren;
+        ::std::list< SwAccessibleChild > aChildren;
         m_rContext.GetChildren( *(m_rContext.GetMap()), aChildren );
 
-        std::list< SwAccessibleChild >::const_iterator aIter = aChildren.begin();
-        std::list< SwAccessibleChild >::const_iterator aEndIter = aChildren.end();
+        ::std::list< SwAccessibleChild >::const_iterator aIter = aChildren.begin();
+        ::std::list< SwAccessibleChild >::const_iterator aEndIter = aChildren.end();
         while( aIter != aEndIter )
         {
             const SwAccessibleChild& rChild = *aIter;
@@ -201,6 +207,7 @@ void SwAccessibleSelectionHelper::selectAllAccessibleChildren(  )
 }
 
 sal_Int32 SwAccessibleSelectionHelper::getSelectedAccessibleChildCount(  )
+    throw ( RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -220,12 +227,12 @@ sal_Int32 SwAccessibleSelectionHelper::getSelectedAccessibleChildCount(  )
             const size_t nSelObjs = pFEShell->IsObjSelected();
             if( nSelObjs > 0 )
             {
-                std::list< SwAccessibleChild > aChildren;
+                ::std::list< SwAccessibleChild > aChildren;
                 m_rContext.GetChildren( *(m_rContext.GetMap()), aChildren );
 
-                std::list< SwAccessibleChild >::const_iterator aIter =
+                ::std::list< SwAccessibleChild >::const_iterator aIter =
                     aChildren.begin();
-                std::list< SwAccessibleChild >::const_iterator aEndIter =
+                ::std::list< SwAccessibleChild >::const_iterator aEndIter =
                     aChildren.end();
                 while( aIter != aEndIter && static_cast<size_t>(nCount) < nSelObjs )
                 {
@@ -245,11 +252,11 @@ sal_Int32 SwAccessibleSelectionHelper::getSelectedAccessibleChildCount(  )
         //we should check whether it is selected in the selection cursor.
         if( nCount == 0 )
         {
-            std::list< SwAccessibleChild > aChildren;
+            ::std::list< SwAccessibleChild > aChildren;
             m_rContext.GetChildren( *(m_rContext.GetMap()), aChildren );
-            std::list< SwAccessibleChild >::const_iterator aIter =
+            ::std::list< SwAccessibleChild >::const_iterator aIter =
                 aChildren.begin();
-            std::list< SwAccessibleChild >::const_iterator aEndIter =
+            ::std::list< SwAccessibleChild >::const_iterator aEndIter =
                 aChildren.end();
             while( aIter != aEndIter )
             {
@@ -265,6 +272,8 @@ sal_Int32 SwAccessibleSelectionHelper::getSelectedAccessibleChildCount(  )
 
 Reference<XAccessible> SwAccessibleSelectionHelper::getSelectedAccessibleChild(
     sal_Int32 nSelectedChildIndex )
+    throw ( lang::IndexOutOfBoundsException,
+            RuntimeException)
 {
     SolarMutexGuard aGuard;
 
@@ -292,7 +301,7 @@ Reference<XAccessible> SwAccessibleSelectionHelper::getSelectedAccessibleChild(
                 if (pFrameFormat)
                 {
                     const SwFormatAnchor& rAnchor = pFrameFormat->GetAnchor();
-                    if( rAnchor.GetAnchorId() == RndStdIds::FLY_AS_CHAR )
+                    if( rAnchor.GetAnchorId() == FLY_AS_CHAR )
                     {
                         const SwFrame *pParaFrame = SwAccessibleFrame::GetParent( SwAccessibleChild(pFlyFrame), m_rContext.IsInPagePreview() );
                         aChild = pParaFrame;
@@ -307,11 +316,11 @@ Reference<XAccessible> SwAccessibleSelectionHelper::getSelectedAccessibleChild(
         if( 0 == nSelObjs || static_cast<size_t>(nSelectedChildIndex) >= nSelObjs )
             throwIndexOutOfBoundsException();
 
-        std::list< SwAccessibleChild > aChildren;
+        ::std::list< SwAccessibleChild > aChildren;
         m_rContext.GetChildren( *(m_rContext.GetMap()), aChildren );
 
-        std::list< SwAccessibleChild >::const_iterator aIter = aChildren.begin();
-        std::list< SwAccessibleChild >::const_iterator aEndIter = aChildren.end();
+        ::std::list< SwAccessibleChild >::const_iterator aIter = aChildren.begin();
+        ::std::list< SwAccessibleChild >::const_iterator aEndIter = aChildren.end();
         while( aIter != aEndIter && !aChild.IsValid() )
         {
             const SwAccessibleChild& rChild = *aIter;
@@ -358,6 +367,8 @@ Reference<XAccessible> SwAccessibleSelectionHelper::getSelectedAccessibleChild(
 // index has to be treated as global child index.
 void SwAccessibleSelectionHelper::deselectAccessibleChild(
     sal_Int32 nChildIndex )
+    throw ( lang::IndexOutOfBoundsException,
+            RuntimeException )
 {
     SolarMutexGuard g;
 

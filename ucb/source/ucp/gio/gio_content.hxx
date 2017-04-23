@@ -55,10 +55,9 @@ namespace gio
 
 css::uno::Any convertToException(GError *pError,
     const css::uno::Reference< css::uno::XInterface >& rContext, bool bThrow=true);
-/// @throws css::io::IOException
-/// @throws css::uno::RuntimeException
 void convertToIOException(GError *pError,
-    const css::uno::Reference< css::uno::XInterface >& rContext);
+    const css::uno::Reference< css::uno::XInterface >& rContext)
+        throw (css::io::IOException, css::uno::RuntimeException, std::exception);
 
 class ContentProvider;
 class Content : public ::ucbhelper::ContentImplHelper, public css::ucb::XContentCreator
@@ -88,20 +87,19 @@ private:
 
     bool doSetFileInfo ( GFileInfo *pNewInfo );
 
-    /// @throws css::uno::Exception
     css::uno::Any open(const css::ucb::OpenCommandArgument2 & rArg,
-        const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+        const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+            throw( css::uno::Exception );
 
-    /// @throws css::uno::Exception
     void transfer( const css::ucb::TransferInfo& rTransferInfo,
-        const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+        const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+            throw( css::uno::Exception, std::exception );
 
-    /// @throws css::uno::Exception
     void insert( const css::uno::Reference< css::io::XInputStream > & xInputStream,
-        bool bReplaceExisting, const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv );
+        bool bReplaceExisting, const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv )
+            throw( css::uno::Exception );
 
-    /// @throws css::uno::Exception
-    void destroy( bool bDeletePhysical );
+    void destroy( bool bDeletePhysical ) throw( css::uno::Exception, std::exception );
 
     static void copyData( const css::uno::Reference< css::io::XInputStream >& xIn,
         const css::uno::Reference< css::io::XOutputStream >& xOut );
@@ -118,18 +116,18 @@ private:
     bool exchangeIdentity(const css::uno::Reference< css::ucb::XContentIdentifier >&  xNewId);
 
 public:
-    /// @throws css::ucb::ContentCreationException
     Content( const css::uno::Reference<
         css::uno::XComponentContext >& rxContext, ContentProvider *pProvider,
-        const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier);
+        const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier)
+            throw ( css::ucb::ContentCreationException );
 
-    /// @throws css::ucb::ContentCreationException
     Content( const css::uno::Reference<
         css::uno::XComponentContext >& rxContext, ContentProvider *pProvider,
         const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
-        bool bIsFolder);
+        bool bIsFolder)
+            throw ( css::ucb::ContentCreationException );
 
-    virtual ~Content() override;
+    virtual ~Content();
 
     css::uno::Reference< css::sdbc::XRow > getPropertyValuesFromGFileInfo(
         GFileInfo *pInfo, const css::uno::Reference< css::uno::XComponentContext >& rxContext,
@@ -147,40 +145,50 @@ public:
     virtual OUString getParentURL() override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-    getImplementationName() override;
+    getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-    getContentType() override;
+    getContentType()
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Any SAL_CALL
         execute( const css::ucb::Command& aCommand,
         sal_Int32 CommandId,
-        const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment ) override;
+        const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment )
+            throw( css::uno::Exception, css::ucb::CommandAbortedException, css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL abort( sal_Int32 CommandId ) override;
+    virtual void SAL_CALL abort( sal_Int32 CommandId )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< css::ucb::ContentInfo >
-        SAL_CALL queryCreatableContentsInfo() override;
+        SAL_CALL queryCreatableContentsInfo()
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::ucb::XContent >
-        SAL_CALL createNewContent( const css::ucb::ContentInfo& Info ) override;
+        SAL_CALL createNewContent( const css::ucb::ContentInfo& Info )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
-    /// @throws css::uno::RuntimeException
     css::uno::Sequence< css::ucb::ContentInfo >
         queryCreatableContentsInfo(
-        const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv);
+        const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv)
+            throw( css::uno::RuntimeException );
 
     GFile* getGFile();
 };

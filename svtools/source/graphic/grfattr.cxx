@@ -37,9 +37,15 @@ GraphicAttr::GraphicAttr() :
     mnBPercent      ( 0 ),
     mbInvert        ( false ),
     mcTransparency  ( 0 ),
-    meDrawMode      ( GraphicDrawMode::Standard )
+    meDrawMode      ( GRAPHICDRAWMODE_STANDARD )
 {
 }
+
+
+GraphicAttr::~GraphicAttr()
+{
+}
+
 
 bool GraphicAttr::operator==( const GraphicAttr& rAttr ) const
 {
@@ -59,5 +65,6 @@ bool GraphicAttr::operator==( const GraphicAttr& rAttr ) const
             ( mcTransparency == rAttr.mcTransparency ) &&
             ( meDrawMode == rAttr.meDrawMode ) );
 }
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

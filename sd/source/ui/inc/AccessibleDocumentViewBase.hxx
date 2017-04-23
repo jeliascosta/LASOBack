@@ -114,7 +114,7 @@ public:
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent);
 
-    virtual ~AccessibleDocumentViewBase() override;
+    virtual ~AccessibleDocumentViewBase();
 
     /** Initialize a new object.  Call this method directly after creating a
         new object.  It finished the initialization begun in the constructor
@@ -125,7 +125,7 @@ public:
     /** Define callback for listening to window child events of VCL.
         Listen for creation or destruction of OLE objects.
     */
-    DECL_LINK( WindowChildEventListener, VclWindowEvent&, void );
+    DECL_LINK_TYPED( WindowChildEventListener, VclWindowEvent&, void );
 
     //=====  IAccessibleViewForwarderListener  ================================
 
@@ -134,42 +134,53 @@ public:
         windowResized... methods it will be sufficient in most cases just to
         override this method.
      */
-    virtual void ViewForwarderChanged() override;
+    virtual void ViewForwarderChanged (ChangeType aChangeType,
+        const IAccessibleViewForwarder* pViewForwarder) override;
 
     //=====  XAccessibleContext  ==============================================
 
     virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL
-        getAccessibleParent() override;
+        getAccessibleParent()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** This implementation returns either 1 or 0 depending on whether there
         is an active accessible OLE object or not.
     */
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** This implementation either returns the active accessible OLE object
         if it exists and the given index is 0 or throws an exception.
     */
     virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild (sal_Int32 nIndex) override;
+        getAccessibleChild (sal_Int32 nIndex)
+        throw (css::uno::RuntimeException,
+            css::lang::IndexOutOfBoundsException, std::exception) override;
 
     //=====  XAccessibleComponent  ============================================
 
     virtual css::uno::Reference<css::accessibility::XAccessible > SAL_CALL
-        getAccessibleAtPoint (const css::awt::Point& aPoint) override;
+        getAccessibleAtPoint (const css::awt::Point& aPoint)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::awt::Rectangle SAL_CALL getBounds() override;
+    virtual css::awt::Rectangle SAL_CALL getBounds()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::awt::Point SAL_CALL getLocation() override;
+    virtual css::awt::Point SAL_CALL getLocation()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::awt::Point SAL_CALL getLocationOnScreen() override;
+    virtual css::awt::Point SAL_CALL getLocationOnScreen()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::awt::Size SAL_CALL getSize() override;
+    virtual css::awt::Size SAL_CALL getSize()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XInterface  ======================================================
 
     virtual css::uno::Any SAL_CALL
-        queryInterface (const css::uno::Type & rType) override;
+        queryInterface (const css::uno::Type & rType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         acquire()
@@ -184,46 +195,60 @@ public:
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XTypeProvider  ===================================================
 
     virtual css::uno::Sequence< css::uno::Type> SAL_CALL
-        getTypes() override;
+        getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  lang::XEventListener  ============================================
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XPropertyChangeListener  =========================================
 
     virtual void SAL_CALL
-        propertyChange (const css::beans::PropertyChangeEvent& rEventObject) override;
+        propertyChange (const css::beans::PropertyChangeEvent& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XWindowListener  =================================================
 
     virtual void SAL_CALL
-        windowResized (const css::awt::WindowEvent& e) override;
+        windowResized (const css::awt::WindowEvent& e)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-        windowMoved (const css::awt::WindowEvent& e) override;
+        windowMoved (const css::awt::WindowEvent& e)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-        windowShown (const css::lang::EventObject& e) override;
+        windowShown (const css::lang::EventObject& e)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-        windowHidden (const css::lang::EventObject& e) override;
+        windowHidden (const css::lang::EventObject& e)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XFocusListener  =================================================
 
-    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& e) override;
-    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& e) override;
+    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& e)
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& e)
+        throw (css::uno::RuntimeException, std::exception) override;
     //----------------------------xAttribute----------------------------
-    virtual css::uno::Any SAL_CALL getExtendedAttributes() override;
+    virtual css::uno::Any SAL_CALL getExtendedAttributes()
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException,
+               std::exception) override;
      ::sd::ViewShell* mpViewShell;
 private:
 
@@ -233,15 +258,18 @@ private:
 
     // return ourself as context in default case
     virtual css::uno::Reference< css::accessibility::XAccessibleContext >
-        implGetAccessibleContext() override;
+        implGetAccessibleContext()
+        throw ( css::uno::RuntimeException ) override;
 
     // return sal_False in default case
     virtual bool
-        implIsSelected( sal_Int32 nAccessibleChildIndex ) override;
+        implIsSelected( sal_Int32 nAccessibleChildIndex )
+        throw (css::uno::RuntimeException) override;
 
     // return nothing in default case
     virtual void
-        implSelect( sal_Int32 nAccessibleChildIndex, bool bSelect ) override;
+        implSelect( sal_Int32 nAccessibleChildIndex, bool bSelect )
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException) override;
 
 protected:
     /// The core window that is made accessible.
@@ -284,7 +312,8 @@ protected:
            A name string.
     */
     virtual OUString
-        CreateAccessibleName () override;
+        CreateAccessibleName ()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Create a description string.  The current description is not
         modified and, therefore, no events are send.  This method is usually
@@ -294,7 +323,8 @@ protected:
            A description string.
     */
     virtual OUString
-        CreateAccessibleDescription () override;
+        CreateAccessibleDescription ()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** This method is called when (after) the frame containing this
         document has been activated.  Can be used to send FOCUSED state
@@ -328,13 +358,16 @@ protected:
         const css::uno::Reference<css::accessibility::XAccessible>& xOLEObject);
     //=====  XAccessibleGetAccFromXShape  ============================================
     css::uno::Sequence< css::uno::Any >
-        SAL_CALL getAccFlowTo(const css::uno::Any& rAny, sal_Int32 nType) override;
+        SAL_CALL getAccFlowTo(const css::uno::Any& rAny, sal_Int32 nType)
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
 public:
     void SwitchViewActivated() { Activated(); }
-     virtual sal_Int32 SAL_CALL getForeground(  ) override;
+     virtual sal_Int32 SAL_CALL getForeground(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getBackground(  ) override;
+    virtual sal_Int32 SAL_CALL getBackground(  )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void impl_dispose();
 };
 

@@ -68,11 +68,14 @@ XFTableStyle::XFTableStyle()
 
 XFTableStyle::~XFTableStyle()
 {
+    delete m_pBGImage;
 }
 
 void    XFTableStyle::SetBackImage(XFBGImage *pImage)
 {
-    m_pBGImage.reset( pImage );
+    delete m_pBGImage;
+
+    m_pBGImage = pImage;
 }
 
 enumXFStyle XFTableStyle::GetStyleFamily()

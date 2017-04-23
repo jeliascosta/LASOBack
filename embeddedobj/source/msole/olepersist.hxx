@@ -32,13 +32,10 @@ namespace com { namespace sun { namespace star {
     namespace lang { class XMultiServiceFactory; }
 } } }
 
-OUString GetNewTempFileURL_Impl( const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory );
-
-/// @throws css::io::IOException
-/// @throws css::uno::RuntimeException
 OUString GetNewFilledTempFile_Impl(
     css::uno::Reference<css::io::XInputStream > const & xInStream,
-    css::uno::Reference<css::lang::XMultiServiceFactory> const & xFactory);
+    css::uno::Reference<css::lang::XMultiServiceFactory> const & xFactory)
+    throw (css::io::IOException, css::uno::RuntimeException);
 
 bool KillFile_Impl( const OUString& aURL, const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory );
 

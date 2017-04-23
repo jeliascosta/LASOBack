@@ -71,20 +71,26 @@ private:
     Service(const Service&) = delete;
     Service& operator=(const Service&) = delete;
 
-    virtual ~Service() override {}
+    virtual ~Service() {}
 
     virtual void SAL_CALL insertExtensionXcsFile(
-        sal_Bool shared, OUString const & fileUri) override;
+        sal_Bool shared, OUString const & fileUri)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL insertExtensionXcuFile(
-        sal_Bool shared, OUString const & fileUri) override;
+        sal_Bool shared, OUString const & fileUri)
+        throw (css::uno::RuntimeException,
+               std::exception) override;
 
-    virtual void SAL_CALL removeExtensionXcuFile(OUString const & fileUri) override;
+    virtual void SAL_CALL removeExtensionXcuFile(OUString const & fileUri)
+        throw (css::uno::RuntimeException,
+               std::exception) override;
 
     virtual void SAL_CALL insertModificationXcuFile(
         OUString const & fileUri,
         css::uno::Sequence< OUString > const & includedPaths,
-        css::uno::Sequence< OUString > const & excludedPaths) override;
+        css::uno::Sequence< OUString > const & excludedPaths)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     std::shared_ptr<osl::Mutex> lock_;
     css::uno::Reference< css::uno::XComponentContext > context_;
@@ -92,6 +98,7 @@ private:
 
 void Service::insertExtensionXcsFile(
     sal_Bool shared, OUString const & fileUri)
+    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(*lock_);
     Components::getSingleton(context_).insertExtensionXcsFile(shared, fileUri);
@@ -99,6 +106,8 @@ void Service::insertExtensionXcsFile(
 
 void Service::insertExtensionXcuFile(
     sal_Bool shared, OUString const & fileUri)
+    throw (css::uno::RuntimeException,
+           std::exception)
 {
     Broadcaster bc;
     {
@@ -113,6 +122,7 @@ void Service::insertExtensionXcuFile(
 }
 
 void Service::removeExtensionXcuFile(OUString const & fileUri)
+    throw (css::uno::RuntimeException, std::exception)
 {
     Broadcaster bc;
     {
@@ -130,6 +140,7 @@ void Service::insertModificationXcuFile(
     OUString const & fileUri,
     css::uno::Sequence< OUString > const & includedPaths,
     css::uno::Sequence< OUString > const & excludedPaths)
+    throw (css::uno::RuntimeException, std::exception)
 {
     Broadcaster bc;
     {

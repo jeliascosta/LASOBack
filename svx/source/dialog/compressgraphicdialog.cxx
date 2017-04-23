@@ -18,14 +18,11 @@
  */
 
 #include <dlgunit.hxx>
-#include <vcl/fixed.hxx>
 #include <vcl/graph.hxx>
 #include <vcl/graphicfilter.hxx>
-#include <vcl/lstbox.hxx>
 #include <vcl/virdev.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-#include <vcl/slider.hxx>
 #include <svx/svdograf.hxx>
 #include <svx/sdgcpitm.hxx>
 #include <svx/dialmgr.hxx>
@@ -49,12 +46,12 @@ CompressGraphicsDialog::CompressGraphicsDialog( vcl::Window* pParent, SdrGrafObj
     m_dResolution     ( 96.0 )
 {
     const SdrGrafCropItem& rCrop = static_cast<const SdrGrafCropItem&>( m_pGraphicObj->GetMergedItem(SDRATTR_GRAFCROP) );
-    m_aCropRectangle = tools::Rectangle(rCrop.GetLeft(), rCrop.GetTop(), rCrop.GetRight(), rCrop.GetBottom());
+    m_aCropRectangle = Rectangle(rCrop.GetLeft(), rCrop.GetTop(), rCrop.GetRight(), rCrop.GetBottom());
 
     Initialize();
 }
 
-CompressGraphicsDialog::CompressGraphicsDialog( vcl::Window* pParent, Graphic& rGraphic, Size rViewSize100mm, tools::Rectangle& rCropRectangle, SfxBindings& rBindings ) :
+CompressGraphicsDialog::CompressGraphicsDialog( vcl::Window* pParent, Graphic& rGraphic, Size rViewSize100mm, Rectangle& rCropRectangle, SfxBindings& rBindings ) :
     ModalDialog       ( pParent, "CompressGraphicDialog", "svx/ui/compressgraphicdialog.ui" ),
     m_pGraphicObj     ( nullptr ),
     m_aGraphic        ( rGraphic ),
@@ -88,8 +85,6 @@ void CompressGraphicsDialog::dispose()
     m_pQualityMF.clear();
     m_pBtnCalculate.clear();
     m_pInterpolationCombo.clear();
-    m_pCompressionSlider.clear();
-    m_pQualitySlider.clear();
     ModalDialog::dispose();
 }
 
@@ -115,8 +110,6 @@ void CompressGraphicsDialog::Initialize()
 
     m_pInterpolationCombo->SelectEntry( "Lanczos" );
 
-    m_pInterpolationCombo->SetSelectHdl( LINK( this, CompressGraphicsDialog, NewInterpolationModifiedHdl ));
-
     m_pMFNewWidth->SetModifyHdl( LINK( this, CompressGraphicsDialog, NewWidthModifiedHdl ));
     m_pMFNewHeight->SetModifyHdl( LINK( this, CompressGraphicsDialog, NewHeightModifiedHdl ));
 
@@ -129,11 +122,7 @@ void CompressGraphicsDialog::Initialize()
     m_pReduceResolutionCB->SetToggleHdl( LINK( this, CompressGraphicsDialog, ToggleReduceResolutionRB ) );
 
     m_pQualitySlider->SetLinkedField(m_pQualityMF);
-    m_pQualitySlider->SetEndSlideHdl( LINK( this, CompressGraphicsDialog, EndSlideHdl ));
     m_pCompressionSlider->SetLinkedField(m_pCompressionMF);
-    m_pCompressionSlider->SetEndSlideHdl( LINK( this, CompressGraphicsDialog, EndSlideHdl ));
-    m_pQualityMF->SetModifyHdl( LINK( this, CompressGraphicsDialog, NewQualityModifiedHdl ));
-    m_pCompressionMF->SetModifyHdl( LINK( this, CompressGraphicsDialog, NewCompressionModifiedHdl ));
 
     m_pJpegCompRB->Check();
     m_pReduceResolutionCB->Check();
@@ -150,31 +139,31 @@ void CompressGraphicsDialog::Update()
     OUString aGraphicTypeString;
     switch(aLinkType)
     {
-        case GfxLinkType::NativeGif:
+        case GFX_LINK_TYPE_NATIVE_GIF:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_GIF);
             break;
-        case GfxLinkType::NativeJpg:
+        case GFX_LINK_TYPE_NATIVE_JPG:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_JPEG);
             break;
-        case GfxLinkType::NativePng:
+        case GFX_LINK_TYPE_NATIVE_PNG:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_PNG);
             break;
-        case GfxLinkType::NativeTif:
+        case GFX_LINK_TYPE_NATIVE_TIF:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_TIFF);
             break;
-        case GfxLinkType::NativeWmf:
+        case GFX_LINK_TYPE_NATIVE_WMF:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_WMF);
             break;
-        case GfxLinkType::NativeMet:
+        case GFX_LINK_TYPE_NATIVE_MET:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_MET);
             break;
-        case GfxLinkType::NativePct:
+        case GFX_LINK_TYPE_NATIVE_PCT:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_PCT);
             break;
-        case GfxLinkType::NativeSvg:
+        case GFX_LINK_TYPE_NATIVE_SVG:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_SVG);
             break;
-        case GfxLinkType::NativeBmp:
+        case GFX_LINK_TYPE_NATIVE_BMP:
             aGraphicTypeString = SVX_RESSTR(STR_IMAGE_BMP);
             break;
         default:
@@ -192,7 +181,7 @@ void CompressGraphicsDialog::Update()
     pDummyVDev->SetMapMode( m_aGraphic.GetPrefMapMode() );
 
     Size aPixelSize = m_aGraphic.GetSizePixel();
-    Size aOriginalSize100mm( pDummyVDev->PixelToLogic( m_aGraphic.GetSizePixel(), MapUnit::Map100thMM ) );
+    Size aOriginalSize100mm( pDummyVDev->PixelToLogic( m_aGraphic.GetSizePixel(), MAP_100TH_MM ) );
 
     OUString aBitmapSizeString = SVX_RESSTR(STR_IMAGE_ORIGINAL_SIZE);
     OUString aWidthString  = GetUnitString( aOriginalSize100mm.Width(),  eFieldUnit, cSeparator );
@@ -246,12 +235,12 @@ void CompressGraphicsDialog::UpdateResolutionLB()
 
 double CompressGraphicsDialog::GetViewWidthInch()
 {
-    return (double) MetricField::ConvertValue(m_aViewSize100mm.Width(),  2, MapUnit::Map100thMM, FUNIT_INCH) / 100.0;
+    return (double) MetricField::ConvertValue(m_aViewSize100mm.Width(),  2, MAP_100TH_MM, FUNIT_INCH) / 100.0;
 }
 
 double CompressGraphicsDialog::GetViewHeightInch()
 {
-    return (double) MetricField::ConvertValue(m_aViewSize100mm.Height(),  2, MapUnit::Map100thMM, FUNIT_INCH) / 100.0;
+    return (double) MetricField::ConvertValue(m_aViewSize100mm.Height(),  2, MAP_100TH_MM, FUNIT_INCH) / 100.0;
 }
 
 BmpScaleFlag CompressGraphicsDialog::GetSelectedInterpolationType()
@@ -297,10 +286,8 @@ void CompressGraphicsDialog::Compress(SvStream& aStream)
     rFilter.ExportGraphic( aScaledGraphic, "none", aStream, nFilterFormat, &aFilterData );
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, NewWidthModifiedHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, NewWidthModifiedHdl, Edit&, void )
 {
-    fprintf(stderr, "NewWidthModifiedHdl\n");
-
     m_dResolution =  m_pMFNewWidth->GetValue() / GetViewWidthInch();
 
     UpdateNewHeightMF();
@@ -308,29 +295,7 @@ IMPL_LINK_NOARG( CompressGraphicsDialog, NewWidthModifiedHdl, Edit&, void )
     Update();
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, EndSlideHdl, Slider*, void )
-{
-    Update();
-}
-
-IMPL_LINK_NOARG( CompressGraphicsDialog, NewInterpolationModifiedHdl, ListBox&, void )
-{
-    Update();
-}
-
-IMPL_LINK_NOARG( CompressGraphicsDialog, NewQualityModifiedHdl, Edit&, void )
-{
-    m_pQualitySlider->SetThumbPos(m_pQualityMF->GetValue());
-    Update();
-}
-
-IMPL_LINK_NOARG( CompressGraphicsDialog, NewCompressionModifiedHdl, Edit&, void )
-{
-    m_pCompressionSlider->SetThumbPos(m_pCompressionMF->GetValue());
-    Update();
-}
-
-IMPL_LINK_NOARG( CompressGraphicsDialog, NewHeightModifiedHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, NewHeightModifiedHdl, Edit&, void )
 {
     m_dResolution =  m_pMFNewHeight->GetValue() / GetViewHeightInch();
 
@@ -339,7 +304,7 @@ IMPL_LINK_NOARG( CompressGraphicsDialog, NewHeightModifiedHdl, Edit&, void )
     Update();
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, ResolutionModifiedHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, ResolutionModifiedHdl, Edit&, void )
 {
     m_dResolution = (double) m_pResolutionLB->GetText().toInt32();
 
@@ -348,27 +313,25 @@ IMPL_LINK_NOARG( CompressGraphicsDialog, ResolutionModifiedHdl, Edit&, void )
     Update();
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, ToggleCompressionRB, RadioButton&, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, ToggleCompressionRB, RadioButton&, void )
 {
     bool choice = m_pLosslessRB->IsChecked();
     m_pCompressionMF->Enable(choice);
     m_pCompressionSlider->Enable(choice);
     m_pQualityMF->Enable(!choice);
     m_pQualitySlider->Enable(!choice);
-    Update();
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, ToggleReduceResolutionRB, CheckBox&, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, ToggleReduceResolutionRB, CheckBox&, void )
 {
     bool choice = m_pReduceResolutionCB->IsChecked();
     m_pMFNewWidth->Enable(choice);
     m_pMFNewHeight->Enable(choice);
     m_pResolutionLB->Enable(choice);
     m_pInterpolationCombo->Enable(choice);
-    Update();
 }
 
-IMPL_LINK_NOARG( CompressGraphicsDialog, CalculateClickHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED( CompressGraphicsDialog, CalculateClickHdl, Button*, void )
 {
     sal_Int32 aSize = 0;
 
@@ -391,7 +354,7 @@ IMPL_LINK_NOARG( CompressGraphicsDialog, CalculateClickHdl, Button*, void )
     }
 }
 
-tools::Rectangle CompressGraphicsDialog::GetScaledCropRectangle()
+Rectangle CompressGraphicsDialog::GetScaledCropRectangle()
 {
     if ( m_pReduceResolutionCB->IsChecked() )
     {
@@ -401,7 +364,7 @@ tools::Rectangle CompressGraphicsDialog::GetScaledCropRectangle()
         double aScaleX = nPixelX / (double) aSize.Width();
         double aScaleY = nPixelY / (double) aSize.Height();
 
-        return tools::Rectangle(
+        return Rectangle(
             m_aCropRectangle.Left()  * aScaleX,
             m_aCropRectangle.Top()   * aScaleY,
             m_aCropRectangle.Right() * aScaleX,
@@ -438,7 +401,7 @@ SdrGrafObj* CompressGraphicsDialog::GetCompressedSdrGrafObj()
 
         if ( m_pReduceResolutionCB->IsChecked() )
         {
-            tools::Rectangle aScaledCropedRectangle = GetScaledCropRectangle();
+            Rectangle aScaledCropedRectangle = GetScaledCropRectangle();
             SdrGrafCropItem aNewCrop(
                 aScaledCropedRectangle.Left(),
                 aScaledCropedRectangle.Top(),

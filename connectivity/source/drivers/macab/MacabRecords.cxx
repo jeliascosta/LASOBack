@@ -17,11 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
-#include <utility>
-#include <vector>
 
 #include "MacabRecords.hxx"
 #include "MacabRecord.hxx"
@@ -33,7 +28,6 @@
 #include <AddressBook/ABAddressBookC.h>
 #include <postmac.h>
 #include <com/sun/star/util/DateTime.hpp>
-#include <o3tl/make_unique.hxx>
 
 using namespace connectivity::macab;
 using namespace com::sun::star::util;
@@ -628,7 +622,7 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
                 CFTypeRef multiValue;
                 OUString multiLabelString;
                 OUString multiPropertyString;
-                std::vector<std::unique_ptr<MacabHeader>> multiHeaders;
+                MacabHeader **multiHeaders = new MacabHeader *[multiLengthFirstLevel];
                 ABPropertyType multiType = (ABPropertyType) (ABMultiValuePropertyType(static_cast<ABMutableMultiValueRef>(const_cast<void *>(_propertyValue))) - 0x100);
 
                 multiPropertyString = CFStringToOUString(_propertyName);
@@ -644,7 +638,6 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
                     /* label */
                     multiLabel = ABMultiValueCopyLabelAtIndex(static_cast<ABMutableMultiValueRef>(const_cast<void *>(_propertyValue)), i);
                     multiValue = ABMultiValueCopyValueAtIndex(static_cast<ABMutableMultiValueRef>(const_cast<void *>(_propertyValue)), i);
-                    std::unique_ptr<MacabHeader> hdr;
                     if(multiValue && multiLabel)
                     {
                         localizedMultiLabel = ABCopyLocalizedPropertyOrLabel(multiLabel);
@@ -652,18 +645,17 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
                         CFRelease(multiLabel);
                         CFRelease(localizedMultiLabel);
                         multiLabel = OUStringToCFString(multiLabelString);
-                        hdr.reset(createHeaderForProperty(multiType, multiValue, multiLabel));
-                        if (!hdr)
-                            hdr = o3tl::make_unique<MacabHeader>();
-                        multiLengthSecondLevel += hdr->getSize();
+                        multiHeaders[i] = createHeaderForProperty(multiType, multiValue, multiLabel);
+                        if (!multiHeaders[i])
+                            multiHeaders[i] = new MacabHeader();
+                        multiLengthSecondLevel += multiHeaders[i]->getSize();
                     }
                     else
                     {
-                        hdr = o3tl::make_unique<MacabHeader>();
+                        multiHeaders[i] = new MacabHeader();
                     }
                     if(multiValue)
                         CFRelease(multiValue);
-                    multiHeaders.push_back(std::move(hdr));
                 }
 
                 /* We now have enough information to create our final MacabHeader.
@@ -684,6 +676,10 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
 
                     headerNames[i] = multiHeaders[j]->copy(k);
                 }
+                for(i = 0; i < multiLengthFirstLevel; i++)
+                    delete multiHeaders[i];
+
+                delete [] multiHeaders;
             }
             break;
 
@@ -714,7 +710,7 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
             /* Get the keys and values */
             dictKeys = static_cast<CFStringRef *>(malloc(sizeof(CFStringRef)*numRecords));
             dictValues = static_cast<CFTypeRef *>(malloc(sizeof(CFTypeRef)*numRecords));
-            CFDictionaryGetKeysAndValues(static_cast<CFDictionaryRef>(_propertyValue), reinterpret_cast<const void **>(dictKeys), dictValues);
+            CFDictionaryGetKeysAndValues(static_cast<CFDictionaryRef>(_propertyValue), reinterpret_cast<const void **>(dictKeys), static_cast<const void **>(dictValues));
 
             propertyNameString = CFStringToOUString(_propertyName);
 
@@ -730,7 +726,7 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
              */
             for(i = 0; i < numRecords; i++)
             {
-                dictType = getABTypeFromCFType( CFGetTypeID(dictValues[i]) );
+                dictType = (ABPropertyType) getABTypeFromCFType( CFGetTypeID(dictValues[i]) );
                 localizedDictKey = ABCopyLocalizedPropertyOrLabel(dictKeys[i]);
                 dictKeyString = CFStringToOUString(localizedDictKey);
                 dictLabelString = propertyNameString + ": " + fixLabel(dictKeyString);
@@ -779,7 +775,7 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
                 sal_Int32 i,j,k;
                 CFTypeRef arrValue;
                 ABPropertyType arrType;
-                std::vector<std::unique_ptr<MacabHeader>> arrHeaders;
+                MacabHeader **arrHeaders = new MacabHeader *[arrLength];
                 OUString propertyNameString = CFStringToOUString(_propertyName);
                 OUString arrLabelString;
                 CFStringRef arrLabel;
@@ -796,16 +792,15 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
                  */
                 for(i = 0; i < arrLength; i++)
                 {
-                    arrValue = CFArrayGetValueAtIndex(static_cast<CFArrayRef>(_propertyValue), i);
-                    arrType = getABTypeFromCFType( CFGetTypeID(arrValue) );
+                    arrValue = static_cast<CFTypeRef>(CFArrayGetValueAtIndex(static_cast<CFArrayRef>(_propertyValue), i));
+                    arrType = (ABPropertyType) getABTypeFromCFType( CFGetTypeID(arrValue) );
                     arrLabelString = propertyNameString + OUString::number(i);
                     arrLabel = OUStringToCFString(arrLabelString);
-                    auto hdr = std::unique_ptr<MacabHeader>(createHeaderForProperty(arrType, arrValue, arrLabel));
-                    if (!hdr)
-                        hdr = o3tl::make_unique<MacabHeader>();
-                    length += hdr->getSize();
+                    arrHeaders[i] = createHeaderForProperty(arrType, arrValue, arrLabel);
+                    if (!arrHeaders[i])
+                        arrHeaders[i] = new MacabHeader();
+                    length += arrHeaders[i]->getSize();
                     CFRelease(arrLabel);
-                    arrHeaders.push_back(std::move(hdr));
                 }
 
                 headerNames = new macabfield *[length];
@@ -819,6 +814,10 @@ MacabHeader *MacabRecords::createHeaderForProperty(const ABPropertyType _propert
 
                     headerNames[i] = arrHeaders[j]->copy(k);
                 }
+                for(i = 0; i < arrLength; i++)
+                    delete arrHeaders[i];
+
+                delete [] arrHeaders;
             }
             break;
 
@@ -1022,7 +1021,7 @@ void MacabRecords::insertPropertyIntoMacabRecord(const ABPropertyType _propertyT
                 CFTypeRef *dictValues;
                 dictKeys = static_cast<CFStringRef *>(malloc(sizeof(CFStringRef)*numRecords));
                 dictValues = static_cast<CFTypeRef *>(malloc(sizeof(CFTypeRef)*numRecords));
-                CFDictionaryGetKeysAndValues(static_cast<CFDictionaryRef>(_propertyValue), reinterpret_cast<const void **>(dictKeys), dictValues);
+                CFDictionaryGetKeysAndValues(static_cast<CFDictionaryRef>(_propertyValue), reinterpret_cast<const void **>(dictKeys), static_cast<const void **>(dictValues));
 
                 /* Going through each element... */
                 for(i = 0; i < numRecords; i++)

@@ -32,7 +32,7 @@
 namespace fileaccess {
 
 
-    class TaskManager;
+    class shell;
 
 
 class XInteractionSupplyNameImpl : public cppu::WeakImplHelper<
@@ -45,12 +45,14 @@ class XInteractionSupplyNameImpl : public cppu::WeakImplHelper<
         {
         }
 
-        virtual void SAL_CALL select() override
+        virtual void SAL_CALL select()
+            throw (css::uno::RuntimeException, std::exception) override
         {
             m_bSelected = true;
         }
 
-        void SAL_CALL setName(const OUString& Name) override
+        void SAL_CALL setName(const OUString& Name)
+            throw(css::uno::RuntimeException, std::exception) override
         {
             m_aNewName = Name;
         }
@@ -82,7 +84,8 @@ class XInteractionSupplyNameImpl : public cppu::WeakImplHelper<
         {
         }
 
-        virtual void SAL_CALL select() override
+        virtual void SAL_CALL select()
+            throw (css::uno::RuntimeException, std::exception) override
         {
             m_bSelected = true;
         }
@@ -106,7 +109,7 @@ class XInteractionSupplyNameImpl : public cppu::WeakImplHelper<
         XInteractionRequestImpl(
             const OUString& aClashingName,
             const css::uno::Reference< css::uno::XInterface>& xOrigin,
-            TaskManager* pShell,
+            shell* pShell,
             sal_Int32 CommandId);
 
         bool aborted() const

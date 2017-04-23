@@ -59,6 +59,7 @@ class ImpRemap3DDepth
 public:
     ImpRemap3DDepth(sal_uInt32 nOrdNum, double fMinimalDepth);
     explicit ImpRemap3DDepth(sal_uInt32 nOrdNum);
+    ~ImpRemap3DDepth();
 
     // for ::std::sort
     bool operator<(const ImpRemap3DDepth& rComp) const;
@@ -78,6 +79,10 @@ ImpRemap3DDepth::ImpRemap3DDepth(sal_uInt32 nOrdNum)
 :   mnOrdNum(nOrdNum),
     mfMinimalDepth(0.0),
     mbIsScene(true)
+{
+}
+
+ImpRemap3DDepth::~ImpRemap3DDepth()
 {
 }
 
@@ -106,6 +111,7 @@ class Imp3DDepthRemapper
 
 public:
     explicit Imp3DDepthRemapper(E3dScene& rScene);
+    ~Imp3DDepthRemapper();
 
     sal_uInt32 RemapOrdNum(sal_uInt32 nOrdNum) const;
 };
@@ -141,6 +147,10 @@ Imp3DDepthRemapper::Imp3DDepthRemapper(E3dScene& rScene)
     // now, we need to sort the maVector by its members minimal depth. The
     // smaller, the nearer to the viewer.
     ::std::sort(maVector.begin(), maVector.end());
+}
+
+Imp3DDepthRemapper::~Imp3DDepthRemapper()
+{
 }
 
 sal_uInt32 Imp3DDepthRemapper::RemapOrdNum(sal_uInt32 nOrdNum) const
@@ -201,8 +211,8 @@ void E3dScene::SetDefaultAttributes(E3dDefaultAttributes& /*rDefault*/)
     // Set defaults
     aCamera.SetViewWindow(-2, -2, 4, 4);
     aCameraSet.SetDeviceRectangle(-2, 2, -2, 2);
-    aCamera.SetDeviceWindow(tools::Rectangle(0, 0, 10, 10));
-    tools::Rectangle aRect(0, 0, 10, 10);
+    aCamera.SetDeviceWindow(Rectangle(0, 0, 10, 10));
+    Rectangle aRect(0, 0, 10, 10);
     aCameraSet.SetViewportRectangle(aRect);
 
     // set defaults for Camera from ItemPool
@@ -287,19 +297,19 @@ void E3dScene::SetBoundRectDirty()
     }
 }
 
-void E3dScene::NbcSetSnapRect(const tools::Rectangle& rRect)
+void E3dScene::NbcSetSnapRect(const Rectangle& rRect)
 {
     SetRectsDirty();
     E3dObject::NbcSetSnapRect(rRect);
     aCamera.SetDeviceWindow(rRect);
-    aCameraSet.SetViewportRectangle((tools::Rectangle&)rRect);
+    aCameraSet.SetViewportRectangle((Rectangle&)rRect);
 
     ImpCleanup3DDepthMapper();
 }
 
 void E3dScene::NbcMove(const Size& rSize)
 {
-    tools::Rectangle aNewSnapRect = GetSnapRect();
+    Rectangle aNewSnapRect = GetSnapRect();
     MoveRect(aNewSnapRect, rSize);
     NbcSetSnapRect(aNewSnapRect);
 }
@@ -307,7 +317,7 @@ void E3dScene::NbcMove(const Size& rSize)
 void E3dScene::NbcResize(const Point& rRef, const Fraction& rXFact,
                                             const Fraction& rYFact)
 {
-    tools::Rectangle aNewSnapRect = GetSnapRect();
+    Rectangle aNewSnapRect = GetSnapRect();
     ResizeRect(aNewSnapRect, rRef, rXFact, rYFact);
     NbcSetSnapRect(aNewSnapRect);
 }
@@ -323,7 +333,8 @@ void E3dScene::SetCamera(const Camera3D& rNewCamera)
     SetRectsDirty();
 
     // Turn off ratio
-    GetCameraSet().SetRatio(0.0);
+    if(aCamera.GetAspectMapping() == AS_NO_MAPPING)
+        GetCameraSet().SetRatio(0.0);
 
     // Set Imaging geometry
     basegfx::B3DPoint aVRP(aCamera.GetViewPoint());
@@ -335,8 +346,8 @@ void E3dScene::SetCamera(const Camera3D& rNewCamera)
     GetCameraSet().SetViewportValues(aVRP, aVPN, aVUV);
 
     // Set perspective
-    GetCameraSet().SetPerspective(aCamera.GetProjection() == ProjectionType::Perspective);
-    GetCameraSet().SetViewportRectangle((tools::Rectangle&)aCamera.GetDeviceWindow());
+    GetCameraSet().SetPerspective(aCamera.GetProjection() == PR_PERSPECTIVE);
+    GetCameraSet().SetViewportRectangle((Rectangle&)aCamera.GetDeviceWindow());
 
     ImpCleanup3DDepthMapper();
 }
@@ -464,7 +475,7 @@ void E3dScene::RebuildLists()
     // first delete
     SdrLayerID nCurrLayerID = GetLayer();
 
-    SdrObjListIter a3DIterator(maSubList, SdrIterMode::Flat);
+    SdrObjListIter a3DIterator(maSubList, IM_FLAT);
 
     // then examine all the objects in the scene
     while ( a3DIterator.IsMore() )
@@ -626,7 +637,7 @@ void E3dScene::RecalcSnapRect()
 
     if(pScene == this)
     {
-        // The Scene is used as a 2D-Object, take the SnapRect from the
+        // The Scene is used as a 2D-Objekt, take the SnapRect from the
         // 2D Display settings
         maSnapRect = pScene->aCamera.GetDeviceWindow();
     }
@@ -641,7 +652,7 @@ void E3dScene::RecalcSnapRect()
 bool E3dScene::IsBreakObjPossible()
 {
     // Break scene, if all members are able to break
-    SdrObjListIter a3DIterator(maSubList, SdrIterMode::DeepWithGroups);
+    SdrObjListIter a3DIterator(maSubList, IM_DEEPWITHGROUPS);
 
     while ( a3DIterator.IsMore() )
     {
@@ -662,7 +673,7 @@ basegfx::B2DPolyPolygon E3dScene::TakeCreatePoly(const SdrDragStat& /*rDrag*/) c
 bool E3dScene::BegCreate(SdrDragStat& rStat)
 {
     rStat.SetOrtho4Possible();
-    tools::Rectangle aRect1(rStat.GetStart(), rStat.GetNow());
+    Rectangle aRect1(rStat.GetStart(), rStat.GetNow());
     aRect1.Justify();
     rStat.SetActionRect(aRect1);
     NbcSetSnapRect(aRect1);
@@ -671,7 +682,7 @@ bool E3dScene::BegCreate(SdrDragStat& rStat)
 
 bool E3dScene::MovCreate(SdrDragStat& rStat)
 {
-    tools::Rectangle aRect1;
+    Rectangle aRect1;
     rStat.TakeCreateRect(aRect1);
     aRect1.Justify();
     rStat.SetActionRect(aRect1);
@@ -683,12 +694,12 @@ bool E3dScene::MovCreate(SdrDragStat& rStat)
 
 bool E3dScene::EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd)
 {
-    tools::Rectangle aRect1;
+    Rectangle aRect1;
     rStat.TakeCreateRect(aRect1);
     aRect1.Justify();
     NbcSetSnapRect(aRect1);
     SetRectsDirty();
-    return (eCmd==SdrCreateCmd::ForceEnd || rStat.GetPointCount()>=2);
+    return (eCmd==SDRCREATE_FORCEEND || rStat.GetPointCount()>=2);
 }
 
 bool E3dScene::BckCreate(SdrDragStat& /*rStat*/)

@@ -35,7 +35,7 @@ private:
 public:
                  GlueEscDirLB( vcl::Window* pParent,
                               const css::uno::Reference< css::frame::XFrame >& rFrame );
-                 virtual ~GlueEscDirLB() override;
+                 virtual ~GlueEscDirLB();
 
     virtual void Select() override;
 
@@ -58,6 +58,7 @@ public:
             SFX_DECL_TOOLBOX_CONTROL();
 
             SdTbxCtlGlueEscDir( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
+            virtual ~SdTbxCtlGlueEscDir() {}
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_GLUECTRL_HXX

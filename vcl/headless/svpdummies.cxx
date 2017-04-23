@@ -42,6 +42,11 @@ void SvpSalObject::SetPosSize( long, long, long, long ) {}
 void SvpSalObject::Show( bool ) {}
 const SystemEnvData* SvpSalObject::GetSystemData() const { return &m_aSystemChildData; }
 
+// SalI18NImeStatus
+SvpImeStatus::~SvpImeStatus() {}
+bool SvpImeStatus::canToggle() { return false; }
+void SvpImeStatus::toggle() {}
+
 // SalSystem
 SvpSalSystem::~SvpSalSystem() {}
 
@@ -50,11 +55,11 @@ unsigned int SvpSalSystem::GetDisplayScreenCount()
     return 1;
 }
 
-tools::Rectangle SvpSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
+Rectangle SvpSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if( nScreen == 0 )
-        aRect = tools::Rectangle( Point(0,0), Size(VIRTUAL_DESKTOP_WIDTH,VIRTUAL_DESKTOP_HEIGHT) );
+        aRect = Rectangle( Point(0,0), Size(VIRTUAL_DESKTOP_WIDTH,VIRTUAL_DESKTOP_HEIGHT) );
     return aRect;
 }
 

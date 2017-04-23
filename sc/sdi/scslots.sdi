@@ -34,7 +34,7 @@ module StarCalc
     item INT32 SfxIntegerListItem;
 
 
-    // in case of problems may be include (=copy/paste) manually
+    // bei Problemen ggF. "von Hand" includen (=Copy/Paste)
     include "sfxitems.sdi"
     include "sfx.sdi"
     include "svxitems.sdi"

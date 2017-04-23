@@ -80,13 +80,13 @@ class XFDrawStyle : public XFStyle
 public:
     XFDrawStyle();
 
-    virtual ~XFDrawStyle() override;
+    virtual ~XFDrawStyle();
 
 public:
     /**
      * @descr   Set drawing object border line.
      */
-    void    SetLineStyle(double width, XFColor color);
+    void    SetLineStyle(double width, XFColor color = XFColor(0,0,0));
 
     /**
      * @descr   Set drawing object dash border style.
@@ -101,17 +101,17 @@ public:
     /**
      * @descr   Set drawing object area grid style.
      */
-    void    SetAreaLineStyle(enumXFAreaLineStyle style, sal_Int32 angle, double space, XFColor lineColor);
+    void    SetAreaLineStyle(enumXFAreaLineStyle style, sal_Int32 angle = 0, double space = 0.102, XFColor lineColor = XFColor(0,0,0));
 
     /**
      * @descr   Set drawing object arrow start style,only lines can have arrows.
      */
-    void    SetArrowStart(const OUString& start, double size);
+    void    SetArrowStart(const OUString& start, double size=0.3);
 
     /**
      * @descr   Set drawing object arrow end style,only lines can have arrows.
      */
-    void    SetArrowEnd(const OUString& end, double size);
+    void    SetArrowEnd(const OUString& end, double size=0.3);
 
     void SetFontWorkStyle(enumXFFWStyle eStyle, enumXFFWAdjust eAdjust);
 

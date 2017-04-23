@@ -25,30 +25,29 @@
 #include <svx/svddef.hxx>
 #include <svx/svxdllapi.h>
 
-// MSVC hack:
-class SdrGrafModeItem_Base: public SfxEnumItem<GraphicDrawMode> {
-protected:
-    SdrGrafModeItem_Base(GraphicDrawMode eMode):
-        SfxEnumItem(SDRATTR_GRAFMODE, eMode) {}
 
-    SdrGrafModeItem_Base(SvStream& rIn): SfxEnumItem(SDRATTR_GRAFMODE, rIn) {}
-};
+// SdrGrafModeItem -
 
-class SVX_DLLPUBLIC SdrGrafModeItem : public SdrGrafModeItem_Base
+
+class SVX_DLLPUBLIC SdrGrafModeItem : public SfxEnumItem
 {
 public:
-                            SdrGrafModeItem( GraphicDrawMode eMode = GraphicDrawMode::Standard ) : SdrGrafModeItem_Base( eMode ) {}
-                            SdrGrafModeItem( SvStream& rIn ) : SdrGrafModeItem_Base( rIn ) {}
+
+
+                            SdrGrafModeItem( GraphicDrawMode eMode = GRAPHICDRAWMODE_STANDARD ) : SfxEnumItem( SDRATTR_GRAFMODE, (sal_uInt16)eMode ) {}
+                            SdrGrafModeItem( SvStream& rIn ) : SfxEnumItem( SDRATTR_GRAFMODE, rIn ) {}
 
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
-    virtual sal_uInt16      GetValueCount() const override;
+    virtual sal_uInt16          GetValueCount() const override;
+    GraphicDrawMode         GetValue() const { return (GraphicDrawMode) SfxEnumItem::GetValue(); }
 
-    virtual OUString        GetValueTextByPos( sal_uInt16 nPos ) const override;
+    virtual OUString   GetValueTextByPos( sal_uInt16 nPos ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString& rText, const IntlWrapper * = nullptr) const override;
+                                                 SfxMapUnit eCoreMetric,
+                                                 SfxMapUnit ePresMetric,
+                                                 OUString& rText, const IntlWrapper * = nullptr) const override;
+
 };
 
 #endif // INCLUDED_SVX_SDGMOITM_HXX

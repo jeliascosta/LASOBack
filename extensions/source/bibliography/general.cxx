@@ -75,12 +75,12 @@ public:
     explicit BibPosListener(BibGeneralPage* pParent);
 
     //XPositioningListener
-    virtual void SAL_CALL cursorMoved(const lang::EventObject& event) override;
-    virtual void SAL_CALL rowChanged(const lang::EventObject& /*event*/) override { /* not interested in */ }
-    virtual void SAL_CALL rowSetChanged(const lang::EventObject& /*event*/) override { /* not interested in */ }
+    virtual void SAL_CALL cursorMoved(const lang::EventObject& event) throw( uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL rowChanged(const lang::EventObject& /*event*/) throw( uno::RuntimeException, std::exception ) override { /* not interested in */ }
+    virtual void SAL_CALL rowSetChanged(const lang::EventObject& /*event*/) throw( uno::RuntimeException, std::exception ) override { /* not interested in */ }
 
     //XEventListener
-    virtual void SAL_CALL disposing(const lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const lang::EventObject& Source) throw( uno::RuntimeException, std::exception ) override;
 
 };
 
@@ -89,7 +89,7 @@ BibPosListener::BibPosListener(BibGeneralPage* pParent) :
 {
 }
 
-void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/)
+void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/) throw( uno::RuntimeException, std::exception )
 {
     try
     {
@@ -129,7 +129,8 @@ void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/)
             if(xValueAcc.is() && xValueAcc->hasByName(uTypeMapping))
             {
                 uno::Any aVal = xValueAcc->getByName(uTypeMapping);
-                uno::Reference< sdb::XColumn >  xCol(aVal, UNO_QUERY);
+                uno::Reference< uno::XInterface >  xInt = *static_cast<uno::Reference< uno::XInterface > const *>(aVal.getValue());
+                uno::Reference< sdb::XColumn >  xCol(xInt, UNO_QUERY);
                 DBG_ASSERT(xCol.is(), "BibPosListener::cursorMoved : invalid column (no sdb::XColumn) !");
                 if (xCol.is())
                 {
@@ -149,7 +150,7 @@ void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/)
                 uno::Sequence<sal_Int16> aSelSeq(1);
                 sal_Int16* pArr = aSelSeq.getArray();
                 pArr[0] = TYPE_COUNT;
-                aSel <<= aSelSeq;
+                aSel.setValue(&aSelSeq, cppu::UnoType<Sequence<sal_Int16>>::get());
                 xPropSet->setPropertyValue("SelectedItems", aSel);
             }
         }
@@ -160,13 +161,12 @@ void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/)
     }
 }
 
-void BibPosListener::disposing(const lang::EventObject& /*Source*/)
+void BibPosListener::disposing(const lang::EventObject& /*Source*/) throw( uno::RuntimeException, std::exception )
 {
 }
 
 BibGeneralPage::BibGeneralPage(vcl::Window* pParent, BibDataManager* pMan):
-    TabPage(pParent, "GeneralPage", "modules/sbibliography/ui/generalpage.ui"),
-    BibShortCutHandler( this ),
+    BibTabPage(pParent, "GeneralPage", "modules/sbibliography/ui/generalpage.ui"),
     sErrorPrefix(BIB_RESSTR(ST_ERROR_PREFIX)),
     mxBibGeneralPageFocusListener(new BibGeneralPageFocusListener(this)),
     pDatMan(pMan)
@@ -336,7 +336,7 @@ BibGeneralPage::BibGeneralPage(vcl::Window* pParent, BibDataManager* pMan):
 
     SetText(BIB_RESSTR(ST_TYPE_TITLE));
 
-    Size aSize(LogicToPixel(Size(0, 209), MapMode(MapUnit::MapAppFont)));
+    Size aSize(LogicToPixel(Size(0, 209), MapMode(MAP_APPFONT)));
     set_height_request(aSize.Height());
 }
 
@@ -388,7 +388,7 @@ void BibGeneralPage::dispose()
     pCustom5FT.clear();
     for (auto & a: aFixedTexts) a.clear();
     mxBibGeneralPageFocusListener.clear();
-    TabPage::dispose();
+    BibTabPage::dispose();
 }
 
 void BibGeneralPage::RemoveListeners()
@@ -502,10 +502,10 @@ uno::Reference< awt::XControlModel >  BibGeneralPage::AddXControl(
                     xCtrWin->setVisible( true );
                     xControl->setDesignMode( true );
 
-                    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
+                    vcl::Window* pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
                     pWindow->set_grid_top_attach(rLabel.get_grid_top_attach());
                     pWindow->set_grid_left_attach(rLabel.get_grid_left_attach()+1);
-                    pWindow->set_valign(VclAlign::Center);
+                    pWindow->set_valign(VCL_ALIGN_CENTER);
                     rLabel.set_mnemonic_widget(pWindow);
                     if (&rLabel == pTitleFT)
                         pWindow->set_grid_width(3);
@@ -583,7 +583,7 @@ void BibGeneralPage::InitFixedTexts()
         aFixedTexts[ i ]->SetText( aFixedStrings[ i ] );
 }
 
-void BibGeneralPage::focusGained(const awt::FocusEvent& rEvent)
+void BibGeneralPage::focusGained(const awt::FocusEvent& rEvent) throw( uno::RuntimeException, std::exception )
 {
     Reference<awt::XWindow> xCtrWin(rEvent.Source, UNO_QUERY );
     if(xCtrWin.is())
@@ -605,7 +605,7 @@ void BibGeneralPage::focusGained(const awt::FocusEvent& rEvent)
     }
 }
 
-void BibGeneralPage::focusLost(const awt::FocusEvent& )
+void BibGeneralPage::focusLost(const awt::FocusEvent& ) throw( uno::RuntimeException, std::exception )
 {
     CommitActiveControl();
 }
@@ -658,7 +658,7 @@ bool BibGeneralPage::HandleShortCutKey( const KeyEvent& rKeyEvent )
                 uno::Reference< awt::XControl >  xControl( aControls[ nCtrlIndex ], UNO_QUERY );
                 DBG_ASSERT( xControl.is(), "-BibGeneralPage::HandleShortCutKey(): a control which is not a control!" );
 
-                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xControl->getPeer() );
+                vcl::Window*         pWindow = VCLUnoHelper::GetWindow( xControl->getPeer() );
 
                 if( pWindow )
                 {
@@ -695,17 +695,17 @@ bool BibGeneralPage::HandleShortCutKey( const KeyEvent& rKeyEvent )
 BibGeneralPageFocusListener::BibGeneralPageFocusListener(BibGeneralPage *pBibGeneralPage): mpBibGeneralPage(pBibGeneralPage)
 {}
 
-void BibGeneralPageFocusListener::focusGained( const css::awt::FocusEvent& e )
+void BibGeneralPageFocusListener::focusGained( const css::awt::FocusEvent& e ) throw( css::uno::RuntimeException, std::exception )
 {
     mpBibGeneralPage->focusGained(e);
 }
 
-void BibGeneralPageFocusListener::focusLost( const css::awt::FocusEvent& e )
+void BibGeneralPageFocusListener::focusLost( const css::awt::FocusEvent& e ) throw( css::uno::RuntimeException, std::exception )
 {
     mpBibGeneralPage->focusLost(e);
 }
 
-void BibGeneralPageFocusListener::disposing( const css::lang::EventObject& )
+void BibGeneralPageFocusListener::disposing( const css::lang::EventObject& ) throw( css::uno::RuntimeException, std::exception )
 {}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

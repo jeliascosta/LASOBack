@@ -140,16 +140,17 @@ bool ScGridWindow::ShowNoteMarker( SCsCOL nPosX, SCsROW nPosY, bool bKeyboard )
                 bLeftEdge = true;
 
             DateTime aDT = pFound->GetDateTime();
-            aTrackText  = pFound->GetUser()
-                        + ", "
-                        + ScGlobal::pLocaleData->getDate(aDT)
-                        + " "
-                        + ScGlobal::pLocaleData->getTime(aDT)
-                        + ":\n";
+            aTrackText  = pFound->GetUser();
+            aTrackText += ", ";
+            aTrackText += ScGlobal::pLocaleData->getDate(aDT);
+            aTrackText += " ";
+            aTrackText += ScGlobal::pLocaleData->getTime(aDT);
+            aTrackText += ":\n";
             OUString aComStr=pFound->GetComment();
             if(!aComStr.isEmpty())
             {
-                aTrackText += aComStr + "\n( ";
+                aTrackText += aComStr;
+                aTrackText += "\n( ";
             }
             OUString aTmp;
             pFound->GetDescription(aTmp, pDoc);
@@ -240,7 +241,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
     //To know whether to prefix STR_CTRLCLICKHYERLINK or STR_CLICKHYPERLINK
     //to hyperlink tooltips/help text
     SvtSecurityOptions aSecOpt;
-    bool bCtrlClickHlink = aSecOpt.IsOptionSet( SvtSecurityOptions::EOption::CtrlClickHyperlink );
+    bool bCtrlClickHlink = aSecOpt.IsOptionSet( SvtSecurityOptions::E_CTRLCLICK_HYPERLINK );
     //Global string STR_CTRLCLICKHYPERLINK i.e,
     // "ctrl-click to follow link:" for not MacOS
     // "⌘-click to follow link:" for MacOs
@@ -292,7 +293,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
     if ( bHelpEnabled && !bDone && !nButtonDown )       // only without pressed button
     {
         OUString aHelpText;
-        tools::Rectangle aPixRect;
+        Rectangle aPixRect;
         Point aPosPixel = ScreenToOutputPixel( rHEvt.GetMousePosPixel() );
 
         if ( pDrView )                                      // URL / Image-Map
@@ -301,7 +302,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
             MouseEvent aMEvt( aPosPixel, 1, MouseEventModifiers::NONE, MOUSE_LEFT );
             SdrHitKind eHit = pDrView->PickAnything( aMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt );
 
-            if ( eHit != SdrHitKind::NONE && aVEvt.pObj != nullptr )
+            if ( eHit != SDRHIT_NONE && aVEvt.pObj != nullptr )
             {
                 // URL for IMapObject below Pointer is help text
                 if ( ScDrawLayer::GetIMapInfo( aVEvt.pObj ) )
@@ -332,22 +333,22 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
                 // URL in shape text or at shape itself (URL in text overrides object URL)
                 if ( aHelpText.isEmpty() )
                 {
-                    if( aVEvt.eEvent == SdrEventKind::ExecuteUrl )
+                    if( aVEvt.eEvent == SDREVENT_EXECUTEURL )
                     {
                         aHelpText = aVEvt.pURLField->GetURL();
                         aPixRect = LogicToPixel(aVEvt.pObj->GetLogicRect());
                     }
                     else
                     {
+                        SdrObject* pObj = nullptr;
                         SdrPageView* pPV = nullptr;
                         Point aMDPos = PixelToLogic( aPosPixel );
-                        SdrObject* pObj = pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER);
-                        if (pObj)
+                        if ( pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER) )
                         {
                             if ( pObj->IsGroupObject() )
                             {
-                                    SdrObject* pHit = pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pPV, SdrSearchOptions::DEEP);
-                                    if (pHit)
+                                    SdrObject* pHit = nullptr;
+                                    if ( pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pHit, pPV, SdrSearchOptions::DEEP ) )
                                         pObj = pHit;
                             }
                             ScMacroInfo* pInfo = ScDrawLayer::GetMacroInfo( pObj );
@@ -379,7 +380,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
             if ( GetEditUrl( aPosPixel, nullptr, &aUrl ) )
             {
                 aHelpText = INetURLObject::decode( aUrl,
-                    INetURLObject::DecodeMechanism::Unambiguous );
+                    INetURLObject::DECODE_UNAMBIGUOUS );
 
                 if( bCtrlClickHlink )
                 {
@@ -406,7 +407,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
 
         if ( !aHelpText.isEmpty() )
         {
-            tools::Rectangle aScreenRect(OutputToScreenPixel(aPixRect.TopLeft()),
+            Rectangle aScreenRect(OutputToScreenPixel(aPixRect.TopLeft()),
                                     OutputToScreenPixel(aPixRect.BottomRight()));
 
             if ( rHEvt.GetMode() & HelpEventMode::BALLOON )
@@ -423,7 +424,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
     if ( pDrView && bHelpEnabled && !bDone )
     {
         SdrPageView* pPV = pDrView->GetSdrPageView();
-        OSL_ENSURE( pPV, "SdrPageView* is NULL" );
+        OSL_ENSURE( pPV, "SdrPageView* ist NULL" );
         if (pPV)
             bDone = FmFormPage::RequestHelp( this, pDrView, rHEvt );
     }

@@ -22,9 +22,7 @@
 
 #include <com/sun/star/xml/sax/XFastParser.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <cppuhelper/weak.hxx>
-#include <cppuhelper/implbase.hxx>
-#include <com/sun/star/lang/XInitialization.hpp>
+#include <cppuhelper/implbase2.hxx>
 
 #include <sax/fastsaxdllapi.h>
 #include <memory>
@@ -44,8 +42,7 @@ class FastSaxParserImpl;
 
 // This class implements the external Parser interface
 class FASTSAX_DLLPUBLIC FastSaxParser
-    : public ::cppu::WeakImplHelper<
-                css::lang::XInitialization,
+    : public ::cppu::WeakImplHelper2<
                 css::xml::sax::XFastParser,
                 css::lang::XServiceInfo >
 {
@@ -53,26 +50,22 @@ class FASTSAX_DLLPUBLIC FastSaxParser
 
 public:
     FastSaxParser();
-    virtual ~FastSaxParser() override;
-
-    // css::lang::XInitialization:
-    virtual void SAL_CALL initialize(css::uno::Sequence<css::uno::Any> const& rArguments) override;
+    virtual ~FastSaxParser();
 
     // XFastParser
-    virtual void SAL_CALL parseStream( const css::xml::sax::InputSource& aInputSource ) override;
-    virtual void SAL_CALL setFastDocumentHandler( const css::uno::Reference< css::xml::sax::XFastDocumentHandler >& Handler ) override;
-    virtual void SAL_CALL setTokenHandler( const css::uno::Reference< css::xml::sax::XFastTokenHandler >& Handler ) override;
-    virtual void SAL_CALL registerNamespace( const OUString& NamespaceURL, sal_Int32 NamespaceToken ) override;
-    virtual OUString SAL_CALL getNamespaceURL( const OUString& rPrefix ) override;
-    virtual void SAL_CALL setErrorHandler( const css::uno::Reference< css::xml::sax::XErrorHandler >& Handler ) override;
-    virtual void SAL_CALL setEntityResolver( const css::uno::Reference< css::xml::sax::XEntityResolver >& Resolver ) override;
-    virtual void SAL_CALL setLocale( const css::lang::Locale& rLocale ) override;
-    virtual void SAL_CALL setNamespaceHandler( const css::uno::Reference< css::xml::sax::XFastNamespaceHandler >& Handler) override;
+    virtual void SAL_CALL parseStream( const css::xml::sax::InputSource& aInputSource ) throw (css::xml::sax::SAXException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFastDocumentHandler( const css::uno::Reference< css::xml::sax::XFastDocumentHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTokenHandler( const css::uno::Reference< css::xml::sax::XFastTokenHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL registerNamespace( const OUString& NamespaceURL, sal_Int32 NamespaceToken ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getNamespaceURL( const OUString& rPrefix ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setErrorHandler( const css::uno::Reference< css::xml::sax::XErrorHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setEntityResolver( const css::uno::Reference< css::xml::sax::XEntityResolver >& Resolver ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setLocale( const css::lang::Locale& rLocale ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 }

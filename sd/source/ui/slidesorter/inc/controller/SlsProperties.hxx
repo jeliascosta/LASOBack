@@ -32,7 +32,7 @@ public:
     Properties();
     ~Properties();
 
-    /** Call this method after receiving a VclEventId::ApplicationDataChanged
+    /** Call this method after receiving a VCLEVENT_APPLICATION_DATACHANGED
         event.
     */
     void HandleDataChangeEvent();
@@ -105,6 +105,12 @@ public:
     bool IsUIReadOnly() const { return mbIsUIReadOnly;}
     void SetUIReadOnly (const bool bIsUIReadOnly);
 
+    /** The mouse over effect (and whether a mouse motion starts a multi
+        selection or a drag-and-drop) can be triggered by just the preview
+        area or the whole page object area.
+    */
+    bool IsOnlyPreviewTriggersMouseOver() const { return mbIsOnlyPreviewTriggersMouseOver;}
+
 private:
     bool mbIsHighlightCurrentSlide;
     bool mbIsShowSelection;
@@ -117,6 +123,7 @@ private:
     Color maSelectionColor;
     Color maHighlightColor;
     bool mbIsUIReadOnly;
+    bool mbIsOnlyPreviewTriggersMouseOver;
     bool mbIsHighContrastModeActive;
 };
 

@@ -54,7 +54,7 @@ enum {
 #define HDL(hdl)            LINK( this, ScPrintAreasDlg, hdl )
 #define ERRORBOX(nId)       ScopedVclPtrInstance<MessageDialog>(this, ScGlobal::GetRscString(nId))->Execute()
 
-// global functions (->at the end of the file):
+// globale Funktionen (->am Ende der Datei):
 
 static bool lcl_CheckRepeatString( const OUString& rStr, ScDocument* pDoc, bool bIsRow, ScRange* pRange );
 static void lcl_GetRepeatRangeString( const ScRange* pRange, ScDocument* pDoc, bool bIsRow, OUString& rStr );
@@ -132,7 +132,7 @@ ScPrintAreasDlg::ScPrintAreasDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Win
 
     Impl_Reset();
 
-    //@BugID 54702 Enable/Disable only in base class
+    //@BugID 54702 Enablen/Disablen nur noch in Basisklasse
     //SFX_APPWINDOW->Enable();
 }
 
@@ -174,8 +174,8 @@ bool ScPrintAreasDlg::Close()
 
 bool ScPrintAreasDlg::IsTableLocked() const
 {
-    //  Printing areas are per table, therefore it makes no sense,
-    //  to switch the table during input
+    //  Druckbereiche gelten pro Tabelle, darum macht es keinen Sinn,
+    //  bei der Eingabe die Tabelle umzuschalten
 
     return true;
 }
@@ -216,7 +216,8 @@ void ScPrintAreasDlg::AddRefEntry()
     if ( pRefInputEdit == pEdPrintArea )
     {
         const sal_Unicode sep = ScCompiler::GetNativeSymbolChar(ocSep);
-        OUString aVal = pEdPrintArea->GetText() + OUStringLiteral1(sep);
+        OUString aVal = pEdPrintArea->GetText();
+        aVal += OUString(sep);
         pEdPrintArea->SetText(aVal);
 
         sal_Int32 nLen = aVal.getLength();
@@ -285,7 +286,7 @@ void ScPrintAreasDlg::Impl_Reset()
         if (pPrintRange)
         {
             if ( !aStrRange.isEmpty() )
-                aStrRange += OUStringLiteral1(sep);
+                aStrRange += OUString(sep);
             aOne = pPrintRange->Format(ScRefFlags::RANGE_ABS, pDoc, eConv);
             aStrRange += aOne;
         }
@@ -396,7 +397,7 @@ bool ScPrintAreasDlg::Impl_CheckRefStrings()
 void ScPrintAreasDlg::Impl_FillLists()
 {
 
-    // Get selection and remember String in PrintArea-ListBox
+    // Selektion holen und String in PrintArea-ListBox merken
 
     ScRange  aRange;
     OUString aStrRange;
@@ -412,13 +413,13 @@ void ScPrintAreasDlg::Impl_FillLists()
     else
     {
         ScRangeListRef aList( new ScRangeList );
-        pViewData->GetMarkData().FillRangeListWithMarks( aList.get(), false );
+        pViewData->GetMarkData().FillRangeListWithMarks( aList, false );
         aList->Format(aStrRange, ScRefFlags::RANGE_ABS, pDoc, eConv);
     }
 
     pLbPrintArea->SetEntryData( SC_AREASDLG_PR_SELECT, new OUString( aStrRange ) );
 
-    // Get ranges and remember in ListBoxen
+    // Ranges holen und in ListBoxen merken
 
     ScRangeName* pRangeNames = pDoc->GetRangeName();
 
@@ -468,7 +469,7 @@ void ScPrintAreasDlg::Impl_FillLists()
 
 // Handler:
 
-IMPL_LINK( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
+IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
 {
     if ( pBtnOk == pBtn )
     {
@@ -516,7 +517,7 @@ IMPL_LINK( ScPrintAreasDlg, Impl_BtnHdl, Button*, pBtn, void )
         Close();
 }
 
-IMPL_LINK( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
+IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
 {
     if ( &rCtrl ==static_cast<Control *>(pEdPrintArea) ||
          &rCtrl ==static_cast<Control *>(pEdRepeatRow) ||
@@ -538,7 +539,7 @@ IMPL_LINK( ScPrintAreasDlg, Impl_GetFocusHdl, Control&, rCtrl, void )
     }
 }
 
-IMPL_LINK( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
 {
     ListBox* pLb = &rLb;
     const sal_Int32 nSelPos = pLb->GetSelectEntryPos();
@@ -573,7 +574,7 @@ IMPL_LINK( ScPrintAreasDlg, Impl_SelectHdl, ListBox&, rLb, void )
         pEd->SetText( *static_cast< OUString* >( pLb->GetEntryData( nSelPos ) ) );
 }
 
-IMPL_LINK( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
+IMPL_LINK_TYPED( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
 {
     ListBox* pLb = nullptr;
 
@@ -602,7 +603,7 @@ IMPL_LINK( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
     if ( (nEntryCount > nFirstCustomPos) && !aStrEd.isEmpty() )
     {
         bool    bFound  = false;
-        sal_Int32 i;
+        sal_uInt16 i;
 
         for ( i=nFirstCustomPos; i<nEntryCount && !bFound; i++ )
         {
@@ -616,13 +617,13 @@ IMPL_LINK( ScPrintAreasDlg, Impl_ModifyHdl, Edit&, rEd, void )
         pLb->SelectEntryPos( !aStrEd.isEmpty() ? nUserDefPos : 0 );
 }
 
-// global functions:
+// globale Funktionen:
 
 // TODO: It might make sense to move these functions to address.?xx. -kohei
 
 static bool lcl_CheckOne_OOO( const OUString& rStr, bool bIsRow, SCCOLROW& rVal )
 {
-    // Allowed syntax for rStr:
+    // Zulaessige Syntax fuer rStr:
     // Row: [$]1-MAXTAB
     // Col: [$]A-IV
 
@@ -644,8 +645,7 @@ static bool lcl_CheckOne_OOO( const OUString& rStr, bool bIsRow, SCCOLROW& rVal 
             {
                 sal_Int32 n = aStr.toInt32();
 
-                bStrOk = (n > 0) && ( n <= MAXROWCOUNT );
-                if ( bStrOk )
+                if ( ( bStrOk = (n > 0) && ( n <= MAXROWCOUNT ) ) )
                     nNum = static_cast<SCCOLROW>(n - 1);
             }
         }
@@ -771,7 +771,7 @@ static bool lcl_CheckRepeatString( const OUString& rStr, ScDocument* pDoc, bool 
             bEndPos = true;
         }
         else
-            aBuf += OUStringLiteral1(c);
+            aBuf += OUString(c);
     }
 
     if (!aBuf.isEmpty())

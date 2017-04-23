@@ -55,7 +55,7 @@ $(eval $(call gb_Library_use_externals,postgresql-sdbc-impl,\
 ))
 
 ifeq ($(SYSTEM_POSTGRESQL),)
-ifneq ($(OS),WNT)
+ifneq ($(OS)$(COM),WNTMSC)
 
 $(eval $(call gb_Library_add_libs,postgresql-sdbc-impl,\
 	$(if $(WITH_GSSAPI),$(GSSAPI_LIBS)) \

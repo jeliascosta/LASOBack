@@ -28,7 +28,6 @@
 
 #include <tools/errinf.hxx>
 #include <svtools/svtools.hrc>
-#include <svx/dialogs.hrc>
 
 #include "ids.hrc"
 #include "getcontinuations.hxx"
@@ -40,7 +39,7 @@ using namespace com::sun::star;
 
 namespace {
 
-ErrorHandlerFlags
+sal_uInt16
 executeErrorDialog(
     vcl::Window * pParent,
     task::InteractionClassification eClassification,
@@ -101,29 +100,27 @@ executeErrorDialog(
         throw uno::RuntimeException("out of memory");
     }
 
-    sal_uInt16 aMessResult = xBox->Execute();
+    sal_uInt16 aResult = xBox->Execute();
 
     xBox.disposeAndClear();
 
-    ErrorHandlerFlags aResult = ErrorHandlerFlags::NONE;
-    switch( aMessResult )
+    switch( aResult )
     {
     case RET_OK:
-        aResult = ErrorHandlerFlags::ButtonsOk;
+        aResult = ERRCODE_BUTTON_OK;
         break;
     case RET_CANCEL:
-        aResult = ErrorHandlerFlags::ButtonsCancel;
+        aResult = ERRCODE_BUTTON_CANCEL;
         break;
     case RET_YES:
-        aResult = ErrorHandlerFlags::ButtonsYes;
+        aResult = ERRCODE_BUTTON_YES;
         break;
     case RET_NO:
-        aResult = ErrorHandlerFlags::ButtonsNo;
+        aResult = ERRCODE_BUTTON_NO;
         break;
     case RET_RETRY:
-        aResult = ErrorHandlerFlags::ButtonsRetry;
+        aResult = ERRCODE_BUTTON_RETRY;
         break;
-    default: assert(false);
     }
 
     return aResult;
@@ -151,15 +148,21 @@ UUIInteractionHelper::handleErrorHandlerRequest(
 
     OUString aMessage;
     {
-        enum Source { SOURCE_DEFAULT, SOURCE_SVX, SOURCE_UUI };
-        static char const * const aManager[3] = { "ofa", "svx", "uui" };
-        static sal_uInt16 const aId[3]
+        enum Source { SOURCE_DEFAULT, SOURCE_CNT, SOURCE_SVX, SOURCE_UUI };
+        static char const * const aManager[4] = { "ofa", "cnt", "svx", "uui" };
+        static sal_uInt16 const aId[4]
             = { RID_ERRHDL,
-                RID_SVXERRCODE,
+                RID_CHAOS_START + 12,
+                // cf. chaos/source/inc/cntrids.hrc, where
+                // #define RID_CHAOS_ERRHDL (RID_CHAOS_START + 12)
+                RID_SVX_START + 350, // RID_SVXERRCODE
                 RID_UUI_ERRHDL };
         ErrCode nErrorId = nErrorCode & ~ERRCODE_WARNING_MASK;
         Source eSource = nErrorId < ERRCODE_AREA_LIB1 ?
             SOURCE_DEFAULT :
+            nErrorId >= ERRCODE_AREA_CHAOS
+            && nErrorId < ERRCODE_AREA_CHAOS_END ?
+            SOURCE_CNT :
             nErrorId >= ERRCODE_AREA_SVX
             && nErrorId <= ERRCODE_AREA_SVX_END ?
             SOURCE_SVX :
@@ -246,7 +249,7 @@ UUIInteractionHelper::handleErrorHandlerRequest(
             return;
 
         //TODO! remove this backwards compatibility?
-        OUString aContext(m_aContextParam);
+        OUString aContext(getContextProperty());
         if (aContext.isEmpty() && nErrorCode != 0)
         {
             SolarMutexGuard aGuard;
@@ -259,12 +262,12 @@ UUIInteractionHelper::handleErrorHandlerRequest(
             }
         }
 
-        ErrorHandlerFlags nResult = executeErrorDialog(
+        sal_uInt16 nResult = executeErrorDialog(
             getParentProperty(), eClassification, aContext, aMessage, nButtonMask );
 
         switch (nResult)
         {
-        case ErrorHandlerFlags::ButtonsOk:
+        case ERRCODE_BUTTON_OK:
             OSL_ENSURE(xApprove.is() || xAbort.is(), "unexpected situation");
             if (xApprove.is())
                 xApprove->select();
@@ -272,31 +275,29 @@ UUIInteractionHelper::handleErrorHandlerRequest(
                 xAbort->select();
             break;
 
-        case ErrorHandlerFlags::ButtonsCancel:
+        case ERRCODE_BUTTON_CANCEL:
             OSL_ENSURE(xAbort.is(), "unexpected situation");
             if (xAbort.is())
                 xAbort->select();
             break;
 
-        case ErrorHandlerFlags::ButtonsRetry:
+        case ERRCODE_BUTTON_RETRY:
             OSL_ENSURE(xRetry.is(), "unexpected situation");
             if (xRetry.is())
                 xRetry->select();
             break;
 
-        case ErrorHandlerFlags::ButtonsNo:
+        case ERRCODE_BUTTON_NO:
             OSL_ENSURE(xDisapprove.is(), "unexpected situation");
             if (xDisapprove.is())
                 xDisapprove->select();
             break;
 
-        case ErrorHandlerFlags::ButtonsYes:
+        case ERRCODE_BUTTON_YES:
             OSL_ENSURE(xApprove.is(), "unexpected situation");
             if (xApprove.is())
                 xApprove->select();
             break;
-
-        default: break;
         }
 
     }

@@ -42,11 +42,18 @@ SvxXConnectionPreview::SvxXConnectionPreview( vcl::Window* pParent, WinBits nSty
     , pObjList(nullptr)
     , pView(nullptr)
 {
-    SetMapMode( MapUnit::Map100thMM );
+    SetMapMode( MAP_100TH_MM );
     SetStyles();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxXConnectionPreview, 0)
+VCL_BUILDER_DECL_FACTORY(SvxXConnectionPreview)
+{
+    WinBits nWinStyle = 0;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<SvxXConnectionPreview>::Create(pParent, nWinStyle);
+}
 
 SvxXConnectionPreview::~SvxXConnectionPreview()
 {
@@ -70,7 +77,7 @@ void SvxXConnectionPreview::Resize()
 
 Size SvxXConnectionPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(118 , 121), MapMode(MapUnit::MapAppFont));
+    return LogicToPixel(Size(118 , 121), MapMode(MAP_APPFONT));
 }
 
 void SvxXConnectionPreview::AdaptSize()
@@ -78,10 +85,10 @@ void SvxXConnectionPreview::AdaptSize()
     // Adapt size
     if( pObjList )
     {
-        SetMapMode( MapUnit::Map100thMM );
+        SetMapMode( MAP_100TH_MM );
 
         OutputDevice* pOD = pView->GetFirstOutputDevice(); // GetWin( 0 );
-        tools::Rectangle aRect = pObjList->GetAllObjBoundRect();
+        Rectangle aRect = pObjList->GetAllObjBoundRect();
 
         MapMode aMapMode = GetMapMode();
         aMapMode.SetMapUnit( pOD->GetMapMode().GetMapUnit() );
@@ -153,9 +160,9 @@ void SvxXConnectionPreview::Construct()
         for( size_t i = 0; i < nMarkCount && !bFound; ++i )
         {
             const SdrObject* pObj = rMarkList.GetMark( i )->GetMarkedSdrObj();
-            SdrInventor nInv = pObj->GetObjInventor();
+            sal_uInt32 nInv = pObj->GetObjInventor();
             sal_uInt16 nId = pObj->GetObjIdentifier();
-            if( nInv == SdrInventor::Default && nId == OBJ_EDGE )
+            if( nInv == SdrInventor && nId == OBJ_EDGE )
             {
                 bFound = true;
                 const SdrEdgeObj* pTmpEdgeObj = static_cast<const SdrEdgeObj*>(pObj);
@@ -200,7 +207,7 @@ void SvxXConnectionPreview::Construct()
     AdaptSize();
 }
 
-void SvxXConnectionPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void SvxXConnectionPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     if (pObjList)
     {

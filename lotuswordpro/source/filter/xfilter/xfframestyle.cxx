@@ -72,6 +72,9 @@ XFFrameStyle::XFFrameStyle()
     , m_bProtectContent(false)
     , m_bProtectSize(false)
     , m_bProtectPos(false)
+    , m_bEditable(false)
+    , m_bPrintable(true)
+    , m_bBackground(false)
     , m_nTransparency(0)
     , m_eTextDir(enumXFTextDirNone)
     , m_eXPos(enumXFFrameXPosCenter)
@@ -133,7 +136,16 @@ void    XFFrameStyle::ToXml(IXFStream *pStrm)
 
     pAttrList->Clear();
 
-    pAttrList->AddAttribute( "style:run-through", "foreground" );
+    /*if( m_eWrap == enumXFWrapBackground )
+    {
+        pAttrList->AddAttribute( "style:run-through", "background" );
+    }
+    else
+    {*/
+    if( m_bBackground)
+        pAttrList->AddAttribute( "style:run-through", "background" );
+    else
+        pAttrList->AddAttribute( "style:run-through", "foreground" );
 
     if( m_eWrap == enumXFWrapNone )
         pAttrList->AddAttribute( "style:wrap", "none" );
@@ -168,7 +180,8 @@ void    XFFrameStyle::ToXml(IXFStream *pStrm)
     if( m_pShadow )
         m_pShadow->ToXml(pStrm);
     //print
-    pAttrList->AddAttribute( "style:print-content", "true" );
+    if( m_bPrintable )
+        pAttrList->AddAttribute( "style:print-content", "true" );
     //text directory
     if( m_eTextDir != enumXFTextDirNone )
         pAttrList->AddAttribute( "style:writing-mode", GetTextDirName(m_eTextDir) );

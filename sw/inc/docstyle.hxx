@@ -36,9 +36,6 @@ class SwCharFormat;
 class SwTextFormatColl;
 class SwFrameFormat;
 class SwNumRule;
-class SwTableAutoFormat;
-class SwBoxAutoFormat;
-enum class SwGetPoolIdFromName : sal_uInt16;
 
 // Temporary StyleSheet.
 class SW_DLLPUBLIC SwDocStyleSheet : public SfxStyleSheetBase
@@ -51,8 +48,7 @@ class SW_DLLPUBLIC SwDocStyleSheet : public SfxStyleSheetBase
     SwFrameFormat*           pFrameFormat;
     const SwPageDesc*   pDesc;
     const SwNumRule*    pNumRule;
-    SwTableAutoFormat*  pTableFormat;
-    const SwBoxAutoFormat*   pBoxFormat;
+
     SwDoc&              rDoc;
     SfxItemSet          aCoreSet;
 
@@ -73,12 +69,13 @@ class SW_DLLPUBLIC SwDocStyleSheet : public SfxStyleSheetBase
             std::unique_ptr<SfxItemSet> * o_ppFlatSet = nullptr);
 
 protected:
-    virtual ~SwDocStyleSheet() override;
+    virtual ~SwDocStyleSheet();
 
 public:
     SwDocStyleSheet( SwDoc&                 rDoc,
                      const OUString&        rName,
-                     SwDocStyleSheetPool*   pPool);
+                     SwDocStyleSheetPool*   pPool,
+                     SfxStyleFamily         eFam);
 
     SwDocStyleSheet( const SwDocStyleSheet& );
 
@@ -127,7 +124,7 @@ public:
     virtual bool            HasFollowSupport() const override;
     virtual bool            HasParentSupport() const override;
     virtual bool            HasClearParentSupport() const override;
-    virtual OUString        GetDescription(MapUnit eUnit) override;
+    virtual OUString        GetDescription(SfxMapUnit eUnit) override;
 
     SwCharFormat*              GetCharFormat();
     SwTextFormatColl*           GetCollection();
@@ -135,7 +132,6 @@ public:
     const SwPageDesc*       GetPageDesc();
     const SwNumRule*        GetNumRule();
     void                    SetNumRule(const SwNumRule& rRule);
-    SwTableAutoFormat*      GetTableFormat();
 
     virtual bool            IsUsed() const override;
 };
@@ -167,17 +163,17 @@ class SwStyleSheetIterator : public SfxStyleSheetIterator, public SfxListener
     sal_uInt32          nLastPos;
     bool                bFirstCalled;
 
-    void                AppendStyleList(const std::vector<OUString>& rLst,
+    void                AppendStyleList(const ::std::vector<OUString>& rLst,
                                         bool        bUsed,
                                         bool        bTestHidden,
                                         bool        bOnlyHidden,
-                                        SwGetPoolIdFromName nSection,
+                                        sal_uInt16  nSection,
                                         char        cType);
 
 public:
     SwStyleSheetIterator( SwDocStyleSheetPool* pBase,
-                          SfxStyleFamily eFam, sal_uInt16 n );
-    virtual ~SwStyleSheetIterator() override;
+                          SfxStyleFamily eFam, sal_uInt16 n=SFXSTYLEBIT_ALL );
+    virtual ~SwStyleSheetIterator();
 
     virtual sal_uInt16 Count() override;
     virtual SfxStyleSheetBase *operator[](sal_uInt16 nIdx) override;
@@ -202,10 +198,10 @@ class SwDocStyleSheetPool : public SfxStyleSheetBasePool
     using SfxStyleSheetBasePool::Find;
 
 public:
-    SwDocStyleSheetPool( SwDoc&, bool bOrganizer );
+    SwDocStyleSheetPool( SwDoc&, bool bOrganizer = false );
 
     virtual SfxStyleSheetBase& Make(const OUString&, SfxStyleFamily,
-            sal_uInt16 nMask = SFXSTYLEBIT_ALL) override;
+            sal_uInt16 nMask) override;
 
     virtual SfxStyleSheetBase* Find( const OUString&, SfxStyleFamily eFam,
                                     sal_uInt16 n=SFXSTYLEBIT_ALL ) override;
@@ -217,16 +213,19 @@ public:
 
     bool    IsOrganizerMode() const         { return bOrganizer; }
 
-    virtual std::shared_ptr<SfxStyleSheetIterator> CreateIterator( SfxStyleFamily, sal_uInt16 nMask ) override;
+    virtual SfxStyleSheetIteratorPtr CreateIterator( SfxStyleFamily, sal_uInt16 nMask ) override;
 
     SwDoc& GetDoc() const { return rDoc; }
 
     void dispose();
 
+    virtual void SAL_CALL acquire(  ) throw () override;
+    virtual void SAL_CALL release(  ) throw () override;
+
     void InvalidateIterator();
 
 protected:
-    virtual ~SwDocStyleSheetPool() override;
+    virtual ~SwDocStyleSheetPool();
 
 private:
     SwDocStyleSheetPool( const SwDocStyleSheetPool& ) = delete;

@@ -32,7 +32,7 @@ private:
 
 public:
     SwWebOleShell(SwView &rView);
-    virtual ~SwWebOleShell() override;
+    virtual ~SwWebOleShell();
 };
 
 #endif

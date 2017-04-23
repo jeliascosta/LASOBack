@@ -36,7 +36,7 @@ class SwTextCharFormat : public SwTextAttrEnd
 
 public:
     SwTextCharFormat( SwFormatCharFormat& rAttr, sal_Int32 nStart, sal_Int32 nEnd );
-    virtual ~SwTextCharFormat( ) override;
+    virtual ~SwTextCharFormat( );
 
     // Passed from SwFormatCharFormat (no derivation from SwClient!).
     void ModifyNotification( const SfxPoolItem*, const SfxPoolItem* );
@@ -64,7 +64,7 @@ public:
         sal_Int32 const i_nStart, sal_Int32 const i_nEnd,
         bool const i_bIsCopy);
 
-    virtual ~SwTextMeta() override;
+    virtual ~SwTextMeta();
 
     void ChgTextNode(SwTextNode * const pNode);
 };
@@ -74,10 +74,10 @@ class SW_DLLPUBLIC SwTextRuby : public SwTextAttrNesting, public SwClient
 {
     SwTextNode* m_pTextNode;
 protected:
-    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
+   virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 public:
     SwTextRuby( SwFormatRuby& rAttr, sal_Int32 nStart, sal_Int32 nEnd );
-    virtual ~SwTextRuby() override;
+    virtual ~SwTextRuby();
 
     virtual bool GetInfo( SfxPoolItem& rInfo ) const override;
 

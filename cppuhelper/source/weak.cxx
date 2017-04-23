@@ -24,9 +24,7 @@
 #include <cppuhelper/interfacecontainer.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <cppuhelper/queryinterface.hxx>
-
 #include <algorithm>
-#include <utility>
 
 using namespace osl;
 using namespace com::sun::star::uno;
@@ -64,19 +62,17 @@ public:
     const OWeakConnectionPoint& operator=(const OWeakConnectionPoint&) = delete;
 
     // XInterface
-    Any SAL_CALL        queryInterface( const Type & rType ) override;
+    Any SAL_CALL        queryInterface( const Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
     void SAL_CALL       acquire() throw() override;
     void SAL_CALL       release() throw() override;
 
     // XAdapter
-    css::uno::Reference< css::uno::XInterface > SAL_CALL queryAdapted() override;
-    void SAL_CALL addReference( const css::uno::Reference< css::uno::XReference >& xRef ) override;
-    void SAL_CALL removeReference( const css::uno::Reference< css::uno::XReference >& xRef ) override;
+    css::uno::Reference< css::uno::XInterface > SAL_CALL queryAdapted() throw(css::uno::RuntimeException, std::exception) override;
+    void SAL_CALL addReference( const css::uno::Reference< css::uno::XReference >& xRef ) throw(css::uno::RuntimeException, std::exception) override;
+    void SAL_CALL removeReference( const css::uno::Reference< css::uno::XReference >& xRef ) throw(css::uno::RuntimeException, std::exception) override;
 
     /// Called from the weak object if the reference count goes to zero.
-    ///
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL dispose();
+    void SAL_CALL dispose() throw(css::uno::RuntimeException);
 
 private:
     virtual ~OWeakConnectionPoint() {}
@@ -91,6 +87,7 @@ private:
 
 // XInterface
 Any SAL_CALL OWeakConnectionPoint::queryInterface( const Type & rType )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return ::cppu::queryInterface(
         rType, static_cast< XAdapter * >( this ), static_cast< XInterface * >( this ) );
@@ -109,7 +106,7 @@ void SAL_CALL OWeakConnectionPoint::release() throw()
         delete this;
 }
 
-void SAL_CALL OWeakConnectionPoint::dispose()
+void SAL_CALL OWeakConnectionPoint::dispose() throw(css::uno::RuntimeException)
 {
     std::vector<Reference<XReference>> aCopy;
     { // only hold the mutex while we access the field
@@ -141,7 +138,7 @@ void SAL_CALL OWeakConnectionPoint::dispose()
 }
 
 // XInterface
-Reference< XInterface > SAL_CALL OWeakConnectionPoint::queryAdapted()
+Reference< XInterface > SAL_CALL OWeakConnectionPoint::queryAdapted() throw(css::uno::RuntimeException, std::exception)
 {
     Reference< XInterface > ret;
 
@@ -153,7 +150,7 @@ Reference< XInterface > SAL_CALL OWeakConnectionPoint::queryAdapted()
 
         if (n > 1)
         {
-            // The reference is incremented. The object cannot be destroyed.
+            // The refence is incremented. The object cannot be destroyed.
             // Release the guard at the earliest point.
             guard.clear();
             // WeakObject has a (XInterface *) cast operator
@@ -170,6 +167,7 @@ Reference< XInterface > SAL_CALL OWeakConnectionPoint::queryAdapted()
 
 // XInterface
 void SAL_CALL OWeakConnectionPoint::addReference(const Reference< XReference >& rRef)
+    throw(css::uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard(getWeakMutex());
     m_aReferences.push_back( rRef );
@@ -177,6 +175,7 @@ void SAL_CALL OWeakConnectionPoint::addReference(const Reference< XReference >& 
 
 // XInterface
 void SAL_CALL OWeakConnectionPoint::removeReference(const Reference< XReference >& rRef)
+    throw(css::uno::RuntimeException, std::exception)
 {
     MutexGuard aGuard(getWeakMutex());
     // Search from end because the thing that last added a ref is most likely to be the
@@ -202,13 +201,13 @@ void SAL_CALL OWeakConnectionPoint::removeReference(const Reference< XReference 
 // Accidentally occurs in msvc mapfile = > had to be outlined.
 OWeakObject::OWeakObject()
     : m_refCount( 0 ),
-      m_pWeakConnectionPoint( nullptr )
+      m_pWeakConnectionPoint( 0 )
 {
 }
 #endif
 
 // XInterface
-Any SAL_CALL OWeakObject::queryInterface( const Type & rType )
+Any SAL_CALL OWeakObject::queryInterface( const Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     return ::cppu::queryInterface(
         rType,
@@ -258,6 +257,7 @@ OWeakObject::~OWeakObject()
 
 // XWeak
 Reference< XAdapter > SAL_CALL OWeakObject::queryAdapter()
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (!m_pWeakConnectionPoint)
     {
@@ -302,14 +302,14 @@ void OWeakAggObject::release() throw()
 }
 
 // XInterface
-Any OWeakAggObject::queryInterface( const Type & rType )
+Any OWeakAggObject::queryInterface( const Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     Reference< XInterface > x( xDelegator ); // harden ref
     return (x.is() ? x->queryInterface( rType ) : queryAggregation( rType ));
 }
 
 // XAggregation
-Any OWeakAggObject::queryAggregation( const Type & rType )
+Any OWeakAggObject::queryAggregation( const Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     return ::cppu::queryInterface(
         rType,
@@ -319,7 +319,7 @@ Any OWeakAggObject::queryAggregation( const Type & rType )
 }
 
 // XAggregation
-void OWeakAggObject::setDelegator( const Reference<XInterface > & rDelegator )
+void OWeakAggObject::setDelegator( const Reference<XInterface > & rDelegator ) throw(css::uno::RuntimeException, std::exception)
 {
     xDelegator = rDelegator;
 }
@@ -353,12 +353,12 @@ public:
     const OWeakRefListener& operator=(const OWeakRefListener&) = delete;
 
     // XInterface
-    Any SAL_CALL queryInterface( const Type & rType ) override;
+    Any SAL_CALL queryInterface( const Type & rType ) throw(RuntimeException, std::exception) override;
     void SAL_CALL acquire() throw() override;
     void SAL_CALL release() throw() override;
 
     // XReference
-    void SAL_CALL   dispose() override;
+    void SAL_CALL   dispose() throw(css::uno::RuntimeException, std::exception) override;
 
     /// The reference counter.
     oslInterlockedCount         m_aRefCount;
@@ -401,7 +401,7 @@ OWeakRefListener::~OWeakRefListener()
 }
 
 // XInterface
-Any SAL_CALL OWeakRefListener::queryInterface( const Type & rType )
+Any SAL_CALL OWeakRefListener::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     return ::cppu::queryInterface(
         rType, static_cast< XReference * >( this ), static_cast< XInterface * >( this ) );
@@ -421,6 +421,7 @@ void SAL_CALL OWeakRefListener::release() throw()
 }
 
 void SAL_CALL OWeakRefListener::dispose()
+    throw(css::uno::RuntimeException, std::exception)
 {
     Reference< XAdapter > xAdp;
     {
@@ -482,14 +483,6 @@ WeakReferenceHelper& WeakReferenceHelper::operator=(const WeakReferenceHelper& r
     }
     Reference< XInterface > xInt( rWeakRef.get() );
     return operator = ( xInt );
-}
-
-WeakReferenceHelper & WeakReferenceHelper::operator =(
-    WeakReferenceHelper && other)
-{
-    clear();
-    std::swap(m_pImpl, other.m_pImpl);
-    return *this;
 }
 
 WeakReferenceHelper & SAL_CALL

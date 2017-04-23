@@ -114,7 +114,7 @@ void lclAppendString32( OUString& rString, XclImpStream& rStrm, sal_uInt32 nChar
     sal_uInt16 nReadChars = ulimit_cast< sal_uInt16 >( nChars );
     rString += rStrm.ReadRawUniString( nReadChars, b16Bit );
     // ignore remaining chars
-    std::size_t nIgnore = nChars - nReadChars;
+    sal_Size nIgnore = nChars - nReadChars;
     if( b16Bit )
         nIgnore *= 2;
     rStrm.Ignore( nIgnore );
@@ -154,7 +154,7 @@ void lclGetAbsPath( OUString& rPath, sal_uInt16 nLevel, SfxObjectShell* pDocShel
     if( pDocShell )
     {
         bool bWasAbs = false;
-        rPath = pDocShell->GetMedium()->GetURLObject().smartRel2Abs( aTmpStr.makeStringAndClear(), bWasAbs ).GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        rPath = pDocShell->GetMedium()->GetURLObject().smartRel2Abs( aTmpStr.makeStringAndClear(), bWasAbs ).GetMainURL( INetURLObject::NO_DECODE );
         // full path as stored in SvxURLField must be encoded
     }
     else
@@ -390,7 +390,8 @@ void XclImpHyperlink::ConvertToValidTabName(OUString& rUrl)
                 // quite.  When this occurs, the whole table name needs to be
                 // quoted.
                 bQuoteTabName = true;
-                aTabName += OUStringLiteral1(c) + OUStringLiteral1(c);
+                aTabName += OUString(c);
+                aTabName += OUString(c);
                 ++i;
                 continue;
             }
@@ -406,9 +407,9 @@ void XclImpHyperlink::ConvertToValidTabName(OUString& rUrl)
             }
         }
         else if (bInQuote)
-            aTabName += OUStringLiteral1(c);
+            aTabName += OUString(c);
         else
-            aNewUrl += OUStringLiteral1(c);
+            aNewUrl += OUString(c);
     }
 
     if (bInQuote)
@@ -596,7 +597,7 @@ void XclImpCondFormat::ReadCF( XclImpStream& rStrm )
     {
         XclImpFont aFont( GetRoot() );
         aFont.ReadCFFontBlock( rStrm );
-        aFont.FillToItemSet( rStyleItemSet, XclFontItemType::Cell );
+        aFont.FillToItemSet( rStyleItemSet, EXC_FONTITEM_CELL );
     }
 
     // alignment
@@ -1124,7 +1125,7 @@ XclImpDecrypterRef lclReadFilepass8_Standard( XclImpStream& rStrm )
 
 XclImpDecrypterRef lclReadFilepass8_Strong(XclImpStream& rStream)
 {
-    //It is possible there are other variants in existence but these
+    //Its possible there are other variants in existance but these
     //are the defaults I get with Excel 2013
     XclImpDecrypterRef xDecr;
 

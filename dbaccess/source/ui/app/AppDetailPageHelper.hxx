@@ -50,7 +50,7 @@ namespace dbaui
     class OPreviewWindow : public vcl::Window
     {
         GraphicObject       m_aGraphicObj;
-        tools::Rectangle           m_aPreviewRect;
+        Rectangle           m_aPreviewRect;
 
         /** gets the graphic center rect
             @param  rGraphic
@@ -61,7 +61,7 @@ namespace dbaui
             @return
                 <TRUE/> when successful
         */
-        bool ImplGetGraphicCenterRect( const Graphic& rGraphic, tools::Rectangle& rResultRect ) const;
+        bool ImplGetGraphicCenterRect( const Graphic& rGraphic, Rectangle& rResultRect ) const;
         void ImplInitSettings();
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
@@ -69,7 +69,7 @@ namespace dbaui
         explicit OPreviewWindow(vcl::Window* _pParent);
 
         // Window overrides
-        virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect) override;
+        virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect) override;
 
         void setGraphic(const Graphic& _rGraphic ) { m_aGraphicObj.SetGraphic(_rGraphic); }
     };
@@ -86,6 +86,7 @@ namespace dbaui
         VclPtr< ::svtools::ODocumentInfoPreview>
                                   m_aDocumentInfo;
         VclPtr<vcl::Window>       m_pTablePreview;
+        ::std::unique_ptr<PopupMenu> m_aMenu;
         PreviewMode               m_ePreviewMode;
         css::uno::Reference < css::frame::XFrame2 >
                                   m_xFrame;
@@ -148,23 +149,23 @@ namespace dbaui
         */
         DBTreeListBox* createSimpleTree( const OString& _sHelpId, const Image& _rImage);
 
-        DECL_LINK( OnEntryDoubleClick,    SvTreeListBox*, bool );
-        DECL_LINK( OnEntryEnterKey,       DBTreeListBox*, void );
-        DECL_LINK( OnEntrySelChange,      LinkParamNone*, void );
+        DECL_LINK_TYPED( OnEntryDoubleClick,    SvTreeListBox*, bool );
+        DECL_LINK_TYPED( OnEntryEnterKey,       DBTreeListBox*, void );
+        DECL_LINK_TYPED( OnEntrySelChange,      LinkParamNone*, void );
 
-        DECL_LINK( OnCopyEntry,           LinkParamNone*, void );
-        DECL_LINK( OnPasteEntry,          LinkParamNone*, void );
-        DECL_LINK( OnDeleteEntry,         LinkParamNone*, void );
+        DECL_LINK_TYPED( OnCopyEntry,           LinkParamNone*, void );
+        DECL_LINK_TYPED( OnPasteEntry,          LinkParamNone*, void );
+        DECL_LINK_TYPED( OnDeleteEntry,         LinkParamNone*, void );
 
         // click a TB slot
-        DECL_LINK(OnDropdownClickHdl, ToolBox*, void);
+        DECL_LINK_TYPED(OnDropdownClickHdl, ToolBox*, void);
 
-        OAppBorderWindow& getBorderWin() const { return m_rBorderWin; }
+        inline OAppBorderWindow& getBorderWin() const { return m_rBorderWin; }
         void ImplInitSettings();
 
     public:
         OAppDetailPageHelper(vcl::Window* _pParent,OAppBorderWindow& _rBorderWin,PreviewMode _ePreviewMode);
-        virtual ~OAppDetailPageHelper() override;
+        virtual ~OAppDetailPageHelper();
         virtual void dispose() override;
 
         // Window overrides
@@ -187,7 +188,7 @@ namespace dbaui
 
         /** returns the current visible tree list box
         */
-        DBTreeListBox* getCurrentView() const
+        inline DBTreeListBox* getCurrentView() const
         {
             ElementType eType = getElementType();
             return (eType != E_NONE ) ? m_pLists[static_cast<sal_Int32>(eType)].get() : nullptr;
@@ -209,7 +210,7 @@ namespace dbaui
             @param  _rNames
                 The list will be filled.
         */
-        void getSelectionElementNames( std::vector< OUString>& _rNames ) const;
+        void getSelectionElementNames( ::std::vector< OUString>& _rNames ) const;
 
         /** describes the current selection for the given control
         */

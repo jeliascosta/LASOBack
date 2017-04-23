@@ -50,7 +50,7 @@ private:
 protected:
     virtual sdr::properties::BaseProperties* CreateObjectSpecificProperties() override;
 
-    tools::Rectangle                   maSnapRect;
+    Rectangle                   maSnapRect;
 
 protected:
     /// Detects the width of the line. No line ->0.
@@ -60,7 +60,7 @@ protected:
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
 
     SdrAttrObj();
-    virtual ~SdrAttrObj() override;
+    virtual ~SdrAttrObj();
 
 public:
 
@@ -70,7 +70,7 @@ public:
     // Detects if Line != LineNone
     bool HasLine() const;
 
-    virtual const tools::Rectangle& GetSnapRect() const override;
+    virtual const Rectangle& GetSnapRect() const override;
 
     virtual void SetModel(SdrModel* pNewModel) override;
 };

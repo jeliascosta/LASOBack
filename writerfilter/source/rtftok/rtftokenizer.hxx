@@ -24,11 +24,11 @@ namespace writerfilter
 namespace rtftok
 {
 /// RTF tokenizer that separates control words from text.
-class RTFTokenizer final
+class RTFTokenizer
 {
 public:
     RTFTokenizer(RTFListener& rImport, SvStream* pInStream, css::uno::Reference<css::task::XStatusIndicator> const& xStatusIndicator);
-    ~RTFTokenizer();
+    virtual ~RTFTokenizer();
 
     RTFError resolveParse();
     static int asHex(char ch);
@@ -42,7 +42,7 @@ public:
     /// To be invoked by the popState() callback to single when the importer leaves a group.
     void popGroup();
     OUString getPosition();
-    std::size_t getGroupStart()
+    sal_Size getGroupStart()
     {
         return m_nGroupStart;
     }
@@ -68,8 +68,8 @@ private:
     /// Same as the size of the importer's states, except that this can be negative for invalid input.
     int m_nGroup;
     sal_Int32 m_nLineNumber;
-    std::size_t m_nLineStartPos;
-    std::size_t m_nGroupStart;
+    sal_Size m_nLineStartPos;
+    sal_Size m_nGroupStart;
 };
 } // namespace rtftok
 } // namespace writerfilter

@@ -1,4 +1,3 @@
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
 #
 # This file is part of the LibreOffice project.
 #
@@ -154,7 +153,7 @@ g_implName = "org.libreoffice.pyuno.LanguageScriptProviderFor"+LANGUAGENAME
 BLOCK_SIZE = 65536
 def readTextFromStream( inputStream ):
     # read the file
-    code = uno.ByteSequence( b"" )
+    code = uno.ByteSequence( "" )
     while True:
         read,out = inputStream.readBytes( None , BLOCK_SIZE )
         code = code + out
@@ -405,12 +404,7 @@ class ProviderContext:
                 allFuncs.append(node.name)
             elif isinstance(node, ast.Assign):
                 for target in node.targets:
-                    try:
-                        identifier = target.id
-                    except AttributeError:
-                        identifier = ""
-                        pass
-                    if identifier == "g_exportedScripts":
+                    if target.id == "g_exportedScripts":
                         for value in node.value.elts:
                             g_exportedScripts.append(value.id)
                         return g_exportedScripts
@@ -555,8 +549,9 @@ class ScriptBrowseNode( unohelper.Base, XBrowseNode , XPropertySet, XInvocation,
 
             elif event.ActionCommand == "Save":
                 toWrite = uno.ByteSequence(
+                    str(
                     self.editor.getControl("EditorTextField").getText().encode(
-                    sys.getdefaultencoding()) )
+                    sys.getdefaultencoding())) )
                 copyUrl = self.uri + ".orig"
                 self.provCtx.sfa.move( self.uri, copyUrl )
                 out = self.provCtx.sfa.openFileWrite( self.uri )
@@ -1081,6 +1076,5 @@ g_ImplementationHelper.addImplementation( \
      "com.sun.star.script.provider.ScriptProviderFor"+ LANGUAGENAME,),)
 
 
-log.debug( "pythonscript finished initializing" )
+log.debug( "pythonscript finished intializing" )
 
-# vim: set shiftwidth=4 softtabstop=4 expandtab:

@@ -43,6 +43,10 @@ XMLCreateElemTransformerContext::XMLCreateElemTransformerContext(
 {
 }
 
+XMLCreateElemTransformerContext::~XMLCreateElemTransformerContext()
+{
+}
+
 void XMLCreateElemTransformerContext::StartElement(
         const Reference< XAttributeList >& rAttrList )
 {

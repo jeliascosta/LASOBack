@@ -49,25 +49,25 @@ public:
         }
     }
 
-    virtual ::sal_Int32 SAL_CALL getCount() override
+    virtual ::sal_Int32 SAL_CALL getCount() throw (uno::RuntimeException, std::exception) override
     {
         return vObjects.size();
     }
 
-    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override
+    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( Index < 0 || Index >= getCount() )
             throw lang::IndexOutOfBoundsException();
         return uno::makeAny( vObjects[ Index ] );
     }
 
-        // Methods XElementAccess
-        virtual uno::Type SAL_CALL getElementType() override
+        // Methods XElementAcess
+        virtual uno::Type SAL_CALL getElementType() throw (uno::RuntimeException, std::exception) override
         {
             return cppu::UnoType<drawing::XControlShape>::get();
         }
 
-        virtual sal_Bool SAL_CALL hasElements() override
+        virtual sal_Bool SAL_CALL hasElements() throw (uno::RuntimeException, std::exception) override
         {
             return ( getCount() > 0 );
         }
@@ -84,12 +84,12 @@ class EnumWrapper : public EnumerationHelper_BASE
 public:
         EnumWrapper(  const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, uno::Reference< container::XIndexAccess >& xIndexAccess ) :  m_xParent( xParent ), m_xContext( xContext), m_xIndexAccess( xIndexAccess ), nIndex( 0 ) {}
 
-        virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+        virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
         {
                 return ( nIndex < m_xIndexAccess->getCount() );
         }
 
-        virtual uno::Any SAL_CALL nextElement(  ) override
+        virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
         {
                 if ( nIndex < m_xIndexAccess->getCount() )
         {
@@ -113,7 +113,7 @@ ScVbaOLEObjects::ScVbaOLEObjects( const uno::Reference< XHelperInterface >& xPar
 {
 }
 uno::Reference< container::XEnumeration >
-ScVbaOLEObjects::createEnumeration()
+ScVbaOLEObjects::createEnumeration() throw (uno::RuntimeException)
 {
     return new EnumWrapper( getParent(), mxContext, m_xIndexAccess );
 }
@@ -131,7 +131,7 @@ ScVbaOLEObjects::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Any
-ScVbaOLEObjects::getItemByStringIndex( const OUString& sIndex )
+ScVbaOLEObjects::getItemByStringIndex( const OUString& sIndex ) throw (uno::RuntimeException)
 {
     try
     {
@@ -158,7 +158,7 @@ ScVbaOLEObjects::getItemByStringIndex( const OUString& sIndex )
 }
 
 uno::Type
-ScVbaOLEObjects::getElementType()
+ScVbaOLEObjects::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<ooo::vba::excel::XOLEObject>::get();
 }

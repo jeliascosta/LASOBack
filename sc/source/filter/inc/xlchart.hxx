@@ -147,7 +147,7 @@ class XclRoot;
 
 // Constants and Enumerations =================================================
 
-const std::size_t EXC_CHART_PROGRESS_SIZE       = 10;
+const sal_Size EXC_CHART_PROGRESS_SIZE          = 10;
 const sal_uInt16 EXC_CHART_AUTOROTATION         = 0xFFFF;   /// Automatic rotation, e.g. axis labels (internal use only).
 
 const sal_Int32 EXC_CHART_AXIS_NONE             = -1;       /// For internal use only.
@@ -1227,10 +1227,10 @@ struct XclChExtTypeInfo : public XclChTypeInfo
     void                Set( const XclChTypeInfo& rTypeInfo, bool b3dChart, bool bSpline );
 
     /** Returns true, if this chart type supports area formatting for its series. */
-    bool         IsSeriesFrameFormat() const
+    inline bool         IsSeriesFrameFormat() const
                             { return mb3dChart ? mbSeriesIsFrame3d : mbSeriesIsFrame2d; }
     /** Returns the correct object type identifier for series and data points. */
-    XclChObjectType GetSeriesObjectType() const
+    inline XclChObjectType GetSeriesObjectType() const
                             { return IsSeriesFrameFormat() ? EXC_CHOBJTYPE_FILLEDSERIES : EXC_CHOBJTYPE_LINEARSERIES; }
 };
 
@@ -1268,7 +1268,7 @@ enum XclChTextType
 /** A map key for text and title objects. */
 struct XclChTextKey : public ::std::pair< XclChTextType, ::std::pair< sal_uInt16, sal_uInt16 > >
 {
-    explicit     XclChTextKey( XclChTextType eTextType, sal_uInt16 nMainIdx = 0, sal_uInt16 nSubIdx = 0 )
+    inline explicit     XclChTextKey( XclChTextType eTextType, sal_uInt16 nMainIdx = 0, sal_uInt16 nSubIdx = 0 )
                             { first = eTextType; second.first = nMainIdx; second.second = nSubIdx; }
 };
 
@@ -1281,12 +1281,12 @@ typedef css::uno::Reference< css::drawing::XShape >
 class XclChObjectTable
 {
 public:
-    explicit            XclChObjectTable( css::uno::Reference< css::lang::XMultiServiceFactory > const & xFactory,
+    explicit            XclChObjectTable( css::uno::Reference< css::lang::XMultiServiceFactory > xFactory,
                             const OUString& rServiceName, const OUString& rObjNameBase );
 
     /** Returns a named formatting object from the chart document. */
     css::uno::Any GetObject( const OUString& rObjName );
-    /** Inserts a named formatting object into the chart document. */
+    /** Insertes a named formatting object into the chart document. */
     OUString      InsertObject( const css::uno::Any& rObj );
 
 private:
@@ -1400,7 +1400,7 @@ struct XclChRootData
 
     css::uno::Reference< css::chart2::XChartDocument >
                         mxChartDoc;             /// The chart document.
-    tools::Rectangle           maChartRect;            /// Position and size of the chart shape.
+    Rectangle           maChartRect;            /// Position and size of the chart shape.
     XclChTypeProvRef    mxTypeInfoProv;         /// Provides info about chart types.
     XclChFmtInfoProvRef mxFmtInfoProv;          /// Provides info about auto formatting.
     XclChObjectTableRef mxLineDashTable;        /// Container for line dash styles.
@@ -1420,7 +1420,7 @@ struct XclChRootData
     void                InitConversion(
                             const XclRoot& rRoot,
                             const css::uno::Reference< css::chart2::XChartDocument >& rxChartDoc,
-                            const tools::Rectangle& rChartRect );
+                            const Rectangle& rChartRect );
     /** Finishes the API chart document conversion. Must be called once before any API access. */
     void                FinishConversion();
 

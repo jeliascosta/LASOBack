@@ -157,13 +157,13 @@ OUString  GetWritableDictionaryURL( const OUString &rDicName )
     aURLObj.SetSmartProtocol( INetProtocol::File );
     aURLObj.SetSmartURL( aDirName );
     DBG_ASSERT(!aURLObj.HasError(), "lng : invalid URL");
-    aURLObj.Append( rDicName, INetURLObject::EncodeMechanism::All );
+    aURLObj.Append( rDicName, INetURLObject::ENCODE_ALL );
     DBG_ASSERT(!aURLObj.HasError(), "lng : invalid URL");
 
-    // DecodeMechanism::NONE preserves the escape sequences that might be included in aDirName
+    // NO_DECODE preserves the escape sequences that might be included in aDirName
     // depending on the characters used in the path string. (Needed when comparing
     // the dictionary URL with GetDictionaryWriteablePath in DicList::createDictionary.)
-    return aURLObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+    return aURLObj.GetMainURL( INetURLObject::NO_DECODE );
 }
 
 }   // namespace linguistic

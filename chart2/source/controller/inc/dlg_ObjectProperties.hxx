@@ -27,11 +27,11 @@
 namespace chart
 {
 
-class ObjectPropertiesDialogParameter final
+class ObjectPropertiesDialogParameter
 {
 public:
     ObjectPropertiesDialogParameter( const OUString& rObjectCID );
-    ~ObjectPropertiesDialogParameter();
+    virtual ~ObjectPropertiesDialogParameter();
 
     void            init( const css::uno::Reference< css::frame::XModel >& xModel );
     ObjectType      getObjectType() const { return m_eObjectType;}
@@ -108,6 +108,7 @@ class SchAttribTabDlg : public SfxTabDialog
 private:
     ObjectType               eObjectType;
     sal_uInt16                   nDlgType;
+    sal_uInt16                   nPageType;
 
     const ObjectPropertiesDialogParameter * const        m_pParameter;
     const ViewElementListProvider* const                 m_pViewElementListProvider;
@@ -122,14 +123,14 @@ private:
     virtual void PageCreated(sal_uInt16 nId, SfxTabPage& rPage) override;
 
     Link<Button*,void> m_aOriginalOKClickHdl;
-    DECL_LINK( OKPressed, Button*, void );
+    DECL_LINK_TYPED( OKPressed, Button*, void );
 
 public:
     SchAttribTabDlg(vcl::Window* pParent, const SfxItemSet* pAttr,
                     const ObjectPropertiesDialogParameter* pDialogParameter,
                     const ViewElementListProvider* pViewElementListProvider,
                     const css::uno::Reference< css::util::XNumberFormatsSupplier >& xNumberFormatsSupplier );
-    virtual ~SchAttribTabDlg() override;
+    virtual ~SchAttribTabDlg();
     virtual void dispose() override;
 
     //pSymbolShapeProperties: Properties to be set on the symbollist shapes

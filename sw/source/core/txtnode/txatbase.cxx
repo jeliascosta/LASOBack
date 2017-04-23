@@ -77,7 +77,7 @@ sal_Int32* SwTextAttrEnd::GetEnd()
 
 void SwTextAttr::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwTextAttr"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swTextAttr"));
 
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("start"), BAD_CAST(OString::number(m_nStart).getStr()));
     if (End())

@@ -40,7 +40,7 @@ using namespace ::osl;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::beans;
 
-#define ROOTNODE_MENUS                                  "Office.Common/Menus/"
+#define ROOTNODE_MENUS                                  OUString("Office.Common/Menus/")
 #define PATHDELIMITER                                   "/"
 
 #define SETNODE_NEWMENU                                 "New"
@@ -80,7 +80,7 @@ class SvtDynMenu
     public:
         // append setup written menu entry
         // Don't touch name of entry. It was defined by setup and must be the same every time!
-        // Look for double menu entries here too... may be some separator items are superfluous...
+        // Look for double menu entries here too... may be some separator items are superflous...
         void AppendSetupEntry( const SvtDynMenuEntry& rEntry )
         {
             if(
@@ -155,11 +155,11 @@ class SvtDynamicMenuOptions_Impl : public ConfigItem
     public:
 
          SvtDynamicMenuOptions_Impl();
-        virtual ~SvtDynamicMenuOptions_Impl() override;
+        virtual ~SvtDynamicMenuOptions_Impl();
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
-            @descr      This method is called from the ConfigManager before the application ends or from the
+            @descr      These method is called from the ConfigManager before application ends or from the
                          PropertyChangeListener if the sub tree broadcasts changes. You must update your
                         internal values.
 
@@ -183,8 +183,8 @@ class SvtDynamicMenuOptions_Impl : public ConfigItem
         virtual void ImplCommit() override;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent our module tree
-            @descr      This method returns the current list of key names! We need it to get needed values from our
+            @short      return list of key names of our configuration management which represent oue module tree
+            @descr      These methods return the current list of key names! We need it to get needed values from our
                         configuration management and support dynamical menu item lists!
             @param      "nNewCount"     ,   returns count of menu entries for "new"
             @param      "nWizardCount"  ,   returns count of menu entries for "wizard"
@@ -361,7 +361,7 @@ SvtDynamicMenuOptions_Impl::~SvtDynamicMenuOptions_Impl()
 
 void SvtDynamicMenuOptions_Impl::Notify( const Sequence< OUString >& )
 {
-    SAL_WARN( "unotools.config", "SvtDynamicMenuOptions_Impl::Notify()\nNot implemented yet! I don't know how I can handle a dynamical list of unknown properties ...\n" );
+    DBG_ASSERT( false, "SvtDynamicMenuOptions_Impl::Notify()\nNot implemented yet! I don't know how I can handle a dynamical list of unknown properties ...\n" );
 }
 
 //  public method
@@ -566,31 +566,44 @@ void SvtDynamicMenuOptions_Impl::impl_SortAndExpandPropertyNames( const Sequence
     }
 }
 
-namespace {
-    // global
-    std::weak_ptr<SvtDynamicMenuOptions_Impl> g_pDynamicMenuOptions;
-}
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
+
+SvtDynamicMenuOptions_Impl*     SvtDynamicMenuOptions::m_pDataContainer = nullptr;
+sal_Int32                       SvtDynamicMenuOptions::m_nRefCount      = 0;
+
+//  constructor
 
 SvtDynamicMenuOptions::SvtDynamicMenuOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetOwnStaticMutex() );
-
-    m_pImpl = g_pDynamicMenuOptions.lock();
-    if( !m_pImpl )
+    // Increase our refcount ...
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<SvtDynamicMenuOptions_Impl>();
-        g_pDynamicMenuOptions = m_pImpl;
-        ItemHolder1::holdConfigItem(EItem::DynamicMenuOptions);
+        m_pDataContainer = new SvtDynamicMenuOptions_Impl;
+        ItemHolder1::holdConfigItem(E_DYNAMICMENUOPTIONS);
     }
 }
+
+//  destructor
 
 SvtDynamicMenuOptions::~SvtDynamicMenuOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetOwnStaticMutex() );
-
-    m_pImpl.reset();
+    // Decrease our refcount.
+    --m_nRefCount;
+    // If last instance was deleted ...
+    // we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 //  public method
@@ -598,7 +611,7 @@ SvtDynamicMenuOptions::~SvtDynamicMenuOptions()
 Sequence< Sequence< PropertyValue > > SvtDynamicMenuOptions::GetMenu( EDynamicMenuType eMenu ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetMenu( eMenu );
+    return m_pDataContainer->GetMenu( eMenu );
 }
 
 namespace

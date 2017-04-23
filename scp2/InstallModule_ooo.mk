@@ -11,17 +11,19 @@ $(eval $(call gb_InstallModule_InstallModule,scp2/ooo))
 
 $(eval $(call gb_InstallModule_use_auto_install_libs,scp2/ooo,\
 	brand \
-	libreofficekit \
 	ooo \
 	ooobinarytable \
-	pdfimport \
 	reportbuilder \
+	pdfimport \
 ))
 
 $(eval $(call gb_InstallModule_define_if_set,scp2/ooo,\
+	ENABLE_GTK \
 	ENABLE_SYSTRAY_GTK \
+	ENABLE_GTK3 \
 	ENABLE_MACOSX_SANDBOX \
 	ENABLE_ONLINE_UPDATE \
+	ENABLE_TDE \
 	SYSTEM_CURL \
 	SYSTEM_HSQLDB \
 	SYSTEM_LIBXSLT \
@@ -30,10 +32,23 @@ $(eval $(call gb_InstallModule_define_if_set,scp2/ooo,\
 	WITH_MYSPELL_DICTS \
 ))
 
+$(eval $(call gb_InstallModule_define_value_if_set,scp2/ooo,\
+	MINGW_GCCDLL \
+	MINGW_GXXDLL \
+))
+
 $(eval $(call gb_InstallModule_add_defs,scp2/ooo,\
+	$(if $(CUSTOM_BRAND_DIR),-DCUSTOM_BRANDING) \
+	$(if $(WINDOWS_SDK_HOME),\
+		-DHAVE_WINDOWS_SDK \
+	) \
 	$(if $(SYSTEM_HSQLDB),\
 		-DHSQLDB_JAR=\""$(call gb_Helper_make_path,$(HSQLDB_JAR))"\" \
 	) \
+	$(if $(MACOSX_SDK_VERSION),\
+		-DMACOSX_SDK_VERSION=$(MACOSX_SDK_VERSION) \
+	) \
+	$(if $(filter MSC,$(COM)),$(if $(MSVC_USE_DEBUG_RUNTIME),-DMSVC_PKG_DEBUG_RUNTIME)) \
 ))
 
 ifeq ($(USING_X11),TRUE)
@@ -48,6 +63,10 @@ $(eval $(call gb_InstallModule_add_defs,scp2/ooo,\
 ))
 endif
 
+$(eval $(call gb_InstallModule_add_defs,scp2/ooo,\
+	-DICU_MAJOR=$(ICU_MAJOR) \
+))
+
 $(eval $(call gb_InstallModule_add_templates,scp2/ooo,\
     scp2/source/templates/module_helppack \
     scp2/source/templates/module_helppack_root \
@@ -57,6 +76,7 @@ $(eval $(call gb_InstallModule_add_templates,scp2/ooo,\
 
 $(eval $(call gb_InstallModule_add_scpfiles,scp2/ooo,\
     scp2/source/ooo/common_brand \
+    scp2/source/ooo/common_brand_readme \
     scp2/source/ooo/directory_ooo \
     scp2/source/ooo/directory_ooo_macosx \
     scp2/source/ooo/file_extra_ooo \
@@ -70,6 +90,10 @@ $(eval $(call gb_InstallModule_add_scpfiles,scp2/ooo,\
     scp2/source/ooo/module_lang_template \
     scp2/source/ooo/profileitem_ooo \
     scp2/source/ooo/scpaction_ooo \
+    $(if $(filter WNTGCC,$(OS)$(COM)),\
+		scp2/source/ooo/mingw_dlls \
+	) \
+    scp2/source/ooo/module_filter \
     $(if $(filter-out MACOSX WNT,$(OS)), \
 		scp2/source/ooo/module_libreofficekit \
 	) \

@@ -105,7 +105,7 @@ const sal_uInt16 TYPE_BIT       = 31;
     };
 
     typedef std::shared_ptr<OTypeInfo>          TOTypeInfoSP;
-    typedef std::multimap<sal_Int32,TOTypeInfoSP> OTypeInfoMap;
+    typedef ::std::multimap<sal_Int32,TOTypeInfoSP> OTypeInfoMap;
     /** return the most suitable typeinfo for a requested type
         @param  _rTypeInfo      contains a map of type to typeinfo
         @param  _nType          the requested type
@@ -114,7 +114,7 @@ const sal_uInt16 TYPE_BIT       = 31;
         @param  _nPrecision     the precision
         @param  _nScale         the scale
         @param  _bAutoIncrement if it is a auto increment
-        @param  _brForceToType  true when type was found which has some differences
+        @param  _brForceToType  true when type was found which has some differenes
     */
     TOTypeInfoSP getTypeInfoFromType(const OTypeInfoMap& _rTypeInfo,
                                sal_Int32 _nType,

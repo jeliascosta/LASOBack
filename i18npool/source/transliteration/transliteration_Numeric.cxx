@@ -22,32 +22,34 @@
 #include <nativenumbersupplier.hxx>
 #include <defaultnumberingprovider.hxx>
 #include <comphelper/string.hxx>
-#include <rtl/ref.hxx>
 
 using namespace com::sun::star::uno;
 
 
 namespace com { namespace sun { namespace star { namespace i18n {
 
-sal_Int16 SAL_CALL transliteration_Numeric::getType()
+sal_Int16 SAL_CALL transliteration_Numeric::getType() throw(RuntimeException, std::exception)
 {
     return TransliterationType::NUMERIC;
 }
 
 OUString SAL_CALL
     transliteration_Numeric::folding( const OUString& /*inStr*/, sal_Int32 /*startPos*/, sal_Int32 /*nCount*/, Sequence< sal_Int32 >& /*offset*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
 
 sal_Bool SAL_CALL
     transliteration_Numeric::equals( const OUString& /*str1*/, sal_Int32 /*pos1*/, sal_Int32 /*nCount1*/, sal_Int32& /*nMatch1*/, const OUString& /*str2*/, sal_Int32 /*pos2*/, sal_Int32 /*nCount2*/, sal_Int32& /*nMatch2*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
 
 Sequence< OUString > SAL_CALL
     transliteration_Numeric::transliterateRange( const OUString& /*str1*/, const OUString& /*str2*/ )
+throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
@@ -58,7 +60,7 @@ Sequence< OUString > SAL_CALL
 
 OUString SAL_CALL
 transliteration_Numeric::transliterateBullet( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        Sequence< sal_Int32 >& offset )
+        Sequence< sal_Int32 >& offset ) throw(RuntimeException)
 {
     sal_Int32 number = -1, j = 0, endPos = startPos + nCount;
 
@@ -112,16 +114,16 @@ transliteration_Numeric::transliterateBullet( const OUString& inStr, sal_Int32 s
 
 OUString SAL_CALL
 transliteration_Numeric::transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        Sequence< sal_Int32 >& offset )
+        Sequence< sal_Int32 >& offset ) throw(RuntimeException, std::exception)
 {
     if (tableSize)
         return transliterateBullet( inStr, startPos, nCount, offset);
     else
-        return rtl::Reference<NativeNumberSupplierService>(new NativeNumberSupplierService(useOffset))->getNativeNumberString( inStr.copy(startPos, nCount), aLocale, nNativeNumberMode, offset );
+        return NativeNumberSupplierService(useOffset).getNativeNumberString( inStr.copy(startPos, nCount), aLocale, nNativeNumberMode, offset );
 }
 
 sal_Unicode SAL_CALL
-transliteration_Numeric::transliterateChar2Char( sal_Unicode inChar )
+transliteration_Numeric::transliterateChar2Char( sal_Unicode inChar ) throw(RuntimeException, MultipleCharsOutputException, std::exception)
 {
     if (tableSize) {
         if (isNumber(inChar)) {
@@ -132,7 +134,7 @@ transliteration_Numeric::transliterateChar2Char( sal_Unicode inChar )
         return inChar;
     }
     else
-        return rtl::Reference<NativeNumberSupplierService>(new NativeNumberSupplierService)->getNativeNumberChar( inChar, aLocale, nNativeNumberMode );
+        return NativeNumberSupplierService().getNativeNumberChar( inChar, aLocale, nNativeNumberMode );
 }
 
 } } } }

@@ -144,7 +144,7 @@ RehearseTimingsActivity::RehearseTimingsActivity( const SlideShowContext& rConte
     maElapsedTime( rContext.mrEventQueue.getTimer() ),
     maViews(),
     maSpriteRectangle(),
-    maFont( Application::GetSettings().GetStyleSettings().GetLabelFont() ),
+    maFont( Application::GetSettings().GetStyleSettings().GetInfoFont() ),
     mpWakeUpEvent(),
     mpMouseHandler(),
     maSpriteSizePixel(),
@@ -161,8 +161,8 @@ RehearseTimingsActivity::RehearseTimingsActivity( const SlideShowContext& rConte
     ScopedVclPtrInstance< VirtualDevice > blackHole;
     blackHole->EnableOutput(false);
     blackHole->SetFont( maFont );
-    blackHole->SetMapMode( MapUnit::MapPixel );
-    tools::Rectangle rect;
+    blackHole->SetMapMode( MAP_PIXEL );
+    Rectangle rect;
     const FontMetric metric( blackHole->GetFontMetric() );
     blackHole->GetTextBoundRect( rect, "XX:XX:XX" );
     maSpriteSizePixel.setX( rect.getWidth() * 12 / 10 );
@@ -179,9 +179,12 @@ RehearseTimingsActivity::~RehearseTimingsActivity()
     {
         stop();
     }
-    catch (const uno::Exception&)
+    catch (uno::Exception &)
     {
-        SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
+        OSL_FAIL( OUStringToOString(
+                        comphelper::anyToString(
+                            cppu::getCaughtException() ),
+                        RTL_TEXTENCODING_UTF8 ).getStr() );
     }
 }
 
@@ -382,7 +385,7 @@ void RehearseTimingsActivity::viewChanged( const UnoViewSharedPtr& rView )
     aModifiedEntry->second->move( maSpriteRectangle.getMinimum() );
 
     // sprites changed, need screen update
-    mrScreenUpdater.notifyUpdate( rView, false );
+    mrScreenUpdater.notifyUpdate( rView );
 }
 
 void RehearseTimingsActivity::viewsChanged()
@@ -437,9 +440,9 @@ void RehearseTimingsActivity::paint( cppcanvas::CanvasSharedPtr const & canvas )
     metaFile.Record( blackHole );
     metaFile.SetPrefSize( Size( 1, 1 ) );
     blackHole->EnableOutput(false);
-    blackHole->SetMapMode( MapUnit::MapPixel );
+    blackHole->SetMapMode( MAP_PIXEL );
     blackHole->SetFont( maFont );
-    tools::Rectangle rect = tools::Rectangle( 0,0,
+    Rectangle rect = Rectangle( 0,0,
                                 maSpriteSizePixel.getX(),
                                 maSpriteSizePixel.getY());
     if (mbDrawPressed)

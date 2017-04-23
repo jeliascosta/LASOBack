@@ -20,7 +20,6 @@
 #include <basegfx/curve/b2dcubicbezier.hxx>
 #include <basegfx/vector/b2dvector.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
-#include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
 
 #include <osl/diagnose.h>
@@ -281,7 +280,7 @@ namespace basegfx
                 const double fJ1y(rfEA.getY() - rfPA.getY() - 1.0/3.0*(rfPB.getY() - rfPA.getY()));
                 const double fJ2x(rfEB.getX() - rfPA.getX() - 2.0/3.0*(rfPB.getX() - rfPA.getX()));
                 const double fJ2y(rfEB.getY() - rfPA.getY() - 2.0/3.0*(rfPB.getY() - rfPA.getY()));
-                const double fDistanceError2(std::max(fJ1x*fJ1x + fJ1y*fJ1y, fJ2x*fJ2x + fJ2y*fJ2y));
+                const double fDistanceError2(::std::max(fJ1x*fJ1x + fJ1y*fJ1y, fJ2x*fJ2x + fJ2y*fJ2y));
 
                 // stop if error measure does not improve anymore. This is a
                 // safety guard against floating point inaccuracies.
@@ -551,12 +550,12 @@ namespace basegfx
         }
     }
 
-    void B2DCubicBezier::adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound) const
+    void B2DCubicBezier::adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound, bool bAllowUnsharpen) const
     {
         if(isBezier())
         {
             // use support method #i37443# and allow unsharpen the criteria
-            ImpSubDivAngleStart(maStartPoint, maControlPointA, maControlPointB, maEndPoint, rTarget, fAngleBound * F_PI180, true/*bAllowUnsharpen*/);
+            ImpSubDivAngleStart(maStartPoint, maControlPointA, maControlPointB, maEndPoint, rTarget, fAngleBound * F_PI180, bAllowUnsharpen);
         }
         else
         {
@@ -640,7 +639,7 @@ namespace basegfx
         if(isBezier())
         {
             ImpSubDivDistance(maStartPoint, maControlPointA, maControlPointB, maEndPoint, rTarget,
-                fDistanceBound * fDistanceBound, std::numeric_limits<double>::max(), 30);
+                fDistanceBound * fDistanceBound, ::std::numeric_limits<double>::max(), 30);
         }
         else
         {
@@ -670,7 +669,7 @@ namespace basegfx
 
     double B2DCubicBezier::getSmallestDistancePointToBezierSegment(const B2DPoint& rTestPoint, double& rCut) const
     {
-        const sal_uInt32 nInitialDivisions(3);
+        const sal_uInt32 nInitialDivisions(3L);
         B2DPolygon aInitialPolygon;
 
         // as start make a fix division, creates nInitialDivisions + 2L points
@@ -684,7 +683,7 @@ namespace basegfx
         double fNewQuadDist;
         sal_uInt32 nSmallestIndex(0);
 
-        for(sal_uInt32 a(1); a < nPointCount; a++)
+        for(sal_uInt32 a(1L); a < nPointCount; a++)
         {
             aVector = B2DVector(rTestPoint - aInitialPolygon.getB2DPoint(a));
             fNewQuadDist = aVector.getX() * aVector.getX() + aVector.getY() * aVector.getY();
@@ -697,8 +696,8 @@ namespace basegfx
         }
 
         // look right and left for even smaller distances
-        double fStepValue(1.0 / (double)((nPointCount - 1) * 2)); // half the edge step width
-        double fPosition((double)nSmallestIndex / (double)(nPointCount - 1));
+        double fStepValue(1.0 / (double)((nPointCount - 1L) * 2L)); // half the edge step width
+        double fPosition((double)nSmallestIndex / (double)(nPointCount - 1L));
         bool bDone(false);
 
         while(!bDone)
@@ -912,7 +911,7 @@ namespace basegfx
 
     bool B2DCubicBezier::getMinimumExtremumPosition(double& rfResult) const
     {
-        std::vector< double > aAllResults;
+        ::std::vector< double > aAllResults;
 
         aAllResults.reserve(4);
         getAllExtremumPositions(aAllResults);
@@ -930,14 +929,14 @@ namespace basegfx
         }
         else
         {
-            rfResult = *(std::min_element(aAllResults.begin(), aAllResults.end()));
+            rfResult = *(::std::min_element(aAllResults.begin(), aAllResults.end()));
             return true;
         }
     }
 
     namespace
     {
-        inline void impCheckExtremumResult(double fCandidate, std::vector< double >& rResult)
+        inline void impCheckExtremumResult(double fCandidate, ::std::vector< double >& rResult)
         {
             // check for range ]0.0 .. 1.0[ with excluding 1.0 and 0.0 clearly
             // by using the equalZero test, NOT ::more or ::less which will use the
@@ -952,7 +951,7 @@ namespace basegfx
         }
     }
 
-    void B2DCubicBezier::getAllExtremumPositions(std::vector< double >& rResults) const
+    void B2DCubicBezier::getAllExtremumPositions(::std::vector< double >& rResults) const
     {
         rResults.clear();
 
@@ -1022,66 +1021,6 @@ namespace basegfx
         }
     }
 
-    void B2DCubicBezier::transform(const basegfx::B2DHomMatrix& rMatrix)
-    {
-        if(!rMatrix.isIdentity())
-        {
-            if(maControlPointA == maStartPoint)
-            {
-                maControlPointA = maStartPoint = rMatrix * maStartPoint;
-            }
-            else
-            {
-                maStartPoint *= rMatrix;
-                maControlPointA *= rMatrix;
-            }
-
-            if(maControlPointB == maEndPoint)
-            {
-                maControlPointB = maEndPoint = rMatrix * maEndPoint;
-            }
-            else
-            {
-                maEndPoint *= rMatrix;
-                maControlPointB *= rMatrix;
-            }
-        }
-    }
-
-    void B2DCubicBezier::fround()
-    {
-        if(maControlPointA == maStartPoint)
-        {
-            maControlPointA = maStartPoint = basegfx::B2DPoint(
-                basegfx::fround(maStartPoint.getX()),
-                basegfx::fround(maStartPoint.getY()));
-        }
-        else
-        {
-            maStartPoint = basegfx::B2DPoint(
-                basegfx::fround(maStartPoint.getX()),
-                basegfx::fround(maStartPoint.getY()));
-            maControlPointA = basegfx::B2DPoint(
-                basegfx::fround(maControlPointA.getX()),
-                basegfx::fround(maControlPointA.getY()));
-        }
-
-        if(maControlPointB == maEndPoint)
-        {
-            maControlPointB = maEndPoint = basegfx::B2DPoint(
-                basegfx::fround(maEndPoint.getX()),
-                basegfx::fround(maEndPoint.getY()));
-        }
-        else
-        {
-            maEndPoint = basegfx::B2DPoint(
-                basegfx::fround(maEndPoint.getX()),
-                basegfx::fround(maEndPoint.getY()));
-            maControlPointB = basegfx::B2DPoint(
-                basegfx::fround(maControlPointB.getX()),
-                basegfx::fround(maControlPointB.getY()));
-        }
-    }
 } // end of namespace basegfx
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

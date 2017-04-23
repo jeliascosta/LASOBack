@@ -215,7 +215,7 @@ public class utils {
     }
 
     /**
-     * In the office there are some settings available. This function
+     * In the office there are some sttetings available. This function
      * returns the value of the given setting name. For Example the setting name "Temp"
      * "Temp" returns the temp folder of the office instance.
      * @param msf a XMultiServiceFactory
@@ -230,13 +230,14 @@ public class utils {
             XPropertySet pthSettings = (XPropertySet) AnyConverter.toObject(
                 new Type(XPropertySet.class), settings);
             return (String) pthSettings.getPropertyValue(setting);
-        } catch (com.sun.star.uno.Exception ex) {
-            throw new RuntimeException(ex);
+        } catch (com.sun.star.uno.Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * This method returns the temp directory of the user.
+     * This method returns the temp dicrectory of the user.
      * Since Java 1.4 it is not possible to read environment variables. To workaround
      * this, the Java parameter -D could be used.
      */
@@ -367,19 +368,31 @@ public class utils {
      * @param fileURL the file which existence should be checked
      * @return true if the file exists, else false
      */
-    public static boolean fileExists(XMultiServiceFactory msf, String fileURL) throws com.sun.star.uno.Exception {
-        Object fileacc = msf.createInstance("com.sun.star.comp.ucb.SimpleFileAccess");
-        XSimpleFileAccess simpleAccess = UnoRuntime.queryInterface(XSimpleFileAccess.class,
+    public static boolean fileExists(XMultiServiceFactory msf, String fileURL) {
+        boolean exists = false;
+        try {
+
+            Object fileacc = msf.createInstance("com.sun.star.comp.ucb.SimpleFileAccess");
+            XSimpleFileAccess simpleAccess = UnoRuntime.queryInterface(XSimpleFileAccess.class,
                 fileacc);
-        return simpleAccess.exists(fileURL);
+            if (simpleAccess.exists(fileURL)) {
+                exists = true;
+            }
+
+        } catch (Exception e) {
+            System.out.println("Couldn't access file '" + fileURL + "'");
+            e.printStackTrace();
+            exists = false;
+        }
+        return exists;
     }
 
     /**
      * This method deletes via office the given file URL. It checks the existence
-     * of <CODE>fileURL</CODE>. If exists it will be deleted.
+     * of <CODE>fileURL</CODE>. If exists it will be deletet.
      * @param xMsf the multiservice factory
      * @param fileURL the file to delete
-     * @return true if the file could be deleted or the file does not exist
+     * @return true if the file could be deletet or the file does not exist
      */
     public static boolean deleteFile(XMultiServiceFactory xMsf, String fileURL) {
         boolean delete = true;
@@ -404,22 +417,22 @@ public class utils {
      * This method copies via office a given file to a new one
      * @param xMsf the multi service factory
      * @param source the source file
-     * @param destination the destination file
+     * @param destinaion the destination file
      * @return true at success
      */
-    public static boolean copyFile(XMultiServiceFactory xMsf, String source, String destination) {
+    public static boolean copyFile(XMultiServiceFactory xMsf, String source, String destinaion) {
         boolean res = false;
         try {
             Object fileacc = xMsf.createInstance("com.sun.star.comp.ucb.SimpleFileAccess");
             XSimpleFileAccess simpleAccess = UnoRuntime.queryInterface(XSimpleFileAccess.class,
                 fileacc);
-            if (!simpleAccess.exists(destination)) {
-                simpleAccess.copy(source, destination);
+            if (!simpleAccess.exists(destinaion)) {
+                simpleAccess.copy(source, destinaion);
             }
 
             res = true;
         } catch (Exception e) {
-            System.out.println("Couldn't copy file '" + source + "' -> '" + destination + "'");
+            System.out.println("Couldn't copy file '" + source + "' -> '" + destinaion + "'");
             e.printStackTrace();
             res = false;
         }
@@ -441,8 +454,10 @@ public class utils {
             simpleAccess.copy(oldF, newF);
         } catch (InteractiveAugmentedIOException e) {
             throw e;
-        } catch (com.sun.star.uno.Exception ex) {
-            throw new RuntimeException("Could not copy " + oldF + " to " + newF, ex);
+        } catch (com.sun.star.uno.Exception e) {
+            System.out.println("Couldn't copy " + oldF + " to " + newF + ":");
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -485,8 +500,15 @@ public class utils {
      *
      */
     public static String getImplName(Object aObject) {
-        XServiceInfo xSI = UnoRuntime.queryInterface(XServiceInfo.class, aObject);
-        return xSI == null ? "Unknown, does not implement XServiceInfo" : xSI.getImplementationName();
+        String res = "Error getting Implementation name";
+        try {
+            XServiceInfo xSI = UnoRuntime.queryInterface(XServiceInfo.class, aObject);
+            res = xSI.getImplementationName();
+        } catch (Exception e) {
+            res = "Error getting Implementation name ( " + e + " )";
+        }
+
+        return res;
     }
 
     /**
@@ -560,11 +582,17 @@ public class utils {
         return rUrl[0];
     }
 
-    public static String getOfficeURL(XMultiServiceFactory msf) throws com.sun.star.uno.Exception {
-        Object settings = msf.createInstance("com.sun.star.util.PathSettings");
-        XPropertySet settingProps = UnoRuntime.queryInterface(XPropertySet.class, settings);
-        String path = (String) settingProps.getPropertyValue("Module");
-        return path;
+    public static String getOfficeURL(XMultiServiceFactory msf) {
+        try {
+            Object settings = msf.createInstance("com.sun.star.util.PathSettings");
+            XPropertySet settingProps = UnoRuntime.queryInterface(XPropertySet.class, settings);
+            String path = (String) settingProps.getPropertyValue("Module");
+            return path;
+        } catch (Exception e) {
+            System.out.println("Couldn't get Office Settings ");
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
@@ -694,7 +722,7 @@ public class utils {
      * Validate the connection string. Returned is an error message, starting
      * with "Error:", or a warning, if the command might work.
      * @param connectString The connection string that is checked.
-     * @param checkAppExecutionCommand If the AppExecutionCommand is checked, the error message is different.
+     * @param checkAppExecutionCommand If the AppExecutionCommand is checked, the error messages willbe different.
      * @return The error message, or OK, if no error was detected.
      */
     private static String validateConnectString(String connectString, boolean checkAppExecutionCommand) {
@@ -741,7 +769,7 @@ public class utils {
      * @return return the expanded string
      * @see com.sun.star.util.XMacroExpander
      */
-    public static String expandMacro(XMultiServiceFactory xMSF, String expand) {
+    public static String expandMacro(XMultiServiceFactory xMSF, String expand) throws java.lang.Exception {
         try {
             XPropertySet xPS = UnoRuntime.queryInterface(XPropertySet.class, xMSF);
             XComponentContext xContext = UnoRuntime.queryInterface(XComponentContext.class,
@@ -750,7 +778,7 @@ public class utils {
                 xContext.getValueByName("/singletons/com.sun.star.util.theMacroExpander"));
             return xME.expandMacros(expand);
         } catch (Exception e) {
-            throw new RuntimeException("could not expand macro", e);
+            throw new Exception("could not expand macro", e);
         }
 
     }
@@ -778,8 +806,9 @@ public class utils {
      * @param xMSF the <CODE>XMultiServiceFactory</CODE>
      * @param xCont the <CODE>XController</CODE> to query for a XDispatchProvider
      * @param URL the <CODE>URL</CODE> to dispatch
+     * @throws java.lang.Exception throws <CODE>java.lang.Exception</CODE> on any error
      */
-    private static void dispatchURL(XMultiServiceFactory xMSF, XController xCont, String URL) {
+    private static void dispatchURL(XMultiServiceFactory xMSF, XController xCont, String URL) throws java.lang.Exception {
         try {
 
             XDispatchProvider xDispProv = UnoRuntime.queryInterface(XDispatchProvider.class, xCont);
@@ -802,7 +831,7 @@ public class utils {
             waitForEventIdle(xMSF);
 
         } catch (Exception e) {
-            throw new RuntimeException("Could not dispatch URL '" + URL + "'", e);
+            throw new Exception("ERROR: could not dispatch URL '" + URL + "'", e);
         }
     }
 

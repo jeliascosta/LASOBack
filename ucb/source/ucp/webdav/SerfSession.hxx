@@ -68,13 +68,13 @@ private:
     SerfRequestProcessor* createReqProc( const OUString & inPath );
 
 protected:
-    virtual ~SerfSession() override;
+    virtual ~SerfSession();
 
 public:
-    /// @throws DAVException
     SerfSession( const rtl::Reference< DAVSessionFactory > & rSessionFactory,
                  const OUString& inUri,
-                 const ucbhelper::InternetProxyDecider & rProxyDecider );
+                 const ucbhelper::InternetProxyDecider & rProxyDecider )
+        throw ( DAVException );
 
     // Serf library callbacks
     apr_status_t setupSerfConnection( apr_socket_t * inAprSocket,
@@ -120,61 +120,71 @@ public:
               const Depth inDepth,
               const std::vector< OUString > & inPropNames,
               std::vector< DAVResource > & ioResources,
-              const DAVRequestEnvironment & rEnv ) override;
+              const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     // propnames
     virtual void
     PROPFIND( const OUString & inPath,
               const Depth inDepth,
               std::vector< DAVResourceInfo >& ioResInfo,
-              const DAVRequestEnvironment & rEnv ) override;
+              const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     PROPPATCH( const OUString & inPath,
                const std::vector< ProppatchValue > & inValues,
-               const DAVRequestEnvironment & rEnv ) override;
+               const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     HEAD( const OUString &  inPath,
           const std::vector< OUString > & inHeaderNames,
           DAVResource & ioResource,
-          const DAVRequestEnvironment & rEnv ) override;
+          const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     bool isHeadRequestInProgress();
 
     virtual css::uno::Reference< css::io::XInputStream >
     GET( const OUString & inPath,
-         const DAVRequestEnvironment & rEnv ) override;
+         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     GET( const OUString & inPath,
          css::uno::Reference< css::io::XOutputStream > &  ioOutputStream,
-         const DAVRequestEnvironment & rEnv ) override;
+         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual css::uno::Reference< css::io::XInputStream >
     GET( const OUString & inPath,
          const std::vector< OUString > & inHeaderNames,
          DAVResource & ioResource,
-         const DAVRequestEnvironment & rEnv ) override;
+         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     GET( const OUString & inPath,
          css::uno::Reference< css::io::XOutputStream > & ioOutputStream,
          const std::vector< OUString > & inHeaderNames,
          DAVResource & ioResource,
-         const DAVRequestEnvironment & rEnv ) override;
+         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     PUT( const OUString & inPath,
          const css::uno::Reference< css::io::XInputStream > & inInputStream,
-         const DAVRequestEnvironment & rEnv ) override;
+         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual css::uno::Reference< css::io::XInputStream >
     POST( const OUString & inPath,
           const OUString & rContentType,
           const OUString & rReferer,
           const css::uno::Reference< css::io::XInputStream > & inInputStream,
-          const DAVRequestEnvironment & rEnv ) override;
+          const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     POST( const OUString & inPath,
@@ -182,42 +192,51 @@ public:
           const OUString & rReferer,
           const css::uno::Reference< css::io::XInputStream > & inInputStream,
           css::uno::Reference< css::io::XOutputStream > & oOutputStream,
-          const DAVRequestEnvironment & rEnv ) override;
+          const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     MKCOL( const OUString & inPath,
-           const DAVRequestEnvironment & rEnv ) override;
+           const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void
     COPY( const OUString & inSourceURL,
           const OUString & inDestinationURL,
           const DAVRequestEnvironment & rEnv,
-          bool inOverWrite = false ) override;
+          bool inOverWrite )
+        throw ( DAVException ) override;
 
     virtual void
     MOVE( const OUString & inSourceURL,
           const OUString & inDestinationURL,
           const DAVRequestEnvironment & rEnv,
-          bool inOverWrite = false ) override;
+          bool inOverWrite )
+        throw ( DAVException ) override;
 
     virtual void DESTROY( const OUString & inPath,
-                          const DAVRequestEnvironment & rEnv ) override;
+                          const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     // set new lock.
     virtual void LOCK( const OUString & inURL,
                        css::ucb::Lock & inLock,
-                       const DAVRequestEnvironment & rEnv ) override;
+                       const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     // refresh existing lock.
     virtual sal_Int64 LOCK( const OUString & inURL,
                             sal_Int64 nTimeout,
-                            const DAVRequestEnvironment & rEnv ) override;
+                            const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     virtual void UNLOCK( const OUString & inURL,
-                         const DAVRequestEnvironment & rEnv ) override;
+                         const DAVRequestEnvironment & rEnv )
+        throw ( DAVException ) override;
 
     // helpers
-    virtual void abort() override;
+    virtual void abort()
+        throw ( DAVException ) override;
 
     const OUString & getHostName() const { return m_aUri.GetHost(); }
     int getPort() const { return m_aUri.GetPort(); }
@@ -227,14 +246,14 @@ public:
 private:
     friend class SerfLockStore;
 
-    /// @throws DAVException
-    void Init();
+    void Init()
+        throw ( DAVException );
 
-    /// @throws DAVException
-    void Init( const DAVRequestEnvironment & rEnv );
+    void Init( const DAVRequestEnvironment & rEnv )
+        throw ( DAVException );
 
-    /// @throws DAVException
-    void HandleError( std::shared_ptr<SerfRequestProcessor> rReqProc );
+    void HandleError( std::shared_ptr<SerfRequestProcessor> rReqProc )
+        throw ( DAVException );
 
     const ucbhelper::InternetProxyServer & getProxySettings() const;
 

@@ -39,7 +39,7 @@ public:
                 const rtl::Reference < SvXMLImportPropertyMapper > &rMap,
                 OUString& rDopCapTextStyleName );
 
-    virtual ~XMLTextPropertySetContext() override;
+    virtual ~XMLTextPropertySetContext();
 
     using SvXMLPropertySetContext::CreateChildContext;
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,

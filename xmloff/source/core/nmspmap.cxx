@@ -284,7 +284,7 @@ sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName_( const OUString& rAttrName,
                                             OUString *pNamespace,
                                             bool bCache) const
 {
-    sal_uInt16 nKey;
+    sal_uInt16 nKey = XML_NAMESPACE_UNKNOWN;
 
     NameSpaceHash::const_iterator it;
     if (bCache)
@@ -307,7 +307,7 @@ sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName_( const OUString& rAttrName,
     }
     else
     {
-    rtl::Reference<NameSpaceEntry> xEntry(new NameSpaceEntry);
+    rtl::Reference<NameSpaceEntry> xEntry(new NameSpaceEntry());
 
         sal_Int32 nColonPos = rAttrName.indexOf( ':' );
         if( -1L == nColonPos )
@@ -342,8 +342,6 @@ sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName_( const OUString& rAttrName,
         else if( nColonPos == -1L )
             // not found, and no namespace: 'namespace' none
             nKey = xEntry->nKey = XML_NAMESPACE_NONE;
-        else
-            nKey = xEntry->nKey = XML_NAMESPACE_UNKNOWN;
 
         if (bCache)
         {
@@ -426,7 +424,8 @@ sal_uInt16 SvXMLNamespaceMap::GetIndexByPrefix( const OUString& rPrefix ) const
 }
 sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName(
                             const OUString& rAttrName,
-                            OUString *pLocalName) const
+                            OUString *pLocalName,
+                            sal_uInt16 /*nIdxGuess*/) const
 {
     return GetKeyByAttrName_( rAttrName, nullptr, pLocalName );
 }
@@ -434,7 +433,8 @@ sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName(
 sal_uInt16 SvXMLNamespaceMap::GetKeyByAttrName( const OUString& rAttrName,
                                             OUString *pPrefix,
                                             OUString *pLocalName,
-                                            OUString *pNamespace ) const
+                                            OUString *pNamespace,
+                                            sal_uInt16 /*nIdxGuess*/ ) const
 {
     return GetKeyByAttrName_ ( rAttrName, pPrefix, pLocalName, pNamespace );
 }

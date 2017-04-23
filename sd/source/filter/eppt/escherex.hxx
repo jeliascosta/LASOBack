@@ -49,12 +49,12 @@ class PptEscherEx : public EscherEx
     public:
 
                 PptEscherEx( SvStream& rOut, const OUString& );
-                virtual ~PptEscherEx() override;
+                virtual ~PptEscherEx();
 
         void    OpenContainer( sal_uInt16 n_EscherContainer, int nRecInstance = 0 ) override;
         void    CloseContainer() override;
 
-        sal_uInt32 EnterGroup( ::tools::Rectangle* pBoundRect, SvMemoryStream* pClientData );
+        sal_uInt32 EnterGroup( Rectangle* pBoundRect, SvMemoryStream* pClientData );
 
         sal_uInt32  DrawingGroupContainerSize();
         void    WriteDrawingGroupContainer( SvStream& rSt );

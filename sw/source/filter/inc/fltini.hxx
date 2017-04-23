@@ -27,11 +27,11 @@ class SwTextNode;
 class SwNumRule;
 class SwNodeIndex;
 
-// the special readers
+// die speziellen Reader
 
 class HTMLReader: public Reader
 {
-    // we don't want to have the streams/storages open
+    // wir wollen die Streams / Storages nicht geoeffnet haben
     virtual bool SetStrmStgPtr() override;
     virtual sal_uLong Read(SwDoc &, const OUString& rBaseURL, SwPaM &, const OUString &) override;
     virtual OUString GetTemplateName() const override;
@@ -53,18 +53,18 @@ public:
                                    std::vector<OUString*>& rStrings ) const override;
 };
 
-// the special writers
+// die speziellen Writer
 
 void GetWW8Writer( const OUString&, const OUString&, WriterRef& );
 
-// Mapping of the LRSpaces in the currently imported document.
-// The foreign filters always provide absolute values for the levels of
-// a NumRule. We are now processing relative values related to the LR-Space-Item
-// though. The consequence of this is that, for all paragraphs, the indentations
-// of the NumRule must be subtracted from the paragraph indentation.
+// Umsetzen der LRSpaces im aktuell importierten Doc. Die Fremd-Filter
+// liefern immer absolute Werte fuer die Ebenen einer NumRule. Wir
+// verarbeiten jetzt aber relative Werte bezogen auf das LR-Space-Item.
+// Das hat zur Folge, das bei allen Absaetzen die EInzuege der NumRule vom
+// Absatz-Einzug abgezogen werden muss.
 class SW_DLLPUBLIC SwRelNumRuleSpaces
 {
-    SwNumRuleTable* pNumRuleTable;  // list of all named NumRules
+    SwNumRuleTable* pNumRuleTable;  // Liste aller benannten NumRules
 
 public:
     SwRelNumRuleSpaces( SwDoc& rDoc, bool bNewDoc );

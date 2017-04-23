@@ -21,10 +21,6 @@
 
 #include "gridmerg.hxx"
 
-#define PAGEBREAK_LINE_DISTANCE_PIXEL 5
-#define PAGEBREAK_LINE_DASH_LEN_PIXEL 5
-#define PAGEBREAK_LINE_DASH_COUNT 1
-
 ScGridMerger::ScGridMerger( OutputDevice* pOutDev, long nOnePixelX, long nOnePixelY )
     : pDev(pOutDev)
     , nOneX(nOnePixelX)
@@ -39,7 +35,7 @@ ScGridMerger::ScGridMerger( OutputDevice* pOutDev, long nOnePixelX, long nOnePix
     //  optimize (DrawGrid) only for pixel MapMode,
     //  to avoid rounding errors
 
-    bOptimize = ( pDev->GetMapMode().GetMapUnit() == MapUnit::MapPixel );
+    bOptimize = ( pDev->GetMapMode().GetMapUnit() == MAP_PIXEL );
 }
 
 ScGridMerger::~ScGridMerger()
@@ -90,9 +86,9 @@ void ScGridMerger::AddLine( long nStart, long nEnd, long nPos )
     }
 }
 
-void ScGridMerger::AddHorLine(bool bWorksInPixels, long nX1, long nX2, long nY, bool bDashed)
+void ScGridMerger::AddHorLine(bool bWorksInPixels, long nX1, long nX2, long nY)
 {
-    if ( bWorksInPixels )
+    if (bWorksInPixels)
     {
         Point aPoint(pDev->PixelToLogic(Point(nX1, nY)));
         nX1 = aPoint.X();
@@ -100,28 +96,7 @@ void ScGridMerger::AddHorLine(bool bWorksInPixels, long nX1, long nX2, long nY, 
         nX2 = pDev->PixelToLogic(Point(nX2, 0)).X();
     }
 
-    if ( bDashed )
-    {
-        // If there are some unflushed lines they must be flushed since
-        // new line is of different style
-        if (bOptimize) {
-            Flush();
-            bVertical = false;
-        }
-
-        LineInfo aLineInfo(LineStyle::Dash, 1);
-        aLineInfo.SetDashCount( PAGEBREAK_LINE_DASH_COUNT );
-
-        // Calculating logic values of DashLen and Distance from fixed pixel values
-        Size aDashDistanceLen( pDev->PixelToLogic( Size( PAGEBREAK_LINE_DISTANCE_PIXEL,
-                                                         PAGEBREAK_LINE_DASH_LEN_PIXEL )));
-
-        aLineInfo.SetDistance( aDashDistanceLen.Width() );
-        aLineInfo.SetDashLen( aDashDistanceLen.Height() );
-
-        pDev->DrawLine( Point( nX1, nY ), Point( nX2, nY ), aLineInfo );
-    }
-    else if ( bOptimize )
+    if ( bOptimize )
     {
         if ( bVertical )
         {
@@ -134,7 +109,7 @@ void ScGridMerger::AddHorLine(bool bWorksInPixels, long nX1, long nX2, long nY, 
         pDev->DrawLine( Point( nX1, nY ), Point( nX2, nY ) );
 }
 
-void ScGridMerger::AddVerLine(bool bWorksInPixels, long nX, long nY1, long nY2, bool bDashed)
+void ScGridMerger::AddVerLine(bool bWorksInPixels, long nX, long nY1, long nY2)
 {
     if (bWorksInPixels)
     {
@@ -144,28 +119,7 @@ void ScGridMerger::AddVerLine(bool bWorksInPixels, long nX, long nY1, long nY2, 
         nY2 = pDev->PixelToLogic(Point(0, nY2)).Y();
     }
 
-    if ( bDashed )
-    {
-        // If there are some unflushed lines they must be flushed since
-        // new line is of different style
-        if (bOptimize) {
-            Flush();
-            bVertical = false;
-        }
-
-        LineInfo aLineInfo(LineStyle::Dash, 1);
-        aLineInfo.SetDashCount( PAGEBREAK_LINE_DASH_COUNT );
-
-        // Calculating logic values of DashLen and Distance from fixed pixel values
-        Size aDashDistanceLen( pDev->PixelToLogic( Size( PAGEBREAK_LINE_DISTANCE_PIXEL,
-                                                         PAGEBREAK_LINE_DASH_LEN_PIXEL )));
-
-        aLineInfo.SetDistance( aDashDistanceLen.Width() );
-        aLineInfo.SetDashLen( aDashDistanceLen.Height() );
-
-        pDev->DrawLine( Point( nX, nY1 ), Point( nX, nY2 ), aLineInfo);
-    }
-    else if ( bOptimize )
+    if ( bOptimize )
     {
         if ( !bVertical )
         {
@@ -200,7 +154,7 @@ void ScGridMerger::Flush()
                     nVarStart = nVarEnd;
                     nVarEnd = nTemp;
                 }
-                pDev->DrawGrid( tools::Rectangle( nVarStart, nFixStart, nVarEnd, nFixEnd ),
+                pDev->DrawGrid( Rectangle( nVarStart, nFixStart, nVarEnd, nFixEnd ),
                                 Size( nVarDiff, nFixEnd - nFixStart ),
                                 DrawGridFlags::VertLines );
             }
@@ -212,7 +166,7 @@ void ScGridMerger::Flush()
             else
             {
                 long nVarEnd = nVarStart + ( nCount - 1 ) * nVarDiff;
-                pDev->DrawGrid( tools::Rectangle( nFixStart, nVarStart, nFixEnd, nVarEnd ),
+                pDev->DrawGrid( Rectangle( nFixStart, nVarStart, nFixEnd, nVarEnd ),
                                 Size( nFixEnd - nFixStart, nVarDiff ),
                                 DrawGridFlags::HorzLines );
             }

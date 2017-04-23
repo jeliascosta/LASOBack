@@ -70,9 +70,9 @@ $(eval $(call gb_Library_use_externals,cui,\
     icuuc \
     icu_headers \
 ))
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_Library_use_externals,cui,\
-     epoxy \
+     glew \
  ))
 endif
 
@@ -115,7 +115,6 @@ $(eval $(call gb_Library_add_exception_objects,cui,\
     cui/source/dialogs/multipat \
     cui/source/dialogs/newtabledlg \
     cui/source/dialogs/passwdomdlg \
-    cui/source/dialogs/screenshotannotationdlg \
     cui/source/dialogs/pastedlg \
     cui/source/dialogs/postdlg \
     cui/source/dialogs/scriptdlg \
@@ -205,14 +204,10 @@ $(eval $(call gb_Library_add_exception_objects,cui,\
     cui/source/tabpages/tpline \
     cui/source/tabpages/tplnedef \
     cui/source/tabpages/tplneend \
-    cui/source/tabpages/tppattern \
     cui/source/tabpages/tpshadow \
     cui/source/tabpages/tptrans \
     cui/source/tabpages/transfrm \
     cui/source/uno/services \
 ))
-
-# Runtime dependency for unit-tests
-$(eval $(call gb_Library_use_restarget,cui,cui))
 
 # vim: set noet sw=4 ts=4:

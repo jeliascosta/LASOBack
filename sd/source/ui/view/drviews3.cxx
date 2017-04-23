@@ -150,8 +150,8 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
                     const SfxUInt32Item* pWhatKind = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATKIND);
 
                     sal_Int32 nWhatPage = (sal_Int32)pWhatPage->GetValue ();
-                    PageKind nWhatKind = (PageKind)pWhatKind->GetValue ();
-                    if (! (nWhatKind >= PageKind::Standard && nWhatKind <= PageKind::Handout))
+                    sal_Int32 nWhatKind = (sal_Int32)pWhatKind->GetValue ();
+                    if (! CHECK_RANGE (PK_STANDARD, nWhatKind, PK_HANDOUT))
                     {
 #if HAVE_FEATURE_SCRIPTING
                         StarBASIC::FatalError (ERRCODE_BASIC_BAD_PROP_VALUE);
@@ -159,9 +159,9 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
                         rReq.Ignore ();
                         break;
                     }
-                    else if (meEditMode != EditMode::MasterPage)
+                    else if (meEditMode != EM_MASTERPAGE)
                     {
-                        if (! CHECK_RANGE (0, nWhatPage, GetDoc()->GetSdPageCount(nWhatKind)))
+                        if (! CHECK_RANGE (0, nWhatPage, GetDoc()->GetSdPageCount((PageKind)nWhatKind)))
                         {
 #if HAVE_FEATURE_SCRIPTING
                             StarBASIC::FatalError (ERRCODE_BASIC_BAD_PROP_VALUE);
@@ -171,7 +171,7 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
                         }
 
                         nSelectedPage = (short) nWhatPage;
-                        mePageKind    = nWhatKind;
+                        mePageKind    = (PageKind) nWhatKind;
                     }
                 }
                 else
@@ -237,25 +237,25 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_PAGEMODE:  // BASIC
         {
 
-            const SfxItemSet *pArgs = rReq.GetArgs();
+            const SfxItemSet *pArgs = rReq.GetArgs ();
 
-            if (pArgs && pArgs->Count () == 2)
+            if ( pArgs && pArgs->Count () == 2)
             {
                 const SfxBoolItem* pIsActive = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE);
                 const SfxUInt32Item* pWhatKind = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATKIND);
 
-                PageKind nWhatKind = (PageKind)pWhatKind->GetValue();
-                if ( nWhatKind >= PageKind::Standard && nWhatKind <= PageKind::Handout)
+                sal_Int32 nWhatKind = (sal_Int32)pWhatKind->GetValue ();
+                if (CHECK_RANGE (PK_STANDARD, nWhatKind, PK_HANDOUT))
                 {
-                    mbIsLayerModeActive = pIsActive->GetValue();
-                    mePageKind = nWhatKind;
+                    mbIsLayerModeActive = pIsActive->GetValue ();
+                    mePageKind = (PageKind) nWhatKind;
                 }
             }
 
             // turn on default layer of page
             mpDrawView->SetActiveLayer(SD_RESSTR(STR_LAYER_LAYOUT));
 
-            ChangeEditMode(EditMode::Page, mbIsLayerModeActive);
+            ChangeEditMode(EM_PAGE, mbIsLayerModeActive);
 
             Invalidate();
             rReq.Done ();
@@ -265,23 +265,25 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
 
         case SID_LAYERMODE:  // BASIC
         {
-            const SfxItemSet *pArgs = rReq.GetArgs();
+            const SfxItemSet *pArgs = rReq.GetArgs ();
 
-            if (pArgs && pArgs->Count() == 2)
+            if ( pArgs && pArgs->Count () == 2)
             {
+                const SfxBoolItem* pWhatLayerMode = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE);
                 const SfxUInt32Item* pWhatLayer = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATLAYER);
-                EditMode nWhatLayer = (EditMode)pWhatLayer->GetValue();
-                if (nWhatLayer == EditMode::Page || nWhatLayer == EditMode::MasterPage)
+
+                sal_Int32 nWhatLayer = (sal_Int32)pWhatLayer->GetValue ();
+                if (CHECK_RANGE (EM_PAGE, nWhatLayer, EM_MASTERPAGE))
                 {
-                    mbIsLayerModeActive = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE)->GetValue();
-                    meEditMode = nWhatLayer;
+                    mbIsLayerModeActive = pWhatLayerMode->GetValue ();
+                    meEditMode = (EditMode) nWhatLayer;
                 }
             }
 
             ChangeEditMode(meEditMode, !mbIsLayerModeActive);
 
             Invalidate();
-            rReq.Done();
+            rReq.Done ();
 
             break;
         }
@@ -291,11 +293,11 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_INSERT_DATE_TIME:
         {
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            ScopedVclPtr<AbstractHeaderFooterDialog> pDlg(pFact ? pFact->CreateHeaderFooterDialog( this, GetActiveWindow(), GetDoc(), mpActualPage ) : nullptr);
+            std::unique_ptr<AbstractHeaderFooterDialog> pDlg(pFact ? pFact->CreateHeaderFooterDialog( this, GetActiveWindow(), GetDoc(), mpActualPage ) : nullptr);
             if( pDlg )
             {
                 pDlg->Execute();
-                pDlg.disposeAndClear();
+                pDlg.reset();
 
                 GetActiveWindow()->Invalidate();
                 UpdatePreview( mpActualPage );
@@ -310,15 +312,16 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_MASTER_LAYOUTS:
         {
             SdPage* pPage = GetActualPage();
-            if (meEditMode == EditMode::MasterPage)
+            if (meEditMode == EM_MASTERPAGE)
                 // Use the master page of the current page.
                 pPage = static_cast<SdPage*>(&pPage->TRG_GetMasterPage());
 
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            if (pFact)
+            std::unique_ptr<VclAbstractDialog> pDlg(pFact ? pFact->CreateMasterLayoutDialog( GetActiveWindow(), GetDoc(), pPage ) : nullptr);
+            if( pDlg )
             {
-                ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateMasterLayoutDialog( GetActiveWindow(), GetDoc(), pPage ));
                 pDlg->Execute();
+                pDlg.reset();
                 Invalidate();
             }
             rReq.Done ();
@@ -334,7 +337,7 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
             {
                 const SfxRectangleItem& rRect =
                     static_cast<const SfxRectangleItem&>(rReq.GetArgs()->Get(SID_OBJECTRESIZE));
-                ::tools::Rectangle aRect( GetActiveWindow()->PixelToLogic( rRect.GetValue() ) );
+                Rectangle aRect( GetActiveWindow()->PixelToLogic( rRect.GetValue() ) );
 
                 if ( mpDrawView->AreObjectsMarked() )
                 {
@@ -416,7 +419,7 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
 
                 if (pBookmark)
                 {
-                    OUString sBookmark(INetURLObject::decode(pBookmark->GetValue(), INetURLObject::DecodeMechanism::WithCharset));
+                    OUString sBookmark(INetURLObject::decode(pBookmark->GetValue(), INetURLObject::DECODE_WITH_CHARSET));
 
                     rtl::Reference< sd::SlideShow > xSlideshow( SlideShow::GetSlideShow( GetViewShellBase() ) );
                     if(xSlideshow.is() && xSlideshow->isRunning())
@@ -503,7 +506,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
 
                 if( mpDrawView->IsTextEdit() )
                 {
-                    ::tools::Rectangle aRect = maMarkRect;
+                    Rectangle aRect = maMarkRect;
                     aRect.SetPos(aRect.TopLeft() + aPagePos);
                     aRect.Left()  = rLRSpace.GetLeft();
                     aRect.Right() = aViewSize.Width() - rLRSpace.GetRight();
@@ -568,7 +571,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
 
                 if( mpDrawView->IsTextEdit() )
                 {
-                    ::tools::Rectangle aRect = maMarkRect;
+                    Rectangle aRect = maMarkRect;
                     aRect.SetPos(aRect.TopLeft() + aPagePos);
                     aRect.Top()  = rULSpace.GetUpper();
                     aRect.Bottom() = aViewSize.Height() - rULSpace.GetLower();
@@ -626,7 +629,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
         case SID_RULER_OBJECT:
             if (pArgs)
             {
-                ::tools::Rectangle aRect = maMarkRect;
+                Rectangle aRect = maMarkRect;
                 aRect.SetPos(aRect.TopLeft() + aPagePos);
 
                 const SvxObjectItem& rOI = static_cast<const SvxObjectItem&>(
@@ -683,7 +686,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
             break;
         case SID_ATTR_PARA_ADJUST_LEFT:
         {
-            SvxAdjustItem aItem( SvxAdjust::Left, EE_PARA_JUST );
+            SvxAdjustItem aItem( SVX_ADJUST_LEFT, EE_PARA_JUST );
             SfxItemSet aEditAttr( GetPool(), EE_PARA_JUST, EE_PARA_JUST );
 
             aEditAttr.Put( aItem );
@@ -694,7 +697,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
         }
         case SID_ATTR_PARA_ADJUST_CENTER:
         {
-            SvxAdjustItem aItem( SvxAdjust::Center, EE_PARA_JUST );
+            SvxAdjustItem aItem( SVX_ADJUST_CENTER, EE_PARA_JUST );
             SfxItemSet aEditAttr( GetPool(), EE_PARA_JUST, EE_PARA_JUST );
 
             aEditAttr.Put( aItem );
@@ -705,7 +708,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
         }
         case SID_ATTR_PARA_ADJUST_RIGHT:
         {
-            SvxAdjustItem aItem( SvxAdjust::Right, EE_PARA_JUST );
+            SvxAdjustItem aItem( SVX_ADJUST_RIGHT, EE_PARA_JUST );
             SfxItemSet aEditAttr( GetPool(), EE_PARA_JUST, EE_PARA_JUST );
 
             aEditAttr.Put( aItem );
@@ -716,7 +719,7 @@ void  DrawViewShell::ExecRuler(SfxRequest& rReq)
         }
         case SID_ATTR_PARA_ADJUST_BLOCK:
         {
-            SvxAdjustItem aItem( SvxAdjust::Block, EE_PARA_JUST );
+            SvxAdjustItem aItem( SVX_ADJUST_BLOCK, EE_PARA_JUST );
             SfxItemSet aEditAttr( GetPool(), EE_PARA_JUST, EE_PARA_JUST );
 
             aEditAttr.Put( aItem );
@@ -861,13 +864,13 @@ void  DrawViewShell::GetRulerState(SfxItemSet& rSet)
     const Point aPagePos( GetActiveWindow()->GetViewOrigin() );
     Size aPageSize = mpActualPage->GetSize();
 
-    ::tools::Rectangle aRect(aPagePos, Point( aViewSize.Width() - (aPagePos.X() + aPageSize.Width()),
+    Rectangle aRect(aPagePos, Point( aViewSize.Width() - (aPagePos.X() + aPageSize.Width()),
                                      aViewSize.Height() - (aPagePos.Y() + aPageSize.Height())));
 
     if( mpDrawView->IsTextEdit() )
     {
         Point aPnt1 = GetActiveWindow()->GetWinViewPos();
-        ::tools::Rectangle aMinMaxRect = ::tools::Rectangle( aPnt1, Size(ULONG_MAX, ULONG_MAX) );
+        Rectangle aMinMaxRect = Rectangle( aPnt1, Size(ULONG_MAX, ULONG_MAX) );
         rSet.Put( SfxRectangleItem(SID_RULER_LR_MIN_MAX, aMinMaxRect) );
     }
     else
@@ -897,7 +900,7 @@ void  DrawViewShell::GetRulerState(SfxItemSet& rSet)
         if( mpDrawView->IsTextEdit() )
         {
             SdrObject* pObj = mpDrawView->GetMarkedObjectList().GetMark( 0 )->GetMarkedSdrObj();
-            if( pObj->GetObjInventor() == SdrInventor::Default)
+            if( pObj->GetObjInventor() == SdrInventor)
             {
                 SfxItemSet aEditAttr( GetDoc()->GetPool() );
                 mpDrawView->GetAttributes( aEditAttr );
@@ -963,7 +966,7 @@ void  DrawViewShell::GetRulerState(SfxItemSet& rSet)
                 if( aEditAttr.GetItemState( EE_PARA_WRITINGDIR ) >= SfxItemState::DEFAULT )
                 {
                     const SvxFrameDirectionItem& rItem = static_cast<const SvxFrameDirectionItem&>( aEditAttr.Get( EE_PARA_WRITINGDIR ) );
-                    rSet.Put(SfxBoolItem(SID_RULER_TEXT_RIGHT_TO_LEFT, rItem.GetValue() == SvxFrameDirection::Horizontal_LR_TB));
+                    rSet.Put(SfxBoolItem(SID_RULER_TEXT_RIGHT_TO_LEFT, rItem.GetValue() == css::text::WritingMode_RL_TB));
                 }
             }
         }
@@ -974,7 +977,7 @@ void  DrawViewShell::GetRulerState(SfxItemSet& rSet)
 
             if( mpDrawView->IsResizeAllowed(true) )
             {
-                ::tools::Rectangle aResizeRect( maMarkRect );
+                Rectangle aResizeRect( maMarkRect );
 
                 aResizeRect.SetPos(aResizeRect.TopLeft() + aPagePos);
                 SvxObjectItem aObjItem(aResizeRect.Left(), aResizeRect.Right(),
@@ -1040,7 +1043,7 @@ void  DrawViewShell::GetSnapItemState( SfxItemSet &rSet )
     {
         const SdrHelpLine& rHelpLine = (pPV->GetHelpLines())[nHelpLine];
 
-        if ( rHelpLine.GetKind() == SdrHelpLineKind::Point )
+        if ( rHelpLine.GetKind() == SDRHELPLINE_POINT )
         {
             rSet.Put( SfxStringItem( SID_SET_SNAPITEM,
                                 SD_RESSTR( STR_POPUP_EDIT_SNAPPOINT)) );

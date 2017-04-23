@@ -37,7 +37,7 @@ public:
         macros.
     */
     OutlineViewShellBase (SfxViewFrame *pFrame, SfxViewShell* pOldShell);
-    virtual ~OutlineViewShellBase() override;
+    virtual ~OutlineViewShellBase();
 };
 
 } // end of namespace sd

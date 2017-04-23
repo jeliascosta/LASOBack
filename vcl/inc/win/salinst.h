@@ -36,16 +36,16 @@ public:
 
 public:
     WinSalInstance();
-    virtual ~WinSalInstance() override;
+    virtual ~WinSalInstance();
 
     virtual SalFrame*       CreateChildFrame( SystemParentData* pParent, SalFrameStyleFlags nStyle ) override;
     virtual SalFrame*       CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
     virtual void            DestroyFrame( SalFrame* pFrame ) override;
-    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow ) override;
+    virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true ) override;
     virtual void            DestroyObject( SalObject* pObject ) override;
     virtual SalVirtualDevice*   CreateVirtualDevice( SalGraphics* pGraphics,
                                                      long &nDX, long &nDY,
-                                                     DeviceFormat eFormat, const SystemGraphicsData *pData = nullptr ) override;
+                                                     DeviceFormat eFormat, const SystemGraphicsData *pData ) override;
     virtual SalInfoPrinter* CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
                                                ImplJobSetup* pSetupData ) override;
     virtual void            DestroyInfoPrinter( SalInfoPrinter* pPrinter ) override;
@@ -56,6 +56,7 @@ public:
     virtual void            DeletePrinterQueueInfo( SalPrinterQueueInfo* pInfo ) override;
     virtual OUString            GetDefaultPrinter() override;
     virtual SalTimer*           CreateSalTimer() override;
+    virtual SalI18NImeStatus*   CreateI18NImeStatus() override;
     virtual SalSystem*          CreateSalSystem() override;
     virtual SalBitmap*          CreateSalBitmap() override;
     virtual comphelper::SolarMutex* GetYieldMutex() override;
@@ -71,7 +72,7 @@ public:
     virtual void                DestroyMenuItem( SalMenuItem* ) override;
     virtual SalSession*         CreateSalSession() override;
     virtual OpenGLContext*      CreateOpenGLContext() override;
-    virtual OUString            GetConnectionIdentifier() override;
+    virtual void*               GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes ) override;
     virtual void                AddToRecentDocumentList(const OUString& rFileUrl, const OUString& rMimeType, const OUString& rDocumentService) override;
 
     virtual OUString            getOSVersion() override;

@@ -74,7 +74,7 @@ namespace connectivity
         }
 
 
-        inline css::util::DateTime CFDateToDateTime(const CFDateRef _cfDate)
+        inline com::sun::star::util::DateTime CFDateToDateTime(const CFDateRef _cfDate)
         {
                 /* Carbon can give us the time since 2001 of any CFDateRef,
                  * and it also stores the time since 1970 as a constant,
@@ -82,7 +82,7 @@ namespace connectivity
                  * CFDateRef. From there, it is just a matter of choosing what
                  * we want to do with it.
                  */
-            css::util::DateTime nRet;
+            com::sun::star::util::DateTime nRet;
             double timeSince2001 = CFDateGetAbsoluteTime(_cfDate);
             time_t unixtime = timeSince2001+kCFAbsoluteTimeIntervalSince1970;
             struct tm *ptm = localtime(&unixtime);
@@ -117,16 +117,16 @@ namespace connectivity
             switch(_abType)
             {
                 case kABStringProperty:
-                    dataType = css::sdbc::DataType::CHAR;
+                    dataType = ::com::sun::star::sdbc::DataType::CHAR;
                     break;
                 case kABDateProperty:
-                    dataType = css::sdbc::DataType::TIMESTAMP;
+                    dataType = ::com::sun::star::sdbc::DataType::TIMESTAMP;
                     break;
                 case kABIntegerProperty:
-                    dataType = css::sdbc::DataType::INTEGER;
+                    dataType = ::com::sun::star::sdbc::DataType::INTEGER;
                     break;
                 case kABRealProperty:
-                    dataType = css::sdbc::DataType::FLOAT;
+                    dataType = ::com::sun::star::sdbc::DataType::FLOAT;
                     break;
                 default:
                     dataType = -1;

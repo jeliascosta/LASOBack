@@ -538,11 +538,11 @@ bool ScOpenCLTest::initTestEnv(const OUString& fileName, sal_Int32 nFormat,
         return false;
 
     xDocSh = loadDoc(fileName, nFormat, bReadWrite);
-    CPPUNIT_ASSERT_MESSAGE("Failed to load document.", xDocSh.is());
+    CPPUNIT_ASSERT_MESSAGE("Failed to load document.", xDocSh.Is());
     enableOpenCL();
 
     xDocShRes = loadDoc(fileName, nFormat, bReadWrite);
-    CPPUNIT_ASSERT_MESSAGE("Failed to load document.", xDocShRes.is());
+    CPPUNIT_ASSERT_MESSAGE("Failed to load document.", xDocShRes.Is());
 
     return true;
 }
@@ -749,10 +749,10 @@ void ScOpenCLTest::testSystematic()
     CPPUNIT_ASSERT(nBVertBegin != 0);
     CPPUNIT_ASSERT(nAVertEnd > nAVertBegin + 100);
     CPPUNIT_ASSERT(nBVertEnd > nBVertBegin + 100);
-    CPPUNIT_ASSERT_EQUAL(nAVertEnd-nAVertBegin, nBVertEnd-nBVertBegin);
+    CPPUNIT_ASSERT((nAVertEnd-nAVertBegin) == (nBVertEnd-nBVertBegin));
     CPPUNIT_ASSERT(nAHorEnd > 10);
     CPPUNIT_ASSERT(nBHorEnd > 10);
-    CPPUNIT_ASSERT_EQUAL(nAHorEnd, nBHorEnd);
+    CPPUNIT_ASSERT(nAHorEnd == nBHorEnd);
 
     for (SCROW i = nAVertBegin; i < nAVertEnd; ++i)
     {
@@ -4747,15 +4747,15 @@ void ScOpenCLTest::setUp()
 void ScOpenCLTest::tearDown()
 {
     //close test env
-    if(xDocSh.is())
+    if(xDocSh.Is())
     {
         xDocSh->DoClose();
-        xDocSh.clear();
+        xDocSh.Clear();
     }
-    if(xDocShRes.is())
+    if(xDocShRes.Is())
     {
         xDocShRes->DoClose();
-        xDocShRes.clear();
+        xDocShRes.Clear();
     }
 
     uno::Reference< lang::XComponent >

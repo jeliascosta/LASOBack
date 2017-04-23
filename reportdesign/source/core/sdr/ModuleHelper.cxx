@@ -43,11 +43,12 @@ namespace rptui
 */
 class OModuleImpl
 {
-    std::unique_ptr<ResMgr> m_pResources;
+    ResMgr* m_pResources;
 
 public:
     /// ctor
     OModuleImpl();
+    ~OModuleImpl();
 
     /// get the manager for the resources of the module
     ResMgr* getResManager();
@@ -60,6 +61,12 @@ OModuleImpl::OModuleImpl()
 }
 
 
+OModuleImpl::~OModuleImpl()
+{
+    delete m_pResources;
+}
+
+
 ResMgr* OModuleImpl::getResManager()
 {
     // note that this method is not threadsafe, which counts for the whole class !
@@ -67,9 +74,9 @@ ResMgr* OModuleImpl::getResManager()
     if (!m_pResources)
     {
         // create a manager with a fixed prefix
-        m_pResources.reset( ResMgr::CreateResMgr("rptui") );
+        m_pResources = ResMgr::CreateResMgr("rptui");
     }
-    return m_pResources.get();
+    return m_pResources;
 }
 
 

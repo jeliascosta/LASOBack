@@ -86,11 +86,13 @@ struct PresetCategory
 typedef std::shared_ptr< PresetCategory > PresetCategoryPtr;
 typedef std::vector< PresetCategoryPtr > PresetCategoryList;
 
-class SD_DLLPUBLIC CustomAnimationPresets final
+class SD_DLLPUBLIC CustomAnimationPresets
 {
 public:
     SAL_DLLPRIVATE CustomAnimationPresets();
-    SAL_DLLPRIVATE ~CustomAnimationPresets();
+    SAL_DLLPRIVATE virtual ~CustomAnimationPresets();
+
+    SAL_DLLPRIVATE void init();
 
     static const CustomAnimationPresets& getCustomAnimationPresets();
 
@@ -115,7 +117,7 @@ private:
 
     SAL_DLLPRIVATE void importPresets( const css::uno::Reference< css::lang::XMultiServiceFactory >& xConfigProvider, const OUString& rNodePath, PresetCategoryList& rPresetMap  );
 
-    SAL_DLLPRIVATE static const OUString& translateName( const OUString& rId, const UStringMap& rNameMap );
+    SAL_DLLPRIVATE const OUString& translateName( const OUString& rId, const UStringMap& rNameMap ) const;
 
 private:
     css::uno::Reference< css::animations::XAnimationNode > mxRootNode;

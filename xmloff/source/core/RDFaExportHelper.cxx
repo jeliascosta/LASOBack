@@ -90,7 +90,9 @@ RDFaExportHelper::RDFaExportHelper(SvXMLExport & i_rExport)
     : m_rExport(i_rExport), m_xRepository(nullptr), m_Counter(0)
 {
     const uno::Reference<rdf::XRepositorySupplier> xRS( m_rExport.GetModel(),
-            uno::UNO_QUERY_THROW);
+            uno::UNO_QUERY);
+    OSL_ENSURE(xRS.is(), "AddRDFa: model is no rdf::XRepositorySupplier");
+    if (!xRS.is()) throw uno::RuntimeException();
     m_xRepository.set(xRS->getRDFRepository(), uno::UNO_QUERY_THROW);
 }
 

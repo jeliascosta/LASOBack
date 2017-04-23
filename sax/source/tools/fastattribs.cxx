@@ -19,7 +19,6 @@
 
 #include <algorithm>
 
-#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <sax/fastattribs.hxx>
 
 using namespace ::com::sun::star::uno;
@@ -28,7 +27,7 @@ using namespace ::com::sun::star::xml::sax;
 namespace sax_fastparser
 {
 
-// wastage to keep MSVC happy vs. an in-line {}
+// wasteage to keep MSVC happy vs. an in-line {}
 FastTokenHandlerBase::~FastTokenHandlerBase()
 {
 }
@@ -119,7 +118,7 @@ void FastAttributeList::addUnknown( const OString& rName, const OString& value )
 }
 
 // XFastAttributeList
-sal_Bool FastAttributeList::hasAttribute( ::sal_Int32 Token )
+sal_Bool FastAttributeList::hasAttribute( ::sal_Int32 Token ) throw (RuntimeException, std::exception)
 {
     for (sal_Int32 i : maAttributeTokens)
         if (i == Token)
@@ -128,7 +127,7 @@ sal_Bool FastAttributeList::hasAttribute( ::sal_Int32 Token )
     return false;
 }
 
-sal_Int32 FastAttributeList::getValueToken( ::sal_Int32 Token )
+sal_Int32 FastAttributeList::getValueToken( ::sal_Int32 Token ) throw (SAXException, RuntimeException, std::exception)
 {
     for (size_t i = 0; i < maAttributeTokens.size(); ++i)
         if (maAttributeTokens[i] == Token)
@@ -140,7 +139,7 @@ sal_Int32 FastAttributeList::getValueToken( ::sal_Int32 Token )
     throw SAXException();
 }
 
-sal_Int32 FastAttributeList::getOptionalValueToken( ::sal_Int32 Token, ::sal_Int32 Default )
+sal_Int32 FastAttributeList::getOptionalValueToken( ::sal_Int32 Token, ::sal_Int32 Default ) throw (RuntimeException, std::exception)
 {
     for (size_t i = 0; i < maAttributeTokens.size(); ++i)
         if (maAttributeTokens[i] == Token)
@@ -192,7 +191,7 @@ bool FastAttributeList::getAsChar( sal_Int32 nToken, const char*& rPos ) const
     return false;
 }
 
-OUString FastAttributeList::getValue( ::sal_Int32 Token )
+OUString FastAttributeList::getValue( ::sal_Int32 Token ) throw (SAXException, RuntimeException, std::exception)
 {
     for (size_t i = 0; i < maAttributeTokens.size(); ++i)
         if (maAttributeTokens[i] == Token)
@@ -201,7 +200,7 @@ OUString FastAttributeList::getValue( ::sal_Int32 Token )
     throw SAXException();
 }
 
-OUString FastAttributeList::getOptionalValue( ::sal_Int32 Token )
+OUString FastAttributeList::getOptionalValue( ::sal_Int32 Token ) throw (RuntimeException, std::exception)
 {
     for (size_t i = 0; i < maAttributeTokens.size(); ++i)
         if (maAttributeTokens[i] == Token)
@@ -209,7 +208,7 @@ OUString FastAttributeList::getOptionalValue( ::sal_Int32 Token )
 
     return OUString();
 }
-Sequence< Attribute > FastAttributeList::getUnknownAttributes(  )
+Sequence< Attribute > FastAttributeList::getUnknownAttributes(  ) throw (RuntimeException, std::exception)
 {
     Sequence< Attribute > aSeq( maUnknownAttributes.size() );
     Attribute* pAttr = aSeq.getArray();
@@ -217,7 +216,7 @@ Sequence< Attribute > FastAttributeList::getUnknownAttributes(  )
         (*attrIter).FillAttribute( pAttr++ );
     return aSeq;
 }
-Sequence< FastAttribute > FastAttributeList::getFastAttributes(  )
+Sequence< FastAttribute > FastAttributeList::getFastAttributes(  ) throw (RuntimeException, std::exception)
 {
     Sequence< FastAttribute > aSeq( maAttributeTokens.size() );
     FastAttribute* pAttr = aSeq.getArray();

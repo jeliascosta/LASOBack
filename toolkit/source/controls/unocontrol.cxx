@@ -24,7 +24,6 @@
 #include <com/sun/star/awt/VclWindowPeerAttribute.hpp>
 #include <com/sun/star/awt/PosSize.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/resource/XStringResourceResolver.hpp>
 #include <toolkit/controls/unocontrol.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -342,7 +341,7 @@ UnoControl::DisposeAccessibleContext(Reference<XComponent> const& xContextComp)
     }
 }
 
-void UnoControl::dispose(  )
+void UnoControl::dispose(  ) throw(RuntimeException, std::exception)
 {
     Reference< XWindowPeer > xPeer;
     Reference<XComponent> xAccessibleComp;
@@ -381,14 +380,14 @@ void UnoControl::dispose(  )
     setContext( Reference< XInterface > () );
 }
 
-void UnoControl::addEventListener( const Reference< XEventListener >& rxListener )
+void UnoControl::addEventListener( const Reference< XEventListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
     maDisposeListeners.addInterface( rxListener );
 }
 
-void UnoControl::removeEventListener( const Reference< XEventListener >& rxListener )
+void UnoControl::removeEventListener( const Reference< XEventListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
@@ -401,7 +400,7 @@ bool UnoControl::requiresNewPeer( const OUString& /* _rPropertyName */ ) const
 }
 
 // XPropertiesChangeListener
-void UnoControl::propertiesChange( const Sequence< PropertyChangeEvent >& rEvents )
+void UnoControl::propertiesChange( const Sequence< PropertyChangeEvent >& rEvents ) throw(RuntimeException, std::exception)
 {
     Sequence< PropertyChangeEvent > aEvents( rEvents );
     {
@@ -642,7 +641,7 @@ void UnoControl::ImplModelPropertiesChanged( const Sequence< PropertyChangeEvent
         VCLXWindow* pPeer;
         {
             SolarMutexGuard g;
-            VclPtr<vcl::Window> pVclPeer = VCLUnoHelper::GetWindow( getPeer() );
+            vcl::Window* pVclPeer = VCLUnoHelper::GetWindow( getPeer() );
             pPeer = pVclPeer ? pVclPeer->GetWindowPeer() : nullptr;
         }
         VclListenerLock aNoVclEventMultiplexing( pPeer );
@@ -661,7 +660,7 @@ void UnoControl::ImplModelPropertiesChanged( const Sequence< PropertyChangeEvent
     }
 }
 
-void UnoControl::disposing( const EventObject& rEvt )
+void UnoControl::disposing( const EventObject& rEvt ) throw(RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     // do not compare differing types in case of multiple inheritance
@@ -685,7 +684,7 @@ void UnoControl::disposing( const EventObject& rEvt )
 }
 
 
-void SAL_CALL UnoControl::setOutputSize( const awt::Size& aSize )
+void SAL_CALL UnoControl::setOutputSize( const awt::Size& aSize ) throw (RuntimeException, std::exception)
 {
     Reference< XWindow2 > xPeerWindow;
     {
@@ -712,33 +711,33 @@ namespace
     }
 }
 
-awt::Size SAL_CALL UnoControl::getOutputSize(  )
+awt::Size SAL_CALL UnoControl::getOutputSize(  ) throw (RuntimeException, std::exception)
 {
     return lcl_askPeer( getPeer(), &XWindow2::getOutputSize, awt::Size() );
 }
 
-sal_Bool SAL_CALL UnoControl::isVisible(  )
+sal_Bool SAL_CALL UnoControl::isVisible(  ) throw (RuntimeException, std::exception)
 {
     return lcl_askPeer( getPeer(), &XWindow2::isVisible, maComponentInfos.bVisible );
 }
 
-sal_Bool SAL_CALL UnoControl::isActive(  )
+sal_Bool SAL_CALL UnoControl::isActive(  ) throw (RuntimeException, std::exception)
 {
     return lcl_askPeer( getPeer(), &XWindow2::isActive, false );
 }
 
-sal_Bool SAL_CALL UnoControl::isEnabled(  )
+sal_Bool SAL_CALL UnoControl::isEnabled(  ) throw (RuntimeException, std::exception)
 {
     return lcl_askPeer( getPeer(), &XWindow2::isEnabled, maComponentInfos.bEnable );
 }
 
-sal_Bool SAL_CALL UnoControl::hasFocus(  )
+sal_Bool SAL_CALL UnoControl::hasFocus(  ) throw (RuntimeException, std::exception)
 {
     return lcl_askPeer( getPeer(), &XWindow2::hasFocus, false );
 }
 
 // XWindow
-void UnoControl::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int32 Height, sal_Int16 Flags )
+void UnoControl::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int32 Height, sal_Int16 Flags ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xWindow;
     {
@@ -761,7 +760,7 @@ void UnoControl::setPosSize( sal_Int32 X, sal_Int32 Y, sal_Int32 Width, sal_Int3
         xWindow->setPosSize( X, Y, Width, Height, Flags );
 }
 
-awt::Rectangle UnoControl::getPosSize(  )
+awt::Rectangle UnoControl::getPosSize(  ) throw(RuntimeException, std::exception)
 {
     awt::Rectangle aRect( maComponentInfos.nX, maComponentInfos.nY, maComponentInfos.nWidth, maComponentInfos.nHeight);
     Reference< XWindow > xWindow;
@@ -776,7 +775,7 @@ awt::Rectangle UnoControl::getPosSize(  )
     return aRect;
 }
 
-void UnoControl::setVisible( sal_Bool bVisible )
+void UnoControl::setVisible( sal_Bool bVisible ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xWindow;
     {
@@ -790,7 +789,7 @@ void UnoControl::setVisible( sal_Bool bVisible )
         xWindow->setVisible( bVisible );
 }
 
-void UnoControl::setEnable( sal_Bool bEnable )
+void UnoControl::setEnable( sal_Bool bEnable ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xWindow;
     {
@@ -804,7 +803,7 @@ void UnoControl::setEnable( sal_Bool bEnable )
         xWindow->setEnable( bEnable );
 }
 
-void UnoControl::setFocus(  )
+void UnoControl::setFocus(  ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xWindow;
     {
@@ -815,7 +814,7 @@ void UnoControl::setFocus(  )
         xWindow->setFocus();
 }
 
-void UnoControl::addWindowListener( const Reference< XWindowListener >& rxListener )
+void UnoControl::addWindowListener( const Reference< XWindowListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -828,7 +827,7 @@ void UnoControl::addWindowListener( const Reference< XWindowListener >& rxListen
         xPeerWindow->addWindowListener( &maWindowListeners );
 }
 
-void UnoControl::removeWindowListener( const Reference< XWindowListener >& rxListener )
+void UnoControl::removeWindowListener( const Reference< XWindowListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -841,7 +840,7 @@ void UnoControl::removeWindowListener( const Reference< XWindowListener >& rxLis
         xPeerWindow->removeWindowListener( &maWindowListeners );
 }
 
-void UnoControl::addFocusListener( const Reference< XFocusListener >& rxListener )
+void UnoControl::addFocusListener( const Reference< XFocusListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -854,7 +853,7 @@ void UnoControl::addFocusListener( const Reference< XFocusListener >& rxListener
         xPeerWindow->addFocusListener( &maFocusListeners );
 }
 
-void UnoControl::removeFocusListener( const Reference< XFocusListener >& rxListener )
+void UnoControl::removeFocusListener( const Reference< XFocusListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -867,7 +866,7 @@ void UnoControl::removeFocusListener( const Reference< XFocusListener >& rxListe
         xPeerWindow->removeFocusListener( &maFocusListeners );
 }
 
-void UnoControl::addKeyListener( const Reference< XKeyListener >& rxListener )
+void UnoControl::addKeyListener( const Reference< XKeyListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -880,7 +879,7 @@ void UnoControl::addKeyListener( const Reference< XKeyListener >& rxListener )
         xPeerWindow->addKeyListener( &maKeyListeners);
 }
 
-void UnoControl::removeKeyListener( const Reference< XKeyListener >& rxListener )
+void UnoControl::removeKeyListener( const Reference< XKeyListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -893,7 +892,7 @@ void UnoControl::removeKeyListener( const Reference< XKeyListener >& rxListener 
         xPeerWindow->removeKeyListener( &maKeyListeners);
 }
 
-void UnoControl::addMouseListener( const Reference< XMouseListener >& rxListener )
+void UnoControl::addMouseListener( const Reference< XMouseListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -906,7 +905,7 @@ void UnoControl::addMouseListener( const Reference< XMouseListener >& rxListener
         xPeerWindow->addMouseListener( &maMouseListeners);
 }
 
-void UnoControl::removeMouseListener( const Reference< XMouseListener >& rxListener )
+void UnoControl::removeMouseListener( const Reference< XMouseListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -919,7 +918,7 @@ void UnoControl::removeMouseListener( const Reference< XMouseListener >& rxListe
         xPeerWindow->removeMouseListener( &maMouseListeners );
 }
 
-void UnoControl::addMouseMotionListener( const Reference< XMouseMotionListener >& rxListener )
+void UnoControl::addMouseMotionListener( const Reference< XMouseMotionListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -932,7 +931,7 @@ void UnoControl::addMouseMotionListener( const Reference< XMouseMotionListener >
         xPeerWindow->addMouseMotionListener( &maMouseMotionListeners);
 }
 
-void UnoControl::removeMouseMotionListener( const Reference< XMouseMotionListener >& rxListener )
+void UnoControl::removeMouseMotionListener( const Reference< XMouseMotionListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -945,7 +944,7 @@ void UnoControl::removeMouseMotionListener( const Reference< XMouseMotionListene
         xPeerWindow->removeMouseMotionListener( &maMouseMotionListeners );
 }
 
-void UnoControl::addPaintListener( const Reference< XPaintListener >& rxListener )
+void UnoControl::addPaintListener( const Reference< XPaintListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -958,7 +957,7 @@ void UnoControl::addPaintListener( const Reference< XPaintListener >& rxListener
         xPeerWindow->addPaintListener( &maPaintListeners);
 }
 
-void UnoControl::removePaintListener( const Reference< XPaintListener >& rxListener )
+void UnoControl::removePaintListener( const Reference< XPaintListener >& rxListener ) throw(RuntimeException, std::exception)
 {
     Reference< XWindow > xPeerWindow;
     {
@@ -972,7 +971,7 @@ void UnoControl::removePaintListener( const Reference< XPaintListener >& rxListe
 }
 
 // XView
-sal_Bool UnoControl::setGraphics( const Reference< XGraphics >& rDevice )
+sal_Bool UnoControl::setGraphics( const Reference< XGraphics >& rDevice ) throw(RuntimeException, std::exception)
 {
     Reference< XView > xView;
     {
@@ -984,18 +983,18 @@ sal_Bool UnoControl::setGraphics( const Reference< XGraphics >& rDevice )
     return !xView.is() || xView->setGraphics( rDevice );
 }
 
-Reference< XGraphics > UnoControl::getGraphics(  )
+Reference< XGraphics > UnoControl::getGraphics(  ) throw(RuntimeException, std::exception)
 {
     return mxGraphics;
 }
 
-awt::Size UnoControl::getSize(  )
+awt::Size UnoControl::getSize(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     return awt::Size( maComponentInfos.nWidth, maComponentInfos.nHeight );
 }
 
-void UnoControl::draw( sal_Int32 x, sal_Int32 y )
+void UnoControl::draw( sal_Int32 x, sal_Int32 y ) throw(RuntimeException, std::exception)
 {
     Reference< XWindowPeer > xDrawPeer;
     Reference< XView > xDrawPeerView;
@@ -1024,7 +1023,7 @@ void UnoControl::draw( sal_Int32 x, sal_Int32 y )
         xDrawPeer->dispose();
 }
 
-void UnoControl::setZoom( float fZoomX, float fZoomY )
+void UnoControl::setZoom( float fZoomX, float fZoomY ) throw(RuntimeException, std::exception)
 {
     Reference< XView > xView;
     {
@@ -1040,14 +1039,14 @@ void UnoControl::setZoom( float fZoomX, float fZoomY )
 }
 
 // XControl
-void UnoControl::setContext( const Reference< XInterface >& rxContext )
+void UnoControl::setContext( const Reference< XInterface >& rxContext ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
     mxContext = rxContext;
 }
 
-Reference< XInterface > UnoControl::getContext(  )
+Reference< XInterface > UnoControl::getContext(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
@@ -1079,7 +1078,7 @@ void UnoControl::peerCreated()
         xWindow->addPaintListener( &maPaintListeners );
 }
 
-void UnoControl::createPeer( const Reference< XToolkit >& rxToolkit, const Reference< XWindowPeer >& rParentPeer )
+void UnoControl::createPeer( const Reference< XToolkit >& rxToolkit, const Reference< XWindowPeer >& rParentPeer ) throw(RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( GetMutex() );
     if ( !mxModel.is() )
@@ -1321,13 +1320,13 @@ void UnoControl::createPeer( const Reference< XToolkit >& rxToolkit, const Refer
     }
 }
 
-Reference< XWindowPeer > UnoControl::getPeer()
+Reference< XWindowPeer > UnoControl::getPeer() throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     return mxPeer;
 }
 
-sal_Bool UnoControl::setModel( const Reference< XControlModel >& rxModel )
+sal_Bool UnoControl::setModel( const Reference< XControlModel >& rxModel ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
 
@@ -1365,17 +1364,17 @@ sal_Bool UnoControl::setModel( const Reference< XControlModel >& rxModel )
     return mxModel.is();
 }
 
-Reference< XControlModel > UnoControl::getModel(    )
+Reference< XControlModel > UnoControl::getModel(    ) throw(RuntimeException, std::exception)
 {
     return mxModel;
 }
 
-Reference< XView > UnoControl::getView(  )
+Reference< XView > UnoControl::getView(  ) throw(RuntimeException, std::exception)
 {
     return  static_cast< XView* >( this );
 }
 
-void UnoControl::setDesignMode( sal_Bool bOn )
+void UnoControl::setDesignMode( sal_Bool bOn ) throw(RuntimeException, std::exception)
 {
     ModeChangeEvent aModeChangeEvent;
 
@@ -1410,36 +1409,36 @@ void UnoControl::setDesignMode( sal_Bool bOn )
     maModeChangeListeners.notifyEach( &XModeChangeListener::modeChanged, aModeChangeEvent );
 }
 
-sal_Bool UnoControl::isDesignMode(  )
+sal_Bool UnoControl::isDesignMode(  ) throw(RuntimeException, std::exception)
 {
     return mbDesignMode;
 }
 
-sal_Bool UnoControl::isTransparent(  )
+sal_Bool UnoControl::isTransparent(  ) throw(RuntimeException, std::exception)
 {
     return false;
 }
 
 // XServiceInfo
-OUString UnoControl::getImplementationName(  )
+OUString UnoControl::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     OSL_FAIL( "This method should be overridden!" );
     return OUString();
 }
 
-sal_Bool UnoControl::supportsService( const OUString& rServiceName )
+sal_Bool UnoControl::supportsService( const OUString& rServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > UnoControl::getSupportedServiceNames(  )
+Sequence< OUString > UnoControl::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
     OUString sName( "com.sun.star.awt.UnoControl" );
     return Sequence< OUString >( &sName, 1 );
 }
 
 
-Reference< XAccessibleContext > SAL_CALL UnoControl::getAccessibleContext(  )
+Reference< XAccessibleContext > SAL_CALL UnoControl::getAccessibleContext(  ) throw (RuntimeException, std::exception)
 {
     // creation of the context will certainly require the SolarMutex ...
     SolarMutexGuard aSolarGuard;
@@ -1474,30 +1473,30 @@ Reference< XAccessibleContext > SAL_CALL UnoControl::getAccessibleContext(  )
     return xCurrentContext;
 }
 
-void SAL_CALL UnoControl::addModeChangeListener( const Reference< XModeChangeListener >& _rxListener )
+void SAL_CALL UnoControl::addModeChangeListener( const Reference< XModeChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     maModeChangeListeners.addInterface( _rxListener );
 }
 
-void SAL_CALL UnoControl::removeModeChangeListener( const Reference< XModeChangeListener >& _rxListener )
+void SAL_CALL UnoControl::removeModeChangeListener( const Reference< XModeChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( GetMutex() );
     maModeChangeListeners.removeInterface( _rxListener );
 }
 
-void SAL_CALL UnoControl::addModeChangeApproveListener( const Reference< XModeChangeApproveListener >& )
+void SAL_CALL UnoControl::addModeChangeApproveListener( const Reference< XModeChangeApproveListener >& ) throw (NoSupportException, RuntimeException, std::exception)
 {
     throw NoSupportException( );
 }
 
-void SAL_CALL UnoControl::removeModeChangeApproveListener( const Reference< XModeChangeApproveListener >&  )
+void SAL_CALL UnoControl::removeModeChangeApproveListener( const Reference< XModeChangeApproveListener >&  ) throw (NoSupportException, RuntimeException, std::exception)
 {
     throw NoSupportException( );
 }
 
 
-awt::Point SAL_CALL UnoControl::convertPointToLogic( const awt::Point& i_Point, ::sal_Int16 i_TargetUnit )
+awt::Point SAL_CALL UnoControl::convertPointToLogic( const awt::Point& i_Point, ::sal_Int16 i_TargetUnit ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     Reference< XUnitConversion > xPeerConversion;
     {
@@ -1510,7 +1509,7 @@ awt::Point SAL_CALL UnoControl::convertPointToLogic( const awt::Point& i_Point, 
 }
 
 
-awt::Point SAL_CALL UnoControl::convertPointToPixel( const awt::Point& i_Point, ::sal_Int16 i_SourceUnit )
+awt::Point SAL_CALL UnoControl::convertPointToPixel( const awt::Point& i_Point, ::sal_Int16 i_SourceUnit ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     Reference< XUnitConversion > xPeerConversion;
     {
@@ -1523,7 +1522,7 @@ awt::Point SAL_CALL UnoControl::convertPointToPixel( const awt::Point& i_Point, 
 }
 
 
-awt::Size SAL_CALL UnoControl::convertSizeToLogic( const awt::Size& i_Size, ::sal_Int16 i_TargetUnit )
+awt::Size SAL_CALL UnoControl::convertSizeToLogic( const awt::Size& i_Size, ::sal_Int16 i_TargetUnit ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     Reference< XUnitConversion > xPeerConversion;
     {
@@ -1536,7 +1535,7 @@ awt::Size SAL_CALL UnoControl::convertSizeToLogic( const awt::Size& i_Size, ::sa
 }
 
 
-awt::Size SAL_CALL UnoControl::convertSizeToPixel( const awt::Size& i_Size, ::sal_Int16 i_SourceUnit )
+awt::Size SAL_CALL UnoControl::convertSizeToPixel( const awt::Size& i_Size, ::sal_Int16 i_SourceUnit ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     Reference< XUnitConversion > xPeerConversion;
     {
@@ -1549,7 +1548,7 @@ awt::Size SAL_CALL UnoControl::convertSizeToPixel( const awt::Size& i_Size, ::sa
 }
 
 
-uno::Reference< awt::XStyleSettings > SAL_CALL UnoControl::getStyleSettings()
+uno::Reference< awt::XStyleSettings > SAL_CALL UnoControl::getStyleSettings() throw (RuntimeException, std::exception)
 {
     Reference< awt::XStyleSettingsSupplier > xPeerSupplier;
     {

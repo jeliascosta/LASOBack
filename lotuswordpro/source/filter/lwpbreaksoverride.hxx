@@ -69,7 +69,7 @@ class LwpBreaksOverride : public LwpOverride
 
 public:
     LwpBreaksOverride();
-    virtual ~LwpBreaksOverride() override;
+    virtual ~LwpBreaksOverride();
 
     virtual LwpBreaksOverride* clone() const override;
 
@@ -133,7 +133,7 @@ private:
     LwpBreaksOverride& operator=(const LwpBreaksOverride& rOther) = delete;
 
 private:
-    std::unique_ptr<LwpAtomHolder>  m_pNextStyle;
+    LwpAtomHolder       *m_pNextStyle;
 };
 
 inline bool LwpBreaksOverride::IsPageBreakBefore()

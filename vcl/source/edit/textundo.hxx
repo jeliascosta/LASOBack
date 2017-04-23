@@ -41,7 +41,7 @@ protected:
 
 public:
     explicit TextUndoManager( TextEngine* pTextEngine );
-    virtual ~TextUndoManager() override;
+    virtual ~TextUndoManager();
 
     using SfxUndoManager::Undo;
     virtual bool Undo() override;
@@ -65,7 +65,7 @@ protected:
 
 public:
     explicit            TextUndo( TextEngine* pTextEngine );
-    virtual             ~TextUndo() override;
+    virtual             ~TextUndo();
 
     TextEngine*         GetTextEngine() const   { return mpTextEngine; }
 

@@ -29,6 +29,17 @@
 
 namespace svx
 {
+    //= ToolboxButtonColorUpdater
+
+    /* Note:
+       The initial color shown on the button is set in /core/svx/source/tbxctrls/tbxcolorupdate.cxx
+       (ToolboxButtonColorUpdater::ToolboxButtonColorUpdater()) .
+       The initial color used by the button is set in /core/svx/source/tbxctrls/tbcontrl.cxx
+       (SvxColorToolBoxControl::SvxColorToolBoxControl())
+       and in case of writer for text(background)color also in /core/sw/source/uibase/docvw/edtwin.cxx
+       (SwEditWin::m_aTextBackColor and SwEditWin::m_aTextColor)
+     */
+
     ToolboxButtonColorUpdater::ToolboxButtonColorUpdater(
         sal_uInt16 nId, sal_uInt16 nTbxBtnId, ToolBox* pToolBox)
         : mnBtnId(nTbxBtnId)
@@ -48,12 +59,11 @@ namespace svx
                 Update(COL_BLUE);
                 break;
             case SID_ATTR_CHAR_COLOR_BACKGROUND:
-            case SID_ATTR_CHAR_BACK_COLOR:
             case SID_BACKGROUND_COLOR:
                 Update(COL_YELLOW);
                 break;
             case SID_ATTR_LINE_COLOR:
-                Update(COL_DEFAULT_SHAPE_STROKE);
+                Update(COL_BLACK);
                 break;
             case SID_ATTR_FILL_COLOR:
                 Update(COL_DEFAULT_SHAPE_FILLING);
@@ -68,7 +78,7 @@ namespace svx
 
     void ToolboxButtonColorUpdater::Update(const Color& rColor, bool bForceUpdate)
     {
-        Image aImage(mpTbx->GetItemImage(mnBtnId));
+        Image aImage(mpTbx->GetItemImageOriginal(mnBtnId));
         Size aItemSize(mpTbx->GetItemContentSize(mnBtnId));
 
         const bool bSizeChanged = (maBmpSize != aItemSize);
@@ -95,7 +105,7 @@ namespace svx
             long nWidth = std::min(aItemSize.Width(), aSource.GetSizePixel().Width());
             long nHeight = std::min(aItemSize.Height(), aSource.GetSizePixel().Height());
 
-            tools::Rectangle aRect(Point(0, 0), Size(nWidth, nHeight));
+            Rectangle aRect(Point(0, 0), Size(nWidth, nHeight));
 
             aBmpEx.CopyPixel( aRect, aRect, &aSource );
 
@@ -149,9 +159,9 @@ namespace svx
 
                 if (maBmpSize.Width() == maBmpSize.Height())
                     // tdf#84985 align color bar with icon bottom edge; integer arithmetic e.g. 26 - 26/4 <> 26 * 3/4
-                    maUpdRect = tools::Rectangle(Point( 0, maBmpSize.Height() - maBmpSize.Height() / 4), Size(maBmpSize.Width(), maBmpSize.Height() / 4));
+                    maUpdRect = Rectangle(Point( 0, maBmpSize.Height() - maBmpSize.Height() / 4), Size(maBmpSize.Width(), maBmpSize.Height() / 4));
                 else
-                    maUpdRect = tools::Rectangle(Point( maBmpSize.Height() + 2, 2), Point(maBmpSize.Width() - 3, maBmpSize.Height() - 3));
+                    maUpdRect = Rectangle(Point( maBmpSize.Height() + 2, 2), Point(maBmpSize.Width() - 3, maBmpSize.Height() - 3));
 
                 pBmpAcc->DrawRect(maUpdRect);
 

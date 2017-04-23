@@ -66,7 +66,7 @@ namespace basprov
     // XBrowseNode
 
 
-    OUString BasicLibraryNodeImpl::getName(  )
+    OUString BasicLibraryNodeImpl::getName(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -74,7 +74,7 @@ namespace basprov
     }
 
 
-    Sequence< Reference< browse::XBrowseNode > > BasicLibraryNodeImpl::getChildNodes(  )
+    Sequence< Reference< browse::XBrowseNode > > BasicLibraryNodeImpl::getChildNodes(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -106,7 +106,7 @@ namespace basprov
     }
 
 
-    sal_Bool BasicLibraryNodeImpl::hasChildNodes(  )
+    sal_Bool BasicLibraryNodeImpl::hasChildNodes(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -118,7 +118,7 @@ namespace basprov
     }
 
 
-    sal_Int16 BasicLibraryNodeImpl::getType(  )
+    sal_Int16 BasicLibraryNodeImpl::getType(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 

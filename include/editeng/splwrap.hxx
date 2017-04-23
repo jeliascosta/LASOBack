@@ -74,28 +74,28 @@ private:
 
 public:
     SvxSpellWrapper( vcl::Window* pWn,
-                     const bool bStart, const bool bIsAllRight );
+                     const bool bStart = false, const bool bIsAllRight = false );
     SvxSpellWrapper( vcl::Window* pWn,
                      css::uno::Reference< css::linguistic2::XHyphenator >  &xHyphenator,
-                     const bool bStart, const bool bOther );
+                     const bool bStart = false, const bool bOther = false );
 
     virtual ~SvxSpellWrapper();
 
     static sal_Int16    CheckSpellLang(
-                            css::uno::Reference< css::linguistic2::XSpellChecker1 > const & xSpell,
+                            css::uno::Reference< css::linguistic2::XSpellChecker1 >  xSpell,
                             sal_Int16 nLang );
     static sal_Int16    CheckHyphLang(
-                            css::uno::Reference< css::linguistic2::XHyphenator >const & xHyph,
+                            css::uno::Reference< css::linguistic2::XHyphenator >  xHyph,
                             sal_Int16 nLang );
 
     static void         ShowLanguageErrors();
 
     void            SpellDocument();        // Perform Spell Checking
-    bool     IsStartDone(){ return bStartDone; }
-    bool     IsEndDone(){ return bEndDone; }
-    bool     IsHyphen(){ return bHyphen; } // Split instead of Spell check
-    void     SetHyphen() { bHyphen = true; }
-    bool     IsAllRight()        { return bAllRight; }
+    inline bool     IsStartDone(){ return bStartDone; }
+    inline bool     IsEndDone(){ return bEndDone; }
+    inline bool     IsHyphen(){ return bHyphen; } // Split instead of Spell check
+    inline void     SetHyphen() { bHyphen = true; }
+    inline bool     IsAllRight()        { return bAllRight; }
 
 protected:
     const css::uno::Reference< css::uno::XInterface >&

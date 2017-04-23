@@ -41,7 +41,7 @@ private:
 
 public:
     BezierObjectBar(ViewShell* pSdViewShell, View* pSdView);
-    virtual ~BezierObjectBar() override;
+    virtual ~BezierObjectBar();
 
     void GetAttrState(SfxItemSet& rSet);
     void Execute(SfxRequest &rReq);

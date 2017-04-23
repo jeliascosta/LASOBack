@@ -20,9 +20,9 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCTABLE_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCTABLE_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 
-#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleTable.hpp>
 #include "UNOXWrapper.h"
 
@@ -47,20 +47,13 @@ public:
     BEGIN_COM_MAP(CAccTable)
     COM_INTERFACE_ENTRY(IAccessibleTable)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
-    static HRESULT WINAPI SmartQI_(void* pv,
+    static HRESULT WINAPI _SmartQI(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return static_cast<CAccTable*>(pv)->SmartQI(iid,ppvObject);
+        return ((CAccTable*)pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -76,101 +69,101 @@ public:
     // IAccessibleTable
 
     // Gets accessible table cell.
-    STDMETHOD(get_accessibleAt)(long row, long column, IUnknown * * accessible) override;
+    STDMETHOD(get_accessibleAt)(long row, long column, IUnknown * * accessible);
 
     // Gets accessible table caption.
-    STDMETHOD(get_caption)(IUnknown * * accessible) override;
+    STDMETHOD(get_caption)(IUnknown * * accessible);
 
     // Gets accessible column description (as string).
-    STDMETHOD(get_columnDescription)(long column, BSTR * description) override;
+    STDMETHOD(get_columnDescription)(long column, BSTR * description);
 
     // Gets number of columns spanned by table cell.
-    STDMETHOD(get_columnExtentAt)(long row, long column, long * nColumnsSpanned) override;
+    STDMETHOD(get_columnExtentAt)(long row, long column, long * nColumnsSpanned);
 
     // Gets accessible column header.
-    STDMETHOD(get_columnHeader)(IAccessibleTable __RPC_FAR *__RPC_FAR *accessibleTable, long *startingRowIndex) override;
+    STDMETHOD(get_columnHeader)(IAccessibleTable __RPC_FAR *__RPC_FAR *accessibleTable, long *startingRowIndex);
 
     // Gets total number of columns in table.
-    STDMETHOD(get_nColumns)(long * columnCount) override;
+    STDMETHOD(get_nColumns)(long * columnCount);
 
     // Gets total number of rows in table.
-    STDMETHOD(get_nRows)(long * rowCount) override;
+    STDMETHOD(get_nRows)(long * rowCount);
 
     // Gets total number of selected columns.
-    STDMETHOD(get_nSelectedColumns)(long * columnCount) override;
+    STDMETHOD(get_nSelectedColumns)(long * columnCount);
 
     // Gets total number of selected rows.
-    STDMETHOD(get_nSelectedRows)(long * rowCount) override;
+    STDMETHOD(get_nSelectedRows)(long * rowCount);
 
     // Gets accessible row description (as string).
-    STDMETHOD(get_rowDescription)(long row, BSTR * description) override;
+    STDMETHOD(get_rowDescription)(long row, BSTR * description);
 
     // Gets number of rows spanned by a table cell.
-    STDMETHOD(get_rowExtentAt)(long row, long column, long * nRowsSpanned) override;
+    STDMETHOD(get_rowExtentAt)(long row, long column, long * nRowsSpanned);
 
     // Gets accessible row header.
-    STDMETHOD(get_rowHeader)(IAccessibleTable __RPC_FAR *__RPC_FAR *accessibleTable, long *startingColumnIndex) override;
+    STDMETHOD(get_rowHeader)(IAccessibleTable __RPC_FAR *__RPC_FAR *accessibleTable, long *startingColumnIndex);
 
     // Gets list of row indexes currently selected (0-based).
-    STDMETHOD(get_selectedRows)(long maxRows, long **rows, long * nRows) override;
+    STDMETHOD(get_selectedRows)(long maxRows, long **rows, long * nRows);
 
     // Gets list of column indexes currently selected (0-based).
-    STDMETHOD(get_selectedColumns)(long maxColumns, long **columns, long * numColumns) override;
+    STDMETHOD(get_selectedColumns)(long maxColumns, long **columns, long * numColumns);
 
     // Gets accessible table summary.
-    STDMETHOD(get_summary)(IUnknown * * accessible) override;
+    STDMETHOD(get_summary)(IUnknown * * accessible);
 
     // Determines if table column is selected.
-    STDMETHOD(get_isColumnSelected)(long column, unsigned char * isSelected) override;
+    STDMETHOD(get_isColumnSelected)(long column, unsigned char * isSelected);
 
     // Determines if table row is selected.
-    STDMETHOD(get_isRowSelected)(long row, unsigned char * isSelected) override;
+    STDMETHOD(get_isRowSelected)(long row, unsigned char * isSelected);
 
     // Determines if table cell is selected.
-    STDMETHOD(get_isSelected)(long row, long column, unsigned char * isSelected) override;
+    STDMETHOD(get_isSelected)(long row, long column, unsigned char * isSelected);
 
     // Selects a row and unselect all previously selected rows.
-    STDMETHOD(selectRow)(long row ) override;
+    STDMETHOD(selectRow)(long row );
 
 
     // Selects a column and unselect all previously selected columns.
 
-    STDMETHOD(selectColumn)(long column) override;
+    STDMETHOD(selectColumn)(long column);
 
     // Unselects one row, leaving other selected rows selected (if any).
-    STDMETHOD(unselectRow)(long row) override;
+    STDMETHOD(unselectRow)(long row);
 
     // Unselects one column, leaving other selected columns selected (if any).
-    STDMETHOD(unselectColumn)(long column) override;
+    STDMETHOD(unselectColumn)(long column);
 
     //get Column index
-    STDMETHOD(get_columnIndex)(long childIndex, long * columnIndex) override;
+    STDMETHOD(get_columnIndex)(long childIndex, long * columnIndex);
 
-    STDMETHOD(get_rowIndex)(long childIndex, long * rowIndex) override;
+    STDMETHOD(get_rowIndex)(long childIndex, long * rowIndex);
 
-    STDMETHOD(get_childIndex)(long rowIndex,long columnIndex, long * childIndex) override;
+    STDMETHOD(get_childIndex)(long rowIndex,long columnIndex, long * childIndex);
 
-    STDMETHOD(get_nSelectedChildren)(long *childCount) override;
+    STDMETHOD(get_nSelectedChildren)(long *childCount);
 
-    STDMETHOD(get_selectedChildren)(long maxChildren, long **children, long *nChildren) override;
+    STDMETHOD(get_selectedChildren)(long maxChildren, long **children, long *nChildren);
 
     STDMETHOD(get_rowColumnExtentsAtIndex)( long index,
                                             long  *row,
                                             long  *column,
                                             long  *rowExtents,
                                             long  *columnExtents,
-                                            boolean  *isSelected) override;
+                                            boolean  *isSelected) ;
 
-    STDMETHOD(get_modelChange)(IA2TableModelChange  *modelChange) override;
+    STDMETHOD(get_modelChange)(IA2TableModelChange  *modelChange);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface) override;
+    STDMETHOD(put_XInterface)(hyper pXInterface);
 
 private:
 
     css::uno::Reference<css::accessibility::XAccessibleTable> pRXTable;
 
-    css::accessibility::XAccessibleTable* GetXInterface()
+    inline css::accessibility::XAccessibleTable* GetXInterface()
     {
         return pRXTable.get();
     }

@@ -23,7 +23,7 @@ private:
         OUString aExt = "." + OUString::createFromAscii(pFormat->pName);
         utl::TempFile aTempFile(OUString(), true, &aExt);
         aTempFile.EnableKillingFile();
-        exportTo(xDocShRef.get(), pFormat, aTempFile);
+        exportTo(xDocShRef, pFormat, aTempFile);
         return parseHtml(aTempFile);
     }
 

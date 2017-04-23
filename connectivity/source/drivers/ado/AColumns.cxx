@@ -46,7 +46,7 @@ sdbcx::ObjectType OColumns::createObject(const OUString& _rName)
 }
 
 
-void OColumns::impl_refresh()
+void OColumns::impl_refresh() throw(RuntimeException)
 {
     m_aCollection.Refresh();
 }
@@ -59,9 +59,9 @@ Reference< XPropertySet > OColumns::createDescriptor()
 // XAppend
 sdbcx::ObjectType OColumns::appendObject( const OUString&, const Reference< XPropertySet >& descriptor )
 {
-    OAdoColumn* pColumn = nullptr;
+    OAdoColumn* pColumn = NULL;
     Reference< XPropertySet > xColumn;
-    if ( !getImplementation( pColumn, descriptor ) || pColumn == nullptr )
+    if ( !getImplementation( pColumn, descriptor ) || pColumn == NULL )
     {
         // m_pConnection->throwGenericSQLException( STR_INVALID_COLUMN_DESCRIPTOR_ERROR,static_cast<XTypeProvider*>(this) );
         pColumn = new OAdoColumn(isCaseSensitive(),m_pConnection);
@@ -84,9 +84,9 @@ sdbcx::ObjectType OColumns::appendObject( const OUString&, const Reference< XPro
     pColumn->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_TYPENAME)) >>= sTypeName;
 
     const OTypeInfoMap* pTypeInfoMap = m_pConnection->getTypeInfo();
-    ::comphelper::UStringMixEqual aCase(false);
+    ::comphelper::UStringMixEqual aCase(sal_False);
     // search for typeinfo where the typename is equal sTypeName
-    OTypeInfoMap::const_iterator aFind = std::find_if(pTypeInfoMap->begin(), pTypeInfoMap->end(),
+    OTypeInfoMap::const_iterator aFind = ::std::find_if(pTypeInfoMap->begin(), pTypeInfoMap->end(),
         [&aCase, &sTypeName] (const OTypeInfoMap::value_type& typeInfo) {
             return aCase(typeInfo.second->getDBName(), sTypeName);
         });
@@ -94,7 +94,7 @@ sdbcx::ObjectType OColumns::appendObject( const OUString&, const Reference< XPro
     if ( aFind != pTypeInfoMap->end() ) // change column type if necessary
         aColumn.put_Type(aFind->first);
 
-    if ( SUCCEEDED(static_cast<ADOColumns*>(m_aCollection)->Append(OLEVariant(aColumn.get_Name()),aColumn.get_Type(),aColumn.get_DefinedSize())) )
+    if ( SUCCEEDED(((ADOColumns*)m_aCollection)->Append(OLEVariant(aColumn.get_Name()),aColumn.get_Type(),aColumn.get_DefinedSize())) )
     {
         WpADOColumn aAddedColumn = m_aCollection.GetItem(OLEVariant(aColumn.get_Name()));
         if ( aAddedColumn.IsValid() )

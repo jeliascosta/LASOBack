@@ -24,7 +24,6 @@
 
 #include <rtl/ustring.hxx>
 
-#include <tools/poly.hxx>
 #include <tools/solar.h>
 
 #include <vcl/salgtype.hxx>
@@ -78,7 +77,7 @@ public:
     virtual void SetFillColor( SalColor nSalColor ) = 0;
 
     // enable/disable XOR drawing
-    virtual void SetXORMode( bool bSet ) = 0;
+    virtual void SetXORMode( bool bSet, bool bInvertOnly ) = 0;
 
     // set line color for raster operations
     virtual void SetROPLineColor( SalROPColor nROPColor ) = 0;
@@ -112,18 +111,18 @@ public:
     virtual bool drawPolyLineBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const PolyFlags* pFlgAry ) = 0;
+                const sal_uInt8* pFlgAry ) = 0;
 
     virtual bool drawPolygonBezier(
                 sal_uInt32 nPoints,
                 const SalPoint* pPtAry,
-                const PolyFlags* pFlgAry ) = 0;
+                const sal_uInt8* pFlgAry ) = 0;
 
     virtual bool drawPolyPolygonBezier(
                 sal_uInt32 nPoly,
                 const sal_uInt32* pPoints,
                 const SalPoint* const* pPtAry,
-                const PolyFlags* const* pFlgAry ) = 0;
+                const sal_uInt8* const* pFlgAry ) = 0;
 
     // CopyArea --> No RasterOp, but ClipRegion
     virtual void copyArea(

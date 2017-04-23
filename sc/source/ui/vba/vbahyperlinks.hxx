@@ -98,31 +98,30 @@ typedef CollTestImplHelper< ov::excel::XHyperlinks > ScVbaHyperlinks_BASE;
 class ScVbaHyperlinks : private detail::ScVbaHlinkContainerMember, public ScVbaHyperlinks_BASE
 {
 public:
-    /// @throws css::uno::RuntimeException
     explicit ScVbaHyperlinks(
         const css::uno::Reference< ov::XHelperInterface >& rxParent,
-        const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+        const css::uno::Reference< css::uno::XComponentContext >& rxContext ) throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
     explicit ScVbaHyperlinks(
         const css::uno::Reference< ov::XHelperInterface >& rxParent,
         const css::uno::Reference< css::uno::XComponentContext >& rxContext,
-        const ScVbaHyperlinksRef& rxSheetHlinks, const ScRangeList& rScRanges );
+        const ScVbaHyperlinksRef& rxSheetHlinks, const ScRangeList& rScRanges ) throw (css::uno::RuntimeException);
 
-    virtual ~ScVbaHyperlinks() override;
+    virtual ~ScVbaHyperlinks();
 
     // XHyperlinks
     virtual css::uno::Reference< ov::excel::XHyperlink > SAL_CALL Add(
         const css::uno::Any& rAnchor, const css::uno::Any& rAddress, const css::uno::Any& rSubAddress,
-        const css::uno::Any& rScreenTip, const css::uno::Any& rTextToDisplay ) override;
+        const css::uno::Any& rScreenTip, const css::uno::Any& rTextToDisplay )
+            throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL Delete() override;
+    virtual void SAL_CALL Delete() throw (css::uno::RuntimeException, std::exception) override;
 
     // XEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
 
     // ScVbaCollectionBase
     virtual css::uno::Any createCollectionObject( const css::uno::Any& rSource ) override;

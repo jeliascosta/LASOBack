@@ -51,12 +51,12 @@ public:
                                 const css::util::URL& rURL,
                                 SfxStateCache* pStateCache, const SfxSlot* pSlot );
 
-    virtual void SAL_CALL           statusChanged( const css::frame::FeatureStateEvent& Event ) override;
-    virtual void SAL_CALL           disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL           statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     void                    Release();
     const css::frame::FeatureStateEvent& GetStatus() const { return aStatus;}
-    sal_Int16               Dispatch( const css::uno::Sequence < css::beans::PropertyValue >& aProps, bool bForceSynchron );
+    void                    Dispatch( const css::uno::Sequence < css::beans::PropertyValue >& aProps, bool bForceSynchron = false );
 };
 
 class SfxStateCache
@@ -77,7 +77,7 @@ friend class BindDispatch_Impl;
 
 private:
                             SfxStateCache( const SfxStateCache& rOrig ) = delete;
-    void                    SetState_Impl( SfxItemState, const SfxPoolItem*, bool bMaybeDirty );
+    void                    SetState_Impl( SfxItemState, const SfxPoolItem*, bool bMaybeDirty=false );
 
 public:
                             SfxStateCache( sal_uInt16 nFuncId );
@@ -89,15 +89,15 @@ public:
     const SfxSlotServer*    GetSlotServer( SfxDispatcher &rDispat )
                             { return GetSlotServer( rDispat, css::uno::Reference< css::frame::XDispatchProvider > () ); }
     css::uno::Reference< css::frame::XDispatch >          GetDispatch() const;
-    sal_Int16               Dispatch( const SfxItemSet* pSet, bool bForceSynchron );
+    void                    Dispatch( const SfxItemSet* pSet, bool bForceSynchron = false );
     bool                    IsControllerDirty() const
                             { return bCtrlDirty; }
     void                    ClearCache();
 
     void                    SetState( SfxItemState, const SfxPoolItem*, bool bMaybeDirty=false );
-    void                    SetCachedState(bool bAlways);
+    void                    SetCachedState(bool bAlways = false);
     void                    Invalidate( bool bWithSlot );
-    void                    SetVisibleState( bool bShow );
+    void                    SetVisibleState( bool bShow=true );
 
     SfxControllerItem*      ChangeItemLink( SfxControllerItem* pNewBinding );
     SfxControllerItem*      GetItemLink() const;

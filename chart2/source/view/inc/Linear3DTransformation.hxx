@@ -32,16 +32,20 @@ class Linear3DTransformation : public ::cppu::WeakImplHelper<
 {
 public:
     Linear3DTransformation( const css::drawing::HomogenMatrix& rHomMatrix, bool bSwapXAndY  );
-    virtual ~Linear3DTransformation() override;
+    virtual ~Linear3DTransformation();
 
     // ____ XTransformation ____
     /// @see css::chart2::XTransformation
     virtual css::uno::Sequence< double > SAL_CALL transform(
-        const css::uno::Sequence< double >& rSourceValues ) override;
+        const css::uno::Sequence< double >& rSourceValues )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
     /// @see css::chart2::XTransformation
-    virtual sal_Int32 SAL_CALL getSourceDimension() override;
+    virtual sal_Int32 SAL_CALL getSourceDimension()
+        throw (css::uno::RuntimeException, std::exception) override;
     /// @see css::chart2::XTransformation
-    virtual sal_Int32 SAL_CALL getTargetDimension() override;
+    virtual sal_Int32 SAL_CALL getTargetDimension()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::drawing::HomogenMatrix    m_Matrix;

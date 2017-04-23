@@ -73,7 +73,7 @@ static OUString getNormDicEntry_Impl(const OUString &rText)
         }
         aTmp = aTmp2.makeStringAndClear();
     }
-    return aTmp.replaceAll("=", "");
+    return comphelper::string::remove(aTmp, '=');
 }
 
 // Compare Dictionary Entry  result
@@ -129,13 +129,13 @@ void SvxNewDictionaryDialog::dispose()
 }
 
 
-IMPL_LINK_NOARG(SvxNewDictionaryDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxNewDictionaryDialog, OKHdl_Impl, Button*, void)
 {
+    OUString sDict = comphelper::string::stripEnd(pNameEdit->GetText(), ' ');
+    // add extension for personal dictionaries
+    sDict += ".dic";
 
-  // add extension for personal dictionaries
-    OUString sDict = comphelper::string::stripEnd(pNameEdit->GetText(), ' ') + ".dic";
-
-    Reference< XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
+    Reference< XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
 
     Sequence< Reference< XDictionary >  > aDics;
     if (xDicList.is())
@@ -152,7 +152,7 @@ IMPL_LINK_NOARG(SvxNewDictionaryDialog, OKHdl_Impl, Button*, void)
     if ( bFound )
     {
         // duplicate names?
-        ScopedVclPtrInstance<MessageDialog>(this, CUI_RESSTR(RID_SVXSTR_OPT_DOUBLE_DICTS), VclMessageType::Info)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(this, CUI_RESSTR(RID_SVXSTR_OPT_DOUBLE_DICTS), VCL_MESSAGE_INFO)->Execute();
         pNameEdit->GrabFocus();
         return;
     }
@@ -200,7 +200,7 @@ IMPL_LINK_NOARG(SvxNewDictionaryDialog, OKHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SvxNewDictionaryDialog, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxNewDictionaryDialog, ModifyHdl_Impl, Edit&, void)
 {
     if ( !pNameEdit->GetText().isEmpty() )
         pOKBtn->Enable();
@@ -238,8 +238,8 @@ SvxEditDictionaryDialog::SvxEditDictionaryDialog(
     get(pDeletePB,"delete");
 
     sNew=pNewReplacePB->GetText();
-    if (LinguMgr::GetDictionaryList().is())
-        aDics = LinguMgr::GetDictionaryList()->getDictionaries();
+    if (SvxGetDictionaryList().is())
+        aDics = SvxGetDictionaryList()->getDictionaries();
 
     pWordsLB->SetSelectHdl(LINK(this, SvxEditDictionaryDialog, SelectHdl));
     pWordsLB->SetTabs(nStaticTabs);
@@ -421,7 +421,7 @@ void SvxEditDictionaryDialog::RemoveDictEntry(SvTreeListEntry* pEntry)
 }
 
 
-IMPL_LINK_NOARG(SvxEditDictionaryDialog, SelectBookHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvxEditDictionaryDialog, SelectBookHdl_Impl, ListBox&, void)
 {
     sal_Int32 nPos = pAllDictsLB->GetSelectEntryPos();
 
@@ -444,7 +444,7 @@ IMPL_LINK_NOARG(SvxEditDictionaryDialog, SelectBookHdl_Impl, ListBox&, void)
 }
 
 
-IMPL_LINK_NOARG(SvxEditDictionaryDialog, SelectLangHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SvxEditDictionaryDialog, SelectLangHdl_Impl, ListBox&, void)
 {
     sal_Int32 nDicPos = pAllDictsLB->GetSelectEntryPos();
     sal_Int32 nLang = pLangLB->GetSelectLanguage();
@@ -453,7 +453,7 @@ IMPL_LINK_NOARG(SvxEditDictionaryDialog, SelectLangHdl_Impl, ListBox&, void)
 
     if ( nLang != nOldLang )
     {
-        ScopedVclPtrInstance< MessageDialog > aBox(this, CUI_RES( RID_SVXSTR_CONFIRM_SET_LANGUAGE), VclMessageType::Question, VclButtonsType::YesNo);
+        ScopedVclPtrInstance< MessageDialog > aBox(this, CUI_RES( RID_SVXSTR_CONFIRM_SET_LANGUAGE), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
         OUString sTxt(aBox->get_primary_text());
         sTxt = sTxt.replaceFirst( "%1", pAllDictsLB->GetSelectEntry() );
         aBox->set_primary_text(sTxt);
@@ -532,7 +532,8 @@ void SvxEditDictionaryDialog::ShowWords_Impl( sal_uInt16 nId )
         sal_uLong nPos = GetLBInsertPos( aStr );
         if(pEntry[i]->isNegative())
         {
-            aStr += "\t" + pEntry[i]->getReplacementText();
+            aStr += "\t";
+            aStr += pEntry[i]->getReplacementText();
         }
         pWordsLB->InsertEntry(aStr, nullptr, false, nPos == TREELIST_ENTRY_NOTFOUND ?  TREELIST_APPEND : nPos);
     }
@@ -547,7 +548,7 @@ void SvxEditDictionaryDialog::ShowWords_Impl( sal_uInt16 nId )
 }
 
 
-IMPL_LINK(SvxEditDictionaryDialog, SelectHdl, SvTreeListBox*, pBox, void)
+IMPL_LINK_TYPED(SvxEditDictionaryDialog, SelectHdl, SvTreeListBox*, pBox, void)
 {
     if(!bDoNothing)
     {
@@ -572,12 +573,12 @@ IMPL_LINK(SvxEditDictionaryDialog, SelectHdl, SvTreeListBox*, pBox, void)
 };
 
 
-IMPL_LINK(SvxEditDictionaryDialog, NewDelButtonHdl, Button*, pBtn, void)
+IMPL_LINK_TYPED(SvxEditDictionaryDialog, NewDelButtonHdl, Button*, pBtn, void)
 {
     NewDelHdl(static_cast<PushButton*>(pBtn));
 }
 
-IMPL_LINK(SvxEditDictionaryDialog, NewDelActionHdl, SvxDictEdit&, rDictEdit, bool)
+IMPL_LINK_TYPED(SvxEditDictionaryDialog, NewDelActionHdl, SvxDictEdit&, rDictEdit, bool)
 {
     return NewDelHdl(&rDictEdit);
 }
@@ -587,7 +588,7 @@ bool SvxEditDictionaryDialog::NewDelHdl(void* pBtn)
 
     if(pBtn == pDeletePB)
     {
-        DBG_ASSERT(pEntry, "no entry selected");
+        DBG_ASSERT(pEntry, "keine Eintrag selektiert");
         OUString aStr;
 
         pWordED->SetText(aStr);
@@ -642,7 +643,8 @@ bool SvxEditDictionaryDialog::NewDelHdl(void* pBtn)
 
             if(pReplaceFT->IsVisible())
             {
-                sEntry += "\t" + aReplaceStr;
+                sEntry += "\t";
+                sEntry += aReplaceStr;
             }
 
             SvTreeListEntry* pNewEntry = nullptr;
@@ -677,7 +679,7 @@ bool SvxEditDictionaryDialog::NewDelHdl(void* pBtn)
 }
 
 
-IMPL_LINK(SvxEditDictionaryDialog, ModifyHdl, Edit&, rEdt, void)
+IMPL_LINK_TYPED(SvxEditDictionaryDialog, ModifyHdl, Edit&, rEdt, void)
 {
     OUString rEntry = rEdt.GetText();
 

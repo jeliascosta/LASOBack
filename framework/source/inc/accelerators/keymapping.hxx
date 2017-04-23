@@ -91,7 +91,8 @@ class KeyMapping
                     if the given identifier does not describe
                     a well known key code.
          */
-        sal_uInt16 mapIdentifierToCode(const OUString& sIdentifier);
+        sal_uInt16 mapIdentifierToCode(const OUString& sIdentifier)
+            throw(css::lang::IllegalArgumentException);
 
         /** @short  return a suitable key identifier
                     for the specified key code.

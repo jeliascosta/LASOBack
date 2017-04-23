@@ -31,7 +31,7 @@ class LatentStyleHandler
 
 public:
     LatentStyleHandler();
-    virtual ~LatentStyleHandler() override;
+    virtual ~LatentStyleHandler();
 
     const std::vector<css::beans::PropertyValue>& getAttributes() const;
 };

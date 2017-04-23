@@ -28,11 +28,12 @@ namespace connectivity
     namespace file
     {
         class OConnection;
-        class OOO_DLLPUBLIC_FILE OSQLAnalyzer final
+        class OOO_DLLPUBLIC_FILE OSQLAnalyzer
         {
-            typedef std::pair< ::rtl::Reference<OPredicateCompiler>,::rtl::Reference<OPredicateInterpreter> > TPredicates;
+            typedef ::std::list<OEvaluateSet*>      OEvaluateSetList;
+            typedef ::std::pair< ::rtl::Reference<OPredicateCompiler>,::rtl::Reference<OPredicateInterpreter> > TPredicates;
 
-            std::vector< TPredicates >        m_aSelectionEvaluations;
+            ::std::vector< TPredicates >        m_aSelectionEvaluations;
             ::rtl::Reference<OPredicateCompiler>        m_aCompiler;
             ::rtl::Reference<OPredicateInterpreter> m_aInterpreter;
             OConnection*                        m_pConnection;
@@ -44,14 +45,14 @@ namespace connectivity
 
         public:
             OSQLAnalyzer(OConnection* _pConnection);
-            ~OSQLAnalyzer();
-            static void * SAL_CALL operator new( size_t nSize )
+            virtual ~OSQLAnalyzer();
+            inline static void * SAL_CALL operator new( size_t nSize )
                 { return ::rtl_allocateMemory( nSize ); }
-            static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
+            inline static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
                 { return _pHint; }
-            static void SAL_CALL operator delete( void * pMem )
+            inline static void SAL_CALL operator delete( void * pMem )
                 { ::rtl_freeMemory( pMem ); }
-            static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
+            inline static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
                 {  }
 
             OConnection* getConnection() const { return m_pConnection; }
@@ -66,18 +67,18 @@ namespace connectivity
             */
             void bindParameterRow(OValueRefRow& _pRow);
 
-            void setIndexes(const css::uno::Reference< css::container::XNameAccess>& _xIndexes);
+            void setIndexes(const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess>& _xIndexes);
 
             void dispose();
             void start(OSQLParseNode* pSQLParseNode);
             bool hasRestriction() const;
             bool hasFunctions() const;
-            bool evaluateRestriction()   { return m_aInterpreter->start(); }
-            void setSelectionEvaluationResult(OValueRefRow& _pRow,const std::vector<sal_Int32>& _rColumnMapping);
+            inline bool evaluateRestriction()   { return m_aInterpreter->start(); }
+            void setSelectionEvaluationResult(OValueRefRow& _pRow,const ::std::vector<sal_Int32>& _rColumnMapping);
             void setOrigColumns(const css::uno::Reference< css::container::XNameAccess>& rCols);
             static OOperandAttr* createOperandAttr(sal_Int32 _nPos,
-                                                    const css::uno::Reference< css::beans::XPropertySet>& _xCol,
-                                                    const css::uno::Reference< css::container::XNameAccess>& _xIndexes);
+                                                    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet>& _xCol,
+                                                    const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess>& _xIndexes=nullptr);
         };
     }
 }

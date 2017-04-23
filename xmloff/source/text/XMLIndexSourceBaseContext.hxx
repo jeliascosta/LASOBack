@@ -75,7 +75,11 @@ enum IndexSourceParamEnum
  */
 class XMLIndexSourceBaseContext : public SvXMLImportContext
 {
+    const OUString sCreateFromChapter;
+    const OUString sIsRelativeTabstops;
+
     bool bUseLevelFormats;
+
     bool bChapterIndex;     /// chapter-wise or document index?
     bool bRelativeTabs;     /// tab stops relative to margin or indent?
 
@@ -94,7 +98,7 @@ public:
         css::uno::Reference<css::beans::XPropertySet> & rPropSet,
         bool bLevelFormats);
 
-    virtual ~XMLIndexSourceBaseContext() override;
+    virtual ~XMLIndexSourceBaseContext();
 
 protected:
 

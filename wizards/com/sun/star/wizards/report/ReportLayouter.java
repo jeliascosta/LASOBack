@@ -191,11 +191,11 @@ public class ReportLayouter
                     });
             if (m_nLandscapeState == 1)
             {
-                CurUnoDialog.getPeerConfiguration().setImageUrl(aOrientationImage, 1002);
+                CurUnoDialog.getPeerConfiguration().setImageUrl(aOrientationImage, 1002, 1003);
             }
             else
             {
-                CurUnoDialog.getPeerConfiguration().setImageUrl(aOrientationImage, 1000);
+                CurUnoDialog.getPeerConfiguration().setImageUrl(aOrientationImage, 1000, 1001);
             }
         }
         catch (Exception exception)
@@ -267,7 +267,7 @@ public class ReportLayouter
                         catch (com.sun.star.lang.IllegalArgumentException e)
                         {
                         }
-                        Helper.setUnoPropertyValue(aOrientationImage, PropertyNames.PROPERTY_IMAGEURL, CurUnoDialog.getWizardImageUrl(1002));
+                        Helper.setUnoPropertyValue(aOrientationImage, PropertyNames.PROPERTY_IMAGEURL, CurUnoDialog.getWizardImageUrl(1002, 1003));
 
                         break;
 
@@ -282,7 +282,7 @@ public class ReportLayouter
                         }
 
                         CurUnoDialog.setControlProperty("imgOrientation", PropertyNames.PROPERTY_IMAGEURL, Desktop.getBitmapPath(m_xMSF) + "/portrait.gif");
-                        Helper.setUnoPropertyValue(aOrientationImage, PropertyNames.PROPERTY_IMAGEURL, CurUnoDialog.getWizardImageUrl(1000));
+                        Helper.setUnoPropertyValue(aOrientationImage, PropertyNames.PROPERTY_IMAGEURL, CurUnoDialog.getWizardImageUrl(1000, 1001));
                         break;
 
                     default:

@@ -20,17 +20,10 @@
 #ifndef INCLUDED_OOX_PPT_TIMENODELISTCONTEXT_HXX
 #define INCLUDED_OOX_PPT_TIMENODELISTCONTEXT_HXX
 
-#include <com/sun/star/uno/Reference.hxx>
-#include <oox/core/contexthandler.hxx>
 #include <oox/core/fragmenthandler2.hxx>
 #include <oox/ppt/timenode.hxx>
-#include <sal/types.h>
 
-namespace com { namespace sun { namespace star {
-    namespace xml { namespace sax { class XFastAttributeList; } }
-} } }
-
-namespace oox { class AttributeList; }
+#include <com/sun/star/animations/XTimeContainer.hpp>
 
 namespace oox { namespace ppt {
 
@@ -38,7 +31,7 @@ namespace oox { namespace ppt {
     class TimeNodeContext : public ::oox::core::FragmentHandler2
     {
     public:
-        virtual ~TimeNodeContext() throw() override;
+        virtual ~TimeNodeContext() throw();
 
         static TimeNodeContext * SAL_CALL makeContext( ::oox::core::FragmentHandler2& rParent, sal_Int32  aElement, const css::uno::Reference< css::xml::sax::XFastAttributeList >& xAttribs, const TimeNodePtr & pNode );
 
@@ -56,7 +49,7 @@ class TimeNodeListContext : public ::oox::core::FragmentHandler2
 public:
     TimeNodeListContext( ::oox::core::FragmentHandler2& rParent, TimeNodePtrList & aList ) throw();
 
-    virtual ~TimeNodeListContext() throw() override;
+    virtual ~TimeNodeListContext() throw();
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;
 
 

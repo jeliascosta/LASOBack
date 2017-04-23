@@ -33,7 +33,6 @@
 
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 
 #include "shapeuno.hxx"
 #include "miscuno.hxx"
@@ -85,8 +84,8 @@ namespace
 {
     void lcl_initializeNotifier( SdrObject& _rSdrObj, ::cppu::OWeakObject& _rShape )
     {
-        std::shared_ptr<svx::IPropertyValueProvider> pProvider( new svx::PropertyValueProvider( _rShape, "Anchor" ) );
-        _rSdrObj.getShapePropertyChangeNotifier().registerProvider( svx::ShapeProperty::CalcDocAnchor, pProvider );
+        svx::PPropertyValueProvider pProvider( new svx::PropertyValueProvider( _rShape, "Anchor" ) );
+        _rSdrObj.getShapePropertyChangeNotifier().registerProvider( svx::eSpreadsheetAnchor, pProvider );
     }
 }
 
@@ -137,6 +136,7 @@ ScShapeObj::~ScShapeObj()
 // XInterface
 
 uno::Any SAL_CALL ScShapeObj::queryInterface( const uno::Type& rType )
+                                                throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ScShapeObj_Base::queryInterface( rType );
 
@@ -225,6 +225,7 @@ static uno::Reference<text::XTextRange> lcl_GetTextRange( const uno::Reference<u
 //  XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScShapeObj::getPropertySetInfo()
+                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -290,7 +291,7 @@ static ScRange lcl_GetAnchorCell( uno::Reference< drawing::XShape >& xShape, ScD
             if (rCaptionPoint.Y < 0)
                 rUnoPoint.Y += rCaptionPoint.Y;
         }
-        aReturn = pDoc->GetRange( nTab, tools::Rectangle( VCLPoint(rUnoPoint), VCLPoint(rUnoPoint) ));
+        aReturn = pDoc->GetRange( nTab, Rectangle( VCLPoint(rUnoPoint), VCLPoint(rUnoPoint) ));
     }
     else
     {
@@ -301,7 +302,7 @@ static ScRange lcl_GetAnchorCell( uno::Reference< drawing::XShape >& xShape, ScD
             if (rCaptionPoint.Y < 0)
                 rUnoPoint.Y += rCaptionPoint.Y;
         }
-        aReturn = pDoc->GetRange( nTab, tools::Rectangle( VCLPoint(rUnoPoint), VCLPoint(rUnoPoint) ));
+        aReturn = pDoc->GetRange( nTab, Rectangle( VCLPoint(rUnoPoint), VCLPoint(rUnoPoint) ));
     }
 
     return aReturn;
@@ -312,7 +313,7 @@ static awt::Point lcl_GetRelativePos( uno::Reference< drawing::XShape >& xShape,
 {
     awt::Point aUnoPoint;
     rRange = lcl_GetAnchorCell(xShape, pDoc, nTab, aUnoPoint, rUnoSize, rCaptionPoint);
-    tools::Rectangle aRect(pDoc->GetMMRect( rRange.aStart.Col(), rRange.aStart.Row(), rRange.aEnd.Col(), rRange.aEnd.Row(), rRange.aStart.Tab() ));
+    Rectangle aRect(pDoc->GetMMRect( rRange.aStart.Col(), rRange.aStart.Row(), rRange.aEnd.Col(), rRange.aEnd.Row(), rRange.aStart.Tab() ));
     Point aPoint = pDoc->IsNegativePage(nTab) ? aRect.TopRight() : aRect.TopLeft();
     aUnoPoint.X -= aPoint.X();
     aUnoPoint.Y -= aPoint.Y();
@@ -320,6 +321,9 @@ static awt::Point lcl_GetRelativePos( uno::Reference< drawing::XShape >& xShape,
 }
 
 void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const uno::Any& aValue)
+    throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+          lang::IllegalArgumentException, lang::WrappedTargetException,
+          uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -349,7 +353,7 @@ void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const 
                                 table::CellRangeAddress aAddress = xRangeAdd->getRangeAddress();
                                 if (nTab == aAddress.Sheet)
                                 {
-                                    tools::Rectangle aRect(pDoc->GetMMRect( static_cast<SCCOL>(aAddress.StartColumn), static_cast<SCROW>(aAddress.StartRow),
+                                    Rectangle aRect(pDoc->GetMMRect( static_cast<SCCOL>(aAddress.StartColumn), static_cast<SCROW>(aAddress.StartRow),
                                         static_cast<SCCOL>(aAddress.EndColumn), static_cast<SCROW>(aAddress.EndRow), aAddress.Sheet ));
                                     awt::Point aRelPoint;
                                     uno::Reference<drawing::XShape> xShape( mxShapeAgg, uno::UNO_QUERY );
@@ -414,7 +418,7 @@ void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const 
                                         ScDrawObjData aAnchor;
                                         aAnchor.maStart = ScAddress(aAddress.StartColumn, aAddress.StartRow, aAddress.Sheet);
                                         aAnchor.maStartOffset = Point(aRelPoint.X, aRelPoint.Y);
-                                        //Uno sets the Anchor in terms of the unrotated shape, not much we can do
+                                        //Uno sets the Anchor in terms of the unorotated shape, not much we can do
                                         //about that since uno also displays the shape geometry in terms of the unrotated
                                         //shape. #TODO think about changing the anchoring behaviour here too
                                         //Currently we've only got a start anchor, not an end-anchor, so generate that now
@@ -513,7 +517,7 @@ void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const 
                                         awt::Point aCaptionPoint;
                                         ScRange aRange;
                                         awt::Point aUnoPoint(lcl_GetRelativePos( xShape, pDoc, nTab, aRange, aUnoSize, aCaptionPoint ));
-                                        tools::Rectangle aRect(pDoc->GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(), aRange.aEnd.Col(), aRange.aEnd.Row(), aRange.aStart.Tab() ));
+                                        Rectangle aRect(pDoc->GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(), aRange.aEnd.Col(), aRange.aEnd.Row(), aRange.aStart.Tab() ));
                                         if (pDoc->IsNegativePage(nTab))
                                         {
                                             aUnoPoint.X = -nPos;
@@ -597,7 +601,7 @@ void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const 
                                         awt::Point aCaptionPoint;
                                         ScRange aRange;
                                         awt::Point aUnoPoint(lcl_GetRelativePos( xShape, pDoc, nTab, aRange, aUnoSize, aCaptionPoint ));
-                                        tools::Rectangle aRect(pDoc->GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(), aRange.aEnd.Col(), aRange.aEnd.Row(), aRange.aStart.Tab() ));
+                                        Rectangle aRect(pDoc->GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(), aRange.aEnd.Col(), aRange.aEnd.Row(), aRange.aStart.Tab() ));
                                         Point aPoint(aRect.TopRight());
                                         Point aEndPoint(aRect.BottomLeft());
                                         aUnoPoint.Y = nPos;
@@ -648,6 +652,8 @@ void SAL_CALL ScShapeObj::setPropertyValue(const OUString& aPropertyName, const 
 }
 
 uno::Any SAL_CALL ScShapeObj::getPropertyValue( const OUString& aPropertyName )
+    throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+          uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -832,6 +838,8 @@ uno::Any SAL_CALL ScShapeObj::getPropertyValue( const OUString& aPropertyName )
 
 void SAL_CALL ScShapeObj::addPropertyChangeListener( const OUString& aPropertyName,
                             const uno::Reference<beans::XPropertyChangeListener>& aListener)
+                            throw(beans::UnknownPropertyException,
+                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -854,6 +862,8 @@ void SAL_CALL ScShapeObj::addPropertyChangeListener( const OUString& aPropertyNa
 
 void SAL_CALL ScShapeObj::removePropertyChangeListener( const OUString& aPropertyName,
                             const uno::Reference<beans::XPropertyChangeListener>& aListener)
+                            throw(beans::UnknownPropertyException,
+                                    lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -864,6 +874,8 @@ void SAL_CALL ScShapeObj::removePropertyChangeListener( const OUString& aPropert
 
 void SAL_CALL ScShapeObj::addVetoableChangeListener( const OUString& aPropertyName,
                             const uno::Reference<beans::XVetoableChangeListener>& aListener)
+                            throw(beans::UnknownPropertyException,
+                                lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -874,6 +886,8 @@ void SAL_CALL ScShapeObj::addVetoableChangeListener( const OUString& aPropertyNa
 
 void SAL_CALL ScShapeObj::removeVetoableChangeListener( const OUString& aPropertyName,
                             const uno::Reference<beans::XVetoableChangeListener>& aListener)
+                            throw(beans::UnknownPropertyException,
+                                lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -885,6 +899,7 @@ void SAL_CALL ScShapeObj::removeVetoableChangeListener( const OUString& aPropert
 //  XPropertyState
 
 beans::PropertyState SAL_CALL ScShapeObj::getPropertyState( const OUString& aPropertyName )
+                                throw(beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -917,6 +932,7 @@ beans::PropertyState SAL_CALL ScShapeObj::getPropertyState( const OUString& aPro
 
 uno::Sequence<beans::PropertyState> SAL_CALL ScShapeObj::getPropertyStates(
                                 const uno::Sequence<OUString>& aPropertyNames )
+                            throw(beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -931,6 +947,8 @@ uno::Sequence<beans::PropertyState> SAL_CALL ScShapeObj::getPropertyStates(
 }
 
 void SAL_CALL ScShapeObj::setPropertyToDefault( const OUString& aPropertyName )
+    throw (beans::UnknownPropertyException, uno::RuntimeException,
+           std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -960,6 +978,8 @@ void SAL_CALL ScShapeObj::setPropertyToDefault( const OUString& aPropertyName )
 }
 
 uno::Any SAL_CALL ScShapeObj::getPropertyDefault( const OUString& aPropertyName )
+                                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -983,6 +1003,7 @@ uno::Any SAL_CALL ScShapeObj::getPropertyDefault( const OUString& aPropertyName 
 // XTextContent
 
 void SAL_CALL ScShapeObj::attach( const uno::Reference<text::XTextRange>& /* xTextRange */ )
+                                throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -990,6 +1011,7 @@ void SAL_CALL ScShapeObj::attach( const uno::Reference<text::XTextRange>& /* xTe
 }
 
 uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getAnchor()
+    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1014,7 +1036,7 @@ uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getAnchor()
                     if ( lcl_GetPageNum( pPage, *pModel, nTab ) )
                     {
                         Point aPos(pObj->GetCurrentBoundRect().TopLeft());
-                        ScRange aRange(pDoc->GetRange( nTab, tools::Rectangle( aPos, aPos ) ));
+                        ScRange aRange(pDoc->GetRange( nTab, Rectangle( aPos, aPos ) ));
 
                         //  anchor is always the cell
 
@@ -1030,7 +1052,7 @@ uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getAnchor()
 
 // XComponent
 
-void SAL_CALL ScShapeObj::dispose()
+void SAL_CALL ScShapeObj::dispose() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1041,6 +1063,7 @@ void SAL_CALL ScShapeObj::dispose()
 
 void SAL_CALL ScShapeObj::addEventListener(
                         const uno::Reference<lang::XEventListener>& xListener )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1051,6 +1074,7 @@ void SAL_CALL ScShapeObj::addEventListener(
 
 void SAL_CALL ScShapeObj::removeEventListener(
                         const uno::Reference<lang::XEventListener>& xListener )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1078,6 +1102,7 @@ static void lcl_CopyOneProperty( beans::XPropertySet& rDest, beans::XPropertySet
 void SAL_CALL ScShapeObj::insertTextContent( const uno::Reference<text::XTextRange>& xRange,
                                                 const uno::Reference<text::XTextContent>& xContent,
                                                 sal_Bool bAbsorb )
+                                    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1105,6 +1130,7 @@ void SAL_CALL ScShapeObj::insertTextContent( const uno::Reference<text::XTextRan
 }
 
 void SAL_CALL ScShapeObj::removeTextContent( const uno::Reference<text::XTextContent>& xContent )
+                                throw(container::NoSuchElementException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1119,6 +1145,7 @@ void SAL_CALL ScShapeObj::removeTextContent( const uno::Reference<text::XTextCon
 // Use own SvxUnoTextCursor subclass - everything is just passed to aggregated object
 
 uno::Reference<text::XTextCursor> SAL_CALL ScShapeObj::createTextCursor()
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1136,6 +1163,7 @@ uno::Reference<text::XTextCursor> SAL_CALL ScShapeObj::createTextCursor()
 
 uno::Reference<text::XTextCursor> SAL_CALL ScShapeObj::createTextCursorByRange(
                                     const uno::Reference<text::XTextRange>& aTextPosition )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1159,6 +1187,7 @@ uno::Reference<text::XTextCursor> SAL_CALL ScShapeObj::createTextCursorByRange(
 
 void SAL_CALL ScShapeObj::insertString( const uno::Reference<text::XTextRange>& xRange,
                                         const OUString& aString, sal_Bool bAbsorb )
+                                    throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1171,6 +1200,7 @@ void SAL_CALL ScShapeObj::insertString( const uno::Reference<text::XTextRange>& 
 
 void SAL_CALL ScShapeObj::insertControlCharacter( const uno::Reference<text::XTextRange>& xRange,
                                                 sal_Int16 nControlCharacter, sal_Bool bAbsorb )
+                                    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1184,13 +1214,13 @@ void SAL_CALL ScShapeObj::insertControlCharacter( const uno::Reference<text::XTe
 // XTextRange
 // (parent of XSimpleText)
 
-uno::Reference<text::XText> SAL_CALL ScShapeObj::getText()
+uno::Reference<text::XText> SAL_CALL ScShapeObj::getText() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return this;
 }
 
-uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getStart()
+uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getStart() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1203,7 +1233,7 @@ uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getStart()
 //    return uno::Reference<text::XTextRange>();
 }
 
-uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getEnd()
+uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getEnd() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1216,7 +1246,7 @@ uno::Reference<text::XTextRange> SAL_CALL ScShapeObj::getEnd()
 //    return uno::Reference<text::XTextRange>();
 }
 
-OUString SAL_CALL ScShapeObj::getString()
+OUString SAL_CALL ScShapeObj::getString() throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1229,7 +1259,7 @@ OUString SAL_CALL ScShapeObj::getString()
 //    return OUString();
 }
 
-void SAL_CALL ScShapeObj::setString( const OUString& aText )
+void SAL_CALL ScShapeObj::setString( const OUString& aText ) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1242,7 +1272,7 @@ void SAL_CALL ScShapeObj::setString( const OUString& aText )
 
 // XChild
 
-uno::Reference< uno::XInterface > SAL_CALL ScShapeObj::getParent()
+uno::Reference< uno::XInterface > SAL_CALL ScShapeObj::getParent() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1277,14 +1307,14 @@ uno::Reference< uno::XInterface > SAL_CALL ScShapeObj::getParent()
     return nullptr;
 }
 
-void SAL_CALL ScShapeObj::setParent( const uno::Reference< uno::XInterface >& )
+void SAL_CALL ScShapeObj::setParent( const uno::Reference< uno::XInterface >& ) throw (lang::NoSupportException, uno::RuntimeException, std::exception)
 {
     throw lang::NoSupportException();
 }
 
 // XTypeProvider
 
-uno::Sequence<uno::Type> SAL_CALL ScShapeObj::getTypes()
+uno::Sequence<uno::Type> SAL_CALL ScShapeObj::getTypes() throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< uno::Type > aBaseTypes( ScShapeObj_Base::getTypes() );
 
@@ -1305,6 +1335,7 @@ uno::Sequence<uno::Type> SAL_CALL ScShapeObj::getTypes()
 }
 
 uno::Sequence<sal_Int8> SAL_CALL ScShapeObj::getImplementationId()
+                                                    throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -1330,7 +1361,7 @@ class ShapeUnoEventAccessImpl : public ::cppu::WeakImplHelper< container::XNameR
 private:
     ScShapeObj* mpShape;
 
-    ScMacroInfo* getInfo( bool bCreate )
+    ScMacroInfo* getInfo( bool bCreate = false )
     {
         return ScShapeObj_getShapeHyperMacroInfo( mpShape, bCreate );
     }
@@ -1341,7 +1372,10 @@ public:
     }
 
     // XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString& aName, const uno::Any& aElement ) override
+    virtual void SAL_CALL replaceByName( const OUString& aName, const uno::Any& aElement )
+        throw (lang::IllegalArgumentException, container::NoSuchElementException,
+               lang::WrappedTargetException, uno::RuntimeException,
+               std::exception) override
     {
         if ( !hasByName( aName ) )
             throw container::NoSuchElementException();
@@ -1377,10 +1411,12 @@ public:
     }
 
     // XNameAccess
-    virtual uno::Any SAL_CALL getByName( const OUString& aName ) override
+    virtual uno::Any SAL_CALL getByName( const OUString& aName )
+        throw (container::NoSuchElementException, lang::WrappedTargetException,
+               uno::RuntimeException, std::exception) override
     {
         uno::Sequence< beans::PropertyValue > aProperties;
-        ScMacroInfo* pInfo = getInfo(false);
+        ScMacroInfo* pInfo = getInfo();
 
         if ( aName == SC_EVENTACC_ONCLICK )
         {
@@ -1401,24 +1437,24 @@ public:
         return uno::Any( aProperties );
     }
 
-    virtual uno::Sequence< OUString > SAL_CALL getElementNames() override
+    virtual uno::Sequence< OUString > SAL_CALL getElementNames() throw(uno::RuntimeException, std::exception) override
     {
         uno::Sequence<OUString> aSeq { SC_EVENTACC_ONCLICK };
         return aSeq;
     }
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw(uno::RuntimeException, std::exception) override
     {
         return aName == SC_EVENTACC_ONCLICK;
     }
 
     // XElementAccess
-    virtual uno::Type SAL_CALL getElementType() override
+    virtual uno::Type SAL_CALL getElementType() throw(uno::RuntimeException, std::exception) override
     {
         return cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get();
     }
 
-    virtual sal_Bool SAL_CALL hasElements() override
+    virtual sal_Bool SAL_CALL hasElements() throw(uno::RuntimeException, std::exception) override
     {
         // elements are always present (but contained property sequences may be empty)
         return true;
@@ -1426,22 +1462,22 @@ public:
 };
 
 ::uno::Reference< container::XNameReplace > SAL_CALL
-ScShapeObj::getEvents(  )
+ScShapeObj::getEvents(  ) throw(uno::RuntimeException, std::exception)
 {
     return new ShapeUnoEventAccessImpl( this );
 }
 
-OUString SAL_CALL ScShapeObj::getImplementationName(  )
+OUString SAL_CALL ScShapeObj::getImplementationName(  ) throw (uno::RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.sc.ScShapeObj" );
 }
 
-sal_Bool SAL_CALL ScShapeObj::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL ScShapeObj::supportsService( const OUString& ServiceName ) throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-uno::Sequence< OUString > SAL_CALL ScShapeObj::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL ScShapeObj::getSupportedServiceNames(  ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference<lang::XServiceInfo> xSI;
     if ( mxShapeAgg.is() )

@@ -157,7 +157,7 @@ public:
     const css::uno::Any& getValue( sal_Int16 nIndex,
                         const css::uno::Reference<css::beans::XMultiPropertySet> & );
 
-    void resetValues() { pValues = nullptr; }
+    inline void resetValues() { pValues = nullptr; }
 };
 
 

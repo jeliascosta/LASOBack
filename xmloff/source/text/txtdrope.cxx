@@ -55,8 +55,9 @@ void XMLTextDropCapExport::exportXML( const Any& rAny,
         SvXMLUnitConverter& rUnitConv = rExport.GetMM100UnitConverter();
 
         // style:lines
+        ::sax::Converter::convertNumber( sBuffer, (sal_Int32)aFormat.Lines );
         rExport.AddAttribute( XML_NAMESPACE_STYLE, XML_LINES,
-                              OUString::number( aFormat.Lines ) );
+                              sBuffer.makeStringAndClear() );
 
         // style:length
         if( bWholeWord )
@@ -65,7 +66,8 @@ void XMLTextDropCapExport::exportXML( const Any& rAny,
         }
         else if( aFormat.Count > 1 )
         {
-            sValue = OUString::number(aFormat.Count);
+            ::sax::Converter::convertNumber(sBuffer, (sal_Int32)aFormat.Count);
+            sValue = sBuffer.makeStringAndClear();
         }
         if( !sValue.isEmpty() )
             rExport.AddAttribute( XML_NAMESPACE_STYLE, XML_LENGTH, sValue );

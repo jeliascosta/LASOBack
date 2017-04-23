@@ -50,12 +50,14 @@ namespace o3tl
 class VCL_DLLPUBLIC ButtonDialog : public Dialog
 {
 public:
-                        ButtonDialog( vcl::Window* pParent, WinBits nStyle );
-    virtual             ~ButtonDialog() override;
+                        ButtonDialog( vcl::Window* pParent, WinBits nStyle = WB_STDDIALOG );
+    virtual             ~ButtonDialog();
     virtual void        dispose() override;
 
     virtual void        Resize() override;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
+
+    void                Click();
 
     void                SetPageSizePixel( const Size& rSize ) { maPageSize = rSize; }
 
@@ -71,7 +73,7 @@ public:
     void                SetButtonText( sal_uInt16 nId, const OUString& rText );
     void                SetButtonHelpText( sal_uInt16 nId, const OUString& rText );
 
-    void                SetFocusButton( sal_uInt16 nId ) { mnFocusButtonId = nId; }
+    void                SetFocusButton( sal_uInt16 nId = BUTTONDIALOG_BUTTON_NOTFOUND ) { mnFocusButtonId = nId; }
 
 protected:
                         ButtonDialog( WindowType nType );
@@ -93,7 +95,7 @@ private:
     SAL_DLLPRIVATE void             ImplInitButtonDialogData();
     SAL_DLLPRIVATE VclPtr<PushButton> ImplCreatePushButton( ButtonDialogFlags nBtnFlags );
     SAL_DLLPRIVATE ImplBtnDlgItem*  ImplGetItem( sal_uInt16 nId ) const;
-    DECL_DLLPRIVATE_LINK(     ImplClickHdl, Button* pBtn, void );
+    DECL_DLLPRIVATE_LINK_TYPED(     ImplClickHdl, Button* pBtn, void );
     SAL_DLLPRIVATE void             ImplPosControls();
 
 };

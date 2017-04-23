@@ -64,7 +64,7 @@ template<typename Func> void visitChildren(const Func& rFunc,
     const sal_Int32 nNumNodes( xChildren->getLength() );
     for( sal_Int32 i=0; i<nNumNodes; ++i )
     {
-        SAL_INFO("filter.svg", "node type: " << sal::static_int_cast<sal_uInt32>(xChildren->item(i)->getNodeType()) << " tag name " << xChildren->item(i)->getNodeName() << " value |" << xChildren->item(i)->getNodeValue() << "|");
+        SAL_INFO("svg", "node type: " << sal::static_int_cast<sal_uInt32>(xChildren->item(i)->getNodeType()) << " tag name " << xChildren->item(i)->getNodeName() << " value |" << xChildren->item(i)->getNodeValue() << "|");
         if( xChildren->item(i)->getNodeType() == eChildType )
             rFunc( *xChildren->item(i).get() );
     }
@@ -151,7 +151,7 @@ bool PolyPolygonIsMixedOpenAndClosed( const basegfx::B2DPolyPolygon& rPoly )
     return bRetval;
 }
 
-typedef std::map<OUString,std::size_t> ElementRefMapType;
+typedef std::map<OUString,sal_Size> ElementRefMapType;
 
 struct AnnotatingVisitor
 {
@@ -187,33 +187,6 @@ struct AnnotatingVisitor
         maCurrState.maViewBox.reset();
         // if necessary, serialize to automatic-style section
         writeStyle(xElem,nTagId);
-    }
-
-    bool IsAncestorId(const uno::Reference<xml::dom::XNode>& xParentNode, const OUString& rValue)
-    {
-        bool bSelfCycle = false;
-        if (xParentNode.is())
-        {
-            if (xParentNode->hasAttributes())
-            {
-                const uno::Reference<xml::dom::XNamedNodeMap> xParentAttributes = xParentNode->getAttributes();
-                const sal_Int32 nFooNumAttrs(xParentAttributes->getLength());
-                for (sal_Int32 i=0; i < nFooNumAttrs; ++i)
-                {
-                    const sal_Int32 nTokenId(getTokenId(xParentAttributes->item(i)->getNodeName()));
-                    if (XML_ID == nTokenId)
-                    {
-                        OUString sParentID = xParentAttributes->item(i)->getNodeValue();
-                        bSelfCycle = sParentID == rValue;
-                        break;
-                    }
-                }
-            }
-
-            if (!bSelfCycle)
-                bSelfCycle = IsAncestorId(xParentNode->getParentNode(), rValue);
-        }
-        return bSelfCycle;
     }
 
     void operator()( const uno::Reference<xml::dom::XElement>&      xElem,
@@ -321,10 +294,27 @@ struct AnnotatingVisitor
                     bool bFound = aFound != maElementIdMap.end();
                     if (bFound)
                     {
-                        const bool bSelfCycle = IsAncestorId(xElem->getParentNode(), sValue);
+                        bool bSelfCycle = false;
+
+                        uno::Reference<xml::dom::XNode> xParentNode(xElem->getParentNode());
+                        if (xParentNode.is() && xParentNode->hasAttributes())
+                        {
+                            const uno::Reference<xml::dom::XNamedNodeMap> xParentAttributes = xParentNode->getAttributes();
+                            const sal_Int32 nFooNumAttrs(xParentAttributes->getLength());
+                            for (sal_Int32 i=0; i < nFooNumAttrs; ++i)
+                            {
+                                const sal_Int32 nTokenId(getTokenId(xParentAttributes->item(i)->getNodeName()));
+                                if (XML_ID == nTokenId)
+                                {
+                                    OUString sParentID = xParentAttributes->item(i)->getNodeValue();
+                                    bSelfCycle = sParentID == sValue;
+                                    break;
+                                }
+                            }
+                        }
+
                         if (bSelfCycle)
                         {
-                            SAL_WARN("filter.svg", "\"use\" declaration with target of ancestor node, causing use cycle");
                             //drop this invalid self-referencing "use" node
                             maElementIdMap.erase(aFound);
                             bFound = false;
@@ -473,6 +463,14 @@ struct AnnotatingVisitor
 
                     maCurrState.maCTM = maCurrState.maCTM*maCurrState.maTransform*aLocalTransform;
 
+                    OSL_TRACE("annotateStyle - CTM is: %f %f %f %f %f %f",
+                              maCurrState.maCTM.get(0,0),
+                              maCurrState.maCTM.get(0,1),
+                              maCurrState.maCTM.get(0,2),
+                              maCurrState.maCTM.get(1,0),
+                              maCurrState.maCTM.get(1,1),
+                              maCurrState.maCTM.get(1,2));
+
                     // if necessary, serialize to automatic-style section
                     writeStyle(xElem,nTagId);
                 }
@@ -501,7 +499,7 @@ struct AnnotatingVisitor
             mrStopVec(rStopVec)
         {}
 
-        bool operator()( std::size_t rLHS, std::size_t rRHS )
+        bool operator()( sal_Size rLHS, sal_Size rRHS )
         {
             return mrStopVec[rLHS].mnStopPosition < mrStopVec[rRHS].mnStopPosition;
         }
@@ -519,8 +517,8 @@ struct AnnotatingVisitor
             return; //easy! :-)
 
         // join similar colors
-        std::vector<std::size_t> aNewStops { rGradient.maStops.front() };
-        for( std::size_t i=1; i<rGradient.maStops.size(); ++i )
+        std::vector<sal_Size> aNewStops { rGradient.maStops.front() };
+        for( sal_Size i=1; i<rGradient.maStops.size(); ++i )
         {
             if( maGradientStopVector[rGradient.maStops[i]].maStopColor !=
                 maGradientStopVector[aNewStops.back()].maStopColor )
@@ -547,9 +545,9 @@ struct AnnotatingVisitor
         // those two stops around this border (metric is
         // super-simplistic: take euclidean distance of colors, weigh
         // with stop distance)
-        std::size_t nMaxIndex=0;
+        sal_Size nMaxIndex=0;
         double    fMaxDistance=0.0;
-        for( std::size_t i=1; i<rGradient.maStops.size(); ++i )
+        for( sal_Size i=1; i<rGradient.maStops.size(); ++i )
         {
             const double fCurrDistance(
                 colorDiffSquared(
@@ -602,15 +600,18 @@ struct AnnotatingVisitor
 
     static OUString getOdfAlign( TextAlign eAlign )
     {
+        static const char aStart[] = "start";
+        static const char aEnd[] = "end";
+        static const char aCenter[] = "center";
         switch(eAlign)
         {
             default:
             case BEFORE:
-                return OUString("start");
+                return OUString(aStart);
             case CENTER:
-                return OUString("center");
+                return OUString(aCenter);
             case AFTER:
-                return OUString("end");
+                return OUString(aEnd);
         }
     }
 
@@ -631,7 +632,7 @@ struct AnnotatingVisitor
 
         std::pair<StatePool::iterator,
                   bool> aRes = mrStates.insert(rState);
-        SAL_INFO ("filter.svg", "size " << mrStates.size() << "   id " <<  const_cast<State&>(*aRes.first).mnStyleId);
+        SAL_INFO ("svg", "size " << mrStates.size() << "   id " <<  const_cast<State&>(*aRes.first).mnStyleId);
 
         if( !aRes.second )
             return false; // not written
@@ -640,7 +641,7 @@ struct AnnotatingVisitor
 
         // mnStyleId does not take part in hashing/comparison
         const_cast<State&>(*aRes.first).mnStyleId = mnCurrStateId;
-        SAL_INFO ("filter.svg", " --> " <<  const_cast<State&>(*aRes.first).mnStyleId);
+        SAL_INFO ("svg", " --> " <<  const_cast<State&>(*aRes.first).mnStyleId);
 
         mrStateMap.insert(std::make_pair(
                               mnCurrStateId,
@@ -870,7 +871,7 @@ struct AnnotatingVisitor
 
     void writeStyle(const uno::Reference<xml::dom::XElement>& xElem, const sal_Int32 nTagId)
     {
-        SAL_INFO ("filter.svg", "writeStyle xElem " << xElem->getTagName());
+        SAL_INFO ("svg", "writeStyle xElem " << xElem->getTagName());
 
         sal_Int32 nStyleId=0;
         if( writeStyle(maCurrState, nTagId) )
@@ -1230,10 +1231,10 @@ struct AnnotatingVisitor
                                    nTokenId, sValue );
                 break;
             case XML_TOKEN_INVALID:
-                SAL_INFO("filter.svg", "unhandled token");
+                SAL_INFO("svg", "unhandled token");
                 break;
             default:
-                SAL_INFO("filter.svg", "unhandled token " << getTokenName(nTokenId));
+                SAL_INFO("svg", "unhandled token " << getTokenName(nTokenId));
                 break;
         }
     }
@@ -1861,6 +1862,14 @@ struct ShapeWritingVisitor
 
         xAttrs->Clear();
 
+        OSL_TRACE("writePath - the CTM is: %f %f %f %f %f %f",
+                  maCurrState.maCTM.get(0,0),
+                  maCurrState.maCTM.get(0,1),
+                  maCurrState.maCTM.get(0,2),
+                  maCurrState.maCTM.get(1,0),
+                  maCurrState.maCTM.get(1,1),
+                  maCurrState.maCTM.get(1,2));
+
         // TODO(F2): separate out shear, rotate etc.
         // apply transformation to polygon, to keep draw
         // import in 100th mm
@@ -2044,7 +2053,7 @@ struct OfficeStylesWritingVisitor
             }
         }
 
-        SAL_INFO("filter.svg", "SvgDashArray2Odf " << *dash_distance << " " << *dots1 << " " << *dots1_length << " " << *dots2 << " " << *dots2_length );
+        SAL_INFO("svg", "SvgDashArray2Odf " << *dash_distance << " " << *dots1 << " " << *dots1_length << " " << *dots2 << " " << *dots2_length );
 
         return;
     }
@@ -2071,17 +2080,29 @@ struct DumpingVisitor
 {
     void operator()( const uno::Reference<xml::dom::XElement>& xElem )
     {
-        SAL_WARN("filter", "name: " << xElem->getTagName());
+        OSL_TRACE("name: %s",
+                  OUStringToOString(
+                      xElem->getTagName(),
+                      RTL_TEXTENCODING_UTF8 ).getStr());
     }
 
     void operator()( const uno::Reference<xml::dom::XElement>&      xElem,
                      const uno::Reference<xml::dom::XNamedNodeMap>& xAttributes )
     {
-        SAL_WARN("filter", "name: " << xElem->getTagName());
+        OSL_TRACE("name: %s",
+                  OUStringToOString(
+                      xElem->getTagName(),
+                      RTL_TEXTENCODING_UTF8 ).getStr());
         const sal_Int32 nNumAttrs( xAttributes->getLength() );
         for( sal_Int32 i=0; i<nNumAttrs; ++i )
         {
-            SAL_WARN("filter", xAttributes->item(i)->getNodeName() << "=" << xAttributes->item(i)->getNodeValue());
+            OSL_TRACE(" %s=%s",
+                      OUStringToOString(
+                          xAttributes->item(i)->getNodeName(),
+                          RTL_TEXTENCODING_UTF8 ).getStr(),
+                      OUStringToOString(
+                          xAttributes->item(i)->getNodeValue(),
+                          RTL_TEXTENCODING_UTF8 ).getStr());
         }
     }
 

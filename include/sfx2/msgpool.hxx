@@ -31,12 +31,13 @@ class SfxInterface;
 class SfxSlot;
 
 typedef std::basic_string< sal_uInt16 > SfxSlotGroupArr_Impl;
+typedef std::vector<SfxInterface*> SfxInterfaceArr_Impl;
 
 class SFX2_DLLPUBLIC SfxSlotPool
 {
-    std::unique_ptr<SfxSlotGroupArr_Impl>       _pGroups;
+    SfxSlotGroupArr_Impl*       _pGroups;
     SfxSlotPool*                _pParentPool;
-    std::unique_ptr< std::vector<SfxInterface*> >       _pInterfaces;
+    SfxInterfaceArr_Impl*       _pInterfaces;
     sal_uInt16                      _nCurGroup;
     sal_uInt16                      _nCurInterface;
     sal_uInt16                      _nCurMsg;

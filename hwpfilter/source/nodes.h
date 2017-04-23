@@ -20,9 +20,6 @@
 #ifndef INCLUDED_HWPFILTER_SOURCE_NODES_H
 #define INCLUDED_HWPFILTER_SOURCE_NODES_H
 
-#include <sal/config.h>
-
-#include <list>
 #include <stdio.h>
 #include <stdlib.h>
 #include <osl/diagnose.h>
@@ -67,9 +64,9 @@ class Node{
 public:
      explicit Node(int _id) : id(_id)
      {
-          value = nullptr;
-          child = nullptr;
-          next = nullptr;
+          value = NULL;
+          child = NULL;
+          next = NULL;
 #ifdef NODE_DEBUG
           count++;
           printf("Node count : [%d]\n",count);
@@ -80,8 +77,8 @@ public:
           if( value ) free( value );
          // if( child ) delete child;
          // if( next ) delete next;
-          next = nullptr;
-          child = nullptr;
+          next = NULL;
+          child = NULL;
 #ifdef NODE_DEBUG
           count--;
           printf("Node count : [%d]\n",count);
@@ -95,7 +92,7 @@ public:
      Node *next;
 };
 
-extern std::list<Node *> nodelist;
+//static LinkedList<Node> nodelist;
 
 #endif
 

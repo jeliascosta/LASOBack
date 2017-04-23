@@ -123,6 +123,10 @@ namespace canvas
          */
         bool isPropertyName( const OUString& aPropertyName ) const;
 
+        /** Request the currently active map
+         */
+        const InputMap& getPropertyMap() const { return maMapEntries; }
+
         // XPropertySet implementation
         css::uno::Reference< css::beans::XPropertySetInfo > getPropertySetInfo() const;
         void setPropertyValue( const OUString&      aPropertyName,

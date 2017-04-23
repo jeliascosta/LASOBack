@@ -41,7 +41,7 @@ namespace sdr
             E3dLatheProperties(const E3dLatheProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~E3dLatheProperties() override;
+            virtual ~E3dLatheProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

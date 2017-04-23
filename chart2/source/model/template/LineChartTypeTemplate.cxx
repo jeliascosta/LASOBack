@@ -21,6 +21,7 @@
 #include "macros.hxx"
 #include "DiagramHelper.hxx"
 #include "servicenames_charttypes.hxx"
+#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "PropertyHelper.hxx"
 #include <unonames.hxx>
@@ -50,7 +51,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( CHART_UNONAME_CURVE_STYLE,
@@ -107,10 +108,10 @@ struct StaticLineChartTypeTemplateInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< css::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -164,6 +165,7 @@ LineChartTypeTemplate::~LineChartTypeTemplate()
 {}
 // ____ OPropertySet ____
 uno::Any LineChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
+    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticLineChartTypeTemplateDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -179,6 +181,7 @@ uno::Any LineChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 uno::Reference< beans::XPropertySetInfo > SAL_CALL LineChartTypeTemplate::getPropertySetInfo()
+    throw (uno::RuntimeException, std::exception)
 {
     return *StaticLineChartTypeTemplateInfo::get();
 }
@@ -197,6 +200,7 @@ StackMode LineChartTypeTemplate::getStackMode( sal_Int32 /* nChartTypeIndex */ )
 sal_Bool SAL_CALL LineChartTypeTemplate::matchesTemplate(
     const uno::Reference< chart2::XDiagram >& xDiagram,
     sal_Bool bAdaptProperties )
+    throw (uno::RuntimeException, std::exception)
 {
     bool bResult = ChartTypeTemplate::matchesTemplate( xDiagram, bAdaptProperties );
 
@@ -208,10 +212,10 @@ sal_Bool SAL_CALL LineChartTypeTemplate::matchesTemplate(
         bool bSymbolFound = false;
         bool bLineFound = false;
 
-        std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
+        ::std::vector< Reference< chart2::XDataSeries > > aSeriesVec(
             DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
 
-        for( std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
+        for( ::std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt =
                  aSeriesVec.begin(); aIt != aSeriesVec.end(); ++aIt )
         {
             try
@@ -314,6 +318,7 @@ Reference< chart2::XChartType > LineChartTypeTemplate::getChartTypeForIndex( sal
 
 Reference< chart2::XChartType > SAL_CALL LineChartTypeTemplate::getChartTypeForNewSeries(
         const uno::Sequence< Reference< chart2::XChartType > >& aFormerlyUsedChartTypes )
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< chart2::XChartType > xResult;
 
@@ -350,6 +355,7 @@ void SAL_CALL LineChartTypeTemplate::applyStyle(
     ::sal_Int32 nChartTypeIndex,
     ::sal_Int32 nSeriesIndex,
     ::sal_Int32 nSeriesCount )
+    throw (uno::RuntimeException, std::exception)
 {
     ChartTypeTemplate::applyStyle( xSeries, nChartTypeIndex, nSeriesIndex, nSeriesCount );
 

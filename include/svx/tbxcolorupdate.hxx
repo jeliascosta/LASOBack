@@ -49,7 +49,6 @@ namespace svx
                     ~ToolboxButtonColorUpdater();
 
         void        Update( const Color& rColor, bool bForceUpdate = false );
-        Color       GetCurrentColor() const { return maCurColor; }
 
     private:
         ToolboxButtonColorUpdater(ToolboxButtonColorUpdater &) = delete;
@@ -59,7 +58,7 @@ namespace svx
         sal_uInt16      mnSlotId;
         VclPtr<ToolBox> mpTbx;
         Color       maCurColor;
-        tools::Rectangle   maUpdRect;
+        Rectangle   maUpdRect;
         Size        maBmpSize;
         bool        mbWasHiContrastMode;
     };

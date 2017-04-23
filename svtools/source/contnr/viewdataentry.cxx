@@ -25,6 +25,7 @@ SvViewDataEntry::SvViewDataEntry() :
     mbHighlighted(false),
     mbExpanded(false),
     mbFocused(false),
+    mbCursored(false),
     mbSelectable(true),
     maPaintRectangle()
 {
@@ -36,6 +37,7 @@ SvViewDataEntry::SvViewDataEntry( const SvViewDataEntry& rData ) :
     mbHighlighted(false),
     mbExpanded(rData.mbExpanded),
     mbFocused(false),
+    mbCursored(rData.mbCursored),
     mbSelectable(rData.mbSelectable),
     maPaintRectangle(rData.maPaintRectangle)
 {
@@ -89,12 +91,12 @@ SvViewDataItem& SvViewDataEntry::GetItem(size_t nPos)
     return maItems[nPos];
 }
 
-void SvViewDataEntry::SetPaintRectangle(tools::Rectangle aRectangle)
+void SvViewDataEntry::SetPaintRectangle(Rectangle aRectangle)
 {
     maPaintRectangle = aRectangle;
 }
 
-const tools::Rectangle& SvViewDataEntry::GetPaintRectangle() const
+const Rectangle& SvViewDataEntry::GetPaintRectangle() const
 {
     return maPaintRectangle;
 }

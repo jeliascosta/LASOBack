@@ -18,8 +18,6 @@
  */
 
 #include <algorithm>
-#include <cassert>
-
 #include <boost/optional.hpp>
 
 #include "oox/vml/vmlshape.hxx"
@@ -397,14 +395,14 @@ Reference< XShape > ShapeBase::convertAndInsert( const Reference< XShapes >& rxS
                         length = aGrabBag.getLength();
                         aGrabBag.realloc( length+1 );
                         aGrabBag[length].Name = "VML-Z-ORDER";
-                        aGrabBag[length].Value <<= maTypeModel.maZIndex.toInt32();
+                        aGrabBag[length].Value = uno::makeAny( maTypeModel.maZIndex.toInt32() );
 
                         if( !s_mso_next_textbox.isEmpty() )
                         {
                             length = aGrabBag.getLength();
                             aGrabBag.realloc( length+1 );
                             aGrabBag[length].Name = "mso-next-textbox";
-                            aGrabBag[length].Value <<= s_mso_next_textbox;
+                            aGrabBag[length].Value = uno::makeAny( s_mso_next_textbox );
                         }
 
                         if( !sLinkChainName.isEmpty() )
@@ -412,13 +410,13 @@ Reference< XShape > ShapeBase::convertAndInsert( const Reference< XShapes >& rxS
                             length = aGrabBag.getLength();
                             aGrabBag.realloc( length+4 );
                             aGrabBag[length].Name   = "TxbxHasLink";
-                            aGrabBag[length].Value   <<= true;
+                            aGrabBag[length].Value   = uno::makeAny( true );
                             aGrabBag[length+1].Name = "Txbx-Id";
-                            aGrabBag[length+1].Value <<= id;
+                            aGrabBag[length+1].Value = uno::makeAny( id );
                             aGrabBag[length+2].Name = "Txbx-Seq";
-                            aGrabBag[length+2].Value <<= seq;
+                            aGrabBag[length+2].Value = uno::makeAny( seq );
                             aGrabBag[length+3].Name = "LinkChainName";
-                            aGrabBag[length+3].Value <<= sLinkChainName;
+                            aGrabBag[length+3].Value = uno::makeAny( sLinkChainName );
                         }
                         propertySet->setPropertyValue( "InteropGrabBag", uno::makeAny(aGrabBag) );
                     }
@@ -513,7 +511,7 @@ void ShapeBase::convertShapeProperties( const Reference< XShape >& rxShape ) con
                 aBorderLine.Color = aPropMap.getProperty(PROP_LineColor).get<sal_Int32>();
                 if (oLineWidth)
                     aBorderLine.LineWidth = *oLineWidth;
-                aPropMap.setProperty(nBorder, aBorderLine);
+                aPropMap.setProperty(nBorder, uno::makeAny(aBorderLine));
             }
             aPropMap.erase(PROP_LineColor);
         }
@@ -539,7 +537,7 @@ void lcl_setSurround(PropertySet& rPropSet, const ShapeTypeModel& rTypeModel, co
     if (nMarginTop < -35277) // Less than 1000 points.
         aWrapType.clear();
 
-    css::text::WrapTextMode nSurround = css::text::WrapTextMode_THROUGH;
+    sal_Int32 nSurround = css::text::WrapTextMode_THROUGHT;
     if ( aWrapType == "square" || aWrapType == "tight" ||
          aWrapType == "through" )
     {
@@ -552,7 +550,7 @@ void lcl_setSurround(PropertySet& rPropSet, const ShapeTypeModel& rTypeModel, co
     else if ( aWrapType == "topAndBottom" )
         nSurround = css::text::WrapTextMode_NONE;
 
-    rPropSet.setProperty(PROP_Surround, (sal_Int32)nSurround);
+    rPropSet.setProperty(PROP_Surround, nSurround);
 }
 
 void lcl_SetAnchorType(PropertySet& rPropSet, const ShapeTypeModel& rTypeModel, const GraphicHelper& rGraphicHelper)
@@ -706,7 +704,7 @@ Reference< XShape > SimpleShape::implConvertAndInsert( const Reference< XShapes 
             xPropertySet->getPropertyValue("FrameInteropGrabBag") >>= aGrabBag;
             beans::PropertyValue aPair;
             aPair.Name = "mso-layout-flow-alt";
-            aPair.Value <<= maTypeModel.maLayoutFlowAlt;
+            aPair.Value = uno::makeAny(maTypeModel.maLayoutFlowAlt);
             if (aGrabBag.hasElements())
             {
                 sal_Int32 nLength = aGrabBag.getLength();
@@ -802,17 +800,19 @@ Reference< XShape > SimpleShape::implConvertAndInsert( const Reference< XShapes 
         // The associated properties "PROP_MirroredX" and "PROP_MirroredY" have to be set here so that direction change will occur internally.
         if (bFlipX || bFlipY)
         {
-            assert(!(bFlipX && bFlipY));
-            css::uno::Sequence< css::beans::PropertyValue > aPropSequence (1);
+            css::uno::Sequence< css::beans::PropertyValue > aPropSequence (2);
+            int nPropertyIndex = 0;
             if (bFlipX)
             {
-                aPropSequence [0].Name = "MirroredX";
-                aPropSequence [0].Value <<= bFlipX;
+                aPropSequence [nPropertyIndex].Name = "MirroredX";
+                aPropSequence [nPropertyIndex].Value = makeAny (bFlipX);
+                nPropertyIndex++;
             }
-            else
+            if (bFlipY)
             {
-                aPropSequence [0].Name = "MirroredY";
-                aPropSequence [0].Value <<= bFlipY;
+                aPropSequence [nPropertyIndex].Name = "MirroredY";
+                aPropSequence [nPropertyIndex].Value = makeAny (bFlipY);
+                nPropertyIndex++;
             }
             aPropertySet.setAnyProperty(PROP_CustomShapeGeometry, makeAny( aPropSequence ) );
         }
@@ -1058,39 +1058,9 @@ Reference< XShape > BezierShape::implConvertAndInsert( const Reference< XShapes 
         aPropSet.setProperty( PROP_PolyPolygonBezier, aBezierCoords );
     }
 
-    // Handle horizontal and vertical flip.
-    if (!maTypeModel.maFlip.isEmpty())
-    {
-        if (SdrObject* pShape = GetSdrObjectFromXShape(xShape))
-        {
-            if (maTypeModel.maFlip.startsWith("x"))
-            {
-                Point aCenter(pShape->GetSnapRect().Center());
-                Point aPoint2(aCenter);
-                aPoint2.setY(aPoint2.getY() + 1);
-                pShape->NbcMirror(aCenter, aPoint2);
-            }
-            if (maTypeModel.maFlip.endsWith("y"))
-            {
-                Point aCenter(pShape->GetSnapRect().Center());
-                Point aPoint2(aCenter);
-                aPoint2.setX(aPoint2.getX() + 1);
-                pShape->NbcMirror(aCenter, aPoint2);
-            }
-        }
-    }
-
     // Hacky way of ensuring the shape is correctly sized/positioned
-    try
-    {
-        // E.g. SwXFrame::setPosition() unconditionally throws
-        xShape->setSize( awt::Size( rShapeRect.Width, rShapeRect.Height ) );
-        xShape->setPosition( awt::Point( rShapeRect.X, rShapeRect.Y ) );
-    }
-    catch (const ::css::uno::Exception&)
-    {
-        // TODO: try some other way to ensure size/position
-    }
+    xShape->setSize( awt::Size( rShapeRect.Width, rShapeRect.Height ) );
+    xShape->setPosition( awt::Point( rShapeRect.X, rShapeRect.Y ) );
     return xShape;
 }
 
@@ -1270,7 +1240,7 @@ Reference< XShape > GroupShape::implConvertAndInsert( const Reference< XShapes >
         xPropertySet->getPropertyValue("InteropGrabBag") >>= aGrabBag;
         beans::PropertyValue aPair;
         aPair.Name = "mso-edit-as";
-        aPair.Value <<= maTypeModel.maEditAs;
+        aPair.Value = uno::makeAny(maTypeModel.maEditAs);
        if (aGrabBag.hasElements())
        {
             sal_Int32 nLength = aGrabBag.getLength();

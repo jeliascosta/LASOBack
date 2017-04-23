@@ -20,27 +20,11 @@
 #ifndef INCLUDED_FORMULA_FORMULA_HXX
 #define INCLUDED_FORMULA_FORMULA_HXX
 
+#include <sfx2/basedlgs.hxx>
 #include <memory>
-#include <utility>
-
 #include <formula/formuladllapi.h>
 #include <formula/omoduleclient.hxx>
 #include <formula/IFunctionDescription.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-#include <sfx2/basedlgs.hxx>
-#include <tools/gen.hxx>
-#include <tools/link.hxx>
-#include <vcl/dialog.hxx>
-
-class Idle;
-class NotifyEvent;
-class SfxBindings;
-class SfxChildWindow;
-
-namespace vcl {
-    class Window;
-}
 
 namespace formula
 {
@@ -54,6 +38,8 @@ enum FormulaDlgMode { FORMULA_FORMDLG_FORMULA, FORMULA_FORMDLG_ARGS, FORMULA_FOR
 
 class FormulaDlg_Impl;
 class IControlReferenceHandler;
+class IFunctionDescription;
+class IFunctionManager;
 class FormulaHelper;
 class RefEdit;
 class RefButton;
@@ -65,8 +51,8 @@ class FORMULA_DLLPUBLIC FormulaModalDialog :   public ModalDialog, public formul
 public:
                     FormulaModalDialog( vcl::Window* pParent
                                             ,IFunctionManager* _pFunctionMgr
-                                            ,IControlReferenceHandler* _pDlg );
-    virtual ~FormulaModalDialog() override;
+                                            ,IControlReferenceHandler* _pDlg = nullptr );
+    virtual ~FormulaModalDialog();
     virtual void dispose() override;
 
 private:
@@ -75,8 +61,8 @@ private:
 protected:
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    ::std::pair<RefButton*,RefEdit*> RefInputStartBefore( RefEdit* pEdit, RefButton* pButton );
-    void            RefInputStartAfter( RefEdit* pEdit, RefButton* pButton );
+    ::std::pair<RefButton*,RefEdit*> RefInputStartBefore( RefEdit* pEdit, RefButton* pButton = nullptr );
+    void            RefInputStartAfter( RefEdit* pEdit, RefButton* pButton = nullptr );
     void            RefInputDoneAfter();
 
     void            SetMeText(const OUString& _sText);
@@ -101,22 +87,22 @@ public:
                                     , SfxChildWindow* pCW
                                     , vcl::Window* pParent
                                     , IFunctionManager* _pFunctionMgr
-                                    , IControlReferenceHandler* _pDlg );
-    virtual ~FormulaDlg() override;
+                                    , IControlReferenceHandler* _pDlg = nullptr );
+    virtual ~FormulaDlg();
     virtual void dispose() override;
 private:
     ::std::unique_ptr<FormulaDlg_Impl> m_pImpl;
 
-    DECL_LINK( UpdateFocusHdl, Timer*, void );
+    DECL_LINK_TYPED( UpdateFocusHdl, Idle*, void );
 protected:
     void            disableOk();
 
 protected:
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    ::std::pair<RefButton*,RefEdit*> RefInputStartBefore( RefEdit* pEdit, RefButton* pButton );
-    void            RefInputStartAfter( RefEdit* pEdit, RefButton* pButton );
-    void            RefInputDoneAfter( bool bForced );
+    ::std::pair<RefButton*,RefEdit*> RefInputStartBefore( RefEdit* pEdit, RefButton* pButton = nullptr );
+    void            RefInputStartAfter( RefEdit* pEdit, RefButton* pButton = nullptr );
+    void            RefInputDoneAfter( bool bForced = false );
 
     void            SetMeText(const OUString& _sText);
     FormulaDlgMode SetMeText(const OUString& _sText, sal_Int32 PrivStart, sal_Int32 PrivEnd, bool bMatrix, bool _bSelect, bool _bUpdate);

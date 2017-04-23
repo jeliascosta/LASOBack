@@ -40,11 +40,15 @@ class VLCFrameGrabber : public FrameGrabber_BASE
 public:
     VLCFrameGrabber( wrapper::EventHandler& eh, const rtl::OUString& url );
 
-    css::uno::Reference< css::graphic::XGraphic > SAL_CALL grabFrame( double fMediaTime ) override;
+    css::uno::Reference< css::graphic::XGraphic > SAL_CALL grabFrame( double fMediaTime )
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
-    ::rtl::OUString SAL_CALL getImplementationName() override;
-    sal_Bool SAL_CALL supportsService( const ::rtl::OUString& serviceName ) override;
-    css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames() override;
+    ::rtl::OUString SAL_CALL getImplementationName()
+            throw ( css::uno::RuntimeException, std::exception ) override;
+    sal_Bool SAL_CALL supportsService( const ::rtl::OUString& serviceName )
+            throw ( css::uno::RuntimeException, std::exception ) override;
+    css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames()
+            throw ( css::uno::RuntimeException, std::exception ) override;
 };
 
 }

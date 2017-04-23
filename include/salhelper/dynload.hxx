@@ -72,7 +72,7 @@ protected:
     /// Destructor, try to unload the library.
     virtual ~ORealDynamicLoader();
 
-    /// points to  the structure with the initialized API function pointers.
+    /// points to  the structure with the initialzed API function pointers.
     void*                   m_pApi;
     /// stores the reference count.
     sal_uInt32              m_refCount;
@@ -147,8 +147,7 @@ public:
     ~ODynamicLoader()
     {
         if( m_pLoader )
-            if (m_pLoader->release()==0)
-                m_pStaticLoader = NULL;
+            m_pLoader->release();
     }
 
     /// Assign operator
@@ -176,7 +175,7 @@ public:
         return static_cast<API*>(m_pLoader->getApi());
     }
 
-    /// cast operator, which cast to a pointer with the initialized API function structure.
+    /// cast operator, which cast to a poiner with the initialized API function structure.
     API* SAL_CALL operator->() const
     {
         return static_cast<API*>(m_pLoader->getApi());

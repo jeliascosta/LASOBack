@@ -103,7 +103,7 @@ module configuration {
 
 };
 
-/// Common user interface elements
+/// TODO: what is this?
 module cui {};
 
 /// Clipboard and Drag&amp;Drop interfaces.
@@ -338,7 +338,7 @@ module sdbcx {};
 /// cryptographic interfaces.
 module security {};
 
-/// Setup specific interfaces
+/// TODO: what is this?
 module setup {};
 
 /// Spreadsheet specific interfaces.

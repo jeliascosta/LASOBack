@@ -21,7 +21,6 @@
 #define INCLUDED_UCBHELPER_PROXYDECIDER_HXX
 
 #include <rtl/ustring.hxx>
-#include <rtl/ref.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <ucbhelper/ucbhelperdllapi.h>
@@ -128,7 +127,7 @@ public:
               sal_Int32 nPort ) const;
 
 private:
-    rtl::Reference<proxydecider_impl::InternetProxyDecider_Impl> m_xImpl;
+    proxydecider_impl::InternetProxyDecider_Impl * m_pImpl;
 };
 
 } // namespace ucbhelper

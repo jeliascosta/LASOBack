@@ -44,11 +44,11 @@ class SwGrammarContact : public IGrammarContact, public SwClient
     SwGrammarMarkUp *mpProxyList;
     bool mbFinished;
     SwTextNode* getMyTextNode() { return static_cast<SwTextNode*>(GetRegisteredIn()); }
-      DECL_LINK( TimerRepaint, Timer *, void );
+      DECL_LINK_TYPED( TimerRepaint, Timer *, void );
 
 public:
     SwGrammarContact();
-    virtual ~SwGrammarContact() override { aTimer.Stop(); delete mpProxyList; }
+    virtual ~SwGrammarContact() { aTimer.Stop(); delete mpProxyList; }
 
     // (pure) virtual functions of IGrammarContact
     virtual void updateCursorPosition( const SwPosition& rNewPos ) override;
@@ -62,11 +62,10 @@ protected:
 SwGrammarContact::SwGrammarContact() : mpProxyList(nullptr), mbFinished( false )
 {
     aTimer.SetTimeout( 2000 );  // Repaint of grammar check after 'setChecked'
-    aTimer.SetInvokeHandler( LINK(this, SwGrammarContact, TimerRepaint) );
-    aTimer.SetDebugName( "sw::SwGrammarContact TimerRepaint" );
+    aTimer.SetTimeoutHdl( LINK(this, SwGrammarContact, TimerRepaint) );
 }
 
-IMPL_LINK( SwGrammarContact, TimerRepaint, Timer *, pTimer, void )
+IMPL_LINK_TYPED( SwGrammarContact, TimerRepaint, Timer *, pTimer, void )
 {
     if( pTimer )
     {

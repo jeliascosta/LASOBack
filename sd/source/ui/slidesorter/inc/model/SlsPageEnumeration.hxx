@@ -63,7 +63,7 @@ public:
     */
     PageEnumeration (const PageEnumeration& rEnumeration);
 
-    virtual ~PageEnumeration() override;
+    virtual ~PageEnumeration();
 
     /** Create and return an exact copy of the called object.
     */

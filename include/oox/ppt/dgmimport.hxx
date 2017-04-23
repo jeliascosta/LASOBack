@@ -20,25 +20,14 @@
 #ifndef INCLUDED_OOX_PPT_DGMIMPORT_HXX
 #define INCLUDED_OOX_PPT_DGMIMPORT_HXX
 
-#include <exception>
-
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <oox/core/filterbase.hxx>
 #include <oox/core/xmlfilterbase.hxx>
+
+#include <com/sun/star/animations/XAnimationNode.hpp>
 #include <oox/drawingml/theme.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-
-namespace com { namespace sun { namespace star {
-    namespace uno { class XComponentContext; }
-} } }
-
-namespace oox {
-    namespace drawingml { namespace chart { class ChartConverter; } }
-    namespace ole { class VbaProject; }
-    namespace vml { class Drawing; }
-}
+#include <oox/ppt/presentationfragmenthandler.hxx>
+#include <oox/ppt/slidepersist.hxx>
+#include <vector>
+#include <map>
 
 namespace oox { namespace ppt {
 
@@ -50,7 +39,7 @@ public:
     QuickDiagrammingImport( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
     // from FilterBase
-    virtual bool importDocument() override;
+    virtual bool importDocument() throw (css::uno::RuntimeException, std::exception) override;
     virtual bool exportDocument() throw() override;
 
     virtual const ::oox::drawingml::Theme* getCurrentTheme() const override;
@@ -60,7 +49,7 @@ public:
     virtual oox::drawingml::chart::ChartConverter* getChartConverter() override;
 
 private:
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
     virtual ::oox::ole::VbaProject* implCreateVbaProject() const override;
 };
 

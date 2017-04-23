@@ -102,10 +102,16 @@ ItemPropertyMapType & lcl_GetFillPropertyMap()
     return aFillPropertyMap;
 }
 
-bool lcl_supportsFillProperties( ::chart::wrapper::GraphicObjectType eType )
+bool lcl_supportsFillProperties( ::chart::wrapper::GraphicPropertyItemConverter::eGraphicObjectType eType )
 {
-    return ( eType == ::chart::wrapper::GraphicObjectType::FilledDataPoint ||
-             eType == ::chart::wrapper::GraphicObjectType::LineAndFillProperties );
+    return ( eType == ::chart::wrapper::GraphicPropertyItemConverter::FILLED_DATA_POINT ||
+             eType == ::chart::wrapper::GraphicPropertyItemConverter::FILL_PROPERTIES ||
+             eType == ::chart::wrapper::GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES );
+}
+
+bool lcl_supportsLineProperties( ::chart::wrapper::GraphicPropertyItemConverter::eGraphicObjectType eType )
+{
+    return ( eType != ::chart::wrapper::GraphicPropertyItemConverter::FILL_PROPERTIES );
 }
 
 bool lcl_SetContentForNamedProperty(
@@ -138,9 +144,9 @@ GraphicPropertyItemConverter::GraphicPropertyItemConverter(
     SfxItemPool& rItemPool,
     SdrModel& rDrawModel,
     const uno::Reference< lang::XMultiServiceFactory > & xNamedPropertyContainerFactory,
-    GraphicObjectType eObjectType /* = FILL_PROPERTIES */ ) :
+    eGraphicObjectType eObjectType /* = FILL_PROPERTIES */ ) :
         ItemConverter( rPropertySet, rItemPool ),
-        m_GraphicObjectType( eObjectType ),
+        m_eGraphicObjectType( eObjectType ),
         m_rDrawModel( rDrawModel ),
         m_xNamedPropertyTableFactory( xNamedPropertyContainerFactory )
 {}
@@ -152,14 +158,16 @@ const sal_uInt16 * GraphicPropertyItemConverter::GetWhichPairs() const
 {
     const sal_uInt16 * pResult = nullptr;
 
-    switch( m_GraphicObjectType )
+    switch( m_eGraphicObjectType )
     {
-        case GraphicObjectType::LineDataPoint:
-        case GraphicObjectType::FilledDataPoint:
+        case LINE_DATA_POINT:
+        case FILLED_DATA_POINT:
             pResult = nRowWhichPairs; break;
-        case GraphicObjectType::LineProperties:
+        case LINE_PROPERTIES:
             pResult = nLinePropertyWhichPairs; break;
-        case GraphicObjectType::LineAndFillProperties:
+        case FILL_PROPERTIES:
+            pResult = nFillPropertyWhichPairs; break;
+        case LINE_AND_FILL_PROPERTIES:
             pResult = nLineAndFillPropertyWhichPairs; break;
     }
 
@@ -171,22 +179,27 @@ bool GraphicPropertyItemConverter::GetItemProperty( tWhichIdType nWhichId, tProp
     ItemPropertyMapType::const_iterator aEndIt;
     ItemPropertyMapType::const_iterator aIt;
 
-    switch( m_GraphicObjectType )
+    switch( m_eGraphicObjectType )
     {
-        case GraphicObjectType::LineDataPoint:
+        case LINE_DATA_POINT:
             aEndIt = lcl_GetDataPointLinePropertyMap().end();
             aIt = lcl_GetDataPointLinePropertyMap().find( nWhichId );
             break;
-        case GraphicObjectType::FilledDataPoint:
+        case FILLED_DATA_POINT:
             aEndIt = lcl_GetDataPointFilledPropertyMap().end();
             aIt = lcl_GetDataPointFilledPropertyMap().find( nWhichId );
             break;
-        case GraphicObjectType::LineProperties:
+        case LINE_PROPERTIES:
             aEndIt = lcl_GetLinePropertyMap().end();
             aIt = lcl_GetLinePropertyMap().find( nWhichId );
             break;
 
-        case GraphicObjectType::LineAndFillProperties:
+        case FILL_PROPERTIES:
+            aEndIt = lcl_GetFillPropertyMap().end();
+            aIt = lcl_GetFillPropertyMap().find( nWhichId );
+            break;
+
+        case LINE_AND_FILL_PROPERTIES:
             // line
             aEndIt = lcl_GetLinePropertyMap().end();
             aIt = lcl_GetLinePropertyMap().find( nWhichId );
@@ -209,6 +222,7 @@ bool GraphicPropertyItemConverter::GetItemProperty( tWhichIdType nWhichId, tProp
 
 void GraphicPropertyItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+    throw (uno::Exception, std::exception)
 {
     switch( nWhichId )
     {
@@ -228,10 +242,10 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         case XATTR_FILLFLOATTRANSPARENCE:
             try
             {
-                if( lcl_supportsFillProperties( m_GraphicObjectType ))
+                if( lcl_supportsFillProperties( m_eGraphicObjectType ))
                 {
                     OUString aPropName =
-                          (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                          (m_eGraphicObjectType == FILLED_DATA_POINT)
                           ? OUString( "TransparencyGradientName" )
                           : OUString( "FillTransparenceGradientName" );
 
@@ -263,10 +277,10 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         break;
 
         case XATTR_GRADIENTSTEPCOUNT:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "GradientStepCount" )
                     : OUString( "FillGradientStepCount" );
 
@@ -280,35 +294,36 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         break;
 
         case XATTR_LINEDASH:
-        {
-            OUString aPropName =
-                (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
-                 ? OUString( "BorderDashName" )
-                 : OUString( "LineDashName" );
+            if( lcl_supportsLineProperties( m_eGraphicObjectType ))
+            {
+                OUString aPropName =
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
+                    ? OUString( "BorderDashName" )
+                    : OUString( "LineDashName" );
 
-            XLineDashItem aItem;
-            aItem.PutValue( GetPropertySet()->getPropertyValue( aPropName ), MID_NAME );
+                XLineDashItem aItem;
+                aItem.PutValue( GetPropertySet()->getPropertyValue( aPropName ), MID_NAME );
 
-            lcl_SetContentForNamedProperty(
-                m_xNamedPropertyTableFactory, "com.sun.star.drawing.DashTable" ,
-                aItem, MID_LINEDASH );
+                lcl_SetContentForNamedProperty(
+                    m_xNamedPropertyTableFactory, "com.sun.star.drawing.DashTable" ,
+                    aItem, MID_LINEDASH );
 
-            // translate model name to UI-name for predefined entries, so
-            // that the correct entry is chosen in the list of UI-names
-            XLineDashItem* pItemToPut = aItem.checkForUniqueItem( & m_rDrawModel );
+                // translate model name to UI-name for predefined entries, so
+                // that the correct entry is chosen in the list of UI-names
+                XLineDashItem* pItemToPut = aItem.checkForUniqueItem( & m_rDrawModel );
 
-            if(pItemToPut)
-                 rOutItemSet.Put( *pItemToPut );
-            else
-                rOutItemSet.Put(aItem);
-        }
+                if(pItemToPut)
+                    rOutItemSet.Put( *pItemToPut );
+                else
+                    rOutItemSet.Put(aItem);
+            }
         break;
 
         case XATTR_FILLGRADIENT:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "GradientName" )
                     : OUString( "FillGradientName" );
 
@@ -331,10 +346,10 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         break;
 
         case XATTR_FILLHATCH:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "HatchName" )
                     : OUString( "FillHatchName" );
 
@@ -357,7 +372,7 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         break;
 
         case XATTR_FILLBITMAP:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 XFillBitmapItem aItem;
                 aItem.PutValue( GetPropertySet()->getPropertyValue( "FillBitmapName" ), MID_NAME );
@@ -380,28 +395,29 @@ void GraphicPropertyItemConverter::FillSpecialItem(
         // hack, because QueryValue of XLineTransparenceItem returns sal_Int32
         // instead of sal_Int16
         case XATTR_LINETRANSPARENCE:
-        {
-            OUString aPropName =
-                  (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
-                  ? OUString( "BorderTransparency" )
-                  : (m_GraphicObjectType == GraphicObjectType::LineDataPoint)
-                  ? OUString( "Transparency" )
-                  : OUString( "LineTransparence" );
+            if( lcl_supportsLineProperties( m_eGraphicObjectType ))
+            {
+                OUString aPropName =
+                      (m_eGraphicObjectType == FILLED_DATA_POINT)
+                      ? OUString( "BorderTransparency" )
+                      : (m_eGraphicObjectType == LINE_DATA_POINT)
+                      ? OUString( "Transparency" )
+                      : OUString( "LineTransparence" );
 
-            XLineTransparenceItem aItem;
-            aItem.PutValue( GetPropertySet()->getPropertyValue( aPropName ), 0 );
+                XLineTransparenceItem aItem;
+                aItem.PutValue( GetPropertySet()->getPropertyValue( aPropName ), 0 );
 
-            rOutItemSet.Put( aItem );
-        }
-        break;
+                rOutItemSet.Put( aItem );
+            }
+            break;
 
         // hack, because QueryValue of XFillTransparenceItem returns sal_Int32
         // instead of sal_Int16
         case XATTR_FILLTRANSPARENCE:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                      (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                      (m_eGraphicObjectType == FILLED_DATA_POINT)
                       ? OUString( "Transparency" )
                       : OUString( "FillTransparence" );
 
@@ -416,6 +432,7 @@ void GraphicPropertyItemConverter::FillSpecialItem(
 
 bool GraphicPropertyItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+    throw( uno::Exception )
 {
     bool bChanged = false;
     uno::Any aValue;
@@ -424,7 +441,7 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
     {
         // bitmap property
         case XATTR_FILLBMP_STRETCH:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 const OUString aModePropName("FillBitmapMode");
                 bool bStretched = static_cast< const XFillBmpStretchItem & >(
@@ -442,7 +459,7 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
             break;
 
         case XATTR_FILLBMP_TILE:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 const OUString aModePropName("FillBitmapMode");
                 bool bTiled = static_cast< const XFillBmpTileItem & >(
@@ -462,10 +479,10 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
         case XATTR_FILLFLOATTRANSPARENCE:
             try
             {
-                if( lcl_supportsFillProperties( m_GraphicObjectType ))
+                if( lcl_supportsFillProperties( m_eGraphicObjectType ))
                 {
                     OUString aPropName =
-                          (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                          (m_eGraphicObjectType == FILLED_DATA_POINT)
                           ? OUString( "TransparencyGradientName" )
                           : OUString( "FillTransparenceGradientName" );
 
@@ -513,10 +530,10 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
 
         case XATTR_GRADIENTSTEPCOUNT:
         {
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "GradientStepCount" )
                     : OUString( "FillGradientStepCount" );
 
@@ -535,29 +552,33 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
 
         case XATTR_LINEDASH:
         {
-            OUString aPropName =
-                (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
-                ? OUString( "BorderDashName" )
-                : OUString( "LineDashName" );
-
-            const XLineDashItem & rItem =
-                static_cast< const XLineDashItem & >(
-                    rItemSet.Get( nWhichId ));
-
-            if( rItem.QueryValue( aValue, MID_NAME ))
+            if( lcl_supportsLineProperties( m_eGraphicObjectType ))
             {
-                if( aValue != GetPropertySet()->getPropertyValue( aPropName ))
-                {
-                    // add LineDash to list
-                    uno::Any aLineDash;
-                    rItem.QueryValue( aLineDash, MID_LINEDASH );
-                    OUString aPreferredName;
-                    aValue >>= aPreferredName;
-                    aValue <<= PropertyHelper::addLineDashUniqueNameToTable(
-                        aLineDash, m_xNamedPropertyTableFactory, aPreferredName );
 
-                    GetPropertySet()->setPropertyValue( aPropName, aValue );
-                    bChanged = true;
+                OUString aPropName =
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
+                    ? OUString( "BorderDashName" )
+                    : OUString( "LineDashName" );
+
+                const XLineDashItem & rItem =
+                    static_cast< const XLineDashItem & >(
+                        rItemSet.Get( nWhichId ));
+
+                if( rItem.QueryValue( aValue, MID_NAME ))
+                {
+                    if( aValue != GetPropertySet()->getPropertyValue( aPropName ))
+                    {
+                        // add LineDash to list
+                        uno::Any aLineDash;
+                        rItem.QueryValue( aLineDash, MID_LINEDASH );
+                        OUString aPreferredName;
+                        aValue >>= aPreferredName;
+                        aValue <<= PropertyHelper::addLineDashUniqueNameToTable(
+                            aLineDash, m_xNamedPropertyTableFactory, aPreferredName );
+
+                        GetPropertySet()->setPropertyValue( aPropName, aValue );
+                        bChanged = true;
+                    }
                 }
             }
         }
@@ -565,10 +586,10 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
 
         case XATTR_FILLGRADIENT:
         {
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "GradientName" )
                     : OUString( "FillGradientName" );
 
@@ -598,10 +619,10 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
 
         case XATTR_FILLHATCH:
         {
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                    (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                    (m_eGraphicObjectType == FILLED_DATA_POINT)
                     ? OUString( "HatchName" )
                     : OUString( "FillHatchName" );
 
@@ -631,7 +652,7 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
 
         case XATTR_FILLBITMAP:
         {
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 const XFillBitmapItem & rItem =
                     static_cast< const XFillBitmapItem & >(
@@ -660,48 +681,49 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
         // hack, because QueryValue of XLineTransparenceItem returns sal_Int32
         // instead of sal_Int16
         case XATTR_LINETRANSPARENCE:
-        {
-            OUString aPropName =
-                  (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
-                  ? OUString( "BorderTransparency" )
-                  : (m_GraphicObjectType == GraphicObjectType::LineDataPoint)
-                  ? OUString( "Transparency" )
-                  : OUString( "LineTransparence" );
-
-            const XLineTransparenceItem & rItem =
-                static_cast< const XLineTransparenceItem & >(
-                    rItemSet.Get( nWhichId ));
-
-            if( rItem.QueryValue( aValue ))
+            if( lcl_supportsLineProperties( m_eGraphicObjectType ))
             {
-                OSL_ENSURE( ! aValue.isExtractableTo(
-                                cppu::UnoType<sal_Int16>::get()),
-                            "TransparenceItem QueryValue bug is fixed. Remove hack." );
-                sal_Int32 nValue = 0;
-                if( aValue >>= nValue )
-                {
-                    OSL_ENSURE( nValue < SAL_MAX_INT16, "Transparency value too large" );
-                    sal_Int16 nValueToSet( static_cast< sal_Int16 >( nValue ));
-                    aValue <<= nValueToSet;
+                OUString aPropName =
+                      (m_eGraphicObjectType == FILLED_DATA_POINT)
+                      ? OUString( "BorderTransparency" )
+                      : (m_eGraphicObjectType == LINE_DATA_POINT)
+                      ? OUString( "Transparency" )
+                      : OUString( "LineTransparence" );
 
-                    GetPropertySet()->setPropertyValue( aPropName, aValue );
-                    bChanged = true;
-                }
-                else
+                const XLineTransparenceItem & rItem =
+                    static_cast< const XLineTransparenceItem & >(
+                        rItemSet.Get( nWhichId ));
+
+                if( rItem.QueryValue( aValue ))
                 {
-                    OSL_FAIL( "Wrong type in Transparency Any" );
+                    OSL_ENSURE( ! aValue.isExtractableTo(
+                                    cppu::UnoType<sal_Int16>::get()),
+                                "TransparenceItem QueryValue bug is fixed. Remove hack." );
+                    sal_Int32 nValue = 0;
+                    if( aValue >>= nValue )
+                    {
+                        OSL_ENSURE( nValue < SAL_MAX_INT16, "Transparency value too large" );
+                        sal_Int16 nValueToSet( static_cast< sal_Int16 >( nValue ));
+                        aValue <<= nValueToSet;
+
+                        GetPropertySet()->setPropertyValue( aPropName, aValue );
+                        bChanged = true;
+                    }
+                    else
+                    {
+                        OSL_FAIL( "Wrong type in Transparency Any" );
+                    }
                 }
             }
-        }
-        break;
+            break;
 
         // hack, because QueryValue of XFillTransparenceItem returns sal_Int32
         // instead of sal_Int16
         case XATTR_FILLTRANSPARENCE:
-            if( lcl_supportsFillProperties( m_GraphicObjectType ))
+            if( lcl_supportsFillProperties( m_eGraphicObjectType ))
             {
                 OUString aPropName =
-                      (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                      (m_eGraphicObjectType == FILLED_DATA_POINT)
                       ? OUString( "Transparency" )
                       : OUString( "FillTransparence" );
 
@@ -724,11 +746,11 @@ bool GraphicPropertyItemConverter::ApplySpecialItem(
                         GetPropertySet()->setPropertyValue( aPropName, aValue );
                         // if linear or no transparence is set, delete the gradient
                         OUString aTransGradPropName =
-                              (m_GraphicObjectType == GraphicObjectType::FilledDataPoint)
+                              (m_eGraphicObjectType == FILLED_DATA_POINT)
                               ? OUString( "TransparencyGradientName" )
                               : OUString( "FillTransparenceGradientName" );
                         GetPropertySet()->setPropertyValue(
-                            aTransGradPropName, uno::Any( OUString() ));
+                            aTransGradPropName, uno::makeAny( OUString() ));
 
                         bChanged = true;
                     }

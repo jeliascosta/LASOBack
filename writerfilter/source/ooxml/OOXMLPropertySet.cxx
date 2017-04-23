@@ -30,9 +30,9 @@ namespace ooxml
 using namespace ::std;
 using namespace com::sun::star;
 
-OOXMLProperty::OOXMLProperty(Id id, const OOXMLValue::Pointer_t& pValue,
-                             OOXMLProperty::Type_t eType)
-    : mId(id), mpValue(pValue), meType(eType)
+OOXMLProperty::OOXMLProperty(Id id, OOXMLValue::Pointer_t pValue,
+                                     OOXMLProperty::Type_t eType)
+: mId(id), mpValue(pValue), meType(eType)
 {
 }
 
@@ -181,7 +181,7 @@ OOXMLValue * OOXMLValue::clone() const
   class OOXMLBinaryValue
  */
 
-OOXMLBinaryValue::OOXMLBinaryValue(OOXMLBinaryObjectReference::Pointer_t const &
+OOXMLBinaryValue::OOXMLBinaryValue(OOXMLBinaryObjectReference::Pointer_t
                                    pBinaryObj)
 : mpBinaryObj(pBinaryObj)
 {
@@ -221,7 +221,7 @@ static bool GetBooleanValue(const char *pValue)
            || !strcmp(pValue, "On");
 }
 
-OOXMLValue::Pointer_t const & OOXMLBooleanValue::Create(bool bValue)
+OOXMLValue::Pointer_t OOXMLBooleanValue::Create(bool bValue)
 {
     static OOXMLValue::Pointer_t False(new OOXMLBooleanValue (false));
     static OOXMLValue::Pointer_t True(new OOXMLBooleanValue (true));
@@ -307,7 +307,7 @@ OOXMLValue * OOXMLStringValue::clone() const
 /*
   class OOXMLInputStreamValue
  */
-OOXMLInputStreamValue::OOXMLInputStreamValue(uno::Reference<io::XInputStream> const & xInputStream)
+OOXMLInputStreamValue::OOXMLInputStreamValue(uno::Reference<io::XInputStream> xInputStream)
 : mxInputStream(xInputStream)
 {
 }
@@ -447,8 +447,9 @@ string OOXMLPropertySet::toString()
   class OOXMLPropertySetValue
 */
 
-OOXMLPropertySetValue::OOXMLPropertySetValue(const OOXMLPropertySet::Pointer_t& pPropertySet)
-    : mpPropertySet(pPropertySet)
+OOXMLPropertySetValue::OOXMLPropertySetValue
+(OOXMLPropertySet::Pointer_t pPropertySet)
+: mpPropertySet(pPropertySet)
 {
 }
 
@@ -629,7 +630,7 @@ string OOXMLUniversalMeasureValue::toString() const
  */
 
 
-OOXMLShapeValue::OOXMLShapeValue(uno::Reference<drawing::XShape> const & rShape)
+OOXMLShapeValue::OOXMLShapeValue(uno::Reference<drawing::XShape> rShape)
 : mrShape(rShape)
 {
 }
@@ -660,7 +661,7 @@ OOXMLValue * OOXMLShapeValue::clone() const
  */
 
 
-OOXMLStarMathValue::OOXMLStarMathValue( uno::Reference< embed::XEmbeddedObject > const & c )
+OOXMLStarMathValue::OOXMLStarMathValue( uno::Reference< embed::XEmbeddedObject > c )
 : component(c)
 {
 }

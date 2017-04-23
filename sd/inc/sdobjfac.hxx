@@ -22,6 +22,7 @@
 
 #include <tools/link.hxx>
 
+// class SdObjectFactory
 class SdrObjFactory;
 
 class SdObjectFactory
@@ -29,7 +30,7 @@ class SdObjectFactory
 public:
     SdObjectFactory() {}
 
-    DECL_STATIC_LINK( SdObjectFactory, MakeUserData, SdrObjUserDataCreatorParams, SdrObjUserData* );
+    DECL_STATIC_LINK_TYPED( SdObjectFactory, MakeUserData, SdrObjFactory *, void );
 };
 
 extern SdObjectFactory aSdObjectFactory;

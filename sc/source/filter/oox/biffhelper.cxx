@@ -22,9 +22,9 @@
 #include <rtl/math.hxx>
 #include <rtl/tencinfo.h>
 #include <osl/diagnose.h>
+#include "biffinputstream.hxx"
 #include "worksheethelper.hxx"
 #include <oox/helper/binaryoutputstream.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 
 namespace oox {
 namespace xls {
@@ -40,8 +40,8 @@ union DecodedDouble
     double              mfValue;
     sal_math_Double     maStruct;
 
-    explicit     DecodedDouble() {}
-    explicit     DecodedDouble( double fValue ) : mfValue( fValue ) {}
+    inline explicit     DecodedDouble() {}
+    inline explicit     DecodedDouble( double fValue ) : mfValue( fValue ) {}
 };
 
 } // namespace
@@ -106,6 +106,26 @@ union DecodedDouble
         }
     }
     return aString;
+}
+
+// BIFF2-BIFF8 import ---------------------------------------------------------
+
+/*static*/ bool BiffHelper::isBofRecord( BiffInputStream& rStrm )
+{
+    return
+        (rStrm.getRecId() == BIFF2_ID_BOF) ||
+        (rStrm.getRecId() == BIFF3_ID_BOF) ||
+        (rStrm.getRecId() == BIFF4_ID_BOF) ||
+        (rStrm.getRecId() == BIFF5_ID_BOF);
+}
+
+/*static*/ bool BiffHelper::skipRecordBlock( BiffInputStream& rStrm, sal_uInt16 nEndRecId )
+{
+    sal_uInt16 nStartRecId = rStrm.getRecId();
+    while( rStrm.startNextRecord() && (rStrm.getRecId() != nEndRecId) )
+        if( rStrm.getRecId() == nStartRecId )
+            skipRecordBlock( rStrm, nEndRecId );
+    return !rStrm.isEof() && (rStrm.getRecId() == nEndRecId);
 }
 
 } // namespace xls

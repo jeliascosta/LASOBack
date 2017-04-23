@@ -46,12 +46,13 @@ struct ProviderRequest
         void* pServiceManager,
         sal_Char const* pImplementationName
     )
-    : xServiceManager(static_cast<XMultiServiceFactory*>(pServiceManager))
+    : xServiceManager(reinterpret_cast<XMultiServiceFactory*>(pServiceManager))
     , sImplementationName(OUString::createFromAscii(pImplementationName))
     {
     }
 
-    bool CREATE_PROVIDER(
+    inline
+    sal_Bool CREATE_PROVIDER(
                 const OUString& Implname,
                 const Sequence< OUString > & Services,
                 ::cppu::ComponentInstantiation Factory,
@@ -59,13 +60,13 @@ struct ProviderRequest
             )
     {
         if (!xRet.is() && (Implname == sImplementationName))
-            try
-            {
-                xRet = creator( xServiceManager, sImplementationName,Factory, Services,nullptr);
-            }
-            catch(...)
-            {
-            }
+        try
+        {
+            xRet = creator( xServiceManager, sImplementationName,Factory, Services,0);
+        }
+        catch(...)
+        {
+        }
         return xRet.is();
     }
 
@@ -78,7 +79,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT void* SAL_CALL ado_component_getFactory(
                     void* pServiceManager,
                     void* /*pRegistryKey*/)
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
     if (pServiceManager)
     {
         ProviderRequest aReq(pServiceManager,pImplementationName);

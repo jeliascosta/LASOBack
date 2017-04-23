@@ -64,26 +64,35 @@ private:
 public:
 
     explicit TaskCreatorService(const css::uno::Reference< css::uno::XComponentContext >& xContext);
+    virtual ~TaskCreatorService(                                                                   );
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.framework.TaskCreator");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
-        return {"com.sun.star.frame.TaskCreator"};
+        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.TaskCreator" };
+        return aSeq;
     }
 
     // XSingleServiceFactory
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance() override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance()
+        throw(css::uno::Exception       ,
+              css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments(const css::uno::Sequence< css::uno::Any >& lArguments) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments(const css::uno::Sequence< css::uno::Any >& lArguments)
+        throw(css::uno::Exception       ,
+              css::uno::RuntimeException, std::exception) override;
 
 private:
 
@@ -111,12 +120,20 @@ TaskCreatorService::TaskCreatorService(const css::uno::Reference< css::uno::XCom
 {
 }
 
+TaskCreatorService::~TaskCreatorService()
+{
+}
+
 css::uno::Reference< css::uno::XInterface > SAL_CALL TaskCreatorService::createInstance()
+    throw(css::uno::Exception       ,
+          css::uno::RuntimeException, std::exception)
 {
     return createInstanceWithArguments(css::uno::Sequence< css::uno::Any >());
 }
 
 css::uno::Reference< css::uno::XInterface > SAL_CALL TaskCreatorService::createInstanceWithArguments(const css::uno::Sequence< css::uno::Any >& lArguments)
+    throw(css::uno::Exception       ,
+          css::uno::RuntimeException, std::exception)
 {
     ::comphelper::SequenceAsHashMap lArgs(lArguments);
 
@@ -200,7 +217,7 @@ void TaskCreatorService::implts_applyDocStyleToWindow(const css::uno::Reference<
 {
     // SYNCHRONIZED ->
     SolarMutexGuard aSolarGuard;
-    VclPtr<vcl::Window> pVCLWindow = VCLUnoHelper::GetWindow(xWindow);
+    vcl::Window* pVCLWindow = VCLUnoHelper::GetWindow(xWindow);
     if (pVCLWindow)
         pVCLWindow->SetExtendedStyle(WB_EXT_DOCUMENT);
     // <- SYNCHRONIZED
@@ -250,7 +267,10 @@ css::uno::Reference< css::awt::XWindow > TaskCreatorService::implts_createContai
 
     // create a new blank container window and get access to parent container to append new created task.
     css::uno::Reference< css::awt::XWindowPeer > xPeer      = xToolkit->createWindow( aDescriptor );
-    css::uno::Reference< css::awt::XWindow >     xWindow    ( xPeer, css::uno::UNO_QUERY_THROW );
+    css::uno::Reference< css::awt::XWindow >     xWindow    ( xPeer, css::uno::UNO_QUERY );
+    if ( ! xWindow.is())
+        throw css::uno::Exception("TaskCreator service was not able to create suitable frame window.",
+                                  static_cast< ::cppu::OWeakObject* >(this));
 
     sal_Int32 nBackground = 0xffffffff;
 

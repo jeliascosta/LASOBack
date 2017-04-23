@@ -132,6 +132,7 @@ void SvxTextEncodingBox::FillFromDbTextEncodingMap(
 #if !HAVE_FEATURE_DBCONNECTIVITY
     (void)bExcludeImportSubsets;
     (void)nExcludeInfoFlags;
+    (void)nButIncludeInfoFlags;
 #else
     rtl_TextEncodingInfo aInfo;
     aInfo.StructSize = sizeof(rtl_TextEncodingInfo);

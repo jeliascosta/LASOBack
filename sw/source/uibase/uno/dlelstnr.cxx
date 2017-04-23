@@ -18,6 +18,8 @@
  */
 
 #include <com/sun/star/frame/Desktop.hpp>
+#include <com/sun/star/linguistic2/DictionaryListEventFlags.hpp>
+#include <com/sun/star/linguistic2/XDictionaryList.hpp>
 #include <com/sun/star/linguistic2/LinguServiceManager.hpp>
 #include <com/sun/star/linguistic2/XLinguServiceEventBroadcaster.hpp>
 #include <com/sun/star/linguistic2/LinguServiceEventFlags.hpp>
@@ -72,6 +74,7 @@ SwLinguServiceEventListener::~SwLinguServiceEventListener()
 
 void SAL_CALL SwLinguServiceEventListener::processLinguServiceEvent(
             const LinguServiceEvent& rLngSvcEvent )
+        throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -101,6 +104,7 @@ void SAL_CALL SwLinguServiceEventListener::processLinguServiceEvent(
 
 void SAL_CALL SwLinguServiceEventListener::disposing(
             const EventObject& rEventObj )
+        throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -112,11 +116,13 @@ void SAL_CALL SwLinguServiceEventListener::disposing(
 
 void SAL_CALL SwLinguServiceEventListener::queryTermination(
             const EventObject& /*rEventObj*/ )
+        throw(TerminationVetoException, RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL SwLinguServiceEventListener::notifyTermination(
             const EventObject& rEventObj )
+        throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 

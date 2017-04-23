@@ -58,14 +58,7 @@ BEGIN_COM_MAP(SOActionsApproval)
     COM_INTERFACE_ENTRY(IDispatch)
     COM_INTERFACE_ENTRY(ISOActionsApproval)
     COM_INTERFACE_ENTRY(ISupportErrorInfo)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
 END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 DECLARE_NOT_AGGREGATABLE(SOActionsApproval)
 // Remove the comment from the line above if you don't want your object to
 // support aggregation.
@@ -73,12 +66,12 @@ DECLARE_NOT_AGGREGATABLE(SOActionsApproval)
 DECLARE_REGISTRY_RESOURCEID(IDR_SODOCUMENTEVENTLISTENER)
 
 // ISupportsErrorInfo
-    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid) override;
+    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
 // ISOActionsApproval
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE approveAction(
             /* [in] */ long nActionID,
-            /* [retval][out] */ boolean *pbApproval) override
+            /* [retval][out] */ boolean *pbApproval)
         {
             // only PreventClose is approved
             USES_CONVERSION;
@@ -88,7 +81,7 @@ DECLARE_REGISTRY_RESOURCEID(IDR_SODOCUMENTEVENTLISTENER)
         }
 
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_Bridge_implementedInterfaces(
-            /* [retval][out] */ SAFEARRAY __RPC_FAR * __RPC_FAR *pVal) override
+            /* [retval][out] */ SAFEARRAY __RPC_FAR * __RPC_FAR *pVal)
         {
             *pVal = SafeArrayCreateVector( VT_BSTR, 0, 1 );
 

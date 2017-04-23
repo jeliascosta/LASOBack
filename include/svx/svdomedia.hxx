@@ -37,9 +37,9 @@ public:
 
 
                                     SdrMediaObj();
-                                    SdrMediaObj( const tools::Rectangle& rRect );
+                                    SdrMediaObj( const Rectangle& rRect );
 
-        virtual                     ~SdrMediaObj() override;
+        virtual                     ~SdrMediaObj();
 
         virtual bool                HasTextEdit() const override;
 
@@ -52,7 +52,7 @@ public:
         virtual SdrMediaObj*            Clone() const override;
         SdrMediaObj&                operator=(const SdrMediaObj& rObj);
 
-        virtual void                AdjustToMaxRect( const tools::Rectangle& rMaxRect, bool bShrinkOnly = false ) override;
+        virtual void                AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly = false ) override;
 
 public:
 
@@ -61,6 +61,8 @@ public:
 
         void                        setMediaProperties( const ::avmedia::MediaItem& rState );
         const ::avmedia::MediaItem& getMediaProperties() const;
+
+        Size                        getPreferredSize() const;
 
         const css::uno::Reference< css::graphic::XGraphic >
                                     getSnapshot() const;

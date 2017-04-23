@@ -48,7 +48,6 @@
 #include <com/sun/star/inspection/ObjectInspectorModel.hpp>
 #include <com/sun/star/inspection/XObjectInspectorUI.hpp>
 #include <com/sun/star/inspection/DefaultHelpProvider.hpp>
-#include <com/sun/star/util/VetoException.hpp>
 
 #include <comphelper/processfactory.hxx>
 #include <comphelper/property.hxx>
@@ -397,7 +396,7 @@ void FmPropBrw::implSetNewSelection( const InterfaceBag& _rSelection )
             Reference< XObjectInspector > xInspector( m_xBrowserController, UNO_QUERY_THROW );
 
             // tell it the objects to inspect
-            xInspector->inspect( comphelper::containerToSequence(_rSelection) );
+            xInspector->inspect( comphelper::containerToSequence< Reference< XInterface > >(_rSelection) );
         }
         catch( const VetoException& )
         {
@@ -482,7 +481,7 @@ void FmPropBrw::FillInfo( SfxChildWinInfo& rInfo ) const
 }
 
 
-IMPL_LINK_NOARG( FmPropBrw, OnAsyncGetFocus, void*, void )
+IMPL_LINK_NOARG_TYPED( FmPropBrw, OnAsyncGetFocus, void*, void )
 {
     if (m_xBrowserComponentWindow.is())
         m_xBrowserComponentWindow->setFocus();
@@ -542,10 +541,10 @@ void FmPropBrw::impl_createPropertyBrowser_throw( FmFormShell* _pFormShell )
     // a ComponentContext for the
     ::cppu::ContextEntry_Init aHandlerContextInfo[] =
     {
-        ::cppu::ContextEntry_Init( "ContextDocument", makeAny( xDocument ) ),
-        ::cppu::ContextEntry_Init( "DialogParentWindow", makeAny( xParentWindow ) ),
-        ::cppu::ContextEntry_Init( "ControlContext", makeAny( xControlContext ) ),
-        ::cppu::ContextEntry_Init( "ControlShapeAccess", makeAny( xControlMap ) )
+        ::cppu::ContextEntry_Init( OUString( "ContextDocument" ), makeAny( xDocument ) ),
+        ::cppu::ContextEntry_Init( OUString( "DialogParentWindow" ), makeAny( xParentWindow ) ),
+        ::cppu::ContextEntry_Init( OUString( "ControlContext" ), makeAny( xControlContext ) ),
+        ::cppu::ContextEntry_Init( OUString( "ControlShapeAccess" ), makeAny( xControlMap ) )
     };
     m_xInspectorContext.set(
         ::cppu::createComponentContext( aHandlerContextInfo, SAL_N_ELEMENTS( aHandlerContextInfo ),

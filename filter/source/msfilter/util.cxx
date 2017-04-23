@@ -7,14 +7,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <com/sun/star/awt/Size.hpp>
 #include <rtl/ustring.hxx>
 #include <rtl/strbuf.hxx>
 #include <unotools/fontcvt.hxx>
 #include <unotools/fontdefs.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/salbtype.hxx>
-#include <filter/msfilter/escherex.hxx>
 #include <filter/msfilter/util.hxx>
 #include <memory>
 #include <unordered_map>
@@ -369,13 +367,13 @@ sal_Int32 WW8ReadFieldParams::SkipToNextToken()
 }
 
 // FindNextPara searches the next backslash parameter or the next string
-// until the next blank or "\" or closing quotation mark
+// until the next blank or "\" or closing quatation mark
 // or the end of the string of pStr.
 //
-// Output ppNext (if ppNext != 0) search begin of next parameter resp. 0
+// Output ppNext (if ppNext != 0) Suchbeginn fuer naechsten Parameter bzw. 0
 //
 // Return value: 0 if end of string reached,
-//             otherwise beginning of the parameter resp. string
+//             ansonsten Anfang des Paramters bzw. der Zeichenkette
 //
 sal_Int32 WW8ReadFieldParams::FindNextStringPiece(const sal_Int32 nStart)
 {
@@ -403,7 +401,7 @@ sal_Int32 WW8ReadFieldParams::FindNextStringPiece(const sal_Int32 nStart)
     // quotation marks before paragraph?
     if ( aData[n]=='"' || aData[n]==0x201c || aData[n]==132 || aData[n]==0x14 )
     {
-        n++;                        // read over quotation marks
+        n++;                        // read over quatation marks
         n2 = n;                     // search for the end from here on
         while(     (nLen > n2)
                 && (aData[n2] != '"')
@@ -1186,7 +1184,7 @@ const char* GetOOXMLPresetGeometry( const char* sShapeType )
 {
     if( pCustomShapeTypeTranslationHashMap == nullptr )
     {
-        pCustomShapeTypeTranslationHashMap = new CustomShapeTypeTranslationHashMap;
+        pCustomShapeTypeTranslationHashMap = new CustomShapeTypeTranslationHashMap ();
         for(const msfilter::util::CustomShapeTypeTranslationTable& i : pCustomShapeTypeTranslationTable)
         {
             (*pCustomShapeTypeTranslationHashMap)[ i.sOOo ] = i.sMSO;
@@ -1206,7 +1204,7 @@ MSO_SPT GETVMLShapeType(const OString& aType)
 
     if (!pDMLToVMLMap)
     {
-        pDMLToVMLMap = new DMLToVMLTranslationHashMap;
+        pDMLToVMLMap = new DMLToVMLTranslationHashMap();
         for (auto& i : pDMLToVMLTable)
             (*pDMLToVMLMap)[i.sDML] = i.nVML;
     }

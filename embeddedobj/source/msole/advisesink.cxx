@@ -36,17 +36,17 @@ OleWrapperAdviseSink::~OleWrapperAdviseSink()
 
 STDMETHODIMP OleWrapperAdviseSink::QueryInterface( REFIID riid , void** ppv )
 {
-    *ppv=nullptr;
+    *ppv=NULL;
 
     if ( riid == IID_IUnknown )
-        *ppv = static_cast<IUnknown*>(this);
+        *ppv = (IUnknown*)this;
 
     if ( riid == IID_IAdviseSink )
-        *ppv = static_cast<IAdviseSink*>(this);
+        *ppv = (IAdviseSink*)this;
 
-    if ( *ppv != nullptr )
+    if ( *ppv != NULL )
     {
-        static_cast<IUnknown*>(*ppv)->AddRef();
+        ((IUnknown*)*ppv)->AddRef();
         return S_OK;
     }
 
@@ -71,7 +71,7 @@ void OleWrapperAdviseSink::disconnectOleComponent()
 {
     // must not be called from the descructor of OleComponent!!!
     osl::MutexGuard aGuard( m_aMutex );
-    m_pOleComp = nullptr;
+    m_pOleComp = NULL;
 }
 
 STDMETHODIMP_(void) OleWrapperAdviseSink::OnDataChange(LPFORMATETC, LPSTGMEDIUM)

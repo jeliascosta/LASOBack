@@ -42,6 +42,8 @@ private:
     css::uno::Sequence< OUString >  aFontNameSeq;
 
 public:
+    static SfxPoolItem* CreateDefault();
+
     SvxFontListItem( const FontList* pFontLst,
                      const sal_uInt16 nId  );
     SvxFontListItem( const SvxFontListItem& rItem );
@@ -52,9 +54,9 @@ public:
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     const FontList*         GetFontList() const { return pFontList; }
 };

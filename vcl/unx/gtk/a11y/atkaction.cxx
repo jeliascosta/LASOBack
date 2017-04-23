@@ -43,9 +43,8 @@ getAsConst( const OString& rString )
     return aUgly[ nIdx ].getStr();
 }
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleAction>
-        getAction( AtkAction *action )
+        getAction( AtkAction *action ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( action );
 
@@ -235,7 +234,7 @@ action_wrapper_get_keybinding (AtkAction *action,
                     appendKeyStrokes( aRet,  xBinding->getAccessibleKeyBinding( n ) );
 
                     if( n < 2 )
-                        aRet.append( ';' );
+                        aRet.append( (sal_Char) ';' );
                 }
 
                 // !! FIXME !! remember keystroke in wrapper object ?

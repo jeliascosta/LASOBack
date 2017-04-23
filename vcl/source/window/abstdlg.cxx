@@ -22,7 +22,6 @@
 #include <rtl/ustring.hxx>
 #include <osl/module.hxx>
 #include <vcl/abstdlg.hxx>
-#include <vcl/bitmap.hxx>
 
 typedef VclAbstractDialogFactory* (SAL_CALL *FuncPtrCreateDialogFactory)();
 
@@ -56,24 +55,6 @@ VclAbstractDialogFactory* VclAbstractDialogFactory::Create()
 
 VclAbstractDialog::~VclAbstractDialog()
 {
-}
-
-std::vector<OString> VclAbstractDialog::getAllPageUIXMLDescriptions() const
-{
-    // default has no pages
-    return std::vector<OString>();
-}
-
-bool VclAbstractDialog::selectPageByUIXMLDescription(const OString& /*rUIXMLDescription*/)
-{
-    // default cannot select a page (which is okay, return true)
-    return true;
-}
-
-Bitmap VclAbstractDialog::createScreenshot() const
-{
-    // default returns empty bitmap
-    return Bitmap();
 }
 
 // virtual

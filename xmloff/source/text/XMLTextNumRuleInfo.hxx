@@ -22,11 +22,11 @@
 
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/container/XIndexReplace.hpp>
-#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace text { class XTextContent; }
 } } }
+#include <sal/types.h>
 
 class XMLTextListAutoStylePool;
 
@@ -38,25 +38,36 @@ class XMLTextListAutoStylePool;
 */
 class XMLTextNumRuleInfo
 {
+    const OUString msNumberingRules;
+    const OUString msNumberingLevel;
+    const OUString msNumberingStartValue;
+    const OUString msParaIsNumberingRestart;
+    const OUString msNumberingIsNumber;
+    const OUString msNumberingIsOutline;
+    const OUString msPropNameListId;
+    const OUString msPropNameStartWith;
+    const OUString msContinueingPreviousSubTree;
+    const OUString msListLabelStringProp;
+
     // numbering rules instance and its name
     css::uno::Reference < css::container::XIndexReplace > mxNumRules;
-    OUString            msNumRulesName;
+    OUString     msNumRulesName;
 
     // paragraph's list attributes
-    OUString            msListId;
+    OUString     msListId;
     sal_Int16           mnListStartValue;
     sal_Int16           mnListLevel;
-    bool                mbIsNumbered;
-    bool                mbIsRestart;
+    bool            mbIsNumbered;
+    bool            mbIsRestart;
 
     // numbering rules' attributes
     sal_Int16           mnListLevelStartValue;
 
     // Written OpenDocument file format doesn't fit to the created text document (#i69627#)
-    bool                mbOutlineStyleAsNormalListStyle;
+    bool mbOutlineStyleAsNormalListStyle;
 
-    bool                mbContinueingPreviousSubTree;
-    OUString            msListLabelString;
+    bool mbContinueingPreviousSubTree;
+    OUString msListLabelString;
 
 public:
 
@@ -70,50 +81,55 @@ public:
               const bool bExportTextNumberElement );
     inline void Reset();
 
-    const OUString& GetNumRulesName() const
+    inline const OUString& GetNumRulesName() const
     {
         return msNumRulesName;
     }
-    sal_Int16 GetListLevelStartValue() const
+    inline sal_Int16 GetListLevelStartValue() const
     {
         return mnListLevelStartValue;
     }
 
-    const OUString& GetListId() const
+    inline const OUString& GetListId() const
     {
         return msListId;
     }
 
-    sal_Int16 GetLevel() const
+    inline sal_Int16 GetLevel() const
     {
         return mnListLevel;
     }
 
-    bool HasStartValue() const
+    inline bool HasStartValue() const
     {
         return mnListStartValue != -1;
     }
-    sal_uInt32 GetStartValue() const
+    inline sal_uInt32 GetStartValue() const
     {
         return mnListStartValue;
     }
 
-    bool IsNumbered() const
+    inline bool IsNumbered() const
     {
         return mbIsNumbered;
     }
-    bool IsRestart() const
+    inline bool IsRestart() const
     {
         return mbIsRestart;
     }
 
     bool BelongsToSameList( const XMLTextNumRuleInfo& rCmp ) const;
 
-    bool IsContinueingPreviousSubTree() const
+    inline bool HasSameNumRules( const XMLTextNumRuleInfo& rCmp ) const
+    {
+        return rCmp.msNumRulesName == msNumRulesName;
+    }
+
+    inline bool IsContinueingPreviousSubTree() const
     {
         return mbContinueingPreviousSubTree;
     }
-    const OUString& ListLabelString() const
+    inline const OUString& ListLabelString() const
     {
         return msListLabelString;
     }

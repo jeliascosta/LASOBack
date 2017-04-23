@@ -76,9 +76,9 @@ namespace drawinglayer
                 }
 
                 // create geometry
-                std::vector< basegfx::B3DPolyPolygon > aFill;
+                ::std::vector< basegfx::B3DPolyPolygon > aFill;
                 extractPlanesFromSlice(aFill, rSliceVector,
-                    bCreateNormals, true/*smoothHorizontalNormals*/, getSmoothNormals(), getSmoothLids(), false,
+                    bCreateNormals, getSmoothHorizontalNormals(), getSmoothNormals(), getSmoothLids(), false,
                     0.5, 0.6, bCreateTextureCoordinatesX || bCreateTextureCoordinatesY, aTexTransform);
 
                 // get full range
@@ -393,6 +393,7 @@ namespace drawinglayer
             double fDiagonal,
             double fBackScale,
             bool bSmoothNormals,
+            bool bSmoothHorizontalNormals,
             bool bSmoothLids,
             bool bCharacterMode,
             bool bCloseFront,
@@ -406,6 +407,7 @@ namespace drawinglayer
             mfBackScale(fBackScale),
             mpLastRLGViewInformation(nullptr),
             mbSmoothNormals(bSmoothNormals),
+            mbSmoothHorizontalNormals(bSmoothHorizontalNormals),
             mbSmoothLids(bSmoothLids),
             mbCharacterMode(bCharacterMode),
             mbCloseFront(bCloseFront),
@@ -459,6 +461,7 @@ namespace drawinglayer
                     && getDiagonal() == rCompare.getDiagonal()
                     && getBackScale() == rCompare.getBackScale()
                     && getSmoothNormals() == rCompare.getSmoothNormals()
+                    && getSmoothHorizontalNormals() == rCompare.getSmoothHorizontalNormals()
                     && getSmoothLids() == rCompare.getSmoothLids()
                     && getCharacterMode() == rCompare.getCharacterMode()
                     && getCloseFront() == rCompare.getCloseFront()

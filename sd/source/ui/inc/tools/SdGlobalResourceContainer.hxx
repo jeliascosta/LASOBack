@@ -82,7 +82,7 @@ public:
     void AddResource (const css::uno::Reference<css::uno::XInterface>& rxResource);
 
 protected:
-    friend class SdGlobalResourceContainerInstance;
+    friend class ::SdModule;
     friend struct ::std::default_delete<SdGlobalResourceContainer>;
 
     class Implementation;

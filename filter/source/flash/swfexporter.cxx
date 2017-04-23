@@ -42,6 +42,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::drawing;
 using namespace ::com::sun::star::presentation;
 using namespace ::com::sun::star::task;
+using namespace ::std;
 using namespace ::swf;
 
 using com::sun::star::io::XOutputStream;
@@ -62,8 +63,8 @@ PageInfo::PageInfo()
 
 PageInfo::~PageInfo()
 {
-    std::vector<ShapeInfo*>::iterator aIter( maShapesVector.begin() );
-    const std::vector<ShapeInfo*>::iterator aEnd( maShapesVector.end() );
+    vector<ShapeInfo*>::iterator aIter( maShapesVector.begin() );
+    const vector<ShapeInfo*>::iterator aEnd( maShapesVector.end() );
     while( aIter != aEnd )
     {
         delete (*aIter++);
@@ -166,13 +167,14 @@ bool FlashExporter::exportAll( const Reference< XComponent >& xDoc, Reference< X
 
     // #i56084# nPageCount is 1 when exporting selection
     const sal_Int32 nPageCount = mbExportSelection ? 1 : xDrawPages->getCount();
+    sal_uInt16 nPage;
 
     if ( xStatusIndicator.is() )
     {
         xStatusIndicator->start("Macromedia Flash (SWF)", nPageCount);
     }
 
-    for( sal_Int32 nPage = 0; nPage < nPageCount; nPage++)
+    for( nPage = 0; nPage < nPageCount; nPage++)
     {
         // #i56084# keep PageNumber? We could determine the PageNumber of the single to-be-exported page
         // when exporting the selection, but this is only used for swf internal, so no need to do so (AFAIK)
@@ -328,7 +330,7 @@ sal_uInt16 FlashExporter::exportBackgrounds( const Reference< XDrawPage >& xDraw
     return nPage;
 }
 
-sal_uInt16 FlashExporter::exportBackgrounds( Reference< XDrawPage > const & xDrawPage, sal_uInt16 nPage, bool bExportObjects )
+sal_uInt16 FlashExporter::exportBackgrounds( Reference< XDrawPage > xDrawPage, sal_uInt16 nPage, bool bExportObjects )
 {
     Reference< XPropertySet > xPropSet( xDrawPage, UNO_QUERY );
     if( !xDrawPage.is() || !xPropSet.is() )
@@ -385,13 +387,13 @@ sal_uInt16 FlashExporter::exportBackgrounds( Reference< XDrawPage > const & xDra
 }
 
 
-static sal_Int32 nPlaceDepth;
+sal_Int32 nPlaceDepth;
 // AS: A Slide can have a private background or use its masterpage's background.
 //  We use the checksums on the metafiles to tell if backgrounds are the same and
 //  should be reused.  The return value indicates which slide's background to use.
 //  If the return value != nPage, then there is no background (if == -1) or the
 //  background has already been exported.
-sal_uInt16 FlashExporter::exportDrawPageBackground(sal_uInt16 nPage, Reference< XDrawPage > const & xPage)
+sal_uInt16 FlashExporter::exportDrawPageBackground(sal_uInt16 nPage, Reference< XDrawPage >& xPage)
 {
     sal_uInt16 rBackgroundID;
 
@@ -503,7 +505,7 @@ void FlashExporter::exportShapes( const Reference< XShapes >& xShapes, bool bStr
 {
     OSL_ENSURE( (xShapes->getCount() <= 0xffff), "overflow in FlashExporter::exportDrawPageContents()" );
 
-    sal_uInt16 nShapeCount = (sal_uInt16)std::min( xShapes->getCount(), (sal_Int32)0xffff );
+    sal_uInt16 nShapeCount = (sal_uInt16)min( xShapes->getCount(), (sal_Int32)0xffff );
     sal_uInt16 nShape;
 
     Reference< XShape > xShape;
@@ -665,7 +667,7 @@ bool FlashExporter::getMetaFile( Reference< XComponent >&xComponent, GDIMetaFile
     aDescriptor[0].Value <<= bExportAsJPEG ? OUString("PNG") : OUString("SVM");
 
     aDescriptor[1].Name = "URL";
-    aDescriptor[1].Value <<= aFile.GetURL();
+    aDescriptor[1].Value <<= OUString(aFile.GetURL());
     aDescriptor[2].Name = "FilterData";
     aDescriptor[2].Value <<= aFilterData;
     if( bOnlyBackground )
@@ -684,7 +686,7 @@ bool FlashExporter::getMetaFile( Reference< XComponent >&xComponent, GDIMetaFile
         aFilter.ImportGraphic( aGraphic, aFile.GetURL(), *aFile.GetStream( StreamMode::READ ) );
         BitmapEx rBitmapEx( aGraphic.GetBitmap(), Color(255,255,255) );
 
-        tools::Rectangle clipRect;
+        Rectangle clipRect;
         for( size_t i = 0, nCount = rMtf.GetActionSize(); i < nCount; i++ )
         {
             const MetaAction*    pAction = rMtf.GetAction( i );

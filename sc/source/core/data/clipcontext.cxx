@@ -17,7 +17,6 @@
 #include <clipparam.hxx>
 
 #include <svl/intitem.hxx>
-#include <formula/errorcodes.hxx>
 
 namespace sc {
 
@@ -204,8 +203,8 @@ void CopyFromClipContext::setSingleCell( const ScAddress& rSrcPos, const ScColum
                 // Good.
                 break;
 
-            FormulaError nErr = rSrcCell.mpFormula->GetErrCode();
-            if (nErr != FormulaError::NONE)
+            sal_uInt16 nErr = rSrcCell.mpFormula->GetErrCode();
+            if (nErr)
             {
                 // error codes are cloned with values
                 if (!bNumeric)
@@ -218,11 +217,6 @@ void CopyFromClipContext::setSingleCell( const ScAddress& rSrcPos, const ScColum
                     pErrCell->SetErrCode(nErr);
                     rSrcCell.set(pErrCell);
                 }
-            }
-            else if (rSrcCell.mpFormula->IsEmptyDisplayedAsString())
-            {
-                // Empty stays empty and doesn't become 0.
-                rSrcCell.clear();
             }
             else if (rSrcCell.mpFormula->IsValue())
             {
@@ -340,14 +334,19 @@ bool CopyFromClipContext::isDateCell( const ScColumn& rCol, SCROW nRow ) const
 }
 
 CopyToClipContext::CopyToClipContext(
-    ScDocument& rDoc, bool bKeepScenarioFlags) :
-    ClipContextBase(rDoc), mbKeepScenarioFlags(bKeepScenarioFlags) {}
+    ScDocument& rDoc, bool bKeepScenarioFlags, bool bCloneNotes) :
+    ClipContextBase(rDoc), mbKeepScenarioFlags(bKeepScenarioFlags), mbCloneNotes(bCloneNotes) {}
 
 CopyToClipContext::~CopyToClipContext() {}
 
 bool CopyToClipContext::isKeepScenarioFlags() const
 {
     return mbKeepScenarioFlags;
+}
+
+bool CopyToClipContext::isCloneNotes() const
+{
+    return mbCloneNotes;
 }
 
 CopyToDocContext::CopyToDocContext(ScDocument& rDoc) :

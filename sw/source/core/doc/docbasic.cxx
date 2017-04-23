@@ -60,10 +60,10 @@ static Sequence<Any> *lcl_docbasic_convertArgs( SbxArray& rArgs )
                 pUnoArgs[i] <<= (sal_Int16)pVar->GetUShort();
                 break;
             case SbxLONG:
-                pUnoArgs[i] <<= pVar->GetLong();
+                pUnoArgs[i] <<= (sal_Int32)pVar->GetLong();
                 break;
             default:
-                pUnoArgs[i].clear();
+                pUnoArgs[i].setValue(nullptr, cppu::UnoType<void>::get());
                 break;
             }
         }
@@ -117,7 +117,8 @@ bool SwDoc::ExecMacro( const SvxMacro& rMacro, OUString* pRet, SbxArray* pArgs )
             Sequence< sal_Int16 > aOutArgsIndex;
             Sequence< Any > aOutArgs;
 
-            SAL_INFO("sw", "SwDoc::ExecMacro URL is " << rMacro.GetMacName() );
+            OSL_TRACE( "SwDoc::ExecMacro URL is %s", OUStringToOString( rMacro.GetMacName(),
+                RTL_TEXTENCODING_UTF8).getStr() );
 
             eErr = mpDocShell->CallXScript(
                 rMacro.GetMacName(), *pUnoArgs, aRet, aOutArgsIndex, aOutArgs);
@@ -130,7 +131,7 @@ bool SwDoc::ExecMacro( const SvxMacro& rMacro, OUString* pRet, SbxArray* pArgs )
 }
 
 sal_uInt16 SwDoc::CallEvent( sal_uInt16 nEvent, const SwCallMouseEvent& rCallEvent,
-                    bool bCheckPtr )
+                    bool bCheckPtr, SbxArray* pArgs )
 {
     if( !mpDocShell )        // we can't do that without a DocShell!
         return 0;
@@ -207,17 +208,28 @@ sal_uInt16 SwDoc::CallEvent( sal_uInt16 nEvent, const SwCallMouseEvent& rCallEve
             if( STARBASIC == rMacro.GetScriptType() )
             {
                 nRet += 0 == mpDocShell->CallBasic( rMacro.GetMacName(),
-                                    rMacro.GetLibName(), nullptr ) ? 1 : 0;
+                                    rMacro.GetLibName(), pArgs ) ? 1 : 0;
             }
             else if( EXTENDED_STYPE == rMacro.GetScriptType() )
             {
-                std::unique_ptr<Sequence<Any> > pUnoArgs(new Sequence<Any>());
+                std::unique_ptr<Sequence<Any> > pUnoArgs;
+
+                if( pArgs )
+                {
+                    pUnoArgs.reset(lcl_docbasic_convertArgs( *pArgs ));
+                }
+
+                if (!pUnoArgs)
+                {
+                    pUnoArgs.reset(new Sequence <Any> (0));
+                }
 
                 Any aRet;
                 Sequence< sal_Int16 > aOutArgsIndex;
                 Sequence< Any > aOutArgs;
 
-                SAL_INFO("sw", "SwDoc::CallEvent URL is " << rMacro.GetMacName() );
+                OSL_TRACE( "SwDoc::CallEvent URL is %s", OUStringToOString(
+                    rMacro.GetMacName(), RTL_TEXTENCODING_UTF8).getStr() );
 
                 nRet += 0 == mpDocShell->CallXScript(
                     rMacro.GetMacName(), *pUnoArgs,aRet, aOutArgsIndex, aOutArgs) ? 1 : 0;

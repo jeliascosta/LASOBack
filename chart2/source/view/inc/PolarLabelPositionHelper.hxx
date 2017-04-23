@@ -39,14 +39,14 @@ public:
         , sal_Int32 nDimensionCount
         , const css::uno::Reference< css::drawing::XShapes >& xLogicTarget
         , AbstractShapeFactory* pShapeFactory );
-    virtual ~PolarLabelPositionHelper() override;
+    virtual ~PolarLabelPositionHelper();
 
     css::awt::Point getLabelScreenPositionAndAlignmentForLogicValues(
                         LabelAlignment& rAlignment
                         , double fLogicValueOnAngleAxis
                         , double fLogicValueOnRadiusAxis
                         , double fLogicZ
-                        , sal_Int32 nScreenValueOffsetInRadiusDirection ) const;
+                        , sal_Int32 nScreenValueOffsetInRadiusDirection=0 ) const;
 
     /** Calculate the anchor point position for a text label.
      *  When the requested label placement is of `INSIDE` or `OUTSIDE` type the
@@ -64,7 +64,7 @@ public:
                         , double fUnitCircleStartAngleDegree, double fUnitCircleWidthAngleDegree
                         , double fUnitCircleInnerRadius, double fUnitCircleOuterRadius
                         , double fLogicZ
-                        , sal_Int32 nScreenValueOffsetInRadiusDirection ) const;
+                        , sal_Int32 nScreenValueOffsetInRadiusDirection=0 ) const;
 
 private:
     PolarPlottingPositionHelper*    m_pPosHelper;

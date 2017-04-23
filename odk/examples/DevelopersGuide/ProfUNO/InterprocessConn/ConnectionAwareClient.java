@@ -127,7 +127,7 @@ public class ConnectionAwareClient extends java.awt.Frame
         }
     }
 
-    /** separates the uno-url into 3 different parts.
+    /** separtates the uno-url into 3 different parts.
      */
     protected static String[] parseUnoUrl(  String url )
     {

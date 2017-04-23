@@ -74,7 +74,7 @@ public:
     void Read() override;
     LwpObjectID& GetHeadID() { return m_DLVHead;}
 private:
-    virtual ~LwpDLVListHeadHolder() override {}
+    virtual ~LwpDLVListHeadHolder(){}
 
     LwpObjectID m_DLVHead;
 };
@@ -92,7 +92,7 @@ public:
 protected:
     LwpDLVListHeadTail m_HeadTail;
 private:
-    virtual ~LwpDLVListHeadTailHolder() override {}
+    virtual ~LwpDLVListHeadTailHolder(){}
 };
 /**
  * @brief   LwpObjectHolder, which is LwpDLVList, contains an id to an object
@@ -105,7 +105,7 @@ public:
     void Read() override;
     LwpObjectID& GetObject() { return m_Object; }
 protected:
-    virtual ~LwpObjectHolder() override {}
+    virtual ~LwpObjectHolder(){}
 
     LwpObjectID m_Object;
 };
@@ -123,7 +123,7 @@ public:
 protected:
     LwpDLVListHeadTail m_HeadTail;
 private:
-    virtual ~LwpListList() override {}
+    virtual ~LwpListList(){}
 };
 
 #endif

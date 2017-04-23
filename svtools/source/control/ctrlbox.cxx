@@ -24,6 +24,7 @@
 #include <vcl/builderfactory.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/field.hxx>
+#include <vcl/helper.hxx>
 #include <vcl/settings.hxx>
 #include <sal/macros.h>
 #include <comphelper/processfactory.hxx>
@@ -42,7 +43,6 @@
 #include <vcl/fontcapabilities.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
-#include <editeng/borderline.hxx>
 
 #include <com/sun/star/table/BorderLineStyle.hpp>
 
@@ -58,6 +58,237 @@
 
 #define FONTNAMEBOXMRUENTRIESFILE "/user/config/fontnameboxmruentries"
 
+
+class ImplColorListData
+{
+public:
+    Color       aColor;
+    bool        bColor;
+
+                ImplColorListData() : aColor( COL_BLACK ) { bColor = false; }
+                explicit ImplColorListData( const Color& rColor ) : aColor( rColor ) { bColor = true; }
+};
+
+void ColorListBox::ImplInit()
+{
+    pColorList = new ImpColorList();
+
+    const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
+    aImageSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
+    EnableUserDraw( true );
+    SetUserItemSize( aImageSize );
+}
+
+void ColorListBox::ImplDestroyColorEntries()
+{
+    for ( size_t n = pColorList->size(); n; )
+        delete (*pColorList)[ --n ];
+    pColorList->clear();
+}
+
+ColorListBox::ColorListBox( vcl::Window* pParent, WinBits nWinStyle ) :
+    ListBox( pParent, nWinStyle )
+{
+    ImplInit();
+    SetEdgeBlending(true);
+}
+
+ColorListBox::ColorListBox( vcl::Window* pParent, const ResId& rResId ) :
+    ListBox( pParent, rResId )
+{
+    ImplInit();
+    SetEdgeBlending(true);
+}
+
+VCL_BUILDER_DECL_FACTORY(ColorListBox)
+{
+    bool bDropdown = VclBuilder::extractDropdown(rMap);
+    WinBits nWinBits = WB_LEFT|WB_VCENTER|WB_3DLOOK|WB_TABSTOP;
+    if (bDropdown)
+        nWinBits |= WB_DROPDOWN;
+    VclPtrInstance<ColorListBox> pListBox(pParent, nWinBits);
+    if (bDropdown)
+        pListBox->EnableAutoSize(true);
+    rRet = pListBox;
+}
+
+ColorListBox::~ColorListBox()
+{
+    disposeOnce();
+}
+
+void ColorListBox::dispose()
+{
+    if ( pColorList )
+    {
+        ImplDestroyColorEntries();
+        delete pColorList;
+        pColorList = nullptr;
+    }
+    ListBox::dispose();
+}
+
+sal_Int32 ColorListBox::InsertEntry( const OUString& rStr, sal_Int32 nPos )
+{
+    nPos = ListBox::InsertEntry( rStr, nPos );
+    if ( nPos != LISTBOX_ERROR )
+    {
+        ImplColorListData* pData = new ImplColorListData;
+        if ( static_cast<size_t>(nPos) < pColorList->size() )
+        {
+            ImpColorList::iterator it = pColorList->begin();
+            ::std::advance( it, nPos );
+            pColorList->insert( it, pData );
+        }
+        else
+        {
+            pColorList->push_back( pData );
+            nPos = pColorList->size() - 1;
+        }
+    }
+    return nPos;
+}
+
+sal_Int32 ColorListBox::InsertEntry( const Color& rColor, const OUString& rStr,
+                                sal_Int32 nPos )
+{
+    nPos = ListBox::InsertEntry( rStr, nPos );
+    if ( nPos != LISTBOX_ERROR )
+    {
+        ImplColorListData* pData = new ImplColorListData( rColor );
+        if ( static_cast<size_t>(nPos) < pColorList->size() )
+        {
+            ImpColorList::iterator it = pColorList->begin();
+            ::std::advance( it, nPos );
+            pColorList->insert( it, pData );
+        }
+        else
+        {
+            pColorList->push_back( pData );
+            nPos = pColorList->size() - 1;
+        }
+    }
+    return nPos;
+}
+
+void ColorListBox::InsertAutomaticEntryColor(const Color &rColor)
+{
+    // insert the "Automatic"-entry always on the first position
+    InsertEntry( rColor, SVT_RESSTR(STR_SVT_AUTOMATIC_COLOR), 0 );
+}
+
+void ColorListBox::RemoveEntry( sal_Int32 nPos )
+{
+    ListBox::RemoveEntry( nPos );
+    if ( 0 <= nPos && static_cast<size_t>(nPos) < pColorList->size() )
+    {
+            ImpColorList::iterator it = pColorList->begin();
+            ::std::advance( it, nPos );
+            delete *it;
+            pColorList->erase( it );
+    }
+}
+
+void ColorListBox::Clear()
+{
+    ImplDestroyColorEntries();
+    ListBox::Clear();
+}
+
+void ColorListBox::CopyEntries( const ColorListBox& rBox )
+{
+    // Liste leeren
+    ImplDestroyColorEntries();
+
+    // Daten kopieren
+    size_t nCount = rBox.pColorList->size();
+    for ( size_t n = 0; n < nCount; n++ )
+    {
+        ImplColorListData* pData = (*rBox.pColorList)[ n ];
+        sal_Int32 nPos = InsertEntry( rBox.GetEntry( n ) );
+        if ( nPos != LISTBOX_ERROR )
+        {
+            if ( static_cast<size_t>(nPos) < pColorList->size() )
+            {
+                ImpColorList::iterator it = pColorList->begin();
+                ::std::advance( it, nPos );
+                pColorList->insert( it, new ImplColorListData( *pData ) );
+            }
+            else
+            {
+                pColorList->push_back( new ImplColorListData( *pData ) );
+            }
+        }
+    }
+}
+
+sal_Int32 ColorListBox::GetEntryPos( const Color& rColor ) const
+{
+    for( sal_Int32 n = (sal_Int32) pColorList->size(); n; )
+    {
+        ImplColorListData* pData = (*pColorList)[ --n ];
+        if ( pData->bColor && ( pData->aColor == rColor ) )
+            return n;
+    }
+    return LISTBOX_ENTRY_NOTFOUND;
+}
+
+Color ColorListBox::GetEntryColor( sal_Int32 nPos ) const
+{
+    Color aColor;
+    ImplColorListData* pData = ( 0 <= nPos && static_cast<size_t>(nPos) < pColorList->size() ) ?
+        (*pColorList)[ nPos ] : nullptr;
+    if ( pData && pData->bColor )
+        aColor = pData->aColor;
+    return aColor;
+}
+
+void ColorListBox::UserDraw( const UserDrawEvent& rUDEvt )
+{
+    size_t nPos = rUDEvt.GetItemId();
+    ImplColorListData* pData = ( nPos < pColorList->size() ) ? (*pColorList)[ nPos ] : nullptr;
+    if ( pData )
+    {
+        if ( pData->bColor )
+        {
+            Point aPos( rUDEvt.GetRect().TopLeft() );
+
+            aPos.X() += 2;
+            aPos.Y() += ( rUDEvt.GetRect().GetHeight() - aImageSize.Height() ) / 2;
+
+            const Rectangle aRect(aPos, aImageSize);
+
+            vcl::RenderContext* pRenderContext = rUDEvt.GetRenderContext();
+            pRenderContext->Push();
+            pRenderContext->SetFillColor(pData->aColor);
+            pRenderContext->SetLineColor(pRenderContext->GetTextColor());
+            pRenderContext->DrawRect(aRect);
+            pRenderContext->Pop();
+
+            const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
+            const sal_uInt16 nEdgeBlendingPercent(GetEdgeBlending() ? rStyleSettings.GetEdgeBlending() : 0);
+
+            if(nEdgeBlendingPercent)
+            {
+                const Color& rTopLeft(rStyleSettings.GetEdgeBlendingTopLeftColor());
+                const Color& rBottomRight(rStyleSettings.GetEdgeBlendingBottomRightColor());
+                const sal_uInt8 nAlpha((nEdgeBlendingPercent * 255) / 100);
+                const BitmapEx aBlendFrame(createBlendFrame(aRect.GetSize(), nAlpha, rTopLeft, rBottomRight));
+
+                if(!aBlendFrame.IsEmpty())
+                {
+                    pRenderContext->DrawBitmapEx(aRect.TopLeft(), aBlendFrame);
+                }
+            }
+
+            ListBox::DrawEntry( rUDEvt, false, false );
+        }
+        else
+            ListBox::DrawEntry( rUDEvt, false, true );
+    }
+    else
+        ListBox::DrawEntry( rUDEvt, true, false );
+}
 
 BorderWidthImpl::BorderWidthImpl( BorderWidthImplFlags nFlags, double nRate1, double nRate2, double nRateGap ):
     m_nFlags( nFlags ),
@@ -209,14 +440,12 @@ private:
     Color  ( *m_pColorDistFn )( Color, Color );
 
     long   m_nMinWidth;
-    SvxBorderLineStyle m_nStyle;
+    sal_uInt16 m_nStyle;
 
 public:
-    ImpLineListData( BorderWidthImpl aWidthImpl, SvxBorderLineStyle nStyle,
-            long nMinWidth,
-            Color ( *pColor1Fn ) ( Color ),
-            Color ( *pColor2Fn ) ( Color ),
-            Color ( *pColorDistFn ) ( Color, Color ) );
+    ImpLineListData( BorderWidthImpl aWidthImpl, sal_uInt16 nStyle,
+            long nMinWidth=0, Color ( *pColor1Fn ) ( Color ) = &sameColor,
+            Color ( *pColor2Fn ) ( Color ) = &sameColor, Color ( *pColorDistFn ) ( Color, Color ) = &sameDistColor );
 
     /** Returns the computed width of the line 1 in twips. */
     long GetLine1ForWidth( long nWidth ) { return m_aWidthImpl.GetLine1( nWidth ); }
@@ -233,11 +462,11 @@ public:
 
     /** Returns the minimum width in twips */
     long   GetMinWidth( ) { return m_nMinWidth;}
-    SvxBorderLineStyle GetStyle( ) { return m_nStyle;}
+    sal_uInt16 GetStyle( ) { return m_nStyle;}
 };
 
 ImpLineListData::ImpLineListData( BorderWidthImpl aWidthImpl,
-       SvxBorderLineStyle nStyle, long nMinWidth, Color ( *pColor1Fn )( Color ),
+       sal_uInt16 nStyle, long nMinWidth, Color ( *pColor1Fn )( Color ),
        Color ( *pColor2Fn )( Color ), Color ( *pColorDistFn )( Color, Color ) ) :
     m_aWidthImpl( aWidthImpl ),
     m_pColor1Fn( pColor1Fn ),
@@ -264,9 +493,9 @@ Color ImpLineListData::GetColorDist( const Color& rMain, const Color& rDefault )
     return ( *m_pColorDistFn )( rMain, rDefault );
 }
 
-SvxBorderLineStyle LineListBox::GetSelectEntryStyle() const
+sal_uInt16 LineListBox::GetSelectEntryStyle() const
 {
-    SvxBorderLineStyle nStyle = SvxBorderLineStyle::SOLID;
+    sal_uInt16 nStyle = css::table::BorderLineStyle::SOLID;
     sal_Int32 nPos = GetSelectEntryPos();
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
     {
@@ -279,7 +508,7 @@ SvxBorderLineStyle LineListBox::GetSelectEntryStyle() const
 }
 
 
-void lclDrawPolygon( OutputDevice& rDev, const basegfx::B2DPolygon& rPolygon, long nWidth, SvxBorderLineStyle nDashing )
+void lclDrawPolygon( OutputDevice& rDev, const basegfx::B2DPolygon& rPolygon, long nWidth, sal_uInt16 nDashing )
 {
     AntialiasingFlags nOldAA = rDev.GetAntialiasing();
     rDev.SetAntialiasing( nOldAA & ~AntialiasingFlags::EnableB2dDraw );
@@ -288,7 +517,7 @@ void lclDrawPolygon( OutputDevice& rDev, const basegfx::B2DPolygon& rPolygon, lo
     basegfx::B2DPolyPolygon aPolygons = svtools::ApplyLineDashing(rPolygon, nDashing, nPix);
 
     // Handle problems of width 1px in Pixel mode: 0.5px gives a 1px line
-    if (rDev.GetMapMode().GetMapUnit() == MapUnit::MapPixel && nWidth == nPix)
+    if (rDev.GetMapMode().GetMapUnit() == MAP_PIXEL && nWidth == nPix)
         nWidth = 0;
 
     for ( sal_uInt32 i = 0; i < aPolygons.count( ); i++ )
@@ -320,30 +549,30 @@ namespace svtools {
 /**
  * Dashing array must start with a line width and end with a blank width.
  */
-std::vector<double> GetDashing( SvxBorderLineStyle nDashing )
+std::vector<double> GetDashing( sal_uInt16 nDashing )
 {
     std::vector<double> aPattern;
     switch (nDashing)
     {
-        case SvxBorderLineStyle::DOTTED:
+        case css::table::BorderLineStyle::DOTTED:
             aPattern.push_back( 1.0 ); // line
             aPattern.push_back( 2.0 ); // blank
         break;
-        case SvxBorderLineStyle::DASHED:
+        case css::table::BorderLineStyle::DASHED:
             aPattern.push_back( 16.0 ); // line
             aPattern.push_back( 5.0 );  // blank
         break;
-        case SvxBorderLineStyle::FINE_DASHED:
+        case css::table::BorderLineStyle::FINE_DASHED:
             aPattern.push_back( 6.0 ); // line
             aPattern.push_back( 2.0 ); // blank
         break;
-        case SvxBorderLineStyle::DASH_DOT:
+        case css::table::BorderLineStyle::DASH_DOT:
             aPattern.push_back( 16.0 ); // line
             aPattern.push_back( 5.0 );  // blank
             aPattern.push_back( 5.0 );  // line
             aPattern.push_back( 5.0 );  // blank
         break;
-        case SvxBorderLineStyle::DASH_DOT_DOT:
+        case css::table::BorderLineStyle::DASH_DOT_DOT:
             aPattern.push_back( 16.0 ); // line
             aPattern.push_back( 5.0 );  // blank
             aPattern.push_back( 5.0 );  // line
@@ -373,14 +602,14 @@ public:
 
 }
 
-std::vector<double> GetLineDashing( SvxBorderLineStyle nDashing, double fScale )
+std::vector<double> GetLineDashing( sal_uInt16 nDashing, double fScale )
 {
     std::vector<double> aPattern = GetDashing(nDashing);
     std::for_each(aPattern.begin(), aPattern.end(), ApplyScale(fScale));
     return aPattern;
 }
 
-basegfx::B2DPolyPolygon ApplyLineDashing( const basegfx::B2DPolygon& rPolygon, SvxBorderLineStyle nDashing, double fScale )
+basegfx::B2DPolyPolygon ApplyLineDashing( const basegfx::B2DPolygon& rPolygon, sal_uInt16 nDashing, double fScale )
 {
     std::vector<double> aPattern = GetDashing(nDashing);
     std::for_each(aPattern.begin(), aPattern.end(), ApplyScale(fScale));
@@ -396,14 +625,14 @@ basegfx::B2DPolyPolygon ApplyLineDashing( const basegfx::B2DPolygon& rPolygon, S
 }
 
 void DrawLine( OutputDevice& rDev, const Point& rP1, const Point& rP2,
-    sal_uInt32 nWidth, SvxBorderLineStyle nDashing )
+    sal_uInt32 nWidth, sal_uInt16 nDashing )
 {
     DrawLine( rDev, basegfx::B2DPoint( rP1.X(), rP1.Y() ),
             basegfx::B2DPoint( rP2.X(), rP2.Y( ) ), nWidth, nDashing );
 }
 
 void DrawLine( OutputDevice& rDev, const basegfx::B2DPoint& rP1, const basegfx::B2DPoint& rP2,
-    sal_uInt32 nWidth, SvxBorderLineStyle nDashing )
+    sal_uInt32 nWidth, sal_uInt16 nDashing )
 {
     basegfx::B2DPolygon aPolygon;
     aPolygon.append( rP1 );
@@ -415,7 +644,7 @@ void DrawLine( OutputDevice& rDev, const basegfx::B2DPoint& rP1, const basegfx::
 
 void LineListBox::ImpGetLine( long nLine1, long nLine2, long nDistance,
                             Color aColor1, Color aColor2, Color aColorDist,
-                            SvxBorderLineStyle nStyle, Bitmap& rBmp )
+                            sal_uInt16 nStyle, Bitmap& rBmp )
 {
     //TODO, rather than including the " " text to force
     //the line height, better would be do drop
@@ -462,7 +691,7 @@ void LineListBox::ImpGetLine( long nLine1, long nLine2, long nDistance,
         if ( aVirDev->GetOutputSizePixel() != aVirSize )
             aVirDev->SetOutputSizePixel( aVirSize );
         aVirDev->SetFillColor( aColorDist );
-        aVirDev->DrawRect( tools::Rectangle( Point(), aSize ) );
+        aVirDev->DrawRect( Rectangle( Point(), aSize ) );
 
         aVirDev->SetFillColor( aColor1 );
 
@@ -473,7 +702,7 @@ void LineListBox::ImpGetLine( long nLine1, long nLine2, long nDistance,
         {
             double y2 =  n1 + nDist + double( n2 ) / 2;
             aVirDev->SetFillColor( aColor2 );
-            svtools::DrawLine( *aVirDev.get(), basegfx::B2DPoint( 0, y2 ), basegfx::B2DPoint( aSize.Width(), y2 ), n2, SvxBorderLineStyle::SOLID );
+            svtools::DrawLine( *aVirDev.get(), basegfx::B2DPoint( 0, y2 ), basegfx::B2DPoint( aSize.Width(), y2 ), n2, css::table::BorderLineStyle::SOLID );
         }
         rBmp = aVirDev->GetBitmap( Point(), Size( aSize.Width(), n1+nDist+n2 ) );
     }
@@ -483,12 +712,12 @@ void LineListBox::ImplInit()
 {
     aTxtSize.Width()  = GetTextWidth( " " );
     aTxtSize.Height() = GetTextHeight();
-    pLineList   = new ImpLineList;
+    pLineList   = new ImpLineList();
     eUnit       = FUNIT_POINT;
     eSourceUnit = FUNIT_POINT;
 
     aVirDev->SetLineColor();
-    aVirDev->SetMapMode( MapMode( MapUnit::MapTwip ) );
+    aVirDev->SetMapMode( MapMode( MAP_TWIP ) );
 
     UpdatePaintLineColor();
 }
@@ -554,7 +783,7 @@ sal_Int32 LineListBox::GetStylePos( sal_Int32 nListPos, long nWidth )
     return nPos;
 }
 
-void LineListBox::SelectEntry( SvxBorderLineStyle nStyle, bool bSelect )
+void LineListBox::SelectEntry( sal_uInt16 nStyle, bool bSelect )
 {
     sal_Int32 nPos = GetEntryPos( nStyle );
     if ( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -562,7 +791,7 @@ void LineListBox::SelectEntry( SvxBorderLineStyle nStyle, bool bSelect )
 }
 
 void LineListBox::InsertEntry(
-    const BorderWidthImpl& rWidthImpl, SvxBorderLineStyle nStyle, long nMinWidth,
+    const BorderWidthImpl& rWidthImpl, sal_uInt16 nStyle, long nMinWidth,
     ColorFunc pColor1Fn, ColorFunc pColor2Fn, ColorDistFunc pColorDistFn )
 {
     ImpLineListData* pData = new ImpLineListData(
@@ -570,9 +799,9 @@ void LineListBox::InsertEntry(
     pLineList->push_back( pData );
 }
 
-sal_Int32 LineListBox::GetEntryPos( SvxBorderLineStyle nStyle ) const
+sal_Int32 LineListBox::GetEntryPos( sal_uInt16 nStyle ) const
 {
-    if(nStyle == SvxBorderLineStyle::NONE && !m_sNone.isEmpty())
+    if(nStyle == css::table::BorderLineStyle::NONE && !m_sNone.isEmpty())
         return 0;
     for ( size_t i = 0, n = pLineList->size(); i < n; ++i ) {
         ImpLineListData* pData = (*pLineList)[ i ];
@@ -590,10 +819,10 @@ sal_Int32 LineListBox::GetEntryPos( SvxBorderLineStyle nStyle ) const
     return LISTBOX_ENTRY_NOTFOUND;
 }
 
-SvxBorderLineStyle LineListBox::GetEntryStyle( sal_Int32 nPos ) const
+sal_uInt16 LineListBox::GetEntryStyle( sal_Int32 nPos ) const
 {
     ImpLineListData* pData = (0 <= nPos && static_cast<size_t>(nPos) < pLineList->size()) ? (*pLineList)[ nPos ] : nullptr;
-    return ( pData ) ? pData->GetStyle() : SvxBorderLineStyle::NONE;
+    return ( pData ) ? pData->GetStyle() : css::table::BorderLineStyle::NONE;
 }
 
 void LineListBox::UpdatePaintLineColor()
@@ -858,7 +1087,7 @@ void FontNameBox::ImplCalcUserItemSize()
 
 namespace
 {
-    long shrinkFontToFit(OUString &rSampleText, long nH, vcl::Font &rFont, OutputDevice &rDevice, tools::Rectangle &rTextRect)
+    long shrinkFontToFit(OUString &rSampleText, long nH, vcl::Font &rFont, OutputDevice &rDevice, Rectangle &rTextRect)
     {
         long nWidth = 0;
 
@@ -910,7 +1139,7 @@ void FontNameBox::UserDraw( const UserDrawEvent& rUDEvt )
         pRenderContext->SetTextColor(aTextColor);
 
         bool bUsingCorrectFont = true;
-        tools::Rectangle aTextRect;
+        Rectangle aTextRect;
 
         // Preview the font name
         OUString sFontName = rFontMetric.GetFamilyName();

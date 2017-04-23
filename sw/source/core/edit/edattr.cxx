@@ -131,7 +131,7 @@ bool SwEditShell::GetPaMAttr( SwPaM* pPaM, SfxItemSet& rSet,
             SwNode* pNd = GetDoc()->GetNodes()[ n ];
             switch( pNd->GetNodeType() )
             {
-            case SwNodeType::Text:
+            case ND_TEXTNODE:
                 {
                     const sal_Int32 nStt = (n == nSttNd) ? nSttCnt : 0;
                     const sal_Int32 nEnd = (n == nEndNd)
@@ -143,8 +143,8 @@ bool SwEditShell::GetPaMAttr( SwPaM* pPaM, SfxItemSet& rSet,
                                                 bMergeIndentValuesOfNumRule );
                 }
                 break;
-            case SwNodeType::Grf:
-            case SwNodeType::Ole:
+            case ND_GRFNODE:
+            case ND_OLENODE:
                 static_cast<SwContentNode*>(pNd)->GetAttr( *pSet );
                 break;
 
@@ -521,7 +521,7 @@ bool SwEditShell::IsMoveLeftMargin( bool bRight, bool bModulus ) const
 void SwEditShell::MoveLeftMargin( bool bRight, bool bModulus )
 {
     StartAllAction();
-    StartUndo( SwUndoId::START );
+    StartUndo( UNDO_START );
 
     SwPaM* pCursor = GetCursor();
     if( pCursor->GetNext() != pCursor )         // Multiple selection ?
@@ -535,7 +535,7 @@ void SwEditShell::MoveLeftMargin( bool bRight, bool bModulus )
     else
         GetDoc()->MoveLeftMargin( *pCursor, bRight, bModulus );
 
-    EndUndo( SwUndoId::END );
+    EndUndo( UNDO_END );
     EndAllAction();
 }
 

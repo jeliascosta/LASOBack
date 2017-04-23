@@ -34,7 +34,6 @@ private:
     static const sal_Int32 HANDLE_INTERACTIVEIOEXCEPTION       = 0;
     static const sal_Int32 HANDLE_UNSUPPORTEDDATASINKEXCEPTION = 1;
     static const sal_Int32 HANDLE_AUTHENTICATIONREQUESTEXCEPTION = 2;
-    static const sal_Int32 HANDLE_CERTIFICATEVALIDATIONREQUESTEXCEPTION = 3;
 
     bool m_bUsed;
     bool m_bHandledByMySelf;
@@ -42,14 +41,14 @@ private:
 
 public:
     StillReadWriteInteraction(const css::uno::Reference< css::task::XInteractionHandler >& xHandler,
-                              const css::uno::Reference< css::task::XInteractionHandler >& xAuxiliaryHandler);
+                              const css::uno::Reference< css::task::XInteractionHandler >& xAuthenticationHandler);
 
     void resetInterceptions();
     void resetErrorStates();
     bool wasWriteError() { return (m_bUsed && m_bHandledByMySelf);}
 
 private:
-    css::uno::Reference< css::task::XInteractionHandler > m_xAuxiliaryHandler;
+    css::uno::Reference< css::task::XInteractionHandler > m_xAuthenticationHandler;
 
     virtual ucbhelper::InterceptedInteraction::EInterceptionState intercepted(const ::ucbhelper::InterceptedInteraction::InterceptedRequest&                         aRequest,
         const css::uno::Reference< css::task::XInteractionRequest >& xRequest) override;

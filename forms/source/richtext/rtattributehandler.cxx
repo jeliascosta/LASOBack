@@ -166,14 +166,14 @@ namespace frm
 
     ParaAlignmentHandler::ParaAlignmentHandler( AttributeId _nAttributeId )
         :AttributeHandler( _nAttributeId, EE_PARA_JUST )
-        ,m_eAdjust( SvxAdjust::Center )
+        ,m_eAdjust( SVX_ADJUST_CENTER )
     {
         switch ( getAttribute() )
         {
-            case SID_ATTR_PARA_ADJUST_LEFT  : m_eAdjust = SvxAdjust::Left;    break;
-            case SID_ATTR_PARA_ADJUST_CENTER: m_eAdjust = SvxAdjust::Center;  break;
-            case SID_ATTR_PARA_ADJUST_RIGHT : m_eAdjust = SvxAdjust::Right;   break;
-            case SID_ATTR_PARA_ADJUST_BLOCK : m_eAdjust = SvxAdjust::Block;   break;
+            case SID_ATTR_PARA_ADJUST_LEFT  : m_eAdjust = SVX_ADJUST_LEFT;    break;
+            case SID_ATTR_PARA_ADJUST_CENTER: m_eAdjust = SVX_ADJUST_CENTER;  break;
+            case SID_ATTR_PARA_ADJUST_RIGHT : m_eAdjust = SVX_ADJUST_RIGHT;   break;
+            case SID_ATTR_PARA_ADJUST_BLOCK : m_eAdjust = SVX_ADJUST_BLOCK;   break;
             default:
                 OSL_FAIL( "ParaAlignmentHandler::ParaAlignmentHandler: invalid slot!" );
                 break;
@@ -226,9 +226,9 @@ namespace frm
         (void)_pAdditionalArg;
 
         SvxLineSpacingItem aLineSpacing( m_nLineSpace, getWhich() );
-        aLineSpacing.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+        aLineSpacing.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
         if ( 100 == m_nLineSpace )
-            aLineSpacing.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
+            aLineSpacing.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
         else
             aLineSpacing.SetPropLineSpace( (sal_uInt8)m_nLineSpace );
 
@@ -237,12 +237,12 @@ namespace frm
 
     EscapementHandler::EscapementHandler( AttributeId _nAttributeId )
         :AttributeHandler( _nAttributeId, EE_CHAR_ESCAPEMENT )
-        ,m_eEscapement( SvxEscapement::Off )
+        ,m_eEscapement( SVX_ESCAPEMENT_OFF )
     {
         switch ( getAttribute() )
         {
-            case SID_SET_SUPER_SCRIPT   : m_eEscapement = SvxEscapement::Superscript; break;
-            case SID_SET_SUB_SCRIPT     : m_eEscapement = SvxEscapement::Subscript;   break;
+            case SID_SET_SUPER_SCRIPT   : m_eEscapement = SVX_ESCAPEMENT_SUPERSCRIPT; break;
+            case SID_SET_SUB_SCRIPT     : m_eEscapement = SVX_ESCAPEMENT_SUBSCRIPT;   break;
             default:
                 OSL_FAIL( "EscapementHandler::EscapementHandler: invalid slot!" );
                 break;
@@ -264,7 +264,7 @@ namespace frm
         (void)_pAdditionalArg;
 
         bool bIsChecked = getCheckState( _rCurrentAttribs ) == eChecked;
-        _rNewAttribs.Put( SvxEscapementItem( bIsChecked ? SvxEscapement::Off : m_eEscapement, getWhich() ) );
+        _rNewAttribs.Put( SvxEscapementItem( bIsChecked ? SVX_ESCAPEMENT_OFF : m_eEscapement, getWhich() ) );
     }
 
     SlotHandler::SlotHandler( AttributeId _nAttributeId, WhichId _nWhichId )
@@ -326,12 +326,12 @@ namespace frm
         {
             // by definition, the item should have the unit twip
             sal_uLong nHeight = pFontHeightItem->GetHeight();
-            if ( _rAttribs.GetPool()->GetMetric( getWhich() ) != MapUnit::MapTwip )
+            if ( _rAttribs.GetPool()->GetMetric( getWhich() ) != SFX_MAPUNIT_TWIP )
             {
                 nHeight = OutputDevice::LogicToLogic(
                     Size( 0, nHeight ),
-                    MapMode(  _rAttribs.GetPool()->GetMetric( getWhich() ) ),
-                    MapMode( MapUnit::MapTwip )
+                    MapMode( (MapUnit)( _rAttribs.GetPool()->GetMetric( getWhich() ) ) ),
+                    MapMode( MAP_TWIP )
                 ).Height();
             }
 
@@ -352,14 +352,14 @@ namespace frm
         if ( pFontHeightItem )
         {
             // correct measurement units
-            MapUnit eItemMapUnit = pFontHeightItem->GetPropUnit(); (void)eItemMapUnit;
+            SfxMapUnit eItemMapUnit = pFontHeightItem->GetPropUnit(); (void)eItemMapUnit;
             sal_uLong nHeight = pFontHeightItem->GetHeight();
-            if ( _rNewAttribs.GetPool()->GetMetric( getWhich() ) != MapUnit::MapTwip )
+            if ( _rNewAttribs.GetPool()->GetMetric( getWhich() ) != SFX_MAPUNIT_TWIP )
             {
                 nHeight = OutputDevice::LogicToLogic(
                     Size( 0, nHeight ),
-                    MapMode( MapUnit::MapTwip ),
-                    MapMode( _rNewAttribs.GetPool()->GetMetric( getWhich() ) )
+                    MapMode( (MapUnit)( SFX_MAPUNIT_TWIP ) ),
+                    MapMode( (MapUnit)( _rNewAttribs.GetPool()->GetMetric( getWhich() ) ) )
                 ).Height();
             }
 
@@ -375,29 +375,29 @@ namespace frm
 
     ParagraphDirectionHandler::ParagraphDirectionHandler( AttributeId _nAttributeId )
         :AttributeHandler( _nAttributeId, EE_PARA_WRITINGDIR )
-        ,m_eParagraphDirection( SvxFrameDirection::Horizontal_LR_TB )
-        ,m_eDefaultAdjustment( SvxAdjust::Right )
-        ,m_eOppositeDefaultAdjustment( SvxAdjust::Left )
+        ,m_eParagraphDirection( FRMDIR_HORI_LEFT_TOP )
+        ,m_eDefaultAdjustment( SVX_ADJUST_RIGHT )
+        ,m_eOppositeDefaultAdjustment( SVX_ADJUST_LEFT )
     {
         switch ( getAttributeId() )
         {
-            case SID_ATTR_PARA_LEFT_TO_RIGHT: m_eParagraphDirection = SvxFrameDirection::Horizontal_LR_TB; m_eDefaultAdjustment = SvxAdjust::Left; break;
-            case SID_ATTR_PARA_RIGHT_TO_LEFT: m_eParagraphDirection = SvxFrameDirection::Horizontal_RL_TB; m_eDefaultAdjustment = SvxAdjust::Right; break;
+            case SID_ATTR_PARA_LEFT_TO_RIGHT: m_eParagraphDirection = FRMDIR_HORI_LEFT_TOP; m_eDefaultAdjustment = SVX_ADJUST_LEFT; break;
+            case SID_ATTR_PARA_RIGHT_TO_LEFT: m_eParagraphDirection = FRMDIR_HORI_RIGHT_TOP; m_eDefaultAdjustment = SVX_ADJUST_RIGHT; break;
             default:
                 OSL_FAIL( "ParagraphDirectionHandler::ParagraphDirectionHandler: invalid attribute id!" );
         }
 
-        if ( SvxAdjust::Right == m_eDefaultAdjustment )
-            m_eOppositeDefaultAdjustment = SvxAdjust::Left;
+        if ( SVX_ADJUST_RIGHT == m_eDefaultAdjustment )
+            m_eOppositeDefaultAdjustment = SVX_ADJUST_LEFT;
         else
-            m_eOppositeDefaultAdjustment = SvxAdjust::Right;
+            m_eOppositeDefaultAdjustment = SVX_ADJUST_RIGHT;
     }
 
 
     AttributeCheckState ParagraphDirectionHandler::implGetCheckState( const SfxPoolItem& _rItem ) const
     {
         OSL_ENSURE( dynamic_cast<const SvxFrameDirectionItem*>( &_rItem) !=  nullptr, "ParagraphDirectionHandler::implGetCheckState: invalid pool item!" );
-        SvxFrameDirection eDirection = static_cast< const SvxFrameDirectionItem& >( _rItem ).GetValue();
+        SvxFrameDirection eDirection = static_cast< SvxFrameDirection >( static_cast< const SvxFrameDirectionItem& >( _rItem ).GetValue() );
         return ( eDirection == m_eParagraphDirection ) ? eChecked : eUnchecked;
     }
 
@@ -408,7 +408,7 @@ namespace frm
 
         // if the current adjustment of the was the default adjustment for the *previous* text direction,
         // then we toggle the adjustment, too
-        SvxAdjust eCurrentAdjustment = SvxAdjust::Left;
+        SvxAdjust eCurrentAdjustment = SVX_ADJUST_LEFT;
         const SfxPoolItem* pCurrentAdjustment = nullptr;
         if ( SfxItemState::SET == _rCurrentAttribs.GetItemState( EE_PARA_JUST, true, &pCurrentAdjustment ) )
             eCurrentAdjustment = static_cast< const SvxAdjustItem* >( pCurrentAdjustment )->GetAdjust();

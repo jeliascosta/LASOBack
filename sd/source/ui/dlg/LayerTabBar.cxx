@@ -57,13 +57,6 @@ LayerTabBar::LayerTabBar(DrawViewShell* pViewSh, vcl::Window* pParent)
 
 LayerTabBar::~LayerTabBar()
 {
-    disposeOnce();
-}
-
-void LayerTabBar::dispose()
-{
-    DropTargetHelper::dispose();
-    TabBar::dispose();
 }
 
 void LayerTabBar::Select()
@@ -96,7 +89,6 @@ void LayerTabBar::MouseButtonDown(const MouseEvent& rMEvt)
             bool bVisible = pPV->IsLayerVisible(aName);
             pPV->SetLayerVisible(aName, !bVisible);
             pDrViewSh->ResetActualLayer();
-            pDrViewSh->GetView()->GetDoc().SetChanged();
         }
     }
 
@@ -297,13 +289,13 @@ void LayerTabBar::ActivatePage()
 
 void LayerTabBar::SendActivatePageEvent()
 {
-    CallEventListeners (VclEventId::TabbarPageActivated,
+    CallEventListeners (VCLEVENT_TABBAR_PAGEACTIVATED,
         reinterpret_cast<void*>(GetCurPageId()));
 }
 
 void LayerTabBar::SendDeactivatePageEvent()
 {
-    CallEventListeners (VclEventId::TabbarPageDeactivated,
+    CallEventListeners (VCLEVENT_TABBAR_PAGEDEACTIVATED,
         reinterpret_cast<void*>(GetCurPageId()));
 }
 

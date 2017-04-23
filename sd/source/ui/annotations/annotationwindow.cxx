@@ -126,13 +126,13 @@ void AnnotationTextWindow::dispose()
     Control::dispose();
 }
 
-void AnnotationTextWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& rRect)
+void AnnotationTextWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect)
 {
     const bool bHighContrast = Application::GetSettings().GetStyleSettings().GetHighContrastMode();
     if ( !bHighContrast )
     {
-        DrawGradient(::tools::Rectangle(Point(0,0),PixelToLogic(GetSizePixel())),
-            Gradient(GradientStyle::Linear,mpAnnotationWindow->maColorLight,mpAnnotationWindow->maColor));
+        DrawGradient(Rectangle(Point(0,0),PixelToLogic(GetSizePixel())),
+            Gradient(GradientStyle_LINEAR,mpAnnotationWindow->maColorLight,mpAnnotationWindow->maColor));
      }
 
     if( mpOutlinerView )
@@ -226,6 +226,16 @@ void AnnotationTextWindow::Command( const CommandEvent& rCEvt )
     }
 }
 
+void AnnotationTextWindow::GetFocus()
+{
+    Window::GetFocus();
+}
+
+void AnnotationTextWindow::LoseFocus()
+{
+    Window::LoseFocus();
+}
+
 OUString AnnotationTextWindow::GetSurroundingText() const
 {
     if( mpOutlinerView )
@@ -317,7 +327,7 @@ void AnnotationWindow::InitControls()
     mpMeta->SetSettings(aSettings);
 
     mpOutliner = new ::Outliner(GetAnnotationPool(),OutlinerMode::TextObject);
-    SdDrawDocument::SetCalcFieldValueHdl( mpOutliner );
+    Doc()->SetCalcFieldValueHdl( mpOutliner );
     mpOutliner->SetUpdateMode( true );
     Rescale();
 
@@ -331,7 +341,7 @@ void AnnotationWindow::InitControls()
     mpOutlinerView = new OutlinerView ( mpOutliner, mpTextWindow );
     mpOutliner->InsertView(mpOutlinerView );
     mpTextWindow->SetOutlinerView(mpOutlinerView);
-    mpOutlinerView->SetOutputArea( PixelToLogic( ::tools::Rectangle(0,0,1,1) ) );
+    mpOutlinerView->SetOutputArea( PixelToLogic( Rectangle(0,0,1,1) ) );
 
     //create Scrollbars
     mpVScrollbar = VclPtr<ScrollBar>::Create(this, WB_3DLOOK |WB_VSCROLL|WB_DRAG);
@@ -353,7 +363,7 @@ void AnnotationWindow::InitControls()
 
     Invalidate();
 
-    SetLanguage(SvxLanguageItem( Doc()->GetLanguage( EE_CHAR_LANGUAGE ), SID_ATTR_LANGUAGE ));
+    SetLanguage(GetLanguage());
 
     mpMeta->Show();
     mpVScrollbar->Show();
@@ -368,7 +378,7 @@ void AnnotationWindow::StartEdit()
 
 void AnnotationWindow::Rescale()
 {
-    MapMode aMode(MapUnit::Map100thMM);
+    MapMode aMode(MAP_100TH_MM);
     aMode.SetOrigin( Point() );
     mpOutliner->SetRefMapMode( aMode );
     SetMapMode( aMode );
@@ -409,10 +419,10 @@ void AnnotationWindow::DoResize()
         mpMeta->setPosSizePixel(0,aHeight,GetSizePixel().Width()-METABUTTON_AREA_WIDTH,POSTIT_META_HEIGHT);
 
     mpOutliner->SetPaperSize( PixelToLogic( Size(aWidth,aHeight) ) ) ;
-    mpOutlinerView->SetOutputArea( PixelToLogic( ::tools::Rectangle(0,0,aWidth,aHeight) ) );
+    mpOutlinerView->SetOutputArea( PixelToLogic( Rectangle(0,0,aWidth,aHeight) ) );
     if (!mpVScrollbar->IsVisible())
     {   // if we do not have a scrollbar anymore, we want to see the complete text
-        mpOutlinerView->SetVisArea( PixelToLogic( ::tools::Rectangle(0,0,aWidth,aHeight) ) );
+        mpOutlinerView->SetVisArea( PixelToLogic( Rectangle(0,0,aWidth,aHeight) ) );
     }
     mpVScrollbar->setPosSizePixel( 0 + aWidth, 0, GetScrollbarWidth(), aHeight );
     mpVScrollbar->SetVisibleSize( PixelToLogic(Size(0,aHeight)).Height() );
@@ -432,11 +442,16 @@ void AnnotationWindow::DoResize()
     maPopupTriangle.append(basegfx::B2DPoint(aRight.X(),aRight.Y()));
     maPopupTriangle.append(basegfx::B2DPoint(aBottom.X(),aBottom.Y()));
     maPopupTriangle.setClosed(true);
-    maRectMetaButton = PixelToLogic( ::tools::Rectangle( Point(
+    maRectMetaButton = PixelToLogic( Rectangle( Point(
             aPos.X()+GetSizePixel().Width()-(METABUTTON_WIDTH+10),
             aPos.Y()+5 ),
             Size( METABUTTON_WIDTH, METABUTTON_HEIGHT ) ) );
 
+}
+
+void AnnotationWindow::SetSizePixel( const Size& rNewSize )
+{
+    Window::SetSizePixel(rNewSize);
 }
 
 void AnnotationWindow::SetScrollbar()
@@ -488,10 +503,15 @@ long AnnotationWindow::GetPostItTextHeight()
     return mpOutliner ? LogicToPixel(mpOutliner->CalcTextSize()).Height() : 0;
 }
 
-IMPL_LINK(AnnotationWindow, ScrollHdl, ScrollBar*, pScroll, void)
+IMPL_LINK_TYPED(AnnotationWindow, ScrollHdl, ScrollBar*, pScroll, void)
 {
     long nDiff = getView()->GetEditView().GetVisArea().Top() - pScroll->GetThumbPos();
     getView()->Scroll( 0, nDiff );
+}
+
+SvxLanguageItem AnnotationWindow::GetLanguage()
+{
+    return SvxLanguageItem( Doc()->GetLanguage( EE_CHAR_LANGUAGE ), SID_ATTR_LANGUAGE );
 }
 
 TextApiObject* getTextApiObject( const Reference< XAnnotation >& xAnnotation )
@@ -632,7 +652,7 @@ void AnnotationWindow::Deactivate()
     Engine()->GetUndoManager().Clear();
 }
 
-void AnnotationWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
+void AnnotationWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     FloatingWindow::Paint(rRenderContext, rRect);
 
@@ -645,7 +665,7 @@ void AnnotationWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::
         else
             SetFillColor(maColor);
         SetLineColor();
-        DrawRect(PixelToLogic(::tools::Rectangle(Point(mpMeta->GetPosPixel().X()+mpMeta->GetSizePixel().Width(),mpMeta->GetPosPixel().Y()),Size(METABUTTON_AREA_WIDTH,mpMeta->GetSizePixel().Height()))));
+        DrawRect(PixelToLogic(Rectangle(Point(mpMeta->GetPosPixel().X()+mpMeta->GetSizePixel().Width(),mpMeta->GetPosPixel().Y()),Size(METABUTTON_AREA_WIDTH,mpMeta->GetSizePixel().Height()))));
 
         if ( bHighContrast )
         {
@@ -658,9 +678,9 @@ void AnnotationWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::
             //draw button
             Gradient aGradient;
             if (mbMouseOverButton)
-                aGradient = Gradient(GradientStyle::Linear,ColorFromAlphaColor(80,maColorDark,maColor),ColorFromAlphaColor(15,maColorDark,maColor));
+                aGradient = Gradient(GradientStyle_LINEAR,ColorFromAlphaColor(80,maColorDark,maColor),ColorFromAlphaColor(15,maColorDark,maColor));
             else
-                aGradient = Gradient(GradientStyle::Linear,ColorFromAlphaColor(15,maColorDark,maColor),ColorFromAlphaColor(80,maColorDark,maColor));
+                aGradient = Gradient(GradientStyle_LINEAR,ColorFromAlphaColor(15,maColorDark,maColor),ColorFromAlphaColor(80,maColorDark,maColor));
             DrawGradient(maRectMetaButton,aGradient);
             //draw rect around button
             SetFillColor();
@@ -706,7 +726,7 @@ void AnnotationWindow::MouseButtonDown( const MouseEvent& rMEvt )
     if (!mbReadonly && maRectMetaButton.IsInside(PixelToLogic(rMEvt.GetPosPixel())) && rMEvt.IsLeft())
     {
         // context menu
-        ::tools::Rectangle aRect(LogicToPixel(maRectMetaButton.BottomLeft()),LogicToPixel(maRectMetaButton.BottomLeft()));
+        Rectangle aRect(LogicToPixel(maRectMetaButton.BottomLeft()),LogicToPixel(maRectMetaButton.BottomLeft()));
         mrManager.ExecuteAnnotationContextMenu( mxAnnotation, static_cast<vcl::Window*>(this), aRect, true );
     }
 }
@@ -717,7 +737,7 @@ void AnnotationWindow::Command( const CommandEvent& rCEvt )
     {
         if( mpMeta->IsVisible() &&(mpMeta->GetPosPixel().Y() < rCEvt.GetMousePosPixel().Y()) )
             return;
-        mrManager.ExecuteAnnotationContextMenu( mxAnnotation, this, ::tools::Rectangle(rCEvt.GetMousePosPixel(),Size(1,1)) );
+        mrManager.ExecuteAnnotationContextMenu( mxAnnotation, this, Rectangle(rCEvt.GetMousePosPixel(),Size(1,1)) );
     }
     else
     {

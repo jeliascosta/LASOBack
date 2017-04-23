@@ -24,9 +24,8 @@ OpenGLProgram::OpenGLProgram() :
     mnTexCoordAttrib( SAL_MAX_UINT32 ),
     mnAlphaCoordAttrib( SAL_MAX_UINT32 ),
     mnMaskCoordAttrib( SAL_MAX_UINT32 ),
-    mnExtrusionVectorsAttrib( SAL_MAX_UINT32 ),
-    mnVertexColorsAttrib( SAL_MAX_UINT32 ),
-    mbBlending(false),
+    mnNormalAttrib( SAL_MAX_UINT32 ),
+    mbBlending( false ),
     mfLastWidth(0.0),
     mfLastHeight(0.0),
     mfLastPixelOffset(0.0)
@@ -113,13 +112,11 @@ bool OpenGLProgram::EnableVertexAttrib(GLuint& rAttrib, const OString& rName)
     return true;
 }
 
-void OpenGLProgram::SetVertexAttrib(GLuint& rAttrib, const OString& rName, GLint nSize,
-                                    GLenum eType, GLboolean bNormalized, GLsizei aStride,
-                                    const GLvoid* pPointer)
+void OpenGLProgram::SetVertexAttrib( GLuint& rAttrib, const OString& rName, const GLvoid* pData, GLint nSize )
 {
     if (EnableVertexAttrib(rAttrib, rName))
     {
-        glVertexAttribPointer(rAttrib, nSize, eType, bNormalized, aStride, pPointer);
+        glVertexAttribPointer( rAttrib, nSize, GL_FLOAT, GL_FALSE, 0, pData );
         CHECK_GL_ERROR();
     }
     else
@@ -130,32 +127,27 @@ void OpenGLProgram::SetVertexAttrib(GLuint& rAttrib, const OString& rName, GLint
 
 void OpenGLProgram::SetVertices( const GLvoid* pData )
 {
-    SetVertexAttrib(mnPositionAttrib, "position", 2, GL_FLOAT, GL_FALSE, 0, pData);
+    SetVertexAttrib( mnPositionAttrib, "position", pData );
 }
 
 void OpenGLProgram::SetTextureCoord( const GLvoid* pData )
 {
-    SetVertexAttrib(mnTexCoordAttrib, "tex_coord_in", 2, GL_FLOAT, GL_FALSE, 0, pData);
+    SetVertexAttrib( mnTexCoordAttrib, "tex_coord_in", pData );
 }
 
 void OpenGLProgram::SetAlphaCoord( const GLvoid* pData )
 {
-    SetVertexAttrib(mnAlphaCoordAttrib, "alpha_coord_in", 2, GL_FLOAT, GL_FALSE, 0, pData);
+    SetVertexAttrib( mnAlphaCoordAttrib, "alpha_coord_in", pData );
 }
 
 void OpenGLProgram::SetMaskCoord(const GLvoid* pData)
 {
-    SetVertexAttrib(mnMaskCoordAttrib, "mask_coord_in", 2, GL_FLOAT, GL_FALSE, 0, pData);
+    SetVertexAttrib(mnMaskCoordAttrib, "mask_coord_in", pData);
 }
 
 void OpenGLProgram::SetExtrusionVectors(const GLvoid* pData)
 {
-    SetVertexAttrib(mnExtrusionVectorsAttrib, "extrusion_vectors", 3, GL_FLOAT, GL_FALSE, 0, pData);
-}
-
-void OpenGLProgram::SetVertexColors(std::vector<GLubyte>& rColorVector)
-{
-    SetVertexAttrib(mnVertexColorsAttrib, "vertex_color_in", 4, GL_UNSIGNED_BYTE, GL_FALSE, 0, rColorVector.data());
+    SetVertexAttrib(mnNormalAttrib, "extrusion_vectors", pData, 3);
 }
 
 void OpenGLProgram::SetShaderType(TextureShaderType eTextureShaderType)
@@ -185,18 +177,10 @@ GLuint OpenGLProgram::GetUniformLocation( const OString& rName )
 void OpenGLProgram::DrawArrays(GLenum aMode, std::vector<GLfloat>& aVertices)
 {
     if (!mbBlending)
-        OpenGLContext::getVCLContext()->state().blend().disable();
+        OpenGLContext::getVCLContext()->state()->blend().disable();
 
     SetVertices(aVertices.data());
     glDrawArrays(aMode, 0, aVertices.size() / 2);
-}
-
-void OpenGLProgram::DrawElements(GLenum aMode, GLuint nNumberOfVertices)
-{
-    if (!mbBlending)
-        OpenGLContext::getVCLContext()->state().blend().disable();
-
-    glDrawElements(aMode, nNumberOfVertices, GL_UNSIGNED_INT, nullptr);
 }
 
 void OpenGLProgram::SetUniform1f( const OString& rName, GLfloat v1 )
@@ -295,7 +279,8 @@ void OpenGLProgram::SetTexture( const OString& rName, OpenGLTexture& rTexture )
     glUniform1i( nUniform, nIndex );
     CHECK_GL_ERROR();
 
-    OpenGLContext::getVCLContext()->state().texture().active(nIndex);
+    std::unique_ptr<RenderState>& rState = OpenGLContext::getVCLContext()->state();
+    rState->texture().active(nIndex);
 
     rTexture.Bind();
     maTextures.push_back(rTexture);
@@ -358,8 +343,8 @@ void OpenGLProgram::ApplyMatrix(float fWidth, float fHeight, float fPixelOffset)
 
 void OpenGLProgram::SetBlendMode(GLenum nSFactor, GLenum nDFactor)
 {
-    OpenGLContext::getVCLContext()->state().blend().enable();
-    OpenGLContext::getVCLContext()->state().blend().func(nSFactor, nDFactor);
+    OpenGLContext::getVCLContext()->state()->blend().enable();
+    OpenGLContext::getVCLContext()->state()->blend().func(nSFactor, nDFactor);
     mbBlending = true;
 }
 

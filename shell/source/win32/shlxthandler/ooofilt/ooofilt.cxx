@@ -61,6 +61,10 @@
 #include <objidl.h>
 #include <stdio.h>
 #include "propspec.hxx"
+#ifdef __MINGW32__
+#include <algorithm>
+using ::std::min;
+#endif
 
 #include "stream_helper.hxx"
 
@@ -76,8 +80,8 @@
 
 COooFilter::COooFilter() :
     m_lRefs(1),
-    m_pContentReader(nullptr),
-    m_pMetaInfoReader(nullptr),
+    m_pContentReader(NULL),
+    m_pMetaInfoReader(NULL),
     m_eState(FilteringContent),
     m_ulUnicodeBufferLen(0),
     m_ulUnicodeCharsRead(0),
@@ -88,8 +92,8 @@ COooFilter::COooFilter() :
     m_fEof(FALSE),
     m_ChunkPosition(0),
     m_cAttributes(0),
-    m_pAttributes(nullptr),
-    m_pStream(nullptr)
+    m_pAttributes(0),
+    m_pStream(NULL)
 
 {
     InterlockedIncrement( &g_lInstances );
@@ -125,23 +129,23 @@ SCODE STDMETHODCALLTYPE COooFilter::QueryInterface(
     REFIID riid,
     void  ** ppvObject)
 {
-    IUnknown *pUnkTemp = nullptr;
+    IUnknown *pUnkTemp = 0;
     if ( IID_IFilter == riid )
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IFilter *>(this));
+        pUnkTemp = (IUnknown *)(IFilter *)this;
     else if ( IID_IPersistFile == riid )
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IPersistFile *>(this));
+        pUnkTemp = (IUnknown *)(IPersistFile *)this;
     else if ( IID_IPersist == riid )
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IPersist *>(static_cast<IPersistFile *>(this)));
+        pUnkTemp = (IUnknown *)(IPersist *)(IPersistFile *)this;
     else if (IID_IPersistStream == riid)
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IPersistStream *>(this));
+        pUnkTemp = (IUnknown *)(IPersistStream *)this;
     else if ( IID_IUnknown == riid )
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IPersist *>(static_cast<IPersistFile *>(this)));
+        pUnkTemp = (IUnknown *)(IPersist *)(IPersistFile *)this;
     else
     {
-        *ppvObject = nullptr;
+        *ppvObject = NULL;
         return E_NOINTERFACE;
     }
-    *ppvObject = pUnkTemp;
+    *ppvObject = (void  *)pUnkTemp;
     pUnkTemp->AddRef();
     return S_OK;
 }
@@ -209,18 +213,18 @@ SCODE STDMETHODCALLTYPE COooFilter::Init(
         if ( m_cAttributes > 0 )
         {
             delete[] m_pAttributes;
-            m_pAttributes = nullptr;
+            m_pAttributes = 0;
             m_cAttributes = 0;
         }
         if( 0 < cAttributes )
         {
             // Filter properties specified in aAttributes
-            if ( nullptr == aAttributes )
+            if ( 0 == aAttributes )
                 return E_INVALIDARG;
             m_pAttributes = new CFullPropSpec[cAttributes];
             m_cAttributes = cAttributes;
             // Is caller want to filter contents?
-            CFullPropSpec const *pAttrib = reinterpret_cast<CFullPropSpec const *>(aAttributes);
+            CFullPropSpec *pAttrib = (CFullPropSpec *) aAttributes;
             ULONG ulNumAttr;
             for ( ulNumAttr = 0 ; ulNumAttr < cAttributes; ulNumAttr++ )
             {
@@ -309,6 +313,7 @@ SCODE STDMETHODCALLTYPE COooFilter::GetChunk(STAT_CHUNK * pStat)
         {
         case FilteringContent:
         {
+            // Read Unicodes from buffer.
             if( m_ChunkPosition == m_pContentReader ->getChunkBuffer().size() )
             {
                 m_ulUnicodeBufferLen=0;
@@ -469,8 +474,8 @@ SCODE STDMETHODCALLTYPE COooFilter::GetValue(PROPVARIANT ** ppPropValue)
     {
         if ( m_cAttributes == 0 || ( m_ulCurrentPropertyNum == m_ulPropertyNum ) )
             return FILTER_E_NO_MORE_VALUES;
-        PROPVARIANT *pPropVar = static_cast<PROPVARIANT *>(CoTaskMemAlloc( sizeof (PROPVARIANT) ));
-        if ( pPropVar == nullptr )
+        PROPVARIANT *pPropVar = (PROPVARIANT *) CoTaskMemAlloc( sizeof (PROPVARIANT) );
+        if ( pPropVar == 0 )
             return E_OUTOFMEMORY;
         ::std::wstring wsTagName= GetMetaInfoNameFromPropertyId( m_pAttributes[m_ulCurrentPropertyNum].GetPropertyPropid() );
         if ( wsTagName == EMPTY_STRING )
@@ -479,7 +484,7 @@ SCODE STDMETHODCALLTYPE COooFilter::GetValue(PROPVARIANT ** ppPropValue)
         pPropVar->vt = VT_LPWSTR;
         size_t cw = wsTagData.length() + 1; // reserve one for the '\0'
         pPropVar->pwszVal = static_cast<WCHAR*>( CoTaskMemAlloc(cw*sizeof(WCHAR)) );
-        if (pPropVar->pwszVal == nullptr)
+        if (pPropVar->pwszVal == 0)
         {
             CoTaskMemFree(pPropVar);
             return E_OUTOFMEMORY;
@@ -686,7 +691,7 @@ SCODE STDMETHODCALLTYPE COooFilter::GetCurFile(LPWSTR * ppszFileName)
     if ( EMPTY_STRING == m_pwszFileName )
         return E_FAIL;
     else
-        *ppszFileName = const_cast<LPWSTR>(m_pwszFileName.c_str());
+        *ppszFileName = (LPWSTR)m_pwszFileName.c_str();
     return S_OK;
 }
 
@@ -728,20 +733,20 @@ SCODE STDMETHODCALLTYPE COooFilterCF::QueryInterface(REFIID riid, void  ** ppvOb
     IUnknown *pUnkTemp;
 
     if ( IID_IClassFactory == riid )
-        pUnkTemp = static_cast<IUnknown *>(static_cast<IClassFactory *>(this));
+        pUnkTemp = (IUnknown *)(IClassFactory *)this;
     else if ( IID_IUnknown == riid )
-        pUnkTemp = static_cast<IUnknown *>(this);
+        pUnkTemp = (IUnknown *)this;
     else
     {
-        *ppvObject = nullptr;
+        *ppvObject = NULL;
         return E_NOINTERFACE;
     }
-    *ppvObject = pUnkTemp;
+    *ppvObject = (void  *)pUnkTemp;
     pUnkTemp->AddRef();
     return S_OK;
 }
 //M-------------------------------------------------------------------------
-//  Method:     COooFilterCF::AddRef            (IUnknown::AddRef)
+//  Method:     COooFilterCF::AddRef            (IUknown::AddRef)
 //  Summary:    Increments interface refcount
 //  Arguments:  void
 //  Returns:    Value of incremented interface refcount
@@ -790,8 +795,8 @@ SCODE STDMETHODCALLTYPE COooFilterCF::CreateInstance(
     REFIID riid,
     void  * * ppvObject)
 {
-    COooFilter *pIUnk = nullptr;
-    if ( nullptr != pUnkOuter )
+    COooFilter *pIUnk = 0;
+    if ( 0 != pUnkOuter )
         return CLASS_E_NOAGGREGATION;
     pIUnk = new COooFilter();
     if ( SUCCEEDED( pIUnk->QueryInterface( riid , ppvObject ) ) )
@@ -881,13 +886,13 @@ extern "C" SCODE STDMETHODCALLTYPE DllGetClassObject(
     void **    ppvObj
 )
 {
-    COooFilterCF* pImpl = nullptr;
-    IUnknown *pResult = nullptr;
+    COooFilterCF* pImpl = 0;
+    IUnknown *pResult = 0;
 
     if ( CLSID_COooFilter == cid )
     {
         pImpl = new COooFilterCF;
-        pResult = static_cast<IUnknown *>(pImpl);
+        pResult = (IUnknown *) pImpl;
     }
     else
         return CLASS_E_CLASSNOTAVAILABLE;

@@ -48,12 +48,13 @@ namespace vcl
 
 /** Error codes for most functions */
     enum TTCRErrCodes {
-        TTCR_OK,                        /**< no error                                               */
-        TTCR_ZEROGLYPHS,                /**< At least one glyph should be defined                   */
-        TTCR_UNKNOWN,                   /**< Unknown TrueType table                                 */
-        TTCR_NONAMES,                   /**< 'name' table does not contain any names                */
-        TTCR_NAMETOOLONG,               /**< 'name' table is too long (string data > 64K)           */
-        TTCR_POSTFORMAT                 /**< unsupported format of a 'post' table                   */
+        TTCR_OK = 0,                        /**< no error                                               */
+        TTCR_ZEROGLYPHS = 1,                /**< At least one glyph should be defined                   */
+        TTCR_UNKNOWN = 2,                   /**< Unknown TrueType table                                 */
+        TTCR_GLYPHSEQ = 3,                  /**< Glyph IDs are not sequential in the glyf table         */
+        TTCR_NONAMES = 4,                   /**< 'name' table does not contain any names                */
+        TTCR_NAMETOOLONG = 5,               /**< 'name' table is too long (string data > 64K)           */
+        TTCR_POSTFORMAT = 6                 /**< unsupported format of a 'post' table                   */
     };
 
 /**
@@ -203,6 +204,13 @@ namespace vcl
  *
  */
     sal_uInt32 glyfCount(const TrueTypeTable *);
+
+/**
+ * Add a Name Record to a name table.
+ * NOTE: This function duplicates NameRecord, so the argument
+ * has to be deallocated by the caller (unlike glyfAdd)
+ */
+    void nameAdd(TrueTypeTable *, NameRecord *nr);
 
 } // namespace
 

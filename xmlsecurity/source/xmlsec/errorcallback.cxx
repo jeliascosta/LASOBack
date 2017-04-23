@@ -17,15 +17,16 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+
+/*
+ * Implementation of the I/O interfaces based on stream and URI binding
+ */
 #include "errorcallback.hxx"
 
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 
-#ifdef _WIN32
-#include <prewin.h>
-#include <postwin.h>
-#include "comphelper/windowserrorstring.hxx"
-#endif
+using namespace ::com::sun::star::xml::crypto;
+
 
 extern "C"
 void errorCallback(const char* file,
@@ -39,13 +40,7 @@ void errorCallback(const char* file,
     const char* pErrorObject = errorObject ? errorObject : "";
     const char* pErrorSubject = errorSubject ? errorSubject : "";
     const char* pMsg = msg ? msg : "";
-    OUString systemErrorString;
-
-#ifdef _WIN32
-    systemErrorString = " " + WindowsErrorString(GetLastError());
-#endif
-
-    SAL_WARN("xmlsecurity.xmlsec", file << ":" << line << ": " << func << "() '" << pErrorObject << "' '" << pErrorSubject << "' " << reason << " '" << pMsg << "'" << systemErrorString);
+    SAL_WARN("xmlsecurity.xmlsec", file << ":" << line << ": " << func << "() '" << pErrorObject << "' '" << pErrorSubject << "' " << reason << " '" << pMsg << "'");
 }
 
 void setErrorRecorder()

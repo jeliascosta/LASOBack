@@ -32,7 +32,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     TextCharacterSpacingPopup(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx);
-    virtual ~TextCharacterSpacingPopup() override;
+    virtual ~TextCharacterSpacingPopup();
 
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
 };

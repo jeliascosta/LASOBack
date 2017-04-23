@@ -23,7 +23,7 @@ private:
 
 public:
     ScPivotLayoutTreeListLabel(vcl::Window* pParent, WinBits nBits);
-    virtual ~ScPivotLayoutTreeListLabel() override;
+    virtual ~ScPivotLayoutTreeListLabel();
     void FillLabelFields(ScDPLabelDataVector& rLabelVector);
     ScItemValue* GetItem(SCCOL nColumn);
     bool IsDataElement(SCCOL nColumn);

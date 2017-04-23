@@ -39,26 +39,33 @@ class UcbCommandEnvironment :
 
 public:
     explicit UcbCommandEnvironment( const css::uno::Reference< css::lang::XMultiServiceFactory >& rXSMgr );
-    virtual ~UcbCommandEnvironment() override;
+    virtual ~UcbCommandEnvironment();
 
     // XInitialization
     virtual void SAL_CALL
-    initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw( css::uno::Exception,
+               css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-    supportsService( const OUString& ServiceName ) override;
+    supportsService( const OUString& ServiceName )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XCommandEnvironment
     virtual css::uno::Reference< css::task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() override;
+    getInteractionHandler()
+        throw ( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::ucb::XProgressHandler > SAL_CALL
-    getProgressHandler() override;
+    getProgressHandler()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     // Non-UNO interfaces
     static OUString  getImplementationName_Static();

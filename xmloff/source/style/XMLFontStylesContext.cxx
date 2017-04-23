@@ -57,6 +57,8 @@ enum XMLFontStyleAttrTokens
     XML_TOK_FONT_STYLE_ATTR_STYLENAME,
     XML_TOK_FONT_STYLE_ATTR_PITCH,
     XML_TOK_FONT_STYLE_ATTR_CHARSET,
+
+    XML_TOK_FONT_STYLE_ATTR_END=XML_TOK_UNKNOWN
 };
 
 static const SvXMLTokenMapEntry* lcl_getFontStyleAttrTokenMap()
@@ -269,9 +271,9 @@ void XMLFontStyleContextFontFaceUri::SetFormat( const OUString& rFormat )
 
 // the CSS2 standard ( http://www.w3.org/TR/2008/REC-CSS2-20080411/fonts.html#referencing )
 // defines these format strings.
-const char OPENTYPE_FORMAT[] = "opentype";
-const char TRUETYPE_FORMAT[] = "truetype";
-const char EOT_FORMAT[]      = "embedded-opentype";
+const char* OPENTYPE_FORMAT = "opentype";
+const char* TRUETYPE_FORMAT = "truetype";
+const char* EOT_FORMAT      = "embedded-opentype";
 
 void XMLFontStyleContextFontFaceUri::EndElement()
 {
@@ -283,12 +285,12 @@ void XMLFontStyleContextFontFaceUri::EndElement()
     bool eot;
     // Assume by default that the font is not compressed.
     if( format.getLength() == 0
-        || format == OPENTYPE_FORMAT
-        || format == TRUETYPE_FORMAT )
+        || format.equalsAscii( OPENTYPE_FORMAT )
+        || format.equalsAscii( TRUETYPE_FORMAT ))
     {
         eot = false;
     }
-    else if( format == EOT_FORMAT )
+    else if( format.equalsAscii( EOT_FORMAT ))
     {
         eot = true;
     }
@@ -375,7 +377,14 @@ XMLFontStylesContext::XMLFontStylesContext( SvXMLImport& rImport,
 {
 }
 
-XMLFontStylesContext::~XMLFontStylesContext() {}
+XMLFontStylesContext::~XMLFontStylesContext()
+{
+    delete pFamilyNameHdl;
+    delete pFamilyHdl;
+    delete pPitchHdl;
+    delete pEncHdl;
+    delete pFontStyleAttrTokenMap;
+}
 
 bool XMLFontStylesContext::FillProperties( const OUString& rName,
                          ::std::vector< XMLPropertyState > &rProps,

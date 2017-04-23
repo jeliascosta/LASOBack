@@ -89,7 +89,7 @@ void MzString::append(const char *s, int slen)
         return;
 
     int new_len = Length + slen;
-    if (allocate(new_len))
+    if (resize(new_len))
     {
         memcpy(Data + Length, s, slen);
         Length = new_len;
@@ -258,5 +258,10 @@ bool MzString::allocate(int len)
     return false;
 }
 
+
+bool MzString::resize(int len)
+{
+    return allocate(len);
+}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

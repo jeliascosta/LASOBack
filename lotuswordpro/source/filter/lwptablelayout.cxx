@@ -82,7 +82,6 @@
 #include "xfilter/xffloatframe.hxx"
 #include "lwpframelayout.hxx"
 #include "xfilter/xfparastyle.hxx"
-#include <memory>
 
 LwpSuperTableLayout::LwpSuperTableLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
     : LwpPlacableLayout(objHdr, pStrm)
@@ -381,25 +380,25 @@ void  LwpSuperTableLayout::XFConvertFrame(XFContentContainer* pCont, sal_Int32 n
 {
     if(m_pFrame)
     {
-        rtl::Reference<XFFrame> xXFFrame;
+        XFFrame* pXFFrame = nullptr;
         if(nEnd < nStart)
         {
-            xXFFrame.set(new XFFrame);
+            pXFFrame = new XFFrame();
         }
         else
         {
-            xXFFrame.set(new XFFloatFrame(nStart, nEnd, bAll));
+            pXFFrame = new XFFloatFrame(nStart, nEnd, bAll);
         }
 
-        m_pFrame->Parse(xXFFrame.get(), static_cast<sal_uInt16>(nStart));
+        m_pFrame->Parse(pXFFrame, static_cast<sal_uInt16>(nStart));
         //parse table, and add table to frame
         LwpTableLayout * pTableLayout = GetTableLayout();
         if (pTableLayout)
         {
-            pTableLayout->XFConvert(xXFFrame.get());
+            pTableLayout->XFConvert(pXFFrame);
         }
         //add frame to the container
-        pCont->Add(xXFFrame.get());
+        pCont ->Add(pXFFrame);
     }
 
 }
@@ -410,8 +409,8 @@ void  LwpSuperTableLayout::XFConvertFrame(XFContentContainer* pCont, sal_Int32 n
  */
 void  LwpSuperTableLayout::RegisterFrameStyle()
 {
-    std::unique_ptr<XFFrameStyle> xFrameStyle(new XFFrameStyle);
-    m_pFrame->RegisterStyle(xFrameStyle);
+    XFFrameStyle* pFrameStyle = new XFFrameStyle();
+    m_pFrame->RegisterStyle(pFrameStyle);
 }
 
 LwpTableLayout::LwpTableLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
@@ -460,7 +459,10 @@ void LwpTableLayout::TraverseTable()
     sal_uInt32 nCount = m_nRows*m_nCols;
 
     // new cell map nRow*nCOl and initialize
-    m_WordProCellsMap.insert(m_WordProCellsMap.end(), nCount, m_pDefaultCellLayout);
+    for (sal_uInt32 iLoop = 0; iLoop < nCount; ++iLoop)
+    {
+        m_WordProCellsMap.push_back(GetDefaultCellLayout());
+    }
 
     // set value
     LwpObjectID& rRowID = GetChildHead();
@@ -558,7 +560,7 @@ void LwpTableLayout::RegisterColumns()
     sal_uInt16 nCols = m_nCols;
 
     m_pColumns = new LwpColumnLayout *[nCols];
-    std::unique_ptr<bool[]> pWidthCalculated( new bool[nCols] );
+    sal_Bool * pWidthCalculated = new sal_Bool[nCols];
     for(sal_uInt16 i=0;i<nCols; i++)
     {
         pWidthCalculated[i] = false;
@@ -579,6 +581,7 @@ void LwpTableLayout::RegisterColumns()
         auto nColId = pColumnLayout->GetColumnID();
         if (nColId >= nCols)
         {
+            delete [] pWidthCalculated;
             throw std::range_error("corrupt LwpTableLayout");
         }
         m_pColumns[nColId] = pColumnLayout;
@@ -639,6 +642,7 @@ void LwpTableLayout::RegisterColumns()
             }
         }
     }
+    delete [] pWidthCalculated;
 }
 /**
  * @short    register all row styles
@@ -700,14 +704,6 @@ void LwpTableLayout::RegisterStyle()
     // get row/column number of this table
     m_nRows = pTable->GetRow();
     m_nCols = pTable->GetColumn();
-    //http://www.danielsays.com/ss-gallery-win1x2x3x-lotus-word-pro-96.html
-    //tables with up to 255 rows and 8192 columns
-    //the row limit tallies with the casting of m_nCols to an unsigned char
-    //elsewhere
-    if (m_nRows > MAX_NUM_ROWS)
-        throw std::runtime_error("max legal row exceeded");
-    if (m_nCols > MAX_NUM_COLS)
-        throw std::runtime_error("max legal column exceeded");
 
     // get default cell layout of current table
     LwpObjectID& rID= pTable->GetDefaultCellStyle();
@@ -717,7 +713,7 @@ void LwpTableLayout::RegisterStyle()
     RegisterColumns();
 
     // register style of whole table
-    std::unique_ptr<XFTableStyle> xTableStyle(new XFTableStyle);
+    XFTableStyle * pTableStyle = new XFTableStyle();
 
     sal_uInt8 nType = pSuper->GetRelativeType();
     // If the table is not "with paragraph above" placement, create an frame style
@@ -726,22 +722,24 @@ void LwpTableLayout::RegisterStyle()
         && (!pSuper->GetContainerLayout().is() || !pSuper->GetContainerLayout()->IsCell()) )
     {
         //with para above
-        pSuper->ApplyBackGround(xTableStyle.get());
-        pSuper->ApplyWatermark(xTableStyle.get());
-        pSuper->ApplyShadow(xTableStyle.get());
-        pSuper->ApplyAlignment(xTableStyle.get());
-        xTableStyle->SetWidth(pSuper->GetTableWidth());
+//      pSuper->ApplyBackColor(pTableStyle);
+        pSuper->ApplyBackGround(pTableStyle);
+        pSuper->ApplyWatermark(pTableStyle);
+        pSuper->ApplyShadow(pTableStyle);
+        pSuper->ApplyAlignment(pTableStyle);
+        pTableStyle->SetWidth(pSuper->GetTableWidth());
     }
     else
     {
         pSuper->RegisterFrameStyle();
-        xTableStyle->SetAlign(enumXFAlignCenter);
-        xTableStyle->SetWidth(pSuper->GetTableWidth());
+        pTableStyle->SetAlign(enumXFAlignCenter);
+        pTableStyle->SetWidth(pSuper->GetTableWidth());
     }
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    m_StyleName = pXFStyleManager->AddStyle(xTableStyle.release()).m_pStyle->GetStyleName();
+    m_StyleName = pXFStyleManager->AddStyle(pTableStyle).m_pStyle->GetStyleName();
 
-    //convert to OO table now and register row style traverse
+    //convert to OO table now and register row style
+    // traverse
     TraverseTable();
 
     SplitConflictCells();
@@ -752,8 +750,10 @@ void LwpTableLayout::RegisterStyle()
     // Parse table
     ParseTable();
 
-    // the old code doesn't check if the LwpFoundry pointer is NULL,
-    // so the NULL pointer cause sodc freeze. Add code to check the pointer.
+    //Comment: the old code doesn't check if the LwpFoundry pointer is NULL,
+    //         so the NULL pointer cause sodc freeze. Add code to check the
+    //         the pointer.
+    //New Code
     if (GetFoundry() && GetTable())
         PutCellVals(GetFoundry(), GetTable()->GetObjectID());
 }
@@ -818,7 +818,7 @@ void LwpTableLayout::Read()
     {
         assert(false);
     }
-    m_ColumnLayout.ReadIndexed(m_pObjStrm.get());
+    m_ColumnLayout.ReadIndexed(m_pObjStrm);
 
     m_pObjStrm->SkipExtra();
 }
@@ -844,13 +844,13 @@ sal_uInt16 LwpTableLayout::ConvertHeadingRow(
 {
     sal_uInt16 nContentRow;
     sal_uInt8 nCol = static_cast<sal_uInt8>(GetTable()->GetColumn());
-    rtl::Reference<XFTable> pTmpTable( new XFTable );
+    XFTable* pTmpTable = new XFTable;
     XFRow* pXFRow;
 
-    ConvertTable(pTmpTable.get(),nStartHeadRow,nEndHeadRow,0,nCol);
+    ConvertTable(pTmpTable,nStartHeadRow,nEndHeadRow,0,nCol);
 
     sal_uInt16 nRowNum = pTmpTable->GetRowCount();
-    std::unique_ptr<sal_uInt8[]> CellMark( new sal_uInt8[nRowNum] );
+    sal_uInt8* CellMark = new sal_uInt8[nRowNum];
 
     if (nRowNum == 1)
     {
@@ -862,11 +862,11 @@ sal_uInt16 LwpTableLayout::ConvertHeadingRow(
     else
     {
         sal_uInt8 nFirstColSpann = 1;
-        const bool bFindFlag = FindSplitColMark(pTmpTable.get(),CellMark.get(),nFirstColSpann);
+        const bool bFindFlag = FindSplitColMark(pTmpTable,CellMark,nFirstColSpann);
 
         if (bFindFlag)//split to 2 cells
         {
-            SplitRowToCells(pTmpTable.get(),pXFTable,nFirstColSpann,CellMark.get());
+            SplitRowToCells(pTmpTable,pXFTable,nFirstColSpann,CellMark);
             nContentRow = nEndHeadRow;
         }
         else//can not split,the first row will be the heading row,the rest will be content row
@@ -877,6 +877,8 @@ sal_uInt16 LwpTableLayout::ConvertHeadingRow(
             nContentRow = m_RowsMap[0]->GetCurMaxSpannedRows(0,nCol);
         }
     }
+    delete pTmpTable;
+    delete [] CellMark;
     return nContentRow;
 }
 
@@ -884,6 +886,7 @@ void LwpTableLayout::SplitRowToCells(XFTable* pTmpTable, rtl::Reference<XFTable>
         sal_uInt8 nFirstColSpann,sal_uInt8* pCellMark)
 {
     sal_uInt16 i;
+    sal_uInt8 j;
     sal_uInt16 nRowNum = pTmpTable->GetRowCount();
     sal_uInt8 nCol = static_cast<sal_uInt8>(GetTable()->GetColumn());
 
@@ -917,48 +920,49 @@ void LwpTableLayout::SplitRowToCells(XFTable* pTmpTable, rtl::Reference<XFTable>
     pXFRow->SetStyleName(pXFStyleManager->AddStyle(pRowStyle).m_pStyle->GetStyleName());
 
     //construct heading row
-    rtl::Reference<XFCell> xXFCell1(new XFCell);
-    rtl::Reference<XFCell> xXFCell2(new XFCell);
+    XFCell* pXFCell1 = new XFCell;
+    XFCell* pXFCell2 = new XFCell;
     XFTable* pSubTable1 = new XFTable;
     XFTable* pSubTable2 = new XFTable;
+    XFRow* pNewRow;
     XFRow* pOldRow;
-    rtl::Reference<XFCell> xNewCell;
+    XFCell* pNewCell;
 
     for (i=1;i<=nRowNum;i++)
     {
         pOldRow = pTmpTable->GetRow(i);
-        rtl::Reference<XFRow> xNewRow(new XFRow);
-        xNewRow->SetStyleName(pOldRow->GetStyleName());
-        for (sal_uInt8 j=1;j<=pCellMark[i];j++)
+        pNewRow = new XFRow;
+        pNewRow->SetStyleName(pOldRow->GetStyleName());
+        for (j=1;j<=pCellMark[i];j++)
         {
-            xNewCell = pOldRow->GetCell(j);
-            xNewRow->AddCell(xNewCell);
+            pNewCell = pOldRow->GetCell(j);
+            pNewRow->AddCell(pNewCell);
         }
-        pSubTable1->AddRow(xNewRow);
+        pSubTable1->AddRow(pNewRow);
     }
     ConvertColumn(pSubTable1,0,nFirstColSpann);//add column info
 
-    xXFCell1->Add(pSubTable1);
-    xXFCell1->SetColumnSpaned(nFirstColSpann);
-    pXFRow->AddCell(xXFCell1);
+    pXFCell1->Add(pSubTable1);
+    pXFCell1->SetColumnSpaned(nFirstColSpann);
+    pXFRow->AddCell(pXFCell1);
 
     for (i=1;i<=nRowNum;i++)
     {
         pOldRow = pTmpTable->GetRow(i);
-        rtl::Reference<XFRow> xNewRow(new XFRow);
-        xNewRow->SetStyleName(pOldRow->GetStyleName());
-        for(sal_Int32 j=pCellMark[i]+1;j<=pOldRow->GetCellCount();j++)
+        pNewRow = new XFRow;
+        pNewRow->SetStyleName(pOldRow->GetStyleName());
+        for(j=pCellMark[i]+1;j<=pOldRow->GetCellCount();j++)
         {
-            xNewCell = pOldRow->GetCell(j);
-            xNewRow->AddCell(xNewCell);
+            pNewCell = pOldRow->GetCell(j);
+            pNewRow->AddCell(pNewCell);
         }
-        pSubTable2->AddRow(xNewRow);
+        pSubTable2->AddRow(pNewRow);
 
     }
     ConvertColumn(pSubTable2,nFirstColSpann,nCol);//add column info
-    xXFCell2->Add(pSubTable2);
-    xXFCell2->SetColumnSpaned(nCol-nFirstColSpann);
-    pXFRow->AddCell(xXFCell2);
+    pXFCell2->Add(pSubTable2);
+    pXFCell2->SetColumnSpaned(nCol-nFirstColSpann);
+    pXFRow->AddCell(pXFCell2);
 
     pXFTable->AddHeaderRow(pXFRow);
 
@@ -966,7 +970,7 @@ void LwpTableLayout::SplitRowToCells(XFTable* pTmpTable, rtl::Reference<XFTable>
     for (i=1;i<=nRowNum;i++)
     {
         pOldRow = pTmpTable->GetRow(i);
-        for(sal_Int32 j=1;j<=pOldRow->GetCellCount();j++)
+        for(j=1;j<=pOldRow->GetCellCount();j++)
             pOldRow->RemoveCell(j);
         pTmpTable->RemoveRow(i);
     }
@@ -982,6 +986,7 @@ bool  LwpTableLayout::FindSplitColMark(XFTable* pXFTable, sal_uInt8* pCellMark,
 {
     sal_uInt16 nRowNum = pXFTable->GetRowCount();
     sal_uInt8 nColNum = static_cast<sal_uInt8>(pXFTable->GetColumnCount());
+    sal_uInt8 nCellMark=0;
     sal_uInt8 nCount;
     sal_uInt8 nColSpan;
     bool bFindFlag = false;
@@ -990,13 +995,14 @@ bool  LwpTableLayout::FindSplitColMark(XFTable* pXFTable, sal_uInt8* pCellMark,
     for(sal_uInt8 i=1;i<=nColNum;i++)
     {
         sal_uInt16 nRowLoop;
+        sal_uInt8 nCellLoop;
 
         //find current max column span
         nMaxColSpan = 1;
         for (nRowLoop=1;nRowLoop<=nRowNum;nRowLoop++)
         {
             nColSpan = 0;
-            for(sal_uInt8 nCellLoop=1; nCellLoop<i+1; nCellLoop++)
+            for(nCellLoop=1; nCellLoop<i+1; nCellLoop++)
             {
                 pTmpRow = pXFTable->GetRow(nRowLoop);
                 XFCell* pCell = pTmpRow->GetCell(nCellLoop);
@@ -1015,8 +1021,8 @@ bool  LwpTableLayout::FindSplitColMark(XFTable* pXFTable, sal_uInt8* pCellMark,
         {
             pTmpRow = pXFTable->GetRow(nRowLoop);
             nCount = 0;
-            sal_Int32 nCellMark = 0;
-            for (sal_Int32 nCellLoop=1; nCellLoop<=pTmpRow->GetCellCount(); nCellLoop++)
+            nCellMark = 0;
+            for (nCellLoop=1; nCellLoop<=pTmpRow->GetCellCount(); nCellLoop++)
             {
                 if (nCount>nMaxColSpan)
                     break;
@@ -1096,8 +1102,10 @@ void LwpTableLayout::ConvertTable(rtl::Reference<XFTable> const & pXFTable, sal_
 void LwpTableLayout::PutCellVals(LwpFoundry* pFoundry, LwpObjectID aTableID)
 {
 
-    // The old code doesn't check if the LwpFoundry pointer is NULL, so the NULL
-    // pointer cause sodc frozen. Add code to check the pointer.
+    //Comment:The old code doesn't check if the LwpFoundry pointer is NULL,
+    //        So the NULL pointer cause sodc frozen. Add code to check the
+    //        the pointer.
+    //New Code
     if( !pFoundry ) return;
 
     try{
@@ -1335,27 +1343,27 @@ void LwpTableLayout::ConvertDefaultRow(rtl::Reference<XFTable> const & pXFTable,
          sal_uInt8 nEndCol, sal_uInt16 nRowID)
 {
     // current row doesn't exist in the file
-    rtl::Reference<XFRow> xRow(new XFRow);
-    xRow->SetStyleName(m_DefaultRowStyleName);
+    XFRow * pRow = new XFRow();
+    pRow->SetStyleName(m_DefaultRowStyleName);
 
     for (sal_uInt16 j =0;j < nEndCol-nStartCol; j++)
     {
         // if table has default cell layout, use it to ConvertCell
         // otherwise use blank cell
-        rtl::Reference<XFCell> xCell;
+        XFCell * pCell = nullptr;
         if (m_pDefaultCellLayout)
         {
-            xCell = m_pDefaultCellLayout->ConvertCell(
+            pCell = m_pDefaultCellLayout->ConvertCell(
                 GetTable()->GetObjectID(),nRowID,j+nStartCol);
         }
         else
         {
-            xCell.set(new XFCell);
+            pCell = new XFCell();
         }
-        xRow->AddCell(xCell);
+        pRow->AddCell(pCell);
     }
 
-    pXFTable->AddRow(xRow);
+    pXFTable->AddRow(pRow);
 }
 /**
  * @short   set cell map info
@@ -1421,14 +1429,14 @@ LwpColumnLayout::~LwpColumnLayout()
 {}
 void LwpColumnLayout::Read()
 {
-    LwpObjectStream* pStrm = m_pObjStrm.get();
+    LwpObjectStream* pStrm = m_pObjStrm;
 
     LwpVirtualLayout::Read();
 
     sal_uInt16 colid;
 
     colid = pStrm->QuickReaduInt16();   // forced to lushort
-    ccolid = (sal_uInt8)colid;
+    ccolid = (sal_uInt8)colid;  // Phillip
     cwidth = pStrm->QuickReadInt32();
 
     pStrm->SkipExtra();

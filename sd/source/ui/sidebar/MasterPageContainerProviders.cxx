@@ -130,7 +130,7 @@ SdPage* TemplatePageObjectProvider::operator() (SdDrawDocument* pContainerDocume
             SdDrawDocument* pDocument = pDocumentShell->GetDoc();
             if (pDocument != nullptr)
             {
-                pPage = pDocument->GetMasterSdPage(0, PageKind::Standard);
+                pPage = pDocument->GetMasterSdPage(0, PK_STANDARD);
                 // In order to make the newly loaded master page deletable
                 // when copied into documents it is marked as no "precious".
                 // When it is modified then it is marked as "precious".
@@ -179,14 +179,14 @@ SdPage* DefaultPageObjectProvider::operator () (SdDrawDocument* pContainerDocume
     if (pContainerDocument != nullptr)
     {
         sal_Int32 nIndex (0);
-        SdPage* pLocalSlide = pContainerDocument->GetSdPage((sal_uInt16)nIndex, PageKind::Standard);
+        SdPage* pLocalSlide = pContainerDocument->GetSdPage((sal_uInt16)nIndex, PK_STANDARD);
         if (pLocalSlide!=nullptr && pLocalSlide->TRG_HasMasterPage())
             pLocalMasterPage = dynamic_cast<SdPage*>(&pLocalSlide->TRG_GetMasterPage());
     }
 
     if (pLocalMasterPage == nullptr)
     {
-        SAL_WARN( "sd", "can not create master page for slide");
+        DBG_ASSERT(false, "can not create master page for slide");
     }
 
     return pLocalMasterPage;

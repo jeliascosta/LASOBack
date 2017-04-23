@@ -26,15 +26,13 @@ $(call gb_ExternalProject_get_state_target,jpeg-turbo,configure) :
 	$(call gb_ExternalProject_run,configure,\
 		MAKE=$(MAKE) ./configure \
 			--build=$(if $(filter WNT,$(OS)),$(if $(filter INTEL,$(CPUNAME)),i686-pc-cygwin,x86_64-pc-cygwin),$(BUILD_PLATFORM)) \
-			$(if $(CROSS_COMPILING),--host=$(HOST_PLATFORM)) \
 			--with-pic \
 			--enable-static \
 			--disable-shared \
 			--with-jpeg8 \
 			--without-java \
 			--without-turbojpeg \
-			$(if $(NASM),,--without-simd) \
-			CFLAGS='$(if $(debug),$(gb_DEBUGINFO_FLAGS) $(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS)) $(CFLAGS) $(gb_VISIBILITY_FLAGS)' \
+			CFLAGS='$(if $(debug),$(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS)) $(CFLAGS)' \
 	)
 
 # vim: set noet sw=4 ts=4:

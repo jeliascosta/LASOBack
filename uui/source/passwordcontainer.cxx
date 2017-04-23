@@ -291,6 +291,7 @@ PasswordContainerInteractionHandler::~PasswordContainerInteractionHandler()
 // virtual
 OUString SAL_CALL
 PasswordContainerInteractionHandler::getImplementationName()
+    throw ( uno::RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
@@ -300,6 +301,7 @@ PasswordContainerInteractionHandler::getImplementationName()
 sal_Bool SAL_CALL
 PasswordContainerInteractionHandler::supportsService(
         const OUString& ServiceName )
+    throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -308,6 +310,7 @@ PasswordContainerInteractionHandler::supportsService(
 // virtual
 uno::Sequence< OUString > SAL_CALL
 PasswordContainerInteractionHandler::getSupportedServiceNames()
+    throw ( uno::RuntimeException, std::exception )
 {
     return getSupportedServiceNames_Static();
 }
@@ -337,6 +340,7 @@ PasswordContainerInteractionHandler::getSupportedServiceNames_Static()
 void SAL_CALL
 PasswordContainerInteractionHandler::handle(
         const uno::Reference< task::XInteractionRequest >& rRequest )
+    throw ( uno::RuntimeException, std::exception )
 {
     handleInteractionRequest( rRequest );
 }
@@ -345,6 +349,7 @@ PasswordContainerInteractionHandler::handle(
 sal_Bool SAL_CALL
 PasswordContainerInteractionHandler::handleInteractionRequest(
         const uno::Reference< task::XInteractionRequest >& rRequest )
+    throw ( uno::RuntimeException, std::exception )
 {
     if ( !rRequest.is() )
         return false;
@@ -397,10 +402,11 @@ PasswordContainerInteractionHandler::handleInteractionRequest(
 
 // Service factory implementation.
 
-/// @throws uno::Exception
+
 static uno::Reference< uno::XInterface > SAL_CALL
 PasswordContainerInteractionHandler_CreateInstance(
         const uno::Reference< lang::XMultiServiceFactory> & rSMgr )
+    throw( uno::Exception )
 {
     lang::XServiceInfo * pX = static_cast< lang::XServiceInfo * >(
         new PasswordContainerInteractionHandler( comphelper::getComponentContext(rSMgr) ) );

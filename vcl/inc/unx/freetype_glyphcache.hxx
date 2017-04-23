@@ -23,6 +23,11 @@
 #include "unx/glyphcache.hxx"
 #include "PhysicalFontFace.hxx"
 
+#include <config_graphite.h>
+#if ENABLE_GRAPHITE
+class GraphiteFaceWrapper;
+#endif
+
 // FreetypeFontFile has the responsibility that a font file is only mapped once.
 // (#86621#) the old directly ft-managed solution caused it to be mapped
 // in up to nTTC*nSizes*nOrientation*nSynthetic times
@@ -61,6 +66,9 @@ public:
     const unsigned char*  GetTable( const char*, sal_uLong* pLength=nullptr ) const;
 
     FT_FaceRec_*          GetFaceFT();
+#if ENABLE_GRAPHITE
+    GraphiteFaceWrapper*  GetGraphiteFace();
+#endif
     void                  ReleaseFaceFT();
 
     const OString&        GetFontFileName() const   { return mpFontFile->GetFileName(); }
@@ -71,19 +79,53 @@ public:
 
     void                  AnnounceFont( PhysicalFontCollection* );
 
+    int                   GetGlyphIndex( sal_UCS4 cChar ) const;
+    void                  CacheGlyphIndex( sal_UCS4 cChar, int nGI ) const;
+
     bool                  GetFontCodeRanges( CmapResult& ) const;
-    const FontCharMapRef& GetFontCharMap();
+    const FontCharMapPtr  GetFontCharMap();
 
 private:
     FT_FaceRec_*    maFaceFT;
     FreetypeFontFile*     mpFontFile;
     const int       mnFaceNum;
     int             mnRefCount;
+#if ENABLE_GRAPHITE
+    bool            mbCheckedGraphite;
+    GraphiteFaceWrapper * mpGraphiteFace;
+#endif
     sal_IntPtr      mnFontId;
     FontAttributes  maDevFontAttributes;
 
-    FontCharMapRef  mxFontCharMap;
+    FontCharMapPtr  mxFontCharMap;
+
+    // cache unicode->glyphid mapping because looking it up is expensive
+    // TODO: change to std::unordered_multimap when a use case requires a m:n mapping
+    typedef std::unordered_map<int,int> Int2IntMap;
+    mutable Int2IntMap* mpChar2Glyph;
+    mutable Int2IntMap* mpGlyph2Char;
+    void InitHashes() const;
 };
+
+// these two inlines are very important for performance
+
+inline int FreetypeFontInfo::GetGlyphIndex( sal_UCS4 cChar ) const
+{
+    if( !mpChar2Glyph )
+        return -1;
+    Int2IntMap::const_iterator it = mpChar2Glyph->find( cChar );
+    if( it == mpChar2Glyph->end() )
+        return -1;
+    return it->second;
+}
+
+inline void FreetypeFontInfo::CacheGlyphIndex( sal_UCS4 cChar, int nIndex ) const
+{
+    if( !mpChar2Glyph )
+        InitHashes();
+    (*mpChar2Glyph)[ cChar ] = nIndex;
+    (*mpGlyph2Char)[ nIndex ] = cChar;
+}
 
 class FreetypeManager
 {
@@ -96,7 +138,7 @@ public:
     void                AnnounceFonts( PhysicalFontCollection* ) const;
     void                ClearFontList();
 
-    FreetypeFont* CreateFont( const FontSelectPattern& );
+    ServerFont* CreateFont( const FontSelectPattern& );
 
 private:
     typedef std::unordered_map<sal_IntPtr,FreetypeFontInfo*> FontList;

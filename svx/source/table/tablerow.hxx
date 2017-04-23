@@ -38,31 +38,30 @@ class TableRow : public TableRowBase
     friend class TableRowUndo;
 public:
     TableRow( const TableModelRef& xTableModel, sal_Int32 nRow, sal_Int32 nColumns );
-    virtual ~TableRow() override;
+    virtual ~TableRow();
 
     void dispose();
-    /// @throws css::uno::RuntimeException
-    void throwIfDisposed() const;
+    void throwIfDisposed() const throw (css::uno::RuntimeException);
 
     TableRow& operator=( const TableRow& );
 
-    void insertColumns( sal_Int32 nIndex, sal_Int32 nCount, CellVector::iterator* pIter );
+    void insertColumns( sal_Int32 nIndex, sal_Int32 nCount, CellVector::iterator* pIter = nullptr );
     void removeColumns( sal_Int32 nIndex, sal_Int32 nCount );
     /// Reference to the table model containing this row.
     const TableModelRef& getModel() const;
 
     // XCellRange
-    virtual css::uno::Reference< css::table::XCell > SAL_CALL getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) override;
-    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom ) override;
-    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByName( const OUString& aRange ) override;
+    virtual css::uno::Reference< css::table::XCell > SAL_CALL getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop, sal_Int32 nRight, sal_Int32 nBottom ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::table::XCellRange > SAL_CALL getCellRangeByName( const OUString& aRange ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XFastPropertySet
-    virtual void SAL_CALL setFastPropertyValue( ::sal_Int32 nHandle, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getFastPropertyValue( ::sal_Int32 nHandle ) override;
+    virtual void SAL_CALL setFastPropertyValue( ::sal_Int32 nHandle, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getFastPropertyValue( ::sal_Int32 nHandle ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 private:
     static rtl::Reference< FastPropertySetInfo > getStaticPropertySetInfo();

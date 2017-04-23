@@ -29,7 +29,7 @@ class SbiStdObject : public SbxObject
 {
     SbStdFactory* pStdFactory;
 
-    virtual ~SbiStdObject() override;
+    virtual ~SbiStdObject();
     using SbxVariable::GetInfo;
     static SbxInfo* GetInfo( short );
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;

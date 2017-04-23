@@ -44,8 +44,8 @@ namespace connectivity
         }
 
 
-        // css::lang::XUnoTunnel
-        sal_Int64 SAL_CALL ODescriptor::getSomething( const Sequence< sal_Int8 >& rId )
+        // com::sun::star::lang::XUnoTunnel
+        sal_Int64 SAL_CALL ODescriptor::getSomething( const Sequence< sal_Int8 >& rId ) throw(RuntimeException, std::exception)
         {
             return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -64,14 +64,14 @@ namespace connectivity
 
         namespace
         {
-            struct ResetROAttribute : public std::unary_function< Property, void >
+            struct ResetROAttribute : public ::std::unary_function< Property, void >
             {
                 void operator ()( Property& _rProperty ) const
                 {
                     _rProperty.Attributes &= ~PropertyAttribute::READONLY;
                 }
             };
-            struct SetROAttribute : public std::unary_function< Property, void >
+            struct SetROAttribute : public ::std::unary_function< Property, void >
             {
                 void operator ()( Property& _rProperty ) const
                 {
@@ -87,9 +87,9 @@ namespace connectivity
             describeProperties( aProperties );
 
             if ( isNew() )
-                std::for_each( aProperties.getArray(), aProperties.getArray() + aProperties.getLength(), ResetROAttribute() );
+                ::std::for_each( aProperties.getArray(), aProperties.getArray() + aProperties.getLength(), ResetROAttribute() );
             else
-                std::for_each( aProperties.getArray(), aProperties.getArray() + aProperties.getLength(), SetROAttribute() );
+                ::std::for_each( aProperties.getArray(), aProperties.getArray() + aProperties.getLength(), SetROAttribute() );
 
             return new ::cppu::OPropertyArrayHelper( aProperties );
         }
@@ -118,7 +118,7 @@ namespace connectivity
         }
 
 
-        Any SAL_CALL ODescriptor::queryInterface( const Type & rType )
+        Any SAL_CALL ODescriptor::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
         {
             Any aRet = ::cppu::queryInterface(rType,static_cast< XUnoTunnel*> (this));
             return aRet.hasValue() ? aRet : ODescriptor_PBASE::queryInterface(rType);
@@ -131,7 +131,7 @@ namespace connectivity
         }
 
 
-        Sequence< Type > SAL_CALL ODescriptor::getTypes(  )
+        Sequence< Type > SAL_CALL ODescriptor::getTypes(  ) throw(RuntimeException, std::exception)
         {
             ::cppu::OTypeCollection aTypes( cppu::UnoType<XMultiPropertySet>::get(),
                                             cppu::UnoType<XFastPropertySet>::get(),

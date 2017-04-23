@@ -17,9 +17,9 @@
  */
 interface TableDrawText
 {
-    // drawing is not possible from Basic, therefore everything with Export = FALSE
+    //  Drawing geht von Basic aus gar nicht, darum alles mit Export = FALSE
 
-    // every reference input dialogues:
+    // alle Referenz-Eingabe-Dialoge:
     FID_DEFINE_NAME             [ StateMethod = StateDisableItems; Export = FALSE; ]
     FID_ADD_NAME                [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_DEFINE_COLROWNAMERANGES [ StateMethod = StateDisableItems; Export = FALSE; ]
@@ -32,7 +32,7 @@ interface TableDrawText
     SID_DEFINE_DBNAME           [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_OPENDLG_CONSOLIDATE     [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_OPENDLG_EDIT_PRINTAREA  [ StateMethod = StateDisableItems; Export = FALSE; ]
-    // others:
+     // andere:
     SID_DRAW_CHART              [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_OPENDLG_FUNCTION        [ StateMethod = StateDisableItems; Export = FALSE; ]
     SID_STYLE_FAMILY2           [ StateMethod = StateDisableItems; Export = FALSE; ]
@@ -55,10 +55,9 @@ interface TableDrawText
     SID_CLIPBOARD_FORMAT_ITEMS [ ExecMethod = Execute; StateMethod = GetClipState; Export = FALSE; ]
     SID_SELECTALL       [ ExecMethod = Execute; StateMethod = GetState; Export = FALSE; ]
     SID_CHARMAP         [ ExecMethod = Execute; StateMethod = GetState; Export = FALSE; ]
-    SID_EMOJI_CONTROL   [ ExecMethod = Execute; StateMethod = GetState; Export = FALSE; ]
     SID_THES            [ ExecMethod = Execute; StateMethod = GetState; Export = FALSE; ]
     SID_THESAURUS       [ ExecMethod = Execute; StateMethod = GetState; Export = FALSE; ]
-    // attribute:
+     // Attribute: --------------------------------------------------
     SID_TEXT_STANDARD           [ ExecMethod = ExecuteAttr; StateMethod = GetState; Export = FALSE; ]
     SID_DRAWTEXT_ATTR_DLG       [ ExecMethod = ExecuteAttr; StateMethod = GetState; Export = FALSE; ]
     SID_ATTR_CHAR_FONT          [ ExecMethod = ExecuteAttr; StateMethod = GetAttrState; Export = FALSE; ]
@@ -104,7 +103,7 @@ interface TableDrawText
     SID_CHAR_DLG                [ ExecMethod = ExecuteAttr; StateMethod = GetAttrState; Export = FALSE; ]
     SID_CHAR_DLG_EFFECT         [ ExecMethod = ExecuteAttr; StateMethod = GetAttrState; Export = FALSE; ]
     SID_PARA_DLG                [ ExecMethod = ExecuteAttr; StateMethod = GetAttrState; Export = FALSE; ]
-    // FontWork:
+     // ---- FontWork:
     SID_FONTWORK    [ ExecMethod = ExecuteExtra; StateMethod = GetState; Export = FALSE; ]
 
     // pseudo slots from Format menu

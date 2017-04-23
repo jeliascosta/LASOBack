@@ -592,7 +592,7 @@ void OpSumIfs::GenSlidingWindowFunction(std::stringstream &ss,
         else if (!pCurDVR->IsStartFixed() && !pCurDVR->IsEndFixed())
             ss << "    int offset = get_group_id(1);\n";
         else
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         // actually unreachable
         ss << "    int lidx = get_local_id(0);\n";
         ss << "    __local double shm_buf[256];\n";
@@ -2647,9 +2647,9 @@ void OpConvert::GenSlidingWindowFunction(
     // convert between as string arguments. This implementation
     // handles just a very small subset of such conversions.
 
-    int arg1=vSubArguments[1]->GetFormulaToken()->GetString().
+    int arg1=vSubArguments[1]->GetFormulaToken()->GetString().\
         getString().toAsciiUpperCase().hashCode();
-    int arg2=vSubArguments[2]->GetFormulaToken()->GetString().
+    int arg2=vSubArguments[2]->GetFormulaToken()->GetString().\
         getString().toAsciiUpperCase().hashCode();
 
     // Check if the from and to units are those combinations that the
@@ -2658,7 +2658,7 @@ void OpConvert::GenSlidingWindowFunction(
         (arg1==108&&arg2==5584)||
         (arg1==5665&&arg2==268206)||
         (arg1==268206&&arg2==5665)) )
-        throw Unhandled(__FILE__, __LINE__);
+        throw Unhandled();
 
     FormulaToken *tmpCur = vSubArguments[0]->GetFormulaToken();
     const formula::SingleVectorRefToken*tmpCurDVR= static_cast<const
@@ -2813,7 +2813,7 @@ void OpAverageIf::GenSlidingWindowFunction(std::stringstream &ss,
         loopTimes = paraOneWidth;
         if(paraOneWidth > 1)
         {
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         }
     }
 
@@ -2827,7 +2827,7 @@ void OpAverageIf::GenSlidingWindowFunction(std::stringstream &ss,
         paraTwoWidth = pCurDVR1->GetArrays().size();
         if(paraTwoWidth > 1)
         {
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         }
         ss << "    i = ";
         if (!pCurDVR1->IsStartFixed() && pCurDVR1->IsEndFixed()) {
@@ -2859,7 +2859,7 @@ void OpAverageIf::GenSlidingWindowFunction(std::stringstream &ss,
             unsigned paraThreeWidth = pCurDVR2->GetArrays().size();
              if(paraThreeWidth > 1)
             {
-                throw Unhandled(__FILE__, __LINE__);
+                throw Unhandled();
             }
         }
     }

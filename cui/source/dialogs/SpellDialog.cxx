@@ -39,6 +39,8 @@
 #include <com/sun/star/lang/XServiceDisplayName.hpp>
 #include <com/sun/star/linguistic2/SpellFailure.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
+#include <com/sun/star/system/SystemShellExecuteFlags.hpp>
+#include <com/sun/star/system/SystemShellExecute.hpp>
 #include <sfx2/app.hxx>
 #include <vcl/help.hxx>
 #include <vcl/graph.hxx>
@@ -118,8 +120,10 @@ public:
         m_nOffset(0)
         {}
 
+    virtual ~SpellUndoAction_Impl();
+
     virtual void            Undo() override;
-    sal_uInt16              GetId() const;
+    virtual sal_uInt16          GetId() const override;
 
     void                    SetEnableChangePB(){m_bEnableChangePB = true;}
     bool                    IsEnableChangePB(){return m_bEnableChangePB;}
@@ -151,6 +155,12 @@ public:
 }//namespace svx
 using namespace ::svx;
 
+
+SpellUndoAction_Impl::~SpellUndoAction_Impl()
+{
+}
+
+
 void SpellUndoAction_Impl::Undo()
 {
     m_rActionLink.Call(*this);
@@ -172,7 +182,6 @@ SpellDialog::SpellDialog(SpellDialogChildWindow* pChildWindow,
     , bModified(false)
     , bFocusLocked(true)
     , rParent(*pChildWindow)
-    , pImpl( new SpellDialog_Impl )
 {
     m_sTitleSpellingGrammar = GetText();
     m_sTitleSpelling = get<FixedText>("alttitleft")->GetText();
@@ -191,7 +200,7 @@ SpellDialog::SpellDialog(SpellDialogChildWindow* pChildWindow,
     get(m_pExplainLink, "explainlink");
     get(m_pNotInDictFT, "notindictft");
     get(m_pSentenceED, "sentence");
-    Size aEdSize(LogicToPixel(Size(197, 48), MapUnit::MapAppFont));
+    Size aEdSize(LogicToPixel(Size(197, 48), MAP_APPFONT));
     m_pSentenceED->set_width_request(aEdSize.Width());
     m_pSentenceED->set_height_request(aEdSize.Height());
     get(m_pSuggestionFT, "suggestionsft");
@@ -215,6 +224,7 @@ SpellDialog::SpellDialog(SpellDialogChildWindow* pChildWindow,
     get(m_pToolbar, "toolbar");
     m_pSentenceED->Init(m_pToolbar);
     xSpell = LinguMgr::GetSpellChecker();
+    pImpl = new SpellDialog_Impl;
 
     const StyleSettings& rSettings = GetSettings().GetStyleSettings();
     Color aCol = rSettings.GetHelpColor();
@@ -241,14 +251,15 @@ SpellDialog::~SpellDialog()
 
 void SpellDialog::dispose()
 {
-    if (pImpl.get())
+    if (pImpl)
     {
         // save possibly modified user-dictionaries
-        Reference< XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
+        Reference< XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
         if (xDicList.is())
             SaveDictionaries( xDicList );
 
-        pImpl.reset();
+        delete pImpl;
+        pImpl = nullptr;
     }
     m_pLanguageFT.clear();
     m_pLanguageLB.clear();
@@ -298,11 +309,13 @@ void SpellDialog::Init_Impl()
 
     m_pLanguageLB->SetSelectHdl(LINK( this, SpellDialog, LanguageSelectHdl ) );
 
+    m_pExplainLink->SetClickHdl( LINK( this, SpellDialog, HandleHyperlink ) );
+
     // initialize language ListBox
     m_pLanguageLB->SetLanguageList( SvxLanguageListFlags::SPELL_USED, false, false, true );
 
     m_pSentenceED->ClearModifyFlag();
-    LinguMgr::GetChangeAllList()->clear();
+    SvxGetChangeAllList()->clear();
 }
 
 void SpellDialog::UpdateBoxes_Impl()
@@ -332,7 +345,7 @@ void SpellDialog::UpdateBoxes_Impl()
     }
     else
         SetTitle_Impl( nAltLanguage );
-    m_pLanguageLB->SelectLanguage( nAltLanguage );
+    SetSelectedLang_Impl( nAltLanguage );
     int nDicts = InitUserDicts();
 
     // enter alternatives
@@ -382,7 +395,7 @@ void SpellDialog::UpdateBoxes_Impl()
         m_pExplainLink->Hide();
     }
 
-    if (bOldShowExplain != m_pExplainLink->IsVisible() || bOldShowGrammar != m_pCheckGrammarCB->IsVisible())
+    if (bOldShowExplain != (bool) m_pExplainLink->IsVisible() || bOldShowGrammar != (bool) m_pCheckGrammarCB->IsVisible())
         setOptimalLayoutSize();
 }
 
@@ -426,8 +439,9 @@ void SpellDialog::SpellContinue_Impl(bool bUseSavedSentence, bool bIgnoreCurrent
 /* Initialize, asynchronous to prevent virtual calls
    from a constructor
  */
-IMPL_LINK_NOARG( SpellDialog, InitHdl, void*, void)
+IMPL_LINK_NOARG_TYPED( SpellDialog, InitHdl, void*, void)
 {
+    m_pToolbar->Disable();
     SetUpdateMode( false );
     //show or hide AutoCorrect depending on the modules abilities
     m_pAutoCorrPB->Show(rParent.HasAutoCorrection());
@@ -456,7 +470,7 @@ IMPL_LINK_NOARG( SpellDialog, InitHdl, void*, void)
 };
 
 
-IMPL_LINK( SpellDialog, ExtClickHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SpellDialog, ExtClickHdl, Button *, pBtn, void )
 {
     if (m_pOptionsPB == pBtn)
         StartSpellOptDlg_Impl();
@@ -488,7 +502,7 @@ IMPL_LINK( SpellDialog, ExtClickHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK( SpellDialog, CheckGrammarHdl, Button*, pBox, void )
+IMPL_LINK_TYPED( SpellDialog, CheckGrammarHdl, Button*, pBox, void )
 {
     rParent.SetGrammarChecking( static_cast<CheckBox*>(pBox)->IsChecked() );
     Impl_Restore(true);
@@ -499,6 +513,7 @@ void SpellDialog::StartSpellOptDlg_Impl()
     sal_uInt16 aSpellInfos[] =
     {
         SID_ATTR_SPELL,SID_ATTR_SPELL,
+        SID_SPELL_MODIFIED, SID_SPELL_MODIFIED,
         SID_AUTOSPELL_CHECK, SID_AUTOSPELL_CHECK,
         0
     };
@@ -552,12 +567,12 @@ OUString SpellDialog::getReplacementString() const
 }
 
 
-IMPL_LINK_NOARG(SpellDialog, DoubleClickChangeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, DoubleClickChangeHdl, ListBox&, void)
 {
     ChangeHdl(nullptr);
 }
 
-IMPL_LINK_NOARG(SpellDialog, ChangeHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, ChangeHdl, Button*, void)
 {
     if(m_pSentenceED->IsUndoEditMode())
     {
@@ -577,7 +592,7 @@ IMPL_LINK_NOARG(SpellDialog, ChangeHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SpellDialog, ChangeAllHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, ChangeAllHdl, Button*, void)
 {
     m_pSentenceED->UndoActionStart( SPELLUNDO_CHANGE_GROUP );
     OUString aString = getReplacementString();
@@ -586,7 +601,7 @@ IMPL_LINK_NOARG(SpellDialog, ChangeAllHdl, Button*, void)
     // add new word to ChangeAll list
     OUString  aOldWord( m_pSentenceED->GetErrorText() );
     SvxPrepareAutoCorrect( aOldWord, aString );
-    Reference<XDictionary> aXDictionary( LinguMgr::GetChangeAllList(), UNO_QUERY );
+    Reference<XDictionary> aXDictionary( SvxGetChangeAllList(), UNO_QUERY );
     DictionaryError nAdded = AddEntryToDic( aXDictionary,
             aOldWord, true,
             aString, eLang );
@@ -607,11 +622,11 @@ IMPL_LINK_NOARG(SpellDialog, ChangeAllHdl, Button*, void)
 }
 
 
-IMPL_LINK( SpellDialog, IgnoreAllHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( SpellDialog, IgnoreAllHdl, Button *, pButton, void )
 {
     m_pSentenceED->UndoActionStart( SPELLUNDO_CHANGE_GROUP );
     // add word to IgnoreAll list
-    Reference< XDictionary > aXDictionary( LinguMgr::GetIgnoreAllList(), UNO_QUERY );
+    Reference< XDictionary > aXDictionary( SvxGetIgnoreAllList(), UNO_QUERY );
     //in case the error has been changed manually it has to be restored
     m_pSentenceED->RestoreCurrentError();
     if (pButton == m_pIgnoreRulePB)
@@ -654,7 +669,7 @@ IMPL_LINK( SpellDialog, IgnoreAllHdl, Button *, pButton, void )
 }
 
 
-IMPL_LINK_NOARG(SpellDialog, UndoHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, UndoHdl, Button*, void)
 {
     m_pSentenceED->Undo();
     if(!m_pSentenceED->GetUndoActionCount())
@@ -662,7 +677,7 @@ IMPL_LINK_NOARG(SpellDialog, UndoHdl, Button*, void)
 }
 
 
-IMPL_LINK( SpellDialog, DialogUndoHdl, SpellUndoAction_Impl&, rAction, void )
+IMPL_LINK_TYPED( SpellDialog, DialogUndoHdl, SpellUndoAction_Impl&, rAction, void )
 {
     switch(rAction.GetId())
     {
@@ -710,7 +725,7 @@ IMPL_LINK( SpellDialog, DialogUndoHdl, SpellUndoAction_Impl&, rAction, void )
 void SpellDialog::Impl_Restore(bool bUseSavedSentence)
 {
     //clear the "ChangeAllList"
-    LinguMgr::GetChangeAllList()->clear();
+    SvxGetChangeAllList()->clear();
     //get a new sentence
     m_pSentenceED->SetText(OUString());
     m_pSentenceED->ResetModified();
@@ -719,7 +734,7 @@ void SpellDialog::Impl_Restore(bool bUseSavedSentence)
     m_pIgnorePB->SetText(m_sIgnoreOnceST);
 }
 
-IMPL_LINK_NOARG(SpellDialog, IgnoreHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, IgnoreHdl, Button*, void)
 {
     if (m_sResumeST.equals(m_pIgnorePB->GetText()))
     {
@@ -743,10 +758,16 @@ bool SpellDialog::Close()
     // Execute() does not work here when we are in a document with protected
     // section - in that case, the cursor can move from the editable field to
     // the protected area, and the slots get disabled because of
-    // SfxDisableFlags::SwOnProtectedCursor (see FN_SPELL_GRAMMAR_DIALOG in .sdi).
+    // SW_DISABLE_ON_PROTECTED_CURSOR (see FN_SPELL_GRAMMAR_DIALOG in .sdi).
     SfxViewFrame::Current()->ToggleChildWindow(rParent.GetType());
 
     return true;
+}
+
+
+void SpellDialog::SetSelectedLang_Impl( LanguageType nLang )
+{
+    m_pLanguageLB->SelectLanguage( nLang );
 }
 
 
@@ -757,7 +778,7 @@ LanguageType SpellDialog::GetSelectedLang_Impl() const
 }
 
 
-IMPL_LINK(SpellDialog, LanguageSelectHdl, ListBox&, rBox, void)
+IMPL_LINK_TYPED(SpellDialog, LanguageSelectHdl, ListBox&, rBox, void)
 {
     //If selected language changes, then add->list should be regenerated to
     //match
@@ -800,13 +821,13 @@ int SpellDialog::InitUserDicts()
     const Reference< XDictionary >  *pDic = nullptr;
 
     // get list of dictionaries
-    Reference< XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
+    Reference< XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
     if (xDicList.is())
     {
         // add active, positive dictionary to dic-list (if not already done).
         // This is to ensure that there is at least on dictionary to which
         // words could be added.
-        Reference< XDictionary >  xDic( LinguMgr::GetStandardDic() );
+        Reference< XDictionary >  xDic( SvxGetOrCreatePosDic( xDicList ) );
         if (xDic.is())
             xDic->setActive( true );
 
@@ -827,7 +848,7 @@ int SpellDialog::InitUserDicts()
     for (sal_Int32 i = 0; i < nSize; ++i)
     {
         uno::Reference< linguistic2::XDictionary >  xDicTmp( pDic[i], uno::UNO_QUERY );
-        if (!xDicTmp.is() || LinguMgr::GetIgnoreAllList() == xDicTmp)
+        if (!xDicTmp.is() || SvxGetIgnoreAllList() == xDicTmp)
             continue;
 
         uno::Reference< frame::XStorable > xStor( xDicTmp, uno::UNO_QUERY );
@@ -867,13 +888,13 @@ int SpellDialog::InitUserDicts()
 }
 
 
-IMPL_LINK_NOARG(SpellDialog, AddToDictClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, AddToDictClickHdl, Button*, void)
 {
     AddToDictionaryExecute(1, m_pAddToDictMB->GetPopupMenu());
 }
 
 
-IMPL_LINK(SpellDialog, AddToDictSelectHdl, MenuButton*, pButton, void )
+IMPL_LINK_TYPED(SpellDialog, AddToDictSelectHdl, MenuButton*, pButton, void )
 {
     AddToDictionaryExecute(pButton->GetCurItemId(), pButton->GetPopupMenu());
 }
@@ -890,7 +911,7 @@ void SpellDialog::AddToDictionaryExecute( sal_uInt16 nItemId, PopupMenu *pMenu )
     OUString aDicName ( pMenu->GetItemText( nItemId ) );
 
     uno::Reference< linguistic2::XDictionary >      xDic;
-    uno::Reference< linguistic2::XSearchableDictionaryList >  xDicList( LinguMgr::GetDictionaryList() );
+    uno::Reference< linguistic2::XSearchableDictionaryList >  xDicList( SvxGetDictionaryList() );
     if (xDicList.is())
         xDic = xDicList->getDictionaryByName( aDicName );
 
@@ -927,7 +948,7 @@ void SpellDialog::AddToDictionaryExecute( sal_uInt16 nItemId, PopupMenu *pMenu )
 }
 
 
-IMPL_LINK(SpellDialog, ModifyHdl, Edit&, rEd, void)
+IMPL_LINK_TYPED(SpellDialog, ModifyHdl, Edit&, rEd, void)
 {
     if (m_pSentenceED == &rEd)
     {
@@ -952,7 +973,7 @@ IMPL_LINK(SpellDialog, ModifyHdl, Edit&, rEd, void)
 };
 
 
-IMPL_LINK_NOARG(SpellDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SpellDialog, CancelHdl, Button*, void)
 {
     //apply changes and ignored text parts first - if there are any
     rParent.ApplyChangedSentence(m_pSentenceED->CreateSpellPortions(), false);
@@ -960,7 +981,7 @@ IMPL_LINK_NOARG(SpellDialog, CancelHdl, Button*, void)
 }
 
 
-bool SpellDialog::EventNotify( NotifyEvent& rNEvt )
+bool SpellDialog::Notify( NotifyEvent& rNEvt )
 {
     /* #i38338#
     *   FIXME: LoseFocus and GetFocus are signals from vcl that
@@ -984,7 +1005,7 @@ bool SpellDialog::EventNotify( NotifyEvent& rNEvt )
             rParent.LoseFocus();
         }
     }
-    return SfxModelessDialog::EventNotify(rNEvt);
+    return SfxModelessDialog::Notify(rNEvt);
 }
 
 
@@ -1133,7 +1154,7 @@ bool SpellDialog::ApplyChangeAllList_Impl(SpellPortions& rSentence, bool &bHasRe
     bHasReplaced = false;
     bool bRet = true;
     SpellPortions::iterator aStart = rSentence.begin();
-    Reference<XDictionary> xChangeAll( LinguMgr::GetChangeAllList(), UNO_QUERY );
+    Reference<XDictionary> xChangeAll( SvxGetChangeAllList(), UNO_QUERY );
     if(!xChangeAll->getCount())
         return bRet;
     bRet = false;
@@ -1514,6 +1535,14 @@ bool SentenceEditWindow_Impl::PreNotify( NotifyEvent& rNEvt )
         else
             bChange = false;
     }
+    else if (rNEvt.GetType() == MouseNotifyEvent::GETFOCUS && m_xToolbar)
+    {
+        m_xToolbar->Enable();
+    }
+    else if(rNEvt.GetType() == MouseNotifyEvent::LOSEFOCUS && m_xToolbar)
+    {
+        m_xToolbar->Disable();
+    }
     return bChange || VclMultiLineEdit::PreNotify(rNEvt);
 }
 
@@ -1523,7 +1552,7 @@ void SentenceEditWindow_Impl::Init(VclPtr<ToolBox> &rToolbar)
     m_xToolbar->SetSelectHdl(LINK(this,SentenceEditWindow_Impl,ToolbarHdl));
 }
 
-IMPL_LINK_NOARG(SentenceEditWindow_Impl, ToolbarHdl, ToolBox *, void)
+IMPL_LINK_NOARG_TYPED(SentenceEditWindow_Impl, ToolbarHdl, ToolBox *, void)
 {
     const sal_uInt16 nCurItemId = m_xToolbar->GetCurItemId();
     if (nCurItemId == m_xToolbar->GetItemId("paste"))
@@ -1583,7 +1612,7 @@ bool SentenceEditWindow_Impl::MarkNextError( bool bIgnoreCurrentError, const css
         }
         // maybe the error found here is already in the ChangeAllList and has to be replaced
 
-        Reference<XDictionary> xChangeAll( LinguMgr::GetChangeAllList(), UNO_QUERY );
+        Reference<XDictionary> xChangeAll( SvxGetChangeAllList(), UNO_QUERY );
         Reference<XDictionaryEntry> xEntry;
 
         const SpellErrorDescription* pSpellErrorDescription = nullptr;
@@ -1931,15 +1960,15 @@ void SentenceEditWindow_Impl::Undo()
     if(!GetUndoActionCount())
         return;
     bool bSaveUndoEdit = IsUndoEditMode();
-    SpellUndoAction_Impl* pUndoAction;
+    sal_uInt16 nId;
     //if the undo edit mode is active then undo all changes until the UNDO_EDIT_MODE action has been found
     do
     {
-        pUndoAction = static_cast<SpellUndoAction_Impl*>(rUndoMgr.GetUndoAction());
+        nId = rUndoMgr.GetUndoActionId();
         rUndoMgr.Undo();
-    }while(bSaveUndoEdit && SPELLUNDO_UNDO_EDIT_MODE != pUndoAction->GetId() && GetUndoActionCount());
+    }while(bSaveUndoEdit && SPELLUNDO_UNDO_EDIT_MODE != nId && GetUndoActionCount());
 
-    if(bSaveUndoEdit || SPELLUNDO_CHANGE_GROUP == pUndoAction->GetId())
+    if(bSaveUndoEdit || SPELLUNDO_CHANGE_GROUP == nId)
         GetSpellDialog()->UpdateBoxes_Impl();
 }
 
@@ -2024,6 +2053,30 @@ void  SentenceEditWindow_Impl::SetUndoEditMode(bool bSet)
                         SPELLUNDO_UNDO_EDIT_MODE, GetSpellDialog()->aDialogUndoLink);
     AddUndoAction(pAction);
     pSpellDialog->m_pChangePB->Enable();
+}
+
+IMPL_LINK_TYPED( SpellDialog, HandleHyperlink, FixedHyperlink&, rHyperlink, void )
+{
+    OUString sURL=rHyperlink.GetURL();
+    OUString sTitle=GetText();
+
+    if ( sURL.isEmpty() ) // Nothing to do, when the URL is empty
+        return;
+    try
+    {
+        uno::Reference< css::system::XSystemShellExecute > xSystemShellExecute(
+            css::system::SystemShellExecute::create(::comphelper::getProcessComponentContext()) );
+        xSystemShellExecute->execute( sURL, OUString(), css::system::SystemShellExecuteFlags::URIS_ONLY );
+    }
+    catch ( uno::Exception& )
+    {
+        uno::Any exc( ::cppu::getCaughtException() );
+        OUString msg( ::comphelper::anyToString( exc ) );
+        const SolarMutexGuard guard;
+        ScopedVclPtrInstance< MessageDialog > aErrorBox(nullptr, msg);
+        aErrorBox->SetText(sTitle);
+        aErrorBox->Execute();
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

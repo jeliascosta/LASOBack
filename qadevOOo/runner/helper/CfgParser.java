@@ -55,11 +55,11 @@ public class CfgParser
             while (cfgEnum.hasMoreElements())
             {
                 String pName = (String) cfgEnum.nextElement();
-                String pValue = cfg.getProperty(pName);
+                Object pValue = cfg.getProperty(pName);
 
-                if (pValue != null)
+                if (pValue instanceof String)
                 {
-                    pValue = pValue.trim();
+                    pValue = ((String) pValue).trim();
                 }
 
                 param.put(pName.trim(), pValue);
@@ -81,6 +81,29 @@ public class CfgParser
         }
 
         debug = param.getBool(PropertyName.DEBUG_IS_ACTIVE);
+
+        //check for platform dependent parameters
+        //this would have a $OperatingSystem as prefix
+        String os = (String) param.get(PropertyName.OPERATING_SYSTEM);
+        if (os != null && os.length() > 1)
+        {
+
+            Map<String, Object> aux = new HashMap<String, Object>();
+            for (Iterator<Map.Entry<String, Object>> it = param.entrySet().iterator(); it.hasNext();)
+            {
+                Map.Entry<String, Object> entry = it.next();
+                String key = entry.getKey();
+                if (key.startsWith(os))
+                {
+                    Object oldValue = entry.getValue();
+                    String newKey = key.substring(os.length() + 1);
+                    it.remove();
+                    aux.put(newKey, oldValue);
+                }
+            }
+            param.putAll(aux);
+
+        }
     }
 
     private Properties getProperties(String name)

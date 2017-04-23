@@ -39,13 +39,13 @@ class OStoreStream
 public:
     /** Construction.
      */
-    OStoreStream()
+    inline OStoreStream()
         : m_hImpl (nullptr)
     {}
 
     /** Destruction.
      */
-    ~OStoreStream()
+    inline ~OStoreStream()
     {
         if (m_hImpl)
             (void) store_releaseHandle (m_hImpl);
@@ -53,7 +53,7 @@ public:
 
     /** Copy construction.
      */
-    OStoreStream (OStoreStream const & rhs)
+    inline OStoreStream (OStoreStream const & rhs)
         : m_hImpl (rhs.m_hImpl)
     {
         if (m_hImpl)
@@ -62,7 +62,7 @@ public:
 
     /** Assignment.
      */
-    OStoreStream & operator= (OStoreStream const & rhs)
+    inline OStoreStream & operator= (OStoreStream const & rhs)
     {
         if (rhs.m_hImpl)
             (void) store_acquireHandle (rhs.m_hImpl);
@@ -75,7 +75,7 @@ public:
     /** Open the stream.
         @see store_openStream()
      */
-    storeError create (
+    inline storeError create (
         storeFileHandle       hFile,
         rtl::OUString const & rPath,
         rtl::OUString const & rName,
@@ -92,7 +92,7 @@ public:
     /** Read from the stream.
         @see store_readStream()
      */
-    storeError readAt (
+    inline storeError readAt (
         sal_uInt32   nOffset,
         void *       pBuffer,
         sal_uInt32   nBytes,
@@ -107,7 +107,7 @@ public:
     /** Write to the stream.
         @see store_writeStream()
      */
-    storeError writeAt (
+    inline storeError writeAt (
         sal_uInt32   nOffset,
         void const * pBuffer,
         sal_uInt32   nBytes,
@@ -135,13 +135,13 @@ class OStoreDirectory
 public:
     /** Construction.
      */
-    OStoreDirectory()
+    inline OStoreDirectory()
         : m_hImpl (nullptr)
     {}
 
     /** Destruction.
      */
-    ~OStoreDirectory()
+    inline ~OStoreDirectory()
     {
         if (m_hImpl)
             (void) store_releaseHandle (m_hImpl);
@@ -149,24 +149,16 @@ public:
 
     /** Copy construction.
      */
-    OStoreDirectory (OStoreDirectory const & rhs)
+    inline OStoreDirectory (OStoreDirectory const & rhs)
         : m_hImpl (rhs.m_hImpl)
     {
         if (m_hImpl)
             (void) store_acquireHandle (m_hImpl);
     }
 
-    /** Move construction.
-     */
-    OStoreDirectory (OStoreDirectory && rhs)
-        : m_hImpl (rhs.m_hImpl)
-    {
-        rhs.m_hImpl = nullptr;
-    }
-
     /** Assignment.
      */
-    OStoreDirectory & operator= (OStoreDirectory const & rhs)
+    inline OStoreDirectory & operator= (OStoreDirectory const & rhs)
     {
         if (rhs.m_hImpl)
             (void) store_acquireHandle (rhs.m_hImpl);
@@ -176,21 +168,10 @@ public:
         return *this;
     }
 
-    /** Move assignment.
-     */
-    OStoreDirectory & operator= (OStoreDirectory && rhs)
-    {
-        if (m_hImpl)
-            (void) store_releaseHandle (m_hImpl);
-        m_hImpl = rhs.m_hImpl;
-        rhs.m_hImpl = nullptr;
-        return *this;
-    }
-
     /** Open the directory.
         @see store_openDirectory()
      */
-    storeError create (
+    inline storeError create (
         storeFileHandle       hFile,
         rtl::OUString const & rPath,
         rtl::OUString const & rName,
@@ -213,7 +194,7 @@ public:
     /** Find first directory entry.
         @see store_findFirst()
      */
-    storeError first (iterator& it)
+    inline storeError first (iterator& it)
     {
         if (!m_hImpl)
             return store_E_InvalidHandle;
@@ -224,7 +205,7 @@ public:
     /** Find next directory entry.
         @see store_findNext()
      */
-    storeError next (iterator& it)
+    inline storeError next (iterator& it)
     {
         if (!m_hImpl)
             return store_E_InvalidHandle;
@@ -248,13 +229,13 @@ class OStoreFile
 public:
     /** Construction.
      */
-    OStoreFile()
+    inline OStoreFile()
         : m_hImpl (nullptr)
     {}
 
     /** Destruction.
      */
-    ~OStoreFile()
+    inline ~OStoreFile()
     {
         if (m_hImpl)
             (void) store_releaseHandle (m_hImpl);
@@ -262,7 +243,7 @@ public:
 
     /** Copy construction.
      */
-    OStoreFile (OStoreFile const & rhs)
+    inline OStoreFile (OStoreFile const & rhs)
         : m_hImpl (rhs.m_hImpl)
     {
         if (m_hImpl)
@@ -271,7 +252,7 @@ public:
 
     /** Assignment.
      */
-    OStoreFile & operator= (OStoreFile const & rhs)
+    inline OStoreFile & operator= (OStoreFile const & rhs)
     {
         if (rhs.m_hImpl)
             (void) store_acquireHandle (rhs.m_hImpl);
@@ -283,7 +264,7 @@ public:
 
     /** Conversion into File Handle.
      */
-    operator storeFileHandle() const
+    inline operator storeFileHandle() const
     {
         return m_hImpl;
     }
@@ -291,7 +272,7 @@ public:
     /** Check for a valid File Handle.
         @return sal_True if valid, sal_False otherwise.
      */
-    bool isValid() const
+    inline bool isValid() const
     {
         return (m_hImpl != nullptr);
     }
@@ -299,22 +280,23 @@ public:
     /** Open the file.
         @see store_openFile()
      */
-    storeError create(
+    inline storeError create (
         rtl::OUString const & rFilename,
-        storeAccessMode       eAccessMode )
+        storeAccessMode       eAccessMode,
+        sal_uInt16            nPageSize = STORE_DEFAULT_PAGESIZE)
     {
         if (m_hImpl)
         {
             (void) store_releaseHandle (m_hImpl);
             m_hImpl = nullptr;
         }
-        return store_openFile (rFilename.pData, eAccessMode, STORE_DEFAULT_PAGESIZE, &m_hImpl);
+        return store_openFile (rFilename.pData, eAccessMode, nPageSize, &m_hImpl);
     }
 
     /** Open the temporary file in memory.
         @see store_createMemoryFile()
      */
-    storeError createInMemory ()
+    inline storeError createInMemory ()
     {
         if (m_hImpl)
         {
@@ -327,7 +309,7 @@ public:
     /** Close the file.
         @see store_closeFile()
      */
-    void close()
+    inline void close()
     {
         if (m_hImpl)
         {
@@ -339,7 +321,7 @@ public:
     /** Flush the file.
         @see store_flushFile()
      */
-    storeError flush() const
+    inline storeError flush() const
     {
         if (!m_hImpl)
             return store_E_InvalidHandle;
@@ -350,7 +332,7 @@ public:
     /** Remove a file entry.
         @see store_remove()
      */
-    storeError remove (
+    inline storeError remove (
         rtl::OUString const & rPath, rtl::OUString const & rName)
     {
         if (!m_hImpl)

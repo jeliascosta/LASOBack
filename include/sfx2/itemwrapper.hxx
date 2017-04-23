@@ -23,9 +23,10 @@
 #include <sal/config.h>
 #include <sfx2/dllapi.h>
 #include <svl/eitem.hxx>
+#include <svl/stritem.hxx>
 #include <svl/intitem.hxx>
+#include <svl/itemset.hxx>
 
-class SfxItemSet;
 
 namespace sfx {
 
@@ -89,12 +90,12 @@ public:
     typedef ValueT                              ItemValueType;
     typedef SingleItemWrapper< ItemT, ValueT >  SingleItemWrapperType;
 
-    explicit     SingleItemWrapper( sal_uInt16 nSlot ) : mnSlot( nSlot ) {}
+    inline explicit     SingleItemWrapper( sal_uInt16 nSlot ) : mnSlot( nSlot ) {}
 
     virtual             ~SingleItemWrapper() {}
 
     /** Returns the SID this wrapper works on. */
-    sal_uInt16       GetSlotId() const { return mnSlot; }
+    inline sal_uInt16       GetSlotId() const { return mnSlot; }
 
     /** Returns the item from an item set, if it is not in "don't know" state.
         @descr  Similar to ItemWrapperHelper::GetUniqueItem(), but works always
@@ -130,8 +131,10 @@ template< typename ItemT, typename ValueT, typename InternalValueT = ValueT >
 class ValueItemWrapper : public SingleItemWrapper< ItemT, ValueT >
 {
 public:
-    explicit     ValueItemWrapper( sal_uInt16 nSlot ) :
+    inline explicit     ValueItemWrapper( sal_uInt16 nSlot ) :
                             SingleItemWrapper< ItemT, ValueT >( nSlot ) {}
+
+    virtual             ~ValueItemWrapper() {}
 
     virtual ValueT      GetItemValue( const ItemT& rItem ) const SAL_OVERRIDE
                             { return static_cast< ValueT >( rItem.GetValue() ); }
@@ -150,8 +153,10 @@ template< typename ItemT >
 class IdentItemWrapper : public SingleItemWrapper< ItemT, const ItemT& >
 {
 public:
-    explicit     IdentItemWrapper( sal_uInt16 nSlot ) :
+    inline explicit     IdentItemWrapper( sal_uInt16 nSlot ) :
                             SingleItemWrapper< ItemT, const ItemT& >( nSlot ) {}
+
+    virtual             ~IdentItemWrapper() {}
 
     virtual const ItemT& GetItemValue( const ItemT& rItem ) const SAL_OVERRIDE
                             { return rItem; }

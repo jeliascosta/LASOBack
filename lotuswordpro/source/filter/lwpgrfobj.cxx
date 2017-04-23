@@ -68,8 +68,6 @@
 #include "bento.hxx"
 
 #include "lwpglobalmgr.hxx"
-#include "lwpframelayout.hxx"
-
 #include "xfilter/xfframe.hxx"
 #include "xfilter/xfimage.hxx"
 #include "xfilter/xfimagestyle.hxx"
@@ -160,14 +158,6 @@ void LwpGraphicObject::Read()
         sal_uInt32 nFilterContextSize = m_pObjStrm->QuickReaduInt32();
         if (nFilterContextSize > 0)
         {
-            sal_uInt16 nMaxPossibleSize = m_pObjStrm->remainingSize();
-
-            if (nFilterContextSize > nMaxPossibleSize)
-            {
-                SAL_WARN("lwp", "stream too short for claimed no of records");
-                nFilterContextSize = nMaxPossibleSize;
-            }
-
             pFilterContext = new unsigned char[nFilterContextSize];
             m_pObjStrm->QuickRead(pFilterContext, static_cast<sal_uInt16>(nFilterContextSize));
         }
@@ -249,6 +239,8 @@ void LwpGraphicObject::XFConvert (XFContentContainer* pCont)
     }
 }
 
+#include "lwpframelayout.hxx"
+
 /**
  * @descr   judge if the graphic format is what we can support: bmp, jpg, wmf, gif, tgf(tif). other format will be filtered to
  *  these formats by Word Pro.
@@ -317,7 +309,7 @@ void LwpGraphicObject::CreateDrawObjects()
 
     SvStream* pDrawObjStream = nullptr;
 
-    // get graphic object's bento object name
+    // get graphic object's bento objet name
     LwpObjectID& rMyID = GetObjectID();
     std::string aGrfObjName;
     GetBentoNamebyID(rMyID,  aGrfObjName);
@@ -369,7 +361,7 @@ sal_uInt32 LwpGraphicObject::GetRawGrafData(sal_uInt8*& pGrafData)
 
     SvStream* pGrafStream = nullptr;
 
-    // get graphic object's bento object name
+    // get graphic object's bento objet name
     LwpObjectID& rMyID = GetObjectID();
     std::string aGrfObjName;
     GetBentoNamebyID(rMyID,  aGrfObjName);
@@ -383,7 +375,7 @@ sal_uInt32 LwpGraphicObject::GetRawGrafData(sal_uInt8*& pGrafData)
         // read image data
         sal_uInt32 nDataLen = pMemGrafStream->GetEndOfData();
         pGrafData = new sal_uInt8 [nDataLen];
-        pMemGrafStream->ReadBytes(pGrafData, nDataLen);
+        pMemGrafStream->Read(pGrafData, nDataLen);
 
         delete pMemGrafStream;
         pMemGrafStream = nullptr;
@@ -412,7 +404,7 @@ sal_uInt32 LwpGraphicObject::GetGrafData(sal_uInt8*& pGrafData)
 
     SvStream* pGrafStream = nullptr;
 
-    // get graphic object's bento object name
+    // get graphic object's bento objet name
     LwpObjectID& rMyID = GetObjectID();
     std::string aGrfObjName;
     GetBentoNamebyID(rMyID,  aGrfObjName);
@@ -434,7 +426,7 @@ sal_uInt32 LwpGraphicObject::GetGrafData(sal_uInt8*& pGrafData)
         pGrafStream->Seek(nPos);
 
         pGrafData = new sal_uInt8 [nDataLen];
-        pMemGrafStream->ReadBytes(pGrafData, nDataLen);
+        pMemGrafStream->Read(pGrafData, nDataLen);
 
         delete pMemGrafStream;
         pMemGrafStream = nullptr;
@@ -696,30 +688,25 @@ void LwpGraphicObject::XFConvertEquation(XFContentContainer * pCont)
         //                                18,12,0,0,0,0,0.
         //                                 .TCIformat{2}
         //total head length = 45
-        bool bOk = true;
         sal_uInt32 nBegin = 45;
-        sal_uInt32 nEnd = 0;
-        if (nDataLen >= 1)
-            nEnd = nDataLen - 1;
-        else
-            bOk = false;
+        sal_uInt32 nEnd = nDataLen -1;
 
-        if (bOk && pGrafData[nEnd] == '$' && nEnd > 0 && pGrafData[nEnd-1] != '\\')
+        if(pGrafData[nEnd] == '$' && pGrafData[nEnd-1]!= '\\')
         {
             //equation body is contained by '$';
             nBegin++;
             nEnd--;
         }
 
-        bOk &= nEnd >= nBegin;
-        if (bOk)
+        if(nEnd >= nBegin)
         {
-            std::unique_ptr<sal_uInt8[]> pEquData( new sal_uInt8[nEnd - nBegin + 1] );
+            sal_uInt8* pEquData = new sal_uInt8[nEnd - nBegin + 1];
             for(sal_uInt32 nIndex = 0; nIndex < nEnd - nBegin +1 ; nIndex++)
             {
                 pEquData[nIndex] = pGrafData[nBegin + nIndex];
             }
-            pXFNotePara->Add(OUString(reinterpret_cast<char*>(pEquData.get()), (nEnd - nBegin + 1), osl_getThreadTextEncoding()));
+            pXFNotePara->Add(OUString(reinterpret_cast<char*>(pEquData), (nEnd - nBegin + 1), osl_getThreadTextEncoding()));
+            delete [] pEquData;
         }
         pXFNote->Add(pXFNotePara);
 

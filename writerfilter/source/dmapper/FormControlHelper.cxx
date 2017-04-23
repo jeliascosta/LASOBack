@@ -53,13 +53,13 @@ struct FormControlHelper::FormControlHelper_Impl
     uno::Reference<lang::XMultiServiceFactory> rServiceFactory;
     uno::Reference<text::XTextDocument> rTextDocument;
 
-    uno::Reference<drawing::XDrawPage> const & getDrawPage();
-    uno::Reference<lang::XMultiServiceFactory> const & getServiceFactory();
-    uno::Reference<form::XForm> const & getForm();
+    uno::Reference<drawing::XDrawPage> getDrawPage();
+    uno::Reference<lang::XMultiServiceFactory> getServiceFactory();
+    uno::Reference<form::XForm> getForm();
     uno::Reference<container::XIndexContainer> getFormComps();
 };
 
-uno::Reference<drawing::XDrawPage> const & FormControlHelper::FormControlHelper_Impl::getDrawPage()
+uno::Reference<drawing::XDrawPage> FormControlHelper::FormControlHelper_Impl::getDrawPage()
 {
     if (! rDrawPage.is())
     {
@@ -72,7 +72,7 @@ uno::Reference<drawing::XDrawPage> const & FormControlHelper::FormControlHelper_
     return rDrawPage;
 }
 
-uno::Reference<lang::XMultiServiceFactory> const & FormControlHelper::FormControlHelper_Impl::getServiceFactory()
+uno::Reference<lang::XMultiServiceFactory> FormControlHelper::FormControlHelper_Impl::getServiceFactory()
 {
     if (! rServiceFactory.is())
         rServiceFactory.set(rTextDocument, uno::UNO_QUERY);
@@ -80,7 +80,7 @@ uno::Reference<lang::XMultiServiceFactory> const & FormControlHelper::FormContro
     return rServiceFactory;
 }
 
-uno::Reference<form::XForm> const & FormControlHelper::FormControlHelper_Impl::getForm()
+uno::Reference<form::XForm> FormControlHelper::FormControlHelper_Impl::getForm()
 {
     if (! rForm.is())
     {
@@ -130,7 +130,7 @@ uno::Reference<container::XIndexContainer> FormControlHelper::FormControlHelper_
 
 FormControlHelper::FormControlHelper(FieldId eFieldId,
                                      uno::Reference<text::XTextDocument> const& xTextDocument,
-                                     FFDataHandler::Pointer_t const & pFFData)
+                                     FFDataHandler::Pointer_t pFFData)
     : m_pFFData(pFFData), m_pImpl(new FormControlHelper_Impl)
 {
     m_pImpl->m_eFieldId = eFieldId;
@@ -258,13 +258,16 @@ void FormControlHelper::insertControl(uno::Reference<text::XTextRange> const& xT
     if (! xFormComps.is())
         return;
 
+    static const char sControl[] = "Control";
+
     sal_Int32 nControl = 0;
     bool bDone = false;
     OUString sControlName;
 
     do
     {
-        OUString sTmp = "Control" + OUString::number(nControl);
+        OUString sTmp(sControl);
+        sTmp += OUString::number(nControl);
 
         nControl++;
         if (! xFormCompsByName->hasByName(sTmp))
@@ -307,7 +310,7 @@ void FormControlHelper::insertControl(uno::Reference<text::XTextRange> const& xT
 
     uno::Reference<beans::XPropertySet> xShapeProps(xShape, uno::UNO_QUERY);
 
-    sal_uInt16 nTmp = (sal_uInt16)text::TextContentAnchorType_AS_CHARACTER;
+    sal_uInt16 nTmp = text::TextContentAnchorType_AS_CHARACTER;
     xShapeProps->setPropertyValue("AnchorType", uno::makeAny<sal_uInt16>(nTmp));
 
     nTmp = text::VertOrientation::CENTER;

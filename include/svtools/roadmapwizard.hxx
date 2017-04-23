@@ -26,6 +26,8 @@
 
 namespace svt
 {
+
+
     struct RoadmapWizardImpl;
     class RoadmapWizard;
 
@@ -62,17 +64,19 @@ namespace svt
     class SVT_DLLPUBLIC RoadmapWizard : public OWizardMachine, public RoadmapWizardTypes
     {
     private:
-        std::unique_ptr<RoadmapWizardImpl>  m_pImpl;
+        RoadmapWizardImpl*  m_pImpl;
 
     public:
         RoadmapWizard(
             vcl::Window* _pParent,
-            const WinBits i_nStyle
+            const WinBits i_nStyle,
+            WizardButtonFlags _nButtonFlags = WizardButtonFlags::NEXT | WizardButtonFlags::PREVIOUS | WizardButtonFlags::FINISH | WizardButtonFlags::CANCEL | WizardButtonFlags::HELP
         );
         RoadmapWizard(
-            vcl::Window* _pParent
+            vcl::Window* _pParent,
+            WizardButtonFlags _nButtonFlags = WizardButtonFlags::NEXT | WizardButtonFlags::PREVIOUS | WizardButtonFlags::FINISH | WizardButtonFlags::CANCEL | WizardButtonFlags::HELP
         );
-        virtual ~RoadmapWizard( ) override;
+        virtual ~RoadmapWizard( );
         virtual void dispose() override;
 
         void            SetRoadmapHelpId( const OString& _rId );
@@ -206,7 +210,7 @@ namespace svt
         void    updateRoadmapItemLabel( WizardState _nState );
 
     private:
-        DECL_DLLPRIVATE_LINK( OnRoadmapItemSelected, LinkParamNone*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( OnRoadmapItemSelected, LinkParamNone*, void );
 
         /** updates the roadmap control to show the given path, as far as possible
             (modulo conflicts with other paths)

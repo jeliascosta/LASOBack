@@ -77,9 +77,7 @@ namespace drawinglayer
                 sal_uInt16 nSteps);
             FillGradientAttribute();
             FillGradientAttribute(const FillGradientAttribute& rCandidate);
-            FillGradientAttribute(FillGradientAttribute&& rCandidate);
             FillGradientAttribute& operator=(const FillGradientAttribute& rCandidate);
-            FillGradientAttribute& operator=(FillGradientAttribute&& rCandidate);
             ~FillGradientAttribute();
 
             // checks if the incarnation is default constructed

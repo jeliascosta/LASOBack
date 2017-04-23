@@ -71,7 +71,7 @@ class XFStyle : public IXFStyle
 public:
     XFStyle();
 
-    virtual ~XFStyle() override;
+    virtual ~XFStyle();
 
 public:
     /**

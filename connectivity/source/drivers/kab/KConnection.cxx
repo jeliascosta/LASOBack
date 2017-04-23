@@ -41,8 +41,8 @@ KabConnection::KabConnection(
     css::uno::Reference<css::sdbc::XDriver> const & driver)
          : OMetaConnection_BASE(m_aMutex),
          OSubComponent<KabConnection, KabConnection_BASE>(driver, this),
-         m_xMetaData(nullptr),
-         m_pAddressBook(nullptr),
+         m_xMetaData(NULL),
+         m_pAddressBook(NULL),
          m_xComponentContext(componentContext)
 {}
 
@@ -54,7 +54,7 @@ KabConnection::~KabConnection()
 
 void SAL_CALL KabConnection::release() throw()
 {
-    release_ChildImpl();
+    relase_ChildImpl();
 }
 
 //TODO: is doing this after the ctor, and the manual ref counting really
@@ -71,7 +71,7 @@ void KabConnection::construct()
 }
 // XServiceInfo
 
-Reference< XStatement > SAL_CALL KabConnection::createStatement(  )
+Reference< XStatement > SAL_CALL KabConnection::createStatement(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -83,7 +83,7 @@ Reference< XStatement > SAL_CALL KabConnection::createStatement(  )
     return xReturn;
 }
 
-Reference< XPreparedStatement > SAL_CALL KabConnection::prepareStatement( const OUString& _sSql )
+Reference< XPreparedStatement > SAL_CALL KabConnection::prepareStatement( const OUString& _sSql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -95,16 +95,16 @@ Reference< XPreparedStatement > SAL_CALL KabConnection::prepareStatement( const 
     return xReturn;
 }
 
-Reference< XPreparedStatement > SAL_CALL KabConnection::prepareCall( const OUString& )
+Reference< XPreparedStatement > SAL_CALL KabConnection::prepareCall( const OUString& ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // not implemented yet :-) a task to do
-    return nullptr;
+    return NULL;
 }
 
-OUString SAL_CALL KabConnection::nativeSQL( const OUString& _sSql )
+OUString SAL_CALL KabConnection::nativeSQL( const OUString& _sSql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     // when you need to transform SQL92 to you driver specific you can do it here
@@ -112,24 +112,24 @@ OUString SAL_CALL KabConnection::nativeSQL( const OUString& _sSql )
     return _sSql;
 }
 
-void SAL_CALL KabConnection::setAutoCommit( sal_Bool )
+void SAL_CALL KabConnection::setAutoCommit( sal_Bool ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
     // here you  have to set your commit mode please have a look at the jdbc documentation to get a clear explanation
 }
 
-sal_Bool SAL_CALL KabConnection::getAutoCommit(  )
+sal_Bool SAL_CALL KabConnection::getAutoCommit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
     // you have to distinguish which if you are in autocommit mode or not
     // at normal case true should be fine here
 
-    return true;
+    return sal_True;
 }
 
-void SAL_CALL KabConnection::commit(  )
+void SAL_CALL KabConnection::commit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -137,7 +137,7 @@ void SAL_CALL KabConnection::commit(  )
     // when you database does support transactions you should commit here
 }
 
-void SAL_CALL KabConnection::rollback(  )
+void SAL_CALL KabConnection::rollback(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -145,7 +145,7 @@ void SAL_CALL KabConnection::rollback(  )
     // same as commit but for the other case
 }
 
-sal_Bool SAL_CALL KabConnection::isClosed(  )
+sal_Bool SAL_CALL KabConnection::isClosed(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -153,7 +153,7 @@ sal_Bool SAL_CALL KabConnection::isClosed(  )
     return KabConnection_BASE::rBHelper.bDisposed;
 }
 
-Reference< XDatabaseMetaData > SAL_CALL KabConnection::getMetaData(  )
+Reference< XDatabaseMetaData > SAL_CALL KabConnection::getMetaData(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -170,7 +170,7 @@ Reference< XDatabaseMetaData > SAL_CALL KabConnection::getMetaData(  )
     return xMetaData;
 }
 
-void SAL_CALL KabConnection::setReadOnly( sal_Bool )
+void SAL_CALL KabConnection::setReadOnly( sal_Bool ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -178,16 +178,16 @@ void SAL_CALL KabConnection::setReadOnly( sal_Bool )
     // set you connection to readonly
 }
 
-sal_Bool SAL_CALL KabConnection::isReadOnly(  )
+sal_Bool SAL_CALL KabConnection::isReadOnly(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // return if your connection to readonly
-    return false;
+    return sal_False;
 }
 
-void SAL_CALL KabConnection::setCatalog( const OUString& )
+void SAL_CALL KabConnection::setCatalog( const OUString& ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -195,7 +195,7 @@ void SAL_CALL KabConnection::setCatalog( const OUString& )
     // if your database doesn't work with catalogs you go to next method otherwise you know what to do
 }
 
-OUString SAL_CALL KabConnection::getCatalog(  )
+OUString SAL_CALL KabConnection::getCatalog(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -205,7 +205,7 @@ OUString SAL_CALL KabConnection::getCatalog(  )
     return OUString();
 }
 
-void SAL_CALL KabConnection::setTransactionIsolation( sal_Int32 )
+void SAL_CALL KabConnection::setTransactionIsolation( sal_Int32 ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -214,7 +214,7 @@ void SAL_CALL KabConnection::setTransactionIsolation( sal_Int32 )
     // please have a look at @see com.sun.star.sdbc.TransactionIsolation
 }
 
-sal_Int32 SAL_CALL KabConnection::getTransactionIsolation(  )
+sal_Int32 SAL_CALL KabConnection::getTransactionIsolation(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
@@ -224,23 +224,23 @@ sal_Int32 SAL_CALL KabConnection::getTransactionIsolation(  )
     return TransactionIsolation::NONE;
 }
 
-Reference< css::container::XNameAccess > SAL_CALL KabConnection::getTypeMap(  )
+Reference< ::com::sun::star::container::XNameAccess > SAL_CALL KabConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabConnection_BASE::rBHelper.bDisposed);
 
     // if your driver has special database types you can return it here
 
-    return nullptr;
+    return NULL;
 }
 
-void SAL_CALL KabConnection::setTypeMap( const Reference< css::container::XNameAccess >& )
+void SAL_CALL KabConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& ) throw(SQLException, RuntimeException, std::exception)
 {
     // the other way around
 }
 
 // XCloseable
-void SAL_CALL KabConnection::close(  )
+void SAL_CALL KabConnection::close(  ) throw(SQLException, RuntimeException, std::exception)
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -250,20 +250,20 @@ void SAL_CALL KabConnection::close(  )
 }
 
 // XWarningsSupplier
-Any SAL_CALL KabConnection::getWarnings(  )
+Any SAL_CALL KabConnection::getWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
     // when you collected some warnings -> return it
     return Any();
 }
 
-void SAL_CALL KabConnection::clearWarnings(  )
+void SAL_CALL KabConnection::clearWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
     // you should clear your collected warnings here
 }
 
 void KabConnection::disposing()
 {
-    // we noticed that we should be destroyed in near future so we have to dispose our statements
+    // we noticed that we should be destroied in near future so we have to dispose our statements
     ::osl::MutexGuard aGuard(m_aMutex);
 
     for (OWeakRefArray::iterator i = m_aStatements.begin(); m_aStatements.end() != i; ++i)
@@ -274,13 +274,13 @@ void KabConnection::disposing()
     }
     m_aStatements.clear();
 
-    if (m_pAddressBook != nullptr)
+    if (m_pAddressBook != NULL)
     {
         KABC::StdAddressBook::close();
-        m_pAddressBook = nullptr;
+        m_pAddressBook = NULL;
     }
 
-    m_xMetaData = css::uno::WeakReference< css::sdbc::XDatabaseMetaData>();
+    m_xMetaData = ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XDatabaseMetaData>();
 
     dispose_ChildImpl();
     KabConnection_BASE::disposing();

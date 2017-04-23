@@ -200,7 +200,7 @@ SwTemplateDlg::SwTemplateDlg(vcl::Window* pParent,
             m_nDropCapsId = AddTabPage("dropcaps", SwDropCapsPage::Create,
                            SwDropCapsPage::GetRanges );
 
-            // add Area and Transparence TabPages
+            //UUUU add Area and Transparence TabPages
             m_nAreaId = AddTabPage("area", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_AREA ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_AREA ));
             m_nTransparenceId = AddTabPage("transparence", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TRANSPARENCE ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_TRANSPARENCE ) );
 
@@ -249,7 +249,7 @@ SwTemplateDlg::SwTemplateDlg(vcl::Window* pParent,
             m_nWrapId = AddTabPage("wrap", SwWrapTabPage::Create,
                                         SwWrapTabPage::GetRanges);
 
-            // add Area and Transparence TabPages
+            //UUUU add Area and Transparence TabPages
             m_nAreaId = AddTabPage("area", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_AREA ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_AREA ));
             m_nTransparenceId = AddTabPage("transparence", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TRANSPARENCE ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_TRANSPARENCE ) );
 
@@ -265,12 +265,12 @@ SwTemplateDlg::SwTemplateDlg(vcl::Window* pParent,
         // page styles
         case SfxStyleFamily::Page:
         {
-            // remove?
+            //UUUU remove?
             //OSL_ENSURE(pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), "GetTabPageCreatorFunc fail!");
             //OSL_ENSURE(pFact->GetTabPageRangesFunc( RID_SVXPAGE_BACKGROUND ), "GetTabPageRangesFunc fail!");
             //m_nBackgroundId = AddTabPage("background", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_BACKGROUND ) );
 
-            // add Area and Transparence TabPages
+            //UUUU add Area and Transparence TabPages
             m_nAreaId = AddTabPage("area", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_AREA ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_AREA ));
             m_nTransparenceId = AddTabPage("transparence", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TRANSPARENCE ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_TRANSPARENCE ) );
 
@@ -315,7 +315,7 @@ SwTemplateDlg::SwTemplateDlg(vcl::Window* pParent,
             m_nBulletId = AddTabPage("bullets", RID_SVXPAGE_PICK_BULLET);
             m_nNumId = AddTabPage("outline", RID_SVXPAGE_PICK_NUM);
             m_nBmpId = AddTabPage("graphics", RID_SVXPAGE_PICK_BMP);
-            m_nNumOptId = AddTabPage("customize", RID_SVXPAGE_NUM_OPTIONS );
+            m_nNumOptId = AddTabPage("options", RID_SVXPAGE_NUM_OPTIONS );
             m_nNumPosId = AddTabPage("position", RID_SVXPAGE_NUM_POSITION );
         }
         break;
@@ -466,7 +466,7 @@ void SwTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
             static_cast<SwColumnPage&>(rPage).SetFrameMode(true);
         static_cast<SwColumnPage&>(rPage).SetFormatUsed( true );
     }
-    // do not remove; many other style dialog combinations still use the SfxTabPage
+    //UUUU do not remove; many other style dialog combinations still use the SfxTabPage
     // for the SvxBrushItem (see RID_SVXPAGE_BACKGROUND)
     else if (nId == m_nBackgroundId)
     {
@@ -501,7 +501,7 @@ void SwTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
                     pFirstStyle = pStyleSheetPool->Next();
                 }
             }
-            // set DrawingLayer FillStyles active
+            //UUUU set DrawingLayer FillStyles active
             aSet.Put(SfxBoolItem(SID_DRAWINGLAYER_FILLSTYLES, true));
             aSet.Put(SfxStringListItem(SID_COLLECT_LIST, &aList));
             rPage.PageCreated(aSet);
@@ -562,7 +562,7 @@ void SwTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
             static_cast<SvxHeaderPage&>(rPage).EnableDynamicSpacing();
         }
 
-        // set DrawingLayer FillStyles active
+        //UUUU set DrawingLayer FillStyles active
         aSet.Put(SfxBoolItem(SID_DRAWINGLAYER_FILLSTYLES, true));
         rPage.PageCreated(aSet);
     }
@@ -573,7 +573,7 @@ void SwTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
             static_cast<SvxFooterPage&>(rPage).EnableDynamicSpacing();
         }
 
-        // set DrawingLayer FillStyles active
+        //UUUU set DrawingLayer FillStyles active
         aSet.Put(SfxBoolItem(SID_DRAWINGLAYER_FILLSTYLES, true));
         rPage.PageCreated(aSet);
     }
@@ -589,7 +589,7 @@ void SwTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
         }
         rPage.PageCreated(aSet);
     }
-    // inits for Area and Transparency TabPages
+    //UUUU inits for Area and Transparency TabPages
     // The selection attribute lists (XPropertyList derivates, e.g. XColorList for
     // the color table) need to be added as items (e.g. SvxColorTableItem) to make
     // these pages find the needed attributes for fill style suggestions.

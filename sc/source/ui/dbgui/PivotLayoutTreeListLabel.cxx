@@ -17,6 +17,8 @@
 #include "pivot.hxx"
 #include "scabstdlg.hxx"
 
+using namespace std;
+
 VCL_BUILDER_FACTORY_ARGS(ScPivotLayoutTreeListLabel,
                          WB_BORDER | WB_TABSTOP | WB_CLIPCHILDREN |
                          WB_FORCE_MAKEVISIBLE);
@@ -35,18 +37,21 @@ void ScPivotLayoutTreeListLabel::FillLabelFields(ScDPLabelDataVector& rLabelVect
     Clear();
     maItemValues.clear();
 
-    for (std::unique_ptr<ScDPLabelData> const & pLabelData : rLabelVector)
+    ScDPLabelDataVector::iterator it;
+    for (it = rLabelVector.begin(); it != rLabelVector.end(); ++it)
     {
-        ScItemValue* pValue = new ScItemValue(pLabelData->maName, pLabelData->mnCol, pLabelData->mnFuncMask);
+        const ScDPLabelData& rLabelData = *it->get();
+
+        ScItemValue* pValue = new ScItemValue(rLabelData.maName, rLabelData.mnCol, rLabelData.mnFuncMask);
         maItemValues.push_back(std::unique_ptr<ScItemValue>(pValue));
-        if (pLabelData->mbDataLayout)
+        if (rLabelData.mbDataLayout)
         {
             maDataItem = maItemValues.size() - 1;
         }
 
-        if (pLabelData->mnOriginalDim < 0 && !pLabelData->mbDataLayout)
+        if (rLabelData.mnOriginalDim < 0 && !rLabelData.mbDataLayout)
         {
-            SvTreeListEntry* pEntry = InsertEntry(pLabelData->maName);
+            SvTreeListEntry* pEntry = InsertEntry(rLabelData.maName);
             pEntry->SetUserData(pValue);
         }
     }

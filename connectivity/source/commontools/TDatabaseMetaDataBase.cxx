@@ -68,20 +68,20 @@ ODatabaseMetaDataBase::~ODatabaseMetaDataBase()
 }
 
 
-Sequence< PropertyValue > SAL_CALL ODatabaseMetaDataBase::getConnectionInfo(  )
+Sequence< PropertyValue > SAL_CALL ODatabaseMetaDataBase::getConnectionInfo(  ) throw (RuntimeException, std::exception)
 {
     return m_aConnectionInfo;
 }
 
 
-void SAL_CALL ODatabaseMetaDataBase::disposing( const EventObject& /*Source*/ )
+void SAL_CALL ODatabaseMetaDataBase::disposing( const EventObject& /*Source*/ ) throw(RuntimeException, std::exception)
 {
     // cut off all references to the connection
 m_xConnection.clear();
 m_xListenerHelper.clear();
 }
 
-Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTypeInfo(  )
+Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTypeInfo(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_aTypeInfoRows.empty() )
@@ -114,7 +114,7 @@ Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTypeInfo(  )
                                         ,DataType::INTEGER
                                         ,DataType::INTEGER
                                     };
-            std::vector<std::shared_ptr<ExpressionNode>> aConditions;
+            ::std::vector<ExpressionNodeSharedPtr> aConditions;
             if ( aTypeInfoSettings.getLength() > 1 && ((aTypeInfoSettings.getLength() % 2) == 0) )
             {
                 const Any* pIter = aTypeInfoSettings.getConstArray();
@@ -145,8 +145,8 @@ Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTypeInfo(  )
                     aRow.push_back(new ORowSetValueDecorator(aValue));
                 }
 
-                std::vector<std::shared_ptr<ExpressionNode>>::iterator aIter = aConditions.begin();
-                std::vector<std::shared_ptr<ExpressionNode>>::const_iterator aEnd = aConditions.end();
+                ::std::vector<ExpressionNodeSharedPtr>::iterator aIter = aConditions.begin();
+                ::std::vector<ExpressionNodeSharedPtr>::const_iterator aEnd = aConditions.end();
                 for (; aIter != aEnd; ++aIter)
                 {
                     if ( (*aIter)->evaluate(aRow)->getValue().getBool() )
@@ -169,33 +169,33 @@ Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTypeInfo(  )
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getExportedKeys(
-        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ )
+        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eExportedKeys );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getImportedKeys(
-        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ )
+        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eImportedKeys );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getPrimaryKeys(
-        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ )
+        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::ePrimaryKeys );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getIndexInfo(
         const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/,
-        sal_Bool /*unique*/, sal_Bool /*approximate*/ )
+        sal_Bool /*unique*/, sal_Bool /*approximate*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eIndexInfo );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getBestRowIdentifier(
         const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/, sal_Int32 /*scope*/,
-        sal_Bool /*nullable*/ )
+        sal_Bool /*nullable*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eBestRowIdentifier );
 }
@@ -203,122 +203,122 @@ Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getBestRowIdentifier(
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getCrossReference(
         const Any& /*primaryCatalog*/, const OUString& /*primarySchema*/,
         const OUString& /*primaryTable*/, const Any& /*foreignCatalog*/,
-        const OUString& /*foreignSchema*/, const OUString& /*foreignTable*/ )
+        const OUString& /*foreignSchema*/, const OUString& /*foreignTable*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eCrossReference );
 }
 
-Reference< XConnection > SAL_CALL ODatabaseMetaDataBase::getConnection(  )
+Reference< XConnection > SAL_CALL ODatabaseMetaDataBase::getConnection(  ) throw(SQLException, RuntimeException, std::exception)
 {
     return m_xConnection;
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getProcedureColumns(
         const Any& /*catalog*/, const OUString& /*schemaPattern*/,
-        const OUString& /*procedureNamePattern*/, const OUString& /*columnNamePattern*/ )
+        const OUString& /*procedureNamePattern*/, const OUString& /*columnNamePattern*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eProcedureColumns );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getProcedures(
         const Any& /*catalog*/, const OUString& /*schemaPattern*/,
-        const OUString& /*procedureNamePattern*/ )
+        const OUString& /*procedureNamePattern*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eProcedures );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getVersionColumns(
-        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ )
+        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eVersionColumns );
 }
 
-Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getSchemas(  )
+Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getSchemas(  ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eSchemas );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getColumnPrivileges(
         const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/,
-        const OUString& /*columnNamePattern*/ )
+        const OUString& /*columnNamePattern*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eColumnPrivileges );
 }
 
 Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getTablePrivileges(
-        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/)
+        const Any& /*catalog*/, const OUString& /*schema*/, const OUString& /*table*/) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eTablePrivileges );
 }
 
-Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getCatalogs(  )
+Reference< XResultSet > SAL_CALL ODatabaseMetaDataBase::getCatalogs(  ) throw(SQLException, RuntimeException, std::exception)
 {
     return new ODatabaseMetaDataResultSet( ODatabaseMetaDataResultSet::eCatalogs );
 }
 
-OUString SAL_CALL ODatabaseMetaDataBase::getIdentifierQuoteString(  )
+OUString SAL_CALL ODatabaseMetaDataBase::getIdentifierQuoteString(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_sIdentifierQuoteString,std::mem_fun_t< OUString ,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getIdentifierQuoteString_throw));
+    return callImplMethod(m_sIdentifierQuoteString,::std::mem_fun_t< OUString ,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getIdentifierQuoteString_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::isCatalogAtStart(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::isCatalogAtStart(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_isCatalogAtStart,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_isCatalogAtStart_throw));
+    return callImplMethod(m_isCatalogAtStart,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_isCatalogAtStart_throw));
 }
 
-OUString SAL_CALL ODatabaseMetaDataBase::getCatalogSeparator(  )
+OUString SAL_CALL ODatabaseMetaDataBase::getCatalogSeparator(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_sCatalogSeparator,std::mem_fun_t< OUString,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getCatalogSeparator_throw));
+    return callImplMethod(m_sCatalogSeparator,::std::mem_fun_t< OUString,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getCatalogSeparator_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsCatalogsInTableDefinitions(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsCatalogsInTableDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsCatalogsInTableDefinitions,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsCatalogsInTableDefinitions_throw));
+    return callImplMethod(m_supportsCatalogsInTableDefinitions,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsCatalogsInTableDefinitions_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsSchemasInTableDefinitions(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsSchemasInTableDefinitions(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsSchemasInTableDefinitions,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsSchemasInTableDefinitions_throw));
+    return callImplMethod(m_supportsSchemasInTableDefinitions,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsSchemasInTableDefinitions_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsCatalogsInDataManipulation(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsCatalogsInDataManipulation(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsCatalogsInDataManipulation,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsCatalogsInDataManipulation_throw));
+    return callImplMethod(m_supportsCatalogsInDataManipulation,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsCatalogsInDataManipulation_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsSchemasInDataManipulation(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsSchemasInDataManipulation(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsSchemasInDataManipulation,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsSchemasInDataManipulation_throw));
+    return callImplMethod(m_supportsSchemasInDataManipulation,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsSchemasInDataManipulation_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsMixedCaseQuotedIdentifiers(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsMixedCaseQuotedIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsMixedCaseQuotedIdentifiers,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsMixedCaseQuotedIdentifiers_throw));
+    return callImplMethod(m_supportsMixedCaseQuotedIdentifiers,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsMixedCaseQuotedIdentifiers_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsAlterTableWithAddColumn(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsAlterTableWithAddColumn(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsAlterTableWithAddColumn,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsAlterTableWithAddColumn_throw));
+    return callImplMethod(m_supportsAlterTableWithAddColumn,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsAlterTableWithAddColumn_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsAlterTableWithDropColumn(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::supportsAlterTableWithDropColumn(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_supportsAlterTableWithDropColumn,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsAlterTableWithDropColumn_throw));
+    return callImplMethod(m_supportsAlterTableWithDropColumn,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_supportsAlterTableWithDropColumn_throw));
 }
 
-sal_Int32 SAL_CALL ODatabaseMetaDataBase::getMaxStatements(  )
+sal_Int32 SAL_CALL ODatabaseMetaDataBase::getMaxStatements(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_MaxStatements,std::mem_fun_t< sal_Int32,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getMaxStatements_throw));
+    return callImplMethod(m_MaxStatements,::std::mem_fun_t< sal_Int32,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getMaxStatements_throw));
 }
 
-sal_Int32 SAL_CALL ODatabaseMetaDataBase::getMaxTablesInSelect(  )
+sal_Int32 SAL_CALL ODatabaseMetaDataBase::getMaxTablesInSelect(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_MaxTablesInSelect,std::mem_fun_t< sal_Int32,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getMaxTablesInSelect_throw));
+    return callImplMethod(m_MaxTablesInSelect,::std::mem_fun_t< sal_Int32,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_getMaxTablesInSelect_throw));
 }
 
-sal_Bool SAL_CALL ODatabaseMetaDataBase::storesMixedCaseQuotedIdentifiers(  )
+sal_Bool SAL_CALL ODatabaseMetaDataBase::storesMixedCaseQuotedIdentifiers(  ) throw(SQLException, RuntimeException, std::exception)
 {
-    return callImplMethod(m_storesMixedCaseQuotedIdentifiers,std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_storesMixedCaseQuotedIdentifiers_throw));
+    return callImplMethod(m_storesMixedCaseQuotedIdentifiers,::std::mem_fun_t< bool,ODatabaseMetaDataBase>(&ODatabaseMetaDataBase::impl_storesMixedCaseQuotedIdentifiers_throw));
 }
 
 

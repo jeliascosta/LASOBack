@@ -28,7 +28,7 @@ class SW_DLLPUBLIC SwWrtShellItem: public SfxPoolItem
     SwWrtShell*         pWrtSh;
 
 public:
-                            SwWrtShellItem( SwWrtShell* pWrtSh );
+                            SwWrtShellItem( sal_uInt16 nWhich , SwWrtShell* pWrtSh);
                             SwWrtShellItem( const SwWrtShellItem& );
 
     virtual bool            operator==( const SfxPoolItem& ) const override;

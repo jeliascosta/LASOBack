@@ -53,6 +53,11 @@ protected:
     virtual sal_Int8    AcceptDrop( const AcceptDropEvent& rEvt ) override;
     virtual sal_Int8    ExecuteDrop( const ExecuteDropEvent& rEvt ) override;
 
+    virtual bool        Notify( NotifyEvent& rNEvt ) override;
+    virtual void        Select() override;
+    virtual void        Modify() override;
+    virtual bool        PreNotify( NotifyEvent& rNEvt ) override;
+
 public:
     SvxHyperURLBox( vcl::Window* pParent, INetProtocol eSmart = INetProtocol::File );
 
@@ -95,11 +100,11 @@ protected:
                                           OUString& aStrIntName, OUString& aStrFrame,
                                           SvxLinkInsertMode& eMode );
 
-    DECL_LINK (ClickScriptHdl_Impl, Button*, void ); ///< Button : Script
+    DECL_LINK_TYPED (ClickScriptHdl_Impl, Button*, void ); ///< Button : Script
 
     static OUString GetSchemeFromURL( const OUString& rStrURL );
 
-    void     DisableClose( bool _bDisable ) { mbIsCloseDisabled = _bDisable; }
+    inline void     DisableClose( bool _bDisable ) { mbIsCloseDisabled = _bDisable; }
 
 public:
     SvxHyperlinkTabPageBase (
@@ -109,7 +114,7 @@ public:
         const OUString& rUIXMLDescription,
         const SfxItemSet& rItemSet
     );
-    virtual ~SvxHyperlinkTabPageBase () override;
+    virtual ~SvxHyperlinkTabPageBase ();
     virtual void dispose() override;
 
     void    SetDocumentFrame(
@@ -125,14 +130,14 @@ public:
     virtual void Reset( const SfxItemSet& ) override;
     virtual bool FillItemSet( SfxItemSet* ) override;
     virtual void ActivatePage( const SfxItemSet& rItemSet ) override;
-    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
+    virtual int  DeactivatePage( SfxItemSet* pSet = nullptr ) override;
 
     bool IsMarkWndVisible ()      { return static_cast<vcl::Window*>(mpMarkWnd)->IsVisible(); }
     Size GetSizeExtraWnd ()       { return ( mpMarkWnd->GetSizePixel() ); }
     bool MoveToExtraWnd ( Point aNewPos, bool bDisConnectDlg = false );
 
-    using TabPage::ActivatePage;
-    using TabPage::DeactivatePage;
+    virtual void        ActivatePage() override;
+    virtual void        DeactivatePage() override;
     virtual bool        QueryClose() override;
 
 protected:
@@ -146,6 +151,8 @@ protected:
 
     HyperDialogEvent   GetMacroEvents();
     SvxMacroTableDtor* GetMacroTable();
+
+    bool IsHTMLDoc() const;
 };
 
 #endif // INCLUDED_CUI_SOURCE_INC_HLTPBASE_HXX

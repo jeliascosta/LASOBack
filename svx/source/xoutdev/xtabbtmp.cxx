@@ -27,11 +27,13 @@
 #include <svx/xtable.hxx>
 #include <svx/xpool.hxx>
 #include <svx/xbtmpit.hxx>
-#include <vcl/bitmapex.hxx>
-#include <vcl/settings.hxx>
-#include <vcl/svapp.hxx>
 
 using namespace com::sun::star;
+
+XBitmapEntry* XBitmapList::Remove(long nIndex)
+{
+    return static_cast<XBitmapEntry*>( XPropertyList::Remove(nIndex) );
+}
 
 XBitmapEntry* XBitmapList::GetBitmap(long nIndex) const
 {
@@ -46,75 +48,45 @@ uno::Reference< container::XNameContainer > XBitmapList::createInstance()
 
 bool XBitmapList::Create()
 {
+    OUStringBuffer aStr(SVX_RESSTR(RID_SVXSTR_BITMAP));
+    sal_uInt16 aArray[64];
+    Bitmap aBitmap;
+    const sal_Int32 nLen(aStr.getLength() - 1);
+
+    memset(aArray, 0, sizeof(aArray));
+
+    // white/white bitmap
+    aStr.append(" 1");
+    aBitmap = createHistorical8x8FromArray(aArray, RGB_Color(COL_WHITE), RGB_Color(COL_WHITE));
+    Insert(new XBitmapEntry(Graphic(aBitmap), aStr.toString()));
+
+    // black/white bitmap
+    aArray[ 0] = 1; aArray[ 9] = 1; aArray[18] = 1; aArray[27] = 1;
+    aArray[36] = 1; aArray[45] = 1; aArray[54] = 1; aArray[63] = 1;
+    aStr[nLen] = '2';
+    aBitmap = createHistorical8x8FromArray(aArray, RGB_Color(COL_BLACK), RGB_Color(COL_WHITE));
+    Insert(new XBitmapEntry(Graphic(aBitmap), aStr.toString()));
+
+    // lightred/white bitmap
+    aArray[ 7] = 1; aArray[14] = 1; aArray[21] = 1; aArray[28] = 1;
+    aArray[35] = 1; aArray[42] = 1; aArray[49] = 1; aArray[56] = 1;
+    aStr[nLen] = '3';
+    aBitmap = createHistorical8x8FromArray(aArray, RGB_Color(COL_LIGHTRED), RGB_Color(COL_WHITE));
+    Insert(new XBitmapEntry(Graphic(aBitmap), aStr.toString()));
+
+    // lightblue/white bitmap
+    aArray[24] = 1; aArray[25] = 1; aArray[26] = 1;
+    aArray[29] = 1; aArray[30] = 1; aArray[31] = 1;
+    aStr[nLen] = '4';
+    aBitmap = createHistorical8x8FromArray(aArray, RGB_Color(COL_LIGHTBLUE), RGB_Color(COL_WHITE));
+    Insert(new XBitmapEntry(Graphic(aBitmap), aStr.toString()));
+
     return true;
 }
 
-Bitmap XBitmapList::CreateBitmap( long nIndex, const Size& rSize ) const
+Bitmap XBitmapList::CreateBitmapForUI( long /*nIndex*/ )
 {
-    OSL_ENSURE( nIndex < Count(), "Access out of range" );
-
-    if(nIndex < Count())
-    {
-        BitmapEx rBitmapEx = GetBitmap( nIndex )->GetGraphicObject().GetGraphic().GetBitmapEx();
-        ScopedVclPtrInstance< VirtualDevice > pVirtualDevice;
-        pVirtualDevice->SetOutputSizePixel(rSize);
-
-        if(rBitmapEx.IsTransparent())
-        {
-            const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
-
-            if(rStyleSettings.GetPreviewUsesCheckeredBackground())
-            {
-                const Point aNull(0, 0);
-                static const sal_uInt32 nLen(8);
-                static const Color aW(COL_WHITE);
-                static const Color aG(0xef, 0xef, 0xef);
-
-                pVirtualDevice->DrawCheckered(aNull, rSize, nLen, aW, aG);
-            }
-            else
-            {
-                pVirtualDevice->SetBackground(rStyleSettings.GetFieldColor());
-                pVirtualDevice->Erase();
-            }
-        }
-
-        if(rBitmapEx.GetSizePixel().Width() >= rSize.Width() && rBitmapEx.GetSizePixel().Height() >= rSize.Height())
-        {
-            rBitmapEx.Scale(rSize);
-            pVirtualDevice->DrawBitmapEx(Point(0, 0), rBitmapEx);
-        }
-        else
-        {
-            const Size aBitmapSize(rBitmapEx.GetSizePixel());
-
-            for(long y(0); y < rSize.Height(); y += aBitmapSize.Height())
-            {
-                for(long x(0); x < rSize.Width(); x += aBitmapSize.Width())
-                {
-                    pVirtualDevice->DrawBitmapEx(
-                        Point(x, y),
-                        rBitmapEx);
-                }
-            }
-        }
-        rBitmapEx = pVirtualDevice->GetBitmap(Point(0, 0), rSize);
-        return rBitmapEx.GetBitmap();
-    }
-    else
-        return Bitmap();
-}
-
-Bitmap XBitmapList::CreateBitmapForUI( long nIndex )
-{
-    const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
-    const Size& rSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
-    return CreateBitmap(nIndex, rSize);
-}
-
-Bitmap XBitmapList::GetBitmapForPreview( long nIndex, const Size& rSize )
-{
-    return CreateBitmap(nIndex, rSize);
+    return Bitmap();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

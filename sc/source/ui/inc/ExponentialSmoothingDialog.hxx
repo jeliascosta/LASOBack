@@ -31,7 +31,7 @@ public:
         SfxBindings* pB, SfxChildWindow* pCW,
         vcl::Window* pParent, ScViewData* pViewData );
 
-    virtual ~ScExponentialSmoothingDialog() override;
+    virtual ~ScExponentialSmoothingDialog();
     virtual void dispose() override;
 
     virtual bool Close() override;

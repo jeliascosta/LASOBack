@@ -11,36 +11,36 @@
 using namespace com::sun::star;
 using namespace ooo::vba;
 
-ScVbaMenuItem::ScVbaMenuItem( const uno::Reference< ov::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< XCommandBarControl >& rCommandBarControl ) : MenuItem_BASE( rParent, rContext ), m_xCommandBarControl( rCommandBarControl )
+ScVbaMenuItem::ScVbaMenuItem( const uno::Reference< ov::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< XCommandBarControl >& rCommandBarControl ) throw( uno::RuntimeException ) : MenuItem_BASE( rParent, rContext ), m_xCommandBarControl( rCommandBarControl )
 {
 }
 
 OUString SAL_CALL
-ScVbaMenuItem::getCaption()
+ScVbaMenuItem::getCaption() throw ( uno::RuntimeException, std::exception )
 {
     return m_xCommandBarControl->getCaption();
 }
 
 void SAL_CALL
-ScVbaMenuItem::setCaption( const OUString& _caption )
+ScVbaMenuItem::setCaption( const OUString& _caption ) throw (uno::RuntimeException, std::exception)
 {
     m_xCommandBarControl->setCaption( _caption );
 }
 
 OUString SAL_CALL
-ScVbaMenuItem::getOnAction()
+ScVbaMenuItem::getOnAction() throw ( uno::RuntimeException, std::exception )
 {
     return m_xCommandBarControl->getOnAction();
 }
 
 void SAL_CALL
-ScVbaMenuItem::setOnAction( const OUString& _onaction )
+ScVbaMenuItem::setOnAction( const OUString& _onaction ) throw (uno::RuntimeException, std::exception)
 {
     m_xCommandBarControl->setOnAction( _onaction );
 }
 
 void SAL_CALL
-ScVbaMenuItem::Delete( )
+ScVbaMenuItem::Delete( ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     m_xCommandBarControl->Delete();
 }

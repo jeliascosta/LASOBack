@@ -149,9 +149,6 @@ public:
 
     void swap( SingleColumnSpanSet& r );
 
-    /** Whether there isn't any row tagged. */
-    bool empty() const;
-
 private:
     ColumnSpansType maSpans;
 };

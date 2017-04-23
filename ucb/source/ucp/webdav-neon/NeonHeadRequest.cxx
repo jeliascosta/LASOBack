@@ -31,7 +31,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/PropertyState.hpp>
 #include "NeonHeadRequest.hxx"
-#include "NeonSession.hxx"
 
 using namespace webdav_ucp;
 using namespace com::sun::star;
@@ -100,9 +99,7 @@ void process_headers( ne_request * req,
         {
             // Create & set the PropertyValue
             DAVPropertyValue thePropertyValue;
-            // header names are case insensitive, so are the
-            // corresponding property names
-            thePropertyValue.Name = aHeaderName.toAsciiLowerCase();
+            thePropertyValue.Name = aHeaderName;
             thePropertyValue.IsCaseSensitive = false;
             thePropertyValue.Value <<= aHeaderValue;
 
@@ -113,6 +110,8 @@ void process_headers( ne_request * req,
 }
 
 } // namespace
+
+extern osl::Mutex aGlobalNeonMutex;
 
 NeonHeadRequest::NeonHeadRequest( HttpSession * inSession,
                                   const OUString & inPath,

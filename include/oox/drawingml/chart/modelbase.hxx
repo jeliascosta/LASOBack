@@ -39,6 +39,7 @@ class ModelRef : public std::shared_ptr< ModelType >
 public:
                  ModelRef() {}
                  ModelRef( const std::shared_ptr< ModelType >& rxModel ) : std::shared_ptr< ModelType >( rxModel ) {}
+                 ~ModelRef() {}
 
     bool         is() const { return this->get() != 0; }
 
@@ -61,6 +62,7 @@ public:
     typedef typename RefVector< ModelType >::size_type  size_type;
 
                  ModelVector() {}
+                 ~ModelVector() {}
 
     ModelType&   create() { return append( new ModelType ); }
     template< typename Param1Type >
@@ -81,6 +83,7 @@ public:
     typedef typename RefMap< KeyType, ModelType >::value_type   value_type;
 
                  ModelMap() {}
+                 ~ModelMap() {}
 
     ModelType&   create( KeyType eKey ) { return insert( eKey, new ModelType ); }
 

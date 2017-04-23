@@ -37,7 +37,7 @@ private:
 
 public:
     ScDataPilotSourceTypeDlg(vcl::Window* pParent, bool bEnableExternal);
-    virtual ~ScDataPilotSourceTypeDlg() override;
+    virtual ~ScDataPilotSourceTypeDlg();
     virtual void dispose() override;
     bool IsDatabase() const;
     bool IsExternal() const;
@@ -46,7 +46,7 @@ public:
     void AppendNamedRange(const OUString& rNames);
 
 private:
-    DECL_LINK( RadioClickHdl, Button *, void );
+    DECL_LINK_TYPED( RadioClickHdl, Button *, void );
 };
 
 class ScDataPilotServiceDlg : public ModalDialog
@@ -61,7 +61,7 @@ private:
 public:
             ScDataPilotServiceDlg( vcl::Window* pParent,
                     const std::vector<OUString>& rServices );
-            virtual ~ScDataPilotServiceDlg() override;
+            virtual ~ScDataPilotServiceDlg();
     virtual void dispose() override;
 
     OUString  GetServiceName() const;

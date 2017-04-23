@@ -23,10 +23,10 @@
 #include <com/sun/star/text/XText.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <editeng/editobj.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/tokens.hxx>
+#include "biffinputstream.hxx"
 #include "editutil.hxx"
 
 #include <vcl/svapp.hxx>
@@ -61,7 +61,7 @@ void RichStringPortion::setText( const OUString& rText )
     maText = rText;
 }
 
-FontRef const & RichStringPortion::createFont()
+FontRef RichStringPortion::createFont()
 {
     mxFont.reset( new Font( *this, false ) );
     return mxFont;
@@ -80,7 +80,7 @@ void RichStringPortion::finalizeImport()
         mxFont = getStyles().getFont( mnFontId );
 }
 
-void RichStringPortion::convert( const Reference< XText >& rxText, bool bReplace )
+void RichStringPortion::convert( const Reference< XText >& rxText, const oox::xls::Font* pFont, bool bReplace )
 {
     if ( mbConverted )
         return;
@@ -98,7 +98,16 @@ void RichStringPortion::convert( const Reference< XText >& rxText, bool bReplace
         if( mxFont.get() )
         {
             PropertySet aPropSet( xRange );
-            mxFont->writeToPropertySet( aPropSet );
+            mxFont->writeToPropertySet( aPropSet, FONT_PROPTYPE_TEXT );
+        }
+
+        /*  Some font attributes cannot be set to cell formatting in Calc but
+            require to use rich formatting, e.g. font escapement. But do not
+            use the passed font if this portion has its own font. */
+        else if( lclNeedsRichTextFormat( pFont ) )
+        {
+            PropertySet aPropSet( xRange );
+            pFont->writeToPropertySet( aPropSet, FONT_PROPTYPE_TEXT );
         }
     }
 
@@ -140,12 +149,15 @@ void RichStringPortion::convert( ScEditEngineDefaulter& rEE, ESelection& rSelect
     rEE.QuickSetAttribs( aItemSet, rSelection );
 }
 
-void RichStringPortion::writeFontProperties( const Reference<XText>& rxText ) const
+void RichStringPortion::writeFontProperties( const Reference<XText>& rxText, const oox::xls::Font* pFont ) const
 {
     PropertySet aPropSet(rxText);
 
     if (mxFont.get())
-        mxFont->writeToPropertySet(aPropSet);
+        mxFont->writeToPropertySet(aPropSet, FONT_PROPTYPE_TEXT);
+
+    if (lclNeedsRichTextFormat(pFont))
+        pFont->writeToPropertySet(aPropSet, FONT_PROPTYPE_TEXT);
 }
 
 void FontPortionModel::read( SequenceInputStream& rStrm )
@@ -370,7 +382,7 @@ bool RichString::extractPlainString( OUString& orString, const oox::xls::Font* p
     return false;
 }
 
-void RichString::convert( const Reference< XText >& rxText ) const
+void RichString::convert( const Reference< XText >& rxText, bool bReplaceOld ) const
 {
     if (maTextPortions.size() == 1)
     {
@@ -378,14 +390,13 @@ void RichString::convert( const Reference< XText >& rxText ) const
         // It's much faster this way.
         RichStringPortion& rPtn = *maTextPortions.front();
         rxText->setString(rPtn.getText());
-        rPtn.writeFontProperties(rxText);
+        rPtn.writeFontProperties(rxText, nullptr);
         return;
     }
 
-    bool bReplaceOld = true;
     for( PortionVector::const_iterator aIt = maTextPortions.begin(), aEnd = maTextPortions.end(); aIt != aEnd; ++aIt )
     {
-        (*aIt)->convert( rxText, bReplaceOld );
+        (*aIt)->convert( rxText, nullptr, bReplaceOld );
         bReplaceOld = false;    // do not replace first portion text with following portions
     }
 }
@@ -436,9 +447,9 @@ void RichString::createTextPortions( const OUString& rText, FontPortionModelList
          sal_Int32 nStrLen = rText.getLength();
         // add leading and trailing string position to ease the following loop
         if( rPortions.empty() || (rPortions.front().mnPos > 0) )
-            rPortions.insert( rPortions.begin(), FontPortionModel( 0 ) );
+            rPortions.insert( rPortions.begin(), FontPortionModel( 0, -1 ) );
         if( rPortions.back().mnPos < nStrLen )
-            rPortions.push_back( FontPortionModel( nStrLen ) );
+            rPortions.push_back( FontPortionModel( nStrLen, -1 ) );
 
         // create all string portions according to the font id vector
         for( ::std::vector< FontPortionModel >::const_iterator aIt = rPortions.begin(); aIt->mnPos < nStrLen; ++aIt )

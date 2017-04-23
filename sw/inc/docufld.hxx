@@ -21,7 +21,7 @@
 
 #include <tools/date.hxx>
 #include <tools/datetime.hxx>
-#include <rtl/ref.hxx>
+
 #include <svl/macitem.hxx>
 
 #include "fldbas.hxx"
@@ -39,6 +39,7 @@ enum SwAuthorFormat
     AF_BEGIN,
     AF_NAME = AF_BEGIN,
     AF_SHORTCUT,
+    AF_END,
     AF_FIXED = 0x8000
 };
 
@@ -53,6 +54,7 @@ enum SwDocStatSubType
     DS_TBL,
     DS_GRF,
     DS_OLE,
+    DS_END
 };
 
 typedef sal_uInt16  SwDocInfoSubType;
@@ -82,16 +84,20 @@ namespace nsSwDocInfoSubType
     const SwDocInfoSubType DI_SUB_MASK      = 0xff00;
 }
 
+enum RegInfoFormat  ///< Only for loading of old documents!!!
+{
+    RF_AUTHOR,
+    RF_TIME,
+    RF_DATE,
+    RF_ALL
+};
+
 enum SwPageNumSubType
 {
     PG_RANDOM,
     PG_NEXT,
     PG_PREV
 };
-
-// NOTE: Possibly the first 15 values in the below enum are required
-// to exactly match the published constants in css::text::UserDataPart
-// (see offapi/com/sun/star/text/UserDataPart.idl).
 
 enum SwExtUserSubType
 {
@@ -125,16 +131,16 @@ enum SwJumpEditFormat
 
 class SwPageNumberFieldType : public SwFieldType
 {
-    SvxNumType      nNumberingType;
+    sal_Int16   nNumberingType;
     bool            bVirtuell;
 
 public:
     SwPageNumberFieldType();
 
-    OUString Expand( SvxNumType nFormat, short nOff, sal_uInt16 const nPageNumber,
+    OUString Expand( sal_uInt32 nFormat, short nOff, sal_uInt16 const nPageNumber,
                      sal_uInt16 const nMaxPage, const OUString& ) const;
     void ChangeExpansion( SwDoc* pDoc,
-                          bool bVirtPageNum, const SvxNumType* pNumFormat );
+                            bool bVirtPageNum, const sal_Int16* pNumFormat = nullptr );
     virtual SwFieldType* Copy() const override;
 };
 
@@ -149,7 +155,7 @@ class SW_DLLPUBLIC SwPageNumberField : public SwField
     sal_uInt16 m_nMaxPage;
 
 public:
-    SwPageNumberField(SwPageNumberFieldType*, sal_uInt16 nSub,
+    SwPageNumberField(SwPageNumberFieldType*, sal_uInt16 nSub = PG_RANDOM,
                       sal_uInt32 nFormat = 0, short nOff = 0,
                       sal_uInt16 const nPageNumber = 0,
                       sal_uInt16 const nMaxPage = 0);
@@ -185,12 +191,13 @@ class SwAuthorField : public SwField
     OUString aContent;
 
 public:
-    SwAuthorField(SwAuthorFieldType*, sal_uInt32 nFormat);
+    SwAuthorField(SwAuthorFieldType*, sal_uInt32 nFormat = 0);
 
     virtual OUString    Expand() const override;
     virtual SwField*    Copy() const override;
 
-    void         SetExpansion(const OUString& rStr) { aContent = rStr; }
+    inline void         SetExpansion(const OUString& rStr) { aContent = rStr; }
+    const OUString&     GetContent() const { return aContent; }
 
     virtual bool        QueryValue( css::uno::Any& rVal, sal_uInt16 nWhich ) const override;
     virtual bool        PutValue( const css::uno::Any& rVal, sal_uInt16 nWhich ) override;
@@ -211,12 +218,13 @@ class SW_DLLPUBLIC SwFileNameField : public SwField
     OUString aContent;
 
 public:
-    SwFileNameField(SwFileNameFieldType*, sal_uInt32 nFormat);
+    SwFileNameField(SwFileNameFieldType*, sal_uInt32 nFormat = 0);
 
     virtual OUString    Expand() const override;
     virtual SwField*    Copy() const override;
 
-    void         SetExpansion(const OUString& rStr) { aContent = rStr; }
+    inline void         SetExpansion(const OUString& rStr) { aContent = rStr; }
+    const OUString&     GetContent() const { return aContent; }
 
     virtual bool        QueryValue( css::uno::Any& rVal, sal_uInt16 nWhich ) const override;
     virtual bool        PutValue( const css::uno::Any& rVal, sal_uInt16 nWhich ) override;
@@ -235,7 +243,7 @@ public:
 class SW_DLLPUBLIC SwTemplNameField : public SwField
 {
 public:
-    SwTemplNameField(SwTemplNameFieldType*, sal_uInt32 nFormat);
+    SwTemplNameField(SwTemplNameFieldType*, sal_uInt32 nFormat = 0);
 
     virtual OUString    Expand() const override;
     virtual SwField*    Copy() const override;
@@ -247,14 +255,14 @@ public:
 class SwDocStatFieldType : public SwFieldType
 {
     SwDoc*          pDoc;
-    SvxNumType      nNumberingType;
+    sal_Int16       nNumberingType; ///< css::style::NumberingType
 
 public:
     SwDocStatFieldType(SwDoc*);
-    OUString                Expand(sal_uInt16 nSubType, SvxNumType nFormat) const;
+    OUString                Expand(sal_uInt16 nSubType, sal_uInt32 nFormat) const;
     virtual SwFieldType*    Copy() const override;
 
-    void             SetNumFormat( SvxNumType eFormat )  { nNumberingType = eFormat; }
+    inline void             SetNumFormat( sal_Int16 eFormat )  { nNumberingType = eFormat; }
 };
 
 class SW_DLLPUBLIC SwDocStatField : public SwField
@@ -263,7 +271,7 @@ class SW_DLLPUBLIC SwDocStatField : public SwField
 
 public:
     SwDocStatField( SwDocStatFieldType*,
-                    sal_uInt16 nSubType, sal_uInt32 nFormat = 0);
+                    sal_uInt16 nSubType = 0, sal_uInt32 nFormat = 0);
 
     void ChangeExpansion( const SwFrame* pFrame );
 
@@ -284,8 +292,8 @@ public:
 
     virtual SwFieldType*    Copy() const override;
 
-    void                    SetHiddenFlag( bool bSetHidden );
-    bool             GetHiddenFlag() const { return bHidden; }
+    void                    SetHiddenFlag( bool bSetHidden = true );
+    inline bool             GetHiddenFlag() const { return bHidden; }
 };
 
 class SwHiddenTextField : public SwField
@@ -322,7 +330,7 @@ public:
 
     void                Evaluate(SwDoc*);
 
-    void         SetValue(bool bHidden)  { bIsHidden = bHidden; }
+    inline void         SetValue(bool bHidden)  { bIsHidden = bHidden; }
     static OUString     GetColumnName(const OUString& rName);
     static OUString     GetDBName(const OUString& rName, SwDoc *pDoc);
 
@@ -441,32 +449,23 @@ class SW_DLLPUBLIC SwPostItField : public SwField
     OUString sName;     ///< Name of the comment.
     DateTime    aDateTime;
     OutlinerParaObject* mpText;
-    rtl::Reference<SwTextAPIObject> m_xTextObject;
-    sal_uInt32 m_nPostItId;
+    SwTextAPIObject* m_pTextObject;
 
 public:
-    static sal_uInt32 m_nLastPostItId;
-
     SwPostItField( SwPostItFieldType*,
                    const OUString& rAuthor,
                    const OUString& rText,
                    const OUString& rInitials,
                    const OUString& rName,
-                   const DateTime& rDate,
-                   const sal_uInt32 nPostItId = 0);
-
-    SwPostItField(const SwPostItField&) = delete;
-    SwPostItField* operator=(const SwPostItField&) = delete;
-
-    virtual ~SwPostItField() override;
+                   const DateTime& rDate);
+    virtual ~SwPostItField();
 
     virtual OUString        Expand() const override;
     virtual SwField*        Copy() const override;
 
     const DateTime&         GetDateTime() const             { return aDateTime; }
-    const Date       GetDate() const                 { return Date(aDateTime.GetDate()); }
-    const tools::Time GetTime() const                 { return aDateTime.GetTime(); }
-    sal_uInt32 GetPostItId() const             { return m_nPostItId; }
+    inline const Date       GetDate() const                 { return aDateTime.GetDate(); }
+    inline const tools::Time GetTime() const                 { return aDateTime.GetTime(); }
 
     /// Author
     virtual OUString        GetPar1() const override;
@@ -519,7 +518,7 @@ public:
     virtual OUString        GetFieldName() const override;
     const OUString&         GetName() const { return aName; }
     void                    SetName( const OUString& rName ) { aName = rName; }
-    void             SetExpansion(const OUString& rStr) { aContent = rStr; }
+    inline void             SetExpansion(const OUString& rStr) { aContent = rStr; }
     virtual bool        QueryValue( css::uno::Any& rVal, sal_uInt16 nWhich ) const override;
     virtual bool        PutValue( const css::uno::Any& rVal, sal_uInt16 nWhich ) override;
 };
@@ -540,7 +539,7 @@ class SwExtUserField : public SwField
     sal_uInt16  nType;
 
 public:
-    SwExtUserField(SwExtUserFieldType*, sal_uInt16 nSub, sal_uInt32 nFormat);
+    SwExtUserField(SwExtUserFieldType*, sal_uInt16 nSub, sal_uInt32 nFormat=0);
 
     virtual OUString    Expand() const override;
     virtual SwField*    Copy() const override;
@@ -548,7 +547,7 @@ public:
     virtual sal_uInt16      GetSubType() const override;
     virtual void        SetSubType(sal_uInt16 nSub) override;
 
-    void         SetExpansion(const OUString& rStr) { aContent = rStr; }
+    inline void         SetExpansion(const OUString& rStr) { aContent = rStr; }
 
     virtual bool        QueryValue( css::uno::Any& rVal, sal_uInt16 nWhich ) const override;
     virtual bool        PutValue( const css::uno::Any& rVal, sal_uInt16 nWhich ) override;
@@ -574,7 +573,7 @@ class SwRefPageSetField : public SwField
     bool    bOn;
 
 public:
-    SwRefPageSetField( SwRefPageSetFieldType*, short nOff,
+    SwRefPageSetField( SwRefPageSetFieldType*, short nOff = 0,
                         bool bOn = true );
 
     virtual OUString    Expand() const override;
@@ -681,7 +680,7 @@ class SwScriptField : public SwField
 
 public:
     SwScriptField( SwScriptFieldType*, const OUString& rType,
-                   const OUString& rCode, bool bURL );
+                   const OUString& rCode, bool bURL=false );
 
     virtual OUString        GetDescription() const override;
 

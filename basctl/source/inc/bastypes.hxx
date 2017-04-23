@@ -25,7 +25,6 @@
 #include <iderid.hxx>
 #include <svtools/tabbar.hxx>
 #include <vcl/toolbox.hxx>
-#include <basic/sbdef.hxx>
 
 #include <unordered_map>
 
@@ -64,13 +63,13 @@ struct BasicStatus
     bool bIsRunning : 1;
     bool bError : 1;
     bool bIsInReschedule : 1;
-    BasicDebugFlags nBasicFlags;
+    sal_uInt16 nBasicFlags;
 
     BasicStatus():
         bIsRunning(false),
         bError(false),
         bIsInReschedule(false),
-        nBasicFlags(BasicDebugFlags::NONE) { }
+        nBasicFlags(0) { }
 };
 
 
@@ -82,7 +81,7 @@ class DockingWindow : public ::DockingWindow
 public:
     DockingWindow (vcl::Window* pParent);
     DockingWindow (Layout* pParent);
-    virtual ~DockingWindow() override;
+    virtual ~DockingWindow();
     virtual void dispose() override;
     void ResizeIfDocking (Point const&, Size const&);
     void ResizeIfDocking (Size const&);
@@ -93,17 +92,17 @@ public:
     void Hide ();
 
 protected:
-    virtual bool Docking( const Point& rPos, tools::Rectangle& rRect ) override;
-    virtual void     EndDocking( const tools::Rectangle& rRect, bool bFloatMode ) override;
+    virtual bool Docking( const Point& rPos, Rectangle& rRect ) override;
+    virtual void     EndDocking( const Rectangle& rRect, bool bFloatMode ) override;
     virtual void     ToggleFloatingMode() override;
     virtual bool PrepareToggleFloatingMode() override;
     virtual void     StartDocking() override;
 
 private:
     // the position and the size of the floating window
-    tools::Rectangle aFloatingRect;
+    Rectangle aFloatingRect;
     // the position and the size of the docking window
-    tools::Rectangle aDockingRect;
+    Rectangle aDockingRect;
     // the parent layout window (only when docking)
     VclPtr<Layout> pLayout;
     // > 0: shown, <= 0: hidden, ++ by Show() and -- by Hide()
@@ -136,6 +135,7 @@ public:
 
 enum BasicWindowStatus
 {
+    BASWIN_OK           = 0x00,
     BASWIN_RUNNINGBASIC = 0x01,
     BASWIN_TOBEKILLED   = 0x02,
     BASWIN_SUSPENDED    = 0x04,
@@ -153,7 +153,7 @@ private:
     VclPtr<ScrollBar>      pShellHScrollBar;
     VclPtr<ScrollBar>      pShellVScrollBar;
 
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
     int nStatus;
 
     ScriptDocument      m_aDocument;
@@ -168,7 +168,7 @@ protected:
 
 public:
     BaseWindow( vcl::Window* pParent, const ScriptDocument& rDocument, const OUString& aLibName, const OUString& aName );
-    virtual         ~BaseWindow() override;
+    virtual         ~BaseWindow();
     virtual void    dispose() override;
 
     void            Init();
@@ -183,7 +183,7 @@ public:
     virtual void    ExecuteCommand (SfxRequest&);
     virtual void    ExecuteGlobal (SfxRequest&);
     virtual void    GetState (SfxItemSet&) = 0;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
 
     virtual void    StoreData();
     virtual void    UpdateData();
@@ -286,15 +286,15 @@ private:
     Map m_aMap;
 };
 
-void            CutLines( OUString& rStr, sal_Int32 nStartLine, sal_Int32 nLines, bool bEraseTrailingEmptyLines );
+void            CutLines( OUString& rStr, sal_Int32 nStartLine, sal_Int32 nLines, bool bEraseTrailingEmptyLines = false );
 OUString CreateMgrAndLibStr( const OUString& rMgrName, const OUString& rLibName );
 sal_uLong           CalcLineCount( SvStream& rStream );
 
-bool QueryReplaceMacro( const OUString& rName, vcl::Window* pParent );
-bool QueryDelMacro( const OUString& rName, vcl::Window* pParent );
-bool QueryDelDialog( const OUString& rName, vcl::Window* pParent );
-bool QueryDelModule( const OUString& rName, vcl::Window* pParent );
-bool QueryDelLib( const OUString& rName, bool bRef, vcl::Window* pParent );
+bool QueryReplaceMacro( const OUString& rName, vcl::Window* pParent = nullptr );
+bool QueryDelMacro( const OUString& rName, vcl::Window* pParent = nullptr );
+bool QueryDelDialog( const OUString& rName, vcl::Window* pParent = nullptr );
+bool QueryDelModule( const OUString& rName, vcl::Window* pParent = nullptr );
+bool QueryDelLib( const OUString& rName, bool bRef = false, vcl::Window* pParent = nullptr );
 bool QueryPassword( const css::uno::Reference< css::script::XLibraryContainer >& xLibContainer, const OUString& rLibName, OUString& rPassword, bool bRepeat = false, bool bNewTitle = false );
 
 class ModuleInfoHelper

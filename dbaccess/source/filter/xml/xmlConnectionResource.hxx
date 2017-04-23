@@ -33,7 +33,7 @@ namespace dbaxml
         OXMLConnectionResource( ODBFilter& rImport, sal_uInt16 nPrfx,
                     const OUString& rLName,
                     const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList);
-        virtual ~OXMLConnectionResource() override;
+        virtual ~OXMLConnectionResource();
     };
 } // namespace dbaxml
 

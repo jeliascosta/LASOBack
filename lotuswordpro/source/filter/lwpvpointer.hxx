@@ -75,7 +75,7 @@ public:
 protected:
     LwpObjectID m_PointerID;
 private:
-    virtual ~LwpVersionedPointer() override {}
+    virtual ~LwpVersionedPointer(){}
 };
 #endif
 

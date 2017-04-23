@@ -98,7 +98,9 @@ enum PageMarElement
     PAGE_MAR_GUTTER
 };
 
-/// property stack element
+/*-------------------------------------------------------------------------
+    property stack element
+  -----------------------------------------------------------------------*/
 enum ContextType
 {
     CONTEXT_SECTION,
@@ -126,11 +128,13 @@ class HeaderFooterContext
 {
     bool m_bTextInserted;
 public:
-    explicit HeaderFooterContext(bool bTextInserted);
+    HeaderFooterContext(bool bTextInserted);
     bool getTextInserted();
 };
 
-/// field stack element
+/*--------------------------------------------------
+   field stack element
+ * --------------------------------------------------*/
 class FieldContext
 {
     bool                                                                            m_bFieldCommandCompleted;
@@ -146,15 +150,13 @@ class FieldContext
     css::uno::Reference<css::beans::XPropertySet> m_xTC; // TOX entry
     css::uno::Reference<css::beans::XPropertySet> m_xCustomField;
     OUString                                                                 m_sHyperlinkURL;
-    /// A frame for the hyperlink when one exists.
-    OUString m_sHyperlinkTarget;
     FFDataHandler::Pointer_t                                                        m_pFFDataHandler;
     FormControlHelper::Pointer_t                                                    m_pFormControlHelper;
     /// (Character) properties of the field itself.
     PropertyMapPtr m_pProperties;
 
 public:
-    explicit FieldContext(css::uno::Reference<css::text::XTextRange> const& xStart);
+    FieldContext(css::uno::Reference<css::text::XTextRange> const& xStart);
     ~FieldContext();
 
     const css::uno::Reference<css::text::XTextRange>& GetStartRange() const { return m_xStartRange; }
@@ -186,8 +188,6 @@ public:
 
     void    SetHyperlinkURL( const OUString& rURL ) { m_sHyperlinkURL = rURL; }
     const OUString&                                                      GetHyperlinkURL() { return m_sHyperlinkURL; }
-    void SetHyperlinkTarget(const OUString& rTarget) { m_sHyperlinkTarget = rTarget; }
-    const OUString& GetHyperlinkTarget() { return m_sHyperlinkTarget; }
 
     void setFFDataHandler(FFDataHandler::Pointer_t pFFDataHandler) { m_pFFDataHandler = pFFDataHandler; }
     const FFDataHandler::Pointer_t& getFFDataHandler() const { return m_pFFDataHandler; }
@@ -219,7 +219,7 @@ struct AnchoredContext
     css::uno::Reference<css::text::XTextContent> xTextContent;
     bool bToRemove;
 
-    explicit AnchoredContext(const css::uno::Reference<css::text::XTextContent>& xContent)
+    AnchoredContext(const css::uno::Reference<css::text::XTextContent>& xContent)
         : xTextContent(xContent), bToRemove(false)
     {
     }
@@ -233,7 +233,7 @@ typedef std::shared_ptr<FieldContext>  FieldContextPtr;
 struct DeletableTabStop : public css::style::TabStop
 {
     bool bDeleted;
-    explicit DeletableTabStop()
+    DeletableTabStop()
         : bDeleted(false)
     {
         // same defaults as SvxXMLTabStopContext_Impl
@@ -246,7 +246,9 @@ struct DeletableTabStop : public css::style::TabStop
     {
     }
 };
-/// helper to remember bookmark start position
+/*-------------------------------------------------------------------------
+    /// helper to remember bookmark start position
+  -----------------------------------------------------------------------*/
 struct BookmarkInsertPosition
 {
     bool                                                                    m_bIsStartOfText;
@@ -333,7 +335,7 @@ struct SymbolData
 };
 
 class DomainMapper;
-class DomainMapper_Impl final
+class DomainMapper_Impl
 {
 public:
     typedef std::map < OUString, BookmarkInsertPosition > BookmarkMap_t;
@@ -341,7 +343,6 @@ public:
 private:
     SourceDocumentType                                                              m_eDocumentType;
     DomainMapper&                                                                   m_rDMapper;
-    OUString m_aBaseUrl;
     css::uno::Reference<css::text::XTextDocument> m_xTextDocument;
     css::uno::Reference<css::beans::XPropertySet> m_xDocumentSettings;
     css::uno::Reference<css::lang::XMultiServiceFactory> m_xTextFactory;
@@ -403,6 +404,7 @@ private:
     PropertyMapPtr           m_pLastCharacterContext;
 
     ::std::vector<DeletableTabStop> m_aCurrentTabStops;
+    sal_uInt32                      m_nCurrentTabStopIndex;
     OUString                 m_sCurrentParaStyleId;
     bool                            m_bInStyleSheetImport; //in import of fonts, styles, lists or lfos
     bool                            m_bInAnyTableImport; //in import of fonts, styles, lists or lfos
@@ -434,7 +436,6 @@ private:
     bool                            m_bIsFirstParaInSection;
     bool                            m_bDummyParaAddedForTableInSection;
     bool                            m_bTextFrameInserted;
-    bool                            m_bIsPreviousParagraphFramed;
     bool                            m_bIsLastParaInSection;
     bool                            m_bIsLastSectionGroup;
     bool                            m_bIsInComments;
@@ -456,9 +457,8 @@ private:
 
     void GetCurrentLocale(css::lang::Locale& rLocale);
     void SetNumberFormat(const OUString& rCommand, css::uno::Reference<css::beans::XPropertySet> const& xPropertySet, bool bDetectFormat = false);
-    /// @throws css::uno::Exception
-    css::uno::Reference<css::beans::XPropertySet> FindOrCreateFieldMaster(const sal_Char* pFieldMasterService, const OUString& rFieldMasterName);
-    css::uno::Reference<css::beans::XPropertySet> const & GetDocumentSettings();
+    css::uno::Reference<css::beans::XPropertySet> FindOrCreateFieldMaster(const sal_Char* pFieldMasterService, const OUString& rFieldMasterName) throw(css::uno::Exception);
+    css::uno::Reference<css::beans::XPropertySet> GetDocumentSettings();
 
     std::map<sal_Int32, css::uno::Any> deferredCharacterProperties;
     SmartTagHandler m_aSmartTagHandler;
@@ -474,15 +474,15 @@ public:
             css::uno::Reference< css::lang::XComponent > const& xModel,
             SourceDocumentType eDocumentType,
             utl::MediaDescriptor& rMediaDesc);
-    ~DomainMapper_Impl();
+    virtual ~DomainMapper_Impl();
 
     SectionPropertyMap* GetLastSectionContext( )
     {
         return dynamic_cast< SectionPropertyMap* >( m_pLastSectionContext.get( ) );
     }
 
-    css::uno::Reference<css::container::XNameContainer> const & GetPageStyles();
-    css::uno::Reference<css::text::XText> const & GetBodyText();
+    css::uno::Reference<css::container::XNameContainer> GetPageStyles();
+    css::uno::Reference<css::text::XText> GetBodyText();
     const css::uno::Reference<css::lang::XMultiServiceFactory>& GetTextFactory() const
     {
         return m_xTextFactory;
@@ -524,8 +524,6 @@ public:
     bool GetIsDummyParaAddedForTableInSection() { return m_bDummyParaAddedForTableInSection;}
     void SetIsTextFrameInserted( bool bIsInserted );
     bool GetIsTextFrameInserted() { return m_bTextFrameInserted;}
-    void SetIsPreviousParagraphFramed( bool bIsFramed ) { m_bIsPreviousParagraphFramed = bIsFramed; }
-    bool GetIsPreviousParagraphFramed() { return m_bIsPreviousParagraphFramed; }
     void SetParaSectpr(bool bParaSectpr);
     bool GetParaSectpr() { return m_bParaSectpr;}
 
@@ -572,34 +570,34 @@ public:
     css::uno::Reference<css::text::XTextAppend> GetTopTextAppend();
     FieldContextPtr GetTopFieldContext();
 
-    FontTablePtr const & GetFontTable()
+    FontTablePtr GetFontTable()
     {
         if(!m_pFontTable)
             m_pFontTable.reset(new FontTable());
          return m_pFontTable;
     }
-    StyleSheetTablePtr const & GetStyleSheetTable()
+    StyleSheetTablePtr GetStyleSheetTable()
     {
         if(!m_pStyleSheetTable)
             m_pStyleSheetTable.reset(new StyleSheetTable( m_rDMapper, m_xTextDocument, m_bIsNewDoc ));
         return m_pStyleSheetTable;
     }
-    ListsManager::Pointer const & GetListTable();
-    ThemeTablePtr const & GetThemeTable()
+    ListsManager::Pointer GetListTable();
+    ThemeTablePtr GetThemeTable()
     {
         if(!m_pThemeTable)
             m_pThemeTable.reset( new ThemeTable );
         return m_pThemeTable;
     }
 
-    SettingsTablePtr const & GetSettingsTable()
+    SettingsTablePtr GetSettingsTable()
     {
         if( !m_pSettingsTable )
-            m_pSettingsTable.reset(new SettingsTable(m_rDMapper));
+            m_pSettingsTable.reset( new SettingsTable );
         return m_pSettingsTable;
     }
 
-    GraphicImportPtr const & GetGraphicImport( GraphicImportType eGraphicImportType );
+    GraphicImportPtr GetGraphicImport( GraphicImportType eGraphicImportType );
     void            ResetGraphicImport();
     // this method deletes the current m_pGraphicImport after import
     void    ImportGraphic(const writerfilter::Reference< Properties>::Pointer_t&, GraphicImportType eGraphicImportType );
@@ -651,16 +649,9 @@ public:
     //collect the pieces of the command
     void AppendFieldCommand(OUString& rPartOfCommand);
     void handleRubyEQField( const FieldContextPtr& pContext);
-    void handleFieldSet
-        (const FieldContextPtr& pContext,
-        css::uno::Reference< css::uno::XInterface > & xFieldInterface,
-        css::uno::Reference< css::beans::XPropertySet > const& xFieldProperties);
     void handleFieldAsk
         (const FieldContextPtr& pContext,
         css::uno::Reference< css::uno::XInterface > & xFieldInterface,
-        css::uno::Reference< css::beans::XPropertySet > const& xFieldProperties);
-    static void handleFieldFormula
-        (const FieldContextPtr& pContext,
         css::uno::Reference< css::beans::XPropertySet > const& xFieldProperties);
     void handleAutoNum
         (const FieldContextPtr& pContext,
@@ -779,6 +770,7 @@ public:
     void SetCurrentRedlineRevertProperties( const css::uno::Sequence<css::beans::PropertyValue>& aProperties );
     void SetCurrentRedlineIsRead();
     void RemoveTopRedline( );
+    void ResetParaMarkerRedline( );
     void SetCurrentRedlineInitials( const OUString& sInitials );
     bool IsFirstRun() { return m_bIsFirstRun;}
     void SetIsFirstRun(bool bval) { m_bIsFirstRun = bval;}
@@ -880,16 +872,11 @@ public:
 
     bool IsDiscardHeaderFooter();
 
-    void SetParaAutoBefore(bool bParaAutoBefore) { m_bParaAutoBefore = bParaAutoBefore; }
-
 private:
     void PushPageHeaderFooter(bool bHeader, SectionPropertyMap::PageType eType);
     std::vector<css::uno::Reference< css::drawing::XShape > > m_vTextFramesForChaining ;
     /// Current paragraph had at least one field in it.
     bool m_bParaHadField;
-    css::uno::Reference<css::beans::XPropertySet> m_xPreviousParagraph;
-    /// Current paragraph has automatic before spacing.
-    bool m_bParaAutoBefore;
 };
 
 } //namespace dmapper

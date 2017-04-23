@@ -20,7 +20,6 @@
 #include <svx/Palette.hxx>
 #include <tools/stream.hxx>
 
-#include "palettes.hxx"
 
 Palette::~Palette()
 {
@@ -54,11 +53,6 @@ const OUString& PaletteASE::GetName()
     return maASEPaletteName;
 }
 
-const OUString& PaletteASE::GetPath()
-{
-    return maFPath;
-}
-
 bool PaletteASE::IsValid()
 {
     return mbValidPalette;
@@ -84,7 +78,7 @@ void PaletteASE::LoadPalette()
 
     // Verify magic first 4 characters
     sal_Char cMagic[5] = {0};
-    if ((aFile.ReadBytes(cMagic, 4) != 4) || (strncmp(cMagic, "ASEF", 4) != 0))
+    if ((aFile.Read(cMagic, 4) != 4) || (strncmp(cMagic, "ASEF", 4) != 0))
     {
         mbValidPalette = false;
         return;
@@ -126,7 +120,7 @@ void PaletteASE::LoadPalette()
         }
 
         sal_Char cColorModel[5] = {0};
-        aFile.ReadBytes(cColorModel, 4);
+        aFile.Read(cColorModel, 4);
         OString aColorModel(cColorModel);
         // r, g, and b are floats ranging from 0 to 1
         float r = 0, g = 0, b = 0;
@@ -190,11 +184,6 @@ PaletteGPL::~PaletteGPL()
 const OUString& PaletteGPL::GetName()
 {
     return maGPLPaletteName;
-}
-
-const OUString& PaletteGPL::GetPath()
-{
-    return maFPath;
 }
 
 void PaletteGPL::LoadColorSet( SvxColorValueSet& rColorSet )
@@ -338,17 +327,12 @@ const OUString& PaletteSOC::GetName()
     return maSOCPaletteName;
 }
 
-const OUString& PaletteSOC::GetPath()
-{
-    return maFPath;
-}
-
 void PaletteSOC::LoadColorSet( SvxColorValueSet& rColorSet )
 {
     if( !mbLoadedPalette )
     {
         mbLoadedPalette = true;
-        mpColorList = XPropertyList::AsColorList(XPropertyList::CreatePropertyListFromURL(XPropertyListType::Color, maFPath));
+        mpColorList = XPropertyList::AsColorList(XPropertyList::CreatePropertyListFromURL(XCOLOR_LIST, maFPath));
         (void)mpColorList->Load();
     }
     rColorSet.Clear();

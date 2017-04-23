@@ -22,12 +22,7 @@
 #include <ooo/vba/msforms/XShapeRange.hpp>
 #include <ooo/vba/office/MsoAutoShapeType.hpp>
 #include <ooo/vba/office/MsoTextOrientation.hpp>
-#include <com/sun/star/awt/Point.hpp>
-#include <com/sun/star/awt/Size.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/script/XTypeConverter.hpp>
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/text/XTextDocument.hpp>
 #include <com/sun/star/text/XTextContent.hpp>
@@ -38,9 +33,6 @@
 #include <com/sun/star/text/SizeType.hpp>
 #include <com/sun/star/text/WritingMode.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
-#include <com/sun/star/drawing/XDrawPage.hpp>
-#include <com/sun/star/drawing/XShape.hpp>
-#include <com/sun/star/drawing/XShapes.hpp>
 
 #include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbashape.hxx>
@@ -57,11 +49,11 @@ class VbShapeEnumHelper : public EnumerationHelper_BASE
         sal_Int32 nIndex;
 public:
     VbShapeEnumHelper( const uno::Reference< msforms::XShapes >& xParent,  const uno::Reference< container::XIndexAccess >& xIndexAccess ) : m_xParent( xParent ), m_xIndexAccess( xIndexAccess ), nIndex( 0 ) {}
-        virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+        virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
         {
                 return ( nIndex < m_xIndexAccess->getCount() );
         }
-        virtual uno::Any SAL_CALL nextElement(  ) override
+        virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
         {
                 ScVbaShapes* pShapes = dynamic_cast< ScVbaShapes* >(m_xParent.get());
                 if ( pShapes && hasMoreElements() )
@@ -94,13 +86,13 @@ ScVbaShapes::ScVbaShapes( const css::uno::Reference< ov::XHelperInterface >& xPa
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaShapes::createEnumeration()
+ScVbaShapes::createEnumeration() throw (uno::RuntimeException)
 {
     return new VbShapeEnumHelper( this,  m_xIndexAccess );
 }
 
 uno::Any
-ScVbaShapes::createCollectionObject( const css::uno::Any& aSource )
+ScVbaShapes::createCollectionObject( const css::uno::Any& aSource ) throw (uno::RuntimeException)
 {
     if( aSource.hasValue() )
     {
@@ -111,7 +103,7 @@ ScVbaShapes::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Type
-ScVbaShapes::getElementType()
+ScVbaShapes::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<ooo::vba::msforms::XShape>::get();
 }
@@ -135,7 +127,7 @@ ScVbaShapes::getServiceNames()
 }
 
 css::uno::Reference< css::container::XIndexAccess >
-ScVbaShapes::getShapesByArrayIndices( const uno::Any& Index  )
+ScVbaShapes::getShapesByArrayIndices( const uno::Any& Index  ) throw (uno::RuntimeException)
 {
     if ( Index.getValueTypeClass() != uno::TypeClass_SEQUENCE )
         throw uno::RuntimeException();
@@ -173,8 +165,25 @@ ScVbaShapes::getShapesByArrayIndices( const uno::Any& Index  )
     return xIndexAccess;
 }
 
+uno::Any SAL_CALL
+ScVbaShapes::Item(const uno::Any& Index, const uno::Any& Index2)
+    throw (lang::IndexOutOfBoundsException, script::BasicErrorException, uno::RuntimeException)
+{
+    // I don't think we need to support Array of indices for shapes
+/*
+    if ( Index.getValueTypeClass() == uno::TypeClass_SEQUENCE )
+    {
+        uno::Reference< container::XIndexAccess > xIndexAccess( getShapesByArrayIndices( Index ) );
+        // return new collection instance
+        uno::Reference< XCollection > xShapesCollection(  new ScVbaShapes( this->getParent(), mxContext, xIndexAccess ) );
+        return uno::makeAny( xShapesCollection );
+    }
+*/
+    return  ScVbaShapes_BASE::Item( Index, Index2 );
+}
+
 uno::Reference< msforms::XShapeRange > SAL_CALL
-ScVbaShapes::Range( const uno::Any& shapes )
+ScVbaShapes::Range( const uno::Any& shapes ) throw (css::uno::RuntimeException, std::exception)
 {
     // shapes, can be an index or an array of indices
     uno::Reference< container::XIndexAccess > xShapes;
@@ -193,7 +202,7 @@ ScVbaShapes::Range( const uno::Any& shapes )
 }
 
 void SAL_CALL
-ScVbaShapes::SelectAll()
+ScVbaShapes::SelectAll() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< view::XSelectionSupplier > xSelectSupp( m_xModel->getCurrentController(), uno::UNO_QUERY_THROW );
     try
@@ -209,7 +218,7 @@ ScVbaShapes::SelectAll()
 }
 
 uno::Reference< drawing::XShape >
-ScVbaShapes::createShape( const OUString& service )
+ScVbaShapes::createShape( const OUString& service ) throw (css::uno::RuntimeException)
 {
     uno::Reference< lang::XMultiServiceFactory > xMSF( m_xModel, uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XShape > xShape( xMSF->createInstance( service ), uno::UNO_QUERY_THROW );
@@ -217,7 +226,7 @@ ScVbaShapes::createShape( const OUString& service )
 }
 
 uno::Any
-ScVbaShapes::AddRectangle(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWidth, sal_Int32 nLineHeight, const uno::Any& rRange)
+ScVbaShapes::AddRectangle(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWidth, sal_Int32 nLineHeight, const uno::Any& rRange) throw (css::uno::RuntimeException)
 {
     OUString sCreateShapeName( "com.sun.star.drawing.RectangleShape" );
     sal_Int32 nXPos = Millimeter::getInHundredthsOfOneMillimeter( startX );
@@ -249,7 +258,7 @@ ScVbaShapes::AddRectangle(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWid
 }
 
 uno::Any
-ScVbaShapes::AddEllipse(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWidth, sal_Int32 nLineHeight, const uno::Any& rRange)
+ScVbaShapes::AddEllipse(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWidth, sal_Int32 nLineHeight, const uno::Any& rRange) throw (css::uno::RuntimeException)
 {
     OUString sCreateShapeName( "com.sun.star.drawing.EllipseShape" );
     sal_Int32 nXPos = Millimeter::getInHundredthsOfOneMillimeter( startX );
@@ -292,9 +301,9 @@ ScVbaShapes::AddEllipse(sal_Int32 startX, sal_Int32 startY, sal_Int32 nLineWidth
     return uno::makeAny( uno::Reference< msforms::XShape > ( pScVbaShape ) );
 }
 
-//helperapi calc
+//helpeapi calc
 uno::Any SAL_CALL
-ScVbaShapes::AddLine( sal_Int32 StartX, sal_Int32 StartY, sal_Int32 endX, sal_Int32 endY )
+ScVbaShapes::AddLine( sal_Int32 StartX, sal_Int32 StartY, sal_Int32 endX, sal_Int32 endY ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLineWidth = endX - StartX;
     sal_Int32 nLineHeight = endY - StartY;
@@ -328,7 +337,7 @@ ScVbaShapes::AddLine( sal_Int32 StartX, sal_Int32 StartY, sal_Int32 endX, sal_In
 }
 
 uno::Any SAL_CALL
-ScVbaShapes::AddShape( sal_Int32 _nType, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight )
+ScVbaShapes::AddShape( sal_Int32 _nType, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight ) throw (uno::RuntimeException, std::exception)
 {
     uno::Any _aAnchor;
     if (_nType == office::MsoAutoShapeType::msoShapeRectangle)
@@ -343,7 +352,7 @@ ScVbaShapes::AddShape( sal_Int32 _nType, sal_Int32 _nLeft, sal_Int32 _nTop, sal_
 }
 
 uno::Any SAL_CALL
-ScVbaShapes::AddTextbox( sal_Int32 _nOrientation, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight )
+ScVbaShapes::AddTextbox( sal_Int32 _nOrientation, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< lang::XServiceInfo > xServiceInfo( m_xModel, uno::UNO_QUERY_THROW );
     if( xServiceInfo->supportsService( "com.sun.star.text.TextDocument" ) )
@@ -354,7 +363,7 @@ ScVbaShapes::AddTextbox( sal_Int32 _nOrientation, sal_Int32 _nLeft, sal_Int32 _n
 }
 
 uno::Any
-ScVbaShapes::AddTextboxInWriter( sal_Int32 /*_nOrientation*/, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight )
+ScVbaShapes::AddTextboxInWriter( sal_Int32 /*_nOrientation*/, sal_Int32 _nLeft, sal_Int32 _nTop, sal_Int32 _nWidth, sal_Int32 _nHeight ) throw (uno::RuntimeException)
 {
     OUString sCreateShapeName( "com.sun.star.drawing.TextShape" );
     sal_Int32 nXPos = Millimeter::getInHundredthsOfOneMillimeter( _nLeft );
@@ -400,12 +409,12 @@ ScVbaShapes::AddTextboxInWriter( sal_Int32 /*_nOrientation*/, sal_Int32 _nLeft, 
 }
 
 void
-ScVbaShapes::setDefaultShapeProperties( const uno::Reference< drawing::XShape >& xShape )
+ScVbaShapes::setDefaultShapeProperties( const uno::Reference< drawing::XShape >& xShape ) throw (uno::RuntimeException)
 {
     uno::Reference< beans::XPropertySet > xPropertySet( xShape, uno::UNO_QUERY_THROW );
     xPropertySet->setPropertyValue( "FillStyle", uno::makeAny( OUString("SOLID") ) );
     xPropertySet->setPropertyValue( "FillColor", uno::makeAny( sal_Int32(0xFFFFFF) )  );
-    xPropertySet->setPropertyValue( "TextWordWrap", uno::makeAny( text::WrapTextMode_THROUGH )  );
+    xPropertySet->setPropertyValue( "TextWordWrap", uno::makeAny( text::WrapTextMode_THROUGHT )  );
     //not find in OOo2.3
     //xPropertySet->setPropertyValue("Opaque", uno::makeAny( sal_True )  );
 }

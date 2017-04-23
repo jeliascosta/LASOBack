@@ -13,6 +13,7 @@
 #include <fstream>
 #include <set>
 #include "plugin.hxx"
+#include "compat.hxx"
 
 /**
   Check for calls to operator== on a std::container< std::unique_ptr >, which is not useful,

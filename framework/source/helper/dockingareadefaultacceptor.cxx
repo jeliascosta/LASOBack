@@ -48,7 +48,7 @@ DockingAreaDefaultAcceptor::~DockingAreaDefaultAcceptor()
 }
 
 //  XDockingAreaAcceptor
-css::uno::Reference< css::awt::XWindow > SAL_CALL DockingAreaDefaultAcceptor::getContainerWindow()
+css::uno::Reference< css::awt::XWindow > SAL_CALL DockingAreaDefaultAcceptor::getContainerWindow() throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -60,7 +60,7 @@ css::uno::Reference< css::awt::XWindow > SAL_CALL DockingAreaDefaultAcceptor::ge
     return xContainerWindow;
 }
 
-sal_Bool SAL_CALL DockingAreaDefaultAcceptor::requestDockingAreaSpace( const css::awt::Rectangle& RequestedSpace )
+sal_Bool SAL_CALL DockingAreaDefaultAcceptor::requestDockingAreaSpace( const css::awt::Rectangle& RequestedSpace ) throw (css::uno::RuntimeException, std::exception)
 {
     // Try to "lock" the frame for access to taskscontainer.
     css::uno::Reference< XFrame > xFrame( m_xOwner );
@@ -73,7 +73,7 @@ sal_Bool SAL_CALL DockingAreaDefaultAcceptor::requestDockingAreaSpace( const css
         if ( xContainerWindow.is() && xComponentWindow.is() )
         {
             css::uno::Reference< css::awt::XDevice > xDevice( xContainerWindow, css::uno::UNO_QUERY );
-            // Convert relative size to output size.
+            // Convert relativ size to output size.
             css::awt::Rectangle  aRectangle  = xContainerWindow->getPosSize();
             css::awt::DeviceInfo aInfo       = xDevice->getInfo();
             css::awt::Size       aSize       (  aRectangle.Width  - aInfo.LeftInset - aInfo.RightInset  ,
@@ -93,7 +93,7 @@ sal_Bool SAL_CALL DockingAreaDefaultAcceptor::requestDockingAreaSpace( const css
     return false;
 }
 
-void SAL_CALL DockingAreaDefaultAcceptor::setDockingAreaSpace( const css::awt::Rectangle& BorderSpace )
+void SAL_CALL DockingAreaDefaultAcceptor::setDockingAreaSpace( const css::awt::Rectangle& BorderSpace ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -107,7 +107,7 @@ void SAL_CALL DockingAreaDefaultAcceptor::setDockingAreaSpace( const css::awt::R
         if ( xContainerWindow.is() && xComponentWindow.is() )
         {
             css::uno::Reference< css::awt::XDevice > xDevice( xContainerWindow, css::uno::UNO_QUERY );
-            // Convert relative size to output size.
+            // Convert relativ size to output size.
             css::awt::Rectangle  aRectangle  = xContainerWindow->getPosSize();
             css::awt::DeviceInfo aInfo       = xDevice->getInfo();
             css::awt::Size       aSize       (  aRectangle.Width  - aInfo.LeftInset - aInfo.RightInset  ,

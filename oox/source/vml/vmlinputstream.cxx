@@ -93,23 +93,19 @@ void lclProcessAttribs( OStringBuffer& rBuffer, const sal_Char* pcBeg, const sal
     {
         // pcNameBeg points to begin of attribute name, find equality sign
         const sal_Char* pcEqualSign = lclFindCharacter( pcNameBeg, pcEnd, '=' );
-        bOk = (pcEqualSign < pcEnd);
-        if (bOk)
+        if ((bOk = (pcEqualSign < pcEnd)))
         {
             // find end of attribute name (ignore whitespace between name and equality sign)
             const sal_Char* pcNameEnd = lclTrimWhiteSpaceFromEnd( pcNameBeg, pcEqualSign );
-            bOk = (pcNameBeg < pcNameEnd);
-            if( bOk )
+            if( (bOk = (pcNameBeg < pcNameEnd)) )
             {
                 // find begin of attribute value (must be single or double quote)
                 const sal_Char* pcValueBeg = lclFindNonWhiteSpace( pcEqualSign + 1, pcEnd );
-                bOk = (pcValueBeg < pcEnd) && ((*pcValueBeg == '\'') || (*pcValueBeg == '"'));
-                if( bOk )
+                if( (bOk = (pcValueBeg < pcEnd) && ((*pcValueBeg == '\'') || (*pcValueBeg == '"'))) )
                 {
                     // find end of attribute value (matching quote character)
                     const sal_Char* pcValueEnd = lclFindCharacter( pcValueBeg + 1, pcEnd, *pcValueBeg );
-                    bOk = (pcValueEnd < pcEnd);
-                    if( bOk )
+                    if( (bOk = (pcValueEnd < pcEnd)) )
                     {
                         ++pcValueEnd;
                         OString aAttribName( pcNameBeg, static_cast< sal_Int32 >( pcNameEnd - pcNameBeg ) );
@@ -124,12 +120,8 @@ void lclProcessAttribs( OStringBuffer& rBuffer, const sal_Char* pcBeg, const sal
                         aAttributes[ pcNameBeg ] = aAttribData;
                         // continue with next attribute (skip whitespace after this attribute)
                         pcNameBeg = pcValueEnd;
-                        if( pcNameBeg < pcEnd )
-                        {
-                            bOk = lclIsWhiteSpace( *pcNameBeg );
-                            if( bOk )
-                                pcNameBeg = lclFindNonWhiteSpace( pcNameBeg + 1, pcEnd );
-                        }
+                        if( (pcNameBeg < pcEnd) && ((bOk = lclIsWhiteSpace( *pcNameBeg ))) )
+                            pcNameBeg = lclFindNonWhiteSpace( pcNameBeg + 1, pcEnd );
                     }
                 }
             }
@@ -263,8 +255,8 @@ InputStream::InputStream( const Reference< XComponentContext >& rxContext, const
     mxTextStrm( TextInputStream::createXTextInputStream( rxContext, rxInStrm, RTL_TEXTENCODING_ISO_8859_1 ) ),
     maOpeningBracket( 1 ),
     maClosingBracket( 1 ),
-    maOpeningCData( "<![CDATA[" ),
-    maClosingCData( "]]>" ),
+    maOpeningCData( CREATE_OSTRING( "<![CDATA[" ) ),
+    maClosingCData( CREATE_OSTRING( "]]>" ) ),
     mnBufferPos( 0 )
 {
     if (!mxTextStrm.is())
@@ -278,6 +270,7 @@ InputStream::~InputStream()
 }
 
 sal_Int32 SAL_CALL InputStream::readBytes( Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead )
+        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     if( nBytesToRead < 0 )
         throw IOException();
@@ -303,11 +296,13 @@ sal_Int32 SAL_CALL InputStream::readBytes( Sequence< sal_Int8 >& rData, sal_Int3
 }
 
 sal_Int32 SAL_CALL InputStream::readSomeBytes( Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead )
+        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     return readBytes( rData, nMaxBytesToRead );
 }
 
 void SAL_CALL InputStream::skipBytes( sal_Int32 nBytesToSkip )
+        throw (NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception)
 {
     if( nBytesToSkip < 0 )
         throw IOException();
@@ -321,20 +316,20 @@ void SAL_CALL InputStream::skipBytes( sal_Int32 nBytesToSkip )
     }
 }
 
-sal_Int32 SAL_CALL InputStream::available()
+sal_Int32 SAL_CALL InputStream::available() throw (NotConnectedException, IOException, RuntimeException, std::exception)
 {
     updateBuffer();
     return maBuffer.getLength() - mnBufferPos;
 }
 
-void SAL_CALL InputStream::closeInput()
+void SAL_CALL InputStream::closeInput() throw (NotConnectedException, IOException, RuntimeException, std::exception)
 {
     mxTextStrm->closeInput();
 }
 
 // private --------------------------------------------------------------------
 
-void InputStream::updateBuffer()
+void InputStream::updateBuffer() throw (IOException, RuntimeException)
 {
     while( (mnBufferPos >= maBuffer.getLength()) && !mxTextStrm->isEOF() )
     {
@@ -372,12 +367,12 @@ void InputStream::updateBuffer()
     }
 }
 
-OString InputStream::readToElementBegin()
+OString InputStream::readToElementBegin() throw (IOException, RuntimeException)
 {
     return OUStringToOString( mxTextStrm->readString( maOpeningBracket, false ), RTL_TEXTENCODING_ISO_8859_1 );
 }
 
-OString InputStream::readToElementEnd()
+OString InputStream::readToElementEnd() throw (IOException, RuntimeException)
 {
     OString aText = OUStringToOString( mxTextStrm->readString( maClosingBracket, false ), RTL_TEXTENCODING_ISO_8859_1 );
     OSL_ENSURE( aText.endsWith(">"), "InputStream::readToElementEnd - missing closing bracket of XML element" );

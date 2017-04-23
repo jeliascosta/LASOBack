@@ -115,7 +115,7 @@ void ScHeaderControl::DoPaint( SCCOLROW nStart, SCCOLROW nEnd )
     bool bLayoutRTL = IsLayoutRTL();
     long nLayoutSign = bLayoutRTL ? -1 : 1;
 
-    tools::Rectangle aRect( Point(0,0), GetOutputSizePixel() );
+    Rectangle aRect( Point(0,0), GetOutputSizePixel() );
     if ( bVertical )
     {
         aRect.Top() = GetScrPos( nStart )-nLayoutSign;      // extra pixel for line at top of selection
@@ -224,22 +224,22 @@ void ScHeaderControl::DrawShadedRect( long nStart, long nEnd, const Color& rBase
     SetLineColor();
     SetFillColor( aOuter );
     if (bVertical)
-        DrawRect( tools::Rectangle( 0, nStart, nCenterPos-1, nEnd ) );
+        DrawRect( Rectangle( 0, nStart, nCenterPos-1, nEnd ) );
     else
-        DrawRect( tools::Rectangle( nStart, 0, nEnd, nCenterPos-1 ) );
+        DrawRect( Rectangle( nStart, 0, nEnd, nCenterPos-1 ) );
     SetFillColor( aCenter );
     if (bVertical)
-        DrawRect( tools::Rectangle( nCenterPos, nStart, nCenterPos, nEnd ) );
+        DrawRect( Rectangle( nCenterPos, nStart, nCenterPos, nEnd ) );
     else
-        DrawRect( tools::Rectangle( nStart, nCenterPos, nEnd, nCenterPos ) );
+        DrawRect( Rectangle( nStart, nCenterPos, nEnd, nCenterPos ) );
     SetFillColor( aInner );
     if (bVertical)
-        DrawRect( tools::Rectangle( nCenterPos+1, nStart, nBarSize-1, nEnd ) );
+        DrawRect( Rectangle( nCenterPos+1, nStart, nBarSize-1, nEnd ) );
     else
-        DrawRect( tools::Rectangle( nStart, nCenterPos+1, nEnd, nBarSize-1 ) );
+        DrawRect( Rectangle( nStart, nCenterPos+1, nEnd, nBarSize-1 ) );
 }
 
-void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect )
+void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect )
 {
     // It is important for VCL to have few calls, that is why the outer lines are
     // grouped together
@@ -336,7 +336,7 @@ void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
 
     //  background is different for entry area and behind the entries
 
-    tools::Rectangle aFillRect;
+    Rectangle aFillRect;
     SetLineColor();
 
     if ( nLineEnd * nLayoutSign >= nInitScrPos * nLayoutSign )
@@ -346,9 +346,9 @@ void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
             // high contrast: single-color background
             SetFillColor( rStyleSettings.GetFaceColor() );
             if ( bVertical )
-                aFillRect = tools::Rectangle( 0, nInitScrPos, nBarSize-1, nLineEnd );
+                aFillRect = Rectangle( 0, nInitScrPos, nBarSize-1, nLineEnd );
             else
-                aFillRect = tools::Rectangle( nInitScrPos, 0, nLineEnd, nBarSize-1 );
+                aFillRect = Rectangle( nInitScrPos, 0, nLineEnd, nBarSize-1 );
             DrawRect( aFillRect );
         }
         else
@@ -362,9 +362,9 @@ void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
     {
         SetFillColor( SC_MOD()->GetColorConfig().GetColorValue(svtools::APPBACKGROUND).nColor );
         if ( bVertical )
-            aFillRect = tools::Rectangle( 0, nLineEnd+nLayoutSign, nBarSize-1, nPEnd );
+            aFillRect = Rectangle( 0, nLineEnd+nLayoutSign, nBarSize-1, nPEnd );
         else
-            aFillRect = tools::Rectangle( nLineEnd+nLayoutSign, 0, nPEnd, nBarSize-1 );
+            aFillRect = Rectangle( nLineEnd+nLayoutSign, 0, nPEnd, nBarSize-1 );
         DrawRect( aFillRect );
     }
 
@@ -381,9 +381,9 @@ void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
                     SetLineColor();
                     SetFillColor( COL_LIGHTGRAY );
                     if (bVertical)
-                        DrawRect( tools::Rectangle( 0, nTransStart, nBarSize-1, nTransEnd ) );
+                        DrawRect( Rectangle( 0, nTransStart, nBarSize-1, nTransEnd ) );
                     else
-                        DrawRect( tools::Rectangle( nTransStart, 0, nTransEnd, nBarSize-1 ) );
+                        DrawRect( Rectangle( nTransStart, 0, nTransEnd, nBarSize-1 ) );
                 }
             }
             else
@@ -450,11 +450,11 @@ void ScHeaderControl::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
                     //  The window's background color (SetBackground) has to be the background
                     //  of the cell area, for the contrast comparison in DrawSelectionBackground.
 
-                    tools::Rectangle aTransRect;
+                    Rectangle aTransRect;
                     if (bVertical)
-                        aTransRect = tools::Rectangle( 0, nTransStart, nBarSize-1, nTransEnd );
+                        aTransRect = Rectangle( 0, nTransStart, nBarSize-1, nTransEnd );
                     else
-                        aTransRect = tools::Rectangle( nTransStart, 0, nTransEnd, nBarSize-1 );
+                        aTransRect = Rectangle( nTransStart, 0, nTransEnd, nBarSize-1 );
                     SetBackground( Color( rStyleSettings.GetFaceColor() ) );
                     DrawSelectionBackground( aTransRect, 0, true, false );
                     SetBackground();
@@ -626,13 +626,13 @@ bool ScHeaderControl::IsSelectionAllowed(SCCOLROW nPos) const
         {
             // row header
             SCROW nRPos = static_cast<SCROW>(nPos);
-            bCellsProtected = pDoc->HasAttrib(0, nRPos, nTab, MAXCOL, nRPos, nTab, HasAttrFlags::Protected);
+            bCellsProtected = pDoc->HasAttrib(0, nRPos, nTab, MAXCOL, nRPos, nTab, HASATTR_PROTECTED);
         }
         else
         {
             // column header
             SCCOL nCPos = static_cast<SCCOL>(nPos);
-            bCellsProtected = pDoc->HasAttrib(nCPos, 0, nTab, nCPos, MAXROW, nTab, HasAttrFlags::Protected);
+            bCellsProtected = pDoc->HasAttrib(nCPos, 0, nTab, nCPos, MAXROW, nTab, HASATTR_PROTECTED);
         }
 
         bool bSelProtected   = pProtect->isOptionEnabled(ScTableProtection::SELECT_LOCKED_CELLS);
@@ -708,7 +708,7 @@ void ScHeaderControl::MouseButtonDown( const MouseEvent& rMEvt )
     {
         pSelEngine->SetWindow( this );
         Point aPoint;
-        tools::Rectangle aVis( aPoint,GetOutputSizePixel() );
+        Rectangle aVis( aPoint,GetOutputSizePixel() );
         if (bVertical)
         {
             aVis.Left() = LONG_MIN;
@@ -949,7 +949,7 @@ void ScHeaderControl::ShowDragHelp()
 
         Point aMousePos = OutputToScreenPixel(GetPointerPosPixel());
 
-        tools::Rectangle aRect;
+        Rectangle aRect;
         QuickHelpFlags nAlign;
         if (!bVertical)
         {

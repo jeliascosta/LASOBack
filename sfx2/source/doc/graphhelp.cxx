@@ -90,11 +90,11 @@ void* GraphicHelper::getEnhMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta )
         OUString aMetaURL = aTempFile.GetURL();
         OString aWinFile = OUStringToOString( aMetaFile, osl_getThreadTextEncoding() );
 
-        SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aMetaURL, StreamMode::STD_READWRITE );
+        SvStream* pStream = ::utl::UcbStreamHelper::CreateStream( aMetaURL, STREAM_STD_READWRITE );
         if ( pStream )
         {
             Graphic aGraph( *pGDIMeta );
-            bool bFailed = GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::EMF );
+            sal_Bool bFailed = (sal_Bool)GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::EMF );
             pStream->Flush();
             delete pStream;
 
@@ -118,17 +118,17 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
 #ifdef _WIN32
     if ( pGDIMeta )
     {
-        SvMemoryStream pStream( 65535, 65535 );
+        SvMemoryStream* pStream = new SvMemoryStream( 65535, 65535 );
         Graphic aGraph( *pGDIMeta );
-        bool bFailed = GraphicConverter::Export( pStream, aGraph, ConvertDataFormat::WMF );
-        pStream.Flush();
+        sal_Bool bFailed = (sal_Bool)GraphicConverter::Export( *pStream, aGraph, ConvertDataFormat::WMF );
+        pStream->Flush();
         if ( !bFailed )
         {
-            sal_Int32 nLength = pStream.Seek( STREAM_SEEK_TO_END );
+            sal_Int32 nLength = pStream->Seek( STREAM_SEEK_TO_END );
             if ( nLength > 22 )
             {
                 HMETAFILE hMeta = SetMetaFileBitsEx( nLength - 22,
-                                ( static_cast< const unsigned char*>( pStream.GetData() ) ) + 22 );
+                                ( reinterpret_cast< const unsigned char*>( pStream->GetData() ) ) + 22 );
 
                 if ( hMeta )
                 {
@@ -136,13 +136,13 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
 
                     if ( hMemory )
                     {
-                           METAFILEPICT* pMF = static_cast<METAFILEPICT*>(GlobalLock( hMemory ));
+                           METAFILEPICT* pMF = (METAFILEPICT*)GlobalLock( hMemory );
 
                            pMF->hMF = hMeta;
                            pMF->mm = MM_ANISOTROPIC;
 
                         MapMode aMetaMode = pGDIMeta->GetPrefMapMode();
-                        MapMode aWinMode( MapUnit::Map100thMM );
+                        MapMode aWinMode( MAP_100TH_MM );
 
                         if ( aWinMode == pGDIMeta->GetPrefMapMode() )
                         {
@@ -159,13 +159,15 @@ void* GraphicHelper::getWinMetaFileFromGDI_Impl( const GDIMetaFile* pGDIMeta, co
                         }
 
                         GlobalUnlock( hMemory );
-                        pResult = static_cast<void*>(hMemory);
+                        pResult = (void*)hMemory;
                     }
                     else
                            DeleteMetaFile( hMeta );
                 }
             }
         }
+
+        delete pStream;
     }
 #endif
 
@@ -189,14 +191,14 @@ bool GraphicHelper::getThumbnailFormatFromGDI_Impl(GDIMetaFile* pMetaFile, const
 
     BitmapEx aResultBitmap;
 
-    bResult = pMetaFile->CreateThumbnail(aResultBitmap, BmpConversion::N8BitColors, BmpScaleFlag::Default);
+    bResult = pMetaFile->CreateThumbnail(aResultBitmap, 256, BMP_CONVERSION_8BIT_COLORS, BmpScaleFlag::Default);
 
     if (!bResult || aResultBitmap.IsEmpty())
         return false;
 
     GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
 
-    if (rFilter.compressAsPNG(aResultBitmap, *pStream.get()) != GRFILTER_OK)
+    if (rFilter.compressAsPNG(aResultBitmap, *pStream.get(), 9) != GRFILTER_OK)
         return false;
 
     pStream->Flush();

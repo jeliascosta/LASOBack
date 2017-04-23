@@ -46,7 +46,7 @@ private:
 public:
     SvxTabStop();
     explicit SvxTabStop( const sal_Int32 nPos,
-                const SvxTabAdjust eAdjst = SvxTabAdjust::Left,
+                const SvxTabAdjust eAdjst = SVX_TAB_ADJUST_LEFT,
                 const sal_Unicode cDec = cDfltDecimalChar,
                 const sal_Unicode cFil = cDfltFillChar );
 
@@ -104,7 +104,7 @@ public:
     explicit SvxTabStopItem( sal_uInt16 nWhich  );
     SvxTabStopItem( const sal_uInt16 nTabs,
                     const sal_uInt16 nDist,
-                    const SvxTabAdjust eAdjst /*= SvxTabAdjust::Default*/,
+                    const SvxTabAdjust eAdjst /*= SVX_TAB_ADJUST_DEFAULT*/,
                     sal_uInt16 nWhich  );
     SvxTabStopItem( const SvxTabStopItem& rTSI );
 
@@ -142,9 +142,9 @@ public:
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create( SvStream&, sal_uInt16 ) const override;

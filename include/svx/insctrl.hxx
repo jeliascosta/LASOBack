@@ -34,7 +34,7 @@ public:
     SFX_DECL_STATUSBAR_CONTROL();
 
     SvxInsertStatusBarControl( sal_uInt16 nSlotId, sal_uInt16 nId, StatusBar& rStb );
-    virtual ~SvxInsertStatusBarControl() override;
+    virtual ~SvxInsertStatusBarControl();
 
 private:
     bool    bInsert;

@@ -24,31 +24,25 @@
 #include <rschash.hxx>
 #include <rscclobj.hxx>
 #include <rsc/rscsfx.hxx>
-#include <o3tl/typed_flags_set.hxx>
-#include <tools/resid.hxx>
 
-enum class RSCVAR {
-    NONE        = 0x0000,
-    Pointer     = 0x0001,
-    Hidden      = 0x0002,
-    NoDataInst  = 0x0004,
-    NoRc        = 0x0008,
-    SvDynamic   = 0x0010,
-    NoEnum      = 0x0020
-};
-namespace o3tl {
-    template<> struct typed_flags<RSCVAR> : is_typed_flags<RSCVAR, 0x007f> {};
-}
+typedef sal_uInt32 RSCVAR;
+#define VAR_POINTER     0x0001
+#define VAR_HIDDEN      0x0002
+#define VAR_NODATAINST  0x0004
+#define VAR_NORC        0x0008
+#define VAR_SVDYNAMIC   0x0010
+#define VAR_NOENUM      0x0020
+#define VAR_EXTENDABLE  0x0040  /* class derivation can all be given */
 
 class RscTop : public RefNode
 {
     RscTop *        pSuperClass;
     RSCINST         aDfltInst;
-    RESOURCE_TYPE   nTypId;
+    sal_uInt32          nTypId;
     RscTop *        pRefClass;
 
 protected:
-                    RscTop( Atom nId, RESOURCE_TYPE nTypIdent,
+                    RscTop( Atom nId, sal_uInt32 nTypIdent,
                             RscTop * pSuperCl = nullptr );
 
 public:
@@ -59,7 +53,7 @@ public:
             RscTop* GetSuperClass() const
                     { return pSuperClass; }
                     // returns the type identifier
-            RESOURCE_TYPE GetTypId() const
+            sal_uInt32  GetTypId() const
                     { return nTypId; };
                     // returns the super class
             bool    InHierarchy( RscTop * pClass );
@@ -67,7 +61,7 @@ public:
                                 const OString& rParType );
             RscTop* GetRefClass() const { return pRefClass; }
     virtual RSCCLASS_TYPE GetClassType() const = 0;
-            RSCINST const & GetDefault();
+            RSCINST GetDefault();
 
                     // preparation fro the destructor call
                     // given that classes can have mutual dependencies,
@@ -78,7 +72,7 @@ public:
     virtual RscTop* GetTypeClass() const;
 
                     // returns the class size in bytes
-    virtual sal_uInt32  Size() const;
+    virtual sal_uInt32  Size();
 
                     // returns the reference
     virtual ERRTYPE GetRef( const RSCINST & rInst, RscId * );
@@ -88,8 +82,18 @@ public:
 
                     // sets the variable
     virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
+                                 RSCINST * pDflt,
+                                 RSCVAR nVarType, SfxStyleItem nMask,
+                                 Atom nDataBaseName = InvalidAtom );
+
+    virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
+                                 RSCINST * pDflt,
+                                 RSCVAR nVarType, SfxSlotInfo nMask,
+                                 Atom nDataBaseName = InvalidAtom );
+
+    virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
                                  RSCINST * pDflt = nullptr,
-                                 RSCVAR nVarType = RSCVAR::NONE, sal_uInt32 nMask = 0,
+                                 RSCVAR nVarType = 0, sal_uInt32 nMask = 0,
                                  Atom nDataBaseName = InvalidAtom );
 
                     // enumerate all variables
@@ -179,7 +183,7 @@ public:
                     // sets all default values
     virtual void    SetToDefault( const RSCINST & rInst );
 
-                    // whether input is equal to default
+                    // wether input is equal to default
     virtual bool    IsDefault( const RSCINST & rInst );
 
                     // sets value to default
@@ -204,9 +208,9 @@ public:
                               RscTypCont * pTC, sal_uInt32 nTab,const char * );
     virtual ERRTYPE WriteRcHeader( const RSCINST & rInst, RscWriteRc & aMem,
                                    RscTypCont * pTC, const RscId & aId,
-                                    sal_uInt32 nDeep );
+                                    sal_uInt32 nDeep, bool bExtra );
     virtual ERRTYPE WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32 nDeep );
+                             RscTypCont * pTC, sal_uInt32 nDeep, bool bExtra );
 };
 
 #endif // INCLUDED_RSC_INC_RSCTOP_HXX

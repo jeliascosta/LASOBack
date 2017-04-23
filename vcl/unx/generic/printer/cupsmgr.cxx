@@ -150,7 +150,7 @@ static const char* setPasswordCallback( const char* pIn )
     const char* pRet = nullptr;
 
     PrinterInfoManager& rMgr = PrinterInfoManager::get();
-    if( rMgr.getType() == PrinterInfoManager::Type::CUPS ) // sanity check
+    if( rMgr.getType() == PrinterInfoManager::CUPS ) // sanity check
         pRet = static_cast<CUPSManager&>(rMgr).authenticateUser( pIn );
     return pRet;
 }
@@ -179,7 +179,7 @@ static void run_dest_thread_stub( void* pThis )
 }
 
 CUPSManager::CUPSManager() :
-        PrinterInfoManager( PrinterInfoManager::Type::CUPS ),
+        PrinterInfoManager( CUPS ),
         m_nDests( 0 ),
         m_pDests( nullptr ),
         m_bNewDests( false ),
@@ -540,11 +540,13 @@ void CUPSManager::setupJobContextData( JobData& rData )
 
 FILE* CUPSManager::startSpool( const OUString& rPrintername, bool bQuickCommand )
 {
-    SAL_INFO( "vcl.unx.print", "startSpool: " << rPrintername << " " << (bQuickCommand ? "true" : "false") );
+    OSL_TRACE( "startSpool: %s, %s",
+               OUStringToOString( rPrintername, RTL_TEXTENCODING_UTF8 ).getStr(),
+              bQuickCommand ? "true" : "false" );
 
     if( m_aCUPSDestMap.find( rPrintername ) == m_aCUPSDestMap.end() )
     {
-        SAL_INFO( "vcl.unx.print", "defer to PrinterInfoManager::startSpool" );
+        OSL_TRACE( "defer to PrinterInfoManager::startSpool" );
         return PrinterInfoManager::startSpool( rPrintername, bQuickCommand );
     }
 
@@ -617,7 +619,11 @@ void CUPSManager::getOptionsFromDocumentSetup( const JobData& rJob, bool bBanner
 
 bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTitle, FILE* pFile, const JobData& rDocumentJobData, bool bBanner, const OUString& rFaxNumber )
 {
-    SAL_INFO( "vcl.unx.print", "endSpool: " << rPrintername << "," << rJobTitle << " copy count = " << rDocumentJobData.m_nCopies );
+    OSL_TRACE( "endSpool: %s, %s, copy count = %d",
+               OUStringToOString( rPrintername, RTL_TEXTENCODING_UTF8 ).getStr(),
+               OUStringToOString( rJobTitle, RTL_TEXTENCODING_UTF8 ).getStr(),
+               rDocumentJobData.m_nCopies
+               );
 
     int nJobID = 0;
 
@@ -627,7 +633,7 @@ bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTi
         m_aCUPSDestMap.find( rPrintername );
     if( dest_it == m_aCUPSDestMap.end() )
     {
-        SAL_INFO( "vcl.unx.print", "defer to PrinterInfoManager::endSpool" );
+        OSL_TRACE( "defer to PrinterInfoManager::endSpool" );
         return PrinterInfoManager::endSpool( rPrintername, rJobTitle, pFile, rDocumentJobData, bBanner, rFaxNumber );
     }
 
@@ -664,7 +670,7 @@ bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTi
                 "    option " << pOptions[n].name << "=" << pOptions[n].value);
 #if OSL_DEBUG_LEVEL > 1
         OString aCmd( "cp " );
-        aCmd = aCmd + it->second.getStr();
+        aCmd = aCmd + files.front();
         aCmd = aCmd + OString( " $HOME/cupsprint.ps" );
         system( aCmd.getStr() );
 #endif
@@ -676,6 +682,11 @@ bool CUPSManager::endSpool( const OUString& rPrintername, const OUString& rJobTi
     }
 
     return nJobID != 0;
+}
+
+void CUPSManager::changePrinterInfo( const OUString& rPrinter, const PrinterInfo& rNewInfo )
+{
+    PrinterInfoManager::changePrinterInfo( rPrinter, rNewInfo );
 }
 
 bool CUPSManager::checkPrintersChanged( bool bWait )
@@ -833,7 +844,7 @@ namespace
 
     public:
         RTSPWDialog(const OString& rServer, const OString& rUserName, vcl::Window* pParent);
-        virtual ~RTSPWDialog() override;
+        virtual ~RTSPWDialog();
         virtual void dispose() override;
         OString getUserName() const;
         OString getPassword() const;

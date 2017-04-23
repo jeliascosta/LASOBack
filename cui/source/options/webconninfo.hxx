@@ -1,3 +1,4 @@
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
  * This file is part of the LibreOffice project.
  *
@@ -22,6 +23,8 @@
 #include <vcl/dialog.hxx>
 #include <vcl/fixed.hxx>
 #include <svtools/simptabl.hxx>
+#include <svtools/stdctrl.hxx>
+
 
 namespace svx
 {
@@ -47,17 +50,17 @@ namespace svx
         VclPtr<PushButton>    m_pChangeBtn;
         sal_Int32      m_nPos;
 
-        DECL_LINK( HeaderBarClickedHdl, SvSimpleTable*, void );
-        DECL_LINK( RemovePasswordHdl, Button*, void );
-        DECL_LINK( RemoveAllPasswordsHdl, Button*, void );
-        DECL_LINK( ChangePasswordHdl, Button*, void );
-        DECL_LINK( EntrySelectedHdl, SvTreeListBox*, void );
+        DECL_LINK_TYPED( HeaderBarClickedHdl, SvSimpleTable*, void );
+        DECL_LINK_TYPED( RemovePasswordHdl, Button*, void );
+        DECL_LINK_TYPED( RemoveAllPasswordsHdl, Button*, void );
+        DECL_LINK_TYPED( ChangePasswordHdl, Button*, void );
+        DECL_LINK_TYPED( EntrySelectedHdl, SvTreeListBox*, void );
 
         void FillPasswordList();
 
     public:
         explicit WebConnectionInfoDialog( vcl::Window* pParent );
-        virtual ~WebConnectionInfoDialog() override;
+        virtual ~WebConnectionInfoDialog();
         virtual void dispose() override;
     };
 

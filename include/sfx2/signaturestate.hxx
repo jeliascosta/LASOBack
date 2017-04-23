@@ -20,9 +20,9 @@
 #ifndef INCLUDED_SFX2_SIGNATURESTATE_HXX
 #define INCLUDED_SFX2_SIGNATURESTATE_HXX
 
+// xmlsec05, check with SFX team
 enum class SignatureState
 {
-    // FIXME: Do these values have to be these, and given at all, or is this just cargo cult?
     UNKNOWN       = 0xffff, // used to be -1 when this was a sal_uInt16
     NOSIGNATURES  = 0,
     OK            = 1,
@@ -31,8 +31,8 @@ enum class SignatureState
     INVALID       = 3,
     // signature is OK, but certificate could not be validated
     NOTVALIDATED  = 4,
-    // signature and certificate are ok, but not all files are signed, as it was the case in
-    // OOo 2.x - OOo 3.1.1. This state is only used together with document signatures.
+    //signatur and certificate are ok,but not al files are signed, as was the case in
+    //OOo 2.x - OOo 3.1.1. This state is only used  together with document signatures.
     PARTIAL_OK    = 5
 };
 

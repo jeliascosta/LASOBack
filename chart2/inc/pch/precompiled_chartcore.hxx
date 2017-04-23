@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <boost/checked_delete.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <osl/conditn.hxx>
 #include <osl/diagnose.h>
@@ -72,6 +73,7 @@
 #include <vcl/virdev.hxx>
 #include <vcl/wall.hxx>
 #include <ChartModel.hxx>
+#include <GL/glew.h>
 #include <basegfx/basegfxdllapi.h>
 #include <basegfx/matrix/b3dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
@@ -167,7 +169,6 @@
 #include <cppuhelper/weak.hxx>
 #include <editeng/editengdllapi.h>
 #include <editeng/unoprnms.hxx>
-#include <epoxy/gl.h>
 #include <i18nlangtag/i18nlangtagdllapi.h>
 #include <i18nlangtag/lang.h>
 #include <i18nlangtag/languagetag.hxx>

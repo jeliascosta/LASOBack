@@ -35,7 +35,9 @@
 #include <com/sun/star/sdb/XRowSetApproveBroadcaster.hpp>
 #include <com/sun/star/sdbc/ResultSetType.hpp>
 #include <com/sun/star/sdbcx/XDeleteRows.hpp>
+#include <cppuhelper/compbase11.hxx>
 #include <comphelper/propertycontainer.hxx>
+#include <cppuhelper/implbase5.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include "RowSetRow.hxx"
 #include "RowSetCacheIterator.hxx"
@@ -55,16 +57,17 @@ namespace dbaccess
         friend class ORowSetClone;
         friend class ORowSetCacheIterator;
 
-        typedef std::vector< TORowSetOldRowHelperRef >    TOldRowSetRows;
+        typedef ::std::vector< TORowSetOldRowHelperRef >    TOldRowSetRows;
 
-        std::map<sal_Int32,sal_Int32>                       m_aKeyColumns;
+        ::std::map<sal_Int32,sal_Int32>                       m_aKeyColumns;
         //the set can be static, bookmarkable or keyset
         css::uno::WeakReference< css::sdbc::XResultSet>       m_xSet;
         css::uno::Reference< css::sdbc::XResultSetMetaData >  m_xMetaData; // must be before m_aInsertRow
         css::uno::Reference< css::uno::XComponentContext>     m_aContext;
 
-        rtl::Reference<OCacheSet>                             m_xCacheSet; // is a bookmarkable, keyset or static resultset
+        css::uno::Reference< css::sdbc::XRow>                 m_xCacheSet;
 
+        OCacheSet*                      m_pCacheSet;            // is a bookmarkable, keyset or static resultset
         ORowSetMatrix*                  m_pMatrix;              // represent the table struct
         ORowSetMatrix::iterator         m_aMatrixIter;          // represent a row of the table
         ORowSetMatrix::iterator         m_aMatrixEnd;           // present the row behind the last row of the table
@@ -101,11 +104,11 @@ namespace dbaccess
         void updateValue(sal_Int32 columnIndex
                         ,const connectivity::ORowSetValue& x
                         ,ORowSetValueVector::Vector& io_aRow
-                        ,std::vector<sal_Int32>& o_ChangedColumns
+                        ,::std::vector<sal_Int32>& o_ChangedColumns
                         );
 
         void impl_updateRowFromCache_throw(ORowSetValueVector::Vector& io_aRow
-                                   ,std::vector<sal_Int32>& o_ChangedColumns
+                                   ,::std::vector<sal_Int32>& o_ChangedColumns
                                    );
         // checks and set the flags isAfterLast isLast and position when afterlast is true
         void checkPositionFlags();
@@ -160,13 +163,13 @@ namespace dbaccess
         sal_Int32 hashBookmark( const css::uno::Any& bookmark );
 
     // css::sdbc::XRowUpdate
-        void updateCharacterStream( sal_Int32 columnIndex, const css::uno::Reference< css::io::XInputStream >& x, sal_Int32 length,ORowSetValueVector::Vector& io_aRow,std::vector<sal_Int32>& o_ChangedColumns
+        void updateCharacterStream( sal_Int32 columnIndex, const css::uno::Reference< css::io::XInputStream >& x, sal_Int32 length,ORowSetValueVector::Vector& io_aRow,::std::vector<sal_Int32>& o_ChangedColumns
              );
-        void updateObject( sal_Int32 columnIndex, const css::uno::Any& x,ORowSetValueVector::Vector& io_aRow ,std::vector<sal_Int32>& o_ChangedColumns);
-        void updateNumericObject( sal_Int32 columnIndex, const css::uno::Any& x, sal_Int32 scale,ORowSetValueVector::Vector& io_aRow ,std::vector<sal_Int32>& o_ChangedColumns);
+        void updateObject( sal_Int32 columnIndex, const css::uno::Any& x,ORowSetValueVector::Vector& io_aRow ,::std::vector<sal_Int32>& o_ChangedColumns);
+        void updateNumericObject( sal_Int32 columnIndex, const css::uno::Any& x, sal_Int32 scale,ORowSetValueVector::Vector& io_aRow ,::std::vector<sal_Int32>& o_ChangedColumns);
         void updateNull(sal_Int32 columnIndex
                         ,ORowSetValueVector::Vector& io_aRow
-                        ,std::vector<sal_Int32>& o_ChangedColumns
+                        ,::std::vector<sal_Int32>& o_ChangedColumns
                         );
 
     // css::sdbc::XResultSet
@@ -188,15 +191,15 @@ namespace dbaccess
         bool rowInserted(  );
 
     // css::sdbc::XResultSetUpdate
-        bool insertRow(std::vector< css::uno::Any >& o_aBookmarks);
+        bool insertRow(::std::vector< css::uno::Any >& o_aBookmarks);
         void resetInsertRow(bool _bClearInsertRow);
 
-        void updateRow( ORowSetMatrix::iterator& _rUpdateRow,std::vector< css::uno::Any >& o_aBookmarks );
+        void updateRow( ORowSetMatrix::iterator& _rUpdateRow,::std::vector< css::uno::Any >& o_aBookmarks );
         bool deleteRow();
         void cancelRowUpdates(  );
         void moveToInsertRow(  );
 
-        const std::map<sal_Int32,sal_Int32>& getKeyColumns() const { return m_aKeyColumns; }
+        const ::std::map<sal_Int32,sal_Int32>& getKeyColumns() const { return m_aKeyColumns; }
         bool isResultSetChanged() const;
         void reset(const css::uno::Reference< css::sdbc::XResultSet>& _xDriverSet);
     };

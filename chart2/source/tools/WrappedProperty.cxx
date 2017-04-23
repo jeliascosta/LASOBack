@@ -52,12 +52,14 @@ Any WrappedProperty::convertOuterToInnerValue( const Any& rOuterValue ) const
 }
 
 void WrappedProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if(xInnerPropertySet.is())
         xInnerPropertySet->setPropertyValue( this->getInnerName(), this->convertOuterToInnerValue( rOuterValue ) );
 }
 
 Any WrappedProperty::getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
     if( xInnerPropertySet.is() )
@@ -69,6 +71,7 @@ Any WrappedProperty::getPropertyValue( const Reference< beans::XPropertySet >& x
 }
 
 void WrappedProperty::setPropertyToDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException)
 {
     if( xInnerPropertyState.is() && !this->getInnerName().isEmpty() )
         xInnerPropertyState->setPropertyToDefault(this->getInnerName());
@@ -80,6 +83,7 @@ void WrappedProperty::setPropertyToDefault( const Reference< beans::XPropertySta
 }
 
 Any WrappedProperty::getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
     if( xInnerPropertyState.is() )
@@ -91,6 +95,7 @@ Any WrappedProperty::getPropertyDefault( const Reference< beans::XPropertyState 
 }
 
 beans::PropertyState WrappedProperty::getPropertyState( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (beans::UnknownPropertyException, uno::RuntimeException)
 {
     beans::PropertyState aState = beans::PropertyState_DIRECT_VALUE;
     OUString aInnerName( this->getInnerName() );

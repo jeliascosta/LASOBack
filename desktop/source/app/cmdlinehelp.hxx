@@ -20,12 +20,26 @@
 #ifndef INCLUDED_DESKTOP_SOURCE_APP_CMDLINEHELP_HXX
 #define INCLUDED_DESKTOP_SOURCE_APP_CMDLINEHELP_HXX
 
-#include <rtl/ustring.hxx>
+#include <vcl/dialog.hxx>
+#include <vcl/fixed.hxx>
+#include <vcl/button.hxx>
 
 namespace desktop
 {
     void displayCmdlineHelp( OUString const & unknown );
     void displayVersion();
+#ifndef UNX
+    class CmdlineHelpDialog : public ModalDialog
+    {
+    public:
+        CmdlineHelpDialog();
+
+        VclPtr<FixedText>   m_pftHead;
+        VclPtr<FixedText>   m_pftLeft;
+        VclPtr<FixedText>   m_pftRight;
+        VclPtr<FixedText>   m_pftBottom;
+    };
+#endif
 }
 
 #endif

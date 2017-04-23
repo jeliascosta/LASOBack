@@ -38,14 +38,14 @@ private:
     const OUString&         rName;
 
     void                    Reset();
-    DECL_LINK( SelectObjectHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( SelectObjectHdl, SvTreeListBox*, void );
 
 public:
                 SdInsertPagesObjsDlg( vcl::Window* pParent,
                                 const SdDrawDocument* pDoc,
                                 SfxMedium* pSfxMedium,
                                 const OUString& rFileName );
-                virtual ~SdInsertPagesObjsDlg() override;
+                virtual ~SdInsertPagesObjsDlg();
     virtual void dispose() override;
 
     /** returns the list

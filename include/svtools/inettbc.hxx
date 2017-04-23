@@ -36,7 +36,7 @@ friend class SvtURLBox_Impl;
     OUString                        aBaseURL;
     OUString                        aPlaceHolder;
     rtl::Reference< SvtMatchContext_Impl > pCtx;
-    std::unique_ptr<SvtURLBox_Impl> pImpl;
+    SvtURLBox_Impl*                 pImp;
     INetProtocol                    eSmartProtocol;
     bool                            bAutoCompleteMode   : 1;
     bool                            bOnlyDirectories    : 1;
@@ -48,26 +48,27 @@ friend class SvtURLBox_Impl;
     SVT_DLLPRIVATE bool             ProcessKey( const vcl::KeyCode& rCode );
     SVT_DLLPRIVATE void             TryAutoComplete();
     SVT_DLLPRIVATE void             UpdatePicklistForSmartProtocol_Impl();
-    DECL_DLLPRIVATE_LINK(     AutoCompleteHdl_Impl, Edit&, void );
+    DECL_DLLPRIVATE_LINK_TYPED(     AutoCompleteHdl_Impl, Edit&, void );
     SVT_DLLPRIVATE void             Init(bool bSetDefaultHelpID);
 
 protected:
-    virtual bool                    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool                    Notify( NotifyEvent& rNEvt ) override;
     virtual void                    Select() override;
+    virtual void                    Modify() override;
     virtual bool                    PreNotify( NotifyEvent& rNEvt ) override;
 
 public:
                                     SvtURLBox( vcl::Window* pParent, INetProtocol eSmart = INetProtocol::NotValid, bool bSetDefaultHelpID = true );
                                     SvtURLBox( vcl::Window* pParent, WinBits _nStyle, INetProtocol eSmart = INetProtocol::NotValid, bool bSetDefaultHelpID = true );
-                                    virtual ~SvtURLBox() override;
+                                    virtual ~SvtURLBox();
     virtual void                    dispose() override;
 
     void                            SetBaseURL( const OUString& rURL );
     const OUString&                 GetBaseURL() const { return aBaseURL; }
     void                            SetOpenHdl( const Link<SvtURLBox*,void>& rLink ) { aOpenHdl = rLink; }
     const Link<SvtURLBox*,void>&    GetOpenHdl() const { return aOpenHdl; }
-    void                            SetOnlyDirectories( bool bDir );
-    void                            SetNoURLSelection( bool bSet );
+    void                            SetOnlyDirectories( bool bDir = true );
+    void                            SetNoURLSelection( bool bSet = true );
     INetProtocol                    GetSmartProtocol() const { return eSmartProtocol; }
     void                            SetSmartProtocol( INetProtocol eProt );
     bool                            IsCtrlOpen()
@@ -81,7 +82,7 @@ public:
 
     void                            SetFilter(const OUString& _sFilter);
 
-    void                     EnableAutocompletion( bool _bEnable )
+    inline void                     EnableAutocompletion( bool _bEnable = true )
                                         { bIsAutoCompleteEnabled = _bEnable; }
     void                            SetPlaceHolder( const OUString& sPlaceHolder )
                                         { aPlaceHolder = sPlaceHolder; }

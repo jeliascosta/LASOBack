@@ -25,7 +25,6 @@
 #include <vcl/msgbox.hxx>
 #include <dbui.hrc>
 #include <com/sun/star/sdb/XColumn.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <helpid.h>
@@ -80,7 +79,7 @@ static void lcl_StoreGreetingsBox(ComboBox& rBox,
     rConfig.SetCurrentGreeting(eType, rBox.GetSelectEntryPos());
 }
 
-IMPL_LINK_NOARG(SwGreetingsHandler, IndividualHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwGreetingsHandler, IndividualHdl_Impl, Button*, void)
 {
     bool bIndividual = m_pPersonalizedCB->IsEnabled() && m_pPersonalizedCB->IsChecked();
     m_pFemaleFT->Enable(bIndividual);
@@ -104,7 +103,7 @@ IMPL_LINK_NOARG(SwGreetingsHandler, IndividualHdl_Impl, Button*, void)
     UpdatePreview();
 }
 
-IMPL_LINK(SwGreetingsHandler, GreetingHdl_Impl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwGreetingsHandler, GreetingHdl_Impl, Button*, pButton, void)
 {
     ScopedVclPtr<SwCustomizeAddressBlockDialog> pDlg(
             VclPtr<SwCustomizeAddressBlockDialog>::Create(pButton, m_rConfigItem,
@@ -113,7 +112,7 @@ IMPL_LINK(SwGreetingsHandler, GreetingHdl_Impl, Button*, pButton, void)
                         SwCustomizeAddressBlockDialog::GREETING_FEMALE ));
     if(RET_OK == pDlg->Execute())
     {
-        ListBox* pToInsert = pButton == m_pMalePB ? m_pMaleLB.get() : m_pFemaleLB.get();
+        ListBox* pToInsert = pButton == m_pMalePB ? m_pMaleLB : m_pFemaleLB;
         pToInsert->SelectEntryPos(pToInsert->InsertEntry(pDlg->GetAddress()));
         if(m_bIsTabPage)
         {
@@ -129,7 +128,7 @@ void    SwGreetingsHandler::UpdatePreview()
     //the base class does nothing
 }
 
-IMPL_LINK(SwMailMergeGreetingsPage, AssignHdl_Impl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwMailMergeGreetingsPage, AssignHdl_Impl, Button*, pButton, void)
 {
     const OUString sPreview(m_pFemaleLB->GetSelectEntry() + "\n" + m_pMaleLB->GetSelectEntry());
     ScopedVclPtr<SwAssignFieldsDialog> pDlg(
@@ -142,15 +141,15 @@ IMPL_LINK(SwMailMergeGreetingsPage, AssignHdl_Impl, Button*, pButton, void)
     }
 }
 
-IMPL_LINK_NOARG(SwMailMergeGreetingsPage, GreetingSelectHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwMailMergeGreetingsPage, GreetingSelectHdl_Impl, Edit&, void)
 {
     UpdatePreview();
 }
-IMPL_LINK_NOARG(SwMailMergeGreetingsPage, GreetingSelectListBoxHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwMailMergeGreetingsPage, GreetingSelectListBoxHdl_Impl, ListBox&, void)
 {
     UpdatePreview();
 }
-IMPL_LINK_NOARG(SwMailMergeGreetingsPage, GreetingSelectComboBoxHdl_Impl, ComboBox&, void)
+IMPL_LINK_NOARG_TYPED(SwMailMergeGreetingsPage, GreetingSelectComboBoxHdl_Impl, ComboBox&, void)
 {
     UpdatePreview();
 }
@@ -251,7 +250,7 @@ SwMailMergeGreetingsPage::SwMailMergeGreetingsPage(SwMailMergeWizard* _pParent)
     get(m_pNeutralCB, "general");
     get(m_pPreviewFI, "previewft");
     get(m_pPreviewWIN, "preview");
-    Size aSize(LogicToPixel(Size(186, 21), MapMode(MapUnit::MapAppFont)));
+    Size aSize(LogicToPixel(Size(186, 21), MapMode(MAP_APPFONT)));
     m_pPreviewWIN->set_width_request(aSize.Width());
     m_pPreviewWIN->set_height_request(aSize.Height());
     get(m_pAssignPB, "assign");
@@ -364,7 +363,7 @@ bool SwMailMergeGreetingsPage::commitPage( ::svt::WizardTypes::CommitPageReason 
     return true;
 }
 
-IMPL_LINK(SwMailMergeGreetingsPage, ContainsHdl_Impl, Button*, pBox, void)
+IMPL_LINK_TYPED(SwMailMergeGreetingsPage, ContainsHdl_Impl, Button*, pBox, void)
 {
     bool bContainsGreeting = static_cast<CheckBox*>(pBox)->IsChecked();
     SwGreetingsHandler::Contains(bContainsGreeting);
@@ -378,7 +377,7 @@ IMPL_LINK(SwMailMergeGreetingsPage, ContainsHdl_Impl, Button*, pBox, void)
     m_pWizard->UpdateRoadmap();
 }
 
-IMPL_LINK(SwMailMergeGreetingsPage, InsertDataHdl_Impl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwMailMergeGreetingsPage, InsertDataHdl_Impl, Button*, pButton, void)
 {
     //if no pButton is given, the first set has to be pre-set
     if(!pButton)
@@ -428,11 +427,20 @@ SwMailBodyDialog::SwMailBodyDialog(vcl::Window* pParent) :
     get(m_pBodyFT, "bodyft");
     get(m_pBodyMLE, "bodymle");
     m_pBodyMLE->SetStyle(m_pBodyMLE->GetStyle() | WB_HSCROLL | WB_VSCROLL | WB_IGNORETAB);
-    Size aSize(LogicToPixel(Size(180, 50), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(180, 50), MAP_APPFONT));
     m_pBodyMLE->set_width_request(aSize.Width());
     m_pBodyMLE->set_height_request(aSize.Height());
     get(m_pOK, "ok");
     m_bIsTabPage = false;
+
+    m_pPersonalizedCB->SetHelpId(   HID_MM_BODY_CB_PERSONALIZED     );
+    m_pFemaleLB->SetHelpId(         HID_MM_BODY_LB_FEMALE           );
+    m_pFemalePB->SetHelpId(         HID_MM_BODY_PB_FEMALE           );
+    m_pMaleLB->SetHelpId(           HID_MM_BODY_LB_MALE             );
+    m_pMalePB->SetHelpId(           HID_MM_BODY_PB_MALE             );
+    m_pFemaleColumnLB->SetHelpId(   HID_MM_BODY_LB_FEMALECOLUMN     );
+    m_pFemaleFieldCB->SetHelpId(    HID_MM_BODY_CB_FEMALEFIELD      );
+    m_pNeutralCB->SetHelpId(        HID_MM_BODY_CB_NEUTRAL          );
 
     m_pGreetingLineCB->SetClickHdl(LINK(this, SwMailBodyDialog, ContainsHdl_Impl));
     Link<Button*,void> aIndividualLink = LINK(this, SwGreetingsHandler, IndividualHdl_Impl);
@@ -482,14 +490,14 @@ void SwMailBodyDialog::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK(SwMailBodyDialog, ContainsHdl_Impl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwMailBodyDialog, ContainsHdl_Impl, Button*, pButton, void)
 {
     CheckBox* pBox = static_cast<CheckBox*>(pButton);
     SwGreetingsHandler::Contains(pBox->IsChecked());
     m_rConfigItem.SetGreetingLine(pBox->IsChecked(), true);
 }
 
-IMPL_LINK_NOARG(SwMailBodyDialog, OKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwMailBodyDialog, OKHdl, Button*, void)
 {
     m_rConfigItem.SetGreetingLine(
                 m_pGreetingLineCB->IsChecked(), false);

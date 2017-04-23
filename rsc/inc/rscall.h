@@ -24,10 +24,9 @@
 #include <rscdef.hxx>
 #include <rschash.hxx>
 #include <rtl/alloc.h>
-#include <o3tl/typed_flags_set.hxx>
 
 /******************* T y p e s *******************************************/
-typedef char * CLASS_DATA;  // Pointer to the data of a class
+typedef char * CLASS_DATA;  // Zeiger auf die Daten einer Klasse
 
 /******************* C l a s s e s   F o r w a r d s *********************/
 class RscCompiler;
@@ -38,29 +37,33 @@ class RscTypCont;
 extern OString* pStdParType;
 extern OString* pStdPar1;
 extern OString* pStdPar2;
+extern OString* pWinParType;
+extern OString* pWinPar1;
+extern OString* pWinPar2;
 extern sal_uInt32       nRefDeep;
+extern sal_uInt32       nRsc_XYMAPMODEId;
+extern sal_uInt32       nRsc_WHMAPMODEId;
+extern sal_uInt32       nRsc_X;
+extern sal_uInt32       nRsc_Y;
+extern sal_uInt32       nRsc_WIDTH;
+extern sal_uInt32       nRsc_HEIGHT;
 extern sal_uInt32       nRsc_DELTALANG;
 extern sal_uInt32       nRsc_DELTASYSTEM;
+extern sal_uInt32       nRsc_EXTRADATA;
 extern AtomContainer*   pHS;
 
 /******************* D e f i n e s ***************************************/
 
-enum class CommandFlags {
-    NONE         = 0x0000,
-    Help         = 0x0001,  // show help
-    NoPrePro     = 0x0002,  // no preprocessor
-    NoSyntax     = 0x0004,  // no parsing
-    NoLink       = 0x0008,  // no linking
-    NoResFile    = 0x0010,  // do not create .res file
-    Define       = 0x0020,  // definitions stated
-    Include      = 0x0040,  // include path extended
-    Preload      = 0x0200,  // preload all resources
-    SrsDefault   = 0x1000,  // always wrote the default
-    NoSysResTest = 0x2000   // do not check the correctness of (bmp, ico, cur)
-};
-namespace o3tl {
-    template<> struct typed_flags<CommandFlags> : is_typed_flags<CommandFlags, 0x327f> {};
-}
+#define HELP_FLAG         0x0001  // Hilfe anzeigen
+#define NOPREPRO_FLAG     0x0002  // kein Preprozesor
+#define NOSYNTAX_FLAG     0x0004  // keine Syntaxanalyse
+#define NOLINK_FLAG       0x0008  // nicht linken
+#define NORESFILE_FLAG    0x0010  // keine .res-Datei erzeugen
+#define DEFINE_FLAG       0x0020  // es wurde Definitionen angegeben
+#define INCLUDE_FLAG      0x0040  // der Include-Pfad wurde erweitert
+#define PRELOAD_FLAG      0x0200  // Alle Resourcen Preloaden
+#define SRSDEFAULT_FLAG   0x1000  // immer der Default geschrieben
+#define NOSYSRESTEST_FLAG 0x2000  // ueberprueft nicht die Richtigkeit von (bmp, ico, cur)
 
 
 /******************* T y p e s *******************************************/
@@ -75,22 +78,22 @@ struct RSCINST
     RscTop *    pClass;
     CLASS_DATA  pData;
 
-                RSCINST(){ pClass = nullptr; pData = nullptr; }
+                RSCINST(){ pClass = NULL; pData = NULL; }
                 RSCINST( RscTop * pCl, CLASS_DATA pClassData )
                     {
                         pClass = pCl;
                         pData = pClassData;
                     }
-    bool        IsInst() const { return( pData != nullptr ); }
+    bool        IsInst() const { return( pData != NULL ); }
 };
 
 /********************** S U B I N F O S T R U C T ************************/
 struct SUBINFO_STRUCT
 {
-    SUBINFO_STRUCT(){ nPos = 0; pClass = nullptr; };
-    RscId        aId;    // resource identifier
-    sal_uInt32   nPos;   // position of resource
-    RscTop *     pClass; // class of entry
+    SUBINFO_STRUCT(){ nPos = 0; pClass = NULL; };
+    RscId        aId;    // Identifier der Resource
+    sal_uInt32   nPos;   // Position der Resource
+    RscTop *     pClass; // Klasse des Eintrages
 };
 
 /******************* F u n c t i o n *************************************/

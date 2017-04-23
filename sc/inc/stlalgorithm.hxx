@@ -43,6 +43,7 @@ public:
     };
 
     AlignedAllocator() {}
+    ~AlignedAllocator() {}
 
     template<typename Type2>
     AlignedAllocator(const AlignedAllocator<Type2,Alignment>&) {}

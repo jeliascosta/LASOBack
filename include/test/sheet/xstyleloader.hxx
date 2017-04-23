@@ -33,7 +33,7 @@ public:
     void testLoadStylesFromDocument();
 
 private:
-    static void checkStyleProperties(css::uno::Reference< css::style::XStyleFamiliesSupplier > const & xFamilySupplier);
+    static void checkStyleProperties(css::uno::Reference< css::style::XStyleFamiliesSupplier > xFamilySupplier);
 
 protected:
     ~XStyleLoader() {}

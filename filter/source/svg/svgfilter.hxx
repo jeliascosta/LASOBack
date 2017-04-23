@@ -77,6 +77,8 @@ using namespace ::com::sun::star::text;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::xml::sax;
 
+using namespace ::std;
+
 #define SVG_EXPORT_ALLPAGES ((sal_Int32)-1)
 
 
@@ -99,7 +101,7 @@ public:
                 const Reference< XDocumentHandler >& rxHandler,
                 const Sequence< PropertyValue >& rFilterData );
 
-    virtual ~SVGExport() override;
+    virtual ~SVGExport();
 
     bool IsUseTinyProfile() const { return mbIsUseTinyProfile; };
     bool IsEmbedFonts() const { return mbIsEmbedFonts; };
@@ -123,19 +125,21 @@ class ObjectRepresentation
 private:
 
     Reference< XInterface >         mxObject;
-    std::unique_ptr<GDIMetaFile>    mxMtf;
+    GDIMetaFile*                    mpMtf;
 
 public:
-    ObjectRepresentation();
-    ObjectRepresentation(const Reference< XInterface >& rxIf,
-                         const GDIMetaFile& rMtf);
-    ObjectRepresentation(const ObjectRepresentation& rPresentation);
 
-    ObjectRepresentation& operator=(const ObjectRepresentation& rPresentation);
+                                      ObjectRepresentation();
+                                      ObjectRepresentation( const Reference< XInterface >& rxIf,
+                                                            const GDIMetaFile& rMtf );
+                                      ObjectRepresentation( const ObjectRepresentation& rPresentation );
+                                      ~ObjectRepresentation();
+
+    ObjectRepresentation&             operator=( const ObjectRepresentation& rPresentation );
 
     const Reference< XInterface >&    GetObject() const { return mxObject; }
-    bool                              HasRepresentation() const { return static_cast<bool>(mxMtf); }
-    const GDIMetaFile&                GetRepresentation() const { return *mxMtf; }
+    bool                          HasRepresentation() const { return mpMtf != nullptr; }
+    const GDIMetaFile&                GetRepresentation() const { return *mpMtf; }
 };
 
 struct PagePropertySet
@@ -218,8 +222,10 @@ private:
     UCharSetMapMap                      mTextFieldCharSets;
     Reference< XInterface >             mCreateOjectsCurrentMasterPage;
     UOStringMap                         mTextShapeIdListMap;
+#ifndef DISABLE_EXPORT
     MetaBitmapActionSet                 mEmbeddedBitmapActionSet;
     ObjectMap                           mEmbeddedBitmapActionMap;
+#endif
     ObjectMap*                          mpObjects;
     Reference< XComponent >             mxSrcDoc;
     Reference< XComponent >             mxDstDoc;
@@ -234,11 +240,9 @@ private:
     Link<EditFieldInfo*,void>           maOldFieldHdl;
     Link<EditFieldInfo*,void>           maNewFieldHdl;
 
-    /// @throws css::uno::RuntimeException
-    bool                            implImport( const Sequence< PropertyValue >& rDescriptor );
+    bool                            implImport( const Sequence< PropertyValue >& rDescriptor ) throw (RuntimeException, std::exception);
 
-    /// @throws css::uno::RuntimeException
-    bool                            implExport( const Sequence< PropertyValue >& rDescriptor );
+    bool                            implExport( const Sequence< PropertyValue >& rDescriptor ) throw (RuntimeException, std::exception);
     static Reference< XWriter >     implCreateExportDocumentHandler( const Reference< XOutputStream >& rxOStm );
 
     void                            implGetPagePropSet( const Reference< XDrawPage > & rxPage );
@@ -279,7 +283,7 @@ private:
     static Any                      implSafeGetPagePropSet( const OUString & sPropertyName,
                                                                 const Reference< XPropertySet > & rxPropSet,
                                                                 const Reference< XPropertySetInfo > & rxPropSetInfo );
-    DECL_LINK( CalcFieldHdl, EditFieldInfo*, void );
+    DECL_LINK_TYPED( CalcFieldHdl, EditFieldInfo*, void );
 
     static bool isStreamGZip(const css::uno::Reference<css::io::XInputStream>& xInput);
     static bool isStreamSvg(const css::uno::Reference<css::io::XInputStream>& xInput);
@@ -287,22 +291,22 @@ private:
 protected:
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) override;
-    virtual void SAL_CALL cancel( ) override;
+    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& rDescriptor ) throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel( ) throw (RuntimeException, std::exception) override;
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const Reference< XComponent >& xDoc ) override;
+    virtual void SAL_CALL setTargetDocument( const Reference< XComponent >& xDoc ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) override;
+    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
     // XExtendedFilterDetection
-    virtual OUString SAL_CALL detect( Sequence< PropertyValue >& io_rDescriptor ) override;
+    virtual OUString SAL_CALL detect( Sequence< PropertyValue >& io_rDescriptor ) throw (RuntimeException, std::exception) override;
 
 public:
 
     explicit SVGFilter( const Reference< XComponentContext >& rxCtx );
-    virtual    ~SVGFilter() override;
+    virtual    ~SVGFilter();
 };
 
 #endif // INCLUDED_FILTER_SOURCE_SVG_SVGFILTER_HXX

@@ -91,7 +91,7 @@ void WriterXmlEmitter::visit( ParagraphElement& elem, const std::list< Element* 
         aProps[ "text:style-name" ] = m_rEmitContext.rStyles.getStyleName( elem.StyleId );
     }
     const char* pTagType = "text:p";
-    if( elem.Type == ParagraphElement::Headline )
+    if( elem.Type == elem.Headline )
         pTagType = "text:h";
     m_rEmitContext.rEmitter.beginTag( pTagType, aProps );
 
@@ -456,7 +456,7 @@ void WriterXmlOptimizer::visit( ParagraphElement& elem, const std::list< Element
                         // check for larger font
                         if( head_line_height > elem.getLineHeight( m_rProcessor ) )
                         {
-                            pPrevPara->Type = ParagraphElement::Headline;
+                            pPrevPara->Type = elem.Headline;
                         }
                         else
                         {
@@ -469,7 +469,7 @@ void WriterXmlOptimizer::visit( ParagraphElement& elem, const std::list< Element
                                 const FontAttributes& rPrevFont = m_rProcessor.getFont( pPrevText->FontId );
                                 const FontAttributes& rThisFont = m_rProcessor.getFont( pThisText->FontId );
                                 if( rPrevFont.isBold && ! rThisFont.isBold )
-                                    pPrevPara->Type = ParagraphElement::Headline;
+                                    pPrevPara->Type = elem.Headline;
                             }
                         }
                     }
@@ -663,7 +663,7 @@ void WriterXmlOptimizer::checkHeaderAndFooter( PageElement& rElem )
 {
     /* indicators for a header:
      *  - single line paragrah at top of page (  inside 15% page height)
-     *  - at least lineheight above the next paragraph
+     *  - at least linheight above the next paragraph
      *
      *  indicators for a footer likewise:
      *  - single line paragraph at bottom of page (inside 15% page height)
@@ -964,7 +964,7 @@ void WriterXmlFinalizer::visit( ParagraphElement& elem, const std::list< Element
 
     if( elem.Parent )
     {
-        // check for center alignment
+        // check for center alignement
         // criterion: paragraph is small relative to parent and distributed around its center
         double p_x = elem.Parent->x;
         double p_w = elem.Parent->w;
@@ -1099,7 +1099,7 @@ void WriterXmlFinalizer::visit( PageElement& elem, const std::list< Element* >::
     elem.BottomMargin = 0;
     elem.LeftMargin = elem.w;
     elem.RightMargin = 0;
-    // first element should be a paragraph
+    // first element should be a paragraphy
     ParagraphElement* pFirstPara = nullptr;
     for( std::list< Element* >::const_iterator it = elem.Children.begin(); it != elem.Children.end(); ++it )
     {

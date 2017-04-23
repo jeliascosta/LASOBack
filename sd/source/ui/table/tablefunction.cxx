@@ -128,7 +128,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
         if( (nColumns == 0) || (nRows == 0) )
         {
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-            ScopedVclPtr<SvxAbstractNewTableDialog> pDlg( pFact ? pFact->CreateSvxNewTableDialog() : nullptr);
+            std::unique_ptr<SvxAbstractNewTableDialog> pDlg( pFact ? pFact->CreateSvxNewTableDialog() : nullptr);
 
             if( !pDlg.get() || (pDlg->Execute() != RET_OK) )
                 break;
@@ -137,7 +137,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
             nRows = pDlg->getRows();
         }
 
-        ::tools::Rectangle aRect;
+        Rectangle aRect;
 
         SdrObject* pPickObj = mpView->GetEmptyPresentationObject( PRESOBJ_TABLE );
         if( pPickObj )
@@ -150,7 +150,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
             Size aSize( 14100, 2000 );
 
             Point aPos;
-            ::tools::Rectangle aWinRect(aPos, GetActiveWindow()->GetOutputSizePixel());
+            Rectangle aWinRect(aPos, GetActiveWindow()->GetOutputSizePixel());
             aWinRect = GetActiveWindow()->PixelToLogic(aWinRect);
 
             // make sure that the default size of the table fits on the paper and is inside the viewing area.
@@ -160,7 +160,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
             if (comphelper::LibreOfficeKit::isActive())
             {
                 // aWinRect is nonsensical in the LOK case
-                aWinRect = ::tools::Rectangle(aPos, aMaxSize);
+                aWinRect = Rectangle(aPos, aMaxSize);
             }
             else
             {
@@ -184,7 +184,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
             aPos = aWinRect.Center();
             aPos.X() -= aSize.Width() / 2;
             aPos.Y() -= aSize.Height() / 2;
-            aRect = ::tools::Rectangle(aPos, aSize);
+            aRect = Rectangle(aPos, aSize);
         }
 
         sdr::table::SdrTableObj* pObj = new sdr::table::SdrTableObj( GetDoc(), aRect, nColumns, nRows );
@@ -227,7 +227,7 @@ void DrawViewShell::FuTable(SfxRequest& rReq)
     }
     case SID_TABLEDESIGN:
     {
-        if( GetDoc() && (GetDoc()->GetDocumentType() == DocumentType::Draw) )
+        if( GetDoc() && (GetDoc()->GetDocumentType() == DOCUMENT_TYPE_DRAW) )
         {
             // in draw open a modal dialog since we have no tool pane yet
             showTableDesignDialog( GetActiveWindow(), GetViewShellBase() );
@@ -275,7 +275,7 @@ void CreateTableFromRTF( SvStream& rStream, SdDrawDocument* pModel )
         {
             Size aSize( 200, 200 );
             Point aPos;
-            ::tools::Rectangle aRect (aPos, aSize);
+            Rectangle aRect (aPos, aSize);
             sdr::table::SdrTableObj* pObj = new sdr::table::SdrTableObj( pModel, aRect, 1, 1 );
             pObj->NbcSetStyleSheet( pModel->GetDefaultStyleSheet(), true );
             OUString sTableStyle;

@@ -35,10 +35,10 @@ class ZipOutputStream
 {
     css::uno::Reference< css::io::XOutputStream > m_xStream;
     ::std::vector < ZipEntry * > m_aZipList;
-    std::shared_ptr<comphelper::ThreadTaskTag> mpThreadTaskTag;
 
     ByteChucker         m_aChucker;
     ZipEntry            *m_pCurrentEntry;
+    comphelper::ThreadPool &m_rSharedThreadPool;
     std::vector< ZipOutputEntry* > m_aEntries;
     ::css::uno::Any m_aDeflateException;
 
@@ -49,44 +49,37 @@ public:
 
     void addDeflatingThread( ZipOutputEntry *pEntry, comphelper::ThreadTask *pThreadTask );
 
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void writeLOC( ZipEntry *pEntry, bool bEncrypt = false );
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void rawWrite( const css::uno::Sequence< sal_Int8 >& rBuffer );
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void rawCloseEntry( bool bEncrypt = false );
+    void writeLOC( ZipEntry *pEntry, bool bEncrypt = false )
+        throw(css::io::IOException, css::uno::RuntimeException);
+    void rawWrite( const css::uno::Sequence< sal_Int8 >& rBuffer )
+        throw(css::io::IOException, css::uno::RuntimeException);
+    void rawCloseEntry( bool bEncrypt = false )
+        throw(css::io::IOException, css::uno::RuntimeException);
 
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void finish();
+    void finish()
+        throw(css::io::IOException, css::uno::RuntimeException);
     const css::uno::Reference< css::io::XOutputStream >& getStream();
 
     static sal_uInt32 getCurrentDosTime();
     static void setEntry( ZipEntry *pEntry );
 
 private:
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void writeEND(sal_uInt32 nOffset, sal_uInt32 nLength);
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void writeCEN( const ZipEntry &rEntry );
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void writeEXT( const ZipEntry &rEntry );
+    void writeEND(sal_uInt32 nOffset, sal_uInt32 nLength)
+        throw(css::io::IOException, css::uno::RuntimeException);
+    void writeCEN( const ZipEntry &rEntry )
+        throw(css::io::IOException, css::uno::RuntimeException);
+    void writeEXT( const ZipEntry &rEntry )
+        throw(css::io::IOException, css::uno::RuntimeException);
 
     // ScheduledThread handling helpers
     void consumeScheduledThreadEntry(ZipOutputEntry* pCandidate);
     void consumeFinishedScheduledThreadEntries();
+    void consumeAllScheduledThreadEntries();
 
 public:
     void reduceScheduledThreadsToGivenNumberOrLess(
-        sal_Int32 nThreads);
-
-    const std::shared_ptr<comphelper::ThreadTaskTag>& getThreadTaskTag() { return mpThreadTaskTag; }
+        sal_Int32 nThreads,
+        sal_Int32 nWaitTimeInTenthSeconds);
 };
 
 #endif

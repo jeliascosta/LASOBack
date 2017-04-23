@@ -24,6 +24,7 @@
 
 #include <comphelper/string.hxx>
 #include <svtools/colorcfg.hxx>
+#include <svl/smplhint.hxx>
 #include <sal/macros.h>
 #include <tools/poly.hxx>
 #include "scmod.hxx"
@@ -47,7 +48,7 @@ struct Func_SetType
 {
     sal_Int32                   mnType;
     explicit                    Func_SetType( sal_Int32 nType ) : mnType( nType ) {}
-    void                 operator()( ScCsvColState& rState ) const
+    inline void                 operator()( ScCsvColState& rState ) const
         { rState.mnType = mnType; }
 };
 
@@ -55,7 +56,7 @@ struct Func_Select
 {
     bool                        mbSelect;
     explicit                    Func_Select( bool bSelect ) : mbSelect( bSelect ) {}
-    void                 operator()( ScCsvColState& rState ) const
+    inline void                 operator()( ScCsvColState& rState ) const
         { rState.Select( mbSelect ); }
 };
 
@@ -63,7 +64,6 @@ ScCsvGrid::ScCsvGrid( ScCsvControl& rParent ) :
     ScCsvControl( rParent ),
     mpBackgrDev( VclPtr<VirtualDevice>::Create() ),
     mpGridDev( VclPtr<VirtualDevice>::Create() ),
-    mpPopup( VclPtr<PopupMenu>::Create() ),
     mpColorConfig( nullptr ),
     mpEditEngine( new ScEditEngineDefaulter( EditEngine::CreatePool(), true ) ),
     maHeaderFont( GetFont() ),
@@ -75,10 +75,10 @@ ScCsvGrid::ScCsvGrid( ScCsvControl& rParent ) :
     mbMTSelecting( false )
 {
     mpEditEngine->SetRefDevice( mpBackgrDev.get() );
-    mpEditEngine->SetRefMapMode( MapMode( MapUnit::MapPixel ) );
+    mpEditEngine->SetRefMapMode( MapMode( MAP_PIXEL ) );
     maEdEngSize = mpEditEngine->GetPaperSize();
 
-    mpPopup->SetMenuFlags( mpPopup->GetMenuFlags() | MenuFlags::NoAutoMnemonics );
+    maPopup.SetMenuFlags( maPopup.GetMenuFlags() | MenuFlags::NoAutoMnemonics );
 
     EnableRTL( false ); // RTL
     InitFonts();
@@ -95,7 +95,6 @@ void ScCsvGrid::dispose()
     OSL_ENSURE(mpColorConfig, "the object hasn't been initialized properly");
     if (mpColorConfig)
         mpColorConfig->RemoveListener(this);
-    mpPopup.disposeAndClear();
     mpBackgrDev.disposeAndClear();
     mpGridDev.disposeAndClear();
     ScCsvControl::dispose();
@@ -136,17 +135,17 @@ void ScCsvGrid::UpdateOffsetX()
 void ScCsvGrid::ApplyLayout( const ScCsvLayoutData& rOldData )
 {
     ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData );
-    if( nDiff == ScCsvDiff::Equal ) return;
+    if( nDiff == CSV_DIFF_EQUAL ) return;
 
     DisableRepaint();
 
-    if( nDiff & ScCsvDiff::RulerCursor )
+    if( nDiff & CSV_DIFF_RULERCURSOR )
     {
         ImplInvertCursor( rOldData.mnPosCursor );
         ImplInvertCursor( GetRulerCursorPos() );
     }
 
-    if( nDiff & ScCsvDiff::PosCount )
+    if( nDiff & CSV_DIFF_POSCOUNT )
     {
         if( GetPosCount() < rOldData.mnPosCount )
         {
@@ -159,21 +158,21 @@ void ScCsvGrid::ApplyLayout( const ScCsvLayoutData& rOldData )
         maColStates.resize( maSplits.Count() - 1 );
     }
 
-    if( nDiff & ScCsvDiff::LineOffset )
+    if( nDiff & CSV_DIFF_LINEOFFSET )
     {
         Execute( CSVCMD_UPDATECELLTEXTS );
         UpdateOffsetX();
     }
 
-    ScCsvDiff nHVDiff = nDiff & (ScCsvDiff::HorizontalMask | ScCsvDiff::VerticalMask);
-    if( nHVDiff == ScCsvDiff::PosOffset )
+    ScCsvDiff nHVDiff = nDiff & (CSV_DIFF_HORIZONTAL | CSV_DIFF_VERTICAL);
+    if( nHVDiff == CSV_DIFF_POSOFFSET )
         ImplDrawHorzScrolled( rOldData.mnPosOffset );
-    else if( nHVDiff != ScCsvDiff::Equal )
+    else if( nHVDiff != CSV_DIFF_EQUAL )
         InvalidateGfx();
 
     EnableRepaint();
 
-    if( nDiff & (ScCsvDiff::PosOffset | ScCsvDiff::LineOffset) )
+    if( nDiff & (CSV_DIFF_POSOFFSET | CSV_DIFF_LINEOFFSET) )
         AccSendVisibleEvent();
 }
 
@@ -252,23 +251,14 @@ void ScCsvGrid::InitFonts()
 
     // copy other items from default font
     const SfxPoolItem& rWeightItem = aDefSet.Get( EE_CHAR_WEIGHT );
-    std::unique_ptr<SfxPoolItem> pNewItem(rWeightItem.Clone());
-    pNewItem->SetWhich(EE_CHAR_WEIGHT_CJK);
-    aDefSet.Put( *pNewItem );
-    pNewItem->SetWhich(EE_CHAR_WEIGHT_CTL);
-    aDefSet.Put( *pNewItem );
+    aDefSet.Put( rWeightItem, EE_CHAR_WEIGHT_CJK );
+    aDefSet.Put( rWeightItem, EE_CHAR_WEIGHT_CTL );
     const SfxPoolItem& rItalicItem = aDefSet.Get( EE_CHAR_ITALIC );
-    pNewItem.reset(rItalicItem.Clone());
-    pNewItem->SetWhich(EE_CHAR_ITALIC_CJK);
-    aDefSet.Put( *pNewItem );
-    pNewItem->SetWhich(EE_CHAR_ITALIC_CTL);
-    aDefSet.Put( *pNewItem );
+    aDefSet.Put( rItalicItem, EE_CHAR_ITALIC_CJK );
+    aDefSet.Put( rItalicItem, EE_CHAR_ITALIC_CTL );
     const SfxPoolItem& rLangItem = aDefSet.Get( EE_CHAR_LANGUAGE );
-    pNewItem.reset(rLangItem.Clone());
-    pNewItem->SetWhich(EE_CHAR_LANGUAGE_CJK);
-    aDefSet.Put( *pNewItem );
-    pNewItem->SetWhich(EE_CHAR_LANGUAGE_CTL);
-    aDefSet.Put( *pNewItem );
+    aDefSet.Put( rLangItem, EE_CHAR_LANGUAGE_CJK );
+    aDefSet.Put( rLangItem, EE_CHAR_LANGUAGE_CTL );
 
     mpEditEngine->SetDefaults( aDefSet );
     InvalidateGfx();
@@ -506,12 +496,12 @@ void ScCsvGrid::SetTypeNames( const std::vector<OUString>& rTypeNames )
     maTypeNames = rTypeNames;
     Repaint( true );
 
-    mpPopup->Clear();
+    maPopup.Clear();
     sal_uInt32 nCount = maTypeNames.size();
     sal_uInt32 nIx;
     sal_uInt16 nItemId;
     for( nIx = 0, nItemId = 1; nIx < nCount; ++nIx, ++nItemId )
-        mpPopup->InsertItem( nItemId, maTypeNames[ nIx ] );
+        maPopup.InsertItem( nItemId, maTypeNames[ nIx ] );
 
     ::std::for_each( maColStates.begin(), maColStates.end(), Func_SetType( CSV_TYPE_DEFAULT ) );
 }
@@ -554,7 +544,7 @@ void ScCsvGrid::FillColumnDataFix( ScAsciiOptions& rOptions ) const
     for( sal_uInt32 nColIx = 0; nColIx < nCount; ++nColIx )
     {
         ScCsvExpData& rData = aDataVec[ nColIx ];
-        rData.mnIndex = GetColumnPos( nColIx );
+        rData.mnIndex = static_cast< sal_Int32 >( GetColumnPos( nColIx ) );
         rData.mnType = lcl_GetExtColumnType( GetColumnType( nColIx ) );
     }
     aDataVec[ nCount ].mnIndex = SAL_MAX_INT32;
@@ -583,9 +573,9 @@ void ScCsvGrid::ScrollVertRel( ScMoveMode eDir )
 
 void ScCsvGrid::ExecutePopup( const Point& rPos )
 {
-    sal_uInt16 nItemId = mpPopup->Execute( this, rPos );
+    sal_uInt16 nItemId = maPopup.Execute( this, rPos );
     if( nItemId )   // 0 = cancelled
-        Execute( CSVCMD_SETCOLUMNTYPE, mpPopup->GetItemPos( nItemId ) );
+        Execute( CSVCMD_SETCOLUMNTYPE, maPopup.GetItemPos( nItemId ) );
 }
 
 // selection handling ---------------------------------------------------------
@@ -986,7 +976,7 @@ void ScCsvGrid::Command( const CommandEvent& rCEvt )
         case CommandEventId::Wheel:
         {
             Point aPoint;
-            tools::Rectangle aRect( aPoint, maWinSize );
+            Rectangle aRect( aPoint, maWinSize );
             if( aRect.IsInside( rCEvt.GetMousePosPixel() ) )
             {
                 const CommandWheelData* pData = rCEvt.GetWheelData();
@@ -1012,7 +1002,7 @@ void ScCsvGrid::DataChanged( const DataChangedEvent& rDCEvt )
     ScCsvControl::DataChanged( rDCEvt );
 }
 
-void ScCsvGrid::ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints )
+void ScCsvGrid::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 )
 {
     InitColors();
     Repaint();
@@ -1020,7 +1010,7 @@ void ScCsvGrid::ConfigurationChanged( utl::ConfigurationBroadcaster*, Configurat
 
 // painting -------------------------------------------------------------------
 
-void ScCsvGrid::Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& )
+void ScCsvGrid::Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& )
 {
     Repaint();
 }
@@ -1047,7 +1037,7 @@ EditEngine* ScCsvGrid::GetEditEngine()
 
 void ScCsvGrid::ImplSetColumnClipRegion( OutputDevice& rOutDev, sal_uInt32 nColIndex )
 {
-    rOutDev.SetClipRegion( vcl::Region( tools::Rectangle(
+    rOutDev.SetClipRegion( vcl::Region( Rectangle(
         std::max( GetColumnX( nColIndex ), GetFirstX() ) + 1, 0,
         std::min( GetColumnX( nColIndex + 1 ), GetLastX() ), GetHeight() - 1 ) ) );
 }
@@ -1060,7 +1050,7 @@ void ScCsvGrid::ImplDrawColumnHeader( OutputDevice& rOutDev, sal_uInt32 nColInde
 
     rOutDev.SetLineColor();
     rOutDev.SetFillColor( aFillColor );
-    rOutDev.DrawRect( tools::Rectangle( nX1, 0, nX2, nHdrHt ) );
+    rOutDev.DrawRect( Rectangle( nX1, 0, nX2, nHdrHt ) );
 
     rOutDev.SetFont( maHeaderFont );
     rOutDev.SetTextColor( maHeaderTextColor );
@@ -1150,7 +1140,7 @@ void ScCsvGrid::ImplDrawColumnBackgr( sal_uInt32 nColIndex )
     sal_Int32 nX2 = GetColumnX( nColIndex + 1 );
     sal_Int32 nY2 = GetY( GetLastVisLine() + 1 );
     sal_Int32 nHdrHt = GetHdrHeight();
-    tools::Rectangle aRect( nX1, nHdrHt, nX2, nY2 );
+    Rectangle aRect( nX1, nHdrHt, nX2, nY2 );
     mpBackgrDev->DrawRect( aRect );
     mpBackgrDev->SetLineColor( maGridColor );
     mpBackgrDev->DrawGrid( aRect, Size( 1, GetLineHeight() ), DrawGridFlags::HorzLines );
@@ -1188,7 +1178,7 @@ void ScCsvGrid::ImplDrawRowHeaders()
     mpBackgrDev->SetLineColor();
     mpBackgrDev->SetFillColor( maAppBackColor );
     Point aPoint( GetHdrX(), 0 );
-    tools::Rectangle aRect( aPoint, Size( GetHdrWidth() + 1, GetHeight() ) );
+    Rectangle aRect( aPoint, Size( GetHdrWidth() + 1, GetHeight() ) );
     mpBackgrDev->DrawRect( aRect );
 
     mpBackgrDev->SetFillColor( maHeaderBackColor );
@@ -1224,7 +1214,7 @@ void ScCsvGrid::ImplDrawBackgrDev()
 {
     mpBackgrDev->SetLineColor();
     mpBackgrDev->SetFillColor( maAppBackColor );
-    mpBackgrDev->DrawRect( tools::Rectangle(
+    mpBackgrDev->DrawRect( Rectangle(
         Point( GetFirstX() + 1, 0 ), Size( GetWidth() - GetHdrWidth(), GetHeight() ) ) );
 
     sal_uInt32 nLastCol = GetLastVisColumn();
@@ -1248,7 +1238,7 @@ void ScCsvGrid::ImplDrawColumnSelection( sal_uInt32 nColIndex )
         sal_Int32 nX2 = GetColumnX( nColIndex + 1 );
 
         // header
-        tools::Rectangle aRect( nX1, 0, nX2, GetHdrHeight() );
+        Rectangle aRect( nX1, 0, nX2, GetHdrHeight() );
         mpGridDev->SetLineColor();
         if( maHeaderBackColor.IsDark() )
             // redraw with light gray background in dark mode
@@ -1261,7 +1251,7 @@ void ScCsvGrid::ImplDrawColumnSelection( sal_uInt32 nColIndex )
         }
 
         // column selection
-        aRect = tools::Rectangle( nX1, GetHdrHeight() + 1, nX2, GetY( GetLastVisLine() + 1 ) - 1 );
+        aRect = Rectangle( nX1, GetHdrHeight() + 1, nX2, GetY( GetLastVisLine() + 1 ) - 1 );
         ImplInvertRect( *mpGridDev.get(), aRect );
     }
 
@@ -1315,7 +1305,7 @@ void ScCsvGrid::ImplDrawHorzScrolled( sal_Int32 nOldPos )
     }
 
     ImplInvertCursor( GetRulerCursorPos() + (nPos - nOldPos) );
-    tools::Rectangle aRectangle( GetFirstX(), 0, GetLastX(), GetHeight() - 1 );
+    Rectangle aRectangle( GetFirstX(), 0, GetLastX(), GetHeight() - 1 );
     vcl::Region aClipReg( aRectangle );
     mpBackgrDev->SetClipRegion( aClipReg );
     mpBackgrDev->CopyArea( aDest, aSrc, maWinSize );
@@ -1331,7 +1321,7 @@ void ScCsvGrid::ImplDrawHorzScrolled( sal_Int32 nOldPos )
     sal_Int32 nLastX = GetX( GetPosCount() ) + 1;
     if( nLastX <= GetLastX() )
     {
-        tools::Rectangle aRect( nLastX, 0, GetLastX(), GetHeight() - 1 );
+        Rectangle aRect( nLastX, 0, GetLastX(), GetHeight() - 1 );
         mpBackgrDev->SetLineColor();
         mpBackgrDev->SetFillColor( maAppBackColor );
         mpBackgrDev->DrawRect( aRect );
@@ -1346,7 +1336,7 @@ void ScCsvGrid::ImplInvertCursor( sal_Int32 nPos )
     if( IsVisibleSplitPos( nPos ) )
     {
         sal_Int32 nX = GetX( nPos ) - 1;
-        tools::Rectangle aRect( Point( nX, 0 ), Size( 3, GetHdrHeight() ) );
+        Rectangle aRect( Point( nX, 0 ), Size( 3, GetHdrHeight() ) );
         ImplInvertRect( *mpGridDev.get(), aRect );
         aRect.Top() = GetHdrHeight() + 1;
         aRect.Bottom() = GetY( GetLastVisLine() + 1 );
@@ -1361,7 +1351,7 @@ void ScCsvGrid::ImplDrawTrackingRect( sal_uInt32 nColIndex )
         sal_Int32 nX1 = std::max( GetColumnX( nColIndex ), GetFirstX() ) + 1;
         sal_Int32 nX2 = std::min( GetColumnX( nColIndex + 1 ) - sal_Int32( 1 ), GetLastX() );
         sal_Int32 nY2 = std::min( GetY( GetLastVisLine() + 1 ), GetHeight() ) - 1;
-        InvertTracking( tools::Rectangle( nX1, 0, nX2, nY2 ), ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
+        InvertTracking( Rectangle( nX1, 0, nX2, nY2 ), ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
     }
 }
 

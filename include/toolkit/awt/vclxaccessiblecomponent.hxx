@@ -27,6 +27,7 @@
 #include <com/sun/star/accessibility/XAccessibleEventBroadcaster.hpp>
 #include <com/sun/star/awt/XWindow.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
+#include <cppuhelper/compbase3.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <comphelper/accimplaccess.hxx>
 #include <comphelper/accessiblecomponenthelper.hxx>
@@ -63,8 +64,8 @@ private:
 
     VCLExternalSolarLock*           m_pSolarLock;
 
-    DECL_LINK( WindowEventListener, VclWindowEvent&, void );
-    DECL_LINK( WindowChildEventListener, VclWindowEvent&, void );
+    DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
+    DECL_LINK_TYPED( WindowChildEventListener, VclWindowEvent&, void );
     void            DisconnectEvents();
 
 protected:
@@ -77,7 +78,7 @@ protected:
 
 public:
     VCLXAccessibleComponent( VCLXWindow* pVCLXWindow );
-    virtual ~VCLXAccessibleComponent() override;
+    virtual ~VCLXAccessibleComponent();
 
     VCLXWindow*    GetVCLXWindow() const;
     VclPtr<vcl::Window> GetWindow() const;
@@ -94,37 +95,37 @@ public:
     DECLARE_XTYPEPROVIDER()
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     // css::accessibility::XAccessibleContext
-    sal_Int32 SAL_CALL getAccessibleChildCount(  ) override;
-    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
-    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) override;
-    sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) override;
-    sal_Int16 SAL_CALL getAccessibleRole(  ) override;
-    OUString SAL_CALL getAccessibleDescription(  ) override;
-    OUString SAL_CALL getAccessibleName(  ) override;
-    css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) override;
-    css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) override;
-    css::lang::Locale SAL_CALL getLocale(  ) override;
+    sal_Int32 SAL_CALL getAccessibleChildCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+    sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+    sal_Int16 SAL_CALL getAccessibleRole(  ) throw (css::uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getAccessibleDescription(  ) throw (css::uno::RuntimeException, std::exception) override;
+    OUString SAL_CALL getAccessibleName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+    css::lang::Locale SAL_CALL getLocale(  ) throw (css::accessibility::IllegalAccessibleComponentStateException, css::uno::RuntimeException, std::exception) override;
 
     // css::accessibility::XAccessibleComponent
-    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) override;
-    css::awt::Point SAL_CALL getLocationOnScreen(  ) override;
-    void SAL_CALL grabFocus(  ) override;
-    virtual sal_Int32 SAL_CALL getForeground(  ) override;
-    virtual sal_Int32 SAL_CALL getBackground(  ) override;
+    css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
+    css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException, std::exception) override;
+    void SAL_CALL grabFocus(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getForeground(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getBackground(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // css::accessibility::XAccessibleExtendedComponent
-    virtual css::uno::Reference< css::awt::XFont > SAL_CALL getFont(  ) override;
-    virtual OUString SAL_CALL getTitledBorderText(  ) override;
-    virtual OUString SAL_CALL getToolTipText(  ) override;
+    virtual css::uno::Reference< css::awt::XFont > SAL_CALL getFont(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getTitledBorderText(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getToolTipText(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     // base class overridables
-    css::awt::Rectangle implGetBounds(  ) override;
+    css::awt::Rectangle implGetBounds(  ) throw (css::uno::RuntimeException) override;
 
 private:
     /** we may be reparented (if external components use OAccessibleImplementationAccess base class),

@@ -66,6 +66,7 @@ namespace {
         PresenterScreenListener (
             const css::uno::Reference<css::uno::XComponentContext>& rxContext,
             const css::uno::Reference<css::frame::XModel2>& rxModel);
+        virtual ~PresenterScreenListener();
         PresenterScreenListener(const PresenterScreenListener&) = delete;
         PresenterScreenListener& operator=(const PresenterScreenListener&) = delete;
 
@@ -74,16 +75,18 @@ namespace {
 
         // document::XEventListener
 
-        virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) override;
+        virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
 
-        virtual void SAL_CALL disposing ( const css::lang::EventObject& rEvent) override;
+        virtual void SAL_CALL disposing ( const css::lang::EventObject& rEvent) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         css::uno::Reference<css::frame::XModel2 > mxModel;
         css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
         rtl::Reference<PresenterScreen> mpPresenterScreen;
+
+        void ThrowIfDisposed() const throw (css::lang::DisposedException);
     };
 }
 
@@ -125,6 +128,7 @@ void SAL_CALL PresenterScreenJob::disposing()
 
 Any SAL_CALL PresenterScreenJob::execute(
     const Sequence< beans::NamedValue >& Arguments )
+    throw (lang::IllegalArgumentException, Exception, RuntimeException, std::exception)
 {
     Sequence< beans::NamedValue > lEnv;
 
@@ -188,6 +192,10 @@ void PresenterScreenListener::Initialize()
         xDocBroadcaster->addEventListener(xDocListener);
 }
 
+PresenterScreenListener::~PresenterScreenListener()
+{
+}
+
 void SAL_CALL PresenterScreenListener::disposing()
 {
     Reference< document::XEventBroadcaster > xDocBroadcaster( mxModel, UNO_QUERY );
@@ -205,14 +213,9 @@ void SAL_CALL PresenterScreenListener::disposing()
 
 // document::XEventListener
 
-void SAL_CALL PresenterScreenListener::notifyEvent( const css::document::EventObject& Event )
+void SAL_CALL PresenterScreenListener::notifyEvent( const css::document::EventObject& Event ) throw (css::uno::RuntimeException, std::exception)
 {
-    if (rBHelper.bDisposed || rBHelper.bInDispose)
-    {
-        throw lang::DisposedException (
-            "PresenterScreenListener object has already been disposed",
-            const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
-    }
+    ThrowIfDisposed();
 
     if ( Event.EventName == "OnStartPresentation" )
     {
@@ -233,6 +236,7 @@ void SAL_CALL PresenterScreenListener::notifyEvent( const css::document::EventOb
 // XEventListener
 
 void SAL_CALL PresenterScreenListener::disposing (const css::lang::EventObject& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
 
@@ -240,6 +244,18 @@ void SAL_CALL PresenterScreenListener::disposing (const css::lang::EventObject& 
     {
         mpPresenterScreen->RequestShutdownPresenterScreen();
         mpPresenterScreen = nullptr;
+    }
+}
+
+void PresenterScreenListener::ThrowIfDisposed() const throw (
+    css::lang::DisposedException)
+{
+    if (rBHelper.bDisposed || rBHelper.bInDispose)
+    {
+        throw lang::DisposedException (
+            OUString(
+                "PresenterScreenListener object has already been disposed"),
+            const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }
 
@@ -275,7 +291,7 @@ bool PresenterScreen::isPresenterScreenEnabled(const css::uno::Reference<css::un
         bool dEnablePresenterScreen=true;
         PresenterConfigurationAccess aConfiguration (
             rxContext,
-            "/org.openoffice.Office.Impress/",
+            OUString("/org.openoffice.Office.Impress/"),
             PresenterConfigurationAccess::READ_ONLY);
         aConfiguration.GetConfigurationNode("Misc/Start/EnablePresenterScreen")
             >>= dEnablePresenterScreen;
@@ -303,6 +319,7 @@ void SAL_CALL PresenterScreen::disposing()
 //----- XEventListener --------------------------------------------------------
 
 void SAL_CALL PresenterScreen::disposing (const lang::EventObject& /*rEvent*/)
+    throw (RuntimeException, std::exception)
 {
     mxSlideShowControllerWeak = WeakReference<presentation::XSlideShowController>();
     RequestShutdownPresenterScreen();
@@ -482,7 +499,7 @@ sal_Int32 PresenterScreen::GetPresenterScreenNumber (
             Reference<XComponentContext> xContext (mxContextWeak);
             PresenterConfigurationAccess aConfiguration (
                 xContext,
-                "/org.openoffice.Office.PresenterScreen/",
+                OUString("/org.openoffice.Office.PresenterScreen/"),
                 PresenterConfigurationAccess::READ_ONLY);
             bool bStartAlways (false);
             if (aConfiguration.GetConfigurationNode(
@@ -633,7 +650,7 @@ void PresenterScreen::SetupConfiguration (
     {
         PresenterConfigurationAccess aConfiguration (
             rxContext,
-            "org.openoffice.Office.PresenterScreen",
+            OUString("org.openoffice.Office.PresenterScreen"),
             PresenterConfigurationAccess::READ_ONLY);
         maViewDescriptors.clear();
         ProcessViewDescriptions(aConfiguration);

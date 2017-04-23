@@ -95,11 +95,11 @@ typedef ::cppu::WeakImplHelper<
 class OOX_DLLPUBLIC FilterBase : public FilterBase_BASE, public ::cppu::BaseMutex
 {
 public:
-    /// @throws css::uno::RuntimeException
     explicit            FilterBase(
-                            const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+                            const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+                            throw( css::uno::RuntimeException );
 
-    virtual             ~FilterBase() override;
+    virtual             ~FilterBase();
 
     /** Returns true, if filter is an import filter. */
     bool                isImportFilter() const;
@@ -201,10 +201,12 @@ public:
     // com.sun.star.lang.XServiceInfo interface -------------------------------
 
     virtual sal_Bool SAL_CALL
-                        supportsService( const OUString& rServiceName ) override;
+                        supportsService( const OUString& rServiceName )
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-                        getSupportedServiceNames() override;
+                        getSupportedServiceNames()
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.lang.XInitialization interface ----------------------------
 
@@ -219,24 +221,32 @@ public:
             filter implementations may support different arguments.
      */
     virtual void SAL_CALL initialize(
-                            const css::uno::Sequence< css::uno::Any >& rArgs ) override;
+                            const css::uno::Sequence< css::uno::Any >& rArgs )
+                            throw(  css::uno::Exception,
+                                    css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.document.XImporter interface ------------------------------
 
     virtual void SAL_CALL setTargetDocument(
-                            const css::uno::Reference< css::lang::XComponent >& rxDocument ) override;
+                            const css::uno::Reference< css::lang::XComponent >& rxDocument )
+                            throw(  css::lang::IllegalArgumentException,
+                                    css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.document.XExporter interface ------------------------------
 
     virtual void SAL_CALL setSourceDocument(
-                            const css::uno::Reference< css::lang::XComponent >& rxDocument ) override;
+                            const css::uno::Reference< css::lang::XComponent >& rxDocument )
+                            throw(  css::lang::IllegalArgumentException,
+                                    css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.document.XFilter interface --------------------------------
 
     virtual sal_Bool SAL_CALL filter(
-                            const css::uno::Sequence< css::beans::PropertyValue >& rMediaDescSeq ) override;
+                            const css::uno::Sequence< css::beans::PropertyValue >& rMediaDescSeq )
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL cancel() override;
+    virtual void SAL_CALL cancel()
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     bool exportVBA() const;
 

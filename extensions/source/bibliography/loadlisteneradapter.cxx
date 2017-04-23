@@ -32,21 +32,37 @@ namespace bib
 
     OComponentListener::~OComponentListener()
     {
-        ::osl::MutexGuard aGuard( m_rMutex );
-        if ( m_xAdapter.is() )
-            m_xAdapter->dispose();
+        {
+            ::osl::MutexGuard aGuard( m_rMutex );
+            if ( m_pAdapter )
+                m_pAdapter->dispose();
+        }
     }
 
 
     void OComponentListener::setAdapter( OComponentAdapterBase* pAdapter )
     {
-        ::osl::MutexGuard aGuard( m_rMutex );
-        m_xAdapter = pAdapter;
+        {
+            ::osl::MutexGuard aGuard( m_rMutex );
+            if ( m_pAdapter )
+            {
+                m_pAdapter->release();
+                m_pAdapter = nullptr;
+            }
+        }
+
+        if ( pAdapter )
+        {
+            ::osl::MutexGuard aGuard( m_rMutex );
+            m_pAdapter = pAdapter;
+            m_pAdapter->acquire();
+        }
     }
 
     OComponentAdapterBase::OComponentAdapterBase( const Reference< XComponent >& _rxComp )
         :m_xComponent( _rxComp )
         ,m_pListener( nullptr )
+        ,m_nLockCount( 0 )
         ,m_bListening( false )
     {
         OSL_ENSURE( m_xComponent.is(), "OComponentAdapterBase::OComponentAdapterBase: invalid component!" );
@@ -92,7 +108,7 @@ namespace bib
     // XEventListener
 
 
-    void SAL_CALL OComponentAdapterBase::disposing( const EventObject& )
+    void SAL_CALL OComponentAdapterBase::disposing( const EventObject& ) throw( RuntimeException, std::exception )
     {
         if ( m_pListener )
         {
@@ -134,7 +150,7 @@ namespace bib
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::disposing( const  EventObject& _rSource )
+    void SAL_CALL OLoadListenerAdapter::disposing( const  EventObject& _rSource ) throw( RuntimeException, std::exception)
     {
         OComponentAdapterBase::disposing( _rSource );
     }
@@ -148,37 +164,37 @@ namespace bib
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::loaded( const EventObject& _rEvent )
+    void SAL_CALL OLoadListenerAdapter::loaded( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
-        if ( getLoadListener( ) )
+        if ( !locked() && getLoadListener( ) )
             getLoadListener( )->_loaded( _rEvent );
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::unloading( const EventObject& _rEvent )
+    void SAL_CALL OLoadListenerAdapter::unloading( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
-        if ( getLoadListener( ) )
+        if ( !locked() && getLoadListener( ) )
             getLoadListener( )->_unloading( _rEvent );
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::unloaded( const EventObject& _rEvent )
+    void SAL_CALL OLoadListenerAdapter::unloaded( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
-        if ( getLoadListener( ) )
+        if ( !locked() && getLoadListener( ) )
             getLoadListener( )->_unloaded( _rEvent );
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::reloading( const EventObject& _rEvent )
+    void SAL_CALL OLoadListenerAdapter::reloading( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
-        if ( getLoadListener( ) )
+        if ( !locked() && getLoadListener( ) )
             getLoadListener( )->_reloading( _rEvent );
     }
 
 
-    void SAL_CALL OLoadListenerAdapter::reloaded( const EventObject& _rEvent )
+    void SAL_CALL OLoadListenerAdapter::reloaded( const EventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
-        if ( getLoadListener( ) )
+        if ( !locked() && getLoadListener( ) )
             getLoadListener( )->_reloaded( _rEvent );
     }
 

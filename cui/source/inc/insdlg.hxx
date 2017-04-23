@@ -69,9 +69,16 @@ class SvInsertOleDlg : public InsertObjectDialog_Impl
     css::uno::Sequence< sal_Int8 > m_aIconMetaFile;
     OUString m_aIconMediaType;
 
-    DECL_LINK(DoubleClickHdl, ListBox&, void);
-    DECL_LINK(BrowseHdl, Button*, void);
-    DECL_LINK(RadioHdl, Button*, void);
+    DECL_LINK_TYPED(DoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(BrowseHdl, Button*, void);
+    DECL_LINK_TYPED(RadioHdl, Button*, void);
+    void SelectDefault();
+    ListBox& GetObjectTypes()
+        { return *m_pLbObjecttype; }
+    OUString GetFilePath() const
+        { return m_pEdFilepath->GetText(); }
+    bool IsLinked() const
+        { return m_pCbFilelink->IsChecked(); }
     bool IsCreateNew() const override
         { return m_pRbNewObject->IsChecked(); }
 
@@ -79,7 +86,7 @@ public:
     SvInsertOleDlg( vcl::Window* pParent,
         const css::uno::Reference < css::embed::XStorage >& xStorage,
         const SvObjectServerList* pServers = nullptr );
-    virtual ~SvInsertOleDlg() override;
+    virtual ~SvInsertOleDlg();
     virtual void dispose() override;
     virtual short Execute() override;
 
@@ -108,8 +115,8 @@ private:
     VclPtr<NumericField> m_pNMMarginHeight;
     VclPtr<CheckBox> m_pCBMarginHeightDefault;
 
-    DECL_LINK(OpenHdl, Button*, void );
-    DECL_LINK(CheckHdl, Button*, void );
+    DECL_LINK_TYPED(OpenHdl, Button*, void );
+    DECL_LINK_TYPED(CheckHdl, Button*, void );
 
     void Init();
 
@@ -118,7 +125,7 @@ public:
         const css::uno::Reference < css::embed::XStorage >& xStorage );
     SfxInsertFloatingFrameDialog( vcl::Window* pParent,
         const css::uno::Reference < css::embed::XEmbeddedObject >& xObj );
-    virtual ~SfxInsertFloatingFrameDialog() override;
+    virtual ~SfxInsertFloatingFrameDialog();
     virtual void dispose() override;
     virtual short Execute() override;
 };

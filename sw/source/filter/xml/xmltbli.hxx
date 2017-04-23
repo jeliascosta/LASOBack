@@ -49,13 +49,12 @@ class SwXMLTableContext : public XMLTextTableContext
 {
     OUString     m_aStyleName;
     OUString     m_aDfltCellStyleName;
-    OUString     m_aTemplateName;
 
     //! Holds basic information about a column's width.
     struct ColumnWidthInfo {
         sal_uInt16 width;      //!< Column width (absolute or relative).
         bool   isRelative; //!< True for a relative width, false for absolute.
-        ColumnWidthInfo(sal_uInt16 wdth, bool isRel) : width(wdth), isRelative(isRel) {};
+        inline ColumnWidthInfo(sal_uInt16 wdth, bool isRel) : width(wdth), isRelative(isRel) {};
     };
     std::vector<ColumnWidthInfo> m_aColumnWidths;
     std::vector<OUString> *m_pColumnDefaultCellStyleNames;
@@ -80,7 +79,7 @@ class SwXMLTableContext : public XMLTextTableContext
 
     SvXMLImportContextRef   m_xParentTable;   // if table is a sub table
 
-    rtl::Reference<SwXMLDDETableContext_Impl> m_xDDESource;
+    SwXMLDDETableContext_Impl   *m_pDDESource;
 
     bool            m_bFirstSection : 1;
     bool            m_bRelWidth : 1;
@@ -137,7 +136,7 @@ public:
                        const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
                        SwXMLTableContext *pTable );
 
-    virtual ~SwXMLTableContext() override;
+    virtual ~SwXMLTableContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                 const OUString& rLocalName,
@@ -147,9 +146,10 @@ public:
 
     void InsertColumn( sal_Int32 nWidth, bool bRelWidth,
                        const OUString *pDfltCellStyleName = nullptr );
-    sal_Int32 GetColumnWidth( sal_uInt32 nCol, sal_uInt32 nColSpan ) const;
+    sal_Int32 GetColumnWidth( sal_uInt32 nCol, sal_uInt32 nColSpan=1UL ) const;
     OUString GetColumnDefaultCellStyleName( sal_uInt32 nCol ) const;
     inline sal_uInt32 GetColumnCount() const;
+    inline bool HasColumnDefaultCellStyleNames() const;
 
     bool IsInsertCellPossible() const { return m_nCurCol < GetColumnCount(); }
     bool IsInsertColPossible() const { return m_nCurCol < USHRT_MAX; }
@@ -157,8 +157,8 @@ public:
     bool IsValid() const { return m_pTableNode != nullptr; }
 
     void InsertCell( const OUString& rStyleName,
-                     sal_uInt32 nRowSpan, sal_uInt32 nColSpan,
-                     const SwStartNode *pStNd,
+                     sal_uInt32 nRowSpan=1U, sal_uInt32 nColSpan=1U,
+                     const SwStartNode *pStNd=nullptr,
                      const OUString & i_rXmlId = OUString(),
                      SwXMLTableContext *pTable=nullptr,
                      bool bIsProtected = false,
@@ -184,7 +184,7 @@ public:
 
 inline SwXMLTableContext *SwXMLTableContext::GetParentTable() const
 {
-    return static_cast<SwXMLTableContext *>(m_xParentTable.get());
+    return static_cast<SwXMLTableContext *>(&m_xParentTable);
 }
 
 inline sal_uInt32 SwXMLTableContext::GetColumnCount() const
@@ -195,6 +195,11 @@ inline sal_uInt32 SwXMLTableContext::GetColumnCount() const
 inline const SwStartNode *SwXMLTableContext::GetLastStartNode() const
 {
     return GetPrevStartNode( 0UL, GetColumnCount() );
+}
+
+inline bool SwXMLTableContext::HasColumnDefaultCellStyleNames() const
+{
+    return m_pColumnDefaultCellStyleNames != nullptr;
 }
 
 #endif

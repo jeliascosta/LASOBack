@@ -19,108 +19,14 @@
 #ifndef INCLUDED_SVL_HINT_HXX
 #define INCLUDED_SVL_HINT_HXX
 
-#include <sal/types.h>
 #include <svl/svldllapi.h>
-
-enum class SfxHintId {
-    NONE,
-    Dying,
-    NameChanged,
-    TitleChanged,
-    DataChanged,
-    DocChanged,
-    UpdateDone,
-    Deinitializing,
-    ModeChanged,
-    ColorsChanged,
-
-// VCL text hints
-    TextParaInserted,
-    TextParaRemoved,
-    TextParaContentChanged,
-    TextHeightChanged,
-    TextFormatPara,
-    TextFormatted,
-    TextModified,
-    TextBlockNotificationStart,
-    TextBlockNotificationEnd,
-    TextInputStart,
-    TextInputEnd,
-    TextViewScrolled,
-    TextViewSelectionChanged,
-    TextViewCaretChanged,
-
-// BASIC hints
-    BasicDying,
-    BasicDataWanted,
-    BasicDataChanged,
-    BasicConverted,
-    BasicInfoWanted,
-    BasicObjectChanged,
-    BasicStart,
-    BasicStop,
-
-// SVX edit source
-    EditSourceParasMoved,
-    EditSourceSelectionChanged,
-
-// SC hints
-    ScDataChanged,
-    ScTableOpDirty,
-    ScCalcAll,
-    ScReference,
-    ScDrawLayerNew,
-    ScDbAreasChanged,
-    ScAreasChanged,
-    ScTablesChanged,
-    ScDrawChanged,
-    ScDocNameChanged,
-    ScAreaLinksChanged,
-    ScShowRangeFinder,
-    ScDocSaved,
-    ScForceSetTab,
-    ScNavigatorUpdateAll,
-    ScAnyDataChanged,
-    ScPrintOptions,
-    ScRefModeChanged,
-    ScKillEditView,
-    ScKillEditViewNoPaint,
-
-// SC accessibility hints
-    ScAccTableChanged,
-    ScAccCursorChanged,
-    ScAccVisAreaChanged,
-    ScAccEnterEditMode,
-    ScAccLeaveEditMode,
-    ScAccMakeDrawLayer,
-    ScAccWindowResized,
-
-
-// SFX stylesheet
-    StyleSheetCreated,  // new
-    StyleSheetModified,  // changed
-    StyleSheetChanged,  // erased and re-created (replaced)
-    StyleSheetErased,  // erased
-    StyleSheetInDestruction,  // in the process of being destructed
-
-// STARMATH
-    MathFormatChanged,
-
-// SW
-    SwDrawViewsCreated,
-    SwSplitNodeOperation,
-};
 
 class SVL_DLLPUBLIC SfxHint
 {
-private:
-    SfxHintId mnId;
 public:
-    SfxHint() : mnId(SfxHintId::NONE) {}
-    explicit SfxHint( SfxHintId nId ) : mnId(nId) {}
     virtual ~SfxHint();
-    SfxHintId GetId() const { return mnId; }
 };
+
 
 #endif
 

@@ -59,7 +59,7 @@ bool dispatchCommand(const OUString& rCommand, const css::uno::Sequence<css::bea
     if (xNotifyingDisp.is())
         xNotifyingDisp->dispatchWithNotification(aCommandURL, rArguments, aListener);
     else
-        xDisp->dispatch(aCommandURL, rArguments);
+        xNotifyingDisp->dispatch(aCommandURL, rArguments);
 
     return true;
 }

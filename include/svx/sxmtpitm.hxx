@@ -22,51 +22,46 @@
 #include <svx/svddef.hxx>
 #include <svl/eitem.hxx>
 #include <svx/svxdllapi.h>
-#include <com/sun/star/drawing/MeasureTextHorzPos.hpp>
-#include <com/sun/star/drawing/MeasureTextVertPos.hpp>
+
+enum SdrMeasureTextHPos {SDRMEASURE_TEXTHAUTO,SDRMEASURE_TEXTLEFTOUTSIDE,SDRMEASURE_TEXTINSIDE,SDRMEASURE_TEXTRIGHTOUTSIDE};
+enum SdrMeasureTextVPos {SDRMEASURE_TEXTVAUTO,SDRMEASURE_ABOVE,SDRMEASURETEXT_BREAKEDLINE,SDRMEASURE_BELOW,SDRMEASURETEXT_VERTICALCENTERED};
+
 
 // class SdrMeasureTextHPosItem
-class SVX_DLLPUBLIC SdrMeasureTextHPosItem: public SfxEnumItem<css::drawing::MeasureTextHorzPos> {
+
+class SVX_DLLPUBLIC SdrMeasureTextHPosItem: public SfxEnumItem {
 public:
-    SdrMeasureTextHPosItem(css::drawing::MeasureTextHorzPos ePos = css::drawing::MeasureTextHorzPos::MeasureTextHorzPos_AUTO)
-        : SfxEnumItem(SDRATTR_MEASURETEXTHPOS, ePos)
-    {
-    }
-    SdrMeasureTextHPosItem(SvStream& rIn)
-        : SfxEnumItem(SDRATTR_MEASURETEXTHPOS, rIn)
-    {
-    }
+    SdrMeasureTextHPosItem(SdrMeasureTextHPos ePos=SDRMEASURE_TEXTHAUTO): SfxEnumItem(SDRATTR_MEASURETEXTHPOS,sal::static_int_cast< sal_uInt16 >(ePos)) {}
+    SdrMeasureTextHPosItem(SvStream& rIn)                               : SfxEnumItem(SDRATTR_MEASURETEXTHPOS,rIn)    {}
     virtual SfxPoolItem*   Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem*   Create(SvStream& rIn, sal_uInt16 nVer) const override;
-    virtual sal_uInt16     GetValueCount() const override; // { return 4; }
+    virtual sal_uInt16         GetValueCount() const override; // { return 4; }
+            SdrMeasureTextHPos GetValue() const { return (SdrMeasureTextHPos)SfxEnumItem::GetValue(); }
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
-    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
 };
 
+
 // class SdrMeasureTextVPosItem
-class SVX_DLLPUBLIC SdrMeasureTextVPosItem: public SfxEnumItem<css::drawing::MeasureTextVertPos> {
+
+class SVX_DLLPUBLIC SdrMeasureTextVPosItem: public SfxEnumItem {
 public:
-    SdrMeasureTextVPosItem(css::drawing::MeasureTextVertPos ePos = css::drawing::MeasureTextVertPos_AUTO)
-        : SfxEnumItem(SDRATTR_MEASURETEXTVPOS, ePos)
-    {
-    }
-    SdrMeasureTextVPosItem(SvStream& rIn)
-        : SfxEnumItem(SDRATTR_MEASURETEXTVPOS, rIn)
-    {
-    }
+    SdrMeasureTextVPosItem(SdrMeasureTextVPos ePos=SDRMEASURE_TEXTVAUTO): SfxEnumItem(SDRATTR_MEASURETEXTVPOS,sal::static_int_cast< sal_uInt16 >(ePos)) {}
+    SdrMeasureTextVPosItem(SvStream& rIn)                               : SfxEnumItem(SDRATTR_MEASURETEXTVPOS,rIn)    {}
     virtual SfxPoolItem*   Clone(SfxItemPool* pPool=nullptr) const override;
     virtual SfxPoolItem*   Create(SvStream& rIn, sal_uInt16 nVer) const override;
-    virtual sal_uInt16     GetValueCount() const override; // { return 5; }
+    virtual sal_uInt16         GetValueCount() const override; // { return 5; }
+            SdrMeasureTextVPos GetValue() const { return (SdrMeasureTextVPos)SfxEnumItem::GetValue(); }
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual OUString GetValueTextByPos(sal_uInt16 nPos) const override;
-    virtual bool GetPresentation(SfxItemPresentation ePres, MapUnit eCoreMetric, MapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation(SfxItemPresentation ePres, SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString& rText, const IntlWrapper * = nullptr) const override;
 };
 
 #endif

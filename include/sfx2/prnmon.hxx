@@ -34,7 +34,7 @@ struct SfxPrintOptDlg_Impl;
 class SfxPrintOptionsDialog : public ModalDialog
 {
 private:
-    std::unique_ptr<SfxPrintOptDlg_Impl>   pDlgImpl;
+    SfxPrintOptDlg_Impl*    pDlgImpl;
     SfxViewShell*           pViewSh;
     SfxItemSet*             pOptions;
     VclPtr<SfxTabPage>      pPage;
@@ -43,11 +43,11 @@ public:
                             SfxPrintOptionsDialog( vcl::Window *pParent,
                                                    SfxViewShell *pViewShell,
                                                    const SfxItemSet *rOptions );
-    virtual                 ~SfxPrintOptionsDialog() override;
+    virtual                 ~SfxPrintOptionsDialog();
     virtual void            dispose() override;
 
     virtual short           Execute() override;
-    virtual bool            EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool            Notify( NotifyEvent& rNEvt ) override;
 
     const SfxItemSet&       GetOptions() const { return *pOptions; }
     void                    DisableHelp();

@@ -19,7 +19,7 @@
 
 #include <sax/tools/converter.hxx>
 #include <sfx2/recentdocsview.hxx>
-#include <sfx2/templatelocalview.hxx>
+#include <sfx2/templateabstractview.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/sfx.hrc>
 #include <sfx2/sfxresid.hxx>
@@ -52,21 +52,18 @@ void SetMessageFont(vcl::RenderContext& rRenderContext)
 
 }
 
-namespace sfx2
-{
-
 RecentDocsView::RecentDocsView( vcl::Window* pParent )
     : ThumbnailView(pParent)
-    , mnFileTypes(ApplicationType::TYPE_NONE)
+    , mnFileTypes(TYPE_NONE)
     , mnTextHeight(30)
     , mnItemPadding(5)
     , mnItemMaxTextLength(30)
     , mnLastMouseDownItem(THUMBNAILVIEW_ITEM_NOTFOUND)
-    , maWelcomeImage(BitmapEx(SfxResId(BMP_WELCOME)))
+    , maWelcomeImage(SfxResId(IMG_WELCOME))
     , maWelcomeLine1(SfxResId(STR_WELCOME_LINE1))
     , maWelcomeLine2(SfxResId(STR_WELCOME_LINE2))
 {
-    tools::Rectangle aScreen = Application::GetScreenPosSizePixel(Application::GetDisplayBuiltInScreen());
+    Rectangle aScreen = Application::GetScreenPosSizePixel(Application::GetDisplayBuiltInScreen());
     mnItemMaxSize = std::min(aScreen.GetWidth(),aScreen.GetHeight()) > 800 ? 256 : 192;
 
     SetStyle(GetStyle() | WB_VSCROLL);
@@ -89,32 +86,32 @@ bool RecentDocsView::typeMatchesExtension(ApplicationType type, const OUString &
     if (rExt == "odt" || rExt == "doc" || rExt == "docx" ||
         rExt == "rtf" || rExt == "txt" || rExt == "odm" || rExt == "otm")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_WRITER);
+        bRet = type & TYPE_WRITER;
     }
     else if (rExt == "ods" || rExt == "xls" || rExt == "xlsx")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_CALC);
+        bRet = type & TYPE_CALC;
     }
     else if (rExt == "odp" || rExt == "pps" || rExt == "ppt" ||
             rExt == "pptx")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_IMPRESS);
+        bRet = type & TYPE_IMPRESS;
     }
     else if (rExt == "odg")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_DRAW);
+        bRet = type & TYPE_DRAW;
     }
     else if (rExt == "odb")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_DATABASE);
+        bRet = type & TYPE_DATABASE;
     }
     else if (rExt == "odf")
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_MATH);
+        bRet = type & TYPE_MATH;
     }
     else
     {
-        bRet = static_cast<bool>(type & ApplicationType::TYPE_OTHER);
+        bRet = type & TYPE_OTHER;
     }
 
     return bRet;
@@ -124,13 +121,13 @@ bool RecentDocsView::isAcceptedFile(const OUString &rURL) const
 {
     INetURLObject aUrl(rURL);
     OUString aExt = aUrl.getExtension();
-    return (mnFileTypes & ApplicationType::TYPE_WRITER   && typeMatchesExtension(ApplicationType::TYPE_WRITER,  aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_CALC     && typeMatchesExtension(ApplicationType::TYPE_CALC,    aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_IMPRESS  && typeMatchesExtension(ApplicationType::TYPE_IMPRESS, aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_DRAW     && typeMatchesExtension(ApplicationType::TYPE_DRAW,    aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_DATABASE && typeMatchesExtension(ApplicationType::TYPE_DATABASE,aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_MATH     && typeMatchesExtension(ApplicationType::TYPE_MATH,    aExt)) ||
-           (mnFileTypes & ApplicationType::TYPE_OTHER    && typeMatchesExtension(ApplicationType::TYPE_OTHER,   aExt));
+    return (mnFileTypes & TYPE_WRITER   && typeMatchesExtension(TYPE_WRITER,  aExt)) ||
+           (mnFileTypes & TYPE_CALC     && typeMatchesExtension(TYPE_CALC,    aExt)) ||
+           (mnFileTypes & TYPE_IMPRESS  && typeMatchesExtension(TYPE_IMPRESS, aExt)) ||
+           (mnFileTypes & TYPE_DRAW     && typeMatchesExtension(TYPE_DRAW,    aExt)) ||
+           (mnFileTypes & TYPE_DATABASE && typeMatchesExtension(TYPE_DATABASE,aExt)) ||
+           (mnFileTypes & TYPE_MATH     && typeMatchesExtension(TYPE_MATH,    aExt)) ||
+           (mnFileTypes & TYPE_OTHER    && typeMatchesExtension(TYPE_OTHER,   aExt));
 }
 
 BitmapEx RecentDocsView::getDefaultThumbnail(const OUString &rURL)
@@ -139,17 +136,17 @@ BitmapEx RecentDocsView::getDefaultThumbnail(const OUString &rURL)
     INetURLObject aUrl(rURL);
     OUString aExt = aUrl.getExtension();
 
-    if (typeMatchesExtension(ApplicationType::TYPE_WRITER, aExt))
+    if ( typeMatchesExtension( TYPE_WRITER, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_TEXT ) );
-    else if (typeMatchesExtension(ApplicationType::TYPE_CALC, aExt))
+    else if ( typeMatchesExtension( TYPE_CALC, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_SHEET ) );
-    else if (typeMatchesExtension(ApplicationType::TYPE_IMPRESS, aExt))
+    else if ( typeMatchesExtension( TYPE_IMPRESS, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_PRESENTATION ) );
-    else if (typeMatchesExtension(ApplicationType::TYPE_DRAW, aExt))
+    else if ( typeMatchesExtension( TYPE_DRAW, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_DRAWING ) );
-    else if (typeMatchesExtension(ApplicationType::TYPE_DATABASE, aExt))
+    else if ( typeMatchesExtension( TYPE_DATABASE, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_DATABASE ) );
-    else if (typeMatchesExtension(ApplicationType::TYPE_MATH, aExt))
+    else if ( typeMatchesExtension( TYPE_MATH, aExt) )
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_MATH ) );
     else
         aImg = BitmapEx ( SfxResId( SFX_FILE_THUMBNAIL_DEFAULT ) );
@@ -159,7 +156,7 @@ BitmapEx RecentDocsView::getDefaultThumbnail(const OUString &rURL)
 
 void RecentDocsView::insertItem(const OUString &rURL, const OUString &rTitle, const BitmapEx &rThumbnail, sal_uInt16 nId)
 {
-    RecentDocsViewItem *pChild = new RecentDocsViewItem(*this, rURL, rTitle, rThumbnail, nId, mnItemMaxSize);
+    RecentDocsViewItem *pChild = new RecentDocsViewItem(*this, rURL, rTitle, rThumbnail, nId, GetThumbnailSize());
 
     AppendItem(pChild);
 }
@@ -183,6 +180,8 @@ void RecentDocsView::Reload()
 
             if (rRecentEntry[j].Name == "URL")
                 a >>= aURL;
+            else if (rRecentEntry[j].Name == "Title")
+                a >>= aTitle;
             //fdo#74834: only load thumbnail if the corresponding option is not disabled in the configuration
             else if (rRecentEntry[j].Name == "Thumbnail" && officecfg::Office::Common::History::RecentDocsThumbnail::get())
             {
@@ -198,13 +197,6 @@ void RecentDocsView::Reload()
                     aThumbnail = aReader.Read();
                 }
             }
-        }
-
-        if(!aURL.isEmpty())
-        {
-            INetURLObject  aURLObj( aURL );
-            //Remove extension from url's last segment and use it as title
-            aTitle = aURLObj.GetBase(); //DecodeMechanism::WithCharset
         }
 
         if (isAcceptedFile(aURL))
@@ -264,7 +256,7 @@ void RecentDocsView::OnItemDblClicked(ThumbnailViewItem *pItem)
         pRecentItem->OpenDocument();
 }
 
-void RecentDocsView::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle &aRect)
+void RecentDocsView::Paint(vcl::RenderContext& rRenderContext, const Rectangle &aRect)
 {
     // Set preferred width
     if (mFilteredItemList.empty())
@@ -327,7 +319,7 @@ void RecentDocsView::Clear()
     ThumbnailView::Clear();
 }
 
-IMPL_STATIC_LINK( RecentDocsView, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( RecentDocsView, ExecuteHdl_Impl, void*, p, void )
 {
     LoadRecentFile* pLoadRecentFile = static_cast< LoadRecentFile*>(p);
     try
@@ -346,7 +338,5 @@ IMPL_STATIC_LINK( RecentDocsView, ExecuteHdl_Impl, void*, p, void )
 
     delete pLoadRecentFile;
 }
-
-} // namespace sfx2
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

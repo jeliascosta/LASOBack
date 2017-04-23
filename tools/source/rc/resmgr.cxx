@@ -94,14 +94,14 @@ class InternalResMgr
                                             const OUString& aPrefix,
                                             const OUString& aResName,
                                             const LanguageTag& rLocale );
+                            ~InternalResMgr();
     bool                    Create();
 
     bool                    IsGlobalAvailable( RESOURCE_TYPE nRT, sal_uInt32 nId ) const;
     void *                  LoadGlobalRes( RESOURCE_TYPE nRT, sal_uInt32 nId,
                                            void **pResHandle );
 public:
-    static void             FreeGlobalRes( void const *, void * );
-                            ~InternalResMgr();
+    static void             FreeGlobalRes( void *, void * );
 };
 
 class ResMgrContainer
@@ -159,10 +159,13 @@ ResMgrContainer& ResMgrContainer::get()
 
 ResMgrContainer::~ResMgrContainer()
 {
-    for( std::pair< OUString, ContainerElement > const & rPair : m_aResFiles )
+    for( std::unordered_map< OUString, ContainerElement, OUStringHash >::iterator it =
+            m_aResFiles.begin(); it != m_aResFiles.end(); ++it )
     {
-        SAL_INFO("tools.rc", "Resource file " << rPair.second.aFileURL << " loaded " << rPair.second.nLoadCount << " times");
-        delete rPair.second.pResMgr;
+        OSL_TRACE( "Resource file %s loaded %d times",
+                         OUStringToOString( it->second.aFileURL, osl_getThreadTextEncoding() ).getStr(),
+                         it->second.nLoadCount );
+        delete it->second.pResMgr;
     }
 }
 
@@ -406,7 +409,7 @@ struct ImpContent
 
 struct ImpContentLessCompare : public ::std::binary_function< ImpContent, ImpContent, bool>
 {
-    bool operator() (const ImpContent& lhs, const ImpContent& rhs) const
+    inline bool operator() (const ImpContent& lhs, const ImpContent& rhs) const
     {
         return lhs.nTypeAndId < rhs.nTypeAndId;
     }
@@ -486,13 +489,13 @@ bool InternalResMgr::Create()
                                                         fRes, 0 ) ) != (RSHEADER_TYPE *)-1)
                                                         */
         pStm->SeekRel( - (int)sizeof( lContLen ) );
-        pStm->ReadBytes( &lContLen, sizeof( lContLen ) );
-        // file is bigendian but SvStreamEndian not set, swab to the right endian
+        pStm->Read( &lContLen, sizeof( lContLen ) );
+        // is bigendian, swab to the right endian
         lContLen = ResMgr::GetLong( &lContLen );
         pStm->SeekRel( -lContLen );
         // allocate stored ImpContent data (12 bytes per unit)
         sal_uInt8* pContentBuf = static_cast<sal_uInt8*>(rtl_allocateMemory( lContLen ));
-        pStm->ReadBytes( pContentBuf, lContLen );
+        pStm->Read( pContentBuf, lContLen );
         // allocate ImpContent space (sizeof(ImpContent) per unit, not necessarily 12)
         pContent = static_cast<ImpContent *>(rtl_allocateMemory( sizeof(ImpContent)*lContLen/12 ));
         // Shorten to number of ImpContent
@@ -542,9 +545,9 @@ bool InternalResMgr::Create()
 
 bool InternalResMgr::IsGlobalAvailable( RESOURCE_TYPE nRT, sal_uInt32 nId ) const
 {
-    // search beginning of string
+    // Anfang der Strings suchen
     ImpContent aValue;
-    aValue.nTypeAndId = ((sal_uInt64(sal_uInt32(nRT)) << 32) | nId);
+    aValue.nTypeAndId = ((sal_uInt64(nRT) << 32) | nId);
     ImpContent * pFind = ::std::lower_bound(pContent,
                                             pContent + nEntries,
                                             aValue,
@@ -558,11 +561,11 @@ void* InternalResMgr::LoadGlobalRes( RESOURCE_TYPE nRT, sal_uInt32 nId,
 {
 #ifdef DBG_UTIL
     if( pResUseDump )
-        pResUseDump->erase( (sal_uInt64(sal_uInt32(nRT)) << 32) | nId );
+        pResUseDump->erase( (sal_uInt64(nRT) << 32) | nId );
 #endif
     // search beginning of string
     ImpContent aValue;
-    aValue.nTypeAndId = ((sal_uInt64(sal_uInt32(nRT)) << 32) | nId);
+    aValue.nTypeAndId = ((sal_uInt64(nRT) << 32) | nId);
     ImpContent* pEnd = (pContent + nEntries);
     ImpContent* pFind = ::std::lower_bound( pContent,
                                             pEnd,
@@ -578,20 +581,20 @@ void* InternalResMgr::LoadGlobalRes( RESOURCE_TYPE nRT, sal_uInt32 nId,
                 // search beginning of string
                 ImpContent * pFirst = pFind;
                 ImpContent * pLast = pFirst;
-                while( pFirst > pContent && RESOURCE_TYPE((pFirst -1)->nTypeAndId >> 32) == RSC_STRING )
+                while( pFirst > pContent && ((pFirst -1)->nTypeAndId >> 32) == RSC_STRING )
                     --pFirst;
-                while( pLast < pEnd && RESOURCE_TYPE(pLast->nTypeAndId >> 32) == RSC_STRING )
+                while( pLast < pEnd && (pLast->nTypeAndId >> 32) == RSC_STRING )
                     ++pLast;
                 nOffCorrection = pFirst->nOffset;
                 sal_uInt32 nSize;
                 --pLast;
                 pStm->Seek( pLast->nOffset );
                 RSHEADER_TYPE aHdr;
-                pStm->ReadBytes( &aHdr, sizeof( aHdr ) );
+                pStm->Read( &aHdr, sizeof( aHdr ) );
                 nSize = pLast->nOffset + aHdr.GetGlobOff() - nOffCorrection;
                 pStringBlock = static_cast<sal_uInt8*>(rtl_allocateMemory( nSize ));
                 pStm->Seek( pFirst->nOffset );
-                pStm->ReadBytes( pStringBlock, nSize );
+                pStm->Read( pStringBlock, nSize );
             }
             *pResHandle = pStringBlock;
             return pStringBlock + pFind->nOffset - nOffCorrection;
@@ -601,10 +604,10 @@ void* InternalResMgr::LoadGlobalRes( RESOURCE_TYPE nRT, sal_uInt32 nId,
             *pResHandle = nullptr;
             RSHEADER_TYPE aHeader;
             pStm->Seek( pFind->nOffset );
-            pStm->ReadBytes( &aHeader, sizeof( RSHEADER_TYPE ) );
+            pStm->Read( &aHeader, sizeof( RSHEADER_TYPE ) );
             void * pRes = rtl_allocateMemory( aHeader.GetGlobOff() );
             memcpy( pRes, &aHeader, sizeof( RSHEADER_TYPE ) );
-            pStm->ReadBytes(static_cast<sal_uInt8*>(pRes) + sizeof(RSHEADER_TYPE),
+            pStm->Read( static_cast<sal_uInt8*>(pRes) + sizeof( RSHEADER_TYPE ),
                         aHeader.GetGlobOff() - sizeof( RSHEADER_TYPE ) );
             return pRes;
         }
@@ -613,7 +616,7 @@ void* InternalResMgr::LoadGlobalRes( RESOURCE_TYPE nRT, sal_uInt32 nId,
     return nullptr;
 }
 
-void InternalResMgr::FreeGlobalRes( void const * pResHandle, void * pResource )
+void InternalResMgr::FreeGlobalRes( void * pResHandle, void * pResource )
 {
     if ( !pResHandle )
         // Free allocated resource
@@ -664,30 +667,30 @@ void ResMgr::RscError_Impl( const sal_Char* pMessage, ResMgr* pResMgr,
 
     ResMgr* pNewResMgr = new ResMgr( pImp );
 
-    OString aFilename(OUStringToOString(pResMgr->GetFileName(),
+    OStringBuffer aStr(OUStringToOString(pResMgr->GetFileName(),
         RTL_TEXTENCODING_UTF8));
-    OStringBuffer aStr(pMessage);
-    aStr.append(aFilename);
-    aStr.append('\n');
 
-    aStr.append("    Class: ");
-    aStr.append(OUStringToOString(GetTypeRes_Impl(ResId((sal_uInt32)nRT, *pNewResMgr)),
+    if (aStr.getLength())
+        aStr.append('\n');
+
+    aStr.append("Class: ");
+    aStr.append(OUStringToOString(GetTypeRes_Impl(ResId(nRT, *pNewResMgr)),
         RTL_TEXTENCODING_UTF8));
     aStr.append(", Id: ");
     aStr.append(static_cast<sal_Int32>(nId));
     aStr.append(". ");
+    aStr.append(pMessage);
 
-    aStr.append("    Resource Stack:");
+    aStr.append("\nResource Stack\n");
     while( nDepth > 0 )
     {
-        aStr.append(" [ Class: ");
+        aStr.append("Class: ");
         aStr.append(OUStringToOString(GetTypeRes_Impl(
-            ResId((sal_uInt32)rResStack[nDepth].pResource->GetRT(), *pNewResMgr)),
+            ResId(rResStack[nDepth].pResource->GetRT(), *pNewResMgr)),
             RTL_TEXTENCODING_UTF8));
         aStr.append(", Id: ");
         aStr.append(static_cast<sal_Int32>(
             rResStack[nDepth].pResource->GetId()));
-        aStr.append("]");
         nDepth--;
     }
 
@@ -874,7 +877,8 @@ void ResMgr::decStack()
         if( (rTop.Flags & RCFlags::FALLBACK_DOWN) )
         {
             #if OSL_DEBUG_LEVEL > 1
-            SAL_INFO("tools", "returning from fallback " << pFallbackResMgr->GetFileName() );
+            OSL_TRACE( "returning from fallback %s",
+                     OUStringToOString(pFallbackResMgr->GetFileName(), osl_getThreadTextEncoding() ).getStr() );
             #endif
             delete pFallbackResMgr;
             pFallbackResMgr = nullptr;
@@ -919,7 +923,7 @@ bool ResMgr::IsAvailable( const ResId& rId, const Resource* pResObj ) const
     if( pMgr->pFallbackResMgr )
     {
         ResId aId( rId );
-        aId.ClearResMgr();
+        aId.SetResMgr( nullptr );
         return pMgr->pFallbackResMgr->IsAvailable( aId, pResObj );
     }
 
@@ -957,7 +961,7 @@ bool ResMgr::GetResource( const ResId& rId, const Resource* pResObj )
     if( pFallbackResMgr )
     {
         ResId aId( rId );
-        aId.ClearResMgr();
+        aId.SetResMgr( nullptr );
         return pFallbackResMgr->GetResource( aId, pResObj );
     }
 
@@ -1090,7 +1094,7 @@ RSHEADER_TYPE* ResMgr::CreateBlock( const ResId& rId )
     if( pFallbackResMgr )
     {
         ResId aId( rId );
-        aId.ClearResMgr();
+        aId.SetResMgr( nullptr );
         return pFallbackResMgr->CreateBlock( aId );
     }
 
@@ -1111,30 +1115,30 @@ RSHEADER_TYPE* ResMgr::CreateBlock( const ResId& rId )
     return pHeader;
 }
 
-sal_Int16 ResMgr::GetShort( void const * pShort )
+sal_Int16 ResMgr::GetShort( void * pShort )
 {
-    return ((*(static_cast<const sal_uInt8*>(pShort) + 0) << 8) |
-            (*(static_cast<const sal_uInt8*>(pShort) + 1) << 0)   );
+    return ((*(static_cast<sal_uInt8*>(pShort) + 0) << 8) |
+            (*(static_cast<sal_uInt8*>(pShort) + 1) << 0)   );
 }
 
-sal_Int32 ResMgr::GetLong( void const * pLong )
+sal_Int32 ResMgr::GetLong( void * pLong )
 {
-    return ((*(static_cast<const sal_uInt8*>(pLong) + 0) << 24) |
-            (*(static_cast<const sal_uInt8*>(pLong) + 1) << 16) |
-            (*(static_cast<const sal_uInt8*>(pLong) + 2) <<  8) |
-            (*(static_cast<const sal_uInt8*>(pLong) + 3) <<  0)   );
+    return ((*(static_cast<sal_uInt8*>(pLong) + 0) << 24) |
+            (*(static_cast<sal_uInt8*>(pLong) + 1) << 16) |
+            (*(static_cast<sal_uInt8*>(pLong) + 2) <<  8) |
+            (*(static_cast<sal_uInt8*>(pLong) + 3) <<  0)   );
 }
 
-sal_uInt64 ResMgr::GetUInt64( void const * pDatum )
+sal_uInt64 ResMgr::GetUInt64( void* pDatum )
 {
-    return ((sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 0)) << 56) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 1)) << 48) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 2)) << 40) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 3)) << 32) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 4)) << 24) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 5)) << 16) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 6)) <<  8) |
-            (sal_uInt64(*(static_cast<const sal_uInt8*>(pDatum) + 7)) <<  0)   );
+    return ((sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 0)) << 56) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 1)) << 48) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 2)) << 40) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 3)) << 32) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 4)) << 24) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 5)) << 16) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 6)) <<  8) |
+            (sal_uInt64(*(static_cast<sal_uInt8*>(pDatum) + 7)) <<  0)   );
 }
 
 sal_uInt32 ResMgr::GetStringWithoutHook( OUString& rStr, const sal_uInt8* pStr )
@@ -1237,7 +1241,7 @@ ResMgr* ResMgr::CreateFallbackResMgr( const ResId& rId, const Resource* pResourc
                 ResMgrContainer::get().freeResMgr( pRes );
                 return nullptr;
             }
-            SAL_INFO("tools.rc", "trying fallback: " << pRes->aFileName );
+            OSL_TRACE( "trying fallback: %s", OUStringToOString( pRes->aFileName, osl_getThreadTextEncoding() ).getStr() );
             pFallback = new ResMgr( pRes );
             pFallback->pOriginalResMgr = this;
             // try to recreate the resource stack
@@ -1382,6 +1386,77 @@ OString ResMgr::ReadByteString()
     return aRet;
 }
 
+OString ResMgr::GetAutoHelpId()
+{
+    osl::Guard<osl::Mutex> aGuard( getResMgrMutex() );
+
+    if( pFallbackResMgr )
+        return pFallbackResMgr->GetAutoHelpId();
+
+    OSL_ENSURE( nCurStack, "resource stack empty in Auto help id generation" );
+    if( nCurStack < 1 || nCurStack > 2 )
+        return OString();
+
+    // prepare HID, start with resource prefix
+    OStringBuffer aHID( 32 );
+    aHID.append( OUStringToOString( pImpRes->aPrefix, RTL_TEXTENCODING_UTF8 ) );
+    aHID.append( '.' );
+
+    // append type
+    const ImpRCStack *pRC = StackTop();
+    OSL_ENSURE( pRC, "missing resource stack level" );
+
+    if ( nCurStack == 1 )
+    {
+        // auto help ids for top level windows
+        switch( pRC->pResource->GetRT() ) {
+            case RSC_DOCKINGWINDOW:     aHID.append( "DockingWindow" );    break;
+            default: return OString();
+        }
+    }
+    else
+    {
+        // only controls with the following parents get auto help ids
+        const ImpRCStack *pRC1 = StackTop(1);
+        switch( pRC1->pResource->GetRT() ) {
+            case RSC_DOCKINGWINDOW:
+                // intentionally no breaks!
+                // auto help ids for controls
+                switch( pRC->pResource->GetRT() ) {
+                    case RSC_RADIOBUTTON:       aHID.append( "RadioButton" );      break;
+                    case RSC_CHECKBOX:          aHID.append( "CheckBox" );         break;
+                    case RSC_EDIT:              aHID.append( "Edit" );             break;
+                    case RSC_LISTBOX:           aHID.append( "ListBox" );          break;
+                    case RSC_COMBOBOX:          aHID.append( "ComboBox" );         break;
+                    case RSC_PUSHBUTTON:        aHID.append( "PushButton" );       break;
+                    case RSC_SPINFIELD:         aHID.append( "SpinField" );        break;
+                    case RSC_NUMERICFIELD:      aHID.append( "NumericField" );     break;
+                    case RSC_METRICFIELD:       aHID.append( "MetricField" );      break;
+                    case RSC_IMAGEBUTTON:       aHID.append( "ImageButton" );      break;
+                    default:
+                        // no type, no auto HID
+                        return OString();
+                }
+                break;
+            default:
+                return OString();
+        }
+    }
+
+    // append resource id hierarchy
+    for( int nOff = nCurStack-1; nOff >= 0; nOff-- )
+    {
+        aHID.append( '.' );
+        pRC = StackTop( nOff );
+
+        OSL_ENSURE( pRC->pResource, "missing resource in resource stack level !" );
+        if( pRC->pResource )
+            aHID.append( sal_Int32( pRC->pResource->GetId() ) );
+    }
+
+    return aHID.makeStringAndClear();
+}
+
 void ResMgr::SetReadStringHook( ResHookProc pProc )
 {
     osl::Guard<osl::Mutex> aGuard( getResMgrMutex() );
@@ -1414,12 +1489,13 @@ SimpleResMgr::SimpleResMgr( const sal_Char* pPrefixName,
     if( aLocale.isSystemLocale() )
         aLocale = ResMgrContainer::get().getDefLocale();
 
-    m_pResImpl.reset(ResMgrContainer::get().getResMgr( aPrefix, aLocale, true ));
+    m_pResImpl = ResMgrContainer::get().getResMgr( aPrefix, aLocale, true );
     DBG_ASSERT( m_pResImpl, "SimpleResMgr::SimpleResMgr : have no impl class !" );
 }
 
 SimpleResMgr::~SimpleResMgr()
 {
+    delete m_pResImpl;
 }
 
 SimpleResMgr* SimpleResMgr::Create(const sal_Char* pPrefixName, const LanguageTag& rLocale)
@@ -1450,7 +1526,7 @@ OUString SimpleResMgr::ReadString( sal_uInt32 nId )
         return sReturn;
 
     void* pResHandle = nullptr;
-    InternalResMgr* pFallback = m_pResImpl.get();
+    InternalResMgr* pFallback = m_pResImpl;
     RSHEADER_TYPE* pResHeader = static_cast<RSHEADER_TYPE*>(m_pResImpl->LoadGlobalRes( RSC_STRING, nId, &pResHandle ));
     if ( !pResHeader )
     {
@@ -1461,7 +1537,7 @@ OUString SimpleResMgr::ReadString( sal_uInt32 nId )
         {
             InternalResMgr* pOldFallback = pFallback;
             pFallback = ResMgrContainer::get().getNextFallback( pFallback );
-            if( pOldFallback != m_pResImpl.get() )
+            if( pOldFallback != m_pResImpl )
                 ResMgrContainer::get().freeResMgr( pOldFallback );
             if( pFallback )
             {
@@ -1488,7 +1564,7 @@ OUString SimpleResMgr::ReadString( sal_uInt32 nId )
     // not necessary with the current implementation which holds the string table permanently, but to be sure ....
     // note: pFallback cannot be NULL here and is either the fallback or m_pResImpl
     InternalResMgr::FreeGlobalRes( pResHeader, pResHandle );
-    if( m_pResImpl.get() != pFallback )
+    if( m_pResImpl != pFallback )
     {
         osl::Guard<osl::Mutex> aGuard2( getResMgrMutex() );
 

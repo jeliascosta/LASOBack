@@ -31,16 +31,6 @@ namespace com { namespace sun { namespace star { namespace lang {
     struct Locale;
 } } } }
 
-/// These constants define character compression in Asian text.
-/// Must match the values in com::sun::star::text::CharacterCompressionType.
-/// For bonus points, also appears to be directly stored in the ww8 file format.
-enum class CharCompressType {
-    NONE,               /// No Compression
-    PunctuationOnly,        /// Only punctuation is compressed
-    PunctuationAndKana, /// Punctuation and Japanese Kana are compressed.
-    Invalid = 0xff      /// only used in SC
-};
-
 class SVL_DLLPUBLIC SvxAsianConfig {
 public:
     SvxAsianConfig();
@@ -54,9 +44,9 @@ public:
 
     void SetKerningWesternTextOnly(bool value);
 
-    CharCompressType GetCharDistanceCompression() const;
+    sal_Int16 GetCharDistanceCompression() const;
 
-    void SetCharDistanceCompression(CharCompressType value);
+    void SetCharDistanceCompression(sal_Int16 value);
 
     css::uno::Sequence< css::lang::Locale > GetStartEndCharLocales() const;
 

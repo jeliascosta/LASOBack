@@ -35,8 +35,7 @@ class SW_DLLPUBLIC SwGlossaryHdl
     OUString        aCurGrp;
     SfxViewFrame*   pViewFrame;
     SwWrtShell*     pWrtShell;
-    std::unique_ptr<SwTextBlocks>
-                    pCurGrp;
+    SwTextBlocks*   pCurGrp;
 
     SAL_DLLPRIVATE bool  Expand( const OUString& rShortName,
                     SwGlossaries* pGlossaries,
@@ -46,7 +45,7 @@ public:
     void        GlossaryDlg();
 
     size_t      GetGroupCnt() const;
-    OUString    GetGroupName( size_t, OUString* pTitle );
+    OUString    GetGroupName( size_t, OUString* pTitle = nullptr );
     void        NewGroup(OUString & rGroupName, const OUString& rTitle);
     bool        DelGroup(const OUString &);
     void        RenameGroup(const OUString& rOld, OUString& rNew, const OUString& rNewTitle);

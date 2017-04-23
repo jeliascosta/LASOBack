@@ -19,6 +19,7 @@
 
 #include <memory>
 
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
 #include <comphelper/lok.hxx>
 #include <comphelper/string.hxx>
@@ -220,15 +221,15 @@ size_t GetPostIt(sal_Int32 aCount,const SwpHints *pHts)
     return aIndex;
 }
 
-bool SwPaM::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNotes , utl::TextSearch& rSText,
-                  SwMoveFnCollection const & fnMove, const SwPaM * pRegion,
+bool SwPaM::Find( const SearchOptions2& rSearchOpt, bool bSearchInNotes , utl::TextSearch& rSText,
+                  SwMoveFn fnMove, const SwPaM * pRegion,
                   bool bInReadOnly )
 {
     if( rSearchOpt.searchString.isEmpty() )
         return false;
 
     SwPaM* pPam = MakeRegion( fnMove, pRegion );
-    const bool bSrchForward = &fnMove == &fnMoveForward;
+    const bool bSrchForward = fnMove == fnMoveForward;
     SwNodeIndex& rNdIdx = pPam->GetPoint()->nNode;
     SwIndex& rContentIdx = pPam->GetPoint()->nContent;
 
@@ -302,12 +303,12 @@ bool SwPaM::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNote
             }
 
             SwDocShell *const pDocShell = pNode->GetDoc()->GetDocShell();
-            SwWrtShell *const pWrtShell = pDocShell ? pDocShell->GetWrtShell() : nullptr;
-            SwPostItMgr *const pPostItMgr = pWrtShell ? pWrtShell->GetPostItMgr() : nullptr;
+            SwWrtShell *const pWrtShell = (pDocShell) ? pDocShell->GetWrtShell() : nullptr;
+            SwPostItMgr *const pPostItMgr = (pWrtShell) ? pWrtShell->GetPostItMgr() : nullptr;
 
             // If there is an active text edit, then search there.
             bool bEndedTextEdit = false;
-            SdrView* pSdrView = pWrtShell ? pWrtShell->GetDrawView() : nullptr;
+            SdrView* pSdrView = pWrtShell->GetDrawView();
             if (pSdrView)
             {
                 // If the edited object is not anchored to this node, then ignore it.
@@ -410,7 +411,7 @@ bool SwPaM::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNote
                 // now we have to split
                 sal_Int32 nStartInside = 0;
                 sal_Int32 nEndInside = 0;
-                sal_Int32 aLoop= bSrchForward ? aStart : aNumberPostits;
+                sal_Int16 aLoop= bSrchForward ? aStart : aNumberPostits;
 
                 while ( (aLoop>=0) && (aLoop<=aNumberPostits))
                 {
@@ -468,8 +469,8 @@ bool SwPaM::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNote
     return bFound;
 }
 
-bool SwPaM::DoSearch( const i18nutil::SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
-                      SwMoveFnCollection const & fnMove, bool bSrchForward, bool bRegSearch,
+bool SwPaM::DoSearch( const SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
+                      SwMoveFn fnMove, bool bSrchForward, bool bRegSearch,
                       bool bChkEmptyPara, bool bChkParaEnd,
                       sal_Int32 &nStart, sal_Int32 &nEnd, sal_Int32 nTextLen,
                       SwNode* pNode, SwPaM* pPam)
@@ -552,7 +553,7 @@ bool SwPaM::DoSearch( const i18nutil::SearchOptions2& rSearchOpt, utl::TextSearc
         sal_Int32 nProxyStart = nStart;
         sal_Int32 nProxyEnd = nEnd;
         if( nSearchScript == nCurrScript &&
-                (rSText.*fnMove.fnSearch)( sCleanStr, &nProxyStart, &nProxyEnd, nullptr ) &&
+                (rSText.*fnMove->fnSearch)( sCleanStr, &nProxyStart, &nProxyEnd, nullptr ) &&
                 !(bZeroMatch = (nProxyStart == nProxyEnd)))
         {
             nStart = nProxyStart;
@@ -614,7 +615,7 @@ bool SwPaM::DoSearch( const i18nutil::SearchOptions2& rSearchOpt, utl::TextSearc
          * search, it probably never did. (pSttNd != &rNdIdx.GetNode())
          * is never true in this case. */
         if( (bSrchForward || pSttNd != &rNdIdx.GetNode()) &&
-            Move( fnMoveForward, GoInContent ) &&
+            Move( fnMoveForward, fnGoContent ) &&
             (!bSrchForward || pSttNd != &GetPoint()->nNode.GetNode()) &&
             1 == std::abs( (int)( GetPoint()->nNode.GetIndex() -
                              GetMark()->nNode.GetIndex()) ) )
@@ -631,17 +632,17 @@ bool SwPaM::DoSearch( const i18nutil::SearchOptions2& rSearchOpt, utl::TextSearc
 /// parameters for search and replace in text
 struct SwFindParaText : public SwFindParas
 {
-    const i18nutil::SearchOptions2& m_rSearchOpt;
+    const SearchOptions2& m_rSearchOpt;
     SwCursor& m_rCursor;
     utl::TextSearch m_aSText;
     bool m_bReplace;
     bool m_bSearchInNotes;
 
-    SwFindParaText( const i18nutil::SearchOptions2& rOpt, bool bSearchInNotes, bool bRepl, SwCursor& rCursor )
+    SwFindParaText( const SearchOptions2& rOpt, bool bSearchInNotes, bool bRepl, SwCursor& rCursor )
         : m_rSearchOpt( rOpt ), m_rCursor( rCursor ), m_aSText( utl::TextSearch::UpgradeToSearchOptions2( rOpt) ),
         m_bReplace( bRepl ), m_bSearchInNotes( bSearchInNotes )
     {}
-    virtual int Find( SwPaM* , SwMoveFnCollection const & , const SwPaM*, bool bInReadOnly ) override;
+    virtual int Find( SwPaM* , SwMoveFn , const SwPaM*, bool bInReadOnly ) override;
     virtual bool IsReplaceMode() const override;
     virtual ~SwFindParaText();
 };
@@ -650,7 +651,7 @@ SwFindParaText::~SwFindParaText()
 {
 }
 
-int SwFindParaText::Find( SwPaM* pCursor, SwMoveFnCollection const & fnMove,
+int SwFindParaText::Find( SwPaM* pCursor, SwMoveFn fnMove,
                           const SwPaM* pRegion, bool bInReadOnly )
 {
     if( bInReadOnly && m_bReplace )
@@ -694,7 +695,7 @@ int SwFindParaText::Find( SwPaM* pCursor, SwMoveFnCollection const & fnMove,
         }
         if (bRegExp && !bReplaced)
         {   // fdo#80715 avoid infinite loop if join failed
-            bool bRet = ((&fnMoveForward == &fnMove) ? &GoNextPara : &GoPrevPara)
+            bool bRet = ((fnMoveForward == fnMove) ? &GoNextPara : &GoPrevPara)
                 (*pCursor, fnMove);
             (void) bRet;
             assert(bRet); // if join failed, next node must be SwTextNode
@@ -711,7 +712,7 @@ bool SwFindParaText::IsReplaceMode() const
     return m_bReplace;
 }
 
-sal_uLong SwCursor::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNotes,
+sal_uLong SwCursor::Find( const SearchOptions2& rSearchOpt, bool bSearchInNotes,
                           SwDocPositions nStart, SwDocPositions nEnd,
                           bool& bCancel, FindRanges eFndRngs, bool bReplace )
 {
@@ -723,12 +724,12 @@ sal_uLong SwCursor::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSear
     bool const bStartUndo = pDoc->GetIDocumentUndoRedo().DoesUndo() && bReplace;
     if (bStartUndo)
     {
-        pDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::REPLACE, nullptr );
+        pDoc->GetIDocumentUndoRedo().StartUndo( UNDO_REPLACE, nullptr );
     }
 
     bool bSearchSel = 0 != (rSearchOpt.searchFlag & SearchFlags::REG_NOT_BEGINOFLINE);
     if( bSearchSel )
-        eFndRngs = (FindRanges)(eFndRngs | FindRanges::InSel);
+        eFndRngs = (FindRanges)(eFndRngs | FND_IN_SEL);
     SwFindParaText aSwFindParaText( rSearchOpt, bSearchInNotes, bReplace, *this );
     sal_uLong nRet = FindAll( aSwFindParaText, nStart, nEnd, eFndRngs, bCancel );
     pDoc->SetOle2Link( aLnk );
@@ -739,12 +740,12 @@ sal_uLong SwCursor::Find( const i18nutil::SearchOptions2& rSearchOpt, bool bSear
     {
         SwRewriter rewriter(MakeUndoReplaceRewriter(
                 nRet, rSearchOpt.searchString, rSearchOpt.replaceString));
-        pDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::REPLACE, & rewriter );
+        pDoc->GetIDocumentUndoRedo().EndUndo( UNDO_REPLACE, & rewriter );
     }
     return nRet;
 }
 
-OUString *ReplaceBackReferences( const i18nutil::SearchOptions2& rSearchOpt, SwPaM* pPam )
+OUString *ReplaceBackReferences( const SearchOptions2& rSearchOpt, SwPaM* pPam )
 {
     OUString *pRet = nullptr;
     if( pPam && pPam->HasMark() &&

@@ -18,7 +18,6 @@
  */
 
 #include "XMLImageMapExport.hxx"
-#include <o3tl/any.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <tools/debug.hxx>
@@ -66,7 +65,8 @@ XMLImageMapExport::XMLImageMapExport(SvXMLExport& rExp) :
     msTarget("Target"),
     msURL("URL"),
     msTitle("Title"),
-    mrExport(rExp)
+    mrExport(rExp),
+    mbWhiteSpace(true)
 {
 }
 
@@ -99,7 +99,7 @@ void XMLImageMapExport::Export(
             // image map container element
             SvXMLElementExport aImageMapElement(
                 mrExport, XML_NAMESPACE_DRAW, XML_IMAGE_MAP,
-                true/*bWhiteSpace*/, true/*bWhiteSpace*/);
+                mbWhiteSpace, mbWhiteSpace);
 
             // iterate over image map elements and call ExportMapEntry(...)
             // for each
@@ -199,7 +199,7 @@ void XMLImageMapExport::ExportMapEntry(
 
         // is-active
         aAny = rPropertySet->getPropertyValue(msIsActive);
-        if (! *o3tl::doAccess<bool>(aAny))
+        if (! *static_cast<sal_Bool const *>(aAny.getValue()))
         {
             mrExport.AddAttribute(XML_NAMESPACE_DRAW, XML_NOHREF, XML_NOHREF);
         }
@@ -225,14 +225,14 @@ void XMLImageMapExport::ExportMapEntry(
         DBG_ASSERT(XML_TOKEN_INVALID != eType,
                    "No name?! How did this happen?");
         SvXMLElementExport aAreaElement(mrExport, XML_NAMESPACE_DRAW, eType,
-                                        true/*bWhiteSpace*/, true/*bWhiteSpace*/);
+                                        mbWhiteSpace, mbWhiteSpace);
 
         // title property (as <svg:title> element)
         OUString sTitle;
         rPropertySet->getPropertyValue(msTitle) >>= sTitle;
         if(!sTitle.isEmpty())
         {
-            SvXMLElementExport aEventElemt(mrExport, XML_NAMESPACE_SVG, XML_TITLE, true/*bWhiteSpace*/, false);
+            SvXMLElementExport aEventElemt(mrExport, XML_NAMESPACE_SVG, XML_TITLE, mbWhiteSpace, false);
             mrExport.Characters(sTitle);
         }
 
@@ -241,13 +241,13 @@ void XMLImageMapExport::ExportMapEntry(
         rPropertySet->getPropertyValue(msDescription) >>= sDescription;
         if (!sDescription.isEmpty())
         {
-            SvXMLElementExport aDesc(mrExport, XML_NAMESPACE_SVG, XML_DESC, true/*bWhiteSpace*/, false);
+            SvXMLElementExport aDesc(mrExport, XML_NAMESPACE_SVG, XML_DESC, mbWhiteSpace, false);
             mrExport.Characters(sDescription);
         }
 
         // export events attached to this
         Reference<XEventsSupplier> xSupplier(rPropertySet, UNO_QUERY);
-        mrExport.GetEventExport().Export(xSupplier);
+        mrExport.GetEventExport().Export(xSupplier, mbWhiteSpace);
     }
     // else: no service info -> can't determine type -> ignore entry
 }

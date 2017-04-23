@@ -70,6 +70,7 @@ GenericStatusbarController::~GenericStatusbarController()
 }
 
 void SAL_CALL GenericStatusbarController::dispose()
+throw ( RuntimeException, std::exception )
 {
     svt::StatusbarController::dispose();
 
@@ -82,6 +83,7 @@ void SAL_CALL GenericStatusbarController::dispose()
 
 void SAL_CALL GenericStatusbarController::statusChanged(
     const FeatureStateEvent& rEvent)
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -122,7 +124,9 @@ void SAL_CALL GenericStatusbarController::paint(
     const Reference< awt::XGraphics >& xGraphics,
     const awt::Rectangle& rOutputRectangle,
     ::sal_Int32 /*nStyle*/ )
+throw ( RuntimeException, std::exception )
 {
+    OSL_TRACE("framework::GenericStatusbarController::paint");
     SolarMutexGuard aGuard;
 
     const Reference< awt::XGraphics2 > xGraphics2(xGraphics, UNO_QUERY);

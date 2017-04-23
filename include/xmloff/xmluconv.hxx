@@ -75,7 +75,7 @@ public:
         a lot of the methods here have been moved to <sax/tools/converter.hxx>!
 */
 
-class XMLOFF_DLLPUBLIC SvXMLUnitConverter final
+class XMLOFF_DLLPUBLIC SvXMLUnitConverter
 {
 private:
     SvXMLUnitConverter(const SvXMLUnitConverter&) = delete;
@@ -93,7 +93,7 @@ public:
         sal_Int16 eCoreMeasureUnit /*css::util::MeasureUnit*/,
         sal_Int16 eXMLMeasureUnit /*css::util::MeasureUnit*/);
 
-    ~SvXMLUnitConverter();
+    virtual ~SvXMLUnitConverter();
 
     static sal_Int16 GetMeasureUnit(FieldUnit const nFieldUnit);
 
@@ -122,48 +122,25 @@ public:
 
     /** convert string to enum using given enum map, if the enum is
         not found in the map, this method will return false */
-    template<typename EnumT>
-    static bool convertEnum( EnumT& rEnum,
+    static bool convertEnum( sal_uInt16& rEnum,
                              const OUString& rValue,
-                             const SvXMLEnumMapEntry<EnumT> *pMap )
-    {
-        sal_uInt16 nTmp;
-        bool bRet = convertEnumImpl(nTmp, rValue,
-                        reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(pMap));
-        if (bRet)
-            rEnum = static_cast<EnumT>(nTmp);
-        return bRet;
-    }
+                             const SvXMLEnumMapEntry *pMap );
 
     /** convert string to enum using given token map, if the enum is
         not found in the map, this method will return false */
-    template<typename EnumT>
-    static bool convertEnum( EnumT& rEnum,
+    static bool convertEnum( sal_uInt16& rEnum,
                              const OUString& rValue,
-                             const SvXMLEnumStringMapEntry<EnumT> *pMap )
-    {
-        sal_uInt16 nTmp;
-        bool bRet = convertEnumImpl(nTmp, rValue,
-                        reinterpret_cast<const SvXMLEnumStringMapEntry<sal_uInt16>*>(pMap));
-        if (bRet)
-            rEnum = static_cast<EnumT>(nTmp);
-        return bRet;
-    }
+                             const SvXMLEnumStringMapEntry *pMap );
 
     /** convert enum to string using given enum map with an optional
         default token. If the enum is not found in the map,
         this method will either use the given default or return
         false if not default is set */
-    template<typename EnumT>
     static bool convertEnum( OUStringBuffer& rBuffer,
-                             EnumT nValue,
-                             const SvXMLEnumMapEntry<EnumT> *pMap,
-                             enum ::xmloff::token::XMLTokenEnum eDefault =
-                                         ::xmloff::token::XML_TOKEN_INVALID )
-    {
-        return convertEnumImpl(rBuffer, static_cast<sal_uInt16>(nValue),
-                   reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(pMap), eDefault);
-    }
+                                 unsigned int nValue,
+                                 const SvXMLEnumMapEntry *pMap,
+                                 enum ::xmloff::token::XMLTokenEnum eDefault =
+                                         ::xmloff::token::XML_TOKEN_INVALID );
 
     /** convert double number to string (using ::rtl::math) and DO
         convert to export MapUnit using meCoreMeasureUnit/meXMLMeasureUnit */
@@ -242,20 +219,6 @@ public:
     /** convert number (sal_uInt32) to string (hex) */
     static void convertHex( OUStringBuffer& rBuffer,
                                sal_uInt32 nVal );
-
-private:
-    static bool convertEnumImpl( sal_uInt16& rEnum,
-                             const OUString& rValue,
-                             const SvXMLEnumMapEntry<sal_uInt16> *pMap );
-
-    static bool convertEnumImpl( sal_uInt16& rEnum,
-                             const OUString& rValue,
-                             const SvXMLEnumStringMapEntry<sal_uInt16> *pMap );
-
-    static bool convertEnumImpl( OUStringBuffer& rBuffer,
-                             sal_uInt16 nValue,
-                             const SvXMLEnumMapEntry<sal_uInt16> *pMap,
-                             enum ::xmloff::token::XMLTokenEnum eDefault );
 };
 
 #endif // INCLUDED_XMLOFF_XMLUCONV_HXX

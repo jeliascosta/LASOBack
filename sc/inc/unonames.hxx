@@ -32,7 +32,6 @@
 
 #define SC_SERVICENAME_CHDATAPROV       "com.sun.star.chart2.data.DataProvider"
 #define SC_SERVICENAME_CHRANGEHILIGHT   "com.sun.star.chart2.data.RangeHighlightListener"
-#define SC_SERVICENAME_CHART_PIVOTTABLE_DATAPROVIDER "com.sun.star.chart2.data.PivotTableDataProvider"
 
 //  document
 #define SC_UNO_AREALINKS            "AreaLinks"
@@ -104,7 +103,6 @@
 #define SC_UNONAME_CELLVJUS_METHOD  "VertJustifyMethod"
 #define SC_UNONAME_CELLORI          "Orientation"
 #define SC_UNONAME_NUMFMT           "NumberFormat"
-#define SC_UNONAME_FORMATID         "FormatID"
 #define SC_UNONAME_SHADOW           "ShadowFormat"
 #define SC_UNONAME_TBLBORD          "TableBorder"
 #define SC_UNONAME_TBLBORD2         "TableBorder2"
@@ -250,9 +248,7 @@
 
 //  data pilot field
 #define SC_UNONAME_FUNCTION         "Function"
-#define SC_UNONAME_FUNCTION2        "Function2"
 #define SC_UNONAME_SUBTOTALS        "Subtotals"
-#define SC_UNONAME_SUBTOTALS2       "Subtotals2"
 #define SC_UNONAME_SELPAGE          "SelectedPage"
 #define SC_UNONAME_USESELPAGE       "UseSelectedPage"
 #define SC_UNONAME_HASREFERENCE     "HasReference"
@@ -585,11 +581,9 @@
 #define SC_UNO_DP_ORIENTATION          "Orientation"
 #define SC_UNO_DP_POSITION             "Position"
 #define SC_UNO_DP_FUNCTION             "Function"
-#define SC_UNO_DP_FUNCTION2            "Function2"
 #define SC_UNO_DP_USEDHIERARCHY        "UsedHierarchy"
 #define SC_UNO_DP_FILTER               "Filter"
 #define SC_UNO_DP_SUBTOTAL             "SubTotals"
-#define SC_UNO_DP_SUBTOTAL2            "SubTotals2"
 #define SC_UNO_DP_SHOWEMPTY            "ShowEmpty"
 #define SC_UNO_DP_REPEATITEMLABELS     "RepeatItemLabels"
 #define SC_UNO_DP_ISVISIBLE            "IsVisible"

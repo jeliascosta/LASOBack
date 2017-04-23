@@ -28,7 +28,7 @@ namespace writerfilter
 {
 namespace dmapper
 {
-    std::string XTextRangeToString(css::uno::Reference< css::text::XTextRange > const & textRange);
+    std::string XTextRangeToString(css::uno::Reference< css::text::XTextRange > textRange);
     void resolveSprmProps(Properties & rHandler, Sprm & rSprm);
 }
 }

@@ -37,17 +37,27 @@ bool DateHelper::IsInSameMonth( const Date& rD1, const Date& rD2 )
         && (rD1.GetMonth() == rD2.GetMonth());
 }
 
-Date DateHelper::GetDateSomeMonthsAway( const Date& rD, sal_Int32 nMonthDistance )
+Date DateHelper::GetDateSomeMonthsAway( const Date& rD, long nMonthDistance )
 {
     Date aRet(rD);
-    aRet.AddMonths( nMonthDistance );
+    long nMonth = rD.GetMonth()+nMonthDistance;
+    long nNewMonth = nMonth%12;
+    long nNewYear = rD.GetYear() + nMonth/12;
+    if( nMonth <= 0 || !nNewMonth )
+        nNewYear--;
+    if( nNewMonth <= 0 )
+        nNewMonth += 12;
+    aRet.SetMonth( sal_uInt16(nNewMonth) );
+    aRet.SetYear( sal_uInt16(nNewYear) );
+    aRet.Normalize();
     return aRet;
 }
 
-Date DateHelper::GetDateSomeYearsAway( const Date& rD, sal_Int32 nYearDistance )
+Date DateHelper::GetDateSomeYearsAway( const Date& rD, long nYearDistance )
 {
     Date aRet(rD);
-    aRet.AddYears( static_cast<sal_Int16>(nYearDistance) );
+    aRet.SetYear( static_cast<sal_uInt16>(rD.GetYear()+nYearDistance) );
+    aRet.Normalize();
     return aRet;
 }
 

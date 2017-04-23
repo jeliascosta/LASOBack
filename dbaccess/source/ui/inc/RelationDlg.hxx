@@ -60,7 +60,7 @@ namespace dbaui
         ORelationDialog(OJoinTableView* pParent,
                         const TTableConnectionData::value_type& pConnectionData,
                         bool bAllowTableSelect = false );
-        virtual ~ORelationDialog() override;
+        virtual ~ORelationDialog();
         virtual void dispose() override;
 
         virtual short Execute() override;
@@ -78,7 +78,7 @@ namespace dbaui
         void Init(const TTableConnectionData::value_type& _pConnectionData);
 
     private:
-        DECL_LINK( OKClickHdl, Button*, void );
+        DECL_LINK_TYPED( OKClickHdl, Button*, void );
     };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_RELATIONDLG_HXX

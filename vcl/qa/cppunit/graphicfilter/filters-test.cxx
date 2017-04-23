@@ -62,7 +62,7 @@ bool VclFiltersTest::load(const OUString &,
 
 void VclFiltersTest::testScaling()
 {
-    for (BmpScaleFlag i = BmpScaleFlag::Default; i <= BmpScaleFlag::BiLinear; i = (BmpScaleFlag)((int)i + 1))
+    for (BmpScaleFlag i = BmpScaleFlag::Default; i <= BmpScaleFlag::Box; i = (BmpScaleFlag)((int)i + 1))
     {
         Bitmap aBitmap( Size( 413, 409 ), 24 );
         BitmapEx aBitmapEx( aBitmap );
@@ -70,7 +70,8 @@ void VclFiltersTest::testScaling()
         fprintf( stderr, "scale with type %d\n", int( i ) );
         CPPUNIT_ASSERT( aBitmapEx.Scale( 0.1937046, 0.193154, i ) );
         Size aAfter( aBitmapEx.GetSizePixel() );
-        fprintf( stderr, "size %ld, %ld\n", aAfter.Width(), aAfter.Height() );
+        fprintf( stderr, "size %ld, %ld\n", (long)aAfter.Width(),
+                 aAfter.Height() );
         CPPUNIT_ASSERT( labs (aAfter.Height() - aAfter.Width()) <= 1 );
     }
 }
@@ -147,9 +148,6 @@ void VclFiltersTest::testCVEs()
 
     testDir(OUString(),
         m_directories.getURLFromSrc("/vcl/qa/cppunit/graphicfilter/data/xpm/"));
-
-    testDir(OUString(),
-        m_directories.getURLFromSrc("/vcl/qa/cppunit/graphicfilter/data/svm/"));
 #endif
 }
 

@@ -86,7 +86,7 @@ sal_Int32 lcl_getSymbolStyleForSymbol( const chart2::Symbol & rSymbol )
 
         case chart2::SymbolStyle_POLYGON:
             // to avoid warning
-        case chart2::SymbolStyle::SymbolStyle_MAKE_FIXED_SIZE:
+        case chart2::SymbolStyle_MAKE_FIXED_SIZE:
             // nothing
             break;
     }
@@ -115,7 +115,7 @@ bool lcl_NumberFormatFromItemToPropertySet( sal_uInt16 nWhichId, const SfxItemSe
             sal_Int32 nFmt = static_cast< sal_Int32 >(
                 static_cast< const SfxUInt32Item & >(
                     rItemSet.Get( nWhichId )).GetValue());
-            aValue <<= nFmt;
+            aValue = uno::makeAny(nFmt);
         }
         else
             return bChanged;
@@ -198,7 +198,7 @@ DataPointItemConverter::DataPointItemConverter(
     SfxItemPool& rItemPool,
     SdrModel& rDrawModel,
     const uno::Reference<lang::XMultiServiceFactory>& xNamedPropertyContainerFactory,
-    GraphicObjectType eMapTo,
+    GraphicPropertyItemConverter::eGraphicObjectType eMapTo,
     const awt::Size* pRefSize,
     bool bDataSeries,
     bool bUseSpecialFillColor,
@@ -237,7 +237,7 @@ DataPointItemConverter::DataPointItemConverter(
 
 DataPointItemConverter::~DataPointItemConverter()
 {
-    std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
+    ::std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
 }
 
 void DataPointItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
@@ -288,6 +288,7 @@ bool DataPointItemConverter::GetItemProperty( tWhichIdType nWhichId, tPropertyNa
 
 bool DataPointItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -315,13 +316,13 @@ bool DataPointItemConverter::ApplySpecialItem(
                     if( bOldValue != bool(rValue) ||
                         DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, CHART_UNONAME_LABEL , aOldValue ) )
                     {
-                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, CHART_UNONAME_LABEL , uno::Any( aLabel ) );
+                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, CHART_UNONAME_LABEL , uno::makeAny( aLabel ) );
                         bChanged = true;
                     }
                 }
                 else if( bOldValue != bool(rValue) )
                 {
-                    GetPropertySet()->setPropertyValue(CHART_UNONAME_LABEL , uno::Any(aLabel));
+                    GetPropertySet()->setPropertyValue(CHART_UNONAME_LABEL , uno::makeAny(aLabel));
                     bChanged = true;
                 }
             }
@@ -353,15 +354,15 @@ bool DataPointItemConverter::ApplySpecialItem(
                 {
                     Reference< chart2::XDataSeries > xSeries( GetPropertySet(), uno::UNO_QUERY);
                     if( !aOldValue.equals(aNewValue) ||
-                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "LabelSeparator" , uno::Any( aOldValue ) ) )
+                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "LabelSeparator" , uno::makeAny( aOldValue ) ) )
                     {
-                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "LabelSeparator" , uno::Any( aNewValue ) );
+                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "LabelSeparator" , uno::makeAny( aNewValue ) );
                         bChanged = true;
                     }
                 }
                 else if( !aOldValue.equals(aNewValue) )
                 {
-                    GetPropertySet()->setPropertyValue( "LabelSeparator" , uno::Any( aNewValue ));
+                    GetPropertySet()->setPropertyValue( "LabelSeparator" , uno::makeAny( aNewValue ));
                     bChanged = true;
                 }
             }
@@ -384,15 +385,15 @@ bool DataPointItemConverter::ApplySpecialItem(
                 {
                     Reference< chart2::XDataSeries > xSeries( GetPropertySet(), uno::UNO_QUERY);
                     if( bOld!=bNew ||
-                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "TextWordWrap", uno::Any( bOld ) ) )
+                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "TextWordWrap", uno::makeAny( bOld ) ) )
                     {
-                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "TextWordWrap", uno::Any( bNew ) );
+                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "TextWordWrap", uno::makeAny( bNew ) );
                         bChanged = true;
                     }
                 }
                 else if( bOld!=bNew )
                 {
-                    GetPropertySet()->setPropertyValue( "TextWordWrap", uno::Any( bNew ));
+                    GetPropertySet()->setPropertyValue( "TextWordWrap", uno::makeAny( bNew ));
                     bChanged = true;
                 }
             }
@@ -419,15 +420,15 @@ bool DataPointItemConverter::ApplySpecialItem(
                 {
                     Reference< chart2::XDataSeries > xSeries( GetPropertySet(), uno::UNO_QUERY);
                     if( nOld!=nNew ||
-                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "LabelPlacement" , uno::Any( nOld ) ) )
+                        DataSeriesHelper::hasAttributedDataPointDifferentValue( xSeries, "LabelPlacement" , uno::makeAny( nOld ) ) )
                     {
-                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "LabelPlacement" , uno::Any( nNew ) );
+                        DataSeriesHelper::setPropertyAlsoToAllAttributedDataPoints( xSeries, "LabelPlacement" , uno::makeAny( nNew ) );
                         bChanged = true;
                     }
                 }
                 else if( nOld!=nNew )
                 {
-                    GetPropertySet()->setPropertyValue( "LabelPlacement" , uno::Any( nNew ));
+                    GetPropertySet()->setPropertyValue( "LabelPlacement" , uno::makeAny( nNew ));
                     bChanged = true;
                 }
             }
@@ -474,7 +475,7 @@ bool DataPointItemConverter::ApplySpecialItem(
                 if( bDeleteSymbol )
                     GetPropertySet()->setPropertyValue( "Symbol" , uno::Any());
                 else
-                    GetPropertySet()->setPropertyValue( "Symbol" , uno::Any( aSymbol ));
+                    GetPropertySet()->setPropertyValue( "Symbol" , uno::makeAny( aSymbol ));
                 bChanged = true;
             }
         }
@@ -493,7 +494,7 @@ bool DataPointItemConverter::ApplySpecialItem(
                 aSymbol.Size.Width = aSize.getWidth();
                 aSymbol.Size.Height = aSize.getHeight();
 
-                GetPropertySet()->setPropertyValue( "Symbol" , uno::Any( aSymbol ));
+                GetPropertySet()->setPropertyValue( "Symbol" , uno::makeAny( aSymbol ));
                 bChanged = true;
             }
         }
@@ -516,7 +517,7 @@ bool DataPointItemConverter::ApplySpecialItem(
                     if( aSymbol.Graphic != xGraphic )
                     {
                         aSymbol.Graphic = xGraphic;
-                        GetPropertySet()->setPropertyValue( "Symbol" , uno::Any( aSymbol ));
+                        GetPropertySet()->setPropertyValue( "Symbol" , uno::makeAny( aSymbol ));
                         bChanged = true;
                     }
                 }
@@ -535,7 +536,7 @@ bool DataPointItemConverter::ApplySpecialItem(
 
             if( ! bPropExisted || fOldValue != fValue )
             {
-                GetPropertySet()->setPropertyValue( "TextRotation" , uno::Any( fValue ));
+                GetPropertySet()->setPropertyValue( "TextRotation" , uno::makeAny( fValue ));
                 bChanged = true;
             }
         }
@@ -547,6 +548,7 @@ bool DataPointItemConverter::ApplySpecialItem(
 
 void DataPointItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+    throw( uno::Exception )
 {
     switch( nWhichId )
     {
@@ -567,7 +569,7 @@ void DataPointItemConverter::FillSpecialItem(
                 if( m_bOverwriteLabelsForAttributedDataPointsAlso )
                 {
                     if( DataSeriesHelper::hasAttributedDataPointDifferentValue(
-                        Reference< chart2::XDataSeries >( GetPropertySet(), uno::UNO_QUERY), CHART_UNONAME_LABEL , uno::Any(aLabel) ) )
+                        Reference< chart2::XDataSeries >( GetPropertySet(), uno::UNO_QUERY), CHART_UNONAME_LABEL , uno::makeAny(aLabel) ) )
                     {
                         rOutItemSet.InvalidateItem(nWhichId);
                     }

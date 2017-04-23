@@ -25,7 +25,6 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/util/XStringSubstitution.hpp>
 #include <com/sun/star/util/thePathSettings.hpp>
-#include <basic/sberrors.hxx>
 #include <osl/file.hxx>
 
 using namespace ::ooo::vba;
@@ -41,6 +40,7 @@ SwVbaOptions::~SwVbaOptions()
 
 uno::Any SAL_CALL
 SwVbaOptions::DefaultFilePath( sal_Int32 _path )
+    throw (css::script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     switch( _path )
     {
@@ -126,132 +126,132 @@ uno::Any SwVbaOptions::getValueEvent()
     return uno::makeAny( sPath );
 }
 
-sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderLineStyle()
+sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderLineStyle() throw (uno::RuntimeException, std::exception)
 {
     return word::WdLineStyle::wdLineStyleSingle;
 }
 
-void SAL_CALL SwVbaOptions::setDefaultBorderLineStyle( ::sal_Int32 /*_defaultborderlinestyle*/ )
+void SAL_CALL SwVbaOptions::setDefaultBorderLineStyle( ::sal_Int32 /*_defaultborderlinestyle*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderLineWidth()
+sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderLineWidth() throw (uno::RuntimeException, std::exception)
 {
     return word::WdLineWidth::wdLineWidth050pt;
 }
 
-void SAL_CALL SwVbaOptions::setDefaultBorderLineWidth( ::sal_Int32 /*_defaultborderlinewidth*/ )
+void SAL_CALL SwVbaOptions::setDefaultBorderLineWidth( ::sal_Int32 /*_defaultborderlinewidth*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderColorIndex()
+sal_Int32 SAL_CALL SwVbaOptions::getDefaultBorderColorIndex() throw (uno::RuntimeException, std::exception)
 {
     return word::WdColorIndex::wdAuto;
 }
 
-void SAL_CALL SwVbaOptions::setDefaultBorderColorIndex( ::sal_Int32 /*_defaultbordercolorindex*/ )
+void SAL_CALL SwVbaOptions::setDefaultBorderColorIndex( ::sal_Int32 /*_defaultbordercolorindex*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getReplaceSelection()
+sal_Bool SAL_CALL SwVbaOptions::getReplaceSelection() throw (uno::RuntimeException, std::exception)
 {
     return true;
 }
 
-void SAL_CALL SwVbaOptions::setReplaceSelection( sal_Bool /*_replaceselection*/ )
+void SAL_CALL SwVbaOptions::setReplaceSelection( sal_Bool /*_replaceselection*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getMapPaperSize()
+sal_Bool SAL_CALL SwVbaOptions::getMapPaperSize() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setMapPaperSize( sal_Bool /*_mappapersize*/ )
+void SAL_CALL SwVbaOptions::setMapPaperSize( sal_Bool /*_mappapersize*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyHeadings()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyHeadings() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyHeadings( sal_Bool /*_autoformatasyoutypeapplyheadings*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyHeadings( sal_Bool /*_autoformatasyoutypeapplyheadings*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyBulletedLists()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyBulletedLists() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyBulletedLists( sal_Bool /*_autoformatasyoutypeapplybulletedlists*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyBulletedLists( sal_Bool /*_autoformatasyoutypeapplybulletedlists*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyNumberedLists()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeApplyNumberedLists() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyNumberedLists( sal_Bool /*_autoformatasyoutypeapplynumberedlists*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeApplyNumberedLists( sal_Bool /*_autoformatasyoutypeapplynumberedlists*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeFormatListItemBeginning()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeFormatListItemBeginning() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeFormatListItemBeginning( sal_Bool /*_autoformatasyoutypeformatlistitembeginning*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeFormatListItemBeginning( sal_Bool /*_autoformatasyoutypeformatlistitembeginning*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeDefineStyles()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatAsYouTypeDefineStyles() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeDefineStyles( sal_Bool /*_autoformatasyoutypedefinestyles*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatAsYouTypeDefineStyles( sal_Bool /*_autoformatasyoutypedefinestyles*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyHeadings()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyHeadings() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatApplyHeadings( sal_Bool /*_autoformatapplyheadings*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatApplyHeadings( sal_Bool /*_autoformatapplyheadings*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyLists()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyLists() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatApplyLists( sal_Bool /*_autoformatapplylists*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatApplyLists( sal_Bool /*_autoformatapplylists*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyBulletedLists()
+sal_Bool SAL_CALL SwVbaOptions::getAutoFormatApplyBulletedLists() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaOptions::setAutoFormatApplyBulletedLists( sal_Bool /*_autoformatapplybulletedlists*/ )
+void SAL_CALL SwVbaOptions::setAutoFormatApplyBulletedLists( sal_Bool /*_autoformatapplybulletedlists*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }

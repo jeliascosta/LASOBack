@@ -30,139 +30,137 @@
 #include "shells.hrc"
 #include "helpid.h"
 
-String STR_PARAGRAPHSTYLEFAMILY
+String STR_PRINT_MERGE_MACRO
 {
-    Text [ en-US ] = "Paragraph Styles" ;
+    Text [ en-US ] = "Print form letters" ;
 };
 
-String STR_CHARACTERSTYLEFAMILY
+String STR_PAGE_COUNT_MACRO
 {
-    Text [ en-US ] = "Character Styles" ;
+    Text [ en-US ] = "Changing the page count" ;
 };
 
-String STR_FRAMESTYLEFAMILY
+ // Image-list ----------------------------------------------------------------
+ // Don't use this image list for normal toolbar images. We have now our commandimagelist
+ // folder in icon-themes/(name of theme)/cmd. This list is now only used for special toolboxes that are
+ // used in floating windows.
+
+#define IMAGELIST_AND_COUNT             \
+    IdList = {                          \
+        FN_FORMULA_CALC                 ;\
+        FN_FORMULA_CANCEL               ;\
+        FN_FORMULA_APPLY                ;\
+        };                              \
+    IdCount = {                         \
+        3;                              \
+    };
+
+ImageList RID_DEFAULTIMAGELIST_SC
 {
-    Text [ en-US ] = "Frame Styles" ;
+    Prefix = "sc";
+    MaskColor = IMAGE_MASK_COLOR ;
+    IMAGELIST_AND_COUNT
 };
 
-String STR_PAGESTYLEFAMILY
+ImageList RID_DEFAULTIMAGELIST_LC
 {
-    Text [ en-US ] = "Page Styles" ;
+    Prefix = "lc";
+    MaskColor = IMAGE_MASK_COLOR ;
+    IMAGELIST_AND_COUNT
 };
 
-String STR_LISTSTYLEFAMILY
-{
-    Text [ en-US ] = "List Styles" ;
-};
+// Templates
+#define STYLE_IMAGE_LISTEF \
+    MaskColor = IMAGE_MASK_COLOR ; \
+    IdList = \
+    { \
+        1; 2; 3; 4; 5; \
+    }; \
+    IdCount = 5;
 
-String STR_TABLESTYLEFAMILY
+SfxStyleFamilies DLG_STYLE_DESIGNER
 {
-    Text [ en-US ] = "Table Styles" ;
-};
-
-StringArray RID_PARAGRAPHSTYLEFAMILY
-{
-    ItemList [ en-US ] =
+    StyleFamilyList =
     {
-        < "All Styles"          ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"       ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"      ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"       ; SFXSTYLEBIT_USERDEF   ; > ;
-        < "Automatic"           ; SFXSTYLEBIT_AUTO      ; > ;
-        < "Text Styles"         ; SWSTYLEBIT_TEXT       ; > ;
-        < "Chapter Styles"      ; SWSTYLEBIT_CHAPTER    ; > ;
-        < "List Styles"         ; SWSTYLEBIT_LIST       ; > ;
-        < "Index Styles"        ; SWSTYLEBIT_IDX        ; > ;
-        < "Special Styles"      ; SWSTYLEBIT_EXTRA      ; > ;
-        < "HTML Styles"         ; SWSTYLEBIT_HTML       ; > ;
-        < "Conditional Styles"  ; SWSTYLEBIT_CONDCOLL   ; > ;
+        SfxStyleFamilyItem
+        {
+            Text [ en-US ] = "Paragraph Styles" ;
+            StyleFamily = SfxStyleFamily::Para ;
+            FilterList [ en-US ] =
+            {
+                < "All Styles"          ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles"       ; SFXSTYLEBIT_HIDDEN    ; > ;
+                < "Applied Styles"      ; SFXSTYLEBIT_USED      ; > ;
+                < "Custom Styles"       ; SFXSTYLEBIT_USERDEF   ; > ;
+                < "Automatic"           ; SFXSTYLEBIT_AUTO      ; > ;
+                < "Text Styles"         ; SWSTYLEBIT_TEXT       ; > ;
+                < "Chapter Styles"      ; SWSTYLEBIT_CHAPTER    ; > ;
+                < "List Styles"         ; SWSTYLEBIT_LIST       ; > ;
+                < "Index Styles"        ; SWSTYLEBIT_IDX        ; > ;
+                < "Special Styles"      ; SWSTYLEBIT_EXTRA      ; > ;
+                < "HTML Styles"         ; SWSTYLEBIT_HTML       ; > ;
+                < "Conditional Styles"  ; SWSTYLEBIT_CONDCOLL   ; > ;
+            };
+        };
+        SfxStyleFamilyItem
+        {
+            Text [ en-US ] = "Character Styles" ;
+            StyleFamily = SfxStyleFamily::Char ;
+            FilterList [ en-US ] =
+            {
+                < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
+                < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
+                < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
+            };
+        };
+        SfxStyleFamilyItem
+        {
+            Text [ en-US ] = "Frame Styles" ;
+            StyleFamily = SfxStyleFamily::Frame ;
+            FilterList [ en-US ] =
+            {
+                < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
+                < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
+                < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
+            };
+        };
+        SfxStyleFamilyItem
+        {
+            Text [ en-US ] = "Page Styles" ;
+            StyleFamily = SfxStyleFamily::Page ;
+            FilterList [ en-US ] =
+            {
+                < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
+                < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
+                < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
+            };
+        };
+        SfxStyleFamilyItem
+        {
+            StyleFamily = SfxStyleFamily::Pseudo ;
+            FilterList [ en-US ] =
+            {
+                < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
+                < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
+                < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
+            };
+            Text [ en-US ] = "List Styles" ;
+        };
+    };
+
+    ImageList 1 // == BMP_COLOR_NORMAL + 1
+    {
+        Prefix = "sf";
+        STYLE_IMAGE_LISTEF
     };
 };
 
-StringArray RID_CHARACTERSTYLEFAMILY
-{
-    ItemList [ en-US ] =
-    {
-        < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
-    };
-};
-
-StringArray RID_FRAMESTYLEFAMILY
-{
-    ItemList [ en-US ] =
-    {
-        < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
-    };
-};
-
-StringArray RID_PAGESTYLEFAMILY
-{
-    ItemList [ en-US ] =
-    {
-        < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
-    };
-};
-
-StringArray RID_LISTSTYLEFAMILY
-{
-    ItemList [ en-US ] =
-    {
-        < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
-    };
-};
-
-StringArray RID_TABLESTYLEFAMILY
-{
-    ItemList [ en-US ] =
-    {
-        < "All"             ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles"   ; SFXSTYLEBIT_HIDDEN    ; > ;
-        < "Applied Styles"  ; SFXSTYLEBIT_USED      ; > ;
-        < "Custom Styles"   ; SFXSTYLEBIT_USERDEF   ; > ;
-    };
-};
-
-Bitmap BMP_STYLES_FAMILY_PARA
-{
-    File = "sf01.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_CHAR
-{
-    File = "sf02.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_FRAME
-{
-    File = "sf03.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_PAGE
-{
-    File = "sf04.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_LIST
-{
-    File = "sf05.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_TABLE
-{
-    File = "sf06.png" ;
-};
+// Bitmap for the NumberingTemplates in the Organizer
+Bitmap BMP_STYLES_FAMILY_NUM { File = "styfamnu.bmp" ; };
 
 String STR_ENV_TITLE
 {
@@ -198,6 +196,11 @@ String STR_CANTCREATE
 String STR_DLLNOTFOUND
 {
     Text [ en-US ] = "Filter not found." ;
+};
+
+String STR_UNBENANNT
+{
+    Text [ en-US ] = "Untitled" ;
 };
 
 String STR_LOAD_GLOBAL_DOC
@@ -265,6 +268,16 @@ String STR_READONLY_PATH
     Text [ en-US ] = "The 'AutoText' directories are read-only. Do you want to call the path settings dialog?";
 };
 
+String STR_ERROR_PASSWD
+{
+    Text [ en-US ] = "Invalid password" ;
+};
+
+String STR_FMT_STD
+{
+    Text [ en-US ] = "(none)" ;
+};
+
 String STR_DOC_STAT
 {
     Text [ en-US ] = "Statistics" ;
@@ -302,9 +315,29 @@ String STR_STATSTR_AUTOFORMAT
     Text [ en-US ] = "Formatting document automatically..." ;
 };
 
+String STR_STATSTR_IMPGRF
+{
+    Text [ en-US ] = "Importing images..." ;
+};
+
 String STR_STATSTR_SEARCH
 {
     Text [ en-US ] = "Search..." ;
+};
+
+String STR_STATSTR_FORMAT
+{
+    Text [ en-US ] = "Formatting..." ;
+};
+
+String STR_STATSTR_PRINT
+{
+    Text [ en-US ] = "Printing..." ;
+};
+
+String STR_STATSTR_LAYOUTINIT
+{
+    Text [ en-US ] = "Converting..." ;
 };
 
 String STR_STATSTR_LETTER
@@ -397,6 +430,11 @@ String STR_ABSTRACT_TITLE
     Text [ en-US ] = "Abstract: " ;
 };
 
+String STR_FDLG_TEMPLATE_BUTTON
+{
+    Text [ en-US ] = "Style" ;
+};
+
 String STR_FDLG_TEMPLATE_NAME
 {
     Text [ en-US ] = "separated by: " ;
@@ -445,6 +483,11 @@ String STR_DELETE_NOTE_AUTHOR
 String STR_HIDE_NOTE_AUTHOR
 {
     Text [ en-US ] = "H~ide All Comments by $1";
+};
+
+String  STR_DONT_ASK_AGAIN
+{
+    Text [ en-US ] = "~Do not show warning again" ;
 };
 
 String STR_OUTLINE_NUMBERING
@@ -550,6 +593,11 @@ String STR_ROW
 String STR_COL
 {
     Text [ en-US ] = "Column" ;
+};
+
+String STR_SIMPLE
+{
+    Text [ en-US ] = "Plain" ;
 };
 
 String STR_AUTHMRK_EDIT

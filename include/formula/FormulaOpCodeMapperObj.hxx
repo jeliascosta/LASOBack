@@ -20,33 +20,19 @@
 #ifndef INCLUDED_FORMULA_FORMULAOPCODEMAPPEROBJ_HXX
 #define INCLUDED_FORMULA_FORMULAOPCODEMAPPEROBJ_HXX
 
-#include <exception>
-#include <memory>
-
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <com/sun/star/uno/Sequence.hxx>
-#include <com/sun/star/sheet/XFormulaOpCodeMapper.hpp>
-#include <cppuhelper/implbase.hxx>
 #include <formula/formuladllapi.h>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <cppuhelper/implbase2.hxx>
+#include <com/sun/star/sheet/XFormulaOpCodeMapper.hpp>
+#include <com/sun/star/lang/XServiceInfo.hpp>
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include <memory>
+#include <formula/FormulaCompiler.hxx>
 
-namespace com { namespace sun { namespace star {
-    namespace sheet { struct FormulaOpCodeMapEntry; }
-    namespace sheet { struct FormulaToken; }
-    namespace uno { class XComponentContext; }
-    namespace uno { class XInterface; }
-} } }
 
 namespace formula
 {
 
-class FormulaCompiler;
-
-class FORMULA_DLLPUBLIC FormulaOpCodeMapperObj : public cppu::WeakImplHelper<
+class FORMULA_DLLPUBLIC FormulaOpCodeMapperObj : public ::cppu::WeakImplHelper2<
                             css::sheet::XFormulaOpCodeMapper,
                             css::lang::XServiceInfo >
 {
@@ -58,24 +44,31 @@ public:
 
 protected:
                             FormulaOpCodeMapperObj(::std::unique_ptr<FormulaCompiler> && _pCompiler);
-    virtual                 ~FormulaOpCodeMapperObj() override;
+    virtual                 ~FormulaOpCodeMapperObj();
 
 private:
                             // XFormulaOpCodeMapper
                             // Attributes
-    virtual ::sal_Int32 SAL_CALL getOpCodeExternal() override;
-    virtual ::sal_Int32 SAL_CALL getOpCodeUnknown() override;
+    virtual ::sal_Int32 SAL_CALL getOpCodeExternal() throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getOpCodeUnknown() throw (css::uno::RuntimeException, std::exception) override;
                             // Methods
     virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL getMappings(
                                     const css::uno::Sequence< OUString >& rNames,
-                                    sal_Int32 nLanguage ) override;
+                                    sal_Int32 nLanguage )
+                                throw ( css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::sheet::FormulaOpCodeMapEntry > SAL_CALL getAvailableMappings(
-                                    sal_Int32 nLanguage, sal_Int32 nGroups ) override;
+                                    sal_Int32 nLanguage, sal_Int32 nGroups )
+                                throw ( css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
 };
 

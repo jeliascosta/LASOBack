@@ -704,7 +704,7 @@ EnhancedCustomShape2d::EnhancedCustomShape2d( SdrObject* pAObj ) :
     // of the constructed helper SdrObjects. This would lead to problems since the shadow
     // of one helper object would fall on one helper object behind it (e.g. with the
     // eyes of the smiley shape). This is not wanted; instead a single shadow 'behind'
-    // the AutoShape visualisation is wanted. This is done with primitive functionality
+    // the AutoShape visualisation is wanted. This is done with primitive functionailty
     // now in SdrCustomShapePrimitive2D::create2DDecomposition, but only for 2D objects
     // (see there and in EnhancedCustomShape3d::Create3DObject to read more).
     // This exception may be removed later when AutoShapes will create primitives directly.
@@ -716,15 +716,15 @@ EnhancedCustomShape2d::EnhancedCustomShape2d( SdrObject* pAObj ) :
     Size aS( pCustomShapeObj->GetLogicRect().GetSize() );
     aP.X() -= aS.Width() / 2;
     aP.Y() -= aS.Height() / 2;
-    aLogicRect = tools::Rectangle( aP, aS );
+    aLogicRect = Rectangle( aP, aS );
 
     OUString sShapeType;
     const SdrCustomShapeGeometryItem& rGeometryItem = static_cast<const SdrCustomShapeGeometryItem&>(pCustomShapeObj->GetMergedItem( SDRATTR_CUSTOMSHAPE_GEOMETRY ));
     const Any* pAny = rGeometryItem.GetPropertyValueByName( "Type" );
     if ( pAny ) {
         *pAny >>= sShapeType;
-        bOOXMLShape = sShapeType.startsWith("ooxml-");
-        SAL_INFO("svx", "shape type: " << sShapeType << " " << bOOXMLShape);
+        bOOXMLShape = ( sShapeType.startsWith("ooxml-") );
+        OSL_TRACE("shape type: %s %d", OUStringToOString( sShapeType, RTL_TEXTENCODING_ASCII_US ).getStr(), bOOXMLShape);
     }
     eSpType = EnhancedCustomShapeTypeNames::Get( sShapeType );
 
@@ -810,28 +810,24 @@ EnhancedCustomShape2d::EnhancedCustomShape2d( SdrObject* pAObj ) :
         }
     }
 }
-
-using EnhancedCustomShape::ExpressionFunct;
-
-double EnhancedCustomShape2d::GetEnumFunc( const ExpressionFunct eFunc ) const
+double EnhancedCustomShape2d::GetEnumFunc( const EnumFunc eFunc ) const
 {
     double fRet = 0.0;
     switch( eFunc )
     {
-        case ExpressionFunct::EnumPi :         fRet = F_PI; break;
-        case ExpressionFunct::EnumLeft :       fRet = 0.0; break;
-        case ExpressionFunct::EnumTop :        fRet = 0.0; break;
-        case ExpressionFunct::EnumRight :      fRet = (double)nCoordWidth * fXRatio;   break;
-        case ExpressionFunct::EnumBottom :     fRet = (double)nCoordHeight * fYRatio; break;
-        case ExpressionFunct::EnumXStretch :   fRet = nXRef; break;
-        case ExpressionFunct::EnumYStretch :   fRet = nYRef; break;
-        case ExpressionFunct::EnumHasStroke :  fRet = bStroked ? 1.0 : 0.0; break;
-        case ExpressionFunct::EnumHasFill :    fRet = bFilled ? 1.0 : 0.0; break;
-        case ExpressionFunct::EnumWidth :      fRet = nCoordWidth; break;
-        case ExpressionFunct::EnumHeight :     fRet = nCoordHeight; break;
-        case ExpressionFunct::EnumLogWidth :   fRet = aLogicRect.GetWidth(); break;
-        case ExpressionFunct::EnumLogHeight :  fRet = aLogicRect.GetHeight(); break;
-        default: break;
+        case ENUM_FUNC_PI :         fRet = F_PI; break;
+        case ENUM_FUNC_LEFT :       fRet = 0.0; break;
+        case ENUM_FUNC_TOP :        fRet = 0.0; break;
+        case ENUM_FUNC_RIGHT :      fRet = (double)nCoordWidth * fXRatio;   break;
+        case ENUM_FUNC_BOTTOM :     fRet = (double)nCoordHeight * fYRatio; break;
+        case ENUM_FUNC_XSTRETCH :   fRet = nXRef; break;
+        case ENUM_FUNC_YSTRETCH :   fRet = nYRef; break;
+        case ENUM_FUNC_HASSTROKE :  fRet = bStroked ? 1.0 : 0.0; break;
+        case ENUM_FUNC_HASFILL :    fRet = bFilled ? 1.0 : 0.0; break;
+        case ENUM_FUNC_WIDTH :      fRet = nCoordWidth; break;
+        case ENUM_FUNC_HEIGHT :     fRet = nCoordHeight; break;
+        case ENUM_FUNC_LOGWIDTH :   fRet = aLogicRect.GetWidth(); break;
+        case ENUM_FUNC_LOGHEIGHT :  fRet = aLogicRect.GetHeight(); break;
     }
     return fRet;
 }
@@ -854,11 +850,15 @@ double EnhancedCustomShape2d::GetAdjustValueAsDouble( const sal_Int32 nIndex ) c
 double EnhancedCustomShape2d::GetEquationValueAsDouble( const sal_Int32 nIndex ) const
 {
     double fNumber = 0.0;
+#if OSL_DEBUG_LEVEL > 0
     static sal_uInt32 nLevel = 0;
+#endif
     if ( nIndex < (sal_Int32)vNodesSharedPtr.size() )
     {
         if ( vNodesSharedPtr[ nIndex ].get() ) {
+#if OSL_DEBUG_LEVEL > 0
             nLevel ++;
+#endif
             try
             {
                 if ( vEquationResults[ nIndex ].bReady )
@@ -873,15 +873,19 @@ double EnhancedCustomShape2d::GetEquationValueAsDouble( const sal_Int32 nIndex )
 
                     if ( !rtl::math::isFinite( fNumber ) )
                         fNumber = 0.0;
+#if OSL_DEBUG_LEVEL > 0
                     SAL_INFO("svx", "equation " << nLevel << " (level: " << seqEquations[nIndex] << "): "
                              << fNumber << " --> " << 180.0*fNumber/10800000.0);
+#endif
                 }
             }
             catch ( ... )
             {
-                SAL_WARN("svx", "EnhancedCustomShape2d::GetEquationValueAsDouble failed");
+                OSL_TRACE("error: EnhancedCustomShape2d::GetEquationValueAsDouble failed");
             }
+#if OSL_DEBUG_LEVEL > 0
         nLevel --;
+#endif
         }
         SAL_INFO(
             "svx",
@@ -1031,40 +1035,16 @@ sal_Int32 EnhancedCustomShape2d::GetLuminanceChange( sal_uInt32 nIndex ) const
 
 Color EnhancedCustomShape2d::GetColorData( const Color& rFillColor, sal_uInt32 nIndex, double dBrightness ) const
 {
-    if ( bOOXMLShape || ( mso_sptMin == eSpType /* ODF "non-primitive" */ ) )
-    { //do LibreOffice way, using dBrightness
-        if ( dBrightness == 0.0)
-        {
-            return rFillColor;
-        }
-        else
-        {
-            if (dBrightness >=0.0)
-            { //lighten, blending with white
-                return Color( (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetRed() * (1.0-dBrightness) + dBrightness * 255.0, 0.0, 255.0)  ),
-                              (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetGreen() * (1.0-dBrightness) + dBrightness * 255.0, 0.0, 255.0) ),
-                              (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetBlue() * (1.0-dBrightness) + dBrightness * 255.0, 0.0, 255.0) )  );
-            }
-            else
-            { //darken (indicated by negative sign), blending with black
-                return Color( (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetRed() * (1.0+dBrightness), 0.0, 255.0)  ),
-                              (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetGreen() * (1.0+dBrightness), 0.0, 255.0) ),
-                              (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(rFillColor.GetBlue() * (1.0+dBrightness), 0.0, 255.0) )  );
-            }
-        }
-    }
-    else
-    { //do OpenOffice way, using nColorData
-        const sal_Int32 nLuminance = GetLuminanceChange(nIndex);
-        if( !nLuminance )
-            return rFillColor;
+    const sal_Int32 nLuminance = GetLuminanceChange(nIndex);
+    if( !nLuminance && dBrightness == 1.0 )
+        return rFillColor;
 
-        basegfx::BColor aHSVColor=
-                basegfx::tools::rgb2hsv(
-                    basegfx::BColor(rFillColor.GetRed()/255.0,
-                                    rFillColor.GetGreen()/255.0,
-                                    rFillColor.GetBlue()/255.0));
-
+    basegfx::BColor aHSVColor=
+        basegfx::tools::rgb2hsv(
+            basegfx::BColor(rFillColor.GetRed()/255.0,
+                            rFillColor.GetGreen()/255.0,
+                            rFillColor.GetBlue()/255.0));
+    if (nLuminance ) {
         if( nLuminance > 0 )
         {
             aHSVColor.setGreen(
@@ -1078,15 +1058,15 @@ Color EnhancedCustomShape2d::GetColorData( const Color& rFillColor, sal_uInt32 n
             aHSVColor.setBlue(
                 (1.0+nLuminance/100.0)*aHSVColor.getBlue());
         }
-
-        aHSVColor = basegfx::tools::hsv2rgb(aHSVColor);
-        return Color( (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(aHSVColor.getRed(),0.0,1.0) * 255.0 + 0.5 ),
-                    (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(aHSVColor.getGreen(),0.0,1.0) * 255.0 + 0.5 ),
-                    (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(aHSVColor.getBlue(),0.0,1.0) * 255.0 + 0.5 ) );
     }
+
+    aHSVColor = basegfx::tools::hsv2rgb(aHSVColor);
+    return Color( (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(dBrightness*aHSVColor.getRed(),0.0,1.0) * 255.0 + 0.5 ),
+                  (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(dBrightness*aHSVColor.getGreen(),0.0,1.0) * 255.0 + 0.5 ),
+                  (sal_uInt8)static_cast< sal_Int32 >( basegfx::clamp(dBrightness*aHSVColor.getBlue(),0.0,1.0) * 255.0 + 0.5 ) );
 }
 
-tools::Rectangle EnhancedCustomShape2d::GetTextRect() const
+Rectangle EnhancedCustomShape2d::GetTextRect() const
 {
     sal_Int32 nIndex, nSize = seqTextFrames.getLength();
     if ( !nSize )
@@ -1106,7 +1086,7 @@ tools::Rectangle EnhancedCustomShape2d::GetTextRect() const
         aTopLeft.Y() = aLogicRect.GetHeight() - aTopLeft.Y();
         aBottomRight.Y() = aLogicRect.GetHeight() - aBottomRight.Y();
     }
-    tools::Rectangle aRect( aTopLeft, aBottomRight );
+    Rectangle aRect( aTopLeft, aBottomRight );
     SAL_INFO("svx", aRect.GetWidth() << " x " << aRect.GetHeight());
     if( aRect.GetWidth() <= 1 || aRect.GetHeight() <= 1 )
         return aLogicRect;
@@ -1220,32 +1200,14 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
             fPos1 /= fXScale;
             fPos2 /= fYScale;
 
-            // Used for scaling the adjustment values based on handle positions
-            double fWidth;
-            double fHeight;
-
-            if ( nCoordWidth || nCoordHeight )
-            {
-                fWidth = nCoordWidth;
-                fHeight = nCoordHeight;
-            }
-            else
-            {
-                fWidth = aLogicRect.GetWidth();
-                fHeight = aLogicRect.GetHeight();
-            }
-
             if ( aHandle.nFlags & HandleFlags::SWITCHED )
             {
                 if ( aLogicRect.GetHeight() > aLogicRect.GetWidth() )
                 {
                     double fX = fPos1;
                     double fY = fPos2;
-                    double fTmp = fWidth;
                     fPos1 = fY;
                     fPos2 = fX;
-                    fHeight = fWidth;
-                    fWidth = fTmp;
                 }
             }
 
@@ -1256,22 +1218,11 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
             if ( aHandle.aPosition.Second.Type == EnhancedCustomShapeParameterType::ADJUSTMENT )
                 aHandle.aPosition.Second.Value>>= nSecondAdjustmentValue;
 
-
-            // DrawingML polar handles set REFR or REFANGLE instead of POLAR
-            if ( aHandle.nFlags & ( HandleFlags::POLAR | HandleFlags::REFR | HandleFlags::REFANGLE ) )
+            if ( aHandle.nFlags & HandleFlags::POLAR )
             {
                 double fXRef, fYRef, fAngle;
-                if ( aHandle.nFlags & HandleFlags::POLAR )
-                {
-                    GetParameter( fXRef, aHandle.aPolar.First, false, false );
-                    GetParameter( fYRef, aHandle.aPolar.Second, false, false );
-                }
-                else
-                {
-                    // DrawingML polar handles don't have reference center.
-                    fXRef = fWidth / 2;
-                    fYRef = fHeight / 2;
-                }
+                GetParameter( fXRef, aHandle.aPolar.First, false, false );
+                GetParameter( fYRef, aHandle.aPolar.Second, false, false );
                 const double fDX = fPos1 - fXRef;
                 fAngle = -( atan2( -fPos2 + fYRef, ( ( fDX == 0.0L ) ? 0.000000001 : fDX ) ) / F_PI180 );
                 double fX = ( fPos1 - fXRef );
@@ -1291,21 +1242,6 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
                     if ( fRadius > fMax )
                         fRadius = fMax;
                 }
-                if (aHandle.nFlags & HandleFlags::REFR)
-                {
-                    fRadius *= 100000.0;
-                    fRadius /= sqrt( fWidth * fWidth + fHeight * fHeight );
-                    nFirstAdjustmentValue = aHandle.nRefR;
-                }
-                if (aHandle.nFlags & HandleFlags::REFANGLE)
-                {
-                    if ( fAngle < 0 )
-                        fAngle += 360.0;
-                    // Adjustment value referred by nRefAngle needs to be in 60000th a degree
-                    // from 0 to 21600000.
-                    fAngle *= 60000.0;
-                    nSecondAdjustmentValue = aHandle.nRefAngle;
-                }
                 if ( nFirstAdjustmentValue >= 0 )
                     SetAdjustValueAsDouble( fRadius, nFirstAdjustmentValue );
                 if ( nSecondAdjustmentValue >= 0 )
@@ -1317,13 +1253,13 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
                 {
                     nFirstAdjustmentValue = aHandle.nRefX;
                     fPos1 *= 100000.0;
-                    fPos1 /= fWidth;
+                    fPos1 /= nCoordWidth;
                 }
                 if ( aHandle.nFlags & HandleFlags::REFY )
                 {
                     nSecondAdjustmentValue = aHandle.nRefY;
                     fPos2 *= 100000.0;
-                    fPos2 /= fHeight;
+                    fPos2 /= nCoordHeight;
                 }
                 if ( nFirstAdjustmentValue >= 0 )
                 {
@@ -1396,9 +1332,9 @@ void EnhancedCustomShape2d::SwapStartAndEndArrow( SdrObject* pObj ) //#108274
     pObj->SetMergedItem( aLineEndCenter );
 }
 
-static basegfx::B2DPolygon CreateArc( const tools::Rectangle& rRect, const Point& rStart, const Point& rEnd, const bool bClockwise, bool bFullCircle = false )
+static basegfx::B2DPolygon CreateArc( const Rectangle& rRect, const Point& rStart, const Point& rEnd, const bool bClockwise, bool bFullCircle = false )
 {
-    tools::Rectangle aRect( rRect );
+    Rectangle aRect( rRect );
     Point aStart( rStart );
     Point aEnd( rEnd );
 
@@ -1419,7 +1355,7 @@ static basegfx::B2DPolygon CreateArc( const tools::Rectangle& rRect, const Point
         }
     }
 
-    tools::Polygon aTempPoly( aRect, aStart, aEnd, PolyStyle::Arc, bFullCircle );
+    tools::Polygon aTempPoly( aRect, aStart, aEnd, POLY_ARC, bFullCircle );
     basegfx::B2DPolygon aRetval;
 
     if ( bClockwise )
@@ -1440,14 +1376,14 @@ static basegfx::B2DPolygon CreateArc( const tools::Rectangle& rRect, const Point
     return aRetval;
 }
 
-void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmentInd, std::vector< SdrPathObj* >& rObjectList,
+void EnhancedCustomShape2d::CreateSubPath( sal_uInt16& rSrcPt, sal_uInt16& rSegmentInd, std::vector< SdrPathObj* >& rObjectList,
                                            const bool bLineGeometryNeededOnly,
                                            const bool bSortFilledObjectsToBack,
                                            sal_Int32 nIndex )
 {
     bool bNoFill = false;
     bool bNoStroke = false;
-    double dBrightness = 0.0; //no blending
+    double dBrightness = 1.0;
 
     basegfx::B2DPolyPolygon aNewB2DPolyPolygon;
     basegfx::B2DPolygon aNewB2DPolygon;
@@ -1484,16 +1420,16 @@ void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmen
                     bNoStroke = true;
                 break;
                 case DARKEN :
-                    dBrightness = -0.4; //use sign to distinguish DARKEN from LIGHTEN
+                    dBrightness = 0.66666666;
                     break;
                 case DARKENLESS :
-                    dBrightness = -0.2;
+                    dBrightness = 0.83333333;
                     break;
                 case LIGHTEN :
-                    dBrightness = 0.4;
+                    dBrightness = 1.16666666;
                     break;
                 case LIGHTENLESS :
-                    dBrightness = 0.2;
+                    dBrightness = 1.33333333;
                     break;
                 case MOVETO :
                 {
@@ -1641,7 +1577,7 @@ void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmen
                         fHeight*= fYScale;
                         Point aP( (sal_Int32)( _aCenter.X() - fWidth ), (sal_Int32)( _aCenter.Y() - fHeight ) );
                         Size  aS( (sal_Int32)( fWidth * 2.0 ), (sal_Int32)( fHeight * 2.0 ) );
-                        tools::Rectangle aRect( aP, aS );
+                        Rectangle aRect( aP, aS );
                         if ( aRect.GetWidth() && aRect.GetHeight() )
                         {
                             double fStartAngle, fEndAngle;
@@ -1779,7 +1715,7 @@ void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmen
                     sal_uInt32 nXor = bClockwise ? 3 : 2;
                     for ( sal_uInt16 i = 0; ( i < nPntCount ) && ( ( rSrcPt + 3 ) < nCoordSize ); i++ )
                     {
-                        tools::Rectangle aRect( GetPoint( seqCoordinates[ rSrcPt ], true, true ), GetPoint( seqCoordinates[ rSrcPt + 1 ], true, true ) );
+                        Rectangle aRect( GetPoint( seqCoordinates[ rSrcPt ], true, true ), GetPoint( seqCoordinates[ rSrcPt + 1 ], true, true ) );
                         if ( aRect.GetWidth() && aRect.GetHeight() )
                         {
                             Point aCenter( aRect.Center() );
@@ -1813,7 +1749,7 @@ void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmen
                         fStartAngle *= F_PI180;
                         fSwingAngle *= F_PI180;
 
-                        SAL_INFO("svx", "ARCANGLETO scale: " << fWR << "x" << fHR << " angles: " << fStartAngle << "," << fSwingAngle);
+                        OSL_TRACE("ARCANGLETO scale: %f x %f angles: %f, %f", fWR, fHR, fStartAngle, fSwingAngle);
 
                         bool bClockwise = fSwingAngle >= 0.0;
 
@@ -1825,13 +1761,12 @@ void EnhancedCustomShape2d::CreateSubPath( sal_Int32& rSrcPt, sal_Int32& rSegmen
                             double fT = atan2((fWR*sin(fStartAngle)), (fHR*cos(fStartAngle)));
                             double fTE = atan2((fWR*sin(fStartAngle + fSwingAngle)), fHR*cos(fStartAngle + fSwingAngle));
 
-                            SAL_INFO("svx", "ARCANGLETO angles: " << fStartAngle << ", " << fSwingAngle
-                                             << " --> parameters: " << fT <<", " << fTE );
+                            OSL_TRACE("ARCANGLETO angles: %f, %f --> parameters: %f, %f", fStartAngle, fSwingAngle, fT, fTE );
 
                             fWR *= fXScale;
                             fHR *= fYScale;
 
-                            tools::Rectangle aRect ( Point ( aStartPoint.getX() - fWR*cos(fT) - fWR, aStartPoint.getY() - fHR*sin(fT) - fHR ),
+                            Rectangle aRect ( Point ( aStartPoint.getX() - fWR*cos(fT) - fWR, aStartPoint.getY() - fHR*sin(fT) - fHR ),
                                               Point ( aStartPoint.getX() - fWR*cos(fT) + fWR, aStartPoint.getY() - fHR*sin(fT) + fHR) );
 
                             Point aEndPoint ( aStartPoint.getX() - fWR*(cos(fT) - cos(fTE)), aStartPoint.getY() - fHR*(sin(fT) - sin(fTE)) );
@@ -2065,9 +2000,10 @@ void CorrectCalloutArrows( MSO_SPT eSpType, sal_uInt32 nLineObjectCount, std::ve
         case mso_sptAccentCallout90 :
         case mso_sptAccentBorderCallout90 :
         {
-            sal_uInt32 nLine = 0;
-            for ( SdrPathObj* pObj: vObjectList )
+            sal_uInt32 i, nLine = 0;
+            for ( i = 0; i < vObjectList.size(); i++ )
             {
+                SdrPathObj* pObj( vObjectList[ i ] );
                 if(pObj->IsLine())
                 {
                     nLine++;
@@ -2089,9 +2025,10 @@ void CorrectCalloutArrows( MSO_SPT eSpType, sal_uInt32 nLineObjectCount, std::ve
         case mso_sptCallout2 :
         case mso_sptBorderCallout2 :
         {
-            sal_uInt32 nLine = 0;
-            for ( SdrPathObj* pObj: vObjectList )
+            sal_uInt32 i, nLine = 0;
+            for ( i = 0; i < vObjectList.size(); i++ )
             {
+                SdrPathObj* pObj( vObjectList[ i ] );
                 if(pObj->IsLine())
                 {
                     nLine++;
@@ -2114,9 +2051,10 @@ void CorrectCalloutArrows( MSO_SPT eSpType, sal_uInt32 nLineObjectCount, std::ve
         case mso_sptCallout3 :
         case mso_sptBorderCallout3 :
         {
-            sal_uInt32 nLine = 0;
-            for ( SdrPathObj* pObj: vObjectList )
+            sal_uInt32 i, nLine = 0;
+            for ( i = 0; i < vObjectList.size(); i++ )
             {
+                SdrPathObj* pObj( vObjectList[ i ] );
                 if(pObj->IsLine())
                 {
                     if ( nLine )
@@ -2147,7 +2085,7 @@ void EnhancedCustomShape2d::AdaptObjColor(SdrPathObj& rObj, const SfxItemSet& rC
             case drawing::FillStyle_SOLID:
             {
                 Color aFillColor;
-                if ( nColorCount || rObj.GetBrightness() != 0.0 )
+                if ( nColorCount || rObj.GetBrightness() != 1.0 )
                 {
                     aFillColor = GetColorData(
                         static_cast<const XFillColorItem&>(rCustomShapeSet.Get( XATTR_FILLCOLOR )).GetColorValue(),
@@ -2159,7 +2097,7 @@ void EnhancedCustomShape2d::AdaptObjColor(SdrPathObj& rObj, const SfxItemSet& rC
             case drawing::FillStyle_GRADIENT:
             {
                 XGradient aXGradient(static_cast<const XFillGradientItem&>(rObj.GetMergedItem(XATTR_FILLGRADIENT)).GetGradientValue());
-                if ( nColorCount || rObj.GetBrightness() != 0.0 )
+                if ( nColorCount || rObj.GetBrightness() != 1.0 )
                 {
                     aXGradient.SetStartColor(
                         GetColorData(
@@ -2177,7 +2115,7 @@ void EnhancedCustomShape2d::AdaptObjColor(SdrPathObj& rObj, const SfxItemSet& rC
             case drawing::FillStyle_HATCH:
             {
                 XHatch aXHatch(static_cast<const XFillHatchItem&>(rObj.GetMergedItem(XATTR_FILLHATCH)).GetHatchValue());
-                if ( nColorCount || rObj.GetBrightness() != 0.0 )
+                if ( nColorCount || rObj.GetBrightness() != 1.0 )
                 {
                     aXHatch.SetColor(
                         GetColorData(
@@ -2190,7 +2128,7 @@ void EnhancedCustomShape2d::AdaptObjColor(SdrPathObj& rObj, const SfxItemSet& rC
             }
             case drawing::FillStyle_BITMAP:
             {
-                if ( nColorCount || rObj.GetBrightness() != 0.0 )
+                if ( nColorCount || rObj.GetBrightness() != 1.0 )
                 {
                     Bitmap aBitmap(static_cast<const XFillBitmapItem&>(rObj.GetMergedItem(XATTR_FILLBITMAP)).GetGraphicObject().GetGraphic().GetBitmapEx().GetBitmap());
 
@@ -2216,13 +2154,14 @@ SdrObject* EnhancedCustomShape2d::CreatePathObj( bool bLineGeometryNeededOnly )
     if ( !nCoordSize )
         return nullptr;
 
+    sal_uInt16 nSrcPt = 0;
+    sal_uInt16 nSegmentInd = 0;
+
     std::vector< SdrPathObj* > vObjectList;
     bool bSortFilledObjectsToBack = SortFilledObjectsToBackByDefault( eSpType );
 
     sal_Int32 nSubPathIndex = 0;
 
-    sal_Int32 nSrcPt = 0;
-    sal_Int32 nSegmentInd = 0;
     while( nSegmentInd <= seqSegments.getLength() )
     {
         CreateSubPath( nSrcPt, nSegmentInd, vObjectList, bLineGeometryNeededOnly, bSortFilledObjectsToBack, nSubPathIndex );
@@ -2334,7 +2273,7 @@ SdrObject* EnhancedCustomShape2d::CreatePathObj( bool bLineGeometryNeededOnly )
         if(pRet)
         {
             // move to target position
-            tools::Rectangle aCurRect(pRet->GetSnapRect());
+            Rectangle aCurRect(pRet->GetSnapRect());
             aCurRect.Move(aLogicRect.Left(), aLogicRect.Top());
             pRet->NbcSetSnapRect(aCurRect);
         }

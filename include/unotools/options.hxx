@@ -22,24 +22,7 @@
 
 #include <sal/config.h>
 #include <unotools/unotoolsdllapi.h>
-#include <o3tl/typed_flags_set.hxx>
 #include <vector>
-#include <memory>
-
-// bits for broadcasting hints of changes in ConfigurationListener::ConfigurationChanged, may be combined
-enum class ConfigurationHints {
-    NONE               = 0x0000,
-    Locale             = 0x0001,
-    Currency           = 0x0002,
-    UiLocale           = 0x0004,
-    DecSep             = 0x0008,
-    DatePatterns       = 0x0010,
-    IgnoreLang         = 0x0020,
-    CtlSettingsChanged = 0x2000,
-};
-namespace o3tl {
-    template<> struct typed_flags<ConfigurationHints> : is_typed_flags<ConfigurationHints, 0x203f> {};
-}
 
 /*
     The class utl::detail::Options provides a kind of multiplexer. It implements a ConfigurationListener
@@ -60,23 +43,23 @@ namespace utl {
     public:
         virtual ~ConfigurationListener();
 
-        virtual void ConfigurationChanged( ConfigurationBroadcaster* p, ConfigurationHints nHint ) = 0;
+        virtual void ConfigurationChanged( ConfigurationBroadcaster* p, sal_uInt32 nHint=0 ) = 0;
     };
     typedef ::std::vector< ConfigurationListener* > IMPL_ConfigurationListenerList;
 
     // complete broadcasting implementation
     class UNOTOOLS_DLLPUBLIC ConfigurationBroadcaster
     {
-        std::unique_ptr<IMPL_ConfigurationListenerList> mpList;
+        IMPL_ConfigurationListenerList* mpList;
         sal_Int32               m_nBroadcastBlocked;     // broadcast only if this is 0
-        ConfigurationHints      m_nBlockedHint;
+        sal_uInt32              m_nBlockedHint;
 
     public:
         void AddListener( utl::ConfigurationListener* pListener );
         void RemoveListener( utl::ConfigurationListener* pListener );
 
         // notify listeners; nHint is an implementation detail of the particular class deriving from ConfigurationBroadcaster
-        void NotifyListeners( ConfigurationHints nHint );
+        void NotifyListeners( sal_uInt32 nHint );
         ConfigurationBroadcaster();
         virtual ~ConfigurationBroadcaster();
         virtual void BlockBroadcasts( bool bBlock );
@@ -95,14 +78,14 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC Options
 public:
     Options();
 
-    virtual ~Options() override = 0;
+    virtual ~Options() = 0;
 
 private:
     Options(Options &) = delete;
     void operator =(Options &) = delete;
 
 protected:
-    virtual void ConfigurationChanged( ::utl::ConfigurationBroadcaster* p, ConfigurationHints nHint ) override;
+    virtual void ConfigurationChanged( ::utl::ConfigurationBroadcaster* p, sal_uInt32 nHint=0 ) override;
 };
 
 } }

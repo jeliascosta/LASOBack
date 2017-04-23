@@ -34,16 +34,19 @@ private:
     css::uno::Reference< css::beans::XPropertySet > mxParaProps;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaTabStops( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::beans::XPropertySet >& xParaProps );
+    SwVbaTabStops( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::beans::XPropertySet >& xParaProps ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaTabStops() {}
 
     // Methods
-    virtual css::uno::Reference< ::ooo::vba::word::XTabStop > SAL_CALL Add( float Position, const css::uno::Any& Alignment, const css::uno::Any& Leader ) override;
-    virtual void SAL_CALL ClearAll(  ) override;
+    virtual css::uno::Reference< ::ooo::vba::word::XTabStop > SAL_CALL Add( float Position, const css::uno::Any& Alignment, const css::uno::Any& Leader )
+        throw (css::script::BasicErrorException,
+               css::uno::RuntimeException,
+               std::exception) override;
+    virtual void SAL_CALL ClearAll(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
 
     // SwVbaTabStops_BASE
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override;

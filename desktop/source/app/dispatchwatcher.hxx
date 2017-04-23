@@ -34,7 +34,7 @@ namespace desktop
 /*
     Class for controls dispatching of command URL through office command line. There
     are "dangerous" command URLs, that can result in a running office without UI. To prevent
-    this situation the implementation monitors all dispatches and looks for an open task if
+    this situation the implementation surveille all dispatches and looks for an open task if
     there is arose a problem. If there is none the office will be shutdown to prevent a
     running office without UI.
 */
@@ -67,16 +67,17 @@ class DispatchWatcher : public ::cppu::WeakImplHelper< css::frame::XDispatchResu
 
         DispatchWatcher();
 
-        virtual ~DispatchWatcher() override;
+        virtual ~DispatchWatcher();
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+            throw(css::uno::RuntimeException, std::exception) override;
 
         // XDispachResultListener
-        virtual void SAL_CALL dispatchFinished( const css::frame::DispatchResultEvent& aEvent ) override;
+        virtual void SAL_CALL dispatchFinished( const css::frame::DispatchResultEvent& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
 
         // execute new dispatch request
-        bool executeDispatchRequests( const std::vector<DispatchRequest>& aDispatches, bool bNoTerminate );
+        bool executeDispatchRequests( const std::vector<DispatchRequest>& aDispatches, bool bNoTerminate = false );
 
     private:
         osl::Mutex m_mutex;

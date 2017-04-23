@@ -18,7 +18,6 @@
  */
 
 #include "dialmgr.hxx"
-#include "swtypes.hxx"
 #include <tools/resmgr.hxx>
 
 #ifndef DISABLE_DYNLOADING

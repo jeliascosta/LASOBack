@@ -35,7 +35,7 @@ class ScServerObjectSvtListenerForwarder : public SvtListener
     SfxBroadcaster  aBroadcaster;
 public:
                     ScServerObjectSvtListenerForwarder( ScServerObject* pObjP);
-    virtual         ~ScServerObjectSvtListenerForwarder() override;
+    virtual         ~ScServerObjectSvtListenerForwarder();
     virtual void Notify( const SfxHint& rHint ) override;
 };
 
@@ -52,7 +52,7 @@ private:
 
 public:
             ScServerObject( ScDocShell* pShell, const OUString& rItem );
-    virtual ~ScServerObject() override;
+    virtual ~ScServerObject();
 
     virtual bool GetData( css::uno::Any & rData /*out param*/,
                              const OUString & rMimeType,

@@ -26,40 +26,37 @@
 #include <svl/macitem.hxx>
 #include <vcl/lstbox.hxx>
 #include <com/sun/star/frame/XFrame.hpp>
-#include <memory>
 
 class SfxMacroTabPage_;
 class SvTabListBox;
 class SvTreeListBox;
 class SfxMacroTabPage_Impl;
 
-class SfxMacroTabPage : public SfxTabPage
+class SfxMacroTabPage_ : public SfxTabPage
 {
     SvxMacroTableDtor           aTbl;
-    DECL_LINK( SelectEvent_Impl, SvTreeListBox*, void );
-    DECL_LINK( SelectGroup_Impl, SvTreeListBox*, void );
-    DECL_LINK( SelectMacro_Impl, SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( SelectEvent_Impl, SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( SelectGroup_Impl, SvTreeListBox*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( SelectMacro_Impl, SvTreeListBox*, void );
 
-    DECL_LINK( AssignDeleteHdl_Impl, SvTreeListBox*, bool );
-    DECL_LINK( AssignDeleteClickHdl_Impl, Button *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( AssignDeleteHdl_Impl, SvTreeListBox*, bool );
+    DECL_DLLPRIVATE_LINK_TYPED( AssignDeleteClickHdl_Impl, Button *, void );
     bool                        AssignDeleteHdl(Control *);
-    DECL_LINK( TimeOut_Impl, Timer*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( TimeOut_Impl, Idle*, void );
 
 protected:
-    std::unique_ptr<SfxMacroTabPage_Impl>       mpImpl;
+    SfxMacroTabPage_Impl*      mpImpl;
+
+                                SfxMacroTabPage_( vcl::Window* pParent, const SfxItemSet& rItemSet );
 
     void                        InitAndSetHandler();
     void                        FillEvents();
+    void                        FillMacroList();
     void                        EnableButtons();
 
 public:
-    SfxMacroTabPage(
-        vcl::Window* pParent,
-        const css::uno::Reference< css::frame::XFrame >& rxDocumentFrame,
-        const SfxItemSet& rSet
-    );
 
-    virtual                     ~SfxMacroTabPage() override;
+    virtual                     ~SfxMacroTabPage_();
     virtual void                dispose() override;
 
     void                        AddEvent( const OUString & rEventName, sal_uInt16 nEventId );
@@ -75,6 +72,16 @@ public:
     virtual void                Reset( const SfxItemSet* rSet ) override;
 
     bool                        IsReadOnly() const override;
+};
+
+class SfxMacroTabPage : public SfxMacroTabPage_
+{
+public:
+    SfxMacroTabPage(
+        vcl::Window* pParent,
+        const css::uno::Reference< css::frame::XFrame >& rxDocumentFrame,
+        const SfxItemSet& rSet
+    );
 
     // --------- inherit from the base -------------
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

@@ -21,63 +21,49 @@
 #include <xmloff/xmltkmap.hxx>
 #include <xmloff/xmltoken.hxx>
 
-#include <unordered_map>
-#include <utility>
+#include <set>
 
 using namespace ::xmloff::token;
 
-class SvXMLTokenMap_Impl
+class SvXMLTokenMapEntry_Impl
 {
-private:
-    struct PairHash
-    {
-        std::size_t operator()(const std::pair<sal_uInt16,OUString> &pair) const
-        {
-            return static_cast<std::size_t>( pair.first | pair.second.hashCode() );
-        }
-    };
-    std::unordered_map< std::pair<sal_uInt16, OUString>,
-                        sal_uInt16, PairHash> m_aPrefixAndNameToTokenMap;
-    std::unordered_map< sal_Int32, sal_uInt16> m_aFastTokenToTokenMap;
+    sal_uInt16  nPrefixKey;
+    OUString    sLocalName;
+    sal_uInt16  nToken;
 
 public:
-    void insert( const SvXMLTokenMapEntry& rEntry );
-    sal_uInt16 get( sal_uInt16 nKeyPrefix, const OUString& rLName ) const;
-    sal_uInt16 get( sal_Int32 nFastTok ) const;
+
+    sal_uInt16 GetToken() const { return nToken; }
+
+    SvXMLTokenMapEntry_Impl( sal_uInt16 nPrefix, const OUString& rLName,
+                             sal_uInt16 nTok=XML_TOK_UNKNOWN ) :
+        nPrefixKey( nPrefix ),
+        sLocalName( rLName  ),
+        nToken( nTok )
+    {}
+
+    explicit SvXMLTokenMapEntry_Impl( const SvXMLTokenMapEntry& rEntry ) :
+        nPrefixKey( rEntry.nPrefixKey ),
+        sLocalName( GetXMLToken( rEntry.eLocalName ) ),
+        nToken( rEntry.nToken )
+    {}
+
+    bool operator<( const SvXMLTokenMapEntry_Impl& r ) const
+    {
+        return nPrefixKey < r.nPrefixKey ||
+               ( nPrefixKey == r.nPrefixKey &&
+                 sLocalName < r.sLocalName);
+    }
 };
 
-void SvXMLTokenMap_Impl::insert( const SvXMLTokenMapEntry& rEntry )
-{
-    m_aPrefixAndNameToTokenMap.insert( std::make_pair( std::make_pair( rEntry.nPrefixKey,
-                                       GetXMLToken( rEntry.eLocalName ) ), rEntry.nToken ) );
-    if( rEntry.nFastToken )
-        m_aFastTokenToTokenMap.insert( std::make_pair( rEntry.nFastToken, rEntry.nToken ) );
-}
-
-sal_uInt16 SvXMLTokenMap_Impl::get( sal_uInt16 nKeyPrefix, const OUString& rLName ) const
-{
-    auto aIter( m_aPrefixAndNameToTokenMap.find( std::make_pair( nKeyPrefix, rLName ) ) );
-    if ( aIter != m_aPrefixAndNameToTokenMap.end() )
-        return (*aIter).second;
-    else
-        return XML_TOK_UNKNOWN;
-}
-
-sal_uInt16 SvXMLTokenMap_Impl::get( sal_Int32 nFastTok ) const
-{
-    auto aIter( m_aFastTokenToTokenMap.find( nFastTok ) );
-    if ( aIter != m_aFastTokenToTokenMap.end() )
-        return (*aIter).second;
-    else
-        return XML_TOK_UNKNOWN;
-}
+class SvXMLTokenMap_Impl : public std::set<SvXMLTokenMapEntry_Impl> {};
 
 SvXMLTokenMap::SvXMLTokenMap( const SvXMLTokenMapEntry *pMap )
     : m_pImpl( new SvXMLTokenMap_Impl )
 {
     while( pMap->eLocalName != XML_TOKEN_INVALID )
     {
-        m_pImpl->insert( *pMap );
+        m_pImpl->insert(SvXMLTokenMapEntry_Impl( *pMap ));
         pMap++;
     }
 }
@@ -89,12 +75,19 @@ SvXMLTokenMap::~SvXMLTokenMap()
 sal_uInt16 SvXMLTokenMap::Get( sal_uInt16 nKeyPrefix,
                                const OUString& rLName ) const
 {
-    return m_pImpl->get( nKeyPrefix, rLName );
-}
+    SvXMLTokenMapEntry_Impl const* pEntry = nullptr;
+    SvXMLTokenMapEntry_Impl aTst( nKeyPrefix, rLName );
 
-sal_uInt16 SvXMLTokenMap::Get( sal_Int32 nFastTok ) const
-{
-    return m_pImpl->get( nFastTok );
+    SvXMLTokenMap_Impl::iterator it = m_pImpl->find( aTst );
+    if (it != m_pImpl->end())
+    {
+        pEntry = &*it;
+    }
+
+    if( pEntry )
+        return pEntry->GetToken();
+    else
+        return XML_TOK_UNKNOWN;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

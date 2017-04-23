@@ -59,7 +59,7 @@ public:
     static Graphic      MirrorGraphic( const Graphic& rGraphic, const BmpMirrorFlags nMirrorFlags );
     static Animation    MirrorAnimation( const Animation& rAnimation, bool bHMirr, bool bVMirr );
     static sal_uInt16   WriteGraphic( const Graphic& rGraphic, OUString& rFileName,
-                                      const OUString& rFilterName, const XOutFlags nFlags,
+                                      const OUString& rFilterName, const XOutFlags nFlags = XOutFlags::NONE,
                                       const Size* pMtfSize_100TH_MM = nullptr );
     static bool         GraphicToBase64(const Graphic& rGraphic, OUString& rOUString);
 
@@ -70,8 +70,8 @@ public:
     static Bitmap       DetectEdges( const Bitmap& rBmp, const sal_uInt8 cThreshold );
 
     static tools::Polygon GetCountour( const Bitmap& rBmp, const XOutFlags nContourFlags,
-                                       const sal_uInt8 cEdgeDetectThreshold,
-                                       const tools::Rectangle* pWorkRect );
+                                       const sal_uInt8 cEdgeDetectThreshold = 50,
+                                       const Rectangle* pWorkRect = nullptr );
 };
 
 SVX_DLLPUBLIC bool DitherBitmap( Bitmap& rBitmap );

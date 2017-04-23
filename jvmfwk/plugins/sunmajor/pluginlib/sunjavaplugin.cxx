@@ -30,11 +30,7 @@
 
 #include <string.h>
 
-#include <cassert>
 #include <memory>
-#include <utility>
-#include <vector>
-
 #include "config_options.h"
 #include "osl/diagnose.h"
 #include "rtl/ustring.hxx"
@@ -148,9 +144,14 @@ OString getPluginJarPath(
 #endif // UNX
 
 
-std::unique_ptr<JavaInfo> createJavaInfo(
-    const rtl::Reference<VendorBase> & info)
+JavaInfo* createJavaInfo(const rtl::Reference<VendorBase> & info)
 {
+    JavaInfo* pInfo = new JavaInfo;
+    pInfo->sVendor = info->getVendor();
+    pInfo->sLocation = info->getHome();
+    pInfo->sVersion = info->getVersion();
+    pInfo->nFeatures = info->supportsAccessibility() ? 1 : 0;
+    pInfo->nRequirements = info->needsRestart() ? JFW_REQUIRE_NEEDRESTART : 0;
     OUStringBuffer buf(1024);
     buf.append(info->getRuntimeLibrary());
     if (!info->getLibraryPath().isEmpty())
@@ -159,15 +160,13 @@ std::unique_ptr<JavaInfo> createJavaInfo(
         buf.append(info->getLibraryPath());
         buf.append("\n");
     }
+
     OUString sVendorData = buf.makeStringAndClear();
-    return std::unique_ptr<JavaInfo>(
-        new JavaInfo{
-            info->getVendor(), info->getHome(), info->getVersion(),
-            sal_uInt64(info->supportsAccessibility() ? 1 : 0),
-            sal_uInt64(info->needsRestart() ? JFW_REQUIRE_NEEDRESTART : 0),
-            rtl::ByteSequence(
-                reinterpret_cast<sal_Int8*>(sVendorData.pData->buffer),
-                sVendorData.getLength() * sizeof(sal_Unicode))});
+    pInfo->arVendorData = rtl::ByteSequence(
+        reinterpret_cast<sal_Int8*>(sVendorData.pData->buffer),
+        sVendorData.getLength() * sizeof(sal_Unicode));
+
+    return pInfo;
 }
 
 OUString getRuntimeLib(const rtl::ByteSequence & data)
@@ -208,7 +207,9 @@ extern "C" void JNICALL abort_handler()
         [in] represents the maximum version of a JRE. The string can be empty.
     @param arExcludeList
         [in] contains a list of &quot;bad&quot; versions. JREs which have one of these
-        versions must not be returned by this function.
+        versions must not be returned by this function. It can be NULL.
+    @param nLenList
+        [in] the number of version strings contained in <code>arExcludeList</code>.
 
    @return
     javaPluginError::NONE the function ran successfully and the version requirements are met
@@ -223,12 +224,9 @@ javaPluginError checkJavaVersionRequirements(
     rtl::Reference<VendorBase> const & aVendorInfo,
     OUString const& sMinVersion,
     OUString const& sMaxVersion,
-    std::vector<OUString> const & arExcludeList)
+    rtl_uString * * arExcludeList,
+    sal_Int32  nLenList)
 {
-    if (!aVendorInfo->isValidArch())
-    {
-        return javaPluginError::WrongArch;
-    }
     if (!sMinVersion.isEmpty())
     {
         try
@@ -267,7 +265,9 @@ javaPluginError checkJavaVersionRequirements(
         }
     }
 
-    for (auto const & sExVer: arExcludeList) {
+    for (int i = 0; i < nLenList; i++)
+    {
+        OUString sExVer(arExcludeList[i]);
         try
         {
             if (aVendorInfo->compareVersions(sExVer) == 0)
@@ -295,15 +295,28 @@ javaPluginError jfw_plugin_getAllJavaInfos(
     OUString const& sVendor,
     OUString const& sMinVersion,
     OUString const& sMaxVersion,
-    std::vector<OUString> const &arExcludeList,
-    std::vector<std::unique_ptr<JavaInfo>>* parJavaInfo,
+    rtl_uString  * *arExcludeList,
+    sal_Int32  nLenList,
+    JavaInfo*** parJavaInfo,
+    sal_Int32 *nLenInfoList,
     std::vector<rtl::Reference<jfw_plugin::VendorBase>> & infos)
 {
-    assert(parJavaInfo);
+    OSL_ASSERT(parJavaInfo);
+    OSL_ASSERT(nLenInfoList);
+    if (!parJavaInfo || !nLenInfoList)
+        return javaPluginError::InvalidArg;
+
+    //nLenlist contains the number of elements in arExcludeList.
+    //If no exclude list is provided then nLenList must be 0
+    OSL_ASSERT( ! (arExcludeList == nullptr && nLenList > 0));
+    if (arExcludeList == nullptr && nLenList > 0)
+        return javaPluginError::InvalidArg;
 
     OSL_ASSERT(!sVendor.isEmpty());
     if (sVendor.isEmpty())
         return javaPluginError::InvalidArg;
+
+    JavaInfo** arInfo = nullptr;
 
     //Find all JREs
     vector<rtl::Reference<VendorBase> > vecInfos =
@@ -319,9 +332,9 @@ javaPluginError jfw_plugin_getAllJavaInfos(
             continue;
 
         javaPluginError err = checkJavaVersionRequirements(
-            cur, sMinVersion, sMaxVersion, arExcludeList);
+            cur, sMinVersion, sMaxVersion, arExcludeList, nLenList);
 
-        if (err == javaPluginError::FailedVersion || err == javaPluginError::WrongArch)
+        if (err == javaPluginError::FailedVersion)
             continue;
         else if (err == javaPluginError::WrongVersionFormat)
             return err;
@@ -330,13 +343,17 @@ javaPluginError jfw_plugin_getAllJavaInfos(
     }
     //Now vecVerifiedInfos contains all those JREs which meet the version requirements
     //Transfer them into the array that is passed out.
-    parJavaInfo->clear();
+    arInfo = static_cast<JavaInfo**>(rtl_allocateMemory(vecVerifiedInfos.size() * sizeof (JavaInfo*)));
+    int j = 0;
     typedef vector<rtl::Reference<VendorBase> >::const_iterator cit;
-    for (cit ii = vecVerifiedInfos.begin(); ii != vecVerifiedInfos.end(); ++ii)
+    for (cit ii = vecVerifiedInfos.begin(); ii != vecVerifiedInfos.end(); ++ii, ++j)
     {
-        parJavaInfo->push_back(createJavaInfo(*ii));
+        arInfo[j] = createJavaInfo(*ii);
     }
+    *nLenInfoList = vecVerifiedInfos.size();
 
+
+    *parJavaInfo = arInfo;
     return javaPluginError::NONE;
 }
 
@@ -345,12 +362,20 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
     OUString const& sVendor,
     OUString const& sMinVersion,
     OUString const& sMaxVersion,
-    std::vector<OUString> const &arExcludeList,
-    std::unique_ptr<JavaInfo> * ppInfo)
+    rtl_uString  *  *arExcludeList,
+    sal_Int32  nLenList,
+    JavaInfo ** ppInfo)
 {
-    assert(ppInfo != nullptr);
+    if (!ppInfo)
+        return javaPluginError::InvalidArg;
     OSL_ASSERT(!sPath.isEmpty());
     if (sPath.isEmpty())
+        return javaPluginError::InvalidArg;
+
+    //nLenlist contains the number of elements in arExcludeList.
+    //If no exclude list is provided then nLenList must be 0
+    OSL_ASSERT( ! (arExcludeList == nullptr && nLenList > 0));
+    if (arExcludeList == nullptr && nLenList > 0)
         return javaPluginError::InvalidArg;
 
     OSL_ASSERT(!sVendor.isEmpty());
@@ -365,7 +390,7 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
     if (!sVendor.equals(aVendorInfo->getVendor()))
         return javaPluginError::NoJre;
     javaPluginError errorcode = checkJavaVersionRequirements(
-            aVendorInfo, sMinVersion, sMaxVersion, arExcludeList);
+            aVendorInfo, sMinVersion, sMaxVersion, arExcludeList, nLenList);
 
     if (errorcode == javaPluginError::NONE)
         *ppInfo = createJavaInfo(aVendorInfo);
@@ -375,10 +400,10 @@ javaPluginError jfw_plugin_getJavaInfoByPath(
 
 javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
     std::vector<pair<OUString, jfw::VersionInfo>> const& vecVendorInfos,
-    std::unique_ptr<JavaInfo> * ppInfo,
-    std::vector<rtl::Reference<VendorBase>> & infos)
+    JavaInfo ** ppInfo, std::vector<rtl::Reference<VendorBase>> & infos)
 {
-    assert(ppInfo);
+    if (!ppInfo)
+        return javaPluginError::InvalidArg;
 
     std::vector<rtl::Reference<VendorBase>> infoJavaHome;
     addJavaInfoFromJavaHome(infos, infoJavaHome);
@@ -400,7 +425,8 @@ javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
                 infoJavaHome[0],
                 versionInfo.sMinVersion,
                 versionInfo.sMaxVersion,
-                versionInfo.vecExcludeVersions);
+                versionInfo.getExcludeVersions(),
+                versionInfo.getExcludeVersionSize());
 
             if (errorcode == javaPluginError::NONE)
             {
@@ -415,14 +441,14 @@ javaPluginError jfw_plugin_getJavaInfoFromJavaHome(
 
 javaPluginError jfw_plugin_getJavaInfosFromPath(
     std::vector<std::pair<OUString, jfw::VersionInfo>> const& vecVendorInfos,
-    std::vector<std::unique_ptr<JavaInfo>> & javaInfosFromPath,
+    std::vector<JavaInfo*> & javaInfosFromPath,
     std::vector<rtl::Reference<jfw_plugin::VendorBase>> & infos)
 {
     // find JREs from PATH
     vector<rtl::Reference<VendorBase>> vecInfosFromPath;
     addJavaInfosFromPath(infos, vecInfosFromPath);
 
-    vector<std::unique_ptr<JavaInfo>> vecVerifiedInfos;
+    vector<JavaInfo*> vecVerifiedInfos;
 
     // copy infos of JREs that meet version requirements to vecVerifiedInfos
     typedef vector<rtl::Reference<VendorBase> >::iterator it;
@@ -434,7 +460,7 @@ javaPluginError jfw_plugin_getJavaInfosFromPath(
         for (ci_pl vendorInfo = vecVendorInfos.begin(); vendorInfo != vecVendorInfos.end(); ++vendorInfo)
         {
             const OUString& vendor = vendorInfo->first;
-            jfw::VersionInfo const & versionInfo = vendorInfo->second;
+            jfw::VersionInfo versionInfo = vendorInfo->second;
 
             if (vendor.equals(currentInfo->getVendor()))
             {
@@ -442,7 +468,8 @@ javaPluginError jfw_plugin_getJavaInfosFromPath(
                     currentInfo,
                     versionInfo.sMinVersion,
                     versionInfo.sMaxVersion,
-                    versionInfo.vecExcludeVersions);
+                    versionInfo.getExcludeVersions(),
+                    versionInfo.getExcludeVersionSize());
 
                 if (errorcode == javaPluginError::NONE)
                 {
@@ -455,7 +482,7 @@ javaPluginError jfw_plugin_getJavaInfosFromPath(
     if (vecVerifiedInfos.empty())
         return javaPluginError::NoJre;
 
-    javaInfosFromPath = std::move(vecVerifiedInfos);
+    javaInfosFromPath = vecVerifiedInfos;
 
     return javaPluginError::NONE;
 }
@@ -511,7 +538,7 @@ static void load_msvcr(LPCWSTR jvm_dll, wchar_t const* msvcr)
 // and just let the implicit loading try to take care of it.
 static void do_msvcr_magic(rtl_uString *jvm_dll)
 {
-    rtl_uString* Module(nullptr);
+    rtl_uString* Module(0);
     struct stat st;
 
     oslFileError nError = osl_getSystemPathFromFileURL(jvm_dll, &Module);
@@ -530,7 +557,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
         return;
     }
 
-    PIMAGE_DOS_HEADER dos_hdr = static_cast<PIMAGE_DOS_HEADER>(malloc(st.st_size));
+    PIMAGE_DOS_HEADER dos_hdr = (PIMAGE_DOS_HEADER) malloc(st.st_size);
 
     if (fread(dos_hdr, st.st_size, 1, f) != 1 ||
         memcmp(dos_hdr, "MZ", 2) != 0 ||
@@ -544,7 +571,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
 
     fclose(f);
 
-    IMAGE_NT_HEADERS *nt_hdr = reinterpret_cast<IMAGE_NT_HEADERS *>(reinterpret_cast<char *>(dos_hdr) + dos_hdr->e_lfanew);
+    IMAGE_NT_HEADERS *nt_hdr = (IMAGE_NT_HEADERS *) ((char *)dos_hdr + dos_hdr->e_lfanew);
 
     DWORD importsVA = nt_hdr->OptionalHeader
             .DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
@@ -568,9 +595,9 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
         return;
     }
     IMAGE_IMPORT_DESCRIPTOR *imports =
-        reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(reinterpret_cast<char *>(dos_hdr) + importsVA + VAtoPhys);
+        (IMAGE_IMPORT_DESCRIPTOR *) ((char *) dos_hdr + importsVA + VAtoPhys);
 
-    while (imports <= reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(reinterpret_cast<char *>(dos_hdr) + st.st_size - sizeof (IMAGE_IMPORT_DESCRIPTOR)) &&
+    while (imports <= (IMAGE_IMPORT_DESCRIPTOR *) ((char *) dos_hdr + st.st_size - sizeof (IMAGE_IMPORT_DESCRIPTOR)) &&
            imports->Name != 0 &&
            imports->Name + VAtoPhys < (DWORD) st.st_size)
     {
@@ -579,7 +606,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
             { "msvcr71.dll" , L"msvcr71.dll"  },
             { "msvcr100.dll", L"msvcr100.dll" },
         };
-        char const* importName = reinterpret_cast<char *>(dos_hdr) + imports->Name + VAtoPhys;
+        char const* importName = (char *) dos_hdr + imports->Name + VAtoPhys;
         for (size_t i = 0; i < SAL_N_ELEMENTS(msvcrts); ++i)
         {
             if (0 == strnicmp(importName,
@@ -613,15 +640,14 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
     JavaVM ** ppVm,
     JNIEnv ** ppEnv)
 {
-    assert(pInfo != nullptr);
-    assert(ppVm != nullptr);
-    assert(ppEnv != nullptr);
     // unless guard is volatile the following warning occurs on gcc:
     // warning: variable 't' might be clobbered by `longjmp' or `vfork'
     volatile osl::MutexGuard guard(PluginMutex::get());
     // unless errorcode is volatile the following warning occurs on gcc:
     // warning: variable 'errorcode' might be clobbered by `longjmp' or `vfork'
     volatile javaPluginError errorcode = javaPluginError::NONE;
+    if ( pInfo == nullptr || ppVm == nullptr || ppEnv == nullptr)
+        return javaPluginError::InvalidArg;
     //Check if the Vendor (pInfo->sVendor) is supported by this plugin
     if ( ! isVendorSupported(pInfo->sVendor))
         return javaPluginError::WrongVendor;
@@ -644,16 +670,6 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
     osl::Module moduleRt;
 #if defined(LINUX)
     if (!moduleRt.load(sRuntimeLib, SAL_LOADMODULE_GLOBAL | SAL_LOADMODULE_NOW))
-#elif defined MACOSX
-    // Must be SAL_LOADMODULE_GLOBAL when e.g. specifying a
-    // -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 option to
-    // JDK 1.8.0_121 at least, as JNI_CreateJavaVM -> Threads::create_vm ->
-    // JvmtiExport::post_vm_initialized -> cbEarlyVMInit -> initialize ->
-    // util_initialize -> sun.misc.VMSupport.getAgentProperties ->
-    // Java_sun_misc_VMSupport_initAgentProperties ->
-    // JDK_FindJvmEntry("JVM_INitAgentProperties") ->
-    // dlsym(RTLD_DEFAULT, "JVM_INitAgentProperties"):
-    if (!moduleRt.load(sRuntimeLib, SAL_LOADMODULE_GLOBAL))
 #else
 #if defined(_WIN32)
     do_msvcr_magic(sRuntimeLib.pData);
@@ -843,7 +859,6 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
 #else
     (void) arOptions;
     (void) cOptions;
-    (void) ppEnv;
     // On Android we always have a Java VM as we only expect this code
     // to be run in an Android app anyway.
     *ppVm = lo_get_javavm();
@@ -853,12 +868,11 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
    return errorcode;
 }
 
-javaPluginError jfw_plugin_existJRE(const JavaInfo *pInfo, bool *exist)
+javaPluginError jfw_plugin_existJRE(const JavaInfo *pInfo, sal_Bool *exist)
 {
-    assert(pInfo != nullptr);
-    assert(exist != nullptr);
-
     javaPluginError ret = javaPluginError::NONE;
+    if (!pInfo || !exist)
+        return javaPluginError::InvalidArg;
     OUString sLocation(pInfo->sLocation);
 
     if (sLocation.isEmpty())

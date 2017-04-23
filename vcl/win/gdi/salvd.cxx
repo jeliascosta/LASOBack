@@ -19,8 +19,6 @@
 
 #include <svsys.h>
 
-#include <comphelper/windowserrorstring.hxx>
-
 #include <vcl/sysdata.hxx>
 
 #include <win/wincomp.hxx>
@@ -36,9 +34,8 @@ HBITMAP WinSalVirtualDevice::ImplCreateVirDevBitmap(HDC hDC, long nDX, long nDY,
 
      if ( nBitCount == 1 )
      {
-         hBitmap = CreateBitmap( (int)nDX, (int)nDY, 1, 1, nullptr );
-         SAL_WARN_IF( !hBitmap, "vcl", "CreateBitmap failed: " << WindowsErrorString( GetLastError() ) );
-         ppData = nullptr;
+         hBitmap = CreateBitmap( (int)nDX, (int)nDY, 1, 1, NULL );
+         ppData = NULL;
      }
      else
      {
@@ -62,9 +59,8 @@ HBITMAP WinSalVirtualDevice::ImplCreateVirDevBitmap(HDC hDC, long nDX, long nDY,
          aBitmapInfo.bmiHeader.biClrImportant = 0;
 
          hBitmap = CreateDIBSection( hDC, &aBitmapInfo,
-                                     DIB_RGB_COLORS, ppData, nullptr,
+                                     DIB_RGB_COLORS, ppData, NULL,
                                      0 );
-         SAL_WARN_IF( !hBitmap, "vcl", "CreateDIBSection failed: " << WindowsErrorString( GetLastError() ) );
      }
 
     return hBitmap;
@@ -88,14 +84,16 @@ SalVirtualDevice* WinSalInstance::CreateVirtualDevice( SalGraphics* pSGraphics,
             break;
     }
 
-    HDC     hDC = nullptr;
-    HBITMAP hBmp = nullptr;
+    HDC     hDC = NULL;
+    HBITMAP hBmp = NULL;
+    bool    bOk = FALSE;
 
     if( pData )
     {
         hDC = (pData->hDC) ? pData->hDC : GetDC(pData->hWnd);
-        hBmp = nullptr;
-        if (hDC)
+        hBmp = NULL;
+        bOk = (hDC != NULL);
+        if (bOk)
         {
             nDX = GetDeviceCaps( hDC, HORZRES );
             nDY = GetDeviceCaps( hDC, VERTRES );
@@ -109,21 +107,27 @@ SalVirtualDevice* WinSalInstance::CreateVirtualDevice( SalGraphics* pSGraphics,
     else
     {
         hDC = CreateCompatibleDC( pGraphics->getHDC() );
-        SAL_WARN_IF( !hDC, "vcl", "CreateCompatibleDC failed: " << WindowsErrorString( GetLastError() ) );
+        if( !hDC )
+            ImplWriteLastError( GetLastError(), "CreateCompatibleDC in CreateVirtualDevice" );
 
         void *pDummy;
         hBmp = WinSalVirtualDevice::ImplCreateVirDevBitmap(pGraphics->getHDC(), nDX, nDY, nBitCount, &pDummy);
-
+        if( !hBmp )
+            ImplWriteLastError( GetLastError(), "ImplCreateVirDevBitmap in CreateVirtualDevice" );
         // #124826# continue even if hBmp could not be created
         // if we would return a failure in this case, the process
         // would terminate which is not required
+
+        DBG_ASSERT( hBmp, "WinSalInstance::CreateVirtualDevice(), could not create Bitmap!" );
+
+        bOk = (hDC != NULL);
     }
 
-    if (hDC)
+    if ( bOk )
     {
-        WinSalVirtualDevice*    pVDev = new WinSalVirtualDevice(hDC, hBmp, nBitCount, (pData != nullptr && pData->hDC != nullptr ), nDX, nDY);
+        WinSalVirtualDevice*    pVDev = new WinSalVirtualDevice;
         SalData*                pSalData = GetSalData();
-        WinSalGraphics*         pVirGraphics = new WinSalGraphics(WinSalGraphics::VIRTUAL_DEVICE, pGraphics->isScreen(), nullptr, pVDev);
+        WinSalGraphics*         pVirGraphics = new WinSalGraphics(WinSalGraphics::VIRTUAL_DEVICE, pGraphics->isScreen(), 0, pVDev);
         pVirGraphics->SetLayout( SalLayoutFlags::NONE );   // by default no! mirroring for VirtualDevices, can be enabled with EnableRTL()
         pVirGraphics->setHDC(hDC);
         if ( pSalData->mhDitherPal && pVirGraphics->isScreen() )
@@ -133,38 +137,47 @@ SalVirtualDevice* WinSalInstance::CreateVirtualDevice( SalGraphics* pSGraphics,
         }
         pVirGraphics->InitGraphics();
 
-        pVDev->setGraphics(pVirGraphics);
+        pVDev->mnWidth = nDX;
+        pVDev->mnHeight = nDY;
+        pVDev->setHDC(hDC);
+        pVDev->mhBmp        = hBmp;
+        if( hBmp )
+            pVDev->mhDefBmp = SelectBitmap( hDC, hBmp );
+        else
+            pVDev->mhDefBmp = NULL;
+        pVDev->mpGraphics   = pVirGraphics;
+        pVDev->mnBitCount   = nBitCount;
+        pVDev->mbGraphics   = FALSE;
+        pVDev->mbForeignDC  = (pData != NULL && pData->hDC != NULL );
+
+        // insert VirDev in VirDevList
+        pVDev->mpNext = pSalData->mpFirstVD;
+        pSalData->mpFirstVD = pVDev;
 
         return pVDev;
     }
     else
     {
+        if ( hDC && !pData )
+            DeleteDC( hDC );
         if ( hBmp )
             DeleteBitmap( hBmp );
-        return nullptr;
+        return NULL;
     }
 }
 
-WinSalVirtualDevice::WinSalVirtualDevice(HDC hDC, HBITMAP hBMP, sal_uInt16 nBitCount, bool bForeignDC, long nWidth, long nHeight)
-    : mhLocalDC(hDC),          // HDC or 0 for Cache Device
-      mhBmp(hBMP),             // Memory Bitmap
-      mpGraphics(nullptr),     // current VirDev graphics
-      mnBitCount(nBitCount),   // BitCount (0 or 1)
-      mbGraphics(false),       // is Graphics used
-      mbForeignDC(bForeignDC), // uses a foreign DC instead of a bitmap
-      mnWidth(nWidth),
-      mnHeight(nHeight)
+WinSalVirtualDevice::WinSalVirtualDevice()
 {
-    // Default Bitmap
-    if (hBMP)
-        mhDefBmp = SelectBitmap(hDC, hBMP);
-    else
-        mhDefBmp = nullptr;
-
-    // insert VirDev into list of virtual devices
-    SalData* pSalData = GetSalData();
-    mpNext = pSalData->mpFirstVD;
-    pSalData->mpFirstVD = this;
+    setHDC((HDC)NULL);          // HDC or 0 for Cache Device
+    mhBmp = (HBITMAP) NULL;     // Memory Bitmap
+    mhDefBmp = (HBITMAP) NULL;  // Default Bitmap
+    mpGraphics = NULL;          // current VirDev graphics
+    mpNext = NULL;              // next VirDev
+    mnBitCount = 0;             // BitCount (0 or 1)
+    mbGraphics = FALSE;         // is Graphics used
+    mbForeignDC = FALSE;        // uses a foreign DC instead of a bitmap
+    mnWidth = 0;
+    mnHeight = 0;
 }
 
 WinSalVirtualDevice::~WinSalVirtualDevice()
@@ -187,29 +200,29 @@ WinSalVirtualDevice::~WinSalVirtualDevice()
     if( mhBmp )
         DeleteBitmap( mhBmp );
     delete mpGraphics;
-    mpGraphics = nullptr;
+    mpGraphics = NULL;
 }
 
 SalGraphics* WinSalVirtualDevice::AcquireGraphics()
 {
     if ( mbGraphics )
-        return nullptr;
+        return NULL;
 
     if ( mpGraphics )
-        mbGraphics = true;
+        mbGraphics = TRUE;
 
     return mpGraphics;
 }
 
 void WinSalVirtualDevice::ReleaseGraphics( SalGraphics* )
 {
-    mbGraphics = false;
+    mbGraphics = FALSE;
 }
 
 bool WinSalVirtualDevice::SetSize( long nDX, long nDY )
 {
     if( mbForeignDC || !mhBmp )
-        return true;    // ???
+        return TRUE;    // ???
     else
     {
         void *pDummy;
@@ -230,13 +243,14 @@ bool WinSalVirtualDevice::SetSize( long nDX, long nDY )
                 if (pImpl)
                     pImpl->Init();
             }
-            return true;
+            return TRUE;
         }
         else
         {
+            ImplWriteLastError( GetLastError(), "ImplCreateVirDevBitmap in SetSize" );
             mnWidth = 0;
             mnHeight = 0;
-            return false;
+            return FALSE;
         }
     }
 }

@@ -19,7 +19,6 @@
 
 #include <com/sun/star/util/DateTime.hpp>
 #include <comphelper/processfactory.hxx>
-#include <o3tl/any.hxx>
 #include <rtl/ustring.hxx>
 #include <svl/fstathelper.hxx>
 #include <tools/date.hxx>
@@ -44,7 +43,7 @@ bool FStatHelper::GetModifiedDateTimeOfFile( const OUString& rURL,
         if( aAny.hasValue() )
         {
             bRet = true;
-            auto pDT = o3tl::doAccess<util::DateTime>(aAny);
+            const util::DateTime* pDT = static_cast<util::DateTime const *>(aAny.getValue());
             if( pDate )
                 *pDate = Date( pDT->Day, pDT->Month, pDT->Year );
             if( pTime )

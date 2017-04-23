@@ -18,7 +18,9 @@
  */
 
 #include <hintids.hxx>
+#include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
+#include <com/sun/star/text/XTextDocument.hpp>
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/xmlmetai.hxx>
 #include <xmloff/xmlmetae.hxx>
@@ -41,7 +43,7 @@ using namespace ::xmloff::token;
 uno::Reference<document::XDocumentProperties>
 SwXMLImport::GetDocumentProperties() const
 {
-    if (m_bOrganizerMode || IsStylesOnlyMode() ||
+    if (IsOrganizerMode() || IsStylesOnlyMode() ||
         IsBlockMode() || IsInsertMode())
     {
         return nullptr;
@@ -158,7 +160,7 @@ void SwXMLExport::ExportMeta_()
 {
     SvXMLExport::ExportMeta_();
 
-    if( !m_bBlock )
+    if( !IsBlockMode() )
     {
 
         if( IsShowProgress() )

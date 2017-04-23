@@ -41,11 +41,30 @@
 
 bool    IsConvDic( const OUString &rFileURL, sal_Int16 &nLang, sal_Int16 &nConvType );
 
-typedef std::unordered_multimap<OUString, OUString, const OUStringHash> ConvMap;
+struct StrLT
+{
+    bool operator()( const OUString &rTxt1, const OUString &rTxt2 ) const
+    {
+        return rTxt1 < rTxt2;
+    }
+};
 
-typedef std::set<OUString> ConvMapKeySet;
+struct StrEQ
+{
+    bool operator()( const OUString &rTxt1, const OUString &rTxt2 ) const
+    {
+        return rTxt1 == rTxt2;
+    }
+};
 
-typedef std::unordered_multimap<OUString, sal_Int16, OUStringHash> PropTypeMap;
+typedef std::unordered_multimap< OUString, OUString,
+                       const OUStringHash, StrEQ > ConvMap;
+
+typedef std::set< OUString, StrLT > ConvMapKeySet;
+
+typedef std::unordered_multimap< OUString, sal_Int16,
+                       OUStringHash, StrEQ > PropTypeMap;
+
 
 class ConvDic :
     public ::cppu::WeakImplHelper
@@ -93,39 +112,51 @@ public:
              sal_Int16 nConversionType,
              bool bBiDirectional,
              const OUString &rMainURL);
-    virtual ~ConvDic() override;
+    virtual ~ConvDic();
 
     // XConversionDictionary
-    virtual OUString SAL_CALL getName(  ) override;
-    virtual css::lang::Locale SAL_CALL getLocale(  ) override;
-    virtual sal_Int16 SAL_CALL getConversionType(  ) override;
-    virtual void SAL_CALL setActive( sal_Bool bActivate ) override;
-    virtual sal_Bool SAL_CALL isActive(  ) override;
-    virtual void SAL_CALL clear(  ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getConversions( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength, css::linguistic2::ConversionDirection eDirection, sal_Int32 nTextConversionOptions ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getConversionEntries( css::linguistic2::ConversionDirection eDirection ) override;
-    virtual void SAL_CALL addEntry( const OUString& aLeftText, const OUString& aRightText ) override;
-    virtual void SAL_CALL removeEntry( const OUString& aLeftText, const OUString& aRightText ) override;
-    virtual sal_Int16 SAL_CALL getMaxCharCount( css::linguistic2::ConversionDirection eDirection ) override;
+    virtual OUString SAL_CALL getName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getLocale(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getConversionType(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setActive( sal_Bool bActivate ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isActive(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL clear(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getConversions( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength, css::linguistic2::ConversionDirection eDirection, sal_Int32 nTextConversionOptions ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getConversionEntries( css::linguistic2::ConversionDirection eDirection ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEntry( const OUString& aLeftText, const OUString& aRightText ) throw (css::lang::IllegalArgumentException, css::container::ElementExistException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEntry( const OUString& aLeftText, const OUString& aRightText ) throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getMaxCharCount( css::linguistic2::ConversionDirection eDirection ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XConversionPropertyType
-    virtual void SAL_CALL setPropertyType( const OUString& aLeftText, const OUString& aRightText, ::sal_Int16 nPropertyType ) override;
-    virtual ::sal_Int16 SAL_CALL getPropertyType( const OUString& aLeftText, const OUString& aRightText ) override;
+    virtual void SAL_CALL setPropertyType( const OUString& aLeftText, const OUString& aRightText, ::sal_Int16 nPropertyType ) throw (css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int16 SAL_CALL getPropertyType( const OUString& aLeftText, const OUString& aRightText ) throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
 
     // XFlushable
-    virtual void SAL_CALL flush(  ) override;
-    virtual void SAL_CALL addFlushListener( const css::uno::Reference< css::util::XFlushListener >& l ) override;
-    virtual void SAL_CALL removeFlushListener( const css::uno::Reference< css::util::XFlushListener >& l ) override;
+    virtual void SAL_CALL flush(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addFlushListener( const css::uno::Reference< css::util::XFlushListener >& l ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeFlushListener( const css::uno::Reference< css::util::XFlushListener >& l ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+
+
+    static inline OUString
+        getImplementationName_Static() throw();
+    static css::uno::Sequence< OUString >
+        getSupportedServiceNames_Static() throw();
 
     bool    HasEntry( const OUString &rLeftText, const OUString &rRightText );
     void    AddEntry( const OUString &rLeftText, const OUString &rRightText );
     void    RemoveEntry( const OUString &rLeftText, const OUString &rRightText );
 };
+
+inline OUString ConvDic::getImplementationName_Static() throw()
+{
+    return OUString( "com.sun.star.lingu2.ConvDic" );
+}
+
 
 #endif
 

@@ -11,7 +11,6 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.libreoffice.LOKitShell;
-import org.libreoffice.LibreOfficeMainActivity;
 import org.mozilla.gecko.util.FloatUtils;
 
 import java.util.Map;
@@ -36,30 +35,24 @@ final class DisplayPortCalculator {
     private static final String PREF_DISPLAYPORT_VB_DANGER_Y_INCR = "gfx.displayport.strategy_vb.danger_y_incr";
     private static final String PREF_DISPLAYPORT_PB_VELOCITY_THRESHOLD = "gfx.displayport.strategy_pb.threshold";
 
-    private DisplayPortStrategy sStrategy;
-    private final LibreOfficeMainActivity mMainActivity;
+    private static DisplayPortStrategy sStrategy = new VelocityBiasStrategy(null);
 
-    DisplayPortCalculator(LibreOfficeMainActivity context) {
-        this.mMainActivity = context;
-        sStrategy = new VelocityBiasStrategy(mMainActivity, null);
-    }
-
-    DisplayPortMetrics calculate(ImmutableViewportMetrics metrics, PointF velocity) {
+    static DisplayPortMetrics calculate(ImmutableViewportMetrics metrics, PointF velocity) {
         return sStrategy.calculate(metrics, (velocity == null ? ZERO_VELOCITY : velocity));
     }
 
-    boolean aboutToCheckerboard(ImmutableViewportMetrics metrics, PointF velocity, DisplayPortMetrics displayPort) {
+    static boolean aboutToCheckerboard(ImmutableViewportMetrics metrics, PointF velocity, DisplayPortMetrics displayPort) {
         if (displayPort == null) {
             return true;
         }
         return sStrategy.aboutToCheckerboard(metrics, (velocity == null ? ZERO_VELOCITY : velocity), displayPort);
     }
 
-    boolean drawTimeUpdate(long millis, int pixels) {
+    static boolean drawTimeUpdate(long millis, int pixels) {
         return sStrategy.drawTimeUpdate(millis, pixels);
     }
 
-    void resetPageState() {
+    static void resetPageState() {
         sStrategy.resetPageState();
     }
 
@@ -83,7 +76,7 @@ final class DisplayPortCalculator {
      * See the gfx.displayport.strategy pref in mobile/android/app/mobile.js to see the
      * mapping between ints and strategies.
      */
-    boolean setStrategy(Map<String, Integer> prefs) {
+    static boolean setStrategy(Map<String, Integer> prefs) {
         Integer strategy = prefs.get(PREF_DISPLAYPORT_STRATEGY);
         if (strategy == null) {
             return false;
@@ -94,16 +87,16 @@ final class DisplayPortCalculator {
                 sStrategy = new FixedMarginStrategy(prefs);
                 break;
             case 1:
-                sStrategy = new VelocityBiasStrategy(mMainActivity, prefs);
+                sStrategy = new VelocityBiasStrategy(prefs);
                 break;
             case 2:
-                sStrategy = new DynamicResolutionStrategy(mMainActivity, prefs);
+                sStrategy = new DynamicResolutionStrategy(prefs);
                 break;
             case 3:
                 sStrategy = new NoMarginStrategy(prefs);
                 break;
             case 4:
-                sStrategy = new PredictionBiasStrategy(mMainActivity, prefs);
+                sStrategy = new PredictionBiasStrategy(prefs);
                 break;
             default:
                 Log.e(LOGTAG, "Invalid strategy index specified");
@@ -343,9 +336,9 @@ final class DisplayPortCalculator {
         private final float DANGER_ZONE_INCR_X_MULTIPLIER;
         private final float DANGER_ZONE_INCR_Y_MULTIPLIER;
 
-        VelocityBiasStrategy(LibreOfficeMainActivity context, Map<String, Integer> prefs) {
+        VelocityBiasStrategy(Map<String, Integer> prefs) {
             SIZE_MULTIPLIER = getFloatPref(prefs, PREF_DISPLAYPORT_VB_MULTIPLIER, 2000);
-            VELOCITY_THRESHOLD = LOKitShell.getDpi(context) * getFloatPref(prefs, PREF_DISPLAYPORT_VB_VELOCITY_THRESHOLD, 32);
+            VELOCITY_THRESHOLD = LOKitShell.getDpi() * getFloatPref(prefs, PREF_DISPLAYPORT_VB_VELOCITY_THRESHOLD, 32);
             REVERSE_BUFFER = getFloatPref(prefs, PREF_DISPLAYPORT_VB_REVERSE_BUFFER, 200);
             DANGER_ZONE_BASE_X_MULTIPLIER = getFloatPref(prefs, PREF_DISPLAYPORT_VB_DANGER_X_BASE, 1000);
             DANGER_ZONE_BASE_Y_MULTIPLIER = getFloatPref(prefs, PREF_DISPLAYPORT_VB_DANGER_Y_BASE, 1000);
@@ -453,21 +446,13 @@ final class DisplayPortCalculator {
      * where we draw less but never even show it on the screen.
      */
     private static class DynamicResolutionStrategy extends DisplayPortStrategy {
-
-        // The velocity above which we start zooming out the display port to keep up
-        // with the panning.
-        private final float VELOCITY_EXPANSION_THRESHOLD;
-
-
-        DynamicResolutionStrategy(LibreOfficeMainActivity context, Map<String, Integer> prefs) {
-            // ignore prefs for now
-            VELOCITY_EXPANSION_THRESHOLD = LOKitShell.getDpi(context) / 16f;
-            VELOCITY_FAST_THRESHOLD = VELOCITY_EXPANSION_THRESHOLD * 2.0f;
-        }
-
         // The length of each axis of the display port will be the corresponding view length
         // multiplied by this factor.
         private static final float SIZE_MULTIPLIER = 1.5f;
+
+        // The velocity above which we start zooming out the display port to keep up
+        // with the panning.
+        private static final float VELOCITY_EXPANSION_THRESHOLD = LOKitShell.getDpi() / 16f;
 
         // How much we increase the display port based on velocity. Assuming no friction and
         // splitting (see below), this should be the number of frames (@60fps) between us
@@ -493,7 +478,7 @@ final class DisplayPortCalculator {
         // assumption that if the user is panning fast, they are less likely to reverse directions
         // and go backwards, so we should spend more of our display port buffer in the direction of
         // panning.
-        private final float VELOCITY_FAST_THRESHOLD;
+        private static final float VELOCITY_FAST_THRESHOLD = VELOCITY_EXPANSION_THRESHOLD * 2.0f;
         private static final float FAST_SPLIT_FACTOR = 0.95f;
         private static final float SLOW_SPLIT_FACTOR = 0.8f;
 
@@ -511,6 +496,10 @@ final class DisplayPortCalculator {
         // danger zone, and thus will be constantly drawing.
         private static final float PREDICTION_VELOCITY_MULTIPLIER = 30.0f;
         private static final float DANGER_ZONE_MULTIPLIER = 0.20f; // must be less than (SIZE_MULTIPLIER - 1.0f)
+
+        DynamicResolutionStrategy(Map<String, Integer> prefs) {
+            // ignore prefs for now
+        }
 
         public DisplayPortMetrics calculate(ImmutableViewportMetrics metrics, PointF velocity) {
             float displayPortWidth = metrics.getWidth() * SIZE_MULTIPLIER;
@@ -574,12 +563,13 @@ final class DisplayPortCalculator {
             float scaleFactor = Math.min(reshapedSize.width / usableSize.width, reshapedSize.height / usableSize.height);
             float displayResolution = metrics.zoomFactor * Math.min(1.0f, scaleFactor);
 
-            return new DisplayPortMetrics(
+            DisplayPortMetrics dpMetrics = new DisplayPortMetrics(
                 metrics.viewportRectLeft - margins.left,
                 metrics.viewportRectTop - margins.top,
                 metrics.viewportRectRight + margins.right,
                 metrics.viewportRectBottom + margins.bottom,
                 displayResolution);
+            return dpMetrics;
         }
 
         /**
@@ -662,8 +652,8 @@ final class DisplayPortCalculator {
         private int mMinFramesToDraw;   // minimum number of frames we take to draw
         private int mMaxFramesToDraw;   // maximum number of frames we take to draw
 
-        PredictionBiasStrategy(LibreOfficeMainActivity context, Map<String, Integer> prefs) {
-            VELOCITY_THRESHOLD = LOKitShell.getDpi(context) * getFloatPref(prefs, PREF_DISPLAYPORT_PB_VELOCITY_THRESHOLD, 16);
+        PredictionBiasStrategy(Map<String, Integer> prefs) {
+            VELOCITY_THRESHOLD = LOKitShell.getDpi() * getFloatPref(prefs, PREF_DISPLAYPORT_PB_VELOCITY_THRESHOLD, 16);
             resetPageState();
         }
 

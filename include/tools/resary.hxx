@@ -27,7 +27,7 @@
 
 class ResId;
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ResStringArray
+class TOOLS_DLLPUBLIC ResStringArray
 {
     struct Impl;
     std::unique_ptr<Impl> mpImpl;

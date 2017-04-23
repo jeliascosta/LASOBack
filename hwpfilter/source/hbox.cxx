@@ -19,6 +19,8 @@
 
 #include "precompile.h"
 
+#include <ctype.h>
+
 #include <osl/diagnose.h>
 
 #include "hwpfile.h"
@@ -28,9 +30,6 @@
 #include "htags.h"
 #include "drawdef.h"
 #include "hcode.h"
-#include "datecode.h"
-
-#include <rtl/character.hxx>
 
 int HBox::boxCount = 0;
 
@@ -82,7 +81,6 @@ SkipData::~SkipData()
 {
 }
 
-
 // FieldCode [5]
 FieldCode::FieldCode()
     : HBox(CH_FIELD)
@@ -90,6 +88,7 @@ FieldCode::FieldCode()
     , str1(nullptr)
     , str2(nullptr)
     , str3(nullptr)
+    , bin(nullptr)
     , m_pDate(nullptr)
 {
     reserved1 = new char[4];
@@ -101,6 +100,7 @@ FieldCode::~FieldCode()
     delete[] str1;
     delete[] str2;
     delete[] str3;
+    delete[] bin;
     delete[] reserved1;
     delete[] reserved2;
     delete m_pDate;
@@ -132,6 +132,8 @@ DateCode::DateCode()
     , key(0)
 {
 }
+
+#include "datecode.h"
 
 static const hchar kor_week[] =
 {
@@ -467,7 +469,7 @@ hchar_string MailMerge::GetString()
 }
 
 
-// character composition(23)
+// character compositon(23)
 // hyphen(24)
 // toc mark(25)
 // index mark(26)
@@ -579,8 +581,7 @@ static void getOutlineNumStr(int style, int level, int num, hchar * hstr)
             ptr = buf;
             while (*ptr)
             {
-                *ptr = sal::static_int_cast<char>(
-                    rtl::toAsciiUpperCase(static_cast<unsigned char>(*ptr)));
+                *ptr = sal::static_int_cast<char>(toupper(*ptr));
                 ptr++;
             }
         }
@@ -682,7 +683,7 @@ hchar_string Outline::GetUnicode() const
                                 char *ptr = dest;
                                 while( *ptr )
                                 {
-                                    *ptr = sal::static_int_cast<char>(rtl::toAsciiUpperCase(static_cast<unsigned char>(*ptr)));
+                                    *ptr = sal::static_int_cast<char>(toupper(*ptr));
                                     ptr++;
                                 }
                             }

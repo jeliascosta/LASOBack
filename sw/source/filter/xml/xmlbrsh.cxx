@@ -18,6 +18,7 @@
  */
 
 #include "hintids.hxx"
+#include <com/sun/star/io/XOutputStream.hpp>
 #include <editeng/memberids.hrc>
 
 #include <xmloff/nmspmap.hxx>
@@ -49,6 +50,7 @@ enum SvXMLTokenMapAttrs
     XML_TOK_BGIMG_POSITION,
     XML_TOK_BGIMG_REPEAT,
     XML_TOK_BGIMG_FILTER,
+    XML_TOK_NGIMG_END=XML_TOK_UNKNOWN
 };
 
 static SvXMLTokenMapEntry aBGImgAttributesAttrTokenMap[] =
@@ -119,7 +121,7 @@ SvXMLImportContext *SwXMLBrushItemImportContext::CreateChildContext(
         if( !xBase64Stream.is() && pItem->GetGraphicLink().isEmpty() )
         {
             const GraphicObject *pGrObj = pItem->GetGraphicObject();
-            if( !pGrObj || GraphicType::NONE == pGrObj->GetType() )
+            if( !pGrObj || GRAPHIC_NONE == pGrObj->GetType() )
             {
                 xBase64Stream =
                     GetImport().GetStreamForGraphicObjectURLFromBase64();
@@ -182,6 +184,7 @@ SwXMLBrushItemImportContext::SwXMLBrushItemImportContext(
 
 SwXMLBrushItemImportContext::~SwXMLBrushItemImportContext()
 {
+    delete pItem;
 }
 
 SwXMLBrushItemExport::SwXMLBrushItemExport( SwXMLExport& rExp ) :

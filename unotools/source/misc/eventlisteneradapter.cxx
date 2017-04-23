@@ -24,7 +24,6 @@
 #include <unotools/eventlisteneradapter.hxx>
 #include <osl/diagnose.h>
 #include <cppuhelper/implbase.hxx>
-#include <rtl/ref.hxx>
 
 namespace utl
 {
@@ -50,7 +49,7 @@ namespace utl
         const Reference< XComponent >&  getComponent() const { return m_xComponent; }
 
     protected:
-        virtual void SAL_CALL disposing( const EventObject& _rSource ) override;
+        virtual void SAL_CALL disposing( const EventObject& _rSource ) throw (RuntimeException, std::exception) override;
     };
 
     OEventListenerImpl::OEventListenerImpl( OEventListenerAdapter* _pAdapter, const Reference< XComponent >& _rxComp )
@@ -79,7 +78,7 @@ namespace utl
         }
     }
 
-    void SAL_CALL OEventListenerImpl::disposing( const EventObject& _rSource )
+    void SAL_CALL OEventListenerImpl::disposing( const EventObject& _rSource ) throw (RuntimeException, std::exception)
     {
         Reference< XEventListener > xDeleteUponLeaving = m_xKeepMeAlive;
         m_xKeepMeAlive.clear();
@@ -93,7 +92,7 @@ namespace utl
     struct OEventListenerAdapterImpl
     {
     public:
-        std::vector< rtl::Reference<OEventListenerImpl> >  aListeners;
+        ::std::vector< void* >  aListeners;
     };
 
     //= OEventListenerAdapter
@@ -113,26 +112,32 @@ namespace utl
         if ( m_pImpl->aListeners.empty() )
             return;
 
-        auto it = m_pImpl->aListeners.begin();
+        ::std::vector< void* >::iterator dispose = m_pImpl->aListeners.begin();
         do
         {
-            rtl::Reference<OEventListenerImpl>& pListenerImpl = *it;
+            OEventListenerImpl* pListenerImpl = static_cast< OEventListenerImpl* >( *dispose );
             if ( pListenerImpl->getComponent().get() == _rxComp.get() )
             {
                 pListenerImpl->dispose();
-                it = m_pImpl->aListeners.erase( it );
+                pListenerImpl->release();
+                dispose = m_pImpl->aListeners.erase( dispose );
             }
             else
-                ++it;
+                ++dispose;
         }
-        while ( it != m_pImpl->aListeners.end() );
+        while ( dispose != m_pImpl->aListeners.end() );
     }
 
     void OEventListenerAdapter::stopAllComponentListening(  )
     {
-        for ( const auto & i : m_pImpl->aListeners )
+        for (   ::std::vector< void* >::const_iterator aDisposeLoop = m_pImpl->aListeners.begin();
+                aDisposeLoop != m_pImpl->aListeners.end();
+                ++aDisposeLoop
+            )
         {
-            i->dispose();
+            OEventListenerImpl* pListenerImpl = static_cast< OEventListenerImpl* >(*aDisposeLoop);
+            pListenerImpl->dispose();
+            pListenerImpl->release();
         }
         m_pImpl->aListeners.clear();
     }
@@ -146,6 +151,7 @@ namespace utl
         }
 
         OEventListenerImpl* pListenerImpl = new OEventListenerImpl(this, _rxComp);
+        pListenerImpl->acquire();
         m_pImpl->aListeners.push_back(pListenerImpl);
     }
 

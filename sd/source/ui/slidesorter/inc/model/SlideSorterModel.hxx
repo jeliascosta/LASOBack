@@ -49,12 +49,12 @@ inline sal_Int32 FromCoreIndex (const sal_uInt16 nCoreIndex) { return (nCoreInde
     this set of slides can be modified (but do not call it directly, use
     SlideSorterController::SetDocumentSlides() instead.)
 */
-class SlideSorterModel final
+class SlideSorterModel
 {
 public:
     SlideSorterModel (SlideSorter& rSlideSorter);
 
-    ~SlideSorterModel();
+    virtual ~SlideSorterModel();
     void Dispose();
 
     /** This method is present to let the view create a ShowView for
@@ -74,6 +74,7 @@ public:
     bool SetEditMode (EditMode eEditMode);
 
     EditMode GetEditMode() const { return meEditMode;}
+    PageKind GetPageType() const { return mePageKind;}
 
     /** Return the number of slides in the document regardless of whether
         they are visible or not or whether they are hidden or not.
@@ -207,6 +208,7 @@ private:
     mutable ::osl::Mutex maMutex;
     SlideSorter& mrSlideSorter;
     css::uno::Reference<css::container::XIndexAccess> mxSlides;
+    PageKind mePageKind;
     EditMode meEditMode;
     mutable ::std::vector<SharedPageDescriptor> maPageDescriptors;
 

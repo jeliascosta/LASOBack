@@ -63,7 +63,7 @@ void LabelPositionHelper::changeTextAdjustment( tAnySequence& rPropValues, const
             eHorizontalAdjust = drawing::TextHorizontalAdjust_RIGHT;
         uno::Any* pHorizontalAdjustAny = PropertyMapper::getValuePointer(rPropValues,rPropNames,"TextHorizontalAdjust");
         if(pHorizontalAdjustAny)
-            *pHorizontalAdjustAny <<= eHorizontalAdjust;
+            *pHorizontalAdjustAny = uno::makeAny(eHorizontalAdjust);
     }
 
     //VerticalAdjustment
@@ -75,7 +75,7 @@ void LabelPositionHelper::changeTextAdjustment( tAnySequence& rPropValues, const
             eVerticalAdjust = drawing::TextVerticalAdjust_TOP;
         uno::Any* pVerticalAdjustAny = PropertyMapper::getValuePointer(rPropValues,rPropNames,"TextVerticalAdjust");
         if(pVerticalAdjustAny)
-            *pVerticalAdjustAny <<= eVerticalAdjust;
+            *pVerticalAdjustAny = uno::makeAny(eVerticalAdjust);
     }
 }
 
@@ -87,7 +87,7 @@ void lcl_doDynamicFontResize( uno::Any* pAOldAndNewFontHeightAny
     if( pAOldAndNewFontHeightAny && ( *pAOldAndNewFontHeightAny >>= fOldFontHeight ) )
     {
         double fNewFontHeight = RelativeSizeHelper::calculate( fOldFontHeight, rOldReferenceSize, rNewReferenceSize );
-        *pAOldAndNewFontHeightAny <<= fNewFontHeight;
+        *pAOldAndNewFontHeightAny = uno::makeAny(fNewFontHeight);
     }
 }
 

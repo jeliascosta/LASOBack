@@ -36,7 +36,7 @@ static bool bDeleted = false;
 class FooController : public SfxControllerItem {
 public:
     FooController() : SfxControllerItem() {}
-    virtual ~FooController() override { bDeleted = true; }
+    virtual ~FooController() { bDeleted = true; }
 };
 
 void ControllerItemTest::test()

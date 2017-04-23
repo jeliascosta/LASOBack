@@ -32,6 +32,7 @@
 
 #include <toolkit/helper/vclunohelper.hxx>
 #include <unotools/syslocale.hxx>
+#include <svl/smplhint.hxx>
 
 #define CORNER_SPACE     5
 
@@ -101,7 +102,7 @@ sal_Int32 OStartMarker::getMinHeight() const
     return LogicToPixel(Size(0, m_aText->GetTextHeight())).Height() + long(aExtraWidth);
 }
 
-void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
+void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
 {
     Size aSize(GetOutputSizePixel());
     const long nCornerWidth = long(CORNER_SPACE * double(GetMapMode().GetScaleX()));
@@ -115,11 +116,11 @@ void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
         const long nVRulerWidth = m_aVRuler->GetSizePixel().Width();
         long nSize = aSize.Width() - nVRulerWidth;
         aSize.Width() += nCornerWidth;
-        rRenderContext.SetClipRegion(vcl::Region(rRenderContext.PixelToLogic(tools::Rectangle(Point(),
+        rRenderContext.SetClipRegion(vcl::Region(rRenderContext.PixelToLogic(Rectangle(Point(),
                                                                              Size(nSize, aSize.Height())))));
     }
 
-    tools::Rectangle aWholeRect(Point(), aSize);
+    Rectangle aWholeRect(Point(), aSize);
     {
         const ColorChanger aColors(&rRenderContext, m_nTextBoundaries, m_nColor);
         tools::PolyPolygon aPoly;
@@ -133,7 +134,7 @@ void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
         aStartColor.RGBtoHSB(nHue, nSat, nBri);
         nSat += 40;
         Color aEndColor(Color::HSBtoRGB(nHue, nSat, nBri));
-        Gradient aGradient(GradientStyle::Linear,aStartColor,aEndColor);
+        Gradient aGradient(GradientStyle_LINEAR,aStartColor,aEndColor);
         aGradient.SetSteps(static_cast<sal_uInt16>(aSize.Height()));
 
         rRenderContext.DrawGradient(PixelToLogic(aPoly) ,aGradient);
@@ -141,12 +142,12 @@ void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
     if (m_bMarked)
     {
         const long nCornerHeight = long(CORNER_SPACE * double(GetMapMode().GetScaleY()));
-        tools::Rectangle aRect(Point(nCornerWidth, nCornerHeight),
+        Rectangle aRect(Point(nCornerWidth, nCornerHeight),
                         Size(aSize.Width() - nCornerWidth - nCornerWidth,
                              aSize.Height() - nCornerHeight - nCornerHeight));
         ColorChanger aColors(&rRenderContext, COL_WHITE, COL_WHITE);
         rRenderContext.DrawPolyLine( tools::Polygon(rRenderContext.PixelToLogic(aRect)),
-                                    LineInfo(LineStyle::Solid, 2));
+                                    LineInfo(LINE_SOLID, 2));
     }
 }
 
@@ -170,7 +171,7 @@ void OStartMarker::MouseButtonUp( const MouseEvent& rMEvt )
     const Size aOutputSize = GetOutputSizePixel();
     if( aPos.X() > aOutputSize.Width() || aPos.Y() > aOutputSize.Height() )
         return;
-    tools::Rectangle aRect(m_aImage->GetPosPixel(),m_aImage->GetSizePixel());
+    Rectangle aRect(m_aImage->GetPosPixel(),m_aImage->GetSizePixel());
     if ( rMEvt.GetClicks() == 2 || aRect.IsInside( aPos ) )
     {
         m_bCollapsed = !m_bCollapsed;
@@ -194,8 +195,8 @@ void OStartMarker::initDefaultNodeImages()
 {
     if ( !s_pDefCollapsed )
     {
-        s_pDefCollapsed = new Image(BitmapEx(ModuleRes(RID_BMP_TREENODE_COLLAPSED)));
-        s_pDefExpanded = new Image(BitmapEx(ModuleRes(RID_BMP_TREENODE_EXPANDED)));
+        s_pDefCollapsed     = new Image( ModuleRes( RID_IMG_TREENODE_COLLAPSED      ) );
+        s_pDefExpanded      = new Image( ModuleRes( RID_IMG_TREENODE_EXPANDED       ) );
     }
 
     Image* pImage = m_bCollapsed ? s_pDefCollapsed : s_pDefExpanded;
@@ -253,7 +254,8 @@ void OStartMarker::setTitle(const OUString& _sTitle)
 void OStartMarker::Notify(SfxBroadcaster & rBc, SfxHint const & rHint)
 {
     OColorListener::Notify(rBc, rHint);
-    if (rHint.GetId() == SfxHintId::ColorsChanged)
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_COLORS_CHANGED)
     {
         setColor();
         Invalidate(InvalidateFlags::Children);
@@ -271,7 +273,7 @@ void OStartMarker::RequestHelp( const HelpEvent& rHEvt )
     if( !m_aText->GetText().isEmpty())
     {
         // Hilfe anzeigen
-        tools::Rectangle aItemRect(rHEvt.GetMousePosPixel(),Size(GetSizePixel().Width(),getMinHeight()));
+        Rectangle aItemRect(rHEvt.GetMousePosPixel(),Size(GetSizePixel().Width(),getMinHeight()));
         Point aPt = OutputToScreenPixel( aItemRect.TopLeft() );
         aItemRect.Left()   = aPt.X();
         aItemRect.Top()    = aPt.Y();

@@ -56,9 +56,6 @@
 #ifndef INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_BENTO_HXX
 #define INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_BENTO_HXX
 
-#include <sal/config.h>
-
-#include <cstring>
 #include <string>
 #include <vector>
 #include "lwpsvstream.hxx"
@@ -120,13 +117,17 @@ enum BenError
     // those should start at 200
 };
 
-class LtcBenContainer;
-class CBenObject;
-class CBenProperty;
-class CBenValue;
-class CBenValueSegment;
-class CBenNamedObject;
-class CBenPropertyName;
+UtDefClassP(LtcBenContainer);
+UtDefClassP(CBenIDListElmt);
+UtDefClassP(CBenObject);
+UtDefClassP(CBenProperty);
+UtDefClassP(CBenReference);
+UtDefClassP(CBenValue);
+UtDefClassP(CBenValueSegment);
+UtDefClassP(CBenNamedObjectListElmt);
+UtDefClassP(CBenNamedObject);
+UtDefClassP(CBenPropertyName);
+UtDefClassP(CBenTypeName);
 
 typedef unsigned char BenByte;
 typedef unsigned short BenWord;
@@ -136,12 +137,12 @@ typedef unsigned long BenContainerPos;
 typedef unsigned long BenObjectID;
 typedef unsigned long BenGeneration;
 
-sal_uLong BenOpenContainer(LwpSvStream * pStream, LtcBenContainer ** ppContainer);
+sal_uLong BenOpenContainer(LwpSvStream * pStream, pLtcBenContainer * ppContainer);
 
 class CBenIDListElmt : public CUtListElmt
 {
 public: // Internal methods
-    CBenIDListElmt(BenObjectID ID, CUtListElmt * pPrev) : CUtListElmt(pPrev)
+    CBenIDListElmt(BenObjectID ID, pCUtListElmt pPrev) : CUtListElmt(pPrev)
       { cID = ID; }
     explicit CBenIDListElmt(BenObjectID ID) { cID = ID; }
     BenObjectID GetID() { return cID; }
@@ -154,39 +155,40 @@ class CBenNamedObjectListElmt : public CUtListElmt
 {
 public: // Methods
     // added to remove warning
-    explicit CBenNamedObjectListElmt(CUtListElmt * pPrev) : CUtListElmt(pPrev)
+    explicit CBenNamedObjectListElmt(pCUtListElmt pPrev) : CUtListElmt(pPrev)
       { cpNamedObject = nullptr; }
-    void SetNamedObject(CBenNamedObject * pObj)
+    void SetNamedObject(pCBenNamedObject pObj)
     {
         cpNamedObject = pObj;
     }
 
-    CBenNamedObject * GetNamedObject() { return cpNamedObject; }
+    pCBenNamedObject GetNamedObject() { return cpNamedObject; }
 
 private: // Data
-    CBenNamedObject * cpNamedObject;
+    pCBenNamedObject cpNamedObject;
 };
 
 class LtcUtBenValueStream : public SvStream
 {
 public:
-    explicit LtcUtBenValueStream(CBenValue * pValue);
-    virtual ~LtcUtBenValueStream() override;
+    explicit LtcUtBenValueStream(pCBenValue pValue);
+    virtual ~LtcUtBenValueStream();
 
 public: // Overridden methods
 
     /* added by  */
+    CBenValue * GetValue(){ return cpValue; };
     sal_uLong GetSize() { return m_ulValueLength; };
 protected: // Overridden methods
 
-    virtual std::size_t GetData(void* pData, std::size_t nSize) override;
-    virtual std::size_t PutData(const void* pData, std::size_t nSize) override;
+    virtual sal_uLong   GetData( void* pData, sal_uLong nSize ) override;
+    virtual sal_uLong   PutData( const void* pData, sal_uLong nSize ) override;
     virtual sal_uInt64   SeekPos( sal_uInt64 nPos ) override;
     virtual void    SetSize( sal_uInt64 nSize ) override;
     virtual void    FlushData() override;
 
 private: // Data
-    CBenValue * cpValue;
+    pCBenValue cpValue;
     unsigned long cCurrentPosition;
 
     sal_uLong m_ulValueLength;      // Added by , sum of length of all sub-valuesegments
@@ -198,11 +200,11 @@ class LtcBenContainer
 public:
     BenError Open();
     void RegisterPropertyName(const char * sPropertyName,
-      CBenPropertyName ** ppPropertyName);
+      pCBenPropertyName * ppPropertyName);
     // Pass NULL to begin iteration.  Done when returns NULL.
     // Objects are returned in order of increasing ID
-    CBenObject * GetNextObject(CBenObject * pCurrObject);
-    CBenObject * FindNextObjectWithProperty(CBenObject * pCurrObject,
+    pCBenObject GetNextObject(pCBenObject pCurrObject);
+    pCBenObject FindNextObjectWithProperty(pCBenObject pCurrObject,
       BenObjectID PropertyID);
 
 public: // Internal methods
@@ -219,7 +221,7 @@ public: // Internal methods
     CUtList& GetObjects() { return cObjects; }
     CUtList& GetNamedObjects() { return cNamedObjects; }
 
-    LtcUtBenValueStream * FindNextValueStreamWithPropertyName(const char * sPropertyName);
+    LtcUtBenValueStream * FindNextValueStreamWithPropertyName(const char * sPropertyName, LtcUtBenValueStream * pCurrentValueStream);
     LtcUtBenValueStream * FindValueStreamWithPropertyName(const char * sPropertyName);
     void CreateGraphicStream(SvStream * &pStream,  const char *pObjectName);
 
@@ -235,17 +237,17 @@ private: // Data
 class CBenObject : public CBenIDListElmt
 {
 public:
-    CBenProperty * UseProperty(BenObjectID PropertyID);
-    CBenValue * UseValue(BenObjectID PropertyID);
-    LtcBenContainer * GetContainer() { return cpContainer; }
+    pCBenProperty UseProperty(BenObjectID PropertyID);
+    pCBenValue UseValue(BenObjectID PropertyID);
+    pLtcBenContainer GetContainer() { return cpContainer; }
 public: // Internal methods
-    CBenObject(LtcBenContainer * pContainer, BenObjectID ObjectID,
-      CUtListElmt * pPrev) : CBenIDListElmt(ObjectID, pPrev)
+    CBenObject(pLtcBenContainer pContainer, BenObjectID ObjectID,
+      pCUtListElmt pPrev) : CBenIDListElmt(ObjectID, pPrev)
       { cpContainer = pContainer; }
     CUtList& GetProperties() { return cProperties; }
 
 private: // Data
-    LtcBenContainer * cpContainer;
+    pLtcBenContainer cpContainer;
     CUtOwningList cProperties;
 };
 
@@ -256,27 +258,30 @@ public:
     void ReadValueData(void * pBuffer,
       unsigned long Offset, unsigned long MaxSize, unsigned long * pAmtRead);
 
-    CBenProperty * BEN_EXPORT GetProperty() { return cpProperty; }
+    pCBenProperty BEN_EXPORT GetProperty() { return cpProperty; }
 
 public: // Internal methods
     // added to remove WARNING
     explicit CBenValue(BenObjectID TypeID):CBenIDListElmt(TypeID)
     {
         cpProperty = nullptr;
+        cpReferencedList = nullptr;
     }
 
-    void SetProperty(CBenProperty * pProperty)
+    void SetProperty(pCBenProperty pProperty)
     {
         cpProperty = pProperty;
     }
 
-    inline CBenValueSegment * GetNextValueSegment(CBenValueSegment *
+    inline pCBenValueSegment GetNextValueSegment(pCBenValueSegment
       pCurrValueSegment);
+    inline pLtcBenContainer GetContainer();
     CUtList& GetValueSegments() { return cValueSegments; }
 
 private: // Data
-    CBenProperty * cpProperty;
+    pCBenProperty cpProperty;
     CUtOwningList cValueSegments;
+    pCBenValue cpReferencedList;
 };
 
 class CBenProperty : public CBenIDListElmt
@@ -287,41 +292,41 @@ public:
     // property has exactly one value
 
     CBenValue& UseValue() { return cValue; }
-    CBenObject * GetBenObject() { return cpObject; }
-    LtcBenContainer * GetContainer() { return GetBenObject()->GetContainer(); }
+    pCBenObject GetBenObject() { return cpObject; }
+    pLtcBenContainer GetContainer() { return GetBenObject()->GetContainer(); }
 
 public: // Internal methods
     // changed to remove WARNING here
-    CBenProperty(CBenObject * pObject, BenObjectID PropertyID,
-      BenObjectID TypeID, CUtListElmt * pPrevProperty) :
+    CBenProperty(pCBenObject pObject, BenObjectID PropertyID,
+      BenObjectID TypeID, pCUtListElmt pPrevProperty) :
       CBenIDListElmt(PropertyID, pPrevProperty), cValue(TypeID)
     {
         cpObject = pObject;
         cValue.SetProperty(this);
     }
 private: // Data
-    CBenObject * cpObject;
+    pCBenObject cpObject;
     CBenValue cValue;
 };
 
 class CBenValueSegment : public CUtListElmt
 {
 public: // Internal methods
-    CBenValueSegment(CBenValue * pValue, BenContainerPos Pos,
+    CBenValueSegment(pCBenValue pValue, BenContainerPos Pos,
       unsigned long Size) : CUtListElmt(&pValue->GetValueSegments())
       { cpValue = pValue; cImmediate = false; cPos = Pos;
       cSize = Size; }
-    CBenValueSegment(CBenValue * pValue, const void  * pImmData,
+    CBenValueSegment(pCBenValue pValue, const void  * pImmData,
       unsigned short Size) : CUtListElmt(&pValue->GetValueSegments())
       { cpValue = pValue; cImmediate = true;
-      std::memcpy(cImmData, pImmData, Size); cSize = Size; }
+      UtHugeMemcpy(cImmData, pImmData, Size); cSize = Size; }
     bool IsImmediate() { return cImmediate; }
     BenContainerPos GetPosition() { return cPos; }
     unsigned long GetSize() { return cSize; }
     BenByte * GetImmediateData() { return cImmData; }
 
 private: // Data
-    CBenValue * cpValue;
+    pCBenValue cpValue;
     bool cImmediate;
     union
     {
@@ -331,10 +336,12 @@ private: // Data
     unsigned long cSize;
 };
 
-inline CBenValueSegment * CBenValue::GetNextValueSegment(CBenValueSegment *
+inline pCBenValueSegment CBenValue::GetNextValueSegment(pCBenValueSegment
   pCurrValueSegment)
-{ return static_cast<CBenValueSegment *>( cValueSegments.GetNextOrNULL(pCurrValueSegment) ); }
+{ return static_cast<pCBenValueSegment>( cValueSegments.GetNextOrNULL(pCurrValueSegment) ); }
 
+inline pLtcBenContainer CBenValue::GetContainer()
+{ return GetProperty()->GetContainer(); }
 
 class CBenNamedObject : public CBenObject
 {
@@ -342,9 +349,9 @@ public: // Methods
     virtual bool IsPropertyName();
 
 public: // Internal methods
-    CBenNamedObject(LtcBenContainer * pContainer, BenObjectID ObjectID,
-    CUtListElmt * pPrevObject, const char * sName,
-    CUtListElmt * pPrevNamedObjectListElmt);
+    CBenNamedObject(pLtcBenContainer pContainer, BenObjectID ObjectID,
+    pCBenObject pPrevObject, const char * sName,
+    pCUtListElmt pPrevNamedObjectListElmt);
 
     const char * GetNameCStr() { return csName.c_str(); }
 
@@ -356,9 +363,9 @@ private: // Data
 class CBenPropertyName : public CBenNamedObject
 {
 public: // Internal methods
-    CBenPropertyName(LtcBenContainer * pContainer, BenObjectID ObjectID,
-    CUtListElmt * pPrevObject, const char * sName,
-    CUtListElmt * pPrevNamedObjectListElmt) :
+    CBenPropertyName(pLtcBenContainer pContainer, BenObjectID ObjectID,
+    pCBenObject pPrevObject, const char * sName,
+    pCUtListElmt pPrevNamedObjectListElmt) :
     CBenNamedObject(pContainer, ObjectID, pPrevObject, sName,
     pPrevNamedObjectListElmt) { ; }
     virtual bool IsPropertyName() override;
@@ -367,9 +374,9 @@ public: // Internal methods
 class CBenTypeName : public CBenNamedObject
 {
 public: // Internal methods
-    CBenTypeName(LtcBenContainer * pContainer, BenObjectID ObjectID,
-    CBenObject * pPrevObject, const char * sName,
-    CUtListElmt * pPrevNamedObjectListElmt) :
+    CBenTypeName(pLtcBenContainer pContainer, BenObjectID ObjectID,
+    pCBenObject pPrevObject, const char * sName,
+    pCUtListElmt pPrevNamedObjectListElmt) :
     CBenNamedObject(pContainer, ObjectID, pPrevObject, sName,
     pPrevNamedObjectListElmt) { ; }
 };

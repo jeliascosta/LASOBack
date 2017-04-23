@@ -116,17 +116,18 @@ double ImpGetDate( const SbxValues* p )
             // quod vide basic/source/runtime/runtime.cxx
 
             SvtSysLocale aSysLocale;
-            DateOrder eDate = aSysLocale.GetLocaleData().getDateOrder();
+            DateFormat eDate = aSysLocale.GetLocaleData().getDateFormat();
             OUString aDateStr;
             switch( eDate )
             {
                 default:
-                case DateOrder::MDY: aDateStr = "MM/DD/YYYY"; break;
-                case DateOrder::DMY: aDateStr = "DD/MM/YYYY"; break;
-                case DateOrder::YMD: aDateStr = "YYYY/MM/DD"; break;
+                case MDY: aDateStr = "MM/DD/YYYY"; break;
+                case DMY: aDateStr = "DD/MM/YYYY"; break;
+                case YMD: aDateStr = "YYYY/MM/DD"; break;
             }
 
-            OUString aStr = aDateStr + " HH:MM:SS";
+            OUString aStr( aDateStr );
+            aStr += " HH:MM:SS";
 
             pFormatter->PutandConvertEntry( aStr, nCheckPos, nType,
                                             nIndex, LANGUAGE_ENGLISH_US, eLangType );
@@ -275,7 +276,7 @@ start:
             short nType;
 
             SvtSysLocale aSysLocale;
-            DateOrder eDate = aSysLocale.GetLocaleData().getDateOrder();
+            DateFormat eDate = aSysLocale.GetLocaleData().getDateFormat();
             OUString aStr;
             // if the whole-number part is 0, we want no year!
             if( n <= -1.0 || n >= 1.0 )
@@ -285,20 +286,20 @@ start:
                 {
                     switch( eDate )
                     {
-                    case DateOrder::MDY: aStr = "MM.TT.JJJJ"; break;
-                    case DateOrder::DMY: aStr = "TT.MM.JJJJ"; break;
-                    case DateOrder::YMD: aStr = "JJJJ.MM.TT"; break;
-                    default:               aStr = "MM.TT.JJJJ";
+                    case MDY: aStr = "MM.TT.JJJJ"; break;
+                    case DMY: aStr = "TT.MM.JJJJ"; break;
+                    case YMD: aStr = "JJJJ.MM.TT"; break;
+                    default:  aStr = "MM.TT.JJJJ";
                     }
                 }
                 else
                 {
                     switch( eDate )
                     {
-                    case DateOrder::MDY: aStr = "MM.TT.JJJJ HH:MM:SS"; break;
-                    case DateOrder::DMY: aStr = "TT.MM.JJJJ HH:MM:SS"; break;
-                    case DateOrder::YMD: aStr = "JJJJ.MM.TT HH:MM:SS"; break;
-                    default:              aStr = "MM.TT.JJJJ HH:MM:SS";
+                    case MDY: aStr = "MM.TT.JJJJ HH:MM:SS"; break;
+                    case DMY: aStr = "TT.MM.JJJJ HH:MM:SS"; break;
+                    case YMD: aStr = "JJJJ.MM.TT HH:MM:SS"; break;
+                    default:  aStr = "MM.TT.JJJJ HH:MM:SS";
                     }
                 }
             }
@@ -413,7 +414,7 @@ start:
         break;
     case SbxBYREF | SbxDATE:
     case SbxBYREF | SbxDOUBLE:
-        *p->pDouble = n;
+        *p->pDouble = (double) n;
         break;
     case SbxBYREF | SbxCURRENCY:
         if( n > SbxMAXCURR )

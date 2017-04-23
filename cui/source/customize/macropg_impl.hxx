@@ -45,11 +45,11 @@ private:
 
     OUString maURL;
 
-    DECL_LINK(ButtonHandler, Button*, void);
+    DECL_LINK_TYPED(ButtonHandler, Button*, void);
 
 public:
     AssignComponentDialog( vcl::Window * pParent, const OUString& rURL );
-    virtual ~AssignComponentDialog() override;
+    virtual ~AssignComponentDialog();
     virtual void dispose() override;
 
     const OUString& getURL() const

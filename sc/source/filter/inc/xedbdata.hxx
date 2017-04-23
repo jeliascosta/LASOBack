@@ -30,7 +30,7 @@ class XclExpTables : public XclExpRecordBase, protected XclExpRoot
 {
 public:
                         XclExpTables( const XclExpRoot& rRoot );
-    virtual             ~XclExpTables() override;
+    virtual             ~XclExpTables();
 
     void                AppendTable( const ScDBData* pData, sal_Int32 nTableId );
 
@@ -55,7 +55,7 @@ class XclExpTablesManager : protected XclExpRoot
 {
 public:
     explicit            XclExpTablesManager( const XclExpRoot& rRoot );
-    virtual             ~XclExpTablesManager() override;
+    virtual             ~XclExpTablesManager();
 
     void                Initialize();
     ::std::shared_ptr< XclExpTables > GetTablesBySheet( SCTAB nTab );

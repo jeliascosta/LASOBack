@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <fehelper.hxx>
-#include <errorhandler.hxx>
-#include "idlc.hxx"
+#include <idlc/fehelper.hxx>
+#include <idlc/errorhandler.hxx>
+#include "idlc/idlc.hxx"
 
 FeDeclarator::FeDeclarator(const OString& name)
     : m_name(name)

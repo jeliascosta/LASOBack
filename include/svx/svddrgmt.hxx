@@ -30,6 +30,7 @@ class SdrDragStat;
 class SVX_DLLPUBLIC SdrDragEntry
 {
 private:
+    // bitfield
     bool                        mbAddToTransparent : 1;
 
 protected:
@@ -54,7 +55,7 @@ private:
 
 public:
     SdrDragEntryPolyPolygon(const basegfx::B2DPolyPolygon& rOriginalPolyPolygon);
-    virtual ~SdrDragEntryPolyPolygon() override;
+    virtual ~SdrDragEntryPolyPolygon();
 
     virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequenceInCurrentState(SdrDragMethod& rDragMethod) override;
 };
@@ -70,7 +71,7 @@ private:
 
 public:
     SdrDragEntrySdrObject(const SdrObject& rOriginal, sdr::contact::ObjectContact& rObjectContact, bool bModify);
-    virtual ~SdrDragEntrySdrObject() override;
+    virtual ~SdrDragEntrySdrObject();
 
     // #i54102# Split createPrimitive2DSequenceInCurrentState in prepareCurrentState and processing,
     // added accessors to original and clone
@@ -90,7 +91,7 @@ private:
 public:
     SdrDragEntryPrimitive2DSequence(
         const drawinglayer::primitive2d::Primitive2DContainer& rSequence);
-    virtual ~SdrDragEntryPrimitive2DSequence() override;
+    virtual ~SdrDragEntryPrimitive2DSequence();
 
     virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequenceInCurrentState(SdrDragMethod& rDragMethod) override;
 };
@@ -104,7 +105,7 @@ private:
 
 public:
     SdrDragEntryPointGlueDrag(const std::vector< basegfx::B2DPoint >& rPositions, bool bIsPointDrag);
-    virtual ~SdrDragEntryPointGlueDrag() override;
+    virtual ~SdrDragEntryPointGlueDrag();
 
     virtual drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequenceInCurrentState(SdrDragMethod& rDragMethod) override;
 };
@@ -117,6 +118,7 @@ private:
     sdr::overlay::OverlayObjectList         maOverlayObjectList;
     SdrDragView&                            mrSdrDragView;
 
+    // bitfield
     bool                                    mbMoveOnly : 1;
     bool                                    mbSolidDraggingActive : 1;
     bool                                    mbShiftPressed : 1;
@@ -128,8 +130,10 @@ protected:
     virtual void createSdrDragEntries();
     virtual void createSdrDragEntryForSdrObject(const SdrObject& rOriginal, sdr::contact::ObjectContact& rObjectContact);
 
-    // access for derivated classes to maOverlayObjectList (passes ownership)
-    void addToOverlayObjectList(sdr::overlay::OverlayObject* pNew) { maOverlayObjectList.append(pNew); }
+    // access for derivated classes to maOverlayObjectList
+    void clearOverlayObjectList() { maOverlayObjectList.clear(); }
+    void addToOverlayObjectList(sdr::overlay::OverlayObject& rNew) { maOverlayObjectList.append(rNew); }
+    basegfx::B2DRange getB2DRangeFromOverlayObjectList() const { return maOverlayObjectList.getBaseRange(); }
 
     // access for derivated classes to mrSdrDragView
     SdrDragView& getSdrDragView() { return mrSdrDragView; }
@@ -156,11 +160,11 @@ protected:
     const SdrHdlList&  GetHdlList() const              { return getSdrDragView().GetHdlList(); }
     void               AddUndo(SdrUndoAction* pUndo)   { getSdrDragView().AddUndo(pUndo); }
     bool               IsDragLimit()                   { return getSdrDragView().mbDragLimit; }
-    const tools::Rectangle&   GetDragLimitRect()              { return getSdrDragView().maDragLimit; }
+    const Rectangle&   GetDragLimitRect()              { return getSdrDragView().maDragLimit; }
     const SdrMarkList& GetMarkedObjectList()                   { return getSdrDragView().GetMarkedObjectList(); }
     Point              GetSnapPos(const Point& rPt) const { return getSdrDragView().GetSnapPos(rPt,getSdrDragView().mpMarkedPV); }
     SdrSnap            SnapPos(Point& rPt) const       { return getSdrDragView().SnapPos(rPt,getSdrDragView().mpMarkedPV); }
-    inline const tools::Rectangle& GetMarkedRect() const;
+    inline const Rectangle& GetMarkedRect() const;
     SdrPageView*       GetDragPV() const;
     SdrObject*         GetDragObj() const;
     bool               IsDraggingPoints() const        { return getSdrDragView().IsDraggingPoints(); }
@@ -203,10 +207,10 @@ public:
     bool getSolidDraggingActive() const { return mbSolidDraggingActive; }
 };
 
-inline const tools::Rectangle& SdrDragMethod::GetMarkedRect() const
+inline const Rectangle& SdrDragMethod::GetMarkedRect() const
 {
-    return getSdrDragView().meDragHdl==SdrHdlKind::Poly ? getSdrDragView().GetMarkedPointsRect() :
-           getSdrDragView().meDragHdl==SdrHdlKind::Glue ? getSdrDragView().GetMarkedGluePointsRect() :
+    return getSdrDragView().meDragHdl==HDL_POLY ? getSdrDragView().GetMarkedPointsRect() :
+           getSdrDragView().meDragHdl==HDL_GLUE ? getSdrDragView().GetMarkedGluePointsRect() :
            getSdrDragView().GetMarkedObjRect();
 }
 
@@ -278,7 +282,7 @@ protected:
 
 public:
     SdrDragObjOwn(SdrDragView& rNewView);
-    virtual ~SdrDragObjOwn() override;
+    virtual ~SdrDragObjOwn();
 
     virtual void TakeSdrDragComment(OUString& rStr) const override;
     virtual bool BeginSdrDrag() override;

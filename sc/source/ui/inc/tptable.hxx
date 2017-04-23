@@ -36,10 +36,10 @@ public:
     virtual bool        FillItemSet     ( SfxItemSet* rCoreSet ) override;
     virtual void        Reset           ( const SfxItemSet* rCoreSet ) override;
     using SfxTabPage::DeactivatePage;
-    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr ) override;
     virtual void        DataChanged     ( const DataChangedEvent& rDCEvt ) override;
 
-    virtual         ~ScTablePage() override;
+    virtual         ~ScTablePage();
     virtual void    dispose() override;
 private:
                     ScTablePage( vcl::Window* pParent, const SfxItemSet& rCoreSet );
@@ -73,9 +73,9 @@ private:
 private:
 
     // Handler:
-    DECL_LINK(PageDirHdl, Button*, void);
-    DECL_LINK( PageNoHdl, Button*, void );
-    DECL_LINK(ScaleHdl, ListBox&, void);
+    DECL_LINK_TYPED(PageDirHdl, Button*, void);
+    DECL_LINK_TYPED( PageNoHdl, Button*, void );
+    DECL_LINK_TYPED(ScaleHdl, ListBox&, void);
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TPTABLE_HXX

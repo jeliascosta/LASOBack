@@ -17,11 +17,17 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <tools/globname.hxx>
+#include <vcl/status.hxx>
+#include <sfx2/msg.hxx>
 #include <sfx2/objface.hxx>
 #include <svl/whiter.hxx>
+#include <sfx2/request.hxx>
 #include <sfx2/sfx.hrc>
 #include <sfx2/viewsh.hxx>
+#include <vcl/wrkwin.hxx>
 #include <svx/svxids.hrc>
+#include <vcl/msgbox.hxx>
 #include <vcl/virdev.hxx>
 #include <unotools/syslocale.hxx>
 #include "smmod.hxx"
@@ -37,22 +43,30 @@
 #define SmModule
 #include "smslots.hxx"
 
+#include <svx/xmlsecctrl.hxx>
+
+
 SmResId::SmResId( sal_uInt16 nId )
     : ResId(nId, *SM_MOD()->GetResMgr())
 {
 }
 
+
 SmLocalizedSymbolData::SmLocalizedSymbolData() :
+    Resource( SmResId(RID_LOCALIZED_NAMES) ),
     aUiSymbolNamesAry       ( SmResId(RID_UI_SYMBOL_NAMES) ),
     aExportSymbolNamesAry   ( SmResId(RID_EXPORT_SYMBOL_NAMES) ),
     aUiSymbolSetNamesAry    ( SmResId(RID_UI_SYMBOLSET_NAMES) ),
     aExportSymbolSetNamesAry( SmResId(RID_EXPORT_SYMBOLSET_NAMES) )
 {
+    FreeResource();
 }
+
 
 SmLocalizedSymbolData::~SmLocalizedSymbolData()
 {
 }
+
 
 const OUString SmLocalizedSymbolData::GetUiSymbolName( const OUString &rExportName )
 {
@@ -74,6 +88,7 @@ const OUString SmLocalizedSymbolData::GetUiSymbolName( const OUString &rExportNa
     return aRes;
 }
 
+
 const OUString SmLocalizedSymbolData::GetExportSymbolName( const OUString &rUiName )
 {
     OUString aRes;
@@ -94,6 +109,7 @@ const OUString SmLocalizedSymbolData::GetExportSymbolName( const OUString &rUiNa
     return aRes;
 }
 
+
 const OUString SmLocalizedSymbolData::GetUiSymbolSetName( const OUString &rExportName )
 {
     OUString aRes;
@@ -113,6 +129,7 @@ const OUString SmLocalizedSymbolData::GetUiSymbolSetName( const OUString &rExpor
 
     return aRes;
 }
+
 
 const OUString SmLocalizedSymbolData::GetExportSymbolSetName( const OUString &rUiName )
 {
@@ -142,7 +159,7 @@ void SmModule::InitInterface_Impl()
 }
 
 SmModule::SmModule(SfxObjectFactory* pObjFact) :
-    SfxModule(ResMgr::CreateResMgr("sm"), {pObjFact})
+    SfxModule(ResMgr::CreateResMgr("sm"), false, pObjFact, nullptr)
 {
     SetName("StarMath");
 
@@ -185,7 +202,7 @@ svtools::ColorConfig & SmModule::GetColorConfig()
     return *mpColorConfig;
 }
 
-void SmModule::ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints )
+void SmModule::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 )
 {
     ApplyColorConfigValues(*mpColorConfig);
 }
@@ -221,7 +238,7 @@ VirtualDevice &SmModule::GetDefaultVirtualDev()
     if (!mpVirtualDev)
     {
         mpVirtualDev.reset( VclPtr<VirtualDevice>::Create() );
-        mpVirtualDev->SetReferenceDevice( VirtualDevice::RefDevMode::MSO1 );
+        mpVirtualDev->SetReferenceDevice( VirtualDevice::REFDEV_MODE_MSO1 );
     }
     return *mpVirtualDev;
 }
@@ -260,7 +277,6 @@ SfxItemSet*  SmModule::CreateItemSet( sal_uInt16 nId )
     }
     return pRet;
 }
-
 void SmModule::ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet )
 {
     if(nId == SID_SM_EDITOPTIONS)
@@ -268,7 +284,6 @@ void SmModule::ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet )
         GetConfig()->ItemSetToConfig(rSet);
     }
 }
-
 VclPtr<SfxTabPage> SmModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet )
 {
     VclPtr<SfxTabPage> pRet;

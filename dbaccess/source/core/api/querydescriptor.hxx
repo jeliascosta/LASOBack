@@ -60,6 +60,7 @@ protected:
     virtual ~OQueryDescriptor_Base();
 
     void        setColumnsOutOfDate( bool _bOutOfDate = true );
+    bool    isColumnsOutOfDate() const { return m_bColumnsOutOfDate; }
 
     sal_Int32   getColumnCount() const { return m_pColumns ? m_pColumns->getCount() : 0; }
     void        clearColumns( );
@@ -74,18 +75,18 @@ public:
     OQueryDescriptor_Base(const OQueryDescriptor_Base& _rSource,::cppu::OWeakObject& _rMySelf);
 
 // css::sdbcx::XColumnsSupplier
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getColumns(  ) override;
+    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getColumns(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::lang::XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
     static css::uno::Sequence< sal_Int8 >  getUnoTunnelImplementationId();
 
 
 // css::lang::XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
 
@@ -124,19 +125,21 @@ protected:
     // OPropertySetHelper
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
-    virtual ~OQueryDescriptor() override;
+    virtual ~OQueryDescriptor();
 public:
     OQueryDescriptor();
     explicit OQueryDescriptor(const OQueryDescriptor_Base& _rSource);
 
-    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes() override;
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 // css::uno::XInterface
     DECLARE_XINTERFACE( )
 
     // css::beans::XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 };
 }   // namespace dbaccess

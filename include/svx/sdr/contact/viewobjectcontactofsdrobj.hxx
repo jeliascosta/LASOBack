@@ -44,7 +44,7 @@ protected:
 
 public:
     ViewObjectContactOfSdrObj(ObjectContact& rObjectContact, ViewContact& rViewContact);
-    virtual ~ViewObjectContactOfSdrObj() override;
+    virtual ~ViewObjectContactOfSdrObj();
 
     virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
 

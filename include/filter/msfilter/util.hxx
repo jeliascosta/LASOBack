@@ -10,19 +10,14 @@
 #ifndef INCLUDED_FILTER_MSFILTER_UTIL_HXX
 #define INCLUDED_FILTER_MSFILTER_UTIL_HXX
 
-#include <filter/msfilter/msfilterdllapi.h>
-#include <svx/msdffdef.hxx>
-#include <rtl/string.hxx>
 #include <rtl/textenc.h>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <tools/datetime.hxx>
 #include <tools/color.hxx>
-
-namespace com { namespace sun { namespace star {
-    namespace awt { struct Size; }
-    namespace lang { struct Locale; }
-} } }
+#include <com/sun/star/lang/Locale.hpp>
+#include <filter/msfilter/msfilterdllapi.h>
+#include <svx/msdffdef.hxx>
+#include <com/sun/star/awt/Size.hpp>
+#include <filter/msfilter/escherex.hxx>
 
 namespace msfilter {
 namespace util {
@@ -57,6 +52,14 @@ to find it, unfortunately :-(
 MSFILTER_DLLPUBLIC sal_Unicode bestFitOpenSymbolToMSFont(sal_Unicode cBullet,
     rtl_TextEncoding& r_ioChrSet, OUString& r_ioFontName);
 
+
+enum TextCategory
+{
+    latin,      //Latin
+    cs,         //Complex Script
+    ea,         //East Asian
+    sym         //Symbol
+};
 
 #define OOXML_COLOR_AUTO 0x0a
 

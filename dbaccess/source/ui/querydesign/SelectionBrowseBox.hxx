@@ -51,7 +51,7 @@ namespace dbaui
     class OSelectionBrowseBox : public ::svt::EditBrowseBox
     {
         friend class OQueryDesignView;
-        std::vector<bool>                 m_bVisibleRow;              // at pos we find the RowId
+        ::std::vector<bool>                 m_bVisibleRow;              // at pos we find the RowId
         Timer                               m_timerInvalidate;
 
         long                                m_nSeekRow;
@@ -75,10 +75,10 @@ namespace dbaui
         bool                            m_bDisableErrorBox;
         bool                            m_bInUndoMode;
 
-        DECL_LINK(OnInvalidateTimer, Timer*, void);
+        DECL_LINK_TYPED(OnInvalidateTimer, Timer*, void);
     public:
         explicit OSelectionBrowseBox( vcl::Window* pParent );
-                                    virtual ~OSelectionBrowseBox() override;
+                                    virtual ~OSelectionBrowseBox();
         virtual void                dispose() override;
 
         void                        initialize();
@@ -92,7 +92,7 @@ namespace dbaui
 
         // AddGroupBy:: inserts a field with function == grouping. If the fields already exists and uses an aggregate function,
         // the flag is not set
-        void                        AddGroupBy( const OTableFieldDescRef& rInfo );
+        void                        AddGroupBy( const OTableFieldDescRef& rInfo,sal_uInt32 _nCurrentPos);
         void                        AddCondition( const OTableFieldDescRef& rInfo,
                                                   const OUString& rValue,
                                                   const sal_uInt16 nLevel,
@@ -139,10 +139,10 @@ namespace dbaui
 
         /** Disables the generation of undo actions
         */
-        void                 EnterUndoMode() { m_bInUndoMode = true; }
+        inline void                 EnterUndoMode() { m_bInUndoMode = true; }
         /** Enables the generation of undo actions
         */
-        void                 LeaveUndoMode() { m_bInUndoMode = false; }
+        inline void                 LeaveUndoMode() { m_bInUndoMode = false; }
 
         /** GetCellText returns the text at the given position
             @param  _nRow
@@ -182,8 +182,8 @@ namespace dbaui
     protected:
         virtual bool                SeekRow( long nRow ) override;
 
-        virtual void                PaintStatusCell(OutputDevice& rDev, const tools::Rectangle& rRect) const override;
-        virtual void                PaintCell(OutputDevice& rDev, const tools::Rectangle& rRect,
+        virtual void                PaintStatusCell(OutputDevice& rDev, const Rectangle& rRect) const override;
+        virtual void                PaintCell(OutputDevice& rDev, const Rectangle& rRect,
                                               sal_uInt16 nColumnId ) const override;
 
         virtual sal_Int8            AcceptDrop( const BrowserAcceptDropEvent& rEvt ) override;
@@ -192,6 +192,7 @@ namespace dbaui
         virtual void                MouseButtonUp( const BrowserMouseEvent& rEvt ) override;
         virtual void                KeyInput( const KeyEvent& rEvt ) override;
         virtual void                Command(const CommandEvent& rEvt) override;
+        virtual void                ArrangeControls(sal_uInt16& nX, sal_uInt16 nY) override;
 
         virtual ::svt::CellController*  GetController(long nRow, sal_uInt16 nCol) override;
         virtual void                InitController(::svt::CellControllerRef& rController, long nRow, sal_uInt16 nCol) override;
@@ -219,7 +220,7 @@ namespace dbaui
             // rCol contains the Nummer of the first empty column (in pOTableFieldDescList)
 
         void            RemoveField( sal_uInt16 nId );
-        tools::Rectangle       GetInvalidRect( sal_uInt16 nColId );
+        Rectangle       GetInvalidRect( sal_uInt16 nColId );
         long            GetRealRow(long nRow) const;
         long            GetBrowseRow(long nRowId) const;
         bool            GetFunctionName(sal_uInt32 _nFunctionTokenId, OUString& rFkt);

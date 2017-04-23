@@ -20,7 +20,6 @@
 #include "eppt.hxx"
 #include "epptdef.hxx"
 
-#include <o3tl/any.hxx>
 #include <tools/globname.hxx>
 #include <tools/datetime.hxx>
 #include <tools/poly.hxx>
@@ -128,8 +127,8 @@ PPTWriterBase::PPTWriterBase()
     , mnPages(0)
     , mnMasterPages(0)
     , maFraction(1, 576)
-    , maMapModeSrc(MapUnit::Map100thMM)
-    , maMapModeDest(MapUnit::MapInch, Point(), maFraction, maFraction)
+    , maMapModeSrc(MAP_100TH_MM)
+    , maMapModeDest(MAP_INCH, Point(), maFraction, maFraction)
     , meLatestPageType(NORMAL)
     , mpStyleSheet(nullptr)
 {
@@ -148,8 +147,8 @@ PPTWriterBase::PPTWriterBase( const Reference< XModel > & rXModel,
     , mnPages(0)
     , mnMasterPages(0)
     , maFraction(1, 576)
-    , maMapModeSrc(MapUnit::Map100thMM)
-    , maMapModeDest(MapUnit::MapInch, Point(), maFraction, maFraction)
+    , maMapModeSrc(MAP_100TH_MM)
+    , maMapModeDest(MAP_INCH, Point(), maFraction, maFraction)
     , meLatestPageType (NORMAL)
     , mpStyleSheet(nullptr)
 {
@@ -170,7 +169,7 @@ void PPTWriterBase::exportPPT( const std::vector< css::beans::PropertyValue >& r
     if ( !InitSOIface() )
         return;
 
-    FontCollectionEntry aDefaultFontDesc( "Times New Roman",
+    FontCollectionEntry aDefaultFontDesc( OUString( "Times New Roman" ),
                                           ROMAN,
                                           awt::FontPitch::VARIABLE,
                                                     RTL_TEXTENCODING_MS_1252 );
@@ -484,7 +483,7 @@ sal_uInt32 PPTWriterBase::GetMasterIndex( PageType ePageType )
             if ( aXPropertySet.is() )
             {
                 if ( ImplGetPropertyValue( aXPropertySet, "Number" ) )
-                    nRetValue |= *o3tl::doAccess<sal_Int16>(mAny);
+                    nRetValue |= *static_cast<sal_Int16 const *>(mAny.getValue());
                 if ( nRetValue & 0xffff )           // avoid overflow
                     nRetValue--;
             }
@@ -523,7 +522,7 @@ bool PPTWriterBase::GetStyleSheets()
             aXPropSet( mXModel, UNO_QUERY );
 
         sal_uInt16 nDefaultTab = ( aXPropSet.is() && ImplGetPropertyValue( aXPropSet, "TabStop" ) )
-            ? (sal_uInt16)( *o3tl::doAccess<sal_Int32>(mAny) / 4.40972 )
+            ? (sal_uInt16)( *static_cast<sal_Int32 const *>(mAny.getValue()) / 4.40972 )
             : 1250;
 
         maStyleSheetList.push_back( new PPTExStyleSheet( nDefaultTab, dynamic_cast<PPTExBulletProvider*>(this) ) );
@@ -601,7 +600,7 @@ bool PPTWriterBase::GetStyleSheets()
                                                 if ( nInstance == EPP_TEXTTYPE_Body )
                                                 {
                                                     sal_Unicode cTemp = aStyle[aStyle.getLength() - 1];
-                                                    aStyle = aStyle.copy(0, aStyle.getLength() - 1) + OUStringLiteral1(++cTemp);
+                                                    aStyle = aStyle.copy(0, aStyle.getLength() - 1) + OUString(++cTemp);
                                                     if ( aXFamily->hasByName( aStyle ) )
                                                     {
                                                         aXFamily->getByName( aStyle ) >>= xStyle;
@@ -681,13 +680,13 @@ awt::Point PPTWriterBase::MapPoint( const awt::Point& rPoint )
     return awt::Point( aRet.X(), aRet.Y() );
 }
 
-::tools::Rectangle PPTWriterBase::MapRectangle( const awt::Rectangle& rRect )
+Rectangle PPTWriterBase::MapRectangle( const awt::Rectangle& rRect )
 {
     css::awt::Point    aPoint( rRect.X, rRect.Y );
     css::awt::Size     aSize( rRect.Width, rRect.Height );
     css::awt::Point    aP( MapPoint( aPoint ) );
     css::awt::Size     aS( MapSize( aSize ) );
-    return ::tools::Rectangle( Point( aP.X, aP.Y ), Size( aS.Width, aS.Height ) );
+    return Rectangle( Point( aP.X, aP.Y ), Size( aS.Width, aS.Height ) );
 }
 
 bool PPTWriterBase::GetShapeByIndex( sal_uInt32 nIndex, bool bGroup )
@@ -714,7 +713,7 @@ bool PPTWriterBase::GetShapeByIndex( sal_uInt32 nIndex, bool bGroup )
             break;
         maPosition = MapPoint( mXShape->getPosition() );
         maSize = MapSize( mXShape->getSize() );
-        maRect = ::tools::Rectangle( Point( maPosition.X, maPosition.Y ), Size( maSize.Width, maSize.Height ) );
+        maRect = Rectangle( Point( maPosition.X, maPosition.Y ), Size( maSize.Width, maSize.Height ) );
 
         OStringBuffer aTypeBuffer(OUStringToOString(
             mXShape->getShapeType(), RTL_TEXTENCODING_UTF8));
@@ -734,7 +733,7 @@ bool PPTWriterBase::GetShapeByIndex( sal_uInt32 nIndex, bool bGroup )
 
         mnAngle = ( PropValue::GetPropertyValue( aAny,
             mXPropSet, "RotateAngle", true ) )
-                ? *o3tl::doAccess<sal_Int32>(aAny)
+                ? *static_cast<sal_Int32 const *>(aAny.getValue())
                 : 0;
 
         return true;
@@ -799,13 +798,7 @@ sal_Int8 PPTWriterBase::GetTransition( sal_Int16 nTransitionType, sal_Int16 nTra
     break;
     case TransitionType::ELLIPSEWIPE :
     {
-        switch( nTransitionSubtype ) {
-        case TransitionSubType::VERTICAL:
-        case TransitionSubType::HORIZONTAL:
-            // no ellipse or oval in PPT or OOXML, fallback to circle
-        default:
-            nPPTTransitionType = PPT_TRANSITION_TYPE_CIRCLE;
-        }
+        nPPTTransitionType = PPT_TRANSITION_TYPE_CIRCLE;
     }
     break;
     case TransitionType::FOURBOXWIPE :
@@ -1005,7 +998,7 @@ bool PPTWriterBase::ContainsOtherShapeThanPlaceholders()
     if ( nShapes )
         for ( sal_uInt32 nIndex = 0; ( nIndex < nShapes ) && !bOtherThanPlaceHolders; nIndex++ )
         {
-            if ( GetShapeByIndex( nIndex, false ) && mType != "drawing.Page" )
+            if ( GetShapeByIndex( nIndex ) && mType != "drawing.Page" )
             {
                 if( mType == "presentation.Page" || mType == "presentation.Notes" )
                 {

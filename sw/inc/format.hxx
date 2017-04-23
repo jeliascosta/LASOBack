@@ -43,8 +43,6 @@ namespace drawinglayer { namespace attribute {
 /// Base class for various Writer styles.
 class SW_DLLPUBLIC SwFormat : public SwModify
 {
-    friend class SwFrameFormat;
-
     OUString m_aFormatName;
     SwAttrSet m_aSet;
 
@@ -69,15 +67,18 @@ protected:
     SwFormat( SwAttrPool& rPool, const OUString &rFormatNm, const sal_uInt16* pWhichRanges,
             SwFormat *pDrvdFrame, sal_uInt16 nFormatWhich );
     SwFormat( const SwFormat& rFormat );
-    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNewValue ) override;
+   virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNewValue ) override;
 
 public:
 
-    virtual ~SwFormat() override;
+    virtual ~SwFormat();
     SwFormat &operator=(const SwFormat&);
 
     /// for Querying of Writer-functions.
     sal_uInt16 Which() const { return m_nWhichId; }
+
+    /// Query format information.
+    virtual bool GetInfo( SfxPoolItem& ) const override;
 
     /// Copy attributes even among documents.
     void CopyAttrs( const SwFormat& );
@@ -90,8 +91,10 @@ public:
     bool SetDerivedFrom(SwFormat *pDerivedFrom = nullptr);
 
     /// If bInParents is FALSE, search only in this format for attribute.
+    //UUUUinline
     const SfxPoolItem& GetFormatAttr( sal_uInt16 nWhich,
                                    bool bInParents = true ) const;
+    //UUUUinline
     SfxItemState GetItemState( sal_uInt16 nWhich, bool bSrchInParent = true,
                                     const SfxPoolItem **ppItem = nullptr ) const;
     SfxItemState GetBackgroundState(SvxBrushItem &rItem) const;
@@ -103,17 +106,18 @@ public:
         @return count of deleted hints. */
     virtual sal_uInt16 ResetAllFormatAttr();
 
-    SwFormat* DerivedFrom() const { return const_cast<SwFormat*>(static_cast<const SwFormat*>(GetRegisteredIn())); }
-    bool IsDefault() const { return DerivedFrom() == nullptr; }
+    inline SwFormat* DerivedFrom() const { return const_cast<SwFormat*>(static_cast<const SwFormat*>(GetRegisteredIn())); }
+    inline bool IsDefault() const { return DerivedFrom() == nullptr; }
 
     const OUString& GetName() const                  { return m_aFormatName; }
-    bool HasName(const OUString &rName) const { return m_aFormatName == rName; }
-    virtual void SetName( const OUString& rNewName, bool bBroadcast=false );
+    inline bool HasName(const OUString &rName) const { return m_aFormatName == rName; }
+    void SetName( const OUString& rNewName, bool bBroadcast=false );
 
     /// For querying the attribute array.
-    const SwAttrSet& GetAttrSet() const { return m_aSet; }
+    inline const SwAttrSet& GetAttrSet() const { return m_aSet; }
 
-    /** The document is set in SwAttrPool now, therefore you always can access it. */
+    /** Das Doc wird jetzt am SwAttrPool gesetzt. Dadurch hat man es immer
+       im Zugriff. */
     const SwDoc *GetDoc() const         { return m_aSet.GetDoc(); }
           SwDoc *GetDoc()               { return m_aSet.GetDoc(); }
 
@@ -149,8 +153,11 @@ public:
 
     /// Get attribute-description. Returns passed string.
     void GetPresentation( SfxItemPresentation ePres,
-        MapUnit eCoreMetric, MapUnit ePresMetric, OUString &rText ) const
+        SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString &rText ) const
         { m_aSet.GetPresentation( ePres, eCoreMetric, ePresMetric, rText ); }
+
+    /// Format-ID for reading/writing:
+    void   ResetWritten()    { m_bWritten = false; }
 
     /// Query / set AutoFormat-flag.
     bool IsAuto() const                 { return m_bAutoFormat; }
@@ -200,7 +207,7 @@ public:
     inline const SvxBoxItem               &GetBox( bool = true ) const;
     inline const SvxFormatKeepItem         &GetKeep( bool = true ) const;
 
-    // Create SvxBrushItem for Background fill (partially for backwards compatibility)
+    //UUUU Create SvxBrushItem for Background fill (partially for backwards compatibility)
     SvxBrushItem makeBackgroundBrushItem( bool = true ) const;
 
     inline const SvxShadowItem            &GetShadow( bool = true ) const;
@@ -247,7 +254,7 @@ public:
     */
     virtual bool IsBackgroundTransparent() const;
 
-    // Access to DrawingLayer FillAttributes in a preprocessed form for primitive usage
+    //UUUU Access to DrawingLayer FillAttributes in a preprocessed form for primitive usage
     virtual drawinglayer::attribute::SdrAllFillAttributesHelperPtr getSdrAllFillAttributesHelper() const;
     virtual bool supportsFullDrawingLayerFillAttributeSet() const;
 };

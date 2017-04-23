@@ -31,10 +31,10 @@ class PushButton;
 struct ImplWizPageData;
 struct ImplWizButtonData;
 
-/*
+/*************************************************************************
 
-Description
-==========
+Beschreibung
+============
 
 class WizardDialog
 
@@ -57,45 +57,55 @@ if the Finnish-Button is activated. Then the Deactivate-Page-Handler
 is called by dialog and by the current TabPage. Now the dialog ends
 (Close() or EndDialog()).
 
-AddPage()/RemovePage()/SetPage() TabPages are made known to the Wizard.
-The TabPage of the current Level is always shown and if no TabPage is
-available at that level then the TabPage of the highest level is used.
-Because of that the current TabPage always can be swapped under the
-condition that in the Activate-Handler the current TabPage cannot be
-destroyed.
+Mit AddPage()/RemovePage()/SetPage() koennen die TabPages dem Wizard
+bekannt gemacht werden. Es wird immer die TabPage des aktuellen Levels
+angezeigt, wenn fuer den aktuellen Level keine TabPage zugewiesen
+ist, wird die TabPages des hoechsten Levels angezeigt. Somit kann auch
+immer die aktuelle TabPage ausgetauscht werden, wobei zu
+beruecksichtigen ist, das im Activate-Handler die aktuelle TabPage
+nicht zerstoert werden darf.
 
-SetPrevButton()/SetNextButton() add the Prev-Button and the
-Next-Button to the dialog. In that case the dialog emits the Click-Handler
-of the assigned Button when Ctrl+Tab, Shift-Ctrl-Tab are pressed. The Buttons
-are not disabled by the WizardDialog and such an action must be
-programmed by the user of this Dialog.
+Mit SetPrevButton()/SetNextButton() werden der Prev-Button und der
+Next-Button dem Dialog bekannt gemacht. In dem Fall loest der
+Dialog bei Ctr+Tab, Shift+Ctrl+Tab den entsprechenden Click-Handler
+am zugewiesenen Button aus. Die Button werden nicht vom WizardDialog
+disablte. Eine entsprechende Steuerung muss der Benutzer dieses
+Dialoges selber programieren.
 
-AddButton()/RemoveButton() can add Buttons to the Wizard and they're shown
-the order of adding them. The Buttons are ordered independent of their
-visibility state, so that also later a Button can be shown/hidden.
-The Offset is in Pixels and always refers to the following Button. So that
-the distance between the Buttons is the same for all dialogs, there is the
-macro WIZARDDIALOG_BUTTON_STDOFFSET_X to be used as the default offset.
+Mit AddButton()/RemoveButton() koennen Buttons dem Wizard bekannt
+gemacht werden, die in der Reihenfolge der Hinzufuegung angeordnet
+werden. Die Buttons werden unabhengig von ihrem sichtbarkeitsstatus
+angeordnet, so das auch spaeter ein entsprechender Button angezeigt/
+gehidet werden kann. Der Offset wird in Pixeln angegeben und bezieht
+sich immer auf den nachfolgenden Button. Damit der Abstand zwischen
+den Buttons bei allen Dialogen gleich ist, gibt es das Define
+WIZARDDIALOG_BUTTON_STDOFFSET_X, welches als Standard-Offset genommen
+werden sollte.
 
-With SetViewWindow() and SetViewAlign() a Control can be set, which can
-be used as Preview-Window or for displaying of pretty Bitmaps.
-
---------------------------------------------------------------------------
-
-The ActivatePage()-Handler is called, if a new TabPage is shown. In that
-handler a new TabPage can be created if it was not created before; the
-handler can be set as a Link. GetCurLevel() returns the current level and
-Level 0 is the first page.
-
-The DeactivatePage()-Handler is called if a new TabPage should be shown.
-In that handler has a optional error check and returns sal_False, if the
-switch should not be done. Also the Handler can be set as a Link. The
-default implementation calls the Link and returns the Links value or returns
-sal_True if no Link is set.
+Mit SetViewWindow() und SetViewAlign() kann ein Control gesetzt werden,
+welches als Preview-Window oder fuer die Anzeige von schoenen Bitmaps
+genutzt werden kann.
 
 --------------------------------------------------------------------------
 
-Example:
+Der ActivatePage()-Handler wird gerufen, wenn eine neue TabPages
+angezeigt wird. In diesem Handler kann beispielsweise die neue
+TabPage erzeugt werden, wenn diese zu diesem Zeitpunkt noch nicht
+erzeugt wurde. Der Handler kann auch als Link gesetzt werden. Mit
+GetCurLevel() kann die aktuelle ebene abgefragt werden, wobei
+Level 0 die erste Seite ist.
+
+Der DeactivatePage()-Handler wird gerufen, wenn eine neue TabPage
+angezeigt werden soll. In diesem Handler kann noch eine Fehler-
+ueberprufung stattfinden und das Umschalten gegebenenfalls verhindert
+werden, indem sal_False zurueckgegeben wird. Der Handler kann auch als
+Link gesetzt werden. Die Defaultimplementierung ruft den Link und
+gibt den Rueckgabewert des Links zurueck und wenn kein Link gesetzt
+ist, wird sal_True zurueckgegeben.
+
+--------------------------------------------------------------------------
+
+Beispiel:
 
 MyWizardDlg-Ctor
 ----------------
@@ -156,21 +166,21 @@ void MyWizardDlg::ActivatePage()
 MyWizardDlg-Prev/Next-Handler
 -----------------------------
 
-IMPL_LINK( MyWizardDlg, ImplPrevHdl, PushButton*, pBtn, void )
+IMPL_LINK_TYPED( MyWizardDlg, ImplPrevHdl, PushButton*, pBtn, void )
 {
     ShowPrevPage();
     if ( !GetCurLevel() )
         pBtn->Disable();
 }
 
-IMPL_LINK( MyWizardDlg, ImplNextHdl, PushButton*, pBtn, void )
+IMPL_LINK_TYPED( MyWizardDlg, ImplNextHdl, PushButton*, pBtn, void )
 {
     ShowNextPage();
     if ( GetCurLevel() < 3 )
         pBtn->Disable();
 }
 
-*/
+*************************************************************************/
 
 #define WIZARDDIALOG_BUTTON_STDOFFSET_X         6
 #define WIZARDDIALOG_BUTTON_SMALLSTDOFFSET_X    3
@@ -193,7 +203,8 @@ private:
     sal_Int16               mnLeftAlignCount;
     bool                    mbEmptyViewMargin;
 
-    DECL_DLLPRIVATE_LINK( ImplHandleWizardLayoutTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( ImplHandleWizardLayoutTimerHdl, Idle*, void );
+    bool hasWizardPendingLayout() const;
 
 protected:
     long                LogicalCoordinateToPixel(int iCoordinate);
@@ -218,14 +229,14 @@ private:
     SVT_DLLPRIVATE TabPage*         ImplGetPage( sal_uInt16 nLevel ) const;
 
 public:
-    WizardDialog( vcl::Window* pParent, WinBits nStyle );
+    WizardDialog( vcl::Window* pParent, WinBits nStyle = WB_STDTABDIALOG );
     WizardDialog( vcl::Window* pParent, const OUString& rID, const OUString& rUIXMLDescription );
-    virtual ~WizardDialog() override;
+    virtual ~WizardDialog();
     virtual void dispose() override;
 
     virtual void        Resize() override;
     virtual void        StateChanged( StateChangedType nStateChange ) override;
-    virtual bool        EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool        Notify( NotifyEvent& rNEvt ) override;
 
     virtual void        ActivatePage();
     virtual bool        DeactivatePage();

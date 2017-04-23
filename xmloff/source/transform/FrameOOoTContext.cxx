@@ -42,6 +42,10 @@ XMLFrameOOoTransformerContext::XMLFrameOOoTransformerContext(
 {
 }
 
+XMLFrameOOoTransformerContext::~XMLFrameOOoTransformerContext()
+{
+}
+
 void XMLFrameOOoTransformerContext::StartElement(
     const Reference< XAttributeList >& rAttrList )
 {

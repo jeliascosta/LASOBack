@@ -35,24 +35,46 @@ class BiffDecoderBase : public ::comphelper::IDocPasswordVerifier
 {
 public:
     explicit            BiffDecoderBase();
-    virtual             ~BiffDecoderBase() override;
+    virtual             ~BiffDecoderBase();
+
+    /** Derived classes return a clone of the decoder for usage in new streams. */
+    inline BiffDecoderBase* clone() { return implClone(); }
 
     /** Implementation of the ::comphelper::IDocPasswordVerifier interface. */
     virtual ::comphelper::DocPasswordVerifierResult verifyPassword( const OUString& rPassword, css::uno::Sequence< css::beans::NamedValue >& o_rEncryptionData ) override;
     virtual ::comphelper::DocPasswordVerifierResult verifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& o_rEncryptionData ) override;
 
     /** Returns true, if the decoder has been initialized correctly. */
-    bool         isValid() const { return mbValid; }
+    inline bool         isValid() const { return mbValid; }
+
+    /** Decodes nBytes bytes and writes encrypted data into the buffer pnDestData. */
+    void                decode(
+                            sal_uInt8* pnDestData,
+                            const sal_uInt8* pnSrcData,
+                            sal_Int64 nStreamPos,
+                            sal_uInt16 nBytes );
 
 private:
+    /** Derived classes return a clone of the decoder for usage in new streams. */
+    virtual BiffDecoderBase* implClone() = 0;
+
     /** Derived classes implement password verification and initialization of
         the decoder. */
     virtual css::uno::Sequence< css::beans::NamedValue > implVerifyPassword( const OUString& rPassword ) = 0;
     virtual bool implVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) = 0;
 
+    /** Implementation of decryption of a memory block. */
+    virtual void        implDecode(
+                            sal_uInt8* pnDestData,
+                            const sal_uInt8* pnSrcData,
+                            sal_Int64 nStreamPos,
+                            sal_uInt16 nBytes ) = 0;
+
 private:
     bool                mbValid;        /// True = decoder is correctly initialized.
 };
+
+typedef std::shared_ptr< BiffDecoderBase > BiffDecoderRef;
 
 /** Decodes BIFF stream contents that are encoded using the old XOR algorithm. */
 class BiffDecoder_XOR : public BiffDecoderBase
@@ -61,9 +83,19 @@ private:
     /** Copy constructor for cloning. */
                         BiffDecoder_XOR( const BiffDecoder_XOR& rDecoder );
 
+    /** Returns a clone of the decoder for usage in new streams. */
+    virtual BiffDecoder_XOR* implClone() override;
+
     /** Implements password verification and initialization of the decoder. */
     virtual css::uno::Sequence< css::beans::NamedValue > implVerifyPassword( const OUString& rPassword ) override;
     virtual bool implVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) override;
+
+    /** Implementation of decryption of a memory block. */
+    virtual void        implDecode(
+                            sal_uInt8* pnDestData,
+                            const sal_uInt8* pnSrcData,
+                            sal_Int64 nStreamPos,
+                            sal_uInt16 nBytes ) override;
 
 private:
     ::oox::core::BinaryCodec_XOR maCodec;   /// Cipher algorithm implementation.
@@ -79,9 +111,19 @@ private:
     /** Copy constructor for cloning. */
                         BiffDecoder_RCF( const BiffDecoder_RCF& rDecoder );
 
+    /** Returns a clone of the decoder for usage in new streams. */
+    virtual BiffDecoder_RCF* implClone() override;
+
     /** Implements password verification and initialization of the decoder. */
     virtual css::uno::Sequence< css::beans::NamedValue > implVerifyPassword( const OUString& rPassword ) override;
     virtual bool implVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) override;
+
+    /** Implementation of decryption of a memory block. */
+    virtual void        implDecode(
+                            sal_uInt8* pnDestData,
+                            const sal_uInt8* pnSrcData,
+                            sal_Int64 nStreamPos,
+                            sal_uInt16 nBytes ) override;
 
 private:
     ::oox::core::BinaryCodec_RCF maCodec;   /// Cipher algorithm implementation.
@@ -89,6 +131,19 @@ private:
     ::std::vector< sal_uInt8 > maSalt;
     ::std::vector< sal_uInt8 > maVerifier;
     ::std::vector< sal_uInt8 > maVerifierHash;
+};
+
+/** Helper for BIFF stream codecs. Holds the used codec object. */
+class BiffCodecHelper : public WorkbookHelper
+{
+public:
+    explicit            BiffCodecHelper( const WorkbookHelper& rHelper );
+
+    /** Clones the contained decoder object if existing and sets it at the passed stream. */
+    void                cloneDecoder( BiffInputStream& rStrm );
+
+private:
+    BiffDecoderRef      mxDecoder;          /// The decoder for import filter.
 };
 
 } // namespace xls

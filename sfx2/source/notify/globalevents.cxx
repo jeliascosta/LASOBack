@@ -26,7 +26,6 @@
 #include <com/sun/star/document/XEventBroadcaster.hpp>
 #include <com/sun/star/document/XDocumentEventListener.hpp>
 #include <com/sun/star/frame/XGlobalEventBroadcaster.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/uno/Type.hxx>
 
@@ -74,58 +73,77 @@ class SfxGlobalEvents_Impl : public ModelCollectionMutexBase
 
 public:
     explicit SfxGlobalEvents_Impl(const css::uno::Reference < css::uno::XComponentContext >& rxContext);
+    virtual ~SfxGlobalEvents_Impl();
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.sfx2.GlobalEventBroadcaster");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.GlobalEventBroadcaster" };
         return aSeq;
     }
 
     // css.document.XEventBroadcaster
-    virtual css::uno::Reference< css::container::XNameReplace > SAL_CALL getEvents() override;
+    virtual css::uno::Reference< css::container::XNameReplace > SAL_CALL getEvents()
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL addEventListener(const css::uno::Reference< css::document::XEventListener >& xListener) override;
+    virtual void SAL_CALL addEventListener(const css::uno::Reference< css::document::XEventListener >& xListener)
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::document::XEventListener >& xListener) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::document::XEventListener >& xListener)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // css.document.XDocumentEventBroadcaster
-    virtual void SAL_CALL addDocumentEventListener( const css::uno::Reference< css::document::XDocumentEventListener >& Listener ) override;
-    virtual void SAL_CALL removeDocumentEventListener( const css::uno::Reference< css::document::XDocumentEventListener >& Listener ) override;
-    virtual void SAL_CALL notifyDocumentEvent( const OUString& EventName, const css::uno::Reference< css::frame::XController2 >& ViewController, const css::uno::Any& Supplement ) override;
+    virtual void SAL_CALL addDocumentEventListener( const css::uno::Reference< css::document::XDocumentEventListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeDocumentEventListener( const css::uno::Reference< css::document::XDocumentEventListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyDocumentEvent( const OUString& EventName, const css::uno::Reference< css::frame::XController2 >& ViewController, const css::uno::Any& Supplement ) throw (css::lang::IllegalArgumentException, css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
 
     // css.document.XEventListener
-    virtual void SAL_CALL notifyEvent(const css::document::EventObject& aEvent) override;
+    virtual void SAL_CALL notifyEvent(const css::document::EventObject& aEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // css.document.XDocumentEventListener
-    virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) override;
+    virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // css.container.XSet
-    virtual sal_Bool SAL_CALL has(const css::uno::Any& aElement) override;
+    virtual sal_Bool SAL_CALL has(const css::uno::Any& aElement)
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL insert(const css::uno::Any& aElement) override;
+    virtual void SAL_CALL insert(const css::uno::Any& aElement)
+        throw(css::lang::IllegalArgumentException  ,
+              css::container::ElementExistException,
+              css::uno::RuntimeException, std::exception           ) override;
 
-    virtual void SAL_CALL remove(const css::uno::Any& aElement) override;
+    virtual void SAL_CALL remove(const css::uno::Any& aElement)
+        throw(css::lang::IllegalArgumentException   ,
+              css::container::NoSuchElementException,
+              css::uno::RuntimeException, std::exception            ) override;
 
     // css.container.XEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // css.container.XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // css.lang.XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
 private:
 
@@ -146,13 +164,20 @@ SfxGlobalEvents_Impl::SfxGlobalEvents_Impl( const uno::Reference < uno::XCompone
     , pImp                    (nullptr      )
 {
     m_refCount++;
-    SfxApplication::GetOrCreate();
+    SfxGetpApp();
     pImp                   = new GlobalEventConfig();
     m_xEvents              = pImp;
     m_refCount--;
 }
 
+
+SfxGlobalEvents_Impl::~SfxGlobalEvents_Impl()
+{
+}
+
+
 uno::Reference< container::XNameReplace > SAL_CALL SfxGlobalEvents_Impl::getEvents()
+    throw(uno::RuntimeException, std::exception)
 {
     // SAFE ->
     ::osl::ResettableMutexGuard aLock(m_aLock);
@@ -162,6 +187,7 @@ uno::Reference< container::XNameReplace > SAL_CALL SfxGlobalEvents_Impl::getEven
 
 
 void SAL_CALL SfxGlobalEvents_Impl::addEventListener(const uno::Reference< document::XEventListener >& xListener)
+    throw(uno::RuntimeException, std::exception)
 {
     // container is threadsafe
     m_aLegacyListeners.addInterface(xListener);
@@ -169,6 +195,7 @@ void SAL_CALL SfxGlobalEvents_Impl::addEventListener(const uno::Reference< docum
 
 
 void SAL_CALL SfxGlobalEvents_Impl::removeEventListener(const uno::Reference< document::XEventListener >& xListener)
+    throw(uno::RuntimeException, std::exception)
 {
     // container is threadsafe
     m_aLegacyListeners.removeInterface(xListener);
@@ -176,12 +203,14 @@ void SAL_CALL SfxGlobalEvents_Impl::removeEventListener(const uno::Reference< do
 
 
 void SAL_CALL SfxGlobalEvents_Impl::addDocumentEventListener( const uno::Reference< document::XDocumentEventListener >& Listener )
+    throw(uno::RuntimeException, std::exception)
 {
     m_aDocumentListeners.addInterface( Listener );
 }
 
 
 void SAL_CALL SfxGlobalEvents_Impl::removeDocumentEventListener( const uno::Reference< document::XDocumentEventListener >& Listener )
+    throw(uno::RuntimeException, std::exception)
 {
     m_aDocumentListeners.removeInterface( Listener );
 }
@@ -189,6 +218,7 @@ void SAL_CALL SfxGlobalEvents_Impl::removeDocumentEventListener( const uno::Refe
 
 void SAL_CALL SfxGlobalEvents_Impl::notifyDocumentEvent( const OUString& /*_EventName*/,
         const uno::Reference< frame::XController2 >& /*_ViewController*/, const uno::Any& /*_Supplement*/ )
+        throw (lang::IllegalArgumentException, lang::NoSupportException, uno::RuntimeException, std::exception)
 {
     // we're a multiplexer only, no chance to generate artificial events here
     throw lang::NoSupportException(OUString(), *this);
@@ -196,6 +226,7 @@ void SAL_CALL SfxGlobalEvents_Impl::notifyDocumentEvent( const OUString& /*_Even
 
 
 void SAL_CALL SfxGlobalEvents_Impl::notifyEvent(const document::EventObject& aEvent)
+    throw(uno::RuntimeException, std::exception)
 {
     document::DocumentEvent aDocEvent(aEvent.Source, aEvent.EventName, nullptr, uno::Any());
     implts_notifyJobExecution(aEvent);
@@ -205,6 +236,7 @@ void SAL_CALL SfxGlobalEvents_Impl::notifyEvent(const document::EventObject& aEv
 
 
 void SAL_CALL SfxGlobalEvents_Impl::documentEventOccured( const document::DocumentEvent& Event )
+    throw (uno::RuntimeException, std::exception)
 {
     implts_notifyJobExecution(document::EventObject(Event.Source, Event.EventName));
     implts_checkAndExecuteEventBindings(Event);
@@ -213,6 +245,7 @@ void SAL_CALL SfxGlobalEvents_Impl::documentEventOccured( const document::Docume
 
 
 void SAL_CALL SfxGlobalEvents_Impl::disposing(const lang::EventObject& aEvent)
+    throw(uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xDoc(aEvent.Source, uno::UNO_QUERY);
 
@@ -227,6 +260,7 @@ void SAL_CALL SfxGlobalEvents_Impl::disposing(const lang::EventObject& aEvent)
 
 
 sal_Bool SAL_CALL SfxGlobalEvents_Impl::has(const uno::Any& aElement)
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xDoc;
     aElement >>= xDoc;
@@ -246,12 +280,15 @@ sal_Bool SAL_CALL SfxGlobalEvents_Impl::has(const uno::Any& aElement)
 
 
 void SAL_CALL SfxGlobalEvents_Impl::insert( const uno::Any& aElement )
+    throw (lang::IllegalArgumentException  ,
+           container::ElementExistException,
+           uno::RuntimeException, std::exception           )
 {
     uno::Reference< frame::XModel > xDoc;
     aElement >>= xDoc;
     if (!xDoc.is())
         throw lang::IllegalArgumentException(
-                "Can not locate at least the model parameter.",
+                OUString("Can not locate at least the model parameter."),
                 static_cast< container::XSet* >(this),
                 0);
 
@@ -280,12 +317,15 @@ void SAL_CALL SfxGlobalEvents_Impl::insert( const uno::Any& aElement )
 
 
 void SAL_CALL SfxGlobalEvents_Impl::remove( const uno::Any& aElement )
+    throw (lang::IllegalArgumentException   ,
+           container::NoSuchElementException,
+           uno::RuntimeException, std::exception            )
 {
     uno::Reference< frame::XModel > xDoc;
     aElement >>= xDoc;
     if (!xDoc.is())
         throw lang::IllegalArgumentException(
-                "Can not locate at least the model parameter.",
+                OUString("Can not locate at least the model parameter."),
                 static_cast< container::XSet* >(this),
                 0);
 
@@ -314,13 +354,14 @@ void SAL_CALL SfxGlobalEvents_Impl::remove( const uno::Any& aElement )
 
 
 uno::Reference< container::XEnumeration > SAL_CALL SfxGlobalEvents_Impl::createEnumeration()
+    throw (uno::RuntimeException, std::exception)
 {
     // SAFE ->
     ::osl::ResettableMutexGuard aLock(m_aLock);
     uno::Sequence<uno::Any> models(m_lModels.size());
     for (size_t i = 0; i < m_lModels.size(); ++i)
     {
-        models[i] <<= m_lModels[i];
+        models[i] = uno::makeAny(m_lModels[i]);
     }
     uno::Reference< container::XEnumeration > xEnum(
         static_cast<container::XEnumeration*>(
@@ -333,12 +374,14 @@ uno::Reference< container::XEnumeration > SAL_CALL SfxGlobalEvents_Impl::createE
 
 
 uno::Type SAL_CALL SfxGlobalEvents_Impl::getElementType()
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<frame::XModel>::get();
 }
 
 
 sal_Bool SAL_CALL SfxGlobalEvents_Impl::hasElements()
+    throw (uno::RuntimeException, std::exception)
 {
     // SAFE ->
     ::osl::ResettableMutexGuard aLock(m_aLock);

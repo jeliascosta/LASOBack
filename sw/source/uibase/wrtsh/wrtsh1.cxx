@@ -19,6 +19,7 @@
 
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XChild.hpp>
+#include <com/sun/star/embed/XVisualObject.hpp>
 #include <com/sun/star/embed/EmbedMisc.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/EmbedVerbs.hpp>
@@ -219,7 +220,7 @@ void SwWrtShell::Insert( const OUString &rStr )
             aRewriter.AddRule(UndoArg3, rStr);
         }
 
-        StartUndo(SwUndoId::REPLACE, &aRewriter);
+        StartUndo(UNDO_REPLACE, &aRewriter);
         bStarted = true;
         bDeleted = DelRight() != 0;
     }
@@ -250,7 +251,7 @@ void SwWrtShell::Insert( const OUString &rPath, const OUString &rFilter,
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, SW_RES(STR_GRAPHIC));
 
-    StartUndo(SwUndoId::INSERT, &aRewriter);
+    StartUndo(UNDO_INSERT, &aRewriter);
 
     if ( HasSelection() )
         DelRight();
@@ -333,7 +334,7 @@ void SwWrtShell::Insert( const OUString &rPath, const OUString &rFilter,
     EndAllAction();
 }
 
-// Insert an OLE-Object into the CORE.
+// Insert an OLE-Objekt into the CORE.
 // if no object is transferred, then one will be created.
 
 void SwWrtShell::InsertObject( const svt::EmbeddedObjectRef& xRef, SvGlobalName *pName,
@@ -376,7 +377,7 @@ void SwWrtShell::InsertObject( const svt::EmbeddedObjectRef& xRef, SvGlobalName 
                     OString aCmd(".uno:");
                     aCmd += pSlot->GetUnoName();
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                    ScopedVclPtr<SfxAbstractInsertObjectDialog> pDlg( pFact->CreateInsertObjectDialog( GetWin(), OUString::fromUtf8( aCmd ), xStor, &aServerList ));
+                    std::unique_ptr<SfxAbstractInsertObjectDialog> pDlg( pFact->CreateInsertObjectDialog( GetWin(), OUString::fromUtf8( aCmd ), xStor, &aServerList ));
                     if ( pDlg )
                     {
                         pDlg->Execute();
@@ -410,9 +411,9 @@ void SwWrtShell::InsertObject( const svt::EmbeddedObjectRef& xRef, SvGlobalName 
 
                 if ( xObj.GetViewAspect() == embed::Aspects::MSOLE_ICON )
                 {
-                    SwRect aArea = GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, xObj.GetObject() );
-                    aArea.Pos() += GetAnyCurRect( CurRectType::FlyEmbedded, nullptr, xObj.GetObject() ).Pos();
-                    MapMode aMapMode( MapUnit::MapTwip );
+                    SwRect aArea = GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() );
+                    aArea.Pos() += GetAnyCurRect( RECT_FLY_EMBEDDED, nullptr, xObj.GetObject() ).Pos();
+                    MapMode aMapMode( MAP_TWIP );
                     Size aSize = xObj.GetSize( &aMapMode );
                     aArea.Width( aSize.Width() );
                     aArea.Height( aSize.Height() );
@@ -445,13 +446,13 @@ bool SwWrtShell::InsertOleObject( const svt::EmbeddedObjectRef& xRef, SwFlyFrame
     ResetCursorStack();
     StartAllAction();
 
-    StartUndo(SwUndoId::INSERT);
+    StartUndo(UNDO_INSERT);
 
     //Some differences between StarMath and any other objects:
     //1. Selections should be deleted. For StarMath the Text should be
     //   passed to the Object
     //2. If the cursor is at the end of an non empty paragraph a paragraph
-    //   break should be inserted. StarMath objects are character bound and
+    //   break should be insertet. StarMath objects are character bound and
     //   no break should be inserted.
     //3. If an selection is passed to a StarMath object, this object should
     //   not be activated. false should be returned then.
@@ -503,7 +504,7 @@ bool SwWrtShell::InsertOleObject( const svt::EmbeddedObjectRef& xRef, SwFlyFrame
     CalcBoundRect( aBound, aFrameMgr.GetAnchor() );
 
     //The Size should be suggested by the OLE server
-    MapMode aMapMode( MapUnit::MapTwip );
+    MapMode aMapMode( MAP_TWIP );
     Size aSz = xRef.GetSize( &aMapMode );
 
     //Object size can be limited
@@ -560,7 +561,7 @@ bool SwWrtShell::InsertOleObject( const svt::EmbeddedObjectRef& xRef, SwFlyFrame
     else
         aRewriter.AddRule(UndoArg1, SW_RES(STR_OLE));
 
-    EndUndo(SwUndoId::INSERT, &aRewriter);
+    EndUndo(UNDO_INSERT, &aRewriter);
 
     return bActivate;
 }
@@ -603,7 +604,7 @@ void SwWrtShell::MoveObjectIfActive( svt::EmbeddedObjectRef& xObj, const Point& 
                 GetView().FindIPClient( xObj.GetObject(), &(GetView().GetEditWin()) );
             if ( pCli )
             {
-                tools::Rectangle aArea = pCli->GetObjArea();
+                Rectangle aArea = pCli->GetObjArea();
                 aArea += rOffset;
                 pCli->SetObjArea( aArea );
             }
@@ -640,7 +641,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
         {
             // TODO/MBA: testing
             SwRect aRect( pFlyPrtRect ? *pFlyPrtRect
-                        : GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, xObj.GetObject() ));
+                        : GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() ));
             if( !aRect.IsEmpty() )
             {
                 // TODO/LEAN: getMapUnit can switch object to running state
@@ -649,7 +650,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
                 MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) );
 
                 // TODO/LATER: needs complete VisArea?!
-                Size aSize( OutputDevice::LogicToLogic( aRect.SVRect(), MapUnit::MapTwip, aUnit ).GetSize() );
+                Size aSize( OutputDevice::LogicToLogic( aRect.SVRect(), MAP_TWIP, aUnit ).GetSize() );
                 awt::Size aSz;
                 aSz.Width = aSize.Width();
                 aSz.Height = aSize.Height();
@@ -754,14 +755,14 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
     // nothing can be scaled.
     if( _aVisArea.Width() && _aVisArea.Height() )
     {
-        const MapMode aTmp( MapUnit::MapTwip );
+        const MapMode aTmp( MAP_TWIP );
         MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) );
         _aVisArea = OutputDevice::LogicToLogic( _aVisArea, aUnit, aTmp);
         Size aObjArea;
         if ( pFlyPrtRect )
             aObjArea = pFlyPrtRect->SSize();
         else
-            aObjArea = GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, xObj.GetObject() ).SSize();
+            aObjArea = GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() ).SSize();
 
         // differ the aObjArea and _aVisArea by 1 Pixel then set new VisArea
         long nX, nY;
@@ -795,8 +796,8 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
     }
     else
     {
-        aArea = GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, xObj.GetObject() );
-        aArea.Pos() += GetAnyCurRect( CurRectType::FlyEmbedded, nullptr, xObj.GetObject() ).Pos();
+        aArea = GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() );
+        aArea.Pos() += GetAnyCurRect( RECT_FLY_EMBEDDED, nullptr, xObj.GetObject() ).Pos();
     }
 
     if ( bUseObjectSize )
@@ -808,7 +809,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
         {
             const Point &rPoint = pFlyFrameFormat->GetLastFlyFramePrtRectPos();
             SwRect aRect( pFlyPrtRect ? *pFlyPrtRect
-                        : GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, xObj.GetObject() ));
+                        : GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() ));
             aArea += rPoint - aRect.Pos(); // adjust area by diff of printing area position in order to keep baseline alignment correct.
         }
         aArea.Width ( _aVisArea.Width() );
@@ -841,7 +842,7 @@ void SwWrtShell::InsertPageBreak(const OUString *pPageDesc, const ::boost::optio
     if( CanInsert() )
     {
         SwActContext aActContext(this);
-        StartUndo(SwUndoId::UI_INSERT_PAGE_BREAK);
+        StartUndo(UNDO_UI_INSERT_PAGE_BREAK);
 
         if ( !IsCursorInTable() )
         {
@@ -861,8 +862,8 @@ void SwWrtShell::InsertPageBreak(const OUString *pPageDesc, const ::boost::optio
             SetAttrItem( aDesc );
         }
         else
-            SetAttrItem( SvxFormatBreakItem(SvxBreak::PageBefore, RES_BREAK) );
-        EndUndo(SwUndoId::UI_INSERT_PAGE_BREAK);
+            SetAttrItem( SvxFormatBreakItem(SVX_BREAK_PAGE_BEFORE, RES_BREAK) );
+        EndUndo(UNDO_UI_INSERT_PAGE_BREAK);
     }
 }
 
@@ -895,7 +896,7 @@ void SwWrtShell::InsertColumnBreak()
     ResetCursorStack();
     if( CanInsert() )
     {
-        StartUndo(SwUndoId::UI_INSERT_COLUMN_BREAK);
+        StartUndo(UNDO_UI_INSERT_COLUMN_BREAK);
 
         if ( !IsCursorInTable() )
         {
@@ -903,9 +904,9 @@ void SwWrtShell::InsertColumnBreak()
                 DelRight();
             SwFEShell::SplitNode( false, false );
         }
-        SetAttrItem(SvxFormatBreakItem(SvxBreak::ColumnBefore, RES_BREAK));
+        SetAttrItem(SvxFormatBreakItem(SVX_BREAK_COLUMN_BEFORE, RES_BREAK));
 
-        EndUndo(SwUndoId::UI_INSERT_COLUMN_BREAK);
+        EndUndo(UNDO_UI_INSERT_COLUMN_BREAK);
     }
 }
 
@@ -956,13 +957,13 @@ void SwWrtShell::SplitNode( bool bAutoFormat )
         bool bHasSel = HasSelection();
         if( bHasSel )
         {
-            StartUndo( SwUndoId::INSERT );
+            StartUndo( UNDO_INSERT );
             DelRight();
         }
 
         SwFEShell::SplitNode( bAutoFormat );
         if( bHasSel )
-            EndUndo( SwUndoId::INSERT );
+            EndUndo( UNDO_INSERT );
     }
 }
 
@@ -985,7 +986,7 @@ void SwWrtShell::NumOrBulletOn(bool bNum)
     // determine numbering rule found at current cursor position in the document.
     const SwNumRule* pCurRule = GetNumRuleAtCurrCursorPos();
 
-    StartUndo(SwUndoId::NUMORNONUM);
+    StartUndo(UNDO_NUMORNONUM);
 
     const SwNumRule * pNumRule = pCurRule;
 
@@ -1247,7 +1248,7 @@ void SwWrtShell::NumOrBulletOn(bool bNum)
             // numbering/bullet should be rtl in rtl paragraph:
             if ( bRightToLeft )
             {
-                aFormat.SetNumAdjust( SvxAdjust::Right );
+                aFormat.SetNumAdjust( SVX_ADJUST_RIGHT );
             }
 
             aNumRule.Set( nLvl, aFormat );
@@ -1290,7 +1291,7 @@ void SwWrtShell::NumOrBulletOn(bool bNum)
         SetCurNumRule( aNumRule, true, OUString(), true );
     }
 
-    EndUndo(SwUndoId::NUMORNONUM);
+    EndUndo(UNDO_NUMORNONUM);
 }
 // <- #i40041#
 
@@ -1358,63 +1359,63 @@ SelectionType SwWrtShell::GetSelectionType() const
     // The value does not matter, it may be updated in endaction anyway.
 
     if ( BasicActionPend() )
-        return IsSelFrameMode() ? SelectionType::Frame : SelectionType::Text;
+        return IsSelFrameMode() ? nsSelectionType::SEL_FRM : nsSelectionType::SEL_TXT;
 
     SwView &_rView = const_cast<SwView&>(GetView());
     if (_rView.GetPostItMgr() && _rView.GetPostItMgr()->HasActiveSidebarWin() )
-        return SelectionType::PostIt;
+        return nsSelectionType::SEL_POSTIT;
 
     // Inserting a frame is not a DrawMode
-    SelectionType nCnt;
+    int nCnt;
     if ( !_rView.GetEditWin().IsFrameAction() &&
         (IsObjSelected() || (_rView.IsDrawMode() && !IsFrameSelected()) ))
     {
         if (GetDrawView()->IsTextEdit())
-            nCnt = SelectionType::DrawObjectEditMode;
+            nCnt = nsSelectionType::SEL_DRW_TXT;
         else
         {
             if (GetView().IsFormMode()) // Only Form selected
-                nCnt = SelectionType::DbForm;
+                nCnt = nsSelectionType::SEL_DRW_FORM;
             else
-                nCnt = SelectionType::DrawObject;            // Any draw object
+                nCnt = nsSelectionType::SEL_DRW;            // Any draw object
 
             if (_rView.IsBezierEditMode())
-                nCnt |= SelectionType::Ornament;
-            else if( GetDrawView()->GetContext() == SdrViewContext::Media )
-                nCnt |= SelectionType::Media;
+                nCnt |= nsSelectionType::SEL_BEZ;
+            else if( GetDrawView()->GetContext() == SDRCONTEXT_MEDIA )
+                nCnt |= nsSelectionType::SEL_MEDIA;
 
             if (svx::checkForSelectedCustomShapes(
                 const_cast<SdrView *>(GetDrawView()),
                 true /* bOnlyExtruded */ ))
             {
-                nCnt |= SelectionType::ExtrudedCustomShape;
+                nCnt |= nsSelectionType::SEL_EXTRUDED_CUSTOMSHAPE;
             }
             sal_uInt32 nCheckStatus = 0;
             if (svx::checkForSelectedFontWork(
                 const_cast<SdrView *>(GetDrawView()), nCheckStatus ))
             {
-                nCnt |= SelectionType::FontWork;
+                nCnt |= nsSelectionType::SEL_FONTWORK;
             }
         }
 
         return nCnt;
     }
 
-    nCnt = static_cast<SelectionType>(GetCntType());
+    nCnt = GetCntType();
 
     if ( IsFrameSelected() )
     {
         if (_rView.IsDrawMode())
             _rView.LeaveDrawCreate();   // clean up (Bug #45639)
-        if ( !(nCnt & (SelectionType::Graphic | SelectionType::Ole)) )
-            return SelectionType::Frame;
+        if ( !(nCnt & (CNT_GRF | CNT_OLE)) )
+            return nsSelectionType::SEL_FRM;
     }
 
     if ( IsCursorInTable() )
-        nCnt |= SelectionType::Table;
+        nCnt |= nsSelectionType::SEL_TBL;
 
     if ( IsTableMode() )
-        nCnt |= (SelectionType::Table | SelectionType::TableCell);
+        nCnt |= (nsSelectionType::SEL_TBL | nsSelectionType::SEL_TBL_CELLS);
 
     // Do not pop up numbering toolbar, if the text node has a numbering of type SVX_NUM_NUMBER_NONE.
     const SwNumRule* pNumRule = GetNumRuleAtCurrCursorPos();
@@ -1435,7 +1436,7 @@ SelectionType SwWrtShell::GetSelectionType() const
 
             const SwNumFormat& rFormat = pNumRule->Get(nLevel);
             if ( SVX_NUM_NUMBER_NONE != rFormat.GetNumberingType() )
-                nCnt |= SelectionType::NumberList;
+                nCnt |= nsSelectionType::SEL_NUM;
         }
     }
 
@@ -1452,7 +1453,7 @@ SwTextFormatColl *SwWrtShell::GetParaStyle(const OUString &rCollName, GetStyle e
     SwTextFormatColl* pColl = FindTextFormatCollByName( rCollName );
     if( !pColl && GETSTYLE_NOCREATE != eCreate )
     {
-        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCollName, SwGetPoolIdFromName::TxtColl );
+        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCollName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
         if( USHRT_MAX != nId || GETSTYLE_CREATEANY == eCreate )
             pColl = GetTextCollFromPool( nId );
     }
@@ -1469,7 +1470,7 @@ SwCharFormat *SwWrtShell::GetCharStyle(const OUString &rFormatName, GetStyle eCr
     SwCharFormat* pFormat = FindCharFormatByName( rFormatName );
     if( !pFormat && GETSTYLE_NOCREATE != eCreate )
     {
-        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rFormatName, SwGetPoolIdFromName::ChrFmt );
+        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rFormatName, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
         if( USHRT_MAX != nId || GETSTYLE_CREATEANY == eCreate )
             pFormat = static_cast<SwCharFormat*>(GetFormatFromPool( nId ));
     }
@@ -1594,7 +1595,7 @@ void SwWrtShell::AutoCorrect( SvxAutoCorrect& rACorr, sal_Unicode cChar )
 
         if(HasSelection())
         {
-                // Only parentheses here, because the regular insert
+                // Only parenthese here, because the regular insert
                 // is already clipped to the editshell
             StartAllAction();
 
@@ -1604,13 +1605,13 @@ void SwWrtShell::AutoCorrect( SvxAutoCorrect& rACorr, sal_Unicode cChar )
             aTmpStr1 += SW_RES(STR_END_QUOTE);
             OUString aTmpStr3;
             aTmpStr3 += SW_RES(STR_START_QUOTE);
-            aTmpStr3 += OUStringLiteral1(cChar);
+            aTmpStr3 += OUString(cChar);
             aTmpStr3 += SW_RES(STR_END_QUOTE);
             aRewriter.AddRule( UndoArg1, aTmpStr1 );
             aRewriter.AddRule( UndoArg2, SW_RES(STR_YIELDS) );
             aRewriter.AddRule( UndoArg3, aTmpStr3 );
 
-            StartUndo( SwUndoId::REPLACE, &aRewriter );
+            StartUndo( UNDO_REPLACE, &aRewriter );
             bStarted = true;
             DelRight();
         }
@@ -1619,7 +1620,7 @@ void SwWrtShell::AutoCorrect( SvxAutoCorrect& rACorr, sal_Unicode cChar )
         if(bStarted)
         {
             EndAllAction();
-            EndUndo( SwUndoId::REPLACE, &aRewriter );
+            EndUndo( UNDO_REPLACE, &aRewriter );
         }
     }
 }
@@ -1717,14 +1718,14 @@ OUString SwWrtShell::GetSelDescr() const
 {
     OUString aResult;
 
-    SelectionType nSelType = GetSelectionType();
+    int nSelType = GetSelectionType();
     switch (nSelType)
     {
-    case SelectionType::Graphic:
+    case nsSelectionType::SEL_GRF:
         aResult = SW_RESSTR(STR_GRAPHIC);
 
         break;
-    case SelectionType::Frame:
+    case nsSelectionType::SEL_FRM:
         {
             const SwFrameFormat * pFrameFormat = GetSelectedFrameFormat();
 
@@ -1732,7 +1733,7 @@ OUString SwWrtShell::GetSelDescr() const
                 aResult = pFrameFormat->GetDescription();
         }
         break;
-    case SelectionType::DrawObject:
+    case nsSelectionType::SEL_DRW:
         {
             aResult = SW_RESSTR(STR_DRAWING_OBJECTS);
         }
@@ -1766,7 +1767,7 @@ void SwWrtShell::ChangeHeaderOrFooter(
 {
     addCurrentPosition();
     StartAllAction();
-    StartUndo( SwUndoId::HEADER_FOOTER ); // #i7983#
+    StartUndo( UNDO_HEADER_FOOTER ); // #i7983#
     bool bExecute = true;
     bool bCursorSet = false;
     for( size_t nFrom = 0, nTo = GetPageDescCnt();
@@ -1829,7 +1830,7 @@ void SwWrtShell::ChangeHeaderOrFooter(
             }
         }
     }
-    EndUndo( SwUndoId::HEADER_FOOTER ); // #i7983#
+    EndUndo( UNDO_HEADER_FOOTER ); // #i7983#
     EndAllAction();
 }
 

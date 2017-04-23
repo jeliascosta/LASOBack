@@ -32,4 +32,8 @@ $(eval $(call gb_SrsTarget_add_files,deploymentgui/res,\
     desktop/source/deployment/gui/dp_gui_versionboxes.src \
 ))
 
+$(eval $(call gb_SrsTarget_add_nonlocalizable_files,deploymentgui/res,\
+    desktop/source/deployment/gui/dp_gui_backend.src \
+))
+
 # vim: set ts=4 sw=4 et:

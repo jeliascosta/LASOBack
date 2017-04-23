@@ -27,8 +27,8 @@
 #include <com/sun/star/lang/Locale.hpp>
 #include <com/sun/star/i18n/NumberFormatCode.hpp>
 #include <com/sun/star/util/NumberFormat.hpp>
-#include <com/sun/star/i18n/NumberFormatMapper.hpp>
 #include <unotools/localedatawrapper.hxx>
+#include <unotools/numberformatcodewrapper.hxx>
 #include <tools/link.hxx>
 #include <svl/ondemand.hxx>
 #include <svl/nfkeytab.hxx>
@@ -100,9 +100,9 @@ enum NfIndexTableOffset
     NF_PERCENT_END = NF_PERCENT_DEC2,
 
     NF_FRACTION_START,
-    NF_FRACTION_1D = NF_FRACTION_START,      // # ?/?
-    NF_FRACTION_2D,                          // # ??/??
-    NF_FRACTION_END = NF_FRACTION_2D,
+    NF_FRACTION_1 = NF_FRACTION_START,      // # ?/?
+    NF_FRACTION_2,                          // # ??/??
+    NF_FRACTION_END = NF_FRACTION_2,
 
     NF_NUMERIC_END = NF_FRACTION_END,
 
@@ -172,17 +172,12 @@ enum NfIndexTableOffset
     // SvxNumberFormatShell::FillEListWithStd_Impl(), otherwise they will not
     // be be listed at all. Yes that is ugly.
 
-    NF_FRACTION_3D = NF_INDEX_TABLE_LOCALE_DATA_DEFAULTS,    // # ???/???
-    NF_FRACTION_2,                          // # ?/2
-    NF_FRACTION_4,                          // # ?/4
-    NF_FRACTION_8,                          // # ?/8
-    NF_FRACTION_16,                         // # ??/16
-    NF_FRACTION_10,                         // # ??/10
-    NF_FRACTION_100,                        // # ??/100
+    NF_FRACTION_3 = NF_INDEX_TABLE_LOCALE_DATA_DEFAULTS,    // # ?/4
+    NF_FRACTION_4,                          // # ?/100
 
     NF_DATETIME_ISO_YYYYMMDD_HHMMSS,        // 1997-10-08 01:23:45          ISO (with blank instead of T)
 
-    NF_INDEX_TABLE_ENTRIES                  // == 59, reserved up to 59 to not use in i18npool locale data.
+    NF_INDEX_TABLE_ENTRIES                  // == 53, reserved up to 59 to not use in i18npool locale data.
 };
 
 
@@ -249,6 +244,10 @@ public:
     NfCurrencyEntry( const css::i18n::Currency & rCurr,
                      const LocaleDataWrapper& rLocaleData,
                      LanguageType eLang );
+    inline NfCurrencyEntry(const OUString& rSymbol, const OUString& rBankSymbol,
+                           LanguageType eLang, sal_uInt16 nPositiveFmt,
+                           sal_uInt16 nNegativeFmt, sal_uInt16 nDig, sal_Unicode cZero);
+    ~NfCurrencyEntry() {}
 
                         /// Symbols and language identical
     bool                operator==( const NfCurrencyEntry& r ) const;
@@ -293,8 +292,21 @@ public:
                                                     sal_uInt16 nCurrFormat, bool bBank );
 
     /// General Unicode Euro symbol
-    static sal_Unicode   GetEuroSymbol() { return sal_Unicode(0x20AC); }
+    static inline sal_Unicode   GetEuroSymbol() { return sal_Unicode(0x20AC); }
 };
+
+/**
+ * Necessary for ptr_vector on Windows. Please don't remove these, or at
+ * least check it on Windows before attempting to remove them.
+ */
+NfCurrencyEntry::NfCurrencyEntry(const OUString& rSymbol, const OUString& rBankSymbol,
+                                 LanguageType eLang, sal_uInt16 nPositiveFmt,
+                                 sal_uInt16 nNegativeFmt, sal_uInt16 nDig, sal_Unicode cZero)
+    : aSymbol(rSymbol), aBankSymbol(rBankSymbol), eLanguage(eLang)
+    , nPositiveFormat(nPositiveFmt), nNegativeFormat(nNegativeFmt)
+    , nDigits(nDig), cZeroChar(cZero)
+{
+}
 
 typedef std::vector< OUString > NfWSStringsDtor;
 
@@ -332,7 +344,7 @@ public:
     /// Change language/country, also input and format scanner
     void ChangeIntl( LanguageType eLnge );
     /// Change the reference null date
-    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear);
+    void ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear);
     /// Change standard precision
     void ChangeStandardPrec(short nPrec);
     /// Set zero value suppression
@@ -343,7 +355,7 @@ public:
     LanguageType GetLanguage() const;
 
     // Determine whether two format types are input compatible or not
-    static bool IsCompatible(short eOldType, short eNewType);
+    bool IsCompatible(short eOldType, short eNewType);
 
     /** Get table of formats of a specific type of a locale. A format FIndex is
         tested whether it has the type and locale requested, if it doesn't
@@ -828,7 +840,7 @@ private:
 
     // Generate additional formats provided by i18n
     SVL_DLLPRIVATE void ImpGenerateAdditionalFormats( sal_uInt32 CLOffset,
-                                                      css::uno::Reference< css::i18n::XNumberFormatCode > const & rNumberFormatCode,
+                                                      NumberFormatCodeWrapper& rNumberFormatCode,
                                                       bool bAfterChangingSystemCL );
 
     SVL_DLLPRIVATE SvNumberformat* ImpInsertFormat( const css::i18n::NumberFormatCode& rCode,
@@ -847,6 +859,11 @@ private:
 
     // Create builtin formats for language/country if necessary, return CLOffset
     SVL_DLLPRIVATE sal_uInt32 ImpGenerateCL( LanguageType eLnge );
+
+    // Build negative currency format, old compatibility style
+    SVL_DLLPRIVATE void ImpGetNegCurrFormat(OUStringBuffer& sNegStr, const OUString& rCurrSymbol);
+    // Build positive currency format, old compatibility style
+    SVL_DLLPRIVATE void ImpGetPosCurrFormat(OUStringBuffer& sPosStr, const OUString& rCurrSymbol);
 
     // Create theCurrencyTable with all <type>NfCurrencyEntry</type>
     SVL_DLLPRIVATE static void ImpInitCurrencyTable();
@@ -887,7 +904,7 @@ private:
         sal_uInt16 nPos, const OUString& rSymbol );
 
     // link to be set at <method>SvtSysLocaleOptions::SetCurrencyChangeLink()</method>
-    DECL_DLLPRIVATE_STATIC_LINK( SvNumberFormatter, CurrencyChangeLink, LinkParamNone*, void );
+    DECL_DLLPRIVATE_STATIC_LINK_TYPED( SvNumberFormatter, CurrencyChangeLink, LinkParamNone*, void );
 
     // return position of a special character
     sal_Int32 ImpPosToken ( const OUStringBuffer & sFormat, sal_Unicode token, sal_Int32 nStartPos = 0 );

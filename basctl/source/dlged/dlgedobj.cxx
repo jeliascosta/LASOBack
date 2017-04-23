@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <cassert>
-
 #include "dlged.hxx"
 #include "dlgeddef.hxx"
 #include "dlgedlist.hxx"
@@ -83,7 +79,13 @@ DlgEdObj::DlgEdObj(const OUString& rModelName,
 DlgEdObj::~DlgEdObj()
 {
     if ( isListening() )
-        EndListening(true);
+        EndListening();
+}
+
+void DlgEdObj::SetPage(SdrPage* _pNewPage)
+{
+    // now set the page
+    SdrUnoObj::SetPage(_pNewPage);
 }
 
 namespace
@@ -127,7 +129,7 @@ bool DlgEdObj::TransformSdrToControlCoordinates(
     DlgEdForm* pForm = nullptr;
     if ( !lcl_getDlgEdForm( this, pForm ) )
         return false;
-    tools::Rectangle aFormRect = pForm->GetSnapRect();
+    Rectangle aFormRect = pForm->GetSnapRect();
     Size aFormPos( aFormRect.Left(), aFormRect.Top() );
 
     // convert 100th_mm to pixel
@@ -135,9 +137,9 @@ bool DlgEdObj::TransformSdrToControlCoordinates(
     DBG_ASSERT( pDevice, "DlgEdObj::TransformSdrToControlCoordinates: missing default device!" );
     if ( !pDevice )
         return false;
-    aPos = pDevice->LogicToPixel( aPos, MapMode( MapUnit::Map100thMM ) );
-    aSize = pDevice->LogicToPixel( aSize, MapMode( MapUnit::Map100thMM ) );
-    aFormPos = pDevice->LogicToPixel( aFormPos, MapMode( MapUnit::Map100thMM ) );
+    aPos = pDevice->LogicToPixel( aPos, MapMode( MAP_100TH_MM ) );
+    aSize = pDevice->LogicToPixel( aSize, MapMode( MAP_100TH_MM ) );
+    aFormPos = pDevice->LogicToPixel( aFormPos, MapMode( MAP_100TH_MM ) );
 
     // subtract form position
     aPos.Width() -= aFormPos.Width();
@@ -158,8 +160,8 @@ bool DlgEdObj::TransformSdrToControlCoordinates(
     }
 
     // convert pixel to logic units
-    aPos = pDevice->PixelToLogic( aPos, MapUnit::MapAppFont );
-    aSize = pDevice->PixelToLogic( aSize, MapUnit::MapAppFont );
+    aPos = pDevice->PixelToLogic( aPos, MAP_APPFONT );
+    aSize = pDevice->PixelToLogic( aSize, MAP_APPFONT );
 
     // set out parameters
     nXOut = aPos.Width();
@@ -183,8 +185,8 @@ bool DlgEdObj::TransformSdrToFormCoordinates(
     DBG_ASSERT( pDevice, "DlgEdObj::TransformSdrToFormCoordinates: missing default device!" );
     if ( !pDevice )
         return false;
-    aPos = pDevice->LogicToPixel( aPos, MapMode( MapUnit::Map100thMM ) );
-    aSize = pDevice->LogicToPixel( aSize, MapMode( MapUnit::Map100thMM ) );
+    aPos = pDevice->LogicToPixel( aPos, MapMode( MAP_100TH_MM ) );
+    aSize = pDevice->LogicToPixel( aSize, MapMode( MAP_100TH_MM ) );
 
     // take window borders into account
     DlgEdForm* pForm = nullptr;
@@ -205,8 +207,8 @@ bool DlgEdObj::TransformSdrToFormCoordinates(
         aSize.Height() -= aDeviceInfo.TopInset + aDeviceInfo.BottomInset;
     }
     // convert pixel to logic units
-    aPos = pDevice->PixelToLogic( aPos, MapUnit::MapAppFont );
-    aSize = pDevice->PixelToLogic( aSize, MapUnit::MapAppFont );
+    aPos = pDevice->PixelToLogic( aPos, MAP_APPFONT );
+    aSize = pDevice->PixelToLogic( aSize, MAP_APPFONT );
 
     // set out parameters
     nXOut = aPos.Width();
@@ -246,9 +248,9 @@ bool DlgEdObj::TransformControlToSdrCoordinates(
     DBG_ASSERT( pDevice, "DlgEdObj::TransformControlToSdrCoordinates: missing default device!" );
     if ( !pDevice )
         return false;
-    aPos = pDevice->LogicToPixel( aPos, MapUnit::MapAppFont );
-    aSize = pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
-    aFormPos = pDevice->LogicToPixel( aFormPos, MapUnit::MapAppFont );
+    aPos = pDevice->LogicToPixel( aPos, MAP_APPFONT );
+    aSize = pDevice->LogicToPixel( aSize, MAP_APPFONT );
+    aFormPos = pDevice->LogicToPixel( aFormPos, MAP_APPFONT );
 
     // add form position
     aPos.Width() += aFormPos.Width();
@@ -265,8 +267,8 @@ bool DlgEdObj::TransformControlToSdrCoordinates(
     }
 
     // convert pixel to 100th_mm
-    aPos = pDevice->PixelToLogic( aPos, MapMode( MapUnit::Map100thMM ) );
-    aSize = pDevice->PixelToLogic( aSize, MapMode( MapUnit::Map100thMM ) );
+    aPos = pDevice->PixelToLogic( aPos, MapMode( MAP_100TH_MM ) );
+    aSize = pDevice->PixelToLogic( aSize, MapMode( MAP_100TH_MM ) );
 
     // set out parameters
     nXOut = aPos.Width();
@@ -296,8 +298,8 @@ bool DlgEdObj::TransformFormToSdrCoordinates(
     if ( !lcl_getDlgEdForm( this, pForm ) )
         return false;
 
-    aPos = pDevice->LogicToPixel( aPos, MapUnit::MapAppFont );
-    aSize = pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aPos = pDevice->LogicToPixel( aPos, MAP_APPFONT );
+    aSize = pDevice->LogicToPixel( aSize, MAP_APPFONT );
 
     // take window borders into account
     Reference< beans::XPropertySet > xPSetForm( pForm->GetUnoControlModel(), UNO_QUERY );
@@ -314,8 +316,8 @@ bool DlgEdObj::TransformFormToSdrCoordinates(
     }
 
     // convert pixel to 100th_mm
-    aPos = pDevice->PixelToLogic( aPos, MapMode( MapUnit::Map100thMM ) );
-    aSize = pDevice->PixelToLogic( aSize, MapMode( MapUnit::Map100thMM ) );
+    aPos = pDevice->PixelToLogic( aPos, MapMode( MAP_100TH_MM ) );
+    aSize = pDevice->PixelToLogic( aSize, MapMode( MAP_100TH_MM ) );
 
     // set out parameters
     nXOut = aPos.Width();
@@ -345,7 +347,7 @@ void DlgEdObj::SetRectFromProps()
             // set rectangle position and size
             Point aPoint( nXOut, nYOut );
             Size aSize( nWidthOut, nHeightOut );
-            SetSnapRect( tools::Rectangle( aPoint, aSize ) );
+            SetSnapRect( Rectangle( aPoint, aSize ) );
         }
     }
 }
@@ -353,7 +355,7 @@ void DlgEdObj::SetRectFromProps()
 void DlgEdObj::SetPropsFromRect()
 {
     // get control position and size from rectangle
-    tools::Rectangle aRect_ = GetSnapRect();
+    Rectangle aRect_ = GetSnapRect();
     sal_Int32 nXIn = aRect_.Left();
     sal_Int32 nYIn = aRect_.Top();
     sal_Int32 nWidthIn = aRect_.GetWidth();
@@ -443,7 +445,7 @@ void DlgEdObj::PositionAndSizeChange( const beans::PropertyChangeEvent& evt )
     SetRectFromProps();
 }
 
-void SAL_CALL DlgEdObj::NameChange( const  css::beans::PropertyChangeEvent& evt )
+void SAL_CALL DlgEdObj::NameChange( const  css::beans::PropertyChangeEvent& evt ) throw (css::container::NoSuchElementException, css::uno::RuntimeException)
 {
     // get old name
     OUString aOldName;
@@ -525,14 +527,14 @@ void DlgEdObj::UpdateStep()
     }
 }
 
-void DlgEdObj::TabIndexChange( const beans::PropertyChangeEvent& evt )
+void DlgEdObj::TabIndexChange( const beans::PropertyChangeEvent& evt ) throw (RuntimeException)
 {
     DlgEdForm* pForm = GetDlgEdForm();
     if ( pForm )
     {
         // stop listening with all children
-        std::vector<DlgEdObj*> aChildList = pForm->GetChildren();
-        std::vector<DlgEdObj*>::iterator aIter;
+        ::std::vector<DlgEdObj*> aChildList = pForm->GetChildren();
+        ::std::vector<DlgEdObj*>::iterator aIter;
         for ( aIter = aChildList.begin() ; aIter != aChildList.end() ; ++aIter )
         {
             (*aIter)->EndListening( false );
@@ -545,10 +547,11 @@ void DlgEdObj::TabIndexChange( const beans::PropertyChangeEvent& evt )
             Sequence< OUString > aNames = xNameAcc->getElementNames();
             const OUString* pNames = aNames.getConstArray();
             sal_Int32 nCtrls = aNames.getLength();
+            sal_Int16 i;
 
             // create a map of tab indices and control names, sorted by tab index
             IndexToNameMap aIndexToNameMap;
-            for ( sal_Int32 i = 0; i < nCtrls; ++i )
+            for ( i = 0; i < nCtrls; ++i )
             {
                 // get control name
                 OUString aName( pNames[i] );
@@ -568,8 +571,8 @@ void DlgEdObj::TabIndexChange( const beans::PropertyChangeEvent& evt )
             }
 
             // create a helper list of control names, sorted by tab index
-            std::vector< OUString > aNameList( aIndexToNameMap.size() );
-            std::transform(
+            ::std::vector< OUString > aNameList( aIndexToNameMap.size() );
+            ::std::transform(
                     aIndexToNameMap.begin(), aIndexToNameMap.end(),
                     aNameList.begin(),
                     ::o3tl::select2nd< IndexToNameMap::value_type >( )
@@ -591,19 +594,13 @@ void DlgEdObj::TabIndexChange( const beans::PropertyChangeEvent& evt )
             aNameList.insert( aNameList.begin() + nNewTabIndex , aCtrlName );
 
             // set new tab indices
-            for ( sal_Int32 i = 0; i < nCtrls; ++i )
+            for ( i = 0; i < nCtrls; ++i )
             {
                 Any aCtrl = xNameAcc->getByName( aNameList[i] );
                 Reference< beans::XPropertySet > xPSet;
                    aCtrl >>= xPSet;
                 if ( xPSet.is() )
                 {
-                    assert(i >= SAL_MIN_INT16);
-                    if (i > SAL_MAX_INT16)
-                    {
-                        SAL_WARN("basctl", "tab " << i << " > SAL_MAX_INT16");
-                        continue;
-                    }
                     xPSet->setPropertyValue( DLGED_PROP_TABINDEX, Any((sal_Int16) i) );
                 }
             }
@@ -758,9 +755,9 @@ OUString DlgEdObj::GetUniqueName() const
     return aUniqueName;
 }
 
-SdrInventor DlgEdObj::GetObjInventor()   const
+sal_uInt32 DlgEdObj::GetObjInventor()   const
 {
-    return SdrInventor::BasicDialog;
+    return DlgInventor;
 }
 
 sal_uInt16 DlgEdObj::GetObjIdentifier() const
@@ -1104,7 +1101,7 @@ void DlgEdObj::EndListening(bool bRemoveListener)
     }
 }
 
-void SAL_CALL DlgEdObj::_propertyChange( const  css::beans::PropertyChangeEvent& evt )
+void SAL_CALL DlgEdObj::_propertyChange( const  css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception)
 {
     if (isListening())
     {
@@ -1142,7 +1139,7 @@ void SAL_CALL DlgEdObj::_propertyChange( const  css::beans::PropertyChangeEvent&
                 catch (container::NoSuchElementException const& e)
                 {
                     throw lang::WrappedTargetRuntimeException("", nullptr,
-                            uno::Any(e));
+                            uno::makeAny(e));
                 }
             }
         }
@@ -1160,7 +1157,7 @@ void SAL_CALL DlgEdObj::_propertyChange( const  css::beans::PropertyChangeEvent&
     }
 }
 
-void SAL_CALL DlgEdObj::_elementInserted(const css::container::ContainerEvent& )
+void SAL_CALL DlgEdObj::_elementInserted(const css::container::ContainerEvent& ) throw(css::uno::RuntimeException)
 {
     if (isListening())
     {
@@ -1169,7 +1166,7 @@ void SAL_CALL DlgEdObj::_elementInserted(const css::container::ContainerEvent& )
     }
 }
 
-void SAL_CALL DlgEdObj::_elementReplaced(const css::container::ContainerEvent& )
+void SAL_CALL DlgEdObj::_elementReplaced(const css::container::ContainerEvent& ) throw(css::uno::RuntimeException)
 {
     if (isListening())
     {
@@ -1178,7 +1175,7 @@ void SAL_CALL DlgEdObj::_elementReplaced(const css::container::ContainerEvent& )
     }
 }
 
-void SAL_CALL DlgEdObj::_elementRemoved(const css::container::ContainerEvent& )
+void SAL_CALL DlgEdObj::_elementRemoved(const css::container::ContainerEvent& ) throw(css::uno::RuntimeException)
 {
     if (isListening())
     {
@@ -1229,7 +1226,7 @@ void DlgEdForm::SetRectFromProps()
             // set rectangle position and size
             Point aPoint( nXOut, nYOut );
             Size aSize( nWidthOut, nHeightOut );
-            SetSnapRect( tools::Rectangle( aPoint, aSize ) );
+            SetSnapRect( Rectangle( aPoint, aSize ) );
         }
     }
 }
@@ -1237,7 +1234,7 @@ void DlgEdForm::SetRectFromProps()
 void DlgEdForm::SetPropsFromRect()
 {
     // get form position and size from rectangle
-    tools::Rectangle aRect_ = GetSnapRect();
+    Rectangle aRect_ = GetSnapRect();
     sal_Int32 nXIn = aRect_.Left();
     sal_Int32 nYIn = aRect_.Top();
     sal_Int32 nWidthIn = aRect_.GetWidth();
@@ -1266,7 +1263,7 @@ void DlgEdForm::AddChild( DlgEdObj* pDlgEdObj )
 
 void DlgEdForm::RemoveChild( DlgEdObj* pDlgEdObj )
 {
-    pChildren.erase( std::find( pChildren.begin() , pChildren.end() , pDlgEdObj ) );
+    pChildren.erase( ::std::find( pChildren.begin() , pChildren.end() , pDlgEdObj ) );
 }
 
 void DlgEdForm::PositionAndSizeChange( const beans::PropertyChangeEvent& evt )
@@ -1398,7 +1395,7 @@ void DlgEdForm::UpdateStep()
 void DlgEdForm::UpdateTabIndices()
 {
     // stop listening with all children
-    std::vector<DlgEdObj*>::iterator aIter;
+    ::std::vector<DlgEdObj*>::iterator aIter;
     for ( aIter = pChildren.begin() ; aIter != pChildren.end() ; ++aIter )
     {
         (*aIter)->EndListening( false );
@@ -1440,7 +1437,7 @@ void DlgEdForm::UpdateTabIndices()
                aCtrl >>= xPSet;
             if ( xPSet.is() )
             {
-                xPSet->setPropertyValue( DLGED_PROP_TABINDEX, Any(nNewTabIndex) );
+                xPSet->setPropertyValue( DLGED_PROP_TABINDEX, Any((sal_Int16) nNewTabIndex) );
                 nNewTabIndex++;
             }
         }
@@ -1488,7 +1485,7 @@ void DlgEdForm::UpdateGroups()
     if ( xTabModel.is() )
     {
         // create a global list of controls that belong to the dialog
-        std::vector<DlgEdObj*> aChildList = GetChildren();
+        ::std::vector<DlgEdObj*> aChildList = GetChildren();
         sal_uInt32 nSize = aChildList.size();
         Sequence< Reference< awt::XControl > > aSeqControls( nSize );
         for ( sal_uInt32 i = 0; i < nSize; ++i )
@@ -1555,7 +1552,7 @@ void DlgEdForm::NbcMove( const Size& rSize )
     StartListening();
 
     // set geometry properties of all children
-    std::vector<DlgEdObj*>::iterator aIter;
+    ::std::vector<DlgEdObj*>::iterator aIter;
     for ( aIter = pChildren.begin() ; aIter != pChildren.end() ; ++aIter )
     {
         (*aIter)->EndListening(false);
@@ -1577,7 +1574,7 @@ void DlgEdForm::NbcResize(const Point& rRef, const Fraction& xFract, const Fract
     StartListening();
 
     // set geometry properties of all children
-    std::vector<DlgEdObj*>::iterator aIter;
+    ::std::vector<DlgEdObj*>::iterator aIter;
     for ( aIter = pChildren.begin() ; aIter != pChildren.end() ; ++aIter )
     {
         (*aIter)->EndListening(false);

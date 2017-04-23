@@ -42,9 +42,9 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
 
-    SwFrameFormat *GetFrameFormat() const { return pFormat; }
+    inline SwFrameFormat *GetFrameFormat() const { return pFormat; }
     /// For Undo: delete the FlyFrameFormat "logically"; it is kept in Undo-object.
-    void SetFlyFormat( SwFrameFormat* pNew = nullptr )   { pFormat = pNew; }
+    inline void SetFlyFormat( SwFrameFormat* pNew = nullptr )   { pFormat = pNew; }
 
     const SwTextFlyCnt *GetTextFlyCnt() const { return pTextAttr; }
 };

@@ -42,7 +42,7 @@ void TabPage::ImplInit( vcl::Window* pParent, WinBits nStyle )
 
     // if the tabpage is drawn (ie filled) by a native widget, make sure all controls will have transparent background
     // otherwise they will paint with a wrong background
-    if( IsNativeControlSupported(ControlType::TabBody, ControlPart::Entire) && GetParent() && (GetParent()->GetType() == WindowType::TABCONTROL) )
+    if( IsNativeControlSupported(ControlType::TabBody, ControlPart::Entire) && GetParent() && (GetParent()->GetType() == WINDOW_TABCONTROL) )
         EnableChildTransparentMode();
 }
 
@@ -70,18 +70,16 @@ void TabPage::ImplInitSettings()
 }
 
 TabPage::TabPage( vcl::Window* pParent, WinBits nStyle ) :
-    Window( WindowType::TABPAGE )
-    , IContext()
+    Window( WINDOW_TABPAGE )
 {
     ImplInit( pParent, nStyle );
 }
 
 TabPage::TabPage(vcl::Window *pParent, const OString& rID, const OUString& rUIXMLDescription)
-    : Window(WindowType::TABPAGE)
-    , IContext()
+    : Window(WINDOW_TABPAGE)
 {
     ImplInit(pParent, 0);
-    m_pUIBuilder.reset( new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID) );
+    m_pUIBuilder = new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID);
     set_hexpand(true);
     set_vexpand(true);
     set_expand(true);
@@ -104,8 +102,8 @@ void TabPage::StateChanged( StateChangedType nType )
 
     if ( nType == StateChangedType::InitShow )
     {
-        if (GetSettings().GetStyleSettings().GetAutoMnemonic())
-            Accelerator::GenerateAutoMnemonicsOnHierarchy(this);
+        if ( GetSettings().GetStyleSettings().GetAutoMnemonic() )
+            ImplWindowAutoMnemonic( this );
         // FIXME: no layouting, workaround some clipping issues
         ImplAdjustNWFSizes();
     }
@@ -128,10 +126,10 @@ void TabPage::DataChanged( const DataChangedEvent& rDCEvt )
     }
 }
 
-void TabPage::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& )
+void TabPage::Paint( vcl::RenderContext& rRenderContext, const Rectangle& )
 {
     // draw native tabpage only inside tabcontrols, standalone tabpages look ugly (due to bad dialog design)
-    if( IsNativeControlSupported(ControlType::TabBody, ControlPart::Entire) && GetParent() && (GetParent()->GetType() == WindowType::TABCONTROL) )
+    if( IsNativeControlSupported(ControlType::TabBody, ControlPart::Entire) && GetParent() && (GetParent()->GetType() == WINDOW_TABCONTROL) )
     {
         const ImplControlValue aControlValue;
 
@@ -141,9 +139,10 @@ void TabPage::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle&
             nState &= ~ControlState::ENABLED;
         if ( HasFocus() )
             nState |= ControlState::FOCUSED;
+        Point aPoint;
         // pass the whole window region to NWF as the tab body might be a gradient or bitmap
         // that has to be scaled properly, clipping makes sure that we do not paint too much
-        tools::Rectangle aCtrlRegion( Point(), GetOutputSizePixel() );
+        Rectangle aCtrlRegion( aPoint, GetOutputSizePixel() );
         rRenderContext.DrawNativeControl( ControlType::TabBody, part, aCtrlRegion, nState,
                 aControlValue, OUString() );
     }
@@ -170,7 +169,7 @@ void TabPage::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, Dr
             pDev->SetFillColor( GetSettings().GetStyleSettings().GetDialogColor() );
         else
             pDev->SetFillColor( aWallpaper.GetColor() );
-        pDev->DrawRect( tools::Rectangle( aPos, aSize ) );
+        pDev->DrawRect( Rectangle( aPos, aSize ) );
     }
 
     pDev->Pop();

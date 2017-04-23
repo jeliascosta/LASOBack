@@ -30,7 +30,7 @@ namespace rtl { class OUString; }
 
 class SW_DLLPUBLIC SwTableBoxNumFormat : public SfxUInt32Item
 {
-    bool m_bAuto;     ///< automatically given flag
+    bool bAuto;     ///< automatically given flag
 public:
     SwTableBoxNumFormat( sal_uInt32 nFormat = css::util::NumberFormat::TEXT,
                         bool bAuto = false );
@@ -39,29 +39,33 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
 
-    SwTableBoxNumFormat& operator=( const SwTableBoxNumFormat& rAttr )
+    inline SwTableBoxNumFormat& operator=( const SwTableBoxNumFormat& rAttr )
     {
         SetValue( rAttr.GetValue() );
-        m_bAuto = rAttr.m_bAuto;
+        SetAutoFlag( rAttr.GetAutoFlag() );
         return *this;
     }
+
+    bool GetAutoFlag() const                    { return bAuto; }
+    void SetAutoFlag( bool bFlag = true )       { bAuto = bFlag; }
 };
 
 class SwTableBoxFormula : public SfxPoolItem, public SwTableFormula
 {
-    SwModify* m_pDefinedIn;   // Modify object where the formula is located
+    SwModify* pDefinedIn;   // Modify object where the formula is located
                             // can only be TableBoxFormat
 
 public:
     SwTableBoxFormula( const OUString& rFormula );
+    virtual ~SwTableBoxFormula() {};
 
     // "pure virtual methods" of SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
 
-    const SwModify* GetDefinedIn() const { return m_pDefinedIn; }
-    void ChgDefinedIn( const SwModify* pNew )
-                                            { m_pDefinedIn = const_cast<SwModify*>(pNew); }
+    inline const SwModify* GetDefinedIn() const { return pDefinedIn; }
+    inline void ChgDefinedIn( const SwModify* pNew )
+                                            { pDefinedIn = const_cast<SwModify*>(pNew); }
     //  BoxAttribut -> BoxStartNode
     virtual const SwNode* GetNodeOfFormula() const override;
 
@@ -75,7 +79,7 @@ public:
 
 class SW_DLLPUBLIC SwTableBoxValue : public SfxPoolItem
 {
-    double m_nValue;
+    double nValue;
 public:
     SwTableBoxValue();
     SwTableBoxValue( const double aVal );
@@ -84,13 +88,13 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
 
-    SwTableBoxValue& operator=( const SwTableBoxValue& rCmp )
+    inline SwTableBoxValue& operator=( const SwTableBoxValue& rCmp )
     {
-        m_nValue = rCmp.m_nValue;
+        nValue = rCmp.nValue;
         return *this;
     }
 
-    double GetValue() const                     { return m_nValue; }
+    double GetValue() const                     { return nValue; }
 };
 
 inline const SwTableBoxNumFormat      &SwAttrSet::GetTableBoxNumFormat(bool bInP) const

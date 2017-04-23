@@ -35,33 +35,6 @@
 #include <rtl/ref.hxx>
 #include <unotools/mediadescriptor.hxx>
 #include <comphelper/sequenceashashmap.hxx>
-#include <o3tl/typed_flags_set.hxx>
-
-
-/** @short  enable/disable special features
-            of a load request.
-
-    @desrc  Such features must outcome without
-            any special parameters.
-            To make enabling/disabling of
-            features very easy (e.g. at the ctor of
-             this class) these values must be combinable
-            as flags. That means: its values must be in
-            range of [2^n]!
- */
-enum class LoadEnvFeatures
-{
-    /// we should be informed, if no feature is enabled :-)
-    NONE = 0,
-    /// enable using of UI elements during loading (means progress, interaction handler etcpp.)
-    WorkWithUI = 1,
-    /// enable loading of resources, which are not related to a target frame! (see concept of ContentHandler)
-    AllowContentHandler = 2
-};
-namespace o3tl {
-    template<> struct typed_flags<LoadEnvFeatures> : is_typed_flags<LoadEnvFeatures, 0x3> {};
-}
-
 
 namespace framework {
 
@@ -78,6 +51,28 @@ class QuietInteraction;
 class LoadEnv
 {
 public:
+
+    /** @short  enable/disable special features
+                of a load request.
+
+        @desrc  Such features must outcome without
+                any special parameters.
+                To make enableing/disabling of
+                features very easy (e.g. at the ctor of
+                this class) these values must be combinable
+                as flags. That means: its values must be in
+                range of [2^n]!
+     */
+    enum EFeature
+    {
+        /// we should be informed, if no feature is enabled :-)
+        E_NO_FEATURE = 0,
+        /// enable using of UI elements during loading (means progress, interaction handler etcpp.)
+        E_WORK_WITH_UI = 1,
+        /// enable loading of resources, which are not related to a target frame! (see concept of ContentHandler)
+        E_ALLOW_CONTENTHANDLER = 2
+    };
+
     /** @short  classify a content.
 
         @descr  The load environment must know, if a content
@@ -125,7 +120,7 @@ private:
                 or a non visible content was loaded!
                 It can be the same frame as m_xBaseFrame it describe, in case
                 the target "_self", "" or the search flag "SELF" was used.
-                Otherwise it's the new created or recycled frame, which was
+                Otherwise its the new created or recycled frame, which was
                 used for loading and contains further the new component.
 
                 Please use method getTarget() or getTargetComponent()
@@ -158,7 +153,7 @@ private:
     css::util::URL m_aURL;
 
     /** @short  enable/disable special features of a load request. */
-    LoadEnvFeatures m_eFeature;
+    EFeature m_eFeature;
 
     /** @short  classify the content, which should be loaded by this instance. */
     EContentType m_eContentType;
@@ -211,21 +206,22 @@ public:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    LoadEnv(const css::uno::Reference< css::uno::XComponentContext >& xContext);
+    LoadEnv(const css::uno::Reference< css::uno::XComponentContext >& xContext)
+        throw(LoadEnvException, css::uno::RuntimeException);
 
     /** @short  deinitialize an instance of this class in the right way.
      */
     ~LoadEnv();
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
     static css::uno::Reference< css::lang::XComponent > loadComponentFromURL(const css::uno::Reference< css::frame::XComponentLoader >&    xLoader,
                                                                              const css::uno::Reference< css::uno::XComponentContext >&     xContext,
                                                                              const OUString&                                        sURL   ,
                                                                              const OUString&                                        sTarget,
                                                                                    sal_Int32                                               nFlags ,
-                                                                             const css::uno::Sequence< css::beans::PropertyValue >&        lArgs  );
+                                                                             const css::uno::Sequence< css::beans::PropertyValue >&        lArgs  )
+        throw(css::lang::IllegalArgumentException,
+              css::io::IOException               ,
+              css::uno::RuntimeException         );
 
     /** @short  set some changeable parameters for a new load request.
 
@@ -269,7 +265,7 @@ public:
                            const css::uno::Reference< css::frame::XFrame >&          xBaseFrame      ,
                            const OUString&                                           sTarget         ,
                                  sal_Int32                                           nSearchFlags    ,
-                                 LoadEnvFeatures                                     eFeature        = LoadEnvFeatures::NONE);
+                                 EFeature                                            eFeature        = E_NO_FEATURE);
 
     /** @short  start loading of the resource represented by this loadenv instance.
 
@@ -378,7 +374,8 @@ public:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    void impl_reactForLoadingState();
+    void impl_reactForLoadingState()
+        throw(LoadEnvException, css::uno::RuntimeException);
 
 private:
 
@@ -393,14 +390,15 @@ private:
         @attention  Not all types we know, are supported by filters. So it does not
                     indicates an error, if no suitable filter(loader etcpp will be found
                     for a type. But a type must be detected for the specified content.
-                    Otherwise it's an error and loading can't be finished successfully.
+                    Otherwise its an error and loading can't be finished successfully.
 
         @throw  A LoadEnvException if detection failed.
 
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    void impl_detectTypeAndFilter();
+    void impl_detectTypeAndFilter()
+        throw(LoadEnvException, css::uno::RuntimeException, std::exception);
 
     /** @short  tries to use ContentHandler objects for loading.
 
@@ -420,7 +418,8 @@ private:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    bool impl_handleContent();
+    bool impl_handleContent()
+        throw(LoadEnvException, css::uno::RuntimeException, std::exception);
 
     /** @short  tries to use FrameLoader objects for loading.
 
@@ -438,14 +437,15 @@ private:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    bool impl_loadContent();
+    bool impl_loadContent()
+        throw(LoadEnvException, css::uno::RuntimeException, std::exception);
 
     /** @short  checks if the specified content is already loaded.
 
         @descr  It depends from the set target information, if such
                 search is allowed or not! So this method checks first,
                 if the target is the special one "_default".
-                If not it returns with an empty result immediately!
+                If not it returns with an empty result immidatly!
                 In case search is allowed, an existing document with the
                 same URL is searched. If it could be found, the corresponding
                 view will get the focus and this method return the corresponding frame.
@@ -454,7 +454,7 @@ private:
                 inside the document, which is related to the jumpmark.
 
         @return A valid reference to the target frame, which contains the already loaded content
-                and could be activated successfully. An empty reference otherwise.
+                and could be activated successfully. An empty reference oterwhise.
 
         @throw  A LoadEnvException only in cases, where an internal error indicates,
                 that the complete load environment seems to be not useable in general.
@@ -463,13 +463,14 @@ private:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    css::uno::Reference< css::frame::XFrame > impl_searchAlreadyLoaded();
+    css::uno::Reference< css::frame::XFrame > impl_searchAlreadyLoaded()
+        throw(LoadEnvException, css::uno::RuntimeException);
 
     /** @short  search for any target frame, which seems to be useable
                 for this load request.
 
         @descr  Because this special feature is bound to the target specifier "_default"
-                its checked inside first. If it's not set => this method return an empty
+                its checked inside first. If its not set => this method return an empty
                 reference. Otherwise any currently existing frame will be analyzed, if
                 it can be used here. The following rules exists:
 
@@ -493,7 +494,8 @@ private:
         @throw  A RuntimeException in case any internal process indicates, that
                 the whole runtime can't be used any longer.
      */
-    css::uno::Reference< css::frame::XFrame > impl_searchRecycleTarget();
+    css::uno::Reference< css::frame::XFrame > impl_searchRecycleTarget()
+        throw(LoadEnvException, css::uno::RuntimeException, std::exception);
 
     /** @short  because showing of a frame is needed more than once...
                 it's implemented as an separate method .-)

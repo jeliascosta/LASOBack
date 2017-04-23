@@ -23,6 +23,7 @@
 #include <sfx2/stbitem.hxx>
 #include <svx/svxdllapi.h>
 
+
 class  SvxSizeItem;
 
 // class SvxPosSizeToolBoxControl ----------------------------------------
@@ -32,13 +33,13 @@ class SVX_DLLPUBLIC XmlSecStatusBarControl : public SfxStatusBarControl
 private:
     struct XmlSecStatusBarControl_Impl;
 
-    std::unique_ptr<XmlSecStatusBarControl_Impl>        mpImpl;
+    XmlSecStatusBarControl_Impl*        mpImpl;
 
 public:
     SFX_DECL_STATUSBAR_CONTROL();
 
     XmlSecStatusBarControl( sal_uInt16 _nSlotId, sal_uInt16 _nId, StatusBar& _rStb );
-    virtual ~XmlSecStatusBarControl() override;
+    virtual ~XmlSecStatusBarControl();
 
     virtual void    StateChanged( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState ) override;
     virtual void    Paint( const UserDrawEvent& rEvt ) override;

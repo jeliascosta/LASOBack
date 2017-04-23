@@ -44,18 +44,27 @@ class WallFloorWrapper : public ::cppu::ImplInheritanceHelper<
                     >
 {
 public:
-    WallFloorWrapper(bool bWall, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
-    virtual ~WallFloorWrapper() override;
+    WallFloorWrapper( bool bWall, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~WallFloorWrapper();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XComponent ____
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     // ____ WrappedPropertySet ____

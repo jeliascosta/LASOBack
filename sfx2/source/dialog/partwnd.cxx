@@ -138,6 +138,18 @@ SfxPartDockWnd_Impl::SfxPartDockWnd_Impl
 }
 
 
+void SfxPartDockWnd_Impl::Resize()
+
+/*  [Description]
+
+    Adjusting the size of the controls wrt the new window size
+*/
+
+{
+    SfxDockingWindow::Resize();
+}
+
+
 bool SfxPartDockWnd_Impl::QueryClose()
 {
     bool bClose = true;
@@ -157,7 +169,7 @@ bool SfxPartDockWnd_Impl::QueryClose()
 }
 
 
-bool SfxPartDockWnd_Impl::EventNotify( NotifyEvent& rEvt )
+bool SfxPartDockWnd_Impl::Notify( NotifyEvent& rEvt )
 {
     if( rEvt.GetType() == MouseNotifyEvent::GETFOCUS )
     {
@@ -170,7 +182,7 @@ bool SfxPartDockWnd_Impl::EventNotify( NotifyEvent& rEvt )
         }
     }
 
-    return SfxDockingWindow::EventNotify( rEvt );
+    return SfxDockingWindow::Notify( rEvt );
 }
 
 void SfxPartDockWnd_Impl::FillInfo( SfxChildWinInfo& rInfo ) const

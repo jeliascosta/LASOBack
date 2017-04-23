@@ -66,7 +66,6 @@
 #include <connectivity/CommonTools.hxx>
 #include <cppuhelper/propshlp.hxx>
 #include <cppuhelper/weakref.hxx>
-#include <vcl/svapp.hxx>
 #include <sfx2/docmacromode.hxx>
 #include <sfx2/docstoragemodifylistener.hxx>
 #include <unotools/sharedunocomponent.hxx>
@@ -171,10 +170,10 @@ private:
     css::uno::WeakReference< css::frame::XModel >                     m_xModel;
     css::uno::WeakReference< css::sdbc::XDataSource >                 m_xDataSource;
 
-    rtl::Reference<DocumentStorageAccess>                             m_pStorageAccess;
+    DocumentStorageAccess*                                            m_pStorageAccess;
     ::comphelper::SharedMutex                                         m_aMutex;
     VosMutexFacade                                                    m_aMutexFacade;
-    std::vector< TContentPtr >                                      m_aContainer;   // one for each ObjectType
+    ::std::vector< TContentPtr >                                      m_aContainer;   // one for each ObjectType
     ::sfx2::DocumentMacroMode                                         m_aMacroMode;
     sal_Int16                                                         m_nImposedMacroExecMode;
 
@@ -183,7 +182,7 @@ private:
 
     SharedStorage                                                     m_xDocumentStorage;
     ::rtl::Reference< ::sfx2::DocumentStorageModifyListener >         m_pStorageModifyListener;
-    ODatabaseContext&                                                 m_rDBContext;
+    ODatabaseContext*                                                 m_pDBContext;
     DocumentEventsData                                                m_aDocumentEvents;
 
     ::comphelper::NamedValueCollection                                m_aMediaDescriptor;
@@ -247,7 +246,7 @@ public:
 
     /** determines whether the database document has an embedded data storage
     */
-    bool isEmbeddedDatabase() const { return ( m_sConnectURL.startsWith("sdbc:embedded:") ); }
+    inline bool isEmbeddedDatabase() const { return ( m_sConnectURL.startsWith("sdbc:embedded:") ); }
 
     /** stores the embedded storage ("database")
 
@@ -276,8 +275,7 @@ public:
         );
 
     // XEventListener
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL disposing( const css::lang::EventObject& Source );
+    void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException);
 
     void setModified( bool bModified );
 
@@ -330,8 +328,8 @@ public:
     void clearConnections();
 
             css::uno::Reference< css::embed::XStorage > getOrCreateRootStorage();
-    css::uno::Reference< css::embed::XStorage > getRootStorage() const { return m_xDocumentStorage.getTyped(); }
-    void resetRootStorage() { impl_switchToStorage_throw( nullptr ); }
+    inline  css::uno::Reference< css::embed::XStorage > getRootStorage() const { return m_xDocumentStorage.getTyped(); }
+    inline  void resetRootStorage() { impl_switchToStorage_throw( nullptr ); }
 
     /** returns the data source. If it doesn't exist it will be created
     */
@@ -367,7 +365,7 @@ public:
     css::uno::Reference< css::document::XDocumentSubStorageSupplier >
             getDocumentSubStorageSupplier();
 
-    const ::comphelper::SharedMutex& getSharedMutex() const { return m_aMutex; }
+    inline const ::comphelper::SharedMutex& getSharedMutex() const { return m_aMutex; }
 
     void SAL_CALL acquire();
 
@@ -384,6 +382,10 @@ public:
     */
     static OUString
                     getObjectContainerStorageName( const ObjectType _eType );
+
+    /** revokes the data source registration at the database context
+    */
+    void            revokeDataSource() const;
 
     /** determines whether a given object storage contains macros
     */
@@ -467,6 +469,7 @@ public:
     virtual css::uno::Reference< css::document::XEmbeddedScripts > getEmbeddedDocumentScripts() const override;
     virtual SignatureState getScriptingSignatureState() override;
     virtual bool hasTrustedScriptingSignature( bool bAllowUIToAddAuthor ) override;
+    virtual void showBrokenSignatureWarning( const css::uno::Reference< css::task::XInteractionHandler >& _rxInteraction ) const override;
 
     // IModifiableDocument
     virtual void storageIsModified() override;
@@ -506,7 +509,7 @@ protected:
     */
     virtual css::uno::Reference< css::uno::XInterface > getThis() const = 0;
 
-    ::osl::Mutex& getMutex() const
+    inline ::osl::Mutex& getMutex() const
     {
         return m_aMutex;
     }
@@ -520,24 +523,24 @@ public:
             if m_pImpl is <NULL/>. Usually, you will set this member in your derived
             component's <code>dispose</code> method to <NULL/>.
     */
-    ::osl::Mutex& getMutex( GuardAccess ) const
+    inline ::osl::Mutex& getMutex( GuardAccess ) const
     {
         return getMutex();
     }
 
     /// checks whether the component is already disposed, throws a DisposedException if so
-    void checkDisposed() const
+    inline void checkDisposed() const
     {
         if ( !m_pImpl.is() )
             throw css::lang::DisposedException( "Component is already disposed.", getThis() );
     }
 
-    void lockModify()
+    inline void lockModify()
     {
         m_pImpl->lockModify();
     }
 
-    void unlockModify()
+    inline void unlockModify()
     {
         m_pImpl->unlockModify();
     }
@@ -566,13 +569,9 @@ private:
     Just put this guard onto the stack at the beginning of your method. Don't bother yourself
     with a MutexGuard, checks for being disposed, and the like.
 */
-class ModelMethodGuard
+class ModelMethodGuard : public ::osl::ResettableMutexGuard
 {
 private:
-    // to avoid deadlocks, lock SolarMutex too, and before the own osl::Mutex
-    SolarMutexResettableGuard m_SolarGuard;
-    ::osl::ResettableMutexGuard m_OslGuard;
-
     typedef ::osl::ResettableMutexGuard             BaseMutexGuard;
 
 public:
@@ -585,22 +584,13 @@ public:
             If the given component is already disposed
     */
     explicit ModelMethodGuard( const ModelDependentComponent& _component )
-        : m_OslGuard(_component.getMutex(ModelDependentComponent::GuardAccess()))
+        :BaseMutexGuard( _component.getMutex( ModelDependentComponent::GuardAccess() ) )
     {
         _component.checkDisposed();
     }
 
-    void clear()
+    ~ModelMethodGuard()
     {
-        m_OslGuard.clear();
-        // note: this only releases *once* so may still be locked
-        m_SolarGuard.clear(); // SolarMutex last
-    }
-
-    void reset()
-    {
-        m_SolarGuard.reset(); // SolarMutex first
-        m_OslGuard.reset();
     }
 };
 

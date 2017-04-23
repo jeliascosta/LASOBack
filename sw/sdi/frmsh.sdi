@@ -29,14 +29,14 @@ shell SwFrameShell : SwBaseShell
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_FRAME_UNCHAIN
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 }
 

@@ -86,7 +86,7 @@ SwFieldRefPage::SwFieldRefPage(vcl::Window* pParent, const SfxItemSet *const pCo
     m_pTypeLB->set_height_request(nHeight);
     m_pFormatLB->set_height_request(nHeight);
 
-    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MapUnit::MapAppFont)).Width();
+    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MAP_APPFONT)).Width();
     m_pTypeLB->set_width_request(nWidth);
     m_pFormatLB->set_width_request(nWidth);
     m_pSelection->set_width_request(nWidth*2);
@@ -129,7 +129,7 @@ void SwFieldRefPage::dispose()
     SwFieldPage::dispose();
 }
 
-IMPL_LINK_NOARG(SwFieldRefPage, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldRefPage, ModifyHdl_Impl, Edit&, void)
 {
     OUString sFilter = comphelper::string::strip(m_pFilterED->GetText(), ' ');
     UpdateSubType(sFilter);
@@ -215,13 +215,13 @@ void SwFieldRefPage::Reset(const SfxItemSet* )
     if (!pSh)
         return;
 
-    const size_t nFieldTypeCnt = pSh->GetFieldTypeCount(SwFieldIds::SetExp);
+    const size_t nFieldTypeCnt = pSh->GetFieldTypeCount(RES_SETEXPFLD);
 
     OSL_ENSURE( nFieldTypeCnt < static_cast<size_t>(REFFLDFLAG), "<SwFieldRefPage::Reset> - Item index will overlap flags!" );
 
     for (size_t n = 0; n < nFieldTypeCnt; ++n)
     {
-        SwSetExpFieldType* pType = static_cast<SwSetExpFieldType*>(pSh->GetFieldType(n, SwFieldIds::SetExp));
+        SwSetExpFieldType* pType = static_cast<SwSetExpFieldType*>(pSh->GetFieldType(n, RES_SETEXPFLD));
 
         if ((nsSwGetSetExpType::GSE_SEQ & pType->GetType()) && pType->HasWriterListeners() && pSh->IsUsed(*pType))
         {
@@ -299,7 +299,7 @@ void SwFieldRefPage::Reset(const SfxItemSet* )
     }
 }
 
-IMPL_LINK_NOARG(SwFieldRefPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldRefPage, TypeHdl, ListBox&, void)
 {
     // save old ListBoxPos
     const sal_Int32 nOld = GetTypeSel();
@@ -438,11 +438,11 @@ IMPL_LINK_NOARG(SwFieldRefPage, TypeHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG(SwFieldRefPage, SubTypeTreeListBoxHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SwFieldRefPage, SubTypeTreeListBoxHdl, SvTreeListBox*, void)
 {
     SubTypeHdl();
 }
-IMPL_LINK_NOARG(SwFieldRefPage, SubTypeListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldRefPage, SubTypeListBoxHdl, ListBox&, void)
 {
     SubTypeHdl();
 }
@@ -588,10 +588,11 @@ void SwFieldRefPage::UpdateSubType(const OUString& filterString)
             bool bCertainTextNodeSelected( false );
             for ( size_t nOutlIdx = 0; nOutlIdx < maOutlineNodes.size(); ++nOutlIdx )
             {
+                SvTreeListEntry* pEntry = nullptr;
                 bool isSubstring = MatchSubstring(pIDoc->getOutlineText( nOutlIdx, true, true, false ), filterString);
                 if(isSubstring)
                 {
-                    SvTreeListEntry* pEntry = m_pSelectionToolTipLB->InsertEntry(
+                    pEntry = m_pSelectionToolTipLB->InsertEntry(
                     pIDoc->getOutlineText( nOutlIdx, true, true, false ) );
                     pEntry->SetUserData( reinterpret_cast<void*>(nOutlIdx) );
                     if ( ( IsFieldEdit() &&
@@ -619,10 +620,11 @@ void SwFieldRefPage::UpdateSubType(const OUString& filterString)
             bool bCertainTextNodeSelected( false );
             for ( size_t nNumItemIdx = 0; nNumItemIdx < maNumItems.size(); ++nNumItemIdx )
             {
+                SvTreeListEntry* pEntry = nullptr;
                 bool isSubstring = MatchSubstring(pIDoc->getListItemText( *maNumItems[nNumItemIdx] ), filterString);
                 if(isSubstring)
                 {
-                    SvTreeListEntry* pEntry = m_pSelectionToolTipLB->InsertEntry(
+                    pEntry = m_pSelectionToolTipLB->InsertEntry(
                     pIDoc->getListItemText( *maNumItems[nNumItemIdx] ) );
                     pEntry->SetUserData( reinterpret_cast<void*>(nNumItemIdx) );
                     if ( ( IsFieldEdit() &&
@@ -647,7 +649,7 @@ void SwFieldRefPage::UpdateSubType(const OUString& filterString)
             // get the fields to Seq-FieldType:
 
             SwSetExpFieldType* pType = static_cast<SwSetExpFieldType*>(pSh->GetFieldType(
-                                nTypeId & ~REFFLDFLAG, SwFieldIds::SetExp ));
+                                nTypeId & ~REFFLDFLAG, RES_SETEXPFLD ));
             if( pType )
             {
                 SwSeqFieldList aArr;
@@ -827,7 +829,7 @@ sal_Int32 SwFieldRefPage::FillFormatLB(sal_uInt16 nTypeId)
 }
 
 // Modify
-IMPL_LINK_NOARG(SwFieldRefPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldRefPage, ModifyHdl, Edit&, void)
 {
     OUString aName(m_pNameED->GetText());
     const bool bEmptyName = aName.isEmpty();
@@ -866,7 +868,7 @@ bool SwFieldRefPage::FillItemSet(SfxItemSet* )
 
         case TYP_SETREFFLD:
         {
-            SwFieldType* pType = GetFieldMgr().GetFieldType(SwFieldIds::SetExp, aName);
+            SwFieldType* pType = GetFieldMgr().GetFieldType(RES_SETEXPFLD, aName);
 
             if(!pType)  // Only insert when the name doesn't exist yet
             {
@@ -977,11 +979,11 @@ bool SwFieldRefPage::FillItemSet(SfxItemSet* )
                 }
             }
         }
-        else                                // SequenceFields
+        else                                // SeqenceFields
         {
             // get fields for Seq-FieldType:
             SwSetExpFieldType* pType = static_cast<SwSetExpFieldType*>(pSh->GetFieldType(
-                                    nTypeId & ~REFFLDFLAG, SwFieldIds::SetExp ));
+                                    nTypeId & ~REFFLDFLAG, RES_SETEXPFLD ));
             if( pType )
             {
                 SwSeqFieldList aArr;

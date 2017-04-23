@@ -30,6 +30,7 @@
 #include <comphelper/anytostring.hxx>
 #include <comphelper/make_shared_from_uno.hxx>
 #include <comphelper/scopeguard.hxx>
+#include <comphelper/optional.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <comphelper/namecontainer.hxx>
 
@@ -58,7 +59,6 @@
 #include <com/sun/star/animations/TransitionSubType.hpp>
 #include <com/sun/star/presentation/XSlideShow.hpp>
 #include <com/sun/star/presentation/XSlideShowListener.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/XServiceName.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
@@ -274,39 +274,52 @@ public:
 
 private:
     // XSlideShow:
-    virtual sal_Bool SAL_CALL nextEffect() override;
-    virtual sal_Bool SAL_CALL previousEffect() override;
+    virtual sal_Bool SAL_CALL nextEffect() throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL previousEffect() throw (uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL startShapeActivity(
-        uno::Reference<drawing::XShape> const& xShape ) override;
+        uno::Reference<drawing::XShape> const& xShape )
+        throw (uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL stopShapeActivity(
-        uno::Reference<drawing::XShape> const& xShape ) override;
-    virtual sal_Bool SAL_CALL pause( sal_Bool bPauseShow ) override;
-    virtual uno::Reference<drawing::XDrawPage> SAL_CALL getCurrentSlide() override;
+        uno::Reference<drawing::XShape> const& xShape )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL pause( sal_Bool bPauseShow )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Reference<drawing::XDrawPage> SAL_CALL getCurrentSlide()
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL displaySlide(
         uno::Reference<drawing::XDrawPage> const& xSlide,
         uno::Reference<drawing::XDrawPagesSupplier> const& xDrawPages,
         uno::Reference<animations::XAnimationNode> const& xRootNode,
-        uno::Sequence<beans::PropertyValue> const& rProperties ) override;
-    virtual void SAL_CALL registerUserPaintPolygons( const css::uno::Reference< css::lang::XMultiServiceFactory >& xDocFactory ) override;
+        uno::Sequence<beans::PropertyValue> const& rProperties )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL registerUserPaintPolygons( const css::uno::Reference< css::lang::XMultiServiceFactory >& xDocFactory ) throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL setProperty(
-        beans::PropertyValue const& rProperty ) override;
+        beans::PropertyValue const& rProperty ) throw (uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL addView(
-        uno::Reference<presentation::XSlideShowView> const& xView ) override;
+        uno::Reference<presentation::XSlideShowView> const& xView )
+        throw (uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL removeView(
-        uno::Reference<presentation::XSlideShowView> const& xView ) override;
-    virtual sal_Bool SAL_CALL update( double & nNextTimeout ) override;
+        uno::Reference<presentation::XSlideShowView> const& xView )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL update( double & nNextTimeout )
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addSlideShowListener(
-        uno::Reference<presentation::XSlideShowListener> const& xListener ) override;
+        uno::Reference<presentation::XSlideShowListener> const& xListener )
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeSlideShowListener(
-        uno::Reference<presentation::XSlideShowListener> const& xListener ) override;
+        uno::Reference<presentation::XSlideShowListener> const& xListener )
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addShapeEventListener(
         uno::Reference<presentation::XShapeEventListener> const& xListener,
-        uno::Reference<drawing::XShape> const& xShape ) override;
+        uno::Reference<drawing::XShape> const& xShape )
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeShapeEventListener(
         uno::Reference<presentation::XShapeEventListener> const& xListener,
-        uno::Reference<drawing::XShape> const& xShape ) override;
+        uno::Reference<drawing::XShape> const& xShape )
+        throw (uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setShapeCursor(
-        uno::Reference<drawing::XShape> const& xShape, sal_Int16 nPointerShape ) override;
+        uno::Reference<drawing::XShape> const& xShape, sal_Int16 nPointerShape )
+        throw (uno::RuntimeException, std::exception) override;
 
     // CursorManager
 
@@ -361,7 +374,7 @@ private:
 
     /// Resets the current slide transition sound object with a new one:
     SoundPlayerSharedPtr resetSlideTransitionSound(
-        uno::Any const& url, bool bLoopSound );
+        uno::Any const& url = uno::Any(), bool bLoopSound = false );
 
     /// stops the current slide transition sound
     void stopSlideTransitionSound();
@@ -747,8 +760,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
 
     if( !xPropSet.is() )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Slide has no PropertySet - assuming no transition" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Slide has no PropertySet - assuming no transition\n" );
         return ActivitySharedPtr();
     }
 
@@ -757,8 +770,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "TransitionType") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Could not extract slide transition type from XDrawPage - assuming no transition" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Could not extract slide transition type from XDrawPage - assuming no transition\n" );
         return ActivitySharedPtr();
     }
 
@@ -767,8 +780,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "TransitionSubtype") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Could not extract slide transition subtype from XDrawPage - assuming no transition" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Could not extract slide transition subtype from XDrawPage - assuming no transition\n" );
         return ActivitySharedPtr();
     }
 
@@ -777,8 +790,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "TransitionDirection") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Could not extract slide transition direction from XDrawPage - assuming default direction" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Could not extract slide transition direction from XDrawPage - assuming default direction\n" );
     }
 
     sal_Int32 aUnoColor(0);
@@ -786,8 +799,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "TransitionFadeColor") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Could not extract slide transition fade color from XDrawPage - assuming black" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Could not extract slide transition fade color from XDrawPage - assuming black\n" );
     }
 
     const RGBColor aTransitionFadeColor( unoColor2RGBColor( aUnoColor ));
@@ -796,10 +809,10 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
     bool bLoopSound = false;
 
     if( !getPropertyValue( aSound, xPropSet, "Sound") )
-        SAL_INFO("slideshow", "createSlideTransition(): Could not determine transition sound effect URL from XDrawPage - using no sound" );
+        OSL_TRACE( "createSlideTransition(): Could not determine transition sound effect URL from XDrawPage - using no sound" );
 
     if( !getPropertyValue( bLoopSound, xPropSet, "LoopSound" ) )
-        SAL_INFO("slideshow", "createSlideTransition(): Could not get slide property 'LoopSound' - using no sound" );
+        OSL_TRACE( "createSlideTransition(): Could not get slide property 'LoopSound' - using no sound" );
 
     NumberAnimationSharedPtr pTransition(
         TransitionFactory::createSlideTransition(
@@ -826,8 +839,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "TransitionDuration") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "Could not extract slide transition duration from XDrawPage - assuming no transition" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "Could not extract slide transition duration from XDrawPage - assuming no transition\n" );
         return ActivitySharedPtr();
     }
 
@@ -836,8 +849,8 @@ ActivitySharedPtr SlideShowImpl::createSlideTransition(
                            xPropSet,
                            "MinimalFrameNumber") )
     {
-        SAL_INFO("slideshow", "createSlideTransition(): "
-                   "No minimal number of frames given - assuming 5" );
+        OSL_TRACE( "createSlideTransition(): "
+                   "No minimal number of frames given - assuming 5\n" );
     }
 
     // prefetch slide transition bitmaps, but postpone it after
@@ -1052,6 +1065,7 @@ void SlideShowImpl::displaySlide(
     uno::Reference<drawing::XDrawPagesSupplier> const& xDrawPages,
     uno::Reference<animations::XAnimationNode> const& xRootNode,
     uno::Sequence<beans::PropertyValue> const& rProperties )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1200,7 +1214,7 @@ void SlideShowImpl::redisplayCurrentSlide()
         });
 }
 
-sal_Bool SlideShowImpl::nextEffect()
+sal_Bool SlideShowImpl::nextEffect() throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1216,7 +1230,7 @@ sal_Bool SlideShowImpl::nextEffect()
         return maEventMultiplexer.notifyNextEffect();
 }
 
-sal_Bool SlideShowImpl::previousEffect()
+sal_Bool SlideShowImpl::previousEffect() throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1261,6 +1275,7 @@ void SlideShowImpl::rewindEffectToPreviousSlide()
 
 sal_Bool SlideShowImpl::startShapeActivity(
     uno::Reference<drawing::XShape> const& /*xShape*/ )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1274,6 +1289,7 @@ sal_Bool SlideShowImpl::startShapeActivity(
 
 sal_Bool SlideShowImpl::stopShapeActivity(
     uno::Reference<drawing::XShape> const& /*xShape*/ )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1286,6 +1302,7 @@ sal_Bool SlideShowImpl::stopShapeActivity(
 }
 
 sal_Bool SlideShowImpl::pause( sal_Bool bPauseShow )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1307,6 +1324,7 @@ sal_Bool SlideShowImpl::pause( sal_Bool bPauseShow )
 }
 
 uno::Reference<drawing::XDrawPage> SlideShowImpl::getCurrentSlide()
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1324,6 +1342,7 @@ uno::Reference<drawing::XDrawPage> SlideShowImpl::getCurrentSlide()
 
 sal_Bool SlideShowImpl::addView(
     uno::Reference<presentation::XSlideShowView> const& xView )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1371,6 +1390,7 @@ sal_Bool SlideShowImpl::addView(
 
 sal_Bool SlideShowImpl::removeView(
     uno::Reference<presentation::XSlideShowView> const& xView )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1391,7 +1411,7 @@ sal_Bool SlideShowImpl::removeView(
     return true;
 }
 
-void SlideShowImpl::registerUserPaintPolygons( const uno::Reference< lang::XMultiServiceFactory >& xDocFactory )
+void SlideShowImpl::registerUserPaintPolygons( const uno::Reference< lang::XMultiServiceFactory >& xDocFactory ) throw (uno::RuntimeException, std::exception)
 {
     //Retrieve Polygons if user ends presentation by context menu
     if (mpCurrentSlide)
@@ -1503,6 +1523,7 @@ void SlideShowImpl::registerUserPaintPolygons( const uno::Reference< lang::XMult
 }
 
 sal_Bool SlideShowImpl::setProperty( beans::PropertyValue const& rProperty )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1793,6 +1814,7 @@ sal_Bool SlideShowImpl::setProperty( beans::PropertyValue const& rProperty )
 
 void SlideShowImpl::addSlideShowListener(
     uno::Reference<presentation::XSlideShowListener> const& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1805,6 +1827,7 @@ void SlideShowImpl::addSlideShowListener(
 
 void SlideShowImpl::removeSlideShowListener(
     uno::Reference<presentation::XSlideShowListener> const& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1815,6 +1838,7 @@ void SlideShowImpl::removeSlideShowListener(
 void SlideShowImpl::addShapeEventListener(
     uno::Reference<presentation::XShapeEventListener> const& xListener,
     uno::Reference<drawing::XShape> const& xShape )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1847,6 +1871,7 @@ void SlideShowImpl::addShapeEventListener(
 void SlideShowImpl::removeShapeEventListener(
     uno::Reference<presentation::XShapeEventListener> const& xListener,
     uno::Reference<drawing::XShape> const& xShape )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1873,6 +1898,7 @@ void SlideShowImpl::removeShapeEventListener(
 
 void SlideShowImpl::setShapeCursor(
     uno::Reference<drawing::XShape> const& xShape, sal_Int16 nPointerShape )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1933,6 +1959,7 @@ void SlideShowImpl::resetCursor()
 }
 
 sal_Bool SlideShowImpl::update( double & nNextTimeout )
+    throw (uno::RuntimeException, std::exception)
 {
     osl::MutexGuard const guard( m_aMutex );
 
@@ -1974,7 +2001,7 @@ sal_Bool SlideShowImpl::update( double & nNextTimeout )
             maEventQueue.process();
 
             // #i118671# the call above may execute a macro bound to an object. In
-            // that case this macro may have destroyed this local slideshow so that it
+            // that case this macro may have destroyed this local sliseshow so that it
             // is disposed (see bugdoc at task). In that case, detect this and exit
             // gently from this slideshow. Do not forget to disable the scoped
             // call to mpPresTimer, this will be deleted if we are disposed.
@@ -2075,12 +2102,9 @@ sal_Bool SlideShowImpl::update( double & nNextTimeout )
                 {
                     uno::Reference< presentation::XSlideShowView > xView( pView->getUnoView(),
                                                                           uno::UNO_QUERY_THROW );
-                    uno::Reference<util::XUpdatable> const xUpdatable(
-                            xView->getCanvas(), uno::UNO_QUERY);
-                    if (xUpdatable.is()) // not supported in PresenterCanvas
-                    {
-                        xUpdatable->update();
-                    }
+                    uno::Reference< util::XUpdatable >             xUpdatable( xView->getCanvas(),
+                                                                               uno::UNO_QUERY_THROW );
+                    xUpdatable->update();
                 }
                 catch( uno::RuntimeException& )
                 {
@@ -2137,9 +2161,9 @@ void queryAutomaticSlideTransition( uno::Reference<drawing::XDrawPage> const& xD
                            xPropSet,
                            "Change") )
     {
-        SAL_INFO("slideshow",
+        OSL_TRACE(
             "queryAutomaticSlideTransition(): "
-            "Could not extract slide change mode from XDrawPage - assuming <none>" );
+            "Could not extract slide change mode from XDrawPage - assuming <none>\n" );
     }
 
     bHasAutomaticNextSlide = nChange == 1;
@@ -2149,10 +2173,10 @@ void queryAutomaticSlideTransition( uno::Reference<drawing::XDrawPage> const& xD
                            xPropSet,
                            "HighResDuration") )
     {
-        SAL_INFO("slideshow",
+        OSL_TRACE(
             "queryAutomaticSlideTransition(): "
             "Could not extract slide transition timeout from "
-            "XDrawPage - assuming 1 sec" );
+            "XDrawPage - assuming 1 sec\n" );
     }
 }
 

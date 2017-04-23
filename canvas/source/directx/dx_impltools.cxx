@@ -20,6 +20,7 @@
 #include <sal/config.h>
 
 #include <algorithm>
+#include <cctype>
 #include <vector>
 
 
@@ -173,7 +174,7 @@ namespace dxcanvas
             }
 
             void graphicsPathFromB2DPolygon( GraphicsPathSharedPtr&             rOutput,
-                                             std::vector< Gdiplus::PointF >&  rPoints,
+                                             ::std::vector< Gdiplus::PointF >&  rPoints,
                                              const ::basegfx::B2DPolygon&       rPoly,
                                              bool bNoLineJoin)
             {
@@ -195,7 +196,7 @@ namespace dxcanvas
                     // first point, thus, one more (can't simply
                     // GraphicsPath::CloseFigure() it, since the last
                     // point cannot have any control points for GDI+)
-                    rPoints.resize( 3*nPoints + (bClosedPolygon ? 1 : 0) );
+                    rPoints.resize( 3*nPoints + bClosedPolygon );
 
                     sal_uInt32 nCurrOutput=0;
                     for( sal_uInt32 nCurrPoint=0; nCurrPoint<nPoints; ++nCurrPoint )
@@ -297,6 +298,11 @@ namespace dxcanvas
             }
         }
 
+        Gdiplus::PointF gdiPlusPointFromRealPoint2D( const css::geometry::RealPoint2D& rPoint )
+        {
+            return implGdiPlusPointFromRealPoint2D( rPoint );
+        }
+
         Gdiplus::Rect gdiPlusRectFromIntegerRectangle2D( const geometry::IntegerRectangle2D& rRect )
         {
             return Gdiplus::Rect( rRect.X1,
@@ -347,7 +353,20 @@ namespace dxcanvas
                                         rRect.Y + rRect.Height );
         }
 
-        uno::Sequence< sal_Int8 > argbToIntSequence( Gdiplus::ARGB rColor )
+        uno::Sequence< double > argbToDoubleSequence( const Gdiplus::ARGB& rColor )
+        {
+            // TODO(F1): handle color space conversions, when defined on canvas/graphicDevice
+            uno::Sequence< double > aRet(4);
+
+            aRet[0] = ((rColor >> 16) & 0xFF) / 255.0;  // red
+            aRet[1] = ((rColor >> 8) & 0xFF) / 255.0;   // green
+            aRet[2] = (rColor & 0xFF) / 255.0;          // blue
+            aRet[3] = ((rColor >> 24) & 0xFF) / 255.0;  // alpha
+
+            return aRet;
+        }
+
+        uno::Sequence< sal_Int8 > argbToIntSequence( const Gdiplus::ARGB& rColor )
         {
             // TODO(F1): handle color space conversions, when defined on canvas/graphicDevice
             uno::Sequence< sal_Int8 > aRet(4);
@@ -405,7 +424,7 @@ namespace dxcanvas
         GraphicsPathSharedPtr graphicsPathFromRealPoint2DSequence( const uno::Sequence< uno::Sequence< geometry::RealPoint2D > >& points )
         {
             GraphicsPathSharedPtr pRes( new Gdiplus::GraphicsPath() );
-            std::vector< Gdiplus::PointF > aPoints;
+            ::std::vector< Gdiplus::PointF > aPoints;
 
             sal_Int32 nCurrPoly;
             for( nCurrPoly=0; nCurrPoly<points.getLength(); ++nCurrPoly )
@@ -418,7 +437,7 @@ namespace dxcanvas
                     // TODO(F1): Closed/open polygons
 
                     // convert from RealPoint2D array to Gdiplus::PointF array
-                    std::transform( points[nCurrPoly].getConstArray(),
+                    ::std::transform( points[nCurrPoly].getConstArray(),
                                       points[nCurrPoly].getConstArray()+nCurrSize,
                                       aPoints.begin(),
                                       implGdiPlusPointFromRealPoint2D );
@@ -433,7 +452,7 @@ namespace dxcanvas
         GraphicsPathSharedPtr graphicsPathFromB2DPolygon( const ::basegfx::B2DPolygon& rPoly, bool bNoLineJoin )
         {
             GraphicsPathSharedPtr               pRes( new Gdiplus::GraphicsPath() );
-            std::vector< Gdiplus::PointF >    aPoints;
+            ::std::vector< Gdiplus::PointF >    aPoints;
 
             graphicsPathFromB2DPolygon( pRes, aPoints, rPoly, bNoLineJoin );
 
@@ -443,7 +462,7 @@ namespace dxcanvas
         GraphicsPathSharedPtr graphicsPathFromB2DPolyPolygon( const ::basegfx::B2DPolyPolygon& rPoly, bool bNoLineJoin )
         {
             GraphicsPathSharedPtr               pRes( new Gdiplus::GraphicsPath() );
-            std::vector< Gdiplus::PointF >    aPoints;
+            ::std::vector< Gdiplus::PointF >    aPoints;
 
             const sal_uInt32 nPolies( rPoly.count() );
             for( sal_uInt32 nCurrPoly=0; nCurrPoly<nPolies; ++nCurrPoly )
@@ -486,7 +505,7 @@ namespace dxcanvas
         {
             BitmapSharedPtr pBitmap(
                 Gdiplus::Bitmap::FromBITMAPINFO( &rBI,
-                                                 const_cast<void*>(pBits) ) );
+                                                 (void*)pBits ) );
 
             return drawGdiPlusBitmap( rGraphics,
                                       pBitmap );
@@ -624,7 +643,9 @@ namespace dxcanvas
             aColorMatrix.m[4][3] = 0.0;
             aColorMatrix.m[4][4] = 1.0;
 
-            o_rAttr.SetColorMatrix( &aColorMatrix );
+            o_rAttr.SetColorMatrix( &aColorMatrix,
+                                    Gdiplus::ColorMatrixFlagsDefault,
+                                    Gdiplus::ColorAdjustTypeDefault );
         }
 
     } // namespace tools

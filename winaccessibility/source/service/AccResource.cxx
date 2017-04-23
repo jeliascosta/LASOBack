@@ -27,7 +27,7 @@
 
 //= ResourceManager
 
-SimpleResMgr* ResourceManager::m_pImpl = nullptr;
+SimpleResMgr* ResourceManager::m_pImpl = NULL;
 
 
 ResourceManager::EnsureDelete::~EnsureDelete()

@@ -33,7 +33,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void SdrConnectorPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*aViewInformation*/) const
+        Primitive2DContainer SdrConnectorPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*aViewInformation*/) const
         {
             Primitive2DContainer aRetval;
 
@@ -76,7 +76,7 @@ namespace drawinglayer
                     getSdrLSTAttribute().getShadow());
             }
 
-            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
+            return aRetval;
         }
 
         SdrConnectorPrimitive2D::SdrConnectorPrimitive2D(

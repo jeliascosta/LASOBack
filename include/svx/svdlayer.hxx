@@ -132,7 +132,7 @@ public:
     SdrLayer*          NewLayer(const OUString& rName, sal_uInt16 nPos=0xFFFF);
 
     // New layer, name is retrieved from the resource
-    void               NewStandardLayer(sal_uInt16 nPos);
+    void               NewStandardLayer(sal_uInt16 nPos=0xFFFF);
 
     // Iterate over all layers
     sal_uInt16         GetLayerCount() const                                         { return sal_uInt16(aLayer.size()); }

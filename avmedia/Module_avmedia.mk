@@ -37,11 +37,9 @@ endif
 
 ifeq ($(OS),MACOSX)
 ifneq ($(ENABLE_MACOSX_SANDBOX),TRUE)
-ifneq ($(shell test $(MACOSX_SDK_VERSION) -ge 101200; echo $$?),0)
 $(eval $(call gb_Module_add_targets,avmedia,\
 	Library_avmediaQuickTime \
 ))
-endif
 endif
 endif
 
@@ -51,7 +49,7 @@ $(eval $(call gb_Module_add_targets,avmedia,\
 ))
 endif
 
-ifeq ($(OS),WNT)
+ifneq ($(ENABLE_DIRECTX),)
 $(eval $(call gb_Module_add_targets,avmedia,\
 	Library_avmediawin \
 ))

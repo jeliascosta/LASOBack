@@ -68,7 +68,7 @@ private:
     std::vector<Image>      aBmps;  // indices s. constants BMP_ ....
 
     SVT_DLLPRIVATE void     SetWidthAndHeight();
-    SVT_DLLPRIVATE void     InitData( bool _bRadioBtn, const Control* pControlForSettings );
+    SVT_DLLPRIVATE void     InitData( bool _bRadioBtn, const Control* pControlForSettings = nullptr );
 public:
                             // include creating default images (CheckBox or RadioButton)
                             SvLBoxButtonData( const Control* pControlForSettings );
@@ -92,7 +92,7 @@ public:
     void                    SetImage(SvBmp nIndex, const Image& aImage) { aBmps[(int)nIndex] = aImage; }
     Image&                  GetImage(SvBmp nIndex) { return aBmps[(int)nIndex]; }
 
-    void                    SetDefaultImages( const Control* pControlForSettings );
+    void                    SetDefaultImages( const Control* pControlForSettings = nullptr );
                                 // set images according to the color scheme of the Control
                                 // pControlForSettings == NULL: settings are taken from Application
     bool                    HasDefaultImages() const;
@@ -108,12 +108,12 @@ protected:
 public:
     SvLBoxString(const OUString& rText);
     SvLBoxString();
-    virtual ~SvLBoxString() override;
+    virtual ~SvLBoxString();
 
-    virtual SvLBoxItemType GetType() const override;
+    virtual sal_uInt16 GetType() const override;
     virtual void InitViewData(SvTreeListBox* pView,
                               SvTreeListEntry* pEntry,
-                              SvViewDataItem* pViewData = nullptr) override;
+                              SvViewDataItem* pViewData) override;
 
     const OUString& GetText() const
     {
@@ -133,6 +133,21 @@ public:
     virtual void Clone(SvLBoxItem* pSource) override;
 };
 
+class SvLBoxBmp : public SvLBoxItem
+{
+    Image aBmp;
+public:
+    SvLBoxBmp();
+    virtual ~SvLBoxBmp();
+    virtual sal_uInt16 GetType() const override;
+    virtual void InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* ) override;
+    virtual void Paint(const Point& rPos, SvTreeListBox& rOutDev,  vcl::RenderContext& rRenderContext,
+                       const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
+    virtual SvLBoxItem* Create() const override;
+    virtual void Clone( SvLBoxItem* pSource ) override;
+};
+
+
 class SVT_DLLPUBLIC SvLBoxButton : public SvLBoxItem
 {
     bool    isVis;
@@ -149,12 +164,12 @@ public:
     // for that kind).
     SvLBoxButton( SvLBoxButtonKind eTheKind, SvLBoxButtonData* pBData );
     SvLBoxButton();
-    virtual ~SvLBoxButton() override;
+    virtual ~SvLBoxButton();
     virtual void InitViewData(SvTreeListBox* pView,
                               SvTreeListEntry* pEntry,
-                              SvViewDataItem* pViewData = nullptr) override;
+                              SvViewDataItem* pViewData) override;
 
-    virtual SvLBoxItemType GetType() const override;
+    virtual sal_uInt16 GetType() const override;
     bool ClickHdl(SvTreeListBox* pView, SvTreeListEntry* );
 
     virtual void Paint(const Point& rPos,
@@ -226,18 +241,18 @@ struct SvLBoxContextBmp_Impl;
 
 class SVT_DLLPUBLIC SvLBoxContextBmp : public SvLBoxItem
 {
-    std::unique_ptr<SvLBoxContextBmp_Impl>  m_pImpl;
+    SvLBoxContextBmp_Impl*  m_pImpl;
 public:
     SvLBoxContextBmp(Image aBmp1,
                      Image aBmp2,
                      bool bExpanded);
     SvLBoxContextBmp();
-    virtual ~SvLBoxContextBmp() override;
+    virtual ~SvLBoxContextBmp();
 
-    virtual SvLBoxItemType GetType() const override;
+    virtual sal_uInt16 GetType() const override;
     virtual void InitViewData(SvTreeListBox* pView,
                               SvTreeListEntry* pEntry,
-                              SvViewDataItem* pViewData = nullptr) override;
+                              SvViewDataItem* pViewData) override;
     virtual void Paint(const Point& rPos,
                        SvTreeListBox& rOutDev,
                        vcl::RenderContext& rRenderContext,

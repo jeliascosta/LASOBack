@@ -17,105 +17,125 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <errorhandler.hxx>
-#include <astinterface.hxx>
+#include <idlc/errorhandler.hxx>
+#include <idlc/astinterface.hxx>
 
 static const sal_Char* errorCodeToMessage(ErrorCode eCode)
 {
     switch (eCode)
     {
-    case ErrorCode::SyntaxError:
+    case EIDL_NONE:
+        return "all is fine ";
+    case EIDL_SYNTAX_ERROR:
         return "";
-    case ErrorCode::RedefScope:
+    case EIDL_REDEF:
+        return "illegal redefinition ";
+    case EIDL_REDEF_SCOPE:
         return "illegal redefinition in scope ";
-    case ErrorCode::CoercionFailure:
+    case EIDL_DEF_USE:
+        return "redefinition after use, ";
+    case EIDL_COERCION_FAILURE:
         return "coercion failure ";
-    case ErrorCode::ScopeConflict:
+    case EIDL_SCOPE_CONFLICT:
         return "definition scope is different than fwd declare scope, ";
-    case ErrorCode::IllegalAdd:
+    case EIDL_ILLEGAL_ADD:
         return "illegal add operation, ";
-    case ErrorCode::IllegalRaises:
+    case EIDL_ILLEGAL_USE:
+        return "illegal type used in expression, ";
+    case EIDL_ILLEGAL_RAISES:
         return "non-exception type in raises(..) clause, ";
-    case ErrorCode::CantInherit:
+    case EIDL_CANT_INHERIT:
         return "cannot inherit ";
-    case ErrorCode::IdentNotFound:
+    case EIDL_LOOKUP_ERROR:
         return "error in lookup of symbol: ";
-    case ErrorCode::CannotInheritFromForward:
+    case EIDL_INHERIT_FWD_ERROR:
         return "";
-    case ErrorCode::ExpectedConstant:
+    case EIDL_CONSTANT_EXPECTED:
         return "constant expected: ";
-    case ErrorCode::Eval:
+    case EIDL_NAME_CASE_ERROR:
+        return "identifier used with two differing spellings: ";
+    case EIDL_EVAL_ERROR:
         return "expression evaluation error: ";
-    case ErrorCode::ForwardDeclLookup:
+    case EIDL_AMBIGUOUS:
+        return "ambiguous definition: ";
+    case EIDL_DECL_NOT_DEFINED:
+        return "forward declared but never defined: ";
+    case EIDL_FWD_DECL_LOOKUP:
         return "";
-    case ErrorCode::RecursiveType:
+    case EIDL_RECURSIVE_TYPE:
         return "illegal recursive use of type: ";
-    case ErrorCode::NotAType:
+    case EIDL_NOT_A_TYPE:
         return "specified symbol is not a type: ";
-    case ErrorCode::InterfaceMemberLookup:
+    case EIDL_TYPE_NOT_VALID:
+        return "specified type is not valid in this context: ";
+    case EIDL_INTERFACEMEMBER_LOOKUP:
         return "error in lookup of symbol, expected interface is not defined and no forward exists: ";
-    case ErrorCode::ServiceMemberLookup:
+    case EIDL_SERVICEMEMBER_LOOKUP:
         return "error in lookup of symbol, expected service is not defined: ";
-    case ErrorCode::DefinedAttributeFlag:
+    case EIDL_TYPE_IDENT_CONFLICT:
+        return "type and parameter/member name are equal: ";
+    case EIDL_WRONGATTRIBUTEFLAG:
+        return "the used flag is not valid in this context: ";
+    case EIDL_DEFINED_ATTRIBUTEFLAG:
         return "flag is already set: ";
-    case ErrorCode::WrongAttributeKeyword:
+    case EIDL_WRONGATTRIBUTEKEYWORD:
         return "keyword not allowed: ";
-    case ErrorCode::MissingAttributeKeyword:
+    case EIDL_MISSINGATTRIBUTEKEYWORD:
         return "missing keyword: ";
-    case ErrorCode::BadAttributeFlags:
+    case EIDL_BAD_ATTRIBUTE_FLAGS:
         return
             "the 'attribute' flag is mandatory, and only the 'bound' and"
             " 'readonly' optional flags are accepted: ";
-    case ErrorCode::ExpectedOptional:
+    case EIDL_OPTIONALEXPECTED:
         return "only the 'optional' flag is accepted: ";
-    case ErrorCode::MixedInheritance:
+    case EIDL_MIXED_INHERITANCE:
         return "interface inheritance declarations cannot appear in both an"
             " interface's header and its body";
-    case ErrorCode::DoubleInheritance:
+    case EIDL_DOUBLE_INHERITANCE:
         return
             "interface is (directly or indirectly) inherited more than once: ";
-    case ErrorCode::DoubleMember:
+    case EIDL_DOUBLE_MEMBER:
         return
             "member is (directly or indirectly) declared more than once: ";
-    case ErrorCode::ConstructorParameterNotIn:
+    case EIDL_CONSTRUCTOR_PARAMETER_NOT_IN:
         return
             "a service constructor parameter may not be an out or inout"
             " parameter";
-    case ErrorCode::ConstructorRestParameterNotFirst:
+    case EIDL_CONSTRUCTOR_REST_PARAMETER_NOT_FIRST:
         return
             "no parameters may precede a rest parameter in a service"
             " constructor";
-    case ErrorCode::RestParameterNotLast:
+    case EIDL_REST_PARAMETER_NOT_LAST:
         return "no parameters may follow a rest parameter";
-    case ErrorCode::RestParameterNotAny:
+    case EIDL_REST_PARAMETER_NOT_ANY:
         return "a rest parameter must be of type any";
-    case ErrorCode::MethodHasRestParameter:
+    case EIDL_METHOD_HAS_REST_PARAMETER:
         return "a rest parameter may not be used on an interface method";
-    case ErrorCode::ReadOnlyAttributeSetExceptions:
+    case EIDL_READONLY_ATTRIBUTE_SET_EXCEPTIONS:
         return "a readonly attribute may not have a setter raises clause";
-    case ErrorCode::UnsignedTypeArgument:
+    case EIDL_UNSIGNED_TYPE_ARGUMENT:
         return "an unsigned type cannot be used as a type argument";
-    case ErrorCode::WrongNumberOfTypeArguments:
+    case EIDL_WRONG_NUMBER_OF_TYPE_ARGUMENTS:
         return
             "the number of given type arguments does not match the expected"
             " number of type parameters";
-    case ErrorCode::InstantiatedStructTypeTypedef:
+    case EIDL_INSTANTIATED_STRUCT_TYPE_TYPEDEF:
         return
             "an instantiated polymorphic struct type cannot be used in a"
             " typedef";
-    case ErrorCode::IdenticalTypeParameters:
+    case EIDL_IDENTICAL_TYPE_PARAMETERS:
         return "two type parameters have the same name";
-    case ErrorCode::StructTypeTemplateWithBase:
+    case EIDL_STRUCT_TYPE_TEMPLATE_WITH_BASE:
         return "a polymorphic struct type template may not have a base type";
-    case ErrorCode::PublishedForward:
+    case EIDL_PUBLISHED_FORWARD:
         return
             "a published forward declaration of an interface type cannot be"
             " followed by an unpublished declaration of that type";
-    case ErrorCode::PublishedusesUnpublished:
+    case EIDL_PUBLISHED_USES_UNPUBLISHED:
         return
             "an unpublished entity cannot be used in the declaration of a"
             " published entity: ";
-    case ErrorCode::SimilarConstructors:
+    case EIDL_SIMILAR_CONSTRUCTORS:
         return "two constructors have identical lists of parameter types";
     }
     return "unknown error";
@@ -125,7 +145,15 @@ static const sal_Char* warningCodeToMessage(WarningCode wCode)
 {
     switch (wCode)
     {
-    case WarningCode::WrongNamingConvention:
+    case WIDL_EXPID_CONFLICT:
+        return "exception id conflict: ";
+    case WIDL_REQID_CONFLICT:
+        return "request id conflict: ";
+    case WIDL_INHERIT_IDCONFLICT:
+        return "request id conflict in inheritance tree: ";
+    case WIDL_TYPE_IDENT_CONFLICT:
+        return "type and parameter|member name are equal: ";
+    case WIDL_WRONG_NAMING_CONV:
         return "type or identifier doesn't fulfill the UNO naming convention: ";
     }
     return "unknown warning";
@@ -323,6 +351,8 @@ static const sal_Char* parseStateToMessage(ParseState state)
         return "Illegal syntax or missing '(' after operation identifier";
     case PS_OpParsCompleted:
         return "Illegal syntax after operation parameter list";
+    case PS_OpCompleted:
+        return "Illegal syntax after operation declaration";
     case PS_OpSqSeen:
         return "Illegal syntax after operation parameter list '(' opener";
     case PS_OpQsSeen:
@@ -467,14 +497,14 @@ void ErrorHandler::warning0(WarningCode w, const sal_Char* warningmsg)
 
 void ErrorHandler::syntaxError(ParseState ps, sal_Int32 lineNumber, const sal_Char* errmsg)
 {
-    errorHeader(ErrorCode::SyntaxError, lineNumber);
+    errorHeader(EIDL_SYNTAX_ERROR, lineNumber);
     fprintf(stderr, "%s: %s\n", parseStateToMessage(ps), errmsg);
     idlc()->incErrorCount();
 }
 
 void ErrorHandler::coercionError(AstExpression *pExpr, ExprType et)
 {
-    errorHeader(ErrorCode::CoercionFailure);
+    errorHeader(EIDL_COERCION_FAILURE);
     fprintf(stderr, "'%s' to '%s'\n", pExpr->toString().getStr(),
             exprTypeToString(et));
     idlc()->incErrorCount();
@@ -482,7 +512,7 @@ void ErrorHandler::coercionError(AstExpression *pExpr, ExprType et)
 
 void ErrorHandler::lookupError(const OString& n)
 {
-    errorHeader(ErrorCode::IdentNotFound);
+    errorHeader(EIDL_LOOKUP_ERROR);
     fprintf(stderr, "'%s'\n", n.getStr());
     idlc()->incErrorCount();
 }
@@ -503,7 +533,7 @@ void ErrorHandler::flagError(ErrorCode e, sal_uInt32 flag)
 
 void ErrorHandler::noTypeError(AstDeclaration const * pDecl)
 {
-    errorHeader(ErrorCode::NotAType);
+    errorHeader(EIDL_NOT_A_TYPE);
     fprintf(stderr, "'%s'\n", pDecl->getScopedName().getStr());
     idlc()->incErrorCount();
 }
@@ -534,12 +564,12 @@ void ErrorHandler::inheritanceError(NodeType nodeType, const OString* name, AstD
          (pDecl->getNodeType() == NT_interface) &&
          !(static_cast<AstInterface*>(pDecl)->isDefined()) )
     {
-        errorHeader(ErrorCode::CannotInheritFromForward);
+        errorHeader(EIDL_INHERIT_FWD_ERROR);
         fprintf(stderr, "interface '%s' cannot inherit from forward declared interface '%s'\n",
                 name->getStr(), pDecl->getScopedName().getStr());
     } else
     {
-        errorHeader(ErrorCode::CantInherit);
+        errorHeader(EIDL_CANT_INHERIT);
         fprintf(stderr, "%s '%s' from '%s'\n",
                 nodeTypeName(nodeType), name->getStr(),
                 pDecl->getScopedName().getStr());
@@ -550,7 +580,7 @@ void ErrorHandler::inheritanceError(NodeType nodeType, const OString* name, AstD
 void ErrorHandler::forwardLookupError(const AstDeclaration* pForward,
                                       const OString& name)
 {
-    errorHeader(ErrorCode::ForwardDeclLookup);
+    errorHeader(EIDL_FWD_DECL_LOOKUP);
     fprintf(stderr, "trying to look up '%s' in undefined forward declared interface '%s'\n",
             pForward->getScopedName().getStr(), name.getStr());
     idlc()->incErrorCount();
@@ -559,21 +589,21 @@ void ErrorHandler::forwardLookupError(const AstDeclaration* pForward,
 void ErrorHandler::constantExpected(AstDeclaration* pDecl,
                                     const OString& name)
 {
-    errorHeader(ErrorCode::ExpectedConstant);
+    errorHeader(EIDL_CONSTANT_EXPECTED);
     fprintf(stderr, "'%s' is bound to '%s'\n", name.getStr(), pDecl->getScopedName().getStr());
     idlc()->incErrorCount();
 }
 
 void ErrorHandler::evalError(AstExpression* pExpr)
 {
-    errorHeader(ErrorCode::Eval);
+    errorHeader(EIDL_EVAL_ERROR);
     fprintf(stderr, "'%s'\n", pExpr->toString().getStr());
     idlc()->incErrorCount();
 }
 
 bool ErrorHandler::checkPublished(AstDeclaration const * decl, bool bOptional) {
     if (idlc()->isPublished() && !decl->isPublished() && !bOptional) {
-        error1(ErrorCode::PublishedusesUnpublished, decl);
+        error1(EIDL_PUBLISHED_USES_UNPUBLISHED, decl);
         return false;
     } else {
         return true;

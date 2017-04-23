@@ -174,7 +174,7 @@ sal_uLong SwASCWriter::WriteStream()
                 bTstFly = false;        // Testing once is enough
             }
 
-            if( !pCurPam->Move( fnMoveForward, GoInNode ) )
+            if( !pCurPam->Move( fnMoveForward, fnGoNode ) )
                 break;
 
             if( bShowProgress )

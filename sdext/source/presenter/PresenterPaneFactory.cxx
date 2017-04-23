@@ -115,6 +115,7 @@ PresenterPaneFactory::~PresenterPaneFactory()
 }
 
 void SAL_CALL PresenterPaneFactory::disposing()
+    throw (RuntimeException)
 {
     Reference<XConfigurationController> xCC (mxConfigurationControllerWeak);
     if (xCC.is())
@@ -140,6 +141,7 @@ void SAL_CALL PresenterPaneFactory::disposing()
 
 Reference<XResource> SAL_CALL PresenterPaneFactory::createResource (
     const Reference<XResourceId>& rxPaneId)
+    throw (RuntimeException, IllegalArgumentException, WrappedTargetException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -179,6 +181,7 @@ Reference<XResource> SAL_CALL PresenterPaneFactory::createResource (
 }
 
 void SAL_CALL PresenterPaneFactory::releaseResource (const Reference<XResource>& rxResource)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -297,10 +300,12 @@ Reference<XResource> PresenterPaneFactory::CreatePane (
             auto const pPane(dynamic_cast<PresenterSpritePane*>(xPane.get()));
             pDescriptor->maSpriteProvider = [pPane](){ return pPane->GetSprite(); };
             pDescriptor->mbIsSprite = true;
+            pDescriptor->mbNeedsClipping = false;
         }
         else
         {
             pDescriptor->mbIsSprite = false;
+            pDescriptor->mbNeedsClipping = true;
         }
 
         // Get the window of the frame and make that visible.
@@ -312,11 +317,12 @@ Reference<XResource> PresenterPaneFactory::CreatePane (
 }
 
 void PresenterPaneFactory::ThrowIfDisposed() const
+    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
         throw lang::DisposedException (
-            "PresenterPaneFactory object has already been disposed",
+            OUString( "PresenterPaneFactory object has already been disposed"),
             const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }

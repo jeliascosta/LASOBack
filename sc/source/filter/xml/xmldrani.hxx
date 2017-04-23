@@ -23,27 +23,33 @@
 #include <xmloff/xmlimp.hxx>
 #include <com/sun/star/sheet/DataImportMode.hpp>
 #include <com/sun/star/sheet/SubTotalColumn.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/sheet/TableFilterField2.hpp>
+#include <com/sun/star/table/CellAddress.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include <com/sun/star/table/TableOrientation.hpp>
 
 #include "dbdata.hxx"
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 #include <memory>
 
 class ScDBData;
 struct ScQueryParam;
 
-class ScXMLDatabaseRangesContext : public ScXMLImportContext
+class ScXMLDatabaseRangesContext : public SvXMLImportContext
 {
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
 
     ScXMLDatabaseRangesContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLDatabaseRangesContext() override;
+    virtual ~ScXMLDatabaseRangesContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -58,7 +64,7 @@ struct ScSubTotalRule
     css::uno::Sequence <css::sheet::SubTotalColumn> aSubTotalColumns;
 };
 
-class ScXMLDatabaseRangeContext : public ScXMLImportContext
+class ScXMLDatabaseRangeContext : public SvXMLImportContext
 {
     std::unique_ptr<ScQueryParam> mpQueryParam;
     ScRange         maRange;
@@ -68,7 +74,7 @@ class ScXMLDatabaseRangeContext : public ScXMLImportContext
     OUString        sSourceObject;
     css::uno::Sequence <css::beans::PropertyValue> aSortSequence;
     std::vector < ScSubTotalRule > aSubTotalRules;
-    ScRange         aFilterConditionSourceRangeAddress;
+    css::table::CellRangeAddress aFilterConditionSourceRangeAddress;
     css::sheet::DataImportMode nSourceType;
     sal_Int32       nRefresh;
     sal_Int16       nSubTotalsUserListIndex;
@@ -92,6 +98,9 @@ class ScXMLDatabaseRangeContext : public ScXMLImportContext
     bool            bByRow;
     ScDBCollection::RangeType meRangeType;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
     std::unique_ptr<ScDBData> ConvertToDBData(const OUString& rName);
 
 public:
@@ -100,7 +109,7 @@ public:
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLDatabaseRangeContext() override;
+    virtual ~ScXMLDatabaseRangeContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -122,14 +131,17 @@ public:
     void SetSubTotalsSortGroups(const bool bTemp) { bSubTotalsSortGroups = bTemp; }
     void AddSubTotalRule(const ScSubTotalRule& rRule) { aSubTotalRules.push_back(rRule); }
     void SetSortSequence(const css::uno::Sequence <css::beans::PropertyValue>& aTempSortSequence) { aSortSequence = aTempSortSequence; }
-    void SetFilterConditionSourceRangeAddress(const ScRange& aRange) { aFilterConditionSourceRangeAddress = aRange;
-                                                                       bFilterConditionSourceRange = true; }
+    void SetFilterConditionSourceRangeAddress(const css::table::CellRangeAddress& aTemp) { aFilterConditionSourceRangeAddress = aTemp;
+                                                                                                    bFilterConditionSourceRange = true; }
 };
 
-class ScXMLSourceSQLContext : public ScXMLImportContext
+class ScXMLSourceSQLContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext*  pDatabaseRangeContext;
     OUString               sDBName;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -138,7 +150,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSourceSQLContext() override;
+    virtual ~ScXMLSourceSQLContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -147,10 +159,13 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLSourceTableContext : public ScXMLImportContext
+class ScXMLSourceTableContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext*  pDatabaseRangeContext;
     OUString               sDBName;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -159,7 +174,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSourceTableContext() override;
+    virtual ~ScXMLSourceTableContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -168,10 +183,13 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLSourceQueryContext : public ScXMLImportContext
+class ScXMLSourceQueryContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext*  pDatabaseRangeContext;
     OUString               sDBName;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -180,7 +198,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSourceQueryContext() override;
+    virtual ~ScXMLSourceQueryContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -189,9 +207,12 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLConResContext : public ScXMLImportContext
+class ScXMLConResContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext*  pDatabaseRangeContext;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -200,7 +221,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLConResContext() override;
+    virtual ~ScXMLConResContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -209,9 +230,12 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLSubTotalRulesContext : public ScXMLImportContext
+class ScXMLSubTotalRulesContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext* pDatabaseRangeContext;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -221,7 +245,7 @@ public:
                                         css::xml::sax::XAttributeList>& xAttrList,
                                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSubTotalRulesContext() override;
+    virtual ~ScXMLSubTotalRulesContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -230,9 +254,12 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLSortGroupsContext : public ScXMLImportContext
+class ScXMLSortGroupsContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext* pDatabaseRangeContext;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -241,7 +268,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSortGroupsContext() override;
+    virtual ~ScXMLSortGroupsContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -250,10 +277,13 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLSubTotalRuleContext : public ScXMLImportContext
+class ScXMLSubTotalRuleContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext*  pDatabaseRangeContext;
     ScSubTotalRule              aSubTotalRule;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -262,7 +292,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSubTotalRuleContext() override;
+    virtual ~ScXMLSubTotalRuleContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -275,11 +305,14 @@ public:
     aSubTotalRule.aSubTotalColumns[aSubTotalRule.aSubTotalColumns.getLength() - 1] = rSubTotalColumn; }
 };
 
-class ScXMLSubTotalFieldContext : public ScXMLImportContext
+class ScXMLSubTotalFieldContext : public SvXMLImportContext
 {
     ScXMLSubTotalRuleContext* pSubTotalRuleContext;
     OUString sFieldNumber;
     OUString sFunction;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -288,7 +321,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLSubTotalRuleContext* pSubTotalRuleContext);
 
-    virtual ~ScXMLSubTotalFieldContext() override;
+    virtual ~ScXMLSubTotalFieldContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

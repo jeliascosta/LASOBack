@@ -24,7 +24,6 @@
 #include "oox/dump/pptxdumper.hxx"
 
 #include <com/sun/star/drawing/XShape.hpp>
-#include <com/sun/star/drawing/XShapes.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 
 #include <services.hxx>
@@ -48,7 +47,7 @@ uno::Sequence< OUString > SAL_CALL QuickDiagrammingImport_getSupportedServiceNam
     return aSeq;
 }
 
-uno::Reference< uno::XInterface > SAL_CALL QuickDiagrammingImport_createInstance( const Reference< XComponentContext >& rxContext )
+uno::Reference< uno::XInterface > SAL_CALL QuickDiagrammingImport_createInstance( const Reference< XComponentContext >& rxContext ) throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new QuickDiagrammingImport( rxContext ));
 }
@@ -57,7 +56,7 @@ QuickDiagrammingImport::QuickDiagrammingImport( const css::uno::Reference< css::
     : XmlFilterBase( rxContext )
 {}
 
-bool QuickDiagrammingImport::importDocument()
+bool QuickDiagrammingImport::importDocument() throw (css::uno::RuntimeException, std::exception)
 {
     /*  to activate the PPTX dumper, define the environment variable
         OOO_PPTXDUMPER and insert the full path to the file
@@ -113,7 +112,7 @@ oox::drawingml::chart::ChartConverter* QuickDiagrammingImport::getChartConverter
     return nullptr;
 }
 
-OUString QuickDiagrammingImport::getImplementationName()
+OUString QuickDiagrammingImport::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return QuickDiagrammingImport_getImplementationName();
 }

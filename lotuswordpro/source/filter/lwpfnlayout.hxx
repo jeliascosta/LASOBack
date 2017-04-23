@@ -71,7 +71,7 @@ class LwpFootnoteLayout : public LwpTableLayout
 {
 public:
     LwpFootnoteLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFootnoteLayout() override;
+    virtual ~LwpFootnoteLayout();
     void RegisterStyle() override;
     virtual void XFConvert(XFContentContainer * pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_FOOTNOTE_LAYOUT;}
@@ -87,7 +87,7 @@ class LwpFnRowLayout : public LwpRowLayout
 {
 public:
     LwpFnRowLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFnRowLayout() override;
+    virtual ~LwpFnRowLayout();
     void RegisterStyle() override;
     virtual void XFConvert(XFContentContainer * pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_FOOTNOTE_ROW_LAYOUT;}
@@ -103,7 +103,7 @@ class LwpFnCellLayout : public LwpCellLayout
 {
 public:
     LwpFnCellLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFnCellLayout() override;
+    virtual ~LwpFnCellLayout();
     void RegisterStyle() override;
     virtual void XFConvert(XFContentContainer * pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_FOOTNOTE_CELL_LAYOUT;}
@@ -119,7 +119,7 @@ class LwpEndnoteLayout : public LwpTableLayout
 {
 public:
     LwpEndnoteLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpEndnoteLayout() override;
+    virtual ~LwpEndnoteLayout();
     void RegisterStyle() override;
     virtual void XFConvert(XFContentContainer * pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_ENDNOTE_LAYOUT;}
@@ -135,7 +135,7 @@ class LwpEnSuperTableLayout : public LwpSuperTableLayout
 {
 public:
     LwpEnSuperTableLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpEnSuperTableLayout() override;
+    virtual ~LwpEnSuperTableLayout();
     void RegisterStyle() override;
     void XFConvert(XFContentContainer* pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_ENDNOTE_SUPERTABLE_LAYOUT;}
@@ -152,7 +152,7 @@ class LwpFnSuperTableLayout : public LwpEnSuperTableLayout
 {
 public:
     LwpFnSuperTableLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFnSuperTableLayout() override;
+    virtual ~LwpFnSuperTableLayout();
     void RegisterStyle() override;
     void XFConvert(XFContentContainer* pCont) override;
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_FOOTNOTE_SUPERTABLE_LAYOUT;}
@@ -169,7 +169,7 @@ class LwpContFromLayout : public LwpPlacableLayout
 {
 public:
     LwpContFromLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpContFromLayout() override;
+    virtual ~LwpContFromLayout();
     void RegisterStyle() override;
     void XFConvert(XFContentContainer* pCont) override;
 protected:
@@ -184,7 +184,7 @@ class LwpContOnLayout : public LwpPlacableLayout
 {
 public:
     LwpContOnLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpContOnLayout() override;
+    virtual ~LwpContOnLayout();
     void RegisterStyle() override;
     void XFConvert(XFContentContainer* pCont) override;
 protected:

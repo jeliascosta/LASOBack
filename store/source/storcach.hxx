@@ -20,10 +20,6 @@
 #ifndef INCLUDED_STORE_SOURCE_STORCACH_HXX
 #define INCLUDED_STORE_SOURCE_STORCACH_HXX
 
-#include <sal/config.h>
-
-#include <memory>
-
 #include "sal/types.h"
 #include "rtl/ref.hxx"
 
@@ -47,7 +43,7 @@ class PageCache :
 {
     // Representation
     static size_t const theTableSize = 32;
-    static_assert((theTableSize & (theTableSize-1)) == 0, "table size should be a power of 2");
+    static_assert(STORE_IMPL_ISP2(theTableSize), "must be the case");
 
     Entry **     m_hash_table;
     Entry *      m_hash_table_0[theTableSize];
@@ -59,17 +55,17 @@ class PageCache :
     size_t       m_nHit;
     size_t       m_nMissed;
 
-    static int hash_Impl(sal_uInt32 a, size_t s, size_t q, size_t m)
+    static inline int hash_Impl(sal_uInt32 a, size_t s, size_t q, size_t m)
     {
         return static_cast<int>((((a) + ((a) >> (s)) + ((a) >> ((s) << 1))) >> (q)) & (m));
     }
-    int hash_index_Impl (sal_uInt32 nOffset)
+    inline int hash_index_Impl (sal_uInt32 nOffset)
     {
         return hash_Impl(nOffset, m_hash_shift, m_page_shift, m_hash_size - 1);
     }
 
     Entry * lookup_Impl (Entry * entry, sal_uInt32 nOffset);
-    void rescale_Impl (std::size_t new_size);
+    void rescale_Impl (sal_Size new_size);
 
 public:
     // Construction
@@ -81,19 +77,19 @@ public:
     /** load.
      */
     storeError lookupPageAt (
-        std::shared_ptr<PageData> & rxPage,
+        PageHolder & rxPage,
         sal_uInt32   nOffset);
 
     /** insert.
      */
     storeError insertPageAt (
-        std::shared_ptr<PageData> const & rxPage,
+        PageHolder const & rxPage,
         sal_uInt32         nOffset);
 
     /** update, or insert.
      */
     storeError updatePageAt (
-        std::shared_ptr<PageData> const & rxPage,
+        PageHolder const & rxPage,
         sal_uInt32         nOffset);
 
     /** remove (invalidate).
@@ -103,7 +99,7 @@ public:
 
 protected:
     // Destruction
-    virtual ~PageCache() override;
+    virtual ~PageCache();
 };
 
 /*========================================================================

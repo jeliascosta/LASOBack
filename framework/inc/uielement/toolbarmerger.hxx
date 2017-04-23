@@ -63,7 +63,7 @@ typedef ::std::vector< AddonToolbarItem > AddonToolbarItemContainer;
 struct ReferenceToolbarPathInfo
 {
     VclPtr<ToolBox>    pToolbar;
-    ToolBox::ImplToolItems::size_type nPos;
+    sal_uInt16         nPos;
     bool               bResult;
 };
 
@@ -88,7 +88,7 @@ class ToolBarMerger
                                                             const OUString& rReferencePoint );
 
         static bool       ProcessMergeOperation( ToolBox*                  pToolbar,
-                                                 ToolBox::ImplToolItems::size_type nPos,
+                                                 sal_uInt16                nPos,
                                                  sal_uInt16&               rItemId,
                                                  CommandToInfoMap&         rCommandMap,
                                                  const OUString&           rModuleIdentifier,
@@ -97,7 +97,7 @@ class ToolBarMerger
                                                  const AddonToolbarItemContainer& rItems );
 
         static bool       ProcessMergeFallback( ToolBox*                         pToolbar,
-                                                ToolBox::ImplToolItems::size_type nPos,
+                                                sal_uInt16                       nPos,
                                                 sal_uInt16&                      rItemId,
                                                 CommandToInfoMap&                rCommandMap,
                                                 const OUString&           rModuleIdentifier,
@@ -106,7 +106,7 @@ class ToolBarMerger
                                                 const AddonToolbarItemContainer& rItems );
 
         static bool       MergeItems( ToolBox*                  pToolbar,
-                                      ToolBox::ImplToolItems::size_type nPos,
+                                      sal_uInt16                nPos,
                                       sal_uInt16                nModIndex,
                                       sal_uInt16&               rItemId,
                                       CommandToInfoMap&         rCommandMap,
@@ -114,14 +114,14 @@ class ToolBarMerger
                                       const AddonToolbarItemContainer& rAddonToolbarItems );
 
         static bool       ReplaceItem( ToolBox*                  pToolbar,
-                                       ToolBox::ImplToolItems::size_type nPos,
+                                       sal_uInt16                nPos,
                                        sal_uInt16&               rItemId,
                                        CommandToInfoMap&         rCommandMap,
                                        const OUString&           rModuleIdentifier,
                                        const AddonToolbarItemContainer& rAddonToolbarItems );
 
         static bool       RemoveItems( ToolBox*           pToolbar,
-                                       ToolBox::ImplToolItems::size_type nPos,
+                                       sal_uInt16         nPos,
                                        const OUString&    rMergeCommandParameter );
 
         static ::cppu::OWeakObject* CreateController(
@@ -134,7 +134,7 @@ class ToolBarMerger
             const OUString& rControlType );
 
         static void CreateToolbarItem( ToolBox* pToolbox,
-                                       ToolBox::ImplToolItems::size_type nPos,
+                                       sal_uInt16 nPos,
                                        sal_uInt16 nItemId,
                                        const AddonToolbarItem& rAddonToolbarItem );
 

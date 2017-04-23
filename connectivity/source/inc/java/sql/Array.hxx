@@ -30,24 +30,24 @@ namespace connectivity
     //************ Class: java.sql.SQLWarning
 
     class java_sql_Array :  public java_lang_Object,
-                            public ::cppu::WeakImplHelper< css::sdbc::XArray>
+                                                        public ::cppu::WeakImplHelper< ::com::sun::star::sdbc::XArray>
     {
     protected:
     // Static data for the class
         static jclass theClass;
     public:
         virtual jclass getMyClass() const override;
-        virtual ~java_sql_Array() override;
+        virtual ~java_sql_Array();
         // A ctor that is needed for returning the object
         java_sql_Array( JNIEnv * pEnv, jobject myObj ) : java_lang_Object( pEnv, myObj ){}
 
         // XArray
-        virtual OUString SAL_CALL getBaseTypeName(  ) override;
-        virtual sal_Int32 SAL_CALL getBaseType(  ) override;
-        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getArray( const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
-        virtual css::uno::Sequence< css::uno::Any > SAL_CALL getArrayAtIndex( sal_Int32 index, sal_Int32 count, const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
-        virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL getResultSet( const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
-        virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL getResultSetAtIndex( sal_Int32 index, sal_Int32 count, const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+        virtual OUString SAL_CALL getBaseTypeName(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getBaseType(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > SAL_CALL getArray( const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > SAL_CALL getArrayAtIndex( sal_Int32 index, sal_Int32 count, const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL getResultSet( const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL getResultSetAtIndex( sal_Int32 index, sal_Int32 count, const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
     };
 }

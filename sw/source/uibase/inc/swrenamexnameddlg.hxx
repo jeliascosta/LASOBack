@@ -24,7 +24,10 @@
 #include <vcl/edit.hxx>
 #include <vcl/button.hxx>
 #include <actctrl.hxx>
+#include <com/sun/star/frame/XController.hpp>
+#include <com/sun/star/text/XTextCursor.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/awt/XControl.hpp>
 #include <com/sun/star/container/XNamed.hpp>
 
 class SwRenameXNamedDlg : public ModalDialog
@@ -38,14 +41,14 @@ class SwRenameXNamedDlg : public ModalDialog
     css::uno::Reference< css::container::XNameAccess >   xSecondAccess;
     css::uno::Reference< css::container::XNameAccess >   xThirdAccess;
 
-    DECL_LINK(OkHdl, Button*, void);
-    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(OkHdl, Button*, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
 
 public:
     SwRenameXNamedDlg( vcl::Window* pParent,
                     css::uno::Reference< css::container::XNamed > & xNamed,
                     css::uno::Reference< css::container::XNameAccess > & xNameAccess );
-    virtual ~SwRenameXNamedDlg() override;
+    virtual ~SwRenameXNamedDlg();
     virtual void dispose() override;
 
     void SetForbiddenChars(const OUString& rSet)

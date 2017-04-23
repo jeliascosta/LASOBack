@@ -62,7 +62,7 @@ SwFieldDokPage::SwFieldDokPage(vcl::Window* pParent, const SfxItemSet *const pCo
     m_pSelectionLB->set_height_request(nHeight);
     m_pFormatLB->set_height_request(nHeight);
 
-    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MapUnit::MapAppFont)).Width();
+    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MAP_APPFONT)).Width();
     m_pTypeLB->set_width_request(nWidth);
     m_pSelectionLB->set_width_request(nWidth);
     m_pFormatLB->set_width_request(nWidth);
@@ -205,7 +205,7 @@ void SwFieldDokPage::Reset(const SfxItemSet* )
     }
 }
 
-IMPL_LINK_NOARG(SwFieldDokPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldDokPage, TypeHdl, ListBox&, void)
 {
     // save old ListBoxPos
     const sal_Int32 nOld = GetTypeSel();
@@ -458,7 +458,7 @@ void SwFieldDokPage::AddSubType(sal_uInt16 nTypeId)
     m_pSelectionLB->SetEntryData(nPos, reinterpret_cast<void*>(nTypeId));
 }
 
-IMPL_LINK_NOARG(SwFieldDokPage, SubTypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldDokPage, SubTypeHdl, ListBox&, void)
 {
     sal_Int32 nPos = m_pSelectionLB->GetSelectEntryPos();
     if(nPos == LISTBOX_ENTRY_NOTFOUND)
@@ -525,7 +525,7 @@ sal_Int32 SwFieldDokPage::FillFormatLB(sal_uInt16 nTypeId)
     return nSize;
 }
 
-IMPL_LINK_NOARG(SwFieldDokPage, FormatHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwFieldDokPage, FormatHdl, ListBox&, void)
 {
     sal_uInt16 nTypeId = (sal_uInt16)reinterpret_cast<sal_uLong>(m_pTypeLB->GetEntryData(GetTypeSel()));
 

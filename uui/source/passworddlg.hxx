@@ -21,6 +21,7 @@
 #define INCLUDED_UUI_SOURCE_PASSWORDDLG_HXX
 
 #include <com/sun/star/task/PasswordRequestMode.hpp>
+#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/edit.hxx>
@@ -39,12 +40,12 @@ class PasswordDialog : public ModalDialog
     OUString        aPasswdMismatch;
 
 
-    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
 
 public:
     PasswordDialog( vcl::Window* pParent, css::task::PasswordRequestMode nDlgMode, ResMgr * pResMgr, const OUString& aDocURL,
-            bool bOpenToModify, bool bIsSimplePasswordRequest );
-    virtual ~PasswordDialog() override;
+            bool bOpenToModify = false, bool bIsSimplePasswordRequest = false );
+    virtual ~PasswordDialog();
     virtual void dispose() override;
 
     void            SetMinLen( sal_uInt16 nMin ) { nMinLen = nMin; }

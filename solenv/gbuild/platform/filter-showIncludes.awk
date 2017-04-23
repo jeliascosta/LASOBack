@@ -54,9 +54,9 @@ BEGIN {
             }
         }
     } else {
-        # because MSVC stupidly prints errors on stdout, it's
+        # because MSVC stupidly prints the include files on stderr, it's
         # necessary to forward everything that isn't matched by the pattern
-        # so users get to see them.
+        # so users get to see compiler errors
         if (firstline) { # ignore the line that just prints name of sourcefile
             firstline = 0
         } else {

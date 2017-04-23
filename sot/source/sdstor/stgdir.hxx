@@ -65,10 +65,10 @@ public:
     StgDirEntry(const void* pBuffer, sal_uInt32 nBufferLen,
                 sal_uInt64 nUnderlyingStreamSize, bool * pbOk);
     explicit StgDirEntry( const StgEntry& );
-    virtual ~StgDirEntry() override;
+    virtual ~StgDirEntry();
 
-    void Invalidate( bool );                // invalidate all open entries
-    void Enum( sal_Int32& );                // enumerate entries for iteration
+    void Invalidate( bool=false );          // invalidate all open entries
+    void Enum( sal_Int32& );                    // enumerate entries for iteration
     void DelTemp( bool );                   // delete temporary entries
     bool Store( StgDirStrm& );              // save entry into dir strm
     bool IsContained( StgDirEntry* );       // check if subentry
@@ -96,10 +96,10 @@ class StgDirStrm : public StgDataStrm
     void         SetupEntry( sal_Int32, StgDirEntry* );
 public:
     explicit StgDirStrm( StgIo& );
-    virtual ~StgDirStrm() override;
+    virtual ~StgDirStrm();
     virtual bool SetSize( sal_Int32 ) override;              // change the size
     bool         Store();
-    void*        GetEntry( sal_Int32 n, bool );// get an entry
+    void*        GetEntry( sal_Int32 n, bool=false );// get an entry
     StgDirEntry* GetRoot() { return m_pRoot; }
     StgDirEntry* Find( StgDirEntry&, const OUString& );
     StgDirEntry* Create( StgDirEntry&, const OUString&, StgEntryType );

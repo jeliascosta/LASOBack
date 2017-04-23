@@ -71,7 +71,7 @@ sdbcx::ObjectType OColumns::createObject(const OUString& _rName)
 }
 
 
-void OColumns::impl_refresh()
+void OColumns::impl_refresh() throw(RuntimeException)
 {
     m_pTable->refreshColumns();
 }

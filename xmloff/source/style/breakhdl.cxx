@@ -27,7 +27,7 @@
 using namespace ::com::sun::star;
 using namespace ::xmloff::token;
 
-SvXMLEnumMapEntry<sal_uInt16> const pXML_BreakTypes[] =
+SvXMLEnumMapEntry pXML_BreakTypes[] =
 {
     { XML_AUTO,         0 },
     { XML_COLUMN,       1 },

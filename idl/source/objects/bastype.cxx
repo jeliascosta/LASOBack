@@ -19,6 +19,7 @@
 
 
 #include <limits.h>
+#include <ctype.h>
 #include <bastype.hxx>
 #include <lex.hxx>
 #include <globals.hxx>
@@ -34,17 +35,24 @@ bool SvBOOL::ReadSvIdl( SvStringHashEntry * pName, SvTokenStream & rInStm )
 
     if( rTok.Is( pName ) )
     {
-        if( rInStm.ReadIf( '=' ) )
+        bool bOk = true;
+        bool bBracket = rInStm.ReadIf( '(' );
+        if( bBracket || rInStm.ReadIf( '=' ) )
         {
             rTok = rInStm.GetToken();
-            if( !rTok.IsBool() )
-                throw SvParseException(rInStm, "xxx");
-            *this = rTok.GetBool();
-            rInStm.GetToken_Next();
+            if( rTok.IsBool() )
+            {
+                *this = rTok.GetBool();
+
+                rInStm.GetToken_Next();
+            }
+            if( bOk && bBracket )
+                bOk = rInStm.ReadIf( ')' );
         }
         else
             *this = true; //default action set to TRUE
-        return true;
+        if( bOk )
+            return true;
     }
     rInStm.Seek( nTokPos );
     return false;

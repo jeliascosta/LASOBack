@@ -74,7 +74,7 @@ static OUString checkExtensions( const OUString& rExtensions )
         case sal_Unicode('*'):
             break;
         default:
-            aRet += OUStringLiteral1( *pSource );
+            aRet += OUString( *pSource );
         }
 
         pSource++;

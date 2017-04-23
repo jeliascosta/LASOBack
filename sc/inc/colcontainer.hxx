@@ -55,21 +55,8 @@ public:
         return static_cast<SCCOL>( aCols.size() );
     }
 
-    void resize( const size_t aNewSize );
-
+    bool ColumnExists( SCCOL nColIdx ) const;
     void Clear();
-
-    const ScColumn& back() const
-    {
-        assert(aCols.size() > 0);
-        return *aCols.back();
-    }
-
-    ScColumn& back()
-    {
-        assert(aCols.size() > 0);
-        return *aCols.back();
-    }
 };
 
 

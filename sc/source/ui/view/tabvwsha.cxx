@@ -63,7 +63,7 @@
 
 using namespace com::sun::star;
 
-bool ScTabViewShell::GetFunction( OUString& rFuncStr, FormulaError nErrCode )
+bool ScTabViewShell::GetFunction( OUString& rFuncStr, sal_uInt16 nErrCode )
 {
     OUString aStr;
 
@@ -79,9 +79,9 @@ bool ScTabViewShell::GetFunction( OUString& rFuncStr, FormulaError nErrCode )
         ScSubTotalFunc eFunc = (ScSubTotalFunc)nFunc;
 
         if (bIgnoreError && (eFunc == SUBTOTAL_FUNC_CNT || eFunc == SUBTOTAL_FUNC_CNT2))
-            nErrCode = FormulaError::NONE;
+            nErrCode = 0;
 
-        if (nErrCode != FormulaError::NONE)
+        if (nErrCode)
         {
             rFuncStr = ScGlobal::GetLongErrorString(nErrCode);
             return true;
@@ -478,6 +478,7 @@ void ScTabViewShell::ExecuteCellFormatDlg(SfxRequest& rReq, const OString &rName
 
     const ScPatternAttr*    pOldAttrs       = GetSelectionPattern();
 
+    std::unique_ptr<SfxAbstractTabDialog> pDlg;
     std::unique_ptr<SfxItemSet> pOldSet(new SfxItemSet(pOldAttrs->GetItemSet()));
     std::unique_ptr<SvxNumberInfoItem> pNumberInfoItem;
 
@@ -537,7 +538,7 @@ void ScTabViewShell::ExecuteCellFormatDlg(SfxRequest& rReq, const OString &rName
     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScAttrDlg(GetDialogParent(), pOldSet.get()));
+    pDlg.reset(pFact->CreateScAttrDlg(GetDialogParent(), pOldSet.get()));
 
     if (!rName.isEmpty())
         pDlg->SetCurPageId(rName);
@@ -617,7 +618,7 @@ void ScTabViewShell::ExecuteInputDirect()
 
 void ScTabViewShell::UpdateInputHandler( bool bForce /* = sal_False */, bool bStopEditing /* = sal_True */ )
 {
-    ScInputHandler* pHdl = mpInputHandler ? mpInputHandler.get() : SC_MOD()->GetInputHdl();
+    ScInputHandler* pHdl = pInputHandler ? pInputHandler : SC_MOD()->GetInputHdl();
 
     if ( pHdl )
     {
@@ -694,7 +695,7 @@ void ScTabViewShell::UpdateInputHandler( bool bForce /* = sal_False */, bool bSt
 
         //  if using the view's local input handler, this view can always be set
         //  as current view inside NotifyChange.
-        ScTabViewShell* pSourceSh = mpInputHandler ? this : nullptr;
+        ScTabViewShell* pSourceSh = pInputHandler ? this : nullptr;
 
         pHdl->NotifyChange( &aState, bForce, pSourceSh, bStopEditing );
     }
@@ -707,7 +708,7 @@ void ScTabViewShell::UpdateInputHandler( bool bForce /* = sal_False */, bool bSt
 
 void ScTabViewShell::UpdateInputHandlerCellAdjust( SvxCellHorJustify eJust )
 {
-    if( ScInputHandler* pHdl = mpInputHandler ? mpInputHandler.get() : SC_MOD()->GetInputHdl() )
+    if( ScInputHandler* pHdl = pInputHandler ? pInputHandler : SC_MOD()->GetInputHdl() )
         pHdl->UpdateCellAdjust( eJust );
 }
 

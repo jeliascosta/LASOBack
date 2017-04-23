@@ -41,31 +41,42 @@ class TVFactory: public cppu::WeakImplHelper <
 
         TVFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-        virtual ~TVFactory() override;
+        virtual ~TVFactory();
 
         // XServiceInfo
         virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName(
+            void )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService(
+            const OUString& ServiceName )
+            throw(css::uno::RuntimeException, std::exception ) override;
 
         virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames(
+            void )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         // XMultiServiceFactory
 
         virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
         createInstance(
-            const OUString& aServiceSpecifier ) override;
+            const OUString& aServiceSpecifier )
+            throw( css::uno::Exception,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
         createInstanceWithArguments(
             const OUString& ServiceSpecifier,
-            const css::uno::Sequence< css::uno::Any >& Arguments ) override;
+            const css::uno::Sequence< css::uno::Any >& Arguments )
+            throw( css::uno::Exception,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Sequence< OUString > SAL_CALL
-        getAvailableServiceNames( ) override;
+        getAvailableServiceNames( )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         // Other
 

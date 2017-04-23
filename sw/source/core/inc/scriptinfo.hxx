@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SW_SOURCE_CORE_INC_SCRIPTINFO_HXX
 #define INCLUDED_SW_SOURCE_CORE_INC_SCRIPTINFO_HXX
 
-#include <vector>
+#include <list>
 #include <deque>
 #include "swscanner.hxx"
 #include <rtl/ustrbuf.hxx>
@@ -29,7 +29,7 @@
 class SwTextNode;
 class Point;
 class MultiSelection;
-typedef std::vector< sal_Int32 > PositionList;
+typedef std::list< sal_Int32 > PositionList;
 enum class SwFontScript;
 
 #define SPACING_PRECISION_FACTOR 100
@@ -46,7 +46,7 @@ private:
     {
         sal_Int32 position; //!< Character position at which we change script
         sal_uInt8       type;     //!< Script type (Latin/Asian/Complex) that we change to.
-        ScriptChangeInfo(sal_Int32 pos, sal_uInt8 typ) : position(pos), type(typ) {};
+        inline ScriptChangeInfo(sal_Int32 pos, sal_uInt8 typ) : position(pos), type(typ) {};
     };
     //TODO - This is sorted, so should probably be a std::set rather than vector.
     //       But we also use random access (probably unnecessarily).
@@ -56,7 +56,7 @@ private:
     {
         sal_Int32 position; //!< Character position at which we change direction.
         sal_uInt8       type;     //!< Direction that we change to.
-        DirectionChangeInfo(sal_Int32 pos, sal_uInt8 typ) : position(pos), type(typ) {};
+        inline DirectionChangeInfo(sal_Int32 pos, sal_uInt8 typ) : position(pos), type(typ) {};
     };
     std::vector<DirectionChangeInfo> aDirectionChanges;
     std::deque< sal_Int32 > aKashida;
@@ -70,7 +70,7 @@ private:
         sal_Int32 position; //!< Character position where the change occurs.
         sal_Int32 length;   //!< Length of the segment.
         CompType  type;     //!< Type of compression that we change to.
-        CompressionChangeInfo(sal_Int32 pos, sal_Int32 len, CompType typ) : position(pos), length(len), type(typ) {};
+        inline CompressionChangeInfo(sal_Int32 pos, sal_Int32 len, CompType typ) : position(pos), length(len), type(typ) {};
     };
     std::vector<CompressionChangeInfo> aCompressionChanges;
 #ifdef DBG_UTIL
@@ -112,7 +112,7 @@ public:
     }
 
     // get default direction for paragraph
-    sal_uInt8 GetDefaultDir() const { return nDefaultDir; };
+    inline sal_uInt8 GetDefaultDir() const { return nDefaultDir; };
 
     // array operations, nCnt refers to array position
     size_t CountScriptChg() const { return aScriptChanges.size(); }
@@ -301,7 +301,7 @@ public:
 /** retrieves kashida opportunities for a given text range.
 
    pKashidaPositions: buffer to receive the char indices of the
-                      kashida opportunities relative to the paragraph
+                      kashida opportunties relative to the paragraph
 */
     void GetKashidaPositions(sal_Int32 nStt, sal_Int32 nLen,
        sal_Int32* pKashidaPosition);
@@ -351,13 +351,6 @@ public:
                                   long* pScrArray, sal_Int32 nIdx,
                                   sal_Int32 nLen, sal_Int32 nNumberOfBlanks = 0,
                                   long nSpaceAdd = 0 );
-
-    static sal_Int32 CountCJKCharacters( const OUString &rText, sal_Int32 nPos, sal_Int32 nEnd, LanguageType aLang);
-
-    static void CJKJustify( const OUString& rText, long* pKernArray,
-                                  long* pScrArray, sal_Int32 nStt,
-                                  sal_Int32 nLen, LanguageType aLang,
-                                  long nSpaceAdd );
 
     static SwScriptInfo* GetScriptInfo( const SwTextNode& rNode,
                                         bool bAllowInvalid = false );

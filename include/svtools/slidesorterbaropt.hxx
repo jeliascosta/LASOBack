@@ -25,7 +25,6 @@
 #include <osl/mutex.hxx>
 #include <rtl/ustring.hxx>
 #include <unotools/options.hxx>
-#include <memory>
 
 /** forward declaration to our private date container implementation
 
@@ -42,8 +41,18 @@ class SvtSlideSorterBarOptions_Impl;
 class SVT_DLLPUBLIC SvtSlideSorterBarOptions: public utl::detail::Options
 {
     public:
+        /** standard constructor and destructor
+
+            This will initialize an instance with default values.
+            We implement these class with a refcount mechanism! Every instance of this class increase it
+            at create and decrease it at delete time - but all instances use the same data container!
+            He is implemented as a static member ...
+
+            \sa    member m_nRefCount
+            \sa    member m_pDataContainer
+        */
         SvtSlideSorterBarOptions();
-        virtual ~SvtSlideSorterBarOptions() override;
+        virtual ~SvtSlideSorterBarOptions();
 
         bool GetVisibleImpressView() const;
         void SetVisibleImpressView( bool bVisible );
@@ -70,7 +79,17 @@ class SVT_DLLPUBLIC SvtSlideSorterBarOptions: public utl::detail::Options
         SVT_DLLPRIVATE static ::osl::Mutex& GetInitMutex();
 
     private:
-        std::shared_ptr<SvtSlideSorterBarOptions_Impl> m_pImpl;
+
+        /**
+            \attention
+            Don't initialize these static members in these headers!
+            \li Double defined symbols will be detected ...
+            \li and unresolved externals exist at linking time.
+            Do it in your source only.
+        */
+        static SvtSlideSorterBarOptions_Impl* m_pDataContainer    ;
+        static sal_Int32                      m_nRefCount         ;
+
 };
 
 #endif

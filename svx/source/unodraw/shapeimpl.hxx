@@ -24,62 +24,66 @@ class SvxShapeCaption : public SvxShapeText
 {
 public:
     explicit SvxShapeCaption( SdrObject* pObj ) throw();
-    virtual ~SvxShapeCaption() throw() override;
+    virtual ~SvxShapeCaption() throw();
 };
 class SvxPluginShape : public SvxOle2Shape
 {
 protected:
     // override these for special property handling in subcasses. Return true if property is handled
-    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) override;
-    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) override;
+    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 public:
     explicit SvxPluginShape( SdrObject* pObj ) throw();
-    virtual ~SvxPluginShape() throw() override;
+    virtual ~SvxPluginShape() throw();
 
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     using SvxUnoTextRangeBase::setPropertyValue;
 
-    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) override;
+    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) throw (css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage ) override;
+    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage = nullptr ) override;
 };
 class SvxAppletShape : public SvxOle2Shape
 {
 protected:
     // override these for special property handling in subcasses. Return true if property is handled
-    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) override;
-    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) override;
+    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 public:
     explicit SvxAppletShape( SdrObject* pObj ) throw();
-    virtual ~SvxAppletShape() throw() override;
+    virtual ~SvxAppletShape() throw();
 
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     using SvxUnoTextRangeBase::setPropertyValue;
 
-    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) override;
+    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) throw (css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage ) override;
+    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage = nullptr ) override;
 };
 class SvxFrameShape : public SvxOle2Shape
 {
 protected:
     // override these for special property handling in subcasses. Return true if property is handled
-    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) override;
+    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     virtual bool getPropertyValueImpl(const OUString& rName, const SfxItemPropertySimpleEntry* pProperty,
-        css::uno::Any& rValue) override;
+        css::uno::Any& rValue)
+            throw (css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException,
+                   std::exception) override;
 
 public:
     explicit SvxFrameShape( SdrObject* pObj ) throw();
-    virtual ~SvxFrameShape() throw() override;
+    virtual ~SvxFrameShape() throw();
 
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     using SvxUnoTextRangeBase::setPropertyValue;
 
-    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) override;
+    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames, const css::uno::Sequence< css::uno::Any >& aValues ) throw (css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage ) override;
+    virtual void Create( SdrObject* pNewOpj, SvxDrawPage* pNewPage = nullptr ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 
@@ -87,8 +91,8 @@ class SvxTableShape : public SvxShape
 {
 protected:
     // override these for special property handling in subcasses. Return true if property is handled
-    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) override;
-    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) override;
+    virtual bool setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+    virtual bool getPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     virtual void lock() override;
     virtual void unlock() override;
@@ -96,7 +100,7 @@ protected:
 public:
 
     explicit SvxTableShape( SdrObject* pObj ) throw();
-    virtual ~SvxTableShape() throw() override;
+    virtual ~SvxTableShape() throw();
 };
 
 SvxUnoPropertyMapProvider& getSvxMapProvider();

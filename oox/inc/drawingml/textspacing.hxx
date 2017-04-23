@@ -33,34 +33,34 @@ namespace oox { namespace drawingml {
     class TextSpacing
     {
     public:
-        enum class Unit {
-            Points = 0,
-            Percent
+        enum {
+            POINTS = 0,
+            PERCENT
         };
         TextSpacing()
-            : nUnit( Unit::Points ), nValue( 0 ), bHasValue( false )
+            : nUnit( POINTS ), nValue( 0 ), bHasValue( false )
             {
             }
-        TextSpacing( sal_Int32 nPoints ) : nUnit( Unit::Points ), nValue( nPoints ), bHasValue( true ){};
+        TextSpacing( sal_Int32 nPoints ) : nUnit( POINTS ), nValue( nPoints ), bHasValue( true ){};
         css::style::LineSpacing toLineSpacing() const
             {
                 css::style::LineSpacing aSpacing;
-                aSpacing.Mode = ( nUnit == Unit::Percent
+                aSpacing.Mode = ( nUnit == PERCENT
                                   ? css::style::LineSpacingMode::PROP
                                   :   css::style::LineSpacingMode::MINIMUM );
-                aSpacing.Height = static_cast< sal_Int16 >( nUnit == Unit::Percent ? nValue / 1000 :  nValue );
+                aSpacing.Height = static_cast< sal_Int16 >( nUnit == PERCENT ? nValue / 1000 :  nValue );
                 return aSpacing;
             }
         sal_Int32 toMargin( float fFontSize ) const
             {
-                if ( nUnit == Unit::Percent )
+                if ( nUnit == PERCENT )
                     return GetTextSpacingPoint(static_cast<sal_Int32>((fFontSize*nValue)/1000));
                 else
                     return nValue;
             }
-        Unit      nUnit;
+        sal_Int32 nUnit;
         sal_Int32 nValue;
-        bool      bHasValue;
+        bool  bHasValue;
     };
 
 } }

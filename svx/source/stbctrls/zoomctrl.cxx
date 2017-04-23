@@ -18,7 +18,6 @@
  */
 
 #include <i18nutil/unicode.hxx>
-#include <vcl/builder.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/status.hxx>
 #include <vcl/menu.hxx>
@@ -37,63 +36,61 @@
 
 SFX_IMPL_STATUSBAR_CONTROL(SvxZoomStatusBarControl,SvxZoomItem);
 
-class ZoomPopup_Impl
+class ZoomPopup_Impl : public PopupMenu
 {
 public:
     ZoomPopup_Impl( sal_uInt16 nZ, SvxZoomEnableFlags nValueSet );
 
-    sal_uInt16 GetZoom();
-    OString    GetCurItemIdent() const { return m_xMenu->GetCurItemIdent(); }
-
-    sal_uInt16 Execute(vcl::Window* pWindow, const Point& rPopupPos)
-    {
-        return m_xMenu->Execute(pWindow, rPopupPos);
-    }
+    sal_uInt16          GetZoom() const { return nZoom; }
+    sal_uInt16          GetCurId() const { return nCurId; }
 
 private:
-    VclBuilder          m_aBuilder;
-    VclPtr<PopupMenu>   m_xMenu;
     sal_uInt16          nZoom;
+    sal_uInt16          nCurId;
+
+    virtual void    Select() override;
 };
 
+
 ZoomPopup_Impl::ZoomPopup_Impl( sal_uInt16 nZ, SvxZoomEnableFlags nValueSet )
-    : m_aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/zoommenu.ui", "")
-    , m_xMenu(m_aBuilder.get_menu("menu"))
+    : PopupMenu(ResId(RID_SVXMNU_ZOOM, DIALOG_MGR()))
     , nZoom(nZ)
+    , nCurId(0)
 {
     if ( !(SvxZoomEnableFlags::N50 & nValueSet) )
-        m_xMenu->EnableItem("50", false);
+            EnableItem( ZOOM_50, false );
     if ( !(SvxZoomEnableFlags::N100 & nValueSet) )
-        m_xMenu->EnableItem("100", false);
+            EnableItem( ZOOM_100, false );
     if ( !(SvxZoomEnableFlags::N150 & nValueSet) )
-        m_xMenu->EnableItem("150", false);
+            EnableItem( ZOOM_150, false );
     if ( !(SvxZoomEnableFlags::N200 & nValueSet) )
-        m_xMenu->EnableItem("200", false);
+            EnableItem( ZOOM_200, false );
     if ( !(SvxZoomEnableFlags::OPTIMAL & nValueSet) )
-        m_xMenu->EnableItem("optimal", false);
+            EnableItem( ZOOM_OPTIMAL, false );
     if ( !(SvxZoomEnableFlags::WHOLEPAGE & nValueSet) )
-        m_xMenu->EnableItem("page", false);
+            EnableItem( ZOOM_WHOLE_PAGE, false );
     if ( !(SvxZoomEnableFlags::PAGEWIDTH & nValueSet) )
-        m_xMenu->EnableItem("width", false);
+            EnableItem( ZOOM_PAGE_WIDTH, false );
 }
 
-sal_uInt16 ZoomPopup_Impl::GetZoom()
-{
-    OString sIdent = GetCurItemIdent();
-    if (sIdent == "200")
-        nZoom = 200;
-    else if (sIdent == "150")
-        nZoom = 150;
-    else if (sIdent == "100")
-        nZoom = 100;
-    else if (sIdent == "75")
-        nZoom =  75;
-    else if (sIdent == "50")
-        nZoom =  50;
-    else if (sIdent == "optimal" || sIdent == "width" || sIdent == "page")
-        nZoom = 0;
 
-    return nZoom;
+void ZoomPopup_Impl::Select()
+{
+    nCurId = GetCurItemId();
+
+    switch ( nCurId )
+    {
+        case ZOOM_200:          nZoom = 200; break;
+        case ZOOM_150:          nZoom = 150; break;
+        case ZOOM_100:          nZoom = 100; break;
+        case ZOOM_75:           nZoom =  75; break;
+        case ZOOM_50:           nZoom =  50; break;
+
+        case ZOOM_OPTIMAL:
+        case ZOOM_PAGE_WIDTH:
+        case ZOOM_WHOLE_PAGE:   nZoom = 0; break;
+
+    }
 }
 
 SvxZoomStatusBarControl::SvxZoomStatusBarControl( sal_uInt16 _nSlotId,
@@ -145,21 +142,20 @@ void SvxZoomStatusBarControl::Command( const CommandEvent& rCEvt )
 {
     if ( CommandEventId::ContextMenu == rCEvt.GetCommand() && bool(nValueSet) )
     {
-        ZoomPopup_Impl aPop(nZoom, nValueSet);
+        ZoomPopup_Impl aPop( nZoom, nValueSet );
         StatusBar& rStatusbar = GetStatusBar();
 
-        if (aPop.Execute(&rStatusbar, rCEvt.GetMousePosPixel()) && (nZoom != aPop.GetZoom() || !nZoom))
+        if ( aPop.Execute( &rStatusbar, rCEvt.GetMousePosPixel() ) && ( nZoom != aPop.GetZoom() || !nZoom ) )
         {
             nZoom = aPop.GetZoom();
-            SvxZoomItem aZoom(SvxZoomType::PERCENT, nZoom, GetId());
+            SvxZoomItem aZoom( SvxZoomType::PERCENT, nZoom, GetId() );
 
-            OString sIdent = aPop.GetCurItemIdent();
-            if (sIdent == "optimal")
-                aZoom.SetType(SvxZoomType::OPTIMAL);
-            else if (sIdent == "width")
-                aZoom.SetType(SvxZoomType::PAGEWIDTH);
-            else if (sIdent == "page")
-                aZoom.SetType(SvxZoomType::WHOLEPAGE);
+            switch( aPop.GetCurId() )
+            {
+            case ZOOM_OPTIMAL:      aZoom.SetType( SvxZoomType::OPTIMAL ); break;
+            case ZOOM_PAGE_WIDTH:   aZoom.SetType( SvxZoomType::PAGEWIDTH ); break;
+            case ZOOM_WHOLE_PAGE:   aZoom.SetType( SvxZoomType::WHOLEPAGE ); break;
+            }
 
             css::uno::Any a;
             INetURLObject aObj( m_aCommandURL );
@@ -181,7 +177,7 @@ SFX_IMPL_STATUSBAR_CONTROL(SvxZoomPageStatusBarControl,SfxVoidItem);
 SvxZoomPageStatusBarControl::SvxZoomPageStatusBarControl(sal_uInt16 _nSlotId,
     sal_uInt16 _nId, StatusBar& rStb)
     : SfxStatusBarControl(_nSlotId, _nId, rStb)
-    , maImage(BitmapEx(SVX_RES(RID_SVXBMP_ZOOM_PAGE)))
+    , maImage(SVX_RES(RID_SVXBMP_ZOOM_PAGE))
 {
     GetStatusBar().SetQuickHelpText(GetId(), SVX_RESSTR(RID_SVXSTR_FIT_SLIDE));
 }
@@ -189,7 +185,7 @@ SvxZoomPageStatusBarControl::SvxZoomPageStatusBarControl(sal_uInt16 _nSlotId,
 void SvxZoomPageStatusBarControl::Paint(const UserDrawEvent& rUsrEvt)
 {
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
-    tools::Rectangle aRect = rUsrEvt.GetRect();
+    Rectangle aRect = rUsrEvt.GetRect();
     Point aPt = centerImage(aRect, maImage);
     pDev->DrawImage(aPt, maImage);
 }

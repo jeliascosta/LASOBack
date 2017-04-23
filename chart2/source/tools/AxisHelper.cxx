@@ -23,6 +23,7 @@
 #include "macros.hxx"
 #include "AxisIndexDefines.hxx"
 #include "LinePropertiesHelper.hxx"
+#include "ContainerHelper.hxx"
 #include "servicenames_coosystems.hxx"
 #include "DataSeriesHelper.hxx"
 #include "Scaling.hxx"
@@ -197,7 +198,7 @@ sal_Int32 AxisHelper::getExplicitNumberFormatKeyForAxis(
                     Reference< data::XDataSource > xSource( DataSourceHelper::getUsedData( xChartDoc ) );
                     if( xSource.is() )
                     {
-                        std::vector< Reference< chart2::data::XLabeledDataSequence > > aXValues(
+                        ::std::vector< Reference< chart2::data::XLabeledDataSequence > > aXValues(
                             DataSeriesHelper::getAllDataSequencesByRole( xSource->getDataSequences(), "values-x", true ) );
                         if( aXValues.empty() )
                         {
@@ -232,7 +233,7 @@ sal_Int32 AxisHelper::getExplicitNumberFormatKeyForAxis(
 
         if( !bFormatSet )
         {
-            typedef std::map< sal_Int32, sal_Int32 > tNumberformatFrequency;
+            typedef ::std::map< sal_Int32, sal_Int32 > tNumberformatFrequency;
             tNumberformatFrequency aKeyMap;
             bool bNumberFormatKeyFoundViaAttachedData = false;
 
@@ -330,7 +331,7 @@ sal_Int32 AxisHelper::getExplicitNumberFormatKeyForAxis(
         }
 
         if (nOldNumberFormat != nNumberFormatKey)
-            xProp->setPropertyValue(CHART_UNONAME_NUMFMT, uno::Any(nNumberFormatKey));
+            xProp->setPropertyValue(CHART_UNONAME_NUMFMT, uno::makeAny(nNumberFormatKey));
     }
 
     return nNumberFormatKey;
@@ -386,7 +387,7 @@ Reference< XAxis > AxisHelper::createAxis(
 
             Reference< beans::XPropertySet > xProp( xAxis, uno::UNO_QUERY );
             if( xProp.is() )
-                xProp->setPropertyValue("CrossoverPosition", uno::Any(eNewAxisPos) );
+                xProp->setPropertyValue("CrossoverPosition", uno::makeAny(eNewAxisPos) );
         }
 
         Reference< beans::XPropertySet > xProp( xAxis, uno::UNO_QUERY );
@@ -478,9 +479,9 @@ void AxisHelper::makeAxisVisible( const Reference< XAxis >& xAxis )
     Reference< beans::XPropertySet > xProps( xAxis, uno::UNO_QUERY );
     if( xProps.is() )
     {
-        xProps->setPropertyValue( "Show", uno::Any( true ) );
+        xProps->setPropertyValue( "Show", uno::makeAny( true ) );
         LinePropertiesHelper::SetLineVisible( xProps );
-        xProps->setPropertyValue( "DisplayLabels", uno::Any( true ) );
+        xProps->setPropertyValue( "DisplayLabels", uno::makeAny( true ) );
     }
 }
 
@@ -488,7 +489,7 @@ void AxisHelper::makeGridVisible( const Reference< beans::XPropertySet >& xGridP
 {
     if( xGridProperties.is() )
     {
-        xGridProperties->setPropertyValue( "Show", uno::Any( true ) );
+        xGridProperties->setPropertyValue( "Show", uno::makeAny( true ) );
         LinePropertiesHelper::SetLineVisible( xGridProperties );
     }
 }
@@ -504,7 +505,7 @@ void AxisHelper::makeAxisInvisible( const Reference< XAxis >& xAxis )
     Reference< beans::XPropertySet > xProps( xAxis, uno::UNO_QUERY );
     if( xProps.is() )
     {
-        xProps->setPropertyValue( "Show", uno::Any( false ) );
+        xProps->setPropertyValue( "Show", uno::makeAny( false ) );
     }
 }
 
@@ -512,8 +513,8 @@ void AxisHelper::hideAxisIfNoDataIsAttached( const Reference< XAxis >& xAxis, co
 {
     //axis is hidden if no data is attached anymore but data is available
     bool bOtherSeriesAttachedToThisAxis = false;
-    std::vector< Reference< chart2::XDataSeries > > aSeriesVector( DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
-    std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt = aSeriesVector.begin();
+    ::std::vector< Reference< chart2::XDataSeries > > aSeriesVector( DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
+    ::std::vector< Reference< chart2::XDataSeries > >::const_iterator aIt = aSeriesVector.begin();
     for( ; aIt != aSeriesVector.end(); ++aIt)
     {
         uno::Reference< chart2::XAxis > xCurrentAxis( DiagramHelper::getAttachedAxis( *aIt, xDiagram ), uno::UNO_QUERY );
@@ -555,7 +556,7 @@ void AxisHelper::makeGridInvisible( const Reference< beans::XPropertySet >& xGri
 {
     if( xGridProperties.is() )
     {
-        xGridProperties->setPropertyValue( "Show", uno::Any( false ) );
+        xGridProperties->setPropertyValue( "Show", uno::makeAny( false ) );
     }
 }
 
@@ -1057,8 +1058,8 @@ Reference< XCoordinateSystem > AxisHelper::getCoordinateSystemOfAxis(
             xCooSys = aCooSysList[nCooSysIndex];
             std::vector< Reference< XAxis > > aAllAxis( AxisHelper::getAllAxesOfCoordinateSystem( xCooSys ) );
 
-            std::vector< Reference< XAxis > >::iterator aFound =
-                  std::find( aAllAxis.begin(), aAllAxis.end(), xAxis );
+            ::std::vector< Reference< XAxis > >::iterator aFound =
+                  ::std::find( aAllAxis.begin(), aAllAxis.end(), xAxis );
             if( aFound != aAllAxis.end())
             {
                 xRet.set( xCooSys );
@@ -1155,8 +1156,8 @@ void AxisHelper::setRTLAxisLayout( const Reference< XCoordinateSystem >& xCooSys
 Reference< XChartType > AxisHelper::getFirstChartTypeWithSeriesAttachedToAxisIndex( const Reference< chart2::XDiagram >& xDiagram, const sal_Int32 nAttachedAxisIndex )
 {
     Reference< XChartType > xChartType;
-    std::vector< Reference< XDataSeries > > aSeriesVector( DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
-    std::vector< Reference< XDataSeries > >::const_iterator aIter = aSeriesVector.begin();
+    ::std::vector< Reference< XDataSeries > > aSeriesVector( DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
+    ::std::vector< Reference< XDataSeries > >::const_iterator aIter = aSeriesVector.begin();
     for( ; aIter != aSeriesVector.end(); ++aIter )
     {
         sal_Int32 nCurrentIndex = DataSeriesHelper::getAttachedAxisIndex( *aIter );

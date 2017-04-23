@@ -56,7 +56,7 @@ public:
         FrameView* pFrameView,
         const bool bIsCenterPane);
 
-    virtual ~SlideSorterViewShell() override;
+    virtual ~SlideSorterViewShell();
 
     /** Late initialization that has to be called after a new instance has
         completed its construction.
@@ -100,12 +100,12 @@ public:
             factor.
         */
     virtual void SetZoom (long int nZoom) override;
-    virtual void SetZoomRect (const ::tools::Rectangle& rZoomRect) override;
+    virtual void SetZoomRect (const Rectangle& rZoomRect) override;
 
     /** This is a callback method used by the active window to delegate its
         Paint() call to.  This view shell itself delegates it to the view.
     */
-    virtual void Paint(const ::tools::Rectangle& rRect, ::sd::Window* pWin) override;
+    virtual void Paint(const Rectangle& rRect, ::sd::Window* pWin) override;
 
     /** Place and size the controls and windows.  You may want to call this
         method when something has changed that for instance affects the
@@ -138,15 +138,15 @@ public:
     virtual sal_Int8 AcceptDrop (
         const AcceptDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow,
-        sal_uInt16 nPage,
-        sal_uInt16 nLayer ) override;
+        ::sd::Window* pTargetWindow = nullptr,
+        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
+        sal_uInt16 nLayer = SDRPAGE_NOTFOUND ) override;
     virtual sal_Int8 ExecuteDrop (
         const ExecuteDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow,
-        sal_uInt16 nPage,
-        sal_uInt16 nLayer) override;
+        ::sd::Window* pTargetWindow = nullptr,
+        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
+        sal_uInt16 nLayer = SDRPAGE_NOTFOUND) override;
 
     typedef ::std::vector<SdPage*> PageSelection;
 
@@ -168,7 +168,7 @@ public:
     /** Remove a listener that was called when the selection of the slide
         sorter changes.
         @param rListener
-            It is safe to pass a listener that was not added are has been
+            It is save to pass a listener that was not added are has been
             removed previously.  Such calls are ignored.
     */
     void RemoveSelectionChangeListener (const Link<LinkParamNone*,void>& rListener);

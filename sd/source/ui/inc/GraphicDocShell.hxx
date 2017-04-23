@@ -46,16 +46,16 @@ public:
     SFX_DECL_OBJECTFACTORY();
 
     GraphicDocShell (
-        SfxObjectCreateMode eMode,
-        bool bSdDataObj,
-        DocumentType=DocumentType::Draw);
+        SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED,
+        bool bSdDataObj=false,
+        DocumentType=DOCUMENT_TYPE_DRAW);
 
     GraphicDocShell (
         SfxModelFlags nModelCreationFlags,
-        bool bSdDataObj,
-        DocumentType=DocumentType::Draw);
+        bool bSdDataObj=false,
+        DocumentType=DOCUMENT_TYPE_DRAW);
 
-    virtual ~GraphicDocShell() override;
+    virtual ~GraphicDocShell();
 };
 
 } // end of namespace sd

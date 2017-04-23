@@ -22,6 +22,7 @@
 #include <osl/thread.h>
 #include <oox/helper/attributelist.hxx>
 #include <string.h>
+#include "biffinputstream.hxx"
 
 namespace oox {
 namespace xls {
@@ -52,15 +53,31 @@ BiffDecoderBase::~BiffDecoderBase()
     return mbValid ? ::comphelper::DocPasswordVerifierResult::OK : ::comphelper::DocPasswordVerifierResult::WrongPassword;
 }
 
+void BiffDecoderBase::decode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcData, sal_Int64 nStreamPos, sal_uInt16 nBytes )
+{
+    if( pnDestData && pnSrcData && (nBytes > 0) )
+    {
+        if( mbValid )
+            implDecode( pnDestData, pnSrcData, nStreamPos, nBytes );
+        else
+            memcpy( pnDestData, pnSrcData, nBytes );
+    }
+}
+
 BiffDecoder_XOR::BiffDecoder_XOR( const BiffDecoder_XOR& rDecoder ) :
     BiffDecoderBase(),  // must be called to prevent compiler warning
-    maCodec(),
+    maCodec( ::oox::core::BinaryCodec_XOR::CODEC_EXCEL ),
     maEncryptionData( rDecoder.maEncryptionData ),
     mnKey( rDecoder.mnKey ),
     mnHash( rDecoder.mnHash )
 {
     if( isValid() )
         maCodec.initCodec( maEncryptionData );
+}
+
+BiffDecoder_XOR* BiffDecoder_XOR::implClone()
+{
+    return new BiffDecoder_XOR( *this );
 }
 
 Sequence< NamedValue > BiffDecoder_XOR::implVerifyPassword( const OUString& rPassword )
@@ -99,6 +116,28 @@ bool BiffDecoder_XOR::implVerifyEncryptionData( const Sequence< NamedValue >& rE
     return maEncryptionData.hasElements();
 }
 
+void BiffDecoder_XOR::implDecode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcData, sal_Int64 nStreamPos, sal_uInt16 nBytes )
+{
+    maCodec.startBlock();
+    maCodec.skip( static_cast< sal_Int32 >( (nStreamPos + nBytes) & 0x0F ) );
+    maCodec.decode( pnDestData, pnSrcData, nBytes );
+}
+
+namespace {
+
+/** Returns the block index of the passed stream position for RCF decryption. */
+sal_Int32 lclGetRcfBlock( sal_Int64 nStreamPos )
+{
+    return static_cast< sal_Int32 >( nStreamPos / BIFF_RCF_BLOCKSIZE );
+}
+
+/** Returns the offset of the passed stream position in a block for RCF decryption. */
+sal_Int32 lclGetRcfOffset( sal_Int64 nStreamPos )
+{
+    return static_cast< sal_Int32 >( nStreamPos % BIFF_RCF_BLOCKSIZE );
+}
+
+} // namespace
 
 BiffDecoder_RCF::BiffDecoder_RCF( const BiffDecoder_RCF& rDecoder ) :
     BiffDecoderBase(),  // must be called to prevent compiler warning
@@ -109,6 +148,11 @@ BiffDecoder_RCF::BiffDecoder_RCF( const BiffDecoder_RCF& rDecoder ) :
 {
     if( isValid() )
         maCodec.initCodec( maEncryptionData );
+}
+
+BiffDecoder_RCF* BiffDecoder_RCF::implClone()
+{
+    return new BiffDecoder_RCF( *this );
 }
 
 Sequence< NamedValue > BiffDecoder_RCF::implVerifyPassword( const OUString& rPassword )
@@ -127,8 +171,8 @@ Sequence< NamedValue > BiffDecoder_RCF::implVerifyPassword( const OUString& rPas
             *aIt = static_cast< sal_uInt16 >( *pcChar );
 
         // init codec
-        maCodec.initKey(aPassVect.data(), maSalt.data());
-        if (maCodec.verifyKey(maVerifier.data(), maVerifierHash.data()))
+        maCodec.initKey( &aPassVect.front(), &maSalt.front() );
+        if( maCodec.verifyKey( &maVerifier.front(), &maVerifierHash.front() ) )
             maEncryptionData = maCodec.getEncryptionData();
     }
 
@@ -144,11 +188,47 @@ bool BiffDecoder_RCF::implVerifyEncryptionData( const Sequence< NamedValue >& rE
         // init codec
         maCodec.initCodec( rEncryptionData );
 
-        if (maCodec.verifyKey(maVerifier.data(), maVerifierHash.data()))
+        if( maCodec.verifyKey( &maVerifier.front(), &maVerifierHash.front() ) )
             maEncryptionData = rEncryptionData;
     }
 
     return maEncryptionData.hasElements();
+}
+
+void BiffDecoder_RCF::implDecode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcData, sal_Int64 nStreamPos, sal_uInt16 nBytes )
+{
+    sal_uInt8* pnCurrDest = pnDestData;
+    const sal_uInt8* pnCurrSrc = pnSrcData;
+    sal_Int64 nCurrPos = nStreamPos;
+    sal_uInt16 nBytesLeft = nBytes;
+    while( nBytesLeft > 0 )
+    {
+        // initialize codec for current stream position
+        maCodec.startBlock( lclGetRcfBlock( nCurrPos ) );
+        maCodec.skip( lclGetRcfOffset( nCurrPos ) );
+
+        // decode the block
+        sal_uInt16 nBlockLeft = static_cast< sal_uInt16 >( BIFF_RCF_BLOCKSIZE - lclGetRcfOffset( nCurrPos ) );
+        sal_uInt16 nDecBytes = ::std::min( nBytesLeft, nBlockLeft );
+        maCodec.decode( pnCurrDest, pnCurrSrc, static_cast< sal_Int32 >( nDecBytes ) );
+
+        // prepare for next block
+        pnCurrDest += nDecBytes;
+        pnCurrSrc += nDecBytes;
+        nCurrPos += nDecBytes;
+        nBytesLeft = nBytesLeft - nDecBytes;
+    }
+}
+
+BiffCodecHelper::BiffCodecHelper( const WorkbookHelper& rHelper ) :
+    WorkbookHelper( rHelper )
+{
+}
+
+void BiffCodecHelper::cloneDecoder( BiffInputStream& rStrm )
+{
+    if( mxDecoder.get() )
+        rStrm.setDecoder( BiffDecoderRef( mxDecoder->clone() ) );
 }
 
 } // namespace xls

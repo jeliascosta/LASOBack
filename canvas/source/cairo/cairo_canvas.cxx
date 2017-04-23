@@ -121,7 +121,7 @@ namespace cairocanvas
         CanvasBaseT::disposeThis();
     }
 
-    OUString SAL_CALL Canvas::getServiceName(  )
+    OUString SAL_CALL Canvas::getServiceName(  ) throw (uno::RuntimeException, std::exception)
     {
         return OUString( CANVAS_SERVICE_NAME );
     }
@@ -157,7 +157,7 @@ namespace cairocanvas
         return pSurface;
     }
 
-    SurfaceSharedPtr Canvas::changeSurface()
+    SurfaceSharedPtr Canvas::changeSurface( bool, bool )
     {
         // non-modifiable surface here
         return SurfaceSharedPtr();

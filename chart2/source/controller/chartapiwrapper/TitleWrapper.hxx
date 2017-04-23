@@ -49,13 +49,19 @@ class TitleWrapper : public ::cppu::ImplInheritanceHelper<
 {
 public:
     TitleWrapper( ::chart::TitleHelper::eTitleType eTitleType,
-                  const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact );
-    virtual ~TitleWrapper() override;
+                  std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~TitleWrapper();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     //ReferenceSizePropertyProvider
     virtual void updateReferenceSize() override;
@@ -64,35 +70,44 @@ public:
 
 protected:
     // ____ XShape ____
-    virtual css::awt::Point SAL_CALL getPosition() override;
-    virtual void SAL_CALL setPosition( const css::awt::Point& aPosition ) override;
-    virtual css::awt::Size SAL_CALL getSize() override;
-    virtual void SAL_CALL setSize( const css::awt::Size& aSize ) override;
+    virtual css::awt::Point SAL_CALL getPosition()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPosition( const css::awt::Point& aPosition )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Size SAL_CALL getSize()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSize( const css::awt::Size& aSize )
+        throw (css::beans::PropertyVetoException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XShapeDescriptor (base of XShape) ____
-    virtual OUString SAL_CALL getShapeType() override;
+    virtual OUString SAL_CALL getShapeType()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XComponent ____
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // character properties have to be handled differently (via the XFormattedString elements)
     void getFastCharacterPropertyValue( sal_Int32 nHandle, css::uno::Any& rValue );
-    /// @throws css::uno::Exception
-    void setFastCharacterPropertyValue( sal_Int32 nHandle, const css::uno::Any& rValue );
+    void setFastCharacterPropertyValue( sal_Int32 nHandle, const css::uno::Any& rValue )
+        throw (css::uno::Exception);
 
     // ____ WrappedPropertySet ____
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    virtual css::beans::PropertyState SAL_CALL getPropertyState( const OUString& PropertyName ) override;
+    virtual css::beans::PropertyState SAL_CALL getPropertyState( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setPropertyToDefault( const OUString& PropertyName ) override;
-    virtual css::uno::Any SAL_CALL getPropertyDefault( const OUString& aPropertyName ) override;
+    virtual void SAL_CALL setPropertyToDefault( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyDefault( const OUString& aPropertyName ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::beans::XPropertySet > getInnerPropertySet() override;
 

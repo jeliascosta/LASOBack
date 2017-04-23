@@ -101,23 +101,19 @@ using namespace ::com::sun::star;
 #include "bento.hxx"
 using namespace OpenStormBento;
 #include "explode.hxx"
-bool Decompress(SvStream *pCompressed, SvStream * & pOutDecompressed)
+ bool Decompress(SvStream *pCompressed, SvStream * & pOutDecompressed)
 {
     pCompressed->Seek(0);
     std::unique_ptr<SvMemoryStream> aDecompressed(new SvMemoryStream(4096, 4096));
     unsigned char buffer[512];
-    pCompressed->ReadBytes(buffer, 16);
-    aDecompressed->WriteBytes(buffer, 16);
+    pCompressed->Read(buffer, 16);
+    aDecompressed->Write(buffer, 16);
 
     std::unique_ptr<LwpSvStream> aLwpStream(new LwpSvStream(pCompressed));
-    std::unique_ptr<OpenStormBento::LtcBenContainer> pBentoContainer;
-    {
-        OpenStormBento::LtcBenContainer* pTmp(nullptr);
-        sal_uLong ulRet = BenOpenContainer(aLwpStream.get(), &pTmp);
-        pBentoContainer.reset(pTmp);
-        if (ulRet != BenErr_OK)
-            return false;
-    }
+    LtcBenContainer* pBentoContainer;
+    sal_uLong ulRet = BenOpenContainer(aLwpStream.get(), &pBentoContainer);
+    if (ulRet != BenErr_OK)
+        return false;
 
     std::unique_ptr<LtcUtBenValueStream> aWordProData(pBentoContainer->FindValueStreamWithPropertyName("WordProData"));
 
@@ -133,8 +129,8 @@ bool Decompress(SvStream *pCompressed, SvStream * & pOutDecompressed)
     nPos += 0x10;
 
     pCompressed->Seek(nPos);
-    while (sal_uInt32 iRead = pCompressed->ReadBytes(buffer, 512))
-        aDecompressed->WriteBytes(buffer, iRead);
+    while (sal_uInt32 iRead = pCompressed->Read(buffer, 512))
+        aDecompressed->Write(buffer, iRead);
 
     // disable stream growing past its current size
     aDecompressed->SetResizeOffset(0);
@@ -215,12 +211,13 @@ int ReadWordproFile(SvStream &rStream, uno::Reference<css::xml::sax::XDocumentHa
         //Reset all static objects,because this function may be called many times.
         XFGlobalReset();
         reader.Read();
+
+        return 0;
     }
     catch (...)
     {
         return 1;
     }
-    return 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

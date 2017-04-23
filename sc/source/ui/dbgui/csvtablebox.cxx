@@ -74,7 +74,7 @@ VCL_BUILDER_FACTORY_ARGS(ScCsvTableBox, WB_BORDER)
 
 Size ScCsvTableBox::GetOptimalSize() const
 {
-    Size aDefault(LogicToPixel(Size(243, 82), MapMode(MapUnit::MapAppFont)));
+    Size aDefault(LogicToPixel(Size(243, 82), MapMode(MAP_APPFONT)));
     return aDefault;
 }
 
@@ -251,7 +251,7 @@ void ScCsvTableBox::DataChanged( const DataChangedEvent& rDCEvt )
     ScCsvControl::DataChanged( rDCEvt );
 }
 
-IMPL_LINK( ScCsvTableBox, CsvCmdHdl, ScCsvControl&, rCtrl, void )
+IMPL_LINK_TYPED( ScCsvTableBox, CsvCmdHdl, ScCsvControl&, rCtrl, void )
 {
     const ScCsvCmd& rCmd = rCtrl.GetCmd();
     ScCsvCmdType eType = rCmd.GetType();
@@ -388,7 +388,7 @@ IMPL_LINK( ScCsvTableBox, CsvCmdHdl, ScCsvControl&, rCtrl, void )
     }
 }
 
-IMPL_LINK( ScCsvTableBox, ScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK_TYPED( ScCsvTableBox, ScrollHdl, ScrollBar*, pScrollBar, void )
 {
     OSL_ENSURE( pScrollBar, "ScCsvTableBox::ScrollHdl - missing sender" );
 
@@ -398,7 +398,7 @@ IMPL_LINK( ScCsvTableBox, ScrollHdl, ScrollBar*, pScrollBar, void )
         Execute( CSVCMD_SETLINEOFFSET, pScrollBar->GetThumbPos() );
 }
 
-IMPL_LINK( ScCsvTableBox, ScrollEndHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK_TYPED( ScCsvTableBox, ScrollEndHdl, ScrollBar*, pScrollBar, void )
 {
     OSL_ENSURE( pScrollBar, "ScCsvTableBox::ScrollEndHdl - missing sender" );
 

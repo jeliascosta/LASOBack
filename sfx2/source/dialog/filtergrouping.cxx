@@ -150,12 +150,15 @@ namespace sfx2
     void lcl_ReadFilterClass( const OConfigurationNode& _rClassesNode, const OUString& _rLogicalClassName,
         FilterClass& /* [out] */ _rClass )
     {
+        static const char sDisplaNameNodeName[] = "DisplayName";
+        static const char sSubFiltersNodeName[] = "Filters";
+
             // the description node for the current class
         OConfigurationNode aClassDesc = _rClassesNode.openNode( _rLogicalClassName );
 
         // the values
-        aClassDesc.getNodeValue( "DisplayName" ) >>= _rClass.sDisplayName;
-        aClassDesc.getNodeValue( "Filters" ) >>= _rClass.aSubFilters;
+        aClassDesc.getNodeValue( sDisplaNameNodeName ) >>= _rClass.sDisplayName;
+        aClassDesc.getNodeValue( sSubFiltersNodeName ) >>= _rClass.aSubFilters;
     }
 
 
@@ -527,7 +530,7 @@ namespace sfx2
     struct FindGroupEntry : public ::std::unary_function< MapGroupEntry2GroupEntry::value_type, sal_Bool >
     {
         FilterGroupEntryReferrer::mapped_type aLookingFor;
-        explicit FindGroupEntry( FilterGroupEntryReferrer::mapped_type const & _rLookingFor ) : aLookingFor( _rLookingFor ) { }
+        explicit FindGroupEntry( FilterGroupEntryReferrer::mapped_type _rLookingFor ) : aLookingFor( _rLookingFor ) { }
 
         bool operator() ( const MapGroupEntry2GroupEntry::value_type& _rMapEntry )
         {
@@ -812,7 +815,7 @@ namespace sfx2
                     // create a representation of the group which is understandable by the XFilterGroupManager
                     if ( _rGroup.size() )
                     {
-                        Sequence< StringPair > aFilters( comphelper::containerToSequence(_rGroup) );
+                        Sequence< StringPair > aFilters( comphelper::containerToSequence<StringPair>(_rGroup) );
                         if ( _bAddExtension )
                         {
                             StringPair* pFilters = aFilters.getArray();
@@ -1151,19 +1154,22 @@ namespace sfx2
                                   const OUString& _rExtension,
                                   bool _bForOpen, FileDialogHelper_Impl& _rFileDlgImpl )
     {
+        static const char sAllFilter[] = "(*.*)";
+        static const char sOpenBracket[] = " (";
+        static const char sCloseBracket[] = ")";
         OUString sRet = _rDisplayText;
 
-        if ( sRet.indexOf( "(*.*)" ) == -1 )
+        if ( sRet.indexOf( sAllFilter ) == -1 )
         {
             OUString sExt = _rExtension;
             if ( !_bForOpen )
             {
                 // show '*' in extensions only when opening a document
-                sExt = sExt.replaceAll("*", "");
+                sExt = comphelper::string::remove(sExt, '*');
             }
-            sRet += " (";
+            sRet += sOpenBracket;
             sRet += sExt;
-            sRet += ")";
+            sRet += sCloseBracket;
         }
         _rFileDlgImpl.addFilterPair( _rDisplayText, sRet );
         return sRet;

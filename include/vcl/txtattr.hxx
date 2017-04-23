@@ -25,7 +25,6 @@
 #include <tools/debug.hxx>
 #include <vcl/vclenum.hxx>
 #include <vcl/dllapi.h>
-#include <memory>
 
 namespace vcl { class Font; }
 
@@ -68,7 +67,7 @@ private:
 public:
                             TextAttribFontColor( const Color& rColor );
                             TextAttribFontColor( const TextAttribFontColor& rAttr );
-                            virtual ~TextAttribFontColor() override;
+                            virtual ~TextAttribFontColor();
 
     const Color&            GetColor() const { return maColor; }
 
@@ -86,13 +85,13 @@ private:
 public:
                             TextAttribFontWeight( FontWeight eWeight );
                             TextAttribFontWeight( const TextAttribFontWeight& rAttr );
-                            virtual ~TextAttribFontWeight() override;
+                            virtual ~TextAttribFontWeight();
 
     virtual void            SetFont( vcl::Font& rFont ) const override;
     virtual TextAttrib*     Clone() const override;
     virtual bool            operator==( const TextAttrib& rAttr ) const override;
 
-    FontWeight getFontWeight() const { return meWeight; }
+    inline FontWeight getFontWeight() const { return meWeight; }
 };
 
 
@@ -105,7 +104,7 @@ private:
 
 public:
                             TextAttribHyperLink( const TextAttribHyperLink& rAttr );
-                            virtual ~TextAttribHyperLink() override;
+                            virtual ~TextAttribHyperLink();
 
     const OUString&         GetURL() const                              { return maURL; }
     virtual void            SetFont( vcl::Font& rFont ) const override;
@@ -118,7 +117,7 @@ class VCL_DLLPUBLIC TextAttribProtect : public TextAttrib
 public:
                             TextAttribProtect();
                             TextAttribProtect( const TextAttribProtect& rAttr );
-                            virtual ~TextAttribProtect() override;
+                            virtual ~TextAttribProtect();
 
     virtual void            SetFont( vcl::Font& rFont ) const override;
     virtual TextAttrib*     Clone() const override;
@@ -130,8 +129,7 @@ public:
 class TextCharAttrib
 {
 private:
-    std::unique_ptr<TextAttrib>
-                    mpAttr;
+    TextAttrib*     mpAttr;
     sal_Int32       mnStart;
     sal_Int32       mnEnd;
 

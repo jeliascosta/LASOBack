@@ -18,8 +18,13 @@
  */
 
 #include <comphelper/classids.hxx>
+#include <com/sun/star/embed/XEmbedObjectCreator.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <com/sun/star/embed/XLinkageSupport.hpp>
+#include <com/sun/star/embed/EmbedStates.hpp>
+#include <com/sun/star/embed/XClassifiedObject.hpp>
+#include <com/sun/star/embed/Aspects.hpp>
+#include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
 #include <com/sun/star/document/XEmbeddedObjectSupplier.hpp>
 #include <xmloff/families.hxx>
 #include <xmloff/xmlnmspe.hxx>
@@ -72,6 +77,93 @@ SwNoTextNode *SwXMLTextParagraphExport::GetNoTextNode(
     const SwFormatContent& rContent = pFrameFormat->GetContent();
     const SwNodeIndex *pNdIdx = rContent.GetContentIdx();
     return  pNdIdx->GetNodes()[pNdIdx->GetIndex() + 1]->GetNoTextNode();
+}
+
+void SwXMLTextParagraphExport::exportStyleContent(
+        const Reference< XStyle > & rStyle )
+{
+
+    Reference<XUnoTunnel> xStyleTunnel(rStyle, UNO_QUERY);
+    Reference<lang::XServiceInfo> xServiceInfo(rStyle, UNO_QUERY);
+    if(!xStyleTunnel.is() || !xServiceInfo.is() || !xServiceInfo->supportsService("com.sun.star.style.ParagraphStyle"))
+        return;
+    sw::ICoreParagraphStyle* pCoreParagraphStyle(reinterpret_cast<sw::ICoreParagraphStyle*>(
+            xStyleTunnel->getSomething(sw::ICoreParagraphStyle::getUnoTunnelId())));
+    if(!pCoreParagraphStyle)
+        return;
+    const SwTextFormatColl* pColl(pCoreParagraphStyle->GetFormatColl());
+    OSL_ENSURE( pColl, "There is the text collection?" );
+    if( pColl && RES_CONDTXTFMTCOLL == pColl->Which() )
+    {
+        const SwFormatCollConditions& rConditions =
+            static_cast<const SwConditionTextFormatColl *>(pColl)->GetCondColls();
+        for( size_t i=0; i < rConditions.size(); ++i )
+        {
+            const SwCollCondition& rCond = *rConditions[i];
+
+            enum XMLTokenEnum eFunc = XML_TOKEN_INVALID;
+            OUString sVal;
+            switch( rCond.GetCondition() )
+            {
+            case PARA_IN_LIST:
+                eFunc = XML_LIST_LEVEL;
+                sVal = OUString::number(rCond.GetSubCondition()+1);
+                break;
+            case PARA_IN_OUTLINE:
+                eFunc = XML_OUTLINE_LEVEL;
+                sVal = OUString::number(rCond.GetSubCondition()+1);
+                break;
+            case PARA_IN_FRAME:
+                eFunc = XML_TEXT_BOX;
+                break;
+            case PARA_IN_TABLEHEAD:
+                eFunc = XML_TABLE_HEADER;
+                break;
+            case PARA_IN_TABLEBODY:
+                eFunc = XML_TABLE;
+                break;
+            case PARA_IN_SECTION:
+                eFunc = XML_SECTION;
+                break;
+            case PARA_IN_FOOTENOTE:
+                eFunc = XML_FOOTNOTE;
+                break;
+            case PARA_IN_FOOTER:
+                eFunc = XML_FOOTER;
+                break;
+            case PARA_IN_HEADER:
+                eFunc = XML_HEADER;
+                break;
+            case PARA_IN_ENDNOTE:
+                eFunc = XML_ENDNOTE;
+                break;
+            }
+            OSL_ENSURE( eFunc != XML_TOKEN_INVALID,
+                        "SwXMLExport::ExportFormat: unknown condition" );
+            if( eFunc != XML_TOKEN_INVALID )
+            {
+                OUString sCond = GetXMLToken(eFunc) + "()";
+                if( !sVal.isEmpty() )
+                {
+                    sCond += "=" + sVal;
+                }
+
+                GetExport().AddAttribute( XML_NAMESPACE_STYLE,
+                            XML_CONDITION, sCond );
+                OUString aString;
+                SwStyleNameMapper::FillProgName(
+                                rCond.GetTextFormatColl()->GetName(),
+                                aString,
+                                nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL,
+                                true);
+                aString = GetExport().EncodeStyleName( aString );
+                GetExport().AddAttribute( XML_NAMESPACE_STYLE,
+                            XML_APPLY_STYLE_NAME, aString );
+                SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_STYLE,
+                                          XML_MAP, true, true );
+            }
+        }
+    }
 }
 
 SwXMLTextParagraphExport::SwXMLTextParagraphExport(
@@ -127,7 +219,7 @@ static void lcl_addOutplaceProperties(
         const rtl::Reference < XMLPropertySetMapper >& rMapper )
 {
     {
-        MapMode aMode( MapUnit::Map100thMM ); // the API expects this map mode for the embedded objects
+        MapMode aMode( MAP_100TH_MM ); // the API expects this map mode for the embedded objects
         Size aSize = rObj.GetSize( &aMode ); // get the size in the requested map mode
 
         if( aSize.Width() && aSize.Height() )

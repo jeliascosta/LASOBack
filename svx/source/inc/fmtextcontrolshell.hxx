@@ -74,6 +74,7 @@ namespace svx
     };
 
     class FmTextControlShell :public IFocusObserver
+                             ,public ISlotInvalidator
                              ,public IContextRequestObserver
     {
     private:
@@ -101,7 +102,7 @@ namespace svx
 
         // translating between "slots" of the framework and "features" of the active control
         typedef rtl::Reference<FmTextControlFeature> ControlFeature;
-        typedef ::std::map< SfxSlotId, ControlFeature >   ControlFeatures;
+        typedef ::std::map< SfxSlotId, ControlFeature, ::std::less< SfxSlotId > >   ControlFeatures;
         ControlFeatures                                             m_aControlFeatures;
 
         SfxViewFrame*                                               m_pViewFrame;
@@ -135,8 +136,6 @@ namespace svx
         */
         void    designModeChanged( bool _bNewDesignMode );
 
-        void    Invalidate( SfxSlotId _nSlot );
-
     protected:
         // IFocusObserver
         virtual void    focusGained( const css::awt::FocusEvent& _rEvent ) override;
@@ -145,13 +144,17 @@ namespace svx
         // IContextRequestObserver
         virtual void    contextMenuRequested( const css::awt::MouseEvent& _rEvent ) override;
 
+        // ISlotInvalidator
+        virtual void    Invalidate( SfxSlotId _nSlot ) override;
+
+    protected:
         enum AttributeSet { eCharAttribs, eParaAttribs };
         void    executeAttributeDialog( AttributeSet _eSet, SfxRequest& _rReq );
         void    executeSelectAll( );
         void    executeClipboardSlot( SfxSlotId _nSlot );
 
     private:
-        bool    isControllerListening() const { return !m_aControlObservers.empty(); }
+        inline  bool    isControllerListening() const { return !m_aControlObservers.empty(); }
 
         FmTextControlFeature*
                         implGetFeatureDispatcher(
@@ -171,7 +174,7 @@ namespace svx
         static void     transferFeatureStatesToItemSet(
                             ControlFeatures& _rDispatchers,
                             SfxAllItemSet& _rSet,
-                            bool _bTranslateLatin
+                            bool _bTranslateLatin = false
                         );
 
         /// to be called when a control has been activated
@@ -192,7 +195,11 @@ namespace svx
         */
         void    stopControllerListening( );
 
-        DECL_LINK( OnInvalidateClipboard, Timer*, void );
+        /** parses the given URL's Complete member, by calling XURLTransformer::parseString
+        */
+        void    impl_parseURL_nothrow( css::util::URL& _rURL );
+
+        DECL_LINK_TYPED( OnInvalidateClipboard, Timer*, void );
     };
 
 

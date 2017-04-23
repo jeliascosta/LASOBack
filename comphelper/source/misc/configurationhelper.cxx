@@ -37,27 +37,27 @@ css::uno::Reference< css::uno::XInterface > ConfigurationHelper::openConfig(cons
     css::uno::Reference< css::lang::XMultiServiceFactory > xConfigProvider(
         css::configuration::theDefaultProvider::get( rxContext ) );
 
-    std::vector< css::uno::Any > lParams;
+    ::std::vector< css::uno::Any > lParams;
     css::beans::PropertyValue      aParam ;
 
     // set root path
     aParam.Name    = "nodepath";
     aParam.Value <<= sPackage;
-    lParams.push_back(css::uno::Any(aParam));
+    lParams.push_back(css::uno::makeAny(aParam));
 
     // enable all locales mode
     if (eMode & EConfigurationModes::AllLocales)
     {
         aParam.Name    = "locale";
         aParam.Value <<= OUString("*");
-        lParams.push_back(css::uno::Any(aParam));
+        lParams.push_back(css::uno::makeAny(aParam));
     }
 
     // enable lazy writing
     bool bLazy(eMode & EConfigurationModes::LazyWrite);
     aParam.Name    = "lazywrite";
-    aParam.Value   <<= bLazy;
-    lParams.push_back(css::uno::Any(aParam));
+    aParam.Value   = css::uno::makeAny(bLazy);
+    lParams.push_back(css::uno::makeAny(aParam));
 
     // open it
     css::uno::Reference< css::uno::XInterface > xCFG;
@@ -86,8 +86,13 @@ css::uno::Any ConfigurationHelper::readRelativeKey(const css::uno::Reference< cs
     xAccess->getByHierarchicalName(sRelPath) >>= xProps;
     if (!xProps.is())
     {
+        OUStringBuffer sMsg(256);
+        sMsg.append("The requested path \"");
+        sMsg.append     (sRelPath               );
+        sMsg.append("\" does not exists."  );
+
         throw css::container::NoSuchElementException(
-            "The requested path \"" + sRelPath + "\" does not exist.");
+                    sMsg.makeStringAndClear());
     }
     return xProps->getPropertyValue(sKey);
 }
@@ -104,8 +109,13 @@ void ConfigurationHelper::writeRelativeKey(const css::uno::Reference< css::uno::
     xAccess->getByHierarchicalName(sRelPath) >>= xProps;
     if (!xProps.is())
     {
+        OUStringBuffer sMsg(256);
+        sMsg.append("The requested path \"");
+        sMsg.append     (sRelPath               );
+        sMsg.append("\" does not exists."  );
+
         throw css::container::NoSuchElementException(
-            "The requested path \"" + sRelPath + "\" does not exist.");
+                    sMsg.makeStringAndClear());
     }
     xProps->setPropertyValue(sKey, aValue);
 }
@@ -120,8 +130,13 @@ css::uno::Reference< css::uno::XInterface > ConfigurationHelper::makeSureSetNode
     xAccess->getByHierarchicalName(sRelPathToSet) >>= xSet;
     if (!xSet.is())
     {
+        OUStringBuffer sMsg(256);
+        sMsg.append("The requested path \"");
+        sMsg.append     (sRelPathToSet          );
+        sMsg.append("\" does not exists."  );
+
         throw css::container::NoSuchElementException(
-            "The requested path \"" + sRelPathToSet + "\" does not exist." );
+                    sMsg.makeStringAndClear());
     }
 
     css::uno::Reference< css::uno::XInterface > xNode;
@@ -132,7 +147,7 @@ css::uno::Reference< css::uno::XInterface > ConfigurationHelper::makeSureSetNode
         css::uno::Reference< css::lang::XSingleServiceFactory > xNodeFactory(xSet, css::uno::UNO_QUERY_THROW);
         xNode = xNodeFactory->createInstance();
         css::uno::Reference< css::container::XNameContainer > xSetReplace(xSet, css::uno::UNO_QUERY_THROW);
-        xSetReplace->insertByName(sSetNode, css::uno::Any(xNode));
+        xSetReplace->insertByName(sSetNode, css::uno::makeAny(xNode));
     }
 
     return xNode;

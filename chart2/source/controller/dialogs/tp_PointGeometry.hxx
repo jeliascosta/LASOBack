@@ -29,7 +29,7 @@ class SchLayoutTabPage : public SfxTabPage
 {
 public:
     SchLayoutTabPage(vcl::Window* pParent, const SfxItemSet& rInAttrs);
-    virtual ~SchLayoutTabPage() override;
+    virtual ~SchLayoutTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rInAttrs);

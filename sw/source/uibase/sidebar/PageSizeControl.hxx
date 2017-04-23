@@ -19,17 +19,15 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGESIZECONTROL_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGESIZECONTROL_HXX
 
+#include <svx/sidebar/PopupControl.hxx>
+
 #include <i18nutil/paper.hxx>
 
 #include <vcl/button.hxx>
 #include <vcl/field.hxx>
 #include <svtools/unitconv.hxx>
-#include <svx/tbxctl.hxx>
-#include <vcl/layout.hxx>
-#include <vcl/lstbox.hxx>
 
 #include <vector>
-#include <svtools/valueset.hxx>
 
 namespace svx { namespace sidebar {
     class ValueSetWithTextControl;
@@ -38,26 +36,34 @@ class ValueSet;
 
 namespace sw { namespace sidebar {
 
-class PageSizeControl : public SfxPopupWindow
+class PagePropertyPanel;
+
+class PageSizeControl
+    : public svx::sidebar::PopupControl
 {
 public:
-    explicit PageSizeControl(sal_uInt16 nId);
-    virtual ~PageSizeControl() override;
+    PageSizeControl(
+        vcl::Window* pParent,
+        PagePropertyPanel& rPanel,
+        const Paper ePaper,
+        const bool bLandscape,
+        const FieldUnit eFUnit );
+    virtual ~PageSizeControl();
     virtual void dispose() override;
 
 private:
-    VclPtr<VclVBox> maContainer;
-    VclPtr<svx::sidebar::ValueSetWithTextControl> mpSizeValueSet;
+    VclPtr< svx::sidebar::ValueSetWithTextControl> mpSizeValueSet;
     VclPtr<PushButton> maMoreButton;
     // hidden metric field
     VclPtr<MetricField> maWidthHeightField;
 
-    std::vector< Paper > maPaperList;
+    Paper mePaper;
+    ::std::vector< Paper > maPaperList;
 
-    static void ExecuteSizeChange( const Paper ePaper );
+    PagePropertyPanel& mrPagePropPanel;
 
-    DECL_LINK(ImplSizeHdl, ::ValueSet*, void);
-    DECL_LINK(MoreButtonClickHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(ImplSizeHdl, ::ValueSet*, void);
+    DECL_LINK_TYPED(MoreButtonClickHdl_Impl, Button*, void);
 };
 
 } } // end of namespace sw::sidebar

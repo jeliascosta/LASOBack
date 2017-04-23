@@ -36,7 +36,6 @@
 #define UNO_NAME_PAGE_WIDTH             "Width"
 #define UNO_NAME_PAGE_PREVIEW           "Preview"
 #define UNO_NAME_PAGE_PREVIEWBITMAP     "PreviewBitmap"
-#define UNO_NAME_PAGE_PREVIEWMETAFILE   "PreviewMetafile"
 #define UNO_NAME_PAGE_VISIBLE           "Visible"
 
 #define UNO_NAME_OBJ_BOOKMARK           "Bookmark"

@@ -27,7 +27,6 @@
 #include <editeng/svxenum.hxx>
 #include "scdllapi.h"
 #include "fonthelper.hxx"
-#include <memory>
 
 namespace vcl { class Font; }
 class OutputDevice;
@@ -35,7 +34,6 @@ class Fraction;
 class ScStyleSheet;
 class SvNumberFormatter;
 class ScDocument;
-enum class ScRotateDir : sal_uInt8;
 
 ///  how to treat COL_AUTO in GetFont:
 
@@ -52,16 +50,15 @@ enum ScAutoFontColorMode
 
 class SC_DLLPUBLIC ScPatternAttr: public SfxSetItem
 {
-    std::unique_ptr<OUString>  pName;
-    ScStyleSheet*              pStyle;
-    sal_uInt64                 mnKey;
+    OUString*       pName;
+    ScStyleSheet*   pStyle;
 public:
                             ScPatternAttr(SfxItemSet* pItemSet, const OUString& rStyleName);
-                            ScPatternAttr(SfxItemSet* pItemSet);
+                            ScPatternAttr(SfxItemSet* pItemSet, ScStyleSheet* pStyleSheet = nullptr);
                             ScPatternAttr(SfxItemPool* pItemPool);
                             ScPatternAttr(const ScPatternAttr& rPatternAttr);
 
-                            virtual ~ScPatternAttr() override;
+                            virtual ~ScPatternAttr();
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream& rStream, sal_uInt16 nVersion) const override;
@@ -81,7 +78,7 @@ public:
 
     void                    DeleteUnchanged( const ScPatternAttr* pOldAttrs );
 
-    static SvxCellOrientation GetCellOrientation( const SfxItemSet& rItemSet, const SfxItemSet* pCondSet );
+    static SvxCellOrientation GetCellOrientation( const SfxItemSet& rItemSet, const SfxItemSet* pCondSet = nullptr );
     SvxCellOrientation      GetCellOrientation( const SfxItemSet* pCondSet = nullptr ) const;
 
     /** Static helper function to fill a font object from the passed item set. */
@@ -134,10 +131,7 @@ public:
                                                 const SfxItemSet* pCondSet ) const;
 
     long                    GetRotateVal( const SfxItemSet* pCondSet ) const;
-    ScRotateDir             GetRotateDir( const SfxItemSet* pCondSet ) const;
-
-    void                    SetKey(sal_uInt64 nKey);
-    sal_uInt64              GetKey() const;
+    sal_uInt8                   GetRotateDir( const SfxItemSet* pCondSet ) const;
 };
 
 #endif

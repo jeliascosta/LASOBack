@@ -88,7 +88,7 @@ bool CommonStylePreviewRenderer::recalculate()
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_RELIEF)) != nullptr)
     {
-        pFont->SetRelief(static_cast<const SvxCharReliefItem*>(pItem)->GetValue());
+        pFont->SetRelief(static_cast<FontRelief>(static_cast<const SvxCharReliefItem*>(pItem)->GetValue()));
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_UNDERLINE)) != nullptr)
     {
@@ -96,7 +96,7 @@ bool CommonStylePreviewRenderer::recalculate()
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_OVERLINE)) != nullptr)
     {
-        pFont->SetOverline(static_cast<const SvxOverlineItem*>(pItem)->GetValue());
+        pFont->SetOverline(static_cast<FontLineStyle>(static_cast<const SvxOverlineItem*>(pItem)->GetValue()));
     }
     if ((pItem = pItemSet->GetItem(SID_ATTR_CHAR_STRIKEOUT)) != nullptr)
     {
@@ -119,7 +119,7 @@ bool CommonStylePreviewRenderer::recalculate()
     {
         if ((pItem = pItemSet->GetItem(XATTR_FILLSTYLE)) != nullptr)
         {
-            css::drawing::FillStyle aFillStyle = static_cast<const XFillStyleItem*>(pItem)->GetValue();
+            sal_uInt16 aFillStyle = static_cast<const XFillStyleItem*>(pItem)->GetValue();
             if (aFillStyle == drawing::FillStyle_SOLID)
             {
                 if ((pItem = pItemSet->GetItem(XATTR_FILLCOLOR)) != nullptr)
@@ -151,7 +151,7 @@ bool CommonStylePreviewRenderer::recalculate()
         vcl::Font aOldFont(mrOutputDev.GetFont());
 
         mrOutputDev.SetFont(*pFont);
-        tools::Rectangle aTextRect;
+        Rectangle aTextRect;
         mrOutputDev.GetTextBoundRect(aTextRect, mpStyle->GetName());
         if (aTextRect.Bottom() > mnMaxHeight)
         {
@@ -180,7 +180,7 @@ Size CommonStylePreviewRenderer::getRenderSize()
     return maPixelSize;
 }
 
-bool CommonStylePreviewRenderer::render(const tools::Rectangle& aRectangle, RenderAlign eRenderAlign)
+bool CommonStylePreviewRenderer::render(const Rectangle& aRectangle, RenderAlign eRenderAlign)
 {
     const OUString& rText = msRenderText.isEmpty() ? maStyleName : msRenderText;
 
@@ -209,6 +209,11 @@ bool CommonStylePreviewRenderer::render(const tools::Rectangle& aRectangle, Rend
     {
         if (aRectangle.GetHeight() > aPixelSize.Height())
             aFontDrawPosition.Y() += (aRectangle.GetHeight() - aPixelSize.Height()) / 2;
+    }
+    else if (eRenderAlign == RenderAlign::BOTTOM)
+    {
+        if (aRectangle.GetHeight() > aPixelSize.Height())
+            aFontDrawPosition.Y() += aRectangle.GetHeight() - aPixelSize.Height();
     }
 
     mrOutputDev.DrawText(aFontDrawPosition, rText);

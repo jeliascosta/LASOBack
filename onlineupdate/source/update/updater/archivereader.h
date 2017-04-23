@@ -8,7 +8,7 @@
 #define ArchiveReader_h__
 
 #include <stdio.h>
-#include <onlineupdate/mar.h>
+#include "mar.h"
 
 #ifdef _WIN32
   typedef WCHAR NS_tchar;

@@ -12,27 +12,11 @@
 
 #include <set>
 #include <functional>
-#include <vcl/menu.hxx>
-#include <sfx2/thumbnailview.hxx>
-#include <sfx2/templateproperties.hxx>
 
-//template thumbnail item defines
-#define TEMPLATE_ITEM_MAX_WIDTH 160
-#define TEMPLATE_ITEM_MAX_HEIGHT 148
-#define TEMPLATE_ITEM_PADDING 5
-#define TEMPLATE_ITEM_MAX_TEXT_LENGTH 20
-#define TEMPLATE_ITEM_THUMBNAIL_MAX_HEIGHT 96
-
-//template thumbnail height with a subtitle
-#define TEMPLATE_ITEM_MAX_HEIGHT_SUB 160
-
-//template thumbnail image defines
-#define TEMPLATE_THUMBNAIL_MAX_HEIGHT TEMPLATE_ITEM_THUMBNAIL_MAX_HEIGHT - 2*TEMPLATE_ITEM_PADDING
-#define TEMPLATE_THUMBNAIL_MAX_WIDTH TEMPLATE_ITEM_MAX_WIDTH - 2*TEMPLATE_ITEM_PADDING
+#include <sfx2/templateabstractview.hxx>
 
 class SfxDocumentTemplates;
 class TemplateContainerItem;
-class TemplateViewItem;
 class PopupMenu;
 
 namespace com {
@@ -41,63 +25,33 @@ namespace com {
     }   }   }
 }
 
-enum class FILTER_APPLICATION
-{
-    NONE,
-    WRITER,
-    CALC,
-    IMPRESS,
-    DRAW
-};
-
-// Display template items depending on the generator application
-class ViewFilter_Application final
-{
-public:
-
-    ViewFilter_Application (FILTER_APPLICATION App)
-        : mApp(App)
-    {}
-
-    bool operator () (const ThumbnailViewItem *pItem);
-
-    static bool isFilteredExtension(FILTER_APPLICATION filter, const OUString &rExt);
-    bool isValid (const OUString& rPath) const;
-
-private:
-
-    FILTER_APPLICATION mApp;
-};
-
-
-class SFX2_DLLPUBLIC TemplateLocalView : public ThumbnailView
+class SFX2_DLLPUBLIC TemplateLocalView : public TemplateAbstractView
 {
     typedef bool (*selection_cmp_fn)(const ThumbnailViewItem*,const ThumbnailViewItem*);
 
 public:
 
-    TemplateLocalView ( vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP | WB_BORDER );
+    TemplateLocalView ( vcl::Window* pParent );
 
-    virtual ~TemplateLocalView () override;
+    virtual ~TemplateLocalView ();
     virtual void dispose() override;
 
-    // Fill view with new item list
-    void insertItems (const std::vector<TemplateItemProperties> &rTemplates, bool isRegionSelected = true, bool bShowCategoryInTooltip = false);
-
     // Fill view with template folders thumbnails
-    void Populate ();
+    virtual void Populate () override;
 
-    virtual void reload ();
+    virtual void reload () override;
 
-    virtual void showAllTemplates ();
+    virtual void showAllTemplates () override;
 
-    void showRegion (TemplateContainerItem *pItem);
+    virtual void showRegion (TemplateContainerItem *pItem) override;
 
     void showRegion (const OUString &rName);
 
     void createContextMenu(const bool bIsDefault );
 
-    DECL_LINK(ContextMenuSelectHdl, Menu*, bool);
+    DECL_LINK_TYPED(ContextMenuSelectHdl, Menu*, bool);
+
+    sal_uInt16 getCurRegionItemId () const;
 
     TemplateContainerItem* getRegion(OUString const & sStr);
 
@@ -114,7 +68,7 @@ public:
     std::vector<TemplateItemProperties>
         getFilteredItems (const std::function<bool (const TemplateItemProperties&) > &rFunc) const;
 
-    sal_uInt16 createRegion (const OUString &rName);
+    virtual sal_uInt16 createRegion (const OUString &rName) override;
 
     bool renameRegion(const OUString &rTitle, const OUString &rNewTitle);
 
@@ -127,66 +81,18 @@ public:
 
     bool moveTemplates (const std::set<const ThumbnailViewItem*,selection_cmp_fn> &rItems, const sal_uInt16 nTargetItem);
 
+    bool copyFrom (const sal_uInt16 nRegionItemId, const BitmapEx &rThumbnail, const OUString &rPath);
+
+    // Import a template to the current region
+    bool copyFrom (const OUString &rPath);
+
     bool copyFrom(TemplateContainerItem *pItem, const OUString &rPath);
 
     bool exportTo (const sal_uInt16 nItemId, const sal_uInt16 nRegionItemId, const OUString &rName);
 
     virtual bool renameItem(ThumbnailViewItem* pItem, const OUString& sNewTitle) override;
 
-    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
-
-    virtual void RequestHelp( const HelpEvent& rHEvt ) override;
-
-    virtual void Command( const CommandEvent& rCEvt ) override;
-
-    virtual void KeyInput( const KeyEvent& rKEvt ) override;
-
-    sal_uInt16 getCurRegionId () const { return mnCurRegionId;}
-
-    void setOpenRegionHdl(const Link<void*,void> &rLink);
-
-    void setCreateContextMenuHdl(const Link<ThumbnailViewItem*,void> &rLink);
-
-    void setOpenTemplateHdl(const Link<ThumbnailViewItem*,void> &rLink);
-
-    void setEditTemplateHdl(const Link<ThumbnailViewItem*,void> &rLink);
-
-    void setDeleteTemplateHdl(const Link<ThumbnailViewItem*,void> &rLink);
-
-    void setDefaultTemplateHdl(const Link<ThumbnailViewItem*,void> &rLink);
-
-    void updateThumbnailDimensions(long itemMaxSize);
-
-    void RemoveDefaultTemplateIcon( const OUString& rPath);
-
-    static BitmapEx scaleImg (const BitmapEx &rImg, long width, long height);
-
-    static BitmapEx getDefaultThumbnail( const OUString& rPath );
-
-    static BitmapEx fetchThumbnail (const OUString &msURL, long width, long height);
-
-    static bool IsDefaultTemplate(const OUString& rPath);
-
 protected:
-    virtual void OnItemDblClicked(ThumbnailViewItem *pItem) override;
-
-protected:
-    sal_uInt16 mnCurRegionId;
-    OUString maCurRegionName;
-
-    TemplateViewItem *maSelectedItem;
-
-    long mnThumbnailWidth;
-    long mnThumbnailHeight;
-
-    Point maPosition; //store the point of click event
-
-    Link<void*,void>              maOpenRegionHdl;
-    Link<ThumbnailViewItem*,void> maCreateContextMenuHdl;
-    Link<ThumbnailViewItem*,void> maOpenTemplateHdl;
-    Link<ThumbnailViewItem*,void> maEditTemplateHdl;
-    Link<ThumbnailViewItem*,void> maDeleteTemplateHdl;
-    Link<ThumbnailViewItem*,void> maDefaultTemplateHdl;
 
     SfxDocumentTemplates *mpDocTemplates;
     std::vector<TemplateContainerItem* > maRegions;

@@ -63,7 +63,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
 
         switch (pAttr->m_nResource)
         {
-        case ResourceType::Boolean:
+        case RT_Boolean:
             {
                 const char *pValue = "";
                 pAttribs->getAsChar(nToken, pValue);
@@ -72,7 +72,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
                 pFactory->attributeAction(pHandler, nToken, xValue);
             }
             break;
-        case ResourceType::String:
+        case RT_String:
             {
                 OUString aValue(pAttribs->getValue(nToken));
                 OOXMLValue::Pointer_t xValue(new OOXMLStringValue(aValue));
@@ -80,7 +80,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
                 pFactory->attributeAction(pHandler, nToken, xValue);
             }
             break;
-        case ResourceType::Integer:
+        case RT_Integer:
             {
                 sal_Int32 nValue;
                 pAttribs->getAsInteger(nToken,nValue);
@@ -89,7 +89,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
                 pFactory->attributeAction(pHandler, nToken, xValue);
             }
             break;
-        case ResourceType::Hex:
+        case RT_Hex:
             {
                 const char *pValue = "";
                 pAttribs->getAsChar(nToken, pValue);
@@ -98,7 +98,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
                 pFactory->attributeAction(pHandler, nToken, xValue);
             }
             break;
-        case ResourceType::UniversalMeasure:
+        case RT_UniversalMeasure:
             {
                 const char *pValue = "";
                 pAttribs->getAsChar(nToken, pValue);
@@ -107,7 +107,7 @@ void OOXMLFactory::attributes(OOXMLFastContextHandler * pHandler,
                 pFactory->attributeAction(pHandler, nToken, xValue);
             }
             break;
-        case ResourceType::List:
+        case RT_List:
             {
                 sal_uInt32 nValue;
                 if (pFactory->getListValue(pAttr->m_nRef, Attribs->getValue(nToken), nValue))

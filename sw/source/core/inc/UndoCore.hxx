@@ -144,7 +144,7 @@ private:
 class SwUndoFormatColl : public SwUndo, private SwUndRng
 {
     OUString aFormatName;
-    std::unique_ptr<SwHistory> pHistory;
+    SwHistory* pHistory;
     SwFormatColl* pFormatColl;
     // for correct <ReDo(..)> and <Repeat(..)>
     // boolean, which indicates that the attributes are reseted at the nodes
@@ -160,7 +160,7 @@ public:
     SwUndoFormatColl( const SwPaM&, SwFormatColl*,
                    const bool bReset,
                    const bool bResetListAttrs );
-    virtual ~SwUndoFormatColl() override;
+    virtual ~SwUndoFormatColl();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -181,7 +181,7 @@ public:
     */
     virtual SwRewriter GetRewriter() const override;
 
-    SwHistory* GetHistory() { return pHistory.get(); }
+    SwHistory* GetHistory() { return pHistory; }
 
 };
 
@@ -190,10 +190,10 @@ class SwUndoSetFlyFormat : public SwUndo, public SwClient
     SwFrameFormat* pFrameFormat;                  // saved FlyFormat
     SwFrameFormat* pOldFormat;
     SwFrameFormat* pNewFormat;
-    std::unique_ptr<SfxItemSet> pItemSet;               // the re-/ set attributes
+    SfxItemSet* pItemSet;               // the re-/ set attributes
     sal_uLong nOldNode, nNewNode;
     sal_Int32 nOldContent, nNewContent;
-    RndStdIds nOldAnchorTyp, nNewAnchorTyp;
+    sal_uInt16 nOldAnchorTyp, nNewAnchorTyp;
     bool bAnchorChgd;
 
     void PutAttr( sal_uInt16 nWhich, const SfxPoolItem* pItem );
@@ -202,7 +202,7 @@ class SwUndoSetFlyFormat : public SwUndo, public SwClient
 
 public:
     SwUndoSetFlyFormat( SwFrameFormat& rFlyFormat, SwFrameFormat& rNewFrameFormat );
-    virtual ~SwUndoSetFlyFormat() override;
+    virtual ~SwUndoSetFlyFormat();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

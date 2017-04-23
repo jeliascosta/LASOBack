@@ -72,6 +72,8 @@ public:
         m_eAdjustType(enumXFFWAdjustAutosize)
         {}
 
+    ~XFFontWorkStyle(){}
+
     inline void SetButtonForm(sal_Int8 nIndex);
     inline void SetFWStyleType(enumXFFWStyle eStyle);
     inline void SetFWAdjustType(enumXFFWAdjust eAdjust);

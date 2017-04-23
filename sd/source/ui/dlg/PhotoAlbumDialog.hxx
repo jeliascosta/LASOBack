@@ -45,10 +45,13 @@ class SdPhotoAlbumDialog : public ModalDialog
 {
 public:
     SdPhotoAlbumDialog(vcl::Window* pWindow, SdDrawDocument* pActDoc);
-    virtual ~SdPhotoAlbumDialog() override;
+    virtual ~SdPhotoAlbumDialog();
     virtual void dispose() override;
 
+    virtual short Execute() override;
+
 private:
+    static OUString sDirUrl;
     VclPtr<CancelButton>   pCancelBtn;
     VclPtr<PushButton>     pCreateBtn;
 
@@ -62,29 +65,25 @@ private:
 
     VclPtr<ListBox>    pInsTypeCombo;
     VclPtr<CheckBox>   pASRCheck;
-    VclPtr<CheckBox>   pASRCheckCrop;
     VclPtr<CheckBox>   pCapCheck;
-    VclPtr<CheckBox>   pInsertAsLinkCheck;
 
     SdDrawDocument* pDoc;
     GraphicFilter* mpGraphicFilter;
 
-    DECL_LINK(CancelHdl, Button*, void);
-    DECL_LINK(CreateHdl, Button*, void);
+    DECL_LINK_TYPED(CancelHdl, Button*, void);
+    DECL_LINK_TYPED(CreateHdl, Button*, void);
 
-    DECL_LINK(FileHdl, Button*, void);
-    DECL_LINK(UpHdl, Button*, void);
-    DECL_LINK(DownHdl, Button*, void);
-    DECL_LINK(RemoveHdl, Button*, void);
+    DECL_LINK_TYPED(FileHdl, Button*, void);
+    DECL_LINK_TYPED(UpHdl, Button*, void);
+    DECL_LINK_TYPED(DownHdl, Button*, void);
+    DECL_LINK_TYPED(RemoveHdl, Button*, void);
 
-    DECL_LINK(SelectHdl, ListBox&, void);
-    DECL_LINK(TypeSelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
 
     Reference< drawing::XDrawPage > appendNewSlide(AutoLayout aLayout,
         const Reference< drawing::XDrawPages >& xDrawPages);
 
     static awt::Size createASRSize(const awt::Size& aPicSize, const awt::Size& aMaxSize);
-    static awt::Size createASRSizeCrop(const awt::Size& aPicSize, const awt::Size& aMaxSize);
     void createCaption(const awt::Size& aPageSize);
     static Reference< graphic::XGraphic> createXGraphicFromUrl(const OUString& sUrl,
         const Reference< graphic::XGraphicProvider>& xProvider);

@@ -51,7 +51,7 @@ SfxItemPool*        ScPoolHelper::GetEditPool() const
     if ( !pEditPool )
     {
         pEditPool = EditEngine::CreatePool();
-        pEditPool->SetDefaultMetric( MapUnit::Map100thMM );
+        pEditPool->SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
         pEditPool->FreezeIdRanges();
         pEditPool->SetFileFormatVersion( SOFFICE_FILEFORMAT_50 );   // used in ScGlobal::EETextObjEqual
     }
@@ -62,7 +62,7 @@ SfxItemPool*        ScPoolHelper::GetEnginePool() const
     if ( !pEnginePool )
     {
         pEnginePool = EditEngine::CreatePool();
-        pEnginePool->SetDefaultMetric( MapUnit::Map100thMM );
+        pEnginePool->SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
         pEnginePool->FreezeIdRanges();
     } // ifg ( pEnginePool )
     return pEnginePool;
@@ -74,19 +74,22 @@ SvNumberFormatter*  ScPoolHelper::GetFormTable() const
     return pFormTable;
 }
 
+void ScPoolHelper::UseDocOptions() const
+{
+    if (pFormTable)
+    {
+        sal_uInt16 d,m,y;
+        aOpt.GetDate( d,m,y );
+        pFormTable->ChangeNullDate( d,m,y );
+        pFormTable->ChangeStandardPrec( (sal_uInt16)aOpt.GetStdPrecision() );
+        pFormTable->SetYear2000( aOpt.GetYear2000() );
+    }
+}
+
 void ScPoolHelper::SetFormTableOpt(const ScDocOptions& rOpt)
 {
     aOpt = rOpt;
-    // #i105512# if the number formatter exists, update its settings
-    if (pFormTable)
-    {
-        sal_uInt16 d,m;
-        sal_Int16 y;
-        aOpt.GetDate( d,m,y );
-        pFormTable->ChangeNullDate( d,m,y );
-        pFormTable->ChangeStandardPrec( aOpt.GetStdPrecision() );
-        pFormTable->SetYear2000( aOpt.GetYear2000() );
-    }
+    UseDocOptions();        // #i105512# if the number formatter exists, update its settings
 }
 
 SvNumberFormatter* ScPoolHelper::CreateNumberFormatter() const
@@ -94,13 +97,12 @@ SvNumberFormatter* ScPoolHelper::CreateNumberFormatter() const
     SvNumberFormatter* p = nullptr;
     {
         osl::MutexGuard aGuard(&maMtxCreateNumFormatter);
-        p = new SvNumberFormatter(comphelper::getProcessComponentContext(), LANGUAGE_SYSTEM);
+        p = new SvNumberFormatter(comphelper::getProcessComponentContext(), ScGlobal::eLnge);
     }
     p->SetColorLink( LINK(m_pSourceDoc, ScDocument, GetUserDefinedColor) );
     p->SetEvalDateFormat(NF_EVALDATEFORMAT_INTL_FORMAT);
 
-    sal_uInt16 d,m;
-    sal_Int16 y;
+    sal_uInt16 d,m,y;
     aOpt.GetDate(d, m, y);
     p->ChangeNullDate(d, m, y);
     p->ChangeStandardPrec(aOpt.GetStdPrecision());

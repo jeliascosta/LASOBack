@@ -329,7 +329,6 @@
         <menu:menupopup>
           <menu:menuitem menu:id=".uno:RotateLeft"/>
           <menu:menuitem menu:id=".uno:RotateRight"/>
-          <menu:menuitem menu:id=".uno:Rotate180"/>
         </menu:menupopup>
       </menu:menu>
       <menu:menu menu:id=".uno:GroupMenu">
@@ -459,7 +458,7 @@
         <menu:menupopup>
           <menu:menuitem menu:id=".uno:MacroRecorder"/>
           <menu:menuitem menu:id=".uno:RunMacro"/>
-          <menu:menuitem menu:id=".uno:ScriptOrganizer"/>
+          <menu:menu menu:id=".uno:ScriptOrganizer"/>
           <menu:menuseparator/>
           <menu:menuitem menu:id=".uno:MacroOrganizer?TabId:short=1"/>
         </menu:menupopup>
@@ -482,12 +481,8 @@
     <menu:menupopup>
       <menu:menuitem menu:id=".uno:HelpIndex"/>
       <menu:menuitem menu:id=".uno:ExtendedHelp"/>
-      <menu:menuitem menu:id=".uno:Documentation"/>
       <menu:menuseparator/>
-      <menu:menuitem menu:id=".uno:QuestionAnswers"/>
       <menu:menuitem menu:id=".uno:SendFeedback"/>
-      <menu:menuseparator/>
-      <menu:menuitem menu:id=".uno:SafeMode"/>
       <menu:menuseparator/>
       <menu:menuitem menu:id=".uno:ShowLicense"/>
       <menu:menuitem menu:id=".uno:About"/>

@@ -30,7 +30,6 @@
 
 #include <vcl/fixed.hxx>
 #include <svtools/ctrlbox.hxx>
-#include <svx/colorbox.hxx>
 #include <svx/fntctrl.hxx>
 #include <fontcfg.hxx>
 class SfxPrinter;
@@ -61,10 +60,10 @@ class SwContentOptPage : public SfxTabPage
     VclPtr<FixedText>  m_pMetricLabel;
     VclPtr<ListBox>    m_pMetricLB;
 
-    DECL_LINK(VertRulerHdl, Button*, void);
+    DECL_LINK_TYPED(VertRulerHdl, Button*, void);
 public:
     SwContentOptPage( vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwContentOptPage() override;
+    virtual ~SwContentOptPage();
 
     virtual void dispose() override;
 
@@ -106,12 +105,12 @@ class SwAddPrinterTabPage : public SfxTabPage
     bool bAttrModified;
     bool bPreview;
 
-    DECL_LINK(AutoClickHdl, Button*, void);
-    DECL_LINK(SelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(AutoClickHdl, Button*, void);
+    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
 
 public:
     SwAddPrinterTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwAddPrinterTabPage() override;
+    virtual ~SwAddPrinterTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -159,6 +158,7 @@ class SwStdFontTabPage : public SfxTabPage
     bool    m_bSetLabelDefault :1;
     bool    m_bIdxDefault     :1;
     bool    m_bSetIdxDefault  :1;
+    bool    m_bDeletePrinter :1;
 
     bool    m_bListHeightDefault    :1;
     bool    m_bSetListHeightDefault :1;
@@ -173,13 +173,13 @@ class SwStdFontTabPage : public SfxTabPage
     OUString m_sScriptAsian;
     OUString m_sScriptComplex;
 
-    DECL_LINK(StandardHdl, Button*, void );
-    DECL_LINK(ModifyHdl, Edit&, void );
-    DECL_LINK(ModifyHeightHdl, Edit&, void );
-    DECL_LINK(LoseFocusHdl, Control&, void );
+    DECL_LINK_TYPED(StandardHdl, Button*, void );
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED(ModifyHeightHdl, Edit&, void );
+    DECL_LINK_TYPED(LoseFocusHdl, Control&, void );
 
     SwStdFontTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwStdFontTabPage() override;
+    virtual ~SwStdFontTabPage();
     virtual void dispose() override;
 
 public:
@@ -188,38 +188,42 @@ public:
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 
+    void SetFontMode(sal_uInt8 nGroup)
+    {
+        m_nFontGroup = nGroup;
+    }
     virtual void PageCreated(const SfxAllItemSet& aSet) override;
 };
 
 class SwTableOptionsTabPage : public SfxTabPage
 {
-    VclPtr<CheckBox>    m_pHeaderCB;
-    VclPtr<CheckBox>    m_pRepeatHeaderCB;
-    VclPtr<CheckBox>    m_pDontSplitCB;
-    VclPtr<CheckBox>    m_pBorderCB;
+    VclPtr<CheckBox>    pHeaderCB;
+    VclPtr<CheckBox>    pRepeatHeaderCB;
+    VclPtr<CheckBox>    pDontSplitCB;
+    VclPtr<CheckBox>    pBorderCB;
 
-    VclPtr<CheckBox>    m_pNumFormattingCB;
-    VclPtr<CheckBox>    m_pNumFormatFormattingCB;
-    VclPtr<CheckBox>    m_pNumAlignmentCB;
+    VclPtr<CheckBox>    pNumFormattingCB;
+    VclPtr<CheckBox>    pNumFormatFormattingCB;
+    VclPtr<CheckBox>    pNumAlignmentCB;
 
-    VclPtr<MetricField> m_pRowMoveMF;
-    VclPtr<MetricField> m_pColMoveMF;
+    VclPtr<MetricField> pRowMoveMF;
+    VclPtr<MetricField> pColMoveMF;
 
-    VclPtr<MetricField> m_pRowInsertMF;
-    VclPtr<MetricField> m_pColInsertMF;
+    VclPtr<MetricField> pRowInsertMF;
+    VclPtr<MetricField> pColInsertMF;
 
-    VclPtr<RadioButton> m_pFixRB;
-    VclPtr<RadioButton> m_pFixPropRB;
-    VclPtr<RadioButton> m_pVarRB;
+    VclPtr<RadioButton> pFixRB;
+    VclPtr<RadioButton> pFixPropRB;
+    VclPtr<RadioButton> pVarRB;
 
-    SwWrtShell* m_pWrtShell;
-    bool        m_bHTMLMode;
+    SwWrtShell* pWrtShell;
+    bool        bHTMLMode;
 
-    DECL_LINK(CheckBoxHdl, Button*, void);
+    DECL_LINK_TYPED(CheckBoxHdl, Button*, void);
 
 public:
     SwTableOptionsTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwTableOptionsTabPage() override;
+    virtual ~SwTableOptionsTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -227,6 +231,7 @@ public:
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 
+    void SetWrtShell(SwWrtShell* pSh) { pWrtShell = pSh; }
     virtual void PageCreated( const SfxAllItemSet& aSet) override;
 
 };
@@ -255,6 +260,7 @@ class SwShdwCursorOptionsTabPage : public SfxTabPage
 
     VclPtr<VclFrame> m_pCursorProtFrame;
     VclPtr<CheckBox> m_pCursorInProtCB;
+    VclPtr<CheckBox> m_pIgnoreProtCB;
 
     VclPtr<CheckBox> m_pMathBaselineAlignmentCB;
 
@@ -262,7 +268,7 @@ class SwShdwCursorOptionsTabPage : public SfxTabPage
 
 public:
     SwShdwCursorOptionsTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwShdwCursorOptionsTabPage() override;
+    virtual ~SwShdwCursorOptionsTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -270,6 +276,10 @@ public:
     virtual bool FillItemSet( SfxItemSet* rSet ) override;
     virtual void Reset( const SfxItemSet* rSet ) override;
 
+    void SetWrtShell(SwWrtShell* pSh)
+    {
+        m_pWrtShell = pSh;
+    }
     virtual void PageCreated( const SfxAllItemSet& aSet ) override;
 };
 
@@ -286,14 +296,14 @@ class SwMarkPreview : public vcl::Window
     Color m_aTextCol;    // text
     Color m_aPrintAreaCol; // frame for print area
 
-    tools::Rectangle aPage;
-    tools::Rectangle aLeftPagePrtArea;
-    tools::Rectangle aRightPagePrtArea;
+    Rectangle aPage;
+    Rectangle aLeftPagePrtArea;
+    Rectangle aRightPagePrtArea;
 
     sal_uInt16 nMarkPos;
 
-    void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
-    void PaintPage(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect);
+    void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
+    void PaintPage(vcl::RenderContext& rRenderContext, const Rectangle &rRect);
     void InitColors();
 
 protected:
@@ -301,43 +311,44 @@ protected:
 
 public:
     SwMarkPreview(vcl::Window* pParent, WinBits nWinBits);
-    virtual ~SwMarkPreview() override;
+    virtual ~SwMarkPreview();
 
-    void SetColor(const Color& rCol) { m_aMarkCol = rCol; }
-    void SetMarkPos(sal_uInt16 nPos) { nMarkPos = nPos; }
+    inline void SetColor(const Color& rCol) { m_aMarkCol = rCol; }
+    inline void SetMarkPos(sal_uInt16 nPos) { nMarkPos = nPos; }
     virtual Size GetOptimalSize() const override;
 };
 
 // redlining options
 class SwRedlineOptionsTabPage : public SfxTabPage
 {
-    VclPtr<ListBox>             m_pInsertLB;
-    VclPtr<SvxColorListBox>     m_pInsertColorLB;
-    VclPtr<SvxFontPrevWindow>   m_pInsertedPreviewWN;
+    VclPtr<ListBox>             pInsertLB;
+    VclPtr<ColorListBox>        pInsertColorLB;
+    VclPtr<SvxFontPrevWindow>   pInsertedPreviewWN;
 
-    VclPtr<ListBox>             m_pDeletedLB;
-    VclPtr<SvxColorListBox>     m_pDeletedColorLB;
-    VclPtr<SvxFontPrevWindow>   m_pDeletedPreviewWN;
+    VclPtr<ListBox>             pDeletedLB;
+    VclPtr<ColorListBox>        pDeletedColorLB;
+    VclPtr<SvxFontPrevWindow>   pDeletedPreviewWN;
 
-    VclPtr<ListBox>             m_pChangedLB;
-    VclPtr<SvxColorListBox>     m_pChangedColorLB;
-    VclPtr<SvxFontPrevWindow>   m_pChangedPreviewWN;
+    VclPtr<ListBox>             pChangedLB;
+    VclPtr<ColorListBox>        pChangedColorLB;
+    VclPtr<SvxFontPrevWindow>   pChangedPreviewWN;
 
-    VclPtr<ListBox>             m_pMarkPosLB;
-    VclPtr<SvxColorListBox>     m_pMarkColorLB;
-    VclPtr<SwMarkPreview>       m_pMarkPreviewWN;
+    VclPtr<ListBox>             pMarkPosLB;
+    VclPtr<ColorListBox>        pMarkColorLB;
+    VclPtr<SwMarkPreview>       pMarkPreviewWN;
 
-    DECL_LINK(AttribHdl, ListBox&, void);
-    void ChangedMaskPrev();
-    DECL_LINK(ChangedMaskPrevHdl, ListBox&, void);
-    DECL_LINK(ChangedMaskColorPrevHdl, SvxColorListBox&, void);
-    DECL_LINK(ColorHdl, SvxColorListBox&, void);
+    OUString             sAuthor;
+    OUString             sNone;
+
+    DECL_LINK_TYPED(AttribHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangedMaskPrevHdl, ListBox&, void);
+    DECL_LINK_TYPED(ColorHdl, ListBox&, void);
 
     static void InitFontStyle(SvxFontPrevWindow& rExampleWin);
 
 public:
     SwRedlineOptionsTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwRedlineOptionsTabPage() override;
+    virtual ~SwRedlineOptionsTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -354,7 +365,7 @@ class SwTestTabPage : public SfxTabPage
 {
 public:
     SwTestTabPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwTestTabPage() override;
+    virtual ~SwTestTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);
@@ -377,7 +388,7 @@ private:
     bool bAttrModified;
 
     void Init();
-    DECL_LINK(AutoClickHdl, Button*, void);
+    DECL_LINK_TYPED(AutoClickHdl, Button*, void);
 };
 #endif // DBG_UTIL
 
@@ -392,12 +403,12 @@ class SwCompareOptionsTabPage : public SfxTabPage
     VclPtr<NumericField> m_pLenNF;
     VclPtr<CheckBox>     m_pStoreRsidCB;
 
-    DECL_LINK(ComparisonHdl, Button*, void);
-    DECL_LINK(IgnoreHdl, Button*, void);
+    DECL_LINK_TYPED(ComparisonHdl, Button*, void);
+    DECL_LINK_TYPED(IgnoreHdl, Button*, void);
 
 public:
     SwCompareOptionsTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwCompareOptionsTabPage() override;
+    virtual ~SwCompareOptionsTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

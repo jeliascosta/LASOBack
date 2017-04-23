@@ -60,11 +60,12 @@ ToggleButtonToolbarController::ToggleButtonToolbarController(
     sal_uInt16                                   nID,
     Style                                    eStyle,
     const OUString&                          aCommand ) :
-    ComplexToolbarController( rxContext, rFrame, pToolbar, nID, aCommand )
+    ComplexToolbarController( rxContext, rFrame, pToolbar, nID, aCommand ),
+    m_eStyle( eStyle )
 {
-    if ( eStyle == Style::DropDownButton )
+    if ( eStyle == STYLE_DROPDOWNBUTTON )
         m_pToolbar->SetItemBits( m_nID, ToolBoxItemBits::DROPDOWNONLY | m_pToolbar->GetItemBits( m_nID ) );
-    else // Style::ToggleDropDownButton
+    else if ( eStyle == STYLE_TOGGLE_DROPDOWNBUTTON )
         m_pToolbar->SetItemBits( m_nID, ToolBoxItemBits::DROPDOWN | m_pToolbar->GetItemBits( m_nID ) );
 }
 
@@ -73,6 +74,7 @@ ToggleButtonToolbarController::~ToggleButtonToolbarController()
 }
 
 void SAL_CALL ToggleButtonToolbarController::dispose()
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
     ComplexToolbarController::dispose();
@@ -91,28 +93,32 @@ Sequence<PropertyValue> ToggleButtonToolbarController::getExecuteArgs(sal_Int16 
 }
 
 uno::Reference< awt::XWindow > SAL_CALL ToggleButtonToolbarController::createPopupWindow()
+throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xWindow;
 
     SolarMutexGuard aSolarMutexGuard;
-
-    // create popup menu
-    ScopedVclPtrInstance<::PopupMenu> aPopup;
-    const sal_uInt32 nCount = m_aDropdownMenuList.size();
-    for ( sal_uInt32 i = 0; i < nCount; i++ )
+    if (( m_eStyle == STYLE_DROPDOWNBUTTON ) ||
+        ( m_eStyle == STYLE_TOGGLE_DROPDOWNBUTTON ))
     {
-        OUString aLabel( m_aDropdownMenuList[i] );
-        aPopup->InsertItem( sal_uInt16( i+1 ), aLabel );
-        if ( aLabel == m_aCurrentSelection )
-            aPopup->CheckItem( sal_uInt16( i+1 ) );
-        else
-            aPopup->CheckItem( sal_uInt16( i+1 ), false );
-    }
+        // create popup menu
+        ::PopupMenu aPopup;
+        const sal_uInt32 nCount = m_aDropdownMenuList.size();
+        for ( sal_uInt32 i = 0; i < nCount; i++ )
+        {
+            OUString aLabel( m_aDropdownMenuList[i] );
+            aPopup.InsertItem( sal_uInt16( i+1 ), aLabel );
+            if ( aLabel == m_aCurrentSelection )
+                aPopup.CheckItem( sal_uInt16( i+1 ) );
+            else
+                aPopup.CheckItem( sal_uInt16( i+1 ), false );
+        }
 
-    m_pToolbar->SetItemDown( m_nID, true );
-    aPopup->SetSelectHdl( LINK( this, ToggleButtonToolbarController, MenuSelectHdl ));
-    aPopup->Execute( m_pToolbar, m_pToolbar->GetItemRect( m_nID ));
-    m_pToolbar->SetItemDown( m_nID, false );
+        m_pToolbar->SetItemDown( m_nID, true );
+        aPopup.SetSelectHdl( LINK( this, ToggleButtonToolbarController, MenuSelectHdl ));
+        aPopup.Execute( m_pToolbar, m_pToolbar->GetItemRect( m_nID ));
+        m_pToolbar->SetItemDown( m_nID, false );
+    }
 
     return xWindow;
 }
@@ -121,135 +127,139 @@ void ToggleButtonToolbarController::executeControlCommand( const css::frame::Con
 {
     SolarMutexGuard aSolarMutexGuard;
 
-    if ( rControlCommand.Command == "SetList" )
+    if (( m_eStyle == STYLE_DROPDOWNBUTTON ) ||
+        ( m_eStyle == STYLE_TOGGLE_DROPDOWNBUTTON ))
     {
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        if ( rControlCommand.Command == "SetList" )
         {
-            if ( rControlCommand.Arguments[i].Name == "List" )
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
             {
-                Sequence< OUString > aList;
-                m_aDropdownMenuList.clear();
-
-                rControlCommand.Arguments[i].Value >>= aList;
-                for ( sal_Int32 j = 0; j < aList.getLength(); j++ )
-                    m_aDropdownMenuList.push_back( aList[j] );
-
-                // send notification
-                uno::Sequence< beans::NamedValue > aInfo { { "List", css::uno::makeAny(aList) } };
-                addNotifyInfo( "ListChanged",
-                            getDispatchFromCommand( m_aCommandURL ),
-                            aInfo );
-
-                break;
-            }
-        }
-    }
-    else if ( rControlCommand.Command == "CheckItemPos" )
-    {
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
-        {
-            if ( rControlCommand.Arguments[i].Name == "Pos" )
-            {
-                sal_Int32 nPos( -1 );
-
-                rControlCommand.Arguments[i].Value >>= nPos;
-                if ( nPos >= 0 &&
-                     ( sal::static_int_cast< sal_uInt32 >(nPos)
-                       < m_aDropdownMenuList.size() ) )
+                if ( rControlCommand.Arguments[i].Name == "List" )
                 {
-                    m_aCurrentSelection = m_aDropdownMenuList[nPos];
+                    Sequence< OUString > aList;
+                    m_aDropdownMenuList.clear();
+
+                    rControlCommand.Arguments[i].Value >>= aList;
+                    for ( sal_Int32 j = 0; j < aList.getLength(); j++ )
+                        m_aDropdownMenuList.push_back( aList[j] );
 
                     // send notification
-                    uno::Sequence< beans::NamedValue > aInfo { { "ItemChecked", css::uno::makeAny(nPos) } };
-                    addNotifyInfo( "Pos",
+                    uno::Sequence< beans::NamedValue > aInfo { { "List", css::uno::makeAny(aList) } };
+                    addNotifyInfo( "ListChanged",
                                 getDispatchFromCommand( m_aCommandURL ),
                                 aInfo );
-                }
-                break;
-            }
-        }
-    }
-    else if ( rControlCommand.Command == "AddEntry" )
-    {
-        OUString   aText;
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
-        {
-            if ( rControlCommand.Arguments[i].Name == "Text" )
-            {
-                if ( rControlCommand.Arguments[i].Value >>= aText )
-                    m_aDropdownMenuList.push_back( aText );
-                break;
-            }
-        }
-    }
-    else if ( rControlCommand.Command == "InsertEntry" )
-    {
-        sal_Int32      nPos( COMBOBOX_APPEND );
-        sal_Int32      nSize = sal_Int32( m_aDropdownMenuList.size() );
-        OUString  aText;
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
-        {
-            if ( rControlCommand.Arguments[i].Name == "Pos" )
-            {
-                sal_Int32 nTmpPos = 0;
-                if ( rControlCommand.Arguments[i].Value >>= nTmpPos )
-                {
-                    if (( nTmpPos >= 0 ) && ( nTmpPos < sal_Int32( nSize )))
-                        nPos = nTmpPos;
-                }
-            }
-            else if ( rControlCommand.Arguments[i].Name == "Text" )
-                rControlCommand.Arguments[i].Value >>= aText;
-        }
 
-        std::vector< OUString >::iterator aIter = m_aDropdownMenuList.begin();
-        aIter += nPos;
-        m_aDropdownMenuList.insert( aIter, aText );
-    }
-    else if ( rControlCommand.Command == "RemoveEntryPos" )
-    {
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+                    break;
+                }
+            }
+        }
+        else if ( rControlCommand.Command == "CheckItemPos" )
         {
-            if ( rControlCommand.Arguments[i].Name == "Pos" )
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
             {
-                sal_Int32 nPos( -1 );
-                if ( rControlCommand.Arguments[i].Value >>= nPos )
+                if ( rControlCommand.Arguments[i].Name == "Pos" )
                 {
-                    if ( nPos < sal_Int32( m_aDropdownMenuList.size() ))
+                    sal_Int32 nPos( -1 );
+
+                    rControlCommand.Arguments[i].Value >>= nPos;
+                    if ( nPos >= 0 &&
+                         ( sal::static_int_cast< sal_uInt32 >(nPos)
+                           < m_aDropdownMenuList.size() ) )
                     {
-                        m_aDropdownMenuList.erase(m_aDropdownMenuList.begin() + nPos);
+                        m_aCurrentSelection = m_aDropdownMenuList[nPos];
+
+                        // send notification
+                        uno::Sequence< beans::NamedValue > aInfo { { "ItemChecked", css::uno::makeAny(nPos) } };
+                        addNotifyInfo( "Pos",
+                                    getDispatchFromCommand( m_aCommandURL ),
+                                    aInfo );
+                    }
+                    break;
+                }
+            }
+        }
+        else if ( rControlCommand.Command == "AddEntry" )
+        {
+            OUString   aText;
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+            {
+                if ( rControlCommand.Arguments[i].Name == "Text" )
+                {
+                    if ( rControlCommand.Arguments[i].Value >>= aText )
+                        m_aDropdownMenuList.push_back( aText );
+                    break;
+                }
+            }
+        }
+        else if ( rControlCommand.Command == "InsertEntry" )
+        {
+            sal_Int32      nPos( COMBOBOX_APPEND );
+            sal_Int32      nSize = sal_Int32( m_aDropdownMenuList.size() );
+            OUString  aText;
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+            {
+                if ( rControlCommand.Arguments[i].Name == "Pos" )
+                {
+                    sal_Int32 nTmpPos = 0;
+                    if ( rControlCommand.Arguments[i].Value >>= nTmpPos )
+                    {
+                        if (( nTmpPos >= 0 ) && ( nTmpPos < sal_Int32( nSize )))
+                            nPos = nTmpPos;
                     }
                 }
-                break;
+                else if ( rControlCommand.Arguments[i].Name == "Text" )
+                    rControlCommand.Arguments[i].Value >>= aText;
             }
+
+            std::vector< OUString >::iterator aIter = m_aDropdownMenuList.begin();
+            aIter += nPos;
+            m_aDropdownMenuList.insert( aIter, aText );
         }
-    }
-    else if ( rControlCommand.Command == "RemoveEntryText" )
-    {
-        for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+        else if ( rControlCommand.Command == "RemoveEntryPos" )
         {
-            if ( rControlCommand.Arguments[i].Name == "Text" )
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
             {
-                OUString aText;
-                if ( rControlCommand.Arguments[i].Value >>= aText )
+                if ( rControlCommand.Arguments[i].Name == "Pos" )
                 {
-                    sal_Int32 nSize = sal_Int32( m_aDropdownMenuList.size() );
-                    for ( sal_Int32 j = 0; j < nSize; j++ )
+                    sal_Int32 nPos( -1 );
+                    if ( rControlCommand.Arguments[i].Value >>= nPos )
                     {
-                        if ( m_aDropdownMenuList[j] == aText )
+                        if ( nPos < sal_Int32( m_aDropdownMenuList.size() ))
                         {
-                            m_aDropdownMenuList.erase(m_aDropdownMenuList.begin() + j);
-                            break;
+                            m_aDropdownMenuList.erase(m_aDropdownMenuList.begin() + nPos);
                         }
                     }
+                    break;
                 }
-                break;
+            }
+        }
+        else if ( rControlCommand.Command == "RemoveEntryText" )
+        {
+            for ( sal_Int32 i = 0; i < rControlCommand.Arguments.getLength(); i++ )
+            {
+                if ( rControlCommand.Arguments[i].Name == "Text" )
+                {
+                    OUString aText;
+                    if ( rControlCommand.Arguments[i].Value >>= aText )
+                    {
+                        sal_Int32 nSize = sal_Int32( m_aDropdownMenuList.size() );
+                        for ( sal_Int32 j = 0; j < nSize; j++ )
+                        {
+                            if ( m_aDropdownMenuList[j] == aText )
+                            {
+                                m_aDropdownMenuList.erase(m_aDropdownMenuList.begin() + j);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
             }
         }
     }
 }
 
-IMPL_LINK( ToggleButtonToolbarController, MenuSelectHdl, Menu *, pMenu, bool )
+IMPL_LINK_TYPED( ToggleButtonToolbarController, MenuSelectHdl, Menu *, pMenu, bool )
 {
     SolarMutexGuard aGuard;
 

@@ -70,9 +70,9 @@ void SfxApplication::RegisterToolBoxControl_Impl( SfxModule *pMod, const SfxTbxC
     }
 
 #ifdef DBG_UTIL
-    for ( size_t n=0; n<pImpl->pTbxCtrlFac->size(); n++ )
+    for ( size_t n=0; n<pAppData_Impl->pTbxCtrlFac->size(); n++ )
     {
-        SfxTbxCtrlFactory *pF = &(*pImpl->pTbxCtrlFac)[n];
+        SfxTbxCtrlFactory *pF = &(*pAppData_Impl->pTbxCtrlFac)[n];
         if ( pF->nTypeId == rFact.nTypeId &&
             (pF->nSlotId == rFact.nSlotId || pF->nSlotId == 0) )
         {
@@ -81,7 +81,7 @@ void SfxApplication::RegisterToolBoxControl_Impl( SfxModule *pMod, const SfxTbxC
     }
 #endif
 
-    pImpl->pTbxCtrlFac->push_back( rFact );
+    pAppData_Impl->pTbxCtrlFac->push_back( rFact );
 }
 
 
@@ -94,9 +94,9 @@ void SfxApplication::RegisterStatusBarControl_Impl( SfxModule *pMod, const SfxSt
     }
 
 #ifdef DBG_UTIL
-    for ( size_t n=0; n<pImpl->pStbCtrlFac->size(); n++ )
+    for ( size_t n=0; n<pAppData_Impl->pStbCtrlFac->size(); n++ )
     {
-        SfxStbCtrlFactory *pF = &(*pImpl->pStbCtrlFac)[n];
+        SfxStbCtrlFactory *pF = &(*pAppData_Impl->pStbCtrlFac)[n];
         if ( pF->nTypeId == rFact.nTypeId &&
             (pF->nSlotId == rFact.nSlotId || pF->nSlotId == 0) )
         {
@@ -105,7 +105,7 @@ void SfxApplication::RegisterStatusBarControl_Impl( SfxModule *pMod, const SfxSt
     }
 #endif
 
-    pImpl->pStbCtrlFac->push_back( rFact );
+    pAppData_Impl->pStbCtrlFac->push_back( rFact );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

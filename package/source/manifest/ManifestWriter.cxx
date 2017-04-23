@@ -55,6 +55,7 @@ ManifestWriter::~ManifestWriter()
 
 // XManifestWriter methods
 void SAL_CALL ManifestWriter::writeManifestSequence( const Reference< XOutputStream >& rStream, const Sequence< Sequence< PropertyValue > >& rSequence )
+        throw (RuntimeException, std::exception)
 {
     Reference < XWriter > xSource = Writer::create( m_xContext );
     xSource->setOutputStream ( rStream );
@@ -85,15 +86,18 @@ Sequence < OUString > ManifestWriter::static_getSupportedServiceNames()
 }
 
 OUString ManifestWriter::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return static_getImplementationName();
 }
 
 sal_Bool SAL_CALL ManifestWriter::supportsService(OUString const & rServiceName)
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 Sequence < OUString > ManifestWriter::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return static_getSupportedServiceNames();
 }

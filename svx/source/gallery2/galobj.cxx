@@ -55,7 +55,7 @@ BitmapEx SgaObject::createPreviewBitmapEx(const Size& rSizePixel) const
 
     if(rSizePixel.Width() && rSizePixel.Height())
     {
-        if(SgaObjKind::Sound == GetObjKind())
+        if(SGA_OBJ_SOUND == GetObjKind())
         {
             aRetval = GAL_RES(RID_SVXBMP_GALLERY_MEDIA);
         }
@@ -93,18 +93,18 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
 {
     bool bRet = false;
 
-    if( rGraphic.GetType() == GraphicType::Bitmap )
+    if( rGraphic.GetType() == GRAPHIC_BITMAP )
     {
         BitmapEx    aBmpEx( rGraphic.GetBitmapEx() );
         Size        aBmpSize( aBmpEx.GetSizePixel() );
 
         if( aBmpSize.Width() && aBmpSize.Height() )
         {
-            if( aBmpEx.GetPrefMapMode().GetMapUnit() != MapUnit::MapPixel &&
+            if( aBmpEx.GetPrefMapMode().GetMapUnit() != MAP_PIXEL &&
                 aBmpEx.GetPrefSize().Width() > 0 &&
                 aBmpEx.GetPrefSize().Height() > 0 )
             {
-                Size aLogSize( OutputDevice::LogicToLogic( aBmpEx.GetPrefSize(), aBmpEx.GetPrefMapMode(), MapUnit::Map100thMM ) );
+                Size aLogSize( OutputDevice::LogicToLogic( aBmpEx.GetPrefSize(), aBmpEx.GetPrefMapMode(), MAP_100TH_MM ) );
 
                 if( aLogSize.Width() > 0 && aLogSize.Height() > 0 )
                 {
@@ -125,7 +125,7 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
 
             if( ( aBmpSize.Width() <= S_THUMB ) && ( aBmpSize.Height() <= S_THUMB ) )
             {
-                aThumbBmp.Convert( BmpConversion::N8BitColors );
+                aThumbBmp.Convert( BMP_CONVERSION_8BIT_COLORS );
                 bRet = true;
             }
             else
@@ -138,13 +138,13 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
                     (double) aNewSize.Height() / aBmpSize.Height(),
                     BmpScaleFlag::BestQuality ) )
                 {
-                    aThumbBmp.Convert( BmpConversion::N8BitColors );
+                    aThumbBmp.Convert( BMP_CONVERSION_8BIT_COLORS );
                     bRet = true;
                 }
             }
         }
     }
-    else if( rGraphic.GetType() == GraphicType::GdiMetafile )
+    else if( rGraphic.GetType() == GRAPHIC_GDIMETAFILE )
     {
         const Size aPrefSize( rGraphic.GetPrefSize() );
         const double fFactor  = (double)aPrefSize.Width() / (double)aPrefSize.Height();
@@ -159,7 +159,7 @@ bool SgaObject::CreateThumb( const Graphic& rGraphic )
 
         if( !aThumbBmp.IsEmpty() )
         {
-            aThumbBmp.Convert( BmpConversion::N8BitColors );
+            aThumbBmp.Convert( BMP_CONVERSION_8BIT_COLORS );
             bRet = true;
         }
     }
@@ -171,7 +171,7 @@ void SgaObject::WriteData( SvStream& rOut, const OUString& rDestDir ) const
 {
     static const sal_uInt32 nInventor = COMPAT_FORMAT( 'S', 'G', 'A', '3' );
 
-    rOut.WriteUInt32( nInventor ).WriteUInt16( 0x0004 ).WriteUInt16( GetVersion() ).WriteUInt16( (sal_uInt16)GetObjKind() );
+    rOut.WriteUInt32( nInventor ).WriteUInt16( 0x0004 ).WriteUInt16( GetVersion() ).WriteUInt16( GetObjKind() );
     rOut.WriteBool( bIsThumbBmp );
 
     if( bIsThumbBmp )
@@ -190,7 +190,7 @@ void SgaObject::WriteData( SvStream& rOut, const OUString& rDestDir ) const
     else
         WriteGDIMetaFile( rOut, aThumbMtf );
 
-    OUString aURLWithoutDestDir = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+    OUString aURLWithoutDestDir = aURL.GetMainURL( INetURLObject::NO_DECODE );
     aURLWithoutDestDir = aURLWithoutDestDir.replaceFirst(rDestDir, "");
     write_uInt16_lenPrefixed_uInt8s_FromOUString(rOut, aURLWithoutDestDir, RTL_TEXTENCODING_UTF8);
 }
@@ -296,8 +296,8 @@ void SgaObjectBmp::WriteData( SvStream& rOut, const OUString& rDestDir ) const
 {
     // Set version
     SgaObject::WriteData( rOut, rDestDir );
-    char aDummy[ 10 ] = { 0 };
-    rOut.WriteBytes(aDummy, 10);
+    char aDummy[ 10 ];
+    rOut.Write( aDummy, 10 );
     write_uInt16_lenPrefixed_uInt8s_FromOString(rOut, OString()); //dummy
     write_uInt16_lenPrefixed_uInt8s_FromOUString(rOut, aTitle, RTL_TEXTENCODING_UTF8);
 }
@@ -478,7 +478,7 @@ bool SgaObjectSvDraw::CreateThumb( const FmFormModel& rModel )
 
         if(pPage)
         {
-            const tools::Rectangle aObjRect(pPage->GetAllObjBoundRect());
+            const Rectangle aObjRect(pPage->GetAllObjBoundRect());
 
             if(aObjRect.GetWidth() && aObjRect.GetHeight())
             {
@@ -508,7 +508,7 @@ bool SgaObjectSvDraw::CreateThumb( const FmFormModel& rModel )
                     if(!!aThumbBmp)
                     {
                         aThumbBmp.Scale(Size(nTargetSizeX, nTargetSizeY), BmpScaleFlag::BestQuality);
-                        aThumbBmp.Convert(BmpConversion::N8BitColors);
+                        aThumbBmp.Convert(BMP_CONVERSION_8BIT_COLORS);
                         bRet = true;
                     }
                 }

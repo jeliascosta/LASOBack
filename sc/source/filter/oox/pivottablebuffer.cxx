@@ -38,13 +38,13 @@
 #include <com/sun/star/sheet/XDataPilotField.hpp>
 #include <com/sun/star/sheet/XDataPilotTablesSupplier.hpp>
 #include <com/sun/star/sheet/XSheetOperation.hpp>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 
 #include "dapiuno.hxx"
 #include "dpobject.hxx"
@@ -60,6 +60,7 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::sheet;
 using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
+using namespace com::sun::star;
 
 namespace {
 
@@ -1198,14 +1199,10 @@ void PivotTable::finalizeImport()
             try
             {
                 // create a new data pilot descriptor based on the source data
-                Reference< XDataPilotTablesSupplier > xDPTablesSupp( getSheetFromDoc( maLocationModel.maRange.aStart.Tab() ), UNO_QUERY_THROW );
+                Reference< XDataPilotTablesSupplier > xDPTablesSupp( getSheetFromDoc( maLocationModel.maRange.Sheet ), UNO_QUERY_THROW );
                 Reference< XDataPilotTables > xDPTables( xDPTablesSupp->getDataPilotTables(), UNO_SET_THROW );
                 mxDPDescriptor.set( xDPTables->createDataPilotDescriptor(), UNO_SET_THROW );
-                ScRange aRange = mpPivotCache->getSourceRange();
-                CellRangeAddress aCellRangeAddress = CellRangeAddress( aRange.aStart.Tab(),
-                                                      aRange.aStart.Col(), aRange.aStart.Row(),
-                                                      aRange.aEnd.Col(), aRange.aEnd.Row() );
-                mxDPDescriptor->setSourceRange( aCellRangeAddress );
+                mxDPDescriptor->setSourceRange( mpPivotCache->getSourceRange() );
                 mxDPDescriptor->setTag( maDefModel.maTag );
 
                 // TODO: This is a hack. Eventually we need to convert the whole thing to the internal API.
@@ -1268,7 +1265,7 @@ void PivotTable::finalizeImport()
                 maFilters.forEachMem( &PivotTableFilter::finalizeImport );
 
                 // calculate base position of table
-                CellAddress aPos( maLocationModel.maRange.aStart.Tab(), maLocationModel.maRange.aStart.Col(), maLocationModel.maRange.aStart.Row() );
+                CellAddress aPos( maLocationModel.maRange.Sheet, maLocationModel.maRange.StartColumn, maLocationModel.maRange.StartRow );
                 /*  If page fields exist, include them into the destination
                     area (they are excluded in Excel). Add an extra blank row. */
                 if( !maPageFields.empty() )

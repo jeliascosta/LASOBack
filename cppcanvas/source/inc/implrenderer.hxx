@@ -36,7 +36,7 @@
 class GDIMetaFile;
 class VirtualDevice;
 class Gradient;
-namespace tools { class Rectangle; }
+class Rectangle;
 namespace vcl { class Font; }
 namespace tools { class PolyPolygon; }
 class Point;
@@ -72,30 +72,23 @@ namespace cppcanvas
             void popState();
             void clearStateStack();
         private:
-            std::vector< OutDevState > m_aStates;
+            ::std::vector< OutDevState > m_aStates;
         };
 
         // EMF+
-        // Transformation matrix (used for Affine Transformation)
-        //      [ eM11, eM12, eDx ]
-        //      [ eM21, eM22, eDy ]
-        //      [ 0,    0,    1   ]
-        // that consists of a linear map (eM11, eM12, eM21, eM22)
-        // More info: https://en.wikipedia.org/wiki/Linear_map
-        // followed by a translation (eDx, eDy)
-
+        // TODO: replace?
         struct XForm
         {
-            float   eM11; // M1,1 value in the matrix. Increases or decreases the size of the pixels horizontally.
-            float   eM12; // M1,2 value in the matrix. This effectively angles the X axis up or down.
-            float   eM21; // M2,1 value in the matrix. This effectively angles the Y axis left or right.
-            float   eM22; // M2,2 value in the matrix. Increases or decreases the size of the pixels vertically.
-            float   eDx;  // Delta x (Dx) value in the matrix. Moves the whole coordinate system horizontally.
-            float   eDy;  // Delta y (Dy) value in the matrix. Moves the whole coordinate system vertically.
+            float   eM11;
+            float   eM12;
+            float   eM21;
+            float   eM22;
+            float   eDx;
+            float   eDy;
             XForm()
             {
                 SetIdentity ();
-            }
+            };
 
             void SetIdentity ()
             {
@@ -113,20 +106,14 @@ namespace cppcanvas
                 eDy  = f.eDy;
             }
 
-            // Multiple two square matrices
-            //      [ eM11, eM12, eDx ]   [ f.eM11, f.eM12, f.eDx ]
-            //      [ eM21, eM22, eDy ] x [ f.eM21, f.eM22, f.eDy ]
-            //      [ 0,    0,    1   ]   [ 0,      0,      1     ]
-            // More information: https://en.wikipedia.org/wiki/Matrix_multiplication#Square_matrices
-            // FIXME We shouldn't modify source matrix during computation
             void Multiply (const XForm& f)
             {
                 eM11 = eM11*f.eM11 + eM12*f.eM21;
                 eM12 = eM11*f.eM12 + eM12*f.eM22;
                 eM21 = eM21*f.eM11 + eM22*f.eM21;
                 eM22 = eM21*f.eM12 + eM22*f.eM22;
-                eDx  = eDx*f.eM11  + eDy*f.eM21 + f.eDx;
-                eDy  = eDx*f.eM12  + eDy*f.eM22 + f.eDy;
+                eDx *= eDx*f.eM11  + eDy*f.eM21 + f.eDx;
+                eDy *= eDx*f.eM12  + eDy*f.eM22 + f.eDy;
             }
 
 #ifdef OSL_BIGENDIAN
@@ -174,7 +161,7 @@ static float GetSwapFloat( SvStream& rSt )
             OutDevState aDevState;
         } EmfPlusGraphicState;
 
-        typedef std::map<int,EmfPlusGraphicState> GraphicStateMap;
+        typedef ::std::map<int,EmfPlusGraphicState> GraphicStateMap;
 
         class ImplRenderer : public virtual Renderer, protected CanvasGraphicHelper
         {
@@ -183,7 +170,7 @@ static float GetSwapFloat( SvStream& rSt )
                           const GDIMetaFile&        rMtf,
                           const Parameters&         rParms );
 
-            virtual ~ImplRenderer() override;
+            virtual ~ImplRenderer();
 
             virtual bool                draw() const override;
             virtual bool                drawSubset( sal_Int32   nStartIndex,
@@ -209,7 +196,7 @@ static float GetSwapFloat( SvStream& rSt )
 
             // prefetched and prepared canvas actions
             // (externally not visible)
-            typedef std::vector< MtfAction >      ActionVector;
+            typedef ::std::vector< MtfAction >      ActionVector;
 
             /* EMF+ */
             static void ReadRectangle (SvStream& s, float& x, float& y, float &width, float& height, bool bCompressed = false);
@@ -228,7 +215,7 @@ static float GetSwapFloat( SvStream& rSt )
                                  const ActionFactoryParameters&     rParms,
                                  bool                               bIntersect );
 
-            static void updateClipping( const ::tools::Rectangle&                 rClipRect,
+            static void updateClipping( const ::Rectangle&                 rClipRect,
                                  const ActionFactoryParameters&     rParms,
                                  bool                               bIntersect );
 

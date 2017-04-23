@@ -334,8 +334,8 @@ bool OpenGLSalBitmap::ImplScale( const double& rScaleX, const double& rScaleY, B
     mpUserBuffer.reset();
     OpenGLVCLContextZone aContextZone;
     rtl::Reference<OpenGLContext> xContext = OpenGLContext::getVCLContext();
-    xContext->state().scissor().disable();
-    xContext->state().stencil().disable();
+    xContext->state()->scissor().disable();
+    xContext->state()->stencil().disable();
 
     if (rScaleX <= 1 && rScaleY <= 1)
     {
@@ -350,7 +350,7 @@ bool OpenGLSalBitmap::ImplScale( const double& rScaleX, const double& rScaleY, B
     {
         return ImplScaleFilter( xContext, rScaleX, rScaleY, GL_LINEAR );
     }
-    else if( nScaleFlag == BmpScaleFlag::Default )
+    else if( nScaleFlag == BmpScaleFlag::Super || nScaleFlag == BmpScaleFlag::Default )
     {
         const Lanczos3Kernel aKernel;
 
@@ -371,11 +371,6 @@ bool OpenGLSalBitmap::ImplScale( const double& rScaleX, const double& rScaleY, B
     return false;
 }
 
-bool OpenGLSalBitmap::ScalingSupported() const
-{
-    return true;
-}
-
 bool OpenGLSalBitmap::Scale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag )
 {
     OpenGLVCLContextZone aContextZone;
@@ -386,6 +381,7 @@ bool OpenGLSalBitmap::Scale( const double& rScaleX, const double& rScaleY, BmpSc
 
     if( nScaleFlag == BmpScaleFlag::Fast ||
         nScaleFlag == BmpScaleFlag::BiLinear ||
+        nScaleFlag == BmpScaleFlag::Super ||
         nScaleFlag == BmpScaleFlag::Lanczos ||
         nScaleFlag == BmpScaleFlag::Default ||
         nScaleFlag == BmpScaleFlag::BestQuality )

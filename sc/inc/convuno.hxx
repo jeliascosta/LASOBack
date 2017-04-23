@@ -50,6 +50,10 @@ public:
     static inline void  FillApiRange(
                             css::table::CellRangeAddress& rApiRange,
                             const ScRange& rScRange );
+    // CellRangeAddress-Start -> CellAddress
+    static inline void  FillApiStartAddress(
+                            css::table::CellAddress& rApiAddress,
+                            const css::table::CellRangeAddress& rApiRange );
 
     /** Returns true, if the passed ranges have at least one common cell. */
     static inline bool  Intersects(
@@ -94,6 +98,15 @@ inline void ScUnoConversion::FillApiRange(
     rApiRange.Sheet = rScRange.aStart.Tab();
     rApiRange.EndColumn = rScRange.aEnd.Col();
     rApiRange.EndRow = rScRange.aEnd.Row();
+}
+
+inline void ScUnoConversion::FillApiStartAddress(
+        css::table::CellAddress& rApiAddress,
+        const css::table::CellRangeAddress& rApiRange )
+{
+    rApiAddress.Column = rApiRange.StartColumn;
+    rApiAddress.Row = rApiRange.StartRow;
+    rApiAddress.Sheet = rApiRange.Sheet;
 }
 
 inline bool ScUnoConversion::Intersects(

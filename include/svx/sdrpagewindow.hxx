@@ -24,7 +24,6 @@
 #include <svx/svdtypes.hxx>
 #include <svx/svxdllapi.h>
 #include <rtl/ref.hxx>
-#include <memory>
 
 #include <com/sun/star/awt/XControlContainer.hpp>
 
@@ -39,7 +38,7 @@ namespace sdr
     }
 }
 
-namespace basegfx { class B2DRange; class B2IRange; }
+namespace basegfx { class B2DRange; }
 
 class SdrPaintWindow;
 class SdrPageView;
@@ -48,7 +47,7 @@ class SVX_DLLPUBLIC SdrPageWindow
 {
     struct Impl;
 
-    std::unique_ptr<Impl> mpImpl;
+    Impl* mpImpl;
 
     SdrPageWindow( const SdrPageWindow& ) = delete;
     SdrPageWindow& operator= ( const SdrPageWindow& ) = delete;
@@ -74,7 +73,7 @@ public:
     void PrePaint();
     void PrepareRedraw(const vcl::Region& rReg);
     void RedrawAll( sdr::contact::ViewObjectContactRedirector* pRedirector );
-    void RedrawLayer( const SdrLayerID* pId, sdr::contact::ViewObjectContactRedirector* pRedirector, basegfx::B2IRange const*);
+    void RedrawLayer( const SdrLayerID* pId, sdr::contact::ViewObjectContactRedirector* pRedirector );
 
     // Invalidate call, used from ObjectContact(OfPageView) in InvalidatePartOfView(...)
     void InvalidatePageWindow(const basegfx::B2DRange& rRange);

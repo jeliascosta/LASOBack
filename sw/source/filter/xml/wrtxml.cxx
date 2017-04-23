@@ -19,15 +19,16 @@
 
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
+#include <com/sun/star/container/XIndexContainer.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
-#include <com/sun/star/task/XStatusIndicator.hpp>
+#include <com/sun/star/task/XStatusIndicatorFactory.hpp>
+#include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
 #include <com/sun/star/document/XExporter.hpp>
 #include <com/sun/star/document/XFilter.hpp>
 #include <com/sun/star/frame/XModule.hpp>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/genericpropertyset.hxx>
-#include <o3tl/any.hxx>
 #include <unotools/streamwrap.hxx>
 #include <svx/xmlgrhlp.hxx>
 #include <svx/xmleohlp.hxx>
@@ -85,7 +86,7 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     OSL_ENSURE( xStg.is(), "Where is my storage?" );
     pGraphicHelper = SvXMLGraphicHelper::Create( xStg,
-                                                 SvXMLGraphicHelperMode::Write,
+                                                 GRAPHICHELPER_MODE_WRITE,
                                                  false );
     xGraphicResolver = pGraphicHelper;
 
@@ -94,7 +95,7 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
     {
         pObjectHelper = SvXMLEmbeddedObjectHelper::Create(
                                          xStg, *pPersist,
-                                         SvXMLEmbeddedObjectHelperMode::Write,
+                                         EMBEDDEDOBJECTHELPER_MODE_WRITE,
                                          false );
         xObjectResolver = pObjectHelper;
     }
@@ -179,13 +180,13 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     // save show redline mode ...
     const OUString sShowChanges("ShowChanges");
-    RedlineFlags nRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    sal_uInt16 nRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
     xInfoSet->setPropertyValue( sShowChanges,
-        makeAny( IDocumentRedlineAccess::IsShowChanges( nRedlineFlags ) ) );
+        makeAny( IDocumentRedlineAccess::IsShowChanges( nRedlineMode ) ) );
     // ... and hide redlines for export
-    nRedlineFlags &= ~RedlineFlags::ShowMask;
-    nRedlineFlags |= RedlineFlags::ShowInsert;
-    pDoc->getIDocumentRedlineAccess().SetRedlineFlags( nRedlineFlags );
+    nRedlineMode &= ~nsRedlineMode_t::REDLINE_SHOW_MASK;
+    nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT;
+    pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)( nRedlineMode ));
 
     // Set base URI
     xInfoSet->setPropertyValue( "BaseURI", makeAny( GetBaseURL() ) );
@@ -398,12 +399,12 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     // restore redline mode
     aAny = xInfoSet->getPropertyValue( sShowChanges );
-    nRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
-    nRedlineFlags &= ~RedlineFlags::ShowMask;
-    nRedlineFlags |= RedlineFlags::ShowInsert;
-    if ( *o3tl::doAccess<bool>(aAny) )
-        nRedlineFlags |= RedlineFlags::ShowDelete;
-    pDoc->getIDocumentRedlineAccess().SetRedlineFlags( nRedlineFlags );
+    nRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+    nRedlineMode &= ~nsRedlineMode_t::REDLINE_SHOW_MASK;
+    nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT;
+    if ( *static_cast<sal_Bool const *>(aAny.getValue()) )
+        nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_DELETE;
+    pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)( nRedlineMode ));
 
     if (xStatusIndicator.is())
     {
@@ -414,14 +415,14 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
     {
         if( !sErrFile.isEmpty() )
             return *new StringErrorInfo( ERR_WRITE_ERROR_FILE, sErrFile,
-                                         ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                                         ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         return ERR_SWG_WRITE_ERROR;
     }
     else if( bWarn )
     {
         if( !sWarnFile.isEmpty() )
             return *new StringErrorInfo( WARN_WRITE_ERROR_FILE, sWarnFile,
-                                         ErrorHandlerFlags::ButtonsOk | ErrorHandlerFlags::MessageError );
+                                         ERRCODE_BUTTON_OK | ERRCODE_MSG_ERROR );
         return WARN_SWG_FEATURES_LOST;
     }
 

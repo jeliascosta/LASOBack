@@ -20,6 +20,7 @@
 #include <sal/config.h>
 
 #include <algorithm>
+#include <ctype.h>
 
 #include <tools/debug.hxx>
 
@@ -38,7 +39,7 @@ SvMetaAttribute::SvMetaAttribute( SvMetaType * pType )
 
 SvMetaType * SvMetaAttribute::GetType() const
 {
-    if( aType.is() || !GetRef() ) return aType.get();
+    if( aType.Is() || !GetRef() ) return aType;
     return static_cast<SvMetaAttribute *>(GetRef())->GetType();
 }
 
@@ -96,6 +97,12 @@ bool SvMetaAttribute::ReadSvIdl( SvIdlDataBase & rBase,
     return bOk;
 }
 
+void SvMetaAttribute::ReadAttributesSvIdl( SvIdlDataBase & rBase,
+                                             SvTokenStream & rInStm )
+{
+    SvMetaReference::ReadAttributesSvIdl( rBase, rInStm );
+}
+
 sal_uLong SvMetaAttribute::MakeSfx( OStringBuffer& rAttrArray )
 {
     SvMetaType * pType = GetType();
@@ -115,7 +122,7 @@ sal_uLong SvMetaAttribute::MakeSfx( OStringBuffer& rAttrArray )
     }
 }
 
-void SvMetaAttribute::Insert(SvSlotElementList&)
+void SvMetaAttribute::Insert (SvSlotElementList&, const OString&, SvIdlDataBase&)
 {
 }
 
@@ -166,12 +173,12 @@ bool SvMetaType::ReadHeaderSvIdl( SvIdlDataBase & ,
     if( rTok.Is( SvHash_interface() ) )
     {
         SetType( MetaTypeType::Interface );
-        bOk = ReadNameSvIdl( rInStm );
+        bOk = ReadNamesSvIdl( rInStm );
     }
     else if( rTok.Is( SvHash_shell() ) )
     {
         SetType( MetaTypeType::Shell );
-        bOk = ReadNameSvIdl( rInStm );
+        bOk = ReadNamesSvIdl( rInStm );
     }
     if( !bOk )
         rInStm.Seek( nTokPos );
@@ -189,6 +196,11 @@ bool SvMetaType::ReadSvIdl( SvIdlDataBase & rBase,
     return false;
 }
 
+bool SvMetaType::ReadNamesSvIdl( SvTokenStream & rInStm )
+{
+    return ReadNameSvIdl( rInStm );
+}
+
 void SvMetaType::ReadContextSvIdl( SvIdlDataBase & rBase,
                                       SvTokenStream & rInStm )
 {
@@ -196,7 +208,7 @@ void SvMetaType::ReadContextSvIdl( SvIdlDataBase & rBase,
     if( xAttr->ReadSvIdl( rBase, rInStm ) )
     {
         if( xAttr->Test( rInStm ) )
-            GetAttrList().push_back( xAttr.get() );
+            GetAttrList().push_back( xAttr );
     }
 }
 
@@ -252,7 +264,7 @@ void SvMetaType::WriteSfxItem(
 
     // write the implementation part
     rOutStm.WriteCharPtr( "#ifdef SFX_TYPEMAP" ) << endl;
-    rOutStm.WriteCharPtr( "#if !defined(_WIN32) && ((defined(DISABLE_DYNLOADING) && (defined(ANDROID) || defined(IOS) || defined(LINUX))) || STATIC_LINKING)" ) << endl;
+    rOutStm.WriteCharPtr( "#if !defined(_WIN32) && ((defined(DISABLE_DYNLOADING) && (defined(ANDROID) || defined(IOS))) || STATIC_LINKING)" ) << endl;
     rOutStm.WriteCharPtr( "__attribute__((__weak__))" ) << endl;
     rOutStm.WriteCharPtr( "#endif" ) << endl;
     rOutStm.WriteOString( aTypeName ).WriteOString( aVarName )

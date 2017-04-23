@@ -27,7 +27,7 @@ class SwColumnFrame: public SwFootnoteBossFrame
 {
 private:
     virtual void DestroyImpl() override;
-    virtual ~SwColumnFrame() override;
+    virtual ~SwColumnFrame();
 
 public:
     SwColumnFrame( SwFrameFormat*, SwFrame* );

@@ -31,7 +31,6 @@ class VCL_DLLPUBLIC SvpSalVirtualDevice : public SalVirtualDevice
 {
     DeviceFormat                        m_eFormat;
     cairo_surface_t*                    m_pSurface;
-    basegfx::B2IVector                  m_aFrameSize;
     double                              m_fScale;
     std::list< SvpSalGraphics* >        m_aGraphics;
 
@@ -42,7 +41,7 @@ public:
         , m_fScale(fScale)
     {
     }
-    virtual ~SvpSalVirtualDevice() override;
+    virtual ~SvpSalVirtualDevice();
 
     // SalVirtualDevice
     virtual SalGraphics*    AcquireGraphics() override;

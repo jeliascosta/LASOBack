@@ -23,6 +23,7 @@
 #include "UserDefinedProperties.hxx"
 #include "PropertyHelper.hxx"
 #include "macros.hxx"
+#include "ContainerHelper.hxx"
 #include "ModifyListenerHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/style/XStyle.hpp>
@@ -50,12 +51,12 @@ struct StaticStockBarInfoHelper_Initializer
 private:
     static uno::Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< css::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::FillProperties::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -118,10 +119,10 @@ StockBar::StockBar( bool bRisingCourse ) :
     {
         setFastPropertyValue_NoBroadcast(
             ::chart::FillProperties::PROP_FILL_COLOR,
-            uno::Any( sal_Int32( 0x000000 ))); // black
+            uno::makeAny( sal_Int32( 0x000000 ))); // black
         setFastPropertyValue_NoBroadcast(
             ::chart::LinePropertiesHelper::PROP_LINE_COLOR,
-            uno::Any( sal_Int32( 0xb3b3b3 ))); // gray30
+            uno::makeAny( sal_Int32( 0xb3b3b3 ))); // gray30
     }
 }
 
@@ -138,12 +139,14 @@ StockBar::~StockBar()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL StockBar::createClone()
+    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new StockBar( *this ));
 }
 
 // ____ OPropertySet ____
 uno::Any StockBar::GetDefaultValue( sal_Int32 nHandle ) const
+    throw(beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticStockBarDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -159,12 +162,14 @@ uno::Any StockBar::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL StockBar::getPropertySetInfo()
+    throw (uno::RuntimeException, std::exception)
 {
     return *StaticStockBarInfo::get();
 }
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL StockBar::addModifyListener( const uno::Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -178,6 +183,7 @@ void SAL_CALL StockBar::addModifyListener( const uno::Reference< util::XModifyLi
 }
 
 void SAL_CALL StockBar::removeModifyListener( const uno::Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -192,18 +198,25 @@ void SAL_CALL StockBar::removeModifyListener( const uno::Reference< util::XModif
 
 // ____ XModifyListener ____
 void SAL_CALL StockBar::modified( const lang::EventObject& aEvent )
+    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL StockBar::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
 
 // ____ OPropertySet ____
 void StockBar::firePropertyChangeEvent()
+{
+    fireModifyEvent();
+}
+
+void StockBar::fireModifyEvent()
 {
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }

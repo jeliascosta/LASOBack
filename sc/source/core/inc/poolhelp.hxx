@@ -43,9 +43,11 @@ private:
     mutable SfxItemPool*        pEnginePool;                    // EditEnginePool
     ScDocument*         m_pSourceDoc;
 
+    void                UseDocOptions() const;
+
 public:
                 ScPoolHelper( ScDocument* pSourceDoc );
-    virtual     ~ScPoolHelper() override;
+    virtual     ~ScPoolHelper();
 
                 // called in dtor of main document
     void        SourceDocumentGone();

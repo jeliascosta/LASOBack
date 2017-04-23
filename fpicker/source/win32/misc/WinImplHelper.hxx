@@ -37,25 +37,25 @@
 bool SAL_CALL IsWindowsVistaOrNewer();
 
 // set actions
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL ListboxAddItem(
-    HWND hwnd, const css::uno::Any& aItem, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aItem, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang::IllegalArgumentException );
 
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL ListboxAddItems(
-    HWND hwnd, const css::uno::Any& aItemList, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aItemList, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang:: IllegalArgumentException );
 
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL ListboxDeleteItem(
-    HWND hwnd, const css::uno::Any& aPosition, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aPosition, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang::IllegalArgumentException );
 
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL ListboxDeleteItems(
-    HWND hwnd, const css::uno::Any& aUnused, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aUnused, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang::IllegalArgumentException );
 
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL ListboxSetSelectedItem(
-    HWND hwnd, const css::uno::Any& aPosition, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aPosition, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang::IllegalArgumentException );
 
 // get actions
 css::uno::Any SAL_CALL ListboxGetItems( HWND hwnd );
@@ -65,15 +65,15 @@ css::uno::Any SAL_CALL ListboxGetSelectedItemIndex( HWND hwnd );
 // checkbox helper functions
 css::uno::Any SAL_CALL CheckboxGetState( HWND hwnd );
 
-/// @throws css::lang::IllegalArgumentException
 void SAL_CALL CheckboxSetState(
-    HWND hwnd, const css::uno::Any& aState, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos );
+    HWND hwnd, const css::uno::Any& aState, const css::uno::Reference< css::uno::XInterface >& rXInterface, sal_Int16 aArgPos )
+    throw( css::lang::IllegalArgumentException );
 
 // calculates the length of '\0' separated and '\0\0'
 // ending strings used in some Win32 functions
 // e.g. Filter\0*.txt\0\0
 // the returned length excludes the last '\0'
-sal_uInt32 SAL_CALL wcslenex( const sal_Unicode* pStr );
+sal_uInt32 SAL_CALL _wcslenex( const sal_Unicode* pStr );
 
 
 // converts a soffice label to a windows label

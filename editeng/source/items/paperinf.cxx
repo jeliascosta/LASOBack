@@ -37,7 +37,7 @@ Size SvxPaperInfo::GetPaperSize( Paper ePaper, MapUnit eUnit )
 {
     PaperInfo aInfo(ePaper);
     Size aRet(aInfo.getWidth(), aInfo.getHeight()); // in 100thMM
-    return eUnit == MapUnit::Map100thMM ? aRet : OutputDevice::LogicToLogic(aRet, MapUnit::Map100thMM, eUnit);
+    return eUnit == MAP_100TH_MM ? aRet : OutputDevice::LogicToLogic(aRet, MAP_100TH_MM, eUnit);
 }
 
 /*------------------------------------------------------------------------
@@ -70,14 +70,14 @@ Size SvxPaperInfo::GetPaperSize( const Printer* pPrinter )
 
         if ( aMap1 == aMap2 )
             aPaperSize =
-                pPrinter->PixelToLogic( aPaperSize, MapMode( MapUnit::MapTwip ) );
+                pPrinter->PixelToLogic( aPaperSize, MapMode( MAP_TWIP ) );
         return aPaperSize;
     }
 
     const Orientation eOrient = pPrinter->GetOrientation();
     Size aSize( GetPaperSize( ePaper ) );
         // for Landscape exchange the pages, has already been done by SV
-    if ( eOrient == Orientation::Landscape )
+    if ( eOrient == ORIENTATION_LANDSCAPE )
         Swap( aSize );
     return aSize;
 }
@@ -85,7 +85,7 @@ Size SvxPaperInfo::GetPaperSize( const Printer* pPrinter )
 
 Paper SvxPaperInfo::GetSvxPaper( const Size &rSize, MapUnit eUnit, bool bSloppy )
 {
-    Size aSize(eUnit == MapUnit::Map100thMM ? rSize : OutputDevice::LogicToLogic(rSize, eUnit, MapUnit::Map100thMM));
+    Size aSize(eUnit == MAP_100TH_MM ? rSize : OutputDevice::LogicToLogic(rSize, eUnit, MAP_100TH_MM));
     PaperInfo aInfo(aSize.Width(), aSize.Height());
     if (bSloppy)
         aInfo.doSloppyFit();
@@ -95,9 +95,9 @@ Paper SvxPaperInfo::GetSvxPaper( const Size &rSize, MapUnit eUnit, bool bSloppy 
 
 long SvxPaperInfo::GetSloppyPaperDimension( long nSize )
 {
-    nSize = OutputDevice::LogicToLogic(nSize, MapUnit::MapTwip, MapUnit::Map100thMM);
+    nSize = OutputDevice::LogicToLogic(nSize, MAP_TWIP, MAP_100TH_MM);
     nSize = PaperInfo::sloppyFitPageDimension(nSize);
-    return OutputDevice::LogicToLogic(nSize, MapUnit::Map100thMM, MapUnit::MapTwip);
+    return OutputDevice::LogicToLogic(nSize, MAP_100TH_MM, MAP_TWIP);
 }
 
 
@@ -105,7 +105,7 @@ Size SvxPaperInfo::GetDefaultPaperSize( MapUnit eUnit )
 {
     PaperInfo aInfo(PaperInfo::getSystemDefaultPaper());
     Size aRet(aInfo.getWidth(), aInfo.getHeight());
-    return eUnit == MapUnit::Map100thMM ? aRet : OutputDevice::LogicToLogic(aRet, MapUnit::Map100thMM, eUnit);
+    return eUnit == MAP_100TH_MM ? aRet : OutputDevice::LogicToLogic(aRet, MAP_100TH_MM, eUnit);
 }
 
 /*------------------------------------------------------------------------

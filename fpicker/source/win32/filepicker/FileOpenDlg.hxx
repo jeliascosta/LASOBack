@@ -32,7 +32,11 @@
 // into our build environment if have stolen the definition
 // for the new OPENFILENAME structure from the new headers
 
-typedef struct {
+#ifndef _CDSIZEOF_STRUCT
+#define _CDSIZEOF_STRUCT(structname, member)  (((int)((LPBYTE)(&((structname*)0)->member) - ((LPBYTE)((structname*)0)))) + sizeof(((structname*)0)->member))
+#endif
+
+typedef struct _tagOFNA {
    DWORD        lStructSize;
    HWND         hwndOwner;
    HINSTANCE    hInstance;
@@ -60,9 +64,9 @@ typedef struct {
    void *       pvReserved;
    DWORD        dwReserved;
    DWORD        FlagsEx;
-} OPENFILENAMEA_, *LPOPENFILENAMEA_;
+} _OPENFILENAMEA, *_LPOPENFILENAMEA;
 
-typedef struct {
+typedef struct _tagOFNW {
    DWORD        lStructSize;
    HWND         hwndOwner;
    HINSTANCE    hInstance;
@@ -86,15 +90,28 @@ typedef struct {
    void *       pvReserved;
    DWORD        dwReserved;
    DWORD        FlagsEx;
-} OPENFILENAMEW_, *LPOPENFILENAMEW_;
+} _OPENFILENAMEW, *_LPOPENFILENAMEW;
 
 #ifdef UNICODE
-typedef OPENFILENAMEW_ OPENFILENAME_;
-typedef LPOPENFILENAMEW_ LPOPENFILENAME_;
+typedef _OPENFILENAMEW _OPENFILENAME;
+typedef _LPOPENFILENAMEW _LPOPENFILENAME;
 #else
-typedef OPENFILENAMEA_ OPENFILENAME_;
-typedef LPOPENFILENAMEA_ LPOPENFILENAME_;
+typedef _OPENFILENAMEA _OPENFILENAME;
+typedef _LPOPENFILENAMEA _LPOPENFILENAME;
 #endif // UNICODE
+
+#if (_WIN32_WINNT >= 0x0500)
+    #define _OPENFILENAME_SIZE_VERSION_400A  _CDSIZEOF_STRUCT(_OPENFILENAMEA,lpTemplateName)
+    #define _OPENFILENAME_SIZE_VERSION_400W  _CDSIZEOF_STRUCT(_OPENFILENAMEW,lpTemplateName)
+    #ifdef UNICODE
+        #define _OPENFILENAME_SIZE_VERSION_400  _OPENFILENAME_SIZE_VERSION_400W
+    #else
+        #define _OPENFILENAME_SIZE_VERSION_400  _OPENFILENAME_SIZE_VERSION_400A
+    #endif // !UNICODE
+#else
+    #error _WIN32_WINNT seems not to be valid.
+#endif // (_WIN32_WINNT >= 0x0500)
+
 
 // A simple wrapper class around the Win32 GetOpenFileName API.
 // This class is not thread-safe and only one instance at a
@@ -113,10 +130,10 @@ public:
     // which provides the custom template, unused if dwTemplateId
     // is 0
     CFileOpenDialog(
-        bool bFileOpenDialog = true,
+        bool bFileOpenDialog = sal_True,
         sal_uInt32 dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
         sal_uInt32 dwTemplateId = 0,
-        HINSTANCE hInstance = nullptr);
+        HINSTANCE hInstance = 0);
 
     virtual ~CFileOpenDialog();
 
@@ -181,7 +198,7 @@ public:
     sal_Int16 SAL_CALL doModal();
 
     // returns the last dialog error that occurred
-    static sal_uInt32 SAL_CALL getLastDialogError();
+    sal_uInt32 SAL_CALL getLastDialogError() const;
 
     // retrievs the currently selected file
     // including path and drive information
@@ -229,7 +246,7 @@ protected:
     sal_uInt32 SAL_CALL onWMNotify(HWND hwndChild, LPOFNOTIFYW lpOfNotify);
 
     // we use non-virtual functions to do necessary work before
-    // calling the virtual functions (see Gamma: Template method)
+    // calling the virtual funtions (see Gamma: Template method)
     void SAL_CALL handleInitDialog(HWND hwndDlg, HWND hwndChild);
 
 protected:
@@ -242,7 +259,7 @@ protected:
     HWND    m_hwndFileOpenDlg;
     HWND    m_hwndFileOpenDlgChild;
 
-    OPENFILENAME_   m_ofn;
+    _OPENFILENAME   m_ofn;
 
     // we connect the instance with the dialog window using
     // SetProp, with this function we can reconnect from

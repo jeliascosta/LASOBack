@@ -19,8 +19,6 @@
 
 #include "vbafont.hxx"
 #include <com/sun/star/awt/FontUnderline.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/container/XIndexAccess.hpp>
 #include <ooo/vba/word/WdUnderline.hpp>
 #include <sal/macros.h>
 #include <ooo/vba/word/WdColorIndex.hpp>
@@ -87,16 +85,14 @@ public:
         return theMapper;
     }
 
-    /// @throws lang::IllegalArgumentException
-    sal_Int32 getOOOFromMSO( sal_Int32 nMSOConst )
+    sal_Int32 getOOOFromMSO( sal_Int32 nMSOConst ) throw( lang::IllegalArgumentException )
     {
         ConstToConst::iterator it = MSO2OOO.find( nMSOConst );
         if ( it == MSO2OOO.end() )
             throw lang::IllegalArgumentException();
         return it->second;
     }
-    /// @throws lang::IllegalArgumentException
-    sal_Int32 getMSOFromOOO( sal_Int32 nOOOConst )
+    sal_Int32 getMSOFromOOO( sal_Int32 nOOOConst ) throw( lang::IllegalArgumentException )
     {
         ConstToConst::iterator it = OOO2MSO.find( nOOOConst );
         if ( it == OOO2MSO.end() )
@@ -105,12 +101,12 @@ public:
     }
 };
 
-SwVbaFont::SwVbaFont( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess >& xPalette, uno::Reference< css::beans::XPropertySet > const & xPropertySet ) : SwVbaFont_BASE( xParent, xContext, xPalette, xPropertySet )
+SwVbaFont::SwVbaFont( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XIndexAccess >& xPalette, uno::Reference< css::beans::XPropertySet > xPropertySet ) throw ( css::uno::RuntimeException ) : SwVbaFont_BASE( xParent, xContext, xPalette, xPropertySet )
 {
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getUnderline()
+SwVbaFont::getUnderline() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nOOVal = 0;
     mxFont->getPropertyValue(  UnderLineMapper::propName() ) >>= nOOVal;
@@ -118,7 +114,7 @@ SwVbaFont::getUnderline()
 }
 
 void SAL_CALL
-SwVbaFont::setUnderline( const uno::Any& _underline )
+SwVbaFont::setUnderline( const uno::Any& _underline ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nMSOVal = 0;
 
@@ -136,7 +132,7 @@ SwVbaFont::getServiceImplName()
 }
 
 void SAL_CALL
-SwVbaFont::setColorIndex( const uno::Any& _colorindex )
+SwVbaFont::setColorIndex( const uno::Any& _colorindex ) throw( uno::RuntimeException, std::exception )
 {
         sal_Int32 nIndex = 0;
         _colorindex >>= nIndex;
@@ -144,7 +140,7 @@ SwVbaFont::setColorIndex( const uno::Any& _colorindex )
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getColorIndex()
+SwVbaFont::getColorIndex() throw ( uno::RuntimeException, std::exception )
 {
         sal_Int32 nColor = 0;
 
@@ -164,7 +160,7 @@ SwVbaFont::getColorIndex()
     return uno::makeAny( nIndex );
 }
 uno::Any SAL_CALL
-SwVbaFont::getSubscript()
+SwVbaFont::getSubscript() throw ( uno::RuntimeException, std::exception )
 {
     bool bRes = false;
     SwVbaFont_BASE::getSubscript() >>= bRes;
@@ -174,7 +170,7 @@ SwVbaFont::getSubscript()
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getSuperscript()
+SwVbaFont::getSuperscript() throw ( uno::RuntimeException, std::exception )
 {
     bool bRes = false;
     SwVbaFont_BASE::getSuperscript() >>= bRes;
@@ -184,7 +180,7 @@ SwVbaFont::getSuperscript()
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getBold()
+SwVbaFont::getBold() throw (uno::RuntimeException, std::exception)
 {
     bool bRes = false;
     SwVbaFont_BASE::getBold() >>= bRes;
@@ -194,7 +190,7 @@ SwVbaFont::getBold()
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getItalic()
+SwVbaFont::getItalic() throw (uno::RuntimeException, std::exception)
 {
     bool bRes = false;
     SwVbaFont_BASE::getItalic() >>= bRes;
@@ -204,7 +200,7 @@ SwVbaFont::getItalic()
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getStrikethrough()
+SwVbaFont::getStrikethrough() throw (css::uno::RuntimeException, std::exception)
 {
     bool bRes = false;
     SwVbaFont_BASE::getStrikethrough() >>= bRes;
@@ -214,7 +210,7 @@ SwVbaFont::getStrikethrough()
 }
 
 uno::Any SAL_CALL
-SwVbaFont::getShadow()
+SwVbaFont::getShadow() throw (uno::RuntimeException, std::exception)
 {
     bool bRes = false;
     SwVbaFont_BASE::getShadow() >>= bRes;

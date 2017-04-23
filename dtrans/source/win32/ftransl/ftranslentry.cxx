@@ -25,15 +25,23 @@
 #include <com/sun/star/datatransfer/XDataFormatTranslator.hpp>
 #include "ftransl.hxx"
 
+// some defines
+
+// the service names
 #define SERVICE_NAME  "com.sun.star.datatransfer.DataFormatTranslator"
 
+// the implementation names
 #define IMPL_NAME  "com.sun.star.datatransfer.DataFormatTranslator"
 
-using namespace ::cppu;
-using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::registry;
+// namespace directives
+
+using namespace ::cppu                      ;
+using namespace ::com::sun::star::uno       ;
+using namespace ::com::sun::star::registry  ;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::datatransfer;
+
+// create a static object to initialize the shell9x library
 
 namespace
 {
@@ -51,16 +59,19 @@ namespace
 extern "C"
 {
 
+// component_getFactory
+// returns a factory to create XFilePicker-Services
+
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL ftransl_component_getFactory( const sal_Char* pImplName, void* pSrvManager, void* /*pRegistryKey*/ )
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
 
     if ( pSrvManager && ( 0 == rtl_str_compare( pImplName, IMPL_NAME ) ) )
     {
         Sequence< OUString > aSNS { SERVICE_NAME };
 
         Reference< XSingleServiceFactory > xFactory ( createOneInstanceFactory(
-            static_cast< XMultiServiceFactory* > ( pSrvManager ),
+            reinterpret_cast< XMultiServiceFactory* > ( pSrvManager ),
             OUString::createFromAscii( pImplName ),
             createInstance,
             aSNS ) );

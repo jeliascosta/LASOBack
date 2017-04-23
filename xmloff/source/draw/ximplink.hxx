@@ -42,11 +42,13 @@ public:
     SdXMLShapeLinkContext( SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXMLShapeLinkContext() override;
+    virtual ~SdXMLShapeLinkContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList ) override;
+    virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 #endif // INCLUDED_XMLOFF_SOURCE_DRAW_XIMPLINK_HXX

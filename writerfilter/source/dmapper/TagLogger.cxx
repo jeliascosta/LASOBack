@@ -67,8 +67,6 @@ namespace writerfilter
         fileName += ".xml";
 
         pWriter = xmlNewTextWriterFilename( fileName.c_str(), 0 );
-        xmlTextWriterSetIndent(pWriter,1);
-        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
         xmlTextWriterSetIndent( pWriter, 4 );
     }
 

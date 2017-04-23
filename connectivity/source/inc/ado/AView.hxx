@@ -37,15 +37,17 @@ namespace connectivity
         protected:
             // OPropertySetHelper
             virtual void SAL_CALL getFastPropertyValue(
-                                css::uno::Any& rValue,
-                                sal_Int32 nHandle
-                                         ) const override;
+                                ::com::sun::star::uno::Any& rValue,
+                                    sal_Int32 nHandle
+                                         ) const;
         public:
-            OAdoView(bool _bCase, ADOView* _pView=nullptr);
+            OAdoView(sal_Bool _bCase, ADOView* _pView=NULL);
 
-            // css::lang::XUnoTunnel
-            virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
-            static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+            // com::sun::star::lang::XUnoTunnel
+            virtual sal_Int64 SAL_CALL getSomething( const ::com::sun::star::uno::Sequence< sal_Int8 >& aIdentifier ) throw(::com::sun::star::uno::RuntimeException);
+            static ::com::sun::star::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
+            virtual void SAL_CALL acquire() throw();
+            virtual void SAL_CALL release() throw();
 
             WpADOView getImpl() const { return m_aView;}
         };

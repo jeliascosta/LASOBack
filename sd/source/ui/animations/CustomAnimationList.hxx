@@ -40,7 +40,7 @@ class ICustomAnimationListController
 public:
     virtual void onSelect() = 0;
     virtual void onDoubleClick() = 0;
-    virtual void onContextMenu(const OString &rIdent) = 0;
+    virtual void onContextMenu( sal_uInt16 nSelectedPopupEntry ) = 0;
     virtual ~ICustomAnimationListController() {}
 };
 
@@ -51,7 +51,7 @@ class CustomAnimationList : public SvTreeListBox, public ISequenceListener
 
 public:
     explicit CustomAnimationList( vcl::Window* pParent );
-    virtual ~CustomAnimationList() override;
+    virtual ~CustomAnimationList();
     virtual void dispose() override;
 
     // methods
@@ -74,12 +74,14 @@ public:
     virtual void    SelectHdl() override;
     virtual bool    DoubleClickHdl() override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
-    virtual VclPtr<PopupMenu> CreateContextMenu() override;
+    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
     virtual void    ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry ) override;
 
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
+
+    virtual void    SetTabs() override;
 
     virtual void notify_change() override;
 
@@ -96,9 +98,6 @@ public:
     };
 
 private:
-    std::unique_ptr<VclBuilder> mxBuilder;
-    VclPtr<PopupMenu> mxMenu;
-
     bool    mbIgnorePaint;
 
     /** appends the given effect to the list*/
@@ -108,7 +107,7 @@ private:
 
     MainSequencePtr mpMainSequence;
 
-    Image maImages[ BMP_CUSTOMANIMATION_MEDIA_STOP - BMP_CUSTOMANIMATION_ON_CLICK + 1];
+    Image maImages[ IMG_CUSTOMANIMATION_MEDIA_STOP - IMG_CUSTOMANIMATION_ON_CLICK + 1];
 
     css::uno::Reference< css::drawing::XShape > mxLastTargetShape;
     sal_Int32 mnLastGroupId;
@@ -118,7 +117,7 @@ private:
 
 OUString getPropertyName( sal_Int32 nPropertyType );
 
-OUString getShapeDescription( const css::uno::Reference< css::drawing::XShape >& xShape, bool bWithText );
+OUString getShapeDescription( const css::uno::Reference< css::drawing::XShape >& xShape, bool bWithText = true );
 
 }
 

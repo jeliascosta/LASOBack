@@ -27,6 +27,7 @@
 #include <osl/diagnose.h>
 
 #include <com/sun/star/frame/XModel.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/sheet/ExternalLinkInfo.hpp>
 #include <com/sun/star/sheet/ExternalLinkType.hpp>
 #include <comphelper/string.hxx>
@@ -662,8 +663,7 @@ static const sal_Unicode* lcl_r1c1_get_col( const sal_Unicode* p,
         return nullptr;
 
     p++;
-    isRelative = *p == '[';
-    if( isRelative )
+    if( ( isRelative = (*p == '[') ) )
         p++;
     n = sal_Unicode_strtol( p, &pEnd );
     if( nullptr == pEnd )
@@ -709,8 +709,7 @@ static inline const sal_Unicode* lcl_r1c1_get_row(
         return nullptr;
 
     p++;
-    isRelative = *p == '[';
-    if( isRelative )
+    if( ( isRelative = (*p == '[') ) )
         p++;
     n = sal_Unicode_strtol( p, &pEnd );
     if( nullptr == pEnd )
@@ -1146,6 +1145,7 @@ static ScRefFlags lcl_ScAddress_Parse_OOo( const sal_Unicode* p, ScDocument* pDo
     OUString aTab;
     bool    bExtDoc = false;
     bool    bExtDocInherited = false;
+    const ScAddress aCurPos(rAddr);
 
     // Lets see if this is a reference to something in an external file.  A
     // document name is always quoted and has a trailing #.
@@ -1445,10 +1445,10 @@ static ScRefFlags lcl_ScAddress_Parse_OOo( const sal_Unicode* p, ScDocument* pDo
 
 static ScRefFlags lcl_ScAddress_Parse ( const sal_Unicode* p, ScDocument* pDoc, ScAddress& rAddr,
                                         const ScAddress::Details& rDetails,
-                                        ScAddress::ExternalInfo* pExtInfo,
-                                        const uno::Sequence<sheet::ExternalLinkInfo>* pExternalLinks,
-                                        sal_Int32* pSheetEndPos,
-                                        const OUString* pErrRef )
+                                        ScAddress::ExternalInfo* pExtInfo = nullptr,
+                                        const uno::Sequence<sheet::ExternalLinkInfo>* pExternalLinks = nullptr,
+                                        sal_Int32* pSheetEndPos = nullptr,
+                                        const OUString* pErrRef = nullptr )
 {
     if( !*p )
         return ScRefFlags::ZERO;
@@ -2050,25 +2050,9 @@ template<typename T > inline void lcl_Format( T& r, SCTAB nTab, SCROW nRow, SCCO
                 r.append(".");
                 break;
 
-            case formula::FormulaGrammar::CONV_XL_OOX:
-                if (!aTabName.isEmpty() && aTabName[0] == '\'')
-                {
-                    if (!aDocName.isEmpty())
-                    {
-                        lcl_string_append(r.append("'["), aDocName);
-                        r.append("]");
-                        lcl_string_append(r, aTabName.copy(1));
-                    }
-                    else
-                    {
-                        lcl_string_append(r, aTabName);
-                    }
-                    r.append("!");
-                    break;
-                }
-                SAL_FALLTHROUGH;
             case formula::FormulaGrammar::CONV_XL_A1:
             case formula::FormulaGrammar::CONV_XL_R1C1:
+            case formula::FormulaGrammar::CONV_XL_OOX:
                 if (!aDocName.isEmpty())
                 {
                     lcl_string_append(r.append("["), aDocName);
@@ -2152,34 +2136,18 @@ static void lcl_ScRange_Format_XL_Header( OUStringBuffer& rString, const ScRange
     if( nFlags & ScRefFlags::TAB_3D )
     {
         OUString aTabName, aDocName;
-        lcl_Split_DocTab( pDoc, rRange.aStart.Tab(), rDetails, nFlags, aTabName, aDocName );
-        switch (rDetails.eConv)
+        lcl_Split_DocTab( pDoc, rRange.aStart.Tab(), rDetails, nFlags,
+                          aTabName, aDocName );
+        if( !aDocName.isEmpty() )
         {
-            case formula::FormulaGrammar::CONV_XL_OOX:
-                if (!aTabName.isEmpty() && aTabName[0] == '\'')
-                {
-                    if (!aDocName.isEmpty())
-                    {
-                        rString.append("'[").append(aDocName).append("]").append(aTabName.copy(1));
-                    }
-                    else
-                    {
-                        rString.append(aTabName);
-                    }
-                    break;
-                }
-                SAL_FALLTHROUGH;
-            default:
-                if (!aDocName.isEmpty())
-                {
-                    rString.append("[").append(aDocName).append("]");
-                }
-                rString.append(aTabName);
-            break;
+            rString.append("[").append(aDocName).append("]");
         }
+        rString.append(aTabName);
+
         if( nFlags & ScRefFlags::TAB2_3D )
         {
-            lcl_Split_DocTab( pDoc, rRange.aEnd.Tab(), rDetails, nFlags, aTabName, aDocName );
+            lcl_Split_DocTab( pDoc, rRange.aEnd.Tab(), rDetails, nFlags,
+                              aTabName, aDocName );
             rString.append(":");
             rString.append(aTabName);
         }

@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblemenuseparator.hxx>
+#include <accessibility/standard/vclxaccessiblemenuseparator.hxx>
 
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 
@@ -31,8 +31,8 @@ using namespace ::comphelper;
 // class VCLXAccessibleMenuSeparator
 
 
-VCLXAccessibleMenuSeparator::VCLXAccessibleMenuSeparator( Menu* pParent, sal_uInt16 nItemPos )
-    :OAccessibleMenuItemComponent( pParent, nItemPos, nullptr )
+VCLXAccessibleMenuSeparator::VCLXAccessibleMenuSeparator( Menu* pParent, sal_uInt16 nItemPos, Menu* pMenu )
+    :OAccessibleMenuItemComponent( pParent, nItemPos, pMenu )
 {
 }
 
@@ -45,22 +45,23 @@ VCLXAccessibleMenuSeparator::~VCLXAccessibleMenuSeparator()
 // XServiceInfo
 
 
-OUString VCLXAccessibleMenuSeparator::getImplementationName()
+OUString VCLXAccessibleMenuSeparator::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleMenuSeparator" );
 }
 
 
-Sequence< OUString > VCLXAccessibleMenuSeparator::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleMenuSeparator::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleMenuSeparator" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenuSeparator" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int16 VCLXAccessibleMenuSeparator::getAccessibleRole(  )
+sal_Int16 VCLXAccessibleMenuSeparator::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

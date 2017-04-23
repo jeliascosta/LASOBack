@@ -33,7 +33,7 @@ namespace chart
 struct ListBoxEntryData
 {
     OUString UIName;
-    ObjectIdentifier OID;
+    ObjectHierarchy::tOID OID;
     sal_Int32 nHierarchyDepth;
 
     ListBoxEntryData() : nHierarchyDepth(0)
@@ -47,7 +47,7 @@ class SelectorListBox : public ListBox
         SelectorListBox( vcl::Window* pParent, WinBits nStyle );
 
         virtual void Select() override;
-        virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+        virtual bool Notify( NotifyEvent& rNEvt ) override;
         virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 
         void ReleaseFocus_Impl();
@@ -58,7 +58,7 @@ class SelectorListBox : public ListBox
     private:
         css::uno::WeakReference< css::frame::XController >   m_xChartController;
 
-        std::vector< ListBoxEntryData > m_aEntries;
+        ::std::vector< ListBoxEntryData > m_aEntries;
 
         bool m_bReleaseFocus;
 };
@@ -70,22 +70,30 @@ class ElementSelectorToolbarController : public ::svt::ToolboxController
 {
 public:
     explicit ElementSelectorToolbarController();
-    virtual ~ElementSelectorToolbarController() override;
+    virtual ~ElementSelectorToolbarController();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XInterface
-     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
      virtual void SAL_CALL acquire() throw () override;
      virtual void SAL_CALL release() throw () override;
 
+     // XInitialization
+     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
      // XStatusListener
-     virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
+     virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
      // XToolbarController
-     virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createItemWindow( const css::uno::Reference< css::awt::XWindow >& Parent ) override;
+     virtual css::uno::Reference< css::awt::XWindow > SAL_CALL createItemWindow( const css::uno::Reference< css::awt::XWindow >& Parent ) throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     VclPtr< SelectorListBox > m_apSelectorListBox;

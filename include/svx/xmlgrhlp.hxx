@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SVX_XMLGRHLP_HXX
 #define INCLUDED_SVX_XMLGRHLP_HXX
 
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase2.hxx>
 #include <osl/mutex.hxx>
 #include <svtools/grfmgr.hxx>
 #include <vector>
@@ -31,9 +31,10 @@
 #include <com/sun/star/embed/XStorage.hpp>
 #include <svx/svxdllapi.h>
 
-enum class SvXMLGraphicHelperMode
+enum SvXMLGraphicHelperMode
 {
-    Read, Write
+    GRAPHICHELPER_MODE_READ = 0,
+    GRAPHICHELPER_MODE_WRITE = 1
 };
 
 struct SvxGraphicHelperStream_Impl
@@ -42,7 +43,7 @@ struct SvxGraphicHelperStream_Impl
     css::uno::Reference < css::io::XStream > xStream;
 };
 
-class SVX_DLLPUBLIC SvXMLGraphicHelper : public cppu::WeakComponentImplHelper< css::document::XGraphicObjectResolver,
+class SVX_DLLPUBLIC SvXMLGraphicHelper : public ::cppu::WeakComponentImplHelper2<   css::document::XGraphicObjectResolver,
                                                                     css::document::XBinaryStreamResolver >
 {
 private:
@@ -63,7 +64,7 @@ private:
     SvXMLGraphicHelperMode      meCreateMode;
     bool                        mbDirect;
 
-    SVX_DLLPRIVATE static bool          ImplGetStreamNames( const OUString& rURLStr,
+    SVX_DLLPRIVATE bool                 ImplGetStreamNames( const OUString& rURLStr,
                                                     OUString& rPictureStorageName,
                                                     OUString& rPictureStreamName );
     SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage >
@@ -71,7 +72,7 @@ private:
     SVX_DLLPRIVATE SvxGraphicHelperStream_Impl
                                             ImplGetGraphicStream( const OUString& rPictureStorageName,
                                                       const OUString& rPictureStreamName );
-    SVX_DLLPRIVATE static OUString      ImplGetGraphicMimeType( const OUString& rFileName );
+    SVX_DLLPRIVATE OUString                 ImplGetGraphicMimeType( const OUString& rFileName ) const;
     SVX_DLLPRIVATE Graphic                  ImplReadGraphic( const OUString& rPictureStorageName,
                                                  const OUString& rPictureStreamName );
     SVX_DLLPRIVATE bool                 ImplWriteGraphic( const OUString& rPictureStorageName,
@@ -82,7 +83,7 @@ private:
 
 protected:
                                 SvXMLGraphicHelper();
-                                virtual ~SvXMLGraphicHelper() override;
+                                virtual ~SvXMLGraphicHelper();
     void                        Init( const css::uno::Reference < css::embed::XStorage >& xXMLStorage,
                                       SvXMLGraphicHelperMode eCreateMode,
                                       bool bDirect );
@@ -102,12 +103,12 @@ public:
 public:
 
     // XGraphicObjectResolver
-    virtual OUString SAL_CALL resolveGraphicObjectURL( const OUString& aURL ) override;
+    virtual OUString SAL_CALL resolveGraphicObjectURL( const OUString& aURL ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XBinaryStreamResolver
-    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream( const OUString& rURL ) override;
-    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL createOutputStream(  ) override;
-    virtual OUString SAL_CALL resolveOutputStream( const css::uno::Reference< css::io::XOutputStream >& rxBinaryStream ) override;
+    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream( const OUString& rURL ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL createOutputStream(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL resolveOutputStream( const css::uno::Reference< css::io::XOutputStream >& rxBinaryStream ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

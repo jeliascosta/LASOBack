@@ -44,7 +44,7 @@ public:
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent);
 
-    virtual ~AccessibleOutlineView() override;
+    virtual ~AccessibleOutlineView();
 
     /** Complete the initialization begun in the constructor.
     */
@@ -52,42 +52,52 @@ public:
 
     //=====  IAccessibleViewForwarderListener  ================================
 
-    virtual void ViewForwarderChanged() override;
+    virtual void ViewForwarderChanged (ChangeType aChangeType,
+        const IAccessibleViewForwarder* pViewForwarder) override;
 
     //=====  XAccessibleContext  ==============================================
 
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild (sal_Int32 nIndex) override;
+        getAccessibleChild (sal_Int32 nIndex)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL
-        getAccessibleName() override;
+        getAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
     //=====  XAccessibleEventBroadcaster  ========================================
 
     virtual void SAL_CALL
         addAccessibleEventListener (
-            const css::uno::Reference<css::accessibility::XAccessibleEventListener >& xListener) override;
+            const css::uno::Reference<css::accessibility::XAccessibleEventListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         removeAccessibleEventListener (
-            const css::uno::Reference<css::accessibility::XAccessibleEventListener >& xListener) override;
+            const css::uno::Reference<css::accessibility::XAccessibleEventListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XServiceInfo  ====================================================
 
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  lang::XEventListener  ============================================
 
-    using AccessibleDocumentViewBase::disposing;
+    virtual void SAL_CALL
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XPropertyChangeListener  =========================================
 
     virtual void SAL_CALL
-        propertyChange (const css::beans::PropertyChangeEvent& rEventObject) override;
+        propertyChange (const css::beans::PropertyChangeEvent& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
 
@@ -106,12 +116,14 @@ protected:
 
     /// Create an accessible name that contains the current view mode.
     virtual OUString
-        CreateAccessibleName () override;
+        CreateAccessibleName ()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Create an accessible description that contains the current
     /// view mode.
     virtual OUString
-        CreateAccessibleDescription () override;
+        CreateAccessibleDescription ()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
 

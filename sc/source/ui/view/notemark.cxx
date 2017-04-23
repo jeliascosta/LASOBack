@@ -48,6 +48,7 @@ ScNoteMarker::ScNoteMarker( vcl::Window* pWin, vcl::Window* pRight, vcl::Window*
     bLeft( bLeftEdge ),
     bByKeyboard( bKeyboard ),
     pModel( nullptr ),
+    pObject( nullptr ),
     bVisible( false )
 {
     Size aSizePixel = pWindow->GetOutputSizePixel();
@@ -55,34 +56,31 @@ ScNoteMarker::ScNoteMarker( vcl::Window* pWin, vcl::Window* pRight, vcl::Window*
         aSizePixel.Width() += pRightWin->GetOutputSizePixel().Width();
     if( pBottomWin )
         aSizePixel.Height() += pBottomWin->GetOutputSizePixel().Height();
-    tools::Rectangle aVisPixel( Point( 0, 0 ), aSizePixel );
+    Rectangle aVisPixel( Point( 0, 0 ), aSizePixel );
     aVisRect = pWindow->PixelToLogic( aVisPixel, aMapMode );
 
-    aTimer.SetInvokeHandler( LINK( this, ScNoteMarker, TimeHdl ) );
+    aTimer.SetTimeoutHdl( LINK( this, ScNoteMarker, TimeHdl ) );
     aTimer.SetTimeout( bForce ? SC_NOTEMARK_SHORT : SC_NOTEMARK_TIME );
     aTimer.Start();
 }
 
 ScNoteMarker::~ScNoteMarker()
 {
-    if (pModel)
-        mxObject.release();     // deleting pModel also deletes the SdrCaptionObj
-
     InvalidateWin();
 
     delete pModel;
 }
 
-IMPL_LINK_NOARG(ScNoteMarker, TimeHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ScNoteMarker, TimeHdl, Timer *, void)
 {
     if (!bVisible)
     {
         SvtPathOptions aPathOpt;
         OUString aPath = aPathOpt.GetPalettePath();
         pModel = new SdrModel(aPath, nullptr, nullptr, false);
-        pModel->SetScaleUnit(MapUnit::Map100thMM);
+        pModel->SetScaleUnit(MAP_100TH_MM);
         SfxItemPool& rPool = pModel->GetItemPool();
-        rPool.SetDefaultMetric(MapUnit::Map100thMM);
+        rPool.SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
         rPool.FreezeIdRanges();
 
         OutputDevice* pPrinter = pDoc->GetRefDevice();
@@ -96,11 +94,11 @@ IMPL_LINK_NOARG(ScNoteMarker, TimeHdl, Timer *, void)
 
         if( SdrPage* pPage = pModel->AllocPage( false ) )
         {
-            mxObject = ScNoteUtil::CreateTempCaption( *pDoc, aDocPos, *pPage, aUserText, aVisRect, bLeft );
-            if( mxObject )
+            pObject = ScNoteUtil::CreateTempCaption( *pDoc, aDocPos, *pPage, aUserText, aVisRect, bLeft );
+            if( pObject )
             {
-                mxObject->SetGridOffset( aGridOff );
-                aRect = mxObject->GetCurrentBoundRect();
+                pObject->SetGridOffset( aGridOff );
+                aRect = pObject->GetCurrentBoundRect();
             }
 
             // Insert page so that the model recognise it and also deleted
@@ -143,21 +141,21 @@ static MapMode lcl_MoveMapMode( const MapMode& rMap, const Size& rMove )
 
 void ScNoteMarker::Draw()
 {
-    if ( mxObject && bVisible )
+    if ( pObject && bVisible )
     {
-        lcl_DrawWin( mxObject.get(), pWindow, aMapMode );
+        lcl_DrawWin( pObject, pWindow, aMapMode );
 
         if ( pRightWin || pBottomWin )
         {
             Size aWinSize = pWindow->PixelToLogic( pWindow->GetOutputSizePixel(), aMapMode );
             if ( pRightWin )
-                lcl_DrawWin( mxObject.get(), pRightWin,
+                lcl_DrawWin( pObject, pRightWin,
                                 lcl_MoveMapMode( aMapMode, Size( aWinSize.Width(), 0 ) ) );
             if ( pBottomWin )
-                lcl_DrawWin( mxObject.get(), pBottomWin,
+                lcl_DrawWin( pObject, pBottomWin,
                                 lcl_MoveMapMode( aMapMode, Size( 0, aWinSize.Height() ) ) );
             if ( pDiagWin )
-                lcl_DrawWin( mxObject.get(), pDiagWin, lcl_MoveMapMode( aMapMode, aWinSize ) );
+                lcl_DrawWin( pObject, pDiagWin, lcl_MoveMapMode( aMapMode, aWinSize ) );
         }
     }
 }

@@ -65,7 +65,7 @@ class ScExternalRefLink : public ::sfx2::SvBaseLink
 {
 public:
     ScExternalRefLink(ScDocument* pDoc, sal_uInt16 nFileId, const OUString& rFilter);
-    virtual ~ScExternalRefLink() override;
+    virtual ~ScExternalRefLink();
 
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
@@ -134,6 +134,13 @@ public:
     {
     public:
 
+        enum ReferencedFlag
+        {
+            UNREFERENCED,
+            REFERENCED_MARKED,      // marked as referenced during store to file
+            REFERENCED_PERMANENT    // permanently marked, e.g. from within interpreter
+        };
+
         Table();
         ~Table();
 
@@ -146,12 +153,15 @@ public:
          *                       false _only when_ adding a range of cell
          *                       values, for performance reasons.
          */
-        SC_DLLPUBLIC void setCell(SCCOL nCol, SCROW nRow, TokenRef const & pToken, sal_uLong nFmtIndex = 0, bool bSetCacheRange = true);
+        SC_DLLPUBLIC void setCell(SCCOL nCol, SCROW nRow, TokenRef pToken, sal_uLong nFmtIndex = 0, bool bSetCacheRange = true);
         SC_DLLPUBLIC TokenRef getCell(SCCOL nCol, SCROW nRow, sal_uInt32* pnFmtIndex = nullptr) const;
         bool hasRow( SCROW nRow ) const;
         /** Set/clear referenced status flag only if current status is not
             REFERENCED_PERMANENT. */
         void setReferenced( bool bReferenced );
+        /// Unconditionally set the reference status flag.
+        void setReferencedFlag( ReferencedFlag eFlag );
+        ReferencedFlag getReferencedFlag() const { return meReferenced;}
         bool isReferenced() const;
         /// Obtain a sorted vector of rows.
         void getAllRows(::std::vector<SCROW>& rRows, SCROW nLow = 0, SCROW nHigh = MAXROW) const;
@@ -185,7 +195,7 @@ public:
         /** Collection of individual cached ranges.  The table ranges are
          *  not used & always zero. */
         ScRangeList                     maCachedRanges;
-        bool                            mbReferenced;
+        ReferencedFlag                  meReferenced;
     };
 
     typedef std::shared_ptr<Table> TableTypeRef;
@@ -227,7 +237,7 @@ public:
     void setRangeName(sal_uInt16 nFileId, const OUString& rName);
 
     void setCellData(sal_uInt16 nFileId, const OUString& rTabName,
-                     SCCOL nCol, SCROW nRow, TokenRef const & pToken, sal_uLong nFmtIndex);
+                     SCCOL nCol, SCROW nRow, TokenRef pToken, sal_uLong nFmtIndex);
 
     struct SingleRangeData
     {
@@ -438,7 +448,7 @@ public:
 
 public:
     explicit ScExternalRefManager(ScDocument* pDoc);
-    virtual ~ScExternalRefManager() override;
+    virtual ~ScExternalRefManager();
 
     virtual OUString getCacheTableName(sal_uInt16 nFileId, size_t nTabIndex) const override;
 
@@ -854,7 +864,7 @@ private:
     bool mbDocTimerEnabled:1;
 
     AutoTimer maSrcDocTimer;
-    DECL_LINK(TimeOutHdl, Timer*, void);
+    DECL_LINK_TYPED(TimeOutHdl, Timer*, void);
 };
 
 #endif

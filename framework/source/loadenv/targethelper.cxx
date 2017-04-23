@@ -26,16 +26,28 @@ bool TargetHelper::matchSpecialTarget(const OUString& sCheckTarget  ,
 {
     switch(eSpecialTarget)
     {
-        case ESpecialTarget::Blank :
+        case E_SELF :
+            return (
+                    (sCheckTarget.isEmpty()                 ) ||
+                    sCheckTarget == SPECIALTARGET_SELF
+                   );
+
+        case E_PARENT :
+            return sCheckTarget == SPECIALTARGET_PARENT;
+
+        case E_TOP :
+            return sCheckTarget == SPECIALTARGET_TOP;
+
+        case E_BLANK :
             return sCheckTarget == SPECIALTARGET_BLANK;
 
-        case ESpecialTarget::Default :
+        case E_DEFAULT :
             return sCheckTarget == SPECIALTARGET_DEFAULT;
 
-        case ESpecialTarget::Beamer :
+        case E_BEAMER :
             return sCheckTarget == SPECIALTARGET_BEAMER;
 
-        case ESpecialTarget::HelpTask :
+        case E_HELPTASK :
             return sCheckTarget == SPECIALTARGET_HELPTASK;
         default:
             return false;
@@ -48,8 +60,8 @@ bool TargetHelper::isValidNameForFrame(const OUString& sName)
     // E.g. the are really used to locate one frame inside the frame tree.
     if (
         (sName.isEmpty()                                    ) ||
-        (TargetHelper::matchSpecialTarget(sName, ESpecialTarget::HelpTask)) ||
-        (TargetHelper::matchSpecialTarget(sName, ESpecialTarget::Beamer)  )
+        (TargetHelper::matchSpecialTarget(sName, E_HELPTASK)) ||
+        (TargetHelper::matchSpecialTarget(sName, E_BEAMER)  )
        )
         return true;
 

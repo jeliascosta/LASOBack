@@ -26,7 +26,7 @@
 #include <sfx2/app.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/dispatch.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <svl/srchitem.hxx>
 #include <svx/fmglob.hxx>
 #include <svx/svdouno.hxx>
@@ -40,6 +40,7 @@
 #include "cmdid.h"
 #include "globals.hrc"
 #include "helpid.h"
+#include "popup.hrc"
 #include "shells.hrc"
 #include "drwbassh.hxx"
 #include "drformsh.hxx"
@@ -62,7 +63,7 @@ void SwDrawFormShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("form");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_TEXT_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_TEXT_TOOLBOX);
 }
 
 
@@ -88,7 +89,7 @@ void SwDrawFormShell::Execute(SfxRequest &rReq)
             if (rMarkList.GetMark(0))
             {
                 SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( rMarkList.GetMark(0)->GetMarkedSdrObj() );
-                if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
+                if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
                 {
                     if(bConvertToText)
                     {
@@ -124,7 +125,7 @@ void SwDrawFormShell::Execute(SfxRequest &rReq)
                                 OUString sLabel("Label");
                                 if( xPropInfoSet->hasPropertyByName(sLabel) )
                                 {
-                                    aTmp <<= rHLinkItem.GetName();
+                                    aTmp <<= OUString(rHLinkItem.GetName());
                                     xPropSet->setPropertyValue(sLabel, aTmp );
                                 }
 
@@ -141,7 +142,8 @@ void SwDrawFormShell::Execute(SfxRequest &rReq)
                                     xPropSet->setPropertyValue( "TargetFrame", aTmp );
                                 }
 
-                                aTmp <<= form::FormButtonType_URL;
+                                form::FormButtonType eButtonType = form::FormButtonType_URL;
+                                aTmp.setValue( &eButtonType, ::cppu::UnoType<form::FormButtonType>::get());
                                 xPropSet->setPropertyValue( "ButtonType", aTmp );
                             }
                         }
@@ -176,7 +178,7 @@ void SwDrawFormShell::GetState(SfxItemSet& rSet)
                 if (rMarkList.GetMark(0))
                 {
                     SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( rMarkList.GetMark(0)->GetMarkedSdrObj() );
-                    if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
+                    if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
                     {
                         uno::Reference< awt::XControlModel >  xControlModel = pUnoCtrl->GetUnoControlModel();
 
@@ -246,9 +248,10 @@ void SwDrawFormShell::GetState(SfxItemSet& rSet)
 SwDrawFormShell::SwDrawFormShell(SwView &_rView) :
     SwDrawBaseShell(_rView)
 {
+    SetHelpId(SW_DRAWFORMSHELL);
     GetShell().NoEdit();
     SetName("DrawForm");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Form));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Form));
 }
 
 SwDrawFormShell::~SwDrawFormShell()

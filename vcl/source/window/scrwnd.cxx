@@ -46,7 +46,7 @@ ImplWheelWindow::ImplWheelWindow( vcl::Window* pParent ) :
             mnActDeltaY     ( 0L )
 {
     // we need a parent
-    SAL_WARN_IF( !pParent, "vcl", "ImplWheelWindow::ImplWheelWindow(): Parent not set!" );
+    DBG_ASSERT( pParent, "ImplWheelWindow::ImplWheelWindow(): Parent not set!" );
 
     const Size      aSize( pParent->GetOutputSizePixel() );
     const StartAutoScrollFlags nFlags = ImplGetSVData()->maWinData.mnAutoScrollFlags;
@@ -75,9 +75,8 @@ ImplWheelWindow::ImplWheelWindow( vcl::Window* pParent ) :
 
     // init timer
     mpTimer = new Timer("WheelWindowTimer");
-    mpTimer->SetInvokeHandler( LINK( this, ImplWheelWindow, ImplScrollHdl ) );
+    mpTimer->SetTimeoutHdl( LINK( this, ImplWheelWindow, ImplScrollHdl ) );
     mpTimer->SetTimeout( mnTimeout );
-    mpTimer->SetDebugName( "vcl::ImplWheelWindow mpTimer" );
     mpTimer->Start();
 
     CaptureMouse();
@@ -109,7 +108,7 @@ void ImplWheelWindow::ImplSetRegion( const Bitmap& rRegionBmp )
     Point           aPos( GetPointerPosPixel() );
     const Size      aSize( rRegionBmp.GetSizePixel() );
     Point           aPoint;
-    const tools::Rectangle aRect( aPoint, aSize );
+    const Rectangle aRect( aPoint, aSize );
 
     maCenter = maLastMousePos = aPos;
     aPos.X() -= aSize.Width() >> 1;
@@ -122,15 +121,9 @@ void ImplWheelWindow::ImplSetRegion( const Bitmap& rRegionBmp )
 void ImplWheelWindow::ImplCreateImageList()
 {
     ResMgr* pResMgr = ImplGetResMgr();
-    if (pResMgr)
-    {
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_SCROLLVH, *pResMgr))));
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_SCROLLV, *pResMgr))));
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_SCROLLH, *pResMgr))));
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_WHEELVH, *pResMgr))));
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_WHEELV, *pResMgr))));
-        maImgList.push_back(Image(BitmapEx(ResId(SV_RESID_BITMAP_WHEELH, *pResMgr))));
-    }
+    if( pResMgr )
+        maImgList.InsertFromHorizontalBitmap
+            ( ResId( SV_RESID_BITMAP_SCROLLBMP, *pResMgr ), 6, nullptr );
 }
 
 void ImplWheelWindow::ImplSetWheelMode( WheelMode nWheelMode )
@@ -156,35 +149,35 @@ void ImplWheelWindow::ImplSetWheelMode( WheelMode nWheelMode )
 
 void ImplWheelWindow::ImplDrawWheel(vcl::RenderContext& rRenderContext)
 {
-    int nIndex;
+    sal_uInt16 nId;
 
     switch (mnWheelMode)
     {
         case WheelMode::VH:
-            nIndex = 0;
+            nId = 1;
         break;
         case WheelMode::V:
-            nIndex = 1;
+            nId = 2;
         break;
         case WheelMode::H:
-            nIndex = 2;
+            nId = 3;
         break;
         case WheelMode::ScrollVH:
-            nIndex = 3;
+            nId = 4;
         break;
         case WheelMode::ScrollV:
-            nIndex = 4;
+            nId = 5;
         break;
         case WheelMode::ScrollH:
-            nIndex = 5;
+            nId = 6;
         break;
         default:
-            nIndex = -1;
+            nId = 0;
         break;
     }
 
-    if (nIndex >= 0)
-        rRenderContext.DrawImage(Point(), maImgList[nIndex]);
+    if (nId)
+        rRenderContext.DrawImage(Point(), maImgList.GetImage(nId));
 }
 
 void ImplWheelWindow::ImplRecalcScrollValues()
@@ -307,7 +300,7 @@ PointerStyle ImplWheelWindow::ImplGetMousePointer( long nDistX, long nDistY )
     return eStyle;
 }
 
-void ImplWheelWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void ImplWheelWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     ImplDrawWheel(rRenderContext);
 }
@@ -366,7 +359,7 @@ void ImplWheelWindow::MouseButtonUp( const MouseEvent& rMEvt )
         FloatingWindow::MouseButtonUp( rMEvt );
 }
 
-IMPL_LINK_NOARG(ImplWheelWindow, ImplScrollHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ImplWheelWindow, ImplScrollHdl, Timer *, void)
 {
     if ( mnActDeltaX || mnActDeltaY )
     {

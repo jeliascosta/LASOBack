@@ -23,15 +23,23 @@
 #include <osl/diagnose.h>
 #include "WinClipboard.hxx"
 
+// some defines
+
+// the service names
 #define WINCLIPBOARD_SERVICE_NAME  "com.sun.star.datatransfer.clipboard.SystemClipboard"
 
+// the implementation names
 #define WINCLIPBOARD_IMPL_NAME  "com.sun.star.datatransfer.clipboard.ClipboardW32"
 
-using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::registry;
-using namespace ::cppu;
+// namespace directives
+
+using namespace ::com::sun::star::uno       ;
+using namespace ::com::sun::star::registry  ;
+using namespace ::cppu                      ;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::datatransfer::clipboard;
+
+// create a static object to initialize the shell9x library
 
 namespace
 {
@@ -42,7 +50,7 @@ namespace
 
     Reference< XInterface > SAL_CALL createInstance( const Reference< XMultiServiceFactory >& rServiceManager )
     {
-        return Reference< XInterface >( static_cast< XClipboard* >( new CWinClipboard( comphelper::getComponentContext(rServiceManager), "" ) ) );
+        return Reference< XInterface >( static_cast< XClipboard* >( new CWinClipboard( comphelper::getComponentContext(rServiceManager), OUString( "" ) ) ) );
     }
 }
 
@@ -54,7 +62,7 @@ extern "C"
 
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL sysdtrans_component_getFactory( const sal_Char* pImplName, void* pSrvManager, void* /*pRegistryKey*/ )
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
 
     if ( pSrvManager && ( 0 == rtl_str_compare( pImplName, WINCLIPBOARD_IMPL_NAME ) ) )
     {
@@ -62,7 +70,7 @@ SAL_DLLPUBLIC_EXPORT void* SAL_CALL sysdtrans_component_getFactory( const sal_Ch
 
         //OUString( FPS_IMPL_NAME )
         Reference< XSingleServiceFactory > xFactory ( createOneInstanceFactory(
-            static_cast< XMultiServiceFactory* > ( pSrvManager ),
+            reinterpret_cast< XMultiServiceFactory* > ( pSrvManager ),
             OUString::createFromAscii( pImplName ),
             createInstance,
             aSNS ) );

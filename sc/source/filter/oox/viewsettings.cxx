@@ -21,6 +21,7 @@
 
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/awt/Size.hpp>
+#include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XIndexContainer.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
@@ -30,7 +31,6 @@
 #include <osl/diagnose.h>
 #include <unotools/mediadescriptor.hxx>
 #include <oox/core/filterbase.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertymap.hxx>
@@ -38,6 +38,7 @@
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 #include "unitconverter.hxx"
 #include "workbooksettings.hxx"
 #include "worksheetbuffer.hxx"
@@ -48,6 +49,7 @@ namespace xls {
 using namespace ::com::sun::star::awt;
 using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::document;
+using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
 
 using ::oox::core::FilterBase;
@@ -158,9 +160,14 @@ sal_Int32 SheetViewModel::getGridColor( const FilterBase& rFilter ) const
     return mbDefGridColor ? API_RGB_TRANSPARENT : maGridColor.getColor( rFilter.getGraphicHelper() );
 }
 
+const PaneSelectionModel* SheetViewModel::getPaneSelection( sal_Int32 nPaneId ) const
+{
+    return maPaneSelMap.get( nPaneId ).get();
+}
+
 const PaneSelectionModel* SheetViewModel::getActiveSelection() const
 {
-    return maPaneSelMap.get( mnActivePaneId ).get();
+    return getPaneSelection( mnActivePaneId );
 }
 
 PaneSelectionModel& SheetViewModel::createPaneSelection( sal_Int32 nPaneId )
@@ -223,7 +230,7 @@ void SheetViewSettings::importSelection( const AttributeList& rAttribs )
         rSelData.maActiveCell = getAddressConverter().createValidCellAddress( rAttribs.getString( XML_activeCell, OUString() ), getSheetIndex(), false );
         rSelData.mnActiveCellId = rAttribs.getInteger( XML_activeCellId, 0 );
         // selection
-        rSelData.maSelection.RemoveAll();
+        rSelData.maSelection.clear();
         getAddressConverter().convertToCellRangeList( rSelData.maSelection, rAttribs.getString( XML_sqref, OUString() ), getSheetIndex(), false );
     }
 }
@@ -304,7 +311,7 @@ void SheetViewSettings::importSelection( SequenceInputStream& rStrm )
         // selection
         BinRangeList aSelection;
         rStrm >> aSelection;
-        rPaneSel.maSelection.RemoveAll();
+        rPaneSel.maSelection.clear();
         getAddressConverter().convertToCellRangeList( rPaneSel.maSelection, aSelection, getSheetIndex(), false );
     }
 }
@@ -327,7 +334,7 @@ void SheetViewSettings::finalizeImport()
     SheetViewModelRef xModel = maSheetViews.empty() ? createSheetView() : maSheetViews.front();
 
     // #i59590# #158194# special handling for chart sheets (Excel ignores some settings in chart sheets)
-    if( getSheetType() == WorksheetType::Chart )
+    if( getSheetType() == SHEETTYPE_CHARTSHEET )
     {
         xModel->maPaneSelMap.clear();
         xModel->maFirstPos = xModel->maSecondPos = ScAddress( SCCOL ( 0 ), SCROW ( 0 ), SCTAB (getSheetIndex() ) );
@@ -531,12 +538,9 @@ void ViewSettings::setSheetViewSettings( sal_Int16 nSheet, const SheetViewModelR
     maSheetProps[ nSheet ] = rProperties;
 }
 
-void ViewSettings::setSheetUsedArea( const ScRange& rUsedArea )
+void ViewSettings::setSheetUsedArea( const CellRangeAddress& rUsedArea )
 {
-    assert( rUsedArea.IsValid() );
-    assert( rUsedArea.aStart.Col() <= MAXCOLCOUNT );
-    assert( rUsedArea.aStart.Row() <= MAXROWCOUNT );
-    maSheetUsedAreas[ rUsedArea.aStart.Tab() ] = rUsedArea;
+    maSheetUsedAreas[ rUsedArea.Sheet ] = rUsedArea;
 }
 
 void ViewSettings::finalizeImport()
@@ -597,9 +601,8 @@ void ViewSettings::finalizeImport()
         #i44077# If a new OLE object is inserted from file, there is no OLESIZE
         record in the Excel file. In this case, use the used area calculated
         from file contents (used cells and drawing objects). */
-    maOleSize.aStart.SetTab( nActiveSheet );
-    maOleSize.aEnd.SetTab( nActiveSheet );
-    const ScRange* pVisibleArea = mbValidOleSize ?
+    maOleSize.Sheet = nActiveSheet;
+    const CellRangeAddress* pVisibleArea = mbValidOleSize ?
         &maOleSize : ContainerHelper::getMapElement( maSheetUsedAreas, nActiveSheet );
     if( pVisibleArea )
     {

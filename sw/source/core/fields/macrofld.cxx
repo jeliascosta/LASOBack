@@ -21,6 +21,7 @@
 #include <doc.hxx>
 #include <docufld.hxx>
 #include <unofldmid.h>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/uri/UriReferenceFactory.hpp>
 #include <com/sun/star/uri/XVndSunStarScriptUrl.hpp>
 #include <comphelper/processfactory.hxx>
@@ -28,7 +29,7 @@
 using namespace ::com::sun::star;
 
 SwMacroFieldType::SwMacroFieldType(SwDoc* pDocument)
-    : SwFieldType( SwFieldIds::Macro ),
+    : SwFieldType( RES_MACROFLD ),
       pDoc(pDocument)
 {
 }
@@ -160,7 +161,7 @@ bool SwMacroField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= bIsScriptURL ? GetMacroName() : OUString();
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -186,7 +187,7 @@ bool SwMacroField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         bIsScriptURL = isScriptURL(aMacro);
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
 
     return true;

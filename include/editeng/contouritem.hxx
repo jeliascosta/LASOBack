@@ -42,11 +42,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxContourItem& operator=(const SvxContourItem& rCont)
+    inline SvxContourItem& operator=(const SvxContourItem& rCont)
     {
         SetValue(rCont.GetValue());
         return *this;

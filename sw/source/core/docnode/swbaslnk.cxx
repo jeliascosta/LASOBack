@@ -148,12 +148,12 @@ static void lcl_CallModify( SwGrfNode& rGrfNd, SfxPoolItem& rItem )
         Graphic aGrf;
 
         if( sfx2::LinkManager::GetGraphicFromAny( rMimeType, rValue, aGrf ) &&
-            ( GraphicType::Default != aGrf.GetType() ||
-              GraphicType::Default != rGrfObj.GetType() ) )
+            ( GRAPHIC_DEFAULT != aGrf.GetType() ||
+              GRAPHIC_DEFAULT != rGrfObj.GetType() ) )
         {
             aGrfSz = ::GetGraphicSizeTwip( aGrf, nullptr );
 
-            if( bGraphicPieceArrived && GraphicType::Default != aGrf.GetType() &&
+            if( bGraphicPieceArrived && GRAPHIC_DEFAULT != aGrf.GetType() &&
                 ( !aOldSz.Width() || !aOldSz.Height() ) )
             {
                 // If only a part arrives, but the size is not set
@@ -237,7 +237,7 @@ static void lcl_CallModify( SwGrfNode& rGrfNd, SfxPoolItem& rItem )
 
                     if( pBLink != this &&
                         ( !bSwapIn ||
-                            GraphicType::Default == pGrfNd->GetGrfObj().GetType()))
+                            GRAPHIC_DEFAULT == pGrfNd->GetGrfObj().GetType()))
                     {
                         Size aPreArriveSize(pGrfNd->GetTwipSize());
 
@@ -300,10 +300,9 @@ static bool SetGrfFlySize( const Size& rGrfSz, SwGrfNode* pGrfNd, const Size& rO
     if ( !(aSz.Width() && aSz.Height()) &&
             rGrfSz.Width() && rGrfSz.Height() )
     {
-        SwFrameFormat* pFormat = nullptr;
-        if (pGrfNd->IsChgTwipSize())
-            pFormat = pGrfNd->GetFlyFormat();
-        if (nullptr != pFormat)
+        SwFrameFormat* pFormat;
+        if( pGrfNd->IsChgTwipSize() &&
+            nullptr != (pFormat = pGrfNd->GetFlyFormat()) )
         {
             Size aCalcSz( aSz );
             if ( !aSz.Height() && aSz.Width() )
@@ -381,6 +380,16 @@ bool SwBaseLink::SwapIn( bool bWaitForData, bool bNativFormat )
         ReleaseRef();
     }
 
+#if OSL_DEBUG_LEVEL > 1
+    {
+        OUString sGrfNm;
+        if(GetLinkManager())
+            GetLinkManager()->GetDisplayNames( this, 0, &sGrfNm, 0, 0 );
+        int x = 0;
+        ++x;
+    }
+#endif
+
     bool bRes = false;
 
     if( GetObj() )
@@ -439,10 +448,10 @@ const SwNode* SwBaseLink::GetAnchor() const
             const SwFormatAnchor& rAnchor = pFormat->GetAnchor();
             SwPosition const*const pAPos = rAnchor.GetContentAnchor();
             if (pAPos &&
-                ((RndStdIds::FLY_AS_CHAR == rAnchor.GetAnchorId()) ||
-                 (RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId()) ||
-                 (RndStdIds::FLY_AT_FLY  == rAnchor.GetAnchorId()) ||
-                 (RndStdIds::FLY_AT_PARA == rAnchor.GetAnchorId())))
+                ((FLY_AS_CHAR == rAnchor.GetAnchorId()) ||
+                 (FLY_AT_CHAR == rAnchor.GetAnchorId()) ||
+                 (FLY_AT_FLY  == rAnchor.GetAnchorId()) ||
+                 (FLY_AT_PARA == rAnchor.GetAnchorId())))
             {
                     return &pAPos->nNode.GetNode();
             }
@@ -457,7 +466,7 @@ const SwNode* SwBaseLink::GetAnchor() const
 bool SwBaseLink::IsRecursion( const SwBaseLink* pChkLnk ) const
 {
     tools::SvRef<SwServerObject> aRef( static_cast<SwServerObject*>(GetObj()) );
-    if( aRef.is() )
+    if( aRef.Is() )
     {
         // As it's a ServerObject, we query all contained Links
         // if we are contained in them. Else we have a recursion.

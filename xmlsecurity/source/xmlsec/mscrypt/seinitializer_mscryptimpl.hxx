@@ -52,32 +52,40 @@ private:
 
 public:
     explicit SEInitializer_MSCryptImpl(const css::uno::Reference< css::uno::XComponentContext > &rxContext);
-    virtual ~SEInitializer_MSCryptImpl() override;
+    virtual ~SEInitializer_MSCryptImpl();
 
     /* XSEInitializer */
     virtual css::uno::Reference< css::xml::crypto::XXMLSecurityContext >
-        SAL_CALL createSecurityContext( const OUString& certDB ) override;
+        SAL_CALL createSecurityContext( const OUString& certDB )
+        throw (css::uno::RuntimeException);
 
     virtual void SAL_CALL freeSecurityContext( const css::uno::Reference<
-        css::xml::crypto::XXMLSecurityContext >& securityContext ) override;
+        css::xml::crypto::XXMLSecurityContext >& securityContext )
+        throw (css::uno::RuntimeException);
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException);
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException);
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException);
 };
 
-/// @throws css::uno::RuntimeException
-OUString SEInitializer_MSCryptImpl_getImplementationName();
+OUString SEInitializer_MSCryptImpl_getImplementationName()
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::RuntimeException
-css::uno::Sequence< OUString > SAL_CALL SEInitializer_MSCryptImpl_getSupportedServiceNames(  );
+sal_Bool SAL_CALL SEInitializer_MSCryptImpl_supportsService( const OUString& ServiceName )
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::Exception
+css::uno::Sequence< OUString > SAL_CALL SEInitializer_MSCryptImpl_getSupportedServiceNames(  )
+    throw ( css::uno::RuntimeException );
+
 css::uno::Reference< css::uno::XInterface >
-SAL_CALL SEInitializer_MSCryptImpl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr);
+SAL_CALL SEInitializer_MSCryptImpl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr)
+    throw ( css::uno::Exception );
 
 #endif
 

@@ -69,14 +69,14 @@ void ScHTMLExport::FillGraphList( const SdrPage* pPage, SCTAB nTab,
 {
     if ( pPage->GetObjCount() )
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         if ( !bAll )
             aRect = pDoc->GetMMRect( nStartCol, nStartRow, nEndCol, nEndRow, nTab );
-        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         while ( pObject )
         {
-            tools::Rectangle aObjRect = pObject->GetCurrentBoundRect();
+            Rectangle aObjRect = pObject->GetCurrentBoundRect();
             if ( (bAll || aRect.IsInside( aObjRect )) && !ScDrawLayer::IsNoteCaption(pObject) )
             {
                 Size aSpace;
@@ -96,7 +96,7 @@ void ScHTMLExport::FillGraphList( const SdrPage* pPage, SCTAB nTab,
                     == static_cast< SCSIZE >( nRow2 - nRow1 ));    // rows-1 !
                 if ( bInCell )
                 {   // Spacing in spanning cell
-                    tools::Rectangle aCellRect = pDoc->GetMMRect(
+                    Rectangle aCellRect = pDoc->GetMMRect(
                         nCol1, nRow1, nCol2, nRow2, nTab );
                     aSpace = MMToPixel( Size(
                         aCellRect.GetWidth() - aObjRect.GetWidth(),

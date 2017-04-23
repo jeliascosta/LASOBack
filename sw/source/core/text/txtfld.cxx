@@ -86,7 +86,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
     {
         pField->SetLanguage( GetFnt()->GetLanguage() );
         // let the visual note know about its new language
-        if (pField->GetTyp()->Which()==SwFieldIds::Postit)
+        if (pField->GetTyp()->Which()==RES_POSTITFLD)
             const_cast<SwFormatField*> (&pHint->GetFormatField())->Broadcast( SwFormatFieldHint( &pHint->GetFormatField(), SwFormatFieldHintWhich::LANGUAGE ) );
     }
 
@@ -97,12 +97,12 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
 
     switch( pField->GetTyp()->Which() )
     {
-        case SwFieldIds::Script:
-        case SwFieldIds::Postit:
-            pRet = new SwPostItsPortion( SwFieldIds::Script == pField->GetTyp()->Which() );
+        case RES_SCRIPTFLD:
+        case RES_POSTITFLD:
+            pRet = new SwPostItsPortion( RES_SCRIPTFLD == pField->GetTyp()->Which() );
             break;
 
-        case SwFieldIds::CombinedChars:
+        case RES_COMBINED_CHARS:
             {
                 if( bName )
                     pRet = new SwFieldPortion( pField->GetFieldName() );
@@ -111,7 +111,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
 
-        case SwFieldIds::HiddenText:
+        case RES_HIDDENTXTFLD:
             {
                 OUString const aStr( (bName)
                         ? pField->GetFieldName()
@@ -120,7 +120,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
 
-        case SwFieldIds::Chapter:
+        case RES_CHAPTERFLD:
             if( !bName && pSh && !pSh->Imp()->IsUpdateExpFields() )
             {
                 static_cast<SwChapterField*>(pField)->ChangeExpansion( pFrame,
@@ -134,7 +134,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
 
-        case SwFieldIds::DocStat:
+        case RES_DOCSTATFLD:
             if( !bName && pSh && !pSh->Imp()->IsUpdateExpFields() )
             {
                 static_cast<SwDocStatField*>(pField)->ChangeExpansion( pFrame );
@@ -148,7 +148,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             static_cast<SwFieldPortion*>(pRet)->m_nAttrFieldType= ATTR_PAGECOOUNTFLD;
             break;
 
-        case SwFieldIds::PageNumber:
+        case RES_PAGENUMBERFLD:
         {
             if( !bName && pSh && pSh->GetLayout() && !pSh->Imp()->IsUpdateExpFields() )
             {
@@ -159,13 +159,13 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
 
                 sal_uInt16 nVirtNum = pFrame->GetVirtPageNum();
                 sal_uInt16 nNumPages = pTmpRootFrame->GetPageNum();
-                SvxNumType nNumFormat = (SvxNumType)-1;
+                sal_Int16 nNumFormat = -1;
                 if(SVX_NUM_PAGEDESC == pField->GetFormat())
                     nNumFormat = pFrame->FindPageFrame()->GetPageDesc()->GetNumType().GetNumberingType();
                 static_cast<SwPageNumberField*>(pField)
                     ->ChangeExpansion(nVirtNum, nNumPages);
                 pPageNr->ChangeExpansion(pDoc,
-                                            bVirt, nNumFormat != (SvxNumType)-1 ? &nNumFormat : nullptr);
+                                            bVirt, nNumFormat > -1 ? &nNumFormat : nullptr);
             }
             {
                 OUString const aStr( (bName)
@@ -176,7 +176,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             static_cast<SwFieldPortion*>(pRet)->m_nAttrFieldType= ATTR_PAGENUMBERFLD;
             break;
         }
-        case SwFieldIds::GetExp:
+        case RES_GETEXPFLD:
         {
             if( !bName && pSh && !pSh->Imp()->IsUpdateExpFields() )
             {
@@ -203,7 +203,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
         }
-        case SwFieldIds::Database:
+        case RES_DBFLD:
         {
             if( !bName )
             {
@@ -218,7 +218,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
         }
-        case SwFieldIds::RefPageGet:
+        case RES_REFPAGEGETFLD:
             if( !bName && pSh && !pSh->Imp()->IsUpdateExpFields() )
             {
                 static_cast<SwRefPageGetField*>(pField)->ChangeExpansion(pFrame,
@@ -232,13 +232,13 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             }
             break;
 
-        case SwFieldIds::JumpEdit:
+        case RES_JUMPEDITFLD:
             if( !bName )
                 pChFormat = static_cast<SwJumpEditField*>(pField)->GetCharFormat();
             bNewFlyPor = true;
             bPlaceHolder = true;
             break;
-        case SwFieldIds::GetRef:
+        case RES_GETREFFLD:
             subType = static_cast<SwGetRefField*>(pField)->GetSubType();
             {
                 OUString const str( (bName)
@@ -251,7 +251,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
             else if( subType == REF_SETREFATTR )
                 static_cast<SwFieldPortion*>(pRet)->m_nAttrFieldType = ATTR_SETREFATTRFLD;
             break;
-        case SwFieldIds::DateTime:
+        case RES_DATETIMEFLD:
             subType = static_cast<SwDateTimeField*>(pField)->GetSubType();
             {
                 OUString const str( (bName)
@@ -278,7 +278,7 @@ SwExpandPortion *SwTextFormatter::NewFieldPortion( SwTextFormatInfo &rInf,
         SwFont *pTmpFnt = nullptr;
         if( !bName )
         {
-            pTmpFnt = new SwFont( *m_pFont );
+            pTmpFnt = new SwFont( *pFnt );
             pTmpFnt->SetDiffFnt( &pChFormat->GetAttrSet(), m_pFrame->GetTextNode()->getIDocumentSettingAccess() );
         }
         {
@@ -316,12 +316,12 @@ static SwFieldPortion * lcl_NewMetaPortion(SwTextAttr & rHint, const bool bPrefi
  */
 SwExpandPortion * SwTextFormatter::TryNewNoLengthPortion(SwTextFormatInfo & rInfo)
 {
-    if (m_pHints)
+    if (pHints)
     {
         const sal_Int32 nIdx(rInfo.GetIdx());
-        while (m_nHintEndIndex < m_pHints->Count())
+        while (m_nHintEndIndex < pHints->Count())
         {
-            SwTextAttr & rHint( *m_pHints->GetSortedByEnd(m_nHintEndIndex) );
+            SwTextAttr & rHint( *pHints->GetSortedByEnd(m_nHintEndIndex) );
             sal_Int32 const nEnd( *rHint.GetAnyEnd() );
             if (nEnd > nIdx)
             {
@@ -469,8 +469,8 @@ SwNumberPortion *SwTextFormatter::NewNumberPortion( SwTextFormatInfo &rInf ) con
             nLevel = MAXLEVEL - 1;
 
         const SwNumFormat &rNumFormat = pNumRule->Get( nLevel );
-        const bool bLeft = SvxAdjust::Left == rNumFormat.GetNumAdjust();
-        const bool bCenter = SvxAdjust::Center == rNumFormat.GetNumAdjust();
+        const bool bLeft = SVX_ADJUST_LEFT == rNumFormat.GetNumAdjust();
+        const bool bCenter = SVX_ADJUST_CENTER == rNumFormat.GetNumAdjust();
         const bool bLabelAlignmentPosAndSpaceModeActive(
                 rNumFormat.GetPositionAndSpaceMode() == SvxNumberFormat::LABEL_ALIGNMENT );
         const sal_uInt16 nMinDist = bLabelAlignmentPosAndSpaceModeActive

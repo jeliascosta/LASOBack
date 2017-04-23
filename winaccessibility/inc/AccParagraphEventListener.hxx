@@ -36,10 +36,10 @@ class AccParagraphEventListener: public AccContainerEventListener
 {
 public:
     AccParagraphEventListener(css::accessibility::XAccessible* pAcc, AccObjectManagerAgent* Agent);
-    virtual ~AccParagraphEventListener() override;
+    virtual ~AccParagraphEventListener();
 
     //AccessibleEventListener
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException) override;
 
     //for caret changed event
     virtual void HandleCaretChangedEvent(

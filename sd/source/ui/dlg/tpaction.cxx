@@ -21,7 +21,6 @@
 #include <com/sun/star/presentation/AnimationEffect.hpp>
 #include <com/sun/star/presentation/ClickAction.hpp>
 #include <com/sun/star/presentation/AnimationSpeed.hpp>
-#include <com/sun/star/embed/NeedsRunningStateException.hpp>
 #include <com/sun/star/embed/VerbDescriptor.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/uri/XUriReferenceFactory.hpp>
@@ -83,6 +82,7 @@ SdActionDlg::SdActionDlg (
         "modules/simpress/ui/interactiondialog.ui")
     , rOutAttrs(*pAttr)
 {
+    // FreeResource();
     VclPtr<SfxTabPage> pNewPage = SdTPAction::Create(get_content_area(), rOutAttrs);
     assert(pNewPage); //Unable to create page
 
@@ -167,7 +167,7 @@ void SdTPAction::SetView( const ::sd::View* pSdView )
     mpView = pSdView;
 
     // get ColorTable and fill ListBox
-    ::sd::DrawDocShell* pDocSh = mpView->GetDocSh();
+    ::sd::DrawDocShell* pDocSh = static_cast<const ::sd::View*>(mpView)->GetDocSh();
     if( pDocSh && pDocSh->GetViewShell() )
     {
         mpDoc = pDocSh->GetDoc();
@@ -202,14 +202,14 @@ void SdTPAction::Construct()
             SdrMark* pMark = rMarkList.GetMark(0);
             pObj = pMark->GetMarkedSdrObj();
 
-            SdrInventor nInv        = pObj->GetObjInventor();
-            sal_uInt16  nSdrObjKind = pObj->GetObjIdentifier();
+            sal_uInt32 nInv = pObj->GetObjInventor();
+            sal_uInt16 nSdrObjKind = pObj->GetObjIdentifier();
 
-            if (nInv == SdrInventor::Default && nSdrObjKind == OBJ_OLE2)
+            if (nInv == SdrInventor && nSdrObjKind == OBJ_OLE2)
             {
                 pOleObj = static_cast<SdrOle2Obj*>(pObj);
             }
-            else if (nInv == SdrInventor::Default && nSdrObjKind == OBJ_GRAF)
+            else if (nInv == SdrInventor && nSdrObjKind == OBJ_GRAF)
             {
                 pGrafObj = static_cast<SdrGrafObj*>(pObj);
             }
@@ -303,8 +303,8 @@ bool SdTPAction::FillItemSet( SfxItemSet* rAttrs )
                 eCA == presentation::ClickAction_DOCUMENT ||
                 eCA == presentation::ClickAction_PROGRAM )
                 aFileName = ::URIHelper::SmartRel2Abs( INetURLObject(aBaseURL), aFileName, URIHelper::GetMaybeFileHdl(), true, false,
-                                                        INetURLObject::EncodeMechanism::WasEncoded,
-                                                        INetURLObject::DecodeMechanism::Unambiguous );
+                                                        INetURLObject::WAS_ENCODED,
+                                                        INetURLObject::DECODE_UNAMBIGUOUS );
 
             rAttrs->Put( SfxStringItem( ATTR_ACTION_FILENAME, aFileName ) );
             bModified = true;
@@ -369,12 +369,12 @@ void SdTPAction::ActivatePage( const SfxItemSet& )
 {
 }
 
-DeactivateRC SdTPAction::DeactivatePage( SfxItemSet* pPageSet )
+SfxTabPage::sfxpg SdTPAction::DeactivatePage( SfxItemSet* pPageSet )
 {
     if( pPageSet )
         FillItemSet( pPageSet );
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 VclPtr<SfxTabPage> SdTPAction::Create( vcl::Window* pWindow,
@@ -417,7 +417,7 @@ void SdTPAction::OpenFileDialog()
             SdOpenSoundFileDialog   aFileDialog;
 
             if( aFile.isEmpty() )
-                aFile = SvtPathOptions().GetWorkPath();
+                aFile = SvtPathOptions().GetGraphicPath();
 
             aFileDialog.SetPath( aFile );
 
@@ -466,12 +466,12 @@ void SdTPAction::OpenFileDialog()
     }
 }
 
-IMPL_LINK_NOARG(SdTPAction, ClickSearchHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdTPAction, ClickSearchHdl, Button*, void)
 {
     OpenFileDialog();
 }
 
-IMPL_LINK_NOARG(SdTPAction, ClickActionHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SdTPAction, ClickActionHdl, ListBox&, void)
 {
     presentation::ClickAction eCA = GetActualClickAction();
 
@@ -643,12 +643,12 @@ IMPL_LINK_NOARG(SdTPAction, ClickActionHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG(SdTPAction, SelectTreeHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SdTPAction, SelectTreeHdl, SvTreeListBox*, void)
 {
     m_pEdtBookmark->SetText( m_pLbTree->GetSelectEntry() );
 }
 
-IMPL_LINK_NOARG(SdTPAction, CheckFileHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(SdTPAction, CheckFileHdl, Control&, void)
 {
     OUString aFile( GetEditText() );
 
@@ -732,7 +732,7 @@ void SdTPAction::SetEditText( OUString const & rStr )
                 INetURLObject aURL( aText );
 
                 // try to convert to system path
-                OUString aTmpStr(aURL.getFSysPath(FSysStyle::Detect));
+                OUString aTmpStr(aURL.getFSysPath(INetURLObject::FSYS_DETECT));
 
                 if( !aTmpStr.isEmpty() )
                     aText = aTmpStr;    // was a system path
@@ -821,7 +821,7 @@ OUString SdTPAction::GetEditText( bool bFullDocDestination )
         aURL = INetURLObject( ::URIHelper::SmartRel2Abs( INetURLObject(aBaseURL), aStr, URIHelper::GetMaybeFileHdl() ) );
 
     // get adjusted file name
-    aStr = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+    aStr = aURL.GetMainURL( INetURLObject::NO_DECODE );
 
     if( bFullDocDestination &&
         eCA == presentation::ClickAction_DOCUMENT &&
@@ -831,7 +831,7 @@ OUString SdTPAction::GetEditText( bool bFullDocDestination )
         OUString aTmpStr( m_pLbTreeDocument->GetSelectEntry() );
         if( !aTmpStr.isEmpty() )
         {
-            aStr += OUStringLiteral1(DOCUMENT_TOKEN) + aTmpStr;
+            aStr += OUStringLiteral1<DOCUMENT_TOKEN>() + aTmpStr;
         }
     }
 

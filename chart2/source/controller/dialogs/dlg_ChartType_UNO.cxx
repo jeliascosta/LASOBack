@@ -41,16 +41,27 @@ ChartTypeUnoDlg::~ChartTypeUnoDlg()
     }
 }
 // lang::XServiceInfo
-OUString SAL_CALL ChartTypeUnoDlg::getImplementationName()
+OUString SAL_CALL ChartTypeUnoDlg::getImplementationName() throw(uno::RuntimeException, std::exception)
+{
+    return getImplementationName_Static();
+}
+
+OUString ChartTypeUnoDlg::getImplementationName_Static() throw(uno::RuntimeException)
 {
     return OUString(CHART_TYPE_DIALOG_SERVICE_IMPLEMENTATION_NAME);
 }
 
-css::uno::Sequence<OUString> SAL_CALL ChartTypeUnoDlg::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL ChartTypeUnoDlg::getSupportedServiceNames() throw(uno::RuntimeException, std::exception)
 {
-    return { CHART_TYPE_DIALOG_SERVICE_NAME };
+    return getSupportedServiceNames_Static();
 }
-uno::Sequence< sal_Int8 > SAL_CALL ChartTypeUnoDlg::getImplementationId()
+
+uno::Sequence< OUString > ChartTypeUnoDlg::getSupportedServiceNames_Static()
+{
+    uno::Sequence<OUString> aSNS { CHART_TYPE_DIALOG_SERVICE_NAME };
+    return aSNS;
+}
+uno::Sequence< sal_Int8 > SAL_CALL ChartTypeUnoDlg::getImplementationId() throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -71,7 +82,7 @@ VclPtr<Dialog> ChartTypeUnoDlg::createDialog(vcl::Window* _pParent)
 {
     return VclPtr<ChartTypeDialog>::Create( _pParent, m_xChartModel );
 }
-uno::Reference<beans::XPropertySetInfo>  SAL_CALL ChartTypeUnoDlg::getPropertySetInfo()
+uno::Reference<beans::XPropertySetInfo>  SAL_CALL ChartTypeUnoDlg::getPropertySetInfo() throw(uno::RuntimeException, std::exception)
 {
     return createPropertySetInfo( getInfoHelper() );
 }

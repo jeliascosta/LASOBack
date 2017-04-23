@@ -52,16 +52,16 @@ SfxSetItem::~SfxSetItem()
 
 bool SfxSetItem::operator==( const SfxPoolItem& rCmp) const
 {
-    assert(SfxPoolItem::operator==(rCmp));
+    DBG_ASSERT( SfxPoolItem::operator==( rCmp ), "unequal type" );
     return *pSet == *static_cast<const SfxSetItem &>(rCmp).pSet;
 }
 
 
 bool SfxSetItem::GetPresentation
 (
-    SfxItemPresentation    /*ePresentation*/,
-    MapUnit                /*eCoreMetric*/,
-    MapUnit                /*ePresentationMetric*/,
+    SfxItemPresentation     /*ePresentation*/,
+    SfxMapUnit              /*eCoreMetric*/,
+    SfxMapUnit              /*ePresentationMetric*/,
     OUString&              /*rText*/,
     const IntlWrapper *
 )   const

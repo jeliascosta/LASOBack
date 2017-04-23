@@ -78,15 +78,15 @@ const XMLPropertyHandler* OPropertyHandlerFactory::GetPropertyHandler(sal_Int32 
     {
         case XML_RPT_ALGINMENT:
             {
-                static SvXMLEnumMapEntry<style::VerticalAlignment> const pXML_VerticalAlign_Enum[] =
+                static SvXMLEnumMapEntry const pXML_VerticalAlign_Enum[] =
                 {
                     { XML_TOP,          style::VerticalAlignment_TOP },
                     { XML_MIDDLE,       style::VerticalAlignment_MIDDLE },
                     { XML_BOTTOM,       style::VerticalAlignment_BOTTOM },
-                    { XML_TOKEN_INVALID, (style::VerticalAlignment)0 }
+                    { XML_TOKEN_INVALID, 0 }
                 };
 
-                pHandler = new XMLEnumPropertyHdl( pXML_VerticalAlign_Enum );
+                pHandler = new XMLEnumPropertyHdl( pXML_VerticalAlign_Enum, cppu::UnoType<css::style::VerticalAlignment>::get());
             }
             break;
         case (XML_SD_TYPES_START+34):
@@ -187,21 +187,21 @@ const XMLPropertyMapEntry* OXMLHelper::GetColumnStyleProps()
     return aXMLColumnStylesProperties;
 }
 
-const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetReportPrintOptions()
+const SvXMLEnumMapEntry* OXMLHelper::GetReportPrintOptions()
 {
-    static const SvXMLEnumMapEntry<sal_Int16> s_aXML_EnumMap[] =
+    static const SvXMLEnumMapEntry s_aXML_EnumMap[] =
     {
-        { XML_NOT_WITH_REPORT_HEADER,            report::ReportPrintOption::NOT_WITH_REPORT_HEADER },
-        { XML_NOT_WITH_REPORT_FOOTER,            report::ReportPrintOption::NOT_WITH_REPORT_FOOTER },
-        { XML_NOT_WITH_REPORT_HEADER_NOR_FOOTER, report::ReportPrintOption::NOT_WITH_REPORT_HEADER_FOOTER },
+        { XML_NOT_WITH_REPORT_HEADER,               report::ReportPrintOption::NOT_WITH_REPORT_HEADER },
+        { XML_NOT_WITH_REPORT_FOOTER,               report::ReportPrintOption::NOT_WITH_REPORT_FOOTER },
+        { XML_NOT_WITH_REPORT_HEADER_NOR_FOOTER,    report::ReportPrintOption::NOT_WITH_REPORT_HEADER_FOOTER },
         { XML_TOKEN_INVALID, 0 }
     };
     return s_aXML_EnumMap;
 }
 
-const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetForceNewPageOptions()
+const SvXMLEnumMapEntry* OXMLHelper::GetForceNewPageOptions()
 {
-    static const SvXMLEnumMapEntry<sal_Int16> s_aXML_EnumMap[] =
+    static const SvXMLEnumMapEntry s_aXML_EnumMap[] =
     {
         { XML_BEFORE_SECTION,       report::ForceNewPage::BEFORE_SECTION },
         { XML_AFTER_SECTION,        report::ForceNewPage::AFTER_SECTION },
@@ -211,9 +211,9 @@ const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetForceNewPageOptions()
     return s_aXML_EnumMap;
 }
 
-const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetKeepTogetherOptions()
+const SvXMLEnumMapEntry* OXMLHelper::GetKeepTogetherOptions()
 {
-    static const SvXMLEnumMapEntry<sal_Int16> s_aXML_EnumMap[] =
+    static const SvXMLEnumMapEntry s_aXML_EnumMap[] =
     {
         { XML_WHOLE_GROUP,          report::KeepTogether::WHOLE_GROUP },
         { XML_WITH_FIRST_DETAIL,    report::KeepTogether::WITH_FIRST_DETAIL },
@@ -222,9 +222,9 @@ const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetKeepTogetherOptions()
     return s_aXML_EnumMap;
 }
 
-const SvXMLEnumMapEntry<sal_Int32>* OXMLHelper::GetCommandTypeOptions()
+const SvXMLEnumMapEntry* OXMLHelper::GetCommandTypeOptions()
 {
-    static const SvXMLEnumMapEntry<sal_Int32> s_aXML_EnumMap[] =
+    static const SvXMLEnumMapEntry s_aXML_EnumMap[] =
     {
         { XML_TABLE, CommandType::TABLE },
         { XML_QUERY, CommandType::QUERY },
@@ -370,9 +370,9 @@ SvXMLTokenMap* OXMLHelper::GetSubDocumentElemTokenMap()
     return new SvXMLTokenMap( aElemTokenMap );
 }
 
-const SvXMLEnumMapEntry<sal_Int16>* OXMLHelper::GetImageScaleOptions()
+const SvXMLEnumMapEntry* OXMLHelper::GetImageScaleOptions()
 {
-       static const SvXMLEnumMapEntry<sal_Int16> s_aXML_EnumMap[] =
+       static const SvXMLEnumMapEntry s_aXML_EnumMap[] =
        {
                { XML_ISOTROPIC,        awt::ImageScaleMode::ISOTROPIC },
                { XML_ANISOTROPIC,      awt::ImageScaleMode::ANISOTROPIC },

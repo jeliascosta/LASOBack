@@ -12,41 +12,20 @@
 
 #include <vcl/builder.hxx>
 #include <vcl/ctrl.hxx>
-#include <vcl/EnumContext.hxx>
-#include <sfx2/notebookbar/NotebookbarContextControl.hxx>
-#include <com/sun/star/ui/XContextChangeEventListener.hpp>
-#include <vector>
-
-class SystemWindow;
 
 /// This implements Widget Layout-based notebook-like menu bar.
-class VCL_DLLPUBLIC NotebookBar : public Control, public VclBuilderContainer
+class NotebookBar : public Control, public VclBuilderContainer
 {
-friend class NotebookBarContextChangeEventListener;
 public:
     NotebookBar(Window* pParent, const OString& rID, const OUString& rUIXMLDescription, const css::uno::Reference<css::frame::XFrame> &rFrame);
-    virtual ~NotebookBar() override;
+    virtual ~NotebookBar();
     virtual void dispose() SAL_OVERRIDE;
 
-    virtual bool PreNotify( NotifyEvent& rNEvt ) override;
     virtual Size GetOptimalSize() const SAL_OVERRIDE;
     virtual void setPosSizePixel(long nX, long nY, long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All) SAL_OVERRIDE;
-    virtual void Resize() override;
 
-    void SetSystemWindow(SystemWindow* pSystemWindow);
-
-    const css::uno::Reference<css::ui::XContextChangeEventListener>& getContextChangeEventListener() const { return m_pEventListener; }
-
-    void DataChanged(const DataChangedEvent& rDCEvt) override;
-
-private:
-    VclPtr<SystemWindow> m_pSystemWindow;
-    css::uno::Reference<css::ui::XContextChangeEventListener> m_pEventListener;
-    std::vector<NotebookbarContextControl*> m_pContextContainers;
-
-    void UpdateBackground();
+    virtual void StateChanged(StateChangedType nType) override;
 };
-
 
 #endif // INCLUDED_VCL_NOTEBOOKBAR_HXX
 

@@ -90,7 +90,7 @@ bool SwViewShell::mbLstAct = false;
 ShellResource *SwViewShell::mpShellRes = nullptr;
 vcl::DeleteOnDeinit< VclPtr<vcl::Window> > SwViewShell::mpCareWindow(new VclPtr<vcl::Window>);
 
-static bool bInSizeNotify = false;
+bool bInSizeNotify = false;
 
 
 using namespace ::com::sun::star;
@@ -115,6 +115,21 @@ void SwViewShell::ToggleHeaderFooterEdit()
     GetWin()->Invalidate();
 }
 
+void SwViewShell::registerLibreOfficeKitCallback(LibreOfficeKitCallback pCallback, void* pData)
+{
+    getIDocumentDrawModelAccess().GetDrawModel()->registerLibreOfficeKitCallback(pCallback, pData);
+    if (SwPostItMgr* pPostItMgr = GetPostItMgr())
+        pPostItMgr->registerLibreOfficeKitCallback(getIDocumentDrawModelAccess().GetDrawModel());
+}
+
+void SwViewShell::libreOfficeKitCallback(int nType, const char* pPayload) const
+{
+    if (mbInLibreOfficeKitCallback)
+        return;
+
+    getIDocumentDrawModelAccess().GetDrawModel()->libreOfficeKitCallback(nType, pPayload);
+}
+
 void SwViewShell::setOutputToWindow(bool bOutputToWindow)
 {
     mbOutputToWindow = bOutputToWindow;
@@ -127,7 +142,7 @@ bool SwViewShell::isOutputToWindow() const
 
 void SwViewShell::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwViewShell"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swViewShell"));
     xmlTextWriterEndElement(pWriter);
 }
 
@@ -139,7 +154,7 @@ lcl_PaintTransparentFormControls(SwViewShell & rShell, SwRect const& rRect)
     if (rShell.GetWin())
     {
         vcl::Window& rWindow = *(rShell.GetWin());
-        const tools::Rectangle aRectanglePixel(rShell.GetOut()->LogicToPixel(rRect.SVRect()));
+        const Rectangle aRectanglePixel(rShell.GetOut()->LogicToPixel(rRect.SVRect()));
         PaintTransparentChildren(rWindow, aRectanglePixel);
     }
 }
@@ -235,12 +250,6 @@ void SwViewShell::ImplEndAction( const bool bIdleEnd )
     {
         mbPaintWorks = true;
         UISizeNotify();
-        // tdf#101464 print preview may generate events if another view shell
-        // performs layout...
-        if (IsPreview() && Imp()->IsAccessible())
-        {
-            Imp()->FireAccessibleEvents();
-        }
         return;
     }
 
@@ -342,9 +351,9 @@ void SwViewShell::ImplEndAction( const bool bIdleEnd )
 
                         bool bSizeOK = true;
 
-                        tools::Rectangle aTmp1( aRect.SVRect() );
+                        Rectangle aTmp1( aRect.SVRect() );
                         aTmp1 = GetOut()->LogicToPixel( aTmp1 );
-                        tools::Rectangle aTmp2( GetOut()->PixelToLogic( aTmp1 ) );
+                        Rectangle aTmp2( GetOut()->PixelToLogic( aTmp1 ) );
                         if ( aTmp2.Left() > aRect.Left() )
                             aTmp1.Left() = std::max( 0L, aTmp1.Left() - 1L );
                         if ( aTmp2.Top() > aRect.Top() )
@@ -904,17 +913,6 @@ void SwViewShell::SetProtectForm( bool _bProtectForm )
     rIDSA.set(DocumentSettingId::PROTECT_FORM, _bProtectForm );
 }
 
-void SwViewShell::SetMsWordCompTrailingBlanks( bool _bMsWordCompTrailingBlanks )
-{
-    IDocumentSettingAccess& rIDSA = getIDocumentSettingAccess();
-    if (rIDSA.get(DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS) != _bMsWordCompTrailingBlanks)
-    {
-        SwWait aWait(*GetDoc()->GetDocShell(), true);
-        rIDSA.set(DocumentSettingId::MS_WORD_COMP_TRAILING_BLANKS, _bMsWordCompTrailingBlanks);
-        const SwInvalidateFlags nInv = SwInvalidateFlags::PrtArea | SwInvalidateFlags::Size | SwInvalidateFlags::Table | SwInvalidateFlags::Section;
-        lcl_InvalidateAllContent(*this, nInv);
-    }
-}
 
 void SwViewShell::Reformat()
 {
@@ -1027,8 +1025,8 @@ void SwViewShell::SizeChgNotify()
                     Size aDocSize = GetDocSize();
                     std::stringstream ss;
                     ss << aDocSize.Width() + 2L * DOCUMENTBORDER << ", " << aDocSize.Height() + 2L * DOCUMENTBORDER;
-                    OString sSize = ss.str().c_str();
-                    GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sSize.getStr());
+                    OString sRect = ss.str().c_str();
+                    libreOfficeKitCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sRect.getStr());
                 }
             }
         }
@@ -1042,7 +1040,7 @@ void SwViewShell::SizeChgNotify()
 
 void SwViewShell::VisPortChgd( const SwRect &rRect)
 {
-    OSL_ENSURE( GetWin(), "VisPortChgd without Window." );
+    OSL_ENSURE( GetWin(), "VisPortChgd ohne Window." );
 
     if ( rRect == VisArea() )
         return;
@@ -1102,7 +1100,7 @@ void SwViewShell::VisPortChgd( const SwRect &rRect)
                 SwRect aPageRect( pPage->GetBoundRect(GetWin()) );
                 if ( bBookMode )
                 {
-                    const SwPageFrame& rFormatPage = pPage->GetFormatPage();
+                    const SwPageFrame& rFormatPage = static_cast<const SwPageFrame*>(pPage)->GetFormatPage();
                     aPageRect.SSize() = rFormatPage.GetBoundRect(GetWin()).SSize();
                 }
 
@@ -1135,7 +1133,7 @@ void SwViewShell::VisPortChgd( const SwRect &rRect)
                             // ignore objects that are not actually placed on the page
                             if (pObj->IsFormatPossible())
                             {
-                                const tools::Rectangle &rBound = pObj->GetObjRect().SVRect();
+                                const Rectangle &rBound = pObj->GetObjRect().SVRect();
                                 if (rBound.Left() != FAR_AWAY) {
                                     // OD 03.03.2003 #107927# - use correct datatype
                                     const SwTwips nL = std::max( 0L, rBound.Left() - nOfst );
@@ -1150,7 +1148,7 @@ void SwViewShell::VisPortChgd( const SwRect &rRect)
                 }
                 pPage = static_cast<const SwPageFrame*>(pPage->GetNext());
             }
-            tools::Rectangle aRect( aPrevArea.SVRect() );
+            Rectangle aRect( aPrevArea.SVRect() );
             aRect.Left()  = nMinLeft;
             aRect.Right() = nMaxRight;
             if( VisArea().IsOver( aPrevArea ) && !mnLockPaint )
@@ -1211,7 +1209,7 @@ void SwViewShell::VisPortChgd( const SwRect &rRect)
         Imp()->UpdateAccessible();
 }
 
-bool SwViewShell::SmoothScroll( long lXDiff, long lYDiff, const tools::Rectangle *pRect )
+bool SwViewShell::SmoothScroll( long lXDiff, long lYDiff, const Rectangle *pRect )
 {
 #if !defined(MACOSX) && !defined(ANDROID) && !defined(IOS)
     // #i98766# - disable smooth scrolling for Mac
@@ -1354,7 +1352,7 @@ bool SwViewShell::SmoothScroll( long lXDiff, long lYDiff, const tools::Rectangle
                 lScroll = aTmpOldVis.Top() - VisArea().Top();
                 if ( pRect )
                 {
-                    tools::Rectangle aTmp( aTmpOldVis.SVRect() );
+                    Rectangle aTmp( aTmpOldVis.SVRect() );
                     aTmp.Left() = pRect->Left();
                     aTmp.Right()= pRect->Right();
                     GetWin()->Scroll( 0, lScroll, aTmp, ScrollFlags::Children);
@@ -1392,12 +1390,12 @@ bool SwViewShell::SmoothScroll( long lXDiff, long lYDiff, const tools::Rectangle
                     if(!Imp()->m_bStopSmooth)
                     {
                             // start paint on logic base
-                            const tools::Rectangle aTargetLogic(Imp()->m_aSmoothRect.SVRect());
+                            const Rectangle aTargetLogic(Imp()->m_aSmoothRect.SVRect());
                             DLPrePaint2(vcl::Region(aTargetLogic));
 
                             // get target rectangle in discrete pixels
                             OutputDevice& rTargetDevice = mpTargetPaintWindow->GetTargetOutputDevice();
-                            const tools::Rectangle aTargetPixel(rTargetDevice.LogicToPixel(aTargetLogic));
+                            const Rectangle aTargetPixel(rTargetDevice.LogicToPixel(aTargetLogic));
 
                             // get source top-left in discrete pixels
                             const Point aSourceTopLeft(pVout->LogicToPixel(aTargetLogic.TopLeft()));
@@ -1534,7 +1532,7 @@ void SwViewShell::PaintDesktop_(vcl::RenderContext& /*rRenderContext*/, const Sw
 
     for ( auto &rRgn : rRegion )
     {
-        const tools::Rectangle aRectangle(rRgn.SVRect());
+        const Rectangle aRectangle(rRgn.SVRect());
 
         // #i93170#
         // Here we have a real Problem. On the one hand we have the buffering for paint
@@ -1621,8 +1619,7 @@ bool SwViewShell::CheckInvalidForPaint( const SwRect &rRect )
             for ( size_t i = 0; i < pRegion->size(); ++i )
             {
                 const SwRect &rTmp = (*pRegion)[i];
-                bStop = rTmp.IsOver( VisArea() );
-                if ( !bStop )
+                if ( !(bStop = rTmp.IsOver( VisArea() )) )
                     break;
             }
             if ( bStop )
@@ -1720,7 +1717,7 @@ public:
 };
 }
 
-void SwViewShell::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle &rRect)
+void SwViewShell::Paint(vcl::RenderContext& rRenderContext, const Rectangle &rRect)
 {
     RenderContextGuard aGuard(mpOut, &rRenderContext, this);
     if ( mnLockPaint )
@@ -1860,7 +1857,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
     // TODO clean up SwViewShell's approach to output devices (the many of
     // them - mpBufferedOut, mpOut, mpWin, ...)
     OutputDevice *pSaveOut = mpOut;
-    comphelper::LibreOfficeKit::setTiledPainting(true);
+    mbInLibreOfficeKitCallback = true;
     mpOut = &rDevice;
 
     // resizes the virtual device so to contain the entries context
@@ -1868,7 +1865,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
 
     // setup the output device to draw the tile
     MapMode aMapMode(rDevice.GetMapMode());
-    aMapMode.SetMapUnit(MapUnit::MapTwip);
+    aMapMode.SetMapUnit(MAP_TWIP);
     aMapMode.SetOrigin(Point(-tilePosX, -tilePosY));
 
     // Scaling. Must convert from pixels to twips. We know
@@ -1890,7 +1887,7 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
         GetWin()->EnableMapMode(false);
     }
 
-    tools::Rectangle aOutRect = tools::Rectangle(Point(tilePosX, tilePosY),
+    Rectangle aOutRect = Rectangle(Point(tilePosX, tilePosY),
                                    rDevice.PixelToLogic(Size(contextWidth, contextHeight)));
 
     // Make the requested area visible -- we can't use MakeVisible as that will
@@ -1908,13 +1905,12 @@ void SwViewShell::PaintTile(VirtualDevice &rDevice, int contextWidth, int contex
     // draw - works in logic coordinates
     Paint(rDevice, aOutRect);
 
-    SwPostItMgr* pPostItMgr = GetPostItMgr();
-    if (GetViewOptions()->IsPostIts() && pPostItMgr)
+    if (SwPostItMgr* pPostItMgr = GetPostItMgr())
         pPostItMgr->PaintTile(rDevice, aOutRect);
 
     // SwViewShell's output device tear down
     mpOut = pSaveOut;
-    comphelper::LibreOfficeKit::setTiledPainting(false);
+    mbInLibreOfficeKitCallback = false;
 }
 
 void SwViewShell::SetBrowseBorder( const Size& rNew )
@@ -2098,14 +2094,14 @@ void SwViewShell::ImplApplyViewOptions( const SwViewOption &rOpt )
 
     if( mpOpt->IsShowHiddenField() != rOpt.IsShowHiddenField() )
     {
-        static_cast<SwHiddenTextFieldType*>(mpDoc->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::HiddenText ))->
+        static_cast<SwHiddenTextFieldType*>(mpDoc->getIDocumentFieldsAccess().GetSysFieldType( RES_HIDDENTXTFLD ))->
                                             SetHiddenFlag( !rOpt.IsShowHiddenField() );
         bReformat = true;
     }
     if ( mpOpt->IsShowHiddenPara() != rOpt.IsShowHiddenPara() )
     {
         SwHiddenParaFieldType* pFieldType = static_cast<SwHiddenParaFieldType*>(GetDoc()->
-                                          getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::HiddenPara));
+                                          getIDocumentFieldsAccess().GetSysFieldType(RES_HIDDENPARAFLD));
         if( pFieldType && pFieldType->HasWriterListeners() )
         {
             SwMsgPoolItem aHint( RES_HIDDENPARA_PRINT );
@@ -2489,22 +2485,30 @@ sal_Int32 SwViewShell::GetPageNumAndSetOffsetForPDF( OutputDevice& rOut, const S
 // --> PB 2007-05-30 #146850#
 const BitmapEx& SwViewShell::GetReplacementBitmap( bool bIsErrorState )
 {
-    if (bIsErrorState)
+    BitmapEx** ppRet;
+    sal_uInt16 nResId = 0;
+    if( bIsErrorState )
     {
-        if (!m_xErrorBmp)
-            m_xErrorBmp.reset(new BitmapEx(SW_RES(RID_GRAPHIC_ERRORBMP)));
-        return *m_xErrorBmp;
+        ppRet = &m_pErrorBmp;
+        nResId = RID_GRAPHIC_ERRORBMP;
+    }
+    else
+    {
+        ppRet = &m_pReplaceBmp;
+        nResId = RID_GRAPHIC_REPLACEBMP;
     }
 
-    if (!m_xReplaceBmp)
-        m_xReplaceBmp.reset(new BitmapEx(SW_RES(RID_GRAPHIC_REPLACEBMP)));
-    return *m_xReplaceBmp;
+    if( !*ppRet )
+    {
+        *ppRet = new BitmapEx( SW_RES( nResId ) );
+    }
+    return **ppRet;
 }
 
 void SwViewShell::DeleteReplacementBitmaps()
 {
-    m_xErrorBmp.reset();
-    m_xReplaceBmp.reset();
+    DELETEZ( m_pErrorBmp );
+    DELETEZ( m_pReplaceBmp );
 }
 
 SwPostItMgr* SwViewShell::GetPostItMgr()

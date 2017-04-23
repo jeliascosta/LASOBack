@@ -29,7 +29,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #pragma clang diagnostic ignored "-Wextra"
-#pragma clang diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Wint-to-pointer-cast"
 #pragma clang diagnostic ignored "-Winvalid-noreturn"
 #pragma clang diagnostic ignored "-Wmicrosoft"
@@ -61,13 +60,13 @@ public:
 
     explicit VarDesc(ITypeInfo* pTypeInfo) :
       m_pTypeInfo(pTypeInfo),
-      m_pVarDesc(nullptr)
+      m_pVarDesc(NULL)
    {
        OSL_ASSERT(pTypeInfo);
    }
    ~VarDesc()
    {
-      if (m_pVarDesc != nullptr)
+      if (m_pVarDesc != NULL)
       {
          m_pTypeInfo->ReleaseVarDesc(m_pVarDesc);
       }
@@ -101,7 +100,7 @@ public:
 
     explicit FuncDesc(ITypeInfo * pTypeInfo) :
         m_pTypeInfo(pTypeInfo),
-        m_pFuncDesc(nullptr)
+        m_pFuncDesc(NULL)
         {
             OSL_ASSERT(pTypeInfo);
         }
@@ -134,17 +133,17 @@ public:
     FUNCDESC* Detach()
     {
         FUNCDESC* pDesc = m_pFuncDesc;
-        m_pFuncDesc = nullptr;
+        m_pFuncDesc = NULL;
         return pDesc;
     }
 
     void ReleaseFUNCDESC()
     {
-        if (m_pFuncDesc != nullptr)
+        if (m_pFuncDesc != NULL)
         {
             m_pTypeInfo->ReleaseFuncDesc(m_pFuncDesc);
         }
-        m_pFuncDesc = nullptr;
+        m_pFuncDesc = NULL;
     }
 };
 //Wrapper for EXCEPINFO structure
@@ -159,11 +158,11 @@ public:
    }
    ~ExcepInfo()
    {
-         if (bstrSource != nullptr)
+         if (bstrSource != NULL)
          ::SysFreeString(bstrSource);
-      if (bstrDescription != nullptr)
+      if (bstrDescription != NULL)
         ::SysFreeString(bstrDescription);
-      if (bstrHelpFile != nullptr)
+      if (bstrHelpFile != NULL)
         ::SysFreeString(bstrHelpFile);
    }
 };
@@ -179,13 +178,13 @@ public:
 
     explicit TypeAttr(ITypeInfo* pTypeInfo) :
       m_pTypeInfo( pTypeInfo ),
-      m_pTypeAttr( nullptr )
+      m_pTypeAttr( NULL )
    {
        OSL_ASSERT(pTypeInfo);
    }
    ~TypeAttr() throw()
    {
-        if (m_pTypeAttr != nullptr)
+        if (m_pTypeAttr != NULL)
         {
             m_pTypeInfo->ReleaseTypeAttr(m_pTypeAttr);
         }

@@ -33,7 +33,7 @@ using namespace com::sun::star;
 using std::vector;
 
 SwDropDownFieldType::SwDropDownFieldType()
-    : SwFieldType(SwFieldIds::Dropdown)
+    : SwFieldType(RES_DROPDOWN)
 {
 }
 
@@ -172,10 +172,11 @@ bool SwDropDownField::QueryValue(::uno::Any &rVal, sal_uInt16 nWhich) const
         break;
     case FIELD_PROP_STRINGS:
         rVal <<= GetItemSequence();
+
         break;
 
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -215,7 +216,7 @@ bool SwDropDownField::PutValue(const uno::Any &rVal,
         break;
 
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }

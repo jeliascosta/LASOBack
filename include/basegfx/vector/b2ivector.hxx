@@ -63,11 +63,23 @@ namespace basegfx
         :   B2ITuple(nX, nY)
         {}
 
+        /** Create a copy of a 2D Vector
+
+            @param rVec
+            The 2D Vector which will be copied.
+        */
+        B2IVector(const B2IVector& rVec)
+        :   B2ITuple(rVec)
+        {}
+
         /** constructor with tuple to allow copy-constructing
             from B2ITuple-based classes
         */
         B2IVector(const ::basegfx::B2ITuple& rTuple)
         :   B2ITuple(rTuple)
+        {}
+
+        ~B2IVector()
         {}
 
         /** *=operator to allow usage from B2IVector, too

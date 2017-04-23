@@ -18,7 +18,7 @@
  */
 
 #include <stdio.h>
-#ifdef __sun
+#ifdef SOLARIS
 #include <strings.h>
 #else
 #include <string.h>
@@ -118,7 +118,7 @@ const struct FontEntry FontMapTab[] =
 };
 
 #if defined(_WIN32)
-const char* const RepFontTab[] =
+const char* RepFontTab[] =
 {
     "\xb9\xd9\xc5\xc1",                                       /* 0 */
     "\xb5\xb8\xbf\xf2",                                       /* 1 */
@@ -126,7 +126,7 @@ const char* const RepFontTab[] =
     "\xb1\xc3\xbc\xad"                                        /* 3 */
 };
 #elif defined(LINUX)
-const char* const RepFontTab[] =
+const char* RepFontTab[] =
 {
     "\xb9\xe9\xb9\xac \xb9\xd9\xc5\xc1",                                     /* 0 */
     "\xb9\xe9\xb9\xac \xb5\xb8\xbf\xf2",                                      /* 1 */
@@ -134,7 +134,7 @@ const char* const RepFontTab[] =
     "\xb9\xe9\xb9\xac \xc7\xec\xb5\xe5\xb6\xf3\xc0\xce"                                      /* 3 */
 };
 #else
-const char* const RepFontTab[] =
+const char* RepFontTab[] =
 {
     "Batang",                                     /* 0 */
     "Dotum",                                      /* 1 */

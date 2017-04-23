@@ -19,6 +19,8 @@
 #include "sfx2/sfx.hrc"
 #include "cfgids.hxx"
 
+#define IMAGE_MASK_STDCOLOR Color{ Red = 0xff00; Green = 0x0000; Blue = 0xff00; }
+
 // Bitmaps for Tree-ListBox in Effects-TabDialog
 #define BMP_PAGE                RID_APP_START+42
 #define BMP_PAGEOBJS            RID_APP_START+43
@@ -44,6 +46,8 @@
 
 #define BMP_FADE_EFFECT_INDICATOR           RID_SD_START+331
 #define BMP_CUSTOM_ANIMATION_INDICATOR      RID_SD_START+332
+
+#define BMP_COMMENTS_INDICATOR              RID_SD_START+338
 
 #define BMP_LAYOUT_EMPTY                    RID_SD_START+340
 #define BMP_LAYOUT_HEAD01                   RID_SD_START+342
@@ -196,13 +200,13 @@
 #define BMP_PRESENTERSCREEN_BUTTON_RESTART_TIMER_MOUSE_OVER (RID_SD_START+594)
 #define BMP_PRESENTERSCREEN_BUTTON_RESTART_TIMER_NORMAL (RID_SD_START+595)
 
+// ResourceIDs for Popup-Menus do not need a dummy string!!!
+
+#define RID_TASKPANE_MASTERPAGESSELECTOR_POPUP  RID_APP_START+67
+#define RID_TASKPANE_LAYOUTMENU_POPUP       RID_APP_START+68
+#define RID_TASKPANE_CURRENT_MASTERPAGESSELECTOR_POPUP  RID_APP_START+93
+
 #define RID_GRAPHICSTYLEFAMILY      RID_APP_START+395
 #define RID_PRESENTATIONSTYLEFAMILY RID_APP_START+396
-#define BMP_STYLES_FAMILY_GRAPHICS  RID_APP_START+397
-#define BMP_STYLES_FAMILY_PRESENTATIONS  RID_APP_START+398
-
-#define BMP_EMBEDDED                RID_APP_START+399
-#define BMP_LINK                    RID_APP_START+400
-#define BMP_HYPERLINK               RID_APP_START+401
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

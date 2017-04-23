@@ -109,21 +109,29 @@ ScDocument* ScTempDocSource::GetDocument()
         return rCache.GetDocument();
 }
 
-ScTempDocCache::ScTempDocCache()
-    : bInUse(false)
+ScTempDocCache::ScTempDocCache() :
+    pDoc( nullptr ),
+    bInUse( false )
 {
+}
+
+ScTempDocCache::~ScTempDocCache()
+{
+    OSL_ENSURE( !bInUse, "ScTempDocCache dtor: bInUse" );
+    delete pDoc;
 }
 
 void ScTempDocCache::SetDocument( ScDocument* pNew )
 {
-    OSL_ENSURE(!xDoc, "ScTempDocCache::SetDocument: already set");
-    xDoc.reset(pNew);
+    OSL_ENSURE( !pDoc, "ScTempDocCache::SetDocument: already set" );
+    pDoc = pNew;
 }
 
 void ScTempDocCache::Clear()
 {
     OSL_ENSURE( !bInUse, "ScTempDocCache::Clear: bInUse" );
-    xDoc.reset();
+    delete pDoc;
+    pDoc = nullptr;
 }
 
 //  copy results from one document into another
@@ -149,7 +157,7 @@ static bool lcl_CopyData( ScDocument* pSrcDoc, const ScRange& rSrcRange,
     pSrcDoc->CopyToClip(aClipParam, pClipDoc.get(), &aSourceMark, false, false);
 
     if ( pClipDoc->HasAttrib( 0,0,nSrcTab, MAXCOL,MAXROW,nSrcTab,
-                                HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
+                                HASATTR_MERGED | HASATTR_OVERLAPPED ) )
     {
         ScPatternAttr aPattern( pSrcDoc->GetPool() );
         aPattern.GetItemSet().Put( ScMergeAttr() );             // Defaults
@@ -171,7 +179,7 @@ ScFunctionAccess::ScFunctionAccess() :
     mbArray( true ),    // default according to behaviour of older Office versions
     mbValid( true )
 {
-    StartListening( *SfxGetpApp() );       // for SfxHintId::Deinitializing
+    StartListening( *SfxGetpApp() );       // for SFX_HINT_DEINITIALIZING
 }
 
 ScFunctionAccess::~ScFunctionAccess()
@@ -186,7 +194,8 @@ ScFunctionAccess::~ScFunctionAccess()
 
 void ScFunctionAccess::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Deinitializing )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DEINITIALIZING )
     {
         //  document must not be used anymore
         aDocCache.Clear();
@@ -203,24 +212,31 @@ ScFunctionAcceess_get_implementation(css::uno::XComponentContext*, css::uno::Seq
 }
 
 // XServiceInfo
-OUString SAL_CALL ScFunctionAccess::getImplementationName()
+OUString SAL_CALL ScFunctionAccess::getImplementationName() throw(uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.StarCalc.ScFunctionAccess");
 }
 
 sal_Bool SAL_CALL ScFunctionAccess::supportsService( const OUString& rServiceName )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL ScFunctionAccess::getSupportedServiceNames()
+                                                    throw(uno::RuntimeException, std::exception)
 {
-    return {SCFUNCTIONACCESS_SERVICE, SCDOCSETTINGS_SERVICE};
+    uno::Sequence<OUString> aRet(2);
+    OUString* pArray = aRet.getArray();
+    pArray[0] = SCFUNCTIONACCESS_SERVICE;
+    pArray[1] = SCDOCSETTINGS_SERVICE;
+    return aRet;
 }
 
 // XPropertySet (document settings)
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScFunctionAccess::getPropertySetInfo()
+                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef(
@@ -230,6 +246,9 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScFunctionAccess::getPropertySe
 
 void SAL_CALL ScFunctionAccess::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
+                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+                        lang::IllegalArgumentException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -252,6 +271,8 @@ void SAL_CALL ScFunctionAccess::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScFunctionAccess::getPropertyValue( const OUString& aPropertyName )
+                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -327,11 +348,11 @@ public:
     // the other types methods are here just to reflect the orig code and for
     // completeness.
 
-    void visitElem( long nCol, long nRow, sal_Int16 elem )
+    void visitElem( long nCol, long nRow, const sal_Int16& elem )
     {
         mpDoc->SetValue( (SCCOL) nCol, (SCROW) nRow, 0, elem );
     }
-    void visitElem( long nCol, long nRow, sal_Int32 elem )
+    void visitElem( long nCol, long nRow, const sal_Int32& elem )
     {
         mpDoc->SetValue( (SCCOL) nCol, (SCROW) nRow, 0, elem );
     }
@@ -443,6 +464,8 @@ static void processSequences( ScDocument* pDoc, const uno::Any& rArg, ScTokenArr
 
 uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
                             const uno::Sequence<uno::Any>& aArguments )
+                throw (container::NoSuchElementException, lang::IllegalArgumentException,
+                       uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -587,19 +610,19 @@ uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
     if ( !bArgErr && !bOverflow && nDocRow <= MAXROWCOUNT )
     {
         ScAddress aFormulaPos( 0, 0, nTempSheet );
-        // GRAM_API doesn't really matter for the token array but fits with
+        // GRAM_PODF_A1 doesn't really matter for the token array but fits with
         // other API compatibility grammars.
         ScFormulaCell* pFormula = new ScFormulaCell(
-            pDoc, aFormulaPos, aTokenArr, formula::FormulaGrammar::GRAM_API,
-            mbArray ? ScMatrixMode::Formula : ScMatrixMode::NONE );
+            pDoc, aFormulaPos, aTokenArr, formula::FormulaGrammar::GRAM_PODF_A1,
+            (sal_uInt8)(mbArray ? MM_FORMULA : MM_NONE) );
         pFormula = pDoc->SetFormulaCell(aFormulaPos, pFormula);
 
         //  call GetMatrix before GetErrCode because GetMatrix always recalculates
         //  if there is no matrix result
 
         const ScMatrix* pMat = (mbArray && pFormula) ? pFormula->GetMatrix() : nullptr;
-        FormulaError nErrCode = pFormula ? pFormula->GetErrCode() : FormulaError::IllegalArgument;
-        if ( nErrCode == FormulaError::NONE )
+        sal_uInt16 nErrCode = pFormula ? pFormula->GetErrCode() : formula::errIllegalArgument;
+        if ( nErrCode == 0 )
         {
             if ( pMat )
             {
@@ -609,7 +632,7 @@ uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
             else if ( pFormula->IsValue() )
             {
                 // numeric value
-                aRet <<= pFormula->GetValue();
+                aRet <<= (double) pFormula->GetValue();
             }
             else
             {
@@ -618,7 +641,7 @@ uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
                 aRet <<= aStrVal;
             }
         }
-        else if ( nErrCode == FormulaError::NotAvailable )
+        else if ( nErrCode == formula::NOTAVAILABLE )
         {
             // #N/A: leave result empty, no exception
         }

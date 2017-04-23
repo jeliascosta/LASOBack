@@ -148,14 +148,16 @@ void ConfigurationClassifier::CopyResources (
         rTarget.push_back(*iResource);
 
         SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    copying " <<
-            FrameworkHelper::ResourceIdToString(*iResource));
+            OUStringToOString(FrameworkHelper::ResourceIdToString(*iResource),
+                RTL_TEXTENCODING_UTF8).getStr());
 
         const Reference<XResourceId>* aA = aBoundResources.getConstArray();
         for (sal_Int32 i=0; i<nL; ++i)
         {
             rTarget.push_back(aA[i]);
             SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    copying " <<
-                FrameworkHelper::ResourceIdToString(aA[i]));
+                OUStringToOString(FrameworkHelper::ResourceIdToString(aA[i]),
+                    RTL_TEXTENCODING_UTF8).getStr());
         }
     }
 }
@@ -172,7 +174,8 @@ void ConfigurationClassifier::TraceResourceIdVector (
     for (iResource=rResources.begin(); iResource!=rResources.end(); ++iResource)
     {
         OUString sResource (FrameworkHelper::ResourceIdToString(*iResource));
-        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": " << sResource);
+        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ": " <<
+            OUStringToOString(sResource, RTL_TEXTENCODING_UTF8).getStr());
     }
 }
 

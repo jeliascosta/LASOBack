@@ -28,14 +28,17 @@
 class SOT_DLLPUBLIC SotObject : virtual public SvRefBase
 {
     sal_uInt16  nOwnerLockCount;
+    bool        bOwner;
     bool        bInClose;         // TRUE, in DoClose
 
 protected:
-    virtual             ~SotObject() override;
+    virtual             ~SotObject();
     virtual bool        Close();
 
 public:
                         SotObject();
+
+    bool                Owner() const { return bOwner; }
 
     sal_uInt16          GetOwnerLockCount() const { return nOwnerLockCount; }
 

@@ -28,7 +28,6 @@
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
-#include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <vector>
@@ -68,36 +67,39 @@ class OFOPXMLHelper_Impl
 
 
 public:
-    css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > const & GetParsingResult();
+    css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > GetParsingResult();
 
     explicit OFOPXMLHelper_Impl( sal_uInt16 nFormat ); // must not be created directly
+    virtual ~OFOPXMLHelper_Impl();
 
     // XDocumentHandler
-    virtual void SAL_CALL startDocument() override;
-    virtual void SAL_CALL endDocument() override;
-    virtual void SAL_CALL startElement( const OUString& aName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs ) override;
-    virtual void SAL_CALL endElement( const OUString& aName ) override;
-    virtual void SAL_CALL characters( const OUString& aChars ) override;
-    virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) override;
-    virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) override;
-    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) override;
+    virtual void SAL_CALL startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL startElement( const OUString& aName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endElement( const OUString& aName ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL characters( const OUString& aChars ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 };
 
 
 namespace OFOPXMLHelper {
 
-/// @throws css::uno::Exception
 static uno::Sequence<uno::Sequence< beans::StringPair>> ReadSequence_Impl(
     const uno::Reference<io::XInputStream>& xInStream,
     const OUString& aStringID, sal_uInt16 nFormat,
-    const uno::Reference<uno::XComponentContext>& xContext);
+    const uno::Reference<uno::XComponentContext>& xContext)
+throw (uno::Exception);
 
 uno::Sequence< uno::Sequence< beans::StringPair > > ReadRelationsInfoSequence(
         const uno::Reference< io::XInputStream >& xInStream,
         const OUString & aStreamName,
         const uno::Reference< uno::XComponentContext >& rContext )
+    throw( uno::Exception )
 {
-    OUString aStringID = "_rels/" + aStreamName;
+    OUString aStringID = "_rels/";
+    aStringID += aStreamName;
     return ReadSequence_Impl( xInStream, aStringID, RELATIONINFO_FORMAT, rContext );
 }
 
@@ -105,6 +107,7 @@ uno::Sequence< uno::Sequence< beans::StringPair > > ReadRelationsInfoSequence(
 uno::Sequence< uno::Sequence< beans::StringPair > > ReadContentTypeSequence(
         const uno::Reference< io::XInputStream >& xInStream,
         const uno::Reference< uno::XComponentContext >& rContext )
+    throw( uno::Exception )
 {
     OUString aStringID = "[Content_Types].xml";
     return ReadSequence_Impl( xInStream, aStringID, CONTENTTYPE_FORMAT, rContext );
@@ -115,6 +118,7 @@ void WriteRelationsInfoSequence(
         const uno::Reference< io::XOutputStream >& xOutStream,
         const uno::Sequence< uno::Sequence< beans::StringPair > >& aSequence,
         const uno::Reference< uno::XComponentContext >& rContext )
+    throw( uno::Exception )
 {
     if ( !xOutStream.is() )
         throw uno::RuntimeException();
@@ -175,6 +179,7 @@ void WriteContentSequence(
         const uno::Sequence< beans::StringPair >& aDefaultsSequence,
         const uno::Sequence< beans::StringPair >& aOverridesSequence,
         const uno::Reference< uno::XComponentContext >& rContext )
+    throw( uno::Exception )
 {
     if ( !xOutStream.is() )
         throw uno::RuntimeException();
@@ -235,6 +240,7 @@ uno::Sequence< uno::Sequence< beans::StringPair > > ReadSequence_Impl(
         const uno::Reference< io::XInputStream >& xInStream,
         const OUString& aStringID, sal_uInt16 nFormat,
         const uno::Reference< uno::XComponentContext >& rContext )
+    throw( uno::Exception )
 {
     if ( !rContext.is() || !xInStream.is() || nFormat > FORMAT_MAX_ID )
         throw uno::RuntimeException();
@@ -272,7 +278,13 @@ OFOPXMLHelper_Impl::OFOPXMLHelper_Impl( sal_uInt16 nFormat )
 {
 }
 
-uno::Sequence< uno::Sequence< beans::StringPair > > const & OFOPXMLHelper_Impl::GetParsingResult()
+
+OFOPXMLHelper_Impl::~OFOPXMLHelper_Impl()
+{
+}
+
+
+uno::Sequence< uno::Sequence< beans::StringPair > > OFOPXMLHelper_Impl::GetParsingResult()
 {
     if ( m_aElementsSeq.size() )
         throw uno::RuntimeException(); // the parsing has still not finished!
@@ -282,16 +294,19 @@ uno::Sequence< uno::Sequence< beans::StringPair > > const & OFOPXMLHelper_Impl::
 
 
 void SAL_CALL OFOPXMLHelper_Impl::startDocument()
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL OFOPXMLHelper_Impl::endDocument()
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL OFOPXMLHelper_Impl::startElement( const OUString& aName, const uno::Reference< css::xml::sax::XAttributeList >& xAttribs )
+        throw( css::xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     if ( m_nFormat == RELATIONINFO_FORMAT )
     {
@@ -434,6 +449,7 @@ void SAL_CALL OFOPXMLHelper_Impl::startElement( const OUString& aName, const uno
 
 
 void SAL_CALL OFOPXMLHelper_Impl::endElement( const OUString& aName )
+    throw( css::xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     if ( m_nFormat == RELATIONINFO_FORMAT || m_nFormat == CONTENTTYPE_FORMAT )
     {
@@ -450,21 +466,25 @@ void SAL_CALL OFOPXMLHelper_Impl::endElement( const OUString& aName )
 
 
 void SAL_CALL OFOPXMLHelper_Impl::characters( const OUString& /*aChars*/ )
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL OFOPXMLHelper_Impl::ignorableWhitespace( const OUString& /*aWhitespaces*/ )
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL OFOPXMLHelper_Impl::processingInstruction( const OUString& /*aTarget*/, const OUString& /*aData*/ )
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL OFOPXMLHelper_Impl::setDocumentLocator( const uno::Reference< css::xml::sax::XLocator >& /*xLocator*/ )
+        throw(css::xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 

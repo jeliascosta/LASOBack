@@ -248,7 +248,7 @@ namespace svt { namespace table
         ,m_pAccessibleTable     ( nullptr                          )
     {
         m_pSelEngine = new SelectionEngine( m_pDataWindow.get(), m_pTableFunctionSet );
-        m_pSelEngine->SetSelectionMode(SelectionMode::Single);
+        m_pSelEngine->SetSelectionMode(SINGLE_SELECTION);
         m_pDataWindow->SetPosPixel( Point( 0, 0 ) );
         m_pDataWindow->Show();
     }
@@ -478,7 +478,7 @@ namespace svt { namespace table
 
     void TableControl_Impl::impl_invalidateColumn( ColPos const i_column )
     {
-        tools::Rectangle const aAllCellsArea( impl_getAllVisibleCellsArea() );
+        Rectangle const aAllCellsArea( impl_getAllVisibleCellsArea() );
 
         const TableColumnGeometry aColumn( *this, aAllCellsArea, i_column );
         if ( aColumn.isValid() )
@@ -500,7 +500,7 @@ namespace svt { namespace table
             if ( !m_bUpdatingColWidths )
             {
                 impl_ni_relayout( i_column );
-                invalidate( TableArea::All );
+                invalidate( TableAreaAll );
             }
 
             nGroup &= ~ColumnAttributeGroup::WIDTH;
@@ -511,9 +511,9 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl_Impl::impl_getAllVisibleCellsArea() const
+    Rectangle TableControl_Impl::impl_getAllVisibleCellsArea() const
     {
-        tools::Rectangle aArea( Point( 0, 0 ), Size( 0, 0 ) );
+        Rectangle aArea( Point( 0, 0 ), Size( 0, 0 ) );
 
         // determine the right-most border of the last column which is
         // at least partially visible
@@ -547,9 +547,9 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl_Impl::impl_getAllVisibleDataCellArea() const
+    Rectangle TableControl_Impl::impl_getAllVisibleDataCellArea() const
     {
-        tools::Rectangle aArea( impl_getAllVisibleCellsArea() );
+        Rectangle aArea( impl_getAllVisibleCellsArea() );
         aArea.Left() = m_nRowHeaderWidthPixel;
         aArea.Top() = m_nColHeaderHeightPixel;
         return aArea;
@@ -558,15 +558,15 @@ namespace svt { namespace table
 
     void TableControl_Impl::impl_ni_updateCachedTableMetrics()
     {
-        m_nRowHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getRowHeight() ), MapUnit::MapAppFont ).Height();
+        m_nRowHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getRowHeight() ), MAP_APPFONT ).Height();
 
         m_nColHeaderHeightPixel = 0;
         if ( m_pModel->hasColumnHeaders() )
-           m_nColHeaderHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getColumnHeaderHeight() ), MapUnit::MapAppFont ).Height();
+           m_nColHeaderHeightPixel = m_rAntiImpl.LogicToPixel( Size( 0, m_pModel->getColumnHeaderHeight() ), MAP_APPFONT ).Height();
 
         m_nRowHeaderWidthPixel = 0;
         if ( m_pModel->hasRowHeaders() )
-            m_nRowHeaderWidthPixel = m_rAntiImpl.LogicToPixel( Size( m_pModel->getRowHeaderWidth(), 0 ), MapUnit::MapAppFont).Width();
+            m_nRowHeaderWidthPixel = m_rAntiImpl.LogicToPixel( Size( m_pModel->getRowHeaderWidth(), 0 ), MAP_APPFONT).Width();
     }
 
 
@@ -664,7 +664,7 @@ namespace svt { namespace table
             for the given row height. Partially fitting rows are counted, too, if the
             respective parameter says so.
         */
-        TableSize lcl_getRowsFittingInto( long _nOverallHeight, long _nRowHeightPixel, bool _bAcceptPartialRow )
+        TableSize lcl_getRowsFittingInto( long _nOverallHeight, long _nRowHeightPixel, bool _bAcceptPartialRow = false )
         {
             return  _bAcceptPartialRow
                 ?   ( _nOverallHeight + ( _nRowHeightPixel - 1 ) ) / _nRowHeightPixel
@@ -676,7 +676,7 @@ namespace svt { namespace table
             with the first visible column as given. Partially fitting columns are counted, too,
             if the respective parameter says so.
         */
-        TableSize lcl_getColumnsVisibleWithin( const tools::Rectangle& _rArea, ColPos _nFirstVisibleColumn,
+        TableSize lcl_getColumnsVisibleWithin( const Rectangle& _rArea, ColPos _nFirstVisibleColumn,
             const TableControl_Impl& _rControl, bool _bAcceptPartialRow )
         {
             TableSize visibleColumns = 0;
@@ -751,7 +751,7 @@ namespace svt { namespace table
             OSL_ENSURE( flexibility >= 0, "TableControl_Impl::impl_ni_calculateColumnWidths: a column's flexibility should be non-negative." );
             if  (   ( flexibility < 0 )                                 // normalization
                 ||  ( !pColumn->isResizable() )                         // column not resizable => no auto-resize
-                ||  ( col <= i_assumeInflexibleColumnsUpToIncluding )   // column shall be treated as inflexible => respect this
+                ||  ( col <= i_assumeInflexibleColumnsUpToIncluding )   // column shall be treated as inflexible => respec this
                 )
                 flexibility = 0;
 
@@ -982,7 +982,7 @@ namespace svt { namespace table
 
         // determine the playground for the data cells (excluding headers)
         // TODO: what if the control is smaller than needed for the headers/scrollbars?
-        tools::Rectangle aDataCellPlayground( Point( 0, 0 ), m_rAntiImpl.GetOutputSizePixel() );
+        Rectangle aDataCellPlayground( Point( 0, 0 ), m_rAntiImpl.GetOutputSizePixel() );
         aDataCellPlayground.Left() = m_nRowHeaderWidthPixel;
         aDataCellPlayground.Top() = m_nColHeaderHeightPixel;
 
@@ -1055,7 +1055,7 @@ namespace svt { namespace table
 
         // if the column widths changed, ensure everything is repainted
         if ( anyColumnWidthChanged )
-            invalidate( TableArea::All );
+            invalidate( TableAreaAll );
 
         // if the column resizing happened to leave some space at the right, but there are columns
         // scrolled out to the left, scroll them in
@@ -1084,7 +1084,7 @@ namespace svt { namespace table
     }
 
 
-    void TableControl_Impl::impl_ni_positionChildWindows( tools::Rectangle const & i_dataCellPlayground,
+    void TableControl_Impl::impl_ni_positionChildWindows( Rectangle const & i_dataCellPlayground,
         bool const i_verticalScrollbar, bool const i_horizontalScrollbar )
     {
         long const nScrollbarMetrics = m_rAntiImpl.GetSettings().GetStyleSettings().GetScrollBarSize();
@@ -1094,7 +1094,7 @@ namespace svt { namespace table
             m_rAntiImpl,
             m_pVScroll,
             i_verticalScrollbar,
-            lcl_getRowsFittingInto( i_dataCellPlayground.GetHeight(), m_nRowHeightPixel, false ),
+            lcl_getRowsFittingInto( i_dataCellPlayground.GetHeight(), m_nRowHeightPixel ),
                                                                     // visible units
             m_nTopRow,                                              // current position
             1,                                                      // line size
@@ -1106,7 +1106,7 @@ namespace svt { namespace table
         // position it
         if ( m_pVScroll )
         {
-            tools::Rectangle aScrollbarArea(
+            Rectangle aScrollbarArea(
                 Point( i_dataCellPlayground.Right() + 1, 0 ),
                 Size( nScrollbarMetrics, i_dataCellPlayground.Bottom() + 1 )
             );
@@ -1141,7 +1141,7 @@ namespace svt { namespace table
                     m_pHScroll->SetPageSize( nVisibleUnits - 1 );
                 }
             }
-            tools::Rectangle aScrollbarArea(
+            Rectangle aScrollbarArea(
                 Point( 0, i_dataCellPlayground.Bottom() + 1 ),
                 Size( i_dataCellPlayground.Right() + 1, nScrollbarMetrics )
             );
@@ -1184,7 +1184,7 @@ namespace svt { namespace table
     }
 
 
-    void TableControl_Impl::doPaintContent(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rUpdateRect)
+    void TableControl_Impl::doPaintContent(vcl::RenderContext& rRenderContext, const Rectangle& _rUpdateRect)
     {
         if (!getModel())
             return;
@@ -1198,13 +1198,13 @@ namespace svt { namespace table
         m_nRowCount = m_pModel->getRowCount();
         // the area occupied by all (at least partially) visible cells, including
         // headers
-        tools::Rectangle const aAllCellsWithHeaders( impl_getAllVisibleCellsArea() );
+        Rectangle const aAllCellsWithHeaders( impl_getAllVisibleCellsArea() );
 
         // draw the header column area
         if (m_pModel->hasColumnHeaders())
         {
-            TableRowGeometry const aHeaderRow(*this, tools::Rectangle(Point(0, 0), aAllCellsWithHeaders.BottomRight()), ROW_COL_HEADERS);
-            tools::Rectangle const aColRect(aHeaderRow.getRect());
+            TableRowGeometry const aHeaderRow(*this, Rectangle(Point(0, 0), aAllCellsWithHeaders.BottomRight()), ROW_COL_HEADERS);
+            Rectangle const aColRect(aHeaderRow.getRect());
             pRenderer->PaintHeaderArea(rRenderContext, aColRect, true, false, rStyle);
             // Note that strictly, aHeaderRow.getRect() also contains the intersection between column
             // and row header area. However, below we go to paint this intersection, again,
@@ -1221,7 +1221,7 @@ namespace svt { namespace table
             }
         }
         // the area occupied by the row header, if any
-        tools::Rectangle aRowHeaderArea;
+        Rectangle aRowHeaderArea;
         if (m_pModel->hasRowHeaders())
         {
             aRowHeaderArea = aAllCellsWithHeaders;
@@ -1240,9 +1240,9 @@ namespace svt { namespace table
 
             if (m_pModel->hasColumnHeaders())
             {
-                TableCellGeometry const aIntersection(*this, tools::Rectangle(Point(0, 0), aAllCellsWithHeaders.BottomRight()),
+                TableCellGeometry const aIntersection(*this, Rectangle(Point(0, 0), aAllCellsWithHeaders.BottomRight()),
                                                       COL_ROW_HEADERS, ROW_COL_HEADERS);
-                tools::Rectangle const aInters(aIntersection.getRect());
+                Rectangle const aInters(aIntersection.getRect());
                 pRenderer->PaintHeaderArea(rRenderContext, aInters, true, true, rStyle);
             }
         }
@@ -1251,7 +1251,7 @@ namespace svt { namespace table
         TableSize colCount = getModel()->getColumnCount();
 
         // paint all rows
-        tools::Rectangle const aAllDataCellsArea(impl_getAllVisibleDataCellArea());
+        Rectangle const aAllDataCellsArea(impl_getAllVisibleDataCellArea());
         for (TableRowGeometry aRowIterator(*this, aAllCellsWithHeaders, getTopRow()); aRowIterator.isValid(); aRowIterator.moveDown())
         {
             if (_rUpdateRect.GetIntersection(aRowIterator.getRect() ).IsEmpty())
@@ -1260,15 +1260,15 @@ namespace svt { namespace table
             bool const isControlFocused = m_rAntiImpl.HasControlFocus();
             bool const isSelectedRow = isRowSelected(aRowIterator.getRow());
 
-            tools::Rectangle const aRect = aRowIterator.getRect().GetIntersection(aAllDataCellsArea);
+            Rectangle const aRect = aRowIterator.getRect().GetIntersection(aAllDataCellsArea);
 
-            // give the renderer a chance to prepare the row
+            // give the redenderer a chance to prepare the row
             pRenderer->PrepareRow(aRowIterator.getRow(), isControlFocused, isSelectedRow, rRenderContext, aRect, rStyle);
 
             // paint the row header
             if (m_pModel->hasRowHeaders())
             {
-                const tools::Rectangle aCurrentRowHeader(aRowHeaderArea.GetIntersection(aRowIterator.getRect()));
+                const Rectangle aCurrentRowHeader(aRowHeaderArea.GetIntersection(aRowIterator.getRect()));
                 pRenderer->PaintRowHeader(isControlFocused, isSelectedRow, rRenderContext, aCurrentRowHeader, rStyle);
             }
 
@@ -1308,7 +1308,7 @@ namespace svt { namespace table
         switch ( _eAction )
         {
         case cursorDown:
-        if ( m_pSelEngine->GetSelectionMode() == SelectionMode::Single )
+        if ( m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION )
         {
             //if other rows already selected, deselect them
             if(!m_aSelectedRows.empty())
@@ -1336,7 +1336,7 @@ namespace svt { namespace table
             break;
 
         case cursorUp:
-        if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
+        if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
         {
             if(!m_aSelectedRows.empty())
             {
@@ -1420,7 +1420,7 @@ namespace svt { namespace table
 
         case cursorSelectRow:
         {
-            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
+            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
                 return bSuccess = false;
             //pos is the position of the current row in the vector of selected rows, if current row is selected
             int pos = getRowSelectedNumber(m_aSelectedRows, m_nCurRow);
@@ -1441,9 +1441,9 @@ namespace svt { namespace table
             break;
         case cursorSelectRowUp:
         {
-            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
+            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
                 return bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
+            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
             {
                 //if there are other selected rows, deselect them
                 return false;
@@ -1526,9 +1526,9 @@ namespace svt { namespace table
         break;
         case cursorSelectRowDown:
         {
-            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
+            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
                 bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
+            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
             {
                 bSuccess = false;
             }
@@ -1608,9 +1608,9 @@ namespace svt { namespace table
 
         case cursorSelectRowAreaTop:
         {
-            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
+            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
                 bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
+            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
                 bSuccess = false;
             else
             {
@@ -1636,9 +1636,9 @@ namespace svt { namespace table
 
         case cursorSelectRowAreaBottom:
         {
-            if(m_pSelEngine->GetSelectionMode() == SelectionMode::NONE)
+            if(m_pSelEngine->GetSelectionMode() == NO_SELECTION)
                 return bSuccess = false;
-            else if(m_pSelEngine->GetSelectionMode() == SelectionMode::Single)
+            else if(m_pSelEngine->GetSelectionMode() == SINGLE_SELECTION)
                 return bSuccess = false;
             //select the region between the current and the last row
             RowPos iter = m_nCurRow;
@@ -1677,7 +1677,7 @@ namespace svt { namespace table
         PTableRenderer pRenderer = !!m_pModel ? m_pModel->getRenderer() : PTableRenderer();
         if ( !!pRenderer )
         {
-            tools::Rectangle aCellRect;
+            Rectangle aCellRect;
             impl_getCellRect( m_nCurColumn, m_nCurRow, aCellRect );
             if ( _bShow )
                 pRenderer->ShowCellCursor( *m_pDataWindow, aCellRect );
@@ -1687,7 +1687,7 @@ namespace svt { namespace table
     }
 
 
-    void TableControl_Impl::impl_getCellRect( ColPos _nColumn, RowPos _nRow, tools::Rectangle& _rCellRect ) const
+    void TableControl_Impl::impl_getCellRect( ColPos _nColumn, RowPos _nRow, Rectangle& _rCellRect ) const
     {
         if  (   !m_pModel
             ||  ( COL_INVALID == _nColumn )
@@ -1788,15 +1788,19 @@ namespace svt { namespace table
     {
         switch ( i_what )
         {
-        case TableArea::ColumnHeaders:
+        case TableAreaColumnHeaders:
             m_pDataWindow->Invalidate( calcHeaderRect( true ) );
             break;
 
-        case TableArea::RowHeaders:
+        case TableAreaRowHeaders:
             m_pDataWindow->Invalidate( calcHeaderRect( false ) );
             break;
 
-        case TableArea::All:
+        case TableAreaDataArea:
+            m_pDataWindow->Invalidate( impl_getAllVisibleDataCellArea() );
+            break;
+
+        case TableAreaAll:
             m_pDataWindow->Invalidate();
             m_pDataWindow->GetParent()->Invalidate( InvalidateFlags::Transparent );
             break;
@@ -1806,13 +1810,13 @@ namespace svt { namespace table
 
     long TableControl_Impl::pixelWidthToAppFont( long const i_pixels ) const
     {
-        return m_pDataWindow->PixelToLogic( Size( i_pixels, 0 ), MapUnit::MapAppFont ).Width();
+        return m_pDataWindow->PixelToLogic( Size( i_pixels, 0 ), MAP_APPFONT ).Width();
     }
 
 
     long TableControl_Impl::appFontWidthToPixel( long const i_appFontUnits ) const
     {
-        return m_pDataWindow->LogicToPixel( Size( i_appFontUnits, 0 ), MapUnit::MapAppFont ).Width();
+        return m_pDataWindow->LogicToPixel( Size( i_appFontUnits, 0 ), MAP_APPFONT ).Width();
     }
 
 
@@ -1822,7 +1826,7 @@ namespace svt { namespace table
     }
 
 
-    void TableControl_Impl::showTracking( tools::Rectangle const & i_location, ShowTrackFlags const i_flags )
+    void TableControl_Impl::showTracking( Rectangle const & i_location, ShowTrackFlags const i_flags )
     {
         m_pDataWindow->ShowTracking( i_location, i_flags );
     }
@@ -1837,15 +1841,15 @@ namespace svt { namespace table
     void TableControl_Impl::invalidateSelectedRegion( RowPos _nPrevRow, RowPos _nCurRow )
     {
         // get the visible area of the table control and set the Left and right border of the region to be repainted
-        tools::Rectangle const aAllCells( impl_getAllVisibleCellsArea() );
+        Rectangle const aAllCells( impl_getAllVisibleCellsArea() );
 
-        tools::Rectangle aInvalidateRect;
+        Rectangle aInvalidateRect;
         aInvalidateRect.Left() = aAllCells.Left();
         aInvalidateRect.Right() = aAllCells.Right();
         // if only one row is selected
         if ( _nPrevRow == _nCurRow )
         {
-            tools::Rectangle aCellRect;
+            Rectangle aCellRect;
             impl_getCellRect( m_nCurColumn, _nCurRow, aCellRect );
             aInvalidateRect.Top() = aCellRect.Top();
             aInvalidateRect.Bottom() = aCellRect.Bottom();
@@ -1853,7 +1857,7 @@ namespace svt { namespace table
         //if the region is above the current row
         else if(_nPrevRow < _nCurRow )
         {
-            tools::Rectangle aCellRect;
+            Rectangle aCellRect;
             impl_getCellRect( m_nCurColumn, _nPrevRow, aCellRect );
             aInvalidateRect.Top() = aCellRect.Top();
             impl_getCellRect( m_nCurColumn, _nCurRow, aCellRect );
@@ -1862,7 +1866,7 @@ namespace svt { namespace table
         //if the region is beneath the current row
         else
         {
-            tools::Rectangle aCellRect;
+            Rectangle aCellRect;
             impl_getCellRect( m_nCurColumn, _nCurRow, aCellRect );
             aInvalidateRect.Top() = aCellRect.Top();
             impl_getCellRect( m_nCurColumn, _nPrevRow, aCellRect );
@@ -1872,7 +1876,7 @@ namespace svt { namespace table
         invalidateRect(aInvalidateRect);
     }
 
-    void TableControl_Impl::invalidateRect(const tools::Rectangle &rInvalidateRect)
+    void TableControl_Impl::invalidateRect(const Rectangle &rInvalidateRect)
     {
         m_pDataWindow->Invalidate( rInvalidateRect,
             m_pDataWindow->GetControlBackground().GetTransparency() ? InvalidateFlags::Transparent : InvalidateFlags::NONE );
@@ -1897,9 +1901,9 @@ namespace svt { namespace table
         RowPos const lastVisibleRow = m_nTopRow + impl_getVisibleRows( true ) - 1;
         RowPos const lastRow = ( ( i_lastRow == ROW_INVALID ) || ( i_lastRow > lastVisibleRow ) ) ? lastVisibleRow : i_lastRow;
 
-        tools::Rectangle aInvalidateRect;
+        Rectangle aInvalidateRect;
 
-        tools::Rectangle const aVisibleCellsArea( impl_getAllVisibleCellsArea() );
+        Rectangle const aVisibleCellsArea( impl_getAllVisibleCellsArea() );
         TableRowGeometry aRow( *this, aVisibleCellsArea, firstRow, true );
         while ( aRow.isValid() && ( aRow.getRow() <= lastRow ) )
         {
@@ -1962,7 +1966,7 @@ namespace svt { namespace table
         DBG_ASSERT( m_pDataWindow, "TableControl_Impl::impl_getVisibleColumns: no data window!" );
 
         return lcl_getColumnsVisibleWithin(
-            tools::Rectangle( Point( 0, 0 ), m_pDataWindow->GetOutputSizePixel() ),
+            Rectangle( Point( 0, 0 ), m_pDataWindow->GetOutputSizePixel() ),
             m_nLeftColumn,
             *this,
             _bAcceptPartialCol
@@ -2059,7 +2063,7 @@ namespace svt { namespace table
             // scroll the view port, if possible
             long nPixelDelta = m_nRowHeightPixel * ( m_nTopRow - nOldTopRow );
 
-            tools::Rectangle aDataArea( Point( 0, m_nColHeaderHeightPixel ), m_pDataWindow->GetOutputSizePixel() );
+            Rectangle aDataArea( Point( 0, m_nColHeaderHeightPixel ), m_pDataWindow->GetOutputSizePixel() );
 
             if  (   m_pDataWindow->GetBackground().IsScrollable()
                 &&  std::abs( nPixelDelta ) < aDataArea.GetHeight()
@@ -2121,7 +2125,7 @@ namespace svt { namespace table
             // Same for onEndScroll
 
             // scroll the view port, if possible
-            const tools::Rectangle aDataArea( Point( m_nRowHeaderWidthPixel, 0 ), m_pDataWindow->GetOutputSizePixel() );
+            const Rectangle aDataArea( Point( m_nRowHeaderWidthPixel, 0 ), m_pDataWindow->GetOutputSizePixel() );
 
             long nPixelDelta =
                     m_aColumnWidths[ nOldLeftColumn ].getStart()
@@ -2261,7 +2265,7 @@ namespace svt { namespace table
         SelectionMode const eSelMode = getSelEngine()->GetSelectionMode();
         switch ( eSelMode )
         {
-        case SelectionMode::Single:
+        case SINGLE_SELECTION:
             if ( !m_aSelectedRows.empty() )
             {
                 OSL_ENSURE( m_aSelectedRows.size() == 1, "TableControl::markRowAsSelected: SingleSelection with more than one selected element?" );
@@ -2270,7 +2274,7 @@ namespace svt { namespace table
             }
             SAL_FALLTHROUGH;
 
-        case SelectionMode::Multiple:
+        case MULTIPLE_SELECTION:
             m_aSelectedRows.push_back( i_rowIndex );
             break;
 
@@ -2296,7 +2300,7 @@ namespace svt { namespace table
     bool TableControl_Impl::markAllRowsAsSelected()
     {
         SelectionMode const eSelMode = getSelEngine()->GetSelectionMode();
-        ENSURE_OR_RETURN_FALSE( eSelMode == SelectionMode::Multiple, "TableControl_Impl::markAllRowsAsSelected: unsupported selection mode!" );
+        ENSURE_OR_RETURN_FALSE( eSelMode == MULTIPLE_SELECTION, "TableControl_Impl::markAllRowsAsSelected: unsupported selection mode!" );
 
         if ( m_aSelectedRows.size() == size_t( m_pModel->getRowCount() ) )
         {
@@ -2338,20 +2342,20 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl_Impl::calcHeaderRect(bool bColHeader)
+    Rectangle TableControl_Impl::calcHeaderRect(bool bColHeader)
     {
-        tools::Rectangle const aRectTableWithHeaders( impl_getAllVisibleCellsArea() );
+        Rectangle const aRectTableWithHeaders( impl_getAllVisibleCellsArea() );
         Size const aSizeTableWithHeaders( aRectTableWithHeaders.GetSize() );
         if ( bColHeader )
-            return tools::Rectangle( aRectTableWithHeaders.TopLeft(), Size( aSizeTableWithHeaders.Width(), m_nColHeaderHeightPixel ) );
+            return Rectangle( aRectTableWithHeaders.TopLeft(), Size( aSizeTableWithHeaders.Width(), m_nColHeaderHeightPixel ) );
         else
-            return tools::Rectangle( aRectTableWithHeaders.TopLeft(), Size( m_nRowHeaderWidthPixel, aSizeTableWithHeaders.Height() ) );
+            return Rectangle( aRectTableWithHeaders.TopLeft(), Size( m_nRowHeaderWidthPixel, aSizeTableWithHeaders.Height() ) );
     }
 
 
-    tools::Rectangle TableControl_Impl::calcHeaderCellRect( bool bColHeader, sal_Int32 nPos )
+    Rectangle TableControl_Impl::calcHeaderCellRect( bool bColHeader, sal_Int32 nPos )
     {
-        tools::Rectangle const aHeaderRect = calcHeaderRect( bColHeader );
+        Rectangle const aHeaderRect = calcHeaderRect( bColHeader );
         TableCellGeometry const aGeometry(
             *this, aHeaderRect,
             bColHeader ? nPos : COL_ROW_HEADERS,
@@ -2361,21 +2365,21 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl_Impl::calcTableRect()
+    Rectangle TableControl_Impl::calcTableRect()
     {
         return impl_getAllVisibleDataCellArea();
     }
 
 
-    tools::Rectangle TableControl_Impl::calcCellRect( sal_Int32 nRow, sal_Int32 nCol )
+    Rectangle TableControl_Impl::calcCellRect( sal_Int32 nRow, sal_Int32 nCol )
     {
-        tools::Rectangle aCellRect;
+        Rectangle aCellRect;
         impl_getCellRect( nRow, nCol, aCellRect );
         return aCellRect;
     }
 
 
-    IMPL_LINK_NOARG( TableControl_Impl, OnUpdateScrollbars, void*, void )
+    IMPL_LINK_NOARG_TYPED( TableControl_Impl, OnUpdateScrollbars, void*, void )
     {
         // TODO: can't we simply use lcl_updateScrollbar here, so the scrollbars ranges are updated, instead of
         // doing a complete re-layout?
@@ -2383,7 +2387,7 @@ namespace svt { namespace table
     }
 
 
-    IMPL_LINK( TableControl_Impl, OnScroll, ScrollBar*, _pScrollbar, void )
+    IMPL_LINK_TYPED( TableControl_Impl, OnScroll, ScrollBar*, _pScrollbar, void )
     {
         DBG_ASSERT( ( _pScrollbar == m_pVScroll ) || ( _pScrollbar == m_pHScroll ),
             "TableControl_Impl::OnScroll: where did this come from?" );
@@ -2489,14 +2493,17 @@ namespace svt { namespace table
         }
         else if ( m_pTableControl->getAnchor() == m_pTableControl->getCurRow() )
         {
+            //selecting region,
+            int diff = m_pTableControl->getCurRow() - newRow;
             //selected region lies above the last selection
-            if( m_pTableControl->getCurRow() >= newRow)
+            if( diff >= 0)
             {
                 //put selected rows in vector
                 while ( m_pTableControl->getAnchor() >= newRow )
                 {
                     m_pTableControl->markRowAsSelected( m_pTableControl->getAnchor() );
                     m_pTableControl->setAnchor( m_pTableControl->getAnchor() - 1 );
+                    diff--;
                 }
                 m_pTableControl->setAnchor( m_pTableControl->getAnchor() + 1 );
             }
@@ -2507,6 +2514,7 @@ namespace svt { namespace table
                 {
                     m_pTableControl->markRowAsSelected( m_pTableControl->getAnchor() );
                     m_pTableControl->setAnchor( m_pTableControl->getAnchor() + 1 );
+                    diff++;
                 }
                 m_pTableControl->setAnchor( m_pTableControl->getAnchor() - 1 );
             }
@@ -2520,7 +2528,7 @@ namespace svt { namespace table
                 m_pTableControl->markRowAsSelected( newRow );
             else
             {
-                if ( m_pTableControl->getSelEngine()->GetSelectionMode() == SelectionMode::Single )
+                if ( m_pTableControl->getSelEngine()->GetSelectionMode() == SINGLE_SELECTION )
                 {
                     DeselectAll();
                     m_pTableControl->markRowAsSelected( newRow );
@@ -2530,7 +2538,7 @@ namespace svt { namespace table
                     m_pTableControl->markRowAsSelected( newRow );
                 }
             }
-            if ( m_pTableControl->getSelectedRowCount() > 1 && m_pTableControl->getSelEngine()->GetSelectionMode() != SelectionMode::Single )
+            if ( m_pTableControl->getSelectedRowCount() > 1 && m_pTableControl->getSelEngine()->GetSelectionMode() != SINGLE_SELECTION )
                 m_pTableControl->getSelEngine()->AddAlways(true);
 
             m_pTableControl->invalidateRow( newRow );

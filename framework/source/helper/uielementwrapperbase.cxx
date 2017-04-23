@@ -57,7 +57,7 @@ UIElementWrapperBase::~UIElementWrapperBase()
 {
 }
 
-Any SAL_CALL UIElementWrapperBase::queryInterface( const Type& _rType )
+Any SAL_CALL UIElementWrapperBase::queryInterface( const Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = UIElementWrapperBase_BASE::queryInterface( _rType );
     if ( !aRet.hasValue() )
@@ -65,7 +65,7 @@ Any SAL_CALL UIElementWrapperBase::queryInterface( const Type& _rType )
     return aRet;
 }
 
-Sequence< Type > SAL_CALL UIElementWrapperBase::getTypes(  )
+Sequence< Type > SAL_CALL UIElementWrapperBase::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return comphelper::concatSequences(
         UIElementWrapperBase_BASE::getTypes(),
@@ -73,17 +73,18 @@ Sequence< Type > SAL_CALL UIElementWrapperBase::getTypes(  )
     );
 }
 
-void SAL_CALL UIElementWrapperBase::addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+void SAL_CALL UIElementWrapperBase::addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
 {
     m_aListenerContainer.addInterface( cppu::UnoType<css::lang::XEventListener>::get(), xListener );
 }
 
-void SAL_CALL UIElementWrapperBase::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+void SAL_CALL UIElementWrapperBase::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
 {
     m_aListenerContainer.removeInterface( cppu::UnoType<css::lang::XEventListener>::get(), xListener );
 }
 
 void SAL_CALL UIElementWrapperBase::initialize( const Sequence< Any >& aArguments )
+throw ( Exception, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -110,24 +111,24 @@ void SAL_CALL UIElementWrapperBase::initialize( const Sequence< Any >& aArgument
 }
 
 // XUIElement
-css::uno::Reference< css::frame::XFrame > SAL_CALL UIElementWrapperBase::getFrame()
+css::uno::Reference< css::frame::XFrame > SAL_CALL UIElementWrapperBase::getFrame() throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::frame::XFrame > xFrame( m_xWeakFrame );
     return xFrame;
 }
 
-OUString SAL_CALL UIElementWrapperBase::getResourceURL()
+OUString SAL_CALL UIElementWrapperBase::getResourceURL() throw (css::uno::RuntimeException, std::exception)
 {
     return m_aResourceURL;
 }
 
-::sal_Int16 SAL_CALL UIElementWrapperBase::getType()
+::sal_Int16 SAL_CALL UIElementWrapperBase::getType() throw (css::uno::RuntimeException, std::exception)
 {
     return m_nType;
 }
 
 // XUpdatable
-void SAL_CALL UIElementWrapperBase::update()
+void SAL_CALL UIElementWrapperBase::update() throw (css::uno::RuntimeException, std::exception)
 {
     // can be implemented by derived class
 }
@@ -136,7 +137,7 @@ void SAL_CALL UIElementWrapperBase::update()
 sal_Bool SAL_CALL UIElementWrapperBase::convertFastPropertyValue( Any&       /*aConvertedValue*/ ,
                                                                   Any&       /*aOldValue*/       ,
                                                                   sal_Int32  /*nHandle*/         ,
-                                                                  const Any& /*aValue*/             )
+                                                                  const Any& /*aValue*/             ) throw( css::lang::IllegalArgumentException )
 {
     //  Initialize state with sal_False !!!
     //  (Handle can be invalid)
@@ -144,7 +145,7 @@ sal_Bool SAL_CALL UIElementWrapperBase::convertFastPropertyValue( Any&       /*a
 }
 
 void SAL_CALL UIElementWrapperBase::setFastPropertyValue_NoBroadcast(   sal_Int32               /*nHandle*/ ,
-                                                                        const css::uno::Any&    /*aValue*/  )
+                                                                        const css::uno::Any&    /*aValue*/  ) throw( css::uno::Exception, std::exception )
 {
 }
 
@@ -192,7 +193,7 @@ void SAL_CALL UIElementWrapperBase::getFastPropertyValue( css::uno::Any& aValue 
     return(*pInfoHelper);
 }
 
-css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL UIElementWrapperBase::getPropertySetInfo()
+css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL UIElementWrapperBase::getPropertySetInfo() throw (css::uno::RuntimeException, std::exception)
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -227,9 +228,9 @@ const css::uno::Sequence< css::beans::Property > UIElementWrapperBase::impl_getS
 
     const css::beans::Property pProperties[] =
     {
-        css::beans::Property( UIELEMENT_PROPNAME_FRAME, UIELEMENT_PROPHANDLE_FRAME          , cppu::UnoType<XFrame>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
-        css::beans::Property( UIELEMENT_PROPNAME_RESOURCEURL, UIELEMENT_PROPHANDLE_RESOURCEURL    , cppu::UnoType<sal_Int16>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
-        css::beans::Property( UIELEMENT_PROPNAME_TYPE, UIELEMENT_PROPHANDLE_TYPE           , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY )
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_FRAME), UIELEMENT_PROPHANDLE_FRAME          , cppu::UnoType<XFrame>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_RESOURCEURL), UIELEMENT_PROPHANDLE_RESOURCEURL    , cppu::UnoType<sal_Int16>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_TYPE), UIELEMENT_PROPHANDLE_TYPE           , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY )
     };
     // Use it to initialize sequence!
     const css::uno::Sequence< css::beans::Property > lPropertyDescriptor( pProperties, UIELEMENT_PROPCOUNT );

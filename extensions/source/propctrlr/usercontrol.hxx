@@ -59,14 +59,14 @@ namespace pcr
     class OFormatSampleControl : public OFormatSampleControl_Base
     {
     public:
-        explicit OFormatSampleControl( vcl::Window* pParent );
+        OFormatSampleControl( vcl::Window* pParent, WinBits nWinStyle );
 
         // XPropertyControl
-        virtual css::uno::Any SAL_CALL getValue() override;
-        virtual void SAL_CALL setValue( const css::uno::Any& _value ) override;
-        virtual css::uno::Type SAL_CALL getValueType() override;
+        virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setValue( const css::uno::Any& _value ) throw (css::beans::IllegalTypeException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Type SAL_CALL getValueType() throw (css::uno::RuntimeException, std::exception) override;
 
-        void SetFormatSupplier( const SvNumberFormatsSupplierObj* _pSupplier )
+        inline void SetFormatSupplier( const SvNumberFormatsSupplierObj* _pSupplier )
         {
             getTypedControlWindow()->SetFormatSupplier( _pSupplier );
         }
@@ -102,12 +102,12 @@ namespace pcr
         sal_Int32   m_nLastDecimalDigits;
 
     public:
-        OFormattedNumericControl( vcl::Window* pParent, WinBits nWinStyle);
+        OFormattedNumericControl( vcl::Window* pParent, WinBits nWinStyle = WB_TABSTOP);
 
         // XPropertyControl
-        virtual css::uno::Any SAL_CALL getValue() override;
-        virtual void SAL_CALL setValue( const css::uno::Any& _value ) override;
-        virtual css::uno::Type SAL_CALL getValueType() override;
+        virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setValue( const css::uno::Any& _value ) throw (css::beans::IllegalTypeException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Type SAL_CALL getValueType() throw (css::uno::RuntimeException, std::exception) override;
 
         void SetFormatDescription( const FormatDescription& rDesc );
 
@@ -118,7 +118,7 @@ namespace pcr
         void SetThousandsSep(bool bEnable) { getTypedControlWindow()->SetThousandsSep(bEnable); }
 
     protected:
-        virtual ~OFormattedNumericControl() override;
+        virtual ~OFormattedNumericControl();
     };
 
 
@@ -128,15 +128,15 @@ namespace pcr
     class OFileUrlControl : public OFileUrlControl_Base
     {
     public:
-        explicit OFileUrlControl( vcl::Window* pParent );
+        OFileUrlControl( vcl::Window* pParent, WinBits nWinStyle );
 
         // XPropertyControl
-        virtual css::uno::Any SAL_CALL getValue() override;
-        virtual void SAL_CALL setValue( const css::uno::Any& _value ) override;
-        virtual css::uno::Type SAL_CALL getValueType() override;
+        virtual css::uno::Any SAL_CALL getValue() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setValue( const css::uno::Any& _value ) throw (css::beans::IllegalTypeException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Type SAL_CALL getValueType() throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~OFileUrlControl() override;
+        virtual ~OFileUrlControl();
     };
 
 
@@ -145,14 +145,14 @@ namespace pcr
     class OTimeDurationControl : public ONumericControl
     {
     public:
-        explicit OTimeDurationControl( vcl::Window* pParent );
-        virtual ~OTimeDurationControl() override;
+        OTimeDurationControl( vcl::Window* pParent, WinBits nWinStyle );
+        virtual ~OTimeDurationControl();
 
         // XPropertyControl
-        ::sal_Int16 SAL_CALL getControlType() override;
+        ::sal_Int16 SAL_CALL getControlType() throw (css::uno::RuntimeException) override;
 
     private:
-        DECL_LINK( OnCustomConvert, MetricFormatter&, void );
+        DECL_LINK_TYPED( OnCustomConvert, MetricFormatter&, void );
     };
 
 

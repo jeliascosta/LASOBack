@@ -19,6 +19,13 @@
 
 #include "idroptarget.hxx"
 
+#ifdef __MINGW32__
+#if defined __uuidof
+#undef __uuidof
+#endif
+#define __uuidof(I) IID_##I
+#endif
+
 IDropTargetImpl::IDropTargetImpl( DropTarget& pTarget): m_nRefCount( 0),
                                     m_rDropTarget( pTarget)
 {
@@ -33,7 +40,7 @@ HRESULT STDMETHODCALLTYPE IDropTargetImpl::QueryInterface( REFIID riid, void  **
 {
     if( !ppvObject)
         return E_POINTER;
-    *ppvObject= nullptr;
+    *ppvObject= NULL;
 
     if( riid == __uuidof( IUnknown))
         *ppvObject= static_cast<IUnknown*>( this);

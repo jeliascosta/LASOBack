@@ -47,7 +47,7 @@ void ImageControl::Resize()
 
 namespace
 {
-    Size lcl_calcPaintSize( const tools::Rectangle& _rPaintRect, const Size& _rBitmapSize )
+    Size lcl_calcPaintSize( const Rectangle& _rPaintRect, const Size& _rBitmapSize )
     {
         const Size aPaintSize = _rPaintRect.GetSize();
 
@@ -58,7 +58,7 @@ namespace
         return Size( long( _rBitmapSize.Width() * nRatioMin ), long( _rBitmapSize.Height() * nRatioMin ) );
     }
 
-    Point lcl_centerWithin( const tools::Rectangle& _rArea, const Size& _rObjectSize )
+    Point lcl_centerWithin( const Rectangle& _rArea, const Size& _rObjectSize )
     {
         Point aPos( _rArea.TopLeft() );
         aPos.X() += ( _rArea.GetWidth() - _rObjectSize.Width() ) / 2;
@@ -77,8 +77,9 @@ void ImageControl::ImplDraw(OutputDevice& rDev, DrawFlags nDrawFlags, const Poin
     }
 
     const Image& rImage( GetModeImage() );
-    const tools::Rectangle aDrawRect( rPos, rSize );
-    if (!rImage)
+    const Image* pImage = &rImage;
+    const Rectangle aDrawRect( rPos, rSize );
+    if ( !*pImage )
     {
         OUString  sText( GetText() );
         if ( sText.isEmpty() )
@@ -94,20 +95,23 @@ void ImageControl::ImplDraw(OutputDevice& rDev, DrawFlags nDrawFlags, const Poin
         return;
     }
 
-    const Size& rBitmapSize = rImage.GetSizePixel();
+    const Size&      rBitmapSize = pImage->GetSizePixel();
 
     switch ( mnScaleMode )
     {
     case ImageScaleMode::NONE:
     {
-        rDev.DrawImage(lcl_centerWithin( aDrawRect, rBitmapSize ), rImage, nStyle);
+        rDev.DrawImage( lcl_centerWithin( aDrawRect, rBitmapSize ), *pImage, nStyle );
     }
     break;
 
     case ImageScaleMode::ISOTROPIC:
     {
         const Size aPaintSize = lcl_calcPaintSize( aDrawRect, rBitmapSize );
-        rDev.DrawImage(lcl_centerWithin(aDrawRect, aPaintSize), aPaintSize, rImage, nStyle);
+        rDev.DrawImage(
+            lcl_centerWithin( aDrawRect, aPaintSize ),
+            aPaintSize,
+            *pImage, nStyle );
     }
     break;
 
@@ -116,7 +120,7 @@ void ImageControl::ImplDraw(OutputDevice& rDev, DrawFlags nDrawFlags, const Poin
         rDev.DrawImage(
             aDrawRect.TopLeft(),
             aDrawRect.GetSize(),
-            rImage, nStyle );
+            *pImage, nStyle );
     }
     break;
 
@@ -127,7 +131,7 @@ void ImageControl::ImplDraw(OutputDevice& rDev, DrawFlags nDrawFlags, const Poin
     }   // switch ( mnScaleMode )
 }
 
-void ImageControl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
+void ImageControl::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
 {
     ImplDraw(rRenderContext, DrawFlags::NONE, Point(), GetOutputSizePixel());
 
@@ -136,7 +140,7 @@ void ImageControl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
         vcl::Window* pBorderWindow = GetWindow(GetWindowType::Border);
 
         bool bFlat = (GetBorderStyle() == WindowBorderStyle::MONO);
-        tools::Rectangle aRect(Point(0,0), pBorderWindow->GetOutputSizePixel());
+        Rectangle aRect(Point(0,0), pBorderWindow->GetOutputSizePixel());
         Color oldLineCol = pBorderWindow->GetLineColor();
         Color oldFillCol = pBorderWindow->GetFillColor();
         pBorderWindow->SetFillColor();
@@ -157,7 +161,7 @@ void ImageControl::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSiz
 {
     const Point     aPos  = pDev->LogicToPixel( rPos );
     const Size      aSize = pDev->LogicToPixel( rSize );
-          tools::Rectangle aRect( aPos, aSize );
+          Rectangle aRect( aPos, aSize );
 
     pDev->Push();
     pDev->SetMapMode();

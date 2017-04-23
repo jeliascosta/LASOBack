@@ -56,7 +56,7 @@ void SwFootNoteOptionDlg::PageCreated( sal_uInt16 /*nId*/, SfxTabPage &rPage )
     static_cast<SwEndNoteOptionPage&>(rPage).SetShell( rSh );
 }
 
-IMPL_LINK( SwFootNoteOptionDlg, OkHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SwFootNoteOptionDlg, OkHdl, Button *, pBtn, void )
 {
     SfxItemSet aDummySet(rSh.GetAttrPool(), 1, 1 );
     SfxTabPage *pPage = GetTabPage( m_nFootNoteId );
@@ -102,6 +102,8 @@ SwEndNoteOptionPage::SwEndNoteOptionPage(vcl::Window *pParent, bool bEN,
         get(m_pPosChapterBox, "posdoccb");
         m_pPosChapterBox->SetClickHdl(LINK(this, SwEndNoteOptionPage, PosChapterHdl));
         get(m_pPosFT, "pos");
+        m_pPosPageBox->SetAccessibleRelationMemberOf(m_pPosFT);
+        m_pPosChapterBox->SetAccessibleRelationMemberOf(m_pPosFT);
         get(m_pContEdit, "conted");
         get(m_pContFromEdit, "contfromed");
     }
@@ -250,7 +252,7 @@ VclPtr<SfxTabPage> SwEndNoteOptionPage::Create( vcl::Window *pParent, const SfxI
 
 // Different kinds of numbering; because the Listbox has varying numbers of
 // entries, here are functions to set and query the intended kind of numbering.
-void SwEndNoteOptionPage::SelectNumbering(SwFootnoteNum const eNum)
+void SwEndNoteOptionPage::SelectNumbering(int eNum)
 {
     OUString sSelect;
     switch(eNum)
@@ -264,17 +266,19 @@ void SwEndNoteOptionPage::SelectNumbering(SwFootnoteNum const eNum)
         case FTNNUM_CHAPTER:
             sSelect = aNumChapter;
         break;
+#if OSL_DEBUG_LEVEL > 0
         default:
-            assert(false);
+            OSL_FAIL("Which numbering type?");
+#endif
     }
     m_pNumCountBox->SelectEntry(sSelect);
     NumCountHdl(*m_pNumCountBox);
 }
 
-SwFootnoteNum SwEndNoteOptionPage::GetNumbering() const
+int SwEndNoteOptionPage::GetNumbering() const
 {
     const sal_Int32 nPos = m_pNumCountBox->GetSelectEntryPos();
-    return static_cast<SwFootnoteNum>((bPosDoc) ? nPos + 2 : nPos);
+    return (int) bPosDoc? nPos + 1: nPos;
 }
 
 void SwEndNoteOptionPage::SetShell( SwWrtShell &rShell )
@@ -292,9 +296,9 @@ void SwEndNoteOptionPage::SetShell( SwWrtShell &rShell )
 
 // Handler behind the button to collect the footnote at the page. In this case
 // all kinds of numbering can be used.
-IMPL_LINK_NOARG(SwEndNoteOptionPage, PosPageHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwEndNoteOptionPage, PosPageHdl, Button*, void)
 {
-    const SwFootnoteNum eNum = GetNumbering();
+    const SwFootnoteNum eNum = (const SwFootnoteNum)GetNumbering();
     bPosDoc = false;
     if(LISTBOX_ENTRY_NOTFOUND == m_pNumCountBox->GetEntryPos(aNumPage))
     {
@@ -306,7 +310,7 @@ IMPL_LINK_NOARG(SwEndNoteOptionPage, PosPageHdl, Button*, void)
     m_pPageTemplBox->Enable(false);
 }
 
-IMPL_LINK_NOARG(SwEndNoteOptionPage, NumCountHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwEndNoteOptionPage, NumCountHdl, ListBox&, void)
 {
     bool bEnable = true;
     if( m_pNumCountBox->GetEntryCount() - 1 != m_pNumCountBox->GetSelectEntryPos() )
@@ -320,7 +324,7 @@ IMPL_LINK_NOARG(SwEndNoteOptionPage, NumCountHdl, ListBox&, void)
 
 // Handler behind the button to collect the footnote at the chapter or end of
 // the document. In this case no pagewise numbering can be used.
-IMPL_LINK_NOARG(SwEndNoteOptionPage, PosChapterHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwEndNoteOptionPage, PosChapterHdl, Button*, void)
 {
     if ( !bPosDoc )
         SelectNumbering(FTNNUM_DOC);
@@ -394,7 +398,7 @@ bool SwEndNoteOptionPage::FillItemSet( SfxItemSet * )
     {
         SwFootnoteInfo *pI = static_cast<SwFootnoteInfo*>(pInf.get());
         pI->ePos = m_pPosPageBox->IsChecked() ? FTNPOS_PAGE : FTNPOS_CHAPTER;
-        pI->eNum = GetNumbering();
+        pI->eNum = (SwFootnoteNum)GetNumbering();
         pI->aQuoVadis = m_pContEdit->GetText();
         pI->aErgoSum = m_pContFromEdit->GetText();
         if ( !(*pI == pSh->GetFootnoteInfo()) )

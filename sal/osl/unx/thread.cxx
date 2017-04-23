@@ -277,8 +277,10 @@ static oslThread osl_thread_create_Impl (
 
 #if defined OPENBSD
     stacksize = 262144;
-#else
+#elif defined LINUX
     stacksize = 12 * 1024 * 1024; // 8MB is not enough for ASAN on x86-64
+#else
+    stacksize = 100 * PTHREAD_STACK_MIN;
 #endif
     if (pthread_attr_setstacksize(&attr, stacksize) != 0) {
         pthread_attr_destroy(&attr);
@@ -711,7 +713,7 @@ static void osl_thread_priority_init_Impl()
         return;
     }
 
-#if defined (__sun)
+#if defined (SOLARIS)
     if ( policy >= _SCHED_NEXT)
     {
         /* mfe: pthread_getschedparam on Solaris has a possible Bug */
@@ -719,7 +721,7 @@ static void osl_thread_priority_init_Impl()
         /*      so set the policy to a default one                  */
         policy=SCHED_OTHER;
     }
-#endif /* __sun */
+#endif /* SOLARIS */
 
     if ((nRet = sched_get_priority_min(policy) ) != -1)
     {
@@ -812,7 +814,7 @@ void SAL_CALL osl_setThreadPriority (
     if (pthread_getschedparam(pImpl->m_hThread, &policy, &Param) != 0)
         return; /* ESRCH */
 
-#if defined (__sun)
+#if defined (SOLARIS)
     if ( policy >= _SCHED_NEXT)
     {
         /* mfe: pthread_getschedparam on Solaris has a possible Bug */
@@ -820,7 +822,7 @@ void SAL_CALL osl_setThreadPriority (
         /*      so set the policy to a default one                 */
         policy=SCHED_OTHER;
     }
-#endif /* __sun */
+#endif /* SOLARIS */
 
     pthread_once (&(g_thread.m_once), osl_thread_init_Impl);
 

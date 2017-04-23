@@ -34,7 +34,7 @@ class CommandEvent;
 #define SELENG_AUTOREPEAT_INTERVAL_MIN 25
 #define SELENG_AUTOREPEAT_INTERVAL_MAX 300
 
-enum class SelectionMode { NONE, Single, Range, Multiple };
+enum SelectionMode { NO_SELECTION, SINGLE_SELECTION, RANGE_SELECTION, MULTIPLE_SELECTION };
 
 
 class VCL_DLLPUBLIC FunctionSet
@@ -79,21 +79,22 @@ class VCL_DLLPUBLIC SelectionEngine
 private:
     FunctionSet*        pFunctionSet;
     VclPtr<vcl::Window> pWin;
-    tools::Rectangle           aArea;
+    Rectangle           aArea;
     Timer               aWTimer; // generate fake mouse moves
     MouseEvent          aLastMove;
     SelectionMode       eSelMode;
     sal_uLong               nUpdateInterval;
     sal_uInt16              nLockedMods;
     SelectionEngineFlags    nFlags;
-    DECL_DLLPRIVATE_LINK( ImpWatchDog, Timer*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( ImpWatchDog, Timer*, void );
 
     inline bool         ShouldDeselect( bool bModifierKey1 ) const;
                                 // determines to deselect or not when Ctrl-key is pressed on CursorPosChanging
 public:
 
                         SelectionEngine( vcl::Window* pWindow,
-                                         FunctionSet* pFunctions = nullptr );
+                                         FunctionSet* pFunctions = nullptr,
+                                         sal_uLong nAutoRepeatInterval = SELENG_AUTOREPEAT_INTERVAL );
                         ~SelectionEngine();
 
     // true: Event was processed by Selection Engine
@@ -113,7 +114,7 @@ public:
 
     // is needed to generate a Move event via a Timer
     // when the mouse is outside the area
-    void                SetVisibleArea( const tools::Rectangle& rNewArea )
+    void                SetVisibleArea( const Rectangle& rNewArea )
                             { aArea = rNewArea; }
 
     void                SetAddMode( bool);

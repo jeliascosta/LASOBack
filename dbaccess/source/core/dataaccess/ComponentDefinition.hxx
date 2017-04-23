@@ -44,7 +44,7 @@ namespace dbaccess
                                      ,public ODataSettings_Base
     {
     public:
-        typedef std::map  <   OUString
+        typedef ::std::map  <   OUString
                             ,   css::uno::Reference< css::beans::XPropertySet >
                             >   Columns;
     typedef Columns::iterator           iterator;
@@ -59,18 +59,18 @@ namespace dbaccess
 
     public:
         OComponentDefinition_Impl();
-        virtual ~OComponentDefinition_Impl() override;
+        virtual ~OComponentDefinition_Impl();
 
-        size_t size() const { return m_aColumns.size(); }
+        inline size_t size() const { return m_aColumns.size(); }
 
-        const_iterator begin() const   { return m_aColumns.begin(); }
-        const_iterator end() const     { return m_aColumns.end(); }
+        inline const_iterator begin() const   { return m_aColumns.begin(); }
+        inline const_iterator end() const     { return m_aColumns.end(); }
 
-        const_iterator find( const OUString& _rName ) const { return m_aColumns.find( _rName ); }
+        inline const_iterator find( const OUString& _rName ) const { return m_aColumns.find( _rName ); }
 
-        void erase( const OUString& _rName ) { m_aColumns.erase( _rName ); }
+        inline void erase( const OUString& _rName ) { m_aColumns.erase( _rName ); }
 
-        void insert( const OUString& _rName, const css::uno::Reference< css::beans::XPropertySet >& _rxColumn )
+        inline void insert( const OUString& _rName, const css::uno::Reference< css::beans::XPropertySet >& _rxColumn )
         {
             OSL_PRECOND( m_aColumns.find( _rName ) == m_aColumns.end(), "OComponentDefinition_Impl::insert: there's already an element with this name!" );
             m_aColumns.insert( Columns::value_type( _rName, _rxColumn ) );
@@ -86,11 +86,11 @@ class OComponentDefinition  :public OContentHelper
                             ,public ::comphelper::OPropertyArrayUsageHelper< OComponentDefinition >
 {
 protected:
-    rtl::Reference< OColumns >     m_xColumns;
+    css::uno::Reference< OColumns >     m_xColumns;
     rtl::Reference<OColumnPropertyListener> m_xColumnPropertyListener;
     bool                        m_bTable;
 
-    virtual ~OComponentDefinition() override;
+    virtual ~OComponentDefinition();
     virtual void SAL_CALL disposing() override;
 
     const   OComponentDefinition_Impl& getDefinition() const { return dynamic_cast< const OComponentDefinition_Impl& >( *m_pImpl.get() ); }
@@ -110,24 +110,26 @@ public:
             ,bool _bTable = true
         );
 
-    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes() override;
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 // css::uno::XInterface
     DECLARE_XINTERFACE( )
 
     // css::lang::XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( css::uno::Sequence< css::uno::Any > const & rArguments) override;
+    virtual void SAL_CALL initialize( css::uno::Sequence< css::uno::Any > const & rArguments) throw (css::uno::Exception, std::exception) override;
 
     // css::beans::XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XColumnsSupplier
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getColumns(  ) override;
+    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getColumns(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // OPropertySetHelper
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
@@ -137,7 +139,7 @@ public:
     virtual css::uno::Reference< css::beans::XPropertySet > createColumnDescriptor() override;
     virtual void columnAppended( const css::uno::Reference< css::beans::XPropertySet >& _rxSourceDescriptor ) override;
     virtual void columnDropped(const OUString& _sName) override;
-    using OContentHelper::notifyDataSourceModified;
+    virtual void notifyDataSourceModified() override { OContentHelper::notifyDataSourceModified(); }
 
 protected:
 // OPropertyArrayUsageHelper
@@ -145,7 +147,7 @@ protected:
 
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
                                     sal_Int32 nHandle,
-                                    const css::uno::Any& rValue) override;
+                                    const css::uno::Any& rValue) throw (css::uno::Exception, std::exception) override;
 
     // OContentHelper overridables
     virtual OUString determineContentType() const override;

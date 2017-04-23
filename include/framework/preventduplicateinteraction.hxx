@@ -121,7 +121,8 @@ class FWE_DLLPUBLIC PreventDuplicateInteraction : private ThreadHelpBase2
 
             @threadsafe yes
         */
-        virtual void SAL_CALL handle(const css::uno::Reference< css::task::XInteractionRequest >& xRequest) override;
+        virtual void SAL_CALL handle(const css::uno::Reference< css::task::XInteractionRequest >& xRequest)
+            throw(css::uno::RuntimeException, std::exception) override;
 
 
         /**
@@ -134,7 +135,8 @@ class FWE_DLLPUBLIC PreventDuplicateInteraction : private ThreadHelpBase2
 
             @threadsafe yes
         */
-        virtual sal_Bool SAL_CALL handleInteractionRequest( const css::uno::Reference< css::task::XInteractionRequest >& xRequest ) override;
+        virtual sal_Bool SAL_CALL handleInteractionRequest( const css::uno::Reference< css::task::XInteractionRequest >& xRequest )
+            throw (css::uno::RuntimeException, std::exception) override;
 
 
         /**
@@ -144,7 +146,8 @@ class FWE_DLLPUBLIC PreventDuplicateInteraction : private ThreadHelpBase2
 
             @threadsafe yes
         */
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType )
+            throw (css::uno::RuntimeException, std::exception) override;
 
     // c++ interface
     public:
@@ -166,7 +169,7 @@ class FWE_DLLPUBLIC PreventDuplicateInteraction : private ThreadHelpBase2
         /**
             @short      dtor to free used memory.
          */
-        virtual ~PreventDuplicateInteraction() override;
+        virtual ~PreventDuplicateInteraction();
 
 
         /**

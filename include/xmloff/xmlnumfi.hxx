@@ -72,7 +72,7 @@ namespace com { namespace sun { namespace star { namespace lang {
 
 class SvXMLNumFmtHelper
 {
-    std::unique_ptr<SvXMLNumImpData> pData;
+    SvXMLNumImpData* pData;
 
 public:
     SvXMLNumFmtHelper(
@@ -91,7 +91,7 @@ public:
                 const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                 SvXMLStylesContext& rStyles);
 
-    SvXMLNumImpData* getData() { return pData.get(); }
+    SvXMLNumImpData* getData() { return pData; }
 
     const SvXMLTokenMap&    GetStylesElemTokenMap();
 
@@ -168,12 +168,13 @@ public:
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                                     const sal_Int32 nKey,
                                     SvXMLStylesContext& rStyles );
-    virtual     ~SvXMLNumFormatContext() override;
+    virtual     ~SvXMLNumFormatContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                     const OUString& rLocalName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList ) override;
     virtual void CreateAndInsert(bool bOverwrite) override;
+    virtual void Finish(bool bOverwrite) override;
 
     SvXMLNumImpData* GetData() const                { return pData; }
     sal_Int32 GetKey();
@@ -185,7 +186,7 @@ public:
     void SetHasLongDoW(bool bSet)               { bHasLongDoW = bSet; }
     bool HasEra() const                         { return bHasEra; }
 
-    void UpdateCalendar( const OUString& rNewCalendar, bool bImplicitSecondaryCalendarEC = false );
+    void UpdateCalendar( const OUString& rNewCalendar );
 
     const LocaleDataWrapper& GetLocaleData() const;
 

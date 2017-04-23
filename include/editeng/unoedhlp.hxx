@@ -30,8 +30,11 @@
 struct EENotify;
 class EditEngine;
 
+#define EDITSOURCE_HINT_PARASMOVED          20
+#define EDITSOURCE_HINT_SELECTIONCHANGED    21
+
 /** Extends TextHint by two additional parameters which are necessary
-    for the SfxHintId::EditSourceParasMoved hint. TextHint's value in this
+    for the EDITSOURCE_HINT_PARASMOVED hint. TextHint's value in this
     case denotes the destination position, the two parameters the
     start and the end of the moved paragraph range.
  */
@@ -42,17 +45,18 @@ private:
     sal_Int32   mnEnd;
 
 public:
-            SvxEditSourceHint( SfxHintId nId );
-            SvxEditSourceHint( SfxHintId nId, sal_uLong nValue, sal_Int32 nStart, sal_Int32 nEnd );
+            SvxEditSourceHint( sal_uInt32 nId );
+            SvxEditSourceHint( sal_uInt32 nId, sal_uLong nValue, sal_Int32 nStart=0, sal_Int32 nEnd=0 );
 
-    using TextHint::GetValue;
+    sal_uLong   GetValue() const;
     sal_Int32   GetStartValue() const { return mnStart;}
     sal_Int32   GetEndValue() const { return mnEnd;}
 };
 class SvxEditSourceHintEndPara :public SvxEditSourceHint
 {
 public:
-    SvxEditSourceHintEndPara() : SvxEditSourceHint(SfxHintId::EditSourceSelectionChanged) {}
+    SvxEditSourceHintEndPara( sal_uInt32 nId )
+        :SvxEditSourceHint(nId) {}
 };
 /** Helper class for common functionality in edit sources
  */
@@ -150,7 +154,7 @@ public:
 
         @return the possibly transformed rect
      */
-    static tools::Rectangle EEToUserSpace( const tools::Rectangle& rRect, const Size& rEESize, bool bIsVertical );
+    static Rectangle EEToUserSpace( const Rectangle& rRect, const Size& rEESize, bool bIsVertical );
 
 };
 

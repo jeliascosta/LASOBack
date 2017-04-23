@@ -37,39 +37,39 @@ class ToolBarWrapper : public css::ui::XUIFunctionListener,
 {
     public:
         ToolBarWrapper( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-        virtual ~ToolBarWrapper() override;
+        virtual ~ToolBarWrapper();
 
         // XInterface
         virtual void SAL_CALL acquire() throw() override;
         virtual void SAL_CALL release() throw() override;
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw( css::uno::RuntimeException, std::exception ) override;
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
         // XUIElement
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() throw (css::uno::RuntimeException, std::exception) override;
 
         // XUpdatable
-        virtual void SAL_CALL update() override;
+        virtual void SAL_CALL update() throw (css::uno::RuntimeException, std::exception) override;
 
         // XUIElementSettings
-        virtual void SAL_CALL updateSettings() override;
+        virtual void SAL_CALL updateSettings() throw (css::uno::RuntimeException, std::exception) override;
 
         // XUIFunctionListener
-        virtual void SAL_CALL functionExecute( const OUString& aUIElementName, const OUString& aCommand ) override;
+        virtual void SAL_CALL functionExecute( const OUString& aUIElementName, const OUString& aCommand ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
         using cppu::OPropertySetHelper::disposing;
-        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
     //  protected methods
 
     protected:
-        virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any&  aValue ) override;
+        virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any&  aValue ) throw( css::uno::Exception, std::exception ) override;
         virtual void impl_fillNewData() override;
 
     private:

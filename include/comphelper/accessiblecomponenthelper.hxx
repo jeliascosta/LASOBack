@@ -42,30 +42,22 @@ namespace comphelper
     protected:
         /// see the respective base class ctor for an extensive comment on this, please
         OCommonAccessibleComponent( IMutex* _pExternalLock );
-        virtual ~OCommonAccessibleComponent() override;
+        virtual ~OCommonAccessibleComponent();
 
     protected:
         /// implements the calculation of the bounding rectangle - still waiting to be overwritten
-        ///
-        /// @throws css::uno::RuntimeException
-        virtual css::awt::Rectangle implGetBounds(  ) = 0;
+        virtual css::awt::Rectangle implGetBounds(  ) throw (css::uno::RuntimeException, std::exception) = 0;
 
     protected:
         /** non-virtual versions of the methods which can be implemented using <method>implGetBounds</method>
             note: getLocationOnScreen relies on a valid parent (XAccessibleContext::getParent()->getAccessibleContext()),
                  which itself implements XAccessibleComponent
-
-            @throws css::uno::RuntimeException
         */
-        bool SAL_CALL containsPoint( const css::awt::Point& aPoint );
-        /// @throws css::uno::RuntimeException
-        css::awt::Point SAL_CALL getLocation(  );
-        /// @throws css::uno::RuntimeException
-        css::awt::Point SAL_CALL getLocationOnScreen(  );
-        /// @throws css::uno::RuntimeException
-        css::awt::Size SAL_CALL getSize(  );
-        /// @throws css::uno::RuntimeException
-        css::awt::Rectangle SAL_CALL getBounds(  );
+        bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException);
+        css::awt::Point SAL_CALL getLocation(  ) throw (css::uno::RuntimeException);
+        css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException);
+        css::awt::Size SAL_CALL getSize(  ) throw (css::uno::RuntimeException);
+        css::awt::Rectangle SAL_CALL getBounds(  ) throw (css::uno::RuntimeException);
     };
 
 
@@ -96,11 +88,11 @@ namespace comphelper
         DECLARE_XTYPEPROVIDER( )
 
         // XAccessibleComponent - default implementations
-        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) override;
-        virtual css::awt::Point SAL_CALL getLocation(  ) override;
-        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) override;
-        virtual css::awt::Size SAL_CALL getSize(  ) override;
-        virtual css::awt::Rectangle SAL_CALL getBounds(  ) override;
+        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Point SAL_CALL getLocation(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Size SAL_CALL getSize(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Rectangle SAL_CALL getBounds(  ) throw (css::uno::RuntimeException, std::exception) override;
     };
 
 
@@ -127,11 +119,11 @@ namespace comphelper
         DECLARE_XTYPEPROVIDER( )
 
         // XAccessibleComponent - default implementations
-        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) override;
-        virtual css::awt::Point SAL_CALL getLocation(  ) override;
-        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) override;
-        virtual css::awt::Size SAL_CALL getSize(  ) override;
-        virtual css::awt::Rectangle SAL_CALL getBounds(  ) override;
+        virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Point SAL_CALL getLocation(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Size SAL_CALL getSize(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::awt::Rectangle SAL_CALL getBounds(  ) throw (css::uno::RuntimeException, std::exception) override;
     };
 
 

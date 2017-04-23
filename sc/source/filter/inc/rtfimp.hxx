@@ -26,6 +26,7 @@ class ScRTFImport : public ScEEImport
 {
 public:
                         ScRTFImport( ScDocument* pDoc, const ScRange& rRange );
+                        virtual ~ScRTFImport();
 };
 
 #endif

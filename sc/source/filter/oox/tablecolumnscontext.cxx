@@ -20,6 +20,7 @@
 #include "tablecolumnscontext.hxx"
 
 #include "tablecolumnsbuffer.hxx"
+#include "biffinputstream.hxx"
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 

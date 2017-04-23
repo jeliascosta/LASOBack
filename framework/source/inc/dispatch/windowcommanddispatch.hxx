@@ -46,7 +46,7 @@ namespace framework{
             scenarios. On the other side VCL does not hold us alive (because it doesn't know our UNO reference).
             So we register at the VCL level as an event listener and
  */
-class WindowCommandDispatch final
+class WindowCommandDispatch
 {
     private:
         osl::Mutex m_mutex;
@@ -81,7 +81,7 @@ class WindowCommandDispatch final
 
         /** @short  used to free internal resources.
          */
-        ~WindowCommandDispatch();
+        virtual ~WindowCommandDispatch();
 
     // implementation
 
@@ -102,9 +102,16 @@ class WindowCommandDispatch final
 
         /** @short  callback from VCL to notify new commands
          */
-        DECL_LINK( impl_notifyCommand, VclWindowEvent&, void );
+        DECL_LINK_TYPED( impl_notifyCommand, VclWindowEvent&, void );
 
-}; // class WindowCommandDispatch
+        /** @short  dispatch right command URLs into our frame context.
+
+            @param  sCommand
+                    the command for dispatch
+         */
+        void impl_dispatchCommand(const OUString& sCommand);
+
+}; // class MACDispatch
 
 } // namespace framework
 

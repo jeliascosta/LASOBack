@@ -18,10 +18,8 @@
  */
 
 #include "svx/svxgrahicitem.hxx"
-#include "svx/svxids.hrc"
-
-SvxGraphicItem::SvxGraphicItem( const Graphic& rGraphic )
-    : SfxPoolItem( SID_GRAPHIC ), aGraphic( rGraphic )
+SvxGraphicItem::SvxGraphicItem( sal_uInt16 _nWhich, const Graphic& rGraphic )
+    : SfxPoolItem( _nWhich ), aGraphic( rGraphic )
 {
 
 }

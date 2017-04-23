@@ -46,7 +46,7 @@ public:
 protected:
     /** Destruction.
      */
-    virtual ~OStoreObject() override {}
+    virtual ~OStoreObject() {}
 
 private:
     /** The IStoreHandle TypeId.

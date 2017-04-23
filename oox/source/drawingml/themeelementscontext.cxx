@@ -19,10 +19,10 @@
 
 #include "drawingml/themeelementscontext.hxx"
 #include "drawingml/clrschemecontext.hxx"
-#include "drawingml/lineproperties.hxx"
+#include "oox/drawingml/lineproperties.hxx"
 #include "drawingml/linepropertiescontext.hxx"
-#include "drawingml/fillproperties.hxx"
-#include "drawingml/misccontexts.hxx"
+#include "oox/drawingml/fillproperties.hxx"
+#include "drawingml/fillpropertiesgroupcontext.hxx"
 #include "drawingml/textcharacterproperties.hxx"
 #include "oox/drawingml/theme.hxx"
 #include "oox/helper/attributelist.hxx"

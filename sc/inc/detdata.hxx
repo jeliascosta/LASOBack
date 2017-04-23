@@ -65,6 +65,7 @@ class ScDetOpList
 public:
         ScDetOpList() : bHasAddError(false) {}
         ScDetOpList(const ScDetOpList& rList);
+        ~ScDetOpList() {}
 
     void    DeleteOnTab( SCTAB nTab );
     void    UpdateReference( ScDocument* pDoc, UpdateRefMode eUpdateRefMode,

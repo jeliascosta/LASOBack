@@ -20,6 +20,7 @@
 #include <svx/svdpagv.hxx>
 #include <svx/svdview.hxx>
 #include <svx/ruler.hxx>
+#include <svx/sidebar/ContextChangeEventMultiplexer.hxx>
 #include <idxmrk.hxx>
 #include <view.hxx>
 #include <wrtsh.hxx>
@@ -37,6 +38,8 @@
 #include <sfx2/request.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <wordcountdialog.hxx>
+
+extern bool bDocSzUpdated;
 
 void SwView::Activate(bool bMDIActivate)
 {
@@ -113,7 +116,9 @@ void SwView::Activate(bool bMDIActivate)
 
 void SwView::Deactivate(bool bMDIActivate)
 {
-    if( g_bFlushCharBuffer ) // Are Characters still in the input buffer?
+    extern bool g_bFlushCharBuffer ;
+        // Are Characters still in the input buffer?
+    if( g_bFlushCharBuffer )
         GetEditWin().FlushInBuffer();
 
     if( bMDIActivate )
@@ -149,8 +154,8 @@ void SwView::ExecFormatPaintbrush(SfxRequest& rReq)
         const SfxItemSet *pArgs = rReq.GetArgs();
         if( pArgs && pArgs->Count() >= 1 )
         {
-            bPersistentCopy = static_cast<const SfxBoolItem &>(pArgs->Get(
-                                    SID_FORMATPAINTBRUSH)).GetValue();
+            bPersistentCopy = static_cast<bool>(static_cast<const SfxBoolItem &>(pArgs->Get(
+                                    SID_FORMATPAINTBRUSH)).GetValue());
         }
 
         m_pFormatClipboard->Copy( GetWrtShell(), GetPool(), bPersistentCopy );

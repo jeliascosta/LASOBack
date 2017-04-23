@@ -43,17 +43,13 @@ public:
     typedef std::map<SCTAB, std::unique_ptr<sc::ColumnSpanSet>> DataSpansType;
 
                     ScSimpleUndo( ScDocShell* pDocSh );
-    virtual         ~ScSimpleUndo() override;
+    virtual         ~ScSimpleUndo();
 
     virtual bool    Merge( SfxUndoAction *pNextAction ) override;
-    /// See SfxUndoAction::GetViewShellId().
-    ViewShellId GetViewShellId() const override;
 
 protected:
     ScDocShell*     pDocShell;
-    std::unique_ptr<SfxUndoAction>
-                    pDetectiveUndo;
-    ViewShellId     mnViewShellId;
+    SfxUndoAction*  pDetectiveUndo;
 
     bool            IsPaintLocked() const { return pDocShell->IsPaintLocked(); }
 
@@ -85,7 +81,7 @@ class ScBlockUndo: public ScSimpleUndo
 public:
                     ScBlockUndo( ScDocShell* pDocSh, const ScRange& rRange,
                                  ScBlockUndoMode eBlockMode );
-    virtual         ~ScBlockUndo() override;
+    virtual         ~ScBlockUndo();
 
 protected:
     ScRange         aBlockRange;
@@ -105,7 +101,7 @@ class ScMultiBlockUndo: public ScSimpleUndo
 {
 public:
     ScMultiBlockUndo(ScDocShell* pDocSh, const ScRangeList& rRanges);
-    virtual ~ScMultiBlockUndo() override;
+    virtual ~ScMultiBlockUndo();
 
 protected:
     ScRangeList     maBlockRanges;
@@ -128,10 +124,11 @@ class ScDBFuncUndo: public ScSimpleUndo
 protected:
     ScDBData*       pAutoDBRange;
     ScRange         aOriginalRange;
+    SdrUndoAction*  mpDrawUndo;
 
 public:
-                    ScDBFuncUndo( ScDocShell* pDocSh, const ScRange& rOriginal );
-    virtual         ~ScDBFuncUndo() override;
+                    ScDBFuncUndo( ScDocShell* pDocSh, const ScRange& rOriginal, SdrUndoAction* pDrawUndo = nullptr );
+    virtual         ~ScDBFuncUndo();
 
     void            BeginUndo();
     void            EndUndo();
@@ -147,7 +144,7 @@ public:
                     ScMoveUndo( ScDocShell* pDocSh,
                                 ScDocument* pRefDoc, ScRefUndoData* pRefData,
                                 ScMoveUndoMode eRefMode );
-    virtual         ~ScMoveUndo() override;
+    virtual         ~ScMoveUndo();
 
 protected:
     SdrUndoAction*  pDrawUndo;
@@ -166,15 +163,16 @@ private:
 
 class ScUndoWrapper: public SfxUndoAction           // for manual merging of actions
 {
-    std::unique_ptr<SfxUndoAction>  pWrappedUndo;
-    ViewShellId                     mnViewShellId;
+    SfxUndoAction*  pWrappedUndo;
 
 public:
                             ScUndoWrapper( SfxUndoAction* pUndo );
-    virtual                 ~ScUndoWrapper() override;
+    virtual                 ~ScUndoWrapper();
 
-    SfxUndoAction*          GetWrappedUndo()        { return pWrappedUndo.get(); }
+    SfxUndoAction*          GetWrappedUndo()        { return pWrappedUndo; }
     void                    ForgetWrappedUndo();
+
+    virtual void SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction) override;
 
     virtual void            Undo() override;
     virtual void            Redo() override;
@@ -183,8 +181,7 @@ public:
     virtual bool            Merge( SfxUndoAction *pNextAction ) override;
     virtual OUString        GetComment() const override;
     virtual OUString        GetRepeatComment(SfxRepeatTarget&) const override;
-    /// See SfxUndoAction::GetViewShellId().
-    ViewShellId GetViewShellId() const override;
+    virtual sal_uInt16      GetId() const override;
 };
 
 #endif

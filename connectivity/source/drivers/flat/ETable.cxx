@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <ctype.h>
 #include "flat/ETable.hxx"
 #include <com/sun/star/sdbc/ColumnValue.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
@@ -62,7 +63,7 @@ using std::vector;
 using std::lower_bound;
 
 
-void OFlatTable::fillColumns(const css::lang::Locale& _aLocale)
+void OFlatTable::fillColumns(const ::com::sun::star::lang::Locale& _aLocale)
 {
     m_bNeedToReadLine = true; // we overwrite m_aCurrentLine, seek the stream, ...
     m_pFileStream->Seek(0);
@@ -287,7 +288,7 @@ void OFlatTable::impl_fillColumnInfo_nothrow(QuotedTokenizedString& aFirstLine, 
                     {
                         try
                         {
-                            nIndex = m_xNumberFormatter->detectNumberFormat(css::util::NumberFormat::ALL,aField2);
+                            nIndex = m_xNumberFormatter->detectNumberFormat(::com::sun::star::util::NumberFormat::ALL,aField2);
                         }
                         catch(Exception&)
                         {
@@ -314,7 +315,7 @@ void OFlatTable::impl_fillColumnInfo_nothrow(QuotedTokenizedString& aFirstLine, 
                 {
                     try
                     {
-                        nIndex = m_xNumberFormatter->detectNumberFormat(css::util::NumberFormat::ALL,aField2);
+                        nIndex = m_xNumberFormatter->detectNumberFormat(::com::sun::star::util::NumberFormat::ALL,aField2);
                     }
                     catch(Exception&)
                     {
@@ -411,7 +412,7 @@ OFlatTable::OFlatTable(sdbcx::OCollection* _pTables,OFlatConnection* _pConnectio
 void OFlatTable::construct()
 {
     SvtSysLocale aLocale;
-    css::lang::Locale aAppLocale(aLocale.GetLanguageTag().getLocale());
+    ::com::sun::star::lang::Locale aAppLocale(aLocale.GetLanguageTag().getLocale());
 
     Reference< XNumberFormatsSupplier > xSupplier = NumberFormatsSupplier::createWithLocale( m_pConnection->getDriver()->getComponentContext(), aAppLocale );
     m_xNumberFormatter.set( NumberFormatter::create( m_pConnection->getDriver()->getComponentContext()), UNO_QUERY_THROW);
@@ -425,9 +426,9 @@ void OFlatTable::construct()
     if(aURL.getExtension() != m_pConnection->getExtension())
         aURL.setExtension(m_pConnection->getExtension());
 
-    OUString aFileName = aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE);
+    OUString aFileName = aURL.GetMainURL(INetURLObject::NO_DECODE);
 
-    m_pFileStream = createStream_simpleError( aFileName, StreamMode::READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYWRITE);
+    m_pFileStream = createStream_simpleError( aFileName, STREAM_READWRITE | StreamMode::NOCREATE | StreamMode::SHARE_DENYWRITE);
 
     if(!m_pFileStream)
         m_pFileStream = createStream_simpleError( aFileName, StreamMode::READ | StreamMode::NOCREATE | StreamMode::SHARE_DENYNONE);
@@ -459,11 +460,12 @@ OUString OFlatTable::getEntry()
 
         INetURLObject aURL;
         xDir->beforeFirst();
+        static const char s_sSeparator[] = "/";
         while(xDir->next())
         {
             sName = xRow->getString(1);
             aURL.SetSmartProtocol(INetProtocol::File);
-            OUString sUrl = m_pConnection->getURL() + "/" + sName;
+            OUString sUrl = m_pConnection->getURL() +  s_sSeparator + sName;
             aURL.SetSmartURL( sUrl );
 
             // cut the extension
@@ -515,7 +517,7 @@ void SAL_CALL OFlatTable::disposing()
     m_aColumns = nullptr;
 }
 
-Sequence< Type > SAL_CALL OFlatTable::getTypes(  )
+Sequence< Type > SAL_CALL OFlatTable::getTypes(  ) throw(RuntimeException, std::exception)
 {
     Sequence< Type > aTypes = OTable_TYPEDEF::getTypes();
     vector<Type> aOwnTypes;
@@ -537,7 +539,7 @@ Sequence< Type > SAL_CALL OFlatTable::getTypes(  )
 }
 
 
-Any SAL_CALL OFlatTable::queryInterface( const Type & rType )
+Any SAL_CALL OFlatTable::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     if( rType == cppu::UnoType<XKeysSupplier>::get()||
         rType == cppu::UnoType<XIndexesSupplier>::get()||
@@ -547,7 +549,7 @@ Any SAL_CALL OFlatTable::queryInterface( const Type & rType )
         return Any();
 
     Any aRet = OTable_TYPEDEF::queryInterface(rType);
-    return aRet.hasValue() ? aRet : ::cppu::queryInterface(rType,static_cast< css::lang::XUnoTunnel*> (this));
+    return aRet.hasValue() ? aRet : ::cppu::queryInterface(rType,static_cast< ::com::sun::star::lang::XUnoTunnel*> (this));
 }
 
 
@@ -566,9 +568,9 @@ Sequence< sal_Int8 > OFlatTable::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// css::lang::XUnoTunnel
+// com::sun::star::lang::XUnoTunnel
 
-sal_Int64 OFlatTable::getSomething( const Sequence< sal_Int8 > & rId )
+sal_Int64 OFlatTable::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException, std::exception)
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -625,7 +627,7 @@ bool OFlatTable::fetchRow(OValueRefRow& _rRow, const OSQLColumns & _rCols, bool 
                 {
                     try
                     {
-                        double nRes = m_xNumberFormatter->convertStringToNumber(css::util::NumberFormat::ALL,aStr);
+                        double nRes = m_xNumberFormatter->convertStringToNumber(::com::sun::star::util::NumberFormat::ALL,aStr);
 
                         switch(nType)
                         {
@@ -678,7 +680,7 @@ bool OFlatTable::fetchRow(OValueRefRow& _rRow, const OSQLColumns & _rCols, bool 
                     else
                     {
                         if ( cThousandDelimiter )
-                            aStrConverted = aStr.replaceAll(OUStringLiteral1(cThousandDelimiter), "");
+                            aStrConverted = comphelper::string::remove(aStr, cThousandDelimiter);
                         else
                             aStrConverted = aStr;
                     }
@@ -707,7 +709,7 @@ bool OFlatTable::fetchRow(OValueRefRow& _rRow, const OSQLColumns & _rCols, bool 
 
 void OFlatTable::refreshHeader()
 {
-    SAL_INFO( "connectivity.flat", "flat lionel@mamane.lu OFlatTable::refreshHeader" );
+    SAL_INFO( "connectivity.drivers", "flat lionel@mamane.lu OFlatTable::refreshHeader" );
 }
 
 

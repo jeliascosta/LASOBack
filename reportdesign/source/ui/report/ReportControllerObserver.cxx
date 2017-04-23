@@ -23,6 +23,7 @@
 
 #include <ReportControllerObserver.hxx>
 #include <ReportController.hxx>
+#include <svl/smplhint.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
@@ -52,6 +53,7 @@ public:
     ::std::vector< uno::Reference< container::XChild> > m_aSections;
     ::osl::Mutex                                        m_aMutex;
     oslInterlockedCount                                 m_nLocks;
+    bool                                                m_bReadOnly;
 
     explicit OXReportControllerObserverImpl();
     OXReportControllerObserverImpl(const OXReportControllerObserverImpl&) = delete;
@@ -61,6 +63,7 @@ public:
 
     OXReportControllerObserverImpl::OXReportControllerObserverImpl()
             :m_nLocks(0)
+            ,m_bReadOnly(false)
     {
     }
 
@@ -80,11 +83,11 @@ public:
     }
 
 
-    IMPL_LINK(OXReportControllerObserver, SettingsChanged, VclSimpleEvent&, _rEvt, void)
+    IMPL_LINK_TYPED(OXReportControllerObserver, SettingsChanged, VclSimpleEvent&, _rEvt, void)
     {
-            VclEventId nEvent = _rEvt.GetId();
+            sal_Int32 nEvent = _rEvt.GetId();
 
-            if (nEvent == VclEventId::ApplicationDataChanged )
+            if (nEvent == VCLEVENT_APPLICATION_DATACHANGED )
             {
                 DataChangedEvent* pData = static_cast<DataChangedEvent*>(static_cast<VclWindowEvent&>(_rEvt).GetData());
                 if ( pData && ((( pData->GetType() == DataChangedEventType::SETTINGS  )   ||
@@ -124,7 +127,7 @@ public:
     }
 
     // XEventListener
-    void SAL_CALL OXReportControllerObserver::disposing(const lang::EventObject& e)
+    void SAL_CALL OXReportControllerObserver::disposing(const lang::EventObject& e) throw( uno::RuntimeException, std::exception )
     {
         (void) e;
         // check if it's an object we have cached information about
@@ -146,12 +149,12 @@ public:
     }
 
     // XPropertyChangeListener
-    void SAL_CALL OXReportControllerObserver::propertyChange(const beans::PropertyChangeEvent& _rEvent)
+    void SAL_CALL OXReportControllerObserver::propertyChange(const beans::PropertyChangeEvent& _rEvent) throw(uno::RuntimeException, std::exception)
     {
         (void) _rEvent;
         ::osl::ClearableMutexGuard aGuard( m_pImpl->m_aMutex );
 
-        if ( m_pImpl->m_nLocks != 0 )
+        if ( IsLocked() )
             return;
 
         m_aFormattedFieldBeautifier.notifyPropertyChange(_rEvent);
@@ -171,6 +174,12 @@ void OXReportControllerObserver::UnLock()
 
     osl_atomic_decrement( &m_pImpl->m_nLocks );
 }
+
+bool OXReportControllerObserver::IsLocked() const
+{
+    return m_pImpl->m_nLocks != 0;
+}
+
 
 void OXReportControllerObserver::AddSection(const uno::Reference< report::XSection > & _xSection)
 {
@@ -225,7 +234,10 @@ void OXReportControllerObserver::TogglePropertyListening(const uno::Reference< u
     uno::Reference< beans::XPropertySet >  xSet(Element, uno::UNO_QUERY);
     if (xSet.is())
     {
-        xSet->addPropertyChangeListener( OUString(), this );
+        if (!m_pImpl->m_bReadOnly)
+            xSet->addPropertyChangeListener( OUString(), this );
+        else
+            xSet->removePropertyChangeListener( OUString(), this );
     }
 }
 
@@ -273,13 +285,16 @@ void OXReportControllerObserver::switchListening( const uno::Reference< uno::XIn
 
     try
     {
-        uno::Reference< beans::XPropertySet > xProps( _rxObject, uno::UNO_QUERY );
-        if ( xProps.is() )
+        if ( !m_pImpl->m_bReadOnly )
         {
-            if ( _bStartListening )
-                xProps->addPropertyChangeListener( OUString(), this );
-            else
-                xProps->removePropertyChangeListener( OUString(), this );
+            uno::Reference< beans::XPropertySet > xProps( _rxObject, uno::UNO_QUERY );
+            if ( xProps.is() )
+            {
+                if ( _bStartListening )
+                    xProps->addPropertyChangeListener( OUString(), this );
+                else
+                    xProps->removePropertyChangeListener( OUString(), this );
+            }
         }
 
         uno::Reference< util::XModifyBroadcaster > xBroadcaster( _rxObject, uno::UNO_QUERY );
@@ -298,7 +313,7 @@ void OXReportControllerObserver::switchListening( const uno::Reference< uno::XIn
 }
 
 
-void SAL_CALL OXReportControllerObserver::modified( const lang::EventObject& /*aEvent*/ )
+void SAL_CALL OXReportControllerObserver::modified( const lang::EventObject& /*aEvent*/ ) throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -344,7 +359,7 @@ void OXReportControllerObserver::RemoveElement(const uno::Reference< uno::XInter
 }
 // XContainerListener
 
-void SAL_CALL OXReportControllerObserver::elementInserted(const container::ContainerEvent& evt)
+void SAL_CALL OXReportControllerObserver::elementInserted(const container::ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );
@@ -358,7 +373,7 @@ void SAL_CALL OXReportControllerObserver::elementInserted(const container::Conta
 }
 
 
-void SAL_CALL OXReportControllerObserver::elementReplaced(const container::ContainerEvent& evt)
+void SAL_CALL OXReportControllerObserver::elementReplaced(const container::ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );
@@ -372,7 +387,7 @@ void SAL_CALL OXReportControllerObserver::elementReplaced(const container::Conta
 }
 
 
-void SAL_CALL OXReportControllerObserver::elementRemoved(const container::ContainerEvent& evt)
+void SAL_CALL OXReportControllerObserver::elementRemoved(const container::ContainerEvent& evt) throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_pImpl->m_aMutex );

@@ -124,6 +124,9 @@
 
 #include "helper/unowrapper.hxx"
 
+#define VCLWINDOW_FRAMEWINDOW               0x1000
+#define VCLWINDOW_SYSTEMCHILDWINDOW         0x1001
+
 #if defined(_WIN32)
 #define SYSTEM_DEPENDENT_TYPE css::lang::SystemDependent::SYSTEM_WIN32
 #elif defined(MACOSX)
@@ -139,28 +142,6 @@ extern "C" typedef vcl::Window* (SAL_CALL *FN_SvtCreateWindow)(
         const css::awt::WindowDescriptor* pDescriptor,
         vcl::Window* pParent,
         WinBits nWinBits );
-
-class Pause : public Idle
-{
-public:
-    explicit Pause(sal_Int32 nPauseMilliseconds) :
-        Idle("pause"),
-        m_nPauseMilliseconds(nPauseMilliseconds)
-    {
-        SetPriority(TaskPriority::HIGHEST);
-        Start();
-    }
-
-    virtual void Invoke() override
-    {
-        SolarMutexGuard aSolarGuard;
-        osl::Thread::wait(std::chrono::milliseconds(m_nPauseMilliseconds));
-        Stop();
-        delete this;
-    }
-
-    sal_Int32 m_nPauseMilliseconds;
-};
 
 class VCLXToolkitMutexHelper
 {
@@ -188,9 +169,9 @@ class VCLXToolkit : public VCLXToolkitMutexHelper,
     bool m_bEventListener;
     bool m_bKeyListener;
 
-    DECL_LINK(eventListenerHandler, ::VclSimpleEvent&, void);
+    DECL_LINK_TYPED(eventListenerHandler, ::VclSimpleEvent&, void);
 
-    DECL_LINK(keyListenerHandler, ::VclWindowEvent&, bool);
+    DECL_LINK_TYPED(keyListenerHandler, ::VclWindowEvent&, bool);
 
     void callTopWindowListeners(
         ::VclSimpleEvent const * pEvent,
@@ -212,122 +193,149 @@ protected:
 public:
 
     VCLXToolkit();
+    virtual ~VCLXToolkit();
 
     // css::awt::XToolkitExperimental
-    virtual void SAL_CALL processEventsToIdle() override;
+    virtual void SAL_CALL processEventsToIdle()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int64 SAL_CALL getOpenGLBufferSwapCounter() override;
+    virtual sal_Int64 SAL_CALL getOpenGLBufferSwapCounter()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setDeterministicScheduling(sal_Bool bDeterministicMode) override;
-
-    virtual void SAL_CALL pause(sal_Int32 nMilliseconds) override;
+    virtual void SAL_CALL setDeterministicScheduling(sal_Bool bDeterministicMode)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XToolkit
-    css::uno::Reference< css::awt::XWindowPeer >  SAL_CALL getDesktopWindow(  ) override;
-    css::awt::Rectangle                                        SAL_CALL getWorkArea(  ) override;
-    css::uno::Reference< css::awt::XWindowPeer >  SAL_CALL createWindow( const css::awt::WindowDescriptor& Descriptor ) override;
-    css::uno::Sequence< css::uno::Reference< css::awt::XWindowPeer > > SAL_CALL createWindows( const css::uno::Sequence< css::awt::WindowDescriptor >& Descriptors ) override;
-    css::uno::Reference< css::awt::XDevice >      SAL_CALL createScreenCompatibleDevice( sal_Int32 Width, sal_Int32 Height ) override;
-    css::uno::Reference< css::awt::XRegion >      SAL_CALL createRegion(  ) override;
+    css::uno::Reference< css::awt::XWindowPeer >  SAL_CALL getDesktopWindow(  ) throw(css::uno::RuntimeException, std::exception) override;
+    css::awt::Rectangle                                        SAL_CALL getWorkArea(  ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::awt::XWindowPeer >  SAL_CALL createWindow( const css::awt::WindowDescriptor& Descriptor ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< css::uno::Reference< css::awt::XWindowPeer > > SAL_CALL createWindows( const css::uno::Sequence< css::awt::WindowDescriptor >& Descriptors ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::awt::XDevice >      SAL_CALL createScreenCompatibleDevice( sal_Int32 Width, sal_Int32 Height ) throw
+(css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::awt::XRegion >      SAL_CALL createRegion(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XSystemChildFactory
-    css::uno::Reference< css::awt::XWindowPeer > SAL_CALL createSystemChild( const css::uno::Any& Parent, const css::uno::Sequence< sal_Int8 >& ProcessId, sal_Int16 SystemType ) override;
+    css::uno::Reference< css::awt::XWindowPeer > SAL_CALL createSystemChild( const css::uno::Any& Parent, const css::uno::Sequence< sal_Int8 >& ProcessId, sal_Int16 SystemType ) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XMessageBoxFactory
-    virtual css::uno::Reference< css::awt::XMessageBox > SAL_CALL createMessageBox( const css::uno::Reference< css::awt::XWindowPeer >& aParent, css::awt::MessageBoxType eType, ::sal_Int32 aButtons, const OUString& aTitle, const OUString& aMessage ) override;
+    virtual css::uno::Reference< css::awt::XMessageBox > SAL_CALL createMessageBox( const css::uno::Reference< css::awt::XWindowPeer >& aParent, css::awt::MessageBoxType eType, ::sal_Int32 aButtons, const OUString& aTitle, const OUString& aMessage ) throw (css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XDataTransfer
-    css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL getDragGestureRecognizer( const css::uno::Reference< css::awt::XWindow >& window ) override;
-    css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL getDragSource( const css::uno::Reference< css::awt::XWindow >& window ) override;
-    css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL getDropTarget( const css::uno::Reference< css::awt::XWindow >& window ) override;
-    css::uno::Reference< css::datatransfer::clipboard::XClipboard > SAL_CALL getClipboard( const OUString& clipboardName ) override;
+    css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL getDragGestureRecognizer( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL getDragSource( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL getDropTarget( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Reference< css::datatransfer::clipboard::XClipboard > SAL_CALL getClipboard( const OUString& clipboardName ) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::lang::XServiceInfo
-    OUString SAL_CALL getImplementationName(  ) override;
-    sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XExtendedToolkit:
 
-    virtual ::sal_Int32 SAL_CALL getTopWindowCount() override;
+    virtual ::sal_Int32 SAL_CALL getTopWindowCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::awt::XTopWindow >
-    SAL_CALL getTopWindow(::sal_Int32 nIndex) override;
+    SAL_CALL getTopWindow(::sal_Int32 nIndex)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::awt::XTopWindow >
-    SAL_CALL getActiveTopWindow() override;
+    SAL_CALL getActiveTopWindow()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addTopWindowListener(
         css::uno::Reference<
-        css::awt::XTopWindowListener > const & rListener) override;
+        css::awt::XTopWindowListener > const & rListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeTopWindowListener(
         css::uno::Reference<
-        css::awt::XTopWindowListener > const & rListener) override;
+        css::awt::XTopWindowListener > const & rListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addKeyHandler(
         css::uno::Reference<
-        css::awt::XKeyHandler > const & rHandler) override;
+        css::awt::XKeyHandler > const & rHandler)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeKeyHandler(
         css::uno::Reference<
-        css::awt::XKeyHandler > const & rHandler) override;
+        css::awt::XKeyHandler > const & rHandler)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addFocusListener(
         css::uno::Reference<
-        css::awt::XFocusListener > const & rListener) override;
+        css::awt::XFocusListener > const & rListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeFocusListener(
         css::uno::Reference<
-        css::awt::XFocusListener > const & rListener) override;
+        css::awt::XFocusListener > const & rListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL fireFocusGained(
         css::uno::Reference<
-        css::uno::XInterface > const & source) override;
+        css::uno::XInterface > const & source)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL fireFocusLost(
         css::uno::Reference<
-        css::uno::XInterface > const & source) override;
+        css::uno::XInterface > const & source)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XReschedule:
-    virtual void SAL_CALL reschedule() override;
+    virtual void SAL_CALL reschedule()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // css:awt:XToolkitRobot
-    virtual void SAL_CALL keyPress( const css::awt::KeyEvent & aKeyEvent ) override;
+    virtual void SAL_CALL keyPress( const css::awt::KeyEvent & aKeyEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL keyRelease( const css::awt::KeyEvent & aKeyEvent ) override;
+    virtual void SAL_CALL keyRelease( const css::awt::KeyEvent & aKeyEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mousePress( const css::awt::MouseEvent & aMouseEvent ) override;
+    virtual void SAL_CALL mousePress( const css::awt::MouseEvent & aMouseEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseRelease( const css::awt::MouseEvent & aMouseEvent ) override;
+    virtual void SAL_CALL mouseRelease( const css::awt::MouseEvent & aMouseEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseMove( const css::awt::MouseEvent & aMouseEvent ) override;
+    virtual void SAL_CALL mouseMove( const css::awt::MouseEvent & aMouseEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
-WinBits ImplGetWinBits( sal_uInt32 nComponentAttribs, WindowType nCompType )
+WinBits ImplGetWinBits( sal_uInt32 nComponentAttribs, sal_uInt16 nCompType )
 {
     WinBits nWinBits = 0;
 
     bool bMessBox = false;
-    if ( ( nCompType == WindowType::INFOBOX ) ||
-         ( nCompType == WindowType::MESSBOX ) ||
-         ( nCompType == WindowType::QUERYBOX ) ||
-         ( nCompType == WindowType::WARNINGBOX ) ||
-         ( nCompType == WindowType::ERRORBOX ) )
+    if ( ( nCompType == WINDOW_INFOBOX ) ||
+         ( nCompType == WINDOW_MESSBOX ) ||
+         ( nCompType == WINDOW_QUERYBOX ) ||
+         ( nCompType == WINDOW_WARNINGBOX ) ||
+         ( nCompType == WINDOW_ERRORBOX ) )
     {
         bMessBox = true;
     }
 
     bool bDecoratedWindow = false;
     if  (   bMessBox
-        ||  ( nCompType == WindowType::DIALOG )
-        ||  ( nCompType == WindowType::MODELESSDIALOG )
-        ||  ( nCompType == WindowType::MODALDIALOG )
-        ||  ( nCompType == WindowType::DOCKINGWINDOW )
-        ||  ( nCompType == WindowType::TABDIALOG )
-        ||  ( nCompType == WindowType::BUTTONDIALOG )
-        ||  ( nCompType == WindowType::SYSTEMCHILDWINDOW )
+        ||  ( nCompType == WINDOW_DIALOG )
+        ||  ( nCompType == WINDOW_MODELESSDIALOG )
+        ||  ( nCompType == WINDOW_MODALDIALOG )
+        ||  ( nCompType == WINDOW_SYSTEMDIALOG )
+        ||  ( nCompType == WINDOW_PATHDIALOG )
+        ||  ( nCompType == WINDOW_FILEDIALOG )
+        ||  ( nCompType == WINDOW_PRINTERSETUPDIALOG )
+        ||  ( nCompType == WINDOW_PRINTDIALOG )
+        ||  ( nCompType == WINDOW_COLORDIALOG )
+        ||  ( nCompType == WINDOW_FONTDIALOG )
+        ||  ( nCompType == WINDOW_DOCKINGWINDOW )
+        ||  ( nCompType == WINDOW_TABDIALOG )
+        ||  ( nCompType == WINDOW_BUTTONDIALOG )
+        ||  ( nCompType == WINDOW_SYSTEMCHILDWINDOW )
         )
     {
         bDecoratedWindow = true;
@@ -394,7 +402,7 @@ WinBits ImplGetWinBits( sal_uInt32 nComponentAttribs, WindowType nCompType )
         if( nComponentAttribs & css::awt::VclWindowPeerAttribute::DEF_NO )
             nWinBits |= WB_DEF_NO;
     }
-    if ( nCompType == WindowType::MULTILINEEDIT || nCompType == WindowType::DIALOG || nCompType == WindowType::GROUPBOX )
+    if ( nCompType == WINDOW_MULTILINEEDIT || nCompType == WINDOW_DIALOG || nCompType == WINDOW_GROUPBOX )
     {
         if( nComponentAttribs & css::awt::VclWindowPeerAttribute::AUTOHSCROLL )
             nWinBits |= WB_AUTOHSCROLL;
@@ -428,72 +436,72 @@ struct ComponentInfo
 
 static ComponentInfo aComponentInfos [] =
 {
-    { "buttondialog",       WindowType::BUTTONDIALOG },
-    { "cancelbutton",       WindowType::CANCELBUTTON },
-    { "checkbox",           WindowType::CHECKBOX },
-    { "combobox",           WindowType::COMBOBOX },
-    { "control",            WindowType::CONTROL },
-    { "currencybox",        WindowType::CURRENCYBOX },
-    { "currencyfield",      WindowType::CURRENCYFIELD },
-    { "datebox",            WindowType::DATEBOX },
-    { "datefield",          WindowType::DATEFIELD },
-    { "dialog",             WindowType::DIALOG },
-    { "dockingarea",        WindowType::DOCKINGAREA },
-    { "dockingwindow",      WindowType::DOCKINGWINDOW },
-    { "edit",               WindowType::EDIT },
-    { "errorbox",           WindowType::ERRORBOX },
-    { "fixedbitmap",        WindowType::FIXEDBITMAP },
-    { "fixedimage",         WindowType::FIXEDIMAGE },
-    { "fixedline",          WindowType::FIXEDLINE },
-    { "fixedtext",          WindowType::FIXEDTEXT },
-    { "floatingwindow",     WindowType::FLOATINGWINDOW },
-    { "framewindow",        WindowType::TOOLKIT_FRAMEWINDOW },
-    { "groupbox",           WindowType::GROUPBOX },
-    { "frame",              WindowType::GROUPBOX },
-    { "helpbutton",         WindowType::HELPBUTTON },
-    { "imagebutton",        WindowType::IMAGEBUTTON },
-    { "infobox",            WindowType::INFOBOX },
-    { "listbox",            WindowType::LISTBOX },
-    { "longcurrencybox",    WindowType::LONGCURRENCYBOX },
-    { "longcurrencyfield",  WindowType::LONGCURRENCYFIELD },
-    { "menubutton",         WindowType::MENUBUTTON },
-    { "messbox",            WindowType::MESSBOX },
-    { "metricbox",          WindowType::METRICBOX },
-    { "metricfield",        WindowType::METRICFIELD },
-    { "modaldialog",        WindowType::MODALDIALOG },
-    { "modelessdialog",     WindowType::MODELESSDIALOG },
-    { "morebutton",         WindowType::MOREBUTTON },
-    { "multilineedit",      WindowType::MULTILINEEDIT },
-    { "multilistbox",       WindowType::MULTILISTBOX },
-    { "numericbox",         WindowType::NUMERICBOX },
-    { "numericfield",       WindowType::NUMERICFIELD },
-    { "okbutton",           WindowType::OKBUTTON },
-    { "patternbox",         WindowType::PATTERNBOX },
-    { "patternfield",       WindowType::PATTERNFIELD },
-    { "pushbutton",         WindowType::PUSHBUTTON },
-    { "querybox",           WindowType::QUERYBOX },
-    { "radiobutton",        WindowType::RADIOBUTTON },
-    { "scrollbar",          WindowType::SCROLLBAR },
-    { "scrollbarbox",       WindowType::SCROLLBARBOX },
-    { "animatedimages",     WindowType::CONTROL },
-    { "spinbutton",         WindowType::SPINBUTTON },
-    { "spinfield",          WindowType::SPINFIELD },
-    { "splitter",           WindowType::SPLITTER },
-    { "splitwindow",        WindowType::SPLITWINDOW },
-    { "statusbar",          WindowType::STATUSBAR },
-    { "systemchildwindow",  WindowType::TOOLKIT_SYSTEMCHILDWINDOW },
-    { "tabcontrol",         WindowType::TABCONTROL },
-    { "tabdialog",          WindowType::TABDIALOG },
-    { "tabpage",            WindowType::TABPAGE },
-    { "timebox",            WindowType::TIMEBOX },
-    { "timefield",          WindowType::TIMEFIELD },
-    { "toolbox",            WindowType::TOOLBOX },
-    { "tristatebox",        WindowType::TRISTATEBOX },
-    { "warningbox",         WindowType::WARNINGBOX },
-    { "window",             WindowType::WINDOW },
-    { "workwindow",         WindowType::WORKWINDOW },
-    { "tabpagecontainer",   WindowType::CONTROL },
-    { "tabpagemodel",       WindowType::TABPAGE }
+    { "buttondialog",       WINDOW_BUTTONDIALOG },
+    { "cancelbutton",       WINDOW_CANCELBUTTON },
+    { "checkbox",           WINDOW_CHECKBOX },
+    { "combobox",           WINDOW_COMBOBOX },
+    { "control",            WINDOW_CONTROL },
+    { "currencybox",        WINDOW_CURRENCYBOX },
+    { "currencyfield",      WINDOW_CURRENCYFIELD },
+    { "datebox",            WINDOW_DATEBOX },
+    { "datefield",          WINDOW_DATEFIELD },
+    { "dialog",             WINDOW_DIALOG },
+    { "dockingarea",        WINDOW_DOCKINGAREA },
+    { "dockingwindow",      WINDOW_DOCKINGWINDOW },
+    { "edit",               WINDOW_EDIT },
+    { "errorbox",           WINDOW_ERRORBOX },
+    { "fixedbitmap",        WINDOW_FIXEDBITMAP },
+    { "fixedimage",         WINDOW_FIXEDIMAGE },
+    { "fixedline",          WINDOW_FIXEDLINE },
+    { "fixedtext",          WINDOW_FIXEDTEXT },
+    { "floatingwindow",     WINDOW_FLOATINGWINDOW },
+    { "framewindow",        VCLWINDOW_FRAMEWINDOW },
+    { "groupbox",           WINDOW_GROUPBOX },
+    { "frame",          WINDOW_GROUPBOX },
+    { "helpbutton",         WINDOW_HELPBUTTON },
+    { "imagebutton",        WINDOW_IMAGEBUTTON },
+    { "infobox",            WINDOW_INFOBOX },
+    { "listbox",            WINDOW_LISTBOX },
+    { "longcurrencybox",    WINDOW_LONGCURRENCYBOX },
+    { "longcurrencyfield",  WINDOW_LONGCURRENCYFIELD },
+    { "menubutton",         WINDOW_MENUBUTTON },
+    { "messbox",            WINDOW_MESSBOX },
+    { "metricbox",          WINDOW_METRICBOX },
+    { "metricfield",        WINDOW_METRICFIELD },
+    { "modaldialog",        WINDOW_MODALDIALOG },
+    { "modelessdialog",     WINDOW_MODELESSDIALOG },
+    { "morebutton",         WINDOW_MOREBUTTON },
+    { "multilineedit",      WINDOW_MULTILINEEDIT },
+    { "multilistbox",       WINDOW_MULTILISTBOX },
+    { "numericbox",         WINDOW_NUMERICBOX },
+    { "numericfield",       WINDOW_NUMERICFIELD },
+    { "okbutton",           WINDOW_OKBUTTON },
+    { "patternbox",         WINDOW_PATTERNBOX },
+    { "patternfield",       WINDOW_PATTERNFIELD },
+    { "pushbutton",         WINDOW_PUSHBUTTON },
+    { "querybox",           WINDOW_QUERYBOX },
+    { "radiobutton",        WINDOW_RADIOBUTTON },
+    { "scrollbar",          WINDOW_SCROLLBAR },
+    { "scrollbarbox",       WINDOW_SCROLLBARBOX },
+    { "animatedimages",     WINDOW_CONTROL },
+    { "spinbutton",         WINDOW_SPINBUTTON },
+    { "spinfield",          WINDOW_SPINFIELD },
+    { "splitter",           WINDOW_SPLITTER },
+    { "splitwindow",        WINDOW_SPLITWINDOW },
+    { "statusbar",          WINDOW_STATUSBAR },
+    { "systemchildwindow",  VCLWINDOW_SYSTEMCHILDWINDOW },
+    { "tabcontrol",         WINDOW_TABCONTROL },
+    { "tabdialog",          WINDOW_TABDIALOG },
+    { "tabpage",            WINDOW_TABPAGE },
+    { "timebox",            WINDOW_TIMEBOX },
+    { "timefield",          WINDOW_TIMEFIELD },
+    { "toolbox",            WINDOW_TOOLBOX },
+    { "tristatebox",        WINDOW_TRISTATEBOX },
+    { "warningbox",         WINDOW_WARNINGBOX },
+    { "window",             WINDOW_WINDOW },
+    { "workwindow",         WINDOW_WORKWINDOW },
+    { "tabpagecontainer",   WINDOW_CONTROL },
+    { "tabpagemodel",       WINDOW_TABPAGE }
 };
 
 extern "C"
@@ -505,7 +513,7 @@ static int SAL_CALL ComponentInfoCompare( const void* pFirst, const void* pSecon
 }
 }
 
-WindowType ImplGetComponentType( const OUString& rServiceName )
+sal_uInt16 ImplGetComponentType( const OUString& rServiceName )
 {
     static bool bSorted = false;
     if( !bSorted )
@@ -531,7 +539,7 @@ WindowType ImplGetComponentType( const OUString& rServiceName )
                         sizeof( ComponentInfo ),
                         ComponentInfoCompare ));
 
-    return pInf ? pInf->nWinType : WindowType::NONE;
+    return pInf ? pInf->nWinType : 0;
 }
 
 
@@ -551,7 +559,7 @@ namespace
         { css::awt::MessageBoxType_WARNINGBOX,      RTL_CONSTASCII_STRINGPARAM("warningbox") },
         { css::awt::MessageBoxType_ERRORBOX,        RTL_CONSTASCII_STRINGPARAM("errorbox") },
         { css::awt::MessageBoxType_QUERYBOX,        RTL_CONSTASCII_STRINGPARAM("querybox") },
-        { css::awt::MessageBoxType::MessageBoxType_MAKE_FIXED_SIZE, nullptr, 0 }
+        { css::awt::MessageBoxType_MAKE_FIXED_SIZE, nullptr, 0 }
     };
 
     bool lcl_convertMessageBoxType(
@@ -559,7 +567,7 @@ namespace
         css::awt::MessageBoxType eType )
     {
         const MessageBoxTypeInfo *pMap = aMessageBoxTypeInfo;
-        css::awt::MessageBoxType eVal = css::awt::MessageBoxType::MessageBoxType_MAKE_FIXED_SIZE;
+        css::awt::MessageBoxType eVal = css::awt::MessageBoxType_MAKE_FIXED_SIZE;
 
         while ( pMap->pName )
         {
@@ -572,7 +580,7 @@ namespace
             pMap++;
         }
 
-        return ( eVal != css::awt::MessageBoxType::MessageBoxType_MAKE_FIXED_SIZE );
+        return ( eVal != css::awt::MessageBoxType_MAKE_FIXED_SIZE );
     }
 }
 
@@ -691,6 +699,11 @@ VCLXToolkit::VCLXToolkit():
     }
 }
 
+VCLXToolkit::~VCLXToolkit()
+{
+}
+
+
 void SAL_CALL VCLXToolkit::disposing()
 {
 #ifndef DISABLE_DYNLOADING
@@ -733,17 +746,17 @@ void SAL_CALL VCLXToolkit::disposing()
 }
 
 
-css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::getDesktopWindow(  )
+css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::getDesktopWindow(  ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::awt::XWindowPeer > xRef;
     // 07/00: AppWindow doesn't exist anymore...
     return xRef;
 }
 
-css::awt::Rectangle VCLXToolkit::getWorkArea(  )
+css::awt::Rectangle VCLXToolkit::getWorkArea(  ) throw(css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nDisplay = Application::GetDisplayBuiltInScreen();
-    tools::Rectangle aWorkRect = Application::GetScreenPosSizePixel( nDisplay );
+    Rectangle aWorkRect = Application::GetScreenPosSizePixel( nDisplay );
     css::awt::Rectangle aNotherRect;
     aNotherRect.X = aWorkRect.getX();
     aNotherRect.Y = aWorkRect.getY();
@@ -752,12 +765,12 @@ css::awt::Rectangle VCLXToolkit::getWorkArea(  )
     return aNotherRect;
 }
 
-css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::createWindow( const css::awt::WindowDescriptor& rDescriptor )
+css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::createWindow( const css::awt::WindowDescriptor& rDescriptor ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     return ImplCreateWindow( rDescriptor, WinBits(0) );
 }
 
-css::uno::Reference< css::awt::XDevice > VCLXToolkit::createScreenCompatibleDevice( sal_Int32 Width, sal_Int32 Height )
+css::uno::Reference< css::awt::XDevice > VCLXToolkit::createScreenCompatibleDevice( sal_Int32 Width, sal_Int32 Height ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -774,7 +787,7 @@ css::uno::Reference< css::awt::XDevice > VCLXToolkit::createScreenCompatibleDevi
     return xRef;
 }
 
-css::uno::Reference< css::awt::XRegion > VCLXToolkit::createRegion(  )
+css::uno::Reference< css::awt::XRegion > VCLXToolkit::createRegion(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -789,8 +802,8 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
     OUString aServiceName( rDescriptor.WindowServiceName );
     aServiceName = aServiceName.toAsciiLowerCase();
 
-    VclPtr<vcl::Window> pNewWindow;
-    WindowType nType = ImplGetComponentType( aServiceName );
+    vcl::Window* pNewWindow = nullptr;
+    sal_uInt16 nType = ImplGetComponentType( aServiceName );
     bool bFrameControl = false;
     if ( aServiceName == "frame" )
         bFrameControl = true;
@@ -804,19 +817,19 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
         // Wenn die Component einen Parent braucht, dann NULL zurueckgeben,
         // spaeter mal css::uno::Exception...
         bool bException = true;
-        if  (   ( nType == WindowType::DIALOG )
-            ||  ( nType == WindowType::MODALDIALOG )
-            ||  ( nType == WindowType::MODELESSDIALOG )
-            ||  ( nType == WindowType::MESSBOX )
-            ||  ( nType == WindowType::INFOBOX )
-            ||  ( nType == WindowType::WARNINGBOX )
-            ||  ( nType == WindowType::ERRORBOX )
-            ||  ( nType == WindowType::QUERYBOX )
+        if  (   ( nType == WINDOW_DIALOG )
+            ||  ( nType == WINDOW_MODALDIALOG )
+            ||  ( nType == WINDOW_MODELESSDIALOG )
+            ||  ( nType == WINDOW_MESSBOX )
+            ||  ( nType == WINDOW_INFOBOX )
+            ||  ( nType == WINDOW_WARNINGBOX )
+            ||  ( nType == WINDOW_ERRORBOX )
+            ||  ( nType == WINDOW_QUERYBOX )
             )
             bException = false;
-        else if ( ( nType == WindowType::WINDOW ) ||
-                  ( nType == WindowType::WORKWINDOW ) ||
-                  ( nType == WindowType::TOOLKIT_FRAMEWINDOW ) )
+        else if ( ( nType == WINDOW_WINDOW ) ||
+                  ( nType == WINDOW_WORKWINDOW ) ||
+                  ( nType == VCLWINDOW_FRAMEWINDOW ) )
         {
             if ( rDescriptor.Type == css::awt::WindowClass_TOP )
                 bException = false;
@@ -829,132 +842,132 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
         }
     }
 
-    if ( nType != WindowType::NONE )
+    if ( nType )
     {
         SolarMutexGuard aVclGuard;
-        switch ( nType )
+        switch ( (WindowType)nType )
         {
-            case WindowType::CANCELBUTTON:
+            case WINDOW_CANCELBUTTON:
                 pNewWindow = VclPtr<CancelButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::CHECKBOX:
+            case WINDOW_CHECKBOX:
                  pNewWindow = VclPtr<CheckBox>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXCheckBox;
             break;
-            case WindowType::COMBOBOX:
+            case WINDOW_COMBOBOX:
                 pNewWindow = VclPtr<ComboBox>::Create( pParent, nWinBits|WB_AUTOHSCROLL );
-                static_cast<ComboBox*>(pNewWindow.get())->EnableAutoSize( false );
+                static_cast<ComboBox*>(pNewWindow)->EnableAutoSize( false );
                 *ppNewComp = new VCLXComboBox;
             break;
-            case WindowType::CURRENCYBOX:
+            case WINDOW_CURRENCYBOX:
                 pNewWindow = VclPtr<CurrencyBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::CURRENCYFIELD:
+            case WINDOW_CURRENCYFIELD:
                 pNewWindow = VclPtr<CurrencyField>::Create( pParent, nWinBits );
-                static_cast<CurrencyField*>(pNewWindow.get())->EnableEmptyFieldValue( true );
+                static_cast<CurrencyField*>(pNewWindow)->EnableEmptyFieldValue( true );
                 *ppNewComp = new VCLXNumericField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<CurrencyField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<CurrencyField*>(pNewWindow)) );
             break;
-            case WindowType::DATEBOX:
+            case WINDOW_DATEBOX:
                 pNewWindow = VclPtr<DateBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::DATEFIELD:
+            case WINDOW_DATEFIELD:
                 pNewWindow = VclPtr<DateField>::Create( pParent, nWinBits );
-                static_cast<DateField*>(pNewWindow.get())->EnableEmptyFieldValue( true );
+                static_cast<DateField*>(pNewWindow)->EnableEmptyFieldValue( true );
                 *ppNewComp = new VCLXDateField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<DateField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<DateField*>(pNewWindow)) );
             break;
-            case WindowType::DOCKINGAREA:
+            case WINDOW_DOCKINGAREA:
                 pNewWindow = VclPtr<DockingAreaWindow>::Create( pParent );
             break;
-            case WindowType::MULTILINEEDIT:
-            case WindowType::EDIT:
+            case WINDOW_MULTILINEEDIT:
+            case WINDOW_EDIT:
                 pNewWindow = VclPtr<Edit>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXEdit;
             break;
-            case WindowType::ERRORBOX:
+            case WINDOW_ERRORBOX:
                 pNewWindow = VclPtr<ErrorBox>::Create( pParent, nWinBits, OUString() );
                 *ppNewComp = new VCLXMessageBox;
             break;
-            case WindowType::FIXEDBITMAP:
+            case WINDOW_FIXEDBITMAP:
                 pNewWindow = VclPtr<FixedBitmap>::Create( pParent, nWinBits );
             break;
-            case WindowType::FIXEDIMAGE:
+            case WINDOW_FIXEDIMAGE:
                 pNewWindow = VclPtr<ImageControl>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXImageControl;
             break;
-            case WindowType::FIXEDLINE:
+            case WINDOW_FIXEDLINE:
                 pNewWindow = VclPtr<FixedLine>::Create( pParent, nWinBits );
             break;
-            case WindowType::FIXEDTEXT:
+            case WINDOW_FIXEDTEXT:
                 pNewWindow = VclPtr<FixedText>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXFixedText;
             break;
-            case WindowType::FLOATINGWINDOW:
+            case WINDOW_FLOATINGWINDOW:
                 pNewWindow = VclPtr<FloatingWindow>::Create( pParent, nWinBits );
             break;
-            case WindowType::GROUPBOX:
+            case WINDOW_GROUPBOX:
                 pNewWindow = VclPtr<GroupBox>::Create( pParent, nWinBits );
                 if ( bFrameControl )
                 {
-                    GroupBox* pGroupBox =  static_cast< GroupBox* >( pNewWindow.get() );
+                    GroupBox* pGroupBox =  static_cast< GroupBox* >( pNewWindow );
                     *ppNewComp = new VCLXFrame;
                     // Frame control needs to receive
                     // Mouse events
                 pGroupBox->SetMouseTransparent( false );
                 }
             break;
-            case WindowType::HELPBUTTON:
+            case WINDOW_HELPBUTTON:
                 pNewWindow = VclPtr<HelpButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::IMAGEBUTTON:
+            case WINDOW_IMAGEBUTTON:
                  pNewWindow = VclPtr<ImageButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::INFOBOX:
+            case WINDOW_INFOBOX:
                 pNewWindow = VclPtr<InfoBox>::Create( pParent, OUString() );
                 *ppNewComp = new VCLXMessageBox;
             break;
-            case WindowType::LISTBOX:
+            case WINDOW_LISTBOX:
                 pNewWindow = VclPtr<ListBox>::Create( pParent, nWinBits|WB_SIMPLEMODE|WB_AUTOHSCROLL );
-                static_cast<ListBox*>(pNewWindow.get())->EnableAutoSize( false );
+                static_cast<ListBox*>(pNewWindow)->EnableAutoSize( false );
                 *ppNewComp = new VCLXListBox;
             break;
-            case WindowType::LONGCURRENCYBOX:
+            case WINDOW_LONGCURRENCYBOX:
                 pNewWindow = VclPtr<LongCurrencyBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::LONGCURRENCYFIELD:
+            case WINDOW_LONGCURRENCYFIELD:
                 pNewWindow = VclPtr<LongCurrencyField>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXCurrencyField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<LongCurrencyField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<LongCurrencyField*>(pNewWindow)) );
             break;
-            case WindowType::MENUBUTTON:
+            case WINDOW_MENUBUTTON:
                 pNewWindow = VclPtr<MenuButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::MESSBOX:
+            case WINDOW_MESSBOX:
                 pNewWindow = VclPtr<MessBox>::Create( pParent, nWinBits, OUString(), OUString() );
                 *ppNewComp = new VCLXMessageBox;
             break;
-            case WindowType::METRICBOX:
+            case WINDOW_METRICBOX:
                 pNewWindow = VclPtr<MetricBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::METRICFIELD:
+            case WINDOW_METRICFIELD:
                 pNewWindow = VclPtr<MetricField>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXMetricField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<MetricField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<MetricField*>(pNewWindow)) );
             break;
-            case WindowType::DIALOG:
-            case WindowType::MODALDIALOG:
-            case WindowType::MODELESSDIALOG:
+            case WINDOW_DIALOG:
+            case WINDOW_MODALDIALOG:
+            case WINDOW_MODELESSDIALOG:
             {
-                // Modal/Modeless only via Show/Execute
+                // Modal/Modeless nur durch Show/Execute
                 if ( (pParent == nullptr ) && ( rDescriptor.ParentIndex == -1 ) )
-                    pNewWindow = VclPtr<toolkit::ScrollableDialog>::Create( nullptr, nWinBits, Dialog::InitFlag::NoParent );
+                    pNewWindow = VclPtr<toolkit::ScrollableWrapper<Dialog>>::Create( nullptr, nWinBits, Dialog::InitFlag::NoParent );
                 else
-                    pNewWindow = VclPtr<toolkit::ScrollableDialog>::Create( pParent, nWinBits );
+                    pNewWindow = VclPtr<toolkit::ScrollableWrapper<Dialog>>::Create( pParent, nWinBits );
                 // #i70217# Don't always create a new component object. It's possible that VCL has called
                 // GetComponentInterface( sal_True ) in the Dialog ctor itself (see Window::IsTopWindow() )
                 // which creates a component object.
@@ -965,44 +978,44 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
                     *ppNewComp = new VCLXDialog;
             }
             break;
-            case WindowType::MOREBUTTON:
+            case WINDOW_MOREBUTTON:
                 pNewWindow = VclPtr<MoreButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::MULTILISTBOX:
+            case WINDOW_MULTILISTBOX:
                 pNewWindow = VclPtr<MultiListBox>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXListBox;
             break;
-            case WindowType::NUMERICBOX:
+            case WINDOW_NUMERICBOX:
                 pNewWindow = VclPtr<NumericBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::NUMERICFIELD:
+            case WINDOW_NUMERICFIELD:
                 pNewWindow = VclPtr<NumericField>::Create( pParent, nWinBits );
-                static_cast<NumericField*>(pNewWindow.get())->EnableEmptyFieldValue( true );
+                static_cast<NumericField*>(pNewWindow)->EnableEmptyFieldValue( true );
                 *ppNewComp = new VCLXNumericField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<NumericField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<NumericField*>(pNewWindow)) );
             break;
-            case WindowType::OKBUTTON:
+            case WINDOW_OKBUTTON:
                 pNewWindow = VclPtr<OKButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::PATTERNBOX:
+            case WINDOW_PATTERNBOX:
                 pNewWindow = VclPtr<PatternBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::PATTERNFIELD:
+            case WINDOW_PATTERNFIELD:
                 pNewWindow = VclPtr<PatternField>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXPatternField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<PatternField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<PatternField*>(pNewWindow)) );
             break;
-            case WindowType::PUSHBUTTON:
+            case WINDOW_PUSHBUTTON:
                 pNewWindow = VclPtr<PushButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXButton;
             break;
-            case WindowType::QUERYBOX:
+            case WINDOW_QUERYBOX:
                 pNewWindow = VclPtr<QueryBox>::Create( pParent, nWinBits, OUString() );
                 *ppNewComp = new VCLXMessageBox;
             break;
-            case WindowType::RADIOBUTTON:
+            case WINDOW_RADIOBUTTON:
                 pNewWindow = VclPtr<RadioButton>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXRadioButton;
 
@@ -1015,76 +1028,76 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
                 // is not really valid: the controls are grouped after they have been created, but we're still in
                 // the creation process, so the RadioButton::Check relies on invalid grouping information.
                 // 07.08.2001 - #87254# - frank.schoenheit@sun.com
-                static_cast<RadioButton*>(pNewWindow.get())->EnableRadioCheck( false );
+                static_cast<RadioButton*>(pNewWindow)->EnableRadioCheck( false );
             break;
-            case WindowType::SCROLLBAR:
+            case WINDOW_SCROLLBAR:
                 pNewWindow = VclPtr<ScrollBar>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXScrollBar;
             break;
-            case WindowType::SCROLLBARBOX:
+            case WINDOW_SCROLLBARBOX:
                 pNewWindow = VclPtr<ScrollBarBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::SPINBUTTON:
+            case WINDOW_SPINBUTTON:
                 pNewWindow = VclPtr<SpinButton>::Create( pParent, nWinBits );
                 *ppNewComp = new ::toolkit::VCLXSpinButton;
             break;
-            case WindowType::SPINFIELD:
+            case WINDOW_SPINFIELD:
                 pNewWindow = VclPtr<SpinField>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXNumericField;
             break;
-            case WindowType::SPLITTER:
+            case WINDOW_SPLITTER:
                 pNewWindow = VclPtr<Splitter>::Create( pParent, nWinBits );
             break;
-            case WindowType::SPLITWINDOW:
+            case WINDOW_SPLITWINDOW:
                 pNewWindow = VclPtr<SplitWindow>::Create( pParent, nWinBits );
             break;
-            case WindowType::STATUSBAR:
+            case WINDOW_STATUSBAR:
                 pNewWindow = VclPtr<StatusBar>::Create( pParent, nWinBits );
             break;
-            case WindowType::TOOLKIT_SYSTEMCHILDWINDOW:
+            case VCLWINDOW_SYSTEMCHILDWINDOW:
                 pNewWindow = VclPtr<SystemChildWindow>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXSystemDependentWindow();
             break;
-            case WindowType::TABCONTROL:
+            case WINDOW_TABCONTROL:
                 pNewWindow = VclPtr<TabControl>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXMultiPage;
             break;
-            case WindowType::TABDIALOG:
+            case WINDOW_TABDIALOG:
                 pNewWindow = VclPtr<TabDialog>::Create( pParent, nWinBits );
             break;
-            case WindowType::TABPAGE:
+            case WINDOW_TABPAGE:
                 {
                     pNewWindow = VclPtr<TabPage>::Create( pParent, nWinBits );
                     *ppNewComp = new VCLXTabPage;
                 }
             break;
-            case WindowType::TIMEBOX:
+            case WINDOW_TIMEBOX:
                 pNewWindow = VclPtr<TimeBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::TIMEFIELD:
+            case WINDOW_TIMEFIELD:
                 pNewWindow = VclPtr<TimeField>::Create( pParent, nWinBits );
-                static_cast<TimeField*>(pNewWindow.get())->EnableEmptyFieldValue( true );
+                static_cast<TimeField*>(pNewWindow)->EnableEmptyFieldValue( true );
                 *ppNewComp = new VCLXTimeField;
-                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<TimeField*>(pNewWindow.get())) );
+                static_cast<VCLXFormattedSpinField*>(*ppNewComp)->SetFormatter( static_cast<FormatterBase*>(static_cast<TimeField*>(pNewWindow)) );
             break;
-            case WindowType::TOOLBOX:
+            case WINDOW_TOOLBOX:
                 pNewWindow = VclPtr<ToolBox>::Create( pParent, nWinBits );
                 *ppNewComp = new VCLXToolBox;
             break;
-            case WindowType::TRISTATEBOX:
+            case WINDOW_TRISTATEBOX:
                 pNewWindow = VclPtr<TriStateBox>::Create( pParent, nWinBits );
             break;
-            case WindowType::WARNINGBOX:
+            case WINDOW_WARNINGBOX:
                 pNewWindow = VclPtr<WarningBox>::Create( pParent, nWinBits, OUString() );
                 *ppNewComp = new VCLXMessageBox;
             break;
-            case WindowType::WORKWINDOW:
-            case WindowType::WINDOW:
-            case WindowType::TOOLKIT_FRAMEWINDOW:
-            case WindowType::DOCKINGWINDOW:
+            case WINDOW_WORKWINDOW:
+            case WINDOW_WINDOW:
+            case VCLWINDOW_FRAMEWINDOW:
+            case WINDOW_DOCKINGWINDOW:
                 if ( rDescriptor.Type == css::awt::WindowClass_TOP )
                 {
-                    if (nType == WindowType::DOCKINGWINDOW )
+                    if (nType == WINDOW_DOCKINGWINDOW )
                         pNewWindow = VclPtr<DockingWindow>::Create( pParent, nWinBits );
                     else
                     {
@@ -1153,11 +1166,11 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
                             pNewWindow = VclPtr<WorkWindow>::Create( pParent, nWinBits );
                     }
 
-                    *ppNewComp = new VCLXTopWindow( pNewWindow->GetType() == WindowType::WORKWINDOW );
+                    *ppNewComp = new VCLXTopWindow( pNewWindow->GetType() == WINDOW_WORKWINDOW );
                 }
                 else if ( rDescriptor.Type == css::awt::WindowClass_CONTAINER )
                 {
-                    if (nType == WindowType::DOCKINGWINDOW )
+                    if (nType == WINDOW_DOCKINGWINDOW )
                         pNewWindow = VclPtr<DockingWindow>::Create( pParent, nWinBits );
                     else
                         pNewWindow = VclPtr<vcl::Window>::Create( pParent, nWinBits );
@@ -1165,14 +1178,14 @@ vcl::Window* VCLXToolkit::ImplCreateWindow( VCLXWindow** ppNewComp,
                 }
                 else
                 {
-                    if (nType == WindowType::DOCKINGWINDOW )
+                    if (nType == WINDOW_DOCKINGWINDOW )
                         pNewWindow = VclPtr<DockingWindow>::Create( pParent, nWinBits );
                     else
                         pNewWindow = VclPtr<vcl::Window>::Create( pParent, nWinBits );
                     *ppNewComp = new VCLXWindow;
                 }
             break;
-            case WindowType::CONTROL:
+            case WINDOW_CONTROL:
                 if ( rDescriptor.WindowServiceName.equalsIgnoreAsciiCase(
                         "tabpagecontainer" ) )
                 {
@@ -1214,7 +1227,7 @@ css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::ImplCreateWindow(
 
     css::uno::Reference< css::awt::XWindowPeer > xRef;
 
-    VclPtr<vcl::Window> pParent;
+    vcl::Window* pParent = nullptr;
     if ( rDescriptor.Parent.is() )
     {
         VCLXWindow* pParentComponent = VCLXWindow::GetImplementation( rDescriptor.Parent );
@@ -1282,7 +1295,7 @@ css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::ImplCreateWindow(
         }
         else if ( !VCLUnoHelper::IsZero( rDescriptor.Bounds ) )
         {
-            tools::Rectangle aRect = VCLRectangle( rDescriptor.Bounds );
+            Rectangle aRect = VCLRectangle( rDescriptor.Bounds );
             pNewWindow->SetPosSizePixel( aRect.TopLeft(), aRect.GetSize() );
         }
 
@@ -1307,7 +1320,7 @@ css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::ImplCreateWindow(
     return xRef;
 }
 
-css::uno::Sequence< css::uno::Reference< css::awt::XWindowPeer > > VCLXToolkit::createWindows( const css::uno::Sequence< css::awt::WindowDescriptor >& rDescriptors )
+css::uno::Sequence< css::uno::Reference< css::awt::XWindowPeer > > VCLXToolkit::createWindows( const css::uno::Sequence< css::awt::WindowDescriptor >& rDescriptors ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -1327,7 +1340,7 @@ css::uno::Sequence< css::uno::Reference< css::awt::XWindowPeer > > VCLXToolkit::
 }
 
 // css::awt::XSystemChildFactory
-css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::createSystemChild( const css::uno::Any& Parent, const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 nSystemType )
+css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::createSystemChild( const css::uno::Any& Parent, const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 nSystemType ) throw(css::uno::RuntimeException, std::exception)
 {
     VclPtr<vcl::Window> pChildWindow;
     if ( nSystemType == SYSTEM_DEPENDENT_TYPE )
@@ -1381,7 +1394,10 @@ css::uno::Reference< css::awt::XWindowPeer > VCLXToolkit::createSystemChild( con
             catch ( const css::uno::RuntimeException & rEx )
             {
                 // system child window could not be created
-                SAL_WARN("toolkit", "caught " << rEx.Message);
+                OSL_TRACE(
+                    "VCLXToolkit::createSystemChild: caught %s\n",
+                    OUStringToOString(
+                        rEx.Message, RTL_TEXTENCODING_UTF8).getStr());
                 pChildWindow.clear();
             }
         }
@@ -1410,7 +1426,7 @@ css::uno::Reference< css::awt::XMessageBox > SAL_CALL VCLXToolkit::createMessage
     css::awt::MessageBoxType eType,
     ::sal_Int32 aButtons,
     const OUString& aTitle,
-    const OUString& aMessage )
+    const OUString& aMessage ) throw (css::uno::RuntimeException, std::exception)
 {
     css::awt::WindowDescriptor aDescriptor;
 
@@ -1461,7 +1477,7 @@ css::uno::Reference< css::awt::XMessageBox > SAL_CALL VCLXToolkit::createMessage
     css::uno::Reference< css::awt::XWindow > xWindow( xMsgBox, css::uno::UNO_QUERY );
     if ( xMsgBox.is() && xWindow.is() )
     {
-        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+        vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pWindow )
         {
             SolarMutexGuard aGuard;
@@ -1473,11 +1489,11 @@ css::uno::Reference< css::awt::XMessageBox > SAL_CALL VCLXToolkit::createMessage
     return xMsgBox;
 }
 
-css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL VCLXToolkit::getDragGestureRecognizer( const css::uno::Reference< css::awt::XWindow >& window )
+css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL VCLXToolkit::getDragGestureRecognizer( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDragGestureRecognizer();
@@ -1485,11 +1501,11 @@ css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL V
     return css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer >();
 }
 
-css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL VCLXToolkit::getDragSource( const css::uno::Reference< css::awt::XWindow >& window )
+css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL VCLXToolkit::getDragSource( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDragSource();
@@ -1497,11 +1513,11 @@ css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL VCLXToolkit:
     return css::uno::Reference< css::datatransfer::dnd::XDragSource >();
 }
 
-css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL VCLXToolkit::getDropTarget( const css::uno::Reference< css::awt::XWindow >& window )
+css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL VCLXToolkit::getDropTarget( const css::uno::Reference< css::awt::XWindow >& window ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDropTarget();
@@ -1509,7 +1525,7 @@ css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL VCLXToolkit:
     return css::uno::Reference< css::datatransfer::dnd::XDropTarget >();
 }
 
-css::uno::Reference< css::datatransfer::clipboard::XClipboard > SAL_CALL VCLXToolkit::getClipboard( const OUString& clipboardName )
+css::uno::Reference< css::datatransfer::clipboard::XClipboard > SAL_CALL VCLXToolkit::getClipboard( const OUString& clipboardName ) throw(css::uno::RuntimeException, std::exception)
 {
     if( clipboardName.isEmpty() )
     {
@@ -1532,17 +1548,17 @@ css::uno::Reference< css::datatransfer::clipboard::XClipboard > SAL_CALL VCLXToo
 }
 
 // XServiceInfo
-OUString VCLXToolkit::getImplementationName()
+OUString VCLXToolkit::getImplementationName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.VCLXToolkit");
 }
 
-sal_Bool VCLXToolkit::supportsService( const OUString& rServiceName )
+sal_Bool VCLXToolkit::supportsService( const OUString& rServiceName ) throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-css::uno::Sequence< OUString > VCLXToolkit::getSupportedServiceNames()
+css::uno::Sequence< OUString > VCLXToolkit::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         "com.sun.star.awt.Toolkit", "stardiv.vcl.VclToolkit"};
@@ -1552,6 +1568,7 @@ css::uno::Sequence< OUString > VCLXToolkit::getSupportedServiceNames()
 
 // virtual
 ::sal_Int32 SAL_CALL VCLXToolkit::getTopWindowCount()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return static_cast< ::sal_Int32 >(::Application::GetTopWindowCount());
         // XXX  numeric overflow
@@ -1560,6 +1577,7 @@ css::uno::Sequence< OUString > VCLXToolkit::getSupportedServiceNames()
 // virtual
 css::uno::Reference< css::awt::XTopWindow > SAL_CALL
 VCLXToolkit::getTopWindow(::sal_Int32 nIndex)
+    throw (css::uno::RuntimeException, std::exception)
 {
     vcl::Window * p = ::Application::GetTopWindow(static_cast< long >(nIndex));
         // XXX  numeric overflow
@@ -1570,7 +1588,7 @@ VCLXToolkit::getTopWindow(::sal_Int32 nIndex)
 
 // virtual
 css::uno::Reference< css::awt::XTopWindow > SAL_CALL
-VCLXToolkit::getActiveTopWindow()
+VCLXToolkit::getActiveTopWindow() throw (css::uno::RuntimeException, std::exception)
 {
     vcl::Window * p = ::Application::GetActiveTopWindow();
     return css::uno::Reference< css::awt::XTopWindow >(
@@ -1581,6 +1599,7 @@ VCLXToolkit::getActiveTopWindow()
 // virtual
 void SAL_CALL VCLXToolkit::addTopWindowListener(
     css::uno::Reference< css::awt::XTopWindowListener > const & rListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OSL_ENSURE(rListener.is(), "Null rListener");
     ::osl::ClearableMutexGuard aGuard(rBHelper.rMutex);
@@ -1602,6 +1621,7 @@ void SAL_CALL VCLXToolkit::addTopWindowListener(
 // virtual
 void SAL_CALL VCLXToolkit::removeTopWindowListener(
     css::uno::Reference< css::awt::XTopWindowListener > const & rListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(rBHelper.rMutex);
     if (!(rBHelper.bDisposed || rBHelper.bInDispose)
@@ -1616,6 +1636,7 @@ void SAL_CALL VCLXToolkit::removeTopWindowListener(
 // virtual
 void SAL_CALL VCLXToolkit::addKeyHandler(
     css::uno::Reference< css::awt::XKeyHandler > const & rHandler)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OSL_ENSURE(rHandler.is(), "Null rHandler");
     ::osl::ClearableMutexGuard aGuard(rBHelper.rMutex);
@@ -1636,6 +1657,7 @@ void SAL_CALL VCLXToolkit::addKeyHandler(
 // virtual
 void SAL_CALL VCLXToolkit::removeKeyHandler(
     css::uno::Reference< css::awt::XKeyHandler > const & rHandler)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(rBHelper.rMutex);
     if (!(rBHelper.bDisposed || rBHelper.bInDispose)
@@ -1649,6 +1671,7 @@ void SAL_CALL VCLXToolkit::removeKeyHandler(
 // virtual
 void SAL_CALL VCLXToolkit::addFocusListener(
     css::uno::Reference< css::awt::XFocusListener > const & rListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     OSL_ENSURE(rListener.is(), "Null rListener");
     ::osl::ClearableMutexGuard aGuard(rBHelper.rMutex);
@@ -1670,6 +1693,7 @@ void SAL_CALL VCLXToolkit::addFocusListener(
 // virtual
 void SAL_CALL VCLXToolkit::removeFocusListener(
     css::uno::Reference< css::awt::XFocusListener > const & rListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(rBHelper.rMutex);
     if (!(rBHelper.bDisposed || rBHelper.bInDispose)
@@ -1685,6 +1709,7 @@ void SAL_CALL VCLXToolkit::removeFocusListener(
 void SAL_CALL VCLXToolkit::fireFocusGained(
     css::uno::Reference<
     css::uno::XInterface > const &)
+    throw (css::uno::RuntimeException, std::exception)
 {
 }
 
@@ -1692,61 +1717,60 @@ void SAL_CALL VCLXToolkit::fireFocusGained(
 void SAL_CALL VCLXToolkit::fireFocusLost(
     css::uno::Reference<
     css::uno::XInterface > const &)
+    throw (css::uno::RuntimeException, std::exception)
 {
 }
 
 
-IMPL_LINK(VCLXToolkit, eventListenerHandler, ::VclSimpleEvent&, rEvent, void)
+IMPL_LINK_TYPED(VCLXToolkit, eventListenerHandler, ::VclSimpleEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
-    case VclEventId::WindowShow:
+    case VCLEVENT_WINDOW_SHOW:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowOpened);
         break;
-    case VclEventId::WindowHide:
+    case VCLEVENT_WINDOW_HIDE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowClosed);
         break;
-    case VclEventId::WindowActivate:
+    case VCLEVENT_WINDOW_ACTIVATE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowActivated);
         break;
-    case VclEventId::WindowDeactivate:
+    case VCLEVENT_WINDOW_DEACTIVATE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowDeactivated);
         break;
-    case VclEventId::WindowClose:
+    case VCLEVENT_WINDOW_CLOSE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowClosing);
         break;
-    case VclEventId::WindowGetFocus:
+    case VCLEVENT_WINDOW_GETFOCUS:
         callFocusListeners(&rEvent, true);
         break;
-    case VclEventId::WindowLoseFocus:
+    case VCLEVENT_WINDOW_LOSEFOCUS:
         callFocusListeners(&rEvent, false);
         break;
-    case VclEventId::WindowMinimize:
+    case VCLEVENT_WINDOW_MINIMIZE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowMinimized);
         break;
-    case VclEventId::WindowNormalize:
+    case VCLEVENT_WINDOW_NORMALIZE:
         callTopWindowListeners(
             &rEvent, &css::awt::XTopWindowListener::windowNormalized);
         break;
-    default: break;
     }
 }
 
-IMPL_LINK(VCLXToolkit, keyListenerHandler, ::VclWindowEvent&, rEvent, bool)
+IMPL_LINK_TYPED(VCLXToolkit, keyListenerHandler, ::VclWindowEvent&, rEvent, bool)
 {
     switch (rEvent.GetId())
     {
-    case VclEventId::WindowKeyInput:
+    case VCLEVENT_WINDOW_KEYINPUT:
         return callKeyHandlers(&rEvent, true);
-    case VclEventId::WindowKeyUp:
+    case VCLEVENT_WINDOW_KEYUP:
         return callKeyHandlers(&rEvent, false);
-    default: break;
     }
     return false;
 }
@@ -1776,7 +1800,10 @@ void VCLXToolkit::callTopWindowListeners(
                 }
                 catch (const css::uno::RuntimeException & rEx)
                 {
-                    SAL_WARN("toolkit", "caught " << rEx.Message);
+                    OSL_TRACE(
+                        "VCLXToolkit::callTopWindowListeners: caught %s\n",
+                        OUStringToOString(
+                            rEx.Message, RTL_TEXTENCODING_UTF8).getStr());
                 }
             }
         }
@@ -1821,7 +1848,10 @@ bool VCLXToolkit::callKeyHandlers(::VclSimpleEvent const * pEvent,
             }
             catch (const css::uno::RuntimeException & rEx)
             {
-                SAL_WARN("toolkit", "caught " << rEx.Message);
+                OSL_TRACE(
+                    "VCLXToolkit::callKeyHandlers: caught %s\n",
+                    OUStringToOString(
+                       rEx.Message, RTL_TEXTENCODING_UTF8).getStr());
             }
         }
     }
@@ -1867,7 +1897,10 @@ void VCLXToolkit::callFocusListeners(::VclSimpleEvent const * pEvent,
                 }
                 catch (const css::uno::RuntimeException & rEx)
                 {
-                    SAL_WARN("toolkit", "caught " << rEx.Message);
+                    OSL_TRACE(
+                        "VCLXToolkit::callFocusListeners: caught %s\n",
+                        OUStringToOString(
+                            rEx.Message, RTL_TEXTENCODING_UTF8).getStr());
                 }
             }
         }
@@ -1877,6 +1910,7 @@ void VCLXToolkit::callFocusListeners(::VclSimpleEvent const * pEvent,
 // css::awt::XReschedule:
 
 void SAL_CALL VCLXToolkit::reschedule()
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     Application::Reschedule(true);
@@ -1885,12 +1919,14 @@ void SAL_CALL VCLXToolkit::reschedule()
 // css::awt::XToolkitExperimental
 
 void SAL_CALL VCLXToolkit::processEventsToIdle()
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     Scheduler::ProcessEventsToIdle();
 }
 
 sal_Int64 SAL_CALL VCLXToolkit::getOpenGLBufferSwapCounter()
+    throw (css::uno::RuntimeException, std::exception)
 {
 #if HAVE_FEATURE_OPENGL
     return OpenGLWrapper::getBufferSwapCounter();
@@ -1900,72 +1936,88 @@ sal_Int64 SAL_CALL VCLXToolkit::getOpenGLBufferSwapCounter()
 }
 
 void SAL_CALL VCLXToolkit::setDeterministicScheduling(sal_Bool bDeterministicMode)
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     Scheduler::SetDeterministicMode(bDeterministicMode);
 }
 
-void SAL_CALL VCLXToolkit::pause(sal_Int32 nMilliseconds)
-{
-    new Pause(nMilliseconds);
-}
-
 // css:awt:XToolkitRobot
 
 void SAL_CALL VCLXToolkit::keyPress( const css::awt::KeyEvent & aKeyEvent )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Reference<css::awt::XWindow> xWindow ( aKeyEvent.Source, css::uno::UNO_QUERY_THROW );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    css::uno::Reference<css::awt::XWindow> xWindow ( aKeyEvent.Source, css::uno::UNO_QUERY );
+    if( !xWindow.is() )
+        throw css::uno::RuntimeException( "invalid event source" );
+
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
     ::KeyEvent aVCLKeyEvent = VCLUnoHelper::createVCLKeyEvent( aKeyEvent );
-    ::Application::PostKeyEvent( VclEventId::WindowKeyInput, pWindow, &aVCLKeyEvent );
+    ::Application::PostKeyEvent( VCLEVENT_WINDOW_KEYINPUT, pWindow, &aVCLKeyEvent );
 }
 
 void SAL_CALL VCLXToolkit::keyRelease( const css::awt::KeyEvent & aKeyEvent )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Reference<css::awt::XWindow> xWindow ( aKeyEvent.Source, css::uno::UNO_QUERY_THROW );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    css::uno::Reference<css::awt::XWindow> xWindow ( aKeyEvent.Source, css::uno::UNO_QUERY );
+    if( !xWindow.is() )
+        throw css::uno::RuntimeException( "invalid event source" );
+
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
     ::KeyEvent aVCLKeyEvent = VCLUnoHelper::createVCLKeyEvent( aKeyEvent );
-    ::Application::PostKeyEvent( VclEventId::WindowKeyUp, pWindow, &aVCLKeyEvent );
+    ::Application::PostKeyEvent( VCLEVENT_WINDOW_KEYUP, pWindow, &aVCLKeyEvent );
 }
 
 
 void SAL_CALL VCLXToolkit::mousePress( const css::awt::MouseEvent & aMouseEvent )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY_THROW );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY );
+    if( !xWindow.is() )
+        throw css::uno::RuntimeException( "invalid event source" );
+
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
     ::MouseEvent aVCLMouseEvent = VCLUnoHelper::createVCLMouseEvent( aMouseEvent );
-    ::Application::PostMouseEvent( VclEventId::WindowMouseButtonDown, pWindow, &aVCLMouseEvent );
+    ::Application::PostMouseEvent( VCLEVENT_WINDOW_MOUSEBUTTONDOWN, pWindow, &aVCLMouseEvent );
 }
 
 void SAL_CALL VCLXToolkit::mouseRelease( const css::awt::MouseEvent & aMouseEvent )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY_THROW );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY );
+    if( !xWindow.is() )
+        throw css::uno::RuntimeException( "invalid event source" );
+
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
     ::MouseEvent aVCLMouseEvent = VCLUnoHelper::createVCLMouseEvent( aMouseEvent );
-    ::Application::PostMouseEvent( VclEventId::WindowMouseButtonUp, pWindow, &aVCLMouseEvent );
+    ::Application::PostMouseEvent( VCLEVENT_WINDOW_MOUSEBUTTONUP, pWindow, &aVCLMouseEvent );
 }
 
 void SAL_CALL VCLXToolkit::mouseMove( const css::awt::MouseEvent & aMouseEvent )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY_THROW );
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    css::uno::Reference<css::awt::XWindow> xWindow ( aMouseEvent.Source, css::uno::UNO_QUERY );
+    if( !xWindow.is() )
+        throw css::uno::RuntimeException( "invalid event source" );
+
+    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
     ::MouseEvent aVCLMouseEvent = VCLUnoHelper::createVCLMouseEvent( aMouseEvent );
-    ::Application::PostMouseEvent( VclEventId::WindowMouseMove, pWindow, &aVCLMouseEvent );
+    ::Application::PostMouseEvent( VCLEVENT_WINDOW_MOUSEMOVE, pWindow, &aVCLMouseEvent );
 }
 
 

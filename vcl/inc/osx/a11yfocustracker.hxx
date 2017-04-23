@@ -35,13 +35,11 @@ class ToolBox;
 class DocumentFocusListener;
 
 
-class AquaA11yFocusTracker
+class AquaA11yFocusTracker : public rtl::Static< AquaA11yFocusTracker, AquaA11yFocusTracker>
 {
 
 public:
     AquaA11yFocusTracker();
-
-    ~AquaA11yFocusTracker();
 
     css::uno::Reference< css::accessibility::XAccessible > const & getFocusedObject() { return m_xFocusedObject; };
 
@@ -91,12 +89,8 @@ private:
     Link<VclSimpleEvent&,void> m_aWindowEventLink;
 
     // the UNO XAccessibilityEventListener for Documents and other non VCL objects
-    const rtl::Reference< DocumentFocusListener > m_xDocumentFocusListener;
+    const css::uno::Reference< DocumentFocusListener > m_xDocumentFocusListener;
 };
-
-struct TheAquaA11yFocusTracker:
-    rtl::Static<AquaA11yFocusTracker, TheAquaA11yFocusTracker>
-{};
 
 #endif // INCLUDED_VCL_INC_OSX_A11YFOCUSTRACKER_HXX
 

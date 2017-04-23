@@ -572,7 +572,7 @@ void OpISPMT::GenSlidingWindowFunction(std::stringstream& ss,
     ss << "}";
 }
 
-void OpPDuration::GenSlidingWindowFunction(std::stringstream& ss,
+void OpDuration::GenSlidingWindowFunction(std::stringstream& ss,
     const std::string &sSymName, SubArguments& vSubArguments)
 {
     ss << "\ndouble " << sSymName;
@@ -929,7 +929,7 @@ void IRR::GenSlidingWindowFunction(std::stringstream &ss,
     ss << "    int gid0 = get_global_id(0);\n";
     FormulaToken* pSur = vSubArguments[1]->GetFormulaToken();
     assert(pSur);
-    ss << "    double fEstimated = ";
+    ss << "    double fSchaetzwert = ";
     ss << vSubArguments[1]->GenSlidingWindowDeclRef() << ";\n";
     ss << "    double fEps = 1.0;\n";
     ss << "    double x = 0.0, xNeu = 0.0, fZaehler = 0.0, fNenner = 0.0;\n";
@@ -939,18 +939,18 @@ void IRR::GenSlidingWindowFunction(std::stringstream &ss,
         const formula::SingleVectorRefToken* pSVR =
             static_cast< const formula::SingleVectorRefToken* >(pSur);
         ss << "    if (gid0 >= " << pSVR->GetArrayLength() << ")\n";
-        ss << "        fEstimated = 0.1;\n";
-        ss << "    if (isnan(fEstimated))\n";
+        ss << "        fSchaetzwert = 0.1;\n";
+        ss << "    if (isnan(fSchaetzwert))\n";
         ss << "        x = 0.1;\n";
         ss << "    else\n";
     }
     else if (pSur->GetType() == formula::svDouble)
     {
-        ss << "    if (isnan(fEstimated))\n";
+        ss << "    if (isnan(fSchaetzwert))\n";
         ss << "        x = 0.1;\n";
         ss << "    else\n";
     }
-    ss << "        x = fEstimated;\n";
+    ss << "        x = fSchaetzwert;\n";
     ss << "    unsigned short nItCount = 0;\n";
     ss << "    while (fEps > Epsilon && nItCount < 20){\n";
     ss << "        nCount = 0.0; fZaehler = 0.0;  fNenner = 0.0;\n";
@@ -1061,14 +1061,11 @@ void IRR::GenSlidingWindowFunction(std::stringstream &ss,
     ss << "        fEps = fabs(xNeu - x);\n";
     ss << "        x = xNeu;\n";
     ss << "        nItCount++;\n    }\n";
-    ss << "        if (fEstimated == 0.0 && fabs(x) < Epsilon)\n";
+    ss << "        if (fSchaetzwert == 0.0 && fabs(x) < Epsilon)\n";
     ss << "            x = 0.0;\n";
     ss << "        if (fEps < Epsilon)\n";
     ss << "            return x;\n";
     ss << "        else\n";
-    // FIXME: This is of course horribly wrong. 523 is the error code NoConvergence, and this should
-    // be CreateDoubleError(523). Ditto for the other occurrences of 523 in the OpenCL code
-    // generated in this file.
     ss << "            return (double)523;\n";
     ss << "}";
 }
@@ -4067,9 +4064,9 @@ void OpTbillprice::GenSlidingWindowFunction(
  void RATE::BinInlineFun(std::set<std::string>& decls,
     std::set<std::string>& funs)
 {
-    decls.insert(nKorrValDecl);
+    decls.insert(approxEqualDecl);decls.insert(nKorrValDecl);
     decls.insert(SCdEpsilonDecl);decls.insert(RoundDecl);
-    funs.insert(Round);
+    funs.insert(approxEqual);funs.insert(Round);
 }
 
 void RATE::GenSlidingWindowFunction(
@@ -4127,7 +4124,7 @@ void RATE::GenSlidingWindowFunction(
     ss << "        {\n";
     ss << "            fPowNminus1 = pow( 1.0+fX, arg0-1.0);\n";
     ss << "            fPowN = fPowNminus1 * (1.0+fX);\n";
-    ss << "            if (fX == 0.0)\n";
+    ss << "            if (approxEqual( fabs(fX), 0.0))\n";
     ss << "            {\n";
     ss << "                fGeoSeries = arg0;\n";
     ss << "                fGeoSeriesDerivation = arg0 * (arg0-1.0)";
@@ -4146,7 +4143,7 @@ void RATE::GenSlidingWindowFunction(
     ss << "                bFound = true;\n";
     ss << "            else\n";
     ss << "            {\n";
-    ss << "                if (fTermDerivation == 0.0)\n";
+    ss << "                if (approxEqual(fabs(fTermDerivation), 0.0))\n";
     ss << "                    fXnew = fX + 1.1 * SCdEpsilon;\n";
     ss << "                else\n";
     ss << "                    fXnew = fX - fTerm ";
@@ -4162,7 +4159,7 @@ void RATE::GenSlidingWindowFunction(
     ss << "        fX = (arg5 < -1.0) ? -1.0 : arg5;\n";
     ss << "        while (bValid && !bFound && nCount < nIterationsMax)\n";
     ss << "        {\n";
-    ss << "            if (fX == 0.0){\n";
+    ss << "            if (approxEqual(fabs(fX), 0.0)){\n";
     ss << "                fGeoSeries = arg0;\n";
     ss << "                fGeoSeriesDerivation = arg0 * ";
     ss << "(arg0-1.0)* pow(2.0,-1);\n";
@@ -4181,7 +4178,7 @@ void RATE::GenSlidingWindowFunction(
     ss << "            if (fabs(fTerm) < fEpsilonSmall)\n";
     ss << "                bFound = true;\n";
     ss << "            else{\n";
-    ss << "                if (fTermDerivation == 0.0)\n";
+    ss << "                if (approxEqual(fabs(fTermDerivation), 0.0))\n";
     ss << "                    fXnew = fX + 1.1 * SCdEpsilon;\n";
     ss << "                else\n";
     ss << "                    fXnew = fX - fTerm ";

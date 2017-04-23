@@ -25,8 +25,6 @@
 #include "frm_strings.hxx"
 #include "property.hrc"
 
-#include <com/sun/star/container/ElementExistException.hpp>
-#include <com/sun/star/util/VetoException.hpp>
 #include <comphelper/enumhelper.hxx>
 
 #include <functional>
@@ -107,7 +105,7 @@ namespace xforms
     }
 
 
-    Reference< XDataType > SAL_CALL ODataTypeRepository::getBasicDataType( sal_Int16 dataTypeClass )
+    Reference< XDataType > SAL_CALL ODataTypeRepository::getBasicDataType( sal_Int16 dataTypeClass ) throw (NoSuchElementException, RuntimeException, std::exception)
     {
         Reference< XDataType > xReturn;
 
@@ -127,7 +125,7 @@ namespace xforms
     }
 
 
-    Reference< XDataType > SAL_CALL ODataTypeRepository::cloneDataType( const OUString& sourceName, const OUString& newName )
+    Reference< XDataType > SAL_CALL ODataTypeRepository::cloneDataType( const OUString& sourceName, const OUString& newName ) throw (NoSuchElementException, ElementExistException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -143,39 +141,39 @@ namespace xforms
     }
 
 
-    void SAL_CALL ODataTypeRepository::revokeDataType( const OUString& typeName )
+    void SAL_CALL ODataTypeRepository::revokeDataType( const OUString& typeName ) throw (NoSuchElementException, VetoException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         Repository::iterator aTypePos = implLocate( typeName );
         if ( aTypePos->second->getIsBasic() )
-            // "This is a built-in type and cannot be removed."
-            throw VetoException(FRM_RES_STRING( RID_STR_XFORMS_CANT_REMOVE_TYPE ), *this );
+            throw VetoException("This is a built-in type and cannot be removed.", *this );
+            // TODO: localize this error message
 
         m_aRepository.erase( aTypePos );
     }
 
 
-    Reference< XDataType > SAL_CALL ODataTypeRepository::getDataType( const OUString& typeName )
+    Reference< XDataType > SAL_CALL ODataTypeRepository::getDataType( const OUString& typeName ) throw (NoSuchElementException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         return implLocate( typeName )->second.get();
     }
 
 
-    Reference< XEnumeration > SAL_CALL ODataTypeRepository::createEnumeration(  )
+    Reference< XEnumeration > SAL_CALL ODataTypeRepository::createEnumeration(  ) throw (RuntimeException, std::exception)
     {
         return new ::comphelper::OEnumerationByName( this );
     }
 
 
-    Any SAL_CALL ODataTypeRepository::getByName( const OUString& aName )
+    Any SAL_CALL ODataTypeRepository::getByName( const OUString& aName ) throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
     {
         return makeAny( getDataType( aName ) );
     }
 
 
-    Sequence< OUString > SAL_CALL ODataTypeRepository::getElementNames(  )
+    Sequence< OUString > SAL_CALL ODataTypeRepository::getElementNames(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -183,20 +181,20 @@ namespace xforms
     }
 
 
-    sal_Bool SAL_CALL ODataTypeRepository::hasByName( const OUString& aName )
+    sal_Bool SAL_CALL ODataTypeRepository::hasByName( const OUString& aName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         return m_aRepository.find( aName ) != m_aRepository.end();
     }
 
 
-    Type SAL_CALL ODataTypeRepository::getElementType(  )
+    Type SAL_CALL ODataTypeRepository::getElementType(  ) throw (RuntimeException, std::exception)
     {
         return cppu::UnoType<XDataType>::get();
     }
 
 
-    sal_Bool SAL_CALL ODataTypeRepository::hasElements(  )
+    sal_Bool SAL_CALL ODataTypeRepository::hasElements(  ) throw (RuntimeException, std::exception)
     {
         return !m_aRepository.empty();
     }

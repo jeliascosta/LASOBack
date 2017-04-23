@@ -72,6 +72,8 @@ BezierObjectBar::BezierObjectBar(
     SetPool(&pDocShell->GetPool());
     SetUndoManager(pDocShell->GetUndoManager());
     SetRepeatTarget(mpView);
+
+    SetHelpId( SD_IF_SDDRAWBEZIEROBJECTBAR );
 }
 
 BezierObjectBar::~BezierObjectBar()
@@ -148,9 +150,9 @@ void BezierObjectBar::GetAttrState(SfxItemSet& rSet)
             SdrPathSegmentKind eSegm = pIPPEC->GetMarkedSegmentsKind();
             switch (eSegm)
             {
-                case SdrPathSegmentKind::DontCare: rSet.InvalidateItem(SID_BEZIER_CONVERT); break;
-                case SdrPathSegmentKind::Line    : rSet.Put(SfxBoolItem(SID_BEZIER_CONVERT,false)); break; // Button down = curve
-                case SdrPathSegmentKind::Curve   : rSet.Put(SfxBoolItem(SID_BEZIER_CONVERT,true));  break;
+                case SDRPATHSEGMENT_DONTCARE: rSet.InvalidateItem(SID_BEZIER_CONVERT); break;
+                case SDRPATHSEGMENT_LINE    : rSet.Put(SfxBoolItem(SID_BEZIER_CONVERT,false)); break; // Button down = curve
+                case SDRPATHSEGMENT_CURVE   : rSet.Put(SfxBoolItem(SID_BEZIER_CONVERT,true));  break;
                 default: break;
             }
         }
@@ -165,10 +167,10 @@ void BezierObjectBar::GetAttrState(SfxItemSet& rSet)
             SdrPathSmoothKind eSmooth = pIPPEC->GetMarkedPointsSmooth();
             switch (eSmooth)
             {
-                case SdrPathSmoothKind::DontCare  : break;
-                case SdrPathSmoothKind::Angular   : rSet.Put(SfxBoolItem(SID_BEZIER_EDGE,  true)); break;
-                case SdrPathSmoothKind::Asymmetric: rSet.Put(SfxBoolItem(SID_BEZIER_SMOOTH,true)); break;
-                case SdrPathSmoothKind::Symmetric : rSet.Put(SfxBoolItem(SID_BEZIER_SYMMTR,true)); break;
+                case SDRPATHSMOOTH_DONTCARE  : break;
+                case SDRPATHSMOOTH_ANGULAR   : rSet.Put(SfxBoolItem(SID_BEZIER_EDGE,  true)); break;
+                case SDRPATHSMOOTH_ASYMMETRIC: rSet.Put(SfxBoolItem(SID_BEZIER_SMOOTH,true)); break;
+                case SDRPATHSMOOTH_SYMMETRIC : rSet.Put(SfxBoolItem(SID_BEZIER_SYMMTR,true)); break;
             }
         }
         if (!pIPPEC || !pIPPEC->IsOpenCloseMarkedObjectsPossible())
@@ -180,9 +182,9 @@ void BezierObjectBar::GetAttrState(SfxItemSet& rSet)
             SdrObjClosedKind eClose = pIPPEC->GetMarkedObjectsClosedState();
             switch (eClose)
             {
-                case SdrObjClosedKind::DontCare: rSet.InvalidateItem(SID_BEZIER_CLOSE); break;
-                case SdrObjClosedKind::Open    : rSet.Put(SfxBoolItem(SID_BEZIER_CLOSE,false)); break;
-                case SdrObjClosedKind::Closed  : rSet.Put(SfxBoolItem(SID_BEZIER_CLOSE,true)); break;
+                case SDROBJCLOSED_DONTCARE: rSet.InvalidateItem(SID_BEZIER_CLOSE); break;
+                case SDROBJCLOSED_OPEN    : rSet.Put(SfxBoolItem(SID_BEZIER_CLOSE,false)); break;
+                case SDROBJCLOSED_CLOSED  : rSet.Put(SfxBoolItem(SID_BEZIER_CLOSE,true)); break;
                 default: break;
             }
         }
@@ -234,7 +236,7 @@ void BezierObjectBar::Execute(SfxRequest& rReq)
 
                     case SID_BEZIER_CONVERT:
                     {
-                        pIPPEC->SetMarkedSegmentsKind(SdrPathSegmentKind::Toggle);
+                        pIPPEC->SetMarkedSegmentsKind(SDRPATHSEGMENT_TOGGLE);
                         break;
                     }
 
@@ -247,9 +249,9 @@ void BezierObjectBar::Execute(SfxRequest& rReq)
                         switch (nSId)
                         {
                             default:
-                            case SID_BEZIER_EDGE:   eKind = SdrPathSmoothKind::Angular; break;
-                            case SID_BEZIER_SMOOTH: eKind = SdrPathSmoothKind::Asymmetric; break;
-                            case SID_BEZIER_SYMMTR: eKind = SdrPathSmoothKind::Symmetric; break;
+                            case SID_BEZIER_EDGE:   eKind = SDRPATHSMOOTH_ANGULAR; break;
+                            case SID_BEZIER_SMOOTH: eKind = SDRPATHSMOOTH_ASYMMETRIC; break;
+                            case SID_BEZIER_SYMMTR: eKind = SDRPATHSMOOTH_SYMMETRIC; break;
                         }
 
                         pIPPEC->SetMarkedPointsSmooth(eKind);

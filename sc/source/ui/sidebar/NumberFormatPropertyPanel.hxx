@@ -46,7 +46,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -56,21 +56,18 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destructor
+    // constructor/destuctor
     NumberFormatPropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         SfxBindings* pBindings);
-    virtual ~NumberFormatPropertyPanel() override;
+    virtual ~NumberFormatPropertyPanel();
     virtual void dispose() override;
 private:
     //ui controls
     VclPtr<ListBox>                                mpLbCategory;
     VclPtr<ToolBox>                                mpTBCategory;
-    VclPtr<FixedText>                              mpFtDecimals;
     VclPtr<NumericField>                           mpEdDecimals;
-    VclPtr<FixedText>                              mpFtDenominator;
-    VclPtr<NumericField>                           mpEdDenominator;
     VclPtr<NumericField>                           mpEdLeadZeroes;
     VclPtr<CheckBox>                               mpBtnNegRed;
     VclPtr<CheckBox>                               mpBtnThousand;
@@ -81,15 +78,14 @@ private:
 
     sal_Int32                               mnCategorySelected;
 
-    vcl::EnumContext                        maContext;
+    ::sfx2::sidebar::EnumContext            maContext;
     SfxBindings*                            mpBindings;
 
-    DECL_LINK(NumFormatSelectHdl, ListBox&, void);
-    DECL_LINK(NumFormatValueHdl, Edit&, void);
-    DECL_LINK(NumFormatValueClickHdl, Button*, void);
+    DECL_LINK_TYPED(NumFormatSelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(NumFormatValueHdl, Edit&, void);
+    DECL_LINK_TYPED(NumFormatValueClickHdl, Button*, void);
 
     void Initialize();
-    void DisableControls();
 };
 
 } } // end of namespace ::sc::sidebar

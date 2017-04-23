@@ -40,7 +40,7 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 
 
-OUString SAL_CALL OTable::getImplementationName(  )
+OUString SAL_CALL OTable::getImplementationName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     if(isNew())
         return OUString("com.sun.star.sdbcx.VTableDescriptor");
@@ -48,9 +48,9 @@ OUString SAL_CALL OTable::getImplementationName(  )
 }
 
 
-css::uno::Sequence< OUString > SAL_CALL OTable::getSupportedServiceNames(  )
+::com::sun::star::uno::Sequence< OUString > SAL_CALL OTable::getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
-    css::uno::Sequence< OUString > aSupported(1);
+    ::com::sun::star::uno::Sequence< OUString > aSupported(1);
     if(isNew())
         aSupported[0] = "com.sun.star.sdbcx.TableDescriptor";
     else
@@ -59,7 +59,7 @@ css::uno::Sequence< OUString > SAL_CALL OTable::getSupportedServiceNames(  )
     return aSupported;
 }
 
-sal_Bool SAL_CALL OTable::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OTable::supportsService( const OUString& _rServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
@@ -123,7 +123,7 @@ void SAL_CALL OTable::release() throw()
 }
 
 
-Any SAL_CALL OTable::queryInterface( const Type & rType )
+Any SAL_CALL OTable::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = ODescriptor::queryInterface( rType);
     if(!aRet.hasValue())
@@ -138,7 +138,7 @@ Any SAL_CALL OTable::queryInterface( const Type & rType )
     return aRet;
 }
 
-Sequence< Type > SAL_CALL OTable::getTypes(  )
+Sequence< Type > SAL_CALL OTable::getTypes(  ) throw(RuntimeException, std::exception)
 {
     if(isNew())
         return ::comphelper::concatSequences(ODescriptor::getTypes(),OTableDescriptor_BASE::getTypes());
@@ -162,7 +162,7 @@ void SAL_CALL OTable::disposing()
 }
 
 // XColumnsSupplier
-Reference< XNameAccess > SAL_CALL OTable::getColumns(  )
+Reference< XNameAccess > SAL_CALL OTable::getColumns(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE::rBHelper.bDisposed);
@@ -187,7 +187,7 @@ Reference< XNameAccess > SAL_CALL OTable::getColumns(  )
 
 
 // XKeysSupplier
-Reference< XIndexAccess > SAL_CALL OTable::getKeys(  )
+Reference< XIndexAccess > SAL_CALL OTable::getKeys(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE::rBHelper.bDisposed);
@@ -223,7 +223,7 @@ cppu::IPropertyArrayHelper & OTable::getInfoHelper()
     return *getArrayHelper(isNew() ? 1 : 0);
 }
 
-Reference< XPropertySet > SAL_CALL OTable::createDataDescriptor(  )
+Reference< XPropertySet > SAL_CALL OTable::createDataDescriptor(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE::rBHelper.bDisposed);
@@ -234,7 +234,7 @@ Reference< XPropertySet > SAL_CALL OTable::createDataDescriptor(  )
 }
 
 // XIndexesSupplier
-Reference< XNameAccess > SAL_CALL OTable::getIndexes(  )
+Reference< XNameAccess > SAL_CALL OTable::getIndexes(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE::rBHelper.bDisposed);
@@ -258,7 +258,7 @@ Reference< XNameAccess > SAL_CALL OTable::getIndexes(  )
 }
 
 // XRename
-void SAL_CALL OTable::rename( const OUString& newName )
+void SAL_CALL OTable::rename( const OUString& newName ) throw(SQLException, ElementExistException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE::rBHelper.bDisposed);
@@ -279,22 +279,22 @@ Reference< XDatabaseMetaData> OTable::getMetaData() const
 }
 
 // XAlterTable
-void SAL_CALL OTable::alterColumnByName( const OUString& /*colName*/, const Reference< XPropertySet >& /*descriptor*/ )
+void SAL_CALL OTable::alterColumnByName( const OUString& /*colName*/, const Reference< XPropertySet >& /*descriptor*/ ) throw(SQLException, NoSuchElementException, RuntimeException, std::exception)
 {
     throwFeatureNotImplementedSQLException( "XAlterTable::alterColumnByName", *this );
 }
 
-void SAL_CALL OTable::alterColumnByIndex( sal_Int32 /*index*/, const Reference< XPropertySet >& /*descriptor*/ )
+void SAL_CALL OTable::alterColumnByIndex( sal_Int32 /*index*/, const Reference< XPropertySet >& /*descriptor*/ ) throw(SQLException, ::com::sun::star::lang::IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     throwFeatureNotImplementedSQLException( "XAlterTable::alterColumnByIndex", *this );
 }
 
-css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL OTable::getPropertySetInfo(  )
+::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL OTable::getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
 
-OUString SAL_CALL OTable::getName()
+OUString SAL_CALL OTable::getName() throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     // this is only correct for tables who haven't a schema or catalog name
     OSL_ENSURE(m_CatalogName.isEmpty(),"getName(): forgot to override getName()!");
@@ -302,7 +302,7 @@ OUString SAL_CALL OTable::getName()
     return m_Name;
 }
 
-void SAL_CALL OTable::setName( const OUString& /*aName*/ )
+void SAL_CALL OTable::setName( const OUString& /*aName*/ ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
 }
 

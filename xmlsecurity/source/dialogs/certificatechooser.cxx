@@ -18,27 +18,38 @@
  */
 
 
-#include <certificatechooser.hxx>
-#include <certificateviewer.hxx>
-#include <biginteger.hxx>
+#include <xmlsecurity/certificatechooser.hxx>
+#include <xmlsecurity/certificateviewer.hxx>
+#include <xmlsecurity/biginteger.hxx>
 #include <com/sun/star/xml/crypto/XSecurityEnvironment.hpp>
 #include <comphelper/sequence.hxx>
 #include <comphelper/processfactory.hxx>
 
 #include <com/sun/star/security/NoPasswordException.hpp>
 #include <com/sun/star/security/CertificateCharacters.hpp>
+#include <com/sun/star/security/SerialNumberAdapter.hpp>
 
 #include "resourcemanager.hxx"
 #include <vcl/msgbox.hxx>
 #include <svtools/treelistentry.hxx>
 
-using namespace css;
+using namespace ::com::sun::star;
 
-CertificateChooser::CertificateChooser(vcl::Window* _pParent,
-                                       uno::Reference<uno::XComponentContext>& _rxCtx,
-                                       std::vector< css::uno::Reference< css::xml::crypto::XSecurityEnvironment > >& rxSecurityEnvironments)
-    : ModalDialog(_pParent, "SelectCertificateDialog", "xmlsec/ui/selectcertificatedialog.ui"),
-    mvUserData()
+#define INVAL_SEL       0xFFFF
+
+sal_uInt16 CertificateChooser::GetSelectedEntryPos() const
+{
+    sal_uInt16  nSel = INVAL_SEL;
+
+    SvTreeListEntry* pSel = m_pCertLB->FirstSelected();
+    if( pSel )
+        nSel = (sal_uInt16) reinterpret_cast<sal_uIntPtr>( pSel->GetUserData() );
+
+    return (sal_uInt16) nSel;
+}
+
+CertificateChooser::CertificateChooser(vcl::Window* _pParent, uno::Reference<uno::XComponentContext>& _rxCtx, uno::Reference<xml::crypto::XSecurityEnvironment>& _rxSecurityEnvironment)
+    : ModalDialog(_pParent, "SelectCertificateDialog", "xmlsec/ui/selectcertificatedialog.ui")
 {
     get(m_pOKBtn, "ok");
     get(m_pViewBtn, "viewcert");
@@ -46,7 +57,7 @@ CertificateChooser::CertificateChooser(vcl::Window* _pParent,
 
     Size aControlSize(475, 122);
     const long nControlWidth = aControlSize.Width();
-    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
     SvSimpleTableContainer *pSignatures = get<SvSimpleTableContainer>("signatures");
     pSignatures->set_width_request(aControlSize.Width());
     pSignatures->set_height_request(aControlSize.Height());
@@ -61,7 +72,7 @@ CertificateChooser::CertificateChooser(vcl::Window* _pParent,
     m_pViewBtn->SetClickHdl( LINK( this, CertificateChooser, ViewButtonHdl ) );
 
     mxCtx = _rxCtx;
-    mxSecurityEnvironments = rxSecurityEnvironments;
+    mxSecurityEnvironment = _rxSecurityEnvironment;
     mbInitialized = false;
 
     // disable buttons
@@ -78,8 +89,6 @@ void CertificateChooser::dispose()
     m_pCertLB.disposeAndClear();
     m_pViewBtn.clear();
     m_pOKBtn.clear();
-    m_pDescriptionED.clear();
-    mvUserData.clear();
     ModalDialog::dispose();
 }
 
@@ -96,7 +105,7 @@ short CertificateChooser::Execute()
 
     // PostUserLink behavior is to slow, so do it directly before Execute().
     // Problem: This Dialog should be visible right now, and the parent should not be accessible.
-    // Show, Update, DisableInput...
+    // Show, Update, DIsableInput...
 
     vcl::Window* pMe = this;
     vcl::Window* pParent = GetParent();
@@ -147,63 +156,56 @@ OUString CertificateChooser::UsageInClearText(int bits)
 
 void CertificateChooser::ImplInitialize()
 {
-    if ( mbInitialized )
-        return;
-
-    for (auto &secEnvironment : mxSecurityEnvironments)
+    if ( !mbInitialized )
     {
-        uno::Sequence< uno::Reference< security::XCertificate > > xCerts;
         try
         {
-            xCerts = secEnvironment->getPersonalCertificates();
+            maCerts = mxSecurityEnvironment->getPersonalCertificates();
         }
         catch (security::NoPasswordException&)
         {
         }
 
-        sal_Int32 nCertificates = xCerts.getLength();
+        uno::Reference< css::security::XSerialNumberAdapter> xSerialNumberAdapter =
+            css::security::SerialNumberAdapter::create(mxCtx);
+
+        sal_Int32 nCertificates = maCerts.getLength();
         for( sal_Int32 nCert = nCertificates; nCert; )
         {
-            uno::Reference< security::XCertificate > xCert = xCerts[ --nCert ];
+            uno::Reference< security::XCertificate > xCert = maCerts[ --nCert ];
             // Check if we have a private key for this...
-            long nCertificateCharacters = secEnvironment->getCertificateCharacters(xCert);
+            long nCertificateCharacters = mxSecurityEnvironment->getCertificateCharacters(xCert);
 
             if (!(nCertificateCharacters & security::CertificateCharacters::HAS_PRIVATE_KEY))
             {
-                ::comphelper::removeElementAt( xCerts, nCert );
-                nCertificates = xCerts.getLength();
+                ::comphelper::removeElementAt( maCerts, nCert );
+                nCertificates = maCerts.getLength();
             }
         }
 
         // fill list of certificates; the first entry will be selected
         for ( sal_Int32 nC = 0; nC < nCertificates; ++nC )
         {
-            std::shared_ptr<UserData> userData = std::make_shared<UserData>();
-            userData->xCertificate = xCerts[ nC ];
-            userData->xSecurityEnvironment = secEnvironment;
-            mvUserData.push_back(userData);
-            SvTreeListEntry* pEntry = m_pCertLB->InsertEntry( XmlSec::GetContentPart( xCerts[ nC ]->getSubjectName() )
-                + "\t" + XmlSec::GetContentPart( xCerts[ nC ]->getIssuerName() )
-                + "\t" + UsageInClearText( xCerts[ nC ]->getCertificateUsage() )
-                + "\t" + XmlSec::GetDateString( xCerts[ nC ]->getNotValidAfter() ) );
-            pEntry->SetUserData( userData.get() );
+            SvTreeListEntry* pEntry = m_pCertLB->InsertEntry( XmlSec::GetContentPart( maCerts[ nC ]->getSubjectName() )
+                + "\t" + XmlSec::GetContentPart( maCerts[ nC ]->getIssuerName() )
+                + "\t" + UsageInClearText( maCerts[ nC ]->getCertificateUsage() )
+                + "\t" + XmlSec::GetDateString( maCerts[ nC ]->getNotValidAfter() ) );
+            pEntry->SetUserData( reinterpret_cast<void*>(nC) ); // missuse user data as index
         }
-    }
 
-    // enable/disable buttons
-    CertificateHighlightHdl( nullptr );
-    mbInitialized = true;
+        // enable/disable buttons
+        CertificateHighlightHdl( nullptr );
+        mbInitialized = true;
+    }
 }
 
 
 uno::Reference< css::security::XCertificate > CertificateChooser::GetSelectedCertificate()
 {
-    SvTreeListEntry* pSel = m_pCertLB->FirstSelected();
-    if( !pSel )
-        return uno::Reference< css::security::XCertificate >();
-
-    UserData* userData = static_cast<UserData*>(pSel->GetUserData());
-    uno::Reference<security::XCertificate> xCert = userData->xCertificate;
+    uno::Reference< css::security::XCertificate > xCert;
+    sal_uInt16  nSelected = GetSelectedEntryPos();
+    if ( nSelected < maCerts.getLength() )
+        xCert = maCerts[ nSelected ];
     return xCert;
 }
 
@@ -212,7 +214,7 @@ OUString CertificateChooser::GetDescription()
     return m_pDescriptionED->GetText();
 }
 
-IMPL_LINK_NOARG(CertificateChooser, CertificateHighlightHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(CertificateChooser, CertificateHighlightHdl, SvTreeListBox*, void)
 {
     bool bEnable = GetSelectedCertificate().is();
     m_pViewBtn->Enable( bEnable );
@@ -220,30 +222,25 @@ IMPL_LINK_NOARG(CertificateChooser, CertificateHighlightHdl, SvTreeListBox*, voi
     m_pDescriptionED->Enable(bEnable);
 }
 
-IMPL_LINK_NOARG(CertificateChooser, CertificateSelectHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG_TYPED(CertificateChooser, CertificateSelectHdl, SvTreeListBox*, bool)
 {
     EndDialog( RET_OK );
     return false;
 }
 
-IMPL_LINK_NOARG(CertificateChooser, ViewButtonHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(CertificateChooser, ViewButtonHdl, Button*, void)
 {
     ImplShowCertificateDetails();
 }
 
 void CertificateChooser::ImplShowCertificateDetails()
 {
-    SvTreeListEntry* pSel = m_pCertLB->FirstSelected();
-    if( !pSel )
-        return;
-
-    UserData* userData = static_cast<UserData*>(pSel->GetUserData());
-
-    if (!userData->xSecurityEnvironment.is() || !userData->xCertificate.is())
-        return;
-
-    ScopedVclPtrInstance< CertificateViewer > aViewer( this, userData->xSecurityEnvironment, userData->xCertificate, true );
-    aViewer->Execute();
+    uno::Reference< css::security::XCertificate > xCert = GetSelectedCertificate();
+    if( xCert.is() )
+    {
+        ScopedVclPtrInstance< CertificateViewer > aViewer( this, mxSecurityEnvironment, xCert, true );
+        aViewer->Execute();
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

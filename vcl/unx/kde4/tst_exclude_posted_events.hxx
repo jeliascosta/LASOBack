@@ -24,6 +24,9 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QEventLoop>
 
+namespace
+{
+
 const QEvent::Type eventType = QEvent::User;
 
 class TestExcludePostedEvents
@@ -46,6 +49,8 @@ bool TestExcludePostedEvents::event( QEvent* e )
     if( e->type() == eventType )
         processed = true;
     return QObject::event( e );
+}
+
 }
 
 #define QVERIFY(a) \

@@ -47,13 +47,27 @@ namespace slideshow
             changes, clients can assume that the object's state has
             changed.
          */
-        class State final
+        class State
         {
         public:
+            virtual ~State() {}
 
             /// Abstract, numerically encoded state ID
             typedef ::std::size_t StateId;
+
+            /** This method returns a numerical state identifier.
+
+                The state ID returned by this method abstractly
+                encodes the object's state. When this ID changes,
+                clients can assume that the object's state has
+                changed.
+
+                @return an abstract, numerical state ID.
+             */
+            ;
         };
+
+        typedef ::std::shared_ptr< State > StateSharedPtr;
 
         class ShapeAttributeLayer;
 

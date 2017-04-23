@@ -159,7 +159,7 @@ namespace svt
             ) const = 0;
 
     protected:
-        virtual ~IAccessibleFactory() override {}
+        virtual ~IAccessibleFactory() {}
     };
 
 

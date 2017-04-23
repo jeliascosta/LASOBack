@@ -49,7 +49,9 @@ protected:
 public:
     OOo2OasisTransformer( const sal_Char *pImplName=nullptr,
                           const sal_Char *pSubServiceName=nullptr ) throw();
-    virtual ~OOo2OasisTransformer() throw() override;
+    virtual ~OOo2OasisTransformer() throw();
+
+    static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
 
     // XInterface
 
@@ -58,7 +60,8 @@ public:
     // the new interfaces).
 
     virtual css::uno::Any SAL_CALL queryInterface(
-        const css::uno::Type& aType ) override;
+        const css::uno::Type& aType )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL acquire(  ) throw () override
         { XMLTransformerBase::acquire(); };
@@ -67,33 +70,32 @@ public:
         { XMLTransformerBase::release(); };
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) override;
-    virtual void SAL_CALL cancel(  ) override;
+    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel(  ) throw (css::uno::RuntimeException, std::exception) override;
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL Initialize( const css::uno::Sequence< css::uno::Any >& aArguments );
+    void SAL_CALL Initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException);
 
     // css::xml::sax::XDocumentHandler
-    virtual void SAL_CALL startDocument() override;
+    virtual void SAL_CALL startDocument()
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString GetEventName( const OUString& rName,
                                             bool bForm = false ) override;

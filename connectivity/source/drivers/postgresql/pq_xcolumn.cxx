@@ -46,7 +46,7 @@ using com::sun::star::beans::XPropertySet;
 namespace pq_sdbc_driver
 {
 Column::Column( const ::rtl::Reference< RefCountedMutex > & refMutex,
-                const Reference< css::sdbc::XConnection > & connection,
+                const Reference< com::sun::star::sdbc::XConnection > & connection,
                 ConnectionSettings *pSettings)
     : ReflectionBase(
         getStatics().refl.column.implName,
@@ -57,7 +57,7 @@ Column::Column( const ::rtl::Reference< RefCountedMutex > & refMutex,
         * getStatics().refl.column.pProps )
 {}
 
-Reference< XPropertySet > Column::createDataDescriptor(  )
+Reference< XPropertySet > Column::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     ColumnDescriptor * pColumn = new ColumnDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -67,7 +67,7 @@ Reference< XPropertySet > Column::createDataDescriptor(  )
 
 ColumnDescriptor::ColumnDescriptor(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const Reference< css::sdbc::XConnection > & connection,
+    const Reference< com::sun::star::sdbc::XConnection > & connection,
     ConnectionSettings *pSettings)
     : ReflectionBase(
         getStatics().refl.columnDescriptor.implName,
@@ -78,7 +78,7 @@ ColumnDescriptor::ColumnDescriptor(
         *getStatics().refl.columnDescriptor.pProps )
 {}
 
-Reference< XPropertySet > ColumnDescriptor::createDataDescriptor(  )
+Reference< XPropertySet > ColumnDescriptor::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     ColumnDescriptor * pColumn = new ColumnDescriptor(
         m_refMutex, m_conn, m_pSettings );

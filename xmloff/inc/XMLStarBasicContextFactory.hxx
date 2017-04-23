@@ -40,7 +40,7 @@ class XMLStarBasicContextFactory : public XMLEventContextFactory
 
 public:
     XMLStarBasicContextFactory();
-    virtual ~XMLStarBasicContextFactory() override;
+    virtual ~XMLStarBasicContextFactory();
 
     virtual SvXMLImportContext* CreateContext(
         SvXMLImport& rImport,               /// import context

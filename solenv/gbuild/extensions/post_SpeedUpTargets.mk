@@ -9,21 +9,21 @@
 
 ifneq ($(CROSS_COMPILING),)
 gb_Module_add_targets_for_build :=
-gb_Module_SKIPTARGETS := check slowcheck screenshot subsequentcheck uicheck
+gb_Module_SKIPTARGETS := check slowcheck subsequentcheck
 endif
 
 ifeq ($(gb_Side),build)
-gb_Module_SKIPTARGETS := check slowcheck screenshot subsequentcheck uicheck
+gb_Module_SKIPTARGETS := check slowcheck subsequentcheck
 endif
 
 ifeq ($(MAKECMDGOALS),build)
-gb_Module_SKIPTARGETS := check slowcheck screenshot subsequentcheck uicheck
+gb_Module_SKIPTARGETS := check slowcheck subsequentcheck
 endif
 
 ifeq (,$(filter perfcheck,$(MAKECMDGOALS)))
 gb_Module_SKIPTARGETS += perfcheck
 else
-gb_Module_SKIPTARGETS += check slowcheck screenshot subsequentcheck uicheck
+gb_Module_SKIPTARGETS += check slowcheck subsequentcheck
 endif
 
 ifneq ($(strip $(MAKECMDGOALS)),)
@@ -37,7 +37,7 @@ ifeq (T,$(if $(filter-out $(gb_SpeedUpTargets_LEVEL_1),$(MAKECMDGOALS)),,T))
 gb_FULLDEPS :=
 
 ifeq (T,$(if $(filter-out $(gb_SpeedUpTargets_LEVEL_2),$(MAKECMDGOALS)),,T))
-gb_Module_SKIPTARGETS += check slowcheck screenshot subsequentcheck uicheck
+gb_Module_SKIPTARGETS += check slowcheck subsequentcheck
 
 ifeq (T,$(if $(filter-out $(gb_SpeedUpTargets_LEVEL_3),$(MAKECMDGOALS)),,T))
 gb_Module_SKIPTARGETS += build
@@ -65,20 +65,12 @@ ifneq (,$(filter slowcheck,$(gb_Module_SKIPTARGETS)))
 gb_Module_add_slowcheck_target =
 endif
 
-ifneq (,$(filter screenshot,$(gb_Module_SKIPTARGETS)))
-gb_Module_add_screenshot_target =
-endif
-
 ifneq (,$(filter subsequentcheck,$(gb_Module_SKIPTARGETS)))
 gb_Module_add_subsequentcheck_target =
 endif
 
 ifneq (,$(filter perfcheck,$(gb_Module_SKIPTARGETS)))
 gb_Module_add_perfcheck_target =
-endif
-
-ifneq (,$(filter uicheck,$(gb_Module_SKIPTARGETS)))
-gb_Module_add_uicheck_target =
 endif
 
 ifneq (,$(filter module,$(gb_Module_SKIPTARGETS)))

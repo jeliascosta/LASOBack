@@ -44,7 +44,7 @@ namespace sdr
             ConnectorProperties(const ConnectorProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~ConnectorProperties() override;
+            virtual ~ConnectorProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

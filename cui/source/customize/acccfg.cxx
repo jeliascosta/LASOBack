@@ -36,6 +36,7 @@
 #include <vcl/builderfactory.hxx>
 
 #include "cuires.hrc"
+#include "acccfg.hrc"
 
 #include <svx/svxids.hrc>
 
@@ -73,9 +74,14 @@
 
 using namespace css;
 
+static const char MODULEPROP_SHORTNAME  [] = "ooSetupFactoryShortName";
+static const char MODULEPROP_UINAME     [] = "ooSetupFactoryUIName";
+static const char CMDPROP_UINAME        [] = "Name";
+
 static const char FOLDERNAME_UICONFIG   [] = "Configurations2";
 
 static const char MEDIATYPE_PROPNAME    [] = "MediaType";
+static const char MEDIATYPE_UICONFIG    [] = "application/vnd.sun.xml.ui.configuration";
 
 static const sal_uInt16 KEYCODE_ARRAY[] =
 {
@@ -630,6 +636,8 @@ class SfxAccCfgLBoxString_Impl : public SvLBoxString
 public:
     explicit SfxAccCfgLBoxString_Impl(const OUString& sText);
 
+    virtual ~SfxAccCfgLBoxString_Impl();
+
     virtual void Paint(const Point& aPos, SvTreeListBox& rDevice, vcl::RenderContext& rRenderContext,
                        const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
 };
@@ -637,6 +645,9 @@ public:
 
 SfxAccCfgLBoxString_Impl::SfxAccCfgLBoxString_Impl(const OUString& sText)
     : SvLBoxString(sText)
+{}
+
+SfxAccCfgLBoxString_Impl::~SfxAccCfgLBoxString_Impl()
 {}
 
 void SfxAccCfgLBoxString_Impl::Paint(const Point& aPos, SvTreeListBox& /*rDevice*/, vcl::RenderContext& rRenderContext,
@@ -662,6 +673,15 @@ VCL_BUILDER_DECL_FACTORY(SfxAccCfgTabListBox)
        nWinBits |= WB_BORDER;
 
     rRet = VclPtr<SfxAccCfgTabListBox_Impl>::Create(pParent, nWinBits);
+}
+
+void SfxAccCfgTabListBox_Impl::InitEntry(SvTreeListEntry* pEntry,
+                                         const OUString& rText,
+                                         const Image& rImage1,
+                                         const Image& rImage2,
+                                         SvLBoxButtonKind eButtonKind)
+{
+    SvTabListBox::InitEntry(pEntry, rText, rImage1, rImage2, eButtonKind);
 }
 
 SfxAccCfgTabListBox_Impl::~SfxAccCfgTabListBox_Impl()
@@ -741,20 +761,20 @@ SfxAcceleratorConfigPage::SfxAcceleratorConfigPage( vcl::Window* pParent, const 
     get(m_pSaveButton, "save");
     get(m_pResetButton, "reset");
     get(m_pEntriesBox, "shortcuts");
-    Size aSize(LogicToPixel(Size(174, 100), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(174, 100), MAP_APPFONT));
     m_pEntriesBox->set_width_request(aSize.Width());
     m_pEntriesBox->set_height_request(aSize.Height());
     m_pEntriesBox->SetAccelConfigPage(this);
     get(m_pGroupLBox, "category");
-    aSize = LogicToPixel(Size(78 , 91), MapUnit::MapAppFont);
+    aSize = LogicToPixel(Size(78 , 91), MAP_APPFONT);
     m_pGroupLBox->set_width_request(aSize.Width());
     m_pGroupLBox->set_height_request(aSize.Height());
     get(m_pFunctionBox, "function");
-    aSize = LogicToPixel(Size(88, 91), MapUnit::MapAppFont);
+    aSize = LogicToPixel(Size(88, 91), MAP_APPFONT);
     m_pFunctionBox->set_width_request(aSize.Width());
     m_pFunctionBox->set_height_request(aSize.Height());
     get(m_pKeyBox, "keys");
-    aSize = LogicToPixel(Size(80, 91), MapUnit::MapAppFont);
+    aSize = LogicToPixel(Size(80, 91), MAP_APPFONT);
     m_pKeyBox->set_width_request(aSize.Width());
     m_pKeyBox->set_height_request(aSize.Height());
 
@@ -775,7 +795,7 @@ SfxAcceleratorConfigPage::SfxAcceleratorConfigPage( vcl::Window* pParent, const 
 
     // initialize Entriesbox
     m_pEntriesBox->SetStyle(m_pEntriesBox->GetStyle()|WB_HSCROLL|WB_CLIPCHILDREN);
-    m_pEntriesBox->SetSelectionMode(SelectionMode::Single);
+    m_pEntriesBox->SetSelectionMode(SINGLE_SELECTION);
     m_pEntriesBox->SetTabs(&AccCfgTabs[0]);
     m_pEntriesBox->Resize(); // OS: Hack for right selection
     m_pEntriesBox->SetSpaceBetweenEntries(0);
@@ -790,7 +810,7 @@ SfxAcceleratorConfigPage::SfxAcceleratorConfigPage( vcl::Window* pParent, const 
             nMaxWidth = nTmp;
     }
     // recalc second tab
-    long nNewTab = PixelToLogic( Size( nMaxWidth, 0 ), MapUnit::MapAppFont ).Width();
+    long nNewTab = PixelToLogic( Size( nMaxWidth, 0 ), MAP_APPFONT ).Width();
     nNewTab = nNewTab + 5; // additional space
     m_pEntriesBox->SetTab( 1, nNewTab );
 
@@ -873,8 +893,8 @@ void SfxAcceleratorConfigPage::InitAccCfg()
                  frame::ModuleManager::create(m_xContext);
         m_sModuleLongName = xModuleManager->identify(m_xFrame);
         comphelper::SequenceAsHashMap lModuleProps(xModuleManager->getByName(m_sModuleLongName));
-        m_sModuleShortName = lModuleProps.getUnpackedValueOrDefault("ooSetupFactoryShortName", OUString());
-        m_sModuleUIName    = lModuleProps.getUnpackedValueOrDefault("ooSetupFactoryUIName", OUString());
+        m_sModuleShortName = lModuleProps.getUnpackedValueOrDefault(MODULEPROP_SHORTNAME, OUString());
+        m_sModuleUIName    = lModuleProps.getUnpackedValueOrDefault(MODULEPROP_UINAME   , OUString());
 
         // get global accelerator configuration
         m_xGlobal = css::ui::GlobalAcceleratorConfiguration::create(m_xContext);
@@ -1039,18 +1059,18 @@ void SfxAcceleratorConfigPage::ResetConfig()
     m_pEntriesBox->Clear();
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, Load, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, Load, Button*, void)
 {
     // ask for filename, where we should load the new config data from
     StartFileDialog( 0, aLoadAccelConfigStr );
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, Save, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, Save, Button*, void)
 {
     StartFileDialog( WB_SAVEAS, aSaveAccelConfigStr );
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, Default, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, Default, Button*, void)
 {
     uno::Reference<form::XReset> xReset(m_xAct, uno::UNO_QUERY);
     if (xReset.is())
@@ -1064,7 +1084,7 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, Default, Button*, void)
     m_pEntriesBox->Select(m_pEntriesBox->GetEntry(nullptr, 0));
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, ChangeHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, ChangeHdl, Button*, void)
 {
     sal_uLong nPos = SvTreeList::GetRelPos( m_pEntriesBox->FirstSelected() );
     TAccInfo* pEntry = static_cast<TAccInfo*>(m_pEntriesBox->GetEntry(nullptr, nPos)->GetUserData());
@@ -1080,7 +1100,7 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, ChangeHdl, Button*, void)
     m_pFunctionBox->GetSelectHdl().Call( m_pFunctionBox );
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, RemoveHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, RemoveHdl, Button*, void)
 {
     // get selected entry
     sal_uLong nPos = SvTreeList::GetRelPos( m_pEntriesBox->FirstSelected() );
@@ -1094,10 +1114,10 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, RemoveHdl, Button*, void)
     m_pFunctionBox->GetSelectHdl().Call( m_pFunctionBox );
 }
 
-IMPL_LINK( SfxAcceleratorConfigPage, SelectHdl, SvTreeListBox*, pListBox, void )
+IMPL_LINK_TYPED( SfxAcceleratorConfigPage, SelectHdl, SvTreeListBox*, pListBox, void )
 {
     // disable help
-    Help::ShowBalloon( this, Point(), ::tools::Rectangle(), OUString() );
+    Help::ShowBalloon( this, Point(), Rectangle(), OUString() );
     if (pListBox == m_pEntriesBox)
     {
         sal_uLong nPos = SvTreeList::GetRelPos( m_pEntriesBox->FirstSelected() );
@@ -1180,7 +1200,7 @@ IMPL_LINK( SfxAcceleratorConfigPage, SelectHdl, SvTreeListBox*, pListBox, void )
     }
 }
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, RadioHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, RadioHdl, Button*, void)
 {
     uno::Reference<ui::XAcceleratorConfiguration> xOld = m_xAct;
 
@@ -1213,7 +1233,7 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, RadioHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, LoadHdl, sfx2::FileDialogHelper*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, LoadHdl, sfx2::FileDialogHelper*, void)
 {
     assert(m_pFileDlg);
 
@@ -1297,7 +1317,7 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, LoadHdl, sfx2::FileDialogHelper*, void
 }
 
 
-IMPL_LINK_NOARG(SfxAcceleratorConfigPage, SaveHdl, sfx2::FileDialogHelper*, void)
+IMPL_LINK_NOARG_TYPED(SfxAcceleratorConfigPage, SaveHdl, sfx2::FileDialogHelper*, void)
 {
     assert(m_pFileDlg);
 
@@ -1346,7 +1366,7 @@ IMPL_LINK_NOARG(SfxAcceleratorConfigPage, SaveHdl, sfx2::FileDialogHelper*, void
             OUString sMediaType;
             xUIConfigProps->getPropertyValue(MEDIATYPE_PROPNAME) >>= sMediaType;
             if (sMediaType.isEmpty())
-                xUIConfigProps->setPropertyValue(MEDIATYPE_PROPNAME, uno::Any(OUString("application/vnd.sun.xml.ui.configuration")));
+                xUIConfigProps->setPropertyValue(MEDIATYPE_PROPNAME, uno::makeAny(OUString(MEDIATYPE_UICONFIG)));
 
             uno::Reference<ui::XUIConfigurationManager2> xCfgMgr2 = ui::UIConfigurationManager::create(m_xContext);
             xCfgMgr2->setStorage(xUIConfig);
@@ -1511,7 +1531,7 @@ OUString SfxAcceleratorConfigPage::GetLabel4Command(const OUString& sCommand)
         if (xModuleConf.is())
         {
             ::comphelper::SequenceAsHashMap lProps(xModuleConf->getByName(sCommand));
-            OUString sLabel = lProps.getUnpackedValueOrDefault("Name", OUString());
+            OUString sLabel = lProps.getUnpackedValueOrDefault(CMDPROP_UINAME, OUString());
             if (!sLabel.isEmpty())
                 return sLabel;
         }

@@ -25,7 +25,7 @@
 #include <sfx2/request.hxx>
 #include <svl/whiter.hxx>
 #include <vcl/msgbox.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 
 #include "sc.hrc"
 #include "pivotsh.hxx"
@@ -63,8 +63,9 @@ ScPivotShell::ScPivotShell( ScTabViewShell* pViewSh ) :
     {
         pMgr->SetMaxUndoActionCount( 0 );
     }
+    SetHelpId( HID_SCSHELL_PIVOTSH );
     SetName("Pivot");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Pivot));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Pivot));
 }
 
 ScPivotShell::~ScPivotShell()
@@ -106,7 +107,7 @@ void ScPivotShell::Execute( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                ScopedVclPtr<AbstractScPivotFilterDlg> pDlg(pFact->CreateScPivotFilterDlg(
+                std::unique_ptr<AbstractScPivotFilterDlg> pDlg(pFact->CreateScPivotFilterDlg(
                     pViewShell->GetDialogParent(), aArgSet, nSrcTab));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
 

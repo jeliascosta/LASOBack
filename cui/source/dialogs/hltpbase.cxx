@@ -45,19 +45,19 @@ OUString CreateUiNameFromURL( const OUString& aStrURL )
     switch(aURLObj.GetProtocol())
     {
         case INetProtocol::File:
-            osl::FileBase::getSystemPathFromFileURL(aURLObj.GetMainURL(INetURLObject::DecodeMechanism::NONE), aStrUiURL);
+            osl::FileBase::getSystemPathFromFileURL(aURLObj.GetMainURL(INetURLObject::NO_DECODE), aStrUiURL);
             break;
         case INetProtocol::Ftp :
             {
                 //remove password from name
                 INetURLObject   aTmpURL(aURLObj);
                 aTmpURL.SetPass("");
-                aStrUiURL = aTmpURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
+                aStrUiURL = aTmpURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
             }
             break;
         default :
             {
-                aStrUiURL = aURLObj.GetMainURL(INetURLObject::DecodeMechanism::Unambiguous);
+                aStrUiURL = aURLObj.GetMainURL(INetURLObject::DECODE_UNAMBIGUOUS);
             }
     }
     if(aStrUiURL.isEmpty())
@@ -95,6 +95,23 @@ sal_Int8 SvxHyperURLBox::ExecuteDrop( const ExecuteDropEvent& rEvt )
     }
 
     return nRet;
+}
+
+void SvxHyperURLBox::Select()
+{
+    SvtURLBox::Select();
+}
+void SvxHyperURLBox::Modify()
+{
+    SvtURLBox::Modify();
+}
+bool SvxHyperURLBox::Notify( NotifyEvent& rNEvt )
+{
+    return SvtURLBox::Notify( rNEvt );
+}
+bool SvxHyperURLBox::PreNotify( NotifyEvent& rNEvt )
+{
+    return SvtURLBox::PreNotify( rNEvt );
 }
 
 //# Hyperlink-Dialog: Tabpages-Baseclass                                 #
@@ -139,6 +156,16 @@ void SvxHyperlinkTabPageBase::dispose()
     IconChoicePage::dispose();
 }
 
+void SvxHyperlinkTabPageBase::ActivatePage()
+{
+    TabPage::ActivatePage();
+}
+
+void SvxHyperlinkTabPageBase::DeactivatePage()
+{
+    TabPage::DeactivatePage();
+}
+
 bool SvxHyperlinkTabPageBase::QueryClose()
 {
     return !mbIsCloseDisabled;
@@ -152,7 +179,7 @@ void SvxHyperlinkTabPageBase::InitStdControls ()
 
         SfxDispatcher* pDispatch = GetDispatcher();
         SfxViewFrame* pViewFrame = pDispatch ? pDispatch->GetFrame() : nullptr;
-        SfxFrame* pFrame = pViewFrame ? &pViewFrame->GetFrame() : nullptr;
+        SfxFrame* pFrame = pViewFrame ? &pViewFrame->GetTopFrame() : nullptr;
         if ( pFrame )
         {
             std::unique_ptr<TargetList> pList(new TargetList);
@@ -172,7 +199,7 @@ void SvxHyperlinkTabPageBase::InitStdControls ()
         get(mpEdIndication, "indication");
         get(mpEdText, "name");
         get(mpBtScript, "script");
-        BitmapEx aBitmap(CUI_RES(RID_SVXBMP_SCRIPT));
+        BitmapEx aBitmap = Image(CUI_RES (RID_SVXBMP_SCRIPT)).GetBitmapEx();
         aBitmap.Scale(GetDPIScaleFactor(),GetDPIScaleFactor(),BmpScaleFlag::BestQuality );
         mpBtScript->SetModeImage(Image(aBitmap));
 
@@ -200,12 +227,12 @@ void SvxHyperlinkTabPageBase::ShowMarkWnd ()
     static_cast<vcl::Window*>(mpMarkWnd)->Show();
 
     // Size of dialog-window in screen pixels
-    ::tools::Rectangle aDlgRect( mpDialog->GetWindowExtentsRelative( nullptr ) );
+    Rectangle aDlgRect( mpDialog->GetWindowExtentsRelative( nullptr ) );
     Point aDlgPos ( aDlgRect.TopLeft() );
     Size aDlgSize ( mpDialog->GetSizePixel () );
 
     // Absolute size of the screen
-    ::tools::Rectangle aScreen( mpDialog->GetDesktopRectPixel() );
+    Rectangle aScreen( mpDialog->GetDesktopRectPixel() );
 
     // Size of Extrawindow
     Size aExtraWndSize( mpMarkWnd->GetSizePixel () );
@@ -299,6 +326,12 @@ void SvxHyperlinkTabPageBase::SetInitFocus()
     GrabFocus();
 }
 
+// Ask dialog whether the current doc is a HTML-doc
+bool SvxHyperlinkTabPageBase::IsHTMLDoc() const
+{
+    return static_cast<SvxHpLinkDlg*>(mpDialog.get())->IsHTMLDoc();
+}
+
 // retrieve dispatcher
 SfxDispatcher* SvxHyperlinkTabPageBase::GetDispatcher() const
 {
@@ -306,7 +339,7 @@ SfxDispatcher* SvxHyperlinkTabPageBase::GetDispatcher() const
 }
 
 // Click on imagebutton : Script
-IMPL_LINK_NOARG(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
 {
     SvxHyperlinkItem *pHyperlinkItem = const_cast<SvxHyperlinkItem*>(static_cast<const SvxHyperlinkItem *>(
                                        GetItemSet().GetItem (SID_HYPERLINK_GETLINK)));
@@ -315,15 +348,15 @@ IMPL_LINK_NOARG(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
     {
         // get macros from itemset
         const SvxMacroTableDtor* pMacroTbl = pHyperlinkItem->GetMacroTable();
-        SvxMacroItem aItem ( SID_ATTR_MACROITEM );
+        SvxMacroItem aItem ( GetWhich(SID_ATTR_MACROITEM) );
         if( pMacroTbl )
             aItem.SetMacroTable( *pMacroTbl );
 
         // create empty itemset for macro-dlg
-        std::unique_ptr<SfxItemSet> pItemSet( new SfxItemSet(SfxGetpApp()->GetPool(),
+        SfxItemSet* pItemSet = new SfxItemSet(SfxGetpApp()->GetPool(),
                                               SID_ATTR_MACROITEM,
-                                              SID_ATTR_MACROITEM ) );
-        pItemSet->Put ( aItem );
+                                              SID_ATTR_MACROITEM );
+        pItemSet->Put ( aItem, SID_ATTR_MACROITEM );
 
         /*  disable HyperLinkDlg for input while the MacroAssignDlg is working
             because if no JAVA is installed an error box occurs and then it is possible
@@ -362,6 +395,7 @@ IMPL_LINK_NOARG(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
                 pHyperlinkItem->SetMacroTable( static_cast<const SvxMacroItem*>(pItem)->GetMacroTable() );
             }
         }
+        delete pItemSet;
     }
 }
 
@@ -425,8 +459,7 @@ void SvxHyperlinkTabPageBase::GetDataFromCommonFields( OUString& aStrName,
     aStrName    = mpEdIndication->GetText();
     aStrFrame   = mpCbbFrame->GetText();
     eMode       = (SvxLinkInsertMode) (mpLbForm->GetSelectEntryPos()+1);
-    // Ask dialog whether the current doc is a HTML-doc
-    if (static_cast<SvxHpLinkDlg*>(mpDialog.get())->IsHTMLDoc())
+    if( IsHTMLDoc() )
         eMode = (SvxLinkInsertMode) ( sal_uInt16(eMode) | HLINK_HTMLMODE );
 }
 
@@ -492,7 +525,7 @@ void SvxHyperlinkTabPageBase::ActivatePage( const SfxItemSet& rItemSet )
         ShowMarkWnd ();
 }
 
-DeactivateRC SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
+int SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
 {
     // hide mark-wnd
     SetMarkWndShouldOpen( IsMarkWndVisible () );
@@ -514,7 +547,7 @@ DeactivateRC SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
         _pSet->Put( aItem );
     }
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 bool SvxHyperlinkTabPageBase::ShouldOpenMarkWnd()

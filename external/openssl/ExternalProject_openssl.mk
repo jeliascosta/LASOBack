@@ -42,7 +42,11 @@ OPENSSL_PLATFORM := \
         ios-armv7\
       ,\
         $(if $(filter WNT,$(OS)),\
-          $(if $(filter INTEL,$(CPUNAME)),VC-WIN32,VC-WIN64A)\
+          $(if $(filter GCC,$(COM)),\
+            mingw\
+          ,\
+            $(if $(filter INTEL,$(CPUNAME)),VC-WIN32,VC-WIN64A)\
+          )\
         ,\
           $(if $(filter MACOSX,$(OS)),\
             $(if $(filter POWERPC,$(CPUNAME)),darwin-ppc-cc)\
@@ -82,8 +86,9 @@ $(call gb_ExternalProject_get_state_target,openssl,build):
 				$(if $(SYSBASE),-I$(SYSBASE)/usr/include -L$(SYSBASE)/usr/lib)) \
 			$(if $(filter MACOSX,$(OS)),--prefix=/@.__________________________________________________OOO) \
 		&& $(MAKE) build_libs \
-			CC="$(CC) -fPIC \
-				$(if $(filter-out WNT MACOSX,$(OS)),-fvisibility=hidden)" \
+			CC="$(CC) -fPIC $(if $(filter-out WNT MACOSX,$(OS)),\
+			$(if $(filter TRUE,$(HAVE_GCC_VISIBILITY_FEATURE)),\
+			-fvisibility=hidden))" \
 	)
 endif
 

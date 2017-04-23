@@ -37,12 +37,14 @@ PDFInteractionHandler::~PDFInteractionHandler()
 
 
 void SAL_CALL PDFInteractionHandler::handle( const Reference< task::XInteractionRequest >& i_xRequest )
+    throw (RuntimeException, std::exception)
 {
     handleInteractionRequest( i_xRequest );
 }
 
 
 sal_Bool SAL_CALL PDFInteractionHandler::handleInteractionRequest( const Reference< task::XInteractionRequest >& i_xRequest )
+    throw (RuntimeException, std::exception)
 {
     bool bHandled = false;
 
@@ -63,37 +65,40 @@ sal_Bool SAL_CALL PDFInteractionHandler::handleInteractionRequest( const Referen
 
 
 OUString PDFInteractionHandler_getImplementationName ()
+    throw (RuntimeException)
 {
     return OUString ( "com.sun.star.comp.PDF.PDFExportInteractionHandler" );
 }
 
 
-Sequence< OUString > SAL_CALL PDFInteractionHandler_getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL PDFInteractionHandler_getSupportedServiceNames(  ) throw (RuntimeException)
 {
     Sequence<OUString> aRet { "com.sun.star.filter.pdfexport.PDFExportInteractionHandler" };
     return aRet;
 }
 
 
-Reference< XInterface > SAL_CALL PDFInteractionHandler_createInstance( const Reference< XMultiServiceFactory > & )
+Reference< XInterface > SAL_CALL PDFInteractionHandler_createInstance( const Reference< XMultiServiceFactory > & ) throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new PDFInteractionHandler);
 }
 
 
 OUString SAL_CALL PDFInteractionHandler::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return PDFInteractionHandler_getImplementationName();
 }
 
 
 sal_Bool SAL_CALL PDFInteractionHandler::supportsService( const OUString& rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService( this, rServiceName );
 }
 
 
-css::uno::Sequence< OUString > SAL_CALL PDFInteractionHandler::getSupportedServiceNames(  )
+css::uno::Sequence< OUString > SAL_CALL PDFInteractionHandler::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
 {
     return PDFInteractionHandler_getSupportedServiceNames();
 }

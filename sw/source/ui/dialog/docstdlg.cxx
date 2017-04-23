@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <ctype.h>
 #include <swwait.hxx>
 #include <wrtsh.hxx>
 #include <view.hxx>
@@ -139,7 +140,7 @@ void SwDocStatPage::Update()
     SetData(aDocStat);
 }
 
-IMPL_LINK_NOARG(SwDocStatPage, UpdateHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwDocStatPage, UpdateHdl, Button*, void)
 {
     Update();
     SwDocShell* pDocShell = static_cast<SwDocShell*>( SfxObjectShell::Current());

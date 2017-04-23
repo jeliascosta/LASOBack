@@ -25,7 +25,6 @@ $(eval $(call gb_Helper_register_executables,NONE, \
 	concat-deps \
 	cpp \
 	cppunittester \
-	gbuildtojson \
 	$(if $(filter MSC,$(COM)), \
 		gcc-wrapper \
 		g++-wrapper \
@@ -38,6 +37,7 @@ $(eval $(call gb_Helper_register_executables,NONE, \
 	helpex \
 	idxdict \
 	langsupport \
+	$(if $(ENABLE_TELEPATHY),liboapprover) \
 	$(if $(filter IOS,$(OS)),LibreOffice) \
 	libtest \
 	lngconvex \
@@ -47,7 +47,6 @@ $(eval $(call gb_Helper_register_executables,NONE, \
 	osl_process_child \
 	pdf2xml \
 	pdfunzip \
-	pdfverify \
 	pocheck \
 	propex \
 	regsvrex \
@@ -75,7 +74,6 @@ $(eval $(call gb_Helper_register_executables,NONE, \
 	vcldemo \
 	tiledrendering \
     mtfdemo \
-    visualbackendtest \
 	$(if $(and $(ENABLE_GTK3), $(filter LINUX %BSD SOLARIS,$(OS))), gtktiledviewer) \
 ))
 
@@ -92,32 +90,6 @@ $(eval $(call gb_Helper_register_executables_for_install,SDK,sdk, \
 
 $(eval $(call gb_Helper_register_executables_for_install,OOO,brand, \
 	$(call gb_Helper_optional,BREAKPAD,minidump_upload) \
-	$(call gb_Helper_optional,FUZZERS,wmffuzzer) \
-	$(call gb_Helper_optional,FUZZERS,jpgfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,giffuzzer) \
-	$(call gb_Helper_optional,FUZZERS,xbmfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,xpmfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,pngfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,bmpfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,svmfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,pcdfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,dxffuzzer) \
-	$(call gb_Helper_optional,FUZZERS,metfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,ppmfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,psdfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,epsfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,pctfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,pcxfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,rasfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,tgafuzzer) \
-	$(call gb_Helper_optional,FUZZERS,tiffuzzer) \
-	$(call gb_Helper_optional,FUZZERS,hwpfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,602fuzzer) \
-	$(call gb_Helper_optional,FUZZERS,lwpfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,olefuzzer) \
-	$(call gb_Helper_optional,FUZZERS,pptfuzzer) \
-	$(call gb_Helper_optional,FUZZERS,rtffuzzer) \
-	$(call gb_Helper_optional,FUZZERS,cgmfuzzer) \
 	$(if $(filter-out ANDROID IOS MACOSX WNT,$(OS)),oosplash) \
 	soffice_bin \
 	$(if $(filter DESKTOP,$(BUILD_TYPE)),unopkg_bin) \
@@ -176,9 +148,7 @@ $(eval $(call gb_Helper_register_executables_for_install,OOO,ooo, \
 	gengal \
 	$(if $(filter WNT,$(OS)),,uri-encode) \
 	$(if $(ENABLE_MACOSX_SANDBOX),, \
-		$(if $(ENABLE_HEADLESS),, \
-			ui-previewer \
-		) \
+		ui-previewer \
 	) \
 	$(if $(filter WNT,$(OS)), \
 		senddoc \
@@ -267,6 +237,7 @@ $(eval $(call gb_Helper_register_executables_for_install,OOO,tde, \
 
 $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,impress, \
 	animcore \
+	placeware \
 	PresenterScreen \
 	PresentationMinimizer \
 	wpftimpress \
@@ -309,9 +280,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 	$(call gb_Helper_optional,AVMEDIA,avmedia) \
 	$(if $(filter MACOSX,$(OS)),\
 		avmediaMacAVF \
-		$(if $(ENABLE_MACOSX_SANDBOX),,\
-			$(if $(shell test $(MACOSX_SDK_VERSION) -ge 101200 || echo not),avmediaQuickTime) \
-		) \
+		$(if $(ENABLE_MACOSX_SANDBOX),,avmediaQuickTime) \
 	) \
 	$(call gb_Helper_optional,SCRIPTING, \
 		basctl \
@@ -324,9 +293,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 	canvastools \
 	chartcore \
 	chartcontroller \
-	$(if $(ENABLE_HEADLESS),, \
-		chartopengl \
-	) \
+	chartopengl \
 	$(call gb_Helper_optional,OPENCL,clew) \
 	$(if $(filter $(OS),WNT),,cmdmail) \
 	cppcanvas \
@@ -337,8 +304,8 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 		dba \
 		dbase \
 		dbmm \
+		dbtools \
 		dbaxml) \
-	dbtools \
 	deploymentmisc \
 	$(if $(filter-out MACOSX WNT,$(OS)),desktopbe1) \
 	$(if $(USING_X11),desktop_detector) \
@@ -347,13 +314,14 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 	$(if $(ENABLE_OPENGL_CANVAS),oglcanvas) \
 	drawinglayer \
 	editeng \
-	$(if $(filter WNT,$(OS)),emser) \
+	$(if $(filter WNT,$(OS)),$(if $(DISABLE_ATL),,emser)) \
 	evtatt \
 	expwrap \
 	$(call gb_Helper_optional,DBCONNECTIVITY, \
 		flat \
 		file) \
 	filterconfig \
+	$(if $(filter $(ENABLE_FIREBIRD_SDBC),TRUE),firebird_sdbc) \
 	fps_office \
 	for \
 	forui \
@@ -425,6 +393,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 	textfd \
 	tk \
 	tl \
+	$(if $(ENABLE_TELEPATHY),tubes) \
 	ucpexpand1 \
 	ucpext \
 	ucpimage \
@@ -456,7 +425,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, \
 	mozbootstrap \
 	$(if $(filter $(OS),WNT), \
 		ado \
-		oleautobridge \
+		$(if $(DISABLE_ATL),,oleautobridge) \
 		smplmail \
 		wininetbe1 \
 	) \
@@ -473,10 +442,6 @@ $(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,postgresqlsdbc, \
 	$(if $(BUILD_POSTGRESQL_SDBC), \
 		postgresql-sdbc \
 		postgresql-sdbc-impl) \
-))
-
-$(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,firebirdsdbc, \
-	$(if $(ENABLE_FIREBIRD_SDBC),firebird_sdbc) \
 ))
 
 ifneq ($(ENABLE_PDFIMPORT),)
@@ -518,10 +483,8 @@ $(eval $(call gb_Helper_register_libraries,PLAINLIBS_NONE, \
 	smoketest \
 	subsequenttest \
 	test \
-	test-setupvcl \
 	testtools_cppobj \
 	testtools_bridgetest \
-	testtools_bridgetest-common \
 	testtools_constructors \
 	unobootstrapprotector \
 	unoexceptionprotector \
@@ -529,7 +492,6 @@ $(eval $(call gb_Helper_register_libraries,PLAINLIBS_NONE, \
 	vclbootstrapprotector \
 	scqahelper \
 	unowinreg \
-	wpftqahelper \
 	$(if $(filter MSC,$(COM)),cli_cppuhelper) \
 	$(if $(filter $(OS),ANDROID),lo-bootstrap) \
 	$(if $(filter $(OS),MACOSX),OOoSpotlightImporter) \
@@ -538,7 +500,6 @@ $(eval $(call gb_Helper_register_libraries,PLAINLIBS_NONE, \
 $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_URE,ure, \
 	affine_uno_uno \
 	$(if $(filter MSC,$(COM)),cli_uno) \
-	i18nlangtag \
 	$(if $(ENABLE_JAVA), \
 		java_uno \
 		jpipe \
@@ -593,6 +554,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
 	dict_zh \
 	embobj \
 	$(if $(ENABLE_JAVA),hsqldb) \
+	i18nlangtag \
 	i18nutil \
 	index_data \
 	$(if $(and $(ENABLE_GTK3), $(filter LINUX %BSD SOLARIS,$(OS))), libreofficekitgtk) \
@@ -604,7 +566,7 @@ $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
 	$(if $(ENABLE_JAVA), \
 		$(if $(filter $(OS),MACOSX),,officebean) \
 	) \
-	emboleobj \
+	$(if $(filter WNT-TRUE,$(OS)-$(DISABLE_ATL)),,emboleobj) \
 	package2 \
 	$(if $(USING_X11),recentfile) \
 	$(call gb_Helper_optional,SCRIPTING,scriptframe) \
@@ -625,7 +587,6 @@ $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
 	xmlsecurity \
 	xsec_fw \
 	xsec_xmlsec \
-	$(if $(filter-out WNT MACOSX ANDROID IOS,$(OS)),xsec_gpg) \
 	xstor \
 	$(if $(filter $(OS),MACOSX), \
 		macab1 \
@@ -636,32 +597,40 @@ $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
 		dtrans \
 		fps \
 		ftransl \
-		inprocserv \
-		UAccCOM \
-		winaccessibility \
+		$(if $(DISABLE_ATL),,\
+			inprocserv \
+			UAccCOM \
+			winaccessibility \
+		) \
 	) \
 ))
 
+ifeq ($(ENABLE_OPENGL),TRUE)
 ifeq ($(ENABLE_GLTF),TRUE)
 $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo, \
     avmediaogl \
 ))
 endif
+endif
 
 ifeq ($(OS),WNT)
 $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,activexbinarytable, \
-	regactivex \
+	$(if $(DISABLE_ACTIVEX),,\
+		regactivex \
+	) \
 ))
 
 $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,activex, \
-	so_activex \
-	spsupp \
+	$(if $(DISABLE_ACTIVEX),,\
+		so_activex \
+	) \
 ))
 
 ifneq ($(BUILD_X64),)
 $(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,activexwin64, \
-	so_activex_x64 \
-	spsupp_x64 \
+	$(if $(DISABLE_ACTIVEX),,\
+		so_activex_x64 \
+	) \
 ))
 endif
 
@@ -759,6 +728,29 @@ $(eval $(call gb_Helper_register_jars_for_install,OOO,extensions_rhino, \
 ))
 endif
 
+ifneq ($(WITH_EXTRA_GALLERY),)
+$(eval $(call gb_Helper_register_packages_for_install,accessories_gallery,\
+	accessories_accessoriesgallery \
+	accessories_accessoriesgallerydrawspeople \
+	accessories_accessoriesgalleryphotosplants \
+	accessories_accessoriesgalleryphotoscelebration \
+	accessories_accessoriesgalleryphotosfauna \
+	accessories_accessoriesgalleryphotosflowers \
+	accessories_accessoriesgalleryphotosfoodsanddrinks \
+	accessories_accessoriesgalleryphotoshumans \
+	accessories_accessoriesgalleryphotoslandscapes \
+	accessories_accessoriesgalleryphotosbuildings \
+	accessories_accessoriesgalleryphotoscities \
+	accessories_accessoriesgalleryphotosobjects \
+	accessories_accessoriesgalleryphotosspace \
+	accessories_accessoriesgalleryphotosstatues \
+	accessories_accessoriesgalleryphotostravel \
+	accessories_accessoriesgalleryelementsbullets2 \
+	accessories_accessoriesgallerynonfree \
+))
+
+endif
+
 ifeq (CT2N,$(filter CT2N,$(BUILD_TYPE)))
 $(eval $(call gb_Helper_register_packages_for_install,extensions_ct2n,\
 	ct2n \
@@ -792,40 +784,6 @@ $(eval $(call gb_Helper_register_jars,NONE,\
 ))
 endif
 
-# 'test_unittest' is only package delivering to workdir.
-# Other packages could be potentially autoinstalled.
-$(eval $(call gb_Helper_register_packages, \
-	test_unittest \
-	cli_basetypes_copy \
-	desktop_install \
-	$(if $(filter DESKTOP,$(BUILD_TYPE)),desktop_scripts_install) \
-	extras_fonts \
-	extras_wordbook \
-	$(if $(filter MSC,$(COM)),msvc_dlls) \
-	more_fonts_conf \
-	instsetoo_native_setup \
-	$(if $(ENABLE_OOENV),instsetoo_native_ooenv) \
-	odk_headers_generated \
-	postprocess_images \
-	postprocess_registry \
-	readlicense_oo_readmes \
-	setup_native_misc \
-	share \
-	vcl_fontunxpsprint \
-))
-
-$(eval $(call gb_Helper_register_packages_for_install,impress,\
-	sd_xml \
-))
-
-$(eval $(call gb_Helper_register_packages_for_install,calc,\
-	sc_res_xml \
-))
-
-$(eval $(call gb_Helper_register_packages_for_install,libreofficekit,\
-	$(if $(filter LINUX %BSD SOLARIS, $(OS)),$(if $(ENABLE_GTK3),libreofficekit_selectionhandles)) \
-))
-
 $(eval $(call gb_Helper_register_packages_for_install,ure,\
 	instsetoo_native_setup_ure \
 	ure_install \
@@ -837,80 +795,13 @@ $(eval $(call gb_Helper_register_packages_for_install,ure,\
 	) \
 ))
 
-$(eval $(call gb_Helper_register_packages_for_install,postgresqlsdbc,\
-	$(if $(BUILD_POSTGRESQL_SDBC),connectivity_postgresql-sdbc) \
-))
-
-$(eval $(call gb_Helper_register_packages_for_install,sdk,\
-	odk_share_readme \
-	odk_share_readme_generated \
-	$(if $(filter WNT,$(OS)),odk_cli) \
-	odk_config \
-	$(if $(filter WNT,$(OS)),odk_config_win) \
-	odk_docs \
-	$(if $(DOXYGEN),odk_doxygen) \
-	odk_examples \
-	odk_headers \
-	odk_html \
-	odk_settings \
-	odk_settings_generated \
-	offapi_idl \
-	udkapi_idl \
-	$(if $(ENABLE_JAVA), \
-		odk_javadoc \
-		odk_uno_loader_classes \
-		odk_unowinreg \
-	) \
-))
-
 $(eval $(call gb_Helper_register_packages_for_install,ooo,\
 	$(if $(SYSTEM_LIBEXTTEXTCAT),,libexttextcat_fingerprint) \
 	officecfg_misc \
-	$(if $(filter $(OS),MACOSX), \
-		extensions_mdibundle \
-		extensions_OOoSpotlightImporter \
-	) \
-	extras_autocorr \
-	extras_autotextuser \
-	extras_cfgsrvnolang \
-	extras_cfgusr \
-	extras_database \
-	extras_databasebiblio \
-	extras_gallbullets \
-	extras_gallhtmlexpo \
-	extras_gallmytheme \
-	extras_gallroot \
-	extras_gallsystem \
-	extras_gallwwwback \
-	extras_gallwwwgraf \
 	extras_glade \
 	extras_labels \
-	$(if $(filter WNT,$(OS)),extras_newfiles) \
-	extras_palettes \
-	extras_tplofficorr \
-	extras_tploffimisc \
-	extras_tplpresnt \
-	extras_tpl_styles \
-	extras_tplpersonal \
-	extras_tplwizbitmap \
-	extras_tplwizdesktop \
-	extras_tplwizletter \
-	extras_tplwizfax \
-	extras_tplwizagenda \
-	extras_tplwizreport \
-	extras_tplwizstyles \
 	framework_dtd \
-	$(if $(filter $(OS),MACOSX),infoplist) \
-	oox_customshapes \
-	oox_generated \
 	package_dtd \
-	sd_web \
-	sfx2_emojiconfig \
-	$(call gb_Helper_optional,DESKTOP,\
-		$(if $(filter-out WNT,$(OS)),$(if $(ENABLE_MACOSX_SANDBOX),,shell_senddoc))) \
-	$(call gb_Helper_optional,DESKTOP,$(if $(filter-out MACOSX WNT,$(OS)),svx_gengal)) \
-	$(if $(USING_X11),vcl_fontunxppds) \
-	$(if $(filter $(OS),MACOSX),vcl_osxres) \
 	xmloff_dtd \
 	xmlscript_dtd \
 	xmlhelp_helpxsl \
@@ -921,23 +812,17 @@ $(eval $(call gb_Helper_register_packages_for_install,ooo,\
 		$(if $(ENABLE_SCRIPTING_JAVASCRIPT),scripting_ScriptsJavaScript) \
 	) \
 	$(if $(DISABLE_SCRIPTING),,scripting_scriptbindinglib) \
-	$(if $(filter $(OS),MACOSX),sysui_osxicons) \
-	wizards_basicshare \
 	wizards_basicsrvaccess2base \
 	wizards_basicsrvdepot \
 	wizards_basicsrveuro \
 	wizards_basicsrvgimmicks \
 	wizards_basicsrvimport \
 	wizards_basicsrvform \
-	wizards_basicsrvstandard \
 	wizards_basicsrvtemplate \
 	wizards_basicsrvtools \
 	wizards_basicsrvtutorials \
-	wizards_basicusr \
 	xmlsec \
-	$(if $(ENABLE_HEADLESS),, \
-		chart2_opengl_shader \
-	) \
+	chart2_opengl_shader \
 	vcl_opengl_shader \
 	$(if $(filter WNT,$(OS)), \
 		vcl_opengl_blacklist \
@@ -948,6 +833,7 @@ $(eval $(call gb_Helper_register_packages_for_install,ooo,\
 		Pyuno/fax \
 		Pyuno/letter \
 		Pyuno/agenda \
+		Pyuno/web \
 		Pyuno/mailmerge \
 	)) \
 	sfx2_classification \
@@ -955,15 +841,8 @@ $(eval $(call gb_Helper_register_packages_for_install,ooo,\
 ))
 
 $(eval $(call gb_Helper_register_packages_for_install,ogltrans,\
-	sd_opengl \
 	slideshow_opengl_shader \
 ))
-
-ifneq ($(ENABLE_PDFIMPORT),)
-$(eval $(call gb_Helper_register_packages_for_install,pdfimport, \
-	sdext_pdfimport_pdf \
-))
-endif
 
 $(eval $(call gb_Helper_register_packages_for_install,reportbuilder,\
 	reportbuilder-templates \
@@ -973,19 +852,6 @@ $(eval $(call gb_Helper_register_packages_for_install,xsltfilter,\
 	filter_docbook \
 	filter_xhtml \
 	filter_xslt \
-))
-
-$(eval $(call gb_Helper_register_packages_for_install,brand,\
-	desktop_branding \
-	$(if $(CUSTOM_BRAND_DIR),desktop_branding_custom) \
-	$(if $(and $(filter-out MACOSX WNT,$(OS)),$(filter DESKTOP,$(BUILD_TYPE))),\
-		$(if $(ENABLE_HEADLESS),, \
-			desktop_soffice_sh \
-		) \
-	) \
-	readlicense_oo_files \
-	$(if $(filter WNT,$(OS)),readlicense_oo_license) \
-	$(call gb_Helper_optional,DESKTOP,setup_native_packinfo) \
 ))
 
 ifeq ($(USING_X11), TRUE)
@@ -1013,10 +879,6 @@ $(eval $(call gb_Helper_register_packages_for_install,writer_brand,\
 	desktop_swriter_sh \
 ))
 endif # USING_X11=TRUE
-
-$(eval $(call gb_Helper_register_packages_for_install,onlineupdate,\
-	$(if $(ENABLE_ONLINE_UPDATE),$(if $(filter LINUX SOLARIS,$(OS)),setup_native_scripts)) \
-))
 
 ifneq ($(DISABLE_PYTHON),TRUE)
 $(eval $(call gb_Helper_register_packages_for_install,python, \
@@ -1046,120 +908,5 @@ $(eval $(call gb_ExternalExecutable_register_executables,\
 	xmllint \
 	xsltproc \
 ))
-
-# Resources
-$(eval $(call gb_Helper_register_resources,\
-	abp \
-	acc \
-	analysis \
-	avmedia \
-	$(call gb_Helper_optional,SCRIPTING,basctl) \
-	$(call gb_Helper_optional,DBCONNECTIVITY,bib) \
-	chartcontroller \
-	cnr \
-	cui \
-	date \
-	$(call gb_Helper_optional,DBCONNECTIVITY,\
-		dba \
-		dbmm \
-		dbp \
-		dbu \
-	) \
-	dbw \
-	deployment \
-	deploymentgui \
-	dkt \
-	editeng \
-	eps \
-	eur \
-	for \
-	forui \
-	$(call gb_Helper_optional,DESKTOP,fps_office) \
-	frm \
-	fwe \
-	gal \
-	imp \
-	ofa \
-	$(call gb_Helper_optional,DBCONNECTIVITY,pcr) \
-	pdffilter \
-	pricing \
-	rpt \
-	rptui \
-	$(call gb_Helper_optional,SCRIPTING,sb) \
-	sc \
-	scn \
-	sd \
-	sdbcl \
-	sdberr \
-	$(call gb_Helper_optional,DBCONNECTIVITY,sdbt) \
-	sfx \
-	sm \
-	$(if $(ENABLE_COINMP)$(ENABLE_LPSOLVE),solver) \
-	svl \
-	svt \
-	svx \
-	sw \
-	t602filter \
-	tpl \
-	upd \
-	$(if $(ENABLE_ONLINE_UPDATE),updchk) \
-	uui \
-	vcl \
-	writerperfect \
-	wzi \
-	$(if $(ENABLE_NSS),xmlsec) \
-	xsltdlg \
-))
-
-# UI configuration
-$(eval $(call gb_Helper_register_uiconfigs,\
-	cui \
-	$(call gb_Helper_optional,DBCONNECTIVITY,dbaccess) \
-	desktop \
-	editeng \
-	filter \
-	formula \
-	fps \
-	$(call gb_Helper_optional,SCRIPTING,modules/BasicIDE) \
-	$(call gb_Helper_optional,DBCONNECTIVITY,\
-		modules/dbapp \
-		modules/dbbrowser \
-		modules/dbquery \
-		modules/dbrelation \
-	) \
-	modules/dbreport \
-	$(call gb_Helper_optional,DBCONNECTIVITY,\
-		modules/dbtable \
-		modules/dbtdata \
-	) \
-	modules/sabpilot \
-	$(call gb_Helper_optional,DBCONNECTIVITY,modules/sbibliography) \
-	modules/scalc \
-	modules/scanner \
-	modules/schart \
-	modules/sdraw \
-	modules/sglobal \
-	modules/simpress \
-	modules/smath \
-	$(call gb_Helper_optional,DBCONNECTIVITY,modules/spropctrlr) \
-	modules/StartModule \
-	modules/sweb \
-	modules/swform \
-	modules/swreport \
-	modules/swriter \
-	modules/swxform \
-	sfx \
-	svt \
-	svx \
-	uui \
-	vcl \
-	writerperfect \
-	$(if $(ENABLE_NSS),xmlsec) \
-))
-
-ifeq ($(gb_GBUILDSELFTEST),t)
-$(eval $(call gb_Helper_register_libraries_for_install,OOOLIBS,ooo, gbuildselftestdep gbuildselftest))
-$(eval $(call gb_Helper_register_executables,NONE, gbuildselftestexe))
-endif
 
 # vim: set noet sw=4 ts=4:

@@ -42,17 +42,21 @@ class CSmplMailSuppl :
 {
 public:
     CSmplMailSuppl( );
-    ~CSmplMailSuppl( ) override;
+    ~CSmplMailSuppl( );
 
     // XSimpleMailClientSupplier
-    virtual css::uno::Reference< css::system::XSimpleMailClient > SAL_CALL querySimpleMailClient(  ) override;
+    virtual css::uno::Reference< css::system::XSimpleMailClient > SAL_CALL querySimpleMailClient(  )
+        throw (css::uno::RuntimeException);
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw(css::uno::RuntimeException);
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw(css::uno::RuntimeException);
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw(css::uno::RuntimeException);
 };
 
 #endif

@@ -23,10 +23,10 @@
 #include <uno/data.h>
 #include <typelib/typedescription.hxx>
 
-#include "bridge.hxx"
-#include "cppinterfaceproxy.hxx"
-#include "types.hxx"
-#include "vtablefactory.hxx"
+#include "bridges/cpp_uno/shared/bridge.hxx"
+#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/types.hxx"
+#include "bridges/cpp_uno/shared/vtablefactory.hxx"
 
 #include "share.hxx"
 #include <stdio.h>
@@ -601,7 +601,7 @@ bridges::cpp_uno::shared::VtableFactory::Slot * bridges::cpp_uno::shared::Vtable
 }
 
 
-std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;

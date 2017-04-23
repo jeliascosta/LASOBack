@@ -41,12 +41,12 @@ using namespace ::com::sun::star;
 class NamesEnumeration : public EnumerationHelperImpl
 {
     uno::Reference< frame::XModel > m_xModel;
+    uno::WeakReference< XHelperInterface > m_xParent;
     uno::Reference< sheet::XNamedRanges > m_xNames;
 public:
-    /// @throws uno::RuntimeException
-    NamesEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration,  const uno::Reference< frame::XModel >& xModel , const uno::Reference< sheet::XNamedRanges >& xNames ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ), m_xModel( xModel ), m_xNames( xNames ) {}
+    NamesEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration,  const uno::Reference< frame::XModel >& xModel , const uno::Reference< sheet::XNamedRanges >& xNames ) throw ( uno::RuntimeException ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ), m_xModel( xModel ), m_xParent( xParent ), m_xNames( xNames ) {}
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         uno::Reference< sheet::XNamedRange > xNamed( m_xEnumeration->nextElement(), uno::UNO_QUERY_THROW );
         return uno::makeAny( uno::Reference< excel::XName > ( new ScVbaName( m_xParent, m_xContext, xNamed ,m_xNames , m_xModel ) ) );
@@ -92,6 +92,7 @@ ScVbaNames::Add( const css::uno::Any& Name ,
                                         const css::uno::Any& /*CategoryLocal*/,
                                         const css::uno::Any& RefersToR1C1,
                                         const css::uno::Any& RefersToR1C1Local )
+    throw (css::uno::RuntimeException, std::exception)
 {
     OUString sName;
     uno::Reference< excel::XRange > xRange;
@@ -101,7 +102,7 @@ ScVbaNames::Add( const css::uno::Any& Name ,
         NameLocal >>= sName;
     if ( !sName.isEmpty() )
     {
-        if ( ScRangeData::IsNameValid( sName , getScDocument() )  != ScRangeData::NAME_VALID )
+        if ( !ScRangeData::IsNameValid( sName , getScDocument() ) )
         {
             OUString sResult ;
             sal_Int32 nToken = 0;
@@ -112,7 +113,7 @@ ScVbaNames::Add( const css::uno::Any& Name ,
             else
                 sResult = sName.copy( nIndex );
             sName = sResult ;
-            if ( ScRangeData::IsNameValid( sName , getScDocument() ) != ScRangeData::NAME_VALID )
+            if ( !ScRangeData::IsNameValid( sName , getScDocument() ) )
                 throw uno::RuntimeException( "This Name is not valid ." );
         }
     }
@@ -198,7 +199,8 @@ ScVbaNames::Add( const css::uno::Any& Name ,
         uno::Reference< sheet::XCellRangeAddressable > thisRangeAdd( aAny, ::uno::UNO_QUERY_THROW);
 
         table::CellRangeAddress aAddr = thisRangeAdd->getRangeAddress();
-        uno::Any aAny2;
+        ScAddress aPos( static_cast< SCCOL >( aAddr.StartColumn ) , static_cast< SCROW >( aAddr.StartRow ) , static_cast< SCTAB >(aAddr.Sheet ) );
+        uno::Any aAny2 ;
         if ( mxNames.is() )
         {
             sal_Int32 nUnoType = 0;
@@ -225,13 +227,13 @@ ScVbaNames::Add( const css::uno::Any& Name ,
 
 // XEnumerationAccess
 css::uno::Type
-ScVbaNames::getElementType()
+ScVbaNames::getElementType() throw( css::uno::RuntimeException )
 {
     return cppu::UnoType<ov::excel::XName>::get();
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaNames::createEnumeration()
+ScVbaNames::createEnumeration() throw (uno::RuntimeException)
 {
     uno::Reference< container::XEnumerationAccess > xEnumAccess( mxNames, uno::UNO_QUERY_THROW );
     return new NamesEnumeration( getParent(), mxContext, xEnumAccess->createEnumeration(), mxModel , mxNames );

@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <o3tl/any.hxx>
 #include <rtl/math.hxx>
 #include <com/sun/star/uno/Any.hxx>
 #include <rtl/ustring.hxx>
@@ -38,7 +37,7 @@ namespace CommonFunctors
     (via mem_fun_ptr)</p>
 */
 template< typename T >
-    struct makeAny : public std::unary_function< T, css::uno::Any >
+    struct makeAny : public ::std::unary_function< T, css::uno::Any >
 {
     css::uno::Any operator() ( const T & aVal )
     {
@@ -51,13 +50,19 @@ template< typename T >
     <p>In case no number can be generated from the Any, NaN (see
     rtl::math::SetNAN()) is returned.</p>
 */
-struct OOO_DLLPUBLIC_CHARTTOOLS AnyToDouble : public std::unary_function< css::uno::Any, double >
+struct OOO_DLLPUBLIC_CHARTTOOLS AnyToDouble : public ::std::unary_function< css::uno::Any, double >
 {
     double operator() ( const css::uno::Any & rAny )
     {
         double fResult;
         ::rtl::math::setNan( & fResult );
-        rAny >>= fResult;
+
+        css::uno::TypeClass eClass( rAny.getValueType().getTypeClass() );
+        if( eClass == css::uno::TypeClass_DOUBLE )
+        {
+            fResult = * static_cast< const double * >( rAny.getValue() );
+        }
+
         return fResult;
     }
 };
@@ -65,12 +70,14 @@ struct OOO_DLLPUBLIC_CHARTTOOLS AnyToDouble : public std::unary_function< css::u
 /** unary function to convert css::uno::Any into an
     OUString.
 */
-struct OOO_DLLPUBLIC_CHARTTOOLS AnyToString : public std::unary_function< css::uno::Any,  OUString >
+struct OOO_DLLPUBLIC_CHARTTOOLS AnyToString : public ::std::unary_function< css::uno::Any,  OUString >
 {
     OUString operator() ( const css::uno::Any & rAny )
     {
-        if( auto pDouble = o3tl::tryAccess<double>(rAny) )
+        css::uno::TypeClass eClass( rAny.getValueType().getTypeClass() );
+        if( eClass == css::uno::TypeClass_DOUBLE )
         {
+            const double* pDouble = static_cast< const double * >( rAny.getValue() );
             if( ::rtl::math::isNan(*pDouble) )
                 return OUString();
             return ::rtl::math::doubleToUString(
@@ -81,9 +88,9 @@ struct OOO_DLLPUBLIC_CHARTTOOLS AnyToString : public std::unary_function< css::u
                 true // remove trailing zeros
                 );
         }
-        else if( auto s = o3tl::tryAccess<OUString>(rAny) )
+        else if( eClass == css::uno::TypeClass_STRING )
         {
-            return *s;
+            return * static_cast< const OUString * >( rAny.getValue() );
         }
 
         return OUString();
@@ -94,7 +101,7 @@ struct OOO_DLLPUBLIC_CHARTTOOLS AnyToString : public std::unary_function< css::u
 
     <p>For conversion rtl::math::StringToDouble is used.</p>
  */
-struct OOO_DLLPUBLIC_CHARTTOOLS OUStringToDouble : public std::unary_function< OUString, double >
+struct OOO_DLLPUBLIC_CHARTTOOLS OUStringToDouble : public ::std::unary_function< OUString, double >
 {
     double operator() ( const OUString & rStr )
     {
@@ -112,7 +119,7 @@ struct OOO_DLLPUBLIC_CHARTTOOLS OUStringToDouble : public std::unary_function< O
 
     <p>For conversion rtl::math::DoubleToOUString is used.</p>
  */
-struct OOO_DLLPUBLIC_CHARTTOOLS DoubleToOUString : public std::unary_function< double, OUString >
+struct OOO_DLLPUBLIC_CHARTTOOLS DoubleToOUString : public ::std::unary_function< double, OUString >
 {
     OUString operator() ( double fNumber )
     {

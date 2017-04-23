@@ -69,12 +69,14 @@ CommandEnvironment::~CommandEnvironment()
 
 // virtual
 Reference< XInteractionHandler > SAL_CALL CommandEnvironment::getInteractionHandler()
+    throw ( RuntimeException, std::exception )
 {
     return m_pImpl->m_xInteractionHandler;
 }
 
 // virtual
 Reference< XProgressHandler > SAL_CALL CommandEnvironment::getProgressHandler()
+    throw ( RuntimeException, std::exception )
 {
     return m_pImpl->m_xProgressHandler;
 }

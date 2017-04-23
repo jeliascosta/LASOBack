@@ -31,8 +31,8 @@ namespace dbmm
     class RangeProgressBar
     {
     public:
-        explicit RangeProgressBar()
-            : m_pBar(nullptr)
+        explicit RangeProgressBar(ProgressBar *pBar = nullptr)
+            : m_pBar(pBar)
             , m_nRange(0)
         {
         }

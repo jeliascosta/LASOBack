@@ -25,11 +25,11 @@
 
  module com {  module sun {  module star {  module frame {
 
-/** Allows to receive notifications when the frame title changes
+/** todo document me
  */
 interface XTitleChangeListener : com::sun::star::lang::XEventListener
 {
-    /** The frame title has changed
+    /** todo document me
      */
     void titleChanged ( [in] TitleChangedEvent aEvent );
 };

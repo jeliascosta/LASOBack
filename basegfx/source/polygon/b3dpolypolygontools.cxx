@@ -243,7 +243,7 @@ namespace basegfx
             }
 
             // min/max limitations
-            nHorSeg = std::min(nMaxSegments, std::max(nMinSegments, nHorSeg));
+            nHorSeg = ::std::min(nMaxSegments, ::std::max(nMinSegments, nHorSeg));
 
             if(!nVerSeg)
             {
@@ -251,7 +251,7 @@ namespace basegfx
             }
 
             // min/max limitations
-            nVerSeg = std::min(nMaxSegments, std::max(nMinSegments, nVerSeg));
+            nVerSeg = ::std::min(nMaxSegments, ::std::max(nMinSegments, nVerSeg));
 
             // create constants
             const double fVerDiffPerStep((fVerStop - fVerStart) / (double)nVerSeg);
@@ -261,9 +261,9 @@ namespace basegfx
             bool bVerToBottom(fTools::equal(fVerStop, -F_PI2));
 
             // create horizontal rings
-            const sal_uInt32 nLoopVerInit(bVerFromTop ? 1 : 0);
-            const sal_uInt32 nLoopVerLimit(bVerToBottom ? nVerSeg : nVerSeg + 1);
-            const sal_uInt32 nLoopHorLimit(bHorClosed ? nHorSeg : nHorSeg + 1);
+            const sal_uInt32 nLoopVerInit(bVerFromTop ? 1L : 0);
+            const sal_uInt32 nLoopVerLimit(bVerToBottom ? nVerSeg : nVerSeg + 1L);
+            const sal_uInt32 nLoopHorLimit(bHorClosed ? nHorSeg : nHorSeg + 1L);
 
             for(a = nLoopVerInit; a < nLoopVerLimit; a++)
             {
@@ -342,7 +342,7 @@ namespace basegfx
             }
 
             // min/max limitations
-            nHorSeg = std::min(nMaxSegments, std::max(nMinSegments, nHorSeg));
+            nHorSeg = ::std::min(nMaxSegments, ::std::max(nMinSegments, nHorSeg));
 
             if(!nVerSeg)
             {
@@ -350,7 +350,7 @@ namespace basegfx
             }
 
             // min/max limitations
-            nVerSeg = std::min(nMaxSegments, std::max(nMinSegments, nVerSeg));
+            nVerSeg = ::std::min(nMaxSegments, ::std::max(nMinSegments, nVerSeg));
 
             // vertical loop
             for(sal_uInt32 a(0); a < nVerSeg; a++)
@@ -459,7 +459,7 @@ namespace basegfx
         {
             const sal_uInt32 nPolygonCount(rCandidate.count());
 
-            if(1 == nPolygonCount)
+            if(1L == nPolygonCount)
             {
                 return isInside(rCandidate.getB3DPolygon(0), rPoint, bWithBorder);
             }
@@ -478,7 +478,7 @@ namespace basegfx
                     }
                 }
 
-                return (nInsideCount % 2);
+                return (nInsideCount % 2L);
             }
         }
 

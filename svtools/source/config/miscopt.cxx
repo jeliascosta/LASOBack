@@ -31,7 +31,6 @@
 #include <svtools/imgdef.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-#include <vcl/toolbox.hxx>
 
 #include <list>
 
@@ -63,10 +62,6 @@ using namespace ::com::sun::star;
 #define PROPERTYHANDLE_EXPERIMENTALMODE         8
 #define PROPERTYNAME_MACRORECORDERMODE       "MacroRecorderMode"
 #define PROPERTYHANDLE_MACRORECORDERMODE        9
-#define PROPERTYNAME_SIDEBARICONSIZE        "SidebarIconSize"
-#define PROPERTYHANDLE_SIDEBARICONSIZE          10
-#define PROPERTYNAME_NOTEBOOKBARICONSIZE    "NotebookbarIconSize"
-#define PROPERTYHANDLE_NOTEBOOKBARICONSIZE      11
 
 #define VCL_TOOLBOX_STYLE_FLAT              ((sal_uInt16)0x0004) // from <vcl/toolbox.hxx>
 
@@ -80,10 +75,6 @@ private:
     bool        m_bIsPluginsEnabledRO;
     sal_Int16   m_nSymbolsSize;
     bool        m_bIsSymbolsSizeRO;
-    ToolBoxButtonSize m_nSidebarIconSize;
-    bool        m_bIsSidebarIconSizeRO;
-    ToolBoxButtonSize m_nNotebookbarIconSize;
-    bool        m_bIsNotebookbarIconSizeRO;
     bool        m_bIsSymbolsStyleRO;
     sal_Int16   m_nToolboxStyle;
     bool        m_bIsToolboxStyleRO;
@@ -101,12 +92,12 @@ private:
 public:
 
          SvtMiscOptions_Impl();
-        virtual ~SvtMiscOptions_Impl() override;
+        virtual ~SvtMiscOptions_Impl();
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
-            @descr      This method is called from the ConfigManager before the application ends or from the
-                        PropertyChangeListener if the sub tree broadcasts changes. You must update your
+            @descr      These method is called from the ConfigManager before application ends or from the
+                         PropertyChangeListener if the sub tree broadcasts changes. You must update your
                         internal values.
 
             @seealso    baseclass ConfigItem
@@ -125,51 +116,41 @@ public:
         //  public interface
 
 
-        bool UseSystemFileDialog() const
+        inline bool UseSystemFileDialog() const
         { return m_bUseSystemFileDialog; }
 
-        void SetUseSystemFileDialog( bool bSet )
+        inline void SetUseSystemFileDialog( bool bSet )
         {  m_bUseSystemFileDialog = bSet; SetModified(); }
 
-        bool IsUseSystemFileDialogReadOnly() const
+        inline bool IsUseSystemFileDialogReadOnly() const
         { return m_bIsUseSystemFileDialogRO; }
 
-        bool DisableUICustomization() const
+        inline bool DisableUICustomization() const
         { return m_bDisableUICustomization; }
 
-        void SetExperimentalMode( bool bSet )
+        inline void SetExperimentalMode( bool bSet )
         { m_bExperimentalMode = bSet; SetModified(); }
 
-        bool IsExperimentalMode() const
+        inline bool IsExperimentalMode() const
         { return m_bExperimentalMode; }
 
-        void SetMacroRecorderMode( bool bSet )
+        inline void SetMacroRecorderMode( bool bSet )
         { m_bMacroRecorderMode = bSet; SetModified(); }
 
-        bool IsMacroRecorderMode() const
+        inline bool IsMacroRecorderMode() const
         { return m_bMacroRecorderMode; }
 
-        bool IsPluginsEnabled() const
+        inline bool IsPluginsEnabled() const
         { return m_bPluginsEnabled; }
 
-        sal_Int16 GetSymbolsSize()
+        inline sal_Int16 GetSymbolsSize()
         { return m_nSymbolsSize; }
-
-        ToolBoxButtonSize GetSidebarIconSize()
-        { return m_nSidebarIconSize; }
-
-        ToolBoxButtonSize GetNotebookbarIconSize()
-        { return m_nNotebookbarIconSize; }
 
         void SetSymbolsSize( sal_Int16 nSet );
 
-        void SetSidebarIconSize( ToolBoxButtonSize nSet );
-
-        void SetNotebookbarIconSize( ToolBoxButtonSize nSet );
-
         static OUString GetIconTheme();
 
-        enum class SetModifiedFlag { SET, DONT_SET };
+        enum SetModifiedFlag { SET_MODIFIED, DONT_SET_MODIFIED };
 
         /** Set the icon theme
          *
@@ -184,25 +165,25 @@ public:
          * during initialization in the constructor.
          */
         void
-        SetIconTheme(const OUString &theme, SetModifiedFlag setModified );
+        SetIconTheme(const OUString &theme, SetModifiedFlag setModified = SET_MODIFIED );
 
         bool IconThemeWasSetAutomatically()
         {return m_bIconThemeWasSetAutomatically;}
 
         // translate to VCL settings ( "0" = 3D, "1" = FLAT )
-        sal_Int16 GetToolboxStyle()
+        inline sal_Int16 GetToolboxStyle()
         { return m_nToolboxStyle ? VCL_TOOLBOX_STYLE_FLAT : 0; }
 
         // translate from VCL settings
         void SetToolboxStyle( sal_Int16 nStyle );
 
-        bool UseSystemPrintDialog() const
+        inline bool UseSystemPrintDialog() const
         { return m_bUseSystemPrintDialog; }
 
-        void SetUseSystemPrintDialog( bool bSet )
+        inline void SetUseSystemPrintDialog( bool bSet )
         {  m_bUseSystemPrintDialog = bSet; SetModified(); }
 
-        bool ShowLinkWarningDialog() const
+        inline bool ShowLinkWarningDialog() const
         { return m_bShowLinkWarningDialog; }
 
         void SetShowLinkWarningDialog( bool bSet )
@@ -222,7 +203,7 @@ public:
 private:
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent our module tree
+            @short      return list of key names of our configuration management which represent oue module tree
             @descr      These methods return a static const list of key names. We need it to get needed values from our
                         configuration management.
             @return     A list of needed configuration keys is returned.
@@ -244,10 +225,6 @@ SvtMiscOptions_Impl::SvtMiscOptions_Impl()
     , m_bIsPluginsEnabledRO( false )
     , m_nSymbolsSize( 0 )
     , m_bIsSymbolsSizeRO( false )
-    , m_nSidebarIconSize( ToolBoxButtonSize::DontCare )
-    , m_bIsSidebarIconSizeRO( false )
-    , m_nNotebookbarIconSize( ToolBoxButtonSize::DontCare )
-    , m_bIsNotebookbarIconSizeRO( false )
     , m_bIsSymbolsStyleRO( false )
     , m_nToolboxStyle( 1 )
     , m_bIsToolboxStyleRO( false )
@@ -298,30 +275,6 @@ SvtMiscOptions_Impl::SvtMiscOptions_Impl()
                 break;
             }
 
-            case PROPERTYHANDLE_SIDEBARICONSIZE :
-            {
-                sal_uInt16 nTmp;
-                if( !(seqValues[nProperty] >>= nTmp) )
-                {
-                    OSL_FAIL("Wrong type of \"Misc\\SidebarIconSize\"!" );
-                } else
-                    m_nSidebarIconSize = (ToolBoxButtonSize)nTmp;
-                m_bIsSidebarIconSizeRO = seqRO[nProperty];
-                break;
-            }
-
-            case PROPERTYHANDLE_NOTEBOOKBARICONSIZE :
-            {
-                sal_uInt16 nTmp;
-                if( !(seqValues[nProperty] >>= nTmp) )
-                {
-                    OSL_FAIL("Wrong type of \"Misc\\NotebookbarIconSize\"!" );
-                } else
-                    m_nNotebookbarIconSize = (ToolBoxButtonSize)nTmp;
-                m_bIsNotebookbarIconSizeRO = seqRO[nProperty];
-                break;
-            }
-
             case PROPERTYHANDLE_TOOLBOXSTYLE :
             {
                 if( !(seqValues[nProperty] >>= m_nToolboxStyle) )
@@ -366,7 +319,7 @@ SvtMiscOptions_Impl::SvtMiscOptions_Impl()
             {
                 OUString aIconTheme;
                 if (seqValues[nProperty] >>= aIconTheme)
-                    SetIconTheme(aIconTheme, SetModifiedFlag::DONT_SET);
+                    SetIconTheme(aIconTheme, DONT_SET_MODIFIED);
                 else
                     OSL_FAIL("Wrong type of \"Misc\\SymbolStyle\"!" );
 
@@ -451,24 +404,6 @@ void SvtMiscOptions_Impl::Load( const Sequence< OUString >& rPropertyNames )
                                                             }
                                                         }
                                                     break;
-            case PROPERTYHANDLE_SIDEBARICONSIZE     :   {
-                                                            sal_uInt16 nTmp;
-                                                            if( !(seqValues[nProperty] >>= nTmp) )
-                                                            {
-                                                                OSL_FAIL("Wrong type of \"Misc\\SidebarIconSize\"!" );
-                                                            } else
-                                                                m_nSidebarIconSize = (ToolBoxButtonSize)nTmp;
-                                                        }
-                                                    break;
-            case PROPERTYHANDLE_NOTEBOOKBARICONSIZE     :   {
-                                                            sal_uInt16 nTmp;
-                                                            if( !(seqValues[nProperty] >>= nTmp ) )
-                                                            {
-                                                                OSL_FAIL("Wrong type of \"Misc\\NotebookbarIconSize\"!" );
-                                                            } else
-                                                                m_nNotebookbarIconSize = (ToolBoxButtonSize)nTmp;
-                                                        }
-                                                    break;
             case PROPERTYHANDLE_TOOLBOXSTYLE        :   {
                                                             if( !(seqValues[nProperty] >>= m_nToolboxStyle) )
                                                             {
@@ -500,7 +435,7 @@ void SvtMiscOptions_Impl::Load( const Sequence< OUString >& rPropertyNames )
             case PROPERTYHANDLE_SYMBOLSTYLE         :   {
                                                             OUString aIconTheme;
                                                             if (seqValues[nProperty] >>= aIconTheme)
-                                                                SetIconTheme(aIconTheme, SetModifiedFlag::DONT_SET);
+                                                                SetIconTheme(aIconTheme, DONT_SET_MODIFIED);
                                                             else
                                                                 OSL_FAIL("Wrong type of \"Misc\\SymbolStyle\"!" );
                                                         }
@@ -551,20 +486,6 @@ void SvtMiscOptions_Impl::SetSymbolsSize( sal_Int16 nSet )
     CallListeners();
 }
 
-void SvtMiscOptions_Impl::SetSidebarIconSize( ToolBoxButtonSize nSet )
-{
-    m_nSidebarIconSize = nSet;
-    SetModified();
-    CallListeners();
-}
-
-void SvtMiscOptions_Impl::SetNotebookbarIconSize( ToolBoxButtonSize nSet )
-{
-    m_nNotebookbarIconSize = nSet;
-    SetModified();
-    CallListeners();
-}
-
 OUString SvtMiscOptions_Impl::GetIconTheme()
 {
     return Application::GetSettings().GetStyleSettings().DetermineIconTheme();
@@ -590,7 +511,7 @@ SvtMiscOptions_Impl::SetIconTheme(const OUString &rName, SetModifiedFlag setModi
     Application::MergeSystemSettings( aAllSettings );
     Application::SetSettings(aAllSettings);
 
-    if (setModified == SetModifiedFlag::SET) {
+    if (setModified == SET_MODIFIED) {
         SetModified();
     }
     CallListeners();
@@ -629,20 +550,6 @@ void SvtMiscOptions_Impl::ImplCommit()
             {
                 if ( !m_bIsSymbolsSizeRO )
                    seqValues[nProperty] <<= m_nSymbolsSize;
-                break;
-            }
-
-            case PROPERTYHANDLE_SIDEBARICONSIZE :
-            {
-                if ( !m_bIsSidebarIconSizeRO )
-                   seqValues[nProperty] <<= (sal_uInt16)m_nSidebarIconSize;
-                break;
-            }
-
-            case PROPERTYHANDLE_NOTEBOOKBARICONSIZE :
-            {
-                if ( !m_bIsNotebookbarIconSizeRO )
-                   seqValues[nProperty] <<= (sal_uInt16)m_nNotebookbarIconSize;
                 break;
             }
 
@@ -727,9 +634,7 @@ Sequence< OUString > SvtMiscOptions_Impl::GetPropertyNames()
         OUString(PROPERTYNAME_SHOWLINKWARNINGDIALOG),
         OUString(PROPERTYNAME_DISABLEUICUSTOMIZATION),
         OUString(PROPERTYNAME_EXPERIMENTALMODE),
-        OUString(PROPERTYNAME_MACRORECORDERMODE),
-        OUString(PROPERTYNAME_SIDEBARICONSIZE),
-        OUString(PROPERTYNAME_NOTEBOOKBARICONSIZE)
+        OUString(PROPERTYNAME_MACRORECORDERMODE)
     };
 
     // Initialize return sequence with these list ...
@@ -738,96 +643,92 @@ Sequence< OUString > SvtMiscOptions_Impl::GetPropertyNames()
     return seqPropertyNames;
 }
 
-namespace {
 
-std::weak_ptr<SvtMiscOptions_Impl> g_pMiscOptions;
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
 
-}
+SvtMiscOptions_Impl*    SvtMiscOptions::m_pDataContainer    = nullptr  ;
+sal_Int32               SvtMiscOptions::m_nRefCount = 0     ;
+
+
+//  constructor
 
 SvtMiscOptions::SvtMiscOptions()
 {
+    // SvtMiscOptions_Impl ctor indirectly calls code that requires locked
+    // SolarMutex; lock it first:
+    SolarMutexGuard g;
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl = g_pMiscOptions.lock();
-    if( !m_pImpl )
+    // Increase our refcount ...
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<SvtMiscOptions_Impl>();
-        g_pMiscOptions = m_pImpl;
-        svtools::ItemHolder2::holdConfigItem(EItem::MiscOptions);
+       m_pDataContainer = new SvtMiscOptions_Impl;
+       svtools::ItemHolder2::holdConfigItem(E_MISCOPTIONS);
     }
 }
+
+
+//  destructor
 
 SvtMiscOptions::~SvtMiscOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl.reset();
+    // Decrease our refcount.
+    --m_nRefCount;
+    // If last instance was deleted ...
+    // we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 bool SvtMiscOptions::UseSystemFileDialog() const
 {
-    return m_pImpl->UseSystemFileDialog();
+    return m_pDataContainer->UseSystemFileDialog();
 }
 
 void SvtMiscOptions::SetUseSystemFileDialog( bool bEnable )
 {
-    m_pImpl->SetUseSystemFileDialog( bEnable );
+    m_pDataContainer->SetUseSystemFileDialog( bEnable );
 }
 
 bool SvtMiscOptions::IsUseSystemFileDialogReadOnly() const
 {
-    return m_pImpl->IsUseSystemFileDialogReadOnly();
+    return m_pDataContainer->IsUseSystemFileDialogReadOnly();
 }
 
 bool SvtMiscOptions::IsPluginsEnabled() const
 {
-    return m_pImpl->IsPluginsEnabled();
+    return m_pDataContainer->IsPluginsEnabled();
 }
 
 sal_Int16 SvtMiscOptions::GetSymbolsSize() const
 {
-    return m_pImpl->GetSymbolsSize();
+    return m_pDataContainer->GetSymbolsSize();
 }
 
 void SvtMiscOptions::SetSymbolsSize( sal_Int16 nSet )
 {
-    m_pImpl->SetSymbolsSize( nSet );
-}
-
-ToolBoxButtonSize SvtMiscOptions::GetSidebarIconSize() const
-{
-    return m_pImpl->GetSidebarIconSize();
-}
-
-ToolBoxButtonSize SvtMiscOptions::GetNotebookbarIconSize() const
-{
-    return m_pImpl->GetNotebookbarIconSize();
-}
-
-void SvtMiscOptions::SetSidebarIconSize( ToolBoxButtonSize nSet )
-{
-    m_pImpl->SetSidebarIconSize( nSet );
-}
-
-void SvtMiscOptions::SetNotebookbarIconSize( ToolBoxButtonSize nSet )
-{
-    m_pImpl->SetNotebookbarIconSize( nSet );
+    m_pDataContainer->SetSymbolsSize( nSet );
 }
 
 sal_Int16 SvtMiscOptions::GetCurrentSymbolsSize() const
 {
-    sal_Int16 eOptSymbolsSize = m_pImpl->GetSymbolsSize();
+    sal_Int16 eOptSymbolsSize = m_pDataContainer->GetSymbolsSize();
 
     if ( eOptSymbolsSize == SFX_SYMBOLS_SIZE_AUTO )
     {
         // Use system settings, we have to retrieve the toolbar icon size from the
         // Application class
         ToolbarIconSize nStyleIconSize = Application::GetSettings().GetStyleSettings().GetToolbarIconSize();
-        if (nStyleIconSize == ToolbarIconSize::Size32)
-            eOptSymbolsSize = SFX_SYMBOLS_SIZE_32;
-        else if (nStyleIconSize == ToolbarIconSize::Large)
+        if ( nStyleIconSize == ToolbarIconSize::Large )
             eOptSymbolsSize = SFX_SYMBOLS_SIZE_LARGE;
         else
             eOptSymbolsSize = SFX_SYMBOLS_SIZE_SMALL;
@@ -838,7 +739,7 @@ sal_Int16 SvtMiscOptions::GetCurrentSymbolsSize() const
 
 bool SvtMiscOptions::AreCurrentSymbolsLarge() const
 {
-    return ( GetCurrentSymbolsSize() == SFX_SYMBOLS_SIZE_LARGE || GetCurrentSymbolsSize() == SFX_SYMBOLS_SIZE_32);
+    return ( GetCurrentSymbolsSize() == SFX_SYMBOLS_SIZE_LARGE );
 }
 
 OUString SvtMiscOptions::GetIconTheme() const
@@ -848,67 +749,67 @@ OUString SvtMiscOptions::GetIconTheme() const
 
 void SvtMiscOptions::SetIconTheme(const OUString& iconTheme)
 {
-    m_pImpl->SetIconTheme(iconTheme, SvtMiscOptions_Impl::SetModifiedFlag::SET);
+    m_pDataContainer->SetIconTheme(iconTheme);
 }
 
 bool SvtMiscOptions::DisableUICustomization() const
 {
-    return m_pImpl->DisableUICustomization();
+    return m_pDataContainer->DisableUICustomization();
 }
 
 sal_Int16 SvtMiscOptions::GetToolboxStyle() const
 {
-    return m_pImpl->GetToolboxStyle();
+    return m_pDataContainer->GetToolboxStyle();
 }
 
 void SvtMiscOptions::SetToolboxStyle( sal_Int16 nStyle )
 {
-    m_pImpl->SetToolboxStyle( nStyle );
+    m_pDataContainer->SetToolboxStyle( nStyle );
 }
 
 bool SvtMiscOptions::UseSystemPrintDialog() const
 {
-    return m_pImpl->UseSystemPrintDialog();
+    return m_pDataContainer->UseSystemPrintDialog();
 }
 
 void SvtMiscOptions::SetUseSystemPrintDialog( bool bEnable )
 {
-    m_pImpl->SetUseSystemPrintDialog( bEnable );
+    m_pDataContainer->SetUseSystemPrintDialog( bEnable );
 }
 
 bool SvtMiscOptions::ShowLinkWarningDialog() const
 {
-    return m_pImpl->ShowLinkWarningDialog();
+    return m_pDataContainer->ShowLinkWarningDialog();
 }
 
 void SvtMiscOptions::SetShowLinkWarningDialog( bool bSet )
 {
-    m_pImpl->SetShowLinkWarningDialog( bSet );
+    m_pDataContainer->SetShowLinkWarningDialog( bSet );
 }
 
 bool SvtMiscOptions::IsShowLinkWarningDialogReadOnly() const
 {
-    return m_pImpl->IsShowLinkWarningDialogReadOnly();
+    return m_pDataContainer->IsShowLinkWarningDialogReadOnly();
 }
 
 void SvtMiscOptions::SetExperimentalMode( bool bSet )
 {
-    m_pImpl->SetExperimentalMode( bSet );
+    m_pDataContainer->SetExperimentalMode( bSet );
 }
 
 bool SvtMiscOptions::IsExperimentalMode() const
 {
-    return m_pImpl->IsExperimentalMode();
+    return m_pDataContainer->IsExperimentalMode();
 }
 
 void SvtMiscOptions::SetMacroRecorderMode( bool bSet )
 {
-    m_pImpl->SetMacroRecorderMode( bSet );
+    m_pDataContainer->SetMacroRecorderMode( bSet );
 }
 
 bool SvtMiscOptions::IsMacroRecorderMode() const
 {
-    return m_pImpl->IsMacroRecorderMode();
+    return m_pDataContainer->IsMacroRecorderMode();
 }
 
 namespace
@@ -924,18 +825,18 @@ Mutex & SvtMiscOptions::GetInitMutex()
 
 void SvtMiscOptions::AddListenerLink( const Link<LinkParamNone*,void>& rLink )
 {
-    m_pImpl->AddListenerLink( rLink );
+    m_pDataContainer->AddListenerLink( rLink );
 }
 
 void SvtMiscOptions::RemoveListenerLink( const Link<LinkParamNone*,void>& rLink )
 {
-    m_pImpl->RemoveListenerLink( rLink );
+    m_pDataContainer->RemoveListenerLink( rLink );
 }
 
 bool
 SvtMiscOptions::IconThemeWasSetAutomatically()
 {
-    return m_pImpl->IconThemeWasSetAutomatically();
+    return m_pDataContainer->IconThemeWasSetAutomatically();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

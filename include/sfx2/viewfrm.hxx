@@ -48,7 +48,6 @@ class Point;
 class Size;
 class SfxChildWindow;
 class SfxInfoBarWindow;
-enum class InfoBarType;
 
 namespace sfx2
 {
@@ -65,7 +64,7 @@ namespace basegfx
 
 class SFX2_DLLPUBLIC SfxViewFrame: public SfxShell, public SfxListener
 {
-    std::unique_ptr<struct SfxViewFrame_Impl>   m_pImpl;
+    struct SfxViewFrame_Impl*   m_pImp;
 
     SfxObjectShellRef           m_xObjSh;
     SfxDispatcher*              m_pDispatcher;
@@ -73,19 +72,18 @@ class SFX2_DLLPUBLIC SfxViewFrame: public SfxShell, public SfxListener
     sal_uInt16                  m_nAdjustPosPixelLock;
 
 private:
-    SAL_DLLPRIVATE void Construct_Impl( SfxObjectShell *pObjSh );
+    SAL_DLLPRIVATE void Construct_Impl( SfxObjectShell *pObjSh=nullptr );
 
 protected:
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-    DECL_LINK( SwitchReadOnlyHandler, Button*, void );
-    DECL_LINK(SignDocumentHandler, Button*, void);
+    DECL_LINK_TYPED( SwitchReadOnlyHandler, Button*, void );
     SAL_DLLPRIVATE void KillDispatcher_Impl();
 
-    virtual                 ~SfxViewFrame() override;
+    virtual                 ~SfxViewFrame();
 
 public:
-                            SfxViewFrame( SfxFrame& rFrame, SfxObjectShell *pDoc );
+                            SfxViewFrame( SfxFrame& rFrame, SfxObjectShell *pDoc = nullptr );
 
                             SFX_DECL_INTERFACE(SFX_INTERFACE_SFXVIEWFRM)
 
@@ -97,9 +95,9 @@ public:
 
     static void             SetViewFrame( SfxViewFrame* );
 
-    static SfxViewFrame*    LoadHiddenDocument( SfxObjectShell& i_rDoc, SfxInterfaceId i_nViewId );
-    static SfxViewFrame*    LoadDocument( SfxObjectShell& i_rDoc, SfxInterfaceId i_nViewId );
-    static SfxViewFrame*    LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const SfxFrameItem* i_pFrameItem, SfxInterfaceId i_nViewId );
+    static SfxViewFrame*    LoadHiddenDocument( SfxObjectShell& i_rDoc, const sal_uInt16 i_nViewId );
+    static SfxViewFrame*    LoadDocument( SfxObjectShell& i_rDoc, const sal_uInt16 i_nViewId );
+    static SfxViewFrame*    LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const SfxFrameItem* i_pFrameItem, const sal_uInt16 i_nViewId = 0 );
     static SfxViewFrame*    LoadDocumentIntoFrame( SfxObjectShell& i_rDoc, const css::uno::Reference< css::frame::XFrame >& i_rFrameItem );
     static SfxViewFrame*    DisplayNewDocument( SfxObjectShell& i_rDoc, const SfxRequest& i_rCreateDocRequest );
 
@@ -107,10 +105,12 @@ public:
     static SfxViewFrame*    GetFirst( const SfxObjectShell* pDoc = nullptr, bool bOnlyVisible = true );
     static SfxViewFrame*    GetNext( const SfxViewFrame& rPrev, const SfxObjectShell* pDoc = nullptr, bool bOnlyVisible = true );
 
-    static SfxViewFrame*    Get( const css::uno::Reference< css::frame::XController>& i_rController, const SfxObjectShell* i_pDoc );
+    static SfxViewFrame*    Get( const css::uno::Reference< css::frame::XController>& i_rController, const SfxObjectShell* i_pDoc = nullptr );
 
             void            DoActivate(bool bMDI);
-            void            DoDeactivate(bool bMDI, SfxViewFrame *pOld);
+            void            DoDeactivate(bool bMDI, SfxViewFrame *pOld=nullptr);
+
+    SfxViewFrame*           GetParentViewFrame() const;
 
     using SfxShell::GetDispatcher;
     SfxDispatcher*          GetDispatcher() { return m_pDispatcher; }
@@ -120,13 +120,15 @@ public:
 
     SfxProgress*            GetProgress() const;
 
+    SfxObjectShell*         GetObjectShell() const
+                            { return m_xObjSh; }
+
     void                    LockAdjustPosSizePixel()
                             { m_nAdjustPosPixelLock++; }
     void                    UnlockAdjustPosSizePixel()
                             { m_nAdjustPosPixelLock--; }
     void                    DoAdjustPosSizePixel( SfxViewShell * pSh,
-                                        const Point &rPos, const Size &rSize,
-                                        bool inplaceEditModeChange );
+                                        const Point &rPos, const Size &rSize );
     void                    Show();
     bool                    IsVisible() const;
     void                    ToTop();
@@ -143,13 +145,15 @@ public:
     SAL_DLLPRIVATE void InvalidateBorderImpl( const SfxViewShell *pSh );
 
     virtual SfxObjectShell* GetObjectShell() override;
-    SfxInterfaceId          GetCurViewId() const;
+    sal_uInt16              GetCurViewId() const;
     SfxFrame&               GetFrame() const;
     SfxViewFrame*           GetTopViewFrame() const;
 
     bool                    DoClose();
     sal_uIntPtr             GetFrameType() const
                             { return GetFrame().GetFrameType(); }
+    SfxFrame&               GetTopFrame() const
+                            { return GetFrame().GetTopFrame(); }
     void                    GetTargetList( TargetList& rList ) const
                             { GetFrame().GetTargetList( rList ); }
 
@@ -171,12 +175,17 @@ public:
         The buttons will be added from Right to Left at the right of the info bar. The parent, size
         and position of each button will be changed: only the width will remain unchanged.
       */
-    VclPtr<SfxInfoBarWindow> AppendInfoBar(const OUString& sId,
+    SfxInfoBarWindow* AppendInfoBar(const OUString& sId,
                                     const OUString& sMessage,
-                                    InfoBarType aInfoBarType);
+                                    const basegfx::BColor* pBackgroundColor = nullptr,
+                                    const basegfx::BColor* pForegroundColor = nullptr,
+                                    const basegfx::BColor* pMessageColor = nullptr,
+                                    WinBits nMessageStyle = 0);
     void              RemoveInfoBar(const OUString& sId);
 
+    SAL_DLLPRIVATE void SetDowning_Impl();
     SAL_DLLPRIVATE void GetDocNumber_Impl();
+    SAL_DLLPRIVATE bool IsDowning_Impl() const;
     SAL_DLLPRIVATE void SetViewShell_Impl( SfxViewShell *pVSh );
     SAL_DLLPRIVATE void ReleaseObjectShell_Impl();
 
@@ -187,13 +196,18 @@ public:
     SAL_DLLPRIVATE void StateView_Impl( SfxItemSet &rSet );
     SAL_DLLPRIVATE void ExecHistory_Impl( SfxRequest &rReq );
     SAL_DLLPRIVATE void StateHistory_Impl( SfxItemSet &rSet );
+    SAL_DLLPRIVATE SfxViewFrame* GetParentViewFrame_Impl() const;
     SAL_DLLPRIVATE void ForceOuterResize_Impl();
+    SAL_DLLPRIVATE bool IsResizeInToOut_Impl() const;
     SAL_DLLPRIVATE void UpdateDocument_Impl();
 
     SAL_DLLPRIVATE void LockObjectShell_Impl();
 
     SAL_DLLPRIVATE void MakeActive_Impl( bool bActivate );
+    SAL_DLLPRIVATE void SetQuietMode_Impl( bool );
     SAL_DLLPRIVATE const Size& GetMargin_Impl() const;
+    SAL_DLLPRIVATE void SetActiveChildFrame_Impl( SfxViewFrame* );
+    SAL_DLLPRIVATE SfxViewFrame* GetActiveChildFrame_Impl() const;
     SAL_DLLPRIVATE OUString GetActualPresentationURL_Impl() const;
     SAL_DLLPRIVATE void MiscExec_Impl(SfxRequest &);
     SAL_DLLPRIVATE void MiscState_Impl(SfxItemSet &);
@@ -204,12 +218,12 @@ public:
     SAL_DLLPRIVATE void INetExecute_Impl(SfxRequest &);
     SAL_DLLPRIVATE void INetState_Impl(SfxItemSet &);
 
-    SAL_DLLPRIVATE void SetCurViewId_Impl( const SfxInterfaceId i_nID );
+    SAL_DLLPRIVATE void SetCurViewId_Impl( const sal_uInt16 i_nID );
 
 private:
     SAL_DLLPRIVATE bool SwitchToViewShell_Impl( sal_uInt16 nNo, bool bIsIndex = false );
     SAL_DLLPRIVATE void PopShellAndSubShells_Impl( SfxViewShell& i_rViewShell );
-    SAL_DLLPRIVATE void SaveCurrentViewData_Impl( const SfxInterfaceId i_nNewViewId );
+    SAL_DLLPRIVATE void SaveCurrentViewData_Impl( const sal_uInt16 i_nNewViewId );
 
     /** loads the given existing document into the given frame
 
@@ -232,7 +246,7 @@ private:
                             const SfxObjectShell& i_rDoc,
                             const css::uno::Reference< css::frame::XFrame >& i_rFrame,
                             const css::uno::Sequence< css::beans::PropertyValue >& i_rLoadArgs,
-                            const SfxInterfaceId i_nViewId,
+                            const sal_uInt16 i_nViewId,
                             const bool i_bHidden
                         );
 
@@ -254,7 +268,7 @@ private:
     SAL_DLLPRIVATE static SfxViewFrame* LoadViewIntoFrame_Impl_NoThrow(
                             const SfxObjectShell& i_rDoc,
                             const css::uno::Reference< css::frame::XFrame >& i_rFrame,
-                            const SfxInterfaceId i_nViewId,
+                            const sal_uInt16 i_nViewId,
                             const bool i_bHidden
                         );
 };

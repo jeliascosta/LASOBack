@@ -25,8 +25,6 @@ public:
     virtual bool importXLSX(ScDocument& rDoc, SfxMedium& rMedium) const override;
     virtual bool importODS(ScDocument& rDoc, SfxMedium& rMedium) const override;
 
-    virtual bool importODS_Styles(ScDocument& rDoc, OUString& aFileName) const override;
-
     virtual ScOrcusXMLContext* createXMLContext(ScDocument& rDoc, const OUString& rPath) const override;
 };
 
@@ -39,7 +37,7 @@ class ScOrcusXMLContextImpl : public ScOrcusXMLContext
 
 public:
     ScOrcusXMLContextImpl(ScDocument& rDoc, const OUString& rPath);
-    virtual ~ScOrcusXMLContextImpl() override;
+    virtual ~ScOrcusXMLContextImpl();
 
     virtual void loadXMLStructure(SvTreeListBox& rTreeCtrl, ScOrcusXMLTreeParam& rParam) override;
 

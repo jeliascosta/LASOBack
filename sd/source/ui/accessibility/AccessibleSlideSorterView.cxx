@@ -39,7 +39,6 @@
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <comphelper/accessibleeventnotifier.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
@@ -70,7 +69,7 @@ public:
         AccessibleSlideSorterView& rAccessibleSlideSorter,
         ::sd::slidesorter::SlideSorter& rSlideSorter,
         vcl::Window* pWindow);
-    virtual ~Implementation() override;
+    virtual ~Implementation();
 
     void RequestUpdateChildren();
     void Clear();
@@ -81,12 +80,12 @@ public:
     void ConnectListeners();
     void ReleaseListeners();
     void Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint) override;
-    DECL_LINK(WindowEventListener, VclWindowEvent&, void);
-    DECL_LINK(SelectionChangeListener, LinkParamNone*, void);
-    DECL_LINK(BroadcastSelectionChange, void*, void);
-    DECL_LINK(FocusChangeListener, LinkParamNone*, void);
-    DECL_LINK(VisibilityChangeListener, LinkParamNone*, void);
-    DECL_LINK(UpdateChildrenCallback, void*, void);
+    DECL_LINK_TYPED(WindowEventListener, VclWindowEvent&, void);
+    DECL_LINK_TYPED(SelectionChangeListener, LinkParamNone*, void);
+    DECL_LINK_TYPED(BroadcastSelectionChange, void*, void);
+    DECL_LINK_TYPED(FocusChangeListener, LinkParamNone*, void);
+    DECL_LINK_TYPED(VisibilityChangeListener, LinkParamNone*, void);
+    DECL_LINK_TYPED(UpdateChildrenCallback, void*, void);
 
     void Activated();
 private:
@@ -184,6 +183,7 @@ void AccessibleSlideSorterView::Destroyed()
 
 Reference<XAccessibleContext > SAL_CALL
     AccessibleSlideSorterView::getAccessibleContext()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
     return this;
@@ -192,6 +192,7 @@ Reference<XAccessibleContext > SAL_CALL
 //=====  XAccessibleContext  ==================================================
 
 sal_Int32 SAL_CALL AccessibleSlideSorterView::getAccessibleChildCount()
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     ::osl::MutexGuard aGuard (maMutex);
@@ -200,6 +201,7 @@ sal_Int32 SAL_CALL AccessibleSlideSorterView::getAccessibleChildCount()
 
 Reference<XAccessible > SAL_CALL
     AccessibleSlideSorterView::getAccessibleChild (sal_Int32 nIndex)
+    throw (lang::IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     ::osl::MutexGuard aGuard (maMutex);
@@ -211,6 +213,7 @@ Reference<XAccessible > SAL_CALL
 }
 
 Reference<XAccessible > SAL_CALL AccessibleSlideSorterView::getAccessibleParent()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -227,6 +230,7 @@ Reference<XAccessible > SAL_CALL AccessibleSlideSorterView::getAccessibleParent(
 }
 
 sal_Int32 SAL_CALL AccessibleSlideSorterView::getAccessibleIndexInParent()
+    throw (uno::RuntimeException, std::exception)
 {
     OSL_ASSERT(getAccessibleParent().is());
     ThrowIfDisposed();
@@ -250,6 +254,7 @@ sal_Int32 SAL_CALL AccessibleSlideSorterView::getAccessibleIndexInParent()
 }
 
 sal_Int16 SAL_CALL AccessibleSlideSorterView::getAccessibleRole()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     static sal_Int16 nRole = AccessibleRole::DOCUMENT;
@@ -257,6 +262,7 @@ sal_Int16 SAL_CALL AccessibleSlideSorterView::getAccessibleRole()
 }
 
 OUString SAL_CALL AccessibleSlideSorterView::getAccessibleDescription()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -265,6 +271,7 @@ OUString SAL_CALL AccessibleSlideSorterView::getAccessibleDescription()
 }
 
 OUString SAL_CALL AccessibleSlideSorterView::getAccessibleName()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -274,12 +281,14 @@ OUString SAL_CALL AccessibleSlideSorterView::getAccessibleName()
 
 Reference<XAccessibleRelationSet> SAL_CALL
     AccessibleSlideSorterView::getAccessibleRelationSet()
+    throw (uno::RuntimeException, std::exception)
 {
     return Reference<XAccessibleRelationSet>();
 }
 
 Reference<XAccessibleStateSet > SAL_CALL
     AccessibleSlideSorterView::getAccessibleStateSet()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -303,6 +312,8 @@ Reference<XAccessibleStateSet > SAL_CALL
 }
 
 lang::Locale SAL_CALL AccessibleSlideSorterView::getLocale()
+    throw (IllegalAccessibleComponentStateException,
+        RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
     Reference<XAccessibleContext> xParentContext;
@@ -319,12 +330,13 @@ lang::Locale SAL_CALL AccessibleSlideSorterView::getLocale()
 
 void SAL_CALL AccessibleSlideSorterView::addAccessibleEventListener(
     const Reference<XAccessibleEventListener >& rxListener)
+    throw (RuntimeException, std::exception)
 {
     if (rxListener.is())
     {
         const osl::MutexGuard aGuard(maMutex);
 
-        if (rBHelper.bDisposed || rBHelper.bInDispose)
+        if (IsDisposed())
         {
             uno::Reference<uno::XInterface> x (static_cast<lang::XComponent *>(this), uno::UNO_QUERY);
             rxListener->disposing (lang::EventObject (x));
@@ -340,6 +352,7 @@ void SAL_CALL AccessibleSlideSorterView::addAccessibleEventListener(
 
 void SAL_CALL AccessibleSlideSorterView::removeAccessibleEventListener(
     const Reference<XAccessibleEventListener >& rxListener)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     if (rxListener.is())
@@ -366,6 +379,7 @@ void SAL_CALL AccessibleSlideSorterView::removeAccessibleEventListener(
 //===== XAccessibleComponent ==================================================
 
 sal_Bool SAL_CALL AccessibleSlideSorterView::containsPoint (const awt::Point& aPoint)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const awt::Rectangle aBBox (getBounds());
@@ -377,6 +391,7 @@ sal_Bool SAL_CALL AccessibleSlideSorterView::containsPoint (const awt::Point& aP
 
 Reference<XAccessible> SAL_CALL
     AccessibleSlideSorterView::getAccessibleAtPoint (const awt::Point& aPoint)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     Reference<XAccessible> xAccessible;
@@ -393,6 +408,7 @@ Reference<XAccessible> SAL_CALL
 }
 
 awt::Rectangle SAL_CALL AccessibleSlideSorterView::getBounds()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -413,6 +429,7 @@ awt::Rectangle SAL_CALL AccessibleSlideSorterView::getBounds()
 }
 
 awt::Point SAL_CALL AccessibleSlideSorterView::getLocation()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     awt::Point aLocation;
@@ -431,6 +448,7 @@ awt::Point SAL_CALL AccessibleSlideSorterView::getLocation()
     and our own relative location.
 */
 awt::Point SAL_CALL AccessibleSlideSorterView::getLocationOnScreen()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -453,6 +471,7 @@ awt::Point SAL_CALL AccessibleSlideSorterView::getLocationOnScreen()
 }
 
 awt::Size SAL_CALL AccessibleSlideSorterView::getSize()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     awt::Size aSize;
@@ -468,6 +487,7 @@ awt::Size SAL_CALL AccessibleSlideSorterView::getSize()
 }
 
 void SAL_CALL AccessibleSlideSorterView::grabFocus()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -477,6 +497,7 @@ void SAL_CALL AccessibleSlideSorterView::grabFocus()
 }
 
 sal_Int32 SAL_CALL AccessibleSlideSorterView::getForeground()
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     svtools::ColorConfig aColorConfig;
@@ -485,6 +506,7 @@ sal_Int32 SAL_CALL AccessibleSlideSorterView::getForeground()
 }
 
 sal_Int32 SAL_CALL AccessibleSlideSorterView::getBackground()
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     sal_uInt32 nColor = Application::GetSettings().GetStyleSettings().GetWindowColor().GetColor();
@@ -494,6 +516,8 @@ sal_Int32 SAL_CALL AccessibleSlideSorterView::getBackground()
 //===== XAccessibleSelection ==================================================
 
 void SAL_CALL AccessibleSlideSorterView::selectAccessibleChild (sal_Int32 nChildIndex)
+    throw (lang::IndexOutOfBoundsException,
+        RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -506,6 +530,8 @@ void SAL_CALL AccessibleSlideSorterView::selectAccessibleChild (sal_Int32 nChild
 }
 
 sal_Bool SAL_CALL AccessibleSlideSorterView::isAccessibleChildSelected (sal_Int32 nChildIndex)
+    throw (lang::IndexOutOfBoundsException,
+        RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     bool bIsSelected = false;
@@ -522,6 +548,7 @@ sal_Bool SAL_CALL AccessibleSlideSorterView::isAccessibleChildSelected (sal_Int3
 }
 
 void SAL_CALL AccessibleSlideSorterView::clearAccessibleSelection()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -530,6 +557,7 @@ void SAL_CALL AccessibleSlideSorterView::clearAccessibleSelection()
 }
 
 void SAL_CALL AccessibleSlideSorterView::selectAllAccessibleChildren()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -538,6 +566,7 @@ void SAL_CALL AccessibleSlideSorterView::selectAllAccessibleChildren()
 }
 
 sal_Int32 SAL_CALL AccessibleSlideSorterView::getSelectedAccessibleChildCount()
+    throw (uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
     const SolarMutexGuard aSolarGuard;
@@ -546,6 +575,7 @@ sal_Int32 SAL_CALL AccessibleSlideSorterView::getSelectedAccessibleChildCount()
 
 Reference<XAccessible > SAL_CALL
     AccessibleSlideSorterView::getSelectedAccessibleChild (sal_Int32 nSelectedChildIndex )
+    throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
     const SolarMutexGuard aSolarGuard;
@@ -573,6 +603,8 @@ Reference<XAccessible > SAL_CALL
 }
 
 void SAL_CALL AccessibleSlideSorterView::deselectAccessibleChild (sal_Int32 nChildIndex)
+    throw (lang::IndexOutOfBoundsException,
+        RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     const SolarMutexGuard aSolarGuard;
@@ -587,35 +619,45 @@ void SAL_CALL AccessibleSlideSorterView::deselectAccessibleChild (sal_Int32 nChi
 // XServiceInfo
 OUString SAL_CALL
        AccessibleSlideSorterView::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("AccessibleSlideSorterView");
 }
 
 sal_Bool SAL_CALL AccessibleSlideSorterView::supportsService (const OUString& sServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 uno::Sequence< OUString> SAL_CALL
        AccessibleSlideSorterView::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed ();
 
-    return uno::Sequence<OUString> {
+    static const OUString sServiceNames[3] = {
             OUString("com.sun.star.accessibility.Accessible"),
             OUString("com.sun.star.accessibility.AccessibleContext"),
             OUString("com.sun.star.drawing.AccessibleSlideSorterView")
     };
+    return uno::Sequence<OUString> (sServiceNames, 3);
 }
 
 void AccessibleSlideSorterView::ThrowIfDisposed()
+    throw (lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {
-        SAL_WARN("sd", "Calling disposed object. Throwing exception:");
+        OSL_TRACE ("Calling disposed object. Throwing exception:");
         throw lang::DisposedException ("object has been already disposed",
             static_cast<uno::XWeak*>(this));
     }
+}
+
+bool AccessibleSlideSorterView::IsDisposed()
+{
+    return (rBHelper.bDisposed || rBHelper.bInDispose);
 }
 
 //===== AccessibleSlideSorterView::Implementation =============================
@@ -812,7 +854,7 @@ void AccessibleSlideSorterView::Implementation::Notify (
     {
         switch (pSdrHint->GetKind())
         {
-            case SdrHintKind::PageOrderChange:
+            case HINT_PAGEORDERCHG:
                 RequestUpdateChildren();
                 break;
             default:
@@ -854,17 +896,17 @@ void AccessibleSlideSorterView::Implementation::Activated()
 
 }
 
-IMPL_LINK(AccessibleSlideSorterView::Implementation, WindowEventListener, VclWindowEvent&, rEvent, void)
+IMPL_LINK_TYPED(AccessibleSlideSorterView::Implementation, WindowEventListener, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
-        case VclEventId::WindowMove:
-        case VclEventId::WindowResize:
+        case VCLEVENT_WINDOW_MOVE:
+        case VCLEVENT_WINDOW_RESIZE:
             RequestUpdateChildren();
             break;
 
-        case VclEventId::WindowGetFocus:
-        case VclEventId::WindowLoseFocus:
+        case VCLEVENT_WINDOW_GETFOCUS:
+        case VCLEVENT_WINDOW_LOSEFOCUS:
             mrAccessibleSlideSorter.FireAccessibleEvent(
                 AccessibleEventId::SELECTION_CHANGED,
                 Any(),
@@ -875,14 +917,14 @@ IMPL_LINK(AccessibleSlideSorterView::Implementation, WindowEventListener, VclWin
     }
 }
 
-IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, SelectionChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, SelectionChangeListener, LinkParamNone*, void)
 {
     if (mnSelectionChangeUserEventId == nullptr)
         mnSelectionChangeUserEventId = Application::PostUserEvent(
             LINK(this, AccessibleSlideSorterView::Implementation, BroadcastSelectionChange));
 }
 
-IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, BroadcastSelectionChange, void*, void)
+IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, BroadcastSelectionChange, void*, void)
 {
     mnSelectionChangeUserEventId = nullptr;
     mrAccessibleSlideSorter.FireAccessibleEvent(
@@ -891,7 +933,7 @@ IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, BroadcastSelectionCha
         Any());
 }
 
-IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, FocusChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, FocusChangeListener, LinkParamNone*, void)
 {
     sal_Int32 nNewFocusedIndex (
         mrSlideSorter.GetController().GetFocusManager().GetFocusedPageIndex());
@@ -933,13 +975,13 @@ IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, FocusChangeListener, 
     }
 }
 
-IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, UpdateChildrenCallback, void*, void)
+IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, UpdateChildrenCallback, void*, void)
 {
     mnUpdateChildrenUserEventId = nullptr;
     UpdateChildren();
 }
 
-IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, VisibilityChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, VisibilityChangeListener, LinkParamNone*, void)
 {
     UpdateChildren();
 }

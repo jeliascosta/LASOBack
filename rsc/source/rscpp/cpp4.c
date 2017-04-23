@@ -19,9 +19,9 @@
 
 #include <sal/types.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "cppdef.h"
 #include "cpp.h"
-
 /*
  * parm[], parmp, and parlist[] are used to store #define() argument
  * lists.  nargs contains the actual number of parameters stored.
@@ -30,9 +30,6 @@ static char parm[NPARMWORK + 1];    /* define param work buffer     */
 static char* parmp;                 /* Free space in parm           */
 static char* parlist[LASTPARM];     /* -> start of each parameter   */
 static int nargs;                   /* Parameters for this macro    */
-
-static int expcollect( void );
-static void expstuff( DEFBUF* dp );
 
 void InitCpp4()
 {
@@ -189,7 +186,7 @@ void dodefine()
                 break;                      /* spaces               */
             else if (c == '\t')
                 c = ' ';                    /* Normalize tabs       */
-            /* fall through *//* to store character                 */
+            /* Fall through to store character                      */
         default:                            /* Other character      */
             save(c);
             break;
@@ -460,7 +457,6 @@ void expand(DEFBUF* tokenp)
                 dumpparm("expand");
 #endif
         }                           /* Collect arguments            */
-        /* fall through */
     case DEF_NOARGS:                /* No parameters just stuffs    */
         expstuff(tokenp);           /* Do actual parameters         */
     }                               /* nargs switch                 */
@@ -469,7 +465,7 @@ void expand(DEFBUF* tokenp)
 /*
  * Collect the actual parameters for this macro.  TRUE if ok.
  */
-static int expcollect()
+int expcollect()
 {
     int c;
     int paren;                  /* For embedded ()'s    */
@@ -537,7 +533,7 @@ static int expcollect()
 /*
  * Stuff the macro body, replacing formal parameters by actual parameters.
  */
-static void expstuff(DEFBUF* tokenp)
+void expstuff(DEFBUF* tokenp)
 {
     int c;                      /* Current character    */
     char* inp;                  /* -> repl string       */

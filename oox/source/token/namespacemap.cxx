@@ -23,13 +23,25 @@ namespace oox {
 
 NamespaceMap::NamespaceMap()
 {
-    maTransitionalNamespaceMap = std::map<sal_Int32, OUString>{
+    static const struct NamespaceUrl { sal_Int32 mnId; const sal_Char* mpcUrl; } spNamespaceUrls[] =
+    {
+// include auto-generated C array with namespace URLs as C strings
 #include "namespacenames.inc"
+        { -1, "" }
     };
 
-    maStrictNamespaceMap = std::map<sal_Int32, OUString>{
+    static const struct NamespaceStrictUrl { sal_Int32 mnId; const sal_Char* mpcUrl; } spNamespaceStrictUrls[] =
+    {
+// include auto-generated C array with namespace URLs as C strings
 #include "namespaces-strictnames.inc"
+        { -1, "" }
     };
+
+    for( const NamespaceUrl* pNamespaceUrl = spNamespaceUrls; pNamespaceUrl->mnId != -1; ++pNamespaceUrl )
+        maTransitionalNamespaceMap[ pNamespaceUrl->mnId ] = OUString::createFromAscii( pNamespaceUrl->mpcUrl );
+
+    for( const NamespaceStrictUrl* pNamespaceUrl = spNamespaceStrictUrls; pNamespaceUrl->mnId != -1; ++pNamespaceUrl )
+        maStrictNamespaceMap[ pNamespaceUrl->mnId ] = OUString::createFromAscii( pNamespaceUrl->mpcUrl );
 }
 
 }

@@ -49,7 +49,7 @@ class EDITENG_DLLPUBLIC SvxAdjustItem : public SfxEnumItemInterface
 public:
     static SfxPoolItem* CreateDefault();
 
-    SvxAdjustItem( const SvxAdjust eAdjst /*= SvxAdjust::Left*/,
+    SvxAdjustItem( const SvxAdjust eAdjst /*= SVX_ADJUST_LEFT*/,
                    const sal_uInt16 nId );
 
     // "pure virtual Methods" from SfxPoolItem
@@ -59,9 +59,9 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
     virtual sal_uInt16       GetValueCount() const override;
     virtual OUString         GetValueTextByPos( sal_uInt16 nPos ) const override;
     virtual sal_uInt16       GetEnumValue() const override;
@@ -71,55 +71,55 @@ public:
     virtual SvStream&        Store(SvStream &, sal_uInt16 nItemVersion ) const override;
     virtual sal_uInt16       GetVersion( sal_uInt16 nFileVersion ) const override;
 
-    void SetOneWord( const SvxAdjust eType )
+    inline void SetOneWord( const SvxAdjust eType )
     {
-        bOneBlock  = eType == SvxAdjust::Block;
+        bOneBlock  = eType == SVX_ADJUST_BLOCK;
     }
 
-    void SetLastBlock( const SvxAdjust eType )
+    inline void SetLastBlock( const SvxAdjust eType )
     {
-        bLastBlock = eType == SvxAdjust::Block;
-        bLastCenter = eType == SvxAdjust::Center;
+        bLastBlock = eType == SVX_ADJUST_BLOCK;
+        bLastCenter = eType == SVX_ADJUST_CENTER;
     }
 
-    void SetAdjust( const SvxAdjust eType )
+    inline void SetAdjust( const SvxAdjust eType )
     {
-        bLeft = eType == SvxAdjust::Left;
-        bRight = eType == SvxAdjust::Right;
-        bCenter = eType == SvxAdjust::Center;
-        bBlock = eType == SvxAdjust::Block;
+        bLeft = eType == SVX_ADJUST_LEFT;
+        bRight = eType == SVX_ADJUST_RIGHT;
+        bCenter = eType == SVX_ADJUST_CENTER;
+        bBlock = eType == SVX_ADJUST_BLOCK;
     }
 
-    SvxAdjust GetLastBlock() const
+    inline SvxAdjust GetLastBlock() const
     {
-        SvxAdjust eRet = SvxAdjust::Left;
+        SvxAdjust eRet = SVX_ADJUST_LEFT;
 
         if ( bLastBlock )
-            eRet = SvxAdjust::Block;
+            eRet = SVX_ADJUST_BLOCK;
         else if( bLastCenter )
-            eRet = SvxAdjust::Center;
+            eRet = SVX_ADJUST_CENTER;
         return eRet;
     }
 
-    SvxAdjust GetOneWord() const
+    inline SvxAdjust GetOneWord() const
     {
-        SvxAdjust eRet = SvxAdjust::Left;
+        SvxAdjust eRet = SVX_ADJUST_LEFT;
 
         if ( bBlock && bOneBlock )
-            eRet = SvxAdjust::Block;
+            eRet = SVX_ADJUST_BLOCK;
         return eRet;
     }
 
-    SvxAdjust GetAdjust() const
+    inline SvxAdjust GetAdjust() const
     {
-        SvxAdjust eRet = SvxAdjust::Left;
+        SvxAdjust eRet = SVX_ADJUST_LEFT;
 
         if ( bRight )
-            eRet = SvxAdjust::Right;
+            eRet = SVX_ADJUST_RIGHT;
         else if ( bCenter )
-            eRet = SvxAdjust::Center;
+            eRet = SVX_ADJUST_CENTER;
         else if ( bBlock )
-            eRet = SvxAdjust::Block;
+            eRet = SVX_ADJUST_BLOCK;
         return eRet;
     }
 };

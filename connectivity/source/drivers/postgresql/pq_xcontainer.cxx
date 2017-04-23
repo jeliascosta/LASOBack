@@ -35,8 +35,7 @@
  ************************************************************************/
 
 #include <rtl/ustrbuf.hxx>
-#include <com/sun/star/container/ElementExistException.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
+
 #include <cppuhelper/implbase.hxx>
 
 #include "pq_xcontainer.hxx"
@@ -135,7 +134,7 @@ public:
 
 Container::Container(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const css::uno::Reference< css::sdbc::XConnection >  & origin,
+    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
     ConnectionSettings *pSettings,
     const OUString &type)
     : ContainerBase( refMutex->mutex ),
@@ -147,19 +146,25 @@ Container::Container(
 }
 
 Any Container::getByName( const OUString& aName )
+    throw (NoSuchElementException,WrappedTargetException,RuntimeException, std::exception)
 {
     String2IntMap::const_iterator ii = m_name2index.find( aName );
     if( ii == m_name2index.end() )
     {
-        throw NoSuchElementException(
-            "Element " + aName + " unknown in " + m_type + "-Container",
-            *this );
+        OUStringBuffer buf(128);
+        buf.append( "Element "  );
+        buf.append( aName );
+        buf.append( " unknown in " );
+        buf.append( m_type );
+        buf.append( "-Container" );
+        throw NoSuchElementException( buf.makeStringAndClear() , *this );
     }
     OSL_ASSERT( ii->second >= 0 && ii->second < (int)m_values.size() );
     return m_values[ ii->second ];
 }
 
 Sequence< OUString > Container::getElementNames(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     Sequence< OUString > ret( m_values.size() );
     for( String2IntMap::const_iterator ii = m_name2index.begin();
@@ -174,34 +179,44 @@ Sequence< OUString > Container::getElementNames(  )
 }
 
 sal_Bool Container::hasByName( const OUString& aName )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return m_name2index.find( aName ) != m_name2index.end();
 }
     // Methods
 Type Container::getElementType(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return Type();
 }
 
 sal_Bool Container::hasElements(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return ! m_name2index.empty();
 }
 
 Any Container::getByIndex( sal_Int32 Index )
+    throw (::com::sun::star::lang::IndexOutOfBoundsException,
+           ::com::sun::star::lang::WrappedTargetException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     if( Index < 0 || Index >= (sal_Int32)m_values.size() )
     {
-        throw IndexOutOfBoundsException(
-            "Index " + OUString::number( Index )
-            + " out of range for " + m_type + "-Container, expected 0 <= x <= "
-            + OUString::number(m_values.size() -1),
-            *this );
+        OUStringBuffer buf(128);
+        buf.append( "Index " );
+        buf.append( Index );
+        buf.append(" out of range for " );
+        buf.append( m_type );
+        buf.append("-Container, expected 0 <= x <= " );
+        buf.append( (sal_Int32 ) (m_values.size() -1));
+        throw IndexOutOfBoundsException( buf.makeStringAndClear(), *this );
     }
     return m_values[Index];
 }
 
 sal_Int32 Container::getCount()
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return m_values.size();
 }
@@ -209,27 +224,35 @@ sal_Int32 Container::getCount()
 
 class ContainerEnumeration : public ::cppu::WeakImplHelper< XEnumeration >
 {
-    std::vector< css::uno::Any > m_vec;
+    std::vector< com::sun::star::uno::Any > m_vec;
     sal_Int32 m_index;
 public:
-    explicit ContainerEnumeration( const std::vector< css::uno::Any > &vec )
+    explicit ContainerEnumeration( const std::vector< com::sun::star::uno::Any > &vec )
         : m_vec( vec ),
           m_index( -1 )
     {}
 
 public:
     // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override;
-    virtual css::uno::Any SAL_CALL nextElement(  ) override;
+    virtual sal_Bool SAL_CALL hasMoreElements(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual ::com::sun::star::uno::Any SAL_CALL nextElement(  )
+        throw (::com::sun::star::container::NoSuchElementException,
+               ::com::sun::star::lang::WrappedTargetException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 };
 
 sal_Bool ContainerEnumeration::hasMoreElements()
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return (int)m_vec.size() > m_index +1;
 }
 
-css::uno::Any ContainerEnumeration::nextElement()
+com::sun::star::uno::Any ContainerEnumeration::nextElement()
+        throw (::com::sun::star::container::NoSuchElementException,
+               ::com::sun::star::lang::WrappedTargetException,
+               ::com::sun::star::uno::RuntimeException, std::exception)
 {
     if( ! hasMoreElements() )
     {
@@ -241,18 +264,21 @@ css::uno::Any ContainerEnumeration::nextElement()
 }
 
 Reference< XEnumeration > Container::createEnumeration(  )
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return new ContainerEnumeration( m_values );
 }
 
 void Container::addRefreshListener(
-    const css::uno::Reference< css::util::XRefreshListener >& l )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::util::XRefreshListener >& l )
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     rBHelper.addListener( cppu::UnoType<decltype(l)>::get() , l );
 }
 
 void Container::removeRefreshListener(
-    const css::uno::Reference< css::util::XRefreshListener >& l )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::util::XRefreshListener >& l )
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     rBHelper.removeListener( cppu::UnoType<decltype(l)>::get() , l );
 }
@@ -281,30 +307,47 @@ void Container::rename( const OUString &oldName, const OUString &newName )
 }
 
 void Container::dropByName( const OUString& elementName )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::container::NoSuchElementException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard guard( m_refMutex->mutex );
     String2IntMap::const_iterator ii = m_name2index.find( elementName );
     if( ii == m_name2index.end() )
     {
-        throw css::container::NoSuchElementException(
-            "Column " + elementName + " is unknown in "
-            + m_type + " container, so it can't be dropped",
-            *this );
+        OUStringBuffer buf( 128 );
+        buf.append( "Column " );
+        buf.append( elementName );
+        buf.append( " is unknown in " );
+        buf.append( m_type );
+//         buf.appendAscii( " " );
+//         buf.append( m_schemaName );
+//         buf.appendAscii( "." );
+//         buf.append( m_tableName );
+        buf.append( " container, so it can't be dropped" );
+        throw com::sun::star::container::NoSuchElementException(
+            buf.makeStringAndClear(), *this );
     }
     dropByIndex( ii->second );
 }
 
 void Container::dropByIndex( sal_Int32 index )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::lang::IndexOutOfBoundsException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard guard( m_refMutex->mutex );
     if( index < 0 ||  index >=(sal_Int32)m_values.size() )
     {
-        throw css::lang::IndexOutOfBoundsException(
-            "Index out of range (allowed 0 to "
-            + OUString::number(m_values.size() -1)
-            + ", got " + OUString::number( index )
-            + ") in " + m_type,
-            *this );
+        OUStringBuffer buf( 128 );
+        buf.append( "Index out of range (allowed 0 to " );
+        buf.append((sal_Int32)(m_values.size() -1) );
+        buf.append( ", got " );
+        buf.append( index );
+        buf.append( ") in " );
+        buf.append( m_type );
+        throw com::sun::star::lang::IndexOutOfBoundsException(
+            buf.makeStringAndClear(), *this );
     }
 
     OUString name;
@@ -343,16 +386,22 @@ void Container::dropByIndex( sal_Int32 index )
 
 void Container::append(
     const OUString & name,
-    const css::uno::Reference< css::beans::XPropertySet >& descriptor )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& descriptor )
+    throw ( ::com::sun::star::container::ElementExistException )
 
 {
     osl::MutexGuard guard( m_refMutex->mutex );
 
     if( hasByName( name ) )
     {
-        throw css::container::ElementExistException(
-            "a " + m_type + " with name " + name + " already exists in this container",
-            *this );
+        OUStringBuffer buf( 128 );
+        buf.append( "a ");
+        buf.append( m_type );
+        buf.append( " with name " );
+        buf.append( name );
+        buf.append( " already exists in this container" );
+        throw com::sun::star::container::ElementExistException(
+            buf.makeStringAndClear() , *this );
     }
 
     int index = m_values.size();
@@ -363,20 +412,25 @@ void Container::append(
 }
 
 void Container::appendByDescriptor(
-    const css::uno::Reference< css::beans::XPropertySet >& descriptor)
+    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& descriptor)
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::container::ElementExistException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     append( extractStringProperty( descriptor, getStatics().NAME ), descriptor );
 }
 
 
 void Container::addContainerListener(
-        const css::uno::Reference< css::container::XContainerListener >& l )
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XContainerListener >& l )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     rBHelper.addListener( cppu::UnoType<decltype(l)>::get() , l );
 }
 
 void Container::removeContainerListener(
-        const css::uno::Reference< css::container::XContainerListener >& l )
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XContainerListener >& l )
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     rBHelper.removeListener( cppu::UnoType<decltype(l)>::get() , l );
 }
@@ -384,7 +438,7 @@ void Container::removeContainerListener(
 
 void Container::fire( const EventBroadcastHelper &helper )
 {
-    Reference< css::util::XRefreshListener > l;
+    Reference< ::com::sun::star::util::XRefreshListener > l;
     cppu::OInterfaceContainerHelper *container = rBHelper.getContainer( helper.getType() );
     if( container )
     {
@@ -395,13 +449,13 @@ void Container::fire( const EventBroadcastHelper &helper )
             {
                 helper.fire( static_cast<XEventListener *>(iterator.next()) );
             }
-            catch ( css::uno::RuntimeException & )
+            catch ( com::sun::star::uno::RuntimeException & )
             {
                 OSL_ENSURE( false, "exception catched" );
                 // loose coupling, a runtime exception shall not break anything
                 // TODO: log away as warning !
             }
-            catch( css::uno::Exception & )
+            catch( com::sun::star::uno::Exception & )
             {
                 OSL_ENSURE( false, "exception from listener flying through" );
                 throw;

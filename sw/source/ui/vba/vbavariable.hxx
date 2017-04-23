@@ -32,17 +32,16 @@ private:
     OUString maVariableName;
 
 public:
-    /// @throws css::uno::RuntimeException
     SwVbaVariable( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext,
-        const css::uno::Reference< css::beans::XPropertyAccess >& rUserDefined, const OUString& rName );
-    virtual ~SwVbaVariable() override;
+        const css::uno::Reference< css::beans::XPropertyAccess >& rUserDefined, const OUString& rName ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaVariable();
 
    // XVariable
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL setName( const OUString& ) override;
-    virtual css::uno::Any SAL_CALL getValue() override;
-    virtual void SAL_CALL setValue( const css::uno::Any& rValue ) override;
-    virtual sal_Int32 SAL_CALL getIndex() override;
+    virtual OUString SAL_CALL getName() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setName( const OUString& ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL getValue() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setValue( const css::uno::Any& rValue ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL getIndex() throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

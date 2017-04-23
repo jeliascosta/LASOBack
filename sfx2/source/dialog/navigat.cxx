@@ -64,6 +64,16 @@ void SfxNavigator::Resize()
         pWrapper->GetContextWindow()->SetSizePixel( GetOutputSizePixel() );
 }
 
+void SfxNavigator::Resizing( Size &rSize )
+{
+    SfxDockingWindow::Resizing( rSize );
+
+    SfxChildWindowContext *pCon = GetChildWindow_Impl()->GetContext_Impl();
+    DBG_ASSERT( pCon, "No Context!" );
+    if ( pCon )
+        pCon->Resizing( rSize );
+}
+
 bool SfxNavigator::Close()
 {
     DBG_ASSERT( GetChildWindow_Impl()->GetContext_Impl(), "No Context!" );

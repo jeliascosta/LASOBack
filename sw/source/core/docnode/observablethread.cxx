@@ -34,7 +34,7 @@ ObservableThread::~ObservableThread()
 {
 }
 
-void ObservableThread::SetListener( std::weak_ptr< IFinishedThreadListener > const & pThreadListener,
+void ObservableThread::SetListener( std::weak_ptr< IFinishedThreadListener > pThreadListener,
                                     const oslInterlockedCount nThreadID )
 {
     mpThreadListener = pThreadListener;

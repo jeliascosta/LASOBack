@@ -20,6 +20,11 @@
 #include "SpellDialogChildWindow.hxx"
 #include <svx/svxids.hrc>
 
+namespace sd{
+
+SFX_IMPL_CHILDWINDOW_WITHID(SpellDialogChildWindow, SID_SPELL_DIALOG)
+}
+
 #include "ViewShell.hxx"
 #include "ViewShellBase.hxx"
 #include "DrawViewShell.hxx"
@@ -28,8 +33,6 @@
 #include "drawdoc.hxx"
 
 namespace sd {
-
-SFX_IMPL_CHILDWINDOW_WITHID(SpellDialogChildWindow, SID_SPELL_DIALOG)
 
 SpellDialogChildWindow::SpellDialogChildWindow (
     vcl::Window* _pParent,
@@ -112,7 +115,7 @@ void SpellDialogChildWindow::Notify(SfxBroadcaster&, const SfxHint& rHint)
 {
     if (const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint))
     {
-        if (SdrHintKind::ModelCleared == pSdrHint->GetKind())
+        if (HINT_MODELCLEARED == pSdrHint->GetKind())
         {
             EndSpellingAndClearOutliner();
         }
@@ -144,7 +147,7 @@ void SpellDialogChildWindow::ProvideOutliner()
                 // to create one.
                 mbOwnOutliner = true;
                 SdDrawDocument *pDoc = pViewShell->GetDoc();
-                mpSdOutliner = new SdOutliner(pDoc, OutlinerMode::TextObject);
+                mpSdOutliner = new Outliner(pDoc, OutlinerMode::TextObject);
                 StartListening(*pDoc);
             }
             else if( dynamic_cast< const OutlineViewShell *>( pViewShell ) !=  nullptr)

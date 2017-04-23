@@ -47,10 +47,10 @@ class SwPageNumAndTypeOfAnchors
         std::vector< tEntry* > maObjList;
 
     public:
-        SwPageNumAndTypeOfAnchors()
+        inline SwPageNumAndTypeOfAnchors()
         {
         }
-        ~SwPageNumAndTypeOfAnchors()
+        inline ~SwPageNumAndTypeOfAnchors()
         {
             for ( std::vector< tEntry* >::iterator aIter = maObjList.begin();
                   aIter != maObjList.end(); ++aIter )
@@ -60,9 +60,9 @@ class SwPageNumAndTypeOfAnchors
             maObjList.clear();
         }
 
-        void Collect( SwAnchoredObject& _rAnchoredObj )
+        inline void Collect( SwAnchoredObject& _rAnchoredObj )
         {
-            tEntry* pNewEntry = new tEntry;
+            tEntry* pNewEntry = new tEntry();
             pNewEntry->mpAnchoredObj = &_rAnchoredObj;
             // #i33751#, #i34060# - method <GetPageFrameOfAnchor()>
             // is replaced by method <FindPageFrameOfAnchor()>. It's return value
@@ -89,7 +89,7 @@ class SwPageNumAndTypeOfAnchors
             maObjList.push_back( pNewEntry );
         }
 
-        SwAnchoredObject* operator[]( sal_uInt32 _nIndex )
+        inline SwAnchoredObject* operator[]( sal_uInt32 _nIndex )
         {
             SwAnchoredObject* bRetObj = nullptr;
 
@@ -101,7 +101,7 @@ class SwPageNumAndTypeOfAnchors
             return bRetObj;
         }
 
-        sal_uInt32 GetPageNum( sal_uInt32 _nIndex ) const
+        inline sal_uInt32 GetPageNum( sal_uInt32 _nIndex ) const
         {
             sal_uInt32 nRetPgNum = 0L;
 
@@ -114,7 +114,7 @@ class SwPageNumAndTypeOfAnchors
         }
 
         // --> #i26945#
-        bool AnchoredAtMaster( sal_uInt32 _nIndex )
+        inline bool AnchoredAtMaster( sal_uInt32 _nIndex )
         {
             bool bAnchoredAtMaster( true );
 
@@ -126,7 +126,7 @@ class SwPageNumAndTypeOfAnchors
             return bAnchoredAtMaster;
         }
 
-        sal_uInt32 Count() const
+        inline sal_uInt32 Count() const
         {
             return maObjList.size();
         }
@@ -136,6 +136,7 @@ SwObjectFormatter::SwObjectFormatter( const SwPageFrame& _rPageFrame,
                                       SwLayAction* _pLayAction,
                                       const bool _bCollectPgNumOfAnchors )
     : mrPageFrame( _rPageFrame ),
+      mbFormatOnlyAsCharAnchored( false ),
       mbConsiderWrapOnObjPos( _rPageFrame.GetFormat()->getIDocumentSettingAccess().get(DocumentSettingId::CONSIDER_WRAP_ON_OBJECT_POSITION) ),
       mpLayAction( _pLayAction ),
       // --> #i26945#
@@ -145,6 +146,7 @@ SwObjectFormatter::SwObjectFormatter( const SwPageFrame& _rPageFrame,
 
 SwObjectFormatter::~SwObjectFormatter()
 {
+    delete mpPgNumAndTypeOfAnchors;
 }
 
 SwObjectFormatter* SwObjectFormatter::CreateObjFormatter(
@@ -296,6 +298,14 @@ void SwObjectFormatter::FormatObjContent( SwAnchoredObject& _rAnchoredObj )
 */
 void SwObjectFormatter::FormatObj_( SwAnchoredObject& _rAnchoredObj )
 {
+    // check, if only as-character anchored object have to be formatted, and
+    // check the anchor type
+    if ( FormatOnlyAsCharAnchored() &&
+         !(_rAnchoredObj.GetFrameFormat().GetAnchor().GetAnchorId() == FLY_AS_CHAR) )
+    {
+        return;
+    }
+
     // collect anchor object and its 'anchor' page number, if requested
     if ( mpPgNumAndTypeOfAnchors )
     {

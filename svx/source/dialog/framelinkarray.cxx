@@ -45,7 +45,7 @@ struct Cell
 
     explicit            Cell();
 
-    bool         IsMerged() const { return mbMergeOrig || mbOverlapX || mbOverlapY; }
+    inline bool         IsMerged() const { return mbMergeOrig || mbOverlapX || mbOverlapY; }
 
     void                MirrorSelfX();
 };
@@ -122,9 +122,9 @@ struct ArrayImpl
 
     explicit            ArrayImpl( size_t nWidth, size_t nHeight, bool bDiagDblClip );
 
-    bool         IsValidPos( size_t nCol, size_t nRow ) const
+    inline bool         IsValidPos( size_t nCol, size_t nRow ) const
                             { return (nCol < mnWidth) && (nRow < mnHeight); }
-    size_t       GetIndex( size_t nCol, size_t nRow ) const
+    inline size_t       GetIndex( size_t nCol, size_t nRow ) const
                             { return nRow * mnWidth + nCol; }
 
     const Cell&         GetCell( size_t nCol, size_t nRow ) const;
@@ -146,7 +146,7 @@ struct ArrayImpl
     bool                IsColInClipRange( size_t nCol ) const;
     bool                IsRowInClipRange( size_t nRow ) const;
 
-    size_t       GetMirrorCol( size_t nCol ) const { return mnWidth - nCol - 1; }
+    inline size_t       GetMirrorCol( size_t nCol ) const { return mnWidth - nCol - 1; }
 
     long                GetColPosition( size_t nCol ) const;
     long                GetRowPosition( size_t nRow ) const;
@@ -323,9 +323,9 @@ class MergedCellIterator
 public:
     explicit            MergedCellIterator( const Array& rArray, size_t nCol, size_t nRow );
 
-    bool         Is() const { return (mnCol <= mnLastCol) && (mnRow <= mnLastRow); }
-    size_t       Col() const { return mnCol; }
-    size_t       Row() const { return mnRow; }
+    inline bool         Is() const { return (mnCol <= mnLastCol) && (mnRow <= mnLastRow); }
+    inline size_t       Col() const { return mnCol; }
+    inline size_t       Row() const { return mnRow; }
 
     MergedCellIterator& operator++();
 
@@ -708,9 +708,9 @@ void Array::SetClipRange( size_t nFirstCol, size_t nFirstRow, size_t nLastCol, s
     mxImpl->mnLastClipRow = nLastRow;
 }
 
-tools::Rectangle Array::GetClipRangeRectangle() const
+Rectangle Array::GetClipRangeRectangle() const
 {
-    return tools::Rectangle(
+    return Rectangle(
         mxImpl->GetColPosition( mxImpl->mnFirstClipCol ),
         mxImpl->GetRowPosition( mxImpl->mnFirstClipRow ),
         mxImpl->GetColPosition( mxImpl->mnLastClipCol + 1 ),
@@ -808,9 +808,9 @@ Size Array::GetCellSize( size_t nCol, size_t nRow ) const
     return Size( GetColWidth( nFirstCol, nLastCol ) + 1, GetRowHeight( nFirstRow, nLastRow ) + 1 );
 }
 
-tools::Rectangle Array::GetCellRect( size_t nCol, size_t nRow ) const
+Rectangle Array::GetCellRect( size_t nCol, size_t nRow ) const
 {
-    tools::Rectangle aRect( GetCellPosition( nCol, nRow ), GetCellSize( nCol, nRow ) );
+    Rectangle aRect( GetCellPosition( nCol, nRow ), GetCellSize( nCol, nRow ) );
 
     // adjust rectangle for partly visible merged cells
     const Cell& rCell = CELL( nCol, nRow );
@@ -900,7 +900,7 @@ void Array::DrawRange( drawinglayer::processor2d::BaseProcessor2D* pProcessor,
             if( (!bOverlapX && !bOverlapY) || (bFirstCol && bFirstRow) ||
                 (!bOverlapY && bFirstCol) || (!bOverlapX && bFirstRow) )
             {
-                tools::Rectangle aRect( GetCellRect( nCol, nRow ) );
+                Rectangle aRect( GetCellRect( nCol, nRow ) );
                 if( (aRect.GetWidth() > 1) && (aRect.GetHeight() > 1) )
                 {
                     size_t _nFirstCol = mxImpl->GetMergedFirstCol( nCol, nRow );
@@ -1105,7 +1105,7 @@ void Array::DrawRange( OutputDevice& rDev,
             if( (!bOverlapX && !bOverlapY) || (bFirstCol && bFirstRow) ||
                 (!bOverlapY && bFirstCol) || (!bOverlapX && bFirstRow) )
             {
-                tools::Rectangle aRect( GetCellRect( nCol, nRow ) );
+                Rectangle aRect( GetCellRect( nCol, nRow ) );
                 if( (aRect.GetWidth() > 1) && (aRect.GetHeight() > 1) )
                 {
                     size_t _nFirstCol = mxImpl->GetMergedFirstCol( nCol, nRow );

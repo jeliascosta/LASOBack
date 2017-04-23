@@ -95,12 +95,11 @@ struct SfxToDo_Impl
 
 struct SfxObjectBars_Impl
 {
-    sal_uInt32         nResId;  // Resource - and ConfigId of the Toolbox
-    sal_uInt16         nPos;
-    SfxVisibilityFlags nFlags;   // special visibility flags
-    SfxInterface*      pIFace;
+    sal_uInt32     nResId;  // Resource - and ConfigId of the Toolbox
+    sal_uInt16     nMode;   // special visibility flags
+    SfxInterface*  pIFace;
 
-    SfxObjectBars_Impl() : nResId(0), nPos(0), nFlags(SfxVisibilityFlags::Invisible), pIFace(nullptr) {}
+    SfxObjectBars_Impl() : nResId(0), nMode(0), pIFace(nullptr) {}
 };
 
 struct SfxDispatcher_Impl
@@ -116,6 +115,8 @@ struct SfxDispatcher_Impl
         for (SfxRequestPtrArray::iterator aI = aReqArr.begin(), aEnd = aReqArr.end(); aI != aEnd; ++aI)
             delete *aI;
     }
+    const SfxSlotServer* pCachedServ1;  // last called message
+    const SfxSlotServer* pCachedServ2;  // penultimate called Message
     SfxShellStack_Impl   aStack;        // active functionality
     Idle                 aIdle;        // for Flush
     std::deque<SfxToDo_Impl> aToDoStack;    // not processed Push/Pop
@@ -141,7 +142,7 @@ struct SfxDispatcher_Impl
                                           // 2==ReadOnlyDoc overturned
     sal_uInt16           nFilterCount;  // Number of SIDs in pFilterSIDs
     const sal_uInt16*    pFilterSIDs;   // sorted Array of SIDs
-    SfxDisableFlags      nDisableFlags;
+    sal_uInt32           nDisableFlags;
     bool                 bFlushed;
     std::deque< std::deque<SfxToDo_Impl> > aToDoCopyStack;
 };
@@ -312,22 +313,6 @@ bool SfxDispatcher::IsAppDispatcher() const
     return !xImp->pFrame;
 }
 
-/// Decides if the request is FASTCALL or not, depending on arguments.
-bool lcl_IsConditionalFastCall(SfxRequest &rReq)
-{
-    sal_uInt16 nId = rReq.GetSlot();
-    bool bRet = false;
-
-    if (nId == SID_UNDO || nId == SID_REDO)
-    {
-        const SfxItemSet* pArgs = rReq.GetArgs();
-        if (pArgs && pArgs->HasItem(SID_REPAIRPACKAGE))
-            bRet = true;
-    }
-
-    return bRet;
-}
-
 /** Helper function to check whether a slot can be executed and
     check the execution itself
 */
@@ -336,7 +321,7 @@ void SfxDispatcher::Call_Impl(SfxShell& rShell, const SfxSlot &rSlot, SfxRequest
     SFX_STACK(SfxDispatcher::Call_Impl);
 
     // The slot may be called (meaning enabled)
-    if ( rSlot.IsMode(SfxSlotMode::FASTCALL) || rShell.CanExecuteSlot_Impl(rSlot) || lcl_IsConditionalFastCall(rReq))
+    if ( rSlot.IsMode(SfxSlotMode::FASTCALL) || rShell.CanExecuteSlot_Impl(rSlot) )
     {
         if ( GetFrame() )
         {
@@ -396,21 +381,36 @@ void SfxDispatcher::Call_Impl(SfxShell& rShell, const SfxSlot &rSlot, SfxRequest
         {
             SfxBindings *pBindings = GetBindings();
 
-            // When AutoUpdate update immediately
+            // When AutoUpdate update immediately; "Pseudoslots" must not be
+            // Autoupdate!
             if ( bAutoUpdate && pBindings )
             {
-                pBindings->Invalidate(rSlot.GetSlotId());
-                pBindings->Update(rSlot.GetSlotId());
+                const SfxSlot* pSlave = rSlot.GetLinkedSlot();
+                if (pSlave)
+                {
+                    // When enum slots take any bound slave slot
+                    while (!pBindings->IsBound(pSlave->GetSlotId()) && pSlave != &rSlot )
+                        pSlave = pSlave->GetLinkedSlot();
+                    pBindings->Invalidate(pSlave->GetSlotId());
+                    pBindings->Update(pSlave->GetSlotId());
+                }
+                else
+                {
+                    pBindings->Invalidate(rSlot.GetSlotId());
+                    pBindings->Update(rSlot.GetSlotId());
+                }
             }
         }
     }
 }
 
-void SfxDispatcher::Construct_Impl()
+void SfxDispatcher::Construct_Impl( SfxDispatcher* pParent )
 {
     xImp.reset(new SfxDispatcher_Impl);
     xImp->bFlushed = true;
 
+    xImp->pCachedServ1 = nullptr;
+    xImp->pCachedServ2 = nullptr;
     xImp->bFlushing = false;
     xImp->bUpdated = false;
     xImp->bLocked = false;
@@ -424,9 +424,9 @@ void SfxDispatcher::Construct_Impl()
     xImp->nFilterEnabling = SfxSlotFilterState::DISABLED;
     xImp->nFilterCount = 0;
     xImp->pFilterSIDs = nullptr;
-    xImp->nDisableFlags = SfxDisableFlags::NONE;
+    xImp->nDisableFlags = 0;
 
-    xImp->pParent = nullptr;
+    xImp->pParent = pParent;
 
     xImp->bInvalidateOnUnlock = false;
 
@@ -437,14 +437,13 @@ void SfxDispatcher::Construct_Impl()
 
     xImp->xPoster = new SfxHintPoster(aGenLink);
 
-    xImp->aIdle.SetPriority(TaskPriority::MEDIUM);
-    xImp->aIdle.SetInvokeHandler( LINK(this, SfxDispatcher, EventHdl_Impl ) );
-    xImp->aIdle.SetDebugName( "sfx::SfxDispatcher_Impl aIdle" );
+    xImp->aIdle.SetPriority(SchedulerPriority::MEDIUM);
+    xImp->aIdle.SetIdleHdl( LINK(this, SfxDispatcher, EventHdl_Impl ) );
 }
 
-SfxDispatcher::SfxDispatcher()
+SfxDispatcher::SfxDispatcher( SfxDispatcher* pParent )
 {
-    Construct_Impl();
+    Construct_Impl( pParent );
     xImp->pFrame = nullptr;
 }
 
@@ -453,7 +452,16 @@ SfxDispatcher::SfxDispatcher()
 */
 SfxDispatcher::SfxDispatcher(SfxViewFrame *pViewFrame)
 {
-    Construct_Impl();
+    if ( pViewFrame )
+    {
+        SfxViewFrame *pFrame = pViewFrame->GetParentViewFrame();
+        if ( pFrame )
+            Construct_Impl(  pFrame->GetDispatcher() );
+        else
+            Construct_Impl( nullptr );
+    }
+    else
+        Construct_Impl( nullptr );
     xImp->pFrame = pViewFrame;
 }
 
@@ -463,14 +471,18 @@ SfxDispatcher::SfxDispatcher(SfxViewFrame *pViewFrame)
 */
 SfxDispatcher::~SfxDispatcher()
 {
-    SAL_INFO("sfx.control", "Delete Dispatcher " << reinterpret_cast<sal_Int64>(this));
+#ifdef DBG_UTIL
+    OStringBuffer sTemp("Delete Dispatcher ");
+    sTemp.append(reinterpret_cast<sal_Int64>(this));
+    OSL_TRACE("%s", sTemp.getStr());
     DBG_ASSERT( !xImp->bActive, "deleting active Dispatcher" );
+#endif
 
     // So that no timer by Reschedule in PlugComm strikes the LeaveRegistrations
     xImp->aIdle.Stop();
     xImp->xPoster->SetEventHdl( Link<SfxRequest*,void>() );
 
-    // Notify the stack variables in Call_Impl
+    // Notify the stack varialbles in Call_Impl
     if ( xImp->pInCallAliveFlag )
         *xImp->pInCallAliveFlag = false;
 
@@ -547,7 +559,7 @@ void SfxDispatcher::Pop(SfxShell& rShell, SfxDispatcherPopFlags nMode)
         xImp->aToDoStack.push_front( SfxToDo_Impl(bPush, bDelete, bUntil, rShell) );
         if (xImp->bFlushed)
         {
-            SAL_INFO("sfx.control", "Unflushed dispatcher!");
+            OSL_TRACE("Unflushed dispatcher!");
             xImp->bFlushed = false;
             xImp->bUpdated = false;
 
@@ -561,8 +573,8 @@ void SfxDispatcher::Pop(SfxShell& rShell, SfxDispatcherPopFlags nMode)
     if(!pSfxApp->IsDowning() && !xImp->aToDoStack.empty())
     {
         // No immediate update is requested
-        xImp->aIdle.SetPriority(TaskPriority::MEDIUM);
-        xImp->aIdle.SetInvokeHandler( LINK(this, SfxDispatcher, EventHdl_Impl ) );
+        xImp->aIdle.SetPriority(SchedulerPriority::MEDIUM);
+        xImp->aIdle.SetIdleHdl( LINK(this, SfxDispatcher, EventHdl_Impl ) );
         xImp->aIdle.Start();
     }
     else
@@ -587,7 +599,7 @@ void SfxDispatcher::Pop(SfxShell& rShell, SfxDispatcherPopFlags nMode)
     It flushes the Stack, if it is dirty, thus it actually executes the
     pending Push and Pop commands.
 */
-IMPL_LINK_NOARG( SfxDispatcher, EventHdl_Impl, Timer *, void )
+IMPL_LINK_NOARG_TYPED( SfxDispatcher, EventHdl_Impl, Idle *, void )
 {
     Flush();
     Update_Impl();
@@ -714,14 +726,17 @@ SfxViewFrame* SfxDispatcher::GetFrame() const
     are called with the handler <SfxShell::Activate(bool)>, starting with
     the lowest.
 */
-void SfxDispatcher::DoActivate_Impl(bool bMDI)
+void SfxDispatcher::DoActivate_Impl(bool bMDI, SfxViewFrame* /* pOld */)
 {
     SFX_STACK(SfxDispatcher::DoActivate);
     if ( bMDI )
     {
-        SAL_INFO("sfx.control", "Activate Dispatcher " << reinterpret_cast<sal_Int64>(this));
+#ifdef DBG_UTIL
+        OStringBuffer sTemp("Activate Dispatcher ");
+        sTemp.append(reinterpret_cast<sal_Int64>(this));
+        OSL_TRACE("%s", sTemp.getStr());
         DBG_ASSERT( !xImp->bActive, "Activation error" );
-
+#endif
         xImp->bActive = true;
         xImp->bUpdated = false;
         SfxBindings* pBindings = GetBindings();
@@ -733,7 +748,11 @@ void SfxDispatcher::DoActivate_Impl(bool bMDI)
     }
     else
     {
-        SAL_INFO("sfx.control", "Non-MDI-Activate Dispatcher " << reinterpret_cast<sal_Int64>(this));
+#ifdef DBG_UTIL
+        OStringBuffer sTemp("Non-MDI-Activate Dispatcher");
+        sTemp.append(reinterpret_cast<sal_Int64>(this));
+        OSL_TRACE("%s", sTemp.getStr());
+#endif
     }
 
     if ( IsAppDispatcher() )
@@ -757,10 +776,14 @@ void SfxDispatcher::DoActivate_Impl(bool bMDI)
     if(!xImp->aToDoStack.empty())
     {
         // No immediate update is requested
-        xImp->aIdle.SetPriority(TaskPriority::MEDIUM);
-        xImp->aIdle.SetInvokeHandler( LINK(this, SfxDispatcher, EventHdl_Impl ) );
+        xImp->aIdle.SetPriority(SchedulerPriority::MEDIUM);
+        xImp->aIdle.SetIdleHdl( LINK(this, SfxDispatcher, EventHdl_Impl ) );
         xImp->aIdle.Start();
     }
+}
+
+void SfxDispatcher::DoParentActivate_Impl()
+{
 }
 
 /** This method controls the deactivation of a dispatcher.
@@ -840,6 +863,10 @@ void SfxDispatcher::DoDeactivate_Impl(bool bMDI, SfxViewFrame* pNew)
     Flush();
 }
 
+void SfxDispatcher::DoParentDeactivate_Impl()
+{
+}
+
 /** This method searches in SfxDispatcher after <SfxShell> , from the Slot Id
     nSlot currently being handled. For this, the dispatcher is first flushed.
 
@@ -889,7 +916,6 @@ bool SfxDispatcher::GetShellAndSlot_Impl(sal_uInt16 nSlot, SfxShell** ppShell,
 void SfxDispatcher::Execute_(SfxShell& rShell, const SfxSlot& rSlot,
         SfxRequest& rReq, SfxCallMode eCallMode)
 {
-    SFX_STACK(SfxDispatcher::Execute_);
     DBG_ASSERT( !xImp->bFlushing, "recursive call to dispatcher" );
     DBG_ASSERT( xImp->aToDoStack.empty(), "unprepared InPlace _Execute" );
 
@@ -998,7 +1024,7 @@ const SfxPoolItem* SfxDispatcher::Execute(sal_uInt16 nSlot, SfxCallMode nCall,
 
     @param nSlot the Id of the executing function
     @param eCall SfxCallMode::SYNCRHON, ..._ASYNCHRON or ..._SLOT
-    @param pArgs Zero terminated C-Array of Parameters
+    @param pArgs Zero teminated C-Array of Parameters
     @param pInternalArgs Zero terminated C-Array of Parameters
 
     @return const SfxPoolItem* Pointer to the SfxPoolItem valid to the next run
@@ -1136,7 +1162,7 @@ const SfxPoolItem* SfxDispatcher::ExecuteList(sal_uInt16 nSlot, SfxCallMode eCal
 
 /** Helper method to receive the asynchronously executed <SfxRequest>s.
 */
-IMPL_LINK(SfxDispatcher, PostMsgHandler, SfxRequest*, pReq, void)
+IMPL_LINK_TYPED(SfxDispatcher, PostMsgHandler, SfxRequest*, pReq, void)
 {
     DBG_ASSERT( !xImp->bFlushing, "recursive call to dispatcher" );
     SFX_STACK(SfxDispatcher::PostMsgHandler);
@@ -1210,6 +1236,7 @@ void SfxDispatcher::Update_Impl( bool bForce )
     if ( !xImp->pFrame )
         return;
 
+    SfxGetpApp();  // -Wall is this required???
     SfxDispatcher *pDisp = this;
     bool bUpdate = bForce;
     while ( pDisp && pDisp->xImp->pFrame )
@@ -1268,7 +1295,8 @@ void SfxDispatcher::Update_Impl( bool bForce )
         SetMenu_Impl();
 
     SfxWorkWindow *pWorkWin = xImp->pFrame->GetFrame().GetWorkWindow_Impl();
-    pWorkWin->ResetStatusBar_Impl();
+    SfxWorkWindow *pTaskWin = xImp->pFrame->GetTopFrame().GetWorkWindow_Impl();
+    pTaskWin->ResetStatusBar_Impl();
 
     SfxDispatcher *pDispat = this;
     while ( pDispat )
@@ -1294,7 +1322,7 @@ void SfxDispatcher::Update_Impl( bool bForce )
         pActDispat = pActDispat->xImp->pParent;
     }
 
-    Update_Impl_( bUIActive, !bIsIPActive, bIsIPActive, pWorkWin );
+    Update_Impl_( bUIActive, !bIsIPActive, bIsIPActive, pTaskWin );
     if ( (bUIActive || bIsActive) && !comphelper::LibreOfficeKit::isActive() )
         pWorkWin->UpdateObjectBars_Impl();
 
@@ -1304,17 +1332,12 @@ void SfxDispatcher::Update_Impl( bool bForce )
     if ( xLayoutManager.is() )
         xLayoutManager->unlock();
 
-    if ( SfxViewShell::Current() && SfxViewShell::Current()->GetDispatcher() )
-    {
-        const SfxPoolItem *pItem;
-        SfxViewShell::Current()->GetDispatcher()->QueryState(SID_NOTEBOOKBAR, pItem);
-    }
-
     return;
 }
 
 void SfxDispatcher::Update_Impl_( bool bUIActive, bool bIsMDIApp, bool bIsIPOwner, SfxWorkWindow *pTaskWin )
 {
+    SfxGetpApp();
     SfxWorkWindow *pWorkWin = xImp->pFrame->GetFrame().GetWorkWindow_Impl();
     bool bIsActive = false;
     SfxDispatcher *pActDispat = pWorkWin->GetBindings().GetDispatcher_Impl();
@@ -1348,25 +1371,24 @@ void SfxDispatcher::Update_Impl_( bool bUIActive, bool bIsMDIApp, bool bIsIPOwne
         SfxShell *pShell = GetShell( nShell-1 );
         SfxInterface *pIFace = pShell->GetInterface();
 
-        // don't consider shells if "Hidden" or "Quiet"
+        // don't consider shells if "Hidden" oder "Quiet"
         bool bReadOnlyShell = IsReadOnlyShell_Impl( nShell-1 );
         sal_uInt16 nNo;
         for ( nNo = 0; pIFace && nNo<pIFace->GetObjectBarCount(); ++nNo )
         {
             sal_uInt16 nPos = pIFace->GetObjectBarPos(nNo);
-            SfxVisibilityFlags nFlags = pIFace->GetObjectBarFlags(nNo);
-            if ( bReadOnlyShell && !( nFlags & SfxVisibilityFlags::ReadonlyDoc ) )
+            if ( bReadOnlyShell && !( nPos & SFX_VISIBILITY_READONLYDOC ) )
                 continue;
 
             // check whether toolbar needs activation of a special feature
-            SfxShellFeature nFeature = pIFace->GetObjectBarFeature(nNo);
-            if ((nFeature != SfxShellFeature::NONE) && !pShell->HasUIFeature(nFeature))
+            sal_uInt32 nFeature = pIFace->GetObjectBarFeature(nNo);
+            if ( nFeature && !pShell->HasUIFeature( nFeature ) )
                 continue;
 
             // check for toolboxes that are exclusively for a viewer
             if ( xImp->pFrame)
             {
-                bool bViewerTbx( nFlags & SfxVisibilityFlags::Viewer );
+                bool bViewerTbx = SFX_VISIBILITY_VIEWER == ( nPos & SFX_VISIBILITY_VIEWER );
                 SfxObjectShell* pSh = xImp->pFrame->GetObjectShell();
                 const SfxBoolItem* pItem = SfxItemSet::GetItem<SfxBoolItem>(pSh->GetMedium()->GetItemSet(), SID_VIEWONLY, false);
                 bool bIsViewer = pItem && pItem->GetValue();
@@ -1377,17 +1399,16 @@ void SfxDispatcher::Update_Impl_( bool bUIActive, bool bIsMDIApp, bool bIsIPOwne
             // always register toolbars, allows to switch them on
             bool bVisible = pIFace->IsObjectBarVisible(nNo);
             if ( !bVisible )
-                nFlags = SfxVisibilityFlags::Invisible;
+                nPos &= SFX_POSITION_MASK;
 
-            SfxObjectBars_Impl& rBar = xImp->aObjBars[nPos];
-            rBar.nPos = nPos;
-            rBar.nFlags = nFlags;
+            SfxObjectBars_Impl& rBar = xImp->aObjBars[nPos & SFX_POSITION_MASK];
+            rBar.nMode = nPos;
             rBar.nResId = pIFace->GetObjectBarId(nNo);
             rBar.pIFace = pIFace;
 
             if ( bUIActive || bIsActive )
             {
-                pWorkWin->SetObjectBar_Impl(nPos, nFlags, rBar.nResId, rBar.pIFace);
+                pWorkWin->SetObjectBar_Impl(nPos, rBar.nResId, rBar.pIFace);
             }
 
             if ( !bVisible )
@@ -1406,23 +1427,23 @@ void SfxDispatcher::Update_Impl_( bool bUIActive, bool bIsMDIApp, bool bIsIPOwne
                     continue;
             }
 
-            SfxShellFeature nFeature = pIFace->GetChildWindowFeature(nNo);
-            if ((nFeature != SfxShellFeature::NONE) && !pShell->HasUIFeature(nFeature))
+            sal_uInt32 nFeature = pIFace->GetChildWindowFeature(nNo);
+            if ( nFeature && !pShell->HasUIFeature( nFeature ) )
                 continue;
 
             // slot decides whether a ChildWindow is shown when document is OLE server or OLE client
-            SfxVisibilityFlags nMode = SfxVisibilityFlags::Standard;
+            sal_uInt16 nMode = SFX_VISIBILITY_STANDARD;
             if( pSlot )
             {
                 if ( pSlot->IsMode(SfxSlotMode::CONTAINER) )
                 {
-                    if ( pWorkWin->IsVisible_Impl( SfxVisibilityFlags::Client ) )
-                        nMode |= SfxVisibilityFlags::Client;
+                    if ( pWorkWin->IsVisible_Impl( SFX_VISIBILITY_CLIENT ) )
+                        nMode |= SFX_VISIBILITY_CLIENT;
                 }
                 else
                 {
-                    if ( pWorkWin->IsVisible_Impl( SfxVisibilityFlags::Server ) )
-                        nMode |= SfxVisibilityFlags::Server;
+                    if ( pWorkWin->IsVisible_Impl( SFX_VISIBILITY_SERVER ) )
+                        nMode |= SFX_VISIBILITY_SERVER;
                 }
             }
 
@@ -1450,7 +1471,7 @@ void SfxDispatcher::Update_Impl_( bool bUIActive, bool bIsMDIApp, bool bIsIPOwne
         {
             SfxObjectBars_Impl& rBar = xImp->aObjBars[nPos];
             rBar = rFixed;
-            pWorkWin->SetObjectBar_Impl(rFixed.nPos, rFixed.nFlags,
+            pWorkWin->SetObjectBar_Impl(rFixed.nMode,
                 rFixed.nResId, rFixed.pIFace);
         }
     }
@@ -1483,7 +1504,7 @@ void SfxDispatcher::FlushImpl()
 {
     SFX_STACK(SfxDispatcher::FlushImpl);
 
-    SAL_INFO("sfx.control", "Flushing dispatcher!");
+    OSL_TRACE("Flushing dispatcher!");
 
     xImp->aIdle.Stop();
 
@@ -1527,7 +1548,7 @@ void SfxDispatcher::FlushImpl()
                 DBG_ASSERT( !xImp->aStack.empty(), "popping from empty stack" );
                 pPopped = xImp->aStack.back();
                 xImp->aStack.pop_back();
-                pPopped->SetDisableFlags( SfxDisableFlags::NONE );
+                pPopped->SetDisableFlags( 0 );
                 bFound = (pPopped == i->pCluster);
 
                 // Mark the moved Shell
@@ -1542,13 +1563,19 @@ void SfxDispatcher::FlushImpl()
     // Invalidate bindings, if possible
     if ( !pSfxApp->IsDowning() )
     {
+        if ( bModify )
+        {
+            xImp->pCachedServ1 = nullptr;
+            xImp->pCachedServ2 = nullptr;
+        }
+
         InvalidateBindings_Impl( bModify );
     }
 
     xImp->bFlushing = false;
     xImp->bUpdated = false; // not only when bModify, if Doc/Template-Config
     xImp->bFlushed = true;
-    SAL_INFO("sfx.control", "Successfully flushed dispatcher!");
+    OSL_TRACE("Successfully flushed dispatcher!");
 
     //fdo#70703 FlushImpl may call back into itself so use aToDoCopyStack to talk
     //to outer levels of ourself. If DoActivate_Impl/DoDeactivate_Impl deletes
@@ -1598,7 +1625,7 @@ void SfxDispatcher::FlushImpl()
     if( bAwakeBindings )
         aToDoCopy.clear();
 
-    // If more changes have occurred on the stack when
+    // If more changes have occurred on the stach when
     // Activate/Deactivate/Delete:
     if (!xImp->bFlushed)
         // If Push/Pop has been called by someone, then also EnterReg was called!
@@ -1622,7 +1649,7 @@ void SfxDispatcher::FlushImpl()
     overturned by the use of 'bEnable == 2', so this will be displayed again.
     On the other slots it has no effect.
 
-    // HACK(here should be used an enum) ???
+    // HACK(hier muss mal ein enum rein) ???
     @param nEnable  1==true: only enable specified slots, disable all other
                     0==false: disable specified slots, first enable all other
     @param nCount Number of SIDs in the following Array
@@ -1717,7 +1744,7 @@ SfxSlotFilterState SfxDispatcher::IsSlotEnabledByFilter_Impl( sal_uInt16 nSID ) 
 */
 bool SfxDispatcher::FindServer_(sal_uInt16 nSlot, SfxSlotServer& rServer, bool bModal)
 {
-    SFX_STACK(SfxDispatcher::FindServer_);
+    SFX_STACK(SfxDispatcher::_FindServer);
 
     // Dispatcher locked? (nevertheless let SID_HELP_PI through)
     if ( IsLocked(nSlot) )
@@ -1794,8 +1821,7 @@ bool SfxDispatcher::FindServer_(sal_uInt16 nSlot, SfxSlotServer& rServer, bool b
         SfxInterface *pIFace = pObjShell->GetInterface();
         const SfxSlot *pSlot = pIFace->GetSlot(nSlot);
 
-        if ( pSlot && pSlot->nDisableFlags != SfxDisableFlags::NONE &&
-             ( (int)pSlot->nDisableFlags & (int)pObjShell->GetDisableFlags() ) != 0 )
+        if ( pSlot && pSlot->nDisableFlags && ( pSlot->nDisableFlags & pObjShell->GetDisableFlags() ) != 0 )
             return false;
 
         if ( pSlot && !( pSlot->nFlags & SfxSlotMode::READONLYDOC ) && bReadOnly )
@@ -1852,7 +1878,7 @@ bool SfxDispatcher::FindServer_(sal_uInt16 nSlot, SfxSlotServer& rServer, bool b
 bool SfxDispatcher::FillState_(const SfxSlotServer& rSvr, SfxItemSet& rState,
         const SfxSlot* pRealSlot)
 {
-    SFX_STACK(SfxDispatcher::FillState_);
+    SFX_STACK(SfxDispatcher::_FillState);
 
     const SfxSlot *pSlot = rSvr.GetSlot();
     if ( pSlot && IsLocked( pSlot->GetSlotId() ) )
@@ -1929,7 +1955,7 @@ void SfxDispatcher::ExecutePopup( vcl::Window *pWin, const Point *pPos )
     }
 }
 
-void SfxDispatcher::ExecutePopup( const OUString& rResName, vcl::Window* pWin, const Point* pPos )
+void SfxDispatcher::ExecutePopup( const OUString& rResName, vcl::Window *pWin, const Point* pPos )
 {
     css::uno::Sequence< css::uno::Any > aArgs( 3 );
     aArgs[0] <<= comphelper::makePropertyValue( "Value", rResName );
@@ -1966,8 +1992,8 @@ void SfxDispatcher::ExecutePopup( const OUString& rResName, vcl::Window* pWin, c
 
         std::stringstream aStream;
         boost::property_tree::write_json(aStream, aRoot, true);
-        if (SfxViewShell* pViewShell = xImp->pFrame->GetViewShell())
-            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_CONTEXT_MENU, aStream.str().c_str());
+        const SfxObjectShell* objSh = xImp->pFrame->GetObjectShell();
+        objSh->libreOfficeKitCallback(LOK_CALLBACK_CONTEXT_MENU, aStream.str().c_str());
     }
     else
     {
@@ -2097,7 +2123,7 @@ SfxItemState SfxDispatcher::QueryState( sal_uInt16 nSID, css::uno::Any& rAny )
                 sal_uInt16 nSubId( 0 );
                 SfxItemPool& rPool = pShell->GetPool();
                 sal_uInt16 nWhich = rPool.GetWhich( nSID );
-                if ( rPool.GetMetric( nWhich ) == MapUnit::MapTwip )
+                if ( rPool.GetMetric( nWhich ) == SFX_MAPUNIT_TWIP )
                     nSubId |= CONVERT_TWIPS;
                 pItem->QueryValue( aState, (sal_uInt8)nSubId );
             }
@@ -2136,7 +2162,7 @@ void SfxDispatcher::RemoveShell_Impl( SfxShell& rShell )
         if ( xImp->aStack[n] == &rShell )
         {
             xImp->aStack.erase( xImp->aStack.begin() + n );
-            rShell.SetDisableFlags( SfxDisableFlags::NONE );
+            rShell.SetDisableFlags( 0 );
             rShell.DoDeactivate_Impl(xImp->pFrame, true);
             break;
         }
@@ -2145,6 +2171,8 @@ void SfxDispatcher::RemoveShell_Impl( SfxShell& rShell )
     if ( !SfxGetpApp()->IsDowning() )
     {
         xImp->bUpdated = false;
+        xImp->pCachedServ1 = nullptr;
+        xImp->pCachedServ2 = nullptr;
         InvalidateBindings_Impl(true);
     }
 }
@@ -2180,14 +2208,14 @@ bool SfxDispatcher::IsUpdated_Impl() const
     return xImp->bUpdated;
 }
 
-void SfxDispatcher::SetDisableFlags( SfxDisableFlags nFlags )
+void SfxDispatcher::SetDisableFlags( sal_uInt32 nFlags )
 {
     xImp->nDisableFlags = nFlags;
     for ( SfxShellStack_Impl::reverse_iterator it = xImp->aStack.rbegin(); it != xImp->aStack.rend(); ++it )
         (*it)->SetDisableFlags( nFlags );
 }
 
-SfxDisableFlags SfxDispatcher::GetDisableFlags() const
+sal_uInt32 SfxDispatcher::GetDisableFlags() const
 {
     return xImp->nDisableFlags;
 }

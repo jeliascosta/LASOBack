@@ -109,7 +109,15 @@ public class UnoProvider implements AppProvider {
         if (unorcName == null) {
             String office = (String)param.get("AppExecutionCommand");
             // determine unorc name: unorc or uno.ini on windows
-            unorcName = (String)param.get(PropertyName.UNORC_NAME);
+            String opSystem = (String)param.get(PropertyName.OPERATING_SYSTEM);
+            if ( opSystem != null && opSystem.equalsIgnoreCase(PropertyName.WNTMSCI)) {
+                unorcName = "uno.ini";
+            }
+            else {
+                unorcName = "unorc";
+            }
+            if (office == null)
+                return null;
             // use '/', because this will be a URL in any case.
             unorcName = office.substring(0, office.indexOf("program")+7) +
                         "/" + unorcName;

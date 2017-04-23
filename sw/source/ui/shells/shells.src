@@ -50,6 +50,10 @@ String STR_INSERT_GRAPHIC
 {
     Text [ en-US ] = "Insert Image" ;
 };
+String STR_NO_ADDRESSBOOK
+{
+        Text [ en-US ] = "An Address Book does not exist" ;
+};
 String STR_REDLINE_COMMENT
 {
         Text [ en-US ] = "Comment: " ;
@@ -67,32 +71,33 @@ String STR_REDLINE_AUTOFMT
         Text [ en-US ] = "AutoCorrect";
 };
 
-Bitmap BMP_REDLINE_INSERTED
+Image IMG_REDLINE_INSERTED
 {
-    File = "redline_inserted.png";
+    ImageBitmap = Bitmap{File = "redline_inserted.png";};
 };
-
-Bitmap BMP_REDLINE_DELETED
+Image IMG_REDLINE_DELETED
 {
-    File = "redline_deleted.png";
+    ImageBitmap = Bitmap{File = "redline_deleted.png";};
 };
-
-Bitmap BMP_REDLINE_FORMATED
+Image IMG_REDLINE_FORMATED
 {
     // FIXME
-    File = "redline_inserted.png";
+    ImageBitmap = Bitmap{File = "redline_inserted.png";};
 };
-
-Bitmap BMP_REDLINE_TABLECHG
+Image IMG_REDLINE_TABLECHG
 {
     // FIXME
-    File = "redline_inserted.png";
+    ImageBitmap = Bitmap{File = "redline_inserted.png";};
 };
-
-Bitmap BMP_REDLINE_FMTCOLLSET
+Image IMG_REDLINE_FMTCOLLSET
 {
     // FIXME
-    File = "redline_inserted.png";
+    ImageBitmap = Bitmap{File = "redline_inserted.png";};
+};
+Image IMG_REDLINE_AUTOFMT
+{
+    // FIXME
+    ImageBitmap = Bitmap{File = "redline_inserted.png";};
 };
 
 String STR_REDLINE_FORMATED

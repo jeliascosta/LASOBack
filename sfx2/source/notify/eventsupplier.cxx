@@ -53,6 +53,8 @@ using namespace css;
     //  --- XNameReplace ---
 
 void SAL_CALL SfxEvents_Impl::replaceByName( const OUString & aName, const uno::Any & rElement )
+                                throw( lang::IllegalArgumentException, container::NoSuchElementException,
+                                       lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -109,6 +111,8 @@ void SAL_CALL SfxEvents_Impl::replaceByName( const OUString & aName, const uno::
 //  --- XNameAccess ---
 
 uno::Any SAL_CALL SfxEvents_Impl::getByName( const OUString& aName )
+                                throw( container::NoSuchElementException, lang::WrappedTargetException,
+                                       uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -126,13 +130,13 @@ uno::Any SAL_CALL SfxEvents_Impl::getByName( const OUString& aName )
 }
 
 
-uno::Sequence< OUString > SAL_CALL SfxEvents_Impl::getElementNames()
+uno::Sequence< OUString > SAL_CALL SfxEvents_Impl::getElementNames() throw ( uno::RuntimeException, std::exception )
 {
     return maEventNames;
 }
 
 
-sal_Bool SAL_CALL SfxEvents_Impl::hasByName( const OUString& aName )
+sal_Bool SAL_CALL SfxEvents_Impl::hasByName( const OUString& aName ) throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -152,14 +156,14 @@ sal_Bool SAL_CALL SfxEvents_Impl::hasByName( const OUString& aName )
 
 //  --- XElementAccess ( parent of XNameAccess ) ---
 
-uno::Type SAL_CALL SfxEvents_Impl::getElementType()
+uno::Type SAL_CALL SfxEvents_Impl::getElementType() throw ( uno::RuntimeException, std::exception )
 {
     uno::Type aElementType = cppu::UnoType<uno::Sequence < beans::PropertyValue >>::get();
     return aElementType;
 }
 
 
-sal_Bool SAL_CALL SfxEvents_Impl::hasElements()
+sal_Bool SAL_CALL SfxEvents_Impl::hasElements() throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -264,7 +268,7 @@ void SfxEvents_Impl::Execute( uno::Any& aEventData, const document::DocumentEven
 
 // --- ::document::XEventListener ---
 
-void SAL_CALL SfxEvents_Impl::notifyEvent( const document::EventObject& aEvent )
+void SAL_CALL SfxEvents_Impl::notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception )
 {
     ::osl::ClearableMutexGuard aGuard( maMutex );
 
@@ -294,7 +298,7 @@ void SAL_CALL SfxEvents_Impl::notifyEvent( const document::EventObject& aEvent )
 
 // --- ::lang::XEventListener ---
 
-void SAL_CALL SfxEvents_Impl::disposing( const lang::EventObject& /*Source*/ )
+void SAL_CALL SfxEvents_Impl::disposing( const lang::EventObject& /*Source*/ ) throw( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( maMutex );
 
@@ -307,13 +311,13 @@ void SAL_CALL SfxEvents_Impl::disposing( const lang::EventObject& /*Source*/ )
 
 
 SfxEvents_Impl::SfxEvents_Impl( SfxObjectShell* pShell,
-                                uno::Reference< document::XEventBroadcaster > const & xBroadcaster )
+                                uno::Reference< document::XEventBroadcaster > xBroadcaster )
 {
     // get the list of supported events and store it
     if ( pShell )
         maEventNames = pShell->GetEventNames();
     else
-        maEventNames = rtl::Reference<GlobalEventConfig>(new GlobalEventConfig)->getElementNames();
+        maEventNames = GlobalEventConfig().getElementNames();
 
     maEventData = uno::Sequence < uno::Any > ( maEventNames.getLength() );
 
@@ -364,7 +368,7 @@ SvxMacro* SfxEvents_Impl::ConvertToMacro( const uno::Any& rElement, SfxObjectShe
             else if ( aProperties[ nIndex ].Name == PROP_MACRO_NAME )
                 aProperties[ nIndex ].Value >>= aMacroName;
             else {
-                OSL_FAIL("Unknown property value!");
+                OSL_FAIL("Unknown propery value!");
             }
             nIndex += 1;
         }
@@ -433,7 +437,7 @@ void SfxEvents_Impl::NormalizeMacro( const ::comphelper::NamedValueCollection& i
                 sal_Int32 nArgsPos = aScript.indexOf( '(' );
                 if ( ( nHashPos != -1 ) && ( nArgsPos == -1 || nHashPos < nArgsPos ) )
                 {
-                    OUString aBasMgrName( INetURLObject::decode( aScript.copy( 8, nHashPos-8 ), INetURLObject::DecodeMechanism::WithCharset ) );
+                    OUString aBasMgrName( INetURLObject::decode( aScript.copy( 8, nHashPos-8 ), INetURLObject::DECODE_WITH_CHARSET ) );
                     if ( aBasMgrName == "." )
                         aLibrary = pDoc->GetTitle();
                     else

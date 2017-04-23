@@ -39,6 +39,7 @@ class SwEndNoteInfo;
 class SW_DLLPUBLIC SwFormatPageDesc : public SfxPoolItem, public SwClient
 {
     ::boost::optional<sal_uInt16> oNumOffset;          ///< Offset page number.
+    sal_uInt16 nDescNameIdx;        ///< SW3-Reader: stringpool-index of style name.
     SwModify* pDefinedIn;       /**< Points to the object in which the
                                  attribute was set (ContentNode/Format). */
 protected:
@@ -49,17 +50,17 @@ public:
     SwFormatPageDesc( const SwPageDesc *pDesc = nullptr );
     SwFormatPageDesc( const SwFormatPageDesc &rCpy );
     SwFormatPageDesc &operator=( const SwFormatPageDesc &rCpy );
-    virtual ~SwFormatPageDesc() override;
+    virtual ~SwFormatPageDesc();
 
 
     /// "Pure virtual methods" of SfxPoolItem.
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
@@ -70,7 +71,7 @@ public:
     void    SetNumOffset( const ::boost::optional<sal_uInt16>& oNum ) { oNumOffset = oNum; }
 
     /// Query / set where attribute is anchored.
-    const SwModify* GetDefinedIn() const { return pDefinedIn; }
+    inline const SwModify* GetDefinedIn() const { return pDefinedIn; }
     void ChgDefinedIn( const SwModify* pNew ) { pDefinedIn = const_cast<SwModify*>(pNew); }
     void RegisterToPageDesc( SwPageDesc& );
     bool KnowsPageDesc() const;

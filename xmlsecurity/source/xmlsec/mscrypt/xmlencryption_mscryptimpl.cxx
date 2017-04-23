@@ -18,19 +18,17 @@
  */
 
 #include <sal/config.h>
-
-#include <com/sun/star/xml/crypto/XMLEncryptionException.hpp>
 #include <rtl/uuid.h>
 #include "xmlencryption_mscryptimpl.hxx"
 
-#include "xmlsec/xmldocumentwrapper_xmlsecimpl.hxx"
+#include "xmldocumentwrapper_xmlsecimpl.hxx"
 
 #include "xmlelementwrapper_xmlsecimpl.hxx"
 
 #include "securityenvironment_mscryptimpl.hxx"
 #include "errorcallback.hxx"
 
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 
 #ifdef UNX
 #define stricmp strcasecmp
@@ -60,12 +58,13 @@ Reference< XXMLEncryptionTemplate >
 SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
     const Reference< XXMLEncryptionTemplate >& aTemplate ,
     const Reference< XSecurityEnvironment >& aEnvironment
-)
+) throw( css::xml::crypto::XMLEncryptionException,
+         css::uno::SecurityException )
 {
-    xmlSecKeysMngrPtr pMngr = nullptr ;
-    xmlSecEncCtxPtr pEncCtx = nullptr ;
-    xmlNodePtr pEncryptedData = nullptr ;
-    xmlNodePtr pContent = nullptr ;
+    xmlSecKeysMngrPtr pMngr = NULL ;
+    xmlSecEncCtxPtr pEncCtx = NULL ;
+    xmlNodePtr pEncryptedData = NULL ;
+    xmlNodePtr pContent = NULL ;
 
     if( !aTemplate.is() )
         throw RuntimeException() ;
@@ -74,9 +73,13 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
         throw RuntimeException() ;
 
     //Get Keys Manager
-    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY_THROW ) ;
-    SecurityEnvironment_MSCryptImpl* pSecEnv = reinterpret_cast<SecurityEnvironment_MSCryptImpl*>(xSecTunnel->getSomething( SecurityEnvironment_MSCryptImpl::getUnoTunnelId() ));
-    if( pSecEnv == nullptr )
+    Reference< XUnoTunnel > xSecTunnel( aEnvironment , UNO_QUERY ) ;
+    if( !xSecTunnel.is() ) {
+         throw RuntimeException() ;
+    }
+
+    SecurityEnvironment_MSCryptImpl* pSecEnv = ( SecurityEnvironment_MSCryptImpl* )xSecTunnel->getSomething( SecurityEnvironment_MSCryptImpl::getUnoTunnelId() ) ;
+    if( pSecEnv == NULL )
         throw RuntimeException() ;
 
     //Get the encryption template
@@ -85,9 +88,13 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
         throw RuntimeException() ;
     }
 
-    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY_THROW ) ;
-    XMLElementWrapper_XmlSecImpl* pTemplate = reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(xTplTunnel->getSomething( XMLElementWrapper_XmlSecImpl::getUnoTunnelImplementationId() ));
-    if( pTemplate == nullptr ) {
+    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY ) ;
+    if( !xTplTunnel.is() ) {
+        throw RuntimeException() ;
+    }
+
+    XMLElementWrapper_XmlSecImpl* pTemplate = ( XMLElementWrapper_XmlSecImpl* )xTplTunnel->getSomething( XMLElementWrapper_XmlSecImpl::getUnoTunnelImplementationId() ) ;
+    if( pTemplate == NULL ) {
         throw RuntimeException() ;
     }
 
@@ -96,28 +103,28 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
     //Find the element to be encrypted.
     //This element is wrapped in the CipherValue sub-element.
     xmlNodePtr pCipherData = pEncryptedData->children;
-    while (pCipherData != nullptr && stricmp(reinterpret_cast<const char *>(pCipherData->name), "CipherData"))
+    while (pCipherData != NULL && stricmp((const char *)(pCipherData->name), "CipherData"))
     {
         pCipherData = pCipherData->next;
     }
 
-    if( pCipherData == nullptr ) {
+    if( pCipherData == NULL ) {
         throw XMLEncryptionException() ;
     }
 
     xmlNodePtr pCipherValue = pCipherData->children;
-    while (pCipherValue != nullptr && stricmp(reinterpret_cast<const char *>(pCipherValue->name), "CipherValue"))
+    while (pCipherValue != NULL && stricmp((const char *)(pCipherValue->name), "CipherValue"))
     {
         pCipherValue = pCipherValue->next;
     }
 
-    if( pCipherValue == nullptr ) {
+    if( pCipherValue == NULL ) {
         throw XMLEncryptionException() ;
     }
 
     pContent = pCipherValue->children;
 
-    if( pContent == nullptr ) {
+    if( pContent == NULL ) {
         throw XMLEncryptionException() ;
     }
 
@@ -125,7 +132,7 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
     xmlAddNextSibling(pEncryptedData, pContent);
 
     //remember the position of the element to be signed
-    bool isParentRef = true;
+    sal_Bool isParentRef = sal_True;
     xmlNodePtr pParent = pEncryptedData->parent;
     xmlNodePtr referenceNode;
 
@@ -136,7 +143,7 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
     else
     {
         referenceNode = pEncryptedData->prev;
-        isParentRef = false;
+        isParentRef = sal_False;
     }
 
      setErrorRecorder( );
@@ -148,9 +155,9 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
 
     //Create Encryption context
     pEncCtx = xmlSecEncCtxCreate( pMngr ) ;
-    if( pEncCtx == nullptr )
+    if( pEncCtx == NULL )
     {
-        SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+        pSecEnv->destroyKeysManager( pMngr );
         //throw XMLEncryptionException() ;
         clearErrorRecorder();
         return aTemplate;
@@ -160,13 +167,13 @@ SAL_CALL XMLEncryption_MSCryptImpl::encrypt(
     if( xmlSecEncCtxXmlEncrypt( pEncCtx , pEncryptedData , pContent ) < 0 ) {
         aTemplate->setStatus(css::xml::crypto::SecurityOperationStatus_UNKNOWN);
         xmlSecEncCtxDestroy( pEncCtx ) ;
-        SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+        pSecEnv->destroyKeysManager( pMngr );
         clearErrorRecorder();
         return aTemplate;
     }
     aTemplate->setStatus(css::xml::crypto::SecurityOperationStatus_OPERATION_SUCCEEDED);
     xmlSecEncCtxDestroy( pEncCtx ) ;
-    SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+    pSecEnv->destroyKeysManager( pMngr );
 
     //get the new EncryptedData element
     if (isParentRef)
@@ -187,10 +194,11 @@ Reference< XXMLEncryptionTemplate > SAL_CALL
 XMLEncryption_MSCryptImpl::decrypt(
     const Reference< XXMLEncryptionTemplate >& aTemplate ,
     const Reference< XXMLSecurityContext >& aSecurityCtx
-) {
-    xmlSecKeysMngrPtr pMngr = nullptr ;
-    xmlSecEncCtxPtr pEncCtx = nullptr ;
-    xmlNodePtr pEncryptedData = nullptr ;
+) throw( css::xml::crypto::XMLEncryptionException ,
+         css::uno::SecurityException) {
+    xmlSecKeysMngrPtr pMngr = NULL ;
+    xmlSecEncCtxPtr pEncCtx = NULL ;
+    xmlNodePtr pEncryptedData = NULL ;
 
     if( !aTemplate.is() )
         throw RuntimeException() ;
@@ -202,9 +210,13 @@ XMLEncryption_MSCryptImpl::decrypt(
     Reference< XSecurityEnvironment > xSecEnv
         = aSecurityCtx->getSecurityEnvironmentByIndex(
             aSecurityCtx->getDefaultSecurityEnvironmentIndex());
-    Reference< XUnoTunnel > xSecTunnel( xSecEnv , UNO_QUERY_THROW ) ;
-    SecurityEnvironment_MSCryptImpl* pSecEnv = reinterpret_cast<SecurityEnvironment_MSCryptImpl*>(xSecTunnel->getSomething( SecurityEnvironment_MSCryptImpl::getUnoTunnelId() ));
-    if( pSecEnv == nullptr )
+    Reference< XUnoTunnel > xSecTunnel( xSecEnv , UNO_QUERY ) ;
+    if( !xSecTunnel.is() ) {
+         throw RuntimeException() ;
+    }
+
+    SecurityEnvironment_MSCryptImpl* pSecEnv = ( SecurityEnvironment_MSCryptImpl* )xSecTunnel->getSomething( SecurityEnvironment_MSCryptImpl::getUnoTunnelId() ) ;
+    if( pSecEnv == NULL )
         throw RuntimeException() ;
 
     //Get the encryption template
@@ -213,16 +225,20 @@ XMLEncryption_MSCryptImpl::decrypt(
         throw RuntimeException() ;
     }
 
-    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY_THROW ) ;
-    XMLElementWrapper_XmlSecImpl* pTemplate = reinterpret_cast<XMLElementWrapper_XmlSecImpl*>(xTplTunnel->getSomething( XMLElementWrapper_XmlSecImpl::getUnoTunnelImplementationId() ));
-    if( pTemplate == nullptr ) {
+    Reference< XUnoTunnel > xTplTunnel( xTemplate , UNO_QUERY ) ;
+    if( !xTplTunnel.is() ) {
+        throw RuntimeException() ;
+    }
+
+    XMLElementWrapper_XmlSecImpl* pTemplate = ( XMLElementWrapper_XmlSecImpl* )xTplTunnel->getSomething( XMLElementWrapper_XmlSecImpl::getUnoTunnelImplementationId() ) ;
+    if( pTemplate == NULL ) {
         throw RuntimeException() ;
     }
 
     pEncryptedData = pTemplate->getNativeElement() ;
 
     //remember the position of the element to be signed
-    bool isParentRef = true;
+    sal_Bool isParentRef = sal_True;
     xmlNodePtr pParent = pEncryptedData->parent;
     xmlNodePtr referenceNode;
 
@@ -233,7 +249,7 @@ XMLEncryption_MSCryptImpl::decrypt(
     else
     {
         referenceNode = pEncryptedData->prev;
-        isParentRef = false;
+        isParentRef = sal_False;
     }
 
      setErrorRecorder( );
@@ -245,19 +261,19 @@ XMLEncryption_MSCryptImpl::decrypt(
 
     //Create Encryption context
     pEncCtx = xmlSecEncCtxCreate( pMngr ) ;
-    if( pEncCtx == nullptr )
+    if( pEncCtx == NULL )
     {
-        SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+        pSecEnv->destroyKeysManager( pMngr );
         //throw XMLEncryptionException() ;
         clearErrorRecorder();
         return aTemplate;
     }
 
     //Decrypt the template
-    if( xmlSecEncCtxDecrypt( pEncCtx , pEncryptedData ) < 0 || pEncCtx->result == nullptr ) {
+    if( xmlSecEncCtxDecrypt( pEncCtx , pEncryptedData ) < 0 || pEncCtx->result == NULL ) {
         aTemplate->setStatus(css::xml::crypto::SecurityOperationStatus_UNKNOWN);
         xmlSecEncCtxDestroy( pEncCtx ) ;
-        SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+        pSecEnv->destroyKeysManager( pMngr );
 
         //throw XMLEncryptionException() ;
         clearErrorRecorder();
@@ -290,7 +306,7 @@ XMLEncryption_MSCryptImpl::decrypt(
 
     //Destroy the encryption context
     xmlSecEncCtxDestroy( pEncCtx ) ;
-    SecurityEnvironment_MSCryptImpl::destroyKeysManager( pMngr );
+    pSecEnv->destroyKeysManager( pMngr );
 
     //get the decrypted element
     XMLElementWrapper_XmlSecImpl * ret = new XMLElementWrapper_XmlSecImpl(isParentRef?
@@ -304,23 +320,23 @@ XMLEncryption_MSCryptImpl::decrypt(
 }
 
 /* XServiceInfo */
-OUString SAL_CALL XMLEncryption_MSCryptImpl::getImplementationName() {
+OUString SAL_CALL XMLEncryption_MSCryptImpl::getImplementationName() throw( RuntimeException ) {
     return impl_getImplementationName() ;
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL XMLEncryption_MSCryptImpl::supportsService( const OUString& serviceName) {
+sal_Bool SAL_CALL XMLEncryption_MSCryptImpl::supportsService( const OUString& serviceName) throw( RuntimeException ) {
     Sequence< OUString > seqServiceNames = getSupportedServiceNames() ;
     const OUString* pArray = seqServiceNames.getConstArray() ;
     for( sal_Int32 i = 0 ; i < seqServiceNames.getLength() ; i ++ ) {
         if( *( pArray + i ) == serviceName )
-            return true ;
+            return sal_True ;
     }
-    return false ;
+    return sal_False ;
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL XMLEncryption_MSCryptImpl::getSupportedServiceNames() {
+Sequence< OUString > SAL_CALL XMLEncryption_MSCryptImpl::getSupportedServiceNames() throw( RuntimeException ) {
     return impl_getSupportedServiceNames() ;
 }
 
@@ -331,12 +347,12 @@ Sequence< OUString > XMLEncryption_MSCryptImpl::impl_getSupportedServiceNames() 
     return seqServiceNames ;
 }
 
-OUString XMLEncryption_MSCryptImpl::impl_getImplementationName() {
+OUString XMLEncryption_MSCryptImpl::impl_getImplementationName() throw( RuntimeException ) {
     return OUString("com.sun.star.xml.security.bridge.xmlsec.XMLEncryption_MSCryptImpl") ;
 }
 
 //Helper for registry
-Reference< XInterface > SAL_CALL XMLEncryption_MSCryptImpl::impl_createInstance( const Reference< XMultiServiceFactory >& aServiceManager ) {
+Reference< XInterface > SAL_CALL XMLEncryption_MSCryptImpl::impl_createInstance( const Reference< XMultiServiceFactory >& aServiceManager ) throw( RuntimeException ) {
     return Reference< XInterface >( *new XMLEncryption_MSCryptImpl( aServiceManager ) ) ;
 }
 

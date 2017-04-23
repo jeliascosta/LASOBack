@@ -26,7 +26,6 @@
 #include <tools/link.hxx>
 #include <tools/fract.hxx>
 #include <vcl/outdev.hxx>
-#include <svx/svdobj.hxx>
 
 
 /**
@@ -65,8 +64,10 @@ SVX_DLLPUBLIC SdrOutliner* SdrMakeOutliner(OutlinerMode nOutlinerMode, SdrModel&
 class SVX_DLLPUBLIC SdrEngineDefaults
 {
 friend class SdrAttrObj;
-    Color            aFontColor;
-    Fraction         aMapFraction;
+    Color      aFontColor;
+    sal_uIntPtr      nFontHeight;
+    MapUnit    eMapUnit;
+    Fraction   aMapFraction;
 
 private:
     static SdrEngineDefaults& GetDefaults();
@@ -79,14 +80,14 @@ public:
 
     // Default FontHeight is 847. The font height uses logical units (MapUnit/MapFraction
     // see below for further details). The default setting 847/100mm corresponds to about
-    // 24 Point. If e.g. one would use Twips (SetMapUnit(MapUnit::MapTwip)) (20 Twip = 1 Point)
+    // 24 Point. If e.g. one would use Twips (SetMapUnit(MAP_TWIP)) (20 Twip = 1 Point)
     // instead, one would need to set the font height to 480, in order to get a 24 Point height.
-    static size_t      GetFontHeight()                      { return 847; }
+    static sal_uIntPtr      GetFontHeight()                      { return GetDefaults().nFontHeight; }
 
     // The MapMode is needed for the global Outliner.
     // Incidentally, every newly instantiated SdrModel is assigned this MapMode by default.
-    // Default MapUnit is MapUnit::Map100thMM
-    static MapUnit    GetMapUnit()                         { return MapUnit::Map100thMM; }
+    // Default MapUnit is MAP_100TH_MM
+    static MapUnit    GetMapUnit()                         { return GetDefaults().eMapUnit; }
 
     // Default MapFraction is 1/1.
     static Fraction   GetMapFraction()                     { return GetDefaults().aMapFraction; }
@@ -127,49 +128,67 @@ sal_uInt16* RemoveWhichRange(const sal_uInt16* pOldWhichTable, sal_uInt16 nRange
 class SVX_DLLPUBLIC SvdProgressInfo
 {
 private:
-    size_t      m_nSumActionCount; // Sum of all Actions
-    size_t      m_nSumCurAction;   // Sum of all handled Actions
+    sal_uIntPtr m_nSumActionCount; // Sum of all Actions
+    sal_uIntPtr m_nSumCurAction;   // Sum of all handled Actions
 
-    size_t      m_nActionCount;   // Count of Actions in the current object
-    size_t      m_nCurAction;     // Count of handled Actions in the current object
+    sal_uIntPtr m_nActionCount;   // Count of Actions in the current object
+    sal_uIntPtr m_nCurAction;     // Count of handled Actions in the current object
 
-    size_t      m_nInsertCount;   // Count of to-be-inserted Actions in the current object
-    size_t      m_nCurInsert;     // Count of already inserted Actions
+    sal_uIntPtr m_nInsertCount;   // Count of to-be-inserted Actions in the current object
+    sal_uIntPtr m_nCurInsert;     // Count of already inserted Actions
 
-    size_t      m_nObjCount;      // Count of selected objects
-    size_t      m_nCurObj;        // Current object
+    sal_uIntPtr m_nObjCount;      // Count of selected objects
+    sal_uIntPtr m_nCurObj;        // Current object
 
     Link<void*,bool>  maLink;
 
 public:
     SvdProgressInfo( const Link<void*,bool>& _pLink );
 
-    void Init( size_t _nSumActionCount, size_t _nObjCount );
+    void Init( sal_uIntPtr _nSumActionCount, sal_uIntPtr _nObjCount );
 
     void SetNextObject();
 
-    void SetActionCount( size_t _nActionCount );
-    void SetInsertCount( size_t _nInsertCount );
+    void SetActionCount( sal_uIntPtr _nActionCount );
+    void SetInsertCount( sal_uIntPtr _nInsertCount );
 
-    bool ReportActions( size_t nActionCount );
-    void ReportInserts( size_t nInsertCount );
+    bool ReportActions( sal_uIntPtr nActionCount );
+    void ReportInserts( sal_uIntPtr nInsertCount );
 
-    size_t      GetSumCurAction() const { return m_nSumCurAction; };
-    size_t      GetObjCount() const { return m_nObjCount; };
-    size_t      GetCurObj() const { return m_nCurObj; };
+    sal_uIntPtr GetSumCurAction() const { return m_nSumCurAction; };
+    sal_uIntPtr GetObjCount() const { return m_nObjCount; };
+    sal_uIntPtr GetCurObj() const { return m_nCurObj; };
 
-    size_t      GetActionCount() const { return m_nActionCount; };
-    size_t      GetCurAction() const { return m_nCurAction; };
+    sal_uIntPtr GetActionCount() const { return m_nActionCount; };
+    sal_uIntPtr GetCurAction() const { return m_nCurAction; };
 
-    size_t      GetInsertCount() const { return m_nInsertCount; };
-    size_t      GetCurInsert() const { return m_nCurInsert; };
+    sal_uIntPtr GetInsertCount() const { return m_nInsertCount; };
+    sal_uIntPtr GetCurInsert() const { return m_nCurInsert; };
 
-    void ReportRescales( size_t nRescaleCount );
+    void ReportRescales( sal_uIntPtr nRescaleCount );
 };
 
 
-std::vector<Link<SdrObjCreatorParams, SdrObject*>>& ImpGetUserMakeObjHdl();
-std::vector<Link<SdrObjUserDataCreatorParams, SdrObjUserData*>>& ImpGetUserMakeObjUserDataHdl();
+class SdrObjFactory;
+
+class SdrLinkList
+{
+    std::vector<Link<SdrObjFactory*,void> > aList;
+protected:
+    unsigned FindEntry(const Link<SdrObjFactory*,void>& rLink) const;
+public:
+    SdrLinkList(): aList()                   {}
+    ~SdrLinkList()                           { Clear(); }
+    SVX_DLLPUBLIC void Clear();
+    unsigned GetLinkCount() const            { return (unsigned)aList.size(); }
+    Link<SdrObjFactory*,void>& GetLink(unsigned nNum)           { return aList[nNum]; }
+    const Link<SdrObjFactory*,void>& GetLink(unsigned nNum) const { return aList[nNum]; }
+    void InsertLink(const Link<SdrObjFactory*,void>& rLink);
+    void RemoveLink(const Link<SdrObjFactory*,void>& rLink);
+};
+
+SdrLinkList& ImpGetUserMakeObjHdl();
+SdrLinkList& ImpGetUserMakeObjUserDataHdl();
 
 class SdrOle2Obj;
 class AutoTimer;
@@ -183,7 +202,7 @@ class OLEObjCache
 
     void UnloadOnDemand();
     static bool UnloadObj( SdrOle2Obj* pObj );
-    DECL_LINK( UnloadCheckHdl, Timer*, void );
+    DECL_LINK_TYPED( UnloadCheckHdl, Timer*, void );
 
 public:
     OLEObjCache();
@@ -203,10 +222,8 @@ class SVX_DLLPUBLIC SdrGlobalData
     const SvtSysLocale*         pSysLocale;     // follows always locale settings
     const LocaleDataWrapper*    pLocaleData;    // follows always SysLocale
 public:
-    std::vector<Link<SdrObjCreatorParams, SdrObject*>>
-                        aUserMakeObjHdl;
-    std::vector<Link<SdrObjUserDataCreatorParams, SdrObjUserData*>>
-                        aUserMakeObjUserDataHdl;
+    SdrLinkList         aUserMakeObjHdl;
+    SdrLinkList         aUserMakeObjUserDataHdl;
     SdrEngineDefaults*  pDefaults;
     ResMgr*             pResMgr;
     OLEObjCache         aOLEObjCache;

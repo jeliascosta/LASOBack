@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <osl/diagnose.h>
 #include <set>
@@ -40,6 +37,8 @@
 #include <xmloff/xmltypes.hxx>
 #include <xmloff/maptype.hxx>
 #include <comphelper/sequence.hxx>
+
+//UUUU
 #include <com/sun/star/drawing/FillStyle.hpp>
 
 using namespace ::com::sun::star;
@@ -50,6 +49,8 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::lang;
 using namespace ::xmloff::token;
+
+//UUUU
 using namespace com::sun::star::drawing;
 
 void XMLPropStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
@@ -58,7 +59,7 @@ void XMLPropStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
 {
     if( XML_NAMESPACE_STYLE == nPrefixKey && IsXMLToken( rLocalName, XML_FAMILY ) )
     {
-        SAL_WARN_IF( GetFamily() != static_cast<SvXMLStylesContext *>(mxStyles.get())->GetFamily( rValue ), "xmloff", "unexpected style family" );
+        DBG_ASSERT( GetFamily() == static_cast<SvXMLStylesContext *>(&mxStyles)->GetFamily( rValue ), "unexpected style family" );
     }
     else
     {
@@ -67,80 +68,11 @@ void XMLPropStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
 }
 
 
-namespace
-{
-    struct theStandardSet :
-        public rtl::StaticWithInit<OldFillStyleDefinitionSet, theStandardSet>
-    {
-        OldFillStyleDefinitionSet operator () ()
-        {
-            OldFillStyleDefinitionSet aSet;
-            aSet.insert("BackColorRGB");
-            aSet.insert("BackTransparent");
-            aSet.insert("BackColorTransparency");
-            aSet.insert("BackGraphicURL");
-            aSet.insert("BackGraphicFilter");
-            aSet.insert("BackGraphicLocation");
-            aSet.insert("BackGraphicTransparency");
-            return aSet;
-        }
-    };
-    struct theHeaderSet :
-        public rtl::StaticWithInit<OldFillStyleDefinitionSet, theHeaderSet>
-    {
-        OldFillStyleDefinitionSet operator () ()
-        {
-            OldFillStyleDefinitionSet aSet;
-            aSet.insert("HeaderBackColorRGB");
-            aSet.insert("HeaderBackTransparent");
-            aSet.insert("HeaderBackColorTransparency");
-            aSet.insert("HeaderBackGraphicURL");
-            aSet.insert("HeaderBackGraphicFilter");
-            aSet.insert("HeaderBackGraphicLocation");
-            aSet.insert("HeaderBackGraphicTransparency");
-            return aSet;
-        }
-    };
-    struct theFooterSet :
-        public rtl::StaticWithInit<OldFillStyleDefinitionSet, theFooterSet>
-    {
-        OldFillStyleDefinitionSet operator () ()
-        {
-            OldFillStyleDefinitionSet aSet;
-            aSet.insert("FooterBackColorRGB");
-            aSet.insert("FooterBackTransparent");
-            aSet.insert("FooterBackColorTransparency");
-            aSet.insert("FooterBackGraphicURL");
-            aSet.insert("FooterBackGraphicFilter");
-            aSet.insert("FooterBackGraphicLocation");
-            aSet.insert("FooterBackGraphicTransparency");
-            return aSet;
-        }
-    };
-    struct theParaSet :
-        public rtl::StaticWithInit<OldFillStyleDefinitionSet, theParaSet>
-    {
-        OldFillStyleDefinitionSet operator () ()
-        {
-            OldFillStyleDefinitionSet aSet;
-            // Caution: here it is *not* 'ParaBackColorRGB' as it should be, but indeed
-            // 'ParaBackColor' is used, see aXMLParaPropMap definition (line 313)
-            aSet.insert("ParaBackColor");
-            aSet.insert("ParaBackTransparent");
-            aSet.insert("ParaBackGraphicLocation");
-            aSet.insert("ParaBackGraphicFilter");
-            aSet.insert("ParaBackGraphicURL");
-
-            // These are not used in aXMLParaPropMap definition, thus not needed here
-            // aSet.insert("ParaBackColorTransparency");
-            // aSet.insert("ParaBackGraphicTransparency");
-            return aSet;
-        }
-    };
-}
-
-
-
+//UUUU
+OldFillStyleDefinitionSet XMLPropStyleContext::maStandardSet;
+OldFillStyleDefinitionSet XMLPropStyleContext::maHeaderSet;
+OldFillStyleDefinitionSet XMLPropStyleContext::maFooterSet;
+OldFillStyleDefinitionSet XMLPropStyleContext::maParaSet;
 
 XMLPropStyleContext::XMLPropStyleContext( SvXMLImport& rImport,
         sal_uInt16 nPrfx, const OUString& rLName,
@@ -160,17 +92,70 @@ XMLPropStyleContext::~XMLPropStyleContext()
 
 const OldFillStyleDefinitionSet& XMLPropStyleContext::getStandardSet()
 {
-    return theStandardSet::get();
+    if(maStandardSet.empty())
+    {
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackColorRGB")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackTransparent")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackColorTransparency")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackGraphicURL")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackGraphicFilter")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackGraphicLocation")));
+        maStandardSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("BackGraphicTransparency")));
+    }
+
+    return maStandardSet;
 }
 
 const OldFillStyleDefinitionSet& XMLPropStyleContext::getHeaderSet()
 {
-    return theHeaderSet::get();
+    if(maHeaderSet.empty())
+    {
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackColorRGB")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackTransparent")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackColorTransparency")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackGraphicURL")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackGraphicFilter")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackGraphicLocation")));
+        maHeaderSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("HeaderBackGraphicTransparency")));
+    }
+
+    return maHeaderSet;
 }
 
 const OldFillStyleDefinitionSet& XMLPropStyleContext::getFooterSet()
 {
-    return theFooterSet::get();
+    if(maFooterSet.empty())
+    {
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackColorRGB")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackTransparent")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackColorTransparency")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackGraphicURL")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackGraphicFilter")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackGraphicLocation")));
+        maFooterSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("FooterBackGraphicTransparency")));
+    }
+
+    return maFooterSet;
+}
+
+const OldFillStyleDefinitionSet& XMLPropStyleContext::getParaSet()
+{
+    if(maParaSet.empty())
+    {
+        // Caution: here it is *not* 'ParaBackColorRGB' as it should be, but indeed
+        // 'ParaBackColor' is used, see aXMLParaPropMap definition (line 313)
+        maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackColor")));
+        maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackTransparent")));
+        maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackGraphicLocation")));
+        maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackGraphicFilter")));
+        maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackGraphicURL")));
+
+        // These are not used in aXMLParaPropMap definition, thus not needed here
+        // maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackColorTransparency")));
+        // maParaSet.insert(::rtl::OUString(RTL_CONSTASCII_USTRINGPARAM("ParaBackGraphicTransparency")));
+    }
+
+    return maParaSet;
 }
 
 SvXMLImportContext *XMLPropStyleContext::CreateChildContext(
@@ -209,7 +194,7 @@ SvXMLImportContext *XMLPropStyleContext::CreateChildContext(
     if( nFamily )
     {
         rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap =
-            static_cast<SvXMLStylesContext *>(mxStyles.get())->GetImportPropertyMapper(
+            static_cast<SvXMLStylesContext *>(&mxStyles)->GetImportPropertyMapper(
                                                         GetFamily() );
         if( xImpPrMap.is() )
             pContext = new SvXMLPropertySetContext( GetImport(), nPrefix,
@@ -230,9 +215,9 @@ void XMLPropStyleContext::FillPropertySet(
             const Reference< XPropertySet > & rPropSet )
 {
     rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap =
-        static_cast<SvXMLStylesContext *>(mxStyles.get())->GetImportPropertyMapper(
+        static_cast<SvXMLStylesContext *>(&mxStyles)->GetImportPropertyMapper(
                                                                 GetFamily() );
-    SAL_WARN_IF( !xImpPrMap.is(), "xmloff", "There is the import prop mapper" );
+    DBG_ASSERT( xImpPrMap.is(), "There is the import prop mapper" );
     if( xImpPrMap.is() )
         xImpPrMap->FillPropertySet( maProperties, rPropSet );
 }
@@ -246,7 +231,7 @@ Reference < XStyle > XMLPropStyleContext::Create()
     Reference < XStyle > xNewStyle;
 
     OUString sServiceName(
-        static_cast<SvXMLStylesContext *>(mxStyles.get())->GetServiceName( GetFamily() ) );
+        static_cast<SvXMLStylesContext *>(&mxStyles)->GetServiceName( GetFamily() ) );
     if( !sServiceName.isEmpty() )
     {
         Reference< XMultiServiceFactory > xFactory( GetImport().GetModel(),
@@ -265,11 +250,11 @@ Reference < XStyle > XMLPropStyleContext::Create()
 
 void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
 {
-    SvXMLStylesContext* pSvXMLStylesContext = static_cast< SvXMLStylesContext* >(mxStyles.get());
+    SvXMLStylesContext* pSvXMLStylesContext = static_cast< SvXMLStylesContext* >(&mxStyles);
     rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap = pSvXMLStylesContext->GetImportPropertyMapper(GetFamily());
     OSL_ENSURE(xImpPrMap.is(), "There is no import prop mapper");
 
-    // need to filter out old fill definitions when the new ones are used. The new
+    //UUUU need to filter out old fill definitions when the new ones are used. The new
     // ones are used when a FillStyle is defined
     const bool bTakeCareOfDrawingLayerFillStyle(xImpPrMap.is() && GetFamily() == XML_STYLE_FAMILY_TEXT_PARAGRAPH);
     bool bDrawingLayerFillStylesUsed(false);
@@ -277,11 +262,11 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
     if(bTakeCareOfDrawingLayerFillStyle)
     {
         // check if new FillStyles are used and if so mark old ones with -1
-        static ::rtl::OUString s_FillStyle("FillStyle");
+        static ::rtl::OUString s_FillStyle(RTL_CONSTASCII_USTRINGPARAM("FillStyle"));
 
         if(doNewDrawingLayerFillStyleDefinitionsExist(s_FillStyle))
         {
-            deactivateOldFillStyleDefinitions(theParaSet::get());
+            deactivateOldFillStyleDefinitions(getParaSet());
             bDrawingLayerFillStylesUsed = true;
         }
     }
@@ -289,7 +274,7 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
     if( pSvXMLStylesContext->IsAutomaticStyle()
         && ( GetFamily() == XML_STYLE_FAMILY_TEXT_TEXT || GetFamily() == XML_STYLE_FAMILY_TEXT_PARAGRAPH ) )
     {
-        // Need to translate StyleName from temp MapNames to names
+        //UUUU Need to translate StyleName from temp MapNames to names
         // used in already imported items (already exist in the pool). This
         // is required for AutomaticStyles since these do *not* use FillPropertySet
         // and thus just trigger CheckSpecialContext in XMLTextStyleContext::FillPropertySet
@@ -364,10 +349,7 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
 
         Reference < XNameContainer > xFamilies = pSvXMLStylesContext->GetStylesContainer( GetFamily() );
         if( !xFamilies.is() )
-        {
-            SAL_WARN("xmloff", "no styles container for family " << GetFamily());
             return;
-        }
 
         bool bNew = false;
         if( xFamilies->hasByName( rName ) )
@@ -391,7 +373,7 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
         if( !bNew && xPropSetInfo->hasPropertyByName( msIsPhysical ) )
         {
             Any aAny = xPropSet->getPropertyValue( msIsPhysical );
-            bNew = !*o3tl::doAccess<bool>(aAny);
+            bNew = !*static_cast<sal_Bool const *>(aAny.getValue());
         }
         SetNew( bNew );
         if( rName != GetName() )
@@ -400,6 +382,8 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
 
         if( bOverwrite || bNew )
         {
+            Reference< XPropertyState > xPropState( xPropSet, uno::UNO_QUERY );
+
             rtl::Reference < XMLPropertySetMapper > xPrMap;
             if( xImpPrMap.is() )
                 xPrMap = xImpPrMap->getPropertySetMapper();
@@ -422,20 +406,17 @@ void XMLPropStyleContext::CreateAndInsert( bool bOverwrite )
                         if( xPropSetInfo->hasPropertyByName( rPrName ) )
                             aNameSet.insert( rPrName );
                     }
-                    Reference< XPropertyState > xPropState( xPropSet, uno::UNO_QUERY );
-                    if (xPropState.is())
-                    {
-                        nCount = aNameSet.size();
-                        Sequence<OUString> aNames( comphelper::containerToSequence(aNameSet) );
-                        Sequence < PropertyState > aStates( xPropState->getPropertyStates(aNames) );
-                        const PropertyState *pStates = aStates.getConstArray();
-                        OUString* pNames = aNames.getArray();
 
-                        for( i = 0; i < nCount; i++ )
-                        {
-                            if( PropertyState_DIRECT_VALUE == *pStates++ )
-                                xPropState->setPropertyToDefault( pNames[i] );
-                        }
+                    nCount = aNameSet.size();
+                    Sequence<OUString> aNames( comphelper::containerToSequence<OUString>(aNameSet) );
+                    Sequence < PropertyState > aStates( xPropState->getPropertyStates(aNames) );
+                    const PropertyState *pStates = aStates.getConstArray();
+                    OUString* pNames = aNames.getArray();
+
+                    for( i = 0; i < nCount; i++ )
+                    {
+                        if( PropertyState_DIRECT_VALUE == *pStates++ )
+                            xPropState->setPropertyToDefault( pNames[i] );
                     }
                 }
             }
@@ -458,8 +439,8 @@ void XMLPropStyleContext::Finish( bool bOverwrite )
     {
         // The families container must exist
         Reference < XNameContainer > xFamilies =
-            static_cast<SvXMLStylesContext *>(mxStyles.get())->GetStylesContainer( GetFamily() );
-        SAL_WARN_IF( !xFamilies.is(), "xmloff", "Families lost" );
+            static_cast<SvXMLStylesContext *>(&mxStyles)->GetStylesContainer( GetFamily() );
+        DBG_ASSERT( xFamilies.is(), "Families lost" );
         if( !xFamilies.is() )
             return;
 
@@ -530,6 +511,7 @@ void XMLPropStyleContext::Finish( bool bOverwrite )
     }
 }
 
+//UUUU
 bool XMLPropStyleContext::doNewDrawingLayerFillStyleDefinitionsExist(
     const OUString& rFillStyleTag) const
 {
@@ -575,6 +557,7 @@ bool XMLPropStyleContext::doNewDrawingLayerFillStyleDefinitionsExist(
     return false;
 }
 
+//UUUU
 void XMLPropStyleContext::deactivateOldFillStyleDefinitions(
     const OldFillStyleDefinitionSet& rHashSetOfTags)
 {
@@ -601,6 +584,7 @@ void XMLPropStyleContext::deactivateOldFillStyleDefinitions(
     }
 }
 
+//UUUU
 void XMLPropStyleContext::translateNameBasedDrawingLayerFillStyleDefinitionsToStyleDisplayNames()
 {
     if(maProperties.size())
@@ -609,10 +593,10 @@ void XMLPropStyleContext::translateNameBasedDrawingLayerFillStyleDefinitionsToSt
 
         if(rMapper.is())
         {
-            static OUString s_FillGradientName("FillGradientName");
-            static OUString s_FillHatchName("FillHatchName");
-            static OUString s_FillBitmapName("FillBitmapName");
-            static OUString s_FillTransparenceGradientName("FillTransparenceGradientName");
+            static OUString s_FillGradientName(RTL_CONSTASCII_USTRINGPARAM("FillGradientName"));
+            static OUString s_FillHatchName(RTL_CONSTASCII_USTRINGPARAM("FillHatchName"));
+            static OUString s_FillBitmapName(RTL_CONSTASCII_USTRINGPARAM("FillBitmapName"));
+            static OUString s_FillTransparenceGradientName(RTL_CONSTASCII_USTRINGPARAM("FillTransparenceGradientName"));
 
             for(::std::vector< XMLPropertyState >::iterator a = maProperties.begin(); a != maProperties.end(); ++a)
             {

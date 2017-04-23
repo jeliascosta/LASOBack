@@ -116,7 +116,7 @@ public:
 
     long GetHeight() const;
 
-    tools::Rectangle GetOriginalRect() const;
+    Rectangle GetOriginalRect() const;
 
     double GetRotationAngle() const;
 

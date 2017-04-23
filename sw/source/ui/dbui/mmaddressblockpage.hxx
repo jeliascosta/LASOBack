@@ -21,6 +21,7 @@
 
 #include <svtools/wizardmachine.hxx>
 #include <vcl/button.hxx>
+#include <svtools/stdctrl.hxx>
 #include <mailmergehelper.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <vcl/edit.hxx>
@@ -31,8 +32,6 @@
 #include <svtools/treelistbox.hxx>
 #include <vcl/combobox.hxx>
 #include <svl/lstner.hxx>
-#include <o3tl/typed_flags_set.hxx>
-
 class SwMailMergeWizard;
 class SwMailMergeConfigItem;
 
@@ -64,13 +63,13 @@ class SwMailMergeAddressBlockPage : public svt::OWizardPage
 
     VclPtr<SwMailMergeWizard>  m_pWizard;
 
-    DECL_LINK(AddressListHdl_Impl, Button *, void);
-    DECL_LINK(SettingsHdl_Impl, Button*, void);
-    DECL_LINK(AssignHdl_Impl, Button*, void);
-    DECL_LINK(AddressBlockHdl_Impl, Button*, void);
-    DECL_LINK(InsertDataHdl_Impl, Button*, void);
-    DECL_LINK(AddressBlockSelectHdl_Impl, LinkParamNone*, void);
-    DECL_LINK(HideParagraphsHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AddressListHdl_Impl, Button *, void);
+    DECL_LINK_TYPED(SettingsHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AssignHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AddressBlockHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(InsertDataHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AddressBlockSelectHdl_Impl, LinkParamNone*, void);
+    DECL_LINK_TYPED(HideParagraphsHdl_Impl, Button*, void);
 
     void                EnableAddressBlock(bool bAll, bool bSelective);
 
@@ -80,7 +79,7 @@ class SwMailMergeAddressBlockPage : public svt::OWizardPage
 
 public:
     SwMailMergeAddressBlockPage(SwMailMergeWizard* _pParent);
-    virtual ~SwMailMergeAddressBlockPage() override;
+    virtual ~SwMailMergeAddressBlockPage();
     virtual void dispose() override;
     SwMailMergeWizard* GetWizard() { return m_pWizard; }
 };
@@ -100,15 +99,15 @@ class SwSelectAddressBlockDialog : public SfxModalDialog
     css::uno::Sequence< OUString>    m_aAddressBlocks;
     SwMailMergeConfigItem& m_rConfig;
 
-    DECL_LINK(NewCustomizeHdl_Impl, Button*, void);
-    DECL_LINK(DeleteHdl_Impl, Button*, void);
-    DECL_LINK(IncludeHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(NewCustomizeHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(DeleteHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(IncludeHdl_Impl, Button*, void);
 
     using Window::SetSettings;
 
 public:
     SwSelectAddressBlockDialog(vcl::Window* pParent, SwMailMergeConfigItem& rConfig);
-    virtual ~SwSelectAddressBlockDialog() override;
+    virtual ~SwSelectAddressBlockDialog();
     virtual void dispose() override;
 
     void         SetAddressBlocks(const css::uno::Sequence< OUString>& rBlocks,
@@ -126,7 +125,7 @@ class DDListBox : public SvTreeListBox
     VclPtr<SwCustomizeAddressBlockDialog>   m_pParentDialog;
 public:
     DDListBox(vcl::Window* pParent, const WinBits nStyle);
-    virtual ~DDListBox() override;
+    virtual ~DDListBox();
     virtual void dispose() override;
 
     void SetAddressDialog(SwCustomizeAddressBlockDialog *pParent);
@@ -134,29 +133,25 @@ public:
     virtual void        StartDrag( sal_Int8 nAction, const Point& rPosPixel ) override;
 };
 
-enum class MoveItemFlags {
-    NONE           = 0,
-    Left           = 1,
-    Right          = 2,
-    Up             = 4,
-    Down           = 8,
-};
-namespace o3tl {
-    template<> struct typed_flags<MoveItemFlags> : is_typed_flags<MoveItemFlags, 0x0f> {};
-}
+#define MOVE_ITEM_LEFT           1
+#define MOVE_ITEM_RIGHT          2
+#define MOVE_ITEM_UP             4
+#define MOVE_ITEM_DOWN           8
 
 class AddressMultiLineEdit : public VclMultiLineEdit, public SfxListener
 {
     Link<AddressMultiLineEdit&,void>       m_aSelectionLink;
     VclPtr<SwCustomizeAddressBlockDialog>  m_pParentDialog;
 
+    using VclMultiLineEdit::Notify;
+
     using VclMultiLineEdit::SetText;
 
 protected:
     bool            PreNotify( NotifyEvent& rNEvt ) override;
 public:
-    AddressMultiLineEdit(vcl::Window* pParent, WinBits nWinStyle);
-    virtual ~AddressMultiLineEdit() override;
+    AddressMultiLineEdit(vcl::Window* pParent, WinBits nWinStyle = WB_LEFT | WB_BORDER);
+    virtual ~AddressMultiLineEdit();
     virtual void    dispose() override;
 
     void            SetAddressDialog(SwCustomizeAddressBlockDialog *pParent);
@@ -174,8 +169,8 @@ public:
     void            InsertNewEntryAtPosition( const OUString& rStr, sal_uLong nPara, sal_uInt16 nIndex );
     void            RemoveCurrentEntry();
 
-    void            MoveCurrentItem(MoveItemFlags nMove);
-    MoveItemFlags   IsCurrentItemMoveable();
+    void            MoveCurrentItem(sal_uInt16 nMove);
+    sal_uInt16      IsCurrentItemMoveable();
     bool            HasCurrentItem();
     OUString        GetCurrentItem();
     void            SelectCurrentItem();
@@ -215,8 +210,8 @@ private:
 
     VclPtr<OKButton>               m_pOK;
 
-    std::vector<OUString>     m_aSalutations;
-    std::vector<OUString>     m_aPunctuations;
+    ::std::vector<OUString>   m_aSalutations;
+    ::std::vector<OUString>   m_aPunctuations;
 
     OUString                m_sCurrentSalutation;
     OUString                m_sCurrentPunctuation;
@@ -225,13 +220,13 @@ private:
     SwMailMergeConfigItem&  m_rConfigItem;
     DialogType              m_eType;
 
-    DECL_LINK(OKHdl_Impl, Button*, void);
-    DECL_LINK(ListBoxSelectHdl_Impl, SvTreeListBox*, void);
-    DECL_LINK(EditModifyHdl_Impl, Edit&, void);
-    DECL_LINK(ImageButtonHdl_Impl, Button*, void);
-    DECL_LINK(SelectionChangedHdl_Impl, AddressMultiLineEdit&, void);
-    DECL_LINK(FieldChangeHdl_Impl, Edit&, void);
-    DECL_LINK(FieldChangeComboBoxHdl_Impl, ComboBox&, void);
+    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(ListBoxSelectHdl_Impl, SvTreeListBox*, void);
+    DECL_LINK_TYPED(EditModifyHdl_Impl, Edit&, void);
+    DECL_LINK_TYPED(ImageButtonHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(SelectionChangedHdl_Impl, AddressMultiLineEdit&, void);
+    DECL_LINK_TYPED(FieldChangeHdl_Impl, Edit&, void);
+    DECL_LINK_TYPED(FieldChangeComboBoxHdl_Impl, ComboBox&, void);
 
     bool            HasItem_Impl(sal_Int32 nUserData);
     sal_Int32       GetSelectedItem_Impl();
@@ -239,7 +234,7 @@ private:
 
 public:
     SwCustomizeAddressBlockDialog(vcl::Window* pParent, SwMailMergeConfigItem& rConfig, DialogType);
-    virtual ~SwCustomizeAddressBlockDialog() override;
+    virtual ~SwCustomizeAddressBlockDialog();
     virtual void dispose() override;
 
     void            SetAddress(const OUString& rAddress);
@@ -263,15 +258,15 @@ class SwAssignFieldsDialog : public SfxModalDialog
     SwMailMergeConfigItem&  m_rConfigItem;
 
     css::uno::Sequence< OUString > CreateAssignments();
-    DECL_LINK(OkHdl_Impl, Button*, void);
-    DECL_LINK(AssignmentModifyHdl_Impl, LinkParamNone*, void);
+    DECL_LINK_TYPED(OkHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AssignmentModifyHdl_Impl, LinkParamNone*, void);
 
 public:
     SwAssignFieldsDialog(vcl::Window* pParent,
                 SwMailMergeConfigItem& rConfigItem,
                 const OUString& rPreview,
                 bool bIsAddressBlock);
-    virtual ~SwAssignFieldsDialog() override;
+    virtual ~SwAssignFieldsDialog();
     virtual void dispose() override;
 };
 #endif

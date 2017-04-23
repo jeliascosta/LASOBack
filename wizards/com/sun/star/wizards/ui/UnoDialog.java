@@ -829,9 +829,28 @@ public class UnoDialog
         return nBlue;
     }
 
-    public String getWizardImageUrl(int _nResId)
+    public String getWizardImageUrl(int _nResId, int _nHCResId)
     {
-        return "private:resource/wzi/bitmapex/" + _nResId;
+        if (isHighContrastModeActivated())
+        {
+            return "private:resource/wzi/image/" + _nHCResId;
+        }
+        else
+        {
+            return "private:resource/wzi/image/" + _nResId;
+        }
+    }
+
+    public String getImageUrl(String _surl, String _shcurl)
+    {
+        if (isHighContrastModeActivated())
+        {
+            return _shcurl;
+        }
+        else
+        {
+            return _surl;
+        }
     }
 
     public static short getListBoxLineCount()

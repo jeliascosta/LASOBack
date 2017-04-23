@@ -41,7 +41,6 @@
 #include <svx/XPropertyEntry.hxx>
 
 #include <limits>
-#include <memory>
 
 class Color;
 class Bitmap;
@@ -144,16 +143,15 @@ public:
     }
 };
 
-enum class XPropertyListType {
-    Unknown = -1,
-    Color,
-    LineEnd,
-    Dash,
-    Hatch,
-    Gradient,
-    Bitmap,
-    Pattern,
-    LAST = Pattern
+enum XPropertyListType {
+    UNKNOWN_XPROPERTYLISTTYPE = -1,
+    XCOLOR_LIST,
+    XLINE_END_LIST,
+    XDASH_LIST,
+    XHATCH_LIST,
+    XGRADIENT_LIST,
+    XBITMAP_LIST,
+    XPROPERTY_LIST_COUNT
 };
 
 typedef rtl::Reference< class XPropertyList > XPropertyListRef;
@@ -162,7 +160,6 @@ class XDashList ; typedef rtl::Reference< class XDashList > XDashListRef;
 class XHatchList ; typedef rtl::Reference< class XHatchList > XHatchListRef;
 class XColorList ; typedef rtl::Reference< class XColorList > XColorListRef;
 class XBitmapList ; typedef rtl::Reference< class XBitmapList > XBitmapListRef;
-class XPatternList ; typedef rtl::Reference< class XPatternList > XPatternListRef;
 class XLineEndList ; typedef rtl::Reference< class XLineEndList > XLineEndListRef;
 class XGradientList ; typedef rtl::Reference< class XGradientList > XGradientListRef;
 
@@ -173,7 +170,7 @@ class SVX_DLLPUBLIC XPropertyList : public cppu::OWeakObject
  protected:
     SAL_DLLPRIVATE void operator delete(void *);
 protected:
-    typedef std::vector< std::unique_ptr<XPropertyEntry> > XPropertyEntryList_impl;
+    typedef ::std::vector< XPropertyEntry* > XPropertyEntryList_impl;
 
     XPropertyListType   meType;
     OUString            maName; // not persistent
@@ -186,20 +183,18 @@ protected:
     bool                mbEmbedInDocument;
 
     XPropertyList(XPropertyListType t, const OUString& rPath, const OUString& rReferer);
-    bool isValidIdx(long nIndex) const;
+
     virtual Bitmap CreateBitmapForUI(long nIndex) = 0;
 
 public:
-    XPropertyList(const XPropertyList&) = delete;
-    XPropertyList& operator=(const XPropertyList&) = delete;
-    virtual ~XPropertyList() override;
+    virtual ~XPropertyList();
 
     XPropertyListType Type() const { return meType; }
     long Count() const;
 
-    void Insert(std::unique_ptr<XPropertyEntry> pEntry, long nIndex = std::numeric_limits<long>::max());
-    void Replace(std::unique_ptr<XPropertyEntry> pEntry, long nIndex);
-    void Remove(long nIndex);
+    void Insert(XPropertyEntry* pEntry, long nIndex = ::std::numeric_limits<long>::max());
+    XPropertyEntry* Replace(XPropertyEntry* pEntry, long nIndex);
+    XPropertyEntry* Remove(long nIndex);
 
     XPropertyEntry* Get(long nIndex) const;
     long GetIndex(const OUString& rName) const;
@@ -211,11 +206,13 @@ public:
     const OUString& GetPath() const { return maPath; }
     void SetPath(const OUString& rString) { maPath = rString; }
 
-    void SetDirty(bool bDirty) { mbListDirty = bDirty; }
+    void SetDirty(bool bDirty = true) { mbListDirty = bDirty; }
 
     bool IsEmbedInDocument() const { return mbEmbedInDocument; }
+    void SetEmbedInDocument(bool b) { mbEmbedInDocument = b; }
 
     static OUString GetDefaultExt(XPropertyListType t);
+    static OUString GetDefaultExtFilter(XPropertyListType t);
     OUString GetDefaultExt() const { return GetDefaultExt(meType); }
 
     virtual css::uno::Reference< css::container::XNameContainer >
@@ -248,8 +245,6 @@ public:
         rtl::Reference<XPropertyList> const & plist);
     static inline XBitmapListRef AsBitmapList(
         rtl::Reference<XPropertyList> const & plist);
-    static inline XPatternListRef AsPatternList(
-        rtl::Reference<XPropertyList> const & plist);
     static inline XLineEndListRef AsLineEndList(
         rtl::Reference<XPropertyList> const & plist);
     static inline XGradientListRef AsGradientList(
@@ -263,11 +258,14 @@ protected:
 
 public:
     XColorList(const OUString& rPath, const OUString& rReferer)
-        : XPropertyList(XPropertyListType::Color, rPath, rReferer) {}
+        : XPropertyList(XCOLOR_LIST, rPath, rReferer) {}
 
-    void Replace(long nIndex, std::unique_ptr<XColorEntry> pEntry);
+    using XPropertyList::Replace;
+    using XPropertyList::Remove;
+
+    XColorEntry* Replace(long nIndex, XColorEntry* pEntry);
+    XColorEntry* Remove(long nIndex);
     XColorEntry* GetColor(long nIndex) const;
-    long GetIndexOfColor( const Color& rColor) const;
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
     virtual bool Create() override;
 
@@ -282,8 +280,10 @@ protected:
 
 public:
     XLineEndList(const OUString& rPath, const OUString& rReferer);
-    virtual ~XLineEndList() override;
+    virtual ~XLineEndList();
 
+    using XPropertyList::Remove;
+    XLineEndEntry* Remove(long nIndex);
     XLineEndEntry* GetLineEnd(long nIndex) const;
 
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
@@ -303,9 +303,12 @@ protected:
 
 public:
     XDashList(const OUString& rPath, const OUString& rReferer);
-    virtual ~XDashList() override;
+    virtual ~XDashList();
 
-    void Replace(std::unique_ptr<XDashEntry> pEntry, long nIndex);
+    using XPropertyList::Replace;
+    XDashEntry* Replace(XDashEntry* pEntry, long nIndex);
+    using XPropertyList::Remove;
+    XDashEntry* Remove(long nIndex);
     XDashEntry* GetDash(long nIndex) const;
 
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
@@ -314,27 +317,28 @@ public:
     // Special call to get a bitmap for the solid line representation. It
     // creates a bitmap fitting in size and style to the ones you get by
     // using GetUiBitmap for existing entries.
-    Bitmap const & GetBitmapForUISolidLine() const;
+    Bitmap GetBitmapForUISolidLine() const;
 
     // Special calls to get the translated strings for the UI entry for no
     // line style (XLINE_NONE) and solid line style (XLINE_SOLID) for dialogs
-    OUString const & GetStringForUiSolidLine() const;
-    OUString const & GetStringForUiNoLine() const;
+    OUString GetStringForUiSolidLine() const;
+    OUString GetStringForUiNoLine() const;
 };
 
 class SVX_DLLPUBLIC XHatchList : public XPropertyList
 {
-private:
-    Bitmap CreateBitmap(long nIndex, const Size& rSize) const;
 protected:
     virtual Bitmap CreateBitmapForUI(long nIndex) override;
+
 public:
     XHatchList(const OUString& rPath, const OUString& rReferer);
-    virtual ~XHatchList() override;
+    virtual ~XHatchList();
 
-    void Replace(std::unique_ptr<XHatchEntry> pEntry, long nIndex);
+    using XPropertyList::Replace;
+    XHatchEntry* Replace(XHatchEntry* pEntry, long nIndex);
+    using XPropertyList::Remove;
+    XHatchEntry* Remove(long nIndex);
     XHatchEntry* GetHatch(long nIndex) const;
-    Bitmap GetBitmapForPreview(long nIndex, const Size& rSize);
 
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
     virtual bool Create() override;
@@ -342,19 +346,18 @@ public:
 
 class SVX_DLLPUBLIC XGradientList : public XPropertyList
 {
-private:
-    Bitmap CreateBitmap(long nIndex, const Size& rSize) const;
-
 protected:
     virtual Bitmap CreateBitmapForUI(long nIndex) override;
 
 public:
     XGradientList(const OUString& rPath, const OUString& rReferer);
-    virtual ~XGradientList() override;
+    virtual ~XGradientList();
 
-    void Replace(std::unique_ptr<XGradientEntry> pEntry, long nIndex);
+    using XPropertyList::Replace;
+    XGradientEntry* Replace(XGradientEntry* pEntry, long nIndex);
+    using XPropertyList::Remove;
+    XGradientEntry* Remove(long nIndex);
     XGradientEntry* GetGradient(long nIndex) const;
-    Bitmap GetBitmapForPreview(long nIndex, const Size& rSize);
 
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
     virtual bool Create() override;
@@ -362,37 +365,17 @@ public:
 
 class SVX_DLLPUBLIC XBitmapList : public XPropertyList
 {
-private:
-    Bitmap CreateBitmap( long nIndex, const Size& rSize ) const;
-
 protected:
     virtual Bitmap CreateBitmapForUI(long nIndex) override;
 
 public:
     XBitmapList(const OUString& rPath, const OUString& rReferer)
-        : XPropertyList(XPropertyListType::Bitmap, rPath, rReferer) {}
+        : XPropertyList(XBITMAP_LIST, rPath, rReferer) {}
 
+    using XPropertyList::Replace;
+    using XPropertyList::Remove;
+    XBitmapEntry* Remove(long nIndex);
     XBitmapEntry* GetBitmap(long nIndex) const;
-    Bitmap GetBitmapForPreview(long nIndex, const Size& rSize);
-
-    virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
-    virtual bool Create() override;
-};
-
-class SVX_DLLPUBLIC XPatternList : public XPropertyList
-{
-private:
-    Bitmap CreateBitmap( long nIndex, const Size& rSize ) const;
-
-protected:
-    virtual Bitmap CreateBitmapForUI(long nIndex) override;
-
-public:
-    XPatternList(const OUString& rPath, const OUString& rReferer)
-        : XPropertyList(XPropertyListType::Pattern, rPath, rReferer) {}
-
-    XBitmapEntry* GetBitmap(long nIndex) const;
-    Bitmap GetBitmapForPreview(long nIndex, const Size& rSize);
 
     virtual css::uno::Reference< css::container::XNameContainer > createInstance() override;
     virtual bool Create() override;
@@ -411,9 +394,6 @@ inline XColorListRef XPropertyList::AsColorList(
 inline XBitmapListRef XPropertyList::AsBitmapList(
     rtl::Reference<XPropertyList> const & plist)
 { return XBitmapListRef( static_cast<XBitmapList *> (plist.get()) ); }
-inline XPatternListRef XPropertyList::AsPatternList(
-    rtl::Reference<XPropertyList> const & plist)
-{ return XPatternListRef( static_cast<XPatternList *> (plist.get()) ); }
 inline XLineEndListRef XPropertyList::AsLineEndList(
     rtl::Reference<XPropertyList> const & plist)
 { return XLineEndListRef( static_cast<XLineEndList *> (plist.get()) ); }

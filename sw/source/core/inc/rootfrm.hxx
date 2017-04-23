@@ -24,7 +24,6 @@
 #include <doc.hxx>
 #include <IDocumentTimerAccess.hxx>
 #include <o3tl/typed_flags_set.hxx>
-#include <set>
 #include <vector>
 
 class SwContentFrame;
@@ -36,6 +35,8 @@ class SwCursor;
 class SwShellCursor;
 class SwTableCursor;
 class SwLayVout;
+class SwDestroyList;
+class SwCurrShells;
 class SwViewOption;
 class SwSelectionList;
 struct SwPosition;
@@ -56,17 +57,6 @@ namespace o3tl
 {
     template<> struct typed_flags<SwInvalidateFlags> : is_typed_flags<SwInvalidateFlags, 0x7f> {};
 };
-
-enum class SwRemoveResult
-{
-    Next,
-    Prev
-};
-
-using SwCurrShells = std::set<CurrShell*>;
-
-class SwSectionFrame;
-using SwDestroyList = std::set<SwSectionFrame*>;
 
 /// The root element of a Writer document layout.
 class SwRootFrame: public SwLayoutFrame
@@ -139,7 +129,7 @@ class SwRootFrame: public SwLayoutFrame
      * and will be activated by the last d'tor of CurrShell.
      * One other problem is the destruction of a shell while it is active.
      * The pointer mpCurrShell is then reset to an arbitrary other shell.
-     * If at the time of the destruction of a shell, which is still referenced
+     * If at the time of the destruction of a shell, which is still referneced
      * by a curshell object, that will be cleaned up as well.
      */
     friend class CurrShell;
@@ -164,7 +154,7 @@ class SwRootFrame: public SwLayoutFrame
     void RemoveFromList_( SwSectionFrame* pSct ); // Removes SectionFrames from the Delete List
 
     virtual void DestroyImpl() override;
-    virtual ~SwRootFrame() override;
+    virtual ~SwRootFrame();
 
 protected:
 
@@ -395,8 +385,6 @@ public:
 
     bool IsLayoutFreezed() const { return mbLayoutFreezed; }
     void FreezeLayout( bool freeze ) { mbLayoutFreezed = freeze; }
-
-    void RemovePage( SwPageFrame **pDel, SwRemoveResult eResult );
 };
 
 inline long SwRootFrame::GetBrowseWidth() const

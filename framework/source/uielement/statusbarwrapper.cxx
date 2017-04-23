@@ -61,7 +61,7 @@ StatusBarWrapper::~StatusBarWrapper()
 {
 }
 
-void SAL_CALL StatusBarWrapper::dispose()
+void SAL_CALL StatusBarWrapper::dispose() throw (css::uno::RuntimeException, std::exception)
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -85,7 +85,7 @@ void SAL_CALL StatusBarWrapper::dispose()
 }
 
 // XInitialization
-void SAL_CALL StatusBarWrapper::initialize( const Sequence< Any >& aArguments )
+void SAL_CALL StatusBarWrapper::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -104,7 +104,7 @@ void SAL_CALL StatusBarWrapper::initialize( const Sequence< Any >& aArguments )
             StatusBarManager* pStatusBarManager( nullptr );
             {
                 SolarMutexGuard aSolarMutexGuard;
-                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
+                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
                 if ( pWindow )
                 {
                     sal_uLong nStyles = WinBits( WB_LEFT | WB_3DLOOK );
@@ -133,7 +133,7 @@ void SAL_CALL StatusBarWrapper::initialize( const Sequence< Any >& aArguments )
 }
 
 // XUIElementSettings
-void SAL_CALL StatusBarWrapper::updateSettings()
+void SAL_CALL StatusBarWrapper::updateSettings() throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -158,7 +158,7 @@ void SAL_CALL StatusBarWrapper::updateSettings()
     }
 }
 
-Reference< XInterface > SAL_CALL StatusBarWrapper::getRealInterface()
+Reference< XInterface > SAL_CALL StatusBarWrapper::getRealInterface() throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 

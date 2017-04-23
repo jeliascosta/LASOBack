@@ -110,9 +110,9 @@ public:
 
     VisualState& GetVisualState() { return maVisualState;}
 
-    ::tools::Rectangle GetBoundingBox() const;
-    Point GetLocation (const bool bIgnoreLocation) const;
-    void SetBoundingBox (const ::tools::Rectangle& rBoundingBox);
+    Rectangle GetBoundingBox() const;
+    Point GetLocation (const bool bIgnoreLocation = false) const;
+    void SetBoundingBox (const Rectangle& rBoundingBox);
 
 private:
     SdPage* mpPage;
@@ -124,7 +124,7 @@ private:
     */
     sal_Int32 mnIndex;
 
-    ::tools::Rectangle maBoundingBox;
+    Rectangle maBoundingBox;
     VisualState maVisualState;
 
     bool mbIsSelected : 1;

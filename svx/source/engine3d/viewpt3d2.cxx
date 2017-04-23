@@ -27,7 +27,8 @@ Viewport3D::Viewport3D() :
     aVUV(0, 1, 1),
     aPRP(0, 0, 2),
     fVPD(-3),
-    eProjection(ProjectionType::Perspective),
+    eProjection(PR_PERSPECTIVE),
+    eAspectMapping(AS_NO_MAPPING),
     aDeviceRect(Point(0,0), Size(-1,-1)),
     aViewPoint (0, 0, 5000),
     bTfValid(false),
@@ -57,7 +58,15 @@ void Viewport3D::SetViewWindow(double fX, double fY, double fW, double fH)
 
 const basegfx::B3DPoint& Viewport3D::GetViewPoint()
 {
-    // Calculate View transformations matrix
+    MakeTransform();
+
+    return aViewPoint;
+}
+
+// Calculate View transformations matrix
+
+void Viewport3D::MakeTransform()
+{
     if ( !bTfValid )
     {
         double fV, fXupVp, fYupVp;
@@ -115,14 +124,56 @@ const basegfx::B3DPoint& Viewport3D::GetViewPoint()
 
         bTfValid = true;
     }
-    return aViewPoint;
 }
 
-void Viewport3D::SetDeviceWindow(const tools::Rectangle& rRect)
+void Viewport3D::SetDeviceWindow(const Rectangle& rRect)
 {
     long nNewW = rRect.GetWidth();
     long nNewH = rRect.GetHeight();
+    long nOldW = aDeviceRect.GetWidth();
+    long nOldH = aDeviceRect.GetHeight();
 
+    switch ( eAspectMapping )
+    {
+        double  fRatio, fTmp;
+
+        // Mapping, without changing the real size of the objects in the
+        // Device Window
+        case AS_HOLD_SIZE:
+            // When the Device is invalid (w, h = -1), adapt the  View
+            // with AsHoldX
+            if ( nOldW > 0 && nOldH > 0 )
+            {
+                fRatio = (double) nNewW / nOldW;
+                aViewWin.X *= fRatio;
+                aViewWin.W *= fRatio;
+                fRatio = (double) nNewH / nOldH;
+                aViewWin.Y *= fRatio;
+                aViewWin.H *= fRatio;
+                break;
+            }
+            SAL_FALLTHROUGH;
+        case AS_HOLD_X:
+            if (nNewW == 0)
+                throw o3tl::divide_by_zero();
+            // Adapt view height to view width
+            fRatio = (double) nNewH / nNewW;
+            fTmp = aViewWin.H;
+            aViewWin.H = aViewWin.W * fRatio;
+            aViewWin.Y = aViewWin.Y * aViewWin.H / fTmp;
+            break;
+
+        case AS_HOLD_Y:
+            if (nNewH == 0)
+                throw o3tl::divide_by_zero();
+            // Adapt view width to view height
+            fRatio = (double) nNewW / nNewH;
+            fTmp = aViewWin.W;
+            aViewWin.W = aViewWin.H * fRatio;
+            aViewWin.X = aViewWin.X * aViewWin.W / fTmp;
+            break;
+        default: break;
+    }
     fWRatio = nNewW / aViewWin.W;
     fHRatio = nNewH / aViewWin.H;
 

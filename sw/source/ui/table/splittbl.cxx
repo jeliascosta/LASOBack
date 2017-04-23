@@ -25,7 +25,7 @@
 SwSplitTableDlg::SwSplitTableDlg( vcl::Window *pParent, SwWrtShell &rSh )
     : SvxStandardDialog( pParent, "SplitTableDialog", "modules/swriter/ui/splittable.ui" )
     , rShell(rSh)
-    , m_nSplit(SplitTable_HeadlineOption::ContentCopy)
+    , m_nSplit(HEADLINE_CNTNTCOPY)
 {
     get(mpContentCopyRB, "copyheading");
     get(mpBoxAttrCopyWithParaRB, "customheadingapplystyle");
@@ -49,13 +49,13 @@ void SwSplitTableDlg::dispose()
 
 void SwSplitTableDlg::Apply()
 {
-    m_nSplit = SplitTable_HeadlineOption::ContentCopy;
+    m_nSplit = HEADLINE_CNTNTCOPY;
     if(mpBoxAttrCopyWithParaRB->IsChecked())
-        m_nSplit = SplitTable_HeadlineOption::BoxAttrAllCopy;
+        m_nSplit = HEADLINE_BOXATRCOLLCOPY;
     else if(mpBoxAttrCopyNoParaRB->IsChecked())
-        m_nSplit = SplitTable_HeadlineOption::BoxAttrCopy;
+        m_nSplit = HEADLINE_BOXATTRCOPY;
     else if(mpBorderCopyRB->IsChecked())
-        m_nSplit = SplitTable_HeadlineOption::BorderCopy;
+        m_nSplit = HEADLINE_BORDERCOPY;
 
     rShell.SplitTable(m_nSplit);
 }

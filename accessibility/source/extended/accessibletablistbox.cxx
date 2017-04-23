@@ -18,8 +18,8 @@
  */
 
 
-#include "extended/accessibletablistbox.hxx"
-#include "extended/accessibletablistboxtable.hxx"
+#include "accessibility/extended/accessibletablistbox.hxx"
+#include "accessibility/extended/accessibletablistboxtable.hxx"
 #include <svtools/svtabbx.hxx>
 #include <comphelper/sequence.hxx>
 
@@ -75,12 +75,13 @@ namespace accessibility
     // XAccessibleContext ---------------------------------------------------------
 
     sal_Int32 SAL_CALL AccessibleTabListBox::getAccessibleChildCount()
+        throw ( uno::RuntimeException, std::exception )
     {
         return 2; // header and table
     }
 
 
-    Reference< XAccessibleContext > SAL_CALL AccessibleTabListBox::getAccessibleContext()
+    Reference< XAccessibleContext > SAL_CALL AccessibleTabListBox::getAccessibleContext() throw ( RuntimeException, std::exception )
     {
         return this;
     }
@@ -88,8 +89,10 @@ namespace accessibility
 
     Reference< XAccessible > SAL_CALL
     AccessibleTabListBox::getAccessibleChild( sal_Int32 nChildIndex )
+        throw ( IndexOutOfBoundsException, RuntimeException, std::exception )
     {
-        SolarMethodGuard aGuard(getMutex());
+        SolarMutexGuard aSolarGuard;
+        ::osl::MutexGuard aGuard( getOslMutex() );
         ensureIsAlive();
 
         if ( nChildIndex < 0 || nChildIndex > 1 )

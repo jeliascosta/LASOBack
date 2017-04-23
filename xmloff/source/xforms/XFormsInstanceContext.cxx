@@ -63,7 +63,11 @@ XFormsInstanceContext::XFormsInstanceContext(
         TokenContext( rImport, nPrefix, rLocalName, aAttributes, aEmptyMap ),
         mxModel( xModel )
 {
-    SAL_WARN_IF( !mxModel.is(), "xmloff", "need model" );
+    DBG_ASSERT( mxModel.is(), "need model" );
+}
+
+XFormsInstanceContext::~XFormsInstanceContext()
+{
 }
 
 SvXMLImportContext* XFormsInstanceContext::CreateChildContext(
@@ -90,7 +94,7 @@ SvXMLImportContext* XFormsInstanceContext::CreateChildContext(
         pContext = pInstance;
     }
 
-    SAL_WARN_IF( pContext == nullptr, "xmloff", "no context!" );
+    DBG_ASSERT( pContext != nullptr, "no context!" );
     return pContext;
 
 }

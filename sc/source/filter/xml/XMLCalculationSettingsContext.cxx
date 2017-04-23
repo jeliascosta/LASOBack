@@ -26,6 +26,7 @@
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/nmspmap.hxx>
 #include <sax/tools/converter.hxx>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <comphelper/extract.hxx>
 
 using namespace com::sun::star;
@@ -35,11 +36,11 @@ ScXMLCalculationSettingsContext::ScXMLCalculationSettingsContext( ScXMLImport& r
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     fIterationEpsilon(0.001),
     nIterationCount(100),
     nYear2000(1930),
-    eSearchType(utl::SearchParam::SearchType::Regexp),
+    eSearchType(utl::SearchParam::SRCH_REGEXP),
     bIsIterationEnabled(false),
     bCalcAsShown(false),
     bIgnoreCase(false),
@@ -89,13 +90,13 @@ ScXMLCalculationSettingsContext::ScXMLCalculationSettingsContext( ScXMLImport& r
             else if (IsXMLToken(aLocalName, XML_USE_REGULAR_EXPRESSIONS))
             {
                 // Overwrite only the default (regex true) value, not wildcard.
-                if (eSearchType == utl::SearchParam::SearchType::Regexp && IsXMLToken(sValue, XML_FALSE))
-                    eSearchType = utl::SearchParam::SearchType::Normal;
+                if (eSearchType == utl::SearchParam::SRCH_REGEXP && IsXMLToken(sValue, XML_FALSE))
+                    eSearchType = utl::SearchParam::SRCH_NORMAL;
             }
             else if (IsXMLToken(aLocalName, XML_USE_WILDCARDS))
             {
                 if (IsXMLToken(sValue, XML_TRUE))
-                    eSearchType = utl::SearchParam::SearchType::Wildcard;
+                    eSearchType = utl::SearchParam::SRCH_WILDCARD;
             }
         }
     }
@@ -160,7 +161,7 @@ ScXMLNullDateContext::ScXMLNullDateContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLCalculationSettingsContext* pCalcSet) :
-    ScXMLImportContext( rImport, nPrfx, rLName )
+    SvXMLImportContext( rImport, nPrfx, rLName )
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
     for( sal_Int16 i=0; i < nAttrCount; ++i )
@@ -206,7 +207,7 @@ ScXMLIterationContext::ScXMLIterationContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLCalculationSettingsContext* pCalcSet) :
-    ScXMLImportContext( rImport, nPrfx, rLName )
+    SvXMLImportContext( rImport, nPrfx, rLName )
 {
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
     for( sal_Int16 i=0; i < nAttrCount; ++i )

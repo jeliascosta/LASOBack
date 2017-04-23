@@ -57,7 +57,7 @@ namespace dbaui
         VclPtr<VclMultiLineEdit> m_pOutput;
         VclPtr<PushButton>       m_pClose;
 
-        typedef std::deque< OUString >  StringQueue;
+        typedef ::std::deque< OUString >  StringQueue;
         StringQueue     m_aStatementHistory;    // previous statements
         StringQueue     m_aNormalizedHistory;   // previous statements, normalized to be used in the list box
 
@@ -71,7 +71,7 @@ namespace dbaui
         DirectSQLDialog(
             vcl::Window* _pParent,
             const css::uno::Reference< css::sdbc::XConnection >& _rxConn);
-        virtual ~DirectSQLDialog() override;
+        virtual ~DirectSQLDialog();
         virtual void dispose() override;
 
         /// number of history entries
@@ -85,11 +85,11 @@ namespace dbaui
         virtual void _disposing( const css::lang::EventObject& _rSource ) override;
 
     protected:
-        DECL_LINK( OnExecute, Button*, void );
-        DECL_LINK( OnClose, void*, void );
-        DECL_LINK( OnCloseClick, Button*, void );
-        DECL_LINK( OnListEntrySelected, ListBox&, void );
-        DECL_LINK( OnStatementModified, Edit&, void );
+        DECL_LINK_TYPED( OnExecute, Button*, void );
+        DECL_LINK_TYPED( OnClose, void*, void );
+        DECL_LINK_TYPED( OnCloseClick, Button*, void );
+        DECL_LINK_TYPED( OnListEntrySelected, ListBox&, void );
+        DECL_LINK_TYPED( OnStatementModified, Edit&, void );
 
     private:
         /// adds a statement to the statement history

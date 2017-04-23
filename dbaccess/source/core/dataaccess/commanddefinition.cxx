@@ -21,7 +21,6 @@
 #include "apitools.hxx"
 #include "dbastrings.hrc"
 
-#include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 
@@ -38,7 +37,7 @@ namespace dbaccess
 
 void OCommandDefinition::registerProperties()
 {
-    OCommandDefinition_Impl& rCommandDefinition = dynamic_cast< OCommandDefinition_Impl& >( *m_pImpl.get() );
+    OCommandDefinition_Impl& rCommandDefinition( getCommandDefinition() );
     registerProperty(PROPERTY_COMMAND, PROPERTY_ID_COMMAND, PropertyAttribute::BOUND,
                     &rCommandDefinition.m_sCommand, cppu::UnoType<decltype(rCommandDefinition.m_sCommand)>::get());
 
@@ -79,6 +78,7 @@ OCommandDefinition::OCommandDefinition( const Reference< XInterface >& _rxContai
 }
 
 css::uno::Sequence<sal_Int8> OCommandDefinition::getImplementationId()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -87,12 +87,12 @@ IMPLEMENT_GETTYPES2(OCommandDefinition,OCommandDefinition_Base,OComponentDefinit
 IMPLEMENT_FORWARD_XINTERFACE2( OCommandDefinition,OComponentDefinition,OCommandDefinition_Base)
 IMPLEMENT_PROPERTYCONTAINER_DEFAULTS2(OCommandDefinition,OCommandDefinition_PROP)
 
-OUString SAL_CALL OCommandDefinition::getImplementationName()
+OUString SAL_CALL OCommandDefinition::getImplementationName() throw(RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.dba.OCommandDefinition");
 }
 
-css::uno::Sequence<OUString> SAL_CALL OCommandDefinition::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OCommandDefinition::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return {
         "com.sun.star.sdb.QueryDefinition",
@@ -101,7 +101,7 @@ css::uno::Sequence<OUString> SAL_CALL OCommandDefinition::getSupportedServiceNam
     };
 }
 
-void SAL_CALL OCommandDefinition::rename( const OUString& newName )
+void SAL_CALL OCommandDefinition::rename( const OUString& newName ) throw (SQLException, ElementExistException, RuntimeException, std::exception)
 {
     try
     {

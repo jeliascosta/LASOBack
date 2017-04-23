@@ -22,26 +22,8 @@
 #include "CustomAnimationEffect.hxx"
 #include "drawdoc.hxx"
 #include "undoanim.hxx"
-#include "ViewShell.hxx"
-#include "ViewShellBase.hxx"
-#include "DrawDocShell.hxx"
 
 using namespace sd;
-
-SdUndoAction::SdUndoAction(SdDrawDocument* pSdDrawDocument)
-    : mpDoc(pSdDrawDocument),
-      mnViewShellId(-1)
-{
-    sd::DrawDocShell* pDocShell = pSdDrawDocument ? pSdDrawDocument->GetDocSh() : nullptr;
-    sd::ViewShell* pViewShell = pDocShell ? pDocShell->GetViewShell() : nullptr;
-    if (pViewShell)
-        mnViewShellId = pViewShell->GetViewShellBase().GetViewShellId();
-}
-
-ViewShellId SdUndoAction::GetViewShellId() const
-{
-    return mnViewShellId;
-}
 
 UndoRemovePresObjectImpl::UndoRemovePresObjectImpl( SdrObject& rObject )
 : mpUndoUsercall(nullptr)
@@ -186,13 +168,14 @@ UndoObjectSetText::UndoObjectSetText( SdrObject& rObject, sal_Int32 nText )
         css::uno::Reference< css::drawing::XShape > xShape( rObject.getUnoShape(), css::uno::UNO_QUERY );
         if( pPage->getMainSequence()->hasEffect( xShape ) )
         {
-            mpUndoAnimation.reset( new UndoAnimation( static_cast< SdDrawDocument* >( pPage->GetModel() ), pPage ) );
+            mpUndoAnimation = new UndoAnimation( static_cast< SdDrawDocument* >( pPage->GetModel() ), pPage );
         }
     }
 }
 
 UndoObjectSetText::~UndoObjectSetText()
 {
+    delete mpUndoAnimation;
 }
 
 void UndoObjectSetText::Undo()

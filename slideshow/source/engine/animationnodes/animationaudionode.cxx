@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/lang/NoSupportException.hpp>
 
 #include "eventqueue.hxx"
 #include "animationaudionode.hxx"

@@ -33,7 +33,7 @@
 #include <memory>
 
 class SdrUnoObj;
-namespace tools { class Rectangle; }
+class Rectangle;
 
 namespace comphelper {
     class ComponentContext;
@@ -66,7 +66,7 @@ namespace svxform
         sal_Int16 initializeControlModel(
                     const DocumentType _eDocType,
                     const css::uno::Reference< css::beans::XPropertySet >& _rxControlModel,
-                    const tools::Rectangle& _rControlBoundRect
+                    const Rectangle& _rControlBoundRect
                 );
 
         sal_Int16 initializeControlModel( const DocumentType _eDocType, const SdrUnoObj& _rObject );

@@ -42,7 +42,7 @@ private:
 
 public:
     SwLabelConfig();
-    virtual ~SwLabelConfig() override;
+    virtual ~SwLabelConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 

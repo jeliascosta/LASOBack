@@ -44,11 +44,11 @@ public:
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxBlinkItem& operator=(const SvxBlinkItem& rBlink) {
+    inline SvxBlinkItem& operator=(const SvxBlinkItem& rBlink) {
             SetValue(rBlink.GetValue());
             return *this;
         }

@@ -26,7 +26,7 @@
 #include "viewdata.hxx"
 #include "document.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 
 #include "subtdlg.hxx"
 #include "tpsubt.hxx"
@@ -58,7 +58,7 @@ ScTpSubTotalGroup::ScTpSubTotalGroup( vcl::Window* pParent,
     mpLbFunctions->set_height_request(nHeight);
 
     // Font is correctly initialized by SvTreeListBox ctor
-    mpLbColumns->SetSelectionMode( SelectionMode::Single );
+    mpLbColumns->SetSelectionMode( SINGLE_SELECTION );
     mpLbColumns->SetDragDropMode( DragDropMode::NONE );
     mpLbColumns->SetSpaceBetweenEntries( 0 );
 
@@ -187,7 +187,7 @@ bool ScTpSubTotalGroup::DoFillItemSet( sal_uInt16       nGroupNo,
     else
         nGroupIdx = nGroupNo-1;
 
-    ScSubTotalParam theSubTotalData;            // read out, if already partly filled
+    ScSubTotalParam theSubTotalData;            // auslesen, wenn schon teilweise gefuellt
     SfxTabDialog* pDlg = GetTabDialog();
     if ( pDlg )
     {
@@ -231,10 +231,10 @@ bool ScTpSubTotalGroup::DoFillItemSet( sal_uInt16       nGroupNo,
                 nCheck++;
             }
         }
-        theSubTotalData.SetSubTotals( nGroupNo,      // group number
+        theSubTotalData.SetSubTotals( nGroupNo,      // Gruppen-Nr.
                                       pSubTotals.get(),
                                       pFunctions.get(),
-                                      nCheckCount ); // number of array elements
+                                      nCheckCount ); // Anzahl der Array-Elemente
 
     }
 
@@ -342,11 +342,11 @@ sal_uInt16 ScTpSubTotalGroup::FuncToLbPos( ScSubTotalFunc eFunc )
 
 // Handler:
 
-IMPL_LINK( ScTpSubTotalGroup, SelectTreeListBoxHdl, SvTreeListBox*, pLb, void )
+IMPL_LINK_TYPED( ScTpSubTotalGroup, SelectTreeListBoxHdl, SvTreeListBox*, pLb, void )
 {
     SelectHdl(pLb);
 }
-IMPL_LINK( ScTpSubTotalGroup, SelectListBoxHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScTpSubTotalGroup, SelectListBoxHdl, ListBox&, rLb, void )
 {
     SelectHdl(&rLb);
 }
@@ -375,7 +375,7 @@ void ScTpSubTotalGroup::SelectHdl(void *pLb)
     }
 }
 
-IMPL_LINK( ScTpSubTotalGroup, CheckHdl, SvTreeListBox*, pLb, void )
+IMPL_LINK_TYPED( ScTpSubTotalGroup, CheckHdl, SvTreeListBox*, pLb, void )
 {
     if ( pLb == mpLbColumns )
     {
@@ -433,7 +433,7 @@ bool ScTpSubTotalGroup2::FillItemSet( SfxItemSet* rArgSet ) { return FILLSET(2);
 bool ScTpSubTotalGroup3::FillItemSet( SfxItemSet* rArgSet ) { return FILLSET(3); }
 #undef FILL
 
-// options tab page:
+// Optionen-Tabpage:
 
 ScTpSubTotalOptions::ScTpSubTotalOptions( vcl::Window*               pParent,
                                           const SfxItemSet&     rArgSet )
@@ -529,7 +529,7 @@ void ScTpSubTotalOptions::Reset( const SfxItemSet* /* rArgSet */ )
 
 bool ScTpSubTotalOptions::FillItemSet( SfxItemSet* rArgSet )
 {
-    ScSubTotalParam theSubTotalData;            // read out, if already partly filled
+    ScSubTotalParam theSubTotalData;            // auslesen, wenn schon teilweise gefuellt
     SfxTabDialog* pDlg = GetTabDialog();
     if ( pDlg )
     {
@@ -570,7 +570,7 @@ void ScTpSubTotalOptions::FillUserSortListBox()
 
 // Handler:
 
-IMPL_LINK( ScTpSubTotalOptions, CheckHdl, Button*, pBox, void )
+IMPL_LINK_TYPED( ScTpSubTotalOptions, CheckHdl, Button*, pBox, void )
 {
     if ( pBox == pBtnSort )
     {

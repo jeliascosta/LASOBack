@@ -26,7 +26,6 @@
 #include <sfx2/dllapi.h>
 #include <tools/link.hxx>
 #include <vector>
-#include <memory>
 
 // class AddressList_Impl ------------------------------------------------
 typedef ::std::vector< OUString > AddressList_Impl;
@@ -35,6 +34,29 @@ typedef ::std::vector< OUString > AddressList_Impl;
 
 class SFX2_DLLPUBLIC SfxMailModel
 {
+public:
+    enum MailPriority
+    {
+        PRIO_HIGHEST,
+        PRIO_HIGH,
+        PRIO_NORMAL,
+        PRIO_LOW,
+        PRIO_LOWEST
+    };
+
+    enum AddressRole
+    {
+        ROLE_TO,
+        ROLE_CC,
+        ROLE_BCC
+    };
+
+    enum MailDocType
+    {
+        TYPE_SELF,
+        TYPE_ASPDF
+    };
+
 protected:
     enum SaveResult
     {
@@ -49,9 +71,9 @@ protected:
                                               OUString& rFileNamePath );
 
 private:
-    std::unique_ptr<AddressList_Impl>   mpToList;
-    std::unique_ptr<AddressList_Impl>   mpCcList;
-    std::unique_ptr<AddressList_Impl>   mpBccList;
+    AddressList_Impl*   mpToList;
+    AddressList_Impl*   mpCcList;
+    AddressList_Impl*   mpBccList;
     OUString            maFromAddress;
     OUString            maSubject;
 
@@ -74,7 +96,7 @@ public:
     SfxMailModel();
     ~SfxMailModel();
 
-    void                AddToAddress( const OUString& rAddress );
+    void                AddAddress( const OUString& rAddress, AddressRole eRole );
     void                SetSubject( const OUString& rSubject )        { maSubject = rSubject; }
 
     /** attaches a document to the current attachment list, can be called more than once.

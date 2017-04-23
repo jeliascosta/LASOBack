@@ -26,11 +26,10 @@
 #include <com/sun/star/table/CellAddress.hpp>
 
 #include "xmldrani.hxx"
-#include "importcontext.hxx"
 
 class ScXMLImport;
 
-class ScXMLSortContext : public ScXMLImportContext
+class ScXMLSortContext : public SvXMLImportContext
 {
     ScXMLDatabaseRangeContext* pDatabaseRangeContext;
 
@@ -44,6 +43,9 @@ class ScXMLSortContext : public ScXMLImportContext
     bool        bIsCaseSensitive;
     bool        bEnabledUserList;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
 
     ScXMLSortContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
@@ -51,7 +53,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDatabaseRangeContext* pTempDatabaseRangeContext);
 
-    virtual ~ScXMLSortContext() override;
+    virtual ~ScXMLSortContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -62,13 +64,16 @@ public:
     void AddSortField(const OUString& sFieldNumber, const OUString& sDataType, const OUString& sOrder);
 };
 
-class ScXMLSortByContext : public ScXMLImportContext
+class ScXMLSortByContext : public SvXMLImportContext
 {
     ScXMLSortContext* pSortContext;
 
     OUString   sFieldNumber;
     OUString   sDataType;
     OUString   sOrder;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -77,7 +82,7 @@ public:
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLSortContext* pTempSortContext);
 
-    virtual ~ScXMLSortByContext() override;
+    virtual ~ScXMLSortByContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

@@ -19,8 +19,6 @@
 
 #include <com/sun/star/xml/AttributeData.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
-#include <o3tl/any.hxx>
-#include <o3tl/make_unique.hxx>
 #include <xmloff/xmlcnimp.hxx>
 #include <xmloff/unoatrcn.hxx>
 #include <editeng/xmlcnitm.hxx>
@@ -57,8 +55,8 @@ bool SvXMLAttrContainerItem::operator==( const SfxPoolItem& rItem ) const
 
 bool SvXMLAttrContainerItem::GetPresentation(
                     SfxItemPresentation /*ePresentation*/,
-                    MapUnit /*eCoreMetric*/,
-                    MapUnit /*ePresentationMetric*/,
+                    SfxMapUnit /*eCoreMetric*/,
+                    SfxMapUnit /*ePresentationMetric*/,
                     OUString & /*rText*/,
                     const IntlWrapper * /*pIntlWrapper*/ ) const
 {
@@ -74,19 +72,24 @@ sal_uInt16 SvXMLAttrContainerItem::GetVersion( sal_uInt16 /*nFileFormatVersion*/
 bool SvXMLAttrContainerItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberId*/ ) const
 {
     Reference<XNameContainer> xContainer =
-        new SvUnoAttributeContainer( o3tl::make_unique<SvXMLAttrContainerData>( *pImpl.get() ) );
+        new SvUnoAttributeContainer( new SvXMLAttrContainerData( *pImpl.get() ) );
 
-    rVal <<= xContainer;
+    rVal.setValue( &xContainer, cppu::UnoType<XNameContainer>::get());
     return true;
 }
 
 bool SvXMLAttrContainerItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*/ )
 {
+    Reference<XInterface> xRef;
     SvUnoAttributeContainer* pContainer = nullptr;
 
-    Reference<XUnoTunnel> xTunnel(rVal, UNO_QUERY);
-    if( xTunnel.is() )
-        pContainer = reinterpret_cast<SvUnoAttributeContainer*>((sal_uLong)xTunnel->getSomething(SvUnoAttributeContainer::getUnoTunnelId()));
+    if( rVal.getValue() != nullptr && rVal.getValueType().getTypeClass() == TypeClass_INTERFACE )
+    {
+        xRef = *static_cast<Reference<XInterface> const *>(rVal.getValue());
+        Reference<XUnoTunnel> xTunnel(xRef, UNO_QUERY);
+        if( xTunnel.is() )
+            pContainer = reinterpret_cast<SvUnoAttributeContainer*>((sal_uLong)xTunnel->getSomething(SvUnoAttributeContainer::getUnoTunnelId()));
+    }
 
     if( pContainer )
     {
@@ -98,7 +101,7 @@ bool SvXMLAttrContainerItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nM
 
         try
         {
-            Reference<XNameContainer> xContainer( rVal, UNO_QUERY );
+            Reference<XNameContainer> xContainer( xRef, UNO_QUERY );
             if( !xContainer.is() )
                 return false;
 
@@ -113,10 +116,10 @@ bool SvXMLAttrContainerItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nM
                 const OUString aName( *pNames++ );
 
                 aAny = xContainer->getByName( aName );
-                auto pData = o3tl::tryAccess<AttributeData>(aAny);
-                if( !pData )
+                if( aAny.getValue() == nullptr || aAny.getValueType() != cppu::UnoType<AttributeData>::get() )
                     return false;
 
+                AttributeData const * pData = static_cast<AttributeData const *>(aAny.getValue());
                 sal_Int32 pos = aName.indexOf( ':' );
                 if( pos != -1 )
                 {
@@ -142,7 +145,7 @@ bool SvXMLAttrContainerItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nM
             }
 
             if( nAttr == nCount )
-                pImpl = std::move(pNewImpl);
+                pImpl.reset( pNewImpl.release() );
             else
                 return false;
         }

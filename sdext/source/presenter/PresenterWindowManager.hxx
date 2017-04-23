@@ -47,12 +47,14 @@ class PresenterController;
 class PresenterPaneBorderPainter;
 class PresenterTheme;
 
-typedef ::cppu::WeakComponentImplHelper<
-    css::awt::XWindowListener,
-    css::awt::XPaintListener,
-    css::awt::XMouseListener,
-    css::awt::XFocusListener
-> PresenterWindowManagerInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper<
+        css::awt::XWindowListener,
+        css::awt::XPaintListener,
+        css::awt::XMouseListener,
+        css::awt::XFocusListener
+    > PresenterWindowManagerInterfaceBase;
+}
 
 /** A simple manager of the positions of the panes of the presenter screen.
     Uses relative coordinates of the four sides of each pane.  Allows panes
@@ -67,7 +69,7 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const ::rtl::Reference<PresenterPaneContainer>& rpPaneContainer,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterWindowManager() override;
+    virtual ~PresenterWindowManager();
     PresenterWindowManager(const PresenterWindowManager&) = delete;
     PresenterWindowManager& operator=(const PresenterWindowManager&) = delete;
 
@@ -114,38 +116,50 @@ public:
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XMouseListener
 
-    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XFocusListener
 
-    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent) override;
+    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent) override;
+    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent) override;
+        const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
@@ -179,6 +193,10 @@ private:
     void ProvideBackgroundBitmap();
     css::uno::Reference<css::rendering::XPolyPolygon2D> CreateClipPolyPolygon() const;
 
+    static void UpdateWindowList();
+
+    void Invalidate();
+
     void StoreViewMode (const ViewMode eViewMode);
 
     void LayoutStandardMode();
@@ -200,8 +218,7 @@ private:
 
     void NotifyDisposing();
 
-    /// @throws css::lang::DisposedException
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const throw (css::lang::DisposedException);
 };
 
 } }

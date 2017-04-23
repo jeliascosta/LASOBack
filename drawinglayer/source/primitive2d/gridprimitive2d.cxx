@@ -33,8 +33,10 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void GridPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer GridPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
+            Primitive2DContainer aRetval;
+
             if(!rViewInformation.getViewport().isEmpty() && getWidth() > 0.0 && getHeight() > 0.0)
             {
                 // decompose grid matrix to get logic size
@@ -227,11 +229,15 @@ namespace drawinglayer
                     // prepare return value
                     const sal_uInt32 nCountPoint(aPositionsPoint.size());
                     const sal_uInt32 nCountCross(aPositionsCross.size());
+                    const sal_uInt32 nRetvalCount((nCountPoint ? 1 : 0) + (nCountCross ? 1 : 0));
+                    sal_uInt32 nInsertCounter(0);
+
+                    aRetval.resize(nRetvalCount);
 
                     // add PointArrayPrimitive2D if point markers were added
                     if(nCountPoint)
                     {
-                        rContainer.push_back(new PointArrayPrimitive2D(aPositionsPoint, getBColor()));
+                        aRetval[nInsertCounter++] = Primitive2DReference(new PointArrayPrimitive2D(aPositionsPoint, getBColor()));
                     }
 
                     // add MarkerArrayPrimitive2D if cross markers were added
@@ -241,15 +247,17 @@ namespace drawinglayer
                         {
                             // no subdivisions, so fall back to points at grid positions, no need to
                             // visualize a difference between divisions and sub-divisions
-                            rContainer.push_back(new PointArrayPrimitive2D(aPositionsCross, getBColor()));
+                            aRetval[nInsertCounter++] = Primitive2DReference(new PointArrayPrimitive2D(aPositionsCross, getBColor()));
                         }
                         else
                         {
-                            rContainer.push_back(new MarkerArrayPrimitive2D(aPositionsCross, getCrossMarker()));
+                            aRetval[nInsertCounter++] = Primitive2DReference(new MarkerArrayPrimitive2D(aPositionsCross, getCrossMarker()));
                         }
                     }
                 }
             }
+
+            return aRetval;
         }
 
         GridPrimitive2D::GridPrimitive2D(
@@ -309,7 +317,7 @@ namespace drawinglayer
             return aUnitRange;
         }
 
-        void GridPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer GridPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -330,7 +338,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
         }
 
         // provide unique ID

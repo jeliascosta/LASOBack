@@ -34,7 +34,7 @@ class XMLAnimationsExporter : public salhelper::SimpleReferenceObject
 
 public:
     XMLAnimationsExporter( XMLShapeExport* pShapeExp );
-    virtual ~XMLAnimationsExporter() override;
+    virtual ~XMLAnimationsExporter();
 
     void prepare( const css::uno::Reference< css::drawing::XShape >& xShape, SvXMLExport& rExport );
     void collect( const css::uno::Reference< css::drawing::XShape >& xShape, SvXMLExport& rExport );

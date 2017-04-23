@@ -78,6 +78,7 @@ namespace
         ::std::vector< double >                     maDblDXArray;   // double DXArray, font size independent -> unit coordinate system
         css::lang::Locale                           maLocale;
 
+        // bitfield
         bool                                        mbRTL : 1;
 
     public:
@@ -169,7 +170,7 @@ namespace
         SdrOutliner&                                mrOutliner;
         ::std::vector< impPathTextPortion >         maPathTextPortions;
 
-        DECL_LINK(decompositionPathTextPrimitive, DrawPortionInfo*, void );
+        DECL_LINK_TYPED(decompositionPathTextPrimitive, DrawPortionInfo*, void );
 
     public:
         explicit impTextBreakupHandler(SdrOutliner& rOutliner)
@@ -193,7 +194,7 @@ namespace
         }
     };
 
-    IMPL_LINK(impTextBreakupHandler, decompositionPathTextPrimitive, DrawPortionInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decompositionPathTextPrimitive, DrawPortionInfo*, pInfo, void)
     {
         maPathTextPortions.push_back(impPathTextPortion(*pInfo));
     }
@@ -272,10 +273,10 @@ namespace
             }
 
             if(maSdrFormTextAttribute.getFormTextStart()
-                && (XFormTextAdjust::Left == maSdrFormTextAttribute.getFormTextAdjust()
-                    || XFormTextAdjust::Right == maSdrFormTextAttribute.getFormTextAdjust()))
+                && (XFT_LEFT == maSdrFormTextAttribute.getFormTextAdjust()
+                    || XFT_RIGHT == maSdrFormTextAttribute.getFormTextAdjust()))
             {
-                if(XFormTextAdjust::Left == maSdrFormTextAttribute.getFormTextAdjust())
+                if(XFT_LEFT == maSdrFormTextAttribute.getFormTextAdjust())
                 {
                     fPolyStart += maSdrFormTextAttribute.getFormTextStart();
 
@@ -295,16 +296,16 @@ namespace
                 }
             }
 
-            if(XFormTextAdjust::Left != maSdrFormTextAttribute.getFormTextAdjust())
+            if(XFT_LEFT != maSdrFormTextAttribute.getFormTextAdjust())
             {
                 // calculate total text length of this paragraph, some layout needs to be done
                 const double fParagraphTextLength(getParagraphTextLength(rTextPortions));
 
                 // check if text is too long for paragraph. If yes, handle as if left aligned (default),
-                // but still take care of XFormTextAdjust::AutoSize in that case
+                // but still take care of XFT_AUTOSIZE in that case
                 const bool bTextTooLong(fParagraphTextLength > (fPolyEnd - fPolyStart));
 
-                if(XFormTextAdjust::Right == maSdrFormTextAttribute.getFormTextAdjust())
+                if(XFT_RIGHT == maSdrFormTextAttribute.getFormTextAdjust())
                 {
                     if(!bTextTooLong)
                     {
@@ -312,7 +313,7 @@ namespace
                         fPolyStart += ((fPolyEnd - fPolyStart) - fParagraphTextLength);
                     }
                 }
-                else if(XFormTextAdjust::Center == maSdrFormTextAttribute.getFormTextAdjust())
+                else if(XFT_CENTER == maSdrFormTextAttribute.getFormTextAdjust())
                 {
                     if(!bTextTooLong)
                     {
@@ -320,7 +321,7 @@ namespace
                         fPolyStart += ((fPolyEnd - fPolyStart) - fParagraphTextLength) / 2.0;
                     }
                 }
-                else if(XFormTextAdjust::AutoSize == maSdrFormTextAttribute.getFormTextAdjust())
+                else if(XFT_AUTOSIZE == maSdrFormTextAttribute.getFormTextAdjust())
                 {
                     // if scale, prepare scale factor between curve length and text length
                     if(0.0 != fParagraphTextLength)
@@ -332,9 +333,9 @@ namespace
             }
 
             // handle text portions for this paragraph
-            for(auto a = rTextPortions.begin(); a != rTextPortions.end() && fPolyStart < fPolyEnd; ++a)
+            for(sal_uInt32 a(0L); a < rTextPortions.size() && fPolyStart < fPolyEnd; a++)
             {
-                const impPathTextPortion* pCandidate = *a;
+                const impPathTextPortion* pCandidate = rTextPortions[a];
                 basegfx::B2DVector aFontScaling;
 
                 if(pCandidate && pCandidate->getTextLength())
@@ -379,17 +380,17 @@ namespace
                         }
 
                         // eventually create shadow primitives from aDecomposition and add to rDecomposition
-                        const bool bShadow(XFormTextShadow::NONE != maSdrFormTextAttribute.getFormTextShadow());
+                        const bool bShadow(XFTSHADOW_NONE != maSdrFormTextAttribute.getFormTextShadow());
 
                         if(bShadow)
                         {
-                            if(XFormTextShadow::Normal == maSdrFormTextAttribute.getFormTextShadow())
+                            if(XFTSHADOW_NORMAL == maSdrFormTextAttribute.getFormTextShadow())
                             {
                                 aNewShadowTransform.translate(
                                     maSdrFormTextAttribute.getFormTextShdwXVal(),
                                     -maSdrFormTextAttribute.getFormTextShdwYVal());
                             }
-                            else // XFormTextShadow::Slant
+                            else // XFTSHADOW_SLANT
                             {
                                 double fScaleValue(maSdrFormTextAttribute.getFormTextShdwYVal() / 100.0);
                                 double fShearValue(-maSdrFormTextAttribute.getFormTextShdwXVal() * F_PI1800);
@@ -402,7 +403,7 @@ namespace
 
                         switch(maSdrFormTextAttribute.getFormTextStyle())
                         {
-                            case XFormTextStyle::Rotate :
+                            case XFT_ROTATE :
                             {
                                 aEndPos = basegfx::tools::getPositionAbsolute(aPolygonCandidate, fPolyStart + fPortionLength, fPolyLength);
                                 const basegfx::B2DVector aDirection(aEndPos - aStartPos);
@@ -411,13 +412,13 @@ namespace
 
                                 break;
                             }
-                            case XFormTextStyle::Upright :
+                            case XFT_UPRIGHT :
                             {
                                 aNewTransformB.translate(aStartPos.getX() - (fPortionLength / 2.0), aStartPos.getY());
 
                                 break;
                             }
-                            case XFormTextStyle::SlantX :
+                            case XFT_SLANTX :
                             {
                                 aEndPos = basegfx::tools::getPositionAbsolute(aPolygonCandidate, fPolyStart + fPortionLength, fPolyLength);
                                 const basegfx::B2DVector aDirection(aEndPos - aStartPos);
@@ -435,7 +436,7 @@ namespace
 
                                 break;
                             }
-                            case XFormTextStyle::SlantY :
+                            case XFT_SLANTY :
                             {
                                 aEndPos = basegfx::tools::getPositionAbsolute(aPolygonCandidate, fPolyStart + fPortionLength, fPolyLength);
                                 const basegfx::B2DVector aDirection(aEndPos - aStartPos);
@@ -454,7 +455,7 @@ namespace
 
                                 break;
                             }
-                            default : break; // XFormTextStyle::NONE
+                            default : break; // XFT_NONE
                         }
 
                         // distance from path?

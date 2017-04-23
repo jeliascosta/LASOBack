@@ -52,6 +52,7 @@ void ChainablePropertySetInfo::remove( const OUString& aName )
 }
 
 Sequence< ::Property > SAL_CALL ChainablePropertySetInfo::getProperties()
+    throw(css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nSize = maMap.size();
     if( maProperties.getLength() != nSize )
@@ -73,6 +74,7 @@ Sequence< ::Property > SAL_CALL ChainablePropertySetInfo::getProperties()
 }
 
 Property SAL_CALL ChainablePropertySetInfo::getPropertyByName( const OUString& rName )
+    throw(::UnknownPropertyException, css::uno::RuntimeException, std::exception)
 {
     PropertyInfoHash::iterator aIter = maMap.find( rName );
 
@@ -89,6 +91,7 @@ Property SAL_CALL ChainablePropertySetInfo::getPropertyByName( const OUString& r
 }
 
 sal_Bool SAL_CALL ChainablePropertySetInfo::hasPropertyByName( const OUString& rName )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return maMap.find ( rName ) != maMap.end();
 }

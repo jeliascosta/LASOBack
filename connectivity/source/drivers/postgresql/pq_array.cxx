@@ -35,7 +35,7 @@
  ************************************************************************/
 
 #include <rtl/ustrbuf.hxx>
-#include <com/sun/star/sdbc/SQLException.hpp>
+
 #include <com/sun/star/sdbc/XArray.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <comphelper/sequence.hxx>
@@ -55,40 +55,46 @@ namespace pq_sdbc_driver
 
 
 OUString Array::getBaseTypeName(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     return OUString( "varchar" );
 }
 
 sal_Int32 Array::getBaseType(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
-    return  css::sdbc::DataType::VARCHAR;
+    return  com::sun::star::sdbc::DataType::VARCHAR;
 }
 
-css::uno::Sequence< css::uno::Any > Array::getArray(
-    const css::uno::Reference< css::container::XNameAccess >& /* typeMap */ )
+::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > Array::getArray(
+    const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& /* typeMap */ )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     return comphelper::containerToSequence(m_data);
 }
 
-css::uno::Sequence< css::uno::Any > Array::getArrayAtIndex(
+::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > Array::getArrayAtIndex(
     sal_Int32 index,
     sal_Int32 count,
-    const css::uno::Reference< css::container::XNameAccess >& /* typeMap */ )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& /* typeMap */ )
+    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     checkRange( index, count );
     return Sequence< Any > ( &m_data[index-1], count );
 }
 
-css::uno::Reference< css::sdbc::XResultSet > Array::getResultSet(
-    const css::uno::Reference< css::container::XNameAccess >& typeMap )
+::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > Array::getResultSet(
+    const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     return getResultSetAtIndex( 0 , m_data.size() , typeMap );
 }
 
-css::uno::Reference< css::sdbc::XResultSet > Array::getResultSetAtIndex(
+::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > Array::getResultSetAtIndex(
     sal_Int32 index,
     sal_Int32 count,
-    const css::uno::Reference< css::container::XNameAccess >& /* typeMap */ )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& /* typeMap */ )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     checkRange( index, count );
     std::vector< std::vector< Any > > ret( count );
@@ -110,12 +116,15 @@ void Array::checkRange( sal_Int32 index, sal_Int32 count )
 {
     if( index >= 1 && index -1 + count <= (sal_Int32)m_data.size() )
         return;
-    throw SQLException(
-        "Array::getArrayAtIndex(): allowed range for index + count "
-        + OUString::number( m_data.size() )
-        + ", got " + OUString::number( index )
-        + " + " + OUString::number( count ),
-        *this, OUString(), 1, Any());
+    OUStringBuffer buf;
+    buf.append( "Array::getArrayAtIndex(): allowed range for index + count " );
+    buf.append( (sal_Int32)m_data.size() );
+    buf.append( ", got " );
+    buf.append( index );
+    buf.append( " + " );
+    buf.append( count );
+
+    throw SQLException( buf.makeStringAndClear() , *this, OUString(), 1, Any());
 
 }
 

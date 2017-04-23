@@ -44,7 +44,7 @@ AnimationActivitySharedPtr AnimationPathMotionNode::createActivity() const
             mxPathMotionNode->getAdditive(),
             getShape(),
             getContext().mpSubsettableShapeManager,
-            getSlideSize(), 0 ),
+            getSlideSize() ),
         true );
 }
 

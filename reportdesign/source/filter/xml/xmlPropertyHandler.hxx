@@ -32,7 +32,7 @@ namespace rptxml
         void operator =(const OXMLRptPropHdlFactory&) = delete;
     public:
         OXMLRptPropHdlFactory();
-        virtual ~OXMLRptPropHdlFactory() override;
+        virtual ~OXMLRptPropHdlFactory();
     };
 
 }// rptxml

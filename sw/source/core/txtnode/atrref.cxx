@@ -71,7 +71,7 @@ void SwFormatRefMark::InvalidateRefMark()
     NotifyClients(&item, &item);
 }
 
-// attribute for content references in the text
+// Attribut fuer Inhalts-/Positions-Referenzen im Text
 
 SwTextRefMark::SwTextRefMark( SwFormatRefMark& rAttr,
             sal_Int32 const nStartPos, sal_Int32 const*const pEnd)

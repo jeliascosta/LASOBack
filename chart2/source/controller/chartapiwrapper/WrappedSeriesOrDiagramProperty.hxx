@@ -49,7 +49,7 @@ public:
     virtual void setValueToSeries( const css::uno::Reference< css::beans::XPropertySet >& xSeriesPropertySet, const PROPERTYTYPE & aNewValue ) const =0;
 
     explicit WrappedSeriesOrDiagramProperty( const OUString& rName, const css::uno::Any& rDefaulValue
-        , const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact
+        , std::shared_ptr< Chart2ModelContact > spChart2ModelContact
         , tSeriesOrDiagramPropertyType ePropertyType )
             : WrappedProperty(rName,OUString())
             , m_spChart2ModelContact(spChart2ModelContact)
@@ -58,6 +58,7 @@ public:
             , m_ePropertyType( ePropertyType )
     {
     }
+    virtual ~WrappedSeriesOrDiagramProperty() {};
 
     bool detectInnerValue( PROPERTYTYPE& rValue, bool& rHasAmbiguousValue ) const
     {
@@ -66,9 +67,9 @@ public:
         if( m_ePropertyType == DIAGRAM &&
             m_spChart2ModelContact.get() )
         {
-            std::vector< css::uno::Reference< css::chart2::XDataSeries > > aSeriesVector(
+            ::std::vector< css::uno::Reference< css::chart2::XDataSeries > > aSeriesVector(
                 ::chart::DiagramHelper::getDataSeriesFromDiagram( m_spChart2ModelContact->getChart2Diagram() ) );
-            std::vector< css::uno::Reference< css::chart2::XDataSeries > >::const_iterator aIter =
+            ::std::vector< css::uno::Reference< css::chart2::XDataSeries > >::const_iterator aIter =
                     aSeriesVector.begin();
             for( ; aIter != aSeriesVector.end(); ++aIter )
             {
@@ -95,9 +96,9 @@ public:
         if( m_ePropertyType == DIAGRAM &&
             m_spChart2ModelContact.get() )
         {
-            std::vector< css::uno::Reference< css::chart2::XDataSeries > > aSeriesVector(
+            ::std::vector< css::uno::Reference< css::chart2::XDataSeries > > aSeriesVector(
                 ::chart::DiagramHelper::getDataSeriesFromDiagram( m_spChart2ModelContact->getChart2Diagram() ) );
-            std::vector< css::uno::Reference< css::chart2::XDataSeries > >::const_iterator aIter =
+            ::std::vector< css::uno::Reference< css::chart2::XDataSeries > >::const_iterator aIter =
                     aSeriesVector.begin();
             for( ; aIter != aSeriesVector.end(); ++aIter )
             {
@@ -109,7 +110,8 @@ public:
             }
         }
     }
-    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override
+    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                    throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override
     {
         PROPERTYTYPE aNewValue = PROPERTYTYPE();
         if( ! (rOuterValue >>= aNewValue) )
@@ -133,7 +135,8 @@ public:
         }
     }
 
-    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override
+    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                            throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override
     {
         if( m_ePropertyType == DIAGRAM )
         {
@@ -142,7 +145,7 @@ public:
             if( detectInnerValue( aValue, bHasAmbiguousValue ) )
             {
                 if(bHasAmbiguousValue)
-                    m_aOuterValue = m_aDefaultValue;
+                    m_aOuterValue <<= m_aDefaultValue;
                 else
                     m_aOuterValue <<= aValue;
             }
@@ -156,7 +159,8 @@ public:
         }
     }
 
-    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& /* xInnerPropertyState */ ) const override
+    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& /* xInnerPropertyState */ ) const
+                            throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override
     {
         return m_aDefaultValue;
     }

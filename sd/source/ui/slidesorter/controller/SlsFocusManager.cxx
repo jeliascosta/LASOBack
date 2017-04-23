@@ -38,7 +38,8 @@ namespace sd { namespace slidesorter { namespace controller {
 FocusManager::FocusManager (SlideSorter& rSlideSorter)
     : mrSlideSorter(rSlideSorter),
       mnPageIndex(0),
-      mbPageIsFocused(false)
+      mbPageIsFocused(false),
+      mbIsVerticalWrapActive(false)
 {
     if (mrSlideSorter.GetModel().GetPageCount() > 0)
         mnPageIndex = 0;
@@ -58,20 +59,51 @@ void FocusManager::MoveFocus (FocusMoveDirection eDirection)
         const sal_Int32 nPageCount (mrSlideSorter.GetModel().GetPageCount());
         switch (eDirection)
         {
-            case FocusMoveDirection::Left:
+            case FMD_NONE:
+                // Nothing to be done.
+                break;
+
+            case FMD_LEFT:
                 if (mnPageIndex > 0)
                     mnPageIndex -= 1;
+                else if (mbIsVerticalWrapActive)
+                    mnPageIndex = nPageCount-1;
                 break;
 
-            case FocusMoveDirection::Right:
+            case FMD_RIGHT:
                 if (mnPageIndex < nPageCount-1)
                     mnPageIndex += 1;
+                else if (mbIsVerticalWrapActive)
+                    mnPageIndex = 0;
                 break;
 
-            case FocusMoveDirection::Up:
+            case FMD_UP:
             {
                 const sal_Int32 nCandidate (mnPageIndex - nColumnCount);
-                if (nCandidate >= 0)
+                if (nCandidate < 0)
+                {
+                    if (mbIsVerticalWrapActive)
+                    {
+                        // Wrap around to the bottom row or the one above
+                        // and go to the correct column.
+                        const sal_Int32 nLastIndex (nPageCount-1);
+                        const sal_Int32 nLastColumn (nLastIndex % nColumnCount);
+                        const sal_Int32 nCurrentColumn (mnPageIndex%nColumnCount);
+                        if (nLastColumn >= nCurrentColumn)
+                        {
+                            // The last row contains the current column.
+                            mnPageIndex = nLastIndex - (nLastColumn-nCurrentColumn);
+                        }
+                        else
+                        {
+                            // Only the second to last row contains the current column.
+                            mnPageIndex = nLastIndex - nLastColumn
+                                - nColumnCount
+                                + nCurrentColumn;
+                        }
+                    }
+                }
+                else
                 {
                     // Move the focus the previous row.
                     mnPageIndex = nCandidate;
@@ -79,10 +111,22 @@ void FocusManager::MoveFocus (FocusMoveDirection eDirection)
             }
             break;
 
-            case FocusMoveDirection::Down:
+            case FMD_DOWN:
             {
                 const sal_Int32 nCandidate (mnPageIndex + nColumnCount);
-                if (nCandidate < nPageCount)
+                if (nCandidate >= nPageCount)
+                {
+                    if (mbIsVerticalWrapActive)
+                    {
+                        // Wrap around to the correct column.
+                        mnPageIndex = mnPageIndex % nColumnCount;
+                    }
+                    else
+                    {
+                        // Do not move the focus.
+                    }
+                }
+                else
                 {
                     // Move the focus to the next row.
                     mnPageIndex = nCandidate;

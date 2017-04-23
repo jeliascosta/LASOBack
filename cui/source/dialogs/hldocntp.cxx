@@ -70,7 +70,7 @@ bool SvxHyperlinkNewDocTp::ImplGetURLObject( const OUString& rPath, const OUStri
             INetURLObject base(rBase);
             base.setFinalSlash();
             aURLObject = base.smartRel2Abs(
-                rPath, wasAbs, true, INetURLObject::EncodeMechanism::All,
+                rPath, wasAbs, true, INetURLObject::ENCODE_ALL,
                 RTL_TEXTENCODING_UTF8, true);
         }
         bIsValidURL = aURLObject.GetProtocol() != INetProtocol::NotValid;
@@ -105,7 +105,7 @@ SvxHyperlinkNewDocTp::SvxHyperlinkNewDocTp ( vcl::Window *pParent, IconChoiceDia
     get(m_pCbbPath, "path");
     m_pCbbPath->SetSmartProtocol(INetProtocol::File);
     get(m_pBtCreate, "create");
-    BitmapEx aBitmap(CUI_RES(RID_SVXBMP_NEWDOC));
+    BitmapEx aBitmap = Image(CUI_RES(RID_SVXBMP_NEWDOC)).GetBitmapEx();
     aBitmap.Scale(GetDPIScaleFactor(),GetDPIScaleFactor(),BmpScaleFlag::BestQuality );
     m_pBtCreate->SetModeImage(Image(aBitmap));
     get(m_pLbDocTypes, "types");
@@ -233,7 +233,7 @@ void SvxHyperlinkNewDocTp::GetCurentItemData ( OUString& rStrURL, OUString& aStr
     INetURLObject aURL;
     if ( ImplGetURLObject( rStrURL, m_pCbbPath->GetBaseURL(), aURL ) )
     {
-        rStrURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        rStrURL = aURL.GetMainURL( INetURLObject::NO_DECODE );
     }
 
     GetDataFromCommonFields( aStrName, aStrIntName, aStrFrame, eMode );
@@ -305,7 +305,7 @@ void SvxHyperlinkNewDocTp::DoApply ()
 
         // create Document
 
-        aStrNewName = aURL.GetURLPath( INetURLObject::DecodeMechanism::NONE );
+        aStrNewName = aURL.GetURLPath( INetURLObject::NO_DECODE );
         SfxViewFrame *pViewFrame = nullptr;
         try
         {
@@ -313,7 +313,8 @@ void SvxHyperlinkNewDocTp::DoApply ()
 
             // check if file exists, warn before we overwrite it
             {
-                SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ );
+                css::uno::Reference < css::task::XInteractionHandler > xHandler;
+                SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ, xHandler );
 
                 bool bOk = pIStm && ( pIStm->GetError() == 0);
 
@@ -364,7 +365,7 @@ void SvxHyperlinkNewDocTp::DoApply ()
                         pViewFrame = pItem->GetFrame();
                         if (pViewFrame)
                         {
-                            SfxStringItem aNewName( SID_FILE_NAME, aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+                            SfxStringItem aNewName( SID_FILE_NAME, aURL.GetMainURL( INetURLObject::NO_DECODE ) );
 
                             pViewFrame->GetDispatcher()->ExecuteList(
                                 SID_SAVEASDOC, SfxCallMode::SYNCHRON,
@@ -400,7 +401,7 @@ void SvxHyperlinkNewDocTp::DoApply ()
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkNewDocTp, ClickNewHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkNewDocTp, ClickNewHdl_Impl, Button*, void)
 {
     uno::Reference < XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     uno::Reference < XFolderPicker2 >  xFolderPicker = FolderPicker::create(xContext);
@@ -454,11 +455,11 @@ IMPL_LINK_NOARG(SvxHyperlinkNewDocTp, ClickNewHdl_Impl, Button*, void)
 
         if( aNewURL.GetProtocol() == INetProtocol::File )
         {
-            osl::FileBase::getSystemPathFromFileURL(aNewURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), aStrTmp);
+            osl::FileBase::getSystemPathFromFileURL(aNewURL.GetMainURL( INetURLObject::NO_DECODE ), aStrTmp);
         }
         else
         {
-            aStrTmp = aNewURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
+            aStrTmp = aNewURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
         }
 
         m_pCbbPath->SetText ( aStrTmp );

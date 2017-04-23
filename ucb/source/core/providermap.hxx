@@ -37,7 +37,7 @@ class ProviderListEntry_Impl
         css::ucb::XContentProvider > m_xResolvedProvider;
 
 private:
-    css::uno::Reference< css::ucb::XContentProvider > const & resolveProvider() const;
+    css::uno::Reference< css::ucb::XContentProvider > resolveProvider() const;
 
 public:
     explicit ProviderListEntry_Impl(

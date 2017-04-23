@@ -66,50 +66,63 @@ public:
     // XInitialization
     virtual void SAL_CALL
     initialize(css::uno::Sequence< css::uno::Any > const &
-                   rArguments) override;
+                   rArguments)
+        throw (css::uno::Exception, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Bool SAL_CALL
-    supportsService(OUString const & rServiceName) override;
+    supportsService(OUString const & rServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     // XJavaVM
     virtual css::uno::Any SAL_CALL
-    getJavaVM(css::uno::Sequence< sal_Int8 > const & rProcessId) override;
+    getJavaVM(css::uno::Sequence< sal_Int8 > const & rProcessId)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isVMStarted() override;
+    virtual sal_Bool SAL_CALL isVMStarted()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isVMEnabled() override;
+    virtual sal_Bool SAL_CALL isVMEnabled()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XJavaThreadRegister_11
-    virtual sal_Bool SAL_CALL isThreadAttached() override;
+    virtual sal_Bool SAL_CALL isThreadAttached()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL registerThread() override;
+    virtual void SAL_CALL registerThread()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL revokeThread() override;
+    virtual void SAL_CALL revokeThread()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XContainerListener
     virtual void SAL_CALL
-    disposing(css::lang::EventObject const & rSource) override;
+    disposing(css::lang::EventObject const & rSource)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-    elementInserted(css::container::ContainerEvent const & rEvent) override;
+    elementInserted(css::container::ContainerEvent const & rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-    elementRemoved(css::container::ContainerEvent const & rEvent) override;
+    elementRemoved(css::container::ContainerEvent const & rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-    elementReplaced(css::container::ContainerEvent const & rEvent) override;
+    elementReplaced(css::container::ContainerEvent const & rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     JavaVirtualMachine(JavaVirtualMachine &) = delete;
     void operator =(const JavaVirtualMachine&) = delete;
 
-    virtual ~JavaVirtualMachine() override;
+    virtual ~JavaVirtualMachine();
 
     virtual void SAL_CALL disposing() override;
 
@@ -129,6 +142,8 @@ private:
     rtl::Reference< jvmaccess::VirtualMachine > m_xVirtualMachine;
     rtl::Reference< jvmaccess::UnoVirtualMachine > m_xUnoVirtualMachine;
     JavaVM * m_pJavaVm;
+        // stored as an instance member for backwards compatibility in getJavaVM
+    bool m_bDontCreateJvm;
         // If the first creation of Java failed and this flag is set then the
         // next call to getJavaVM throws a RuntimException.  This is useful when
         // the second attempt to create Java might cause a crash.

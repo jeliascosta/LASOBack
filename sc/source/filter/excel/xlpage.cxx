@@ -38,20 +38,20 @@ struct XclPaperSize
     long                mnHeight;           /// Paper height in twips.
 };
 
-constexpr long in2twips(double n_inch)
+SAL_CONSTEXPR long in2twips(double n_inch)
 {
     return static_cast<long>( (n_inch * EXC_TWIPS_PER_INCH) + 0.5);
 }
-constexpr long mm2twips(double n_mm)
+SAL_CONSTEXPR long mm2twips(double n_mm)
 {
     return static_cast<long>( (n_mm * EXC_TWIPS_PER_INCH / CM_PER_INCH / 10.0) + 0.5);
 }
-constexpr long twips2mm(long n_twips)
+SAL_CONSTEXPR long twips2mm(long n_twips)
 {
     return static_cast<long>((static_cast<double>(n_twips) - 0.5) / EXC_TWIPS_PER_INCH * CM_PER_INCH * 10.0);
 }
 
-constexpr XclPaperSize pPaperSizeTable[] =
+SAL_CONSTEXPR XclPaperSize pPaperSizeTable[] =
 {
 /*  0*/ { PAPER_USER,       0,                  0                   },  // undefined
         { PAPER_LETTER,     in2twips( 8.5 ),    in2twips( 11 )      },  // Letter

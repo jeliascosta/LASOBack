@@ -8,9 +8,9 @@
  */
 
 #include <cassert>
-#include <limits>
 #include <string>
 #include "plugin.hxx"
+#include "compat.hxx"
 
 //
 // We don't like using C-style casts in C++ code
@@ -75,6 +75,10 @@ bool areSimilar(QualType type1, QualType type2) {
     }
 }
 
+bool hasCLanguageLinkageType(FunctionDecl const * decl) {
+    return decl->isExternC() || compat::isInExternCContext(*decl);
+}
+
 QualType resolvePointers(QualType type) {
     while (type->isPointerType()) {
         type = type->getAs<PointerType>()->getPointeeType();
@@ -86,7 +90,9 @@ class CStyleCast:
     public RecursiveASTVisitor<CStyleCast>, public loplugin::Plugin
 {
 public:
-    explicit CStyleCast(InstantiationData const & data): Plugin(data) {}
+    explicit CStyleCast(InstantiationData const & data):
+        Plugin(data), externCFunction(false)
+    {}
 
     virtual void run() override {
         if (compiler.getLangOpts().CPlusPlus) {
@@ -94,18 +100,14 @@ public:
         }
     }
 
-    bool TraverseLinkageSpecDecl(LinkageSpecDecl * decl);
+    bool TraverseFunctionDecl(FunctionDecl * decl);
 
     bool VisitCStyleCastExpr(const CStyleCastExpr * expr);
 
 private:
     bool isConstCast(QualType from, QualType to);
 
-    bool isFromCIncludeFile(SourceLocation spellingLocation) const;
-
-    bool isSharedCAndCppCode(SourceLocation location) const;
-
-    unsigned int externCContexts_ = 0;
+    bool externCFunction;
 };
 
 const char * recommendedFix(clang::CastKind ck) {
@@ -117,12 +119,17 @@ const char * recommendedFix(clang::CastKind ck) {
     }
 }
 
-bool CStyleCast::TraverseLinkageSpecDecl(LinkageSpecDecl * decl) {
-    assert(externCContexts_ != std::numeric_limits<unsigned int>::max()); //TODO
-    ++externCContexts_;
-    bool ret = RecursiveASTVisitor::TraverseLinkageSpecDecl(decl);
-    assert(externCContexts_ != 0);
-    --externCContexts_;
+bool CStyleCast::TraverseFunctionDecl(FunctionDecl * decl) {
+    bool ext = hasCLanguageLinkageType(decl)
+        && decl->isThisDeclarationADefinition();
+    if (ext) {
+        assert(!externCFunction);
+        externCFunction = true;
+    }
+    bool ret = RecursiveASTVisitor::TraverseFunctionDecl(decl);
+    if (ext) {
+        externCFunction = false;
+    }
     return ret;
 }
 
@@ -160,9 +167,6 @@ bool CStyleCast::VisitCStyleCastExpr(const CStyleCastExpr * expr) {
             perf = "const_cast";
         }
     }
-    if (isSharedCAndCppCode(expr->getLocStart())) {
-        return true;
-    }
     std::string incompFrom;
     std::string incompTo;
     if( expr->getCastKind() == CK_BitCast ) {
@@ -173,6 +177,15 @@ bool CStyleCast::VisitCStyleCastExpr(const CStyleCastExpr * expr) {
         }
         if (resolvePointers(expr->getType())->isIncompleteType()) {
             incompTo = "incomplete ";
+        }
+    }
+    if (externCFunction || expr->getLocStart().isMacroID()) {
+        SourceLocation spellingLocation = compiler.getSourceManager().getSpellingLoc(
+            expr->getLocStart());
+        StringRef filename = compiler.getSourceManager().getFilename(spellingLocation);
+        // ignore C code
+        if ( filename.endswith(".h") ) {
+            return true;
         }
     }
     if (perf == nullptr) {
@@ -211,28 +224,6 @@ bool CStyleCast::isConstCast(QualType from, QualType to) {
         }
     }
     return areSimilar(from, to);
-}
-
-bool CStyleCast::isFromCIncludeFile(SourceLocation spellingLocation) const {
-    return !compiler.getSourceManager().isInMainFile(spellingLocation)
-        && (StringRef(
-                compiler.getSourceManager().getPresumedLoc(spellingLocation)
-                .getFilename())
-            .endswith(".h"));
-}
-
-bool CStyleCast::isSharedCAndCppCode(SourceLocation location) const {
-    while (compiler.getSourceManager().isMacroArgExpansion(location)) {
-        location = compiler.getSourceManager().getImmediateMacroCallerLoc(
-            location);
-    }
-    // Assume that code is intended to be shared between C and C++ if it comes
-    // from an include file ending in .h, and is either in an extern "C" context
-    // or the body of a macro definition:
-    return
-        isFromCIncludeFile(compiler.getSourceManager().getSpellingLoc(location))
-        && (externCContexts_ != 0
-            || compiler.getSourceManager().isMacroBodyExpansion(location));
 }
 
 loplugin::Plugin::Registration< CStyleCast > X("cstylecast");

@@ -19,14 +19,9 @@
 #ifndef INCLUDED_SVX_AFFINEMATRIXITEM_HXX
 #define INCLUDED_SVX_AFFINEMATRIXITEM_HXX
 
-#include <com/sun/star/geometry/AffineMatrix2D.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <sal/types.h>
-#include <svl/poolitem.hxx>
 #include <svx/svxdllapi.h>
-
-class SfxItemPool;
-class SvStream;
+#include <svl/poolitem.hxx>
+#include <com/sun/star/geometry/AffineMatrix2D.hpp>
 
 class SVX_DLLPUBLIC AffineMatrixItem : public SfxPoolItem
 {
@@ -34,10 +29,10 @@ private:
     css::geometry::AffineMatrix2D        maMatrix;
 
 public:
-    AffineMatrixItem(const css::geometry::AffineMatrix2D* pMatrix);
+    AffineMatrixItem(const css::geometry::AffineMatrix2D* pMatrix = nullptr);
     AffineMatrixItem(SvStream& rIn);
     AffineMatrixItem(const AffineMatrixItem&);
-    virtual ~AffineMatrixItem() override;
+    virtual ~AffineMatrixItem();
 
     virtual bool operator==(const SfxPoolItem&) const override;
     virtual SfxPoolItem* Clone( SfxItemPool* pPool = nullptr ) const override;

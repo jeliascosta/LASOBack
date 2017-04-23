@@ -33,10 +33,7 @@
 
 using namespace ::com::sun::star;
 
-namespace
-{
-
-void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
+static void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
                              vcl::Font* pFont, const Bitmap* pBitmap, const BitmapEx* pBitmapEx,
                              const Point& rDestPt, const Size& rDestSize )
 {
@@ -45,7 +42,7 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
     Point       aPoint( rDestPt.X() + nPixelWidth, rDestPt.Y() + nPixelWidth );
     Size        aSize( rDestSize.Width() - ( nPixelWidth << 1 ), rDestSize.Height() - ( nPixelWidth << 1 ) );
     bool        bFilled = ( pBitmap != nullptr || pBitmapEx != nullptr || pFont != nullptr );
-    tools::Rectangle   aBorderRect( aPoint, aSize );
+    Rectangle   aBorderRect( aPoint, aSize );
 
     pOutDev->Push();
 
@@ -95,7 +92,7 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
     if ( aSize.Width() > 0 && aSize.Height() > 0 && pFont && pText && pText->getLength()
          && !(!pOutDev->IsOutputEnabled() /*&& pOutDev->GetConnectMetaFile() */) )
     {
-        MapMode aMapMode( MapUnit::MapPoint );
+        MapMode aMapMode( MAP_POINT );
         Size    aSz = pOutDev->LogicToLogic( Size( 0, 12 ), &aMapMode, nullptr );
         long    nThreshold = aSz.Height() / 2;
         long    nStep = nThreshold / 3;
@@ -119,8 +116,8 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
 
                 if ( nTextWidth <= nWidth || aSz.Height() <= nThreshold )
                 {
-                    sal_Int32 nStart = 0;
-                    sal_Int32 nLen = 0;
+                    sal_uInt16 nStart = 0;
+                    sal_uInt16 nLen = 0;
 
                     while( nStart < pText->getLength() && (*pText)[nStart] == ' ' )
                         nStart++;
@@ -128,7 +125,7 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
                         nLen++;
                     while( nStart < pText->getLength() && nLines-- )
                     {
-                        sal_Int32 nNext = nLen;
+                        sal_uInt16 nNext = nLen;
                         do
                         {
                             while ( nStart+nNext < pText->getLength() && (*pText)[nStart+nNext] == ' ' )
@@ -142,7 +139,7 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
                         }
                         while ( nStart+nNext < pText->getLength() );
 
-                        sal_Int32 n = nLen;
+                        sal_uInt16 n = nLen;
                         nTextWidth = pOutDev->GetTextWidth( *pText, nStart, n );
                         while( nTextWidth > aSize.Width() )
                             nTextWidth = pOutDev->GetTextWidth( *pText, nStart, --n );
@@ -181,49 +178,46 @@ void ImplDrawDefault( OutputDevice* pOutDev, const OUString* pText,
     pOutDev->Pop();
 }
 
-} // end anonymous namespace
-
 Graphic::Graphic()
-    : mxImpGraphic(new ImpGraphic)
 {
+    mpImpGraphic = new ImpGraphic;
 }
 
-Graphic::Graphic(const Graphic& rGraphic)
+Graphic::Graphic( const Graphic& rGraphic ) :
+SvDataCopyStream()
 {
     if( rGraphic.IsAnimated() )
-        mxImpGraphic.reset(new ImpGraphic(*rGraphic.mxImpGraphic));
+        mpImpGraphic = new ImpGraphic( *rGraphic.mpImpGraphic );
     else
-        mxImpGraphic = rGraphic.mxImpGraphic;
+    {
+        mpImpGraphic = rGraphic.mpImpGraphic;
+        mpImpGraphic->mnRefCount++;
+    }
 }
 
-Graphic::Graphic(Graphic&& rGraphic)
-    : mxImpGraphic(std::move(rGraphic.mxImpGraphic))
+Graphic::Graphic( const Bitmap& rBmp )
 {
+    mpImpGraphic = new ImpGraphic( rBmp );
 }
 
-Graphic::Graphic(const Bitmap& rBmp)
-    : mxImpGraphic(new ImpGraphic(rBmp))
+Graphic::Graphic( const BitmapEx& rBmpEx )
 {
-}
-
-Graphic::Graphic(const BitmapEx& rBmpEx)
-    : mxImpGraphic(new ImpGraphic(rBmpEx))
-{
+    mpImpGraphic = new ImpGraphic( rBmpEx );
 }
 
 Graphic::Graphic(const SvgDataPtr& rSvgDataPtr)
-    : mxImpGraphic(new ImpGraphic(rSvgDataPtr))
 {
+    mpImpGraphic = new ImpGraphic(rSvgDataPtr);
 }
 
-Graphic::Graphic(const Animation& rAnimation)
-    : mxImpGraphic(new ImpGraphic(rAnimation))
+Graphic::Graphic( const Animation& rAnimation )
 {
+    mpImpGraphic = new ImpGraphic( rAnimation );
 }
 
-Graphic::Graphic(const GDIMetaFile& rMtf)
-    : mxImpGraphic(new ImpGraphic(rMtf))
+Graphic::Graphic( const GDIMetaFile& rMtf )
 {
+    mpImpGraphic = new ImpGraphic( rMtf );
 }
 
 Graphic::Graphic( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic )
@@ -235,20 +229,32 @@ Graphic::Graphic( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic
 
     if( pGraphic )
     {
-        if (pGraphic->IsAnimated())
-            mxImpGraphic.reset(new ImpGraphic(*pGraphic->mxImpGraphic));
+        if( pGraphic->IsAnimated() )
+            mpImpGraphic = new ImpGraphic( *pGraphic->mpImpGraphic );
         else
-            mxImpGraphic = pGraphic->mxImpGraphic;
+        {
+            mpImpGraphic = pGraphic->mpImpGraphic;
+            mpImpGraphic->mnRefCount++;
+        }
     }
     else
-        mxImpGraphic.reset(new ImpGraphic);
+        mpImpGraphic = new ImpGraphic;
+}
+
+Graphic::~Graphic()
+{
+    if( mpImpGraphic->mnRefCount == 1UL )
+        delete mpImpGraphic;
+    else
+        mpImpGraphic->mnRefCount--;
 }
 
 void Graphic::ImplTestRefCount()
 {
-    if (!mxImpGraphic.unique())
+    if( mpImpGraphic->mnRefCount > 1UL )
     {
-        mxImpGraphic.reset(new ImpGraphic(*mxImpGraphic));
+        mpImpGraphic->mnRefCount--;
+        mpImpGraphic = new ImpGraphic( *mpImpGraphic );
     }
 }
 
@@ -258,105 +264,111 @@ Graphic& Graphic::operator=( const Graphic& rGraphic )
     {
         if( rGraphic.IsAnimated() )
         {
-            mxImpGraphic.reset(new ImpGraphic(*rGraphic.mxImpGraphic));
+            if( mpImpGraphic->mnRefCount == 1UL )
+                delete mpImpGraphic;
+            else
+                mpImpGraphic->mnRefCount--;
+
+            mpImpGraphic = new ImpGraphic( *rGraphic.mpImpGraphic );
         }
         else
         {
-            mxImpGraphic = rGraphic.mxImpGraphic;
+            rGraphic.mpImpGraphic->mnRefCount++;
+
+            if( mpImpGraphic->mnRefCount == 1UL )
+                delete mpImpGraphic;
+            else
+                mpImpGraphic->mnRefCount--;
+
+            mpImpGraphic = rGraphic.mpImpGraphic;
         }
     }
 
     return *this;
 }
 
-Graphic& Graphic::operator=(Graphic&& rGraphic)
-{
-    mxImpGraphic = std::move(rGraphic.mxImpGraphic);
-    return *this;
-}
-
 bool Graphic::operator==( const Graphic& rGraphic ) const
 {
-    return (*mxImpGraphic == *rGraphic.mxImpGraphic);
+    return( *mpImpGraphic == *rGraphic.mpImpGraphic );
 }
 
 bool Graphic::operator!=( const Graphic& rGraphic ) const
 {
-    return (*mxImpGraphic != *rGraphic.mxImpGraphic);
+    return( *mpImpGraphic != *rGraphic.mpImpGraphic );
 }
 
 bool Graphic::operator!() const
 {
-    return (GraphicType::NONE == mxImpGraphic->ImplGetType());
+    return( GRAPHIC_NONE == mpImpGraphic->ImplGetType() );
 }
 
 void Graphic::Clear()
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplClear();
+    mpImpGraphic->ImplClear();
 }
 
 GraphicType Graphic::GetType() const
 {
-    return mxImpGraphic->ImplGetType();
+    return mpImpGraphic->ImplGetType();
 }
 
 void Graphic::SetDefaultType()
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplSetDefaultType();
+    mpImpGraphic->ImplSetDefaultType();
 }
 
 bool Graphic::IsSupportedGraphic() const
 {
-    return mxImpGraphic->ImplIsSupportedGraphic();
+    return mpImpGraphic->ImplIsSupportedGraphic();
 }
 
 bool Graphic::IsTransparent() const
 {
-    return mxImpGraphic->ImplIsTransparent();
+    return mpImpGraphic->ImplIsTransparent();
 }
 
 bool Graphic::IsAlpha() const
 {
-    return mxImpGraphic->ImplIsAlpha();
+    return mpImpGraphic->ImplIsAlpha();
 }
 
 bool Graphic::IsAnimated() const
 {
-    return mxImpGraphic->ImplIsAnimated();
+    return mpImpGraphic->ImplIsAnimated();
 }
 
 bool Graphic::IsEPS() const
 {
-    return mxImpGraphic->ImplIsEPS();
+    return mpImpGraphic->ImplIsEPS();
 }
 
 Bitmap Graphic::GetBitmap(const GraphicConversionParameters& rParameters) const
 {
-    return mxImpGraphic->ImplGetBitmap(rParameters);
+    return mpImpGraphic->ImplGetBitmap(rParameters);
 }
 
 BitmapEx Graphic::GetBitmapEx(const GraphicConversionParameters& rParameters) const
 {
-    return mxImpGraphic->ImplGetBitmapEx(rParameters);
+    return mpImpGraphic->ImplGetBitmapEx(rParameters);
 }
 
 Animation Graphic::GetAnimation() const
 {
-    return mxImpGraphic->ImplGetAnimation();
+    return mpImpGraphic->ImplGetAnimation();
 }
 
 const GDIMetaFile& Graphic::GetGDIMetaFile() const
 {
-    return mxImpGraphic->ImplGetGDIMetaFile();
+    return mpImpGraphic->ImplGetGDIMetaFile();
 }
 
 uno::Reference< graphic::XGraphic > Graphic::GetXGraphic() const
 {
     uno::Reference< graphic::XGraphic > xRet;
 
-    if( GetType() != GraphicType::NONE )
+    if( GetType() != GRAPHIC_NONE )
     {
         uno::Reference < uno::XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
         uno::Reference< graphic::XGraphicProvider > xProv( graphic::GraphicProvider::create( xContext ) );
@@ -375,24 +387,24 @@ uno::Reference< graphic::XGraphic > Graphic::GetXGraphic() const
 
 Size Graphic::GetPrefSize() const
 {
-    return mxImpGraphic->ImplGetPrefSize();
+    return mpImpGraphic->ImplGetPrefSize();
 }
 
 void Graphic::SetPrefSize( const Size& rPrefSize )
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplSetPrefSize( rPrefSize );
+    mpImpGraphic->ImplSetPrefSize( rPrefSize );
 }
 
 MapMode Graphic::GetPrefMapMode() const
 {
-    return mxImpGraphic->ImplGetPrefMapMode();
+    return mpImpGraphic->ImplGetPrefMapMode();
 }
 
 void Graphic::SetPrefMapMode( const MapMode& rPrefMapMode )
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplSetPrefMapMode( rPrefMapMode );
+    mpImpGraphic->ImplSetPrefMapMode( rPrefMapMode );
 }
 
 basegfx::B2DSize Graphic::GetPPI() const
@@ -421,8 +433,8 @@ Size Graphic::GetSizePixel( const OutputDevice* pRefDevice ) const
 {
     Size aRet;
 
-    if( GraphicType::Bitmap == mxImpGraphic->ImplGetType() )
-        aRet = mxImpGraphic->ImplGetBitmapEx(GraphicConversionParameters()).GetSizePixel();
+    if( GRAPHIC_BITMAP == mpImpGraphic->ImplGetType() )
+        aRet = mpImpGraphic->ImplGetBitmapEx(GraphicConversionParameters()).GetSizePixel();
     else
         aRet = ( pRefDevice ? pRefDevice : Application::GetDefaultDevice() )->LogicToPixel( GetPrefSize(), GetPrefMapMode() );
 
@@ -431,21 +443,21 @@ Size Graphic::GetSizePixel( const OutputDevice* pRefDevice ) const
 
 sal_uLong Graphic::GetSizeBytes() const
 {
-    return mxImpGraphic->ImplGetSizeBytes();
+    return mpImpGraphic->ImplGetSizeBytes();
 }
 
 void Graphic::Draw( OutputDevice* pOutDev, const Point& rDestPt ) const
 {
-    mxImpGraphic->ImplDraw( pOutDev, rDestPt );
+    mpImpGraphic->ImplDraw( pOutDev, rDestPt );
 }
 
 void Graphic::Draw( OutputDevice* pOutDev,
                     const Point& rDestPt, const Size& rDestSz ) const
 {
-    if( GraphicType::Default == mxImpGraphic->ImplGetType() )
+    if( GRAPHIC_DEFAULT == mpImpGraphic->ImplGetType() )
         ImplDrawDefault( pOutDev, nullptr, nullptr, nullptr, nullptr, rDestPt, rDestSz );
     else
-        mxImpGraphic->ImplDraw( pOutDev, rDestPt, rDestSz );
+        mpImpGraphic->ImplDraw( pOutDev, rDestPt, rDestSz );
 }
 
 void Graphic::DrawEx( OutputDevice* pOutDev, const OUString& rText,
@@ -460,136 +472,125 @@ void Graphic::StartAnimation( OutputDevice* pOutDev, const Point& rDestPt,
                               OutputDevice* pFirstFrameOutDev )
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplStartAnimation( pOutDev, rDestPt, rDestSz, nExtraData, pFirstFrameOutDev );
+    mpImpGraphic->ImplStartAnimation( pOutDev, rDestPt, rDestSz, nExtraData, pFirstFrameOutDev );
 }
 
 void Graphic::StopAnimation( OutputDevice* pOutDev, long nExtraData )
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplStopAnimation( pOutDev, nExtraData );
+    mpImpGraphic->ImplStopAnimation( pOutDev, nExtraData );
 }
 
 void Graphic::SetAnimationNotifyHdl( const Link<Animation*,void>& rLink )
 {
-    mxImpGraphic->ImplSetAnimationNotifyHdl( rLink );
+    mpImpGraphic->ImplSetAnimationNotifyHdl( rLink );
 }
 
 Link<Animation*,void> Graphic::GetAnimationNotifyHdl() const
 {
-    return mxImpGraphic->ImplGetAnimationNotifyHdl();
+    return mpImpGraphic->ImplGetAnimationNotifyHdl();
 }
 
 sal_uLong Graphic::GetAnimationLoopCount() const
 {
-    return mxImpGraphic->ImplGetAnimationLoopCount();
+    return mpImpGraphic->ImplGetAnimationLoopCount();
 }
 
-std::shared_ptr<GraphicReader>& Graphic::GetContext()
+GraphicReader* Graphic::GetContext()
 {
-    return mxImpGraphic->ImplGetContext();
+    return mpImpGraphic->ImplGetContext();
 }
 
-void Graphic::SetContext( const std::shared_ptr<GraphicReader> &pReader )
+void Graphic::SetContext( GraphicReader* pReader )
 {
-    mxImpGraphic->ImplSetContext( pReader );
+    mpImpGraphic->ImplSetContext( pReader );
 }
 
 void Graphic::SetDummyContext( bool value )
 {
-    mxImpGraphic->ImplSetDummyContext( value );
+    mpImpGraphic->ImplSetDummyContext( value );
 }
 
 bool Graphic::IsDummyContext()
 {
-    return mxImpGraphic->ImplIsDummyContext();
+    return mpImpGraphic->ImplIsDummyContext();
 }
 
 bool Graphic::SwapOut()
 {
     ImplTestRefCount();
-    return mxImpGraphic->ImplSwapOut();
+    return mpImpGraphic->ImplSwapOut();
 }
 
 void Graphic::SwapOutAsLink()
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplSwapOutAsLink();
+    mpImpGraphic->ImplSwapOutAsLink();
 }
 
 bool Graphic::SwapOut( SvStream* pOStream )
 {
     ImplTestRefCount();
-    return mxImpGraphic->ImplSwapOut( pOStream );
+    return mpImpGraphic->ImplSwapOut( pOStream );
 }
 
 bool Graphic::SwapIn()
 {
     ImplTestRefCount();
-    return mxImpGraphic->ImplSwapIn();
+    return mpImpGraphic->ImplSwapIn();
 }
 
 bool Graphic::SwapIn( SvStream* pStrm )
 {
     ImplTestRefCount();
-    return mxImpGraphic->ImplSwapIn( pStrm );
+    return mpImpGraphic->ImplSwapIn( pStrm );
 }
 
 bool Graphic::IsSwapOut() const
 {
-    return mxImpGraphic->ImplIsSwapOut();
+    return mpImpGraphic->ImplIsSwapOut();
 }
 
 void Graphic::SetLink( const GfxLink& rGfxLink )
 {
     ImplTestRefCount();
-    mxImpGraphic->ImplSetLink( rGfxLink );
+    mpImpGraphic->ImplSetLink( rGfxLink );
 }
 
 GfxLink Graphic::GetLink() const
 {
-    return mxImpGraphic->ImplGetLink();
+    return mpImpGraphic->ImplGetLink();
 }
 
 bool Graphic::IsLink() const
 {
-    return mxImpGraphic->ImplIsLink();
+    return mpImpGraphic->ImplIsLink();
 }
 
 BitmapChecksum Graphic::GetChecksum() const
 {
-    return mxImpGraphic->ImplGetChecksum();
+    return mpImpGraphic->ImplGetChecksum();
 }
 
 bool Graphic::ExportNative( SvStream& rOStream ) const
 {
-    return mxImpGraphic->ImplExportNative( rOStream );
+    return mpImpGraphic->ImplExportNative( rOStream );
 }
 
-void ReadGraphic(SvStream& rIStream, Graphic& rGraphic)
+SvStream& ReadGraphic( SvStream& rIStream, Graphic& rGraphic )
 {
     rGraphic.ImplTestRefCount();
-    ReadImpGraphic(rIStream, *rGraphic.mxImpGraphic);
+    return ReadImpGraphic( rIStream, *rGraphic.mpImpGraphic );
 }
 
-void WriteGraphic( SvStream& rOStream, const Graphic& rGraphic )
+SvStream& WriteGraphic( SvStream& rOStream, const Graphic& rGraphic )
 {
-    WriteImpGraphic(rOStream, *rGraphic.mxImpGraphic);
+    return WriteImpGraphic( rOStream, *rGraphic.mpImpGraphic );
 }
 
 const SvgDataPtr& Graphic::getSvgData() const
 {
-    return mxImpGraphic->getSvgData();
-}
-
-void Graphic::setPdfData(const uno::Sequence<sal_Int8>& rPdfData)
-{
-    ImplTestRefCount();
-    mxImpGraphic->maPdfData = rPdfData;
-}
-
-const uno::Sequence<sal_Int8>& Graphic::getPdfData() const
-{
-    return mxImpGraphic->maPdfData;
+    return mpImpGraphic->getSvgData();
 }
 
 namespace {

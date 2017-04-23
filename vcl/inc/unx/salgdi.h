@@ -34,7 +34,6 @@
 #include "salgeom.hxx"
 #include "sallayout.hxx"
 #include "vclpluginapi.h"
-#include "ControlCacheKey.hxx"
 
 #include <deque>
 #include <memory>
@@ -53,8 +52,9 @@ class X11SalVirtualDevice;
 class X11SalGraphicsImpl;
 class X11OpenGLSalGraphicsImpl;
 class X11OpenGLSalVirtualDevice;
-class FreetypeFont;
+class ServerFont;
 class ImplLayoutArgs;
+class ServerFontLayout;
 class PhysicalFontCollection;
 class PhysicalFontFace;
 class SalGraphicsImpl;
@@ -66,16 +66,17 @@ namespace basegfx {
 
 class VCLPLUG_GEN_PUBLIC X11SalGraphics : public SalGraphics
 {
+    friend class ServerFontLayout;
     friend class X11SalGraphicsImpl;
     friend class X11OpenGLSalGraphicsImpl;
     friend class X11CairoTextRender;
 
 public:
                                     X11SalGraphics();
-    virtual                         ~X11SalGraphics() override;
+    virtual                         ~X11SalGraphics();
 
     void                            Init( SalFrame *pFrame, Drawable aDrawable, SalX11Screen nXScreen );
-    void                            Init( X11SalVirtualDevice *pVirtualDevice, SalColormap* pColormap = nullptr, bool bDeleteColormap = false );
+    void                            Init( X11SalVirtualDevice *pVirtualDevice, SalColormap* pColormap = NULL, bool bDeleteColormap = false );
     void                            Init( X11OpenGLSalVirtualDevice *pVirtualDevice );
     void                            DeInit();
 
@@ -84,11 +85,11 @@ public:
     inline  Display*                GetXDisplay() const;
     inline  const SalVisual&        GetVisual() const;
     SalGeometryProvider*            GetGeometryProvider() const;
-    Drawable                GetDrawable() const { return hDrawable_; }
+    inline  Drawable                GetDrawable() const { return hDrawable_; }
     void                            SetDrawable( Drawable d, SalX11Screen nXScreen );
     XRenderPictFormat*              GetXRenderFormat() const;
-    void                    SetXRenderFormat( XRenderPictFormat* pXRenderFormat ) { m_pXRenderFormat = pXRenderFormat; }
-    const SalColormap&      GetColormap() const { return *m_pColormap; }
+    inline  void                    SetXRenderFormat( XRenderPictFormat* pXRenderFormat ) { m_pXRenderFormat = pXRenderFormat; }
+    inline  const SalColormap&      GetColormap() const { return *m_pColormap; }
 
     using SalGraphics::GetPixel;
     inline  Pixel                   GetPixel( SalColor nSalColor ) const;
@@ -109,15 +110,15 @@ public:
 
     virtual void                    SetFillColor( SalColor nSalColor ) override;
 
-    virtual void                    SetXORMode( bool bSet ) override;
+    virtual void                    SetXORMode( bool bSet, bool ) override;
 
     virtual void                    SetROPLineColor( SalROPColor nROPColor ) override;
     virtual void                    SetROPFillColor( SalROPColor nROPColor ) override;
 
     virtual void                    SetTextColor( SalColor nSalColor ) override;
     virtual void                    SetFont( FontSelectPattern*, int nFallbackLevel ) override;
-    virtual void                    GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) override;
-    virtual const FontCharMapRef    GetFontCharMap() const override;
+    virtual void                    GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) override;
+    virtual const FontCharMapPtr    GetFontCharMap() const override;
     virtual bool                    GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const override;
     virtual void                    GetDevFontList( PhysicalFontCollection* ) override;
     virtual void                    ClearDevFontCache() override;
@@ -132,19 +133,28 @@ public:
                                         int nGlyphs,
                                         FontSubsetInfo& rInfo ) override;
 
-    virtual const void*             GetEmbedFontData(const PhysicalFontFace*, long* pDataLen) override;
+    virtual const Ucs2SIntMap*      GetFontEncodingVector( const PhysicalFontFace*, const Ucs2OStrMap** ppNonEncoded, std::set<sal_Unicode> const**) override;
+
+    virtual const void*             GetEmbedFontData(
+                                        const PhysicalFontFace*,
+                                        const sal_Ucs* pUnicodes,
+                                        sal_Int32* pWidths,
+                                        size_t nLen,
+                                        FontSubsetInfo& rInfo,
+                                        long* pDataLen ) override;
+
     virtual void                    FreeEmbedFontData( const void* pData, long nDataLen ) override;
 
     virtual void                    GetGlyphWidths(
                                         const PhysicalFontFace*,
                                         bool bVertical,
-                                        std::vector< sal_Int32 >& rWidths,
+                                        Int32Vector& rWidths,
                                         Ucs2UIntMap& rUnicodeEnc ) override;
 
-    virtual bool                    GetGlyphBoundRect(const GlyphItem&, tools::Rectangle&) override;
-    virtual bool                    GetGlyphOutline(const GlyphItem&, basegfx::B2DPolyPolygon&) override;
+    virtual bool                    GetGlyphBoundRect( sal_GlyphId nIndex, Rectangle& ) override;
+    virtual bool                    GetGlyphOutline( sal_GlyphId nIndex, basegfx::B2DPolyPolygon& ) override;
     virtual SalLayout*              GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) override;
-    virtual void                    DrawTextLayout( const CommonSalLayout& ) override;
+    virtual void                    DrawServerFontLayout( const ServerFontLayout& ) override;
 
     virtual bool                    supportsOperation( OutDevSupportType ) const override;
     virtual void                    drawPixel( long nX, long nY ) override;
@@ -175,18 +185,18 @@ public:
     virtual bool                    drawPolyLineBezier(
                                         sal_uInt32 nPoints,
                                         const SalPoint* pPtAry,
-                                        const PolyFlags* pFlgAry ) override;
+                                        const sal_uInt8* pFlgAry ) override;
 
     virtual bool                    drawPolygonBezier(
                                         sal_uInt32 nPoints,
                                         const SalPoint* pPtAry,
-                                        const PolyFlags* pFlgAry ) override;
+                                        const sal_uInt8* pFlgAry ) override;
 
     virtual bool                    drawPolyPolygonBezier(
                                         sal_uInt32 nPoly,
                                         const sal_uInt32* pPoints,
                                         const SalPoint* const* pPtAry,
-                                        const PolyFlags* const* pFlgAry ) override;
+                                        const sal_uInt8* const* pFlgAry ) override;
 #endif
 
     virtual void                    copyArea(
@@ -250,17 +260,12 @@ public:
                                         long nHeight, sal_uInt8 nTransparency ) override;
 
     virtual SystemGraphicsData      GetGraphicsData() const override;
-
-#if ENABLE_CAIRO_CANVAS
     virtual bool                    SupportsCairo() const override;
     virtual cairo::SurfaceSharedPtr CreateSurface(const cairo::CairoSurfaceSharedPtr& rSurface) const override;
     virtual cairo::SurfaceSharedPtr CreateSurface(const OutputDevice& rRefDevice, int x, int y, int width, int height) const override;
     virtual cairo::SurfaceSharedPtr CreateBitmapSurface(const OutputDevice& rRefDevice, const BitmapSystemData& rData, const Size& rSize) const override;
     virtual css::uno::Any           GetNativeSurfaceHandle(cairo::SurfaceSharedPtr& rSurface, const basegfx::B2ISize& rSize) const override;
     virtual SystemFontData          GetSysFontData( int nFallbackLevel ) const override;
-
-    void clipRegion(cairo_t* cr);
-#endif // ENABLE_CAIRO_CANVAS
 
     bool TryRenderCachedNativeControl(ControlCacheKey& aControlCacheKey,
                                       int nX, int nY);
@@ -303,7 +308,7 @@ public:
 
 protected:
     using SalGraphics::SetClipRegion;
-    void                            SetClipRegion( GC pGC, Region pXReg = nullptr ) const;
+    void                            SetClipRegion( GC pGC, Region pXReg = NULL ) const;
     bool                            GetDitherPixmap ( SalColor nSalColor );
 
     using SalGraphics::DrawBitmap;
@@ -323,12 +328,8 @@ protected:
     mutable XRenderPictFormat*      m_pXRenderFormat;
     XID                             m_aXRenderPicture;
 
+    Region                          pPaintRegion_;
     Region                          mpClipRegion;
-#if ENABLE_CAIRO_CANVAS
-    vcl::Region                     maClipRegion;
-    SalColor                        mnPenColor;
-    SalColor                        mnFillColor;
-#endif // ENABLE_CAIRO_CANVAS
 
     GC                              pFontGC_;       // Font attributes
     Pixel                           nTextPixel_;
@@ -339,7 +340,6 @@ protected:
     bool                            bPrinter_ : 1;      // is Printer
     bool                            bVirDev_ : 1;       // is VirDev
     bool                            bFontGC_ : 1;       // is Font GC valid
-    bool                            m_bOpenGL : 1;
 
 private:
     std::unique_ptr<SalGraphicsImpl> mxImpl;

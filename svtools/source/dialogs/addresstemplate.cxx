@@ -45,11 +45,11 @@
 #include <com/sun/star/sdbcx/XTablesSupplier.hpp>
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
+#include <svtools/localresaccess.hxx>
 #include <svl/filenotation.hxx>
 #include <tools/urlobj.hxx>
 #include <algorithm>
 #include <map>
-#include <array>
 
 
 namespace svt
@@ -249,6 +249,7 @@ namespace svt
 
     protected:
         css::uno::Any   getProperty(const OUString& _rLocalName) const;
+        css::uno::Any   getProperty(const sal_Char* _pLocalName) const;
 
         OUString        getStringProperty(const sal_Char* _pLocalName) const;
         OUString        getStringProperty(const OUString& _rLocalName) const;
@@ -257,6 +258,7 @@ namespace svt
 
     public:
         AssignmentPersistentData();
+        virtual ~AssignmentPersistentData();
 
         // IAssigmentData overridables
         virtual OUString getDatasourceName() const override;
@@ -287,13 +289,19 @@ void AssignmentPersistentData::ImplCommit()
 
 
     AssignmentPersistentData::AssignmentPersistentData()
-        :ConfigItem("Office.DataAccess/AddressBook")
+        :ConfigItem( OUString( "Office.DataAccess/AddressBook" ))
     {
         Sequence< OUString > aStoredNames = GetNodeNames("Fields");
         const OUString* pStoredNames = aStoredNames.getConstArray();
         for (sal_Int32 i=0; i<aStoredNames.getLength(); ++i, ++pStoredNames)
             m_aStoredFields.insert(*pStoredNames);
     }
+
+
+    AssignmentPersistentData::~AssignmentPersistentData()
+    {
+    }
+
 
     bool AssignmentPersistentData::hasFieldAssignment(const OUString& _rLogicalName)
     {
@@ -312,6 +320,12 @@ void AssignmentPersistentData::ImplCommit()
             sAssignment = getStringProperty(sFieldPath);
         }
         return sAssignment;
+    }
+
+
+    Any AssignmentPersistentData::getProperty(const sal_Char* _pLocalName) const
+    {
+        return getProperty(OUString::createFromAscii(_pLocalName));
     }
 
 
@@ -335,7 +349,7 @@ void AssignmentPersistentData::ImplCommit()
     OUString AssignmentPersistentData::getStringProperty(const sal_Char* _pLocalName) const
     {
         OUString sReturn;
-        getProperty(OUString::createFromAscii(_pLocalName)) >>= sReturn;
+        getProperty( _pLocalName ) >>= sReturn;
         return sReturn;
     }
 
@@ -424,8 +438,8 @@ void AssignmentPersistentData::ImplCommit()
 
     struct AddressBookSourceDialogData
     {
-        std::array<VclPtr<FixedText>, FIELD_PAIRS_VISIBLE*2> pFieldLabels;
-        std::array<VclPtr<ListBox>, FIELD_PAIRS_VISIBLE*2> pFields;
+        VclPtr<FixedText>      pFieldLabels[FIELD_PAIRS_VISIBLE * 2];
+        VclPtr<ListBox>        pFields[FIELD_PAIRS_VISIBLE * 2];
 
         /// when working transient, we need the data source
         Reference< XDataSource >
@@ -446,31 +460,36 @@ void AssignmentPersistentData::ImplCommit()
         /// the logical field names
         std::vector<OUString>     aLogicalFieldNames;
 
-        std::unique_ptr<IAssigmentData> pConfigData;
+        IAssigmentData* pConfigData;
 
 
         AddressBookSourceDialogData( )
-            :pFieldLabels{{nullptr}}
-            ,pFields{{nullptr}}
-            ,nFieldScrollPos(0)
+            :nFieldScrollPos(0)
             ,nLastVisibleListIndex(0)
             ,bOddFieldNumber(false)
             ,bWorkingPersistent( true )
             ,pConfigData( new AssignmentPersistentData )
         {
+            memset(pFieldLabels, 0, sizeof(pFieldLabels));
+            memset(pFields, 0, sizeof(pFields));
         }
 
         AddressBookSourceDialogData( const Reference< XDataSource >& _rxTransientDS, const OUString& _rDataSourceName,
             const OUString& _rTableName, const Sequence< AliasProgrammaticPair >& _rFields )
-            :pFieldLabels{{nullptr}}
-            ,pFields{{nullptr}}
-            ,m_xTransientDataSource( _rxTransientDS )
+            :m_xTransientDataSource( _rxTransientDS )
             ,nFieldScrollPos(0)
             ,nLastVisibleListIndex(0)
             ,bOddFieldNumber(false)
             ,bWorkingPersistent( false )
             ,pConfigData( new AssigmentTransientData( _rDataSourceName, _rTableName, _rFields ) )
         {
+            memset(pFieldLabels, 0, sizeof(pFieldLabels));
+            memset(pFields, 0, sizeof(pFields));
+        }
+
+        ~AddressBookSourceDialogData()
+        {
+            delete pConfigData;
         }
 
         // Copy assignment is forbidden and not implemented.
@@ -681,7 +700,7 @@ void AssignmentPersistentData::ImplCommit()
         INetURLObject aURL( sName );
         if( aURL.GetProtocol() != INetProtocol::NotValid )
         {
-            OFileNotation aFileNotation( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+            OFileNotation aFileNotation( aURL.GetMainURL( INetURLObject::NO_DECODE ) );
             sName = aFileNotation.get(OFileNotation::N_SYSTEM);
         }
 
@@ -710,7 +729,7 @@ void AssignmentPersistentData::ImplCommit()
 
     void AddressBookSourceDialog::dispose()
     {
-        m_pImpl.reset();
+        delete m_pImpl;
         m_pDatasource.clear();
         m_pAdministrateDatasources.clear();
         m_pTable.clear();
@@ -758,7 +777,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK(AddressBookSourceDialog, OnFieldScroll, ScrollBar*, _pScrollBar, void)
+    IMPL_LINK_TYPED(AddressBookSourceDialog, OnFieldScroll, ScrollBar*, _pScrollBar, void)
     {
         implScrollFields( _pScrollBar->GetThumbPos(), true, true );
     }
@@ -953,7 +972,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK(AddressBookSourceDialog, OnFieldSelect, ListBox&, _rListbox, void)
+    IMPL_LINK_TYPED(AddressBookSourceDialog, OnFieldSelect, ListBox&, _rListbox, void)
     {
         // the index of the affected list box in our array
         sal_IntPtr nListBoxIndex = reinterpret_cast<sal_IntPtr>(_rListbox.GetEntryData(0));
@@ -978,14 +997,14 @@ void AssignmentPersistentData::ImplCommit()
 
         // loop through our field control rows and do some adjustments
         // for the new texts
-        auto pLeftLabelControl = m_pImpl->pFieldLabels.begin();
-        auto pRightLabelControl = pLeftLabelControl+1;
+        VclPtr<FixedText>* pLeftLabelControl = m_pImpl->pFieldLabels;
+        VclPtr<FixedText>* pRightLabelControl = pLeftLabelControl + 1;
         auto pLeftColumnLabel = m_pImpl->aFieldLabels.cbegin() + 2 * _nPos;
         auto pRightColumnLabel = pLeftColumnLabel + 1;
 
         // for the focus movement and the selection scroll
-        auto pLeftListControl = m_pImpl->pFields.begin();
-        auto pRightListControl = pLeftListControl + 1;
+        VclPtr<ListBox>* pLeftListControl = m_pImpl->pFields;
+        VclPtr<ListBox>* pRightListControl = pLeftListControl + 1;
 
         // for the focus movement
         sal_Int32 nOldFocusRow = -1;
@@ -1078,7 +1097,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG(AddressBookSourceDialog, OnDelayedInitialize, void*, void)
+    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnDelayedInitialize, void*, void)
     {
         // load the initial data from the configuration
         loadConfiguration();
@@ -1091,7 +1110,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK(AddressBookSourceDialog, OnComboSelect, ComboBox&, _rBox, void)
+    IMPL_LINK_TYPED(AddressBookSourceDialog, OnComboSelect, ComboBox&, _rBox, void)
     {
         if (&_rBox == m_pDatasource)
             resetTables();
@@ -1100,14 +1119,14 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_STATIC_LINK(
+    IMPL_STATIC_LINK_TYPED(
         AddressBookSourceDialog, OnComboGetFocus, Control&, _rBox, void)
     {
         static_cast<ComboBox&>(_rBox).SaveValue();
     }
 
 
-    IMPL_LINK(AddressBookSourceDialog, OnComboLoseFocus, Control&, rControl, void)
+    IMPL_LINK_TYPED(AddressBookSourceDialog, OnComboLoseFocus, Control&, rControl, void)
     {
         ComboBox* _pBox = static_cast<ComboBox*>(&rControl);
         if ( _pBox->IsValueChangedFromSaved() )
@@ -1120,7 +1139,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG(AddressBookSourceDialog, OnOkClicked, Button*, void)
+    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnOkClicked, Button*, void)
     {
         OUString sSelectedDS = lcl_getSelectedDataSource(*m_pDatasource);
         if ( m_pImpl->bWorkingPersistent )
@@ -1146,7 +1165,7 @@ void AssignmentPersistentData::ImplCommit()
     }
 
 
-    IMPL_LINK_NOARG(AddressBookSourceDialog, OnAdministrateDatasources, Button*, void)
+    IMPL_LINK_NOARG_TYPED(AddressBookSourceDialog, OnAdministrateDatasources, Button*, void)
     {
         // create the dialog object
         Reference< XExecutableDialog > xAdminDialog;
@@ -1175,11 +1194,12 @@ void AssignmentPersistentData::ImplCommit()
                     INetURLObject aURL( sName );
                     if( aURL.GetProtocol() != INetProtocol::NotValid )
                     {
-                        OFileNotation aFileNotation( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+                        OFileNotation aFileNotation( aURL.GetMainURL( INetURLObject::NO_DECODE ) );
                         sName = aFileNotation.get(OFileNotation::N_SYSTEM);
                     }
                     m_pDatasource->InsertEntry(sName);
-                    m_pImpl->pConfigData.reset( new AssignmentPersistentData );
+                    delete m_pImpl->pConfigData;
+                    m_pImpl->pConfigData = new AssignmentPersistentData();
                     loadConfiguration();
                     resetTables();
                     // will reset the fields implicitly

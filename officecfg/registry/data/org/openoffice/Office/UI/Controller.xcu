@@ -347,98 +347,6 @@
           <value>anchor</value>
         </prop>
       </node>
-      <node oor:name="c29" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:Notebookbar</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.NotebookbarMenuController</value>
-        </prop>
-      </node>
-      <node oor:name="c30" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:ColumnOperations</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sheet.SpreadsheetDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ResourceMenuController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>column_operations</value>
-        </prop>
-      </node>
-      <node oor:name="c31" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:RowOperations</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sheet.SpreadsheetDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ResourceMenuController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>row_operations</value>
-        </prop>
-      </node>
-      <node oor:name="c32" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:ToolbarMode</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ToolbarModeMenuController</value>
-        </prop>
-      </node>
-      <node oor:name="c33" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:DBNewMenu</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sdb.OfficeDatabaseDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ResourceMenuController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>new</value>
-        </prop>
-      </node>
-      <node oor:name="c34" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:DBRefreshMenu</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ResourceMenuController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>refreshdata</value>
-        </prop>
-      </node>
-      <node oor:name="c35" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:DBPreview</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sdb.OfficeDatabaseDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.ResourceMenuController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>preview</value>
-        </prop>
-      </node>
     </node>
     <node oor:name="ToolBar">
       <node oor:name="ZoomToolBox" oor:op="replace">
@@ -715,10 +623,7 @@
           <value>com.sun.star.sdb.OfficeDatabaseDocument</value>
         </prop>
         <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.GenericPopupToolbarController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>.uno:DBNewMenu;1</value>
+          <value>com.sun.star.sdb.ApplicationToolboxController</value>
         </prop>
       </node>
       <node oor:name="org.libreoffice.comp.dbu.LimitBoxController" oor:op="replace">
@@ -743,32 +648,15 @@
           <value>org.libreoffice.chart2.Chart2ToolboxController</value>
         </prop>
       </node>
-      <node oor:name="TableRefreshControl" oor:op="replace">
+      <node oor:name="c2" oor:op="replace">
         <prop oor:name="Command">
           <value>.uno:Refresh</value>
         </prop>
         <prop oor:name="Module">
-          <value>com.sun.star.sdb.TableDataView</value>
+          <value>com.sun.star.sdb.OfficeDatabaseDocument</value>
         </prop>
         <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.GenericPopupToolbarController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>.uno:DBRefreshMenu;1</value>
-        </prop>
-      </node>
-      <node oor:name="DataBrowserRefreshControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:Refresh</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sdb.DataSourceBrowser</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.GenericPopupToolbarController</value>
-        </prop>
-        <prop oor:name="Value">
-          <value>.uno:DBRefreshMenu;1</value>
+          <value>com.sun.star.sdb.ApplicationToolboxController</value>
         </prop>
       </node>
       <node oor:name="c13" oor:op="replace">
@@ -1144,39 +1032,6 @@
           <value>com.sun.star.comp.sfx2.ClassificationCategoriesController</value>
         </prop>
       </node>
-      <node oor:name="LineEndToolBoxControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:LineEndStyle</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.svx.LineEndToolBoxControl</value>
-        </prop>
-      </node>
-      <node oor:name="BorderStyleToolBoxControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:SetBorderStyle</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.svx.FrameToolBoxControl</value>
-        </prop>
-      </node>
-      <node oor:name="BorderLineStyleToolBoxControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:LineStyle</value>
-        </prop>
-        <prop oor:name="Module">
-          <value/>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.svx.FrameToolBoxControl</value>
-        </prop>
-      </node>
       <node oor:name="c4" oor:op="replace" install:module="reportbuilder">
         <prop oor:name="Command">
           <value>.uno:FontColor</value>
@@ -1210,15 +1065,15 @@
           <value>com.sun.star.report.ReportToolboxController</value>
         </prop>
       </node>
-      <node oor:name="FontNameToolBox" oor:op="replace">
+      <node oor:name="c14" oor:op="replace" install:module="reportbuilder">
         <prop oor:name="Command">
           <value>.uno:CharFontName</value>
         </prop>
         <prop oor:name="Module">
-          <value/>
+          <value>com.sun.star.report.ReportDefinition</value>
         </prop>
         <prop oor:name="Controller">
-          <value>com.sun.star.comp.svx.FontNameToolBoxControl</value>
+          <value>com.sun.star.report.ReportToolboxController</value>
         </prop>
       </node>
       <node oor:name="OpenToolbarController" oor:op="replace">
@@ -1357,28 +1212,6 @@
       <node oor:name="ConditionalFormatControl" oor:op="replace">
         <prop oor:name="Command">
           <value>.uno:ConditionalFormatMenu</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sheet.SpreadsheetDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.GenericPopupToolbarController</value>
-        </prop>
-      </node>
-      <node oor:name="ColumnOperationsControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:ColumnOperations</value>
-        </prop>
-        <prop oor:name="Module">
-          <value>com.sun.star.sheet.SpreadsheetDocument</value>
-        </prop>
-        <prop oor:name="Controller">
-          <value>com.sun.star.comp.framework.GenericPopupToolbarController</value>
-        </prop>
-      </node>
-      <node oor:name="RowOperationsControl" oor:op="replace">
-        <prop oor:name="Command">
-          <value>.uno:RowOperations</value>
         </prop>
         <prop oor:name="Module">
           <value>com.sun.star.sheet.SpreadsheetDocument</value>

@@ -9,6 +9,8 @@
 #
 #*************************************************************************
 
+include $(SRCDIR)/sw/ooxmlexport_setup.mk
+
 # empty second argument (i.e. no 1)
 $(eval $(call sw_ooxmlexport_test,))
 

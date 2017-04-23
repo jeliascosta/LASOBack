@@ -70,10 +70,10 @@
 #include "xfilter/xfstylemanager.hxx"
 #include "xfilter/xflist.hxx"
 #include "lwpglobalmgr.hxx"
-#include "xfilter/xflistitem.hxx"
 
 LwpBulletStyleMgr::LwpBulletStyleMgr()
     : m_pFoundry(nullptr)
+    , m_pBulletList(nullptr)
     , m_bContinue(true)
     , m_bIsBulletSkipped(false)
 {
@@ -81,6 +81,11 @@ LwpBulletStyleMgr::LwpBulletStyleMgr()
 
 LwpBulletStyleMgr::~LwpBulletStyleMgr()
 {
+    if (m_pBulletList)
+    {
+        delete m_pBulletList;
+    }
+
     m_vIDsPairList.clear();
     m_vStyleNameList.clear();
 }
@@ -243,6 +248,7 @@ OUString LwpBulletStyleMgr::RegisterBulletStyle(LwpPara* pPara, LwpBulletOverrid
 
 }
 
+#include "xfilter/xflistitem.hxx"
 //Create nested XFList and XFItems and then add it to XFContentContainer(pCont)
 //Return the inner XFItem created.
 XFContentContainer* LwpBulletStyleMgr::AddBulletList(

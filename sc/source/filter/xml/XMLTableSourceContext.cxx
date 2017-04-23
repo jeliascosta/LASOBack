@@ -35,7 +35,7 @@ ScXMLTableSourceContext::ScXMLTableSourceContext( ScXMLImport& rImport,
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     sLink(),
     sTableName(),
     sFilterName(),

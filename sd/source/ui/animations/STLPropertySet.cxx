@@ -47,7 +47,7 @@ void STLPropertySet::setPropertyValue( sal_Int32 nHandle, const Any& rValue )
     PropertyMapIter aIter;
     if( findProperty( nHandle, aIter ) )
     {
-        (*aIter).second.mnState = STLPropertyState::Direct;
+        (*aIter).second.mnState = STLPropertyState_DIRECT;
         (*aIter).second.maValue = rValue;
     }
     else
@@ -72,7 +72,7 @@ Any STLPropertySet::getPropertyValue( sal_Int32 nHandle ) const
     }
 }
 
-STLPropertyState STLPropertySet::getPropertyState( sal_Int32 nHandle ) const
+sal_Int32 STLPropertySet::getPropertyState( sal_Int32 nHandle ) const
 {
     PropertyMapConstIter aIter;
     if( findProperty( nHandle, aIter ) )
@@ -82,11 +82,11 @@ STLPropertyState STLPropertySet::getPropertyState( sal_Int32 nHandle ) const
     else
     {
         OSL_FAIL( "sd::STLPropertySet::setPropertyState(), unknown property!" );
-        return STLPropertyState::Ambiguous;
+        return STLPropertyState_AMBIGUOUS;
     }
 }
 
-void STLPropertySet::setPropertyState( sal_Int32 nHandle, STLPropertyState nState )
+void STLPropertySet::setPropertyState( sal_Int32 nHandle, sal_Int32 nState )
 {
     PropertyMapIter aIter;
     if( findProperty( nHandle, aIter ) )

@@ -42,7 +42,7 @@ void UndoSort::Execute( bool bUndo )
     sc::ReorderParam aParam = maParam;
     if (bUndo)
         aParam.reverse();
-    rDoc.Reorder(aParam);
+    rDoc.Reorder(aParam, nullptr);
 
     if (maParam.mbHasHeaders)
     {
@@ -66,9 +66,9 @@ void UndoSort::Execute( bool bUndo )
 
     rDoc.SetDirty(maParam.maSortRange, true);
     if (!aParam.mbUpdateRefs)
-        rDoc.BroadcastCells(aParam.maSortRange, SfxHintId::ScDataChanged);
+        rDoc.BroadcastCells(aParam.maSortRange, SC_HINT_DATACHANGED);
 
-    pDocShell->PostPaint(maParam.maSortRange, PaintPartFlags::Grid);
+    pDocShell->PostPaint(maParam.maSortRange, PAINT_GRID);
     pDocShell->PostDataChanged();
 }
 

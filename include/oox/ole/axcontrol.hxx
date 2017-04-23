@@ -173,10 +173,11 @@ enum ApiControlType
 
 
 /** Specifies how a form control supports transparent background. */
-enum class ApiTransparencyMode
+enum ApiTransparencyMode
 {
-    NotSupported,      ///< Control does not support transparency.
-    Void,              ///< Transparency is enabled by missing fill color.
+    API_TRANSPARENCY_NOTSUPPORTED,      ///< Control does not support transparency.
+    API_TRANSPARENCY_VOID,              ///< Transparency is enabled by missing fill color.
+    API_TRANSPARENCY_PAINTTRANSPARENT   ///< Transparency is enabled by the 'PaintTransparent' property.
 };
 
 /** Specifies how a form control supports the DefaultState property. */
@@ -191,14 +192,14 @@ enum ApiDefaultStateMode
 /** A base class with useful helper functions for something that is able to
     convert ActiveX and ComCtl form controls.
  */
-class OOX_DLLPUBLIC ControlConverter final
+class OOX_DLLPUBLIC ControlConverter
 {
 public:
     explicit            ControlConverter(
                             const css::uno::Reference< css::frame::XModel >& rxDocModel,
                             const GraphicHelper& rGraphicHelper,
                             bool bDefaultColorBgr = true );
-                        ~ControlConverter();
+    virtual             ~ControlConverter();
 
     // Generic conversion -----------------------------------------------------
 
@@ -398,7 +399,8 @@ class ComCtlModelBase : public ControlModelBase
 {
 public:
     explicit            ComCtlModelBase(
-                            sal_uInt32 nDataPartId5, sal_uInt32 nDataPartId6, sal_uInt16 nVersion );
+                            sal_uInt32 nDataPartId5, sal_uInt32 nDataPartId6, sal_uInt16 nVersion,
+                            bool bCommonPart, bool bComplexPart );
 
     virtual bool        importBinaryModel( BinaryInputStream& rInStrm ) override;
     virtual void        convertProperties( PropertyMap& rPropMap, const ControlConverter& rConv ) const override;
@@ -904,6 +906,7 @@ class OOX_DLLPUBLIC EmbeddedControl
 {
 public:
     explicit            EmbeddedControl( const OUString& rName );
+    virtual             ~EmbeddedControl();
 
     /** Creates and returns the internal control model of the specified type. */
     template< typename ModelType >
@@ -968,7 +971,8 @@ public:
     explicit            EmbeddedForm(
                             const css::uno::Reference< css::frame::XModel >& rxDocModel,
                             const css::uno::Reference< css::drawing::XDrawPage >& rxDrawPage,
-                            const GraphicHelper& rGraphicHelper );
+                            const GraphicHelper& rGraphicHelper,
+                            bool bDefaultColorBgr = true );
 
     /** Converts the passed control and inserts the control model into the form.
         @return  The API control model, if conversion was successful. */
@@ -981,7 +985,7 @@ public:
 
 private:
     /** Creates the form that will hold the form controls. */
-    css::uno::Reference< css::container::XIndexContainer > const &
+    css::uno::Reference< css::container::XIndexContainer >
                         createXForm();
 
 private:

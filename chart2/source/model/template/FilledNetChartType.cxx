@@ -23,6 +23,7 @@
 #include "PolarCoordinateSystem.hxx"
 #include "Scaling.hxx"
 #include "servicenames_charttypes.hxx"
+#include "ContainerHelper.hxx"
 #include "AxisIndexDefines.hxx"
 #include <com/sun/star/chart2/AxisType.hpp>
 #include <cppuhelper/supportsservice.hxx>
@@ -50,32 +51,49 @@ FilledNetChartType::~FilledNetChartType()
 
 // ____ XCloneable ____
 uno::Reference< util::XCloneable > SAL_CALL FilledNetChartType::createClone()
+    throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< util::XCloneable >( new FilledNetChartType( *this ));
 }
 
 // ____ XChartType ____
 OUString SAL_CALL FilledNetChartType::getChartType()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(CHART2_SERVICE_NAME_CHARTTYPE_FILLED_NET);
 }
 
+uno::Sequence< OUString > FilledNetChartType::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aServices( 3 );
+    aServices[ 0 ] = CHART2_SERVICE_NAME_CHARTTYPE_FILLED_NET;
+    aServices[ 1 ] = "com.sun.star.chart2.ChartType";
+    aServices[ 2 ] = "com.sun.star.beans.PropertySet";
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL FilledNetChartType::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString FilledNetChartType::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart.FilledNetChartType");
 }
 
 sal_Bool SAL_CALL FilledNetChartType::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL FilledNetChartType::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        CHART2_SERVICE_NAME_CHARTTYPE_FILLED_NET,
-        "com.sun.star.chart2.ChartType",
-        "com.sun.star.beans.PropertySet" };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace chart

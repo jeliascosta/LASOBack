@@ -92,30 +92,30 @@ class Thesaurus :
 
 public:
     Thesaurus();
-    virtual ~Thesaurus() override;
+    virtual ~Thesaurus();
 
     // XSupportedLocales (for XThesaurus)
-    virtual Sequence< Locale > SAL_CALL getLocales() override;
-    virtual sal_Bool SAL_CALL hasLocale( const Locale& rLocale ) override;
+    virtual Sequence< Locale > SAL_CALL getLocales() throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasLocale( const Locale& rLocale ) throw(RuntimeException, std::exception) override;
 
     // XThesaurus
-    virtual Sequence< Reference < css::linguistic2::XMeaning > > SAL_CALL queryMeanings( const OUString& rTerm, const Locale& rLocale, const PropertyValues& rProperties ) override;
+    virtual Sequence< Reference < css::linguistic2::XMeaning > > SAL_CALL queryMeanings( const OUString& rTerm, const Locale& rLocale, const PropertyValues& rProperties ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
     // XServiceDisplayName
-    virtual OUString SAL_CALL getServiceDisplayName( const Locale& rLocale ) override;
+    virtual OUString SAL_CALL getServiceDisplayName( const Locale& rLocale ) throw(RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& rArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& rArguments ) throw(Exception, RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const Reference< XEventListener >& rxListener ) override;
-    virtual void SAL_CALL removeEventListener( const Reference< XEventListener >& rxListener ) override;
+    virtual void SAL_CALL dispose() throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const Reference< XEventListener >& rxListener ) throw(RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const Reference< XEventListener >& rxListener ) throw(RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) throw(RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(RuntimeException, std::exception) override;
 
     static inline OUString
         getImplementationName_Static() throw();

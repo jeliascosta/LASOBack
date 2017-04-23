@@ -75,19 +75,25 @@ XFRow::XFRow()
 
 XFRow::~XFRow()
 {
+    std::map<sal_Int32,XFCell*>::iterator it;
+    for( it=m_aCells.begin(); it!=m_aCells.end(); ++it )
+    {
+        XFCell *pCell = (*it).second;
+        delete pCell;
+    }
 }
 
-void XFRow::AddCell(rtl::Reference<XFCell>& rCell)
+void    XFRow::AddCell(XFCell *pCell)
 {
-    if (!rCell)
+    if( !pCell )
         return;
     sal_Int32 col = m_aCells.size()+1;
-    rCell->SetCol(col);
-    rCell->SetOwnerRow(this);
-    m_aCells[col] = rCell;
+    pCell->SetCol(col);
+    pCell->SetOwnerRow(this);
+    m_aCells[col]=pCell;
 }
 
-sal_Int32 XFRow::GetCellCount() const
+sal_Int32   XFRow::GetCellCount() const
 {
     return m_aCells.size();
 }
@@ -97,7 +103,7 @@ XFCell* XFRow::GetCell(sal_Int32 col) const
     if( m_aCells.find(col) == m_aCells.end() )
         return nullptr;
     else
-        return m_aCells.find(col)->second.get();
+        return m_aCells.find(col)->second;
 }
 
 void    XFRow::ToXml(IXFStream *pStrm)
@@ -112,11 +118,11 @@ void    XFRow::ToXml(IXFStream *pStrm)
         pAttrList->AddAttribute( "table:number-rows-repeated", OUString::number(m_nRepeat) );
     pStrm->StartElement( "table:table-row" );
 
-    auto it = m_aCells.begin();
+    std::map<sal_Int32,XFCell*>::iterator   it = m_aCells.begin();
     for( ; it!=m_aCells.end(); ++it )
     {
         int col = (*it).first;
-        XFCell *pCell = (*it).second.get();
+        XFCell  *pCell = (*it).second;
         if( !pCell )
             continue;
         if( col>lastCol+1 )

@@ -87,7 +87,7 @@ public:
 
     void StartDelayToScrollTimer ();
 
-    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle);
+    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle);
 
     /** is called when the current function should be aborted. <p>
         This is used when a function gets a KEY_ESCAPE but can also
@@ -117,11 +117,11 @@ protected:
         ::sd::View* pView,
         SdDrawDocument* pDoc,
         SfxRequest& rReq);
-    virtual ~FuPoor() override;
+    virtual ~FuPoor();
 
-    DECL_LINK( DelayHdl, Timer *, void );
+    DECL_LINK_TYPED( DelayHdl, Timer *, void );
 
-    static void ImpForceQuadratic(::tools::Rectangle& rRect);
+    static void ImpForceQuadratic(Rectangle& rRect);
 
     /** Switch to another layer.  The layer to switch to is specified by an
         offset relative to the active layer.  With respect to the layer bar
@@ -153,11 +153,11 @@ protected:
     VclPtr<Dialog>             pDialog;
 
     Timer               aScrollTimer;           ///< for auto-scrolling
-    DECL_LINK( ScrollHdl, Timer *, void );
+    DECL_LINK_TYPED( ScrollHdl, Timer *, void );
     void ForceScroll(const Point& aPixPos);
 
     Timer               aDragTimer;             ///< for Drag&Drop
-    DECL_LINK(DragHdl, Timer *, void);
+    DECL_LINK_TYPED(DragHdl, Timer *, void);
     bool            bIsInDragMode;
     Point               aMDPos;                 ///< position of MouseButtonDown
 

@@ -273,7 +273,7 @@ bool SwWW8ImplReader::ReadGrafFile(OUString& rFileName, Graphic*& rpGraphic,
     if (!bOk || pSt->GetError() || !aWMF.GetActionSize())
         return false;
 
-    if (m_pWwFib->m_envr != 1) // !MAC as creator
+    if (m_pWwFib->envr != 1) // !MAC as creator
     {
         rpGraphic = new Graphic( aWMF );
         return true;
@@ -288,8 +288,7 @@ bool SwWW8ImplReader::ReadGrafFile(OUString& rFileName, Graphic*& rpGraphic,
     if (nData > 0)
     {
         rpGraphic = new Graphic();
-        bOk = SwWW8ImplReader::GetPictGrafFromStream(*rpGraphic, *pSt);
-        if (!bOk)
+        if (!(bOk = SwWW8ImplReader::GetPictGrafFromStream(*rpGraphic, *pSt)))
             DELETEZ(rpGraphic);
     }
     return bOk; // Contains graphic
@@ -356,13 +355,13 @@ SwFlyFrameFormat* SwWW8ImplReader::MakeGrafNotInContent(const WW8PicDesc& rPD,
 
     // Vertical shift through line spacing
     sal_Int32 nNetHeight = nHeight + rPD.nCT + rPD.nCB;
-    if (m_xSFlyPara->nLineSpace && m_xSFlyPara->nLineSpace > nNetHeight)
-        m_xSFlyPara->nYPos =
-            (sal_uInt16)( m_xSFlyPara->nYPos + m_xSFlyPara->nLineSpace - nNetHeight );
+    if( m_pSFlyPara->nLineSpace && m_pSFlyPara->nLineSpace > nNetHeight )
+        m_pSFlyPara->nYPos =
+            (sal_uInt16)( m_pSFlyPara->nYPos + m_pSFlyPara->nLineSpace - nNetHeight );
 
-    WW8FlySet aFlySet(*this, m_xWFlyPara.get(), m_xSFlyPara.get(), true);
+    WW8FlySet aFlySet(*this, m_pWFlyPara, m_pSFlyPara, true);
 
-    SwFormatAnchor aAnchor(m_xSFlyPara->eAnchor);
+    SwFormatAnchor aAnchor(m_pSFlyPara->eAnchor);
     aAnchor.SetAnchor(m_pPaM->GetPoint());
     aFlySet.Put(aAnchor);
 
@@ -373,7 +372,7 @@ SwFlyFrameFormat* SwWW8ImplReader::MakeGrafNotInContent(const WW8PicDesc& rPD,
 
     // So the frames are generated when inserted in an existing doc:
     if (m_rDoc.getIDocumentLayoutAccess().GetCurrentViewShell() &&
-        (RndStdIds::FLY_AT_PARA == pFlyFormat->GetAnchor().GetAnchorId()))
+        (FLY_AT_PARA == pFlyFormat->GetAnchor().GetAnchorId()))
     {
         pFlyFormat->MakeFrames();
     }
@@ -401,8 +400,8 @@ SwFrameFormat* SwWW8ImplReader::MakeGrafInContent(const WW8_PIC& rPic,
 
     // Resize the frame to the size of the picture if graphic is inside a frame
     // (only if auto-width)
-    if (m_xSFlyPara)
-        m_xSFlyPara->BoxUpWidth( rPD.nWidth );
+    if( m_pSFlyPara )
+        m_pSFlyPara->BoxUpWidth( rPD.nWidth );
     return pFlyFormat;
 }
 
@@ -433,7 +432,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf1(WW8_PIC& rPic, SvStream* pSt,
         aGrfSet.Put( aCrop );
     }
 
-    if (m_xWFlyPara && m_xWFlyPara->bGrafApo)
+    if( m_pWFlyPara && m_pWFlyPara->bGrafApo )
         pRet = MakeGrafNotInContent(aPD,pGraph,aFileName,aGrfSet);
     else
         pRet = MakeGrafInContent(rPic,aPD,pGraph,aFileName,aGrfSet);
@@ -446,10 +445,10 @@ void SwWW8ImplReader::PicRead(SvStream *pDataStream, WW8_PIC *pPic,
 {
     //Only the first 0x2e bytes are the same between version 6/7 and 8+
     WW8_PIC_SHADOW aPicS;
-    pDataStream->ReadBytes( &aPicS, sizeof( aPicS ) );
+    pDataStream->Read( &aPicS, sizeof( aPicS ) );
     WW8PicShadowToReal( &aPicS, pPic );
     for (WW8_BRC & i : pPic->rgbrc)
-        pDataStream->ReadBytes(&i, bVer67 ? 2 : 4);
+        pDataStream->Read( &i, bVer67 ? 2 : 4);
     pDataStream->ReadInt16( pPic->dxaOrigin );
     pDataStream->ReadInt16( pPic->dyaOrigin );
     if (!bVer67)
@@ -458,11 +457,11 @@ void SwWW8ImplReader::PicRead(SvStream *pDataStream, WW8_PIC *pPic,
 
 namespace
 {
-    SwNodeType GetNodeType(SwFrameFormat &rSource)
+    sal_uInt8 GetNodeType(SwFrameFormat &rSource)
     {
         const SwNodeIndex* pNodeIndex = rSource.GetContent().GetContentIdx();
         if (!pNodeIndex)
-            return SwNodeType::NONE;
+            return 0;
         const SwNode& rCSttNd = pNodeIndex->GetNode();
         SwNodeRange aRg(rCSttNd, 1, *rCSttNd.EndOfSectionNode());
         return aRg.aStart.GetNode().GetNodeType();
@@ -497,7 +496,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
 
     // Sanity check is needed because for example check boxes in field results
     // contain a WMF-like struct
-    if (m_pDataStream->good() && (aPic.lcb >= 58))
+    if ((aPic.lcb >= 58) && !m_pDataStream->GetError())
     {
         if( m_pFlyFormatOfJustInsertedGraphic )
         {
@@ -511,7 +510,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
             // current PaM point is after the position if it is anchored in
             // content; because this anchor add a character into the textnode.
             // #i2806#
-            if (RndStdIds::FLY_AS_CHAR ==
+            if (FLY_AS_CHAR ==
                 m_pFlyFormatOfJustInsertedGraphic->GetAnchor().GetAnchorId() )
             {
                 aFlySet.ClearItem( RES_ANCHOR );
@@ -548,8 +547,8 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
                 m_pDataStream->SeekRel( nNameLen );
             }
 
-            tools::Rectangle aChildRect;
-            tools::Rectangle aClientRect( 0,0, aPD.nWidth,  aPD.nHeight);
+            Rectangle aChildRect;
+            Rectangle aClientRect( 0,0, aPD.nWidth,  aPD.nHeight);
             SvxMSDffImportData aData( aClientRect );
             pObject = m_pMSDffManager->ImportObj(*m_pDataStream, &aData, aClientRect, aChildRect );
             if (pObject)
@@ -583,17 +582,17 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
                         // object itself, no idea why it's this call (or even
                         // what the call actually does), but that's what
                         // ImportGraf() (called by ImportObj()) uses.
-                        pObject->SetSnapRect( tools::Rectangle( 0, 0, aPD.nWidth, aPD.nHeight ));
+                        pObject->SetSnapRect( Rectangle( 0, 0, aPD.nWidth, aPD.nHeight ));
                     }
 
                     // A graphic of this type in this location is always
                     // inline, and uses the pic in the same module as ww6
                     // graphics.
-                    if (m_xWFlyPara && m_xWFlyPara->bGrafApo)
+                    if (m_pWFlyPara && m_pWFlyPara->bGrafApo)
                     {
-                        WW8FlySet aFlySet(*this, m_xWFlyPara.get(), m_xSFlyPara.get(), true);
+                        WW8FlySet aFlySet(*this, m_pWFlyPara, m_pSFlyPara, true);
 
-                        SwFormatAnchor aAnchor(m_xSFlyPara->eAnchor);
+                        SwFormatAnchor aAnchor(m_pSFlyPara->eAnchor);
                         aAnchor.SetAnchor(m_pPaM->GetPoint());
                         aFlySet.Put(aAnchor);
 
@@ -608,7 +607,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
                     }
                     // Modified for i120716,for graf importing from MS Word 2003
                     // binary format, there is no border distance.
-                    tools::Rectangle aInnerDist(0,0,0,0);
+                    Rectangle aInnerDist(0,0,0,0);
                     MatchSdrItemsIntoFlySet( pObject, aAttrSet,
                         pRecord->eLineStyle, pRecord->eLineDashing,
                         pRecord->eShapeType, aInnerDist );
@@ -697,7 +696,7 @@ SwFrameFormat* SwWW8ImplReader::ImportGraf(SdrTextObj* pTextObj,
                     {
                         if (pOurNewObject != pObject)
                         {
-                            m_pMSDffManager->ExchangeInShapeOrder( pObject, 0,
+                            m_pMSDffManager->ExchangeInShapeOrder( pObject, 0, nullptr,
                                 pOurNewObject );
 
                             // delete and destroy old SdrGrafObj from page

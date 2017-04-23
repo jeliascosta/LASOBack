@@ -67,12 +67,15 @@ OConnection::OConnection(MysqlCDriver& _rDriver, sql::Driver * _cppDriver)
     ,m_rDriver(_rDriver)
     ,cppDriver(_cppDriver)
     ,m_bClosed(false)
+    ,m_bUseCatalog(false)
 {
+    OSL_TRACE("OConnection::OConnection");
     m_rDriver.acquire();
 }
 
 OConnection::~OConnection()
 {
+    OSL_TRACE("OConnection::~OConnection");
     if (!isClosed()) {
         close();
     }
@@ -82,11 +85,14 @@ OConnection::~OConnection()
 void SAL_CALL OConnection::release()
     throw()
 {
-    release_ChildImpl();
+    OSL_TRACE("OConnection::release");
+    relase_ChildImpl();
 }
 
 void OConnection::construct(const rtl::OUString& url, const Sequence< PropertyValue >& info)
+    throw(SQLException)
 {
+    OSL_TRACE("OConnection::construct");
     MutexGuard aGuard(m_aMutex);
 
     sal_Int32 nIndex;
@@ -173,6 +179,12 @@ void OConnection::construct(const rtl::OUString& url, const Sequence< PropertyVa
                 connProps["socket"] = pipe_str;
             }
 
+            OSL_TRACE("hostName=%s", host_str.c_str());
+            OSL_TRACE("port=%i", int(nPort));
+            OSL_TRACE("userName=%s", user_str.c_str());
+            OSL_TRACE("password=%s", pass_str.c_str());
+            OSL_TRACE("schema=%s", schema_str.c_str());
+
             m_settings.cppConnection.reset(cppDriver->connect(connProps));
         } catch (const sql::SQLException &e) {
             mysqlc_sdbc_driver::translateAndThrow(e, *this, getConnectionEncoding());
@@ -182,6 +194,7 @@ void OConnection::construct(const rtl::OUString& url, const Sequence< PropertyVa
     }
 
     m_settings.schema = aDbName;
+    OSL_TRACE("%s", rtl::OUStringToOString(m_settings.schema, getConnectionEncoding()).getStr());
 
     // Check if the server is 4.1 or above
     if (this->getMysqlVersion() < 40100) {
@@ -197,12 +210,13 @@ void OConnection::construct(const rtl::OUString& url, const Sequence< PropertyVa
     stmt->executeUpdate("SET NAMES utf8");
 }
 
-rtl::OUString OConnection::getImplementationName()
+rtl::OUString OConnection::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return rtl::OUString("com.sun.star.sdbc.drivers.mysqlc.OConnection");
 }
 
 css::uno::Sequence<rtl::OUString> OConnection::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence<rtl::OUString> s(1);
     s[0] = "com.sun.star.sdbc.Connection";
@@ -210,12 +224,15 @@ css::uno::Sequence<rtl::OUString> OConnection::getSupportedServiceNames()
 }
 
 sal_Bool OConnection::supportsService(rtl::OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Reference< XStatement > SAL_CALL OConnection::createStatement()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::createStatement");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -233,7 +250,9 @@ Reference< XStatement > SAL_CALL OConnection::createStatement()
 }
 
 Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement(const rtl::OUString& _sSql)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::prepareStatement");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
     const rtl::OUString sSqlStatement = transFormPreparedStatement( _sSql );
@@ -252,7 +271,9 @@ Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement(const rtl
 }
 
 Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall(const rtl::OUString& /*_sSql*/ )
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::prepareCall");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -261,7 +282,9 @@ Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall(const rtl::OUS
 }
 
 rtl::OUString SAL_CALL OConnection::nativeSQL(const rtl::OUString& _sSql)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::nativeSQL");
     MutexGuard aGuard(m_aMutex);
 
     const rtl::OUString sSqlStatement = transFormPreparedStatement( _sSql );
@@ -276,7 +299,9 @@ rtl::OUString SAL_CALL OConnection::nativeSQL(const rtl::OUString& _sSql)
 }
 
 void SAL_CALL OConnection::setAutoCommit(sal_Bool autoCommit)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::setAutoCommit");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
     try {
@@ -287,7 +312,9 @@ void SAL_CALL OConnection::setAutoCommit(sal_Bool autoCommit)
 }
 
 sal_Bool SAL_CALL OConnection::getAutoCommit()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::getAutoCommit");
     // you have to distinguish which if you are in autocommit mode or not
     // at normal case true should be fine here
 
@@ -304,7 +331,9 @@ sal_Bool SAL_CALL OConnection::getAutoCommit()
 }
 
 void SAL_CALL OConnection::commit()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::commit");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
     try {
@@ -315,7 +344,9 @@ void SAL_CALL OConnection::commit()
 }
 
 void SAL_CALL OConnection::rollback()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::rollback");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
     try {
@@ -326,7 +357,9 @@ void SAL_CALL OConnection::rollback()
 }
 
 sal_Bool SAL_CALL OConnection::isClosed()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::isClosed");
     MutexGuard aGuard(m_aMutex);
 
     // just simple -> we are close when we are disposed that means someone called dispose(); (XComponent)
@@ -334,7 +367,9 @@ sal_Bool SAL_CALL OConnection::isClosed()
 }
 
 Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::getMetaData");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -352,7 +387,9 @@ Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData()
 }
 
 void SAL_CALL OConnection::setReadOnly(sal_Bool readOnly)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::setReadOnly");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -360,7 +397,9 @@ void SAL_CALL OConnection::setReadOnly(sal_Bool readOnly)
 }
 
 sal_Bool SAL_CALL OConnection::isReadOnly()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::isReadOnly");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -369,7 +408,9 @@ sal_Bool SAL_CALL OConnection::isReadOnly()
 }
 
 void SAL_CALL OConnection::setCatalog(const rtl::OUString& catalog)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::setCatalog");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -382,7 +423,9 @@ void SAL_CALL OConnection::setCatalog(const rtl::OUString& catalog)
 }
 
 rtl::OUString SAL_CALL OConnection::getCatalog()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::getCatalog");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -396,7 +439,9 @@ rtl::OUString SAL_CALL OConnection::getCatalog()
 }
 
 void SAL_CALL OConnection::setTransactionIsolation(sal_Int32 level)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::setTransactionIsolation");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -429,7 +474,9 @@ void SAL_CALL OConnection::setTransactionIsolation(sal_Int32 level)
 }
 
 sal_Int32 SAL_CALL OConnection::getTransactionIsolation()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::getTransactionIsolation");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -449,7 +496,9 @@ sal_Int32 SAL_CALL OConnection::getTransactionIsolation()
 }
 
 Reference<XNameAccess> SAL_CALL OConnection::getTypeMap()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::getTypeMap");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -458,7 +507,9 @@ Reference<XNameAccess> SAL_CALL OConnection::getTypeMap()
 }
 
 void SAL_CALL OConnection::setTypeMap(const Reference<XNameAccess >& typeMap)
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::setTypeMap");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -467,7 +518,9 @@ void SAL_CALL OConnection::setTypeMap(const Reference<XNameAccess >& typeMap)
 
 // XCloseable
 void SAL_CALL OConnection::close()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::close");
     /*
       we need block, because the mutex is a local variable,
       which will guard the block
@@ -482,20 +535,25 @@ void SAL_CALL OConnection::close()
 
 // XWarningsSupplier
 Any SAL_CALL OConnection::getWarnings()
+    throw(SQLException, RuntimeException, std::exception)
 {
     Any x = Any();
+    OSL_TRACE("OConnection::getWarnings");
     // when you collected some warnings -> return it
     return x;
 }
 
 void SAL_CALL OConnection::clearWarnings()
+    throw(SQLException, RuntimeException, std::exception)
 {
+    OSL_TRACE("OConnection::clearWarnings");
     // you should clear your collected warnings here#
 }
 
 void OConnection::disposing()
 {
-    // we noticed that we should be destroyed in near future so we have to dispose our statements
+    OSL_TRACE("OConnection::disposing");
+    // we noticed that we should be destroied in near future so we have to dispose our statements
     MutexGuard aGuard(m_aMutex);
 
     for (OWeakRefArray::iterator i = m_aStatements.begin(); i != m_aStatements.end() ; ++i) {
@@ -514,7 +572,9 @@ void OConnection::disposing()
 }
 
 sal_Int32 OConnection::getMysqlVersion()
+    throw(SQLException, RuntimeException)
 {
+    OSL_TRACE("OConnection::getMysqlVersion");
     MutexGuard aGuard(m_aMutex);
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
 
@@ -528,6 +588,22 @@ sal_Int32 OConnection::getMysqlVersion()
     }
     return version;
 }
+
+// TODO: Not used
+//sal_Int32 OConnection::sdbcColumnType(rtl::OUString typeName)
+//{
+//  OSL_TRACE("OConnection::sdbcColumnType");
+//  int i = 0;
+//  while (mysqlc_types[i].typeName) {
+//      if (rtl::OUString::createFromAscii(mysqlc_types[i].typeName).equals(
+//          typeName.toAsciiUpperCase()))
+//      {
+//          return mysqlc_types[i].dataType;
+//      }
+//      i++;
+//  }
+//  return 0;
+//}
 
 rtl::OUString OConnection::transFormPreparedStatement(const rtl::OUString& _sSQL)
 {

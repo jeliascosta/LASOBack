@@ -58,7 +58,7 @@ static void lcl_MakeAutoFrames( const SwFrameFormats& rSpzArr, sal_uLong nMovedI
         {
             SwFrameFormat * pFormat = rSpzArr[n];
             const SwFormatAnchor* pAnchor = &pFormat->GetAnchor();
-            if (pAnchor->GetAnchorId() == RndStdIds::FLY_AT_CHAR)
+            if (pAnchor->GetAnchorId() == FLY_AT_CHAR)
             {
                 const SwPosition* pAPos = pAnchor->GetContentAnchor();
                 if( pAPos && nMovedIndex == pAPos->nNode.GetIndex() )
@@ -97,7 +97,7 @@ SwUndoDelete::SwUndoDelete(
     SwPaM& rPam,
     bool bFullPara,
     bool bCalledByTableCpy )
-    : SwUndo(SwUndoId::DELETE, rPam.GetDoc()),
+    : SwUndo(UNDO_DELETE),
     SwUndRng( rPam ),
     m_pMvStt( nullptr ),
     m_pSttStr(nullptr),
@@ -134,7 +134,7 @@ SwUndoDelete::SwUndoDelete(
     }
 
     if( !pHistory )
-        pHistory.reset( new SwHistory );
+        pHistory = new SwHistory;
 
     // delete all footnotes for now
     const SwPosition *pStt = rPam.Start(),
@@ -145,9 +145,9 @@ SwUndoDelete::SwUndoDelete(
     // Step 1. deletion/record of content indices
     if( m_bDelFullPara )
     {
-        OSL_ENSURE( rPam.HasMark(), "PaM without Mark" );
+        OSL_ENSURE( rPam.HasMark(), "PaM ohne Mark" );
         DelContentIndex( *rPam.GetMark(), *rPam.GetPoint(),
-                        DelContentType(DelContentType::AllMask | DelContentType::CheckNoCntnt) );
+                        DelContentType(nsDelContentType::DELCNT_ALL | nsDelContentType::DELCNT_CHKNOCNTNT) );
 
         ::sw::UndoGuard const undoGuard(pDoc->GetIDocumentUndoRedo());
         DelBookmarks(pStt->nNode, pEnd->nNode);
@@ -186,8 +186,8 @@ SwUndoDelete::SwUndoDelete(
     if( pSttTextNd && pEndTextNd && pSttTextNd != pEndTextNd )
     {
         // two different TextNodes, thus save also the TextFormatCollection
-        pHistory->Add( pSttTextNd->GetTextColl(),pStt->nNode.GetIndex(), SwNodeType::Text );
-        pHistory->Add( pEndTextNd->GetTextColl(),pEnd->nNode.GetIndex(), SwNodeType::Text );
+        pHistory->Add( pSttTextNd->GetTextColl(),pStt->nNode.GetIndex(), ND_TEXTNODE );
+        pHistory->Add( pEndTextNd->GetTextColl(),pEnd->nNode.GetIndex(), ND_TEXTNODE );
 
         if( !m_bJoinNext )        // Selection from bottom to top
         {
@@ -196,7 +196,7 @@ SwUndoDelete::SwUndoDelete(
             // EndNode needs to be reset. Same for PageDesc and ColBreak.
             if( pEndTextNd->HasSwAttrSet() )
             {
-                SwRegHistory aRegHist( *pEndTextNd, pHistory.get() );
+                SwRegHistory aRegHist( *pEndTextNd, pHistory );
                 if( SfxItemState::SET == pEndTextNd->GetpSwAttrSet()->GetItemState(
                         RES_BREAK, false ) )
                     pEndTextNd->ResetAttr( RES_BREAK );
@@ -342,7 +342,7 @@ SwUndoDelete::SwUndoDelete(
     if( !pSttTextNd && !pEndTextNd )
     {
         m_nNdDiff = nSttNode - rPam.GetPoint()->nNode.GetIndex() - (bFullPara ? 0 : 1);
-        rPam.Move( fnMoveForward, GoInNode );
+        rPam.Move( fnMoveForward, fnGoNode );
     }
     else
     {
@@ -357,7 +357,7 @@ SwUndoDelete::SwUndoDelete(
 
     // is a history necessary here at all?
     if( pHistory && !pHistory->Count() )
-        pHistory.reset();
+        DELETEZ( pHistory );
 }
 
 bool SwUndoDelete::SaveContent( const SwPosition* pStt, const SwPosition* pEnd,
@@ -368,7 +368,7 @@ bool SwUndoDelete::SaveContent( const SwPosition* pStt, const SwPosition* pEnd,
     if( pSttTextNd )
     {
         bool bOneNode = nSttNode == nEndNode;
-        SwRegHistory aRHst( *pSttTextNd, pHistory.get() );
+        SwRegHistory aRHst( *pSttTextNd, pHistory );
         // always save all text atttibutes because of possibly overlapping
         // areas of on/off
         pHistory->CopyAttr( pSttTextNd->GetpSwpHints(), nNdIdx,
@@ -407,7 +407,7 @@ bool SwUndoDelete::SaveContent( const SwPosition* pStt, const SwPosition* pEnd,
     {
         SwIndex aEndIdx( pEndTextNd );
         nNdIdx = pEnd->nNode.GetIndex();
-        SwRegHistory aRHst( *pEndTextNd, pHistory.get() );
+        SwRegHistory aRHst( *pEndTextNd, pHistory );
 
         // always save all text atttibutes because of possibly overlapping
         // areas of on/off
@@ -730,7 +730,7 @@ static void lcl_ReAnchorAtContentFlyFrames( const SwFrameFormats& rSpzArr, SwPos
         {
             pFormat = static_cast<SwFlyFrameFormat*>(rSpzArr[n]);
             pAnchor = &pFormat->GetAnchor();
-            if (pAnchor->GetAnchorId() == RndStdIds::FLY_AT_PARA)
+            if (pAnchor->GetAnchorId() == FLY_AT_PARA)
             {
                 pAPos =  pAnchor->GetContentAnchor();
                 if( pAPos && nOldIdx == pAPos->nNode.GetIndex() )
@@ -920,14 +920,14 @@ void SwUndoDelete::UndoImpl(::sw::UndoRedoContext & rContext)
                 {
                     // if so save the attributes of the others
                     SwHistory aHstr;
-                    aHstr.Move( 0, pHistory.get(), m_nSetPos );
+                    aHstr.Move( 0, pHistory, m_nSetPos );
                     pHistory->Rollback(&rDoc);
                     pHistory->Move( 0, &aHstr );
                 }
                 else
                 {
                     pHistory->Rollback(&rDoc);
-                    pHistory.reset();
+                    DELETEZ( pHistory );
                 }
             }
         }
@@ -984,13 +984,13 @@ void SwUndoDelete::RedoImpl(::sw::UndoRedoContext & rContext)
     {
         pHistory->SetTmpEnd( pHistory->Count() );
         SwHistory aHstr;
-        aHstr.Move( 0, pHistory.get() );
+        aHstr.Move( 0, pHistory );
 
         if( m_bDelFullPara )
         {
             OSL_ENSURE( rPam.HasMark(), "PaM without Mark" );
             DelContentIndex( *rPam.GetMark(), *rPam.GetPoint(),
-                            DelContentType(DelContentType::AllMask | DelContentType::CheckNoCntnt) );
+                            DelContentType(nsDelContentType::DELCNT_ALL | nsDelContentType::DELCNT_CHKNOCNTNT) );
 
             DelBookmarks(rPam.GetMark()->nNode, rPam.GetPoint()->nNode);
         }
@@ -1006,7 +1006,7 @@ void SwUndoDelete::RedoImpl(::sw::UndoRedoContext & rContext)
         {
             OSL_ENSURE( rPam.HasMark(), "PaM without Mark" );
             DelContentIndex( *rPam.GetMark(), *rPam.GetPoint(),
-                            DelContentType(DelContentType::AllMask | DelContentType::CheckNoCntnt) );
+                            DelContentType(nsDelContentType::DELCNT_ALL | nsDelContentType::DELCNT_CHKNOCNTNT) );
 
             DelBookmarks( rPam.GetMark()->nNode, rPam.GetPoint()->nNode );
         }
@@ -1051,10 +1051,10 @@ void SwUndoDelete::RedoImpl(::sw::UndoRedoContext & rContext)
 
         // avoid asserts from ~SwIndexReg for deleted nodes
         SwPaM aTmp(*rPam.End());
-        if (!aTmp.Move(fnMoveForward, GoInNode))
+        if (!aTmp.Move(fnMoveForward, fnGoNode))
         {
             *aTmp.GetPoint() = *rPam.Start();
-            aTmp.Move(fnMoveBackward, GoInNode);
+            aTmp.Move(fnMoveBackward, fnGoNode);
         }
         assert(aTmp.GetPoint()->nNode != rPam.GetPoint()->nNode
             && aTmp.GetPoint()->nNode != rPam.GetMark()->nNode);
@@ -1090,7 +1090,7 @@ void SwUndoDelete::RepeatImpl(::sw::RepeatContext & rContext)
     if( !rPam.HasMark() )
     {
         rPam.SetMark();
-        rPam.Move( fnMoveForward, GoInContent );
+        rPam.Move( fnMoveForward, fnGoContent );
     }
     if( m_bDelFullPara )
         rDoc.getIDocumentContentOperations().DelFullPara( rPam );

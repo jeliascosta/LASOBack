@@ -41,9 +41,9 @@ namespace sd {
 
 //                          struct ClientBoxEntry
 
-ClientBoxEntry::ClientBoxEntry(const std::shared_ptr<ClientInfo>& pClientInfo)
-    : m_bActive(false)
-    , m_pClientInfo(pClientInfo)
+ClientBoxEntry::ClientBoxEntry( std::shared_ptr<ClientInfo> pClientInfo ) :
+    m_bActive( false ),
+    m_pClientInfo( pClientInfo )
 {
 }
 
@@ -51,6 +51,7 @@ ClientBoxEntry::~ClientBoxEntry()
 {}
 
 void ClientRemovedListener::disposing( lang::EventObject const & rEvt )
+    throw ( uno::RuntimeException, std::exception )
 {
     (void) rEvt;
 }
@@ -107,11 +108,18 @@ ClientBox::ClientBox( vcl::Window* pParent, WinBits nStyle ) :
     Show();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(ClientBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(ClientBox)
+{
+    WinBits nWinStyle = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<ClientBox>::Create(pParent, nWinStyle);
+}
 
 Size ClientBox::GetOptimalSize() const
 {
-    return LogicToPixel(Size(200, 140), MapUnit::MapAppFont);
+    return LogicToPixel(Size(200, 140), MAP_APPFONT);
 }
 
 ClientBox::~ClientBox()
@@ -159,7 +167,7 @@ void ClientBox::CalcActiveHeight( const long nPos )
     aSize.Width() -= ICON_OFFSET;
 
     aSize = LogicToPixel( Size( RSC_CD_PUSHBUTTON_WIDTH, RSC_CD_PUSHBUTTON_HEIGHT ),
-                               MapMode( MapUnit::MapAppFont ) );
+                               MapMode( MAP_APPFONT ) );
     aTextHeight += aSize.Height();
 
     if ( aTextHeight < m_nStdHeight )
@@ -168,7 +176,7 @@ void ClientBox::CalcActiveHeight( const long nPos )
     m_nActiveHeight = aTextHeight + 2;
 }
 
-::tools::Rectangle ClientBox::GetEntryRect( const long nPos ) const
+Rectangle ClientBox::GetEntryRect( const long nPos ) const
 {
     const ::osl::MutexGuard aGuard( m_entriesMutex );
 
@@ -186,7 +194,7 @@ void ClientBox::CalcActiveHeight( const long nPos )
     if ( m_bHasActive && ( nPos < m_nActive ) )
         aPos.Y() += m_nActiveHeight - m_nStdHeight;
 
-    return ::tools::Rectangle( aPos, aSize );
+    return Rectangle( aPos, aSize );
 }
 
 void ClientBox::DeleteRemoved()
@@ -214,7 +222,7 @@ long ClientBox::GetActiveEntryIndex()
 //This function may be called with nPos < 0
 void ClientBox::selectEntry( const long nPos )
 {
-    //ToDo we should not use the guard at such a big scope here.
+    //ToDo whe should not use the guard at such a big scope here.
     //Currently it is used to guard m_vEntries and m_nActive. m_nActive will be
     //modified in this function.
     //It would be probably best to always use a copy of m_vEntries
@@ -273,7 +281,7 @@ void ClientBox::selectEntry( const long nPos )
     guard.clear();
 }
 
-void ClientBox::DrawRow(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect, const TClientBoxEntry& rEntry)
+void ClientBox::DrawRow(vcl::RenderContext& rRenderContext, const Rectangle& rRect, const TClientBoxEntry& rEntry)
 {
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
 
@@ -348,7 +356,7 @@ void ClientBox::RecalcAll()
 
     Size aPBSize = LogicToPixel(
                       Size( RSC_CD_PUSHBUTTON_WIDTH, RSC_CD_PUSHBUTTON_HEIGHT ),
-                      MapMode( MapUnit::MapAppFont ) );
+                      MapMode( MAP_APPFONT ) );
     m_aPinBox->SetSizePixel( aPBSize );
     m_aDeauthoriseButton->SetSizePixel( m_aDeauthoriseButton->GetOptimalSize() );
 
@@ -359,7 +367,7 @@ void ClientBox::RecalcAll()
     }
     else
     {
-        ::tools::Rectangle aEntryRect = GetEntryRect( m_nActive );
+        Rectangle aEntryRect = GetEntryRect( m_nActive );
 
         Size  aPinBoxSize( m_aPinBox->GetSizePixel() );
         Point aPos( aEntryRect.Left(),
@@ -369,7 +377,7 @@ void ClientBox::RecalcAll()
 
         if ( !bAlreadyAuthorised )
         {
-            m_sPinTextRect = ::tools::Rectangle( aPos.X(), aPos.Y(),
+            m_sPinTextRect = Rectangle( aPos.X(), aPos.Y(),
                                         aEntryRect.Right(),
                                         aEntryRect.Bottom() - TOP_OFFSET);
 
@@ -474,7 +482,7 @@ bool ClientBox::HandleCursorKey( sal_uInt16 nKeyCode )
     return true;
 }
 
-void ClientBox::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle &/*rPaintRect*/)
+void ClientBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle &/*rPaintRect*/)
 {
     if (!m_bInDelete)
         DeleteRemoved();
@@ -494,7 +502,7 @@ void ClientBox::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectang
     for (ITER iIndex = m_vEntries.begin(); iIndex < m_vEntries.end(); ++iIndex)
     {
         aSize.Height() = (*iIndex)->m_bActive ? m_nActiveHeight : m_nStdHeight;
-        ::tools::Rectangle aEntryRect(aStart, aSize);
+        Rectangle aEntryRect(aStart, aSize);
         DrawRow(rRenderContext, aEntryRect, *iIndex);
         aStart.Y() += aSize.Height();
     }
@@ -582,7 +590,7 @@ void ClientBox::MouseButtonDown( const MouseEvent& rMEvt )
     }
 }
 
-bool ClientBox::EventNotify( NotifyEvent& rNEvt )
+bool ClientBox::Notify( NotifyEvent& rNEvt )
 {
     if ( !m_bInDelete )
         DeleteRemoved();
@@ -618,12 +626,12 @@ bool ClientBox::EventNotify( NotifyEvent& rNEvt )
     }
 
     if ( !bHandled )
-        return Control::EventNotify(rNEvt);
+        return Control::Notify( rNEvt );
     else
         return true;
 }
 
-void ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
+long ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
 {
     long         nPos = 0;
 
@@ -656,6 +664,8 @@ void ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
         Invalidate();
 
     m_bNeedsRecalc = true;
+
+    return nPos;
 }
 
 void ClientBox::clearEntries()
@@ -701,19 +711,19 @@ void ClientBox::DoScroll( long nDelta )
     m_nTopIndex += nDelta;
     Point aNewSBPt( m_aScrollBar->GetPosPixel() );
 
-    ::tools::Rectangle aScrRect( Point(), GetOutputSizePixel() );
+    Rectangle aScrRect( Point(), GetOutputSizePixel() );
     aScrRect.Right() -= m_aScrollBar->GetSizePixel().Width();
     Scroll( 0, -nDelta, aScrRect );
 
     m_aScrollBar->SetPosPixel( aNewSBPt );
 }
 
-IMPL_LINK( ClientBox, ScrollHdl, ScrollBar*, pScrBar, void )
+IMPL_LINK_TYPED( ClientBox, ScrollHdl, ScrollBar*, pScrBar, void )
 {
     DoScroll( pScrBar->GetDelta() );
 }
 
-IMPL_LINK_NOARG( ClientBox, DeauthoriseHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED( ClientBox, DeauthoriseHdl, Button*, void )
 {
     long aSelected = GetActiveEntryIndex();
     if ( aSelected < 0 )

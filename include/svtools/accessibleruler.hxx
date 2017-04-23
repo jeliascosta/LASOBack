@@ -35,7 +35,8 @@
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <cppuhelper/interfacecontainer.h>
 #include <cppuhelper/compbase5.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/implbase5.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <vcl/vclptr.hxx>
 
@@ -46,7 +47,7 @@ namespace com { namespace sun { namespace star { namespace awt {
     class XFocusListener;
 } } } }
 
-namespace tools { class Rectangle; }
+class Rectangle;
 class Ruler;
 namespace vcl { class Window; }
 
@@ -59,118 +60,117 @@ typedef ::cppu::WeakAggComponentImplHelper5<
             css::lang::XServiceInfo >
             SvtRulerAccessible_Base;
 
-class SvtRulerAccessible : public ::cppu::BaseMutex, public SvtRulerAccessible_Base
+class SvtRulerAccessible : public ::comphelper::OBaseMutex, public SvtRulerAccessible_Base
 {
 public:
     //=====  internal  ========================================================
     SvtRulerAccessible(
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent, Ruler& rRepresentation, const ::rtl::OUString& rName );
 protected:
-    virtual ~SvtRulerAccessible() override;
+    virtual ~SvtRulerAccessible();
 public:
-    /// @throws css::uno::RuntimeException
+
     bool SAL_CALL
-        isVisible();
+        isVisible() throw( css::uno::RuntimeException );
 
     //=====  XAccessible  =====================================================
 
     virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL
-        getAccessibleContext() override;
+        getAccessibleContext() throw( css::uno::RuntimeException, std::exception ) override;
 
     //=====  XAccessibleComponent  ============================================
 
     virtual sal_Bool SAL_CALL
-        containsPoint( const css::awt::Point& rPoint ) override;
+        containsPoint( const css::awt::Point& rPoint ) throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-        getAccessibleAtPoint( const css::awt::Point& rPoint ) override;
+        getAccessibleAtPoint( const css::awt::Point& rPoint ) throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::awt::Rectangle SAL_CALL
-        getBounds() override;
+        getBounds() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::awt::Point SAL_CALL
-        getLocation() override;
+        getLocation() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::awt::Point SAL_CALL
-        getLocationOnScreen() override;
+        getLocationOnScreen() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::awt::Size SAL_CALL
-        getSize() override;
+        getSize() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-        grabFocus() override;
+        grabFocus() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int32 SAL_CALL
-        getForeground(  ) override;
+        getForeground(  ) throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL
-        getBackground(  ) override;
+        getBackground(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XAccessibleContext  ==============================================
 
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild( sal_Int32 nIndex ) override;
+        getAccessibleChild( sal_Int32 nIndex )
+            throw( css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleParent() override;
+        getAccessibleParent() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int32 SAL_CALL
-        getAccessibleIndexInParent() override;
+        getAccessibleIndexInParent() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int16 SAL_CALL
-        getAccessibleRole() override;
+        getAccessibleRole() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual ::rtl::OUString SAL_CALL
-        getAccessibleDescription() override;
+        getAccessibleDescription() throw (css::uno::RuntimeException, std::exception) override;
 
     virtual ::rtl::OUString SAL_CALL
-        getAccessibleName() override;
+        getAccessibleName() throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL
-        getAccessibleRelationSet() override;
+        getAccessibleRelationSet() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL
-        getAccessibleStateSet() override;
+        getAccessibleStateSet() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::lang::Locale SAL_CALL
-        getLocale() override;
+        getLocale()
+            throw(  css::uno::RuntimeException,
+                    css::accessibility::IllegalAccessibleComponentStateException, std::exception ) override;
     //=====  XAccessibleEventBroadcaster  =====================================
 
     virtual void SAL_CALL
-        addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
+        addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener )throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-        removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) override;
+        removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener ) throw( css::uno::RuntimeException, std::exception ) override;
 
     //=====  XServiceInfo  ====================================================
 
     virtual ::rtl::OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-        supportsService( const ::rtl::OUString& sServiceName ) override;
+        supportsService( const ::rtl::OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< ::rtl::OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     //=====  XTypeProvider  ===================================================
 
     virtual css::uno::Sequence<sal_Int8> SAL_CALL
-        getImplementationId() override;
+        getImplementationId() throw( css::uno::RuntimeException, std::exception ) override;
 
 protected:
 
     /// @Return the object's current bounding box relative to the desktop.
-    ///
-    /// @throws css::uno::RuntimeException
-    tools::Rectangle GetBoundingBoxOnScreen();
+    Rectangle GetBoundingBoxOnScreen() throw( css::uno::RuntimeException );
 
     /// @Return the object's current bounding box relative to the parent object.
-    ///
-    /// @throws css::uno::RuntimeException
-    tools::Rectangle GetBoundingBox();
+    Rectangle GetBoundingBox() throw( css::uno::RuntimeException );
 
 
     virtual void SAL_CALL disposing() override;
@@ -178,8 +178,11 @@ protected:
     /// @returns true if it's disposed or in disposing
     inline bool IsAlive() const;
 
-    /// @throws DisposedException if it's not alive
-    void ThrowExceptionIfNotAlive();
+    /// @returns true if it's not disposed and no in disposing
+    inline bool IsNotAlive() const;
+
+    /// throws the exception DisposedException if it's not alive
+    void ThrowExceptionIfNotAlive() throw( css::lang::DisposedException );
 
 private:
     /** Description of this object.  This is not a constant because it can
@@ -207,6 +210,11 @@ private:
 inline bool SvtRulerAccessible::IsAlive() const
 {
     return !rBHelper.bDisposed && !rBHelper.bInDispose;
+}
+
+inline bool SvtRulerAccessible::IsNotAlive() const
+{
+    return rBHelper.bDisposed || rBHelper.bInDispose;
 }
 
 #endif

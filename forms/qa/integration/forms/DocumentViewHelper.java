@@ -22,7 +22,6 @@ package integration.forms;
 import com.sun.star.awt.XControl;
 import com.sun.star.awt.XControlModel;
 import com.sun.star.awt.XWindow;
-import com.sun.star.awt.XToolkitExperimental;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.form.XForm;
 import com.sun.star.form.runtime.XFormController;
@@ -190,11 +189,6 @@ public class DocumentViewHelper
             dispatch( ".uno:SwitchXFormsDesignMode" );
         else
             dispatch( ".uno:SwitchControlDesignMode" );
-        // at least SwitchControlDesignMode is async, so wait for it to be done
-        XToolkitExperimental xToolkit = UnoRuntime.queryInterface(
-                XToolkitExperimental.class,
-                m_orb.createInstance("com.sun.star.awt.Toolkit"));
-        xToolkit.processEventsToIdle();
     }
 
     /* ------------------------------------------------------------------ */

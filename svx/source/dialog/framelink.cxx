@@ -100,10 +100,10 @@ struct LineEndResult
     long                mnOffs1;    /// Offset for top or left edge, dependent of context.
     long                mnOffs2;    /// Offset for bottom or right edge, dependent of context
 
-    explicit     LineEndResult() : mnOffs1( 0 ), mnOffs2( 0 ) {}
+    inline explicit     LineEndResult() : mnOffs1( 0 ), mnOffs2( 0 ) {}
 
-    void         Swap() { std::swap( mnOffs1, mnOffs2 ); }
-    void         Negate() { mnOffs1 = -mnOffs1; mnOffs2 = -mnOffs2; }
+    inline void         Swap() { std::swap( mnOffs1, mnOffs2 ); }
+    inline void         Negate() { mnOffs1 = -mnOffs1; mnOffs2 = -mnOffs2; }
 };
 
 /** Result struct used by the horizontal/vertical frame link functions.
@@ -117,7 +117,7 @@ struct BorderEndResult
     LineEndResult       maSecn;     /// Result for secondary line.
     LineEndResult       maGap;      /// Result for gap line.
 
-    void         Negate() { maPrim.Negate(); maSecn.Negate(); maGap.Negate(); }
+    inline void         Negate() { maPrim.Negate(); maSecn.Negate(); maGap.Negate(); }
 };
 
 /** Result struct used by the horizontal/vertical frame link functions.
@@ -146,7 +146,7 @@ struct DiagLineResult
     long                mnTClip;    /// Offset for top border of clipping rectangle.
     long                mnBClip;    /// Offset for bottom border of clipping rectangle.
 
-    explicit     DiagLineResult() : mnLClip( 0 ), mnRClip( 0 ), mnTClip( 0 ), mnBClip( 0 ) {}
+    inline explicit     DiagLineResult() : mnLClip( 0 ), mnRClip( 0 ), mnTClip( 0 ), mnBClip( 0 ) {}
 };
 
 /** Result struct used by the diagonal frame link functions.
@@ -179,7 +179,7 @@ struct LinePoints
 
     explicit            LinePoints( const Point& rBeg, const Point& rEnd ) :
                             maBeg( rBeg ), maEnd( rEnd ) {}
-    explicit            LinePoints( const tools::Rectangle& rRect, bool bTLBR ) :
+    explicit            LinePoints( const Rectangle& rRect, bool bTLBR ) :
                             maBeg( bTLBR ? rRect.TopLeft() : rRect.TopRight() ),
                             maEnd( bTLBR ? rRect.BottomRight() : rRect.BottomLeft() ) {}
 };
@@ -213,14 +213,14 @@ double lclScaleValue( double nValue, double fScale, sal_uInt16 nMaxWidth )
 
     The functions regard the reference point handling mode of the passed border
     style.
-    RefMode::Centered:
+    REFMODE_CENTERED:
         All returned offsets are relative to the middle position of the frame
         border (offsets left of the middle are returned negative, offsets right
         of the middle are returned positive).
-    RefMode::Begin:
+    REFMODE_BEGIN:
         All returned offsets are relative to the begin of the frame border
         (lclGetBeg() always returns 0).
-    RefMode::End:
+    REFMODE_END:
         All returned offsets are relative to the end of the frame border
         (lclGetEnd() always returns 0).
 
@@ -264,9 +264,9 @@ long lclGetBeg( const Style& rBorder )
     long nPos = 0;
     switch( rBorder.GetRefMode() )
     {
-        case RefMode::Centered:  if( rBorder.Prim() ) nPos = -128 * (rBorder.GetWidth() - 1); break;
-        case RefMode::End:       if( rBorder.Prim() ) nPos = -256 * (rBorder.GetWidth() - 1); break;
-        case RefMode::Begin:     break;
+        case REFMODE_CENTERED:  if( rBorder.Prim() ) nPos = -128 * (rBorder.GetWidth() - 1); break;
+        case REFMODE_END:       if( rBorder.Prim() ) nPos = -256 * (rBorder.GetWidth() - 1); break;
+        case REFMODE_BEGIN:     break;
     }
     return nPos;
 }
@@ -281,9 +281,9 @@ long lclGetEnd( const Style& rBorder )
     long nPos = 0;
     switch( rBorder.GetRefMode() )
     {
-        case RefMode::Centered:  if( rBorder.Prim() ) nPos = 128 * (rBorder.GetWidth() - 1); break;
-        case RefMode::Begin:     if( rBorder.Prim() ) nPos = 256 * (rBorder.GetWidth() - 1); break;
-        case RefMode::End:     break;
+        case REFMODE_CENTERED:  if( rBorder.Prim() ) nPos = 128 * (rBorder.GetWidth() - 1); break;
+        case REFMODE_BEGIN:     if( rBorder.Prim() ) nPos = 256 * (rBorder.GetWidth() - 1); break;
+        case REFMODE_END:     break;
     }
     return nPos;
 }
@@ -756,7 +756,7 @@ void lclDrawHorLine(
         OutputDevice& rDev,
         const Point& rLPos, const LineEndResult& rLRes,
         const Point& rRPos, const LineEndResult& rRRes,
-        long nTOffs, long nBOffs, SvxBorderLineStyle nDashing )
+        long nTOffs, long nBOffs, SvxBorderStyle nDashing )
 {
     LinePoints aTPoints( rLPos + lclToMapUnit( rLRes.mnOffs1, nTOffs ), rRPos + lclToMapUnit( rRRes.mnOffs1, nTOffs ) );
     LinePoints aBPoints( rLPos + lclToMapUnit( rLRes.mnOffs2, nBOffs ), rRPos + lclToMapUnit( rRRes.mnOffs2, nBOffs ) );
@@ -826,7 +826,7 @@ void lclDrawVerLine(
         OutputDevice& rDev,
         const Point& rTPos, const LineEndResult& rTRes,
         const Point& rBPos, const LineEndResult& rBRes,
-        long nLOffs, long nROffs, SvxBorderLineStyle nDashing )
+        long nLOffs, long nROffs, SvxBorderStyle nDashing )
 {
     LinePoints aLPoints( rTPos + lclToMapUnit( nLOffs, rTRes.mnOffs1 ), rBPos + lclToMapUnit( nLOffs, rBRes.mnOffs1 ) );
     LinePoints aRPoints( rTPos + lclToMapUnit( nROffs, rTRes.mnOffs2 ), rBPos + lclToMapUnit( nROffs, rBRes.mnOffs2 ) );
@@ -884,7 +884,7 @@ void lclDrawVerFrameBorder(
 }
 
 
-// Drawing of diagonal frame borders, includes clipping functions.
+// Drawing of diagonal frame borders, incudes clipping functions.
 
 /** Returns the drawing coordinates for a diagonal thin line.
 
@@ -900,7 +900,7 @@ void lclDrawVerFrameBorder(
     @return
         A struct containg start and end position of the diagonal line.
  */
-LinePoints lclGetDiagLineEnds( const tools::Rectangle& rRect, bool bTLBR, long nDiagOffs )
+LinePoints lclGetDiagLineEnds( const Rectangle& rRect, bool bTLBR, long nDiagOffs )
 {
     LinePoints aPoints( rRect, bTLBR );
     bool bVert = rRect.GetWidth() < rRect.GetHeight();
@@ -938,10 +938,10 @@ LinePoints lclGetDiagLineEnds( const tools::Rectangle& rRect, bool bTLBR, long n
         The result struct containing modifies for each border of the reference
         rectangle.
  */
-void lclPushDiagClipRect( OutputDevice& rDev, const tools::Rectangle& rRect, const DiagLineResult& rResult )
+void lclPushDiagClipRect( OutputDevice& rDev, const Rectangle& rRect, const DiagLineResult& rResult )
 {
     // PixelToLogic() regards internal offset of the output device
-    tools::Rectangle aClipRect( rRect );
+    Rectangle aClipRect( rRect );
     aClipRect.Left()   += lclToMapUnit( rResult.mnLClip );
     aClipRect.Top()    += lclToMapUnit( rResult.mnTClip );
     aClipRect.Right()  += lclToMapUnit( rResult.mnRClip );
@@ -975,7 +975,7 @@ void lclPushDiagClipRect( OutputDevice& rDev, const tools::Rectangle& rRect, con
     @param bCrossStyle
         The style of the crossing frame border. Must be a double frame style.
  */
-void lclPushCrossingClipRegion( OutputDevice& rDev, const tools::Rectangle& rRect, bool bTLBR, const Style& rCrossStyle )
+void lclPushCrossingClipRegion( OutputDevice& rDev, const Rectangle& rRect, bool bTLBR, const Style& rCrossStyle )
 {
     DBG_ASSERT( rCrossStyle.Secn(), "lclGetCrossingClipRegion - use only for double styles" );
     LinePoints aLPoints( lclGetDiagLineEnds( rRect, !bTLBR, lclGetPrimEnd( rCrossStyle ) ) );
@@ -1010,8 +1010,8 @@ void lclPushCrossingClipRegion( OutputDevice& rDev, const tools::Rectangle& rRec
     passed DiagLineResult struct. A one pixel wide line can be drawn dotted.
  */
 void lclDrawDiagLine(
-        OutputDevice& rDev, const tools::Rectangle& rRect, bool bTLBR,
-        const DiagLineResult& rResult, long nDiagOffs1, long nDiagOffs2, SvxBorderLineStyle nDashing )
+        OutputDevice& rDev, const Rectangle& rRect, bool bTLBR,
+        const DiagLineResult& rResult, long nDiagOffs1, long nDiagOffs2, SvxBorderStyle nDashing )
 {
     lclPushDiagClipRect( rDev, rRect, rResult );
     LinePoints aLPoints( lclGetDiagLineEnds( rRect, bTLBR, nDiagOffs1 ) );
@@ -1044,7 +1044,7 @@ void lclDrawDiagLine(
         Style of the crossing diagonal frame border.
  */
 void lclDrawDiagFrameBorder(
-        OutputDevice& rDev, const tools::Rectangle& rRect, bool bTLBR,
+        OutputDevice& rDev, const Rectangle& rRect, bool bTLBR,
         const Style& rBorder, const DiagBorderResult& rResult, const Style& rCrossStyle,
         const Color* pForceColor, bool bDiagDblClip )
 {
@@ -1090,7 +1090,7 @@ void lclDrawDiagFrameBorder(
         Offsets (sub units) to modify the clipping region of the output device.
  */
 void lclDrawDiagFrameBorders(
-        OutputDevice& rDev, const tools::Rectangle& rRect,
+        OutputDevice& rDev, const Rectangle& rRect,
         const Style& rTLBR, const Style& rBLTR, const DiagBordersResult& rResult,
         const Color* pForceColor, bool bDiagDblClip )
 {
@@ -1120,15 +1120,15 @@ void lclDrawDiagFrameBorders(
 #define SCALEVALUE( value ) lclScaleValue( value, fScale, nMaxWidth )
 
 Style::Style() :
-    meRefMode(RefMode::Centered),
+    meRefMode(REFMODE_CENTERED),
     mfPatternScale(1.0),
-    mnType(SvxBorderLineStyle::SOLID)
+    mnType(table::BorderLineStyle::SOLID)
 {
     Clear();
 }
 
-Style::Style( double nP, double nD, double nS, SvxBorderLineStyle nType ) :
-    meRefMode(RefMode::Centered),
+Style::Style( double nP, double nD, double nS, editeng::SvxBorderStyle nType ) :
+    meRefMode(REFMODE_CENTERED),
     mfPatternScale(1.0),
     mnType(nType)
 {
@@ -1137,19 +1137,19 @@ Style::Style( double nP, double nD, double nS, SvxBorderLineStyle nType ) :
 }
 
 Style::Style( const Color& rColorPrim, const Color& rColorSecn, const Color& rColorGap, bool bUseGapColor,
-              double nP, double nD, double nS, SvxBorderLineStyle nType ) :
-    meRefMode(RefMode::Centered),
+              double nP, double nD, double nS, editeng::SvxBorderStyle nType ) :
+    meRefMode(REFMODE_CENTERED),
     mfPatternScale(1.0),
     mnType(nType)
 {
     Set( rColorPrim, rColorSecn, rColorGap, bUseGapColor, nP, nD, nS );
 }
 
-Style::Style( const editeng::SvxBorderLine* pBorder, double fScale ) :
-    meRefMode(RefMode::Centered),
+Style::Style( const editeng::SvxBorderLine* pBorder, double fScale, sal_uInt16 nMaxWidth ) :
+    meRefMode(REFMODE_CENTERED),
     mfPatternScale(fScale)
 {
-    Set( pBorder, fScale );
+    Set( pBorder, fScale, nMaxWidth );
 }
 
 
@@ -1218,7 +1218,7 @@ void Style::Set( const SvxBorderLine& rBorder, double fScale, sal_uInt16 nMaxWid
             // Still too thick? Decrease the line widths.
             if( GetWidth() > nMaxWidth )
             {
-                if (mfPrim != 0.0 && rtl::math::approxEqual(mfPrim, mfSecn))
+                if (!rtl::math::approxEqual(mfPrim, 0.0) && rtl::math::approxEqual(mfPrim, mfSecn))
                 {
                     // Both lines equal - decrease both to keep symmetry.
                     --mfPrim;
@@ -1229,7 +1229,7 @@ void Style::Set( const SvxBorderLine& rBorder, double fScale, sal_uInt16 nMaxWid
                     // Decrease each line for itself
                     if (mfPrim)
                         --mfPrim;
-                    if ((GetWidth() > nMaxWidth) && mfSecn != 0.0)
+                    if ((GetWidth() > nMaxWidth) && !rtl::math::approxEqual(mfSecn, 0.0))
                         --mfSecn;
                 }
             }
@@ -1244,7 +1244,7 @@ void Style::Set( const SvxBorderLine* pBorder, double fScale, sal_uInt16 nMaxWid
     else
     {
         Clear();
-        mnType = SvxBorderLineStyle::SOLID;
+        mnType = table::BorderLineStyle::SOLID;
     }
 }
 
@@ -1252,8 +1252,8 @@ Style& Style::MirrorSelf()
 {
     if (mfSecn)
         std::swap( mfPrim, mfSecn );
-    if( meRefMode != RefMode::Centered )
-        meRefMode = (meRefMode == RefMode::Begin) ? RefMode::End : RefMode::Begin;
+    if( meRefMode != REFMODE_CENTERED )
+        meRefMode = (meRefMode == REFMODE_BEGIN) ? REFMODE_END : REFMODE_BEGIN;
     return *this;
 }
 
@@ -1284,7 +1284,7 @@ bool operator<( const Style& rL, const Style& rR )
     if( (rL.Secn() && rR.Secn()) && !rtl::math::approxEqual(rL.Dist(), rR.Dist()) ) return rL.Dist() > rR.Dist();
 
     // both lines single and 1 unit thick, only one is dotted -> rL<rR, if rL is dotted
-    if( (nLW == 1) && (rL.Type() != rR.Type()) ) return rL.Type() != SvxBorderLineStyle::SOLID;
+    if( (nLW == 1) && (rL.Type() != rR.Type()) ) return rL.Type();
 
     // seem to be equal
     return false;
@@ -1351,7 +1351,7 @@ bool CheckFrameBorderConnectable( const Style& rLBorder, const Style& rRBorder,
 
 
 double lcl_GetExtent( const Style& rBorder, const Style& rSide, const Style& rOpposite,
-                      long nAngleSide, long nAngleOpposite )
+                      long nAngleSide = 9000, long nAngleOpposite = 9000 )
 {
     Style aOtherBorder = rSide;
     long nOtherAngle = nAngleSide;
@@ -1396,7 +1396,7 @@ basegfx::B2DPoint lcl_PointToB2DPoint( const Point& rPoint )
 
 drawinglayer::primitive2d::Primitive2DContainer CreateClippedBorderPrimitives (
         const Point& rStart, const Point& rEnd, const Style& rBorder,
-        const tools::Rectangle& rClipRect )
+        const Rectangle& rClipRect )
 {
     drawinglayer::primitive2d::Primitive2DContainer aSequence( 1 );
     basegfx::B2DPolygon aPolygon;
@@ -1496,7 +1496,7 @@ void DrawVerFrameBorder( OutputDevice& rDev,
 
 
 void DrawDiagFrameBorders(
-        OutputDevice& rDev, const tools::Rectangle& rRect, const Style& rTLBR, const Style& rBLTR,
+        OutputDevice& rDev, const Rectangle& rRect, const Style& rTLBR, const Style& rBLTR,
         const Style& rTLFromB, const Style& rTLFromR, const Style& rBRFromT, const Style& rBRFromL,
         const Style& rBLFromT, const Style& rBLFromR, const Style& rTRFromB, const Style& rTRFromL,
         const Color* pForceColor, bool bDiagDblClip )

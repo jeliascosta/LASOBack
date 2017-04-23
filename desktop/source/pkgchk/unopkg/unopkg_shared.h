@@ -74,7 +74,7 @@ inline bool readOption(
     bool * flag, OptionInfo const * option_info, sal_uInt32 * pIndex )
 {
     if (isOption( option_info, pIndex )) {
-        OSL_ASSERT( flag != nullptr );
+        OSL_ASSERT( flag != NULL );
         *flag = true;
         return true;
     }
@@ -107,9 +107,9 @@ css::uno::Reference<css::ucb::XCommandEnvironment> createCmdEnv(
     bool option_suppressLicense);
 
 void printf_packages(
-    std::vector<
+    ::std::vector<
     css::uno::Reference<css::deployment::XPackage> > const & allExtensions,
-    std::vector<bool> const & vecUnaccepted,
+    ::std::vector<bool> const & vecUnaccepted,
     css::uno::Reference<css::ucb::XCommandEnvironment> const & xCmdEnv,
     sal_Int32 level = 0 );
 

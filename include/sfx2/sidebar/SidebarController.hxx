@@ -38,16 +38,21 @@
 #include <com/sun/star/ui/XSidebar.hpp>
 
 #include <boost/optional.hpp>
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase4.hxx>
+#include <cppuhelper/compbase5.hxx>
 #include <cppuhelper/basemutex.hxx>
 
-typedef cppu::WeakComponentImplHelper <
-    css::ui::XContextChangeEventListener,
-    css::beans::XPropertyChangeListener,
-    css::ui::XSidebar,
-    css::frame::XStatusListener,
-    css::frame::XFrameActionListener
-    > SidebarControllerInterfaceBase;
+
+namespace
+{
+    typedef ::cppu::WeakComponentImplHelper5 <
+        css::ui::XContextChangeEventListener,
+        css::beans::XPropertyChangeListener,
+        css::ui::XSidebar,
+        css::frame::XStatusListener,
+        css::frame::XFrameActionListener
+        > SidebarControllerInterfaceBase;
+}
 
 class SfxSplitWindow;
 class FixedBitmap;
@@ -66,10 +71,10 @@ class SFX2_DLLPUBLIC SidebarController
       public SidebarControllerInterfaceBase
 {
 public:
-    static rtl::Reference<SidebarController> create(
+    SidebarController(
         SidebarDockingWindow* pParentWindow,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
-    virtual ~SidebarController() override;
+    virtual ~SidebarController();
     SidebarController(const SidebarController&) = delete;
     SidebarController& operator=( const SidebarController& ) = delete;
 
@@ -87,22 +92,28 @@ public:
     static void unregisterSidebarForFrame(SidebarController* pController, const css::uno::Reference<css::frame::XController>& xFrame);
 
     // ui::XContextChangeEventListener
-    virtual void SAL_CALL notifyContextChangeEvent (const css::ui::ContextChangeEventObject& rEvent) override;
+    virtual void SAL_CALL notifyContextChangeEvent (const css::ui::ContextChangeEventObject& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEventObject) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEventObject)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // beans::XPropertyChangeListener
-    virtual void SAL_CALL propertyChange (const css::beans::PropertyChangeEvent& rEvent) override;
+    virtual void SAL_CALL propertyChange (const css::beans::PropertyChangeEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // frame::XStatusListener
-    virtual void SAL_CALL statusChanged (const css::frame::FeatureStateEvent& rEvent) override;
+    virtual void SAL_CALL statusChanged (const css::frame::FeatureStateEvent& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // frame::XFrameActionListener
-    virtual void SAL_CALL frameAction (const css::frame::FrameActionEvent& rEvent) override;
+    virtual void SAL_CALL frameAction (const css::frame::FrameActionEvent& rEvent)
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     // ui::XSidebar
-    virtual void SAL_CALL requestLayout() override;
+    virtual void SAL_CALL requestLayout()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     void NotifyResize();
 
@@ -158,13 +169,7 @@ public:
 
     void disposeDecks();
 
-    void FadeIn();
-    void FadeOut();
-
 private:
-    SidebarController(
-        SidebarDockingWindow* pParentWindow,
-        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
     VclPtr<Deck> mpCurrentDeck;
     VclPtr<SidebarDockingWindow> mpParentWindow;
@@ -190,6 +195,7 @@ private:
     */
     ::boost::optional<bool> mbIsDeckRequestedOpen;
     ::boost::optional<bool> mbIsDeckOpen;
+    bool mbCanDeckBeOpened;
 
     /** Before the deck is closed the sidebar width is saved into this variable,
         so that it can be restored when the deck is reopened.
@@ -209,7 +215,7 @@ private:
     */
     VclPtr<vcl::Window> mpCloseIndicator;
 
-    DECL_LINK(WindowEventHandler, VclWindowEvent&, void);
+    DECL_LINK_TYPED(WindowEventHandler, VclWindowEvent&, void);
     /** Make maRequestedContext the current context.
     */
     void UpdateConfigurations();
@@ -235,11 +241,11 @@ private:
         const Context& rContext);
 
     void ShowPopupMenu (
-        const tools::Rectangle& rButtonBox,
+        const Rectangle& rButtonBox,
         const ::std::vector<TabBar::DeckMenuData>& rMenuData) const;
-    VclPtr<PopupMenu> CreatePopupMenu (
+    std::shared_ptr<PopupMenu> CreatePopupMenu (
         const ::std::vector<TabBar::DeckMenuData>& rMenuData) const;
-    DECL_LINK(OnMenuItemSelected, Menu*, bool);
+    DECL_LINK_TYPED(OnMenuItemSelected, Menu*, bool);
     void BroadcastPropertyChange();
 
     /** The close of the deck changes the width of the child window.

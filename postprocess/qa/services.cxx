@@ -216,7 +216,7 @@ void Test::test() {
                             "multiple implementations named \"" + msg(name)
                             + "\"")
                          .getStr()),
-                        bool(j == k->second.factory));
+                        j == k->second.factory);
                 }
                 CPPUNIT_ASSERT_MESSAGE(
                     (OString(

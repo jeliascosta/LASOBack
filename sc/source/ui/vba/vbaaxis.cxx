@@ -34,7 +34,7 @@ const OUString AUTOORIGIN("AutoOrigin");
 const OUString VBA_MIN("Max");
 const OUString VBA_MAX("Min");
 ScVbaChart*
-ScVbaAxis::getChartPtr()
+ScVbaAxis::getChartPtr() throw( uno::RuntimeException )
 {
     ScVbaChart* pChart = static_cast< ScVbaChart* >( moChartParent.get() );
     if ( !pChart )
@@ -43,7 +43,7 @@ ScVbaAxis::getChartPtr()
 }
 
 bool
-ScVbaAxis::isValueAxis()
+ScVbaAxis::isValueAxis() throw( script::BasicErrorException )
 {
     if ( getType() == xlCategory )
     {
@@ -61,14 +61,14 @@ ScVbaAxis::ScVbaAxis( const uno::Reference< XHelperInterface >& xParent,const un
 }
 
 void SAL_CALL
-ScVbaAxis::Delete(  )
+ScVbaAxis::Delete(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< lang::XComponent > xComponent( mxPropertySet, uno::UNO_QUERY_THROW );
     xComponent->dispose();
 }
 
  uno::Reference< ::ooo::vba::excel::XAxisTitle > SAL_CALL
-ScVbaAxis::getAxisTitle(  )
+ScVbaAxis::getAxisTitle(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< excel::XAxisTitle > xAxisTitle;
     try
@@ -101,20 +101,20 @@ ScVbaAxis::getAxisTitle(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setDisplayUnit( ::sal_Int32 /*DisplayUnit*/ )
+ScVbaAxis::setDisplayUnit( ::sal_Int32 /*DisplayUnit*/ ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     DebugHelper::basicexception(ERRCODE_BASIC_NOT_IMPLEMENTED, OUString());
 }
 
 ::sal_Int32 SAL_CALL
-ScVbaAxis::getDisplayUnit(  )
+ScVbaAxis::getDisplayUnit(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     DebugHelper::basicexception(ERRCODE_BASIC_NOT_IMPLEMENTED, OUString());
     return -1;
 }
 
 void SAL_CALL
-ScVbaAxis::setCrosses( ::sal_Int32 _nCrosses )
+ScVbaAxis::setCrosses( ::sal_Int32 _nCrosses ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -147,7 +147,7 @@ ScVbaAxis::setCrosses( ::sal_Int32 _nCrosses )
     }
 }
 ::sal_Int32 SAL_CALL
-ScVbaAxis::getCrosses(  )
+ScVbaAxis::getCrosses(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     sal_Int32 nCrosses = xlAxisCrossesCustom;
     try
@@ -181,7 +181,7 @@ ScVbaAxis::getCrosses(  )
 }
 
  void SAL_CALL
-ScVbaAxis::setCrossesAt( double _fCrossesAt )
+ScVbaAxis::setCrossesAt( double _fCrossesAt ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -196,7 +196,7 @@ ScVbaAxis::setCrossesAt( double _fCrossesAt )
 }
 
  double SAL_CALL
-ScVbaAxis::getCrossesAt(  )
+ScVbaAxis::getCrossesAt(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     double fCrosses = 0.0;
     try
@@ -211,19 +211,19 @@ ScVbaAxis::getCrossesAt(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setType( ::sal_Int32 _nType )
+ScVbaAxis::setType( ::sal_Int32 _nType ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     mnType = _nType;
 }
 
 ::sal_Int32 SAL_CALL
-ScVbaAxis::getType(  )
+ScVbaAxis::getType(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     return mnType;
 }
 
 void SAL_CALL
-ScVbaAxis::setHasTitle( sal_Bool _bHasTitle )
+ScVbaAxis::setHasTitle( sal_Bool _bHasTitle ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -249,7 +249,7 @@ ScVbaAxis::setHasTitle( sal_Bool _bHasTitle )
 }
 
  sal_Bool SAL_CALL
-ScVbaAxis::getHasTitle(  )
+ScVbaAxis::getHasTitle(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     bool bHasTitle = false;
     try
@@ -276,7 +276,7 @@ ScVbaAxis::getHasTitle(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMinorUnit( double _fMinorUnit )
+ScVbaAxis::setMinorUnit( double _fMinorUnit ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -290,7 +290,7 @@ ScVbaAxis::setMinorUnit( double _fMinorUnit )
 }
 
 double SAL_CALL
-ScVbaAxis::getMinorUnit(  )
+ScVbaAxis::getMinorUnit(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     double fMinor = 1.0;
     try
@@ -306,7 +306,7 @@ ScVbaAxis::getMinorUnit(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMinorUnitIsAuto( sal_Bool _bMinorUnitIsAuto )
+ScVbaAxis::setMinorUnitIsAuto( sal_Bool _bMinorUnitIsAuto ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -320,7 +320,7 @@ ScVbaAxis::setMinorUnitIsAuto( sal_Bool _bMinorUnitIsAuto )
 }
 
  sal_Bool SAL_CALL
-ScVbaAxis::getMinorUnitIsAuto(  )
+ScVbaAxis::getMinorUnitIsAuto(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     bool bIsAuto = false;
     try
@@ -338,20 +338,20 @@ ScVbaAxis::getMinorUnitIsAuto(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setReversePlotOrder( sal_Bool /*ReversePlotOrder*/ )
+ScVbaAxis::setReversePlotOrder( sal_Bool /*ReversePlotOrder*/ ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     DebugHelper::basicexception(ERRCODE_BASIC_NOT_IMPLEMENTED, OUString());
 }
 
 sal_Bool SAL_CALL
-ScVbaAxis::getReversePlotOrder(  )
+ScVbaAxis::getReversePlotOrder(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     DebugHelper::basicexception(ERRCODE_BASIC_NOT_IMPLEMENTED, OUString());
     return false;
 }
 
 void SAL_CALL
-ScVbaAxis::setMajorUnit( double _fMajorUnit )
+ScVbaAxis::setMajorUnit( double _fMajorUnit ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -367,7 +367,7 @@ ScVbaAxis::setMajorUnit( double _fMajorUnit )
 }
 
 double SAL_CALL
-ScVbaAxis::getMajorUnit(  )
+ScVbaAxis::getMajorUnit(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     double fMax = 1.0;
     try
@@ -383,7 +383,7 @@ ScVbaAxis::getMajorUnit(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMajorUnitIsAuto( sal_Bool _bMajorUnitIsAuto )
+ScVbaAxis::setMajorUnitIsAuto( sal_Bool _bMajorUnitIsAuto ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -399,7 +399,7 @@ ScVbaAxis::setMajorUnitIsAuto( sal_Bool _bMajorUnitIsAuto )
 }
 
 sal_Bool SAL_CALL
-ScVbaAxis::getMajorUnitIsAuto(  )
+ScVbaAxis::getMajorUnitIsAuto(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     bool bIsAuto = false;
     try
@@ -417,7 +417,7 @@ ScVbaAxis::getMajorUnitIsAuto(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMaximumScale( double _fMaximumScale )
+ScVbaAxis::setMaximumScale( double _fMaximumScale ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -433,7 +433,7 @@ ScVbaAxis::setMaximumScale( double _fMaximumScale )
 }
 
 double SAL_CALL
-ScVbaAxis::getMaximumScale(  )
+ScVbaAxis::getMaximumScale(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     double fMax = 1.0;
     try
@@ -452,7 +452,7 @@ ScVbaAxis::getMaximumScale(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMaximumScaleIsAuto( sal_Bool _bMaximumScaleIsAuto )
+ScVbaAxis::setMaximumScaleIsAuto( sal_Bool _bMaximumScaleIsAuto ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -467,7 +467,7 @@ ScVbaAxis::setMaximumScaleIsAuto( sal_Bool _bMaximumScaleIsAuto )
 }
 
 sal_Bool SAL_CALL
-ScVbaAxis::getMaximumScaleIsAuto(  )
+ScVbaAxis::getMaximumScaleIsAuto(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     bool bIsAuto = false;
     try
@@ -483,7 +483,7 @@ ScVbaAxis::getMaximumScaleIsAuto(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMinimumScale( double _fMinimumScale )
+ScVbaAxis::setMinimumScale( double _fMinimumScale ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -497,7 +497,7 @@ ScVbaAxis::setMinimumScale( double _fMinimumScale )
 }
 
 double SAL_CALL
-ScVbaAxis::getMinimumScale(  )
+ScVbaAxis::getMinimumScale(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     double fMin = 0.0;
     try
@@ -513,7 +513,7 @@ ScVbaAxis::getMinimumScale(  )
 }
 
 void SAL_CALL
-ScVbaAxis::setMinimumScaleIsAuto( sal_Bool _bMinimumScaleIsAuto )
+ScVbaAxis::setMinimumScaleIsAuto( sal_Bool _bMinimumScaleIsAuto ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -529,7 +529,7 @@ ScVbaAxis::setMinimumScaleIsAuto( sal_Bool _bMinimumScaleIsAuto )
 }
 
 sal_Bool SAL_CALL
-ScVbaAxis::getMinimumScaleIsAuto(  )
+ScVbaAxis::getMinimumScaleIsAuto(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     bool bIsAuto = false;
     try
@@ -547,13 +547,13 @@ ScVbaAxis::getMinimumScaleIsAuto(  )
 }
 
 ::sal_Int32 SAL_CALL
-ScVbaAxis::getAxisGroup(  )
+ScVbaAxis::getAxisGroup(  ) throw (uno::RuntimeException, std::exception)
 {
     return mnGroup;
 }
 
 void SAL_CALL
-ScVbaAxis::setScaleType( ::sal_Int32 _nScaleType )
+ScVbaAxis::setScaleType( ::sal_Int32 _nScaleType ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -580,7 +580,7 @@ ScVbaAxis::setScaleType( ::sal_Int32 _nScaleType )
 }
 
 ::sal_Int32 SAL_CALL
-ScVbaAxis::getScaleType(  )
+ScVbaAxis::getScaleType(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     sal_Int32 nScaleType = xlScaleLinear;
     try
@@ -603,36 +603,36 @@ ScVbaAxis::getScaleType(  )
 }
 
 double SAL_CALL
-ScVbaAxis::getHeight(  )
+ScVbaAxis::getHeight(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     return oShapeHelper->getHeight();
 }
 
-void SAL_CALL ScVbaAxis::setHeight( double height )
+void SAL_CALL ScVbaAxis::setHeight( double height ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     oShapeHelper->setHeight( height );
 }
-double SAL_CALL ScVbaAxis::getWidth(  )
+double SAL_CALL ScVbaAxis::getWidth(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     return oShapeHelper->getWidth( );
 }
-void SAL_CALL ScVbaAxis::setWidth( double width )
+void SAL_CALL ScVbaAxis::setWidth( double width ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     oShapeHelper->setWidth( width );
 }
-double SAL_CALL ScVbaAxis::getTop(  )
+double SAL_CALL ScVbaAxis::getTop(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     return oShapeHelper->getTop( );
 }
-void SAL_CALL ScVbaAxis::setTop( double top )
+void SAL_CALL ScVbaAxis::setTop( double top ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     oShapeHelper->setTop( top );
 }
-double SAL_CALL ScVbaAxis::getLeft(  )
+double SAL_CALL ScVbaAxis::getLeft(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     return oShapeHelper->getLeft( );
 }
-void SAL_CALL ScVbaAxis::setLeft( double left )
+void SAL_CALL ScVbaAxis::setLeft( double left ) throw (css::script::BasicErrorException, css::uno::RuntimeException, std::exception)
 {
     oShapeHelper->setLeft( left );
 }

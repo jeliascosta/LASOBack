@@ -37,7 +37,7 @@ private:
 
 public:
     SchLegendPosTabPage(vcl::Window* pParent, const SfxItemSet& rInAttrs);
-    virtual ~SchLegendPosTabPage() override;
+    virtual ~SchLegendPosTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rInAttrs);

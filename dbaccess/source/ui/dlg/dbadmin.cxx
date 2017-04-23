@@ -29,7 +29,7 @@
 #include "dbustrings.hrc"
 #include "dsitems.hxx"
 #include "dsnItem.hxx"
-#include "moduledbu.hxx"
+#include "localresaccess.hxx"
 #include "optionalboolitem.hxx"
 #include "propertysetitem.hxx"
 #include "stringlistitem.hxx"
@@ -79,7 +79,7 @@ void ODbAdminDialog::dispose()
 short ODbAdminDialog::Ok()
 {
     SfxTabDialog::Ok();
-    m_bUIEnabled = false;
+    disabledUI();
     return ( AR_LEAVE_MODIFIED == implApplyChanges() ) ? RET_OK : RET_CANCEL;
         // TODO : AR_ERROR is not handled correctly, we always close the dialog here
 }
@@ -244,7 +244,7 @@ ODbAdminDialog::ApplyResult ODbAdminDialog::implApplyChanges()
     if ( !m_pImpl->saveChanges(*m_pExampleSet) )
         return AR_KEEP;
 
-    if ( m_bUIEnabled )
+    if ( isUIEnabled() )
         ShowPage(GetCurPageId());
         // This does the usual ActivatePage, so the pages can save their current status.
         // This way, next time they're asked what has changed since now and here, they really
@@ -270,7 +270,7 @@ SfxItemSet* ODbAdminDialog::getWriteOutputSet()
     return m_pExampleSet;
 }
 
-std::pair< Reference<XConnection>,sal_Bool> ODbAdminDialog::createConnection()
+::std::pair< Reference<XConnection>,sal_Bool> ODbAdminDialog::createConnection()
 {
     return m_pImpl->createConnection();
 }
@@ -295,17 +295,17 @@ void ODbAdminDialog::clearPassword()
     m_pImpl->clearPassword();
 }
 
-SfxItemSet* ODbAdminDialog::createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults, ::dbaccess::ODsnTypeCollection* _pTypeCollection)
+SfxItemSet* ODbAdminDialog::createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults, ::dbaccess::ODsnTypeCollection* _pTypeCollection)
 {
     // just to be sure ....
     _rpSet = nullptr;
     _rpPool = nullptr;
-    _rpDefaults = nullptr;
+    _rppDefaults = nullptr;
 
-    const OUString sFilterAll( "%" );
+    const OUString sFilterAll( "%", 1, RTL_TEXTENCODING_ASCII_US );
     // create and initialize the defaults
-    _rpDefaults = new std::vector<SfxPoolItem*>(DSID_LAST_ITEM_ID - DSID_FIRST_ITEM_ID + 1);
-    SfxPoolItem** pCounter = _rpDefaults->data();  // want to modify this without affecting the out param _rppDefaults
+    _rppDefaults = new SfxPoolItem*[DSID_LAST_ITEM_ID - DSID_FIRST_ITEM_ID + 1];
+    SfxPoolItem** pCounter = _rppDefaults;  // want to modify this without affecting the out param _rppDefaults
     *pCounter++ = new SfxStringItem(DSID_NAME, OUString());
     *pCounter++ = new SfxStringItem(DSID_ORIGINALNAME, OUString());
     *pCounter++ = new SfxStringItem(DSID_CONNECTURL, OUString());
@@ -435,17 +435,17 @@ SfxItemSet* ODbAdminDialog::createItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rp
     };
 
     OSL_ENSURE(SAL_N_ELEMENTS(aItemInfos) == DSID_LAST_ITEM_ID,"Invalid Ids!");
-    _rpPool = new SfxItemPool("DSAItemPool", DSID_FIRST_ITEM_ID, DSID_LAST_ITEM_ID,
-        aItemInfos, _rpDefaults);
+    _rpPool = new SfxItemPool(OUString("DSAItemPool"), DSID_FIRST_ITEM_ID, DSID_LAST_ITEM_ID,
+        aItemInfos, _rppDefaults);
     _rpPool->FreezeIdRanges();
 
     // and, finally, the set
-    _rpSet = new SfxItemSet(*_rpPool);
+    _rpSet = new SfxItemSet(*_rpPool, true);
 
     return _rpSet;
 }
 
-void ODbAdminDialog::destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, std::vector<SfxPoolItem*>*& _rpDefaults)
+void ODbAdminDialog::destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, SfxPoolItem**& _rppDefaults)
 {
     // _first_ delete the set (referring the pool)
     if (_rpSet)
@@ -464,7 +464,7 @@ void ODbAdminDialog::destroyItemSet(SfxItemSet*& _rpSet, SfxItemPool*& _rpPool, 
     }
 
     // reset the defaults ptr
-    _rpDefaults = nullptr;
+    _rppDefaults = nullptr;
         // no need to explicitly delete the defaults, this has been done by the ReleaseDefaults
 }
 

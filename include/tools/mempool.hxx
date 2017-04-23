@@ -26,7 +26,7 @@
 
 struct FixedMemPool_Impl;
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC FixedMemPool
+class TOOLS_DLLPUBLIC FixedMemPool
 {
     FixedMemPool_Impl * m_pImpl;
     char const *        m_pTypeName;

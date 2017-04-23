@@ -47,19 +47,19 @@ SwVbaApplication::~SwVbaApplication()
 }
 
 OUString SAL_CALL
-SwVbaApplication::getName()
+SwVbaApplication::getName() throw (uno::RuntimeException, std::exception)
 {
     return OUString("Microsoft Word" );
 }
 
 uno::Reference< word::XDocument > SAL_CALL
-SwVbaApplication::getActiveDocument()
+SwVbaApplication::getActiveDocument() throw (uno::RuntimeException, std::exception)
 {
     return new SwVbaDocument( this, mxContext, getCurrentDocument() );
 }
 
 uno::Reference< word::XWindow > SAL_CALL
-SwVbaApplication::getActiveWindow()
+SwVbaApplication::getActiveWindow() throw (uno::RuntimeException, std::exception)
 {
     // #FIXME so far can't determine Parent
     uno::Reference< frame::XModel > xModel( getCurrentDocument(), uno::UNO_SET_THROW );
@@ -68,31 +68,31 @@ SwVbaApplication::getActiveWindow()
 }
 
 uno::Reference<word::XSystem > SAL_CALL
-SwVbaApplication::getSystem()
+SwVbaApplication::getSystem() throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< word::XSystem >( new SwVbaSystem( mxContext ) );
 }
 
 uno::Reference<word::XOptions > SAL_CALL
-SwVbaApplication::getOptions()
+SwVbaApplication::getOptions() throw (uno::RuntimeException, std::exception)
 {
     return uno::Reference< word::XOptions >( new SwVbaOptions( mxContext ) );
 }
 
 uno::Any SAL_CALL
-SwVbaApplication::CommandBars( const uno::Any& aIndex )
+SwVbaApplication::CommandBars( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
     return VbaApplicationBase::CommandBars( aIndex );
 }
 
 uno::Reference< word::XSelection > SAL_CALL
-SwVbaApplication::getSelection()
+SwVbaApplication::getSelection() throw (uno::RuntimeException, std::exception)
 {
     return new SwVbaSelection( this, mxContext, getCurrentDocument() );
 }
 
 uno::Any SAL_CALL
-SwVbaApplication::Documents( const uno::Any& index )
+SwVbaApplication::Documents( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< XCollection > xCol( new SwVbaDocuments( this, mxContext ) );
     if ( index.hasValue() )
@@ -101,7 +101,7 @@ SwVbaApplication::Documents( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaApplication::Addins( const uno::Any& index )
+SwVbaApplication::Addins( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     static uno::Reference< XCollection > xCol( new SwVbaAddins( this, mxContext ) );
     if ( index.hasValue() )
@@ -110,7 +110,7 @@ SwVbaApplication::Addins( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaApplication::Dialogs( const uno::Any& index )
+SwVbaApplication::Dialogs( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< word::XDialogs > xCol( new SwVbaDialogs( this, mxContext, getCurrentDocument() ));
     if ( index.hasValue() )
@@ -119,7 +119,7 @@ SwVbaApplication::Dialogs( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaApplication::ListGalleries( const uno::Any& index )
+SwVbaApplication::ListGalleries( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< text::XTextDocument > xTextDoc( getCurrentDocument(), uno::UNO_QUERY_THROW );
     uno::Reference< XCollection > xCol( new SwVbaListGalleries( this, mxContext, xTextDoc ) );
@@ -128,34 +128,34 @@ SwVbaApplication::ListGalleries( const uno::Any& index )
     return uno::makeAny( xCol );
 }
 
-sal_Bool SAL_CALL SwVbaApplication::getDisplayAutoCompleteTips()
+sal_Bool SAL_CALL SwVbaApplication::getDisplayAutoCompleteTips() throw (css::uno::RuntimeException, std::exception)
 {
     return SvxAutoCorrCfg::Get().IsAutoTextTip();
 }
 
-void SAL_CALL SwVbaApplication::setDisplayAutoCompleteTips( sal_Bool _displayAutoCompleteTips )
+void SAL_CALL SwVbaApplication::setDisplayAutoCompleteTips( sal_Bool _displayAutoCompleteTips ) throw (css::uno::RuntimeException, std::exception)
 {
     SvxAutoCorrCfg::Get().SetAutoTextTip( _displayAutoCompleteTips );
 }
 
-sal_Int32 SAL_CALL SwVbaApplication::getEnableCancelKey()
+sal_Int32 SAL_CALL SwVbaApplication::getEnableCancelKey() throw (css::uno::RuntimeException, std::exception)
 {
     // the default value is wdCancelInterrupt in Word
     return word::WdEnableCancelKey::wdCancelInterrupt;
 }
 
-void SAL_CALL SwVbaApplication::setEnableCancelKey( sal_Int32/* _enableCancelKey */)
+void SAL_CALL SwVbaApplication::setEnableCancelKey( sal_Int32/* _enableCancelKey */) throw (css::uno::RuntimeException, std::exception)
 {
     // seems not supported in Writer
 }
 
-float SAL_CALL SwVbaApplication::CentimetersToPoints( float Centimeters )
+float SAL_CALL SwVbaApplication::CentimetersToPoints( float Centimeters ) throw (uno::RuntimeException, std::exception)
 {
     return VbaApplicationBase::CentimetersToPoints( Centimeters );
 }
 
 uno::Reference< frame::XModel >
-SwVbaApplication::getCurrentDocument()
+SwVbaApplication::getCurrentDocument() throw (css::uno::RuntimeException)
 {
     return getCurrentWordDoc( mxContext );
 }

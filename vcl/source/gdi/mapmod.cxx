@@ -23,6 +23,7 @@
 #include <tools/fract.hxx>
 #include <tools/stream.hxx>
 #include <tools/vcompat.hxx>
+#include <tools/debug.hxx>
 #include <rtl/instance.hxx>
 
 struct MapMode::ImplMapMode
@@ -48,8 +49,8 @@ MapMode::ImplMapMode::ImplMapMode() :
     maScaleX( 1, 1 ),
     maScaleY( 1, 1 )
 {
-    meUnit   = MapUnit::MapPixel;
-    mbSimple = true;
+    meUnit      = MAP_PIXEL;
+    mbSimple    = true;
 }
 
 MapMode::ImplMapMode::ImplMapMode( const ImplMapMode& rImplMapMode ) :
@@ -63,7 +64,7 @@ MapMode::ImplMapMode::ImplMapMode( const ImplMapMode& rImplMapMode ) :
 
 bool MapMode::ImplMapMode::operator==( const ImplMapMode& rImpMapMode ) const
 {
-    if (meUnit == rImpMapMode.meUnit
+    if (meUnit   == rImpMapMode.meUnit
         && maOrigin == rImpMapMode.maOrigin
         && maScaleX == rImpMapMode.maScaleX
         && maScaleY == rImpMapMode.maScaleY)
@@ -87,7 +88,7 @@ MapMode::MapMode( const MapMode& rMapMode ) : mpImplMapMode( rMapMode.mpImplMapM
 
 MapMode::MapMode( MapUnit eUnit ) : mpImplMapMode()
 {
-    mpImplMapMode->meUnit = eUnit;
+    mpImplMapMode->meUnit   = eUnit;
 }
 
 MapMode::MapMode( MapUnit eUnit, const Point& rLogicOrg,
@@ -99,7 +100,7 @@ MapMode::MapMode( MapUnit eUnit, const Point& rLogicOrg,
     mpImplMapMode->maScaleY = rScaleY;
     mpImplMapMode->maScaleX.ReduceInaccurate(32);
     mpImplMapMode->maScaleY.ReduceInaccurate(32);
-    mpImplMapMode->mbSimple = false;
+    mpImplMapMode->mbSimple    = false;
 }
 
 MapMode::~MapMode()
@@ -133,41 +134,41 @@ void MapMode::SetScaleY( const Fraction& rScaleY )
 
 double MapMode::GetUnitMultiplier() const
 {
-    double nMul;
+    double  nMul;
     switch ( GetMapUnit() )
     {
-        case MapUnit::MapPixel :
-        case MapUnit::MapSysFont :
-        case MapUnit::MapAppFont :
+        case MAP_PIXEL :
+        case MAP_SYSFONT :
+        case MAP_APPFONT :
 
-        case MapUnit::Map100thMM :
+        case MAP_100TH_MM :
             nMul = 1;
             break;
-        case MapUnit::Map10thMM :
+        case MAP_10TH_MM :
             nMul = 10;
             break;
-        case MapUnit::MapMM :
+        case MAP_MM :
             nMul = 100;
             break;
-        case MapUnit::MapCM :
+        case MAP_CM :
             nMul = 1000;
             break;
-        case MapUnit::Map1000thInch :
+        case MAP_1000TH_INCH :
             nMul = 2.54;
             break;
-        case MapUnit::Map100thInch :
+        case MAP_100TH_INCH :
             nMul = 25.4;
             break;
-        case MapUnit::Map10thInch :
+        case MAP_10TH_INCH :
             nMul = 254;
             break;
-        case MapUnit::MapInch :
+        case MAP_INCH :
             nMul = 2540;
             break;
-        case MapUnit::MapTwip :
+        case MAP_TWIP :
             nMul = 1.76388889;
             break;
-        case MapUnit::MapPoint :
+        case MAP_POINT :
             nMul = 35.27777778;
             break;
         default:
@@ -183,12 +184,6 @@ MapMode& MapMode::operator=( const MapMode& rMapMode )
     return *this;
 }
 
-MapMode& MapMode::operator=( MapMode&& rMapMode )
-{
-    mpImplMapMode = std::move(rMapMode.mpImplMapMode);
-    return *this;
-}
-
 bool MapMode::operator==( const MapMode& rMapMode ) const
 {
    return mpImplMapMode == rMapMode.mpImplMapMode;
@@ -201,8 +196,8 @@ bool MapMode::IsDefault() const
 
 SvStream& ReadMapMode( SvStream& rIStm, MapMode& rMapMode )
 {
-    VersionCompat aCompat( rIStm, StreamMode::READ );
-    sal_uInt16    nTmp16;
+    VersionCompat   aCompat( rIStm, StreamMode::READ );
+    sal_uInt16          nTmp16;
 
     rIStm.ReadUInt16( nTmp16 ); rMapMode.mpImplMapMode->meUnit = (MapUnit) nTmp16;
     ReadPair( rIStm, rMapMode.mpImplMapMode->maOrigin );
@@ -217,7 +212,7 @@ SvStream& WriteMapMode( SvStream& rOStm, const MapMode& rMapMode )
 {
     VersionCompat aCompat( rOStm, StreamMode::WRITE, 1 );
 
-    rOStm.WriteUInt16( (sal_uInt16)rMapMode.mpImplMapMode->meUnit );
+    rOStm.WriteUInt16( rMapMode.mpImplMapMode->meUnit );
     WritePair( rOStm, rMapMode.mpImplMapMode->maOrigin );
     WriteFraction( rOStm, rMapMode.mpImplMapMode->maScaleX );
     WriteFraction( rOStm, rMapMode.mpImplMapMode->maScaleY );

@@ -43,7 +43,7 @@ class FuPage
     const SfxItemSet* ExecuteDialog( vcl::Window* pParent );
 
 protected:
-    virtual ~FuPage() override;
+    virtual ~FuPage();
 
 private:
     FuPage (
@@ -57,8 +57,7 @@ private:
 
     SfxRequest&                 mrReq;
     const SfxItemSet*           mpArgs;
-    std::unique_ptr<SdBackgroundObjUndoAction>
-                                mpBackgroundObjUndoAction;
+    SdBackgroundObjUndoAction*  mpBackgroundObjUndoAction;
     Size                        maSize;
     bool                        mbPageBckgrdDeleted;
     bool                        mbMasterPage;

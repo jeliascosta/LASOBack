@@ -231,47 +231,12 @@ gb_Jar_MODULE_$(2) += $(3)
 
 endef
 
-define gb_Helper__register_packages
-$(foreach target,$(1),\
- $(if $(filter $(target),$(gb_Package_REGISTERED)),\
-  $(call gb_Output_error,gb_Helper_register_packages: already registered: $(target))))
-$(if $(filter-out $(words $(1)),$(words $(sort $(1)))),\
- $(call gb_Output_error,gb_Helper_register_packages: contains duplicates: $(1)))
-
-gb_Package_REGISTERED += $(1)
-
-endef
-
-# $(call gb_Helper_register_packages,packages)
-define gb_Helper_register_packages
-$(call gb_Helper__register_packages,$(1))
-
-endef
-
 # $(call gb_Helper_register_packages_for_install,installmodule,packages)
 define gb_Helper_register_packages_for_install
 $(if $(2),,$(call gb_Output_error,gb_Helper_register_packages_for_install: no packages - need 2 parameters))
-$(call gb_Helper__register_packages,$(2))
 
 gb_Package_MODULE_$(1) += $(2)
 
-endef
-
-# TODO: this should be extended to handle auto-installation.
-define gb_Helper_register_resources
-gb_AllLangResTarget_REGISTERED += $(1)
-
-endef
-
-# TODO: this should be extended to handle auto-installation.
-define gb_Helper_register_uiconfigs
-gb_UIConfig_REGISTERED += $(1)
-
-endef
-
-define gb_Helper_get_imagelists
-$(foreach res,$(gb_AllLangResTarget_REGISTERED),$(call gb_AllLangResTarget_get_imagelists,$(res))) \
-$(foreach ui,$(gb_UIConfig_REGISTERED),$(call gb_UIConfig_get_imagelist_target,$(ui)))
 endef
 
 # call gb_Helper_replace_if_different_and_touch,source,target,optional-touch-reference-file
@@ -317,9 +282,7 @@ endef
 endif
 
 define gb_Helper_optional_for_host
-$(if $(filter build,$(gb_Side)), \
-	$(if $(filter $(1),$(BUILD_TYPE_FOR_HOST)),$(2)), \
-	$(call gb_Output_error,gb_Helper_optional_for_host: Use only when gb_Side=build))
+$(if $(filter $(1),$(BUILD_TYPE_FOR_HOST)),$(2))
 endef
 
 define gb_Helper_print_on_error

@@ -28,7 +28,6 @@
 #include <com/sun/star/graphic/XGraphic.hpp>
 #include <com/sun/star/graphic/GraphicProvider.hpp>
 #include <com/sun/star/graphic/XGraphicProvider.hpp>
-#include <com/sun/star/io/BufferSizeExceededException.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -76,36 +75,46 @@ class XInputStreamHelper : public cppu::WeakImplHelper<io::XInputStream>
     const sal_uInt8* m_pBuffer;
     const sal_Int32  m_nLength;
     sal_Int32        m_nPosition;
+    bool             m_bBmp;
 
     const sal_uInt8* m_pBMPHeader; //default BMP-header
     sal_Int32        m_nHeaderLength;
 public:
-    XInputStreamHelper(const sal_uInt8* buf, size_t len);
+    XInputStreamHelper(const sal_uInt8* buf, size_t len, bool bBmp);
+    virtual ~XInputStreamHelper();
 
-    virtual ::sal_Int32 SAL_CALL readBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nBytesToRead ) override;
-    virtual ::sal_Int32 SAL_CALL readSomeBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nMaxBytesToRead ) override;
-    virtual void SAL_CALL skipBytes( ::sal_Int32 nBytesToSkip ) override;
-    virtual ::sal_Int32 SAL_CALL available(  ) override;
-    virtual void SAL_CALL closeInput(  ) override;
+    virtual ::sal_Int32 SAL_CALL readBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nBytesToRead ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL readSomeBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nMaxBytesToRead ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL skipBytes( ::sal_Int32 nBytesToSkip ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL available(  ) throw (io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeInput(  ) throw (io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception) override;
 };
 
-XInputStreamHelper::XInputStreamHelper(const sal_uInt8* buf, size_t len) :
+XInputStreamHelper::XInputStreamHelper(const sal_uInt8* buf, size_t len, bool bBmp) :
         m_pBuffer( buf ),
         m_nLength( len ),
-        m_nPosition( 0 )
+        m_nPosition( 0 ),
+        m_bBmp( bBmp )
 {
     static const sal_uInt8 aHeader[] =
         {0x42, 0x4d, 0xe6, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
     m_pBMPHeader = aHeader;
-    m_nHeaderLength = 0;
+    m_nHeaderLength = m_bBmp ? sizeof( aHeader ) / sizeof(sal_uInt8) : 0;
+}
+
+
+XInputStreamHelper::~XInputStreamHelper()
+{
 }
 
 sal_Int32 XInputStreamHelper::readBytes( uno::Sequence<sal_Int8>& aData, sal_Int32 nBytesToRead )
+    throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception)
 {
     return readSomeBytes( aData, nBytesToRead );
 }
 
 sal_Int32 XInputStreamHelper::readSomeBytes( uno::Sequence<sal_Int8>& aData, sal_Int32 nMaxBytesToRead )
+        throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception)
 {
     sal_Int32 nRet = 0;
     if( nMaxBytesToRead > 0 )
@@ -135,7 +144,7 @@ sal_Int32 XInputStreamHelper::readSomeBytes( uno::Sequence<sal_Int8>& aData, sal
 }
 
 
-void XInputStreamHelper::skipBytes( sal_Int32 nBytesToSkip )
+void XInputStreamHelper::skipBytes( sal_Int32 nBytesToSkip ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception)
 {
     if( nBytesToSkip < 0 || m_nPosition + nBytesToSkip > (m_nLength + m_nHeaderLength))
         throw io::BufferSizeExceededException();
@@ -143,13 +152,13 @@ void XInputStreamHelper::skipBytes( sal_Int32 nBytesToSkip )
 }
 
 
-sal_Int32 XInputStreamHelper::available(  )
+sal_Int32 XInputStreamHelper::available(  ) throw (io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception)
 {
     return ( m_nLength + m_nHeaderLength ) - m_nPosition;
 }
 
 
-void XInputStreamHelper::closeInput(  )
+void XInputStreamHelper::closeInput(  ) throw (io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception)
 {
 }
 
@@ -199,7 +208,7 @@ public:
     bool      bPageToggle;
     sal_Int16 nVertOrient;
     sal_Int16 nVertRelation;
-    text::WrapTextMode nWrap;
+    sal_Int32 nWrap;
     bool      bLayoutInCell;
     bool      bOpaque;
     bool      bContour;
@@ -229,6 +238,7 @@ public:
     sal_Int32           nCurrentBorderLine;
 
     bool            bIsGraphic;
+    bool            bIsBitmap;
 
     bool            bHoriFlip;
     bool            bVertFlip;
@@ -241,7 +251,6 @@ public:
     OUString sName;
     OUString sAlternativeText;
     OUString title;
-    OUString sHyperlinkURL;
     std::pair<OUString, OUString>& m_rPositionOffsets;
     std::pair<OUString, OUString>& m_rAligns;
     std::queue<OUString>& m_rPositivePercentages;
@@ -269,7 +278,7 @@ public:
         ,bPageToggle( false )
         ,nVertOrient(  text::VertOrientation::NONE )
         ,nVertRelation( text::RelOrientation::FRAME )
-        ,nWrap(text::WrapTextMode_NONE)
+        ,nWrap(0)
         ,bLayoutInCell(false)
         ,bOpaque( true )
         ,bContour(false)
@@ -290,6 +299,7 @@ public:
         ,eColorMode( drawing::ColorMode_STANDARD )
         ,nCurrentBorderLine(BORDER_TOP)
         ,bIsGraphic(false)
+        ,bIsBitmap(false)
         ,bHoriFlip(false)
         ,bVertFlip(false)
         ,bSizeProtected(false)
@@ -384,9 +394,6 @@ public:
             uno::Reference< container::XNamed > xNamed( xGraphicObjectProperties, uno::UNO_QUERY_THROW );
             xNamed->setName(rDomainMapper.GetGraphicNamingHelper().NameGraphic(sName));
 
-            if ( sHyperlinkURL.getLength() > 0 )
-                xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_HYPER_LINK_U_R_L ),
-                    uno::makeAny ( sHyperlinkURL ));
             xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_DESCRIPTION ),
                 uno::makeAny( sAlternativeText ));
             xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_TITLE ),
@@ -399,7 +406,7 @@ public:
     }
 
     /// Getter for m_aInteropGrabBag, but also merges in the values from other members if they are set.
-    comphelper::SequenceAsHashMap const & getInteropGrabBag()
+    comphelper::SequenceAsHashMap getInteropGrabBag()
     {
         comphelper::SequenceAsHashMap aEffectExtent;
         if (m_oEffectExtentLeft)
@@ -497,9 +504,6 @@ void GraphicImport::lcl_attribute(Id nName, Value& rValue)
     sal_Int32 nIntValue = rValue.getInt();
     switch( nName )
     {
-        case NS_ooxml::LN_CT_Hyperlink_URL://90682;
-            m_pImpl->sHyperlinkURL = rValue.getString();
-        break;
         case NS_ooxml::LN_blip: //the binary graphic data in a shape
             {
             writerfilter::Reference<Properties>::Pointer_t pProperties = rValue.getProperties();
@@ -842,7 +846,7 @@ void GraphicImport::lcl_attribute(Id nName, Value& rValue)
                         m_pImpl->applyMargins(xShapeProps);
                         bool bOpaque = m_pImpl->bOpaque && !m_pImpl->rDomainMapper.IsInHeaderFooter();
                         xShapeProps->setPropertyValue("Opaque", uno::makeAny(bOpaque));
-                        xShapeProps->setPropertyValue("Surround", uno::makeAny((sal_Int32)m_pImpl->nWrap));
+                        xShapeProps->setPropertyValue("Surround", uno::makeAny(m_pImpl->nWrap));
                         m_pImpl->applyZOrder(xShapeProps);
                         m_pImpl->applyName(xShapeProps);
 
@@ -1088,8 +1092,8 @@ void GraphicImport::lcl_sprm(Sprm& rSprm)
             }
             break;
         case NS_ooxml::LN_EG_WrapType_wrapNone: // 90944; - doesn't contain attributes
-            //depending on the behindDoc attribute text wraps through behind or in front of the object
-            m_pImpl->nWrap = text::WrapTextMode_THROUGH;
+            //depending on the behindDoc attribute text wraps through behind or in fron of the object
+            m_pImpl->nWrap = text::WrapTextMode_THROUGHT;
         break;
         case NS_ooxml::LN_EG_WrapType_wrapTopAndBottom: // 90948;
             m_pImpl->nWrap = text::WrapTextMode_NONE;
@@ -1101,13 +1105,6 @@ void GraphicImport::lcl_sprm(Sprm& rSprm)
                 writerfilter::Reference<Properties>::Pointer_t pProperties = rSprm.getProps();
                 if( pProperties.get())
                     pProperties->resolve(*this);
-            }
-        break;
-        case NS_ooxml::LN_CT_NonVisualDrawingProps_a_hlinkClick: // 90689;
-            {
-                writerfilter::Reference<Properties>::Pointer_t pProperties = rSprm.getProps();
-                if( pProperties.get( ) )
-                    pProperties->resolve( *this );
             }
         break;
         default:
@@ -1264,8 +1261,8 @@ uno::Reference< text::XTextContent > GraphicImport::createGraphicObject( const b
                         uno::makeAny(bOpaque));
                 }
                 xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_SURROUND ),
-                    uno::makeAny((sal_Int32)m_pImpl->nWrap));
-                if( m_pImpl->rDomainMapper.IsInTable() && m_pImpl->bLayoutInCell && m_pImpl->nWrap != text::WrapTextMode_THROUGH )
+                    uno::makeAny(m_pImpl->nWrap));
+                if( m_pImpl->rDomainMapper.IsInTable() && m_pImpl->bLayoutInCell && m_pImpl->nWrap != text::WrapTextMode_THROUGHT )
                     xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_FOLLOW_TEXT_FLOW ),
                         uno::makeAny(true));
 
@@ -1370,7 +1367,7 @@ void GraphicImport::data(const sal_uInt8* buf, size_t len, writerfilter::Referen
         beans::PropertyValues aMediaProperties( 1 );
         aMediaProperties[0].Name = getPropertyName(PROP_INPUT_STREAM);
 
-        uno::Reference< io::XInputStream > xIStream = new XInputStreamHelper( buf, len );
+        uno::Reference< io::XInputStream > xIStream = new XInputStreamHelper( buf, len, m_pImpl->bIsBitmap );
         aMediaProperties[0].Value <<= xIStream;
 
         uno::Reference<beans::XPropertySet> xPropertySet;

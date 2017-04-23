@@ -81,7 +81,7 @@ public:
     /**
      * @descr   Destructure, all contents will be deleted too.
      */
-    virtual ~XFContentContainer() override;
+    virtual ~XFContentContainer();
 
 public:
     /**

@@ -50,6 +50,8 @@ public:
         ::std::vector< XMLPropertyState > &rProps,
         const rtl::Reference < SvXMLImportPropertyMapper > &rMap );
 
+    virtual ~XMLTextShapePropertySetContext_Impl();
+
     using SvXMLPropertySetContext::CreateChildContext;
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -67,6 +69,10 @@ XMLTextShapePropertySetContext_Impl::XMLTextShapePropertySetContext_Impl(
                  const rtl::Reference < SvXMLImportPropertyMapper > &rMap ) :
     XMLShapePropertySetContext( rImport, nPrfx, rLName, xAttrList, nFamily,
                                 rProps, rMap )
+{
+}
+
+XMLTextShapePropertySetContext_Impl::~XMLTextShapePropertySetContext_Impl()
 {
 }
 
@@ -211,11 +217,11 @@ void XMLTextShapeStyleContext::CreateAndInsert( bool bOverwrite )
     }
 
     // tell the style about it's events (if applicable)
-    if( xEventContext.is() )
+    if( xEventContext.Is() )
     {
         // set event suppplier and release reference to context
         Reference<XEventsSupplier> xEventsSupplier(xStyle, UNO_QUERY);
-        static_cast<XMLEventsImportContext *>(xEventContext.get())->SetEvents(xEventsSupplier);
+        static_cast<XMLEventsImportContext *>(&xEventContext)->SetEvents(xEventsSupplier);
         xEventContext = nullptr;
     }
 }

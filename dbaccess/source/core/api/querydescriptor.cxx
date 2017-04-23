@@ -66,6 +66,7 @@ OQueryDescriptor::~OQueryDescriptor()
 }
 
 css::uno::Sequence<sal_Int8> OQueryDescriptor::getImplementationId()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -99,7 +100,7 @@ void OQueryDescriptor::registerProperties()
                     &m_aLayoutInformation, cppu::UnoType<decltype(m_aLayoutInformation)>::get());
 }
 
-Reference< XPropertySetInfo > SAL_CALL OQueryDescriptor::getPropertySetInfo(  )
+Reference< XPropertySetInfo > SAL_CALL OQueryDescriptor::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return createPropertySetInfo( getInfoHelper() ) ;
 }
@@ -121,14 +122,14 @@ OQueryDescriptor_Base::OQueryDescriptor_Base(::osl::Mutex&  _rMutex,::cppu::OWea
     :m_bColumnsOutOfDate(true)
     ,m_rMutex(_rMutex)
 {
-    m_pColumns = new OColumns(_rMySelf, m_rMutex, true,std::vector< OUString>(), this,this);
+    m_pColumns = new OColumns(_rMySelf, m_rMutex, true,::std::vector< OUString>(), this,this);
 }
 
 OQueryDescriptor_Base::OQueryDescriptor_Base(const OQueryDescriptor_Base& _rSource,::cppu::OWeakObject& _rMySelf)
     :m_bColumnsOutOfDate(true)
     ,m_rMutex(_rSource.m_rMutex)
 {
-    m_pColumns = new OColumns(_rMySelf, m_rMutex, true,std::vector< OUString>(), this,this);
+    m_pColumns = new OColumns(_rMySelf, m_rMutex, true,::std::vector< OUString>(), this,this);
 
     m_sCommand = _rSource.m_sCommand;
     m_bEscapeProcessing = _rSource.m_bEscapeProcessing;
@@ -146,7 +147,7 @@ OQueryDescriptor_Base::~OQueryDescriptor_Base()
 
 }
 
-sal_Int64 SAL_CALL OQueryDescriptor_Base::getSomething( const Sequence< sal_Int8 >& _rIdentifier )
+sal_Int64 SAL_CALL OQueryDescriptor_Base::getSomething( const Sequence< sal_Int8 >& _rIdentifier ) throw(RuntimeException, std::exception)
 {
     if (_rIdentifier.getLength() != 16)
         return 0;
@@ -178,11 +179,11 @@ void OQueryDescriptor_Base::clearColumns( )
     setColumnsOutOfDate();
 }
 
-Reference< XNameAccess > SAL_CALL OQueryDescriptor_Base::getColumns( )
+Reference< XNameAccess > SAL_CALL OQueryDescriptor_Base::getColumns( ) throw (RuntimeException, std::exception)
 {
     MutexGuard aGuard(m_rMutex);
 
-    if ( m_bColumnsOutOfDate )
+    if ( isColumnsOutOfDate() )
     {
         // clear the current columns
         clearColumns();
@@ -208,17 +209,17 @@ Reference< XNameAccess > SAL_CALL OQueryDescriptor_Base::getColumns( )
     return m_pColumns;
 }
 
-OUString SAL_CALL OQueryDescriptor_Base::getImplementationName(  )
+OUString SAL_CALL OQueryDescriptor_Base::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return OUString("com.sun.star.sdb.OQueryDescriptor");
 }
 
-sal_Bool SAL_CALL OQueryDescriptor_Base::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OQueryDescriptor_Base::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
-Sequence< OUString > SAL_CALL OQueryDescriptor_Base::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL OQueryDescriptor_Base::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
     Sequence< OUString > aSupported(2);
     aSupported.getArray()[0] = SERVICE_SDB_DATASETTINGS;

@@ -89,7 +89,7 @@ namespace pdfi
         static void fillFrameProps( DrawElement&       rElem,
                              PropertyMap&       rProps,
                              const EmitContext& rEmitContext,
-                             bool               bWasTransformed
+                             bool               bWasTransformed = false
                              );
 
     public:

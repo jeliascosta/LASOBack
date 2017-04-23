@@ -71,120 +71,165 @@ class DiagramWrapper : public cppu::ImplInheritanceHelper<
                     >
 {
 public:
-    explicit DiagramWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
-    virtual ~DiagramWrapper() override;
+    explicit DiagramWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~DiagramWrapper();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XComponent ____
-    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL dispose()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addEventListener( const css::uno::Reference<
-                                            css::lang::XEventListener >& xListener ) override;
+                                            css::lang::XEventListener >& xListener )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeEventListener( const css::uno::Reference<
-                                               css::lang::XEventListener >& aListener ) override;
+                                               css::lang::XEventListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDiagram ____
-    virtual OUString SAL_CALL getDiagramType() override;
+    virtual OUString SAL_CALL getDiagramType()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getDataRowProperties( sal_Int32 nRow ) override;
+        css::beans::XPropertySet > SAL_CALL getDataRowProperties( sal_Int32 nRow )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getDataPointProperties( sal_Int32 nCol, sal_Int32 nRow ) override;
+        css::beans::XPropertySet > SAL_CALL getDataPointProperties( sal_Int32 nCol, sal_Int32 nRow )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XShape (base of XDiagram) ____
-    virtual css::awt::Point SAL_CALL getPosition() override;
-    virtual void SAL_CALL setPosition( const css::awt::Point& aPosition ) override;
-    virtual css::awt::Size SAL_CALL getSize() override;
-    virtual void SAL_CALL setSize( const css::awt::Size& aSize ) override;
+    virtual css::awt::Point SAL_CALL getPosition()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPosition( const css::awt::Point& aPosition )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Size SAL_CALL getSize()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSize( const css::awt::Size& aSize )
+        throw (css::beans::PropertyVetoException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XShapeDescriptor (base of XShape) ____
-    virtual OUString SAL_CALL getShapeType() override;
+    virtual OUString SAL_CALL getShapeType()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XAxisSupplier ____
     virtual css::uno::Reference<
-        css::chart::XAxis > SAL_CALL getAxis( sal_Int32 nDimensionIndex ) override;
+        css::chart::XAxis > SAL_CALL getAxis( sal_Int32 nDimensionIndex )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::chart::XAxis > SAL_CALL getSecondaryAxis( sal_Int32 nDimensionIndex ) override;
+        css::chart::XAxis > SAL_CALL getSecondaryAxis( sal_Int32 nDimensionIndex )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XAxisZSupplier ____
     virtual css::uno::Reference<
-        css::drawing::XShape > SAL_CALL getZAxisTitle() override;
+        css::drawing::XShape > SAL_CALL getZAxisTitle()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getZMainGrid() override;
+        css::beans::XPropertySet > SAL_CALL getZMainGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getZHelpGrid() override;
+        css::beans::XPropertySet > SAL_CALL getZHelpGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getZAxis() override;
+        css::beans::XPropertySet > SAL_CALL getZAxis()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XTwoAxisXSupplier ____
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getSecondaryXAxis() override;
+        css::beans::XPropertySet > SAL_CALL getSecondaryXAxis()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XAxisXSupplier (base of XTwoAxisXSupplier) ____
     virtual css::uno::Reference<
-        css::drawing::XShape > SAL_CALL getXAxisTitle() override;
+        css::drawing::XShape > SAL_CALL getXAxisTitle()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getXAxis() override;
+        css::beans::XPropertySet > SAL_CALL getXAxis()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getXMainGrid() override;
+        css::beans::XPropertySet > SAL_CALL getXMainGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getXHelpGrid() override;
+        css::beans::XPropertySet > SAL_CALL getXHelpGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XTwoAxisYSupplier ____
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getSecondaryYAxis() override;
+        css::beans::XPropertySet > SAL_CALL getSecondaryYAxis()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XAxisYSupplier (base of XTwoAxisYSupplier) ____
     virtual css::uno::Reference<
-        css::drawing::XShape > SAL_CALL getYAxisTitle() override;
+        css::drawing::XShape > SAL_CALL getYAxisTitle()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getYAxis() override;
+        css::beans::XPropertySet > SAL_CALL getYAxis()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getYHelpGrid() override;
+        css::beans::XPropertySet > SAL_CALL getYHelpGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getYMainGrid() override;
+        css::beans::XPropertySet > SAL_CALL getYMainGrid()
+        throw (css::uno::RuntimeException, std::exception) override;
 
    // ____ XSecondAxisTitleSupplier ____
     virtual css::uno::Reference<
-        css::drawing::XShape > SAL_CALL getSecondXAxisTitle() override;
+        css::drawing::XShape > SAL_CALL getSecondXAxisTitle()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::drawing::XShape > SAL_CALL getSecondYAxisTitle() override;
+        css::drawing::XShape > SAL_CALL getSecondYAxisTitle()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XStatisticDisplay ____
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getUpBar() override;
+        css::beans::XPropertySet > SAL_CALL getUpBar()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getDownBar() override;
+        css::beans::XPropertySet > SAL_CALL getDownBar()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getMinMaxLine() override;
+        css::beans::XPropertySet > SAL_CALL getMinMaxLine()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ X3DDisplay ____
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getWall() override;
+        css::beans::XPropertySet > SAL_CALL getWall()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<
-        css::beans::XPropertySet > SAL_CALL getFloor() override;
+        css::beans::XPropertySet > SAL_CALL getFloor()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ X3DDefaultSetter ____
-    virtual void SAL_CALL set3DSettingsToDefault() override;
-    virtual void SAL_CALL setDefaultRotation() override;
-    virtual void SAL_CALL setDefaultIllumination() override;
+    virtual void SAL_CALL set3DSettingsToDefault() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultRotation() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultIllumination() throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDiagramPositioning ____
-    virtual void SAL_CALL setAutomaticDiagramPositioning(  ) override;
-    virtual sal_Bool SAL_CALL isAutomaticDiagramPositioning(  ) override;
-    virtual void SAL_CALL setDiagramPositionExcludingAxes( const css::awt::Rectangle& PositionRect ) override;
-    virtual sal_Bool SAL_CALL isExcludingDiagramPositioning(  ) override;
-    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionExcludingAxes(  ) override;
-    virtual void SAL_CALL setDiagramPositionIncludingAxes( const css::awt::Rectangle& PositionRect ) override;
-    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionIncludingAxes(  ) override;
-    virtual void SAL_CALL setDiagramPositionIncludingAxesAndAxisTitles( const css::awt::Rectangle& PositionRect ) override;
-    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionIncludingAxesAndAxisTitles(  ) override;
+    virtual void SAL_CALL setAutomaticDiagramPositioning(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isAutomaticDiagramPositioning(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDiagramPositionExcludingAxes( const css::awt::Rectangle& PositionRect ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isExcludingDiagramPositioning(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionExcludingAxes(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDiagramPositionIncludingAxes( const css::awt::Rectangle& PositionRect ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionIncludingAxes(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDiagramPositionIncludingAxesAndAxisTitles( const css::awt::Rectangle& PositionRect ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL calculateDiagramPositionIncludingAxesAndAxisTitles(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDiagramProvider ____
-    virtual css::uno::Reference< css::chart2::XDiagram > SAL_CALL getDiagram() override;
-    virtual void SAL_CALL setDiagram( const css::uno::Reference< css::chart2::XDiagram >& xDiagram ) override;
+    virtual css::uno::Reference< css::chart2::XDiagram > SAL_CALL getDiagram()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDiagram( const css::uno::Reference< css::chart2::XDiagram >& xDiagram )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     // ____ WrappedPropertySet ____

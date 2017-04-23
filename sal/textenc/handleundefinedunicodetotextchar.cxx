@@ -125,12 +125,12 @@ bool sal::detail::textenc::handleUndefinedUnicodeToTextChar(
                 *pInfo |= RTL_UNICODETOTEXT_INFO_ERROR;
                 return false;
             }
-            if ( (nFlags & RTL_UNICODETOTEXT_FLAGS_INVALID_MASK) == RTL_UNICODETOTEXT_FLAGS_INVALID_IGNORE )
+            else if ( (nFlags & RTL_UNICODETOTEXT_FLAGS_INVALID_MASK) == RTL_UNICODETOTEXT_FLAGS_INVALID_IGNORE )
             {
                 (*ppSrcBuf)++;
                 return true;
             }
-            if (ImplGetInvalidAsciiMultiByte(nFlags,
+            else if (ImplGetInvalidAsciiMultiByte(nFlags,
                                                   *ppDestBuf,
                                                   pEndDestBuf - *ppDestBuf))
             {
@@ -138,8 +138,12 @@ bool sal::detail::textenc::handleUndefinedUnicodeToTextChar(
                 ++*ppDestBuf;
                 return true;
             }
-            *pInfo |= RTL_UNICODETOTEXT_INFO_ERROR | RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL;
-            return false;
+            else
+            {
+                *pInfo |= RTL_UNICODETOTEXT_INFO_ERROR
+                              | RTL_UNICODETOTEXT_INFO_DESTBUFFERTOSMALL;
+                return false;
+            }
         }
     }
 
@@ -149,7 +153,7 @@ bool sal::detail::textenc::handleUndefinedUnicodeToTextChar(
         *pInfo |= RTL_UNICODETOTEXT_INFO_ERROR;
         return false;
     }
-    if ( (nFlags & RTL_UNICODETOTEXT_FLAGS_UNDEFINED_MASK) == RTL_UNICODETOTEXT_FLAGS_UNDEFINED_IGNORE )
+    else if ( (nFlags & RTL_UNICODETOTEXT_FLAGS_UNDEFINED_MASK) == RTL_UNICODETOTEXT_FLAGS_UNDEFINED_IGNORE )
         (*ppSrcBuf)++;
     else if (ImplGetUndefinedAsciiMultiByte(nFlags,
                                             *ppDestBuf,

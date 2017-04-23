@@ -52,24 +52,22 @@ class ProviderCache
 {
 
 public:
-     /// @throws css::uno::RuntimeException
-     ProviderCache( const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Sequence< css::uno::Any >& scriptContext );
-     /// @throws css::uno::RuntimeException
+     ProviderCache( const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Sequence< css::uno::Any >& scriptContext )
+        throw ( css::uno::RuntimeException );
      ProviderCache( const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Sequence< css::uno::Any >& scriptContext,
-        const css::uno::Sequence< OUString >& blackList );
+        const css::uno::Sequence< OUString >& blackList )
+        throw ( css::uno::RuntimeException );
     ~ProviderCache();
      css::uno::Reference< css::script::provider::XScriptProvider >
          getProvider( const OUString& providerName );
-     /// @throws css::uno::RuntimeException
      css::uno::Sequence < css::uno::Reference< css::script::provider::XScriptProvider > >
-         getAllProviders();
+         getAllProviders() throw ( css::uno::RuntimeException );
 private:
-    /// @throws css::uno::RuntimeException
-    void populateCache();
+    void populateCache()
+        throw ( css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
    css::uno::Reference< css::script::provider::XScriptProvider >
-        createProvider( ProviderDetails& details );
+        createProvider( ProviderDetails& details ) throw ( css::uno::RuntimeException );
     bool isInBlackList( const OUString& serviceName )
     {
         if ( m_sBlackList.getLength() > 0 )

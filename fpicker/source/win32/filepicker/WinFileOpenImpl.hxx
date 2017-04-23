@@ -46,89 +46,85 @@ class CWinFileOpenImpl : public CFileOpenDialog
 public:
     CWinFileOpenImpl(
         CFilePicker* aFilePicker,
-        bool bFileOpenDialog = true,
+        sal_Bool bFileOpenDialog = sal_True,
         sal_uInt32 dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
         sal_uInt32 dwTemplateId = 0,
-        HINSTANCE hInstance = nullptr );
+        HINSTANCE hInstance = 0 );
 
-    virtual ~CWinFileOpenImpl( ) override;
+    virtual ~CWinFileOpenImpl( );
 
     // XExecutableDialog
 
-    /// @throws css::uno::RuntimeException
-    virtual sal_Int16 SAL_CALL execute(  );
+    virtual sal_Int16 SAL_CALL execute(  ) throw( css::uno::RuntimeException );
 
     // XFilePicker
 
-    virtual void SAL_CALL setDefaultName( const OUString& aName ) override;
+    virtual void SAL_CALL setDefaultName( const OUString& aName )
+        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual css::uno::Sequence< OUString > SAL_CALL getFiles(  );
+    virtual css::uno::Sequence< OUString > SAL_CALL getFiles(  )
+        throw(css::uno::RuntimeException );
 
-    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory ) override;
+    virtual void SAL_CALL setDisplayDirectory( const OUString& aDirectory )
+        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual OUString SAL_CALL getDisplayDirectory( );
+    virtual OUString SAL_CALL getDisplayDirectory( ) throw ( css::uno::RuntimeException );
 
     // XFilterManager
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL appendFilter( const OUString& aTitle, const OUString& aFilter );
+    virtual void SAL_CALL appendFilter( const OUString& aTitle, const OUString& aFilter )
+        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL setCurrentFilter( const OUString& aTitle );
+    virtual void SAL_CALL setCurrentFilter( const OUString& aTitle )
+        throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual OUString  SAL_CALL getCurrentFilter( );
+    virtual OUString  SAL_CALL getCurrentFilter( )
+        throw( css::uno::RuntimeException );
 
     // XFilterGroupManager
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters );
+    virtual void SAL_CALL appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
 
     // XFilePickerControlAccess
 
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue );
+    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue )
+        throw( css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction );
+    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction )
+        throw( css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL enableControl( sal_Int16 aControlId, bool bEnable );
+    virtual void SAL_CALL enableControl( sal_Int16 aControlId, sal_Bool bEnable )
+        throw( css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel );
+    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId );
+    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId )
+        throw ( css::uno::RuntimeException);
 
     // XFilePreview
 
-    /// @throws css::uno::RuntimeException
-    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedImageFormats(  );
+    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedImageFormats(  )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual sal_Int32 SAL_CALL getTargetColorDepth( );
+    virtual sal_Int32 SAL_CALL getTargetColorDepth( )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual sal_Int32 SAL_CALL getAvailableWidth( );
+    virtual sal_Int32 SAL_CALL getAvailableWidth( )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual sal_Int32 SAL_CALL getAvailableHeight( );
+    virtual sal_Int32 SAL_CALL getAvailableHeight( )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    virtual void SAL_CALL setImage( sal_Int16 aImageFormat, const css::uno::Any& aImage );
+    virtual void SAL_CALL setImage( sal_Int16 aImageFormat, const css::uno::Any& aImage )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual bool SAL_CALL setShowState( bool bShowState );
+    virtual sal_Bool SAL_CALL setShowState( sal_Bool bShowState )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
-    virtual bool SAL_CALL getShowState( );
+    virtual sal_Bool SAL_CALL getShowState( )
+        throw (css::uno::RuntimeException);
 
     // XCancelable
 
@@ -137,33 +133,33 @@ public:
     // Implementation details
 
 protected:
-    static sal_Int16 SAL_CALL getFocused( );
+    sal_Int16 SAL_CALL getFocused( );
 
-    virtual bool SAL_CALL preModal( ) override;
-    virtual void SAL_CALL postModal( sal_Int16 nDialogResult ) override;
+    virtual bool SAL_CALL preModal( );
+    virtual void SAL_CALL postModal( sal_Int16 nDialogResult );
 
-    virtual sal_uInt32 SAL_CALL onFileOk() override;
-    virtual void SAL_CALL onSelChanged( HWND hwndListBox ) override;
+    virtual sal_uInt32 SAL_CALL onFileOk();
+    virtual void SAL_CALL onSelChanged( HWND hwndListBox );
 
     // only called back if OFN_EXPLORER is set
-    virtual void SAL_CALL onInitDone() override;
-    virtual void SAL_CALL onFolderChanged() override;
-    virtual void SAL_CALL onTypeChanged( sal_uInt32 nFilterIndex ) override;
+    virtual void SAL_CALL onInitDone();
+    virtual void SAL_CALL onFolderChanged();
+    virtual void SAL_CALL onTypeChanged( sal_uInt32 nFilterIndex );
 
     // call base class method first when overriding
-    virtual void SAL_CALL onInitDialog( HWND hwndDlg ) override;
+    virtual void SAL_CALL onInitDialog( HWND hwndDlg );
 
-    virtual sal_uInt32 SAL_CALL onCtrlCommand( HWND hwndDlg, sal_uInt16 ctrlId, sal_uInt16 notifyCode ) override;
+    virtual sal_uInt32 SAL_CALL onCtrlCommand( HWND hwndDlg, sal_uInt16 ctrlId, sal_uInt16 notifyCode );
 
     void onWMSize();
-    void onWMShow(bool bShow);
+    void onWMShow(sal_Bool bShow);
     void onWMWindowPosChanged();
     void onCustomControlHelpRequest(LPHELPINFO lphi);
 
 private:
     inline void SAL_CALL appendFilterGroupSeparator( );
 
-    static inline bool SAL_CALL IsCustomControlHelpRequested(LPHELPINFO lphi);
+    inline sal_Bool SAL_CALL IsCustomControlHelpRequested(LPHELPINFO lphi) const;
 
     void EnlargeStdControlLabels() const;
 
@@ -188,7 +184,7 @@ private:
     CFilePicker*                            m_FilePicker;
     WNDPROC                                 m_pfnOldDlgProc;
     OUString                                m_defaultName;
-    bool                                    m_bInitialSelChanged;
+    sal_Bool                                m_bInitialSelChanged;
     CHelpPopupWindow                        m_HelpPopupWindow;
     CFilePickerState*                       m_FilePickerState;
     CExecuteFilePickerState*                m_ExecuteFilePickerState;

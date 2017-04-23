@@ -26,7 +26,11 @@
 #include <sfx2/viewsh.hxx>
 #include <sfx2/objsh.hxx>
 
+#include <com/sun/star/frame/XController.hpp>
+#include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/frame/DocumentTemplates.hpp>
+#include <com/sun/star/frame/XDocumentTemplates.hpp>
+#include <com/sun/star/document/XUndoManagerSupplier.hpp>
 
 #include <sfx2/doctempl.hxx>
 
@@ -43,7 +47,7 @@ namespace sw { namespace sidebar {
 namespace {
 
 void renderPreview(sfx2::StyleManager* pStyleManager, OutputDevice& aOutputDevice,
-                   OUString const & sName, sal_Int32 nHeight, tools::Rectangle& aRect)
+                   OUString const & sName, sal_Int32 nHeight, Rectangle& aRect)
 {
     SfxStyleSheetBase* pStyleSheet = pStyleManager->Search(sName, SfxStyleFamily::Para);
 
@@ -62,19 +66,19 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
 
     ScopedVclPtrInstance<VirtualDevice> pVirtualDev(*Application::GetDefaultDevice());
 
-    float fScalingFactor = pVirtualDev->GetDPIScaleFactor();
+    sal_Int32 nScalingFactor = pVirtualDev->GetDPIScaleFactor();
 
-    sal_Int32 nMargin = 6 * fScalingFactor;
+    sal_Int32 nMargin = 6 * nScalingFactor;
 
-    sal_Int32 nPreviewWidth = 144 * fScalingFactor;
+    sal_Int32 nPreviewWidth = 144 * nScalingFactor;
 
-    sal_Int32 nNameHeight = 16 * fScalingFactor;
-    sal_Int32 nTitleHeight = 32 * fScalingFactor;
-    sal_Int32 nHeadingHeight = 24 * fScalingFactor;
-    sal_Int32 nTextBodyHeight = 16 * fScalingFactor;
-    sal_Int32 nBottomMargin = 2 * fScalingFactor;
+    sal_Int32 nNameHeight = 16 * nScalingFactor;
+    sal_Int32 nTitleHeight = 32 * nScalingFactor;
+    sal_Int32 nHeadingHeight = 24 * nScalingFactor;
+    sal_Int32 nTextBodyHeight = 16 * nScalingFactor;
+    sal_Int32 nBottomMargin = 2 * nScalingFactor;
 
-    sal_Int32 nNameFontSize = 12 * fScalingFactor;
+    sal_Int32 nNameFontSize = 12 * nScalingFactor;
 
     sal_Int32 nPreviewHeight = nNameHeight + nTitleHeight + nHeadingHeight + nTextBodyHeight + nBottomMargin;
 
@@ -88,7 +92,7 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
     long y = 0;
     {
         pVirtualDev->SetFillColor(COL_LIGHTGRAY);
-        tools::Rectangle aNameRect(0, y, nPreviewWidth, nNameHeight);
+        Rectangle aNameRect(0, y, nPreviewWidth, nNameHeight);
         pVirtualDev->DrawRect(aNameRect);
 
         vcl::Font aFont;
@@ -107,18 +111,18 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
     }
 
     {
-        tools::Rectangle aRenderRect(Point(nMargin, y), aSize);
+        Rectangle aRenderRect(Point(nMargin, y), aSize);
         renderPreview(pStyleManager, *pVirtualDev.get(), "Title", nTitleHeight, aRenderRect);
         y += nTitleHeight;
     }
 
     {
-        tools::Rectangle aRenderRect(Point(nMargin, y), aSize);
+        Rectangle aRenderRect(Point(nMargin, y), aSize);
         renderPreview(pStyleManager, *pVirtualDev.get(), "Heading 1", nHeadingHeight, aRenderRect);
         y += nHeadingHeight;
     }
     {
-        tools::Rectangle aRenderRect(Point(nMargin, y), aSize);
+        Rectangle aRenderRect(Point(nMargin, y), aSize);
         renderPreview(pStyleManager, *pVirtualDev.get(), "Text Body", nTextBodyHeight, aRenderRect);
     }
 
@@ -127,7 +131,7 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
 
 BitmapEx CreatePreview(OUString& aUrl, OUString& aName)
 {
-    SfxMedium aMedium(aUrl, StreamMode::STD_READWRITE);
+    SfxMedium aMedium(aUrl, STREAM_STD_READWRITE);
     SfxObjectShell* pObjectShell = SfxObjectShell::Current();
     SfxObjectShellLock xTemplDoc = SfxObjectShell::CreateObjectByFactoryName(pObjectShell->GetFactory().GetFactoryName(), SfxObjectCreateMode::ORGANIZER);
     xTemplDoc->DoInitNew();
@@ -198,7 +202,7 @@ void StylePresetsPanel::dispose()
     PanelLayout::dispose();
 }
 
-IMPL_LINK_NOARG(StylePresetsPanel, DoubleClickHdl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(StylePresetsPanel, DoubleClickHdl, ValueSet*, void)
 {
     sal_Int32 nItemId = mpValueSet->GetSelectItemId();
     TemplateEntry* pEntry = static_cast<TemplateEntry*>(mpValueSet->GetItemData(nItemId));

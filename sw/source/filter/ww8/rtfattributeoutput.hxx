@@ -134,7 +134,7 @@ public:
     virtual void EndStyles(sal_uInt16 nNumberOfStyles) override;
 
     /// Write default style.
-    virtual void DefaultStyle() override;
+    virtual void DefaultStyle(sal_uInt16 nStyle) override;
 
     /// Start of a style in the styles table.
     virtual void StartStyle(const OUString& rName, StyleType eType,
@@ -211,9 +211,9 @@ public:
                                 sal_Int16 nFirstLineIndex,
                                 sal_Int16 nListTabPos,
                                 const OUString& rNumberingString,
-                                const SvxBrushItem* pBrush) override;//For i120928,to export graphic of bullet
+                                const SvxBrushItem* pBrush = nullptr) override;//For i120928,to export graphic of bullet
 
-    void WriteField_Impl(const SwField* pField, ww::eField eType, const OUString& rFieldCmd, FieldFlags nMode);
+    void WriteField_Impl(const SwField* pField, ww::eField eType, const OUString& rFieldCmd, sal_uInt8 nMode);
     void WriteBookmarks_Impl(std::vector< OUString >& rStarts, std::vector< OUString >& rEnds);
     void WriteAnnotationMarks_Impl(std::vector< OUString >& rStarts, std::vector< OUString >& rEnds);
     void WriteHeaderFooter_Impl(const SwFrameFormat& rFormat, bool bHeader, const sal_Char* pStr, bool bTitlepg);
@@ -507,6 +507,11 @@ private:
      */
     OStringBuffer m_aStylesEnd;
 
+    /*
+     * We just get a "end of strike" mark at the end of strike, store here what to finish: single or double strike.
+     */
+    bool m_bStrikeDouble;
+
     sal_Int32 m_nNextAnnotationMarkId;
     sal_Int32 m_nCurrentAnnotationMarkId;
     /// Maps annotation mark names to ID's.
@@ -597,7 +602,7 @@ private:
 public:
     explicit RtfAttributeOutput(RtfExport& rExport);
 
-    virtual ~RtfAttributeOutput() override;
+    virtual ~RtfAttributeOutput();
 
     /// Return the right export class.
     virtual MSWordExportBase& GetExport() override;

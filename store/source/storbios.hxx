@@ -117,7 +117,7 @@ public:
 protected:
     /** Destruction (OReference).
      */
-    virtual ~OStorePageBIOS() override;
+    virtual ~OStorePageBIOS();
 
 private:
     /** Representation.

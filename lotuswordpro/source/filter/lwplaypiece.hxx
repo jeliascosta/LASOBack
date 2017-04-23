@@ -63,10 +63,6 @@
 
 #include "lwppiece.hxx"
 #include "lwpbasetype.hxx"
-#include "lwpmargins.hxx"
-#include "lwpborderstuff.hxx"
-#include "lwpshadow.hxx"
-
 
 class LwpRotor
 {
@@ -99,7 +95,7 @@ protected:
     LwpRotor m_ContainerRotor;
     sal_uInt8 m_ContentOrientation;
 private:
-    virtual ~LwpLayoutGeometry() override;
+    virtual ~LwpLayoutGeometry();
 };
 
 class LwpLayoutScale : public LwpVirtualPiece
@@ -116,7 +112,7 @@ public:
     sal_Int32 GetScaleWidth(){return m_nScaleWidth;}
     sal_Int32 GetScaleHeight(){return m_nScaleHeight;}
     sal_uInt16 GetPlacement(){return m_nPlacement;}
-    LwpPoint& GetOffset() {return m_Offset;}
+    inline LwpPoint& GetOffset() {return m_Offset;}
 protected:
     virtual void Read() override;
 protected:
@@ -128,8 +124,10 @@ protected:
     LwpPoint m_Offset;
     sal_uInt16 m_nPlacement;
 private:
-    virtual ~LwpLayoutScale() override;
+    virtual ~LwpLayoutScale();
 };
+
+#include "lwpmargins.hxx"
 
 class LwpLayoutMargins : public LwpVirtualPiece
 {
@@ -145,9 +143,10 @@ protected:
     LwpMargins m_ExtMargins;
     LwpMargins m_ExtraMargins;
 private:
-    virtual ~LwpLayoutMargins() override;
+    virtual ~LwpLayoutMargins();
 };
 
+#include "lwpborderstuff.hxx"
 class LwpLayoutBorder : public LwpVirtualPiece
 {
 public:
@@ -159,7 +158,7 @@ protected:
 protected:
     LwpBorderStuff m_BorderStuff;
 private:
-    virtual ~LwpLayoutBorder() override;
+    virtual ~LwpLayoutBorder();
 };
 
 class LwpLayoutBackground : public LwpVirtualPiece
@@ -173,7 +172,7 @@ protected:
 protected:
     LwpBackgroundStuff m_BackgroundStuff;
 private:
-    virtual ~LwpLayoutBackground() override;
+    virtual ~LwpLayoutBackground();
 };
 
 class LwpExternalBorder
@@ -200,7 +199,7 @@ protected:
 protected:
     LwpExternalBorder   m_ExtranalBorder;
 private:
-    virtual ~LwpLayoutExternalBorder() override;
+    virtual ~LwpLayoutExternalBorder();
 };
 
 class LwpColumnInfo
@@ -209,8 +208,8 @@ public:
     LwpColumnInfo();
     ~LwpColumnInfo();
     void Read(LwpObjectStream *pStrm);
-    double GetWidth(){return LwpTools::ConvertFromUnitsToMetric(m_nWidth);}
-    double GetGap(){return LwpTools::ConvertFromUnitsToMetric(m_nGap);}
+    inline double GetWidth(){return LwpTools::ConvertFromUnitsToMetric(m_nWidth);}
+    inline double GetGap(){return LwpTools::ConvertFromUnitsToMetric(m_nGap);}
 private:
     sal_Int32 m_nWidth;
     sal_Int32 m_nGap;
@@ -221,7 +220,7 @@ class LwpLayoutColumns : public LwpVirtualPiece
 public:
     LwpLayoutColumns(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
     virtual void Parse(IXFStream* pOutputStream) override;
-    sal_uInt16 GetNumCols(){return m_nNumCols;}
+    inline sal_uInt16 GetNumCols(){return m_nNumCols;}
     double GetColWidth(sal_uInt16 nIndex);
     double GetColGap(sal_uInt16 nIndex);
 protected:
@@ -230,7 +229,7 @@ protected:
     sal_uInt16 m_nNumCols;
     LwpColumnInfo* m_pColumns;
 private:
-    virtual ~LwpLayoutColumns() override;
+    virtual ~LwpLayoutColumns();
 };
 
 class LwpLayoutGutters : public LwpVirtualPiece
@@ -238,13 +237,13 @@ class LwpLayoutGutters : public LwpVirtualPiece
 public:
     LwpLayoutGutters(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
     virtual void Parse(IXFStream* pOutputStream) override;
-    LwpBorderStuff& GetBorderStuff() { return m_BorderBuffer; }
+    inline LwpBorderStuff& GetBorderStuff() { return m_BorderBuffer; }
 protected:
     virtual void Read() override;
 protected:
     LwpBorderStuff m_BorderBuffer;
 private:
-    virtual ~LwpLayoutGutters() override;
+    virtual ~LwpLayoutGutters();
 };
 
 class LwpJoinStuff
@@ -303,8 +302,10 @@ protected:
 protected:
     LwpJoinStuff m_JoinStuff;
 private:
-    virtual ~LwpLayoutJoins() override;
+    virtual ~LwpLayoutJoins();
 };
+
+#include "lwpshadow.hxx"
 
 class LwpLayoutShadow : public LwpVirtualPiece
 {
@@ -317,7 +318,7 @@ protected:
 protected:
     LwpShadow m_Shadow;
 private:
-    virtual ~LwpLayoutShadow() override;
+    virtual ~LwpLayoutShadow();
 };
 
 class LwpLayoutRelativityGuts
@@ -373,7 +374,7 @@ protected:
 protected:
     LwpLayoutRelativityGuts m_RelGuts;
 private:
-    virtual ~LwpLayoutRelativity() override;
+    virtual ~LwpLayoutRelativity();
 };
 
 #endif

@@ -20,7 +20,6 @@
 #include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
 #include <com/sun/star/drawing/PointSequence.hpp>
 #include <com/sun/star/drawing/FlagSequence.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
@@ -37,6 +36,7 @@ namespace unotools
 {
 
     B2DPolyPolygon polyPolygonBezierToB2DPolyPolygon(const drawing::PolyPolygonBezierCoords& rSourcePolyPolygon)
+        throw( lang::IllegalArgumentException )
     {
         const sal_Int32 nOuterSequenceCount(rSourcePolyPolygon.Coordinates.getLength());
         B2DPolyPolygon aNewPolyPolygon;
@@ -171,7 +171,7 @@ namespace unotools
             const bool bClosed(rPoly.isClosed());
 
             // calculate input vertex count
-            const sal_uInt32 nLoopCount(bClosed ? nCount : (nCount ? nCount - 1 : 0 ));
+            const sal_uInt32 nLoopCount(bClosed ? nCount : (nCount ? nCount - 1L : 0 ));
 
             std::vector<awt::Point> aPoints; aPoints.reserve(nLoopCount);
             std::vector<drawing::PolygonFlags> aFlags; aFlags.reserve(nLoopCount);
@@ -237,7 +237,7 @@ namespace unotools
                 else
                 {
                     // add last point as closing point
-                    const basegfx::B2DPoint aClosingPoint(rPoly.getB2DPoint(nCount - 1));
+                    const basegfx::B2DPoint aClosingPoint(rPoly.getB2DPoint(nCount - 1L));
                     const awt::Point aEnd(fround(aClosingPoint.getX()),
                                           fround(aClosingPoint.getY()));
                     aPoints.push_back(aEnd);

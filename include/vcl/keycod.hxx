@@ -39,6 +39,7 @@ private:
 
 public:
                     KeyCode() { nKeyCodeAndModifiers = 0; eFunc = KeyFuncType::DONTKNOW; }
+                    KeyCode( const ResId& rResId );
                     KeyCode( sal_uInt16 nKey, sal_uInt16 nModifier = 0 );
                     KeyCode( sal_uInt16 nKey, bool bShift, bool bMod1, bool bMod2, bool bMod3 );
                     KeyCode( KeyFuncType eFunction );

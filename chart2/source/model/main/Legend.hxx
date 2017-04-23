@@ -52,12 +52,18 @@ class Legend :
 {
 public:
     explicit Legend( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~Legend() override;
+    virtual ~Legend();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -68,35 +74,44 @@ protected:
     explicit Legend( const Legend & rOther );
 
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException) override;
 
     // ____ OPropertySet ____
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     // ____ XPropertySet ____
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyBroadcaster ____
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent ) override;
+        const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source ) override;
+        const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
+
+    void fireModifyEvent();
 
 private:
     css::uno::Reference< css::util::XModifyListener > m_xModifyEventForwarder;

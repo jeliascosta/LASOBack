@@ -31,7 +31,6 @@
 #include "com/sun/star/lang/XMultiServiceFactory.hpp"
 #include "com/sun/star/registry/XRegistryKey.hpp"
 #include "com/sun/star/util/theMacroExpander.hpp"
-#include "com/sun/star/ucb/IllegalIdentifierException.hpp"
 #include "com/sun/star/ucb/XContentProvider.hpp"
 
 #define EXPAND_PROTOCOL "vnd.sun.star.expand"
@@ -70,18 +69,24 @@ public:
           m_xComponentContext( xComponentContext ),
           m_xMacroExpander( util::theMacroExpander::get(xComponentContext) )
         {}
+    virtual ~ExpandContentProviderImpl() throw ();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
-    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (uno::RuntimeException, std::exception) override;
 
     // XContentProvider
     virtual uno::Reference< ucb::XContent > SAL_CALL queryContent(
-        uno::Reference< ucb::XContentIdentifier > const & xIdentifier ) override;
+        uno::Reference< ucb::XContentIdentifier > const & xIdentifier )
+        throw (ucb::IllegalIdentifierException, uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL compareContentIds(
         uno::Reference< ucb::XContentIdentifier > const & xId1,
-        uno::Reference< ucb::XContentIdentifier > const & xId2 ) override;
+        uno::Reference< ucb::XContentIdentifier > const & xId2 )
+        throw (uno::RuntimeException, std::exception) override;
 };
 
 
@@ -98,6 +103,12 @@ inline void ExpandContentProviderImpl::check() const
                 const_cast< ExpandContentProviderImpl * >(this) ) );
     }
 }
+
+
+ExpandContentProviderImpl::~ExpandContentProviderImpl() throw ()
+{
+}
+
 
 void ExpandContentProviderImpl::disposing()
 {
@@ -130,6 +141,7 @@ uno::Sequence< OUString > SAL_CALL supportedServices()
 // XServiceInfo
 
 OUString ExpandContentProviderImpl::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     check();
     return implName();
@@ -137,12 +149,14 @@ OUString ExpandContentProviderImpl::getImplementationName()
 
 
 uno::Sequence< OUString > ExpandContentProviderImpl::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     check();
     return supportedServices();
 }
 
 sal_Bool ExpandContentProviderImpl::supportsService(OUString const & serviceName )
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
@@ -171,6 +185,7 @@ OUString ExpandContentProviderImpl::expandUri(
 
 uno::Reference< ucb::XContent > ExpandContentProviderImpl::queryContent(
     uno::Reference< ucb::XContentIdentifier > const & xIdentifier )
+    throw (ucb::IllegalIdentifierException, uno::RuntimeException, std::exception)
 {
     check();
     OUString uri( expandUri( xIdentifier ) );
@@ -192,6 +207,7 @@ uno::Reference< ucb::XContent > ExpandContentProviderImpl::queryContent(
 sal_Int32 ExpandContentProviderImpl::compareContentIds(
     uno::Reference< ucb::XContentIdentifier > const & xId1,
     uno::Reference< ucb::XContentIdentifier > const & xId2 )
+    throw (uno::RuntimeException, std::exception)
 {
     check();
     try

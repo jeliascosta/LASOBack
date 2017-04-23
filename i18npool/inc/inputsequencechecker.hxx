@@ -41,18 +41,20 @@ class InputSequenceCheckerImpl : public cppu::WeakImplHelper
 public:
     InputSequenceCheckerImpl( const css::uno::Reference < css::uno::XComponentContext >& rxContext );
     InputSequenceCheckerImpl(const char *pServiceName);
-    virtual ~InputSequenceCheckerImpl() override;
+    virtual ~InputSequenceCheckerImpl();
 
     virtual sal_Bool SAL_CALL checkInputSequence(const OUString& Text, sal_Int32 nStartPos,
-        sal_Unicode inputChar, sal_Int16 inputCheckMode) override;
+        sal_Unicode inputChar, sal_Int16 inputCheckMode) throw(css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Int32 SAL_CALL correctInputSequence(OUString& Text, sal_Int32 nStartPos,
-        sal_Unicode inputChar, sal_Int16 inputCheckMode) override;
+        sal_Unicode inputChar, sal_Int16 inputCheckMode) throw(css::uno::RuntimeException, std::exception) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     const sal_Char *serviceName;
@@ -68,8 +70,8 @@ private:
 
     css::uno::Reference < css::uno::XComponentContext > m_xContext;
 
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference< css::i18n::XExtendedInputSequenceChecker >& SAL_CALL getInputSequenceChecker(sal_Char* rLanguage);
+    css::uno::Reference< css::i18n::XExtendedInputSequenceChecker >& SAL_CALL getInputSequenceChecker(sal_Char* rLanguage)
+        throw (css::uno::RuntimeException);
     static sal_Char* SAL_CALL getLanguageByScripType(sal_Unicode cChar, sal_Unicode nChar);
 };
 

@@ -73,46 +73,68 @@ public:
     Service& operator=(const Service&) = delete;
 
 private:
-    virtual ~Service() override {}
+    virtual ~Service() {}
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return getServiceImplementationName(); }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     { return ServiceName == getSupportedServiceNames()[0]; }
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override
+    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override
     { return getServiceSupportedServiceNames(); }
 
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-    getPropertySetInfo() override
+    getPropertySetInfo() throw (css::uno::RuntimeException, std::exception) override
     { return css::uno::Reference< css::beans::XPropertySetInfo >(); }
 
     virtual void SAL_CALL setPropertyValue(
-        OUString const &, css::uno::Any const &) override;
+        OUString const &, css::uno::Any const &)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::beans::PropertyVetoException,
+            css::lang::IllegalArgumentException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Any SAL_CALL getPropertyValue(
-        OUString const & PropertyName) override;
+        OUString const & PropertyName)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addPropertyChangeListener(
         OUString const &,
-        css::uno::Reference< css::beans::XPropertyChangeListener > const &) override
+        css::uno::Reference< css::beans::XPropertyChangeListener > const &)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
     {}
 
     virtual void SAL_CALL removePropertyChangeListener(
         OUString const &,
-        css::uno::Reference< css::beans::XPropertyChangeListener > const &) override
+        css::uno::Reference< css::beans::XPropertyChangeListener > const &)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
     {}
 
     virtual void SAL_CALL addVetoableChangeListener(
         OUString const &,
-        css::uno::Reference< css::beans::XVetoableChangeListener > const &) override
+        css::uno::Reference< css::beans::XVetoableChangeListener > const &)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
     {}
 
     virtual void SAL_CALL removeVetoableChangeListener(
         OUString const &,
-        css::uno::Reference< css::beans::XVetoableChangeListener > const &) override
+        css::uno::Reference< css::beans::XVetoableChangeListener > const &)
+        throw (
+            css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
     {}
 
     bool enabled_;
@@ -124,19 +146,27 @@ Service::Service(): enabled_(false) {
     if (context.is()) {
         OUString desktop;
         context->getValueByName(
-            "system.desktop-environment") >>= desktop;
-        enabled_ = desktop == "KDE" && KApplication::kApplication() != nullptr;
+            OUString("system.desktop-environment")) >>=
+            desktop;
+        enabled_ = desktop == "KDE" && KApplication::kApplication() != 0;
     }
 }
 
 void Service::setPropertyValue(OUString const &, css::uno::Any const &)
+    throw (
+        css::beans::UnknownPropertyException, css::beans::PropertyVetoException,
+        css::lang::IllegalArgumentException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     throw css::lang::IllegalArgumentException(
-        "setPropertyValue not supported",
+        OUString("setPropertyValue not supported"),
         static_cast< cppu::OWeakObject * >(this), -1);
 }
 
 css::uno::Any Service::getPropertyValue(OUString const & PropertyName)
+    throw (
+        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     if ( PropertyName == "EnableATToolSupport" || PropertyName == "ExternalMailer" || PropertyName == "SourceViewFontHeight"
       || PropertyName == "SourceViewFontName" || PropertyName == "WorkPathVariable" || PropertyName == "ooInetFTPProxyName"
@@ -164,9 +194,9 @@ css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance(
 
 static cppu::ImplementationEntry const services[] = {
     { &createInstance, &getServiceImplementationName,
-      &getServiceSupportedServiceNames, &cppu::createSingleComponentFactory, nullptr,
+      &getServiceSupportedServiceNames, &cppu::createSingleComponentFactory, 0,
       0 },
-    { nullptr, nullptr, nullptr, nullptr, nullptr, 0 }
+    { 0, 0, 0, 0, 0, 0 }
 };
 
 }

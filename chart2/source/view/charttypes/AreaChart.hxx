@@ -36,7 +36,7 @@ public:
              , sal_Int32 nDimensionCount
              , bool bCategoryXAxis, bool bNoArea=false
              );
-    virtual ~AreaChart() override;
+    virtual ~AreaChart();
 
     virtual void createShapes() override;
     virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
@@ -45,10 +45,11 @@ public:
 
     // MinimumAndMaximumSupplier
     virtual double getMaximumX() override;
+    virtual bool isExpandIfValuesCloseToBorder( sal_Int32 nDimensionIndex ) override;
     virtual bool isSeparateStackingForDifferentSigns( sal_Int32 nDimensionIndex ) override;
 
     virtual LegendSymbolStyle getLegendSymbolStyle() override;
-    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex/*-1 for series symbol*/ ) override;
+    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex=-1/*-1 for series symbol*/ ) override;
 
 private: //methods
     void impl_createSeriesShapes();
@@ -65,8 +66,7 @@ private: //methods
                 , css::drawing::PolyPolygonShape3D &aPoly );
 
 private: //member
-    std::unique_ptr<PlottingPositionHelper>
-                                        m_pMainPosHelper;
+    PlottingPositionHelper*             m_pMainPosHelper;
 
     bool                                m_bArea;//false -> line or symbol only
     bool                                m_bLine;

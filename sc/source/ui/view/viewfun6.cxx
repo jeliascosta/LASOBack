@@ -45,7 +45,6 @@
 #include "drawview.hxx"
 #include "globalnames.hxx"
 #include "inputhdl.hxx"
-#include "tabvwsh.hxx"
 
 #include <vector>
 
@@ -269,7 +268,7 @@ void ScViewFunc::InsertCurrentTime(short nReqFmt, const OUString& rUndoStr)
     SvNumberFormatter* pFormatter = rDoc.GetFormatTable();
     const SvNumberformat* pCurNumFormatEntry = pFormatter->GetEntry(nCurNumFormat);
     const short nCurNumFormatType = (pCurNumFormatEntry ?
-            pCurNumFormatEntry->GetMaskedType() : css::util::NumberFormat::UNDEFINED);
+            (pCurNumFormatEntry->GetType() & ~css::util::NumberFormat::DEFINED) : css::util::NumberFormat::UNDEFINED);
 
     if (bInputMode)
     {
@@ -439,7 +438,7 @@ void ScViewFunc::InsertCurrentTime(short nReqFmt, const OUString& rUndoStr)
         }
 
         ::svl::IUndoManager* pUndoMgr = pDocSh->GetUndoManager();
-        pUndoMgr->EnterListAction(rUndoStr, rUndoStr, 0, rViewData.GetViewShell()->GetViewShellId());
+        pUndoMgr->EnterListAction(rUndoStr, rUndoStr);
 
         pDocSh->GetDocFunc().SetValueCell(aCurPos, fVal, true);
 
@@ -509,8 +508,6 @@ void ScViewFunc::EditNote()
             {
                 ScrollToObject( pCaption );         // make object fully visible
                 pFuText->SetInEditMode( pCaption );
-
-                ScTabView::OnLOKNoteStateChanged( pNote );
             }
         }
     }

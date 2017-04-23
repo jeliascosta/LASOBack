@@ -23,10 +23,10 @@
 
 // implementation
 
-CStgTransferHelper::CStgTransferHelper( bool bAutoInit,
+CStgTransferHelper::CStgTransferHelper( sal_Bool bAutoInit,
                                         HGLOBAL hGlob,
-                                        bool bDelStgOnRelease ) :
-    m_lpStream( nullptr ),
+                                        sal_Bool bDelStgOnRelease ) :
+    m_lpStream( NULL ),
     m_bDelStgOnRelease( bDelStgOnRelease )
 {
     if ( bAutoInit )
@@ -83,13 +83,13 @@ HGLOBAL SAL_CALL CStgTransferHelper::getHGlobal( ) const
 {
     OSL_ASSERT( m_lpStream );
 
-    HGLOBAL hGlob = nullptr;
+    HGLOBAL hGlob = NULL;
 
     if ( m_lpStream )
     {
         HRESULT hr = GetHGlobalFromStream( m_lpStream, &hGlob );
         if ( FAILED( hr ) )
-            hGlob = nullptr;
+            hGlob = NULL;
     }
 
     return hGlob;
@@ -109,21 +109,21 @@ void SAL_CALL CStgTransferHelper::getIStream( LPSTREAM* ppStream )
 
 void SAL_CALL CStgTransferHelper::init( SIZE_T newSize,
                                         sal_uInt32 uiFlags,
-                                        bool bDelStgOnRelease )
+                                        sal_Bool bDelStgOnRelease )
 {
     cleanup( );
 
     m_bDelStgOnRelease      = bDelStgOnRelease;
 
     HGLOBAL hGlob = GlobalAlloc( uiFlags, newSize );
-    if ( nullptr == hGlob )
+    if ( NULL == hGlob )
         throw CStgTransferException( STG_E_MEDIUMFULL );
 
     HRESULT hr = CreateStreamOnHGlobal( hGlob, m_bDelStgOnRelease, &m_lpStream );
     if ( FAILED( hr ) )
     {
         GlobalFree( hGlob );
-        m_lpStream = nullptr;
+        m_lpStream = NULL;
         throw CStgTransferException( hr );
     }
 
@@ -137,7 +137,7 @@ void SAL_CALL CStgTransferHelper::init( SIZE_T newSize,
 // Init
 
 void SAL_CALL CStgTransferHelper::init( HGLOBAL hGlob,
-                                        bool bDelStgOnRelease )
+                                         sal_Bool bDelStgOnRelease )
 {
     cleanup( );
 
@@ -162,7 +162,7 @@ void SAL_CALL CStgTransferHelper::cleanup( )
     if ( m_lpStream )
     {
         m_lpStream->Release( );
-        m_lpStream = nullptr;
+        m_lpStream = NULL;
     }
 }
 
@@ -172,7 +172,7 @@ sal_uInt32 SAL_CALL CStgTransferHelper::memSize( CLIPFORMAT cf ) const
 {
     DWORD dwSize = 0;
 
-    if ( nullptr != m_lpStream )
+    if ( NULL != m_lpStream )
     {
         HGLOBAL hGlob;
         GetHGlobalFromStream( m_lpStream, &hGlob );

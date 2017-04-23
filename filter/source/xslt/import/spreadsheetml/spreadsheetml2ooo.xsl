@@ -5122,18 +5122,18 @@
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:variable name="recent-index"
-						select="preceding-sibling::ss:Column[@ss:Index][last()]"/>
+						select="preceding-sibling::*[@ss:Index][last()]"/>
 					<xsl:choose>
 						<xsl:when test="$recent-index">
 							<xsl:variable name="nodes-up-to-current"
-								select="set:intersection(preceding-sibling::ss:Column, $recent-index/following-sibling::ss:Column)"/>
+								select="set:intersection(preceding-sibling::*, $recent-index/following-sibling::*)"/>
 							<xsl:variable name="allSpans" select="$nodes-up-to-current/@ss:Span"/>
 							<xsl:value-of
 								select="$recent-index/@ss:Index + count($nodes-up-to-current) + sum($allSpans) + count($allSpans)"
 							/>
 						</xsl:when>
 						<xsl:otherwise>
-							<xsl:variable name="allSpans" select="preceding-sibling::ss:Column/@ss:Span"/>
+							<xsl:variable name="allSpans" select="preceding-sibling::*/@ss:Span"/>
 
 							<xsl:value-of select="$currentCount + sum($allSpans) + count($allSpans)"/>
 						</xsl:otherwise>
@@ -5255,15 +5255,15 @@
 			<xsl:choose>
 				<xsl:when test="@ss:Index"><xsl:value-of select="@ss:Index -1 + $simple-span-value"/></xsl:when>
 				<xsl:otherwise>
-					<xsl:variable name="recent-index" select="preceding-sibling::ss:Row[@ss:Index][last()]"></xsl:variable>
+					<xsl:variable name="recent-index" select="preceding-sibling::*[@ss:Index][last()]"></xsl:variable>
 					<xsl:choose>
 						<xsl:when test="$recent-index">
-							<xsl:variable name="nodes-up-to-current" select="set:intersection(preceding-sibling::ss:Row, $recent-index/following-sibling::ss:Row)"></xsl:variable>
+							<xsl:variable name="nodes-up-to-current" select="set:intersection(preceding-sibling::*, $recent-index/following-sibling::*)"></xsl:variable>
 							<xsl:variable name="allSpans" select="$nodes-up-to-current/@ss:Span"/>
 							<xsl:value-of select="$recent-index/@ss:Index + count($nodes-up-to-current) + sum($allSpans) + count($allSpans)"/>
 						</xsl:when>
 						<xsl:otherwise>
-							<xsl:variable name="allSpans" select="preceding-sibling::ss:Row/@ss:Span"/>
+							<xsl:variable name="allSpans" select="preceding-sibling::*/@ss:Span"/>
 							<xsl:value-of select="position() + sum($allSpans) + count($allSpans)"/>
 						</xsl:otherwise>
 					</xsl:choose>
@@ -5960,15 +5960,15 @@
 				<xsl:choose>
 					<xsl:when test="@ss:Index"><xsl:value-of select="@ss:Index -1 + $simple-span-value"/></xsl:when>
 					<xsl:otherwise>
-						<xsl:variable name="recent-index" select="preceding-sibling::ss:Row[@ss:Index][last()]"></xsl:variable>
+						<xsl:variable name="recent-index" select="preceding-sibling::*[@ss:Index][last()]"></xsl:variable>
 						<xsl:choose>
 							<xsl:when test="$recent-index">
-								<xsl:variable name="nodes-up-to-current" select="set:intersection(preceding-sibling::ss:Row, $recent-index/following-sibling::ss:Row)"></xsl:variable>
+								<xsl:variable name="nodes-up-to-current" select="set:intersection(preceding-sibling::*, $recent-index/following-sibling::*)"></xsl:variable>
 								<xsl:variable name="allSpans" select="$nodes-up-to-current/@ss:Span"/>
 								<xsl:value-of select="$recent-index/@ss:Index + count($nodes-up-to-current) + sum($allSpans) + count($allSpans)"/>
 							</xsl:when>
 							<xsl:otherwise>
-								<xsl:variable name="allSpans" select="preceding-sibling::ss:Row/@ss:Span"/>
+								<xsl:variable name="allSpans" select="preceding-sibling::*/@ss:Span"/>
 								<xsl:value-of select="$rowNodeIndex + sum($allSpans) + count($allSpans)"/>
 							</xsl:otherwise>
 						</xsl:choose>

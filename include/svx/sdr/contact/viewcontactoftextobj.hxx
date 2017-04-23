@@ -31,7 +31,7 @@ class ViewContactOfTextObj : public ViewContactOfSdrObj
 public:
     // basic constructor, used from SdrObject.
     explicit ViewContactOfTextObj(SdrTextObj& rTextObj);
-    virtual ~ViewContactOfTextObj() override;
+    virtual ~ViewContactOfTextObj();
 };
 
 }}

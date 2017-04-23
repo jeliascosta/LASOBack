@@ -40,6 +40,12 @@ AcceleratorCache::AcceleratorCache(const AcceleratorCache& rCopy)
     m_lKey2Commands = rCopy.m_lKey2Commands;
 }
 
+AcceleratorCache::~AcceleratorCache()
+{
+    // Don't save anything automatically here.
+    // The user has to do that explicitly!
+}
+
 void AcceleratorCache::takeOver(const AcceleratorCache& rCopy)
 {
     SolarMutexGuard g;

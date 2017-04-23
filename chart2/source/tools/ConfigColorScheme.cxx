@@ -18,6 +18,7 @@
  */
 
 #include "ConfigColorScheme.hxx"
+#include "ContainerHelper.hxx"
 #include "macros.hxx"
 
 #include <unotools/configitem.hxx>
@@ -53,6 +54,7 @@ class ChartConfigItem : public ::utl::ConfigItem
 {
 public:
     explicit ChartConfigItem( ConfigColorScheme & rListener );
+    virtual ~ChartConfigItem() {}
 
     void addPropertyNotification( const OUString & rPropertyName );
     uno::Any getProperty( const OUString & aPropertyName );
@@ -64,7 +66,7 @@ protected:
 
 private:
     ConfigColorScheme &      m_rListener;
-    std::set< OUString >   m_aPropertiesToNotify;
+    ::std::set< OUString >   m_aPropertiesToNotify;
 };
 
 ChartConfigItem::ChartConfigItem( ConfigColorScheme & rListener ) :
@@ -87,7 +89,7 @@ void ChartConfigItem::ImplCommit()
 void ChartConfigItem::addPropertyNotification( const OUString & rPropertyName )
 {
     m_aPropertiesToNotify.insert( rPropertyName );
-    EnableNotification( comphelper::containerToSequence( m_aPropertiesToNotify ));
+    EnableNotification( comphelper::containerToSequence<OUString>( m_aPropertiesToNotify ));
 }
 
 uno::Any ChartConfigItem::getProperty( const OUString & aPropertyName )
@@ -139,6 +141,7 @@ void ConfigColorScheme::retrieveConfigColors()
 
 // ____ XColorScheme ____
 ::sal_Int32 SAL_CALL ConfigColorScheme::getColorByIndex( ::sal_Int32 nIndex )
+    throw (uno::RuntimeException, std::exception)
 {
     if( m_bNeedsUpdate )
         retrieveConfigColors();
@@ -164,19 +167,34 @@ void ConfigColorScheme::notify( const OUString & rPropertyName )
         m_bNeedsUpdate = true;
 }
 
+Sequence< OUString > ConfigColorScheme::getSupportedServiceNames_Static()
+{
+    Sequence<OUString> aServices { "com.sun.star.chart2.ColorScheme" };
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ConfigColorScheme::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString ConfigColorScheme::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart2.ConfigDefaultColorScheme") ;
 }
 
 sal_Bool SAL_CALL ConfigColorScheme::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL ConfigColorScheme::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.chart2.ColorScheme" };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace chart

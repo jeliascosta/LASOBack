@@ -112,15 +112,15 @@ OUString SwHistorySetFormat::GetDescription() const
     case RES_BREAK:
         switch ((static_cast<SvxFormatBreakItem &>(*m_pAttr)).GetBreak())
         {
-        case SvxBreak::PageBefore:
-        case SvxBreak::PageAfter:
-        case SvxBreak::PageBoth:
+        case SVX_BREAK_PAGE_BEFORE:
+        case SVX_BREAK_PAGE_AFTER:
+        case SVX_BREAK_PAGE_BOTH:
             aResult = SW_RESSTR(STR_UNDO_PAGEBREAKS);
 
             break;
-        case SvxBreak::ColumnBefore:
-        case SvxBreak::ColumnAfter:
-        case SvxBreak::ColumnBoth:
+        case SVX_BREAK_COLUMN_BEFORE:
+        case SVX_BREAK_COLUMN_AFTER:
+        case SVX_BREAK_COLUMN_BOTH:
             aResult = SW_RESSTR(STR_UNDO_COLBRKS);
 
             break;
@@ -201,7 +201,7 @@ SwHistorySetText::SwHistorySetText( SwTextAttr* pTextHt, sal_uLong nNodePos )
     , m_bFormatIgnoreEnd  (pTextHt->IsFormatIgnoreEnd  ())
 {
     // Caution: the following attributes generate no format attributes:
-    //  - NoLineBreak, NoHyphen, Inserted, Deleted
+    //  - NoLineBreak, NoHypen, Inserted, Deleted
     // These cases must be handled separately !!!
 
     // a little bit complicated but works: first assign a copy of the
@@ -261,10 +261,10 @@ SwHistorySetTextField::SwHistorySetTextField( SwTextField* pTextField, sal_uLong
     SwDoc* pDoc = pTextField->GetTextNode().GetDoc();
 
     m_nFieldWhich = m_pField->GetField()->GetTyp()->Which();
-    if (m_nFieldWhich == SwFieldIds::Database ||
-        m_nFieldWhich == SwFieldIds::User ||
-        m_nFieldWhich == SwFieldIds::SetExp ||
-        m_nFieldWhich == SwFieldIds::Dde ||
+    if (m_nFieldWhich == RES_DBFLD ||
+        m_nFieldWhich == RES_USERFLD ||
+        m_nFieldWhich == RES_SETEXPFLD ||
+        m_nFieldWhich == RES_DDEFLD ||
         !pDoc->getIDocumentFieldsAccess().GetSysFieldType( m_nFieldWhich ))
     {
         m_pFieldType.reset( m_pField->GetField()->GetTyp()->Copy() );
@@ -503,7 +503,7 @@ void SwHistorySetFootnote::SetInDoc( SwDoc* pDoc, bool )
 }
 
 SwHistoryChangeFormatColl::SwHistoryChangeFormatColl( SwFormatColl* pFormatColl, sal_uLong nNd,
-                            SwNodeType nNodeWhich )
+                            sal_uInt8 nNodeWhich )
     : SwHistoryHint( HSTRY_CHGFMTCOLL )
     , m_pColl( pFormatColl )
     , m_nNodeIndex( nNd )
@@ -520,7 +520,7 @@ void SwHistoryChangeFormatColl::SetInDoc( SwDoc* pDoc, bool )
     // document. if it has been deleted, there is no undo!
     if ( pContentNd && m_nNodeType == pContentNd->GetNodeType() )
     {
-        if ( SwNodeType::Text == m_nNodeType )
+        if ( ND_TEXTNODE == m_nNodeType )
         {
             if (pDoc->GetTextFormatColls()->Contains( static_cast<SwTextFormatColl * const>(m_pColl) ))
             {
@@ -685,8 +685,7 @@ SwHistorySetAttrSet::SwHistorySetAttrSet( const SfxItemSet& rSet,
     SfxItemIter aIter( m_OldSet ), aOrigIter( rSet );
     const SfxPoolItem* pItem = aIter.FirstItem(),
                      * pOrigItem = aOrigIter.FirstItem();
-    while (pItem && pOrigItem)
-    {
+    do {
         if( !rSetArr.count( pOrigItem->Which() ))
         {
             m_ResetArray.push_back( pOrigItem->Which() );
@@ -742,9 +741,11 @@ SwHistorySetAttrSet::SwHistorySetAttrSet( const SfxItemSet& rSet,
             }
         }
 
+        if( aIter.IsAtEnd() )
+            break;
         pItem = aIter.NextItem();
         pOrigItem = aOrigIter.NextItem();
-    }
+    } while( true );
 }
 
 void SwHistorySetAttrSet::SetInDoc( SwDoc* pDoc, bool )
@@ -776,7 +777,7 @@ SwHistoryChangeFlyAnchor::SwHistoryChangeFlyAnchor( SwFrameFormat& rFormat )
     : SwHistoryHint( HSTRY_CHGFLYANCHOR )
     , m_rFormat( rFormat )
     , m_nOldNodeIndex( rFormat.GetAnchor().GetContentAnchor()->nNode.GetIndex() )
-    , m_nOldContentIndex( (RndStdIds::FLY_AT_CHAR == rFormat.GetAnchor().GetAnchorId())
+    , m_nOldContentIndex( (FLY_AT_CHAR == rFormat.GetAnchor().GetAnchorId())
             ?   rFormat.GetAnchor().GetContentAnchor()->nContent.GetIndex()
             :   COMPLETE_STRING )
 {
@@ -903,7 +904,7 @@ void SwHistory::Add(
     // no default Attribute?
     SwHistoryHint* pHt = nullptr;
 
-    // To be able to include the DrawingLayer FillItems something more
+    //UUUU To be able to include the DrawingLayer FillItems something more
     // general has to be done to check if an Item is default than to check
     // if its pointer equals that in Writer's global PoolDefaults (held in
     // aAttrTab and used to fill the pool defaults in Writer - looks as if
@@ -954,7 +955,8 @@ void SwHistory::Add( SwTextAttr* pHint, sal_uLong nNodeIdx, bool bNewAttr )
                         static_txtattr_cast<SwTextRefMark*>(pHint), nNodeIdx);
                 break;
             default:
-                pHt = new SwHistorySetText( pHint, nNodeIdx );
+                pHt = new SwHistorySetText(
+                            static_cast<SwTextAttr*>(pHint), nNodeIdx );
         }
     }
     else
@@ -965,7 +967,7 @@ void SwHistory::Add( SwTextAttr* pHint, sal_uLong nNodeIdx, bool bNewAttr )
     m_SwpHstry.push_back( pHt );
 }
 
-void SwHistory::Add( SwFormatColl* pColl, sal_uLong nNodeIdx, SwNodeType nWhichNd )
+void SwHistory::Add( SwFormatColl* pColl, sal_uLong nNodeIdx, sal_uInt8 nWhichNd )
 {
     OSL_ENSURE( !m_nEndDiff, "History was not deleted after REDO" );
 
@@ -1317,10 +1319,8 @@ bool SwRegHistory::InsertItems( const SfxItemSet& rSet,
                 (isCHRATR(nWhich) || RES_TXTATR_UNKNOWN_CONTAINER == nWhich)
                     ? RES_TXTATR_AUTOFMT
                     : static_cast<RES_TXTATR>(nWhich));
-            if (RES_TXTATR_AUTOFMT == nExpected)
+            if (RES_TXTATR_AUTOFMT == nExpected && 0 == nStart && pTextNode->Len() == nEnd)
                 continue; // special case, may get set on text node itself
-                          // tdf#105077 even worse, node's set could cause
-                          // nothing at all to be inserted
             assert(std::find_if(
                 m_pHistory->m_SwpHstry.begin(), m_pHistory->m_SwpHstry.end(),
                 [nExpected](SwHistoryHint *const pHint) -> bool {

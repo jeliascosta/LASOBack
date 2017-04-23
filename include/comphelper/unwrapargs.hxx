@@ -76,7 +76,7 @@ namespace detail {
             return unwrapArgsError( OUString( "No such argument available!"),
                                      nArg, args... );
         }
-        if( !fromAny( seq[nArg], &v ) )
+        if( ! ( seq[nArg] >>= v ) )
         {
             OUStringBuffer buf;
             buf.append( "Cannot extract ANY { " );

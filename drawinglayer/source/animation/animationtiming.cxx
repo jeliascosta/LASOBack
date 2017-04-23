@@ -19,7 +19,7 @@
 
 #include <drawinglayer/animation/animationtiming.hxx>
 #include <basegfx/numeric/ftools.hxx>
-#include <o3tl/make_unique.hxx>
+
 
 namespace drawinglayer
 {
@@ -46,9 +46,9 @@ namespace drawinglayer
         {
         }
 
-        std::unique_ptr<AnimationEntry> AnimationEntryFixed::clone() const
+        AnimationEntry* AnimationEntryFixed::clone() const
         {
-            return o3tl::make_unique<AnimationEntryFixed>(mfDuration, mfState);
+            return new AnimationEntryFixed(mfDuration, mfState);
         }
 
         bool AnimationEntryFixed::operator==(const AnimationEntry& rCandidate) const
@@ -95,9 +95,9 @@ namespace drawinglayer
         {
         }
 
-        std::unique_ptr<AnimationEntry> AnimationEntryLinear::clone() const
+        AnimationEntry* AnimationEntryLinear::clone() const
         {
-            return o3tl::make_unique<AnimationEntryLinear>(mfDuration, mfFrequency, mfStart, mfStop);
+            return new AnimationEntryLinear(mfDuration, mfFrequency, mfStart, mfStop);
         }
 
         bool AnimationEntryLinear::operator==(const AnimationEntry& rCandidate) const
@@ -159,9 +159,9 @@ namespace drawinglayer
         }
 
 
-        AnimationEntryList::Entries::size_type AnimationEntryList::impGetIndexAtTime(double fTime, double &rfAddedTime) const
+        sal_uInt32 AnimationEntryList::impGetIndexAtTime(double fTime, double &rfAddedTime) const
         {
-            Entries::size_type nIndex(0L);
+            sal_uInt32 nIndex(0L);
 
             while(nIndex < maEntries.size() && basegfx::fTools::lessOrEqual(rfAddedTime + maEntries[nIndex]->getDuration(), fTime))
             {
@@ -178,18 +178,22 @@ namespace drawinglayer
 
         AnimationEntryList::~AnimationEntryList()
         {
+            for(AnimationEntry* i : maEntries)
+            {
+                delete i;
+            }
         }
 
-        std::unique_ptr<AnimationEntry> AnimationEntryList::clone() const
+        AnimationEntry* AnimationEntryList::clone() const
         {
-            std::unique_ptr<AnimationEntryList> pNew(o3tl::make_unique<AnimationEntryList>());
+            AnimationEntryList* pNew = new AnimationEntryList();
 
-            for(const auto &i : maEntries)
+            for(AnimationEntry* i : maEntries)
             {
                 pNew->append(*i);
             }
 
-            return std::move(pNew);
+            return pNew;
         }
 
         bool AnimationEntryList::operator==(const AnimationEntry& rCandidate) const
@@ -233,7 +237,7 @@ namespace drawinglayer
             if(!basegfx::fTools::equalZero(mfDuration))
             {
                 double fAddedTime(0.0);
-                const auto nIndex(impGetIndexAtTime(fTime, fAddedTime));
+                const sal_uInt32 nIndex(impGetIndexAtTime(fTime, fAddedTime));
 
                 if(nIndex < maEntries.size())
                 {
@@ -251,7 +255,7 @@ namespace drawinglayer
             if(!basegfx::fTools::equalZero(mfDuration))
             {
                 double fAddedTime(0.0);
-                const auto nIndex(impGetIndexAtTime(fTime, fAddedTime));
+                const sal_uInt32 nIndex(impGetIndexAtTime(fTime, fAddedTime));
 
                 if(nIndex < maEntries.size())
                 {
@@ -273,16 +277,16 @@ namespace drawinglayer
         {
         }
 
-        std::unique_ptr<AnimationEntry> AnimationEntryLoop::clone() const
+        AnimationEntry* AnimationEntryLoop::clone() const
         {
-            std::unique_ptr<AnimationEntryLoop> pNew(o3tl::make_unique<AnimationEntryLoop>(mnRepeat));
+            AnimationEntryLoop* pNew = new AnimationEntryLoop(mnRepeat);
 
-            for(const auto &i : maEntries)
+            for(AnimationEntry* i : maEntries)
             {
                 pNew->append(*i);
             }
 
-            return std::move(pNew);
+            return pNew;
         }
 
         bool AnimationEntryLoop::operator==(const AnimationEntry& rCandidate) const

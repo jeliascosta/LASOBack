@@ -29,105 +29,27 @@
 #include "smmod.hxx"
 
 #include <cassert>
-#include <unordered_set>
 
-namespace {
 
-bool SmGetGlyphBoundRect(const vcl::RenderContext &rDev,
-                         const OUString &rText, tools::Rectangle &rRect)
-    // basically the same as 'GetTextBoundRect' (in class 'OutputDevice')
-    // but with a string as argument.
+// '\0' terminated Array with symbol, which should be treat as letters in
+// StarMath Font, (to get a normal (non-clipped) SmRect in contrast to the
+// other operators and symbols).
+static sal_Unicode const aMathAlpha[] =
 {
-    // handle special case first
-    if (rText.isEmpty())
-    {
-        rRect.SetEmpty();
-        return true;
-    }
-
-    // get a device where 'OutputDevice::GetTextBoundRect' will be successful
-    OutputDevice *pGlyphDev;
-    if (rDev.GetOutDevType() != OUTDEV_PRINTER)
-        pGlyphDev = const_cast<OutputDevice *>(&rDev);
-    else
-    {
-        // since we format for the printer (where GetTextBoundRect will fail)
-        // we need a virtual device here.
-        pGlyphDev = &SM_MOD()->GetDefaultVirtualDev();
-    }
-
-    const FontMetric  aDevFM (rDev.GetFontMetric());
-
-    pGlyphDev->Push(PushFlags::FONT | PushFlags::MAPMODE);
-    vcl::Font aFnt(rDev.GetFont());
-    aFnt.SetAlignment(ALIGN_TOP);
-
-    // use scale factor when calling GetTextBoundRect to counter
-    // negative effects from antialiasing which may otherwise result
-    // in significant incorrect bounding rectangles for some characters.
-    Size aFntSize = aFnt.GetFontSize();
-
-    // Workaround to avoid HUGE font sizes and resulting problems
-    long nScaleFactor = 1;
-    while( aFntSize.Height() > 2000 * nScaleFactor )
-        nScaleFactor *= 2;
-
-    aFnt.SetFontSize( Size( aFntSize.Width() / nScaleFactor, aFntSize.Height() / nScaleFactor ) );
-    pGlyphDev->SetFont(aFnt);
-
-    long nTextWidth = rDev.GetTextWidth(rText);
-    Point aPoint;
-    tools::Rectangle   aResult (aPoint, Size(nTextWidth, rDev.GetTextHeight())),
-                aTmp;
-
-    bool bSuccess = pGlyphDev->GetTextBoundRect(aTmp, rText);
-    OSL_ENSURE( bSuccess, "GetTextBoundRect failed" );
-
-
-    if (!aTmp.IsEmpty())
-    {
-        aResult = tools::Rectangle(aTmp.Left() * nScaleFactor, aTmp.Top() * nScaleFactor,
-                            aTmp.Right() * nScaleFactor, aTmp.Bottom() * nScaleFactor);
-        if (&rDev != pGlyphDev) /* only when rDev is a printer... */
-        {
-            long nGDTextWidth  = pGlyphDev->GetTextWidth(rText);
-            if (nGDTextWidth != 0  &&
-                nTextWidth != nGDTextWidth)
-            {
-                aResult.Right() *= nTextWidth;
-                aResult.Right() /= nGDTextWidth * nScaleFactor;
-            }
-        }
-    }
-
-    // move rectangle to match possibly different baselines
-    // (because of different devices)
-    long nDelta = aDevFM.GetAscent() - pGlyphDev->GetFontMetric().GetAscent() * nScaleFactor;
-    aResult.Move(0, nDelta);
-
-    pGlyphDev->Pop();
-
-    rRect = aResult;
-    return bSuccess;
-}
+    MS_ALEPH,               MS_IM,                  MS_RE,
+    MS_WP,                  sal_Unicode(0xE070),    MS_EMPTYSET,
+    sal_Unicode(0x2113),    sal_Unicode(0xE0D6),    sal_Unicode(0x2107),
+    sal_Unicode(0x2127),    sal_Unicode(0x210A),    MS_HBAR,
+    MS_LAMBDABAR,           MS_SETN,                MS_SETZ,
+    MS_SETQ,                MS_SETR,                MS_SETC,
+    sal_Unicode(0x2373),    sal_Unicode(0xE0A5),    sal_Unicode(0x2112),
+    sal_Unicode(0x2130),    sal_Unicode(0x2131),
+    sal_Unicode('\0')
+};
 
 bool SmIsMathAlpha(const OUString &rText)
     // true iff symbol (from StarMath Font) should be treated as letter
 {
-    // Set of symbols, which should be treated as letters in StarMath Font
-    // (to get a normal (non-clipped) SmRect in contrast to the other operators
-    // and symbols).
-    static std::unordered_set<sal_Unicode> const aMathAlpha({
-        MS_ALEPH,               MS_IM,                  MS_RE,
-        MS_WP,                  sal_Unicode(0xE070),    MS_EMPTYSET,
-        sal_Unicode(0x2113),    sal_Unicode(0xE0D6),    sal_Unicode(0x2107),
-        sal_Unicode(0x2127),    sal_Unicode(0x210A),    MS_HBAR,
-        MS_LAMBDABAR,           MS_SETN,                MS_SETZ,
-        MS_SETQ,                MS_SETR,                MS_SETC,
-        sal_Unicode(0x2373),    sal_Unicode(0xE0A5),    sal_Unicode(0x2112),
-        sal_Unicode(0x2130),    sal_Unicode(0x2131)
-    });
-
     if (rText.isEmpty())
         return false;
 
@@ -137,11 +59,18 @@ bool SmIsMathAlpha(const OUString &rText)
     // is it a greek symbol?
     if (sal_Unicode(0xE0AC) <= cChar  &&  cChar <= sal_Unicode(0xE0D4))
         return true;
-    // or, does it appear in 'aMathAlpha'?
-    return aMathAlpha.find(cChar) != aMathAlpha.end();
+    else
+    {
+        // appears it in 'aMathAlpha'?
+        const sal_Unicode *pChar = aMathAlpha;
+        while (*pChar  &&  *pChar != cChar)
+            pChar++;
+        return *pChar != '\0';
+    }
 }
 
-}
+
+// SmRect members
 
 
 SmRect::SmRect()
@@ -165,6 +94,26 @@ SmRect::SmRect()
 }
 
 
+SmRect::SmRect(const SmRect &rRect)
+    : aTopLeft(rRect.aTopLeft)
+    , aSize(rRect.aSize)
+    , nBaseline(rRect.nBaseline)
+    , nAlignT(rRect.nAlignT)
+    , nAlignM(rRect.nAlignM)
+    , nAlignB(rRect.nAlignB)
+    , nGlyphTop(rRect.nGlyphTop)
+    , nGlyphBottom(rRect.nGlyphBottom)
+    , nItalicLeftSpace(rRect.nItalicLeftSpace)
+    , nItalicRightSpace(rRect.nItalicRightSpace)
+    , nLoAttrFence(rRect.nLoAttrFence)
+    , nHiAttrFence(rRect.nHiAttrFence)
+    , nBorderWidth(rRect.nBorderWidth)
+    , bHasBaseline(rRect.bHasBaseline)
+    , bHasAlignInfo(rRect.bHasAlignInfo)
+{
+}
+
+
 void SmRect::CopyAlignInfo(const SmRect &rRect)
 {
     nBaseline     = rRect.nBaseline;
@@ -178,12 +127,13 @@ void SmRect::CopyAlignInfo(const SmRect &rRect)
 }
 
 
-SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
-               const OUString &rText, sal_uInt16 nBorder)
-    // get rectangle fitting for drawing 'rText' on OutputDevice 'rDev'
-    : aTopLeft(0, 0)
-    , aSize(rDev.GetTextWidth(rText), rDev.GetTextHeight())
+void SmRect::BuildRect(const OutputDevice &rDev, const SmFormat *pFormat,
+                       const OUString &rText, sal_uInt16 nBorder)
 {
+    OSL_ENSURE(aTopLeft == Point(0, 0), "Sm: Ooops...");
+
+    aSize = Size(rDev.GetTextWidth(rText), rDev.GetTextHeight());
+
     const FontMetric  aFM (rDev.GetFontMetric());
     bool              bIsMath  = aFM.GetFamilyName().equalsIgnoreAsciiCase( FONTNAME_MATH );
     bool              bAllowSmaller = bIsMath && !SmIsMathAlpha(rText);
@@ -223,7 +173,7 @@ SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
     }
 
     // get GlyphBoundRect
-    tools::Rectangle  aGlyphRect;
+    Rectangle  aGlyphRect;
     bool bSuccess = SmGetGlyphBoundRect(rDev, rText, aGlyphRect);
     if (!bSuccess)
         SAL_WARN("starmath", "Ooops... (Font missing?)");
@@ -262,6 +212,24 @@ SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
 
     OSL_ENSURE(rText.isEmpty() || !IsEmpty(),
                "Sm: empty rectangle created");
+}
+
+
+void SmRect::Init(const OutputDevice &rDev, const SmFormat *pFormat,
+                  const OUString &rText, sal_uInt16 nEBorderWidth)
+    // get rectangle fitting for drawing 'rText' on OutputDevice 'rDev'
+{
+    BuildRect(rDev, pFormat, rText, nEBorderWidth);
+}
+
+
+SmRect::SmRect(const OutputDevice &rDev, const SmFormat *pFormat,
+               const OUString &rText, long nEBorderWidth)
+{
+    OSL_ENSURE( nEBorderWidth >= 0, "BorderWidth is negative" );
+    if (nEBorderWidth < 0)
+        nEBorderWidth = 0;
+    Init(rDev, pFormat, rText, sal::static_int_cast<sal_uInt16>(nEBorderWidth));
 }
 
 
@@ -480,12 +448,11 @@ SmRect & SmRect::ExtendBy(const SmRect &rRect, RectCopyMBL eCopyMode)
     if (!HasAlignInfo())
         CopyAlignInfo(rRect);
     else if (rRect.HasAlignInfo())
-    {
-        assert(HasAlignInfo());
-        nAlignT = std::min(GetAlignT(), rRect.GetAlignT());
+    {   nAlignT = std::min(GetAlignT(), rRect.GetAlignT());
         nAlignB = std::max(GetAlignB(), rRect.GetAlignB());
         nHiAttrFence = std::min(GetHiAttrFence(), rRect.GetHiAttrFence());
         nLoAttrFence = std::max(GetLoAttrFence(), rRect.GetLoAttrFence());
+        OSL_ENSURE(HasAlignInfo(), "Sm: ooops...");
 
         switch (eCopyMode)
         {   case RectCopyMBL::This:
@@ -495,7 +462,7 @@ SmRect & SmRect::ExtendBy(const SmRect &rRect, RectCopyMBL eCopyMode)
                 CopyMBL(rRect);
                 break;
             case RectCopyMBL::None:
-                bHasBaseline = false;
+                ClearBaseline();
                 nAlignM = (nAlignT + nAlignB) / 2;
                 break;
             case RectCopyMBL::Xor:
@@ -620,5 +587,84 @@ SmRect SmRect::AsGlyphRect() const
     aRect.SetBottom(nGlyphBottom);
     return aRect;
 }
+
+bool SmGetGlyphBoundRect(const vcl::RenderContext &rDev,
+                         const OUString &rText, Rectangle &rRect)
+    // basically the same as 'GetTextBoundRect' (in class 'OutputDevice')
+    // but with a string as argument.
+{
+    // handle special case first
+    if (rText.isEmpty())
+    {
+        rRect.SetEmpty();
+        return true;
+    }
+
+    // get a device where 'OutputDevice::GetTextBoundRect' will be successful
+    OutputDevice *pGlyphDev;
+    if (rDev.GetOutDevType() != OUTDEV_PRINTER)
+        pGlyphDev = const_cast<OutputDevice *>(&rDev);
+    else
+    {
+        // since we format for the printer (where GetTextBoundRect will fail)
+        // we need a virtual device here.
+        pGlyphDev = &SM_MOD()->GetDefaultVirtualDev();
+    }
+
+    const FontMetric  aDevFM (rDev.GetFontMetric());
+
+    pGlyphDev->Push(PushFlags::FONT | PushFlags::MAPMODE);
+    vcl::Font aFnt(rDev.GetFont());
+    aFnt.SetAlignment(ALIGN_TOP);
+
+    // use scale factor when calling GetTextBoundRect to counter
+    // negative effects from antialiasing which may otherwise result
+    // in significant incorrect bounding rectangles for some characters.
+    Size aFntSize = aFnt.GetFontSize();
+
+    // Workaround to avoid HUGE font sizes and resulting problems
+    long nScaleFactor = 1;
+    while( aFntSize.Height() > 2000 * nScaleFactor )
+        nScaleFactor *= 2;
+
+    aFnt.SetFontSize( Size( aFntSize.Width() / nScaleFactor, aFntSize.Height() / nScaleFactor ) );
+    pGlyphDev->SetFont(aFnt);
+
+    long nTextWidth = rDev.GetTextWidth(rText);
+    Point aPoint;
+    Rectangle   aResult (aPoint, Size(nTextWidth, rDev.GetTextHeight())),
+                aTmp;
+
+    bool bSuccess = pGlyphDev->GetTextBoundRect(aTmp, rText);
+    OSL_ENSURE( bSuccess, "GetTextBoundRect failed" );
+
+
+    if (!aTmp.IsEmpty())
+    {
+        aResult = Rectangle(aTmp.Left() * nScaleFactor, aTmp.Top() * nScaleFactor,
+                            aTmp.Right() * nScaleFactor, aTmp.Bottom() * nScaleFactor);
+        if (&rDev != pGlyphDev) /* only when rDev is a printer... */
+        {
+            long nGDTextWidth  = pGlyphDev->GetTextWidth(rText);
+            if (nGDTextWidth != 0  &&
+                nTextWidth != nGDTextWidth)
+            {
+                aResult.Right() *= nTextWidth;
+                aResult.Right() /= nGDTextWidth * nScaleFactor;
+            }
+        }
+    }
+
+    // move rectangle to match possibly different baselines
+    // (because of different devices)
+    long nDelta = aDevFM.GetAscent() - pGlyphDev->GetFontMetric().GetAscent() * nScaleFactor;
+    aResult.Move(0, nDelta);
+
+    pGlyphDev->Pop();
+
+    rRect = aResult;
+    return bSuccess;
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

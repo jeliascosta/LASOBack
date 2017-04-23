@@ -62,21 +62,21 @@ class FilterDetectDocHandler : public ::cppu::WeakImplHelper< css::xml::sax::XFa
 {
 public:
     explicit            FilterDetectDocHandler( const css::uno::Reference< css::uno::XComponentContext >& rxContext, OUString& rFilter );
-    virtual             ~FilterDetectDocHandler() override;
+    virtual             ~FilterDetectDocHandler();
 
     // XFastDocumentHandler
-    virtual void SAL_CALL startDocument() override;
-    virtual void SAL_CALL endDocument() override;
-    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) override;
+    virtual void SAL_CALL startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
     // XFastContextHandler
-    virtual void SAL_CALL startFastElement( sal_Int32 nElement, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) override;
-    virtual void SAL_CALL startUnknownElement( const OUString& Namespace, const OUString& Name, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) override;
-    virtual void SAL_CALL endFastElement( sal_Int32 Element ) override;
-    virtual void SAL_CALL endUnknownElement( const OUString& Namespace, const OUString& Name ) override;
-    virtual css::uno::Reference< XFastContextHandler > SAL_CALL createFastChildContext( sal_Int32 Element, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) override;
-    virtual css::uno::Reference< XFastContextHandler > SAL_CALL createUnknownChildContext( const OUString& Namespace, const OUString& Name, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) override;
-    virtual void SAL_CALL characters( const OUString& aChars ) override;
+    virtual void SAL_CALL startFastElement( sal_Int32 nElement, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL startUnknownElement( const OUString& Namespace, const OUString& Name, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endFastElement( sal_Int32 Element ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endUnknownElement( const OUString& Namespace, const OUString& Name ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< XFastContextHandler > SAL_CALL createFastChildContext( sal_Int32 Element, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< XFastContextHandler > SAL_CALL createUnknownChildContext( const OUString& Namespace, const OUString& Name, const css::uno::Reference< css::xml::sax::XFastAttributeList >& Attribs ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL characters( const OUString& aChars ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
 private:
     void                parseRelationship( const AttributeList& rAttribs );
@@ -95,12 +95,14 @@ private:
 };
 
 
-class OOX_DLLPUBLIC FilterDetect : public ::cppu::WeakImplHelper<css::document::XExtendedFilterDetection, css::lang::XServiceInfo>
+class SAL_DLLPUBLIC_TEMPLATE FilterDetect_BASE : public ::cppu::WeakImplHelper<css::document::XExtendedFilterDetection, css::lang::XServiceInfo> {};
+
+class OOX_DLLPUBLIC FilterDetect : public FilterDetect_BASE
 {
 public:
-    /// @throws css::uno::RuntimeException
-    explicit            FilterDetect( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual             ~FilterDetect() override;
+    explicit            FilterDetect( const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+                            throw( css::uno::RuntimeException );
+    virtual             ~FilterDetect();
 
     /** Tries to extract an unencrypted ZIP package from the passed media
         descriptor.
@@ -130,9 +132,9 @@ public:
 
     // com.sun.star.lang.XServiceInfo interface -------------------------------
 
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.document.XExtendedFilterDetection interface ---------------
 
@@ -153,7 +155,8 @@ public:
         property of the passed media descriptor.
      */
     virtual OUString SAL_CALL
-                        detect( css::uno::Sequence< css::beans::PropertyValue >& rMediaDescSeq ) override;
+                        detect( css::uno::Sequence< css::beans::PropertyValue >& rMediaDescSeq )
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     css::uno::Reference< css::uno::XComponentContext > mxContext;

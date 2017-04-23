@@ -20,24 +20,27 @@
 #include "condformatbuffer.hxx"
 
 #include <com/sun/star/sheet/ConditionOperator2.hpp>
+#include <com/sun/star/table/CellAddress.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
 #include <svl/intitem.hxx>
 #include <svl/sharedstringpool.hxx>
 #include <oox/core/filterbase.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 #include "stylesbuffer.hxx"
 #include "themebuffer.hxx"
 
 #include "colorscale.hxx"
 #include "conditio.hxx"
 #include "document.hxx"
+#include "convuno.hxx"
 #include "docfunc.hxx"
 #include "tokenarray.hxx"
 #include "tokenuno.hxx"
@@ -46,6 +49,8 @@ namespace oox {
 namespace xls {
 
 using namespace ::com::sun::star::sheet;
+using namespace ::com::sun::star::style;
+using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
 
 namespace {
@@ -363,7 +368,7 @@ namespace {
 ScIconSetType getType(const OUString& rName)
 {
     ScIconSetType eIconSetType = IconSet_3TrafficLights1;
-    const ScIconSetMap* pIconSetMap = ScIconSetFormat::g_IconSetMap;
+    ScIconSetMap* pIconSetMap = ScIconSetFormat::getIconSetMap();
     for(size_t i = 0; pIconSetMap[i].pName; ++i)
     {
         if(OUString::createFromAscii(pIconSetMap[i].pName) == rName)
@@ -469,7 +474,7 @@ void CondFormatRule::importCfRule( const AttributeList& rAttribs )
 
 void CondFormatRule::appendFormula( const OUString& rFormula )
 {
-    ScAddress aBaseAddr = mrCondFormat.getRanges().GetTopLeftCorner();
+    ScAddress aBaseAddr = mrCondFormat.getRanges().getBaseAddress();
     ApiTokenSequence aTokens = getFormulaParser().importFormula( aBaseAddr, rFormula );
     maModel.maFormulas.push_back( aTokens );
 }
@@ -500,8 +505,8 @@ void CondFormatRule::importCfRule( SequenceInputStream& rStrm )
     SAL_WARN_IF( !( (nFmla1Size > 0) == (rStrm.getRemaining() >= 8) ), "sc.filter", "CondFormatRule::importCfRule - formula size mismatch" );
     if( rStrm.getRemaining() >= 8 )
     {
-        ScAddress aBaseAddr = mrCondFormat.getRanges().GetTopLeftCorner();
-        ApiTokenSequence aTokens = getFormulaParser().importFormula( aBaseAddr, FormulaType::CondFormat, rStrm );
+        ScAddress aBaseAddr = mrCondFormat.getRanges().getBaseAddress();
+        ApiTokenSequence aTokens = getFormulaParser().importFormula( aBaseAddr, FORMULATYPE_CONDFORMAT, rStrm );
         maModel.maFormulas.push_back( aTokens );
 
         // second formula
@@ -509,14 +514,14 @@ void CondFormatRule::importCfRule( SequenceInputStream& rStrm )
         OSL_ENSURE( (nFmla2Size > 0) == (rStrm.getRemaining() >= 8), "CondFormatRule::importCfRule - formula size mismatch" );
         if( rStrm.getRemaining() >= 8 )
         {
-            aTokens = getFormulaParser().importFormula( aBaseAddr, FormulaType::CondFormat, rStrm );
+            aTokens = getFormulaParser().importFormula( aBaseAddr, FORMULATYPE_CONDFORMAT, rStrm );
             maModel.maFormulas.push_back( aTokens );
 
             // third formula
             OSL_ENSURE( (nFmla3Size > 0) == (rStrm.getRemaining() >= 8), "CondFormatRule::importCfRule - formula size mismatch" );
             if( rStrm.getRemaining() >= 8 )
             {
-                aTokens = getFormulaParser().importFormula( aBaseAddr, FormulaType::CondFormat, rStrm );
+                aTokens = getFormulaParser().importFormula( aBaseAddr, FORMULATYPE_CONDFORMAT, rStrm );
                 maModel.maFormulas.push_back( aTokens );
             }
         }
@@ -828,7 +833,7 @@ void CondFormatRule::finalizeImport()
             {
                 case 'B':       // current base address
                     if( aAddress.isEmpty() )
-                        aAddress = FormulaProcessorBase::generateAddress2dString( mrCondFormat.getRanges().GetTopLeftCorner(), false );
+                        aAddress = FormulaProcessorBase::generateAddress2dString( mrCondFormat.getRanges().getBaseAddress(), false );
                     aReplaceFormula = aReplaceFormula.replaceAt( nStrPos, 2, aAddress );
                 break;
                 default:
@@ -842,7 +847,7 @@ void CondFormatRule::finalizeImport()
         eOperator = SC_COND_DIRECT;
     }
 
-    ScAddress aPos = mrCondFormat.getRanges().GetTopLeftCorner();
+    ScAddress aPos = mrCondFormat.getRanges().getBaseAddress();
 
     if( eOperator == SC_COND_ERROR || eOperator == SC_COND_NOERROR )
     {
@@ -943,7 +948,7 @@ void CondFormatRule::finalizeImport()
                 eDateType = condformat::NEXTMONTH;
                 break;
             default:
-                SAL_WARN("sc.filter", "CondFormatRule::finalizeImport - unknown time period type" );
+                SAL_WARN("sc", "CondFormatRule::finalizeImport - unknown time period type" );
         }
 
         ScDocument& rDoc = getScDocument();
@@ -1056,11 +1061,18 @@ void CondFormat::finalizeImport()
         return;
     ScDocument& rDoc = getScDocument();
     maRules.forEachMem( &CondFormatRule::finalizeImport );
-    SCTAB nTab = maModel.maRanges.GetTopLeftCorner().Tab();
+    SCTAB nTab = maModel.maRanges.getBaseAddress().Tab();
     sal_Int32 nIndex = getScDocument().AddCondFormat(mpFormat, nTab);
 
-    rDoc.AddCondFormatData( maModel.maRanges, nTab, nIndex );
-    mpFormat->SetRange(maModel.maRanges);
+    ScRangeList aList;
+    for( ::std::vector< CellRangeAddress >::const_iterator itr = maModel.maRanges.begin(); itr != maModel.maRanges.end(); ++itr)
+    {
+        ScRange aRange;
+        ScUnoConversion::FillScRange(aRange, *itr);
+        aList.Append(aRange);
+    }
+    rDoc.AddCondFormatData( aList, nTab, nIndex );
+    mpFormat->SetRange(aList);
 }
 
 CondFormatRuleRef CondFormat::createRule()
@@ -1068,7 +1080,7 @@ CondFormatRuleRef CondFormat::createRule()
     return std::make_shared<CondFormatRule>( *this, mpFormat );
 }
 
-void CondFormat::insertRule( CondFormatRuleRef const & xRule )
+void CondFormat::insertRule( CondFormatRuleRef xRule )
 {
     if( xRule.get() && (xRule->getPriority() > 0) )
     {

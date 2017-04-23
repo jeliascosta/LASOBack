@@ -59,7 +59,7 @@ namespace slideshow
             ExternalShapeBase( const css::uno::Reference< css::drawing::XShape >&   xShape,
                                double                                       nPrio,
                                const SlideShowContext&                      rContext ); // throw ShapeLoadFailedException;
-            virtual ~ExternalShapeBase() override;
+            virtual ~ExternalShapeBase();
 
             virtual css::uno::Reference< css::drawing::XShape > getXShape() const override;
 

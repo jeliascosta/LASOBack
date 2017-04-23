@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 
 import org.libreoffice.canvas.SelectionHandle;
 import org.mozilla.gecko.gfx.ComposedTileLayer;
+import org.mozilla.gecko.gfx.LayerView;
 
 /**
  * Common static LOKit functions, functions to send events.
@@ -26,32 +27,44 @@ import org.mozilla.gecko.gfx.ComposedTileLayer;
 public class LOKitShell {
     private static final String LOGTAG = LOKitShell.class.getSimpleName();
 
-    public static float getDpi(Context context) {
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+    public static float getDpi() {
+        DisplayMetrics metrics = LibreOfficeMainActivity.mAppContext.getResources().getDisplayMetrics();
         return metrics.density * 160;
     }
 
     // Get a Handler for the main java thread
     public static Handler getMainHandler() {
-        return LibreOfficeApplication.getMainHandler();
+        return LibreOfficeMainActivity.mAppContext.mMainHandler;
     }
 
-    public static void showProgressSpinner(final LibreOfficeMainActivity context) {
+    public static void showProgressSpinner() {
         getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                context.showProgressSpinner();
+                LibreOfficeMainActivity.mAppContext.showProgressSpinner();
             }
         });
     }
 
-    public static void hideProgressSpinner(final LibreOfficeMainActivity context) {
+    public static void hideProgressSpinner() {
         getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                context.hideProgressSpinner();
+                LibreOfficeMainActivity.mAppContext.hideProgressSpinner();
             }
         });
+    }
+
+    public static ToolbarController getToolbarController() {
+        return LibreOfficeMainActivity.mAppContext.getToolbarController();
+    }
+
+    public static FormattingController getFormattingController() {
+        return LibreOfficeMainActivity.mAppContext.getFormattingController();
+    }
+
+    public static FontController getFontController() {
+        return LibreOfficeMainActivity.mAppContext.getFontController();
     }
 
     public static int getMemoryClass(Context context) {
@@ -59,8 +72,21 @@ public class LOKitShell {
         return activityManager.getMemoryClass() * 1024 * 1024;
     }
 
+    public static DisplayMetrics getDisplayMetrics() {
+        if (LibreOfficeMainActivity.mAppContext == null) {
+            return null;
+        }
+        DisplayMetrics metrics = new DisplayMetrics();
+        LibreOfficeMainActivity.mAppContext.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        return metrics;
+    }
+
     public static boolean isEditingEnabled() {
         return LibreOfficeMainActivity.isExperimentalMode();
+    }
+
+    public static LayerView getLayerView() {
+        return LibreOfficeMainActivity.getLayerClient().getView();
     }
 
     // EVENTS
@@ -69,7 +95,9 @@ public class LOKitShell {
      * Make sure LOKitThread is running and send event to it.
      */
     public static void sendEvent(LOEvent event) {
-        LibreOfficeMainActivity.loKitThread.queueEvent(event);
+        if (LibreOfficeMainActivity.mAppContext != null && LibreOfficeMainActivity.mAppContext.getLOKitThread() != null) {
+            LibreOfficeMainActivity.mAppContext.getLOKitThread().queueEvent(event);
+        }
     }
 
     public static void sendThumbnailEvent(ThumbnailCreator.ThumbnailCreationTask task) {
@@ -106,20 +134,8 @@ public class LOKitShell {
         LOKitShell.sendEvent(new LOEvent(LOEvent.CHANGE_PART, part));
     }
 
-    public static void sendLoadEvent(String inputFilePath) {
-        LOKitShell.sendEvent(new LOEvent(inputFilePath, LOEvent.LOAD));
-    }
-
-    public static void sendNewDocumentLoadEvent(String newDocumentPath, String newDocumentType) {
-        LOKitShell.sendEvent(new LOEvent(newDocumentPath, newDocumentType, LOEvent.LOAD_NEW));
-    }
-
-    public static void sendSaveAsEvent(String filePath, String fileFormat) {
-        LOKitShell.sendEvent(new LOEvent(filePath, fileFormat, LOEvent.SAVE_AS));
-    }
-
-    public static void sendResumeEvent(String inputFile, int partIndex) {
-        LOKitShell.sendEvent(new LOEvent(LOEvent.RESUME, inputFile, partIndex));
+    public static void sendLoadEvent(String inputFile) {
+        LOKitShell.sendEvent(new LOEvent(LOEvent.LOAD, inputFile));
     }
 
     public static void sendCloseEvent() {
@@ -155,11 +171,11 @@ public class LOKitShell {
      * Move the viewport to the desired point (top-left), and change the zoom level.
      * Ensure this runs on the UI thread.
      */
-    public static void moveViewportTo(final LibreOfficeMainActivity context, final PointF position, final Float zoom) {
-        context.getLayerClient().post(new Runnable() {
+    public static void moveViewportTo(final PointF position, final Float zoom) {
+        getLayerView().getLayerClient().post(new Runnable() {
             @Override
             public void run() {
-                context.getLayerClient().moveTo(position, zoom);
+                getLayerView().getLayerClient().moveTo(position, zoom);
             }
         });
     }

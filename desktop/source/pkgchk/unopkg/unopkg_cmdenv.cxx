@@ -18,8 +18,8 @@
  */
 
 
-#include "dp_gui.hrc"
-#include "dp_gui_shared.hxx"
+#include "../../deployment/gui/dp_gui.hrc"
+#include "../../deployment/gui/dp_gui_shared.hxx"
 #include "unopkg_shared.h"
 #include <osl/thread.h>
 #include <tools/resmgr.hxx>
@@ -30,7 +30,6 @@
 #include <com/sun/star/lang/WrappedTargetException.hpp>
 #include <com/sun/star/task/XInteractionAbort.hpp>
 #include <com/sun/star/task/XInteractionApprove.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/deployment/InstallException.hpp>
 #include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/deployment/LicenseException.hpp>
@@ -64,13 +63,12 @@ class CommandEnvironmentImpl
     Reference< XComponentContext > m_xComponentContext;
     Reference< XProgressHandler > m_xLogFile;
 
-    /// @throws RuntimeException
-    void update_( Any const & Status );
+    void update_( Any const & Status ) throw (RuntimeException);
     void printLicense(const OUString & sName,const OUString& sLicense,
                       bool & accept, bool & decline);
 
 public:
-    virtual ~CommandEnvironmentImpl() override;
+    virtual ~CommandEnvironmentImpl();
     CommandEnvironmentImpl(
         Reference<XComponentContext> const & xComponentContext,
         OUString const & log_file,
@@ -80,17 +78,19 @@ public:
 
     // XCommandEnvironment
     virtual Reference< task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() override;
-    virtual Reference< XProgressHandler > SAL_CALL getProgressHandler() override;
+    getInteractionHandler() throw (RuntimeException, std::exception) override;
+    virtual Reference< XProgressHandler > SAL_CALL getProgressHandler()
+        throw (RuntimeException, std::exception) override;
 
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        Reference< task::XInteractionRequest > const & xRequest ) override;
+        Reference< task::XInteractionRequest > const & xRequest )
+        throw (RuntimeException, std::exception) override;
 
     // XProgressHandler
-    virtual void SAL_CALL push( Any const & Status ) override;
-    virtual void SAL_CALL update( Any const & Status ) override;
-    virtual void SAL_CALL pop() override;
+    virtual void SAL_CALL push( Any const & Status ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL update( Any const & Status ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL pop() throw (RuntimeException, std::exception) override;
 };
 
 
@@ -187,13 +187,14 @@ void CommandEnvironmentImpl::printLicense(
 // XCommandEnvironment
 
 Reference< task::XInteractionHandler >
-CommandEnvironmentImpl::getInteractionHandler()
+CommandEnvironmentImpl::getInteractionHandler() throw (RuntimeException, std::exception)
 {
     return this;
 }
 
 
 Reference< XProgressHandler > CommandEnvironmentImpl::getProgressHandler()
+    throw (RuntimeException, std::exception)
 {
     return this;
 }
@@ -202,6 +203,7 @@ Reference< XProgressHandler > CommandEnvironmentImpl::getProgressHandler()
 
 void CommandEnvironmentImpl::handle(
     Reference<task::XInteractionRequest> const & xRequest )
+    throw (RuntimeException, std::exception)
 {
     Any request( xRequest->getRequest() );
     OSL_ASSERT( request.getValueTypeClass() == TypeClass_EXCEPTION );
@@ -219,6 +221,7 @@ void CommandEnvironmentImpl::handle(
     deployment::VersionException verExc;
 
 
+    bool bLicenseException = false;
     if (request >>= wtExc) {
         // ignore intermediate errors of legacy packages, i.e.
         // former pkgchk behaviour:
@@ -281,7 +284,9 @@ void CommandEnvironmentImpl::handle(
             return; // unknown request => no selection at all
     }
 
-    if (abort && m_option_verbose)
+    //In case of a user declining a license abort is true but this is intended,
+    //therefore no logging
+    if (abort && m_option_verbose && !bLicenseException)
     {
         OUString msg = ::comphelper::anyToString(request);
         dp_misc::writeConsoleError("\nERROR: " + msg + "\n");
@@ -317,6 +322,7 @@ void CommandEnvironmentImpl::handle(
 // XProgressHandler
 
 void CommandEnvironmentImpl::push( Any const & Status )
+    throw (RuntimeException, std::exception)
 {
     update_( Status );
     OSL_ASSERT( m_logLevel >= 0 );
@@ -327,6 +333,7 @@ void CommandEnvironmentImpl::push( Any const & Status )
 
 
 void CommandEnvironmentImpl::update_( Any const & Status )
+    throw (RuntimeException)
 {
     if (! Status.hasValue())
         return;
@@ -368,6 +375,7 @@ void CommandEnvironmentImpl::update_( Any const & Status )
 
 
 void CommandEnvironmentImpl::update( Any const & Status )
+    throw (RuntimeException, std::exception)
 {
     update_( Status );
     if (m_xLogFile.is())
@@ -375,7 +383,7 @@ void CommandEnvironmentImpl::update( Any const & Status )
 }
 
 
-void CommandEnvironmentImpl::pop()
+void CommandEnvironmentImpl::pop() throw (RuntimeException, std::exception)
 {
     OSL_ASSERT( m_logLevel > 0 );
     --m_logLevel;

@@ -18,17 +18,16 @@
  */
 
 #include "documentdigitalsignatures.hxx"
-#include "resourcemanager.hxx"
+#include <xmlsecurity/digitalsignaturesdialog.hxx>
+#include <xmlsecurity/certificatechooser.hxx>
+#include <xmlsecurity/certificateviewer.hxx>
+#include <xmlsecurity/macrosecurity.hxx>
+#include <xmlsecurity/biginteger.hxx>
+#include <xmlsecurity/global.hrc>
 
-#include <digitalsignaturesdialog.hxx>
-#include <certificatechooser.hxx>
-#include <certificateviewer.hxx>
-#include <macrosecurity.hxx>
-#include <biginteger.hxx>
-#include <global.hrc>
-#include <pdfsignaturehelper.hxx>
 #include <sax/tools/converter.hxx>
 
+#include <../dialogs/resourcemanager.hxx>
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/embed/StorageFormats.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
@@ -38,10 +37,10 @@
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/ucb/XCommandProcessor.hpp>
 #include <com/sun/star/ucb/Command.hpp>
-#include <com/sun/star/uno/SecurityException.hpp>
 #include <vcl/layout.hxx>
 #include <unotools/securityoptions.hxx>
 #include <com/sun/star/security/CertificateValidity.hpp>
+#include <com/sun/star/security/SerialNumberAdapter.hpp>
 #include <comphelper/documentconstants.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
@@ -57,11 +56,8 @@ DocumentDigitalSignatures::DocumentDigitalSignatures( const Reference< XComponen
 {
 }
 
-DocumentDigitalSignatures::~DocumentDigitalSignatures()
-{
-}
-
 void DocumentDigitalSignatures::initialize( const Sequence< Any >& aArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     if (aArguments.getLength() > 2)
         throw css::lang::IllegalArgumentException(
@@ -92,18 +88,21 @@ void DocumentDigitalSignatures::initialize( const Sequence< Any >& aArguments)
 }
 
 OUString DocumentDigitalSignatures::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return GetImplementationName();
 }
 
 sal_Bool DocumentDigitalSignatures::supportsService(
     OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString>
 DocumentDigitalSignatures::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return GetSupportedServiceNames();
 }
@@ -111,60 +110,63 @@ DocumentDigitalSignatures::getSupportedServiceNames()
 sal_Bool DocumentDigitalSignatures::signDocumentContent(
     const Reference< css::embed::XStorage >& rxStorage,
     const Reference< css::io::XStream >& xSignStream)
+        throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(), "DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    return ImplViewSignatures( rxStorage, xSignStream, DocumentSignatureMode::Content, false );
+    return ImplViewSignatures( rxStorage, xSignStream, SignatureModeDocumentContent, false );
 }
 
 Sequence< css::security::DocumentSignatureInformation >
 DocumentDigitalSignatures::verifyDocumentContentSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    return ImplVerifySignatures( rxStorage, xSignInStream, DocumentSignatureMode::Content );
+    return ImplVerifySignatures( rxStorage, xSignInStream, SignatureModeDocumentContent );
 }
 
 void DocumentDigitalSignatures::showDocumentContentSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    ImplViewSignatures( rxStorage, xSignInStream, DocumentSignatureMode::Content, true );
+    ImplViewSignatures( rxStorage, xSignInStream, SignatureModeDocumentContent, true );
 }
 
 OUString DocumentDigitalSignatures::getDocumentContentSignatureDefaultStreamName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return DocumentSignatureHelper::GetDocumentContentSignatureDefaultStreamName();
 }
 
 sal_Bool DocumentDigitalSignatures::signScriptingContent(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XStream >& xSignStream )
+    const Reference< css::io::XStream >& xSignStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
     OSL_ENSURE(m_nArgumentsCount == 2, "DocumentDigitalSignatures: Service was not initialized properly");
-    return ImplViewSignatures( rxStorage, xSignStream, DocumentSignatureMode::Macros, false );
+    return ImplViewSignatures( rxStorage, xSignStream, SignatureModeMacros, false );
 }
 
 Sequence< css::security::DocumentSignatureInformation >
 DocumentDigitalSignatures::verifyScriptingContentSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    return ImplVerifySignatures( rxStorage, xSignInStream, DocumentSignatureMode::Macros );
+    return ImplVerifySignatures( rxStorage, xSignInStream, SignatureModeMacros );
 }
 
 void DocumentDigitalSignatures::showScriptingContentSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    ImplViewSignatures( rxStorage, xSignInStream, DocumentSignatureMode::Macros, true );
+    ImplViewSignatures( rxStorage, xSignInStream, SignatureModeMacros, true );
 }
 
 OUString DocumentDigitalSignatures::getScriptingContentSignatureDefaultStreamName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return DocumentSignatureHelper::GetScriptingContentSignatureDefaultStreamName();
 }
@@ -172,30 +174,31 @@ OUString DocumentDigitalSignatures::getScriptingContentSignatureDefaultStreamNam
 
 sal_Bool DocumentDigitalSignatures::signPackage(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XStream >& xSignStream  )
+    const Reference< css::io::XStream >& xSignStream  ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    return ImplViewSignatures( rxStorage, xSignStream, DocumentSignatureMode::Package, false );
+    return ImplViewSignatures( rxStorage, xSignStream, SignatureModePackage, false );
 }
 
 Sequence< css::security::DocumentSignatureInformation >
 DocumentDigitalSignatures::verifyPackageSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    return ImplVerifySignatures( rxStorage, xSignInStream, DocumentSignatureMode::Package );
+    return ImplVerifySignatures( rxStorage, xSignInStream, SignatureModePackage );
 }
 
 void DocumentDigitalSignatures::showPackageSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignInStream )
+    const Reference< css::io::XInputStream >& xSignInStream ) throw (RuntimeException, std::exception)
 {
     OSL_ENSURE(!m_sODFVersion.isEmpty(),"DocumentDigitalSignatures: ODF Version not set, assuming minimum 1.2");
-    ImplViewSignatures( rxStorage, xSignInStream, DocumentSignatureMode::Package, true );
+    ImplViewSignatures( rxStorage, xSignInStream, SignatureModePackage, true );
 }
 
 OUString DocumentDigitalSignatures::getPackageSignatureDefaultStreamName(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     return DocumentSignatureHelper::GetPackageSignatureDefaultStreamName();
 }
@@ -204,7 +207,7 @@ OUString DocumentDigitalSignatures::getPackageSignatureDefaultStreamName(  )
 void DocumentDigitalSignatures::ImplViewSignatures(
     const Reference< css::embed::XStorage >& rxStorage,
     const Reference< css::io::XInputStream >& xSignStream,
-    DocumentSignatureMode eMode, bool bReadOnly )
+    DocumentSignatureMode eMode, bool bReadOnly ) throw (RuntimeException, std::exception)
 {
     Reference< io::XStream > xStream;
     if ( xSignStream.is() )
@@ -214,20 +217,17 @@ void DocumentDigitalSignatures::ImplViewSignatures(
 
 bool DocumentDigitalSignatures::ImplViewSignatures(
     const Reference< css::embed::XStorage >& rxStorage, const Reference< css::io::XStream >& xSignStream,
-    DocumentSignatureMode eMode, bool bReadOnly )
+    DocumentSignatureMode eMode, bool bReadOnly ) throw (RuntimeException, std::exception)
 {
     bool bChanges = false;
     ScopedVclPtrInstance<DigitalSignaturesDialog> aSignaturesDialog(
         nullptr, mxCtx, eMode, bReadOnly, m_sODFVersion,
         m_bHasDocumentSignature);
     bool bInit = aSignaturesDialog->Init();
-    SAL_WARN_IF( !bInit, "xmlsecurity.comp", "Error initializing security context!" );
+    DBG_ASSERT( bInit, "Error initializing security context!" );
     if ( bInit )
     {
-        if (rxStorage.is())
-            // Something ZIP based: ODF or OOXML.
-            aSignaturesDialog->SetStorage( rxStorage );
-
+        aSignaturesDialog->SetStorage( rxStorage );
         aSignaturesDialog->SetSignatureStream( xSignStream );
         if ( aSignaturesDialog->Execute() )
         {
@@ -245,7 +245,7 @@ bool DocumentDigitalSignatures::ImplViewSignatures(
     }
     else
     {
-        ScopedVclPtrInstance< MessageDialog > aBox(nullptr, XMLSEC_RES(RID_XMLSECWB_NO_MOZILLA_PROFILE), VclMessageType::Warning);
+        ScopedVclPtrInstance< MessageDialog > aBox(nullptr, XMLSEC_RES(RID_XMLSECWB_NO_MOZILLA_PROFILE), VCL_MESSAGE_WARNING);
         aBox->Execute();
     }
 
@@ -255,28 +255,11 @@ bool DocumentDigitalSignatures::ImplViewSignatures(
 Sequence< css::security::DocumentSignatureInformation >
 DocumentDigitalSignatures::ImplVerifySignatures(
     const Reference< css::embed::XStorage >& rxStorage,
-    const Reference< css::io::XInputStream >& xSignStream, DocumentSignatureMode eMode )
+    const Reference< css::io::XInputStream >& xSignStream, DocumentSignatureMode eMode ) throw (RuntimeException)
 {
-    DocumentSignatureManager aSignatureManager(mxCtx, eMode);
-
-    bool bInit = aSignatureManager.init();
-
-    SAL_WARN_IF(!bInit, "xmlsecurity.comp", "Error initializing security context!");
-
-    if (!bInit)
-        return uno::Sequence<security::DocumentSignatureInformation>(0);
-
     if (!rxStorage.is())
     {
-        if (xSignStream.is())
-        {
-            // Something not ZIP-based, try PDF.
-            PDFSignatureHelper& rSignatureHelper = aSignatureManager.getPDFSignatureHelper();
-            if (rSignatureHelper.ReadAndVerifySignature(xSignStream))
-                return rSignatureHelper.GetDocumentSignatureInformations(aSignatureManager.getSecurityEnvironment());
-        }
-
-        SAL_WARN( "xmlsecurity.comp", "Error, no XStorage provided");
+        DBG_ASSERT(false, "Error, no XStorage provided");
         return Sequence<css::security::DocumentSignatureInformation>();
     }
     // First check for the InputStream, to avoid unnecessary initialization of the security environment...
@@ -294,27 +277,38 @@ DocumentDigitalSignatures::ImplVerifySignatures(
         return Sequence< css::security::DocumentSignatureInformation >(0);
 
 
-    XMLSignatureHelper& rSignatureHelper = aSignatureManager.maSignatureHelper;
-    rSignatureHelper.SetStorage(rxStorage, m_sODFVersion);
+    XMLSignatureHelper aSignatureHelper( mxCtx );
 
-    rSignatureHelper.StartMission(aSignatureManager.mxSecurityContext);
+    bool bInit = aSignatureHelper.Init();
+
+    DBG_ASSERT( bInit, "Error initializing security context!" );
+
+    if ( !bInit )
+        return Sequence< css::security::DocumentSignatureInformation >(0);
+
+    aSignatureHelper.SetStorage(rxStorage, m_sODFVersion);
+
+    aSignatureHelper.StartMission();
 
     if (xInputStream.is())
-        rSignatureHelper.ReadAndVerifySignature(xInputStream);
+        aSignatureHelper.ReadAndVerifySignature(xInputStream);
     else if (aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML)
-        rSignatureHelper.ReadAndVerifySignatureStorage(aStreamHelper.xSignatureStorage);
+        aSignatureHelper.ReadAndVerifySignatureStorage(aStreamHelper.xSignatureStorage);
 
-    rSignatureHelper.EndMission();
+    aSignatureHelper.EndMission();
 
-    uno::Reference<xml::crypto::XSecurityEnvironment> xSecEnv = aSignatureManager.getSecurityEnvironment();
+    Reference< css::xml::crypto::XSecurityEnvironment > xSecEnv = aSignatureHelper.GetSecurityEnvironment();
 
-    SignatureInformations aSignInfos = rSignatureHelper.GetSignatureInformations();
+    SignatureInformations aSignInfos = aSignatureHelper.GetSignatureInformations();
     int nInfos = aSignInfos.size();
     Sequence< css::security::DocumentSignatureInformation > aInfos(nInfos);
     css::security::DocumentSignatureInformation* arInfos = aInfos.getArray();
 
     if ( nInfos )
     {
+       Reference<security::XSerialNumberAdapter> xSerialNumberAdapter =
+            css::security::SerialNumberAdapter::create(mxCtx);
+
         for( int n = 0; n < nInfos; ++n )
         {
             DocumentSignatureAlgorithm mode = DocumentSignatureHelper::getDocumentAlgorithm(
@@ -329,7 +323,7 @@ DocumentDigitalSignatures::ImplVerifySignatures(
             if (!rInfo.ouX509Certificate.isEmpty())
                rSigInfo.Signer = xSecEnv->createCertificateFromAscii( rInfo.ouX509Certificate ) ;
             if (!rSigInfo.Signer.is())
-                rSigInfo.Signer = xSecEnv->getCertificate( rInfo.ouX509IssuerName, xmlsecurity::numericStringToBigInteger( rInfo.ouX509SerialNumber ) );
+                rSigInfo.Signer = xSecEnv->getCertificate( rInfo.ouX509IssuerName, xSerialNumberAdapter->toSequence( rInfo.ouX509SerialNumber ) );
 
             // Time support again (#i38744#)
             Date aDate( rInfo.stDateTime.Day, rInfo.stDateTime.Month, rInfo.stDateTime.Year );
@@ -372,7 +366,7 @@ DocumentDigitalSignatures::ImplVerifySignatures(
                       DocumentSignatureHelper::checkIfAllFilesAreSigned(
                       aElementsToBeVerified, rInfo, mode);
             }
-            if (eMode == DocumentSignatureMode::Content)
+            if (eMode == SignatureModeDocumentContent)
             {
                 if (aStreamHelper.nStorageFormat == embed::StorageFormats::OFOPXML)
                     rSigInfo.PartialDocumentSignature = true;
@@ -386,7 +380,7 @@ DocumentDigitalSignatures::ImplVerifySignatures(
 
 }
 
-void DocumentDigitalSignatures::manageTrustedSources(  )
+void DocumentDigitalSignatures::manageTrustedSources(  ) throw (RuntimeException, std::exception)
 {
     // MT: i45295
     // SecEnv is only needed to display certificate information from trusted sources.
@@ -395,39 +389,40 @@ void DocumentDigitalSignatures::manageTrustedSources(  )
 
     Reference< css::xml::crypto::XSecurityEnvironment > xSecEnv;
 
-    DocumentSignatureMode eMode{};
-    DocumentSignatureManager aSignatureManager(mxCtx, eMode);
-    if (aSignatureManager.init())
-        xSecEnv = aSignatureManager.getSecurityEnvironment();
+    XMLSignatureHelper aSignatureHelper( mxCtx );
+    if ( aSignatureHelper.Init() )
+        xSecEnv = aSignatureHelper.GetSecurityEnvironment();
 
-    ScopedVclPtrInstance< MacroSecurity > aDlg( nullptr, xSecEnv );
+    ScopedVclPtrInstance< MacroSecurity > aDlg( nullptr, mxCtx, xSecEnv );
     aDlg->Execute();
 }
 
 void DocumentDigitalSignatures::showCertificate(
-    const Reference< css::security::XCertificate >& Certificate )
+    const Reference< css::security::XCertificate >& Certificate ) throw (RuntimeException, std::exception)
 {
-    DocumentSignatureMode eMode{};
-    DocumentSignatureManager aSignatureManager(mxCtx, eMode);
+    XMLSignatureHelper aSignatureHelper( mxCtx );
 
-    bool bInit = aSignatureManager.init();
+    bool bInit = aSignatureHelper.Init();
 
-    SAL_WARN_IF( !bInit, "xmlsecurity.comp", "Error initializing security context!" );
+    DBG_ASSERT( bInit, "Error initializing security context!" );
 
     if ( bInit )
     {
-        ScopedVclPtrInstance<CertificateViewer> aViewer(nullptr, aSignatureManager.getSecurityEnvironment(), Certificate, false);
+        ScopedVclPtrInstance< CertificateViewer > aViewer( nullptr, aSignatureHelper.GetSecurityEnvironment(), Certificate, false );
         aViewer->Execute();
     }
 
 }
 
 sal_Bool DocumentDigitalSignatures::isAuthorTrusted(
-    const Reference< css::security::XCertificate >& Author )
+    const Reference< css::security::XCertificate >& Author ) throw (RuntimeException, std::exception)
 {
     bool bFound = false;
 
-    OUString sSerialNum = xmlsecurity::bigIntegerToNumericString( Author->getSerialNumber() );
+    Reference<security::XSerialNumberAdapter> xSerialNumberAdapter =
+        css::security::SerialNumberAdapter::create(mxCtx);
+
+    OUString sSerialNum = xSerialNumberAdapter->toString( Author->getSerialNumber() );
 
     Sequence< SvtSecurityOptions::Certificate > aTrustedAuthors = SvtSecurityOptions().GetTrustedAuthors();
     const SvtSecurityOptions::Certificate* pAuthors = aTrustedAuthors.getConstArray();
@@ -445,24 +440,20 @@ sal_Bool DocumentDigitalSignatures::isAuthorTrusted(
     return bFound;
 }
 
-Reference< css::security::XCertificate > DocumentDigitalSignatures::chooseCertificate(OUString& rDescription)
+Reference< css::security::XCertificate > DocumentDigitalSignatures::chooseCertificate() throw (RuntimeException, std::exception)
 {
-    std::vector< Reference< css::xml::crypto::XSecurityEnvironment > > xSecEnvs;
+    Reference< css::xml::crypto::XSecurityEnvironment > xSecEnv;
 
-    DocumentSignatureMode eMode{};
-    DocumentSignatureManager aSignatureManager(mxCtx, eMode);
-    if (aSignatureManager.init()) {
-        xSecEnvs.push_back(aSignatureManager.getSecurityEnvironment());
-        xSecEnvs.push_back(aSignatureManager.getGpgSecurityEnvironment());
-    }
+    XMLSignatureHelper aSignatureHelper( mxCtx );
+    if ( aSignatureHelper.Init() )
+        xSecEnv = aSignatureHelper.GetSecurityEnvironment();
 
-    ScopedVclPtrInstance< CertificateChooser > aChooser(nullptr, mxCtx, xSecEnvs);
+    ScopedVclPtrInstance< CertificateChooser > aChooser(nullptr, mxCtx, xSecEnv);
 
     if (aChooser->Execute() != RET_OK)
         return Reference< css::security::XCertificate >(nullptr);
 
     Reference< css::security::XCertificate > xCert = aChooser->GetSelectedCertificate();
-    rDescription = aChooser->GetDescription();
 
     if ( !xCert.is() )
         return Reference< css::security::XCertificate >(nullptr);
@@ -471,19 +462,22 @@ Reference< css::security::XCertificate > DocumentDigitalSignatures::chooseCertif
 }
 
 
-sal_Bool DocumentDigitalSignatures::isLocationTrusted( const OUString& Location )
+sal_Bool DocumentDigitalSignatures::isLocationTrusted( const OUString& Location ) throw (RuntimeException, std::exception)
 {
     return SvtSecurityOptions().isTrustedLocationUri(Location);
 }
 
 void DocumentDigitalSignatures::addAuthorToTrustedSources(
-    const Reference< css::security::XCertificate >& Author )
+    const Reference< css::security::XCertificate >& Author ) throw (RuntimeException, std::exception)
 {
     SvtSecurityOptions aSecOpts;
 
+    Reference<security::XSerialNumberAdapter> xSerialNumberAdapter =
+        css::security::SerialNumberAdapter::create(mxCtx);
+
     SvtSecurityOptions::Certificate aNewCert( 3 );
     aNewCert[ 0 ] = Author->getIssuerName();
-    aNewCert[ 1 ] = xmlsecurity::bigIntegerToNumericString( Author->getSerialNumber() );
+    aNewCert[ 1 ] = xSerialNumberAdapter->toString( Author->getSerialNumber() );
 
     OUStringBuffer aStrBuffer;
     ::sax::Converter::encodeBase64(aStrBuffer, Author->getEncoded());
@@ -498,7 +492,7 @@ void DocumentDigitalSignatures::addAuthorToTrustedSources(
     aSecOpts.SetTrustedAuthors( aTrustedAuthors );
 }
 
-void DocumentDigitalSignatures::addLocationToTrustedSources( const OUString& Location )
+void DocumentDigitalSignatures::addLocationToTrustedSources( const OUString& Location ) throw (RuntimeException, std::exception)
 {
     SvtSecurityOptions aSecOpt;
 
@@ -510,12 +504,12 @@ void DocumentDigitalSignatures::addLocationToTrustedSources( const OUString& Loc
     aSecOpt.SetSecureURLs( aSecURLs );
 }
 
-OUString DocumentDigitalSignatures::GetImplementationName()
+OUString DocumentDigitalSignatures::GetImplementationName() throw (RuntimeException)
 {
     return OUString( "com.sun.star.security.DocumentDigitalSignatures" );
 }
 
-Sequence< OUString > DocumentDigitalSignatures::GetSupportedServiceNames()
+Sequence< OUString > DocumentDigitalSignatures::GetSupportedServiceNames() throw (css::uno::RuntimeException)
 {
     Sequence<OUString> aRet { "com.sun.star.security.DocumentDigitalSignatures" };
     return aRet;
@@ -523,7 +517,7 @@ Sequence< OUString > DocumentDigitalSignatures::GetSupportedServiceNames()
 
 
 Reference< XInterface > DocumentDigitalSignatures_CreateInstance(
-    const Reference< XComponentContext >& rCtx)
+    const Reference< XComponentContext >& rCtx) throw ( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new DocumentDigitalSignatures( rCtx ));
 }

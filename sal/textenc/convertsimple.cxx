@@ -42,7 +42,7 @@ static ImplReplaceCharData const aImplRepCharTab[] =
   { 0x2005, 0x0020 },   /* FOUR-PER-EM SPACE */
   { 0x2006, 0x0020 },   /* SIX-PER-EM SPACE */
   { 0x2007, 0x0020 },   /* FIGURE SPACE */
-  { 0x2008, 0x0020 },   /* PUNCTUATION SPACE */
+  { 0x2008, 0x0020 },   /* PUNCTATION SPACE */
   { 0x2009, 0x0020 },   /* THIN SPACE */
   { 0x200A, 0x0020 },   /* HAIR SPACE */
   { 0x2010, 0x002D },   /* HYPHEN */
@@ -497,8 +497,11 @@ int ImplConvertUnicodeCharToChar(
                     dest[0] = static_cast< char >(pCharExData->mnChar);
                     if ( pCharExData->mnChar2 == 0 )
                         return 1;
-                    dest[1] = static_cast< char >(pCharExData->mnChar2);
-                    return 2;
+                    else
+                    {
+                        dest[1] = static_cast< char >(pCharExData->mnChar2);
+                        return 2;
+                    }
                 }
             }
         }
@@ -543,12 +546,13 @@ sal_Size sal::detail::textenc::convertCharToUnicode(
                     *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                     break;
                 }
-                if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_IGNORE )
+                else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_MASK) == RTL_TEXTTOUNICODE_FLAGS_UNDEFINED_IGNORE )
                 {
                     pSrcBuf++;
                     continue;
                 }
-                cConv = ImplGetUndefinedUnicodeChar(c, nFlags);
+                else
+                    cConv = ImplGetUndefinedUnicodeChar(c, nFlags);
             }
         }
 
@@ -638,7 +642,8 @@ sal_Size sal::detail::textenc::convertUnicodeToChar(
                                 &pSrcBuf, pEndSrcBuf, &pDestBuf, pEndDestBuf,
                                 nFlags, pInfo))
                             continue;
-                        break;
+                        else
+                            break;
                     }
                 }
             }

@@ -310,7 +310,7 @@ void SwParagraphNumTabPage::EnableNewStart()
     m_pNewStartBX->Show();
 }
 
-IMPL_LINK_NOARG(SwParagraphNumTabPage, NewStartHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwParagraphNumTabPage, NewStartHdl_Impl, Button*, void)
 {
     bool bEnable = m_pNewStartCB->IsChecked();
     m_pNewStartNumberCB->Enable(bEnable);
@@ -318,7 +318,7 @@ IMPL_LINK_NOARG(SwParagraphNumTabPage, NewStartHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(SwParagraphNumTabPage, LineCountHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwParagraphNumTabPage, LineCountHdl_Impl, Button*, void)
 {
     m_pRestartParaCountCB->Enable(m_pCountParaCB->IsChecked());
 
@@ -327,7 +327,7 @@ IMPL_LINK_NOARG(SwParagraphNumTabPage, LineCountHdl_Impl, Button*, void)
     m_pRestartBX->Enable(bEnableRestartValue);
 }
 
-IMPL_LINK_NOARG( SwParagraphNumTabPage, EditNumStyleSelectHdl_Impl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( SwParagraphNumTabPage, EditNumStyleSelectHdl_Impl, ListBox&, void )
 {
     sal_Int32 numSelectPos = m_pNumberStyleLB->GetSelectEntryPos();
     if ( numSelectPos == 0 )
@@ -336,7 +336,7 @@ IMPL_LINK_NOARG( SwParagraphNumTabPage, EditNumStyleSelectHdl_Impl, ListBox&, vo
         m_pEditNumStyleBtn->Enable();
 }
 
-IMPL_LINK_NOARG(SwParagraphNumTabPage, EditNumStyleHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwParagraphNumTabPage, EditNumStyleHdl_Impl, Button*, void)
 {
     OUString aTemplName(m_pNumberStyleLB->GetSelectEntry());
     ExecuteEditNumStyle_Impl( SID_STYLE_EDIT, aTemplName, OUString(), SfxStyleFamily::Pseudo );
@@ -352,6 +352,7 @@ bool SwParagraphNumTabPage::ExecuteEditNumStyle_Impl(
     SfxStringItem aItem(nId, rStr);
     SfxUInt16Item aFamily(SID_STYLE_FAMILY, (sal_uInt16)nFamily);
     SfxUInt16Item aMask( SID_STYLE_MASK, nMask );
+    SfxStringItem aUpdName(SID_STYLE_UPD_BY_EX_NAME, rStr);
     SfxStringItem aRefName( SID_STYLE_REFERENCE, rRefStr );
     const SfxPoolItem* pItems[ 6 ];
     sal_uInt16 nCount = 0;
@@ -376,7 +377,7 @@ bool SwParagraphNumTabPage::ExecuteEditNumStyle_Impl(
 
 }
 
-IMPL_LINK( SwParagraphNumTabPage, StyleHdl_Impl, ListBox&, rBox, void )
+IMPL_LINK_TYPED( SwParagraphNumTabPage, StyleHdl_Impl, ListBox&, rBox, void )
 {
     bool bEnable = bCurNumrule || rBox.GetSelectEntryPos() > 0;
     m_pNewStartCB->Enable(bEnable);

@@ -69,6 +69,7 @@ XMLAutoTextEventExport::~XMLAutoTextEventExport()
 
 void XMLAutoTextEventExport::initialize(
     const Sequence<Any> & rArguments )
+        throw(uno::Exception, uno::RuntimeException, std::exception)
 {
     if (rArguments.getLength() > 1)
     {
@@ -216,6 +217,7 @@ OUString SAL_CALL XMLAutoTextEventExport_getImplementationName() throw()
 
 Reference< XInterface > SAL_CALL XMLAutoTextEventExport_createInstance(
         const Reference< XMultiServiceFactory > & rSMgr)
+    throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new XMLAutoTextEventExport( comphelper::getComponentContext(rSMgr), XMLAutoTextEventExport_getImplementationName(), SvXMLExportFlags::ALL|SvXMLExportFlags::OASIS));
 }
@@ -236,6 +238,7 @@ OUString SAL_CALL XMLAutoTextEventExportOOO_getImplementationName() throw()
 
 Reference< XInterface > SAL_CALL XMLAutoTextEventExportOOO_createInstance(
         const Reference< XMultiServiceFactory > & rSMgr)
+    throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new XMLAutoTextEventExport( comphelper::getComponentContext(rSMgr), XMLAutoTextEventExportOOO_getImplementationName(), SvXMLExportFlags::ALL));
 }

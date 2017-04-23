@@ -41,7 +41,7 @@ namespace ww8
     public:
         WW8Struct(SvStream& rSt, sal_uInt32 nPos, sal_uInt32 nSize);
         WW8Struct(WW8Struct * pStruct, sal_uInt32 nPos, sal_uInt32 nSize);
-        virtual ~WW8Struct() override;
+        virtual ~WW8Struct();
 
         sal_uInt8 getU8(sal_uInt32 nOffset);
 
@@ -61,7 +61,7 @@ namespace ww8
 
     public:
         WW8Sttb(SvStream& rSt, sal_Int32 nPos, sal_uInt32 nSize);
-        virtual ~WW8Sttb() override;
+        virtual ~WW8Sttb();
 
         std::vector<OUString> & getStrings()
         {

@@ -20,13 +20,10 @@
 #ifndef INCLUDED_SVL_SVDDE_HXX
 #define INCLUDED_SVL_SVDDE_HXX
 
-#include <sal/config.h>
-
 #include <svl/svldllapi.h>
 #include <sot/exchange.hxx>
 #include <tools/solar.h>
 #include <tools/link.hxx>
-#include <memory>
 #include <vector>
 
 class DdeString;
@@ -57,7 +54,7 @@ class SVL_DLLPUBLIC DdeData
     friend class    DdeService;
     friend class    DdeConnection;
     friend class    DdeTransaction;
-    std::unique_ptr<DdeDataImp>    xImp;
+    DdeDataImp*     pImp;
 
     SVL_DLLPRIVATE void            Lock();
 
@@ -65,19 +62,17 @@ class SVL_DLLPUBLIC DdeData
 
 public:
                     DdeData();
-                    DdeData(SAL_UNUSED_PARAMETER const void*, SAL_UNUSED_PARAMETER long, SAL_UNUSED_PARAMETER SotClipboardFormatId = SotClipboardFormatId::STRING);
-                    DdeData(SAL_UNUSED_PARAMETER const OUString&);
-                    DdeData(const DdeData&);
-                    DdeData(DdeData&&);
+                    DdeData( SAL_UNUSED_PARAMETER const void*, SAL_UNUSED_PARAMETER long, SAL_UNUSED_PARAMETER SotClipboardFormatId = SotClipboardFormatId::STRING );
+                    DdeData( SAL_UNUSED_PARAMETER const OUString& );
+                    DdeData( const DdeData& );
                     ~DdeData();
 
-    void const *    getData() const;
-    long            getSize() const;
+    operator const  void*() const;
+    operator        long() const;
 
     SotClipboardFormatId GetFormat() const;
 
-    DdeData&        operator=(const DdeData&);
-    DdeData&        operator=(DdeData&&);
+    DdeData&        operator = ( const DdeData& );
 
     static sal_uLong GetExternalFormat(SotClipboardFormatId nFmt);
     static SotClipboardFormatId GetInternalFormat(sal_uLong nFmt);
@@ -137,7 +132,7 @@ class SVL_DLLPUBLIC DdeLink : public DdeTransaction
 
 public:
                     DdeLink( DdeConnection&, const OUString&, long = 0 );
-    virtual        ~DdeLink() override;
+    virtual        ~DdeLink();
 
     void            SetNotifyHdl( const Link<void*,void>& rLink ) { aNotify = rLink; }
     const Link<void*,void>&   GetNotifyHdl() const { return aNotify; }
@@ -148,7 +143,7 @@ public:
 class SVL_DLLPUBLIC DdeHotLink : public DdeLink
 {
 public:
-            DdeHotLink( DdeConnection&, const OUString& );
+            DdeHotLink( DdeConnection&, const OUString&, long = 0 );
 };
 
 
@@ -187,6 +182,7 @@ public:
                     ~DdeConnection();
 
     long            GetError();
+    sal_IntPtr      GetConvId();
 
     static const std::vector<DdeConnection*>& GetConnections();
 
@@ -208,6 +204,9 @@ class SVL_DLLPUBLIC DdeItem
     DdeString*      pName;
     DdeTopic*       pMyTopic;
     DdeItemImp*     pImpData;
+
+    void            IncMonitor( sal_uLong );
+    void            DecMonitor( sal_uLong );
 
 protected:
     sal_uInt8            nType;
@@ -239,6 +238,7 @@ public:
 
 class SVL_DLLPUBLIC DdeTopic
 {
+    SVL_DLLPRIVATE void Disconnect( sal_IntPtr );
 
 public:
     virtual DdeData* Get(SotClipboardFormatId);
@@ -265,6 +265,7 @@ public:
     virtual        ~DdeTopic();
 
     const OUString  GetName() const;
+    long            GetConvId();
 
     void            NotifyClient( const OUString& );
     bool            IsSystemTopic();

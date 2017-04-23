@@ -38,10 +38,10 @@ unsigned int AquaSalSystem::GetDisplayScreenCount()
     return pScreens ? [pScreens count] : 1;
 }
 
-tools::Rectangle AquaSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
+Rectangle AquaSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
 {
     NSArray* pScreens = [NSScreen screens];
-    tools::Rectangle aRet;
+    Rectangle aRet;
     NSScreen* pScreen = nil;
     if( pScreens && nScreen < [pScreens count] )
         pScreen = [pScreens objectAtIndex: nScreen];
@@ -51,7 +51,7 @@ tools::Rectangle AquaSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScre
     if( pScreen )
     {
         NSRect aFrame = [pScreen frame];
-        aRet = tools::Rectangle( Point( static_cast<long int>(aFrame.origin.x), static_cast<long int>(aFrame.origin.y) ),
+        aRet = Rectangle( Point( static_cast<long int>(aFrame.origin.x), static_cast<long int>(aFrame.origin.y) ),
                           Size( static_cast<long int>(aFrame.size.width), static_cast<long int>(aFrame.size.height) ) );
     }
     return aRet;

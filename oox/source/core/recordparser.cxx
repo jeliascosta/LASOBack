@@ -39,18 +39,17 @@ namespace prv {
 class Locator : public ::cppu::WeakImplHelper< XLocator >
 {
 public:
-    explicit         Locator( RecordParser* pParser ) : mpParser( pParser ) {}
+    inline explicit         Locator( RecordParser* pParser ) : mpParser( pParser ) {}
 
     void                    dispose();
-    /// @throws css::uno::RuntimeException
-    void                    checkDispose();
+    void                    checkDispose() throw( RuntimeException );
 
     // com.sun.star.sax.XLocator interface
 
-    virtual sal_Int32 SAL_CALL getColumnNumber() override;
-    virtual sal_Int32 SAL_CALL getLineNumber() override;
-    virtual OUString SAL_CALL getPublicId() override;
-    virtual OUString SAL_CALL getSystemId() override;
+    virtual sal_Int32 SAL_CALL getColumnNumber() throw( RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL getLineNumber() throw( RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getPublicId() throw( RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL getSystemId() throw( RuntimeException, std::exception ) override;
 
 private:
     RecordParser*           mpParser;
@@ -61,29 +60,29 @@ void Locator::dispose()
     mpParser = nullptr;
 }
 
-void Locator::checkDispose()
+void Locator::checkDispose() throw( RuntimeException )
 {
     if( !mpParser )
         throw DisposedException();
 }
 
-sal_Int32 SAL_CALL Locator::getColumnNumber()
+sal_Int32 SAL_CALL Locator::getColumnNumber() throw( RuntimeException, std::exception )
 {
     return -1;
 }
 
-sal_Int32 SAL_CALL Locator::getLineNumber()
+sal_Int32 SAL_CALL Locator::getLineNumber() throw( RuntimeException, std::exception )
 {
     return -1;
 }
 
-OUString SAL_CALL Locator::getPublicId()
+OUString SAL_CALL Locator::getPublicId() throw( RuntimeException, std::exception )
 {
     checkDispose();
     return mpParser->getInputSource().maPublicId;
 }
 
-OUString SAL_CALL Locator::getSystemId()
+OUString SAL_CALL Locator::getSystemId() throw( RuntimeException, std::exception )
 {
     checkDispose();
     return mpParser->getInputSource().maSystemId;
@@ -92,9 +91,9 @@ OUString SAL_CALL Locator::getSystemId()
 class ContextStack
 {
 public:
-    explicit            ContextStack( FragmentHandlerRef const & xHandler );
+    explicit            ContextStack( FragmentHandlerRef xHandler );
 
-    bool         empty() const { return maStack.empty(); }
+    inline bool         empty() const { return maStack.empty(); }
 
     sal_Int32           getCurrentRecId() const;
     bool                hasCurrentEndRecId() const;
@@ -111,7 +110,7 @@ private:
     ContextInfoVec      maStack;
 };
 
-ContextStack::ContextStack( FragmentHandlerRef const & xHandler ) :
+ContextStack::ContextStack( FragmentHandlerRef xHandler ) :
     mxHandler( xHandler )
 {
 }
@@ -230,7 +229,7 @@ void RecordParser::setFragmentHandler( const ::rtl::Reference< FragmentHandler >
     }
 }
 
-void RecordParser::parseStream( const RecordInputSource& rInputSource )
+void RecordParser::parseStream( const RecordInputSource& rInputSource ) throw( SAXException, IOException, RuntimeException )
 {
     maSource = rInputSource;
 

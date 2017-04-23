@@ -51,7 +51,7 @@ UriReference::UriReference(
 
 UriReference::~UriReference() {}
 
-OUString UriReference::getUriReference()
+OUString UriReference::getUriReference() throw (css::uno::RuntimeException)
 {
     osl::MutexGuard g(m_mutex);
     OUStringBuffer buf;
@@ -67,12 +67,13 @@ OUString UriReference::getUriReference()
     return buf.makeStringAndClear();
 }
 
-bool UriReference::isAbsolute() {
+bool UriReference::isAbsolute() throw (css::uno::RuntimeException) {
     return !m_scheme.isEmpty();
 }
 
 
 OUString UriReference::getSchemeSpecificPart()
+    throw (css::uno::RuntimeException)
 {
     osl::MutexGuard g(m_mutex);
     OUStringBuffer buf;
@@ -80,33 +81,33 @@ OUString UriReference::getSchemeSpecificPart()
     return buf.makeStringAndClear();
 }
 
-bool UriReference::isHierarchical() {
+bool UriReference::isHierarchical() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_isHierarchical;
 }
 
-bool UriReference::hasAuthority() {
+bool UriReference::hasAuthority() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_hasAuthority;
 }
 
-OUString UriReference::getAuthority() {
+OUString UriReference::getAuthority() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_authority;
 }
 
-OUString UriReference::getPath() {
+OUString UriReference::getPath() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_path;
 }
 
-bool UriReference::hasRelativePath() {
+bool UriReference::hasRelativePath() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_isHierarchical && !m_hasAuthority
         && (m_path.isEmpty() || m_path[0] != '/');
 }
 
-sal_Int32 UriReference::getPathSegmentCount()
+sal_Int32 UriReference::getPathSegmentCount() throw (css::uno::RuntimeException)
 {
     osl::MutexGuard g(m_mutex);
     if (!m_isHierarchical || m_path.isEmpty()) {
@@ -125,6 +126,7 @@ sal_Int32 UriReference::getPathSegmentCount()
 }
 
 OUString UriReference::getPathSegment(sal_Int32 index)
+    throw (css::uno::RuntimeException)
 {
     osl::MutexGuard g(m_mutex);
     if (m_isHierarchical && !m_path.isEmpty() && index >= 0) {
@@ -142,34 +144,35 @@ OUString UriReference::getPathSegment(sal_Int32 index)
     return OUString();
 }
 
-bool UriReference::hasQuery() {
+bool UriReference::hasQuery() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_hasQuery;
 }
 
-OUString UriReference::getQuery() {
+OUString UriReference::getQuery() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_query;
 }
 
-bool UriReference::hasFragment() {
+bool UriReference::hasFragment() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_hasFragment;
 }
 
-OUString UriReference::getFragment() {
+OUString UriReference::getFragment() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     return m_fragment;
 }
 
 void UriReference::setFragment(OUString const & fragment)
+    throw (css::uno::RuntimeException)
 {
     osl::MutexGuard g(m_mutex);
     m_hasFragment = true;
     m_fragment = fragment;
 }
 
-void UriReference::clearFragment() {
+void UriReference::clearFragment() throw (css::uno::RuntimeException) {
     osl::MutexGuard g(m_mutex);
     m_hasFragment = false;
     m_fragment.clear();

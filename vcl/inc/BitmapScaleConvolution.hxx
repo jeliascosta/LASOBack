@@ -20,13 +20,14 @@
 #ifndef INCLUDED_VCL_BITMAPSCALECONVOLUTION_HXX
 #define INCLUDED_VCL_BITMAPSCALECONVOLUTION_HXX
 
-#include <bitmapfilter.hxx>
+#include <vcl/bitmapfilter.hxx>
 
 namespace vcl
 {
 
 enum class ConvolutionKernelType
 {
+    Box       = 0,
     BiLinear  = 1,
     BiCubic   = 2,
     Lanczos3  = 3,
@@ -40,6 +41,9 @@ public:
         : mrScaleX(rScaleX)
         , mrScaleY(rScaleY)
         , meKernelType(eKernelType)
+    {}
+
+    virtual ~BitmapScaleConvolution()
     {}
 
     virtual bool filter(Bitmap& rBitmap) override;

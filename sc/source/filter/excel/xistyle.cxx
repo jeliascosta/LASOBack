@@ -79,23 +79,23 @@ public:
     explicit PaletteIndex( const ColorDataVec& rColorDataTable ) : maColorData( rColorDataTable ) {}
 
     // Methods XIndexAccess
-    virtual ::sal_Int32 SAL_CALL getCount() override
+    virtual ::sal_Int32 SAL_CALL getCount() throw (uno::RuntimeException, std::exception) override
     {
          return  maColorData.size();
     }
 
-    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override
+    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         //--Index;  // apparently the palette is already 1 based
         return uno::makeAny( sal_Int32( maColorData[ Index ] ) );
     }
 
-    // Methods XElementAccess
-    virtual uno::Type SAL_CALL getElementType() override
+    // Methods XElementAcess
+    virtual uno::Type SAL_CALL getElementType() throw (uno::RuntimeException, std::exception) override
     {
         return ::cppu::UnoType<sal_Int32>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements() override
+    virtual sal_Bool SAL_CALL hasElements() throw (uno::RuntimeException, std::exception) override
     {
         return (maColorData.size() > 0);
     }
@@ -286,7 +286,7 @@ void XclImpFont::ReadCFFontBlock( XclImpStream& rStrm )
     if( (mbHeightUsed = (nHeight <= 0x7FFF)) )
         maData.mnHeight = static_cast< sal_uInt16 >( nHeight );
     if( (mbWeightUsed = !::get_flag( nFontFlags1, EXC_CF_FONT_STYLE ) && (nWeight < 0x7FFF)) )
-        maData.mnWeight = nWeight;
+        maData.mnWeight = static_cast< sal_uInt16 >( nWeight );
     if( (mbItalicUsed = !::get_flag( nFontFlags1, EXC_CF_FONT_STYLE )) )
         maData.mbItalic = ::get_flag( nStyle, EXC_CF_FONT_STYLE );
     if( (mbUnderlUsed = !::get_flag( nFontFlags3, EXC_CF_FONT_UNDERL ) && (nUnderl <= 0x7F)) )
@@ -300,7 +300,7 @@ void XclImpFont::ReadCFFontBlock( XclImpStream& rStrm )
 void XclImpFont::FillToItemSet( SfxItemSet& rItemSet, XclFontItemType eType, bool bSkipPoolDefs ) const
 {
     // true = edit engine Which-IDs (EE_CHAR_*); false = Calc Which-IDs (ATTR_*)
-    bool bEE = eType != XclFontItemType::Cell;
+    bool bEE = eType != EXC_FONTITEM_CELL;
 
 // item = the item to put into the item set
 // sc_which = the Calc Which-ID of the item
@@ -309,7 +309,9 @@ void XclImpFont::FillToItemSet( SfxItemSet& rItemSet, XclFontItemType eType, boo
     ScfTools::PutItem( rItemSet, item, (bEE ? (ee_which) : (sc_which)), bSkipPoolDefs )
 
 // Font item
-    if( mbFontNameUsed )
+    // #i36997# do not set default Tahoma font from notes
+    bool bDefNoteFont = (eType == EXC_FONTITEM_NOTE) && (maData.maName.equalsIgnoreAsciiCase( "Tahoma" ));
+    if( mbFontNameUsed && !bDefNoteFont )
     {
         rtl_TextEncoding eFontEnc = maData.GetFontEncoding();
         rtl_TextEncoding eTempTextEnc = (bEE && (eFontEnc == GetTextEncoding())) ?
@@ -340,7 +342,7 @@ void XclImpFont::FillToItemSet( SfxItemSet& rItemSet, XclFontItemType eType, boo
     if( mbHeightUsed )
     {
         sal_Int32 nHeight = maData.mnHeight;
-        if( bEE && (eType != XclFontItemType::HeaderFooter) )     // do not convert header/footer height
+        if( bEE && (eType != EXC_FONTITEM_HF) )     // do not convert header/footer height
             nHeight = (nHeight * 127 + 36) / EXC_POINTS_PER_INCH;   // 1 in == 72 pt
 
         SvxFontHeightItem aHeightItem( nHeight, 100, ATTR_FONT_HEIGHT );
@@ -460,7 +462,7 @@ void XclImpFont::GuessScriptType()
     if( OutputDevice* pPrinter = GetPrinter() )
     {
         vcl::Font aFont( maData.maName, Size( 0, 10 ) );
-        FontCharMapRef xFontCharMap;
+        FontCharMapPtr xFontCharMap;
 
         pPrinter->SetFont( aFont );
         if( pPrinter->GetFontCharMap( xFontCharMap ) )
@@ -957,7 +959,7 @@ bool lclConvertBorderLine( ::editeng::SvxBorderLine& rLine, const XclImpPalette&
 
     rLine.SetColor( rPalette.GetColor( nXclColor ) );
     rLine.SetWidth( ppnLineParam[ nXclLine ][ 0 ] );
-    rLine.SetBorderLineStyle( static_cast< SvxBorderLineStyle>(
+    rLine.SetBorderLineStyle( static_cast< ::editeng::SvxBorderStyle>(
                 ppnLineParam[ nXclLine ][ 1 ]) );
     return true;
 }
@@ -1270,7 +1272,7 @@ const ScPatternAttr& XclImpXF::CreatePattern( bool bSkipPoolDefs )
 
     // font
     if( mbFontUsed )
-        GetFontBuffer().FillToItemSet( rItemSet, XclFontItemType::Cell, mnXclFont, bSkipPoolDefs );
+        GetFontBuffer().FillToItemSet( rItemSet, EXC_FONTITEM_CELL, mnXclFont, bSkipPoolDefs );
 
     // value format
     if( mbFmtUsed )
@@ -1588,7 +1590,7 @@ namespace {
 /** Functor for case-insensitive string comparison, usable in maps etc. */
 struct IgnoreCaseCompare
 {
-    bool operator()( const OUString& rName1, const OUString& rName2 ) const
+    inline bool operator()( const OUString& rName1, const OUString& rName2 ) const
         { return rName1.compareToIgnoreAsciiCase( rName2 ) < 0; }
 };
 
@@ -1908,7 +1910,7 @@ void XclImpXFRangeBuffer::SetXF( const ScAddress& rScPos, sal_uInt16 nXFIndex, X
             if (pRange && (pRange->aEnd.Row() == nScRow) && (pRange->aEnd.Col() + 1 == nScCol) && (eMode == xlXFModeBlank))
                 pRange->aEnd.IncCol();
             else if( eMode != xlXFModeBlank )   // do not merge empty cells
-                maMergeList.Append( ScRange( nScCol, nScRow, 0 ) );
+                SetMerge( nScCol, nScRow );
         }
     }
 }
@@ -1964,6 +1966,11 @@ void XclImpXFRangeBuffer::SetBorderLine( const ScRange& rRange, SCTAB nScTab, Sv
 void XclImpXFRangeBuffer::SetHyperlink( const XclRange& rXclRange, const OUString& rUrl )
 {
     maHyperlinks.push_back( XclImpHyperlinkRange( rXclRange, rUrl ) );
+}
+
+void XclImpXFRangeBuffer::SetMerge( SCCOL nScCol, SCROW nScRow )
+{
+    maMergeList.Append( ScRange( nScCol, nScRow, 0 ) );
 }
 
 void XclImpXFRangeBuffer::SetMerge( SCCOL nScCol1, SCROW nScRow1, SCCOL nScCol2, SCROW nScRow2 )

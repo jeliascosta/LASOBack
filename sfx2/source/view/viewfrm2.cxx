@@ -34,7 +34,7 @@
 #include <sfx2/request.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/viewsh.hxx>
-#include <com/sun/star/util/CloseVetoException.hpp>
+
 #include <com/sun/star/util/XCloseable.hpp>
 
 #include <svtools/asynclink.hxx>
@@ -85,7 +85,7 @@ void SfxViewFrame::UpdateTitle()
     [Note]
 
     This is for example necessary if one listens to the SfxObjectShell as
-    SfxListener and then react on the <SfxSimpleHint> SfxHintId::TitleChanged,
+    SfxListener and then react on the <SfxSimpleHint> SFX_HINT_TITLECHANGED,
     then query the title of his views. However these views (SfxTopViewFrames)
     are  also SfxListener and because the order of notifications might not be
     fixed, the title update will be enforced in advance.
@@ -98,7 +98,7 @@ void SfxViewFrame::UpdateTitle()
         {
             switch( ( (SfxSimpleHint&) rHint ).GetId() )
             {
-                case SfxHintId::TitleChanged:
+                case SFX_HINT_TITLECHANGED:
                     for ( SfxViewFrame *pTop = SfxViewFrame::GetFirst( this );
                           pTop;
                           pTop = SfxViewFrame::GetNext( this );
@@ -116,7 +116,7 @@ void SfxViewFrame::UpdateTitle()
 {
 
     const SfxObjectFactory &rFact = GetObjectShell()->GetFactory();
-    m_pImpl->aFactoryName = rFact.GetFactoryName();
+    m_pImp->aFactoryName = OUString::createFromAscii(rFact.GetShortName());
 
     SfxObjectShell *pObjSh = GetObjectShell();
     if ( !pObjSh )
@@ -129,18 +129,19 @@ void SfxViewFrame::UpdateTitle()
     if ( pObjSh->HasName() )
     {
         INetURLObject aTmp( pMedium->GetName() );
-        aURL = aTmp.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset );
+        aURL = aTmp.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET );
     }
 
-    if ( aURL != m_pImpl->aActualURL )
+    if ( aURL != m_pImp->aActualURL )
         // URL has changed
-        m_pImpl->aActualURL = aURL;
+        m_pImp->aActualURL = aURL;
 
     // SbxObjects name
     OUString aSbxName = pObjSh->SfxShell::GetName();
     if ( IsVisible() )
     {
-        aSbxName += ":" + OUString::number(m_pImpl->nDocViewNo);
+        aSbxName += ":";
+        aSbxName += OUString::number(m_pImp->nDocViewNo);
     }
 
     SetName( aSbxName );
@@ -160,6 +161,8 @@ void SfxViewFrame::Exec_Impl(SfxRequest &rReq )
         {
             const SfxBoolItem* pShowItem = rReq.GetArg<SfxBoolItem>(SID_SHOWPOPUPS);
             bool bShow = pShowItem == nullptr || pShowItem->GetValue();
+            const SfxUInt16Item* pIdItem = rReq.GetArg<SfxUInt16Item>(SID_CONFIGITEMID);
+            sal_uInt16 nId = pIdItem ? pIdItem->GetValue() : 0;
 
             SfxWorkWindow *pWorkWin = GetFrame().GetWorkWindow_Impl();
             if ( bShow )
@@ -181,7 +184,7 @@ void SfxViewFrame::Exec_Impl(SfxRequest &rReq )
                     pBind = pBind->GetSubBindings_Impl();
                 }
 
-                pWorkWin->HidePopups_Impl( !bShow, true );
+                pWorkWin->HidePopups_Impl( !bShow, true, nId );
                 pWorkWin->MakeChildrenVisible_Impl( bShow );
             }
 
@@ -203,8 +206,8 @@ void SfxViewFrame::Exec_Impl(SfxRequest &rReq )
             OUString aFactName;
             if ( pFactoryItem )
                 aFactName = pFactoryItem->GetValue();
-            else if ( !m_pImpl->aFactoryName.isEmpty() )
-                aFactName = m_pImpl->aFactoryName;
+            else if ( !m_pImp->aFactoryName.isEmpty() )
+                aFactName = m_pImp->aFactoryName;
             else
             {
                 OSL_FAIL("Missing argument!");
@@ -212,10 +215,11 @@ void SfxViewFrame::Exec_Impl(SfxRequest &rReq )
             }
 
             SfxRequest aReq( SID_OPENDOC, SfxCallMode::SYNCHRON, GetPool() );
-            const OUString aFact("private:factory/" + aFactName);
+            OUString aFact("private:factory/");
+            aFact += aFactName;
             aReq.AppendItem( SfxStringItem( SID_FILE_NAME, aFact ) );
             aReq.AppendItem( SfxFrameItem( SID_DOCFRAME, &GetFrame() ) );
-            aReq.AppendItem( SfxStringItem( SID_TARGETNAME, "_blank" ) );
+            aReq.AppendItem( SfxStringItem( SID_TARGETNAME, OUString( "_blank" ) ) );
             SfxGetpApp()->ExecuteSlot( aReq );
             const SfxViewFrameItem* pItem = dynamic_cast<const SfxViewFrameItem*>( aReq.GetReturnValue()  );
             if ( pItem )
@@ -289,9 +293,11 @@ void SfxViewFrame::GetState_Impl( SfxItemSet &rSet )
             {
             case SID_NEWDOCDIRECT :
             {
-                if ( !m_pImpl->aFactoryName.isEmpty() )
+                if ( !m_pImp->aFactoryName.isEmpty() )
                 {
-                    rSet.Put( SfxStringItem( nWhich, "private:factory/"+m_pImpl->aFactoryName ) );
+                    OUString aFact("private:factory/");
+                    aFact += m_pImp->aFactoryName;
+                    rSet.Put( SfxStringItem( nWhich, aFact ) );
                 }
                 break;
             }
@@ -371,8 +377,9 @@ void SfxViewFrame::INetState_Impl( SfxItemSet &rItemSet )
 
     // Add/SaveToBookmark at BASIC-IDE, QUERY-EDITOR etc. disable
     SfxObjectShell *pDocSh = GetObjectShell();
+    bool bPseudo = pDocSh && !( pDocSh->GetFactory().GetFlags() & SfxObjectShellFlags::HASOPENDOC );
     bool bEmbedded = pDocSh && pDocSh->GetCreateMode() == SfxObjectCreateMode::EMBEDDED;
-    if ( !pDocSh || bEmbedded || !pDocSh->HasName() )
+    if ( !pDocSh || bPseudo || bEmbedded || !pDocSh->HasName() )
         rItemSet.DisableItem( SID_CREATELINK );
 }
 
@@ -380,7 +387,7 @@ void SfxViewFrame::Activate( bool bMDI )
 {
     DBG_ASSERT(GetViewShell(), "No Shell");
     if ( bMDI )
-        m_pImpl->bActive = true;
+        m_pImp->bActive = true;
 //(mba): here maybe as in Beanframe NotifyEvent ?!
 }
 
@@ -388,7 +395,7 @@ void SfxViewFrame::Deactivate( bool bMDI )
 {
     DBG_ASSERT(GetViewShell(), "No Shell");
     if ( bMDI )
-        m_pImpl->bActive = false;
+        m_pImp->bActive = false;
 //(mba): here maybe as in Beanframe NotifyEvent ?!
 }
 

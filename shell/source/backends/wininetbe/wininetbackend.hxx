@@ -39,13 +39,16 @@ class WinInetBackend : public ::cppu::WeakImplHelper <
 
         // XServiceInfo
         virtual OUString SAL_CALL
-            getImplementationName(  ) override;
+            getImplementationName(  )
+                throw (uno::RuntimeException) ;
 
         virtual sal_Bool SAL_CALL
-            supportsService( const OUString& aServiceName ) override;
+            supportsService( const OUString& aServiceName )
+                throw (uno::RuntimeException) ;
 
         virtual uno::Sequence<OUString> SAL_CALL
-            getSupportedServiceNames(  ) override;
+            getSupportedServiceNames(  )
+                throw (uno::RuntimeException) ;
 
         /**
           Provides the implementation name.
@@ -62,33 +65,53 @@ class WinInetBackend : public ::cppu::WeakImplHelper <
 
         // XPropertySet
         virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override
+        getPropertySetInfo() throw (css::uno::RuntimeException)
         { return css::uno::Reference< css::beans::XPropertySetInfo >(); }
 
         virtual void SAL_CALL setPropertyValue(
-            OUString const &, css::uno::Any const &) override;
+            OUString const &, css::uno::Any const &)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::lang::IllegalArgumentException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException);
 
         virtual css::uno::Any SAL_CALL getPropertyValue(
-            OUString const & PropertyName) override;
+            OUString const & PropertyName)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException);
 
         virtual void SAL_CALL addPropertyChangeListener(
             OUString const &,
-            css::uno::Reference< css::beans::XPropertyChangeListener > const &) override
+            css::uno::Reference< css::beans::XPropertyChangeListener > const &)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException)
         {}
 
         virtual void SAL_CALL removePropertyChangeListener(
             OUString const &,
-            css::uno::Reference< css::beans::XPropertyChangeListener > const &) override
+            css::uno::Reference< css::beans::XPropertyChangeListener > const &)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException)
         {}
 
         virtual void SAL_CALL addVetoableChangeListener(
             OUString const &,
-            css::uno::Reference< css::beans::XVetoableChangeListener > const &) override
+            css::uno::Reference< css::beans::XVetoableChangeListener > const &)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException)
         {}
 
         virtual void SAL_CALL removeVetoableChangeListener(
             OUString const &,
-            css::uno::Reference< css::beans::XVetoableChangeListener > const &) override
+            css::uno::Reference< css::beans::XVetoableChangeListener > const &)
+            throw (
+                css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException, css::uno::RuntimeException)
         {}
 
     protected:
@@ -100,7 +123,7 @@ class WinInetBackend : public ::cppu::WeakImplHelper <
         WinInetBackend();
 
         /** Destructor */
-        ~WinInetBackend() override;
+        ~WinInetBackend() ;
 
     private:
         css::beans::Optional< css::uno::Any >

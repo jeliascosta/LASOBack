@@ -24,7 +24,7 @@ public:
     RootNode();
 
 private:
-    virtual ~RootNode() override;
+    virtual ~RootNode();
 
     virtual Kind kind() const override;
 

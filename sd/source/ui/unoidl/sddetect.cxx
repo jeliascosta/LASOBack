@@ -49,7 +49,7 @@ SdFilterDetect::~SdFilterDetect()
 {
 }
 
-OUString SAL_CALL SdFilterDetect::detect( Sequence< beans::PropertyValue >& lDescriptor )
+OUString SAL_CALL SdFilterDetect::detect( Sequence< beans::PropertyValue >& lDescriptor ) throw( RuntimeException, std::exception )
 {
     MediaDescriptor aMediaDesc( lDescriptor );
     OUString aTypeName = aMediaDesc.getUnpackedValueOrDefault( MediaDescriptor::PROP_TYPENAME(), OUString() );
@@ -133,19 +133,19 @@ OUString SAL_CALL SdFilterDetect::detect( Sequence< beans::PropertyValue >& lDes
 }
 
 // XServiceInfo
-OUString SAL_CALL SdFilterDetect::getImplementationName()
+OUString SAL_CALL SdFilterDetect::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.draw.FormatDetector" );
 }
 
 // XServiceInfo
-sal_Bool SAL_CALL SdFilterDetect::supportsService( const OUString& sServiceName )
+sal_Bool SAL_CALL SdFilterDetect::supportsService( const OUString& sServiceName ) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > SAL_CALL SdFilterDetect::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL SdFilterDetect::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence<OUString> seqServiceNames { "com.sun.star.frame.ExtendedTypeDetection" };
     return seqServiceNames ;

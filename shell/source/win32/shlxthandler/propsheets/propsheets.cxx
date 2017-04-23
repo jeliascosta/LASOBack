@@ -36,7 +36,6 @@
 #pragma warning(pop)
 #endif
 
-#include <memory>
 #include <string>
 #include <vector>
 #include <utility>
@@ -57,14 +56,14 @@
 CPropertySheet::CPropertySheet(long RefCnt) :
     m_RefCnt(RefCnt)
 {
-    OutputDebugStringFormatA("CPropertySheet::CTor [%d], [%d]", m_RefCnt, g_DllRefCnt );
+    OutputDebugStringFormat("CPropertySheet::CTor [%d], [%d]", m_RefCnt, g_DllRefCnt );
     InterlockedIncrement(&g_DllRefCnt);
 }
 
 
 CPropertySheet::~CPropertySheet()
 {
-    OutputDebugStringFormatA("CPropertySheet::DTor [%d], [%d]", m_RefCnt, g_DllRefCnt );
+    OutputDebugStringFormat("CPropertySheet::DTor [%d], [%d]", m_RefCnt, g_DllRefCnt );
     InterlockedDecrement(&g_DllRefCnt);
 }
 
@@ -75,9 +74,9 @@ CPropertySheet::~CPropertySheet()
 HRESULT STDMETHODCALLTYPE CPropertySheet::QueryInterface(
     REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject)
 {
-    *ppvObject = nullptr;
+    *ppvObject = 0;
 
-    IUnknown* pUnk = nullptr;
+    IUnknown* pUnk = 0;
     if (IID_IUnknown == riid || IID_IShellExtInit == riid)
     {
         pUnk = static_cast<IShellExtInit*>(this);
@@ -99,14 +98,14 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::QueryInterface(
 
 ULONG STDMETHODCALLTYPE CPropertySheet::AddRef()
 {
-    OutputDebugStringFormatA("CPropertySheet::AddRef [%d]", m_RefCnt );
+    OutputDebugStringFormat("CPropertySheet::AddRef [%d]", m_RefCnt );
     return InterlockedIncrement(&m_RefCnt);
 }
 
 
 ULONG STDMETHODCALLTYPE CPropertySheet::Release()
 {
-    OutputDebugStringFormatA("CPropertySheet::Release [%d]", m_RefCnt );
+    OutputDebugStringFormat("CPropertySheet::Release [%d]", m_RefCnt );
     long refcnt = InterlockedDecrement(&m_RefCnt);
 
     if (0 == refcnt)
@@ -125,27 +124,27 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::Initialize(
     InitCommonControls();
 
     STGMEDIUM medium;
-    FORMATETC fe = {CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
+    FORMATETC fe = {CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
 
     HRESULT hr = lpdobj->GetData(&fe, &medium);
 
     // save the file name
     if (SUCCEEDED(hr) &&
         (1 == DragQueryFileA(
-            static_cast<HDROP>(medium.hGlobal),
+            reinterpret_cast<HDROP>(medium.hGlobal),
             0xFFFFFFFF,
-            nullptr,
+            NULL,
             0)))
     {
-        UINT size = DragQueryFileW( static_cast<HDROP>(medium.hGlobal), 0, nullptr, 0 );
+        UINT size = DragQueryFile( reinterpret_cast<HDROP>(medium.hGlobal), 0, 0, 0 );
         if ( size != 0 )
         {
-            auto buffer = std::unique_ptr<WCHAR[]>(new WCHAR[ size + 1 ]);
-            UINT result_size = DragQueryFileW( static_cast<HDROP>(medium.hGlobal),
-                                               0, buffer.get(), size + 1 );
+            TCHAR * buffer = new TCHAR[ size + 1 ];
+            UINT result_size = DragQueryFile( reinterpret_cast<HDROP>(medium.hGlobal),
+                                              0, buffer, size + 1 );
             if ( result_size != 0 )
             {
-                std::wstring fname = getShortPathName( buffer.get() );
+                std::wstring fname = getShortPathName( buffer );
                 std::string fnameA = WStringToString( fname );
                 ZeroMemory( m_szFileName, sizeof( m_szFileName ) );
                 strncpy( m_szFileName, fnameA.c_str(), ( sizeof( m_szFileName ) - 1 ) );
@@ -153,6 +152,7 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::Initialize(
             }
             else
                 hr = E_INVALIDARG;
+            delete [] buffer;
         }
         else
             hr = E_INVALIDARG;
@@ -173,7 +173,7 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::AddPages(LPFNADDPROPSHEETPAGE lpfnAddP
 {
 // the Win32 SDK 8.1 deprecates GetVersionEx()
 #ifdef _WIN32_WINNT_WINBLUE
-    bool bIsVistaOrLater = IsWindowsVistaOrGreater();
+    bool bIsVistaOrLater = IsWindowsVistaOrGreater() ? true : false;
 #else
     // Get OS version (we don't need the summary page on Windows Vista or later)
     OSVERSIONINFO sInfoOS;
@@ -192,11 +192,11 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::AddPages(LPFNADDPROPSHEETPAGE lpfnAddP
     // add the summary property page
     psp.dwSize      = sizeof(PROPSHEETPAGE);
     psp.dwFlags     = PSP_DEFAULT | PSP_USETITLE | PSP_USECALLBACK;
-    psp.hInstance   = GetModuleHandleW(MODULE_NAME);
+    psp.hInstance   = GetModuleHandle(MODULE_NAME);
     psp.lParam      = reinterpret_cast<LPARAM>(this);
     psp.pfnCallback = reinterpret_cast<LPFNPSPCALLBACK>(CPropertySheet::PropPageSummaryCallback);
 
-    HPROPSHEETPAGE hPage = nullptr;
+    HPROPSHEETPAGE hPage = NULL;
 
     if ( !bIsVistaOrLater )
     {
@@ -209,7 +209,8 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::AddPages(LPFNADDPROPSHEETPAGE lpfnAddP
         hPage = CreatePropertySheetPage(&psp);
 
         // keep this instance alive, will be released when the
-        // page is about to be destroyed in the callback function
+        // the page is about to be destroyed in the callback function
+
         if (hPage)
         {
             if (lpfnAddPage(hPage, lParam))
@@ -236,7 +237,9 @@ HRESULT STDMETHODCALLTYPE CPropertySheet::AddPages(LPFNADDPROPSHEETPAGE lpfnAddP
             DestroyPropertySheetPage(hPage);
     }
 
-    // always return success else no property sheet will be displayed at all
+    // always return success else
+    // no property sheet will be
+    // displayed at all
     return NOERROR;
 }
 
@@ -254,7 +257,8 @@ UINT CALLBACK CPropertySheet::PropPageSummaryCallback(
     CPropertySheet* pImpl =
         reinterpret_cast<CPropertySheet*>(ppsp->lParam);
 
-    // release this instance, acquired in the AddPages method
+    // release this instance, acquired
+    // in the AddPages method
     if (PSPCB_RELEASE == uMsg)
     {
         pImpl->Release();
@@ -325,6 +329,8 @@ void CPropertySheet::InitPropPageSummary(HWND hwnd, LPPROPSHEETPAGE /*lppsp*/)
 }
 
 
+/**
+*/
 void CPropertySheet::InitPropPageStatistics(HWND hwnd, LPPROPSHEETPAGE /*lppsp*/)
 {
     try

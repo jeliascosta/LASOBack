@@ -44,7 +44,7 @@ namespace sdr
             E3dProperties(const E3dProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~E3dProperties() override;
+            virtual ~E3dProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

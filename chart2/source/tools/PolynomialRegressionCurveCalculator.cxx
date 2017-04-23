@@ -25,7 +25,7 @@
 #include <rtl/math.hxx>
 #include <rtl/ustrbuf.hxx>
 
-#include <SpecialCharacters.hxx>
+#include <SpecialUnicodes.hxx>
 
 using namespace com::sun::star;
 
@@ -42,6 +42,7 @@ PolynomialRegressionCurveCalculator::~PolynomialRegressionCurveCalculator()
 void SAL_CALL PolynomialRegressionCurveCalculator::recalculateRegression(
     const uno::Sequence< double >& aXValues,
     const uno::Sequence< double >& aYValues )
+    throw (uno::RuntimeException, std::exception)
 {
     rtl::math::setNan(&m_fCorrelationCoeffitient);
 
@@ -198,6 +199,8 @@ void SAL_CALL PolynomialRegressionCurveCalculator::recalculateRegression(
 }
 
 double SAL_CALL PolynomialRegressionCurveCalculator::getCurveValue( double x )
+    throw (lang::IllegalArgumentException,
+           uno::RuntimeException, std::exception)
 {
     double fResult;
     rtl::math::setNan(&fResult);
@@ -218,11 +221,23 @@ double SAL_CALL PolynomialRegressionCurveCalculator::getCurveValue( double x )
     return fResult;
 }
 
+uno::Sequence< geometry::RealPoint2D > SAL_CALL PolynomialRegressionCurveCalculator::getCurveValues(
+    double min, double max, sal_Int32 nPointCount,
+    const uno::Reference< chart2::XScaling >& xScalingX,
+    const uno::Reference< chart2::XScaling >& xScalingY,
+    sal_Bool bMaySkipPointsInCalculation )
+    throw (lang::IllegalArgumentException,
+           uno::RuntimeException, std::exception)
+{
+
+    return RegressionCurveCalculator::getCurveValues( min, max, nPointCount, xScalingX, xScalingY, bMaySkipPointsInCalculation );
+}
+
 OUString PolynomialRegressionCurveCalculator::ImplGetRepresentation(
     const uno::Reference< util::XNumberFormatter >& xNumFormatter,
     sal_Int32 nNumberFormatKey, sal_Int32* pFormulaMaxWidth /* = nullptr */ ) const
 {
-    OUStringBuffer aBuf( mYName + " = " );
+    OUStringBuffer aBuf( "f(x) = " );
 
     sal_Int32 nValueLength=0;
     sal_Int32 aLastIndex = mCoefficients.size() - 1;
@@ -249,7 +264,7 @@ OUString PolynomialRegressionCurveCalculator::ImplGetRepresentation(
                 nCharMin += 3; // " + "
             if ( i > 0 )
             {
-                nCharMin += mXName.getLength() + 1; // " x"
+                 nCharMin += 1; // "x"
                 if ( i > 1 )
                     nCharMin +=1; // "^i"
                 if ( i >= 10 )
@@ -275,7 +290,7 @@ OUString PolynomialRegressionCurveCalculator::ImplGetRepresentation(
         {
             if ( bFindValue ) // if it is not the first aValue
                 aTmpBuf.append( " " );
-            aTmpBuf.append( OUStringLiteral1(aMinusSign) + " ");
+            aTmpBuf.append( aMinusSign + " ");
             aValue = - aValue;
         }
         else
@@ -289,15 +304,11 @@ OUString PolynomialRegressionCurveCalculator::ImplGetRepresentation(
         sal_Int32* pValueLength = nValueLength ? &nValueLength : nullptr;
         OUString aValueString = getFormattedString( xNumFormatter, nNumberFormatKey, aValue, pValueLength );
         if ( i == 0 || aValueString != "1" )  // aValueString may be rounded to 1 if nValueLength is small
-        {
             aTmpBuf.append( aValueString );
-            if ( i > 0 ) // insert blank between coefficient and x
-                aTmpBuf.append( " " );
-        }
 
         if(i > 0)
         {
-            aTmpBuf.append( mXName );
+            aTmpBuf.append( "x" );
             if (i > 1)
             {
                 if (i < 10) // simple case if only one digit
@@ -315,7 +326,7 @@ OUString PolynomialRegressionCurveCalculator::ImplGetRepresentation(
         }
         addStringToEquation( aBuf, nLineLength, aTmpBuf, pFormulaMaxWidth );
     }
-    if ( aBuf.toString().equals( OUString( mYName + " = ") ) )
+    if ( aBuf.toString() == "f(x) = " )
         aBuf.append( "0" );
 
     return aBuf.makeStringAndClear();

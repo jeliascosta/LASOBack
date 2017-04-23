@@ -19,8 +19,8 @@
 
 // SOComWindowPeer.h: Definition of the SOComWindowPeer class
 
-#ifndef INCLUDED_EXTENSIONS_SOURCE_ACTIVEX_SOCOMWINDOWPEER_H
-#define INCLUDED_EXTENSIONS_SOURCE_ACTIVEX_SOCOMWINDOWPEER_H
+#ifndef __SOCOMWINDOWPEER_H_
+#define __SOCOMWINDOWPEER_H_
 
 #ifdef _MSC_VER
 #pragma once
@@ -52,21 +52,14 @@ class SOComWindowPeer :
 {
     HWND m_hwnd;
 public:
-    SOComWindowPeer() : m_hwnd( nullptr ) {}
+    SOComWindowPeer() : m_hwnd( NULL ) {}
     virtual ~SOComWindowPeer() { }
 
 BEGIN_COM_MAP(SOComWindowPeer)
     COM_INTERFACE_ENTRY(IDispatch)
     COM_INTERFACE_ENTRY(ISOComWindowPeer)
     COM_INTERFACE_ENTRY(ISupportErrorInfo)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
 END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 DECLARE_NOT_AGGREGATABLE(SOComWindowPeer)
 // Remove the comment from the line above if you don't want your object to
 // support aggregation.
@@ -74,69 +67,69 @@ DECLARE_NOT_AGGREGATABLE(SOComWindowPeer)
 DECLARE_REGISTRY_RESOURCEID(IDR_SOCOMWINDOWPEER)
 
 // ISupportsErrorInfo
-    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid) override;
+    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
 // ISOComWindowPeer
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE getWindowHandle(
             /* [in] */ SAFEARRAY __RPC_FAR * /*procId*/,
             /* [in] */ short /*s*/,
-            /* [retval][out] */ long __RPC_FAR *ret) override
+            /* [retval][out] */ long __RPC_FAR *ret)
         {
             *ret = HandleToLong( m_hwnd );
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE getToolkit(
-            /* [retval][out] */ IDispatch __RPC_FAR *__RPC_FAR *retVal) override
+            /* [retval][out] */ IDispatch __RPC_FAR *__RPC_FAR *retVal)
         {
-            *retVal = nullptr;
+            *retVal = NULL;
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE setPointer(
-            /* [in] */ IDispatch __RPC_FAR* /*xPointer*/) override
+            /* [in] */ IDispatch __RPC_FAR* /*xPointer*/)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE setBackground(
-            /* [in] */ int /*nColor*/) override
+            /* [in] */ int /*nColor*/)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE invalidate(
-            /* [in] */ short /*__MIDL_0015*/) override
+            /* [in] */ short /*__MIDL_0015*/)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE invalidateRect(
             /* [in] */ IDispatch __RPC_FAR* /*aRect*/,
-            /* [in] */ short /*nFlags*/) override
+            /* [in] */ short /*nFlags*/)
         {
             return S_OK;
         }
 
-        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE dispose( void) override
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE dispose( void)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE addEventListener(
-            /* [in] */ IDispatch __RPC_FAR* /*xListener*/) override
+            /* [in] */ IDispatch __RPC_FAR* /*xListener*/)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE removeEventListener(
-            /* [in] */ IDispatch __RPC_FAR* /*xListener*/) override
+            /* [in] */ IDispatch __RPC_FAR* /*xListener*/)
         {
             return S_OK;
         }
 
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_Bridge_implementedInterfaces(
-            /* [retval][out] */ SAFEARRAY __RPC_FAR * __RPC_FAR *pVal) override
+            /* [retval][out] */ SAFEARRAY __RPC_FAR * __RPC_FAR *pVal)
         {
             *pVal = SafeArrayCreateVector( VT_BSTR, 0, 2 );
 
@@ -157,6 +150,6 @@ DECLARE_REGISTRY_RESOURCEID(IDR_SOCOMWINDOWPEER)
         void SetHWNDInternally( HWND hwnd ) { m_hwnd = hwnd; }
 };
 
-#endif
+#endif // __SOCOMWINDOWPEER_H_
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

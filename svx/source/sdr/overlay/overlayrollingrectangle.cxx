@@ -35,14 +35,14 @@ namespace sdr
         {
             drawinglayer::primitive2d::Primitive2DContainer aRetval;
 
-            if(getOverlayManager() && (mbShowBounds || mbExtendedLines))
+            if(getOverlayManager() && (getShowBounds() || getExtendedLines()))
             {
                 const basegfx::BColor aRGBColorA(getOverlayManager()->getStripeColorA().getBColor());
                 const basegfx::BColor aRGBColorB(getOverlayManager()->getStripeColorB().getBColor());
                 const double fStripeLengthPixel(getOverlayManager()->getStripeLengthPixel());
                 const basegfx::B2DRange aRollingRectangle(getBasePosition(), getSecondPosition());
 
-                if(mbShowBounds)
+                if(getShowBounds())
                 {
                     // view-independent part, create directly
                     const basegfx::B2DPolygon aPolygon(basegfx::tools::createPolygonFromRect(aRollingRectangle));
@@ -66,7 +66,7 @@ namespace sdr
                         false);
                 }
 
-                if(mbExtendedLines)
+                if(getExtendedLines())
                 {
                     // view-dependent part, use helper primitive
                     const drawinglayer::primitive2d::Primitive2DReference aReference(

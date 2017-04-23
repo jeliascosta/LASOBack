@@ -74,10 +74,10 @@ STORE_DLLPUBLIC storeError SAL_CALL store_createMemoryFile (
 /** Open a file.
     @param  pFilename [in] the filename as URL or system path.
     @param  eAccessMode [in] the access mode.
-            storeAccessMode::Create     truncate existing and create,
+            store_AccessCreate     truncate existing and create,
             store_AccessReadCreate create not existing,
-            storeAccessMode::ReadWrite  write existing,
-            storeAccessMode::ReadOnly   never modifies.
+            store_AccessReadWrite  write existing,
+            store_AccessReadOnly   never modifies.
     @param  nPageSize [in] the creation page size,
             integer multiple of minimum page size.
     @param  phFile [out] the File Handle.

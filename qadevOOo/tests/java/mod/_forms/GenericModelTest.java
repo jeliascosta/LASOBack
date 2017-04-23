@@ -137,7 +137,7 @@ public class GenericModelTest extends TestCase {
 
     /**
      * describes the kind of the shape which should be created.
-     * Example: m_kindOfshape=DateFilled
+     * Example: m_kindOfshape=DateFiled
      */
     protected String m_kindOfControl = null;
 

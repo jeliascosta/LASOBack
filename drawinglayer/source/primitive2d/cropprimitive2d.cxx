@@ -66,8 +66,10 @@ namespace drawinglayer
             return false;
         }
 
-        void CropPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer CropPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
+            Primitive2DContainer xRetval;
+
             if(!getChildren().empty())
             {
                 // get original object scale in unit coordinates (no mirroring)
@@ -126,7 +128,7 @@ namespace drawinglayer
                         {
                             // the new range is completely inside the old range (unit range),
                             // so no masking is needed
-                            rVisitor.append(xTransformPrimitive);
+                            xRetval = Primitive2DContainer { xTransformPrimitive };
                         }
                         else
                         {
@@ -140,11 +142,13 @@ namespace drawinglayer
                                     aMaskPolyPolygon,
                                     Primitive2DContainer { xTransformPrimitive }));
 
-                            rVisitor.append(xMask);
+                            xRetval = Primitive2DContainer { xMask };
                         }
                     }
                 }
             }
+
+            return xRetval;
         }
 
         // provide unique ID

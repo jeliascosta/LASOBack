@@ -52,7 +52,7 @@ sal_uInt16 lcl_DoUpdateCharts( const ScAddress& rPos, ScDocument* pDoc, bool bAl
         SdrPage* pPage = pModel->GetPage(nPageNo);
         OSL_ENSURE(pPage,"Page ?");
 
-        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -130,7 +130,7 @@ void ScChartHelper::AdjustRangesOfChartsOnDestinationPage( ScDocument* pSrcDoc, 
     SdrPage* pDestPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nDestTab));
     if( pDestPage )
     {
-        SdrObjListIter aIter( *pDestPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pDestPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         while( pObject )
         {
@@ -170,7 +170,7 @@ void ScChartHelper::UpdateChartsOnDestinationPage( ScDocument* pDestDoc, const S
     SdrPage* pDestPage = pDrawLayer->GetPage(static_cast<sal_uInt16>(nDestTab));
     if( pDestPage )
     {
-        SdrObjListIter aIter( *pDestPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pDestPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         while( pObject )
         {
@@ -321,7 +321,7 @@ void ScChartHelper::AddRangesIfProtectedChart( ScRangeListVector& rRangesVector,
                         if (pListener)
                         {
                             const ScRangeListRef& rRangeList = pListener->GetRangeList();
-                            if ( rRangeList.is() )
+                            if ( rRangeList.Is() )
                             {
                                 rRangesVector.push_back( *rRangeList );
                             }
@@ -341,7 +341,7 @@ void ScChartHelper::FillProtectedChartRangesVector( ScRangeListVector& rRangesVe
 {
     if ( pDocument && pPage )
     {
-        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
         SdrObject* pObject = aIter.Next();
         while ( pObject )
         {
@@ -355,7 +355,7 @@ void ScChartHelper::GetChartNames( ::std::vector< OUString >& rChartNames, SdrPa
 {
     if ( pPage )
     {
-        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
         SdrObject* pObject = aIter.Next();
         while ( pObject )
         {
@@ -379,7 +379,7 @@ void ScChartHelper::CreateProtectedChartListenersAndNotify( ScDocument* pDoc, Sd
     {
         size_t nRangeListCount = rRangesVector.size();
         size_t nRangeList = 0;
-        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
         SdrObject* pObject = aIter.Next();
         while ( pObject )
         {
@@ -427,7 +427,7 @@ void ScChartHelper::CreateProtectedChartListenersAndNotify( ScDocument* pDoc, Sd
 
                         if ( pModelObj && pModelObj->HasChangesListeners() )
                         {
-                            tools::Rectangle aRectangle = pSdrOle2Obj->GetSnapRect();
+                            Rectangle aRectangle = pSdrOle2Obj->GetSnapRect();
                             ScRange aRange( pDoc->GetRange( nTab, aRectangle ) );
                             ScRangeList aChangeRanges;
                             aChangeRanges.Append( aRange );

@@ -38,10 +38,10 @@ public:
     void DocInfoChgd(bool isEnableSetModified) override;
     const SwDocStat &GetDocStat() const override;
     void SetDocStatModified(bool bSet);
-    const SwDocStat &GetUpdatedDocStat(bool bCompleteAsync, bool bFields) override;
+    const SwDocStat &GetUpdatedDocStat(bool bCompleteAsync = false, bool bFields = true) override;
     void SetDocStat(const SwDocStat& rStat) override;
-    void UpdateDocStat(bool bCompleteAsync, bool bFields) override;
-    virtual ~DocumentStatisticsManager() override;
+    void UpdateDocStat(bool bCompleteAsync = false, bool bFields = true) override;
+    virtual ~DocumentStatisticsManager();
 
 private:
 
@@ -59,7 +59,7 @@ private:
     bool IncrementalDocStatCalculate(long nChars, bool bFields = true);
 
     // Our own 'StatsUpdateTimer' calls the following method
-    DECL_LINK( DoIdleStatsUpdate, Timer *, void );
+    DECL_LINK_TYPED( DoIdleStatsUpdate, Timer *, void );
 
 
     SwDocStat       *mpDocStat;          //< Statistics information.

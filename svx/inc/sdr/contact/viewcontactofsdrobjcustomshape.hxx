@@ -43,7 +43,7 @@ namespace sdr
         public:
             // basic constructor, used from SdrObject.
             explicit ViewContactOfSdrObjCustomShape(SdrObjCustomShape& rCustomShape);
-            virtual ~ViewContactOfSdrObjCustomShape() override;
+            virtual ~ViewContactOfSdrObjCustomShape();
 
         protected:
             // This method is responsible for creating the graphical visualisation data

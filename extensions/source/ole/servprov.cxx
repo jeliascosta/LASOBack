@@ -19,15 +19,18 @@
 
 #include <vector>
 
+#ifdef __MINGW32__
+#define INITGUID
+#include <initguid.h>
+#else
 #include "ole2uno.hxx"
 #include "unoconversionutilities.hxx"
+#endif
 #include "servprov.hxx"
 #include "unoobjw.hxx"
 #include "oleobjw.hxx"
-#include <com/sun/star/script/CannotConvertException.hpp>
 #include <cppuhelper/queryinterface.hxx>
 #include <cppuhelper/supportsservice.hxx>
-#include <o3tl/any.hxx>
 
 using namespace cppu;
 using namespace osl;
@@ -73,7 +76,7 @@ ProviderOleWrapper_Impl::~ProviderOleWrapper_Impl()
 {
 }
 
-bool ProviderOleWrapper_Impl::registerClass()
+sal_Bool ProviderOleWrapper_Impl::registerClass()
 {
     HRESULT hresult;
 
@@ -89,7 +92,7 @@ bool ProviderOleWrapper_Impl::registerClass()
     return (hresult == NOERROR);
 }
 
-bool ProviderOleWrapper_Impl::deregisterClass()
+sal_Bool ProviderOleWrapper_Impl::deregisterClass()
 {
     HRESULT hresult = CoRevokeClassObject(m_factoryHandle);
 
@@ -101,17 +104,17 @@ STDMETHODIMP ProviderOleWrapper_Impl::QueryInterface(REFIID riid, void FAR* FAR*
     if(IsEqualIID(riid, IID_IUnknown))
     {
         AddRef();
-        *ppv = static_cast<IUnknown*>(static_cast<IClassFactory*>(this));
+        *ppv = (IUnknown*) (IClassFactory*) this;
         return NOERROR;
     }
     else if (IsEqualIID(riid, IID_IClassFactory))
     {
         AddRef();
-        *ppv = static_cast<IClassFactory*>(this);
+        *ppv = (IClassFactory*) this;
         return NOERROR;
     }
 
-    *ppv = nullptr;
+    *ppv = NULL;
     return ResultFromScode(E_NOINTERFACE);
 }
 
@@ -137,7 +140,7 @@ STDMETHODIMP ProviderOleWrapper_Impl::CreateInstance(IUnknown FAR* punkOuter,
                                                      void FAR* FAR* ppv)
 {
     HRESULT ret = ResultFromScode(E_UNEXPECTED);
-    punkOuter = nullptr;
+    punkOuter = NULL;
 
     Reference<XInterface> xInstance;
 
@@ -152,14 +155,14 @@ STDMETHODIMP ProviderOleWrapper_Impl::CreateInstance(IUnknown FAR* punkOuter,
             sal_uInt8 arId[16];
             rtl_getGlobalProcessId( arId );
             Any oleAny = m_bridgeSupplier->createBridge(usrAny,
-                                        Sequence<sal_Int8>(reinterpret_cast<sal_Int8*>(arId), 16),
+                                        Sequence<sal_Int8>((sal_Int8*)arId, 16),
                                         UNO,
                                         OLE);
 
 
-            if (auto v = o3tl::tryAccess<sal_uIntPtr>(oleAny))
+            if (oleAny.getValueTypeClass() == cppu::UnoType<sal_uIntPtr>::get().getTypeClass())
             {
-                VARIANT* pVariant = reinterpret_cast<VARIANT*>(*v);
+                VARIANT* pVariant = *(VARIANT**)oleAny.getValue();
 
                 if (pVariant->vt == VT_DISPATCH)
                 {
@@ -209,7 +212,7 @@ OneInstanceOleWrapper_Impl::~OneInstanceOleWrapper_Impl()
 {
 }
 
-bool OneInstanceOleWrapper_Impl::registerClass()
+sal_Bool OneInstanceOleWrapper_Impl::registerClass()
 {
     HRESULT hresult;
 
@@ -225,7 +228,7 @@ bool OneInstanceOleWrapper_Impl::registerClass()
     return (hresult == NOERROR);
 }
 
-bool OneInstanceOleWrapper_Impl::deregisterClass()
+sal_Bool OneInstanceOleWrapper_Impl::deregisterClass()
 {
     HRESULT hresult1 = NOERROR;
 
@@ -239,17 +242,17 @@ STDMETHODIMP OneInstanceOleWrapper_Impl::QueryInterface(REFIID riid, void FAR* F
     if(IsEqualIID(riid, IID_IUnknown))
     {
         AddRef();
-        *ppv = static_cast<IUnknown*>(static_cast<IClassFactory*>(this));
+        *ppv = (IUnknown*) (IClassFactory*) this;
         return NOERROR;
     }
     else if (IsEqualIID(riid, IID_IClassFactory))
     {
         AddRef();
-        *ppv = static_cast<IClassFactory*>(this);
+        *ppv = (IClassFactory*) this;
         return NOERROR;
     }
 
-    *ppv = nullptr;
+    *ppv = NULL;
     return ResultFromScode(E_NOINTERFACE);
 }
 
@@ -275,7 +278,7 @@ STDMETHODIMP OneInstanceOleWrapper_Impl::CreateInstance(IUnknown FAR* punkOuter,
                                                          void FAR* FAR* ppv)
 {
     HRESULT ret = ResultFromScode(E_UNEXPECTED);
-    punkOuter = nullptr;
+    punkOuter = NULL;
 
     if (m_xInst.is())
     {
@@ -283,14 +286,14 @@ STDMETHODIMP OneInstanceOleWrapper_Impl::CreateInstance(IUnknown FAR* punkOuter,
         sal_uInt8 arId[16];
         rtl_getGlobalProcessId( arId);
         Any oleAny = m_bridgeSupplier->createBridge(usrAny,
-                                        Sequence<sal_Int8>( reinterpret_cast<sal_Int8*>(arId), 16),
+                                        Sequence<sal_Int8>( (sal_Int8*)arId, 16),
                                         UNO,
                                         OLE);
 
 
-        if (auto v = o3tl::tryAccess<sal_uIntPtr>(oleAny))
+        if (oleAny.getValueTypeClass() == cppu::UnoType<sal_uIntPtr>::get().getTypeClass())
         {
-            VARIANT* pVariant = reinterpret_cast<VARIANT*>(*v);
+            VARIANT* pVariant = *(VARIANT**)oleAny.getValue();
 
             if ((pVariant->vt == VT_UNKNOWN) || (pVariant->vt == VT_DISPATCH))
             {
@@ -339,12 +342,14 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
                                        const Sequence< sal_Int8 >& ProcessId,
                                        sal_Int16 sourceModelType,
                                        sal_Int16 destModelType)
+                                       throw (IllegalArgumentException,
+                                                   RuntimeException )
 {
     Any ret;
     sal_uInt8 arId[16];
     rtl_getGlobalProcessId( arId );
 
-    Sequence< sal_Int8 > seqProcessId( reinterpret_cast<sal_Int8*>(arId), 16);
+    Sequence< sal_Int8 > seqProcessId( (sal_Int8*)arId, 16);
 
     if ( seqProcessId == ProcessId)
     {
@@ -358,7 +363,7 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
             else if (destModelType == OLE)
             {
                 // convert UNO any into variant
-                VARIANT* pVariant = static_cast<VARIANT*>(CoTaskMemAlloc(sizeof(VARIANT)));
+                VARIANT* pVariant = (VARIANT*) CoTaskMemAlloc(sizeof(VARIANT));
                 VariantInit( pVariant);
                 try
                 {
@@ -376,17 +381,16 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
         }
         else if (sourceModelType == OLE)
         {
-            auto v = o3tl::tryAccess<sal_uIntPtr>(modelDepObject);
-            if (!v)
+            if (modelDepObject.getValueType() != cppu::UnoType<sal_uIntPtr>::get())
             {
                 throw IllegalArgumentException();
             }
             else if (destModelType == OLE)
             {
                 // same model -> copy value only
-                VARIANT* pVariant = static_cast<VARIANT*>(CoTaskMemAlloc(sizeof(VARIANT)));
+                VARIANT* pVariant = (VARIANT*) CoTaskMemAlloc(sizeof(VARIANT));
 
-                if (NOERROR != VariantCopy(pVariant, reinterpret_cast<VARIANT*>(*v)))
+                if (NOERROR != VariantCopy(pVariant, *(VARIANT**)modelDepObject.getValue()))
                 {
                     CoTaskMemFree(pVariant);
                     throw(IllegalArgumentException());
@@ -399,7 +403,7 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
             else if (destModelType == UNO)
             {
                 // convert variant into UNO any
-                VARIANT* pVariant = reinterpret_cast<VARIANT*>(*v);
+                VARIANT* pVariant = *(VARIANT**)modelDepObject.getValue();
                 try
                 {
                     variantToAny(pVariant, ret);
@@ -407,7 +411,7 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
                 catch (const CannotConvertException & e)
                 {
                     throw IllegalArgumentException(
-                        e.Message, nullptr, -1);
+                        e.Message, 0, -1);
                 }
             }
             else
@@ -422,6 +426,7 @@ Any SAL_CALL OleConverter_Impl2::createBridge(const Any& modelDepObject,
 }
 
 OUString OleConverter_Impl2::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return m_nUnoWrapperClass == INTERFACE_OLE_WRAPPER_IMPL
         ? OUString("com.sun.star.comp.ole.OleConverter2")
@@ -429,11 +434,13 @@ OUString OleConverter_Impl2::getImplementationName()
 }
 
 sal_Bool OleConverter_Impl2::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> OleConverter_Impl2::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (m_nUnoWrapperClass == INTERFACE_OLE_WRAPPER_IMPL)
     {
@@ -448,6 +455,7 @@ css::uno::Sequence<OUString> OleConverter_Impl2::getSupportedServiceNames()
 // XInitialize ------------------------------------------------------------------------------
 // the first argument is an XMultiServiceFactory if at all
 void SAL_CALL OleConverter_Impl2::initialize( const Sequence< Any >& aArguments )
+                throw(Exception, RuntimeException)
 {
     if( aArguments.getLength() == 1 && aArguments[0].getValueTypeClass() == TypeClass_INTERFACE)
     {
@@ -507,7 +515,7 @@ OleClient_Impl::~OleClient_Impl()
 {
 }
 
-Sequence< OUString >    SAL_CALL OleClient_Impl::getAvailableServiceNames()
+Sequence< OUString >    SAL_CALL OleClient_Impl::getAvailableServiceNames() throw( RuntimeException )
 {
     Sequence< OUString > ret;
 
@@ -515,27 +523,30 @@ Sequence< OUString >    SAL_CALL OleClient_Impl::getAvailableServiceNames()
 }
 
 OUString OleClient_Impl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.ole.OleClient");
 }
 
 sal_Bool OleClient_Impl::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> OleClient_Impl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         "com.sun.star.bridge.OleObjectFactory",
         "com.sun.star.bridge.oleautomation.Factory"};
 }
 
-Reference<XInterface> SAL_CALL OleClient_Impl::createInstance(const OUString& ServiceSpecifier)
+Reference<XInterface> SAL_CALL OleClient_Impl::createInstance(const OUString& ServiceSpecifier) throw (Exception, RuntimeException )
 {
     Reference<XInterface>   ret;
     HRESULT         result;
-    IUnknown*       pUnknown = nullptr;
+    IUnknown*       pUnknown = NULL;
     CLSID           classId;
 
     o2u_attachCurrentThread();
@@ -549,14 +560,14 @@ Reference<XInterface> SAL_CALL OleClient_Impl::createInstance(const OUString& Se
     {
         result = CoCreateInstance(
                       classId,              //Class identifier (CLSID) of the object
-                      nullptr,              //Pointer to whether object is or isn't part of an aggregate
+                      NULL,                 //Pointer to whether object is or isn't part of an aggregate
                       CLSCTX_SERVER,  //Context for running executable code
                       IID_IUnknown,         //Reference to the identifier of the interface
-                      reinterpret_cast<void**>(&pUnknown)); //Address of output variable that receives
+                      (void**)&pUnknown);   //Address of output variable that receives
                                                   // the interface pointer requested in riid
     }
 
-    if (pUnknown != nullptr)
+    if (pUnknown != NULL)
     {
         Any any;
         CComVariant variant;
@@ -578,7 +589,7 @@ Reference<XInterface> SAL_CALL OleClient_Impl::createInstance(const OUString& Se
     return ret;
 }
 
-Reference<XInterface> SAL_CALL OleClient_Impl::createInstanceWithArguments(const OUString& ServiceSpecifier, const Sequence< Any >& /*Arguments*/)
+Reference<XInterface> SAL_CALL OleClient_Impl::createInstanceWithArguments(const OUString& ServiceSpecifier, const Sequence< Any >& /*Arguments*/) throw (Exception, RuntimeException)
 {
     return createInstance( ServiceSpecifier);
 }
@@ -627,7 +638,7 @@ OleServer_Impl::OleServer_Impl( const Reference<XMultiServiceFactory>& smgr):
         a >>= m_bridgeSupplier;
     }
 
-    bool ret = provideInstance( m_smgr, const_cast<GUID*>(&OID_ServiceManager) );
+    sal_Bool ret = provideInstance( m_smgr, (GUID*)&OID_ServiceManager );
     (void)ret;
 }
 
@@ -642,23 +653,26 @@ OleServer_Impl::~OleServer_Impl()
 }
 
 OUString OleServer_Impl::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.ole.OleServer");
 }
 
 sal_Bool OleServer_Impl::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> OleServer_Impl::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         "com.sun.star.bridge.OleApplicationRegistration",
         "com.sun.star.bridge.oleautomation.ApplicationRegistration"};
 }
 
-bool OleServer_Impl::provideService(const Reference<XSingleServiceFactory>& xSFact, GUID* guid)
+sal_Bool OleServer_Impl::provideService(const Reference<XSingleServiceFactory>& xSFact, GUID* guid)
 {
     IClassFactoryWrapper* pFac = new ProviderOleWrapper_Impl( m_smgr, xSFact, guid);
 
@@ -669,7 +683,7 @@ bool OleServer_Impl::provideService(const Reference<XSingleServiceFactory>& xSFa
     return pFac->registerClass();
 }
 
-bool OleServer_Impl::provideInstance(const Reference<XInterface>& xInst, GUID* guid)
+sal_Bool OleServer_Impl::provideInstance(const Reference<XInterface>& xInst, GUID* guid)
 {
     IClassFactoryWrapper* pFac =
         new OneInstanceOleWrapper_Impl( m_smgr, xInst, guid );

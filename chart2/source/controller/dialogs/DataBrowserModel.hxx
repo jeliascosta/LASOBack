@@ -35,13 +35,13 @@ namespace chart
 
 class DialogModel;
 
-class DataBrowserModel final
+class DataBrowserModel
 {
 public:
     explicit DataBrowserModel(
         const css::uno::Reference< css::chart2::XChartDocument > & xChartDoc,
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    ~DataBrowserModel();
+    virtual ~DataBrowserModel();
 
     /** Inserts a new data series after the data series to which the data column
         with index nAfterColumnIndex belongs.
@@ -109,8 +109,8 @@ public:
         {}
         // "full" CTOR
         tDataHeader(
-            css::uno::Reference< css::chart2::XDataSeries > const & xDataSeries,
-            css::uno::Reference< css::chart2::XChartType > const &xChartType,
+            css::uno::Reference< css::chart2::XDataSeries > xDataSeries,
+            css::uno::Reference< css::chart2::XChartType >  xChartType,
             bool                                        bSwapXAndYAxis,
             sal_Int32                                   nStartColumn,
             sal_Int32                                   nEndColumn ) :
@@ -122,7 +122,7 @@ public:
         {}
     };
 
-    typedef std::vector< tDataHeader > tDataHeaderVector;
+    typedef ::std::vector< tDataHeader > tDataHeaderVector;
 
     const tDataHeaderVector& getDataHeaders() const { return m_aHeaders;}
 
@@ -151,7 +151,7 @@ private:
     struct tDataColumn;
     struct implColumnLess;
 
-    typedef std::vector< tDataColumn > tDataColumnVector;
+    typedef ::std::vector< tDataColumn > tDataColumnVector;
 
     tDataColumnVector m_aColumns;
     tDataHeaderVector m_aHeaders;

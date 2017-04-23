@@ -26,7 +26,6 @@
 
 #include <comphelper/propertysetinfo.hxx>
 #include <comphelper/sequence.hxx>
-#include <o3tl/any.hxx>
 
 #include <algorithm>
 #include <limits.h>
@@ -57,7 +56,7 @@ SbPropertyValues::~SbPropertyValues()
     m_xInfo.clear();
 }
 
-Reference< XPropertySetInfo > SbPropertyValues::getPropertySetInfo()
+Reference< XPropertySetInfo > SbPropertyValues::getPropertySetInfo() throw( RuntimeException, std::exception )
 {
     // create on demand?
     if (!m_xInfo.is())
@@ -96,6 +95,11 @@ size_t SbPropertyValues::GetIndex_Impl( const OUString &rPropName ) const
 void SbPropertyValues::setPropertyValue(
                     const OUString& aPropertyName,
                     const Any& aValue)
+                    throw (css::beans::UnknownPropertyException,
+                    css::beans::PropertyVetoException,
+                    css::lang::IllegalArgumentException,
+                    css::lang::WrappedTargetException,
+                    css::uno::RuntimeException, std::exception)
 {
     size_t const nIndex = GetIndex_Impl( aPropertyName );
     PropertyValue & rPropVal = m_aPropVals[nIndex];
@@ -105,6 +109,9 @@ void SbPropertyValues::setPropertyValue(
 
 Any SbPropertyValues::getPropertyValue(
                     const OUString& aPropertyName)
+                    throw(css::beans::UnknownPropertyException,
+                    css::lang::WrappedTargetException,
+                    css::uno::RuntimeException, std::exception)
 {
     size_t const nIndex = GetIndex_Impl( aPropertyName );
     return m_aPropVals[nIndex].Value;
@@ -114,6 +121,7 @@ Any SbPropertyValues::getPropertyValue(
 void SbPropertyValues::addPropertyChangeListener(
                     const OUString& aPropertyName,
                     const Reference< XPropertyChangeListener >& )
+                    throw (std::exception)
 {
     (void)aPropertyName;
 }
@@ -122,6 +130,7 @@ void SbPropertyValues::addPropertyChangeListener(
 void SbPropertyValues::removePropertyChangeListener(
                     const OUString& aPropertyName,
                     const Reference< XPropertyChangeListener >& )
+                    throw (std::exception)
 {
     (void)aPropertyName;
 }
@@ -130,6 +139,7 @@ void SbPropertyValues::removePropertyChangeListener(
 void SbPropertyValues::addVetoableChangeListener(
                     const OUString& aPropertyName,
                     const Reference< XVetoableChangeListener >& )
+                    throw(std::exception)
 {
     (void)aPropertyName;
 }
@@ -138,18 +148,24 @@ void SbPropertyValues::addVetoableChangeListener(
 void SbPropertyValues::removeVetoableChangeListener(
                     const OUString& aPropertyName,
                     const Reference< XVetoableChangeListener >& )
+                    throw(std::exception)
 {
     (void)aPropertyName;
 }
 
 
-Sequence< PropertyValue > SbPropertyValues::getPropertyValues()
+Sequence< PropertyValue > SbPropertyValues::getPropertyValues() throw (css::uno::RuntimeException, std::exception)
 {
     return comphelper::containerToSequence(m_aPropVals);
 }
 
 
 void SbPropertyValues::setPropertyValues(const Sequence< PropertyValue >& rPropertyValues )
+                     throw (css::beans::UnknownPropertyException,
+                     css::beans::PropertyVetoException,
+                     css::lang::IllegalArgumentException,
+                     css::lang::WrappedTargetException,
+                     css::uno::RuntimeException, std::exception)
 {
     if (!m_aPropVals.empty())
         throw IllegalArgumentException();
@@ -185,13 +201,14 @@ void RTL_Impl_CreatePropertySet( StarBASIC* pBasic, SbxArray& rPar, bool bWrite 
         // Set PropertyValues
         Any aArgAsAny = sbxToUnoValue( rPar.Get(1),
                 cppu::UnoType<Sequence<PropertyValue>>::get() );
-        auto pArg = o3tl::doAccess<Sequence<PropertyValue>>(aArgAsAny);
+        Sequence<PropertyValue> const *pArg =
+                static_cast<Sequence<PropertyValue> const *>(aArgAsAny.getValue());
         Reference< XPropertyAccess > xPropAcc( xInterface, UNO_QUERY );
         xPropAcc->setPropertyValues( *pArg );
 
         // Build a SbUnoObject and return it
         auto xUnoObj = tools::make_ref<SbUnoObject>( "stardiv.uno.beans.PropertySet", Any(xInterface) );
-        if( xUnoObj->getUnoAny().hasValue() )
+        if( xUnoObj->getUnoAny().getValueType().getTypeClass() != TypeClass_VOID )
         {
             // Return object
             refVar->PutObject( xUnoObj.get() );

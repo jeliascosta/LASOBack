@@ -99,7 +99,7 @@ wrapper::ItemConverter* createItemConverter(
                 pItemConverter =  new wrapper::GraphicPropertyItemConverter(
                                         xObjectProperties, rDrawModel.GetItemPool(),
                                         rDrawModel, uno::Reference< lang::XMultiServiceFactory >( xChartModel, uno::UNO_QUERY ),
-                                        wrapper::GraphicObjectType::LineAndFillProperties );
+                                        wrapper::GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES );
                     break;
             case OBJECTTYPE_TITLE:
             {
@@ -134,7 +134,7 @@ wrapper::ItemConverter* createItemConverter(
                 pItemConverter =  new wrapper::GraphicPropertyItemConverter(
                                         xObjectProperties, rDrawModel.GetItemPool(),
                                         rDrawModel, uno::Reference< lang::XMultiServiceFactory >( xChartModel, uno::UNO_QUERY ),
-                                        wrapper::GraphicObjectType::LineAndFillProperties );
+                                        wrapper::GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES );
                     break;
             case OBJECTTYPE_AXIS:
             {
@@ -202,8 +202,8 @@ wrapper::ItemConverter* createItemConverter(
                 if (pRefSizeProvider)
                     pRefSize.reset( new awt::Size( pRefSizeProvider->getPageSize()));
 
-                wrapper::GraphicObjectType eMapTo =
-                    wrapper::GraphicObjectType::FilledDataPoint;
+                wrapper::GraphicPropertyItemConverter::eGraphicObjectType eMapTo =
+                    wrapper::GraphicPropertyItemConverter::FILLED_DATA_POINT;
 
                 uno::Reference< XDataSeries > xSeries = ObjectIdentifier::getDataSeriesForCID( aObjectCID, xChartModel );
                 uno::Reference< XChartType > xChartType = ChartModelHelper::getChartTypeOfSeries( xChartModel, xSeries );
@@ -211,7 +211,7 @@ wrapper::ItemConverter* createItemConverter(
                 uno::Reference< XDiagram > xDiagram( ChartModelHelper::findDiagram( xChartModel ) );
                 sal_Int32 nDimensionCount = DiagramHelper::getDimension( xDiagram );
                 if( !ChartTypeHelper::isSupportingAreaProperties( xChartType, nDimensionCount ) )
-                    eMapTo = wrapper::GraphicObjectType::LineDataPoint;
+                    eMapTo = wrapper::GraphicPropertyItemConverter::LINE_DATA_POINT;
 
                 bool bDataSeries = eObjectType == OBJECTTYPE_DATA_SERIES;
 
@@ -255,7 +255,7 @@ wrapper::ItemConverter* createItemConverter(
                 pItemConverter =  new wrapper::GraphicPropertyItemConverter(
                                         xObjectProperties, rDrawModel.GetItemPool(),
                                         rDrawModel, uno::Reference< lang::XMultiServiceFactory >( xChartModel, uno::UNO_QUERY ),
-                                        wrapper::GraphicObjectType::LineProperties );
+                                        wrapper::GraphicPropertyItemConverter::LINE_PROPERTIES );
                     break;
 
             case OBJECTTYPE_DATA_ERRORS_X:
@@ -292,7 +292,7 @@ wrapper::ItemConverter* createItemConverter(
                 pItemConverter =  new wrapper::GraphicPropertyItemConverter(
                                         xObjectProperties, rDrawModel.GetItemPool(),
                                         rDrawModel, uno::Reference< lang::XMultiServiceFactory >( xChartModel, uno::UNO_QUERY ),
-                                        wrapper::GraphicObjectType::LineAndFillProperties );
+                                        wrapper::GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES );
                     break;
             default: //OBJECTTYPE_UNKNOWN
                     break;
@@ -702,7 +702,7 @@ void ChartController::executeDlg_ObjectProperties( const OUString& rSelectedObje
     OUString aObjectCID = lcl_getFormatCIDforSelectedCID( rSelectedObjectCID );
 
     UndoGuard aUndoGuard( ActionDescriptionProvider::createDescription(
-                ActionDescriptionProvider::ActionType::Format,
+                ActionDescriptionProvider::FORMAT,
                 ObjectNameProvider::getName( ObjectIdentifier::getObjectType( aObjectCID ))),
             m_xUndoManager );
 
@@ -761,7 +761,7 @@ bool ChartController::executeDlg_ObjectProperties_withoutUndoGuard(
 
         SolarMutexGuard aGuard;
         ScopedVclPtrInstance<SchAttribTabDlg> aDlg(
-                GetChartWindow(), &aItemSet, &aDialogParameter,
+                m_pChartWindow, &aItemSet, &aDialogParameter,
                 &aViewElementListProvider,
                 uno::Reference< util::XNumberFormatsSupplier >(
                         getModel(), uno::UNO_QUERY ) );
@@ -776,7 +776,7 @@ bool ChartController::executeDlg_ObjectProperties_withoutUndoGuard(
                                         , m_pDrawModelWrapper->getSdrModel().GetItemPool()
                                         , m_pDrawModelWrapper->getSdrModel()
                                         , uno::Reference< lang::XMultiServiceFactory >( getModel(), uno::UNO_QUERY )
-                                        , wrapper::GraphicObjectType::FilledDataPoint );
+                                        , wrapper::GraphicPropertyItemConverter::FILLED_DATA_POINT );
 
             pSymbolShapeProperties = new SfxItemSet( aSymbolItemConverter.CreateEmptyItemSet() );
             aSymbolItemConverter.FillItemSet( *pSymbolShapeProperties );
@@ -817,13 +817,14 @@ void ChartController::executeDispatch_View3D()
 {
     try
     {
-        UndoLiveUpdateGuard aUndoGuard(
+        // using assignment for broken gcc 3.3
+        UndoLiveUpdateGuard aUndoGuard = UndoLiveUpdateGuard(
             SCH_RESSTR( STR_ACTION_EDIT_3D_VIEW ),
             m_xUndoManager );
 
         //open dialog
         SolarMutexGuard aSolarGuard;
-        ScopedVclPtrInstance< View3DDialog > aDlg(GetChartWindow(), getModel());
+        ScopedVclPtrInstance< View3DDialog > aDlg( m_pChartWindow, getModel(), m_pDrawModelWrapper->GetColorList() );
         if( aDlg->Execute() == RET_OK )
             aUndoGuard.commit();
     }

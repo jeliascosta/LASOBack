@@ -31,15 +31,16 @@ public:
     struct DisplayMonitor
     {
         OUString        m_aName;
-        tools::Rectangle       m_aArea;
+        Rectangle       m_aArea;
 
         DisplayMonitor() {}
         DisplayMonitor( const OUString& rName,
-                        const tools::Rectangle& rArea )
+                        const Rectangle& rArea )
                         : m_aName( rName ),
                           m_aArea( rArea )
         {
         }
+        ~DisplayMonitor() {}
     };
 private:
     std::vector<DisplayMonitor>             m_aMonitors;
@@ -47,11 +48,11 @@ private:
     unsigned int                            m_nPrimary;
 public:
     WinSalSystem() : m_nPrimary( 0 ) {}
-    virtual ~WinSalSystem() override;
+    virtual ~WinSalSystem();
 
     virtual unsigned int GetDisplayScreenCount() override;
     virtual unsigned int GetDisplayBuiltInScreen() override;
-    virtual tools::Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen )  override;
+    virtual Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen )  override;
     virtual int ShowNativeMessageBox( const OUString& rTitle,
                                       const OUString& rMessage)  override;
     bool initMonitors();

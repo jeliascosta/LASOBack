@@ -83,14 +83,14 @@ SvStream* XclEscherExGlobal::ImplQueryPictureStream()
     if( mxPicTempFile->IsValid() )
     {
         mxPicTempFile->EnableKillingFile();
-        mxPicStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxPicTempFile->GetURL(), StreamMode::STD_READWRITE ) );
+        mxPicStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxPicTempFile->GetURL(), STREAM_STD_READWRITE ) );
         mxPicStrm->SetEndian( SvStreamEndian::LITTLE );
     }
     return mxPicStrm.get();
 }
 
 XclEscherEx::XclEscherEx( const XclExpRoot& rRoot, XclExpObjectManager& rObjMgr, SvStream& rStrm, const XclEscherEx* pParent ) :
-    EscherEx( pParent ? pParent->mxGlobal : std::shared_ptr<EscherExGlobal>( new XclEscherExGlobal( rRoot ) ), &rStrm ),
+    EscherEx( pParent ? pParent->mxGlobal : EscherExGlobalRef( new XclEscherExGlobal( rRoot ) ), &rStrm ),
     XclExpRoot( rRoot ),
     mrObjMgr( rObjMgr ),
     pCurrXclObj( nullptr ),
@@ -184,7 +184,7 @@ bool lcl_IsFontwork( const SdrObject* pObj )
 
 } // namespace
 
-EscherExHostAppData* XclEscherEx::StartShape( const Reference< XShape >& rxShape, const tools::Rectangle* pChildAnchor )
+EscherExHostAppData* XclEscherEx::StartShape( const Reference< XShape >& rxShape, const Rectangle* pChildAnchor )
 {
     if ( nAdditionalText )
         nAdditionalText++;
@@ -245,7 +245,7 @@ EscherExHostAppData* XclEscherEx::StartShape( const Reference< XShape >& rxShape
             }
             catch(const Exception&)
             {
-                SAL_WARN("sc", "XclEscherEx::StartShape, this control can't get the property ControlTypeinMSO!");
+                OSL_TRACE("XclEscherEx::StartShape, this control can't get the property ControlTypeinMSO!");
             }
             if( nMsCtlType == 2 )  //OCX Form Control
                 pCurrXclObj = CreateOCXCtrlObj( rxShape, pChildAnchor ).release();
@@ -326,7 +326,7 @@ EscherExHostAppData* XclEscherEx::StartShape( const Reference< XShape >& rxShape
             }
             catch(const Exception&)
             {
-                SAL_WARN("sc", "XclEscherEx::StartShape, this control can't get the property ObjIDinMSO!");
+                OSL_TRACE("XclEscherEx::StartShape, this control can't get the property ObjIDinMSO!");
             }
             sal_uInt16 nObjIDinMSO = 0xFFFF;
             aAny >>= nObjIDinMSO;
@@ -405,7 +405,7 @@ void XclEscherEx::EndDocument()
     mpOutStrm->Seek( 0 );
 }
 
-std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< XShape > const & xShape, const tools::Rectangle* pChildAnchor )
+std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< XShape > xShape, const Rectangle* pChildAnchor )
 {
     ::std::unique_ptr< XclExpOcxControlObj > xOcxCtrl;
 
@@ -413,9 +413,9 @@ std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< X
     if( xCtrlModel.is() )
     {
         // output stream
-        if( !mxCtlsStrm.is() )
+        if( !mxCtlsStrm.Is() )
             mxCtlsStrm = OpenStream( EXC_STREAM_CTLS );
-        if( mxCtlsStrm.is() )
+        if( mxCtlsStrm.Is() )
         {
             OUString aClassName;
             sal_uInt32 nStrmStart = static_cast< sal_uInt32 >( mxCtlsStrm->Tell() );
@@ -435,7 +435,7 @@ std::unique_ptr<XclExpOcxControlObj> XclEscherEx::CreateOCXCtrlObj( Reference< X
     return xOcxCtrl;
 }
 
-std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< XShape > const & xShape, const tools::Rectangle* pChildAnchor )
+std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< XShape > xShape, const Rectangle* pChildAnchor )
 {
     ::std::unique_ptr< XclExpTbxControlObj > xTbxCtrl( new XclExpTbxControlObj( mrObjMgr, xShape, pChildAnchor ) );
     if( xTbxCtrl->GetObjType() == EXC_OBJTYPE_UNKNOWN )
@@ -450,7 +450,7 @@ std::unique_ptr<XclExpTbxControlObj> XclEscherEx::CreateTBXCtrlObj( Reference< X
     return xTbxCtrl;
 }
 
-void XclEscherEx::ConvertTbxMacro( XclExpTbxControlObj& rTbxCtrlObj, Reference< XControlModel > const & xCtrlModel )
+void XclEscherEx::ConvertTbxMacro( XclExpTbxControlObj& rTbxCtrlObj, Reference< XControlModel > xCtrlModel )
 {
     SdrPage* pSdrPage = GetSdrPage( GetCurrScTab() );
     if( xCtrlModel.is() && GetDocShell() && pSdrPage ) try
@@ -568,7 +568,7 @@ ShapeInteractionHelper::PopulateShapeInteractionInfo( XclExpObjectManager& rObjM
          hExpHlink.WriteEmbeddedData( tmpStream );
       }
       if ( !sHyperLink.isEmpty() || !sMacro.isEmpty() )
-          rHostAppData.SetInteractionInfo( new InteractionInfo( pMemStrm ) );
+          rHostAppData.SetInteractionInfo( new InteractionInfo( pMemStrm, true ) );
    }
    catch( Exception& )
    {

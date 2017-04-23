@@ -41,6 +41,8 @@
  * be synchronized with Writer's SwTableAutoFmtTbl sw/source/core/doc/tblafmt.cxx
  */
 
+const sal_Char *linker_dummy = "";
+
 static const sal_Char sAutoTblFmtName[] = "autotbl.fmt";
 
 // till SO5PF
@@ -94,8 +96,8 @@ namespace
         if (blobSize)
         {
             blob.pData = new sal_uInt8[blobSize];
-            blob.size = static_cast<std::size_t>(blobSize);
-            stream.ReadBytes(blob.pData, blob.size);
+            blob.size = static_cast<sal_Size>(blobSize);
+            stream.Read(blob.pData, blob.size);
         }
 
         return stream;
@@ -107,7 +109,7 @@ namespace
         const sal_uInt64 endOfBlob = stream.Tell() + sizeof(sal_uInt64) + blob.size;
         stream.WriteUInt64( endOfBlob );
         if (blob.size)
-            stream.WriteBytes(blob.pData, blob.size);
+            stream.Write(blob.pData, blob.size);
 
         return stream;
     }
@@ -188,11 +190,11 @@ void ScAfVersions::Write(SvStream& rStream, sal_uInt16 fileVersion)
     rStream.WriteUInt16( SvxLineItem(SID_FRAME_LINESTYLE).GetVersion(fileVersion) );
     rStream.WriteUInt16( SvxBrushItem(ATTR_BACKGROUND).GetVersion(fileVersion) );
 
-    rStream.WriteUInt16( SvxAdjustItem(SvxAdjust::Left, 0).GetVersion(fileVersion) );
+    rStream.WriteUInt16( SvxAdjustItem(SVX_ADJUST_LEFT, 0).GetVersion(fileVersion) );
     if (fileVersion >= SOFFICE_FILEFORMAT_50)
         WriteAutoFormatSwBlob( rStream, swVersions );
 
-    rStream.WriteUInt16( SvxHorJustifyItem(SvxCellHorJustify::Standard, ATTR_HOR_JUSTIFY).GetVersion(fileVersion) );
+    rStream.WriteUInt16( SvxHorJustifyItem(SVX_HOR_JUSTIFY_STANDARD, ATTR_HOR_JUSTIFY).GetVersion(fileVersion) );
     rStream.WriteUInt16( SvxVerJustifyItem(SVX_VER_JUSTIFY_STANDARD, ATTR_VER_JUSTIFY).GetVersion(fileVersion) );
     rStream.WriteUInt16( SvxOrientationItem(SVX_ORIENTATION_STANDARD, 0).GetVersion(fileVersion) );
     rStream.WriteUInt16( SvxMarginItem(ATTR_MARGIN).GetVersion(fileVersion) );
@@ -229,8 +231,8 @@ ScAutoFormatDataField::ScAutoFormatDataField() :
     aTLBR( ATTR_BORDER_TLBR ),
     aBLTR( ATTR_BORDER_BLTR ),
     aBackground( ATTR_BACKGROUND ),
-    aAdjust( SvxAdjust::Left, 0 ),
-    aHorJustify( SvxCellHorJustify::Standard, ATTR_HOR_JUSTIFY ),
+    aAdjust( SVX_ADJUST_LEFT, 0 ),
+    aHorJustify( SVX_HOR_JUSTIFY_STANDARD, ATTR_HOR_JUSTIFY ),
     aVerJustify( SVX_VER_JUSTIFY_STANDARD, ATTR_VER_JUSTIFY ),
     aMargin( ATTR_MARGIN ),
     aLinebreak( ATTR_LINEBREAK ),
@@ -655,15 +657,9 @@ void ScAutoFormatData::FillToItemSet( sal_uInt16 nIndex, SfxItemSet& rItemSet, S
         }
         else
         {
-            SvxFontHeightItem aFontHeightItem(rField.GetHeight());
-            aFontHeightItem.SetWhich(ATTR_CJK_FONT_HEIGHT);
-            rItemSet.Put( aFontHeightItem );
-            SvxWeightItem aWeightItem(rField.GetWeight());
-            aWeightItem.SetWhich(ATTR_CJK_FONT_WEIGHT);
-            rItemSet.Put( aWeightItem );
-            SvxPostureItem aPostureItem(rField.GetPosture());
-            aPostureItem.SetWhich(ATTR_CJK_FONT_POSTURE);
-            rItemSet.Put( aPostureItem );
+            rItemSet.Put( rField.GetHeight(), ATTR_CJK_FONT_HEIGHT );
+            rItemSet.Put( rField.GetWeight(), ATTR_CJK_FONT_WEIGHT );
+            rItemSet.Put( rField.GetPosture(), ATTR_CJK_FONT_POSTURE );
         }
         // do not insert empty CTL font
         const SvxFontItem& rCTLFont = rField.GetCTLFont();
@@ -676,15 +672,9 @@ void ScAutoFormatData::FillToItemSet( sal_uInt16 nIndex, SfxItemSet& rItemSet, S
         }
         else
         {
-            SvxFontHeightItem aFontHeightItem(rField.GetHeight());
-            aFontHeightItem.SetWhich(ATTR_CTL_FONT_HEIGHT);
-            rItemSet.Put( aFontHeightItem );
-            SvxWeightItem aWeightItem(rField.GetWeight());
-            aWeightItem.SetWhich(ATTR_CTL_FONT_WEIGHT);
-            rItemSet.Put( aWeightItem );
-            SvxPostureItem aPostureItem(rField.GetPosture());
-            aPostureItem.SetWhich(ATTR_CTL_FONT_POSTURE);
-            rItemSet.Put( aPostureItem );
+            rItemSet.Put( rField.GetHeight(), ATTR_CTL_FONT_HEIGHT );
+            rItemSet.Put( rField.GetWeight(), ATTR_CTL_FONT_WEIGHT );
+            rItemSet.Put( rField.GetPosture(), ATTR_CTL_FONT_POSTURE );
         }
         rItemSet.Put( rField.GetUnderline() );
         rItemSet.Put( rField.GetOverline() );
@@ -917,6 +907,24 @@ bool DefaultFirstEntry::operator() (const OUString& left, const OUString& right)
     return ScGlobal::GetCollator()->compareString( left, right) < 0;
 }
 
+ScAutoFormat::ScAutoFormat(const ScAutoFormat& r)
+    : mbSaveLater(false)
+{
+    for (auto const& it : r.m_Data)
+    {
+        m_Data.insert(std::make_pair(it.first, o3tl::make_unique<ScAutoFormatData>(*it.second)));
+    }
+}
+
+ScAutoFormat::~ScAutoFormat()
+{
+    //  When modified via StarOne then only the SaveLater flag is set and no saving is done.
+    //  If the flag is set then save now.
+
+    if (mbSaveLater)
+        Save();
+}
+
 void ScAutoFormat::SetSaveLater( bool bSet )
 {
     mbSaveLater = bSet;
@@ -1002,7 +1010,7 @@ void ScAutoFormat::Load()
     aURL.setFinalSlash();
     aURL.Append( sAutoTblFmtName );
 
-    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE), StreamMode::READ );
+    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::NO_DECODE), StreamMode::READ );
     SvStream* pStream = aMedium.GetInStream();
     bool bRet = (pStream && pStream->GetError() == 0);
     if (bRet)
@@ -1060,7 +1068,7 @@ bool ScAutoFormat::Save()
     aURL.setFinalSlash();
     aURL.Append(sAutoTblFmtName);
 
-    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE), StreamMode::WRITE );
+    SfxMedium aMedium( aURL.GetMainURL(INetURLObject::NO_DECODE), StreamMode::WRITE );
     SvStream* pStream = aMedium.GetOutStream();
     bool bRet = (pStream && pStream->GetError() == 0);
     if (bRet)

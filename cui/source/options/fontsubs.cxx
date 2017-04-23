@@ -59,7 +59,7 @@ SvxFontSubstTabPage::SvxFontSubstTabPage( vcl::Window* pParent,
 
     SvSimpleTableContainer *pCheckLBContainer = get<SvSimpleTableContainer>("checklb");
     Size aControlSize(248, 75);
-    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
     pCheckLBContainer->set_width_request(aControlSize.Width());
     pCheckLBContainer->set_height_request(aControlSize.Height());
 
@@ -67,17 +67,18 @@ SvxFontSubstTabPage::SvxFontSubstTabPage( vcl::Window* pParent,
     m_pCheckLB->SetHelpId(HID_OFA_FONT_SUBST_CLB);
 
     m_pCheckLB->SetStyle(m_pCheckLB->GetStyle()|WB_HSCROLL|WB_VSCROLL);
-    m_pCheckLB->SetSelectionMode(SelectionMode::Multiple);
+    m_pCheckLB->SetSelectionMode(MULTIPLE_SELECTION);
     m_pCheckLB->SortByCol(2);
     long aStaticTabs[] = { 4, 0, 0, 0, 0 };
     m_pCheckLB->SvSimpleTable::SetTabs(&aStaticTabs[0]);
 
     OUString sHeader1(get<FixedText>("always")->GetText());
     OUString sHeader2(get<FixedText>("screenonly")->GetText());
-    OUString sHeader = sHeader1 + "\t" + sHeader2
-        + "\t " + get<FixedText>("font")->GetText()
-        + "\t " + get<FixedText>("replacewith")->GetText();
-    m_pCheckLB->InsertHeaderEntry(sHeader);
+    OUStringBuffer sHeader;
+    sHeader.append(sHeader1).append("\t").append(sHeader2)
+        .append("\t ").append(get<FixedText>("font")->GetText())
+        .append("\t ").append(get<FixedText>("replacewith")->GetText());
+    m_pCheckLB->InsertHeaderEntry(sHeader.makeStringAndClear());
 
     HeaderBar &rBar = m_pCheckLB->GetTheHeaderBar();
     HeaderBarItemBits nBits = rBar.GetItemBits(1) | HeaderBarItemBits::FIXEDPOS | HeaderBarItemBits::FIXED;
@@ -253,19 +254,19 @@ void  SvxFontSubstTabPage::Reset( const SfxItemSet* )
     m_pFontHeightLB->SaveValue();
 }
 
-IMPL_LINK(SvxFontSubstTabPage, ClickHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SvxFontSubstTabPage, ClickHdl, Button*, pButton, void)
 {
     SelectHdl(pButton);
 }
-IMPL_LINK(SvxFontSubstTabPage, TreeListBoxSelectHdl, SvTreeListBox*, pButton, void)
+IMPL_LINK_TYPED(SvxFontSubstTabPage, TreeListBoxSelectHdl, SvTreeListBox*, pButton, void)
 {
     SelectHdl(pButton);
 }
-IMPL_LINK(SvxFontSubstTabPage, SelectComboBoxHdl, ComboBox&, rBox, void)
+IMPL_LINK_TYPED(SvxFontSubstTabPage, SelectComboBoxHdl, ComboBox&, rBox, void)
 {
     SelectHdl(&rBox);
 }
-IMPL_LINK(SvxFontSubstTabPage, SelectEditHdl, Edit&, rBox, void)
+IMPL_LINK_TYPED(SvxFontSubstTabPage, SelectEditHdl, Edit&, rBox, void)
 {
     SelectHdl(&rBox);
 }
@@ -344,7 +345,7 @@ void SvxFontSubstTabPage::SelectHdl(vcl::Window* pWin)
 }
 
 
-IMPL_LINK(SvxFontSubstTabPage, NonPropFontsHdl, Button*, pBox, void)
+IMPL_LINK_TYPED(SvxFontSubstTabPage, NonPropFontsHdl, Button*, pBox, void)
 {
     OUString sFontName = m_pFontNameLB->GetSelectEntry();
     bool bNonPropOnly = static_cast<CheckBox*>(pBox)->IsChecked();
@@ -371,7 +372,9 @@ void SvxFontSubstTabPage::CheckEnable()
 
         SvTreeListEntry* pEntry = m_pCheckLB->FirstSelected();
 
-        OUString sEntry = m_pFont1CB->GetText() + "\t" + m_pFont2CB->GetText();
+        OUString sEntry = m_pFont1CB->GetText();
+        sEntry += "\t";
+        sEntry += m_pFont2CB->GetText();
 
         // because of OS/2 optimization error (Bug #56267) a bit more intricate:
         if (m_pFont1CB->GetText().isEmpty() || m_pFont2CB->GetText().isEmpty())
@@ -421,7 +424,7 @@ void SvxFontSubstCheckListBox::setColSizes()
     long nW1 = rBar.GetTextWidth(rBar.GetItemText(3));
     long nW2 = rBar.GetTextWidth(rBar.GetItemText(4));
     long nMax = std::max( nW1, nW2 ) + 6; // width of the longest header + a little offset
-    long nMin = rBar.LogicToPixel(Size(10, 0), MapUnit::MapAppFont).Width();
+    long nMin = rBar.LogicToPixel(Size(10, 0), MAP_APPFONT).Width();
     nMax = std::max( nMax, nMin );
     const long nDoubleMax = 2*nMax;
     const long nRest = GetSizePixel().Width() - nDoubleMax;
@@ -429,7 +432,7 @@ void SvxFontSubstCheckListBox::setColSizes()
     aStaticTabs[2] = nMax;
     aStaticTabs[3] = nDoubleMax;
     aStaticTabs[4] = nDoubleMax + nRest/2;
-    SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
+    SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
 }
 
 void SvxFontSubstCheckListBox::Resize()
@@ -462,7 +465,7 @@ void    SvxFontSubstCheckListBox::KeyInput( const KeyEvent& rKEvt )
         if ( nCol < 2 )
         {
             CheckEntryPos( nSelPos, nCol, !IsChecked( nSelPos, nCol ) );
-            CallImplEventListeners( VclEventId::CheckboxToggle, static_cast<void*>(GetEntry( nSelPos )) );
+            CallImplEventListeners( VCLEVENT_CHECKBOX_TOGGLE, static_cast<void*>(GetEntry( nSelPos )) );
         }
         else
         {
@@ -511,7 +514,7 @@ void SvxFontSubstCheckListBox::SetCheckButtonState( SvTreeListEntry* pEntry, sal
 {
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SvLBoxItemType::Button)
+    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         switch( eState )
         {
@@ -536,7 +539,7 @@ SvButtonState SvxFontSubstCheckListBox::GetCheckButtonState( SvTreeListEntry* pE
     SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SvLBoxItemType::Button)
+    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
         eState = SvLBoxButtonData::ConvertToButtonState( nButtonFlags );

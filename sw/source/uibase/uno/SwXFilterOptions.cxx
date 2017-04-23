@@ -50,7 +50,7 @@ SwXFilterOptions::~SwXFilterOptions()
 {
 }
 
-uno::Sequence< beans::PropertyValue > SwXFilterOptions::getPropertyValues()
+uno::Sequence< beans::PropertyValue > SwXFilterOptions::getPropertyValues() throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence<beans::PropertyValue> aRet(1);
     beans::PropertyValue* pArray = aRet.getArray();
@@ -62,6 +62,8 @@ uno::Sequence< beans::PropertyValue > SwXFilterOptions::getPropertyValues()
 }
 
 void   SwXFilterOptions::setPropertyValues( const uno::Sequence<beans::PropertyValue >& aProps )
+    throw (beans::UnknownPropertyException, beans::PropertyVetoException,
+       IllegalArgumentException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     const beans::PropertyValue* pPropArray = aProps.getConstArray();
     long nPropCount = aProps.getLength();
@@ -80,10 +82,11 @@ void   SwXFilterOptions::setPropertyValues( const uno::Sequence<beans::PropertyV
 }
 
 void   SwXFilterOptions::setTitle( const OUString& /*rTitle*/ )
+    throw (uno::RuntimeException, std::exception)
 {
 }
 
-sal_Int16 SwXFilterOptions::execute()
+sal_Int16 SwXFilterOptions::execute() throw (uno::RuntimeException, std::exception)
 {
     sal_Int16 nRet = ui::dialogs::ExecutableDialogResults::CANCEL;
 
@@ -105,7 +108,7 @@ sal_Int16 SwXFilterOptions::execute()
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-        ScopedVclPtr<AbstractSwAsciiFilterDlg> pAsciiDlg(pFact->CreateSwAsciiFilterDlg(*pDocShell,
+        std::unique_ptr<AbstractSwAsciiFilterDlg> pAsciiDlg(pFact->CreateSwAsciiFilterDlg(*pDocShell,
             pInStream.get()));
         OSL_ENSURE(pAsciiDlg, "Dialog creation failed!");
         if(RET_OK == pAsciiDlg->Execute())
@@ -121,28 +124,32 @@ sal_Int16 SwXFilterOptions::execute()
 }
 
 void   SwXFilterOptions::setTargetDocument( const uno::Reference< XComponent >& xDoc )
+    throw (IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     bExport = false;
     xModel = xDoc;
 }
 
 void   SwXFilterOptions::setSourceDocument( const uno::Reference<XComponent >& xDoc )
+        throw (IllegalArgumentException,uno::RuntimeException, std::exception)
 {
     bExport = true;
     xModel = xDoc;
 }
 
-OUString SwXFilterOptions::getImplementationName()
+OUString SwXFilterOptions::getImplementationName() throw(uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Writer.FilterOptionsDialog");
 }
 
 sal_Bool SwXFilterOptions::supportsService( const OUString& rServiceName )
+    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SwXFilterOptions::getSupportedServiceNames()
+                throw(uno::RuntimeException, std::exception)
 {
     OUString sService("com.sun.star.ui.dialogs.FilterOptionsDialog");
     return uno::Sequence< OUString> (&sService, 1);

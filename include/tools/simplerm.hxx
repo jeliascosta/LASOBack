@@ -27,15 +27,14 @@
 #include <tools/resid.hxx>
 #include <i18nlangtag/languagetag.hxx>
 #include <tools/toolsdllapi.h>
-#include <memory>
 
 class InternalResMgr;
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC SimpleResMgr final
+class TOOLS_DLLPUBLIC SimpleResMgr
 {
+protected:
     osl::Mutex              m_aAccessSafety;
-    std::unique_ptr<InternalResMgr>
-                            m_pResImpl;
+    InternalResMgr*         m_pResImpl;
 
 public:
                             /** creates a new SimpleResManager
@@ -49,10 +48,10 @@ public:
                             SimpleResMgr( const sal_Char* pPrefixName,
                                           const LanguageTag& rLocale);
 
-                            ~SimpleResMgr();
+    virtual                 ~SimpleResMgr();
 
     static SimpleResMgr*    Create( const sal_Char* pPrefixName,
-                                    const LanguageTag& rLocale );// only in VCL
+                                    const LanguageTag& rLocale = LanguageTag( LANGUAGE_SYSTEM) );// only in VCL
 
     bool                    IsValid() const { return m_pResImpl != nullptr; }
 

@@ -42,7 +42,7 @@ public:
     TitlesAndObjectsTabPage( svt::OWizardMachine* pParent
                 , const css::uno::Reference< css::chart2::XChartDocument >& xChartModel
                 , const css::uno::Reference< css::uno::XComponentContext >& xContext );
-    virtual ~TitlesAndObjectsTabPage() override;
+    virtual ~TitlesAndObjectsTabPage();
     virtual void dispose() override;
 
     virtual void        initializePage() override;
@@ -51,9 +51,9 @@ public:
 
 protected:
     void commitToModel();
-    DECL_LINK( ChangeHdl, LinkParamNone*, void );
-    DECL_LINK( ChangeEditHdl, Edit&, void );
-    DECL_LINK( ChangeCheckBoxHdl, CheckBox&, void );
+    DECL_LINK_TYPED( ChangeHdl, LinkParamNone*, void );
+    DECL_LINK_TYPED( ChangeEditHdl, Edit&, void );
+    DECL_LINK_TYPED( ChangeCheckBoxHdl, CheckBox&, void );
 
 protected:
     std::unique_ptr< TitleResources >            m_xTitleResources;

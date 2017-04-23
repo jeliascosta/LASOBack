@@ -36,13 +36,13 @@ class ComPtr
          */
         ComPtr()
         {
-            m_pInterface = nullptr;
+            m_pInterface = NULL;
         }
 
 
         /** initialize com ptr with given interface.
          */
-        explicit ComPtr(T_INTERFACE* pInterface)
+        ComPtr(T_INTERFACE* pInterface)
         {
             m_pInterface = pInterface;
             if (m_pInterface)
@@ -60,9 +60,9 @@ class ComPtr
         }
 
 
-        /** initialize object by querying external object for the right interface.
+        /** initialize object by quering external object for the right interface.
          */
-        explicit ComPtr(IUnknown* pIUnknown)
+        ComPtr(IUnknown* pIUnknown)
         {
             if (pIUnknown)
                 pIUnknown->QueryInterface(P_IID, (void**)&m_pInterface);
@@ -81,7 +81,7 @@ class ComPtr
 
         HRESULT create()
         {
-            return CoCreateInstance(P_CLSID, nullptr, CLSCTX_ALL, P_IID, reinterpret_cast<void**>(&m_pInterface));
+            return CoCreateInstance(P_CLSID, NULL, CLSCTX_ALL, P_IID, (void**)&m_pInterface);
         }
 
 
@@ -170,17 +170,21 @@ class ComPtr
             if (m_pInterface)
             {
                 m_pInterface->Release();
-                m_pInterface = nullptr;
+                m_pInterface = NULL;
             }
         }
+
+#ifndef __MINGW32__
 
         template< class T_QUERYINTERFACE >
         HRESULT query(T_QUERYINTERFACE** pQuery)
         {
-            return m_pInterface->QueryInterface(__uuidof(T_QUERYINTERFACE), reinterpret_cast<void**>(pQuery));
+            return m_pInterface->QueryInterface(__uuidof(T_QUERYINTERFACE), (void**)pQuery);
         }
+#endif
 
-        bool equals(IUnknown* pCheck)
+
+        sal_Bool equals(IUnknown* pCheck)
         {
             if (
                 ( ! m_pInterface ) &&
@@ -198,9 +202,9 @@ class ComPtr
         }
 
 
-        bool is()
+        sal_Bool is()
         {
-            return (m_pInterface != nullptr);
+            return (m_pInterface != 0);
         }
 
     private:

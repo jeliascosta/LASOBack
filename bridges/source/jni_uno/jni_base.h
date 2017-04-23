@@ -63,19 +63,19 @@ class JNI_context
 
     void java_exc_occurred() const;
 public:
-    explicit JNI_context(
+    inline explicit JNI_context(
         JNI_info const * jni_info, JNIEnv * env, jobject class_loader )
         : m_jni_info( jni_info ),
           m_env( env ),
           m_class_loader( class_loader )
         {}
 
-    JNI_info const * get_info() const
+    inline JNI_info const * get_info() const
         { return m_jni_info; }
 
-    JNIEnv * operator -> () const
+    inline JNIEnv * operator -> () const
         { return m_env; }
-    JNIEnv * get_jni_env() const
+    inline JNIEnv * get_jni_env() const
         { return m_env; }
 
     // does not handle exceptions, *classClass will be null if exception
@@ -91,7 +91,7 @@ public:
     inline void ensure_no_exception() const; // throws BridgeRuntimeError
     inline bool assert_no_exception() const; // asserts and clears exception
 
-    OUString get_stack_trace( jobject jo_exc = nullptr ) const;
+    OUString get_stack_trace( jobject jo_exc = NULL ) const;
 };
 
 inline void JNI_context::ensure_no_exception() const
@@ -125,7 +125,7 @@ class JNI_guarded_context
     void operator = ( JNI_guarded_context ) = delete;
 
 public:
-    explicit JNI_guarded_context(
+    inline explicit JNI_guarded_context(
         JNI_info const * jni_info,
         rtl::Reference<jvmaccess::UnoVirtualMachine> const & vm_access)
         : AttachGuard( vm_access->getVirtualMachine() ),
@@ -144,7 +144,7 @@ class JLocalAutoRef
 public:
     explicit JLocalAutoRef( JNI_context const & jni )
         : m_jni( jni ),
-          m_jo( nullptr )
+          m_jo( NULL )
         {}
     explicit JLocalAutoRef( JNI_context const & jni, jobject jo )
         : m_jni( jni ),
@@ -156,7 +156,7 @@ public:
     jobject get() const
         { return m_jo; }
     bool is() const
-        { return (nullptr != m_jo); }
+        { return (NULL != m_jo); }
     inline jobject release();
     inline void reset( jobject jo );
     inline JLocalAutoRef & operator = ( JLocalAutoRef & auto_ref );
@@ -164,7 +164,7 @@ public:
 
 inline JLocalAutoRef::~JLocalAutoRef()
 {
-    if (nullptr != m_jo)
+    if (NULL != m_jo)
         m_jni->DeleteLocalRef( m_jo );
 }
 
@@ -172,13 +172,13 @@ inline JLocalAutoRef::JLocalAutoRef( JLocalAutoRef & auto_ref )
     : m_jni( auto_ref.m_jni ),
       m_jo( auto_ref.m_jo )
 {
-    auto_ref.m_jo = nullptr;
+    auto_ref.m_jo = NULL;
 }
 
 inline jobject JLocalAutoRef::release()
 {
     jobject jo = m_jo;
-    m_jo = nullptr;
+    m_jo = NULL;
     return jo;
 }
 
@@ -186,7 +186,7 @@ inline void JLocalAutoRef::reset( jobject jo )
 {
     if (jo != m_jo)
     {
-        if (nullptr != m_jo)
+        if (NULL != m_jo)
             m_jni->DeleteLocalRef( m_jo );
         m_jo = jo;
     }
@@ -196,7 +196,7 @@ inline JLocalAutoRef & JLocalAutoRef::operator = ( JLocalAutoRef & auto_ref )
 {
     assert( m_jni.get_jni_env() == auto_ref.m_jni.get_jni_env() );
     reset( auto_ref.m_jo );
-    auto_ref.m_jo = nullptr;
+    auto_ref.m_jo = NULL;
     return *this;
 }
 
@@ -204,22 +204,22 @@ inline JLocalAutoRef & JLocalAutoRef::operator = ( JLocalAutoRef & auto_ref )
 
 struct rtl_mem
 {
-    static void * operator new ( size_t nSize )
+    inline static void * operator new ( size_t nSize )
         { return rtl_allocateMemory( nSize ); }
-    static void operator delete ( void * mem )
+    inline static void operator delete ( void * mem )
         { if (mem) rtl_freeMemory( mem ); }
-    static void * operator new ( size_t, void * mem )
+    inline static void * operator new ( size_t, void * mem )
         { return mem; }
-    static void operator delete ( void *, void * )
+    inline static void operator delete ( void *, void * )
         {}
 
-    static inline rtl_mem * allocate( std::size_t bytes );
+    static inline rtl_mem * allocate( ::std::size_t bytes );
 };
 
-inline rtl_mem * rtl_mem::allocate( std::size_t bytes )
+inline rtl_mem * rtl_mem::allocate( ::std::size_t bytes )
 {
     void * p = rtl_allocateMemory( bytes );
-    if (nullptr == p)
+    if (NULL == p)
         throw BridgeRuntimeError( "out of memory!" );
     return static_cast<rtl_mem *>(p);
 }
@@ -234,18 +234,18 @@ class TypeDescr
 
 public:
     inline explicit TypeDescr( typelib_TypeDescriptionReference * td_ref );
-    ~TypeDescr()
+    inline ~TypeDescr()
         { TYPELIB_DANGER_RELEASE( m_td ); }
 
-    typelib_TypeDescription * get() const
+    inline typelib_TypeDescription * get() const
         { return m_td; }
 };
 
 inline TypeDescr::TypeDescr( typelib_TypeDescriptionReference * td_ref )
-    : m_td( nullptr )
+    : m_td( NULL )
 {
     TYPELIB_DANGER_GET( &m_td, td_ref );
-    if (nullptr == m_td)
+    if (NULL == m_td)
     {
         throw BridgeRuntimeError(
             "cannot get comprehensive type description for " +

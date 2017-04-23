@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-namespace tools { class Rectangle; }
+class Rectangle;
 
 namespace sd { namespace slidesorter { namespace view {
 
@@ -46,10 +46,10 @@ public:
     ~LayeredDevice ();
 
     void Invalidate (
-        const ::tools::Rectangle& rInvalidationBox,
+        const Rectangle& rInvalidationBox,
         const sal_Int32 nLayer);
     void InvalidateAllLayers (
-        const ::tools::Rectangle& rInvalidationBox);
+        const Rectangle& rInvalidationBox);
     void InvalidateAllLayers (
         const vcl::Region& rInvalidationRegion);
 
@@ -75,7 +75,7 @@ private:
     ScopedVclPtr<VirtualDevice> mpBackBuffer;
     MapMode maSavedMapMode;
 
-    void RepaintRectangle (const ::tools::Rectangle& rRepaintRectangle);
+    void RepaintRectangle (const Rectangle& rRepaintRectangle);
 };
 
 } } } // end of namespace ::sd::slidesorter::view

@@ -43,11 +43,11 @@ class ChartModel;
 namespace wrapper
 {
 
-class Chart2ModelContact final
+class Chart2ModelContact
 {
 public:
     explicit Chart2ModelContact( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-    ~Chart2ModelContact();
+    virtual ~Chart2ModelContact();
 
 public:
     void setModel( const css::uno::Reference< css::frame::XModel >& xChartModel );
@@ -126,7 +126,7 @@ public:
 
 private: //methods
     ExplicitValueProvider* getExplicitValueProvider() const;
-    css::uno::Reference< css::lang::XUnoTunnel > const & getChartView() const;
+    css::uno::Reference< css::lang::XUnoTunnel > getChartView() const;
 
 public: //member
     css::uno::Reference< css::uno::XComponentContext >  m_xContext;

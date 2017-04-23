@@ -22,12 +22,15 @@
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
 
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase1.hxx>
 #include <cppuhelper/basemutex.hxx>
 
-typedef cppu::WeakComponentImplHelper <
-    css::accessibility::XAccessible
-    > AccessibleInterfaceBase;
+namespace
+{
+    typedef ::cppu::WeakComponentImplHelper1 <
+        css::accessibility::XAccessible
+        > AccessibleInterfaceBase;
+}
 
 namespace sfx2 { namespace sidebar {
 
@@ -43,13 +46,14 @@ class Accessible
 public:
     explicit Accessible (
         const css::uno::Reference<css::accessibility::XAccessibleContext>& rxContext);
-    virtual ~Accessible() override;
+    virtual ~Accessible();
     Accessible(const Accessible&) = delete;
     Accessible& operator=( const Accessible& ) = delete;
 
     virtual void SAL_CALL disposing() override;
     // XAccessible
-    virtual css::uno::Reference<css::accessibility::XAccessibleContext> SAL_CALL getAccessibleContext() override;
+    virtual css::uno::Reference<css::accessibility::XAccessibleContext> SAL_CALL getAccessibleContext()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::accessibility::XAccessibleContext> mxContext;

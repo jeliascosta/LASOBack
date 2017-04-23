@@ -55,7 +55,7 @@ namespace dbaui
         virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
     public:
         OAppBorderWindow(OApplicationView* _pParent,PreviewMode _ePreviewMode);
-        virtual ~OAppBorderWindow() override;
+        virtual ~OAppBorderWindow();
         virtual void dispose() override;
 
         // Window overrides
@@ -91,7 +91,7 @@ namespace dbaui
     protected:
 
         // return the Rectangle where I can paint myself
-        virtual void resizeDocumentView(tools::Rectangle& rRect) override;
+        virtual void resizeDocumentView(Rectangle& rRect) override;
 
         // OEventListenerAdapter
         virtual void _disposing( const css::lang::EventObject& _rSource ) override;
@@ -104,7 +104,7 @@ namespace dbaui
                             ,OApplicationController&            _rAppController
                             ,PreviewMode _ePreviewMode
                             );
-        virtual ~OApplicationView() override;
+        virtual ~OApplicationView();
         virtual void dispose() override;
 
         /// automatically creates mnemonics for the icon/texts in our left hand side panel
@@ -117,7 +117,7 @@ namespace dbaui
         virtual bool PreNotify( NotifyEvent& rNEvt ) override;
         virtual void GetFocus() override;
 
-        OApplicationController&                  getAppController() const { return m_rAppController; }
+        inline OApplicationController&                  getAppController() const { return m_rAppController; }
 
         // IClipboardTest
         virtual bool isCutAllowed() override;
@@ -128,9 +128,9 @@ namespace dbaui
         virtual void paste() override;
 
         /// get the left panel
-        OApplicationSwapWindow*  getPanel()      const { return m_pWin->getPanel(); }
+        inline OApplicationSwapWindow*  getPanel()      const { return m_pWin->getPanel(); }
         /// get the detail page
-        OApplicationDetailView*  getDetailView() const { return m_pWin->getDetailView(); }
+        inline OApplicationDetailView*  getDetailView() const { return m_pWin->getDetailView(); }
 
         /** return the qualified name.
             @param  _pEntry
@@ -189,7 +189,7 @@ namespace dbaui
             @param  _rNames
                 The list will be filled.
         */
-        void getSelectionElementNames( std::vector< OUString>& _rNames ) const;
+        void getSelectionElementNames( ::std::vector< OUString>& _rNames ) const;
 
         /** describes the current selection for the given control
         */

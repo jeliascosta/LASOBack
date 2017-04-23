@@ -20,6 +20,7 @@
 
 #include "dbu_reghelper.hxx"
 
+#include <osl/diagnose.h>
 #include <comphelper/sequence.hxx>
 
 namespace dbaui

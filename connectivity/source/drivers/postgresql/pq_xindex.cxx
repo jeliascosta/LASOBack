@@ -63,7 +63,7 @@ using com::sun::star::beans::XPropertySet;
 namespace pq_sdbc_driver
 {
 Index::Index( const ::rtl::Reference< RefCountedMutex > & refMutex,
-          const Reference< css::sdbc::XConnection > & connection,
+          const Reference< com::sun::star::sdbc::XConnection > & connection,
           ConnectionSettings *pSettings,
           const OUString & schemaName,
           const OUString & tableName )
@@ -78,7 +78,7 @@ Index::Index( const ::rtl::Reference< RefCountedMutex > & refMutex,
       m_tableName( tableName )
 {}
 
-Reference< XPropertySet > Index::createDataDescriptor(  )
+Reference< XPropertySet > Index::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     IndexDescriptor * pIndex = new IndexDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -87,7 +87,7 @@ Reference< XPropertySet > Index::createDataDescriptor(  )
     return Reference< XPropertySet > ( pIndex );
 }
 
-Reference< XNameAccess > Index::getColumns(  )
+Reference< XNameAccess > Index::getColumns(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     if( ! m_indexColumns.is() )
     {
@@ -101,7 +101,7 @@ Reference< XNameAccess > Index::getColumns(  )
     return m_indexColumns;
 }
 
-Sequence<Type > Index::getTypes()
+Sequence<Type > Index::getTypes() throw( RuntimeException, std::exception )
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -110,7 +110,7 @@ Sequence<Type > Index::getTypes()
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<css::sdbcx::XColumnsSupplier>::get(),
+                cppu::UnoType<com::sun::star::sdbcx::XColumnsSupplier>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -118,12 +118,12 @@ Sequence<Type > Index::getTypes()
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> Index::getImplementationId()
+Sequence< sal_Int8> Index::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any Index::queryInterface( const Type & reqType )
+Any Index::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
 {
     Any ret;
 
@@ -131,14 +131,14 @@ Any Index::queryInterface( const Type & reqType )
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< css::sdbcx::XColumnsSupplier * > ( this ) );
+            static_cast< com::sun::star::sdbcx::XColumnsSupplier * > ( this ) );
     return ret;
 }
 
 
 IndexDescriptor::IndexDescriptor(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const Reference< css::sdbc::XConnection > & connection,
+    const Reference< com::sun::star::sdbc::XConnection > & connection,
     ConnectionSettings *pSettings )
     : ReflectionBase(
         getStatics().refl.indexDescriptor.implName,
@@ -149,7 +149,7 @@ IndexDescriptor::IndexDescriptor(
         * getStatics().refl.indexDescriptor.pProps )
 {}
 
-Reference< XPropertySet > IndexDescriptor::createDataDescriptor(  )
+Reference< XPropertySet > IndexDescriptor::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     IndexDescriptor * pIndex = new IndexDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -157,7 +157,7 @@ Reference< XPropertySet > IndexDescriptor::createDataDescriptor(  )
     return Reference< XPropertySet > ( pIndex );
 }
 
-Reference< XNameAccess > IndexDescriptor::getColumns(  )
+Reference< XNameAccess > IndexDescriptor::getColumns(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     if( ! m_indexColumns.is() )
     {
@@ -173,7 +173,7 @@ Reference< XNameAccess > IndexDescriptor::getColumns(  )
     return m_indexColumns;
 }
 
-Sequence<Type > IndexDescriptor::getTypes()
+Sequence<Type > IndexDescriptor::getTypes() throw( RuntimeException, std::exception )
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -182,7 +182,7 @@ Sequence<Type > IndexDescriptor::getTypes()
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<css::sdbcx::XColumnsSupplier>::get(),
+                cppu::UnoType<com::sun::star::sdbcx::XColumnsSupplier>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -190,12 +190,12 @@ Sequence<Type > IndexDescriptor::getTypes()
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> IndexDescriptor::getImplementationId()
+Sequence< sal_Int8> IndexDescriptor::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any IndexDescriptor::queryInterface( const Type & reqType )
+Any IndexDescriptor::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
 {
     Any ret;
 
@@ -203,7 +203,7 @@ Any IndexDescriptor::queryInterface( const Type & reqType )
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< css::sdbcx::XColumnsSupplier * > ( this ) );
+            static_cast< com::sun::star::sdbcx::XColumnsSupplier * > ( this ) );
     return ret;
 }
 

@@ -24,17 +24,16 @@
 #include <list>
 #include <rtl/ustring.hxx>
 #include <unotools/options.hxx>
-#include <memory>
 
 class SvtHelpOptions_Impl;
 
 class SVT_DLLPUBLIC SvtHelpOptions: public utl::detail::Options
 {
-    std::shared_ptr<SvtHelpOptions_Impl>    pImpl;
+    SvtHelpOptions_Impl*    pImp;
 
 public:
                     SvtHelpOptions();
-                    virtual ~SvtHelpOptions() override;
+                    virtual ~SvtHelpOptions();
 
     void            SetExtendedHelp( bool b );
     bool            IsExtendedHelp() const;
@@ -43,6 +42,9 @@ public:
 
     const OUString& GetHelpStyleSheet()const;
     void            SetHelpStyleSheet(const OUString& rStyleSheet);
+
+    void            SetWelcomeScreen( bool b );
+    bool            IsWelcomeScreen() const;
 
     OUString        GetSystem() const;
 };

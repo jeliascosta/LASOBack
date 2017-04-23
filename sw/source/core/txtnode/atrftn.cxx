@@ -190,20 +190,21 @@ void SwFormatFootnote::GetFootnoteText( OUString& rStr ) const
             ++aIdx;
             while ( !aIdx.GetNode().IsEndNode() ) {
                 if ( aIdx.GetNode().IsTextNode() )
-                    rStr += "  " + aIdx.GetNode().GetTextNode()->GetExpandText();
+                    rStr += "  " + static_cast<SwTextNode*>((aIdx.GetNode().GetTextNode()))->GetExpandText();
                 ++aIdx;
             }
         }
     }
 }
 
-/// return the view string of the foot/endnote
+    // returnt den anzuzeigenden String der Fuss-/Endnote
 OUString SwFormatFootnote::GetViewNumStr( const SwDoc& rDoc, bool bInclStrings ) const
 {
     OUString sRet( GetNumStr() );
     if( sRet.isEmpty() )
     {
-        // in this case the number is needed, get it via SwDoc's FootnoteInfo
+        // dann ist die Nummer von Interesse, also ueber die Info diese
+        // besorgen.
         bool bMakeNum = true;
         const SwSectionNode* pSectNd = m_pTextAttr
                     ? SwUpdFootnoteEndNtAtEnd::FindSectNdWithEndAttr( *m_pTextAttr )
@@ -275,9 +276,9 @@ void SwTextFootnote::SetStartNode( const SwNodeIndex *pNewNode, bool bDelNode )
     }
     else if ( m_pStartNode )
     {
-        // need to do 2 things:
-        // 1) unregister footnotes at their pages
-        // 2) delete the footnote section in the Inserts of the nodes-array
+        // Zwei Dinge muessen erledigt werden:
+        // 1) Die Fussnoten muessen bei ihren Seiten abgemeldet werden
+        // 2) Die Fussnoten-Sektion in den Inserts muss geloescht werden.
         SwDoc* pDoc;
         if ( m_pTextNode )
         {
@@ -285,37 +286,39 @@ void SwTextFootnote::SetStartNode( const SwNodeIndex *pNewNode, bool bDelNode )
         }
         else
         {
-            //JP 27.01.97: the sw3-Reader creates a StartNode but the
-            //             attribute isn't anchored in the TextNode yet.
-            //             If it is deleted (e.g. Insert File with footnote
-            //             inside fly frame), the content must also be deleted.
+            //JP 27.01.97: der sw3-Reader setzt einen StartNode aber das
+            //              Attribut ist noch nicht im TextNode verankert.
+            //              Wird es geloescht (z.B. bei Datei einfuegen mit
+            //              Footnote in einen Rahmen), muss auch der Inhalt
+            //              geloescht werden
             pDoc = m_pStartNode->GetNodes().GetDoc();
         }
 
-        // If called from ~SwDoc(), must not delete the footnote nodes,
-        // and not necessary to delete the footnote frames.
+        // Wir duerfen die Fussnotennodes nicht loeschen
+        // und brauchen die Fussnotenframes nicht loeschen, wenn
+        // wir im ~SwDoc() stehen.
         if( !pDoc->IsInDtor() )
         {
             if( bDelNode )
             {
-                // 2) delete the section for the footnote nodes
-                // it's possible that the Inserts have already been deleted (how???)
+                // 1) Die Section fuer die Fussnote wird beseitigt
+                // Es kann sein, dass die Inserts schon geloescht wurden.
                 pDoc->getIDocumentContentOperations().DeleteSection( &m_pStartNode->GetNode() );
             }
             else
-                // If the nodes are not deleted, their frames must be removed
-                // from the page (deleted), there is nothing else that deletes
-                // them (particularly not Undo)
+                // Werden die Nodes nicht geloescht mussen sie bei den Seiten
+                // abmeldet (Frames loeschen) werden, denn sonst bleiben sie
+                // stehen (Undo loescht sie nicht!)
                 DelFrames( nullptr );
         }
         DELETEZ( m_pStartNode );
 
-        // remove the footnote from the SwDoc's array
+        // loesche die Fussnote noch aus dem Array am Dokument
         for( size_t n = 0; n < pDoc->GetFootnoteIdxs().size(); ++n )
             if( this == pDoc->GetFootnoteIdxs()[n] )
             {
                 pDoc->GetFootnoteIdxs().erase( pDoc->GetFootnoteIdxs().begin() + n );
-                // if necessary, update following footnotes
+                // gibt noch weitere Fussnoten
                 if( !pDoc->IsInDtor() && n < pDoc->GetFootnoteIdxs().size() )
                 {
                     SwNodeIndex aTmp( pDoc->GetFootnoteIdxs()[n]->GetTextNode() );
@@ -346,6 +349,7 @@ void SwTextFootnote::SetNumber( const sal_uInt16 nNewNum, const OUString &sNumSt
         sal_uLong nEndIdx = m_pStartNode->GetNode().EndOfSectionIndex();
         for( ; nSttIdx < nEndIdx; ++nSttIdx )
         {
+            // Es koennen ja auch Grafiken in der Fussnote stehen ...
             SwNode* pNd;
             if( ( pNd = rNodes[ nSttIdx ] )->IsTextNode() )
                 static_cast<SwTextNode*>(pNd)->ModifyNotification( nullptr, &rFootnote );
@@ -353,6 +357,7 @@ void SwTextFootnote::SetNumber( const sal_uInt16 nNewNum, const OUString &sNumSt
     }
 }
 
+// Die Fussnoten duplizieren
 void SwTextFootnote::CopyFootnote(
     SwTextFootnote & rDest,
     SwTextNode & rDestNode ) const
@@ -396,13 +401,13 @@ void SwTextFootnote::CopyFootnote(
     }
 }
 
-/// create a new nodes-array section for the footnote
+    // lege eine neue leere TextSection fuer diese Fussnote an
 void SwTextFootnote::MakeNewTextSection( SwNodes& rNodes )
 {
     if ( m_pStartNode )
         return;
 
-    // set the footnote style on the SwTextNode
+    // Nun verpassen wir dem TextNode noch die Fussnotenvorlage.
     SwTextFormatColl *pFormatColl;
     const SwEndNoteInfo* pInfo;
     sal_uInt16 nPoolId;
@@ -449,8 +454,8 @@ void SwTextFootnote::DelFrames( const SwFrame* pSib )
             }
         }
     }
-    //JP 13.05.97: if the layout is deleted before the footnotes are deleted,
-    //             try to delete the footnote's frames by another way
+    //JP 13.05.97: falls das Layout vorm loeschen der Fussnoten entfernt
+    //              wird, sollte man das ueber die Fussnote selbst tun
     if ( !bFrameFnd && m_pStartNode )
     {
         SwNodeIndex aIdx( *m_pStartNode );

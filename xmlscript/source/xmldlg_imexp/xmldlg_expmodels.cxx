@@ -28,7 +28,6 @@
 #include <com/sun/star/document/XStorageBasedDocument.hpp>
 #include <com/sun/star/document/XGraphicObjectResolver.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <o3tl/any.hxx>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -877,10 +876,10 @@ void ElementDescriptor::readFormattedFieldModel( StyleBag * all_styles )
     switch (a.getValueTypeClass())
     {
     case TypeClass_DOUBLE:
-        addAttribute( XMLNS_DIALOGS_PREFIX ":value-default", OUString::number( *o3tl::forceAccess<double>(a) ) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":value-default", OUString::number( *static_cast<double const *>(a.getValue()) ) );
         break;
     case TypeClass_STRING:
-        addAttribute( XMLNS_DIALOGS_PREFIX ":value-default", *o3tl::forceAccess<OUString>(a) );
+        addAttribute( XMLNS_DIALOGS_PREFIX ":value-default", *static_cast<OUString const *>(a.getValue()) );
         break;
     default:
         break;

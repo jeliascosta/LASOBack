@@ -34,7 +34,7 @@ InputSequenceChecker_th::~InputSequenceChecker_th()
 }
 
 /* Table for Thai Cell Manipulation */
-sal_Char const TAC_celltype_inputcheck[17][17] = {
+sal_Char TAC_celltype_inputcheck[17][17] = {
 /* Cn */ /*  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   A,   B,   C,   D,   E,   F       */
 /* Cn-1 00 */{  'X', 'A', 'A', 'A', 'A', 'A', 'A', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R' },
      /* 10 */{  'X', 'A', 'A', 'A', 'S', 'S', 'A', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R' },
@@ -55,7 +55,7 @@ sal_Char const TAC_celltype_inputcheck[17][17] = {
          { 'X', 'A', 'A', 'A', 'S', 'S', 'A', 'R', 'R', 'R', 'C', 'R', 'C', 'R', 'R', 'R', 'R' }
 };
 
-bool const TAC_Composible[3][5] = {
+bool TAC_Composible[3][5] = {
         /*  'A',    'C',        'S',        'R',        'X'   */
 /* Mode 0 */    {true,  true,   true,   true,   true}, // PASSTHROUGH = 0
 /* Mode 1 */    {true,  true,   true,   false,      true}, // BASIC = 1
@@ -78,7 +78,7 @@ static bool SAL_CALL check(sal_Unicode ch1, sal_Unicode ch2, sal_Int16 inputChec
 
 sal_Bool SAL_CALL
 InputSequenceChecker_th::checkInputSequence(const OUString& Text, sal_Int32 nStartPos,
-    sal_Unicode inputChar, sal_Int16 inputCheckMode)
+    sal_Unicode inputChar, sal_Int16 inputCheckMode) throw(css::uno::RuntimeException, std::exception)
 {
     return check(Text[nStartPos], inputChar, inputCheckMode);
 }
@@ -88,6 +88,7 @@ InputSequenceChecker_th::correctInputSequence(OUString& Text,
                                             sal_Int32       nStartPos,
                                             sal_Unicode     inputChar,
                                             sal_Int16       inputCheckMode)
+  throw(css::uno::RuntimeException, std::exception)
 {
 /* 9 rules for input sequence correction, see issue i42661 for detail,
 

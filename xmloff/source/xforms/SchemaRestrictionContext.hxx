@@ -46,6 +46,7 @@ public:
                               const OUString& rLName,
                               css::uno::Reference<css::xforms::XDataTypeRepository>& rRepository,
                               const OUString& sTypeName );
+    virtual ~SchemaRestrictionContext();
 
 protected:
     // create mxDataType (if not already present)

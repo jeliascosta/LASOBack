@@ -77,7 +77,6 @@ namespace cppu_unourl
                 {
                     cppu::UnoUrlDescriptor aDescriptor(rtl::OUString::createFromAscii(
                                                            aTests[i].pInput));
-                    (void)aDescriptor;
                     bValid = true;
                 }
                 catch (rtl::MalformedUriException &)
@@ -228,8 +227,8 @@ namespace cppu_unourl
                 {}
 
                 CPPUNIT_ASSERT_MESSAGE("Failed to parse URI", bValid);
-                CPPUNIT_ASSERT_EQUAL_MESSAGE("Failed to detect parameter correctly",
-                                       aTests[i].bPresent, bPresent);
+                CPPUNIT_ASSERT_MESSAGE("Failed to detect parameter correctly",
+                                       bPresent == aTests[i].bPresent);
             }
         }
 
@@ -332,7 +331,6 @@ namespace cppu_unourl
                 try
                 {
                     cppu::UnoUrl aUrl(rtl::OUString::createFromAscii(aTests[i].pInput));
-                    (void)aUrl;
                     bValid = true;
                 }
                 catch (rtl::MalformedUriException &)

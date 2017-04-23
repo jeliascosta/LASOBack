@@ -44,7 +44,7 @@ namespace rptxml
         void operator =(const OXMLAutoStylePoolP&) = delete;
     public:
         explicit OXMLAutoStylePoolP(ORptExport& rXMLExport);
-        virtual ~OXMLAutoStylePoolP() override;
+        virtual ~OXMLAutoStylePoolP();
     };
 
 } // rptxml

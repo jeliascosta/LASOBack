@@ -2,7 +2,6 @@ package org.libreoffice.storage.external;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -86,11 +85,6 @@ public class LegacyExtSDDocumentsProvider implements IExternalDocumentProvider,
     @Override
     public int getId() {
         return id;
-    }
-
-    @Override
-    public boolean checkProviderAvailability() {
-        return Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) && Environment.isExternalStorageRemovable();
     }
 
     @Override

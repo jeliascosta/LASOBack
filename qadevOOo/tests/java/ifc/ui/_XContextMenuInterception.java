@@ -98,7 +98,7 @@ public class _XContextMenuInterception extends MultiMethodTest {
         XInterface toolkit = null;
         boolean res = true;
 
-        log.println("get accessibility...");
+        log.println("get accesibility...");
         try{
             toolkit = (XInterface) xMSF.createInstance("com.sun.star.awt.Toolkit");
         } catch (com.sun.star.uno.Exception e){

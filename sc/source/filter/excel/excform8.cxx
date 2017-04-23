@@ -135,7 +135,7 @@ bool ExcelToSc8::HandleOleLink(sal_uInt16 nXtiIndex, const XclImpExtName& rExtNa
 
 // if bAllowArrays is false stream seeks to first byte after <nFormulaLen>
 // otherwise it will seek to the first byte past additional content after <nFormulaLen>
-ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn, std::size_t nFormulaLen, bool bAllowArrays, const FORMULA_TYPE eFT )
+ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn, sal_Size nFormulaLen, bool bAllowArrays, const FORMULA_TYPE eFT )
 {
     bool                    bError = false;
     bool                    bArrayFormula = false;
@@ -147,10 +147,10 @@ ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn,
     const bool              bRNorSF = bRangeNameOrCond || bSharedFormula;
 
     ScSingleRefData         aSRD;
-    ScComplexRefData        aCRD;
+    ScComplexRefData            aCRD;
     ExtensionTypeVec        aExtensions;
 
-    if( eStatus != ConvErr::OK )
+    if( eStatus != ConvOK )
     {
         aIn.Ignore( nFormulaLen );
         return eStatus;
@@ -161,10 +161,10 @@ ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn,
         aPool.Store( OUString( "-/-" ) );
         aPool >> aStack;
         rpTokArray = aPool[ aStack.Get() ];
-        return ConvErr::OK;
+        return ConvOK;
     }
 
-    std::size_t nEndPos = aIn.GetRecPos() + nFormulaLen;
+    sal_Size nEndPos = aIn.GetRecPos() + nFormulaLen;
 
     while( (aIn.GetRecPos() < nEndPos) && !bError )
     {
@@ -293,7 +293,7 @@ ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn,
                 break;
             case 0x17: // String Constant                       [314 266]
             {
-                sal_uInt8 nLen = aIn.ReaduInt8();        // Why?
+                sal_uInt8 nLen = aIn.ReaduInt8();        // und?
                 OUString aString = aIn.ReadUniString( nLen );            // reads Grbit even if nLen==0
 
                 aStack << aPool.Store( aString );
@@ -386,7 +386,7 @@ ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn,
                 {
                     // nFakt -> skip bytes or words    AttrChoose
                     nData++;
-                    aIn.Ignore(static_cast<std::size_t>(nData) * nFakt);
+                    aIn.Ignore(static_cast<sal_Size>(nData) * nFakt);
                 }
                 else if( nOpt & 0x10 )                      // AttrSum
                     DoMulArgs( ocSum, 1 );
@@ -924,36 +924,36 @@ ConvErr ExcelToSc8::Convert( const ScTokenArray*& rpTokArray, XclImpStream& aIn,
         aPool << ocBad;
         aPool >> aStack;
         rpTokArray = aPool[ aStack.Get() ];
-        eRet = ConvErr::Ni;
+        eRet = ConvErrNi;
     }
     else if( aIn.GetRecPos() != nEndPos )
     {
         aPool << ocBad;
         aPool >> aStack;
         rpTokArray = aPool[ aStack.Get() ];
-        eRet = ConvErr::Count;
+        eRet = ConvErrCount;
     }
     else if( bArrayFormula )
     {
         rpTokArray = nullptr;
-        eRet = ConvErr::OK;
+        eRet = ConvOK;
     }
     else
     {
         rpTokArray = aPool[ aStack.Get() ];
-        eRet = ConvErr::OK;
+        eRet = ConvOK;
     }
 
     aIn.Seek( nEndPos );
 
-    if( eRet == ConvErr::OK)
+    if( eRet == ConvOK)
         ReadExtensions( aExtensions, aIn );
 
     return eRet;
 }
 
 // stream seeks to first byte after <nFormulaLen>
-ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std::size_t nFormulaLen,
+ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, sal_Size nFormulaLen,
                               SCsTAB nTab, const FORMULA_TYPE eFT )
 {
     sal_uInt8                   nOp, nLen;
@@ -966,16 +966,18 @@ ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std
     ScSingleRefData         aSRD;
     ScComplexRefData            aCRD;
 
-    if( eStatus != ConvErr::OK )
+    bExternName = false;
+
+    if( eStatus != ConvOK )
     {
         aIn.Ignore( nFormulaLen );
         return eStatus;
     }
 
     if( nFormulaLen == 0 )
-        return ConvErr::OK;
+        return ConvOK;
 
-    std::size_t nEndPos = aIn.GetRecPos() + nFormulaLen;
+    sal_Size nEndPos = aIn.GetRecPos() + nFormulaLen;
 
     while( (aIn.GetRecPos() < nEndPos) && !bError )
     {
@@ -1016,7 +1018,7 @@ ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std
             case 0x16: // Missing Argument                      [314 266]
                 break;
             case 0x17: // String Constant                       [314 266]
-                nLen = aIn.ReaduInt8();        // Why?
+                nLen = aIn.ReaduInt8();        // und?
 
                 aIn.IgnoreUniString( nLen );        // reads Grbit even if nLen==0
                 break;
@@ -1033,7 +1035,7 @@ ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std
                 {
                     // nFakt -> skip bytes or words    AttrChoose
                     ++nData;
-                    aIn.Ignore(static_cast<std::size_t>(nData) * nFakt);
+                    aIn.Ignore(static_cast<sal_Size>(nData) * nFakt);
                 }
             }
                 break;
@@ -1286,17 +1288,19 @@ ConvErr ExcelToSc8::Convert( ScRangeListTabs& rRangeList, XclImpStream& aIn, std
     ConvErr eRet;
 
     if( bError )
-        eRet = ConvErr::Ni;
+        eRet = ConvErrNi;
     else if( aIn.GetRecPos() != nEndPos )
-        eRet = ConvErr::Count;
+        eRet = ConvErrCount;
+    else if( bExternName )
+        eRet = ConvErrExternal;
     else
-        eRet = ConvErr::OK;
+        eRet = ConvOK;
 
     aIn.Seek( nEndPos );
     return eRet;
 }
 
-void ExcelToSc8::ConvertExternName( const ScTokenArray*& rpArray, XclImpStream& rStrm, std::size_t nFormulaLen,
+void ExcelToSc8::ConvertExternName( const ScTokenArray*& rpArray, XclImpStream& rStrm, sal_Size nFormulaLen,
                                        const OUString& rUrl, const vector<OUString>& rTabNames )
 {
     if( !GetDocShell() )
@@ -1310,7 +1314,7 @@ void ExcelToSc8::ConvertExternName( const ScTokenArray*& rpArray, XclImpStream& 
     ScSingleRefData           aSRD;
     ScComplexRefData            aCRD;
 
-    if (eStatus != ConvErr::OK)
+    if (eStatus != ConvOK)
     {
         rStrm.Ignore(nFormulaLen);
         return;
@@ -1328,7 +1332,7 @@ void ExcelToSc8::ConvertExternName( const ScTokenArray*& rpArray, XclImpStream& 
     sal_uInt16 nFileId = pRefMgr->getExternalFileId(aFileUrl);
     sal_uInt16 nTabCount = static_cast< sal_uInt16 >( rTabNames.size() );
 
-    std::size_t nEndPos = rStrm.GetRecPos() + nFormulaLen;
+    sal_Size nEndPos = rStrm.GetRecPos() + nFormulaLen;
 
     while( (rStrm.GetRecPos() < nEndPos) && !bError )
     {
@@ -1463,7 +1467,7 @@ void ExcelToSc8::ExcRelToScRel8( sal_uInt16 nRow, sal_uInt16 nC, ScSingleRefData
                 // relative column references wrap around
                 nRelCol = static_cast<sal_Int16>(256 + (int)nRelCol);
             }
-            rSRD.SetRelCol(nRelCol);
+            rSRD.SetRelCol(static_cast<SCCOL>(nRelCol));
         }
         else
             rSRD.SetAbsCol(static_cast<SCCOL>(nCol));
@@ -1500,16 +1504,16 @@ void ExcelToSc8::ExcRelToScRel8( sal_uInt16 nRow, sal_uInt16 nC, ScSingleRefData
 }
 
 // stream seeks to first byte after <nLen>
-void ExcelToSc8::GetAbsRefs( ScRangeList& r, XclImpStream& aIn, std::size_t nLen )
+void ExcelToSc8::GetAbsRefs( ScRangeList& r, XclImpStream& aIn, sal_Size nLen )
 {
     sal_uInt8                   nOp;
     sal_uInt16                  nRow1, nRow2, nCol1, nCol2;
     SCTAB                                   nTab1, nTab2;
     sal_uInt16                  nIxti;
 
-    std::size_t nSeek;
+    sal_Size nSeek;
 
-    std::size_t nEndPos = aIn.GetRecPos() + nLen;
+    sal_Size nEndPos = aIn.GetRecPos() + nLen;
 
     while( aIn.IsValid() && (aIn.GetRecPos() < nEndPos) )
     {

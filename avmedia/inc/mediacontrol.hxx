@@ -28,8 +28,6 @@
 #include <vcl/toolbox.hxx>
 #include <vcl/edit.hxx>
 #include <vcl/image.hxx>
-#include <vcl/fixed.hxx>
-#include <avmedia/MediaControlBase.hxx>
 
 #define AVMEDIA_CONTROLOFFSET 6
 
@@ -38,20 +36,27 @@ class ListBox;
 namespace avmedia
 {
 
+
+enum MediaControlStyle
+{
+    MEDIACONTROLSTYLE_SINGLELINE = 0,
+    MEDIACONTROLSTYLE_MULTILINE = 1
+};
+
+
 class MediaItem;
 
-class MediaControl : public Control, public MediaControlBase
+class MediaControl : public Control
 {
 public:
 
                         MediaControl( vcl::Window* pParent, MediaControlStyle eControlStyle );
-    virtual             ~MediaControl() override;
+    virtual             ~MediaControl();
     virtual void        dispose() override;
 
     const Size&         getMinSizePixel() const;
 
     void                setState( const MediaItem& rItem );
-    void                UpdateURLField(MediaItem maItem);
 
 protected:
 
@@ -59,24 +64,35 @@ protected:
     virtual void        execute( const MediaItem& rItem ) = 0;
 
     virtual void        Resize() override;
-    virtual void        InitializeWidgets() override;
-    VclPtr<FixedText>        mpMediaPath;
 
 private:
 
-                        DECL_LINK( implTimeHdl, Slider*, void );
-                        DECL_LINK( implTimeEndHdl, Slider*, void );
-                        DECL_LINK( implVolumeHdl, Slider*, void );
-                        DECL_LINK( implSelectHdl, ToolBox*, void );
-                        DECL_LINK( implZoomSelectHdl, ListBox&, void );
-                        DECL_LINK(implTimeoutHdl, Timer *, void);
+    void                implUpdateToolboxes();
+    void                implUpdateTimeSlider();
+    void                implUpdateVolumeSlider();
+    void                implUpdateTimeField( double fCurTime );
+    Image               implGetImage( sal_Int32 nImageId ) const;
 
+                        DECL_LINK_TYPED( implTimeHdl, Slider*, void );
+                        DECL_LINK_TYPED( implTimeEndHdl, Slider*, void );
+                        DECL_LINK_TYPED( implVolumeHdl, Slider*, void );
+                        DECL_LINK_TYPED( implSelectHdl, ToolBox*, void );
+                        DECL_LINK_TYPED( implZoomSelectHdl, ListBox&, void );
+                        DECL_LINK_TYPED(implTimeoutHdl, Idle *, void);
+
+    ImageList           maImageList;
     Idle                maIdle;
     MediaItem           maItem;
-    VclPtr<ToolBox>     mpZoomToolBox;
+    VclPtr<ToolBox>     maPlayToolBox;
+    VclPtr<Slider>      maTimeSlider;
+    VclPtr<ToolBox>     maMuteToolBox;
+    VclPtr<Slider>      maVolumeSlider;
+    VclPtr<ToolBox>     maZoomToolBox;
+    VclPtr<ListBox>     mpZoomListBox;
+    VclPtr<Edit>        maTimeEdit;
     Size                maMinSize;
-    bool                mbLocked;
     MediaControlStyle   meControlStyle;
+    bool                mbLocked;
 };
 
 }

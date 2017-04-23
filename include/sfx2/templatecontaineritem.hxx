@@ -12,9 +12,10 @@
 
 #include <sfx2/templateproperties.hxx>
 
-class TemplateContainerItem final
+class TemplateContainerItem
 {
 public:
+
     sal_uInt16 mnId;
     sal_uInt16 mnRegionId;
     OUString maTitle;
@@ -22,7 +23,7 @@ public:
 
     TemplateContainerItem (sal_uInt16 nId);
 
-    ~TemplateContainerItem ();
+    virtual ~TemplateContainerItem ();
 };
 
 #endif // INCLUDED_SFX2_TEMPLATECONTAINERITEM_HXX

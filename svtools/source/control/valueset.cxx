@@ -55,10 +55,7 @@ enum
 
 }
 
-ValueSet::ValueSet( vcl::Window* pParent, WinBits nWinStyle ) :
-    Control( pParent, nWinStyle ),
-    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
-    maColor( COL_TRANSPARENT )
+void ValueSet::ImplInit()
 {
     mpNoneItem.reset(nullptr);
     mxScrollBar.reset(nullptr);
@@ -98,8 +95,34 @@ ValueSet::ValueSet( vcl::Window* pParent, WinBits nWinStyle ) :
     ImplInitSettings( true, true, true );
 }
 
+ValueSet::ValueSet( vcl::Window* pParent, WinBits nWinStyle ) :
+    Control( pParent, nWinStyle ),
+    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
+    maColor( COL_TRANSPARENT )
+{
+    ImplInit();
+    mbIsTransientChildrenDisabled = false;
+}
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(ValueSet, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(ValueSet)
+{
+    WinBits nWinBits = WB_TABSTOP;
+
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nWinBits |= WB_BORDER;
+
+    rRet = VclPtr<ValueSet>::Create(pParent, nWinBits);
+}
+
+ValueSet::ValueSet( vcl::Window* pParent, const ResId& rResId ) :
+    Control( pParent, rResId ),
+    maVirDev( VclPtr<VirtualDevice>::Create(*this) ),
+    maColor( COL_TRANSPARENT )
+{
+    ImplInit();
+    mbIsTransientChildrenDisabled = false;
+}
 
 ValueSet::~ValueSet()
 {
@@ -129,7 +152,7 @@ void ValueSet::ImplDeleteItems()
             Any aOldAny;
             Any aNewAny;
 
-            aOldAny <<= pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/ );
+            aOldAny <<= pItem->GetAccessible( mbIsTransientChildrenDisabled );
             ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
         }
 
@@ -202,7 +225,7 @@ void ValueSet::ImplInitScrollBar()
     }
 }
 
-void ValueSet::ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* pItem, tools::Rectangle aRect)
+void ValueSet::ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* pItem, Rectangle aRect)
 {
     WinBits nStyle = GetStyle();
     if (nStyle & WB_ITEMBORDER)
@@ -345,7 +368,7 @@ void ValueSet::ImplFormatItem(vcl::RenderContext& rRenderContext, ValueSetItem* 
 
 Reference<XAccessible> ValueSet::CreateAccessible()
 {
-    return new ValueSetAcc( this );
+    return new ValueSetAcc( this, mbIsTransientChildrenDisabled );
 }
 
 void ValueSet::Format(vcl::RenderContext& rRenderContext)
@@ -630,12 +653,12 @@ void ValueSet::Format(vcl::RenderContext& rRenderContext)
                     Any aOldAny;
                     Any aNewAny;
 
-                    aNewAny <<= pItem->GetAccessible(false/*bIsTransientChildrenDisabled*/);
+                    aNewAny <<= pItem->GetAccessible(mbIsTransientChildrenDisabled);
                     ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
                 }
 
                 pItem->mbVisible = true;
-                ImplFormatItem(rRenderContext, pItem, tools::Rectangle(Point(x, y), Size(mnItemWidth, mnItemHeight)));
+                ImplFormatItem(rRenderContext, pItem, Rectangle(Point(x, y), Size(mnItemWidth, mnItemHeight)));
 
                 if (!((i + 1) % mnCols))
                 {
@@ -652,7 +675,7 @@ void ValueSet::Format(vcl::RenderContext& rRenderContext)
                     Any aOldAny;
                     Any aNewAny;
 
-                    aOldAny <<= pItem->GetAccessible(false/*bIsTransientChildrenDisabled*/);
+                    aOldAny <<= pItem->GetAccessible(mbIsTransientChildrenDisabled);
                     ImplFireAccessibleEvent(AccessibleEventId::CHILD, aOldAny, aNewAny);
                 }
 
@@ -704,13 +727,13 @@ void ValueSet::ImplDrawItemText(vcl::RenderContext& rRenderContext, const OUStri
         const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
         rRenderContext.SetLineColor();
         rRenderContext.SetFillColor(rStyleSettings.GetFaceColor());
-        rRenderContext.DrawRect(tools::Rectangle(Point(0, nTxtOffset), Point(aWinSize.Width(), aWinSize.Height())));
+        rRenderContext.DrawRect(Rectangle(Point(0, nTxtOffset), Point(aWinSize.Width(), aWinSize.Height())));
         rRenderContext.SetTextColor(rStyleSettings.GetButtonTextColor());
     }
     else
     {
         nTxtOffset += NAME_LINE_HEIGHT+NAME_LINE_OFF_Y;
-        rRenderContext.Erase(tools::Rectangle(Point(0, nTxtOffset), Point(aWinSize.Width(), aWinSize.Height())));
+        rRenderContext.Erase(Rectangle(Point(0, nTxtOffset), Point(aWinSize.Width(), aWinSize.Height())));
     }
     rRenderContext.DrawText(Point((aWinSize.Width() - nTxtWidth) / 2, nTxtOffset + (NAME_OFFSET / 2)), rText);
 }
@@ -739,7 +762,7 @@ void ValueSet::ImplDrawSelect(vcl::RenderContext& rRenderContext)
 void ValueSet::ImplDrawSelect(vcl::RenderContext& rRenderContext, sal_uInt16 nItemId, const bool bFocus, const bool bDrawSel )
 {
     ValueSetItem* pItem;
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if (nItemId)
     {
         const size_t nPos = GetItemPos( nItemId );
@@ -860,7 +883,7 @@ void ValueSet::ImplDrawSelect(vcl::RenderContext& rRenderContext, sal_uInt16 nIt
             aRect.Top()++;
             aRect.Right()--;
             aRect.Bottom()--;
-            tools::Rectangle aRect2 = aRect;
+            Rectangle aRect2 = aRect;
             aRect.Left()++;
             aRect.Top()++;
             aRect.Right()--;
@@ -897,7 +920,7 @@ void ValueSet::ImplDrawSelect(vcl::RenderContext& rRenderContext, sal_uInt16 nIt
 
 void ValueSet::ImplHideSelect( sal_uInt16 nItemId )
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
 
     const size_t nItemPos = GetItemPos( nItemId );
     if ( nItemPos != VALUESET_ITEM_NOTFOUND )
@@ -1108,7 +1131,7 @@ bool ValueSet::ImplHasAccessibleListeners()
     return( pAcc && pAcc->HasAccessibleListeners() );
 }
 
-IMPL_LINK( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK_TYPED( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
 {
     sal_uInt16 nNewFirstLine = (sal_uInt16)pScrollBar->GetThumbPos();
     if ( nNewFirstLine != mnFirstLine )
@@ -1119,7 +1142,7 @@ IMPL_LINK( ValueSet,ImplScrollHdl, ScrollBar*, pScrollBar, void )
     }
 }
 
-IMPL_LINK_NOARG(ValueSet, ImplTimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ValueSet, ImplTimerHdl, Timer *, void)
 {
     ImplTracking( GetPointerPosPixel(), true );
 }
@@ -1132,7 +1155,7 @@ void ValueSet::ImplTracking( const Point& rPos, bool bRepeat )
         {
             if ( mbSelection )
             {
-                maTimer.SetInvokeHandler( LINK( this, ValueSet, ImplTimerHdl ) );
+                maTimer.SetTimeoutHdl( LINK( this, ValueSet, ImplTimerHdl ) );
                 maTimer.SetTimeout( GetSettings().GetMouseSettings().GetScrollRepeat() );
                 maTimer.Start();
             }
@@ -1211,7 +1234,7 @@ void ValueSet::MouseButtonDown( const MouseEvent& rMouseEvent )
                     StartTracking( StartTrackingFlags::ScrollRepeat );
                 }
                 else if ( rMouseEvent.GetClicks() == 2 )
-                    maDoubleClickHdl.Call( this );
+                    DoubleClick();
 
                 return;
             }
@@ -1419,7 +1442,7 @@ void ValueSet::Command( const CommandEvent& rCommandEvent )
     Control::Command( rCommandEvent );
 }
 
-void ValueSet::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void ValueSet::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     if (GetStyle() & WB_FLATVALUESET)
     {
@@ -1428,7 +1451,7 @@ void ValueSet::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&
         rRenderContext.SetFillColor(rStyleSettings.GetFaceColor());
         long nOffY = maVirDev->GetOutputSizePixel().Height();
         Size aWinSize(GetOutputSizePixel());
-        rRenderContext.DrawRect(tools::Rectangle(Point(0, nOffY ), Point( aWinSize.Width(), aWinSize.Height())));
+        rRenderContext.DrawRect(Rectangle(Point(0, nOffY ), Point( aWinSize.Width(), aWinSize.Height())));
     }
 
     ImplDraw(rRenderContext);
@@ -1436,7 +1459,7 @@ void ValueSet::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&
 
 void ValueSet::GetFocus()
 {
-    SAL_INFO("svtools", "value set getting focus");
+    OSL_TRACE ("value set getting focus");
     Invalidate();
     Control::GetFocus();
 
@@ -1448,7 +1471,7 @@ void ValueSet::GetFocus()
 
 void ValueSet::LoseFocus()
 {
-    SAL_INFO("svtools", "value set losing focus");
+    OSL_TRACE ("value set losing focus");
     if ( mbNoSelection && mnSelItemId )
         ImplHideSelect( mnSelItemId );
     else
@@ -1477,7 +1500,7 @@ void ValueSet::RequestHelp( const HelpEvent& rHelpEvent )
         size_t nItemPos = ImplGetItem( aPos );
         if ( nItemPos != VALUESET_ITEM_NOTFOUND )
         {
-            tools::Rectangle aItemRect = ImplGetItemRect( nItemPos );
+            Rectangle aItemRect = ImplGetItemRect( nItemPos );
             Point aPt = OutputToScreenPixel( aItemRect.TopLeft() );
             aItemRect.Left()   = aPt.X();
             aItemRect.Top()    = aPt.Y();
@@ -1558,6 +1581,11 @@ void ValueSet::Select()
     maSelectHdl.Call( this );
 }
 
+void ValueSet::DoubleClick()
+{
+    maDoubleClickHdl.Call( this );
+}
+
 void ValueSet::UserDraw( const UserDrawEvent& )
 {
 }
@@ -1623,7 +1651,7 @@ void ValueSet::ImplInsertItem( ValueSetItem *const pItem, const size_t nPos )
         Invalidate();
 }
 
-tools::Rectangle ValueSet::ImplGetItemRect( size_t nPos ) const
+Rectangle ValueSet::ImplGetItemRect( size_t nPos ) const
 {
     const size_t nVisibleBegin = static_cast<size_t>(mnFirstLine)*mnCols;
     const size_t nVisibleEnd = nVisibleBegin + static_cast<size_t>(mnVisLines)*mnCols;
@@ -1631,7 +1659,7 @@ tools::Rectangle ValueSet::ImplGetItemRect( size_t nPos ) const
     // Check if the item is inside the range of the displayed ones,
     // taking into account that last row could be incomplete
     if ( nPos<nVisibleBegin || nPos>=nVisibleEnd || nPos>=mItemList.size() )
-        return tools::Rectangle();
+        return Rectangle();
 
     nPos -= nVisibleBegin;
 
@@ -1640,7 +1668,7 @@ tools::Rectangle ValueSet::ImplGetItemRect( size_t nPos ) const
     const long x = maItemListRect.Left()+col*(mnItemWidth+mnSpacing);
     const long y = maItemListRect.Top()+row*(mnItemHeight+mnSpacing);
 
-    return tools::Rectangle( Point(x, y), Size(mnItemWidth, mnItemHeight) );
+    return Rectangle( Point(x, y), Size(mnItemWidth, mnItemHeight) );
 }
 
 void ValueSet::RemoveItem( sal_uInt16 nItemId )
@@ -1718,14 +1746,14 @@ sal_uInt16 ValueSet::GetItemId( const Point& rPos ) const
     return 0;
 }
 
-tools::Rectangle ValueSet::GetItemRect( sal_uInt16 nItemId ) const
+Rectangle ValueSet::GetItemRect( sal_uInt16 nItemId ) const
 {
     const size_t nPos = GetItemPos( nItemId );
 
     if ( nPos!=VALUESET_ITEM_NOTFOUND && mItemList[nPos]->mbVisible )
         return ImplGetItemRect( nPos );
 
-    return tools::Rectangle();
+    return Rectangle();
 }
 
 void ValueSet::EnableFullItemMode( bool bFullMode )
@@ -1877,14 +1905,22 @@ void ValueSet::SelectItem( sal_uInt16 nItemId )
                 if( nPos != VALUESET_ITEM_NOTFOUND )
                 {
                     ValueItemAcc* pItemAcc = ValueItemAcc::getImplementation(
-                        mItemList[nPos]->GetAccessible( false/*bIsTransientChildrenDisabled*/ ) );
+                        mItemList[nPos]->GetAccessible( mbIsTransientChildrenDisabled ) );
 
                     if( pItemAcc )
                     {
                         Any aOldAny;
                         Any aNewAny;
-                        aOldAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
-                        ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny );
+                        if( !mbIsTransientChildrenDisabled )
+                        {
+                            aOldAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
+                            ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny );
+                        }
+                        else
+                        {
+                            aOldAny <<= AccessibleStateType::FOCUSED;
+                            pItemAcc->FireAccessibleEvent(AccessibleEventId::STATE_CHANGED, aOldAny, aNewAny);
+                        }
                     }
                 }
             }
@@ -1900,14 +1936,22 @@ void ValueSet::SelectItem( sal_uInt16 nItemId )
 
             ValueItemAcc* pItemAcc = nullptr;
             if (pItem != nullptr)
-                pItemAcc = ValueItemAcc::getImplementation( pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/ ) );
+                pItemAcc = ValueItemAcc::getImplementation( pItem->GetAccessible( mbIsTransientChildrenDisabled ) );
 
             if( pItemAcc )
             {
                 Any aOldAny;
                 Any aNewAny;
-                aNewAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
-                ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny);
+                if( !mbIsTransientChildrenDisabled )
+                {
+                    aNewAny <<= Reference<XInterface>(static_cast<cppu::OWeakObject*>(pItemAcc));
+                    ImplFireAccessibleEvent(AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldAny, aNewAny);
+                }
+                else
+                {
+                    aNewAny <<= AccessibleStateType::FOCUSED;
+                    pItemAcc->FireAccessibleEvent(AccessibleEventId::STATE_CHANGED, aOldAny, aNewAny);
+                }
             }
 
             // selection event
@@ -1942,7 +1986,7 @@ void ValueSet::SetItemImage( sal_uInt16 nItemId, const Image& rImage )
 
     if ( !mbFormat && IsReallyVisible() && IsUpdateMode() )
     {
-        const tools::Rectangle aRect = ImplGetItemRect(nPos);
+        const Rectangle aRect = ImplGetItemRect(nPos);
         Invalidate(aRect);
     }
     else
@@ -1972,7 +2016,7 @@ void ValueSet::SetItemColor( sal_uInt16 nItemId, const Color& rColor )
 
     if ( !mbFormat && IsReallyVisible() && IsUpdateMode() )
     {
-        const tools::Rectangle aRect = ImplGetItemRect(nPos);
+        const Rectangle aRect = ImplGetItemRect(nPos);
         Invalidate( aRect );
     }
     else
@@ -2003,7 +2047,7 @@ void ValueSet::SetItemData( sal_uInt16 nItemId, void* pData )
     {
         if ( !mbFormat && IsReallyVisible() && IsUpdateMode() )
         {
-            const tools::Rectangle aRect = ImplGetItemRect(nPos);
+            const Rectangle aRect = ImplGetItemRect(nPos);
             Invalidate(aRect);
         }
         else
@@ -2054,7 +2098,7 @@ void ValueSet::SetItemText(sal_uInt16 nItemId, const OUString& rText)
 
     if (ImplHasAccessibleListeners())
     {
-        Reference<XAccessible> xAccessible(pItem->GetAccessible( false/*bIsTransientChildrenDisabled*/));
+        Reference<XAccessible> xAccessible(pItem->GetAccessible( mbIsTransientChildrenDisabled));
         ValueItemAcc* pValueItemAcc = static_cast<ValueItemAcc*>(xAccessible.get());
         pValueItemAcc->FireAccessibleEvent(AccessibleEventId::NAME_CHANGED, aOldName, aNewName);
     }

@@ -152,7 +152,7 @@ OUString OColumnControlWindow::getAutoIncrementValue() const
     return m_sAutoIncrementValue;
 }
 
-TOTypeInfoSP const & OColumnControlWindow::getDefaultTyp() const
+TOTypeInfoSP OColumnControlWindow::getDefaultTyp() const
 {
     if ( !m_pTypeInfo.get() )
     {

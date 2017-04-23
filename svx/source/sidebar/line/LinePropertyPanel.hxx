@@ -43,19 +43,26 @@ class ListBox;
 class ToolBox;
 class FloatingWindow;
 
+namespace
+{
+
 #define SIDEBAR_LINE_WIDTH_GLOBAL_VALUE "PopupPanel_LineWidth"
+
+} //end of anonymous namespace
 
 namespace svx
 {
 namespace sidebar
 {
 
+class PopupContainer;
+
 class LinePropertyPanel : public LinePropertyPanelBase,
                           public sfx2::sidebar::IContextChangeReceiver,
                           public sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 public:
-    virtual ~LinePropertyPanel() override;
+    virtual ~LinePropertyPanel();
     virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create(
@@ -64,7 +71,7 @@ public:
         SfxBindings* pBindings);
 
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -74,7 +81,7 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destructor
+    // constructor/destuctor
     LinePropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
@@ -106,7 +113,9 @@ private:
     sfx2::sidebar::ControllerItem maCapStyle;
 
     SfxBindings* mpBindings;
-    vcl::EnumContext maContext;
+    sfx2::sidebar::EnumContext maContext;
+
+    void Initialize();
 };
 
 } } // end of namespace svx::sidebar

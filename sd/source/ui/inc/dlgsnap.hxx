@@ -55,11 +55,11 @@ private:
     FieldUnit           eUIUnit;
     Fraction            aUIScale;
 
-    DECL_LINK( ClickHdl, Button *, void );
+    DECL_LINK_TYPED( ClickHdl, Button *, void );
 
 public:
     SdSnapLineDlg(vcl::Window* pWindow, const SfxItemSet& rInAttrs, ::sd::View* pView);
-    virtual ~SdSnapLineDlg() override;
+    virtual ~SdSnapLineDlg();
     virtual void dispose() override;
 
     void GetAttr(SfxItemSet& rOutAttrs);

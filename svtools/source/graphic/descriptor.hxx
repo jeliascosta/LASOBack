@@ -68,34 +68,37 @@ class GraphicDescriptor : public ::cppu::OWeakAggObject,
 public:
 
     GraphicDescriptor();
-    virtual ~GraphicDescriptor() throw() override;
+    virtual ~GraphicDescriptor() throw();
 
     void init( const ::Graphic& rGraphic );
     void init( const OUString& rURL );
     void init( const css::uno::Reference< css::io::XInputStream >& rxIStm, const OUString& rURL );
+
+    static OUString getImplementationName_Static() throw();
+    static css::uno::Sequence< OUString >  getSupportedServiceNames_Static() throw();
 
 protected:
 
     static ::comphelper::PropertySetInfo* createPropertySetInfo();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type & rType ) override;
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw() override;
     virtual void SAL_CALL release() throw() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // PropertySetHelper
-     virtual void _setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const css::uno::Any* pValues ) override;
-     virtual void _getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, css::uno::Any* pValue ) override;
+     virtual void _setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const css::uno::Any* pValues ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException ) override;
+     virtual void _getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, css::uno::Any* pValue ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 private:
 
@@ -106,6 +109,8 @@ private:
     Size                    maSize100thMM;
     sal_uInt16              mnBitsPerPixel;
     bool                    mbTransparent;
+    bool                    mbAlpha;
+    bool                    mbAnimated;
 
     GraphicDescriptor( const GraphicDescriptor& rDescriptor ) = delete;
 

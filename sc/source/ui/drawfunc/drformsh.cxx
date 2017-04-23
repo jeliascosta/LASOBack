@@ -35,7 +35,7 @@
 #include "drawview.hxx"
 #include "scresid.hxx"
 #include <svx/svdobj.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 
 #define ScDrawFormShell
 #include "scslots.hxx"
@@ -44,8 +44,7 @@ SFX_IMPL_INTERFACE(ScDrawFormShell, ScDrawShell)
 
 void ScDrawFormShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT,
-                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER,
                                             RID_OBJECTBAR_FORMAT);
 
     GetStaticInterface()->RegisterPopupMenu("form");
@@ -55,8 +54,9 @@ void ScDrawFormShell::InitInterface_Impl()
 ScDrawFormShell::ScDrawFormShell(ScViewData* pData) :
     ScDrawShell(pData)
 {
+    SetHelpId(HID_SCSHELL_DRAWFORMSH);
     SetName("DrawForm");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Form));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Form));
 }
 
 ScDrawFormShell::~ScDrawFormShell()

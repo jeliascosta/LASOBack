@@ -34,16 +34,14 @@ $(eval $(call gb_Module_add_l10n_targets,writerperfect,\
 
 $(eval $(call gb_Module_add_check_targets,writerperfect,\
 	CppunitTest_writerperfect_stream \
-	CppunitTest_writerperfect_wpftimport \
 ))
 
 $(eval $(call gb_Module_add_slowcheck_targets,writerperfect,\
 	CppunitTest_writerperfect_calc \
 	CppunitTest_writerperfect_draw \
-	CppunitTest_writerperfect_import \
 	CppunitTest_writerperfect_impress \
 	CppunitTest_writerperfect_writer \
-	Library_wpftqahelper \
+	StaticLibrary_writerperfect_importtestbase \
 ))
 
 # vim: set noet sw=4 ts=4:

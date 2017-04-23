@@ -159,10 +159,11 @@ namespace drawinglayer
             Color                                   maFormTextShdwColor;    // shadow color
 
             // outline attributes; used when getFormTextOutline() is true and (for
-            // shadow) when getFormTextShadow() != XFormTextShadow::NONE
+            // shadow) when getFormTextShadow() != XFTSHADOW_NONE
             SdrFormTextOutlineAttribute             maOutline;
             SdrFormTextOutlineAttribute             maShadowOutline;
 
+            // bitfield
             bool                                    mbFormTextMirror : 1;   // change orientation
             bool                                    mbFormTextOutline : 1;  // show contour of objects
 
@@ -194,7 +195,7 @@ namespace drawinglayer
                             aLineAttribute, aStrokeAttribute, nTransparence);
                     }
 
-                    if(XFormTextShadow::NONE != getFormTextShadow())
+                    if(XFTSHADOW_NONE != getFormTextShadow())
                     {
                         // also need to prepare attributes for shadow outlines
                         const LineAttribute aLineAttribute(impGetLineAttribute(true, rSet));
@@ -212,9 +213,9 @@ namespace drawinglayer
                 mnFormTextShdwXVal(0),
                 mnFormTextShdwYVal(0),
                 mnFormTextShdwTransp(0),
-                meFormTextStyle(XFormTextStyle::NONE),
-                meFormTextAdjust(XFormTextAdjust::Center),
-                meFormTextShadow(XFormTextShadow::NONE),
+                meFormTextStyle(XFT_NONE),
+                meFormTextAdjust(XFT_CENTER),
+                meFormTextShadow(XFTSHADOW_NONE),
                 maFormTextShdwColor(),
                 maOutline(),
                 maShadowOutline(),
@@ -228,6 +229,7 @@ namespace drawinglayer
             sal_Int32 getFormTextStart() const { return mnFormTextStart; }
             sal_Int32 getFormTextShdwXVal() const { return mnFormTextShdwXVal; }
             sal_Int32 getFormTextShdwYVal() const { return mnFormTextShdwYVal; }
+            sal_uInt16 getFormTextShdwTransp() const { return mnFormTextShdwTransp; }
             XFormTextStyle getFormTextStyle() const { return meFormTextStyle; }
             XFormTextAdjust getFormTextAdjust() const { return meFormTextAdjust; }
             XFormTextShadow getFormTextShadow() const { return meFormTextShadow; }
@@ -244,7 +246,7 @@ namespace drawinglayer
                     && getFormTextStart() == rCandidate.getFormTextStart()
                     && getFormTextShdwXVal() == rCandidate.getFormTextShdwXVal()
                     && getFormTextShdwYVal() == rCandidate.getFormTextShdwYVal()
-                    && mnFormTextShdwTransp == rCandidate.mnFormTextShdwTransp
+                    && getFormTextShdwTransp() == rCandidate.getFormTextShdwTransp()
                     && getFormTextStyle() == rCandidate.getFormTextStyle()
                     && getFormTextAdjust() == rCandidate.getFormTextAdjust()
                     && getFormTextShadow() == rCandidate.getFormTextShadow()
@@ -277,11 +279,6 @@ namespace drawinglayer
         {
         }
 
-        SdrFormTextAttribute::SdrFormTextAttribute(SdrFormTextAttribute&& rCandidate)
-        :   mpSdrFormTextAttribute(std::move(rCandidate.mpSdrFormTextAttribute))
-        {
-        }
-
         SdrFormTextAttribute::~SdrFormTextAttribute()
         {
         }
@@ -294,12 +291,6 @@ namespace drawinglayer
         SdrFormTextAttribute& SdrFormTextAttribute::operator=(const SdrFormTextAttribute& rCandidate)
         {
             mpSdrFormTextAttribute = rCandidate.mpSdrFormTextAttribute;
-            return *this;
-        }
-
-        SdrFormTextAttribute& SdrFormTextAttribute::operator=(SdrFormTextAttribute&& rCandidate)
-        {
-            mpSdrFormTextAttribute = std::move(rCandidate.mpSdrFormTextAttribute);
             return *this;
         }
 

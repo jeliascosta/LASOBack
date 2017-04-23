@@ -21,8 +21,6 @@
 #include <rtl/ustring.hxx>
 #include <sal/macros.h>
 
-#include <win/salframe.h>
-
 #include <windows.h>
 
 // Use unique ;) names to avoid clashes with the KEY_* (especially
@@ -194,7 +192,7 @@ namespace vcl_sal {
     };
 
     // translate keycodes, used within the displayed menu shortcuts
-    OUString getKeysReplacementName( OUString const & pLang, LONG nSymbol )
+    OUString getKeysReplacementName( OUString pLang, LONG nSymbol )
     {
         for( unsigned int n = 0; n < SAL_N_ELEMENTS(aKeyboards); n++ )
         {

@@ -44,7 +44,6 @@ import com.sun.star.util.Date;
 *  <li><code> RegularExpressions</code></li>
 *  <li><code> ForbiddenCharacters</code></li>
 *  <li><code> HasDrawPages</code></li>
-*  <li><code> Wildcards</code></li>
 * </ul> <p>
 * Properties testing is automated by <code>lib.MultiPropertyTest</code>.
 * @see com.sun.star.sheet.SpreadsheetDocumentSettings

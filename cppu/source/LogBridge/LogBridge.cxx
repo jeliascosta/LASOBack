@@ -40,7 +40,7 @@ class LogBridge : public cppu::Enterable
     sal_Int32           m_count;
     oslThreadIdentifier m_threadId;
 
-    virtual  ~LogBridge() override;
+    virtual  ~LogBridge();
 
 public:
     explicit LogBridge();

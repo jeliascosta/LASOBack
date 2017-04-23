@@ -28,20 +28,16 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/Pipe.hpp>
 #include <com/sun/star/io/XActiveDataSink.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
 #include <com/sun/star/ucb/CommandEnvironment.hpp>
 #include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ucb/ContentInfoAttribute.hpp>
 #include <com/sun/star/ucb/GlobalTransferCommandArgument2.hpp>
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <com/sun/star/ucb/InsertCommandArgument2.hpp>
 #include <com/sun/star/ucb/InteractiveBadTransferURLException.hpp>
 #include <com/sun/star/ucb/NameClash.hpp>
@@ -49,7 +45,6 @@
 #include <com/sun/star/ucb/OpenCommandArgument2.hpp>
 #include <com/sun/star/ucb/OpenMode.hpp>
 #include <com/sun/star/ucb/TransferInfo2.hpp>
-#include <com/sun/star/ucb/UnsupportedCommandException.hpp>
 #include <com/sun/star/ucb/UnsupportedNameClashException.hpp>
 #include <com/sun/star/ucb/XCommandInfo.hpp>
 #include <com/sun/star/ucb/XContentAccess.hpp>
@@ -106,13 +101,15 @@ public:
 
     // XInteractionHandler methods.
     virtual void SAL_CALL handle(
-            const uno::Reference< task::XInteractionRequest >& Request ) override;
+            const uno::Reference< task::XInteractionRequest >& Request )
+        throw ( uno::RuntimeException, std::exception ) override;
 };
 
 
 // virtual
 void SAL_CALL InteractionHandlerProxy::handle(
             const uno::Reference< task::XInteractionRequest >& Request )
+    throw ( uno::RuntimeException, std::exception )
 {
     if ( !m_xOrig.is() )
         return;
@@ -171,14 +168,17 @@ class ActiveDataSink : public cppu::WeakImplHelper< io::XActiveDataSink >
 public:
     // XActiveDataSink methods.
     virtual void SAL_CALL setInputStream(
-                        const uno::Reference< io::XInputStream >& aStream ) override;
-    virtual uno::Reference< io::XInputStream > SAL_CALL getInputStream() override;
+                        const uno::Reference< io::XInputStream >& aStream )
+        throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Reference< io::XInputStream > SAL_CALL getInputStream()
+        throw( uno::RuntimeException, std::exception ) override;
 };
 
 
 // virtual
 void SAL_CALL ActiveDataSink::setInputStream(
                         const uno::Reference< io::XInputStream >& aStream )
+    throw( uno::RuntimeException, std::exception )
 {
     m_xStream = aStream;
 }
@@ -186,6 +186,7 @@ void SAL_CALL ActiveDataSink::setInputStream(
 
 // virtual
 uno::Reference< io::XInputStream > SAL_CALL ActiveDataSink::getInputStream()
+    throw( uno::RuntimeException, std::exception )
 {
     return m_xStream;
 }
@@ -197,47 +198,61 @@ uno::Reference< io::XInputStream > SAL_CALL ActiveDataSink::getInputStream()
 class CommandProcessorInfo :
     public cppu::WeakImplHelper< ucb::XCommandInfo >
 {
-    std::unique_ptr< uno::Sequence< ucb::CommandInfo > > m_pInfo;
+    uno::Sequence< ucb::CommandInfo > * m_pInfo;
 
 public:
     CommandProcessorInfo();
+    virtual ~CommandProcessorInfo();
 
     // XCommandInfo methods
-    virtual uno::Sequence< ucb::CommandInfo > SAL_CALL getCommands() override;
+    virtual uno::Sequence< ucb::CommandInfo > SAL_CALL getCommands()
+        throw( uno::RuntimeException, std::exception ) override;
     virtual ucb::CommandInfo SAL_CALL
-    getCommandInfoByName( const OUString& Name ) override;
+    getCommandInfoByName( const OUString& Name )
+        throw( ucb::UnsupportedCommandException, uno::RuntimeException, std::exception ) override;
     virtual ucb::CommandInfo SAL_CALL
-    getCommandInfoByHandle( sal_Int32 Handle ) override;
-    virtual sal_Bool SAL_CALL hasCommandByName( const OUString& Name ) override;
-    virtual sal_Bool SAL_CALL hasCommandByHandle( sal_Int32 Handle ) override;
+    getCommandInfoByHandle( sal_Int32 Handle )
+        throw( ucb::UnsupportedCommandException, uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL hasCommandByName( const OUString& Name )
+        throw( uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL hasCommandByHandle( sal_Int32 Handle )
+        throw( uno::RuntimeException, std::exception ) override;
 };
 
 
 CommandProcessorInfo::CommandProcessorInfo()
 {
-    m_pInfo.reset( new uno::Sequence< ucb::CommandInfo >( 2 ) );
+    m_pInfo = new uno::Sequence< ucb::CommandInfo >( 2 );
 
     (*m_pInfo)[ 0 ]
         = ucb::CommandInfo(
-            GETCOMMANDINFO_NAME, // Name
+            OUString( GETCOMMANDINFO_NAME ), // Name
             GETCOMMANDINFO_HANDLE, // Handle
             cppu::UnoType<void>::get() ); // ArgType
     (*m_pInfo)[ 1 ]
         = ucb::CommandInfo(
-            GLOBALTRANSFER_NAME, // Name
+            OUString( GLOBALTRANSFER_NAME ), // Name
             GLOBALTRANSFER_HANDLE, // Handle
             cppu::UnoType<ucb::GlobalTransferCommandArgument>::get() ); // ArgType
     (*m_pInfo)[ 2 ]
         = ucb::CommandInfo(
-            CHECKIN_NAME, // Name
+            OUString( CHECKIN_NAME ), // Name
             CHECKIN_HANDLE, // Handle
             cppu::UnoType<ucb::CheckinArgument>::get() ); // ArgType
 }
 
 
 // virtual
+CommandProcessorInfo::~CommandProcessorInfo()
+{
+    delete m_pInfo;
+}
+
+
+// virtual
 uno::Sequence< ucb::CommandInfo > SAL_CALL
 CommandProcessorInfo::getCommands()
+    throw( uno::RuntimeException, std::exception )
 {
     return uno::Sequence< ucb::CommandInfo >( *m_pInfo );
 }
@@ -246,6 +261,7 @@ CommandProcessorInfo::getCommands()
 // virtual
 ucb::CommandInfo SAL_CALL
 CommandProcessorInfo::getCommandInfoByName( const OUString& Name )
+    throw( ucb::UnsupportedCommandException, uno::RuntimeException, std::exception )
 {
     for ( sal_Int32 n = 0; n < m_pInfo->getLength(); ++n )
     {
@@ -260,6 +276,7 @@ CommandProcessorInfo::getCommandInfoByName( const OUString& Name )
 // virtual
 ucb::CommandInfo SAL_CALL
 CommandProcessorInfo::getCommandInfoByHandle( sal_Int32 Handle )
+    throw( ucb::UnsupportedCommandException, uno::RuntimeException, std::exception )
 {
     for ( sal_Int32 n = 0; n < m_pInfo->getLength(); ++n )
     {
@@ -274,6 +291,7 @@ CommandProcessorInfo::getCommandInfoByHandle( sal_Int32 Handle )
 // virtual
 sal_Bool SAL_CALL CommandProcessorInfo::hasCommandByName(
                                                 const OUString& Name )
+    throw( uno::RuntimeException, std::exception )
 {
     for ( sal_Int32 n = 0; n < m_pInfo->getLength(); ++n )
     {
@@ -287,6 +305,7 @@ sal_Bool SAL_CALL CommandProcessorInfo::hasCommandByName(
 
 // virtual
 sal_Bool SAL_CALL CommandProcessorInfo::hasCommandByHandle( sal_Int32 Handle )
+    throw( uno::RuntimeException, std::exception )
 {
     for ( sal_Int32 n = 0; n < m_pInfo->getLength(); ++n )
     {
@@ -434,21 +453,22 @@ NameClashContinuation interactiveNameClashResolve(
     return NOT_HANDLED;
 }
 
-/// @throws uno::RuntimeException
+
 bool setTitle(
         const uno::Reference< ucb::XCommandProcessor > & xCommandProcessor,
         const uno::Reference< ucb::XCommandEnvironment > & xEnv,
         const OUString & rNewTitle )
+    throw( uno::RuntimeException )
 {
     try
     {
         uno::Sequence< beans::PropertyValue > aPropValues( 1 );
         aPropValues[ 0 ].Name = "Title";
         aPropValues[ 0 ].Handle = -1;
-        aPropValues[ 0 ].Value  <<= rNewTitle;
+        aPropValues[ 0 ].Value  = uno::makeAny( rNewTitle );
 
         ucb::Command aSetPropsCommand(
-            "setPropertyValues",
+            OUString(  "setPropertyValues"  ),
             -1,
             uno::makeAny( aPropValues ) );
 
@@ -480,13 +500,14 @@ bool setTitle(
     return true;
 }
 
-/// @throws uno::Exception
+
 uno::Reference< ucb::XContent > createNew(
                     const TransferCommandContext & rContext,
                     const uno::Reference< ucb::XContent > & xTarget,
                     bool bSourceIsFolder,
                     bool bSourceIsDocument,
                     bool bSourceIsLink )
+    throw( uno::Exception )
 {
 
 
@@ -502,7 +523,7 @@ uno::Reference< ucb::XContent > createNew(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Folder",
+                                  OUString( "Folder"),
                                   -1,
                                   uno::makeAny(rContext.aArg.TargetURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -520,7 +541,7 @@ uno::Reference< ucb::XContent > createNew(
     aPropsToObtain[ 0 ].Handle = -1;
 
     ucb::Command aGetPropsCommand(
-            "getPropertyValues",
+            OUString("getPropertyValues"),
             -1,
             uno::makeAny( aPropsToObtain ) );
 
@@ -553,7 +574,7 @@ uno::Reference< ucb::XContent > createNew(
         {
             uno::Any aProps
                 = uno::makeAny(beans::PropertyValue(
-                                  "Folder",
+                                  OUString( "Folder"),
                                   -1,
                                   uno::makeAny(rContext.aArg.TargetURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -574,7 +595,7 @@ uno::Reference< ucb::XContent > createNew(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                              "Folder",
+                              OUString("Folder"),
                               -1,
                               uno::makeAny(rContext.aArg.TargetURL),
                               beans::PropertyState_DIRECT_VALUE));
@@ -646,7 +667,7 @@ uno::Reference< ucb::XContent > createNew(
         {
             ucbhelper::cancelCommandExecution(
                 uno::makeAny( lang::IllegalArgumentException(
-                                        "Unknown transfer operation!",
+                                        OUString( "Unknown transfer operation!" ),
                                         rContext.xProcessor,
                                         -1 ) ),
                               rContext.xOrigEnv );
@@ -665,7 +686,7 @@ uno::Reference< ucb::XContent > createNew(
                 // First, try it using "CreatabeleContentsInfo" property and
                 // "createNewContent" command -> the "new" way.
                 ucb::Command aCreateNewCommand(
-                   "createNewContent",
+                   OUString("createNewContent"),
                    -1,
                    uno::makeAny( aTypesInfo[ n ] ) );
 
@@ -685,7 +706,7 @@ uno::Reference< ucb::XContent > createNew(
                 uno::Any aProps
                     = uno::makeAny(
                              beans::PropertyValue(
-                                 "Folder",
+                                 OUString( "Folder"),
                                  -1,
                                  uno::makeAny(rContext.aArg.TargetURL),
                                  beans::PropertyState_DIRECT_VALUE));
@@ -704,14 +725,15 @@ uno::Reference< ucb::XContent > createNew(
     return xNew;
 }
 
-/// @throws uno::Exception
+
 void transferProperties(
     const TransferCommandContext & rContext,
     const uno::Reference< ucb::XCommandProcessor > & xCommandProcessorS,
     const uno::Reference< ucb::XCommandProcessor > & xCommandProcessorN )
+        throw( uno::Exception )
 {
     ucb::Command aGetPropertySetInfoCommand(
-                "getPropertySetInfo",
+                OUString("getPropertySetInfo"),
                 -1,
                 uno::Any() );
 
@@ -723,7 +745,7 @@ void transferProperties(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rContext.aArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -739,7 +761,7 @@ void transferProperties(
     uno::Sequence< beans::Property > aAllProps = xInfo->getProperties();
 
     ucb::Command aGetPropsCommand1(
-                "getPropertyValues",
+                OUString("getPropertyValues"),
                 -1,
                 uno::makeAny( aAllProps ) );
 
@@ -751,7 +773,7 @@ void transferProperties(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rContext.aArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -852,7 +874,7 @@ void transferProperties(
     // Set properties at new object.
 
     ucb::Command aSetPropsCommand(
-                "setPropertyValues",
+                OUString("setPropertyValues"),
                 -1,
                 uno::makeAny( aPropValues ) );
 
@@ -862,10 +884,11 @@ void transferProperties(
     //     new object? addProperty ???
 }
 
-/// @throws uno::Exception
+
 uno::Reference< io::XInputStream > getInputStream(
     const TransferCommandContext & rContext,
     const uno::Reference< ucb::XCommandProcessor > & xCommandProcessorS )
+        throw( uno::Exception )
 {
     uno::Reference< io::XInputStream > xInputStream;
 
@@ -884,7 +907,7 @@ uno::Reference< io::XInputStream > getInputStream(
         aArg.Properties = uno::Sequence< beans::Property >( 0 ); // unused
 
         ucb::Command aOpenCommand(
-                                "open",
+                                OUString("open"),
                                 -1,
                                 uno::makeAny( aArg ) );
 
@@ -918,7 +941,7 @@ uno::Reference< io::XInputStream > getInputStream(
             aArg.Properties = uno::Sequence< beans::Property >( 0 );
 
             ucb::Command aOpenCommand(
-                                "open",
+                                OUString("open"),
                                 -1,
                                 uno::makeAny( aArg ) );
 
@@ -939,10 +962,11 @@ uno::Reference< io::XInputStream > getInputStream(
     return xInputStream;
 }
 
-/// @throws uno::Exception
+
 uno::Reference< sdbc::XResultSet > getResultSet(
     const TransferCommandContext & rContext,
     const uno::Reference< ucb::XCommandProcessor > & xCommandProcessorS )
+        throw( uno::Exception )
 {
     uno::Reference< sdbc::XResultSet > xResultSet;
 
@@ -961,7 +985,7 @@ uno::Reference< sdbc::XResultSet > getResultSet(
     aArg.Sink       = nullptr;
     aArg.Properties = aProps;
 
-    ucb::Command aOpenCommand( "open",
+    ucb::Command aOpenCommand( OUString("open"),
                                      -1,
                                      uno::makeAny( aArg ) );
     try
@@ -984,7 +1008,7 @@ uno::Reference< sdbc::XResultSet > getResultSet(
     return xResultSet;
 }
 
-/// @throws uno::Exception
+
 void handleNameClashRename(
         const TransferCommandContext & rContext,
         const uno::Reference< ucb::XContent > & xNew,
@@ -993,6 +1017,7 @@ void handleNameClashRename(
         const uno::Reference<
             ucb::XCommandProcessor > & xCommandProcessorS,
         /* [inout] */ uno::Reference< io::XInputStream > & xInputStream )
+    throw( uno::Exception, std::exception )
 {
     sal_Int32 nTry = 0;
 
@@ -1002,7 +1027,7 @@ void handleNameClashRename(
     aProps[ 0 ].Handle = -1;
 
     ucb::Command aGetPropsCommand(
-            "getPropertyValues",
+            OUString("getPropertyValues"),
             -1,
             uno::makeAny( aProps ) );
 
@@ -1014,7 +1039,7 @@ void handleNameClashRename(
         uno::Any aProps2
             = uno::makeAny(
                      beans::PropertyValue(
-                         "Uri",
+                         OUString(  "Uri"  ),
                          -1,
                          uno::makeAny(
                              xNew->getIdentifier()->getContentIdentifier() ),
@@ -1033,7 +1058,7 @@ void handleNameClashRename(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( beans::UnknownPropertyException(
-                            "Unable to get property 'Title' from new object!",
+                            OUString( "Unable to get property 'Title' from new object!" ),
                             rContext.xProcessor ) ),
             rContext.xOrigEnv );
         // Unreachable
@@ -1102,7 +1127,7 @@ void handleNameClashRename(
                         uno::Any aProps2
                             = uno::makeAny(
                                 beans::PropertyValue(
-                                    "Uri",
+                                    OUString( "Uri"  ),
                                     -1,
                                     uno::makeAny(
                                         xNew->getIdentifier()->
@@ -1124,7 +1149,7 @@ void handleNameClashRename(
             aArg.ReplaceExisting = false;
 
             ucb::Command aInsertCommand(
-                        "insert",
+                        OUString("insert"),
                         -1,
                         uno::makeAny( aArg ) );
 
@@ -1148,7 +1173,7 @@ void handleNameClashRename(
         ucbhelper::cancelCommandExecution(
             uno::makeAny(
                 ucb::UnsupportedNameClashException(
-                    "Unable to resolve name clash!",
+                    OUString( "Unable to resolve name clash!" ),
                     rContext.xProcessor,
                     ucb::NameClash::RENAME ) ),
             rContext.xOrigEnv );
@@ -1156,12 +1181,13 @@ void handleNameClashRename(
     }
 }
 
-/// @throws uno::Exception
+
 void globalTransfer_(
         const TransferCommandContext & rContext,
         const uno::Reference< ucb::XContent > & xSource,
         const uno::Reference< ucb::XContent > & xTarget,
         const uno::Reference< sdbc::XRow > & xSourceProps )
+    throw( uno::Exception, std::exception )
 {
     // IsFolder: property is required.
     bool bSourceIsFolder = xSourceProps->getBoolean( 1 );
@@ -1169,7 +1195,8 @@ void globalTransfer_(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( beans::UnknownPropertyException(
-                            "Unable to get property 'IsFolder' from source object!",
+                            OUString( "Unable to get property 'IsFolder' "
+                                "from source object!" ),
                             rContext.xProcessor ) ),
             rContext.xOrigEnv );
         // Unreachable
@@ -1181,7 +1208,8 @@ void globalTransfer_(
     {
         ucbhelper::cancelCommandExecution(
             uno::makeAny( beans::UnknownPropertyException(
-                            "Unable to get property 'IsDocument' from source object!",
+                            OUString( "Unable to get property 'IsDocument' "
+                                "from source object!" ),
                             rContext.xProcessor ) ),
             rContext.xOrigEnv );
         // Unreachable
@@ -1204,7 +1232,7 @@ void globalTransfer_(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Folder",
+                                  OUString( "Folder"),
                                   -1,
                                   uno::makeAny(rContext.aArg.TargetURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1227,7 +1255,7 @@ void globalTransfer_(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(
                                       xNew->getIdentifier()->
@@ -1250,7 +1278,7 @@ void globalTransfer_(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rContext.aArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1323,7 +1351,7 @@ void globalTransfer_(
         try
         {
             ucb::Command aInsertCommand(
-                                    "insert",
+                                    OUString("insert"),
                                     -1,
                                     uno::makeAny( aArg ) );
 
@@ -1341,8 +1369,9 @@ void globalTransfer_(
             // No chance to solve name clashes, because I'm not able to detect
             // whether there is one.
             throw ucb::UnsupportedNameClashException(
-                    "Unable to resolve name clashes, no chance to detect "
-                    "that there is one!",
+                    OUString(
+                        "Unable to resolve name clashes, no chance to detect "
+                        "that there is one!" ),
                     rContext.xProcessor,
                     rContext.aArg.NameClash );
         }
@@ -1368,8 +1397,9 @@ void globalTransfer_(
                     ucbhelper::cancelCommandExecution(
                         uno::makeAny(
                             ucb::UnsupportedNameClashException(
-                                "BUG: insert + replace == true MUST NOT "
-                                "throw NameClashException.",
+                                OUString(
+                                    "BUG: insert + replace == true MUST NOT "
+                                    "throw NameClashException." ),
                                 rContext.xProcessor,
                                 rContext.aArg.NameClash ) ),
                         rContext.xOrigEnv );
@@ -1415,8 +1445,9 @@ void globalTransfer_(
 
                             case ABORT:
                                 throw ucb::CommandFailedException(
-                                    "abort requested via interaction "
-                                    "handler",
+                                    OUString(
+                                            "abort requested via interaction "
+                                            "handler"  ),
                                     uno::Reference< uno::XInterface >(),
                                     aExc );
     //                            break;
@@ -1446,7 +1477,7 @@ void globalTransfer_(
                                 {
                                     // error setting title. Abort.
                                     throw ucb::CommandFailedException(
-                                        "error setting Title property!",
+                                        OUString( "error setting Title property!" ),
                                         uno::Reference< uno::XInterface >(),
                                         aExc );
                                 }
@@ -1464,8 +1495,9 @@ void globalTransfer_(
                     ucbhelper::cancelCommandExecution(
                         uno::makeAny(
                             ucb::UnsupportedNameClashException(
-                                "default action, don't know how to "
-                                "handle name clash",
+                                OUString(
+                                        "default action, don't know how to "
+                                        "handle name clash"  ),
                                 rContext.xProcessor,
                                 rContext.aArg.NameClash ) ),
                         rContext.xOrigEnv );
@@ -1494,7 +1526,7 @@ void globalTransfer_(
                 uno::Any aProps
                     = uno::makeAny(
                              beans::PropertyValue(
-                                 "Uri",
+                                 OUString( "Uri"),
                                  -1,
                                  uno::makeAny(rContext.aArg.SourceURL),
                                  beans::PropertyState_DIRECT_VALUE));
@@ -1515,7 +1547,7 @@ void globalTransfer_(
                 uno::Any aProps
                     = uno::makeAny(
                              beans::PropertyValue(
-                                 "Uri",
+                                 OUString( "Uri"),
                                  -1,
                                  uno::makeAny(rContext.aArg.SourceURL),
                                  beans::PropertyState_DIRECT_VALUE));
@@ -1581,7 +1613,7 @@ void globalTransfer_(
             aAny =
                 xcp->execute(
                     ucb::Command(
-                        "getCommandInfo",
+                        OUString("getCommandInfo"),
                         -1,
                         uno::Any()),
                     0,
@@ -1602,7 +1634,7 @@ void globalTransfer_(
     }
 }
 
-} /* namespace */
+} /* namescpace */
 
 
 // UniversalContentBroker implementation ( XCommandProcessor commands ).
@@ -1618,6 +1650,7 @@ UniversalContentBroker::getCommandInfo()
 void UniversalContentBroker::globalTransfer(
             const ucb::GlobalTransferCommandArgument2 & rArg,
             const uno::Reference< ucb::XCommandEnvironment > & xEnv )
+    throw( uno::Exception, std::exception )
 {
     // Use own command environment with own interaction handler intercepting
     // some interaction requests that shall not be handled by the user-supplied
@@ -1653,7 +1686,7 @@ void UniversalContentBroker::globalTransfer(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rArg.TargetURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1676,7 +1709,7 @@ void UniversalContentBroker::globalTransfer(
             uno::Any aProps
                 = uno::makeAny(
                          beans::PropertyValue(
-                             "Uri",
+                             OUString( "Uri"),
                              -1,
                              uno::makeAny(rArg.TargetURL),
                              beans::PropertyState_DIRECT_VALUE));
@@ -1705,7 +1738,7 @@ void UniversalContentBroker::globalTransfer(
             try
             {
                 ucb::Command aCommand(
-                    "transfer", // Name
+                    OUString( "transfer" ), // Name
                     -1,                                           // Handle
                     uno::makeAny( aTransferArg ) );               // Argument
 
@@ -1742,7 +1775,7 @@ void UniversalContentBroker::globalTransfer(
                             aTransferArg.MimeType );
 
                         ucb::Command aCommand1(
-                            "transfer",
+                            OUString("transfer"),
                             -1,
                             uno::makeAny( aTransferArg1 ) );
 
@@ -1785,8 +1818,9 @@ void UniversalContentBroker::globalTransfer(
 
                             case ABORT:
                                 throw ucb::CommandFailedException(
-                                    "abort requested via interaction "
-                                    "handler",
+                                    OUString(
+                                            "abort requested via interaction "
+                                            "handler"  ),
                                     uno::Reference< uno::XInterface >(),
                                     aExc );
 //                                break;
@@ -1836,7 +1870,7 @@ void UniversalContentBroker::globalTransfer(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1855,7 +1889,7 @@ void UniversalContentBroker::globalTransfer(
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                                  OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1882,7 +1916,7 @@ void UniversalContentBroker::globalTransfer(
     aProps[ 3 ].Handle = -1; /* unknown */
 
     ucb::Command aGetPropsCommand(
-                "getPropertyValues",
+                OUString("getPropertyValues"),
                 -1,
                 uno::makeAny( aProps ) );
 
@@ -1893,7 +1927,7 @@ void UniversalContentBroker::globalTransfer(
     {
         uno::Any aProps2
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri",
+                               OUString( "Uri"),
                                   -1,
                                   uno::makeAny(rArg.SourceURL),
                                   beans::PropertyState_DIRECT_VALUE));
@@ -1932,8 +1966,8 @@ void UniversalContentBroker::globalTransfer(
         try
         {
             ucb::Command aCommand(
-                "delete",                   // Name
-                -1,                         // Handle
+                OUString("delete"), // Name
+                -1,                                         // Handle
                 uno::makeAny( true ) );     // Argument
 
             xCommandProcessor->execute( aCommand, 0, xLocalEnv );
@@ -1947,7 +1981,7 @@ void UniversalContentBroker::globalTransfer(
 }
 
 uno::Any UniversalContentBroker::checkIn( const ucb::CheckinArgument& rArg,
-            const uno::Reference< ucb::XCommandEnvironment >& xEnv )
+            const uno::Reference< ucb::XCommandEnvironment >& xEnv ) throw ( uno::Exception )
 {
     uno::Any aRet;
     // Use own command environment with own interaction handler intercepting
@@ -1980,7 +2014,7 @@ uno::Any UniversalContentBroker::checkIn( const ucb::CheckinArgument& rArg,
     {
         uno::Any aProps
             = uno::makeAny(beans::PropertyValue(
-                                  "Uri", -1,
+                                  OUString( "Uri" ), -1,
                                   uno::makeAny( rArg.TargetURL ),
                                   beans::PropertyState_DIRECT_VALUE ) );
         ucbhelper::cancelCommandExecution(
@@ -1999,7 +2033,7 @@ uno::Any UniversalContentBroker::checkIn( const ucb::CheckinArgument& rArg,
         uno::Any aProps
             = uno::makeAny(
                      beans::PropertyValue(
-                         "Uri", -1,
+                         OUString( "Uri" ), -1,
                          uno::makeAny( rArg.TargetURL ),
                          beans::PropertyState_DIRECT_VALUE ) );
         ucbhelper::cancelCommandExecution(
@@ -2014,7 +2048,7 @@ uno::Any UniversalContentBroker::checkIn( const ucb::CheckinArgument& rArg,
     try
     {
         ucb::Command aCommand(
-            "checkin", -1,
+            OUString( "checkin" ), -1,
             uno::makeAny( rArg ) );
 
         aRet = xCommandProcessor->execute( aCommand, 0, xLocalEnv );

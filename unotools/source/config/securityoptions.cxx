@@ -39,7 +39,7 @@ using namespace ::utl;
 using namespace ::osl;
 using namespace ::com::sun::star::uno;
 
-#define ROOTNODE_SECURITY               "Office.Common/Security/Scripting"
+#define ROOTNODE_SECURITY               OUString("Office.Common/Security/Scripting")
 #define DEFAULT_SECUREURL               Sequence< OUString >()
 #define DEFAULT_TRUSTEDAUTHORS          Sequence< SvtSecurityOptions::Certificate >()
 
@@ -110,14 +110,14 @@ class SvtSecurityOptions_Impl : public ConfigItem
         //  constructor / destructor
 
          SvtSecurityOptions_Impl();
-        virtual ~SvtSecurityOptions_Impl() override;
+        virtual ~SvtSecurityOptions_Impl();
 
         //  override methods of baseclass
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
-            @descr      This method is called from the ConfigManager before application ends or from the
-                        PropertyChangeListener if the sub tree broadcasts changes. You must update your
+            @descr      These method is called from the ConfigManager before application ends or from the
+                         PropertyChangeListener if the sub tree broadcasts changes. You must update your
                         internal values.
 
             @seealso    baseclass ConfigItem
@@ -145,18 +145,18 @@ class SvtSecurityOptions_Impl : public ConfigItem
         void                SetOption       ( SvtSecurityOptions::EOption eOption, bool bValue  );
         bool                IsOptionEnabled ( SvtSecurityOptions::EOption eOption                   ) const;
 
+        /*-****************************************************************************************************
+            @short      return list of key names of our configuration management which represent our module tree
+            @descr      These methods return a static const list of key names. We need it to get needed values from our
+                        configuration management.
+            @return     A list of needed configuration keys is returned.
+        *//*-*****************************************************************************************************/
 
         void                    SetProperty( sal_Int32 nHandle, const Any& rValue, bool bReadOnly );
         void                    LoadAuthors();
         static sal_Int32        GetHandle( const OUString& rPropertyName );
         bool                    GetOption( SvtSecurityOptions::EOption eOption, bool*& rpValue, bool*& rpRO );
 
-        /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent our module tree
-            @descr      This method returns a static const list of key names. We need it to get needed values from our
-                        configuration management.
-            @return     A list of needed configuration keys is returned.
-        *//*-*****************************************************************************************************/
         static Sequence< OUString > GetPropertyNames();
 
         Sequence< OUString >                        m_seqSecureURLs;
@@ -285,13 +285,10 @@ void SvtSecurityOptions_Impl::SetProperty( sal_Int32 nProperty, const Any& rValu
         {
             m_seqSecureURLs.realloc( 0 );
             rValue >>= m_seqSecureURLs;
-            if (!utl::ConfigManager::IsAvoidConfig())
-            {
-                SvtPathOptions  aOpt;
-                sal_uInt32      nCount = m_seqSecureURLs.getLength();
-                for( sal_uInt32 nItem = 0; nItem < nCount; ++nItem )
-                    m_seqSecureURLs[ nItem ] = aOpt.SubstituteVariable( m_seqSecureURLs[ nItem ] );
-            }
+            SvtPathOptions  aOpt;
+            sal_uInt32      nCount = m_seqSecureURLs.getLength();
+            for( sal_uInt32 nItem = 0; nItem < nCount; ++nItem )
+                m_seqSecureURLs[ nItem ] = aOpt.SubstituteVariable( m_seqSecureURLs[ nItem ] );
             m_bROSecureURLs = bRO;
         }
         break;
@@ -509,35 +506,35 @@ bool SvtSecurityOptions_Impl::GetOption( SvtSecurityOptions::EOption eOption, bo
 {
     switch( eOption )
     {
-        case SvtSecurityOptions::EOption::DocWarnSaveOrSend:
+        case SvtSecurityOptions::E_DOCWARN_SAVEORSEND:
             rpValue = &m_bSaveOrSend;
             rpRO = &m_bROSaveOrSend;
             break;
-        case SvtSecurityOptions::EOption::DocWarnSigning:
+        case SvtSecurityOptions::E_DOCWARN_SIGNING:
             rpValue = &m_bSigning;
             rpRO = &m_bROSigning;
             break;
-        case SvtSecurityOptions::EOption::DocWarnPrint:
+        case SvtSecurityOptions::E_DOCWARN_PRINT:
             rpValue = &m_bPrint;
             rpRO = &m_bROPrint;
             break;
-        case SvtSecurityOptions::EOption::DocWarnCreatePdf:
+        case SvtSecurityOptions::E_DOCWARN_CREATEPDF:
             rpValue = &m_bCreatePDF;
             rpRO = &m_bROCreatePDF;
             break;
-        case SvtSecurityOptions::EOption::DocWarnRemovePersonalInfo:
+        case SvtSecurityOptions::E_DOCWARN_REMOVEPERSONALINFO:
             rpValue = &m_bRemoveInfo;
             rpRO = &m_bRORemoveInfo;
             break;
-        case SvtSecurityOptions::EOption::DocWarnRecommendPassword:
+        case SvtSecurityOptions::E_DOCWARN_RECOMMENDPASSWORD:
             rpValue = &m_bRecommendPwd;
             rpRO = &m_bRORecommendPwd;
             break;
-        case SvtSecurityOptions::EOption::CtrlClickHyperlink:
+        case SvtSecurityOptions::E_CTRLCLICK_HYPERLINK:
             rpValue = &m_bCtrlClickHyperlink;
             rpRO = &m_bROCtrlClickHyperlink;
             break;
-        case SvtSecurityOptions::EOption::BlockUntrustedRefererLinks:
+        case SvtSecurityOptions::E_BLOCKUNTRUSTEDREFERERLINKS:
             rpValue = &m_bBlockUntrustedRefererLinks;
             rpRO = &m_bROBlockUntrustedRefererLinks;
             break;
@@ -763,51 +760,54 @@ bool SvtSecurityOptions_Impl::IsReadOnly( SvtSecurityOptions::EOption eOption ) 
     bool    bReadonly;
     switch(eOption)
     {
-        case SvtSecurityOptions::EOption::SecureUrls :
+        case SvtSecurityOptions::E_SECUREURLS :
             bReadonly = m_bROSecureURLs;
             break;
-        case SvtSecurityOptions::EOption::DocWarnSaveOrSend:
+        case SvtSecurityOptions::E_DOCWARN_SAVEORSEND:
             bReadonly = m_bROSaveOrSend;
             break;
-        case SvtSecurityOptions::EOption::DocWarnSigning:
+        case SvtSecurityOptions::E_DOCWARN_SIGNING:
             bReadonly = m_bROSigning;
             break;
-        case SvtSecurityOptions::EOption::DocWarnPrint:
+        case SvtSecurityOptions::E_DOCWARN_PRINT:
             bReadonly = m_bROPrint;
             break;
-        case SvtSecurityOptions::EOption::DocWarnCreatePdf:
+        case SvtSecurityOptions::E_DOCWARN_CREATEPDF:
             bReadonly = m_bROCreatePDF;
             break;
-        case SvtSecurityOptions::EOption::DocWarnRemovePersonalInfo:
+        case SvtSecurityOptions::E_DOCWARN_REMOVEPERSONALINFO:
             bReadonly = m_bRORemoveInfo;
             break;
-        case SvtSecurityOptions::EOption::DocWarnRecommendPassword:
+        case SvtSecurityOptions::E_DOCWARN_RECOMMENDPASSWORD:
             bReadonly = m_bRORecommendPwd;
             break;
-        case SvtSecurityOptions::EOption::MacroSecLevel:
+        case SvtSecurityOptions::E_MACRO_SECLEVEL:
             bReadonly = m_bROSecLevel;
             break;
-        case SvtSecurityOptions::EOption::MacroTrustedAuthors:
+        case SvtSecurityOptions::E_MACRO_TRUSTEDAUTHORS:
             bReadonly = m_bROTrustedAuthors;
             break;
-        case SvtSecurityOptions::EOption::CtrlClickHyperlink:
+        case SvtSecurityOptions::E_MACRO_DISABLE:
+            bReadonly = m_bRODisableMacros;
+            break;
+        case SvtSecurityOptions::E_CTRLCLICK_HYPERLINK:
             bReadonly = m_bROCtrlClickHyperlink;
             break;
-        case SvtSecurityOptions::EOption::BlockUntrustedRefererLinks:
+        case SvtSecurityOptions::E_BLOCKUNTRUSTEDREFERERLINKS:
             bReadonly = m_bROBlockUntrustedRefererLinks;
             break;
 
         // xmlsec05 deprecated
-        case SvtSecurityOptions::EOption::BasicMode:
+        case SvtSecurityOptions::E_BASICMODE:
             bReadonly = m_bROBasicMode;
             break;
-        case SvtSecurityOptions::EOption::ExecutePlugins:
+        case SvtSecurityOptions::E_EXECUTEPLUGINS:
             bReadonly = m_bROExecutePlugins;
             break;
-        case SvtSecurityOptions::EOption::Warning:
+        case SvtSecurityOptions::E_WARNING:
             bReadonly = m_bROWarning;
             break;
-        case SvtSecurityOptions::EOption::Confirmation:
+        case SvtSecurityOptions::E_CONFIRMATION:
             bReadonly = m_bROConfirmation;
             break;
         // xmlsec05 deprecated
@@ -930,24 +930,25 @@ Sequence< OUString > SvtSecurityOptions_Impl::GetPropertyNames()
     return seqPropertyNames;
 }
 
-namespace {
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
 
-std::weak_ptr<SvtSecurityOptions_Impl> g_pSecurityOptions;
-
-}
+SvtSecurityOptions_Impl*    SvtSecurityOptions::m_pDataContainer    = nullptr;
+sal_Int32                   SvtSecurityOptions::m_nRefCount         = 0;
 
 SvtSecurityOptions::SvtSecurityOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl = g_pSecurityOptions.lock();
-    if( !m_pImpl )
+    // Increase our refcount ...
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<SvtSecurityOptions_Impl>();
-        g_pSecurityOptions = m_pImpl;
+        m_pDataContainer = new SvtSecurityOptions_Impl;
 
-        ItemHolder1::holdConfigItem(EItem::SecurityOptions);
+        ItemHolder1::holdConfigItem(E_SECURITYOPTIONS);
     }
 }
 
@@ -955,26 +956,33 @@ SvtSecurityOptions::~SvtSecurityOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl.reset();
+    // Decrease our refcount.
+    --m_nRefCount;
+    // If last instance was deleted ...
+    // we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 bool SvtSecurityOptions::IsReadOnly( EOption eOption ) const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsReadOnly(eOption);
+    return m_pDataContainer->IsReadOnly(eOption);
 }
 
 Sequence< OUString > SvtSecurityOptions::GetSecureURLs() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->GetSecureURLs();
+    return m_pDataContainer->GetSecureURLs();
 }
 
 void SvtSecurityOptions::SetSecureURLs( const Sequence< OUString >& seqURLList )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetSecureURLs( seqURLList );
+    m_pDataContainer->SetSecureURLs( seqURLList );
 }
 
 bool SvtSecurityOptions::isSecureMacroUri(
@@ -998,18 +1006,18 @@ bool SvtSecurityOptions::isSecureMacroUri(
 
 bool SvtSecurityOptions::isUntrustedReferer(OUString const & referer) const {
     MutexGuard g(GetInitMutex());
-    return m_pImpl->IsOptionSet(EOption::BlockUntrustedRefererLinks)
+    return m_pDataContainer->IsOptionSet(E_BLOCKUNTRUSTEDREFERERLINKS)
         && !(referer.isEmpty() || referer.startsWithIgnoreAsciiCase("private:")
              || isTrustedLocationUri(referer));
 }
 
 bool SvtSecurityOptions::isTrustedLocationUri(OUString const & uri) const {
     MutexGuard g(GetInitMutex());
-    for (sal_Int32 i = 0; i != m_pImpl->m_seqSecureURLs.getLength();
+    for (sal_Int32 i = 0; i != m_pDataContainer->m_seqSecureURLs.getLength();
          ++i)
     {
         if (UCBContentHelper::IsSubPath(
-                m_pImpl->m_seqSecureURLs[i], uri))
+                m_pDataContainer->m_seqSecureURLs[i], uri))
         {
             return true;
         }
@@ -1028,49 +1036,49 @@ bool SvtSecurityOptions::isTrustedLocationUriForUpdatingLinks(
 sal_Int32 SvtSecurityOptions::GetMacroSecurityLevel() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->GetMacroSecurityLevel();
+    return m_pDataContainer->GetMacroSecurityLevel();
 }
 
 void SvtSecurityOptions::SetMacroSecurityLevel( sal_Int32 _nLevel )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetMacroSecurityLevel( _nLevel );
+    m_pDataContainer->SetMacroSecurityLevel( _nLevel );
 }
 
 bool SvtSecurityOptions::IsMacroDisabled() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsMacroDisabled();
+    return m_pDataContainer->IsMacroDisabled();
 }
 
 Sequence< SvtSecurityOptions::Certificate > SvtSecurityOptions::GetTrustedAuthors() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->GetTrustedAuthors();
+    return m_pDataContainer->GetTrustedAuthors();
 }
 
 void SvtSecurityOptions::SetTrustedAuthors( const Sequence< Certificate >& rAuthors )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetTrustedAuthors( rAuthors );
+    m_pDataContainer->SetTrustedAuthors( rAuthors );
 }
 
 bool SvtSecurityOptions::IsOptionSet( EOption eOption ) const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsOptionSet( eOption );
+    return m_pDataContainer->IsOptionSet( eOption );
 }
 
 void SvtSecurityOptions::SetOption( EOption eOption, bool bValue )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetOption( eOption, bValue );
+    m_pDataContainer->SetOption( eOption, bValue );
 }
 
 bool SvtSecurityOptions::IsOptionEnabled( EOption eOption ) const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsOptionEnabled( eOption );
+    return m_pDataContainer->IsOptionEnabled( eOption );
 }
 
 namespace
@@ -1129,49 +1137,49 @@ void SvtSecurityOptions_Impl::SetConfirmationEnabled( bool bSet )
 bool SvtSecurityOptions::IsExecutePlugins() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsExecutePlugins();
+    return m_pDataContainer->IsExecutePlugins();
 }
 
 void SvtSecurityOptions::SetExecutePlugins( bool bSet )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetExecutePlugins( bSet );
+    m_pDataContainer->SetExecutePlugins( bSet );
 }
 
 bool SvtSecurityOptions::IsWarningEnabled() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsWarningEnabled();
+    return m_pDataContainer->IsWarningEnabled();
 }
 
 void SvtSecurityOptions::SetWarningEnabled( bool bSet )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetWarningEnabled( bSet );
+    m_pDataContainer->SetWarningEnabled( bSet );
 }
 
 bool SvtSecurityOptions::IsConfirmationEnabled() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->IsConfirmationEnabled();
+    return m_pDataContainer->IsConfirmationEnabled();
 }
 
 void SvtSecurityOptions::SetConfirmationEnabled( bool bSet )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetConfirmationEnabled( bSet );
+    m_pDataContainer->SetConfirmationEnabled( bSet );
 }
 
 void SvtSecurityOptions::SetBasicMode( EBasicSecurityMode eMode )
 {
     MutexGuard aGuard( GetInitMutex() );
-    m_pImpl->SetBasicMode( eMode );
+    m_pDataContainer->SetBasicMode( eMode );
 }
 
 EBasicSecurityMode SvtSecurityOptions::GetBasicMode() const
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->GetBasicMode();
+    return m_pDataContainer->GetBasicMode();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

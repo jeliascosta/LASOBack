@@ -52,10 +52,6 @@ Font::Font( const vcl::Font& rFont ) : mpImplFont( rFont.mpImplFont )
 {
 }
 
-Font::Font( vcl::Font&& rFont ) : mpImplFont( std::move(rFont.mpImplFont) )
-{
-}
-
 Font::Font( const OUString& rFamilyName, const Size& rSize ) : mpImplFont()
 {
     mpImplFont->SetFamilyName( rFamilyName );
@@ -124,7 +120,7 @@ void Font::SetFontSize( const Size& rSize )
 
 void Font::SetFamily( FontFamily eFamily )
 {
-    if( mpImplFont->GetFamilyTypeNoAsk() != eFamily )
+    if( mpImplFont->GetFamilyType() != eFamily )
         mpImplFont->SetFamilyType( eFamily );
 }
 
@@ -211,7 +207,7 @@ void Font::SetKerning( FontKerning eKerning )
 
 bool Font::IsKerning() const
 {
-    return !(mpImplFont->meKerning == FontKerning::NONE);
+    return bool(mpImplFont->meKerning & FontKerning::FontSpecific);
 }
 
 void Font::SetWeight( FontWeight eWeight )
@@ -283,12 +279,6 @@ void Font::SetWordLineMode( bool bWordLine )
 Font& Font::operator=( const vcl::Font& rFont )
 {
     mpImplFont = rFont.mpImplFont;
-    return *this;
-}
-
-Font& Font::operator=( vcl::Font&& rFont )
-{
-    mpImplFont = std::move(rFont.mpImplFont);
     return *this;
 }
 
@@ -431,7 +421,7 @@ SvStream& WriteImplFont( SvStream& rOStm, const ImplFont& rImplFont )
     rOStm.WriteUChar( static_cast<sal_uInt8>(rImplFont.meKerning) );
 
     // new in version 2
-    rOStm.WriteUChar( (sal_uChar)rImplFont.meRelief );
+    rOStm.WriteUChar( rImplFont.meRelief );
     rOStm.WriteUInt16( rImplFont.maCJKLanguageTag.getLanguageType( false) );
     rOStm.WriteBool( rImplFont.mbVertical );
     rOStm.WriteUInt16( (sal_uInt16)rImplFont.meEmphasisMark );
@@ -563,12 +553,12 @@ namespace
         bool bResult = false;
         // might be a type1, find eexec
         const char* pStream = i_pBuffer;
-        const char* const pExec = "eexec";
+        const char* pExec = "eexec";
         const char* pExecPos = std::search( pStream, pStream+i_nSize, pExec, pExec+5 );
         if( pExecPos != pStream+i_nSize)
         {
             // find /FamilyName entry
-            static const char* const pFam = "/FamilyName";
+            static const char* pFam = "/FamilyName";
             const char* pFamPos = std::search( pStream, pExecPos, pFam, pFam+11 );
             if( pFamPos != pExecPos )
             {
@@ -586,7 +576,7 @@ namespace
             }
 
             // parse /ItalicAngle
-            static const char* const pItalic = "/ItalicAngle";
+            static const char* pItalic = "/ItalicAngle";
             const char* pItalicPos = std::search( pStream, pExecPos, pItalic, pItalic+12 );
             if( pItalicPos != pExecPos )
             {
@@ -595,7 +585,7 @@ namespace
             }
 
             // parse /Weight
-            static const char* const pWeight = "/Weight";
+            static const char* pWeight = "/Weight";
             const char* pWeightPos = std::search( pStream, pExecPos, pWeight, pWeight+7 );
             if( pWeightPos != pExecPos )
             {
@@ -620,7 +610,7 @@ namespace
             }
 
             // parse isFixedPitch
-            static const char* const pFixed = "/isFixedPitch";
+            static const char* pFixed = "/isFixedPitch";
             const char* pFixedPos = std::search( pStream, pExecPos, pFixed, pFixed+13 );
             if( pFixedPos != pExecPos )
             {
@@ -706,6 +696,15 @@ void Font::DecreaseQualityBy( int nQualityAmount ) { mpImplFont->DecreaseQuality
 
 void Font::SetMapNames( OUString const & aMapNames ) { mpImplFont->SetMapNames(aMapNames); }
 
+bool Font::IsBuiltInFont() const { return mpImplFont->IsBuiltInFont(); }
+void Font::SetBuiltInFontFlag( bool bIsBuiltInFontFlag ) { mpImplFont->SetBuiltInFontFlag( bIsBuiltInFontFlag ); }
+bool Font::CanEmbed() const { return mpImplFont->CanEmbed(); }
+void Font::SetEmbeddableFlag( bool bEmbeddable ) { mpImplFont->SetEmbeddableFlag( bEmbeddable ); }
+bool Font::CanSubset() const { return mpImplFont->CanSubset(); }
+void Font::SetSubsettableFlag( bool bSubsettable ) { mpImplFont->SetSubsettableFlag( bSubsettable ); }
+bool Font::CanRotate() const { return mpImplFont->CanRotate(); }
+void Font::SetOrientationFlag( bool bCanRotate ) { mpImplFont->SetOrientationFlag( bCanRotate ); }
+
 bool Font::IsOutline() const { return mpImplFont->mbOutline; }
 bool Font::IsShadow() const { return mpImplFont->mbShadow; }
 FontRelief Font::GetRelief() const { return mpImplFont->meRelief; }
@@ -727,9 +726,9 @@ ImplFont::ImplFont() :
     meUnderline( LINESTYLE_NONE ),
     meOverline( LINESTYLE_NONE ),
     meStrikeout( STRIKEOUT_NONE ),
-    meRelief( FontRelief::NONE ),
+    meRelief( RELIEF_NONE ),
     meEmphasisMark( FontEmphasisMark::NONE ),
-    meKerning( FontKerning::FontSpecific ),
+    meKerning( FontKerning::NONE ),
     meCharSet( RTL_TEXTENCODING_DONTKNOW ),
     maLanguageTag( LANGUAGE_DONTKNOW ),
     maCJKLanguageTag( LANGUAGE_DONTKNOW ),
@@ -742,6 +741,10 @@ ImplFont::ImplFont() :
     maColor( COL_TRANSPARENT ),
     maFillColor( COL_TRANSPARENT ),
     mbWordLine( false ),
+    mbEmbeddable( false ),
+    mbSubsettable( false ),
+    mbRotatable( false ),
+    mbDevice( false ),
     mnOrientation( 0 ),
     mnQuality( 0 )
 {}
@@ -775,6 +778,10 @@ ImplFont::ImplFont( const ImplFont& rImplFont ) :
     maFillColor( rImplFont.maFillColor ),
     maMapNames( rImplFont.maMapNames ),
     mbWordLine( rImplFont.mbWordLine ),
+    mbEmbeddable( rImplFont.mbEmbeddable ),
+    mbSubsettable( rImplFont.mbSubsettable ),
+    mbRotatable( rImplFont.mbRotatable ),
+    mbDevice( rImplFont.mbDevice ),
     mnOrientation( rImplFont.mnOrientation ),
     mnQuality( rImplFont.mnQuality )
 {}

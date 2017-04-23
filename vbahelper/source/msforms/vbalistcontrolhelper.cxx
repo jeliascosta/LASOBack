@@ -20,7 +20,6 @@
 #include <vbalistcontrolhelper.hxx>
 #include <vector>
 #include <vbahelper/vbapropvalue.hxx>
-#include <com/sun/star/beans/XPropertySet.hpp>
 
 using namespace com::sun::star;
 using namespace ooo::vba;
@@ -75,13 +74,13 @@ uno::Any ListPropListener::getValueEvent()
             sReturnArray[ i ].realloc( 10 );
             sReturnArray[ i ][ 0 ] = sList[ i ];
         }
-        aRet <<= sReturnArray;
+        aRet = uno::makeAny( sReturnArray );
     }
     return aRet;
 }
 
 void SAL_CALL
-ListControlHelper::AddItem( const uno::Any& pvargItem, const uno::Any& pvargIndex )
+ListControlHelper::AddItem( const uno::Any& pvargItem, const uno::Any& pvargIndex ) throw (uno::RuntimeException)
 {
     if ( pvargItem.hasValue()  )
     {
@@ -136,7 +135,7 @@ ListControlHelper::AddItem( const uno::Any& pvargItem, const uno::Any& pvargInde
 }
 
 void SAL_CALL
-ListControlHelper::removeItem( const uno::Any& index )
+ListControlHelper::removeItem( const uno::Any& index ) throw (uno::RuntimeException)
 {
     sal_Int32 nIndex = 0;
     // for int index
@@ -165,7 +164,7 @@ ListControlHelper::removeItem( const uno::Any& index )
 }
 
 void SAL_CALL
-ListControlHelper::Clear(  )
+ListControlHelper::Clear(  ) throw (uno::RuntimeException)
 {
     // urk, setValue doesn't seem to work !!
     //setValue( uno::makeAny( sal_Int16() ) );
@@ -173,14 +172,14 @@ ListControlHelper::Clear(  )
 }
 
 void SAL_CALL
-ListControlHelper::setRowSource( const OUString& _rowsource )
+ListControlHelper::setRowSource( const OUString& _rowsource ) throw (uno::RuntimeException)
 {
     if ( _rowsource.isEmpty() )
         Clear();
 }
 
 sal_Int32 SAL_CALL
-ListControlHelper::getListCount()
+ListControlHelper::getListCount() throw (uno::RuntimeException)
 {
     uno::Sequence< OUString > sList;
     m_xProps->getPropertyValue( "StringItemList" ) >>= sList;
@@ -188,7 +187,7 @@ ListControlHelper::getListCount()
 }
 
 uno::Any SAL_CALL
-ListControlHelper::List( const ::uno::Any& pvargIndex, const uno::Any& pvarColumn )
+ListControlHelper::List( const ::uno::Any& pvargIndex, const uno::Any& pvarColumn ) throw (uno::RuntimeException)
 {
     return uno::makeAny( uno::Reference< XPropValue > ( new ScVbaPropValue( new ListPropListener( m_xProps, pvargIndex, pvarColumn ) ) ) );
 }

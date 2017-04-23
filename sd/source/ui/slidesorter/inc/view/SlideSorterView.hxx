@@ -71,7 +71,7 @@ public:
     explicit SlideSorterView (SlideSorter& rSlideSorter);
     void Init();
 
-    virtual ~SlideSorterView() override;
+    virtual ~SlideSorterView();
     void Dispose();
 
     SlideSorterView(const SlideSorterView&) = delete;
@@ -85,10 +85,10 @@ public:
 
     void RequestRepaint();
     void RequestRepaint (const model::SharedPageDescriptor& rDescriptor);
-    void RequestRepaint (const ::tools::Rectangle& rRepaintBox);
+    void RequestRepaint (const Rectangle& rRepaintBox);
     void RequestRepaint (const vcl::Region& rRepaintRegion);
 
-    ::tools::Rectangle GetModelArea();
+    Rectangle GetModelArea();
 
     /** Return the index of the page that is rendered at the given position.
         @param rPosition
@@ -129,11 +129,11 @@ public:
         OutputDevice* pDevice,
         const vcl::Region& rPaintArea,
         sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr) override;
-    void Paint (OutputDevice& rDevice, const ::tools::Rectangle& rRepaintArea);
+    void Paint (OutputDevice& rDevice, const Rectangle& rRepaintArea);
 
     virtual void ConfigurationChanged (
         utl::ConfigurationBroadcaster* pBroadcaster,
-        ConfigurationHints nHint) override;
+        sal_uInt32 nHint) override;
 
     void HandleDataChangeEvent();
 
@@ -143,7 +143,7 @@ public:
     */
     void InvalidatePageObjectVisibilities();
 
-    std::shared_ptr<cache::PageCache> const & GetPreviewCache();
+    std::shared_ptr<cache::PageCache> GetPreviewCache();
 
     /** Return the range of currently visible page objects including the
         first and last one in that range.
@@ -151,7 +151,7 @@ public:
             The returned pair of page object indices is empty when the
             second index is lower than the first.
     */
-    Pair const & GetVisiblePageRange();
+    Pair GetVisiblePageRange();
 
     /** Add a shape to the page.  Typically used from inside
         PostModelChange().
@@ -168,7 +168,7 @@ public:
 
     /** Remove a listener that is called when the set of visible slides changes.
         @param rListener
-            It is safe to pass a listener that was not added or has been
+            It is save to pass a listener that was not added or has been
             removed previously.  Such calls are ignored.
     */
     void RemoveVisibilityChangeListener (const Link<LinkParamNone*,void>& rListener);
@@ -187,7 +187,7 @@ public:
 
     void UpdateOrientation();
 
-    std::shared_ptr<PageObjectPainter> const & GetPageObjectPainter();
+    std::shared_ptr<PageObjectPainter> GetPageObjectPainter();
     const std::shared_ptr<LayeredDevice>& GetLayeredDevice() const { return mpLayeredDevice;}
 
     class DrawLock
@@ -208,6 +208,9 @@ public:
 
     virtual void DragFinished (sal_Int8 nDropAction) override;
 
+protected:
+    virtual void Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint) override;
+
 private:
     SlideSorter& mrSlideSorter;
     model::SlideSorterModel& mrModel;
@@ -217,6 +220,7 @@ private:
     std::shared_ptr<cache::PageCache> mpPreviewCache;
     std::shared_ptr<LayeredDevice> mpLayeredDevice;
     Range maVisiblePageRange;
+    bool mbModelChangedWhileModifyEnabled;
     Size maPreviewSize;
     bool mbPreciousFlagUpdatePending;
     Layouter::Orientation meOrientation;

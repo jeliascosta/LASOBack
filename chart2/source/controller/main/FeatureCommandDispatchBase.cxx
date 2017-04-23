@@ -40,7 +40,7 @@ FeatureCommandDispatchBase::~FeatureCommandDispatchBase()
 void FeatureCommandDispatchBase::initialize()
 {
     CommandDispatch::initialize();
-    describeSupportedFeatures();
+    fillSupportedFeatures();
 }
 
 bool FeatureCommandDispatchBase::isFeatureSupported( const OUString& rCommandURL )
@@ -75,6 +75,7 @@ void FeatureCommandDispatchBase::fireStatusEvent( const OUString& rURL,
 // XDispatch
 void FeatureCommandDispatchBase::dispatch( const util::URL& URL,
     const Sequence< beans::PropertyValue >& Arguments )
+    throw (uno::RuntimeException, std::exception)
 {
     OUString aCommand( URL.Complete );
     if ( getState( aCommand ).bEnabled )
@@ -92,6 +93,11 @@ void FeatureCommandDispatchBase::implDescribeSupportedFeature( const sal_Char* p
     aFeature.GroupId = nGroup;
 
     m_aSupportedFeatures[ aFeature.Command ] = aFeature;
+}
+
+void FeatureCommandDispatchBase::fillSupportedFeatures()
+{
+    describeSupportedFeatures();
 }
 
 } //  namespace chart

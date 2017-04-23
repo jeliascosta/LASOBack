@@ -33,14 +33,16 @@
 #include <memory>
 #include <unordered_set>
 
+#include <config_graphite.h>
+#if ENABLE_GRAPHITE
+#  include <graphite_static.hxx>
+#  include <graphite2/Font.h>
+#endif
 #ifndef INCLUDED_PRE_POST_WIN_H
 #define INCLUDED_PRE_POST_WIN_H
 #  include "prewin.h"
 #  include "postwin.h"
 #endif
-
-#include <hb-ot.h>
-#include <dwrite.h>
 
 class FontSelectPattern;
 class WinFontInstance;
@@ -50,10 +52,29 @@ class PhysicalFontCollection;
 class SalGraphicsImpl;
 class WinOpenGLSalGraphicsImpl;
 class ImplFontMetricData;
-class CommonSalLayout;
 
 #define RGB_TO_PALRGB(nRGB)         ((nRGB)|0x02000000)
 #define PALRGB_TO_RGB(nPalRGB)      ((nPalRGB)&0x00ffffff)
+
+#if ENABLE_GRAPHITE
+class RawFontData;
+class GrFontData
+{
+public:
+    GrFontData(HDC hDC);
+    ~GrFontData();
+    const void * getTable(unsigned int name, size_t *len) const;
+    const gr_face * getFace() const { return mpFace; }
+    void AddReference() { ++mnRefCount; }
+    void DeReference() { if (--mnRefCount == 0) delete this; }
+private:
+    GrFontData(GrFontData &) {};
+    HDC mhDC;
+    mutable std::vector<RawFontData*> mvData;
+    gr_face * mpFace;
+    unsigned int mnRefCount;
+};
+#endif
 
 // win32 specific physically available font face
 class WinFontFace : public PhysicalFontFace
@@ -62,7 +83,7 @@ public:
     explicit                WinFontFace( const FontAttributes&,
                                 int nFontHeight, BYTE eWinCharSet,
                                 BYTE nPitchAndFamily  );
-    virtual                 ~WinFontFace() override;
+    virtual                 ~WinFontFace();
 
     virtual PhysicalFontFace* Clone() const override;
     virtual LogicalFontInstance* CreateFontInstance( FontSelectPattern& ) const override;
@@ -74,16 +95,35 @@ public:
 
     BYTE                    GetCharSet() const          { return meWinCharSet; }
     BYTE                    GetPitchAndFamily() const   { return mnPitchAndFamily; }
+    bool                    SupportsCJK() const         { return mbHasCJKSupport; }
+    bool                    SupportsArabic() const      { return mbHasArabicSupport; }
+#if ENABLE_GRAPHITE
+    bool                    SupportsGraphite() const    { return mbHasGraphiteSupport; }
+    const gr_face*          GraphiteFace() const;
+#endif
 
-    FontCharMapRef          GetFontCharMap() const;
+    FontCharMapPtr          GetFontCharMap() const;
     bool GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const;
-
+    const Ucs2SIntMap* GetEncodingVector() const { return mpEncodingVector; }
+    void SetEncodingVector( const Ucs2SIntMap* pNewVec ) const
+    {
+        if( mpEncodingVector )
+            delete mpEncodingVector;
+        mpEncodingVector = pNewVec;
+    }
 private:
     sal_IntPtr              mnId;
 
-    // some members that are initialized lazily when the font gets selected into a HDC
+    // some members that are initalized lazily when the font gets selected into a HDC
+    mutable bool                    mbHasCJKSupport;
+#if ENABLE_GRAPHITE
+    mutable GrFontData*             mpGraphiteData;
+    mutable bool                    mbHasGraphiteSupport;
+#endif
+    mutable bool                    mbHasArabicSupport;
     mutable bool                    mbFontCapabilitiesRead;
-    mutable FontCharMapRef          mxUnicodeMap;
+    mutable FontCharMapPtr          mxUnicodeMap;
+    mutable const Ucs2SIntMap*      mpEncodingVector;
     mutable vcl::FontCapabilities   maFontCapabilities;
 
     BYTE                    meWinCharSet;
@@ -94,10 +134,14 @@ private:
     void                    ReadCmapTable( HDC ) const;
     void                    GetFontCapabilities( HDC hDC ) const;
 
-    mutable hb_font_t*      mpHbFont;
+    void                    ReadGsubTable( HDC ) const;
+
+    typedef std::unordered_set<sal_UCS4> UcsHashSet;
+    mutable UcsHashSet      maGsubTable;
+    mutable bool            mbGsubRead;
 public:
-    hb_font_t*              GetHbFont() const { return mpHbFont; }
-    void                    SetHbFont( hb_font_t* pHbFont ) const { mpHbFont = pHbFont; }
+    bool                    HasGSUBstitutions( HDC ) const;
+    bool                    IsGSUBstituted( sal_UCS4 ) const;
 };
 
 /** Class that creates (and destroys) a compatible Device Context.
@@ -151,6 +195,9 @@ class WinSalGraphics : public SalGraphics
     friend class WinOpenGLSalGraphicsImpl;
     friend class ScopedFont;
     friend class OpenGLCompatibleDC;
+    friend class WinLayout;
+    friend class SimpleWinLayout;
+    friend class UniscribeLayout;
 
 protected:
     std::unique_ptr<SalGraphicsImpl> mpImpl;
@@ -166,6 +213,8 @@ private:
     HFONT                   mhFonts[ MAX_FALLBACK ];        // Font + Fallbacks
     const WinFontFace*  mpWinFontData[ MAX_FALLBACK ];  // pointer to the most recent font face
     WinFontInstance*       mpWinFontEntry[ MAX_FALLBACK ]; // pointer to the most recent font instance
+    float                   mfFontScale[ MAX_FALLBACK ];        // allows metrics emulation of huge font sizes
+    float                   mfCurrentFontScale;
     HRGN                    mhRegion;           // vcl::Region Handle
     HPEN                    mhDefPen;           // DefaultPen
     HBRUSH                  mhDefBrush;         // DefaultBrush
@@ -174,12 +223,13 @@ private:
     COLORREF                mnTextColor;        // TextColor
     RGNDATA*                mpClipRgnData;      // ClipRegion-Data
     RGNDATA*                mpStdClipRgnData;   // Cache Standard-ClipRegion-Data
+    ImplFontAttrCache*      mpFontAttrCache;    // Cache font attributes from files in so/share/fonts
+    bool                    mbFontKernInit;     // FALSE: FontKerns must be queried
+    KERNINGPAIR*            mpFontKernPairs;    // Kerning Pairs of the current Font
+    sal_uIntPtr             mnFontKernPairCount;// Number of Kerning Pairs of the current Font
     int                     mnPenWidth;         // Linienbreite
 
     LogicalFontInstance* GetWinFontEntry(int nFallbackLevel);
-
-    bool CacheGlyphs(const CommonSalLayout& rLayout);
-    bool DrawCachedGlyphs(const CommonSalLayout& rLayout);
 
 public:
     HDC getHDC() const { return mhLocalDC; }
@@ -205,12 +255,12 @@ public:
 
     HWND gethWnd();
 
-    HFONT                   ImplDoSetFont( FontSelectPattern* i_pFont, HFONT& o_rOldFont );
+    HFONT                   ImplDoSetFont( FontSelectPattern* i_pFont, float& o_rFontScale, HFONT& o_rOldFont );
 
 public:
     explicit WinSalGraphics(WinSalGraphics::Type eType, bool bScreen, HWND hWnd,
                             SalGeometryProvider *pProvider);
-    virtual ~WinSalGraphics() override;
+    virtual ~WinSalGraphics();
 
     SalGraphicsImpl* GetImpl() const override;
     bool isPrinter() const;
@@ -238,9 +288,9 @@ protected:
         basegfx::B2DLineJoin,
         css::drawing::LineCap,
         double fMiterMinimumAngle) override;
-    virtual bool        drawPolyLineBezier( sal_uInt32 nPoints, const SalPoint* pPtAry, const PolyFlags* pFlgAry ) override;
-    virtual bool        drawPolygonBezier( sal_uInt32 nPoints, const SalPoint* pPtAry, const PolyFlags* pFlgAry ) override;
-    virtual bool        drawPolyPolygonBezier( sal_uInt32 nPoly, const sal_uInt32* pPoints, const SalPoint* const* pPtAry, const PolyFlags* const* pFlgAry ) override;
+    virtual bool        drawPolyLineBezier( sal_uInt32 nPoints, const SalPoint* pPtAry, const sal_uInt8* pFlgAry ) override;
+    virtual bool        drawPolygonBezier( sal_uInt32 nPoints, const SalPoint* pPtAry, const sal_uInt8* pFlgAry ) override;
+    virtual bool        drawPolyPolygonBezier( sal_uInt32 nPoly, const sal_uInt32* pPoints, const SalPoint* const* pPtAry, const BYTE* const* pFlgAry ) override;
     virtual bool        drawGradient( const tools::PolyPolygon&, const Gradient& ) override { return false; };
 
     // CopyArea --> No RasterOp, but ClipRegion
@@ -268,14 +318,14 @@ protected:
     virtual bool        drawEPS( long nX, long nY, long nWidth, long nHeight, void* pPtr, sal_uIntPtr nSize ) override;
 
     // native widget rendering methods that require mirroring
-    virtual bool        hitTestNativeControl( ControlType nType, ControlPart nPart, const tools::Rectangle& rControlRegion,
+    virtual bool        hitTestNativeControl( ControlType nType, ControlPart nPart, const Rectangle& rControlRegion,
                                               const Point& aPos, bool& rIsInside ) override;
-    virtual bool        drawNativeControl( ControlType nType, ControlPart nPart, const tools::Rectangle& rControlRegion,
+    virtual bool        drawNativeControl( ControlType nType, ControlPart nPart, const Rectangle& rControlRegion,
                                            ControlState nState, const ImplControlValue& aValue,
                                            const OUString& aCaption ) override;
-    virtual bool        getNativeControlRegion( ControlType nType, ControlPart nPart, const tools::Rectangle& rControlRegion, ControlState nState,
+    virtual bool        getNativeControlRegion( ControlType nType, ControlPart nPart, const Rectangle& rControlRegion, ControlState nState,
                                                 const ImplControlValue& aValue, const OUString& aCaption,
-                                                tools::Rectangle &rNativeBoundingRegion, tools::Rectangle &rNativeContentRegion ) override;
+                                                Rectangle &rNativeBoundingRegion, Rectangle &rNativeContentRegion ) override;
 
     virtual bool        blendBitmap( const SalTwoRect&,
                                      const SalBitmap& rBitmap ) override;
@@ -299,7 +349,8 @@ protected:
 private:
     // local helpers
 
-    void                    DrawTextLayout(const CommonSalLayout&, HDC, bool bUseDWrite);
+    // get kernign pairs of the current font
+    sal_uLong               GetKernPairs();
 
 public:
     // public SalGraphics methods, the interface to the independent vcl part
@@ -324,7 +375,7 @@ public:
     // filled accordingly
     virtual void            SetFillColor( SalColor nSalColor ) override;
     // enable/disable XOR drawing
-    virtual void            SetXORMode( bool bSet ) override;
+    virtual void            SetXORMode( bool bSet, bool ) override;
     // set line color for raster operations
     virtual void            SetROPLineColor( SalROPColor nROPColor ) override;
     // set fill color for raster operations
@@ -334,9 +385,9 @@ public:
     // set the font
     virtual void            SetFont( FontSelectPattern*, int nFallbackLevel ) override;
     // get the current font's metrics
-    virtual void            GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) override;
+    virtual void            GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) override;
     // get the repertoire of the current font
-    virtual const FontCharMapRef GetFontCharMap() const override;
+    virtual const FontCharMapPtr GetFontCharMap() const override;
     // get the layout capabilities of the current font
     virtual bool GetFontCapabilities(vcl::FontCapabilities &rGetFontCapabilities) const override;
     // graphics must fill supplied font list
@@ -351,7 +402,7 @@ public:
     //             pFont: describes from which font to create a subset
     //             pGlyphIDs: the glyph ids to be extracted
     //             pEncoding: the character code corresponding to each glyph
-    //             pWidths: the advance widths of the corresponding glyphs (in PS font units)
+    //             pWidths: the advance widths of the correspoding glyphs (in PS font units)
     //             nGlyphs: the number of glyphs
     //             rInfo: additional outgoing information
     // implementation note: encoding 0 with glyph id 0 should be added implicitly
@@ -365,23 +416,41 @@ public:
                                               FontSubsetInfo& rInfo // out parameter
                                               ) override;
 
+    // GetFontEncodingVector: a method to get the encoding map Unicode
+    // to font encoded character; this is only used for type1 fonts and
+    // may return NULL in case of unknown encoding vector
+    // if ppNonEncoded is set and non encoded characters (that is type1
+    // glyphs with only a name) exist it is set to the corresponding
+    // map for non encoded glyphs; the encoding vector contains -1
+    // as encoding for these cases
+    virtual const Ucs2SIntMap* GetFontEncodingVector( const PhysicalFontFace*, const Ucs2OStrMap** ppNonEncoded, std::set<sal_Unicode> const** ) override;
+
     // GetEmbedFontData: gets the font data for a font marked
     // embeddable by GetDevFontList or NULL in case of error
     // parameters: pFont: describes the font in question
+    //             pWidths: the widths of all glyphs from char code 0 to 255
+    //                      pWidths MUST support at least 256 members;
+    //             rInfo: additional outgoing information
     //             pDataLen: out parameter, contains the byte length of the returned buffer
-    virtual const void* GetEmbedFontData(const PhysicalFontFace*, long* pDataLen) override;
+    virtual const void* GetEmbedFontData( const PhysicalFontFace*,
+                                          const sal_Ucs* pUnicodes,
+                                          sal_Int32* pWidths,
+                                          size_t nLen,
+                                          FontSubsetInfo& rInfo,
+                                          long* pDataLen ) override;
     // frees the font data again
     virtual void            FreeEmbedFontData( const void* pData, long nDataLen ) override;
     virtual void            GetGlyphWidths( const PhysicalFontFace*,
                                             bool bVertical,
-                                            std::vector< sal_Int32 >& rWidths,
+                                            Int32Vector& rWidths,
                                             Ucs2UIntMap& rUnicodeEnc ) override;
+            int             GetMinKashidaWidth();
 
-    virtual bool            GetGlyphBoundRect(const GlyphItem&, tools::Rectangle&) override;
-    virtual bool            GetGlyphOutline(const GlyphItem&, basegfx::B2DPolyPolygon&) override;
+    virtual bool            GetGlyphBoundRect( sal_GlyphId, Rectangle& ) override;
+    virtual bool            GetGlyphOutline( sal_GlyphId, basegfx::B2DPolyPolygon& ) override;
 
     virtual SalLayout*      GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) override;
-    virtual void            DrawTextLayout( const CommonSalLayout& ) override;
+    virtual void            DrawServerFontLayout( const ServerFontLayout& ) override;
 
     virtual bool            supportsOperation( OutDevSupportType ) const override;
     // Query the platform layer for control support
@@ -400,6 +469,17 @@ void    ImplGetLogFontFromFontSelect( HDC, const FontSelectPattern*,
             LOGFONTW&, bool bTestVerticalAvail );
 
 #define MAX_64KSALPOINTS    ((((sal_uInt16)0xFFFF)-8)/sizeof(POINTS))
+
+// #102411# Win's GCP mishandles kerning => we need to do it ourselves
+// SalGraphicsData::mpFontKernPairs is sorted by
+inline bool ImplCmpKernData( const KERNINGPAIR& a, const KERNINGPAIR& b )
+{
+    if( a.wFirst < b.wFirst )
+        return true;
+    if( a.wFirst > b.wFirst )
+        return false;
+    return (a.wSecond < b.wSecond);
+}
 
 // called extremely often from just one spot => inline
 inline bool WinFontFace::HasChar( sal_uInt32 cChar ) const

@@ -116,7 +116,7 @@ public class ColumnarTwoColumns extends ReportBuilderLayouter
     }
 
     @Override
-    protected void insertDetailFieldTitles(int lastGroupPosition)
+    protected void insertDetailFieldTitles(int lastGroupPostion)
     {
         // we won't extra field titles
     }

@@ -93,22 +93,18 @@ public:
     OUString         m_aUserDictionaryPath;
 
                     SvtDefaultOptions_Impl();
-                    virtual ~SvtDefaultOptions_Impl() override;
 
     OUString         GetDefaultPath( sal_uInt16 nId ) const;
     virtual void    Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
 
 private:
-    virtual void    ImplCommit() final override;
+    virtual void    ImplCommit() override;
 };
 
 // global ----------------------------------------------------------------
 
-namespace {
-
-std::weak_ptr<SvtDefaultOptions_Impl> g_pOptions;
-
-}
+static SvtDefaultOptions_Impl*  pOptions = nullptr;
+static sal_Int32                nRefCount = 0;
 
 typedef OUString SvtDefaultOptions_Impl:: *PathStrPtr;
 
@@ -317,12 +313,6 @@ SvtDefaultOptions_Impl::SvtDefaultOptions_Impl() : ConfigItem( "Office.Common/Pa
     }
 }
 
-SvtDefaultOptions_Impl::~SvtDefaultOptions_Impl()
-{
-    if ( IsModified() )
-        Commit();
-}
-
 // class SvtDefaultOptions -----------------------------------------------
 namespace { struct lclMutex : public rtl::Static< ::osl::Mutex, lclMutex > {}; }
 
@@ -330,25 +320,30 @@ SvtDefaultOptions::SvtDefaultOptions()
 {
     // Global access, must be guarded (multithreading)
     ::osl::MutexGuard aGuard( lclMutex::get() );
-    pImpl = g_pOptions.lock();
-    if ( !pImpl )
+    if ( !pOptions )
     {
-        pImpl = std::make_shared<SvtDefaultOptions_Impl>();
-        g_pOptions = pImpl;
-        ItemHolder1::holdConfigItem(EItem::DefaultOptions);
+        pOptions = new SvtDefaultOptions_Impl;
+        ItemHolder1::holdConfigItem(E_DEFAULTOPTIONS);
     }
+    ++nRefCount;
+    pImp = pOptions;
 }
 
 SvtDefaultOptions::~SvtDefaultOptions()
 {
     // Global access, must be guarded (multithreading)
     ::osl::MutexGuard aGuard( lclMutex::get() );
-    pImpl.reset();
+    if ( !--nRefCount )
+    {
+        if ( pOptions->IsModified() )
+            pOptions->Commit();
+        DELETEZ( pOptions );
+    }
 }
 
 OUString SvtDefaultOptions::GetDefaultPath( sal_uInt16 nId ) const
 {
-    return pImpl->GetDefaultPath( nId );
+    return pImp->GetDefaultPath( nId );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

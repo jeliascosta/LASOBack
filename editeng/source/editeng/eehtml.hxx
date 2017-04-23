@@ -35,21 +35,20 @@ class EditHTMLParser : public HTMLParser
 {
     using HTMLParser::CallParser;
 private:
-    OUStringBuffer          maStyleSource;
+    OUStringBuffer maStyleSource;
     EditSelection           aCurSel;
     OUString                aBaseURL;
-    EditEngine*             mpEditEngine;
-    std::unique_ptr<AnchorInfo>
-                            pCurAnchor;
+    EditEngine* mpEditEngine;
+    AnchorInfo*             pCurAnchor;
 
     bool                    bInPara:1;
     bool                    bWasInPara:1; // Remember bInPara before HeadingStart, because afterwards it will be gone.
     bool                    bFieldsInserted:1;
     bool                    bInTitle:1;
 
-    sal_uInt8               nInTable;
-    sal_uInt8               nInCell;
-    sal_uInt8               nDefListLevel;
+    sal_uInt8                   nInTable;
+    sal_uInt8                   nInCell;
+    sal_uInt8                   nDefListLevel;
 
     void                    StartPara( bool bReal );
     void                    EndPara( bool bReal );
@@ -71,7 +70,7 @@ protected:
 
 public:
     EditHTMLParser(SvStream& rIn, const OUString& rBaseURL, SvKeyValueIterator* pHTTPHeaderAttrs);
-    virtual ~EditHTMLParser() override;
+    virtual ~EditHTMLParser();
 
     SvParserState CallParser(EditEngine* pEE, const EditPaM& rPaM);
 

@@ -25,13 +25,12 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <unotools/mediadescriptor.hxx>
 #include <oox/core/filterbase.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/core/xmlfilterbase.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffcodec.hxx"
+#include "biffinputstream.hxx"
 #include "unitconverter.hxx"
 
 namespace oox {
@@ -182,9 +181,17 @@ void WorkbookSettings::finalizeImport()
 {
     // default settings
     PropertySet aPropSet( getDocument() );
-    aPropSet.setProperty( PROP_IgnoreCase,          true );     // always in Excel
-    aPropSet.setProperty( PROP_RegularExpressions,  false );    // not supported in Excel
-    aPropSet.setProperty( PROP_Wildcards,           true );     // always in Excel
+    switch( getFilterType() )
+    {
+        case FILTER_OOXML:
+        case FILTER_BIFF:
+            aPropSet.setProperty( PROP_IgnoreCase,          true );     // always in Excel
+            aPropSet.setProperty( PROP_RegularExpressions,  false );    // not supported in Excel
+            aPropSet.setProperty( PROP_Wildcards,           true );     // always in Excel
+        break;
+        case FILTER_UNKNOWN:
+        break;
+    }
 
     // write protection
     if( maFileSharing.mbRecommendReadOnly || (maFileSharing.mnPasswordHash != 0) ) try
@@ -240,7 +247,7 @@ sal_Int16 WorkbookSettings::getApiShowObjectMode() const
     return API_SHOWMODE_SHOW;
 }
 
-css::util::Date const & WorkbookSettings::getNullDate() const
+css::util::Date WorkbookSettings::getNullDate() const
 {
     static const css::util::Date saDate1900                 ( 30, 12, 1899 );
     static const css::util::Date saDate1904                 ( 1, 1, 1904 );

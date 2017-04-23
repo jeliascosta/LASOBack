@@ -38,7 +38,7 @@ MasterPageDescriptor::MasterPageDescriptor (
     const std::shared_ptr<PreviewProvider>& rpPreviewProvider)
     : maToken(MasterPageContainer::NIL_TOKEN),
       meOrigin(eOrigin),
-      msURL(INetURLObject(rsURL).GetMainURL(INetURLObject::DecodeMechanism::Unambiguous)),
+      msURL(INetURLObject(rsURL).GetMainURL(INetURLObject::DECODE_UNAMBIGUOUS)),
       msPageName(rsPageName),
       msStyleName(rsStyleName),
       mbIsPrecious(bIsPrecious),
@@ -145,13 +145,13 @@ const Image& MasterPageDescriptor::GetPreview (MasterPageContainer::PreviewSize 
      ::std::unique_ptr<std::vector<MasterPageContainerChangeEvent::EventType> > pResult;
      if (bDataChanged || bIndexChanged || bPreviewChanged)
      {
-         pResult.reset(new std::vector<MasterPageContainerChangeEvent::EventType>);
+         pResult.reset(new std::vector<MasterPageContainerChangeEvent::EventType>());
          if (bDataChanged)
-             pResult->push_back(MasterPageContainerChangeEvent::EventType::DATA_CHANGED);
+             pResult->push_back(MasterPageContainerChangeEvent::DATA_CHANGED);
          if (bIndexChanged)
-             pResult->push_back(MasterPageContainerChangeEvent::EventType::INDEX_CHANGED);
+             pResult->push_back(MasterPageContainerChangeEvent::INDEX_CHANGED);
          if (bPreviewChanged)
-             pResult->push_back(MasterPageContainerChangeEvent::EventType::PREVIEW_CHANGED);
+             pResult->push_back(MasterPageContainerChangeEvent::PREVIEW_CHANGED);
      }
 
      return pResult;
@@ -200,7 +200,7 @@ int MasterPageDescriptor::UpdatePageObject (
         }
         else
         {
-            SAL_WARN( "sd", "UpdatePageObject: master page is NULL");
+            DBG_ASSERT(false, "UpdatePageObject: master page is NULL");
             return -1;
         }
 

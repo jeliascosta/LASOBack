@@ -102,7 +102,7 @@ public:
 private:
     void processQueue();
 
-    DECL_STATIC_LINK(MissingPluginInstaller, launchUi, void*, void);
+    DECL_STATIC_LINK_TYPED(MissingPluginInstaller, launchUi, void*, void);
 
     osl::Mutex mutex_;
     std::set<OString> reported_;
@@ -235,7 +235,7 @@ void MissingPluginInstaller::processQueue() {
 }
 
 
-IMPL_STATIC_LINK(MissingPluginInstaller, launchUi, void *, p, void)
+IMPL_STATIC_LINK_TYPED(MissingPluginInstaller, launchUi, void *, p, void)
 {
     MissingPluginInstallerThread* thread = static_cast<MissingPluginInstallerThread*>(p);
     rtl::Reference<MissingPluginInstallerThread> ref(thread, SAL_NO_ACQUIRE);
@@ -614,7 +614,7 @@ void Player::preparePlaybin( const OUString& rURL, GstElement *pSink )
     mpPlaybin = gst_element_factory_make( "playbin", nullptr );
 
     //tdf#96989 on systems with flat-volumes setting the volume directly on the
-    //playbin to 100% results in setting the global volume to 100% of the
+    //playbin to 100% results in setting the global volums to 100% of the
     //maximum. We expect to set as % of the current volume.
     mpVolumeControl = gst_element_factory_make( "volume", nullptr );
     GstElement *pAudioSink = gst_element_factory_make( "autoaudiosink", nullptr );
@@ -684,6 +684,7 @@ bool Player::create( const OUString& rURL )
 
 
 void SAL_CALL Player::start()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -697,6 +698,7 @@ void SAL_CALL Player::start()
 
 
 void SAL_CALL Player::stop()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -710,6 +712,7 @@ void SAL_CALL Player::stop()
 
 
 sal_Bool SAL_CALL Player::isPlaying()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -728,6 +731,7 @@ sal_Bool SAL_CALL Player::isPlaying()
 
 
 double SAL_CALL Player::getDuration()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -743,6 +747,7 @@ double SAL_CALL Player::getDuration()
 
 
 void SAL_CALL Player::setMediaTime( double fTime )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -763,6 +768,7 @@ void SAL_CALL Player::setMediaTime( double fTime )
 
 
 double SAL_CALL Player::getMediaTime()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -780,6 +786,7 @@ double SAL_CALL Player::getMediaTime()
 
 
 void SAL_CALL Player::setPlaybackLoop( sal_Bool bSet )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     // TODO check how to do with GST
@@ -788,6 +795,7 @@ void SAL_CALL Player::setPlaybackLoop( sal_Bool bSet )
 
 
 sal_Bool SAL_CALL Player::isPlaybackLoop()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     // TODO check how to do with GST
@@ -796,6 +804,7 @@ sal_Bool SAL_CALL Player::isPlaybackLoop()
 
 
 void SAL_CALL Player::setMute( sal_Bool bSet )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -818,6 +827,7 @@ void SAL_CALL Player::setMute( sal_Bool bSet )
 
 
 sal_Bool SAL_CALL Player::isMute()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -826,6 +836,7 @@ sal_Bool SAL_CALL Player::isMute()
 
 
 void SAL_CALL Player::setVolumeDB( sal_Int16 nVolumeDB )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -842,6 +853,7 @@ void SAL_CALL Player::setVolumeDB( sal_Int16 nVolumeDB )
 
 
 sal_Int16 SAL_CALL Player::getVolumeDB()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -860,6 +872,7 @@ sal_Int16 SAL_CALL Player::getVolumeDB()
 
 
 awt::Size SAL_CALL Player::getPreferredPlayerWindowSize()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -887,6 +900,7 @@ awt::Size SAL_CALL Player::getPreferredPlayerWindowSize()
 
 
 uno::Reference< ::media::XPlayerWindow > SAL_CALL Player::createPlayerWindow( const uno::Sequence< uno::Any >& rArguments )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
@@ -948,6 +962,7 @@ uno::Reference< ::media::XPlayerWindow > SAL_CALL Player::createPlayerWindow( co
 
 
 uno::Reference< media::XFrameGrabber > SAL_CALL Player::createFrameGrabber()
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     FrameGrabber* pFrameGrabber = nullptr;
@@ -962,20 +977,25 @@ uno::Reference< media::XFrameGrabber > SAL_CALL Player::createFrameGrabber()
 
 
 OUString SAL_CALL Player::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString( AVMEDIA_GST_PLAYER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL Player::supportsService( const OUString& ServiceName )
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL Player::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
-    return { AVMEDIA_GST_PLAYER_SERVICENAME };
+    uno::Sequence<OUString> aRet { AVMEDIA_GST_PLAYER_SERVICENAME };
+
+    return aRet;
 }
 
 } // namespace gstreamer

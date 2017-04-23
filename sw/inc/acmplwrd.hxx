@@ -44,15 +44,12 @@ class SwAutoCompleteWord
     SwAutoCompleteStringPtrDeque aLRULst;
 
     std::unique_ptr<SwAutoCompleteWord_Impl> pImpl;
-    editeng::SortedAutoCompleteStrings::size_type nMaxCount;
-    sal_uInt16 nMinWrdLen;
+    sal_uInt16 nMaxCount, nMinWrdLen;
     bool bLockWordLst;
 
     void DocumentDying(const SwDoc& rDoc);
 public:
-    SwAutoCompleteWord(
-        editeng::SortedAutoCompleteStrings::size_type nWords,
-        sal_uInt16 nMWrdLen = 10 );
+    SwAutoCompleteWord( sal_uInt16 nWords = 500, sal_uInt16 nMWrdLen = 10 );
     ~SwAutoCompleteWord();
 
     bool InsertWord( const OUString& rWord, SwDoc& rDoc );
@@ -60,7 +57,7 @@ public:
     bool IsLockWordLstLocked() const           { return bLockWordLst; }
     void SetLockWordLstLocked( bool bFlag ) { bLockWordLst = bFlag; }
 
-    void SetMaxCount( editeng::SortedAutoCompleteStrings::size_type n );
+    void SetMaxCount( sal_uInt16 n );
 
     sal_uInt16 GetMinWordLen() const                { return nMinWrdLen; }
     void SetMinWordLen( sal_uInt16 n );

@@ -23,7 +23,6 @@
 #include <tools/helpers.hxx>
 #include <vcl/msgbox.hxx>
 #include <svl/eitem.hxx>
-#include <sfx2/ctrlitem.hxx>
 #include <sfx2/dispatch.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <svtools/miscopt.hxx>
@@ -48,8 +47,8 @@
 
 SFX_IMPL_FLOATINGWINDOW_WITHID( SvxContourDlgChildWindow, SID_CONTOUR_DLG );
 
-SvxContourDlgItem::SvxContourDlgItem( SvxSuperContourDlg& rContourDlg, SfxBindings& rBindings ) :
-            SfxControllerItem   ( SID_CONTOUR_EXEC, rBindings ),
+SvxContourDlgItem::SvxContourDlgItem( sal_uInt16 _nId, SvxSuperContourDlg& rContourDlg, SfxBindings& rBindings ) :
+            SfxControllerItem   ( _nId, rBindings ),
             rDlg                ( rContourDlg )
 {
 }
@@ -103,13 +102,13 @@ void SvxContourDlg::SetSuperClass( SvxSuperContourDlg& rSuperClass )
 }
 
 tools::PolyPolygon SvxContourDlg::CreateAutoContour( const Graphic& rGraphic,
-                                                     const tools::Rectangle* pRect,
+                                                     const Rectangle* pRect,
                                                      const sal_uIntPtr nFlags )
 {
     Bitmap  aBmp;
     XOutFlags nContourFlags = XOutFlags::ContourHorz;
 
-    if ( rGraphic.GetType() == GraphicType::Bitmap )
+    if ( rGraphic.GetType() == GRAPHIC_BITMAP )
     {
         if( rGraphic.IsAnimated() )
         {
@@ -138,7 +137,7 @@ tools::PolyPolygon SvxContourDlg::CreateAutoContour( const Graphic& rGraphic,
                 aTransMap.SetOrigin( Point() );
                 pVDev->SetMapMode( aTransMap );
                 aBmp = pVDev->GetBitmap( Point(), rSizePix );
-                aBmp.Convert( BmpConversion::N1BitThreshold );
+                aBmp.Convert( BMP_CONVERSION_1BIT_THRESHOLD );
             }
         }
         else if( rGraphic.IsTransparent() )
@@ -149,7 +148,7 @@ tools::PolyPolygon SvxContourDlg::CreateAutoContour( const Graphic& rGraphic,
             nContourFlags |= XOutFlags::ContourEdgeDetect;
         }
     }
-    else if( rGraphic.GetType() != GraphicType::NONE )
+    else if( rGraphic.GetType() != GRAPHIC_NONE )
     {
         const Graphic   aTmpGrf( rGraphic.GetGDIMetaFile().GetMonochromeMtf( Color( COL_BLACK ) ) );
         ScopedVclPtrInstance< VirtualDevice > pVDev;
@@ -217,7 +216,7 @@ SvxSuperContourDlg::SvxSuperContourDlg(SfxBindings *_pBindings, SfxChildWindow *
         aCreateIdle         ( "SvxSuperContourDlg CreateIdle" ),
         pUpdateEditingObject( nullptr ),
         pCheckObj           ( nullptr ),
-        aContourItem        ( *this, *_pBindings ),
+        aContourItem        ( SID_CONTOUR_EXEC, *this, *_pBindings ),
         nGrfChanged         ( 0UL ),
         bExecState          ( false ),
         bUpdateGraphicLinked( false ),
@@ -274,7 +273,7 @@ SvxSuperContourDlg::SvxSuperContourDlg(SfxBindings *_pBindings, SfxChildWindow *
     m_pTbx1->SetSizePixel( aTbxSize );
     m_pTbx1->SetSelectHdl( LINK( this, SvxSuperContourDlg, Tbx1ClickHdl ) );
 
-    aPos.X() += aTbxSize.Width() + LogicToPixel( Size( 3, 0 ), MapMode( MapUnit::MapAppFont ) ).Width();
+    aPos.X() += aTbxSize.Width() + LogicToPixel( Size( 3, 0 ), MapMode( MAP_APPFONT ) ).Width();
     m_pMtfTolerance->SetPosPixel( aPos );
     m_pMtfTolerance->SetValue( 10L );
 
@@ -287,11 +286,11 @@ SvxSuperContourDlg::SvxSuperContourDlg(SfxBindings *_pBindings, SfxChildWindow *
 
     Resize();
 
-    aUpdateIdle.SetPriority( TaskPriority::LOW );
-    aUpdateIdle.SetInvokeHandler( LINK( this, SvxSuperContourDlg, UpdateHdl ) );
+    aUpdateIdle.SetPriority( SchedulerPriority::LOW );
+    aUpdateIdle.SetIdleHdl( LINK( this, SvxSuperContourDlg, UpdateHdl ) );
 
-    aCreateIdle.SetPriority( TaskPriority::RESIZE );
-    aCreateIdle.SetInvokeHandler( LINK( this, SvxSuperContourDlg, CreateHdl ) );
+    aCreateIdle.SetPriority( SchedulerPriority::RESIZE );
+    aCreateIdle.SetIdleHdl( LINK( this, SvxSuperContourDlg, CreateHdl ) );
 }
 
 SvxSuperContourDlg::~SvxSuperContourDlg()
@@ -353,13 +352,13 @@ void SvxSuperContourDlg::SetGraphic( const Graphic& rGraphic )
 
 void SvxSuperContourDlg::SetPolyPolygon( const tools::PolyPolygon& rPolyPoly )
 {
-    DBG_ASSERT(  m_pContourWnd->GetGraphic().GetType() != GraphicType::NONE, "Graphic must've been set first!" );
+    DBG_ASSERT(  m_pContourWnd->GetGraphic().GetType() != GRAPHIC_NONE, "Graphic must've been set first!" );
 
     tools::PolyPolygon aPolyPoly( rPolyPoly );
-    const MapMode   aMap100( MapUnit::Map100thMM );
+    const MapMode   aMap100( MAP_100TH_MM );
     const MapMode   aGrfMap( aGraphic.GetPrefMapMode() );
     OutputDevice*   pOutDev = Application::GetDefaultDevice();
-    bool            bPixelMap = aGrfMap.GetMapUnit() == MapUnit::MapPixel;
+    bool            bPixelMap = aGrfMap.GetMapUnit() == MAP_PIXEL;
 
     for ( sal_uInt16 j = 0, nPolyCount = aPolyPoly.Count(); j < nPolyCount; j++ )
     {
@@ -384,10 +383,10 @@ tools::PolyPolygon SvxSuperContourDlg::GetPolyPolygon()
 {
     tools::PolyPolygon aRetPolyPoly( m_pContourWnd->GetPolyPolygon() );
 
-    const MapMode   aMap100( MapUnit::Map100thMM );
+    const MapMode   aMap100( MAP_100TH_MM );
     const MapMode   aGrfMap( aGraphic.GetPrefMapMode() );
     OutputDevice*   pOutDev = Application::GetDefaultDevice();
-    bool            bPixelMap = aGrfMap.GetMapUnit() == MapUnit::MapPixel;
+    bool            bPixelMap = aGrfMap.GetMapUnit() == MAP_PIXEL;
 
     for ( sal_uInt16 j = 0, nPolyCount = aRetPolyPoly.Count(); j < nPolyCount; j++ )
     {
@@ -422,9 +421,19 @@ void SvxSuperContourDlg::UpdateGraphic( const Graphic& rGraphic, bool _bGraphicL
     aUpdateIdle.Start();
 }
 
+bool SvxSuperContourDlg::IsUndoPossible() const
+{
+    return aUndoGraphic.GetType() != GRAPHIC_NONE;
+}
+
+bool SvxSuperContourDlg::IsRedoPossible() const
+{
+    return aRedoGraphic.GetType() != GRAPHIC_NONE;
+}
+
 // Click handler for ToolBox
 
-IMPL_LINK( SvxSuperContourDlg, Tbx1ClickHdl, ToolBox*, pTbx, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, Tbx1ClickHdl, ToolBox*, pTbx, void )
 {
     sal_uInt16 nNewItemId = pTbx->GetCurItemId();
 
@@ -530,7 +539,7 @@ IMPL_LINK( SvxSuperContourDlg, Tbx1ClickHdl, ToolBox*, pTbx, void )
     m_pContourWnd->QueueIdleUpdate();
 }
 
-IMPL_LINK( SvxSuperContourDlg, MousePosHdl, GraphCtrl*, pWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, MousePosHdl, GraphCtrl*, pWnd, void )
 {
     OUString aStr;
     const FieldUnit eFieldUnit = GetBindings().GetDispatcher()->GetModule()->GetFieldUnit();
@@ -538,14 +547,14 @@ IMPL_LINK( SvxSuperContourDlg, MousePosHdl, GraphCtrl*, pWnd, void )
     const LocaleDataWrapper& rLocaleWrapper( Application::GetSettings().GetLocaleDataWrapper() );
     const sal_Unicode cSep = rLocaleWrapper.getNumDecimalSep()[0];
 
-    aStr = GetUnitString( rMousePos.X(), eFieldUnit, cSep )
-         + " / "
-         + GetUnitString( rMousePos.Y(), eFieldUnit, cSep );
+    aStr = GetUnitString( rMousePos.X(), eFieldUnit, cSep );
+    aStr += " / ";
+    aStr += GetUnitString( rMousePos.Y(), eFieldUnit, cSep );
 
     m_pStbStatus->SetItemText( 2, aStr );
 }
 
-IMPL_LINK( SvxSuperContourDlg, GraphSizeHdl, GraphCtrl*, pWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, GraphSizeHdl, GraphCtrl*, pWnd, void )
 {
     OUString aStr;
     const FieldUnit eFieldUnit = GetBindings().GetDispatcher()->GetModule()->GetFieldUnit();
@@ -553,14 +562,14 @@ IMPL_LINK( SvxSuperContourDlg, GraphSizeHdl, GraphCtrl*, pWnd, void )
     const LocaleDataWrapper& rLocaleWrapper( Application::GetSettings().GetLocaleDataWrapper() );
     const sal_Unicode cSep = rLocaleWrapper.getNumDecimalSep()[0];
 
-    aStr = GetUnitString( rSize.Width(), eFieldUnit, cSep )
-         + " x "
-         + GetUnitString( rSize.Height(), eFieldUnit, cSep );
+    aStr = GetUnitString( rSize.Width(), eFieldUnit, cSep );
+    aStr += " x ";
+    aStr += GetUnitString( rSize.Height(), eFieldUnit, cSep );
 
     m_pStbStatus->SetItemText( 3, aStr );
 }
 
-IMPL_LINK_NOARG(SvxSuperContourDlg, UpdateHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvxSuperContourDlg, UpdateHdl, Idle *, void)
 {
     aUpdateIdle.Stop();
 
@@ -571,7 +580,7 @@ IMPL_LINK_NOARG(SvxSuperContourDlg, UpdateHdl, Timer *, void)
 
         SetGraphic( aUpdateGraphic );
         SetPolyPolygon( aUpdatePolyPoly );
-        pCheckObj = pUpdateEditingObject;
+        SetEditingObject( pUpdateEditingObject );
         bGraphicLinked = bUpdateGraphicLinked;
 
         aUpdateGraphic = Graphic();
@@ -585,11 +594,11 @@ IMPL_LINK_NOARG(SvxSuperContourDlg, UpdateHdl, Timer *, void)
     m_pContourWnd->QueueIdleUpdate();
 }
 
-IMPL_LINK_NOARG(SvxSuperContourDlg, CreateHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvxSuperContourDlg, CreateHdl, Idle *, void)
 {
     aCreateIdle.Stop();
 
-    const tools::Rectangle aWorkRect = m_pContourWnd->LogicToPixel( m_pContourWnd->GetWorkRect(), MapMode( MapUnit::Map100thMM ) );
+    const Rectangle aWorkRect = m_pContourWnd->LogicToPixel( m_pContourWnd->GetWorkRect(), MapMode( MAP_100TH_MM ) );
     const Graphic&  rGraphic = m_pContourWnd->GetGraphic();
     const bool      bValid = aWorkRect.Left() != aWorkRect.Right() && aWorkRect.Top() != aWorkRect.Bottom();
 
@@ -598,7 +607,7 @@ IMPL_LINK_NOARG(SvxSuperContourDlg, CreateHdl, Timer *, void)
     LeaveWait();
 }
 
-IMPL_LINK( SvxSuperContourDlg, StateHdl, GraphCtrl*, pWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, StateHdl, GraphCtrl*, pWnd, void )
 {
     const SdrObject*    pObj = pWnd->GetSelectedSdrObject();
     const SdrView*      pView = pWnd->GetSdrView();
@@ -607,7 +616,7 @@ IMPL_LINK( SvxSuperContourDlg, StateHdl, GraphCtrl*, pWnd, void )
     const bool          bPipette = m_pTbx1->IsItemChecked(mnPipetteId);
     const bool          bWorkplace = m_pTbx1->IsItemChecked(mnWorkSpaceId);
     const bool          bDontHide = !( bPipette || bWorkplace );
-    const bool          bBitmap = pWnd->GetGraphic().GetType() == GraphicType::Bitmap;
+    const bool          bBitmap = pWnd->GetGraphic().GetType() == GRAPHIC_BITMAP;
 
     m_pTbx1->EnableItem(mnApplyId, bDontHide && bExecState && pWnd->IsChanged());
 
@@ -626,8 +635,8 @@ IMPL_LINK( SvxSuperContourDlg, StateHdl, GraphCtrl*, pWnd, void )
     m_pTbx1->EnableItem(mnAutoContourId, bDontHide && bDrawEnabled);
     m_pTbx1->EnableItem(mnPipetteId, !bWorkplace && bDrawEnabled && bBitmap);
 
-    m_pTbx1->EnableItem(mnUndoId, bDontHide && aUndoGraphic.GetType() != GraphicType::NONE);
-    m_pTbx1->EnableItem(mnRedoId, bDontHide && aRedoGraphic.GetType() != GraphicType::NONE);
+    m_pTbx1->EnableItem(mnUndoId, bDontHide && IsUndoPossible());
+    m_pTbx1->EnableItem(mnRedoId, bDontHide && IsRedoPossible());
 
     if ( bPolyEdit )
     {
@@ -653,12 +662,12 @@ IMPL_LINK( SvxSuperContourDlg, StateHdl, GraphCtrl*, pWnd, void )
     }
 }
 
-IMPL_LINK( SvxSuperContourDlg, PipetteHdl, ContourWindow&, rWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, PipetteHdl, ContourWindow&, rWnd, void )
 {
     const Color& rOldLineColor = m_pStbStatus->GetLineColor();
     const Color& rOldFillColor = m_pStbStatus->GetFillColor();
 
-    tools::Rectangle       aRect( m_pStbStatus->GetItemRect( 4 ) );
+    Rectangle       aRect( m_pStbStatus->GetItemRect( 4 ) );
     const Color&    rColor = rWnd.GetPipetteColor();
 
     m_pStbStatus->SetLineColor( rColor );
@@ -675,7 +684,7 @@ IMPL_LINK( SvxSuperContourDlg, PipetteHdl, ContourWindow&, rWnd, void )
     m_pStbStatus->SetFillColor( rOldFillColor );
 }
 
-IMPL_LINK( SvxSuperContourDlg, PipetteClickHdl, ContourWindow&, rWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, PipetteClickHdl, ContourWindow&, rWnd, void )
 {
     if ( rWnd.IsClickValid() )
     {
@@ -684,7 +693,7 @@ IMPL_LINK( SvxSuperContourDlg, PipetteClickHdl, ContourWindow&, rWnd, void )
 
         EnterWait();
 
-        if( aGraphic.GetType() == GraphicType::Bitmap )
+        if( aGraphic.GetType() == GRAPHIC_BITMAP )
         {
             Bitmap      aBmp( aGraphic.GetBitmap() );
             const long  nTol = static_cast<long>(m_pMtfTolerance->GetValue() * 255L / 100L);
@@ -692,7 +701,7 @@ IMPL_LINK( SvxSuperContourDlg, PipetteClickHdl, ContourWindow&, rWnd, void )
             aMask = aBmp.CreateMask( rColor, nTol );
 
             if( aGraphic.IsTransparent() )
-                aMask.CombineSimple( aGraphic.GetBitmapEx().GetMask(), BmpCombine::Or );
+                aMask.CombineSimple( aGraphic.GetBitmapEx().GetMask(), BMP_COMBINE_OR );
 
             if( !!aMask )
             {
@@ -720,7 +729,7 @@ IMPL_LINK( SvxSuperContourDlg, PipetteClickHdl, ContourWindow&, rWnd, void )
     m_pStbStatus->Invalidate();
 }
 
-IMPL_LINK( SvxSuperContourDlg, WorkplaceClickHdl, ContourWindow&, rWnd, void )
+IMPL_LINK_TYPED( SvxSuperContourDlg, WorkplaceClickHdl, ContourWindow&, rWnd, void )
 {
     m_pTbx1->CheckItem(mnWorkSpaceId, false);
     m_pTbx1->CheckItem(mnSelectId);
@@ -730,7 +739,7 @@ IMPL_LINK( SvxSuperContourDlg, WorkplaceClickHdl, ContourWindow&, rWnd, void )
     Invalidate();
 }
 
-IMPL_LINK_NOARG(SvxSuperContourDlg, MiscHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(SvxSuperContourDlg, MiscHdl, LinkParamNone*, void)
 {
     SvtMiscOptions aMiscOptions;
     m_pTbx1->SetOutStyle( aMiscOptions.GetToolboxStyle() );

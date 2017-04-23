@@ -19,7 +19,6 @@
 #include "cppuhelper/implementationentry.hxx"
 #include "comphelper/servicedecl.hxx"
 
-#include <service.hxx>
 
 // component exports
 
@@ -27,6 +26,17 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
 namespace sdecl = comphelper::service_decl;
+
+// reference service helper(s)
+namespace  controlprovider
+{
+extern sdecl::ServiceDecl const serviceDecl;
+}
+
+namespace  userform
+{
+extern sdecl::ServiceDecl const serviceDecl;
+}
 
 extern "C"
 {

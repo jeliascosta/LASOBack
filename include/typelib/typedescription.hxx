@@ -52,13 +52,13 @@ class TypeDescription
 public:
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new ( size_t nSize )
+    inline static void * SAL_CALL operator new ( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete ( void * pMem )
+    inline static void SAL_CALL operator delete ( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new ( size_t, void * pMem )
+    inline static void * SAL_CALL operator new ( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete ( void *, void * )
+    inline static void SAL_CALL operator delete ( void *, void * )
         {}
     /// @endcond
 
@@ -82,10 +82,6 @@ public:
         @param rDescr another TypeDescription
     */
     inline TypeDescription( const TypeDescription & rDescr );
-#if defined LIBO_INTERNAL_ONLY
-    TypeDescription(TypeDescription && other): _pTypeDescr(other._pTypeDescr)
-    { other._pTypeDescr = nullptr; }
-#endif
     /** Constructor:
 
         @param pTypeName a type name
@@ -111,19 +107,8 @@ public:
         @param rTypeDescr another type description
         @return this TypeDescription
     */
-    TypeDescription & SAL_CALL operator =( const TypeDescription & rTypeDescr )
+    inline TypeDescription & SAL_CALL operator =( const TypeDescription & rTypeDescr )
         { return this->operator =( rTypeDescr.get() ); }
-
-#if defined LIBO_INTERNAL_ONLY
-    TypeDescription & operator =(TypeDescription && other) {
-        if (_pTypeDescr != nullptr) {
-            typelib_typedescription_release(_pTypeDescr);
-        }
-        _pTypeDescr = other._pTypeDescr;
-        other._pTypeDescr = nullptr;
-        return *this;
-    }
-#endif
 
     /** Tests whether two type descriptions are equal.
 
@@ -136,7 +121,7 @@ public:
         @param rTypeDescr another type description
         @return true, if both type descriptions are equal, false otherwise
     */
-    bool SAL_CALL equals( const TypeDescription & rTypeDescr ) const
+    inline bool SAL_CALL equals( const TypeDescription & rTypeDescr ) const
         { return equals( rTypeDescr._pTypeDescr ); }
 
     /** Makes stored type description complete.
@@ -147,13 +132,13 @@ public:
 
         @return stored pointer of type description
     */
-    typelib_TypeDescription * SAL_CALL get() const
+    inline typelib_TypeDescription * SAL_CALL get() const
         { return _pTypeDescr; }
     /** Tests if a type description is set.
 
         @return true, if a type description is set, false otherwise
     */
-    bool SAL_CALL is() const
+    inline bool SAL_CALL is() const
         { return (_pTypeDescr != NULL); }
 };
 

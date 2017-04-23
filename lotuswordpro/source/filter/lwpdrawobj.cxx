@@ -151,7 +151,7 @@ void LwpDrawObj::ReadClosedObjStyle()
 
     // fill style
     m_pStream->ReadUInt16( m_aClosedObjStyleRec.nFillType );
-    m_pStream->ReadBytes(m_aClosedObjStyleRec.pFillPattern,
+    m_pStream->Read(m_aClosedObjStyleRec.pFillPattern,
         sizeof(m_aClosedObjStyleRec.pFillPattern));
 }
 
@@ -780,7 +780,7 @@ XFFrame* LwpDrawRectangle::CreateStandardDrawObj(const  OUString& rStyleName)
         double fStartX, fStartY, fWidth, fHeight;
         double fRotAngle = 0.0;
         SdwRectangle aSdwRect;
-        tools::Rectangle aOriginalRect;
+        Rectangle aOriginalRect;
         Point aPt0, aPt1, aPt2, aPt3;
 
         aPt0.setX(m_aVector[0].x); aPt0.setY(m_aVector[0].y);
@@ -796,7 +796,7 @@ XFFrame* LwpDrawRectangle::CreateStandardDrawObj(const  OUString& rStyleName)
         }
         else
         {
-            aOriginalRect = tools::Rectangle(aPt0, aPt2);
+            aOriginalRect = Rectangle(aPt0, aPt2);
         }
 
         fStartX = aOriginalRect.TopLeft().X();
@@ -1036,7 +1036,7 @@ void LwpDrawTextBox::Read()
         m_aTextRec.nTextWidth = 1;
 
     m_pStream->ReadInt16( m_aTextRec.nTextHeight );
-    m_pStream->ReadBytes(m_aTextRec.tmpTextFaceName, DRAW_FACESIZE);
+    m_pStream->Read(m_aTextRec.tmpTextFaceName, DRAW_FACESIZE);
     m_pStream->SeekRel(1);// PitchAndFamily
 
     m_pStream->ReadInt16( m_aTextRec.nTextSize );
@@ -1062,7 +1062,7 @@ void LwpDrawTextBox::Read()
     sal_Int16 TextLength = m_aObjHeader.nRecLen - 71;
     m_aTextRec.pTextString = new sal_uInt8 [TextLength];
 
-    m_pStream->ReadBytes(m_aTextRec.pTextString, TextLength);
+    m_pStream->Read(m_aTextRec.pTextString, TextLength);
 }
 
 OUString LwpDrawTextBox::RegisterStyle()
@@ -1242,7 +1242,7 @@ void LwpDrawTextArt::Read()
 
     m_pStream->SeekRel(1);
 
-    m_pStream->ReadBytes(m_aTextArtRec.tmpTextFaceName, DRAW_FACESIZE);
+    m_pStream->Read(m_aTextArtRec.tmpTextFaceName, DRAW_FACESIZE);
     m_pStream->SeekRel(1);// PitchAndFamily
 
     m_pStream->ReadInt16( m_aTextArtRec.nTextSize );
@@ -1265,7 +1265,7 @@ void LwpDrawTextArt::Read()
         throw BadRead();
 
     m_aTextArtRec.pTextString = new sal_uInt8 [m_aTextArtRec.nTextLen];
-    m_pStream->ReadBytes(m_aTextArtRec.pTextString, m_aTextArtRec.nTextLen);
+    m_pStream->Read(m_aTextArtRec.pTextString, m_aTextArtRec.nTextLen);
     m_aTextArtRec.pTextString[m_aTextArtRec.nTextLen-1] = 0;
 
 }
@@ -1476,7 +1476,7 @@ void LwpDrawBitmap::Read()
         pPicData += 30*sizeof(sal_uInt8);
     }
 
-    m_pStream->ReadBytes(pPicData, nDIBRemaining);
+    m_pStream->Read(pPicData, nDIBRemaining);
 }
 
 OUString LwpDrawBitmap::RegisterStyle()

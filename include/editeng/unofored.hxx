@@ -33,12 +33,12 @@ private:
 
 public:
                         SvxEditEngineForwarder( EditEngine& rEngine );
-    virtual             ~SvxEditEngineForwarder() override;
+    virtual             ~SvxEditEngineForwarder();
 
     virtual sal_Int32   GetParagraphCount() const override;
     virtual sal_Int32   GetTextLen( sal_Int32 nParagraph ) const override;
     virtual OUString    GetText( const ESelection& rSel ) const override;
-    virtual SfxItemSet  GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs::All ) const override;
+    virtual SfxItemSet  GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs_All ) const override;
     virtual SfxItemSet  GetParaAttribs( sal_Int32 nPara ) const override;
     virtual void        SetParaAttribs( sal_Int32 nPara, const SfxItemSet& rSet ) override;
     virtual void        RemoveAttribs( const ESelection& rSelection ) override;
@@ -62,8 +62,8 @@ public:
     virtual sal_Int32       GetFieldCount( sal_Int32 nPara ) const override;
     virtual EFieldInfo      GetFieldInfo( sal_Int32 nPara, sal_uInt16 nField ) const override;
     virtual EBulletInfo     GetBulletInfo( sal_Int32 nPara ) const override;
-    virtual tools::Rectangle       GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const override;
-    virtual tools::Rectangle       GetParaBounds( sal_Int32 nPara ) const override;
+    virtual Rectangle       GetCharBounds( sal_Int32 nPara, sal_Int32 nIndex ) const override;
+    virtual Rectangle       GetParaBounds( sal_Int32 nPara ) const override;
     virtual MapMode         GetMapMode() const override;
     virtual OutputDevice*   GetRefDevice() const override;
     virtual bool            GetIndexAtPoint( const Point&, sal_Int32& nPara, sal_Int32& nIndex ) const override;

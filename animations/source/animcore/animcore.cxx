@@ -19,7 +19,6 @@
 
 #include <com/sun/star/util/XCloneable.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/XTypeProvider.hpp>
 #include <com/sun/star/animations/XAnimateColor.hpp>
@@ -42,7 +41,6 @@
 #include <com/sun/star/animations/TransitionType.hpp>
 #include <com/sun/star/animations/TransitionSubType.hpp>
 #include <com/sun/star/presentation/ShapeAnimationSubType.hpp>
-#include <com/sun/star/container/ElementExistException.hpp>
 #include <com/sun/star/container/XEnumerationAccess.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/util/XChangesNotifier.hpp>
@@ -75,7 +73,8 @@ using ::com::sun::star::uno::XComponentContext;
 using ::com::sun::star::uno::Exception;
 using ::com::sun::star::uno::XWeak;
 using ::com::sun::star::uno::Type;
-using ::com::sun::star::uno::Any;
+using ::com::sun::star::uno::makeAny;
+using ::com::sun::star::lang::NoSupportException;
 using ::com::sun::star::lang::IllegalArgumentException;
 using ::com::sun::star::lang::WrappedTargetException;
 using ::com::sun::star::lang::XServiceInfo;
@@ -101,7 +100,7 @@ namespace animcore
 {
 
 
-typedef std::list< Reference< XAnimationNode > > ChildList_t;
+typedef ::std::list< Reference< XAnimationNode > > ChildList_t;
 
 
 class AnimationNodeBase :   public XAnimateMotion,
@@ -121,7 +120,7 @@ class AnimationNodeBase :   public XAnimateMotion,
                             public OWeakObject
 {
 public:
-    // our first, last and only protection from multi-threads!
+    // our first, last and only protection from mutli-threads!
     Mutex maMutex;
 };
 
@@ -130,156 +129,157 @@ class AnimationNode : public AnimationNodeBase
 public:
     explicit AnimationNode(sal_Int16 nNodeType);
     explicit AnimationNode(const AnimationNode& rNode);
+    virtual ~AnimationNode();
 
     // XInterface
-    virtual Any SAL_CALL queryInterface( const Type& aType ) override;
+    virtual Any SAL_CALL queryInterface( const Type& aType ) throw (RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
 
     // XTypeProvider
-    virtual Sequence< Type > SAL_CALL getTypes() override;
-    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual Sequence< Type > SAL_CALL getTypes() throw (RuntimeException, std::exception) override;
+    virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (RuntimeException, std::exception) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName() override;
-    Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
-    sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    OUString SAL_CALL getImplementationName() throw(std::exception) override;
+    Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(std::exception) override;
+    sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw(std::exception) override;
 
     // XChild
-    virtual Reference< XInterface > SAL_CALL getParent() override;
-    virtual void SAL_CALL setParent( const Reference< XInterface >& Parent ) override;
+    virtual Reference< XInterface > SAL_CALL getParent() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setParent( const Reference< XInterface >& Parent ) throw (NoSupportException, RuntimeException, std::exception) override;
 
     // XCloneable
-    virtual Reference< XCloneable > SAL_CALL createClone() override;
+    virtual Reference< XCloneable > SAL_CALL createClone() throw (RuntimeException, std::exception) override;
 
     // XAnimationNode
-    virtual sal_Int16 SAL_CALL getType() override;
-    virtual Any SAL_CALL getBegin() override;
-    virtual void SAL_CALL setBegin( const Any& _begin ) override;
-    virtual Any SAL_CALL getDuration() override;
-    virtual void SAL_CALL setDuration( const Any& _duration ) override;
-    virtual Any SAL_CALL getEnd() override;
-    virtual void SAL_CALL setEnd( const Any& _end ) override;
-    virtual Any SAL_CALL getEndSync() override;
-    virtual void SAL_CALL setEndSync( const Any& _endsync ) override;
-    virtual Any SAL_CALL getRepeatCount() override;
-    virtual void SAL_CALL setRepeatCount( const Any& _repeatcount ) override;
-    virtual Any SAL_CALL getRepeatDuration() override;
-    virtual void SAL_CALL setRepeatDuration( const Any& _repeatduration ) override;
-    virtual sal_Int16 SAL_CALL getFill() override;
-    virtual void SAL_CALL setFill( sal_Int16 _fill ) override;
-    virtual sal_Int16 SAL_CALL getFillDefault() override;
-    virtual void SAL_CALL setFillDefault( sal_Int16 _filldefault ) override;
-    virtual sal_Int16 SAL_CALL getRestart() override;
-    virtual void SAL_CALL setRestart( sal_Int16 _restart ) override;
-    virtual sal_Int16 SAL_CALL getRestartDefault() override;
-    virtual void SAL_CALL setRestartDefault( sal_Int16 _restartdefault ) override;
-    virtual double SAL_CALL getAcceleration() override;
-    virtual void SAL_CALL setAcceleration( double _acceleration ) override;
-    virtual double SAL_CALL getDecelerate() override;
-    virtual void SAL_CALL setDecelerate( double _decelerate ) override;
-    virtual sal_Bool SAL_CALL getAutoReverse() override;
-    virtual void SAL_CALL setAutoReverse( sal_Bool _autoreverse ) override;
-    virtual Sequence< NamedValue > SAL_CALL getUserData() override;
-    virtual void SAL_CALL setUserData( const Sequence< NamedValue >& _userdata ) override;
+    virtual sal_Int16 SAL_CALL getType() throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getBegin() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setBegin( const Any& _begin ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getDuration() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDuration( const Any& _duration ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getEnd() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setEnd( const Any& _end ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getEndSync() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setEndSync( const Any& _endsync ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getRepeatCount() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setRepeatCount( const Any& _repeatcount ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getRepeatDuration() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setRepeatDuration( const Any& _repeatduration ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getFill() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFill( sal_Int16 _fill ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getFillDefault() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFillDefault( sal_Int16 _filldefault ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getRestart() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setRestart( sal_Int16 _restart ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getRestartDefault() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setRestartDefault( sal_Int16 _restartdefault ) throw (RuntimeException, std::exception) override;
+    virtual double SAL_CALL getAcceleration() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAcceleration( double _acceleration ) throw (RuntimeException, std::exception) override;
+    virtual double SAL_CALL getDecelerate() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDecelerate( double _decelerate ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getAutoReverse() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAutoReverse( sal_Bool _autoreverse ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< NamedValue > SAL_CALL getUserData() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setUserData( const Sequence< NamedValue >& _userdata ) throw (RuntimeException, std::exception) override;
 
     // XAnimate
-    virtual Any SAL_CALL getTarget() override;
-    virtual void SAL_CALL setTarget( const Any& _target ) override;
-    virtual sal_Int16 SAL_CALL getSubItem() override;
-    virtual void SAL_CALL setSubItem( sal_Int16 _subitem ) override;
-    virtual OUString SAL_CALL getAttributeName() override;
-    virtual void SAL_CALL setAttributeName( const OUString& _attribute ) override;
-    virtual Sequence< Any > SAL_CALL getValues() override;
-    virtual void SAL_CALL setValues( const Sequence< Any >& _values ) override;
-    virtual Sequence< double > SAL_CALL getKeyTimes() override;
-    virtual void SAL_CALL setKeyTimes( const Sequence< double >& _keytimes ) override;
-    virtual sal_Int16 SAL_CALL getValueType() override;
-    virtual void SAL_CALL setValueType( sal_Int16 _valuetype ) override;
-    virtual sal_Int16 SAL_CALL getCalcMode() override;
-    virtual void SAL_CALL setCalcMode( sal_Int16 _calcmode ) override;
-    virtual sal_Bool SAL_CALL getAccumulate() override;
-    virtual void SAL_CALL setAccumulate( sal_Bool _accumulate ) override;
-    virtual sal_Int16 SAL_CALL getAdditive() override;
-    virtual void SAL_CALL setAdditive( sal_Int16 _additive ) override;
-    virtual Any SAL_CALL getFrom() override;
-    virtual void SAL_CALL setFrom( const Any& _from ) override;
-    virtual Any SAL_CALL getTo() override;
-    virtual void SAL_CALL setTo( const Any& _to ) override;
-    virtual Any SAL_CALL getBy() override;
-    virtual void SAL_CALL setBy( const Any& _by ) override;
-    virtual Sequence< TimeFilterPair > SAL_CALL getTimeFilter() override;
-    virtual void SAL_CALL setTimeFilter( const Sequence< TimeFilterPair >& _timefilter ) override;
-    virtual OUString SAL_CALL getFormula() override;
-    virtual void SAL_CALL setFormula( const OUString& _formula ) override;
+    virtual Any SAL_CALL getTarget() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTarget( const Any& _target ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getSubItem() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSubItem( sal_Int16 _subitem ) throw (RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getAttributeName() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAttributeName( const OUString& _attribute ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< Any > SAL_CALL getValues() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setValues( const Sequence< Any >& _values ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< double > SAL_CALL getKeyTimes() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setKeyTimes( const Sequence< double >& _keytimes ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getValueType() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setValueType( sal_Int16 _valuetype ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getCalcMode() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCalcMode( sal_Int16 _calcmode ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getAccumulate() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAccumulate( sal_Bool _accumulate ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getAdditive() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAdditive( sal_Int16 _additive ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getFrom() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFrom( const Any& _from ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getTo() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTo( const Any& _to ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getBy() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setBy( const Any& _by ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< TimeFilterPair > SAL_CALL getTimeFilter() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTimeFilter( const Sequence< TimeFilterPair >& _timefilter ) throw (RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getFormula() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFormula( const OUString& _formula ) throw (RuntimeException, std::exception) override;
 
     // XAnimateColor
-    virtual sal_Int16 SAL_CALL getColorInterpolation() override;
-    virtual void SAL_CALL setColorInterpolation( sal_Int16 _colorspace ) override;
-    virtual sal_Bool SAL_CALL getDirection() override;
-    virtual void SAL_CALL setDirection( sal_Bool _direction ) override;
+    virtual sal_Int16 SAL_CALL getColorInterpolation() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setColorInterpolation( sal_Int16 _colorspace ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getDirection() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDirection( sal_Bool _direction ) throw (RuntimeException, std::exception) override;
 
     // XAnimateMotion
-    virtual Any SAL_CALL getPath() override;
-    virtual void SAL_CALL setPath( const Any& _path ) override;
-    virtual Any SAL_CALL getOrigin() override;
-    virtual void SAL_CALL setOrigin( const Any& _origin ) override;
+    virtual Any SAL_CALL getPath() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPath( const Any& _path ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getOrigin() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setOrigin( const Any& _origin ) throw (RuntimeException, std::exception) override;
 
     // XAnimateTransform
-    virtual sal_Int16 SAL_CALL getTransformType() override;
-    virtual void SAL_CALL setTransformType( sal_Int16 _transformtype ) override;
+    virtual sal_Int16 SAL_CALL getTransformType() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTransformType( sal_Int16 _transformtype ) throw (RuntimeException, std::exception) override;
 
     // XTransitionFilter
-    virtual sal_Int16 SAL_CALL getTransition() override;
-    virtual void SAL_CALL setTransition( sal_Int16 _transition ) override;
-    virtual sal_Int16 SAL_CALL getSubtype() override;
-    virtual void SAL_CALL setSubtype( sal_Int16 _subtype ) override;
-    virtual sal_Bool SAL_CALL getMode() override;
-    virtual void SAL_CALL setMode( sal_Bool _mode ) override;
-    virtual sal_Int32 SAL_CALL getFadeColor() override;
-    virtual void SAL_CALL setFadeColor( sal_Int32 _fadecolor ) override;
+    virtual sal_Int16 SAL_CALL getTransition() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTransition( sal_Int16 _transition ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getSubtype() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSubtype( sal_Int16 _subtype ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getMode() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setMode( sal_Bool _mode ) throw (RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getFadeColor() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFadeColor( sal_Int32 _fadecolor ) throw (RuntimeException, std::exception) override;
 
     // XAudio
-    virtual Any SAL_CALL getSource() override;
-    virtual void SAL_CALL setSource( const Any& _source ) override;
-    virtual double SAL_CALL getVolume() override;
-    virtual void SAL_CALL setVolume( double _volume ) override;
+    virtual Any SAL_CALL getSource() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSource( const Any& _source ) throw (RuntimeException, std::exception) override;
+    virtual double SAL_CALL getVolume() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setVolume( double _volume ) throw (RuntimeException, std::exception) override;
 
 
     // XCommand - the following two shadowed by animate, unfortunately
 //    virtual Any SAL_CALL getTarget() throw (RuntimeException);
 //    virtual void SAL_CALL setTarget( const Any& _target ) throw (RuntimeException);
-    virtual sal_Int16 SAL_CALL getCommand() override;
-    virtual void SAL_CALL setCommand( sal_Int16 _command ) override;
-    virtual Any SAL_CALL getParameter() override;
-    virtual void SAL_CALL setParameter( const Any& _parameter ) override;
+    virtual sal_Int16 SAL_CALL getCommand() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCommand( sal_Int16 _command ) throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getParameter() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setParameter( const Any& _parameter ) throw (RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual Type SAL_CALL getElementType() throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw (RuntimeException, std::exception) override;
 
     // XEnumerationAccess
-    virtual Reference< XEnumeration > SAL_CALL createEnumeration() override;
+    virtual Reference< XEnumeration > SAL_CALL createEnumeration() throw (RuntimeException, std::exception) override;
 
     // XTimeContainer
-    virtual Reference< XAnimationNode > SAL_CALL insertBefore( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild ) override;
-    virtual Reference< XAnimationNode > SAL_CALL insertAfter( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild ) override;
-    virtual Reference< XAnimationNode > SAL_CALL replaceChild( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& oldChild ) override;
-    virtual Reference< XAnimationNode > SAL_CALL removeChild( const Reference< XAnimationNode >& oldChild ) override;
-    virtual Reference< XAnimationNode > SAL_CALL appendChild( const Reference< XAnimationNode >& newChild ) override;
+    virtual Reference< XAnimationNode > SAL_CALL insertBefore( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild ) throw (IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Reference< XAnimationNode > SAL_CALL insertAfter( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild ) throw (IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Reference< XAnimationNode > SAL_CALL replaceChild( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& oldChild ) throw( IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Reference< XAnimationNode > SAL_CALL removeChild( const Reference< XAnimationNode >& oldChild ) throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Reference< XAnimationNode > SAL_CALL appendChild( const Reference< XAnimationNode >& newChild ) throw(IllegalArgumentException, ElementExistException, WrappedTargetException, RuntimeException, std::exception) override;
 
     // XIterateContainer
-    virtual sal_Int16 SAL_CALL getIterateType() override;
-    virtual void SAL_CALL setIterateType( sal_Int16 _iteratetype ) override;
-    virtual double SAL_CALL getIterateInterval() override;
-    virtual void SAL_CALL setIterateInterval( double _iterateinterval ) override;
+    virtual sal_Int16 SAL_CALL getIterateType() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setIterateType( sal_Int16 _iteratetype ) throw (RuntimeException, std::exception) override;
+    virtual double SAL_CALL getIterateInterval() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL setIterateInterval( double _iterateinterval ) throw (RuntimeException, std::exception) override;
 
     // XChangesNotifier
-    virtual void SAL_CALL addChangesListener( const Reference< XChangesListener >& aListener ) override;
-    virtual void SAL_CALL removeChangesListener( const Reference< XChangesListener >& aListener ) override;
+    virtual void SAL_CALL addChangesListener( const Reference< XChangesListener >& aListener ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeChangesListener( const Reference< XChangesListener >& aListener ) throw (RuntimeException, std::exception) override;
 
     // XUnoTunnel
-    virtual ::sal_Int64 SAL_CALL getSomething( const Sequence< ::sal_Int8 >& aIdentifier ) override;
+    virtual ::sal_Int64 SAL_CALL getSomething( const Sequence< ::sal_Int8 >& aIdentifier ) throw (RuntimeException, std::exception) override;
 
     static const Sequence< sal_Int8 > & getUnoTunnelId();
     void fireChangeListener();
@@ -352,10 +352,11 @@ class TimeContainerEnumeration : public ::cppu::WeakImplHelper< XEnumeration >
 {
 public:
     explicit TimeContainerEnumeration( const ChildList_t &rChildren );
+    virtual ~TimeContainerEnumeration();
 
     // Methods
-    virtual sal_Bool SAL_CALL hasMoreElements() override;
-    virtual Any SAL_CALL nextElement(  ) override;
+    virtual sal_Bool SAL_CALL hasMoreElements() throw (RuntimeException, std::exception) override;
+    virtual Any SAL_CALL nextElement(  ) throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception) override;
 
 private:
     /** sorted list of child nodes */
@@ -364,7 +365,7 @@ private:
     /** current iteration position */
     ChildList_t::iterator   maIter;
 
-    /** our first, last and only protection from multi-threads! */
+    /** our first, last and only protection from mutli-threads! */
     Mutex                   maMutex;
 };
 
@@ -374,8 +375,12 @@ TimeContainerEnumeration::TimeContainerEnumeration( const ChildList_t &rChildren
     maIter = maChildren.begin();
 }
 
+TimeContainerEnumeration::~TimeContainerEnumeration()
+{
+}
+
 // Methods
-sal_Bool SAL_CALL TimeContainerEnumeration::hasMoreElements()
+sal_Bool SAL_CALL TimeContainerEnumeration::hasMoreElements() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
@@ -383,13 +388,14 @@ sal_Bool SAL_CALL TimeContainerEnumeration::hasMoreElements()
 }
 
 Any SAL_CALL TimeContainerEnumeration::nextElement()
+    throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( maIter == maChildren.end() )
         throw NoSuchElementException();
 
-    return Any( *maIter++ );
+    return makeAny( (*maIter++) );
 }
 
 
@@ -423,7 +429,7 @@ AnimationNode::AnimationNode( sal_Int16 nNodeType )
     mnIterateType( css::presentation::ShapeAnimationSubType::AS_WHOLE ),
     mfIterateInterval(0.0)
 {
-    assert((sal_uInt32)nNodeType < sizeof(mpTypes)/sizeof(Sequence<Type>*));
+    OSL_ENSURE((sal_uInt32)nNodeType < sizeof(mpTypes)/sizeof(Sequence<Type>*), "NodeType out of range");
 }
 
 AnimationNode::AnimationNode( const AnimationNode& rNode )
@@ -494,9 +500,14 @@ AnimationNode::AnimationNode( const AnimationNode& rNode )
 {
 }
 
+AnimationNode::~AnimationNode()
+{
+}
+
 Sequence<OUString> getSupportedServiceNames_PAR()
 {
-    return { "com.sun.star.animations.ParallelTimeContainer" };
+    Sequence<OUString> aRet { "com.sun.star.animations.ParallelTimeContainer" };
+    return aRet;
 }
 
 OUString getImplementationName_PAR()
@@ -506,7 +517,8 @@ OUString getImplementationName_PAR()
 
 Sequence<OUString> getSupportedServiceNames_SEQ()
 {
-    return { "com.sun.star.animations.SequenceTimeContainer" };
+    Sequence<OUString> aRet { "com.sun.star.animations.SequenceTimeContainer" };
+    return aRet;
 }
 
 OUString getImplementationName_SEQ()
@@ -516,7 +528,8 @@ OUString getImplementationName_SEQ()
 
 Sequence<OUString> getSupportedServiceNames_ITERATE()
 {
-    return { "com.sun.star.animations.IterateContainer" };
+    Sequence<OUString> aRet { "com.sun.star.animations.IterateContainer" };
+    return aRet;
 }
 
 OUString getImplementationName_ITERATE()
@@ -526,7 +539,8 @@ OUString getImplementationName_ITERATE()
 
 Sequence<OUString> getSupportedServiceNames_ANIMATE()
 {
-    return { "com.sun.star.animations.Animate" };
+    Sequence<OUString> aRet { "com.sun.star.animations.Animate" };
+    return aRet;
 }
 
 OUString getImplementationName_ANIMATE()
@@ -536,7 +550,8 @@ OUString getImplementationName_ANIMATE()
 
 Sequence<OUString> getSupportedServiceNames_SET()
 {
-    return { "com.sun.star.animations.AnimateSet" };
+    Sequence<OUString> aRet { "com.sun.star.animations.AnimateSet" };
+    return aRet;
 }
 
 OUString getImplementationName_SET()
@@ -546,7 +561,8 @@ OUString getImplementationName_SET()
 
 Sequence<OUString> getSupportedServiceNames_ANIMATECOLOR()
 {
-    return { "com.sun.star.animations.AnimateColor" };
+    Sequence<OUString> aRet { "com.sun.star.animations.AnimateColor" };
+    return aRet;
 }
 
 OUString getImplementationName_ANIMATECOLOR()
@@ -556,7 +572,8 @@ OUString getImplementationName_ANIMATECOLOR()
 
 Sequence<OUString> getSupportedServiceNames_ANIMATEMOTION()
 {
-    return { "com.sun.star.animations.AnimateMotion" };
+    Sequence<OUString> aRet { "com.sun.star.animations.AnimateMotion" };
+    return aRet;
 }
 
 OUString getImplementationName_ANIMATEMOTION()
@@ -566,7 +583,8 @@ OUString getImplementationName_ANIMATEMOTION()
 
 Sequence<OUString> getSupportedServiceNames_ANIMATETRANSFORM()
 {
-    return { "com.sun.star.animations.AnimateTransform" };
+    Sequence<OUString> aRet { "com.sun.star.animations.AnimateTransform" };
+    return aRet;
 }
 
 OUString getImplementationName_ANIMATETRANSFORM()
@@ -576,7 +594,8 @@ OUString getImplementationName_ANIMATETRANSFORM()
 
 Sequence<OUString> getSupportedServiceNames_TRANSITIONFILTER()
 {
-    return { "com.sun.star.animations.TransitionFilter" };
+    Sequence<OUString> aRet { "com.sun.star.animations.TransitionFilter" };
+    return aRet;
 }
 
 OUString getImplementationName_TRANSITIONFILTER()
@@ -586,7 +605,8 @@ OUString getImplementationName_TRANSITIONFILTER()
 
 Sequence<OUString> getSupportedServiceNames_AUDIO()
 {
-    return { "com.sun.star.animations.Audio" };
+    Sequence<OUString> aRet { "com.sun.star.animations.Audio" };
+    return aRet;
 }
 
 OUString getImplementationName_AUDIO()
@@ -596,7 +616,8 @@ OUString getImplementationName_AUDIO()
 
 Sequence<OUString> getSupportedServiceNames_COMMAND()
 {
-    return { "com.sun.star.animations.Command" };
+    Sequence<OUString> aRet { "com.sun.star.animations.Command" };
+    return aRet;
 }
 
 OUString getImplementationName_COMMAND()
@@ -605,7 +626,7 @@ OUString getImplementationName_COMMAND()
 }
 
 // XInterface
-Any SAL_CALL AnimationNode::queryInterface( const Type& aType )
+Any SAL_CALL AnimationNode::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
 {
     Any aRet( ::cppu::queryInterface(
         aType,
@@ -676,11 +697,14 @@ Any SAL_CALL AnimationNode::queryInterface( const Type& aType )
                 static_cast< XAnimateTransform * >( this ) );
             break;
         case AnimationNodeType::AUDIO:
-            aRet = ::cppu::queryInterface(aType, static_cast< XAudio * >(this) );
+            aRet = ::cppu::queryInterface(
+                aType,
+                static_cast< XAudio * >( static_cast< XAudio * >(this) ) );
             break;
         case AnimationNodeType::COMMAND:
             aRet = ::cppu::queryInterface(
-                aType, static_cast< XCommand * >(this) );
+                aType,
+                static_cast< XCommand * >( static_cast< XCommand * >(this) ) );
             break;
         case AnimationNodeType::TRANSITIONFILTER:
             aRet = ::cppu::queryInterface(
@@ -771,7 +795,7 @@ void AnimationNode::initTypeProvider( sal_Int16 nNodeType ) throw()
 }
 
 
-Sequence< Type > AnimationNode::getTypes()
+Sequence< Type > AnimationNode::getTypes() throw (RuntimeException, std::exception)
 {
     if (! mpTypes[mnNodeType])
         initTypeProvider(mnNodeType);
@@ -779,7 +803,7 @@ Sequence< Type > AnimationNode::getTypes()
 }
 
 
-Sequence< sal_Int8 > AnimationNode::getImplementationId()
+Sequence< sal_Int8 > AnimationNode::getImplementationId() throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -800,7 +824,7 @@ void SAL_CALL AnimationNode::release(  ) throw ()
 
 
 // XServiceInfo
-OUString AnimationNode::getImplementationName()
+OUString AnimationNode::getImplementationName() throw(std::exception)
 {
     switch( mnNodeType )
     {
@@ -831,13 +855,13 @@ OUString AnimationNode::getImplementationName()
 }
 
 // XServiceInfo
-sal_Bool AnimationNode::supportsService(const OUString& ServiceName)
+sal_Bool AnimationNode::supportsService(const OUString& ServiceName) throw(std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 // XServiceInfo
-Sequence< OUString > AnimationNode::getSupportedServiceNames()
+Sequence< OUString > AnimationNode::getSupportedServiceNames() throw(std::exception)
 {
     switch( mnNodeType )
     {
@@ -869,7 +893,7 @@ Sequence< OUString > AnimationNode::getSupportedServiceNames()
 
 
 // XAnimationNode
-sal_Int16 SAL_CALL AnimationNode::getType()
+sal_Int16 SAL_CALL AnimationNode::getType() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnNodeType;
@@ -877,7 +901,7 @@ sal_Int16 SAL_CALL AnimationNode::getType()
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getBegin()
+Any SAL_CALL AnimationNode::getBegin() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maBegin;
@@ -885,7 +909,7 @@ Any SAL_CALL AnimationNode::getBegin()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setBegin( const Any& _begin )
+void SAL_CALL AnimationNode::setBegin( const Any& _begin ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _begin != maBegin )
@@ -897,7 +921,7 @@ void SAL_CALL AnimationNode::setBegin( const Any& _begin )
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getDuration()
+Any SAL_CALL AnimationNode::getDuration() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maDuration;
@@ -905,7 +929,7 @@ Any SAL_CALL AnimationNode::getDuration()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setDuration( const Any& _duration )
+void SAL_CALL AnimationNode::setDuration( const Any& _duration ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _duration != maDuration )
@@ -917,7 +941,7 @@ void SAL_CALL AnimationNode::setDuration( const Any& _duration )
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getEnd()
+Any SAL_CALL AnimationNode::getEnd() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maEnd;
@@ -925,7 +949,7 @@ Any SAL_CALL AnimationNode::getEnd()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setEnd( const Any& _end )
+void SAL_CALL AnimationNode::setEnd( const Any& _end ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _end != maEnd )
@@ -937,7 +961,7 @@ void SAL_CALL AnimationNode::setEnd( const Any& _end )
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getEndSync()
+Any SAL_CALL AnimationNode::getEndSync() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maEndSync;
@@ -945,7 +969,7 @@ Any SAL_CALL AnimationNode::getEndSync()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setEndSync( const Any& _endsync )
+void SAL_CALL AnimationNode::setEndSync( const Any& _endsync ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _endsync != maEndSync )
@@ -957,7 +981,7 @@ void SAL_CALL AnimationNode::setEndSync( const Any& _endsync )
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getRepeatCount()
+Any SAL_CALL AnimationNode::getRepeatCount() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maRepeatCount;
@@ -965,7 +989,7 @@ Any SAL_CALL AnimationNode::getRepeatCount()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setRepeatCount( const Any& _repeatcount )
+void SAL_CALL AnimationNode::setRepeatCount( const Any& _repeatcount ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _repeatcount != maRepeatCount )
@@ -977,7 +1001,7 @@ void SAL_CALL AnimationNode::setRepeatCount( const Any& _repeatcount )
 
 
 // XAnimationNode
-Any SAL_CALL AnimationNode::getRepeatDuration()
+Any SAL_CALL AnimationNode::getRepeatDuration() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maRepeatDuration;
@@ -985,7 +1009,7 @@ Any SAL_CALL AnimationNode::getRepeatDuration()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setRepeatDuration( const Any& _repeatduration )
+void SAL_CALL AnimationNode::setRepeatDuration( const Any& _repeatduration ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _repeatduration != maRepeatDuration )
@@ -997,7 +1021,7 @@ void SAL_CALL AnimationNode::setRepeatDuration( const Any& _repeatduration )
 
 
 // XAnimationNode
-sal_Int16 SAL_CALL AnimationNode::getFill()
+sal_Int16 SAL_CALL AnimationNode::getFill() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnFill;
@@ -1005,7 +1029,7 @@ sal_Int16 SAL_CALL AnimationNode::getFill()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setFill( sal_Int16 _fill )
+void SAL_CALL AnimationNode::setFill( sal_Int16 _fill ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _fill != mnFill )
@@ -1017,7 +1041,7 @@ void SAL_CALL AnimationNode::setFill( sal_Int16 _fill )
 
 
 // XAnimationNode
-sal_Int16 SAL_CALL AnimationNode::getFillDefault()
+sal_Int16 SAL_CALL AnimationNode::getFillDefault() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnFillDefault;
@@ -1025,7 +1049,7 @@ sal_Int16 SAL_CALL AnimationNode::getFillDefault()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setFillDefault( sal_Int16 _filldefault )
+void SAL_CALL AnimationNode::setFillDefault( sal_Int16 _filldefault ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _filldefault != mnFillDefault )
@@ -1037,7 +1061,7 @@ void SAL_CALL AnimationNode::setFillDefault( sal_Int16 _filldefault )
 
 
 // XAnimationNode
-sal_Int16 SAL_CALL AnimationNode::getRestart()
+sal_Int16 SAL_CALL AnimationNode::getRestart() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnRestart;
@@ -1045,7 +1069,7 @@ sal_Int16 SAL_CALL AnimationNode::getRestart()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setRestart( sal_Int16 _restart )
+void SAL_CALL AnimationNode::setRestart( sal_Int16 _restart ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _restart != mnRestart )
@@ -1057,7 +1081,7 @@ void SAL_CALL AnimationNode::setRestart( sal_Int16 _restart )
 
 
 // XAnimationNode
-sal_Int16 SAL_CALL AnimationNode::getRestartDefault()
+sal_Int16 SAL_CALL AnimationNode::getRestartDefault() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnRestartDefault;
@@ -1065,7 +1089,7 @@ sal_Int16 SAL_CALL AnimationNode::getRestartDefault()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setRestartDefault( sal_Int16 _restartdefault )
+void SAL_CALL AnimationNode::setRestartDefault( sal_Int16 _restartdefault ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _restartdefault != mnRestartDefault )
@@ -1077,7 +1101,7 @@ void SAL_CALL AnimationNode::setRestartDefault( sal_Int16 _restartdefault )
 
 
 // XAnimationNode
-double SAL_CALL AnimationNode::getAcceleration()
+double SAL_CALL AnimationNode::getAcceleration() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mfAcceleration;
@@ -1085,7 +1109,7 @@ double SAL_CALL AnimationNode::getAcceleration()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setAcceleration( double _acceleration )
+void SAL_CALL AnimationNode::setAcceleration( double _acceleration ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _acceleration != mfAcceleration )
@@ -1097,7 +1121,7 @@ void SAL_CALL AnimationNode::setAcceleration( double _acceleration )
 
 
 // XAnimationNode
-double SAL_CALL AnimationNode::getDecelerate()
+double SAL_CALL AnimationNode::getDecelerate() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mfDecelerate;
@@ -1105,7 +1129,7 @@ double SAL_CALL AnimationNode::getDecelerate()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setDecelerate( double _decelerate )
+void SAL_CALL AnimationNode::setDecelerate( double _decelerate ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _decelerate != mfDecelerate )
@@ -1117,7 +1141,7 @@ void SAL_CALL AnimationNode::setDecelerate( double _decelerate )
 
 
 // XAnimationNode
-sal_Bool SAL_CALL AnimationNode::getAutoReverse()
+sal_Bool SAL_CALL AnimationNode::getAutoReverse() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mbAutoReverse;
@@ -1125,7 +1149,7 @@ sal_Bool SAL_CALL AnimationNode::getAutoReverse()
 
 
 // XAnimationNode
-void SAL_CALL AnimationNode::setAutoReverse( sal_Bool _autoreverse )
+void SAL_CALL AnimationNode::setAutoReverse( sal_Bool _autoreverse ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( bool(_autoreverse) != mbAutoReverse )
@@ -1136,14 +1160,14 @@ void SAL_CALL AnimationNode::setAutoReverse( sal_Bool _autoreverse )
 }
 
 
-Sequence< NamedValue > SAL_CALL AnimationNode::getUserData()
+Sequence< NamedValue > SAL_CALL AnimationNode::getUserData() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maUserData;
 }
 
 
-void SAL_CALL AnimationNode::setUserData( const Sequence< NamedValue >& _userdata )
+void SAL_CALL AnimationNode::setUserData( const Sequence< NamedValue >& _userdata ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maUserData = _userdata;
@@ -1152,7 +1176,7 @@ void SAL_CALL AnimationNode::setUserData( const Sequence< NamedValue >& _userdat
 
 
 // XChild
-Reference< XInterface > SAL_CALL AnimationNode::getParent()
+Reference< XInterface > SAL_CALL AnimationNode::getParent() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mxParent.get();
@@ -1160,7 +1184,7 @@ Reference< XInterface > SAL_CALL AnimationNode::getParent()
 
 
 // XChild
-void SAL_CALL AnimationNode::setParent( const Reference< XInterface >& Parent )
+void SAL_CALL AnimationNode::setParent( const Reference< XInterface >& Parent ) throw (NoSupportException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( Parent != mxParent.get() )
@@ -1178,7 +1202,7 @@ void SAL_CALL AnimationNode::setParent( const Reference< XInterface >& Parent )
 
 
 // XCloneable
-Reference< XCloneable > SAL_CALL AnimationNode::createClone()
+Reference< XCloneable > SAL_CALL AnimationNode::createClone() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
@@ -1205,7 +1229,7 @@ Reference< XCloneable > SAL_CALL AnimationNode::createClone()
                     }
                     catch(const Exception&)
                     {
-                        SAL_INFO("animations", "animations::AnimationNode::createClone(), exception caught!");
+                        OSL_TRACE( "animations::AnimationNode::createClone(), exception caught!" );
                     }
                 }
             }
@@ -1213,7 +1237,7 @@ Reference< XCloneable > SAL_CALL AnimationNode::createClone()
     }
     catch(const Exception&)
     {
-        SAL_INFO("animations", "animations::AnimationNode::createClone(), exception caught!");
+        OSL_TRACE( "animations::AnimationNode::createClone(), exception caught!" );
     }
 
     return xNewNode;
@@ -1222,6 +1246,7 @@ Reference< XCloneable > SAL_CALL AnimationNode::createClone()
 
 // XAnimate
 Any SAL_CALL AnimationNode::getTarget()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maTarget;
@@ -1230,6 +1255,7 @@ Any SAL_CALL AnimationNode::getTarget()
 
 // XAnimate
 void SAL_CALL AnimationNode::setTarget( const Any& _target )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _target != maTarget )
@@ -1241,7 +1267,7 @@ void SAL_CALL AnimationNode::setTarget( const Any& _target )
 
 
 // XAnimate
-OUString SAL_CALL AnimationNode::getAttributeName()
+OUString SAL_CALL AnimationNode::getAttributeName() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maAttributeName;
@@ -1250,6 +1276,7 @@ OUString SAL_CALL AnimationNode::getAttributeName()
 
 // XAnimate
 void SAL_CALL AnimationNode::setAttributeName( const OUString& _attribute )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _attribute != maAttributeName )
@@ -1262,6 +1289,7 @@ void SAL_CALL AnimationNode::setAttributeName( const OUString& _attribute )
 
 // XAnimate
 Sequence< Any > SAL_CALL AnimationNode::getValues()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maValues;
@@ -1270,6 +1298,7 @@ Sequence< Any > SAL_CALL AnimationNode::getValues()
 
 // XAnimate
 void SAL_CALL AnimationNode::setValues( const Sequence< Any >& _values )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maValues = _values;
@@ -1278,7 +1307,7 @@ void SAL_CALL AnimationNode::setValues( const Sequence< Any >& _values )
 
 
 // XAnimate
-sal_Int16 SAL_CALL AnimationNode::getSubItem()
+sal_Int16 SAL_CALL AnimationNode::getSubItem() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnSubItem;
@@ -1286,7 +1315,7 @@ sal_Int16 SAL_CALL AnimationNode::getSubItem()
 
 
 // XAnimate
-void SAL_CALL AnimationNode::setSubItem( sal_Int16 _subitem )
+void SAL_CALL AnimationNode::setSubItem( sal_Int16 _subitem ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _subitem != mnSubItem )
@@ -1298,7 +1327,7 @@ void SAL_CALL AnimationNode::setSubItem( sal_Int16 _subitem )
 
 
 // XAnimate
-Sequence< double > SAL_CALL AnimationNode::getKeyTimes()
+Sequence< double > SAL_CALL AnimationNode::getKeyTimes() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maKeyTimes;
@@ -1306,7 +1335,7 @@ Sequence< double > SAL_CALL AnimationNode::getKeyTimes()
 
 
 // XAnimate
-void SAL_CALL AnimationNode::setKeyTimes( const Sequence< double >& _keytimes )
+void SAL_CALL AnimationNode::setKeyTimes( const Sequence< double >& _keytimes ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maKeyTimes = _keytimes;
@@ -1315,14 +1344,14 @@ void SAL_CALL AnimationNode::setKeyTimes( const Sequence< double >& _keytimes )
 
 
 // XAnimate
-sal_Int16 SAL_CALL AnimationNode::getValueType()
+sal_Int16 SAL_CALL AnimationNode::getValueType() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnValueType;
 }
 
 
-void SAL_CALL AnimationNode::setValueType( sal_Int16 _valuetype )
+void SAL_CALL AnimationNode::setValueType( sal_Int16 _valuetype ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _valuetype != mnValueType )
@@ -1335,6 +1364,7 @@ void SAL_CALL AnimationNode::setValueType( sal_Int16 _valuetype )
 
 // XAnimate
 sal_Int16 SAL_CALL AnimationNode::getCalcMode()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnCalcMode;
@@ -1343,6 +1373,7 @@ sal_Int16 SAL_CALL AnimationNode::getCalcMode()
 
 // XAnimate
 void SAL_CALL AnimationNode::setCalcMode( sal_Int16 _calcmode )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _calcmode != mnCalcMode )
@@ -1355,6 +1386,7 @@ void SAL_CALL AnimationNode::setCalcMode( sal_Int16 _calcmode )
 
 // XAnimate
 sal_Bool SAL_CALL AnimationNode::getAccumulate()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mbAccumulate;
@@ -1363,6 +1395,7 @@ sal_Bool SAL_CALL AnimationNode::getAccumulate()
 
 // XAnimate
 void SAL_CALL AnimationNode::setAccumulate( sal_Bool _accumulate )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( bool(_accumulate) != mbAccumulate )
@@ -1375,6 +1408,7 @@ void SAL_CALL AnimationNode::setAccumulate( sal_Bool _accumulate )
 
 // XAnimate
 sal_Int16 SAL_CALL AnimationNode::getAdditive()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnAdditive;
@@ -1383,6 +1417,7 @@ sal_Int16 SAL_CALL AnimationNode::getAdditive()
 
 // XAnimate
 void SAL_CALL AnimationNode::setAdditive( sal_Int16 _additive )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _additive != mnAdditive )
@@ -1395,6 +1430,7 @@ void SAL_CALL AnimationNode::setAdditive( sal_Int16 _additive )
 
 // XAnimate
 Any SAL_CALL AnimationNode::getFrom()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maFrom;
@@ -1403,6 +1439,7 @@ Any SAL_CALL AnimationNode::getFrom()
 
 // XAnimate
 void SAL_CALL AnimationNode::setFrom( const Any& _from )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _from != maFrom )
@@ -1415,6 +1452,7 @@ void SAL_CALL AnimationNode::setFrom( const Any& _from )
 
 // XAnimate
 Any SAL_CALL AnimationNode::getTo()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maTo;
@@ -1423,6 +1461,7 @@ Any SAL_CALL AnimationNode::getTo()
 
 // XAnimate
 void SAL_CALL AnimationNode::setTo( const Any& _to )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _to != maTo )
@@ -1435,6 +1474,7 @@ void SAL_CALL AnimationNode::setTo( const Any& _to )
 
 // XAnimate
 Any SAL_CALL AnimationNode::getBy()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maBy;
@@ -1443,6 +1483,7 @@ Any SAL_CALL AnimationNode::getBy()
 
 // XAnimate
 void SAL_CALL AnimationNode::setBy( const Any& _by )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _by != maBy )
@@ -1455,6 +1496,7 @@ void SAL_CALL AnimationNode::setBy( const Any& _by )
 
 // XAnimate
 Sequence< TimeFilterPair > SAL_CALL AnimationNode::getTimeFilter()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maTimeFilter;
@@ -1463,6 +1505,7 @@ Sequence< TimeFilterPair > SAL_CALL AnimationNode::getTimeFilter()
 
 // XAnimate
 void SAL_CALL AnimationNode::setTimeFilter( const Sequence< TimeFilterPair >& _timefilter )
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maTimeFilter = _timefilter;
@@ -1470,14 +1513,14 @@ void SAL_CALL AnimationNode::setTimeFilter( const Sequence< TimeFilterPair >& _t
 }
 
 
-OUString SAL_CALL AnimationNode::getFormula()
+OUString SAL_CALL AnimationNode::getFormula() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maFormula;
 }
 
 
-void SAL_CALL AnimationNode::setFormula( const OUString& _formula )
+void SAL_CALL AnimationNode::setFormula( const OUString& _formula ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _formula != maFormula )
@@ -1489,7 +1532,7 @@ void SAL_CALL AnimationNode::setFormula( const OUString& _formula )
 
 
 // XAnimateColor
-sal_Int16 SAL_CALL AnimationNode::getColorInterpolation()
+sal_Int16 SAL_CALL AnimationNode::getColorInterpolation() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnColorSpace;
@@ -1497,7 +1540,7 @@ sal_Int16 SAL_CALL AnimationNode::getColorInterpolation()
 
 
 // XAnimateColor
-void SAL_CALL AnimationNode::setColorInterpolation( sal_Int16 _colorspace )
+void SAL_CALL AnimationNode::setColorInterpolation( sal_Int16 _colorspace ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _colorspace != mnColorSpace )
@@ -1509,7 +1552,7 @@ void SAL_CALL AnimationNode::setColorInterpolation( sal_Int16 _colorspace )
 
 
 // XAnimateColor
-sal_Bool SAL_CALL AnimationNode::getDirection()
+sal_Bool SAL_CALL AnimationNode::getDirection() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mbDirection;
@@ -1517,7 +1560,7 @@ sal_Bool SAL_CALL AnimationNode::getDirection()
 
 
 // XAnimateColor
-void SAL_CALL AnimationNode::setDirection( sal_Bool _direction )
+void SAL_CALL AnimationNode::setDirection( sal_Bool _direction ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( bool(_direction) != mbDirection )
@@ -1529,7 +1572,7 @@ void SAL_CALL AnimationNode::setDirection( sal_Bool _direction )
 
 
 // XAnimateMotion
-Any SAL_CALL AnimationNode::getPath()
+Any SAL_CALL AnimationNode::getPath() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maPath;
@@ -1537,7 +1580,7 @@ Any SAL_CALL AnimationNode::getPath()
 
 
 // XAnimateMotion
-void SAL_CALL AnimationNode::setPath( const Any& _path )
+void SAL_CALL AnimationNode::setPath( const Any& _path ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maPath = _path;
@@ -1546,7 +1589,7 @@ void SAL_CALL AnimationNode::setPath( const Any& _path )
 
 
 // XAnimateMotion
-Any SAL_CALL AnimationNode::getOrigin()
+Any SAL_CALL AnimationNode::getOrigin() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maOrigin;
@@ -1554,7 +1597,7 @@ Any SAL_CALL AnimationNode::getOrigin()
 
 
 // XAnimateMotion
-void SAL_CALL AnimationNode::setOrigin( const Any& _origin )
+void SAL_CALL AnimationNode::setOrigin( const Any& _origin ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maOrigin = _origin;
@@ -1563,7 +1606,7 @@ void SAL_CALL AnimationNode::setOrigin( const Any& _origin )
 
 
 // XAnimateTransform
-sal_Int16 SAL_CALL AnimationNode::getTransformType()
+sal_Int16 SAL_CALL AnimationNode::getTransformType() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnTransformType;
@@ -1571,7 +1614,7 @@ sal_Int16 SAL_CALL AnimationNode::getTransformType()
 
 
 // XAnimateTransform
-void SAL_CALL AnimationNode::setTransformType( sal_Int16 _transformtype )
+void SAL_CALL AnimationNode::setTransformType( sal_Int16 _transformtype ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _transformtype != mnTransformType )
@@ -1583,7 +1626,7 @@ void SAL_CALL AnimationNode::setTransformType( sal_Int16 _transformtype )
 
 
 // XTransitionFilter
-sal_Int16 SAL_CALL AnimationNode::getTransition()
+sal_Int16 SAL_CALL AnimationNode::getTransition() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnTransition;
@@ -1591,7 +1634,7 @@ sal_Int16 SAL_CALL AnimationNode::getTransition()
 
 
 // XTransitionFilter
-void SAL_CALL AnimationNode::setTransition( sal_Int16 _transition )
+void SAL_CALL AnimationNode::setTransition( sal_Int16 _transition ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _transition != mnTransition )
@@ -1603,7 +1646,7 @@ void SAL_CALL AnimationNode::setTransition( sal_Int16 _transition )
 
 
 // XTransitionFilter
-sal_Int16 SAL_CALL AnimationNode::getSubtype()
+sal_Int16 SAL_CALL AnimationNode::getSubtype() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnSubtype;
@@ -1611,7 +1654,7 @@ sal_Int16 SAL_CALL AnimationNode::getSubtype()
 
 
 // XTransitionFilter
-void SAL_CALL AnimationNode::setSubtype( sal_Int16 _subtype )
+void SAL_CALL AnimationNode::setSubtype( sal_Int16 _subtype ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _subtype != mnSubtype )
@@ -1623,7 +1666,7 @@ void SAL_CALL AnimationNode::setSubtype( sal_Int16 _subtype )
 
 
 // XTransitionFilter
-sal_Bool SAL_CALL AnimationNode::getMode()
+sal_Bool SAL_CALL AnimationNode::getMode() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mbMode;
@@ -1631,7 +1674,7 @@ sal_Bool SAL_CALL AnimationNode::getMode()
 
 
 // XTransitionFilter
-void SAL_CALL AnimationNode::setMode( sal_Bool _mode )
+void SAL_CALL AnimationNode::setMode( sal_Bool _mode ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( bool(_mode) != mbMode )
@@ -1643,7 +1686,7 @@ void SAL_CALL AnimationNode::setMode( sal_Bool _mode )
 
 
 // XTransitionFilter
-sal_Int32 SAL_CALL AnimationNode::getFadeColor()
+sal_Int32 SAL_CALL AnimationNode::getFadeColor() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnFadeColor;
@@ -1651,7 +1694,7 @@ sal_Int32 SAL_CALL AnimationNode::getFadeColor()
 
 
 // XTransitionFilter
-void SAL_CALL AnimationNode::setFadeColor( sal_Int32 _fadecolor )
+void SAL_CALL AnimationNode::setFadeColor( sal_Int32 _fadecolor ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _fadecolor != mnFadeColor )
@@ -1663,7 +1706,7 @@ void SAL_CALL AnimationNode::setFadeColor( sal_Int32 _fadecolor )
 
 
 // XAudio
-Any SAL_CALL AnimationNode::getSource()
+Any SAL_CALL AnimationNode::getSource() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maTarget;
@@ -1671,7 +1714,7 @@ Any SAL_CALL AnimationNode::getSource()
 
 
 // XAudio
-void SAL_CALL AnimationNode::setSource( const Any& _source )
+void SAL_CALL AnimationNode::setSource( const Any& _source ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maTarget = _source;
@@ -1680,7 +1723,7 @@ void SAL_CALL AnimationNode::setSource( const Any& _source )
 
 
 // XAudio
-double SAL_CALL AnimationNode::getVolume()
+double SAL_CALL AnimationNode::getVolume() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mfVolume;
@@ -1688,7 +1731,7 @@ double SAL_CALL AnimationNode::getVolume()
 
 
 // XAudio
-void SAL_CALL AnimationNode::setVolume( double _volume )
+void SAL_CALL AnimationNode::setVolume( double _volume ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _volume != mfVolume )
@@ -1700,7 +1743,7 @@ void SAL_CALL AnimationNode::setVolume( double _volume )
 
 
 // XCommand
-sal_Int16 SAL_CALL AnimationNode::getCommand()
+sal_Int16 SAL_CALL AnimationNode::getCommand() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnCommand;
@@ -1708,7 +1751,7 @@ sal_Int16 SAL_CALL AnimationNode::getCommand()
 
 
 // XCommand
-void SAL_CALL AnimationNode::setCommand( sal_Int16 _command )
+void SAL_CALL AnimationNode::setCommand( sal_Int16 _command ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _command != mnCommand )
@@ -1720,7 +1763,7 @@ void SAL_CALL AnimationNode::setCommand( sal_Int16 _command )
 
 
 // XCommand
-Any SAL_CALL AnimationNode::getParameter()
+Any SAL_CALL AnimationNode::getParameter() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return maParameter;
@@ -1728,7 +1771,7 @@ Any SAL_CALL AnimationNode::getParameter()
 
 
 // XCommand
-void SAL_CALL AnimationNode::setParameter( const Any& _parameter )
+void SAL_CALL AnimationNode::setParameter( const Any& _parameter ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     maParameter = _parameter;
@@ -1737,14 +1780,14 @@ void SAL_CALL AnimationNode::setParameter( const Any& _parameter )
 
 
 // XElementAccess
-Type SAL_CALL AnimationNode::getElementType()
+Type SAL_CALL AnimationNode::getElementType() throw (RuntimeException, std::exception)
 {
     return cppu::UnoType<XAnimationNode>::get();
 }
 
 
 // XElementAccess
-sal_Bool SAL_CALL AnimationNode::hasElements()
+sal_Bool SAL_CALL AnimationNode::hasElements() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return !maChildren.empty();
@@ -1753,6 +1796,7 @@ sal_Bool SAL_CALL AnimationNode::hasElements()
 
 // XEnumerationAccess
 Reference< XEnumeration > SAL_CALL AnimationNode::createEnumeration()
+    throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
@@ -1762,17 +1806,18 @@ Reference< XEnumeration > SAL_CALL AnimationNode::createEnumeration()
 
 // XTimeContainer
 Reference< XAnimationNode > SAL_CALL AnimationNode::insertBefore( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild )
+    throw (IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( !newChild.is() || !refChild.is() )
         throw IllegalArgumentException();
 
-    ChildList_t::iterator before = std::find(maChildren.begin(), maChildren.end(), refChild);
+    ChildList_t::iterator before = ::std::find(maChildren.begin(), maChildren.end(), refChild);
     if( before == maChildren.end() )
         throw NoSuchElementException();
 
-    if( std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
+    if( ::std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
         throw ElementExistException();
 
     maChildren.insert( before, newChild );
@@ -1786,17 +1831,18 @@ Reference< XAnimationNode > SAL_CALL AnimationNode::insertBefore( const Referenc
 
 // XTimeContainer
 Reference< XAnimationNode > SAL_CALL AnimationNode::insertAfter( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& refChild )
+    throw (IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( !newChild.is() || !refChild.is() )
         throw IllegalArgumentException();
 
-    ChildList_t::iterator before = std::find(maChildren.begin(), maChildren.end(), refChild);
+    ChildList_t::iterator before = ::std::find(maChildren.begin(), maChildren.end(), refChild);
     if( before == maChildren.end() )
         throw NoSuchElementException();
 
-    if( std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
+    if( ::std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
         throw ElementExistException();
 
     ++before;
@@ -1814,17 +1860,18 @@ Reference< XAnimationNode > SAL_CALL AnimationNode::insertAfter( const Reference
 
 // XTimeContainer
 Reference< XAnimationNode > SAL_CALL AnimationNode::replaceChild( const Reference< XAnimationNode >& newChild, const Reference< XAnimationNode >& oldChild )
+    throw( IllegalArgumentException, NoSuchElementException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( !newChild.is() || !oldChild.is() )
         throw IllegalArgumentException();
 
-    ChildList_t::iterator replace = std::find(maChildren.begin(), maChildren.end(), oldChild);
+    ChildList_t::iterator replace = ::std::find(maChildren.begin(), maChildren.end(), oldChild);
     if( replace == maChildren.end() )
         throw NoSuchElementException();
 
-    if( std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
+    if( ::std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
         throw ElementExistException();
 
     Reference< XInterface > xNull( nullptr );
@@ -1841,13 +1888,14 @@ Reference< XAnimationNode > SAL_CALL AnimationNode::replaceChild( const Referenc
 
 // XTimeContainer
 Reference< XAnimationNode > SAL_CALL AnimationNode::removeChild( const Reference< XAnimationNode >& oldChild )
+    throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( !oldChild.is() )
         throw IllegalArgumentException();
 
-    ChildList_t::iterator old = std::find(maChildren.begin(), maChildren.end(), oldChild);
+    ChildList_t::iterator old = ::std::find(maChildren.begin(), maChildren.end(), oldChild);
     if( old == maChildren.end() )
         throw NoSuchElementException();
 
@@ -1862,13 +1910,14 @@ Reference< XAnimationNode > SAL_CALL AnimationNode::removeChild( const Reference
 
 // XTimeContainer
 Reference< XAnimationNode > SAL_CALL AnimationNode::appendChild( const Reference< XAnimationNode >& newChild )
+    throw(IllegalArgumentException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
 
     if( !newChild.is() )
         throw IllegalArgumentException();
 
-    if( std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
+    if( ::std::find(maChildren.begin(), maChildren.end(), newChild) != maChildren.end() )
         throw ElementExistException();
 
     Reference< XInterface > xThis( static_cast< OWeakObject * >(this) );
@@ -1886,7 +1935,7 @@ Reference< XAnimationNode > SAL_CALL AnimationNode::appendChild( const Reference
 
 
 // XIterateContainer
-sal_Int16 SAL_CALL AnimationNode::getIterateType()
+sal_Int16 SAL_CALL AnimationNode::getIterateType() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mnIterateType;
@@ -1894,7 +1943,7 @@ sal_Int16 SAL_CALL AnimationNode::getIterateType()
 
 
 // XIterateContainer
-void SAL_CALL AnimationNode::setIterateType( sal_Int16 _iteratetype )
+void SAL_CALL AnimationNode::setIterateType( sal_Int16 _iteratetype ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _iteratetype != mnIterateType )
@@ -1906,7 +1955,7 @@ void SAL_CALL AnimationNode::setIterateType( sal_Int16 _iteratetype )
 
 
 // XIterateContainer
-double SAL_CALL AnimationNode::getIterateInterval()
+double SAL_CALL AnimationNode::getIterateInterval() throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     return mfIterateInterval;
@@ -1914,7 +1963,7 @@ double SAL_CALL AnimationNode::getIterateInterval()
 
 
 // XIterateContainer
-void SAL_CALL AnimationNode::setIterateInterval( double _iterateinterval )
+void SAL_CALL AnimationNode::setIterateInterval( double _iterateinterval ) throw (RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( maMutex );
     if( _iterateinterval != mfIterateInterval )
@@ -1926,21 +1975,21 @@ void SAL_CALL AnimationNode::setIterateInterval( double _iterateinterval )
 
 
 // XChangesNotifier
-void SAL_CALL AnimationNode::addChangesListener( const Reference< XChangesListener >& aListener )
+void SAL_CALL AnimationNode::addChangesListener( const Reference< XChangesListener >& aListener ) throw (RuntimeException, std::exception)
 {
     maChangeListener.addInterface( aListener );
 }
 
 
 // XChangesNotifier
-void SAL_CALL AnimationNode::removeChangesListener( const Reference< XChangesListener >& aListener )
+void SAL_CALL AnimationNode::removeChangesListener( const Reference< XChangesListener >& aListener ) throw (RuntimeException, std::exception)
 {
     maChangeListener.removeInterface(aListener);
 }
 
 
 // XUnoTunnel
-::sal_Int64 SAL_CALL AnimationNode::getSomething( const Sequence< ::sal_Int8 >& rId )
+::sal_Int64 SAL_CALL AnimationNode::getSomething( const Sequence< ::sal_Int8 >& rId ) throw (RuntimeException, std::exception)
 {
     if( rId.getLength() == 16 && 0 == memcmp( getUnoTunnelId().getConstArray(), rId.getConstArray(), 16 ) )
     {
@@ -1973,7 +2022,7 @@ void AnimationNode::fireChangeListener()
     {
         Reference< XInterface > xSource( static_cast<OWeakObject*>(this), UNO_QUERY );
         Sequence< ElementChange > aChanges;
-        const ChangesEvent aEvent( xSource, Any( mxParent.get() ), aChanges );
+        const ChangesEvent aEvent( xSource, makeAny( mxParent.get() ), aChanges );
         while( aIterator.hasMoreElements() )
         {
             Reference< XChangesListener > xListener( aIterator.next(), UNO_QUERY );

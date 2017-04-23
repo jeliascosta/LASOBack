@@ -534,6 +534,7 @@ PDFOutDev::PDFOutDev( PDFDoc* pDoc ) :
 }
 PDFOutDev::~PDFOutDev()
 {
+    delete m_pUtf8Map;
 }
 
 void PDFOutDev::startPage(int /*pageNum*/, GfxState* state
@@ -871,13 +872,6 @@ void PDFOutDev::drawChar(GfxState *state, double x, double y,
 
     if( u == nullptr )
         return;
-
-    // Fix for tdf#96080
-    if (uLen == 4 && u[0] == '\t' && u[1] == '\r' && u[2] == ' ' && u[3] == 0xA0)
-    {
-        u += 2;
-        uLen = 1;
-    }
 
     double csdx = 0.0;
     double csdy = 0.0;

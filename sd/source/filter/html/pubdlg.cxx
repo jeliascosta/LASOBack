@@ -65,7 +65,7 @@ const sal_uInt16 nMagic = (sal_uInt16)0x1977;
 #define KEY_QUALITY     "JPG-EXPORT-QUALITY"
 
 // The Help-IDs of the pages
-const char* const aPageHelpIds[NOOFPAGES] =
+const char* aPageHelpIds[NOOFPAGES] =
 {
     HID_SD_HTMLEXPORT_PAGE1,
     HID_SD_HTMLEXPORT_PAGE2,
@@ -344,10 +344,10 @@ private:
 
 public:
     SdDesignNameDlg(vcl::Window* pWindow, const OUString& aName );
-    virtual ~SdDesignNameDlg() override;
+    virtual ~SdDesignNameDlg();
     virtual void dispose() override;
     OUString GetDesignName();
-    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
 };
 
 // SdPublishingDlg Methods
@@ -364,9 +364,9 @@ SdPublishingDlg::SdPublishingDlg(vcl::Window* pWindow, DocumentType eDocType)
     get(pNextPageButton, "nextPageButton");
     get(pFinishButton, "finishButton");
 
-    m_bImpress = eDocType == DocumentType::Impress;
+    m_bImpress = eDocType == DOCUMENT_TYPE_IMPRESS;
 
-    Size aSize(LogicToPixel(Size(60, 50), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(60, 50), MAP_APPFONT));
     get(pPage2_Standard_FB, "standardFBImage");
     pPage2_Standard_FB->set_width_request(aSize.Width());
     pPage2_Standard_FB->set_height_request(aSize.Height());
@@ -865,10 +865,10 @@ void SdPublishingDlg::GetParameterSequence( Sequence< PropertyValue >& rParams )
     // try to guess protocol for user's homepage
     INetURLObject aHomeURL( pPage4_WWW->GetText(),
                             INetProtocol::Http,     // default proto is HTTP
-                            INetURLObject::EncodeMechanism::All );
+                            INetURLObject::ENCODE_ALL );
 
     aValue.Name = "HomepageURL";
-    aValue.Value <<= OUString( aHomeURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+    aValue.Value <<= OUString( aHomeURL.GetMainURL( INetURLObject::NO_DECODE ) );
     aProps.push_back( aValue );
 
     aValue.Name = "UserText";
@@ -931,7 +931,7 @@ void SdPublishingDlg::GetParameterSequence( Sequence< PropertyValue >& rParams )
 }
 
 // Clickhandler for the radiobuttons of the design-selection
-IMPL_LINK( SdPublishingDlg, DesignHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( SdPublishingDlg, DesignHdl, Button *, pButton, void )
 {
     if(pButton == pPage1_NewDesign)
     {
@@ -963,7 +963,7 @@ IMPL_LINK( SdPublishingDlg, DesignHdl, Button *, pButton, void )
 }
 
 // Clickhandler for the choice of one design
-IMPL_LINK_NOARG(SdPublishingDlg, DesignSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, DesignSelectHdl, ListBox&, void)
 {
     const sal_Int32 nPos = pPage1_Designs->GetSelectEntryPos();
     m_pDesign = &m_aDesignList[nPos];
@@ -976,7 +976,7 @@ IMPL_LINK_NOARG(SdPublishingDlg, DesignSelectHdl, ListBox&, void)
 }
 
 // Clickhandler for the delete of one design
-IMPL_LINK_NOARG(SdPublishingDlg, DesignDeleteHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, DesignDeleteHdl, Button*, void)
 {
     const sal_Int32 nPos = pPage1_Designs->GetSelectEntryPos();
 
@@ -996,8 +996,8 @@ IMPL_LINK_NOARG(SdPublishingDlg, DesignDeleteHdl, Button*, void)
     UpdatePage();
 }
 
-// Clickhandler for the other servertypes
-IMPL_LINK( SdPublishingDlg, WebServerHdl, Button *, pButton, void )
+// Clickhandler for the other servertypess
+IMPL_LINK_TYPED( SdPublishingDlg, WebServerHdl, Button *, pButton, void )
 {
     bool bASP = pButton == pPage2_ASP;
 
@@ -1007,7 +1007,7 @@ IMPL_LINK( SdPublishingDlg, WebServerHdl, Button *, pButton, void )
 }
 
 // Clickhandler for the Radiobuttons of the graphicformat choice
-IMPL_LINK( SdPublishingDlg, GfxFormatHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( SdPublishingDlg, GfxFormatHdl, Button *, pButton, void )
 {
     pPage3_Png->Check( pButton == pPage3_Png );
     pPage3_Gif->Check( pButton == pPage3_Gif );
@@ -1016,13 +1016,13 @@ IMPL_LINK( SdPublishingDlg, GfxFormatHdl, Button *, pButton, void )
 }
 
 // Clickhandler for the Radiobuttons Standard/Frames
-IMPL_LINK_NOARG(SdPublishingDlg, BaseHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, BaseHdl, Button*, void)
 {
     UpdatePage();
 }
 
 // Clickhandler for the Checkbox of the Title page
-IMPL_LINK_NOARG(SdPublishingDlg, ContentHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, ContentHdl, Button*, void)
 {
     if(pPage2_Content->IsChecked())
     {
@@ -1043,7 +1043,7 @@ IMPL_LINK_NOARG(SdPublishingDlg, ContentHdl, Button*, void)
 }
 
 // Clickhandler for the Resolution Radiobuttons
-IMPL_LINK( SdPublishingDlg, ResolutionHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( SdPublishingDlg, ResolutionHdl, Button *, pButton, void )
 {
     pPage3_Resolution_1->Check(pButton == pPage3_Resolution_1);
     pPage3_Resolution_2->Check(pButton == pPage3_Resolution_2);
@@ -1051,14 +1051,14 @@ IMPL_LINK( SdPublishingDlg, ResolutionHdl, Button *, pButton, void )
 }
 
 // Clickhandler for the ValueSet with the bitmap-buttons
-IMPL_LINK_NOARG(SdPublishingDlg, ButtonsHdl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, ButtonsHdl, ValueSet*, void)
 {
     // if one bitmap-button is chosen, then disable TextOnly
     pPage5_TextOnly->Check(false);
 }
 
 // Fill the SfxItemSet with the settings of the dialog
-IMPL_LINK( SdPublishingDlg, ColorHdl, Button *, pButton, void)
+IMPL_LINK_TYPED( SdPublishingDlg, ColorHdl, Button *, pButton, void)
 {
     SvColorDialog aDlg(this);
 
@@ -1099,13 +1099,13 @@ IMPL_LINK( SdPublishingDlg, ColorHdl, Button *, pButton, void)
     pPage6_Preview->Invalidate();
 }
 
-IMPL_LINK_NOARG(SdPublishingDlg, SlideChgHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, SlideChgHdl, Button*, void)
 {
     UpdatePage();
 }
 
 // Clickhandler for the Ok Button
-IMPL_LINK_NOARG(SdPublishingDlg, FinishHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, FinishHdl, Button*, void)
 {
     //End
     SdPublishingDesign aDesign;
@@ -1153,7 +1153,7 @@ IMPL_LINK_NOARG(SdPublishingDlg, FinishHdl, Button*, void)
                 if (iter != m_aDesignList.end())
                 {
                     ScopedVclPtrInstance<MessageDialog> aErrorBox(this, SD_RESSTR(STR_PUBDLG_SAMENAME),
-                        VclMessageType::Error, VclButtonsType::YesNo);
+                        VCL_MESSAGE_ERROR, VCL_BUTTONS_YES_NO);
                     bRetry = aErrorBox->Execute() == RET_NO;
 
                     if(!bRetry)
@@ -1352,7 +1352,7 @@ void SdPublishingDlg::LoadPreviewButtons()
 }
 
 // Clickhandler for the Forward Button
-IMPL_LINK_NOARG(SdPublishingDlg, NextPageHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, NextPageHdl, Button*, void)
 {
     aAssistentFunc.NextPage();
     ChangePage();
@@ -1497,7 +1497,7 @@ void SdPublishingDlg::GetDesign( SdPublishingDesign* pDesign )
 }
 
 // Clickhandler for the back Button
-IMPL_LINK_NOARG(SdPublishingDlg, LastPageHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPublishingDlg, LastPageHdl, Button*, void)
 {
     aAssistentFunc.PreviousPage();
     ChangePage();
@@ -1513,7 +1513,8 @@ void SdPublishingDlg::Load()
 
     // check if file exists, SfxMedium shows an errorbox else
     {
-        SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ );
+        css::uno::Reference < css::task::XInteractionHandler > xHandler;
+        SvStream* pIStm = ::utl::UcbStreamHelper::CreateStream( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ, xHandler );
 
         bool bOk = pIStm && ( pIStm->GetError() == 0);
 
@@ -1523,7 +1524,7 @@ void SdPublishingDlg::Load()
             return;
     }
 
-    SfxMedium aMedium( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ | StreamMode::NOCREATE );
+    SfxMedium aMedium( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ | StreamMode::NOCREATE );
 
     SvStream* pStream = aMedium.GetInStream();
 
@@ -1557,7 +1558,7 @@ bool SdPublishingDlg::Save()
 {
     INetURLObject aURL( SvtPathOptions().GetUserConfigPath() );
     aURL.Append( "designs.sod" );
-    SfxMedium aMedium( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::WRITE | StreamMode::TRUNC );
+    SfxMedium aMedium( aURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::WRITE | StreamMode::TRUNC );
 
     SvStream* pStream = aMedium.GetOutStream();
 
@@ -1584,33 +1585,6 @@ bool SdPublishingDlg::Save()
     aMedium.Commit();
 
     return( aMedium.GetError() == 0 );
-}
-
-std::vector<OString> SdPublishingDlg::getAllPageUIXMLDescriptions() const
-{
-    // this dialog has a hard number of pages
-    std::vector<OString> aRetval;
-
-    for (sal_uInt32 a(0); a < 6; a++)
-    {
-        aRetval.push_back(OString::number(a));
-    }
-
-    return aRetval;
-}
-
-bool SdPublishingDlg::selectPageByUIXMLDescription(const OString& rUIXMLDescription)
-{
-    // rUIXMLDescription contains one of the values above, make use of it
-    const sal_uInt32 nPage(rUIXMLDescription.toUInt32());
-
-    if (nPage < 6)
-    {
-        aAssistentFunc.GotoPage(nPage + 1);
-        return true;
-    }
-
-    return false;
 }
 
 // SdDesignNameDlg Methods
@@ -1641,7 +1615,7 @@ OUString SdDesignNameDlg::GetDesignName()
     return m_pEdit->GetText();
 }
 
-IMPL_LINK_NOARG(SdDesignNameDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SdDesignNameDlg, ModifyHdl, Edit&, void)
 {
     m_pBtnOK->Enable(!m_pEdit->GetText().isEmpty());
 }

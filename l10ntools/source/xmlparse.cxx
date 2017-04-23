@@ -86,7 +86,7 @@ XMLParentNode::XMLParentNode( const XMLParentNode& rObj)
 {
     if( rObj.m_pChildList )
     {
-        m_pChildList.reset( new XMLChildNodeList );
+        m_pChildList.reset( new XMLChildNodeList() );
         for ( size_t i = 0; i < rObj.m_pChildList->size(); i++ )
         {
             XMLChildNode* pNode = (*rObj.m_pChildList)[ i ];
@@ -120,7 +120,7 @@ XMLParentNode& XMLParentNode::operator=(const XMLParentNode& rObj)
         }
         if( rObj.m_pChildList )
         {
-            m_pChildList.reset( new XMLChildNodeList );
+            m_pChildList.reset( new XMLChildNodeList() );
             for ( size_t i = 0; i < rObj.m_pChildList->size(); i++ )
                 AddChild( (*rObj.m_pChildList)[ i ] );
         }
@@ -133,7 +133,7 @@ XMLParentNode& XMLParentNode::operator=(const XMLParentNode& rObj)
 void XMLParentNode::AddChild( XMLChildNode *pChild )
 {
     if ( !m_pChildList )
-        m_pChildList.reset( new XMLChildNodeList );
+        m_pChildList.reset( new XMLChildNodeList() );
     m_pChildList->push_back( pChild );
 }
 
@@ -326,7 +326,7 @@ XMLFile::XMLFile( const OString &rFileName ) // the file name, empty if created 
 
 void XMLFile::Extract()
 {
-    m_pXMLStrings.reset( new XMLHashMap );
+    m_pXMLStrings.reset( new XMLHashMap() );
     SearchL10NElements( this );
 }
 
@@ -364,7 +364,7 @@ void XMLFile::InsertL10NElement( XMLElement* pElement )
     XMLHashMap::iterator pos = m_pXMLStrings->find( sId );
     if( pos == m_pXMLStrings->end() ) // No instance, create new one
     {
-        pElem = new LangHashMap;
+        pElem = new LangHashMap();
         (*pElem)[ sLanguage ]=pElement;
         m_pXMLStrings->insert( XMLHashMap::value_type( sId , pElem ) );
         m_vOrder.push_back( sId );
@@ -405,11 +405,11 @@ XMLFile& XMLFile::operator=(const XMLFile& rObj)
 
         if( rObj.m_pXMLStrings )
         {
-            m_pXMLStrings.reset( new XMLHashMap );
+            m_pXMLStrings.reset( new XMLHashMap() );
             for( XMLHashMap::iterator pos = rObj.m_pXMLStrings->begin() ; pos != rObj.m_pXMLStrings->end() ; ++pos )
             {
                 LangHashMap* pElem=pos->second;
-                LangHashMap* pNewelem = new LangHashMap;
+                LangHashMap* pNewelem = new LangHashMap();
                 for(LangHashMap::iterator pos2=pElem->begin(); pos2!=pElem->end();++pos2)
                 {
                     (*pNewelem)[ pos2->first ] = new XMLElement( *pos2->second );
@@ -555,8 +555,11 @@ XMLElement::XMLElement(
 )
     : XMLParentNode( pParent )
     , m_sElementName( rName )
+    , m_sProject(OString())
+    , m_sFilename(OString())
     , m_sId(OString())
     , m_sOldRef(OString())
+    , m_sResourceType(OString())
     , m_sLanguageId(OString())
     , m_nPos(0)
 {
@@ -565,14 +568,17 @@ XMLElement::XMLElement(
 XMLElement::XMLElement(const XMLElement& rObj)
     : XMLParentNode( rObj )
     , m_sElementName( rObj.m_sElementName )
+    , m_sProject( rObj.m_sProject )
+    , m_sFilename( rObj.m_sFilename )
     , m_sId( rObj.m_sId )
     , m_sOldRef( rObj.m_sOldRef )
+    , m_sResourceType( rObj.m_sResourceType )
     , m_sLanguageId( rObj.m_sLanguageId )
     , m_nPos( rObj.m_nPos )
 {
     if ( rObj.m_pAttributes )
     {
-        m_pAttributes.reset( new XMLAttributeList );
+        m_pAttributes.reset( new XMLAttributeList() );
         for ( size_t i = 0; i < rObj.m_pAttributes->size(); i++ )
             AddAttribute( (*rObj.m_pAttributes)[ i ]->GetName(), (*rObj.m_pAttributes)[ i ]->GetValue() );
     }
@@ -584,8 +590,11 @@ XMLElement& XMLElement::operator=(const XMLElement& rObj)
     {
         XMLParentNode::operator=(rObj);
         m_sElementName = rObj.m_sElementName;
+        m_sProject = rObj.m_sProject;
+        m_sFilename = rObj.m_sFilename;
         m_sId = rObj.m_sId;
         m_sOldRef = rObj.m_sOldRef;
+        m_sResourceType = rObj.m_sResourceType;
         m_sLanguageId = rObj.m_sLanguageId;
         m_nPos = rObj.m_nPos;
 
@@ -597,7 +606,7 @@ XMLElement& XMLElement::operator=(const XMLElement& rObj)
         }
         if ( rObj.m_pAttributes )
         {
-            m_pAttributes.reset( new XMLAttributeList );
+            m_pAttributes.reset( new XMLAttributeList() );
             for ( size_t i = 0; i < rObj.m_pAttributes->size(); i++ )
                 AddAttribute( (*rObj.m_pAttributes)[ i ]->GetName(), (*rObj.m_pAttributes)[ i ]->GetValue() );
         }
@@ -608,7 +617,7 @@ XMLElement& XMLElement::operator=(const XMLElement& rObj)
 void XMLElement::AddAttribute( const OString &rAttribute, const OString &rValue )
 {
     if ( !m_pAttributes )
-        m_pAttributes.reset( new XMLAttributeList );
+        m_pAttributes.reset( new XMLAttributeList() );
     m_pAttributes->push_back( new XMLAttribute( rAttribute, rValue ) );
 }
 
@@ -963,7 +972,7 @@ XMLFile *SimpleXMLParser::Execute( const OString &rFileName, XMLFile* pXMLFileIn
             m_aErrorInformation.m_sMessage += "Tag mismatch";
             break;
         case XML_ERROR_DUPLICATE_ATTRIBUTE:
-            m_aErrorInformation.m_sMessage += "Duplicated attribute";
+            m_aErrorInformation.m_sMessage += "Duplicat attribute";
             break;
         case XML_ERROR_JUNK_AFTER_DOC_ELEMENT:
             m_aErrorInformation.m_sMessage += "Junk after doc element";
@@ -1090,7 +1099,11 @@ OString XMLUtil::QuotHTML( const OString &rString )
     UErrorCode nIcuErr = U_ZERO_ERROR;
     static const sal_uInt32 nSearchFlags =
         UREGEX_DOTALL | UREGEX_CASE_INSENSITIVE;
-    static const UnicodeString sSearchPat( "<[/]\?\?[a-z_-]+?(?:| +[a-z]+?=\".*?\") *[/]\?\?>" );
+    static const OUString sPattern(
+        "<[/]\?\?[a-z_-]+?(?:| +[a-z]+?=\".*?\") *[/]\?\?>");
+    static const UnicodeString sSearchPat(
+        reinterpret_cast<const UChar*>(sPattern.getStr()),
+        sPattern.getLength() );
 
     const OUString sOUSource = OStringToOUString(rString, RTL_TEXTENCODING_UTF8);
     icu::UnicodeString sSource(

@@ -102,10 +102,7 @@ class ExtMgrDialog : public ModelessDialog,
                      public DialogHelper
 {
     VclPtr<ExtBoxWithBtns_Impl> m_pExtensionBox;
-    VclPtr<PushButton>          m_pOptionsBtn;
     VclPtr<PushButton>          m_pAddBtn;
-    VclPtr<PushButton>          m_pRemoveBtn;
-    VclPtr<PushButton>          m_pEnableBtn;
     VclPtr<PushButton>          m_pUpdateBtn;
     VclPtr<CloseButton>         m_pCloseBtn;
     VclPtr<CheckBox>            m_pBundledCbx;
@@ -126,7 +123,6 @@ class ExtMgrDialog : public ModelessDialog,
     bool                 m_bEnableWarning;
     bool                 m_bDisableWarning;
     bool                 m_bDeleteWarning;
-    bool                 m_bClosed;
     long                 m_nProgress;
     Idle                 m_aIdle;
     TheExtensionManager *m_pManager;
@@ -135,24 +131,21 @@ class ExtMgrDialog : public ModelessDialog,
 
     bool removeExtensionWarn( const OUString &rExtensionTitle ) const;
 
-    DECL_LINK( HandleOptionsBtn, Button*, void );
-    DECL_LINK( HandleAddBtn, Button*, void );
-    DECL_LINK( HandleRemoveBtn, Button*, void );
-    DECL_LINK( HandleEnableBtn, Button*, void );
-    DECL_LINK( HandleUpdateBtn, Button*, void );
-    DECL_LINK( HandleCancelBtn, Button*, void );
-    DECL_LINK( HandleCloseBtn, Button*, void );
-    DECL_LINK( HandleExtTypeCbx, Button*, void );
-    DECL_LINK(TimeOutHdl, Timer *, void);
-    DECL_LINK( startProgress, void *, void );
-    DECL_STATIC_LINK( ExtMgrDialog, Restart, void *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleAddBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleUpdateBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleCancelBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleCloseBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleExtTypeCbx, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleHyperlink, FixedHyperlink&, void );
+    DECL_DLLPRIVATE_LINK_TYPED(TimeOutHdl, Idle *, void);
+    DECL_DLLPRIVATE_LINK_TYPED( startProgress, void *, void );
 
 public:
                     ExtMgrDialog( vcl::Window * pParent, TheExtensionManager *pManager, Dialog::InitFlag eFlag = Dialog::InitFlag::Default );
-    virtual        ~ExtMgrDialog() override;
+    virtual        ~ExtMgrDialog();
     virtual void    dispose() override;
 
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
     virtual bool    Close() override;
 
     virtual void    showProgress( bool bStart ) override;
@@ -177,15 +170,6 @@ public:
     virtual void    checkEntries() override;
 
     css::uno::Sequence< OUString > raiseAddPicker();
-
-    void enableOptionsButton( bool bEnable );
-    void enableRemoveButton( bool bEnable );
-    void enableEnableButton( bool bEnable );
-    /*
-     * Transform the button to "Enable", or to "Disable"
-     * based on the value of bEnable.
-     */
-    void enableButtontoEnable( bool bEnable );
 };
 
 
@@ -213,11 +197,12 @@ class UpdateRequiredDialog : public ModalDialog,
 
     css::uno::Reference< css::task::XAbortChannel > m_xAbortChannel;
 
-    DECL_LINK( HandleUpdateBtn, Button*, void );
-    DECL_LINK( HandleCloseBtn, Button*, void );
-    DECL_LINK( HandleCancelBtn, Button*, void );
-    DECL_LINK(TimeOutHdl, Timer *, void);
-    DECL_LINK( startProgress, void *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleUpdateBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleCloseBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleCancelBtn, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED(TimeOutHdl, Idle *, void);
+    DECL_DLLPRIVATE_LINK_TYPED( startProgress, void *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( HandleHyperlink, FixedHyperlink&, void );
 
     static bool     isEnabled( const css::uno::Reference< css::deployment::XPackage > &xPackage );
     static bool     checkDependencies( const css::uno::Reference< css::deployment::XPackage > &xPackage );
@@ -226,7 +211,7 @@ class UpdateRequiredDialog : public ModalDialog,
 
 public:
                     UpdateRequiredDialog( vcl::Window * pParent, TheExtensionManager *pManager );
-    virtual        ~UpdateRequiredDialog() override;
+    virtual        ~UpdateRequiredDialog();
     virtual void    dispose() override;
 
     virtual short   Execute() override;
@@ -241,6 +226,7 @@ public:
 
     virtual void    addPackageToList( const css::uno::Reference< css::deployment::XPackage > &,
                                       bool bLicenseMissing = false ) override;
+    void            enablePackage( const css::uno::Reference< css::deployment::XPackage > &xPackage, bool bEnable );
 
     virtual void    prepareChecking() override;
     virtual void    checkEntries() override;
@@ -252,7 +238,7 @@ class ShowLicenseDialog : public ModalDialog
     VclPtr<VclMultiLineEdit> m_pLicenseText;
 public:
     ShowLicenseDialog(vcl::Window * pParent, const css::uno::Reference< css::deployment::XPackage > &xPackage);
-    virtual ~ShowLicenseDialog() override;
+    virtual ~ShowLicenseDialog();
     virtual void dispose() override;
 };
 
@@ -265,8 +251,8 @@ public:
                                  css::uno::Reference< css::uno::XComponentContext> const & xComponentContext );
 
     // XExecutableDialog
-    virtual void SAL_CALL         setTitle( OUString const & title ) override;
-    virtual sal_Int16 SAL_CALL    execute() override;
+    virtual void SAL_CALL         setTitle( OUString const & title ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int16 SAL_CALL    execute() throw ( css::uno::RuntimeException, std::exception ) override;
 };
 
 } // namespace dp_gui

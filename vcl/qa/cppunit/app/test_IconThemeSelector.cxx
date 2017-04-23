@@ -108,7 +108,7 @@ IconThemeSelectorTest::ThemeIsOverriddenByPreferredTheme()
 {
     vcl::IconThemeSelector s;
     OUString preferred("oxygen");
-    s.SetPreferredIconTheme(preferred, false);
+    s.SetPreferredIconTheme(preferred);
     std::vector<vcl::IconThemeInfo> themes = GetFakeInstalledThemes();
     OUString selected = s.SelectIconThemeForDesktopEnvironment(themes, "gtk");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("'tango' theme is overridden by oxygen", preferred, selected);
@@ -133,7 +133,7 @@ void
 IconThemeSelectorTest::NotInstalledThemeDoesNotOverride()
 {
     vcl::IconThemeSelector s;
-    s.SetPreferredIconTheme("oxygen_katze", false);
+    s.SetPreferredIconTheme("oxygen_katze");
     std::vector<vcl::IconThemeInfo> themes = GetFakeInstalledThemes();
     OUString selected = s.SelectIconTheme(themes, "oxygen");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("'oxygen' theme is not overridden by 'oxygen_katze'", OUString("oxygen"), selected);
@@ -163,7 +163,7 @@ IconThemeSelectorTest::FallbackThemeIsReturnedForEmptyInput()
     vcl::IconThemeSelector s;
     OUString selected = s.SelectIconTheme(std::vector<vcl::IconThemeInfo>(), "oxygen");
     CPPUNIT_ASSERT_EQUAL_MESSAGE("fallback is returned for empty input",
-            OUString(vcl::IconThemeSelector::FALLBACK_ICON_THEME_ID), selected);
+            vcl::IconThemeSelector::FALLBACK_ICON_THEME_ID, selected);
 }
 
 void
@@ -182,7 +182,7 @@ IconThemeSelectorTest::DifferentPreferredThemesAreInequal()
 {
     vcl::IconThemeSelector s1;
     vcl::IconThemeSelector s2;
-    s1.SetPreferredIconTheme("oxygen", false);
+    s1.SetPreferredIconTheme("oxygen");
     s2.SetUseHighContrastTheme(true);
     bool equal = (s1 == s2);
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Different preferred themes are detected as inequal", false, equal);

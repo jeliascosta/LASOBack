@@ -54,10 +54,11 @@ SvCreateInstancePersist SvClassManager::Get( sal_Int32 nClassId )
 SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream )
     : rClassMgr( rMgr )
     , pStm( pStream )
-    , aPUIdx( UniqueIndex<SvPersistBase>::Index(1) )
+    , aPUIdx( 1 )
     , nStartIdx( 1 )
+    , pRefStm( nullptr )
 {
-    DBG_ASSERT( nStartIdx != Index(0), "zero index not allowed" );
+    DBG_ASSERT( nStartIdx != 0, "zero index not allowed" );
     m_isWritable = true;
     if( pStm )
     {
@@ -68,6 +69,11 @@ SvPersistStream::SvPersistStream( SvClassManager & rMgr, SvStream * pStream )
 }
 
 SvPersistStream::~SvPersistStream()
+{
+    ClearStream();
+}
+
+void SvPersistStream::ClearStream()
 {
     if( pStm != nullptr )
     {
@@ -84,18 +90,18 @@ void SvPersistStream::ResetError()
     pStm->ResetError();
 }
 
-std::size_t SvPersistStream::GetData( void* pData, std::size_t nSize )
+sal_uIntPtr SvPersistStream::GetData( void* pData, sal_uIntPtr nSize )
 {
     DBG_ASSERT( pStm, "stream not set" );
-    std::size_t const nRet = pStm->ReadBytes( pData, nSize );
+    sal_uIntPtr nRet = pStm->Read( pData, nSize );
     SetError( pStm->GetError() );
     return nRet;
 }
 
-std::size_t SvPersistStream::PutData( const void* pData, std::size_t nSize )
+sal_uIntPtr SvPersistStream::PutData( const void* pData, sal_uIntPtr nSize )
 {
     DBG_ASSERT( pStm, "stream not set" );
-    std::size_t const nRet = pStm->WriteBytes( pData, nSize );
+    sal_uIntPtr nRet = pStm->Write( pData, nSize );
     SetError( pStm->GetError() );
     return nRet;
 }
@@ -117,7 +123,10 @@ SvPersistStream::Index SvPersistStream::GetIndex( SvPersistBase * pObj ) const
     PersistBaseMap::const_iterator it = aPTable.find( pObj );
     if( it == aPTable.end() )
     {
-        return Index(0);
+        if ( pRefStm )
+            return pRefStm->GetIndex( pObj );
+        else
+            return 0;
     }
     return it->second;
 }
@@ -126,6 +135,8 @@ SvPersistBase * SvPersistStream::GetObject( Index nIdx ) const
 {
     if( nIdx >= nStartIdx )
         return aPUIdx.Get( nIdx );
+    else if( pRefStm )
+        return pRefStm->GetObject( nIdx );
     return nullptr;
 }
 
@@ -244,7 +255,17 @@ void SvPersistStream::WriteCompressed( SvStream & rStm, sal_uInt32 nVal )
 */
 sal_uInt32 SvPersistStream::WriteDummyLen()
 {
-    WriteUInt32( 0 );
+#ifdef DBG_UTIL
+    sal_uInt32 nPos = Tell();
+#endif
+    sal_uInt32 n0 = 0;
+    WriteUInt32( n0 ); // Because of Sun sp
+    // Don't assert on stream error
+#ifdef DBG_UTIL
+    DBG_ASSERT( GetError() != SVSTREAM_OK
+                  || (sizeof( sal_uInt32 ) == Tell() -nPos),
+                "No 4 byte as length parameter" );
+#endif
     return Tell();
 }
 
@@ -357,18 +378,18 @@ static void ReadId
     nClassId = 0;
     rStm.ReadUChar( nHdr );
     if( nHdr & P_ID_0 )
-        nId = SvPersistStream::Index(0);
+        nId = 0;
     else
     {
         if( (nHdr & P_VER_MASK) == 0 )
         {
             if( (nHdr & P_DBGUTIL) || !(nHdr & P_OBJ) )
-                nId = SvPersistStream::Index(SvPersistStream::ReadCompressed( rStm ));
+                nId = SvPersistStream::ReadCompressed( rStm );
             else
-                nId = SvPersistStream::Index(0);
+                nId = 0;
         }
         else if( nHdr & P_ID )
-            nId = SvPersistStream::Index(SvPersistStream::ReadCompressed( rStm ));
+            nId = SvPersistStream::ReadCompressed( rStm );
 
         if( (nHdr & P_DBGUTIL) || (nHdr & P_OBJ) )
             nClassId = (sal_uInt16)SvPersistStream::ReadCompressed( rStm );
@@ -412,7 +433,7 @@ SvPersistStream& SvPersistStream::WritePointer
             aPTable[ pObj ] = nId;
             nP |= P_OBJ;
         }
-        WriteId( *this, nP, (sal_uInt32)nId, pObj->GetClassId() );
+        WriteId( *this, nP, nId, pObj->GetClassId() );
         if( nP & P_OBJ )
             WriteObj( nP, pObj );
     }
@@ -429,7 +450,7 @@ void SvPersistStream::ReadObj
 )
 {
     sal_uInt8   nHdr;
-    Index       nId(0);
+    Index       nId = 0;
     sal_uInt16  nClassId;
 
     rpObj = nullptr; // specification: 0 in case of error

@@ -21,14 +21,9 @@
 #ifndef INCLUDED_OOX_PPT_SLIDETRANSITION_HXX
 #define INCLUDED_OOX_PPT_SLIDETRANSITION_HXX
 
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/presentation/AnimationSpeed.hpp>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
 
-namespace com { namespace sun { namespace star {
-    namespace animations { class XTransitionFilter; }
-} } }
+#include <com/sun/star/animations/XTransitionFilter.hpp>
 
 namespace oox { class PropertyMap; }
 
@@ -65,7 +60,7 @@ namespace oox { namespace ppt {
         ::sal_Int16 mnTransitionType;
         ::sal_Int16 mnTransitionSubType;
         bool  mbTransitionDirectionNormal;
-        css::presentation::AnimationSpeed mnAnimationSpeed;
+        ::sal_Int16 mnAnimationSpeed;
         ::sal_Int32 mnFadeColor;
         bool  mbMode; /**< http://api.libreoffice.org/docs/common/ref/com/sun/star/animations/XTransitionFilter.html Mode property */
         ::sal_Int32 mnAdvanceTime;

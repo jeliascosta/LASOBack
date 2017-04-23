@@ -30,11 +30,12 @@ class Point;
 
 namespace sw { namespace sidebarwindows {
 
-enum class AnchorState
+enum AnchorState
 {
-    All,
-    End,
-    Tri
+    AS_ALL,
+    AS_START,
+    AS_END,
+    AS_TRI
 };
 
 class AnchorOverlayObject: public sdr::overlay::OverlayObjectWithBasePosition
@@ -48,7 +49,7 @@ class AnchorOverlayObject: public sdr::overlay::OverlayObjectWithBasePosition
                                                                const Color& aColorAnchor );
         static void DestroyAnchorOverlayObject( AnchorOverlayObject* pAnchor );
 
-        const basegfx::B2DPoint& GetSecondPosition() const { return maSecondPosition; }
+        inline const basegfx::B2DPoint& GetSecondPosition() const { return maSecondPosition; }
         const basegfx::B2DPoint& GetThirdPosition() const { return maThirdPosition; }
         const basegfx::B2DPoint& GetFourthPosition() const { return maFourthPosition; }
         const basegfx::B2DPoint& GetFifthPosition() const { return maFifthPosition; }
@@ -71,12 +72,12 @@ class AnchorOverlayObject: public sdr::overlay::OverlayObjectWithBasePosition
         void SetSeventhPosition( const basegfx::B2DPoint& rNew );
 
         void setLineSolid( const bool bNew );
-        bool getLineSolid() const { return mbLineSolid; }
+        inline bool getLineSolid() const { return mbLineSolid; }
 
-        void SetHeight( const unsigned long aHeight ) { mHeight = aHeight; };
+        inline void SetHeight( const unsigned long aHeight ) { mHeight = aHeight; };
 
         void SetAnchorState( const AnchorState aState );
-        AnchorState GetAnchorState() const { return mAnchorState; }
+        inline AnchorState GetAnchorState() const { return mAnchorState; }
 
     protected:
         /*                        6------------7
@@ -117,7 +118,7 @@ class AnchorOverlayObject: public sdr::overlay::OverlayObjectWithBasePosition
                              const basegfx::B2DPoint& rSixthPos,
                              const basegfx::B2DPoint& rSeventhPos,
                              const Color& rBaseColor );
-        virtual ~AnchorOverlayObject() override;
+        virtual ~AnchorOverlayObject();
 };
 
 } } // end of namespace sw::annotation

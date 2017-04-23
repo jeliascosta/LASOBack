@@ -21,7 +21,7 @@
 
 #include "delcodlg.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 
 bool       ScDeleteContentsDlg::bPreviousAllCheck = false;
 InsertDeleteFlags ScDeleteContentsDlg::nPreviousChecks   = (InsertDeleteFlags::DATETIME | InsertDeleteFlags::STRING  |
@@ -150,7 +150,7 @@ void ScDeleteContentsDlg::DisableObjects()
     aBtnDelObjects->Disable();
 }
 
-IMPL_LINK_NOARG(ScDeleteContentsDlg, DelAllHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScDeleteContentsDlg, DelAllHdl, Button*, void)
 {
     DisableChecks( aBtnDelAll->IsChecked() );
 }

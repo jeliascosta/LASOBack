@@ -19,9 +19,6 @@
 
 #include "celllistsource.hxx"
 #include <tools/debug.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
-#include <com/sun/star/lang/NotInitializedException.hpp>
-#include <com/sun/star/lang/NullPointerException.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 #include <com/sun/star/sheet/XCellRangeAddressable.hpp>
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
@@ -55,12 +52,13 @@ namespace calc
         OSL_PRECOND( m_xDocument.is(), "OCellListSource::OCellListSource: invalid document!" );
 
         // register our property at the base class
+        CellRangeAddress aInitialPropValue;
         registerPropertyNoMember(
             "CellRange",
             PROP_HANDLE_RANGE_ADDRESS,
             PropertyAttribute::BOUND | PropertyAttribute::READONLY,
-            cppu::UnoType<CellRangeAddress>::get(),
-            css::uno::Any(CellRangeAddress())
+            cppu::UnoType<decltype(aInitialPropValue)>::get(),
+            &aInitialPropValue
         );
     }
 
@@ -95,7 +93,7 @@ namespace calc
         // TODO: clean up here whatever you need to clean up (e.g. revoking listeners etc.)
     }
 
-    Reference< XPropertySetInfo > SAL_CALL OCellListSource::getPropertySetInfo(  )
+    Reference< XPropertySetInfo > SAL_CALL OCellListSource::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
     {
         return createPropertySetInfo( getInfoHelper() ) ;
     }
@@ -131,23 +129,26 @@ namespace calc
     void OCellListSource::checkInitialized()
     {
         if ( !m_bInitialized )
-            throw NotInitializedException("CellListSource is not initialized", static_cast<cppu::OWeakObject*>(this));
+            throw RuntimeException();
+            // TODO: error message
     }
 
-    OUString SAL_CALL OCellListSource::getImplementationName(  )
+    OUString SAL_CALL OCellListSource::getImplementationName(  ) throw (RuntimeException, std::exception)
     {
         return OUString( "com.sun.star.comp.sheet.OCellListSource" );
     }
 
-    sal_Bool SAL_CALL OCellListSource::supportsService( const OUString& _rServiceName )
+    sal_Bool SAL_CALL OCellListSource::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL OCellListSource::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL OCellListSource::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
-        return {"com.sun.star.table.CellRangeListSource",
-                "com.sun.star.form.binding.ListEntrySource"};
+        Sequence< OUString > aServices( 2 );
+        aServices[ 0 ] = "com.sun.star.table.CellRangeListSource";
+        aServices[ 1 ] = "com.sun.star.form.binding.ListEntrySource";
+        return aServices;
     }
 
     CellRangeAddress OCellListSource::getRangeAddress( ) const
@@ -161,68 +162,20 @@ namespace calc
         return aAddress;
     }
 
-    OUString OCellListSource::getCellTextContent_noCheck( sal_Int32 _nRangeRelativeRow, css::uno::Any* pAny )
+    OUString OCellListSource::getCellTextContent_noCheck( sal_Int32 _nRangeRelativeRow )
     {
-        OUString sText;
-
         OSL_PRECOND( m_xRange.is(), "OCellListSource::getRangeAddress: invalid range!" );
-
-        if (!m_xRange.is())
-            return sText;
-
-        Reference< XCell > xCell( m_xRange->getCellByPosition( 0, _nRangeRelativeRow ));
-        if (!xCell.is())
-        {
-            if (pAny)
-                *pAny <<= sText;
-            return sText;
-        }
-
         Reference< XTextRange > xCellText;
-        xCellText.set( xCell, UNO_QUERY);
+        if ( m_xRange.is() )
+            xCellText.set(m_xRange->getCellByPosition( 0, _nRangeRelativeRow ), css::uno::UNO_QUERY);
 
-        if (xCellText.is())
-            sText = xCellText->getString();     // formatted output string
-
-        if (pAny)
-        {
-            switch (xCell->getType())
-            {
-                case CellContentType_VALUE:
-                    *pAny <<= xCell->getValue();
-                break;
-                case CellContentType_TEXT:
-                    *pAny <<= sText;
-                break;
-                case CellContentType_FORMULA:
-                    if (xCell->getError())
-                        *pAny <<= sText;    // Err:... or #...!
-                    else
-                    {
-                        Reference< XPropertySet > xProp( xCell, UNO_QUERY);
-                        if (xProp.is())
-                        {
-                            CellContentType eResultType;
-                            if ((xProp->getPropertyValue("FormulaResultType") >>= eResultType) &&
-                                    eResultType == CellContentType_VALUE)
-                                *pAny <<= xCell->getValue();
-                            else
-                                *pAny <<= sText;
-                        }
-                    }
-                break;
-                case CellContentType_EMPTY:
-                    *pAny <<= OUString();
-                break;
-                default:
-                    ;   // nothing, if actually occurred it would result in #N/A being displayed if selected
-            }
-        }
-
+        OUString sText;
+        if ( xCellText.is() )
+            sText = xCellText->getString();
         return sText;
     }
 
-    sal_Int32 SAL_CALL OCellListSource::getListEntryCount(  )
+    sal_Int32 SAL_CALL OCellListSource::getListEntryCount(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed();
@@ -232,7 +185,7 @@ namespace calc
         return aAddress.EndRow - aAddress.StartRow + 1;
     }
 
-    OUString SAL_CALL OCellListSource::getListEntry( sal_Int32 _nPosition )
+    OUString SAL_CALL OCellListSource::getListEntry( sal_Int32 _nPosition ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed();
@@ -241,10 +194,10 @@ namespace calc
         if ( _nPosition >= getListEntryCount() )
             throw IndexOutOfBoundsException();
 
-        return getCellTextContent_noCheck( _nPosition, nullptr );
+        return getCellTextContent_noCheck( _nPosition );
     }
 
-    Sequence< OUString > SAL_CALL OCellListSource::getAllListEntries(  )
+    Sequence< OUString > SAL_CALL OCellListSource::getAllListEntries(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed();
@@ -254,32 +207,13 @@ namespace calc
         OUString* pAllEntries = aAllEntries.getArray();
         for ( sal_Int32 i = 0; i < aAllEntries.getLength(); ++i )
         {
-            *pAllEntries++ = getCellTextContent_noCheck( i, nullptr );
+            *pAllEntries++ = getCellTextContent_noCheck( i );
         }
 
         return aAllEntries;
     }
 
-    Sequence< OUString > SAL_CALL OCellListSource::getAllListEntriesTyped( Sequence< Any >& rDataValues )
-    {
-        ::osl::MutexGuard aGuard( m_aMutex );
-        checkDisposed();
-        checkInitialized();
-
-        const sal_Int32 nCount = getListEntryCount();
-        Sequence< OUString > aAllEntries( nCount );
-        rDataValues = Sequence< Any >( nCount );
-        OUString* pAllEntries = aAllEntries.getArray();
-        Any* pDataValues = rDataValues.getArray();
-        for ( sal_Int32 i = 0; i < nCount; ++i )
-        {
-            *pAllEntries++ = getCellTextContent_noCheck( i, pDataValues++ );
-        }
-
-        return aAllEntries;
-    }
-
-    void SAL_CALL OCellListSource::addListEntryListener( const Reference< XListEntryListener >& _rxListener )
+    void SAL_CALL OCellListSource::addListEntryListener( const Reference< XListEntryListener >& _rxListener ) throw (NullPointerException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed();
@@ -291,7 +225,7 @@ namespace calc
         m_aListEntryListeners.addInterface( _rxListener );
     }
 
-    void SAL_CALL OCellListSource::removeListEntryListener( const Reference< XListEntryListener >& _rxListener )
+    void SAL_CALL OCellListSource::removeListEntryListener( const Reference< XListEntryListener >& _rxListener ) throw (NullPointerException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         checkDisposed();
@@ -303,7 +237,7 @@ namespace calc
         m_aListEntryListeners.removeInterface( _rxListener );
     }
 
-    void SAL_CALL OCellListSource::modified( const EventObject& /* aEvent */ )
+    void SAL_CALL OCellListSource::modified( const EventObject& /* aEvent */ ) throw (RuntimeException, std::exception)
     {
         notifyModified();
     }
@@ -332,7 +266,7 @@ namespace calc
 
     }
 
-    void SAL_CALL OCellListSource::disposing( const EventObject& aEvent )
+    void SAL_CALL OCellListSource::disposing( const EventObject& aEvent ) throw (RuntimeException, std::exception)
     {
         Reference<XInterface> xRangeInt( m_xRange, UNO_QUERY );
         if ( xRangeInt == aEvent.Source )
@@ -342,10 +276,11 @@ namespace calc
         }
     }
 
-    void SAL_CALL OCellListSource::initialize( const Sequence< Any >& _rArguments )
+    void SAL_CALL OCellListSource::initialize( const Sequence< Any >& _rArguments ) throw (Exception, RuntimeException, std::exception)
     {
         if ( m_bInitialized )
-            throw RuntimeException("CellListSource is already initialized", static_cast<cppu::OWeakObject*>(this));
+            throw Exception();
+            // TODO: error message
 
         // get the cell address
         CellRangeAddress aRangeAddress;
@@ -367,7 +302,8 @@ namespace calc
         }
 
         if ( !bFoundAddress )
-            throw RuntimeException("Cell not found", static_cast<cppu::OWeakObject*>(this));
+            // TODO: error message
+            throw Exception();
 
         // determine the range we're bound to
         try
@@ -401,7 +337,8 @@ namespace calc
         }
 
         if ( !m_xRange.is() )
-            throw RuntimeException("Failed to retrieve cell range", static_cast<cppu::OWeakObject*>(this));
+            throw Exception();
+            // TODO error message
 
         Reference<XModifyBroadcaster> xBroadcaster( m_xRange, UNO_QUERY );
         if ( xBroadcaster.is() )

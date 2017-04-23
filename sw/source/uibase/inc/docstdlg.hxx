@@ -22,6 +22,7 @@
 #include <sfx2/tabdlg.hxx>
 
 #include <vcl/fixed.hxx>
+#include <svtools/stdctrl.hxx>
 
 #include "docstat.hxx"
 
@@ -30,7 +31,7 @@ class SwDocStatPage: public SfxTabPage
 {
 public:
     SwDocStatPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwDocStatPage() override;
+    virtual ~SwDocStatPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -39,7 +40,7 @@ protected:
     virtual bool    FillItemSet(      SfxItemSet *rSet) override;
     virtual void    Reset      (const SfxItemSet *rSet) override;
 
-    DECL_LINK(UpdateHdl, Button*, void);
+    DECL_LINK_TYPED(UpdateHdl, Button*, void);
 
 private:
     VclPtr<FixedText>      m_pPageNo;

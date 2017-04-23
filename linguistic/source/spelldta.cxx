@@ -96,7 +96,7 @@ void SearchSimilarText( const OUString &rText, sal_Int16 nLanguage,
                 if (pEntries[k].is())
                 {
                     // remove characters used to determine hyphenation positions
-                    aEntryTxt = pEntries[k]->getDictionaryWord().replaceAll("=", "");
+                    aEntryTxt = comphelper::string::remove(pEntries[k]->getDictionaryWord(), '=');
                 }
                 if (!aEntryTxt.isEmpty()  &&  aEntryTxt.getLength() > 1  &&  LevDistance( rText, aEntryTxt ) <= 2)
                     rDicListProps.push_back( aEntryTxt );
@@ -179,11 +179,11 @@ SpellAlternatives::SpellAlternatives()
 
 
 SpellAlternatives::SpellAlternatives(
-        const OUString &rWord, sal_Int16 nLang,
+        const OUString &rWord, sal_Int16 nLang, sal_Int16 nFailureType,
         const Sequence< OUString > &rAlternatives ) :
     aAlt        (rAlternatives),
     aWord       (rWord),
-    nType       (SpellFailure::IS_NEGATIVE_WORD),
+    nType       (nFailureType),
     nLanguage   (nLang)
 {
 }
@@ -195,6 +195,7 @@ SpellAlternatives::~SpellAlternatives()
 
 
 OUString SAL_CALL SpellAlternatives::getWord()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return aWord;
@@ -202,6 +203,7 @@ OUString SAL_CALL SpellAlternatives::getWord()
 
 
 Locale SAL_CALL SpellAlternatives::getLocale()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return LanguageTag::convertToLocale( nLanguage );
@@ -209,6 +211,7 @@ Locale SAL_CALL SpellAlternatives::getLocale()
 
 
 sal_Int16 SAL_CALL SpellAlternatives::getFailureType()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return nType;
@@ -216,6 +219,7 @@ sal_Int16 SAL_CALL SpellAlternatives::getFailureType()
 
 
 sal_Int16 SAL_CALL SpellAlternatives::getAlternativesCount()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return (sal_Int16) aAlt.getLength();
@@ -223,6 +227,7 @@ sal_Int16 SAL_CALL SpellAlternatives::getAlternativesCount()
 
 
 Sequence< OUString > SAL_CALL SpellAlternatives::getAlternatives()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return aAlt;
@@ -230,6 +235,7 @@ Sequence< OUString > SAL_CALL SpellAlternatives::getAlternatives()
 
 
 void SAL_CALL SpellAlternatives::setAlternatives( const uno::Sequence< OUString >& rAlternatives )
+throw (uno::RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     aAlt = rAlternatives;
@@ -237,6 +243,7 @@ void SAL_CALL SpellAlternatives::setAlternatives( const uno::Sequence< OUString 
 
 
 void SAL_CALL SpellAlternatives::setFailureType( sal_Int16 nFailureType )
+throw (uno::RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     nType = nFailureType;

@@ -19,7 +19,9 @@
 #include "document.hxx"
 #include "uiitems.hxx"
 #include "reffact.hxx"
+#include "strload.hxx"
 #include "docfunc.hxx"
+#include "StatisticsDialogs.hrc"
 #include "TableFillingAndNavigationTools.hxx"
 
 #include "DescriptiveStatisticsDialog.hxx"
@@ -51,6 +53,9 @@ static const StatisticCalculation lclCalcDefinitions[] =
     { STRID_CALC_COUNT,          "=COUNT(%RANGE%)" },
     { 0,                         nullptr }
 };
+
+static const char strWildcardRange[] = "%RANGE%";
+static const char strWildcardNumber[] = "%NUMBER%";
 
 }
 
@@ -96,11 +101,11 @@ ScRange ScDescriptiveStatisticsDialog::ApplyOutput(ScDocShell* pDocShell)
     for( ; pIterator->hasNext(); pIterator->next() )
     {
         if (mGroupedBy == BY_COLUMN)
-            aTemplate.setTemplate(SC_RESSTR(STR_COLUMN_LABEL_TEMPLATE));
+            aTemplate.setTemplate(SC_STRLOAD(RID_STATISTICS_DLGS, STR_COLUMN_LABEL_TEMPLATE));
         else
-            aTemplate.setTemplate(SC_RESSTR(STR_ROW_LABEL_TEMPLATE));
+            aTemplate.setTemplate(SC_STRLOAD(RID_STATISTICS_DLGS, STR_ROW_LABEL_TEMPLATE));
 
-        aTemplate.applyNumber("%NUMBER%", pIterator->index() + 1);
+        aTemplate.applyNumber(strWildcardNumber, pIterator->index() + 1);
         aOutput.writeBoldString(aTemplate.getTemplate());
         aOutput.nextColumn();
     }
@@ -111,7 +116,7 @@ ScRange ScDescriptiveStatisticsDialog::ApplyOutput(ScDocShell* pDocShell)
     // Write calculation labels
     for(sal_Int32 i = 0; lclCalcDefinitions[i].aFormula != nullptr; i++)
     {
-        OUString aLabel(SC_RESSTR(lclCalcDefinitions[i].aCalculationNameId));
+        OUString aLabel(SC_STRLOAD(RID_STATISTICS_DLGS, lclCalcDefinitions[i].aCalculationNameId));
         aOutput.writeString(aLabel);
         aOutput.nextRow();
     }
@@ -126,7 +131,7 @@ ScRange ScDescriptiveStatisticsDialog::ApplyOutput(ScDocShell* pDocShell)
         for(sal_Int32 i = 0; lclCalcDefinitions[i].aFormula != nullptr; i++)
         {
             aTemplate.setTemplate(lclCalcDefinitions[i].aFormula);
-            aTemplate.applyRange("%RANGE%", pIterator->get(), b3DAddress);
+            aTemplate.applyRange(strWildcardRange, pIterator->get(), b3DAddress);
             aOutput.writeFormula(aTemplate.getTemplate());
             aOutput.nextRow();
         }

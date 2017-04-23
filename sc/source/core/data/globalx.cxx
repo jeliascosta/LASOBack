@@ -32,6 +32,7 @@
 #include <com/sun/star/ucb/XContentAccess.hpp>
 
 #include <com/sun/star/i18n/OrdinalSuffix.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
 #include <unotools/configmgr.hxx>
@@ -68,7 +69,7 @@ void ScGlobal::InitAddIns()
         aObj.setFinalSlash();
         try
         {
-            ::ucbhelper::Content aCnt( aObj.GetMainURL(INetURLObject::DecodeMechanism::NONE),
+            ::ucbhelper::Content aCnt( aObj.GetMainURL(INetURLObject::NO_DECODE),
                 Reference< XCommandEnvironment >(),
                 comphelper::getProcessComponentContext() );
             Reference< sdbc::XResultSet > xResultSet;

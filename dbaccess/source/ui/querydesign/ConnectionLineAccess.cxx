@@ -21,7 +21,6 @@
 #include "JoinTableView.hxx"
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleRelationType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <toolkit/awt/vclxwindow.hxx>
 #include "TableConnection.hxx"
 #include "TableWindow.hxx"
@@ -48,29 +47,34 @@ namespace dbaui
         m_pLine = nullptr;
         VCLXAccessibleComponent::disposing();
     }
-    Any SAL_CALL OConnectionLineAccess::queryInterface( const Type& aType )
+    Any SAL_CALL OConnectionLineAccess::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
     {
         Any aRet(VCLXAccessibleComponent::queryInterface( aType ));
         return aRet.hasValue() ? aRet : OConnectionLineAccess_BASE::queryInterface( aType );
     }
-    Sequence< Type > SAL_CALL OConnectionLineAccess::getTypes(  )
+    Sequence< Type > SAL_CALL OConnectionLineAccess::getTypes(  ) throw (RuntimeException, std::exception)
     {
         return ::comphelper::concatSequences(VCLXAccessibleComponent::getTypes(),OConnectionLineAccess_BASE::getTypes());
     }
-    OUString SAL_CALL OConnectionLineAccess::getImplementationName()
+    OUString SAL_CALL OConnectionLineAccess::getImplementationName() throw(RuntimeException, std::exception)
+    {
+        return getImplementationName_Static();
+    }
+    // XServiceInfo - static methods
+    OUString OConnectionLineAccess::getImplementationName_Static() throw( RuntimeException )
     {
         return OUString("org.openoffice.comp.dbu.ConnectionLineAccessibility");
     }
     // XAccessibleContext
-    sal_Int32 SAL_CALL OConnectionLineAccess::getAccessibleChildCount(  )
+    sal_Int32 SAL_CALL OConnectionLineAccess::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         return 0;
     }
-    Reference< XAccessible > SAL_CALL OConnectionLineAccess::getAccessibleChild( sal_Int32 /*i*/ )
+    Reference< XAccessible > SAL_CALL OConnectionLineAccess::getAccessibleChild( sal_Int32 /*i*/ ) throw (RuntimeException, std::exception)
     {
         return Reference< XAccessible >();
     }
-    sal_Int32 SAL_CALL OConnectionLineAccess::getAccessibleIndexInParent(  )
+    sal_Int32 SAL_CALL OConnectionLineAccess::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         sal_Int32 nIndex = -1;
@@ -87,54 +91,54 @@ namespace dbaui
         }
         return nIndex;
     }
-    sal_Int16 SAL_CALL OConnectionLineAccess::getAccessibleRole(  )
+    sal_Int16 SAL_CALL OConnectionLineAccess::getAccessibleRole(  ) throw (RuntimeException, std::exception)
     {
         return AccessibleRole::UNKNOWN; // ? or may be an AccessibleRole::WINDOW
     }
-    OUString SAL_CALL OConnectionLineAccess::getAccessibleDescription(  )
+    OUString SAL_CALL OConnectionLineAccess::getAccessibleDescription(  ) throw (RuntimeException, std::exception)
     {
         return OUString("Relation");
     }
-    Reference< XAccessibleRelationSet > SAL_CALL OConnectionLineAccess::getAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > SAL_CALL OConnectionLineAccess::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         return this;
     }
     // XAccessibleComponent
-    Reference< XAccessible > SAL_CALL OConnectionLineAccess::getAccessibleAtPoint( const awt::Point& /*_aPoint*/ )
+    Reference< XAccessible > SAL_CALL OConnectionLineAccess::getAccessibleAtPoint( const awt::Point& /*_aPoint*/ ) throw (RuntimeException, std::exception)
     {
         return Reference< XAccessible >();
     }
-    awt::Rectangle SAL_CALL OConnectionLineAccess::getBounds(  )
+    awt::Rectangle SAL_CALL OConnectionLineAccess::getBounds(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
-        tools::Rectangle aRect(m_pLine ? m_pLine->GetBoundingRect() : tools::Rectangle());
+        Rectangle aRect(m_pLine ? m_pLine->GetBoundingRect() : Rectangle());
         return awt::Rectangle(aRect.getX(),aRect.getY(),aRect.getWidth(),aRect.getHeight());
     }
-    awt::Point SAL_CALL OConnectionLineAccess::getLocation(  )
+    awt::Point SAL_CALL OConnectionLineAccess::getLocation(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         Point aPoint(m_pLine ? m_pLine->GetBoundingRect().TopLeft() : Point());
         return awt::Point(aPoint.X(),aPoint.Y());
     }
-    awt::Point SAL_CALL OConnectionLineAccess::getLocationOnScreen(  )
+    awt::Point SAL_CALL OConnectionLineAccess::getLocationOnScreen(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         Point aPoint(m_pLine ? m_pLine->GetParent()->ScreenToOutputPixel(m_pLine->GetBoundingRect().TopLeft()) : Point());
         return awt::Point(aPoint.X(),aPoint.Y());
     }
-    awt::Size SAL_CALL OConnectionLineAccess::getSize(  )
+    awt::Size SAL_CALL OConnectionLineAccess::getSize(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         Size aSize(m_pLine ? m_pLine->GetBoundingRect().GetSize() : Size());
         return awt::Size(aSize.Width(),aSize.Height());
     }
     // XAccessibleRelationSet
-    sal_Int32 SAL_CALL OConnectionLineAccess::getRelationCount(  )
+    sal_Int32 SAL_CALL OConnectionLineAccess::getRelationCount(  ) throw (RuntimeException, std::exception)
     {
         return 1;
     }
-    AccessibleRelation SAL_CALL OConnectionLineAccess::getRelation( sal_Int32 nIndex )
+    AccessibleRelation SAL_CALL OConnectionLineAccess::getRelation( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         if( nIndex < 0 || nIndex >= getRelationCount() )
@@ -149,11 +153,11 @@ namespace dbaui
 
         return AccessibleRelation(AccessibleRelationType::CONTROLLED_BY,aSeq);
     }
-    sal_Bool SAL_CALL OConnectionLineAccess::containsRelation( sal_Int16 aRelationType )
+    sal_Bool SAL_CALL OConnectionLineAccess::containsRelation( sal_Int16 aRelationType ) throw (RuntimeException, std::exception)
     {
         return AccessibleRelationType::CONTROLLED_BY == aRelationType;
     }
-    AccessibleRelation SAL_CALL OConnectionLineAccess::getRelationByType( sal_Int16 aRelationType )
+    AccessibleRelation SAL_CALL OConnectionLineAccess::getRelationByType( sal_Int16 aRelationType ) throw (RuntimeException, std::exception)
     {
         if( AccessibleRelationType::CONTROLLED_BY == aRelationType )
             return getRelation(0);
@@ -174,7 +178,7 @@ namespace dbaui
         m_pParent.clear();
         vcl::Window::dispose();
     }
-    Reference< XAccessibleContext > SAL_CALL OConnectionLineAccess::getAccessibleContext(  )
+    Reference< XAccessibleContext > SAL_CALL OConnectionLineAccess::getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return this;
     }

@@ -37,14 +37,14 @@ public:
     XMLImageStyle();
     ~XMLImageStyle();
 
-    static void exportXML( const OUString& rStrName, const css::uno::Any& rValue, SvXMLExport& rExport );
-    static void importXML( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList, css::uno::Any& rValue, OUString& rStrName, SvXMLImport& rImport );
+    void exportXML( const OUString& rStrName, const css::uno::Any& rValue, SvXMLExport& rExport );
+    void importXML( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList, css::uno::Any& rValue, OUString& rStrName, SvXMLImport& rImport );
 
 private:
 
-    SAL_DLLPRIVATE static void ImpExportXML( const OUString& rStrName, const css::uno::Any& rValue,
+    SAL_DLLPRIVATE void ImpExportXML( const OUString& rStrName, const css::uno::Any& rValue,
                            SvXMLExport& rExport );
-    SAL_DLLPRIVATE static bool ImpImportXML( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
+    SAL_DLLPRIVATE bool ImpImportXML( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
                            css::uno::Any& rValue, OUString& rStrName,
                            SvXMLImport& rImport );
 };

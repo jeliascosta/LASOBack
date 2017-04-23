@@ -56,9 +56,7 @@ namespace drawinglayer
                 bool bTwoSidedLighting);
             SdrSceneAttribute();
             SdrSceneAttribute(const SdrSceneAttribute& rCandidate);
-            SdrSceneAttribute(SdrSceneAttribute&& rCandidate);
             SdrSceneAttribute& operator=(const SdrSceneAttribute& rCandidate);
-            SdrSceneAttribute& operator=(SdrSceneAttribute&& rCandidate);
             ~SdrSceneAttribute();
 
             // checks if the incarnation is default constructed

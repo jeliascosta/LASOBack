@@ -235,6 +235,7 @@ SwLabPage::SwLabPage(vcl::Window* pParent, const SfxItemSet& rSet)
         "modules/swriter/ui/cardmediumpage.ui", &rSet)
     , pDBManager(nullptr)
     , aItem(static_cast<const SwLabItem&>(rSet.Get(FN_LABEL)))
+    , m_bLabel(false)
 {
     WaitObject aWait( pParent );
 
@@ -320,10 +321,11 @@ void SwLabPage::SetToBusinessCard()
     m_pSheetButton->SetHelpId(HID_BUSINESS_FMT_PAGE_SHEET);
     m_pMakeBox->SetHelpId(HID_BUSINESS_FMT_PAGE_BRAND);
     m_pTypeBox->SetHelpId(HID_BUSINESS_FMT_PAGE_TYPE);
+    m_bLabel = false;
     m_pAddressFrame->Hide();
 };
 
-IMPL_LINK_NOARG(SwLabPage, AddrHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwLabPage, AddrHdl, Button*, void)
 {
     OUString aWriting;
 
@@ -334,7 +336,7 @@ IMPL_LINK_NOARG(SwLabPage, AddrHdl, Button*, void)
     m_pWritingEdit->GrabFocus();
 }
 
-IMPL_LINK( SwLabPage, DatabaseHdl, ListBox&, rListBox, void )
+IMPL_LINK_TYPED( SwLabPage, DatabaseHdl, ListBox&, rListBox, void )
 {
     sActDBName = m_pDatabaseLB->GetSelectEntry();
 
@@ -346,7 +348,7 @@ IMPL_LINK( SwLabPage, DatabaseHdl, ListBox&, rListBox, void )
     GetDBManager()->GetColumnNames(m_pDBFieldLB, sActDBName, m_pTableLB->GetSelectEntry());
 }
 
-IMPL_LINK_NOARG(SwLabPage, FieldHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwLabPage, FieldHdl, Button*, void)
 {
     OUString aStr("<" + m_pDatabaseLB->GetSelectEntry() + "." +
                   m_pTableLB->GetSelectEntry() + "." +
@@ -358,12 +360,12 @@ IMPL_LINK_NOARG(SwLabPage, FieldHdl, Button*, void)
     m_pWritingEdit->SetSelection(aSel);
 }
 
-IMPL_LINK_NOARG(SwLabPage, PageHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwLabPage, PageHdl, Button*, void)
 {
     m_pMakeBox->GetSelectHdl().Call(*m_pMakeBox);
 }
 
-IMPL_LINK_NOARG(SwLabPage, MakeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwLabPage, MakeHdl, ListBox&, void)
 {
     WaitObject aWait( GetParentSwLabDlg() );
 
@@ -416,7 +418,7 @@ IMPL_LINK_NOARG(SwLabPage, MakeHdl, ListBox&, void)
     m_pTypeBox->GetSelectHdl().Call(*m_pTypeBox);
 }
 
-IMPL_LINK_NOARG(SwLabPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwLabPage, TypeHdl, ListBox&, void)
 {
     DisplayFormat();
     aItem.m_aType = m_pTypeBox->GetSelectEntry();
@@ -486,12 +488,12 @@ void SwLabPage::ActivatePage(const SfxItemSet& rSet)
     Reset( &rSet );
 }
 
-DeactivateRC SwLabPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwLabPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if (_pSet)
         FillItemSet(_pSet);
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void SwLabPage::FillItem(SwLabItem& rItem)
@@ -591,7 +593,7 @@ SwVisitingCardPage::SwVisitingCardPage(vcl::Window* pParent, const SfxItemSet& r
 
     m_pAutoTextLB->SetStyle( m_pAutoTextLB->GetStyle() | WB_HSCROLL );
     m_pAutoTextLB->SetSpaceBetweenEntries(0);
-    m_pAutoTextLB->SetSelectionMode( SelectionMode::Single );
+    m_pAutoTextLB->SetSelectionMode( SINGLE_SELECTION );
 
     SetExchangeSupport();
     m_pAutoTextLB->SetSelectHdl(LINK(this, SwVisitingCardPage, AutoTextSelectTreeListBoxHdl));
@@ -632,11 +634,11 @@ void SwVisitingCardPage::ActivatePage(const SfxItemSet& rSet)
     UpdateFields();
 }
 
-DeactivateRC SwVisitingCardPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwVisitingCardPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if (_pSet)
         FillItemSet(_pSet);
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 bool SwVisitingCardPage::FillItemSet(SfxItemSet* rSet)
@@ -793,11 +795,11 @@ void SwPrivateDataPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&rSet);
 }
 
-DeactivateRC SwPrivateDataPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwPrivateDataPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if (_pSet)
         FillItemSet(_pSet);
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 bool SwPrivateDataPage::FillItemSet(SfxItemSet* rSet)
@@ -906,11 +908,11 @@ void SwBusinessDataPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&rSet);
 }
 
-DeactivateRC SwBusinessDataPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwBusinessDataPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if (_pSet)
         FillItemSet(_pSet);
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 bool SwBusinessDataPage::FillItemSet(SfxItemSet* rSet)

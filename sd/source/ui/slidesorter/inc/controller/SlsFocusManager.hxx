@@ -49,12 +49,13 @@ public:
 
     ~FocusManager();
 
-    enum class FocusMoveDirection
+    enum FocusMoveDirection
     {
-        Left,
-        Right,
-        Up,
-        Down
+        FMD_NONE,
+        FMD_LEFT,
+        FMD_RIGHT,
+        FMD_UP,
+        FMD_DOWN
     };
 
     /** Move the focus from the currently focused page to one that is
@@ -65,9 +66,10 @@ public:
             wrap around takes place in the same column, i.e. when you are
             in the top row and move up you come out in the bottom row in the
             same column.  Horizontal wrap around moves to the next
-            (FocusMoveDirection::Right) or previous (FocusMoveDirection::Left) page.  Moving to the right
+            (FMD_RIGHT) or previous (FMD_LEFT) page.  Moving to the right
             from the last page goes to the first page and vice versa.
-            The current page index is set to the nearest valid
+            When FMD_NONE is given, the current page index is checked for
+            being valid.  If it is not, then it is set to the nearest valid
             page index.
     */
     void MoveFocus (FocusMoveDirection eDirection);
@@ -145,7 +147,7 @@ public:
 
     /** Remove a focus change listener.
         @param rListener
-            It is safe to pass a listener that was not added are has been
+            It is save to pass a listener that was not added are has been
             removed previously.  Such calls are ignored.
     */
     void RemoveFocusChangeListener (const Link<LinkParamNone*,void>& rListener);
@@ -178,6 +180,12 @@ private:
     bool mbPageIsFocused;
 
     ::std::vector<Link<LinkParamNone*,void>> maFocusChangeListeners;
+
+    /** When vertical wrap is active then pressing UP in the top row moves
+        the focus to the bottom row, DOWN in the bottom row moves the focus
+        to the top row.
+    */
+    bool mbIsVerticalWrapActive;
 
     /** Reset the focus state of the given descriptor and request a repaint
         so that the focus indicator is hidden.

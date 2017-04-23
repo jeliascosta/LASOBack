@@ -15,7 +15,6 @@
 #include "scdllapi.h"
 #include "tokenarray.hxx"
 #include "types.hxx"
-#include <formulalogger.hxx>
 
 class SC_DLLPUBLIC ScGroupTokenConverter
 {
@@ -32,7 +31,7 @@ class SC_DLLPUBLIC ScGroupTokenConverter
 public:
     ScGroupTokenConverter(ScTokenArray& rGroupTokens, ScDocument& rDoc, ScFormulaCell& rCell, const ScAddress& rPos);
 
-    bool convert( ScTokenArray& rCode, sc::FormulaLogger::GroupScope& rScope );
+    bool convert(ScTokenArray& rCode);
 };
 
 #endif // INCLUDED_SC_SOURCE_CORE_INC_GROUPTOKENCONVERTER_HXX

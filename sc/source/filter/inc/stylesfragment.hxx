@@ -40,7 +40,7 @@ class FontContext : public WorkbookContextBase
 {
 public:
     template< typename ParentType >
-    explicit     FontContext( ParentType& rParent, const FontRef& rxFont ) :
+    inline explicit     FontContext( ParentType& rParent, const FontRef& rxFont ) :
                             WorkbookContextBase( rParent ), mxFont( rxFont ) {}
 
 protected:
@@ -54,7 +54,7 @@ class BorderContext : public WorkbookContextBase
 {
 public:
     template< typename ParentType >
-    explicit     BorderContext( ParentType& rParent, const BorderRef& rxBorder ) :
+    inline explicit     BorderContext( ParentType& rParent, const BorderRef& rxBorder ) :
                             WorkbookContextBase( rParent ), mxBorder( rxBorder ) {}
 
 protected:
@@ -69,7 +69,7 @@ class FillContext : public WorkbookContextBase
 {
 public:
     template< typename ParentType >
-    explicit     FillContext( ParentType& rParent, const FillRef& rxFill ) :
+    inline explicit     FillContext( ParentType& rParent, const FillRef& rxFill ) :
                             WorkbookContextBase( rParent ), mxFill( rxFill ), mfGradPos( -1.0 ) {}
 
 protected:
@@ -84,7 +84,7 @@ class XfContext : public WorkbookContextBase
 {
 public:
     template< typename ParentType >
-    explicit     XfContext( ParentType& rParent, const XfRef& rxXf, bool bCellXf ) :
+    inline explicit     XfContext( ParentType& rParent, const XfRef& rxXf, bool bCellXf ) :
                             WorkbookContextBase( rParent ), mxXf( rxXf ), mbCellXf( bCellXf ) {}
 
 protected:
@@ -100,7 +100,7 @@ class DxfContext : public WorkbookContextBase
 {
 public:
     template< typename ParentType >
-    explicit     DxfContext( ParentType& rParent, const DxfRef& rxDxf ) :
+    inline explicit     DxfContext( ParentType& rParent, const DxfRef& rxDxf ) :
                             WorkbookContextBase( rParent ), mxDxf( rxDxf ) {}
 
 protected:

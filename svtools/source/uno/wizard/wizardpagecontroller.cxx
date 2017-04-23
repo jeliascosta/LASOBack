@@ -93,8 +93,8 @@ namespace svt { namespace uno
         try
         {
             Reference< XWindow > xPageWindow( m_xWizardPage->getWindow(), UNO_SET_THROW );
-            VclPtr<vcl::Window> pPageWindow = VCLUnoHelper::GetWindow( xPageWindow );
-            if ( pPageWindow )
+            vcl::Window* pPageWindow = VCLUnoHelper::GetWindow( xPageWindow );
+            if ( pPageWindow == nullptr )
             {
                 // windows created via the XContainerWindowProvider might be controls, not real windows, so resolve
                 // that one indirection
@@ -103,8 +103,8 @@ namespace svt { namespace uno
                 pPageWindow = VCLUnoHelper::GetWindow( xPageWindow );
             }
 
-            OSL_ENSURE( pPageWindow, "WizardPageController::getTabPage: unable to find the Window implementation for the page's window!" );
-            return dynamic_cast< TabPage* >( pPageWindow.get() );
+            OSL_ENSURE( pPageWindow != nullptr, "WizardPageController::getTabPage: unable to find the Window implementation for the page's window!" );
+            return dynamic_cast< TabPage* >( pPageWindow );
         }
         catch( const Exception& )
         {

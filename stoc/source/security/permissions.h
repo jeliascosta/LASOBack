@@ -37,9 +37,9 @@ public:
     // mode
     enum t_type { ALL, RUNTIME, SOCKET, FILE } m_type;
 
-    Permission(
+    inline Permission(
         t_type type,
-        ::rtl::Reference< Permission > const & next )
+        ::rtl::Reference< Permission > const & next = ::rtl::Reference< Permission >() )
         : m_next( next )
         , m_type( type )
         {}
@@ -65,9 +65,9 @@ class PermissionCollection
 {
     ::rtl::Reference< Permission > m_head;
 public:
-    PermissionCollection()
+    inline PermissionCollection()
         {}
-    PermissionCollection( PermissionCollection const & collection )
+    inline PermissionCollection( PermissionCollection const & collection )
         : m_head( collection.m_head )
         {}
     explicit PermissionCollection( ::rtl::Reference< Permission > const & single )

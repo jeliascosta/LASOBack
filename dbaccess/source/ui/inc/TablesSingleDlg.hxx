@@ -42,7 +42,7 @@ class ODbDataSourceAdministrationHelper;
     // OTableSubscriptionDialog
     class OTableSubscriptionDialog : public SfxSingleTabDialog, public IItemSetHelper
     {
-        std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
+        ::std::unique_ptr<ODbDataSourceAdministrationHelper>  m_pImpl;
         bool m_bStopExecution; // set when the dialog should not be executed
 
         SfxItemSet*             m_pOutSet;
@@ -53,7 +53,7 @@ class ODbDataSourceAdministrationHelper;
             ,const css::uno::Reference< css::uno::XComponentContext >& _rxORB
             ,const css::uno::Any& _aDataSourceName
         );
-        virtual ~OTableSubscriptionDialog() override;
+        virtual ~OTableSubscriptionDialog();
         virtual void dispose() override;
 
         // forwards from ODbDataSourceAdministrationHelper
@@ -62,7 +62,7 @@ class ODbDataSourceAdministrationHelper;
         void        clearPassword();
         OUString    getConnectionURL() const;
         css::uno::Reference< css::beans::XPropertySet >   getCurrentDataSource();
-        void endExecution() { m_bStopExecution = true; }
+        inline void endExecution() { m_bStopExecution = true; }
 
         virtual const SfxItemSet* getOutputSet() const override;
         virtual SfxItemSet* getWriteOutputSet() override;

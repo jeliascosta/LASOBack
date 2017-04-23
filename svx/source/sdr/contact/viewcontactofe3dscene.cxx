@@ -18,6 +18,7 @@
  */
 
 #include <svx/sdr/contact/viewcontactofe3dscene.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/sdr/contact/displayinfo.hxx>
 #include <svx/sdr/contact/viewobjectcontact.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
@@ -244,7 +245,7 @@ void ViewContactOfE3dScene::createViewInformation3D(const basegfx::B3DRange& rCo
 void ViewContactOfE3dScene::createObjectTransformation()
 {
     // create 2d Object Transformation from relative point in 2d scene to world
-    tools::Rectangle aRectangle = GetE3dScene().GetSnapRect();
+    Rectangle aRectangle = GetE3dScene().GetSnapRect();
     // Hack for calc, transform position of object according
     // to current zoom so as objects relative position to grid
     // appears stable

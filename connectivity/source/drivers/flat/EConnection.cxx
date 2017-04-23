@@ -60,6 +60,7 @@ IMPLEMENT_SERVICE_INFO(OFlatConnection, "com.sun.star.sdbc.drivers.flat.Connecti
 
 
 void OFlatConnection::construct(const OUString& url,const Sequence< PropertyValue >& info)
+    throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception)
 {
     osl_atomic_increment( &m_refCount );
 
@@ -104,7 +105,7 @@ void OFlatConnection::construct(const OUString& url,const Sequence< PropertyValu
     m_bShowDeleted = true; // we do not supported rows for this type
 }
 
-Reference< XDatabaseMetaData > SAL_CALL OFlatConnection::getMetaData(  )
+Reference< XDatabaseMetaData > SAL_CALL OFlatConnection::getMetaData(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_B::rBHelper.bDisposed);
@@ -120,7 +121,7 @@ Reference< XDatabaseMetaData > SAL_CALL OFlatConnection::getMetaData(  )
     return xMetaData;
 }
 
-css::uno::Reference< XTablesSupplier > OFlatConnection::createCatalog()
+::com::sun::star::uno::Reference< XTablesSupplier > OFlatConnection::createCatalog()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     Reference< XTablesSupplier > xTab = m_xCatalog;
@@ -133,7 +134,7 @@ css::uno::Reference< XTablesSupplier > OFlatConnection::createCatalog()
     return xTab;
 }
 
-Reference< XStatement > SAL_CALL OFlatConnection::createStatement(  )
+Reference< XStatement > SAL_CALL OFlatConnection::createStatement(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_B::rBHelper.bDisposed);
@@ -145,7 +146,7 @@ Reference< XStatement > SAL_CALL OFlatConnection::createStatement(  )
     return xStmt;
 }
 
-Reference< XPreparedStatement > SAL_CALL OFlatConnection::prepareStatement( const OUString& sql )
+Reference< XPreparedStatement > SAL_CALL OFlatConnection::prepareStatement( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_B::rBHelper.bDisposed);
@@ -159,7 +160,7 @@ Reference< XPreparedStatement > SAL_CALL OFlatConnection::prepareStatement( cons
     return xStmt;
 }
 
-Reference< XPreparedStatement > SAL_CALL OFlatConnection::prepareCall( const OUString& /*sql*/ )
+Reference< XPreparedStatement > SAL_CALL OFlatConnection::prepareCall( const OUString& /*sql*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_B::rBHelper.bDisposed);

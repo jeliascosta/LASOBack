@@ -46,6 +46,7 @@ protected:
 
 public:
     SvxOptionsGrid();
+    ~SvxOptionsGrid();
 
     void    SetFieldDrawX(    sal_uInt32 nSet){nFldDrawX      = nSet;}
     void    SetFieldDivisionX(sal_uInt32 nSet){nFldDivisionX  = nSet;}
@@ -85,9 +86,9 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
 };
 
@@ -100,7 +101,7 @@ class SVX_DLLPUBLIC SvxGridTabPage : public SfxTabPage
 
 public:
     SvxGridTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxGridTabPage() override;
+    virtual ~SvxGridTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet& rAttrSet );
@@ -109,7 +110,7 @@ public:
     virtual void        Reset( const SfxItemSet* rSet ) override;
 
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet ) override;
 
 private:
     VclPtr<CheckBox>            pCbxUseGridsnap;
@@ -140,10 +141,10 @@ protected:
 private:
     bool                bAttrModified;
 
-    DECL_LINK( ClickRotateHdl_Impl, Button*, void );
-    DECL_LINK( ChangeDrawHdl_Impl, Edit&, void );
-    DECL_LINK( ChangeGridsnapHdl_Impl, Button*, void );
-    DECL_LINK( ChangeDivisionHdl_Impl, Edit&, void );
+    DECL_LINK_TYPED( ClickRotateHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( ChangeDrawHdl_Impl, Edit&, void );
+    DECL_LINK_TYPED( ChangeGridsnapHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( ChangeDivisionHdl_Impl, Edit&, void );
 };
 
 #endif

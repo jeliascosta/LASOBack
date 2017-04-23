@@ -27,7 +27,7 @@ class WinSalMenu : public SalMenu
 {
 public:
     WinSalMenu();
-    virtual ~WinSalMenu() override;
+    virtual ~WinSalMenu();
     virtual bool VisibleMenuBar() override;  // must return TRUE to actually DISPLAY native menu bars
                             // otherwise only menu messages are processed (eg, OLE on Windows)
 
@@ -52,7 +52,7 @@ class WinSalMenuItem : public SalMenuItem
 {
 public:
     WinSalMenuItem();
-    virtual ~WinSalMenuItem() override;
+    virtual ~WinSalMenuItem();
 
     MENUITEMINFOW mInfo;
     void*     mpMenu;       // pointer to corresponding VCL menu

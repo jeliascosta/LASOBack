@@ -40,25 +40,28 @@ protected:
     void handle_(bool approve, bool abort,
                  css::uno::Reference< css::task::XInteractionRequest> const & xRequest );
 public:
-    virtual ~BaseCommandEnv() override;
+    virtual ~BaseCommandEnv();
     BaseCommandEnv();
     explicit BaseCommandEnv(
         css::uno::Reference< css::task::XInteractionHandler> const & handler);
 
     // XCommandEnvironment
     virtual css::uno::Reference<css::task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() override;
+    getInteractionHandler() throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference<css::ucb::XProgressHandler >
-    SAL_CALL getProgressHandler() override;
+    SAL_CALL getProgressHandler() throw (css::uno::RuntimeException, std::exception) override;
 
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XProgressHandler
-    virtual void SAL_CALL push( css::uno::Any const & Status ) override;
-    virtual void SAL_CALL update( css::uno::Any const & Status ) override;
-    virtual void SAL_CALL pop() override;
+    virtual void SAL_CALL push( css::uno::Any const & Status )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL update( css::uno::Any const & Status )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL pop() throw (css::uno::RuntimeException, std::exception) override;
 };
 
 class TmpRepositoryCommandEnv : public BaseCommandEnv
@@ -69,7 +72,8 @@ public:
 
 // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -90,7 +94,8 @@ public:
 
 // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -106,7 +111,8 @@ public:
 
 // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -124,7 +130,8 @@ public:
     SilentCheckPrerequisitesCommandEnv();
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        css::uno::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        css::uno::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Set to true if a PlatformException or a DependencyException were handled.
     css::uno::Any m_Exception;

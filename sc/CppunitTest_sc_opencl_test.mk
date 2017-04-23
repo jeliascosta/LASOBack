@@ -60,7 +60,10 @@ $(eval $(call gb_CppunitTest_set_include,sc_opencl_test,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sc_opencl_test))
+$(eval $(call gb_CppunitTest_use_api,sc_opencl_test,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_opencl_test))
 $(eval $(call gb_CppunitTest_use_vcl,sc_opencl_test))
@@ -97,7 +100,6 @@ $(eval $(call gb_CppunitTest_use_components,sc_opencl_test,\
     ucb/source/core/ucb1 \
     ucb/source/ucp/file/ucpfile1 \
     ucb/source/ucp/tdoc/ucptdoc1 \
-	uui/util/uui \
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \

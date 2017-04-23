@@ -57,7 +57,7 @@ public:
     virtual bool PutValue(const css::uno::Any& rVal, sal_uInt8 nMemberId) override;
 
     virtual bool GetPresentation(SfxItemPresentation ePres,
-                                 MapUnit eCoreMetric, MapUnit ePresMetric,
+                                 SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric,
                                  OUString &rText, const IntlWrapper* = nullptr) const override;
 
     // Access methods:

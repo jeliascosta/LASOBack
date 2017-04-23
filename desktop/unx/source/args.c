@@ -28,8 +28,7 @@ static struct {
     const char   *pPageinType;
 } pArgDescr[] = {
     /* have a trailing argument */
-    { "pt",         1, 0, 0, 0, NULL },
-    { "p",          1, 0, 0, 0, NULL },
+    { "pt",         0, 0, 0, 0, NULL },
     { "display",    0, 0, 0, 0, NULL },
 
     /* no splash */
@@ -39,7 +38,6 @@ static struct {
     { "quickstart", 1, 0, 0, 0, NULL },
     { "minimized",  1, 0, 0, 0, NULL },
     { "convert-to", 1, 0, 0, 0, NULL },
-    { "cat",        1, 0, 0, 0, NULL },
 
     /* pagein bits */
     { "writer",     0, 0, 0, 0, "pagein-writer"  },
@@ -103,7 +101,7 @@ Args *args_parse (void)
         if (arg[0] != '-')
             continue;
 
-        while (length > 1 && arg[0] == '-') {
+        while (length > 2 && arg[0] == '-') {
             arg++;
             length--;
         }

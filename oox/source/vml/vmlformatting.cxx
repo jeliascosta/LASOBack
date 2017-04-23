@@ -27,8 +27,8 @@
 #include <osl/diagnose.h>
 #include "oox/drawingml/color.hxx"
 #include "oox/drawingml/drawingmltypes.hxx"
-#include "drawingml/fillproperties.hxx"
-#include "drawingml/lineproperties.hxx"
+#include "oox/drawingml/fillproperties.hxx"
+#include "oox/drawingml/lineproperties.hxx"
 #include "oox/drawingml/shapepropertymap.hxx"
 #include "oox/helper/attributelist.hxx"
 #include "oox/helper/graphichelper.hxx"
@@ -398,7 +398,7 @@ void ConversionHelper::decodeVmlPath( ::std::vector< ::std::vector< Point > >& r
             }
 
             // Allow two-char commands to peek ahead to the next character
-            sal_Unicode nextChar = '\0';
+            char nextChar = '\0';
             if (i+1 < rPath.getLength())
                 nextChar = rPath[i+1];
 
@@ -830,7 +830,7 @@ void ShadowModel::pushToPropMap(ShapePropertyMap& rPropMap, const GraphicHelper&
     aFormat.Location = table::ShadowLocation_BOTTOM_RIGHT;
     // The width of the shadow is the average of the x and y values, see SwWW8ImplReader::MatchSdrItemsIntoFlySet().
     aFormat.ShadowWidth = ((nOffsetX + nOffsetY) / 2);
-    rPropMap.setProperty(PROP_ShadowFormat, aFormat);
+    rPropMap.setProperty(PROP_ShadowFormat, uno::makeAny(aFormat));
 }
 
 TextpathModel::TextpathModel()

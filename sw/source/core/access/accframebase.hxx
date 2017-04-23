@@ -44,20 +44,20 @@ protected:
     virtual void InvalidateCursorPos_() override;
     virtual void InvalidateFocus_() override;
 
-    virtual ~SwAccessibleFrameBase() override;
+    virtual ~SwAccessibleFrameBase();
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
 public:
-    SwAccessibleFrameBase(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+    SwAccessibleFrameBase( SwAccessibleMap* pInitMap,
                            sal_Int16 nInitRole,
                            const SwFlyFrame *pFlyFrame );
 
     virtual bool HasCursor() override;   // required by map to remember that object
 
-    static SwNodeType GetNodeType( const SwFlyFrame *pFlyFrame );
+    static sal_uInt8 GetNodeType( const SwFlyFrame *pFlyFrame );
 
     // The object is not visible an longer and should be destroyed
-    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true) override;
+    virtual void Dispose( bool bRecursive = false ) override;
     virtual bool SetSelectedState( bool bSeleted ) override;
 };
 

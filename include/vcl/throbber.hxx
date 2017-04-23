@@ -31,21 +31,23 @@
 class VCL_DLLPUBLIC Throbber : public ImageControl
 {
 public:
-    enum class ImageSet
+    enum ImageSet
     {
+        /// no (default) images at all
+        IMAGES_NONE,
         /// automatically decide between different image sets, depending on what fits best the actual size
-        Auto,
+        IMAGES_AUTO,
         /// default images, 16x16 pixels
-        N16px,
+        IMAGES_16_PX,
         /// default images, 32x32 pixels
-        N32px,
+        IMAGES_32_PX,
         /// default images, 64x64 pixels
-        N64px,
+        IMAGES_64_PX,
     };
 
 public:
     Throbber(vcl::Window* i_parentWindow, WinBits i_style);
-    virtual ~Throbber() override;
+    virtual ~Throbber();
     virtual void dispose() override;
 
     // Properties
@@ -82,7 +84,7 @@ private:
     AutoTimer   maWaitTimer;
     ImageSet    meImageSet;
 
-    DECL_LINK( TimeOutHdl, Timer*, void );
+    DECL_LINK_TYPED( TimeOutHdl, Timer*, void );
 };
 
 #endif // INCLUDED_VCL_THROBBER_HXX

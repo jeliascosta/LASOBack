@@ -43,7 +43,7 @@ public:
         sal_uInt16 nPrefix,
         const OUString& rLocalName);
 
-    virtual ~XMLTrackedChangesImportContext() override;
+    virtual ~XMLTrackedChangesImportContext();
 
     virtual void StartElement(
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;

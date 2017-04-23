@@ -38,7 +38,7 @@ namespace sdr
             void ImpRemoveStyleSheet();
 
         protected:
-            // the StyleSheet of this object
+            // the SytleSheet of this object
             SfxStyleSheet*                                  mpStyleSheet;
 
             // create a new itemset
@@ -61,7 +61,7 @@ namespace sdr
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
 
             // destructor
-            virtual ~AttributeProperties() override;
+            virtual ~AttributeProperties();
 
             // set a new StyleSheet and broadcast
             virtual void SetStyleSheet(SfxStyleSheet* pNewStyleSheet, bool bDontRemoveHardAttr) override;
@@ -70,7 +70,7 @@ namespace sdr
             virtual SfxStyleSheet* GetStyleSheet() const override;
 
             // Move properties to a new ItemPool.
-            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel) override;
+            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel = nullptr) override;
 
             // Set new model.
             virtual void SetModel(SdrModel* pOldModel, SdrModel* pNewModel) override;

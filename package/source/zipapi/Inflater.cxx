@@ -28,6 +28,7 @@ using namespace ZipUtils;
 
 Inflater::Inflater(bool bNoWrap)
 : bFinished(false),
+  bSetParams(false),
   bNeedDict(false),
   nOffset(0),
   nLength(0),

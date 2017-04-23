@@ -108,7 +108,7 @@ class AbstractSwBreakDlg_Impl : public AbstractSwBreakDlg
 class AbstractSplitTableDialog_Impl : public AbstractSplitTableDialog // add for
 {
     DECL_ABSTDLG_BASE(AbstractSplitTableDialog_Impl, SwSplitTableDlg)
-    virtual SplitTable_HeadlineOption GetSplitMode() override;
+    virtual sal_uInt16 GetSplitMode() override;
 };
 
 class AbstractTabDialog_Impl : virtual public SfxAbstractTabDialog
@@ -131,7 +131,7 @@ public:
         : AbstractTabDialog_Impl(p)
     {
     }
-    DECL_LINK(ApplyHdl, Button*, void);
+    DECL_LINK_TYPED(ApplyHdl, Button*, void);
 private:
     Link<LinkParamNone*,void> m_aHandler;
     virtual void                SetApplyHdl( const Link<LinkParamNone*,void>& rLink ) override;
@@ -347,13 +347,12 @@ class AbstractMailMergeWizard_Impl : public AbstractMailMergeWizard
     VclPtr<SwMailMergeWizard> pDlg;
     Link<Dialog&,void>        aEndDlgHdl;
 
-    DECL_LINK( EndDialogHdl, Dialog&, void );
+    DECL_LINK_TYPED( EndDialogHdl, Dialog&, void );
 public:
     explicit AbstractMailMergeWizard_Impl( SwMailMergeWizard* p )
      : pDlg(p)
      {}
-    virtual         ~AbstractMailMergeWizard_Impl() override;
-    virtual void    dispose() override;
+    virtual         ~AbstractMailMergeWizard_Impl();
     virtual void    StartExecuteModal( const Link<Dialog&,void>& rEndDialogHdl ) override;
     virtual long    GetResult() override;
 
@@ -369,123 +368,126 @@ class SwAbstractDialogFactory_Impl : public SwAbstractDialogFactory
 public:
     virtual ~SwAbstractDialogFactory_Impl() {}
 
-    virtual VclPtr<SfxAbstractDialog>              CreateSfxDialog( vcl::Window* pParent,
+    virtual SfxAbstractDialog*              CreateSfxDialog( vcl::Window* pParent,
                                                              const SfxItemSet& rAttr,
                                                              const css::uno::Reference< css::frame::XFrame >& _rxFrame,
                                                              sal_uInt32 nResId
                                                             ) override;
-    virtual VclPtr<AbstractSwWordCountFloatDlg> CreateSwWordCountDialog(SfxBindings* pBindings,
+    virtual AbstractSwWordCountFloatDlg* CreateSwWordCountDialog(SfxBindings* pBindings,
         SfxChildWindow* pChild, vcl::Window *pParent, SfxChildWinInfo* pInfo) override;
-    virtual VclPtr<AbstractSwInsertAbstractDlg> CreateSwInsertAbstractDlg() override;
-    virtual VclPtr<AbstractSwAsciiFilterDlg>  CreateSwAsciiFilterDlg ( SwDocShell& rDocSh,
+    virtual AbstractSwInsertAbstractDlg * CreateSwInsertAbstractDlg() override;
+    virtual AbstractSwAsciiFilterDlg*  CreateSwAsciiFilterDlg ( SwDocShell& rDocSh,
                                                                 SvStream* pStream ) override;
-    virtual VclPtr<VclAbstractDialog> CreateSwInsertBookmarkDlg( vcl::Window *pParent, SwWrtShell &rSh, SfxRequest& rReq ) override;
-    virtual VclPtr<AbstractSwBreakDlg> CreateSwBreakDlg(vcl::Window *pParent, SwWrtShell &rSh) override;
-    virtual VclPtr<VclAbstractDialog> CreateSwChangeDBDlg(SwView& rVw) override;
-    virtual VclPtr<SfxAbstractTabDialog>  CreateSwCharDlg(vcl::Window* pParent, SwView& pVw, const SfxItemSet& rCoreSet,
+    virtual VclAbstractDialog * CreateSwInsertBookmarkDlg( vcl::Window *pParent, SwWrtShell &rSh, SfxRequest& rReq, int nResId ) override;
+    virtual AbstractSwBreakDlg * CreateSwBreakDlg(vcl::Window *pParent, SwWrtShell &rSh) override;
+    virtual VclAbstractDialog   * CreateSwChangeDBDlg(SwView& rVw) override;
+    virtual SfxAbstractTabDialog *  CreateSwCharDlg(vcl::Window* pParent, SwView& pVw, const SfxItemSet& rCoreSet,
         SwCharDlgMode nDialogMode, const OUString* pFormatStr = nullptr) override;
-    virtual VclPtr<AbstractSwConvertTableDlg> CreateSwConvertTableDlg(SwView& rView, bool bToTable) override;
-    virtual VclPtr<VclAbstractDialog> CreateSwCaptionDialog ( vcl::Window *pParent, SwView &rV) override;
+    virtual AbstractSwConvertTableDlg* CreateSwConvertTableDlg(SwView& rView, bool bToTable) override;
+    virtual VclAbstractDialog * CreateSwCaptionDialog ( vcl::Window *pParent, SwView &rV,int nResId) override;
 
-    virtual VclPtr<AbstractSwInsertDBColAutoPilot> CreateSwInsertDBColAutoPilot(SwView& rView,
+    virtual AbstractSwInsertDBColAutoPilot* CreateSwInsertDBColAutoPilot(SwView& rView,
         css::uno::Reference< css::sdbc::XDataSource> rxSource,
         css::uno::Reference<css::sdbcx::XColumnsSupplier> xColSupp,
         const SwDBData& rData) override;
-    virtual VclPtr<SfxAbstractTabDialog> CreateSwFootNoteOptionDlg(vcl::Window *pParent, SwWrtShell &rSh) override;
+    virtual SfxAbstractTabDialog * CreateSwFootNoteOptionDlg(vcl::Window *pParent, SwWrtShell &rSh) override;
 
-    virtual VclPtr<AbstractDropDownFieldDialog> CreateDropDownFieldDialog(SwWrtShell &rSh,
-        SwField* pField, bool bNextButton) override;
-    virtual VclPtr<SfxAbstractTabDialog> CreateSwEnvDlg ( vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell* pWrtSh, Printer* pPrt, bool bInsert ) override;
-    virtual VclPtr<AbstractSwLabDlg> CreateSwLabDlg(const SfxItemSet& rSet,
+    virtual AbstractDropDownFieldDialog * CreateDropDownFieldDialog(SwWrtShell &rSh,
+        SwField* pField, bool bNextButton = false) override;
+    virtual SfxAbstractTabDialog* CreateSwEnvDlg ( vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell* pWrtSh, Printer* pPrt, bool bInsert ) override;
+    virtual AbstractSwLabDlg* CreateSwLabDlg(const SfxItemSet& rSet,
                                                      SwDBManager* pDBManager, bool bLabel) override;
 
     virtual SwLabDlgMethod GetSwLabDlgStaticMethod () override;
-    virtual VclPtr<SfxAbstractTabDialog> CreateSwParaDlg ( vcl::Window *pParent,
+    virtual SfxAbstractTabDialog* CreateSwParaDlg ( vcl::Window *pParent,
                                                     SwView& rVw,
                                                     const SfxItemSet& rCoreSet,
-                                                    bool bDraw,
+                                                    const OUString *pCollName = nullptr,
+                                                    bool bDraw = false,
                                                     const OString& sDefPage = OString() ) override;
 
-    virtual VclPtr<AbstractSwSelGlossaryDlg> CreateSwSelGlossaryDlg(const OUString &rShortName) override;
-    virtual VclPtr<VclAbstractDialog> CreateVclAbstractDialog ( vcl::Window * pParent, SwWrtShell &rSh, int nResId ) override;
-    virtual VclPtr<AbstractSplitTableDialog> CreateSplitTableDialog ( vcl::Window * pParent, SwWrtShell &rSh ) override;
+    virtual AbstractSwSelGlossaryDlg * CreateSwSelGlossaryDlg(const OUString &rShortName) override;
+    virtual VclAbstractDialog * CreateVclAbstractDialog ( vcl::Window * pParent, SwWrtShell &rSh, int nResId ) override;
+    virtual AbstractSplitTableDialog * CreateSplitTableDialog ( vcl::Window * pParent, SwWrtShell &rSh ) override;
 
-    virtual VclPtr<AbstractSwAutoFormatDlg> CreateSwAutoFormatDlg( vcl::Window* pParent, SwWrtShell* pShell,
+    virtual AbstractSwAutoFormatDlg * CreateSwAutoFormatDlg( vcl::Window* pParent, SwWrtShell* pShell,
                                                             bool bSetAutoFormat = true,
                                                             const SwTableAutoFormat* pSelFormat = nullptr ) override;
-    virtual VclPtr<SfxAbstractDialog> CreateSwBorderDlg (vcl::Window* pParent, SfxItemSet& rSet, SwBorderModes nType ) override;
+    virtual SfxAbstractDialog * CreateSwBorderDlg (vcl::Window* pParent, SfxItemSet& rSet, SwBorderModes nType, int nResId ) override;
 
-    virtual VclPtr<SfxAbstractDialog> CreateSwWrapDlg ( vcl::Window* pParent, SfxItemSet& rSet, SwWrtShell* pSh ) override;
-    virtual VclPtr<VclAbstractDialog> CreateSwTableWidthDlg(vcl::Window *pParent, SwTableFUNC &rFnc) override;
-    virtual VclPtr<SfxAbstractTabDialog> CreateSwTableTabDlg(vcl::Window* pParent, SfxItemPool& Pool,
+    virtual SfxAbstractDialog * CreateSwWrapDlg ( vcl::Window* pParent, SfxItemSet& rSet, SwWrtShell* pSh, int nResId ) override;
+    virtual VclAbstractDialog * CreateSwTableWidthDlg(vcl::Window *pParent, SwTableFUNC &rFnc) override;
+    virtual SfxAbstractTabDialog* CreateSwTableTabDlg(vcl::Window* pParent, SfxItemPool& Pool,
         const SfxItemSet* pItemSet, SwWrtShell* pSh) override;
-    virtual VclPtr<AbstractSwFieldDlg> CreateSwFieldDlg(SfxBindings* pB, SwChildWinWrapper* pCW, vcl::Window *pParent) override;
-    virtual VclPtr<SfxAbstractDialog>   CreateSwFieldEditDlg ( SwView& rVw ) override;
-    virtual VclPtr<AbstractSwRenameXNamedDlg> CreateSwRenameXNamedDlg(vcl::Window* pParent,
+    virtual AbstractSwFieldDlg * CreateSwFieldDlg(SfxBindings* pB, SwChildWinWrapper* pCW, vcl::Window *pParent) override;
+    virtual SfxAbstractDialog*   CreateSwFieldEditDlg ( SwView& rVw, int nResId ) override;
+    virtual AbstractSwRenameXNamedDlg * CreateSwRenameXNamedDlg(vcl::Window* pParent,
         css::uno::Reference< css::container::XNamed > & xNamed,
         css::uno::Reference< css::container::XNameAccess > & xNameAccess) override;
-    virtual VclPtr<AbstractSwModalRedlineAcceptDlg> CreateSwModalRedlineAcceptDlg(vcl::Window *pParent) override;
+    virtual AbstractSwModalRedlineAcceptDlg * CreateSwModalRedlineAcceptDlg(vcl::Window *pParent) override;
 
-    virtual VclPtr<VclAbstractDialog>          CreateTableMergeDialog(vcl::Window* pParent, bool& rWithPrev) override;
-    virtual VclPtr<SfxAbstractTabDialog>       CreateFrameTabDialog( const OUString &rDialogType,
+    virtual VclAbstractDialog*          CreateTableMergeDialog(vcl::Window* pParent, bool& rWithPrev) override;
+    virtual SfxAbstractTabDialog*       CreateFrameTabDialog( const OUString &rDialogType,
                                                 SfxViewFrame *pFrame, vcl::Window *pParent,
                                                 const SfxItemSet& rCoreSet,
                                                 bool bNewFrame  = true,
-                                                const OString& sDefPage = OString()) override;
-    virtual VclPtr<SfxAbstractApplyTabDialog>  CreateTemplateDialog(
+                                                const OString& sDefPage = OString(),
+                                                const OUString*   pFormatStr  = nullptr) override;
+    virtual SfxAbstractApplyTabDialog*  CreateTemplateDialog(
                                                 vcl::Window *pParent,
                                                 SfxStyleSheetBase&  rBase,
                                                 SfxStyleFamily      nRegion,
-                                                const OString&      sPage,
-                                                SwWrtShell*         pActShell,
+                                                const OString&      sPage = OString(),
+                                                SwWrtShell*         pActShell = nullptr,
                                                 bool                bNew = false) override;
-    virtual VclPtr<AbstractGlossaryDlg>        CreateGlossaryDlg(SfxViewFrame* pViewFrame,
+    virtual AbstractGlossaryDlg*        CreateGlossaryDlg(SfxViewFrame* pViewFrame,
                                                 SwGlossaryHdl* pGlosHdl,
                                                 SwWrtShell *pWrtShell) override;
-    virtual VclPtr<AbstractFieldInputDlg>        CreateFieldInputDlg(vcl::Window *pParent,
-        SwWrtShell &rSh, SwField* pField, bool bNextButton) override;
-    virtual VclPtr<AbstractInsFootNoteDlg>     CreateInsFootNoteDlg(
+    virtual AbstractFieldInputDlg*        CreateFieldInputDlg(vcl::Window *pParent,
+        SwWrtShell &rSh, SwField* pField, bool bNextButton = false) override;
+    virtual AbstractInsFootNoteDlg*     CreateInsFootNoteDlg(
         vcl::Window * pParent, SwWrtShell &rSh, bool bEd = false) override;
-    virtual VclPtr<VclAbstractDialog>         CreateTitlePageDlg ( vcl::Window * pParent ) override;
-    virtual VclPtr<VclAbstractDialog>         CreateVclSwViewDialog(SwView& rView) override;
-    virtual VclPtr<AbstractInsTableDlg>        CreateInsTableDlg(SwView& rView) override;
-    virtual VclPtr<AbstractJavaEditDialog>     CreateJavaEditDialog(vcl::Window* pParent,
+    virtual VclAbstractDialog *         CreateTitlePageDlg ( vcl::Window * pParent ) override;
+    virtual VclAbstractDialog *         CreateVclSwViewDialog(SwView& rView) override;
+    virtual AbstractInsTableDlg*        CreateInsTableDlg(SwView& rView) override;
+    virtual AbstractJavaEditDialog*     CreateJavaEditDialog(vcl::Window* pParent,
         SwWrtShell* pWrtSh) override;
-    virtual VclPtr<AbstractMailMergeDlg>       CreateMailMergeDlg(
+    virtual AbstractMailMergeDlg*       CreateMailMergeDlg( int nResId,
                                                 vcl::Window* pParent, SwWrtShell& rSh,
                                                 const OUString& rSourceName,
                                                 const OUString& rTableName,
                                                 sal_Int32 nCommandType,
-                                                const css::uno::Reference< css::sdbc::XConnection>& xConnection ) override;
-    virtual VclPtr<AbstractMailMergeCreateFromDlg>     CreateMailMergeCreateFromDlg(vcl::Window* pParent) override;
-    virtual VclPtr<AbstractMailMergeFieldConnectionsDlg> CreateMailMergeFieldConnectionsDlg(vcl::Window* pParent) override;
-    virtual VclPtr<VclAbstractDialog>          CreateMultiTOXMarkDlg(vcl::Window* pParent, SwTOXMgr &rTOXMgr) override;
-    virtual VclPtr<SfxAbstractTabDialog>       CreateSwTabDialog( int nResId,
+                                                const css::uno::Reference< css::sdbc::XConnection>& xConnection,
+                                                css::uno::Sequence< css::uno::Any >* pSelection = nullptr ) override;
+    virtual AbstractMailMergeCreateFromDlg*     CreateMailMergeCreateFromDlg(vcl::Window* pParent) override;
+    virtual AbstractMailMergeFieldConnectionsDlg* CreateMailMergeFieldConnectionsDlg(vcl::Window* pParent) override;
+    virtual VclAbstractDialog*          CreateMultiTOXMarkDlg(vcl::Window* pParent, SwTOXMgr &rTOXMgr) override;
+    virtual SfxAbstractTabDialog*       CreateSwTabDialog( int nResId,
                                                 vcl::Window* pParent,
                                                 const SfxItemSet* pSwItemSet,
                                                 SwWrtShell &) override;
-    virtual VclPtr<AbstractMultiTOXTabDialog>      CreateMultiTOXTabDialog(
+    virtual AbstractMultiTOXTabDialog*      CreateMultiTOXTabDialog(
                                                 vcl::Window* pParent, const SfxItemSet& rSet,
                                                 SwWrtShell &rShell,
-                                                SwTOXBase* pCurTOX,
-                                                bool bGlobal) override;
-    virtual VclPtr<AbstractEditRegionDlg>      CreateEditRegionDlg(vcl::Window* pParent, SwWrtShell& rWrtSh) override;
-    virtual VclPtr<AbstractInsertSectionTabDialog>     CreateInsertSectionTabDialog(
+                                                SwTOXBase* pCurTOX, sal_uInt16 nToxType = USHRT_MAX,
+                                                bool bGlobal = false) override;
+    virtual AbstractEditRegionDlg*      CreateEditRegionDlg(vcl::Window* pParent, SwWrtShell& rWrtSh) override;
+    virtual AbstractInsertSectionTabDialog*     CreateInsertSectionTabDialog(
         vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell& rSh) override;
-    virtual VclPtr<AbstractMarkFloatDlg>       CreateIndexMarkFloatDlg(
+    virtual AbstractMarkFloatDlg*       CreateIndexMarkFloatDlg(
                                                        SfxBindings* pBindings,
                                                        SfxChildWindow* pChild,
                                                        vcl::Window *pParent,
                                                        SfxChildWinInfo* pInfo) override;
-    virtual VclPtr<AbstractMarkFloatDlg>       CreateAuthMarkFloatDlg(
+    virtual AbstractMarkFloatDlg*       CreateAuthMarkFloatDlg(
                                                        SfxBindings* pBindings,
                                                        SfxChildWindow* pChild,
                                                        vcl::Window *pParent,
                                                        SfxChildWinInfo* pInfo) override;
-    virtual VclPtr<VclAbstractDialog>         CreateIndexMarkModalDlg(
+    virtual VclAbstractDialog *         CreateIndexMarkModalDlg(
                                                 vcl::Window *pParent, SwWrtShell& rSh, SwTOXMark* pCurTOXMark ) override;
 
-    virtual VclPtr<AbstractMailMergeWizard>    CreateMailMergeWizard(SwView& rView, std::shared_ptr<SwMailMergeConfigItem>& rConfigItem) override;
+    virtual AbstractMailMergeWizard*    CreateMailMergeWizard(SwView& rView, SwMailMergeConfigItem& rConfigItem) override;
 
     virtual GlossaryGetCurrGroup        GetGlossaryCurrGroupFunc() override;
     virtual GlossarySetActGroup         SetGlossaryActGroupFunc() override;

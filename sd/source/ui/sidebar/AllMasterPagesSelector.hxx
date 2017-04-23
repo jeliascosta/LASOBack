@@ -63,7 +63,7 @@ private:
         ViewShellBase& rBase,
         const std::shared_ptr<MasterPageContainer>& rpContainer,
         const css::uno::Reference<css::ui::XSidebar>& rxSidebar);
-    virtual ~AllMasterPagesSelector() override;
+    virtual ~AllMasterPagesSelector();
 
     void AddItem (MasterPageContainer::Token aToken);
 

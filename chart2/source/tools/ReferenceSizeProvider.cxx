@@ -95,10 +95,10 @@ void ReferenceSizeProvider::setValuesAtAllDataSeries()
     Reference< XDiagram > xDiagram( ChartModelHelper::findDiagram( m_xChartDoc ));
 
     // DataSeries/Points
-    std::vector< Reference< XDataSeries > > aSeries(
+    ::std::vector< Reference< XDataSeries > > aSeries(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
 
-    for( std::vector< Reference< XDataSeries > >::const_iterator aIt( aSeries.begin());
+    for( ::std::vector< Reference< XDataSeries > >::const_iterator aIt( aSeries.begin());
          aIt != aSeries.end(); ++aIt )
     {
         Reference< beans::XPropertySet > xSeriesProp( *aIt, uno::UNO_QUERY );
@@ -144,7 +144,7 @@ void ReferenceSizeProvider::setValuesAtPropertySet(
         if( useAutoScale())
         {
             if( ! bHasOldRefSize )
-                xProp->setPropertyValue( aRefSizeName, uno::Any( aRefSize ));
+                xProp->setPropertyValue( aRefSizeName, uno::makeAny( aRefSize ));
         }
         else
         {
@@ -168,13 +168,14 @@ void ReferenceSizeProvider::getAutoResizeFromPropSet(
     const Reference< beans::XPropertySet > & xProp,
     ReferenceSizeProvider::AutoResizeState & rInOutState )
 {
+    static const char aRefSizeName[] = "ReferencePageSize";
     AutoResizeState eSingleState = AUTO_RESIZE_UNKNOWN;
 
     if( xProp.is())
     {
         try
         {
-            if( xProp->getPropertyValue( "ReferencePageSize" ).hasValue())
+            if( xProp->getPropertyValue( aRefSizeName ).hasValue())
                 eSingleState = AUTO_RESIZE_YES;
             else
                 eSingleState = AUTO_RESIZE_NO;
@@ -266,10 +267,10 @@ ReferenceSizeProvider::AutoResizeState ReferenceSizeProvider::getAutoResizeState
     }
 
     // DataSeries/Points
-    std::vector< Reference< XDataSeries > > aSeries(
+    ::std::vector< Reference< XDataSeries > > aSeries(
         DiagramHelper::getDataSeriesFromDiagram( xDiagram ));
 
-    for( std::vector< Reference< XDataSeries > >::const_iterator aIt( aSeries.begin());
+    for( ::std::vector< Reference< XDataSeries > >::const_iterator aIt( aSeries.begin());
          aIt != aSeries.end(); ++aIt )
     {
         Reference< beans::XPropertySet > xSeriesProp( *aIt, uno::UNO_QUERY );

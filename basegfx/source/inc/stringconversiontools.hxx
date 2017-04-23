@@ -36,8 +36,8 @@ namespace basegfx
                                  const sal_Int32 nLen);
 
         inline bool isOnNumberChar(const sal_Unicode aChar,
-                                   bool              bSignAllowed,
-                                   bool              bDotAllowed)
+                                   bool              bSignAllowed = true,
+                                   bool              bDotAllowed = true)
         {
             const bool bPredicate( (sal_Unicode('0') <= aChar && sal_Unicode('9') >= aChar)
                                     || (bSignAllowed && sal_Unicode('+') == aChar)
@@ -51,7 +51,7 @@ namespace basegfx
                                    const sal_Int32 nPos,
                                    bool            bSignAllowed = true)
         {
-            return isOnNumberChar(rStr[nPos], bSignAllowed, true);
+            return isOnNumberChar(rStr[nPos], bSignAllowed);
         }
 
         bool getDoubleChar(double&          o_fRetval,

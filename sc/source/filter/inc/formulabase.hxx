@@ -24,13 +24,14 @@
 #include <com/sun/star/sheet/FormulaOpCodeMapEntry.hpp>
 #include <com/sun/star/sheet/FormulaToken.hpp>
 #include <com/sun/star/table/CellAddress.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/helper/refvector.hxx>
 #include "addressconverter.hxx"
 
 namespace com { namespace sun { namespace star {
-    namespace lang { class XMultiServiceFactory; }
+    namespace sheet { class XFormulaOpCodeMapper; }
     namespace sheet { class XFormulaParser; }
 } } }
 
@@ -210,13 +211,14 @@ const sal_uInt16 BIFF_FUNC_WEEKNUM              = 465;      /// Function identif
 // Formula type ===============================================================
 
 /** Enumerates all possible types of a formula. */
-enum class FormulaType
+enum FormulaType
 {
-    Cell,           /// Simple cell formula, or reference to a shared formula name.
-    Array,          /// Array (matrix) formula.
-    SharedFormula,  /// Shared formula definition.
-    CondFormat,     /// Condition of a conditional format rule.
-    Validation      /// Condition of a data validation.
+    FORMULATYPE_CELL,           /// Simple cell formula, or reference to a shared formula name.
+    FORMULATYPE_ARRAY,          /// Array (matrix) formula.
+    FORMULATYPE_SHAREDFORMULA,  /// Shared formula definition.
+    FORMULATYPE_CONDFORMAT,     /// Condition of a conditional format rule.
+    FORMULATYPE_VALIDATION,     /// Condition of a data validation.
+    FORMULATYPE_DEFINEDNAME     /// Definition of a defined name.
 };
 
 // Reference helpers ==========================================================
@@ -232,8 +234,12 @@ struct BinSingleRef2d
     explicit            BinSingleRef2d();
 
     void                setBiff12Data( sal_uInt16 nCol, sal_Int32 nRow, bool bRelativeAsOffset );
+    void                setBiff2Data( sal_uInt8 nCol, sal_uInt16 nRow, bool bRelativeAsOffset );
+    void                setBiff8Data( sal_uInt16 nCol, sal_uInt16 nRow, bool bRelativeAsOffset );
 
     void                readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset );
+    void                readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
+    void                readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
 };
 
 /** A 2D formula cell range reference struct with relative flags. */
@@ -243,6 +249,8 @@ struct BinComplexRef2d
     BinSingleRef2d      maRef2;             /// End (bottom-right) cell address.
 
     void                readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset );
+    void                readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
+    void                readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
 };
 
 // Token vector, token sequence ===============================================
@@ -282,7 +290,7 @@ public:
 
     /** Appends a new token with the passed op-code and data. */
     template< typename Type >
-    void         append( sal_Int32 nOpCode, const Type& rData ) { append( nOpCode ) <<= rData; }
+    inline void         append( sal_Int32 nOpCode, const Type& rData ) { append( nOpCode ) <<= rData; }
 
     /** Converts to a sequence. */
     ApiTokenSequence toSequence() const;
@@ -298,8 +306,8 @@ class ApiTokenIterator
 {
 public:
     explicit            ApiTokenIterator( const ApiTokenSequence& rTokens, sal_Int32 nSpacesOpCode, bool bSkipSpaces );
-    bool         is() const { return mpToken != mpTokenEnd; }
-    const ApiToken* operator->() const { return mpToken; }
+    inline bool         is() const { return mpToken != mpTokenEnd; }
+    inline const ApiToken* operator->() const { return mpToken; }
 
     ApiTokenIterator&   operator++();
 
@@ -366,11 +374,23 @@ struct ApiOpCodes
 // Function parameter info ====================================================
 
 /** Enumerates validity modes for a function parameter. */
-enum class FuncParamValidity
+enum FuncParamValidity
 {
-    Regular,         /// Parameter supported by Calc and Excel.
-    CalcOnly,        /// Parameter supported by Calc only.
-    ExcelOnly        /// Parameter supported by Excel only.
+    FUNC_PARAM_NONE = 0,        /// Default for an unspecified entry in a C-array.
+    FUNC_PARAM_REGULAR,         /// Parameter supported by Calc and Excel.
+    FUNC_PARAM_CALCONLY,        /// Parameter supported by Calc only.
+    FUNC_PARAM_EXCELONLY        /// Parameter supported by Excel only.
+};
+
+/** Enumerates different types of token class conversion in function parameters. */
+enum FuncParamConversion
+{
+    FUNC_PARAMCONV_ORG,         /// Use original class of current token.
+    FUNC_PARAMCONV_VAL,         /// Convert tokens to VAL class.
+    FUNC_PARAMCONV_ARR,         /// Convert tokens to ARR class.
+    FUNC_PARAMCONV_RPT,         /// Repeat parent conversion in VALTYPE parameters.
+    FUNC_PARAMCONV_RPX,         /// Repeat parent conversion in REFTYPE parameters.
+    FUNC_PARAMCONV_RPO          /// Repeat parent conversion in operands of operators.
 };
 
 /** Structure that contains all needed information for a parameter in a
@@ -472,7 +492,7 @@ enum FunctionLibraryType
 
     The member mpParamInfos points to a C-array of type information structures
     for all parameters of the function. The last initialized structure
-    describing a regular parameter (member meValid == FuncParamValidity::Regular) in
+    describing a regular parameter (member meValid == FUNC_PARAM_REGULAR) in
     this array is used repeatedly for all following parameters supported by a
     function.
  */
@@ -534,7 +554,8 @@ struct FunctionProviderImpl;
 class FunctionProvider  // not derived from WorkbookHelper to make it usable in file dumpers
 {
 public:
-    explicit            FunctionProvider(bool bImportFilter);
+    explicit            FunctionProvider( FilterType eFilter, BiffType eBiff, bool bImportFilter,
+                                          bool bCallerKnowsAboutMacroExport );
     virtual             ~FunctionProvider();
 
     /** Returns the function info for an OOXML function name, or 0 on error. */
@@ -542,6 +563,9 @@ public:
 
     /** Returns the function info for a BIFF12 function index, or 0 on error. */
     const FunctionInfo* getFuncInfoFromBiff12FuncId( sal_uInt16 nFuncId ) const;
+
+    /** Returns the function info for a BIFF2-BIFF8 function index, or 0 on error. */
+    const FunctionInfo* getFuncInfoFromBiffFuncId( sal_uInt16 nFuncId ) const;
 
     /** Returns the function info for a macro function referred by the
         EXTERN.CALL function, or 0 on error. */
@@ -570,9 +594,10 @@ struct OpCodeProviderImpl;
 class OpCodeProvider : public FunctionProvider // not derived from WorkbookHelper to make it usable as UNO service
 {
 public:
-    explicit            OpCodeProvider(const css::uno::Reference<css::lang::XMultiServiceFactory>& rxModelFactory,
-                                       bool bImportFilter);
-    virtual             ~OpCodeProvider() override;
+    explicit            OpCodeProvider(
+                            const css::uno::Reference< css::lang::XMultiServiceFactory >& rxModelFactory,
+                            FilterType eFilter, BiffType eBiff, bool bImportFilter );
+    virtual             ~OpCodeProvider();
 
     /** Returns the structure containing all token op-codes for operators and
         special tokens used by the Calc document and its formula parser. */
@@ -601,12 +626,12 @@ public:
                             const OpCodeProvider& rOpCodeProv );
 
     /** Returns read/write access to the formula parser property set. */
-    PropertySet& getParserProperties() { return maParserProps; }
+    inline PropertySet& getParserProperties() { return maParserProps; }
 
     /** Calls the XFormulaParser::parseFormula() function of the API parser. */
     ApiTokenSequence    parseFormula(
                             const OUString& rFormula,
-                            const ScAddress& rRefPos );
+                            const css::table::CellAddress& rRefPos );
 
 private:
     css::uno::Reference< css::sheet::XFormulaParser >
@@ -673,7 +698,6 @@ public:
                         extractReference( const ApiTokenSequence& rTokens ) const;
 
     /** Tries to extract a cell range address from a formula token sequence.
-        Only real absolute references will be accepted.
 
         @param orAddress  (output parameter) If the token sequence is valid,
             this parameter will contain the extracted cell range address. If
@@ -684,15 +708,19 @@ public:
             one cell range address token. The token sequence may contain
             whitespace tokens.
 
+        @param bAllowRelative  True = it is allowed that rTokens contains
+            relative references (based on cell A1 of the current sheet).
+            False = only real absolute references will be accepted.
+
         @return  True, if the token sequence contains a valid cell range
             address which has been extracted to orRange, false otherwise.
      */
     bool                extractCellRange(
-                            ScRange& orRange,
-                            const ApiTokenSequence& rTokens ) const;
+                            css::table::CellRangeAddress& orRange,
+                            const ApiTokenSequence& rTokens,
+                            bool bAllowRelative ) const;
 
     /** Tries to extract a cell range list from a formula token sequence.
-        Only real absolute references will be accepted.
 
         @param orRanges  (output parameter) If the token sequence is valid,
             this parameter will contain the extracted cell range list. Deleted
@@ -705,14 +733,19 @@ public:
             standard function parameter separator token. The token sequence may
             contain parentheses and whitespace tokens.
 
+        @param bAllowRelative  True = it is allowed that rTokens contains
+            relative references (based on cell A1 of the current sheet).
+            False = only real absolute references will be accepted.
+
         @param nFilterBySheet  If non-negative, this function returns only cell
             ranges located in the specified sheet, otherwise returns all cell
             ranges contained in the token sequence.
      */
     void                extractCellRangeList(
-                            ScRangeList& orRanges,
+                            ApiCellRangeList& orRanges,
                             const ApiTokenSequence& rTokens,
-                            sal_Int32 nFilterBySheet ) const;
+                            bool bAllowRelative,
+                            sal_Int32 nFilterBySheet = -1 ) const;
 
     /** Tries to extract a string from a formula token sequence.
 

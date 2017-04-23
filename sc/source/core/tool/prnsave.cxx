@@ -23,7 +23,7 @@
 
 #include <osl/diagnose.h>
 
-//      Data per table
+//      Daten pro Tabelle
 
 ScPrintSaverTab::ScPrintSaverTab() :
     mpRepeatCol(nullptr),
@@ -66,17 +66,20 @@ bool ScPrintSaverTab::operator==( const ScPrintSaverTab& rCmp ) const
         (maPrintRanges == rCmp.maPrintRanges);
 }
 
-//      Data for the whole document
+//      Daten fuer das ganze Dokument
 
 ScPrintRangeSaver::ScPrintRangeSaver( SCTAB nCount ) :
     nTabCount( nCount )
 {
     if (nCount > 0)
-        pData.reset( new ScPrintSaverTab[nCount] );
+        pData = new ScPrintSaverTab[nCount];
+    else
+        pData = nullptr;
 }
 
 ScPrintRangeSaver::~ScPrintRangeSaver()
 {
+    delete[] pData;
 }
 
 ScPrintSaverTab& ScPrintRangeSaver::GetTabData(SCTAB nTab)

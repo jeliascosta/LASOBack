@@ -72,32 +72,49 @@ DEFINE_INIT_SERVICE                     (   NewMenuController, {} )
 void NewMenuController::setMenuImages( PopupMenu* pPopupMenu, bool bSetImages )
 {
     sal_uInt16 nItemCount = pPopupMenu->GetItemCount();
+    Image               aImage;
     Reference< XFrame > xFrame( m_xFrame );
 
     for ( sal_uInt16 i = 0; i < nItemCount; i++ )
     {
-        sal_uInt16 nItemId = pPopupMenu->GetItemId( i );
+        sal_uInt16 nItemId = pPopupMenu->GetItemId( sal::static_int_cast<sal_uInt16>( i ));
         if ( nItemId != 0 )
         {
             if ( bSetImages )
             {
+                bool        bImageSet( false );
                 OUString aImageId;
-                OUString aCmd( pPopupMenu->GetItemCommand( nItemId ) );
-                sal_uLong nAttributePtr = pPopupMenu->GetUserValue( nItemId );
+
+                sal_uLong nAttributePtr = pPopupMenu->GetUserValue(sal::static_int_cast<sal_uInt16>(i));
                 MenuAttributes* pAttributes = reinterpret_cast<MenuAttributes *>(nAttributePtr);
                 if (pAttributes)
                     aImageId = pAttributes->aImageId;
 
-                INetURLObject aURLObj( aImageId.isEmpty() ? aCmd : aImageId );
-                Image aImage = SvFileInformationManager::GetImageNoDefault( aURLObj );
-                if ( !aImage )
-                    aImage = vcl::CommandInfoProvider::GetImageForCommand(aCmd, xFrame);
+                if ( !aImageId.isEmpty() )
+                {
+                    aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand( aImageId, false, xFrame );
+                    if ( !!aImage )
+                    {
+                        bImageSet = true;
+                        pPopupMenu->SetItemImage( nItemId, aImage );
+                    }
+                }
 
-                if ( !!aImage )
-                    pPopupMenu->SetItemImage( nItemId, aImage );
+                if ( !bImageSet )
+                {
+                    OUString aCmd( pPopupMenu->GetItemCommand( nItemId ) );
+                    if ( !aCmd.isEmpty() )
+                    {
+                        INetURLObject aURLObj( aCmd );
+                        aImage = SvFileInformationManager::GetImageNoDefault( aURLObj );
+                    }
+
+                    if ( !!aImage )
+                        pPopupMenu->SetItemImage( nItemId, aImage );
+                }
             }
             else
-                pPopupMenu->SetItemImage( nItemId, Image() );
+                pPopupMenu->SetItemImage( nItemId, aImage );
         }
     }
 }
@@ -113,11 +130,11 @@ void NewMenuController::determineAndSetNewDocAccel( PopupMenu* pPopupMenu, const
     {
         // Search for the empty document URL
 
-        for ( sal_uInt16 i = 0; i < nCount; i++ )
+        for ( sal_uInt32 i = 0; i < sal_uInt32( nCount ); i++ )
         {
-            if ( pPopupMenu->GetItemType( i ) != MenuItemType::SEPARATOR )
+            nId = pPopupMenu->GetItemId( sal_uInt16( i ));
+            if ( nId != 0 && pPopupMenu->GetItemType( nId ) != MenuItemType::SEPARATOR )
             {
-                nId = pPopupMenu->GetItemId( i );
                 aCommand = pPopupMenu->GetItemCommand( nId );
                 if ( aCommand.startsWith( m_aEmptyDocURL ) )
                 {
@@ -135,11 +152,11 @@ void NewMenuController::determineAndSetNewDocAccel( PopupMenu* pPopupMenu, const
         OUString aDefaultModuleName( SvtModuleOptions().GetDefaultModuleName() );
         if ( !aDefaultModuleName.isEmpty() )
         {
-            for ( sal_uInt16 i = 0; i < nCount; i++ )
+            for ( sal_uInt32 i = 0; i < sal_uInt32( nCount ); i++ )
             {
-                if ( pPopupMenu->GetItemType( i ) != MenuItemType::SEPARATOR )
+                nId = pPopupMenu->GetItemId( sal_uInt16( i ));
+                if ( nId != 0 && pPopupMenu->GetItemType( nId ) != MenuItemType::SEPARATOR )
                 {
-                    nId = pPopupMenu->GetItemId( i );
                     aCommand = pPopupMenu->GetItemCommand( nId );
                     if ( aCommand.indexOf( aDefaultModuleName ) >= 0 )
                     {
@@ -207,15 +224,15 @@ void NewMenuController::setAccelerators( PopupMenu* pPopupMenu )
         }
 
         vcl::KeyCode                    aEmptyKeyCode;
-        sal_uInt16                      nItemCount( pPopupMenu->GetItemCount() );
+        sal_uInt32                      nItemCount( pPopupMenu->GetItemCount() );
         std::vector< vcl::KeyCode >     aMenuShortCuts;
         std::vector< OUString >    aCmds;
-        std::vector< sal_uInt16 >       aIds;
-        for ( sal_uInt16 i = 0; i < nItemCount; i++ )
+        std::vector< sal_uInt32 >       aIds;
+        for ( sal_uInt32 i = 0; i < nItemCount; i++ )
         {
-            if ( pPopupMenu->GetItemType( i ) != MenuItemType::SEPARATOR )
+            sal_uInt16 nId( pPopupMenu->GetItemId( sal_uInt16( i )));
+            if ( nId && ( pPopupMenu->GetItemType( nId ) != MenuItemType::SEPARATOR ))
             {
-                sal_uInt16 nId( pPopupMenu->GetItemId( i ));
                 aIds.push_back( nId );
                 aMenuShortCuts.push_back( aEmptyKeyCode );
                 aCmds.push_back( pPopupMenu->GetItemCommand( nId ));
@@ -245,11 +262,11 @@ void NewMenuController::setAccelerators( PopupMenu* pPopupMenu )
         if ( m_xModuleAcceleratorManager.is() )
             retrieveShortcutsFromConfiguration( xModuleAccelCfg, aSeq, aMenuShortCuts );
         if ( m_xDocAcceleratorManager.is() )
-            retrieveShortcutsFromConfiguration( xDocAccelCfg, aSeq, aMenuShortCuts );
+            retrieveShortcutsFromConfiguration( xGlobalAccelCfg, aSeq, aMenuShortCuts );
 
         const sal_uInt32 nCount2 = aIds.size();
         for ( sal_uInt32 i = 0; i < nCount2; i++ )
-            pPopupMenu->SetAccelKey( aIds[i], aMenuShortCuts[i] );
+            pPopupMenu->SetAccelKey( sal_uInt16( aIds[i] ), aMenuShortCuts[i] );
 
         // Special handling for "New" menu short-cut should be set at the
         // document which will be opened using it.
@@ -367,7 +384,7 @@ void NewMenuController::fillPopupMenu( Reference< css::awt::XPopupMenu >& rPopup
 }
 
 // XEventListener
-void SAL_CALL NewMenuController::disposing( const EventObject& )
+void SAL_CALL NewMenuController::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
 {
     Reference< css::awt::XMenuListener > xHolder(static_cast<OWeakObject *>(this), UNO_QUERY );
 
@@ -382,49 +399,69 @@ void SAL_CALL NewMenuController::disposing( const EventObject& )
 }
 
 // XStatusListener
-void SAL_CALL NewMenuController::statusChanged( const FeatureStateEvent& )
+void SAL_CALL NewMenuController::statusChanged( const FeatureStateEvent& ) throw ( RuntimeException, std::exception )
 {
 }
 
 // XMenuListener
-void SAL_CALL NewMenuController::itemSelected( const css::awt::MenuEvent& rEvent )
+void SAL_CALL NewMenuController::itemSelected( const css::awt::MenuEvent& rEvent ) throw (RuntimeException, std::exception)
 {
     Reference< css::awt::XPopupMenu > xPopupMenu;
+    Reference< XDispatch >            xDispatch;
+    Reference< XDispatchProvider >    xDispatchProvider;
     Reference< XComponentContext >    xContext;
+    Reference< XURLTransformer >      xURLTransformer;
 
     osl::ClearableMutexGuard aLock( m_aMutex );
-    xPopupMenu = m_xPopupMenu;
-    xContext   = m_xContext;
+    xPopupMenu          = m_xPopupMenu;
+    xDispatchProvider.set( m_xFrame, UNO_QUERY );
+    xContext     = m_xContext;
+    xURLTransformer     = m_xURLTransformer;
     aLock.clear();
 
-    if ( xPopupMenu.is() )
+    css::util::URL aTargetURL;
+    Sequence< PropertyValue > aArgsList( 1 );
+
+    if ( xPopupMenu.is() && xDispatchProvider.is() )
     {
         VCLXPopupMenu* pPopupMenu = static_cast<VCLXPopupMenu *>(VCLXPopupMenu::GetImplementation( xPopupMenu ));
         if ( pPopupMenu )
         {
-            OUString aURL;
             OUString aTargetFrame( m_aTargetFrame );
 
             {
                 SolarMutexGuard aSolarMutexGuard;
                 PopupMenu* pVCLPopupMenu = static_cast<PopupMenu *>(pPopupMenu->GetMenu());
-                aURL = pVCLPopupMenu->GetItemCommand(rEvent.MenuId);
+                aTargetURL.Complete = pVCLPopupMenu->GetItemCommand(rEvent.MenuId);
                 sal_uLong nAttributePtr = pVCLPopupMenu->GetUserValue(rEvent.MenuId);
                 MenuAttributes* pAttributes = reinterpret_cast<MenuAttributes *>(nAttributePtr);
                 if (pAttributes)
                     aTargetFrame = pAttributes->aTargetFrame;
             }
 
-            Sequence< PropertyValue > aArgsList( 1 );
-            aArgsList[0].Name = "Referer";
-            aArgsList[0].Value <<= OUString( "private:user" );
+            xURLTransformer->parseStrict( aTargetURL );
 
-            dispatchCommand( aURL, aArgsList, aTargetFrame );
+            aArgsList[0].Name = "Referer";
+            aArgsList[0].Value = makeAny( OUString( "private:user" ));
+
+            xDispatch = xDispatchProvider->queryDispatch( aTargetURL, aTargetFrame, 0 );
         }
+    }
+
+    if ( xDispatch.is() )
+    {
+        // Call dispatch asynchronously as we can be destroyed while dispatch is
+        // executed. VCL is not able to survive this as it wants to call listeners
+        // after select!!!
+        NewDocument* pNewDocument = new NewDocument;
+        pNewDocument->xDispatch  = xDispatch;
+        pNewDocument->aTargetURL = aTargetURL;
+        pNewDocument->aArgSeq    = aArgsList;
+        Application::PostUserEvent( LINK(nullptr, NewMenuController, ExecuteHdl_Impl), pNewDocument );
     }
 }
 
-void SAL_CALL NewMenuController::itemActivated( const css::awt::MenuEvent& )
+void SAL_CALL NewMenuController::itemActivated( const css::awt::MenuEvent& ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarMutexGuard;
     if ( m_xFrame.is() && m_xPopupMenu.is() )
@@ -491,7 +528,7 @@ void NewMenuController::impl_setPopupMenu()
 }
 
 // XInitialization
-void SAL_CALL NewMenuController::initialize( const Sequence< Any >& aArguments )
+void SAL_CALL NewMenuController::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
 {
     osl::MutexGuard aLock( m_aMutex );
 
@@ -509,6 +546,21 @@ void SAL_CALL NewMenuController::initialize( const Sequence< Any >& aArguments )
             m_bNewMenu      = m_aCommandURL == aSlotNewDocDirect;
         }
     }
+}
+
+IMPL_STATIC_LINK_TYPED( NewMenuController, ExecuteHdl_Impl, void*, p, void )
+{
+    NewDocument* pNewDocument = static_cast<NewDocument*>(p);
+/*  i62706: Don't catch all exceptions. We hide all problems here and are not able
+            to handle them on higher levels.
+    try
+    {
+*/
+        // Asynchronous execution as this can lead to our own destruction!
+        // Framework can recycle our current frame and the layout manager disposes all user interface
+        // elements if a component gets detached from its frame!
+        pNewDocument->xDispatch->dispatch( pNewDocument->aTargetURL, pNewDocument->aArgSeq );
+    delete pNewDocument;
 }
 
 }

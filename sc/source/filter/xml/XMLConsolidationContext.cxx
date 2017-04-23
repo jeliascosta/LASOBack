@@ -33,7 +33,7 @@ ScXMLConsolidationContext::ScXMLConsolidationContext(
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference< xml::sax::XAttributeList >& xAttrList ) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     eFunction( SUBTOTAL_FUNC_NONE ),
     bLinkToSource( false ),
     bTargetAddr(false)

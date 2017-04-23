@@ -76,6 +76,15 @@
 #include <list>
 #include <unordered_map>
 
+#define ASYNC 0
+
+// primitive support for asynchronous handling of
+// events from controls ( all event will be processed asynchronously
+// in the application thread )
+#if ASYNC
+#include <vcl/svapp.hxx>
+#endif
+
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::script;
 using namespace ::com::sun::star::uno;
@@ -174,15 +183,14 @@ struct TranslateInfo
 {
     OUString sVBAName; //vba event name
     Translator toVBA;       //the method to convert OO event parameters to VBA event parameters
-    bool (*ApproveRule)(const ScriptEvent& evt, void const * pPara); //this method is used to determine which types of controls should execute the event
-    void const *pPara;            //Parameters for the above approve method
+    bool (*ApproveRule)(const ScriptEvent& evt, void* pPara); //this method is used to determine which types of controls should execute the event
+    void *pPara;            //Parameters for the above approve method
 };
 
 
-typedef std::unordered_map<
-    OUString,
-    std::list< TranslateInfo >,
-    OUStringHash > EventInfoHash;
+typedef std::unordered_map< OUString,
+std::list< TranslateInfo >,
+OUStringHash > EventInfoHash;
 
 
 struct TranslatePropMap
@@ -191,41 +199,41 @@ struct TranslatePropMap
     TranslateInfo aTransInfo;
 };
 
-bool ApproveAll(const ScriptEvent& evt, void const * pPara); //allow all types of controls to execute the event
-bool ApproveType(const ScriptEvent& evt, void const * pPara); //certain types of controls should execute the event, those types are given by pPara
-bool DenyType(const ScriptEvent& evt, void const * pPara);    //certain types of controls should not execute the event, those types are given by pPara
-bool DenyMouseDrag(const ScriptEvent& evt, void const * pPara); //used for VBA MouseMove event when "Shift" key is pressed
+bool ApproveAll(const ScriptEvent& evt, void* pPara); //allow all types of controls to execute the event
+bool ApproveType(const ScriptEvent& evt, void* pPara); //certain types of controls should execute the event, those types are given by pPara
+bool DenyType(const ScriptEvent& evt, void* pPara);    //certain types of controls should not execute the event, those types are given by pPara
+bool DenyMouseDrag(const ScriptEvent& evt, void* pPara); //used for VBA MouseMove event when "Shift" key is pressed
 
 struct TypeList
 {
-    uno::Type const * pTypeList;
+    uno::Type* pTypeList;
     int nListLength;
 };
 
-Type const typeXFixedText = cppu::UnoType<awt::XFixedText>::get();
-Type const typeXTextComponent = cppu::UnoType<awt::XTextComponent>::get();
-Type const typeXComboBox = cppu::UnoType<awt::XComboBox>::get();
-Type const typeXRadioButton = cppu::UnoType<awt::XRadioButton>::get();
-Type const typeXListBox = cppu::UnoType<awt::XListBox>::get();
+Type typeXFixedText = cppu::UnoType<awt::XFixedText>::get();
+Type typeXTextComponent = cppu::UnoType<awt::XTextComponent>::get();
+Type typeXComboBox = cppu::UnoType<awt::XComboBox>::get();
+Type typeXRadioButton = cppu::UnoType<awt::XRadioButton>::get();
+Type typeXListBox = cppu::UnoType<awt::XListBox>::get();
 
 
-TypeList const fixedTextList = {&typeXFixedText, 1};
-TypeList const textCompList = {&typeXTextComponent, 1};
-TypeList const radioButtonList = {&typeXRadioButton, 1};
-TypeList const comboBoxList = {&typeXComboBox, 1};
-TypeList const listBoxList = {&typeXListBox, 1};
+TypeList fixedTextList = {&typeXFixedText, 1};
+TypeList textCompList = {&typeXTextComponent, 1};
+TypeList radioButtonList = {&typeXRadioButton, 1};
+TypeList comboBoxList = {&typeXComboBox, 1};
+TypeList listBoxList = {&typeXListBox, 1};
 
 //this array stores the OO event to VBA event translation info
 static TranslatePropMap aTranslatePropMap_Impl[] =
 {
-    { OUString("actionPerformed"), { OUString("_Change"), nullptr, DenyType, static_cast<void const *>(&radioButtonList) } },
+    { OUString("actionPerformed"), { OUString("_Change"), nullptr, DenyType, static_cast<void*>(&radioButtonList) } },
     // actionPerformed ooo event
     { OUString("actionPerformed"), { OUString("_Click"), nullptr, ApproveAll, nullptr } },
-    { OUString("itemStateChanged"), { OUString("_Change"), nullptr, ApproveType, static_cast<void const *>(&radioButtonList) } },
+    { OUString("itemStateChanged"), { OUString("_Change"), nullptr, ApproveType, static_cast<void*>(&radioButtonList) } },
     // itemStateChanged ooo event
-    { OUString("itemStateChanged"), { OUString("_Click"), nullptr, ApproveType, static_cast<void const *>(&comboBoxList) } },
+    { OUString("itemStateChanged"), { OUString("_Click"), nullptr, ApproveType, static_cast<void*>(&comboBoxList) } },
 
-    { OUString("itemStateChanged"), { OUString("_Click"), nullptr, ApproveType, static_cast<void const *>(&listBoxList) } },
+    { OUString("itemStateChanged"), { OUString("_Click"), nullptr, ApproveType, static_cast<void*>(&listBoxList) } },
     // changed ooo event
     { OUString("changed"), { OUString("_Change"), nullptr, ApproveAll, nullptr } },
 
@@ -234,7 +242,7 @@ static TranslatePropMap aTranslatePropMap_Impl[] =
 
     // focusLost ooo event
     { OUString("focusLost"), { OUString("_LostFocus"), nullptr, ApproveAll, nullptr } },
-    { OUString("focusLost"), { OUString("_Exit"), nullptr, ApproveType, static_cast<void const *>(&textCompList) } }, // support VBA TextBox_Exit event
+    { OUString("focusLost"), { OUString("_Exit"), nullptr, ApproveType, static_cast<void*>(&textCompList) } }, // support VBA TextBox_Exit event
 
     // adjustmentValueChanged ooo event
     { OUString("adjustmentValueChanged"), { OUString("_Scroll"), nullptr, ApproveAll, nullptr } },
@@ -247,7 +255,7 @@ static TranslatePropMap aTranslatePropMap_Impl[] =
     { OUString("keyReleased"), { OUString("_KeyUp"), ooKeyPressedToVBAKeyUpDown, ApproveAll, nullptr } },
 
     // mouseReleased ooo event
-    { OUString("mouseReleased"), { OUString("_Click"), ooMouseEvtToVBAMouseEvt, ApproveType, static_cast<void const *>(&fixedTextList) } },
+    { OUString("mouseReleased"), { OUString("_Click"), ooMouseEvtToVBAMouseEvt, ApproveType, static_cast<void*>(&fixedTextList) } },
     { OUString("mouseReleased"), { OUString("_MouseUp"), ooMouseEvtToVBAMouseEvt, ApproveAll, nullptr } },
 
     // mousePressed ooo event
@@ -407,7 +415,7 @@ ScriptEventHelper::getEventListeners()
         }
     }
 
-    return comphelper::containerToSequence(eventMethods);
+    return comphelper::containerToSequence<OUString>(eventMethods);
 }
 
 Sequence< ScriptEventDescriptor >
@@ -449,32 +457,32 @@ public:
     ReadOnlyEventsNameContainer( const Sequence< OUString >& eventMethods, const OUString& sCodeName );
     // XNameContainer
 
-    virtual void SAL_CALL insertByName( const OUString&, const Any& ) override
+    virtual void SAL_CALL insertByName( const OUString&, const Any& ) throw (lang::IllegalArgumentException, container::ElementExistException, lang::WrappedTargetException, RuntimeException, std::exception) override
     {
         throw RuntimeException("ReadOnly container" );
 
     }
-    virtual void SAL_CALL removeByName( const OUString& ) override
+    virtual void SAL_CALL removeByName( const OUString& ) throw (css::container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception) override
     {
         throw RuntimeException("ReadOnly container" );
     }
 
     // XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString&, const Any& ) override
+    virtual void SAL_CALL replaceByName( const OUString&, const Any& ) throw (lang::IllegalArgumentException, container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception) override
     {
         throw RuntimeException("ReadOnly container" );
 
     }
 
     // XNameAccess
-    virtual Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual Any SAL_CALL getByName( const OUString& aName ) throw (container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getElementNames(  ) throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual Type SAL_CALL getElementType(  ) override
+    virtual Type SAL_CALL getElementType(  ) throw (RuntimeException, std::exception) override
     { return cppu::UnoType<OUString>::get(); }
-    virtual sal_Bool SAL_CALL hasElements(  ) override
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (RuntimeException, std::exception) override
     { return !m_hEvents.empty(); }
 private:
 
@@ -500,7 +508,7 @@ ReadOnlyEventsNameContainer::ReadOnlyEventsNameContainer( const Sequence< OUStri
 }
 
 Any SAL_CALL
-ReadOnlyEventsNameContainer::getByName( const OUString& aName ){
+ReadOnlyEventsNameContainer::getByName( const OUString& aName ) throw (container::NoSuchElementException, lang::WrappedTargetException, RuntimeException, std::exception){
     EventSupplierHash::const_iterator it = m_hEvents.find( aName );
     if ( it == m_hEvents.end() )
         throw container::NoSuchElementException();
@@ -508,13 +516,13 @@ ReadOnlyEventsNameContainer::getByName( const OUString& aName ){
 }
 
 Sequence< OUString > SAL_CALL
-ReadOnlyEventsNameContainer::getElementNames(  )
+ReadOnlyEventsNameContainer::getElementNames(  ) throw (RuntimeException, std::exception)
 {
     return comphelper::mapKeysToSequence(m_hEvents);
 }
 
 sal_Bool SAL_CALL
-ReadOnlyEventsNameContainer::hasByName( const OUString& aName )
+ReadOnlyEventsNameContainer::hasByName( const OUString& aName ) throw (RuntimeException, std::exception)
 {
     EventSupplierHash::const_iterator it = m_hEvents.find( aName );
     if ( it == m_hEvents.end() )
@@ -529,7 +537,7 @@ public:
     { m_xNameContainer = new ReadOnlyEventsNameContainer( eventMethods, sCodeName ); }
 
     // XScriptEventSupplier
-    virtual Reference< container::XNameContainer > SAL_CALL getEvents(  ) override { return m_xNameContainer; }
+    virtual Reference< container::XNameContainer > SAL_CALL getEvents(  ) throw (RuntimeException, std::exception) override { return m_xNameContainer; }
 private:
     Reference< container::XNameContainer > m_xNameContainer;
 };
@@ -543,30 +551,31 @@ class EventListener : public EventListener_BASE
     ,public ::comphelper::OMutexAndBroadcastHelper
     ,public ::comphelper::OPropertyContainer
     ,public ::comphelper::OPropertyArrayUsageHelper< EventListener >
+
 {
 
 public:
     EventListener();
     // XEventListener
-    virtual void SAL_CALL disposing(const lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const lang::EventObject& Source) throw( RuntimeException, std::exception ) override;
     using cppu::OPropertySetHelper::disposing;
 
     // XScriptListener
-    virtual void SAL_CALL firing(const ScriptEvent& evt) override;
-    virtual Any SAL_CALL approveFiring(const ScriptEvent& evt) override;
+    virtual void SAL_CALL firing(const ScriptEvent& evt) throw(RuntimeException, std::exception) override;
+    virtual Any SAL_CALL approveFiring(const ScriptEvent& evt) throw(reflection::InvocationTargetException, RuntimeException, std::exception) override;
     // XCloseListener
-    virtual void SAL_CALL queryClosing( const lang::EventObject& Source, sal_Bool GetsOwnership ) override;
-    virtual void SAL_CALL notifyClosing( const lang::EventObject& Source ) override;
+    virtual void SAL_CALL queryClosing( const lang::EventObject& Source, sal_Bool GetsOwnership ) throw (util::CloseVetoException, uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyClosing( const lang::EventObject& Source ) throw (uno::RuntimeException, std::exception) override;
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw (css::uno::RuntimeException, std::exception) override;
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception) override;
     // XInterface
     DECLARE_XINTERFACE()
 
     // XTypeProvider
     DECLARE_XTYPEPROVIDER()
-    virtual void SAL_CALL setFastPropertyValue( sal_Int32 nHandle, const css::uno::Any& rValue ) override
+    virtual void SAL_CALL setFastPropertyValue( sal_Int32 nHandle, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override
     {
         if ( nHandle == EVENTLSTNR_PROPERTY_ID_MODEL )
         {
@@ -592,17 +601,20 @@ public:
             setShellFromModel();
     }
 
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString( "ooo.vba.EventListener"  );
     }
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         const OUString strName( getImplementationName() );
         return Sequence< OUString >( &strName, 1 );
@@ -616,9 +628,11 @@ protected:
     virtual ::cppu::IPropertyArrayHelper* createArrayHelper(  ) const override;
 
 private:
+#if ASYNC
+    DECL_LINK( OnAsyncScriptEvent, ScriptEvent* );
+#endif
     void setShellFromModel();
-    /// @throws RuntimeException
-    void firing_Impl( const  ScriptEvent& evt, Any *pSyncRet );
+    void firing_Impl( const  ScriptEvent& evt, Any *pSyncRet=nullptr ) throw( RuntimeException, std::exception );
 
     Reference< frame::XModel > m_xModel;
     bool m_bDocClosed;
@@ -661,20 +675,51 @@ EventListener::setShellFromModel()
 
 //XEventListener
 void
-EventListener::disposing(const lang::EventObject&)
+EventListener::disposing(const lang::EventObject&)  throw( RuntimeException, std::exception )
 {
 }
 
 //XScriptListener
 
 void SAL_CALL
-EventListener::firing(const ScriptEvent& evt)
+EventListener::firing(const ScriptEvent& evt) throw(RuntimeException, std::exception)
 {
-    firing_Impl( evt, nullptr );
+#if ASYNC
+    // needs some logic to check if the event handler is oneway or not
+    // if not oneway then firing_Impl otherwise... as below
+    acquire();
+    Application::PostUserEvent( LINK( this, EventListener, OnAsyncScriptEvent ),
+                                new ScriptEvent( evt ) );
+#else
+    firing_Impl( evt );
+#endif
 }
 
+#if ASYNC
+IMPL_LINK( EventListener, OnAsyncScriptEvent, ScriptEvent*, _pEvent )
+{
+    if ( !_pEvent )
+        return 1L;
+
+    {
+        // #FIXME if we enable ASYNC we probably need something like
+        // below
+        //::osl::ClearableMutexGuard aGuard( m_aMutex );
+
+        //if ( !impl_isDisposed_nothrow() )
+        //  impl_doFireScriptEvent_nothrow( aGuard, *_pEvent, NULL );
+        firing_Impl( *_pEvent, NULL );
+    }
+
+    delete _pEvent;
+    // we acquired ourself immediately before posting the event
+    release();
+    return 0L;
+ }
+#endif
+
 Any SAL_CALL
-EventListener::approveFiring(const ScriptEvent& evt)
+EventListener::approveFiring(const ScriptEvent& evt) throw(reflection::InvocationTargetException, RuntimeException, std::exception)
 {
     Any ret;
     firing_Impl( evt, &ret );
@@ -683,13 +728,13 @@ EventListener::approveFiring(const ScriptEvent& evt)
 
 // XCloseListener
 void SAL_CALL
-EventListener::queryClosing( const lang::EventObject& /*Source*/, sal_Bool /*GetsOwnership*/ )
+EventListener::queryClosing( const lang::EventObject& /*Source*/, sal_Bool /*GetsOwnership*/ ) throw (util::CloseVetoException, uno::RuntimeException, std::exception)
 {
     //Nothing to do
 }
 
 void SAL_CALL
-EventListener::notifyClosing( const lang::EventObject& /*Source*/ )
+EventListener::notifyClosing( const lang::EventObject& /*Source*/ ) throw (uno::RuntimeException, std::exception)
 {
     m_bDocClosed = true;
     uno::Reference< util::XCloseBroadcaster > xCloseBroadcaster( m_xModel, uno::UNO_QUERY );
@@ -701,7 +746,7 @@ EventListener::notifyClosing( const lang::EventObject& /*Source*/ )
 
 // XInitialization
 void SAL_CALL
-EventListener::initialize( const Sequence< Any >& aArguments )
+EventListener::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
 {
     if ( aArguments.getLength() == 1 )
         aArguments[0] >>= m_xModel;
@@ -738,7 +783,7 @@ EventListener::createArrayHelper(  ) const
 
 // XPropertySet
 Reference< beans::XPropertySetInfo >
-EventListener::getPropertySetInfo(  )
+EventListener::getPropertySetInfo(  ) throw (RuntimeException, std::exception)
 {
     Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -746,20 +791,20 @@ EventListener::getPropertySetInfo(  )
 
 
 //decide if the control should execute the event
-bool ApproveAll(const ScriptEvent&, void const * )
+bool ApproveAll(const ScriptEvent&, void* )
 {
     return true;
 }
 
 //for the given control type in evt.Arguments[0], look for if it appears in the type list in pPara
-bool FindControl(const ScriptEvent& evt, void const * pPara)
+bool FindControl(const ScriptEvent& evt, void* pPara)
 {
     lang::EventObject aEvent;
     evt.Arguments[ 0 ] >>= aEvent;
     uno::Reference< uno::XInterface > xInterface( aEvent.Source, uno::UNO_QUERY );
 
-    TypeList const * pTypeListInfo = static_cast<TypeList const *>(pPara);
-    Type const * pType = pTypeListInfo->pTypeList;
+    TypeList* pTypeListInfo = static_cast<TypeList*>(pPara);
+    Type* pType = pTypeListInfo->pTypeList;
     int nLen = pTypeListInfo->nListLength;
 
     for (int i = 0; i < nLen; i++)
@@ -775,13 +820,13 @@ bool FindControl(const ScriptEvent& evt, void const * pPara)
 }
 
 //if the given control type in evt.Arguments[0] appears in the type list in pPara, then approve the execution
-bool ApproveType(const ScriptEvent& evt, void const * pPara)
+bool ApproveType(const ScriptEvent& evt, void* pPara)
 {
     return FindControl(evt, pPara);
 }
 
 //if the given control type in evt.Arguments[0] appears in the type list in pPara, then deny the execution
-bool DenyType(const ScriptEvent& evt, void const * pPara)
+bool DenyType(const ScriptEvent& evt, void* pPara)
 {
     return !FindControl(evt, pPara);
 }
@@ -789,7 +834,7 @@ bool DenyType(const ScriptEvent& evt, void const * pPara)
 //when mouse is moving, either the mouse button is pressed or some key is pressed can trigger the OO mouseDragged event,
 //the former should be denied, and the latter allowed, only by doing so can the VBA MouseMove event when the "Shift" key is
 //pressed can be correctly triggered
-bool DenyMouseDrag(const ScriptEvent& evt, void const * )
+bool DenyMouseDrag(const ScriptEvent& evt, void* )
 {
     awt::MouseEvent aEvent;
     evt.Arguments[ 0 ] >>= aEvent;
@@ -807,18 +852,27 @@ bool DenyMouseDrag(const ScriptEvent& evt, void const * )
 // EventListener
 
 void
-EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
+EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet ) throw(RuntimeException, std::exception)
 {
+    OSL_TRACE("EventListener::firing_Impl( FAKE VBA_EVENTS )");
+    static const OUString vbaInterOp =
+        OUString("VBAInterop");
+
     // let default handlers deal with non vba stuff
-    if ( evt.ScriptType != "VBAInterop" )
+    if ( !evt.ScriptType.equals( vbaInterOp ) )
         return;
     lang::EventObject aEvent;
     evt.Arguments[ 0 ] >>= aEvent;
+    OSL_TRACE("evt.MethodName is  %s", OUStringToOString( evt.MethodName, RTL_TEXTENCODING_UTF8 ).getStr() );
+    OSL_TRACE("Argument[0] is  %s", OUStringToOString( comphelper::anyToString( evt.Arguments[0] ), RTL_TEXTENCODING_UTF8 ).getStr() );
+    OSL_TRACE("Getting Control");
     OUString sName = "UserForm";
+    OSL_TRACE("Getting Name");
 
     uno::Reference< awt::XDialog > xDlg( aEvent.Source, uno::UNO_QUERY );
     if ( !xDlg.is() )
     {
+        OSL_TRACE("Getting Control");
         // evt.Source is
         // a) Dialog
         // b) xShapeControl ( from api (sheet control) )
@@ -833,13 +887,16 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
             // api code creates just a control instance that is transferred
             // via aEvent.Arguments[ 0 ] that control though has no
             // info like name etc.
+            OSL_TRACE("Got control shape");
             uno::Reference< container::XNamed > xName( xCntrlShape->getControl(), uno::UNO_QUERY_THROW );
+            OSL_TRACE("Got xnamed ");
             sName = xName->getName();
         }
         else
         {
             // Userform control ( fired from the api or from event manager )
             uno::Reference< beans::XPropertySet > xProps;
+            OSL_TRACE("Getting properties");
             xProps.set( xControl->getModel(), uno::UNO_QUERY_THROW );
             xProps->getPropertyValue("Name") >>= sName;
         }
@@ -850,7 +907,8 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
     EventInfoHash::const_iterator it_end = infos.end();
     if ( eventInfo_it == it_end )
     {
-        SAL_WARN("scripting", "Bogus event for " << evt.ScriptType );
+        OSL_TRACE("Bogus event for %s",
+            OUStringToOString( evt.ScriptType, RTL_TEXTENCODING_UTF8 ).getStr() );
         return;
     }
 
@@ -891,6 +949,7 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
         sMacroLoc = sMacroLoc.concat(  "." );
         sMacroLoc = sMacroLoc.concat( sScriptCode ).concat( "." );
 
+        OSL_TRACE("sMacroLoc is %s", OUStringToOString( sMacroLoc, RTL_TEXTENCODING_UTF8 ).getStr() );
         for ( ; txInfo != txInfo_end; ++txInfo )
         {
             // If the document is closed, we should not execute macro.
@@ -904,6 +963,8 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
             // where ScriptCode is methodname_handlerextension
             OUString sToResolve = sMacroLoc.concat( sTemp );
 
+            OSL_TRACE("*** trying to invoke %s ",
+                OUStringToOString( sToResolve, RTL_TEXTENCODING_UTF8 ).getStr() );
             ooo::vba::MacroResolvedInfo aMacroResolvedInfo = ooo::vba::resolveVBAMacro( mpShell, sToResolve );
             if ( aMacroResolvedInfo.mbFound )
             {
@@ -929,6 +990,10 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
 
                     // create script url
                     OUString url = aMacroResolvedInfo.msResolvedMacro;
+
+                    OSL_TRACE("resolved script = %s",
+                        OUStringToOString( url,
+                            RTL_TEXTENCODING_UTF8 ).getStr() );
                     try
                     {
                         uno::Any aDummyCaller = uno::makeAny( OUString("Error") );
@@ -944,7 +1009,7 @@ EventListener::firing_Impl(const ScriptEvent& evt, Any* pRet )
                     }
                     catch ( uno::Exception& e )
                     {
-                        SAL_WARN("scripting", "event script raised " << e.Message );
+                        OSL_TRACE("event script raised %s", OUStringToOString( e.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
                     }
                }
            }
@@ -961,20 +1026,23 @@ public:
     VBAToOOEventDescGen();
 
     // XVBAToOOEventDescGen
-    virtual Sequence< ScriptEventDescriptor > SAL_CALL getEventDescriptions( const OUString& sCtrlServiceName, const OUString& sCodeName ) override;
-    virtual Reference< XScriptEventsSupplier > SAL_CALL getEventSupplier( const Reference< XInterface >& xControl,  const OUString& sCodeName ) override;
+    virtual Sequence< ScriptEventDescriptor > SAL_CALL getEventDescriptions( const OUString& sCtrlServiceName, const OUString& sCodeName ) throw (RuntimeException, std::exception) override;
+    virtual Reference< XScriptEventsSupplier > SAL_CALL getEventSupplier( const Reference< XInterface >& xControl,  const OUString& sCodeName ) throw (css::uno::RuntimeException, std::exception) override;
 
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString( "ooo.vba.VBAToOOEventDesc"  );
     }
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         const OUString strName( getImplementationName() );
         return Sequence< OUString >( &strName, 1 );
@@ -985,14 +1053,14 @@ public:
 VBAToOOEventDescGen::VBAToOOEventDescGen() {}
 
 Sequence< ScriptEventDescriptor > SAL_CALL
-VBAToOOEventDescGen::getEventDescriptions( const OUString& sCntrlServiceName, const OUString& sCodeName )
+VBAToOOEventDescGen::getEventDescriptions( const OUString& sCntrlServiceName, const OUString& sCodeName ) throw (RuntimeException, std::exception)
 {
     ScriptEventHelper evntHelper( sCntrlServiceName );
     return evntHelper.createEvents( sCodeName );
 }
 
 Reference< XScriptEventsSupplier > SAL_CALL
-VBAToOOEventDescGen::getEventSupplier( const Reference< XInterface >& xControl, const OUString& sCodeName  )
+VBAToOOEventDescGen::getEventSupplier( const Reference< XInterface >& xControl, const OUString& sCodeName  ) throw (css::uno::RuntimeException, std::exception)
 {
     ScriptEventHelper evntHelper( xControl );
     Reference< XScriptEventsSupplier > xSupplier =

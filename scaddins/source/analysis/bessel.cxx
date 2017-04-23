@@ -55,7 +55,7 @@ const double f_2_DIV_PI = 2.0 / f_PI;
     alpha_k=1 for k=N and alpha_k=0 otherwise
 */
 
-double BesselJ( double x, sal_Int32 N )
+double BesselJ( double x, sal_Int32 N ) throw (IllegalArgumentException, NoConvergenceException)
 
 {
     if( N < 0 )
@@ -167,7 +167,7 @@ double BesselJ( double x, sal_Int32 N )
     No asymptotic approximation used, see issue 43040.
  */
 
-double BesselI( double x, sal_Int32 n )
+double BesselI( double x, sal_Int32 n ) throw( IllegalArgumentException, NoConvergenceException )
 {
     const sal_Int32 nMaxIteration = 2000;
     const double fXHalf = x / 2.0;
@@ -222,9 +222,8 @@ double BesselI( double x, sal_Int32 n )
     return fResult;
 }
 
-/// @throws IllegalArgumentException
-/// @throws NoConvergenceException
-double Besselk0( double fNum )
+
+double Besselk0( double fNum ) throw( IllegalArgumentException, NoConvergenceException )
 {
     double  fRet;
 
@@ -249,9 +248,8 @@ double Besselk0( double fNum )
     return fRet;
 }
 
-/// @throws IllegalArgumentException
-/// @throws NoConvergenceException
-double Besselk1( double fNum )
+
+double Besselk1( double fNum ) throw( IllegalArgumentException, NoConvergenceException )
 {
     double  fRet;
 
@@ -278,7 +276,7 @@ double Besselk1( double fNum )
 }
 
 
-double BesselK( double fNum, sal_Int32 nOrder )
+double BesselK( double fNum, sal_Int32 nOrder ) throw( IllegalArgumentException, NoConvergenceException )
 {
     switch( nOrder )
     {
@@ -321,9 +319,7 @@ double BesselK( double fNum, sal_Int32 nOrder )
     http://www.openoffice.org/nonav/issues/showattachment.cgi/63609/Comments%20to%20the%20implementation%20of%20the%20Bessel%20functions.odt
 */
 
-/// @throws IllegalArgumentException
-/// @throws NoConvergenceException
-double Bessely0( double fX )
+double Bessely0( double fX ) throw( IllegalArgumentException, NoConvergenceException )
 {
     if (fX <= 0)
         throw IllegalArgumentException();
@@ -375,9 +371,7 @@ double Bessely0( double fX )
 
 // See #i31656# for a commented version of this implementation, attachment #desc6
 // http://www.openoffice.org/nonav/issues/showattachment.cgi/63609/Comments%20to%20the%20implementation%20of%20the%20Bessel%20functions.odt
-/// @throws IllegalArgumentException
-/// @throws NoConvergenceException
-double Bessely1( double fX )
+double Bessely1( double fX ) throw( IllegalArgumentException, NoConvergenceException )
 {
     if (fX <= 0)
         throw IllegalArgumentException();
@@ -429,7 +423,7 @@ double Bessely1( double fX )
         throw NoConvergenceException();
 }
 
-double BesselY( double fNum, sal_Int32 nOrder )
+double BesselY( double fNum, sal_Int32 nOrder ) throw( IllegalArgumentException, NoConvergenceException )
 {
     switch( nOrder )
     {

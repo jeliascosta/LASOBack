@@ -43,7 +43,7 @@ using namespace ::com::sun::star::util;
 using namespace ::com::sun::star::form::binding;
 
 
-css::uno::Sequence<OUString> SAL_CALL ORadioButtonControl::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL ORadioButtonControl::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OBoundControl::getSupportedServiceNames();
     aSupported.realloc(aSupported.getLength() + 2);
@@ -58,6 +58,27 @@ css::uno::Sequence<OUString> SAL_CALL ORadioButtonControl::getSupportedServiceNa
 ORadioButtonControl::ORadioButtonControl(const Reference<XComponentContext>& _rxFactory)
                       :OBoundControl(_rxFactory, VCL_CONTROL_RADIOBUTTON)
 {
+}
+
+
+void SAL_CALL ORadioButtonControl::createPeer(const Reference<css::awt::XToolkit>& _rxToolkit, const Reference<css::awt::XWindowPeer>& _rxParent) throw (RuntimeException, std::exception)
+{
+    OBoundControl::createPeer(_rxToolkit, _rxParent);
+
+    // switch off the auto-toggle, we do this ourself ....
+    // (formerly this switch-off was done in the toolkit - but the correct place is here ...)
+//  Reference< XVclWindowPeer >  xVclWindowPeer( getPeer(), UNO_QUERY );
+//  if (xVclWindowPeer.is())
+//      xVclWindowPeer->setProperty(OUString("AutoToggle"), ::cppu::bool2any(sal_False));
+    // new order: do _not_ switch off the auto toggle because:
+    // * today, it is not necessary anymore to handle the toggling ourself (everything works fine without it)
+    // * without auto toggle, the AccessibleEvents as fired by the radio buttons are
+    //     a. newly checked button: "unchecked"->"checked"
+    //     b. previously checked button: "checked"->"unchecked"
+    //   This is deadly for AT-tools, which then get the "unchecked" event _immediately_ after the "checked" event,
+    //   and only read the latter. This makes radio buttons pretty unusable in form documents.
+    //   So we switched AutoToggle _on_, again, because then VCL can handle the notifications, and will send
+    //   them in the proper order.
 }
 
 
@@ -89,7 +110,7 @@ IMPLEMENT_DEFAULT_CLONING( ORadioButtonModel )
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL ORadioButtonModel::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL ORadioButtonModel::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aSupported = OReferenceValueComponent::getSupportedServiceNames();
 
@@ -133,7 +154,7 @@ void ORadioButtonModel::SetSiblingPropsTo(const OUString& rPropName, const Any& 
         sal_Int32 nNumSiblings = xIndexAccess->getCount();
         for (sal_Int32 i=0; i<nNumSiblings; ++i)
         {
-            Reference<XPropertySet> xSiblingProperties(xIndexAccess->getByIndex(i), UNO_QUERY);
+            Reference<XPropertySet> xSiblingProperties(*static_cast<css::uno::Reference<css::uno::XInterface> const *>(xIndexAccess->getByIndex(i).getValue()), UNO_QUERY);
             if (!xSiblingProperties.is())
                 continue;
             if (xMyProps == xSiblingProperties)
@@ -156,7 +177,7 @@ void ORadioButtonModel::SetSiblingPropsTo(const OUString& rPropName, const Any& 
 }
 
 
-void ORadioButtonModel::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const Any& rValue)
+void ORadioButtonModel::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const Any& rValue) throw (Exception, std::exception)
 {
     OReferenceValueComponent::setFastPropertyValue_NoBroadcast( nHandle, rValue );
 
@@ -208,7 +229,7 @@ void ORadioButtonModel::setControlSource()
             static_cast<XWeak*>(this), css::uno::UNO_QUERY);
         for (sal_Int32 i=0; i<xIndexAccess->getCount(); ++i)
         {
-            Reference<XPropertySet> xSiblingProperties(xIndexAccess->getByIndex(i), UNO_QUERY);
+            Reference<XPropertySet> xSiblingProperties(*static_cast<css::uno::Reference<css::uno::XInterface> const *>(xIndexAccess->getByIndex(i).getValue()), UNO_QUERY);
             if (!xSiblingProperties.is())
                 continue;
 
@@ -248,13 +269,14 @@ void ORadioButtonModel::describeFixedProperties( Sequence< Property >& _rProps )
 }
 
 
-OUString SAL_CALL ORadioButtonModel::getServiceName()
+OUString SAL_CALL ORadioButtonModel::getServiceName() throw(RuntimeException, std::exception)
 {
     return OUString(FRM_COMPONENT_RADIOBUTTON);   // old (non-sun) name for compatibility !
 }
 
 
 void SAL_CALL ORadioButtonModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
+    throw(IOException, RuntimeException, std::exception)
 {
     OReferenceValueComponent::write(_rxOutStream);
 
@@ -271,7 +293,7 @@ void SAL_CALL ORadioButtonModel::write(const Reference<XObjectOutputStream>& _rx
 }
 
 
-void SAL_CALL ORadioButtonModel::read(const Reference<XObjectInputStream>& _rxInStream)
+void SAL_CALL ORadioButtonModel::read(const Reference<XObjectInputStream>& _rxInStream) throw(IOException, RuntimeException, std::exception)
 {
     OReferenceValueComponent::read(_rxInStream);
     ::osl::MutexGuard aGuard(m_aMutex);
@@ -314,7 +336,7 @@ void SAL_CALL ORadioButtonModel::read(const Reference<XObjectInputStream>& _rxIn
 }
 
 
-void ORadioButtonModel::_propertyChanged(const PropertyChangeEvent& _rEvent)
+void ORadioButtonModel::_propertyChanged(const PropertyChangeEvent& _rEvent) throw(RuntimeException)
 {
     if ( _rEvent.PropertyName == PROPERTY_STATE )
     {

@@ -32,7 +32,6 @@
 #include <svtools/svtresid.hxx>
 #include <svtools/ctrltool.hxx>
 #include <o3tl/typed_flags_set.hxx>
-#include <comphelper/lok.hxx>
 
 // Standard Fontgroessen fuer scalierbare Fonts
 const sal_IntPtr FontList::aStdSizeAry[] =
@@ -238,7 +237,8 @@ ImplFontListNameInfo* FontList::ImplFindByName(const OUString& rStr) const
     return ImplFind( aSearchName, nullptr );
 }
 
-void FontList::ImplInsertFonts(OutputDevice* pDevice, bool bInsertData)
+void FontList::ImplInsertFonts( OutputDevice* pDevice, bool bAll,
+                                bool bInsertData )
 {
     rtl_TextEncoding eSystemEncoding = osl_getThreadTextEncoding();
 
@@ -249,16 +249,15 @@ void FontList::ImplInsertFonts(OutputDevice* pDevice, bool bInsertData)
         nType = FontListFontNameType::PRINTER;
 
     // inquire all fonts from the device
-    int n = pDevice->GetDevFontCount();
-    if (n == 0 && comphelper::LibreOfficeKit::isActive())
-    {
-        pDevice->RefreshFontData(true);
-        n = pDevice->GetDevFontCount();
-    }
-
+    int const n = pDevice->GetDevFontCount();
     for (int i = 0; i < n; ++i)
     {
         FontMetric aFontMetric = pDevice->GetDevFont( i );
+
+        // ignore raster-fonts if they are not to be displayed
+        if ( !bAll && (aFontMetric.GetType() == TYPE_RASTER) )
+            continue;
+
         OUString aSearchName(aFontMetric.GetFamilyName());
         ImplFontListNameInfo*   pData;
         sal_uLong                   nIndex;
@@ -332,7 +331,7 @@ void FontList::ImplInsertFonts(OutputDevice* pDevice, bool bInsertData)
     }
 }
 
-FontList::FontList(OutputDevice* pDevice, OutputDevice* pDevice2)
+FontList::FontList( OutputDevice* pDevice, OutputDevice* pDevice2, bool bAll )
 {
     // initialise variables
     mpDev = pDevice;
@@ -349,7 +348,7 @@ FontList::FontList(OutputDevice* pDevice, OutputDevice* pDevice2)
     maBlack         = SVT_RESSTR(STR_SVT_STYLE_BLACK);
     maBlackItalic   = SVT_RESSTR(STR_SVT_STYLE_BLACK_ITALIC);
 
-    ImplInsertFonts(pDevice, true);
+    ImplInsertFonts( pDevice, bAll, true );
 
     // if required compare to the screen fonts
     // in order to map the duplicates to Equal
@@ -362,7 +361,7 @@ FontList::FontList(OutputDevice* pDevice, OutputDevice* pDevice2)
 
     if ( pDevice2 &&
          (pDevice2->GetOutDevType() != pDevice->GetOutDevType()) )
-        ImplInsertFonts(pDevice2, !bCompareWindow);
+        ImplInsertFonts( pDevice2, bAll, !bCompareWindow );
 }
 
 FontList::~FontList()
@@ -386,7 +385,8 @@ FontList::~FontList()
 
 FontList* FontList::Clone() const
 {
-    FontList* pReturn = new FontList(mpDev, mpDev2);
+    FontList* pReturn = new FontList(
+            mpDev, mpDev2, sal::static_int_cast<int>(GetFontNameCount()) == mpDev->GetDevFontCount());
     return pReturn;
 }
 
@@ -441,7 +441,8 @@ OUString FontList::GetStyleName(const FontMetric& rInfo) const
     else
     {
         // Translate StyleName to localized name
-        OUString aCompareStyleName = aStyleName.toAsciiLowerCase().replaceAll(" ", "");
+        OUString aCompareStyleName = aStyleName.toAsciiLowerCase();
+        aCompareStyleName = comphelper::string::remove(aCompareStyleName, ' ');
         if (aCompareStyleName == "bold")
             aStyleName = maBold;
         else if (aCompareStyleName == "bolditalic")
@@ -530,6 +531,14 @@ OUString FontList::GetFontMapText( const FontMetric& rInfo ) const
         if (maMapPrinterOnly.isEmpty())
             const_cast<FontList*>(this)->maMapPrinterOnly = SVT_RESSTR(STR_SVT_FONTMAP_PRINTERONLY);
         return maMapPrinterOnly;
+    }
+    // Only Screen-Font?
+    else if ( nType == FontListFontNameType::SCREEN
+            && rInfo.GetType() == TYPE_RASTER )
+    {
+        if (maMapScreenOnly.isEmpty())
+            const_cast<FontList*>(this)->maMapScreenOnly = SVT_RESSTR(STR_SVT_FONTMAP_SCREENONLY);
+        return maMapScreenOnly;
     }
     else
     {
@@ -739,7 +748,7 @@ const sal_IntPtr* FontList::GetSizeAry( const FontMetric& rInfo ) const
         return aStdSizeAry;
 
     MapMode aOldMapMode = pDevice->GetMapMode();
-    MapMode aMap( MapUnit::Map10thInch, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
+    MapMode aMap( MAP_10TH_INCH, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
     pDevice->SetMapMode( aMap );
 
     int nRealCount = 0;

@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <com/sun/star/container/XIndexAccess.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
-#include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <localedata.hxx>
 #include <i18nlangtag/mslangid.hxx>
@@ -385,7 +382,7 @@ LocaleDataImpl::~LocaleDataImpl()
 
 
 LocaleDataItem SAL_CALL
-LocaleDataImpl::getLocaleItem( const Locale& rLocale )
+LocaleDataImpl::getLocaleItem( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getLocaleItem" ));
 
@@ -522,7 +519,7 @@ oslGenericFunction SAL_CALL lcl_LookupTableHelper::getFunctionSymbolByName(
             aBuf.append( SAL_DLLPREFIX ).appendAscii(i.pLib).append( SAL_DLLEXTENSION );
 #else
             aBuf.ensureCapacity(strlen(i.pLib) + 4);    // mostly "*.dll"
-            aBuf.appendAscii(i.pLib).append( SAL_DLLEXTENSION );
+            aBuf.appendAscii(i.pLib).appendAscii( SAL_DLLEXTENSION );
 #endif
             osl::Module *module = new osl::Module();
             if ( module->loadRelative(&thisModule, aBuf.makeStringAndClear()) )
@@ -603,6 +600,7 @@ oslGenericFunction SAL_CALL lcl_LookupTableHelper::getFunctionSymbolByName(
 
 Sequence< CalendarItem2 > &LocaleDataImpl::getCalendarItemByName(const OUString& name,
         const Locale& rLocale, const Sequence< Calendar2 >& calendarsSeq, sal_Int16 item)
+        throw(RuntimeException)
 {
     if (!ref_name.equals(name)) {
         OUString aLocStr, id;
@@ -631,7 +629,8 @@ Sequence< CalendarItem2 > &LocaleDataImpl::getCalendarItemByName(const OUString&
         }
         // Referred locale not found, return name for en_US locale.
         if (index == cals.getLength()) {
-            cals = getAllCalendars2( Locale("en", "US", OUString()) );
+            cals = getAllCalendars2(
+                    Locale(OUString("en"), OUString("US"), OUString()));
             if (cals.getLength() > 0)
                 ref_cal = cals[0];
             else
@@ -657,10 +656,12 @@ Sequence< CalendarItem2 > &LocaleDataImpl::getCalendarItemByName(const OUString&
     }
 }
 
+
 Sequence< CalendarItem2 > LocaleDataImpl::getCalendarItems(
         sal_Unicode const * const * const allCalendars, sal_Int16 & rnOffset,
         const sal_Int16 nWhichItem, const sal_Int16 nCalendar,
         const Locale & rLocale, const Sequence< Calendar2 > & calendarsSeq )
+        throw(RuntimeException)
 {
     Sequence< CalendarItem2 > aItems;
     if ( OUString( allCalendars[rnOffset] ) == "ref" )
@@ -704,8 +705,9 @@ Sequence< CalendarItem2 > LocaleDataImpl::getCalendarItems(
     return aItems;
 }
 
+
 Sequence< Calendar2 > SAL_CALL
-LocaleDataImpl::getAllCalendars2( const Locale& rLocale )
+LocaleDataImpl::getAllCalendars2( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
 
     sal_Unicode const * const * allCalendars = nullptr;
@@ -751,7 +753,7 @@ LocaleDataImpl::getAllCalendars2( const Locale& rLocale )
 
 
 Sequence< Calendar > SAL_CALL
-LocaleDataImpl::getAllCalendars( const Locale& rLocale )
+LocaleDataImpl::getAllCalendars( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     const Sequence< Calendar2 > aCal2( getAllCalendars2( rLocale));
     sal_Int32 nLen = aCal2.getLength();
@@ -767,7 +769,7 @@ LocaleDataImpl::getAllCalendars( const Locale& rLocale )
 
 
 Sequence< Currency2 > SAL_CALL
-LocaleDataImpl::getAllCurrencies2( const Locale& rLocale )
+LocaleDataImpl::getAllCurrencies2( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getAllCurrencies" ));
 
@@ -799,7 +801,7 @@ LocaleDataImpl::getAllCurrencies2( const Locale& rLocale )
 
 
 Sequence< Currency > SAL_CALL
-LocaleDataImpl::getAllCurrencies( const Locale& rLocale )
+LocaleDataImpl::getAllCurrencies( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     Sequence< Currency2 > aCur2( getAllCurrencies2( rLocale));
     sal_Int32 nLen = aCur2.getLength();
@@ -815,7 +817,7 @@ LocaleDataImpl::getAllCurrencies( const Locale& rLocale )
 
 
 Sequence< FormatElement > SAL_CALL
-LocaleDataImpl::getAllFormats( const Locale& rLocale )
+LocaleDataImpl::getAllFormats( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     const int SECTIONS = 2;
     struct FormatSection
@@ -866,7 +868,7 @@ LocaleDataImpl::getAllFormats( const Locale& rLocale )
 
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getDateAcceptancePatterns( const Locale& rLocale )
+LocaleDataImpl::getDateAcceptancePatterns( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getDateAcceptancePatterns" ));
 
@@ -895,7 +897,7 @@ LocaleDataImpl::getDateAcceptancePatterns( const Locale& rLocale )
 #define COLLATOR_ELEMENTS       3
 
 OUString SAL_CALL
-LocaleDataImpl::getCollatorRuleByAlgorithm( const Locale& rLocale, const OUString& algorithm )
+LocaleDataImpl::getCollatorRuleByAlgorithm( const Locale& rLocale, const OUString& algorithm ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getCollatorImplementation" ));
     if ( func ) {
@@ -910,7 +912,7 @@ LocaleDataImpl::getCollatorRuleByAlgorithm( const Locale& rLocale, const OUStrin
 
 
 Sequence< Implementation > SAL_CALL
-LocaleDataImpl::getCollatorImplementations( const Locale& rLocale )
+LocaleDataImpl::getCollatorImplementations( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getCollatorImplementation" ));
 
@@ -932,7 +934,7 @@ LocaleDataImpl::getCollatorImplementations( const Locale& rLocale )
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getCollationOptions( const Locale& rLocale )
+LocaleDataImpl::getCollationOptions( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getCollationOptions" ));
 
@@ -952,7 +954,7 @@ LocaleDataImpl::getCollationOptions( const Locale& rLocale )
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getSearchOptions( const Locale& rLocale )
+LocaleDataImpl::getSearchOptions( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getSearchOptions" ));
 
@@ -982,7 +984,7 @@ LocaleDataImpl::getIndexArray(const Locale& rLocale, sal_Int16& indexCount)
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getIndexAlgorithm( const Locale& rLocale )
+LocaleDataImpl::getIndexAlgorithm( const Locale& rLocale ) throw(RuntimeException)
 {
     sal_Int16 indexCount = 0;
     sal_Unicode **indexArray = getIndexArray(rLocale, indexCount);
@@ -1001,7 +1003,7 @@ LocaleDataImpl::getIndexAlgorithm( const Locale& rLocale )
 }
 
 OUString SAL_CALL
-LocaleDataImpl::getDefaultIndexAlgorithm( const Locale& rLocale )
+LocaleDataImpl::getDefaultIndexAlgorithm( const Locale& rLocale ) throw(RuntimeException)
 {
     sal_Int16 indexCount = 0;
     sal_Unicode **indexArray = getIndexArray(rLocale, indexCount);
@@ -1016,7 +1018,7 @@ LocaleDataImpl::getDefaultIndexAlgorithm( const Locale& rLocale )
 }
 
 bool SAL_CALL
-LocaleDataImpl::hasPhonetic( const Locale& rLocale )
+LocaleDataImpl::hasPhonetic( const Locale& rLocale ) throw(RuntimeException)
 {
     sal_Int16 indexCount = 0;
     sal_Unicode **indexArray = getIndexArray(rLocale, indexCount);
@@ -1045,28 +1047,28 @@ LocaleDataImpl::getIndexArrayForAlgorithm(const Locale& rLocale, const OUString&
 }
 
 bool SAL_CALL
-LocaleDataImpl::isPhonetic( const Locale& rLocale, const OUString& algorithm )
+LocaleDataImpl::isPhonetic( const Locale& rLocale, const OUString& algorithm ) throw(RuntimeException)
 {
     sal_Unicode **indexArray = getIndexArrayForAlgorithm(rLocale, algorithm);
     return indexArray && indexArray[4][0];
 }
 
 OUString SAL_CALL
-LocaleDataImpl::getIndexKeysByAlgorithm( const Locale& rLocale, const OUString& algorithm )
+LocaleDataImpl::getIndexKeysByAlgorithm( const Locale& rLocale, const OUString& algorithm ) throw(RuntimeException)
 {
     sal_Unicode **indexArray = getIndexArrayForAlgorithm(rLocale, algorithm);
     return indexArray ? "0-9"+OUString(indexArray[2]) : OUString();
 }
 
 OUString SAL_CALL
-LocaleDataImpl::getIndexModuleByAlgorithm( const Locale& rLocale, const OUString& algorithm )
+LocaleDataImpl::getIndexModuleByAlgorithm( const Locale& rLocale, const OUString& algorithm ) throw(RuntimeException)
 {
     sal_Unicode **indexArray = getIndexArrayForAlgorithm(rLocale, algorithm);
     return indexArray ? OUString(indexArray[1]) : OUString();
 }
 
 Sequence< UnicodeScript > SAL_CALL
-LocaleDataImpl::getUnicodeScripts( const Locale& rLocale )
+LocaleDataImpl::getUnicodeScripts( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getUnicodeScripts" ));
 
@@ -1086,7 +1088,7 @@ LocaleDataImpl::getUnicodeScripts( const Locale& rLocale )
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getFollowPageWords( const Locale& rLocale )
+LocaleDataImpl::getFollowPageWords( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getFollowPageWords" ));
 
@@ -1106,7 +1108,7 @@ LocaleDataImpl::getFollowPageWords( const Locale& rLocale )
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getTransliterations( const Locale& rLocale )
+LocaleDataImpl::getTransliterations( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getTransliterations" ));
 
@@ -1131,7 +1133,7 @@ LocaleDataImpl::getTransliterations( const Locale& rLocale )
 
 
 LanguageCountryInfo SAL_CALL
-LocaleDataImpl::getLanguageCountryInfo( const Locale& rLocale )
+LocaleDataImpl::getLanguageCountryInfo( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getLCInfo" ));
 
@@ -1154,7 +1156,7 @@ LocaleDataImpl::getLanguageCountryInfo( const Locale& rLocale )
 
 
 ForbiddenCharacters SAL_CALL
-LocaleDataImpl::getForbiddenCharacters( const Locale& rLocale )
+LocaleDataImpl::getForbiddenCharacters( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getForbiddenCharacters" ));
 
@@ -1171,7 +1173,7 @@ LocaleDataImpl::getForbiddenCharacters( const Locale& rLocale )
 }
 
 OUString SAL_CALL
-LocaleDataImpl::getHangingCharacters( const Locale& rLocale )
+LocaleDataImpl::getHangingCharacters( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getForbiddenCharacters" ));
 
@@ -1185,7 +1187,7 @@ LocaleDataImpl::getHangingCharacters( const Locale& rLocale )
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getBreakIteratorRules( const Locale& rLocale  )
+LocaleDataImpl::getBreakIteratorRules( const Locale& rLocale  ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getBreakIteratorRules" ));
 
@@ -1207,7 +1209,7 @@ LocaleDataImpl::getBreakIteratorRules( const Locale& rLocale  )
 
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getReservedWord( const Locale& rLocale  )
+LocaleDataImpl::getReservedWord( const Locale& rLocale  ) throw(RuntimeException, std::exception)
 {
     MyFunc_Type func = reinterpret_cast<MyFunc_Type>(getFunctionSymbol( rLocale, "getReservedWords" ));
 
@@ -1229,7 +1231,7 @@ LocaleDataImpl::getReservedWord( const Locale& rLocale  )
 
 
 Sequence< Sequence<beans::PropertyValue> > SAL_CALL
-LocaleDataImpl::getContinuousNumberingLevels( const lang::Locale& rLocale )
+LocaleDataImpl::getContinuousNumberingLevels( const lang::Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     // load symbol
     MyFunc_Type2 func = reinterpret_cast<MyFunc_Type2>(getFunctionSymbol( rLocale, "getContinuousNumberingLevels" ));
@@ -1298,6 +1300,9 @@ LocaleDataImpl::getContinuousNumberingLevels( const lang::Locale& rLocale )
 
 // OutlineNumbering helper class
 
+#include <com/sun/star/container/XIndexAccess.hpp>
+#include <cppuhelper/implbase.hxx>
+
 namespace com{ namespace sun{ namespace star{ namespace lang {
     struct  Locale;
 }}}}
@@ -1321,22 +1326,24 @@ class OutlineNumbering : public cppu::WeakImplHelper < container::XIndexAccess >
 {
     // OutlineNumbering helper class
 
-    std::unique_ptr<const OutlineNumberingLevel_Impl[]> m_pOutlineLevels;
+    const OutlineNumberingLevel_Impl* m_pOutlineLevels;
     sal_Int16                         m_nCount;
 public:
     OutlineNumbering(const OutlineNumberingLevel_Impl* pOutlineLevels, int nLevels);
+    virtual ~OutlineNumbering();
 
     //XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount(  ) override;
-    virtual Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount(  ) throw(RuntimeException, std::exception) override;
+    virtual Any SAL_CALL getByIndex( sal_Int32 Index )
+        throw(IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception) override;
 
     //XElementAccess
-    virtual Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual Type SAL_CALL getElementType(  ) throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) throw(RuntimeException, std::exception) override;
 };
 
 Sequence< Reference<container::XIndexAccess> > SAL_CALL
-LocaleDataImpl::getOutlineNumberingLevels( const lang::Locale& rLocale )
+LocaleDataImpl::getOutlineNumberingLevels( const lang::Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     // load symbol
     MyFunc_Type3 func = reinterpret_cast<MyFunc_Type3>(getFunctionSymbol( rLocale, "getOutlineNumberingLevels" ));
@@ -1408,6 +1415,7 @@ LocaleDataImpl::getOutlineNumberingLevels( const lang::Locale& rLocale )
 // helper functions
 
 oslGenericFunction SAL_CALL LocaleDataImpl::getFunctionSymbol( const Locale& rLocale, const sal_Char* pFunction )
+        throw(RuntimeException, std::exception)
 {
     lcl_LookupTableHelper & rLookupTable = lcl_LookupTableStatic::get();
 
@@ -1455,7 +1463,7 @@ oslGenericFunction SAL_CALL LocaleDataImpl::getFunctionSymbol( const Locale& rLo
 }
 
 Sequence< Locale > SAL_CALL
-LocaleDataImpl::getAllInstalledLocaleNames()
+LocaleDataImpl::getAllInstalledLocaleNames() throw(RuntimeException, std::exception)
 {
     Sequence< lang::Locale > seq( nbOfLocales );
     sal_Int16 nInstalled = 0;
@@ -1493,16 +1501,22 @@ OutlineNumbering::OutlineNumbering(const OutlineNumberingLevel_Impl* pOutlnLevel
 {
 }
 
-sal_Int32 OutlineNumbering::getCount(  )
+OutlineNumbering::~OutlineNumbering()
+{
+    delete [] m_pOutlineLevels;
+}
+
+sal_Int32 OutlineNumbering::getCount(  ) throw(RuntimeException, std::exception)
 {
     return m_nCount;
 }
 
 Any OutlineNumbering::getByIndex( sal_Int32 nIndex )
+        throw(IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
 {
     if(nIndex < 0 || nIndex >= m_nCount)
         throw IndexOutOfBoundsException();
-    const OutlineNumberingLevel_Impl* pTemp = m_pOutlineLevels.get();
+    const OutlineNumberingLevel_Impl* pTemp = m_pOutlineLevels;
     pTemp += nIndex;
     Any aRet;
 
@@ -1536,29 +1550,30 @@ Any OutlineNumbering::getByIndex( sal_Int32 nIndex )
     return aRet;
 }
 
-Type OutlineNumbering::getElementType(  )
+Type OutlineNumbering::getElementType(  ) throw(RuntimeException, std::exception)
 {
     return cppu::UnoType<Sequence<PropertyValue>>::get();
 }
 
-sal_Bool OutlineNumbering::hasElements(  )
+sal_Bool OutlineNumbering::hasElements(  ) throw(RuntimeException, std::exception)
 {
     return m_nCount > 0;
 }
 
 OUString SAL_CALL
-LocaleDataImpl::getImplementationName()
+LocaleDataImpl::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.i18n.LocaleDataImpl");
 }
 
 sal_Bool SAL_CALL LocaleDataImpl::supportsService(const OUString& rServiceName)
+        throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-LocaleDataImpl::getSupportedServiceNames()
+LocaleDataImpl::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.i18n.LocaleData" };
     return aRet;

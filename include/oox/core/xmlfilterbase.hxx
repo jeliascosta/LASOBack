@@ -83,11 +83,11 @@ struct XmlFilterBaseImpl;
 class OOX_DLLPUBLIC XmlFilterBase : public FilterBase
 {
 public:
-    /// @throws css::uno::RuntimeException
     explicit            XmlFilterBase(
-                            const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+                            const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+                            throw( css::uno::RuntimeException );
 
-    virtual             ~XmlFilterBase() override;
+    virtual             ~XmlFilterBase();
 
     /** Has to be implemented by each filter, returns the current theme. */
     virtual const ::oox::drawingml::Theme*
@@ -224,12 +224,14 @@ public:
     /** Write the document properties into into the current OPC package.
 
         @param xProperties  The document properties to export.
+
+        @return *this
      */
-    void exportDocumentProperties( const css::uno::Reference< css::document::XDocumentProperties >& xProperties );
+    XmlFilterBase& exportDocumentProperties( const css::uno::Reference< css::document::XDocumentProperties >& xProperties );
 
     void importDocumentProperties();
 
-    static FastParser* createParser();
+    FastParser* createParser() const;
 
     bool isMSO2007Document() const;
 
@@ -239,8 +241,6 @@ public:
 
     void checkDocumentProperties(
             const css::uno::Reference<css::document::XDocumentProperties>& xDocProps);
-
-    OUString getNamespaceURL(sal_Int32 nNSID) const;
 
 protected:
     virtual css::uno::Reference< css::io::XInputStream >

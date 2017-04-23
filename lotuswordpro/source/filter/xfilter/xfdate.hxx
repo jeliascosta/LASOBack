@@ -71,12 +71,15 @@ class XFDate : public XFContent
 public:
     XFDate();
 
-    virtual ~XFDate() override;
+    virtual ~XFDate();
 
     virtual void    ToXml(IXFStream *pStrm) override;
 
 private:
+    bool      m_bFixed;
     OUString  m_strText;
+    OUString  m_strDate;
+    bool      m_bValued;
 };
 
 class XFDateStart : public XFDate

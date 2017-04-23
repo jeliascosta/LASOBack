@@ -17,13 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <extended/accessibletabbarpagelist.hxx>
+#include <accessibility/extended/accessibletabbarpagelist.hxx>
 #include <svtools/tabbar.hxx>
-#include <extended/accessibletabbarpage.hxx>
+#include <accessibility/extended/accessibletabbarpage.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/supportsservice.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
@@ -179,7 +178,7 @@ namespace accessibility
     {
          switch ( rVclWindowEvent.GetId() )
          {
-            case VclEventId::WindowEnabled:
+            case VCLEVENT_WINDOW_ENABLED:
             {
                Any aNewValue;
                 aNewValue <<= AccessibleStateType::SENSITIVE;
@@ -188,7 +187,7 @@ namespace accessibility
                 NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, Any(), aNewValue );
             }
             break;
-            case VclEventId::WindowDisabled:
+            case VCLEVENT_WINDOW_DISABLED:
             {
                Any aOldValue;
                 aOldValue <<= AccessibleStateType::ENABLED;
@@ -197,7 +196,7 @@ namespace accessibility
                 NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, aOldValue, Any() );
             }
             break;
-            case VclEventId::WindowShow:
+            case VCLEVENT_WINDOW_SHOW:
             {
                 Any aOldValue, aNewValue;
                 aNewValue <<= AccessibleStateType::SHOWING;
@@ -205,7 +204,7 @@ namespace accessibility
                 UpdateShowing( true );
             }
             break;
-            case VclEventId::WindowHide:
+            case VCLEVENT_WINDOW_HIDE:
             {
                 Any aOldValue, aNewValue;
                 aOldValue <<= AccessibleStateType::SHOWING;
@@ -213,12 +212,12 @@ namespace accessibility
                 UpdateShowing( false );
             }
             break;
-            case VclEventId::TabbarPageSelected:
+            case VCLEVENT_TABBAR_PAGESELECTED:
             {
                 // do nothing
             }
             break;
-            case VclEventId::TabbarPageActivated:
+            case VCLEVENT_TABBAR_PAGEACTIVATED:
             {
                 if ( m_pTabBar )
                 {
@@ -228,7 +227,7 @@ namespace accessibility
                 }
             }
             break;
-            case VclEventId::TabbarPageDeactivated:
+            case VCLEVENT_TABBAR_PAGEDEACTIVATED:
             {
                 if ( m_pTabBar )
                 {
@@ -238,7 +237,7 @@ namespace accessibility
                 }
             }
             break;
-            case VclEventId::TabbarPageInserted:
+            case VCLEVENT_TABBAR_PAGEINSERTED:
             {
                 if ( m_pTabBar )
                 {
@@ -248,7 +247,7 @@ namespace accessibility
                 }
             }
             break;
-            case VclEventId::TabbarPageRemoved:
+            case VCLEVENT_TABBAR_PAGEREMOVED:
             {
                 if ( m_pTabBar )
                 {
@@ -278,14 +277,14 @@ namespace accessibility
                 }
             }
             break;
-            case VclEventId::TabbarPageMoved:
+            case VCLEVENT_TABBAR_PAGEMOVED:
             {
                 Pair* pPair = static_cast<Pair*>(rVclWindowEvent.GetData());
                 if ( pPair )
                     MoveChild( pPair->A(), pPair->B() );
             }
             break;
-            case VclEventId::TabbarPageTextChanged:
+            case VCLEVENT_TABBAR_PAGETEXTCHANGED:
             {
                 sal_uInt16 nPageId = (sal_uInt16)reinterpret_cast<sal_IntPtr>(rVclWindowEvent.GetData());
                 sal_uInt16 nPagePos = m_pTabBar->GetPagePos( nPageId );
@@ -322,7 +321,7 @@ namespace accessibility
     // OCommonAccessibleComponent
 
 
-    awt::Rectangle AccessibleTabBarPageList::implGetBounds()
+    awt::Rectangle AccessibleTabBarPageList::implGetBounds() throw (RuntimeException)
     {
         awt::Rectangle aBounds;
         if ( m_pTabBar )
@@ -365,28 +364,29 @@ namespace accessibility
     // XServiceInfo
 
 
-    OUString AccessibleTabBarPageList::getImplementationName()
+    OUString AccessibleTabBarPageList::getImplementationName() throw (RuntimeException, std::exception)
     {
         return OUString( "com.sun.star.comp.svtools.AccessibleTabBarPageList" );
     }
 
 
-    sal_Bool AccessibleTabBarPageList::supportsService( const OUString& rServiceName )
+    sal_Bool AccessibleTabBarPageList::supportsService( const OUString& rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, rServiceName);
     }
 
 
-    Sequence< OUString > AccessibleTabBarPageList::getSupportedServiceNames()
+    Sequence< OUString > AccessibleTabBarPageList::getSupportedServiceNames() throw (RuntimeException, std::exception)
     {
-        return { "com.sun.star.awt.AccessibleTabBarPageList" };
+        Sequence< OUString > aNames { "com.sun.star.awt.AccessibleTabBarPageList" };
+        return aNames;
     }
 
 
     // XAccessible
 
 
-    Reference< XAccessibleContext > AccessibleTabBarPageList::getAccessibleContext(  )
+    Reference< XAccessibleContext > AccessibleTabBarPageList::getAccessibleContext(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -397,7 +397,7 @@ namespace accessibility
     // XAccessibleContext
 
 
-    sal_Int32 AccessibleTabBarPageList::getAccessibleChildCount()
+    sal_Int32 AccessibleTabBarPageList::getAccessibleChildCount() throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -405,7 +405,7 @@ namespace accessibility
     }
 
 
-    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleChild( sal_Int32 i )
+    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -430,7 +430,7 @@ namespace accessibility
     }
 
 
-    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleParent(  )
+    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleParent(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -442,7 +442,7 @@ namespace accessibility
     }
 
 
-    sal_Int32 AccessibleTabBarPageList::getAccessibleIndexInParent(  )
+    sal_Int32 AccessibleTabBarPageList::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -450,7 +450,7 @@ namespace accessibility
     }
 
 
-    sal_Int16 AccessibleTabBarPageList::getAccessibleRole(  )
+    sal_Int16 AccessibleTabBarPageList::getAccessibleRole(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -458,7 +458,7 @@ namespace accessibility
     }
 
 
-    OUString AccessibleTabBarPageList::getAccessibleDescription( )
+    OUString AccessibleTabBarPageList::getAccessibleDescription( ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -466,7 +466,7 @@ namespace accessibility
     }
 
 
-    OUString AccessibleTabBarPageList::getAccessibleName(  )
+    OUString AccessibleTabBarPageList::getAccessibleName(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -474,7 +474,7 @@ namespace accessibility
     }
 
 
-    Reference< XAccessibleRelationSet > AccessibleTabBarPageList::getAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > AccessibleTabBarPageList::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -484,7 +484,7 @@ namespace accessibility
     }
 
 
-    Reference< XAccessibleStateSet > AccessibleTabBarPageList::getAccessibleStateSet(  )
+    Reference< XAccessibleStateSet > AccessibleTabBarPageList::getAccessibleStateSet(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -504,7 +504,7 @@ namespace accessibility
     }
 
 
-    Locale AccessibleTabBarPageList::getLocale(  )
+    Locale AccessibleTabBarPageList::getLocale(  ) throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -515,7 +515,7 @@ namespace accessibility
     // XAccessibleComponent
 
 
-    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleAtPoint( const awt::Point& rPoint )
+    Reference< XAccessible > AccessibleTabBarPageList::getAccessibleAtPoint( const awt::Point& rPoint ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -528,7 +528,7 @@ namespace accessibility
                 Reference< XAccessibleComponent > xComp( xAcc->getAccessibleContext(), UNO_QUERY );
                 if ( xComp.is() )
                 {
-                    tools::Rectangle aRect = VCLRectangle( xComp->getBounds() );
+                    Rectangle aRect = VCLRectangle( xComp->getBounds() );
                     Point aPos = VCLPoint( rPoint );
                     if ( aRect.IsInside( aPos ) )
                     {
@@ -543,13 +543,13 @@ namespace accessibility
     }
 
 
-    void AccessibleTabBarPageList::grabFocus(  )
+    void AccessibleTabBarPageList::grabFocus(  ) throw (RuntimeException, std::exception)
     {
         // no focus
     }
 
 
-    sal_Int32 AccessibleTabBarPageList::getForeground(  )
+    sal_Int32 AccessibleTabBarPageList::getForeground(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -566,7 +566,7 @@ namespace accessibility
     }
 
 
-    sal_Int32 AccessibleTabBarPageList::getBackground(  )
+    sal_Int32 AccessibleTabBarPageList::getBackground(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -586,7 +586,7 @@ namespace accessibility
     // XAccessibleExtendedComponent
 
 
-    Reference< awt::XFont > AccessibleTabBarPageList::getFont(  )
+    Reference< awt::XFont > AccessibleTabBarPageList::getFont(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -603,7 +603,7 @@ namespace accessibility
     }
 
 
-    OUString AccessibleTabBarPageList::getTitledBorderText(  )
+    OUString AccessibleTabBarPageList::getTitledBorderText(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -611,7 +611,7 @@ namespace accessibility
     }
 
 
-    OUString AccessibleTabBarPageList::getToolTipText(  )
+    OUString AccessibleTabBarPageList::getToolTipText(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -622,7 +622,7 @@ namespace accessibility
     // XAccessibleSelection
 
 
-    void AccessibleTabBarPageList::selectAccessibleChild( sal_Int32 nChildIndex )
+    void AccessibleTabBarPageList::selectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -639,7 +639,7 @@ namespace accessibility
     }
 
 
-    sal_Bool AccessibleTabBarPageList::isAccessibleChildSelected( sal_Int32 nChildIndex )
+    sal_Bool AccessibleTabBarPageList::isAccessibleChildSelected( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -654,13 +654,13 @@ namespace accessibility
     }
 
 
-    void AccessibleTabBarPageList::clearAccessibleSelection(  )
+    void AccessibleTabBarPageList::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)
     {
         // This method makes no sense in a TabBar, and so does nothing.
     }
 
 
-    void AccessibleTabBarPageList::selectAllAccessibleChildren(  )
+    void AccessibleTabBarPageList::selectAllAccessibleChildren(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -668,7 +668,7 @@ namespace accessibility
     }
 
 
-    sal_Int32 AccessibleTabBarPageList::getSelectedAccessibleChildCount(  )
+    sal_Int32 AccessibleTabBarPageList::getSelectedAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -676,7 +676,7 @@ namespace accessibility
     }
 
 
-    Reference< XAccessible > AccessibleTabBarPageList::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
+    Reference< XAccessible > AccessibleTabBarPageList::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 
@@ -698,7 +698,7 @@ namespace accessibility
     }
 
 
-    void AccessibleTabBarPageList::deselectAccessibleChild( sal_Int32 nChildIndex )
+    void AccessibleTabBarPageList::deselectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         OExternalLockGuard aGuard( this );
 

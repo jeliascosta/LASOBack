@@ -43,13 +43,13 @@ class DropDownFieldDialog : public SvxStandardDialog
     SwWrtShell          &rSh;
     SwDropDownField*    pDropField;
 
-    DECL_LINK(ButtonHdl, Button*, void);
+    DECL_LINK_TYPED(ButtonHdl, Button*, void);
     virtual void    Apply() override;
-    DECL_LINK(DoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(DoubleClickHdl, ListBox&, void);
 public:
     DropDownFieldDialog(   vcl::Window *pParent, SwWrtShell &rSh,
-                                SwField* pField, bool bNextButton );
-    virtual ~DropDownFieldDialog() override;
+                                SwField* pField, bool bNextButton = false );
+    virtual ~DropDownFieldDialog();
     virtual void dispose() override;
 };
 } //namespace sw

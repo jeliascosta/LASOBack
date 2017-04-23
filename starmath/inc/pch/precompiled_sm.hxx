@@ -38,6 +38,7 @@
 #include <string.h>
 #include <unordered_map>
 #include <vector>
+#include <boost/checked_delete.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/optional/optional.hpp>
 #include <osl/diagnose.h>
@@ -132,6 +133,7 @@
 #include <svl/itemset.hxx>
 #include <svl/languageoptions.hxx>
 #include <svl/poolitem.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/stritem.hxx>
 #include <svl/svldllapi.h>
 #include <svx/svxdllapi.h>

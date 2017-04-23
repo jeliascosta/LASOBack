@@ -19,6 +19,10 @@
 
 #include <editeng/editrids.hrc>
 
+String RID_OUTLUNDO_HEIGHT
+{
+    Text [ en-US ] = "Move" ;
+};
 String RID_OUTLUNDO_DEPTH
 {
     Text [ en-US ] = "Indent" ;

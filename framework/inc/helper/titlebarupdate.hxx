@@ -78,21 +78,26 @@ class TitleBarUpdate : public  ::cppu::WeakImplHelper<
 
         // ctor/dtor
                  TitleBarUpdate(const css::uno::Reference< css::uno::XComponentContext >& xContext);
-        virtual ~TitleBarUpdate(                                                                   ) override;
+        virtual ~TitleBarUpdate(                                                                   );
 
         // XInterface, XTypeProvider
 
         // XInitialization
-        virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any >& lArguments) override;
+        virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any >& lArguments)
+            throw(css::uno::Exception       ,
+                  css::uno::RuntimeException, std::exception) override;
 
         // XFrameActionListener
-        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) override;
+        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent)
+            throw(css::uno::RuntimeException, std::exception) override;
 
         // XTitleChangeListener
-        virtual void SAL_CALL titleChanged(const css::frame::TitleChangedEvent& aEvent) override;
+        virtual void SAL_CALL titleChanged(const css::frame::TitleChangedEvent& aEvent)
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
+            throw(css::uno::RuntimeException, std::exception) override;
 
     // helper
 

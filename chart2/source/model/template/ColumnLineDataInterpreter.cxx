@@ -41,8 +41,9 @@ namespace chart
 
 // explicit
 ColumnLineDataInterpreter::ColumnLineDataInterpreter(
-    sal_Int32 nNumberOfLines ) :
-        DataInterpreter(),
+    sal_Int32 nNumberOfLines,
+    const Reference< uno::XComponentContext > & xContext ) :
+        DataInterpreter( xContext ),
         m_nNumberOfLines( nNumberOfLines )
 {}
 
@@ -54,6 +55,7 @@ InterpretedData SAL_CALL ColumnLineDataInterpreter::interpretDataSource(
     const Reference< data::XDataSource >& xSource,
     const Sequence< beans::PropertyValue >& aArguments,
     const Sequence< Reference< XDataSeries > >& aSeriesToReUse )
+    throw (uno::RuntimeException, std::exception)
 {
     InterpretedData aResult(  DataInterpreter::interpretDataSource( xSource, aArguments, aSeriesToReUse ));
 
@@ -66,13 +68,13 @@ InterpretedData SAL_CALL ColumnLineDataInterpreter::interpretDataSource(
         // if we have more than one series put the last nNumOfLines ones into a new group
         if( nNumberOfSeries > 1 && m_nNumberOfLines > 0 )
         {
-            sal_Int32 nNumOfLines = std::min( m_nNumberOfLines, nNumberOfSeries - 1 );
+            sal_Int32 nNumOfLines = ::std::min( m_nNumberOfLines, nNumberOfSeries - 1 );
             aResult.Series.realloc(2);
 
             Sequence< Reference< XDataSeries > > & rColumnDataSeries = aResult.Series[0];
             Sequence< Reference< XDataSeries > > & rLineDataSeries   = aResult.Series[1];
             rLineDataSeries.realloc( nNumOfLines );
-            std::copy( rColumnDataSeries.begin() + nNumberOfSeries - nNumOfLines,
+            ::std::copy( rColumnDataSeries.begin() + nNumberOfSeries - nNumOfLines,
                          rColumnDataSeries.begin() + nNumberOfSeries,
                          rLineDataSeries.getArray() );
             rColumnDataSeries.realloc( nNumberOfSeries - nNumOfLines );

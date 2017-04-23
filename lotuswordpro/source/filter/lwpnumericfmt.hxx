@@ -64,7 +64,6 @@
 #include "lwpatomholder.hxx"
 #include "lwptblcell.hxx"
 #include "lwpcolor.hxx"
-#include "lwppiece.hxx"
 
 //For converting to xml
 #include "xfilter/xfnumberstyle.hxx"
@@ -249,6 +248,7 @@ class LwpNumericFormat
 {
 public:
     explicit LwpNumericFormat(LwpObjectStream * pStrm);
+    ~LwpNumericFormat(){}
     void Read();
     static bool IsCurrencyFormat(sal_uInt16 Format);
     sal_uInt16 GetDecimalPlaces();
@@ -295,11 +295,12 @@ LwpNumericFormat::IsNegativeOverridden()
     return (cFlags & NF_OVER_NEGATIVE) != 0;
 }
 
+#include "lwppiece.hxx"
 class LwpLayoutNumerics : public LwpVirtualPiece
 {
 public:
     LwpLayoutNumerics(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
-    :LwpVirtualPiece(objHdr, pStrm),cNumerics(m_pObjStrm.get()){}
+    :LwpVirtualPiece(objHdr, pStrm),cNumerics(m_pObjStrm){}
     XFStyle* Convert();
     virtual void Read() override;
 
@@ -307,7 +308,7 @@ protected:
     LwpNumericFormat cNumerics;
 
 private:
-    virtual ~LwpLayoutNumerics() override {}
+    virtual ~LwpLayoutNumerics(){}
 };
 
 #endif

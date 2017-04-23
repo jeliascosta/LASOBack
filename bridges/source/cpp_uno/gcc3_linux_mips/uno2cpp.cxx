@@ -22,10 +22,10 @@
 #include <com/sun/star/uno/genfunc.hxx>
 #include <uno/data.h>
 
-#include "bridge.hxx"
-#include "types.hxx"
-#include "unointerfaceproxy.hxx"
-#include "vtables.hxx"
+#include "bridges/cpp_uno/shared/bridge.hxx"
+#include "bridges/cpp_uno/shared/types.hxx"
+#include "bridges/cpp_uno/shared/unointerfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/vtables.hxx"
 
 #include "share.hxx"
 
@@ -60,6 +60,7 @@ namespace
     int off;                      // offset used to find function
     int nw;                       // number of words mapped
     long *p;                      // pointer to parameter overflow area
+    int c;                        // character of parameter type being decoded
     int iret, iret2;              // temporary function return values
 
     // never called
@@ -113,7 +114,7 @@ namespace
 
     /* parse the argument list up to the ending ) */
     while (*pPT != 'X') {
-      int c = *pPT; // character of parameter type being decoded
+      c = *pPT;
       switch (c) {
         case 'D':                   /* type is double */
           /* treat the same as long long */

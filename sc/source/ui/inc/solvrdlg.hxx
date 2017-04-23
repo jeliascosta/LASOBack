@@ -41,7 +41,7 @@ public:
                     ScSolverDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                  ScDocument* pDocument,
                                  ScAddress aCursorPos );
-                    virtual ~ScSolverDlg() override;
+                    virtual ~ScSolverDlg();
     virtual void    dispose() override;
 
     virtual void    SetReference( const ScRange& rRef, ScDocument* pDoc ) override;
@@ -80,9 +80,9 @@ private:
     bool    CheckTargetValue( const OUString& rStrVal );
     void    RaiseError( ScSolverErr eError );
 
-    DECL_LINK( BtnHdl, Button*, void );
-    DECL_LINK( GetFocusHdl, Control&, void );
-    DECL_LINK( LoseFocusHdl, Control&, void );
+    DECL_LINK_TYPED( BtnHdl, Button*, void );
+    DECL_LINK_TYPED( GetFocusHdl, Control&, void );
+    DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_SOLVRDLG_HXX

@@ -26,28 +26,34 @@
 
 namespace fileaccess {
 
-    class TaskManager;
+    class shell;
 
 class XPropertySetInfo_impl : public cppu::WeakImplHelper<
     css::beans::XPropertySetInfo >
     {
     public:
-        XPropertySetInfo_impl( TaskManager* pMyShell,const OUString& aUnqPath );
-        XPropertySetInfo_impl( TaskManager* pMyShell,const css::uno::Sequence< css::beans::Property >& seq );
+        XPropertySetInfo_impl( shell* pMyShell,const OUString& aUnqPath );
+        XPropertySetInfo_impl( shell* pMyShell,const css::uno::Sequence< css::beans::Property >& seq );
 
-        virtual ~XPropertySetInfo_impl() override;
+        virtual ~XPropertySetInfo_impl();
 
         virtual css::uno::Sequence< css::beans::Property > SAL_CALL
-        getProperties() override;
+        getProperties(
+            void )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual css::beans::Property SAL_CALL
-        getPropertyByName( const OUString& aName ) override;
+        getPropertyByName(
+            const OUString& aName )
+            throw( css::beans::UnknownPropertyException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual sal_Bool SAL_CALL
-        hasPropertyByName( const OUString& Name ) override;
+        hasPropertyByName( const OUString& Name )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     private:
-        TaskManager*                                               m_pMyShell;
+        shell*                                               m_pMyShell;
         sal_Int32                                            m_count;
         css::uno::Sequence< css::beans::Property >           m_seq;
     };

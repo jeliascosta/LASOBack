@@ -34,10 +34,10 @@ class SidebarDockingWindow : public SfxDockingWindow
 public:
     SidebarDockingWindow(SfxBindings* pBindings, SidebarChildWindow& rChildWindow,
                          vcl::Window* pParent, WinBits nBits);
-    virtual ~SidebarDockingWindow() override;
+    virtual ~SidebarDockingWindow();
     virtual void dispose() override;
 
-    using SfxDockingWindow::Close;
+    virtual bool Close() override;
 
 protected:
     // Window overridables

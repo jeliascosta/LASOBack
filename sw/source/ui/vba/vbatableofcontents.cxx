@@ -18,14 +18,13 @@
  */
 #include "vbatableofcontents.hxx"
 #include <vbahelper/vbahelper.hxx>
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <tools/diagnose_ex.h>
 #include <ooo/vba/word/WdTabLeader.hpp>
 
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaTableOfContents::SwVbaTableOfContents( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextDocument >& xDoc, const uno::Reference< text::XDocumentIndex >& xDocumentIndex ) :
+SwVbaTableOfContents::SwVbaTableOfContents( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextDocument >& xDoc, const uno::Reference< text::XDocumentIndex >& xDocumentIndex ) throw ( uno::RuntimeException ) :
     SwVbaTableOfContents_BASE( rParent, rContext ), mxTextDocument( xDoc ), mxDocumentIndex( xDocumentIndex )
 {
     mxTocProps.set( mxDocumentIndex, uno::UNO_QUERY_THROW );
@@ -35,60 +34,60 @@ SwVbaTableOfContents::~SwVbaTableOfContents()
 {
 }
 
-::sal_Int32 SAL_CALL SwVbaTableOfContents::getLowerHeadingLevel()
+::sal_Int32 SAL_CALL SwVbaTableOfContents::getLowerHeadingLevel() throw (uno::RuntimeException, std::exception)
 {
     sal_Int16 nLevel = 0;
     mxTocProps->getPropertyValue("Level") >>= nLevel;
     return nLevel;
 }
 
-void SAL_CALL SwVbaTableOfContents::setLowerHeadingLevel( ::sal_Int32 _lowerheadinglevel )
+void SAL_CALL SwVbaTableOfContents::setLowerHeadingLevel( ::sal_Int32 _lowerheadinglevel ) throw (uno::RuntimeException, std::exception)
 {
     mxTocProps->setPropertyValue("Level", uno::makeAny( sal_Int8( _lowerheadinglevel ) ) );
 }
 
-::sal_Int32 SAL_CALL SwVbaTableOfContents::getTabLeader()
+::sal_Int32 SAL_CALL SwVbaTableOfContents::getTabLeader() throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
     return word::WdTabLeader::wdTabLeaderDots;
 }
 
-void SAL_CALL SwVbaTableOfContents::setTabLeader( ::sal_Int32 /*_tableader*/ )
+void SAL_CALL SwVbaTableOfContents::setTabLeader( ::sal_Int32 /*_tableader*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not support in Writer
 }
 
-sal_Bool SAL_CALL SwVbaTableOfContents::getUseFields()
+sal_Bool SAL_CALL SwVbaTableOfContents::getUseFields() throw (css::uno::RuntimeException, std::exception)
 {
     bool bUseFields = false;
     mxTocProps->getPropertyValue("CreateFromMarks") >>= bUseFields;
     return bUseFields;
 }
 
-void SAL_CALL SwVbaTableOfContents::setUseFields( sal_Bool _useFields )
+void SAL_CALL SwVbaTableOfContents::setUseFields( sal_Bool _useFields ) throw (css::uno::RuntimeException, std::exception)
 {
     mxTocProps->setPropertyValue("CreateFromMarks", uno::makeAny( _useFields ) );
 }
 
-sal_Bool SAL_CALL SwVbaTableOfContents::getUseOutlineLevels()
+sal_Bool SAL_CALL SwVbaTableOfContents::getUseOutlineLevels() throw (css::uno::RuntimeException, std::exception)
 {
     bool bUseOutlineLevels = false;
     mxTocProps->getPropertyValue("CreateFromOutline") >>= bUseOutlineLevels;
     return bUseOutlineLevels;
 }
 
-void SAL_CALL SwVbaTableOfContents::setUseOutlineLevels( sal_Bool _useOutlineLevels )
+void SAL_CALL SwVbaTableOfContents::setUseOutlineLevels( sal_Bool _useOutlineLevels ) throw (css::uno::RuntimeException, std::exception)
 {
     mxTocProps->setPropertyValue("CreateFromOutline", uno::makeAny( _useOutlineLevels ) );
 }
 
-void SAL_CALL SwVbaTableOfContents::Delete(  )
+void SAL_CALL SwVbaTableOfContents::Delete(  ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< text::XTextContent > xTextContent( mxDocumentIndex, uno::UNO_QUERY_THROW );
     mxTextDocument->getText()->removeTextContent( xTextContent );
 }
 
-void SAL_CALL SwVbaTableOfContents::Update(  )
+void SAL_CALL SwVbaTableOfContents::Update(  ) throw (uno::RuntimeException, std::exception)
 {
     mxDocumentIndex->update();
 }

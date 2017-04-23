@@ -104,11 +104,12 @@ struct Path2D
 };
 
 
-class CustomShapeProperties final
+class CustomShapeProperties
 {
 public:
+
     CustomShapeProperties();
-    ~CustomShapeProperties();
+    virtual ~CustomShapeProperties();
 
     void pushToPropSet( const ::oox::core::FilterBase& rFilterBase,
                         const css::uno::Reference < css::beans::XPropertySet > & xPropSet,

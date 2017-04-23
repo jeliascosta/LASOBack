@@ -37,8 +37,8 @@ protected:
     SwPosition GetPosition();
 
 public:
-    SwUndoField(const SwPosition & rPos );
-    virtual ~SwUndoField() override;
+    SwUndoField(const SwPosition & rPos, SwUndoId nId = UNDO_FIELD );
+    virtual ~SwUndoField();
 };
 
 class SwUndoFieldFromDoc : public SwUndoField
@@ -52,9 +52,10 @@ class SwUndoFieldFromDoc : public SwUndoField
 public:
     SwUndoFieldFromDoc(const SwPosition & rPos, const SwField & aOldField,
                        const SwField & aNewField,
-                       SwMsgPoolItem * pHint, bool bUpdate);
+                       SwMsgPoolItem * pHint, bool bUpdate,
+                       SwUndoId nId = UNDO_FIELD );
 
-    virtual ~SwUndoFieldFromDoc() override;
+    virtual ~SwUndoFieldFromDoc();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -73,7 +74,7 @@ public:
                        const css::uno::Any & rOldVal,
                        const css::uno::Any & rNewVal,
                        sal_uInt16 nWhich);
-    virtual ~SwUndoFieldFromAPI() override;
+    virtual ~SwUndoFieldFromAPI();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

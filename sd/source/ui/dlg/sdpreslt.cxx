@@ -40,7 +40,7 @@ SdPresLayoutDlg::SdPresLayoutDlg(::sd::DrawDocShell* pDocShell,
     , maStrNone(SD_RESSTR(STR_NULL))
 {
     get(m_pVS, "select");
-    Size aPref(LogicToPixel(Size(144 , 141), MapUnit::MapAppFont));
+    Size aPref(LogicToPixel(Size(144 , 141), MAP_APPFONT));
     m_pVS->set_width_request(aPref.Width());
     m_pVS->set_height_request(aPref.Height());
     get(m_pCbxMasterPage, "masterpage");
@@ -151,13 +151,13 @@ void SdPresLayoutDlg::FillValueSet()
     for (sal_uInt16 nLayout = 0; nLayout < nCount; nLayout++)
     {
         SdPage* pMaster = static_cast<SdPage*>(pDoc->GetMasterPage(nLayout));
-        if (pMaster->GetPageKind() == PageKind::Standard)
+        if (pMaster->GetPageKind() == PK_STANDARD)
         {
             OUString aLayoutName(pMaster->GetLayoutName());
             aLayoutName = aLayoutName.copy(0, aLayoutName.indexOf(SD_LT_SEPARATOR));
             maLayoutNames.push_back(aLayoutName);
 
-            Image aBitmap(Bitmap(mpDocSh->GetPagePreviewBitmap(pMaster)));
+            Image aBitmap(Bitmap(mpDocSh->GetPagePreviewBitmap(pMaster, 90)));
             m_pVS->InsertItem((sal_uInt16)maLayoutNames.size(), aBitmap, aLayoutName);
         }
     }
@@ -168,7 +168,7 @@ void SdPresLayoutDlg::FillValueSet()
 /**
  * DoubleClick handler
  */
-IMPL_LINK_NOARG(SdPresLayoutDlg, ClickLayoutHdl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(SdPresLayoutDlg, ClickLayoutHdl, ValueSet*, void)
 {
     EndDialog(RET_OK);
 }
@@ -176,9 +176,9 @@ IMPL_LINK_NOARG(SdPresLayoutDlg, ClickLayoutHdl, ValueSet*, void)
 /**
  * Click handler for load button
  */
-IMPL_LINK_NOARG(SdPresLayoutDlg, ClickLoadHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdPresLayoutDlg, ClickLoadHdl, Button*, void)
 {
-    VclPtrInstance< SfxNewFileDialog > pDlg(this, SfxNewFileDialogMode::Preview);
+    VclPtrInstance< SfxNewFileDialog > pDlg(this, SFXWB_PREVIEW);
     pDlg->SetText(SD_RESSTR(STR_LOAD_PRESENTATION_LAYOUT));
 
     if(!IsReallyVisible())
@@ -249,13 +249,13 @@ IMPL_LINK_NOARG(SdPresLayoutDlg, ClickLoadHdl, Button*, void)
                     for (sal_uInt16 nLayout = 0; nLayout < nCount; nLayout++)
                     {
                         SdPage* pMaster = static_cast<SdPage*>( pTemplDoc->GetMasterPage(nLayout) );
-                        if (pMaster->GetPageKind() == PageKind::Standard)
+                        if (pMaster->GetPageKind() == PK_STANDARD)
                         {
                             OUString aLayoutName(pMaster->GetLayoutName());
                             aLayoutName = aLayoutName.copy(0, aLayoutName.indexOf(SD_LT_SEPARATOR));
                             maLayoutNames.push_back(aLayoutName);
 
-                            Image aBitmap(Bitmap(pTemplDocSh->GetPagePreviewBitmap(pMaster)));
+                            Image aBitmap(Bitmap(pTemplDocSh->GetPagePreviewBitmap(pMaster, 90)));
                             m_pVS->InsertItem((sal_uInt16)maLayoutNames.size(), aBitmap, aLayoutName);
                         }
                     }

@@ -84,33 +84,33 @@ void ContextHandler::implSetLocator( const Reference< XLocator >& rxLocator )
 
 // com.sun.star.xml.sax.XFastContextHandler interface -------------------------
 
-void ContextHandler::startFastElement( sal_Int32, const Reference< XFastAttributeList >& )
+void ContextHandler::startFastElement( sal_Int32, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void ContextHandler::startUnknownElement( const OUString&, const OUString&, const Reference< XFastAttributeList >& )
+void ContextHandler::startUnknownElement( const OUString&, const OUString&, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void ContextHandler::endFastElement( sal_Int32 )
+void ContextHandler::endFastElement( sal_Int32 ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void ContextHandler::endUnknownElement( const OUString&, const OUString& )
+void ContextHandler::endUnknownElement( const OUString&, const OUString& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-Reference< XFastContextHandler > ContextHandler::createFastChildContext( sal_Int32, const Reference< XFastAttributeList >& )
-{
-    return nullptr;
-}
-
-Reference< XFastContextHandler > ContextHandler::createUnknownChildContext( const OUString&, const OUString&, const Reference< XFastAttributeList >& )
+Reference< XFastContextHandler > ContextHandler::createFastChildContext( sal_Int32, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
     return nullptr;
 }
 
-void ContextHandler::characters( const OUString& )
+Reference< XFastContextHandler > ContextHandler::createUnknownChildContext( const OUString&, const OUString&, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
+{
+    return nullptr;
+}
+
+void ContextHandler::characters( const OUString& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 

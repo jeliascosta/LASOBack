@@ -32,7 +32,6 @@
 #include "propertycomposer.hxx"
 
 #include <com/sun/star/awt/XWindow.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/inspection/PropertyControlType.hpp>
 #include <com/sun/star/ucb/AlreadyInitializedException.hpp>
@@ -110,7 +109,7 @@ namespace pcr
     IMPLEMENT_FORWARD_REFCOUNT( OPropertyBrowserController, OPropertyBrowserController_Base )
 
 
-    Any SAL_CALL OPropertyBrowserController::queryInterface( const Type& _rType )
+    Any SAL_CALL OPropertyBrowserController::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
     {
         Any aReturn = OPropertyBrowserController_Base::queryInterface( _rType );
         if ( !aReturn.hasValue() )
@@ -160,7 +159,7 @@ namespace pcr
     }
 
 
-    Reference< XObjectInspectorModel > SAL_CALL OPropertyBrowserController::getInspectorModel()
+    Reference< XObjectInspectorModel > SAL_CALL OPropertyBrowserController::getInspectorModel() throw (RuntimeException, std::exception)
     {
         return m_xModel;
     }
@@ -185,6 +184,18 @@ namespace pcr
         {
             DBG_UNHANDLED_EXCEPTION();
         }
+    }
+
+
+    void OPropertyBrowserController::impl_updateReadOnlyView_nothrow()
+    {
+        // this is a huge cudgel, admitted.
+        // The problem is that in case we were previously read-only, all our controls
+        // were created read-only, too. We cannot simply switch them to not-read-only.
+        // Even if they had an API for this, we do not know whether they were
+        // originally created read-only, or if they are read-only just because
+        // the model was.
+        impl_rebindToInspectee_nothrow( m_aInspectedObjects );
     }
 
 
@@ -238,7 +249,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::setInspectorModel( const Reference< XObjectInspectorModel >& _inspectorModel )
+    void SAL_CALL OPropertyBrowserController::setInspectorModel( const Reference< XObjectInspectorModel >& _inspectorModel ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -249,14 +260,14 @@ namespace pcr
     }
 
 
-    Reference< XObjectInspectorUI > SAL_CALL OPropertyBrowserController::getInspectorUI()
+    Reference< XObjectInspectorUI > SAL_CALL OPropertyBrowserController::getInspectorUI() throw (RuntimeException, std::exception)
     {
         // we're derived from this interface, though we do not expose it in queryInterface and getTypes.
         return this;
     }
 
 
-    void SAL_CALL OPropertyBrowserController::inspect( const Sequence< Reference< XInterface > >& _rObjects )
+    void SAL_CALL OPropertyBrowserController::inspect( const Sequence< Reference< XInterface > >& _rObjects ) throw (css::util::VetoException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -277,14 +288,14 @@ namespace pcr
     }
 
 
-    Reference< XDispatch > SAL_CALL OPropertyBrowserController::queryDispatch( const URL& /*URL*/, const OUString& /*TargetFrameName*/, ::sal_Int32 /*SearchFlags*/ )
+    Reference< XDispatch > SAL_CALL OPropertyBrowserController::queryDispatch( const URL& /*URL*/, const OUString& /*TargetFrameName*/, ::sal_Int32 /*SearchFlags*/ ) throw (RuntimeException, std::exception)
     {
         // we don't have any dispatches at all, right now
         return Reference< XDispatch >();
     }
 
 
-    Sequence< Reference< XDispatch > > SAL_CALL OPropertyBrowserController::queryDispatches( const Sequence< DispatchDescriptor >& Requests )
+    Sequence< Reference< XDispatch > > SAL_CALL OPropertyBrowserController::queryDispatches( const Sequence< DispatchDescriptor >& Requests ) throw (RuntimeException, std::exception)
     {
         Sequence< Reference< XDispatch > > aReturn;
         sal_Int32 nLen = Requests.getLength();
@@ -301,7 +312,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::initialize( const Sequence< Any >& _arguments )
+    void SAL_CALL OPropertyBrowserController::initialize( const Sequence< Any >& _arguments ) throw (Exception, RuntimeException, std::exception)
     {
         if ( m_bConstructed )
             throw AlreadyInitializedException();
@@ -309,7 +320,7 @@ namespace pcr
         StlSyntaxSequence< Any > arguments( _arguments );
         if ( arguments.empty() )
         {   // constructor: "createDefault()"
-            m_bConstructed = true;
+            createDefault();
             return;
         }
 
@@ -326,6 +337,12 @@ namespace pcr
     }
 
 
+    void OPropertyBrowserController::createDefault()
+    {
+        m_bConstructed = true;
+    }
+
+
     void OPropertyBrowserController::createWithModel( const Reference< XObjectInspectorModel >& _rxModel )
     {
         osl_atomic_increment( &m_refCount );
@@ -338,7 +355,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::attachFrame( const Reference< XFrame >& _rxFrame )
+    void SAL_CALL OPropertyBrowserController::attachFrame( const Reference< XFrame >& _rxFrame ) throw(RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -380,7 +397,7 @@ namespace pcr
     }
 
 
-    sal_Bool SAL_CALL OPropertyBrowserController::attachModel( const Reference< XModel >& _rxModel )
+    sal_Bool SAL_CALL OPropertyBrowserController::attachModel( const Reference< XModel >& _rxModel ) throw(RuntimeException, std::exception)
     {
         Reference< XObjectInspectorModel > xModel( _rxModel, UNO_QUERY );
         if ( !xModel.is() )
@@ -418,7 +435,7 @@ namespace pcr
                 ++handler
             )
         {
-            if ( std::find( aAllHandlers.begin(), aAllHandlers.end(), handler->second ) != aAllHandlers.end() )
+            if ( ::std::find( aAllHandlers.begin(), aAllHandlers.end(), handler->second ) != aAllHandlers.end() )
                 // already visited this particular handler (m_aPropertyHandlers usually contains
                 // the same handler more than once)
                 continue;
@@ -446,7 +463,7 @@ namespace pcr
     }
 
 
-    sal_Bool SAL_CALL OPropertyBrowserController::suspend( sal_Bool _bSuspend )
+    sal_Bool SAL_CALL OPropertyBrowserController::suspend( sal_Bool _bSuspend ) throw(RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         OSL_ENSURE( haveView(), "OPropertyBrowserController::suspend: don't have a view anymore!" );
@@ -473,13 +490,13 @@ namespace pcr
     }
 
 
-    Any SAL_CALL OPropertyBrowserController::getViewData(  )
+    Any SAL_CALL OPropertyBrowserController::getViewData(  ) throw(RuntimeException, std::exception)
     {
         return makeAny( m_sPageSelection );
     }
 
 
-    void SAL_CALL OPropertyBrowserController::restoreViewData( const Any& Data )
+    void SAL_CALL OPropertyBrowserController::restoreViewData( const Any& Data ) throw(RuntimeException, std::exception)
     {
         OUString sPageSelection;
         if ( ( Data >>= sPageSelection ) && !sPageSelection.isEmpty() )
@@ -490,20 +507,20 @@ namespace pcr
     }
 
 
-    Reference< XModel > SAL_CALL OPropertyBrowserController::getModel(  )
+    Reference< XModel > SAL_CALL OPropertyBrowserController::getModel(  ) throw(RuntimeException, std::exception)
     {
         // have no model
         return Reference< XModel >();
     }
 
 
-    Reference< XFrame > SAL_CALL OPropertyBrowserController::getFrame(  )
+    Reference< XFrame > SAL_CALL OPropertyBrowserController::getFrame(  ) throw(RuntimeException, std::exception)
     {
         return m_xFrame;
     }
 
 
-    void SAL_CALL OPropertyBrowserController::dispose(  )
+    void SAL_CALL OPropertyBrowserController::dispose(  ) throw(RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
 
@@ -529,42 +546,42 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::addEventListener( const Reference< XEventListener >& _rxListener )
+    void SAL_CALL OPropertyBrowserController::addEventListener( const Reference< XEventListener >& _rxListener ) throw(RuntimeException, std::exception)
     {
         m_aDisposeListeners.addInterface(_rxListener);
     }
 
 
-    void SAL_CALL OPropertyBrowserController::removeEventListener( const Reference< XEventListener >& _rxListener )
+    void SAL_CALL OPropertyBrowserController::removeEventListener( const Reference< XEventListener >& _rxListener ) throw(RuntimeException, std::exception)
     {
         m_aDisposeListeners.removeInterface(_rxListener);
     }
 
 
-    OUString SAL_CALL OPropertyBrowserController::getImplementationName(  )
+    OUString SAL_CALL OPropertyBrowserController::getImplementationName(  ) throw(RuntimeException, std::exception)
     {
         return getImplementationName_static();
     }
 
-    sal_Bool SAL_CALL OPropertyBrowserController::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL OPropertyBrowserController::supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
 
-    Sequence< OUString > SAL_CALL OPropertyBrowserController::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL OPropertyBrowserController::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
     {
         return getSupportedServiceNames_static();
     }
 
 
-    OUString OPropertyBrowserController::getImplementationName_static(  )
+    OUString OPropertyBrowserController::getImplementationName_static(  ) throw(RuntimeException)
     {
         return OUString("org.openoffice.comp.extensions.ObjectInspector");
     }
 
 
-    Sequence< OUString > OPropertyBrowserController::getSupportedServiceNames_static(  )
+    Sequence< OUString > OPropertyBrowserController::getSupportedServiceNames_static(  ) throw(RuntimeException)
     {
         Sequence< OUString > aSupported { "com.sun.star.inspection.ObjectInspector" };
         return aSupported;
@@ -577,7 +594,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::focusGained( const FocusEvent& _rSource )
+    void SAL_CALL OPropertyBrowserController::focusGained( const FocusEvent& _rSource ) throw (RuntimeException, std::exception)
     {
         Reference< XWindow > xSourceWindow(_rSource.Source, UNO_QUERY);
         Reference< XWindow > xContainerWindow;
@@ -592,13 +609,13 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::focusLost( const FocusEvent& /*_rSource*/ )
+    void SAL_CALL OPropertyBrowserController::focusLost( const FocusEvent& /*_rSource*/ ) throw (RuntimeException, std::exception)
     {
         // not interested in
     }
 
 
-    void SAL_CALL OPropertyBrowserController::disposing( const EventObject& _rSource )
+    void SAL_CALL OPropertyBrowserController::disposing( const EventObject& _rSource ) throw(RuntimeException, std::exception)
     {
         if ( m_xView.is() && ( m_xView == _rSource.Source ) )
         {
@@ -620,7 +637,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG(OPropertyBrowserController, OnPageActivation, LinkParamNone*, void)
+    IMPL_LINK_NOARG_TYPED(OPropertyBrowserController, OnPageActivation, LinkParamNone*, void)
     {
         updateViewDataFromActivePage();
     }
@@ -705,18 +722,12 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::propertyChange( const PropertyChangeEvent& _rEvent )
+    void SAL_CALL OPropertyBrowserController::propertyChange( const PropertyChangeEvent& _rEvent ) throw (RuntimeException, std::exception)
     {
         if ( _rEvent.Source == m_xModel )
         {
             if ( _rEvent.PropertyName == "IsReadOnly" )
-               // this is a huge cudgel, admitted.
-                // The problem is that in case we were previously read-only, all our controls
-                // were created read-only, too. We cannot simply switch them to not-read-only.
-                // Even if they had an API for this, we do not know whether they were
-                // originally created read-only, or if they are read-only just because
-                // the model was.
-                impl_rebindToInspectee_nothrow( m_aInspectedObjects );
+                impl_updateReadOnlyView_nothrow();
             return;
         }
 
@@ -749,7 +760,7 @@ namespace pcr
     }
 
 
-    Reference< XPropertyControl > SAL_CALL OPropertyBrowserController::createPropertyControl( ::sal_Int16 ControlType, sal_Bool CreateReadOnly )
+    Reference< XPropertyControl > SAL_CALL OPropertyBrowserController::createPropertyControl( ::sal_Int16 ControlType, sal_Bool CreateReadOnly ) throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -890,7 +901,7 @@ namespace pcr
               aHandler != m_aPropertyHandlers.end();
               ++aHandler
             )
-            if ( std::find( aAllHandlers.begin(), aAllHandlers.end(), aHandler->second ) == aAllHandlers.end() )
+            if ( ::std::find( aAllHandlers.begin(), aAllHandlers.end(), aHandler->second ) == aAllHandlers.end() )
                 aAllHandlers.push_back( aHandler->second );
 
         for ( PropertyHandlerArray::iterator loop = aAllHandlers.begin();
@@ -968,7 +979,7 @@ namespace pcr
         {
 
             // obtain the properties of the object
-            std::vector< Property > aProperties;
+            ::std::vector< Property > aProperties;
 
             PropertyHandlerArray aPropertyHandlers;
             getPropertyHandlers( m_aInspectedObjects, aPropertyHandlers );
@@ -992,7 +1003,7 @@ namespace pcr
                 aProperties.reserve( aProperties.size() + aThisHandlersProperties.size() );
                 for (const auto & aThisHandlersPropertie : aThisHandlersProperties)
                 {
-                    std::vector< Property >::const_iterator previous = std::find_if(
+                    ::std::vector< Property >::const_iterator previous = ::std::find_if(
                         aProperties.begin(),
                         aProperties.end(),
                         FindPropertyByName( aThisHandlersPropertie.Name )
@@ -1011,7 +1022,7 @@ namespace pcr
                     // This is 'cause we have a new handler which is responsible for this property,
                     // which means it can give it a completely different meaning than the previous
                     // handler for this property is prepared for.
-                    std::pair< PropertyHandlerMultiRepository::iterator, PropertyHandlerMultiRepository::iterator >
+                    ::std::pair< PropertyHandlerMultiRepository::iterator, PropertyHandlerMultiRepository::iterator >
                         aDepHandlers = m_aDependencyHandlers.equal_range( aThisHandlersPropertie.Name );
                     m_aDependencyHandlers.erase( aDepHandlers.first, aDepHandlers.second );
                 }
@@ -1020,7 +1031,7 @@ namespace pcr
                 StlSyntaxSequence< OUString > aSupersededByThisHandler( (*aHandler)->getSupersededProperties() );
                 for (const auto & superseded : aSupersededByThisHandler)
                 {
-                    std::vector< Property >::iterator existent = std::find_if(
+                    ::std::vector< Property >::iterator existent = ::std::find_if(
                         aProperties.begin(),
                         aProperties.end(),
                         FindPropertyByName( superseded )
@@ -1058,7 +1069,7 @@ namespace pcr
             m_pUIRequestComposer.reset( new ComposedPropertyUIUpdate( getInspectorUI(), this ) );
 
             // sort the properties by relative position, as indicated by the model
-            for (   std::vector< Property >::const_iterator sourceProps = aProperties.begin();
+            for (   ::std::vector< Property >::const_iterator sourceProps = aProperties.begin();
                     sourceProps != aProperties.end();
                     ++sourceProps
                 )
@@ -1079,7 +1090,7 @@ namespace pcr
     }
 
 
-    css::awt::Size SAL_CALL OPropertyBrowserController::getMinimumSize()
+    css::awt::Size SAL_CALL OPropertyBrowserController::getMinimumSize() throw (css::uno::RuntimeException, std::exception)
     {
         css::awt::Size aSize;
         if( m_pView )
@@ -1089,13 +1100,13 @@ namespace pcr
     }
 
 
-    css::awt::Size SAL_CALL OPropertyBrowserController::getPreferredSize()
+    css::awt::Size SAL_CALL OPropertyBrowserController::getPreferredSize() throw (css::uno::RuntimeException, std::exception)
     {
         return getMinimumSize();
     }
 
 
-    css::awt::Size SAL_CALL OPropertyBrowserController::calcAdjustedSize( const css::awt::Size& _rNewSize )
+    css::awt::Size SAL_CALL OPropertyBrowserController::calcAdjustedSize( const css::awt::Size& _rNewSize ) throw (css::uno::RuntimeException, std::exception)
     {
         awt::Size aMinSize = getMinimumSize( );
         awt::Size aAdjustedSize( _rNewSize );
@@ -1186,12 +1197,12 @@ namespace pcr
             // create our tab pages
             impl_buildCategories_throw();
             // (and allow for pages to be actually unused)
-            std::set< sal_uInt16 > aUsedPages;
+            ::std::set< sal_uInt16 > aUsedPages;
 
             // when building the UI below, remember which properties are actuating,
-            // to allow for a initial actuatingPropertyChanged call
-            std::vector< OUString > aActuatingProperties;
-            std::vector< Any > aActuatingPropertyValues;
+            // to allow for a initial actuatinPropertyChanged call
+            ::std::vector< OUString > aActuatingProperties;
+            ::std::vector< Any > aActuatingPropertyValues;
 
             // ask the handlers to describe the property UI, and insert the resulting
             // entries into our list boxes
@@ -1236,8 +1247,8 @@ namespace pcr
 
             // update any dependencies for the actuating properties which we encountered
             {
-                std::vector< OUString >::const_iterator aProperty = aActuatingProperties.begin();
-                std::vector< Any >::const_iterator aPropertyValue = aActuatingPropertyValues.begin();
+                ::std::vector< OUString >::const_iterator aProperty = aActuatingProperties.begin();
+                ::std::vector< Any >::const_iterator aPropertyValue = aActuatingPropertyValues.begin();
                 for ( ; aProperty != aActuatingProperties.end(); ++aProperty, ++aPropertyValue )
                     impl_broadcastPropertyChange_nothrow( *aProperty, *aPropertyValue, *aPropertyValue, true );
             }
@@ -1329,7 +1340,7 @@ namespace pcr
     }
 
 
-    bool SAL_CALL OPropertyBrowserController::hasPropertyByName( const OUString& _rName )
+    bool SAL_CALL OPropertyBrowserController::hasPropertyByName( const OUString& _rName ) throw (RuntimeException)
     {
         for (   OrderedPropertyMap::const_iterator search = m_aProperties.begin();
                 search != m_aProperties.end();
@@ -1457,7 +1468,7 @@ namespace pcr
         {
             ::cppu::ContextEntry_Init aHandlerContextInfo[] =
             {
-                ::cppu::ContextEntry_Init( "DialogParentWindow", makeAny( VCLUnoHelper::GetInterface( m_pView ) ) )
+                ::cppu::ContextEntry_Init( OUString(  "DialogParentWindow"  ), makeAny( VCLUnoHelper::GetInterface( m_pView ) ) )
             };
             xHandlerContext = ::cppu::createComponentContext(
                 aHandlerContextInfo, SAL_N_ELEMENTS( aHandlerContextInfo ),
@@ -1485,8 +1496,8 @@ namespace pcr
             else
             {
                 // create a single handler for every single object
-                std::vector< Reference< XPropertyHandler > > aSingleHandlers( _rObjects.size() );
-                std::vector< Reference< XPropertyHandler > >::iterator pHandler = aSingleHandlers.begin();
+                ::std::vector< Reference< XPropertyHandler > > aSingleHandlers( _rObjects.size() );
+                ::std::vector< Reference< XPropertyHandler > >::iterator pHandler = aSingleHandlers.begin();
 
                 InterfaceArray::const_iterator pObject = _rObjects.begin();
                 InterfaceArray::const_iterator pObjectEnd = _rObjects.end();
@@ -1527,7 +1538,7 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::rebuildPropertyUI( const OUString& _rPropertyName )
+    void OPropertyBrowserController::rebuildPropertyUI( const OUString& _rPropertyName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1551,7 +1562,7 @@ namespace pcr
    }
 
 
-    void OPropertyBrowserController::enablePropertyUI( const OUString& _rPropertyName, sal_Bool _bEnable )
+    void OPropertyBrowserController::enablePropertyUI( const OUString& _rPropertyName, sal_Bool _bEnable ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1564,7 +1575,7 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::enablePropertyUIElements( const OUString& _rPropertyName, sal_Int16 _nElements, sal_Bool _bEnable )
+    void OPropertyBrowserController::enablePropertyUIElements( const OUString& _rPropertyName, sal_Int16 _nElements, sal_Bool _bEnable ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1577,7 +1588,7 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::showPropertyUI( const OUString& _rPropertyName )
+    void OPropertyBrowserController::showPropertyUI( const OUString& _rPropertyName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1627,7 +1638,7 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::hidePropertyUI( const OUString& _rPropertyName )
+    void OPropertyBrowserController::hidePropertyUI( const OUString& _rPropertyName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1640,7 +1651,7 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::showCategory( const OUString& _rCategory, sal_Bool _bShow )
+    void OPropertyBrowserController::showCategory( const OUString& _rCategory, sal_Bool _bShow ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1653,7 +1664,7 @@ namespace pcr
     }
 
 
-    Reference< XPropertyControl > SAL_CALL OPropertyBrowserController::getPropertyControl( const OUString& _rPropertyName )
+    Reference< XPropertyControl > SAL_CALL OPropertyBrowserController::getPropertyControl( const OUString& _rPropertyName ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !haveView() )
@@ -1664,19 +1675,19 @@ namespace pcr
     }
 
 
-    void SAL_CALL OPropertyBrowserController::registerControlObserver( const Reference< XPropertyControlObserver >& Observer )
+    void SAL_CALL OPropertyBrowserController::registerControlObserver( const Reference< XPropertyControlObserver >& Observer ) throw (RuntimeException, std::exception)
     {
         m_aControlObservers.addInterface( Observer );
     }
 
 
-    void SAL_CALL OPropertyBrowserController::revokeControlObserver( const Reference< XPropertyControlObserver >& Observer )
+    void SAL_CALL OPropertyBrowserController::revokeControlObserver( const Reference< XPropertyControlObserver >& Observer ) throw (RuntimeException, std::exception)
     {
         m_aControlObservers.removeInterface( Observer );
     }
 
 
-    void SAL_CALL OPropertyBrowserController::setHelpSectionText( const OUString& _rHelpText )
+    void SAL_CALL OPropertyBrowserController::setHelpSectionText( const OUString& _rHelpText ) throw (NoSupportException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -1694,7 +1705,7 @@ namespace pcr
     void OPropertyBrowserController::impl_broadcastPropertyChange_nothrow( const OUString& _rPropertyName, const Any& _rNewValue, const Any& _rOldValue, bool _bFirstTimeInit ) const
     {
         // are there one or more handlers which are interested in the actuation?
-        std::pair< PropertyHandlerMultiRepository::const_iterator, PropertyHandlerMultiRepository::const_iterator > aInterestedHandlers =
+        ::std::pair< PropertyHandlerMultiRepository::const_iterator, PropertyHandlerMultiRepository::const_iterator > aInterestedHandlers =
             m_aDependencyHandlers.equal_range( _rPropertyName );
         if ( aInterestedHandlers.first == aInterestedHandlers.second )
             // none of our handlers is interested in this

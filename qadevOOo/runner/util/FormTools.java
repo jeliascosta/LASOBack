@@ -57,29 +57,33 @@ public class FormTools {
      * @return the created XControlShape
     */
     public static XControlShape createControlShape( XComponent oDoc, int height,
-                                        int width, int x, int y, String kind )
-        throws com.sun.star.uno.Exception
-    {
+                                        int width, int x, int y, String kind ) {
 
          Size size = new Size();
         Point position = new Point();
         XControlShape oCShape = null;
         XControlModel aControl = null;
 
+        //get MSF
         XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
 
-        Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
-        Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
-        XPropertySet model_props = UnoRuntime.queryInterface(XPropertySet.class,aCon);
-        model_props.setPropertyValue("DefaultControl","com.sun.star.form.control."+kind);
-        aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
-        oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
-        size.Height = height;
-        size.Width = width;
-        position.X = x;
-        position.Y = y;
-        oCShape.setSize(size);
-        oCShape.setPosition(position);
+        try{
+            Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
+            Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
+            XPropertySet model_props = UnoRuntime.queryInterface(XPropertySet.class,aCon);
+            model_props.setPropertyValue("DefaultControl","com.sun.star.form.control."+kind);
+            aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
+            oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
+            size.Height = height;
+            size.Width = width;
+            position.X = x;
+            position.Y = y;
+            oCShape.setSize(size);
+            oCShape.setPosition(position);
+        } catch ( com.sun.star.uno.Exception e ) {
+            // Some exception occurs.FAILED
+            System.out.println( "Couldn't create instance "+ e );
+        }
 
         oCShape.setControl(aControl);
 
@@ -87,29 +91,35 @@ public class FormTools {
     } // finish createControlShape
 
     public static XControlShape createUnoControlShape( XComponent oDoc, int height,
-                                        int width, int x, int y, String kind, String defControl )
-        throws com.sun.star.uno.Exception
-    {
+                                        int width, int x, int y, String kind, String defControl ) {
 
          Size size = new Size();
         Point position = new Point();
         XControlShape oCShape = null;
         XControlModel aControl = null;
 
-        XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
+        //get MSF
+           XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
 
-        Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
-        Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
-        XPropertySet model_props = UnoRuntime.queryInterface(XPropertySet.class,aCon);
-        model_props.setPropertyValue("DefaultControl","com.sun.star.awt."+defControl);
-        aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
-        oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
-        size.Height = height;
-        size.Width = width;
-        position.X = x;
-        position.Y = y;
-        oCShape.setSize(size);
-        oCShape.setPosition(position);
+           try{
+         Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
+         Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
+         XPropertySet model_props = UnoRuntime.queryInterface(XPropertySet.class,aCon);
+         model_props.setPropertyValue("DefaultControl","com.sun.star.awt."+defControl);
+         aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
+         oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
+         size.Height = height;
+         size.Width = width;
+         position.X = x;
+         position.Y = y;
+         oCShape.setSize(size);
+         oCShape.setPosition(position);
+
+
+           } catch ( com.sun.star.uno.Exception e ) {
+            // Some exception occurs.FAILED
+            System.out.println( "Couldn't create instance "+ e );
+        }
 
         oCShape.setControl(aControl);
 
@@ -117,43 +127,53 @@ public class FormTools {
     } // finish createControlShape
 
     public static XControlShape createControlShapeWithDefaultControl( XComponent oDoc, int height,
-                                        int width, int x, int y, String kind )
-        throws com.sun.star.uno.Exception
-    {
+                                        int width, int x, int y, String kind ) {
 
          Size size = new Size();
         Point position = new Point();
         XControlShape oCShape = null;
         XControlModel aControl = null;
 
-        XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
+        //get MSF
+           XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
 
-        Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
-        Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
+           try{
+         Object oInt = oDocMSF.createInstance("com.sun.star.drawing.ControlShape");
+         Object aCon = oDocMSF.createInstance("com.sun.star.form.component."+kind);
 
-        aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
-        oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
-        size.Height = height;
-        size.Width = width;
-        position.X = x;
-        position.Y = y;
-        oCShape.setSize(size);
-        oCShape.setPosition(position);
+         aControl = UnoRuntime.queryInterface( XControlModel.class, aCon );
+         oCShape = UnoRuntime.queryInterface( XControlShape.class, oInt );
+         size.Height = height;
+         size.Width = width;
+         position.X = x;
+         position.Y = y;
+         oCShape.setSize(size);
+         oCShape.setPosition(position);
+
+
+           } catch ( com.sun.star.uno.Exception e ) {
+            // Some exception occurs.FAILED
+            System.out.println( "Couldn't create instance "+ e );
+        }
 
         oCShape.setControl(aControl);
 
         return oCShape;
     } // finish createControlShape
 
-    public static XInterface createControl( XComponent oDoc, String kind )
-        throws com.sun.star.uno.Exception
-    {
+    public static XInterface createControl( XComponent oDoc, String kind ) {
+
         XInterface oControl = null;
 
-        XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
+           XMultiServiceFactory oDocMSF = UnoRuntime.queryInterface( XMultiServiceFactory.class, oDoc );
 
-        oControl = (XInterface) oDocMSF.createInstance(
+           try{
+            oControl = (XInterface) oDocMSF.createInstance(
                                         "com.sun.star.form.component."+kind);
+           } catch ( Exception e ) {
+            // Some exception occurs.FAILED
+            System.out.println( "Couldn't create instance "+ kind + ": "+ e );
+        }
         return oControl;
     } // finish createControl
 
@@ -173,37 +193,46 @@ public class FormTools {
     } //finish getIndexedForms
 
     public static void insertForm ( XComponent aDoc, XNameContainer Forms,
-                                                                String aName )
-        throws com.sun.star.uno.Exception
-    {
-        XInterface oControl = createControl(aDoc, "Form");
-        XForm oForm = UnoRuntime.queryInterface(XForm.class, oControl);
-        Forms.insertByName(aName,oForm);
+                                                                String aName ) {
+        try {
+            XInterface oControl = createControl(aDoc, "Form");
+            XForm oForm = UnoRuntime.queryInterface(XForm.class, oControl);
+            Forms.insertByName(aName,oForm);
+        } catch ( Exception e ) {
+            throw new IllegalArgumentException( "Couldn't insert Form", e );
+        }
     }
 
     public static XControlShape insertControlShape( XComponent oDoc, int height,
-                                        int width, int x, int y, String kind )
-        throws com.sun.star.uno.Exception
-    {
+                                        int width, int x, int y, String kind ) {
+
         XControlShape aShape = createControlShape(oDoc,height,width,x,y,kind);
         XDrawPage oDP = DrawTools.getDrawPage(oDoc,0);
         DrawTools.getShapes(oDP).add(aShape);
         return aShape;
     }
 
-    public static XLoadable bindForm( XTextDocument aDoc )
-        throws com.sun.star.uno.Exception
-    {
+    public static XLoadable bindForm( XTextDocument aDoc ) {
         XLoadable formLoader = null;
 
-        Object aForm = FormTools.getIndexedForms(WriterTools.getDrawPage(aDoc)).getByIndex(0);
-        XForm the_form = null;
-        the_form = (XForm) AnyConverter.toObject(new Type(XForm.class), aForm);
-        XPropertySet formProps = UnoRuntime.queryInterface(XPropertySet.class, the_form);
-        formProps.setPropertyValue("DataSourceName","Bibliography");
-        formProps.setPropertyValue("Command","biblio");
-        formProps.setPropertyValue("CommandType",Integer.valueOf(com.sun.star.sdb.CommandType.TABLE));
-        formLoader = UnoRuntime.queryInterface(XLoadable.class, the_form);
+        try {
+            Object aForm = FormTools.getIndexedForms(WriterTools.getDrawPage(aDoc)).getByIndex(0);
+            XForm the_form = null;
+            try {
+                the_form = (XForm) AnyConverter.toObject(new Type(XForm.class), aForm);
+            } catch (com.sun.star.lang.IllegalArgumentException iae) {
+                System.out.println("### Couldn't convert Any");
+            }
+            XPropertySet formProps = UnoRuntime.queryInterface(XPropertySet.class, the_form);
+            formProps.setPropertyValue("DataSourceName","Bibliography");
+            formProps.setPropertyValue("Command","biblio");
+            formProps.setPropertyValue("CommandType",Integer.valueOf(com.sun.star.sdb.CommandType.TABLE));
+            formLoader = UnoRuntime.queryInterface(XLoadable.class, the_form);
+        }
+        catch (Exception ex) {
+            System.out.println("Exception: "+ex);
+            ex.printStackTrace(System.err);
+        }
 
         return formLoader;
     }
@@ -257,9 +286,8 @@ public class FormTools {
         return UnoRuntime.queryInterface(XLoadable.class, the_form);
     }
 
-    public static void switchDesignOf(XMultiServiceFactory xMSF, XTextDocument aDoc)
-        throws com.sun.star.uno.Exception
-    {
+    public static void switchDesignOf(XMultiServiceFactory xMSF, XTextDocument aDoc) {
+    try {
         com.sun.star.frame.XController aController = aDoc.getCurrentController();
         com.sun.star.frame.XFrame aFrame = aController.getFrame();
         com.sun.star.frame.XDispatchProvider aDispProv = UnoRuntime.queryInterface(com.sun.star.frame.XDispatchProvider.class,aFrame);
@@ -281,7 +309,10 @@ public class FormTools {
 
         com.sun.star.beans.PropertyValue[] noArgs = new com.sun.star.beans.PropertyValue[0];
         aDisp.dispatch(aURL, noArgs);
-        util.utils.waitForEventIdle(xMSF); // async dispatch
+        } catch (Exception e) {
+            System.out.println("******* Mist");
+            e.printStackTrace();
+            }
     }
 
 }

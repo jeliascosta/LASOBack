@@ -247,7 +247,10 @@ Any SAL_CALL ImplHelper_queryNoXInterface(
     {
         return Any( &p, pTDR );
     }
-    return Any();
+    else
+    {
+        return Any();
+    }
 }
 
 css::uno::Sequence<sal_Int8> ImplHelper_getImplementationId(

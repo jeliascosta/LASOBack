@@ -22,6 +22,30 @@
 #include "fmhelp.hrc"
 #include <svx/svxcommands.h>
 
+Menu RID_SVXMNU_ROWS
+{
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = SID_FM_DELETEROWS ;
+            HelpId = HID_FM_DELETEROWS ;
+            Text [ en-US ] = "Delete Rows" ;
+        };
+        MenuItem
+        {
+            Identifier = SID_FM_RECORD_SAVE ;
+            HelpId = CMD_SID_FM_RECORD_SAVE ;
+            Text [ en-US ] = "Save Record" ;
+        };
+        MenuItem
+        {
+            Identifier = SID_FM_RECORD_UNDO ;
+            HelpId = CMD_SID_FM_RECORD_UNDO ;
+            Text [ en-US ] = "Undo: Data entry" ;
+        };
+    };
+};
 Menu RID_SVXMNU_COLS
 {
     ItemList =
@@ -157,6 +181,19 @@ Menu RID_SVXMNU_COLS
             Identifier = SID_FM_SHOW_PROPERTY_BROWSER ;
             HelpId = CMD_SID_FM_SHOW_PROPERTY_BROWSER ;
             Text [ en-US ] = "Column..." ;
+        };
+    };
+};
+
+Menu RID_SVXMNU_CELL
+{
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = SID_COPY ;
+            Command = ".uno:Copy" ;
+            Text [ en-US ] = "~Copy" ;
         };
     };
 };

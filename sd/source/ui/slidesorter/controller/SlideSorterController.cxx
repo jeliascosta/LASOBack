@@ -120,7 +120,7 @@ SlideSorterController::SlideSorterController (SlideSorter& rSlideSorter)
       mnPaintEntranceCount(0),
       mbIsContextMenuOpen(false)
 {
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     OSL_ASSERT(pWindow);
     if (pWindow)
     {
@@ -133,7 +133,7 @@ SlideSorterController::SlideSorterController (SlideSorter& rSlideSorter)
         // class.
         pWindow->SetBackground(Wallpaper());
         pWindow->SetCenterAllowed(false);
-        pWindow->SetMapMode(MapMode(MapUnit::MapPixel));
+        pWindow->SetMapMode(MapMode(MAP_PIXEL));
         pWindow->SetViewSize(mrView.GetModelArea().GetSize());
     }
 }
@@ -199,12 +199,13 @@ model::SharedPageDescriptor SlideSorterController::GetPageAt (
         // Depending on a property we may have to check that the mouse is no
         // just over the page object but over the preview area.
         if (pDescriptorAtPoint
+            && mrSlideSorter.GetProperties()->IsOnlyPreviewTriggersMouseOver()
             && ! pDescriptorAtPoint->HasState(PageDescriptor::ST_Selected))
         {
             // Make sure that the mouse is over the preview area.
             if ( ! mrView.GetLayouter().GetPageObjectLayouter()->GetBoundingBox(
                 pDescriptorAtPoint,
-                view::PageObjectLayouter::Part::Preview,
+                view::PageObjectLayouter::Preview,
                 view::PageObjectLayouter::WindowCoordinateSystem).IsInside(aWindowPosition))
             {
                 pDescriptorAtPoint.reset();
@@ -239,25 +240,25 @@ ScrollBarManager& SlideSorterController::GetScrollBarManager()
     return *mpScrollBarManager.get();
 }
 
-std::shared_ptr<CurrentSlideManager> const & SlideSorterController::GetCurrentSlideManager() const
+std::shared_ptr<CurrentSlideManager> SlideSorterController::GetCurrentSlideManager() const
 {
     OSL_ASSERT(mpCurrentSlideManager.get()!=nullptr);
     return mpCurrentSlideManager;
 }
 
-std::shared_ptr<SlotManager> const & SlideSorterController::GetSlotManager() const
+std::shared_ptr<SlotManager> SlideSorterController::GetSlotManager() const
 {
     OSL_ASSERT(mpSlotManager.get()!=nullptr);
     return mpSlotManager;
 }
 
-std::shared_ptr<SelectionManager> const & SlideSorterController::GetSelectionManager() const
+std::shared_ptr<SelectionManager> SlideSorterController::GetSelectionManager() const
 {
     OSL_ASSERT(mpSelectionManager.get()!=nullptr);
     return mpSelectionManager;
 }
 
-std::shared_ptr<InsertionIndicatorHandler> const &
+std::shared_ptr<InsertionIndicatorHandler>
     SlideSorterController::GetInsertionIndicatorHandler() const
 {
     OSL_ASSERT(mpInsertionIndicatorHandler.get()!=nullptr);
@@ -265,7 +266,7 @@ std::shared_ptr<InsertionIndicatorHandler> const &
 }
 
 void SlideSorterController::Paint (
-    const ::tools::Rectangle& rBBox,
+    const Rectangle& rBBox,
     vcl::Window* pWindow)
 {
     if (mnPaintEntranceCount == 0)
@@ -325,7 +326,7 @@ bool SlideSorterController::Command (
             if (aSelectedPages.HasMoreElements())
                 pPage = aSelectedPages.GetNextElement()->GetPage();
 
-            if (mrModel.GetEditMode() == EditMode::Page)
+            if (mrModel.GetEditMode() == EM_PAGE)
             {
                 if (pPage != nullptr)
                     aPopupId = "pagepane";
@@ -371,10 +372,10 @@ bool SlideSorterController::Command (
                     GetFocusManager().GetFocusedPageDescriptor());
                 if (pDescriptor.get() != nullptr)
                 {
-                    ::tools::Rectangle aBBox (
+                    Rectangle aBBox (
                         mrView.GetLayouter().GetPageObjectLayouter()->GetBoundingBox (
                             pDescriptor,
-                            PageObjectLayouter::Part::PageObject,
+                            PageObjectLayouter::PageObject,
                             PageObjectLayouter::ModelCoordinateSystem));
                     aMenuLocation = aBBox.Center();
                 }
@@ -425,12 +426,14 @@ bool SlideSorterController::Command (
             {
                 GetScrollBarManager().Scroll(
                     ScrollBarManager::Orientation_Vertical,
+                    ScrollBarManager::Unit_Slide,
                     -pData->GetNotchDelta());
             }
             else
             {
                 GetScrollBarManager().Scroll(
                     ScrollBarManager::Orientation_Horizontal,
+                    ScrollBarManager::Unit_Slide,
                     -pData->GetNotchDelta());
             }
             mrSlideSorter.GetView().UpdatePageUnderMouse(rEvent.GetMousePosPixel());
@@ -483,7 +486,7 @@ void SlideSorterController::PostModelChange()
     mbPostModelChangePending = false;
     mrModel.Resync();
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     if (pWindow)
     {
         GetCurrentSlideManager()->HandleModelChange();
@@ -517,37 +520,37 @@ void SlideSorterController::HandleModelChange()
     }
 }
 
-IMPL_LINK(SlideSorterController, ApplicationEventHandler, VclSimpleEvent&, rEvent, void)
+IMPL_LINK_TYPED(SlideSorterController, ApplicationEventHandler, VclSimpleEvent&, rEvent, void)
 {
     auto windowEvent = dynamic_cast<VclWindowEvent *>(&rEvent);
     if (windowEvent != nullptr) {
         WindowEventHandler(*windowEvent);
     }
 }
-IMPL_LINK(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK_TYPED(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
         vcl::Window* pWindow = rEvent.GetWindow();
-        sd::Window *pActiveWindow (mrSlideSorter.GetContentWindow().get());
+        sd::Window *pActiveWindow (mrSlideSorter.GetContentWindow());
         switch (rEvent.GetId())
         {
-            case VclEventId::WindowActivate:
-            case VclEventId::WindowShow:
+            case VCLEVENT_WINDOW_ACTIVATE:
+            case VCLEVENT_WINDOW_SHOW:
                 if (pActiveWindow && pWindow == pActiveWindow->GetParent())
                     mrView.RequestRepaint();
                 break;
 
-            case VclEventId::WindowHide:
+            case VCLEVENT_WINDOW_HIDE:
                 if (pActiveWindow && pWindow == pActiveWindow->GetParent())
                     mrView.SetPageUnderMouse(SharedPageDescriptor());
                 break;
 
-            case VclEventId::WindowGetFocus:
+            case VCLEVENT_WINDOW_GETFOCUS:
                 if (pActiveWindow)
                     if (pWindow == pActiveWindow)
                         GetFocusManager().ShowFocus(false);
                 break;
 
-            case VclEventId::WindowLoseFocus:
+            case VCLEVENT_WINDOW_LOSEFOCUS:
                 if (pActiveWindow && pWindow == pActiveWindow)
                 {
                     GetFocusManager().HideFocus();
@@ -559,7 +562,7 @@ IMPL_LINK(SlideSorterController, WindowEventHandler, VclWindowEvent&, rEvent, vo
                 }
                 break;
 
-            case VclEventId::ApplicationDataChanged:
+            case VCLEVENT_APPLICATION_DATACHANGED:
             {
                 // Invalidate the preview cache.
                 cache::PageCacheManager::Instance()->InvalidateAllCaches();
@@ -663,7 +666,7 @@ void SlideSorterController::UpdateAllPages()
     mrSlideSorter.GetContentWindow()->Invalidate();
 }
 
-void SlideSorterController::Resize (const ::tools::Rectangle& rAvailableSpace)
+void SlideSorterController::Resize (const Rectangle& rAvailableSpace)
 {
     if (maTotalWindowArea != rAvailableSpace)
     {
@@ -685,14 +688,14 @@ void  SlideSorterController::Rearrange (bool bForce)
     else
         mbIsForcedRearrangePending = false;
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     if (pWindow)
     {
         if (bForce)
             mrView.UpdateOrientation();
 
         // Place the scroll bars.
-        ::tools::Rectangle aNewContentArea = GetScrollBarManager().PlaceScrollBars(
+        Rectangle aNewContentArea = GetScrollBarManager().PlaceScrollBars(
             maTotalWindowArea,
             mrView.GetOrientation() != view::Layouter::VERTICAL,
             mrView.GetOrientation() != view::Layouter::HORIZONTAL);
@@ -702,7 +705,7 @@ void  SlideSorterController::Rearrange (bool bForce)
         // order to determine whether the window and the view have to be resized.
         if ( ! bForce)
         {
-            ::tools::Rectangle aCurrentContentArea (pWindow->GetPosPixel(), pWindow->GetOutputSizePixel());
+            Rectangle aCurrentContentArea (pWindow->GetPosPixel(), pWindow->GetOutputSizePixel());
             bSizeHasChanged = (aNewContentArea != aCurrentContentArea);
         }
         if (bForce || bSizeHasChanged)
@@ -740,7 +743,7 @@ void SlideSorterController::PrepareEditModeChange()
     //  Before we throw away the page descriptors we prepare for selecting
     //  descriptors in the other mode and for restoring the current
     //  selection when switching back to the current mode.
-    if (mrModel.GetEditMode() == EditMode::Page)
+    if (mrModel.GetEditMode() == EM_PAGE)
     {
         maSelectionBeforeSwitch.clear();
 
@@ -784,7 +787,7 @@ void SlideSorterController::ChangeEditMode (EditMode eEditMode)
 
 void SlideSorterController::FinishEditModeChange()
 {
-    if (mrModel.GetEditMode() == EditMode::MasterPage)
+    if (mrModel.GetEditMode() == EM_MASTERPAGE)
     {
         mpPageSelector->DeselectAllPages();
 
@@ -832,7 +835,7 @@ void SlideSorterController::PageNameHasChanged (int nPageIndex, const OUString& 
 
     // Get a pointer to the corresponding accessible object and notify
     // that of the name change.
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     if ( ! pWindow)
         return;
 

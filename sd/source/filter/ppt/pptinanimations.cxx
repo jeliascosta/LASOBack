@@ -178,8 +178,7 @@ int AnimationImporter::import( const Reference< XDrawPage >& xPage, const DffRec
                 nNodes = importAnimationContainer( pAtom.get(), xParent );
             }
 
-            std::for_each( maAfterEffectNodes.begin(), maAfterEffectNodes.end(),
-                           sd::stl_process_after_effect_node_func );
+            processAfterEffectNodes();
         }
     }
 
@@ -188,6 +187,11 @@ int AnimationImporter::import( const Reference< XDrawPage >& xPage, const DffRec
 #endif
 
     return nNodes;
+}
+
+void AnimationImporter::processAfterEffectNodes()
+{
+    std::for_each( maAfterEffectNodes.begin(), maAfterEffectNodes.end(), sd::stl_process_after_effect_node_func );
 }
 
 Reference< XAnimationNode > AnimationImporter::createNode( const Atom* pAtom, const AnimationNode& rNode )
@@ -315,7 +319,7 @@ int AnimationImporter::importAnimationContainer( const Atom* pAtom, const Refere
             xNode = mxRootNode;
         }
 
-        // import if we have a node and it's not random
+        // import if we have a node and its not random
         if( xNode.is() )
         {
             fillNode( xNode, aNode, aSet );
@@ -618,7 +622,7 @@ bool AnimationImporter::convertAnimationNode( const Reference< XAnimationNode >&
         xNode->setUserData( aUserData );
     }
 
-    // if it's an after effect node, add it to the list for
+    // if its an after effect node, add it to the list for
     // later processing
     // after effect nodes are not inserted at their import
     // position, so return false in this case
@@ -758,18 +762,18 @@ bool AnimationImporter::convertAnimationValue( oox::ppt::MS_AttributeNames eAttr
                 aString = aString.copy( 4, aString.getLength() - 5 );
                 Color aColor;
                 sal_Int32 index = 0;
-                aColor.SetRed( (sal_uInt8)aString.getToken( 0, ',', index ).toInt32() );
-                aColor.SetGreen( (sal_uInt8)aString.getToken( 0, ',', index ).toInt32() );
-                aColor.SetRed( (sal_uInt8)aString.getToken( 0, ',', index ).toInt32() );
+                aColor.SetRed( (sal_uInt8)aString.getToken( 0, (sal_Unicode)',', index ).toInt32() );
+                aColor.SetGreen( (sal_uInt8)aString.getToken( 0, (sal_Unicode)',', index ).toInt32() );
+                aColor.SetRed( (sal_uInt8)aString.getToken( 0, (sal_Unicode)',', index ).toInt32() );
                 rValue <<= (sal_Int32)aColor.GetColor();
                 bRet = true;
             }
             else if( aString.startsWith( "hsl(" ) )
             {
                 sal_Int32 index = 0;
-                sal_Int32 nA = aString.getToken( 0, ',', index ).toInt32();
-                sal_Int32 nB = aString.getToken( 0, ',', index ).toInt32();
-                sal_Int32 nC = aString.getToken( 0, ',', index ).toInt32();
+                sal_Int32 nA = aString.getToken( 0, (sal_Unicode)',', index ).toInt32();
+                sal_Int32 nB = aString.getToken( 0, (sal_Unicode)',', index ).toInt32();
+                sal_Int32 nC = aString.getToken( 0, (sal_Unicode)',', index ).toInt32();
                 dump( "hsl(%ld", nA );
                 dump( ",%ld", nB );
                 dump( ",%ld)", nC );
@@ -905,7 +909,7 @@ void AnimationImporter::fillNode( Reference< XAnimationNode >& xNode, const Anim
         Any aDuration;
         if( rNode.mnDuration > 0 )
         {
-            aDuration <<= rNode.mnDuration / 1000.0;
+            aDuration <<= (double)(rNode.mnDuration / 1000.0);
         }
         else if( rNode.mnDuration < 0 )
         {
@@ -1097,7 +1101,7 @@ void AnimationImporter::fillNode( Reference< XAnimationNode >& xNode, const Anim
                 sal_Int32 fromIndex = 0;
                 while(true)
                 {
-                    fromIndex = aString.indexOf( ';', fromIndex );
+                    fromIndex = aString.indexOf( (sal_Unicode)';', fromIndex );
                     if( fromIndex == -1 )
                         break;
 
@@ -2432,7 +2436,7 @@ void AnimationImporter::importAnimateKeyPoints( const Atom* pAtom, const Referen
 
                         if( bHasValue )
                         {
-                            aValues[nKeyTime] <<= ValuePair( aValue1, aValue2 );
+                            aValues[nKeyTime] = makeAny( ValuePair( aValue1, aValue2 ) );
                         }
                         else
                         {
@@ -2632,7 +2636,7 @@ void AnimationImporter::importAnimationEvents( const Atom* pAtom, const Referenc
                     }
 
                     if( (nBegin != 0) || (aEvent.Trigger == EventTrigger::NONE) )
-                        aEvent.Offset = (nBegin == -1) ? makeAny( Timing_INDEFINITE ) : makeAny( nBegin / 1000.0 );
+                        aEvent.Offset = (nBegin == -1) ? makeAny( Timing_INDEFINITE ) : makeAny( (double)(nBegin / 1000.0) );
                 }
                 break;
                 case DFF_msofbtAnimateTargetElement:
@@ -2797,11 +2801,11 @@ void AnimationImporter::importTargetElementContainer( const Atom* pAtom, Any& rT
                             rTarget >>= aParaTarget.Shape;
                             /* FIXME: Paragraph should be sal_Int32 as well */
                             aParaTarget.Paragraph = static_cast<sal_Int16>(nPara);
-                            rTarget <<= aParaTarget;
+                            rTarget = makeAny( aParaTarget );
 
                             rSubType = ShapeAnimationSubType::ONLY_TEXT;
-                            dump( " paragraph %d,", nPara);
-                            dump( " %d characters", end );
+                            dump( " paragraph %d,", (sal_Int32)nPara);
+                            dump( " %d characters", (sal_Int32)end );
                         }
                     }
                     }

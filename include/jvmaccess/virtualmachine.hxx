@@ -48,14 +48,14 @@ public:
     public:
         /** An exception indicating failure to create an AttachGuard.
          */
-        class JVMACCESS_DLLPUBLIC CreationException final
+        class JVMACCESS_DLLPUBLIC CreationException
         {
         public:
             CreationException();
 
             CreationException(CreationException const &);
 
-            ~CreationException();
+            virtual ~CreationException();
 
             CreationException & operator =(CreationException const &);
         };
@@ -79,7 +79,7 @@ public:
             @return
             A valid JNI environment pointer.  Will never be null.
          */
-        JNIEnv * getEnvironment() const { return m_pEnvironment; }
+        inline JNIEnv * getEnvironment() const { return m_pEnvironment; }
 
     private:
         AttachGuard(AttachGuard &) = delete;
@@ -131,7 +131,7 @@ private:
     VirtualMachine(VirtualMachine &) = delete;
     void operator =(VirtualMachine) = delete;
 
-    virtual ~VirtualMachine() override;
+    virtual ~VirtualMachine();
 
     JNIEnv * attachThread(bool * pAttached) const;
 

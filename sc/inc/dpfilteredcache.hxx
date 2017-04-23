@@ -65,6 +65,7 @@ public:
     {
     public:
         explicit SingleFilter(const ScDPItemData &rItem);
+        virtual ~SingleFilter() {}
 
         virtual bool match(const ScDPItemData& rCellData) const override;
         virtual std::vector<ScDPItemData> getMatchValues() const override;
@@ -78,6 +79,7 @@ public:
     {
     public:
         GroupFilter();
+        virtual ~GroupFilter() {}
         virtual bool match(const ScDPItemData& rCellData) const override;
         virtual std::vector<ScDPItemData> getMatchValues() const override;
         void addMatchItem(const ScDPItemData& rItem);
@@ -140,8 +142,8 @@ public:
     void clear();
     bool empty() const;
 
-#if DUMP_PIVOT_TABLE
-    static void dumpRowFlag( const RowFlagType& rFlag );
+#if DEBUG_PIVOT_TABLE
+    void dumpRowFlag(const RowFlagType& rFlag) const;
     void dump() const;
 #endif
 

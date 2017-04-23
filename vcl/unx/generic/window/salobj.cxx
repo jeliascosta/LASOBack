@@ -31,6 +31,7 @@
 #include <vcl/event.hxx>
 
 #include <unx/salunx.h>
+#include <unx/saldata.hxx>
 #include <unx/salinst.h>
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
@@ -79,7 +80,7 @@ X11SalObject* X11SalObject::CreateObject( SalFrame* pParent, SystemWindowData* p
     int nVisuals = 0;
     XVisualInfo* pInfo = XGetVisualInfo( pDisp, VisualIDMask, &aTemplate, &nVisuals );
     // only one VisualInfo structure can match the visual id
-    SAL_WARN_IF( nVisuals != 1, "vcl", "match count for visual id is not 1" );
+    DBG_ASSERT( nVisuals == 1, "match count for visual id is not 1" );
     unsigned int nDepth     = pInfo->depth;
     XFree( pInfo );
     XSetWindowAttributes aAttribs;

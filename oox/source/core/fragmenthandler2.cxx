@@ -43,12 +43,12 @@ FragmentHandler2::~FragmentHandler2()
 
 // com.sun.star.xml.sax.XFastDocumentHandler interface --------------------
 
-void SAL_CALL FragmentHandler2::startDocument()
+void SAL_CALL FragmentHandler2::startDocument() throw( SAXException, RuntimeException, std::exception )
 {
     initializeImport();
 }
 
-void SAL_CALL FragmentHandler2::endDocument()
+void SAL_CALL FragmentHandler2::endDocument() throw( SAXException, RuntimeException, std::exception )
 {
     finalizeImport();
 }
@@ -58,12 +58,12 @@ bool FragmentHandler2::prepareMceContext( sal_Int32 nElement, const AttributeLis
     switch( nElement )
     {
         case MCE_TOKEN( AlternateContent ):
-            aMceState.push_back( MCE_STATE::Started );
+            aMceState.push_back( MCE_STARTED );
             break;
 
         case MCE_TOKEN( Choice ):
             {
-                if (aMceState.empty() || aMceState.back() != MCE_STATE::Started)
+                if (aMceState.empty() || aMceState.back() != MCE_STARTED)
                     return false;
 
                 OUString aRequires = rAttribs.getString( (XML_Requires ), "none" );
@@ -76,18 +76,17 @@ bool FragmentHandler2::prepareMceContext( sal_Int32 nElement, const AttributeLis
                 {
                     "p14",
                     "p15",
-                    "x12ac",
                 };
 
                 if (std::find(aSupportedNS.begin(), aSupportedNS.end(), aRequires) != aSupportedNS.end())
-                    aMceState.back() = MCE_STATE::FoundChoice;
+                    aMceState.back() = MCE_FOUND_CHOICE;
                 else
                     return false;
             }
             break;
 
         case MCE_TOKEN( Fallback ):
-            if( !aMceState.empty() && aMceState.back() == MCE_STATE::Started )
+            if( !aMceState.empty() && aMceState.back() == MCE_STARTED )
                 break;
             return false;
         default:
@@ -109,7 +108,7 @@ bool FragmentHandler2::prepareMceContext( sal_Int32 nElement, const AttributeLis
 // com.sun.star.xml.sax.XFastContextHandler interface -------------------------
 
 Reference< XFastContextHandler > SAL_CALL FragmentHandler2::createFastChildContext(
-        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs )
+        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs ) throw( SAXException, RuntimeException, std::exception )
 {
     if( getNamespace( nElement ) == NMSP_mce ) // TODO for checking 'Ignorable'
     {
@@ -121,17 +120,17 @@ Reference< XFastContextHandler > SAL_CALL FragmentHandler2::createFastChildConte
 }
 
 void SAL_CALL FragmentHandler2::startFastElement(
-        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs )
+        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs ) throw( SAXException, RuntimeException, std::exception )
 {
     implStartElement( nElement, rxAttribs );
 }
 
-void SAL_CALL FragmentHandler2::characters( const OUString& rChars )
+void SAL_CALL FragmentHandler2::characters( const OUString& rChars ) throw( SAXException, RuntimeException, std::exception )
 {
     implCharacters( rChars );
 }
 
-void SAL_CALL FragmentHandler2::endFastElement( sal_Int32 nElement )
+void SAL_CALL FragmentHandler2::endFastElement( sal_Int32 nElement ) throw( SAXException, RuntimeException, std::exception )
 {
     /* If MCE */
     switch( nElement )

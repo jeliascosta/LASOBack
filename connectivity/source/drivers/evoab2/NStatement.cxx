@@ -75,7 +75,7 @@ OCommonStatement::OCommonStatement(OEvoabConnection* _pConnection)
     , m_xResultSet(nullptr)
     , m_pConnection(_pConnection)
     , m_aParser(_pConnection->getDriver().getComponentContext())
-    , m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser )
+    , m_aSQLIterator( _pConnection, _pConnection->createCatalog()->getTables(), m_aParser, nullptr )
     , m_pParseTree(nullptr)
     , m_nMaxFieldSize(0)
     , m_nMaxRows(0)
@@ -135,7 +135,7 @@ void OCommonStatement::disposing()
     OCommonStatement_IBase::disposing();
 }
 
-Any SAL_CALL OCommonStatement::queryInterface( const Type & rType )
+Any SAL_CALL OCommonStatement::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = OCommonStatement_IBase::queryInterface(rType);
     if(!aRet.hasValue())
@@ -143,7 +143,7 @@ Any SAL_CALL OCommonStatement::queryInterface( const Type & rType )
     return aRet;
 }
 
-Sequence< Type > SAL_CALL OCommonStatement::getTypes(  )
+Sequence< Type > SAL_CALL OCommonStatement::getTypes(  ) throw(RuntimeException, std::exception)
 {
     ::cppu::OTypeCollection aTypes( cppu::UnoType<XMultiPropertySet>::get(),
                                     cppu::UnoType<XFastPropertySet>::get(),
@@ -161,7 +161,7 @@ Sequence< Type > SAL_CALL OCommonStatement::getTypes(  )
 //}
 
 
-void SAL_CALL OCommonStatement::close(  )
+void SAL_CALL OCommonStatement::close(  ) throw(SQLException, RuntimeException, std::exception)
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -368,7 +368,7 @@ EBookQuery *OCommonStatement::whereAnalysis( const OSQLParseNode* parseTree )
         aMatchString = pAtom->getTokenValue();
 
         // Determine where '%' character is...
-        if( aMatchString == OUStringLiteral1(WILDCARD) )
+        if( aMatchString == OUStringLiteral1<WILDCARD>() )
         {
             // String containing only a '%' and nothing else matches everything
             pResult = createTest( aColumnName, E_BOOK_QUERY_CONTAINS,
@@ -388,7 +388,7 @@ EBookQuery *OCommonStatement::whereAnalysis( const OSQLParseNode* parseTree )
         }
         else if( (aMatchString.indexOf ( WILDCARD ) == aMatchString.lastIndexOf ( WILDCARD ) ) )
         {   // One occurrence of '%'  matches...
-            if ( aMatchString.startsWith(OUStringLiteral1(WILDCARD)) )
+            if ( aMatchString.startsWith(OUStringLiteral1<WILDCARD>()) )
                 pResult = createTest( aColumnName, E_BOOK_QUERY_ENDS_WITH, aMatchString.copy( 1 ) );
             else if ( aMatchString.indexOf ( WILDCARD ) == aMatchString.getLength() - 1 )
                 pResult = createTest( aColumnName, E_BOOK_QUERY_BEGINS_WITH, aMatchString.copy( 0, aMatchString.getLength() - 1 ) );
@@ -396,7 +396,7 @@ EBookQuery *OCommonStatement::whereAnalysis( const OSQLParseNode* parseTree )
                 m_pConnection->throwGenericSQLException(STR_QUERY_LIKE_WILDCARD,*this);
         }
         else if( aMatchString.getLength() >= 3 &&
-                 aMatchString.startsWith(OUStringLiteral1(WILDCARD)) &&
+                 aMatchString.startsWith(OUStringLiteral1<WILDCARD>()) &&
                  aMatchString.indexOf ( WILDCARD, 1) == aMatchString.getLength() - 1 ) {
             // one '%' at the start and another at the end
             pResult = createTest( aColumnName, E_BOOK_QUERY_CONTAINS, aMatchString.copy (1, aMatchString.getLength() - 2) );
@@ -490,7 +490,7 @@ void OCommonStatement::parseSql( const OUString& sql, QueryData& _out_rQueryData
 }
 
 
-Reference< XConnection > SAL_CALL OStatement::getConnection(  )
+Reference< XConnection > SAL_CALL OStatement::getConnection(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);
@@ -500,7 +500,7 @@ Reference< XConnection > SAL_CALL OStatement::getConnection(  )
 }
 
 
-Any SAL_CALL OCommonStatement::getWarnings(  )
+Any SAL_CALL OCommonStatement::getWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);
@@ -510,7 +510,7 @@ Any SAL_CALL OCommonStatement::getWarnings(  )
 }
 
 
-void SAL_CALL OCommonStatement::clearWarnings(  )
+void SAL_CALL OCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);
@@ -537,7 +537,7 @@ void SAL_CALL OCommonStatement::acquire() throw()
 
 void SAL_CALL OCommonStatement::release() throw()
 {
-    release_ChildImpl();
+    relase_ChildImpl();
 }
 
 
@@ -590,7 +590,7 @@ Reference< XResultSet > OCommonStatement::impl_executeQuery_throw( const OUStrin
 }
 
 
-Reference< XPropertySetInfo > SAL_CALL OCommonStatement::getPropertySetInfo(  )
+Reference< XPropertySetInfo > SAL_CALL OCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo( getInfoHelper() );
 }
@@ -608,7 +608,7 @@ IMPLEMENT_FORWARD_XINTERFACE2( OStatement, OCommonStatement, OStatement_IBase )
 IMPLEMENT_FORWARD_XTYPEPROVIDER2( OStatement, OCommonStatement, OStatement_IBase )
 
 
-sal_Bool SAL_CALL OStatement::execute( const OUString& _sql )
+sal_Bool SAL_CALL OStatement::execute( const OUString& _sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);
@@ -618,7 +618,7 @@ sal_Bool SAL_CALL OStatement::execute( const OUString& _sql )
 }
 
 
-Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& _sql )
+Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& _sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);
@@ -627,7 +627,7 @@ Reference< XResultSet > SAL_CALL OStatement::executeQuery( const OUString& _sql 
 }
 
 
-sal_Int32 SAL_CALL OStatement::executeUpdate( const OUString& /*sql*/ )
+sal_Int32 SAL_CALL OStatement::executeUpdate( const OUString& /*sql*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBase::rBHelper.bDisposed);

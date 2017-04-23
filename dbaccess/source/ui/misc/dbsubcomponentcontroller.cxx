@@ -39,7 +39,6 @@
 #include <comphelper/sequence.hxx>
 #include <comphelper/types.hxx>
 #include <connectivity/dbexception.hxx>
-#include <connectivity/dbmetadata.hxx>
 #include <connectivity/dbtools.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/interfacecontainer2.hxx>
@@ -209,7 +208,7 @@ namespace dbaui
         }
     }
 
-    Any SAL_CALL DBSubComponentController::queryInterface(const Type& _rType)
+    Any SAL_CALL DBSubComponentController::queryInterface(const Type& _rType) throw (RuntimeException, std::exception)
     {
         if ( _rType.equals( cppu::UnoType<XScriptInvocationContext>::get() ) )
         {
@@ -221,17 +220,17 @@ namespace dbaui
         return DBSubComponentController_Base::queryInterface( _rType );
     }
 
-    Sequence< Type > SAL_CALL DBSubComponentController::getTypes(  )
+    Sequence< Type > SAL_CALL DBSubComponentController::getTypes(  ) throw (RuntimeException, std::exception)
     {
         Sequence< Type > aTypes( DBSubComponentController_Base::getTypes() );
         if ( !m_pImpl->documentHasScriptSupport() )
         {
             Sequence< Type > aStrippedTypes( aTypes.getLength() - 1 );
-            std::remove_copy_if(
+            ::std::remove_copy_if(
                 aTypes.getConstArray(),
                 aTypes.getConstArray() + aTypes.getLength(),
                 aStrippedTypes.getArray(),
-                std::bind2nd( std::equal_to< Type >(), cppu::UnoType<XScriptInvocationContext>::get() )
+                ::std::bind2nd( ::std::equal_to< Type >(), cppu::UnoType<XScriptInvocationContext>::get() )
             );
             aTypes = aStrippedTypes;
         }
@@ -307,14 +306,14 @@ namespace dbaui
         bool bReConnect = true;
         if ( _bUI )
         {
-            ScopedVclPtrInstance< MessageDialog > aQuery(getView(), ModuleRes(STR_QUERY_CONNECTION_LOST), VclMessageType::Question, VclButtonsType::YesNo);
+            ScopedVclPtrInstance< MessageDialog > aQuery(getView(), ModuleRes(STR_QUERY_CONNECTION_LOST), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
             bReConnect = ( RET_YES == aQuery->Execute() );
         }
 
         // now really reconnect ...
         if ( bReConnect )
         {
-            m_pImpl->m_xConnection.reset( connect( m_pImpl->m_aDataSource.getDataSource() ), SharedConnection::TakeOwnership );
+            m_pImpl->m_xConnection.reset( connect( m_pImpl->m_aDataSource.getDataSource(), nullptr ), SharedConnection::TakeOwnership );
             m_pImpl->m_aSdbMetaData.reset( m_pImpl->m_xConnection );
         }
 
@@ -349,7 +348,7 @@ namespace dbaui
         m_pImpl->m_aDataSource.clear();
     }
 
-    void SAL_CALL DBSubComponentController::disposing(const EventObject& _rSource)
+    void SAL_CALL DBSubComponentController::disposing(const EventObject& _rSource) throw( RuntimeException, std::exception )
     {
         if ( _rSource.Source == getConnection() )
         {
@@ -398,7 +397,7 @@ namespace dbaui
         showError( m_pImpl->m_aCurrentError );
     }
 
-    sal_Bool SAL_CALL DBSubComponentController::suspend(sal_Bool bSuspend)
+    sal_Bool SAL_CALL DBSubComponentController::suspend(sal_Bool bSuspend) throw( RuntimeException, std::exception )
     {
         m_pImpl->m_bSuspended = bSuspend;
         if ( !bSuspend && !isConnected() )
@@ -407,7 +406,7 @@ namespace dbaui
         return true;
     }
 
-    sal_Bool SAL_CALL DBSubComponentController::attachModel( const Reference< XModel > & _rxModel)
+    sal_Bool SAL_CALL DBSubComponentController::attachModel( const Reference< XModel > & _rxModel) throw( RuntimeException, std::exception )
     {
         if ( !_rxModel.is() )
             return false;
@@ -452,11 +451,11 @@ namespace dbaui
         Reference< XWindow > xWindow = getTopMostContainerWindow();
         vcl::Window* pWin = nullptr;
         if ( xWindow.is() )
-            pWin = VCLUnoHelper::GetWindow(xWindow).get();
+            pWin = VCLUnoHelper::GetWindow(xWindow);
         if ( !pWin )
             pWin = getView()->Window::GetParent();
 
-        ScopedVclPtrInstance<MessageDialog>(pWin, aMessage, VclMessageType::Info)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(pWin, aMessage, VCL_MESSAGE_INFO)->Execute();
     }
     const Reference< XConnection >& DBSubComponentController::getConnection() const
     {
@@ -529,6 +528,7 @@ namespace dbaui
     }
     // XTitle
     OUString SAL_CALL DBSubComponentController::getTitle()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( getMutex() );
         if ( m_bExternalTitle )
@@ -550,7 +550,7 @@ namespace dbaui
         return m_pImpl->m_nDocStartNumber;
     }
 
-    Reference< XEmbeddedScripts > SAL_CALL DBSubComponentController::getScriptContainer()
+    Reference< XEmbeddedScripts > SAL_CALL DBSubComponentController::getScriptContainer() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( getMutex() );
         if ( !m_pImpl->documentHasScriptSupport() )
@@ -559,25 +559,25 @@ namespace dbaui
         return Reference< XEmbeddedScripts >( getDatabaseDocument(), UNO_QUERY_THROW );
     }
 
-    void SAL_CALL DBSubComponentController::addModifyListener( const Reference< XModifyListener >& i_Listener )
+    void SAL_CALL DBSubComponentController::addModifyListener( const Reference< XModifyListener >& i_Listener ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( getMutex() );
         m_pImpl->m_aModifyListeners.addInterface( i_Listener );
     }
 
-    void SAL_CALL DBSubComponentController::removeModifyListener( const Reference< XModifyListener >& i_Listener )
+    void SAL_CALL DBSubComponentController::removeModifyListener( const Reference< XModifyListener >& i_Listener ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( getMutex() );
         m_pImpl->m_aModifyListeners.removeInterface( i_Listener );
     }
 
-    sal_Bool SAL_CALL DBSubComponentController::isModified(  )
+    sal_Bool SAL_CALL DBSubComponentController::isModified(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( getMutex() );
         return impl_isModified();
     }
 
-    void SAL_CALL DBSubComponentController::setModified( sal_Bool i_bModified )
+    void SAL_CALL DBSubComponentController::setModified( sal_Bool i_bModified ) throw (PropertyVetoException, RuntimeException, std::exception)
     {
         ::osl::ClearableMutexGuard aGuard( getMutex() );
 

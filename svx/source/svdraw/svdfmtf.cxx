@@ -76,7 +76,7 @@ using namespace com::sun::star;
 ImpSdrGDIMetaFileImport::ImpSdrGDIMetaFileImport(
     SdrModel& rModel,
     SdrLayerID nLay,
-    const tools::Rectangle& rRect)
+    const Rectangle& rRect)
 :   maTmpList(),
     mpVD(VclPtr<VirtualDevice>::Create()),
     maScaleRect(rRect),
@@ -293,9 +293,11 @@ size_t ImpSdrGDIMetaFileImport::DoImport(
     // insert all objects cached in aTmpList now into rOL from nInsPos
     nInsPos = std::min(nInsPos, rOL.GetObjCount());
 
+    SdrInsertReason aReason(SDRREASON_VIEWCALL);
+
     for(SdrObject* pObj : maTmpList)
     {
-        rOL.NbcInsertObject(pObj, nInsPos);
+        rOL.NbcInsertObject(pObj, nInsPos, &aReason);
         nInsPos++;
 
         if(pProgrInfo)
@@ -508,7 +510,7 @@ void ImpSdrGDIMetaFileImport::InsertObj(SdrObject* pObj, bool bScale)
                 {
                     // recursively add created conversion; per definition this shall not
                     // contain further SdrTextObjs. Visit only non-group objects
-                    SdrObjListIter aIter(*pConverted, SdrIterMode::DeepNoGroups);
+                    SdrObjListIter aIter(*pConverted, IM_DEEPNOGROUPS);
 
                     // work with clones; the created conversion may contain group objects
                     // and when working with the original objects the loop itself could
@@ -517,7 +519,7 @@ void ImpSdrGDIMetaFileImport::InsertObj(SdrObject* pObj, bool bScale)
                     while(aIter.IsMore())
                     {
                         SdrObject* pCandidate = aIter.Next();
-                        OSL_ENSURE(pCandidate && dynamic_cast< SdrObjGroup* >(pCandidate) ==  nullptr, "SdrObjListIter with SdrIterMode::DeepNoGroups error (!)");
+                        OSL_ENSURE(pCandidate && dynamic_cast< SdrObjGroup* >(pCandidate) ==  nullptr, "SdrObjListIter with IM_DEEPNOGROUPS error (!)");
                         SdrObject* pNewClone = pCandidate->Clone();
 
                         if(pNewClone)
@@ -994,7 +996,7 @@ void ImpSdrGDIMetaFileImport::ImportText( const Point& rPos, const OUString& rSt
     else if ( eAlg == ALIGN_BOTTOM )
         aPos.Y() -= nTextHeight;
 
-    tools::Rectangle aTextRect( aPos, aSize );
+    Rectangle aTextRect( aPos, aSize );
     SdrRectObj* pText =new SdrRectObj( OBJ_TEXT, aTextRect );
 
     pText->SetMergedItem ( makeSdrTextUpperDistItem (0));
@@ -1007,7 +1009,7 @@ void ImpSdrGDIMetaFileImport::ImportText( const Point& rPos, const OUString& rSt
         pText->ClearMergedItem( SDRATTR_TEXT_AUTOGROWWIDTH );
         pText->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );
         // don't let the margins eat the space needed for the text
-        pText->SetMergedItem( SdrTextFitToSizeTypeItem( SdrFitToSizeType::AllLines ) );
+        pText->SetMergedItem( SdrTextFitToSizeTypeItem( SDRTEXTFIT_ALLLINES ) );
     }
     else
     {
@@ -1062,7 +1064,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaStretchTextAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(),rAct.GetBitmap().GetSizePixel());
+    Rectangle aRect(rAct.GetPoint(),rAct.GetBitmap().GetSizePixel());
     aRect.Right()++; aRect.Bottom()++;
     SdrGrafObj* pGraf=new SdrGrafObj(Graphic(rAct.GetBitmap()),aRect);
 
@@ -1074,7 +1076,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaBmpAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpScaleAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
+    Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
     aRect.Right()++; aRect.Bottom()++;
     SdrGrafObj* pGraf=new SdrGrafObj(Graphic(rAct.GetBitmap()),aRect);
 
@@ -1086,7 +1088,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaBmpScaleAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpExAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(),rAct.GetBitmapEx().GetSizePixel());
+    Rectangle aRect(rAct.GetPoint(),rAct.GetBitmapEx().GetSizePixel());
     aRect.Right()++; aRect.Bottom()++;
     SdrGrafObj* pGraf=new SdrGrafObj( rAct.GetBitmapEx(), aRect );
 
@@ -1098,7 +1100,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaBmpExAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpExScaleAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
+    Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
     aRect.Right()++; aRect.Bottom()++;
     SdrGrafObj* pGraf=new SdrGrafObj( rAct.GetBitmapEx(), aRect );
 
@@ -1129,13 +1131,13 @@ void ImpSdrGDIMetaFileImport::DoAction( MetaHatchAction& rAct )
 
             switch(rHatch.GetStyle())
             {
-                case HatchStyle::Triple :
+                case HATCH_TRIPLE :
                 {
                     eStyle = css::drawing::HatchStyle_TRIPLE;
                     break;
                 }
 
-                case HatchStyle::Double :
+                case HATCH_DOUBLE :
                 {
                     eStyle = css::drawing::HatchStyle_DOUBLE;
                     break;
@@ -1220,7 +1222,7 @@ void ImpSdrGDIMetaFileImport::DoAction( MetaCommentAction& rAct, GDIMetaFile& rM
                     aXGradient.SetGradientStyle((css::awt::GradientStyle)rGrad.GetStyle());
                     aXGradient.SetStartColor(rGrad.GetStartColor());
                     aXGradient.SetEndColor(rGrad.GetEndColor());
-                    aXGradient.SetAngle(rGrad.GetAngle());
+                    aXGradient.SetAngle((sal_uInt16)rGrad.GetAngle());
                     aXGradient.SetBorder(rGrad.GetBorder());
                     aXGradient.SetXOffset(rGrad.GetOfsX());
                     aXGradient.SetYOffset(rGrad.GetOfsY());
@@ -1274,12 +1276,12 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaTextRectAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpScalePartAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetDestPoint(), rAct.GetDestSize());
+    Rectangle aRect(rAct.GetDestPoint(), rAct.GetDestSize());
     Bitmap aBitmap(rAct.GetBitmap());
 
     aRect.Right()++;
     aRect.Bottom()++;
-    aBitmap.Crop(tools::Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
+    aBitmap.Crop(Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
     SdrGrafObj* pGraf = new SdrGrafObj(aBitmap, aRect);
 
     // This action is not creating line and fill, set directly, do not use SetAttributes(..)
@@ -1290,12 +1292,12 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaBmpScalePartAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaBmpExScalePartAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetDestPoint(),rAct.GetDestSize());
+    Rectangle aRect(rAct.GetDestPoint(),rAct.GetDestSize());
     BitmapEx aBitmapEx(rAct.GetBitmapEx());
 
     aRect.Right()++;
     aRect.Bottom()++;
-    aBitmapEx.Crop(tools::Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
+    aBitmapEx.Crop(Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
     SdrGrafObj* pGraf = new SdrGrafObj(aBitmapEx, aRect);
 
     // This action is not creating line and fill, set directly, do not use SetAttributes(..)
@@ -1306,7 +1308,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaBmpExScalePartAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaMaskAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(), rAct.GetBitmap().GetSizePixel());
+    Rectangle aRect(rAct.GetPoint(), rAct.GetBitmap().GetSizePixel());
     BitmapEx aBitmapEx(rAct.GetBitmap(), rAct.GetColor());
 
     aRect.Right()++; aRect.Bottom()++;
@@ -1320,7 +1322,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaMaskAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaMaskScaleAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetPoint(), rAct.GetSize());
+    Rectangle aRect(rAct.GetPoint(), rAct.GetSize());
     BitmapEx aBitmapEx(rAct.GetBitmap(), rAct.GetColor());
 
     aRect.Right()++; aRect.Bottom()++;
@@ -1334,11 +1336,11 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaMaskScaleAction& rAct)
 
 void ImpSdrGDIMetaFileImport::DoAction(MetaMaskScalePartAction& rAct)
 {
-    tools::Rectangle aRect(rAct.GetDestPoint(), rAct.GetDestSize());
+    Rectangle aRect(rAct.GetDestPoint(), rAct.GetDestSize());
     BitmapEx aBitmapEx(rAct.GetBitmap(), rAct.GetColor());
 
     aRect.Right()++; aRect.Bottom()++;
-    aBitmapEx.Crop(tools::Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
+    aBitmapEx.Crop(Rectangle(rAct.GetSrcPoint(), rAct.GetSrcSize()));
     SdrGrafObj* pGraf = new SdrGrafObj(aBitmapEx, aRect);
 
     // This action is not creating line and fill, set directly, do not use SetAttributes(..)
@@ -1355,18 +1357,18 @@ namespace
 
         switch(rGradientStyle)
         {
-            case GradientStyle::Linear: aXGradientStyle = css::awt::GradientStyle_LINEAR; break;
-            case GradientStyle::Axial: aXGradientStyle = css::awt::GradientStyle_AXIAL; break;
-            case GradientStyle::Radial: aXGradientStyle = css::awt::GradientStyle_RADIAL; break;
-            case GradientStyle::Elliptical: aXGradientStyle = css::awt::GradientStyle_ELLIPTICAL; break;
-            case GradientStyle::Square: aXGradientStyle = css::awt::GradientStyle_SQUARE; break;
-            case GradientStyle::Rect: aXGradientStyle = css::awt::GradientStyle_RECT; break;
+            case GradientStyle_LINEAR: aXGradientStyle = css::awt::GradientStyle_LINEAR; break;
+            case GradientStyle_AXIAL: aXGradientStyle = css::awt::GradientStyle_AXIAL; break;
+            case GradientStyle_RADIAL: aXGradientStyle = css::awt::GradientStyle_RADIAL; break;
+            case GradientStyle_ELLIPTICAL: aXGradientStyle = css::awt::GradientStyle_ELLIPTICAL; break;
+            case GradientStyle_SQUARE: aXGradientStyle = css::awt::GradientStyle_SQUARE; break;
+            case GradientStyle_RECT: aXGradientStyle = css::awt::GradientStyle_RECT; break;
 
-            // Needed due to GradientStyle::FORCE_EQUAL_SIZE; this again is needed
+            // Needed due to GradientStyle_FORCE_EQUAL_SIZE; this again is needed
             // to force the enum defines in VCL to a defined size for the compilers,
             // so despite it is never used it cannot be removed (would break the
             // API implementation probably).
-            case GradientStyle::FORCE_EQUAL_SIZE: break;
+            case GradientStyle_FORCE_EQUAL_SIZE: break;
             default:
                 break;
         }
@@ -1385,7 +1387,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaGradientAction& rAct)
         aRange.transform(aTransform);
         const Gradient& rGradient = rAct.GetGradient();
         SdrRectObj* pRect = new SdrRectObj(
-            tools::Rectangle(
+            Rectangle(
                 floor(aRange.getMinX()),
                 floor(aRange.getMinY()),
                 ceil(aRange.getMaxX()),
@@ -1492,7 +1494,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
 
     if(rMtf.GetActionSize())
     {
-        const tools::Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
+        const Rectangle aRect(rAct.GetPoint(),rAct.GetSize());
 
         // convert metafile sub-content to BitmapEx
         BitmapEx aBitmapEx(
@@ -1553,7 +1555,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
             ScopedVclPtrInstance< VirtualDevice > pVDev;
 
             pVDev->SetOutputSizePixel(aBitmapEx.GetBitmap().GetSizePixel());
-            pVDev->DrawGradient(tools::Rectangle(Point(0, 0), pVDev->GetOutputSizePixel()), rGradient);
+            pVDev->DrawGradient(Rectangle(Point(0, 0), pVDev->GetOutputSizePixel()), rGradient);
 
             aNewMask = AlphaMask(pVDev->GetBitmap(Point(0, 0), pVDev->GetOutputSizePixel()));
             bHasNewMask = true;
@@ -1584,16 +1586,16 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
                     {
                         aOldMask = aBitmapEx.GetAlpha();
                     }
-                    else if(TransparentType::Bitmap == aBitmapEx.GetTransparentType())
+                    else if(TRANSPARENT_BITMAP == aBitmapEx.GetTransparentType())
                     {
                         aOldMask = aBitmapEx.GetMask();
                     }
-                    else if(TransparentType::Color == aBitmapEx.GetTransparentType())
+                    else if(TRANSPARENT_COLOR == aBitmapEx.GetTransparentType())
                     {
                         aOldMask = aBitmapEx.GetBitmap().CreateMask(aBitmapEx.GetTransparentColor());
                     }
 
-                    AlphaMask::ScopedWriteAccess pOld(aOldMask);
+                    BitmapWriteAccess* pOld = aOldMask.AcquireWriteAccess();
 
                     if(pOld)
                     {
@@ -1616,7 +1618,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
                         }
                         else
                         {
-                            AlphaMask::ScopedReadAccess pNew(aNewMask);
+                            BitmapReadAccess* pNew = aNewMask.AcquireReadAccess();
 
                             if(pNew)
                             {
@@ -1639,7 +1641,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
                                     OSL_ENSURE(false, "Alpha masks have different sizes (!)");
                                 }
 
-                                pNew.reset();
+                                aNewMask.ReleaseAccess(pNew);
                             }
                             else
                             {
@@ -1647,7 +1649,7 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
                             }
                         }
 
-                        pOld.reset();
+                        aOldMask.ReleaseAccess(pOld);
                     }
                     else
                     {

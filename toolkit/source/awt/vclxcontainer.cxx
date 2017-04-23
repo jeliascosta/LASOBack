@@ -34,7 +34,7 @@
 //  class VCLXContainer
 
 
-void VCLXContainer::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
+void VCLXContainer::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
 {
     VCLXWindow::ImplGetPropertyIds( rIds );
 }
@@ -48,7 +48,7 @@ VCLXContainer::~VCLXContainer()
 }
 
 // css::uno::XInterface
-css::uno::Any VCLXContainer::queryInterface( const css::uno::Type & rType )
+css::uno::Any VCLXContainer::queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< css::awt::XVclContainer* >(this)),
@@ -65,27 +65,27 @@ IMPL_XTYPEPROVIDER_END
 
 
 // css::awt::XVclContainer
-void VCLXContainer::addVclContainerListener( const css::uno::Reference< css::awt::XVclContainerListener >& rxListener )
+void VCLXContainer::addVclContainerListener( const css::uno::Reference< css::awt::XVclContainerListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     GetContainerListeners().addInterface( rxListener );
 }
 
-void VCLXContainer::removeVclContainerListener( const css::uno::Reference< css::awt::XVclContainerListener >& rxListener )
+void VCLXContainer::removeVclContainerListener( const css::uno::Reference< css::awt::XVclContainerListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     GetContainerListeners().removeInterface( rxListener );
 }
 
-css::uno::Sequence< css::uno::Reference< css::awt::XWindow > > VCLXContainer::getWindows(  )
+css::uno::Sequence< css::uno::Reference< css::awt::XWindow > > VCLXContainer::getWindows(  ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     // Request container interface from all children
     css::uno::Sequence< css::uno::Reference< css::awt::XWindow > > aSeq;
-    VclPtr<vcl::Window> pWindow = GetWindow();
+    vcl::Window* pWindow = GetWindow();
     if ( pWindow )
     {
         sal_uInt16 nChildren = pWindow->GetChildCount();
@@ -107,11 +107,11 @@ css::uno::Sequence< css::uno::Reference< css::awt::XWindow > > VCLXContainer::ge
 
 
 // css::awt::XVclContainerPeer
-void VCLXContainer::enableDialogControl( sal_Bool bEnable )
+void VCLXContainer::enableDialogControl( sal_Bool bEnable ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    VclPtr<vcl::Window> pWindow = GetWindow();
+    vcl::Window* pWindow = GetWindow();
     if ( pWindow )
     {
         WinBits nStyle = pWindow->GetStyle();
@@ -123,7 +123,7 @@ void VCLXContainer::enableDialogControl( sal_Bool bEnable )
     }
 }
 
-void VCLXContainer::setTabOrder( const css::uno::Sequence< css::uno::Reference< css::awt::XWindow > >& Components, const css::uno::Sequence< css::uno::Any >& Tabs, sal_Bool bGroupControl )
+void VCLXContainer::setTabOrder( const css::uno::Sequence< css::uno::Reference< css::awt::XWindow > >& Components, const css::uno::Sequence< css::uno::Any >& Tabs, sal_Bool bGroupControl ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -136,7 +136,7 @@ void VCLXContainer::setTabOrder( const css::uno::Sequence< css::uno::Reference< 
     for ( sal_uInt32 n = 0; n < nCount; n++ )
     {
         // css::style::TabStop
-        VclPtr<vcl::Window> pWin = VCLUnoHelper::GetWindow( pComps[n] );
+        vcl::Window* pWin = VCLUnoHelper::GetWindow( pComps[n] );
         // May be NULL if a css::uno::Sequence is originated from TabController and is missing a peer!
         if ( pWin )
         {
@@ -168,7 +168,7 @@ void VCLXContainer::setTabOrder( const css::uno::Sequence< css::uno::Reference< 
     }
 }
 
-void VCLXContainer::setGroup( const css::uno::Sequence< css::uno::Reference< css::awt::XWindow > >& Components )
+void VCLXContainer::setGroup( const css::uno::Sequence< css::uno::Reference< css::awt::XWindow > >& Components ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -179,13 +179,13 @@ void VCLXContainer::setGroup( const css::uno::Sequence< css::uno::Reference< css
     vcl::Window* pPrevRadio = nullptr;
     for ( sal_uInt32 n = 0; n < nCount; n++ )
     {
-        VclPtr<vcl::Window> pWin = VCLUnoHelper::GetWindow( pComps[n] );
+        vcl::Window* pWin = VCLUnoHelper::GetWindow( pComps[n] );
         if ( pWin )
         {
             vcl::Window* pSortBehind = pPrevWin;
             // #57096# Sort all radios consecutively
             bool bNewPrevWin = true;
-            if ( pWin->GetType() == WindowType::RADIOBUTTON )
+            if ( pWin->GetType() == WINDOW_RADIOBUTTON )
             {
                 if ( pPrevRadio )
                 {
@@ -228,6 +228,7 @@ void VCLXContainer::setGroup( const css::uno::Sequence< css::uno::Reference< css
 void SAL_CALL VCLXContainer::setProperty(
     const OUString& PropertyName,
     const css::uno::Any& Value )
+throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -242,9 +243,9 @@ void SAL_CALL VCLXContainer::setProperty(
             sal_Int32 nVal =0;
             Value >>= nVal;
             Size aSize( nVal, nVal );
-            VclPtr<vcl::Window> pWindow = GetWindow();
-            MapMode aMode( MapUnit::MapAppFont );
-            toolkit::ScrollableDialog* pScrollable = dynamic_cast< toolkit::ScrollableDialog* >( pWindow.get() );
+            vcl::Window* pWindow = GetWindow();
+            MapMode aMode( MAP_APPFONT );
+            toolkit::ScrollableInterface* pScrollable = dynamic_cast< toolkit::ScrollableInterface* >( pWindow );
             if ( pWindow && pScrollable )
             {
                 OutputDevice* pDev = VCLUnoHelper::GetOutputDevice( getGraphics() );

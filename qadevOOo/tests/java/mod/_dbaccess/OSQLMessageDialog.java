@@ -114,14 +114,5 @@ public class OSQLMessageDialog extends TestCase {
         return tEnv;
     } // finish method getTestEnvironment
 
-    @Override public void disposeTestEnvironment(
-        TestEnvironment tEnv, TestParameters tParam)
-    {
-        UnoRuntime.queryInterface(
-            com.sun.star.lang.XComponent.class,
-            (com.sun.star.awt.XWindow) tEnv.getObjRelation("ERR_XWindow"))
-            .dispose();
-        super.disposeTestEnvironment(tEnv, tParam);
-    }
 } // finish class OSQLMessageDialog
 

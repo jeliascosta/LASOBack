@@ -57,7 +57,7 @@ namespace toolkit
         AccessibleDummyFactory& operator=(const AccessibleDummyFactory&) = delete;
 
     protected:
-        virtual ~AccessibleDummyFactory() override;
+        virtual ~AccessibleDummyFactory();
 
     public:
         // IAccessibleFactory

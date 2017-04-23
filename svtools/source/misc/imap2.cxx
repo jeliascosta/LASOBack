@@ -39,7 +39,7 @@
 
 void IMapObject::AppendCERNCoords(OStringBuffer& rBuf, const Point& rPoint100)
 {
-    const Point aPixPt( Application::GetDefaultDevice()->LogicToPixel( rPoint100, MapMode( MapUnit::Map100thMM ) ) );
+    const Point aPixPt( Application::GetDefaultDevice()->LogicToPixel( rPoint100, MapMode( MAP_100TH_MM ) ) );
 
     rBuf.append('(');
     rBuf.append(static_cast<sal_Int32>(aPixPt.X()));
@@ -50,7 +50,7 @@ void IMapObject::AppendCERNCoords(OStringBuffer& rBuf, const Point& rPoint100)
 
 void IMapObject::AppendNCSACoords(OStringBuffer& rBuf, const Point& rPoint100)
 {
-    const Point aPixPt( Application::GetDefaultDevice()->LogicToPixel( rPoint100, MapMode( MapUnit::Map100thMM ) ) );
+    const Point aPixPt( Application::GetDefaultDevice()->LogicToPixel( rPoint100, MapMode( MAP_100TH_MM ) ) );
 
     rBuf.append(static_cast<sal_Int32>(aPixPt.X()));
     rBuf.append(',');
@@ -248,7 +248,7 @@ void ImageMap::ImpReadCERNLine( const OString& rLine, const OUString& rBaseURL  
 {
     OString aStr = comphelper::string::stripStart(rLine, ' ');
     aStr = comphelper::string::stripStart(aStr, '\t');
-    aStr = aStr.replaceAll(";", "");
+    aStr = comphelper::string::remove(aStr, ';');
     aStr = aStr.toAsciiLowerCase();
 
     const char* pStr = aStr.getStr();
@@ -270,7 +270,7 @@ void ImageMap::ImpReadCERNLine( const OString& rLine, const OUString& rBaseURL  
             const Point     aTopLeft( ImpReadCERNCoords( &pStr ) );
             const Point     aBottomRight( ImpReadCERNCoords( &pStr ) );
             const OUString  aURL( ImpReadCERNURL( &pStr, rBaseURL ) );
-            const tools::Rectangle aRect( aTopLeft, aBottomRight );
+            const Rectangle aRect( aTopLeft, aBottomRight );
 
             IMapRectangleObject* pObj = new IMapRectangleObject( aRect, aURL, OUString(), OUString(), OUString(), OUString() );
             maList.push_back( pObj );
@@ -389,7 +389,7 @@ void ImageMap::ImpReadNCSALine( const OString& rLine, const OUString& rBaseURL )
 {
     OString aStr = comphelper::string::stripStart(rLine, ' ');
     aStr = comphelper::string::stripStart(aStr, '\t');
-    aStr = aStr.replaceAll(";", "");
+    aStr = comphelper::string::remove(aStr, ';');
     aStr = aStr.toAsciiLowerCase();
 
     const char* pStr = aStr.getStr();
@@ -411,7 +411,7 @@ void ImageMap::ImpReadNCSALine( const OString& rLine, const OUString& rBaseURL )
             const OUString  aURL( ImpReadNCSAURL( &pStr, rBaseURL ) );
             const Point     aTopLeft( ImpReadNCSACoords( &pStr ) );
             const Point     aBottomRight( ImpReadNCSACoords( &pStr ) );
-            const tools::Rectangle aRect( aTopLeft, aBottomRight );
+            const Rectangle aRect( aTopLeft, aBottomRight );
 
             IMapRectangleObject* pObj = new IMapRectangleObject( aRect, aURL, OUString(), OUString(), OUString(), OUString() );
             maList.push_back( pObj );
@@ -505,7 +505,7 @@ sal_uLong ImageMap::ImpDetectFormat( SvStream& rIStm )
     sal_uLong   nRet = IMAP_FORMAT_BIN;
     char    cMagic[6];
 
-    rIStm.ReadBytes(cMagic, sizeof(cMagic));
+    rIStm.Read( cMagic, sizeof( cMagic ) );
 
     // if we do not have an internal formats
     // we check the format

@@ -40,7 +40,6 @@
 #include <svtools/treelistentry.hxx>
 #include <svtools/viewdataentry.hxx>
 #include "svimpbox.hxx"
-#include "uitest/uiobject.hxx"
 
 #include <set>
 #include <string.h>
@@ -62,7 +61,7 @@ class MyEdit_Impl : public Edit
     SvInplaceEdit2* pOwner;
 public:
                  MyEdit_Impl( vcl::Window* pParent, SvInplaceEdit2* pOwner );
-    virtual     ~MyEdit_Impl() override { disposeOnce(); }
+    virtual     ~MyEdit_Impl() { disposeOnce(); }
     virtual void dispose() override { pOwner = nullptr; Edit::dispose(); }
     virtual void KeyInput( const KeyEvent& rKEvt ) override;
     virtual void LoseFocus() override;
@@ -151,13 +150,13 @@ void SvInplaceEdit2::Hide()
 }
 
 
-IMPL_LINK_NOARG(SvInplaceEdit2, ReturnHdl_Impl, Accelerator&, void)
+IMPL_LINK_NOARG_TYPED(SvInplaceEdit2, ReturnHdl_Impl, Accelerator&, void)
 {
     bCanceled = false;
     CallCallBackHdl_Impl();
 }
 
-IMPL_LINK_NOARG(SvInplaceEdit2, EscapeHdl_Impl, Accelerator&, void)
+IMPL_LINK_NOARG_TYPED(SvInplaceEdit2, EscapeHdl_Impl, Accelerator&, void)
 {
     bCanceled = true;
     CallCallBackHdl_Impl();
@@ -199,14 +198,13 @@ void SvInplaceEdit2::LoseFocus()
     )
     {
         bCanceled = false;
-        aIdle.SetPriority(TaskPriority::REPAINT);
-        aIdle.SetInvokeHandler(LINK(this,SvInplaceEdit2,Timeout_Impl));
-        aIdle.SetDebugName( "svtools::SvInplaceEdit2 aIdle" );
+        aIdle.SetPriority(SchedulerPriority::REPAINT);
+        aIdle.SetIdleHdl(LINK(this,SvInplaceEdit2,Timeout_Impl));
         aIdle.Start();
     }
 }
 
-IMPL_LINK_NOARG(SvInplaceEdit2, Timeout_Impl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvInplaceEdit2, Timeout_Impl, Idle *, void)
 {
     CallCallBackHdl_Impl();
 }
@@ -340,7 +338,7 @@ SvTreeListBox::SvTreeListBox(vcl::Window* pParent, WinBits nWinStyle) :
     mbContextBmpExpanded(false),
     mbAlternatingRowColors(false),
     mbUpdateAlternatingRows(false),
-    eSelMode(SelectionMode::NONE),
+    eSelMode(NO_SELECTION),
     nMinWidthInChars(0),
     mbCenterAndClipText(false)
 {
@@ -355,16 +353,54 @@ SvTreeListBox::SvTreeListBox(vcl::Window* pParent, WinBits nWinStyle) :
     pModel->InsertView( this );
     pHdlEntry = nullptr;
     pEdCtrl = nullptr;
-    eSelMode = SelectionMode::Single;
+    eSelMode = SINGLE_SELECTION;
     nDragDropMode = DragDropMode::NONE;
-    SetType(WindowType::TREELISTBOX);
+    SetType(WINDOW_TREELISTBOX);
 
     InitTreeView();
 
     SetSublistOpenWithLeftRight();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SvTreeListBox, WB_TABSTOP)
+SvTreeListBox::SvTreeListBox(vcl::Window* pParent, const ResId& rResId) :
+    Control(pParent, rResId),
+    DropTargetHelper(this),
+    DragSourceHelper(this),
+    mpImpl(new SvTreeListBoxImpl(*this)),
+    mbContextBmpExpanded(false),
+    mbAlternatingRowColors(false),
+    mbUpdateAlternatingRows(false),
+    eSelMode(NO_SELECTION),
+    nMinWidthInChars(0),
+    mbCenterAndClipText(false)
+{
+    pTargetEntry = nullptr;
+    nImpFlags = SvTreeListBoxFlags::NONE;
+    nDragOptions = DND_ACTION_COPYMOVE | DND_ACTION_LINK;
+    nDragDropMode = DragDropMode::NONE;
+    SvTreeList* pTempModel = new SvTreeList;
+    pTempModel->SetRefCount( 0 );
+    SetBaseModel(pTempModel);
+    pModel->InsertView( this );
+    pHdlEntry = nullptr;
+    pEdCtrl = nullptr;
+    pModel->SetCloneLink( LINK(this, SvTreeListBox, CloneHdl_Impl ));
+    SetType(WINDOW_TREELISTBOX);
+
+    InitTreeView();
+    Resize();
+
+    SetSublistOpenWithLeftRight();
+}
+
+VCL_BUILDER_DECL_FACTORY(SvTreeListBox)
+{
+    WinBits nWinStyle = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<SvTreeListBox>::Create(pParent, nWinStyle);
+}
 
 void SvTreeListBox::Clear()
 {
@@ -386,7 +422,7 @@ bool SvTreeListBox::IsEntryMnemonicsEnabled() const
     return mpImpl->m_bEntryMnemonicsEnabled;
 }
 
-IMPL_LINK( SvTreeListBox, CloneHdl_Impl, SvTreeListEntry*, pEntry, SvTreeListEntry* )
+IMPL_LINK_TYPED( SvTreeListBox, CloneHdl_Impl, SvTreeListEntry*, pEntry, SvTreeListEntry* )
 {
     return CloneEntry(pEntry);
 }
@@ -491,7 +527,7 @@ TriState SvTreeListBox::NotifyMoving(
     SvTreeListEntry*& rpNewParent,   // new target parent
     sal_uLong&        rNewChildPos)  // position in childlist of target parent
 {
-    DBG_ASSERT(pEntry,"NotifyMoving:SourceEntry?");
+    DBG_ASSERT(pEntry,"NotifyMoving:SoureEntry?");
     if( !pTarget )
     {
         rpNewParent = nullptr;
@@ -596,6 +632,11 @@ bool SvTreeListBox::CopySelection( SvTreeListBox* pSource, SvTreeListEntry* pTar
 }
 
 // return: all entries were moved
+bool SvTreeListBox::MoveSelection( SvTreeListBox* pSource, SvTreeListEntry* pTarget )
+{
+    return MoveSelectionCopyFallbackPossible( pSource, pTarget, false );
+}
+
 bool SvTreeListBox::MoveSelectionCopyFallbackPossible( SvTreeListBox* pSource, SvTreeListEntry* pTarget, bool bAllowCopyFallback )
 {
     nCurEntrySelPos = 0; // selection counter for NotifyMoving/Copying
@@ -676,6 +717,11 @@ void SvTreeListBox::RemoveSelection()
         pModel->Remove(*it);
 }
 
+SvTreeListBox* SvTreeListBox::GetSourceView()
+{
+    return g_pDDSource;
+}
+
 void SvTreeListBox::RecalcViewData()
 {
     SvTreeListEntry* pEntry = First();
@@ -699,7 +745,7 @@ void SvTreeListBox::ImplShowTargetEmphasis( SvTreeListEntry* pEntry, bool bShow)
         return;
     if ( !bShow && !(nImpFlags & SvTreeListBoxFlags::TARGEMPH_VIS) )
         return;
-    pImpl->PaintDDCursor( pEntry );
+    ShowTargetEmphasis( pEntry, bShow );
     if( bShow )
         nImpFlags |= SvTreeListBoxFlags::TARGEMPH_VIS;
     else
@@ -883,7 +929,7 @@ void SvTreeListBox::EnableSelectionAsDropTarget( bool bEnable )
 // InplaceEditing
 // ******************************************************************
 
-void SvTreeListBox::EditText( const OUString& rStr, const tools::Rectangle& rRect,
+void SvTreeListBox::EditText( const OUString& rStr, const Rectangle& rRect,
     const Selection& rSel )
 {
     delete pEdCtrl;
@@ -896,7 +942,7 @@ void SvTreeListBox::EditText( const OUString& rStr, const tools::Rectangle& rRec
         rSel );
 }
 
-IMPL_LINK_NOARG(SvTreeListBox, TextEditEndedHdl_Impl, SvInplaceEdit2&, void)
+IMPL_LINK_NOARG_TYPED(SvTreeListBox, TextEditEndedHdl_Impl, SvInplaceEdit2&, void)
 {
     if ( nImpFlags & SvTreeListBoxFlags::EDTEND_CALLED ) // avoid nesting
         return;
@@ -906,7 +952,7 @@ IMPL_LINK_NOARG(SvTreeListBox, TextEditEndedHdl_Impl, SvInplaceEdit2&, void)
         aStr = pEdCtrl->GetText();
     else
         aStr = pEdCtrl->GetSavedValue();
-    if ( mpImpl->m_bIsEmptyTextAllowed || !aStr.isEmpty() )
+    if ( IsEmptyTextAllowed() || !aStr.isEmpty() )
         EditedText( aStr );
     // Hide may only be called after the new text was put into the entry, so
     // that we don't call the selection handler in the GetFocus of the listbox
@@ -930,6 +976,11 @@ void SvTreeListBox::EndEditing( bool bCancel )
     nImpFlags &= (~SvTreeListBoxFlags::IN_EDT);
 }
 
+
+bool SvTreeListBox::IsEmptyTextAllowed() const
+{
+    return mpImpl->m_bIsEmptyTextAllowed;
+}
 
 void SvTreeListBox::ForbidEmptyText()
 {
@@ -1125,7 +1176,7 @@ sal_Int8 SvTreeListBox::ExecuteDrop( const ExecuteDropEvent& rEvt, SvTreeListBox
         }
         else if( DND_ACTION_MOVE == rEvt.mnAction )
         {
-            if (MoveSelectionCopyFallbackPossible( g_pDDSource, pTarget, false ))
+            if (MoveSelection(g_pDDSource, pTarget))
                 nRet = rEvt.mnAction;
         }
         else if( DND_ACTION_COPYMOVE == rEvt.mnAction )
@@ -1139,7 +1190,7 @@ sal_Int8 SvTreeListBox::ExecuteDrop( const ExecuteDropEvent& rEvt, SvTreeListBox
 
 sal_Int8 SvTreeListBox::ExecuteDrop( const ExecuteDropEvent& rEvt )
 {
-    return ExecuteDrop( rEvt, g_pDDSource );
+    return ExecuteDrop( rEvt, GetSourceView() );
 }
 
 /**
@@ -1260,7 +1311,7 @@ void SvTreeListBox::RemoveBoxFromDDList_Impl( const SvTreeListBox& rB )
     SortLBoxes::get().erase( nVal );
 }
 
-IMPL_LINK( SvTreeListBox, DragFinishHdl_Impl, sal_Int8, nAction, void )
+IMPL_LINK_TYPED( SvTreeListBox, DragFinishHdl_Impl, sal_Int8, nAction, void )
 {
     sal_uLong nVal = reinterpret_cast<sal_uLong>(this);
     std::set<sal_uLong> &rSortLBoxes = SortLBoxes::get();
@@ -1303,7 +1354,7 @@ void SvTreeListBox::InitTreeView()
     nTreeFlags = SvTreeFlags::RECALCTABS;
     nIndent = SV_LBOX_DEFAULT_INDENT_PIXEL;
     nEntryHeightOffs = SV_ENTRYHEIGHTOFFS_PIXEL;
-    pImpl.reset( new SvImpLBox( this, GetModel(), GetStyle() ) );
+    pImp = new SvImpLBox( this, GetModel(), GetStyle() );
 
     mbContextBmpExpanded = true;
     nContextBmpWidthMax = 0;
@@ -1338,8 +1389,9 @@ OUString SvTreeListBox::SearchEntryTextWithHeadTitle( SvTreeListEntry* pEntry )
     sal_uInt16 nHeaderCur = 0;
     while( nCur < nCount )
     {
+        // MT: SV_ITEM_ID_EXTENDRLBOXSTRING / GetExtendText() was in use in IA2 cws, but only used in sc: ScSolverOptionsString. Needed?
         SvLBoxItem& rItem = pEntry->GetItem( nCur );
-        if ( (rItem.GetType() == SvLBoxItemType::String) &&
+        if ( (rItem.GetType() == SV_ITEM_ID_LBOXSTRING ) &&
              !static_cast<SvLBoxString&>( rItem ).GetText().isEmpty() )
         {
             //want the column header
@@ -1354,7 +1406,8 @@ OUString SvTreeListBox::SearchEntryTextWithHeadTitle( SvTreeListEntry* pEntry )
                     }
                     if (!headString.isEmpty())
                     {
-                        sRet += headString + ":";
+                        sRet += headString ;
+                        sRet += ":" ;
                     }
                 }
                 else
@@ -1366,7 +1419,8 @@ OUString SvTreeListBox::SearchEntryTextWithHeadTitle( SvTreeListEntry* pEntry )
                     }
                     if (!aString.isEmpty())
                     {
-                        sRet += aString + ":";
+                        sRet += aString ;
+                        sRet += ":" ;
                     }
                     nHeaderCur++;
                 }
@@ -1374,7 +1428,8 @@ OUString SvTreeListBox::SearchEntryTextWithHeadTitle( SvTreeListEntry* pEntry )
             }
             else
             {
-                sRet += static_cast<SvLBoxString&>( rItem ).GetText() + ",";
+                sRet += static_cast<SvLBoxString&>( rItem ).GetText();
+                sRet += ",";
             }
             //end want to the column header
         }
@@ -1393,10 +1448,11 @@ SvTreeListBox::~SvTreeListBox()
 
 void SvTreeListBox::dispose()
 {
-    if( pImpl )
+    if( pImp )
     {
-        pImpl->CallEventListeners( VclEventId::ObjectDying );
-        pImpl.reset();
+        pImp->CallEventListeners( VCLEVENT_OBJECT_DYING );
+        delete pImp;
+        pImp = nullptr;
     }
     if( mpImpl )
     {
@@ -1422,22 +1478,21 @@ void SvTreeListBox::dispose()
             g_pDDSource = nullptr;
         if (this == g_pDDTarget)
             g_pDDTarget = nullptr;
-        mpImpl.reset();
+        delete mpImpl;
+        mpImpl = nullptr;
     }
 
-    DropTargetHelper::dispose();
-    DragSourceHelper::dispose();
     Control::dispose();
 }
 
 void SvTreeListBox::SetExtendedWinBits( ExtendedWinBits _nBits )
 {
-    pImpl->SetExtendedWindowBits( _nBits );
+    pImp->SetExtendedWindowBits( _nBits );
 }
 
 void SvTreeListBox::SetModel( SvTreeList* pNewModel )
 {
-    pImpl->SetModel( pNewModel );
+    pImp->SetModel( pNewModel );
     SetBaseModel(pNewModel);
 }
 
@@ -1460,17 +1515,17 @@ void SvTreeListBox::DisconnectFromModel()
     pNewModel->SetRefCount( 0 );    // else this will never be deleted
     SvListView::SetModel( pNewModel );
 
-    pImpl->SetModel( GetModel() );
+    pImp->SetModel( GetModel() );
 }
 
 void SvTreeListBox::SetSublistOpenWithReturn()
 {
-    pImpl->bSubLstOpRet = true;
+    pImp->bSubLstOpRet = true;
 }
 
 void SvTreeListBox::SetSublistOpenWithLeftRight()
 {
-    pImpl->bSubLstOpLR = true;
+    pImp->bSubLstOpLR = true;
 }
 
 void SvTreeListBox::Resize()
@@ -1480,10 +1535,10 @@ void SvTreeListBox::Resize()
 
     Control::Resize();
 
-    pImpl->Resize();
+    pImp->Resize();
     nFocusWidth = -1;
-    pImpl->ShowCursor( false );
-    pImpl->ShowCursor( true );
+    pImp->ShowCursor( false );
+    pImp->ShowCursor( true );
 }
 
 /* Cases:
@@ -1614,7 +1669,7 @@ void SvTreeListBox::SetTabs()
             AddTab( nStartPos, TABFLAGS_TEXT );
             break;
     }
-    pImpl->NotifyTabsChanged();
+    pImp->NotifyTabsChanged();
 }
 
 void SvTreeListBox::InitEntry(SvTreeListEntry* pEntry,
@@ -1634,7 +1689,7 @@ void SvTreeListBox::InitEntry(SvTreeListEntry* pEntry,
 OUString SvTreeListBox::GetEntryText(SvTreeListEntry* pEntry) const
 {
     DBG_ASSERT( pEntry, "SvTreeListBox::GetEntryText(): no entry" );
-    SvLBoxString* pItem = static_cast<SvLBoxString*>(pEntry->GetFirstItem(SvLBoxItemType::String));
+    SvLBoxString* pItem = static_cast<SvLBoxString*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
     DBG_ASSERT( pEntry, "SvTreeListBox::GetEntryText(): item not found" );
     return pItem->GetText();
 }
@@ -1642,7 +1697,7 @@ OUString SvTreeListBox::GetEntryText(SvTreeListEntry* pEntry) const
 const Image& SvTreeListBox::GetExpandedEntryBmp(const SvTreeListEntry* pEntry)
 {
     DBG_ASSERT(pEntry,"Entry?");
-    const SvLBoxContextBmp* pItem = static_cast<const SvLBoxContextBmp*>(pEntry->GetFirstItem(SvLBoxItemType::ContextBmp));
+    const SvLBoxContextBmp* pItem = static_cast<const SvLBoxContextBmp*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
     DBG_ASSERT(pItem,"GetContextBmp:Item not found");
     return pItem->GetBitmap2( );
 }
@@ -1650,12 +1705,12 @@ const Image& SvTreeListBox::GetExpandedEntryBmp(const SvTreeListEntry* pEntry)
 const Image& SvTreeListBox::GetCollapsedEntryBmp( const SvTreeListEntry* pEntry )
 {
     DBG_ASSERT(pEntry,"Entry?");
-    const SvLBoxContextBmp* pItem = static_cast<const SvLBoxContextBmp*>(pEntry->GetFirstItem(SvLBoxItemType::ContextBmp));
+    const SvLBoxContextBmp* pItem = static_cast<const SvLBoxContextBmp*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
     DBG_ASSERT(pItem,"GetContextBmp:Item not found");
     return pItem->GetBitmap1( );
 }
 
-IMPL_LINK( SvTreeListBox, CheckButtonClick, SvLBoxButtonData *, pData, void )
+IMPL_LINK_TYPED( SvTreeListBox, CheckButtonClick, SvLBoxButtonData *, pData, void )
 {
     pHdlEntry = pData->GetActEntry();
     CheckButtonHdl();
@@ -1671,8 +1726,8 @@ SvTreeListEntry* SvTreeListBox::InsertEntry(
 {
     nTreeFlags |= SvTreeFlags::MANINS;
 
-    const Image& rDefExpBmp = pImpl->GetDefaultEntryExpBmp( );
-    const Image& rDefColBmp = pImpl->GetDefaultEntryColBmp( );
+    const Image& rDefExpBmp = pImp->GetDefaultEntryExpBmp( );
+    const Image& rDefColBmp = pImp->GetDefaultEntryColBmp( );
 
     aCurInsertedExpBmp = rDefExpBmp;
     aCurInsertedColBmp = rDefColBmp;
@@ -1726,16 +1781,16 @@ SvTreeListEntry* SvTreeListBox::InsertEntry( const OUString& rText,
 
 void SvTreeListBox::SetEntryText(SvTreeListEntry* pEntry, const OUString& rStr)
 {
-    SvLBoxString* pItem = static_cast<SvLBoxString*>(pEntry->GetFirstItem(SvLBoxItemType::String));
+    SvLBoxString* pItem = static_cast<SvLBoxString*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
     DBG_ASSERT(pItem,"SetText:Item not found");
     pItem->SetText(rStr);
-    pItem->InitViewData( this, pEntry );
+    pItem->InitViewData( this, pEntry, nullptr );
     GetModel()->InvalidateEntry( pEntry );
 }
 
 void SvTreeListBox::SetExpandedEntryBmp( SvTreeListEntry* pEntry, const Image& aBmp )
 {
-    SvLBoxContextBmp* pItem = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SvLBoxItemType::ContextBmp));
+    SvLBoxContextBmp* pItem = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
 
     DBG_ASSERT(pItem,"SetExpBmp:Item not found");
     pItem->SetBitmap2( aBmp );
@@ -1743,7 +1798,7 @@ void SvTreeListBox::SetExpandedEntryBmp( SvTreeListEntry* pEntry, const Image& a
     GetModel()->InvalidateEntry( pEntry );
     SetEntryHeight( pEntry );
     Size aSize = aBmp.GetSizePixel();
-    short nWidth = pImpl->UpdateContextBmpWidthVector( pEntry, (short)aSize.Width() );
+    short nWidth = pImp->UpdateContextBmpWidthVector( pEntry, (short)aSize.Width() );
     if( nWidth > nContextBmpWidthMax )
     {
         nContextBmpWidthMax = nWidth;
@@ -1753,7 +1808,7 @@ void SvTreeListBox::SetExpandedEntryBmp( SvTreeListEntry* pEntry, const Image& a
 
 void SvTreeListBox::SetCollapsedEntryBmp(SvTreeListEntry* pEntry,const Image& aBmp )
 {
-    SvLBoxContextBmp* pItem = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SvLBoxItemType::ContextBmp));
+    SvLBoxContextBmp* pItem = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
 
     DBG_ASSERT(pItem,"SetExpBmp:Item not found");
     pItem->SetBitmap1( aBmp );
@@ -1761,7 +1816,7 @@ void SvTreeListBox::SetCollapsedEntryBmp(SvTreeListEntry* pEntry,const Image& aB
     GetModel()->InvalidateEntry( pEntry );
     SetEntryHeight( pEntry );
     Size aSize = aBmp.GetSizePixel();
-    short nWidth = pImpl->UpdateContextBmpWidthVector( pEntry, (short)aSize.Width() );
+    short nWidth = pImp->UpdateContextBmpWidthVector( pEntry, (short)aSize.Width() );
     if( nWidth > nContextBmpWidthMax )
     {
         nContextBmpWidthMax = nWidth;
@@ -1801,7 +1856,7 @@ void SvTreeListBox::ImpEntryInserted( SvTreeListEntry* pEntry )
 
     if( nTreeFlags & SvTreeFlags::CHKBTN )
     {
-        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SvLBoxItemType::Button));
+        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXBUTTON));
         if( pItem )
         {
             long nWidth = pItem->GetSize(this, pEntry).Width();
@@ -1819,7 +1874,7 @@ void SvTreeListBox::SetCheckButtonState( SvTreeListEntry* pEntry, SvButtonState 
 {
     if( nTreeFlags & SvTreeFlags::CHKBTN )
     {
-        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SvLBoxItemType::Button));
+        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXBUTTON));
         if(!(pItem && pItem->CheckModification()))
             return ;
         switch( eState )
@@ -1842,15 +1897,12 @@ void SvTreeListBox::SetCheckButtonState( SvTreeListEntry* pEntry, SvButtonState 
 
 void SvTreeListBox::SetCheckButtonInvisible( SvTreeListEntry* pEntry)
 {
-    SvLBoxButton* pItem = (nTreeFlags & SvTreeFlags::CHKBTN) ?
-        static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SvLBoxItemType::Button)) :
-        nullptr;
-
-    if (!pItem)
-        return;
-
-    pItem->SetStateInvisible();
-    InvalidateEntry(pEntry);
+    if( nTreeFlags & SvTreeFlags::CHKBTN )
+    {
+        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXBUTTON));
+        pItem->SetStateInvisible();
+        InvalidateEntry( pEntry );
+    }
 }
 
 SvButtonState SvTreeListBox::GetCheckButtonState( SvTreeListEntry* pEntry ) const
@@ -1858,7 +1910,7 @@ SvButtonState SvTreeListBox::GetCheckButtonState( SvTreeListEntry* pEntry ) cons
     SvButtonState eState = SvButtonState::Unchecked;
     if( pEntry && ( nTreeFlags & SvTreeFlags::CHKBTN ) )
     {
-        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SvLBoxItemType::Button));
+        SvLBoxButton* pItem = static_cast<SvLBoxButton*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXBUTTON));
         if(!pItem)
             return SvButtonState::Tristate;
         SvItemStateFlags nButtonFlags = pItem->GetButtonFlags();
@@ -1871,7 +1923,7 @@ void SvTreeListBox::CheckButtonHdl()
 {
     aCheckButtonHdl.Call( this );
     if ( pCheckButtonData )
-        pImpl->CallEventListeners( VclEventId::CheckboxToggle, static_cast<void*>(pCheckButtonData->GetActEntry()) );
+        pImp->CallEventListeners( VCLEVENT_CHECKBOX_TOGGLE, static_cast<void*>(pCheckButtonData->GetActEntry()) );
 }
 
 
@@ -1888,16 +1940,16 @@ SvTreeListEntry* SvTreeListBox::CloneEntry( SvTreeListEntry* pSource )
     Image aExpEntryBmp;
     SvLBoxButtonKind eButtonKind = SvLBoxButtonKind::EnabledCheckbox;
 
-    SvLBoxString* pStringItem = static_cast<SvLBoxString*>(pSource->GetFirstItem(SvLBoxItemType::String));
+    SvLBoxString* pStringItem = static_cast<SvLBoxString*>(pSource->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
     if( pStringItem )
         aStr = pStringItem->GetText();
-    SvLBoxContextBmp* pBmpItem = static_cast<SvLBoxContextBmp*>(pSource->GetFirstItem(SvLBoxItemType::ContextBmp));
+    SvLBoxContextBmp* pBmpItem = static_cast<SvLBoxContextBmp*>(pSource->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
     if( pBmpItem )
     {
         aCollEntryBmp = pBmpItem->GetBitmap1( );
         aExpEntryBmp  = pBmpItem->GetBitmap2( );
     }
-    SvLBoxButton* pButtonItem = static_cast<SvLBoxButton*>(pSource->GetFirstItem(SvLBoxItemType::Button));
+    SvLBoxButton* pButtonItem = static_cast<SvLBoxButton*>(pSource->GetFirstItem(SV_ITEM_ID_LBOXBUTTON));
     if( pButtonItem )
         eButtonKind = pButtonItem->GetKind();
     SvTreeListEntry* pClone = CreateEntry();
@@ -1919,12 +1971,12 @@ void SvTreeListBox::SetIndent( short nNewIndent )
 
 const Image& SvTreeListBox::GetDefaultExpandedEntryBmp( ) const
 {
-    return pImpl->GetDefaultEntryExpBmp( );
+    return pImp->GetDefaultEntryExpBmp( );
 }
 
 const Image& SvTreeListBox::GetDefaultCollapsedEntryBmp( ) const
 {
-    return pImpl->GetDefaultEntryColBmp( );
+    return pImp->GetDefaultEntryColBmp( );
 }
 
 void SvTreeListBox::SetDefaultExpandedEntryBmp( const Image& aBmp )
@@ -1934,7 +1986,7 @@ void SvTreeListBox::SetDefaultExpandedEntryBmp( const Image& aBmp )
         nContextBmpWidthMax = (short)aSize.Width();
     SetTabs();
 
-    pImpl->SetDefaultEntryExpBmp( aBmp );
+    pImp->SetDefaultEntryExpBmp( aBmp );
 }
 
 void SvTreeListBox::SetDefaultCollapsedEntryBmp( const Image& aBmp )
@@ -1944,7 +1996,7 @@ void SvTreeListBox::SetDefaultCollapsedEntryBmp( const Image& aBmp )
         nContextBmpWidthMax = (short)aSize.Width();
     SetTabs();
 
-    pImpl->SetDefaultEntryColBmp( aBmp );
+    pImp->SetDefaultEntryColBmp( aBmp );
 }
 
 void SvTreeListBox::EnableCheckButton( SvLBoxButtonData* pData )
@@ -2013,7 +2065,7 @@ void SvTreeListBox::KeyInput( const KeyEvent& rKEvt )
 
     nImpFlags |= SvTreeListBoxFlags::IS_TRAVELSELECT;
 
-    if( !pImpl->KeyInput( rKEvt ) )
+    if( !pImp->KeyInput( rKEvt ) )
     {
         bool bHandled = HandleKeyInput( rKEvt );
         if ( !bHandled )
@@ -2036,21 +2088,21 @@ void SvTreeListBox::GetFocus()
     {
         Invalidate();
     }
-    pImpl->GetFocus();
+    pImp->GetFocus();
     Control::GetFocus();
 
     SvTreeListEntry* pEntry = FirstSelected();
     if ( !pEntry )
     {
-        pEntry = pImpl->GetCurrentEntry();
+        pEntry = pImp->GetCurrentEntry();
     }
-    if (pImpl->pCursor)
+    if (pImp->pCursor)
     {
-        if (pEntry != pImpl->pCursor)
-            pEntry = pImpl->pCursor;
+        if (pEntry != pImp->pCursor)
+            pEntry = pImp->pCursor;
     }
     if ( pEntry )
-        pImpl->CallEventListeners( VclEventId::ListboxTreeFocus, pEntry );
+        pImp->CallEventListeners( VCLEVENT_LISTBOX_TREEFOCUS, pEntry );
 
 }
 
@@ -2059,17 +2111,17 @@ void SvTreeListBox::LoseFocus()
     // If there is no item in the tree, delete visual focus.
     if ( !First() )
         Invalidate();
-    if ( pImpl )
-        pImpl->LoseFocus();
+    if ( pImp )
+        pImp->LoseFocus();
     Control::LoseFocus();
 }
 
 void SvTreeListBox::ModelHasCleared()
 {
-    pImpl->pCursor = nullptr; // else we crash in GetFocus when editing in-place
+    pImp->pCursor = nullptr; // else we crash in GetFocus when editing in-place
     delete pEdCtrl;
     pEdCtrl = nullptr;
-    pImpl->Clear();
+    pImp->Clear();
     nFocusWidth = -1;
 
     nContextBmpWidthMax = 0;
@@ -2085,49 +2137,54 @@ void SvTreeListBox::ModelHasCleared()
     SvListView::ModelHasCleared();
 }
 
+void SvTreeListBox::ShowTargetEmphasis( SvTreeListEntry* pEntry, bool /*bShow*/ )
+{
+    pImp->PaintDDCursor( pEntry );
+}
+
 void SvTreeListBox::ScrollOutputArea( short nDeltaEntries )
 {
-    if( !nDeltaEntries || !pImpl->aVerSBar->IsVisible() )
+    if( !nDeltaEntries || !pImp->aVerSBar->IsVisible() )
         return;
 
-    long nThumb = pImpl->aVerSBar->GetThumbPos();
-    long nMax = pImpl->aVerSBar->GetRange().Max();
+    long nThumb = pImp->aVerSBar->GetThumbPos();
+    long nMax = pImp->aVerSBar->GetRange().Max();
 
     if( nDeltaEntries < 0 )
     {
         // move window up
         nDeltaEntries *= -1;
-        long nVis = pImpl->aVerSBar->GetVisibleSize();
+        long nVis = pImp->aVerSBar->GetVisibleSize();
         long nTemp = nThumb + nVis;
         if( nDeltaEntries > (nMax - nTemp) )
             nDeltaEntries = (short)(nMax - nTemp);
-        pImpl->PageDown( (sal_uInt16)nDeltaEntries );
+        pImp->PageDown( (sal_uInt16)nDeltaEntries );
     }
     else
     {
         if( nDeltaEntries > nThumb )
             nDeltaEntries = (short)nThumb;
-        pImpl->PageUp( (sal_uInt16)nDeltaEntries );
+        pImp->PageUp( (sal_uInt16)nDeltaEntries );
     }
-    pImpl->SyncVerThumb();
+    pImp->SyncVerThumb();
     NotifyEndScroll();
 }
 
 void SvTreeListBox::ScrollToAbsPos( long nPos )
 {
-    pImpl->ScrollToAbsPos( nPos );
+    pImp->ScrollToAbsPos( nPos );
 }
 
 void SvTreeListBox::SetSelectionMode( SelectionMode eSelectMode )
 {
     eSelMode = eSelectMode;
-    pImpl->SetSelectionMode( eSelectMode );
+    pImp->SetSelectionMode( eSelectMode );
 }
 
 void SvTreeListBox::SetDragDropMode( DragDropMode nDDMode )
 {
     nDragDropMode = nDDMode;
-    pImpl->SetDragDropMode( nDDMode );
+    pImp->SetDragDropMode( nDDMode );
 }
 
 short SvTreeListBox::GetHeightOffset(const Image& rBmp, Size& aSizeLogic )
@@ -2137,6 +2194,11 @@ short SvTreeListBox::GetHeightOffset(const Image& rBmp, Size& aSizeLogic )
     if( GetEntryHeight() > aSizeLogic.Height() )
         nOffset = ( GetEntryHeight() - (short)aSizeLogic.Height()) / 2;
     return nOffset;
+}
+
+void SvTreeListBox::GetHeightOffset(Size& aSizeLogic )
+{
+    aSizeLogic = Size(GetTextWidth(OUString('X')), GetTextHeight());
 }
 
 void SvTreeListBox::SetEntryHeight( SvTreeListEntry* pEntry )
@@ -2157,13 +2219,13 @@ void SvTreeListBox::SetEntryHeight( SvTreeListEntry* pEntry )
     {
         nEntryHeight = nHeightMax;
         Control::SetFont( GetFont() );
-        pImpl->SetEntryHeight( nHeightMax );
+        pImp->SetEntryHeight( nHeightMax );
     }
 }
 
-void SvTreeListBox::SetEntryHeight( short nHeight, bool bForce )
+void SvTreeListBox::SetEntryHeight( short nHeight )
 {
-    if( nHeight > nEntryHeight || bForce )
+    if( nHeight > nEntryHeight )
     {
         nEntryHeight = nHeight;
         if( nEntryHeight )
@@ -2171,7 +2233,7 @@ void SvTreeListBox::SetEntryHeight( short nHeight, bool bForce )
         else
             nTreeFlags &= ~SvTreeFlags::FIXEDHEIGHT;
         Control::SetFont( GetFont() );
-        pImpl->SetEntryHeight( nHeight );
+        pImp->SetEntryHeight( nHeight );
     }
 }
 
@@ -2187,17 +2249,18 @@ void SvTreeListBox::AdjustEntryHeight( const Image& rBmp )
     if( aSize.Height() > nEntryHeight )
     {
         nEntryHeight = (short)aSize.Height() + nEntryHeightOffs;
-        pImpl->SetEntryHeight( nEntryHeight );
+        pImp->SetEntryHeight( nEntryHeight );
     }
 }
 
 void SvTreeListBox::AdjustEntryHeight()
 {
-    Size aSize( GetTextWidth(OUString('X')), GetTextHeight() );
+    Size aSize;
+    GetHeightOffset( aSize );
     if( aSize.Height()  >  nEntryHeight )
     {
         nEntryHeight = (short)aSize.Height() + nEntryHeightOffs;
-        pImpl->SetEntryHeight( nEntryHeight );
+        pImp->SetEntryHeight( nEntryHeight );
     }
 }
 
@@ -2216,7 +2279,7 @@ bool SvTreeListBox::Expand( SvTreeListEntry* pParent )
         {
             bExpanded = true;
             ExpandListEntry( pParent );
-            pImpl->EntryExpanded( pParent );
+            pImp->EntryExpanded( pParent );
             pHdlEntry = pParent;
             ExpandedHdl();
             SetAlternatingRowColors( mbAlternatingRowColors );
@@ -2237,7 +2300,7 @@ bool SvTreeListBox::Expand( SvTreeListEntry* pParent )
     // #i92103#
     if ( bExpanded )
     {
-        pImpl->CallEventListeners( VclEventId::ItemExpanded, pParent );
+        pImp->CallEventListeners( VCLEVENT_ITEM_EXPANDED, pParent );
     }
 
     return bExpanded;
@@ -2252,9 +2315,9 @@ bool SvTreeListBox::Collapse( SvTreeListEntry* pParent )
     if( ExpandingHdl() )
     {
         bCollapsed = true;
-        pImpl->CollapsingEntry( pParent );
+        pImp->CollapsingEntry( pParent );
         CollapseListEntry( pParent );
-        pImpl->EntryCollapsed( pParent );
+        pImp->EntryCollapsed( pParent );
         pHdlEntry = pParent;
         ExpandedHdl();
         SetAlternatingRowColors( mbAlternatingRowColors );
@@ -2263,7 +2326,7 @@ bool SvTreeListBox::Collapse( SvTreeListEntry* pParent )
     // #i92103#
     if ( bCollapsed )
     {
-        pImpl->CallEventListeners( VclEventId::ItemCollapsed, pParent );
+        pImp->CallEventListeners( VCLEVENT_ITEM_COLLAPSED, pParent );
     }
 
     return bCollapsed;
@@ -2276,12 +2339,12 @@ bool SvTreeListBox::Select( SvTreeListEntry* pEntry, bool bSelect )
     DBG_ASSERT(IsSelected(pEntry)==bSelect,"Select failed");
     if( bRetVal )
     {
-        pImpl->EntrySelected( pEntry, bSelect );
+        pImp->EntrySelected( pEntry, bSelect );
         pHdlEntry = pEntry;
         if( bSelect )
         {
             SelectHdl();
-            CallEventListeners( VclEventId::ListboxTreeSelect, pEntry);
+            CallEventListeners( VCLEVENT_LISTBOX_TREESELECT, pEntry);
         }
         else
             DeselectHdl();
@@ -2291,7 +2354,7 @@ bool SvTreeListBox::Select( SvTreeListEntry* pEntry, bool bSelect )
 
 sal_uLong SvTreeListBox::SelectChildren( SvTreeListEntry* pParent, bool bSelect )
 {
-    pImpl->DestroyAnchor();
+    pImp->DestroyAnchor();
     sal_uLong nRet = 0;
     if( !pParent->HasChildren() )
         return 0;
@@ -2307,10 +2370,10 @@ sal_uLong SvTreeListBox::SelectChildren( SvTreeListEntry* pParent, bool bSelect 
 
 void SvTreeListBox::SelectAll( bool bSelect, bool )
 {
-    pImpl->SelAllDestrAnch(
+    pImp->SelAllDestrAnch(
         bSelect,
         true,       // delete anchor,
-        true );     // even when using SelectionMode::Single, deselect the cursor
+        true );     // even when using SINGLE_SELECTION, deselect the cursor
 }
 
 void SvTreeListBox::ModelHasInsertedTree( SvTreeListEntry* pEntry )
@@ -2322,25 +2385,25 @@ void SvTreeListBox::ModelHasInsertedTree( SvTreeListEntry* pEntry )
         ImpEntryInserted( pTmp );
         pTmp = Next( pTmp );
     } while( pTmp && nRefDepth < pModel->GetDepth( pTmp ) );
-    pImpl->TreeInserted( pEntry );
+    pImp->TreeInserted( pEntry );
 }
 
 void SvTreeListBox::ModelHasInserted( SvTreeListEntry* pEntry )
 {
     ImpEntryInserted( pEntry );
-    pImpl->EntryInserted( pEntry );
+    pImp->EntryInserted( pEntry );
 }
 
 void SvTreeListBox::ModelIsMoving(SvTreeListEntry* pSource,
                                         SvTreeListEntry* /* pTargetParent */,
                                         sal_uLong /* nChildPos */ )
 {
-    pImpl->MovingEntry( pSource );
+    pImp->MovingEntry( pSource );
 }
 
 void SvTreeListBox::ModelHasMoved( SvTreeListEntry* pSource )
 {
-    pImpl->EntryMoved( pSource );
+    pImp->EntryMoved( pSource );
 }
 
 void SvTreeListBox::ModelIsRemoving( SvTreeListEntry* pEntry )
@@ -2348,26 +2411,26 @@ void SvTreeListBox::ModelIsRemoving( SvTreeListEntry* pEntry )
     if(pEdEntry == pEntry)
         pEdEntry = nullptr;
 
-    pImpl->RemovingEntry( pEntry );
+    pImp->RemovingEntry( pEntry );
 }
 
 void SvTreeListBox::ModelHasRemoved( SvTreeListEntry* pEntry  )
 {
     if ( pEntry == pHdlEntry)
         pHdlEntry = nullptr;
-    pImpl->EntryRemoved();
+    pImp->EntryRemoved();
 }
 
 void SvTreeListBox::SetCollapsedNodeBmp( const Image& rBmp)
 {
     AdjustEntryHeight( rBmp );
-    pImpl->SetCollapsedNodeBmp( rBmp );
+    pImp->SetCollapsedNodeBmp( rBmp );
 }
 
 void SvTreeListBox::SetExpandedNodeBmp( const Image& rBmp )
 {
     AdjustEntryHeight( rBmp );
-    pImpl->SetExpandedNodeBmp( rBmp );
+    pImp->SetExpandedNodeBmp( rBmp );
 }
 
 
@@ -2397,12 +2460,12 @@ void SvTreeListBox::AdjustEntryHeightAndRecalc()
     RecalcViewData();
 }
 
-void SvTreeListBox::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void SvTreeListBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     Control::Paint(rRenderContext, rRect);
     if (nTreeFlags & SvTreeFlags::RECALCTABS)
         SetTabs();
-    pImpl->Paint(rRenderContext, rRect);
+    pImp->Paint(rRenderContext, rRect);
 
     //Add visual focus draw
     if (!First())
@@ -2410,7 +2473,7 @@ void SvTreeListBox::Paint(vcl::RenderContext& rRenderContext, const tools::Recta
         if (HasFocus())
         {
             long nHeight = rRenderContext.GetTextHeight();
-            tools::Rectangle aRect(Point(0, 0), Size(GetSizePixel().Width(), nHeight));
+            Rectangle aRect(Point(0, 0), Size(GetSizePixel().Width(), nHeight));
             ShowFocus(aRect);
         }
         else
@@ -2422,23 +2485,23 @@ void SvTreeListBox::Paint(vcl::RenderContext& rRenderContext, const tools::Recta
 
 void SvTreeListBox::MouseButtonDown( const MouseEvent& rMEvt )
 {
-    pImpl->MouseButtonDown( rMEvt );
+    pImp->MouseButtonDown( rMEvt );
 }
 
 void SvTreeListBox::MouseButtonUp( const MouseEvent& rMEvt )
 {
-    pImpl->MouseButtonUp( rMEvt );
+    pImp->MouseButtonUp( rMEvt );
 }
 
 void SvTreeListBox::MouseMove( const MouseEvent& rMEvt )
 {
-    pImpl->MouseMove( rMEvt );
+    pImp->MouseMove( rMEvt );
 }
 
 
 void SvTreeListBox::SetUpdateMode( bool bUpdate )
 {
-    pImpl->SetUpdateMode( bUpdate );
+    pImp->SetUpdateMode( bUpdate );
     mbUpdateAlternatingRows = bUpdate;
     SetAlternatingRowColors( mbAlternatingRowColors );
 }
@@ -2448,31 +2511,31 @@ void SvTreeListBox::SetSpaceBetweenEntries( short nOffsLogic )
     if( nOffsLogic != nEntryHeightOffs )
     {
         nEntryHeight = nEntryHeight - nEntryHeightOffs;
-        nEntryHeightOffs = nOffsLogic;
+        nEntryHeightOffs = (short)nOffsLogic;
         nEntryHeight = nEntryHeight + nOffsLogic;
         AdjustEntryHeightAndRecalc();
-        pImpl->SetEntryHeight( nEntryHeight );
+        pImp->SetEntryHeight( nEntryHeight );
     }
 }
 
 void SvTreeListBox::SetCursor( SvTreeListEntry* pEntry, bool bForceNoSelect )
 {
-    pImpl->SetCursor(pEntry, bForceNoSelect);
+    pImp->SetCursor(pEntry, bForceNoSelect);
 }
 
 void SvTreeListBox::SetCurEntry( SvTreeListEntry* pEntry )
 {
-    pImpl->SetCurEntry( pEntry );
+    pImp->SetCurEntry( pEntry );
 }
 
 Image SvTreeListBox::GetExpandedNodeBmp( ) const
 {
-    return pImpl->GetExpandedNodeBmp( );
+    return pImp->GetExpandedNodeBmp( );
 }
 
 Point SvTreeListBox::GetEntryPosition( SvTreeListEntry* pEntry ) const
 {
-    return pImpl->GetEntryPosition( pEntry );
+    return pImp->GetEntryPosition( pEntry );
 }
 
 void SvTreeListBox::ShowEntry( SvTreeListEntry* pEntry )
@@ -2482,12 +2545,12 @@ void SvTreeListBox::ShowEntry( SvTreeListEntry* pEntry )
 
 void SvTreeListBox::MakeVisible( SvTreeListEntry* pEntry )
 {
-    pImpl->MakeVisible(pEntry);
+    pImp->MakeVisible(pEntry);
 }
 
 void SvTreeListBox::MakeVisible( SvTreeListEntry* pEntry, bool bMoveToTop )
 {
-    pImpl->MakeVisible( pEntry, bMoveToTop );
+    pImp->MakeVisible( pEntry, bMoveToTop );
 }
 
 void SvTreeListBox::ModelHasEntryInvalidated( SvTreeListEntry* pEntry )
@@ -2502,7 +2565,7 @@ void SvTreeListBox::ModelHasEntryInvalidated( SvTreeListEntry* pEntry )
     }
 
     // repaint
-    pImpl->InvalidateEntry( pEntry );
+    pImp->InvalidateEntry( pEntry );
 }
 
 void SvTreeListBox::EditItemText(SvTreeListEntry* pEntry, SvLBoxString* pItem, const Selection& rSelection)
@@ -2510,11 +2573,11 @@ void SvTreeListBox::EditItemText(SvTreeListEntry* pEntry, SvLBoxString* pItem, c
     DBG_ASSERT(pEntry&&pItem,"EditItemText: Bad params");
     if( IsSelected( pEntry ))
     {
-        pImpl->ShowCursor( false );
+        pImp->ShowCursor( false );
         SelectListEntry( pEntry, false );
-        pImpl->InvalidateEntry(pEntry);
+        pImp->InvalidateEntry(pEntry);
         SelectListEntry( pEntry, true );
-        pImpl->ShowCursor( true );
+        pImp->ShowCursor( true );
     }
     pEdEntry = pEntry;
     pEdItem = pItem;
@@ -2525,7 +2588,7 @@ void SvTreeListBox::EditItemText(SvTreeListEntry* pEntry, SvLBoxString* pItem, c
     Point aPos = GetEntryPosition( pEntry );
     aPos.Y() += ( nEntryHeight - aItemSize.Height() ) / 2;
     aPos.X() = GetTabPos( pEntry, pTab );
-    long nOutputWidth = pImpl->GetOutputSize().Width();
+    long nOutputWidth = pImp->GetOutputSize().Width();
     Size aSize( nOutputWidth - aPos.X(), aItemSize.Height() );
     sal_uInt16 nPos = std::find( aTabs.begin(), aTabs.end(), pTab ) - aTabs.begin();
     if( nPos+1 < (sal_uInt16)aTabs.size() )
@@ -2538,13 +2601,13 @@ void SvTreeListBox::EditItemText(SvTreeListEntry* pEntry, SvLBoxString* pItem, c
     Point aOrigin( GetMapMode().GetOrigin() );
     aPos += aOrigin; // convert to win coordinates
     aSize.Width() -= aOrigin.X();
-    tools::Rectangle aRect( aPos, aSize );
+    Rectangle aRect( aPos, aSize );
     EditText( pItem->GetText(), aRect, rSelection );
 }
 
 void SvTreeListBox::EditEntry( SvTreeListEntry* pEntry )
 {
-    pImpl->aEditClickPos = Point( -1, -1 );
+    pImp->aEditClickPos = Point( -1, -1 );
     ImplEditEntry( pEntry );
 }
 
@@ -2556,7 +2619,7 @@ void SvTreeListBox::ImplEditEntry( SvTreeListEntry* pEntry )
         pEntry = GetCurEntry();
     if( pEntry )
     {
-        long nClickX = pImpl->aEditClickPos.X();
+        long nClickX = pImp->aEditClickPos.X();
         bool bIsMouseTriggered = nClickX >= 0;
 
         SvLBoxString* pItem = nullptr;
@@ -2565,7 +2628,7 @@ void SvTreeListBox::ImplEditEntry( SvTreeListEntry* pEntry )
         for( sal_uInt16 i = 0 ; i < nCount ; i++ )
         {
             SvLBoxItem& rTmpItem = pEntry->GetItem( i );
-            if (rTmpItem.GetType() != SvLBoxItemType::String)
+            if (rTmpItem.GetType() != SV_ITEM_ID_LBOXSTRING)
                 continue;
 
             SvLBoxTab* pTab = GetTab( pEntry, &rTmpItem );
@@ -2600,12 +2663,12 @@ void SvTreeListBox::ImplEditEntry( SvTreeListEntry* pEntry )
 
 bool SvTreeListBox::AreChildrenTransient() const
 {
-    return pImpl->AreChildrenTransient();
+    return pImp->AreChildrenTransient();
 }
 
 void SvTreeListBox::SetChildrenNotTransient()
 {
-    pImpl->SetChildrenNotTransient();
+    pImp->SetChildrenNotTransient();
 }
 
 void SvTreeListBox::EditedText( const OUString& rStr )
@@ -2620,7 +2683,7 @@ void SvTreeListBox::EditedText( const OUString& rStr )
         }
         if( GetSelectionCount() == 0 )
             Select( pEdEntry );
-        if( GetSelectionMode() == SelectionMode::Multiple && !GetCurEntry() )
+        if( GetSelectionMode() == MULTIPLE_SELECTION && !GetCurEntry() )
             SetCurEntry( pEdEntry );
     }
 }
@@ -2635,7 +2698,7 @@ SvTreeListEntry* SvTreeListBox::GetDropTarget( const Point& rPos )
     }
     else
     {
-        Size aSize( pImpl->GetOutputSize() );
+        Size aSize( pImp->GetOutputSize() );
         if( rPos.Y() > aSize.Height() - 12 )
         {
             ImplShowTargetEmphasis(pTargetEntry, false);
@@ -2643,7 +2706,7 @@ SvTreeListEntry* SvTreeListBox::GetDropTarget( const Point& rPos )
         }
     }
 
-    SvTreeListEntry* pTarget = pImpl->GetEntry( rPos );
+    SvTreeListEntry* pTarget = pImp->GetEntry( rPos );
     // when dropping in a vacant space, use the last entry
     if( !pTarget )
         return LastVisible();
@@ -2657,11 +2720,11 @@ SvTreeListEntry* SvTreeListBox::GetDropTarget( const Point& rPos )
 
 SvTreeListEntry* SvTreeListBox::GetEntry( const Point& rPos, bool bHit ) const
 {
-    SvTreeListEntry* pEntry = pImpl->GetEntry( rPos );
+    SvTreeListEntry* pEntry = pImp->GetEntry( rPos );
     if( pEntry && bHit )
     {
-        long nLine = pImpl->GetEntryLine( pEntry );
-        if( !(pImpl->EntryReallyHit( pEntry, rPos, nLine)) )
+        long nLine = pImp->GetEntryLine( pEntry );
+        if( !(pImp->EntryReallyHit( pEntry, rPos, nLine)) )
             return nullptr;
     }
     return pEntry;
@@ -2669,7 +2732,7 @@ SvTreeListEntry* SvTreeListBox::GetEntry( const Point& rPos, bool bHit ) const
 
 SvTreeListEntry* SvTreeListBox::GetCurEntry() const
 {
-    return pImpl ? pImpl->GetCurEntry() : nullptr;
+    return pImp ? pImp->GetCurEntry() : nullptr;
 }
 
 void SvTreeListBox::ImplInitStyle()
@@ -2687,8 +2750,8 @@ void SvTreeListBox::ImplInitStyle()
         GetModel()->SetSortMode(SortNone);
         GetModel()->SetCompareHdl(Link<const SvSortData&,sal_Int32>());
     }
-    pImpl->SetStyle(nWindowStyle);
-    pImpl->Resize();
+    pImp->SetStyle(nWindowStyle);
+    pImp->Resize();
     Invalidate();
 }
 
@@ -2701,26 +2764,27 @@ void SvTreeListBox::InvalidateEntry(SvTreeListEntry* pEntry)
     }
 }
 
-void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::RenderContext& rRenderContext)
+void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::RenderContext& rRenderContext,
+                                SvLBoxTabFlags nTabFlags)
 {
 
-    tools::Rectangle aRect; // multi purpose
+    Rectangle aRect; // multi purpose
 
-    bool bHorSBar = pImpl->HasHorScrollBar();
+    bool bHorSBar = pImp->HasHorScrollBar();
     PreparePaint(rRenderContext, rEntry);
 
-    pImpl->UpdateContextBmpWidthMax(&rEntry);
+    pImp->UpdateContextBmpWidthMax(&rEntry);
 
     if (nTreeFlags & SvTreeFlags::RECALCTABS)
         SetTabs();
 
     short nTempEntryHeight = GetEntryHeight();
-    long nWidth = pImpl->GetOutputSize().Width();
+    long nWidth = pImp->GetOutputSize().Width();
 
     // Did we turn on the scrollbar within PreparePaints? If yes, we have to set
     // the ClipRegion anew.
-    if (!bHorSBar && pImpl->HasHorScrollBar())
-        rRenderContext.SetClipRegion(vcl::Region(pImpl->GetClipRegionRect()));
+    if (!bHorSBar && pImp->HasHorScrollBar())
+        rRenderContext.SetClipRegion(vcl::Region(pImp->GetClipRegionRect()));
 
     Point aEntryPos(rRenderContext.GetMapMode().GetOrigin());
     aEntryPos.X() *= -1; // conversion document coordinates
@@ -2779,122 +2843,137 @@ void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::Render
         else
             nX = nTabPos + pTab->CalcOffset(aSize.Width(), nNextTabPos - nTabPos);
 
-        aEntryPos.X() = nX;
-        aEntryPos.Y() = nLine;
-
-        // set background pattern/color
-
-        Wallpaper aWallpaper = rRenderContext.GetBackground();
-
-        bool bSelTab = bool(nFlags & SvLBoxTabFlags::SHOW_SELECTION);
-        SvLBoxItemType nItemType = pItem->GetType();
-
-        if (pViewDataEntry->IsHighlighted() && bSelTab)
+        if (nFlags & nTabFlags)
         {
-            Color aNewWallColor = rSettings.GetHighlightColor();
-            if (!bInUse || nItemType != SvLBoxItemType::ContextBmp)
+            aEntryPos.X() = nX;
+            aEntryPos.Y() = nLine;
+
+            // set background pattern/color
+
+            Wallpaper aWallpaper = rRenderContext.GetBackground();
+
+            bool bSelTab = bool(nFlags & SvLBoxTabFlags::SHOW_SELECTION);
+            sal_uInt16 nItemType = pItem->GetType();
+
+            if (pViewDataEntry->IsHighlighted() && bSelTab && !pViewDataEntry->IsCursored())
             {
-                // if the face color is bright then the deactive color is also bright
-                // -> so you can't see any deactive selection
-                if (bHideSelection && !rSettings.GetFaceColor().IsBright()
-                   && aWallpaper.GetColor().IsBright() != rSettings.GetDeactiveColor().IsBright())
+                Color aNewWallColor = rSettings.GetHighlightColor();
+                if (!bInUse || nItemType != SV_ITEM_ID_LBOXCONTEXTBMP)
                 {
-                    aNewWallColor = rSettings.GetDeactiveColor();
+                    // if the face color is bright then the deactive color is also bright
+                    // -> so you can't see any deactive selection
+                    if (bHideSelection && !rSettings.GetFaceColor().IsBright()
+                       && aWallpaper.GetColor().IsBright() != rSettings.GetDeactiveColor().IsBright())
+                    {
+                        aNewWallColor = rSettings.GetDeactiveColor();
+                    }
+                    // set font color to highlight
+                    if (!bCurFontIsSel)
+                    {
+                        rRenderContext.SetTextColor(aHighlightTextColor);
+                        rRenderContext.SetFont(aHighlightFont);
+                        bCurFontIsSel = true;
+                    }
                 }
-                // set font color to highlight
-                if (!bCurFontIsSel)
+                aWallpaper.SetColor(aNewWallColor);
+            }
+            else  // no selection
+            {
+                if (bInUse && nItemType == SV_ITEM_ID_LBOXCONTEXTBMP)
                 {
-                    rRenderContext.SetTextColor(aHighlightTextColor);
-                    rRenderContext.SetFont(aHighlightFont);
-                    bCurFontIsSel = true;
+                    aWallpaper.SetColor(rSettings.GetFieldColor());
+                }
+                else if (bCurFontIsSel)
+                {
+                    bCurFontIsSel = false;
+                    rRenderContext.SetTextColor(aBackupTextColor);
+                    rRenderContext.SetFont(aBackupFont);
+                }
+                else
+                {
+                    aWallpaper.SetColor(rEntry.GetBackColor());
                 }
             }
-            aWallpaper.SetColor(aNewWallColor);
-        }
-        else  // no selection
-        {
-            if (bInUse && nItemType == SvLBoxItemType::ContextBmp)
+
+            // draw background
+            if (!(nTreeFlags & SvTreeFlags::USESEL))
             {
-                aWallpaper.SetColor(rSettings.GetFieldColor());
-            }
-            else if (bCurFontIsSel)
-            {
-                bCurFontIsSel = false;
-                rRenderContext.SetTextColor(aBackupTextColor);
-                rRenderContext.SetFont(aBackupFont);
+                // only draw the area that is used by the item
+                aRectSize.Width() = aSize.Width();
+                aRect.SetPos(aEntryPos);
+                aRect.SetSize(aRectSize);
             }
             else
             {
-                aWallpaper.SetColor(rEntry.GetBackColor());
+                // draw from the current to the next tab
+                if (nCurTab != 0)
+                    aRect.Left() = nTabPos;
+                else
+                    // if we're in the 0th tab, always draw from column 0 --
+                    // else we get problems with centered tabs
+                    aRect.Left() = 0;
+                aRect.Top() = nLine;
+                aRect.Bottom() = nLine + nTempEntryHeight - 1;
+                if (pNextTab)
+                {
+                    long nRight;
+                    nRight = GetTabPos(&rEntry, pNextTab) - 1;
+                    if (nRight > nMaxRight)
+                        nRight = nMaxRight;
+                    aRect.Right() = nRight;
+                }
+                else
+                {
+                    aRect.Right() = nMaxRight;
+                }
             }
-        }
-
-        // draw background
-        if (!(nTreeFlags & SvTreeFlags::USESEL))
-        {
-            // only draw the area that is used by the item
-            aRectSize.Width() = aSize.Width();
-            aRect.SetPos(aEntryPos);
-            aRect.SetSize(aRectSize);
-        }
-        else
-        {
-            // draw from the current to the next tab
-            if (nCurTab != 0)
-                aRect.Left() = nTabPos;
-            else
-                // if we're in the 0th tab, always draw from column 0 --
-                // else we get problems with centered tabs
-                aRect.Left() = 0;
-            aRect.Top() = nLine;
-            aRect.Bottom() = nLine + nTempEntryHeight - 1;
-            if (pNextTab)
+            // A custom selection that starts at a tab position > 0, do not fill
+            // the background of the 0th item, else e.g. we might not be able to
+            // realize tab listboxes with lines.
+            if (!(nCurTab == 0 && (nTreeFlags & SvTreeFlags::USESEL) && nFirstSelTab))
             {
-                long nRight;
-                nRight = GetTabPos(&rEntry, pNextTab) - 1;
-                if (nRight > nMaxRight)
-                    nRight = nMaxRight;
-                aRect.Right() = nRight;
+                Color aBackgroundColor = aWallpaper.GetColor();
+                if (aBackgroundColor != Color(COL_TRANSPARENT))
+                {
+                    rRenderContext.SetFillColor(aBackgroundColor);
+                    // this case may occur for smaller horizontal resizes
+                    if (aRect.Left() < aRect.Right())
+                        rRenderContext.DrawRect(aRect);
+                }
             }
-            else
+            // draw item
+            // center vertically
+            aEntryPos.Y() += (nTempEntryHeight - aSize.Height()) / 2;
+            pViewDataEntry->SetPaintRectangle(aRect);
+
+            pItem->Paint(aEntryPos, *this, rRenderContext, pViewDataEntry, rEntry);
+
+            // division line between tabs
+            if (pNextTab && pItem->GetType() == SV_ITEM_ID_LBOXSTRING &&
+                // not at the right edge of the window!
+                aRect.Right() < nMaxRight)
             {
-                aRect.Right() = nMaxRight;
+                aRect.Left() = aRect.Right() - SV_TAB_BORDER;
+                rRenderContext.DrawRect(aRect);
             }
+
+            rRenderContext.SetFillColor(aBackupColor);
         }
-        // A custom selection that starts at a tab position > 0, do not fill
-        // the background of the 0th item, else e.g. we might not be able to
-        // realize tab listboxes with lines.
-        if (!(nCurTab == 0 && (nTreeFlags & SvTreeFlags::USESEL) && nFirstSelTab))
-        {
-            Color aBackgroundColor = aWallpaper.GetColor();
-            if (aBackgroundColor != Color(COL_TRANSPARENT))
-            {
-                rRenderContext.SetFillColor(aBackgroundColor);
-                // this case may occur for smaller horizontal resizes
-                if (aRect.Left() < aRect.Right())
-                    rRenderContext.DrawRect(aRect);
-            }
-        }
-        // draw item
-        // center vertically
-        aEntryPos.Y() += (nTempEntryHeight - aSize.Height()) / 2;
-        pViewDataEntry->SetPaintRectangle(aRect);
-
-        pItem->Paint(aEntryPos, *this, rRenderContext, pViewDataEntry, rEntry);
-
-        // division line between tabs
-        if (pNextTab && pItem->GetType() == SvLBoxItemType::String &&
-            // not at the right edge of the window!
-            aRect.Right() < nMaxRight)
-        {
-            aRect.Left() = aRect.Right() - SV_TAB_BORDER;
-            rRenderContext.DrawRect(aRect);
-        }
-
-        rRenderContext.SetFillColor(aBackupColor);
-
         nCurItem++;
         nCurTab++;
+    }
+    if (pViewDataEntry->IsCursored() && !HasFocus())
+    {
+        // cursor emphasis
+        rRenderContext.SetFillColor();
+        Color aOldLineColor = rRenderContext.GetLineColor();
+        rRenderContext.SetLineColor(Color(COL_BLACK));
+        aRect = GetFocusRect(&rEntry, nLine);
+        aRect.Top()++;
+        aRect.Bottom()--;
+        rRenderContext.DrawRect(aRect);
+        rRenderContext.SetLineColor(aOldLineColor);
+        rRenderContext.SetFillColor(aBackupColor);
     }
 
     if (bCurFontIsSel)
@@ -2903,11 +2982,11 @@ void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::Render
         rRenderContext.SetFont(aBackupFont);
     }
 
-    sal_uInt16 nFirstDynTabPos(0);
+    sal_uInt16 nFirstDynTabPos;
     SvLBoxTab* pFirstDynamicTab = GetFirstDynamicTab(nFirstDynTabPos);
     long nDynTabPos = GetTabPos(&rEntry, pFirstDynamicTab);
-    nDynTabPos += pImpl->nNodeBmpTabDistance;
-    nDynTabPos += pImpl->nNodeBmpWidth / 2;
+    nDynTabPos += pImp->nNodeBmpTabDistance;
+    nDynTabPos += pImp->nNodeBmpWidth / 2;
     nDynTabPos += 4; // 4 pixels of buffer, so the node bitmap is not too close
                      // to the next tab
 
@@ -2929,23 +3008,23 @@ void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::Render
             if ((nWindowStyle & WB_HASBUTTONSATROOT) || pModel->GetDepth(&rEntry) > 0)
             {
                 Point aPos(GetTabPos(&rEntry, pFirstDynamicTab), nLine);
-                aPos.X() += pImpl->nNodeBmpTabDistance;
+                aPos.X() += pImp->nNodeBmpTabDistance;
 
                 const Image* pImg = nullptr;
 
                 if (IsExpanded(&rEntry))
-                    pImg = &pImpl->GetExpandedNodeBmp();
+                    pImg = &pImp->GetExpandedNodeBmp();
                 else
                 {
                     if ((!rEntry.HasChildren()) && rEntry.HasChildrenOnDemand() &&
                         (!(rEntry.GetFlags() & SvTLEntryFlags::HAD_CHILDREN)) &&
-                        pImpl->GetDontKnowNodeBmp().GetSizePixel().Width())
+                        pImp->GetDontKnowNodeBmp().GetSizePixel().Width())
                     {
-                        pImg = &pImpl->GetDontKnowNodeBmp( );
+                        pImg = &pImp->GetDontKnowNodeBmp( );
                     }
                     else
                     {
-                        pImg = &pImpl->GetCollapsedNodeBmp( );
+                        pImg = &pImp->GetCollapsedNodeBmp( );
                     }
                 }
                 aPos.Y() += (nTempEntryHeight - pImg->GetSizePixel().Height()) / 2;
@@ -2959,7 +3038,7 @@ void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::Render
                 if (rRenderContext.IsNativeControlSupported(ControlType::ListNode, ControlPart::Entire))
                 {
                     ImplControlValue aControlValue;
-                    tools::Rectangle aCtrlRegion(aPos,  pImg->GetSizePixel());
+                    Rectangle aCtrlRegion(aPos,  pImg->GetSizePixel());
                     ControlState nState = ControlState::NONE;
 
                     if (IsEnabled())
@@ -2971,7 +3050,7 @@ void SvTreeListBox::PaintEntry1(SvTreeListEntry& rEntry, long nLine, vcl::Render
                     {
                         if ((!rEntry.HasChildren()) && rEntry.HasChildrenOnDemand() &&
                             (!(rEntry.GetFlags() & SvTLEntryFlags::HAD_CHILDREN)) &&
-                            pImpl->GetDontKnowNodeBmp().GetSizePixel().Width())
+                            pImp->GetDontKnowNodeBmp().GetSizePixel().Width())
                         {
                             aControlValue.setTristateVal( ButtonValue::DontKnow ); //don't know
                         }
@@ -3000,14 +3079,14 @@ void SvTreeListBox::PreparePaint(vcl::RenderContext& /*rRenderContext*/, SvTreeL
 {
 }
 
-tools::Rectangle SvTreeListBox::GetFocusRect( SvTreeListEntry* pEntry, long nLine )
+Rectangle SvTreeListBox::GetFocusRect( SvTreeListEntry* pEntry, long nLine )
 {
     Size aSize;
-    tools::Rectangle aRect;
+    Rectangle aRect;
     aRect.Top() = nLine;
     aSize.Height() = GetEntryHeight();
 
-    long nRealWidth = pImpl->GetOutputSize().Width();
+    long nRealWidth = pImp->GetOutputSize().Width();
     nRealWidth -= GetMapMode().GetOrigin().X();
 
     sal_uInt16 nCurTab;
@@ -3118,7 +3197,7 @@ SvLBoxItem* SvTreeListBox::GetItem_Impl( SvTreeListEntry* pEntry, long nX,
     SvLBoxItem* pItem = &pEntry->GetItem(0);
     sal_uInt16 nNextItem = 1;
     nX -= GetMapMode().GetOrigin().X();
-    long nRealWidth = pImpl->GetOutputSize().Width();
+    long nRealWidth = pImp->GetOutputSize().Width();
     nRealWidth -= GetMapMode().GetOrigin().X();
 
     while( true )
@@ -3241,7 +3320,7 @@ void SvTreeListBox::SetAlternatingRowColors( bool bEnable )
             pEntry->SetBackColor( GetBackground().GetColor() );
 
     mbAlternatingRowColors = bEnable;
-    pImpl->UpdateAll(true);
+    pImp->UpdateAll();
 }
 
 SvLBoxItem* SvTreeListBox::GetItem(SvTreeListEntry* pEntry,long nX,SvLBoxTab** ppTab)
@@ -3255,11 +3334,11 @@ SvLBoxItem* SvTreeListBox::GetItem(SvTreeListEntry* pEntry,long nX )
     return GetItem_Impl( pEntry, nX, &pDummyTab );
 }
 
-void SvTreeListBox::AddTab(long nTabPos, SvLBoxTabFlags nFlags )
+void SvTreeListBox::AddTab(long nTabPos, SvLBoxTabFlags nFlags, void* pUserData )
 {
     nFocusWidth = -1;
     SvLBoxTab* pTab = new SvLBoxTab( nTabPos, nFlags );
-    pTab->SetUserData( nullptr );
+    pTab->SetUserData( pUserData );
     aTabs.push_back( pTab );
     if( nTreeFlags & SvTreeFlags::USESEL )
     {
@@ -3318,7 +3397,7 @@ void SvTreeListBox::ClearTabList()
 
 Size SvTreeListBox::GetOutputSizePixel() const
 {
-    Size aSize = pImpl->GetOutputSize();
+    Size aSize = pImp->GetOutputSize();
     return aSize;
 }
 
@@ -3333,22 +3412,22 @@ void SvTreeListBox::NotifyScrolled()
 
 void SvTreeListBox::Invalidate( InvalidateFlags nInvalidateFlags )
 {
-    if (!pImpl)
+    if (!pImp)
         return;
     if( nFocusWidth == -1 )
         // to make sure that the control doesn't show the wrong focus rectangle
         // after painting
-        pImpl->RecalcFocusRect();
+        pImp->RecalcFocusRect();
     Control::Invalidate( nInvalidateFlags );
-    pImpl->Invalidate();
+    pImp->Invalidate();
 }
 
-void SvTreeListBox::Invalidate( const tools::Rectangle& rRect, InvalidateFlags nInvalidateFlags )
+void SvTreeListBox::Invalidate( const Rectangle& rRect, InvalidateFlags nInvalidateFlags )
 {
     if( nFocusWidth == -1 )
         // to make sure that the control doesn't show the wrong focus rectangle
         // after painting
-        pImpl->RecalcFocusRect();
+        pImp->RecalcFocusRect();
     Control::Invalidate( rRect, nInvalidateFlags );
 }
 
@@ -3368,16 +3447,15 @@ void SvTreeListBox::SetHighlightRange( sal_uInt16 nStart, sal_uInt16 nEnd)
     nTreeFlags |= SvTreeFlags::RECALCTABS;
     nFirstSelTab = nStart;
     nLastSelTab = nEnd;
-    pImpl->RecalcFocusRect();
+    pImp->RecalcFocusRect();
 }
 
-void SvTreeListBox::Command(const CommandEvent& rCEvt)
+void SvTreeListBox::Command( const CommandEvent& rCEvt )
 {
-    pImpl->Command(rCEvt);
-    //pass at least alt press/release to parent impl
-    if (rCEvt.GetCommand() == CommandEventId::ModKeyChange)
-        Control::Command(rCEvt);
+    // FIXME gnumake2 resync to DEV300_m84
+    pImp->Command( rCEvt );
 }
+
 
 void SvTreeListBox::RemoveParentKeepChildren( SvTreeListEntry* pParent )
 {
@@ -3429,18 +3507,18 @@ void SvTreeListBox::GetLastTab( SvLBoxTabFlags nFlagMask, sal_uInt16& rTabPos )
 
 void SvTreeListBox::RequestHelp( const HelpEvent& rHEvt )
 {
-    if( !pImpl->RequestHelp( rHEvt ) )
+    if( !pImp->RequestHelp( rHEvt ) )
         Control::RequestHelp( rHEvt );
 }
 
-IMPL_LINK( SvTreeListBox, DefaultCompare, const SvSortData&, rData, sal_Int32 )
+IMPL_LINK_TYPED( SvTreeListBox, DefaultCompare, const SvSortData&, rData, sal_Int32 )
 {
     const SvTreeListEntry* pLeft = rData.pLeft;
     const SvTreeListEntry* pRight = rData.pRight;
-    OUString aLeft( static_cast<const SvLBoxString*>(pLeft->GetFirstItem(SvLBoxItemType::String))->GetText());
-    OUString aRight( static_cast<const SvLBoxString*>(pRight->GetFirstItem(SvLBoxItemType::String))->GetText());
-    pImpl->UpdateStringSorter();
-    return pImpl->m_pStringSorter->compare(aLeft, aRight);
+    OUString aLeft( static_cast<const SvLBoxString*>(pLeft->GetFirstItem(SV_ITEM_ID_LBOXSTRING))->GetText());
+    OUString aRight( static_cast<const SvLBoxString*>(pRight->GetFirstItem(SV_ITEM_ID_LBOXSTRING))->GetText());
+    pImp->UpdateStringSorter();
+    return pImp->m_pStringSorter->compare(aLeft, aRight);
 }
 
 void SvTreeListBox::ModelNotification( SvListAction nActionId, SvTreeListEntry* pEntry1,
@@ -3463,13 +3541,13 @@ void SvTreeListBox::ModelNotification( SvListAction nActionId, SvTreeListEntry* 
                 break;
             }
 
-            SvLBoxContextBmp* pBmpItem = static_cast< SvLBoxContextBmp* >( pEntry->GetFirstItem( SvLBoxItemType::ContextBmp ) );
+            SvLBoxContextBmp* pBmpItem = static_cast< SvLBoxContextBmp* >( pEntry->GetFirstItem( SV_ITEM_ID_LBOXCONTEXTBMP ) );
             if ( !pBmpItem )
                 break;
             const Image& rBitmap1( pBmpItem->GetBitmap1() );
             const Image& rBitmap2( pBmpItem->GetBitmap2() );
             short nMaxWidth = short( std::max( rBitmap1.GetSizePixel().Width(), rBitmap2.GetSizePixel().Width() ) );
-            nMaxWidth = pImpl->UpdateContextBmpWidthVector( pEntry, nMaxWidth );
+            nMaxWidth = pImp->UpdateContextBmpWidthVector( pEntry, nMaxWidth );
             if( nMaxWidth > nContextBmpWidthMax )
             {
                 nContextBmpWidthMax = nMaxWidth;
@@ -3501,22 +3579,22 @@ void SvTreeListBox::ModelNotification( SvListAction nActionId, SvTreeListEntry* 
 
 void SvTreeListBox::EndSelection()
 {
-    pImpl->EndSelection();
+    pImp->EndSelection();
 }
 
 ScrollBar *SvTreeListBox::GetVScroll()
 {
-    return pImpl->aVerSBar.get();
+    return pImp->aVerSBar.get();
 }
 
 ScrollBar *SvTreeListBox::GetHScroll()
 {
-    return pImpl->aHorSBar.get();
+    return pImp->aHorSBar.get();
 }
 
 void SvTreeListBox::EnableAsyncDrag( bool b )
 {
-    pImpl->EnableAsyncDrag( b );
+    pImp->EnableAsyncDrag( b );
 }
 
 SvTreeListEntry* SvTreeListBox::GetFirstEntryInView() const
@@ -3531,7 +3609,7 @@ SvTreeListEntry* SvTreeListBox::GetNextEntryInView(SvTreeListEntry* pEntry ) con
     if( pNext )
     {
         Point aPos( GetEntryPosition(pNext) );
-        const Size& rSize = pImpl->GetOutputSize();
+        const Size& rSize = pImp->GetOutputSize();
         if( aPos.Y() < 0 || aPos.Y() >= rSize.Height() )
             return nullptr;
     }
@@ -3548,7 +3626,7 @@ SvTreeListEntry* SvTreeListBox::GetLastEntryInView() const
         if( pNext )
         {
           Point aPos( GetEntryPosition(pNext) );
-          const Size& rSize = pImpl->GetOutputSize();
+          const Size& rSize = pImp->GetOutputSize();
           if( aPos.Y() < 0 || aPos.Y() + GetEntryHeight() >= rSize.Height() )
               break;
           else
@@ -3562,7 +3640,7 @@ SvTreeListEntry* SvTreeListBox::GetLastEntryInView() const
 
 void SvTreeListBox::ShowFocusRect( const SvTreeListEntry* pEntry )
 {
-    pImpl->ShowFocusRect( pEntry );
+    pImp->ShowFocusRect( pEntry );
 }
 
 void SvTreeListBox::DataChanged( const DataChangedEvent& rDCEvt )
@@ -3628,39 +3706,39 @@ void SvTreeListBox::InitSettings()
 
 bool SvTreeListBox::IsCellFocusEnabled() const
 {
-    return pImpl->IsCellFocusEnabled();
+    return pImp->IsCellFocusEnabled();
 }
 
 bool SvTreeListBox::SetCurrentTabPos( sal_uInt16 _nNewPos )
 {
-    return pImpl->SetCurrentTabPos( _nNewPos );
+    return pImp->SetCurrentTabPos( _nNewPos );
 }
 
 sal_uInt16 SvTreeListBox::GetCurrentTabPos() const
 {
-    return pImpl->GetCurrentTabPos();
+    return pImp->GetCurrentTabPos();
 }
 
 void SvTreeListBox::InitStartEntry()
 {
-    if( !pImpl->pStartEntry )
-        pImpl->pStartEntry = GetModel()->First();
+    if( !pImp->pStartEntry )
+        pImp->pStartEntry = GetModel()->First();
 }
 
-VclPtr<PopupMenu> SvTreeListBox::CreateContextMenu()
+std::unique_ptr<PopupMenu> SvTreeListBox::CreateContextMenu()
 {
     return nullptr;
 }
 
 void SvTreeListBox::ExecuteContextMenuAction( sal_uInt16 )
 {
-    SAL_INFO( "svtools.contnr", "SvTreeListBox::ExecuteContextMenuAction(): now there's happening nothing!" );
+    SAL_INFO( "svtools", "SvTreeListBox::ExecuteContextMenuAction(): now there's happening nothing!" );
 }
 
 void SvTreeListBox::EnableContextMenuHandling()
 {
-    assert(pImpl && "-SvTreeListBox::EnableContextMenuHandling(): No implementation!");
-    pImpl->bContextMenuHandling = true;
+    assert(pImp && "-SvTreeListBox::EnableContextMenuHandling(): No implementation!");
+    pImp->bContextMenuHandling = true;
 }
 
 void SvTreeListBox::EnableList( bool _bEnable )
@@ -3668,7 +3746,7 @@ void SvTreeListBox::EnableList( bool _bEnable )
     // call base class method
     Window::Enable(_bEnable);
     // then invalidate
-    Invalidate(tools::Rectangle(Point(), GetSizePixel()));
+    Invalidate(Rectangle(Point(), GetSizePixel()));
 }
 
 css::uno::Reference< XAccessible > SvTreeListBox::CreateAccessible()
@@ -3684,7 +3762,7 @@ css::uno::Reference< XAccessible > SvTreeListBox::CreateAccessible()
         {
             // need to be done here to get the vclxwindow later on in the accessible
             css::uno::Reference< css::awt::XWindowPeer > xTemp(GetComponentInterface());
-            xAccessible = pImpl->m_aFactoryAccess.getFactory().createAccessibleTreeListBox( *this, xAccParent );
+            xAccessible = pImp->m_aFactoryAccess.getFactory().createAccessibleTreeListBox( *this, xAccParent );
         }
     }
     return xAccessible;
@@ -3718,19 +3796,19 @@ void SvTreeListBox::FillAccessibleEntryStateSet( SvTreeListEntry* pEntry, ::utl:
     }
 }
 
-tools::Rectangle SvTreeListBox::GetBoundingRect( SvTreeListEntry* pEntry )
+Rectangle SvTreeListBox::GetBoundingRect( SvTreeListEntry* pEntry )
 {
     Point aPos = GetEntryPosition( pEntry );
-    tools::Rectangle aRect = GetFocusRect( pEntry, aPos.Y() );
+    Rectangle aRect = GetFocusRect( pEntry, aPos.Y() );
     return aRect;
 }
 
 void SvTreeListBox::EnableCellFocus()
 {
-    pImpl->EnableCellFocus();
+    pImp->EnableCellFocus();
 }
 
-void SvTreeListBox::CallImplEventListeners(VclEventId nEvent, void* pData)
+void SvTreeListBox::CallImplEventListeners(sal_uLong nEvent, void* pData)
 {
     CallEventListeners(nEvent, pData);
 }
@@ -3750,11 +3828,6 @@ bool SvTreeListBox::set_property(const OString &rKey, const OString &rValue)
     else
         return Control::set_property(rKey, rValue);
     return true;
-}
-
-FactoryFunction SvTreeListBox::GetUITestFactory() const
-{
-    return TreeListUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

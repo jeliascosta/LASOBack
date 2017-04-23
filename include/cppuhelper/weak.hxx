@@ -81,13 +81,13 @@ protected:
 public:
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
     /// @endcond
 
@@ -99,7 +99,7 @@ public:
 #else
     /** Default Constructor.  Sets the reference count to zero.
     */
-    OWeakObject()
+    inline OWeakObject()
         : m_refCount( 0 )
         , m_pWeakConnectionPoint( NULL )
         , m_pReserved(NULL)
@@ -109,7 +109,7 @@ public:
 
         @param rObj dummy param
     */
-    OWeakObject( const OWeakObject & rObj )
+    inline OWeakObject( const OWeakObject & rObj )
         : css::uno::XWeak()
         , m_refCount( 0 )
         , m_pWeakConnectionPoint( NULL )
@@ -121,7 +121,7 @@ public:
 
         @return this OWeakObject
     */
-    OWeakObject & SAL_CALL operator = ( const OWeakObject &)
+    inline OWeakObject & SAL_CALL operator = ( const OWeakObject &)
         { return *this; }
 
     /** Basic queryInterface() implementation supporting com::sun::star::uno::XWeak and
@@ -131,7 +131,8 @@ public:
         @return demanded type or empty any
     */
     virtual css::uno::Any SAL_CALL queryInterface(
-        const css::uno::Type & rType ) SAL_OVERRIDE;
+        const css::uno::Type & rType )
+        throw (css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
     /** increasing m_refCount
     */
     virtual void SAL_CALL acquire()
@@ -145,13 +146,14 @@ public:
 
         @return a com::sun::star::uno::XAdapter reference
     */
-    virtual css::uno::Reference< css::uno::XAdapter > SAL_CALL queryAdapter() SAL_OVERRIDE;
+    virtual css::uno::Reference< css::uno::XAdapter > SAL_CALL queryAdapter()
+        throw (css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
 
     /** Cast operator to XInterface reference.
 
         @return XInterface reference
     */
-    SAL_CALL operator css::uno::Reference< css::uno::XInterface > ()
+    inline SAL_CALL operator css::uno::Reference< css::uno::XInterface > ()
         { return this; }
 };
 

@@ -76,9 +76,13 @@ typedef std::vector< migration_step > migrations_v;
 typedef std::unique_ptr< migrations_v > migrations_vr;
 typedef std::vector< supported_migration > migrations_available;
 
+namespace {
+
 inline bool areBothOpenFrom(OUString const & cmd1, OUString const & cmd2)
 {
     return cmd1 == ".uno:Open" && cmd2.startsWith(".uno:OpenFrom");
+}
+
 }
 
 /**
@@ -100,7 +104,7 @@ struct MigrationItem
     MigrationItem(const OUString& sParentNodeName,
         const OUString& sPrevSibling,
         const OUString& sCommandURL,
-        const css::uno::Reference< css::container::XIndexContainer > & xPopupMenu)
+        const css::uno::Reference< css::container::XIndexContainer > xPopupMenu)
     {
         m_sParentNodeName = sParentNodeName;
         m_sPrevSibling    = sPrevSibling;
@@ -140,7 +144,7 @@ struct MigrationModuleInfo
 {
     OUString sModuleShortName;
     bool     bHasMenubar;
-    std::vector< OUString > m_vToolbars;
+    ::std::vector< OUString > m_vToolbars;
 
     MigrationModuleInfo() : bHasMenubar(false) {};
 };
@@ -156,7 +160,7 @@ public:
     css::uno::Reference< css::ui::XUIConfigurationManager > getConfigManager(const OUString& sModuleShortName) const;
     css::uno::Reference< css::container::XIndexContainer > getNewMenubarSettings(const OUString& sModuleShortName) const;
     css::uno::Reference< css::container::XIndexContainer > getNewToolbarSettings(const OUString& sModuleShortName, const OUString& sToolbarName) const;
-    void init(const std::vector< MigrationModuleInfo >& vModulesInfo);
+    void init(const ::std::vector< MigrationModuleInfo >& vModulesInfo);
 
 private:
 
@@ -192,7 +196,7 @@ private:
     static strings_vr applyPatterns(const strings_v& vSet, const strings_v& vPatterns);
     static css::uno::Reference< css::container::XNameAccess > getConfigAccess(const sal_Char* path, bool rw=false);
 
-    std::vector< MigrationModuleInfo > dectectUIChangesForAllModules() const;
+    ::std::vector< MigrationModuleInfo > dectectUIChangesForAllModules() const;
     void compareOldAndNewConfig(const OUString& sParentNodeName,
         const css::uno::Reference< css::container::XIndexContainer >& xOldIndexContainer,
         const css::uno::Reference< css::container::XIndexContainer >& xNewIndexContainer,
@@ -206,6 +210,7 @@ private:
     void copyFiles();
     void copyConfig();
     void runServices();
+    static void refresh();
 
     static void setMigrationCompleted();
     static bool checkMigrationCompleted();

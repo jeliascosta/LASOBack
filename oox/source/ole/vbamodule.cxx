@@ -25,7 +25,6 @@
 #include <com/sun/star/script/vba/XVBAModuleInfo.hpp>
 #include <com/sun/star/awt/KeyEvent.hpp>
 #include <osl/diagnose.h>
-#include <rtl/character.hxx>
 #include <filter/msfilter/msvbahelper.hxx>
 #include "oox/helper/binaryinputstream.hxx"
 #include "oox/helper/storagebase.hxx"
@@ -186,7 +185,7 @@ OUString VbaModule::readSourceCode( StorageBase& rVbaStrg ) const
                         // for Excel short cut key seems limited to cntrl+'a-z, A-Z'
                         OUString sKey = aCodeLine.copy( aCodeLine.lastIndexOf("= ") + 3, 1 );
                         // only alpha key valid for key shortcut, however the api will accept other keys
-                        if ( rtl::isAsciiAlpha( sKey[ 0 ] ) )
+                        if ( !isalpha( (char)sKey[ 0 ] ) )
                         {
                             // cntrl modifier is explicit ( but could be cntrl+shift ), parseKeyEvent
                             // will handle and uppercase letter appropriately

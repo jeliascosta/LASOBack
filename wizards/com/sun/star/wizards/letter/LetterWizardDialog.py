@@ -18,7 +18,7 @@
 from .LetterWizardDialogConst import LetterWizardDialogConst, HIDMAIN, HID
 from .LetterWizardDialogResources import LetterWizardDialogResources
 from ..common.HelpIds import HelpIds
-from ..ui.WizardDialog import WizardDialog, uno, UIConsts, PropertyNames
+from ..ui.WizardDialog import WizardDialog, uno, PropertyNames
 
 from com.sun.star.awt.FontUnderline import SINGLE
 
@@ -1094,7 +1094,7 @@ class LetterWizardDialog(WizardDialog):
                 PropertyNames.PROPERTY_TABINDEX,
                 PropertyNames.PROPERTY_WIDTH),
             (0, 10,
-                UIConsts.INFOIMAGEURL,
+                "private:resource/dbu/image/19205",
                 "ImageControl2", 92, 145,  False, 6, 66, 10))
         self.insertLabel("lblTemplateName",
             (PropertyNames.PROPERTY_HEIGHT,

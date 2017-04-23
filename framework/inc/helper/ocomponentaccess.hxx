@@ -91,7 +91,7 @@ class OComponentAccess  :   public ::cppu::WeakImplHelper< css::container::XEnum
                         An NULL-reference, other way.
         *//*-*****************************************************************************************************/
 
-        virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+        virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw( css::uno::RuntimeException, std::exception ) override;
 
         //  XElementAccess
 
@@ -102,7 +102,7 @@ class OComponentAccess  :   public ::cppu::WeakImplHelper< css::container::XEnum
             @return     The uno-type XComponent.
         *//*-*****************************************************************************************************/
 
-        virtual css::uno::Type SAL_CALL getElementType() override;
+        virtual css::uno::Type SAL_CALL getElementType() throw( css::uno::RuntimeException, std::exception ) override;
 
         /*-****************************************************************************************************
             @short      get state of componentlist of enumeration.
@@ -111,7 +111,7 @@ class OComponentAccess  :   public ::cppu::WeakImplHelper< css::container::XEnum
             @return     sal_False ,otherwise.
         *//*-*****************************************************************************************************/
 
-        virtual sal_Bool SAL_CALL hasElements() override;
+        virtual sal_Bool SAL_CALL hasElements() throw( css::uno::RuntimeException, std::exception ) override;
 
     //  protected methods
 
@@ -127,7 +127,7 @@ class OComponentAccess  :   public ::cppu::WeakImplHelper< css::container::XEnum
             @seealso    class Desktop
         *//*-*****************************************************************************************************/
 
-        virtual ~OComponentAccess() override;
+        virtual ~OComponentAccess();
 
 
     private:
@@ -159,6 +159,30 @@ class OComponentAccess  :   public ::cppu::WeakImplHelper< css::container::XEnum
         *//*-*****************************************************************************************************/
 
         css::uno::Reference< css::lang::XComponent > impl_getFrameComponent( const css::uno::Reference< css::frame::XFrame >& xFrame ) const;
+
+    //  debug methods
+    //  (should be private everyway!)
+
+        /*-****************************************************************************************************
+            @short      debug-method to check incoming parameter of some other mehods of this class
+            @descr      The following methods are used to check parameters for other methods
+                        of this class. The return value is used directly for an ASSERT(...).
+
+            @seealso    ASSERTs in implementation!
+
+            @param      references to checking variables
+            @return     sal_False ,on invalid parameter.
+            @return     sal_True  ,otherwise
+        *//*-*****************************************************************************************************/
+
+    private:
+
+        static bool impldbg_checkParameter_OComponentAccessCtor( const css::uno::Reference< css::frame::XDesktop >& xOwner );
+
+    //  variables
+    //  (should be private everyway!)
+
+    private:
 
         css::uno::WeakReference< css::frame::XDesktop >     m_xOwner;   /// weak reference to the desktop object!
 

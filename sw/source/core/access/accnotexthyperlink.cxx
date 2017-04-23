@@ -45,6 +45,7 @@ SwAccessibleNoTextHyperlink::SwAccessibleNoTextHyperlink( SwAccessibleNoTextFram
 
 // XAccessibleAction
 sal_Int32 SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionCount()
+        throw (RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -63,6 +64,7 @@ sal_Int32 SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionCount()
 }
 
 sal_Bool SAL_CALL SwAccessibleNoTextHyperlink::doAccessibleAction( sal_Int32 nIndex )
+        throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -80,7 +82,7 @@ sal_Bool SAL_CALL SwAccessibleNoTextHyperlink::doAccessibleAction( sal_Int32 nIn
             SwViewShell *pVSh = xFrame->GetShell();
             if( pVSh )
             {
-                LoadURL( *pVSh, pMapObj->GetURL(), LoadUrlFlags::NONE,
+                LoadURL( *pVSh, pMapObj->GetURL(), URLLOAD_NOFILTER,
                          pMapObj->GetTarget() );
                 bRet = true;
             }
@@ -91,7 +93,7 @@ sal_Bool SAL_CALL SwAccessibleNoTextHyperlink::doAccessibleAction( sal_Int32 nIn
         SwViewShell *pVSh = xFrame->GetShell();
         if( pVSh )
         {
-            LoadURL( *pVSh, aURL.GetURL(), LoadUrlFlags::NONE,
+            LoadURL( *pVSh, aURL.GetURL(), URLLOAD_NOFILTER,
                      aURL.GetTargetFrameName() );
             bRet = true;
         }
@@ -102,6 +104,7 @@ sal_Bool SAL_CALL SwAccessibleNoTextHyperlink::doAccessibleAction( sal_Int32 nIn
 
 OUString SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionDescription(
         sal_Int32 nIndex )
+        throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -128,6 +131,7 @@ OUString SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionDescription(
 
 Reference< XAccessibleKeyBinding > SAL_CALL
     SwAccessibleNoTextHyperlink::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -168,6 +172,7 @@ Reference< XAccessibleKeyBinding > SAL_CALL
 // XAccessibleHyperlink
 Any SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionAnchor(
         sal_Int32 nIndex )
+        throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -185,6 +190,7 @@ Any SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionAnchor(
 
 Any SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionObject(
             sal_Int32 nIndex )
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -209,16 +215,19 @@ Any SAL_CALL SwAccessibleNoTextHyperlink::getAccessibleActionObject(
 }
 
 sal_Int32 SAL_CALL SwAccessibleNoTextHyperlink::getStartIndex()
+        throw (RuntimeException, std::exception)
 {
     return 0;
 }
 
 sal_Int32 SAL_CALL SwAccessibleNoTextHyperlink::getEndIndex()
+        throw (RuntimeException, std::exception)
 {
     return 0;
 }
 
 sal_Bool SAL_CALL SwAccessibleNoTextHyperlink::isValid(  )
+        throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 

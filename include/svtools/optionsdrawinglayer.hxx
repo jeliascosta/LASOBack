@@ -25,7 +25,6 @@
 #include <osl/mutex.hxx>
 #include <rtl/ustring.hxx>
 #include <tools/color.hxx>
-#include <memory>
 
 /*-************************************************************************************************************
     @short          forward declaration to our private date container implementation
@@ -44,6 +43,17 @@ class SvtOptionsDrawinglayer_Impl;
 class SVT_DLLPUBLIC SvtOptionsDrawinglayer
 {
     public:
+
+        /*-****************************************************************************************************
+            @short      standard constructor and destructor
+            @descr      This will initialize an instance with default values.
+                        We implement these class with a refcount mechanism! Every instance of this class increase it
+                        at create and decrease it at delete time - but all instances use the same data container!
+                        He is implemented as a static member ...
+
+            @seealso    member m_nRefCount
+            @seealso    member m_pDataContainer
+        *//*-*****************************************************************************************************/
 
          SvtOptionsDrawinglayer();
         ~SvtOptionsDrawinglayer();
@@ -95,7 +105,7 @@ class SVT_DLLPUBLIC SvtOptionsDrawinglayer
         sal_uInt32  GetMaximumPaperBottomMargin() const;
 
         // #i95644# helper to check if AA is allowed on this system. Currently, for WIN its disabled
-        // and OutDevSupportType::TransparentRect is checked (this  hits XRenderExtension, e.g.
+        // and OutDevSupport_TransparentRect is checked (this  hits XRenderExtension, e.g.
         // currently for SunRay as long as not supported there)
         bool       IsAAPossibleOnThisSystem() const;
 
@@ -130,7 +140,17 @@ class SVT_DLLPUBLIC SvtOptionsDrawinglayer
         *//*-*****************************************************************************************************/
         SVT_DLLPRIVATE static ::osl::Mutex& GetOwnStaticMutex();
 
-        std::shared_ptr<SvtOptionsDrawinglayer_Impl>     m_pImpl;
+        /*Attention
+
+            Don't initialize these static members in these headers!
+            a) Double defined symbols will be detected ...
+            b) and unresolved externals exist at linking time.
+            Do it in your source only.
+         */
+
+        static SvtOptionsDrawinglayer_Impl*     m_pDataContainer    ;
+        static sal_Int32                        m_nRefCount         ;
+
 };
 
 #endif  // #ifndef INCLUDED_SVTOOLS_OPTIONSDRAWINGLAYER_HXX

@@ -74,7 +74,7 @@ namespace sdr
             const drawinglayer::primitive3d::Primitive3DReference xReference(
                 new drawinglayer::primitive3d::SdrExtrudePrimitive3D(
                     aWorldTransform, aTextureSize, aAttribute, *pSdr3DObjectAttribute,
-                    aPolyPolygon, fDepth, fDiagonal, fBackScale, bSmoothNormals, bSmoothLids,
+                    aPolyPolygon, fDepth, fDiagonal, fBackScale, bSmoothNormals, true, bSmoothLids,
                     bCharacterMode, bCloseFront, bCloseBack));
             xRetval = { xReference };
 

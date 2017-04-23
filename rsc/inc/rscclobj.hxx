@@ -26,23 +26,23 @@
 /******************* O b j N o d e ***************************************/
 class ObjNode : public IdNode
 {
-    RscId       aRscId;         // resource ID
-    CLASS_DATA  pRscObj;        // pointer to a resourceobject
-    RscFileTab::Index lFileKey;
+    RscId       aRscId; // Id der Resource
+    CLASS_DATA  pRscObj;// pointer to a resourceobject
+    sal_uLong   lFileKey;// Dateischluessel
 protected:
     using NameNode::Search;
 
 public:
     using NameNode::Insert;
 
-                ObjNode( const RscId & rId, CLASS_DATA pData, RscFileTab::Index lKey );
-    ObjNode *   DelObjNode( RscTop * pClass, RscFileTab::Index lFileKey );
+                ObjNode( const RscId & rId, CLASS_DATA pData, sal_uLong lKey );
+    ObjNode *   DelObjNode( RscTop * pClass, sal_uLong lFileKey );
     sal_uInt32  GetId() const override;
     const RscId& GetRscId() const { return aRscId; }
-    RscFileTab::Index GetFileKey() const { return lFileKey; };
+    sal_uLong   GetFileKey() const { return lFileKey; };
     ObjNode*    Search( const RscId &rName ) const //< search the index in the b-tree
                     {
-                        return static_cast<ObjNode *>(IdNode::Search( rName.GetNumber() ));
+                        return static_cast<ObjNode *>(IdNode::Search( rName ));
                     }
     bool        Insert( ObjNode* pTN ) //< insert a new node in the b-tree
 
@@ -67,7 +67,7 @@ protected:
 public:
     using NameNode::Insert;
 
-    ObjNode*    pObjBiTree; // pointer to object tree
+    ObjNode*    pObjBiTree; // Zeiger auf Objektbaum
                 RefNode( Atom nTyp );
     sal_uInt32  GetId() const override;
     void        Insert( RefNode* pTN ) //< insert a new node in the b-tree
@@ -81,6 +81,7 @@ public:
 
     ObjNode *   GetObjNode() const
                     {
+                        // hole  pObjBiTree
                         return pObjBiTree;
                     }
 };

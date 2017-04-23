@@ -53,8 +53,8 @@ namespace connectivity
                 :nPrecision(0)
                 ,nMaximumScale(0)
                 ,nMinimumScale(0)
-                ,nType( css::sdbc::DataType::OTHER)
-                ,nSearchType( css::sdbc::ColumnSearch::FULL)
+                ,nType( ::com::sun::star::sdbc::DataType::OTHER)
+                ,nSearchType( ::com::sun::star::sdbc::ColumnSearch::FULL)
                 ,nNumPrecRadix(0)
                 ,bCurrency(false)
                 ,bAutoIncrement(false)
@@ -63,13 +63,13 @@ namespace connectivity
                 ,bUnsigned(false)
         {}
 
-        static void * SAL_CALL operator new( size_t nSize )
+        inline static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
+        inline static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
             { return _pHint; }
-        static void SAL_CALL operator delete( void * pMem )
+        inline static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
+        inline static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
             {  }
 
         bool operator == (const OTypeInfo& lh) const { return lh.nType == nType; }

@@ -35,7 +35,7 @@ namespace abp
 
     public:
         explicit TableSelectionPage( OAddressBookSourcePilot* _pParent );
-        virtual ~TableSelectionPage() override;
+        virtual ~TableSelectionPage();
         virtual void dispose() override;
     protected:
         // OWizardPage overridables
@@ -44,13 +44,14 @@ namespace abp
 
         // TabDialog overridables
         virtual void        ActivatePage() override;
+        virtual void        DeactivatePage() override;
 
         // OImportPage overridables
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK( OnTableSelected, ListBox&, void );
-        DECL_LINK( OnTableDoubleClicked, ListBox&, void );
+        DECL_LINK_TYPED( OnTableSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnTableDoubleClicked, ListBox&, void );
     };
 
 

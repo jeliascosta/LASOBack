@@ -53,6 +53,7 @@ OutlinerParaObjData::OutlinerParaObjData( const OutlinerParaObjData& r ):
 
 OutlinerParaObjData::~OutlinerParaObjData()
 {
+    delete mpEditTextObject;
 }
 
 bool OutlinerParaObjData::operator==(const OutlinerParaObjData& rCandidate) const
@@ -224,11 +225,9 @@ void OutlinerParaObject::SetStyleSheets(sal_uInt16 nLevel, const OUString& rNewN
 
 void OutlinerParaObject::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("OutlinerParaObject"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("outlinerParaObject"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
-    mpImpl->mpEditTextObject->dumpAsXml(pWriter);
-    for (Paragraph const & p : mpImpl->maParagraphDataVector)
-        p.dumpAsXml(pWriter);
+    GetTextObject().dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
 }
 

@@ -72,10 +72,11 @@ namespace /* private */ {
         recently_used_item(
             const string_t& uri,
             const string_t& mime_type,
-            const string_container_t& groups) :
+            const string_container_t& groups,
+            bool is_private = false) :
             uri_(uri),
             mime_type_(mime_type),
-            is_private_(false),
+            is_private_(is_private),
             groups_(groups)
         {
             timestamp_ = time(nullptr);
@@ -166,7 +167,7 @@ namespace /* private */ {
 
         void write_xml_tag(const string_t& name, const string_t& value, const recently_used_file& file) const
         {
-            write_xml_start_tag(name, file, false);
+            write_xml_start_tag(name, file);
             OString escaped = escape_content (value);
             file.write(escaped.getStr(), escaped.getLength());
             write_xml_end_tag(name, file);
@@ -179,7 +180,7 @@ namespace /* private */ {
             file.write("/>\n", 3);
         }
 
-        void write_xml_start_tag(const string_t& name, const recently_used_file& file, bool linefeed) const
+        void write_xml_start_tag(const string_t& name, const recently_used_file& file, bool linefeed = false) const
         {
             file.write("<", 1);
             file.write(name.c_str(), name.length());
@@ -305,24 +306,28 @@ namespace /* private */ {
     class recent_item_writer
     {
     public:
-        explicit recent_item_writer( recently_used_file& file ) :
+        recent_item_writer(
+            recently_used_file& file,
+            int max_items_to_write = MAX_RECENTLY_USED_ITEMS) :
             file_(file),
+            max_items_to_write_(max_items_to_write),
             items_written_(0)
         {}
 
         void operator() (const recently_used_item* item)
         {
-            if (items_written_++ < MAX_RECENTLY_USED_ITEMS)
+            if (items_written_++ < max_items_to_write_)
                 item->write_xml(file_);
         }
     private:
         recently_used_file& file_;
+        int max_items_to_write_;
         int items_written_;
     };
 
 
-    const char* const XML_HEADER = "<?xml version=\"1.0\"?>\n<RecentFiles>\n";
-    const char* const XML_FOOTER = "</RecentFiles>";
+    const char* XML_HEADER = "<?xml version=\"1.0\"?>\n<RecentFiles>\n";
+    const char* XML_FOOTER = "</RecentFiles>";
 
 
     // assumes that the list is ordered decreasing
@@ -385,9 +390,9 @@ namespace /* private */ {
     };
 
 
-    const char* const GROUP_OOO         = "openoffice.org";
-    const char* const GROUP_STAR_OFFICE = "staroffice";
-    const char* const GROUP_STAR_SUITE  = "starsuite";
+    const char* GROUP_OOO         = "openoffice.org";
+    const char* GROUP_STAR_OFFICE = "staroffice";
+    const char* GROUP_STAR_SUITE  = "starsuite";
 
 
     void recently_used_item_list_add(

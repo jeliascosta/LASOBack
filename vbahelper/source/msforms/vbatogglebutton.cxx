@@ -36,7 +36,7 @@ ScVbaToggleButton::~ScVbaToggleButton()
 
 // Attributes
 OUString SAL_CALL
-ScVbaToggleButton::getCaption()
+ScVbaToggleButton::getCaption() throw (css::uno::RuntimeException, std::exception)
 {
     OUString Label;
     m_xProps->getPropertyValue( "Label" ) >>= Label;
@@ -44,13 +44,13 @@ ScVbaToggleButton::getCaption()
 }
 
 void SAL_CALL
-ScVbaToggleButton::setCaption( const OUString& _caption )
+ScVbaToggleButton::setCaption( const OUString& _caption ) throw (css::uno::RuntimeException, std::exception)
 {
     m_xProps->setPropertyValue( "Label", uno::makeAny( _caption ) );
 }
 
 uno::Any SAL_CALL
-ScVbaToggleButton::getValue()
+ScVbaToggleButton::getValue() throw (uno::RuntimeException, std::exception)
 {
     sal_Int16 nState = 0;
         m_xProps->getPropertyValue( "State" ) >>= nState;
@@ -59,7 +59,7 @@ ScVbaToggleButton::getValue()
 
 
 void SAL_CALL
-ScVbaToggleButton::setValue( const uno::Any& _value )
+ScVbaToggleButton::setValue( const uno::Any& _value ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int16 nState = 0;
     if ( ! ( _value >>= nState ) )
@@ -75,70 +75,70 @@ ScVbaToggleButton::setValue( const uno::Any& _value )
     m_xProps->setPropertyValue( "State", uno::makeAny(   nState ) );
 }
 
-sal_Bool SAL_CALL ScVbaToggleButton::getAutoSize()
+sal_Bool SAL_CALL ScVbaToggleButton::getAutoSize() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getAutoSize();
 }
 
-void SAL_CALL ScVbaToggleButton::setAutoSize( sal_Bool bAutoSize )
+void SAL_CALL ScVbaToggleButton::setAutoSize( sal_Bool bAutoSize ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setAutoSize( bAutoSize );
 }
 
-sal_Bool SAL_CALL ScVbaToggleButton::getCancel()
+sal_Bool SAL_CALL ScVbaToggleButton::getCancel() throw (uno::RuntimeException, std::exception)
 {
     // #STUB
     return false;
 }
 
-void SAL_CALL ScVbaToggleButton::setCancel( sal_Bool /*bCancel*/ )
+void SAL_CALL ScVbaToggleButton::setCancel( sal_Bool /*bCancel*/ ) throw (uno::RuntimeException, std::exception)
 {
     // #STUB
 }
 
-sal_Bool SAL_CALL ScVbaToggleButton::getDefault()
+sal_Bool SAL_CALL ScVbaToggleButton::getDefault() throw (uno::RuntimeException, std::exception)
 {
     // #STUB
     return false;
 }
 
-void SAL_CALL ScVbaToggleButton::setDefault( sal_Bool /*bDefault*/ )
+void SAL_CALL ScVbaToggleButton::setDefault( sal_Bool /*bDefault*/ ) throw (uno::RuntimeException, std::exception)
 {
     // #STUB
 }
 
-sal_Int32 SAL_CALL ScVbaToggleButton::getBackColor()
+sal_Int32 SAL_CALL ScVbaToggleButton::getBackColor() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getBackColor();
 }
 
-void SAL_CALL ScVbaToggleButton::setBackColor( sal_Int32 nBackColor )
+void SAL_CALL ScVbaToggleButton::setBackColor( sal_Int32 nBackColor ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setBackColor( nBackColor );
 }
 
-sal_Int32 SAL_CALL ScVbaToggleButton::getForeColor()
+sal_Int32 SAL_CALL ScVbaToggleButton::getForeColor() throw (uno::RuntimeException)
 {
     // #STUB
     return 0;
 }
 
-void SAL_CALL ScVbaToggleButton::setForeColor( sal_Int32 /*nForeColor*/ )
+void SAL_CALL ScVbaToggleButton::setForeColor( sal_Int32 /*nForeColor*/ ) throw (uno::RuntimeException)
 {
     // #STUB
 }
 
-uno::Reference< msforms::XNewFont > SAL_CALL ScVbaToggleButton::getFont()
+uno::Reference< msforms::XNewFont > SAL_CALL ScVbaToggleButton::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new VbaNewFont( m_xProps );
 }
 
-sal_Bool SAL_CALL ScVbaToggleButton::getLocked()
+sal_Bool SAL_CALL ScVbaToggleButton::getLocked() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getLocked();
 }
 
-void SAL_CALL ScVbaToggleButton::setLocked( sal_Bool bLocked )
+void SAL_CALL ScVbaToggleButton::setLocked( sal_Bool bLocked ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setLocked( bLocked );
 }

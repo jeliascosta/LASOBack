@@ -55,15 +55,15 @@ namespace com { namespace sun { namespace star { namespace form {
 
 class SVX_DLLPUBLIC FmFormView : public E3dView
 {
-    rtl::Reference<FmXFormView> pImpl;
+    FmXFormView*    pImpl;
     FmFormShell*    pFormShell;
 
     void Init();
 
 public:
 
-    FmFormView(FmFormModel* pModel, OutputDevice* pOut);
-    virtual ~FmFormView() override;
+    FmFormView(FmFormModel* pModel, OutputDevice* pOut = nullptr);
+    virtual ~FmFormView();
 
     /** create a control pair (label/bound control) for the database field description given.
         @param rFieldDesc
@@ -93,7 +93,7 @@ public:
         const css::uno::Reference< css::util::XNumberFormats >& _rxNumberFormats,
         sal_uInt16 _nControlObjectID,
         const OUString& _rFieldPostfix,
-        SdrInventor _nInventor,
+        sal_uInt32 _nInventor,
         sal_uInt16 _nLabelObjectID,
         SdrPage* _pLabelPage,
         SdrPage* _pControlPage,
@@ -104,6 +104,9 @@ public:
 
     virtual SdrPageView* ShowSdrPage(SdrPage* pPage) override;
     virtual void HideSdrPage() override;
+
+    // for copying complete form structures, not only control models
+    virtual SdrModel* GetMarkedObjModel() const override;
 
     virtual bool MouseButtonDown( const MouseEvent& _rMEvt, vcl::Window* _pWin ) override;
 
@@ -127,7 +130,7 @@ public:
 
     SVX_DLLPRIVATE void ChangeDesignMode(bool bDesign);
 
-    SVX_DLLPRIVATE FmXFormView* GetImpl() const { return pImpl.get(); }
+    SVX_DLLPRIVATE FmXFormView* GetImpl() const { return pImpl; }
     SVX_DLLPRIVATE FmFormShell* GetFormShell() const { return pFormShell; }
 
     struct FormShellAccess { friend class FmFormShell; private: FormShellAccess() { } };

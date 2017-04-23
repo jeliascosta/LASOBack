@@ -30,8 +30,8 @@
 class FmFormModel;
 class FmFormPage;
 class E3dView;
+class E3dPolyScene;
 class E3dObject;
-class E3dScene;
 
 enum class SvxPreviewObjectType { SPHERE, CUBE };
 
@@ -41,7 +41,7 @@ protected:
     FmFormModel*            mpModel;
     FmFormPage*             mpFmPage;
     E3dView*                mp3DView;
-    E3dScene*               mpScene;
+    E3dPolyScene*           mpScene;
     E3dObject*              mp3DObj;
     SvxPreviewObjectType    mnObjectType;
 
@@ -49,10 +49,10 @@ protected:
 
 public:
     Svx3DPreviewControl(vcl::Window* pParent, WinBits nStyle = 0);
-    virtual ~Svx3DPreviewControl() override;
+    virtual ~Svx3DPreviewControl();
     virtual void dispose() override;
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void Resize() override;
     virtual Size GetOptimalSize() const override;
@@ -85,10 +85,12 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC Svx3DLightControl : public Svx3DPreviewContr
 
     // interaction parameters
     Point                       maActionStartPoint;
+    sal_Int32                   mnInteractionStartDistance;
     double                      mfSaveActionStartHor;
     double                      mfSaveActionStartVer;
     double                      mfSaveActionStartRotZ;
 
+    // bitfield
     bool                        mbMouseMoved : 1;
     bool                        mbGeometrySelected : 1;
 
@@ -98,9 +100,9 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC Svx3DLightControl : public Svx3DPreviewContr
     void TrySelection(Point aPosPixel);
 
 public:
-    Svx3DLightControl(vcl::Window* pParent, WinBits nStyle);
+    Svx3DLightControl(vcl::Window* pParent, WinBits nStyle = 0);
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void Tracking( const TrackingEvent& rTEvt ) override;
     virtual void Resize() override;
@@ -148,7 +150,7 @@ private:
 
 public:
     SvxLightCtl3D(vcl::Window* pParent);
-    virtual ~SvxLightCtl3D() override;
+    virtual ~SvxLightCtl3D();
     virtual void dispose() override;
 
     // react to size changes
@@ -173,10 +175,10 @@ public:
 
 protected:
 
-    DECL_LINK( InternalInteractiveChange, Svx3DLightControl*, void);
-    DECL_LINK( InternalSelectionChange, Svx3DLightControl*, void);
-    DECL_LINK( ScrollBarMove, ScrollBar*, void);
-    DECL_LINK( ButtonPress, Button*, void);
+    DECL_LINK_TYPED( InternalInteractiveChange, Svx3DLightControl*, void);
+    DECL_LINK_TYPED( InternalSelectionChange, Svx3DLightControl*, void);
+    DECL_LINK_TYPED( ScrollBarMove, ScrollBar*, void);
+    DECL_LINK_TYPED( ButtonPress, Button*, void);
 
     // initialize local parameters
     void Init();

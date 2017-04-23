@@ -24,7 +24,7 @@
 //      run nmake -f so_activexps.mk in the project directory.
 
 #include "stdio.h"
-#include "StdAfx2.h"
+#include "stdafx2.h"
 #include "resource.h"
 #include <initguid.h>
 
@@ -82,12 +82,18 @@ const REGSAM n64KeyAccess = KEY_ALL_ACCESS | KEY_WOW64_64KEY;
 const REGSAM n32KeyAccess = KEY_ALL_ACCESS;
 
 #ifdef _AMD64_
-const bool bX64 = true;
+const BOOL bX64 = TRUE;
 #define REG_DELETE_KEY_A( key, aPath, nKeyAccess ) RegDeleteKeyExA( key, aPath, nKeyAccess, 0 )
 #else
-const bool bX64 = false;
+const BOOL bX64 = FALSE;
 #define REG_DELETE_KEY_A( key, aPath, nKeyAccess ) RegDeleteKeyA( key, aPath )
 #endif
+
+// MinGW doesn't know anything about RegDeleteKeyExA if WINVER < 0x0502.
+extern "C" {
+WINADVAPI LONG WINAPI RegDeleteKeyExA(HKEY,LPCSTR,REGSAM,DWORD);
+}
+
 
 // DLL Entry Point
 
@@ -125,13 +131,13 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 
 // for now database component and chart are always installed
 #define SUPPORTED_EXT_NUM 30
-const char* const aFileExt[] = { ".vor",
+const char* aFileExt[] = { ".vor",
                            ".sds", ".sda", ".sdd", ".sdp", ".sdc", ".sdw", ".smf",
                            ".stw", ".stc", ".sti", ".std",
                            ".sxw", ".sxc", ".sxi", ".sxd", ".sxg", ".sxm",
                            ".ott", ".otg", ".otp", ".ots", ".otf",
                            ".odt", ".oth", ".odm", ".odg", ".odp", ".ods", ".odf"};
-const char* const aMimeType[] = {
+const char* aMimeType[] = {
                           "application/vnd.stardivision.writer",
 
                           "application/vnd.stardivision.chart",
@@ -176,34 +182,34 @@ const int nForModes[] = { 16,
                           16,  2,  4,  8, 32,
                           16, 16, 16,  2,  4,  8, 32 };
 
-const char* const aClassID = "{67F2A879-82D5-4A6D-8CC5-FFB3C114B69D}";
-const char* const aTypeLib = "{61FA3F13-8061-4796-B055-3697ED28CB38}";
+const char* aClassID = "{67F2A879-82D5-4A6D-8CC5-FFB3C114B69D}";
+const char* aTypeLib = "{61FA3F13-8061-4796-B055-3697ED28CB38}";
 
 // ISOComWindowPeer interface information
-const char* const aInterIDWinPeer = "{BF5D10F3-8A10-4A0B-B150-2B6AA2D7E118}";
-const char* const aProxyStubWinPeer = "{00020424-0000-0000-C000-000000000046}";
+const char* aInterIDWinPeer = "{BF5D10F3-8A10-4A0B-B150-2B6AA2D7E118}";
+const char* aProxyStubWinPeer = "{00020424-0000-0000-C000-000000000046}";
 
 // ISODispatchInterceptor interface information
-const char* const aInterIDDispInt = "{9337694C-B27D-4384-95A4-9D8E0EABC9E5}";
-const char* const aProxyStubDispInt = "{00020424-0000-0000-C000-000000000046}";
+const char* aInterIDDispInt = "{9337694C-B27D-4384-95A4-9D8E0EABC9E5}";
+const char* aProxyStubDispInt = "{00020424-0000-0000-C000-000000000046}";
 
 // ISOActionsApproval interface information
-const char* const aInterIDActApprove = "{029E9F1E-2B3F-4297-9160-8197DE7ED54F}";
-const char* const aProxyStubActApprove = "{00020424-0000-0000-C000-000000000046}";
+const char* aInterIDActApprove = "{029E9F1E-2B3F-4297-9160-8197DE7ED54F}";
+const char* aProxyStubActApprove = "{00020424-0000-0000-C000-000000000046}";
 
 // The following prefix is required for HKEY_LOCAL_MACHINE and HKEY_CURRENT_USER ( not for HKEY_CLASSES_ROOT )
-const char* const aLocalPrefix = "Software\\Classes\\";
+const char* aLocalPrefix = "Software\\Classes\\";
 
 BOOL createKey( HKEY hkey,
                 const char* aKeyToCreate,
         REGSAM nKeyAccess,
-                const char* aValue = nullptr,
-                const char* aChildName = nullptr,
-                const char* aChildValue = nullptr )
+                const char* aValue = NULL,
+                const char* aChildName = NULL,
+                const char* aChildValue = NULL )
 {
     HKEY hkey1;
 
-    return ( ERROR_SUCCESS == RegCreateKeyExA( hkey, aKeyToCreate, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr )
+    return ( ERROR_SUCCESS == RegCreateKeyExA( hkey, aKeyToCreate, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL )
            && ( !aValue || ERROR_SUCCESS == RegSetValueExA( hkey1,
                                                            "",
                                                            0,
@@ -225,11 +231,11 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
 {
     BOOL aResult = FALSE;
 
-    HKEY        hkey = nullptr;
-    HKEY        hkey1 = nullptr;
-    HKEY        hkey2 = nullptr;
-    HKEY        hkey3 = nullptr;
-    HKEY        hkey4 = nullptr;
+    HKEY        hkey = NULL;
+    HKEY        hkey1 = NULL;
+    HKEY        hkey2 = NULL;
+    HKEY        hkey3 = NULL;
+    HKEY        hkey4 = NULL;
     char aSubKey[513];
     int         ind;
     const char* aPrefix = aLocalPrefix; // bForAllUsers ? "" : aLocalPrefix;
@@ -239,7 +245,7 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
     // using SO8 ActiveX control. The fix is just to clean up the local entries related to ActiveX control.
     // Unfortunately it can be done only for the user who installs the office.
     if ( bForAllUsers )
-        DllUnregisterServerNative( nMode, false, false );
+        DllUnregisterServerNative( nMode, sal_False, sal_False );
 
     if ( pProgramPath && strlen( pProgramPath ) < 1024 )
     {
@@ -252,8 +258,8 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
         {
             wsprintfA( aSubKey, "%sCLSID\\%s", aPrefix, aClassID );
             aResult =
-                ( ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey , nullptr )
-                    && ERROR_SUCCESS == RegSetValueExA( hkey, "", 0, REG_SZ, reinterpret_cast<const BYTE*>("SOActiveX Class"), 17 )
+                ( ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey , NULL )
+                    && ERROR_SUCCESS == RegSetValueExA( hkey, "", 0, REG_SZ, (const BYTE*)"SOActiveX Class", 17 )
                     && createKey( hkey, "Control", nKeyAccess )
                     && createKey( hkey, "EnableFullPage", nKeyAccess )
                     && createKey( hkey, "InprocServer32", nKeyAccess, pActiveXPath, "ThreadingModel", "Apartment" )
@@ -266,21 +272,21 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
                     && createKey( hkey, "Version", nKeyAccess, "1.0" )
                     && createKey( hkey, "VersionIndependentProgID", nKeyAccess, "so_activex.SOActiveX" )
                 && ERROR_SUCCESS == RegCloseKey( hkey )
-                && ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aPrefix, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey , nullptr )
+                && ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aPrefix, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey , NULL )
                     && createKey( hkey, "so_activex.SOActiveX", nKeyAccess, "SOActiveX Class" )
-                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "so_activex.SOActiveX", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr )
+                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "so_activex.SOActiveX", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL )
                         && createKey( hkey1, "CLSID", nKeyAccess, aClassID )
                         && createKey( hkey1, "CurVer", nKeyAccess, "so_activex.SOActiveX.1" )
                     && ERROR_SUCCESS == RegCloseKey( hkey1 )
                     && createKey( hkey, "so_activex.SOActiveX.1", nKeyAccess, "SOActiveX Class" )
-                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "so_activex.SOActiveX.1", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr )
+                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "so_activex.SOActiveX.1", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL )
                         && createKey( hkey1, "CLSID", nKeyAccess, aClassID )
                     && ERROR_SUCCESS == RegCloseKey( hkey1 )
-                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "TypeLib", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr )
-                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aTypeLib, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey2 , nullptr )
+                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "TypeLib", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL )
+                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aTypeLib, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey2 , NULL )
                             && createKey( hkey2, "1.0", nKeyAccess, "wrap_activex 1.0 Type Library" )
-                            && ERROR_SUCCESS == RegCreateKeyExA( hkey2, "1.0", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey3 , nullptr )
-                                && ERROR_SUCCESS == RegCreateKeyExA( hkey3, "0", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey4 , nullptr )
+                            && ERROR_SUCCESS == RegCreateKeyExA( hkey2, "1.0", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey3 , NULL )
+                                && ERROR_SUCCESS == RegCreateKeyExA( hkey3, "0", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey4 , NULL )
                                     && createKey( hkey4, "win32", nKeyAccess, pActiveXPath )
                                 && ERROR_SUCCESS == RegCloseKey( hkey4 )
                                 && createKey( hkey3, "FLAGS", nKeyAccess, "0" )
@@ -288,21 +294,21 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
                             && ERROR_SUCCESS == RegCloseKey( hkey3 )
                         && ERROR_SUCCESS == RegCloseKey( hkey2 )
                     && ERROR_SUCCESS == RegCloseKey( hkey1 )
-                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "Interface", 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr )
+                    && ERROR_SUCCESS == RegCreateKeyExA( hkey, "Interface", 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL )
                         && createKey( hkey1, aInterIDWinPeer, nKeyAccess, "ISOComWindowPeer" )
-                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDWinPeer, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey2 , nullptr )
+                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDWinPeer, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey2 , NULL )
                             && createKey( hkey2, "ProxyStubClsid", nKeyAccess, aProxyStubWinPeer )
                             && createKey( hkey2, "ProxyStubClsid32", nKeyAccess, aProxyStubWinPeer )
                             && createKey( hkey2, "TypeLib", nKeyAccess, aTypeLib, "Version", "1.0" )
                         && ERROR_SUCCESS == RegCloseKey( hkey2 )
                         && createKey( hkey1, aInterIDActApprove, nKeyAccess, "ISOActionsApproval" )
-                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDActApprove, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey2 , nullptr )
+                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDActApprove, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey2 , NULL )
                             && createKey( hkey2, "ProxyStubClsid", nKeyAccess, aProxyStubActApprove )
                             && createKey( hkey2, "ProxyStubClsid32", nKeyAccess, aProxyStubActApprove )
                             && createKey( hkey2, "TypeLib", nKeyAccess, aTypeLib, "Version", "1.0" )
                         && ERROR_SUCCESS == RegCloseKey( hkey2 )
                         && createKey( hkey1, aInterIDDispInt, nKeyAccess, "ISODispatchInterceptor" )
-                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDDispInt, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey2 , nullptr )
+                        && ERROR_SUCCESS == RegCreateKeyExA( hkey1, aInterIDDispInt, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey2 , NULL )
                             && createKey( hkey2, "ProxyStubClsid", nKeyAccess, aProxyStubDispInt )
                             && createKey( hkey2, "ProxyStubClsid32", nKeyAccess, aProxyStubDispInt )
                             && createKey( hkey2, "TypeLib", nKeyAccess, aTypeLib, "Version", "1.0" )
@@ -310,7 +316,7 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
                     && ERROR_SUCCESS == RegCloseKey( hkey1 )
                 && ERROR_SUCCESS == RegCloseKey( hkey ) );
 
-            hkey = hkey1 = hkey2 = hkey3 = hkey4 = nullptr;
+            hkey = hkey1 = hkey2 = hkey3 = hkey4 = NULL;
         }
     }
 
@@ -319,7 +325,7 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
         if( nForModes[ind] & nMode )
         {
             wsprintfA( aSubKey, "%sMIME\\DataBase\\Content Type\\%s", aPrefix, aMimeType[ind] );
-            if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr )
+            if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL )
               || ERROR_SUCCESS != RegSetValueExA(hkey, "CLSID", 0, REG_SZ,
                     reinterpret_cast<const BYTE *>(aClassID),
                     sal::static_int_cast<DWORD>(strlen(aClassID))) )
@@ -328,10 +334,7 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
             }
 
             if( hkey )
-            {
-                RegCloseKey(hkey);
-                hkey= nullptr;
-            }
+                RegCloseKey(hkey),hkey= NULL;
         }
     }
 
@@ -341,26 +344,20 @@ STDAPI DllRegisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAc
            for( ind = 0; ind < SUPPORTED_EXT_NUM; ind++ )
            {
                wsprintfA( aSubKey, "EnableFullPage\\%s", aFileExt[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( hkey, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr ) )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( hkey, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL ) )
                    aResult = FALSE;
 
             if ( hkey1 )
-            {
-                RegCloseKey(hkey1);
-                hkey1= nullptr;
-            }
+                   RegCloseKey(hkey1),hkey1= NULL;
          }
     }
     else
         aResult = FALSE;
 
     if ( hkey )
-    {
-        RegCloseKey(hkey);
-        hkey= nullptr;
-    }
+           RegCloseKey(hkey),hkey= NULL;
 
-    return HRESULT(aResult);
+    return aResult;
 }
 
 STDAPI DllRegisterServerNative( int nMode, BOOL bForAllUsers, BOOL bFor64Bit, const char* pProgramPath )
@@ -379,7 +376,7 @@ STDAPI DllRegisterServerNative( int nMode, BOOL bForAllUsers, BOOL bFor64Bit, co
 // DllUnregisterServer - Removes entries from the system registry
 HRESULT DeleteKeyTree( HKEY hkey, const char* pPath, REGSAM nKeyAccess )
 {
-    HKEY hkey1 = nullptr;
+    HKEY hkey1 = NULL;
 
     char pSubKeyName[256];
     // first delete the subkeys
@@ -387,15 +384,11 @@ HRESULT DeleteKeyTree( HKEY hkey, const char* pPath, REGSAM nKeyAccess )
         && ERROR_SUCCESS == RegEnumKeyA( hkey1, 0, pSubKeyName, 256 )
         && ERROR_SUCCESS == DeleteKeyTree( hkey1, pSubKeyName, nKeyAccess ) )
     {
-        RegCloseKey( hkey1 );
-        hkey1= nullptr;
+        RegCloseKey( hkey1 ),hkey1= NULL;
     }
 
     if ( hkey1 )
-    {
-        RegCloseKey( hkey1 );
-        hkey1= nullptr;
-    }
+        RegCloseKey( hkey1 ),hkey1= NULL;
 
     // delete the key itself
     return REG_DELETE_KEY_A( hkey, pPath, nKeyAccess & ( KEY_WOW64_64KEY | KEY_WOW64_32KEY ) );
@@ -403,7 +396,7 @@ HRESULT DeleteKeyTree( HKEY hkey, const char* pPath, REGSAM nKeyAccess )
 
 STDAPI DllUnregisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAccess )
 {
-    HKEY        hkey = nullptr;
+    HKEY        hkey = NULL;
     BOOL        fErr = FALSE;
     char aSubKey[513];
     const char*    aPrefix = aLocalPrefix; // bForAllUsers ? "" : aLocalPrefix;
@@ -414,47 +407,43 @@ STDAPI DllUnregisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKey
         {
             DWORD nSubKeys = 0, nValues = 0;
             wsprintfA( aSubKey, "%sMIME\\DataBase\\Content Type\\%s", aPrefix, aMimeType[ind] );
-            if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr ) )
+            if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL ) )
                 fErr = TRUE;
             else
             {
                 if ( ERROR_SUCCESS != RegDeleteValue( hkey, "CLSID" ) )
                     fErr = TRUE;
 
-                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, nullptr, nullptr, nullptr,
-                                                    &nSubKeys, nullptr, nullptr,
-                                                    &nValues, nullptr, nullptr, nullptr, nullptr ) )
+                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, NULL, NULL, NULL,
+                                                    &nSubKeys, NULL, NULL,
+                                                    &nValues, NULL, NULL, NULL, NULL ) )
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     fErr = TRUE;
                 }
                 else
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     if ( !nSubKeys && !nValues )
                         DeleteKeyTree( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, nKeyAccess );
                 }
             }
 
                wsprintfA( aSubKey, "%s%s", aPrefix, aFileExt[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr ) )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL ) )
                 fErr = TRUE;
             else
             {
-                   if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, nullptr, nullptr, nullptr,
-                                                    &nSubKeys, nullptr, nullptr,
-                                                    &nValues, nullptr, nullptr, nullptr, nullptr ) )
+                   if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, NULL, NULL, NULL,
+                                                    &nSubKeys, NULL, NULL,
+                                                    &nValues, NULL, NULL, NULL, NULL ) )
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     fErr = TRUE;
                 }
                 else
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     if ( !nSubKeys && !nValues )
                         DeleteKeyTree( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, nKeyAccess );
                 }
@@ -490,7 +479,7 @@ STDAPI DllUnregisterServerNative_Impl( int nMode, BOOL bForAllUsers, REGSAM nKey
     if( ERROR_SUCCESS != DeleteKeyTree( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, nKeyAccess ) )
            fErr = TRUE;
 
-    return HRESULT(!fErr);
+    return !fErr;
 }
 
 STDAPI DllUnregisterServerNative( int nMode, BOOL bForAllUsers, BOOL bFor64Bit )
@@ -506,8 +495,8 @@ STDAPI DllUnregisterServerNative( int nMode, BOOL bForAllUsers, BOOL bFor64Bit )
 // DllRegisterServerDoc - Adds entries to the system registry
 
 #define SUPPORTED_MSEXT_NUM 7
-const char* const aMSFileExt[] = { ".dot", ".doc", ".xlt", ".xls", ".pot", ".ppt", ".pps" };
-const char* const aMSMimeType[] = { "application/msword",
+const char* aMSFileExt[] = { ".dot", ".doc", ".xlt", ".xls", ".pot", ".ppt", ".pps" };
+const char* aMSMimeType[] = { "application/msword",
                           "application/msword",
                           "application/msexcell",
                           "application/msexcell",
@@ -521,8 +510,8 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
 {
     BOOL aResult = TRUE;
 
-    HKEY        hkey = nullptr;
-    HKEY        hkey1 = nullptr;
+    HKEY        hkey = NULL;
+    HKEY        hkey1 = NULL;
     char aSubKey[513];
     int         ind;
     const char*    aPrefix = aLocalPrefix; // bForAllUsers ? "" : aLocalPrefix;
@@ -531,14 +520,14 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
     // using SO8 ActiveX control. The fix is just to clean up the local entries related to ActiveX control.
     // Unfortunately it can be done only for the user who installs the office.
     if ( bForAllUsers )
-        DllUnregisterServerDoc( nMode, false, false );
+        DllUnregisterServerDoc( nMode, sal_False, sal_False );
 
     for( ind = 0; ind < SUPPORTED_MSEXT_NUM && aResult; ind++ )
     {
         if( nForMSModes[ind] & nMode )
         {
                wsprintfA( aSubKey, "%sMIME\\DataBase\\Content Type\\%s", aPrefix, aMSMimeType[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL )
                || ERROR_SUCCESS != RegSetValueExA(hkey, "Extension", 0, REG_SZ,
                         reinterpret_cast<const BYTE *>(aMSFileExt[ind]),
                         sal::static_int_cast<DWORD>(strlen(aMSFileExt[ind])))
@@ -550,13 +539,10 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
                }
 
                if( hkey )
-               {
-                   RegCloseKey(hkey);
-                   hkey= nullptr;
-               }
+                   RegCloseKey(hkey),hkey= NULL;
 
                wsprintfA( aSubKey, "%s%s", aPrefix, aMSFileExt[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL )
                || ERROR_SUCCESS != RegSetValueExA(hkey, "Content Type", 0, REG_SZ,
                         reinterpret_cast<const BYTE *>(aMSMimeType[ind]),
                         sal::static_int_cast<DWORD>(strlen(aMSMimeType[ind]))))
@@ -565,15 +551,12 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
                }
 
                if( hkey )
-               {
-                   RegCloseKey(hkey);
-                   hkey= nullptr;
-               }
+                   RegCloseKey(hkey),hkey= NULL;
         }
     }
 
     wsprintfA( aSubKey, "%sCLSID\\%s", aPrefix, aClassID );
-    if ( aResult && ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey , nullptr )
+    if ( aResult && ERROR_SUCCESS == RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey , NULL )
       && createKey( hkey, "EnableFullPage", nKeyAccess ) )
     {
            for( ind = 0; ind < SUPPORTED_MSEXT_NUM; ind++ )
@@ -581,14 +564,11 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
             if( nForMSModes[ind] & nMode )
             {
                    wsprintfA( aSubKey, "EnableFullPage\\%s", aMSFileExt[ind] );
-                   if ( ERROR_SUCCESS != RegCreateKeyExA( hkey, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey1 , nullptr ) )
+                   if ( ERROR_SUCCESS != RegCreateKeyExA( hkey, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey1 , NULL ) )
                        aResult = FALSE;
 
                    if ( hkey1 )
-                   {
-                       RegCloseKey(hkey1);
-                       hkey1= nullptr;
-                   }
+                       RegCloseKey(hkey1),hkey1= NULL;
             }
            }
     }
@@ -596,12 +576,9 @@ STDAPI DllRegisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcces
         aResult = FALSE;
 
     if ( hkey )
-    {
-        RegCloseKey(hkey);
-        hkey= nullptr;
-    }
+        RegCloseKey(hkey),hkey= NULL;
 
-    return HRESULT(aResult);
+    return aResult;
 }
 
 STDAPI DllRegisterServerDoc( int nMode, BOOL bForAllUsers, BOOL bFor64Bit )
@@ -621,7 +598,7 @@ STDAPI DllRegisterServerDoc( int nMode, BOOL bForAllUsers, BOOL bFor64Bit )
 
 STDAPI DllUnregisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAccess )
 {
-    HKEY        hkey = nullptr;
+    HKEY        hkey = NULL;
     BOOL        fErr = FALSE;
     char aSubKey[513];
     const char*    aPrefix = aLocalPrefix; // bForAllUsers ? "" : aLocalPrefix;
@@ -633,7 +610,7 @@ STDAPI DllUnregisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcc
             DWORD nSubKeys = 0, nValues = 0;
 
                wsprintfA( aSubKey, "%sMIME\\DataBase\\Content Type\\%s", aPrefix, aMSMimeType[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr ) )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL ) )
                 fErr = TRUE;
             else
             {
@@ -643,43 +620,39 @@ STDAPI DllUnregisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcc
                    if ( ERROR_SUCCESS != RegDeleteValue( hkey, "CLSID" ) )
                     fErr = TRUE;
 
-                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, nullptr, nullptr, nullptr,
-                                                        &nSubKeys, nullptr, nullptr,
-                                                        &nValues, nullptr, nullptr, nullptr, nullptr ) )
+                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, NULL, NULL, NULL,
+                                                        &nSubKeys, NULL, NULL,
+                                                        &nValues, NULL, NULL, NULL, NULL ) )
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     fErr = TRUE;
                 }
                 else
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     if ( !nSubKeys && !nValues )
                         DeleteKeyTree( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, nKeyAccess );
                 }
             }
 
                wsprintfA( aSubKey, "%s%s", aPrefix, aMSFileExt[ind] );
-               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, nullptr, REG_OPTION_NON_VOLATILE, nKeyAccess, nullptr, &hkey, nullptr ) )
+               if ( ERROR_SUCCESS != RegCreateKeyExA( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, 0, NULL, REG_OPTION_NON_VOLATILE, nKeyAccess, NULL, &hkey, NULL ) )
                 fErr = TRUE;
             else
             {
                    if ( ERROR_SUCCESS != RegDeleteValue( hkey, "Content Type" ) )
                     fErr = TRUE;
 
-                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, nullptr, nullptr, nullptr,
-                                                        &nSubKeys, nullptr, nullptr,
-                                                        &nValues, nullptr, nullptr, nullptr, nullptr ) )
+                if ( ERROR_SUCCESS != RegQueryInfoKey(  hkey, NULL, NULL, NULL,
+                                                        &nSubKeys, NULL, NULL,
+                                                        &nValues, NULL, NULL, NULL, NULL ) )
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     fErr = TRUE;
                 }
                 else
                 {
-                    RegCloseKey( hkey );
-                    hkey = nullptr;
+                    RegCloseKey( hkey ), hkey = NULL;
                     if ( !nSubKeys && !nValues )
                         DeleteKeyTree( bForAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER, aSubKey, nKeyAccess );
                 }
@@ -687,7 +660,7 @@ STDAPI DllUnregisterServerDoc_Impl( int nMode, BOOL bForAllUsers, REGSAM nKeyAcc
         }
        }
 
-    return HRESULT(!fErr);
+    return !fErr;
 }
 
 STDAPI DllUnregisterServerDoc( int nMode, BOOL bForAllUsers, BOOL bFor64Bit )

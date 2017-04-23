@@ -36,7 +36,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList);
-    virtual ~SdXMLLayerSetContext() override;
+    virtual ~SdXMLLayerSetContext();
 
     virtual SvXMLImportContext * CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList ) override;

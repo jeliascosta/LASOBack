@@ -42,7 +42,7 @@ class X11ImeStatus : public SalI18NImeStatus
 {
 public:
     X11ImeStatus() {}
-    virtual ~X11ImeStatus() override;
+    virtual ~X11ImeStatus();
 
     virtual bool canToggle() override;
     virtual void toggle() override;

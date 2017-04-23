@@ -18,22 +18,38 @@
  */
 
 #include <sal/types.h>
+#include <osl/thread.h>
 #include <tools/datetime.hxx>
+#include <tools/inetmime.hxx>
 #include <tools/inetmsg.hxx>
+#include <tools/inetstrm.hxx>
 #include <tools/contnr.hxx>
 #include <rtl/instance.hxx>
 #include <comphelper/string.hxx>
-#include <rtl/character.hxx>
 
+#include <stdio.h>
 #include <map>
+
+inline bool ascii_isDigit( sal_Unicode ch )
+{
+    return ((ch >= 0x0030) && (ch <= 0x0039));
+}
+
+inline bool ascii_isLetter( sal_Unicode ch )
+{
+    return (( (ch >= 0x0041) && (ch <= 0x005A)) || ((ch >= 0x0061) && (ch <= 0x007A)));
+}
 
 void INetMIMEMessage::SetHeaderField_Impl (
     const OString &rName,
     const OUString &rValue,
     sal_uIntPtr &rnIndex)
 {
+    INetMIMEOutputSink aSink;
+    INetMIME::writeHeaderFieldBody (
+        aSink, rValue, osl_getThreadTextEncoding());
     SetHeaderField_Impl (
-        INetMessageHeader (rName, rValue.toUtf8()), rnIndex);
+        INetMessageHeader (rName, aSink.takeBuffer()), rnIndex);
 }
 
 /* ParseDateField and local helper functions.
@@ -54,12 +70,10 @@ static const sal_Char *months[12] =
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static sal_uInt16 ParseNumber(const OString& rStr, sal_Int32& nIndex)
+static sal_uInt16 ParseNumber(const OString& rStr, sal_uInt16& nIndex)
 {
-    sal_Int32 n = nIndex;
-    while ((n < rStr.getLength())
-           && rtl::isAsciiDigit(static_cast<unsigned char>(rStr[n])))
-        n++;
+    sal_uInt16 n = nIndex;
+    while ((n < rStr.getLength()) && ascii_isDigit(rStr[n])) n++;
 
     OString aNum(rStr.copy(nIndex, (n - nIndex)));
     nIndex = n;
@@ -67,12 +81,10 @@ static sal_uInt16 ParseNumber(const OString& rStr, sal_Int32& nIndex)
     return (sal_uInt16)(aNum.toInt32());
 }
 
-static sal_uInt16 ParseMonth(const OString& rStr, sal_Int32& nIndex)
+static sal_uInt16 ParseMonth(const OString& rStr, sal_uInt16& nIndex)
 {
-    sal_Int32 n = nIndex;
-    while ((n < rStr.getLength())
-           && rtl::isAsciiAlpha(static_cast<unsigned char>(rStr[n])))
-        n++;
+    sal_uInt16 n = nIndex;
+    while ((n < rStr.getLength()) && ascii_isLetter(rStr[n])) n++;
 
     OString aMonth(rStr.copy(nIndex, 3));
     nIndex = n;
@@ -94,7 +106,7 @@ bool INetMIMEMessage::ParseDateField (
     if (aDateField.indexOf(':') != -1)
     {
         // Some DateTime format.
-        sal_Int32 nIndex = 0;
+        sal_uInt16 nIndex = 0;
 
         // Skip over <Wkd> or <Weekday>, leading and trailing space.
         while ((nIndex < aDateField.getLength()) &&
@@ -103,7 +115,7 @@ bool INetMIMEMessage::ParseDateField (
 
         while (
             (nIndex < aDateField.getLength()) &&
-            (rtl::isAsciiAlpha (static_cast<unsigned char>(aDateField[nIndex])) ||
+            (ascii_isLetter (aDateField[nIndex]) ||
              (aDateField[nIndex] == ',')     ))
             nIndex++;
 
@@ -111,7 +123,7 @@ bool INetMIMEMessage::ParseDateField (
                (aDateField[nIndex] == ' '))
             nIndex++;
 
-        if (rtl::isAsciiAlpha (static_cast<unsigned char>(aDateField[nIndex])))
+        if (ascii_isLetter (aDateField[nIndex]))
         {
             // Format: ctime().
             if ((aDateField.getLength() - nIndex) < 20) return false;

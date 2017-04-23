@@ -36,9 +36,11 @@ namespace sdext { namespace presenter {
 class PresenterPane;
 class PresenterTheme;
 
-typedef ::cppu::WeakComponentImplHelper<
-    css::drawing::framework::XPaneBorderPainter
-> PresenterPaneBorderPainterInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper<
+        css::drawing::framework::XPaneBorderPainter
+    > PresenterPaneBorderPainterInterfaceBase;
+}
 
 /** This class is responsible for painting window borders of PresenterPane
     objects.
@@ -50,7 +52,7 @@ class PresenterPaneBorderPainter
 public:
     explicit PresenterPaneBorderPainter (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterPaneBorderPainter() override;
+    virtual ~PresenterPaneBorderPainter();
     PresenterPaneBorderPainter(const PresenterPaneBorderPainter&) = delete;
     PresenterPaneBorderPainter& operator=(const PresenterPaneBorderPainter&) = delete;
 
@@ -90,19 +92,22 @@ public:
     virtual css::awt::Rectangle SAL_CALL addBorder (
         const OUString& rsPaneBorderStyleName,
         const css::awt::Rectangle& rRectangle,
-        css::drawing::framework::BorderType eBorderType) override;
+        css::drawing::framework::BorderType eBorderType)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::awt::Rectangle SAL_CALL removeBorder (
         const OUString& rsPaneBorderStyleName,
         const css::awt::Rectangle& rRectangle,
-        css::drawing::framework::BorderType eBorderType) override;
+        css::drawing::framework::BorderType eBorderType)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL paintBorder (
         const OUString& rsPaneBorderStyleName,
         const css::uno::Reference<css::rendering::XCanvas>& rxCanvas,
         const css::awt::Rectangle& rOuterBorderRectangle,
         const css::awt::Rectangle& rRepaintArea,
-        const OUString& rsTitle) override;
+        const OUString& rsTitle)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL paintBorderWithCallout (
         const OUString& rsPaneBorderStyleName,
@@ -110,10 +115,12 @@ public:
         const css::awt::Rectangle& rOuterBorderRectangle,
         const css::awt::Rectangle& rRepaintArea,
         const OUString& rsTitle,
-        const css::awt::Point& rCalloutAnchor) override;
+        const css::awt::Point& rCalloutAnchor)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::awt::Point SAL_CALL getCalloutOffset (
-        const OUString& rsPaneBorderStyleName) override;
+        const OUString& rsPaneBorderStyleName)
+        throw(css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::uno::XComponentContext> mxContext;
@@ -130,8 +137,8 @@ private:
         const css::uno::Reference<css::rendering::XCanvas>& rxCanvas);
     void ProvideTheme();
 
-    /// @throws css::lang::DisposedException
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const
+        throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sd::presenter

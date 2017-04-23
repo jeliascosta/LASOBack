@@ -35,10 +35,10 @@ class RscCmdLine
 
 public:
 
-    RscStrList     aInputList;     // source file list
+    RscStrList          aInputList;     // source file list
     OString        aPath;          // path list
     RSCBYTEORDER_TYPE   nByteOrder;
-    CommandFlags   nCommands;      // command bits
+    unsigned short      nCommands;      // command bits
     OString        aOutputSrs;     // Srs output file name
     OString        aILDir;
 
@@ -80,6 +80,7 @@ private:
 public:
     RscTypCont*     pTC;        // string and id manager
     RscCmdLine*     pCL;        // command line
+    FILE *          fListing;   // output file for listings
     FILE *          fExitFile;  // when deconstructed, this file must be deleted
 
                     RscCompiler( RscCmdLine *, RscTypCont * );
@@ -88,8 +89,8 @@ public:
     ERRTYPE         Start();
 
                     // read include statements
-    ERRTYPE         IncludeParser( RscFileTab::Index lFileKey );
-    ERRTYPE         ParseOneFile( RscFileTab::Index lFileKey, const RscCmdLine::OutputFile* pOutputFile, const WriteRcContext* pContext );
+    ERRTYPE         IncludeParser( sal_uLong lFileKey );
+    ERRTYPE         ParseOneFile( sal_uLong lFileKey, const RscCmdLine::OutputFile* pOutputFile, const WriteRcContext* pContext );
     ERRTYPE         Link();
     void            EndCompile();
 };

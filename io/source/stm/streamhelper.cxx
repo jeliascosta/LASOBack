@@ -33,17 +33,18 @@ using namespace ::com::sun::star::uno;
 namespace io_stm {
 
 void MemFIFO::write( const Sequence< sal_Int8 > &seq )
+    throw ( css::io::BufferSizeExceededException )
 {
     writeAt(getSize(), seq);
 }
 
-void MemFIFO::read( Sequence<sal_Int8> &seq , sal_Int32 nBufferLen )
+void MemFIFO::read( Sequence<sal_Int8> &seq , sal_Int32 nBufferLen ) throw (css::io::BufferSizeExceededException)
 {
     readAt(0, seq , nBufferLen);
     forgetFromStart( nBufferLen );
 }
 
-void MemFIFO::skip( sal_Int32 nBytesToSkip )
+void MemFIFO::skip( sal_Int32 nBytesToSkip ) throw ( css::io::BufferSizeExceededException )
 {
     forgetFromStart( nBytesToSkip );
 }
@@ -63,7 +64,7 @@ MemRingBuffer::~MemRingBuffer()
     }
 }
 
-void MemRingBuffer::resizeBuffer( sal_Int32 nMinSize )
+void MemRingBuffer::resizeBuffer( sal_Int32 nMinSize ) throw(css::io::BufferSizeExceededException)
 {
     sal_Int32 nNewLen = 1;
 
@@ -93,6 +94,7 @@ void MemRingBuffer::resizeBuffer( sal_Int32 nMinSize )
 
 
 void MemRingBuffer::readAt( sal_Int32 nPos, Sequence<sal_Int8> &seq , sal_Int32 nBytesToRead ) const
+                                                        throw(css::io::BufferSizeExceededException)
 {
     if( nPos + nBytesToRead > m_nOccupiedBuffer ) {
         throw css::io::BufferSizeExceededException(
@@ -118,6 +120,7 @@ void MemRingBuffer::readAt( sal_Int32 nPos, Sequence<sal_Int8> &seq , sal_Int32 
 
 
 void MemRingBuffer::writeAt( sal_Int32 nPos, const Sequence<sal_Int8> &seq )
+                                                        throw (css::io::BufferSizeExceededException)
 {
     checkInvariants();
     sal_Int32 nLen = seq.getLength();
@@ -158,7 +161,7 @@ sal_Int32 MemRingBuffer::getSize()  const throw()
     return m_nOccupiedBuffer;
 }
 
-void MemRingBuffer::forgetFromStart( sal_Int32 nBytesToForget )
+void MemRingBuffer::forgetFromStart( sal_Int32 nBytesToForget ) throw (css::io::BufferSizeExceededException)
 {
     checkInvariants();
     if( nBytesToForget > m_nOccupiedBuffer ) {
@@ -173,6 +176,24 @@ void MemRingBuffer::forgetFromStart( sal_Int32 nBytesToForget )
     checkInvariants();
 }
 
+
+void MemRingBuffer::shrink() throw ()
+{
+    checkInvariants();
+
+    // Up to now, only shrinking of while buffer works.
+    // No other shrinking supported up to now.
+    if( ! m_nOccupiedBuffer ) {
+        if( m_p ) {
+            free( m_p );
+        }
+        m_p = nullptr;
+        m_nBufferLen = 0;
+        m_nStart = 0;
+    }
+
+    checkInvariants();
+}
 
 }
 

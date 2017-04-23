@@ -22,6 +22,7 @@
 #include "macros.hxx"
 #include "DataSeriesHelper.hxx"
 #include "CommonConverters.hxx"
+#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <com/sun/star/util/XCloneable.hpp>
@@ -36,8 +37,9 @@ using ::com::sun::star::uno::Sequence;
 namespace chart
 {
 
-BubbleDataInterpreter::BubbleDataInterpreter() :
-        DataInterpreter()
+BubbleDataInterpreter::BubbleDataInterpreter(
+    const uno::Reference< uno::XComponentContext > & xContext ) :
+        DataInterpreter( xContext )
 {
 }
 
@@ -50,6 +52,7 @@ chart2::InterpretedData SAL_CALL BubbleDataInterpreter::interpretDataSource(
     const Reference< chart2::data::XDataSource >& xSource,
     const Sequence< beans::PropertyValue >& aArguments,
     const Sequence< Reference< XDataSeries > >& aSeriesToReUse )
+    throw (uno::RuntimeException, std::exception)
 {
     if( ! xSource.is())
         return InterpretedData();
@@ -142,7 +145,7 @@ chart2::InterpretedData SAL_CALL BubbleDataInterpreter::interpretDataSource(
         if( nSeriesIndex < aSeriesToReUse.getLength())
             xSeries.set( aSeriesToReUse[nSeriesIndex] );
         else
-            xSeries.set( new DataSeries );
+            xSeries.set( new DataSeries( GetComponentContext() ) );
         OSL_ASSERT( xSeries.is() );
         Reference< data::XDataSink > xSink( xSeries, uno::UNO_QUERY );
         OSL_ASSERT( xSink.is() );
@@ -158,6 +161,7 @@ chart2::InterpretedData SAL_CALL BubbleDataInterpreter::interpretDataSource(
 
 chart2::InterpretedData SAL_CALL BubbleDataInterpreter::reinterpretDataSeries(
     const chart2::InterpretedData& aInterpretedData )
+    throw (uno::RuntimeException, std::exception)
 {
     InterpretedData aResult( aInterpretedData );
 
@@ -268,6 +272,7 @@ chart2::InterpretedData SAL_CALL BubbleDataInterpreter::reinterpretDataSeries(
 
 sal_Bool SAL_CALL BubbleDataInterpreter::isDataCompatible(
     const chart2::InterpretedData& aInterpretedData )
+    throw (uno::RuntimeException, std::exception)
 {
     Sequence< Reference< XDataSeries > > aSeries( FlattenSequence( aInterpretedData.Series ));
     for( sal_Int32 i=0; i<aSeries.getLength(); ++i )

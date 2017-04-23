@@ -29,8 +29,6 @@
 #include <memory>
 #include "formatsh.hxx"
 #include "address.hxx"
-#include <vcl/window.hxx>
-#include <rtl/ref.hxx>
 
 class SvxClipboardFormatItem;
 class TransferableDataHelper;
@@ -39,13 +37,14 @@ class AbstractScLinkedAreaDlg;
 
 struct CellShell_Impl
 {
-    rtl::Reference<TransferableClipboardListener>
-                                    m_xClipEvtLstnr;
-    VclPtr<AbstractScLinkedAreaDlg> m_pLinkedDlg;
+    TransferableClipboardListener*  m_pClipEvtLstnr;
+    AbstractScLinkedAreaDlg*        m_pLinkedDlg;
     SfxRequest*                     m_pRequest;
 
-    CellShell_Impl();
-    ~CellShell_Impl();
+    CellShell_Impl() :
+        m_pClipEvtLstnr( nullptr ),
+        m_pLinkedDlg( nullptr ),
+        m_pRequest( nullptr ) {}
 };
 
 class ScCellShell: public ScFormatShell
@@ -65,12 +64,10 @@ private:
 
     void ExecuteFillSingleEdit();
 
-    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
-    DECL_LINK( DialogClosed, Dialog&, void );
+    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
+    DECL_LINK_TYPED( DialogClosed, Dialog&, void );
 
     RotateTransliteration m_aRotateCase;
-
-    VclPtr<vcl::Window> pFrameWin;
 
 public:
     SFX_DECL_INTERFACE(SCID_CELL_SHELL)
@@ -80,8 +77,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-                ScCellShell( ScViewData* pData, VclPtr<vcl::Window> pFrameWin );
-    virtual     ~ScCellShell() override;
+                ScCellShell(ScViewData* pData);
+    virtual     ~ScCellShell();
 
     void        Execute(SfxRequest &);
     void        GetState(SfxItemSet &);
@@ -104,9 +101,6 @@ public:
     void        ExecutePage( SfxRequest& rReq );
     void        ExecutePageSel( SfxRequest& rReq );
     void        ExecuteMove( SfxRequest& rReq );
-
-    VclPtr<vcl::Window> GetFrameWin();
-
     static void GetStateCursor( SfxItemSet& rSet );
 };
 

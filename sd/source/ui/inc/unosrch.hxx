@@ -59,14 +59,14 @@ public:
     virtual ~SdUnoSearchReplaceShape() throw();
 
     // XReplaceable
-    virtual css::uno::Reference< css::util::XReplaceDescriptor > SAL_CALL createReplaceDescriptor(  ) override;
-    virtual sal_Int32 SAL_CALL replaceAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+    virtual css::uno::Reference< css::util::XReplaceDescriptor > SAL_CALL createReplaceDescriptor(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL replaceAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XSearchable
-    virtual css::uno::Reference< css::util::XSearchDescriptor > SAL_CALL createSearchDescriptor(  ) override;
-    virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL findAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL findFirst( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL findNext( const css::uno::Reference< css::uno::XInterface >& xStartAt, const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+    virtual css::uno::Reference< css::util::XSearchDescriptor > SAL_CALL createSearchDescriptor(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL findAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL findFirst( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL findNext( const css::uno::Reference< css::uno::XInterface >& xStartAt, const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 /* ================================================================= */
@@ -77,7 +77,7 @@ public:
 class SdUnoSearchReplaceDescriptor : public ::cppu::WeakImplHelper< css::lang::XUnoTunnel, css::util::XReplaceDescriptor > // public css::util::XSearchDescriptor, css::beans::XPropertySet
 {
 protected:
-    std::unique_ptr<SvxItemPropertySet> mpPropSet;
+    SvxItemPropertySet* mpPropSet;
 
     bool mbBackwards;
     bool mbCaseSensitive;
@@ -89,9 +89,8 @@ protected:
     OUString maReplaceStr;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SdUnoSearchReplaceDescriptor(bool bReplace);
-    virtual ~SdUnoSearchReplaceDescriptor() throw() override;
+    SdUnoSearchReplaceDescriptor(bool bReplace) throw (css::uno::RuntimeException);
+    virtual ~SdUnoSearchReplaceDescriptor() throw();
 
     bool IsCaseSensitive() const { return mbCaseSensitive; }
     bool IsWords() const { return mbWords; }
@@ -99,21 +98,21 @@ public:
     UNO3_GETIMPLEMENTATION_DECL( SdUnoSearchReplaceDescriptor )
 
     // XSearchDescriptor
-    virtual OUString SAL_CALL getSearchString(  ) override;
-    virtual void SAL_CALL setSearchString( const OUString& aString ) override;
+    virtual OUString SAL_CALL getSearchString(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSearchString( const OUString& aString ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XReplaceDescriptor
-    virtual OUString SAL_CALL getReplaceString(  ) override;
-    virtual void SAL_CALL setReplaceString( const OUString& aReplaceString ) override;
+    virtual OUString SAL_CALL getReplaceString(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setReplaceString( const OUString& aReplaceString ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 };
 
 /* ================================================================= */
@@ -127,15 +126,15 @@ protected:
 
 public:
     SdUnoFindAllAccess( css::uno::Sequence< css::uno::Reference< css::uno::XInterface >  >& rSequence ) throw();
-    virtual ~SdUnoFindAllAccess() throw() override;
+    virtual ~SdUnoFindAllAccess() throw();
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override ;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override ;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_UNOSRCH_HXX

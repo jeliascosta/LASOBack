@@ -44,7 +44,7 @@ public:
     ScXMLCellImportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper,
             SvXMLImport& rImport);
-    virtual ~ScXMLCellImportPropertyMapper() override;
+    virtual ~ScXMLCellImportPropertyMapper();
 
     /** This method is called when all attributes have been processed. It may be used to remove items that are incomplete */
     virtual void finished(
@@ -60,7 +60,7 @@ public:
     ScXMLRowImportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper,
             SvXMLImport& rImport);
-    virtual ~ScXMLRowImportPropertyMapper() override;
+    virtual ~ScXMLRowImportPropertyMapper();
 
     /** This method is called when all attributes have been processed. It may be used to remove items that are incomplete */
     virtual void finished(
@@ -94,7 +94,7 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             SvXMLStylesContext& rStyles, sal_uInt16 nFamily, bool bDefaultStyle = false );
-    virtual ~XMLTableStyleContext() override;
+    virtual ~XMLTableStyleContext();
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,
@@ -164,7 +164,7 @@ public:
             const OUString& rLName ,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             const bool bAutoStyles );
-    virtual ~XMLTableStylesContext() override;
+    virtual ~XMLTableStylesContext();
 
     virtual void EndElement() override;
 
@@ -196,7 +196,7 @@ public:
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList);
 
-    virtual ~ScXMLMasterStylesContext() override;
+    virtual ~ScXMLMasterStylesContext();
     virtual void EndElement() override;
 };
 
@@ -218,7 +218,12 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             bool bOverwrite );
-    virtual ~ScMasterPageContext() override;
+    virtual ~ScMasterPageContext();
+
+    virtual SvXMLImportContext *CreateChildContext(
+            sal_uInt16 nPrefix,
+            const OUString& rLocalName,
+            const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList ) override;
 
     virtual SvXMLImportContext *CreateHeaderFooterContext(
             sal_uInt16 nPrefix,
@@ -243,7 +248,7 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             SvXMLStylesContext& rStyles, sal_uInt16 nFamily );
-    virtual ~ScCellTextStyleContext() override;
+    virtual ~ScCellTextStyleContext();
 
     // override FillPropertySet to store style information
     virtual void FillPropertySet(

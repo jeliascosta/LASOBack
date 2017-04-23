@@ -89,7 +89,7 @@ void TextBodyProperties::pushRotationAdjustments()
         if( moInsets[i] )
             maPropertyMap.setProperty( aProps[ nOff ], static_cast< sal_Int32 >( *moInsets[i] + nVal ));
         else if( nVal )
-            maPropertyMap.setProperty( aProps[ nOff ], nVal );
+            maPropertyMap.setProperty( aProps[ nOff ], static_cast< sal_Int32 >( nVal ));
 
         nOff = (nOff+1) % n;
     }

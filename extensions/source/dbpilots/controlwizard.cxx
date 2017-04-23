@@ -40,6 +40,7 @@
 #include <vcl/msgbox.hxx>
 #include <comphelper/interaction.hxx>
 #include <vcl/stdtext.hxx>
+#include <svtools/localresaccess.hxx>
 #include <connectivity/conncleanup.hxx>
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <tools/urlobj.hxx>
@@ -212,7 +213,7 @@ namespace dbp
 
             INetURLObject aURL( sDataSource );
             if( aURL.GetProtocol() != INetProtocol::NotValid )
-                sDataSource = aURL.GetName(INetURLObject::DecodeMechanism::WithCharset);
+                sDataSource = aURL.GetName(INetURLObject::DECODE_WITH_CHARSET);
             m_pFormDatasource->SetText(sDataSource);
             m_pFormTable->SetText(sCommand);
 
@@ -245,7 +246,7 @@ namespace dbp
         m_aContext.xObjectModel = _rxObjectModel;
         initContext();
 
-        SetPageSizePixel(LogicToPixel(::Size(WINDOW_SIZE_X, WINDOW_SIZE_Y), MapUnit::MapAppFont));
+        SetPageSizePixel(LogicToPixel(::Size(WINDOW_SIZE_X, WINDOW_SIZE_Y), MAP_APPFONT));
         defaultButton(WizardButtonFlags::NEXT);
         enableButtons(WizardButtonFlags::FINISH, false);
     }
@@ -275,6 +276,12 @@ namespace dbp
         ActivatePage();
 
         return OControlWizard_Base::Execute();
+    }
+
+
+    void OControlWizard::ActivatePage()
+    {
+        OControlWizard_Base::ActivatePage();
     }
 
 
@@ -574,6 +581,7 @@ namespace dbp
             if (xColumns.is())
             {
                 m_aContext.aFieldNames = xColumns->getElementNames();
+                static const char s_sFieldTypeProperty[] = "Type";
                 const OUString* pBegin = m_aContext.aFieldNames.getConstArray();
                 const OUString* pEnd   = pBegin + m_aContext.aFieldNames.getLength();
                 for(;pBegin != pEnd;++pBegin)
@@ -583,7 +591,7 @@ namespace dbp
                     {
                         Reference< XPropertySet > xColumn;
                         xColumns->getByName(*pBegin) >>= xColumn;
-                        xColumn->getPropertyValue("Type") >>= nFieldType;
+                        xColumn->getPropertyValue(s_sFieldTypeProperty) >>= nFieldType;
                     }
                     catch(const Exception&)
                     {

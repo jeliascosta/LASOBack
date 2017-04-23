@@ -38,11 +38,12 @@
 using namespace svt;
 using namespace ::com::sun::star;
 
-SwMailMergeWizard::SwMailMergeWizard(SwView& rView, std::shared_ptr<SwMailMergeConfigItem>& rItem) :
-        RoadmapWizard(&rView.GetViewFrame()->GetWindow()),
+SwMailMergeWizard::SwMailMergeWizard(SwView& rView, SwMailMergeConfigItem& rItem) :
+        RoadmapWizard(&rView.GetViewFrame()->GetWindow(),
+                        WizardButtonFlags::NEXT|WizardButtonFlags::PREVIOUS|WizardButtonFlags::FINISH|WizardButtonFlags::CANCEL|WizardButtonFlags::HELP),
         m_pSwView(&rView),
         m_bDocumentLoad( false ),
-        m_xConfigItem(rItem),
+        m_rConfigItem(rItem),
         m_sStarting(        SW_RES( ST_STARTING      )),
         m_sDocumentType(    SW_RES( ST_DOCUMENTTYPE   )),
         m_sAddressBlock(    SW_RES( ST_ADDRESSBLOCK   )),
@@ -55,14 +56,12 @@ SwMailMergeWizard::SwMailMergeWizard(SwView& rView, std::shared_ptr<SwMailMergeC
     defaultButton(WizardButtonFlags::NEXT);
     enableButtons(WizardButtonFlags::FINISH, false);
 
-    setTitleBase(SW_RESSTR( ST_MMWTITLE ) );
-
     m_pFinish->SetText(m_sFinish);
     m_pNextPage->SetHelpId(HID_MM_NEXT_PAGE);
     m_pPrevPage->SetHelpId(HID_MM_PREV_PAGE);
 
     //#i51949# no output type page visible if e-Mail is not supported
-    if (m_xConfigItem->IsMailAvailable())
+    if(rItem.IsMailAvailable())
         declarePath(
             0,
             {MM_DOCUMENTSELECTPAGE,
@@ -93,31 +92,11 @@ VclPtr<TabPage> SwMailMergeWizard::createPage(WizardState _nState)
     VclPtr<OWizardPage> pRet;
     switch(_nState)
     {
-        case MM_DOCUMENTSELECTPAGE :
-            pRet = VclPtr<SwMailMergeDocSelectPage>::Create(this);
-
-            /* tdf#52986 Set help ID using SetRoadmapHelpId for all pages
-            so that when by default the focus is on the left side pane of
-            the wizard the relevant help page is displayed when hitting
-            the Help / F1 button */
-            SetRoadmapHelpId("modules/swriter/ui/mmselectpage/MMSelectPage");
-        break;
-        case MM_OUTPUTTYPETPAGE    :
-            pRet = VclPtr<SwMailMergeOutputTypePage>::Create(this);
-            SetRoadmapHelpId("modules/swriter/ui/mmoutputtypepage/MMOutputTypePage");
-        break;
-        case MM_ADDRESSBLOCKPAGE   :
-            pRet = VclPtr<SwMailMergeAddressBlockPage>::Create(this);
-            SetRoadmapHelpId("modules/swriter/ui/mmaddressblockpage/MMAddressBlockPage");
-        break;
-        case MM_GREETINGSPAGE      :
-            pRet = VclPtr<SwMailMergeGreetingsPage>::Create(this);
-            SetRoadmapHelpId("modules/swriter/ui/mmsalutationpage/MMSalutationPage");
-        break;
-        case MM_LAYOUTPAGE         :
-            pRet = VclPtr<SwMailMergeLayoutPage>::Create(this);
-            SetRoadmapHelpId("modules/swriter/ui/mmlayoutpage/MMLayoutPage");
-        break;
+        case MM_DOCUMENTSELECTPAGE : pRet = VclPtr<SwMailMergeDocSelectPage>::Create(this);     break;
+        case MM_OUTPUTTYPETPAGE : pRet = VclPtr<SwMailMergeOutputTypePage>::Create(this);       break;
+        case MM_ADDRESSBLOCKPAGE  : pRet = VclPtr<SwMailMergeAddressBlockPage>::Create(this);     break;
+        case MM_GREETINGSPAGE     : pRet = VclPtr<SwMailMergeGreetingsPage>::Create(this);      break;
+        case MM_LAYOUTPAGE        : pRet = VclPtr<SwMailMergeLayoutPage>::Create(this);     break;
     }
     OSL_ENSURE(pRet, "no page created in ::createPage");
     return pRet;
@@ -126,13 +105,26 @@ VclPtr<TabPage> SwMailMergeWizard::createPage(WizardState _nState)
 void SwMailMergeWizard::enterState( WizardState _nState )
 {
     ::svt::RoadmapWizard::enterState( _nState );
+/*
 
-    if (m_xConfigItem->GetTargetView())
+    entering a page after the layoutpage requires the insertion
+    of greeting and address block - if not yet done
+    entering the merge or output page requires to create the output document
+*/
+    if(_nState > MM_LAYOUTPAGE && m_rConfigItem.GetSourceView() &&
+            ((m_rConfigItem.IsAddressBlock() && !m_rConfigItem.IsAddressInserted()) ||
+             (m_rConfigItem.IsGreetingLine(false) && !m_rConfigItem.IsGreetingInserted() )))
+    {
+        SwMailMergeLayoutPage::InsertAddressAndGreeting(m_rConfigItem.GetSourceView(),
+                                m_rConfigItem, Point(-1, -1), true);
+    }
+
+    if(m_rConfigItem.GetTargetView())
     {
         //close the dialog, remove the target view, show the source view
         m_nRestartPage = _nState;
         //set ResultSet back to start
-        m_xConfigItem->MoveResultSet(1);
+        m_rConfigItem.MoveResultSet(1);
         EndDialog(RET_REMOVE_TARGET);
         return;
     }
@@ -144,7 +136,7 @@ void SwMailMergeWizard::enterState( WizardState _nState )
             bEnablePrev = false; // the first page
         break;
         case MM_ADDRESSBLOCKPAGE  :
-            bEnableNext = m_xConfigItem->GetResultSet().is();
+            bEnableNext = m_rConfigItem.GetResultSet().is();
         break;
         case MM_LAYOUTPAGE:
             bEnableNext = false; // the last page
@@ -165,7 +157,7 @@ OUString SwMailMergeWizard::getStateDisplayName( WizardState _nState ) const
         case MM_OUTPUTTYPETPAGE:
             return m_sDocumentType;
         case MM_ADDRESSBLOCKPAGE:
-            return m_xConfigItem->IsOutputToLetter() ?
+            return m_rConfigItem.IsOutputToLetter() ?
                    m_sAddressBlock : m_sAddressList;
         case MM_GREETINGSPAGE:
             return m_sGreetingsLine;
@@ -193,12 +185,12 @@ void SwMailMergeWizard::UpdateRoadmap()
     TabPage* pCurPage = GetPage( nCurPage );
     if(!pCurPage)
         return;
-    bool bAddressFieldsConfigured = !m_xConfigItem->IsOutputToLetter() ||
-                !m_xConfigItem->IsAddressBlock() ||
-                m_xConfigItem->IsAddressFieldsAssigned();
-    bool bGreetingFieldsConfigured = !m_xConfigItem->IsGreetingLine(false) ||
-            !m_xConfigItem->IsIndividualGreeting(false) ||
-                    m_xConfigItem->IsGreetingFieldsAssigned();
+    bool bAddressFieldsConfigured = !m_rConfigItem.IsOutputToLetter() ||
+                !m_rConfigItem.IsAddressBlock() ||
+                m_rConfigItem.IsAddressFieldsAssigned();
+    bool bGreetingFieldsConfigured = !m_rConfigItem.IsGreetingLine(false) ||
+            !m_rConfigItem.IsIndividualGreeting(false)||
+                    m_rConfigItem.IsGreetingFieldsAssigned();
 
     //#i97436# if a document has to be loaded then enable output type page only
     m_bDocumentLoad = false;
@@ -207,7 +199,7 @@ void SwMailMergeWizard::UpdateRoadmap()
 
     // handle the Finish button
     bool bCanFinish = !m_bDocumentLoad && bEnableOutputTypePage &&
-        m_xConfigItem->GetResultSet().is() &&
+        m_rConfigItem.GetResultSet().is() &&
         bAddressFieldsConfigured &&
         bGreetingFieldsConfigured;
     enableButtons(WizardButtonFlags::FINISH, (nCurPage != MM_DOCUMENTSELECTPAGE) && bCanFinish);
@@ -228,17 +220,22 @@ void SwMailMergeWizard::UpdateRoadmap()
             break;
             case MM_GREETINGSPAGE:
                 bEnable = !m_bDocumentLoad && bEnableOutputTypePage &&
-                    m_xConfigItem->GetResultSet().is() &&
+                    m_rConfigItem.GetResultSet().is() &&
                             bAddressFieldsConfigured;
             break;
             case MM_LAYOUTPAGE:
                 bEnable = bCanFinish &&
-                        ((m_xConfigItem->IsAddressBlock() && !m_xConfigItem->IsAddressInserted()) ||
-                            (m_xConfigItem->IsGreetingLine(false) && !m_xConfigItem->IsGreetingInserted() ));
+                        ((m_rConfigItem.IsAddressBlock() && !m_rConfigItem.IsAddressInserted()) ||
+                            (m_rConfigItem.IsGreetingLine(false) && !m_rConfigItem.IsGreetingInserted() ));
             break;
         }
         enableState( nPage, bEnable );
     }
+}
+
+void SwMailMergeWizard::updateRoadmapItemLabel( WizardState _nState )
+{
+    svt::RoadmapWizard::updateRoadmapItemLabel( _nState );
 }
 
 short SwMailMergeWizard::Execute()
@@ -248,6 +245,11 @@ short SwMailMergeWizard::Execute()
                "back to VCL apartment => deadlock!\n"
                "Use Dialog::StartExecuteModal to execute the dialog!" );
     return RET_CANCEL;
+}
+
+void SwMailMergeWizard::StartExecuteModal( const Link<Dialog&, void>& rEndDialogHdl )
+{
+    ::svt::RoadmapWizard::StartExecuteModal( rEndDialogHdl );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

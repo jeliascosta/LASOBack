@@ -74,7 +74,7 @@ void OHiddenModel::getFastPropertyValue(Any& _rValue, sal_Int32 _nHandle) const
 }
 
 
-void OHiddenModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue)
+void OHiddenModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue) throw (css::uno::Exception, std::exception)
 {
     switch (_nHandle)
     {
@@ -90,6 +90,7 @@ void OHiddenModel::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const An
 
 sal_Bool OHiddenModel::convertFastPropertyValue(
             Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
+            throw (IllegalArgumentException)
 {
     bool bModified(false);
     switch (_nHandle)
@@ -117,7 +118,7 @@ void OHiddenModel::describeFixedProperties( Sequence< Property >& _rProps ) cons
 
 // XServiceInfo
 
-css::uno::Sequence<OUString> SAL_CALL OHiddenModel::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OHiddenModel::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         FRM_SUN_COMPONENT_HIDDENCONTROL, FRM_SUN_FORMCOMPONENT,
@@ -125,13 +126,14 @@ css::uno::Sequence<OUString> SAL_CALL OHiddenModel::getSupportedServiceNames()
 }
 
 
-OUString SAL_CALL OHiddenModel::getServiceName()
+OUString SAL_CALL OHiddenModel::getServiceName() throw(RuntimeException, std::exception)
 {
     return OUString(FRM_COMPONENT_HIDDEN);    // old (non-sun) name for compatibility !
 }
 
 
 void SAL_CALL OHiddenModel::write(const Reference<XObjectOutputStream>& _rxOutStream)
+    throw(IOException, RuntimeException, std::exception)
 {
     // Version
     _rxOutStream->writeShort(0x0002);
@@ -143,7 +145,7 @@ void SAL_CALL OHiddenModel::write(const Reference<XObjectOutputStream>& _rxOutSt
 }
 
 
-void SAL_CALL OHiddenModel::read(const Reference<XObjectInputStream>& _rxInStream)
+void SAL_CALL OHiddenModel::read(const Reference<XObjectInputStream>& _rxInStream) throw(IOException, RuntimeException, std::exception)
 {
     // Version
     sal_uInt16 nVersion = _rxInStream->readShort();

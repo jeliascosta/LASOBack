@@ -41,7 +41,7 @@ using namespace ::com::sun::star::sdbc;
 
 
 extern
-std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpression* _aExpr, MQueryHelperResultEntry* entry);
+::std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpression* _aExpr, MQueryHelperResultEntry* entry);
 
 MQueryHelperResultEntry::MQueryHelperResultEntry()
 {
@@ -70,7 +70,10 @@ void MQueryHelperResultEntry::setValue( const OString &key, const OUString & rVa
 }
 
 MQueryHelper::MQueryHelper(const OColumnAlias& _ca)
-    :m_rColumnAlias( _ca )
+    :m_nIndex( 0 )
+    ,m_bHasMore( true )
+    ,m_bAtEnd( false )
+    ,m_rColumnAlias( _ca )
     ,m_aError()
 {
     m_aResults.clear();
@@ -79,19 +82,24 @@ MQueryHelper::MQueryHelper(const OColumnAlias& _ca)
 MQueryHelper::~MQueryHelper()
 {
     clear_results();
+    OSL_TRACE("OUT MQueryHelper::~MQueryHelper()");
 }
 
 
 void MQueryHelper::setAddressbook(OUString &ab)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
+
     m_aAddressbook = ab;
+
+    OSL_TRACE("\tOUT MQuery::setAddressbook()");
 }
 
 void MQueryHelper::append(MQueryHelperResultEntry* resEnt)
 {
     if ( resEnt != nullptr ) {
         m_aResults.push_back( resEnt );
+        m_bAtEnd   = false;
     }
 }
 
@@ -107,6 +115,9 @@ void MQueryHelper::clear_results()
 
 void MQueryHelper::reset()
 {
+    m_nIndex = 0;
+    m_bHasMore = true;
+    m_bAtEnd = false;
     clear_results();
     m_aError.reset();
 }
@@ -239,9 +250,9 @@ sal_Int32 MQueryHelper::executeQuery(OConnection* xConnection, MQueryExpression 
                     OUString valueOUString = OStringToOUString( valueOString, RTL_TEXTENCODING_UTF8 );
                     entry->setValue(key, valueOUString);
                 }
-                std::vector<bool> vector = entryMatchedByExpression(this, &expr, entry);
+                ::std::vector<bool> vector = entryMatchedByExpression(this, &expr, entry);
                 bool result = true;
-                for (std::vector<bool>::const_iterator iter = vector.begin(); iter != vector.end(); ++iter)
+                for (::std::vector<bool>::const_iterator iter = vector.begin(); iter != vector.end(); ++iter)
                 {
                     result = result && *iter;
                 }
@@ -259,9 +270,9 @@ sal_Int32 MQueryHelper::executeQuery(OConnection* xConnection, MQueryExpression 
     return 0;
 }
 
-std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpression* _aExpr, MQueryHelperResultEntry* entry)
+::std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpression* _aExpr, MQueryHelperResultEntry* entry)
 {
-    std::vector<bool> resultVector;
+    ::std::vector<bool> resultVector;
     MQueryExpression::ExprVector::const_iterator evIter;
     for( evIter = _aExpr->getExpressions().begin();
          evIter != _aExpr->getExpressions().end();
@@ -303,7 +314,7 @@ std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpressi
                 } else if (evStr->getCond() == MQueryOp::RegExp) {
                     SAL_INFO("connectivity.mork", "MQueryOp::RegExp; done");
                     utl::SearchParam param(
-                        searchedValue, utl::SearchParam::SearchType::Regexp);
+                        searchedValue, utl::SearchParam::SRCH_REGEXP);
                     utl::TextSearch ts(param, LANGUAGE_DONTKNOW);
                     sal_Int32 start = 0;
                     sal_Int32 end = currentValue.getLength();
@@ -322,17 +333,17 @@ std::vector<bool> entryMatchedByExpression(MQueryHelper* _aQuery, MQueryExpressi
             SAL_INFO("connectivity.mork", "Appending Subquery Expression");
             MQueryExpression* queryExpression = static_cast<MQueryExpression*> (*evIter);
             // recursive call
-            std::vector<bool> subquery_result = entryMatchedByExpression(_aQuery, queryExpression, entry);
+            ::std::vector<bool> subquery_result = entryMatchedByExpression(_aQuery, queryExpression, entry);
             MQueryExpression::bool_cond condition = queryExpression->getExpressionCondition();
             if (condition == MQueryExpression::OR) {
                 bool result = false;
-                for (std::vector<bool>::const_iterator iter =  subquery_result.begin(); iter != subquery_result.end(); ++iter) {
+                for (::std::vector<bool>::const_iterator iter =  subquery_result.begin(); iter != subquery_result.end(); ++iter) {
                     result = result || *iter;
                 }
                 resultVector.push_back(result);
             } else if (condition == MQueryExpression::AND) {
                 bool result = true;
-                for (std::vector<bool>::const_iterator iter = subquery_result.begin(); iter != subquery_result.end(); ++iter) {
+                for (::std::vector<bool>::const_iterator iter = subquery_result.begin(); iter != subquery_result.end(); ++iter) {
                     result = result && *iter;
                 }
                 resultVector.push_back(result);

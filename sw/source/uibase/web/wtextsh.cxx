@@ -30,6 +30,7 @@
 #include "wtextsh.hxx"
 #include "basesh.hxx"
 #include "globals.hrc"
+#include "popup.hrc"
 #include "shells.hrc"
 #include "web.hrc"
 
@@ -48,7 +49,7 @@ void SwWebTextShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("text");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_TEXT_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_TEXT_TOOLBOX);
 
     GetStaticInterface()->RegisterChildWindow(FN_EDIT_FORMULA);
     GetStaticInterface()->RegisterChildWindow(FN_INSERT_FIELD);
@@ -58,6 +59,7 @@ void SwWebTextShell::InitInterface_Impl()
 SwWebTextShell::SwWebTextShell(SwView &_rView) :
     SwTextShell(_rView)
 {
+    SetHelpId(SW_WEBTEXTSHELL);
 }
 
 SwWebTextShell::~SwWebTextShell()

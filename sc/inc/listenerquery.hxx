@@ -33,7 +33,7 @@ public:
     typedef std::unordered_map<SCTAB,ColsType> TabsType;
 
     RefQueryFormulaGroup();
-    virtual ~RefQueryFormulaGroup() override;
+    virtual ~RefQueryFormulaGroup();
 
     void setSkipRange( const ScRange& rRange );
     void add( const ScAddress& rPos );
@@ -59,7 +59,7 @@ class QueryRange : public SvtListener::QueryBase
 
 public:
     QueryRange();
-    virtual ~QueryRange() override;
+    virtual ~QueryRange();
 
     void add( const ScRange& rRange );
 

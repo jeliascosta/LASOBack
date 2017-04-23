@@ -27,11 +27,13 @@
 #include <vector>
 
 struct ImplStatusItem;
+typedef ::std::vector< ImplStatusItem* > ImplStatusItemList;
+
 
 void VCL_DLLPUBLIC DrawProgress(vcl::Window* pWindow, vcl::RenderContext& rRenderContext, const Point& rPos,
                                 long nOffset, long nPrgsWidth, long nPrgsHeight,
                                 sal_uInt16 nPercent1, sal_uInt16 nPercent2, sal_uInt16 nPercentCount,
-                                const tools::Rectangle& rFramePosSize);
+                                const Rectangle& rFramePosSize);
 
 
 enum class StatusBarItemBits {
@@ -59,17 +61,18 @@ class VCL_DLLPUBLIC StatusBar : public vcl::Window
 {
     class   ImplData;
 private:
-    std::vector<ImplStatusItem *> mpItemList;
+    ImplStatusItemList* mpItemList;
     ImplData*           mpImplData;
     OUString            maPrgsTxt;
     Point               maPrgsTxtPos;
-    tools::Rectangle           maPrgsFrameRect;
+    Rectangle           maPrgsFrameRect;
     long                mnPrgsSize;
     long                mnItemsWidth;
     long                mnDX;
     long                mnDY;
     long                mnCalcHeight;
     long                mnTextY;
+    long                mnItemY;
     sal_uInt16          mnCurItemId;
     sal_uInt16          mnPercent;
     sal_uInt16          mnPercentCount;
@@ -92,7 +95,7 @@ private:
                                           sal_uInt16 nPos);
     SAL_DLLPRIVATE void      ImplDrawProgress(vcl::RenderContext& rRenderContext, sal_uInt16 nNewPerc);
     SAL_DLLPRIVATE void      ImplCalcProgressRect();
-    SAL_DLLPRIVATE tools::Rectangle ImplGetItemRectPos( sal_uInt16 nPos ) const;
+    SAL_DLLPRIVATE Rectangle ImplGetItemRectPos( sal_uInt16 nPos ) const;
     SAL_DLLPRIVATE sal_uInt16    ImplGetFirstVisiblePos() const;
 
 protected:
@@ -101,13 +104,14 @@ protected:
 public:
                         StatusBar( vcl::Window* pParent,
                                    WinBits nWinStyle = WB_BORDER | WB_RIGHT );
-    virtual             ~StatusBar() override;
+    virtual             ~StatusBar();
     virtual void        dispose() override;
 
     void                AdjustItemWidthsForHiDPI();
 
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
+    virtual void        Move() override;
     virtual void        Resize() override;
     virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void        StateChanged( StateChangedType nType ) override;
@@ -137,7 +141,7 @@ public:
     sal_uInt16          GetItemId( sal_uInt16 nPos ) const;
     sal_uInt16          GetItemId( const Point& rPos ) const;
     sal_uInt16          GetItemPos( sal_uInt16 nItemId ) const;
-    tools::Rectangle           GetItemRect( sal_uInt16 nItemId ) const;
+    Rectangle           GetItemRect( sal_uInt16 nItemId ) const;
     Point               GetItemTextPos( sal_uInt16 nItemId ) const;
     sal_uInt16          GetCurItemId() const { return mnCurItemId; }
 

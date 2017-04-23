@@ -87,7 +87,14 @@ SvxFontListBox::SvxFontListBox(vcl::Window* pParent, WinBits nStyle)
     maEntryFont = maStdFont;
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxFontListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(SvxFontListBox)
+{
+    WinBits nWinStyle = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<SvxFontListBox>::Create(pParent, nWinStyle);
+}
 
 void SvxFontListBox::InsertFontEntry( const OUString& rString, const vcl::Font& rFont, const Color* pColor )
 {

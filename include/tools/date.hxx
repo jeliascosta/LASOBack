@@ -27,32 +27,15 @@
 enum DayOfWeek { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY,
                  SATURDAY, SUNDAY };
 
-/** Represents a date in the proleptic Gregorian calendar.
-
-    Largest representable date is 32767-12-31 = 327671231
-
-    Smallest representable date is -32768-01-01 = -327680101
-
-    Due to possible conversions to css::util::Date, which has a short
-    Year member variable, these limits are fix.
-
-    Year value 0 is unused. The year before year 1 CE is year 1 BCE, which is
-    the traditional proleptic Gregorian calendar.
-
-    This is not how ISO 8601:2000 defines things (but ISO 8601:1998 Draft
-    Revision did), but it enables class Date to be used for writing XML files
-    as XML Schema Part 2 in D.3.2 No Year Zero says
-    "The year "0000" is an illegal year value.", see
-    https://www.w3.org/TR/2004/REC-xmlschema-2-20041028/#noYearZero
-    and furthermore the note for 3.2.7 dateTime
-    https://www.w3.org/TR/2004/REC-xmlschema-2-20041028/#dateTime
-
- */
+// TODO FIXME: make it handle signed year?
 class SAL_WARN_UNUSED TOOLS_DLLPUBLIC Date
 {
 private:
-    sal_Int32       mnDate;
-    void            setDateFromDMY( sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear );
+    sal_uInt32      nDate;
+    void            setDateFromDMY( sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear )
+                        { nDate = (   sal_uInt32( nDay   % 100 ) ) +
+                                  ( ( sal_uInt32( nMonth % 100 ) ) * 100 ) +
+                                  ( ( sal_uInt32( nYear  % 10000 ) ) * 10000); }
 
 public:
     enum DateInitSystem
@@ -60,61 +43,37 @@ public:
         SYSTEM
     };
 
+    // TODO temporary until all uses are inspected and resolved
     enum DateInitEmpty
     {
         EMPTY
     };
 
-                    explicit Date( DateInitEmpty ) : mnDate(0) {}
-                    explicit Date( DateInitSystem );
-                    explicit Date( sal_Int32 nDate ) : mnDate(nDate) {}
-                    Date( const Date& rDate ) : mnDate(rDate.mnDate) {}
-                    Date( sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear )
+                    Date( DateInitEmpty)
+                        { nDate = 0; }
+                    Date( DateInitSystem );
+                    Date( sal_uInt32 _nDate ) { Date::nDate = _nDate; }
+                    Date( const Date& rDate )
+                        { nDate = rDate.nDate; }
+                    Date( sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear )
                         { setDateFromDMY(nDay, nMonth, nYear); }
-                    Date( const css::util::Date& rUDate )
+                    Date( const css::util::Date& _rDate )
                     {
-                        setDateFromDMY(rUDate.Day, rUDate.Month, rUDate.Year);
+                        SAL_WARN_IF(_rDate.Year < 0, "tools.datetime", "Negative year in css::util::Date to ::Date conversion");
+                        setDateFromDMY(_rDate.Day, _rDate.Month, _rDate.Year);
                     }
                     Date( const css::util::DateTime& _rDateTime );
 
-    void            SetDate( sal_Int32 nNewDate );
-    sal_Int32       GetDate() const { return mnDate; }
-    /** Type safe access for values that are guaranteed to be unsigned, like Date::SYSTEM. */
-    sal_uInt32      GetDateUnsigned() const { return static_cast<sal_uInt32>(mnDate < 0 ? -mnDate : mnDate); }
+    void            SetDate( sal_uInt32 nNewDate ) { nDate = nNewDate; }
+    sal_uInt32      GetDate() const { return nDate; }
     css::util::Date GetUNODate() const { return css::util::Date(GetDay(), GetMonth(), GetYear()); }
 
     void            SetDay( sal_uInt16 nNewDay );
     void            SetMonth( sal_uInt16 nNewMonth );
-    void            SetYear( sal_Int16 nNewYear );
-    sal_uInt16      GetDay() const
-                    {
-                        return mnDate < 0 ?
-                            static_cast<sal_uInt16>(-mnDate % 100) :
-                            static_cast<sal_uInt16>( mnDate % 100);
-                    }
-    sal_uInt16      GetMonth() const
-                    {
-                        return mnDate < 0 ?
-                            static_cast<sal_uInt16>((-mnDate / 100) % 100) :
-                            static_cast<sal_uInt16>(( mnDate / 100) % 100);
-                    }
-    sal_Int16       GetYear() const { return static_cast<sal_Int16>(mnDate / 10000); }
-    /** Type safe access for values that are guaranteed to be unsigned, like Date::SYSTEM. */
-    sal_uInt16      GetYearUnsigned() const { return static_cast<sal_uInt16>((mnDate < 0 ? -mnDate : mnDate) / 10000); }
-    sal_Int16       GetNextYear() const { sal_Int16 nY = GetYear(); return nY == -1 ? 1 : nY + 1; }
-    sal_Int16       GetPrevYear() const { sal_Int16 nY = GetYear(); return nY == 1 ? -1 : nY - 1; }
-
-    /** Add years skipping year 0 and truncating at limits. If the original
-        date was on Feb-29 and the resulting date is not a leap year, the
-        result is adjusted to Feb-28.
-    */
-    void            AddYears( sal_Int16 nAddYears );
-
-    /** Add months skipping year 0 and truncating at limits. If the original
-        date was on Feb-29 or day 31 and the resulting date is not a leap year
-        or a month with less days, the result is adjusted to Feb-28 or day 30.
-    */
-    void            AddMonths( sal_Int32 nAddMonths );
+    void            SetYear( sal_uInt16 nNewYear );
+    sal_uInt16      GetDay() const { return (sal_uInt16)(nDate % 100); }
+    sal_uInt16      GetMonth() const { return (sal_uInt16)((nDate / 100) % 100); }
+    sal_uInt16      GetYear() const { return (sal_uInt16)(nDate / 10000); }
 
     /** Obtain the day of the week for the date.
 
@@ -187,26 +146,24 @@ public:
     bool            Normalize();
 
     bool            IsBetween( const Date& rFrom, const Date& rTo ) const
-                        { return ((mnDate >= rFrom.mnDate) &&
-                                 (mnDate <= rTo.mnDate)); }
+                        { return ((nDate >= rFrom.nDate) &&
+                                 (nDate <= rTo.nDate)); }
 
     bool            operator ==( const Date& rDate ) const
-                        { return (mnDate == rDate.mnDate); }
+                        { return (nDate == rDate.nDate); }
     bool            operator !=( const Date& rDate ) const
-                        { return (mnDate != rDate.mnDate); }
+                        { return (nDate != rDate.nDate); }
     bool            operator  >( const Date& rDate ) const
-                        { return (mnDate > rDate.mnDate); }
+                        { return (nDate > rDate.nDate); }
     bool            operator  <( const Date& rDate ) const
-                        { return (mnDate < rDate.mnDate); }
+                        { return (nDate < rDate.nDate); }
     bool            operator >=( const Date& rDate ) const
-                        { return (mnDate >= rDate.mnDate); }
+                        { return (nDate >= rDate.nDate); }
     bool            operator <=( const Date& rDate ) const
-                        { return (mnDate <= rDate.mnDate); }
+                        { return (nDate <= rDate.nDate); }
 
     Date&           operator =( const Date& rDate )
-                        { mnDate = rDate.mnDate; return *this; }
-    Date&           operator =( const css::util::Date& rUDate )
-                        { setDateFromDMY( rUDate.Day, rUDate.Month, rUDate.Year); return *this; }
+                        { nDate = rDate.nDate; return *this; }
     Date&           operator +=( long nDays );
     Date&           operator -=( long nDays );
     Date&           operator ++();
@@ -221,14 +178,14 @@ public:
         Internally sanitizes nMonth to values 1 <= nMonth <= 12, does not
         normalize values.
      */
-    static sal_uInt16 GetDaysInMonth( sal_uInt16 nMonth, sal_Int16 nYear );
+    static sal_uInt16 GetDaysInMonth( sal_uInt16 nMonth, sal_uInt16 nYear );
 
     /// Internally normalizes values.
-    static long DateToDays( sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear );
+    static long DateToDays( sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear );
     /// Semantically identical to IsValidDate() member method.
-    static bool IsValidDate( sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear );
+    static bool IsValidDate( sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear );
     /// Semantically identical to Normalize() member method.
-    static bool Normalize( sal_uInt16 & rDay, sal_uInt16 & rMonth, sal_Int16 & rYear );
+    static bool Normalize( sal_uInt16 & rDay, sal_uInt16 & rMonth, sal_uInt16 & rYear );
 
  private:
     /// An accelerated form of DateToDays on this date

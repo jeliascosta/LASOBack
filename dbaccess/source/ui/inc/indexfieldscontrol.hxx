@@ -53,7 +53,7 @@ namespace dbaui
 
     public:
         IndexFieldsControl( vcl::Window* _pParent, WinBits nWinStyle);
-        virtual ~IndexFieldsControl() override;
+        virtual ~IndexFieldsControl();
         virtual void dispose() override;
 
         void Init(const css::uno::Sequence< OUString >& _rAvailableFields, sal_Int32 _nMaxColumnsInIndex,bool _bAddIndexAppendix);
@@ -62,7 +62,7 @@ namespace dbaui
         void commitTo(IndexFields& _rFields);
 
         bool SaveModified() override;
-        using EditBrowseBox::IsModified;
+        bool IsModified() const override;
 
         const IndexFields&  GetSavedValue() const { return m_aSavedValue; }
         void                SaveValue() { m_aSavedValue = m_aFields; }
@@ -72,7 +72,7 @@ namespace dbaui
 
     protected:
         // EditBrowseBox overridables
-        virtual void PaintCell( OutputDevice& _rDev, const tools::Rectangle& _rRect, sal_uInt16 _nColumnId ) const override;
+        virtual void PaintCell( OutputDevice& _rDev, const Rectangle& _rRect, sal_uInt16 _nColumnId ) const override;
         virtual bool SeekRow(long nRow) override;
         virtual sal_uInt32 GetTotalCellWidth(long nRow, sal_uInt16 nColId) override;
         virtual bool IsTabAllowed(bool bForward) const override;
@@ -86,7 +86,7 @@ namespace dbaui
 
         bool isNewField() const { return GetCurRow() >= (sal_Int32)m_aFields.size(); }
 
-        DECL_LINK( OnListEntrySelected, DbaMouseDownListBoxController&, void );
+        DECL_LINK_TYPED( OnListEntrySelected, DbaMouseDownListBoxController&, void );
 
     private:
         using ::svt::EditBrowseBox::Init;

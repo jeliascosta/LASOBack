@@ -50,7 +50,8 @@ ScAddressConversionObj::~ScAddressConversionObj()
 
 void ScAddressConversionObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // invalid
     }
@@ -93,6 +94,7 @@ bool ScAddressConversionObj::ParseUIString( const OUString& rUIString, ::formula
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScAddressConversionObj::getPropertySetInfo()
+                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -129,6 +131,9 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScAddressConversionObj::getProp
 }
 
 void SAL_CALL ScAddressConversionObj::setPropertyValue( const OUString& aPropertyName, const uno::Any& aValue )
+                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+                        lang::IllegalArgumentException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     if ( !pDocShell )
         throw uno::RuntimeException();
@@ -187,13 +192,13 @@ void SAL_CALL ScAddressConversionObj::setPropertyValue( const OUString& aPropert
             OUString aUIString(sRepresentation);
 
             //  cell or range: strip a single "." at the start
-            if ( aUIString[0]== '.' )
+            if ( aUIString[0]== (sal_Unicode) '.' )
                 aUIString = aUIString.copy( 1 );
 
             if ( bIsRange )
             {
                 //  range: also strip a "." after the last colon
-                sal_Int32 nColon = aUIString.lastIndexOf( ':' );
+                sal_Int32 nColon = aUIString.lastIndexOf( (sal_Unicode) ':' );
                 if ( nColon >= 0 && nColon < aUIString.getLength() - 1 &&
                      aUIString[nColon+1] == '.' )
                     aUIString = aUIString.replaceAt( nColon+1, 1, "" );
@@ -211,6 +216,8 @@ void SAL_CALL ScAddressConversionObj::setPropertyValue( const OUString& aPropert
 }
 
 uno::Any SAL_CALL ScAddressConversionObj::getPropertyValue( const OUString& aPropertyName )
+                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     if ( !pDocShell )
         throw uno::RuntimeException();
@@ -279,22 +286,25 @@ SC_IMPL_DUMMY_PROPERTY_LISTENER( ScAddressConversionObj )
 
 // lang::XServiceInfo
 
-OUString SAL_CALL ScAddressConversionObj::getImplementationName()
+OUString SAL_CALL ScAddressConversionObj::getImplementationName() throw(uno::RuntimeException, std::exception)
 {
     return OUString("ScAddressConversionObj" );
 }
 
 sal_Bool SAL_CALL ScAddressConversionObj::supportsService( const OUString& rServiceName )
+                                                    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL ScAddressConversionObj::getSupportedServiceNames()
+                                                    throw(uno::RuntimeException, std::exception)
 {
-    if (bIsRange)
-        return {SC_SERVICENAME_RANGEADDRESS};
-    else
-        return {SC_SERVICENAME_CELLADDRESS};
+    uno::Sequence<OUString> aRet(1);
+    OUString* pArray = aRet.getArray();
+    pArray[0] = bIsRange ? OUString(SC_SERVICENAME_RANGEADDRESS)
+                         : OUString(SC_SERVICENAME_CELLADDRESS);
+    return aRet;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

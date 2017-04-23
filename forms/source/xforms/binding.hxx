@@ -157,7 +157,7 @@ private:
 
 public:
     Binding();
-    virtual ~Binding() override;
+    virtual ~Binding();
 
 
     // property methods: get/set value
@@ -224,7 +224,7 @@ public:
     /// get this binding's context node
     xforms::EvaluationContext getEvaluationContext() const;
 
-    /// get evaluation contexts for this binding's MIPs
+    /// get evalation contexts for this binding's MIPs
     std::vector<xforms::EvaluationContext> getMIPEvaluationContexts();
 
     /// get nodeset the bind is bound to
@@ -264,9 +264,11 @@ public:
 private:
     /// check whether object is live, and throw suitable exception if not
     /// (to be used be API methods before acting on the object)
-    ///
-    /// @throws css::uno::RuntimeException
-    void checkLive();
+    void checkLive() throw( css::uno::RuntimeException );
+
+    /// check whether binding has a model, and throw exception if not
+    /// (to be used be API methods before acting on the object)
+    void checkModel() throw( css::uno::RuntimeException );
 
     /// determine whether object is live
     /// live: has model, and model has been initialized
@@ -321,43 +323,65 @@ private:
 
 public:
 
-    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getSupportedValueTypes() override;
+    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getSupportedValueTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL supportsType( const css::uno::Type& aType ) override;
+    virtual sal_Bool SAL_CALL supportsType( const css::uno::Type& aType )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Any SAL_CALL getValue( const css::uno::Type& aType ) override;
+    virtual css::uno::Any SAL_CALL getValue( const css::uno::Type& aType )
+        throw( css::form::binding::IncompatibleTypesException,
+               css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setValue( const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setValue( const css::uno::Any& aValue )
+        throw( css::form::binding::IncompatibleTypesException,
+               css::form::binding::InvalidBindingStateException,
+               css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception ) override;
 
 
-    // XListEntrySource
+    // XListEntry Source
 
 
-    virtual sal_Int32 SAL_CALL getListEntryCount() override;
+    virtual sal_Int32 SAL_CALL getListEntryCount()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual OUString SAL_CALL getListEntry( sal_Int32 nPosition ) override;
+    virtual OUString SAL_CALL getListEntry( sal_Int32 nPosition )
+        throw( css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getAllListEntries() override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getAllListEntries()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL addListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>& ) override;
+    virtual void SAL_CALL addListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>& )
+        throw( css::lang::NullPointerException,
+               css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL removeListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>&) override;
+    virtual void SAL_CALL removeListEntryListener( const css::uno::Reference<css::form::binding::XListEntryListener>&)
+        throw( css::lang::NullPointerException,
+               css::uno::RuntimeException, std::exception ) override;
 
 
     // XValidator:
 
 
     virtual sal_Bool SAL_CALL isValid(
-        const css::uno::Any& ) override;
+        const css::uno::Any& )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL explainInvalid(
-        const css::uno::Any& ) override;
+        const css::uno::Any& )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addValidityConstraintListener(
-        const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener ) override;
+        const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener )
+        throw( css::lang::NullPointerException,
+               css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeValidityConstraintListener(
-        const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener ) override;
+        const css::uno::Reference<css::form::validation::XValidityConstraintListener>& xListener )
+        throw( css::lang::NullPointerException,
+               css::uno::RuntimeException, std::exception ) override;
 
 
     // XModifyBroadcaster & friends:
@@ -367,10 +391,12 @@ public:
 public:
 
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference<css::util::XModifyListener>& xListener ) override;
+        const css::uno::Reference<css::util::XModifyListener>& xListener )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference<css::util::XModifyListener>& xListener ) override;
+        const css::uno::Reference<css::util::XModifyListener>& xListener )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XNamed:
@@ -379,9 +405,11 @@ public:
 
 public:
 
-    virtual OUString SAL_CALL getName() override;
+    virtual OUString SAL_CALL getName()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setName( const OUString& ) override;
+    virtual void SAL_CALL setName( const OUString& )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // xml::dom::event::XEventListener
@@ -389,19 +417,22 @@ public:
 
 
     virtual void SAL_CALL handleEvent(
-        const css::uno::Reference<css::xml::dom::events::XEvent>& xEvent ) override;
+        const css::uno::Reference<css::xml::dom::events::XEvent>& xEvent )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XUnoTunnel
 
 
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence<sal_Int8>& ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence<sal_Int8>& )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XCloneable
 
 
-    virtual css::uno::Reference<css::util::XCloneable> SAL_CALL createClone() override;
+    virtual css::uno::Reference<css::util::XCloneable> SAL_CALL createClone()
+        throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 

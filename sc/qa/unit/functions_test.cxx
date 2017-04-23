@@ -7,12 +7,44 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <sal/config.h>
 
-#include "functions_test.hxx"
+#include <unotest/filters-test.hxx>
+#include "scdll.hxx"
+#include "helper/qahelper.hxx"
+
 #include "document.hxx"
 
-FunctionsTest::FunctionsTest(const OUString& rPath):
-    ScBootstrapFixture(rPath)
+class FunctionsTest : public ScBootstrapFixture, public test::FiltersTest
+{
+public:
+
+    FunctionsTest();
+
+    virtual void setUp() override;
+
+    virtual void tearDown() override;
+
+    virtual bool load(
+        const OUString &rFilter,
+        const OUString &rURL,
+        const OUString &rUserData,
+        SfxFilterFlags nFilterFlags,
+        SotClipboardFormatId nClipboardID,
+        unsigned int nFilterVersion) override;
+
+    void testFormulasFODS();
+
+    CPPUNIT_TEST_SUITE(FunctionsTest);
+    CPPUNIT_TEST(testFormulasFODS);
+    CPPUNIT_TEST_SUITE_END();
+
+private:
+    uno::Reference<uno::XInterface> m_xCalcComponent;
+};
+
+FunctionsTest::FunctionsTest():
+    ScBootstrapFixture("sc/qa/unit/data/functions/fods")
 {
 }
 
@@ -27,6 +59,11 @@ void FunctionsTest::setUp()
     CPPUNIT_ASSERT_MESSAGE("no calc component!", m_xCalcComponent.is());
 }
 
+void FunctionsTest::tearDown()
+{
+    ScBootstrapFixture::tearDown();
+}
+
 bool FunctionsTest::load(const OUString& rFilter, const OUString& rURL,
         const OUString& rUserData, SfxFilterFlags nFilterFlags,
         SotClipboardFormatId nClipboardID,
@@ -34,7 +71,7 @@ bool FunctionsTest::load(const OUString& rFilter, const OUString& rURL,
 {
     ScDocShellRef xDocShRef = ScBootstrapFixture::load(rURL, rFilter, rUserData,
         OUString(), nFilterFlags, nClipboardID, nFilterVersion );
-    CPPUNIT_ASSERT(xDocShRef.is());
+    CPPUNIT_ASSERT(xDocShRef.Is());
 
     xDocShRef->DoHardRecalc(true);
 
@@ -46,5 +83,18 @@ bool FunctionsTest::load(const OUString& rFilter, const OUString& rURL,
 
     return true;
 }
+
+void FunctionsTest::testFormulasFODS()
+{
+    OUString aDirectoryURL = m_directories.getURLFromSrc("/sc/qa/unit/data/functions/fods/");
+    recursiveScan(test::pass, "OpenDocument Spreadsheet Flat XML", aDirectoryURL,
+            "com.sun.star.comp.filter.OdfFlatXml,,com.sun.star.comp.Calc.XMLOasisImporter,com.sun.star.comp.Calc.XMLOasisExporter,,,true",
+            FODS_FORMAT_TYPE, SotClipboardFormatId::NONE, 0, false);
+}
+
+CPPUNIT_TEST_SUITE_REGISTRATION(FunctionsTest);
+
+
+CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

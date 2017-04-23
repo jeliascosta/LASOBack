@@ -24,7 +24,6 @@
 #include <sal/types.h>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
-#include <rtl/ref.hxx>
 #include <rtl/ustring.hxx>
 #include <tools/errcode.hxx>
 #include <vcl/dialog.hxx>
@@ -65,12 +64,10 @@ enum class FileDialogFlags {
     Export            = 0x02,    // turn Save into Export dialog
     SaveACopy         = 0x04,    // turn Save into Save a Copy dialog
     MultiSelection    = 0x08,
-    Graphic           = 0x10,    // register graphic formats
-    /// Sign existing PDF.
-    SignPDF           = 0x20
+    Graphic           = 0x10     // register graphic formats
 };
 namespace o3tl {
-    template<> struct typed_flags<FileDialogFlags> : is_typed_flags<FileDialogFlags, 0x3f> {};
+    template<> struct typed_flags<FileDialogFlags> : is_typed_flags<FileDialogFlags, 0x1f> {};
 }
 
 #define FILEDIALOG_FILTER_ALL   "*.*"
@@ -86,6 +83,14 @@ public:
     {
         UNKNOWN_CONTEXT,                // unknown context
         SW_INSERT_GRAPHIC,              // insert graphic in writer
+        SW_INSERT_SOUND,                // insert sound in writer
+        SW_INSERT_VIDEO,                // insert video in writer
+        SC_INSERT_GRAPHIC,              // insert graphic in calc
+        SC_INSERT_SOUND,                // insert sound in calc
+        SC_INSERT_VIDEO,                // insert video in calc
+        SD_INSERT_GRAPHIC,              // insert graphic in draw
+        SD_INSERT_SOUND,                // insert sound in draw
+        SD_INSERT_VIDEO,                // insert video in draw
         SD_EXPORT,                      // export in draw
         SI_EXPORT,                      // export in impress
         SW_EXPORT                       // export in writer
@@ -95,7 +100,7 @@ private:
     Link<FileDialogHelper*,void>  m_aDialogClosedLink;
     ErrCode m_nError;
 
-    rtl::Reference< FileDialogHelper_Impl > mpImpl;
+    css::uno::Reference< FileDialogHelper_Impl > mpImpl;
 
 
 public:
@@ -127,14 +132,12 @@ public:
                                               const css::uno::Sequence< OUString >& rBlackList,
                                               vcl::Window* _pPreferredParent = nullptr );
 
-    virtual                 ~FileDialogHelper();
 
-    FileDialogHelper& operator=(const FileDialogHelper &) = delete;
-    FileDialogHelper(const FileDialogHelper &) = delete;
+    virtual                 ~FileDialogHelper();
 
     ErrCode                 Execute();
     void                    StartExecuteModal( const Link<FileDialogHelper*,void>& rEndDialogHdl );
-    ErrCode          GetError() const { return m_nError; }
+    inline ErrCode          GetError() const { return m_nError; }
     sal_Int16               GetDialogType() const;
     bool                    IsPasswordEnabled() const;
     OUString                GetRealFilter() const;
@@ -225,7 +228,7 @@ public:
     */
     void                    SetContext( Context _eNewContext );
 
-   DECL_LINK( ExecuteSystemFilePicker, void*, void );
+   DECL_LINK_TYPED( ExecuteSystemFilePicker, void*, void );
 
    ErrCode                  Execute( std::vector<OUString>& rpURLList,
                                      SfxItemSet *&   rpSet,
@@ -246,8 +249,8 @@ ErrCode FileOpenDialog_Impl( sal_Int16 nDialogType,
                              std::vector<OUString>& rpURLList,
                              OUString& rFilter,
                              SfxItemSet *& rpSet,
-                             const OUString* pPath,
-                             sal_Int16 nDialog,
+                             const OUString* pPath = nullptr,
+                             sal_Int16 nDialog = SFX2_IMPL_DIALOG_CONFIG,
                              const OUString& rStandardDir = OUString(),
                              const css::uno::Sequence< OUString >& rBlackList = css::uno::Sequence< OUString >());
 

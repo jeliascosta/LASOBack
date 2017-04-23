@@ -38,7 +38,7 @@ class FileViewContainer : public vcl::Window
     {
     }
 
-    virtual ~FileViewContainer() override
+    virtual ~FileViewContainer()
     {
         disposeOnce();
     }
@@ -85,7 +85,7 @@ class FileViewContainer : public vcl::Window
         m_pSplitter->SetSizePixel( splitterNewSize );
         sal_Int32 nMinX = m_pTreeView->GetPosPixel().X();
         sal_Int32 nMaxX = m_pFileView->GetPosPixel().X() + m_pFileView->GetSizePixel().Width() - nMinX;
-        m_pSplitter->SetDragRectPixel( tools::Rectangle( Point( nMinX, 0 ), Size( nMaxX, aSize.Width() ) ) );
+        m_pSplitter->SetDragRectPixel( Rectangle( Point( nMinX, 0 ), Size( nMaxX, aSize.Width() ) ) );
 
         // Resize the tree list box to fit the height of the FileView
         Size placesNewSize( m_pTreeView->GetSizePixel() );
@@ -135,7 +135,7 @@ class FileViewContainer : public vcl::Window
         }
     }
 
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override
+    virtual bool Notify( NotifyEvent& rNEvt ) override
     {
         if( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         {
@@ -164,7 +164,7 @@ class FileViewContainer : public vcl::Window
                 return true;
             }
         }
-        return Window::EventNotify(rNEvt);
+        return Window::Notify( rNEvt );
     }
 };
 
@@ -214,7 +214,8 @@ RemoteFilesDialog::RemoteFilesDialog( vcl::Window* pParent, PickerFlags nBits )
     {
         get( m_pOk_btn, "save" );
 
-        m_pNewFolder->SetModeImage(Image(BitmapEx(fpicker::SvtResId(BMP_FILEDLG_CREATEFOLDER))));
+        m_aImages = ImageList( fpicker::SvtResId( RID_FILEPICKER_IMAGES ) );
+        m_pNewFolder->SetModeImage( m_aImages.GetImage( IMG_FILEDLG_CREATEFOLDER ) );
         m_pNewFolder->SetClickHdl( LINK( this, RemoteFilesDialog, NewFolderHdl ) );
     }
 
@@ -278,9 +279,7 @@ RemoteFilesDialog::RemoteFilesDialog( vcl::Window* pParent, PickerFlags nBits )
     m_pName_ed->SetGetFocusHdl( LINK( this, RemoteFilesDialog, FileNameGetFocusHdl ) );
     m_pName_ed->SetModifyHdl( LINK( this, RemoteFilesDialog, FileNameModifyHdl ) );
 
-    m_pAddService_btn->SetDelayMenu(true);
-    m_pAddService_btn->SetDropDown(PushButtonDropdownStyle::SplitMenuButton);
-
+    m_pAddService_btn->SetMenuMode( MENUBUTTON_MENUMODE_TIMED );
     m_pAddMenu = m_pAddService_btn->GetPopupMenu();
     m_pAddService_btn->SetClickHdl( LINK( this, RemoteFilesDialog, AddServiceHdl ) );
     m_pAddService_btn->SetSelectHdl( LINK( this, RemoteFilesDialog, EditServiceMenuHdl ) );
@@ -304,7 +303,7 @@ void RemoteFilesDialog::dispose()
     // save window state
     if( !m_sIniKey.isEmpty() )
     {
-        SvtViewOptions aDlgOpt( EViewType::Dialog, m_sIniKey );
+        SvtViewOptions aDlgOpt( E_DIALOG, m_sIniKey );
         aDlgOpt.SetWindowState( OStringToOUString( GetWindowState(), osl_getThreadTextEncoding() ) );
 
         Size aSize( GetSizePixel() );
@@ -356,7 +355,6 @@ void RemoteFilesDialog::dispose()
     m_pNewFolder.clear();
     m_pIconView_btn.clear();
     m_pListView_btn.clear();
-    m_pAddMenu.clear();
 
     ModalDialog::dispose();
 }
@@ -411,7 +409,7 @@ OUString lcl_GetServiceType( const ServicePtr& pService )
             return OUString( "FTP" );
         case INetProtocol::Cmis:
         {
-            OUString sHost = pService->GetUrlObject().GetHost( INetURLObject::DecodeMechanism::WithCharset );
+            OUString sHost = pService->GetUrlObject().GetHost( INetURLObject::DECODE_WITH_CHARSET );
 
             if( sHost.startsWith( GDRIVE_BASE_URL ) )
                 return OUString( "Google Drive" );
@@ -443,7 +441,7 @@ void RemoteFilesDialog::InitSize()
         return;
 
     // initialize from config
-    SvtViewOptions aDlgOpt( EViewType::Dialog, m_sIniKey );
+    SvtViewOptions aDlgOpt( E_DIALOG, m_sIniKey );
 
     if( aDlgOpt.Exists() )
     {
@@ -734,17 +732,17 @@ void RemoteFilesDialog::SavePassword( const OUString& rURL, const OUString& rUse
     {}
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, IconViewHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, IconViewHdl, Button*, void )
 {
     m_pFileView->SetViewMode( eIcon );
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, ListViewHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, ListViewHdl, Button*, void )
 {
     m_pFileView->SetViewMode( eDetailedList );
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, AddServiceHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, AddServiceHdl, Button*, void )
 {
     ScopedVclPtrInstance< PlaceEditDialog > aDlg( this );
     aDlg->ShowPasswordControl();
@@ -787,7 +785,7 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, AddServiceHdl, Button*, void )
     };
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
 {
     int nPos = GetSelectedServicePos();
 
@@ -801,7 +799,7 @@ IMPL_LINK_NOARG( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
     }
 }
 
-IMPL_LINK ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
+IMPL_LINK_TYPED ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
 {
     OString sIdent( pButton->GetCurItemIdent() );
     if( sIdent == "edit_service"  && m_pServices_lb->GetEntryCount() > 0 )
@@ -853,7 +851,7 @@ IMPL_LINK ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
         {
             OUString sMsg = fpicker::SvtResId( STR_SVT_DELETESERVICE );
             sMsg = sMsg.replaceFirst( "$servicename$", m_pServices_lb->GetSelectEntry() );
-            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VclMessageType::Question, VclButtonsType::YesNo );
+            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO );
 
             if( aBox->Execute() == RET_YES )
             {
@@ -917,7 +915,7 @@ IMPL_LINK ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
                         OUString sUserName = aURLEntries.UserList[0].UserName;
 
                         ::comphelper::SimplePasswordRequest* pPasswordRequest
-                            = new ::comphelper::SimplePasswordRequest;
+                            = new ::comphelper::SimplePasswordRequest( PasswordRequestMode_PASSWORD_CREATE );
                         Reference< XInteractionRequest > rRequest( pPasswordRequest );
 
                         xInteractionHandler->handle( rRequest );
@@ -941,7 +939,7 @@ IMPL_LINK ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
     EnableControls();
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
 {
     if( m_pFileView->GetSelectionCount() )
     {
@@ -968,7 +966,7 @@ IMPL_LINK_NOARG( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
     return true;
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
 {
     SvTreeListEntry* pEntry = m_pFileView->FirstSelected();
 
@@ -987,9 +985,9 @@ IMPL_LINK_NOARG( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
                 INetURLObject aCurrentURL( m_sLastServiceUrl );
                 aURL.SetUser( aCurrentURL.GetUser() );
 
-                m_sPath = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+                m_sPath = aURL.GetMainURL( INetURLObject::NO_DECODE );
 
-                m_pName_ed->SetText( INetURLObject::decode( aURL.GetLastName(), INetURLObject::DecodeMechanism::WithCharset ) );
+                m_pName_ed->SetText( INetURLObject::decode( aURL.GetLastName(), INetURLObject::DECODE_WITH_CHARSET ) );
             }
             else
             {
@@ -1005,19 +1003,19 @@ IMPL_LINK_NOARG( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
     }
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, FileNameGetFocusHdl, Control&, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, FileNameGetFocusHdl, Control&, void )
 {
     m_pFileView->SetNoSelection();
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, FileNameModifyHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, FileNameModifyHdl, Edit&, void )
 {
     m_pFileView->SetNoSelection();
     if( !m_pOk_btn->IsEnabled() )
         EnableControls();
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, SplitHdl, Splitter*, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SplitHdl, Splitter*, void )
 {
     sal_Int32 nSplitPos = m_pSplitter->GetSplitPosPixel();
 
@@ -1039,7 +1037,7 @@ IMPL_LINK_NOARG( RemoteFilesDialog, SplitHdl, Splitter*, void )
     m_pSplitter->SetPosPixel( Point( placeSize.Width(), m_pSplitter->GetPosPixel().Y() ) );
 }
 
-IMPL_LINK_NOARG( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
 {
     unsigned int nPos = m_pFilter_lb->GetSelectEntryPos();
 
@@ -1054,7 +1052,7 @@ IMPL_LINK_NOARG( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
     }
 }
 
-IMPL_LINK( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK_TYPED( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
 {
     OUString* sURL = static_cast< OUString* >( pBox->GetHdlEntry()->GetUserData() );
 
@@ -1065,23 +1063,16 @@ IMPL_LINK( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
     }
 }
 
-IMPL_LINK ( RemoteFilesDialog, SelectBreadcrumbHdl, Breadcrumb*, pPtr, void )
+IMPL_LINK_TYPED ( RemoteFilesDialog, SelectBreadcrumbHdl, Breadcrumb*, pPtr, void )
 {
     OpenURL( pPtr->GetHdlURL() );
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, NewFolderHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, NewFolderHdl, Button*, void )
 {
     m_pFileView->EndInplaceEditing();
 
-    // will be bound after InteractionHandler is enabled
-    SmartContent aContent;
-    aContent.enableDefaultInteractionHandler();
-    // now it can be bound
-    aContent.bindTo( m_pFileView->GetViewURL() );
-    if( !aContent.canCreateFolder() )
-        return;
-
+    SmartContent aContent( m_pFileView->GetViewURL() );
     OUString aTitle;
     aContent.getTitle( aTitle );
     ScopedVclPtrInstance< QueryFolderNameDialog > aDlg( this, aTitle, fpicker::SVT_RESSTR( STR_SVT_NEW_FOLDER ) );
@@ -1103,7 +1094,7 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, NewFolderHdl, Button*, void )
     }
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, OkHdl, Button*, void )
 {
     OUString sNameNoExt = m_pName_ed->GetText();
     OUString sPathNoExt;
@@ -1126,8 +1117,8 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
 
     if( !bSelected )
     {
-        m_sPath = sCurrentPath + INetURLObject::encode( sName, INetURLObject::PART_FPATH, INetURLObject::EncodeMechanism::All );
-        sPathNoExt = sCurrentPath + INetURLObject::encode( sNameNoExt, INetURLObject::PART_FPATH, INetURLObject::EncodeMechanism::All );
+        m_sPath = sCurrentPath + INetURLObject::encode( sName, INetURLObject::PART_FPATH, INetURLObject::ENCODE_ALL );
+        sPathNoExt = sCurrentPath + INetURLObject::encode( sNameNoExt, INetURLObject::PART_FPATH, INetURLObject::ENCODE_ALL );
     }
     else
     {
@@ -1142,7 +1133,7 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
         INetURLObject aCurrentURL( m_sLastServiceUrl );
         aURL.SetUser( aCurrentURL.GetUser() );
 
-        m_sPath = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        m_sPath = aURL.GetMainURL( INetURLObject::NO_DECODE );
     }
 
     bool bExists = false;
@@ -1158,7 +1149,7 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
         {
             OUString sMsg = fpicker::SvtResId( STR_SVT_ALREADYEXISTOVERWRITE );
             sMsg = sMsg.replaceFirst( "$filename$", sName );
-            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VclMessageType::Question, VclButtonsType::YesNo );
+            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO );
             if( aBox->Execute() != RET_YES )
                 return;
         }
@@ -1183,7 +1174,7 @@ IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_NOARG ( RemoteFilesDialog, CancelHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, CancelHdl, Button*, void )
 {
     if( m_pCurrentAsyncAction.is() )
     {
@@ -1235,7 +1226,7 @@ void RemoteFilesDialog::SetPath( const OUString& rNewURL )
     if( m_eMode == REMOTEDLG_MODE_SAVE )
     {
         INetURLObject aUrl( m_sPath );
-        OUString sFileName = aUrl.GetLastName( INetURLObject::DecodeMechanism::WithCharset );
+        OUString sFileName = aUrl.GetLastName( INetURLObject::DECODE_WITH_CHARSET );
 
         m_pName_ed->SetText( sFileName );
     }
@@ -1369,7 +1360,7 @@ void RemoteFilesDialog::UpdateControls( const OUString& rURL )
         {
             OUString sTitle( INetURLObject::decode(
                                 aFolderName.copy( nTitleStart + 1 ),
-                                INetURLObject::DecodeMechanism::WithCharset ) );
+                                INetURLObject::DECODE_WITH_CHARSET ) );
 
             if( rFolder.mbIsFolder )
             {
@@ -1413,7 +1404,7 @@ std::vector<OUString> RemoteFilesDialog::GetPathList() const
         INetURLObject aCurrentURL( m_sLastServiceUrl );
         aURL.SetUser( aCurrentURL.GetUser() );
 
-        aList.push_back( aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+        aList.push_back( aURL.GetMainURL( INetURLObject::NO_DECODE ) );
         pEntry = m_pFileView->NextSelected( pEntry );
     }
 

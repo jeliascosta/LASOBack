@@ -17,8 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <framework/dispatchhelper.hxx>
-#include <macros/xserviceinfo.hxx>
+#include <services/dispatchhelper.hxx>
 #include <services.h>
 
 #include <com/sun/star/util/URLTransformer.hpp>
@@ -78,11 +77,13 @@ css::uno::Any SAL_CALL DispatchHelper::executeDispatch(
                                 const OUString&                                      sTargetFrameName  ,
                                       sal_Int32                                             nSearchFlags      ,
                                 const css::uno::Sequence< css::beans::PropertyValue >&      lArguments        )
+    throw(css::uno::RuntimeException, std::exception)
 {
+    css::uno::Reference< css::uno::XInterface > xTHIS(static_cast< ::cppu::OWeakObject* >(this), css::uno::UNO_QUERY);
+
     // check for valid parameters
     if (
         (!xDispatchProvider.is()) ||
-        (!m_xContext.is())        ||
         (sURL.isEmpty()         )
        )
     {
@@ -102,57 +103,41 @@ css::uno::Any SAL_CALL DispatchHelper::executeDispatch(
 
     // search dispatcher
     css::uno::Reference< css::frame::XDispatch >          xDispatch       = xDispatchProvider->queryDispatch(aURL, sTargetFrameName, nSearchFlags);
+    css::uno::Reference< css::frame::XNotifyingDispatch > xNotifyDispatch (xDispatch, css::uno::UNO_QUERY);
 
-    return executeDispatch(xDispatch, aURL, true, lArguments);
-}
+    // make sure that synchronous execution is used (if possible)
+    css::uno::Sequence< css::beans::PropertyValue > aArguments( lArguments );
+    sal_Int32 nLength = lArguments.getLength();
+    aArguments.realloc( nLength + 1 );
+    aArguments[ nLength ].Name = "SynchronMode";
+    aArguments[ nLength ].Value <<= true;
 
-
-css::uno::Any SAL_CALL DispatchHelper::executeDispatch(
-                                 const css::uno::Reference< css::frame::XDispatch >&  xDispatch     ,
-                                 const  css::util::URL&                                 aURL        ,
-                                 bool                                                   SyncronFlag ,
-                                 const css::uno::Sequence< css::beans::PropertyValue >& lArguments  )
-{
-    css::uno::Reference< css::uno::XInterface > xTHIS(static_cast< ::cppu::OWeakObject* >(this), css::uno::UNO_QUERY);
-    m_aResult.clear();
-
-    // check for valid parameters
-    if (xDispatch.is() )
+    css::uno::Any aResult;
+    if (xNotifyDispatch.is())
     {
-        css::uno::Reference< css::frame::XNotifyingDispatch > xNotifyDispatch (xDispatch, css::uno::UNO_QUERY);
+        // dispatch it with guaranteed notification
+        // Here we can hope for a result ... instead of the normal dispatch.
+        css::uno::Reference< css::frame::XDispatchResultListener > xListener(xTHIS, css::uno::UNO_QUERY);
+        /* SAFE { */
+        osl::ClearableMutexGuard aWriteLock(m_mutex);
+        m_xBroadcaster.set(xNotifyDispatch, css::uno::UNO_QUERY);
+        m_aResult      = css::uno::Any();
+        m_aBlock.reset();
+        aWriteLock.clear();
+        /* } SAFE */
 
-        // make sure that synchronous execution is used (if possible)
-        css::uno::Sequence< css::beans::PropertyValue > aArguments( lArguments );
-        sal_Int32 nLength = lArguments.getLength();
-        aArguments.realloc( nLength + 1 );
-        aArguments[ nLength ].Name = "SynchronMode";
-        aArguments[ nLength ].Value <<= SyncronFlag;
-
-        if (xNotifyDispatch.is())
-        {
-            // dispatch it with guaranteed notification
-            // Here we can hope for a result ... instead of the normal dispatch.
-            css::uno::Reference< css::frame::XDispatchResultListener > xListener(xTHIS, css::uno::UNO_QUERY);
-            /* SAFE { */
-            osl::ClearableMutexGuard aWriteLock(m_mutex);
-            m_xBroadcaster.set(xNotifyDispatch, css::uno::UNO_QUERY);
-            m_aBlock.reset();
-            aWriteLock.clear();
-            /* } SAFE */
-
-            // dispatch it and wait for a notification
-            // TODO/MBA: waiting in main thread?!
-            xNotifyDispatch->dispatchWithNotification(aURL, aArguments, xListener);
-            m_aBlock.wait();        // wait for result
-        }
-        else
-        {
-            // dispatch it without any chance to get a result
-            xDispatch->dispatch( aURL, aArguments );
-        }
+        // dispatch it and wait for a notification
+        // TODO/MBA: waiting in main thread?!
+        xNotifyDispatch->dispatchWithNotification(aURL, aArguments, xListener);
+        aResult = m_aResult;
+    }
+    else if (xDispatch.is())
+    {
+        // dispatch it without any chance to get a result
+        xDispatch->dispatch( aURL, aArguments );
     }
 
-    return m_aResult;
+    return aResult;
 }
 
 /** callback for started dispatch with guaranteed notifications.
@@ -165,6 +150,7 @@ css::uno::Any SAL_CALL DispatchHelper::executeDispatch(
                 describes the result of the dispatch operation
  */
 void SAL_CALL DispatchHelper::dispatchFinished( const css::frame::DispatchResultEvent& aResult )
+    throw(css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_mutex);
     m_aResult <<= aResult;
@@ -178,6 +164,7 @@ void SAL_CALL DispatchHelper::dispatchFinished( const css::frame::DispatchResult
                 describe the source of this event and MUST be our save broadcaster!
  */
 void SAL_CALL DispatchHelper::disposing( const css::lang::EventObject& )
+    throw(css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_mutex);
     m_aResult.clear();

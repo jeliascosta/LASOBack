@@ -26,7 +26,7 @@
 
 class SwRedlineSaveDatas;
 class SwTextNode;
-enum class TransliterationFlags;
+
 namespace utl {
     class TransliterationWrapper;
 }
@@ -34,7 +34,7 @@ namespace utl {
 class SwUndoOverwrite: public SwUndo, private SwUndoSaveContent
 {
     OUString aDelStr, aInsStr;
-    std::unique_ptr<SwRedlineSaveDatas> pRedlSaveData;
+    SwRedlineSaveDatas* pRedlSaveData;
     sal_uLong nSttNode;
     sal_Int32 nSttContent;
     bool bInsChar : 1;  // no Overwrite, but Insert
@@ -43,7 +43,7 @@ class SwUndoOverwrite: public SwUndo, private SwUndoSaveContent
 public:
     SwUndoOverwrite( SwDoc*, SwPosition&, sal_Unicode cIns );
 
-    virtual ~SwUndoOverwrite() override;
+    virtual ~SwUndoOverwrite();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -69,7 +69,7 @@ struct UndoTransliterate_Data;
 class SwUndoTransliterate : public SwUndo, public SwUndRng
 {
     std::vector< UndoTransliterate_Data * >    aChanges;
-    TransliterationFlags nType;
+    sal_uInt32 nType;
 
     void DoTransliterate(SwDoc & rDoc, SwPaM & rPam);
 
@@ -77,7 +77,7 @@ public:
     SwUndoTransliterate( const SwPaM& rPam,
                             const utl::TransliterationWrapper& rTrans );
 
-    virtual ~SwUndoTransliterate() override;
+    virtual ~SwUndoTransliterate();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

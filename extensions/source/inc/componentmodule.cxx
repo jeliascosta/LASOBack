@@ -42,9 +42,9 @@ namespace COMPMOD_NAMESPACE
     // implementation for <type>OModule</type>. not threadsafe, has to be guarded by its owner
     class OModuleImpl
     {
-        std::unique_ptr<ResMgr>  m_pResources;
-        bool                     m_bInitialized;
-        OString                  m_sFilePrefix;
+        ResMgr*     m_pResources;
+        bool    m_bInitialized;
+        OString m_sFilePrefix;
 
     public:
         /// ctor
@@ -66,6 +66,7 @@ namespace COMPMOD_NAMESPACE
 
     OModuleImpl::~OModuleImpl()
     {
+        delete m_pResources;
     }
 
 
@@ -76,7 +77,7 @@ namespace COMPMOD_NAMESPACE
         {
             DBG_ASSERT(!m_sFilePrefix.isEmpty(), "OModuleImpl::getResManager: no resource file prefix!");
             // create a manager with a fixed prefix
-            m_pResources.reset( ResMgr::CreateResMgr(m_sFilePrefix.getStr()) );
+            m_pResources = ResMgr::CreateResMgr(m_sFilePrefix.getStr());
             DBG_ASSERT(m_pResources,
                     OStringBuffer("OModuleImpl::getResManager: could not create the resource manager (file name: ")
                 .append(m_sFilePrefix)
@@ -84,7 +85,7 @@ namespace COMPMOD_NAMESPACE
 
             m_bInitialized = true;
         }
-        return m_pResources.get();
+        return m_pResources;
     }
 
 

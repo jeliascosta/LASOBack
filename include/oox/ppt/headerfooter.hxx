@@ -20,6 +20,8 @@
 #ifndef INCLUDED_OOX_PPT_HEADERFOOTER_HXX
 #define INCLUDED_OOX_PPT_HEADERFOOTER_HXX
 
+#include <sal/types.h>
+
 namespace oox { namespace ppt {
 
     struct HeaderFooter

@@ -86,7 +86,7 @@ SwMailMergeDocSelectPage::SwMailMergeDocSelectPage(SwMailMergeWizard* pParent)
 
     //Temp hack until all pages are converted to .ui and wizard
     //base class adapted
-    SetSizePixel(LogicToPixel(Size(260 , 250), MapMode(MapUnit::MapAppFont)));
+    SetSizePixel(LogicToPixel(Size(260 , 250), MapMode(MAP_APPFONT)));
 }
 
 SwMailMergeDocSelectPage::~SwMailMergeDocSelectPage()
@@ -108,7 +108,7 @@ void SwMailMergeDocSelectPage::dispose()
     svt::OWizardPage::dispose();
 }
 
-IMPL_LINK(SwMailMergeDocSelectPage, DocSelectHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwMailMergeDocSelectPage, DocSelectHdl, Button*, pButton, void)
 {
     m_pRecentDocLB->Enable(m_pRecentDocRB == pButton);
 
@@ -116,14 +116,14 @@ IMPL_LINK(SwMailMergeDocSelectPage, DocSelectHdl, Button*, pButton, void)
     m_pWizard->enableButtons(WizardButtonFlags::NEXT, m_pWizard->isStateEnabled(MM_OUTPUTTYPETPAGE));
 }
 
-IMPL_LINK(SwMailMergeDocSelectPage, FileSelectHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SwMailMergeDocSelectPage, FileSelectHdl, Button*, pButton, void)
 {
     bool bTemplate = m_pBrowseTemplatePB == pButton;
 
     if(bTemplate)
     {
         m_pLoadTemplateRB->Check();
-        VclPtrInstance< SfxNewFileDialog > pNewFileDlg(this, SfxNewFileDialogMode::NONE);
+        VclPtrInstance< SfxNewFileDialog > pNewFileDlg(this, 0);
         sal_uInt16 nRet = pNewFileDlg->Execute();
         if(RET_TEMPLATE_LOAD == nRet)
             bTemplate = false;
@@ -141,7 +141,7 @@ IMPL_LINK(SwMailMergeDocSelectPage, FileSelectHdl, Button*, pButton, void)
         xFP->setDisplayDirectory( SvtPathOptions().GetWorkPath() );
 
         SfxObjectFactory &rFact = m_pWizard->GetSwView()->GetDocShell()->GetFactory();
-        SfxFilterMatcher aMatcher( rFact.GetFactoryName() );
+        SfxFilterMatcher aMatcher( OUString::createFromAscii(rFact.GetShortName()) );
         SfxFilterMatcherIter aIter( aMatcher );
         Reference<XFilterManager> xFltMgr(xFP, UNO_QUERY);
         std::shared_ptr<const SfxFilter> pFlt = aIter.First();

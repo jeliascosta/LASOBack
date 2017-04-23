@@ -29,15 +29,15 @@ namespace connectivity
     {
         class MacabTables : public sdbcx::OCollection
         {
-            css::uno::Reference< css::sdbc::XDatabaseMetaData >       m_xMetaData;
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >       m_xMetaData;
 
         protected:
             virtual sdbcx::ObjectType createObject(const OUString& _rName) override;
-            virtual void impl_refresh() override;
+            virtual void impl_refresh() throw(::com::sun::star::uno::RuntimeException) override;
 
         public:
             MacabTables(
-                const css::uno::Reference< css::sdbc::XDatabaseMetaData >& _rMetaData,
+                const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >& _rMetaData,
                 ::cppu::OWeakObject& _rParent,
                 ::osl::Mutex& _rMutex,
                 const TStringVector &_rVector)

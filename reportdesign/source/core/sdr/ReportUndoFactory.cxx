@@ -135,7 +135,7 @@ SdrUndoAction* OReportUndoFactory::CreateUndoMoveLayer(sal_uInt16 nLayerNum, Sdr
 // page
 SdrUndoAction*  OReportUndoFactory::CreateUndoDeletePage(SdrPage& rPage)
 {
-    return m_pUndoFactory->CreateUndoDeletePage(rPage);
+    return m_pUndoFactory->CreateUndoDeletePage( rPage );
 }
 
 SdrUndoAction* OReportUndoFactory::CreateUndoNewPage(SdrPage& rPage)

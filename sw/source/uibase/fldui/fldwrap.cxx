@@ -43,10 +43,10 @@ SwChildWinWrapper::SwChildWinWrapper(vcl::Window *pParentWindow, sal_uInt16 nId)
 {
     // avoid flickering of buttons:
     m_aUpdateTimer.SetTimeout(200);
-    m_aUpdateTimer.SetInvokeHandler(LINK(this, SwChildWinWrapper, UpdateHdl));
+    m_aUpdateTimer.SetTimeoutHdl(LINK(this, SwChildWinWrapper, UpdateHdl));
 }
 
-IMPL_LINK_NOARG(SwChildWinWrapper, UpdateHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SwChildWinWrapper, UpdateHdl, Timer *, void)
 {
     GetWindow()->Activate();    // update dialog
 }
@@ -81,7 +81,7 @@ SwFieldDlgWrapper::SwFieldDlgWrapper( vcl::Window* _pParent, sal_uInt16 nId,
 {
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     assert(pFact && "SwAbstractDialogFactory fail!");
-    VclPtr<AbstractSwFieldDlg> pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
+    AbstractSwFieldDlg* pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
     assert(pDlg && "Dialog creation failed!");
     pDlgInterface = pDlg;
     SetWindow( pDlg->GetWindow() );
@@ -91,8 +91,9 @@ SwFieldDlgWrapper::SwFieldDlgWrapper( vcl::Window* _pParent, sal_uInt16 nId,
 // newly initialise dialog after Doc switch
 bool SwFieldDlgWrapper::ReInitDlg(SwDocShell *pDocSh)
 {
-    bool bRet = SwChildWinWrapper::ReInitDlg(pDocSh);
-    if (bRet)  // update immediately, Doc switch
+    bool bRet;
+
+    if ((bRet = SwChildWinWrapper::ReInitDlg(pDocSh)))  // update immediately, Doc switch
     {
         pDlgInterface->ReInitDlg();
     }
@@ -124,7 +125,7 @@ SwFieldDataOnlyDlgWrapper::SwFieldDataOnlyDlgWrapper( vcl::Window* _pParent, sal
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    VclPtr<AbstractSwFieldDlg> pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
+    AbstractSwFieldDlg* pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlgInterface = pDlg;
 
@@ -137,8 +138,8 @@ SwFieldDataOnlyDlgWrapper::SwFieldDataOnlyDlgWrapper( vcl::Window* _pParent, sal
 // re-init after doc activation
 bool SwFieldDataOnlyDlgWrapper::ReInitDlg(SwDocShell *pDocSh)
 {
-    bool bRet = SwChildWinWrapper::ReInitDlg(pDocSh);
-    if (bRet)  // update immediately, Doc switch
+    bool bRet;
+    if ((bRet = SwChildWinWrapper::ReInitDlg(pDocSh)))  // update immediately, Doc switch
     {
         pDlgInterface->ReInitDlg();
     }

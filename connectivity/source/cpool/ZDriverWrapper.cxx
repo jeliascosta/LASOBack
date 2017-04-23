@@ -34,7 +34,10 @@ namespace connectivity
         :m_pConnectionPool(_pPool)
     {
         OSL_ENSURE(_rxAggregateDriver.is(), "ODriverWrapper::ODriverWrapper: invalid aggregate!");
-        OSL_ENSURE(m_pConnectionPool.is(), "ODriverWrapper::ODriverWrapper: invalid connection pool!");
+        OSL_ENSURE(m_pConnectionPool, "ODriverWrapper::ODriverWrapper: invalid connection pool!");
+
+        if (m_pConnectionPool)
+            m_pConnectionPool->acquire();
 
         osl_atomic_increment( &m_refCount );
         if (_rxAggregateDriver.is())
@@ -58,20 +61,24 @@ namespace connectivity
     {
         if (m_xDriverAggregate.is())
             m_xDriverAggregate->setDelegator(nullptr);
+
+        if (m_pConnectionPool)
+            m_pConnectionPool->release();
+        m_pConnectionPool = nullptr;
     }
 
 
-    Any SAL_CALL ODriverWrapper::queryInterface( const Type& _rType )
+    Any SAL_CALL ODriverWrapper::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
     {
         Any aReturn = ODriverWrapper_BASE::queryInterface(_rType);
         return aReturn.hasValue() ? aReturn : (m_xDriverAggregate.is() ? m_xDriverAggregate->queryAggregation(_rType) : aReturn);
     }
 
 
-    Reference< XConnection > SAL_CALL ODriverWrapper::connect( const OUString& url, const Sequence< PropertyValue >& info )
+    Reference< XConnection > SAL_CALL ODriverWrapper::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
     {
         Reference< XConnection > xConnection;
-        if (m_pConnectionPool.is())
+        if (m_pConnectionPool)
             // route this through the pool
             xConnection = m_pConnectionPool->getConnectionWithInfo( url, info );
         else if (m_xDriver.is())
@@ -81,13 +88,13 @@ namespace connectivity
     }
 
 
-    sal_Bool SAL_CALL ODriverWrapper::acceptsURL( const OUString& url )
+    sal_Bool SAL_CALL ODriverWrapper::acceptsURL( const OUString& url ) throw (SQLException, RuntimeException, std::exception)
     {
         return m_xDriver.is() && m_xDriver->acceptsURL(url);
     }
 
 
-    Sequence< DriverPropertyInfo > SAL_CALL ODriverWrapper::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info )
+    Sequence< DriverPropertyInfo > SAL_CALL ODriverWrapper::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info ) throw (SQLException, RuntimeException, std::exception)
     {
         Sequence< DriverPropertyInfo > aInfo;
         if (m_xDriver.is())
@@ -96,13 +103,13 @@ namespace connectivity
     }
 
 
-    sal_Int32 SAL_CALL ODriverWrapper::getMajorVersion(  )
+    sal_Int32 SAL_CALL ODriverWrapper::getMajorVersion(  ) throw (RuntimeException, std::exception)
     {
         return m_xDriver.is() ? m_xDriver->getMajorVersion() : 0;
     }
 
 
-    sal_Int32 SAL_CALL ODriverWrapper::getMinorVersion(  )
+    sal_Int32 SAL_CALL ODriverWrapper::getMinorVersion(  ) throw (RuntimeException, std::exception)
     {
         return m_xDriver.is() ? m_xDriver->getMinorVersion() : 0;
     }

@@ -29,10 +29,10 @@ class SwFootnoteFrame;
 class SwAccessibleFootnote : public SwAccessibleContext
 {
 protected:
-    virtual ~SwAccessibleFootnote() override;
+    virtual ~SwAccessibleFootnote();
 
 public:
-    SwAccessibleFootnote( std::shared_ptr<SwAccessibleMap> const& pInitMap,
+    SwAccessibleFootnote( SwAccessibleMap* pInitMap,
                           bool bIsEndnote,
                           const SwFootnoteFrame *pFootnoteFrame );
 
@@ -40,25 +40,29 @@ public:
 
     /// Return this object's description.
     virtual OUString SAL_CALL
-        getAccessibleDescription() override;
+        getAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
 
     /** Returns an identifier for the implementation of this object. */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Return whether the specified service is supported by this class. */
     virtual sal_Bool SAL_CALL
-        supportsService (const OUString& sServiceName) override;
+        supportsService (const OUString& sServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Returns a list of all supported services.  In this case that is just
         the AccessibleContext service. */
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     static bool IsEndnote( const SwFootnoteFrame *pFrame );
 };

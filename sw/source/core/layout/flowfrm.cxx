@@ -188,10 +188,10 @@ bool SwFlowFrame::IsKeep( const SwAttrSet& rAttrs, bool bCheckIfLastRowShouldKee
     {
         switch ( rAttrs.GetBreak().GetBreak() )
         {
-            case SvxBreak::ColumnAfter:
-            case SvxBreak::ColumnBoth:
-            case SvxBreak::PageAfter:
-            case SvxBreak::PageBoth:
+            case SVX_BREAK_COLUMN_AFTER:
+            case SVX_BREAK_COLUMN_BOTH:
+            case SVX_BREAK_PAGE_AFTER:
+            case SVX_BREAK_PAGE_BOTH:
             {
                 bKeep = false;
                 break;
@@ -243,10 +243,10 @@ bool SwFlowFrame::IsKeep( const SwAttrSet& rAttrs, bool bCheckIfLastRowShouldKee
                         bKeep = false;
                     else switch ( pSet->GetBreak().GetBreak() )
                     {
-                        case SvxBreak::ColumnBefore:
-                        case SvxBreak::ColumnBoth:
-                        case SvxBreak::PageBefore:
-                        case SvxBreak::PageBoth:
+                        case SVX_BREAK_COLUMN_BEFORE:
+                        case SVX_BREAK_COLUMN_BOTH:
+                        case SVX_BREAK_PAGE_BEFORE:
+                        case SVX_BREAK_PAGE_BOTH:
                             bKeep = false;
                             break;
                         default: break;
@@ -303,7 +303,7 @@ sal_uInt8 SwFlowFrame::BwdMoveNecessary( const SwPageFrame *pPage, const SwRect 
             const SwFrameFormat& rFormat = pObj->GetFrameFormat();
             const SwRect aRect( pObj->GetObjRect() );
             if ( aRect.IsOver( rRect ) &&
-                 rFormat.GetSurround().GetSurround() != css::text::WrapTextMode_THROUGH )
+                 rFormat.GetSurround().GetSurround() != SURROUND_THROUGHT )
             {
                 if( m_rThis.IsLayoutFrame() && //Fly Lower of This?
                     Is_Lower_Of( &m_rThis, pObj->GetDrawObj() ) )
@@ -326,7 +326,7 @@ sal_uInt8 SwFlowFrame::BwdMoveNecessary( const SwPageFrame *pPage, const SwRect 
                 // flow, because then I wouldn't evade it.
                 if ( ::IsFrameInSameKontext( pAnchor, &m_rThis ) )
                 {
-                    if ( rFormat.GetAnchor().GetAnchorId() == RndStdIds::FLY_AT_PARA )
+                    if ( rFormat.GetAnchor().GetAnchorId() == FLY_AT_PARA )
                     {
                         // The index of the other one can be retrieved using the anchor attribute.
                         sal_uLong nTmpIndex = rFormat.GetAnchor().GetContentAnchor()->nNode.GetIndex();
@@ -495,7 +495,7 @@ bool SwFlowFrame::PasteTree( SwFrame *pStart, SwLayoutFrame *pParent, SwFrame *p
     }
     SwFrame *pFloat = pStart;
     SwFrame *pLst = nullptr;
-    SwRectFnSet aRectFnSet(pParent);
+    SWRECTFN( pParent )
     SwTwips nGrowVal = 0;
     do
     {   pFloat->mpUpper = pParent;
@@ -512,7 +512,7 @@ bool SwFlowFrame::PasteTree( SwFrame *pStart, SwLayoutFrame *pParent, SwFrame *p
         else
             bRet = true;
 
-        nGrowVal += aRectFnSet.GetHeight(pFloat->Frame());
+        nGrowVal += (pFloat->Frame().*fnRect->fnGetHeight)();
         if ( pFloat->GetNext() )
             pFloat = pFloat->GetNext();
         else
@@ -587,7 +587,6 @@ void SwFlowFrame::MoveSubTree( SwLayoutFrame* pParent, SwFrame* pSibling )
         //SwSectionFrame::MergeNext removing the pParent we're trying to reparent
         //into
         FlowFrameJoinLockGuard aJoinGuard(pParent);
-        SwFrameDeleteGuard aDeleteGuard(pParent);
         pOldParent = CutTree( &m_rThis );
         bInvaLay = PasteTree( &m_rThis, pParent, pSibling, pOldParent );
     }
@@ -654,7 +653,7 @@ SwTextFrame* SwContentFrame::FindMaster() const
 {
     OSL_ENSURE( IsFollow(), "SwContentFrame::FindMaster(): !IsFollow" );
 
-    const SwContentFrame* pPrec = static_cast<const SwContentFrame*>(SwFlowFrame::GetPrecede());
+    const SwContentFrame* pPrec = GetPrecede();
 
     if ( pPrec && pPrec->HasFollow() && pPrec->GetFollow() == this )
     {
@@ -662,7 +661,7 @@ SwTextFrame* SwContentFrame::FindMaster() const
         return const_cast<SwTextFrame*>(static_cast< const SwTextFrame* >(pPrec));
     }
 
-    OSL_FAIL( "Follow is lost in Space." );
+    OSL_FAIL( "Follow ist lost in Space." );
     return nullptr;
 }
 
@@ -682,7 +681,7 @@ SwSectionFrame* SwSectionFrame::FindMaster() const
         pSect = aIter.Next();
     }
 
-    OSL_FAIL( "Follow is lost in Space." );
+    OSL_FAIL( "Follow ist lost in Space." );
     return nullptr;
 }
 
@@ -720,7 +719,7 @@ SwTabFrame* SwTabFrame::FindMaster( bool bFirstMaster ) const
         pTab = aIter.Next();
     }
 
-    OSL_FAIL( "Follow is lost in Space." );
+    OSL_FAIL( "Follow ist lost in Space." );
     return nullptr;
 }
 
@@ -819,15 +818,15 @@ bool SwFrame::WrongPageDesc( SwPageFrame* pNew )
     // Way out of the situation: Try to preliminarily insert a
     // new page once (empty pages are already inserted by InsertPage()
     // if required)
+    const SwFormatPageDesc &rFormatDesc = GetAttrSet()->GetPageDesc();
 
     //My Pagedesc doesn't count if I'm a follow!
-    const SwPageDesc *pDesc = nullptr;
+    SwPageDesc *pDesc = nullptr;
     int nTmp = 0;
     SwFlowFrame *pFlow = SwFlowFrame::CastFlowFrame( this );
     if ( !pFlow || !pFlow->IsFollow() )
     {
-        const SwFormatPageDesc &rFormatDesc = GetAttrSet()->GetPageDesc();
-        pDesc = rFormatDesc.GetPageDesc();
+        pDesc = const_cast<SwPageDesc*>(rFormatDesc.GetPageDesc());
         if( pDesc )
         {
             if( !pDesc->GetRightFormat() )
@@ -856,13 +855,6 @@ bool SwFrame::WrongPageDesc( SwPageFrame* pNew )
         pNewFlow = pNewFlow->GetFrame().FindTabFrame();
     const SwPageDesc *pNewDesc= ( pNewFlow && !pNewFlow->IsFollow() )
             ? pNewFlow->GetFrame().GetAttrSet()->GetPageDesc().GetPageDesc() : nullptr;
-
-    SAL_INFO( "sw.pageframe", "WrongPageDesc p: " << pNew << " phys: " << pNew->GetPhyPageNum() );
-    SAL_INFO( "sw.pageframe", "WrongPageDesc " << pNew->GetPageDesc() << " " << pDesc );
-    SAL_INFO( "sw.pageframe", "WrongPageDesc odd: " << bOdd
-              << " first: " << bFirst << " " << pNew->GetFormat() << " == "
-              << (bOdd ? pDesc->GetRightFormat(bFirst) : pDesc->GetLeftFormat(bFirst)) << " "
-              << (bOdd ? pDesc->GetLeftFormat(bFirst) : pDesc->GetRightFormat(bFirst)) );
 
     return (pNew->GetPageDesc() != pDesc)   //  own desc ?
         || (pNew->GetFormat() !=
@@ -1139,15 +1131,15 @@ bool SwFlowFrame::IsPageBreak( bool bAct ) const
             const IDocumentSettingAccess& rIDSA = m_rThis.GetUpper()->GetFormat()->getIDocumentSettingAccess();
             const bool bTreatSingleColumnBreakAsPageBreak = rIDSA.get(DocumentSettingId::TREAT_SINGLE_COLUMN_BREAK_AS_PAGE_BREAK);
             const SvxBreak eBreak = pSet->GetBreak().GetBreak();
-            if ( eBreak == SvxBreak::PageBefore ||
-                 eBreak == SvxBreak::PageBoth ||
-                 ( bTreatSingleColumnBreakAsPageBreak && eBreak == SvxBreak::ColumnBefore && !m_rThis.FindColFrame() ))
+            if ( eBreak == SVX_BREAK_PAGE_BEFORE ||
+                 eBreak == SVX_BREAK_PAGE_BOTH ||
+                 ( bTreatSingleColumnBreakAsPageBreak && eBreak == SVX_BREAK_COLUMN_BEFORE && !m_rThis.FindColFrame() ))
                 return true;
             else
             {
                 const SvxBreak &ePrB = pPrev->GetAttrSet()->GetBreak().GetBreak();
-                if ( ePrB == SvxBreak::PageAfter ||
-                     ePrB == SvxBreak::PageBoth  ||
+                if ( ePrB == SVX_BREAK_PAGE_AFTER ||
+                     ePrB == SVX_BREAK_PAGE_BOTH  ||
                      pSet->GetPageDesc().GetPageDesc() )
                     return true;
             }
@@ -1178,7 +1170,7 @@ bool SwFlowFrame::IsColBreak( bool bAct ) const
         {
             // Determine predecessor
             const SwFrame *pPrev = m_rThis.FindPrev();
-            while( pPrev && ( ( !pPrev->IsInDocBody() && !m_rThis.IsInFly() && !m_rThis.FindFooterOrHeader() ) ||
+            while( pPrev && ( ( !pPrev->IsInDocBody() && !m_rThis.IsInFly() ) ||
                    ( pPrev->IsTextFrame() && static_cast<const SwTextFrame*>(pPrev)->IsHiddenNow() ) ) )
                     pPrev = pPrev->FindPrev();
 
@@ -1194,14 +1186,14 @@ bool SwFlowFrame::IsColBreak( bool bAct ) const
                 }
 
                 const SvxBreak eBreak = m_rThis.GetAttrSet()->GetBreak().GetBreak();
-                if ( eBreak == SvxBreak::ColumnBefore ||
-                     eBreak == SvxBreak::ColumnBoth )
+                if ( eBreak == SVX_BREAK_COLUMN_BEFORE ||
+                     eBreak == SVX_BREAK_COLUMN_BOTH )
                     return true;
                 else
                 {
                     const SvxBreak &ePrB = pPrev->GetAttrSet()->GetBreak().GetBreak();
-                    if ( ePrB == SvxBreak::ColumnAfter ||
-                         ePrB == SvxBreak::ColumnBoth )
+                    if ( ePrB == SVX_BREAK_COLUMN_AFTER ||
+                         ePrB == SVX_BREAK_COLUMN_BOTH )
                         return true;
                 }
             }
@@ -1392,10 +1384,6 @@ SwTwips SwFlowFrame::CalcUpperSpace( const SwBorderAttrs *pAttrs,
         const bool bUseFormerLineSpacing = rIDSA.get(DocumentSettingId::OLD_LINE_SPACING);
         if( pPrevFrame )
         {
-            const bool bContextualSpacing = pAttrs->GetULSpace().GetContext()
-                                         && lcl_getContextualSpacing(pPrevFrame)
-                                         && lcl_IdenticalStyles(pPrevFrame, &m_rThis);
-
             // OD 2004-03-10 #i11860# - use new method to determine needed spacing
             // values of found previous frame and use these values.
             SwTwips nPrevLowerSpace = 0;
@@ -1407,7 +1395,7 @@ SwTwips SwFlowFrame::CalcUpperSpace( const SwBorderAttrs *pAttrs,
                                    bPrevLineSpacingPorportional );
             if( rIDSA.get(DocumentSettingId::PARA_SPACE_MAX) )
             {
-                nUpper = (bContextualSpacing) ? 0 : nPrevLowerSpace + pAttrs->GetULSpace().GetUpper();
+                nUpper = nPrevLowerSpace + pAttrs->GetULSpace().GetUpper();
                 SwTwips nAdd = nPrevLineSpacing;
                 // OD 07.01.2004 #i11859# - consideration of the line spacing
                 //      for the upper spacing of a text frame
@@ -1450,8 +1438,8 @@ SwTwips SwFlowFrame::CalcUpperSpace( const SwBorderAttrs *pAttrs,
             }
             else
             {
-                nUpper = bContextualSpacing ? 0 : std::max(static_cast<long>(nPrevLowerSpace),
-                                                           static_cast<long>(pAttrs->GetULSpace().GetUpper()) );
+                nUpper = std::max( static_cast<long>(nPrevLowerSpace),
+                              static_cast<long>(pAttrs->GetULSpace().GetUpper()) );
                 // OD 07.01.2004 #i11859# - consideration of the line spacing
                 //      for the upper spacing of a text frame
                 if ( bUseFormerLineSpacing )
@@ -1515,7 +1503,16 @@ SwTwips SwFlowFrame::CalcUpperSpace( const SwBorderAttrs *pAttrs,
     {
         nUpper += GetUpperSpaceAmountConsideredForPageGrid_( nUpper );
     }
-    return nUpper;
+
+    const bool bContextualSpacing = pAttrs->GetULSpace().GetContext();
+
+    if (bContextualSpacing && pPrevFrame && lcl_getContextualSpacing(pPrevFrame)
+            && lcl_IdenticalStyles(pPrevFrame, &m_rThis))
+    {
+        return 0;
+    }
+    else
+        return nUpper;
 }
 
 /** method to detemine the upper space amount, which is considered for
@@ -1541,26 +1538,26 @@ SwTwips SwFlowFrame::GetUpperSpaceAmountConsideredForPageGrid_(
                 const long nGridLineHeight =
                         pGrid->GetBaseHeight() + pGrid->GetRubyHeight();
 
-                SwRectFnSet aRectFnSet(&m_rThis);
-                const SwTwips nBodyPrtTop = aRectFnSet.GetPrtTop(*pBodyFrame);
+                SWRECTFN( (&m_rThis) )
+                const SwTwips nBodyPrtTop = (pBodyFrame->*fnRect->fnGetPrtTop)();
                 const SwTwips nProposedPrtTop =
-                        aRectFnSet.YInc( aRectFnSet.GetTop(m_rThis.Frame()),
+                        (*fnRect->fnYInc)( (m_rThis.Frame().*fnRect->fnGetTop)(),
                                            _nUpperSpaceWithoutGrid );
 
                 const SwTwips nSpaceAbovePrtTop =
-                        aRectFnSet.YDiff( nProposedPrtTop, nBodyPrtTop );
+                        (*fnRect->fnYDiff)( nProposedPrtTop, nBodyPrtTop );
                 const SwTwips nSpaceOfCompleteLinesAbove =
                         nGridLineHeight * ( nSpaceAbovePrtTop / nGridLineHeight );
                 SwTwips nNewPrtTop =
-                        aRectFnSet.YInc( nBodyPrtTop, nSpaceOfCompleteLinesAbove );
-                if ( aRectFnSet.YDiff( nProposedPrtTop, nNewPrtTop ) > 0 )
+                        (*fnRect->fnYInc)( nBodyPrtTop, nSpaceOfCompleteLinesAbove );
+                if ( (*fnRect->fnYDiff)( nProposedPrtTop, nNewPrtTop ) > 0 )
                 {
-                    nNewPrtTop = aRectFnSet.YInc( nNewPrtTop, nGridLineHeight );
+                    nNewPrtTop = (*fnRect->fnYInc)( nNewPrtTop, nGridLineHeight );
                 }
 
                 const SwTwips nNewUpperSpace =
-                        aRectFnSet.YDiff( nNewPrtTop,
-                                            aRectFnSet.GetTop(m_rThis.Frame()) );
+                        (*fnRect->fnYDiff)( nNewPrtTop,
+                                            (m_rThis.Frame().*fnRect->fnGetTop)() );
 
                 nUpperSpaceAmountConsideredForPageGrid =
                         nNewUpperSpace - _nUpperSpaceWithoutGrid;
@@ -1872,7 +1869,7 @@ bool SwFlowFrame::MoveFwd( bool bMakePage, bool bPageBreak, bool bMoveAlways )
             }
         }
         // Do not calculate split cell frames.
-        else if ( !pNewUpper->IsCellFrame() || pNewUpper->Lower() )
+        else if ( !pNewUpper->IsCellFrame() || static_cast<SwLayoutFrame*>(pNewUpper)->Lower() )
             pNewUpper->Calc(m_rThis.getRootFrame()->GetCurrShell()->GetOut());
 
         SwFootnoteBossFrame *pNewBoss = pNewUpper->FindFootnoteBossFrame();
@@ -1900,9 +1897,9 @@ bool SwFlowFrame::MoveFwd( bool bMakePage, bool bPageBreak, bool bMoveAlways )
             bSamePage = pNewPage == pOldPage;
             // Set deadline, so the footnotes don't think up
             // silly things...
-            SwRectFnSet aRectFnSet(pOldBoss);
+            SWRECTFN( pOldBoss )
             SwSaveFootnoteHeight aHeight( pOldBoss,
-                aRectFnSet.GetBottom(pOldBoss->Frame()) );
+                (pOldBoss->Frame().*fnRect->fnGetBottom)() );
             SwContentFrame* pStart = m_rThis.IsContentFrame() ?
                 static_cast<SwContentFrame*>(&m_rThis) : static_cast<SwLayoutFrame&>(m_rThis).ContainsContent();
             OSL_ENSURE( pStart || ( m_rThis.IsTabFrame() && !static_cast<SwTabFrame&>(m_rThis).Lower() ),

@@ -24,6 +24,7 @@
 #include "CharacterProperties.hxx"
 #include "UserDefinedProperties.hxx"
 #include "LegendHelper.hxx"
+#include "ContainerHelper.hxx"
 #include "CloneHelper.hxx"
 #include "PropertyHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
@@ -47,6 +48,8 @@ using ::com::sun::star::beans::Property;
 namespace
 {
 
+static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.Legend";
+
 enum
 {
     PROP_LEGEND_ANCHOR_POSITION,
@@ -58,7 +61,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "AnchorPosition",
@@ -144,14 +147,14 @@ struct StaticLegendInfoHelper_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< css::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::FillProperties::AddPropertiesToVector( aProperties );
         ::chart::CharacterProperties::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -201,12 +204,14 @@ Legend::~Legend()
 
 // ____ XCloneable ____
 Reference< util::XCloneable > SAL_CALL Legend::createClone()
+    throw (uno::RuntimeException, std::exception)
 {
     return Reference< util::XCloneable >( new Legend( *this ));
 }
 
 // ____ XModifyBroadcaster ____
 void SAL_CALL Legend::addModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -220,6 +225,7 @@ void SAL_CALL Legend::addModifyListener( const Reference< util::XModifyListener 
 }
 
 void SAL_CALL Legend::removeModifyListener( const Reference< util::XModifyListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -234,12 +240,14 @@ void SAL_CALL Legend::removeModifyListener( const Reference< util::XModifyListen
 
 // ____ XModifyListener ____
 void SAL_CALL Legend::modified( const lang::EventObject& aEvent )
+    throw (uno::RuntimeException, std::exception)
 {
     m_xModifyEventForwarder->modified( aEvent );
 }
 
 // ____ XEventListener (base of XModifyListener) ____
 void SAL_CALL Legend::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
     // nothing
 }
@@ -247,11 +255,32 @@ void SAL_CALL Legend::disposing( const lang::EventObject& /* Source */ )
 // ____ OPropertySet ____
 void Legend::firePropertyChangeEvent()
 {
+    fireModifyEvent();
+}
+
+void Legend::fireModifyEvent()
+{
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
+}
+
+Sequence< OUString > Legend::getSupportedServiceNames_Static()
+{
+    const sal_Int32 nNumServices( 6 );
+    sal_Int32 nI = 0;
+    Sequence< OUString > aServices( nNumServices );
+    aServices[ nI++ ] = "com.sun.star.chart2.Legend";
+    aServices[ nI++ ] = "com.sun.star.beans.PropertySet";
+    aServices[ nI++ ] = "com.sun.star.drawing.FillProperties";
+    aServices[ nI++ ] = "com.sun.star.drawing.LineProperties";
+    aServices[ nI++ ] = "com.sun.star.style.CharacterProperties";
+    aServices[ nI++ ] = "com.sun.star.layout.LayoutElement";
+    OSL_ASSERT( nNumServices == nI );
+    return aServices;
 }
 
 // ____ OPropertySet ____
 Any Legend::GetDefaultValue( sal_Int32 nHandle ) const
+    throw (beans::UnknownPropertyException, uno::RuntimeException)
 {
     const tPropertyValueMap& rStaticDefaults = *StaticLegendDefaults::get();
     tPropertyValueMap::const_iterator aFound( rStaticDefaults.find( nHandle ) );
@@ -267,31 +296,33 @@ Any Legend::GetDefaultValue( sal_Int32 nHandle ) const
 
 // ____ XPropertySet ____
 Reference< beans::XPropertySetInfo > SAL_CALL Legend::getPropertySetInfo()
+    throw (uno::RuntimeException, std::exception)
 {
     return *StaticLegendInfo::get();
 }
 
 // implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL Legend::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return OUString("com.sun.star.comp.chart2.Legend");
+    return getImplementationName_Static();
+}
+
+OUString Legend::getImplementationName_Static()
+{
+    return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL Legend::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL Legend::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        "com.sun.star.chart2.Legend",
-        "com.sun.star.beans.PropertySet",
-        "com.sun.star.drawing.FillProperties",
-        "com.sun.star.drawing.LineProperties",
-        "com.sun.star.style.CharacterProperties",
-        "com.sun.star.layout.LayoutElement"
-    };
+    return getSupportedServiceNames_Static();
 }
 
 // needed by MSC compiler

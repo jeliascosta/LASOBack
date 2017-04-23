@@ -36,7 +36,7 @@ ZoomList::ZoomList(ViewShell* pViewShell)
 {
 }
 
-void ZoomList::InsertZoomRect(const ::tools::Rectangle& rRect)
+void ZoomList::InsertZoomRect(const Rectangle& rRect)
 {
     size_t nRectCount = maRectangles.size();
 
@@ -54,7 +54,7 @@ void ZoomList::InsertZoomRect(const ::tools::Rectangle& rRect)
     rBindings.Invalidate( SID_ZOOM_PREV );
 }
 
-::tools::Rectangle ZoomList::GetNextZoomRect()
+Rectangle ZoomList::GetNextZoomRect()
 {
     mnCurPos++;
     size_t nRectCount = maRectangles.size();
@@ -69,7 +69,7 @@ void ZoomList::InsertZoomRect(const ::tools::Rectangle& rRect)
     return maRectangles[mnCurPos];
 }
 
-::tools::Rectangle ZoomList::GetPreviousZoomRect()
+Rectangle ZoomList::GetPreviousZoomRect()
 {
     if (mnCurPos > 0)
         mnCurPos--;

@@ -26,18 +26,18 @@
 #include "edimp.hxx"
 #include "frmtool.hxx"
 
-RedlineFlags SwEditShell::GetRedlineFlags() const
+sal_uInt16 SwEditShell::GetRedlineMode() const
 {
-    return GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
+    return GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
 }
 
-void SwEditShell::SetRedlineFlags( RedlineFlags eMode )
+void SwEditShell::SetRedlineMode( sal_uInt16 eMode )
 {
-    if( eMode != GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags() )
+    if( eMode != GetDoc()->getIDocumentRedlineAccess().GetRedlineMode() )
     {
         SET_CURR_SHELL( this );
         StartAllAction();
-        GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags( eMode );
+        GetDoc()->getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)eMode );
         EndAllAction();
     }
 }
@@ -47,12 +47,12 @@ bool SwEditShell::IsRedlineOn() const
     return GetDoc()->getIDocumentRedlineAccess().IsRedlineOn();
 }
 
-SwRedlineTable::size_type SwEditShell::GetRedlineCount() const
+sal_uInt16 SwEditShell::GetRedlineCount() const
 {
     return GetDoc()->getIDocumentRedlineAccess().GetRedlineTable().size();
 }
 
-const SwRangeRedline& SwEditShell::GetRedline( SwRedlineTable::size_type nPos ) const
+const SwRangeRedline& SwEditShell::GetRedline( sal_uInt16 nPos ) const
 {
     return *GetDoc()->getIDocumentRedlineAccess().GetRedlineTable()[ nPos ];
 }
@@ -66,7 +66,7 @@ static void lcl_InvalidateAll( SwViewShell* pSh )
     }
 }
 
-bool SwEditShell::AcceptRedline( SwRedlineTable::size_type nPos )
+bool SwEditShell::AcceptRedline( sal_uInt16 nPos )
 {
     SET_CURR_SHELL( this );
     StartAllAction();
@@ -77,7 +77,7 @@ bool SwEditShell::AcceptRedline( SwRedlineTable::size_type nPos )
     return bRet;
 }
 
-bool SwEditShell::RejectRedline( SwRedlineTable::size_type nPos )
+bool SwEditShell::RejectRedline( sal_uInt16 nPos )
 {
     SET_CURR_SHELL( this );
     StartAllAction();
@@ -125,7 +125,8 @@ const SwRangeRedline* SwEditShell::GetCurrRedline() const
 
 void SwEditShell::UpdateRedlineAttr()
 {
-    if( IDocumentRedlineAccess::IsShowChanges(GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags()) )
+    if( ( nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE ) ==
+        ( nsRedlineMode_t::REDLINE_SHOW_MASK & GetDoc()->getIDocumentRedlineAccess().GetRedlineMode() ))
     {
         SET_CURR_SHELL( this );
         StartAllAction();
@@ -138,16 +139,16 @@ void SwEditShell::UpdateRedlineAttr()
 
 /** Search the Redline of the data given
  *
- * @return Returns the Pos of the Array, or SwRedlineTable::npos if not present
+ * @return Returns the Pos of the Array, or USHRT_MAX if not present
  */
-SwRedlineTable::size_type SwEditShell::FindRedlineOfData( const SwRedlineData& rData ) const
+sal_uInt16 SwEditShell::FindRedlineOfData( const SwRedlineData& rData ) const
 {
     const SwRedlineTable& rTable = GetDoc()->getIDocumentRedlineAccess().GetRedlineTable();
 
-    for( SwRedlineTable::size_type i = 0, nCnt = rTable.size(); i < nCnt; ++i )
+    for( sal_uInt16 i = 0, nCnt = rTable.size(); i < nCnt; ++i )
         if( &rTable[ i ]->GetRedlineData() == &rData )
             return i;
-    return SwRedlineTable::npos;
+    return USHRT_MAX;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

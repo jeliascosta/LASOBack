@@ -45,6 +45,7 @@ public:
     };
 
 private:
+    sal_Int8        m_nCurrentBorderPosition;
     //values of the current border
     sal_Int32       m_nLineWidth;
     sal_Int32       m_nLineType;
@@ -65,7 +66,7 @@ private:
 
 public:
     explicit BorderHandler( bool bOOXML );
-    virtual ~BorderHandler() override;
+    virtual ~BorderHandler();
 
     ::std::shared_ptr<PropertyMap>            getProperties();
     css::table::BorderLine2 getBorderLine();

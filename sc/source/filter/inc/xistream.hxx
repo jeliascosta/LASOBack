@@ -44,12 +44,12 @@ class XclImpDecrypter : public ::comphelper::IDocPasswordVerifier
 {
 public:
     explicit            XclImpDecrypter();
-    virtual             ~XclImpDecrypter() override;
+    virtual             ~XclImpDecrypter();
 
     /** Returns the current error code of the decrypter. */
-    ErrCode      GetError() const { return mnError; }
+    inline ErrCode      GetError() const { return mnError; }
     /** Returns true, if the decoder has been initialized correctly. */
-    bool         IsValid() const { return mnError == ERRCODE_NONE; }
+    inline bool         IsValid() const { return mnError == ERRCODE_NONE; }
 
     /** Creates a (ref-counted) copy of this decrypter object. */
     XclImpDecrypterRef  Clone() const;
@@ -78,7 +78,7 @@ private:
     virtual bool OnVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) = 0;
 
     /** Implementation of updating the decrypter. */
-    virtual void        OnUpdate( std::size_t nOldStrmPos, std::size_t nNewStrmPos, sal_uInt16 nRecSize ) = 0;
+    virtual void        OnUpdate( sal_Size nOldStrmPos, sal_Size nNewStrmPos, sal_uInt16 nRecSize ) = 0;
     /** Implementation of the decryption. */
     virtual sal_uInt16  OnRead( SvStream& rStrm, sal_uInt8* pnData, sal_uInt16 nBytes ) = 0;
 
@@ -105,7 +105,7 @@ private:
         OnVerifyPassword( const OUString& rPassword ) override;
     virtual bool OnVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) override;
     /** Implementation of updating the decrypter. */
-    virtual void        OnUpdate( std::size_t nOldStrmPos, std::size_t nNewStrmPos, sal_uInt16 nRecSize ) override;
+    virtual void        OnUpdate( sal_Size nOldStrmPos, sal_Size nNewStrmPos, sal_uInt16 nRecSize ) override;
     /** Implementation of the decryption. */
     virtual sal_uInt16  OnRead( SvStream& rStrm, sal_uInt8* pnData, sal_uInt16 nBytes ) override;
 
@@ -125,14 +125,14 @@ private:
         OnVerifyPassword( const OUString& rPassword ) override;
     virtual bool OnVerifyEncryptionData( const css::uno::Sequence< css::beans::NamedValue >& rEncryptionData ) override;
     /** Implementation of updating the decrypter. */
-    virtual void        OnUpdate( std::size_t nOldStrmPos, std::size_t nNewStrmPos, sal_uInt16 nRecSize ) override;
+    virtual void        OnUpdate( sal_Size nOldStrmPos, sal_Size nNewStrmPos, sal_uInt16 nRecSize ) override;
     /** Implementation of the decryption. */
     virtual sal_uInt16  OnRead( SvStream& rStrm, sal_uInt8* pnData, sal_uInt16 nBytes ) override;
 
     /** Returns the block number corresponding to the passed stream position. */
-    static sal_uInt32   GetBlock( std::size_t nStrmPos );
+    static sal_uInt32    GetBlock( sal_Size nStrmPos );
     /** Returns the block offset corresponding to the passed stream position. */
-    static sal_uInt16   GetOffset( std::size_t nStrmPos );
+    static sal_uInt16    GetOffset( sal_Size nStrmPos );
 
 protected:
     explicit  XclImpBiff8Decrypter(const std::vector<sal_uInt8>& rSalt,
@@ -204,22 +204,22 @@ public:
     explicit            XclImpStreamPos();
 
     /** Sets the stream position data to the passed values. */
-    void                Set( const SvStream& rStrm, std::size_t nNextPos, std::size_t nCurrSize,
+    void                Set( const SvStream& rStrm, sal_Size nNextPos, sal_Size nCurrSize,
                             sal_uInt16 nRawRecId, sal_uInt16 nRawRecSize, sal_uInt16 nRawRecLeft,
                             bool bValid );
 
     /** Writes the contained stream position data to the given variables. */
-    void                Get( SvStream& rStrm, std::size_t& rnNextPos, std::size_t& rnCurrSize,
+    void                Get( SvStream& rStrm, sal_Size& rnNextPos, sal_Size& rnCurrSize,
                             sal_uInt16& rnRawRecId, sal_uInt16& rnRawRecSize, sal_uInt16& rnRawRecLeft,
                             bool& rbValid ) const;
 
     /** Returns the stored stream position. */
-    std::size_t  GetPos() const { return mnPos; }
+    inline sal_Size     GetPos() const { return mnPos; }
 
 private:
-    std::size_t         mnPos;          /// Absolute position of the stream.
-    std::size_t         mnNextPos;      /// Absolute position of next record.
-    std::size_t         mnCurrSize;     /// Current calculated size of the record.
+    sal_Size            mnPos;          /// Absolute position of the stream.
+    sal_Size            mnNextPos;      /// Absolute position of next record.
+    sal_Size            mnCurrSize;     /// Current calculated size of the record.
     sal_uInt16          mnRawRecId;     /// Current raw record ID (including CONTINUEs).
     sal_uInt16          mnRawRecSize;   /// Current raw record size (without following CONTINUEs).
     sal_uInt16          mnRawRecLeft;   /// Bytes left in current raw record (without following CONTINUEs).
@@ -289,7 +289,7 @@ public:
                         ~XclImpStream();
 
     /** Returns the filter root data. */
-    const XclImpRoot& GetRoot() const { return mrRoot; }
+    inline const XclImpRoot& GetRoot() const { return mrRoot; }
 
     /** Sets stream pointer to the start of the next record content.
         @descr  Ignores all CONTINUE records of the current record, if automatic
@@ -299,7 +299,7 @@ public:
     /** Sets stream pointer to the start of the record content for the record
         at the passed absolute stream position.
         @return  false = no record found (end of stream). */
-    bool                StartNextRecord( std::size_t nNextRecPos );
+    bool                StartNextRecord( sal_Size nNextRecPos );
     /** Sets stream pointer to begin of record content.
         @param bContLookup  Automatic CONTINUE lookup on/off. In difference
         to other stream settings, this setting is persistent until next call of
@@ -320,9 +320,11 @@ public:
     void                RewindRecord();
 
     /** Enables decryption of record contents for the rest of the stream. */
-    void                SetDecrypter( XclImpDecrypterRef const & xDecrypter );
+    void                SetDecrypter( XclImpDecrypterRef xDecrypter );
     /** Sets decrypter from another stream. */
     void                CopyDecrypterFrom( const XclImpStream& rStrm );
+    /** Returns true, if a valid decrypter is set at the stream. */
+    bool                HasValidDecrypter() const;
     /** Switches usage of current decryption algorithm on/off.
         @descr  Encryption is re-enabled automatically, if a new record is
         started using the function StartNextRecord(). */
@@ -330,7 +332,7 @@ public:
     /** Switches usage of current decryption algorithm off.
         @descr  This is a record-local setting. The function StartNextRecord()
         always enables decryption. */
-    void         DisableDecryption() { EnableDecryption( false ); }
+    inline void         DisableDecryption() { EnableDecryption( false ); }
 
     /** Pushes current position on user position stack.
         @descr  This stack is emptied when starting a new record with
@@ -347,19 +349,19 @@ public:
     void                SeekGlobalPosition();
 
     /** Returns record reading state: false = record overread. */
-    bool         IsValid() const { return mbValid; }
+    inline bool         IsValid() const { return mbValid; }
     /** Returns the current record ID. */
-    sal_uInt16   GetRecId() const { return mnRecId; }
+    inline sal_uInt16   GetRecId() const { return mnRecId; }
     /** Returns the position inside of the whole record content. */
-    std::size_t         GetRecPos() const;
+    sal_Size            GetRecPos() const;
     /** Returns the data size of the whole record without record headers. */
-    std::size_t         GetRecSize();
+    sal_Size            GetRecSize();
     /** Returns remaining data size of the whole record without record headers. */
-    std::size_t         GetRecLeft();
+    sal_Size            GetRecLeft();
     /** Returns the record ID of the following record. */
     sal_uInt16          GetNextRecId();
 
-    sal_uInt16          PeekRecId( std::size_t nPos );
+    sal_uInt16          PeekRecId( sal_Size nPos );
 
     SAL_WARN_UNUSED_RESULT
     sal_uInt8           ReaduInt8();
@@ -376,19 +378,19 @@ public:
 
     /** Reads nBytes bytes to the existing(!) buffer pData.
         @return  Count of bytes really read. */
-    std::size_t         Read( void* pData, std::size_t nBytes );
+    sal_Size            Read( void* pData, sal_Size nBytes );
     /** Copies nBytes bytes to rOutStrm.
         @return  Count of bytes really written. */
-    std::size_t         CopyToStream( SvStream& rOutStrm, std::size_t nBytes );
+    sal_Size            CopyToStream( SvStream& rOutStrm, sal_Size nBytes );
 
     /** Copies the entire record to rOutStrm. The current record position keeps unchanged. */
     void            CopyRecordToStream( SvStream& rOutStrm );
 
     /** Seeks absolute in record content to the specified position.
         @descr  The value 0 means start of record, independent from physical stream position. */
-    void                Seek( std::size_t nPos );
+    void                Seek( sal_Size nPos );
     /** Seeks forward inside the current record. */
-    void                Ignore( std::size_t nBytes );
+    void                Ignore( sal_Size nBytes );
 
     // *** special string functions *** ---------------------------------------
 
@@ -412,12 +414,12 @@ public:
 
     /** Reads ext. header, detects 8/16 bit mode, sets all ext. info.
         @return  Total size of ext. data. */
-    std::size_t         ReadUniStringExtHeader(
+    sal_Size            ReadUniStringExtHeader(
                             bool& rb16Bit, bool& rbRich, bool& rbFareast,
                             sal_uInt16& rnFormatRuns, sal_uInt32& rnExtInf, sal_uInt8 nFlags );
     /** Seeks to begin of character array, detects 8/16 bit mode.
         @return  Total size of ext. data. */
-    std::size_t         ReadUniStringExtHeader( bool& rb16Bit, sal_uInt8 nFlags );
+    sal_Size            ReadUniStringExtHeader( bool& rb16Bit, sal_uInt8 nFlags );
 
     /** Sets a replacement character for NUL characters.
         @descr  NUL characters must be replaced, because Tools strings cannot
@@ -426,7 +428,7 @@ public:
         @param cNulSubst  The character to use for NUL replacement. It is
         possible to specify NUL here. in this case strings are terminated when
         the first NUL occurs during string import. */
-    void         SetNulSubstChar( sal_Unicode cNulSubst = '?' ) { mcNulSubst = cNulSubst; }
+    inline void         SetNulSubstChar( sal_Unicode cNulSubst = '?' ) { mcNulSubst = cNulSubst; }
 
     /** Reads nChars characters and returns the string. */
     OUString            ReadRawUniString( sal_uInt16 nChars, bool b16Bit );
@@ -455,9 +457,9 @@ public:
     // *** SvStream functions *** ---------------------------------------------
 
     /** Returns the absolute stream position. */
-    std::size_t  GetSvStreamPos() const { return mrStrm.Tell(); }
+    inline sal_Size     GetSvStreamPos() const { return mrStrm.Tell(); }
     /** Returns the stream size. */
-    std::size_t  GetSvStreamSize() const { return mnStreamSize; }
+    inline sal_Size     GetSvStreamSize() const { return mnStreamSize; }
 
     /** Stores current stream position into rPos. */
     void                StorePosition( XclImpStreamPos& rPos );
@@ -502,11 +504,15 @@ private:
         @return  Copy of mbValid. */
     bool                EnsureRawReadSize( sal_uInt16 nBytes );
     /** Returns the maximum size of raw data possible to read in one block. */
-    sal_uInt16          GetMaxRawReadSize( std::size_t nBytes ) const;
+    sal_uInt16          GetMaxRawReadSize( sal_Size nBytes ) const;
 
     /** Reads and decrypts nBytes bytes to the existing(!) buffer pData.
         @return  Count of bytes really read. */
     sal_uInt16          ReadRawData( void* pData, sal_uInt16 nBytes );
+
+    /** Reads 8 bit/16 bit string length. */
+    inline sal_uInt16   ReadByteStrLen( bool b16BitLen )
+                            { return b16BitLen ? ReaduInt16() : ReaduInt8(); }
 
 private:
     typedef ::std::vector< XclImpStreamPos > XclImpStreamPosStack;
@@ -524,10 +530,10 @@ private:
     bool                mbGlobValidRec; /// Was user position a valid record?
     bool                mbHasGlobPos;   /// Is user position defined?
 
-    std::size_t         mnStreamSize;   /// Size of system stream.
-    std::size_t         mnNextRecPos;   /// Start of next record header.
-    std::size_t         mnCurrRecSize;  /// Helper for record position.
-    std::size_t         mnComplRecSize; /// Size of complete record data (with CONTINUEs).
+    sal_Size            mnStreamSize;   /// Size of system stream.
+    sal_Size            mnNextRecPos;   /// Start of next record header.
+    sal_Size            mnCurrRecSize;  /// Helper for record position.
+    sal_Size            mnComplRecSize; /// Size of complete record data (with CONTINUEs).
     bool                mbHasComplRec;  /// true = mnComplRecSize is valid.
 
     sal_uInt16          mnRecId;        /// Current record ID (not the CONTINUE ID).

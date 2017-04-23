@@ -78,7 +78,6 @@ void TextContext::onCharacters( const OUString& rChars )
 
         // Also store it as a single element type for non-Excel document.
         mrModel.mxDataSeq->maData[0] <<= rChars;
-        mrModel.mxDataSeq->mnPointCount = 1;
     }
 }
 

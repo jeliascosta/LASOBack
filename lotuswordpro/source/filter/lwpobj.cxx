@@ -64,14 +64,16 @@ LwpObject::LwpObject(LwpObjectHeader objHdr, LwpSvStream* pStrm)
     , m_pStrm(pStrm), m_bRegisteringStyle(false), m_bParsingStyle(false)
     , m_bConvertingContent(false)
 {
-    m_pObjStrm.reset( new LwpObjectStream(pStrm, m_ObjHdr.IsCompressed(),
-            static_cast<sal_uInt16>(m_ObjHdr.GetSize()) ) );
+    m_pObjStrm = new LwpObjectStream(pStrm, m_ObjHdr.IsCompressed(),
+            static_cast<sal_uInt16>(m_ObjHdr.GetSize()) );
 }
 /**
  * @descr   dtor()
 */
 LwpObject::~LwpObject()
 {
+    delete m_pObjStrm;
+
 }
 /**
  * @descr  QuickRead template
@@ -82,7 +84,8 @@ void LwpObject::QuickRead()
     if(m_pObjStrm)
     {
         m_pObjStrm->ReadComplete();
-        m_pObjStrm.reset();
+        delete m_pObjStrm;
+        m_pObjStrm = nullptr;
     }
 }
 /**

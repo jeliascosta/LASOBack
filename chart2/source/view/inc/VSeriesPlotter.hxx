@@ -97,7 +97,7 @@ public:
                                                 , bool bSeparateStackingForDifferentSigns
                                                 , double& rfMinimumY, double& rfMaximumY, sal_Int32 nAxisIndex );
 
-    std::vector< VDataSeries* >   m_aSeriesVector;
+    ::std::vector< VDataSeries* >   m_aSeriesVector;
 
 private:
     //cached values
@@ -113,7 +113,7 @@ private:
     mutable bool        m_bMaxPointCountDirty;
     mutable sal_Int32   m_nMaxPointCount;
     typedef std::map< sal_Int32, CachedYValues > tCachedYValuesPerAxisIndexMap;
-    mutable std::vector< tCachedYValuesPerAxisIndexMap >   m_aListOfCachedYValues;
+    mutable ::std::vector< tCachedYValuesPerAxisIndexMap >   m_aListOfCachedYValues;
 };
 
 class VSeriesPlotter : public PlotterBase, public MinimumAndMaximumSupplier, public LegendEntryProvider
@@ -121,7 +121,7 @@ class VSeriesPlotter : public PlotterBase, public MinimumAndMaximumSupplier, pub
 public:
     VSeriesPlotter() = delete;
 
-    virtual ~VSeriesPlotter() override;
+    virtual ~VSeriesPlotter();
 
     /*
     * A new series can be positioned relative to other series in a chart.
@@ -150,13 +150,12 @@ public:
     1==AttachedAxisIndex indicates that the series should be scaled at the first secondary axis if there is any otherwise at the main y axis
     and so on.
     The parameter nAxisIndex matches this DataSeries property 'AttachedAxisIndex'.
-    nAxisIndex must be greater than 0. nAxisIndex==1 refers to the first secondary axis.
+    nAxisIndex must be greater than 0. nAxisIndex==1 referres to the first secondary axis.
     )
-
-    @throws css::uno::RuntimeException
     */
 
-    void addSecondaryValueScale( const ExplicitScaleData& rScale, sal_Int32 nAxisIndex );
+    void addSecondaryValueScale( const ExplicitScaleData& rScale, sal_Int32 nAxisIndex )
+                throw (css::uno::RuntimeException);
 
     // MinimumAndMaximumSupplier
 
@@ -196,7 +195,7 @@ public:
     virtual LegendSymbolStyle getLegendSymbolStyle();
     virtual css::awt::Size getPreferredLegendKeyAspectRatio() override;
 
-    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex/*-1 for series symbol*/ );
+    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex=-1/*-1 for series symbol*/ );
 
     css::uno::Reference< css::drawing::XShape > createLegendSymbolForSeries(
                   const css::awt::Size& rEntryKeyAspectRatio
@@ -220,12 +219,12 @@ public:
             const css::uno::Reference< css::uno::XComponentContext >& xContext
                 );
 
-    std::vector< VDataSeries* > getAllSeries();
+    ::std::vector< VDataSeries* > getAllSeries();
 
     // This method creates a series plotter of the requested type; e.g. : return new PieChart ....
     static VSeriesPlotter* createSeriesPlotter( const css::uno::Reference< css::chart2::XChartType >& xChartTypeModel
                                 , sal_Int32 nDimensionCount
-                                , bool bExcludingPositioning /*for pie and donut charts labels and exploded segments are excluded from the given size*/);
+                                , bool bExcludingPositioning = false /*for pie and donut charts labels and exploded segments are excluded from the given size*/);
 
     sal_Int32 getPointCount() const;
 
@@ -320,7 +319,7 @@ protected:
                 , double fValue
                 , double fSumValue
                 , const css::awt::Point& rScreenPosition2D
-                , LabelAlignment eAlignment
+                , LabelAlignment eAlignment=LABEL_ALIGN_CENTER
                 , sal_Int32 nOffset=0
                 , sal_Int32 nTextWidth = 0 );
 
@@ -365,7 +364,7 @@ protected:
     void createErrorBar_Y( const css::drawing::Position3D& rUnscaledLogicPosition
         , VDataSeries& rVDataSeries, sal_Int32 nPointIndex
         , const css::uno::Reference< css::drawing::XShapes >& xTarget
-        , double* pfScaledLogicX );
+        , double* pfScaledLogicX=nullptr );
 
     void createRegressionCurvesShapes( VDataSeries& rVDataSeries
         , const css::uno::Reference< css::drawing::XShapes >& xTarget
@@ -394,7 +393,7 @@ protected:
     css::uno::Reference< css::chart2::XChartType >    m_xChartTypeModel;
     css::uno::Reference< css::beans::XPropertySet >   m_xChartTypeModelProps;
 
-    std::vector< std::vector< VDataSeriesGroup > >  m_aZSlots;
+    ::std::vector< ::std::vector< VDataSeriesGroup > >  m_aZSlots;
 
     bool                                m_bCategoryXAxis;//true->xvalues are indices (this would not be necessary if series for category chart wouldn't have x-values)
     long m_nTimeResolution;

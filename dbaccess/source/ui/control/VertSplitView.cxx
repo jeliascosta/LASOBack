@@ -32,6 +32,7 @@ OSplitterView::OSplitterView(vcl::Window* _pParent) : Window(_pParent,WB_DIALOGC
     ,m_pSplitter( nullptr )
     ,m_pLeft(nullptr)
     ,m_pRight(nullptr)
+    ,m_bVertical(false)
 {
     ImplInitSettings();
 }
@@ -49,10 +50,16 @@ void OSplitterView::dispose()
     vcl::Window::dispose();
 }
 
-IMPL_LINK_NOARG( OSplitterView, SplitHdl, Splitter*, void )
+IMPL_LINK_NOARG_TYPED( OSplitterView, SplitHdl, Splitter*, void )
 {
     OSL_ENSURE(m_pSplitter, "Splitter is NULL!");
-    m_pSplitter->SetPosPixel( Point( m_pSplitter->GetPosPixel().X(),m_pSplitter->GetSplitPosPixel() ) );
+    if ( m_bVertical )
+    {
+        long nPosY = m_pSplitter->GetPosPixel().Y();
+        m_pSplitter->SetPosPixel( Point( m_pSplitter->GetSplitPosPixel(), nPosY ) );
+    }
+    else
+        m_pSplitter->SetPosPixel( Point( m_pSplitter->GetPosPixel().X(),m_pSplitter->GetSplitPosPixel() ) );
 
     Resize();
 }
@@ -116,31 +123,61 @@ void OSplitterView::Resize()
     {
         aSplitPos   = m_pSplitter->GetPosPixel();
         aSplitSize  = m_pSplitter->GetOutputSizePixel();
-        aSplitPos.X() = aPlaygroundPos.X();
-        aSplitSize.Width() = aPlaygroundSize.Width();
+        if ( m_bVertical )
+        {
+            // calculate the splitter pos and size
+            aSplitPos.Y() = aPlaygroundPos.Y();
+            aSplitSize.Height() = aPlaygroundSize.Height();
 
-        if( ( aSplitPos.Y() + aSplitSize.Height() ) > ( aPlaygroundSize.Height() ))
-            aSplitPos.Y() = aPlaygroundSize.Height() - aSplitSize.Height();
+            if( ( aSplitPos.X() + aSplitSize.Width() ) > ( aPlaygroundSize.Width() ))
+                aSplitPos.X() = aPlaygroundSize.Width() - aSplitSize.Width();
 
-        if( aSplitPos.Y() <= aPlaygroundPos.Y() )
-            aSplitPos.Y() = aPlaygroundPos.Y() + sal_Int32(aPlaygroundSize.Height() * 0.3);
+            if( aSplitPos.X() <= aPlaygroundPos.X() )
+                aSplitPos.X() = aPlaygroundPos.X() + sal_Int32(aPlaygroundSize.Width() * 0.3);
 
-        // the tree pos and size
-        Point   aTreeViewPos( aPlaygroundPos );
-        Size    aTreeViewSize( aPlaygroundSize.Width() ,aSplitPos.Y());
+            // the tree pos and size
+            Point   aTreeViewPos( aPlaygroundPos );
+            Size    aTreeViewSize( aSplitPos.X(), aPlaygroundSize.Height() );
 
-        // set the size of treelistbox
-        m_pLeft->SetPosSizePixel( aTreeViewPos, aTreeViewSize );
+            // set the size of treelistbox
+            m_pLeft->SetPosSizePixel( aTreeViewPos, aTreeViewSize );
 
-        //set the size of the splitter
-        m_pSplitter->SetPosSizePixel( aSplitPos, Size( aPlaygroundSize.Width(), aSplitSize.Height() ) );
-        m_pSplitter->SetDragRectPixel( tools::Rectangle(aPlaygroundPos,aPlaygroundSize) );
+            //set the size of the splitter
+            m_pSplitter->SetPosSizePixel( aSplitPos, Size( aSplitSize.Width(), aPlaygroundSize.Height() ) );
+            m_pSplitter->SetDragRectPixel( Rectangle(aPlaygroundPos,aPlaygroundSize) );
+        }
+        else
+        {
+            aSplitPos.X() = aPlaygroundPos.X();
+            aSplitSize.Width() = aPlaygroundSize.Width();
+
+            if( ( aSplitPos.Y() + aSplitSize.Height() ) > ( aPlaygroundSize.Height() ))
+                aSplitPos.Y() = aPlaygroundSize.Height() - aSplitSize.Height();
+
+            if( aSplitPos.Y() <= aPlaygroundPos.Y() )
+                aSplitPos.Y() = aPlaygroundPos.Y() + sal_Int32(aPlaygroundSize.Height() * 0.3);
+
+            // the tree pos and size
+            Point   aTreeViewPos( aPlaygroundPos );
+            Size    aTreeViewSize( aPlaygroundSize.Width() ,aSplitPos.Y());
+
+            // set the size of treelistbox
+            m_pLeft->SetPosSizePixel( aTreeViewPos, aTreeViewSize );
+
+            //set the size of the splitter
+            m_pSplitter->SetPosSizePixel( aSplitPos, Size( aPlaygroundSize.Width(), aSplitSize.Height() ) );
+            m_pSplitter->SetDragRectPixel( Rectangle(aPlaygroundPos,aPlaygroundSize) );
+        }
     }
 
     if ( m_pRight )
     {
-        m_pRight->setPosSizePixel( aSplitPos.X(), aPlaygroundPos.Y() + aSplitPos.Y() + aSplitSize.Height(),
-                               aPlaygroundSize.Width() , aPlaygroundSize.Height() - aSplitSize.Height() - aSplitPos.Y());
+        if ( m_bVertical )
+            m_pRight->setPosSizePixel( aSplitPos.X() + aSplitSize.Width(), aPlaygroundPos.Y(),
+                                   aPlaygroundSize.Width() - aSplitSize.Width() - aSplitPos.X(), aPlaygroundSize.Height());
+        else
+            m_pRight->setPosSizePixel( aSplitPos.X(), aPlaygroundPos.Y() + aSplitPos.Y() + aSplitSize.Height(),
+                                   aPlaygroundSize.Width() , aPlaygroundSize.Height() - aSplitSize.Height() - aSplitPos.Y());
     }
 
 }
@@ -156,7 +193,7 @@ void OSplitterView::setSplitter(Splitter* _pSplitter)
     m_pSplitter = _pSplitter;
     if ( m_pSplitter )
     {
-        m_pSplitter->SetSplitPosPixel( LogicToPixel( Size( SPLITTER_WIDTH, 0 ), MapUnit::MapAppFont ).Width() );
+        m_pSplitter->SetSplitPosPixel( LogicToPixel( Size( SPLITTER_WIDTH, 0 ), MAP_APPFONT ).Width() );
         m_pSplitter->SetSplitHdl( LINK(this, OSplitterView, SplitHdl) );
         m_pSplitter->Show();
         LINK( this, OSplitterView, SplitHdl ).Call(m_pSplitter);

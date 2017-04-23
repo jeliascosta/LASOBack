@@ -55,11 +55,11 @@ namespace abp
             {}
         };
 
-        std::vector< ButtonItem > m_aAllTypes;
+        ::std::vector< ButtonItem > m_aAllTypes;
 
     public:
         explicit TypeSelectionPage( OAddressBookSourcePilot* _pParent );
-        virtual ~TypeSelectionPage() override;
+        virtual ~TypeSelectionPage();
         virtual void        dispose() override;
 
         // retrieves the currently selected type
@@ -78,7 +78,7 @@ namespace abp
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK( OnTypeSelected, Button*, void );
+        DECL_LINK_TYPED( OnTypeSelected, Button*, void );
 
         void                selectType( AddressSourceType _eType );
     };

@@ -59,10 +59,10 @@ namespace connectivity
     // OConnectionPool - the one-instance service for PooledConnections
     // manages the active connections and the connections in the pool
 
-    typedef ::cppu::WeakImplHelper< css::beans::XPropertyChangeListener>  OConnectionPool_Base;
+    typedef ::cppu::WeakImplHelper< ::com::sun::star::beans::XPropertyChangeListener>  OConnectionPool_Base;
 
     // typedef for the internal structure
-    typedef std::vector< css::uno::Reference< css::sdbc::XPooledConnection> > TPooledConnections;
+    typedef ::std::vector< ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPooledConnection> > TPooledConnections;
 
      // contains the currently pooled connections
     typedef struct
@@ -83,7 +83,7 @@ namespace connectivity
 
     //  typedef TDigestHolder
 
-    struct TDigestLess : public std::binary_function< TDigestHolder, TDigestHolder, bool>
+    struct TDigestLess : public ::std::binary_function< TDigestHolder, TDigestHolder, bool>
     {
         bool operator() (const TDigestHolder& x, const TDigestHolder& y) const
         {
@@ -94,16 +94,16 @@ namespace connectivity
         }
     };
 
-    typedef std::map< TDigestHolder,TConnectionPool,TDigestLess> TConnectionMap;
+    typedef ::std::map< TDigestHolder,TConnectionPool,TDigestLess> TConnectionMap;
 
     // contains additional information about a activeconnection which is needed to put it back to the pool
     typedef struct
     {
         TConnectionMap::iterator aPos;
-        css::uno::Reference< css::sdbc::XPooledConnection> xPooledConnection;
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPooledConnection> xPooledConnection;
     } TActiveConnectionInfo;
 
-    typedef std::map< css::uno::Reference< css::sdbc::XConnection>,
+    typedef ::std::map< ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection>,
                         TActiveConnectionInfo> TActiveConnectionMap;
 
     class OConnectionPool : public OConnectionPool_Base
@@ -114,36 +114,34 @@ namespace connectivity
         ::osl::Mutex            m_aMutex;
         ::rtl::Reference<OPoolTimer>    m_xInvalidator;         // invalidates the conntection pool when shot
 
-        css::uno::Reference< css::sdbc::XDriver >             m_xDriver;      // the one and only driver for this connectionpool
-        css::uno::Reference< css::uno::XInterface >           m_xDriverNode;  // config node entry
-        css::uno::Reference< css::reflection::XProxyFactory > m_xProxyFactory;
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDriver >             m_xDriver;      // the one and only driver for this connectionpool
+        ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >           m_xDriverNode;  // config node entry
+        ::com::sun::star::uno::Reference< ::com::sun::star::reflection::XProxyFactory > m_xProxyFactory;
         sal_Int32               m_nTimeOut;
         sal_Int32               m_nALiveCount;
 
     private:
-        css::uno::Reference< css::sdbc::XConnection> createNewConnection(const OUString& _rURL,
-                                const css::uno::Sequence< css::beans::PropertyValue >& _rInfo);
-        css::uno::Reference< css::sdbc::XConnection> getPooledConnection(TConnectionMap::iterator& _rIter);
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection> createNewConnection(const OUString& _rURL,
+                                const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& _rInfo);
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection> getPooledConnection(TConnectionMap::iterator& _rIter);
         // calculate the timeout and the corresponding ALiveCount
         void calculateTimeOuts();
 
     protected:
         // the dtor will be called from the last instance  (last release call)
-        virtual ~OConnectionPool() override;
+        virtual ~OConnectionPool();
     public:
-        OConnectionPool(const css::uno::Reference< css::sdbc::XDriver >& _xDriver,
-                        const css::uno::Reference< css::uno::XInterface >& _xDriverNode,
-                        const css::uno::Reference< css::reflection::XProxyFactory >& _rxProxyFactory);
+        OConnectionPool(const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDriver >& _xDriver,
+                        const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xDriverNode,
+                        const ::com::sun::star::uno::Reference< ::com::sun::star::reflection::XProxyFactory >& _rxProxyFactory);
 
         // delete all refs
         void clear(bool _bDispose);
-        /// @throws css::sdbc::SQLException
-        /// @throws css::uno::RuntimeException
-        css::uno::Reference< css::sdbc::XConnection > SAL_CALL getConnectionWithInfo( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info );
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL getConnectionWithInfo( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const ::com::sun::star::lang::EventObject& Source ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+        virtual void SAL_CALL propertyChange( const ::com::sun::star::beans::PropertyChangeEvent& evt ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
         void invalidatePooledConnections();
     };

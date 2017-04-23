@@ -55,6 +55,11 @@ Reference< XAccessible > EditBrowseBox::CreateAccessibleCheckBoxCell(long _nRow,
     return xReturn;
 }
 
+Reference< XAccessible > EditBrowseBox::CreateAccessibleCell( sal_Int32 _nRow, sal_uInt16 _nColumnPos )
+{
+    return BrowseBox::CreateAccessibleCell( _nRow, _nColumnPos );
+}
+
 sal_Int32 EditBrowseBox::GetAccessibleControlCount() const
 {
     return IsEditing() ? 1 : 0;
@@ -99,6 +104,11 @@ Reference< XAccessible > EditBrowseBox::CreateAccessibleControl( sal_Int32 _nInd
     return m_aImpl->m_xActiveCell;
 }
 
+Reference<XAccessible > EditBrowseBox::CreateAccessibleRowHeader( sal_Int32 _nRow )
+{
+    return BrowseBox::CreateAccessibleRowHeader( _nRow );
+}
+
 void EditBrowseBoxImpl::clearActiveCell()
 {
     try
@@ -115,7 +125,7 @@ void EditBrowseBoxImpl::clearActiveCell()
 
 void EditBrowseBox::GrabTableFocus()
 {
-    if ( aController.is() )
+    if ( aController.Is() )
         aController->GetWindow().GrabFocus();
 }
 
@@ -164,9 +174,9 @@ void EditBrowseBox::DetermineFocus( const GetFocusFlags _nGetFocusFlags )
     }
 }
 
-tools::Rectangle EditBrowseBox::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 _nIndex)
+Rectangle EditBrowseBox::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 _nIndex)
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if ( SeekRow(_nRow) )
     {
         CellController* pController = GetController(

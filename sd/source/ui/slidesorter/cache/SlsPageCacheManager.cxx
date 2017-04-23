@@ -38,7 +38,7 @@ public:
     Size maPreviewSize;
 
     CacheDescriptor(
-        ::sd::slidesorter::cache::PageCacheManager::DocumentKey const & pDocument,
+        ::sd::slidesorter::cache::PageCacheManager::DocumentKey pDocument,
         const Size& rPreviewSize)
         :mpDocument(pDocument),maPreviewSize(rPreviewSize)
     {}
@@ -180,7 +180,8 @@ std::shared_ptr<PageCacheManager> PageCacheManager::Instance()
 
 PageCacheManager::PageCacheManager()
     : mpPageCaches(new PageCacheContainer()),
-      mpRecentlyUsedPageCaches(new RecentlyUsedPageCaches())
+      mpRecentlyUsedPageCaches(new RecentlyUsedPageCaches()),
+      mnMaximalRecentlyCacheCount(2)
 {
 }
 
@@ -409,7 +410,7 @@ std::shared_ptr<PageCacheManager::Cache> PageCacheManager::GetRecentlyUsedCache 
 }
 
 void PageCacheManager::PutRecentlyUsedCache(
-    DocumentKey const & pDocument,
+    DocumentKey pDocument,
     const Size& rPreviewSize,
     const std::shared_ptr<Cache>& rpCache)
 {

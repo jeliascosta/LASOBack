@@ -88,8 +88,7 @@ SFX_IMPL_INTERFACE(ScPreviewShell, SfxViewShell)
 
 void ScPreviewShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT,
-                                            SfxVisibilityFlags::Standard|SfxVisibilityFlags::Server|SfxVisibilityFlags::ReadonlyDoc,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT|SFX_VISIBILITY_STANDARD|SFX_VISIBILITY_SERVER|SFX_VISIBILITY_READONLYDOC,
                                             RID_OBJECTBAR_PREVIEW);
 
     GetStaticInterface()->RegisterPopupMenu("preview");
@@ -143,12 +142,13 @@ void ScPreviewShell::Construct( vcl::Window* pParent )
     pHorScroll->Show( false );
     pVerScroll->Show( false );
     pCorner->Show();
+    SetHelpId( HID_SCSHELL_PREVWSH );
     SetName("Preview");
 }
 
 ScPreviewShell::ScPreviewShell( SfxViewFrame* pViewFrame,
                                 SfxViewShell* pOldSh ) :
-    SfxViewShell( pViewFrame, SfxViewShellFlags::HAS_PRINTOPTIONS ),
+    SfxViewShell( pViewFrame, SfxViewShellFlags::CAN_PRINT | SfxViewShellFlags::HAS_PRINTOPTIONS ),
     pDocShell( static_cast<ScDocShell*>(pViewFrame->GetObjectShell()) ),
     mpFrameWindow(nullptr),
     nSourceDesignMode( TRISTATE_INDET ),
@@ -186,7 +186,7 @@ ScPreviewShell::~ScPreviewShell()
         mpFrameWindow->SetCloseHdl(Link<SystemWindow&,void>()); // Remove close handler.
 
     // #108333#; notify Accessibility that Shell is dying and before destroy all
-    BroadcastAccessibility( SfxHint( SfxHintId::Dying ) );
+    BroadcastAccessibility( SfxSimpleHint( SFX_HINT_DYING ) );
     DELETEZ(pAccessibilityBroadcaster);
 
     SfxBroadcaster* pDrawBC = pDocShell->GetDocument().GetDrawBroadcaster();
@@ -220,10 +220,10 @@ void ScPreviewShell::AdjustPosSizePixel( const Point &rPos, const Size &rSize )
     else if ( SvxZoomType::PAGEWIDTH == eZoom )
         pPreview->SetZoom( pPreview->GetOptimalZoom(true) );
 
-    UpdateNeededScrollBars(false);
+    UpdateNeededScrollBars();
 }
 
-void ScPreviewShell::InnerResizePixel( const Point &rOfs, const Size &rSize, bool )
+void ScPreviewShell::InnerResizePixel( const Point &rOfs, const Size &rSize )
 {
     AdjustPosSizePixel( rOfs,rSize );
 }
@@ -404,7 +404,7 @@ void ScPreviewShell::UpdateScrollBars()
     }
 }
 
-IMPL_LINK( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
+IMPL_LINK_TYPED( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
 {
     long nPos           = pScroll->GetThumbPos();
     long nDelta         = pScroll->GetDelta();
@@ -440,7 +440,7 @@ IMPL_LINK( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
             Point  aMousePos = pScroll->OutputToNormalizedScreenPixel( pScroll->GetPointerPosPixel() );
             Point  aPos      = pScroll->GetParent()->OutputToNormalizedScreenPixel( pScroll->GetPosPixel() );
             OUString aHelpStr;
-            tools::Rectangle aRect;
+            Rectangle aRect;
             QuickHelpFlags nAlign;
 
             if( nDelta < 0 )
@@ -475,7 +475,7 @@ IMPL_LINK( ScPreviewShell, ScrollHandler, ScrollBar*, pScroll, void )
     }
 }
 
-IMPL_LINK_NOARG(ScPreviewShell, CloseHdl, SystemWindow&, void)
+IMPL_LINK_NOARG_TYPED(ScPreviewShell, CloseHdl, SystemWindow&, void)
 {
     ExitPreview();
 }
@@ -528,7 +528,7 @@ VclPtr<SfxTabPage> ScPreviewShell::CreatePrintOptionsPage( vcl::Window *pParent,
 {
     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
-    ::CreateTabPage ScTpPrintOptionsCreate = pFact->GetTabPageCreatorFunc(RID_SC_TP_PRINT);
+    ::CreateTabPage ScTpPrintOptionsCreate = pFact->GetTabPageCreatorFunc( RID_SCPAGE_PRINT );
     if ( ScTpPrintOptionsCreate )
         return ScTpPrintOptionsCreate( pParent, &rOptions );
     return VclPtr<SfxTabPage>();
@@ -640,7 +640,7 @@ void ScPreviewShell::Execute( SfxRequest& rReq )
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                     if(pFact)
                     {
-                        ScopedVclPtr<AbstractSvxZoomDialog> pDlg(pFact->CreateSvxZoomDialog(nullptr, aSet));
+                        std::unique_ptr<AbstractSvxZoomDialog> pDlg(pFact->CreateSvxZoomDialog(nullptr, aSet));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
                         pDlg->SetLimits( 20, 400 );
                         pDlg->HideButton( ZoomButtonId::OPTIMAL );
@@ -893,9 +893,9 @@ void ScPreviewShell::FillFieldData( ScHeaderFieldData& rData )
         rData.aTitle = pDocShell->GetTitle();
 
     const INetURLObject& rURLObj = pDocShell->GetMedium()->GetURLObject();
-    rData.aLongDocName  = rURLObj.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
+    rData.aLongDocName  = rURLObj.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
     if ( !rData.aLongDocName.isEmpty() )
-        rData.aShortDocName = rURLObj.GetName( INetURLObject::DecodeMechanism::Unambiguous );
+        rData.aShortDocName = rURLObj.GetName( INetURLObject::DECODE_UNAMBIGUOUS );
     else
         rData.aShortDocName = rData.aLongDocName = rData.aTitle;
     rData.nPageNo       = pPreview->GetPageNo() + 1;
@@ -915,7 +915,7 @@ void ScPreviewShell::WriteUserData(OUString& rData, bool /* bBrowse */)
     //  nPageNo
 
     rData = OUString::number(pPreview->GetZoom())
-        + OUStringLiteral1(SC_USERDATA_SEP)
+        + OUStringLiteral1<SC_USERDATA_SEP>()
         + OUString::number(pPreview->GetPageNo());
 }
 
@@ -938,15 +938,15 @@ void ScPreviewShell::WriteUserDataSequence(uno::Sequence < beans::PropertyValue 
     {
         sal_uInt16 nViewID(GetViewFrame()->GetCurViewId());
         pSeq[0].Name = SC_VIEWID;
-        pSeq[0].Value <<= SC_VIEW + OUString::number(nViewID);
+        OUStringBuffer sBuffer(SC_VIEW);
+        ::sax::Converter::convertNumber(sBuffer,
+                static_cast<sal_Int32>(nViewID));
+        pSeq[0].Value <<= sBuffer.makeStringAndClear();
         pSeq[1].Name = SC_ZOOMVALUE;
         pSeq[1].Value <<= sal_Int32 (pPreview->GetZoom());
         pSeq[2].Name = "PageNumber";
         pSeq[2].Value <<= pPreview->GetPageNo();
     }
-
-    // Common SdrModel processing
-    GetDocument().GetDrawLayer()->WriteUserDataSequence(rSeq);
 }
 
 void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyValue >& rSeq)
@@ -972,8 +972,6 @@ void ScPreviewShell::ReadUserDataSequence(const uno::Sequence < beans::PropertyV
                     if (pSeq->Value >>= nTemp)
                         pPreview->SetPageNo(nTemp);
                 }
-                // Fallback to common SdrModel processing
-                else GetDocument().GetDrawLayer()->ReadUserDataSequenceValue(pSeq);
             }
         }
     }

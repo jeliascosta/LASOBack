@@ -15,7 +15,8 @@ HtmlWriter::HtmlWriter(SvStream& rStream) :
     mrStream(rStream),
     mbElementOpen(false),
     mbContentWritten(false),
-    mbPrettyPrint(true)
+    mbPrettyPrint(true),
+    maEncoding(RTL_TEXTENCODING_UTF8)
 {}
 
 HtmlWriter::~HtmlWriter()
@@ -128,7 +129,7 @@ void HtmlWriter::attribute(const OString& aAttribute, const char* pValue)
 
 void HtmlWriter::attribute(const OString& aAttribute, const OUString& aValue)
 {
-    attribute(aAttribute, OUStringToOString(aValue, RTL_TEXTENCODING_UTF8));
+    attribute(aAttribute, OUStringToOString(aValue, maEncoding));
 }
 
 void HtmlWriter::attribute(const OString& aAttribute)

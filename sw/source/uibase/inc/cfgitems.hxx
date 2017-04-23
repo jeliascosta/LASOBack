@@ -55,10 +55,11 @@ class SW_DLLPUBLIC SwDocDisplayItem : public SfxPoolItem
     bool bShowHiddenPara    :1;
 
 public:
-                                SwDocDisplayItem();
+                                SwDocDisplayItem( sal_uInt16 nWhich = FN_PARAM_DOCDISP );
                                 SwDocDisplayItem(
                                     const SwDocDisplayItem& rSwDocDisplayItem );
-                                SwDocDisplayItem( const SwViewOption& rVOpt );
+                                SwDocDisplayItem( const SwViewOption& rVOpt,
+                                                                sal_uInt16 nWhich );
 
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool                operator==( const SfxPoolItem& ) const override;
@@ -86,9 +87,9 @@ class SW_DLLPUBLIC SwElemItem : public SfxPoolItem
     friend class SwContentOptPage;
 
 public:
-                            SwElemItem();
+                            SwElemItem( sal_uInt16 nWhich = FN_PARAM_ELEM );
                             SwElemItem(const SwElemItem& rElemItem);
-                            SwElemItem(const SwViewOption& rVOpt);
+                            SwElemItem(const SwViewOption& rVOpt, sal_uInt16 nWhich);
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -107,8 +108,8 @@ class SW_DLLPUBLIC SwAddPrinterItem : public SfxPoolItem, public SwPrintData
     using  SwPrintData::operator ==;
 
 public:
-    SwAddPrinterItem();
-    SwAddPrinterItem( const SwPrintData& rPrtData );
+    SwAddPrinterItem( sal_uInt16 nWhich = FN_PARAM_ADDPRINTER );
+    SwAddPrinterItem( sal_uInt16 nWhich, const SwPrintData& rPrtData );
     SwAddPrinterItem( const SwAddPrinterItem& rAddPrinterItem);
 
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -124,9 +125,9 @@ class SW_DLLPUBLIC SwShadowCursorItem : public SfxPoolItem
     sal_uInt8 eMode;
     bool bOn;
 public:
-    SwShadowCursorItem();
+    SwShadowCursorItem( sal_uInt16 nWhich = FN_PARAM_SHADOWCURSOR );
     SwShadowCursorItem( const SwShadowCursorItem& rElemItem );
-    SwShadowCursorItem( const SwViewOption& rVOpt );
+    SwShadowCursorItem( const SwViewOption& rVOpt, sal_uInt16 nWhich );
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -162,7 +163,8 @@ class SW_DLLPUBLIC SwTestItem : public SfxPoolItem
     bool    bTest10:1;
 
 public:
-                            SwTestItem() : SfxPoolItem(FN_PARAM_SWTEST) {};
+                            SwTestItem( sal_uInt16 _nWhich):
+                                            SfxPoolItem(_nWhich){};
                             SwTestItem( const SwTestItem& pTestItem);
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;

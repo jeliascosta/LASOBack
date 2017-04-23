@@ -120,7 +120,7 @@ namespace drawinglayer
                 return OUString("Time");
             }
 
-            // a central PropertyValue parsing method to allow transportation of
+            // a central PropertyValue parsing method to allow transportatin of
             // all ViewParameters using UNO API
             void impInterpretPropertyValues(const uno::Sequence< beans::PropertyValue >& rViewParameters)
             {
@@ -456,11 +456,6 @@ namespace drawinglayer
         {
         }
 
-        ViewInformation3D::ViewInformation3D(ViewInformation3D&& rCandidate)
-        :   mpViewInformation3D(std::move(rCandidate.mpViewInformation3D))
-        {
-        }
-
         ViewInformation3D::~ViewInformation3D()
         {
         }
@@ -473,12 +468,6 @@ namespace drawinglayer
         ViewInformation3D& ViewInformation3D::operator=(const ViewInformation3D& rCandidate)
         {
             mpViewInformation3D = rCandidate.mpViewInformation3D;
-            return *this;
-        }
-
-        ViewInformation3D& ViewInformation3D::operator=(ViewInformation3D&& rCandidate)
-        {
-            mpViewInformation3D = std::move(rCandidate.mpViewInformation3D);
             return *this;
         }
 

@@ -26,11 +26,9 @@ class SalFrame;
 
 class KDESalInstance : public X11SalInstance
 {
-    protected:
-        virtual SalX11Display* CreateDisplay() const override;
-
     public:
         explicit KDESalInstance(SalYieldMutex* pMutex);
+        virtual ~KDESalInstance() {}
         virtual SalFrame* CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
 
         virtual bool hasNativeFileSelection() const override { return true; }
@@ -38,6 +36,7 @@ class KDESalInstance : public X11SalInstance
         virtual css::uno::Reference< css::ui::dialogs::XFilePicker2 >
             createFilePicker( const css::uno::Reference<
                                   css::uno::XComponentContext >& ) override;
+        int getFrameWidth();
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

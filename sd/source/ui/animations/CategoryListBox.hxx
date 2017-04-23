@@ -29,13 +29,13 @@ class CategoryListBox : public ListBox
 {
 public:
     explicit CategoryListBox( vcl::Window* pParent );
-    virtual ~CategoryListBox() override;
+    virtual ~CategoryListBox();
 
     virtual void        MouseButtonUp( const MouseEvent& rMEvt ) SAL_OVERRIDE;
 
-    void                InsertCategory( const OUString& rStr );
+    sal_Int32           InsertCategory( const OUString& rStr );
 
-    DECL_LINK(implDoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(implDoubleClickHdl, ListBox&, void);
 
 private:
     virtual void    UserDraw( const UserDrawEvent& rUDEvt ) SAL_OVERRIDE;

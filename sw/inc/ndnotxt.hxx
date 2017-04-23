@@ -30,7 +30,7 @@ class SW_DLLPUBLIC SwNoTextNode : public SwContentNode
     friend class SwNodes;
     friend class SwNoTextFrame;
 
-    std::unique_ptr<tools::PolyPolygon> pContour;
+    tools::PolyPolygon *pContour;
     bool bAutomaticContour : 1; // automatic contour polygon, not manipulated
     bool bContourMapModeValid : 1; // contour map mode is not the graphics's
                                    // preferred map mode, but either
@@ -45,15 +45,15 @@ class SW_DLLPUBLIC SwNoTextNode : public SwContentNode
     SwNoTextNode &operator=( const SwNoTextNode& ) = delete;
 
 protected:
-    SwNoTextNode( const SwNodeIndex &rWhere, const SwNodeType nNdType,
-                SwGrfFormatColl *pGrColl, SwAttrSet* pAutoAttr );
+    SwNoTextNode( const SwNodeIndex &rWhere, const sal_uInt8 nNdType,
+                SwGrfFormatColl *pGrColl, SwAttrSet* pAutoAttr = nullptr );
 
 public:
-    virtual ~SwNoTextNode() override;
+    virtual ~SwNoTextNode();
 
     virtual SwContentFrame *MakeFrame( SwFrame* ) override;
 
-    SwGrfFormatColl *GetGrfColl() const { return const_cast<SwGrfFormatColl*>(static_cast<const SwGrfFormatColl*>(GetRegisteredIn())); }
+    inline SwGrfFormatColl *GetGrfColl() const { return const_cast<SwGrfFormatColl*>(static_cast<const SwGrfFormatColl*>(GetRegisteredIn())); }
 
     virtual Size GetTwipSize() const = 0;
 
@@ -93,11 +93,11 @@ public:
 // Inline methods from Node.hxx - we know TextNode only here!!
 inline SwNoTextNode *SwNode::GetNoTextNode()
 {
-    return SwNodeType::NoTextMask & m_nNodeType ? static_cast<SwNoTextNode*>(this) : nullptr;
+    return ND_NOTXTNODE & m_nNodeType ? static_cast<SwNoTextNode*>(this) : nullptr;
 }
 inline const SwNoTextNode *SwNode::GetNoTextNode() const
 {
-    return SwNodeType::NoTextMask & m_nNodeType ? static_cast<const SwNoTextNode*>(this) : nullptr;
+    return ND_NOTXTNODE & m_nNodeType ? static_cast<const SwNoTextNode*>(this) : nullptr;
 }
 
 #endif // INCLUDED_SW_INC_NDNOTXT_HXX

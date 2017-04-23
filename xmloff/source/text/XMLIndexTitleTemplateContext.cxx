@@ -39,6 +39,8 @@ XMLIndexTitleTemplateContext::XMLIndexTitleTemplateContext(
     sal_uInt16 nPrfx,
     const OUString& rLocalName)
 :   SvXMLImportContext(rImport, nPrfx, rLocalName)
+,   sTitle("Title")
+,   sParaStyleHeading("ParaStyleHeading")
 ,   bStyleNameOK(false)
 ,   rTOCPropertySet(rPropSet)
 {
@@ -78,14 +80,14 @@ void XMLIndexTitleTemplateContext::EndElement()
     Any aAny;
 
     aAny <<= sContent.makeStringAndClear();
-    rTOCPropertySet->setPropertyValue("Title", aAny);
+    rTOCPropertySet->setPropertyValue(sTitle, aAny);
 
     if (bStyleNameOK)
     {
         aAny <<= GetImport().GetStyleDisplayName(
                                 XML_STYLE_FAMILY_TEXT_PARAGRAPH,
                                 sStyleName );
-        rTOCPropertySet->setPropertyValue("ParaStyleHeading", aAny);
+        rTOCPropertySet->setPropertyValue(sParaStyleHeading, aAny);
     }
 }
 

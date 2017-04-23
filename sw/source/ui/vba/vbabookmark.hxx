@@ -35,21 +35,19 @@ private:
     bool mbValid;
 
 private:
-    /// @throws css::uno::RuntimeException
-    void checkVality();
+    void checkVality() throw ( css::uno::RuntimeException );
 
 public:
-    /// @throws css::uno::RuntimeException
     SwVbaBookmark( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext,
-        const css::uno::Reference< css::frame::XModel >& rModel, const OUString& rName );
-    virtual ~SwVbaBookmark() override;
+        const css::uno::Reference< css::frame::XModel >& rModel, const OUString& rName ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaBookmark();
 
    // Methods
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL setName( const OUString& ) override;
-    virtual void SAL_CALL Delete() override;
-    virtual void SAL_CALL Select() override;
-    virtual css::uno::Any SAL_CALL Range() override;
+    virtual OUString SAL_CALL getName() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setName( const OUString& ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL Delete() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL Select() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL Range() throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

@@ -36,6 +36,7 @@ namespace pcr
 
     using ::com::sun::star::uno::Any;
     using ::com::sun::star::uno::Type;
+    using ::com::sun::star::beans::IllegalTypeException;
     using ::com::sun::star::uno::RuntimeException;
 
     namespace PropertyControlType = ::com::sun::star::inspection::PropertyControlType;
@@ -86,14 +87,14 @@ namespace pcr
     // OFormatSampleControl
 
 
-    OFormatSampleControl::OFormatSampleControl( vcl::Window* pParent )
-        :OFormatSampleControl_Base( PropertyControlType::Unknown, pParent, WB_READONLY | WB_TABSTOP | WB_BORDER )
+    OFormatSampleControl::OFormatSampleControl( vcl::Window* pParent, WinBits nWinStyle )
+        :OFormatSampleControl_Base( PropertyControlType::Unknown, pParent, nWinStyle )
     {
         getTypedControlWindow()->setControlHelper(*this);
     }
 
 
-    void SAL_CALL OFormatSampleControl::setValue( const Any& _rValue )
+    void SAL_CALL OFormatSampleControl::setValue( const Any& _rValue ) throw (IllegalTypeException, RuntimeException, std::exception)
     {
         sal_Int32 nFormatKey = 0;
         if ( _rValue >>= nFormatKey )
@@ -124,7 +125,7 @@ namespace pcr
                 {
                     Date aCurrentDate( Date::SYSTEM );
                     static css::util::Date STANDARD_DB_DATE(30,12,1899);
-                    nValue = ::dbtools::DBTypeConversion::toDouble(::dbtools::DBTypeConversion::toDate(aCurrentDate.GetDate()),STANDARD_DB_DATE);
+                    nValue = ::dbtools::DBTypeConversion::toDouble(::dbtools::DBTypeConversion::toDate(static_cast<sal_Int32>(aCurrentDate.GetDate())),STANDARD_DB_DATE);
                 }
                 break;
             case css::util::NumberFormat::TIME:
@@ -151,7 +152,7 @@ namespace pcr
         return nValue;
     }
 
-    Any SAL_CALL OFormatSampleControl::getValue()
+    Any SAL_CALL OFormatSampleControl::getValue() throw (RuntimeException, std::exception)
     {
         Any aPropValue;
         if ( !getTypedControlWindow()->GetText().isEmpty() )
@@ -160,7 +161,7 @@ namespace pcr
     }
 
 
-    Type SAL_CALL OFormatSampleControl::getValueType()
+    Type SAL_CALL OFormatSampleControl::getValueType() throw (RuntimeException, std::exception)
     {
         return ::cppu::UnoType<sal_Int32>::get();
     }
@@ -183,7 +184,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OFormattedNumericControl::setValue( const Any& _rValue )
+    void SAL_CALL OFormattedNumericControl::setValue( const Any& _rValue ) throw (IllegalTypeException, RuntimeException, std::exception)
     {
         double nValue( 0 );
         if ( _rValue >>= nValue )
@@ -193,16 +194,16 @@ namespace pcr
     }
 
 
-    Any SAL_CALL OFormattedNumericControl::getValue()
+    Any SAL_CALL OFormattedNumericControl::getValue() throw (RuntimeException, std::exception)
     {
         Any aPropValue;
         if ( !getTypedControlWindow()->GetText().isEmpty() )
-            aPropValue <<= getTypedControlWindow()->GetValue();
+            aPropValue <<= (double)getTypedControlWindow()->GetValue();
         return aPropValue;
     }
 
 
-    Type SAL_CALL OFormattedNumericControl::getValueType()
+    Type SAL_CALL OFormattedNumericControl::getValueType() throw (RuntimeException, std::exception)
     {
         return ::cppu::UnoType<double>::get();
     }
@@ -261,8 +262,8 @@ namespace pcr
     //= OFileUrlControl
 
 
-    OFileUrlControl::OFileUrlControl( vcl::Window* pParent )
-        :OFileUrlControl_Base( PropertyControlType::Unknown, pParent, WB_TABSTOP | WB_BORDER | WB_DROPDOWN )
+    OFileUrlControl::OFileUrlControl( vcl::Window* pParent, WinBits nWinStyle )
+        :OFileUrlControl_Base( PropertyControlType::Unknown, pParent, nWinStyle | WB_DROPDOWN )
     {
         getTypedControlWindow()->SetDropDownLineCount( 10 );
         getTypedControlWindow()->SetPlaceHolder( PcrRes( RID_EMBED_IMAGE_PLACEHOLDER ).toString() ) ;
@@ -274,7 +275,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL OFileUrlControl::setValue( const Any& _rValue )
+    void SAL_CALL OFileUrlControl::setValue( const Any& _rValue ) throw (IllegalTypeException, RuntimeException, std::exception)
     {
         OUString sURL;
         if ( ( _rValue >>= sURL ) )
@@ -289,7 +290,7 @@ namespace pcr
     }
 
 
-    Any SAL_CALL OFileUrlControl::getValue()
+    Any SAL_CALL OFileUrlControl::getValue() throw (RuntimeException, std::exception)
     {
         Any aPropValue;
         if ( !getTypedControlWindow()->GetText().isEmpty() )
@@ -298,7 +299,7 @@ namespace pcr
     }
 
 
-    Type SAL_CALL OFileUrlControl::getValueType()
+    Type SAL_CALL OFileUrlControl::getValueType() throw (RuntimeException, std::exception)
     {
         return ::cppu::UnoType<OUString>::get();
     }
@@ -307,8 +308,8 @@ namespace pcr
     //= OTimeDurationControl
 
 
-    OTimeDurationControl::OTimeDurationControl( vcl::Window* pParent )
-        :ONumericControl( pParent, WB_BORDER | WB_TABSTOP )
+    OTimeDurationControl::OTimeDurationControl( vcl::Window* pParent, WinBits nWinStyle )
+        :ONumericControl( pParent, nWinStyle )
     {
         getTypedControlWindow()->SetUnit( FUNIT_CUSTOM );
         getTypedControlWindow()->SetCustomUnitText(" ms");
@@ -321,7 +322,7 @@ namespace pcr
     }
 
 
-    ::sal_Int16 SAL_CALL OTimeDurationControl::getControlType()
+    ::sal_Int16 SAL_CALL OTimeDurationControl::getControlType() throw (css::uno::RuntimeException)
     {
         // don't use the base class'es method, it would claim we're a standard control, which
         // we in fact aren't
@@ -329,7 +330,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG( OTimeDurationControl, OnCustomConvert, MetricFormatter&, void )
+    IMPL_LINK_NOARG_TYPED( OTimeDurationControl, OnCustomConvert, MetricFormatter&, void )
     {
         long nMultiplier = 1;
         if ( getTypedControlWindow()->GetCurUnitText().equalsIgnoreAsciiCase( "ms" ) )

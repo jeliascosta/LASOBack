@@ -22,6 +22,7 @@
 #include "sdresid.hxx"
 
 #include "strings.hrc"
+#include "dialogs.hrc"
 #include "masterlayoutdlg.hxx"
 #include "drawdoc.hxx"
 
@@ -45,21 +46,21 @@ MasterLayoutDialog::MasterLayoutDialog( vcl::Window* pParent, SdDrawDocument* pD
 
     if( mpCurrentPage == nullptr )
     {
-        mpCurrentPage = pDoc->GetMasterSdPage( 0, PageKind::Standard );
+        mpCurrentPage = pDoc->GetMasterSdPage( 0, PK_STANDARD );
         OSL_FAIL( "MasterLayoutDialog::MasterLayoutDialog() - no current page?" );
     }
 
     switch( mpCurrentPage->GetPageKind() )
     {
-        case PageKind::Standard:
+        case PK_STANDARD:
         {
             mpCBHeader->Enable(false);
             mpCBPageNumber->SetText(mpCBSlideNumber->GetText());
             break;
         }
-        case PageKind::Notes:
+        case PK_NOTES:
             break;
-        case PageKind::Handout:
+        case PK_HANDOUT:
             break;
     }
 
@@ -100,7 +101,7 @@ void MasterLayoutDialog::applyChanges()
 {
     mpDoc->BegUndo(GetText());
 
-    if( (mpCurrentPage->GetPageKind() != PageKind::Standard) && (mbOldHeader != mpCBHeader->IsChecked() ) )
+    if( (mpCurrentPage->GetPageKind() != PK_STANDARD) && (mbOldHeader != (bool) mpCBHeader->IsChecked() ) )
     {
         if( mbOldHeader )
             remove( PRESOBJ_HEADER );
@@ -108,7 +109,7 @@ void MasterLayoutDialog::applyChanges()
             create( PRESOBJ_HEADER );
     }
 
-    if( mbOldFooter != mpCBFooter->IsChecked() )
+    if( mbOldFooter != (bool) mpCBFooter->IsChecked() )
     {
         if( mbOldFooter )
             remove( PRESOBJ_FOOTER );
@@ -116,7 +117,7 @@ void MasterLayoutDialog::applyChanges()
             create( PRESOBJ_FOOTER );
     }
 
-    if( mbOldDate != mpCBDate->IsChecked() )
+    if( mbOldDate != (bool) mpCBDate->IsChecked() )
     {
         if( mbOldDate )
             remove( PRESOBJ_DATETIME );
@@ -124,7 +125,7 @@ void MasterLayoutDialog::applyChanges()
             create( PRESOBJ_DATETIME );
     }
 
-    if( mbOldPageNumber != mpCBPageNumber->IsChecked() )
+    if( mbOldPageNumber != (bool) mpCBPageNumber->IsChecked() )
     {
         if( mbOldPageNumber )
             remove( PRESOBJ_SLIDENUMBER );

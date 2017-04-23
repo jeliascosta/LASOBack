@@ -32,14 +32,14 @@ class DLLPUBLIC_PACKAGE Inflater
     typedef struct z_stream_s z_stream;
 
 protected:
-    bool                    bFinished, bNeedDict;
+    bool                    bFinished, bSetParams, bNeedDict;
     sal_Int32               nOffset, nLength, nLastInflateError;
     z_stream*               pStream;
     css::uno::Sequence < sal_Int8 >  sInBuffer;
     sal_Int32   doInflateBytes (css::uno::Sequence < sal_Int8 > &rBuffer, sal_Int32 nNewOffset, sal_Int32 nNewLength);
 
 public:
-    Inflater(bool bNoWrap);
+    Inflater(bool bNoWrap = false);
     ~Inflater();
     void SAL_CALL setInput( const css::uno::Sequence< sal_Int8 >& rBuffer );
     bool SAL_CALL needsDictionary(  ) { return bNeedDict;}

@@ -19,11 +19,9 @@
 
 #include "borderconn.hxx"
 #include <svx/frmsel.hxx>
-#include <svx/svxids.hrc>
 #include "editeng/lineitem.hxx"
 #include <editeng/boxitem.hxx>
 #include <svx/algitem.hxx>
-#include <svx/colorbox.hxx>
 #include <editeng/shaditem.hxx>
 
 namespace svx {
@@ -42,7 +40,9 @@ of the tab page.
 class LineItemWrapper : public sfx::SingleItemWrapper< SvxLineItem, const editeng::SvxBorderLine* >
 {
 public:
-    explicit     LineItemWrapper( sal_uInt16 nSlot ) : SingleItemWrapperType( nSlot ) {}
+    inline explicit     LineItemWrapper( sal_uInt16 nSlot ) : SingleItemWrapperType( nSlot ) {}
+
+    virtual ~LineItemWrapper() {}
 
     virtual const editeng::SvxBorderLine* GetItemValue( const SvxLineItem& rItem ) const override
                             { return rItem.GetLine(); }
@@ -55,7 +55,7 @@ public:
 class FrameSelectorWrapper : public sfx::SingleControlWrapper< FrameSelector, const editeng::SvxBorderLine* >
 {
 public:
-    explicit     FrameSelectorWrapper( FrameSelector& rFrameSel, FrameBorderType eBorder ) :
+    inline explicit     FrameSelectorWrapper( FrameSelector& rFrameSel, FrameBorderType eBorder ) :
                             SingleControlWrapperType( rFrameSel ), meBorder( eBorder ) {}
 
     virtual bool        IsControlDontKnow() const override;
@@ -70,7 +70,7 @@ private:
 
 bool FrameSelectorWrapper::IsControlDontKnow() const
 {
-    return GetControl().GetFrameBorderState( meBorder ) == FrameBorderState::DontCare;
+    return GetControl().GetFrameBorderState( meBorder ) == FRAMESTATE_DONTCARE;
 }
 
 void FrameSelectorWrapper::SetControlDontKnow( bool bSet )
@@ -170,7 +170,7 @@ public:
 
 MarginConnection::MarginConnection( const SfxItemSet& rItemSet,
         MetricField& rMfLeft, MetricField& rMfRight, MetricField& rMfTop, MetricField& rMfBottom ) :
-    ItemControlConnectionType( SID_ATTR_ALIGN_MARGIN, new MarginControlsWrapper( rMfLeft, rMfRight, rMfTop, rMfBottom ), ItemConnFlags::NONE )
+    ItemControlConnectionType( SID_ATTR_ALIGN_MARGIN, new MarginControlsWrapper( rMfLeft, rMfRight, rMfTop, rMfBottom ), sfx::ITEMCONN_DEFAULT )
 {
     mxCtrlWrp->SetDefaultValue( maItemWrp.GetDefaultItem( rItemSet ) );
 }
@@ -192,18 +192,18 @@ typedef sfx::IdentItemWrapper< SvxShadowItem > ShadowItemWrapper;
 typedef sfx::ValueSetWrapper< SvxShadowLocation > ShadowPosWrapper;
 static const ShadowPosWrapper::MapEntryType s_pShadowPosMap[] =
 {
-    { 1,                        SvxShadowLocation::NONE         },
-    { 2,                        SvxShadowLocation::BottomRight  },
-    { 3,                        SvxShadowLocation::TopRight     },
-    { 4,                        SvxShadowLocation::BottomLeft   },
-    { 5,                        SvxShadowLocation::TopLeft      },
-    { WRAPPER_VALUESET_ITEM_NOTFOUND, SvxShadowLocation::NONE   }
+    { 1,                        SVX_SHADOW_NONE         },
+    { 2,                        SVX_SHADOW_BOTTOMRIGHT  },
+    { 3,                        SVX_SHADOW_TOPRIGHT     },
+    { 4,                        SVX_SHADOW_BOTTOMLEFT   },
+    { 5,                        SVX_SHADOW_TOPLEFT      },
+    { WRAPPER_VALUESET_ITEM_NOTFOUND, SVX_SHADOW_NONE   }
 };
 
 class ShadowControlsWrapper : public sfx::MultiControlWrapper< SvxShadowItem >
 {
 public:
-    explicit            ShadowControlsWrapper( ValueSet& rVsPos, MetricField& rMfSize, SvxColorListBox& rLbColor );
+    explicit            ShadowControlsWrapper( ValueSet& rVsPos, MetricField& rMfSize, ColorListBox& rLbColor );
 
     virtual SvxShadowItem GetControlValue() const override;
     virtual void        SetControlValue( SvxShadowItem aItem ) override;
@@ -211,11 +211,11 @@ public:
 private:
     ShadowPosWrapper                    maPosWrp;
     sfx::MetricFieldWrapper<sal_uInt16> maSizeWrp;
-    SvxColorListBoxWrapper              maColorWrp;
+    sfx::ColorListBoxWrapper            maColorWrp;
 };
 
 ShadowControlsWrapper::ShadowControlsWrapper(
-        ValueSet& rVsPos, MetricField& rMfSize, SvxColorListBox& rLbColor ) :
+        ValueSet& rVsPos, MetricField& rMfSize, ColorListBox& rLbColor ) :
     maPosWrp( rVsPos, s_pShadowPosMap ),
     maSizeWrp( rMfSize, FUNIT_TWIP ),
     maColorWrp( rLbColor )
@@ -250,12 +250,12 @@ class ShadowConnection : public sfx::ItemControlConnection< ShadowItemWrapper, S
 {
 public:
     explicit            ShadowConnection( const SfxItemSet& rItemSet,
-                                ValueSet& rVsPos, MetricField& rMfSize, SvxColorListBox& rLbColor );
+                                ValueSet& rVsPos, MetricField& rMfSize, ColorListBox& rLbColor );
 };
 
 ShadowConnection::ShadowConnection( const SfxItemSet& rItemSet,
-        ValueSet& rVsPos, MetricField& rMfSize, SvxColorListBox& rLbColor ) :
-    ItemControlConnectionType( SID_ATTR_BORDER_SHADOW, new ShadowControlsWrapper( rVsPos, rMfSize, rLbColor ), ItemConnFlags::NONE )
+        ValueSet& rVsPos, MetricField& rMfSize, ColorListBox& rLbColor ) :
+    ItemControlConnectionType( SID_ATTR_BORDER_SHADOW, new ShadowControlsWrapper( rVsPos, rMfSize, rLbColor ), sfx::ITEMCONN_DEFAULT )
 {
     mxCtrlWrp->SetDefaultValue( maItemWrp.GetDefaultItem( rItemSet ) );
 }
@@ -264,7 +264,7 @@ ShadowConnection::ShadowConnection( const SfxItemSet& rItemSet,
 sfx::ItemConnectionBase* CreateFrameLineConnection( sal_uInt16 nSlot,
         FrameSelector& rFrameSel, FrameBorderType eBorder )
 {
-    return new sfx::ItemControlConnection< LineItemWrapper, FrameSelectorWrapper >( nSlot, new FrameSelectorWrapper( rFrameSel, eBorder ), ItemConnFlags::NONE );
+    return new sfx::ItemControlConnection< LineItemWrapper, FrameSelectorWrapper >( nSlot, new FrameSelectorWrapper( rFrameSel, eBorder ), sfx::ITEMCONN_DEFAULT );
 }
 
 sfx::ItemConnectionBase* CreateMarginConnection( const SfxItemSet& rItemSet,
@@ -275,7 +275,7 @@ sfx::ItemConnectionBase* CreateMarginConnection( const SfxItemSet& rItemSet,
 }
 
 sfx::ItemConnectionBase* CreateShadowConnection( const SfxItemSet& rItemSet,
-        ValueSet& rVsPos, MetricField& rMfSize, SvxColorListBox& rLbColor )
+        ValueSet& rVsPos, MetricField& rMfSize, ColorListBox& rLbColor )
 {
     return new ShadowConnection( rItemSet, rVsPos, rMfSize, rLbColor );
 }

@@ -25,19 +25,19 @@
 #include "svx/fmglob.hxx"
 #include "svx/globl3d.hxx"
 
-using vcl::EnumContext;
+using sfx2::sidebar::EnumContext;
 
 
 namespace svx { namespace sidebar {
 
 EnumContext::Context SelectionAnalyzer::GetContextForSelection_SC (const SdrMarkList& rMarkList)
 {
-    EnumContext::Context eContext = EnumContext::Context::Unknown;
+    EnumContext::Context eContext = EnumContext::Context_Unknown;
 
     switch (rMarkList.GetMarkCount())
     {
         case 0:
-            // Empty selection.  Return Context::Unknown to let the caller
+            // Empty selection.  Return Context_Unknown to let the caller
             // substitute it with the default context.
             break;
 
@@ -46,16 +46,16 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SC (const SdrMark
             SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
             if ( dynamic_cast<const SdrTextObj*>( pObj) != nullptr && static_cast<SdrTextObj*>(pObj)->IsInEditMode() )
             {
-                eContext = EnumContext::Context::DrawText;
+                eContext = EnumContext::Context_DrawText;
             }
             else
             {
-                const SdrInventor nInv   = pObj->GetObjInventor();
-                const sal_uInt16  nObjId = pObj->GetObjIdentifier();
-                if (nInv == SdrInventor::Default)
+                const sal_uInt32 nInv = pObj->GetObjInventor();
+                const sal_uInt16 nObjId = pObj->GetObjIdentifier();
+                if (nInv == SdrInventor)
                     eContext = GetContextForObjectId_SC(nObjId);
-                else if (nInv == SdrInventor::FmForm)
-                    eContext = EnumContext::Context::Form;
+                else if (nInv == FmFormInventor)
+                    eContext = EnumContext::Context_Form;
             }
             break;
         }
@@ -65,25 +65,23 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SC (const SdrMark
             // Multi selection.
             switch (GetInventorTypeFromMark(rMarkList))
             {
-                case SdrInventor::Default:
+                case SdrInventor:
                 {
                     const sal_uInt16 nObjId (GetObjectTypeFromMark(rMarkList));
                     if (nObjId == 0)
-                        eContext = EnumContext::Context::MultiObject;
+                        eContext = EnumContext::Context_MultiObject;
                     else
                         eContext = GetContextForObjectId_SC(nObjId);
                     break;
                 }
 
-                case SdrInventor::FmForm:
-                    eContext = EnumContext::Context::Form;
+                case FmFormInventor:
+                    eContext = EnumContext::Context_Form;
                     break;
 
-                case SdrInventor::Unknown:
-                    eContext = EnumContext::Context::MultiObject;
+                case 0:
+                    eContext = EnumContext::Context_MultiObject;
                     break;
-
-                default: break;
             }
         }
     }
@@ -96,7 +94,7 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SD (
     const SdrMarkList& rMarkList,
     const ViewType eViewType)
 {
-    EnumContext::Context eContext = EnumContext::Context::Unknown;
+    EnumContext::Context eContext = EnumContext::Context_Unknown;
 
     // Note that some cases are handled by the caller.  They rely on
     // sd specific data.
@@ -105,17 +103,20 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SD (
         case 0:
             switch(eViewType)
             {
-                case ViewType::Standard:
-                    eContext = EnumContext::Context::DrawPage;
+                case VT_Standard:
+                    eContext = EnumContext::Context_DrawPage;
                     break;
-                case ViewType::Master:
-                    eContext = EnumContext::Context::MasterPage;
+                case VT_Master:
+                    eContext = EnumContext::Context_MasterPage;
                     break;
-                case ViewType::Handout:
-                    eContext = EnumContext::Context::HandoutPage;
+                case VT_Handout:
+                    eContext = EnumContext::Context_HandoutPage;
                     break;
-                case ViewType::Notes:
-                    eContext = EnumContext::Context::NotesPage;
+                case VT_Notes:
+                    eContext = EnumContext::Context_NotesPage;
+                    break;
+                case VT_Outline:
+                    eContext = EnumContext::Context_OutlineText;
                     break;
             }
             break;
@@ -130,16 +131,16 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SD (
                     // Let a table object take precedence over text
                     // edit mode.  The panels for text editing are
                     // present for table context as well, anyway.
-                    eContext = EnumContext::Context::Table;
+                    eContext = EnumContext::Context_Table;
                 }
                 else
-                    eContext = EnumContext::Context::DrawText;
+                    eContext = EnumContext::Context_DrawText;
             }
             else
             {
-                const SdrInventor nInv   = pObj->GetObjInventor();
-                sal_uInt16        nObjId = pObj->GetObjIdentifier();
-                if (nInv == SdrInventor::Default)
+                const sal_uInt32 nInv = pObj->GetObjInventor();
+                sal_uInt16 nObjId = pObj->GetObjIdentifier();
+                if (nInv == SdrInventor)
                 {
                     if (nObjId == OBJ_GRUP)
                     {
@@ -149,13 +150,13 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SD (
                     }
                     eContext = GetContextForObjectId_SD(nObjId, eViewType);
                 }
-                else if (nInv == SdrInventor::E3d)
+                else if (nInv == E3dInventor)
                 {
-                    eContext = EnumContext::Context::ThreeDObject;
+                    eContext = EnumContext::Context_3DObject;
                 }
-                else if (nInv == SdrInventor::FmForm)
+                else if (nInv == FmFormInventor)
                 {
-                    eContext = EnumContext::Context::Form;
+                    eContext = EnumContext::Context_Form;
                 }
             }
             break;
@@ -165,29 +166,27 @@ EnumContext::Context SelectionAnalyzer::GetContextForSelection_SD (
         {
             switch (GetInventorTypeFromMark(rMarkList))
             {
-                case SdrInventor::Default:
+                case SdrInventor:
                 {
                     const sal_uInt16 nObjId = GetObjectTypeFromMark(rMarkList);
                     if (nObjId == 0)
-                        eContext = EnumContext::Context::MultiObject;
+                        eContext = EnumContext::Context_MultiObject;
                     else
                         eContext = GetContextForObjectId_SD(nObjId, eViewType);
                     break;
                 }
 
-                case SdrInventor::E3d:
-                    eContext = EnumContext::Context::ThreeDObject;
+                case E3dInventor:
+                    eContext = EnumContext::Context_3DObject;
                     break;
 
-                case SdrInventor::FmForm:
-                    eContext = EnumContext::Context::Form;
+                case FmFormInventor:
+                    eContext = EnumContext::Context_Form;
                     break;
 
-                case SdrInventor::Unknown:
-                    eContext = EnumContext::Context::MultiObject;
+                case 0:
+                    eContext = EnumContext::Context_MultiObject;
                     break;
-
-                default: break;
             }
             break;
         }
@@ -217,27 +216,27 @@ EnumContext::Context SelectionAnalyzer::GetContextForObjectId_SC (const sal_uInt
         case OBJ_CCUT:
         case OBJ_CUSTOMSHAPE:
         case OBJ_GRUP:
-            return EnumContext::Context::Draw;
+            return EnumContext::Context_Draw;
 
         case OBJ_PLIN:
         case OBJ_PATHLINE:
         case OBJ_FREELINE:
         case OBJ_LINE:
         case OBJ_EDGE:
-            return EnumContext::Context::DrawLine;
+            return EnumContext::Context_DrawLine;
 
         case OBJ_GRAF:
-            return EnumContext::Context::Graphic;
+            return EnumContext::Context_Graphic;
 
         case OBJ_OLE2:
-            return EnumContext::Context::OLE;
+            return EnumContext::Context_OLE;
 
         case OBJ_MEDIA:
-            return EnumContext::Context::Media;
+            return EnumContext::Context_Media;
             break;
 
         default:
-            return EnumContext::Context::Unknown;
+            return EnumContext::Context_Unknown;
     }
 }
 
@@ -260,69 +259,71 @@ EnumContext::Context SelectionAnalyzer::GetContextForObjectId_SD (
         case OBJ_CCUT:
         case OBJ_CUSTOMSHAPE:
         case OBJ_GRUP:
-            return EnumContext::Context::Draw;
+            return EnumContext::Context_Draw;
 
         case OBJ_EDGE:
         case OBJ_PATHLINE:
         case OBJ_FREELINE:
         case OBJ_PLIN:
         case OBJ_LINE:
-            return EnumContext::Context::DrawLine;
+            return EnumContext::Context_DrawLine;
 
         case OBJ_TITLETEXT:
         case OBJ_OUTLINETEXT:
         case OBJ_TEXT:
         case OBJ_TEXTEXT:
-            return EnumContext::Context::TextObject;
+            return EnumContext::Context_TextObject;
 
         case OBJ_GRAF:
-            return EnumContext::Context::Graphic;
+            return EnumContext::Context_Graphic;
 
         case OBJ_OLE2:
-            return EnumContext::Context::OLE;
+            return EnumContext::Context_OLE;
 
         case OBJ_MEDIA:
-            return EnumContext::Context::Media;
+            return EnumContext::Context_Media;
 
         case OBJ_TABLE:
-            return EnumContext::Context::Table;
+            return EnumContext::Context_Table;
 
         case OBJ_PAGE:
             switch (eViewType)
             {
-                case ViewType::Handout:
-                    return EnumContext::Context::HandoutPage;
-                case ViewType::Notes:
-                    return EnumContext::Context::NotesPage;
+                case VT_Handout:
+                    return EnumContext::Context_HandoutPage;
+                case VT_Notes:
+                    return EnumContext::Context_NotesPage;
+                case VT_Outline:
+                    return EnumContext::Context_OutlineText;
                 default:
-                    return EnumContext::Context::Unknown;
+                    return EnumContext::Context_Unknown;
             }
 
         default:
-            return EnumContext::Context::Unknown;
+            return EnumContext::Context_Unknown;
     }
 }
 
 
-SdrInventor SelectionAnalyzer::GetInventorTypeFromMark (const SdrMarkList& rMarkList)
+sal_uInt32 SelectionAnalyzer::GetInventorTypeFromMark (const SdrMarkList& rMarkList)
 {
     const size_t nMarkCount (rMarkList.GetMarkCount());
 
     if (nMarkCount < 1)
-        return SdrInventor::Unknown;
+        return 0;
 
     SdrMark* pMark = rMarkList.GetMark(0);
     SdrObject* pObj = pMark->GetMarkedSdrObj();
-    const SdrInventor nFirstInv = pObj->GetObjInventor();
+    const sal_uInt32 nFirstInv = pObj->GetObjInventor();
 
     for (size_t nIndex=1; nIndex<nMarkCount; ++nIndex)
     {
         pMark = rMarkList.GetMark(nIndex);
         pObj = pMark->GetMarkedSdrObj();
-        const SdrInventor nInv (pObj->GetObjInventor());
+        const sal_uInt32 nInv (pObj->GetObjInventor());
 
         if (nInv != nFirstInv)
-            return SdrInventor::Unknown;
+            return 0;
     }
 
     return nFirstInv;

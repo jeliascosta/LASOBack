@@ -37,7 +37,9 @@ private:
     bool       m_bNull;
 
 public:
-    GenPoEntry();
+                        GenPoEntry();
+    virtual             ~GenPoEntry();
+                        // Default copy constructor and copy operator work well
 
     const OString& getReference() const    { return m_sReference; }
     const OString& getMsgCtxt() const      { return m_sMsgCtxt; }
@@ -119,6 +121,10 @@ GenPoEntry::GenPoEntry()
     , m_sMsgStr( OString() )
     , m_bFuzzy( false )
     , m_bNull( false )
+{
+}
+
+GenPoEntry::~GenPoEntry()
 {
 }
 
@@ -283,14 +289,7 @@ PoEntry& PoEntry::operator=(const PoEntry& rPo)
     return *this;
 }
 
-PoEntry& PoEntry::operator=(PoEntry&& rPo)
-{
-    m_pGenPo = std::move(rPo.m_pGenPo);
-    m_bIsInitialized = std::move(rPo.m_bIsInitialized);
-    return *this;
-}
-
-OString const & PoEntry::getSourceFile() const
+OString PoEntry::getSourceFile() const
 {
     assert( m_bIsInitialized );
     return m_pGenPo->getReference();
@@ -344,14 +343,14 @@ bool PoEntry::isFuzzy() const
 }
 
 // Get translation string in merge format
-OString const & PoEntry::getMsgId() const
+OString PoEntry::getMsgId() const
 {
     assert( m_bIsInitialized );
     return m_pGenPo->getMsgId();
 }
 
 // Get translated string in merge format
-const OString& PoEntry::getMsgStr() const
+OString PoEntry::getMsgStr() const
 {
     assert( m_bIsInitialized );
     return m_pGenPo->getMsgStr();
@@ -419,6 +418,7 @@ PoHeader::PoHeader( const OString& rExtSrc )
 
 PoHeader::~PoHeader()
 {
+    delete m_pGenPo;
 }
 
 PoOfstream::PoOfstream()

@@ -21,64 +21,79 @@
 #include "newhelp.hrc"
 #include "helpid.hrc"
 
-Bitmap BMP_HELP_TOOLBOX_INDEX_ON
+#define MASKCOLOR_MAGENTA \
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
+
+Image IMG_HELP_TOOLBOX_INDEX_ON
 {
-    File = "indexon_small.png" ;
+    ImageBitmap = Bitmap { File = "indexon_small.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_INDEX_OFF
+Image IMG_HELP_TOOLBOX_INDEX_OFF
 {
-    File = "indexoff_small.png" ;
+    ImageBitmap = Bitmap { File = "indexoff_small.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_START
+Image IMG_HELP_TOOLBOX_START
 {
-    File = "sc06303.png" ;
+    ImageBitmap = Bitmap { File = "sc06303.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_PREV
+Image IMG_HELP_TOOLBOX_PREV
 {
-    File = "sc06301.png" ;
+    ImageBitmap = Bitmap { File = "sc06301.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_NEXT
+Image IMG_HELP_TOOLBOX_NEXT
 {
-    File = "sc06300.png" ;
+    ImageBitmap = Bitmap { File = "sc06300.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_PRINT
+Image IMG_HELP_TOOLBOX_PRINT
 {
-    File = "sc05504.png" ;
+    ImageBitmap = Bitmap { File = "sc05504.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_BOOKMARKS
+Image IMG_HELP_TOOLBOX_BOOKMARKS
 {
-    File = "favourite.png" ;
+    ImageBitmap = Bitmap { File = "favourite.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_SEARCHDIALOG
+Image IMG_HELP_TOOLBOX_SEARCHDIALOG
 {
-    File = "sc05961.png" ;
+    ImageBitmap = Bitmap { File = "sc05961.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_COPY
+Image IMG_HELP_TOOLBOX_COPY
 {
-    File = "sc05711.png" ;
+    ImageBitmap = Bitmap { File = "sc05711.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_CONTENT_BOOK_OPEN
+Image IMG_HELP_CONTENT_BOOK_OPEN
 {
-    File = "hlpbookopen.png" ;
+    ImageBitmap = Bitmap { File = "hlpbookopen.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_CONTENT_BOOK_CLOSED
+Image IMG_HELP_CONTENT_BOOK_CLOSED
 {
-    File = "hlpbookclosed.png" ;
+    ImageBitmap = Bitmap { File = "hlpbookclosed.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_CONTENT_DOC
+Image IMG_HELP_CONTENT_DOC
 {
-    File = "hlpdoc.png" ;
+    ImageBitmap = Bitmap { File = "hlpdoc.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
 String STR_HELP_WINDOW_TITLE
@@ -131,6 +146,16 @@ String STR_HELP_BUTTON_SOURCEVIEW
     Text [ en-US ] = "HTML Source";
 };
 
+String STR_HELP_FIRST_MESSAGE
+{
+    Text [ en-US ] = "The Help is being started...";
+};
+
+String STR_HELP_FIRST_HTML
+{
+    Text = "<html></head><body><center><br></br><br></br><p><tt>%1</tt></center></body></html>";
+};
+
 String STR_HELP_MENU_TEXT_SELECTION_MODE
 {
     Text [ en-US ] = "Select Text";
@@ -139,6 +164,35 @@ String STR_HELP_MENU_TEXT_SELECTION_MODE
 String STR_HELP_MENU_TEXT_COPY
 {
     Text [ en-US ] = "~Copy" ;
+};
+
+Menu MENU_HELP_BOOKMARKS
+{
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = MID_OPEN ;
+            HelpId = HID_HELP_BOOKMARKS_OPEN;
+            Text [ en-US ] = "Display";
+        };
+        MenuItem
+        {
+            Separator = TRUE ;
+        };
+        MenuItem
+        {
+            Identifier = MID_RENAME ;
+            HelpId = HID_HELP_BOOKMARKS_RENAME;
+            Text [ en-US ] = "Rename...";
+        };
+        MenuItem
+        {
+            Identifier = MID_DELETE ;
+            HelpId = HID_HELP_BOOKMARKS_DELETE;
+            Text [ en-US ] = "Delete";
+        };
+    };
 };
 
 String STR_INFO_NOSEARCHRESULTS
@@ -151,44 +205,66 @@ String STR_INFO_NOSEARCHTEXTFOUND
     Text [ en-US ] = "The text you entered was not found.";
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_INDEX_ON
+Image IMG_HELP_TOOLBOX_L_INDEX_ON
 {
-    File = "indexon_big.png" ;
+    ImageBitmap = Bitmap { File = "indexon_big.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_INDEX_OFF
+Image IMG_HELP_TOOLBOX_L_INDEX_OFF
 {
-    File = "indexoff_big.png" ;
+    ImageBitmap = Bitmap { File = "indexoff_big.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_START
+Image IMG_HELP_TOOLBOX_L_START
 {
-    File = "lc06303.png" ;
+    ImageBitmap = Bitmap { File = "lc06303.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_PREV
+Image IMG_HELP_TOOLBOX_L_PREV
 {
-    File = "lc06301.png" ;
+    ImageBitmap = Bitmap { File = "lc06301.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_NEXT
+Image IMG_HELP_TOOLBOX_L_NEXT
 {
-    File = "lc06300.png" ;
+    ImageBitmap = Bitmap { File = "lc06300.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_PRINT
+Image IMG_HELP_TOOLBOX_L_PRINT
 {
-    File = "lc05504.png" ;
+    ImageBitmap = Bitmap { File = "lc05504.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_BOOKMARKS
+Image IMG_HELP_TOOLBOX_L_BOOKMARKS
 {
-    File = "favourite_big.png" ;
+    ImageBitmap = Bitmap { File = "favourite_big.bmp" ; };
+    MASKCOLOR_MAGENTA
 };
 
-Bitmap BMP_HELP_TOOLBOX_L_SEARCHDIALOG
+Image IMG_HELP_TOOLBOX_L_SEARCHDIALOG
 {
-    File = "lc05961.png" ;
+    ImageBitmap = Bitmap { File = "lc05961.bmp" ; };
+    MASKCOLOR_MAGENTA
+};
+
+Image IMG_HELP_TOOLBOX_L_COPY
+{
+    ImageBitmap = Bitmap { File = "lc05711.bmp" ; };
+    MASKCOLOR_MAGENTA
+};
+
+CheckBox RID_HELP_ONSTARTUP_BOX
+{
+    HelpId = HID_HELP_ONSTARTUP_BOX;
+    Hide = TRUE;
+    TabStop = TRUE;
+    Size = MAP_APPFONT ( 200 , 10 ) ;
 };
 
 String RID_HELP_ONSTARTUP_TEXT

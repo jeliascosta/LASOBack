@@ -32,7 +32,6 @@
 #include <com/sun/star/util/DateTime.hpp>
 #include <com/sun/star/ucb/Lock.hpp>
 #include <com/sun/star/ucb/LockEntry.hpp>
-#include <o3tl/make_unique.hxx>
 #include "webdavcontent.hxx"
 #include "webdavprovider.hxx"
 #include "DAVSession.hxx"
@@ -53,7 +52,7 @@ bool ContentProvider::getProperty(
         osl::MutexGuard aGuard( m_aMutex );
         if ( !m_pProps )
         {
-            m_pProps = o3tl::make_unique<PropertyMap>();
+            m_pProps = new PropertyMap;
 
 
             // Fill map of known properties...

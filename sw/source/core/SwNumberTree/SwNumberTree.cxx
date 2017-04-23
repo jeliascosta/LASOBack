@@ -72,7 +72,7 @@ SwNumberTreeNode * SwNumberTreeNode::CreatePhantom()
     else
     {
         pNew = Create();
-        pNew->mbPhantom = true;
+        pNew->SetPhantom();
         pNew->mpParent = this;
 
         std::pair<tSwNumberTreeChildren::iterator, bool> aInsert =
@@ -725,6 +725,11 @@ bool SwNumberTreeNode::IsValid(const SwNumberTreeNode * pChild) const
 }
 
 
+void SwNumberTreeNode::SetPhantom()
+{
+    mbPhantom = true;
+}
+
 bool SwNumberTreeNode::HasOnlyPhantoms() const
 {
     bool bResult = false;
@@ -1070,11 +1075,18 @@ void SwNumberTreeNode::SetLastValid
                 ++aIt;
             }
 
-            if (mpParent)
-            {
-                mpParent->SetLastValid(mpParent->GetIterator(this), bValidating);
-            }
+            SetLastValid(bValidating);
         }
+    }
+}
+
+void SwNumberTreeNode::SetLastValid(bool bValidating) const
+{
+    if (mpParent)
+    {
+        tSwNumberTreeChildren::const_iterator aIt = mpParent->GetIterator(this);
+
+        mpParent->SetLastValid(aIt, bValidating);
     }
 }
 

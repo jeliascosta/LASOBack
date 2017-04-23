@@ -20,9 +20,9 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCRELATION_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCRELATION_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 
-#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleRelationSet.hpp>
 #include "UNOXWrapper.h"
 
@@ -50,36 +50,29 @@ public:
     BEGIN_COM_MAP(CAccRelation)
     COM_INTERFACE_ENTRY(IAccessibleRelation)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
     // IAccessibleRelation
 public:
     // IAccessibleRelation
 
     // Gets what the type of relation is.
-    STDMETHOD(get_relationType)(BSTR * relationType) override;
+    STDMETHOD(get_relationType)(BSTR * relationType);
 
     // Gets what the type of localized relation is.
-    STDMETHOD(get_localizedRelationType)(BSTR * relationType) override;
+    STDMETHOD(get_localizedRelationType)(BSTR * relationType);
 
     // Gets how many targets this relation have.
-    STDMETHOD(get_nTargets)(long * nTargets) override;
+    STDMETHOD(get_nTargets)(long * nTargets);
 
     // Gets one accessible relation target.
-    STDMETHOD(get_target)(long targetIndex, IUnknown * * target) override;
+    STDMETHOD(get_target)(long targetIndex, IUnknown * * target);
 
     // Gets multiple accessible relation targets.
-    STDMETHOD(get_targets)(long maxTargets, IUnknown * * target, long * nTargets) override;
+    STDMETHOD(get_targets)(long maxTargets, IUnknown * * target, long * nTargets);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XSubInterface)(hyper pXSubInterface) override;
+    STDMETHOD(put_XSubInterface)(hyper pXSubInterface);
 
     //static OLECHAR* getRelationTypeOLECHAR(int type);
     static BSTR getRelationTypeBSTR(int type);

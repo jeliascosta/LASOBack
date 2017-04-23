@@ -363,7 +363,7 @@
           </object>
         </child>
         <child type="label">
-          <object class="GtkLabel" id="labelProperties">
+          <object class="GtkLabel" id="labelPropeties">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Properties</property>

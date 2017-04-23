@@ -22,7 +22,6 @@
 #include <svx/stddlg.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/button.hxx>
-#include <tblenum.hxx>
 
 class SwWrtShell;
 
@@ -33,18 +32,18 @@ class SwSplitTableDlg : public SvxStandardDialog
     VclPtr<RadioButton>    mpBoxAttrCopyNoParaRB ;
     VclPtr<RadioButton>    mpBorderCopyRB;
 
-    SwWrtShell            &rShell;
-    SplitTable_HeadlineOption m_nSplit;
+    SwWrtShell      &rShell;
+    sal_uInt16          m_nSplit;
 
 protected:
     virtual void Apply() override;
 
 public:
     SwSplitTableDlg( vcl::Window *pParent, SwWrtShell &rSh );
-    virtual ~SwSplitTableDlg() override;
+    virtual ~SwSplitTableDlg();
     virtual void dispose() override;
 
-    SplitTable_HeadlineOption GetSplitMode() const { return m_nSplit; }
+    sal_uInt16 GetSplitMode() const { return m_nSplit; }
 };
 
 #endif

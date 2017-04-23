@@ -22,9 +22,7 @@
 
 #include <formula/formuladllapi.h>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <tools/gen.hxx>
-#include <vcl/vclptr.hxx>
 #include <vcl/window.hxx>
 
 namespace formula
@@ -37,23 +35,25 @@ public:
 
     virtual void            SaveValues();
 
-    sal_uInt16       GetMode() const     { return nMode; }
-    sal_Int32        GetFStart() const   { return nFStart; }
-    sal_uInt16       GetOffset() const   { return nOffset; }
-    sal_uInt16       GetEdFocus() const  { return nEdFocus; }
-    const OUString&  GetUndoStr() const  { return aUndoStr; }
-    bool             GetMatrixFlag()const{ return bMatrix;}
+    inline sal_uInt16       GetMode() const     { return nMode; }
+    inline sal_Int32        GetFStart() const   { return nFStart; }
+    inline sal_Int32        GetCatSel() const   { return nCatSel; }
+    inline sal_Int32        GetFuncSel() const  { return nFuncSel; }
+    inline sal_uInt16       GetOffset() const   { return nOffset; }
+    inline sal_uInt16       GetEdFocus() const  { return nEdFocus; }
+    inline const OUString&  GetUndoStr() const  { return aUndoStr; }
+    inline bool             GetMatrixFlag()const{ return bMatrix;}
     const VclPtr<vcl::Window>& GetFocusWindow()const  { return xFocusWin; }
-    const Selection& GetSelection()const { return aSelection;}
+    inline const Selection& GetSelection()const { return aSelection;}
 
-    void             SetMode( sal_uInt16 nNew )                  { nMode = nNew; }
-    void             SetFStart( sal_Int32 nNew )                 { nFStart = nNew; }
-    void             SetOffset( sal_uInt16 nNew )                { nOffset = nNew; }
-    void             SetEdFocus( sal_uInt16 nNew )               { nEdFocus = nNew; }
-    void             SetUndoStr( const OUString& rNew )          { aUndoStr = rNew; }
-    void             SetMatrixFlag(bool bNew)                    { bMatrix=bNew;}
-    void             SetFocusWindow(const VclPtr<vcl::Window>& rWin) { xFocusWin=rWin;}
-    void             SetSelection(const Selection& aSel)         { aSelection=aSel;}
+    inline void             SetMode( sal_uInt16 nNew )                  { nMode = nNew; }
+    inline void             SetFStart( sal_Int32 nNew )                 { nFStart = nNew; }
+    inline void             SetOffset( sal_uInt16 nNew )                { nOffset = nNew; }
+    inline void             SetEdFocus( sal_uInt16 nNew )               { nEdFocus = nNew; }
+    inline void             SetUndoStr( const OUString& rNew )          { aUndoStr = rNew; }
+    inline void             SetMatrixFlag(bool bNew)                    { bMatrix=bNew;}
+    inline void             SetFocusWindow(const VclPtr<vcl::Window>& rWin) { xFocusWin=rWin;}
+    inline void             SetSelection(const Selection& aSel)         { aSelection=aSel;}
 protected:
     void                Reset();
     FormEditData( const FormEditData& );
@@ -63,6 +63,8 @@ protected:
 private:
     sal_uInt16          nMode;              // enum ScFormulaDlgMode
     sal_Int32           nFStart;
+    sal_Int32           nCatSel;
+    sal_Int32           nFuncSel;
     sal_uInt16          nOffset;
     sal_uInt16          nEdFocus;
     OUString            aUndoStr;

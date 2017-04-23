@@ -116,13 +116,12 @@ struct FmGridHeaderData
 };
 
 const sal_Int16 nChangeTypeOffset = 1000;
-void SetMenuItem(sal_uInt16 nImgID, sal_uInt16 nID, Menu* pMenu, Menu& rNewMenu, bool bDesignMode, sal_Int16 nOffset = nChangeTypeOffset)
+void SetMenuItem(const ImageList& rList, sal_uInt16 nID, Menu* pMenu, Menu& rNewMenu, bool bDesignMode = true, sal_Int16 nOffset = nChangeTypeOffset)
 {
-    Image aImage(BitmapEx(SVX_RES(nImgID)));
-    pMenu->SetItemImage(nID, aImage);
+    pMenu->SetItemImage(nID, rList.GetImage(nID));
     pMenu->EnableItem(nID, bDesignMode);
     rNewMenu.InsertItem(nID + nOffset, pMenu->GetItemText(nID));
-    rNewMenu.SetItemImage(nID + nOffset, aImage);
+    rNewMenu.SetItemImage(nID + nOffset, rList.GetImage(nID));
     rNewMenu.SetHelpId(nID + nOffset, pMenu->GetHelpId(nID));
     rNewMenu.EnableItem(nID + nOffset, bDesignMode);
 }
@@ -141,8 +140,8 @@ FmGridHeader::~FmGridHeader()
 
 void FmGridHeader::dispose()
 {
-    m_pImpl.reset();
-    DropTargetHelper::dispose();
+    delete m_pImpl;
+    m_pImpl = nullptr;
     svt::EditBrowserHeader::dispose();
 }
 
@@ -180,7 +179,7 @@ void FmGridHeader::RequestHelp( const HelpEvent& rHEvt )
     {
         if ( rHEvt.GetMode() & (HelpEventMode::QUICK | HelpEventMode::BALLOON) )
         {
-            tools::Rectangle aItemRect = GetItemRect( nItemId );
+            Rectangle aItemRect = GetItemRect( nItemId );
             Point aPt = OutputToScreenPixel( aItemRect.TopLeft() );
             aItemRect.Left()   = aPt.X();
             aItemRect.Top()    = aPt.Y();
@@ -254,14 +253,14 @@ sal_Int8 FmGridHeader::ExecuteDrop( const ExecuteDropEvent& _rEvt )
     Reference< XConnection >            xConnection;
 
     ODataAccessDescriptor aColumn = OColumnTransferable::extractColumnDescriptor(aDroppedData);
-    if (aColumn.has(DataAccessDescriptorProperty::DataSource))  aColumn[DataAccessDescriptorProperty::DataSource]   >>= sDatasource;
-    if (aColumn.has(DataAccessDescriptorProperty::DatabaseLocation))    aColumn[DataAccessDescriptorProperty::DatabaseLocation] >>= sDatabaseLocation;
-    if (aColumn.has(DataAccessDescriptorProperty::ConnectionResource))  aColumn[DataAccessDescriptorProperty::ConnectionResource] >>= sConnnectionResource;
-    if (aColumn.has(DataAccessDescriptorProperty::Command))     aColumn[DataAccessDescriptorProperty::Command]      >>= sCommand;
-    if (aColumn.has(DataAccessDescriptorProperty::CommandType)) aColumn[DataAccessDescriptorProperty::CommandType]  >>= nCommandType;
-    if (aColumn.has(DataAccessDescriptorProperty::ColumnName))  aColumn[DataAccessDescriptorProperty::ColumnName]   >>= sFieldName;
-    if (aColumn.has(DataAccessDescriptorProperty::ColumnObject))aColumn[DataAccessDescriptorProperty::ColumnObject] >>= xField;
-    if (aColumn.has(DataAccessDescriptorProperty::Connection))  aColumn[DataAccessDescriptorProperty::Connection]   >>= xConnection;
+    if (aColumn.has(daDataSource))  aColumn[daDataSource]   >>= sDatasource;
+    if (aColumn.has(daDatabaseLocation))    aColumn[daDatabaseLocation] >>= sDatabaseLocation;
+    if (aColumn.has(daConnectionResource))  aColumn[daConnectionResource] >>= sConnnectionResource;
+    if (aColumn.has(daCommand))     aColumn[daCommand]      >>= sCommand;
+    if (aColumn.has(daCommandType)) aColumn[daCommandType]  >>= nCommandType;
+    if (aColumn.has(daColumnName))  aColumn[daColumnName]   >>= sFieldName;
+    if (aColumn.has(daColumnObject))aColumn[daColumnObject] >>= xField;
+    if (aColumn.has(daConnection))  aColumn[daConnection]   >>= xConnection;
 
     if  (   sFieldName.isEmpty()
         ||  sCommand.isEmpty()
@@ -356,8 +355,8 @@ sal_Int8 FmGridHeader::ExecuteDrop( const ExecuteDropEvent& _rEvt )
         // do the drop asynchronously
         // (85957 - UI actions within the drop are not allowed, but we want to open a popup menu)
         m_pImpl->aDropData = aColumn;
-        m_pImpl->aDropData[DataAccessDescriptorProperty::Connection] <<= xConnection;
-        m_pImpl->aDropData[DataAccessDescriptorProperty::ColumnObject] <<= xField;
+        m_pImpl->aDropData[daConnection] <<= xConnection;
+        m_pImpl->aDropData[daColumnObject] <<= xField;
 
         m_pImpl->nDropAction = _rEvt.mnAction;
         m_pImpl->aDropPosPixel = _rEvt.maPosPixel;
@@ -376,7 +375,7 @@ sal_Int8 FmGridHeader::ExecuteDrop( const ExecuteDropEvent& _rEvt )
     return DND_ACTION_LINK;
 }
 
-IMPL_LINK_NOARG( FmGridHeader, OnAsyncExecuteDrop, void*, void )
+IMPL_LINK_NOARG_TYPED( FmGridHeader, OnAsyncExecuteDrop, void*, void )
 {
     OUString             sCommand, sFieldName,sURL;
     sal_Int32                   nCommandType = CommandType::COMMAND;
@@ -384,13 +383,13 @@ IMPL_LINK_NOARG( FmGridHeader, OnAsyncExecuteDrop, void*, void )
     Reference< XConnection >    xConnection;
 
     OUString sDatasource = m_pImpl->aDropData.getDataSource();
-    if ( sDatasource.isEmpty() && m_pImpl->aDropData.has(DataAccessDescriptorProperty::ConnectionResource) )
-        m_pImpl->aDropData[DataAccessDescriptorProperty::ConnectionResource]    >>= sURL;
-    m_pImpl->aDropData[DataAccessDescriptorProperty::Command]       >>= sCommand;
-    m_pImpl->aDropData[DataAccessDescriptorProperty::CommandType]   >>= nCommandType;
-    m_pImpl->aDropData[DataAccessDescriptorProperty::ColumnName]    >>= sFieldName;
-    m_pImpl->aDropData[DataAccessDescriptorProperty::Connection]    >>= xConnection;
-    m_pImpl->aDropData[DataAccessDescriptorProperty::ColumnObject]  >>= xField;
+    if ( sDatasource.isEmpty() && m_pImpl->aDropData.has(daConnectionResource) )
+        m_pImpl->aDropData[daConnectionResource]    >>= sURL;
+    m_pImpl->aDropData[daCommand]       >>= sCommand;
+    m_pImpl->aDropData[daCommandType]   >>= nCommandType;
+    m_pImpl->aDropData[daColumnName]    >>= sFieldName;
+    m_pImpl->aDropData[daConnection]    >>= xConnection;
+    m_pImpl->aDropData[daColumnObject]  >>= xField;
 
     try
     {
@@ -435,61 +434,45 @@ IMPL_LINK_NOARG( FmGridHeader, OnAsyncExecuteDrop, void*, void )
 
         // Create Column based on type, default textfield
         std::vector<sal_uInt16> aPossibleTypes;
-        std::vector<sal_uInt16> aImgResId;
         switch (nDataType)
         {
             case DataType::BIT:
             case DataType::BOOLEAN:
                 aPossibleTypes.push_back(SID_FM_CHECKBOX);
-                aImgResId.push_back(RID_SVXBMP_CHECKBOX);
                 break;
             case DataType::TINYINT:
             case DataType::SMALLINT:
             case DataType::INTEGER:
                 aPossibleTypes.push_back(SID_FM_NUMERICFIELD);
-                aImgResId.push_back(RID_SVXBMP_NUMERICFIELD);
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 break;
             case DataType::REAL:
             case DataType::DOUBLE:
             case DataType::NUMERIC:
             case DataType::DECIMAL:
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 aPossibleTypes.push_back(SID_FM_NUMERICFIELD);
-                aImgResId.push_back(RID_SVXBMP_NUMERICFIELD);
                 break;
             case DataType::TIMESTAMP:
                 aPossibleTypes.push_back(SID_FM_TWOFIELDS_DATE_N_TIME);
-                aImgResId.push_back(RID_SVXBMP_DATE_N_TIME_FIELDS);
                 aPossibleTypes.push_back(SID_FM_DATEFIELD);
-                aImgResId.push_back(RID_SVXBMP_DATEFIELD);
                 aPossibleTypes.push_back(SID_FM_TIMEFIELD);
-                aImgResId.push_back(RID_SVXBMP_TIMEFIELD);
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 break;
             case DataType::DATE:
                 aPossibleTypes.push_back(SID_FM_DATEFIELD);
-                aImgResId.push_back(RID_SVXBMP_DATEFIELD);
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 break;
             case DataType::TIME:
                 aPossibleTypes.push_back(SID_FM_TIMEFIELD);
-                aImgResId.push_back(RID_SVXBMP_TIMEFIELD);
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 break;
             case DataType::CHAR:
             case DataType::VARCHAR:
             case DataType::LONGVARCHAR:
             default:
                 aPossibleTypes.push_back(SID_FM_EDIT);
-                aImgResId.push_back(RID_SVXBMP_EDITBOX);
                 aPossibleTypes.push_back(SID_FM_FORMATTEDFIELD);
-                aImgResId.push_back(RID_SVXBMP_FORMATTEDFIELD);
                 break;
         }
         // if it's a currency field, a "currency field" option
@@ -497,17 +480,12 @@ IMPL_LINK_NOARG( FmGridHeader, OnAsyncExecuteDrop, void*, void )
         {
             if  (   ::comphelper::hasProperty(FM_PROP_ISCURRENCY, xField)
                 &&  ::comphelper::getBOOL(xField->getPropertyValue(FM_PROP_ISCURRENCY)))
-            {
                 aPossibleTypes.insert(aPossibleTypes.begin(), SID_FM_CURRENCYFIELD);
-                aImgResId.insert(aImgResId.begin(), RID_SVXBMP_CURRENCYFIELD);
-            }
         }
-        catch (const Exception&)
+        catch(Exception&)
         {
             OSL_FAIL("FmGridHeader::ExecuteDrop: Exception occurred!");
         }
-
-        assert(aPossibleTypes.size() == aImgResId.size());
 
         bool bDateNTimeCol = false;
         if (!aPossibleTypes.empty())
@@ -515,15 +493,14 @@ IMPL_LINK_NOARG( FmGridHeader, OnAsyncExecuteDrop, void*, void )
             sal_Int32 nPreferredType = aPossibleTypes[0];
             if ((m_pImpl->nDropAction == DND_ACTION_LINK) && (aPossibleTypes.size() > 1))
             {
-                ScopedVclPtrInstance<PopupMenu> aInsertMenu(SVX_RES(RID_SVXMNU_COLS));
-                ScopedVclPtrInstance<PopupMenu> aTypeMenu;
-                PopupMenu* pMenu = aInsertMenu->GetPopupMenu(SID_FM_INSERTCOL);
-                for (std::vector<sal_uInt16>::const_iterator iter = aPossibleTypes.begin(), imgiter = aImgResId.begin();
-                     iter != aPossibleTypes.end(); ++iter, ++imgiter)
-                {
-                    SetMenuItem(*imgiter, *iter, pMenu, *aTypeMenu.get(), true, 0);
-                }
-                nPreferredType = aTypeMenu->Execute(this, m_pImpl->aDropPosPixel);
+                ImageList aImageList( SVX_RES(RID_SVXIMGLIST_FMEXPL) );
+
+                PopupMenu aInsertMenu(SVX_RES(RID_SVXMNU_COLS));
+                PopupMenu aTypeMenu;
+                PopupMenu* pMenu = aInsertMenu.GetPopupMenu(SID_FM_INSERTCOL);
+                for (std::vector<sal_uInt16>::const_iterator iter = aPossibleTypes.begin(); iter != aPossibleTypes.end(); ++iter)
+                    SetMenuItem(aImageList, *iter, pMenu, aTypeMenu, true, 0);
+                nPreferredType = aTypeMenu.Execute(this, m_pImpl->aDropPosPixel);
             }
 
             bDateNTimeCol = nPreferredType == SID_FM_TWOFIELDS_DATE_N_TIME;
@@ -661,7 +638,7 @@ void FmGridHeader::PreExecuteColumnContextMenu(sal_uInt16 nColId, PopupMenu& rMe
     bool bDesignMode = static_cast<FmGridControl*>(GetParent())->IsDesignMode();
 
     Reference< css::container::XIndexContainer >  xCols(static_cast<FmGridControl*>(GetParent())->GetPeer()->getColumns());
-    // Aufbau des Insert Menus
+    // Aufbau des Insert Menues
     // mark the column if nColId != HEADERBAR_ITEM_NOTFOUND
     if(nColId > 0)
     {
@@ -678,21 +655,22 @@ void FmGridHeader::PreExecuteColumnContextMenu(sal_uInt16 nColId, PopupMenu& rMe
     sal_uInt16 nPos = GetModelColumnPos(nColId);
     bool bMarked = nColId && static_cast<FmGridControl*>(GetParent())->isColumnMarked(nColId);
 
-    VclPtrInstance<PopupMenu> pControlMenu;
+    ImageList aImageList( SVX_RES(RID_SVXIMGLIST_FMEXPL) );
+    PopupMenu* pControlMenu = new PopupMenu;
 
     PopupMenu* pMenu = rMenu.GetPopupMenu(SID_FM_INSERTCOL);
     if (pMenu)
     {
-        SetMenuItem(RID_SVXBMP_EDITBOX, SID_FM_EDIT, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_CHECKBOX, SID_FM_CHECKBOX, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_COMBOBOX, SID_FM_COMBOBOX, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_LISTBOX, SID_FM_LISTBOX, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_DATEFIELD, SID_FM_DATEFIELD, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_TIMEFIELD, SID_FM_TIMEFIELD, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_NUMERICFIELD, SID_FM_NUMERICFIELD, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_CURRENCYFIELD, SID_FM_CURRENCYFIELD, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_PATTERNFIELD, SID_FM_PATTERNFIELD, pMenu, *pControlMenu, bDesignMode);
-        SetMenuItem(RID_SVXBMP_FORMATTEDFIELD, SID_FM_FORMATTEDFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_EDIT, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_CHECKBOX, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_COMBOBOX, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_LISTBOX, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_DATEFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_TIMEFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_NUMERICFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_CURRENCYFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_PATTERNFIELD, pMenu, *pControlMenu, bDesignMode);
+        SetMenuItem(aImageList, SID_FM_FORMATTEDFIELD, pMenu, *pControlMenu, bDesignMode);
     }
 
     if (pMenu && xCols.is() && nColId)
@@ -728,8 +706,6 @@ void FmGridHeader::PreExecuteColumnContextMenu(sal_uInt16 nColId, PopupMenu& rMe
         pControlMenu->EnableItem(SID_FM_FORMATTEDFIELD + nChangeTypeOffset, bDesignMode && (nColType != TYPE_FORMATTEDFIELD));
         rMenu.SetPopupMenu(SID_FM_CHANGECOL, pControlMenu);
     }
-    else
-        pControlMenu.disposeAndClear();
 
     rMenu.EnableItem(SID_FM_INSERTCOL, bDesignMode && xCols.is());
     rMenu.EnableItem(SID_FM_DELETECOL, bDesignMode && bMarked && xCols.is());
@@ -803,6 +779,10 @@ void FmGridHeader::PostExecuteColumnContextMenu(sal_uInt16 nColId, const PopupMe
 {
     Reference< css::container::XIndexContainer >  xCols(static_cast<FmGridControl*>(GetParent())->GetPeer()->getColumns());
     sal_uInt16 nPos = GetModelColumnPos(nColId);
+
+    // remove and delete the menu we inserted in PreExecuteColumnContextMenu
+    PopupMenu* pControlMenu = rMenu.GetPopupMenu(SID_FM_CHANGECOL);
+    delete pControlMenu;
 
     OUString aFieldType;
     bool    bReplace = false;
@@ -892,7 +872,7 @@ void FmGridHeader::PostExecuteColumnContextMenu(sal_uInt16 nColId, const PopupMe
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if(pFact)
             {
-                ScopedVclPtr<AbstractFmShowColsDialog> pDlg(pFact->CreateFmShowColsDialog());
+                std::unique_ptr<AbstractFmShowColsDialog> pDlg(pFact->CreateFmShowColsDialog());
                 DBG_ASSERT(pDlg, "Dialog creation failed!");
                 pDlg->SetColumns(xCols);
                 pDlg->Execute();
@@ -918,7 +898,7 @@ void FmGridHeader::PostExecuteColumnContextMenu(sal_uInt16 nColId, const PopupMe
             {   // it was a "show column/<colname>" command (there are at most 16 such items)
                 // search the nExecutionResult'th hidden col
                 Reference< css::beans::XPropertySet >  xCurCol;
-                for (sal_Int32 i=0; i<xCols->getCount() && nExecutionResult; ++i)
+                for (sal_uInt16 i=0; i<xCols->getCount() && nExecutionResult; ++i)
                 {
                     xCurCol.set(xCols->getByIndex(i), css::uno::UNO_QUERY);
                     Any aHidden = xCurCol->getPropertyValue(FM_PROP_HIDDEN);
@@ -1002,17 +982,17 @@ void FmGridHeader::triggerColumnContextMenu( const ::Point& _rPreferredPos )
     sal_uInt16 nColId = GetItemId( _rPreferredPos );
 
     // the menu
-    ScopedVclPtrInstance<PopupMenu> aContextMenu( SVX_RES( RID_SVXMNU_COLS ) );
+    PopupMenu aContextMenu( SVX_RES( RID_SVXMNU_COLS ) );
 
     // let derivees modify the menu
-    PreExecuteColumnContextMenu( nColId, *aContextMenu );
-    aContextMenu->RemoveDisabledEntries( true, true );
+    PreExecuteColumnContextMenu( nColId, aContextMenu );
+    aContextMenu.RemoveDisabledEntries( true, true );
 
     // execute the menu
-    sal_uInt16 nResult = aContextMenu->Execute( this, _rPreferredPos );
+    sal_uInt16 nResult = aContextMenu.Execute( this, _rPreferredPos );
 
     // let derivees handle the result
-    PostExecuteColumnContextMenu( nColId, *aContextMenu, nResult );
+    PostExecuteColumnContextMenu( nColId, aContextMenu, nResult );
 }
 
 void FmGridHeader::Command(const CommandEvent& rEvt)
@@ -1058,7 +1038,7 @@ void FmGridControl::Command(const CommandEvent& _rEvt)
             {
                 sal_uInt16 nSelId = GetColumnId(
                     sal::static_int_cast< sal_uInt16 >( FirstSelectedColumn() ) );
-                ::tools::Rectangle aColRect( GetFieldRectPixel( 0, nSelId, false ) );
+                ::Rectangle aColRect( GetFieldRectPixel( 0, nSelId, false ) );
 
                 Point aRelativePos( pMyHeader->ScreenToOutputPixel( OutputToScreenPixel( aColRect.TopCenter() ) ) );
                 pMyHeader->triggerColumnContextMenu(aRelativePos);
@@ -1085,12 +1065,12 @@ void FmGridControl::propertyChange(const css::beans::PropertyChangeEvent& evt)
     const DbGridRowRef& xRow = GetCurrentRow();
     // waehrend Positionierung wird kein abgleich  der Properties vorgenommen
     Reference<XPropertySet> xSet(evt.Source,UNO_QUERY);
-    if (xRow.is() && (::cppu::any2bool(xSet->getPropertyValue(FM_PROP_ISNEW))|| CompareBookmark(getDataSource()->getBookmark(), xRow->GetBookmark())))
+    if (xRow.Is() && (::cppu::any2bool(xSet->getPropertyValue(FM_PROP_ISNEW))|| CompareBookmark(getDataSource()->getBookmark(), xRow->GetBookmark())))
     {
         if (evt.PropertyName == FM_PROP_ISMODIFIED)
         {
             // modified or clean ?
-            GridRowStatus eStatus = ::comphelper::getBOOL(evt.NewValue) ? GridRowStatus::Modified : GridRowStatus::Clean;
+            GridRowStatus eStatus = ::comphelper::getBOOL(evt.NewValue) ? GRS_MODIFIED : GRS_CLEAN;
             if (eStatus != xRow->GetStatus())
             {
                 xRow->SetStatus(eStatus);
@@ -1149,7 +1129,7 @@ void FmGridControl::DeleteSelectedRows()
     if ( IsCurrentAppending() )
         return;
     // is the insert row selected
-    if (GetEmptyRow().is() && IsRowSelected(GetRowCount() - 1))
+    if (GetEmptyRow().Is() && IsRowSelected(GetRowCount() - 1))
         nSelectedRows -= 1;
 
     // nothing to do
@@ -1216,10 +1196,10 @@ void FmGridControl::DeleteSelectedRows()
         Any aBookmark;
         bool bNewPos = false;
         // if the current row isn't selected we take the row as row after deletion
-        OSL_ENSURE( GetCurrentRow().is(), "FmGridControl::DeleteSelectedRows: no current row here?" );
+        OSL_ENSURE( GetCurrentRow().Is(), "FmGridControl::DeleteSelectedRows: no current row here?" );
             // crash reports suggest it can happen we don't have a current row - how?
             // #154303# / 2008-04-23 / frank.schoenheit@sun.com
-        if ( !IsRowSelected( GetCurrentPos() ) && !IsCurrentAppending() && GetCurrentRow().is() )
+        if ( !IsRowSelected( GetCurrentPos() ) && !IsCurrentAppending() && GetCurrentRow().Is() )
         {
             aBookmark = GetCurrentRow()->GetBookmark();
             bNewPos   = true;
@@ -1314,7 +1294,7 @@ void FmGridControl::DeleteSelectedRows()
                             --nRecordCount;
 
                         // there are no rows left and we have an insert row
-                        if (!nRecordCount && GetEmptyRow().is())
+                        if (!nRecordCount && GetEmptyRow().Is())
                         {
                             Reference< XResultSetUpdate >  xUpdateCursor(Reference< XInterface >(*m_pDataCursor), UNO_QUERY);
                             xUpdateCursor->moveToInsertRow();
@@ -1423,7 +1403,7 @@ bool FmGridControl::commit()
     // wird
     if (!IsUpdating())
     {
-        if (Controller().is() && Controller()->IsModified())
+        if (Controller().Is() && Controller()->IsModified())
         {
             if (!SaveModified())
                 return false;
@@ -1435,7 +1415,7 @@ bool FmGridControl::commit()
 void FmGridControl::inserted(const css::lang::EventObject& /*rEvent*/)
 {
     const DbGridRowRef& xRow = GetCurrentRow();
-    if (!xRow.is())
+    if (!xRow.Is())
         return;
 
     // Zeile ist eingefuegt worden, dann den status und mode zuruecksetzen
@@ -1479,7 +1459,7 @@ bool FmGridControl::isColumnMarked(sal_uInt16 nId) const
 long FmGridControl::QueryMinimumRowHeight()
 {
     long nMinimalLogicHeight = 20; // 0.2 cm
-    long nMinimalPixelHeight = LogicToPixel( Point( 0, nMinimalLogicHeight ), MapUnit::Map10thMM ).Y();
+    long nMinimalPixelHeight = LogicToPixel( Point( 0, nMinimalLogicHeight ), MAP_10TH_MM ).Y();
     return CalcZoom( nMinimalPixelHeight );
 }
 
@@ -1494,7 +1474,7 @@ void FmGridControl::RowHeightChanged()
         try
         {
             sal_Int32 nUnzoomedPixelHeight = CalcReverseZoom( GetDataRowHeight() );
-            Any aProperty = makeAny( (sal_Int32)PixelToLogic( Point( 0, nUnzoomedPixelHeight ), MapUnit::Map10thMM ).Y() );
+            Any aProperty = makeAny( (sal_Int32)PixelToLogic( Point( 0, nUnzoomedPixelHeight ), MAP_10TH_MM ).Y() );
             xModel->setPropertyValue( FM_PROP_ROWHEIGHT, aProperty );
         }
         catch( const Exception& )
@@ -1517,7 +1497,7 @@ void FmGridControl::ColumnResized(sal_uInt16 nId)
         sal_Int32 nColumnWidth = GetColumnWidth(nId);
         nColumnWidth = CalcReverseZoom(nColumnWidth);
         // Umrechnen in 10THMM
-        aWidth <<= (sal_Int32)PixelToLogic(Point(nColumnWidth,0),MapUnit::Map10thMM).X();
+        aWidth <<= (sal_Int32)PixelToLogic(Point(nColumnWidth,0),MAP_10TH_MM).X();
         xColModel->setPropertyValue(FM_PROP_WIDTH, aWidth);
     }
 }
@@ -1610,7 +1590,7 @@ void FmGridControl::InitColumnsByModels(const Reference< css::container::XIndexC
         aWidth = xCol->getPropertyValue(FM_PROP_WIDTH);
         sal_Int32 nWidth = 0;
         if (aWidth >>= nWidth)
-            nWidth = LogicToPixel(Point(nWidth,0),MapUnit::Map10thMM).X();
+            nWidth = LogicToPixel(Point(nWidth,0),MAP_10TH_MM).X();
 
         AppendColumn(aName, (sal_uInt16)nWidth);
         DbGridColumn* pCol = DbGridControl::GetColumns().at( i );
@@ -1901,7 +1881,7 @@ namespace
                     try {
                         xProp->getPropertyValue( _sPropName ) >>= sRetText;
                     } catch (UnknownPropertyException const& e) {
-                        SAL_WARN("svx.fmcomp",
+                        SAL_WARN("svx.form",
                                 "exception caught: " << e.Message);
                     }
                 }

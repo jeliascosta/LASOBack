@@ -92,7 +92,7 @@ public:
 protected:
     /** Destruction.
     */
-    virtual ~OStorePageManager() override;
+    virtual ~OStorePageManager();
 
 private:
     /** Implementation.

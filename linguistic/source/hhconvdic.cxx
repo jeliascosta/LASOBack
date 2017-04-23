@@ -56,8 +56,7 @@ using namespace i18n;
 #define SCRIPT_HANGUL   2
 
 // from i18npool/source/textconversion/textconversion_ko.cxx
-/// @throws RuntimeException
-sal_Int16 SAL_CALL checkScriptType(sal_Unicode c)
+sal_Int16 SAL_CALL checkScriptType(sal_Unicode c) throw (RuntimeException)
 {
   UErrorCode status = U_ZERO_ERROR;
 
@@ -96,6 +95,7 @@ HHConvDic::~HHConvDic()
 void SAL_CALL HHConvDic::addEntry(
         const OUString& aLeftText,
         const OUString& aRightText )
+    throw (IllegalArgumentException, container::ElementExistException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -108,20 +108,33 @@ void SAL_CALL HHConvDic::addEntry(
 
 
 OUString SAL_CALL HHConvDic::getImplementationName(  )
+    throw (RuntimeException, std::exception)
 {
-    return OUString( "com.sun.star.lingu2.HHConvDic" );
+    return getImplementationName_Static();
 }
 
 
 sal_Bool SAL_CALL HHConvDic::supportsService( const OUString& rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL HHConvDic::getSupportedServiceNames(  )
+    throw (RuntimeException, std::exception)
 {
-    return { SN_CONV_DICTIONARY, SN_HH_CONV_DICTIONARY };
+    return getSupportedServiceNames_Static();
+}
+
+
+uno::Sequence< OUString > HHConvDic::getSupportedServiceNames_Static()
+    throw()
+{
+    uno::Sequence< OUString > aSNS( 2 );
+    aSNS.getArray()[0] = SN_CONV_DICTIONARY;
+    aSNS.getArray()[1] = SN_HH_CONV_DICTIONARY;
+    return aSNS;
 }
 
 

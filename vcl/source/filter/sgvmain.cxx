@@ -29,6 +29,14 @@
 #include "sgvspln.hxx"
 #include <unotools/ucbstreamhelper.hxx>
 
+#if defined OSL_BIGENDIAN
+
+#define SWAPPOINT(p) {  \
+    p.x=OSL_SWAPWORD(p.x); \
+    p.y=OSL_SWAPWORD(p.y); }
+
+#endif
+
 //  Restrictions:
 
 //  - area patterns are matched to the available ones in Starview.
@@ -442,7 +450,7 @@ void DrawSlideRect(sal_Int16 x1, sal_Int16 y1, sal_Int16 x2, sal_Int16 y2, ObjAr
     Int1=100-F.FIntens; Int2=F.FIntens;
     if (Int1==Int2) {
         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-        rOut.DrawRect(tools::Rectangle(x1,y1,x2,y2));
+        rOut.DrawRect(Rectangle(x1,y1,x2,y2));
     } else {
         b0=Int1;
         switch (F.FBFarbe & 0x38) {
@@ -453,13 +461,13 @@ void DrawSlideRect(sal_Int16 x1, sal_Int16 y1, sal_Int16 x2, sal_Int16 y2, ObjAr
                     b=Int1+sal_Int16((sal_Int32)(Int2-Int1)*(sal_Int32)(i-y1) /(sal_Int32)(y2-y1+1));
                     if (b!=b0) {
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.DrawRect(tools::Rectangle(x1,i0,x2,i-1));
+                        rOut.DrawRect(Rectangle(x1,i0,x2,i-1));
                         i0=i; b0=b;
                     }
                     i++;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-                rOut.DrawRect(tools::Rectangle(x1,i0,x2,y2));
+                rOut.DrawRect(Rectangle(x1,i0,x2,y2));
             } break;
             case 0x28: { // horizontal
                 i0=x1;
@@ -468,20 +476,20 @@ void DrawSlideRect(sal_Int16 x1, sal_Int16 y1, sal_Int16 x2, sal_Int16 y2, ObjAr
                     b=Int1+sal_Int16((sal_Int32)(Int2-Int1)*(sal_Int32)(i-x1) /(sal_Int32)(x2-x1+1));
                     if (b!=b0) {
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.DrawRect(tools::Rectangle(i0,y1,i-1,y2));
+                        rOut.DrawRect(Rectangle(i0,y1,i-1,y2));
                         i0=i; b0=b;
                     }
                     i++;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-                rOut.DrawRect(tools::Rectangle(i0,y1,x2,y2));
+                rOut.DrawRect(Rectangle(i0,y1,x2,y2));
             } break;
 
             case 0x18: case 0x38: { // circle
                 vcl::Region ClipMerk=rOut.GetClipRegion();
                 double a;
 
-                rOut.SetClipRegion(vcl::Region(tools::Rectangle(x1,y1,x2,y2)));
+                rOut.SetClipRegion(vcl::Region(Rectangle(x1,y1,x2,y2)));
                 cx=(x1+x2) /2;
                 cy=(y1+y2) /2;
                 dx=x2-x1+1;
@@ -495,13 +503,13 @@ void DrawSlideRect(sal_Int16 x1, sal_Int16 y1, sal_Int16 x2, sal_Int16 y2, ObjAr
                     b=Int1+sal_Int16((sal_Int32(Int2-Int1)*sal_Int32(i)) /sal_Int32(MaxR));
                     if (b!=b0) {
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.DrawEllipse(tools::Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
+                        rOut.DrawEllipse(Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
                         i0=i; b0=b;
                     }
                     i--;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int1,rOut);
-                rOut.DrawEllipse(tools::Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
+                rOut.DrawEllipse(Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
                 rOut.SetClipRegion(ClipMerk);
             } break; // circle
         }
@@ -515,13 +523,13 @@ void RectType::Draw(OutputDevice& rOut)
     if (RotationAngle==0) {
     if ((F.FBFarbe & 0x38)==0 || Radius!=0) {
             SetLine(L,rOut);
-            rOut.DrawRect(tools::Rectangle(Pos1.x,Pos1.y,Pos2.x,Pos2.y),Radius,Radius);
+            rOut.DrawRect(Rectangle(Pos1.x,Pos1.y,Pos2.x,Pos2.y),Radius,Radius);
         } else {
             DrawSlideRect(Pos1.x,Pos1.y,Pos2.x,Pos2.y,F,rOut);
             if (L.LMuster!=0) {
                 SetLine(L,rOut);
                 rOut.SetFillColor();
-                rOut.DrawRect(tools::Rectangle(Pos1.x,Pos1.y,Pos2.x,Pos2.y));
+                rOut.DrawRect(Rectangle(Pos1.x,Pos1.y,Pos2.x,Pos2.y));
             }
         }
     } else {
@@ -590,7 +598,7 @@ void DrawSlideCirc(sal_Int16 cx, sal_Int16 cy, sal_Int16 rx, sal_Int16 ry, ObjAr
     Int1=100-F.FIntens; Int2=F.FIntens;
     if (Int1==Int2) {
         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-        rOut.DrawEllipse(tools::Rectangle(x1,y1,x2,y2));
+        rOut.DrawEllipse(Rectangle(x1,y1,x2,y2));
     } else {
         b0=Int1;
         switch (F.FBFarbe & 0x38) {
@@ -602,15 +610,15 @@ void DrawSlideCirc(sal_Int16 cx, sal_Int16 cy, sal_Int16 rx, sal_Int16 ry, ObjAr
                     b=Int1+sal_Int16((sal_Int32)(Int2-Int1)*(sal_Int32)(i-y1) /(sal_Int32)(y2-y1+1));
                     if (b!=b0) {
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.SetClipRegion(vcl::Region(tools::Rectangle(x1,i0,x2,i-1)));
-                        rOut.DrawEllipse(tools::Rectangle(x1,y1,x2,y2));
+                        rOut.SetClipRegion(vcl::Region(Rectangle(x1,i0,x2,i-1)));
+                        rOut.DrawEllipse(Rectangle(x1,y1,x2,y2));
                         i0=i; b0=b;
                     }
                     i++;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-                rOut.SetClipRegion(vcl::Region(tools::Rectangle(x1,i0,x2,y2)));
-                rOut.DrawEllipse(tools::Rectangle(x1,y1,x2,y2));
+                rOut.SetClipRegion(vcl::Region(Rectangle(x1,i0,x2,y2)));
+                rOut.DrawEllipse(Rectangle(x1,y1,x2,y2));
                 rOut.SetClipRegion(ClipMerk);
             } break;
             case 0x28: { // horizontal
@@ -621,15 +629,15 @@ void DrawSlideCirc(sal_Int16 cx, sal_Int16 cy, sal_Int16 rx, sal_Int16 ry, ObjAr
                     b=Int1+sal_Int16((sal_Int32)(Int2-Int1)*(sal_Int32)(i-x1) /(sal_Int32)(x2-x1+1));
                     if (b!=b0) {
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.SetClipRegion(vcl::Region(tools::Rectangle(i0,y1,i-1,y2)));
-                        rOut.DrawEllipse(tools::Rectangle(x1,y1,x2,y2));
+                        rOut.SetClipRegion(vcl::Region(Rectangle(i0,y1,i-1,y2)));
+                        rOut.DrawEllipse(Rectangle(x1,y1,x2,y2));
                         i0=i; b0=b;
                     }
                     i++;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int2,rOut);
-                rOut.SetClipRegion(vcl::Region(tools::Rectangle(i0,y1,x2,y2)));
-                rOut.DrawEllipse(tools::Rectangle(x1,y1,x2,y2));
+                rOut.SetClipRegion(vcl::Region(Rectangle(i0,y1,x2,y2)));
+                rOut.DrawEllipse(Rectangle(x1,y1,x2,y2));
                 rOut.SetClipRegion(ClipMerk);
             } break;
 
@@ -648,13 +656,13 @@ void DrawSlideCirc(sal_Int16 cx, sal_Int16 cy, sal_Int16 rx, sal_Int16 ry, ObjAr
                         sal_Int32 temp=sal_Int32(i0)*sal_Int32(ry)/sal_Int32(rx);
                         sal_Int16 j0=sal_Int16(temp);
                         SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)b0,rOut);
-                        rOut.DrawEllipse(tools::Rectangle(cx-i0,cy-j0,cx+i0,cy+j0));
+                        rOut.DrawEllipse(Rectangle(cx-i0,cy-j0,cx+i0,cy+j0));
                         i0=i; b0=b;
                     }
                     i--;
                 }
                 SgfAreaColorIntens(F.FMuster,(sal_uInt8)Col1,(sal_uInt8)Col2,(sal_uInt8)Int1,rOut);
-                rOut.DrawEllipse(tools::Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
+                rOut.DrawEllipse(Rectangle(cx-i0,cy-i0,cx+i0,cy+i0));
             } break; // circle
         }
     }
@@ -662,7 +670,7 @@ void DrawSlideCirc(sal_Int16 cx, sal_Int16 cy, sal_Int16 rx, sal_Int16 ry, ObjAr
 
 void CircType::Draw(OutputDevice& rOut)
 {
-    tools::Rectangle aRect(Center.x-Radius.x,Center.y-Radius.y,Center.x+Radius.x,Center.y+Radius.y);
+    Rectangle aRect(Center.x-Radius.x,Center.y-Radius.y,Center.x+Radius.x,Center.y+Radius.y);
 
     if (L.LMuster!=0) L.LMuster=1; // no line pattern here, only on or off
     SetArea(F,rOut);
@@ -720,7 +728,7 @@ void BmapType::Draw(OutputDevice& rOut)
         (sal_Int32)Filename[ 0 ], RTL_TEXTENCODING_UTF8 );
     INetURLObject   aFNam( aStr );
 
-    SvStream* pInp = ::utl::UcbStreamHelper::CreateStream( aFNam.GetMainURL( INetURLObject::DecodeMechanism::NONE ), StreamMode::READ );
+    SvStream* pInp = ::utl::UcbStreamHelper::CreateStream( aFNam.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READ );
     if ( pInp )
     {
         unsigned char nSgfTyp = CheckSgfTyp( *pInp,nVersion);
@@ -777,7 +785,7 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadTextType( rInp, aText );
                     if (!rInp.GetError()) {
                         aText.Buffer=new UCHAR[aText.BufSize+1]; // add one for LookAhead at CK-separation
-                        rInp.ReadBytes(aText.Buffer, aText.BufSize);
+                        rInp.Read(aText.Buffer, aText.BufSize);
                         if (!rInp.GetError()) aText.Draw(rOut);
                         delete[] aText.Buffer;
                     }
@@ -794,11 +802,10 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadPolyType( rInp, aPoly );
                     if (!rInp.GetError()) {
                         aPoly.EckP=new PointType[aPoly.nPoints];
-                        for (int i = 0; i < aPoly.nPoints; ++i)
-                        {
-                            rInp.ReadInt16(aPoly.EckP[i].x);
-                            rInp.ReadInt16(aPoly.EckP[i].y);
-                        }
+                        rInp.Read(aPoly.EckP, 4*aPoly.nPoints);
+#if defined OSL_BIGENDIAN
+                        for(short i=0;i<aPoly.nPoints;i++) SWAPPOINT(aPoly.EckP[i]);
+#endif
                         if (!rInp.GetError()) aPoly.Draw(rOut);
                         delete[] aPoly.EckP;
                     }
@@ -808,11 +815,10 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadSplnType( rInp, aSpln );
                     if (!rInp.GetError()) {
                         aSpln.EckP=new PointType[aSpln.nPoints];
-                        for (int i = 0; i < aSpln.nPoints; ++i)
-                        {
-                            rInp.ReadInt16(aSpln.EckP[i].x);
-                            rInp.ReadInt16(aSpln.EckP[i].y);
-                        }
+                        rInp.Read(aSpln.EckP, 4*aSpln.nPoints);
+#if defined OSL_BIGENDIAN
+                        for(short i=0;i<aSpln.nPoints;i++) SWAPPOINT(aSpln.EckP[i]);
+#endif
                         if (!rInp.GetError()) aSpln.Draw(rOut);
                         delete[] aSpln.EckP;
                     }
@@ -899,15 +905,19 @@ bool SgfFilterSDrw( SvStream& rInp, SgfHeader&, SgfEntry&, GDIMetaFile& rMtf )
 
     rMtf.Stop();
     rMtf.WindStart();
-    MapMode aMap(MapUnit::Map10thMM,Point(),Fraction(1,4),Fraction(1,4));
+    MapMode aMap(MAP_10TH_MM,Point(),Fraction(1,4),Fraction(1,4));
     rMtf.SetPrefMapMode(aMap);
-    rMtf.SetPrefSize(Size(aPage.Paper.Size.x, aPage.Paper.Size.y));
+    rMtf.SetPrefSize(Size((sal_Int16)aPage.Paper.Size.x,(sal_Int16)aPage.Paper.Size.y));
     bRet=true;
     return bRet;
 }
 
 bool SgfSDrwFilter(SvStream& rInp, GDIMetaFile& rMtf, const INetURLObject& _aIniPath )
 {
+#if OSL_DEBUG_LEVEL > 1 // check record size. New compiler possibly aligns different!
+    if (sizeof(ObjTextType)!=ObjTextTypeSize)  return false;
+#endif
+
     sal_uLong   nFileStart;        // offset of SgfHeaders. In general 0.
     SgfHeader   aHead;
     SgfEntry    aEntr;
@@ -919,7 +929,7 @@ bool SgfSDrwFilter(SvStream& rInp, GDIMetaFile& rMtf, const INetURLObject& _aIni
 
     pSgfFonts = new SgfFontLst;
 
-    pSgfFonts->AssignFN( aIniPath.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+    pSgfFonts->AssignFN( aIniPath.GetMainURL( INetURLObject::NO_DECODE ) );
     nFileStart=rInp.Tell();
     ReadSgfHeader( rInp, aHead );
     if (aHead.ChkMagic() && aHead.Typ==SgfStarDraw && aHead.Version==SGV_VERSION) {

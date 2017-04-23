@@ -51,12 +51,14 @@ Meaning::~Meaning()
 }
 
 OUString SAL_CALL Meaning::getMeaning()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return aTerm;
 }
 
 Sequence< OUString > SAL_CALL Meaning::querySynonyms()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
         return aSyn;

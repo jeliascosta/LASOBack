@@ -49,7 +49,7 @@ namespace sdr
 
             // basic constructor, used from SdrPageView.
             explicit ObjectContactOfPageView(SdrPageWindow& rPageWindow);
-            virtual ~ObjectContactOfPageView() override;
+            virtual ~ObjectContactOfPageView();
 
             // LazyInvalidate request. This is used from the VOCs to mark that they
             // got invalidated by an ActionChanged() call. An active view needs to remember
@@ -61,7 +61,7 @@ namespace sdr
             virtual void PrepareProcessDisplay() override;
 
             // From baseclass Timer, the timeout call triggered by the LazyInvalidate mechanism
-            virtual void Invoke() final override;
+            virtual void Invoke() override;
 
             // Process the whole displaying
             virtual void ProcessDisplay(DisplayInfo& rDisplayInfo) override;

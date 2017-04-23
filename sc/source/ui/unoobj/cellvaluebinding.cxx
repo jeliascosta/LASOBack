@@ -20,8 +20,6 @@
 #include "cellvaluebinding.hxx"
 #include <tools/debug.hxx>
 #include <rtl/math.hxx>
-#include <com/sun/star/form/binding/IncompatibleTypesException.hpp>
-#include <com/sun/star/lang/NotInitializedException.hpp>
 #include <com/sun/star/table/XCellRange.hpp>
 #include <com/sun/star/sheet/XCellAddressable.hpp>
 #include <com/sun/star/sheet/XCellRangeData.hpp>
@@ -58,12 +56,13 @@ namespace calc
         ,m_bListPos( _bListPos )
     {
         // register our property at the base class
+        CellAddress aInitialPropValue;
         registerPropertyNoMember(
             "BoundCell",
             PROP_HANDLE_BOUND_CELL,
             PropertyAttribute::BOUND | PropertyAttribute::READONLY,
-            cppu::UnoType<CellAddress>::get(),
-            css::uno::Any(CellAddress())
+            cppu::UnoType<decltype(aInitialPropValue)>::get(),
+            &aInitialPropValue
         );
 
         // TODO: implement a ReadOnly property as required by the service,
@@ -97,7 +96,7 @@ namespace calc
         // for the cell)
     }
 
-    Reference< XPropertySetInfo > SAL_CALL OCellValueBinding::getPropertySetInfo(  )
+    Reference< XPropertySetInfo > SAL_CALL OCellValueBinding::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
     {
         return createPropertySetInfo( getInfoHelper() ) ;
     }
@@ -126,7 +125,7 @@ namespace calc
             _rValue <<= xCellAddress->getCellAddress( );
     }
 
-    Sequence< Type > SAL_CALL OCellValueBinding::getSupportedValueTypes(  )
+    Sequence< Type > SAL_CALL OCellValueBinding::getSupportedValueTypes(  ) throw (RuntimeException, std::exception)
     {
         checkDisposed( );
         checkInitialized( );
@@ -156,7 +155,7 @@ namespace calc
         return aTypes;
     }
 
-    sal_Bool SAL_CALL OCellValueBinding::supportsType( const Type& aType )
+    sal_Bool SAL_CALL OCellValueBinding::supportsType( const Type& aType ) throw (RuntimeException, std::exception)
     {
         checkDisposed( );
         checkInitialized( );
@@ -172,7 +171,7 @@ namespace calc
         return false;
     }
 
-    Any SAL_CALL OCellValueBinding::getValue( const Type& aType )
+    Any SAL_CALL OCellValueBinding::getValue( const Type& aType ) throw (IncompatibleTypesException, RuntimeException, std::exception)
     {
         checkDisposed( );
         checkInitialized( );
@@ -257,7 +256,7 @@ namespace calc
         return aReturn;
     }
 
-    void SAL_CALL OCellValueBinding::setValue( const Any& aValue )
+    void SAL_CALL OCellValueBinding::setValue( const Any& aValue ) throw (IncompatibleTypesException, NoSupportException, RuntimeException, std::exception)
     {
         checkDisposed( );
         checkInitialized( );
@@ -396,7 +395,8 @@ namespace calc
     void OCellValueBinding::checkInitialized()
     {
         if ( !m_bInitialized )
-            throw NotInitializedException("CellValueBinding is not initialized", static_cast<cppu::OWeakObject*>(this));
+            throw RuntimeException();
+            // TODO: error message
     }
 
     void OCellValueBinding::checkValueType( const Type& _rType ) const
@@ -414,17 +414,17 @@ namespace calc
         }
     }
 
-    OUString SAL_CALL OCellValueBinding::getImplementationName(  )
+    OUString SAL_CALL OCellValueBinding::getImplementationName(  ) throw (RuntimeException, std::exception)
     {
         return OUString( "com.sun.star.comp.sheet.OCellValueBinding" );
     }
 
-    sal_Bool SAL_CALL OCellValueBinding::supportsService( const OUString& _rServiceName )
+    sal_Bool SAL_CALL OCellValueBinding::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL OCellValueBinding::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL OCellValueBinding::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aServices( m_bListPos ? 3 : 2 );
         aServices[ 0 ] = "com.sun.star.table.CellValueBinding";
@@ -434,13 +434,13 @@ namespace calc
         return aServices;
     }
 
-    void SAL_CALL OCellValueBinding::addModifyListener( const Reference< XModifyListener >& _rxListener )
+    void SAL_CALL OCellValueBinding::addModifyListener( const Reference< XModifyListener >& _rxListener ) throw (RuntimeException, std::exception)
     {
        if ( _rxListener.is() )
            m_aModifyListeners.addInterface( _rxListener );
     }
 
-    void SAL_CALL OCellValueBinding::removeModifyListener( const Reference< XModifyListener >& _rxListener )
+    void SAL_CALL OCellValueBinding::removeModifyListener( const Reference< XModifyListener >& _rxListener ) throw (RuntimeException, std::exception)
     {
        if ( _rxListener.is() )
            m_aModifyListeners.removeInterface( _rxListener );
@@ -469,12 +469,12 @@ namespace calc
         }
     }
 
-    void SAL_CALL OCellValueBinding::modified( const EventObject& /* aEvent */ )
+    void SAL_CALL OCellValueBinding::modified( const EventObject& /* aEvent */ ) throw (RuntimeException, std::exception)
     {
         notifyModified();
     }
 
-    void SAL_CALL OCellValueBinding::disposing( const EventObject& aEvent )
+    void SAL_CALL OCellValueBinding::disposing( const EventObject& aEvent ) throw (RuntimeException, std::exception)
     {
         Reference<XInterface> xCellInt( m_xCell, UNO_QUERY );
         if ( xCellInt == aEvent.Source )
@@ -485,10 +485,11 @@ namespace calc
         }
     }
 
-    void SAL_CALL OCellValueBinding::initialize( const Sequence< Any >& _rArguments )
+    void SAL_CALL OCellValueBinding::initialize( const Sequence< Any >& _rArguments ) throw (Exception, RuntimeException, std::exception)
     {
         if ( m_bInitialized )
-            throw RuntimeException("CellValueBinding is already initialized", static_cast<cppu::OWeakObject*>(this));
+            throw Exception();
+            // TODO: error message
 
         // get the cell address
         CellAddress aAddress;
@@ -510,7 +511,8 @@ namespace calc
         }
 
         if ( !bFoundAddress )
-            throw RuntimeException("Cell not found", static_cast<cppu::OWeakObject*>(this));
+            // TODO: error message
+            throw Exception();
 
         // get the cell object
         try
@@ -542,7 +544,8 @@ namespace calc
         }
 
         if ( !m_xCell.is() )
-            throw RuntimeException("Failed to retrieve cell object", static_cast<cppu::OWeakObject*>(this));
+            throw Exception();
+            // TODO error message
 
         m_xCellText.set(m_xCell, css::uno::UNO_QUERY);
 

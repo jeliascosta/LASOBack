@@ -34,6 +34,8 @@
 
 #include <libxml/xmlwriter.h>
 
+SfxPoolItem* XLineTransparenceItem::CreateDefault() {return new XLineTransparenceItem;}
+
 XLineTransparenceItem::XLineTransparenceItem(sal_uInt16 nLineTransparence) :
     SfxUInt16Item(XATTR_LINETRANSPARENCE, nLineTransparence)
 {
@@ -57,8 +59,8 @@ SfxPoolItem* XLineTransparenceItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) c
 bool XLineTransparenceItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -66,10 +68,10 @@ bool XLineTransparenceItem::GetPresentation
 
     switch ( ePres )
     {
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText = OUString( ResId( RID_SVXSTR_TRANSPARENCE, DIALOG_MGR() ) ) + ": ";
             SAL_FALLTHROUGH;
-        case SfxItemPresentation::Nameless:
+        case SFX_ITEM_PRESENTATION_NAMELESS:
             rText += unicode::formatPercent(GetValue(),
                 Application::GetSettings().GetUILanguageTag());
             return true;
@@ -82,7 +84,7 @@ bool XLineTransparenceItem::GetPresentation
 SfxPoolItem* XLineJointItem::CreateDefault() { return new XLineJointItem; }
 
 XLineJointItem::XLineJointItem( css::drawing::LineJoint eLineJoint ) :
-    SfxEnumItem(XATTR_LINEJOINT, eLineJoint)
+    SfxEnumItem(XATTR_LINEJOINT, sal::static_int_cast< sal_uInt16 >(eLineJoint))
 {
 }
 
@@ -111,8 +113,8 @@ SfxPoolItem* XLineJointItem::Clone(SfxItemPool* /*pPool*/) const
     return new XLineJointItem( *this );
 }
 
-bool XLineJointItem::GetPresentation( SfxItemPresentation /*ePres*/, MapUnit /*eCoreUnit*/,
-    MapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
+bool XLineJointItem::GetPresentation( SfxItemPresentation /*ePres*/, SfxMapUnit /*eCoreUnit*/,
+    SfxMapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
 {
     rText.clear();
 
@@ -120,27 +122,27 @@ bool XLineJointItem::GetPresentation( SfxItemPresentation /*ePres*/, MapUnit /*e
 
     switch( GetValue() )
     {
-        case css::drawing::LineJoint::LineJoint_MAKE_FIXED_SIZE:
-        case css::drawing::LineJoint_NONE:
+        case( css::drawing::LineJoint_MAKE_FIXED_SIZE ):
+        case( css::drawing::LineJoint_NONE ):
             nId = RID_SVXSTR_LINEJOINT_NONE;
         break;
 
-        case css::drawing::LineJoint_MIDDLE:
+        case( css::drawing::LineJoint_MIDDLE ):
             nId = RID_SVXSTR_LINEJOINT_MIDDLE;
         break;
 
 
-        case css::drawing::LineJoint_BEVEL:
+        case( css::drawing::LineJoint_BEVEL ):
             nId = RID_SVXSTR_LINEJOINT_BEVEL;
         break;
 
 
-        case css::drawing::LineJoint_MITER:
+        case( css::drawing::LineJoint_MITER ):
             nId = RID_SVXSTR_LINEJOINT_MITER;
         break;
 
 
-        case css::drawing::LineJoint_ROUND:
+        case( css::drawing::LineJoint_ROUND ):
             nId = RID_SVXSTR_LINEJOINT_ROUND;
         break;
     }
@@ -171,7 +173,7 @@ bool XLineJointItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*
         eUnoJoint = (css::drawing::LineJoint)nLJ;
     }
 
-    SetValue( eUnoJoint );
+    SetValue( sal::static_int_cast< sal_uInt16 >( eUnoJoint ) );
 
     return true;
 }
@@ -286,7 +288,7 @@ bool AffineMatrixItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberI
 SfxPoolItem* XLineCapItem::CreateDefault() { return new XLineCapItem; }
 
 XLineCapItem::XLineCapItem(css::drawing::LineCap eLineCap)
-:   SfxEnumItem(XATTR_LINECAP, eLineCap)
+:   SfxEnumItem(XATTR_LINECAP, sal::static_int_cast< sal_uInt16 >(eLineCap))
 {
 }
 
@@ -315,8 +317,8 @@ SfxPoolItem* XLineCapItem::Clone(SfxItemPool* /*pPool*/) const
     return new XLineCapItem( *this );
 }
 
-bool XLineCapItem::GetPresentation( SfxItemPresentation /*ePres*/, MapUnit /*eCoreUnit*/,
-                                                     MapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
+bool XLineCapItem::GetPresentation( SfxItemPresentation /*ePres*/, SfxMapUnit /*eCoreUnit*/,
+                                                     SfxMapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
 {
     rText.clear();
 
@@ -371,7 +373,7 @@ bool XLineCapItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*/)
         || css::drawing::LineCap_ROUND == eUnoCap
         || css::drawing::LineCap_SQUARE == eUnoCap, "Unknown enum value in XATTR_LINECAP (!)");
 
-    SetValue(eUnoCap);
+    SetValue(sal::static_int_cast< sal_uInt16 >(eUnoCap));
 
     return true;
 }
@@ -391,6 +393,8 @@ css::drawing::LineCap XLineCapItem::GetValue() const
 
     return eRetval;
 }
+
+SfxPoolItem* XFillTransparenceItem::CreateDefault() {return new XFillTransparenceItem;}
 
 XFillTransparenceItem::XFillTransparenceItem(sal_uInt16 nFillTransparence) :
     SfxUInt16Item(XATTR_FILLTRANSPARENCE, nFillTransparence)
@@ -415,8 +419,8 @@ SfxPoolItem* XFillTransparenceItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) c
 bool XFillTransparenceItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -424,10 +428,10 @@ bool XFillTransparenceItem::GetPresentation
 
     switch ( ePres )
     {
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText = OUString( ResId( RID_SVXSTR_TRANSPARENCE, DIALOG_MGR() ) ) + ": ";
             SAL_FALLTHROUGH;
-        case SfxItemPresentation::Nameless:
+        case SFX_ITEM_PRESENTATION_NAMELESS:
             rText += unicode::formatPercent(GetValue(),
                 Application::GetSettings().GetUILanguageTag());
             return true;
@@ -438,12 +442,14 @@ bool XFillTransparenceItem::GetPresentation
 
 void XFillTransparenceItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillTransparenceItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillTransparenceItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);
 }
 
+
+SfxPoolItem* XFormTextShadowTranspItem::CreateDefault() { return new XFormTextShadowTranspItem; }
 
 XFormTextShadowTranspItem::XFormTextShadowTranspItem(sal_uInt16 nShdwTransparence) :
     SfxUInt16Item(XATTR_FORMTXTSHDWTRANSP, nShdwTransparence)
@@ -466,6 +472,8 @@ SfxPoolItem* XFormTextShadowTranspItem::Create(SvStream& rIn, sal_uInt16 /*nVer*
 }
 
 // class XFillGradientStepCountItem
+
+SfxPoolItem* XGradientStepCountItem::CreateDefault() {return new XGradientStepCountItem;}
 
 XGradientStepCountItem::XGradientStepCountItem( sal_uInt16 nStepCount ) :
     SfxUInt16Item( XATTR_GRADIENTSTEPCOUNT, nStepCount )
@@ -490,8 +498,8 @@ SfxPoolItem* XGradientStepCountItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) 
 bool XGradientStepCountItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -501,6 +509,8 @@ bool XGradientStepCountItem::GetPresentation
     return true;
 }
 
+
+SfxPoolItem* XFillBmpTileItem::CreateDefault() {return new XFillBmpTileItem;}
 
 XFillBmpTileItem::XFillBmpTileItem( bool bTile ) :
             SfxBoolItem( XATTR_FILLBMP_TILE, bTile )
@@ -525,8 +535,8 @@ SfxPoolItem* XFillBmpTileItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XFillBmpTileItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -536,7 +546,7 @@ bool XFillBmpTileItem::GetPresentation
 
 void XFillBmpTileItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillBmpTileItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillBmpTileItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::boolean(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);
@@ -545,8 +555,10 @@ void XFillBmpTileItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 // class XFillBmpTilePosItem
 
 
-XFillBmpPosItem::XFillBmpPosItem( RectPoint eRP ) :
-    SfxEnumItem( XATTR_FILLBMP_POS, eRP )
+SfxPoolItem* XFillBmpPosItem::CreateDefault() {return new XFillBmpPosItem;}
+
+XFillBmpPosItem::XFillBmpPosItem( RECT_POINT eRP ) :
+    SfxEnumItem( XATTR_FILLBMP_POS, sal::static_int_cast< sal_uInt16 >( eRP ) )
 {
 }
 
@@ -568,8 +580,8 @@ SfxPoolItem* XFillBmpPosItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XFillBmpPosItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -584,13 +596,15 @@ sal_uInt16 XFillBmpPosItem::GetValueCount() const
 
 void XFillBmpPosItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillBmpPosItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillBmpPosItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number((int)GetValue()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);
 }
 
 // class XFillBmpTileSizeXItem
+
+SfxPoolItem* XFillBmpSizeXItem::CreateDefault() {return new XFillBmpSizeXItem;}
 
 XFillBmpSizeXItem::XFillBmpSizeXItem( long nSizeX ) :
             SfxMetricItem( XATTR_FILLBMP_SIZEX, nSizeX )
@@ -615,8 +629,8 @@ SfxPoolItem* XFillBmpSizeXItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) cons
 bool XFillBmpSizeXItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -631,6 +645,8 @@ bool XFillBmpSizeXItem::HasMetrics() const
 
 // class XFillBmpTileSizeYItem
 
+
+SfxPoolItem* XFillBmpSizeYItem::CreateDefault() {return new XFillBmpSizeYItem;}
 
 XFillBmpSizeYItem::XFillBmpSizeYItem( long nSizeY ) :
             SfxMetricItem( XATTR_FILLBMP_SIZEY, nSizeY )
@@ -655,8 +671,8 @@ SfxPoolItem* XFillBmpSizeYItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) cons
 bool XFillBmpSizeYItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -670,6 +686,8 @@ bool XFillBmpSizeYItem::HasMetrics() const
 }
 
 // class XFillBmpTileLogItem
+
+SfxPoolItem* XFillBmpSizeLogItem::CreateDefault() {return new XFillBmpSizeLogItem;}
 
 XFillBmpSizeLogItem::XFillBmpSizeLogItem( bool bLog ) :
             SfxBoolItem( XATTR_FILLBMP_SIZELOG, bLog )
@@ -694,8 +712,8 @@ SfxPoolItem* XFillBmpSizeLogItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) co
 bool XFillBmpSizeLogItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -705,6 +723,8 @@ bool XFillBmpSizeLogItem::GetPresentation
 
 // class XFillBmpTileOffXItem
 
+
+SfxPoolItem* XFillBmpTileOffsetXItem::CreateDefault() {return new XFillBmpTileOffsetXItem;}
 
 XFillBmpTileOffsetXItem::XFillBmpTileOffsetXItem( sal_uInt16 nOffX ) :
             SfxUInt16Item( XATTR_FILLBMP_TILEOFFSETX, nOffX )
@@ -729,8 +749,8 @@ SfxPoolItem* XFillBmpTileOffsetXItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/
 bool XFillBmpTileOffsetXItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -739,6 +759,8 @@ bool XFillBmpTileOffsetXItem::GetPresentation
 }
 
 // class XFillBmpTileOffYItem
+
+SfxPoolItem* XFillBmpTileOffsetYItem::CreateDefault() {return new XFillBmpTileOffsetYItem;}
 
 XFillBmpTileOffsetYItem::XFillBmpTileOffsetYItem( sal_uInt16 nOffY ) :
             SfxUInt16Item( XATTR_FILLBMP_TILEOFFSETY, nOffY )
@@ -763,14 +785,16 @@ SfxPoolItem* XFillBmpTileOffsetYItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/
 bool XFillBmpTileOffsetYItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     rText.clear();
     return true;
 }
+
+SfxPoolItem* XFillBmpStretchItem::CreateDefault() {return new XFillBmpStretchItem;}
 
 XFillBmpStretchItem::XFillBmpStretchItem( bool bStretch ) :
             SfxBoolItem( XATTR_FILLBMP_STRETCH, bStretch )
@@ -795,8 +819,8 @@ SfxPoolItem* XFillBmpStretchItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/) co
 bool XFillBmpStretchItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -806,13 +830,15 @@ bool XFillBmpStretchItem::GetPresentation
 
 void XFillBmpStretchItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillBmpStretchItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillBmpStretchItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::boolean(GetValue()).getStr()));
     xmlTextWriterEndElement(pWriter);
 }
 
 // class XFillBmpTileOffPosXItem
+
+SfxPoolItem* XFillBmpPosOffsetXItem::CreateDefault() {return new XFillBmpPosOffsetXItem;}
 
 XFillBmpPosOffsetXItem::XFillBmpPosOffsetXItem( sal_uInt16 nOffPosX ) :
             SfxUInt16Item( XATTR_FILLBMP_POSOFFSETX, nOffPosX )
@@ -837,8 +863,8 @@ SfxPoolItem* XFillBmpPosOffsetXItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/)
 bool XFillBmpPosOffsetXItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -847,6 +873,8 @@ bool XFillBmpPosOffsetXItem::GetPresentation
 }
 
 // class XFillBmpTileOffPosYItem
+
+SfxPoolItem* XFillBmpPosOffsetYItem::CreateDefault() {return new XFillBmpPosOffsetYItem;}
 
 XFillBmpPosOffsetYItem::XFillBmpPosOffsetYItem( sal_uInt16 nOffPosY ) :
             SfxUInt16Item( XATTR_FILLBMP_POSOFFSETY, nOffPosY )
@@ -871,14 +899,16 @@ SfxPoolItem* XFillBmpPosOffsetYItem::Create( SvStream& rIn, sal_uInt16 /*nVer*/)
 bool XFillBmpPosOffsetYItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     rText.clear();
     return true;
 }
+
+SfxPoolItem* XFillBackgroundItem::CreateDefault() {return new XFillBackgroundItem;}
 
 XFillBackgroundItem::XFillBackgroundItem( bool bFill ) :
     SfxBoolItem( XATTR_FILLBACKGROUND, bFill )
@@ -900,8 +930,8 @@ SfxPoolItem* XFillBackgroundItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) con
     return new XFillBackgroundItem( rIn );
 }
 
-bool XFillBackgroundItem::GetPresentation( SfxItemPresentation /*ePres*/, MapUnit /*eCoreUnit*/,
-                                           MapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
+bool XFillBackgroundItem::GetPresentation( SfxItemPresentation /*ePres*/, SfxMapUnit /*eCoreUnit*/,
+                                                          SfxMapUnit /*ePresUnit*/, OUString& rText, const IntlWrapper*) const
 {
     rText.clear();
     return true;

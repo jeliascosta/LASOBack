@@ -91,7 +91,6 @@
 
 #include <IDocumentStylePoolAccess.hxx>
 #include <numrule.hxx>
-#include <o3tl/typed_flags_set.hxx>
 
 #include <rtl/strbuf.hxx>
 
@@ -100,28 +99,22 @@ using editeng::SvxBorderLine;
 
 #define HTML_HEADSPACE (12*20)
 
-enum class Css1Background {
-    Attr    = 1,
-    Page    = 2,
-    Table   = 3,
-    Fly     = 4,
-    Section = 5
-};
+#define CSS1_BACKGROUND_ATTR    1
+#define CSS1_BACKGROUND_PAGE    2
+#define CSS1_BACKGROUND_TABLE   3
+#define CSS1_BACKGROUND_FLY     4
+#define CSS1_BACKGROUND_SECTION 5
 
-enum class Css1FrameSize {
-    NONE       = 0x00,
-    Width      = 0x01,
-    VarHeight  = 0x02,
-    MinHeight  = 0x04,
-    FixHeight  = 0x08,
-    AnyHeight  = 0x0e,
-    Pixel      = 0x10,
-};
-namespace o3tl {
-    template<> struct typed_flags<Css1FrameSize> : is_typed_flags<Css1FrameSize, 0x1f> {};
-}
+#define CSS1_FRMSIZE_WIDTH      0x01
+#define CSS1_FRMSIZE_VARHEIGHT  0x02
+#define CSS1_FRMSIZE_MINHEIGHT  0x04
+#define CSS1_FRMSIZE_FIXHEIGHT  0x08
+#define CSS1_FRMSIZE_ANYHEIGHT  0x0e
+#define CSS1_FRMSIZE_PIXEL      0x10
 
 #define DOT_LEADERS_MAX_WIDTH   18
+
+extern SwAttrFnTab aCSS1AttrFnTab;
 
 static Writer& OutCSS1_SwFormat( Writer& rWrt, const SwFormat& rFormat,
                               IDocumentStylePoolAccess /*SwDoc*/ *pDoc, SwDoc *pTemplate );
@@ -150,11 +143,11 @@ static Writer& OutCSS1_SvxULSpace_SvxLRSpace( Writer& rWrt,
                                         const SfxItemSet& rItemSet,
                                         bool bDeep );
 static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt,
-                                 Css1Background nMode,
+                                 sal_uInt16 nMode,
                                  const OUString *pGraphicName );
 static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt );
 static Writer& OutCSS1_SwFormatFrameSize( Writer& rWrt, const SfxPoolItem& rHt,
-                                     Css1FrameSize nMode );
+                                     sal_uInt16 nMode );
 static Writer& OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( Writer& rWrt,
                                         const SfxItemSet& rItemSet,
                                         bool bDeep );
@@ -163,11 +156,11 @@ static Writer& OutCSS1_SwFormatLayoutSplit( Writer& rWrt, const SfxPoolItem& rHt
 namespace
 {
 
-const sal_Char sCSS1_rule_end[] = " }";
-const sal_Char sCSS1_span_tag_end[] = "\">";
+const sal_Char* sCSS1_rule_end      = " }";
+const sal_Char* sCSS1_span_tag_end  = "\">";
 const sal_Char cCSS1_style_opt_end  = '\"';
 
-const sal_Char* const sHTML_FTN_fontheight = "57%";
+const sal_Char* sHTML_FTN_fontheight = "57%";
 
 OString lclConvToHex(sal_uInt16 nHex)
 {
@@ -234,7 +227,7 @@ void SwHTMLWriter::OutCSS1_Property( const sal_Char *pProp,
     //
     //  p.leaders {
     //      /* FIXME:
-    //         (1) dots line up vertically only in the paragraphs with the same alignment/level
+    //         (1) dots line up vertically only in the paragraphs with the same alignation/level
     //         (2) max-width = 18 cm instead of 80em; possible improvement with the new CSS3 calc() */
     //      max-width: 18cm; /* note: need to overwrite max-width with max-width - border-left_of_the_actual_paragraph */
     //      padding: 0;
@@ -480,6 +473,68 @@ void SwHTMLWriter::OutCSS1_PixelProperty( const sal_Char *pProp, long nVal,
     OutCSS1_PropertyAscii(pProp, sOut);
 }
 
+void SwHTMLWriter::OutCSS1_SfxItemSet( const SfxItemSet& rItemSet,
+                                       bool bDeep )
+{
+    // print ItemSet, including all attributes
+    Out_SfxItemSet( aCSS1AttrFnTab, *this, rItemSet, bDeep );
+
+    // some Attributes require special treatment
+    const SfxPoolItem *pItem = nullptr;
+
+    // Underline, Overline, CrossedOut and Blink form together a CSS1-Property
+    // (doesn't work of course for Hints)
+    if( !IsCSS1Source(CSS1_OUTMODE_HINT) )
+    {
+        const SvxUnderlineItem *pUnderlineItem = nullptr;
+        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_UNDERLINE, bDeep, &pItem ))
+            pUnderlineItem = static_cast<const SvxUnderlineItem *>(pItem);
+
+        const SvxOverlineItem *pOverlineItem = nullptr;
+        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_OVERLINE, bDeep, &pItem ))
+            pOverlineItem = static_cast<const SvxOverlineItem *>(pItem);
+
+        const SvxCrossedOutItem *pCrossedOutItem = nullptr;
+        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_CROSSEDOUT, bDeep, &pItem ))
+            pCrossedOutItem = static_cast<const SvxCrossedOutItem *>(pItem);
+
+        const SvxBlinkItem *pBlinkItem = nullptr;
+        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_BLINK, bDeep, &pItem ))
+            pBlinkItem = static_cast<const SvxBlinkItem *>(pItem);
+
+        if( pUnderlineItem || pOverlineItem || pCrossedOutItem || pBlinkItem )
+            OutCSS1_SvxTextLn_SvxCrOut_SvxBlink( *this, pUnderlineItem,
+                                                 pOverlineItem,
+                                                 pCrossedOutItem,
+                                                 pBlinkItem );
+
+        OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( *this, rItemSet, bDeep );
+    }
+
+    if( !m_bFirstCSS1Property )
+    {
+        // if a Property was exported as part of a Style-Option,
+        // the Option still needs to be finished
+        OStringBuffer sOut;
+        switch( m_nCSS1OutMode & CSS1_OUTMODE_ANY_OFF )
+        {
+        case CSS1_OUTMODE_SPAN_TAG_OFF:
+            sOut.append(sCSS1_span_tag_end);
+            break;
+
+        case CSS1_OUTMODE_STYLE_OPT_OFF:
+            sOut.append(cCSS1_style_opt_end);
+            break;
+
+        case CSS1_OUTMODE_RULE_OFF:
+            sOut.append(sCSS1_rule_end);
+            break;
+        }
+        if (!sOut.isEmpty())
+            Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
+    }
+}
+
 void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
 {
     m_bFirstCSS1Rule = true;
@@ -513,7 +568,7 @@ void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
         {
             // The document is one-sided; no matter what page, we do not create a 2-sided doc.
             // The attribute is exported relative to the HTML page template.
-          OutCSS1_SwPageDesc( *this, *pPageDesc, pStylePoolAccess, m_xTemplate.get(),
+          OutCSS1_SwPageDesc( *this, *pPageDesc, pStylePoolAccess, m_pTemplate,
                                 RES_POOLPAGE_HTML, true, false );
             nFirstRefPoolId = pFollow->GetPoolFormatId();
         }
@@ -523,9 +578,9 @@ void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
                   RES_POOLPAGE_LEFT == pFollow->GetPoolFormatId()) )
         {
             // the document is double-sided
-          OutCSS1_SwPageDesc( *this, *pPageDesc, pStylePoolAccess, m_xTemplate.get(),
+          OutCSS1_SwPageDesc( *this, *pPageDesc, pStylePoolAccess, m_pTemplate,
                                 RES_POOLPAGE_HTML, true );
-          OutCSS1_SwPageDesc( *this, *pFollow, pStylePoolAccess, m_xTemplate.get(),
+          OutCSS1_SwPageDesc( *this, *pFollow, pStylePoolAccess, m_pTemplate,
                                 RES_POOLPAGE_HTML, true );
             nFirstRefPoolId = RES_POOLPAGE_RIGHT;
             m_bCSS1IgnoreFirstPageDesc = false;
@@ -533,7 +588,7 @@ void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
         // other cases we miss
 
         if( pFirstPageDesc )
-          OutCSS1_SwPageDesc( *this, *pFirstPageDesc, pStylePoolAccess, m_xTemplate.get(),
+          OutCSS1_SwPageDesc( *this, *pFirstPageDesc, pStylePoolAccess, m_pTemplate,
                                 nFirstRefPoolId, false );
     }
 
@@ -550,7 +605,7 @@ void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
         const SwTextFormatColl* pColl = (*pDoc->GetTextFormatColls())[i];
         sal_uInt16 nPoolId = pColl->GetPoolFormatId();
         if( nPoolId == RES_POOLCOLL_TEXT || pDoc->IsUsed( *pColl ) )
-            OutCSS1_SwFormat( *this, *pColl, &pDoc->getIDocumentStylePoolAccess(), m_xTemplate.get() );
+            OutCSS1_SwFormat( *this, *pColl, &pDoc->getIDocumentStylePoolAccess(), m_pTemplate );
     }
 
     // the Default-TextStyle is not also exported !!
@@ -562,7 +617,7 @@ void SwHTMLWriter::OutStyleSheet( const SwPageDesc& rPageDesc )
         if( nPoolId == RES_POOLCHR_INET_NORMAL ||
             nPoolId == RES_POOLCHR_INET_VISIT ||
             pDoc->IsUsed( *pCFormat ) )
-            OutCSS1_SwFormat( *this, *pCFormat, &pDoc->getIDocumentStylePoolAccess(), m_xTemplate.get() );
+            OutCSS1_SwFormat( *this, *pCFormat, &pDoc->getIDocumentStylePoolAccess(), m_pTemplate );
     }
 
     bool bHasEndNotes {false};
@@ -1119,10 +1174,10 @@ void SwHTMLWriter::PrepareFontList( const SvxFontItem& rFontItem,
             if( !rNames.isEmpty() )
                 rNames += ", ";
             if( cQuote && !bIsKeyword )
-                rNames += OUStringLiteral1( cQuote );
+                rNames += OUString( cQuote );
             rNames += aName;
             if( cQuote && !bIsKeyword )
-                rNames += OUStringLiteral1( cQuote );
+                rNames += OUString( cQuote );
         }
     }
 
@@ -1756,9 +1811,9 @@ static Writer& OutCSS1_SwFootnoteInfo( Writer& rWrt, const SwEndNoteInfo& rInfo,
         // exported, so that Netscape displays the document correctly.
         // Otherwise it is sufficient, to export the differences to the
         // footnote and endnote template.
-        if( !bHasNotes && rHTMLWrt.m_xTemplate.is() )
+        if( !bHasNotes && rHTMLWrt.m_pTemplate )
         {
-            SwFormat *pRefFormat = rHTMLWrt.m_xTemplate->getIDocumentStylePoolAccess().GetCharFormatFromPool(
+            SwFormat *pRefFormat = rHTMLWrt.m_pTemplate->getIDocumentStylePoolAccess().GetCharFormatFromPool(
                         static_cast< sal_uInt16 >(bEndNote ? RES_POOLCHR_ENDNOTE : RES_POOLCHR_FOOTNOTE) );
             if( pRefFormat )
                 SwHTMLWriter::SubtractItemSet( aItemSet, pRefFormat->GetAttrSet(),
@@ -1793,7 +1848,7 @@ Writer& OutCSS1_BodyTagStyleOpt( Writer& rWrt, const SfxItemSet& rItemSet,
     if( SfxItemState::SET == rItemSet.GetItemState( RES_BACKGROUND, false,
                                                &pItem ) )
     {
-        OutCSS1_SvxBrush( rWrt, *pItem, Css1Background::Page, &rEmbeddedGraphicName );
+        OutCSS1_SvxBrush( rWrt, *pItem, CSS1_BACKGROUND_PAGE, &rEmbeddedGraphicName );
     }
 
     if( SfxItemState::SET == rItemSet.GetItemState( RES_BOX, false,
@@ -1823,6 +1878,37 @@ Writer& OutCSS1_ParaTagStyleOpt( Writer& rWrt, const SfxItemSet& rItemSet )
     return rWrt;
 }
 
+Writer& OutCSS1_HintSpanTag( Writer& rWrt, const SfxPoolItem& rHt )
+{
+    SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
+
+    SwCSS1OutMode aMode( rHTMLWrt, CSS1_OUTMODE_SPAN_TAG |
+                                   CSS1_OUTMODE_ENCODE|CSS1_OUTMODE_HINT, nullptr );
+
+    Out( aCSS1AttrFnTab, rHt, rWrt );
+
+    if( !rHTMLWrt.m_bFirstCSS1Property  && rHTMLWrt.m_bTagOn )
+        rWrt.Strm().WriteCharPtr( sCSS1_span_tag_end );
+
+    return rWrt;
+}
+
+Writer& OutCSS1_HintStyleOpt( Writer& rWrt, const SfxPoolItem& rHt )
+{
+    SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
+
+    SwCSS1OutMode aMode( rHTMLWrt, CSS1_OUTMODE_STYLE_OPT_ON |
+                                   CSS1_OUTMODE_ENCODE|
+                                   CSS1_OUTMODE_HINT, nullptr );
+
+    Out( aCSS1AttrFnTab, rHt, rWrt );
+
+    if( !rHTMLWrt.m_bFirstCSS1Property )
+        rWrt.Strm().WriteChar( '\"' );
+
+    return rWrt;
+}
+
 // Wrapper for Table background
 Writer& OutCSS1_TableBGStyleOpt( Writer& rWrt, const SfxPoolItem& rHt )
 {
@@ -1831,7 +1917,7 @@ Writer& OutCSS1_TableBGStyleOpt( Writer& rWrt, const SfxPoolItem& rHt )
     SwCSS1OutMode aMode( rHTMLWrt, CSS1_OUTMODE_STYLE_OPT_ON |
                                    CSS1_OUTMODE_ENCODE|
                                    CSS1_OUTMODE_TABLEBOX, nullptr );
-    OutCSS1_SvxBrush( rWrt, rHt, Css1Background::Table, nullptr );
+    OutCSS1_SvxBrush( rWrt, rHt, CSS1_BACKGROUND_TABLE, nullptr );
 
     if( !rHTMLWrt.m_bFirstCSS1Property )
         rWrt.Strm().WriteChar( '\"' );
@@ -1874,7 +1960,7 @@ Writer& OutCSS1_NumBulListStyleOpt( Writer& rWrt, const SwNumRule& rNumRule,
 }
 
 void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat,
-                                          HtmlFrmOpts nFrameOpts,
+                                          sal_uInt32 nFrameOpts,
                                           const SdrObject *pSdrObj,
                                           const SfxItemSet *pItemSet )
 {
@@ -1885,17 +1971,17 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
     const SwFormatHoriOrient& rHoriOri = rFrameFormat.GetHoriOrient();
     SvxLRSpaceItem aLRItem( rFrameFormat.GetLRSpace() );
     SvxULSpaceItem aULItem( rFrameFormat.GetULSpace() );
-    if( nFrameOpts & HtmlFrmOpts::SAlign )
+    if( nFrameOpts & HTML_FRMOPT_S_ALIGN )
     {
         const SwFormatAnchor& rAnchor = rFrameFormat.GetAnchor();
         switch( rAnchor.GetAnchorId() )
         {
-        case RndStdIds::FLY_AT_PARA:
-        case RndStdIds::FLY_AT_CHAR:
+        case FLY_AT_PARA:
+        case FLY_AT_CHAR:
             if( text::RelOrientation::FRAME == rHoriOri.GetRelationOrient() ||
                 text::RelOrientation::PRINT_AREA == rHoriOri.GetRelationOrient() )
             {
-                if( !(nFrameOpts & HtmlFrmOpts::Align) )
+                if( !(nFrameOpts & HTML_FRMOPT_ALIGN) )
                 {
                     // float
                     const sal_Char *pStr = text::HoriOrientation::RIGHT==rHoriOri.GetHoriOrient()
@@ -1905,10 +1991,10 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
                 }
                 break;
             }
-            SAL_FALLTHROUGH;
+            SAL_FALLTHROUGH; //TODO ???
 
-        case RndStdIds::FLY_AT_PAGE:
-        case RndStdIds::FLY_AT_FLY:
+        case FLY_AT_PAGE:
+        case FLY_AT_FLY:
             {
                 // position
                 OutCSS1_PropertyAscii( sCSS1_P_position, sCSS1_PV_absolute );
@@ -1931,8 +2017,8 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
                     if( pSdrObj )
                     {
                         Point aPos( pSdrObj->GetRelativePos() );
-                        nXPos = aPos.X();
-                        nYPos = aPos.Y();
+                        nXPos = aPos.A();
+                        nYPos = aPos.B();
                     }
                     bOutXPos = bOutYPos = true;
                 }
@@ -1987,7 +2073,7 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
     }
 
     // width/height
-    if( nFrameOpts & HtmlFrmOpts::SSize )
+    if( nFrameOpts & HTML_FRMOPT_S_SIZE )
     {
         if( RES_DRAWFRMFMT == rFrameFormat.Which() )
         {
@@ -1998,17 +2084,17 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
             if( pSdrObj )
             {
                 Size aTwipSz( pSdrObj->GetLogicRect().GetSize() );
-                if( nFrameOpts & HtmlFrmOpts::SWidth )
+                if( nFrameOpts & HTML_FRMOPT_S_WIDTH )
                 {
-                    if( nFrameOpts & HtmlFrmOpts::SPixSize )
+                    if( nFrameOpts & HTML_FRMOPT_S_PIXSIZE )
                         OutCSS1_PixelProperty( sCSS1_P_width, aTwipSz.Width(),
                                                false );
                     else
                         OutCSS1_UnitProperty( sCSS1_P_width, aTwipSz.Width() );
                 }
-                if( nFrameOpts & HtmlFrmOpts::SHeight )
+                if( nFrameOpts & HTML_FRMOPT_S_HEIGHT )
                 {
-                    if( nFrameOpts & HtmlFrmOpts::SPixSize )
+                    if( nFrameOpts & HTML_FRMOPT_S_PIXSIZE )
                         OutCSS1_PixelProperty( sCSS1_P_height, aTwipSz.Height(),
                                                true );
                     else
@@ -2018,17 +2104,17 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
         }
         else
         {
-            OSL_ENSURE( HtmlFrmOpts::AbsSize & nFrameOpts,
+            OSL_ENSURE( HTML_FRMOPT_ABSSIZE & nFrameOpts,
                     "Export absolute size" );
-            OSL_ENSURE( HtmlFrmOpts::AnySize & nFrameOpts,
+            OSL_ENSURE( HTML_FRMOPT_ANYSIZE & nFrameOpts,
                     "Export every size" );
-            Css1FrameSize nMode = Css1FrameSize::NONE;
-            if( nFrameOpts & HtmlFrmOpts::SWidth )
-                nMode |= Css1FrameSize::Width;
-            if( nFrameOpts & HtmlFrmOpts::SHeight )
-                nMode |= (Css1FrameSize::MinHeight|Css1FrameSize::FixHeight);
-            if( nFrameOpts & HtmlFrmOpts::SPixSize )
-                nMode |= Css1FrameSize::Pixel;
+            sal_uInt16 nMode = 0;
+            if( nFrameOpts & HTML_FRMOPT_S_WIDTH )
+                nMode |= CSS1_FRMSIZE_WIDTH;
+            if( nFrameOpts & HTML_FRMOPT_S_HEIGHT )
+                nMode |= (CSS1_FRMSIZE_MINHEIGHT|CSS1_FRMSIZE_FIXHEIGHT);
+            if( nFrameOpts & HTML_FRMOPT_S_PIXSIZE )
+                nMode |= CSS1_FRMSIZE_PIXEL;
 
             OutCSS1_SwFormatFrameSize( *this, rFrameFormat.GetFrameSize(), nMode );
         }
@@ -2036,7 +2122,7 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
 
     const SfxItemSet& rItemSet = rFrameFormat.GetAttrSet();
     // margin-*
-    if( (nFrameOpts & HtmlFrmOpts::SSpace) &&
+    if( (nFrameOpts & HTML_FRMOPT_S_SPACE) &&
         IsHTMLMode( HTMLMODE_FLY_MARGINS) )
     {
         const SvxLRSpaceItem *pLRItem = nullptr;
@@ -2050,17 +2136,17 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
     }
 
     // border
-    if( nFrameOpts & HtmlFrmOpts::SBorder )
+    if( nFrameOpts & HTML_FRMOPT_S_BORDER )
     {
         const SfxPoolItem* pItem;
-        if( nFrameOpts & HtmlFrmOpts::SNoBorder )
+        if( nFrameOpts & HTML_FRMOPT_S_NOBORDER )
             OutCSS1_SvxBox( *this, rFrameFormat.GetBox() );
         else if( SfxItemState::SET==rItemSet.GetItemState( RES_BOX, true, &pItem ) )
             OutCSS1_SvxBox( *this, *pItem );
     }
 
     // background (if, then the color must be set also)
-    if( nFrameOpts & HtmlFrmOpts::SBackground )
+    if( nFrameOpts & HTML_FRMOPT_S_BACKGROUND )
         OutCSS1_FrameFormatBackground( rFrameFormat );
 
     if( pItemSet )
@@ -2079,7 +2165,7 @@ void SwHTMLWriter::OutCSS1_TableFrameFormatOptions( const SwFrameFormat& rFrameF
     const SfxPoolItem *pItem;
     const SfxItemSet& rItemSet = rFrameFormat.GetAttrSet();
     if( SfxItemState::SET==rItemSet.GetItemState( RES_BACKGROUND, false, &pItem ) )
-        OutCSS1_SvxBrush( *this, *pItem, Css1Background::Table, nullptr );
+        OutCSS1_SvxBrush( *this, *pItem, CSS1_BACKGROUND_TABLE, nullptr );
 
     if( IsHTMLMode( HTMLMODE_PRINT_EXT ) )
         OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( *this, rItemSet, false );
@@ -2111,7 +2197,7 @@ void SwHTMLWriter::OutCSS1_SectionFormatOptions( const SwFrameFormat& rFrameForm
     const SfxPoolItem *pItem;
     const SfxItemSet& rItemSet = rFrameFormat.GetAttrSet();
     if( SfxItemState::SET==rItemSet.GetItemState( RES_BACKGROUND, false, &pItem ) )
-        OutCSS1_SvxBrush( *this, *pItem, Css1Background::Section, nullptr );
+        OutCSS1_SvxBrush( *this, *pItem, CSS1_BACKGROUND_SECTION, nullptr );
 
     if (pCol)
     {
@@ -2130,10 +2216,10 @@ static bool OutCSS1_FrameFormatBrush( SwHTMLWriter& rWrt,
     /// output brush of frame format, if its background color is not "no fill"/"auto fill"
     /// or it has a background graphic.
     if( rBrushItem.GetColor() != COL_TRANSPARENT ||
-        !rBrushItem.GetGraphicLink().isEmpty() ||
+        nullptr != rBrushItem.GetGraphicLink() ||
         0 != rBrushItem.GetGraphicPos() )
     {
-        OutCSS1_SvxBrush( rWrt, rBrushItem, Css1Background::Fly, nullptr );
+        OutCSS1_SvxBrush( rWrt, rBrushItem, CSS1_BACKGROUND_FLY, nullptr );
         bWritten = true;
     }
     return bWritten;
@@ -2149,7 +2235,7 @@ void SwHTMLWriter::OutCSS1_FrameFormatBackground( const SwFrameFormat& rFrameFor
     const SwFormatAnchor& rAnchor = rFrameFormat.GetAnchor();
     RndStdIds eAnchorId = rAnchor.GetAnchorId();
     const SwPosition *pAnchorPos = rAnchor.GetContentAnchor();
-    if (RndStdIds::FLY_AT_PAGE != eAnchorId && pAnchorPos)
+    if (FLY_AT_PAGE != eAnchorId && pAnchorPos)
     {
         const SwNode& rNode = pAnchorPos->nNode.GetNode();
         if( rNode.IsContentNode() )
@@ -2359,19 +2445,19 @@ static Writer& OutCSS1_SvxCaseMap( Writer& rWrt, const SfxPoolItem& rHt )
 
     switch( static_cast<const SvxCaseMapItem&>(rHt).GetCaseMap() )
     {
-    case SvxCaseMap::NotMapped:
+    case SVX_CASEMAP_NOT_MAPPED:
         rHTMLWrt.OutCSS1_PropertyAscii( sCSS1_P_font_variant, sCSS1_PV_normal );
         break;
-    case SvxCaseMap::SmallCaps:
+    case SVX_CASEMAP_KAPITAELCHEN:
         rHTMLWrt.OutCSS1_PropertyAscii( sCSS1_P_font_variant, sCSS1_PV_small_caps );
         break;
-    case SvxCaseMap::Uppercase:
+    case SVX_CASEMAP_VERSALIEN:
         rHTMLWrt.OutCSS1_PropertyAscii( sCSS1_P_text_transform, sCSS1_PV_uppercase );
         break;
-    case SvxCaseMap::Lowercase:
+    case SVX_CASEMAP_GEMEINE:
         rHTMLWrt.OutCSS1_PropertyAscii( sCSS1_P_text_transform, sCSS1_PV_lowercase );
         break;
-    case SvxCaseMap::Capitalize:
+    case SVX_CASEMAP_TITEL:
         rHTMLWrt.OutCSS1_PropertyAscii( sCSS1_P_text_transform, sCSS1_PV_capitalize );
         break;
     default:
@@ -2673,19 +2759,19 @@ static Writer& OutCSS1_SvxLineSpacing( Writer& rWrt, const SfxPoolItem& rHt )
 
     sal_uInt16 nHeight = 0;
     sal_uInt16 nPrcHeight = 0;
-    SvxLineSpaceRule eLineSpace = rLSItem.GetLineSpaceRule();
+    SvxLineSpace eLineSpace = rLSItem.GetLineSpaceRule();
     switch( rLSItem.GetInterLineSpaceRule() )
     {
-    case SvxInterLineSpaceRule::Off:
-    case SvxInterLineSpaceRule::Fix:
+    case SVX_INTER_LINE_SPACE_OFF:
+    case SVX_INTER_LINE_SPACE_FIX:
         {
             switch( eLineSpace )
             {
-            case SvxLineSpaceRule::Min:
-            case SvxLineSpaceRule::Fix:
+            case SVX_LINE_SPACE_MIN:
+            case SVX_LINE_SPACE_FIX:
                 nHeight = rLSItem.GetLineHeight();
                 break;
-            case SvxLineSpaceRule::Auto:
+            case SVX_LINE_SPACE_AUTO:
                 nPrcHeight = 100;
                 break;
             default:
@@ -2693,7 +2779,7 @@ static Writer& OutCSS1_SvxLineSpacing( Writer& rWrt, const SfxPoolItem& rHt )
             }
         }
         break;
-    case SvxInterLineSpaceRule::Prop:
+    case SVX_INTER_LINE_SPACE_PROP:
         nPrcHeight = rLSItem.GetPropLineSpace();
         break;
 
@@ -2725,10 +2811,10 @@ static Writer& OutCSS1_SvxAdjust( Writer& rWrt, const SfxPoolItem& rHt )
     const sal_Char* pStr = nullptr;
     switch( static_cast<const SvxAdjustItem&>(rHt).GetAdjust() )
     {
-    case SvxAdjust::Left:   pStr = sCSS1_PV_left;       break;
-    case SvxAdjust::Right:  pStr = sCSS1_PV_right;      break;
-    case SvxAdjust::Block:  pStr = sCSS1_PV_justify;    break;
-    case SvxAdjust::Center: pStr = sCSS1_PV_center;     break;
+    case SVX_ADJUST_LEFT:   pStr = sCSS1_PV_left;       break;
+    case SVX_ADJUST_RIGHT:  pStr = sCSS1_PV_right;      break;
+    case SVX_ADJUST_BLOCK:  pStr = sCSS1_PV_justify;    break;
+    case SVX_ADJUST_CENTER: pStr = sCSS1_PV_center;     break;
     default:
         ;
     }
@@ -2835,13 +2921,13 @@ static Writer& OutCSS1_SwFormatDrop( Writer& rWrt, const SfxPoolItem& rHt )
 }
 
 static Writer& OutCSS1_SwFormatFrameSize( Writer& rWrt, const SfxPoolItem& rHt,
-                                     Css1FrameSize nMode )
+                                     sal_uInt16 nMode )
 {
     SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
 
     const SwFormatFrameSize& rFSItem = static_cast<const SwFormatFrameSize&>(rHt);
 
-    if( nMode & Css1FrameSize::Width )
+    if( nMode & CSS1_FRMSIZE_WIDTH )
     {
         sal_uInt8 nPrcWidth = rFSItem.GetWidthPercent();
         if( nPrcWidth )
@@ -2849,7 +2935,7 @@ static Writer& OutCSS1_SwFormatFrameSize( Writer& rWrt, const SfxPoolItem& rHt,
             OString sOut(OString::number(nPrcWidth) + "%");
             rHTMLWrt.OutCSS1_PropertyAscii(sCSS1_P_width, sOut);
         }
-        else if( nMode & Css1FrameSize::Pixel )
+        else if( nMode & CSS1_FRMSIZE_PIXEL )
         {
             rHTMLWrt.OutCSS1_PixelProperty( sCSS1_P_width,
                                             rFSItem.GetSize().Width(), false );
@@ -2861,19 +2947,19 @@ static Writer& OutCSS1_SwFormatFrameSize( Writer& rWrt, const SfxPoolItem& rHt,
         }
     }
 
-    if( nMode & Css1FrameSize::AnyHeight )
+    if( nMode & CSS1_FRMSIZE_ANYHEIGHT )
     {
         bool bOutHeight = false;
         switch( rFSItem.GetHeightSizeType() )
         {
         case ATT_FIX_SIZE:
-            bOutHeight = bool(nMode & Css1FrameSize::FixHeight);
+            bOutHeight = (nMode & CSS1_FRMSIZE_FIXHEIGHT) != 0;
             break;
         case ATT_MIN_SIZE:
-            bOutHeight = bool(nMode & Css1FrameSize::MinHeight);
+            bOutHeight = (nMode & CSS1_FRMSIZE_MINHEIGHT) != 0;
             break;
         case ATT_VAR_SIZE:
-            bOutHeight = bool(nMode & Css1FrameSize::VarHeight);
+            bOutHeight = (nMode & CSS1_FRMSIZE_VARHEIGHT) != 0;
             break;
         default:
             OSL_ENSURE( bOutHeight, "Hoehe wird nicht exportiert" );
@@ -2888,7 +2974,7 @@ static Writer& OutCSS1_SwFormatFrameSize( Writer& rWrt, const SfxPoolItem& rHt,
                 OString sOut(OString::number(nPrcHeight) + "%");
                 rHTMLWrt.OutCSS1_PropertyAscii(sCSS1_P_height, sOut);
             }
-            else if( nMode & Css1FrameSize::Pixel )
+            else if( nMode & CSS1_FRMSIZE_PIXEL )
             {
                 rHTMLWrt.OutCSS1_PixelProperty( sCSS1_P_height,
                                                 rFSItem.GetSize().Height(),
@@ -2915,7 +3001,7 @@ static Writer& OutCSS1_SvxLRSpace( Writer& rWrt, const SfxPoolItem& rHt )
     // match that of the current template
 
     // A left margin can exist because of a list nearby
-    long nLeftMargin = rLRItem.GetTextLeft() - rHTMLWrt.m_nLeftMargin;
+    long nLeftMargin = (long)rLRItem.GetTextLeft() - rHTMLWrt.m_nLeftMargin;
     if( rHTMLWrt.m_nDfltLeftMargin != nLeftMargin )
     {
         rHTMLWrt.OutCSS1_UnitProperty( sCSS1_P_margin_left, nLeftMargin );
@@ -2928,7 +3014,8 @@ static Writer& OutCSS1_SvxLRSpace( Writer& rWrt, const SfxPoolItem& rHt )
 
     if( rHTMLWrt.m_nDfltRightMargin != rLRItem.GetRight() )
     {
-        rHTMLWrt.OutCSS1_UnitProperty( sCSS1_P_margin_right, rLRItem.GetRight() );
+        rHTMLWrt.OutCSS1_UnitProperty( sCSS1_P_margin_right,
+                                 (long)rLRItem.GetRight() );
     }
 
     // The LineIndent of the first line might contain the room for numbering
@@ -2979,7 +3066,7 @@ static Writer& OutCSS1_SvxULSpace_SvxLRSpace( Writer& rWrt,
         pULItem->GetUpper() != rHTMLWrt.m_nDfltTopMargin &&
         pULItem->GetLower() != rHTMLWrt.m_nDfltBottomMargin )
     {
-        rHTMLWrt.OutCSS1_UnitProperty( sCSS1_P_margin, pLRItem->GetLeft() );
+        rHTMLWrt.OutCSS1_UnitProperty( sCSS1_P_margin, (long)pLRItem->GetLeft() );
     }
     else
     {
@@ -3032,17 +3119,17 @@ static Writer& OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( Writer& rWrt,
     {
         switch( pBreakItem->GetBreak() )
         {
-        case SvxBreak::NONE:
+        case SVX_BREAK_NONE:
             pBreakBefore = sCSS1_PV_auto;
             if( !pBreakAfter )
                 pBreakAfter = sCSS1_PV_auto;
             break;
 
-        case SvxBreak::PageBefore:
+        case SVX_BREAK_PAGE_BEFORE:
             pBreakBefore = sCSS1_PV_always;
             break;
 
-        case SvxBreak::PageAfter:
+        case SVX_BREAK_PAGE_AFTER:
             pBreakAfter= sCSS1_PV_always;
             break;
 
@@ -3110,12 +3197,12 @@ static Writer& OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( Writer& rWrt,
 // Wrapper for OutCSS1_SfxItemSet etc.
 static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt )
 {
-    OutCSS1_SvxBrush( rWrt, rHt, Css1Background::Attr, nullptr );
+    OutCSS1_SvxBrush( rWrt, rHt, CSS1_BACKGROUND_ATTR, nullptr );
     return rWrt;
 }
 
 static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt,
-                                 Css1Background nMode,
+                                 sal_uInt16 nMode,
                                  const OUString* pGraphicName)
 {
     SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
@@ -3132,7 +3219,7 @@ static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt,
     OUString aLink = pGraphicName ? *pGraphicName
                             : static_cast<const SvxBrushItem &>(rHt).GetGraphicLink();
     SvxGraphicPosition ePos = static_cast<const SvxBrushItem &>(rHt).GetGraphicPos();
-    if( Css1Background::Page == nMode && !rHTMLWrt.mbEmbedImages )
+    if( CSS1_BACKGROUND_PAGE==nMode && !rHTMLWrt.mbEmbedImages )
     {
         // page style images are exported if not tiled
         if( aLink.isEmpty() || GPOS_TILED==ePos )
@@ -3175,7 +3262,7 @@ static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt,
         aLink = aGraphicAsLink;
     }
     // In tables we only export something if there is a Graphic
-    if( Css1Background::Table==nMode && !pGrf && !aLink.isEmpty())
+    if( CSS1_BACKGROUND_TABLE==nMode && !pGrf && !aLink.isEmpty())
         return rWrt;
 
     // if necessary, add the orientation of the Graphic
@@ -3246,7 +3333,7 @@ static Writer& OutCSS1_SvxBrush( Writer& rWrt, const SfxPoolItem& rHt,
     if( !pGrf && aLink.isEmpty() && !bColor )
     {
         // no color and no Link, but a transparent Brush
-        if( bTransparent && Css1Background::Fly != nMode )
+        if( bTransparent && CSS1_BACKGROUND_FLY != nMode )
             sOut += OStringToOUString(sCSS1_PV_transparent, RTL_TEXTENCODING_ASCII_US);
     }
     else
@@ -3313,7 +3400,7 @@ static void OutCSS1_SvxBorderLine( SwHTMLWriter& rHTMLWrt,
     OStringBuffer sOut;
     if( Application::GetDefaultDevice() &&
         nWidth <= Application::GetDefaultDevice()->PixelToLogic(
-                    Size( 1, 1 ), MapMode( MapUnit::MapTwip) ).Width() )
+                    Size( 1, 1 ), MapMode( MAP_TWIP) ).Width() )
     {
         // If the width is smaller than one pixel, then export as 1px
         // so that Netscape and IE show the line.
@@ -3332,34 +3419,34 @@ static void OutCSS1_SvxBorderLine( SwHTMLWriter& rHTMLWrt,
     sOut.append(' ');
     switch (pLine->GetBorderLineStyle())
     {
-        case SvxBorderLineStyle::SOLID:
+        case table::BorderLineStyle::SOLID:
             sOut.append(sCSS1_PV_solid);
             break;
-        case SvxBorderLineStyle::DOTTED:
+        case table::BorderLineStyle::DOTTED:
             sOut.append(sCSS1_PV_dotted);
             break;
-        case SvxBorderLineStyle::DASHED:
+        case table::BorderLineStyle::DASHED:
             sOut.append(sCSS1_PV_dashed);
             break;
-        case SvxBorderLineStyle::DOUBLE:
-        case SvxBorderLineStyle::THINTHICK_SMALLGAP:
-        case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
-        case SvxBorderLineStyle::THINTHICK_LARGEGAP:
-        case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
-        case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
-        case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
+        case table::BorderLineStyle::DOUBLE:
+        case table::BorderLineStyle::THINTHICK_SMALLGAP:
+        case table::BorderLineStyle::THINTHICK_MEDIUMGAP:
+        case table::BorderLineStyle::THINTHICK_LARGEGAP:
+        case table::BorderLineStyle::THICKTHIN_SMALLGAP:
+        case table::BorderLineStyle::THICKTHIN_MEDIUMGAP:
+        case table::BorderLineStyle::THICKTHIN_LARGEGAP:
             sOut.append(sCSS1_PV_double);
             break;
-        case SvxBorderLineStyle::EMBOSSED:
+        case table::BorderLineStyle::EMBOSSED:
             sOut.append(sCSS1_PV_ridge);
             break;
-        case SvxBorderLineStyle::ENGRAVED:
+        case table::BorderLineStyle::ENGRAVED:
             sOut.append(sCSS1_PV_groove);
             break;
-        case SvxBorderLineStyle::INSET:
+        case table::BorderLineStyle::INSET:
             sOut.append(sCSS1_PV_inset);
             break;
-        case SvxBorderLineStyle::OUTSET:
+        case table::BorderLineStyle::OUTSET:
             sOut.append(sCSS1_PV_outset);
             break;
         default:
@@ -3454,23 +3541,22 @@ static Writer& OutCSS1_SvxFrameDirection( Writer& rWrt, const SfxPoolItem& rHt )
     if( !rHTMLWrt.IsCSS1Source( CSS1_OUTMODE_TEMPLATE ) )
         return rWrt;
 
-    SvxFrameDirection nDir =
+    sal_uInt16 nDir =
         static_cast< const SvxFrameDirectionItem& >( rHt ).GetValue();
     const sal_Char* pStr = nullptr;
     switch( nDir )
     {
-    case SvxFrameDirection::Horizontal_LR_TB:
-    case SvxFrameDirection::Vertical_LR_TB:
+    case FRMDIR_HORI_LEFT_TOP:
+    case FRMDIR_VERT_TOP_LEFT:
         pStr = sCSS1_PV_ltr;
         break;
-    case SvxFrameDirection::Horizontal_RL_TB:
-    case SvxFrameDirection::Vertical_RL_TB:
+    case FRMDIR_HORI_RIGHT_TOP:
+    case FRMDIR_VERT_TOP_RIGHT:
         pStr = sCSS1_PV_rtl;
         break;
-    case SvxFrameDirection::Environment:
+    case FRMDIR_ENVIRONMENT:
         pStr = sCSS1_PV_inherit;
         break;
-    default: break;
     }
 
     if( pStr )
@@ -3485,7 +3571,7 @@ static Writer& OutCSS1_SvxFrameDirection( Writer& rWrt, const SfxPoolItem& rHt )
  * They are local structures, only needed within the HTML-DLL.
  */
 
-static SwAttrFnTab const aCSS1AttrFnTab = {
+SwAttrFnTab aCSS1AttrFnTab = {
 /* RES_CHRATR_CASEMAP   */          OutCSS1_SvxCaseMap,
 /* RES_CHRATR_CHARSETCOLOR  */      nullptr,
 /* RES_CHRATR_COLOR */              OutCSS1_SvxColor,
@@ -3643,98 +3729,5 @@ static SwAttrFnTab const aCSS1AttrFnTab = {
 /* RES_BOXATR_FORMULA */            nullptr,
 /* RES_BOXATR_VALUE */              nullptr
 };
-
-void SwHTMLWriter::OutCSS1_SfxItemSet( const SfxItemSet& rItemSet,
-                                       bool bDeep )
-{
-    // print ItemSet, including all attributes
-    Out_SfxItemSet( aCSS1AttrFnTab, *this, rItemSet, bDeep );
-
-    // some Attributes require special treatment
-    const SfxPoolItem *pItem = nullptr;
-
-    // Underline, Overline, CrossedOut and Blink form together a CSS1-Property
-    // (doesn't work of course for Hints)
-    if( !IsCSS1Source(CSS1_OUTMODE_HINT) )
-    {
-        const SvxUnderlineItem *pUnderlineItem = nullptr;
-        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_UNDERLINE, bDeep, &pItem ))
-            pUnderlineItem = static_cast<const SvxUnderlineItem *>(pItem);
-
-        const SvxOverlineItem *pOverlineItem = nullptr;
-        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_OVERLINE, bDeep, &pItem ))
-            pOverlineItem = static_cast<const SvxOverlineItem *>(pItem);
-
-        const SvxCrossedOutItem *pCrossedOutItem = nullptr;
-        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_CROSSEDOUT, bDeep, &pItem ))
-            pCrossedOutItem = static_cast<const SvxCrossedOutItem *>(pItem);
-
-        const SvxBlinkItem *pBlinkItem = nullptr;
-        if( SfxItemState::SET==rItemSet.GetItemState( RES_CHRATR_BLINK, bDeep, &pItem ))
-            pBlinkItem = static_cast<const SvxBlinkItem *>(pItem);
-
-        if( pUnderlineItem || pOverlineItem || pCrossedOutItem || pBlinkItem )
-            OutCSS1_SvxTextLn_SvxCrOut_SvxBlink( *this, pUnderlineItem,
-                                                 pOverlineItem,
-                                                 pCrossedOutItem,
-                                                 pBlinkItem );
-
-        OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( *this, rItemSet, bDeep );
-    }
-
-    if( !m_bFirstCSS1Property )
-    {
-        // if a Property was exported as part of a Style-Option,
-        // the Option still needs to be finished
-        OStringBuffer sOut;
-        switch( m_nCSS1OutMode & CSS1_OUTMODE_ANY_OFF )
-        {
-        case CSS1_OUTMODE_SPAN_TAG_OFF:
-            sOut.append(sCSS1_span_tag_end);
-            break;
-
-        case CSS1_OUTMODE_STYLE_OPT_OFF:
-            sOut.append(cCSS1_style_opt_end);
-            break;
-
-        case CSS1_OUTMODE_RULE_OFF:
-            sOut.append(sCSS1_rule_end);
-            break;
-        }
-        if (!sOut.isEmpty())
-            Strm().WriteCharPtr( sOut.makeStringAndClear().getStr() );
-    }
-}
-
-Writer& OutCSS1_HintSpanTag( Writer& rWrt, const SfxPoolItem& rHt )
-{
-    SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
-
-    SwCSS1OutMode aMode( rHTMLWrt, CSS1_OUTMODE_SPAN_TAG |
-                                   CSS1_OUTMODE_ENCODE|CSS1_OUTMODE_HINT, nullptr );
-
-    Out( aCSS1AttrFnTab, rHt, rWrt );
-
-    if( !rHTMLWrt.m_bFirstCSS1Property  && rHTMLWrt.m_bTagOn )
-        rWrt.Strm().WriteCharPtr( sCSS1_span_tag_end );
-
-    return rWrt;
-}
-
-Writer& OutCSS1_HintStyleOpt( Writer& rWrt, const SfxPoolItem& rHt )
-{
-    SwHTMLWriter& rHTMLWrt = static_cast<SwHTMLWriter&>(rWrt);
-
-    SwCSS1OutMode aMode( rHTMLWrt, CSS1_OUTMODE_STYLE_OPT_ON |
-                                   CSS1_OUTMODE_ENCODE|
-                                   CSS1_OUTMODE_HINT, nullptr );
-
-    Out( aCSS1AttrFnTab, rHt, rWrt );
-
-    if( !rHTMLWrt.m_bFirstCSS1Property )
-        rWrt.Strm().WriteChar( '\"' );
-
-    return rWrt;
-}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

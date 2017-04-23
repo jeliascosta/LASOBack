@@ -290,7 +290,7 @@ namespace xmloff
     bool OFormLayerXMLExport_Impl::pageContainsForms( const Reference< XDrawPage >& _rxDrawPage )
     {
         Reference< XFormsSupplier2 > xFormsSupp( _rxDrawPage, UNO_QUERY );
-        SAL_WARN_IF( !xFormsSupp.is(), "xmloff", "OFormLayerXMLExport_Impl::pageContainsForms: no XFormsSupplier2!" );
+        DBG_ASSERT( xFormsSupp.is(), "OFormLayerXMLExport_Impl::pageContainsForms: no XFormsSupplier2!" );
         return xFormsSupp.is() && xFormsSupp->hasForms();
     }
 
@@ -474,7 +474,8 @@ namespace xmloff
 
         OUString lcl_findFreeControlId( const MapPropertySet2Map& _rAllPagesControlIds )
         {
-            OUString sControlId = "control";
+            static const char sControlIdBase[] = "control";
+            OUString sControlId = sControlIdBase;
 
             size_t nKnownControlCount = ::std::accumulate( _rAllPagesControlIds.begin(), _rAllPagesControlIds.end(), (size_t)0, AccumulateSize() );
             sControlId += OUString::number( (sal_Int32)nKnownControlCount + 1 );
@@ -716,7 +717,10 @@ namespace xmloff
             {
                 // create it for en-US (does not really matter, as we will specify a locale for every
                 // concrete language to use)
-                Locale aLocale (  "en", "US", OUString() );
+                Locale aLocale (  OUString("en"),
+                                                 OUString("US"),
+                                                 OUString()
+                                             );
                 xFormatsSupplier = NumberFormatsSupplier::createWithLocale( m_rContext.getComponentContext(), aLocale );
                 m_xControlNumberFormats = xFormatsSupplier->getNumberFormats();
             }

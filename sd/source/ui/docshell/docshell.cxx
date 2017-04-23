@@ -172,7 +172,7 @@ DrawDocShell::~DrawDocShell()
     // destroyed.  This has been introduced for the PreviewRenderer to
     // free its view (that uses the item poll of the doc shell) but
     // may be useful in other places as well.
-    Broadcast(SfxHint(SfxHintId::Dying));
+    Broadcast(SfxSimpleHint(SFX_HINT_DYING));
 
     mbInDestruction = true;
 
@@ -274,12 +274,7 @@ void DrawDocShell::GetState(SfxItemSet &rSet)
 
             case SID_NOTEBOOKBAR:
             {
-                if (mpViewShell)
-                {
-                    bool bVisible = sfx2::SfxNotebookBar::StateMethod(mpViewShell->GetFrame()->GetBindings(),
-                                                                      "modules/simpress/ui/");
-                    rSet.Put( SfxBoolItem( SID_NOTEBOOKBAR, bVisible ) );
-                }
+                sfx2::SfxNotebookBar::StateMethod(mpViewShell->GetFrame()->GetBindings(), "modules/simpress/ui/notebookbar.ui");
             }
             break;
 
@@ -334,7 +329,7 @@ void DrawDocShell::InPlaceActivate( bool bActive )
 
     if( bActive )
     {
-        for( std::vector<FrameView*>::size_type i = 0; pSfxViewFrame && (i < rViews.size()); i++ )
+        for( sal_uInt32 i = 0; pSfxViewFrame && (i < rViews.size()); i++ )
         {
             // determine the number of FrameViews
             SfxViewShell* pSfxViewSh = pSfxViewFrame->GetViewShell();
@@ -374,7 +369,6 @@ void DrawDocShell::UpdateTablePointers()
     PutItem( SvxGradientListItem( mpDoc->GetGradientList(), SID_GRADIENT_LIST ) );
     PutItem( SvxHatchListItem( mpDoc->GetHatchList(), SID_HATCH_LIST ) );
     PutItem( SvxBitmapListItem( mpDoc->GetBitmapList(), SID_BITMAP_LIST ) );
-    PutItem( SvxPatternListItem( mpDoc->GetPatternList(), SID_PATTERN_LIST ) );
     PutItem( SvxDashListItem( mpDoc->GetDashList(), SID_DASH_LIST ) );
     PutItem( SvxLineEndListItem( mpDoc->GetLineEndList(), SID_LINEEND_LIST ) );
 
@@ -429,7 +423,7 @@ void DrawDocShell::SetModified( bool bSet /* = true */ )
         if ( mpDoc )
             mpDoc->NbcSetChanged( bSet );
 
-        Broadcast( SfxHint( SfxHintId::DocChanged ) );
+        Broadcast( SfxSimpleHint( SFX_HINT_DOCCHANGED ) );
     }
 }
 
@@ -438,7 +432,7 @@ void DrawDocShell::SetModified( bool bSet /* = true */ )
  */
 // ExecuteSpellPopup now handled by DrawDocShell. This is necessary
 // to get hands on the outliner and the text object.
-IMPL_LINK(DrawDocShell, OnlineSpellCallback, SpellCallbackInfo&, rInfo, void)
+IMPL_LINK_TYPED(DrawDocShell, OnlineSpellCallback, SpellCallbackInfo&, rInfo, void)
 {
     SdrObject* pObj = nullptr;
     SdrOutliner* pOutl = nullptr;
@@ -482,6 +476,12 @@ void DrawDocShell::ClearUndoBuffer()
     ::svl::IUndoManager* pUndoManager = GetUndoManager();
     if(pUndoManager && pUndoManager->GetUndoActionCount())
         pUndoManager->Clear();
+}
+
+void DrawDocShell::libreOfficeKitCallback(int nType, const char* pPayload) const
+{
+    if (mpDoc)
+        mpDoc->libreOfficeKitCallback(nType, pPayload);
 }
 
 } // end of namespace sd

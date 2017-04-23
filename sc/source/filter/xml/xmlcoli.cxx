@@ -32,6 +32,7 @@
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/families.hxx>
 #include <xmloff/xmltoken.hxx>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/table/XColumnRowRange.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
@@ -43,7 +44,7 @@ ScXMLTableColContext::ScXMLTableColContext( ScXMLImport& rImport,
                                       sal_uInt16 nPrfx,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     sVisibility(GetXMLToken(XML_VISIBLE))
 {
     nColCount = 1;
@@ -157,7 +158,7 @@ ScXMLTableColsContext::ScXMLTableColsContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       const bool bTempHeader, const bool bTempGroup) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     nHeaderStartCol(0),
     nHeaderEndCol(0),
     nGroupStartCol(0),

@@ -59,7 +59,7 @@ public:
     UpdateInstallDialog(vcl::Window * parent, std::vector<UpdateData> & aVecUpdateData,
         css::uno::Reference< css::uno::XComponentContext > const & xCtx);
 
-    virtual ~UpdateInstallDialog() override;
+    virtual ~UpdateInstallDialog();
     virtual void dispose() override;
 
     bool Close() override;
@@ -73,7 +73,7 @@ private:
     friend class Thread;
     friend class UpdateCommandEnv;
 
-    DECL_LINK(cancelHandler, Button*, void);
+    DECL_LINK_TYPED(cancelHandler, Button*, void);
 
     //signals in the dialog that we have finished.
     void updateDone();

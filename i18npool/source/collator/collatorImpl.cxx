@@ -47,7 +47,7 @@ CollatorImpl::~CollatorImpl()
 
 sal_Int32 SAL_CALL
 CollatorImpl::compareSubstring( const OUString& str1, sal_Int32 off1, sal_Int32 len1,
-    const OUString& str2, sal_Int32 off2, sal_Int32 len2)
+    const OUString& str2, sal_Int32 off2, sal_Int32 len2) throw(RuntimeException, std::exception)
 {
     if (cachedItem)
         return cachedItem->xC->compareSubstring(str1, off1, len1, str2, off2, len2);
@@ -61,7 +61,7 @@ CollatorImpl::compareSubstring( const OUString& str1, sal_Int32 off1, sal_Int32 
 }
 
 sal_Int32 SAL_CALL
-CollatorImpl::compareString( const OUString& in_str1, const OUString& in_str2)
+CollatorImpl::compareString( const OUString& in_str1, const OUString& in_str2) throw(RuntimeException, std::exception)
 {
     if (cachedItem)
         return cachedItem->xC->compareString(in_str1, in_str2);
@@ -71,7 +71,7 @@ CollatorImpl::compareString( const OUString& in_str1, const OUString& in_str2)
 
 
 sal_Int32 SAL_CALL
-CollatorImpl::loadDefaultCollator(const lang::Locale& rLocale, sal_Int32 collatorOptions)
+CollatorImpl::loadDefaultCollator(const lang::Locale& rLocale, sal_Int32 collatorOptions) throw(RuntimeException, std::exception)
 {
     const Sequence< Implementation > &imp = mxLocaleData->getCollatorImplementations(rLocale);
     for (sal_Int32 i = 0; i < imp.getLength(); i++)
@@ -84,6 +84,7 @@ CollatorImpl::loadDefaultCollator(const lang::Locale& rLocale, sal_Int32 collato
 
 sal_Int32 SAL_CALL
 CollatorImpl::loadCollatorAlgorithm(const OUString& impl, const lang::Locale& rLocale, sal_Int32 collatorOptions)
+    throw(RuntimeException, std::exception)
 {
     if (! cachedItem || ! cachedItem->equals(rLocale, impl))
         loadCachedCollator(rLocale, impl);
@@ -98,7 +99,7 @@ CollatorImpl::loadCollatorAlgorithm(const OUString& impl, const lang::Locale& rL
 
 void SAL_CALL
 CollatorImpl::loadCollatorAlgorithmWithEndUserOption(const OUString& impl, const lang::Locale& rLocale,
-    const Sequence< sal_Int32 >& collatorOptions)
+    const Sequence< sal_Int32 >& collatorOptions) throw(RuntimeException, std::exception)
 {
     sal_Int32 options = 0;
     for (sal_Int32 i = 0; i < collatorOptions.getLength(); i++)
@@ -107,7 +108,7 @@ CollatorImpl::loadCollatorAlgorithmWithEndUserOption(const OUString& impl, const
 }
 
 Sequence< OUString > SAL_CALL
-CollatorImpl::listCollatorAlgorithms( const lang::Locale& rLocale )
+CollatorImpl::listCollatorAlgorithms( const lang::Locale& rLocale ) throw(RuntimeException, std::exception)
 {
     nLocale = rLocale;
     const Sequence< Implementation > &imp = mxLocaleData->getCollatorImplementations(rLocale);
@@ -126,7 +127,7 @@ CollatorImpl::listCollatorAlgorithms( const lang::Locale& rLocale )
 }
 
 Sequence< sal_Int32 > SAL_CALL
-CollatorImpl::listCollatorOptions( const OUString& /*collatorAlgorithmName*/ )
+CollatorImpl::listCollatorOptions( const OUString& /*collatorAlgorithmName*/ ) throw(RuntimeException, std::exception)
 {
     Sequence< OUString > option_str = mxLocaleData->getCollationOptions(nLocale);
     Sequence< sal_Int32 > option_int(option_str.getLength());
@@ -142,6 +143,7 @@ CollatorImpl::listCollatorOptions( const OUString& /*collatorAlgorithmName*/ )
 
 bool SAL_CALL
 CollatorImpl::createCollator(const lang::Locale& rLocale, const OUString& serviceName, const OUString& rSortAlgorithm)
+    throw(RuntimeException)
 {
     for (size_t l = 0; l < lookupTable.size(); l++) {
         cachedItem = lookupTable[l];
@@ -166,6 +168,7 @@ CollatorImpl::createCollator(const lang::Locale& rLocale, const OUString& servic
 
 void SAL_CALL
 CollatorImpl::loadCachedCollator(const lang::Locale& rLocale, const OUString& rSortAlgorithm)
+    throw(RuntimeException)
 {
     for (lookupTableItem* i : lookupTable) {
         cachedItem = i;
@@ -209,18 +212,19 @@ CollatorImpl::loadCachedCollator(const lang::Locale& rLocale, const OUString& rS
     }
 }
 
-OUString SAL_CALL CollatorImpl::getImplementationName()
+OUString SAL_CALL CollatorImpl::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.i18n.Collator");
 }
 
 sal_Bool SAL_CALL CollatorImpl::supportsService(const OUString& rServiceName)
+                throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-CollatorImpl::getSupportedServiceNames()
+CollatorImpl::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.i18n.Collator" };
     return aRet;

@@ -50,8 +50,8 @@ void SwWebDocShell::InitInterface_Impl()
 
 SFX_IMPL_OBJECTFACTORY(SwWebDocShell, SvGlobalName(SO3_SWWEB_CLASSID), SfxObjectShellFlags::STD_NORMAL|SfxObjectShellFlags::HASMENU, "swriter/web" )
 
-SwWebDocShell::SwWebDocShell()
-    : SwDocShell(SfxObjectCreateMode::STANDARD)
+SwWebDocShell::SwWebDocShell(SfxObjectCreateMode const eMode)
+    : SwDocShell(eMode)
     , m_nSourcePara(0)
 {
 }

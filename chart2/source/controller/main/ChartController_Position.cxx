@@ -54,7 +54,7 @@ void lcl_getPositionAndSizeFromItemSet( const SfxItemSet& rItemSet, awt::Rectang
     long nSizX(0);
     long nSizY(0);
 
-    RectPoint eRP = RectPoint::LT;
+    RECT_POINT eRP = (RECT_POINT)RP_LT;
 
     const SfxPoolItem* pPoolItem=nullptr;
     //read position
@@ -68,37 +68,37 @@ void lcl_getPositionAndSizeFromItemSet( const SfxItemSet& rItemSet, awt::Rectang
     if (SfxItemState::SET==rItemSet.GetItemState(SID_ATTR_TRANSFORM_HEIGHT,true,&pPoolItem))
         nSizY=static_cast<const SfxUInt32Item*>(pPoolItem)->GetValue();
     if (SfxItemState::SET==rItemSet.GetItemState(SID_ATTR_TRANSFORM_SIZE_POINT,true,&pPoolItem))
-        eRP=(RectPoint)static_cast<const SfxAllEnumItem*>(pPoolItem)->GetValue();
+        eRP=(RECT_POINT)static_cast<const SfxAllEnumItem*>(pPoolItem)->GetValue();
 
     switch( eRP )
     {
-        case RectPoint::LT:
+        case RP_LT:
             break;
-        case RectPoint::MT:
+        case RP_MT:
             nPosX += ( rOriginalSize.Width - nSizX ) / 2;
             break;
-        case RectPoint::RT:
+        case RP_RT:
             nPosX += rOriginalSize.Width - nSizX;
             break;
-        case RectPoint::LM:
+        case RP_LM:
             nPosY += ( rOriginalSize.Height - nSizY ) / 2;
             break;
-        case RectPoint::MM:
+        case RP_MM:
             nPosX += ( rOriginalSize.Width  - nSizX ) / 2;
             nPosY += ( rOriginalSize.Height - nSizY ) / 2;
             break;
-        case RectPoint::RM:
+        case RP_RM:
             nPosX += rOriginalSize.Width - nSizX;
             nPosY += ( rOriginalSize.Height - nSizY ) / 2;
             break;
-        case RectPoint::LB:
+        case RP_LB:
             nPosY += rOriginalSize.Height - nSizY;
             break;
-        case RectPoint::MB:
+        case RP_MB:
             nPosX += ( rOriginalSize.Width - nSizX ) / 2;
             nPosY += rOriginalSize.Height - nSizY;
             break;
-        case RectPoint::RB:
+        case RP_RB:
             nPosX += rOriginalSize.Width - nSizX;
             nPosY += rOriginalSize.Height - nSizY;
             break;
@@ -125,7 +125,7 @@ void ChartController::executeDispatch_PositionAndSize()
 
     UndoGuard aUndoGuard(
         ActionDescriptionProvider::createDescription(
-            ActionDescriptionProvider::ActionType::PosSize,
+            ActionDescriptionProvider::POS_SIZE,
             ObjectNameProvider::getName( eObjectType)),
         m_xUndoManager );
 
@@ -140,8 +140,8 @@ void ChartController::executeDispatch_PositionAndSize()
         SolarMutexGuard aGuard;
         SvxAbstractDialogFactory * pFact = SvxAbstractDialogFactory::Create();
         OSL_ENSURE( pFact, "No dialog factory" );
-        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSchTransformTabDialog(
-            GetChartWindow(), &aItemSet, pSdrView, bResizePossible ));
+        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSchTransformTabDialog(
+            m_pChartWindow, &aItemSet, pSdrView, RID_SCH_TransformTabDLG_SVXPAGE_ANGLE, bResizePossible ));
         OSL_ENSURE( pDlg, "Couldn't create SchTransformTabDialog" );
 
         if( pDlg->Execute() == RET_OK )

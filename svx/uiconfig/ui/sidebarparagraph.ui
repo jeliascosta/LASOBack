@@ -16,6 +16,7 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="border_width">6</property>
+        <property name="row_spacing">6</property>
         <property name="column_spacing">6</property>
         <property name="column_homogeneous">True</property>
         <child>
@@ -61,7 +62,6 @@
           <object class="GtkBox" id="box1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_bottom">6</property>
             <property name="spacing">6</property>
             <child>
               <object class="sfxlo-SidebarToolBox" id="horizontalalignment">
@@ -288,8 +288,6 @@
               <object class="GtkBox" id="box11">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">4</property>
-                <property name="margin_right">6</property>
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkImage" id="image6">
@@ -313,13 +311,8 @@
                     <property name="tooltip_text" translatable="yes">Above Paragraph Spacing</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="text">0</property>
+                    <property name="text" translatable="no">0</property>
                     <property name="adjustment">adjustment1</property>
-                    <child internal-child="accessible">
-                      <object class="AtkObject" id="aboveparaspacing-atkobject">
-                        <property name="AtkObject::accessible-name" translatable="yes">Above Paragraph Spacing</property>
-                      </object>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -338,8 +331,6 @@
               <object class="GtkBox" id="box12">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">4</property>
-                <property name="margin_right">6</property>
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkImage" id="image7">
@@ -363,13 +354,8 @@
                     <property name="tooltip_text" translatable="yes">Below Paragraph Spacing</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="text">0</property>
+                    <property name="text" translatable="no">0</property>
                     <property name="adjustment">adjustment1</property>
-                    <child internal-child="accessible">
-                      <object class="AtkObject" id="belowparaspacing-atkobject">
-                        <property name="AtkObject::accessible-name" translatable="yes">Below Paragraph Spacing</property>
-                      </object>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -389,7 +375,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
-                <property name="margin_left">1</property>
                 <property name="hexpand">True</property>
                 <child>
                   <object class="GtkMenuToolButton" id="setlinespacing">
@@ -415,7 +400,7 @@
           </object>
           <packing>
             <property name="left_attach">0</property>
-            <property name="top_attach">3</property>
+            <property name="top_attach">2</property>
           </packing>
         </child>
         <child>
@@ -441,7 +426,7 @@
               </packing>
             </child>
             <child>
-              <object class="sfxlo-SidebarToolBox" id="indent">
+              <object class="GtkToolbar" id="indent">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="has_tooltip">True</property>
@@ -500,8 +485,6 @@
               <object class="GtkBox" id="box14">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">4</property>
-                <property name="margin_right">6</property>
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkImage" id="image8">
@@ -524,13 +507,8 @@
                     <property name="tooltip_text" translatable="yes">Before Text Indent</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="text">0</property>
+                    <property name="text" translatable="no">0</property>
                     <property name="adjustment">adjustment1</property>
-                    <child internal-child="accessible">
-                      <object class="AtkObject" id="beforetextindent-atkobject">
-                        <property name="AtkObject::accessible-name" translatable="yes">Before Text Indent</property>
-                      </object>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -549,8 +527,6 @@
               <object class="GtkBox" id="box15">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">4</property>
-                <property name="margin_right">6</property>
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkImage" id="image9">
@@ -573,13 +549,8 @@
                     <property name="tooltip_text" translatable="yes">After Text Indent</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="text">0</property>
+                    <property name="text" translatable="no">0</property>
                     <property name="adjustment">adjustment1</property>
-                    <child internal-child="accessible">
-                      <object class="AtkObject" id="aftertextindent-atkobject">
-                        <property name="AtkObject::accessible-name" translatable="yes">After Text Indent</property>
-                      </object>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -598,8 +569,6 @@
               <object class="GtkBox" id="box16">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_left">4</property>
-                <property name="margin_right">6</property>
                 <property name="spacing">6</property>
                 <child>
                   <object class="GtkImage" id="image10">
@@ -622,13 +591,8 @@
                     <property name="tooltip_text" translatable="yes">First Line Indent</property>
                     <property name="hexpand">True</property>
                     <property name="invisible_char">•</property>
-                    <property name="text">0</property>
+                    <property name="text" translatable="no">0</property>
                     <property name="adjustment">adjustment1</property>
-                    <child internal-child="accessible">
-                      <object class="AtkObject" id="firstlineindent-atkobject">
-                        <property name="AtkObject::accessible-name" translatable="yes">First Line Indent</property>
-                      </object>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -646,7 +610,7 @@
           </object>
           <packing>
             <property name="left_attach">1</property>
-            <property name="top_attach">3</property>
+            <property name="top_attach">2</property>
           </packing>
         </child>
         <child>
@@ -745,21 +709,6 @@
           <packing>
             <property name="left_attach">1</property>
             <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkSeparator" id="separator1">
-            <property name="height_request">2</property>
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">5</property>
-            <property name="margin_bottom">5</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">2</property>
-            <property name="width">2</property>
-            <property name="height">1</property>
           </packing>
         </child>
       </object>

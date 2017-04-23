@@ -104,7 +104,7 @@ sal_uInt16 MSWordExportBase::GetId( const SwNumRule& rNumRule )
 
     // Is this list now duplicated into a new list which we should use
     // #i77812# - perform 'deep' search in duplication map
-    std::map<sal_uInt16,sal_uInt16>::const_iterator aResult = m_aRuleDuplicates.end();
+    ::std::map<sal_uInt16,sal_uInt16>::const_iterator aResult = m_aRuleDuplicates.end();
     do {
         aResult = m_aRuleDuplicates.find(nRet);
         if ( aResult != m_aRuleDuplicates.end() )
@@ -124,7 +124,7 @@ sal_Int16 GetWordFirstLineOffset(const SwNumFormat &rFormat)
             "<GetWordFirstLineOffset> - misusage: position-and-space-mode does not equal LABEL_WIDTH_AND_POSITION" );
 
     short nFirstLineOffset;
-    if (rFormat.GetNumAdjust() == SvxAdjust::Right)
+    if (rFormat.GetNumAdjust() == SVX_ADJUST_RIGHT)
         nFirstLineOffset = -rFormat.GetCharTextDistance();
     else
         nFirstLineOffset = rFormat.GetFirstLineOffset();
@@ -137,11 +137,11 @@ void WW8Export::WriteNumbering()
         return; // no numbering is used
 
     // list formats - LSTF
-    pFib->m_fcPlcfLst = pTableStrm->Tell();
+    pFib->fcPlcfLst = pTableStrm->Tell();
     SwWW8Writer::WriteShort( *pTableStrm, m_pUsedNumTable->size() );
     NumberingDefinitions();
     // set len to FIB
-    pFib->m_lcbPlcfLst = pTableStrm->Tell() - pFib->m_fcPlcfLst;
+    pFib->lcbPlcfLst = pTableStrm->Tell() - pFib->fcPlcfLst;
 
     // list formats - LVLF
     AbstractNumberingDefinitions();
@@ -257,10 +257,10 @@ void WW8AttributeOutput::NumberingLevel( sal_uInt8 /*nLevel*/,
     sal_uInt8 nAlign;
     switch ( eAdjust )
     {
-    case SvxAdjust::Center:
+    case SVX_ADJUST_CENTER:
         nAlign = 1;
         break;
-    case SvxAdjust::Right:
+    case SVX_ADJUST_RIGHT:
         nAlign = 2;
         break;
     default:
@@ -271,7 +271,7 @@ void WW8AttributeOutput::NumberingLevel( sal_uInt8 /*nLevel*/,
 
     // Write the rgbxchNums[9], positions of placeholders for paragraph
     // numbers in the text
-    m_rWW8Export.pTableStrm->WriteBytes(pNumLvlPos, WW8ListManager::nMaxLevel);
+    m_rWW8Export.pTableStrm->Write( pNumLvlPos, WW8ListManager::nMaxLevel );
 
     // Type of the character between the bullet and the text
     m_rWW8Export.pTableStrm->WriteUChar( nFollow );
@@ -290,9 +290,9 @@ void WW8AttributeOutput::NumberingLevel( sal_uInt8 /*nLevel*/,
         {
             sal_uInt16 nFontID = m_rWW8Export.m_aFontHelper.GetId( *pFont );
 
-            m_rWW8Export.InsUInt16( NS_sprm::sprmCRgFtc0 );
+            m_rWW8Export.InsUInt16( NS_sprm::LN_CRgFtc0 );
             m_rWW8Export.InsUInt16( nFontID );
-            m_rWW8Export.InsUInt16( NS_sprm::sprmCRgFtc2 );
+            m_rWW8Export.InsUInt16( NS_sprm::LN_CRgFtc2 );
             m_rWW8Export.InsUInt16( nFontID );
         }
 
@@ -303,9 +303,9 @@ void WW8AttributeOutput::NumberingLevel( sal_uInt8 /*nLevel*/,
             int nIndex = m_rWW8Export.GetGrfIndex(*pBrush);
             if ( nIndex != -1 )
             {
-                m_rWW8Export.InsUInt16(NS_sprm::sprmCPbiIBullet);
+                m_rWW8Export.InsUInt16(NS_sprm::LN_CPbiIBullet);
                 m_rWW8Export.InsUInt32(nIndex);
-                m_rWW8Export.InsUInt16(NS_sprm::sprmCPbiGrf);
+                m_rWW8Export.InsUInt16(NS_sprm::LN_CPbiGrf);
                 m_rWW8Export.InsUInt16(1);
             }
         }
@@ -333,11 +333,11 @@ void WW8AttributeOutput::NumberingLevel( sal_uInt8 /*nLevel*/,
     pData += 5;
     Set_UInt16( pData, nListTabPos );
 
-    m_rWW8Export.pTableStrm->WriteBytes(aPapSprms, sizeof(aPapSprms));
+    m_rWW8Export.pTableStrm->Write( aPapSprms, sizeof( aPapSprms ));
 
     // write Chpx
     if( !aCharAtrs.empty() )
-        m_rWW8Export.pTableStrm->WriteBytes(aCharAtrs.data(), aCharAtrs.size());
+        m_rWW8Export.pTableStrm->Write( aCharAtrs.data(), aCharAtrs.size() );
 
     // write the num string
     SwWW8Writer::WriteShort( *m_rWW8Export.pTableStrm, rNumberingString.getLength() );
@@ -551,7 +551,7 @@ void WW8Export::OutOverrideListTab()
     sal_uInt16 nCount = m_pUsedNumTable->size();
     sal_uInt16 n;
 
-    pFib->m_fcPlfLfo = pTableStrm->Tell();
+    pFib->fcPlfLfo = pTableStrm->Tell();
     SwWW8Writer::WriteLong( *pTableStrm, nCount );
 
     for( n = 0; n < nCount; ++n )
@@ -563,7 +563,7 @@ void WW8Export::OutOverrideListTab()
         SwWW8Writer::WriteLong( *pTableStrm, -1 );  // no overwrite
 
     // set len to FIB
-    pFib->m_lcbPlfLfo = pTableStrm->Tell() - pFib->m_fcPlfLfo;
+    pFib->lcbPlfLfo = pTableStrm->Tell() - pFib->fcPlfLfo;
 }
 
 void WW8Export::OutListNamesTab()
@@ -574,7 +574,7 @@ void WW8Export::OutListNamesTab()
     // write the "list format override" - LFO
     sal_uInt16 nNms = 0, nCount = m_pUsedNumTable->size();
 
-    pFib->m_fcSttbListNames = pTableStrm->Tell();
+    pFib->fcSttbListNames = pTableStrm->Tell();
     SwWW8Writer::WriteShort( *pTableStrm, -1 );
     SwWW8Writer::WriteLong( *pTableStrm, nCount );
 
@@ -590,9 +590,9 @@ void WW8Export::OutListNamesTab()
             SwWW8Writer::WriteString16(*pTableStrm, sNm, false);
     }
 
-    SwWW8Writer::WriteLong( *pTableStrm, pFib->m_fcSttbListNames + 2, nNms );
+    SwWW8Writer::WriteLong( *pTableStrm, pFib->fcSttbListNames + 2, nNms );
     // set len to FIB
-    pFib->m_lcbSttbListNames = pTableStrm->Tell() - pFib->m_fcSttbListNames;
+    pFib->lcbSttbListNames = pTableStrm->Tell() - pFib->fcSttbListNames;
 }
 
 void MSWordExportBase::SubstituteBullet( OUString& rNumStr,

@@ -47,7 +47,7 @@ namespace svx
 
     public:
         ODocumentLinkDialog( vcl::Window* _pParent, bool _bCreateNew );
-        virtual ~ODocumentLinkDialog() override;
+        virtual ~ODocumentLinkDialog();
         virtual void dispose() override;
 
         // name validation has to be done by an external instance
@@ -59,9 +59,9 @@ namespace svx
         void    getLink(        OUString& _rName,         OUString& _rURL ) const;
 
     protected:
-        DECL_LINK( OnTextModified, Edit&, void );
-        DECL_LINK( OnBrowseFile, Button*, void );
-        DECL_LINK( OnOk, Button*, void );
+        DECL_LINK_TYPED( OnTextModified, Edit&, void );
+        DECL_LINK_TYPED( OnBrowseFile, Button*, void );
+        DECL_LINK_TYPED( OnOk, Button*, void );
 
         void validate( );
     };

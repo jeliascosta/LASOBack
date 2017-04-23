@@ -18,6 +18,7 @@
  */
 
 
+#include <tchar.h>
 #include "customcontrolfactory.hxx"
 #include "customcontrolcontainer.hxx"
 #include "dialogcustomcontrols.hxx"
@@ -32,13 +33,13 @@ CCustomControl* CCustomControlFactory::CreateCustomControl(HWND aControlHandle, 
     // get window class
     // if static text create static text control etc.
 
-    WCHAR aClassName[256];
-    ZeroMemory(aClassName,sizeof(aClassName));
-    if (GetClassNameW(aControlHandle,aClassName,SAL_N_ELEMENTS(aClassName)) == 0) {
+    TCHAR aClsName[256];
+    ZeroMemory(aClsName,sizeof(aClsName));
+    if (GetClassName(aControlHandle,aClsName,sizeof(aClsName)) == 0) {
         OSL_FAIL("Invalid window handle");
     }
 
-    if (0 == _wcsicmp(aClassName,L"button"))
+    if (0 == _tcsicmp(aClsName,TEXT("button")))
     {
         // button means many things so we have
         // to find out what button it is
@@ -53,10 +54,10 @@ CCustomControl* CCustomControlFactory::CreateCustomControl(HWND aControlHandle, 
         return new CDummyCustomControl(aControlHandle,aParentHandle);
     }
 
-    if (0 == _wcsicmp(aClassName,L"listbox") || 0 == _wcsicmp(aClassName,L"combobox"))
+    if (0 == _tcsicmp(aClsName,TEXT("listbox")) || 0 == _tcsicmp(aClsName,TEXT("combobox")))
         return new CComboboxCustomControl(aControlHandle,aParentHandle);
 
-    if (0 == _wcsicmp(aClassName,L"static"))
+    if (0 == _tcsicmp(aClsName,TEXT("static")))
         return new CStaticCustomControl(aControlHandle,aParentHandle);
 
     return new CDummyCustomControl(aControlHandle,aParentHandle);
@@ -65,7 +66,7 @@ CCustomControl* CCustomControlFactory::CreateCustomControl(HWND aControlHandle, 
 
 CCustomControl* CCustomControlFactory::CreateCustomControlContainer()
 {
-    return new CCustomControlContainer;
+    return new CCustomControlContainer();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

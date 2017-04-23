@@ -48,7 +48,7 @@ void oldtests::test_profile()
     CPPUNIT_ASSERT(hProfile != nullptr);
     CPPUNIT_ASSERT_MESSAGE(
         "cannot write into init file",
-        osl_writeProfileBool( hProfile, "testsection", "testbool", true ));
+        osl_writeProfileBool( hProfile, "testsection", "testbool", 1 ));
     CPPUNIT_ASSERT(osl_closeProfile( hProfile ));
 
     // unsuccessful open
@@ -58,5 +58,7 @@ void oldtests::test_profile()
 } // namespace osl_Profile
 
 CPPUNIT_TEST_SUITE_REGISTRATION( osl_Profile::oldtests );
+
+CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

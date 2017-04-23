@@ -59,9 +59,9 @@ public:
         SfxViewFrame* pFrame,
         ViewShellBase& rViewShellBase,
         vcl::Window* pParentWindow,
-        FrameView* pFrameView);
+        FrameView* pFrameView = nullptr);
 
-    virtual ~GraphicViewShell() override;
+    virtual ~GraphicViewShell();
 
     /** Override this method in order to have the layer mode always active.
     */

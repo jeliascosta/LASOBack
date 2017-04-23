@@ -155,6 +155,11 @@ OJoinController::~OJoinController()
 {
 }
 
+void SAL_CALL OJoinController::disposing( const EventObject& _rSource ) throw(RuntimeException, std::exception)
+{
+    OJoinController_BASE::disposing( _rSource );
+}
+
 OJoinDesignView* OJoinController::getJoinView()
 {
     return static_cast< OJoinDesignView* >( getView() );
@@ -189,7 +194,7 @@ void OJoinController::SaveTabWinPosSize(OTableWindow* pTabWin, long nOffsetX, lo
 {
     // the data for the window
     TTableWindowData::value_type pData = pTabWin->GetData();
-    OSL_ENSURE(pData != nullptr, "SaveTabWinPosSize : TabWin has no data !");
+    OSL_ENSURE(pData != nullptr, "SaveTabWinPosSize : TabWin hat keine Daten !");
 
     // set Position & Size of data anew (with current window parameters)
     Point aPos = pTabWin->GetPosPixel();
@@ -301,7 +306,7 @@ void OJoinController::SaveTabWinsPosSize( OJoinTableView::OTableWindowMap* pTabW
 
 void OJoinController::removeConnectionData(const TTableConnectionData::value_type& _pData)
 {
-    m_vTableConnectionData.erase( std::remove(m_vTableConnectionData.begin(),m_vTableConnectionData.end(),_pData),m_vTableConnectionData.end());
+    m_vTableConnectionData.erase( ::std::remove(m_vTableConnectionData.begin(),m_vTableConnectionData.end(),_pData),m_vTableConnectionData.end());
 }
 
 void OJoinController::describeSupportedFeatures()
@@ -314,7 +319,7 @@ void OJoinController::describeSupportedFeatures()
     implDescribeSupportedFeature( ".uno:EditDoc",   ID_BROWSER_EDITDOC, CommandGroup::EDIT );
 }
 
-sal_Bool SAL_CALL OJoinController::suspend(sal_Bool _bSuspend)
+sal_Bool SAL_CALL OJoinController::suspend(sal_Bool _bSuspend) throw( RuntimeException, std::exception )
 {
     if ( getBroadcastHelper().bInDispose || getBroadcastHelper().bDisposed )
         return true;

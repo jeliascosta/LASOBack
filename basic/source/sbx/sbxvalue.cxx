@@ -36,15 +36,52 @@ SbxValue::SbxValue() : SbxBase()
     aData.eType = SbxEMPTY;
 }
 
-SbxValue::SbxValue( SbxDataType t ) : SbxBase()
+SbxValue::SbxValue( SbxDataType t, void* p ) : SbxBase()
 {
     int n = t & 0x0FFF;
-
+    if( p )
+        n |= SbxBYREF;
     if( n == SbxVARIANT )
         n = SbxEMPTY;
     else
         SetFlag( SbxFlagBits::Fixed );
-    memset( &aData, 0, sizeof( SbxValues ) );
+    if( p )
+    {
+        switch( t & 0x0FFF )
+        {
+            case SbxINTEGER:    n |= SbxBYREF; aData.pInteger = static_cast<sal_Int16*>(p); break;
+            case SbxSALUINT64:  n |= SbxBYREF; aData.puInt64 = static_cast<sal_uInt64*>(p); break;
+            case SbxSALINT64:
+            case SbxCURRENCY:   n |= SbxBYREF; aData.pnInt64 = static_cast<sal_Int64*>(p); break;
+            case SbxLONG:       n |= SbxBYREF; aData.pLong = static_cast<sal_Int32*>(p); break;
+            case SbxSINGLE:     n |= SbxBYREF; aData.pSingle = static_cast<float*>(p); break;
+            case SbxDATE:
+            case SbxDOUBLE:     n |= SbxBYREF; aData.pDouble = static_cast<double*>(p); break;
+            case SbxSTRING:     n |= SbxBYREF; aData.pOUString = static_cast<OUString*>(p); break;
+            case SbxERROR:
+            case SbxUSHORT:
+            case SbxBOOL:       n |= SbxBYREF; aData.pUShort = static_cast<sal_uInt16*>(p); break;
+            case SbxULONG:      n |= SbxBYREF; aData.pULong = static_cast<sal_uInt32*>(p); break;
+            case SbxCHAR:       n |= SbxBYREF; aData.pChar = static_cast<sal_Unicode*>(p); break;
+            case SbxBYTE:       n |= SbxBYREF; aData.pByte = static_cast<sal_uInt8*>(p); break;
+            case SbxINT:        n |= SbxBYREF; aData.pInt = static_cast<int*>(p); break;
+            case SbxOBJECT:
+                aData.pObj = static_cast<SbxBase*>(p);
+                if( p )
+                    aData.pObj->AddFirstRef();
+                break;
+            case SbxDECIMAL:
+                aData.pDecimal = static_cast<SbxDecimal*>(p);
+                if( p )
+                    aData.pDecimal->addRef();
+                break;
+            default:
+                DBG_ASSERT( false, "Improper pointer argument" );
+                n = SbxNULL;
+        }
+    }
+    else
+        memset( &aData, 0, sizeof( SbxValues ) );
     aData.eType = SbxDataType( n );
 }
 
@@ -59,7 +96,7 @@ SbxValue::SbxValue( const SbxValue& r )
     }
     else
     {
-        const_cast<SbxValue*>(&r)->Broadcast( SfxHintId::BasicDataWanted );
+        const_cast<SbxValue*>(&r)->Broadcast( SBX_HINT_DATAWANTED );
         aData = r.aData;
         // Copy pointer, increment references
         switch( aData.eType )
@@ -133,7 +170,7 @@ SbxValue& SbxValue::operator=( const SbxValue& r )
 
 SbxValue::~SbxValue()
 {
-    Broadcast( SfxHintId::BasicDying );
+    Broadcast( SBX_HINT_DYING );
     SetFlag( SbxFlagBits::Write );
     SbxValue::Clear();
 }
@@ -182,7 +219,7 @@ void SbxValue::Clear()
 
 // Dummy
 
-void SbxValue::Broadcast( SfxHintId )
+void SbxValue::Broadcast( sal_uInt32 )
 {}
 
 //////////////////////////// Readout data
@@ -191,6 +228,11 @@ void SbxValue::Broadcast( SfxHintId )
 // the object itself or its default property.
 // If the variable contain a variable or an object, this will be
 // addressed.
+
+SbxValue* SbxValue::TheRealValue() const
+{
+    return TheRealValue( true );
+}
 
 SbxValue* SbxValue::TheRealValue( bool bObjInObjError ) const
 {
@@ -281,10 +323,10 @@ bool SbxValue::Get( SbxValues& rRes ) const
         // If an object or a VARIANT is requested, don't search the real values
         SbxValue* p = const_cast<SbxValue*>(this);
         if( rRes.eType != SbxOBJECT && rRes.eType != SbxVARIANT )
-            p = TheRealValue( true );
+            p = TheRealValue();
         if( p )
         {
-            p->Broadcast( SfxHintId::BasicDataWanted );
+            p->Broadcast( SBX_HINT_DATAWANTED );
             switch( rRes.eType )
             {
                 case SbxEMPTY:
@@ -519,7 +561,7 @@ bool SbxValue::Put( const SbxValues& rVal )
             if( !IsError() )
             {
                 p->SetModified( true );
-                p->Broadcast( SfxHintId::BasicDataChanged );
+                p->Broadcast( SBX_HINT_DATACHANGED );
                 if( eOld != ERRCODE_SBX_OK )
                     SetError( eOld );
                 bRes = true;
@@ -689,7 +731,7 @@ bool SbxValue::ImpIsNumeric( bool bOnlyIntntl ) const
     }
     // Test downcast!!!
     if( nullptr != dynamic_cast<const SbxVariable*>( this) )
-        const_cast<SbxVariable*>(static_cast<const SbxVariable*>(this))->Broadcast( SfxHintId::BasicDataWanted );
+        const_cast<SbxVariable*>(static_cast<const SbxVariable*>(this))->Broadcast( SBX_HINT_DATAWANTED );
     SbxDataType t = GetType();
     if( t == SbxSTRING )
     {
@@ -817,7 +859,7 @@ bool SbxValue::Convert( SbxDataType eTo )
             Put( aNew );
             SetModified( true );
         }
-        Broadcast( SfxHintId::BasicConverted );
+        Broadcast( SBX_HINT_CONVERTED );
         return true;
     }
     else
@@ -1293,17 +1335,17 @@ bool SbxValue::Compare( SbxOperator eOp, const SbxValue& rOp ) const
                 switch( eOp )
                 {
                     case SbxEQ:
-                        bRes = ( eRes == SbxDecimal::CmpResult::EQ ); break;
+                        bRes = ( eRes == SbxDecimal::EQ ); break;
                     case SbxNE:
-                        bRes = ( eRes != SbxDecimal::CmpResult::EQ ); break;
+                        bRes = ( eRes != SbxDecimal::EQ ); break;
                     case SbxLT:
-                        bRes = ( eRes == SbxDecimal::CmpResult::LT ); break;
+                        bRes = ( eRes == SbxDecimal::LT ); break;
                     case SbxGT:
-                        bRes = ( eRes == SbxDecimal::CmpResult::GT ); break;
+                        bRes = ( eRes == SbxDecimal::GT ); break;
                     case SbxLE:
-                        bRes = ( eRes != SbxDecimal::CmpResult::GT ); break;
+                        bRes = ( eRes != SbxDecimal::GT ); break;
                     case SbxGE:
-                        bRes = ( eRes != SbxDecimal::CmpResult::LT ); break;
+                        bRes = ( eRes != SbxDecimal::LT ); break;
                     default:
                         SetError( ERRCODE_SBX_NOTIMP );
                 }
@@ -1509,7 +1551,7 @@ bool SbxValue::LoadData( SvStream& r, sal_uInt16 )
                 memset (&aData,0,sizeof(aData));
                 ResetFlag(SbxFlagBits::Fixed);
                 aData.eType = SbxNULL;
-                SAL_WARN( "basic.sbx", "Loaded a non-supported data type" );
+                DBG_ASSERT( false, "Loaded a non-supported data type" );
 
                 return false;
         }
@@ -1611,7 +1653,7 @@ bool SbxValue::LoadData( SvStream& r, sal_uInt16 )
         case SbxWCHAR:
             break;
         default:
-            SAL_WARN( "basic.sbx", "Saving a non-supported data type" );
+            DBG_ASSERT( false, "Saving a non-supported data type" );
             return false;
     }
     return true;

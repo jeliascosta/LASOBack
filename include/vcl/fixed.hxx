@@ -40,7 +40,7 @@ private:
     using Control::ImplInitSettings;
     using Window::ImplInit;
     SAL_DLLPRIVATE void    ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
+    SAL_DLLPRIVATE WinBits ImplInitStyle( WinBits nStyle );
     SAL_DLLPRIVATE void    ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
                               const Point& rPos, const Size& rSize, bool bFillLayout = false ) const;
 public:
@@ -56,12 +56,13 @@ protected:
 
 public:
     explicit        FixedText( vcl::Window* pParent, WinBits nStyle = 0 );
-    virtual         ~FixedText() override;
+    explicit        FixedText( vcl::Window* pParent, const ResId& rResId );
+    virtual         ~FixedText();
     virtual void    dispose() override;
 
     virtual void    ApplySettings(vcl::RenderContext& rRenderContext) override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nType ) override;
@@ -81,7 +82,7 @@ public:
 class VCL_DLLPUBLIC SelectableFixedText : public Edit
 {
 public:
-    explicit SelectableFixedText( vcl::Window* pParent, WinBits nStyle );
+    explicit SelectableFixedText( vcl::Window* pParent, WinBits nStyle = 0 );
 
     virtual void    LoseFocus() override;
     virtual void    ApplySettings(vcl::RenderContext&) override;
@@ -94,7 +95,7 @@ private:
     using Control::ImplInitSettings;
     using Window::ImplInit;
     SAL_DLLPRIVATE void    ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
+    SAL_DLLPRIVATE WinBits ImplInitStyle( WinBits nStyle );
     SAL_DLLPRIVATE void    ImplDraw(vcl::RenderContext& rRenderContext);
 
 protected:
@@ -106,10 +107,11 @@ protected:
 
 public:
     explicit        FixedLine( vcl::Window* pParent, WinBits nStyle = WB_HORZ );
+    explicit        FixedLine( vcl::Window* pParent, const ResId& );
 
     virtual void    ApplySettings(vcl::RenderContext&) override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nType ) override;
@@ -126,7 +128,7 @@ private:
     using Control::ImplInitSettings;
     using Window::ImplInit;
     SAL_DLLPRIVATE void    ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
+    SAL_DLLPRIVATE WinBits ImplInitStyle( WinBits nStyle );
     SAL_DLLPRIVATE void    ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
                               const Point& rPos, const Size& rSize );
 
@@ -135,7 +137,7 @@ public:
 
     virtual void    ApplySettings(vcl::RenderContext&) override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nType ) override;
@@ -150,22 +152,26 @@ class VCL_DLLPUBLIC FixedImage : public Control
 {
 private:
     Image           maImage;
+    bool            mbInUserDraw;
 
 private:
     using Control::ImplInitSettings;
     using Window::ImplInit;
     SAL_DLLPRIVATE void    ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
+    SAL_DLLPRIVATE WinBits ImplInitStyle( WinBits nStyle );
 
 protected:
     SAL_DLLPRIVATE void    ImplDraw( OutputDevice* pDev, DrawFlags nDrawFlags,
                               const Point& rPos, const Size& rSize );
+    SAL_DLLPRIVATE void    ImplLoadRes( const ResId& rResId );
+
 public:
     explicit        FixedImage( vcl::Window* pParent, WinBits nStyle = 0 );
+    explicit        FixedImage( vcl::Window* pParent, const ResId& );
 
     virtual void    ApplySettings(vcl::RenderContext&) override;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
     virtual void    StateChanged( StateChangedType nType ) override;

@@ -18,10 +18,11 @@
 
 package com.sun.star.lib.uno.typedesc;
 
+import com.sun.star.uno.ITypeDescription;
 import com.sun.star.uno.TypeClass;
 
 final class MemberDescriptionHelper {
-    public static boolean isUnsigned(TypeDescription desc) {
+    public static boolean isUnsigned(ITypeDescription desc) {
         switch (getElementTypeClass(desc).getValue()) {
         case TypeClass.UNSIGNED_SHORT_value:
         case TypeClass.UNSIGNED_LONG_value:
@@ -33,15 +34,15 @@ final class MemberDescriptionHelper {
         }
     }
 
-    public static boolean isAny(TypeDescription desc) {
+    public static boolean isAny(ITypeDescription desc) {
         return getElementTypeClass(desc) == TypeClass.ANY;
     }
 
-    public static boolean isInterface(TypeDescription desc) {
+    public static boolean isInterface(ITypeDescription desc) {
         return getElementTypeClass(desc) == TypeClass.INTERFACE;
     }
 
-    private static TypeClass getElementTypeClass(TypeDescription desc) {
+    private static TypeClass getElementTypeClass(ITypeDescription desc) {
         for (;; desc = desc.getComponentType()) {
             TypeClass tc = desc.getTypeClass();
             if (tc != TypeClass.SEQUENCE) {

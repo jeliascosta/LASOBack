@@ -41,8 +41,8 @@ namespace pcr
     // class OPropertyEditor
 
 
-    OPropertyEditor::OPropertyEditor( vcl::Window* pParent)
-            :Control(pParent, WB_DIALOGCONTROL)
+    OPropertyEditor::OPropertyEditor( vcl::Window* pParent, WinBits nWinStyle)
+            :Control(pParent, nWinStyle)
             ,m_aTabControl( VclPtr<TabControl>::Create(this) )
             ,m_pListener(nullptr)
             ,m_pObserver(nullptr)
@@ -114,7 +114,7 @@ namespace pcr
             sal_uInt16 nFirstID = m_aTabControl->GetPageId( 0 );
 
             // reserve space for the tabs themself
-            tools::Rectangle aTabArea( m_aTabControl->GetTabBounds( nFirstID ) );
+            Rectangle aTabArea( m_aTabControl->GetTabBounds( nFirstID ) );
             nMinHeight += aTabArea.GetHeight();
 
             // ask the page how much it requires
@@ -201,7 +201,7 @@ namespace pcr
 
     void OPropertyEditor::Resize()
     {
-        tools::Rectangle aPlayground(
+        Rectangle aPlayground(
             Point( LAYOUT_BORDER_LEFT, LAYOUT_BORDER_TOP ),
             Size(
                 GetOutputSizePixel().Width() - LAYOUT_BORDER_LEFT - LAYOUT_BORDER_RIGHT,
@@ -209,7 +209,7 @@ namespace pcr
             )
         );
 
-        tools::Rectangle aTabArea( aPlayground );
+        Rectangle aTabArea( aPlayground );
         m_aTabControl->SetPosSizePixel( aTabArea.TopLeft(), aTabArea.GetSize() );
     }
 
@@ -273,7 +273,7 @@ namespace pcr
     }
 
 
-    void OPropertyEditor::Update(const std::mem_fun_t<void,OBrowserListBox>& _aUpdateFunction)
+    void OPropertyEditor::Update(const ::std::mem_fun_t<void,OBrowserListBox>& _aUpdateFunction)
     {
         // forward this to all our pages
         sal_uInt16 nCount = m_aTabControl->GetPageCount();
@@ -288,12 +288,12 @@ namespace pcr
 
     void OPropertyEditor::EnableUpdate()
     {
-        Update(std::mem_fun(&OBrowserListBox::EnableUpdate));
+        Update(::std::mem_fun(&OBrowserListBox::EnableUpdate));
     }
 
     void OPropertyEditor::DisableUpdate()
     {
-        Update(std::mem_fun(&OBrowserListBox::DisableUpdate));
+        Update(::std::mem_fun(&OBrowserListBox::DisableUpdate));
     }
 
 
@@ -459,7 +459,7 @@ namespace pcr
         }
         else
         {
-            std::map< sal_uInt16, HiddenPage >::iterator aPagePos = m_aHiddenPages.find( _nPageId );
+            ::std::map< sal_uInt16, HiddenPage >::iterator aPagePos = m_aHiddenPages.find( _nPageId );
             if ( aPagePos == m_aHiddenPages.end() )
                 return;
 
@@ -505,13 +505,13 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG(OPropertyEditor, OnPageActivate, TabControl*, void)
+    IMPL_LINK_NOARG_TYPED(OPropertyEditor, OnPageActivate, TabControl*, void)
     {
         m_aPageActivationHandler.Call(nullptr);
     }
 
 
-    IMPL_LINK_NOARG(OPropertyEditor, OnPageDeactivate, TabControl *, bool)
+    IMPL_LINK_NOARG_TYPED(OPropertyEditor, OnPageDeactivate, TabControl *, bool)
     {
         // commit the data on the current (to-be-deactivated) tab page
         // (79404)

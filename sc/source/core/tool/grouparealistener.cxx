@@ -107,13 +107,18 @@ ScRange FormulaGroupAreaListener::getListeningRange() const
 
 void FormulaGroupAreaListener::Notify( const SfxHint& rHint )
 {
-    // BulkDataHint may include (SfxHintId::ScDataChanged |
-    // SfxHintId::ScTableOpDirty) so has to be checked first.
-    if ( const BulkDataHint* pBulkHint = dynamic_cast<const BulkDataHint*>(&rHint) )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if (!pSimpleHint)
+        return;
+
+    // SC_HINT_BULK_DATACHANGED may include (SC_HINT_DATACHANGED |
+    // SC_HINT_TABLEOPDIRTY) so has to be checked first.
+    if (pSimpleHint->GetId() & SC_HINT_BULK_DATACHANGED)
     {
-        notifyBulkChange(*pBulkHint);
+        const BulkDataHint& rBulkHint = static_cast<const BulkDataHint&>(rHint);
+        notifyBulkChange(rBulkHint);
     }
-    else if (rHint.GetId() == SfxHintId::ScDataChanged || rHint.GetId() == SfxHintId::ScTableOpDirty)
+    else if (pSimpleHint->GetId() & (SC_HINT_DATACHANGED | SC_HINT_TABLEOPDIRTY))
     {
         notifyCellChange(rHint, static_cast<const ScHint*>(&rHint)->GetAddress());
     }
@@ -150,7 +155,7 @@ void FormulaGroupAreaListener::notifyBulkChange( const BulkDataHint& rHint )
 
     std::vector<ScFormulaCell*> aCells;
     aAction.swapCells(aCells);
-    ScHint aHint(SfxHintId::ScDataChanged, ScAddress());
+    ScHint aHint(SC_HINT_DATACHANGED, ScAddress());
     std::for_each(aCells.begin(), aCells.end(), Notifier(aHint));
 }
 
@@ -218,7 +223,7 @@ void FormulaGroupAreaListener::collectFormulaCells(
         const_cast<FormulaGroupAreaListener*>(this)->mnGroupLen = nLen;
     }
 
-    /* With tdf#89957 it happened that the actual block size in column
+    /* FIXME: with tdf#89957 it happened that the actual block size in column
      * AP (shifted from AO) of sheet 'w' was smaller than the remembered group
      * length and correct. This is just a very ugly workaround, the real cause
      * is yet unknown, but at least don't crash in such case. The intermediate
@@ -232,14 +237,6 @@ void FormulaGroupAreaListener::collectFormulaCells(
         SAL_WARN("sc.core","FormulaGroupAreaListener::collectFormulaCells() nBlockSize " <<
                 nBlockSize << " < " << mnGroupLen << " mnGroupLen");
         const_cast<FormulaGroupAreaListener*>(this)->mnGroupLen = static_cast<SCROW>(nBlockSize);
-
-        // erAck: 2016-11-09T18:30+01:00  XXX This doesn't occur anymore, at
-        // least not in the original bug scenario (insert a column before H on
-        // sheet w) of tdf#89957 with
-        // http://bugs.documentfoundation.org/attachment.cgi?id=114042
-        // Apparently this was fixed in the mean time, let's assume and get the
-        // assert bat out to hit us if it wasn't.
-        assert(!"something is still messing up the formula goup and block size length");
     }
 
     ScFormulaCell* const * ppEnd = pp + mnGroupLen;
@@ -326,7 +323,7 @@ const ScFormulaCell* FormulaGroupAreaListener::getTopCell() const
 {
     size_t nBlockSize = 0;
     const ScFormulaCell* const * pp = mpColumn->GetFormulaCellBlockAddress( mnTopCellRow, nBlockSize);
-    SAL_WARN_IF(!pp, "sc.core.grouparealistener", "GetFormulaCellBlockAddress not found");
+    SAL_WARN_IF(!pp, "sc", "GetFormulaCellBlockAddress not found");
     return pp ? *pp : nullptr;
 }
 

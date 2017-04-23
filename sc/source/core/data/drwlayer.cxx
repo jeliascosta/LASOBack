@@ -20,7 +20,13 @@
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/chart/XChartDocument.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
+#include <com/sun/star/embed/XVisualObject.hpp>
 #include <com/sun/star/embed/XClassifiedObject.hpp>
+#include <com/sun/star/embed/XComponentSupplier.hpp>
+#include <com/sun/star/embed/EmbedStates.hpp>
+#include <com/sun/star/embed/ElementModes.hpp>
+#include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
+#include <com/sun/star/datatransfer/XTransferable.hpp>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 
 #include "scitems.hxx"
@@ -156,7 +162,7 @@ void ScUndoAnchorData::Undo()
     // Trigger Object Change
     if (pObj->IsInserted() && pObj->GetPage() && pObj->GetModel())
     {
-        SdrHint aHint(SdrHintKind::ObjectChange, *pObj);
+        SdrHint aHint(*pObj);
         pObj->GetModel()->Broadcast(aHint);
     }
 
@@ -176,7 +182,7 @@ void ScUndoAnchorData::Redo()
     // Trigger Object Change
     if (pObj->IsInserted() && pObj->GetPage() && pObj->GetModel())
     {
-        SdrHint aHint(SdrHintKind::ObjectChange, *pObj);
+        SdrHint aHint(*pObj);
         pObj->GetModel()->Broadcast(aHint);
     }
 }
@@ -223,7 +229,7 @@ inline void ReverseTwipsToMM( long& nVal )
     nVal = HmmToTwips (nVal);
 }
 
-static void lcl_ReverseTwipsToMM( tools::Rectangle& rRect )
+static void lcl_ReverseTwipsToMM( Rectangle& rRect )
 {
     ReverseTwipsToMM( rRect.Left() );
     ReverseTwipsToMM( rRect.Right() );
@@ -262,10 +268,10 @@ ScDrawLayer::ScDrawLayer( ScDocument* pDocument, const OUString& rName ) :
 
     SetSwapGraphics();
 
-    SetScaleUnit(MapUnit::Map100thMM);
+    SetScaleUnit(MAP_100TH_MM);
     SfxItemPool& rPool = GetItemPool();
-    rPool.SetDefaultMetric(MapUnit::Map100thMM);
-    SvxFrameDirectionItem aModeItem( SvxFrameDirection::Environment, EE_PARA_WRITINGDIR );
+    rPool.SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
+    SvxFrameDirectionItem aModeItem( FRMDIR_ENVIRONMENT, EE_PARA_WRITINGDIR );
     rPool.SetPoolDefaultItem( aModeItem );
 
     // #i33700#
@@ -330,7 +336,7 @@ ScDrawLayer::ScDrawLayer( ScDocument* pDocument, const OUString& rName ) :
 
 ScDrawLayer::~ScDrawLayer()
 {
-    Broadcast(SdrHint(SdrHintKind::ModelCleared));
+    Broadcast(SdrHint(HINT_MODELCLEARED));
 
     ClearModel(true);
 
@@ -444,7 +450,7 @@ void ScDrawLayer::ScCopyPage( sal_uInt16 nOldPos, sal_uInt16 nNewPos )
         SCTAB nOldTab = static_cast<SCTAB>(nOldPos);
         SCTAB nNewTab = static_cast<SCTAB>(nNewPos);
 
-        SdrObjListIter aIter( *pOldPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pOldPage, IM_FLAT );
         SdrObject* pOldObject = aIter.Next();
         while (pOldObject)
         {
@@ -499,7 +505,7 @@ void ScDrawLayer::ResetTab( SCTAB nStart, SCTAB nEnd )
         if (!pPage)
             continue;
 
-        SdrObjListIter aIter(*pPage, SdrIterMode::Flat);
+        SdrObjListIter aIter(*pPage, IM_FLAT);
         for (SdrObject* pObj = aIter.Next(); pObj; pObj = aIter.Next())
         {
             ScDrawObjData* pData = GetObjData(pObj);
@@ -578,7 +584,7 @@ void ScDrawLayer::SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpda
         if ( rSize != pPage->GetSize() )
         {
             pPage->SetSize( rSize );
-            Broadcast( ScTabSizeChangedHint( static_cast<SCTAB>(nPageNo) ) );   // SetWorkArea() on the views
+            Broadcast( ScTabSizeChangedHint( static_cast<SCTAB>(nPageNo) ) );   // SetWorkArea() an den Views
         }
 
         // Implement Detective lines (adjust to new heights / widths)
@@ -587,9 +593,6 @@ void ScDrawLayer::SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpda
 
         bool bNegativePage = pDoc && pDoc->IsNegativePage( static_cast<SCTAB>(nPageNo) );
 
-        // Disable mass broadcasts from drawing objects' position changes.
-        bool bWasLocked = isLocked();
-        setLock(true);
         const size_t nCount = pPage->GetObjCount();
         for ( size_t i = 0; i < nCount; ++i )
         {
@@ -598,16 +601,15 @@ void ScDrawLayer::SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpda
             if( pData )
                 RecalcPos( pObj, *pData, bNegativePage, bUpdateNoteCaptionPos );
         }
-        setLock(bWasLocked);
     }
 }
 
 namespace
 {
     //Can't have a zero width dimension
-    tools::Rectangle lcl_makeSafeRectangle(const tools::Rectangle &rNew)
+    Rectangle lcl_makeSafeRectangle(const Rectangle &rNew)
     {
-        tools::Rectangle aRect = rNew;
+        Rectangle aRect = rNew;
         if (aRect.Bottom() == aRect.Top())
             aRect.Bottom() = aRect.Top()+1;
         if (aRect.Right() == aRect.Left())
@@ -627,11 +629,11 @@ namespace
         return aAvailableDiff;
     }
 
-    tools::Rectangle lcl_UpdateCalcPoly(basegfx::B2DPolygon &rCalcPoly, int nWhichPoint, const Point &rPos)
+    Rectangle lcl_UpdateCalcPoly(basegfx::B2DPolygon &rCalcPoly, int nWhichPoint, const Point &rPos)
     {
         rCalcPoly.setB2DPoint(nWhichPoint, basegfx::B2DPoint(rPos.X(), rPos.Y()));
         basegfx::B2DRange aRange(basegfx::tools::getRange(rCalcPoly));
-        return tools::Rectangle(static_cast<long>(aRange.getMinX()), static_cast<long>(aRange.getMinY()),
+        return Rectangle(static_cast<long>(aRange.getMinX()), static_cast<long>(aRange.getMinY()),
             static_cast<long>(aRange.getMaxX()), static_cast<long>(aRange.getMaxY()));
     }
 }
@@ -656,7 +658,7 @@ void ScDrawLayer::ResizeLastRectFromAnchor( SdrObject* pObj, ScDrawObjData& rDat
         TwipsToMM( aEnd.Y() );
         aEnd += lcl_calcAvailableDiff(*pDoc, nCol2, nRow2, nTab2, rData.maEndOffset);
 
-        tools::Rectangle aNew = tools::Rectangle( aPos, aEnd );
+        Rectangle aNew = Rectangle( aPos, aEnd );
         if ( bNegativePage )
             MirrorRectRTL( aNew );
 
@@ -714,9 +716,9 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
 
         // Calculations and values as in detfunc.cxx
 
-        Size aSize( TwipsToHmm( pDoc->GetColWidth( nCol1, nTab1) ),
-                    TwipsToHmm( pDoc->GetRowHeight( nRow1, nTab1) ) );
-        tools::Rectangle aRect( aPos, aSize );
+        Size aSize( (long)( TwipsToHmm( pDoc->GetColWidth( nCol1, nTab1) ) ),
+                    (long)( TwipsToHmm( pDoc->GetRowHeight( nRow1, nTab1) ) ) );
+        Rectangle aRect( aPos, aSize );
         aRect.Left()    -= 250;
         aRect.Right()   += 250;
         aRect.Top()     -= 70;
@@ -825,9 +827,6 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
     }
     else
     {
-        // Prevent multiple broadcasts during the series of changes.
-        SdrDelayBroadcastObjectChange aDelayBroadcastObjectChange(*pObj);
-
         bool bCanResize = bValid2 && !pObj->IsResizeProtect();
 
         //First time positioning, must be able to at least move it
@@ -841,7 +840,7 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
                 double fShearX(0.0);
 
                 Point aPoint;
-                tools::Rectangle aRect;
+                Rectangle aRect;
 
                 basegfx::B2DTuple aScale;
                 basegfx::B2DTuple aTranslate;
@@ -872,7 +871,7 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
             // we need to save the old anchor ( for persisting ) and also track any resize or repositions that happen.
 
             // This is an evil hack, having a anchor that is one minute in terms of untransformed object and then later
-            // in terms of the transformed object is not ideal, similarly having 2 anchors per object is wasteful, can't
+            // in terms of the transformed object is not ideal, similary having 2 anchors per object is wasteful, can't
             // see another way out of this at the moment though.
             rNoRotatedAnchor.maStart = rData.maStart;
             rNoRotatedAnchor.maEnd = rData.maEnd;
@@ -891,7 +890,7 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
             // is guaranteed to get consistent results)
             ResizeLastRectFromAnchor( pObj, rData, true, bNegativePage, bCanResize, false );
             // aFullRect contains the unrotated size and position of the shape (regardless of any hidden row/columns)
-            tools::Rectangle aFullRect = rData.maLastRect;
+            Rectangle aFullRect = rData.maLastRect;
 
             // get current size and position from the anchor for use later
             ResizeLastRectFromAnchor( pObj, rNoRotatedAnchor, true, bNegativePage, bCanResize );
@@ -912,11 +911,11 @@ void ScDrawLayer::RecalcPos( SdrObject* pObj, ScDrawObjData& rData, bool bNegati
 
         if( bCanResize )
         {
-            tools::Rectangle aNew = rData.maLastRect;
+            Rectangle aNew = rData.maLastRect;
 
             if ( pObj->GetSnapRect() != aNew )
             {
-                tools::Rectangle aOld(pObj->GetSnapRect());
+                Rectangle aOld(pObj->GetSnapRect());
 
                 if (bRecording)
                     AddCalcUndo( new SdrUndoGeoObj( *pObj ) );
@@ -1020,13 +1019,13 @@ bool ScDrawLayer::GetPrintArea( ScRange& rRange, bool bSetHor, bool bSetVer ) co
     OSL_ENSURE(pPage,"Page not found");
     if (pPage)
     {
-        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
                             //TODO: test Flags (hidden?)
 
-            tools::Rectangle aObjRect = pObject->GetCurrentBoundRect();
+            Rectangle aObjRect = pObject->GetCurrentBoundRect();
             bool bFit = true;
             if ( !bSetHor && ( aObjRect.Right() < nStartX || aObjRect.Left() > nEndX ) )
                 bFit = false;
@@ -1149,7 +1148,7 @@ void ScDrawLayer::MoveArea( SCTAB nTab, SCCOL nCol1,SCROW nRow1, SCCOL nCol2,SCR
 
     bool bNegativePage = pDoc->IsNegativePage( nTab );
 
-    tools::Rectangle aRect = pDoc->GetMMRect( nCol1, nRow1, nCol2, nRow2, nTab );
+    Rectangle aRect = pDoc->GetMMRect( nCol1, nRow1, nCol2, nRow2, nTab );
     lcl_ReverseTwipsToMM( aRect );
     //TODO: use twips directly?
 
@@ -1198,7 +1197,7 @@ bool ScDrawLayer::HasObjectsInRows( SCTAB nTab, SCROW nStartRow, SCROW nEndRow )
     if (!pPage->GetObjCount())
         return false;
 
-    tools::Rectangle aTestRect;
+    Rectangle aTestRect;
 
     aTestRect.Top() += pDoc->GetRowHeight( 0, nStartRow-1, nTab);
 
@@ -1222,7 +1221,7 @@ bool ScDrawLayer::HasObjectsInRows( SCTAB nTab, SCROW nStartRow, SCROW nEndRow )
 
     bool bFound = false;
 
-    tools::Rectangle aObjRect;
+    Rectangle aObjRect;
     SdrObjListIter aIter( *pPage );
     SdrObject* pObject = aIter.Next();
     while ( pObject && !bFound )
@@ -1255,11 +1254,11 @@ void ScDrawLayer::DeleteObjectsInArea( SCTAB nTab, SCCOL nCol1,SCROW nRow1,
     if (nObjCount)
     {
         size_t nDelCount = 0;
-        tools::Rectangle aDelRect = pDoc->GetMMRect( nCol1, nRow1, nCol2, nRow2, nTab );
+        Rectangle aDelRect = pDoc->GetMMRect( nCol1, nRow1, nCol2, nRow2, nTab );
 
         std::unique_ptr<SdrObject*[]> ppObj(new SdrObject*[nObjCount]);
 
-        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -1267,7 +1266,7 @@ void ScDrawLayer::DeleteObjectsInArea( SCTAB nTab, SCCOL nCol1,SCROW nRow1,
             // TODO: detective objects are still deleted, is this desired?
             if (!IsNoteCaption( pObject ))
             {
-                tools::Rectangle aObjRect = pObject->GetCurrentBoundRect();
+                Rectangle aObjRect = pObject->GetCurrentBoundRect();
                 if ( aDelRect.IsInside( aObjRect ) )
                     ppObj[nDelCount++] = pObject;
             }
@@ -1310,13 +1309,13 @@ void ScDrawLayer::DeleteObjectsInSelection( const ScMarkData& rMark )
             {
                 size_t nDelCount = 0;
                 //  Rectangle around the whole selection
-                tools::Rectangle aMarkBound = pDoc->GetMMRect(
+                Rectangle aMarkBound = pDoc->GetMMRect(
                             aMarkRange.aStart.Col(), aMarkRange.aStart.Row(),
                             aMarkRange.aEnd.Col(), aMarkRange.aEnd.Row(), nTab );
 
                 std::unique_ptr<SdrObject*[]> ppObj(new SdrObject*[nObjCount]);
 
-                SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+                SdrObjListIter aIter( *pPage, IM_FLAT );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -1324,7 +1323,7 @@ void ScDrawLayer::DeleteObjectsInSelection( const ScMarkData& rMark )
                     // TODO: detective objects are still deleted, is this desired?
                     if (!IsNoteCaption( pObject ))
                     {
-                        tools::Rectangle aObjRect = pObject->GetCurrentBoundRect();
+                        Rectangle aObjRect = pObject->GetCurrentBoundRect();
                         if ( aMarkBound.IsInside( aObjRect ) )
                         {
                             ScRange aRange = pDoc->GetRange( nTab, aObjRect );
@@ -1353,7 +1352,7 @@ void ScDrawLayer::DeleteObjectsInSelection( const ScMarkData& rMark )
     }
 }
 
-void ScDrawLayer::CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const tools::Rectangle& rRange )
+void ScDrawLayer::CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const Rectangle& rRange )
 {
     //  copy everything in the specified range into the same page (sheet) in the clipboard doc
 
@@ -1363,11 +1362,11 @@ void ScDrawLayer::CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const tools::Rec
         ScDrawLayer* pDestModel = nullptr;
         SdrPage* pDestPage = nullptr;
 
-        SdrObjListIter aIter( *pSrcPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pSrcPage, IM_FLAT );
         SdrObject* pOldObject = aIter.Next();
         while (pOldObject)
         {
-            tools::Rectangle aObjRect = pOldObject->GetCurrentBoundRect();
+            Rectangle aObjRect = pOldObject->GetCurrentBoundRect();
             // do not copy internal objects (detective) and note captions
             if ( rRange.IsInside( aObjRect ) && (pOldObject->GetLayer() != SC_LAYER_INTERN) && !IsNoteCaption( pOldObject ) )
             {
@@ -1457,8 +1456,8 @@ static bool lcl_MoveRanges( ::std::vector< ScRangeList >& rRangesVector, const S
     return bChanged;
 }
 
-void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const tools::Rectangle& rSourceRange,
-                                    const ScAddress& rDestPos, const tools::Rectangle& rDestRange )
+void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const Rectangle& rSourceRange,
+                                    const ScAddress& rDestPos, const Rectangle& rDestRange )
 {
     OSL_ENSURE( pDoc, "ScDrawLayer::CopyFromClip without document" );
     if ( !pDoc )
@@ -1477,7 +1476,7 @@ void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const
                         rDestRange.Left()   > 0 && rDestRange.Right()   > 0 ) ||
                       ( rSourceRange.Left() > 0 && rSourceRange.Right() > 0 &&
                         rDestRange.Left()   < 0 && rDestRange.Right()   < 0 );
-    tools::Rectangle aMirroredSource = rSourceRange;
+    Rectangle aMirroredSource = rSourceRange;
     if ( bMirrorObj )
         MirrorRectRTL( aMirroredSource );
 
@@ -1489,7 +1488,7 @@ void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const
     if ( !pSrcPage || !pDestPage )
         return;
 
-    SdrObjListIter aIter( *pSrcPage, SdrIterMode::Flat );
+    SdrObjListIter aIter( *pSrcPage, IM_FLAT );
     SdrObject* pOldObject = aIter.Next();
 
     ScDocument* pClipDoc = pClipModel->GetDocument();
@@ -1550,7 +1549,7 @@ void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const
 
     while (pOldObject)
     {
-        tools::Rectangle aObjRect = pOldObject->GetCurrentBoundRect();
+        Rectangle aObjRect = pOldObject->GetCurrentBoundRect();
         // do not copy internal objects (detective) and note captions
         if ( rSourceRange.IsInside( aObjRect ) && (pOldObject->GetLayer() != SC_LAYER_INTERN) && !IsNoteCaption( pOldObject ) )
         {
@@ -1685,7 +1684,7 @@ void ScDrawLayer::MirrorRTL( SdrObject* pObj )
         //  Move instead of mirroring:
         //  New start position is negative of old end position
         //  -> move by sum of start and end position
-        tools::Rectangle aObjRect = pObj->GetLogicRect();
+        Rectangle aObjRect = pObj->GetLogicRect();
         Size aMoveSize( -(aObjRect.Left() + aObjRect.Right()), 0 );
         if (bRecording)
             AddCalcUndo( new SdrUndoMoveObj( *pObj, aMoveSize ) );
@@ -1693,7 +1692,7 @@ void ScDrawLayer::MirrorRTL( SdrObject* pObj )
     }
 }
 
-void ScDrawLayer::MirrorRectRTL( tools::Rectangle& rRect )
+void ScDrawLayer::MirrorRectRTL( Rectangle& rRect )
 {
     //  mirror and swap left/right
     long nTemp = rRect.Left();
@@ -1701,9 +1700,9 @@ void ScDrawLayer::MirrorRectRTL( tools::Rectangle& rRect )
     rRect.Right() = -nTemp;
 }
 
-tools::Rectangle ScDrawLayer::GetCellRect( ScDocument& rDoc, const ScAddress& rPos, bool bMergedCell )
+Rectangle ScDrawLayer::GetCellRect( ScDocument& rDoc, const ScAddress& rPos, bool bMergedCell )
 {
-    tools::Rectangle aCellRect;
+    Rectangle aCellRect;
     OSL_ENSURE( ValidColRowTab( rPos.Col(), rPos.Row(), rPos.Tab() ), "ScDrawLayer::GetCellRect - invalid cell address" );
     if( ValidColRowTab( rPos.Col(), rPos.Row(), rPos.Tab() ) )
     {
@@ -1735,7 +1734,7 @@ tools::Rectangle ScDrawLayer::GetCellRect( ScDocument& rDoc, const ScAddress& rP
         aBotRight.X() = static_cast< long >( aBotRight.X() * HMM_PER_TWIPS );
         aBotRight.Y() = static_cast< long >( aBotRight.Y() * HMM_PER_TWIPS );
 
-        aCellRect = tools::Rectangle( aTopLeft, aBotRight );
+        aCellRect = Rectangle( aTopLeft, aBotRight );
         if( rDoc.IsNegativePage( rPos.Tab() ) )
             MirrorRectRTL( aCellRect );
     }
@@ -1777,7 +1776,7 @@ SdrObject* ScDrawLayer::GetNamedObject( const OUString& rName, sal_uInt16 nId, S
         OSL_ENSURE(pPage,"Page ?");
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -1798,7 +1797,8 @@ SdrObject* ScDrawLayer::GetNamedObject( const OUString& rName, sal_uInt16 nId, S
 
 OUString ScDrawLayer::GetNewGraphicName( long* pnCounter ) const
 {
-    OUString aBase = ScGlobal::GetRscString(STR_GRAPHICNAME) + " ";
+    OUString aBase = ScGlobal::GetRscString(STR_GRAPHICNAME);
+    aBase += " ";
 
     bool bThere = true;
     OUString aGraphicName;
@@ -1829,7 +1829,7 @@ void ScDrawLayer::EnsureGraphicNames()
         OSL_ENSURE(pPage,"Page ?");
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
             SdrObject* pObject = aIter.Next();
 
             /* The index passed to GetNewGraphicName() will be set to
@@ -1856,7 +1856,7 @@ namespace
         for( sal_uInt16 i = 0; i < nCount; i++ )
         {
             SdrObjUserData* pData = pObj->GetUserData( i );
-            if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == nId )
+            if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == nId )
                 return pData;
         }
         return nullptr;
@@ -1868,7 +1868,7 @@ namespace
         for( sal_uInt16 i = nCount; i > 0; i-- )
         {
             SdrObjUserData* pData = pObj->GetUserData( i-1 );
-            if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == nId )
+            if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == nId )
                 pObj->DeleteUserData(i-1);
         }
     }
@@ -1914,10 +1914,10 @@ void ScDrawLayer::SetCellAnchoredFromPosition( SdrObject &rObj, const ScDocument
 
 void ScDrawLayer::GetCellAnchorFromPosition( SdrObject &rObj, ScDrawObjData &rAnchor, const ScDocument &rDoc, SCTAB nTab, bool bUseLogicRect, bool bHiddenAsZero )
 {
-    tools::Rectangle aObjRect( bUseLogicRect ? rObj.GetLogicRect() : rObj.GetSnapRect() );
+    Rectangle aObjRect( bUseLogicRect ? rObj.GetLogicRect() : rObj.GetSnapRect() );
     ScRange aRange = rDoc.GetRange( nTab, aObjRect, bHiddenAsZero );
 
-    tools::Rectangle aCellRect;
+    Rectangle aCellRect;
 
     rAnchor.maStart = aRange.aStart;
     aCellRect = rDoc.GetMMRect( aRange.aStart.Col(), aRange.aStart.Row(),
@@ -1941,13 +1941,13 @@ void ScDrawLayer::GetCellAnchorFromPosition( SdrObject &rObj, ScDrawObjData &rAn
 
 void ScDrawLayer::UpdateCellAnchorFromPositionEnd( SdrObject &rObj, ScDrawObjData &rAnchor, const ScDocument &rDoc, SCTAB nTab, bool bUseLogicRect )
 {
-    tools::Rectangle aObjRect(bUseLogicRect ? rObj.GetLogicRect() : rObj.GetSnapRect());
+    Rectangle aObjRect(bUseLogicRect ? rObj.GetLogicRect() : rObj.GetSnapRect());
     ScRange aRange = rDoc.GetRange( nTab, aObjRect );
 
     ScDrawObjData* pAnchor = &rAnchor;
     pAnchor->maEnd = aRange.aEnd;
 
-    tools::Rectangle aCellRect;
+    Rectangle aCellRect;
     aCellRect = rDoc.GetMMRect( aRange.aEnd.Col(), aRange.aEnd.Row(),
       aRange.aEnd.Col(), aRange.aEnd.Row(), aRange.aEnd.Tab() );
     pAnchor->maEndOffset.Y() = aObjRect.Bottom()-aCellRect.Top();
@@ -1984,7 +1984,7 @@ ScDrawObjData* ScDrawLayer::GetNonRotatedObjData( SdrObject* pObj, bool bCreate 
     for( sal_uInt16 i = 0; i < nCount; i++ )
     {
         SdrObjUserData* pData = pObj->GetUserData( i );
-        if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == SC_UD_OBJDATA && ++nFound == 2 )
+        if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == SC_UD_OBJDATA && ++nFound == 2 )
             return static_cast<ScDrawObjData*>(pData);
     }
     if( pObj && bCreate )
@@ -2043,10 +2043,10 @@ ScIMapInfo* ScDrawLayer::GetIMapInfo( SdrObject* pObj )
 IMapObject* ScDrawLayer::GetHitIMapObject( SdrObject* pObj,
                                           const Point& rWinPoint, const vcl::Window& rCmpWnd )
 {
-    const MapMode       aMap100( MapUnit::Map100thMM );
+    const MapMode       aMap100( MAP_100TH_MM );
     MapMode             aWndMode = rCmpWnd.GetMapMode();
     Point               aRelPoint( rCmpWnd.LogicToLogic( rWinPoint, &aWndMode, &aMap100 ) );
-    tools::Rectangle           aLogRect = rCmpWnd.LogicToLogic( pObj->GetLogicRect(), &aWndMode, &aMap100 );
+    Rectangle           aLogRect = rCmpWnd.LogicToLogic( pObj->GetLogicRect(), &aWndMode, &aMap100 );
     ScIMapInfo*         pIMapInfo = GetIMapInfo( pObj );
     IMapObject*         pIMapObj = nullptr;
 
@@ -2074,7 +2074,7 @@ IMapObject* ScDrawLayer::GetHitIMapObject( SdrObject* pObj,
             if ( rGeo.nShearAngle )
                 ShearPoint( aRelPoint, aLogRect.TopLeft(), -rGeo.nTan );
 
-            if ( rGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
+            if ( rGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
                 aGraphSize = rCmpWnd.PixelToLogic( rGraphic.GetPrefSize(),
                                                          aMap100 );
             else

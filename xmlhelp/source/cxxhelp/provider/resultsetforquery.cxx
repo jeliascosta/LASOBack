@@ -34,11 +34,11 @@
 #pragma warning(disable : 4068 4263 4264 4266)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(HAVE_GCC_VISIBILITY_FEATURE)
 #  pragma GCC visibility push (default)
 #endif
 #include <CLucene.h>
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(HAVE_GCC_VISIBILITY_FEATURE)
 #  pragma GCC visibility pop
 #endif
 
@@ -150,7 +150,7 @@ ResultSetForQuery::ResultSetForQuery( const uno::Reference< uno::XComponentConte
                 vector<HitItem>* pQueryResultVector;
                 if( nQueryListSize > 1 )
                 {
-                    pQueryResultVector = new vector<HitItem>;
+                    pQueryResultVector = new vector<HitItem>();
                     aQueryListResultVectorVector.push_back( pQueryResultVector );
                 }
                 else

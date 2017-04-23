@@ -41,11 +41,10 @@ namespace codemaker { namespace cppumaker {
 class Dependencies {
 public:
     /**
-       Flags to distinguish whether one entity depends on another entity because
-       the second is a direct base of the first or an exception thrown by the
-       first.
+       Flags to distinguish whether or not one entity depends on another entity
+       because the second is a direct base of the first.
      */
-    enum Kind { KIND_NORMAL, KIND_BASE, KIND_EXCEPTION };
+    enum Kind { KIND_NO_BASE, KIND_BASE };
 
     typedef std::map< rtl::OUString, Kind > Map;
 
@@ -98,7 +97,7 @@ public:
     bool hasSequenceDependency() const { return m_sequenceDependency; }
 
 private:
-    void insert(rtl::OUString const & name, Kind kind);
+    void insert(rtl::OUString const & name, bool base = false);
 
     rtl::Reference< TypeManager > m_manager;
     Map m_map;

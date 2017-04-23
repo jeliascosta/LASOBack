@@ -21,7 +21,6 @@
 
 #include <config_features.h>
 
-#include <memory>
 #include <vector>
 #include <ucbhelper/content.hxx>
 #include <vcl/button.hxx>
@@ -65,9 +64,11 @@ private:
     VclPtr<SvxJavaClassPathDlg>        m_pPathDlg;
 
 #if HAVE_FEATURE_JAVA
-    std::vector<std::unique_ptr<JavaInfo>> m_parJavaInfo;
-    std::vector<OUString>   m_parParameters;
-    OUString                m_pClassPath;
+    JavaInfo**              m_parJavaInfo;
+    rtl_uString**           m_parParameters;
+    rtl_uString*            m_pClassPath;
+    sal_Int32               m_nInfoSize;
+    sal_Int32               m_nParamSize;
 #endif
     OUString                m_sInstallText;
     OUString                m_sAccessibilityText;
@@ -77,35 +78,35 @@ private:
     VclPtr<CheckBox>               m_pExperimentalCB;
     VclPtr<CheckBox>               m_pMacroCB;
 
-    std::vector<std::unique_ptr<JavaInfo>>
+    ::std::vector< JavaInfo* >
                             m_aAddedInfos;
 
-    rtl::Reference< ::svt::DialogClosedListener >           xDialogListener;
+    css::uno::Reference< ::svt::DialogClosedListener > xDialogListener;
     css::uno::Reference< css::ui::dialogs::XFolderPicker2 > xFolderPicker;
 
-    DECL_LINK(        EnableHdl_Impl, Button*, void);
-    DECL_LINK(        CheckHdl_Impl, SvTreeListBox*, void );
-    DECL_LINK(        SelectHdl_Impl, SvTreeListBox*, void);
-    DECL_LINK(        AddHdl_Impl, Button*, void);
-    DECL_LINK(        ParameterHdl_Impl, Button*, void);
-    DECL_LINK(        ClassPathHdl_Impl, Button*, void);
-    DECL_LINK(        ResetHdl_Impl, Timer *, void);
+    DECL_LINK_TYPED(        EnableHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(        CheckHdl_Impl, SvTreeListBox*, void );
+    DECL_LINK_TYPED(        SelectHdl_Impl, SvTreeListBox*, void);
+    DECL_LINK_TYPED(        AddHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(        ParameterHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(        ClassPathHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(        ResetHdl_Impl, Idle *, void);
 
-    DECL_LINK(        StartFolderPickerHdl, void *, void );
-    DECL_LINK(        DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
+    DECL_LINK_TYPED(        StartFolderPickerHdl, void *, void );
+    DECL_LINK_TYPED(        DialogClosedHdl, css::ui::dialogs::DialogClosedEvent*, void );
 
-    DECL_LINK(        ExpertConfigHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(        ExpertConfigHdl_Impl, Button*, void);
 
     void                    ClearJavaInfo();
     void                    ClearJavaList();
     void                    LoadJREs();
-    void                    AddJRE( JavaInfo const * _pInfo );
+    void                    AddJRE( JavaInfo* _pInfo );
     void                    HandleCheckEntry( SvTreeListEntry* _pEntry );
     void                    AddFolder( const OUString& _rFolder );
 
 public:
     SvxJavaOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxJavaOptionsPage() override;
+    virtual ~SvxJavaOptionsPage();
     virtual void            dispose() override;
 
     static VclPtr<SfxTabPage>      Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -128,44 +129,44 @@ private:
 
     VclPtr<PushButton>             m_pEditBtn;
 
-    DECL_LINK(ModifyHdl_Impl, Edit&, void);
-    DECL_LINK(AssignHdl_Impl, Button*, void);
-    DECL_LINK(SelectHdl_Impl, ListBox&, void);
-    DECL_LINK(DblClickHdl_Impl, ListBox&, void);
-    DECL_LINK(RemoveHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(ModifyHdl_Impl, Edit&, void);
+    DECL_LINK_TYPED(AssignHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(SelectHdl_Impl, ListBox&, void);
+    DECL_LINK_TYPED(DblClickHdl_Impl, ListBox&, void);
+    DECL_LINK_TYPED(RemoveHdl_Impl, Button*, void);
 
-    DECL_LINK(EditHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(EditHdl_Impl, Button*, void);
 
-    void             EnableRemoveButton()
+    inline void             EnableRemoveButton()
                                 { m_pRemoveBtn->Enable(
                                     m_pAssignedList->GetSelectEntryPos()
                                     != LISTBOX_ENTRY_NOTFOUND ); }
 
 
-    void             EnableEditButton()
+    inline void             EnableEditButton()
                                 { m_pEditBtn->Enable(
                                     m_pAssignedList->GetSelectEntryPos()
                                     != LISTBOX_ENTRY_NOTFOUND ); }
 
-    void             DisableAssignButton()
+    inline void             DisableAssignButton()
                                 { m_pAssignBtn->Disable(); }
 
-    void             DisableRemoveButton()
+    inline void             DisableRemoveButton()
                                 { m_pRemoveBtn->Disable(); }
 
-    void             DisableEditButton()
+    inline void             DisableEditButton()
                                 { m_pEditBtn->Disable(); }
 
 
 public:
     explicit SvxJavaParameterDlg( vcl::Window* pParent );
-    virtual ~SvxJavaParameterDlg() override;
+    virtual ~SvxJavaParameterDlg();
     virtual void dispose() override;
 
     virtual short           Execute() override;
 
-    std::vector< OUString > GetParameters() const;
-    void SetParameters( std::vector< OUString > const & rParams );
+    css::uno::Sequence< OUString > GetParameters() const;
+    void SetParameters( css::uno::Sequence< OUString >& rParams );
     void DisableButtons();
     void EditParameter();
 };
@@ -182,24 +183,24 @@ private:
 
     OUString                m_sOldPath;
 
-    DECL_LINK(AddArchiveHdl_Impl, Button*, void);
-    DECL_LINK(AddPathHdl_Impl, Button*, void);
-    DECL_LINK(RemoveHdl_Impl, Button*, void);
-    DECL_LINK(SelectHdl_Impl, ListBox&, void);
+    DECL_LINK_TYPED(AddArchiveHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AddPathHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(RemoveHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(SelectHdl_Impl, ListBox&, void);
 
     bool                    IsPathDuplicate( const OUString& _rPath );
-    void             EnableRemoveButton()
+    inline void             EnableRemoveButton()
                                 { m_pRemoveBtn->Enable(
                                     m_pPathList->GetSelectEntryPos() != LISTBOX_ENTRY_NOTFOUND ); }
 
 
 public:
     explicit SvxJavaClassPathDlg( vcl::Window* pParent );
-    virtual ~SvxJavaClassPathDlg() override;
+    virtual ~SvxJavaClassPathDlg();
     virtual void            dispose() override;
 
-    const OUString&  GetOldPath() const { return m_sOldPath; }
-    void             SetFocus() { m_pPathList->GrabFocus(); }
+    inline const OUString&  GetOldPath() const { return m_sOldPath; }
+    inline void             SetFocus() { m_pPathList->GrabFocus(); }
 
     OUString                GetClassPath() const;
     void                    SetClassPath( const OUString& _rPath );

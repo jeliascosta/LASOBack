@@ -61,9 +61,14 @@ OCatalog::~OCatalog()
     delete m_pUsers;
 }
 
+void SAL_CALL OCatalog::acquire() throw()
+{
+    OCatalog_BASE::acquire();
+}
+
 void SAL_CALL OCatalog::release() throw()
 {
-    release_ChildImpl();
+    relase_ChildImpl();
 }
 
 
@@ -85,7 +90,7 @@ void SAL_CALL OCatalog::disposing()
 }
 
 // XTablesSupplier
-Reference< XNameAccess > SAL_CALL OCatalog::getTables(  )
+Reference< XNameAccess > SAL_CALL OCatalog::getTables(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OCatalog_BASE::rBHelper.bDisposed);
@@ -109,7 +114,7 @@ Reference< XNameAccess > SAL_CALL OCatalog::getTables(  )
 }
 
 // XViewsSupplier
-Reference< XNameAccess > SAL_CALL OCatalog::getViews(  )
+Reference< XNameAccess > SAL_CALL OCatalog::getViews(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OCatalog_BASE::rBHelper.bDisposed);
@@ -133,7 +138,7 @@ Reference< XNameAccess > SAL_CALL OCatalog::getViews(  )
 }
 
 // XUsersSupplier
-Reference< XNameAccess > SAL_CALL OCatalog::getUsers(  )
+Reference< XNameAccess > SAL_CALL OCatalog::getUsers(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OCatalog_BASE::rBHelper.bDisposed);
@@ -157,7 +162,7 @@ Reference< XNameAccess > SAL_CALL OCatalog::getUsers(  )
 }
 
 // XGroupsSupplier
-Reference< XNameAccess > SAL_CALL OCatalog::getGroups(  )
+Reference< XNameAccess > SAL_CALL OCatalog::getGroups(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OCatalog_BASE::rBHelper.bDisposed);
@@ -214,7 +219,7 @@ void OCatalog::fillNames(Reference< XResultSet >& _xResult,TStringVector& _rName
 
 void ODescriptor::construct()
 {
-    sal_Int32 nAttrib = isNew() ? 0 : css::beans::PropertyAttribute::READONLY;
+    sal_Int32 nAttrib = isNew() ? 0 : ::com::sun::star::beans::PropertyAttribute::READONLY;
     registerProperty(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_NAME), PROPERTY_ID_NAME ,nAttrib,&m_Name,::cppu::UnoType<OUString>::get());
 }
 

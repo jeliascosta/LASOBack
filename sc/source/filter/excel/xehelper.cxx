@@ -87,7 +87,7 @@ void XclExpProgressBar::Initialize()
             SCCOL nLastUsedScCol;
             SCROW nLastUsedScRow;
             rDoc.GetTableArea( nScTab, nLastUsedScCol, nLastUsedScRow );
-            std::size_t nSegSize = static_cast< std::size_t >( nLastUsedScRow + 1 );
+            sal_Size nSegSize = static_cast< sal_Size >( nLastUsedScRow + 1 );
             maSubSegRowCreate[ nScTab ] = mpSubRowCreate->AddSegment( nSegSize );
         }
     }
@@ -252,7 +252,7 @@ void XclExpAddressConverter::ValidateRangeList( ScRangeList& rScRanges, bool bWa
     {
         ScRange* pScRange = rScRanges[ --nRange ];
         if( !CheckRange( *pScRange, bWarn ) )
-            rScRanges.Remove(nRange);
+            delete rScRanges.Remove(nRange);
     }
 }
 
@@ -867,7 +867,7 @@ void XclExpHFConverter::AppendPortion( const EditTextObject* pTextObj, sal_Unico
 
     if( !aText.isEmpty() )
     {
-        maHFString += "&" + OUStringLiteral1(cPortionCode) + aText;
+        maHFString += "&" + OUString(cPortionCode) + aText;
         mnTotalHeight = ::std::max( mnTotalHeight, nHeight );
     }
 }
@@ -964,8 +964,8 @@ OUString lclEncodeDosUrl(
 
 OUString XclExpUrlHelper::EncodeUrl( const XclExpRoot& rRoot, const OUString& rAbsUrl, const OUString* pTableName )
 {
-    OUString aDosUrl = INetURLObject(rAbsUrl).getFSysPath(FSysStyle::Dos);
-    OUString aDosBase = INetURLObject(rRoot.GetBasePath()).getFSysPath(FSysStyle::Dos);
+    OUString aDosUrl = INetURLObject(rAbsUrl).getFSysPath(INetURLObject::FSYS_DOS);
+    OUString aDosBase = INetURLObject(rRoot.GetBasePath()).getFSysPath(INetURLObject::FSYS_DOS);
     return lclEncodeDosUrl(rRoot.GetBiff(), aDosUrl, aDosBase, pTableName);
 }
 
@@ -996,7 +996,7 @@ void XclExpCachedMatrix::GetDimensions( SCSIZE & nCols, SCSIZE & nRows ) const
     OSL_ENSURE( nCols <= 256, "XclExpCachedMatrix::GetDimensions - too many columns" );
 }
 
-std::size_t XclExpCachedMatrix::GetSize() const
+sal_Size XclExpCachedMatrix::GetSize() const
 {
     SCSIZE nCols, nRows;
 
@@ -1027,8 +1027,7 @@ void XclExpCachedMatrix::Save( XclExpStream& rStrm ) const
         {
             ScMatrixValue nMatVal = mrMatrix.Get( nCol, nRow );
 
-            FormulaError nScError;
-            if( ScMatValType::Empty == nMatVal.nType )
+            if( SC_MATVAL_EMPTY == nMatVal.nType )
             {
                 rStrm.SetSliceSize( 9 );
                 rStrm << EXC_CACHEDVAL_EMPTY;
@@ -1040,14 +1039,14 @@ void XclExpCachedMatrix::Save( XclExpStream& rStrm ) const
                 rStrm.SetSliceSize( 6 );
                 rStrm << EXC_CACHEDVAL_STRING << aStr;
             }
-            else if( ScMatValType::Boolean == nMatVal.nType )
+            else if( SC_MATVAL_BOOLEAN == nMatVal.nType )
             {
                 sal_Int8 nBool = sal_Int8(nMatVal.GetBoolean());
                 rStrm.SetSliceSize( 9 );
                 rStrm << EXC_CACHEDVAL_BOOL << nBool;
                 rStrm.WriteZeroBytes( 7 );
             }
-            else if( (nScError = nMatVal.GetError()) != FormulaError::NONE )
+            else if( sal_uInt16 nScError = nMatVal.GetError() )
             {
                 sal_Int8 nError ( XclTools::GetXclErrorCode( nScError ) );
                 rStrm.SetSliceSize( 9 );

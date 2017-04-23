@@ -33,13 +33,12 @@ private:
     sal_uInt16      nSelItem;
     OUString        maStrUnit[CELL_LINE_STYLE_ENTRIES];
 public:
-    explicit CellLineStyleValueSet(vcl::Window* pParent);
-    virtual ~CellLineStyleValueSet() override;
+    CellLineStyleValueSet( vcl::Window* pParent, const ResId& rResId);
+    virtual ~CellLineStyleValueSet();
     virtual void dispose() override;
 
     void SetUnit(const OUString* str);
     void SetSelItem(sal_uInt16 nSel);
-    virtual Size GetOptimalSize() const override;
     virtual void UserDraw( const UserDrawEvent& rUDEvt ) override;
 };
 

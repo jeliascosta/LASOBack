@@ -20,7 +20,6 @@
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/text/XParagraphAppend.hpp>
 #include <com/sun/star/text/XRelativeTextContentRemove.hpp>
-#include <o3tl/any.hxx>
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlnmspe.hxx>
 #include "XMLTextHeaderFooterContext.hxx"
@@ -59,7 +58,7 @@ XMLTextHeaderFooterContext::XMLTextHeaderFooterContext( SvXMLImport& rImport, sa
         Any aAny;
 
         aAny = xPropSet->getPropertyValue( sOn );
-        bool bOn = *o3tl::doAccess<bool>(aAny);
+        bool bOn = *static_cast<sal_Bool const *>(aAny.getValue());
 
         if( bOn )
         {
@@ -125,7 +124,7 @@ SvXMLImportContext *XMLTextHeaderFooterContext::CreateChildContext(
             else
             {
                 aAny = xPropSet->getPropertyValue( sOn );
-                bool bOn = *o3tl::doAccess<bool>(aAny);
+                bool bOn = *static_cast<sal_Bool const *>(aAny.getValue());
 
                 if( !bOn )
                 {
@@ -139,7 +138,7 @@ SvXMLImportContext *XMLTextHeaderFooterContext::CreateChildContext(
 
                 // If a header or footer is not shared, share it now.
                 aAny = xPropSet->getPropertyValue( sShareContent );
-                bool bShared = *o3tl::doAccess<bool>(aAny);
+                bool bShared = *static_cast<sal_Bool const *>(aAny.getValue());
                 if( !bShared )
                 {
                     xPropSet->setPropertyValue( sShareContent, Any(true) );

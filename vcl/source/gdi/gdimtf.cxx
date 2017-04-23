@@ -18,7 +18,6 @@
  */
 
 #include <rtl/crc.h>
-#include <cstdlib>
 #include <memory>
 #include <tools/stream.hxx>
 #include <tools/vcompat.hxx>
@@ -53,7 +52,7 @@
 
 using namespace com::sun::star;
 
-#define GAMMA( _def_cVal, _def_InvGamma )   ((sal_uInt8)MinMax(FRound(pow( _def_cVal/255.0,_def_InvGamma)*255.0),0,255))
+#define GAMMA( _def_cVal, _def_InvGamma )   ((sal_uInt8)MinMax(FRound(pow( _def_cVal/255.0,_def_InvGamma)*255.0),0L,255L))
 
 struct ImplColAdjustParam
 {
@@ -345,10 +344,10 @@ void GDIMetaFile::Play( OutputDevice* pOut, size_t nPos )
         // recent add-ons. Newer metafiles must of course explicitly set
         // those states.
         pOut->Push( PushFlags::TEXTLAYOUTMODE|PushFlags::TEXTLANGUAGE );
-        pOut->SetLayoutMode( ComplexTextLayoutFlags::Default );
+        pOut->SetLayoutMode( TEXT_LAYOUT_DEFAULT );
         pOut->SetDigitLanguage( 0 );
 
-        SAL_INFO( "vcl.gdi", "GDIMetaFile::Play on device of size: " << pOut->GetOutputSizePixel().Width() << " " << pOut->GetOutputSizePixel().Height());
+        OSL_TRACE("GDIMetaFile::Play on device of size: %ld x %ld", pOut->GetOutputSizePixel().Width(), pOut->GetOutputSizePixel().Height());
 
         if( !ImplPlayWithRenderer( pOut, Point(0,0), pOut->GetOutputSize() ) ) {
             size_t  i  = 0;
@@ -356,7 +355,15 @@ void GDIMetaFile::Play( OutputDevice* pOut, size_t nPos )
             {
                 if( pAction )
                 {
-                    pAction->Execute( pOut );
+                    if( pAction->GetType() == MetaActionType::COMMENT &&
+                        static_cast<MetaCommentAction*>(pAction)->GetComment() == "DELEGATE_PLUGGABLE_RENDERER" )
+                    {
+                        ImplDelegate2PluggableRenderer(static_cast<MetaCommentAction*>(pAction), pOut);
+                    }
+                    else
+                    {
+                        pAction->Execute( pOut );
+                    }
 
                     // flush output from time to time
                     if( i++ > nSyncCount )
@@ -420,7 +427,7 @@ bool GDIMetaFile::ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, S
                 BitmapEx aBitmapEx;
                 if( aBitmapEx.Create( xBitmapCanvas, aSize ) )
                 {
-                    if ( pOut->GetMapMode() == MapUnit::MapPixel )
+                    if ( pOut->GetMapMode() == MAP_PIXEL )
                         pOut->DrawBitmapEx( rPos, aBitmapEx );
                     else
                         pOut->DrawBitmapEx( rPos, rLogicDestSize, aBitmapEx );
@@ -436,11 +443,82 @@ bool GDIMetaFile::ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, S
     catch (const uno::Exception& e)
     {
         // ignore errors, no way of reporting them here
-        SAL_WARN("vcl.gdi",
+        SAL_WARN("vcl",
             "GDIMetaFile::ImplPlayWithRenderer: exception: " << e.Message);
     }
 
     return false;
+}
+
+void GDIMetaFile::ImplDelegate2PluggableRenderer( const MetaCommentAction* pAct, OutputDevice* pOut )
+{
+    OSL_ASSERT( pAct->GetComment() == "DELEGATE_PLUGGABLE_RENDERER" );
+
+    // read payload - string of service name, followed by raw render input
+    const sal_uInt8* pData = pAct->GetData();
+    const sal_uInt8* const pEndData = pData + pAct->GetDataSize();
+    if( !pData )
+        return;
+
+    OUStringBuffer aBuffer;
+    while( pData<pEndData && *pData )
+        aBuffer.append(static_cast<sal_Unicode>(*pData++));
+    const OUString aRendererServiceName=aBuffer.makeStringAndClear();
+    ++pData;
+
+    while( pData<pEndData && *pData )
+        aBuffer.append(static_cast<sal_Unicode>(*pData++));
+    const OUString aGraphicServiceName=aBuffer.makeStringAndClear();
+    ++pData;
+
+    uno::Reference< lang::XMultiServiceFactory > xFactory = comphelper::getProcessServiceFactory();
+    if( pData<pEndData )
+    {
+        try
+        {
+            // instantiate render service
+            uno::Sequence<uno::Any> aRendererArgs(1);
+            aRendererArgs[0] = makeAny(uno::Reference<awt::XGraphics>(pOut->CreateUnoGraphics()));
+            uno::Reference<graphic::XGraphicRenderer> xRenderer(
+                xFactory->createInstanceWithArguments(
+                    aRendererServiceName,
+                    aRendererArgs),
+                uno::UNO_QUERY );
+
+            // instantiate graphic service
+            uno::Reference<graphic::XGraphic> xGraphic(
+                xFactory->createInstance(
+                    aGraphicServiceName),
+                uno::UNO_QUERY );
+
+            uno::Reference<lang::XInitialization> xInit(
+                xGraphic, uno::UNO_QUERY);
+
+            if(xGraphic.is() && xRenderer.is() && xInit.is())
+            {
+                // delay initialization of XGraphic, to only expose
+                // XGraphic-generating services to arbitrary binary data
+                uno::Sequence< sal_Int8 > aSeq(
+                    reinterpret_cast<sal_Int8 const *>(pData), pEndData-pData );
+                uno::Sequence<uno::Any> aGraphicsArgs(1);
+                aGraphicsArgs[0] = makeAny(aSeq);
+                xInit->initialize(aGraphicsArgs);
+
+                xRenderer->render(xGraphic);
+            }
+        }
+        catch (const uno::RuntimeException&)
+        {
+            // runtime errors are fatal
+            throw;
+        }
+        catch (const uno::Exception& e)
+        {
+            // ignore errors, no way of reporting them here
+            SAL_WARN("vcl", "GDIMetaFile::ImplDelegate2PluggableRenderer:"
+                    " exception: " << e.Message);
+        }
+    }
 }
 
 void GDIMetaFile::Play( OutputDevice* pOut, const Point& rPos,
@@ -498,7 +576,7 @@ void GDIMetaFile::Play( OutputDevice* pOut, const Point& rPos,
         // This is necessary, since old metafiles don't even know of these
         // recent add-ons. Newer metafiles must of course explicitly set
         // those states.
-        pOut->SetLayoutMode( ComplexTextLayoutFlags::Default );
+        pOut->SetLayoutMode( TEXT_LAYOUT_DEFAULT );
         pOut->SetDigitLanguage( 0 );
 
         Play( pOut );
@@ -612,7 +690,7 @@ bool GDIMetaFile::Mirror( BmpMirrorFlags nMirrorFlags )
 
     if( nMirrorFlags & BmpMirrorFlags::Horizontal )
     {
-        nMoveX = std::abs( aOldPrefSize.Width() ) - 1;
+        nMoveX = SAL_ABS( aOldPrefSize.Width() ) - 1;
         fScaleX = -1.0;
     }
     else
@@ -623,7 +701,7 @@ bool GDIMetaFile::Mirror( BmpMirrorFlags nMirrorFlags )
 
     if( nMirrorFlags & BmpMirrorFlags::Vertical )
     {
-        nMoveY = std::abs( aOldPrefSize.Height() ) - 1;
+        nMoveY = SAL_ABS( aOldPrefSize.Height() ) - 1;
         fScaleY = -1.0;
     }
     else
@@ -707,7 +785,7 @@ void GDIMetaFile::Move( long nX, long nY, long nDPIX, long nDPIY )
             ( MetaActionType::POP == nType ) )
         {
             pModAct->Execute( aMapVDev.get() );
-            if( aMapVDev->GetMapMode().GetMapUnit() == MapUnit::MapPixel )
+            if( aMapVDev->GetMapMode().GetMapUnit() == MAP_PIXEL )
             {
                 aOffset = aMapVDev->LogicToPixel( aBaseOffset, GetPrefMapMode() );
                 MapMode aMap( aMapVDev->GetMapMode() );
@@ -748,9 +826,9 @@ void GDIMetaFile::Scale( const Fraction& rScaleX, const Fraction& rScaleY )
     Scale( (double) rScaleX, (double) rScaleY );
 }
 
-void GDIMetaFile::Clip( const tools::Rectangle& i_rClipRect )
+void GDIMetaFile::Clip( const Rectangle& i_rClipRect )
 {
-    tools::Rectangle aCurRect( i_rClipRect );
+    Rectangle aCurRect( i_rClipRect );
     ScopedVclPtrInstance< VirtualDevice > aMapVDev;
 
     aMapVDev->EnableOutput( false );
@@ -837,8 +915,8 @@ void GDIMetaFile::ImplAddGradientEx( GDIMetaFile&         rMtf,
 
 void GDIMetaFile::Rotate( long nAngle10 )
 {
-    nAngle10 %= 3600;
-    nAngle10 = ( nAngle10 < 0 ) ? ( 3599 + nAngle10 ) : nAngle10;
+    nAngle10 %= 3600L;
+    nAngle10 = ( nAngle10 < 0L ) ? ( 3599L + nAngle10 ) : nAngle10;
 
     if( nAngle10 )
     {
@@ -847,7 +925,7 @@ void GDIMetaFile::Rotate( long nAngle10 )
         const double    fAngle = F_PI1800 * nAngle10;
         const double    fSin = sin( fAngle );
         const double    fCos = cos( fAngle );
-        tools::Rectangle       aRect=tools::Rectangle( Point(), GetPrefSize() );
+        Rectangle       aRect=Rectangle( Point(), GetPrefSize() );
         tools::Polygon aPoly( aRect );
 
         aPoly.Rotate( Point(), fSin, fCos );
@@ -855,7 +933,7 @@ void GDIMetaFile::Rotate( long nAngle10 )
         aMapVDev->EnableOutput( false );
         aMapVDev->SetMapMode( GetPrefMapMode() );
 
-        const tools::Rectangle aNewBound( aPoly.GetBoundRect() );
+        const Rectangle aNewBound( aPoly.GetBoundRect() );
 
         const Point aOrigin( GetPrefMapMode().GetOrigin().X(), GetPrefMapMode().GetOrigin().Y() );
         const Size  aOffset( -aNewBound.Left(), -aNewBound.Top() );
@@ -921,7 +999,7 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::ARC ):
                 {
                     MetaArcAction*  pAct = static_cast<MetaArcAction*>(pAction);
-                    const tools::Polygon aArcPoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), PolyStyle::Arc );
+                    const tools::Polygon aArcPoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), POLY_ARC );
 
                     aMtf.AddAction( new MetaPolygonAction( ImplGetRotatedPolygon( aArcPoly, aRotAnchor, aRotOffset, fSin, fCos ) ) );
                 }
@@ -930,7 +1008,7 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::PIE ):
                 {
                     MetaPieAction*  pAct = static_cast<MetaPieAction*>(pAction);
-                    const tools::Polygon aPiePoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), PolyStyle::Pie );
+                    const tools::Polygon aPiePoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), POLY_PIE );
 
                     aMtf.AddAction( new MetaPolygonAction( ImplGetRotatedPolygon( aPiePoly, aRotAnchor, aRotOffset, fSin, fCos ) ) );
                 }
@@ -939,7 +1017,7 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::CHORD ):
                 {
                     MetaChordAction*    pAct = static_cast<MetaChordAction*>(pAction);
-                    const tools::Polygon aChordPoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), PolyStyle::Chord );
+                    const tools::Polygon aChordPoly( pAct->GetRect(), pAct->GetStartPoint(), pAct->GetEndPoint(), POLY_CHORD );
 
                     aMtf.AddAction( new MetaPolygonAction( ImplGetRotatedPolygon( aChordPoly, aRotAnchor, aRotOffset, fSin, fCos ) ) );
                 }
@@ -1001,8 +1079,8 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::BMPSCALE ):
                 {
                     MetaBmpScaleAction* pAct = static_cast<MetaBmpScaleAction*>(pAction);
-                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle           aBmpRect( aBmpPoly.GetBoundRect() );
+                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle           aBmpRect( aBmpPoly.GetBoundRect() );
                     BitmapEx            aBmpEx( pAct->GetBitmap() );
 
                     aBmpEx.Rotate( nAngle10, Color( COL_TRANSPARENT ) );
@@ -1014,11 +1092,11 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::BMPSCALEPART ):
                 {
                     MetaBmpScalePartAction* pAct = static_cast<MetaBmpScalePartAction*>(pAction);
-                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetDestPoint(), pAct->GetDestSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle               aBmpRect( aBmpPoly.GetBoundRect() );
+                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetDestPoint(), pAct->GetDestSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle               aBmpRect( aBmpPoly.GetBoundRect() );
                     BitmapEx                aBmpEx( pAct->GetBitmap() );
 
-                    aBmpEx.Crop( tools::Rectangle( pAct->GetSrcPoint(), pAct->GetSrcSize() ) );
+                    aBmpEx.Crop( Rectangle( pAct->GetSrcPoint(), pAct->GetSrcSize() ) );
                     aBmpEx.Rotate( nAngle10, Color( COL_TRANSPARENT ) );
 
                     aMtf.AddAction( new MetaBmpExScaleAction( aBmpRect.TopLeft(), aBmpRect.GetSize(), aBmpEx ) );
@@ -1028,8 +1106,8 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::BMPEXSCALE ):
                 {
                     MetaBmpExScaleAction*   pAct = static_cast<MetaBmpExScaleAction*>(pAction);
-                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle               aBmpRect( aBmpPoly.GetBoundRect() );
+                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle               aBmpRect( aBmpPoly.GetBoundRect() );
                     BitmapEx                aBmpEx( pAct->GetBitmapEx() );
 
                     aBmpEx.Rotate( nAngle10, Color( COL_TRANSPARENT ) );
@@ -1041,11 +1119,11 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 case( MetaActionType::BMPEXSCALEPART ):
                 {
                     MetaBmpExScalePartAction*   pAct = static_cast<MetaBmpExScalePartAction*>(pAction);
-                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetDestPoint(), pAct->GetDestSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle                   aBmpRect( aBmpPoly.GetBoundRect() );
+                    tools::Polygon aBmpPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetDestPoint(), pAct->GetDestSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle                   aBmpRect( aBmpPoly.GetBoundRect() );
                     BitmapEx                    aBmpEx( pAct->GetBitmapEx() );
 
-                    aBmpEx.Crop( tools::Rectangle( pAct->GetSrcPoint(), pAct->GetSrcSize() ) );
+                    aBmpEx.Crop( Rectangle( pAct->GetSrcPoint(), pAct->GetSrcSize() ) );
                     aBmpEx.Rotate( nAngle10, Color( COL_TRANSPARENT ) );
 
                     aMtf.AddAction( new MetaBmpExScaleAction( aBmpRect.TopLeft(), aBmpRect.GetSize(), aBmpEx ) );
@@ -1182,8 +1260,8 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 {
                     MetaFloatTransparentAction* pAct = static_cast<MetaFloatTransparentAction*>(pAction);
                     GDIMetaFile                 aTransMtf( pAct->GetGDIMetaFile() );
-                    tools::Polygon aMtfPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle                   aMtfRect( aMtfPoly.GetBoundRect() );
+                    tools::Polygon aMtfPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle                   aMtfRect( aMtfPoly.GetBoundRect() );
 
                     aTransMtf.Rotate( nAngle10 );
                     aMtf.AddAction( new MetaFloatTransparentAction( aTransMtf, aMtfRect.TopLeft(), aMtfRect.GetSize(),
@@ -1195,8 +1273,8 @@ void GDIMetaFile::Rotate( long nAngle10 )
                 {
                     MetaEPSAction*  pAct = static_cast<MetaEPSAction*>(pAction);
                     GDIMetaFile     aEPSMtf( pAct->GetSubstitute() );
-                    tools::Polygon aEPSPoly( ImplGetRotatedPolygon( tools::Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
-                    tools::Rectangle       aEPSRect( aEPSPoly.GetBoundRect() );
+                    tools::Polygon aEPSPoly( ImplGetRotatedPolygon( Rectangle( pAct->GetPoint(), pAct->GetSize() ), aRotAnchor, aRotOffset, fSin, fCos ) );
+                    Rectangle       aEPSRect( aEPSPoly.GetBoundRect() );
 
                     aEPSMtf.Rotate( nAngle10 );
                     aMtf.AddAction( new MetaEPSAction( aEPSRect.TopLeft(), aEPSRect.GetSize(),
@@ -1298,12 +1376,12 @@ void GDIMetaFile::Rotate( long nAngle10 )
     }
 }
 
-static void ImplActionBounds( tools::Rectangle& o_rOutBounds,
-                              const tools::Rectangle& i_rInBounds,
-                              const std::vector<tools::Rectangle>& i_rClipStack,
-                              tools::Rectangle* o_pHairline )
+static void ImplActionBounds( Rectangle& o_rOutBounds,
+                              const Rectangle& i_rInBounds,
+                              const std::vector<Rectangle>& i_rClipStack,
+                              Rectangle* o_pHairline )
 {
-    tools::Rectangle aBounds( i_rInBounds );
+    Rectangle aBounds( i_rInBounds );
     if( ! i_rInBounds.IsEmpty() && ! i_rClipStack.empty() && ! i_rClipStack.back().IsEmpty() )
         aBounds.Intersection( i_rClipStack.back() );
     if( ! aBounds.IsEmpty() )
@@ -1323,7 +1401,7 @@ static void ImplActionBounds( tools::Rectangle& o_rOutBounds,
     }
 }
 
-tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::Rectangle* pHairline ) const
+Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, Rectangle* pHairline ) const
 {
     GDIMetaFile     aMtf;
     ScopedVclPtrInstance< VirtualDevice > aMapVDev(  i_rReference  );
@@ -1331,13 +1409,13 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
     aMapVDev->EnableOutput( false );
     aMapVDev->SetMapMode( GetPrefMapMode() );
 
-    std::vector<tools::Rectangle> aClipStack( 1, tools::Rectangle() );
+    std::vector<Rectangle> aClipStack( 1, Rectangle() );
     std::vector<PushFlags> aPushFlagStack;
 
-    tools::Rectangle aBound;
+    Rectangle aBound;
 
     if(pHairline)
-        *pHairline = tools::Rectangle();
+        *pHairline = Rectangle();
 
     const sal_uLong nCount(GetActionSize());
 
@@ -1345,7 +1423,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
     {
         MetaAction* pAction = GetAction(a);
         const MetaActionType nActionType = pAction->GetType();
-        tools::Rectangle* pUseHairline = (pHairline && aMapVDev->IsLineColor()) ? pHairline : nullptr;
+        Rectangle* pUseHairline = (pHairline && aMapVDev->IsLineColor()) ? pHairline : nullptr;
 
         switch( nActionType )
         {
@@ -1353,7 +1431,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         {
             MetaPixelAction* pAct = static_cast<MetaPixelAction*>(pAction);
             ImplActionBounds( aBound,
-                              tools::Rectangle( OutputDevice::LogicToLogic( pAct->GetPoint(), aMapVDev->GetMapMode(), GetPrefMapMode() ),
+                              Rectangle( OutputDevice::LogicToLogic( pAct->GetPoint(), aMapVDev->GetMapMode(), GetPrefMapMode() ),
                                        aMapVDev->PixelToLogic( Size( 1, 1 ), GetPrefMapMode() ) ),
                              aClipStack, pUseHairline );
         }
@@ -1363,7 +1441,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         {
             MetaPointAction* pAct = static_cast<MetaPointAction*>(pAction);
             ImplActionBounds( aBound,
-                              tools::Rectangle( OutputDevice::LogicToLogic( pAct->GetPoint(), aMapVDev->GetMapMode(), GetPrefMapMode() ),
+                              Rectangle( OutputDevice::LogicToLogic( pAct->GetPoint(), aMapVDev->GetMapMode(), GetPrefMapMode() ),
                                        aMapVDev->PixelToLogic( Size( 1, 1 ), GetPrefMapMode() ) ),
                              aClipStack, pUseHairline );
         }
@@ -1373,7 +1451,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         {
             MetaLineAction* pAct = static_cast<MetaLineAction*>(pAction);
             Point aP1( pAct->GetStartPoint() ), aP2( pAct->GetEndPoint() );
-            tools::Rectangle aRect( aP1, aP2 );
+            Rectangle aRect( aP1, aP2 );
             aRect.Justify();
 
             if(pUseHairline)
@@ -1439,7 +1517,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::POLYLINE ):
         {
             MetaPolyLineAction* pAct = static_cast<MetaPolyLineAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolygon().GetBoundRect() );
 
             if(pUseHairline)
             {
@@ -1456,7 +1534,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::POLYGON ):
         {
             MetaPolygonAction* pAct = static_cast<MetaPolygonAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolygon().GetBoundRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, pUseHairline );
         }
         break;
@@ -1464,7 +1542,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::POLYPOLYGON ):
         {
             MetaPolyPolygonAction* pAct = static_cast<MetaPolyPolygonAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, pUseHairline );
         }
         break;
@@ -1472,7 +1550,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::TEXT ):
         {
             MetaTextAction* pAct = static_cast<MetaTextAction*>(pAction);
-            tools::Rectangle aRect;
+            Rectangle aRect;
             // hdu said base = index
             aMapVDev->GetTextBoundRect( aRect, pAct->GetText(), pAct->GetIndex(), pAct->GetIndex(), pAct->GetLen() );
             Point aPt( pAct->GetPoint() );
@@ -1484,7 +1562,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::TEXTARRAY ):
         {
             MetaTextArrayAction* pAct = static_cast<MetaTextArrayAction*>(pAction);
-            tools::Rectangle aRect;
+            Rectangle aRect;
             // hdu said base = index
             aMapVDev->GetTextBoundRect( aRect, pAct->GetText(), pAct->GetIndex(), pAct->GetIndex(), pAct->GetLen(),
                                        0, pAct->GetDXArray() );
@@ -1497,7 +1575,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::STRETCHTEXT ):
         {
             MetaStretchTextAction* pAct = static_cast<MetaStretchTextAction*>(pAction);
-            tools::Rectangle aRect;
+            Rectangle aRect;
             // hdu said base = index
             aMapVDev->GetTextBoundRect( aRect, pAct->GetText(), pAct->GetIndex(), pAct->GetIndex(), pAct->GetLen(),
                                        pAct->GetWidth() );
@@ -1514,7 +1592,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
             static const sal_Unicode pStr[] = { 0xc4, 0x67, 0 };
             OUString aStr( pStr );
 
-            tools::Rectangle aRect;
+            Rectangle aRect;
             aMapVDev->GetTextBoundRect( aRect, aStr, 0, 0, aStr.getLength() );
             Point aPt( pAct->GetStartPoint() );
             aRect.Move( aPt.X(), aPt.Y() );
@@ -1526,7 +1604,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMPSCALE ):
         {
             MetaBmpScaleAction* pAct = static_cast<MetaBmpScaleAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
+            Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1534,7 +1612,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMPSCALEPART ):
         {
             MetaBmpScalePartAction* pAct = static_cast<MetaBmpScalePartAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
+            Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1542,7 +1620,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMPEXSCALE ):
         {
             MetaBmpExScaleAction*   pAct = static_cast<MetaBmpExScaleAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
+            Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1550,7 +1628,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMPEXSCALEPART ):
         {
             MetaBmpExScalePartAction*   pAct = static_cast<MetaBmpExScalePartAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
+            Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1558,7 +1636,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::GRADIENT ):
         {
             MetaGradientAction* pAct = static_cast<MetaGradientAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetRect() );
+            Rectangle aRect( pAct->GetRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1566,7 +1644,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::GRADIENTEX ):
         {
             MetaGradientExAction* pAct = static_cast<MetaGradientExAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1580,7 +1658,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::HATCH ):
         {
             MetaHatchAction*    pAct = static_cast<MetaHatchAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1588,7 +1666,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::Transparent ):
         {
             MetaTransparentAction* pAct = static_cast<MetaTransparentAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
+            Rectangle aRect( pAct->GetPolyPolygon().GetBoundRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1598,7 +1676,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
             MetaFloatTransparentAction* pAct = static_cast<MetaFloatTransparentAction*>(pAction);
             // MetaFloatTransparentAction is defined limiting its content Metafile
             // to its geometry definition(Point, Size), so use these directly
-            const tools::Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
+            const Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1606,7 +1684,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::EPS ):
         {
             MetaEPSAction*  pAct = static_cast<MetaEPSAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
+            Rectangle aRect( pAct->GetPoint(), pAct->GetSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1617,14 +1695,14 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
             if( pAct->IsClipping() )
                 aClipStack.back() = OutputDevice::LogicToLogic( pAct->GetRegion().GetBoundRect(), aMapVDev->GetMapMode(), GetPrefMapMode() );
             else
-                aClipStack.back() = tools::Rectangle();
+                aClipStack.back() = Rectangle();
         }
         break;
 
         case( MetaActionType::ISECTRECTCLIPREGION ):
         {
             MetaISectRectClipRegionAction* pAct = static_cast<MetaISectRectClipRegionAction*>(pAction);
-            tools::Rectangle aRect( OutputDevice::LogicToLogic( pAct->GetRect(), aMapVDev->GetMapMode(), GetPrefMapMode() ) );
+            Rectangle aRect( OutputDevice::LogicToLogic( pAct->GetRect(), aMapVDev->GetMapMode(), GetPrefMapMode() ) );
             if( aClipStack.back().IsEmpty() )
                 aClipStack.back() = aRect;
             else
@@ -1635,7 +1713,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::ISECTREGIONCLIPREGION ):
         {
             MetaISectRegionClipRegionAction*    pAct = static_cast<MetaISectRegionClipRegionAction*>(pAction);
-            tools::Rectangle aRect( OutputDevice::LogicToLogic( pAct->GetRegion().GetBoundRect(), aMapVDev->GetMapMode(), GetPrefMapMode() ) );
+            Rectangle aRect( OutputDevice::LogicToLogic( pAct->GetRegion().GetBoundRect(), aMapVDev->GetMapMode(), GetPrefMapMode() ) );
             if( aClipStack.back().IsEmpty() )
                 aClipStack.back() = aRect;
             else
@@ -1646,7 +1724,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMP ):
         {
             MetaBmpAction* pAct = static_cast<MetaBmpAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmap().GetSizePixel() ) );
+            Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmap().GetSizePixel() ) );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1654,7 +1732,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::BMPEX ):
         {
             MetaBmpExAction* pAct = static_cast<MetaBmpExAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmapEx().GetSizePixel() ) );
+            Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmapEx().GetSizePixel() ) );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1662,7 +1740,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::MASK ):
         {
             MetaMaskAction* pAct = static_cast<MetaMaskAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmap().GetSizePixel() ) );
+            Rectangle aRect( pAct->GetPoint(), aMapVDev->PixelToLogic( pAct->GetBitmap().GetSizePixel() ) );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1670,7 +1748,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::MASKSCALE ):
         {
             MetaMaskScalePartAction* pAct = static_cast<MetaMaskScalePartAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
+            Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1678,7 +1756,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::MASKSCALEPART ):
         {
             MetaMaskScalePartAction* pAct = static_cast<MetaMaskScalePartAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
+            Rectangle aRect( pAct->GetDestPoint(), pAct->GetDestSize() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1686,7 +1764,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::WALLPAPER ):
         {
             MetaWallpaperAction* pAct = static_cast<MetaWallpaperAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetRect() );
+            Rectangle aRect( pAct->GetRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1694,7 +1772,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
         case( MetaActionType::TEXTRECT ):
         {
             MetaTextRectAction* pAct = static_cast<MetaTextRectAction*>(pAction);
-            tools::Rectangle aRect( pAct->GetRect() );
+            Rectangle aRect( pAct->GetRect() );
             ImplActionBounds( aBound, OutputDevice::LogicToLogic( aRect, aMapVDev->GetMapMode(), GetPrefMapMode() ), aClipStack, nullptr );
         }
         break;
@@ -1721,7 +1799,7 @@ tools::Rectangle GDIMetaFile::GetBoundRect( OutputDevice& i_rReference, tools::R
                     aPushFlagStack.push_back( pAct->GetFlags() );
                     if( aPushFlagStack.back() & PushFlags::CLIPREGION )
                     {
-                        tools::Rectangle aRect( aClipStack.back() );
+                        Rectangle aRect( aClipStack.back() );
                         aClipStack.push_back( aRect );
                     }
                 }
@@ -1770,7 +1848,7 @@ Color GDIMetaFile::ImplColConvertFnc( const Color& rColor, const void* pColParam
 {
     sal_uInt8 cLum = rColor.GetLuminance();
 
-    if( MtfConversion::N1BitThreshold == static_cast<const ImplColConvertParam*>(pColParam)->eConversion )
+    if( MTF_CONVERSION_1BIT_THRESHOLD == static_cast<const ImplColConvertParam*>(pColParam)->eConversion )
         cLum = ( cLum < 128 ) ? 0 : 255;
 
     return Color( rColor.GetTransparency(), cLum, cLum, cLum );
@@ -1948,7 +2026,7 @@ void GDIMetaFile::ImplExchangeColors( ColorExchangeFnc pFncCol, const void* pCol
             {
                 MetaWallpaperAction*    pAct = static_cast<MetaWallpaperAction*>(pAction);
                 Wallpaper               aWall( pAct->GetWallpaper() );
-                const tools::Rectangle&        rRect = pAct->GetRect();
+                const Rectangle&        rRect = pAct->GetRect();
 
                 aWall.SetColor( pFncCol( aWall.GetColor(), pColParam ) );
 
@@ -2122,15 +2200,15 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
 
         // calculate slope
         if( nContrastPercent >= 0 )
-            fM = 128.0 / ( 128.0 - 1.27 * MinMax( nContrastPercent, 0, 100 ) );
+            fM = 128.0 / ( 128.0 - 1.27 * MinMax( nContrastPercent, 0L, 100L ) );
         else
-            fM = ( 128.0 + 1.27 * MinMax( nContrastPercent, -100, 0 ) ) / 128.0;
+            fM = ( 128.0 + 1.27 * MinMax( nContrastPercent, -100L, 0L ) ) / 128.0;
 
         if(!msoBrightness)
             // total offset = luminance offset + contrast offset
-            fOff = MinMax( nLuminancePercent, -100, 100 ) * 2.55 + 128.0 - fM * 128.0;
+            fOff = MinMax( nLuminancePercent, -100L, 100L ) * 2.55 + 128.0 - fM * 128.0;
         else
-            fOff = MinMax( nLuminancePercent, -100, 100 ) * 2.55;
+            fOff = MinMax( nLuminancePercent, -100L, 100L ) * 2.55;
 
         // channel offset = channel offset  + total offset
         fROff = nChannelRPercent * 2.55 + fOff;
@@ -2142,19 +2220,19 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
         const bool bGamma = ( fGamma != 1.0 );
 
         // create mapping table
-        for( long nX = 0; nX < 256; nX++ )
+        for( long nX = 0L; nX < 256L; nX++ )
         {
             if(!msoBrightness)
             {
-                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fROff ), 0, 255 );
-                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fGOff ), 0, 255 );
-                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fBOff ), 0, 255 );
+                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fROff ), 0L, 255L );
+                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fGOff ), 0L, 255L );
+                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( nX * fM + fBOff ), 0L, 255L );
             }
             else
             {
-                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fROff/2-128) * fM + 128 + fROff/2 ), 0, 255 );
-                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fGOff/2-128) * fM + 128 + fGOff/2 ), 0, 255 );
-                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fBOff/2-128) * fM + 128 + fBOff/2 ), 0, 255 );
+                aColParam.pMapR[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fROff/2-128) * fM + 128 + fROff/2 ), 0L, 255L );
+                aColParam.pMapG[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fGOff/2-128) * fM + 128 + fGOff/2 ), 0L, 255L );
+                aColParam.pMapB[ nX ] = (sal_uInt8) MinMax( FRound( (nX+fBOff/2-128) * fM + 128 + fBOff/2 ), 0L, 255L );
             }
             if( bGamma )
             {
@@ -2190,13 +2268,17 @@ void GDIMetaFile::Adjust( short nLuminancePercent, short nContrastPercent,
 
 void GDIMetaFile::Convert( MtfConversion eConversion )
 {
-    ImplColConvertParam aColParam;
-    ImplBmpConvertParam aBmpParam;
+    // nothing to do? => return quickly
+    if( eConversion != MTF_CONVERSION_NONE )
+    {
+        ImplColConvertParam aColParam;
+        ImplBmpConvertParam aBmpParam;
 
-    aColParam.eConversion = eConversion;
-    aBmpParam.eConversion = ( MtfConversion::N1BitThreshold == eConversion ) ? BmpConversion::N1BitThreshold : BmpConversion::N8BitGreys;
+        aColParam.eConversion = eConversion;
+        aBmpParam.eConversion = ( MTF_CONVERSION_1BIT_THRESHOLD == eConversion ) ? BMP_CONVERSION_1BIT_THRESHOLD : BMP_CONVERSION_8BIT_GREYS;
 
-    ImplExchangeColors( ImplColConvertFnc, &aColParam, ImplBmpConvertFnc, &aBmpParam );
+        ImplExchangeColors( ImplColConvertFnc, &aColParam, ImplBmpConvertFnc, &aBmpParam );
+    }
 }
 
 void GDIMetaFile::ReplaceColors( const Color* pSearchColors, const Color* pReplaceColors, sal_uLong nColorCount )
@@ -2666,23 +2748,17 @@ sal_uLong GDIMetaFile::GetSizeBytes() const
 
 SvStream& ReadGDIMetaFile( SvStream& rIStm, GDIMetaFile& rGDIMetaFile )
 {
-    if (rIStm.GetError())
+    if( !rIStm.GetError() )
     {
-        SAL_WARN("vcl.gdi", "Stream error: " << rIStm.GetError());
-        return rIStm;
-    }
+        char    aId[ 7 ];
+        sal_uLong      nStmPos = rIStm.Tell();
+        SvStreamEndian nOldFormat = rIStm.GetEndian();
 
-    sal_uLong      nStmPos = rIStm.Tell();
-    SvStreamEndian nOldFormat = rIStm.GetEndian();
+        rIStm.SetEndian( SvStreamEndian::LITTLE );
 
-    rIStm.SetEndian( SvStreamEndian::LITTLE );
-
-    try
-    {
-        char aId[7];
-        aId[0] = 0;
-        aId[6] = 0;
-        rIStm.ReadBytes( aId, 6 );
+        aId[ 0 ] = 0;
+        aId[ 6 ] = 0;
+        rIStm.Read( aId, 6 );
 
         if ( !strcmp( aId, "VCLMTF" ) )
         {
@@ -2722,21 +2798,21 @@ SvStream& ReadGDIMetaFile( SvStream& rIStm, GDIMetaFile& rGDIMetaFile )
             rIStm.Seek( nStmPos );
             delete( new SVMConverter( rIStm, rGDIMetaFile, CONVERT_FROM_SVM1 ) );
         }
-    }
-    catch (...)
-    {
-        SAL_WARN("vcl", "GDIMetaFile exception during load");
-        rIStm.SetError(SVSTREAM_FILEFORMAT_ERROR);
-    };
 
-    // check for errors
-    if( rIStm.GetError() )
+        // check for errors
+        if( rIStm.GetError() )
+        {
+            rGDIMetaFile.Clear();
+            rIStm.Seek( nStmPos );
+        }
+
+        rIStm.SetEndian( nOldFormat );
+    }
+    else
     {
-        rGDIMetaFile.Clear();
-        rIStm.Seek( nStmPos );
+        SAL_WARN("vcl.gdi", "Stream error: " << rIStm.GetError());
     }
 
-    rIStm.SetEndian( nOldFormat );
     return rIStm;
 }
 
@@ -2759,9 +2835,10 @@ SvStream& WriteGDIMetaFile( SvStream& rOStm, const GDIMetaFile& rGDIMetaFile )
 #ifdef DEBUG
         if( !bNoSVM1 && rOStm.GetVersion() < SOFFICE_FILEFORMAT_50 )
         {
-            SAL_WARN( "vcl", "GDIMetaFile would normally be written in old SVM1 format by this call. "
-                "The current implementation always writes in VCLMTF format. "
-                "Please set environment variable SAL_ENABLE_SVM1 to '1' to reenable old behavior" );
+OSL_TRACE( \
+"GDIMetaFile would normally be written in old SVM1 format by this call. \
+The current implementation always writes in VCLMTF format. \
+Please set environment variable SAL_ENABLE_SVM1 to '1' to reenable old behavior" );
         }
 #endif // DEBUG
     }
@@ -2784,7 +2861,7 @@ SvStream& GDIMetaFile::Write( SvStream& rOStm )
     SvStreamEndian   nOldFormat = rOStm.GetEndian();
 
     rOStm.SetEndian( SvStreamEndian::LITTLE );
-    rOStm.WriteBytes( "VCLMTF", 6 );
+    rOStm.Write( "VCLMTF", 6 );
 
     pCompat = new VersionCompat( rOStm, StreamMode::WRITE, 1 );
 
@@ -2811,7 +2888,7 @@ SvStream& GDIMetaFile::Write( SvStream& rOStm )
     return rOStm;
 }
 
-bool GDIMetaFile::CreateThumbnail(BitmapEx& rBitmapEx, BmpConversion eColorConversion, BmpScaleFlag nScaleFlag) const
+bool GDIMetaFile::CreateThumbnail(BitmapEx& rBitmapEx, sal_uInt32 nMaximumExtent, BmpConversion eColorConversion, BmpScaleFlag nScaleFlag) const
 {
     // initialization seems to be complicated but is used to avoid rounding errors
     ScopedVclPtrInstance< VirtualDevice > aVDev;
@@ -2820,7 +2897,6 @@ bool GDIMetaFile::CreateThumbnail(BitmapEx& rBitmapEx, BmpConversion eColorConve
     const Point     aBRPix( aVDev->LogicToPixel( Point( GetPrefSize().Width() - 1, GetPrefSize().Height() - 1 ), GetPrefMapMode() ) );
     Size            aDrawSize( aVDev->LogicToPixel( GetPrefSize(), GetPrefMapMode() ) );
     Size            aSizePix( labs( aBRPix.X() - aTLPix.X() ) + 1, labs( aBRPix.Y() - aTLPix.Y() ) + 1 );
-    sal_uInt32      nMaximumExtent = 256;
 
     if (!rBitmapEx.IsEmpty())
         rBitmapEx.SetEmpty();

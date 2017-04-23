@@ -62,12 +62,11 @@
 #include <com/sun/star/util/XNumberFormatter.hpp>
 #include <com/sun/star/util/XNumberFormats.hpp>
 
-#include <rtl/ref.hxx>
 #include <tools/wintypes.hxx>
 #include <cppuhelper/weakref.hxx>
 #include <comphelper/uno3.hxx>
 #include <comphelper/stl_types.hxx>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 
 #include <set>
 
@@ -78,8 +77,8 @@ namespace vcl { class Window; }
 
 // displaying a database exception for the user
 // display info about a simple css::sdbc::SQLException
-void displayException(const css::sdbc::SQLException&, vcl::Window* _pParent);
-SVX_DLLPUBLIC void displayException(const css::sdb::SQLContext&, vcl::Window* _pParent);
+void displayException(const css::sdbc::SQLException&, vcl::Window* _pParent = nullptr);
+SVX_DLLPUBLIC void displayException(const css::sdb::SQLContext&, vcl::Window* _pParent = nullptr);
 void displayException(const css::sdb::SQLErrorEvent&);
 void displayException(const css::uno::Any&, vcl::Window* _pParent = nullptr);
 
@@ -103,6 +102,7 @@ private:
 
 public:
     // Construction/Destruction
+    CursorWrapper() { }
     CursorWrapper(const css::uno::Reference< css::sdbc::XRowSet>& _rxCursor, bool bUseCloned = false);
     SVX_DLLPUBLIC CursorWrapper(const css::uno::Reference< css::sdbc::XResultSet>& _rxCursor, bool bUseCloned = false);
         // if bUseCloned == sal_True, the cursor is first doubled over the XCloneable interface (which it must implement)
@@ -125,13 +125,10 @@ public:
     const css::uno::Reference< css::beans::XPropertySet >&        getPropertySet() const      { return m_xPropertyAccess; }
 
     // css::uno::Reference< css::sdbcx::XRowLocate>
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
     css::uno::Any getBookmark()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException )
     { return m_xBookmarkOperations->getBookmark(); }
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
-    bool moveToBookmark(const css::uno::Any& bookmark) { return m_xBookmarkOperations->moveToBookmark(bookmark); }
+    bool moveToBookmark(const css::uno::Any& bookmark) throw( css::sdbc::SQLException, css::uno::RuntimeException ) { return m_xBookmarkOperations->moveToBookmark(bookmark); }
 
     // css::sdbc::XResultSet
     bool isBeforeFirst() const              { return m_xMoveOperations->isBeforeFirst(); }
@@ -149,8 +146,7 @@ public:
     void refreshRow()                       { m_xMoveOperations->refreshRow(); }
     bool rowDeleted()                       { return m_xMoveOperations->rowDeleted(); }
     // css::sdbcx::XColumnsSupplier
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference< css::container::XNameAccess> getColumns() const { return m_xColumnsSupplier->getColumns(); }
+    css::uno::Reference< css::container::XNameAccess> getColumns() const throw( css::uno::RuntimeException ) { return m_xColumnsSupplier->getColumns(); }
 private:
     void ImplConstruct(const css::uno::Reference< css::sdbc::XResultSet>& _rxCursor, bool bUseCloned);
 };
@@ -161,30 +157,31 @@ class SAL_WARN_UNUSED FmXDisposeListener
 {
     friend class FmXDisposeMultiplexer;
 
-    rtl::Reference<FmXDisposeMultiplexer> m_pAdapter;
+    FmXDisposeMultiplexer*  m_pAdapter;
     osl::Mutex   m_aMutex;
 
 public:
+    FmXDisposeListener() : m_pAdapter(nullptr) { }
     virtual ~FmXDisposeListener();
 
-    /// @throws css::uno::RuntimeException
-    virtual void disposing(const css::lang::EventObject& _rEvent, sal_Int16 _nId) = 0;
+    virtual void disposing(const css::lang::EventObject& _rEvent, sal_Int16 _nId) throw( css::uno::RuntimeException ) = 0;
 
 protected:
     void setAdapter(FmXDisposeMultiplexer* pAdapter);
 };
 
-class SAL_WARN_UNUSED FmXDisposeMultiplexer : public cppu::WeakImplHelper< css::lang::XEventListener >
+class SAL_WARN_UNUSED FmXDisposeMultiplexer : public ::cppu::WeakImplHelper1< css::lang::XEventListener>
 {
     css::uno::Reference< css::lang::XComponent>       m_xObject;
     FmXDisposeListener* m_pListener;
+    sal_Int16           m_nId;
 
-    virtual ~FmXDisposeMultiplexer() override;
+    virtual ~FmXDisposeMultiplexer();
 public:
     FmXDisposeMultiplexer(FmXDisposeListener* _pListener, const css::uno::Reference< css::lang::XComponent>& _rxObject);
 
 // css::lang::XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
 
     void dispose();
 };

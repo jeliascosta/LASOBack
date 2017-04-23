@@ -62,7 +62,7 @@ class Clipboard
 {
 public:
     Clipboard (SlideSorter& rSlideSorter);
-    virtual ~Clipboard() override;
+    virtual ~Clipboard();
 
     /** Create a slide sorter transferable from the given sd
         transferable.  The returned transferable is set up with all
@@ -89,16 +89,16 @@ public:
     sal_Int8 AcceptDrop (
         const AcceptDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow,
-        sal_uInt16 nPage,
-        sal_uInt16 nLayer );
+        ::sd::Window* pTargetWindow = nullptr,
+        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
+        sal_uInt16 nLayer = SDRPAGE_NOTFOUND );
 
     sal_Int8 ExecuteDrop (
         const ExecuteDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow,
-        sal_uInt16 nPage,
-        sal_uInt16 nLayer );
+        ::sd::Window* pTargetWindow = nullptr,
+        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
+        sal_uInt16 nLayer = SDRPAGE_NOTFOUND);
 
     void Abort();
 
@@ -226,7 +226,7 @@ private:
     /** Asynchronous part of DragFinished.  The argument is the sal_Int8
         nDropAction, disguised as void*.
     */
-    DECL_LINK(ProcessDragFinished, void*, void);
+    DECL_LINK_TYPED(ProcessDragFinished, void*, void);
 };
 
 } } } // end of namespace ::sd::slidesorter::controller

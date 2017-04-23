@@ -85,11 +85,12 @@ public:
         Gradient_FocusedPage,
         GradientColorType_Size_
     };
-    enum class GradientColorClass {
+    enum GradientColorClass {
         Border1,
         Border2,
         Fill1,
-        Fill2
+        Fill2,
+        Base
     };
     ColorData GetGradientColor (
         const GradientColorType eType,
@@ -141,7 +142,7 @@ private:
 
     GradientDescriptor& GetGradient (const GradientColorType eType);
     /** Guarded initialization of the specified icon in the maIcons
-        container.
+        container.  Call only while a LocalResource object is active.
     */
     void InitializeIcon (const IconType eType, sal_uInt16 nResourceId);
 };

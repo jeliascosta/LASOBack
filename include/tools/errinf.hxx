@@ -26,7 +26,6 @@
 #include <rtl/ustring.hxx>
 #include <tools/errcode.hxx>
 #include <tools/toolsdllapi.h>
-#include <o3tl/typed_flags_set.hxx>
 #include <memory>
 
 // FIXME: horrible legacy dependency on VCL from tools.
@@ -35,35 +34,7 @@ namespace vcl { class Window; }
 class DynamicErrorInfo_Impl;
 class ErrorHandler_Impl;
 
-enum class ErrorHandlerFlags
-{
-    NONE                    = 0x0000,
-    ButtonsOk               = 0x0001,
-    ButtonsCancel           = 0x0002,
-    ButtonsRetry            = 0x0004,
-    ButtonsOkCancel         = 0x0003,
-    ButtonsNo               = 0x0008,
-    ButtonsYes              = 0x0010,
-    ButtonsYesNo            = 0x0018,
-    ButtonsYesNoCancel      = 0x001a,
-
-    ButtonDefaultsOk        = 0x0100,
-    ButtonDefaultsCancel    = 0x0200,
-    ButtonDefaultsYes       = 0x0300,
-    ButtonDefaultsNo        = 0x0400,
-
-    MessageError            = 0x1000,
-    MessageWarning          = 0x2000,
-    MessageInfo             = 0x3000,
-
-    MAX                     = USHRT_MAX,
-};
-namespace o3tl
-{
-    template<> struct typed_flags<ErrorHandlerFlags> : is_typed_flags<ErrorHandlerFlags, 0xffff> {};
-}
-
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ErrorInfo
+class TOOLS_DLLPUBLIC ErrorInfo
 {
 private:
     sal_uIntPtr             lUserId;
@@ -79,7 +50,7 @@ public:
     static ErrorInfo*       GetErrorInfo(sal_uIntPtr);
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC DynamicErrorInfo : public ErrorInfo
+class TOOLS_DLLPUBLIC DynamicErrorInfo : public ErrorInfo
 {
     friend class DynamicErrorInfo_Impl;
 
@@ -88,14 +59,14 @@ private:
 
 public:
 
-                            DynamicErrorInfo(sal_uIntPtr lUserId, ErrorHandlerFlags nMask);
-    virtual                 ~DynamicErrorInfo() override;
+                            DynamicErrorInfo(sal_uIntPtr lUserId, sal_uInt16 nMask);
+    virtual                 ~DynamicErrorInfo();
 
     operator                sal_uIntPtr() const;
-    ErrorHandlerFlags       GetDialogMask() const;
+    sal_uInt16              GetDialogMask() const;
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC StringErrorInfo : public DynamicErrorInfo
+class TOOLS_DLLPUBLIC StringErrorInfo : public DynamicErrorInfo
 {
 private:
     OUString                aString;
@@ -104,11 +75,11 @@ public:
 
                             StringErrorInfo( sal_uIntPtr lUserId,
                                             const OUString& aStringP,
-                                            ErrorHandlerFlags nMask = ErrorHandlerFlags::NONE);
+                                            sal_uInt16 nMask = 0);
     const OUString&         GetErrorString() const { return aString; }
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC TwoStringErrorInfo: public DynamicErrorInfo
+class TOOLS_DLLPUBLIC TwoStringErrorInfo: public DynamicErrorInfo
 {
 private:
     OUString aArg1;
@@ -117,15 +88,17 @@ private:
 public:
 
     TwoStringErrorInfo(sal_uIntPtr nUserID, const OUString & rTheArg1,
-                       const OUString & rTheArg2, ErrorHandlerFlags nMask):
+                       const OUString & rTheArg2, sal_uInt16 nMask = 0):
         DynamicErrorInfo(nUserID, nMask), aArg1(rTheArg1), aArg2(rTheArg2) {}
+
+    virtual ~TwoStringErrorInfo() {}
 
     const OUString& GetArg1() const { return aArg1; }
     const OUString& GetArg2() const { return aArg2; }
 };
 
 struct ErrorContextImpl;
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ErrorContext
+class TOOLS_DLLPUBLIC ErrorContext
 {
     friend class ErrorHandler;
 
@@ -133,7 +106,7 @@ private:
     std::unique_ptr<ErrorContextImpl> pImpl;
 
 public:
-                            ErrorContext(vcl::Window *pWin);
+                            ErrorContext(vcl::Window *pWin=nullptr);
     virtual                 ~ErrorContext();
 
     virtual bool            GetString( sal_uIntPtr nErrId, OUString& rCtxStr ) = 0;
@@ -142,29 +115,32 @@ public:
     static ErrorContext*    GetContext();
 };
 
-typedef ErrorHandlerFlags WindowDisplayErrorFunc(
-    vcl::Window *, ErrorHandlerFlags nMask, const OUString &rErr, const OUString &rAction);
+typedef sal_uInt16 WindowDisplayErrorFunc(
+    vcl::Window *, sal_uInt16 nMask, const OUString &rErr, const OUString &rAction);
 
 typedef void BasicDisplayErrorFunc(
     const OUString &rErr, const OUString &rAction);
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC ErrorHandler
+class TOOLS_DLLPUBLIC ErrorHandler
 {
     friend class ErrorHandler_Impl;
 
 private:
-    static ErrorHandlerFlags HandleError_Impl( sal_uIntPtr lId,
-                              ErrorHandlerFlags nFlags,
+    std::unique_ptr<ErrorHandler_Impl>  pImpl;
+
+    static sal_uInt16   HandleError_Impl( sal_uIntPtr lId,
+                              sal_uInt16 nFlags,
                               bool bJustCreateString,
                               OUString & rError);
 protected:
-    virtual bool        CreateString(const ErrorInfo *, OUString &) const = 0;
+    virtual bool        CreateString( const ErrorInfo *,
+                              OUString &, sal_uInt16& nMask ) const = 0;
 
 public:
                         ErrorHandler();
     virtual             ~ErrorHandler();
 
-    static ErrorHandlerFlags HandleError ( sal_uIntPtr lId, ErrorHandlerFlags nMask = ErrorHandlerFlags::MAX );
+    static sal_uInt16   HandleError ( sal_uIntPtr lId, sal_uInt16 nMask = USHRT_MAX );
     static bool         GetErrorString( sal_uIntPtr lId, OUString& rStr );
 
     static void         RegisterDisplay( BasicDisplayErrorFunc* );

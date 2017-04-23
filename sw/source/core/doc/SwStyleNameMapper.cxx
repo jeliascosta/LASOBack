@@ -31,50 +31,46 @@
 
 extern ResMgr* pSwResMgr;
 // Initialise UI names to 0
-std::vector<OUString> *SwStyleNameMapper::s_pTextUINameArray = nullptr,
-                *SwStyleNameMapper::s_pListsUINameArray = nullptr,
-                *SwStyleNameMapper::s_pExtraUINameArray = nullptr,
-                *SwStyleNameMapper::s_pRegisterUINameArray = nullptr,
-                *SwStyleNameMapper::s_pDocUINameArray = nullptr,
-                *SwStyleNameMapper::s_pHTMLUINameArray = nullptr,
-                *SwStyleNameMapper::s_pFrameFormatUINameArray = nullptr,
-                *SwStyleNameMapper::s_pChrFormatUINameArray = nullptr,
-                *SwStyleNameMapper::s_pHTMLChrFormatUINameArray = nullptr,
-                *SwStyleNameMapper::s_pPageDescUINameArray = nullptr,
-                *SwStyleNameMapper::s_pNumRuleUINameArray = nullptr,
-                *SwStyleNameMapper::s_pTableStyleUINameArray = nullptr,
-                *SwStyleNameMapper::s_pCellStyleUINameArray = nullptr,
+::std::vector<OUString> *SwStyleNameMapper::m_pTextUINameArray = nullptr,
+                *SwStyleNameMapper::m_pListsUINameArray = nullptr,
+                *SwStyleNameMapper::m_pExtraUINameArray = nullptr,
+                *SwStyleNameMapper::m_pRegisterUINameArray = nullptr,
+                *SwStyleNameMapper::m_pDocUINameArray = nullptr,
+                *SwStyleNameMapper::m_pHTMLUINameArray = nullptr,
+                *SwStyleNameMapper::m_pFrameFormatUINameArray = nullptr,
+                *SwStyleNameMapper::m_pChrFormatUINameArray = nullptr,
+                *SwStyleNameMapper::m_pHTMLChrFormatUINameArray = nullptr,
+                *SwStyleNameMapper::m_pPageDescUINameArray = nullptr,
+                *SwStyleNameMapper::m_pNumRuleUINameArray = nullptr,
+                *SwStyleNameMapper::m_pTableStyleUINameArray = nullptr,
 
 // Initialise programmatic names to 0
-                *SwStyleNameMapper::s_pTextProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pListsProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pExtraProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pRegisterProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pDocProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pHTMLProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pFrameFormatProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pChrFormatProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pHTMLChrFormatProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pPageDescProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pNumRuleProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pTableStyleProgNameArray = nullptr,
-                *SwStyleNameMapper::s_pCellStyleProgNameArray = nullptr;
+                *SwStyleNameMapper::m_pTextProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pListsProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pExtraProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pRegisterProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pDocProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pHTMLProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pFrameFormatProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pChrFormatProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pHTMLChrFormatProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pPageDescProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pNumRuleProgNameArray = nullptr,
+                *SwStyleNameMapper::m_pTableStyleProgNameArray = nullptr;
 
-NameToIdHash    *SwStyleNameMapper::s_pParaUIMap = nullptr,
-                *SwStyleNameMapper::s_pCharUIMap = nullptr,
-                *SwStyleNameMapper::s_pPageUIMap = nullptr,
-                *SwStyleNameMapper::s_pFrameUIMap = nullptr,
-                *SwStyleNameMapper::s_pNumRuleUIMap = nullptr,
-                *SwStyleNameMapper::s_pTableStyleUIMap = nullptr,
-                *SwStyleNameMapper::s_pCellStyleUIMap = nullptr,
+NameToIdHash    *SwStyleNameMapper::m_pParaUIMap = nullptr,
+                *SwStyleNameMapper::m_pCharUIMap = nullptr,
+                *SwStyleNameMapper::m_pPageUIMap = nullptr,
+                *SwStyleNameMapper::m_pFrameUIMap = nullptr,
+                *SwStyleNameMapper::m_pNumRuleUIMap = nullptr,
+                *SwStyleNameMapper::m_pTableStyleUIMap = nullptr,
 
-                *SwStyleNameMapper::s_pParaProgMap = nullptr,
-                *SwStyleNameMapper::s_pCharProgMap = nullptr,
-                *SwStyleNameMapper::s_pPageProgMap = nullptr,
-                *SwStyleNameMapper::s_pFrameProgMap = nullptr,
-                *SwStyleNameMapper::s_pNumRuleProgMap = nullptr,
-                *SwStyleNameMapper::s_pTableStyleProgMap = nullptr,
-                *SwStyleNameMapper::s_pCellStyleProgMap = nullptr;
+                *SwStyleNameMapper::m_pParaProgMap = nullptr,
+                *SwStyleNameMapper::m_pCharProgMap = nullptr,
+                *SwStyleNameMapper::m_pPageProgMap = nullptr,
+                *SwStyleNameMapper::m_pFrameProgMap = nullptr,
+                *SwStyleNameMapper::m_pNumRuleProgMap = nullptr,
+                *SwStyleNameMapper::m_pTableStyleProgMap = nullptr;
 
 // SwTableEntry so we can pass the length to the String CTOR
 struct SwTableEntry
@@ -321,31 +317,15 @@ const struct SwTableEntry NumRuleProgNameTable [] =
 
 const struct SwTableEntry TableStyleProgNameTable [] =
 {
-    ENTRY( "Default Style" ),     // RES_POOLTABLESTYLE_DEFAULT
-    ENTRY( "3D" ),                // RES_POOLTABLESTYLE_3D
-    ENTRY( "Black 1" ),           // RES_POOLTABLESTYLE_BLACK1
-    ENTRY( "Black 2" ),           // RES_POOLTABLESTYLE_BLACK2
-    ENTRY( "Blue" ),              // RES_POOLTABLESTYLE_BLUE
-    ENTRY( "Brown" ),             // RES_POOLTABLESTYLE_BROWN
-    ENTRY( "Currency" ),          // RES_POOLTABLESTYLE_CURRENCY
-    ENTRY( "Currency 3D" ),       // RES_POOLTABLESTYLE_CURRENCY_3D
-    ENTRY( "Currency Gray" ),     // RES_POOLTABLESTYLE_CURRENCY_GRAY
-    ENTRY( "Currency Lavender" ), // RES_POOLTABLESTYLE_CURRENCY_LAVENDER
-    ENTRY( "Currency Turquoise" ),// RES_POOLTABLESTYLE_CURRENCY_TURQUOISE
-    ENTRY( "Gray" ),              // RES_POOLTABLESTYLE_GRAY
-    ENTRY( "Green" ),             // RES_POOLTABLESTYLE_GREEN
-    ENTRY( "Lavender" ),          // RES_POOLTABLESTYLE_LAVENDER
-    ENTRY( "Red" ),               // RES_POOLTABLESTYLE_RED
-    ENTRY( "Turquoise" ),         // RES_POOLTABLESTYLE_TURQUOISE
-    ENTRY( "Yellow" ),            // RES_POOLTABLESTYLE_YELLOW
+    ENTRY( "Default Style" ), // RES_POOLTABLESTYLE_DEFAULT
     { 0, nullptr }
 };
 #undef ENTRY
 
-std::vector<OUString>*
+::std::vector<OUString>*
 lcl_NewUINameArray(sal_uInt16 nStt, sal_uInt16 const nEnd)
 {
-    std::vector<OUString> *const pNameArray = new std::vector<OUString>;
+    ::std::vector<OUString> *const pNameArray = new ::std::vector<OUString>;
     pNameArray->reserve(nEnd - nStt);
     while( nStt < nEnd )
     {
@@ -356,10 +336,10 @@ lcl_NewUINameArray(sal_uInt16 nStt, sal_uInt16 const nEnd)
     return pNameArray;
 }
 
-std::vector<OUString>*
+::std::vector<OUString>*
 lcl_NewProgNameArray(const SwTableEntry *pTable, sal_uInt8 const nCount)
 {
-    std::vector<OUString> *const pProgNameArray = new std::vector<OUString>;
+    ::std::vector<OUString> *const pProgNameArray = new ::std::vector<OUString>;
     pProgNameArray->reserve(nCount);
     while (pTable->nLength)
     {
@@ -373,7 +353,7 @@ lcl_NewProgNameArray(const SwTableEntry *pTable, sal_uInt8 const nCount)
 OUString
 lcl_GetSpecialExtraName(const OUString& rExtraName, const bool bIsUIName )
 {
-    const std::vector<OUString>& rExtraArr = bIsUIName
+    const ::std::vector<OUString>& rExtraArr = bIsUIName
         ? SwStyleNameMapper::GetExtraUINameArray()
         : SwStyleNameMapper::GetExtraProgNameArray();
     static const sal_uInt16 nIds[] =
@@ -456,13 +436,13 @@ const NameToIdHash & SwStyleNameMapper::getHashTable ( SwGetPoolIdFromName eFlag
     // pHashPointer is a pointer to a pointer which stores the UI/prog name array
     NameToIdHash **pHashPointer = nullptr;
     // Stores tuples representing (index start, index end, pointer to function which returns ref to name array)
-    std::vector<NameArrayIndexTuple_t> vIndexes;
+    ::std::vector<NameArrayIndexTuple_t> vIndexes;
 
     switch ( eFlags )
     {
-        case SwGetPoolIdFromName::TxtColl:
+        case nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL:
         {
-            pHashPointer = bProgName ? &s_pParaProgMap : &s_pParaUIMap;
+            pHashPointer = bProgName ? &m_pParaProgMap : &m_pParaUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLCOLL_TEXT_BEGIN, RES_POOLCOLL_TEXT_END, bProgName ? &GetTextProgNameArray : &GetTextUINameArray) );
             vIndexes.push_back( std::make_tuple(RES_POOLCOLL_LISTS_BEGIN, RES_POOLCOLL_LISTS_END, bProgName ? &GetListsProgNameArray : &GetListsUINameArray) );
             vIndexes.push_back( std::make_tuple(RES_POOLCOLL_EXTRA_BEGIN, RES_POOLCOLL_EXTRA_END, bProgName ? &GetExtraProgNameArray : &GetExtraUINameArray) );
@@ -471,41 +451,35 @@ const NameToIdHash & SwStyleNameMapper::getHashTable ( SwGetPoolIdFromName eFlag
             vIndexes.push_back( std::make_tuple(RES_POOLCOLL_HTML_BEGIN, RES_POOLCOLL_HTML_END, bProgName ? &GetHTMLProgNameArray : &GetHTMLUINameArray) );
         }
         break;
-        case SwGetPoolIdFromName::ChrFmt:
+        case nsSwGetPoolIdFromName::GET_POOLID_CHRFMT:
         {
-            pHashPointer = bProgName ? &s_pCharProgMap : &s_pCharUIMap;
+            pHashPointer = bProgName ? &m_pCharProgMap : &m_pCharUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLCHR_NORMAL_BEGIN, RES_POOLCHR_NORMAL_END, bProgName ? &GetChrFormatProgNameArray : &GetChrFormatUINameArray) );
             vIndexes.push_back( std::make_tuple(RES_POOLCHR_HTML_BEGIN, RES_POOLCHR_HTML_END, bProgName ? &GetHTMLChrFormatProgNameArray : &GetHTMLChrFormatUINameArray) );
         }
         break;
-        case SwGetPoolIdFromName::FrmFmt:
+        case nsSwGetPoolIdFromName::GET_POOLID_FRMFMT:
         {
-            pHashPointer = bProgName ? &s_pFrameProgMap : &s_pFrameUIMap;
+            pHashPointer = bProgName ? &m_pFrameProgMap : &m_pFrameUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLFRM_BEGIN, RES_POOLFRM_END, bProgName ? &GetFrameFormatProgNameArray : &GetFrameFormatUINameArray) );
         }
         break;
-        case SwGetPoolIdFromName::PageDesc:
+        case nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC:
         {
-            pHashPointer = bProgName ? &s_pPageProgMap : &s_pPageUIMap;
+            pHashPointer = bProgName ? &m_pPageProgMap : &m_pPageUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLPAGE_BEGIN, RES_POOLPAGE_END, bProgName ? &GetPageDescProgNameArray : &GetPageDescUINameArray) );
         }
         break;
-        case SwGetPoolIdFromName::NumRule:
+        case nsSwGetPoolIdFromName::GET_POOLID_NUMRULE:
         {
-            pHashPointer = bProgName ? &s_pNumRuleProgMap : &s_pNumRuleUIMap;
+            pHashPointer = bProgName ? &m_pNumRuleProgMap : &m_pNumRuleUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLNUMRULE_BEGIN, RES_POOLNUMRULE_END, bProgName ? &GetNumRuleProgNameArray : &GetNumRuleUINameArray) );
         }
         break;
-        case SwGetPoolIdFromName::TabStyle:
+        case nsSwGetPoolIdFromName::GET_POOLID_TABSTYLE:
         {
-            pHashPointer = bProgName ? &s_pTableStyleProgMap : &s_pTableStyleUIMap;
+            pHashPointer = bProgName ? &m_pTableStyleProgMap : &m_pTableStyleUIMap;
             vIndexes.push_back( std::make_tuple(RES_POOLTABSTYLE_BEGIN, RES_POOLTABSTYLE_END, bProgName ? &GetTableStyleProgNameArray : &GetTableStyleUINameArray) );
-        }
-        break;
-        case SwGetPoolIdFromName::CellStyle:
-        {
-            pHashPointer = bProgName ? &s_pCellStyleProgMap : &s_pCellStyleUIMap;
-            vIndexes.push_back( std::make_tuple(RES_POOLCELLSTYLE_BEGIN, RES_POOLCELLSTYLE_END, bProgName ? &GetCellStyleProgNameArray : &GetCellStyleUINameArray) );
         }
         break;
         default:
@@ -520,13 +494,13 @@ const NameToIdHash & SwStyleNameMapper::getHashTable ( SwGetPoolIdFromName eFlag
         sal_uInt16 nSize = std::accumulate( vIndexes.begin(), vIndexes.end(), 0, lcl_AccumulateIndexCount );
 
         NameToIdHash *pHash = new NameToIdHash( nSize );
-        for ( std::vector<NameArrayIndexTuple_t>::iterator entry = vIndexes.begin(); entry != vIndexes.end(); ++entry )
+        for ( ::std::vector<NameArrayIndexTuple_t>::iterator entry = vIndexes.begin(); entry != vIndexes.end(); ++entry )
         {
             // Get a pointer to the function which will populate pStrings
-            const std::vector<OUString>& (*pStringsFetchFunc)() = std::get<2>( *entry );
+            const ::std::vector<OUString>& (*pStringsFetchFunc)() = std::get<2>( *entry );
             if ( pStringsFetchFunc )
             {
-                const std::vector<OUString>& rStrings = pStringsFetchFunc();
+                const ::std::vector<OUString>& rStrings = pStringsFetchFunc();
                 sal_uInt16 nIndex, nId;
                 for ( nIndex = 0, nId = std::get<0>( *entry ) ; nId < std::get<1>( *entry ) ; nId++, nIndex++ )
                     (*pHash)[rStrings[nIndex]] = nId;
@@ -542,17 +516,17 @@ const NameToIdHash & SwStyleNameMapper::getHashTable ( SwGetPoolIdFromName eFlag
     {
         bTested = true;
 
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_TEXT_BEGIN, RES_POOLCOLL_TEXT_END );
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_LISTS_BEGIN, RES_POOLCOLL_LISTS_END );
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_EXTRA_BEGIN, RES_POOLCOLL_EXTRA_END );
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_REGISTER_BEGIN, RES_POOLCOLL_REGISTER_END );
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_DOC_BEGIN, RES_POOLCOLL_DOC_END );
-        testNameTable( SwGetPoolIdFromName::TxtColl, RES_POOLCOLL_HTML_BEGIN, RES_POOLCOLL_HTML_END );
-        testNameTable( SwGetPoolIdFromName::ChrFmt, RES_POOLCHR_NORMAL_BEGIN, RES_POOLCHR_NORMAL_END );
-        testNameTable( SwGetPoolIdFromName::ChrFmt, RES_POOLCHR_HTML_BEGIN, RES_POOLCHR_HTML_END );
-        testNameTable( SwGetPoolIdFromName::FrmFmt, RES_POOLFRM_BEGIN, RES_POOLFRM_END );
-        testNameTable( SwGetPoolIdFromName::PageDesc, RES_POOLPAGE_BEGIN, RES_POOLPAGE_END );
-        testNameTable( SwGetPoolIdFromName::NumRule, RES_POOLNUMRULE_BEGIN, RES_POOLNUMRULE_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_TEXT_BEGIN, RES_POOLCOLL_TEXT_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_LISTS_BEGIN, RES_POOLCOLL_LISTS_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_EXTRA_BEGIN, RES_POOLCOLL_EXTRA_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_REGISTER_BEGIN, RES_POOLCOLL_REGISTER_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_DOC_BEGIN, RES_POOLCOLL_DOC_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, RES_POOLCOLL_HTML_BEGIN, RES_POOLCOLL_HTML_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, RES_POOLCHR_NORMAL_BEGIN, RES_POOLCHR_NORMAL_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, RES_POOLCHR_HTML_BEGIN, RES_POOLCHR_HTML_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_FRMFMT, RES_POOLFRM_BEGIN, RES_POOLFRM_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC, RES_POOLPAGE_BEGIN, RES_POOLPAGE_END );
+        testNameTable( nsSwGetPoolIdFromName::GET_POOLID_NUMRULE, RES_POOLNUMRULE_BEGIN, RES_POOLNUMRULE_END );
     }
 #endif
     return **pHashPointer;
@@ -629,7 +603,7 @@ const OUString& SwStyleNameMapper::getNameFromId(
         sal_uInt16 const nId, const OUString& rFillName, bool const bProgName)
 {
     sal_uInt16 nStt = 0;
-    const std::vector<OUString>* pStrArr = nullptr;
+    const ::std::vector<OUString>* pStrArr = nullptr;
 
     switch( (USER_FMT | COLL_GET_RANGE_BITS | POOLGRP_NOCOLLID) & nId )
     {
@@ -769,212 +743,196 @@ sal_uInt16 SwStyleNameMapper::GetPoolIdFromProgName(
     return aIter != rHashMap.end() ? (*aIter).second : USHRT_MAX;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetTextUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetTextUINameArray()
 {
-    if (!s_pTextUINameArray)
-        s_pTextUINameArray = lcl_NewUINameArray( RC_POOLCOLL_TEXT_BEGIN,
+    if (!m_pTextUINameArray)
+        m_pTextUINameArray = lcl_NewUINameArray( RC_POOLCOLL_TEXT_BEGIN,
             RC_POOLCOLL_TEXT_BEGIN + (RES_POOLCOLL_TEXT_END - RES_POOLCOLL_TEXT_BEGIN) );
-    return *s_pTextUINameArray;
+    return *m_pTextUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetListsUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetListsUINameArray()
 {
-    if (!s_pListsUINameArray)
-        s_pListsUINameArray = lcl_NewUINameArray( RC_POOLCOLL_LISTS_BEGIN,
+    if (!m_pListsUINameArray)
+        m_pListsUINameArray = lcl_NewUINameArray( RC_POOLCOLL_LISTS_BEGIN,
             RC_POOLCOLL_LISTS_BEGIN + (RES_POOLCOLL_LISTS_END - RES_POOLCOLL_LISTS_BEGIN) );
-    return *s_pListsUINameArray;
+    return *m_pListsUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetExtraUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetExtraUINameArray()
 {
-    if (!s_pExtraUINameArray)
-        s_pExtraUINameArray = lcl_NewUINameArray( RC_POOLCOLL_EXTRA_BEGIN,
+    if (!m_pExtraUINameArray)
+        m_pExtraUINameArray = lcl_NewUINameArray( RC_POOLCOLL_EXTRA_BEGIN,
             RC_POOLCOLL_EXTRA_BEGIN + (RES_POOLCOLL_EXTRA_END - RES_POOLCOLL_EXTRA_BEGIN) );
-    return *s_pExtraUINameArray;
+    return *m_pExtraUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetRegisterUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetRegisterUINameArray()
 {
-    if (!s_pRegisterUINameArray)
-        s_pRegisterUINameArray = lcl_NewUINameArray( RC_POOLCOLL_REGISTER_BEGIN,
+    if (!m_pRegisterUINameArray)
+        m_pRegisterUINameArray = lcl_NewUINameArray( RC_POOLCOLL_REGISTER_BEGIN,
             RC_POOLCOLL_REGISTER_BEGIN + (RES_POOLCOLL_REGISTER_END - RES_POOLCOLL_REGISTER_BEGIN) );
-    return *s_pRegisterUINameArray;
+    return *m_pRegisterUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetDocUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetDocUINameArray()
 {
-    if (!s_pDocUINameArray)
-        s_pDocUINameArray = lcl_NewUINameArray( RC_POOLCOLL_DOC_BEGIN,
+    if (!m_pDocUINameArray)
+        m_pDocUINameArray = lcl_NewUINameArray( RC_POOLCOLL_DOC_BEGIN,
             RC_POOLCOLL_DOC_BEGIN + (RES_POOLCOLL_DOC_END - RES_POOLCOLL_DOC_BEGIN) );
-    return *s_pDocUINameArray;
+    return *m_pDocUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetHTMLUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetHTMLUINameArray()
 {
-    if (!s_pHTMLUINameArray)
-        s_pHTMLUINameArray = lcl_NewUINameArray( RC_POOLCOLL_HTML_BEGIN,
+    if (!m_pHTMLUINameArray)
+        m_pHTMLUINameArray = lcl_NewUINameArray( RC_POOLCOLL_HTML_BEGIN,
             RC_POOLCOLL_HTML_BEGIN + (RES_POOLCOLL_HTML_END - RES_POOLCOLL_HTML_BEGIN) );
-    return *s_pHTMLUINameArray;
+    return *m_pHTMLUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetFrameFormatUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetFrameFormatUINameArray()
 {
-    if (!s_pFrameFormatUINameArray)
-        s_pFrameFormatUINameArray = lcl_NewUINameArray( RC_POOLFRMFMT_BEGIN,
+    if (!m_pFrameFormatUINameArray)
+        m_pFrameFormatUINameArray = lcl_NewUINameArray( RC_POOLFRMFMT_BEGIN,
             RC_POOLFRMFMT_BEGIN + (RES_POOLFRM_END - RES_POOLFRM_BEGIN) );
-    return *s_pFrameFormatUINameArray;
+    return *m_pFrameFormatUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetChrFormatUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetChrFormatUINameArray()
 {
-    if (!s_pChrFormatUINameArray)
-        s_pChrFormatUINameArray = lcl_NewUINameArray( RC_POOLCHRFMT_BEGIN,
+    if (!m_pChrFormatUINameArray)
+        m_pChrFormatUINameArray = lcl_NewUINameArray( RC_POOLCHRFMT_BEGIN,
             RC_POOLCHRFMT_BEGIN + (RES_POOLCHR_NORMAL_END - RES_POOLCHR_NORMAL_BEGIN) );
-    return *s_pChrFormatUINameArray;
+    return *m_pChrFormatUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetHTMLChrFormatUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetHTMLChrFormatUINameArray()
 {
-    if (!s_pHTMLChrFormatUINameArray)
-        s_pHTMLChrFormatUINameArray = lcl_NewUINameArray( RC_POOLCHRFMT_HTML_BEGIN,
+    if (!m_pHTMLChrFormatUINameArray)
+        m_pHTMLChrFormatUINameArray = lcl_NewUINameArray( RC_POOLCHRFMT_HTML_BEGIN,
             RC_POOLCHRFMT_HTML_BEGIN + (RES_POOLCHR_HTML_END - RES_POOLCHR_HTML_BEGIN) );
-    return *s_pHTMLChrFormatUINameArray;
+    return *m_pHTMLChrFormatUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetPageDescUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetPageDescUINameArray()
 {
-    if (!s_pPageDescUINameArray)
-        s_pPageDescUINameArray = lcl_NewUINameArray( RC_POOLPAGEDESC_BEGIN,
+    if (!m_pPageDescUINameArray)
+        m_pPageDescUINameArray = lcl_NewUINameArray( RC_POOLPAGEDESC_BEGIN,
             RC_POOLPAGEDESC_BEGIN + (RES_POOLPAGE_END - RES_POOLPAGE_BEGIN) );
-    return *s_pPageDescUINameArray;
+    return *m_pPageDescUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetNumRuleUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetNumRuleUINameArray()
 {
-    if (!s_pNumRuleUINameArray)
-        s_pNumRuleUINameArray = lcl_NewUINameArray( RC_POOLNUMRULE_BEGIN,
+    if (!m_pNumRuleUINameArray)
+        m_pNumRuleUINameArray = lcl_NewUINameArray( RC_POOLNUMRULE_BEGIN,
             RC_POOLNUMRULE_BEGIN + (RES_POOLNUMRULE_END - RES_POOLNUMRULE_BEGIN) );
-    return *s_pNumRuleUINameArray;
+    return *m_pNumRuleUINameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetTableStyleUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetTableStyleUINameArray()
 {
-    if (!s_pTableStyleUINameArray)
-        s_pTableStyleUINameArray = lcl_NewUINameArray( RC_POOLTABSTYLE_BEGIN,
+    if (!m_pTableStyleUINameArray)
+        m_pTableStyleUINameArray = lcl_NewUINameArray( RC_POOLTABSTYLE_BEGIN,
             RC_POOLTABSTYLE_BEGIN + (RES_POOLTABSTYLE_END - RES_POOLTABSTYLE_BEGIN) );
-    return *s_pTableStyleUINameArray;
+    return *m_pTableStyleUINameArray;
 }
 
-/// returns an empty array because Cell Names aren't translated
-const std::vector<OUString>& SwStyleNameMapper::GetCellStyleUINameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetTextProgNameArray()
 {
-    if (!s_pCellStyleUINameArray)
-        s_pCellStyleUINameArray = new std::vector<OUString>;
-    return *s_pCellStyleUINameArray;
-}
-
-const std::vector<OUString>& SwStyleNameMapper::GetTextProgNameArray()
-{
-    if (!s_pTextProgNameArray)
-        s_pTextProgNameArray = lcl_NewProgNameArray(TextProgNameTable,
+    if (!m_pTextProgNameArray)
+        m_pTextProgNameArray = lcl_NewProgNameArray(TextProgNameTable,
             sizeof ( TextProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pTextProgNameArray;
+    return *m_pTextProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetListsProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetListsProgNameArray()
 {
-    if (!s_pListsProgNameArray)
-        s_pListsProgNameArray = lcl_NewProgNameArray( ListsProgNameTable,
+    if (!m_pListsProgNameArray)
+        m_pListsProgNameArray = lcl_NewProgNameArray( ListsProgNameTable,
             sizeof ( ListsProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pListsProgNameArray;
+    return *m_pListsProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetExtraProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetExtraProgNameArray()
 {
-    if (!s_pExtraProgNameArray)
-        s_pExtraProgNameArray = lcl_NewProgNameArray( ExtraProgNameTable,
+    if (!m_pExtraProgNameArray)
+        m_pExtraProgNameArray = lcl_NewProgNameArray( ExtraProgNameTable,
             sizeof ( ExtraProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pExtraProgNameArray;
+    return *m_pExtraProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetRegisterProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetRegisterProgNameArray()
 {
-    if (!s_pRegisterProgNameArray)
-        s_pRegisterProgNameArray = lcl_NewProgNameArray( RegisterProgNameTable,
+    if (!m_pRegisterProgNameArray)
+        m_pRegisterProgNameArray = lcl_NewProgNameArray( RegisterProgNameTable,
             sizeof ( RegisterProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pRegisterProgNameArray;
+    return *m_pRegisterProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetDocProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetDocProgNameArray()
 {
-    if (!s_pDocProgNameArray)
-        s_pDocProgNameArray = lcl_NewProgNameArray( DocProgNameTable,
+    if (!m_pDocProgNameArray)
+        m_pDocProgNameArray = lcl_NewProgNameArray( DocProgNameTable,
             sizeof ( DocProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pDocProgNameArray;
+    return *m_pDocProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetHTMLProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetHTMLProgNameArray()
 {
-    if (!s_pHTMLProgNameArray)
-        s_pHTMLProgNameArray = lcl_NewProgNameArray( HTMLProgNameTable,
+    if (!m_pHTMLProgNameArray)
+        m_pHTMLProgNameArray = lcl_NewProgNameArray( HTMLProgNameTable,
             sizeof ( HTMLProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pHTMLProgNameArray;
+    return *m_pHTMLProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetFrameFormatProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetFrameFormatProgNameArray()
 {
-    if (!s_pFrameFormatProgNameArray)
-        s_pFrameFormatProgNameArray = lcl_NewProgNameArray( FrameFormatProgNameTable,
+    if (!m_pFrameFormatProgNameArray)
+        m_pFrameFormatProgNameArray = lcl_NewProgNameArray( FrameFormatProgNameTable,
             sizeof ( FrameFormatProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pFrameFormatProgNameArray;
+    return *m_pFrameFormatProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetChrFormatProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetChrFormatProgNameArray()
 {
-    if (!s_pChrFormatProgNameArray)
-        s_pChrFormatProgNameArray = lcl_NewProgNameArray( ChrFormatProgNameTable,
+    if (!m_pChrFormatProgNameArray)
+        m_pChrFormatProgNameArray = lcl_NewProgNameArray( ChrFormatProgNameTable,
             sizeof ( ChrFormatProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pChrFormatProgNameArray;
+    return *m_pChrFormatProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetHTMLChrFormatProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetHTMLChrFormatProgNameArray()
 {
-    if (!s_pHTMLChrFormatProgNameArray)
-        s_pHTMLChrFormatProgNameArray = lcl_NewProgNameArray( HTMLChrFormatProgNameTable,
+    if (!m_pHTMLChrFormatProgNameArray)
+        m_pHTMLChrFormatProgNameArray = lcl_NewProgNameArray( HTMLChrFormatProgNameTable,
             sizeof ( HTMLChrFormatProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pHTMLChrFormatProgNameArray;
+    return *m_pHTMLChrFormatProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetPageDescProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetPageDescProgNameArray()
 {
-    if (!s_pPageDescProgNameArray)
-        s_pPageDescProgNameArray = lcl_NewProgNameArray( PageDescProgNameTable,
+    if (!m_pPageDescProgNameArray)
+        m_pPageDescProgNameArray = lcl_NewProgNameArray( PageDescProgNameTable,
             sizeof ( PageDescProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pPageDescProgNameArray;
+    return *m_pPageDescProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetNumRuleProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetNumRuleProgNameArray()
 {
-    if (!s_pNumRuleProgNameArray)
-        s_pNumRuleProgNameArray = lcl_NewProgNameArray( NumRuleProgNameTable,
+    if (!m_pNumRuleProgNameArray)
+        m_pNumRuleProgNameArray = lcl_NewProgNameArray( NumRuleProgNameTable,
             sizeof ( NumRuleProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pNumRuleProgNameArray;
+    return *m_pNumRuleProgNameArray;
 }
 
-const std::vector<OUString>& SwStyleNameMapper::GetTableStyleProgNameArray()
+const ::std::vector<OUString>& SwStyleNameMapper::GetTableStyleProgNameArray()
 {
-    if (!s_pTableStyleProgNameArray)
-        s_pTableStyleProgNameArray = lcl_NewProgNameArray( TableStyleProgNameTable,
+    if (!m_pTableStyleProgNameArray)
+        m_pTableStyleProgNameArray = lcl_NewProgNameArray( TableStyleProgNameTable,
             sizeof ( TableStyleProgNameTable ) / sizeof ( SwTableEntry ) );
-    return *s_pTableStyleProgNameArray;
-}
-
-/// returns an empty array because Cell Names aren't translated
-const std::vector<OUString>& SwStyleNameMapper::GetCellStyleProgNameArray()
-{
-    if (!s_pCellStyleProgNameArray)
-        s_pCellStyleProgNameArray = new std::vector<OUString>;
-    return *s_pCellStyleProgNameArray;
+    return *m_pTableStyleProgNameArray;
 }
 
 const OUString

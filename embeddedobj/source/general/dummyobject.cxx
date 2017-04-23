@@ -20,7 +20,6 @@
 #include <com/sun/star/embed/EmbedStates.hpp>
 #include <com/sun/star/embed/EmbedVerbs.hpp>
 #include <com/sun/star/embed/EmbedUpdateModes.hpp>
-#include <com/sun/star/embed/UnreachableStateException.hpp>
 #include <com/sun/star/embed/XEmbeddedClient.hpp>
 #include <com/sun/star/embed/XInplaceClient.hpp>
 #include <com/sun/star/embed/XWindowSupplier.hpp>
@@ -29,10 +28,7 @@
 #include <com/sun/star/embed/EmbedMapUnits.hpp>
 #include <com/sun/star/embed/EntryInitModes.hpp>
 #include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 
 #include <dummyobject.hxx>
 
@@ -100,6 +96,10 @@ ODummyEmbeddedObject::~ODummyEmbeddedObject()
 
 
 void SAL_CALL ODummyEmbeddedObject::changeState( sal_Int32 nNewState )
+        throw ( embed::UnreachableStateException,
+                embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -112,6 +112,8 @@ void SAL_CALL ODummyEmbeddedObject::changeState( sal_Int32 nNewState )
 
 
 uno::Sequence< sal_Int32 > SAL_CALL ODummyEmbeddedObject::getReachableStates()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -124,6 +126,8 @@ uno::Sequence< sal_Int32 > SAL_CALL ODummyEmbeddedObject::getReachableStates()
 
 
 sal_Int32 SAL_CALL ODummyEmbeddedObject::getCurrentState()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -133,6 +137,11 @@ sal_Int32 SAL_CALL ODummyEmbeddedObject::getCurrentState()
 
 
 void SAL_CALL ODummyEmbeddedObject::doVerb( sal_Int32 )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                embed::UnreachableStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -142,6 +151,8 @@ void SAL_CALL ODummyEmbeddedObject::doVerb( sal_Int32 )
 
 
 uno::Sequence< embed::VerbDescriptor > SAL_CALL ODummyEmbeddedObject::getSupportedVerbs()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -152,6 +163,8 @@ uno::Sequence< embed::VerbDescriptor > SAL_CALL ODummyEmbeddedObject::getSupport
 
 void SAL_CALL ODummyEmbeddedObject::setClientSite(
                 const uno::Reference< embed::XEmbeddedClient >& xClient )
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -161,6 +174,8 @@ void SAL_CALL ODummyEmbeddedObject::setClientSite(
 
 
 uno::Reference< embed::XEmbeddedClient > SAL_CALL ODummyEmbeddedObject::getClientSite()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -170,6 +185,9 @@ uno::Reference< embed::XEmbeddedClient > SAL_CALL ODummyEmbeddedObject::getClien
 
 
 void SAL_CALL ODummyEmbeddedObject::update()
+        throw ( embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -177,6 +195,8 @@ void SAL_CALL ODummyEmbeddedObject::update()
 
 
 void SAL_CALL ODummyEmbeddedObject::setUpdateMode( sal_Int32 )
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -184,6 +204,8 @@ void SAL_CALL ODummyEmbeddedObject::setUpdateMode( sal_Int32 )
 
 
 sal_Int64 SAL_CALL ODummyEmbeddedObject::getStatus( sal_Int64 )
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -193,6 +215,7 @@ sal_Int64 SAL_CALL ODummyEmbeddedObject::getStatus( sal_Int64 )
 
 
 void SAL_CALL ODummyEmbeddedObject::setContainerName( const OUString& )
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_Runtime();
@@ -200,6 +223,10 @@ void SAL_CALL ODummyEmbeddedObject::setContainerName( const OUString& )
 
 
 void SAL_CALL ODummyEmbeddedObject::setVisualAreaSize( sal_Int64 nAspect, const awt::Size& aSize )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -217,6 +244,10 @@ void SAL_CALL ODummyEmbeddedObject::setVisualAreaSize( sal_Int64 nAspect, const 
 
 
 awt::Size SAL_CALL ODummyEmbeddedObject::getVisualAreaSize( sal_Int64 nAspect )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -237,6 +268,8 @@ awt::Size SAL_CALL ODummyEmbeddedObject::getVisualAreaSize( sal_Int64 nAspect )
 
 
 sal_Int32 SAL_CALL ODummyEmbeddedObject::getMapUnit( sal_Int64 nAspect )
+        throw ( uno::Exception,
+                uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_Runtime();
@@ -252,6 +285,10 @@ sal_Int32 SAL_CALL ODummyEmbeddedObject::getMapUnit( sal_Int64 nAspect )
 
 
 embed::VisualRepresentation SAL_CALL ODummyEmbeddedObject::getPreferredVisualRepresentation( sal_Int64 )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -268,6 +305,11 @@ void SAL_CALL ODummyEmbeddedObject::setPersistentEntry(
                     sal_Int32 nEntryConnectionMode,
                     const uno::Sequence< beans::PropertyValue >& /* lArguments */,
                     const uno::Sequence< beans::PropertyValue >& /* lObjArgs */ )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -328,6 +370,11 @@ void SAL_CALL ODummyEmbeddedObject::storeToEntry( const uno::Reference< embed::X
                             const OUString& sEntName,
                             const uno::Sequence< beans::PropertyValue >& /* lArguments */,
                             const uno::Sequence< beans::PropertyValue >& /* lObjArgs */ )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -345,6 +392,11 @@ void SAL_CALL ODummyEmbeddedObject::storeAsEntry( const uno::Reference< embed::X
                             const OUString& sEntName,
                             const uno::Sequence< beans::PropertyValue >& /* lArguments */,
                             const uno::Sequence< beans::PropertyValue >& /* lObjArgs */ )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -365,6 +417,9 @@ void SAL_CALL ODummyEmbeddedObject::storeAsEntry( const uno::Reference< embed::X
 
 
 void SAL_CALL ODummyEmbeddedObject::saveCompleted( sal_Bool bUseNew )
+        throw ( embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -396,6 +451,8 @@ void SAL_CALL ODummyEmbeddedObject::saveCompleted( sal_Bool bUseNew )
 
 
 sal_Bool SAL_CALL ODummyEmbeddedObject::hasEntry()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -413,6 +470,8 @@ sal_Bool SAL_CALL ODummyEmbeddedObject::hasEntry()
 
 
 OUString SAL_CALL ODummyEmbeddedObject::getEntryName()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -427,6 +486,10 @@ OUString SAL_CALL ODummyEmbeddedObject::getEntryName()
 
 
 void SAL_CALL ODummyEmbeddedObject::storeOwn()
+        throw ( embed::WrongStateException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -442,6 +505,8 @@ void SAL_CALL ODummyEmbeddedObject::storeOwn()
 
 
 sal_Bool SAL_CALL ODummyEmbeddedObject::isReadonly()
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -459,6 +524,11 @@ sal_Bool SAL_CALL ODummyEmbeddedObject::isReadonly()
 void SAL_CALL ODummyEmbeddedObject::reload(
                 const uno::Sequence< beans::PropertyValue >& /* lArguments */,
                 const uno::Sequence< beans::PropertyValue >& /* lObjArgs */ )
+        throw ( lang::IllegalArgumentException,
+                embed::WrongStateException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_WrongState();
@@ -473,6 +543,7 @@ void SAL_CALL ODummyEmbeddedObject::reload(
 
 
 uno::Sequence< sal_Int8 > SAL_CALL ODummyEmbeddedObject::getClassID()
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_Runtime();
@@ -484,6 +555,7 @@ uno::Sequence< sal_Int8 > SAL_CALL ODummyEmbeddedObject::getClassID()
 
 
 OUString SAL_CALL ODummyEmbeddedObject::getClassName()
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -495,12 +567,15 @@ OUString SAL_CALL ODummyEmbeddedObject::getClassName()
 
 void SAL_CALL ODummyEmbeddedObject::setClassInfo(
                 const uno::Sequence< sal_Int8 >& /*aClassID*/, const OUString& /*aClassName*/ )
+        throw ( lang::NoSupportException,
+                uno::RuntimeException, std::exception )
 {
     throw lang::NoSupportException();
 }
 
 
 uno::Reference< util::XCloseable > SAL_CALL ODummyEmbeddedObject::getComponent()
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     CheckInit_Runtime();
@@ -510,6 +585,7 @@ uno::Reference< util::XCloseable > SAL_CALL ODummyEmbeddedObject::getComponent()
 
 
 void SAL_CALL ODummyEmbeddedObject::addStateChangeListener( const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -525,6 +601,7 @@ void SAL_CALL ODummyEmbeddedObject::addStateChangeListener( const uno::Reference
 
 void SAL_CALL ODummyEmbeddedObject::removeStateChangeListener(
                     const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )
@@ -534,6 +611,8 @@ void SAL_CALL ODummyEmbeddedObject::removeStateChangeListener(
 
 
 void SAL_CALL ODummyEmbeddedObject::close( sal_Bool bDeliverOwnership )
+    throw ( util::CloseVetoException,
+            uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -588,6 +667,7 @@ void SAL_CALL ODummyEmbeddedObject::close( sal_Bool bDeliverOwnership )
 
 
 void SAL_CALL ODummyEmbeddedObject::addCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -601,6 +681,7 @@ void SAL_CALL ODummyEmbeddedObject::addCloseListener( const uno::Reference< util
 
 
 void SAL_CALL ODummyEmbeddedObject::removeCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )
@@ -610,6 +691,7 @@ void SAL_CALL ODummyEmbeddedObject::removeCloseListener( const uno::Reference< u
 
 
 void SAL_CALL ODummyEmbeddedObject::addEventListener( const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
@@ -623,6 +705,7 @@ void SAL_CALL ODummyEmbeddedObject::addEventListener( const uno::Reference< docu
 
 
 void SAL_CALL ODummyEmbeddedObject::removeEventListener( const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )

@@ -57,13 +57,15 @@ public:
     OComponentHelper( ::osl::Mutex & rMutex );
     /** Destructor. If this object was not disposed previously, object will be disposed manually.
     */
-    virtual ~OComponentHelper() SAL_OVERRIDE;
+    virtual ~OComponentHelper();
 
     // XAggregation
     virtual css::uno::Any SAL_CALL queryInterface(
-        css::uno::Type const & rType ) SAL_OVERRIDE;
+        css::uno::Type const & rType )
+        throw (css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
     virtual css::uno::Any SAL_CALL queryAggregation(
-        css::uno::Type const & rType ) SAL_OVERRIDE;
+        css::uno::Type const & rType )
+        throw (css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
     virtual void SAL_CALL acquire()
         throw () SAL_OVERRIDE;
     virtual void SAL_CALL release()
@@ -72,18 +74,23 @@ public:
     /** @attention
         XTypeProvider::getImplementationId() has to be implemented separately!
     */
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() SAL_OVERRIDE = 0;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw(css::uno::RuntimeException, std::exception) SAL_OVERRIDE = 0;
     /** @attention
         XTypeProvider::getTypes() has to be re-implemented!
     */
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() SAL_OVERRIDE;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
 
     // XComponent
-    virtual void SAL_CALL dispose() SAL_OVERRIDE;
+    virtual void SAL_CALL dispose()
+        throw(css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
     virtual void SAL_CALL addEventListener(
-        const css::uno::Reference< css::lang::XEventListener >& aListener ) SAL_OVERRIDE;
+        const css::uno::Reference< css::lang::XEventListener >& aListener )
+        throw(css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
     virtual void SAL_CALL removeEventListener(
-        const css::uno::Reference< css::lang::XEventListener >& aListener ) SAL_OVERRIDE;
+        const css::uno::Reference< css::lang::XEventListener >& aListener )
+        throw(css::uno::RuntimeException, std::exception) SAL_OVERRIDE;
 
 protected:
     /** Called in dispose method after the listeners were notified.

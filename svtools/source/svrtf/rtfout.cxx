@@ -24,40 +24,7 @@
 #include <svtools/rtfkeywd.hxx>
 #include <svtools/rtfout.hxx>
 
-namespace {
-
-SvStream& Out_Hex( SvStream& rStream, sal_uLong nHex, sal_uInt8 nLen )
-{
-    sal_Char aNToABuf[] = "0000000000000000";
-
-    DBG_ASSERT( nLen < sizeof(aNToABuf), "zu viele Stellen" );
-    if( nLen >= sizeof(aNToABuf) )
-        nLen = (sizeof(aNToABuf)-1);
-
-    // set pointer to end of buffer
-    sal_Char* pStr = aNToABuf + (sizeof(aNToABuf)-1);
-    for( sal_uInt8 n = 0; n < nLen; ++n )
-    {
-        *(--pStr) = (sal_Char)(nHex & 0xf ) + 48;
-        if( *pStr > '9' )
-            *pStr += 39;
-        nHex >>= 4;
-    }
-    return rStream.WriteCharPtr( pStr );
-}
-
-// Ideally, this function should work on (sal_uInt32) Unicode scalar values
-// instead of (sal_Unicode) UTF-16 code units.  However, at least "Rich Text
-// Format (RTF) Specification Version 1.9.1" available at
-// <https://www.microsoft.com/en-us/download/details.aspx?id=10725> does not
-// look like it allows non-BMP Unicode characters >= 0x10000 in the \uN notation
-// (it only talks about "Unicode character", but then explains how values of N
-// greater than 32767 will be expressed as negative signed 16-bit numbers, so
-// that smells like \uN is limited to BMP).
-// However the "Mathematics" section has an example that shows the code point
-// U+1D44E being encoded as UTF-16 surrogate pair "\u-10187?\u-9138?", so
-// sal_Unicode actually works fine here.
-SvStream& Out_Char(SvStream& rStream, sal_Unicode c,
+SvStream& RTFOutFuncs::Out_Char(SvStream& rStream, sal_Unicode c,
     int *pUCMode, rtl_TextEncoding eDestEnc, bool bWriteHelpFile)
 {
     const sal_Char* pStr = nullptr;
@@ -120,16 +87,17 @@ SvStream& Out_Char(SvStream& rStream, sal_Unicode c,
             case '\\':
             case '}':
             case '{':
-                rStream.WriteChar( '\\' ).WriteChar( char(c) );
+                rStream.WriteChar( '\\' ).WriteChar( c );
                 break;
             default:
                 if (c >= ' ' && c <= '~')
-                    rStream.WriteChar( char(c) );
+                    rStream.WriteChar( c );
                 else
                 {
                     //If we can't convert to the dest encoding, or if
-                    //it's an uncommon multibyte sequence which most
+                    //its an uncommon multibyte sequence which most
                     //readers won't be able to handle correctly, then
+                    //If we can't convert to the dest encoding, then
                     //export as unicode
                     OUString sBuf(&c, 1);
                     OString sConverted;
@@ -141,7 +109,7 @@ SvStream& Out_Char(SvStream& rStream, sal_Unicode c,
                                             || (RTL_TEXTENCODING_UTF8==eDestEnc); // #i43933# do not export UTF-8 chars in RTF;
                     if (bWriteAsUnicode)
                     {
-                        (void)sBuf.convertToString(&sConverted,
+                        sBuf.convertToString(&sConverted,
                             eDestEnc, OUSTRING_TO_OSTRING_CVTFLAGS);
                     }
                     const sal_Int32 nLen = sConverted.getLength();
@@ -179,8 +147,6 @@ SvStream& Out_Char(SvStream& rStream, sal_Unicode c,
     return rStream;
 }
 
-}
-
 SvStream& RTFOutFuncs::Out_String( SvStream& rStream, const OUString& rStr,
     rtl_TextEncoding eDestEnc, bool bWriteHelpFile)
 {
@@ -191,5 +157,26 @@ SvStream& RTFOutFuncs::Out_String( SvStream& rStream, const OUString& rStr,
       rStream.WriteCharPtr( "\\uc1" ).WriteCharPtr( " " ); // #i47831# add an additional whitespace, so that "document whitespaces" are not ignored.;
     return rStream;
 }
+
+SvStream& RTFOutFuncs::Out_Hex( SvStream& rStream, sal_uLong nHex, sal_uInt8 nLen )
+{
+    sal_Char aNToABuf[] = "0000000000000000";
+
+    DBG_ASSERT( nLen < sizeof(aNToABuf), "zu viele Stellen" );
+    if( nLen >= sizeof(aNToABuf) )
+        nLen = (sizeof(aNToABuf)-1);
+
+    // set pointer to end of buffer
+    sal_Char* pStr = aNToABuf + (sizeof(aNToABuf)-1);
+    for( sal_uInt8 n = 0; n < nLen; ++n )
+    {
+        *(--pStr) = (sal_Char)(nHex & 0xf ) + 48;
+        if( *pStr > '9' )
+            *pStr += 39;
+        nHex >>= 4;
+    }
+    return rStream.WriteCharPtr( pStr );
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

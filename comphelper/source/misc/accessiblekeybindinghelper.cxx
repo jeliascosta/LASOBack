@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <comphelper/accessiblekeybindinghelper.hxx>
 
 
@@ -53,7 +50,7 @@ namespace comphelper
     }
 
 
-    void OAccessibleKeyBindingHelper::AddKeyBinding( const Sequence< awt::KeyStroke >& rKeyBinding )
+    void OAccessibleKeyBindingHelper::AddKeyBinding( const Sequence< awt::KeyStroke >& rKeyBinding ) throw (RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -61,7 +58,7 @@ namespace comphelper
     }
 
 
-    void OAccessibleKeyBindingHelper::AddKeyBinding( const awt::KeyStroke& rKeyStroke )
+    void OAccessibleKeyBindingHelper::AddKeyBinding( const awt::KeyStroke& rKeyStroke ) throw (RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -74,7 +71,7 @@ namespace comphelper
     // XAccessibleKeyBinding
 
 
-    sal_Int32 OAccessibleKeyBindingHelper::getAccessibleKeyBindingCount()
+    sal_Int32 OAccessibleKeyBindingHelper::getAccessibleKeyBindingCount() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -82,7 +79,7 @@ namespace comphelper
     }
 
 
-    Sequence< awt::KeyStroke > OAccessibleKeyBindingHelper::getAccessibleKeyBinding( sal_Int32 nIndex )
+    Sequence< awt::KeyStroke > OAccessibleKeyBindingHelper::getAccessibleKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 

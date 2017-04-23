@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblemenubar.hxx>
+#include <accessibility/standard/vclxaccessiblemenubar.hxx>
 
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <vcl/svapp.hxx>
@@ -69,10 +69,10 @@ bool VCLXAccessibleMenuBar::IsFocused()
 }
 
 
-IMPL_LINK( VCLXAccessibleMenuBar, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK_TYPED( VCLXAccessibleMenuBar, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     OSL_ENSURE( rEvent.GetWindow(), "VCLXAccessibleMenuBar::WindowEventListener: no window!" );
-    if ( !rEvent.GetWindow()->IsAccessibilityEventsSuppressed() || ( rEvent.GetId() == VclEventId::ObjectDying ) )
+    if ( !rEvent.GetWindow()->IsAccessibilityEventsSuppressed() || ( rEvent.GetId() == VCLEVENT_OBJECT_DYING ) )
     {
         ProcessWindowEvent( rEvent );
     }
@@ -83,13 +83,13 @@ void VCLXAccessibleMenuBar::ProcessWindowEvent( const VclWindowEvent& rVclWindow
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::WindowGetFocus:
-        case VclEventId::WindowLoseFocus:
+        case VCLEVENT_WINDOW_GETFOCUS:
+        case VCLEVENT_WINDOW_LOSEFOCUS:
         {
-            SetFocused( rVclWindowEvent.GetId() == VclEventId::WindowGetFocus );
+            SetFocused( rVclWindowEvent.GetId() == VCLEVENT_WINDOW_GETFOCUS );
         }
         break;
-        case VclEventId::ObjectDying:
+        case VCLEVENT_OBJECT_DYING:
         {
             if ( m_pWindow )
             {
@@ -124,22 +124,23 @@ void VCLXAccessibleMenuBar::disposing()
 // XServiceInfo
 
 
-OUString VCLXAccessibleMenuBar::getImplementationName()
+OUString VCLXAccessibleMenuBar::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleMenuBar" );
 }
 
 
-Sequence< OUString > VCLXAccessibleMenuBar::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleMenuBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleMenuBar" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenuBar" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int32 VCLXAccessibleMenuBar::getAccessibleIndexInParent(  )
+sal_Int32 VCLXAccessibleMenuBar::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -170,7 +171,7 @@ sal_Int32 VCLXAccessibleMenuBar::getAccessibleIndexInParent(  )
 }
 
 
-sal_Int16 VCLXAccessibleMenuBar::getAccessibleRole(  )
+sal_Int16 VCLXAccessibleMenuBar::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -181,7 +182,7 @@ sal_Int16 VCLXAccessibleMenuBar::getAccessibleRole(  )
 // XAccessibleExtendedComponent
 
 
-sal_Int32 VCLXAccessibleMenuBar::getBackground(  )
+sal_Int32 VCLXAccessibleMenuBar::getBackground(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

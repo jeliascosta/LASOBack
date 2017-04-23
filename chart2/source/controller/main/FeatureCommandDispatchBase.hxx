@@ -33,8 +33,9 @@ struct ControllerFeature: public css::frame::DispatchInformation
     sal_uInt16 nFeatureId;
 };
 
-typedef std::map< OUString,
-                    ControllerFeature > SupportedFeatures;
+typedef ::std::map< OUString,
+                    ControllerFeature,
+                    ::std::less< OUString > > SupportedFeatures;
 
 struct FeatureState
 {
@@ -50,7 +51,7 @@ class FeatureCommandDispatchBase: public CommandDispatch
 {
 public:
     explicit FeatureCommandDispatchBase( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~FeatureCommandDispatchBase() override;
+    virtual ~FeatureCommandDispatchBase();
 
     // late initialisation, especially for adding as listener
     virtual void initialize() override;
@@ -60,7 +61,8 @@ public:
 protected:
     // XDispatch
     virtual void SAL_CALL dispatch( const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void fireStatusEvent( const OUString& rURL,
         const css::uno::Reference< css::frame::XStatusListener >& xSingleListener ) override;
@@ -88,11 +90,14 @@ protected:
             by the user, see also <type scope="css::frame">CommandGroup</type>.
     */
     void implDescribeSupportedFeature( const sal_Char* pAsciiCommandURL, sal_uInt16 nId,
-        sal_Int16 nGroup );
+        sal_Int16 nGroup = css::frame::CommandGroup::INTERNAL );
 
     mutable SupportedFeatures m_aSupportedFeatures;
 
     sal_uInt16 m_nFeatureId;
+
+private:
+    void fillSupportedFeatures();
 };
 
 } //  namespace chart

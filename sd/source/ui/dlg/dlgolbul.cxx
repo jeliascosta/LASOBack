@@ -73,7 +73,7 @@ OutlineBulletDlg::OutlineBulletDlg(
         for(size_t nNum = 0; nNum < nCount; ++nNum)
         {
             SdrObject* pObj = rMarkList.GetMark(nNum)->GetMarkedSdrObj();
-            if( pObj->GetObjInventor() == SdrInventor::Default )
+            if( pObj->GetObjInventor() == SdrInventor )
             {
 
                 switch(pObj->GetObjIdentifier())
@@ -106,13 +106,12 @@ OutlineBulletDlg::OutlineBulletDlg(
 
         DBG_ASSERT( pItem, "No EE_PARA_NUMBULLET in Pool! [CL]" );
 
-        std::unique_ptr<SfxPoolItem> pNewItem(pItem->CloneSetWhich(EE_PARA_NUMBULLET));
-        aInputSet.Put(*pNewItem);
+        aInputSet.Put(*pItem, EE_PARA_NUMBULLET);
     }
 
     if(bTitle && aInputSet.GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET )
     {
-        const SvxNumBulletItem* pItem = aInputSet.GetItem<SvxNumBulletItem>(EE_PARA_NUMBULLET);
+        const SvxNumBulletItem* pItem = static_cast<const SvxNumBulletItem*>( aInputSet.GetItem(EE_PARA_NUMBULLET) );
         SvxNumRule* pRule = pItem->GetNumRule();
         if(pRule)
         {
@@ -187,7 +186,7 @@ const SfxItemSet* OutlineBulletDlg::GetOutputItemSet() const
 
     if(bTitle && pOutputSet->GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET )
     {
-        const SvxNumBulletItem* pBulletItem = pOutputSet->GetItem<SvxNumBulletItem>(EE_PARA_NUMBULLET);
+        const SvxNumBulletItem* pBulletItem = static_cast<const SvxNumBulletItem*>(pOutputSet->GetItem(EE_PARA_NUMBULLET));
         SvxNumRule* pRule = pBulletItem->GetNumRule();
         if(pRule)
             pRule->SetFeatureFlag( SvxNumRuleFlags::NO_NUMBERS, false );

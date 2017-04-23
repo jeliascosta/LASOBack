@@ -21,8 +21,8 @@
 #include "dialmgr.hxx"
 #include "newtabledlg.hxx"
 
-SvxNewTableDialog::SvxNewTableDialog()
-    : m_pDialog( VclPtr<ModalDialog>::Create( nullptr, "NewTableDialog", "cui/ui/newtabledialog.ui" ) )
+SvxNewTableDialog::SvxNewTableDialog( vcl::Window* pParent )
+    : m_pDialog( VclPtr<ModalDialog>::Create( pParent, "NewTableDialog", "cui/ui/newtabledialog.ui" ) )
 {
     m_pDialog->get(mpNumRows, "rows");
     m_pDialog->get(mpNumColumns, "columns");
@@ -30,15 +30,9 @@ SvxNewTableDialog::SvxNewTableDialog()
 
 SvxNewTableDialog::~SvxNewTableDialog()
 {
-    disposeOnce();
-}
-
-void SvxNewTableDialog::dispose()
-{
     mpNumColumns.clear();
     mpNumRows.clear();
     m_pDialog.disposeAndClear();
-    SvxAbstractNewTableDialog::dispose();
 }
 
 short SvxNewTableDialog::Execute()

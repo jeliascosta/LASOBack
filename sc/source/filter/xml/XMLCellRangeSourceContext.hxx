@@ -22,7 +22,6 @@
 
 #include <xmloff/xmlimp.hxx>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 
 struct ScMyImpCellRangeSource
@@ -31,15 +30,19 @@ struct ScMyImpCellRangeSource
     OUString             sFilterName;
     OUString             sFilterOptions;
     OUString             sURL;
-    sal_Int32            nColumns;
-    sal_Int32            nRows;
-    sal_Int32            nRefresh;
+    sal_Int32                   nColumns;
+    sal_Int32                   nRows;
+    sal_Int32                   nRefresh;
 
-                               ScMyImpCellRangeSource();
+                                ScMyImpCellRangeSource();
 };
 
-class ScXMLCellRangeSourceContext : public ScXMLImportContext
+class ScXMLCellRangeSourceContext : public SvXMLImportContext
 {
+private:
+    const ScXMLImport&          GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport&                GetScImport()       { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
                                 ScXMLCellRangeSourceContext(
                                     ScXMLImport& rImport,
@@ -48,7 +51,7 @@ public:
                                     const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
                                     ScMyImpCellRangeSource* pCellRangeSource
                                     );
-    virtual                     ~ScXMLCellRangeSourceContext() override;
+    virtual                     ~ScXMLCellRangeSourceContext();
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,

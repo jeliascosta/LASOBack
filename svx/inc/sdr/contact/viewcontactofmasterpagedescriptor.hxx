@@ -50,7 +50,7 @@ namespace sdr
             explicit ViewContactOfMasterPageDescriptor(sdr::MasterPageDescriptor& rDescriptor);
 
             // The destructor.
-            virtual ~ViewContactOfMasterPageDescriptor() override;
+            virtual ~ViewContactOfMasterPageDescriptor();
 
             // access to MasterPageDescriptor
             sdr::MasterPageDescriptor& GetMasterPageDescriptor() const

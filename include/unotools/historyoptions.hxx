@@ -28,7 +28,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <rtl/ustring.hxx>
 #include <unotools/options.hxx>
-#include <memory>
 
 // The method GetList() returns a list of property values.
 // Use follow defines to separate values by names.
@@ -59,7 +58,7 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtHistoryOptions : public utl::detail:
 {
 public:
     SvtHistoryOptions();
-    virtual ~SvtHistoryOptions() override;
+    virtual ~SvtHistoryOptions();
 
     /** Get max size of specified history.
 
@@ -103,7 +102,17 @@ public:
     void DeleteItem(EHistoryType eHistory, const OUString& sURL);
 
 private:
-    std::shared_ptr<SvtHistoryOptions_Impl> m_pImpl;
+
+    /* Attention
+
+        Don't initialize these static members in these headers!
+        a) Double defined symbols will be detected ...
+        b) and unresolved externals exist at linking time.
+        Do it in your source only.
+     */
+
+    static SvtHistoryOptions_Impl* m_pDataContainer;
+    static sal_Int32               m_nRefCount;
 };
 
 #endif // INCLUDED_UNOTOOLS_HISTORYOPTIONS_HXX

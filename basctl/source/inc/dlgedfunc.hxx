@@ -35,7 +35,7 @@ protected:
     DlgEditor& rParent;
     Timer      aScrollTimer;
 
-    DECL_LINK( ScrollTimeout, Timer *, void );
+    DECL_LINK_TYPED( ScrollTimeout, Timer *, void );
     void    ForceScroll( const Point& rPos );
 
 public:
@@ -56,7 +56,7 @@ class DlgEdFuncInsert : public DlgEdFunc
 {
 public:
     explicit DlgEdFuncInsert (DlgEditor& rParent);
-    virtual ~DlgEdFuncInsert () override;
+    virtual ~DlgEdFuncInsert ();
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual bool MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -74,7 +74,7 @@ protected:
 
 public:
     explicit DlgEdFuncSelect (DlgEditor& rParent);
-    virtual ~DlgEdFuncSelect () override;
+    virtual ~DlgEdFuncSelect ();
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual bool MouseButtonUp( const MouseEvent& rMEvt ) override;

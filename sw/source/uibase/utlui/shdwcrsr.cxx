@@ -73,8 +73,8 @@ void SwShadowCursor::DrawCursor( const Point& rPt, long nHeight, sal_uInt16 nMod
 
     pWin->Push();
 
-    pWin->SetMapMode( MapUnit::MapPixel );
-    pWin->SetRasterOp( RasterOp::Xor );
+    pWin->SetMapMode( MAP_PIXEL );
+    pWin->SetRasterOp( ROP_XOR );
 
     pWin->SetLineColor( Color( aCol.GetColor() ^ COL_WHITE ) );
 
@@ -97,7 +97,7 @@ void SwShadowCursor::Paint()
         DrawCursor( aOldPt, nOldHeight, nOldMode );
 }
 
-tools::Rectangle SwShadowCursor::GetRect() const
+Rectangle SwShadowCursor::GetRect() const
 {
     long nH = nOldHeight;
     Point aPt( aOldPt );
@@ -115,7 +115,7 @@ tools::Rectangle SwShadowCursor::GetRect() const
         aSz.Width() *= 2;
     }
 
-    return pWin->PixelToLogic( tools::Rectangle( aPt, aSz ) );
+    return pWin->PixelToLogic( Rectangle( aPt, aSz ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -20,6 +20,7 @@
 #define INCLUDED_CHART2_SOURCE_CONTROLLER_INC_ITEMCONVERTER_HXX
 
 #include <unotools/eventlisteneradapter.hxx>
+#include <svl/itempool.hxx>
 #include <svl/itemset.hxx>
 #include <com/sun/star/beans/XPropertySet.hpp>
 
@@ -74,13 +75,13 @@ public:
     ItemConverter(
             const css::uno::Reference< css::beans::XPropertySet > & rPropertySet ,
             SfxItemPool& rItemPool );
-    virtual ~ItemConverter() override;
+    virtual ~ItemConverter();
 
     typedef sal_uInt16          tWhichIdType;
     typedef OUString tPropertyNameType;
     typedef sal_uInt8            tMemberIdType;
 
-    typedef std::pair< tPropertyNameType, tMemberIdType > tPropertyNameWithMemberId;
+    typedef ::std::pair< tPropertyNameType, tMemberIdType > tPropertyNameWithMemberId;
 
     /** applies all properties that can be mapped to items into the given item
         set.
@@ -144,10 +145,9 @@ protected:
         false.
 
         The default implementation does nothing except showing an assertion
-
-        @throws css::uno::Exception
      */
-    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const;
+    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+        throw (css::uno::Exception, std::exception);
 
     /** for items that can not be mapped directly to a property.
 
@@ -157,10 +157,9 @@ protected:
         The default implementation returns just false and shows an assertion
 
         @return true if the item changed a property, false otherwise.
-
-        @throws css::uno::Exception
      */
-    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet );
+    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+        throw( css::uno::Exception );
 
     /// Returns the pool
     SfxItemPool & GetItemPool() const { return m_rItemPool;}

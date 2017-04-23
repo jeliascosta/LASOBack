@@ -42,7 +42,7 @@ public:
         sal_Int32 nNumberFormat = 0,
         sal_Int32 nPercentNumberFormat = 0 );
 
-    virtual ~TextLabelItemConverter() override;
+    virtual ~TextLabelItemConverter();
 
     virtual void FillItemSet( SfxItemSet & rOutItemSet ) const override;
     virtual bool ApplyItemSet( const SfxItemSet & rItemSet ) override;
@@ -51,8 +51,10 @@ protected:
     virtual const sal_uInt16* GetWhichPairs() const override;
     virtual bool GetItemProperty( tWhichIdType nWhichId, tPropertyNameWithMemberId & rOutProperty ) const override;
 
-    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const override;
-    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet ) override;
+    virtual void FillSpecialItem( sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+        throw (css::uno::Exception) override;
+    virtual bool ApplySpecialItem( sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+        throw (css::uno::Exception) override;
 
 private:
     std::vector<ItemConverter*> maConverters;

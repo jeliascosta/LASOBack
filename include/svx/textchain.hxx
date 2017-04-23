@@ -53,11 +53,11 @@
     a##PropName = (PropDefault);
 
 #define DECL_CHAIN_PROP_INTERFACE(PropName, PropType) \
-    PropType const & Get##PropName (const SdrTextObj *); \
+    PropType Get##PropName (const SdrTextObj *); \
     void Set##PropName (const SdrTextObj *, PropType);
 
 #define IMPL_CHAIN_PROP_INTERFACE(PropName, PropType) \
-    PropType const & TextChain::Get##PropName (const SdrTextObj *pTarget) { \
+    PropType TextChain::Get##PropName (const SdrTextObj *pTarget) { \
         ImpChainLinkProperties *pLinkProperties = GetLinkProperties(pTarget); \
         return pLinkProperties->a##PropName; \
     } \

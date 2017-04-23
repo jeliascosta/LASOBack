@@ -22,7 +22,6 @@
 
 #include "formattributes.hxx"
 #include <xmloff/xmlictxt.hxx>
-#include <memory>
 #include "logging.hxx"
 
 class SvXMLElementExport;
@@ -39,7 +38,7 @@ namespace xmloff
     public:
 
         OFormsRootImport( SvXMLImport& _rImport, sal_uInt16 _nPrfx, const OUString& _rLocalName);
-        virtual ~OFormsRootImport() override;
+        virtual ~OFormsRootImport();
 
         // SvXMLImportContext overridable
         virtual SvXMLImportContext * CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -62,7 +61,7 @@ namespace xmloff
     class OFormsRootExport
     {
     private:
-        std::unique_ptr<SvXMLElementExport>     m_pImplElement;
+        SvXMLElementExport*     m_pImplElement;
 
     public:
         explicit OFormsRootExport( SvXMLExport& _rExp );
@@ -79,9 +78,6 @@ namespace xmloff
             const OUString& _rPropName,
             bool _bDefault
             );
-
-        OFormsRootExport(const OFormsRootExport&) = delete;
-        OFormsRootExport& operator=(const OFormsRootExport&) = delete;
     };
 
 }   // namespace xmloff

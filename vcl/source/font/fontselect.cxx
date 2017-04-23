@@ -22,9 +22,10 @@
 #include <PhysicalFontFace.hxx>
 #include "svdata.hxx"
 
-// These mustn't conflict with font name lists which use ; and ,
-const char FontSelectPatternAttributes::FEAT_PREFIX = ':';
-const char FontSelectPatternAttributes::FEAT_SEPARATOR = '&';
+#include <config_graphite.h>
+#if ENABLE_GRAPHITE
+#include "graphite_features.hxx"
+#endif
 
 FontSelectPattern::FontSelectPattern( const vcl::Font& rFont,
     const OUString& rSearchName, const Size& rSize, float fExactHeight)
@@ -90,7 +91,7 @@ FontSelectPattern::FontSelectPattern( const PhysicalFontFace& rFontData,
     const Size& rSize, float fExactHeight, int nOrientation, bool bVertical )
     : FontSelectPatternAttributes(rFontData, rSize, fExactHeight, nOrientation, bVertical)
     , mpFontData( &rFontData )
-    , mpFontInstance( nullptr )
+    , mpFontInstance( NULL )
 {
 }
 #endif
@@ -104,13 +105,15 @@ size_t FontSelectPatternAttributes::hashCode() const
 {
     // TODO: does it pay off to improve this hash function?
     size_t nHash;
+#if ENABLE_GRAPHITE
     // check for features and generate a unique hash if necessary
-    if (maTargetName.indexOf(FontSelectPatternAttributes::FEAT_PREFIX)
+    if (maTargetName.indexOf(grutils::GrFeatureParser::FEAT_PREFIX)
         != -1)
     {
         nHash = maTargetName.hashCode();
     }
     else
+#endif
     {
         nHash = maSearchName.hashCode();
     }

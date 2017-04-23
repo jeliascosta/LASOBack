@@ -34,6 +34,7 @@ class StyleSheetUndoAction : public SdUndoAction
 
     std::unique_ptr<SfxItemSet> mpNewSet;
     std::unique_ptr<SfxItemSet> mpOldSet;
+    OUString        maComment;
 
 public:
     StyleSheetUndoAction(SdDrawDocument* pTheDoc,
@@ -42,6 +43,8 @@ public:
 
     virtual void Undo() override;
     virtual void Redo() override;
+
+    virtual OUString GetComment() const override;
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_UNCHSS_HXX

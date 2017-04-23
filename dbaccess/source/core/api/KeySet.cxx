@@ -67,7 +67,7 @@ using std::vector;
 
 namespace
 {
-    void lcl_fillIndexColumns(const Reference<XIndexAccess>& _xIndexes, std::vector< Reference<XNameAccess> >& _rAllIndexColumns)
+    void lcl_fillIndexColumns(const Reference<XIndexAccess>& _xIndexes, ::std::vector< Reference<XNameAccess> >& _rAllIndexColumns)
     {
         if ( _xIndexes.is() )
         {
@@ -151,7 +151,7 @@ void OKeySet::findTableColumnsMatching_throw(   const Any& i_aTable,
                                                 const OUString& i_rUpdateTableName,
                                                 const Reference<XDatabaseMetaData>& i_xMeta,
                                                 const Reference<XNameAccess>& i_xQueryColumns,
-                                                std::unique_ptr<SelectColumnsMetaData>& o_pKeyColumnNames)
+                                                ::std::unique_ptr<SelectColumnsMetaData>& o_pKeyColumnNames)
 {
     // first ask the database itself for the best columns which can be used
     Sequence< OUString> aBestColumnNames;
@@ -221,11 +221,12 @@ namespace
 {
     void appendOneKeyColumnClause( const OUString &tblName, const OUString &colName, const connectivity::ORowSetValue &_rValue, OUStringBuffer &o_buf )
     {
+        static const char s_sDot[] = ".";
         OUString fullName;
         if (tblName.isEmpty())
             fullName = colName;
         else
-            fullName = tblName + "." + colName;
+            fullName = tblName + s_sDot + colName;
         if ( _rValue.isNull() )
         {
             o_buf.append(fullName + " IS NULL ");
@@ -322,7 +323,7 @@ void OKeySet::construct(const Reference< XResultSet>& _xDriverSet, const OUStrin
 
     // the first row is empty because it's now easier for us to distinguish when we are beforefirst or first
     // without extra variable to be set
-    OKeySetValue keySetValue(nullptr,std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
+    OKeySetValue keySetValue(nullptr,::std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
     m_aKeyMap.insert(OKeySetMatrix::value_type(0, keySetValue));
     m_aKeyIter = m_aKeyMap.begin();
 }
@@ -332,7 +333,7 @@ void OKeySet::reset(const Reference< XResultSet>& _xDriverSet)
     OCacheSet::construct(_xDriverSet, m_sRowSetFilter);
     m_bRowCountFinal = false;
     m_aKeyMap.clear();
-    OKeySetValue keySetValue(nullptr,std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
+    OKeySetValue keySetValue(nullptr,::std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>()));
     m_aKeyMap.insert(OKeySetMatrix::value_type(0,keySetValue));
     m_aKeyIter = m_aKeyMap.begin();
 }
@@ -413,14 +414,14 @@ void OKeySet::invalidateRow()
     ::comphelper::disposeComponent(m_xSet);
 }
 
-Any SAL_CALL OKeySet::getBookmark()
+Any SAL_CALL OKeySet::getBookmark() throw(SQLException, RuntimeException)
 {
     OSL_ENSURE(m_aKeyIter != m_aKeyMap.end() && m_aKeyIter != m_aKeyMap.begin(),
         "getBookmark is only possible when we stand on a valid row!");
     return makeAny(m_aKeyIter->first);
 }
 
-bool SAL_CALL OKeySet::moveToBookmark( const Any& bookmark )
+bool SAL_CALL OKeySet::moveToBookmark( const Any& bookmark ) throw(SQLException, RuntimeException)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     m_aKeyIter = m_aKeyMap.find(::comphelper::getINT32(bookmark));
@@ -428,7 +429,7 @@ bool SAL_CALL OKeySet::moveToBookmark( const Any& bookmark )
     return m_aKeyIter != m_aKeyMap.end();
 }
 
-sal_Int32 SAL_CALL OKeySet::compareBookmarks( const Any& _first, const Any& _second )
+sal_Int32 SAL_CALL OKeySet::compareBookmarks( const Any& _first, const Any& _second ) throw(SQLException, RuntimeException)
 {
     sal_Int32 nFirst = 0, nSecond = 0;
     _first >>= nFirst;
@@ -437,18 +438,18 @@ sal_Int32 SAL_CALL OKeySet::compareBookmarks( const Any& _first, const Any& _sec
     return (nFirst != nSecond) ? CompareBookmark::NOT_EQUAL : CompareBookmark::EQUAL;
 }
 
-bool SAL_CALL OKeySet::hasOrderedBookmarks(  )
+bool SAL_CALL OKeySet::hasOrderedBookmarks(  ) throw(SQLException, RuntimeException)
 {
     return true;
 }
 
-sal_Int32 SAL_CALL OKeySet::hashBookmark( const Any& bookmark )
+sal_Int32 SAL_CALL OKeySet::hashBookmark( const Any& bookmark ) throw(SQLException, RuntimeException)
 {
     return ::comphelper::getINT32(bookmark);
 }
 
 
-void SAL_CALL OKeySet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable  )
+void SAL_CALL OKeySet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable  ) throw(SQLException, RuntimeException, std::exception)
 {
     Reference<XPropertySet> xSet(_xTable,UNO_QUERY);
     fillTableName(xSet);
@@ -471,11 +472,11 @@ void SAL_CALL OKeySet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow
     if ( xIndexSup.is() )
         xIndexes.set(xIndexSup->getIndexes(),UNO_QUERY);
 
-    std::vector< Reference<XNameAccess> > aAllIndexColumns;
+    ::std::vector< Reference<XNameAccess> > aAllIndexColumns;
     lcl_fillIndexColumns(xIndexes,aAllIndexColumns);
 
     OUStringBuffer sKeyCondition,sIndexCondition;
-    std::vector<sal_Int32> aIndexColumnPositions;
+    ::std::vector<sal_Int32> aIndexColumnPositions;
 
     const sal_Int32 nOldLength = aSql.getLength();
     sal_Int32 i = 1;
@@ -495,8 +496,8 @@ void SAL_CALL OKeySet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow
         }
         else
         {
-            std::vector< Reference<XNameAccess> >::const_iterator aIndexEnd = aAllIndexColumns.end();
-            for( std::vector< Reference<XNameAccess> >::const_iterator aIndexIter = aAllIndexColumns.begin();
+            ::std::vector< Reference<XNameAccess> >::const_iterator aIndexEnd = aAllIndexColumns.end();
+            for( ::std::vector< Reference<XNameAccess> >::const_iterator aIndexIter = aAllIndexColumns.begin();
                 aIndexIter != aIndexEnd;++aIndexIter)
             {
                 if((*aIndexIter)->hasByName(aIter->first))
@@ -551,7 +552,7 @@ void SAL_CALL OKeySet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow
     executeUpdate(_rInsertRow ,_rOriginalRow,aSql.makeStringAndClear(),"",aIndexColumnPositions);
 }
 
-void OKeySet::executeUpdate(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const OUString& i_sSQL,const OUString& i_sTableName,const std::vector<sal_Int32>& _aIndexColumnPositions)
+void OKeySet::executeUpdate(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const OUString& i_sSQL,const OUString& i_sTableName,const ::std::vector<sal_Int32>& _aIndexColumnPositions)
 {
     // now create end execute the prepared statement
     Reference< XPreparedStatement > xPrep(m_xConnection->prepareStatement(i_sSQL));
@@ -573,7 +574,7 @@ void OKeySet::executeUpdate(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rO
             {
                 if ( bRefetch )
                 {
-                    bRefetch = std::find(m_aFilterColumns.begin(),m_aFilterColumns.end(),aIter->second.sRealName) == m_aFilterColumns.end();
+                    bRefetch = ::std::find(m_aFilterColumns.begin(),m_aFilterColumns.end(),aIter->second.sRealName) == m_aFilterColumns.end();
                 }
                 impl_convertValue_throw(_rInsertRow,aIter->second);
                 (_rInsertRow->get())[nPos].setSigned((_rOriginalRow->get())[nPos].isSigned());
@@ -595,8 +596,8 @@ void OKeySet::executeUpdate(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rO
     if ( !_aIndexColumnPositions.empty() )
     {
         // now we have to set the index values
-        std::vector<sal_Int32>::const_iterator aIdxColIter = _aIndexColumnPositions.begin();
-        std::vector<sal_Int32>::const_iterator aIdxColEnd = _aIndexColumnPositions.end();
+        ::std::vector<sal_Int32>::const_iterator aIdxColIter = _aIndexColumnPositions.begin();
+        ::std::vector<sal_Int32>::const_iterator aIdxColEnd = _aIndexColumnPositions.end();
         j = 0;
         aIter = m_pColumnNames->begin();
         for(;aIdxColIter != aIdxColEnd;++aIdxColIter,++i,++j,++aIter)
@@ -617,7 +618,7 @@ void OKeySet::executeUpdate(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rO
     }
 }
 
-void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable )
+void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& _xTable ) throw(SQLException, RuntimeException, std::exception)
 {
     Reference<XPropertySet> xSet(_xTable,UNO_QUERY);
     fillTableName(xSet);
@@ -626,7 +627,9 @@ void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivi
 
     // set values and column names
     OUStringBuffer aValues(" VALUES ( ");
+    static const char aPara[] = "?,";
     OUString aQuote = getIdentifierQuoteString();
+    static const char aComma[] = ",";
 
     SelectColumnsMetaData::const_iterator aIter = m_pColumnNames->begin();
     SelectColumnsMetaData::const_iterator aEnd = m_pColumnNames->end();
@@ -639,10 +642,10 @@ void SAL_CALL OKeySet::insertRow( const ORowSetRow& _rInsertRow,const connectivi
         {
             if ( bRefetch )
             {
-                bRefetch = std::find(m_aFilterColumns.begin(),m_aFilterColumns.end(),aIter->second.sRealName) == m_aFilterColumns.end();
+                bRefetch = ::std::find(m_aFilterColumns.begin(),m_aFilterColumns.end(),aIter->second.sRealName) == m_aFilterColumns.end();
             }
-            aSql.append(::dbtools::quoteName( aQuote,aIter->second.sRealName) + ",");
-            aValues.append("?,");
+            aSql.append(::dbtools::quoteName( aQuote,aIter->second.sRealName) + aComma);
+            aValues.append(aPara);
             bModified = true;
         }
     }
@@ -717,8 +720,8 @@ void OKeySet::executeInsert( const ORowSetRow& _rInsertRow,const OUString& i_sSQ
                     Reference< XResultSetMetaDataSupplier > xMdSup(xRes,UNO_QUERY);
                     Reference< XResultSetMetaData > xMd = xMdSup->getMetaData();
                     sal_Int32 nColumnCount = xMd->getColumnCount();
-                    std::vector< OUString >::const_iterator aAutoIter = m_aAutoColumns.begin();
-                    std::vector< OUString >::const_iterator aAutoEnd = m_aAutoColumns.end();
+                    ::std::vector< OUString >::const_iterator aAutoIter = m_aAutoColumns.begin();
+                    ::std::vector< OUString >::const_iterator aAutoEnd = m_aAutoColumns.end();
                     for (sal_Int32 i = 1;aAutoIter !=  aAutoEnd && i <= nColumnCount; ++aAutoIter,++i)
                     {
                         SelectColumnsMetaData::const_iterator aFind = m_pKeyColumnNames->find(*aAutoIter);
@@ -745,15 +748,18 @@ void OKeySet::executeInsert( const ORowSetRow& _rInsertRow,const OUString& i_sSQ
         const OUString sQuote = getIdentifierQuoteString();
         OUString sMaxStmt;
         aEnd = m_pKeyColumnNames->end();
-        std::vector< OUString >::const_iterator aAutoIter = m_aAutoColumns.begin();
-        std::vector< OUString >::const_iterator aAutoEnd = m_aAutoColumns.end();
+        ::std::vector< OUString >::const_iterator aAutoIter = m_aAutoColumns.begin();
+        ::std::vector< OUString >::const_iterator aAutoEnd = m_aAutoColumns.end();
         for (;aAutoIter !=  aAutoEnd; ++aAutoIter)
         {
             // we will only fetch values which are keycolumns
             SelectColumnsMetaData::const_iterator aFind = m_pKeyColumnNames->find(*aAutoIter);
             if ( aFind != aEnd )
             {
-                sMaxStmt += sMax + ::dbtools::quoteName( sQuote,aFind->second.sRealName) + sMaxEnd;
+                sMaxStmt += sMax;
+                sMaxStmt += ::dbtools::quoteName( sQuote,aFind->second.sRealName
+);
+                sMaxStmt += sMaxEnd;
             }
         }
 
@@ -796,7 +802,7 @@ void OKeySet::executeInsert( const ORowSetRow& _rInsertRow,const OUString& i_sSQ
         ORowSetRow aKeyRow = new connectivity::ORowVector< ORowSetValue >(m_pKeyColumnNames->size());
         copyRowValue(_rInsertRow,aKeyRow,aKeyIter->first + 1);
 
-        m_aKeyIter = m_aKeyMap.insert(OKeySetMatrix::value_type(aKeyIter->first + 1,OKeySetValue(aKeyRow,std::pair<sal_Int32,Reference<XRow> >(1,Reference<XRow>())))).first;
+        m_aKeyIter = m_aKeyMap.insert(OKeySetMatrix::value_type(aKeyIter->first + 1,OKeySetValue(aKeyRow,::std::pair<sal_Int32,Reference<XRow> >(1,Reference<XRow>())))).first;
         // now we set the bookmark for this row
         (_rInsertRow->get())[0] = makeAny((sal_Int32)m_aKeyIter->first);
         tryRefetch(_rInsertRow,bRefetch);
@@ -861,7 +867,7 @@ void OKeySet::copyRowValue(const ORowSetRow& _rInsertRow,ORowSetRow& _rKeyRow,sa
     }
 }
 
-void SAL_CALL OKeySet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivity::OSQLTable& _xTable   )
+void SAL_CALL OKeySet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivity::OSQLTable& _xTable   ) throw(SQLException, RuntimeException)
 {
     Reference<XPropertySet> xSet(_xTable,UNO_QUERY);
     fillTableName(xSet);
@@ -881,11 +887,11 @@ void SAL_CALL OKeySet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivit
         xIndexes.set(xIndexSup->getIndexes(),UNO_QUERY);
 
     //  Reference<XColumnsSupplier>
-    std::vector< Reference<XNameAccess> > aAllIndexColumns;
+    ::std::vector< Reference<XNameAccess> > aAllIndexColumns;
     lcl_fillIndexColumns(xIndexes,aAllIndexColumns);
 
     OUStringBuffer sIndexCondition;
-    std::vector<sal_Int32> aIndexColumnPositions;
+    ::std::vector<sal_Int32> aIndexColumnPositions;
     SelectColumnsMetaData::const_iterator aIter = m_pColumnNames->begin();
     SelectColumnsMetaData::const_iterator aEnd = m_pColumnNames->end();
 
@@ -906,8 +912,8 @@ void SAL_CALL OKeySet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivit
         }
         else
         {
-            std::vector< Reference<XNameAccess> >::const_iterator aIndexEnd = aAllIndexColumns.end();
-            for( std::vector< Reference<XNameAccess> >::const_iterator aIndexIter = aAllIndexColumns.begin();
+            ::std::vector< Reference<XNameAccess> >::const_iterator aIndexEnd = aAllIndexColumns.end();
+            for( ::std::vector< Reference<XNameAccess> >::const_iterator aIndexIter = aAllIndexColumns.begin();
                     aIndexIter != aIndexEnd;++aIndexIter)
             {
                 if((*aIndexIter)->hasByName(aIter->first))
@@ -943,8 +949,8 @@ void SAL_CALL OKeySet::deleteRow(const ORowSetRow& _rDeleteRow,const connectivit
     }
 
     // now we have to set the index values
-    std::vector<sal_Int32>::const_iterator aIdxColIter = aIndexColumnPositions.begin();
-    std::vector<sal_Int32>::const_iterator aIdxColEnd = aIndexColumnPositions.end();
+    ::std::vector<sal_Int32>::const_iterator aIdxColIter = aIndexColumnPositions.begin();
+    ::std::vector<sal_Int32>::const_iterator aIdxColEnd = aIndexColumnPositions.end();
     aIter = m_pColumnNames->begin();
     for(;aIdxColIter != aIdxColEnd;++aIdxColIter,++i,++aIter)
     {
@@ -1003,7 +1009,7 @@ Reference<XNameAccess> OKeySet::getKeyColumns() const
     return xKeyColumns;
 }
 
-bool SAL_CALL OKeySet::next()
+bool SAL_CALL OKeySet::next(  ) throw(SQLException, RuntimeException)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
 
@@ -1031,24 +1037,24 @@ bool SAL_CALL OKeySet::next()
     return !isAfterLast();
 }
 
-bool SAL_CALL OKeySet::isBeforeFirst(  )
+bool SAL_CALL OKeySet::isBeforeFirst(  ) throw(SQLException, RuntimeException)
 {
     return m_aKeyIter == m_aKeyMap.begin();
 }
 
-bool SAL_CALL OKeySet::isAfterLast(  )
+bool SAL_CALL OKeySet::isAfterLast(  ) throw(SQLException, RuntimeException)
 {
     return  m_bRowCountFinal && m_aKeyIter == m_aKeyMap.end();
 }
 
-void SAL_CALL OKeySet::beforeFirst(  )
+void SAL_CALL OKeySet::beforeFirst(  ) throw(SQLException, RuntimeException)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     m_aKeyIter = m_aKeyMap.begin();
     invalidateRow();
 }
 
-void SAL_CALL OKeySet::afterLast(  )
+void SAL_CALL OKeySet::afterLast(  ) throw(SQLException, RuntimeException)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     fillAllRows();
@@ -1056,7 +1062,7 @@ void SAL_CALL OKeySet::afterLast(  )
     invalidateRow();
 }
 
-bool SAL_CALL OKeySet::first()
+bool SAL_CALL OKeySet::first(  ) throw(SQLException, RuntimeException)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     m_aKeyIter = m_aKeyMap.begin();
@@ -1074,7 +1080,7 @@ bool SAL_CALL OKeySet::first()
     return m_aKeyIter != m_aKeyMap.end() && m_aKeyIter != m_aKeyMap.begin();
 }
 
-bool SAL_CALL OKeySet::last(  )
+bool SAL_CALL OKeySet::last(  ) throw(SQLException, RuntimeException)
 {
     return last_checked(true);
 }
@@ -1093,15 +1099,15 @@ bool OKeySet::last_checked( bool /* i_bFetchRow */ )
     return m_aKeyIter != m_aKeyMap.end() && m_aKeyIter != m_aKeyMap.begin();
 }
 
-sal_Int32 SAL_CALL OKeySet::getRow(  )
+sal_Int32 SAL_CALL OKeySet::getRow(  ) throw(SQLException, RuntimeException)
 {
     OSL_ENSURE(!isAfterLast(),"getRow is not allowed when afterlast record!");
     OSL_ENSURE(!isBeforeFirst(),"getRow is not allowed when beforefirst record!");
 
-    return std::distance(m_aKeyMap.begin(),m_aKeyIter);
+    return ::std::distance(m_aKeyMap.begin(),m_aKeyIter);
 }
 
-bool SAL_CALL OKeySet::absolute( sal_Int32 row )
+bool SAL_CALL OKeySet::absolute( sal_Int32 row ) throw(SQLException, RuntimeException)
 {
     return absolute_checked(row,true);
 }
@@ -1176,12 +1182,12 @@ bool OKeySet::previous_checked( bool /* i_bFetchRow */ )
     return m_aKeyIter != m_aKeyMap.begin();
 }
 
-bool SAL_CALL OKeySet::previous(  )
+bool SAL_CALL OKeySet::previous(  ) throw(SQLException, RuntimeException)
 {
     return previous_checked(true);
 }
 
-bool OKeySet::doTryRefetch_throw()
+bool OKeySet::doTryRefetch_throw()  throw(SQLException, RuntimeException)
 {
     ensureStatement( );
     // we just reassign the base members
@@ -1225,7 +1231,7 @@ bool OKeySet::doTryRefetch_throw()
     return m_xSet->next();
 }
 
-void SAL_CALL OKeySet::refreshRow()
+void SAL_CALL OKeySet::refreshRow() throw(SQLException, RuntimeException)
 {
     invalidateRow();
 
@@ -1311,7 +1317,7 @@ bool OKeySet::fetchRow()
             const SelectColumnDescription& rColDesc = aPosIter->second;
             aIter->fill(rColDesc.nPosition, rColDesc.nType, m_xRow);
         }
-        m_aKeyIter = m_aKeyMap.insert(OKeySetMatrix::value_type(m_aKeyMap.rbegin()->first+1,OKeySetValue(aKeyRow,std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>())))).first;
+        m_aKeyIter = m_aKeyMap.insert(OKeySetMatrix::value_type(m_aKeyMap.rbegin()->first+1,OKeySetValue(aKeyRow,::std::pair<sal_Int32,Reference<XRow> >(0,Reference<XRow>())))).first;
     }
     else
         m_bRowCountFinal = true;
@@ -1333,7 +1339,7 @@ bool OKeySet::fillAllRows()
 }
 
 // XRow
-sal_Bool SAL_CALL OKeySet::wasNull(  )
+sal_Bool SAL_CALL OKeySet::wasNull(  ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( ! m_xRow.is() )
         throwGenericSQLException("Must call getFOO() for some FOO before wasNull()", *this);
@@ -1342,7 +1348,7 @@ sal_Bool SAL_CALL OKeySet::wasNull(  )
     return m_xRow->wasNull();
 }
 
-inline void OKeySet::ensureRowForData( )
+inline void OKeySet::ensureRowForData( ) throw(SQLException, RuntimeException)
 {
     if (! m_xRow.is() )
         refreshRow();
@@ -1352,131 +1358,131 @@ inline void OKeySet::ensureRowForData( )
     OSL_ENSURE(m_xRow.is(),"m_xRow is null! I've called throwSQLException but execution continued?");
 }
 
-OUString SAL_CALL OKeySet::getString( sal_Int32 columnIndex )
+OUString SAL_CALL OKeySet::getString( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getString(columnIndex);
 }
 
-sal_Bool SAL_CALL OKeySet::getBoolean( sal_Int32 columnIndex )
+sal_Bool SAL_CALL OKeySet::getBoolean( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getBoolean(columnIndex);
 }
 
-sal_Int8 SAL_CALL OKeySet::getByte( sal_Int32 columnIndex )
+sal_Int8 SAL_CALL OKeySet::getByte( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getByte(columnIndex);
 }
 
-sal_Int16 SAL_CALL OKeySet::getShort( sal_Int32 columnIndex )
+sal_Int16 SAL_CALL OKeySet::getShort( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getShort(columnIndex);
 }
 
-sal_Int32 SAL_CALL OKeySet::getInt( sal_Int32 columnIndex )
+sal_Int32 SAL_CALL OKeySet::getInt( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getInt(columnIndex);
 }
 
-sal_Int64 SAL_CALL OKeySet::getLong( sal_Int32 columnIndex )
+sal_Int64 SAL_CALL OKeySet::getLong( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getLong(columnIndex);
 }
 
-float SAL_CALL OKeySet::getFloat( sal_Int32 columnIndex )
+float SAL_CALL OKeySet::getFloat( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getFloat(columnIndex);
 }
 
-double SAL_CALL OKeySet::getDouble( sal_Int32 columnIndex )
+double SAL_CALL OKeySet::getDouble( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getDouble(columnIndex);
 }
 
-Sequence< sal_Int8 > SAL_CALL OKeySet::getBytes( sal_Int32 columnIndex )
+Sequence< sal_Int8 > SAL_CALL OKeySet::getBytes( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getBytes(columnIndex);
 }
 
-css::util::Date SAL_CALL OKeySet::getDate( sal_Int32 columnIndex )
+css::util::Date SAL_CALL OKeySet::getDate( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getDate(columnIndex);
 }
 
-css::util::Time SAL_CALL OKeySet::getTime( sal_Int32 columnIndex )
+css::util::Time SAL_CALL OKeySet::getTime( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getTime(columnIndex);
 }
 
-css::util::DateTime SAL_CALL OKeySet::getTimestamp( sal_Int32 columnIndex )
+css::util::DateTime SAL_CALL OKeySet::getTimestamp( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getTimestamp(columnIndex);
 }
 
-Reference< css::io::XInputStream > SAL_CALL OKeySet::getBinaryStream( sal_Int32 columnIndex )
+Reference< css::io::XInputStream > SAL_CALL OKeySet::getBinaryStream( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getBinaryStream(columnIndex);
 }
 
-Reference< css::io::XInputStream > SAL_CALL OKeySet::getCharacterStream( sal_Int32 columnIndex )
+Reference< css::io::XInputStream > SAL_CALL OKeySet::getCharacterStream( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getCharacterStream(columnIndex);
 }
 
-Any SAL_CALL OKeySet::getObject( sal_Int32 columnIndex, const Reference< css::container::XNameAccess >& typeMap )
+Any SAL_CALL OKeySet::getObject( sal_Int32 columnIndex, const Reference< css::container::XNameAccess >& typeMap ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getObject(columnIndex,typeMap);
 }
 
-Reference< XRef > SAL_CALL OKeySet::getRef( sal_Int32 columnIndex )
+Reference< XRef > SAL_CALL OKeySet::getRef( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getRef(columnIndex);
 }
 
-Reference< XBlob > SAL_CALL OKeySet::getBlob( sal_Int32 columnIndex )
+Reference< XBlob > SAL_CALL OKeySet::getBlob( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getBlob(columnIndex);
 }
 
-Reference< XClob > SAL_CALL OKeySet::getClob( sal_Int32 columnIndex )
+Reference< XClob > SAL_CALL OKeySet::getClob( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getClob(columnIndex);
 }
 
-Reference< XArray > SAL_CALL OKeySet::getArray( sal_Int32 columnIndex )
+Reference< XArray > SAL_CALL OKeySet::getArray( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     ensureRowForData();
     return m_xRow->getArray(columnIndex);
 }
 
-bool SAL_CALL OKeySet::rowUpdated(  )
+bool SAL_CALL OKeySet::rowUpdated(  ) throw(SQLException, RuntimeException)
 {
     return m_aKeyIter != m_aKeyMap.begin() && m_aKeyIter != m_aKeyMap.end() && m_aKeyIter->second.second.first == 2;
 }
 
-bool SAL_CALL OKeySet::rowInserted(  )
+bool SAL_CALL OKeySet::rowInserted(  ) throw(SQLException, RuntimeException)
 {
     return m_aKeyIter != m_aKeyMap.begin() && m_aKeyIter != m_aKeyMap.end() && m_aKeyIter->second.second.first == 1;
 }
 
-bool SAL_CALL OKeySet::rowDeleted(  )
+bool SAL_CALL OKeySet::rowDeleted(  ) throw(SQLException, RuntimeException)
 {
     bool bDeleted = m_bDeleted;
     m_bDeleted = false;
@@ -1560,7 +1566,7 @@ void OKeySet::impl_convertValue_throw(const ORowSetRow& _rInsertRow,const Select
                 sal_Int32 nIndex = sValue.indexOf('.');
                 if ( nIndex != -1 )
                 {
-                    aValue = sValue.copy(0,std::min(sValue.getLength(),nIndex + (i_aMetaData.nScale > 0 ? i_aMetaData.nScale + 1 : 0)));
+                    aValue = sValue.copy(0,::std::min(sValue.getLength(),nIndex + (i_aMetaData.nScale > 0 ? i_aMetaData.nScale + 1 : 0)));
                 }
             }
             break;

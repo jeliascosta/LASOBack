@@ -90,7 +90,7 @@ protected:
 public:
     E3dScene();
     E3dScene(E3dDefaultAttributes& rDefault);
-    virtual ~E3dScene() override;
+    virtual ~E3dScene();
 
     virtual void SetBoundRectDirty() override;
 
@@ -101,7 +101,7 @@ public:
 
     sal_uInt32 RemapOrdNum(sal_uInt32 nOrdNum) const;
 
-    // Perspective: enum ProjectionType { ProjectionType::Parallel, ProjectionType::Perspective }
+    // Perspective: enum ProjectionType { PR_PARALLEL, PR_PERSPECTIVE }
     ProjectionType GetPerspective() const
         { return (ProjectionType) static_cast<const Svx3DPerspectiveItem&>(GetObjectItemSet().Get(SDRATTR_3DSCENE_PERSPECTIVE)).GetValue(); }
 
@@ -118,7 +118,7 @@ public:
     bool GetDrawOnlySelected() const { return bDrawOnlySelected; }
     virtual sal_uInt16 GetObjIdentifier() const override;
 
-    virtual void    NbcSetSnapRect(const tools::Rectangle& rRect) override;
+    virtual void    NbcSetSnapRect(const Rectangle& rRect) override;
     virtual void    NbcMove(const Size& rSize) override;
     virtual void    NbcResize(const Point& rRef, const Fraction& rXFact,
                                                  const Fraction& rYFact) override;

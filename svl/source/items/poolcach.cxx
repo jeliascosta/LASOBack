@@ -27,6 +27,7 @@
 SfxItemPoolCache::SfxItemPoolCache( SfxItemPool *pItemPool,
                                     const SfxPoolItem *pPutItem ):
     pPool(pItemPool),
+    pCache(new SfxItemModifyArr_Impl),
     pSetToPut( nullptr ),
     pItemToPut( &pItemPool->Put(*pPutItem) )
 {
@@ -37,6 +38,7 @@ SfxItemPoolCache::SfxItemPoolCache( SfxItemPool *pItemPool,
 SfxItemPoolCache::SfxItemPoolCache( SfxItemPool *pItemPool,
                                     const SfxItemSet *pPutSet ):
     pPool(pItemPool),
+    pCache(new SfxItemModifyArr_Impl),
     pSetToPut( pPutSet ),
     pItemToPut( nullptr )
 {
@@ -46,10 +48,11 @@ SfxItemPoolCache::SfxItemPoolCache( SfxItemPool *pItemPool,
 
 SfxItemPoolCache::~SfxItemPoolCache()
 {
-    for (SfxItemModifyImpl & rImpl : m_aCache) {
+    for (SfxItemModifyImpl & rImpl : *pCache) {
         pPool->Remove( *rImpl.pPoolItem );
         pPool->Remove( *rImpl.pOrigItem );
     }
+    delete pCache; pCache = nullptr;
 
     if ( pItemToPut )
         pPool->Remove( *pItemToPut );
@@ -63,7 +66,7 @@ const SfxSetItem& SfxItemPoolCache::ApplyTo( const SfxSetItem &rOrigItem )
                 "original not in pool" );
 
     // Find whether this Transformations ever occurred
-    for (SfxItemModifyImpl & rMapEntry : m_aCache)
+    for (SfxItemModifyImpl & rMapEntry : *pCache)
     {
         if ( rMapEntry.pOrigItem == &rOrigItem )
         {
@@ -99,7 +102,7 @@ const SfxSetItem& SfxItemPoolCache::ApplyTo( const SfxSetItem &rOrigItem )
     SfxItemModifyImpl aModify;
     aModify.pOrigItem = &rOrigItem;
     aModify.pPoolItem = const_cast<SfxSetItem*>(pNewPoolItem);
-    m_aCache.push_back( aModify );
+    pCache->push_back( aModify );
 
     DBG_ASSERT( !pItemToPut ||
                 &pNewPoolItem->GetItemSet().Get( pItemToPut->Which() ) == pItemToPut,

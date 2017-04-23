@@ -37,11 +37,9 @@
 #include <osl/thread.h>
 #include <sal/log.hxx>
 
-#include <filetime.hxx>
-#include <nlsupport.hxx>
-#include "procimpl.hxx"
-#include "sockimpl.hxx"
-#include "file_url.hxx"
+#include "procimpl.h"
+#include "sockimpl.h"
+#include "file_url.h"
 #include "path_helper.hxx"
 #include <rtl/ustrbuf.h>
 #include <rtl/alloc.h>
@@ -52,106 +50,13 @@
 
 oslProcessError SAL_CALL osl_terminateProcess(oslProcess Process)
 {
-    if (Process == nullptr)
+    if (Process == NULL)
         return osl_Process_E_Unknown;
 
-    HANDLE hProcess = static_cast<oslProcessImpl*>(Process)->m_hProcess;
-    DWORD dwPID = GetProcessId(hProcess);
-
-    // cannot be System Process (0x00000000)
-    if (dwPID == 0x0)
-        return osl_Process_E_InvalidError;
-
-    // Test to see if we can create a thread in a process... adapted from:
-    // * https://support.microsoft.com/en-us/help/178893/how-to-terminate-an-application-cleanly-in-win32
-    // * http://www.drdobbs.com/a-safer-alternative-to-terminateprocess/184416547
-
-    // TODO: we really should firstly check to see if we have access to create threads and only
-    // duplicate the handle with elevated access if we don't have access... this can be done, but
-    // it's not exactly easy - an example can be found here:
-    // http://windowsitpro.com/site-files/windowsitpro.com/files/archive/windowsitpro.com/content/content/15989/listing_01.txt
-
-    HANDLE hDupProcess = nullptr;
-
-
-    // we need to make sure we can create a thread in the remote process, if the handle was created
-    // in something that doesn't give us appropriate levels of access then we will need to give it the
-    // desired level of access - if the process handle was grabbed from OpenProcess it's quite possible
-    // that the handle doesn't have the appropriate level of access...
-
-    // see https://msdn.microsoft.com/en-au/library/windows/desktop/ms684880(v=vs.85).aspx
-    DWORD dwAccessFlags = (PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION
-                                    | PROCESS_VM_WRITE | PROCESS_VM_READ);
-
-    BOOL bHaveDuplHdl = DuplicateHandle(GetCurrentProcess(),    // handle to process that has handle
-                                    hProcess,                   // handle to be duplicated
-                                    GetCurrentProcess(),        // process that will get the dup handle
-                                    &hDupProcess,               // store duplicate process handle here
-                                    dwAccessFlags,              // desired access
-                                    FALSE,                      // handle can't be inherited
-                                    0);                         // zero means no additional action needed
-
-    if (bHaveDuplHdl)
-        hProcess = hDupProcess;     // so we were able to duplicate the handle, all good...
-    else
-        SAL_WARN("sal.osl", "Could not duplicate process handle, let's hope for the best...");
-
-    DWORD dwProcessStatus = 0;
-    HANDLE hRemoteThread = nullptr;
-
-    if (GetExitCodeProcess(hProcess, &dwProcessStatus) && (dwProcessStatus == STILL_ACTIVE))
-    {
-        // We need to get the address of the Win32 procedure ExitProcess, can't call it
-        // directly because we'll be calling the thunk and that will probably lead to an
-        // access violation. Once we have the address, then we need to create a new
-        // thread in the process (which we might need to run in the address space of
-        // another process) and then call on ExitProcess to try to cleanly terminate that
-        // process
-
-        DWORD dwTID = 0;    // dummy variable as we don't need to track the thread ID
-        UINT uExitCode = 0; // dummy variable... ExitProcess has no return value
-
-        // Note: we want to call on ExitProcess() and not TerminateProcess() - this is
-        // because with ExitProcess() Windows notifies all attached dlls that the process
-        // is detaching from the dll, but TerminateProcess() terminates all threads
-        // immediately, doesn't call any termination handlers and doesn't notify any dlls
-        // that it is detaching from them
-
-        HINSTANCE hKernel = GetModuleHandleA("kernel32.dll");
-        FARPROC pfnExitProc = GetProcAddress(hKernel, "ExitProcess");
-        hRemoteThread = CreateRemoteThread(
-                            hProcess,           /* process handle */
-                            nullptr,               /* default security descriptor */
-                            0,                  /* initial size of stack in bytes is default
-                                                   size for executable */
-                            reinterpret_cast<LPTHREAD_START_ROUTINE>(pfnExitProc), /* Win32 ExitProcess() */
-                            reinterpret_cast<PVOID>(uExitCode),   /* ExitProcess() dummy return... */
-                            0,                  /* value of 0 tells thread to run immediately
-                                                   after creation */
-                            &dwTID);            /* new remote thread's identifier */
-
-    }
-
-    bool bHasExited = false;
-
-    if (hRemoteThread)
-    {
-        WaitForSingleObject(hProcess, INFINITE); // wait for process to terminate, never stop waiting...
-        CloseHandle(hRemoteThread);              // close the thread handle to allow the process to exit
-        bHasExited = true;
-    }
-
-    // need to close this duplicated process handle...
-    if (bHaveDuplHdl)
-        CloseHandle(hProcess);
-
-    if (bHasExited)
+    if (TerminateProcess(((oslProcessImpl*)Process)->m_hProcess, 0))
         return osl_Process_E_None;
 
-    // fallback - given that we we wait for an infinite time on WaitForSingleObject, this should
-    // never occur... unless CreateRemoteThread failed
-    SAL_WARN("sal.osl", "TerminateProcess(hProcess, 0) called - we should never get here!");
-    return (TerminateProcess(hProcess, 0) == FALSE) ? osl_Process_E_Unknown : osl_Process_E_None;
+    return osl_Process_E_Unknown;
 }
 
 /***************************************************************************/
@@ -164,12 +69,12 @@ oslProcess SAL_CALL osl_getProcess(oslProcessIdentifier Ident)
 
     if (hProcess)
     {
-        pProcImpl = static_cast< oslProcessImpl*>( rtl_allocateMemory(sizeof(oslProcessImpl)) );
+        pProcImpl = reinterpret_cast< oslProcessImpl*>( rtl_allocateMemory(sizeof(oslProcessImpl)) );
         pProcImpl->m_hProcess  = hProcess;
         pProcImpl->m_IdProcess = Ident;
     }
     else
-        pProcImpl = nullptr;
+        pProcImpl = NULL;
 
     return pProcImpl;
 }
@@ -178,11 +83,11 @@ oslProcess SAL_CALL osl_getProcess(oslProcessIdentifier Ident)
 
 void SAL_CALL osl_freeProcessHandle(oslProcess Process)
 {
-    if (Process != nullptr)
+    if (Process != NULL)
     {
-        CloseHandle(static_cast<oslProcessImpl*>(Process)->m_hProcess);
+        CloseHandle(((oslProcessImpl*)Process)->m_hProcess);
 
-        rtl_freeMemory(Process);
+        rtl_freeMemory((oslProcessImpl*)Process);
     }
 }
 
@@ -194,15 +99,15 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
     HANDLE hProcess;
     DWORD  IdProcess;
 
-    if (Process == nullptr)
+    if (Process == NULL)
     {
         hProcess  = GetCurrentProcess();
         IdProcess = GetCurrentProcessId();
     }
     else
     {
-        hProcess  = static_cast<oslProcessImpl*>(Process)->m_hProcess;
-        IdProcess = static_cast<oslProcessImpl*>(Process)->m_IdProcess;
+        hProcess  = ((oslProcessImpl*)Process)->m_hProcess;
+        IdProcess = ((oslProcessImpl*)Process)->m_IdProcess;
     }
 
     if (! pInfo || (pInfo->Size != sizeof(oslProcessInfo)))
@@ -224,7 +129,7 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
 
     if (Fields & osl_Process_HEAPUSAGE)
     {
-        void*   lpAddress=nullptr;
+        void*   lpAddress=0;
         MEMORY_BASIC_INFORMATION Info;
 
         pInfo->HeapUsage = 0;
@@ -237,9 +142,9 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
             if ((Info.State == MEM_COMMIT) && (Info.Type == MEM_PRIVATE))
                 pInfo->HeapUsage += Info.RegionSize;
 
-            lpAddress = static_cast<LPBYTE>(lpAddress) + Info.RegionSize;
+            lpAddress = (LPBYTE)lpAddress + Info.RegionSize;
         }
-        while (reinterpret_cast<uintptr_t>(lpAddress) <= (uintptr_t)0x7FFFFFFF); // 2GB address space
+        while ((uintptr_t)lpAddress <= (uintptr_t)0x7FFFFFFF); // 2GB address space
 
         pInfo->Fields |= osl_Process_HEAPUSAGE;
     }
@@ -253,11 +158,11 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
         {
             __int64 Value;
 
-            Value = osl::detail::getFiletime(UserTime);
+            Value = *((__int64 *)&UserTime);
             pInfo->UserTime.Seconds   = (unsigned long) (Value / 10000000L);
             pInfo->UserTime.Nanosec   = (unsigned long)((Value % 10000000L) * 100);
 
-            Value = osl::detail::getFiletime(KernelTime);
+            Value = *((__int64 *)&KernelTime);
             pInfo->SystemTime.Seconds = (unsigned long) (Value / 10000000L);
             pInfo->SystemTime.Nanosec = (unsigned long)((Value % 10000000L) * 100);
 
@@ -272,7 +177,7 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
 
 oslProcessError SAL_CALL osl_joinProcess(oslProcess Process)
 {
-    return osl_joinProcessWithTimeout(Process, nullptr);
+    return osl_joinProcessWithTimeout(Process, NULL);
 }
 
 /***************************************************************************/
@@ -283,13 +188,13 @@ oslProcessError SAL_CALL osl_joinProcessWithTimeout(oslProcess Process, const Ti
     oslProcessError osl_error = osl_Process_E_None;
     DWORD           ret;
 
-    if (nullptr == Process)
+    if (NULL == Process)
         return osl_Process_E_Unknown;
 
     if (pTimeout)
         timeout = pTimeout->Seconds * 1000 + pTimeout->Nanosec / 1000000L;
 
-    ret = WaitForSingleObject(static_cast<oslProcessImpl*>(Process)->m_hProcess, timeout);
+    ret = WaitForSingleObject(((oslProcessImpl*)Process)->m_hProcess, timeout);
 
     if (WAIT_FAILED == ret)
         osl_error = osl_Process_E_Unknown;
@@ -308,9 +213,9 @@ oslProcessError bootstrap_getExecutableFile(rtl_uString ** ppFileURL)
     ::osl::LongPathBuffer< sal_Unicode > aBuffer( MAX_LONG_PATH );
     DWORD buflen = 0;
 
-    if ((buflen = GetModuleFileNameW (nullptr, ::osl::mingw_reinterpret_cast<LPWSTR>(aBuffer), aBuffer.getBufSizeInSymbols())) > 0)
+    if ((buflen = GetModuleFileNameW (0, ::osl::mingw_reinterpret_cast<LPWSTR>(aBuffer), aBuffer.getBufSizeInSymbols())) > 0)
     {
-        rtl_uString * pAbsPath = nullptr;
+        rtl_uString * pAbsPath = 0;
         rtl_uString_newFromStr_WithLength (&(pAbsPath), aBuffer, buflen);
         if (pAbsPath)
         {
@@ -342,7 +247,7 @@ struct CommandArgs_Impl
 static struct CommandArgs_Impl g_command_args =
 {
     0,
-    nullptr
+    0
 };
 
 #ifdef _MSC_VER
@@ -352,8 +257,8 @@ static struct CommandArgs_Impl g_command_args =
 static rtl_uString ** osl_createCommandArgs_Impl (int argc, char **)
 {
     rtl_uString ** ppArgs =
-        static_cast<rtl_uString**>(rtl_allocateZeroMemory (argc * sizeof(rtl_uString*)));
-    if (ppArgs != nullptr)
+        (rtl_uString**)rtl_allocateZeroMemory (argc * sizeof(rtl_uString*));
+    if (ppArgs != 0)
     {
         int i;
         int nArgs;
@@ -364,14 +269,14 @@ static rtl_uString ** osl_createCommandArgs_Impl (int argc, char **)
             /* Convert to unicode */
             rtl_uString_newFromStr( &(ppArgs[i]), reinterpret_cast<const sal_Unicode*>(wargv[i]) );
         }
-        if (ppArgs[0] != nullptr)
+        if (ppArgs[0] != 0)
         {
             /* Ensure absolute path */
             ::osl::LongPathBuffer< sal_Unicode > aBuffer( MAX_LONG_PATH );
             DWORD dwResult = 0;
 
             dwResult = SearchPath (
-                nullptr, reinterpret_cast<LPCWSTR>(ppArgs[0]->buffer), L".exe", aBuffer.getBufSizeInSymbols(), ::osl::mingw_reinterpret_cast<LPWSTR>(aBuffer), nullptr);
+                0, reinterpret_cast<LPCWSTR>(ppArgs[0]->buffer), L".exe", aBuffer.getBufSizeInSymbols(), ::osl::mingw_reinterpret_cast<LPWSTR>(aBuffer), 0);
             if ((0 < dwResult) && (dwResult < aBuffer.getBufSizeInSymbols()))
             {
                 /* Replace argv[0] with its absolute path */
@@ -379,12 +284,12 @@ static rtl_uString ** osl_createCommandArgs_Impl (int argc, char **)
                     &(ppArgs[0]), aBuffer, dwResult);
             }
         }
-        if (ppArgs[0] != nullptr)
+        if (ppArgs[0] != 0)
         {
             /* Convert to FileURL, see @ osl_getExecutableFile() */
-            rtl_uString * pResult = nullptr;
+            rtl_uString * pResult = 0;
             osl_getFileURLFromSystemPath (ppArgs[0], &pResult);
-            if (pResult != nullptr)
+            if (pResult != 0)
             {
                 rtl_uString_assign (&(ppArgs[0]), pResult);
                 rtl_uString_release (pResult);
@@ -464,7 +369,7 @@ void SAL_CALL osl_setCommandArgs (int argc, char ** argv)
     if (g_command_args.m_nCount == 0)
     {
         rtl_uString** ppArgs = osl_createCommandArgs_Impl (argc, argv);
-        if (ppArgs != nullptr)
+        if (ppArgs != 0)
         {
             g_command_args.m_nCount = argc;
             g_command_args.m_ppArgs = ppArgs;
@@ -513,7 +418,7 @@ oslProcessError SAL_CALL osl_clearEnvironment(rtl_uString *ustrVar)
     // delete the variable from the current process environment
     // by setting SetEnvironmentVariable's second parameter to NULL
     LPCWSTR lpName = reinterpret_cast<LPCWSTR>(ustrVar->buffer);
-    if (SetEnvironmentVariableW(lpName, nullptr))
+    if (SetEnvironmentVariableW(lpName, NULL))
     {
         wchar_t *buffer = new wchar_t[wcslen(lpName) + 1 + 1];
         wcscpy(buffer, lpName);
@@ -529,6 +434,8 @@ oslProcessError SAL_CALL osl_clearEnvironment(rtl_uString *ustrVar)
  * Current Working Directory.
  ***************************************************************************/
 
+extern "C" oslMutex g_CurrentDirectoryMutex;
+
 oslProcessError SAL_CALL osl_getProcessWorkingDir( rtl_uString **pustrWorkingDir )
 {
     ::osl::LongPathBuffer< sal_Unicode > aBuffer( MAX_LONG_PATH );
@@ -541,7 +448,7 @@ oslProcessError SAL_CALL osl_getProcessWorkingDir( rtl_uString **pustrWorkingDir
     if ( dwLen && dwLen < aBuffer.getBufSizeInSymbols() )
     {
         oslFileError    eError;
-        rtl_uString     *ustrTemp = nullptr;
+        rtl_uString     *ustrTemp = NULL;
 
         rtl_uString_newFromStr_WithLength( &ustrTemp, aBuffer, dwLen );
         eError = osl_getFileURLFromSystemPath( ustrTemp, pustrWorkingDir );
@@ -561,7 +468,9 @@ oslProcessError SAL_CALL osl_getProcessWorkingDir( rtl_uString **pustrWorkingDir
  * Process Locale.
  ***************************************************************************/
 
-static rtl_Locale * g_theProcessLocale = nullptr;
+extern "C" void _imp_getProcessLocale( rtl_Locale ** ppLocale );
+
+static rtl_Locale * g_theProcessLocale = NULL;
 
 /***************************************************************************/
 
@@ -570,8 +479,8 @@ oslProcessError SAL_CALL osl_getProcessLocale( rtl_Locale ** ppLocale )
     osl_acquireMutex( *osl_getGlobalMutex() );
 
     /* determine the users default locale */
-    if( nullptr == g_theProcessLocale )
-        imp_getProcessLocale( &g_theProcessLocale );
+    if( NULL == g_theProcessLocale )
+        _imp_getProcessLocale( &g_theProcessLocale );
 
     /* or return the cached value */
     *ppLocale = g_theProcessLocale;

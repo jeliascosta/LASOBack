@@ -9,7 +9,10 @@
 
 $(eval $(call gb_CppunitTest_CppunitTest,sax))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sax))
+$(eval $(call gb_CppunitTest_use_api,sax,\
+	offapi \
+	udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_external,sax,boost_headers))
 

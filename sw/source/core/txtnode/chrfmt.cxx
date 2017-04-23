@@ -25,7 +25,7 @@
 
 void SwCharFormat::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwCharFormat"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swCharFormat"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetName().toUtf8().getStr()));
     GetAttrSet().dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
@@ -33,7 +33,7 @@ void SwCharFormat::dumpAsXml(xmlTextWriterPtr pWriter) const
 
 void SwCharFormats::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwCharFormats"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swCharFormats"));
     for (size_t i = 0; i < size(); ++i)
         GetFormat(i)->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);

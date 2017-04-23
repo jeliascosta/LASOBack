@@ -36,7 +36,7 @@ StgInternalStream::StgInternalStream( BaseStorage& rStg, const OUString& rName, 
     StreamMode nMode = bWr
                  ? StreamMode::WRITE | StreamMode::SHARE_DENYALL
                  : StreamMode::READ | StreamMode::SHARE_DENYWRITE | StreamMode::NOCREATE;
-    m_pStrm.reset( rStg.OpenStream( rName, nMode ) );
+    m_pStrm = rStg.OpenStream( rName, nMode );
 
     // set the error code right here in the stream
     SetError( rStg.GetError() );
@@ -45,9 +45,10 @@ StgInternalStream::StgInternalStream( BaseStorage& rStg, const OUString& rName, 
 
 StgInternalStream::~StgInternalStream()
 {
+    delete m_pStrm;
 }
 
-std::size_t StgInternalStream::GetData(void* pData, std::size_t nSize)
+sal_uLong StgInternalStream::GetData( void* pData, sal_uLong nSize )
 {
     if( m_pStrm )
     {
@@ -59,7 +60,7 @@ std::size_t StgInternalStream::GetData(void* pData, std::size_t nSize)
         return 0;
 }
 
-std::size_t StgInternalStream::PutData(const void* pData, std::size_t nSize)
+sal_uLong StgInternalStream::PutData( const void* pData, sal_uLong nSize )
 {
     if( m_pStrm )
     {
@@ -94,7 +95,7 @@ void StgInternalStream::Commit()
 ///////////////////////// class StgCompObjStream
 
 StgCompObjStream::StgCompObjStream( BaseStorage& rStg, bool bWr )
-    : StgInternalStream( rStg, "\1CompObj", bWr )
+    : StgInternalStream( rStg, OUString("\1CompObj"), bWr )
 {
     memset( &m_aClsId, 0, sizeof( ClsId ) );
     m_nCbFormat = SotClipboardFormatId::NONE;
@@ -122,7 +123,7 @@ bool StgCompObjStream::Load()
 
             std::unique_ptr<sal_Char[]> p(new sal_Char[ nStrLen+1 ]);
             p[nStrLen] = 0;
-            if (ReadBytes( p.get(), nStrLen ) == nStrLen)
+            if( Read( p.get(), nStrLen ) == nStrLen )
             {
                 //The encoding here is "ANSI", which is pretty useless seeing as
                 //the actual codepage used doesn't seem to be specified/stored
@@ -130,7 +131,7 @@ bool StgCompObjStream::Load()
                 //all platforms and envs
                 //https://bz.apache.org/ooo/attachment.cgi?id=68668
                 //for a good edge-case example
-                m_aUserName = OUString(p.get(), nStrLen, RTL_TEXTENCODING_MS_1252);
+                m_aUserName = nStrLen ? OUString( p.get(), nStrLen, RTL_TEXTENCODING_MS_1252 ) : OUString();
                 m_nCbFormat = ReadClipboardFormat( *this );
             }
             else
@@ -162,9 +163,10 @@ bool StgCompObjStream::Store()
 
 /////////////////////////// class StgOleStream
 
-StgOleStream::StgOleStream( BaseStorage& rStg )
-    : StgInternalStream( rStg, "\1Ole", true )
+StgOleStream::StgOleStream( BaseStorage& rStg, bool bWr )
+    : StgInternalStream( rStg, OUString("\1Ole"), bWr )
 {
+    m_nFlags = 0;
 }
 
 bool StgOleStream::Store()
@@ -174,7 +176,7 @@ bool StgOleStream::Store()
 
     Seek( 0L );
     WriteInt32( 0x02000001 );         // OLE version, format
-    WriteInt32( 0 );             // Object flags
+    WriteInt32( m_nFlags );             // Object flags
     WriteInt32( 0 );                  // Update Options
     WriteInt32( 0 );                  // reserved
     WriteInt32( 0 );                 // Moniker 1

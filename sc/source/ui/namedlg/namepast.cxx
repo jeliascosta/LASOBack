@@ -22,7 +22,7 @@
 #include "namepast.hxx"
 #include "scresid.hxx"
 #include "docsh.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 #include "rangenam.hxx"
 #include "viewdata.hxx"
 
@@ -49,7 +49,7 @@ ScNamePasteDlg::ScNamePasteDlg( vcl::Window * pParent, ScDocShell* pShell, bool 
     ScAddress aPos(pViewData->GetCurX(), pViewData->GetCurY(), pViewData->GetTabNo());
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("ctrl");
     Size aControlSize(210, 0);
-    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
     pContainer->set_width_request(aControlSize.Width());
     pContainer->set_height_request(10 * GetTextHeight());
     mpTable = VclPtr<ScRangeManagerTable>::Create(*pContainer, m_RangeMap, aPos);
@@ -79,7 +79,7 @@ void ScNamePasteDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK( ScNamePasteDlg, ButtonHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( ScNamePasteDlg, ButtonHdl, Button *, pButton, void )
 {
     if( pButton == m_pBtnPasteAll )
     {

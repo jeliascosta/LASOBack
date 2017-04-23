@@ -30,7 +30,6 @@ class SvMetaTypeEnum;
 class SvStringHashEntry;
 class SvMetaType;
 class SvMetaClass;
-class SvBOOL;
 
 class SvIdlParser
 {
@@ -45,19 +44,15 @@ public:
     void         ReadInclude( SvMetaModule& rModule );
     void         ReadInterfaceOrShell( SvMetaModule& rModule, MetaTypeType aMetaTypeType );
     void         ReadInterfaceOrShellEntry( SvMetaClass& rClass );
-    bool         ReadSlot( SvMetaSlot& rSlot );
-    void         ReadInterfaceOrShellMethod( SvMetaAttribute& rAttr );
+    bool         ReadInterfaceOrShellSlot( SvMetaSlot& rSlot );
+    void         ReadInterfaceOrShellMethodOrAttribute( SvMetaAttribute& rAttr );
     void         ReadItem();
     void         ReadStruct();
     void         ReadEnum();
     void         ReadEnumValue( SvMetaTypeEnum& rEnum );
-    void         ReadSlotId(SvIdentifier& rSlotId);
-    void         ReadSlotAttribute( SvMetaSlot& rSlot );
     SvMetaClass* ReadKnownClass();
     SvMetaType*  ReadKnownType();
     void         Read(char cChar);
-    bool         ReadIfBoolAttribute( SvBOOL&, SvStringHashEntry* pName);
-    bool         ReadIfIdAttribute( SvIdentifier& rIdentifier, SvStringHashEntry* pName );
     bool         ReadIf(char cChar);
     void         ReadDelimiter();
     bool         ReadIfDelimiter();

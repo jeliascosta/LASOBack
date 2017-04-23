@@ -221,7 +221,8 @@ namespace cairocanvas
         void doPolyPolygonPath( const css::uno::Reference< css::rendering::XPolyPolygon2D >& xPolyPolygon,
                                 Operation aOperation,
                                 bool bNoLineJoin = false,
-                                const css::uno::Sequence< css::rendering::Texture >* pTextures=nullptr ) const;
+                                const css::uno::Sequence< css::rendering::Texture >* pTextures=nullptr,
+                                cairo_t* pCairo=nullptr ) const;
 
         css::uno::Reference< css::rendering::XCachedPrimitive > implDrawBitmapSurface(
                    const css::rendering::XCanvas*      pCanvas,

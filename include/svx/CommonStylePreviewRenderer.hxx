@@ -10,18 +10,12 @@
 #ifndef INCLUDED_SVX_COMMONSTYLEPREVIEWRENDERER_HXX
 #define INCLUDED_SVX_COMMONSTYLEPREVIEWRENDERER_HXX
 
-#include <memory>
-
-#include <sfx2/objsh.hxx>
-#include <sfx2/StylePreviewRenderer.hxx>
+#include <vcl/outdev.hxx>
+#include <rsc/rscsfx.hxx>
+#include <editeng/svxfont.hxx>
 #include <svx/svxdllapi.h>
-#include <rtl/ustring.hxx>
-#include <tools/color.hxx>
-#include <tools/gen.hxx>
 
-class OutputDevice;
-class SfxStyleSheetBase;
-class SvxFont;
+#include <sfx2/StylePreviewRenderer.hxx>
 
 namespace svx
 {
@@ -36,12 +30,12 @@ class SVX_DLLPUBLIC CommonStylePreviewRenderer : public sfx2::StylePreviewRender
 
 public:
     CommonStylePreviewRenderer(const SfxObjectShell& rShell, OutputDevice& rOutputDev,
-                               SfxStyleSheetBase* pStyle, long nMaxHeight);
-    virtual ~CommonStylePreviewRenderer() override;
+                               SfxStyleSheetBase* pStyle, long nMaxHeight = 32);
+    virtual ~CommonStylePreviewRenderer();
 
     virtual bool recalculate() override;
     virtual Size getRenderSize() override;
-    virtual bool render(const tools::Rectangle& aRectangle, RenderAlign eRenderAlign = RenderAlign::CENTER) override;
+    virtual bool render(const Rectangle& aRectangle, RenderAlign eRenderAlign = RenderAlign::CENTER) override;
 };
 
 } // end namespace svx

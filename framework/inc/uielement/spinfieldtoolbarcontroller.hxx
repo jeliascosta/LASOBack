@@ -45,10 +45,10 @@ class SpinfieldToolbarController : public ComplexToolbarController
                                     sal_uInt16 nID,
                                     sal_Int32 nWidth,
                                     const OUString& aCommand );
-        virtual ~SpinfieldToolbarController() override;
+        virtual ~SpinfieldToolbarController();
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
 
         // called from SpinfieldControl
         void Up();

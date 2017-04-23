@@ -382,17 +382,17 @@ escape_path( rtl_uString *pToEscape )
         sal_Unicode c = pToEscape->buffer[i];
         switch ( c )
         {
-            case '\0':
+            case (sal_Unicode)'\0':
                 rtl_uStringbuffer_insert_ascii( &pBuffer, &nCapacity,
                         rtl_uString_getLength( pBuffer ),
                         RTL_CONSTASCII_STRINGPARAM( "\\0" ) );
                 break;
-            case ',':
+            case (sal_Unicode)',':
                 rtl_uStringbuffer_insert_ascii( &pBuffer, &nCapacity,
                         rtl_uString_getLength( pBuffer ),
                         RTL_CONSTASCII_STRINGPARAM( "\\," ) );
                 break;
-            case '\\':
+            case (sal_Unicode)'\\':
                 rtl_uStringbuffer_insert_ascii( &pBuffer, &nCapacity,
                         rtl_uString_getLength( pBuffer ),
                         RTL_CONSTASCII_STRINGPARAM( "\\\\" ) );
@@ -478,7 +478,7 @@ send_args( int fd, rtl_uString *pCwdPath )
 
     if ( bResult )
     {
-        char resp[SAL_N_ELEMENTS("InternalIPC::ProcessingDone")];
+        char resp[ strlen( "InternalIPC::ProcessingDone" ) ];
         ssize_t n = read( fd, resp, SAL_N_ELEMENTS( resp ) );
         bResult = n == (ssize_t) SAL_N_ELEMENTS( resp )
             && (memcmp(
@@ -705,7 +705,7 @@ exec_javaldx (Args *args)
 #endif
 
 // has to be a global :(
-static oslProcess * volatile g_pProcess = NULL;
+oslProcess * volatile g_pProcess = NULL;
 
 void sigterm_handler(int ignored)
 {

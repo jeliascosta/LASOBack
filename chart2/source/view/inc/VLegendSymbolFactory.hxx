@@ -29,11 +29,13 @@ namespace chart
 
 namespace VLegendSymbolFactory
 {
-    enum class PropertyType
+    enum tPropertyType
     {
-        FilledSeries,
-        LineSeries,
-        Line,
+        PROP_TYPE_FILLED_SERIES,
+        PROP_TYPE_LINE_SERIES,
+        PROP_TYPE_FILL,
+        PROP_TYPE_LINE,
+        PROP_TYPE_FILL_AND_LINE
     };
 
     css::uno::Reference< css::drawing::XShape >
@@ -43,7 +45,7 @@ namespace VLegendSymbolFactory
             LegendSymbolStyle eStyle,
             const css::uno::Reference< css::lang::XMultiServiceFactory > & xShapeFactory,
             const css::uno::Reference< css::beans::XPropertySet > & xLegendEntryProperties,
-            PropertyType ePropertyType,
+            tPropertyType ePropertyType,
             const css::uno::Any& rExplicitSymbol /*should contain a css::chart2::Symbol without automatic symbol if the charttype does support symbols else empty*/);
 }
 

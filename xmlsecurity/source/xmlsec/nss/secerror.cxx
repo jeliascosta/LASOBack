@@ -47,13 +47,14 @@ const ErrDesc allDesc[] = {
 const char *
 getCertError(PRErrorCode errNum)
 {
+    static const char sEmpty[] = "";
     for (const ErrDesc& i : allDesc)
     {
         if (i.errNum == errNum)
             return i.errString;
     }
 
-    return "";
+    return sEmpty;
 }
 
 void

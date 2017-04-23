@@ -23,8 +23,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import com.sun.star.lib.uno.typedesc.FieldDescription;
 import com.sun.star.lib.uno.typedesc.TypeDescription;
 import com.sun.star.lib.util.WeakMap;
 
@@ -245,7 +243,7 @@ public class UnoRuntime {
             return v1 == v2;
         case TypeClass.STRUCT_value:
         case TypeClass.EXCEPTION_value:
-            FieldDescription[] fs;
+            IFieldDescription[] fs;
             try {
                 fs = TypeDescription.getTypeDescription(t).
                     getFieldDescriptions();

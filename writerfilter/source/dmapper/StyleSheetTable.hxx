@@ -88,7 +88,7 @@ class StyleSheetTable :
 
 public:
     StyleSheetTable(DomainMapper& rDMapper, css::uno::Reference<css::text::XTextDocument> const& xTextDocument, bool bIsNewDoc);
-    virtual ~StyleSheetTable() override;
+    virtual ~StyleSheetTable();
 
     void ApplyStyleSheets( const FontTablePtr& rFontTable );
     const StyleSheetEntryPtr FindStyleSheetByISTD(const OUString& sIndex);
@@ -144,7 +144,7 @@ public:
     PropertyMapPtr GetProperties( sal_Int32 nMask);
 
     TableStyleSheetEntry( StyleSheetEntry& aEntry, StyleSheetTable* pStyles );
-    virtual ~TableStyleSheetEntry( ) override;
+    virtual ~TableStyleSheetEntry( );
 
 protected:
     PropertyMapPtr GetLocalPropertiesFromMask( sal_Int32 nMask );

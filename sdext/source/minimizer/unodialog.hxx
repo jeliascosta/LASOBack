@@ -60,8 +60,8 @@ public:
     void execute();
     void endExecute( bool bStatus );
 
-    /// @throws css::uno::Exception
-    css::uno::Reference< css::awt::XWindowPeer > createWindowPeer( css::uno::Reference< css::awt::XWindowPeer > const & xParentPeer );
+    css::uno::Reference< css::awt::XWindowPeer > createWindowPeer( css::uno::Reference< css::awt::XWindowPeer > xParentPeer )
+        throw ( css::uno::Exception );
 
     css::uno::Reference< css::uno::XInterface > insertControlModel( const OUString& rServiceName, const OUString& rName,
         const css::uno::Sequence< OUString >& rPropertyNames, const css::uno::Sequence< css::uno::Any >& rPropertyValues );

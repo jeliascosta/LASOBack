@@ -36,6 +36,7 @@
 #include <osl/file.hxx>
 #include <osl/thread.h>
 #include <memory>
+#include <algorithm>
 
 class FilterConfigItem;
 
@@ -131,17 +132,17 @@ static void MakeAsMeta(Graphic &rGraphic)
 
     if( !aSize.Width() || !aSize.Height() )
         aSize = Application::GetDefaultDevice()->PixelToLogic(
-            aBmp.GetSizePixel(), MapUnit::Map100thMM );
+            aBmp.GetSizePixel(), MAP_100TH_MM );
     else
         aSize = OutputDevice::LogicToLogic( aSize,
-            aBmp.GetPrefMapMode(), MapUnit::Map100thMM );
+            aBmp.GetPrefMapMode(), MAP_100TH_MM );
 
     pVDev->EnableOutput( false );
     aMtf.Record( pVDev );
     pVDev->DrawBitmap( Point(), aSize, rGraphic.GetBitmap() );
     aMtf.Stop();
     aMtf.WindStart();
-    aMtf.SetPrefMapMode( MapUnit::Map100thMM );
+    aMtf.SetPrefMapMode( MAP_100TH_MM );
     aMtf.SetPrefSize( aSize );
     rGraphic = aMtf;
 }
@@ -177,7 +178,7 @@ static oslProcessError runProcessWithPathSearch(const OUString &rProgName,
 
     result = osl_executeProcess_WithRedirectedIO(url.pData,
     pArgs, nArgs, osl_Process_HIDDEN,
-        pSecurity, nullptr, nullptr, 0, pProcess, pIn, pOut, pErr);
+        pSecurity, 0, 0, 0, pProcess, pIn, pOut, pErr);
 #else
     result = osl_executeProcess_WithRedirectedIO(rProgName.pData,
         pArgs, nArgs, osl_Process_SEARCHPATH | osl_Process_HIDDEN,
@@ -205,7 +206,7 @@ static bool RenderAsEMF(const sal_uInt8* pBuf, sal_uInt32 nBytesRead, Graphic &r
     osl::FileBase::getSystemPathFromFileURL(aTempInput.GetURL(), input);
 
     SvStream* pInputStream = aTempInput.GetStream(StreamMode::WRITE);
-    sal_uInt64 nCount = pInputStream->WriteBytes(pBuf, nBytesRead);
+    sal_uInt64 nCount = pInputStream->Write(pBuf, nBytesRead);
     aTempInput.CloseStream();
 
     //fdo#64161 pstoedit under non-windows uses libEMF to output the EMF, but
@@ -318,7 +319,7 @@ static bool RenderAsBMPThroughHelper(const sal_uInt8* pBuf, sal_uInt32 nBytesRea
         oslFileError eFileErr = osl_readFile(pOut, aBuf, 32000, &nCount);
         while (eFileErr == osl_File_E_None && nCount)
         {
-            aMemStm.WriteBytes(aBuf, sal::static_int_cast<std::size_t>(nCount));
+            aMemStm.Write(aBuf, sal::static_int_cast< sal_Size >(nCount));
             eFileErr = osl_readFile(pOut, aBuf, 32000, &nCount);
         }
 
@@ -418,22 +419,6 @@ void CreateMtfReplacementAction( GDIMetaFile& rMtf, SvStream& rStrm, sal_uInt32 
     OString aComment("EPSReplacementGraphic");
     if ( nSizeWMF || nSizeTIFF )
     {
-        std::vector<sal_uInt8> aWMFBuf;
-        if (nSizeWMF && checkSeek(rStrm, nOrigPos + nPosWMF) && rStrm.remainingSize() >= nSizeWMF)
-        {
-            aWMFBuf.resize(nSizeWMF);
-            aWMFBuf.resize(rStrm.ReadBytes(aWMFBuf.data(), nSizeWMF));
-        }
-        nSizeWMF = aWMFBuf.size();
-
-        std::vector<sal_uInt8> aTIFFBuf;
-        if (nSizeTIFF && checkSeek(rStrm, nOrigPos + nPosTIFF) && rStrm.remainingSize() >= nSizeTIFF)
-        {
-            aTIFFBuf.resize(nSizeTIFF);
-            aTIFFBuf.resize(rStrm.ReadBytes(aTIFFBuf.data(), nSizeTIFF));
-        }
-        nSizeTIFF = aTIFFBuf.size();
-
         SvMemoryStream aReplacement( nSizeWMF + nSizeTIFF + 28 );
         sal_uInt32 nMagic = 0xc6d3d0c5;
         sal_uInt32 nPPos = 28 + nSizeWMF + nSizeTIFF;
@@ -443,9 +428,18 @@ void CreateMtfReplacementAction( GDIMetaFile& rMtf, SvStream& rStrm, sal_uInt32 
         aReplacement.WriteUInt32( nMagic ).WriteUInt32( nPPos ).WriteUInt32( nPSSize )
                     .WriteUInt32( nWPos ).WriteUInt32( nSizeWMF )
                     .WriteUInt32( nTPos ).WriteUInt32( nSizeTIFF );
-
-        aReplacement.WriteBytes(aWMFBuf.data(), nSizeWMF);
-        aReplacement.WriteBytes(aTIFFBuf.data(), nSizeTIFF);
+        if (nSizeWMF && checkSeek(rStrm, nOrigPos + nPosWMF) && rStrm.remainingSize() >= nSizeWMF)
+        {
+            std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[ nSizeWMF ]);
+            rStrm.Read(pBuf.get(), nSizeWMF);
+            aReplacement.Write(pBuf.get(), nSizeWMF);
+        }
+        if (nSizeTIFF && checkSeek(rStrm, nOrigPos + nPosTIFF) && rStrm.remainingSize() >= nSizeTIFF)
+        {
+            std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[ nSizeTIFF ]);
+            rStrm.Read(pBuf.get(), nSizeTIFF);
+            aReplacement.Write(pBuf.get(), nSizeTIFF);
+        }
         rMtf.AddAction( static_cast<MetaAction*>( new MetaCommentAction( aComment, 0, static_cast<const sal_uInt8*>(aReplacement.GetData()), aReplacement.Tell() ) ) );
     }
     else
@@ -470,7 +464,7 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
     pVDev->Push( PushFlags::FONT );
     pVDev->SetFont( aFont );
 
-    tools::Rectangle aRect( Point( 1, 1 ), Size( nWidth - 2, nHeight - 2 ) );
+    Rectangle aRect( Point( 1, 1 ), Size( nWidth - 2, nHeight - 2 ) );
     pVDev->DrawRect( aRect );
 
     OUString aString;
@@ -492,8 +486,7 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
             sal_uInt8 aOldValue(pDest[ nLen ]); pDest[ nLen ] = 0;
             if ( strcmp( reinterpret_cast<char*>(pDest), "none" ) != 0 )
             {
-                const char* pStr = reinterpret_cast<char*>(pDest);
-                aString += " Title:" + OUString(pStr, strlen(pStr), RTL_TEXTENCODING_ASCII_US) + "\n";
+                aString += " Title:" + OUString::createFromAscii( reinterpret_cast<char*>(pDest) ) + "\n";
             }
             pDest[ nLen ] = aOldValue;
         }
@@ -513,8 +506,7 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
         if (static_cast<sal_uInt32>(nLen) < nRemainingBytes)
         {
             sal_uInt8 aOldValue(pDest[nLen]); pDest[nLen] = 0;
-            const char* pStr = reinterpret_cast<char*>(pDest);
-            aString += " Creator:" + OUString(pStr, strlen(pStr), RTL_TEXTENCODING_ASCII_US) + "\n";
+            aString += " Creator:" + OUString::createFromAscii( reinterpret_cast<char*>(pDest) ) + "\n";
             pDest[nLen] = aOldValue;
         }
     }
@@ -536,8 +528,6 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
             if ( strcmp( reinterpret_cast<char*>(pDest), "none" ) != 0 )
             {
                 aString += " CreationDate:" + OUString::createFromAscii( reinterpret_cast<char*>(pDest) ) + "\n";
-                const char* pStr = reinterpret_cast<char*>(pDest);
-                aString += " CreationDate:" + OUString(pStr, strlen(pStr), RTL_TEXTENCODING_ASCII_US) + "\n";
             }
             pDest[ nLen ] = aOldValue;
         }
@@ -559,7 +549,7 @@ void MakePreview(sal_uInt8* pBuf, sal_uInt32 nBytesRead,
     pVDev->Pop();
     aMtf.Stop();
     aMtf.WindStart();
-    aMtf.SetPrefMapMode( MapUnit::MapPoint );
+    aMtf.SetPrefMapMode( MAP_POINT );
     aMtf.SetPrefSize( Size( nWidth, nHeight ) );
     rGraphic = aMtf;
 }
@@ -624,7 +614,7 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
 
     std::unique_ptr<sal_uInt8[]> pHeader( new sal_uInt8[ 22 ] );
     rStream.Seek( nPSStreamPos );
-    rStream.ReadBytes(pHeader.get(), 22); // check PostScript header
+    rStream.Read(pHeader.get(), 22); // check PostScript header
     bool bOk = ImplSearchEntry(pHeader.get(), reinterpret_cast<sal_uInt8 const *>("%!PS-Adobe"), 10, 10) &&
                ImplSearchEntry(&pHeader[ 15 ], reinterpret_cast<sal_uInt8 const *>("EPS"), 3, 3);
     if (bOk)
@@ -638,7 +628,7 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
         std::unique_ptr<sal_uInt8[]> pBuf( new sal_uInt8[ nPSSize ] );
 
         sal_uInt32 nBufStartPos = rStream.Tell();
-        sal_uInt32 nBytesRead = rStream.ReadBytes(pBuf.get(), nPSSize);
+        sal_uInt32 nBytesRead = rStream.Read( pBuf.get(), nPSSize );
         if ( nBytesRead == nPSSize )
         {
             sal_uInt32 nSecurityCount = 32;
@@ -729,13 +719,13 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
                                 aMtf.Record( pVDev );
                                 aSize = aBitmap.GetPrefSize();
                                 if( !aSize.Width() || !aSize.Height() )
-                                    aSize = Application::GetDefaultDevice()->PixelToLogic( aBitmap.GetSizePixel(), MapUnit::Map100thMM );
+                                    aSize = Application::GetDefaultDevice()->PixelToLogic( aBitmap.GetSizePixel(), MAP_100TH_MM );
                                 else
-                                    aSize = OutputDevice::LogicToLogic( aSize, aBitmap.GetPrefMapMode(), MapUnit::Map100thMM );
+                                    aSize = OutputDevice::LogicToLogic( aSize, aBitmap.GetPrefMapMode(), MAP_100TH_MM );
                                 pVDev->DrawBitmap( Point(), aSize, aBitmap );
                                 aMtf.Stop();
                                 aMtf.WindStart();
-                                aMtf.SetPrefMapMode( MapUnit::Map100thMM );
+                                aMtf.SetPrefMapMode( MAP_100TH_MM );
                                 aMtf.SetPrefSize( aSize );
                                 aGraphic = aMtf;
                                 bHasPreview = bRetValue = true;
@@ -780,12 +770,13 @@ ipsGraphicImport( SvStream & rStream, Graphic & rGraphic, FilterConfigItem* )
                             aGraphic);
                     }
 
-                    GfxLink     aGfxLink( std::move(pBuf), nPSSize, GfxLinkType::EpsBuffer ) ;
+                    GfxLink     aGfxLink( pBuf.get(), nPSSize, GFX_LINK_TYPE_EPS_BUFFER ) ;
+                    pBuf.release();
                     aMtf.AddAction( static_cast<MetaAction*>( new MetaEPSAction( Point(), Size( nWidth, nHeight ),
                                                                       aGfxLink, aGraphic.GetGDIMetaFile() ) ) );
                     CreateMtfReplacementAction( aMtf, rStream, nOrigPos, nPSSize, nPosWMF, nSizeWMF, nPosTIFF, nSizeTIFF );
                     aMtf.WindStart();
-                    aMtf.SetPrefMapMode( MapUnit::MapPoint );
+                    aMtf.SetPrefMapMode( MAP_POINT );
                     aMtf.SetPrefSize( Size( nWidth, nHeight ) );
                     rGraphic = aMtf;
                     bRetValue = true;

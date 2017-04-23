@@ -24,8 +24,6 @@
 #include <svx/sdr/attribute/sdrallfillattributeshelper.hxx>
 
 class SvxBoxItem;
-enum class SvxPageUsage;
-enum class SvxFrameDirection;
 
 class SVX_DLLPUBLIC SvxPageWindow : public vcl::Window
 {
@@ -43,7 +41,7 @@ private:
     SvxBoxItem* pBorder;
     bool bResetBackground;
     bool bFrameDirection;
-    SvxFrameDirection nFrameDirection;
+    sal_Int32 nFrameDirection;
 
     long nHdLeft;
     long nHdRight;
@@ -57,6 +55,7 @@ private:
     long nFtHeight;
     SvxBoxItem* pFtBorder;
 
+    //UUUU
     drawinglayer::attribute::SdrAllFillAttributesHelperPtr  maHeaderFillAttributes;
     drawinglayer::attribute::SdrAllFillAttributesHelperPtr  maFooterFillAttributes;
     drawinglayer::attribute::SdrAllFillAttributesHelperPtr  maPageFillAttributes;
@@ -67,23 +66,25 @@ private:
     bool bHorz : 1;
     bool bVert : 1;
 
-    SvxPageUsage eUsage;
+    sal_uInt16 eUsage;
 
 protected:
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
 
     virtual void DrawPage(vcl::RenderContext& rRenderContext, const Point& rPoint,
                           const bool bSecond, const bool bEnabled);
 
+    //UUUU
     void drawFillAttributes(vcl::RenderContext& rRenderContext,
                             const drawinglayer::attribute::SdrAllFillAttributesHelperPtr& rFillAttributes,
-                            const tools::Rectangle& rPaintRange, const tools::Rectangle& rDefineRange);
+                            const Rectangle& rPaintRange, const Rectangle& rDefineRange);
 
 public:
     SvxPageWindow(vcl::Window* pParent);
-    virtual ~SvxPageWindow() override;
+    virtual ~SvxPageWindow();
     virtual void dispose() override;
 
+    //UUUU
     void setHeaderFillAttributes(const drawinglayer::attribute::SdrAllFillAttributesHelperPtr& rFillAttributes)
     {
         maHeaderFillAttributes = rFillAttributes;
@@ -142,8 +143,8 @@ public:
     long GetFtDist() const { return nFtDist; }
     long GetFtHeight() const { return nFtHeight; }
 
-    void SetUsage(SvxPageUsage eU) { eUsage = eU; }
-    SvxPageUsage GetUsage() const { return eUsage; }
+    void SetUsage(sal_uInt16 eU) { eUsage = eU; }
+    sal_uInt16 GetUsage() const { return eUsage; }
 
     void SetHeader( bool bNew ) { bHeader = bNew; }
     void SetFooter( bool bNew ) { bFooter = bNew; }
@@ -152,7 +153,8 @@ public:
     void SetVert( bool bNew ) { bVert = bNew; }
 
     void EnableFrameDirection(bool bEnable);
-    void SetFrameDirection(SvxFrameDirection nDirection);
+    //uses enum SvxFrameDirection
+    void SetFrameDirection(sal_Int32 nDirection);
 
     void ResetBackground();
 

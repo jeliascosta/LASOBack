@@ -54,7 +54,7 @@ void SwAsyncRetrieveInputStreamThreadConsumer::CreateThread( const OUString& rUR
 }
 
 void SwAsyncRetrieveInputStreamThreadConsumer::ApplyInputStream(
-    css::uno::Reference<css::io::XInputStream> const & xInputStream,
+    css::uno::Reference<css::io::XInputStream> xInputStream,
     const bool bIsStreamReadOnly )
 {
     mrGrfNode.ApplyInputStream( xInputStream, bIsStreamReadOnly );

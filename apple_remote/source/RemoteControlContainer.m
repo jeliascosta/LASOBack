@@ -92,13 +92,15 @@
 }
 
 - (void) setListeningToRemote: (BOOL) value {
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         [[remoteControls objectAtIndex: i] setListeningToRemote: value];
     }
     if (value && value != [self isListeningToRemote]) [self performSelector:@selector(reset) withObject:nil afterDelay:0.01];
 }
 - (BOOL) isListeningToRemote {
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         if ([[remoteControls objectAtIndex: i] isListeningToRemote]) {
             return YES;
         }
@@ -110,7 +112,8 @@
 #ifdef DEBUG
     NSLog(@"Apple Remote: start listening to events... ");
 #endif
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         [[remoteControls objectAtIndex: i] startListening: sender];
     }
 }
@@ -118,20 +121,23 @@
 #ifdef DEBUG
     NSLog(@"Apple Remote: stopListening to events... ");
 #endif
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         [[remoteControls objectAtIndex: i] stopListening: sender];
     }
 }
 
 - (BOOL) isOpenInExclusiveMode {
     BOOL mode = YES;
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         mode = mode && ([[remoteControls objectAtIndex: i] isOpenInExclusiveMode]);
     }
     return mode;
 }
 - (void) setOpenInExclusiveMode: (BOOL) value {
-    for(NSUInteger i=0; i < [remoteControls count]; i++) {
+    unsigned int i;
+    for(i=0; i < [remoteControls count]; i++) {
         [[remoteControls objectAtIndex: i] setOpenInExclusiveMode:value];
     }
 }

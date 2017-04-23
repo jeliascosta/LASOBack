@@ -44,7 +44,7 @@ SfxPoolItem* SvxRotateModeItem::CreateDefault() { return new  SvxRotateModeItem(
 
 
 SvxRotateModeItem::SvxRotateModeItem( SvxRotateMode eMode, sal_uInt16 _nWhich )
-    : SfxEnumItem( _nWhich, eMode )
+    : SfxEnumItem( _nWhich, (sal_uInt16)eMode )
 {
 }
 
@@ -66,19 +66,19 @@ SfxPoolItem* SvxRotateModeItem::Create( SvStream& rStream, sal_uInt16 ) const
 
 bool SvxRotateModeItem::GetPresentation(
                                 SfxItemPresentation ePres,
-                                MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
+                                SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
                                 OUString& rText, const IntlWrapper * )  const
 {
     rText.clear();
 
     switch ( ePres )
     {
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText += "...: ";
             SAL_FALLTHROUGH; // break; // FALL THROUGH!!!
 
-        case SfxItemPresentation::Nameless:
-            rText += OUStringLiteral1( GetValue() );
+        case SFX_ITEM_PRESENTATION_NAMELESS:
+            rText += OUString( sal_Unicode(GetValue()) );
             return true;
             break;
         default: ;//prevent warning
@@ -133,7 +133,7 @@ bool SvxRotateModeItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/ 
         case table::CellVertJustify2::BOTTOM:   eSvx = SVX_ROTATE_MODE_BOTTOM;   break;
         default: ;//prevent warning
     }
-    SetValue( eSvx );
+    SetValue( (sal_uInt16)eSvx );
     return true;
 }
 

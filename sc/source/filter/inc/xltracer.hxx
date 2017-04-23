@@ -30,17 +30,30 @@ enum XclTracerId
     eUnKnown  ,          /// unused but allows us to set the correct index
     eRowLimitExceeded ,
     eTabLimitExceeded ,
+    ePassword ,
     ePrintRange ,
     eShortDate ,
     eBorderLineStyle ,
     eFillPattern ,
+    eInvisibleGrid ,
+    eFormattedNote ,
+    eFormulaExtName ,
     eFormulaMissingArg ,
     ePivotDataSource ,
     ePivotChartExists ,
     eChartUnKnownType ,
+    eChartTrendLines ,
+    eChartErrorBars ,
     eChartOnlySheet ,
+    eChartRange ,
+    eChartDSName,
     eChartDataTable,
     eChartLegendPosition,
+    eChartTextFormatting,
+    eChartEmbeddedObj,
+    eChartAxisAuto,
+    eChartAxisManual,
+    eChartInvalidXY,
     eUnsupportedObject ,
     eObjectNotPrintable ,
     eDVType,
@@ -48,14 +61,14 @@ enum XclTracerId
 };
 
 /** This class wraps an MSFilterTracer to create trace logs for import/export filters. */
-class XclTracer final
+class XclTracer
 {
 public:
     explicit                    XclTracer( const OUString& rDocUrl );
-                                ~XclTracer();
+    virtual                     ~XclTracer();
 
     /** Returns true, if tracing is enabled. */
-    bool                 IsEnabled() const { return mbEnabled; }
+    inline bool                 IsEnabled() const { return mbEnabled; }
 
     /** Ensure that particular traces are logged once per document. */
     void                        ProcessTraceOnce(XclTracerId eProblem);

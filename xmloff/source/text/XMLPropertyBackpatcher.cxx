@@ -34,6 +34,9 @@ template<class A>
 XMLPropertyBackpatcher<A>::XMLPropertyBackpatcher(
     const OUString& sPropName)
 :   sPropertyName(sPropName)
+,   bDefaultHandling(false)
+,   bPreserveProperty(false)
+,   sPreservePropertyName()
 {
 }
 
@@ -41,6 +44,7 @@ XMLPropertyBackpatcher<A>::XMLPropertyBackpatcher(
 template<class A>
 XMLPropertyBackpatcher<A>::~XMLPropertyBackpatcher()
 {
+    SetDefault();
 }
 
 
@@ -66,11 +70,28 @@ void XMLPropertyBackpatcher<A>::ResolveId(
         //    (and preserve Property, if appropriate)
         Any aAny;
         aAny <<= aValue;
-        for(BackpatchListType::iterator aIter = pList->begin();
-            aIter != pList->end();
-            ++aIter)
+        if (bPreserveProperty)
         {
-            (*aIter)->setPropertyValue(sPropertyName, aAny);
+            // preserve version
+            for(BackpatchListType::iterator aIter = pList->begin();
+                aIter != pList->end();
+                ++aIter)
+            {
+                Reference<XPropertySet> xProp = (*aIter);
+                Any aPres = xProp->getPropertyValue(sPreservePropertyName);
+                xProp->setPropertyValue(sPropertyName, aAny);
+                xProp->setPropertyValue(sPreservePropertyName, aPres);
+            }
+        }
+        else
+        {
+            // without preserve
+            for(BackpatchListType::iterator aIter = pList->begin();
+                aIter != pList->end();
+                ++aIter)
+            {
+                (*aIter)->setPropertyValue(sPropertyName, aAny);
+            }
         }
 
         // c) delete list
@@ -104,12 +125,21 @@ void XMLPropertyBackpatcher<A>::SetProperty(
         if (! aBackpatchListMap.count(sName))
         {
             // create backpatch list for this name
-            BackpatchListType* pTmp = new BackpatchListType;
+            BackpatchListType* pTmp = new BackpatchListType() ;
             aBackpatchListMap[sName] = static_cast<void*>(pTmp);
         }
 
         // insert footnote
         static_cast<BackpatchListType*>(aBackpatchListMap[sName])->push_back(xPropSet);
+    }
+}
+
+template<class A>
+void XMLPropertyBackpatcher<A>::SetDefault()
+{
+    if (bDefaultHandling)
+    {
+        // not implemented yet
     }
 }
 
@@ -179,10 +209,11 @@ XMLPropertyBackpatcher<sal_Int16>& XMLTextImportHelper::GetSequenceIdBP()
 
 XMLPropertyBackpatcher<OUString>& XMLTextImportHelper::GetSequenceNameBP()
 {
+    static const char s_SourceName[] = "SourceName";
     if (!m_xBackpatcherImpl->m_pSequenceNameBackpatcher.get())
     {
         m_xBackpatcherImpl->m_pSequenceNameBackpatcher.reset(
-            new XMLPropertyBackpatcher<OUString>("SourceName"));
+            new XMLPropertyBackpatcher<OUString>(s_SourceName));
     }
     return *m_xBackpatcherImpl->m_pSequenceNameBackpatcher;
 }

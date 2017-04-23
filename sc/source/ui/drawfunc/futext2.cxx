@@ -31,14 +31,14 @@ SdrOutliner* FuText::MakeOutliner()
 
     rViewData.UpdateOutlinerFlags(*pOutl);
 
-    //  The EditEngine uses during RTF export (Clipboard / Drag&Drop)
-    //  the MapMode of RefDevice to set the font size
+    //  Die EditEngine benutzt beim RTF Export (Clipboard / Drag&Drop)
+    //  den MapMode des RefDevices, um die Fontgroesse zu setzen
 
     //  #i10426# The ref device isn't set to the EditEngine before SdrBeginTextEdit now,
     //  so the device must be taken from the model here.
     OutputDevice* pRef = pDrDoc->GetRefDevice();
     if (pRef && pRef != pWindow)
-        pRef->SetMapMode( MapMode(MapUnit::Map100thMM) );
+        pRef->SetMapMode( MapMode(MAP_100TH_MM) );
 
     return pOutl;
 }

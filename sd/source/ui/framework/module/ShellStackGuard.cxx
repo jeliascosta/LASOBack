@@ -71,8 +71,8 @@ ShellStackGuard::ShellStackGuard (Reference<frame::XController>& rxController)
             Any());
 
         // Prepare the printer polling.
-        maPrinterPollingIdle.SetInvokeHandler(LINK(this,ShellStackGuard,TimeoutHandler));
-        maPrinterPollingIdle.SetPriority(TaskPriority::LOWER);
+        maPrinterPollingIdle.SetIdleHdl(LINK(this,ShellStackGuard,TimeoutHandler));
+        maPrinterPollingIdle.SetPriority(SchedulerPriority::LOWER);
     }
 }
 
@@ -91,6 +91,7 @@ void SAL_CALL ShellStackGuard::disposing()
 
 void SAL_CALL ShellStackGuard::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     if (rEvent.Type.equals(FrameworkHelper::msConfigurationUpdateStartEvent))
     {
@@ -107,6 +108,7 @@ void SAL_CALL ShellStackGuard::notifyConfigurationChange (
 
 void SAL_CALL ShellStackGuard::disposing (
     const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     if (mxConfigurationController.is())
         if (rEvent.Source == mxConfigurationController)
@@ -116,7 +118,7 @@ void SAL_CALL ShellStackGuard::disposing (
         }
 }
 
-IMPL_LINK(ShellStackGuard, TimeoutHandler, Timer*, pIdle, void)
+IMPL_LINK_TYPED(ShellStackGuard, TimeoutHandler, Idle*, pIdle, void)
 {
 #ifdef DEBUG
     OSL_ASSERT(pIdle==&maPrinterPollingIdle);

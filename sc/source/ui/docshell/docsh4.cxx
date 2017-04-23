@@ -19,8 +19,6 @@
 
 #include <config_features.h>
 
-#include <boost/property_tree/json_parser.hpp>
-
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
 #include <com/sun/star/frame/XComponentLoader.hpp>
@@ -45,6 +43,7 @@ using namespace ::com::sun::star;
 #include <svx/dataaccessdescriptor.hxx>
 #include <svx/drawitem.hxx>
 #include <svx/fmshell.hxx>
+#include <svtools/xwindowitem.hxx>
 #include <svx/svdoole2.hxx>
 #include <sfx2/passwd.hxx>
 #include <sfx2/filedlghelper.hxx>
@@ -53,9 +52,7 @@ using namespace ::com::sun::star;
 #include <svl/documentlockfile.hxx>
 #include <svl/sharecontrolfile.hxx>
 #include <unotools/securityoptions.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
-#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 #include "docuno.hxx"
 
@@ -63,7 +60,7 @@ using namespace ::com::sun::star;
 #include "docsh.hxx"
 #include "docshimp.hxx"
 #include "docfunc.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "stlsheet.hxx"
 #include "stlpool.hxx"
 #include "appoptio.hxx"
@@ -132,7 +129,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                             pReqArgs->HasItem( FN_PARAM_3, &pTabItem ) &&
                             pReqArgs->HasItem( SID_SC_SETTEXT, &pTextItem ) )
             {
-                //  parameters are  1-based !!!
+                //  Parameter sind 1-based !!!
                 SCCOL nCol = static_cast<const SfxInt16Item*>(pColItem)->GetValue() - 1;
                 SCROW nRow = static_cast<const SfxInt32Item*>(pRowItem)->GetValue() - 1;
                 SCTAB nTab = static_cast<const SfxInt16Item*>(pTabItem)->GetValue() - 1;
@@ -151,10 +148,10 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         rReq.Done();
                         break;
                     }
-                    else                // protected cell
+                    else                // geschuetzte Zelle
                     {
 #if HAVE_FEATURE_SCRIPTING
-                        SbxBase::SetError( ERRCODE_SBX_BAD_PARAMETER );      //! which error ?
+                        SbxBase::SetError( ERRCODE_SBX_BAD_PARAMETER );      //! welchen Fehler ?
 #endif
                         break;
                     }
@@ -184,11 +181,11 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 if ( pReqArgs->GetItemState( FN_PARAM_1, true, &pItem ) == SfxItemState::SET )
                     sTarget = static_cast<const SfxStringItem*>(pItem)->GetValue();
 
-                bool bIsNewArea = true;         // Default sal_True (no inquiry)
+                bool bIsNewArea = true;         // Default sal_True (keine Nachfrage)
                 if ( pReqArgs->GetItemState( FN_PARAM_2, true, &pItem ) == SfxItemState::SET )
                     bIsNewArea = static_cast<const SfxBoolItem*>(pItem)->GetValue();
 
-                // if necessary, create new database area
+                // bei Bedarf neuen Datenbankbereich anlegen
                 bool bMakeArea = false;
                 if (bIsNewArea)
                 {
@@ -202,20 +199,17 @@ void ScDocShell::Execute( SfxRequest& rReq )
                             if (bUndo)
                             {
                                 OUString aStrImport = ScGlobal::GetRscString( STR_UNDO_IMPORTDATA );
-                                ViewShellId nViewShellId(-1);
-                                if (ScTabViewShell* pViewSh = ScTabViewShell::GetActiveViewShell())
-                                    nViewShellId = pViewSh->GetViewShellId();
-                                GetUndoManager()->EnterListAction( aStrImport, aStrImport, 0, nViewShellId );
+                                GetUndoManager()->EnterListAction( aStrImport, aStrImport );
                             }
 
-                            ScDBData* pDBData = GetDBData( ScRange(aPos), SC_DB_IMPORT, ScGetDBSelection::Keep );
-                            OSL_ENSURE(pDBData, "Cannot create DB-Daten");
+                            ScDBData* pDBData = GetDBData( ScRange(aPos), SC_DB_IMPORT, SC_DBSEL_KEEP );
+                            OSL_ENSURE(pDBData, "kann DB-Daten nicht anlegen");
                             sTarget = pDBData->GetName();
                         }
                     }
                 }
 
-                // inquire, before old DB range gets overwritten
+                // nachfragen, bevor alter DB-Bereich ueberschrieben wird
                 bool bDo = true;
                 if (!bIsNewArea)
                 {
@@ -233,7 +227,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     ScDBDocFunc(*this).UpdateImport( sTarget, aDesc );
                     rReq.Done();
 
-                    //  UpdateImport also updates the internal operations
+                    //  UpdateImport aktualisiert auch die internen Operationen
                 }
                 else
                     rReq.Ignore();
@@ -292,11 +286,11 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     if ( !aRangeListRef->empty() )
                     {
                         bMultiRange = true;
-                        aSingleRange = *aRangeListRef->front(); // for header
+                        aSingleRange = *aRangeListRef->front(); // fuer Header
                         bValid = true;
                     }
                     else
-                        aRangeListRef.clear();
+                        aRangeListRef.Clear();
                 }
 
                 ScTabViewShell* pViewSh = ScTabViewShell::GetActiveViewShell();
@@ -310,11 +304,11 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     SCROW nRow2 = aSingleRange.aEnd.Row();
                     SCTAB nTab = aSingleRange.aStart.Tab();
 
-                    //! limit always or not at all ???
+                    //! immer oder gar nicht begrenzen ???
                     if (!bMultiRange)
                         aDocument.LimitChartArea( nTab, nCol1,nRow1, nCol2,nRow2 );
 
-                                        // Dialog for column/row headers
+                                        // Dialog fuer Spalten/Zeilenkoepfe
                     bool bOk = true;
                     if ( !bAddRange && ( !bColInit || !bRowInit ) )
                     {
@@ -327,7 +321,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                        ScopedVclPtr<AbstractScColRowLabelDlg> pDlg(pFact->CreateScColRowLabelDlg(pParent, bRowHeaders, bColHeaders));
+                        std::unique_ptr<AbstractScColRowLabelDlg> pDlg(pFact->CreateScColRowLabelDlg(pParent, bRowHeaders, bColHeaders));
                         OSL_ENSURE(pDlg, "Dialog create fail!");
                         if ( pDlg->Execute() == RET_OK )
                         {
@@ -341,7 +335,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                             bOk = false;
                     }
 
-                    if (bOk)            // execute
+                    if (bOk)            // ausfuehren
                     {
                         if (bMultiRange)
                         {
@@ -370,13 +364,13 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 }
                 else
                 {
-                    OSL_FAIL("UpdateChartArea: no ViewShell or wrong data");
+                    OSL_FAIL("UpdateChartArea: keine ViewShell oder falsche Daten");
                 }
                 rReq.Done();
             }
             else
             {
-                OSL_FAIL("SID_CHART_SOURCE without arguments");
+                OSL_FAIL("SID_CHART_SOURCE ohne Argumente");
             }
             break;
 
@@ -387,7 +381,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 if ( pReqArgs && SfxItemState::SET == pReqArgs->GetItemState( nSlot, true, &pItem ) )
                     bNewVal = static_cast<const SfxBoolItem*>(pItem)->GetValue();
                 else
-                    bNewVal = !aDocument.GetAutoCalc();     // Toggle for menue
+                    bNewVal = !aDocument.GetAutoCalc();     // Toggle fuer Menue
                 aDocument.SetAutoCalc( bNewVal );
                 SetDocumentModified();
                 if (pBindings)
@@ -458,17 +452,17 @@ void ScDocShell::Execute( SfxRequest& rReq )
 
                     if (bAnyDde)
                     {
-                        //  calculate formulas and paint like in the TrackTimeHdl
+                        //  Formeln berechnen und painten wie im TrackTimeHdl
                         aDocument.TrackFormulas();
-                        Broadcast(SfxHint(SfxHintId::ScDataChanged));
+                        Broadcast(SfxSimpleHint(FID_DATACHANGED));
 
-                        //  Should FID_DATACHANGED become asynchronous some time
-                        //  (e.g., with Invalidate at Window), an update needs to be forced here.
+                        //  wenn FID_DATACHANGED irgendwann mal asynchron werden sollte
+                        //  (z.B. mit Invalidate am Window), muss hier ein Update erzwungen werden.
                     }
 
                     aDocument.UpdateAreaLinks();
 
-                    //! test for error
+                    //! Test, ob Fehler
                     rReq.Done();
                 }
                 else
@@ -481,7 +475,8 @@ void ScDocShell::Execute( SfxRequest& rReq )
 
         case SID_REIMPORT_AFTER_LOAD:
             {
-                //  Is called after loading if there are DB areas with omitted data
+                //  wird nach dem Laden aufgerufen, wenn DB-Bereiche mit
+                //  weggelassenen Daten enthalten sind
 
                 bool bDone = false;
                 ScDBCollection* pDBColl = aDocument.GetDBCollection();
@@ -491,7 +486,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 {
                     ScRange aRange;
                     ScTabViewShell* pViewSh = GetBestViewShell();
-                    OSL_ENSURE(pViewSh,"SID_REIMPORT_AFTER_LOAD: no View");
+                    OSL_ENSURE(pViewSh,"SID_REIMPORT_AFTER_LOAD: keine View");
                     if (pViewSh && pDBColl)
                     {
                         ScopedVclPtrInstance<QueryBox> aBox( GetActiveDialogParent(), WinBits(WB_YES_NO | WB_DEF_YES),
@@ -509,27 +504,27 @@ void ScDocShell::Execute( SfxRequest& rReq )
                                     rDBData.GetArea(aRange);
                                     pViewSh->MarkRange(aRange);
 
-                                    //  Import and internal operations like SID_REFRESH_DBAREA
-                                    //  (inquiry for import not needed here)
+                                    //  Import und interne Operationen wie SID_REFRESH_DBAREA
+                                    //  (Abfrage auf Import hier nicht noetig)
 
                                     ScImportParam aImportParam;
                                     rDBData.GetImportParam( aImportParam );
                                     bool bContinue = pViewSh->ImportData( aImportParam );
                                     rDBData.SetImportParam( aImportParam );
 
-                                    //  mark (size may have changed)
+                                    //  markieren (Groesse kann sich geaendert haben)
                                     rDBData.GetArea(aRange);
                                     pViewSh->MarkRange(aRange);
 
-                                    if ( bContinue )    // error at import -> abort
+                                    if ( bContinue )    // Fehler beim Import -> Abbruch
                                     {
-                                        //  internal operations, if some where saved
+                                        //  interne Operationen, wenn welche gespeichert
 
                                         if ( rDBData.HasQueryParam() || rDBData.HasSortParam() ||
                                              rDBData.HasSubTotalParam() )
                                             pViewSh->RepeatDB();
 
-                                        //  pivot tables, which have the range as source data
+                                        //  Pivottabellen die den Bereich als Quelldaten haben
 
                                         RefreshPivotTables(aRange);
                                     }
@@ -542,10 +537,10 @@ void ScDocShell::Execute( SfxRequest& rReq )
 
                 if ( !bDone && pDBColl )
                 {
-                    //  if not, but then update the dependent formulas
-                    //! also for individual ranges, which cannot be updated
+                    //  wenn nicht, dann aber die abhaengigen Formeln updaten
+                    //! auch fuer einzelne Bereiche, die nicht aktualisiert werden koennen
 
-                    aDocument.CalcAll();        //! only for the dependent
+                    aDocument.CalcAll();        //! nur die abhaengigen
                     PostDataChanged();
                 }
 
@@ -575,6 +570,13 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 const SfxBoolItem* pItem = rReq.GetArg<SfxBoolItem>(FID_CHG_RECORD);
                 bool bDo = true;
 
+                // xmlsec05/06:
+                // getting real parent window when called from Security-Options TP
+                vcl::Window* pParent = nullptr;
+                const SfxPoolItem* pParentItem;
+                if( pReqArgs && SfxItemState::SET == pReqArgs->GetItemState( SID_ATTR_XWINDOW, false, &pParentItem ) )
+                    pParent = static_cast<const XWindowItem*>( pParentItem )->GetWindowPtr();
+
                 // desired state
                 ScChangeTrack* pChangeTrack = rDoc.GetChangeTrack();
                 bool bActivateTracking = (pChangeTrack == nullptr);   // toggle
@@ -586,7 +588,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     if ( !pItem )
                     {
                         // no dialog on playing the macro
-                        ScopedVclPtrInstance<WarningBox> aBox( GetActiveDialogParent(),
+                        ScopedVclPtrInstance<WarningBox> aBox( pParent ? pParent : GetActiveDialogParent(),
                             WinBits(WB_YES_NO | WB_DEF_NO),
                             ScGlobal::GetRscString( STR_END_REDLINING ) );
                         bDo = ( aBox->Execute() == RET_YES );
@@ -597,7 +599,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         if (pChangeTrack)
                         {
                             if ( pChangeTrack->IsProtected() )
-                                bDo = ExecuteChangeProtectionDialog();
+                                bDo = ExecuteChangeProtectionDialog( nullptr );
                         }
                         if ( bDo )
                         {
@@ -618,7 +620,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 {
                     UpdateAcceptChangesDialog();
 
-                    // invalidate slots
+                    // Slots invalidieren
                     if (pBindings)
                         pBindings->InvalidateAll(false);
                     if ( !pItem )
@@ -632,7 +634,11 @@ void ScDocShell::Execute( SfxRequest& rReq )
 
         case SID_CHG_PROTECT :
             {
-                if ( ExecuteChangeProtectionDialog() )
+                vcl::Window* pParent = nullptr;
+                const SfxPoolItem* pParentItem;
+                if( pReqArgs && SfxItemState::SET == pReqArgs->GetItemState( SID_ATTR_XWINDOW, false, &pParentItem ) )
+                    pParent = static_cast<const XWindowItem*>( pParentItem )->GetWindowPtr();
+                if ( ExecuteChangeProtectionDialog( pParent ) )
                 {
                     rReq.Done();
                     SetDocumentModified();
@@ -655,12 +661,12 @@ void ScDocShell::Execute( SfxRequest& rReq )
                             WinBits(WB_YES_NO | WB_DEF_NO),
                             ScGlobal::GetRscString( STR_END_REDLINING ) );
                         if( aBox->Execute() == RET_YES )
-                            bDo = ExecuteChangeProtectionDialog( true );
+                            bDo = ExecuteChangeProtectionDialog( nullptr, true );
                         else
                             bDo = false;
                     }
                     else    // merge might reject some actions
-                        bDo = ExecuteChangeProtectionDialog( true );
+                        bDo = ExecuteChangeProtectionDialog( nullptr, true );
                 }
                 if ( !bDo )
                 {
@@ -704,7 +710,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         nVersion = pInt16Item->GetValue();
                     }
 
-                    //  no filter specified -> detection
+                    //  kein Filter angegeben -> Detection
                     if (aFilterName.isEmpty())
                         ScDocumentLoader::GetFilterName( aFileName, aFilterName, aOptions, true, false );
 
@@ -718,7 +724,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         pSet->Put( SfxStringItem( SID_FILE_FILTEROPTIONS, aOptions ) );
                     if ( nVersion != 0 )
                         pSet->Put( SfxInt16Item( SID_VERSION, nVersion ) );
-                    pMed = new SfxMedium( aFileName, StreamMode::STD_READ, pFilter, pSet );
+                    pMed = new SfxMedium( aFileName, STREAM_STD_READ, pFilter, pSet );
                 }
                 else
                 {
@@ -728,12 +734,12 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     pImpl->pRequest = new SfxRequest( rReq );
                     delete pImpl->pDocInserter;
                     pImpl->pDocInserter = new ::sfx2::DocumentInserter(
-                        ScDocShell::Factory().GetFactoryName(), false );
+                        OUString::createFromAscii( ScDocShell::Factory().GetShortName() ), false );
                     pImpl->pDocInserter->StartExecuteModal( LINK( this, ScDocShell, DialogClosedHdl ) );
                     return ;
                 }
 
-                if ( pMed )     // now execute in earnest...
+                if ( pMed )     // nun wirklich ausfuehren...
                 {
                     SfxErrorContext aEc( ERRCTX_SFX_OPENDOC, pMed->GetName() );
 
@@ -743,9 +749,9 @@ void ScDocShell::Execute( SfxRequest& rReq )
                     pOtherDocSh->DoLoad( pMed );
                     sal_uLong nErr = pOtherDocSh->GetErrorCode();
                     if (nErr)
-                        ErrorHandler::HandleError( nErr );          // also warnings
+                        ErrorHandler::HandleError( nErr );          // auch Warnings
 
-                    if ( !pOtherDocSh->GetError() )                 // only errors
+                    if ( !pOtherDocSh->GetError() )                 // nur Errors
                     {
                         bool bHadTrack = ( aDocument.GetChangeTrack() != nullptr );
 #if HAVE_FEATURE_MULTIUSER_ENVIRONMENT
@@ -778,7 +784,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         rReq.SetReturnValue( SfxInt32Item( nSlot, 0 ) );        //! ???????
                         rReq.Done();
 
-                        if (!bHadTrack)         //  newly turned on -> show as well
+                        if (!bHadTrack)         //  neu eingeschaltet -> auch anzeigen
                         {
                             ScChangeViewSettings* pOldSet = aDocument.GetChangeViewSettings();
                             if ( !pOldSet || !pOldSet->ShowChanges() )
@@ -809,7 +815,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         }
 #endif
                     }
-                    pOtherDocSh->DoClose();     // delete happens with the Ref
+                    pOtherDocSh->DoClose();     // delete passiert mit der Ref
                 }
             }
             break;
@@ -826,12 +832,12 @@ void ScDocShell::Execute( SfxRequest& rReq )
                         SCTAB nTab;
                         if (aDocument.GetTable( aName, nTab ))
                         {
-                            //  move DeleteTable from viewfunc to docfunc!
+                            //  DeleteTable von viewfunc nach docfunc verschieben!
 
                             ScTabViewShell* pSh = GetBestViewShell();
                             if ( pSh )
                             {
-                                //! omit SetTabNo in DeleteTable?
+                                //! SetTabNo in DeleteTable weglassen?
                                 SCTAB nDispTab = pSh->GetViewData().GetTabNo();
                                 pSh->DeleteTable( nTab );
                                 pSh->SetTabNo(nDispTab);
@@ -858,7 +864,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                             {
                                 OUString aComment;
                                 Color aColor;
-                                ScScenarioFlags nFlags;
+                                sal_uInt16 nFlags;
                                 aDocument.GetScenarioData( nTab, aComment, aColor, nFlags );
 
                                 // Determine if the Sheet that the Scenario was created on
@@ -875,7 +881,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                                ScopedVclPtr<AbstractScNewScenarioDlg> pNewDlg(pFact->CreateScNewScenarioDlg(GetActiveDialogParent(), aName, true, bSheetProtected));
+                                std::unique_ptr<AbstractScNewScenarioDlg> pNewDlg(pFact->CreateScNewScenarioDlg(GetActiveDialogParent(), aName, true, bSheetProtected));
                                 OSL_ENSURE(pNewDlg, "Dialog create fail!");
                                 pNewDlg->SetScenarioData( aName, aComment, aColor, nFlags );
                                 if ( pNewDlg->Execute() == RET_OK )
@@ -899,13 +905,13 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 if (const SfxUInt16Item* pInt16Item = dynamic_cast<const SfxUInt16Item*>(pItem))
                 {
                     sal_uInt16 nY2k = pInt16Item->GetValue();
-                    // set always to DocOptions, so that it is also saved for S050
-                    // (and all inquiries run up until now on it as well).
-                    // SetDocOptions propagates that to the NumberFormatter
+                    // immer an den DocOptions setzen, damit das auch fuer SO50
+                    // gespeichert wird (und alle Abfragen bisher auch darauf laufen).
+                    // SetDocOptions propagiert das an den NumberFormatter
                     ScDocOptions aDocOpt( aDocument.GetDocOptions() );
                     aDocOpt.SetYear2000( nY2k );
                     aDocument.SetDocOptions( aDocOpt );
-                    // the FormShell shall notice it as well
+                    // die FormShell soll es mitbekommen
                     ScTabViewShell* pSh = GetBestViewShell();
                     if ( pSh )
                     {
@@ -932,7 +938,7 @@ void ScDocShell::Execute( SfxRequest& rReq )
                 if ( aDlg->Execute() == RET_OK )
                 {
                     bool bSetShared = aDlg->IsShareDocumentChecked();
-                    if ( bSetShared != IsDocShared() )
+                    if ( bSetShared != static_cast< bool >( IsDocShared() ) )
                     {
                         if ( bSetShared )
                         {
@@ -1108,17 +1114,13 @@ void ScDocShell::Execute( SfxRequest& rReq )
         break;
         case SID_NOTEBOOKBAR:
         {
-            const SfxStringItem* pFile = rReq.GetArg<SfxStringItem>( SID_NOTEBOOKBAR );
-
-            if ( pBindings && sfx2::SfxNotebookBar::IsActive() )
-                sfx2::SfxNotebookBar::ExecMethod(*pBindings, pFile ? pFile->GetValue() : "");
-            else if ( pBindings )
-                sfx2::SfxNotebookBar::CloseMethod(*pBindings);
+            if (pBindings)
+                sfx2::SfxNotebookBar::ExecMethod(*pBindings);
         }
         break;
         default:
         {
-            // small (?) hack -> forwarding of the slots to TabViewShell
+            // kleiner (?) Hack -> forward der Slots an TabViewShell
             ScTabViewShell* pSh = GetBestViewShell();
             if ( pSh )
                 pSh->Execute( rReq );
@@ -1143,7 +1145,7 @@ void UpdateAcceptChangesDialog()
     }
 }
 
-bool ScDocShell::ExecuteChangeProtectionDialog( bool bJustQueryIfProtected )
+bool ScDocShell::ExecuteChangeProtectionDialog( vcl::Window* _pParent, bool bJustQueryIfProtected )
 {
     bool bDone = false;
     ScChangeTrack* pChangeTrack = aDocument.GetChangeTrack();
@@ -1158,7 +1160,7 @@ bool ScDocShell::ExecuteChangeProtectionDialog( bool bJustQueryIfProtected )
         OUString aPassword;
 
         ScopedVclPtrInstance<SfxPasswordDialog> pDlg(
-            GetActiveDialogParent(), &aText );
+            _pParent ? _pParent : GetActiveDialogParent(), &aText );
         pDlg->SetText( aTitle );
         pDlg->SetMinLen( 1 );
         pDlg->SetHelpId( GetStaticInterface()->GetSlot(SID_CHG_PROTECT)->GetCommand() );
@@ -1215,7 +1217,7 @@ void ScDocShell::DoRecalc( bool bApi )
     {
         if ( pHdl && pHdl->IsInputMode() && pHdl->IsFormulaMode() && !bApi )
         {
-            pHdl->FormulaPreview();     // partial result as QuickHelp
+            pHdl->FormulaPreview();     // Teilergebnis als QuickHelp
             bDone = true;
         }
         else
@@ -1224,7 +1226,7 @@ void ScDocShell::DoRecalc( bool bApi )
             pSh->UpdateInputHandler();
         }
     }
-    if (!bDone)                         // otherwise re-calculate document
+    if (!bDone)                         // sonst Dokument neu berechnen
     {
         WaitObject aWaitObj( GetActiveDialogParent() );
         if ( pHdl )
@@ -1238,10 +1240,11 @@ void ScDocShell::DoRecalc( bool bApi )
         if ( pSh )
             pSh->UpdateCharts(true);
 
-        aDocument.BroadcastUno( SfxHint( SfxHintId::DataChanged ) );
+        aDocument.BroadcastUno( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
 
-        //  If there are charts, then paint everything, so that PostDataChanged
-        //  and the charts do not come one after the other and parts are painted twice.
+        //  Wenn es Charts gibt, dann alles painten, damit nicht
+        //  PostDataChanged und die Charts nacheinander kommen und Teile
+        //  doppelt gepainted werden.
 
         ScChartListenerCollection* pCharts = aDocument.GetChartListenerCollection();
         if ( pCharts && pCharts->hasListeners() )
@@ -1261,21 +1264,21 @@ void ScDocShell::DoHardRecalc( bool /* bApi */ )
         pSh->UpdateInputHandler();
     }
     aDocument.CalcAll();
-    GetDocFunc().DetectiveRefresh();    // creates own Undo
+    GetDocFunc().DetectiveRefresh();    // erzeugt eigenes Undo
     if ( pSh )
         pSh->UpdateCharts(true);
 
-    // set notification flags for "calculate" event (used in SfxHintId::DataChanged broadcast)
+    // set notification flags for "calculate" event (used in SFX_HINT_DATACHANGED broadcast)
     // (might check for the presence of any formulas on each sheet)
     SCTAB nTabCount = aDocument.GetTableCount();
     if (aDocument.HasAnySheetEventScript( ScSheetEventId::CALCULATE, true )) // search also for VBA handler
         for (SCTAB nTab=0; nTab<nTabCount; nTab++)
             aDocument.SetCalcNotification(nTab);
 
-    // CalcAll doesn't broadcast value changes, so SfxHintId::ScCalcAll is broadcasted globally
-    // in addition to SfxHintId::DataChanged.
-    aDocument.BroadcastUno( SfxHint( SfxHintId::ScCalcAll ) );
-    aDocument.BroadcastUno( SfxHint( SfxHintId::DataChanged ) );
+    // CalcAll doesn't broadcast value changes, so SC_HINT_CALCALL is broadcasted globally
+    // in addition to SFX_HINT_DATACHANGED.
+    aDocument.BroadcastUno( SfxSimpleHint( SC_HINT_CALCALL ) );
+    aDocument.BroadcastUno( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
 
     // use hard recalc also to disable stream-copying of all sheets
     // (somewhat consistent with charts)
@@ -1305,26 +1308,26 @@ void ScDocShell::DoAutoStyle( const ScRange& rRange, const OUString& rStyle )
         SCROW nEndRow = rRange.aEnd.Row();
         aDocument.ApplyStyleAreaTab( nStartCol, nStartRow, nEndCol, nEndRow, nTab, *pStyleSheet );
         aDocument.ExtendMerge( nStartCol, nStartRow, nEndCol, nEndRow, nTab );
-        PostPaint( nStartCol, nStartRow, nTab, nEndCol, nEndRow, nTab, PaintPartFlags::Grid );
+        PostPaint( nStartCol, nStartRow, nTab, nEndCol, nEndRow, nTab, PAINT_GRID );
     }
 }
 
 void ScDocShell::NotifyStyle( const SfxStyleSheetHint& rHint )
 {
-    SfxHintId nId = rHint.GetId();
+    sal_uInt16 nId = rHint.GetHint();
     const SfxStyleSheetBase* pStyle = rHint.GetStyleSheet();
     if (!pStyle)
         return;
 
     if ( pStyle->GetFamily() == SfxStyleFamily::Page )
     {
-        if ( nId == SfxHintId::StyleSheetModified )
+        if ( nId == SfxStyleSheetHintId::MODIFIED )
         {
             ScDocShellModificator aModificator( *this );
 
             OUString aNewName = pStyle->GetName();
             OUString aOldName = aNewName;
-            const SfxStyleSheetModifiedHint* pExtendedHint = dynamic_cast<const SfxStyleSheetModifiedHint*>(&rHint); // Name geaendert?
+            const SfxStyleSheetHintExtended* pExtendedHint = dynamic_cast<const SfxStyleSheetHintExtended*>(&rHint); // Name geaendert?
             if (pExtendedHint)
                 aOldName = pExtendedHint->GetOldName();
 
@@ -1333,7 +1336,7 @@ void ScDocShell::NotifyStyle( const SfxStyleSheetHint& rHint )
 
             SCTAB nTabCount = aDocument.GetTableCount();
             for (SCTAB nTab=0; nTab<nTabCount; nTab++)
-                if (aDocument.GetPageStyle(nTab) == aNewName)   // already adjusted to new
+                if (aDocument.GetPageStyle(nTab) == aNewName)   // schon auf neu angepasst
                 {
                     aDocument.PageStyleModified( nTab, aNewName );
                     ScPrintFunc aPrintFunc( this, GetPrinter(), nTab );
@@ -1358,11 +1361,11 @@ void ScDocShell::NotifyStyle( const SfxStyleSheetHint& rHint )
     }
     else if ( pStyle->GetFamily() == SfxStyleFamily::Para )
     {
-        if ( nId == SfxHintId::StyleSheetModified)
+        if ( nId == SfxStyleSheetHintId::MODIFIED)
         {
             OUString aNewName = pStyle->GetName();
             OUString aOldName = aNewName;
-            const SfxStyleSheetModifiedHint* pExtendedHint = dynamic_cast<const SfxStyleSheetModifiedHint*>(&rHint);
+            const SfxStyleSheetHintExtended* pExtendedHint = dynamic_cast<const SfxStyleSheetHintExtended*>(&rHint);
             if (pExtendedHint)
                 aOldName = pExtendedHint->GetOldName();
             if ( aNewName != aOldName )
@@ -1377,10 +1380,10 @@ void ScDocShell::NotifyStyle( const SfxStyleSheetHint& rHint )
         }
     }
 
-    //  everything else goes via slots...
+    //  alles andere geht ueber Slots...
 }
 
-//  like in printfun.cxx
+//  wie in printfun.cxx
 #define ZOOM_MIN    10
 
 void ScDocShell::SetPrintZoom( SCTAB nTab, sal_uInt16 nScale, sal_uInt16 nPages )
@@ -1434,7 +1437,7 @@ bool ScDocShell::AdjustPrintZoom( const ScRange& rRange )
         const ScRange* pRepeatCol = aDocument.GetRepeatColRange( nTab );
         const ScRange* pRepeatRow = aDocument.GetRepeatRowRange( nTab );
 
-        //  calculate needed scaling for selection
+        //  benoetigte Skalierung fuer Selektion ausrechnen
 
         sal_uInt16 nNewScale = nOldScale;
 
@@ -1484,7 +1487,7 @@ bool ScDocShell::AdjustPrintZoom( const ScRange& rRange )
         long nNeeded = std::min( aPhysPage.Width()  * 100 / nBlkTwipsX,
                             aPhysPage.Height() * 100 / nBlkTwipsY );
         if ( nNeeded < ZOOM_MIN )
-            nNeeded = ZOOM_MIN;         // boundary
+            nNeeded = ZOOM_MIN;         // Begrenzung
         if ( nNeeded < (long) nNewScale )
             nNewScale = (sal_uInt16) nNeeded;
 
@@ -1505,14 +1508,14 @@ void ScDocShell::PageStyleModified( const OUString& rStyleName, bool bApi )
         if ( aDocument.GetPageStyle(nTab) == rStyleName &&
                 ( !bApi || aDocument.GetPageSize(nTab).Width() ) )
             nUseTab = nTab;
-                                // at bApi only if breaks already shown
+                                // bei bApi nur, wenn Umbrueche schon angezeigt
 
-    if (ValidTab(nUseTab))      // not used -> nothing to do
+    if (ValidTab(nUseTab))      // nicht verwendet -> nichts zu tun
     {
         bool bWarn = false;
 
-        ScPrintFunc aPrintFunc( this, GetPrinter(), nUseTab );  //! cope without CountPages
-        if (!aPrintFunc.UpdatePages())                          //  sets breaks on all tabs
+        ScPrintFunc aPrintFunc( this, GetPrinter(), nUseTab );  //! ohne CountPages auskommen
+        if (!aPrintFunc.UpdatePages())                          //  setzt Umbrueche auf allen Tabs
             bWarn = true;
 
         if (bWarn && !bApi)
@@ -1543,7 +1546,7 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
 
     switch ( rReq.GetSlot() )
     {
-        case SID_STATUS_PAGESTYLE:  // click on StatusBar control
+        case SID_STATUS_PAGESTYLE:  // Click auf StatusBar-Control
         case SID_FORMATPAGE:
             {
                 if ( pReqArgs == nullptr )
@@ -1567,7 +1570,7 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScStyleDlg( GetActiveDialogParent(), *pStyleSheet, RID_SCDLG_STYLES_PAGE, RID_SCDLG_STYLES_PAGE ));
+                        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScStyleDlg( GetActiveDialogParent(), *pStyleSheet, RID_SCDLG_STYLES_PAGE, RID_SCDLG_STYLES_PAGE ));
                         OSL_ENSURE(pDlg, "Dialog create fail!");
 
                         if ( pDlg->Execute() == RET_OK )
@@ -1591,7 +1594,7 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
                             if ( pOutSet )
                                 aDocument.ModifyStyleSheet( *pStyleSheet, *pOutSet );
 
-                            // memorizing for GetState():
+                            // merken fuer GetState():
                             GetPageOnFromPageStyleSet( &rStyleSet, nCurTab, bHeaderOn, bFooterOn );
                             rCaller.GetViewFrame()->GetBindings().Invalidate( SID_HFEDIT );
 
@@ -1607,7 +1610,7 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
                             PageStyleModified( aNewName, false );
                             rReq.Done();
                         }
-                        pDlg.disposeAndClear();
+                        pDlg.reset();
 
                         rStyleSet.ClearItem( ATTR_PAGE_PAPERTRAY );
                     }
@@ -1653,12 +1656,12 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
 
                         switch ( eUsage )
                         {
-                            case SvxPageUsage::Left:
-                            case SvxPageUsage::Right:
+                            case SVX_PAGE_LEFT:
+                            case SVX_PAGE_RIGHT:
                             {
                                 if ( bHeaderOn && bFooterOn )
                                     nResId = RID_SCDLG_HFEDIT;
-                                else if ( SvxPageUsage::Right == eUsage )
+                                else if ( SVX_PAGE_RIGHT == eUsage )
                                 {
                                     if ( !bHeaderOn && bFooterOn )
                                         nResId = RID_SCDLG_HFEDIT_RIGHTFOOTER;
@@ -1680,8 +1683,8 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
                             }
                             break;
 
-                            case SvxPageUsage::Mirror:
-                            case SvxPageUsage::All:
+                            case SVX_PAGE_MIRROR:
+                            case SVX_PAGE_ALL:
                             default:
                             {
                                 if ( !bShareHeader && !bShareFooter )
@@ -1729,7 +1732,7 @@ void ScDocShell::ExecutePageStyle( SfxViewShell& rCaller,
                         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScHFEditDlg(
+                        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScHFEditDlg(
                                                                                 GetActiveDialogParent(),
                                                                                 rStyleSet,
                                                                                 aStr,
@@ -1843,9 +1846,9 @@ void ScDocShell::GetState( SfxItemSet &rSet )
                 }
                 break;
 
-            //  When a formula is edited, FID_RECALC must be enabled in any case. Recalc for
-            //  the doc was disabled once because of a bug if AutoCalc was on, but is now
-            //  always enabled because of another bug.
+            //  Wenn eine Formel editiert wird, muss FID_RECALC auf jeden Fall enabled sein.
+            //  Recalc fuer das Doc war mal wegen eines Bugs disabled, wenn AutoCalc an war,
+            //  ist jetzt wegen eines anderen Bugs aber auch immer enabled.
 
             case SID_TABLES_COUNT:
                 rSet.Put( SfxInt16Item( nWhich, aDocument.GetTableCount() ) );
@@ -1872,11 +1875,7 @@ void ScDocShell::GetState( SfxItemSet &rSet )
             case SID_NOTEBOOKBAR:
                 {
                     if (GetViewBindings())
-                    {
-                        bool bVisible = sfx2::SfxNotebookBar::StateMethod(*GetViewBindings(),
-                                                                          "modules/scalc/ui/");
-                        rSet.Put( SfxBoolItem( SID_NOTEBOOKBAR, bVisible ) );
-                    }
+                        sfx2::SfxNotebookBar::StateMethod(*GetViewBindings(), "modules/scalc/ui/notebookbar.ui");
                 }
                 break;
 
@@ -1896,9 +1895,10 @@ void ScDocShell::GetSbxState( SfxItemSet &rSet )
     //  SID_TABLES_GET (Tables),
     //  SID_PIVOT_GET (DataPilotTables) - removed (old Basic)
 
-        //  If slots from the view shell are executed here, the GetState must also be forwarded!
+        //  Wenn hier Slots von der View-Shell executed werden, muss auch der
+        //  GetState weitergeleitet werden!
 
-    ScTabViewShell* pVisibleSh = GetBestViewShell();        // visible view
+    ScTabViewShell* pVisibleSh = GetBestViewShell();        // sichtbare View
     if ( pVisibleSh )
         pVisibleSh->GetState( rSet );
 }
@@ -1910,12 +1910,12 @@ void ScDocShell::Draw( OutputDevice* pDev, const JobSetup & /* rSetup */, sal_uI
     if (!aDocument.HasTable(nVisTab))
         return;
 
-    ComplexTextLayoutFlags nOldLayoutMode = pDev->GetLayoutMode();
-    pDev->SetLayoutMode( ComplexTextLayoutFlags::Default );     // even if it's the same, to get the metafile action
+    ComplexTextLayoutMode nOldLayoutMode = pDev->GetLayoutMode();
+    pDev->SetLayoutMode( TEXT_LAYOUT_DEFAULT );     // even if it's the same, to get the metafile action
 
     if ( nAspect == ASPECT_THUMBNAIL )
     {
-        tools::Rectangle aBoundRect = GetVisArea( ASPECT_THUMBNAIL );
+        Rectangle aBoundRect = GetVisArea( ASPECT_THUMBNAIL );
         ScViewData aTmpData( this, nullptr );
         aTmpData.SetTabNo(nVisTab);
         SnapVisArea( aBoundRect );
@@ -1924,7 +1924,7 @@ void ScDocShell::Draw( OutputDevice* pDev, const JobSetup & /* rSetup */, sal_uI
     }
     else
     {
-        tools::Rectangle aBoundRect = SfxObjectShell::GetVisArea();
+        Rectangle aBoundRect = SfxObjectShell::GetVisArea();
         ScViewData aTmpData( this, nullptr );
         aTmpData.SetTabNo(nVisTab);
         SnapVisArea( aBoundRect );
@@ -1935,14 +1935,14 @@ void ScDocShell::Draw( OutputDevice* pDev, const JobSetup & /* rSetup */, sal_uI
     pDev->SetLayoutMode( nOldLayoutMode );
 }
 
-tools::Rectangle ScDocShell::GetVisArea( sal_uInt16 nAspect ) const
+Rectangle ScDocShell::GetVisArea( sal_uInt16 nAspect ) const
 {
     SfxObjectCreateMode eShellMode = GetCreateMode();
     if ( eShellMode == SfxObjectCreateMode::ORGANIZER )
     {
-        //  without contents we also don't know how large are the contents;
-        //  return empty rectangle, it will then be calculated after the loading
-        return tools::Rectangle();
+        //  ohne Inhalte wissen wir auch nicht, wie gross die Inhalte sind
+        //  leeres Rechteck zurueckgeben, das wird dann nach dem Laden berechnet
+        return Rectangle();
     }
 
     if( nAspect == ASPECT_THUMBNAIL )
@@ -1956,7 +1956,7 @@ tools::Rectangle ScDocShell::GetVisArea( sal_uInt16 nAspect ) const
         Size aSize = aDocument.GetPageSize(nVisTab);
         const long SC_PREVIEW_SIZE_X = 10000;
         const long SC_PREVIEW_SIZE_Y = 12400;
-        tools::Rectangle aArea( 0,0, SC_PREVIEW_SIZE_X, SC_PREVIEW_SIZE_Y);
+        Rectangle aArea( 0,0, SC_PREVIEW_SIZE_X, SC_PREVIEW_SIZE_Y);
         if (aSize.Width() > aSize.Height())
         {
             aArea.Right() = SC_PREVIEW_SIZE_Y;
@@ -1971,7 +1971,7 @@ tools::Rectangle ScDocShell::GetVisArea( sal_uInt16 nAspect ) const
     }
     else if( nAspect == ASPECT_CONTENT && eShellMode != SfxObjectCreateMode::EMBEDDED )
     {
-        //  fetch visarea like after loading
+        //  Visarea holen wie nach Load
 
         SCTAB nVisTab = aDocument.GetVisibleTab();
         if (!aDocument.HasTable(nVisTab))
@@ -1989,7 +1989,7 @@ tools::Rectangle ScDocShell::GetVisArea( sal_uInt16 nAspect ) const
             nStartCol = nEndCol;
         if (nStartRow>nEndRow)
             nStartRow = nEndRow;
-        tools::Rectangle aNewArea = ((ScDocument&)aDocument)
+        Rectangle aNewArea = ((ScDocument&)aDocument)
                                 .GetMMRect( nStartCol,nStartRow, nEndCol,nEndRow, nVisTab );
         //TODO/LATER: different methods for setting VisArea?!
         const_cast<ScDocShell*>(this)->SfxObjectShell::SetVisArea( aNewArea );
@@ -2059,7 +2059,7 @@ void SnapVer( const ScDocument& rDoc, SCTAB nTab, long& rVal, SCROW& rStartRow )
 
 }
 
-void ScDocShell::SnapVisArea( tools::Rectangle& rRect ) const
+void ScDocShell::SnapVisArea( Rectangle& rRect ) const
 {
     SCTAB nTab = aDocument.GetVisibleTab();
     bool bNegativePage = aDocument.IsNegativePage( nTab );
@@ -2068,12 +2068,12 @@ void ScDocShell::SnapVisArea( tools::Rectangle& rRect ) const
 
     SCCOL nCol = 0;
     SnapHor( aDocument, nTab, rRect.Left(), nCol );
-    ++nCol;                                         // at least one column
+    ++nCol;                                         // mindestens eine Spalte
     SnapHor( aDocument, nTab, rRect.Right(), nCol );
 
     SCROW nRow = 0;
     SnapVer( aDocument, nTab, rRect.Top(), nRow );
-    ++nRow;                                         // at least one row
+    ++nRow;                                         // mindestens eine Zeile
     SnapVer( aDocument, nTab, rRect.Bottom(), nRow );
 
     if ( bNegativePage )
@@ -2134,7 +2134,7 @@ bool ScDocShell::DdeGetData( const OUString& rItem,
         }
         ScImportExport aObj( &aDocument, rItem );
         if ( !aObj.IsRef() )
-            return false;                           // invalid range
+            return false;                           // ungueltiger Bereich
 
         if( aDdeTextFmt[0] == 'F' )
             aObj.SetFormulas( true );
@@ -2196,10 +2196,10 @@ bool ScDocShell::DdeSetData( const OUString& rItem,
         if( aDdeTextFmt == "CSV" ||
             aDdeTextFmt == "FCSV" )
             aObj.SetSeparator( ',' );
-        return ScImportExport::ImportData( rMimeType, rValue );
+        return aObj.ImportData( rMimeType, rValue );
     }
     ScImportExport aObj( &aDocument, rItem );
-    return aObj.IsRef() && ScImportExport::ImportData( rMimeType, rValue );
+    return aObj.IsRef() && aObj.ImportData( rMimeType, rValue );
 }
 #endif
 
@@ -2239,58 +2239,6 @@ bool ScDocShell::DdeSetData( const OUString& rItem,
     return pObj;
 }
 
-void ScDocShell::LOKCommentNotify(LOKCommentNotificationType nType, const ScDocument* pDocument, const ScAddress& rPos, const ScPostIt* pNote)
-{
-    if ( !pDocument->IsDocVisible() || // don't want callbacks until document load
-         !comphelper::LibreOfficeKit::isActive() ||
-         comphelper::LibreOfficeKit::isTiledAnnotations() )
-        return;
-
-    boost::property_tree::ptree aAnnotation;
-    aAnnotation.put("action", (nType == LOKCommentNotificationType::Add ? "Add" :
-                               (nType == LOKCommentNotificationType::Remove ? "Remove" :
-                                (nType == LOKCommentNotificationType::Modify ? "Modify" : "???"))));
-    OUString aCellId = rPos.Format(ScRefFlags::VALID | ScRefFlags::TAB_3D, pDocument,
-                                   ScAddress::Details(formula::FormulaGrammar::AddressConvention::CONV_ODF, rPos));
-    aAnnotation.put("id", aCellId.toUtf8().getStr());
-    if (nType != LOKCommentNotificationType::Remove && pNote)
-    {
-        aAnnotation.put("author", pNote->GetAuthor());
-        aAnnotation.put("dateTime", pNote->GetDate());
-        aAnnotation.put("text", pNote->GetText());
-
-        // Calculating the cell cursor position
-        ScViewData* pViewData = GetViewData();
-        if (pViewData && pViewData->GetActiveWin())
-        {
-            Point aScrPos = pViewData->GetScrPos(rPos.Col(), rPos.Row(), pViewData->GetActivePart(), true);
-            long nSizeXPix;
-            long nSizeYPix;
-            pViewData->GetMergeSizePixel(rPos.Col(), rPos.Row(), nSizeXPix, nSizeYPix);
-
-            const double fPPTX = pViewData->GetPPTX();
-            const double fPPTY = pViewData->GetPPTY();
-            tools::Rectangle aRect(Point(aScrPos.getX() / fPPTX, aScrPos.getY() / fPPTY),
-                            Size(nSizeXPix / fPPTX, nSizeYPix / fPPTY));
-
-            aAnnotation.put("cellPos", aRect.toString());
-        }
-    }
-
-    boost::property_tree::ptree aTree;
-    aTree.add_child("comment", aAnnotation);
-    std::stringstream aStream;
-    boost::property_tree::write_json(aStream, aTree);
-    std::string aPayload = aStream.str();
-
-    SfxViewShell* pViewShell = SfxViewShell::GetFirst();
-    while (pViewShell)
-    {
-        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_COMMENT, aPayload.c_str());
-        pViewShell = SfxViewShell::GetNext(*pViewShell);
-    }
-}
-
 ScViewData* ScDocShell::GetViewData()
 {
     SfxViewShell* pCur = SfxViewShell::Current();
@@ -2310,12 +2258,12 @@ SCTAB ScDocShell::GetCurTab()
 ScTabViewShell* ScDocShell::GetBestViewShell( bool bOnlyVisible )
 {
     ScTabViewShell* pViewSh = ScTabViewShell::GetActiveViewShell();
-    // wrong Doc?
+    // falsches Doc?
     if( pViewSh && pViewSh->GetViewData().GetDocShell() != this )
         pViewSh = nullptr;
     if( !pViewSh )
     {
-        // 1. find ViewShell
+        // 1. ViewShell suchen
         SfxViewFrame* pFrame = SfxViewFrame::GetFirst( this, bOnlyVisible );
         if( pFrame )
         {
@@ -2358,7 +2306,7 @@ ScDocShell* ScDocShell::GetShellByNum( sal_uInt16 nDocNo )      // static
     return pFound;
 }
 
-IMPL_LINK( ScDocShell, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
+IMPL_LINK_TYPED( ScDocShell, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
 {
     OSL_ENSURE( _pFileDlg, "ScDocShell::DialogClosedHdl(): no file dialog" );
     OSL_ENSURE( pImpl->pDocInserter, "ScDocShell::DialogClosedHdl(): no document inserter" );

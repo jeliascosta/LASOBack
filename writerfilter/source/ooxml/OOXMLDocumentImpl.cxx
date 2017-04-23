@@ -41,7 +41,6 @@
 #include <unotools/mediadescriptor.hxx>
 
 #include <iostream>
-#include "sfx2/objsh.hxx"
 
 // this extern variable is declared in OOXMLStreamImpl.hxx
 OUString customTarget;
@@ -51,7 +50,7 @@ namespace writerfilter {
 namespace ooxml
 {
 
-OOXMLDocumentImpl::OOXMLDocumentImpl(OOXMLStream::Pointer_t const & pStream, const uno::Reference<task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const uno::Sequence<beans::PropertyValue>& rDescriptor)
+OOXMLDocumentImpl::OOXMLDocumentImpl(OOXMLStream::Pointer_t pStream, const uno::Reference<task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const uno::Sequence<beans::PropertyValue>& rDescriptor)
     : mpStream(pStream)
     , mxStatusIndicator(xStatusIndicator)
     , mnXNoteId(0)
@@ -82,7 +81,7 @@ void OOXMLDocumentImpl::resolveFastSubStream(Stream & rStreamHandler,
     }
     catch (uno::Exception const& e)
     {
-        SAL_INFO("writerfilter.ooxml", "resolveFastSubStream: exception while "
+        SAL_INFO("writerfilter", "resolveFastSubStream: exception while "
                 "resolving stream " << nType << " : " << e.Message);
         return;
     }
@@ -140,7 +139,7 @@ uno::Reference<xml::dom::XDocument> OOXMLDocumentImpl::importSubStream(OOXMLStre
     }
     catch (uno::Exception const& e)
     {
-        SAL_INFO("writerfilter.ooxml", "importSubStream: exception while "
+        SAL_INFO("writerfilter", "importSubStream: exception while "
                 "importing stream " << nType << " : " << e.Message);
         return xRet;
     }
@@ -158,7 +157,7 @@ uno::Reference<xml::dom::XDocument> OOXMLDocumentImpl::importSubStream(OOXMLStre
         }
         catch (uno::Exception const& e)
         {
-            SAL_INFO("writerfilter.ooxml", "importSubStream: exception while "
+            SAL_INFO("writerfilter", "importSubStream: exception while "
                      "parsing stream " << nType << " : " << e.Message);
             return xRet;
         }
@@ -187,11 +186,11 @@ void OOXMLDocumentImpl::importSubStreamRelations(const OOXMLStream::Pointer_t& p
     OOXMLStream::Pointer_t cStream;
     try
     {
-        cStream = OOXMLDocumentFactory::createStream(pStream, nType);
+       cStream = OOXMLDocumentFactory::createStream(pStream, nType);
     }
     catch (uno::Exception const& e)
     {
-        SAL_WARN("writerfilter.ooxml", "importSubStreamRelations: exception while "
+        SAL_WARN("writerfilter", "importSubStreamRelations: exception while "
             "importing stream " << nType << " : " << e.Message);
         return;
     }
@@ -212,7 +211,7 @@ void OOXMLDocumentImpl::importSubStreamRelations(const OOXMLStream::Pointer_t& p
             }
             catch (uno::Exception const& e)
             {
-                SAL_WARN("writerfilter.ooxml", "importSubStream: exception while "
+                SAL_WARN("writerfilter", "importSubStream: exception while "
                          "parsing stream " << nType << " : " << e.Message);
                 mxCustomXmlProsDom = xRelation;
             }
@@ -272,7 +271,7 @@ OOXMLDocumentImpl::getSubStream(const OUString & rId)
     writerfilter::Reference<Stream>::Pointer_t pRet( pTemp = new OOXMLDocumentImpl(pStream, uno::Reference<task::XStatusIndicator>(), mbSkipImages, maMediaDescriptor));
     pTemp->setModel(mxModel);
     pTemp->setDrawPage(mxDrawPage);
-    pTemp->mbIsSubstream = true;
+    pTemp->setIsSubstream( true );
     return pRet;
 }
 
@@ -504,14 +503,11 @@ void OOXMLDocumentImpl::resolve(Stream & rStream)
         {
             xParser->parseStream(aParserInput);
         }
-        catch (xml::sax::SAXException const& rErr)
+        catch (xml::sax::SAXException const&)
         {
-            // don't silently swallow these - handlers may not have been executed,
+            // don't swallow these - handlers may not have been executed,
             // and the domain mapper is likely in an inconsistent state
-            // In case user chooses to try to continue loading, don't ask again for this file
-            SfxObjectShell* rShell = SfxObjectShell::GetShellFromComponent(mxModel);
-            if (!rShell || !rShell->IsContinueImportOnFilterExceptions("SAXException: " + rErr.Message))
-                throw;
+            throw;
         }
         catch (uno::RuntimeException const&)
         {
@@ -553,7 +549,7 @@ void OOXMLDocumentImpl::resolveCustomXmlStream(Stream & rStream)
 {
     // Resolving all item[n].xml files from CustomXml folder.
     uno::Reference<embed::XRelationshipAccess> xRelationshipAccess;
-    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*mpStream.get())).accessDocumentStream(), uno::UNO_QUERY);
+    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*mpStream.get())).accessDocumentStream(), uno::UNO_QUERY_THROW);
     if (xRelationshipAccess.is())
     {
         static const char sCustomType[] = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml";
@@ -621,12 +617,12 @@ void OOXMLDocumentImpl::resolveGlossaryStream(Stream & /*rStream*/)
     }
     catch (uno::Exception const& e)
     {
-        SAL_INFO("writerfilter.ooxml", "resolveGlossaryStream: exception while "
+        SAL_INFO("writerfilter", "resolveGlossaryStream: exception while "
                  "createStream for glossary" << OOXMLStream::GLOSSARY << " : " << e.Message);
         return;
     }
     uno::Reference<embed::XRelationshipAccess> xRelationshipAccess;
-    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*pStream.get())).accessDocumentStream(), uno::UNO_QUERY);
+    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*pStream.get())).accessDocumentStream(), uno::UNO_QUERY_THROW);
     if (xRelationshipAccess.is())
     {
 
@@ -688,7 +684,7 @@ void OOXMLDocumentImpl::resolveGlossaryStream(Stream & /*rStream*/)
                   }
                   catch (uno::Exception const& e)
                   {
-                      SAL_INFO("writerfilter.ooxml", "importSubStream: exception while "
+                      SAL_INFO("writerfilter", "importSubStream: exception while "
                       "parsing stream of Type" << nType << " : " << e.Message);
                       return;
                   }
@@ -696,11 +692,11 @@ void OOXMLDocumentImpl::resolveGlossaryStream(Stream & /*rStream*/)
                   if (xDom.is())
                   {
                       uno::Sequence< uno::Any > glossaryTuple (5);
-                      glossaryTuple[0] <<= xDom;
-                      glossaryTuple[1] <<= gId;
-                      glossaryTuple[2] <<= gType;
-                      glossaryTuple[3] <<= gTarget;
-                      glossaryTuple[4] <<= contentType;
+                      glossaryTuple[0] = uno::makeAny(xDom);
+                      glossaryTuple[1] = uno::makeAny(gId);
+                      glossaryTuple[2] = uno::makeAny(gType);
+                      glossaryTuple[3] = uno::makeAny(gTarget);
+                      glossaryTuple[4] = uno::makeAny(contentType);
                       aGlossaryDomList.push_back(glossaryTuple);
                       counter++;
                   }
@@ -713,7 +709,7 @@ void OOXMLDocumentImpl::resolveGlossaryStream(Stream & /*rStream*/)
 void OOXMLDocumentImpl::resolveEmbeddingsStream(const OOXMLStream::Pointer_t& pStream)
 {
     uno::Reference<embed::XRelationshipAccess> xRelationshipAccess;
-    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*pStream.get())).accessDocumentStream(), uno::UNO_QUERY);
+    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*pStream.get())).accessDocumentStream(), uno::UNO_QUERY_THROW);
     std::vector<css::beans::PropertyValue> aEmbeddings;
     if (xRelationshipAccess.is())
     {
@@ -767,18 +763,9 @@ void OOXMLDocumentImpl::resolveEmbeddingsStream(const OOXMLStream::Pointer_t& pS
                 }
                 if(bHeaderFooterFound)
                 {
-                    try
-                    {
-                        OOXMLStream::Pointer_t Stream = OOXMLDocumentFactory::createStream(pStream, streamType);
-                        if (Stream)
-                            resolveEmbeddingsStream(Stream);
-                    }
-                    catch (uno::Exception const& e)
-                    {
-                        SAL_INFO("writerfilter.ooxml", "resolveEmbeddingsStream: can't find header/footer whilst "
-                               "resolving stream " << streamType << " : " << e.Message);
-                        return;
-                    }
+                    OOXMLStream::Pointer_t Stream = OOXMLDocumentFactory::createStream(pStream, streamType);
+                    if(Stream)
+                        resolveEmbeddingsStream(Stream);
                 }
 
                 beans::PropertyValue embeddingsTemp;
@@ -788,7 +775,7 @@ void OOXMLDocumentImpl::resolveEmbeddingsStream(const OOXMLStream::Pointer_t& pS
                     if(mxEmbeddings.is())
                     {
                         embeddingsTemp.Name = embeddingsTarget;
-                        embeddingsTemp.Value <<= mxEmbeddings;
+                        embeddingsTemp.Value = uno::makeAny(mxEmbeddings);
                         aEmbeddings.push_back(embeddingsTemp);
                         mxEmbeddings.clear();
                     }
@@ -806,7 +793,7 @@ void OOXMLDocumentImpl::resolveActiveXStream(Stream & rStream)
 {
     // Resolving all ActiveX[n].xml files from ActiveX folder.
     uno::Reference<embed::XRelationshipAccess> xRelationshipAccess;
-    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*mpStream.get())).accessDocumentStream(), uno::UNO_QUERY);
+    xRelationshipAccess.set((dynamic_cast<OOXMLStreamImpl&>(*mpStream.get())).accessDocumentStream(), uno::UNO_QUERY_THROW);
     if (xRelationshipAccess.is())
     {
         static const char sCustomType[] = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/control";

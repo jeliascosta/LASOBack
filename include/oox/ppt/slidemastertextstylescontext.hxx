@@ -20,20 +20,18 @@
 #ifndef INCLUDED_OOX_PPT_SLIDEMASTERTEXTSTYLESCONTEXT_HXX
 #define INCLUDED_OOX_PPT_SLIDEMASTERTEXTSTYLESCONTEXT_HXX
 
+#include <oox/drawingml/theme.hxx>
 #include <oox/core/contexthandler.hxx>
 #include <oox/core/fragmenthandler2.hxx>
 #include <oox/ppt/slidepersist.hxx>
-#include <sal/types.h>
-
-namespace oox { class AttributeList; }
 
 namespace oox { namespace ppt {
 
 class SlideMasterTextStylesContext : public oox::core::FragmentHandler2
 {
 public:
-    SlideMasterTextStylesContext( ::oox::core::FragmentHandler2& rParent, SlidePersistPtr const & pSlidePersistPtr );
-    virtual ~SlideMasterTextStylesContext() override;
+    SlideMasterTextStylesContext( ::oox::core::FragmentHandler2& rParent, SlidePersistPtr pSlidePersistPtr );
+    virtual ~SlideMasterTextStylesContext();
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;
 
 protected:

@@ -24,9 +24,12 @@
 #include <rtl/string.hxx>
 #include <rtl/strbuf.hxx>
 #include <rtl/ustring.hxx>
+#include <rtl/tencinfo.h>
 #include <tools/debug.hxx>
 
 #include <unordered_map>
+
+class INetMIMEOutputSink;
 
 struct INetContentTypeParameter
 {
@@ -56,7 +59,7 @@ typedef std::unordered_map<OString, INetContentTypeParameter, OStringHash>
     INetContentTypeParameterList;
 
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC INetMIME
+class TOOLS_DLLPUBLIC INetMIME
 {
 public:
     /** Check for US-ASCII visible character.
@@ -108,6 +111,15 @@ public:
         (0--15); otherwise, return -1.
      */
     static inline int getHexWeight(sal_uInt32 nChar);
+
+    /** Get a hexadecimal digit encoded as US-ASCII.
+
+        @param nWeight  Must be in the range 0--15, inclusive.
+
+        @return  The canonic (i.e., upper case) hexadecimal digit
+        corresponding to nWeight (US-ASCII '0'--'9' or 'A'--'F').
+     */
+    static sal_uInt32 getHexDigit(int nWeight);
 
     /** Check two US-ASCII strings for equality, ignoring case.
 
@@ -165,6 +177,10 @@ public:
         sal_Unicode const *pBegin, sal_Unicode const * pEnd,
         OUString * pType = nullptr, OUString * pSubType = nullptr,
         INetContentTypeParameterList * pParameters = nullptr);
+
+    static void writeHeaderFieldBody(INetMIMEOutputSink & rSink,
+                                     const OUString& rBody,
+                                     rtl_TextEncoding ePreferredEncoding);
 
     static OUString decodeHeaderFieldBody(const OString& rBody);
 
@@ -256,6 +272,17 @@ private:
                                const sal_Unicode * pEnd);
 
 public:
+    /** Write a sequence of octets.
+
+        @descr  The supplied sequence of Unicode characters is interpreted as
+        a sequence of octets.  It is an error if any of the elements of the
+        sequence has a numerical value greater than 255.
+
+        @param pBegin  Points to the start of the sequence, must not be null.
+
+        @param pEnd  Points past the end of the sequence, must be >= pBegin.
+     */
+    inline void write(const sal_Unicode * pBegin, const sal_Unicode * pEnd);
 
     /** Write a single octet.
 
@@ -281,6 +308,12 @@ public:
     }
 };
 
+
+inline void INetMIMEOutputSink::write(const sal_Unicode * pBegin,
+                                      const sal_Unicode * pEnd)
+{
+    writeSequence(pBegin, pEnd);
+}
 
 inline INetMIMEOutputSink & INetMIMEOutputSink::operator <<(sal_Char nOctet)
 {

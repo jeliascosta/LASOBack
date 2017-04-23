@@ -32,14 +32,17 @@ namespace com { namespace sun { namespace star {
 
 class XMLAutoMarkFileContext : public SvXMLImportContext
 {
+    const OUString sIndexAutoMarkFileURL;
+
 public:
+
 
     XMLAutoMarkFileContext(
         SvXMLImport& rImport,
         sal_uInt16 nPrfx,
         const OUString& rLocalName);
 
-    virtual ~XMLAutoMarkFileContext() override;
+    virtual ~XMLAutoMarkFileContext();
 
 protected:
 

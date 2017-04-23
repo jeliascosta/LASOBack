@@ -28,15 +28,17 @@ class ColumnLineDataInterpreter : public DataInterpreter
 {
 public:
     explicit ColumnLineDataInterpreter(
-        sal_Int32 nNumberOfLines );
-    virtual ~ColumnLineDataInterpreter() override;
+        sal_Int32 nNumberOfLines,
+        const css::uno::Reference< css::uno::XComponentContext > & xContext );
+    virtual ~ColumnLineDataInterpreter();
 
 protected:
     // ____ XDataInterpreter ____
     virtual css::chart2::InterpretedData SAL_CALL interpretDataSource(
         const css::uno::Reference< css::chart2::data::XDataSource >& xSource,
         const css::uno::Sequence< css::beans::PropertyValue >& aArguments,
-        const css::uno::Sequence< css::uno::Reference< css::chart2::XDataSeries > >& aSeriesToReUse ) override;
+        const css::uno::Sequence< css::uno::Reference< css::chart2::XDataSeries > >& aSeriesToReUse )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     sal_Int32 m_nNumberOfLines;

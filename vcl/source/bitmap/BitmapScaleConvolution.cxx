@@ -96,7 +96,7 @@ bool ImplScaleConvolutionHor(Bitmap& rSource, Bitmap& rTarget, const double& rSc
         return true;
     }
 
-    Bitmap::ScopedReadAccess pReadAcc(rSource);
+    BitmapReadAccess* pReadAcc = rSource.AcquireReadAccess();
 
     if(pReadAcc)
     {
@@ -108,7 +108,7 @@ bool ImplScaleConvolutionHor(Bitmap& rSource, Bitmap& rTarget, const double& rSc
         const long nHeight(rSource.GetSizePixel().Height());
         ImplCalculateContributions(nWidth, nNewWidth, aNumberOfContributions, pWeights, pPixels, pCount, aKernel);
         rTarget = Bitmap(Size(nNewWidth, nHeight), 24);
-        Bitmap::ScopedWriteAccess pWriteAcc(rTarget);
+        BitmapWriteAccess* pWriteAcc = rTarget.AcquireWriteAccess();
         bool bResult(nullptr != pWriteAcc);
 
         if(bResult)
@@ -154,9 +154,10 @@ bool ImplScaleConvolutionHor(Bitmap& rSource, Bitmap& rTarget, const double& rSc
                 }
             }
 
-            pWriteAcc.reset();
+            Bitmap::ReleaseAccess(pWriteAcc);
         }
 
+        Bitmap::ReleaseAccess(pReadAcc);
         delete[] pWeights;
         delete[] pCount;
         delete[] pPixels;
@@ -182,7 +183,7 @@ bool ImplScaleConvolutionVer(Bitmap& rSource, Bitmap& rTarget, const double& rSc
         return true;
     }
 
-    Bitmap::ScopedReadAccess pReadAcc(rSource);
+    BitmapReadAccess* pReadAcc = rSource.AcquireReadAccess();
 
     if(pReadAcc)
     {
@@ -194,7 +195,7 @@ bool ImplScaleConvolutionVer(Bitmap& rSource, Bitmap& rTarget, const double& rSc
         const long nWidth(rSource.GetSizePixel().Width());
         ImplCalculateContributions(nHeight, nNewHeight, aNumberOfContributions, pWeights, pPixels, pCount, aKernel);
         rTarget = Bitmap(Size(nWidth, nNewHeight), 24);
-        Bitmap::ScopedWriteAccess pWriteAcc(rTarget);
+        BitmapWriteAccess* pWriteAcc = rTarget.AcquireWriteAccess();
         bool bResult(nullptr != pWriteAcc);
 
         if(pWriteAcc)
@@ -247,6 +248,9 @@ bool ImplScaleConvolutionVer(Bitmap& rSource, Bitmap& rTarget, const double& rSc
                 }
             }
         }
+
+        Bitmap::ReleaseAccess(pWriteAcc);
+        Bitmap::ReleaseAccess(pReadAcc);
 
         delete[] pWeights;
         delete[] pCount;
@@ -374,6 +378,8 @@ bool BitmapScaleConvolution::filter(Bitmap& rBitmap)
 
     switch(meKernelType)
     {
+        case ConvolutionKernelType::Box:
+            return ImplScaleConvolution(rBitmap, mrScaleX, mrScaleY, BoxKernel());
         case ConvolutionKernelType::BiLinear:
             return ImplScaleConvolution(rBitmap, mrScaleX, mrScaleY, BilinearKernel());
         case ConvolutionKernelType::BiCubic:

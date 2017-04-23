@@ -48,9 +48,8 @@ getAsConst( const OUString& rString )
 
 /*****************************************************************************/
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleTable>
-    getTable( AtkTable *pTable )
+    getTable( AtkTable *pTable ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pTable );
     if( pWrap )

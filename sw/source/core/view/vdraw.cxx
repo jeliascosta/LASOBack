@@ -40,9 +40,6 @@
 #include "flyfrm.hxx"
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
-#include <vcl/canvastools.hxx>
-
-#include <basegfx/range/b2irectangle.hxx>
 
 #include <IDocumentDrawModelAccess.hxx>
 
@@ -87,7 +84,6 @@ void SwViewShellImp::UnlockPaint()
 
 void SwViewShellImp::PaintLayer( const SdrLayerID _nLayerID,
                             SwPrintData const*const pPrintData,
-                            SwPageFrame const& rPageFrame,
                             const SwRect& aPaintRect,
                             const Color* _pPageBackgrdColor,
                             const bool _bIsPageRightToLeft,
@@ -141,9 +137,7 @@ void SwViewShellImp::PaintLayer( const SdrLayerID _nLayerID,
             SdrView &rSdrView = const_cast< SdrView & >(GetPageView()->GetView());
             rSdrView.setHideDraw( !pPrintData->IsPrintDraw() );
         }
-        basegfx::B2IRectangle const pageFrame(
-            vcl::unotools::b2IRectangleFromRectangle(rPageFrame.Frame().SVRect()));
-        GetPageView()->DrawLayer(_nLayerID, pOutDev, pRedirector, aPaintRect.SVRect(), &pageFrame);
+        GetPageView()->DrawLayer( _nLayerID, pOutDev, pRedirector, aPaintRect.SVRect() );
         pOutDev->Pop();
 
         // reset background color of the outliner & default horiz. text dir.
@@ -198,8 +192,8 @@ void SwViewShellImp::NotifySizeChg( const Size &rNewSz )
         GetPageView()->GetPage()->SetSize( rNewSz );
 
     // Limitation of the work area
-    const tools::Rectangle aDocRect( Point( DOCUMENTBORDER, DOCUMENTBORDER ), rNewSz );
-    const tools::Rectangle &rOldWork = GetDrawView()->GetWorkArea();
+    const Rectangle aDocRect( Point( DOCUMENTBORDER, DOCUMENTBORDER ), rNewSz );
+    const Rectangle &rOldWork = GetDrawView()->GetWorkArea();
     bool bCheckDrawObjs = false;
     if ( aDocRect != rOldWork )
     {
@@ -229,7 +223,7 @@ void SwViewShellImp::NotifySizeChg( const Size &rNewSz )
             const SwFrame *pAnchor = static_cast<const SwDrawContact*>(pCont)->GetAnchorFrame();
             if ( !pAnchor || pAnchor->IsInFly() || !pAnchor->IsValid() ||
                  !pAnchor->GetUpper() || !pAnchor->FindPageFrame() ||
-                 (RndStdIds::FLY_AS_CHAR == pCont->GetFormat()->GetAnchor().GetAnchorId()) )
+                 (FLY_AS_CHAR == pCont->GetFormat()->GetAnchor().GetAnchorId()) )
             {
                 continue;
             }
@@ -251,7 +245,7 @@ void SwViewShellImp::NotifySizeChg( const Size &rNewSz )
                 continue;
             }
 
-            const tools::Rectangle aObjBound( pObj->GetCurrentBoundRect() );
+            const Rectangle aObjBound( pObj->GetCurrentBoundRect() );
             if ( !aDocRect.IsInside( aObjBound ) )
             {
                 Size aSz;

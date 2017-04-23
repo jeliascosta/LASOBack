@@ -35,7 +35,7 @@
 #include <frmfmt.hxx>
 #include <charfmt.hxx>
 #include <viewimp.hxx>
-#include <svl/hint.hxx>
+#include <swhints.hxx>
 #include <doc.hxx>
 #include <docfunc.hxx>
 #include <IDocumentUndoRedo.hxx>
@@ -109,11 +109,11 @@ static void lcl_AdjustPositioningAttr( SwDrawFrameFormat* _pFrameFormat,
             aAnchorPos = _rSdrObj.GetAnchorPos();
             // If no anchor frame exist - e.g. because no layout exists - the
             // default layout direction is taken.
-            const SvxFrameDirectionItem& rDirItem =
-                static_cast<const SvxFrameDirectionItem&>(_pFrameFormat->GetAttrSet().GetPool()->GetDefaultItem( RES_FRAMEDIR ));
-            switch ( rDirItem.GetValue() )
+            const SvxFrameDirectionItem* pDirItem =
+                static_cast<const SvxFrameDirectionItem*>(&(_pFrameFormat->GetAttrSet().GetPool()->GetDefaultItem( RES_FRAMEDIR )));
+            switch ( pDirItem->GetValue() )
             {
-                case SvxFrameDirection::Vertical_LR_TB:
+                case FRMDIR_VERT_TOP_LEFT:
                 {
                     // vertical from left-to-right
                     bVert = true;
@@ -121,31 +121,27 @@ static void lcl_AdjustPositioningAttr( SwDrawFrameFormat* _pFrameFormat,
                     OSL_FAIL( "<lcl_AdjustPositioningAttr(..)> - vertical from left-to-right not supported." );
                 }
                 break;
-                case SvxFrameDirection::Vertical_RL_TB:
+                case FRMDIR_VERT_TOP_RIGHT:
                 {
                     // vertical from right-to-left
                     bVert = true;
                     bR2L = false;
                 }
                 break;
-                case SvxFrameDirection::Horizontal_RL_TB:
+                case FRMDIR_HORI_RIGHT_TOP:
                 {
                     // horizontal from right-to-left
                     bVert = false;
                     bR2L = true;
                 }
                 break;
-                case SvxFrameDirection::Horizontal_LR_TB:
+                case FRMDIR_HORI_LEFT_TOP:
                 {
                     // horizontal from left-to-right
                     bVert = false;
                     bR2L = false;
                 }
                 break;
-                case SvxFrameDirection::Environment:
-                    SAL_WARN("sw.core", "lcl_AdjustPositioningAttr(..) SvxFrameDirection::Environment not supported");
-                    break;
-                default: break;
             }
 
         }
@@ -155,11 +151,11 @@ static void lcl_AdjustPositioningAttr( SwDrawFrameFormat* _pFrameFormat,
         if ( bVert )
         {
             if ( bR2L ) {
-                  //SvxFrameDirection::Vertical_LR_TB
+                  //FRMDIR_VERT_TOP_LEFT
                   nHoriRelPos = aObjRect.Left() - aAnchorPos.getX();
                   nVertRelPos = aObjRect.Top() - aAnchorPos.getY();
             } else {
-                //SvxFrameDirection::Vertical_RL_TB
+                //FRMDIR_VERT_TOP_RIGHT
                 nHoriRelPos = aObjRect.Top() - aAnchorPos.getY();
                 nVertRelPos = aAnchorPos.getX() - aObjRect.Right();
             }
@@ -216,7 +212,7 @@ SwDrawContact* SwDoc::GroupSelection( SdrView& rDrawView )
 
         SwUndoDrawGroup *const pUndo = (!GetIDocumentUndoRedo().DoesUndo())
                                  ? nullptr
-                                 : new SwUndoDrawGroup( (sal_uInt16)rMrkList.GetMarkCount() , this);
+                                 : new SwUndoDrawGroup( (sal_uInt16)rMrkList.GetMarkCount() );
 
         // #i53320#
         bool bGroupMembersNotPositioned( false );
@@ -241,7 +237,7 @@ SwDrawContact* SwDoc::GroupSelection( SdrView& rDrawView )
 
             pFormat = static_cast<SwDrawFrameFormat*>(pContact->GetFormat());
             // Deletes itself!
-            pContact->Changed(*pObj, SdrUserCallType::Delete, pObj->GetLastBoundRect() );
+            pContact->Changed(*pObj, SDRUSERCALL_DELETE, pObj->GetLastBoundRect() );
             pObj->SetUserCall( nullptr );
 
             if( pUndo )
@@ -334,7 +330,7 @@ void SwDoc::UnGroupSelection( SdrView& rDrawView )
                     SwUndoDrawUnGroup* pUndo = nullptr;
                     if( bUndo )
                     {
-                        pUndo = new SwUndoDrawUnGroup( static_cast<SdrObjGroup*>(pObj), this );
+                        pUndo = new SwUndoDrawUnGroup( static_cast<SdrObjGroup*>(pObj) );
                         GetIDocumentUndoRedo().AppendUndo(pUndo);
                     }
 
@@ -364,7 +360,7 @@ void SwDoc::UnGroupSelection( SdrView& rDrawView )
         SwUndoDrawUnGroupConnectToLayout* pUndo = nullptr;
         if( bUndo )
         {
-            pUndo = new SwUndoDrawUnGroupConnectToLayout(this);
+            pUndo = new SwUndoDrawUnGroupConnectToLayout();
             GetIDocumentUndoRedo().AppendUndo(pUndo);
         }
 
@@ -394,7 +390,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
     const SdrMarkList &rMrkList = rDrawView.GetMarkedObjectList();
     if( rMrkList.GetMarkCount() )
     {
-        GetIDocumentUndoRedo().StartUndo(SwUndoId::EMPTY, nullptr);
+        GetIDocumentUndoRedo().StartUndo(UNDO_EMPTY, nullptr);
         bool bDelMarked = true;
 
         if( 1 == rMrkList.GetMarkCount() )
@@ -420,7 +416,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
                 SwDrawContact *pC = static_cast<SwDrawContact*>(GetUserCall(pObj));
                 SwDrawFrameFormat *pFrameFormat = static_cast<SwDrawFrameFormat*>(pC->GetFormat());
                 if( pFrameFormat &&
-                    RndStdIds::FLY_AS_CHAR == pFrameFormat->GetAnchor().GetAnchorId() )
+                    FLY_AS_CHAR == pFrameFormat->GetAnchor().GetAnchorId() )
                 {
                     rDrawView.MarkObj( pObj, rDrawView.Imp().GetPageView(), true );
                     --i;
@@ -437,7 +433,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
                 SwUndoDrawDelete *const pUndo =
                     (!GetIDocumentUndoRedo().DoesUndo())
                         ? nullptr
-                            : new SwUndoDrawDelete( (sal_uInt16)rMrkList.GetMarkCount(), this );
+                            : new SwUndoDrawDelete( (sal_uInt16)rMrkList.GetMarkCount() );
 
                 // Destroy ContactObjects, save formats.
                 for( size_t i = 0; i < rMrkList.GetMarkCount(); ++i )
@@ -457,7 +453,7 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
                             OSL_FAIL( "<SwDrawVirtObj> is still marked for delete. application will crash!" );
                         }
                         // Deletes itself!
-                        pContact->Changed(*pObj, SdrUserCallType::Delete, pObj->GetLastBoundRect() );
+                        pContact->Changed(*pObj, SDRUSERCALL_DELETE, pObj->GetLastBoundRect() );
                         pObj->SetUserCall( nullptr );
 
                         if( pUndo )
@@ -476,19 +472,46 @@ bool SwDoc::DeleteSelection( SwDrawView& rDrawView )
         }
         getIDocumentState().SetModified();
 
-        GetIDocumentUndoRedo().EndUndo(SwUndoId::EMPTY, nullptr);
+        GetIDocumentUndoRedo().EndUndo(UNDO_EMPTY, nullptr);
     }
 
     return bCallBase;
 }
 
-ZSortFly::ZSortFly(const SwFrameFormat* pFrameFormat, const SwFormatAnchor* pFlyAn, sal_uInt32 nArrOrdNum)
-    : pFormat(pFrameFormat)
-    , pAnchor(pFlyAn)
-    , nOrdNum(nArrOrdNum)
+ZSortFly::ZSortFly( const SwFrameFormat* pFrameFormat, const SwFormatAnchor* pFlyAn,
+                      sal_uInt32 nArrOrdNum )
+    : pFormat( pFrameFormat ), pAnchor( pFlyAn ), nOrdNum( nArrOrdNum )
 {
-    SAL_WARN_IF(pFormat->Which() != RES_FLYFRMFMT && pFormat->Which() != RES_DRAWFRMFMT, "sw.core", "What kind of format is this?");
-    pFormat->CallSwClientNotify(sw::GetZOrderHint(nOrdNum));
+    // #i11176#
+    // This also needs to work when no layout exists. Thus, for
+    // FlyFrames an alternative method is used now in that case.
+    if( RES_FLYFRMFMT == pFormat->Which() )
+    {
+        if( pFormat->getIDocumentLayoutAccess().GetCurrentViewShell() )
+        {
+            // See if there is an SdrObject for it
+            SwFlyFrame* pFly = SwIterator<SwFlyFrame,SwFormat>( *pFrameFormat ).First();
+            if( pFly )
+                nOrdNum = pFly->GetVirtDrawObj()->GetOrdNum();
+        }
+        else
+        {
+            // See if there is an SdrObject for it
+            SwFlyDrawContact* pContact = SwIterator<SwFlyDrawContact,SwFormat>( *pFrameFormat ).First();
+            if( pContact )
+                nOrdNum = pContact->GetMaster()->GetOrdNum();
+        }
+    }
+    else if( RES_DRAWFRMFMT == pFormat->Which() )
+    {
+        // See if there is an SdrObject for it
+        SwDrawContact* pContact = SwIterator<SwDrawContact,SwFormat>( *pFrameFormat ).First();
+        if( pContact )
+            nOrdNum = pContact->GetMaster()->GetOrdNum();
+    }
+    else {
+        OSL_ENSURE( false, "what kind of format is this?" );
+    }
 }
 
 /// In the Outliner, set a link to the method for field display in edit objects.
@@ -498,7 +521,7 @@ void SwDoc::SetCalcFieldValueHdl(Outliner* pOutliner)
 }
 
 /// Recognise fields/URLs in the Outliner and set how they are displayed.
-IMPL_LINK(SwDoc, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
+IMPL_LINK_TYPED(SwDoc, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 {
     if (!pInfo)
         return;
@@ -580,7 +603,7 @@ namespace docfunc
         {
             const SdrPage& rSdrPage( *(p_rDoc.getIDocumentDrawModelAccess().GetDrawModel()->GetPage( 0 )) );
 
-            SdrObjListIter aIter( rSdrPage, SdrIterMode::Flat );
+            SdrObjListIter aIter( rSdrPage, IM_FLAT );
             while( aIter.IsMore() )
             {
                 SdrObject* pObj( aIter.Next() );
@@ -605,7 +628,7 @@ namespace docfunc
         {
             const SdrPage& rSdrPage( *(p_rDoc.getIDocumentDrawModelAccess().GetDrawModel()->GetPage( 0 )) );
 
-            SdrObjListIter aIter( rSdrPage, SdrIterMode::Flat );
+            SdrObjListIter aIter( rSdrPage, IM_FLAT );
             while( aIter.IsMore() )
             {
                 SdrObject* pObj( aIter.Next() );

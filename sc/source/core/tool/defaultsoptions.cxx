@@ -13,10 +13,7 @@
 #include "defaultsoptions.hxx"
 #include "miscuno.hxx"
 #include "global.hxx"
-#include "attrib.hxx"
-#include "scitems.hxx"
 #include "globstr.hrc"
-#include "sc.hrc"
 
 using namespace utl;
 using namespace com::sun::star::uno;
@@ -57,12 +54,8 @@ bool ScDefaultsOptions::operator==( const ScDefaultsOptions& rOpt ) const
         && rOpt.aInitTabPrefix == aInitTabPrefix;
 }
 
-ScTableListItem::ScTableListItem()
-    : SfxPoolItem(ATTR_PAGE_PRINTTABLES), nCount(0), pTabArr(nullptr)
-{}
-
-ScTpDefaultsItem::ScTpDefaultsItem( const ScDefaultsOptions& rOpt ) :
-    SfxPoolItem ( SID_SCDEFAULTSOPTIONS ),
+ScTpDefaultsItem::ScTpDefaultsItem( sal_uInt16 nWhichP, const ScDefaultsOptions& rOpt ) :
+    SfxPoolItem ( nWhichP ),
     theOptions  ( rOpt )
 {
 }
@@ -94,15 +87,25 @@ SfxPoolItem* ScTpDefaultsItem::Clone( SfxItemPool * ) const
 
 #define SCDEFAULTSOPT_TAB_COUNT  0
 #define SCDEFAULTSOPT_TAB_PREFIX 1
+#define SCDEFAULTSOPT_COUNT      2
 
 Sequence<OUString> ScDefaultsCfg::GetPropertyNames()
 {
-    return {"Sheet/SheetCount",   // SCDEFAULTSOPT_TAB_COUNT
-            "Sheet/SheetPrefix"}; // SCDEFAULTSOPT_TAB_PREFIX
+    static const char* aPropNames[] =
+    {
+        "Sheet/SheetCount", // SCDEFAULTSOPT_TAB_COUNT
+        "Sheet/SheetPrefix" // SCDEFAULTSOPT_TAB_PREFIX
+    };
+    Sequence<OUString> aNames(SCDEFAULTSOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for (int i = 0; i < SCDEFAULTSOPT_COUNT; ++i)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 ScDefaultsCfg::ScDefaultsCfg() :
-    ConfigItem( CFGPATH_FORMULA )
+    ConfigItem( OUString( CFGPATH_FORMULA ) )
 {
     OUString aPrefix;
 

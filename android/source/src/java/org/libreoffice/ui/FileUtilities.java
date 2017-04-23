@@ -121,7 +121,7 @@ public class FileUtilities {
         extensionToMimeTypeMap.put("oth", "application/vnd.oasis.opendocument.text-web");
     }
 
-    public static String getExtension(String filename) {
+    private static final String getExtension(String filename) {
         if (filename == null)
             return "";
         int nExt = filename.lastIndexOf('.');
@@ -130,7 +130,7 @@ public class FileUtilities {
         return filename.substring(nExt);
     }
 
-    private static int lookupExtension(String filename) {
+    private static final int lookupExtension(String filename) {
         String extn = getExtension(filename);
         if (!mExtnMap.containsKey(extn))
             return UNKNOWN;
@@ -161,7 +161,10 @@ public class FileUtilities {
             return false;
 
         if (byMode == ALL && byFilename.equals("")) {
-            return !filename.startsWith("."); //ignore hidden files
+            if (filename.startsWith(".")) {//ignore hidden files
+                return false;
+            }
+            return true;
         }
         // check extension
         if (byMode != ALL) {
@@ -245,14 +248,19 @@ public class FileUtilities {
             default:
                 Log.e(LOGTAG, "uncatched sortMode: " + sortMode);
         }
+        return;
     }
 
     static boolean isHidden(File file) {
-        return file.getName().startsWith(".");
+        if (file.getName().startsWith("."))
+            return true;
+        return false;
     }
 
     static boolean isThumbnail(File file) {
-        return isHidden(file) && file.getName().endsWith(".png");
+        if (isHidden(file) && file.getName().endsWith(".png"))
+            return true;
+        return false;
     }
 
     static boolean hasThumbnail(File file) {
@@ -260,7 +268,9 @@ public class FileUtilities {
         if (lookupExtension(filename) == DOC) // only do this for docs for now
         {
             // Will need another method to check if Thumb is up-to-date - or extend this one?
-            return new File(file.getParent(), getThumbnailName(file)).isFile();
+            if (new File(file.getParent() , getThumbnailName(file)).isFile())
+                return true;
+            return false; // If it's a document with no thumb
         }
         return true;
     }

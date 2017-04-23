@@ -48,7 +48,7 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
 
     struct Field
     {
-        tools::SvRef<SvxFieldData> mpData;
+        SvxFieldData* mpData;
         ESelection maSelection;
 
         Field(const Field&) = delete;
@@ -96,7 +96,6 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
     bool mbEditEngineHasText;
     bool mbHasFormatRuns;
     bool mbHasStyle;
-    bool mbPossibleEmptyDisplay;
 
     void DoMerge(const ScAddress& rScCellPos, const SCCOL nCols, const SCROW nRows);
 
@@ -104,7 +103,9 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
     void SetContentValidation( const ScAddress& rScCellPos );
 
     void LockSolarMutex();
+    void UnlockSolarMutex();
 
+    bool HasSpecialContent() const;
     bool CellsAreRepeated() const;
 
     void SetFormulaCell             ( ScFormulaCell* pFCell ) const;
@@ -129,11 +130,12 @@ class ScXMLTableRowCellContext : public ScXMLImportContext
 
 public:
 
-    ScXMLTableRowCellContext( ScXMLImport& rImport, sal_Int32 nElement,
-                       const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList,
+    ScXMLTableRowCellContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
+                       const OUString& rLName,
+                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                        const bool bIsCovered, const sal_Int32 nRepeatedRows );
 
-    virtual ~ScXMLTableRowCellContext() override;
+    virtual ~ScXMLTableRowCellContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -150,7 +152,7 @@ public:
     void SetDetectiveObj( const ScAddress& rPosition );
     void SetCellRangeSource( const ScAddress& rPosition );
 
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
+    virtual void EndElement() override;
 };
 
 #endif

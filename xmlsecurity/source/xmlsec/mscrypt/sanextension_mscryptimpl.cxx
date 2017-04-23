@@ -18,9 +18,6 @@
  */
 
 #include <sal/config.h>
-
-#include <memory>
-
 #include <rtl/uuid.h>
 #include <rtl/ustring.hxx>
 #include <com/sun/star/security/ExtAltNameType.hpp>
@@ -38,7 +35,7 @@ using ::com::sun::star::security::XCertificateExtension ;
 
 
 SanExtensionImpl::SanExtensionImpl() :
-    m_critical( false )
+    m_critical( sal_False )
 {
 }
 
@@ -47,28 +44,28 @@ SanExtensionImpl::~SanExtensionImpl() {
 
 
 //Methods from XCertificateExtension
-sal_Bool SAL_CALL SanExtensionImpl::isCritical() {
+sal_Bool SAL_CALL SanExtensionImpl::isCritical() throw( css::uno::RuntimeException ) {
     return m_critical ;
 }
 
-css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionId() {
+css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionId() throw( css::uno::RuntimeException ) {
     return m_xExtnId ;
 }
 
-css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionValue() {
+css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionValue() throw( css::uno::RuntimeException ) {
     return m_xExtnValue ;
 }
 
 //Methods from XSanExtension
-css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl::getAlternativeNames(){
+css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl::getAlternativeNames() throw( css::uno::RuntimeException ){
 
     if (!m_Entries.hasElements())
     {
         CERT_ALT_NAME_INFO *subjectName;
         DWORD size;
-        CryptDecodeObjectEx(X509_ASN_ENCODING, X509_ALTERNATE_NAME, reinterpret_cast<unsigned char*>(m_xExtnValue.getArray()), m_xExtnValue.getLength(), CRYPT_DECODE_ALLOC_FLAG | CRYPT_DECODE_NOCOPY_FLAG, nullptr,&subjectName, &size);
+        CryptDecodeObjectEx(X509_ASN_ENCODING, X509_ALTERNATE_NAME, (unsigned char*) m_xExtnValue.getArray(), m_xExtnValue.getLength(), CRYPT_DECODE_ALLOC_FLAG | CRYPT_DECODE_NOCOPY_FLAG, NULL,&subjectName, &size);
 
-        auto arrCertAltNameEntry = std::unique_ptr<CertAltNameEntry[]>(new CertAltNameEntry[subjectName->cAltEntry]);
+        CertAltNameEntry* arrCertAltNameEntry = new CertAltNameEntry[subjectName->cAltEntry];
 
         for (unsigned int i = 0; i < (unsigned int)subjectName->cAltEntry; i++){
           PCERT_ALT_NAME_ENTRY pEntry = &subjectName->rgAltEntry[i];
@@ -93,11 +90,11 @@ css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl:
                 }
             case CERT_ALT_NAME_RFC822_NAME :
                 arrCertAltNameEntry[i].Type = ExtAltNameType_RFC822_NAME;
-                arrCertAltNameEntry[i].Value <<= OUString(SAL_U(pEntry->pwszRfc822Name));
+                arrCertAltNameEntry[i].Value <<= OUString((const sal_Unicode*)pEntry->pwszRfc822Name);
                 break;
             case CERT_ALT_NAME_DNS_NAME :
                 arrCertAltNameEntry[i].Type = ExtAltNameType_DNS_NAME;
-                arrCertAltNameEntry[i].Value <<= OUString(SAL_U(pEntry->pwszDNSName));
+                arrCertAltNameEntry[i].Value <<= OUString((const sal_Unicode*)pEntry->pwszDNSName);
                 break;
             case CERT_ALT_NAME_DIRECTORY_NAME :
                 {
@@ -106,7 +103,7 @@ css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl:
                 }
             case CERT_ALT_NAME_URL :
                 arrCertAltNameEntry[i].Type = ExtAltNameType_URL;
-                arrCertAltNameEntry[i].Value <<= OUString(SAL_U(pEntry->pwszURL));
+                arrCertAltNameEntry[i].Value <<= OUString((const sal_Unicode*)pEntry->pwszURL);
                 break;
             case CERT_ALT_NAME_IP_ADDRESS :
                 {
@@ -125,7 +122,9 @@ css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl:
                 break;
           }
         }
-        m_Entries = ::comphelper::arrayToSequence< css::security::CertAltNameEntry >(arrCertAltNameEntry.get(), subjectName->cAltEntry);
+        m_Entries = ::comphelper::arrayToSequence< css::security::CertAltNameEntry >(arrCertAltNameEntry, subjectName->cAltEntry);
+
+        delete [] arrCertAltNameEntry;
     }
 
     return m_Entries;

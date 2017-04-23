@@ -26,16 +26,16 @@ using namespace connectivity::sdbcx;
 using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::uno;
 
-OUString SAL_CALL OIndexColumn::getImplementationName(  )
+OUString SAL_CALL OIndexColumn::getImplementationName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     if(isNew())
         return OUString("com.sun.star.sdbcx.VIndexColumnDescription");
     return OUString("com.sun.star.sdbcx.VIndex");
 }
 
-css::uno::Sequence< OUString > SAL_CALL OIndexColumn::getSupportedServiceNames(  )
+::com::sun::star::uno::Sequence< OUString > SAL_CALL OIndexColumn::getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
-    css::uno::Sequence< OUString > aSupported(1);
+    ::com::sun::star::uno::Sequence< OUString > aSupported(1);
     if(isNew())
         aSupported[0] = "com.sun.star.sdbcx.IndexDescription";
     else
@@ -44,7 +44,7 @@ css::uno::Sequence< OUString > SAL_CALL OIndexColumn::getSupportedServiceNames( 
     return aSupported;
 }
 
-sal_Bool SAL_CALL OIndexColumn::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OIndexColumn::supportsService( const OUString& _rServiceName ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
@@ -63,6 +63,9 @@ OIndexColumn::OIndexColumn( bool             IsAscending,
                             sal_Int32        Precision,
                             sal_Int32        Scale,
                             sal_Int32        Type,
+                            bool             IsAutoIncrement,
+                            bool             IsRowVersion,
+                            bool             IsCurrency,
                             bool             _bCase,
                             const OUString&  CatalogName,
                             const OUString&  SchemaName,
@@ -75,9 +78,9 @@ OIndexColumn::OIndexColumn( bool             IsAscending,
                             Precision,
                             Scale,
                             Type,
-                            false/*IsAutoIncrement*/,
-                            false/*IsRowVersion*/,
-                            false/*IsCurrency*/,
+                            IsAutoIncrement,
+                            IsRowVersion,
+                            IsCurrency,
                             _bCase,
                             CatalogName,
                             SchemaName,

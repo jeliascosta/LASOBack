@@ -36,7 +36,7 @@
 #include "salinst.hxx"
 #include "opengl/zone.hxx"
 #include "opengl/watchdog.hxx"
-#include <osl/conditn.hxx>
+#include <osl/conditn.h>
 #include <vcl/opengl/OpenGLWrapper.hxx>
 #include <vcl/opengl/OpenGLContext.hxx>
 #include <desktop/crashreport.hxx>
@@ -170,7 +170,7 @@ namespace
 
     OString getHexString(const sal_uInt8* pData, sal_uInt32 nLength)
     {
-        static const char* const pHexData = "0123456789ABCDEF";
+        static const char* pHexData = "0123456789ABCDEF";
 
         bool bIsZero = true;
         OStringBuffer aHexStr;
@@ -401,7 +401,7 @@ GLint OpenGLHelper::LoadShaders(const OUString& rVertexShaderName,
         aGeometryShaderSource = getShaderSource(rGeometryShaderName);
 
     GLint bBinaryResult = GL_FALSE;
-    if (epoxy_has_gl_extension("GL_ARB_get_program_binary") && !rDigest.isEmpty())
+    if( GLEW_ARB_get_program_binary && !rDigest.isEmpty() )
     {
         OString aFileName =
                 createFileName(rVertexShaderName, rFragmentShaderName, rGeometryShaderName, rDigest);
@@ -473,7 +473,7 @@ GLint OpenGLHelper::LoadShaders(const OUString& rVertexShaderName,
     if (bHasGeometryShader)
         glAttachShader(ProgramID, GeometryShaderID);
 
-    if (epoxy_has_gl_extension("GL_ARB_get_program_binary") && !rDigest.isEmpty())
+    if( GLEW_ARB_get_program_binary && !rDigest.isEmpty() )
     {
         glProgramParameteri(ProgramID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
         glLinkProgram(ProgramID);
@@ -812,16 +812,14 @@ void OpenGLZone::leave() { gnLeaveCount++; }
 
 namespace {
     static volatile bool gbWatchdogFiring = false;
-    static osl::Condition* gpWatchdogExit = nullptr;
+    static oslCondition gpWatchdogExit = nullptr;
     static WatchdogTimings gWatchdogTimings;
     static rtl::Reference<OpenGLWatchdogThread> gxWatchdog;
 }
 
 WatchdogTimings::WatchdogTimings()
-    : maTimingValues{
-                     {{6,   20} /* 1.5s,  5s */, {20, 120} /*  5s, 30s */,
-                      {60, 240} /*  15s, 60s */, {60, 240} /* 15s, 60s */}
-                    }
+    : maTimingValues({{6,   20} /* 1.5s,  5s */, {20, 120} /*  5s, 30s */,
+                      {60, 240} /*  15s, 60s */, {60, 240} /* 15s, 60s */})
     , mbRelaxed(false)
 {
 }
@@ -840,7 +838,7 @@ void OpenGLWatchdogThread::execute()
     do {
         sal_uInt64 nLastEnters = OpenGLZone::gnEnterCount;
 
-        gpWatchdogExit->wait(&aQuarterSecond);
+        osl_waitCondition(gpWatchdogExit, &aQuarterSecond);
 
         if (OpenGLZone::isInZone())
         {
@@ -897,13 +895,13 @@ void OpenGLWatchdogThread::execute()
         {
             nUnchanged = 0;
         }
-    } while (!gpWatchdogExit->check());
+    } while (!osl_checkCondition(gpWatchdogExit));
 }
 
 void OpenGLWatchdogThread::start()
 {
     assert (gxWatchdog == nullptr);
-    gpWatchdogExit = new osl::Condition();
+    gpWatchdogExit = osl_createCondition();
     gxWatchdog.set(new OpenGLWatchdogThread());
     gxWatchdog->launch();
 }
@@ -914,7 +912,7 @@ void OpenGLWatchdogThread::stop()
         return; // in watchdog thread
 
     if (gpWatchdogExit)
-        gpWatchdogExit->set();
+        osl_setCondition(gpWatchdogExit);
 
     if (gxWatchdog.is())
     {
@@ -923,7 +921,7 @@ void OpenGLWatchdogThread::stop()
     }
 
     if (gpWatchdogExit)
-        delete gpWatchdogExit;
+        osl_destroyCondition(gpWatchdogExit);
     gpWatchdogExit = nullptr;
 }
 
@@ -965,39 +963,18 @@ OpenGLVCLContextZone::OpenGLVCLContextZone()
     OpenGLContext::makeVCLCurrent();
 }
 
-namespace
-{
-    bool bTempOpenGLDisabled = false;
-}
-
-PreDefaultWinNoOpenGLZone::PreDefaultWinNoOpenGLZone()
-{
-    bTempOpenGLDisabled = true;
-}
-
-PreDefaultWinNoOpenGLZone::~PreDefaultWinNoOpenGLZone()
-{
-    bTempOpenGLDisabled = false;
-}
-
 bool OpenGLHelper::isVCLOpenGLEnabled()
 {
     /**
      * The !bSet part should only be called once! Changing the results in the same
      * run will mix OpenGL and normal rendering.
      */
-
     static bool bSet = false;
     static bool bEnable = false;
     static bool bForceOpenGL = false;
 
     // If we are a console app, then we don't use OpenGL
     if ( Application::IsConsoleOnly() )
-        return false;
-
-    //tdf#106155, disable GL while loading certain bitmaps needed for the initial toplevel windows
-    //under raw X (kde4) vclplug
-    if (bTempOpenGLDisabled)
         return false;
 
     if (bSet)
@@ -1016,13 +993,15 @@ bool OpenGLHelper::isVCLOpenGLEnabled()
     bForceOpenGL = !!getenv("SAL_FORCEGL") || officecfg::Office::Common::VCL::ForceOpenGL::get();
 
     bool bRet = false;
-    bool bSupportsVCLOpenGL = supportsVCLOpenGL();
-    // always call supportsVCLOpenGL to de-zombie the glxtest child process on X11
     if (bForceOpenGL)
     {
         bRet = true;
     }
-    else if (bSupportsVCLOpenGL)
+    else if (!supportsVCLOpenGL())
+    {
+        bRet = false;
+    }
+    else
     {
         static bool bEnableGLEnv = !!getenv("SAL_ENABLEGL");
 
@@ -1033,10 +1012,6 @@ bool OpenGLHelper::isVCLOpenGLEnabled()
             bEnable = false;
         else if (officecfg::Office::Common::VCL::UseOpenGL::get())
             bEnable = true;
-
-        // Force disable in safe mode
-        if (Application::IsSafeModeEnabled())
-            bEnable = false;
 
         bRet = bEnable;
     }
@@ -1058,15 +1033,11 @@ bool OpenGLWrapper::isVCLOpenGLEnabled()
 
 void OpenGLHelper::debugMsgStream(std::ostringstream const &pStream)
 {
-    debugMsgPrint(0, "%x: %s", osl_getThreadIdentifier(nullptr), pStream.str().c_str());
+    debugMsgPrint ("%x: %s", osl_getThreadIdentifier(nullptr),
+                   pStream.str().c_str());
 }
 
-void OpenGLHelper::debugMsgStreamWarn(std::ostringstream const &pStream)
-{
-    debugMsgPrint(1, "%x: %s", osl_getThreadIdentifier(nullptr), pStream.str().c_str());
-}
-
-void OpenGLHelper::debugMsgPrint(const int nType, const char *pFormat, ...)
+void OpenGLHelper::debugMsgPrint(const char *pFormat, ...)
 {
     va_list aArgs;
     va_start (aArgs, pFormat);
@@ -1080,29 +1051,22 @@ void OpenGLHelper::debugMsgPrint(const int nType, const char *pFormat, ...)
 
     bool bHasContext = OpenGLContext::hasCurrent();
     if (!bHasContext)
-        strcat(pStr, " (no GL context)");
+        strcat(pStr, "- no GL context");
 
-    if (nType == 0)
-    {
-        SAL_INFO("vcl.opengl", pStr);
-    }
-    else if (nType == 1)
-    {
-        SAL_WARN("vcl.opengl", pStr);
-    }
+    SAL_INFO("vcl.opengl", pStr);
 
     if (bHasContext)
     {
         OpenGLZone aZone;
 
-        if (epoxy_has_gl_extension("GL_KHR_debug"))
+        if (GLEW_KHR_debug)
             glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION,
                                  GL_DEBUG_TYPE_OTHER,
                                  1, // one[sic] id is as good as another ?
                                  // GL_DEBUG_SEVERITY_NOTIFICATION for >= GL4.3 ?
                                  GL_DEBUG_SEVERITY_LOW,
                                  strlen(pStr), pStr);
-        else if (epoxy_has_gl_extension("GL_AMD_debug_output"))
+        else if (GLEW_AMD_debug_output)
             glDebugMessageInsertAMD(GL_DEBUG_CATEGORY_APPLICATION_AMD,
                                     GL_DEBUG_SEVERITY_LOW_AMD,
                                     1, // one[sic] id is as good as another ?
@@ -1110,6 +1074,42 @@ void OpenGLHelper::debugMsgPrint(const int nType, const char *pFormat, ...)
     }
 
     va_end (aArgs);
+}
+
+OutputDevice::PaintScope::PaintScope(OutputDevice *pDev)
+    : pHandle( nullptr )
+{
+    if( pDev->mpGraphics || pDev->AcquireGraphics() )
+    {
+    }
+}
+
+/**
+ * Flush all the queued rendering commands to the screen for this context.
+ */
+void OutputDevice::PaintScope::flush()
+{
+    if( pHandle )
+    {
+        OpenGLContext *pContext = static_cast<OpenGLContext *>( pHandle );
+        pHandle = nullptr;
+        pContext->mnPainting--;
+        assert( pContext->mnPainting >= 0 );
+        if( pContext->mnPainting == 0 )
+        {
+            pContext->makeCurrent();
+            pContext->AcquireDefaultFramebuffer();
+            glFlush();
+            pContext->swapBuffers();
+            CHECK_GL_ERROR();
+        }
+        pContext->release();
+    }
+}
+
+OutputDevice::PaintScope::~PaintScope()
+{
+    flush();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

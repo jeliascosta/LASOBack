@@ -36,7 +36,6 @@
 #include <com/sun/star/chart2/data/XDataProvider.hpp>
 #include <com/sun/star/chart2/data/XDataReceiver.hpp>
 #include <com/sun/star/chart2/data/XRangeXMLConversion.hpp>
-#include <com/sun/star/chart2/data/XPivotTableDataProvider.hpp>
 #include <com/sun/star/chart2/XChartDocument.hpp>
 #include <com/sun/star/chart2/XCoordinateSystemContainer.hpp>
 #include <com/sun/star/chart2/XRegressionCurveContainer.hpp>
@@ -127,7 +126,7 @@ Reference< chart2::data::XDataSequence > lcl_createNewSequenceFromCachedXMLRange
 namespace SchXMLTools
 {
 
-static const SvXMLEnumMapEntry<SchXMLChartTypeEnum> aXMLChartClassMap[] =
+static const SvXMLEnumMapEntry aXMLChartClassMap[] =
 {
     { XML_LINE,         XML_CHART_CLASS_LINE    },
     { XML_AREA,         XML_CHART_CLASS_AREA    },
@@ -147,9 +146,11 @@ static const SvXMLEnumMapEntry<SchXMLChartTypeEnum> aXMLChartClassMap[] =
 
 SchXMLChartTypeEnum GetChartTypeEnum( const OUString& rClassName )
 {
-    SchXMLChartTypeEnum nEnumVal = XML_CHART_CLASS_UNKNOWN;
-    SvXMLUnitConverter::convertEnum( nEnumVal, rClassName, aXMLChartClassMap );
-    return nEnumVal;
+    sal_uInt16 nEnumVal = XML_CHART_CLASS_UNKNOWN;
+    if( !SvXMLUnitConverter::convertEnum(
+                                    nEnumVal, rClassName, aXMLChartClassMap ) )
+        nEnumVal = XML_CHART_CLASS_UNKNOWN;
+    return SchXMLChartTypeEnum(nEnumVal);
 }
 
 typedef std::map< OUString, OUString > tMakeStringStringMap;
@@ -369,7 +370,7 @@ Reference< chart2::data::XDataSequence > CreateDataSequence(
             bool bVal = false;
             uno::Any any = xPropSet->getPropertyValue("UseInternalDataProvider");
             if (any >>= bVal)
-                bUseInternal = bVal;
+                bUseInternal = static_cast<bool>(bVal);
         }
         catch (const beans::UnknownPropertyException&)
         {
@@ -489,21 +490,11 @@ void CreateCategories(
                                             bRangeConverted = true;
                                         }
                                     }
-
-                                    Reference<chart2::data::XDataSequence> xSequence;
-                                    Reference<chart2::data::XPivotTableDataProvider> xPivotTableDataProvider(xDataProvider, uno::UNO_QUERY);
-                                    if (xPivotTableDataProvider.is())
-                                    {
-                                        xSequence.set(xPivotTableDataProvider->createDataSequenceOfCategories());
-                                    }
-                                    else
-                                    {
-                                        xSequence.set(xDataProvider->createDataSequenceByRangeRepresentation(aConvertedRange));
-                                        if (bRangeConverted)
-                                            setXMLRangePropertyAtDataSequence(xSequence, rRangeAddress);
-                                    }
-                                    xLabeledSeq->setValues(xSequence);
-
+                                    Reference< chart2::data::XDataSequence > xSeq(
+                                        xDataProvider->createDataSequenceByRangeRepresentation( aConvertedRange ));
+                                    xLabeledSeq->setValues( xSeq );
+                                    if( bRangeConverted )
+                                        setXMLRangePropertyAtDataSequence( xSeq, rRangeAddress );
                                 }
                                 catch( const lang::IllegalArgumentException & ex )
                                 {

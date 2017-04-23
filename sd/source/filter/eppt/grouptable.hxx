@@ -40,6 +40,8 @@ struct GroupEntry
         mnCount = nCount;
         mnCurrentPos = 0;
     };
+
+    ~GroupEntry(){};
 };
 
 class GroupTable

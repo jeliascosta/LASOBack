@@ -35,13 +35,13 @@ class SwRangeRedline;
 
 class SwOutlineContent : public SwContent
 {
-    SwOutlineNodes::size_type nOutlinePos;
+    sal_uInt16  nOutlinePos;
     sal_uInt8   nOutlineLevel;
     bool    bIsMoveable;
     public:
         SwOutlineContent(   const SwContentType* pCnt,
                             const OUString& rName,
-                            SwOutlineNodes::size_type nArrPos,
+                            sal_uInt16 nArrPos,
                             sal_uInt8 nLevel,
                             bool bMove,
                             long nYPos) :
@@ -90,6 +90,8 @@ public:
 class SwPostItContent : public SwContent
 {
     const SwFormatField*     pField;
+    SwRangeRedline*     pRedline;
+    bool                mbPostIt;
 public:
     SwPostItContent( const SwContentType* pCnt,
                             const OUString& rName,
@@ -97,10 +99,14 @@ public:
                             long nYPos )
         : SwContent(pCnt, rName, nYPos)
         , pField(pFormatField)
+        , pRedline(nullptr)
+        , mbPostIt(true)
     {}
 
     const SwFormatField* GetPostIt() const  { return pField; }
+    SwRangeRedline* GetRedline() { return pRedline; }
     virtual bool    IsProtect()     const override;
+    bool            IsPostIt()   const {return mbPostIt; }
 };
 
 class SwGraphicContent : public SwContent
@@ -110,7 +116,7 @@ public:
     SwGraphicContent(const SwContentType* pCnt, const OUString& rName, const OUString& rLink, long nYPos)
         : SwContent( pCnt, rName, nYPos ), sLink( rLink )
         {}
-    virtual ~SwGraphicContent() override;
+    virtual ~SwGraphicContent();
 
     const OUString&   GetLink() const {return sLink;}
 };
@@ -122,7 +128,7 @@ public:
     SwTOXBaseContent(const SwContentType* pCnt, const OUString& rName, long nYPos, const SwTOXBase& rBase)
         : SwContent( pCnt, rName, nYPos ), pBase(&rBase)
         {}
-    virtual ~SwTOXBaseContent() override;
+    virtual ~SwTOXBaseContent();
 
     const SwTOXBase* GetTOXBase() const {return pBase;}
 };
@@ -138,8 +144,7 @@ public:
 class SwContentType : public SwTypeNumber
 {
     SwWrtShell*         pWrtShell;
-    std::unique_ptr<SwContentArr>
-                        pMember;            // array for content
+    SwContentArr*       pMember;            // array for content
     OUString            sContentTypeName;   // name of content type
     OUString            sSingleContentTypeName; // name of content type, singular
     OUString            sTypeToken;         // attachment for URL
@@ -153,7 +158,7 @@ protected:
         static OUString     RemoveNewline(const OUString&);
 public:
         SwContentType(SwWrtShell* pParent, ContentTypeId nType, sal_uInt8 nLevel );
-        virtual ~SwContentType() override;
+        virtual ~SwContentType();
 
         void                Init(bool* pbInvalidateWindow = nullptr);
 

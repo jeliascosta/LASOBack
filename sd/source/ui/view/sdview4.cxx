@@ -95,7 +95,7 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
     if( !pPickObj && pPV )
     {
         SdrPageView* pPageView = pPV;
-        pPickObj = PickObj(rPos, getHitTolLog(), pPageView);
+        PickObj(rPos, getHitTolLog(), pPickObj, pPageView);
     }
 
     const bool bIsGraphic(dynamic_cast< const SdrGrafObj* >(pPickObj) !=  nullptr);
@@ -125,7 +125,7 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
 
         if ( pNewGrafObj->IsEmptyPresObj() )
         {
-            ::tools::Rectangle aRect( pNewGrafObj->GetLogicRect() );
+            Rectangle aRect( pNewGrafObj->GetLogicRect() );
             pNewGrafObj->AdjustToMaxRect( aRect );
             pNewGrafObj->SetOutlinerParaObject(nullptr);
             pNewGrafObj->SetEmptyPresObj(false);
@@ -173,7 +173,7 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
         // create  new object
         Size aSize;
 
-        if ( rGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
+        if ( rGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
         {
             ::OutputDevice* pOutDev = nullptr;
             if( mpViewSh )
@@ -183,21 +183,21 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
                 pOutDev = Application::GetDefaultDevice();
 
             if( pOutDev )
-                aSize = pOutDev->PixelToLogic( rGraphic.GetPrefSize(), MapUnit::Map100thMM );
+                aSize = pOutDev->PixelToLogic( rGraphic.GetPrefSize(), MAP_100TH_MM );
         }
         else
         {
             aSize = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(),
                                                 rGraphic.GetPrefMapMode(),
-                                                MapMode( MapUnit::Map100thMM ) );
+                                                MapMode( MAP_100TH_MM ) );
         }
 
-        pNewGrafObj = new SdrGrafObj( rGraphic, ::tools::Rectangle( rPos, aSize ) );
+        pNewGrafObj = new SdrGrafObj( rGraphic, Rectangle( rPos, aSize ) );
         SdrPage* pPage = pPV->GetPage();
         Size aPageSize( pPage->GetSize() );
         aPageSize.Width()  -= pPage->GetLftBorder() + pPage->GetRgtBorder();
         aPageSize.Height() -= pPage->GetUppBorder() + pPage->GetLwrBorder();
-        pNewGrafObj->AdjustToMaxRect( ::tools::Rectangle( Point(), aPageSize ), true );
+        pNewGrafObj->AdjustToMaxRect( Rectangle( Point(), aPageSize ), true );
 
         SdrInsertFlags nOptions = SdrInsertFlags::SETDEFLAYER;
         bool    bIsPresTarget = false;
@@ -223,9 +223,9 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
             if (pImageMap)
                 pNewGrafObj->AppendUserData(new SdIMapInfo(*pImageMap));
 
-            ::tools::Rectangle aPickObjRect(pPickObj->GetCurrentBoundRect());
+            Rectangle aPickObjRect(pPickObj->GetCurrentBoundRect());
             Size aPickObjSize(aPickObjRect.GetSize());
-            ::tools::Rectangle aObjRect(pNewGrafObj->GetCurrentBoundRect());
+            Rectangle aObjRect(pNewGrafObj->GetCurrentBoundRect());
             Size aObjSize(aObjRect.GetSize());
 
             Fraction aScaleWidth(aPickObjSize.Width(), aObjSize.Width());
@@ -329,6 +329,12 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
             pPV = nullptr;
     }
 
+    if( !pPickObj && pPV )
+    {
+        SdrPageView* pPageView = pPV;
+        PickObj(rPos, getHitTolLog(), pPickObj, pPageView);
+    }
+
     if( mnAction == DND_ACTION_LINK && pPickObj && pPV && dynamic_cast< SdrMediaObj *>( pPickObj ) !=  nullptr )
     {
         pNewMediaObj = static_cast< SdrMediaObj* >( pPickObj->Clone() );
@@ -340,7 +346,7 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
     }
     else if( pPV )
     {
-        ::tools::Rectangle aRect( rPos, rSize );
+        Rectangle aRect( rPos, rSize );
         if( pPickObj )
             aRect = pPickObj->GetLogicRect();
 
@@ -385,7 +391,7 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
 /**
  * Timer handler for InsertFile at Drop()
  */
-IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(View, DropInsertFileHdl, Idle *, void)
 {
     DBG_ASSERT( mpViewSh, "sd::View::DropInsertFileHdl(), I need a view shell to work!" );
     if( !mpViewSh )
@@ -412,7 +418,7 @@ IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
         GraphicFilter&  rGraphicFilter = GraphicFilter::GetGraphicFilter();
         Graphic         aGraphic;
 
-        aCurrentDropFile = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        aCurrentDropFile = aURL.GetMainURL( INetURLObject::NO_DECODE );
 
         if( !::avmedia::MediaWindow::isMediaURL( aCurrentDropFile, ""/*TODO?*/ ) )
         {
@@ -483,9 +489,9 @@ IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
                     ::sd::Window* pWin = mpViewSh->GetActiveWindow();
 
                     if( pWin )
-                        aPrefSize = pWin->PixelToLogic( aPrefSize, MapUnit::Map100thMM );
+                        aPrefSize = pWin->PixelToLogic( aPrefSize, MAP_100TH_MM );
                     else
-                        aPrefSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MapUnit::Map100thMM );
+                        aPrefSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MAP_100TH_MM );
                 }
                 else
                     aPrefSize  = Size( 5000, 5000 );
@@ -528,7 +534,7 @@ IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
                             }
 
                             Size        aSize( aSz.Width, aSz.Height );
-                            ::tools::Rectangle   aRect;
+                            Rectangle   aRect;
 
                             if (!aSize.Width() || !aSize.Height())
                             {
@@ -536,7 +542,7 @@ IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
                                 aSize.Height()  = 1000;
                             }
 
-                            aRect = ::tools::Rectangle( maDropPos, aSize );
+                            aRect = Rectangle( maDropPos, aSize );
 
                             SdrOle2Obj* pOleObj = new SdrOle2Obj( svt::EmbeddedObjectRef( xObj, nAspect ), aName, aRect );
                             SdrInsertFlags nOptions = SdrInsertFlags::SETDEFLAYER;
@@ -576,7 +582,7 @@ IMPL_LINK_NOARG(View, DropInsertFileHdl, Timer *, void)
 /**
  * Timer handler for Errorhandling at Drop()
  */
-IMPL_LINK_NOARG(View, DropErrorHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(View, DropErrorHdl, Idle *, void)
 {
     ScopedVclPtrInstance<InfoBox>( mpViewSh ? mpViewSh->GetActiveWindow() : nullptr, SD_RESSTR(STR_ACTION_NOTPOSSIBLE) )->Execute();
 }

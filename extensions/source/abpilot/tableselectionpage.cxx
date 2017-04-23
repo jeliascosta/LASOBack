@@ -55,6 +55,12 @@ namespace abp
     }
 
 
+    void TableSelectionPage::DeactivatePage()
+    {
+        AddressBookSourcePage::DeactivatePage();
+    }
+
+
     void TableSelectionPage::initializePage()
     {
         AddressBookSourcePage::initializePage();
@@ -80,14 +86,14 @@ namespace abp
     }
 
 
-    IMPL_LINK_NOARG( TableSelectionPage, OnTableDoubleClicked, ListBox&, void )
+    IMPL_LINK_NOARG_TYPED( TableSelectionPage, OnTableDoubleClicked, ListBox&, void )
     {
         if ( 1 == m_pTableList->GetSelectEntryCount() )
             getDialog()->travelNext();
     }
 
 
-    IMPL_LINK_NOARG( TableSelectionPage, OnTableSelected, ListBox&, void )
+    IMPL_LINK_NOARG_TYPED( TableSelectionPage, OnTableSelected, ListBox&, void )
     {
         updateDialogTravelUI();
     }

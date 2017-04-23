@@ -24,10 +24,9 @@
 #include <unotools/textsearch.hxx>
 #include <com/sun/star/util/Date.hpp>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 
-class ScXMLCalculationSettingsContext : public ScXMLImportContext
+class ScXMLCalculationSettingsContext : public SvXMLImportContext
 {
     css::util::Date aNullDate;
     double fIterationEpsilon;
@@ -40,12 +39,14 @@ class ScXMLCalculationSettingsContext : public ScXMLImportContext
     bool bLookUpLabels;
     bool bMatchWholeCell;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLCalculationSettingsContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLCalculationSettingsContext() override;
+    virtual ~ScXMLCalculationSettingsContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -58,14 +59,16 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLNullDateContext : public ScXMLImportContext
+class ScXMLNullDateContext : public SvXMLImportContext
 {
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLNullDateContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList, ScXMLCalculationSettingsContext* pCalcSet);
 
-    virtual ~ScXMLNullDateContext() override;
+    virtual ~ScXMLNullDateContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -74,14 +77,16 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLIterationContext : public ScXMLImportContext
+class ScXMLIterationContext : public SvXMLImportContext
 {
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLIterationContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList, ScXMLCalculationSettingsContext* pCalcSet);
 
-    virtual ~ScXMLIterationContext() override;
+    virtual ~ScXMLIterationContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

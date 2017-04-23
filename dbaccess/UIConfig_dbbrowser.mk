@@ -13,11 +13,6 @@ $(eval $(call gb_UIConfig_add_menubarfiles,modules/dbbrowser,\
 	dbaccess/uiconfig/dbbrowser/menubar/compat \
 ))
 
-$(eval $(call gb_UIConfig_add_popupmenufiles,modules/dbbrowser,\
-	dbaccess/uiconfig/dbbrowser/popupmenu/explorer \
-	dbaccess/uiconfig/dbbrowser/popupmenu/refreshdata \
-))
-
 $(eval $(call gb_UIConfig_add_toolbarfiles,modules/dbbrowser,\
 	dbaccess/uiconfig/dbbrowser/toolbar/toolbar \
 ))

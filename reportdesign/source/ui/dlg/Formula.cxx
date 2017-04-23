@@ -94,7 +94,7 @@ void FormulaDialog::dispose()
 {
     if ( m_pAddField )
     {
-        SvtViewOptions aDlgOpt( EViewType::Window, HID_RPT_FIELD_SEL_WIN );
+        SvtViewOptions aDlgOpt( E_WINDOW, OUString( HID_RPT_FIELD_SEL_WIN ) );
         aDlgOpt.SetWindowState(OStringToOUString(m_pAddField->GetWindowState((WindowStateMask::X | WindowStateMask::Y | WindowStateMask::State | WindowStateMask::Minimized)), RTL_TEXTENCODING_ASCII_US));
     }
 
@@ -105,7 +105,7 @@ void FormulaDialog::dispose()
 }
 
 
-// functions for right side
+//                          Funktionen fuer rechte Seite
 
 bool FormulaDialog::calculateValue( const OUString& rStrExp, OUString& rStrResult, bool /*bMatrixFormula*/ )
 {
@@ -126,6 +126,9 @@ void FormulaDialog::dispatch(bool /*_bOK*/, bool /*_bMatrixChecked*/)
 {
 }
 void FormulaDialog::setDispatcherLock( bool /*bLock*/ )
+{
+}
+void FormulaDialog::setReferenceInput(const FormEditData* /*_pData*/)
 {
 }
 void FormulaDialog::deleteFormData()
@@ -203,7 +206,7 @@ void FormulaDialog::ToggleCollapsed( RefEdit* _pEdit, RefButton* _pButton)
     {
         m_pAddField = VclPtr<OAddFieldWindow>::Create(this,m_xRowSet);
         m_pAddField->SetCreateHdl(LINK( this, FormulaDialog, OnClickHdl ) );
-        SvtViewOptions aDlgOpt( EViewType::Window, HID_RPT_FIELD_SEL_WIN );
+        SvtViewOptions aDlgOpt( E_WINDOW, OUString( HID_RPT_FIELD_SEL_WIN ) );
         if ( aDlgOpt.Exists() )
         {
             m_pAddField->SetWindowState(OUStringToOString(aDlgOpt.GetWindowState().getStr(), RTL_TEXTENCODING_ASCII_US));
@@ -217,7 +220,7 @@ void FormulaDialog::ToggleCollapsed( RefEdit* _pEdit, RefButton* _pButton)
 
 }
 
-IMPL_LINK( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, void)
+IMPL_LINK_TYPED( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, void)
 {
     const uno::Sequence< beans::PropertyValue > aArgs = _rAddFieldDlg.getSelectedFieldDescriptors();
     // we use this way to create undo actions
@@ -227,7 +230,7 @@ IMPL_LINK( FormulaDialog, OnClickHdl, OAddFieldWindow& ,_rAddFieldDlg, void)
         aArgs[0].Value >>= aValue;
         svx::ODataAccessDescriptor aDescriptor(aValue);
         OUString sName;
-        aDescriptor[ svx::DataAccessDescriptorProperty::ColumnName ] >>= sName;
+        aDescriptor[ svx::daColumnName ] >>= sName;
         if ( !sName.isEmpty() )
         {
             sName = "[" + sName + "]";

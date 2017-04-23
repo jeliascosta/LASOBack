@@ -21,7 +21,6 @@
 #include <basegfx/matrix/b3dhommatrix.hxx>
 #include <hommatrixtemplate.hxx>
 #include <basegfx/vector/b3dvector.hxx>
-#include <memory>
 
 namespace basegfx
 {
@@ -43,11 +42,6 @@ namespace basegfx
     {
     }
 
-    B3DHomMatrix::B3DHomMatrix(B3DHomMatrix&& rMat) :
-        mpImpl(std::move(rMat.mpImpl))
-    {
-    }
-
     B3DHomMatrix::~B3DHomMatrix()
     {
     }
@@ -55,12 +49,6 @@ namespace basegfx
     B3DHomMatrix& B3DHomMatrix::operator=(const B3DHomMatrix& rMat)
     {
         mpImpl = rMat.mpImpl;
-        return *this;
-    }
-
-    B3DHomMatrix& B3DHomMatrix::operator=(B3DHomMatrix&& rMat)
-    {
-        mpImpl = std::move(rMat.mpImpl);
         return *this;
     }
 
@@ -95,15 +83,18 @@ namespace basegfx
     bool B3DHomMatrix::invert()
     {
         Impl3DHomMatrix aWork(*mpImpl);
-        std::unique_ptr<sal_uInt16[]> pIndex( new sal_uInt16[Impl3DHomMatrix_Base::getEdgeLength()] );
+        sal_uInt16* pIndex = new sal_uInt16[Impl3DHomMatrix_Base::getEdgeLength()];
         sal_Int16 nParity;
 
-        if(aWork.ludcmp(pIndex.get(), nParity))
+        if(aWork.ludcmp(pIndex, nParity))
         {
-            mpImpl->doInvert(aWork, pIndex.get());
+            mpImpl->doInvert(aWork, pIndex);
+            delete[] pIndex;
+
             return true;
         }
 
+        delete[] pIndex;
         return false;
     }
 
@@ -360,7 +351,7 @@ namespace basegfx
         aVUV.normalize();
         aVPN.normalize();
 
-        // build x-axis as perpendicular from aVUV and aVPN
+        // build x-axis as perpendicular fron aVUV and aVPN
         B3DVector aRx(aVUV.getPerpendicular(aVPN));
         aRx.normalize();
 

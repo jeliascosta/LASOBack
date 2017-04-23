@@ -97,7 +97,7 @@ public:
         mbNewFullSize (bNFullSize)
 
         {}
-    virtual ~SdPageFormatUndoAction() override;
+    virtual ~SdPageFormatUndoAction();
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -125,7 +125,7 @@ public:
         mnNewLeft   (nNewLft),
         mnNewRight  (nNewRgt)
         {}
-    virtual ~SdPageLRUndoAction() override;
+    virtual ~SdPageLRUndoAction();
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -153,7 +153,7 @@ public:
         mnNewUpper  (nNewUpr),
         mnNewLower  (nNewLwr)
         {}
-    virtual ~SdPageULUndoAction() override;
+    virtual ~SdPageULUndoAction();
 
     virtual void Undo() override;
     virtual void Redo() override;

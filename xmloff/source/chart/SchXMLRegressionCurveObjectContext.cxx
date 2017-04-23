@@ -153,10 +153,10 @@ void SchXMLEquationContext::StartElement( const uno::Reference< xml::sax::XAttri
                 bHasYPos = true;
                 break;
             case XML_TOK_REGEQ_DISPLAY_EQUATION:
-                (void)::sax::Converter::convertBool(bShowEquation, aValue);
+                ::sax::Converter::convertBool(bShowEquation, aValue);
                 break;
             case XML_TOK_REGEQ_DISPLAY_R_SQUARE:
-                (void)::sax::Converter::convertBool(bShowRSquare, aValue);
+                ::sax::Converter::convertBool(bShowRSquare, aValue);
                 break;
             case XML_TOK_REGEQ_STYLE_NAME:
                 sAutoStyleName = aValue;

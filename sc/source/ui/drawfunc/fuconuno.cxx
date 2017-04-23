@@ -31,13 +31,13 @@
 FuConstUnoControl::FuConstUnoControl(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pViewP,
                    SdrModel* pDoc, SfxRequest& rReq)
     : FuConstruct(pViewSh, pWin, pViewP, pDoc, rReq)
-    , nInventor(SdrInventor::Unknown)
+    , nInventor(0)
     , nIdentifier(0)
 {
     const SfxUInt32Item* pInventorItem = rReq.GetArg<SfxUInt32Item>(SID_FM_CONTROL_INVENTOR);
     const SfxUInt16Item* pIdentifierItem = rReq.GetArg<SfxUInt16Item>(SID_FM_CONTROL_IDENTIFIER);
     if( pInventorItem )
-        nInventor = (SdrInventor)pInventorItem->GetValue();
+        nInventor = pInventorItem->GetValue();
     if( pIdentifierItem )
         nIdentifier = pIdentifierItem->GetValue();
 }
@@ -84,6 +84,17 @@ bool FuConstUnoControl::MouseButtonDown(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
+|* MouseMove-event
+|*
+\************************************************************************/
+
+bool FuConstUnoControl::MouseMove(const MouseEvent& rMEvt)
+{
+    return FuConstruct::MouseMove(rMEvt);
+}
+
+/*************************************************************************
+|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -97,10 +108,24 @@ bool FuConstUnoControl::MouseButtonUp(const MouseEvent& rMEvt)
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj(SdrCreateCmd::ForceEnd);
+        pView->EndCreateObj(SDRCREATE_FORCEEND);
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
+}
+
+/*************************************************************************
+|*
+|* Tastaturereignisse bearbeiten
+|*
+|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
+|* FALSE.
+|*
+\************************************************************************/
+
+bool FuConstUnoControl::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************
@@ -142,7 +167,7 @@ void FuConstUnoControl::Deactivate()
 }
 
 // Create default drawing objects via keyboard
-SdrObject* FuConstUnoControl::CreateDefaultObject(const sal_uInt16 /* nID */, const tools::Rectangle& rRectangle)
+SdrObject* FuConstUnoControl::CreateDefaultObject(const sal_uInt16 /* nID */, const Rectangle& rRectangle)
 {
     // case SID_FM_CREATE_CONTROL:
 

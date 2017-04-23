@@ -31,8 +31,8 @@ class XMLEventOOoTransformerContext : public XMLPersElemContentTContext
 public:
     XMLEventOOoTransformerContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName,
-                              bool bPersistent  );
-    virtual ~XMLEventOOoTransformerContext() override;
+                              bool bPersistent = false  );
+    virtual ~XMLEventOOoTransformerContext();
 
     static XMLTransformerOOoEventMap_Impl *CreateEventMap();
     static void FlushEventMap( XMLTransformerOOoEventMap_Impl *p );

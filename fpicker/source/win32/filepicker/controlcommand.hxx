@@ -67,9 +67,9 @@ public:
         sal_Int16 aControlAction,
         const css::uno::Any& aValue );
 
-    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState ) override;
+    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState );
 
-    virtual CControlCommandResult* SAL_CALL handleRequest( CControlCommandRequest* aRequest ) override;
+    virtual CControlCommandResult* SAL_CALL handleRequest( CControlCommandRequest* aRequest );
 
     sal_Int16 SAL_CALL getControlAction( ) const;
 
@@ -88,9 +88,9 @@ public:
         sal_Int16 aControlId,
         const OUString& aLabel );
 
-    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState ) override;
+    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState );
 
-    virtual CControlCommandResult* SAL_CALL handleRequest( CControlCommandRequest* aRequest ) override;
+    virtual CControlCommandResult* SAL_CALL handleRequest( CControlCommandRequest* aRequest );
 
     OUString SAL_CALL getLabel( ) const;
 
@@ -104,12 +104,12 @@ class CEnableControlCommand : public CControlCommand
 public:
     CEnableControlCommand(
         sal_Int16 controlId,
-        bool bEnable );
+        sal_Bool bEnable );
 
-    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState ) override;
+    virtual void SAL_CALL exec( CFilePickerState* aFilePickerState );
 
 private:
-    bool m_bEnable;
+    sal_Bool m_bEnable;
 };
 
 #endif

@@ -23,9 +23,8 @@
 #include <xmloff/xmlictxt.hxx>
 #include <com/sun/star/sheet/SheetLinkMode.hpp>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
-class ScXMLTableSourceContext : public ScXMLImportContext
+class ScXMLTableSourceContext : public SvXMLImportContext
 {
     OUString                           sLink;
     OUString                           sTableName;
@@ -34,12 +33,14 @@ class ScXMLTableSourceContext : public ScXMLImportContext
     sal_Int32                          nRefresh;
     css::sheet::SheetLinkMode          nMode;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLTableSourceContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLTableSourceContext() override;
+    virtual ~ScXMLTableSourceContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

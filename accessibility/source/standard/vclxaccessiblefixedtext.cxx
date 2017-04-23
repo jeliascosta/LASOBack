@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblefixedtext.hxx>
+#include <accessibility/standard/vclxaccessiblefixedtext.hxx>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
@@ -53,18 +53,26 @@ void VCLXAccessibleFixedText::FillAccessibleStateSet( utl::AccessibleStateSetHel
 }
 
 
+void VCLXAccessibleFixedText::implGetLineBoundary( i18n::Boundary& rBoundary, sal_Int32 nIndex )
+{
+    // TODO
+    OCommonAccessibleText::implGetLineBoundary( rBoundary, nIndex );
+}
+
+
 // XServiceInfo
 
 
-OUString VCLXAccessibleFixedText::getImplementationName()
+OUString VCLXAccessibleFixedText::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleFixedText" );
 }
 
 
-Sequence< OUString > VCLXAccessibleFixedText::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleFixedText::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleFixedText" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleFixedText" };
+    return aNames;
 }
 
 

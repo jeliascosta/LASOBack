@@ -47,11 +47,11 @@ GraphicExportDialog::~GraphicExportDialog()
 }
 
 // XInitialization
-void SAL_CALL GraphicExportDialog::initialize( const Sequence<Any>& )
+void SAL_CALL GraphicExportDialog::initialize( const Sequence<Any>& ) throw ( Exception, RuntimeException, std::exception )
 {}
 
 // XPropertyAccess
-Sequence<PropertyValue> GraphicExportDialog::getPropertyValues()
+Sequence<PropertyValue> GraphicExportDialog::getPropertyValues() throw ( RuntimeException, std::exception )
 {
     sal_Int32 i;
     sal_Int32 nCount = maMediaDescriptor.getLength();
@@ -76,6 +76,8 @@ Sequence<PropertyValue> GraphicExportDialog::getPropertyValues()
 }
 
 void GraphicExportDialog::setPropertyValues( const Sequence<PropertyValue>& aProps )
+    throw ( UnknownPropertyException, PropertyVetoException, IllegalArgumentException,
+            WrappedTargetException, RuntimeException, std::exception )
 {
     maMediaDescriptor = aProps;
 
@@ -95,11 +97,12 @@ void GraphicExportDialog::setPropertyValues( const Sequence<PropertyValue>& aPro
 
 // XExecutableDialog
 void GraphicExportDialog::setTitle( const OUString& aTitle )
+    throw ( uno::RuntimeException, std::exception )
 {
     maDialogTitle = aTitle;
 }
 
-sal_Int16 GraphicExportDialog::execute()
+sal_Int16 GraphicExportDialog::execute() throw ( RuntimeException, std::exception )
 {
     sal_Int16 nReturn = ui::dialogs::ExecutableDialogResults::CANCEL;
     ScopedVclPtrInstance< GraphicExportOptionsDialog > graphicExportOptionsDialog( Application::GetDefDialogParent(), mxSourceDocument );
@@ -113,6 +116,7 @@ sal_Int16 GraphicExportDialog::execute()
 
 // XEmporter
 void GraphicExportDialog::setSourceDocument( const Reference<XComponent>& xDocument )
+    throw ( IllegalArgumentException, RuntimeException, std::exception )
 {
     mxSourceDocument = xDocument;
 

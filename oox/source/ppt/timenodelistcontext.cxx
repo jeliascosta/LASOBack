@@ -84,17 +84,17 @@ namespace oox { namespace ppt {
                     aHSL[ 0 ] = double(one) / 100000;
                     aHSL[ 1 ] = double(two) / 100000;
                     aHSL[ 2 ] = double(three) / 100000;
-                    aColor <<= aHSL;
+                    aColor = Any(aHSL);
                     break;
                 case AnimationColorSpace::RGB:
                     nColor = ( ( ( one * 128 ) / 1000 ) & 0xff ) << 16
                         | ( ( ( two * 128 ) / 1000 ) & 0xff ) << 8
                         | ( ( ( three * 128 ) / 1000 )  & 0xff );
-                    aColor <<= nColor;
+                    aColor = Any(nColor);
                     break;
                 default:
                     nColor = 0;
-                    aColor <<= nColor;
+                    aColor = Any( nColor );
                     break;
                 }
                 return  aColor;
@@ -179,7 +179,7 @@ namespace oox { namespace ppt {
 
             }
 
-        virtual ~SetTimeNodeContext() throw () override
+        virtual ~SetTimeNodeContext() throw ()
             {
                 if( maTo.hasValue() )
                 {
@@ -188,9 +188,10 @@ namespace oox { namespace ppt {
                     OUString aString;
                     if( maTo >>= aString )
                     {
-                        maTo <<= aString == "visible";
+                        OSL_TRACE( "Magic conversion %s", OUSTRING_TO_CSTR( aString ) );
+                        maTo = makeAny( aString == "visible" );
                         if( !maTo.has<sal_Bool>() )
-                            SAL_WARN("oox.ppt", "conversion failed" );
+                            OSL_TRACE( "conversion failed" );
                     }
                     mpNode->setTo( maTo );
                 }
@@ -237,6 +238,10 @@ namespace oox { namespace ppt {
                 default:
                     break;
                 }
+            }
+
+        virtual ~CmdTimeNodeContext() throw ()
+            {
             }
 
         virtual void onEndElement() override
@@ -291,22 +296,22 @@ namespace oox { namespace ppt {
                             }
                             break;
                         }
-                        mpNode->getNodeProperties()[ NP_COMMAND ] <<= nCommand;
+                        mpNode->getNodeProperties()[ NP_COMMAND ] = makeAny((sal_Int16)nCommand);
                         if( nCommand == EffectCommands::CUSTOM )
                         {
-                            SAL_WARN("oox.ppt", "OOX: CmdTimeNodeContext::endFastElement(), unknown command!");
+                            OSL_TRACE("OOX: CmdTimeNodeContext::endFastElement(), unknown command!");
                             aParamValue.Name = "UserDefined";
                             aParamValue.Value <<= msCommand;
                         }
                         if( aParamValue.Value.hasValue() )
                         {
                             Sequence< NamedValue > aParamSeq( &aParamValue, 1 );
-                            mpNode->getNodeProperties()[ NP_PARAMETER ] <<= aParamSeq;
+                            mpNode->getNodeProperties()[ NP_PARAMETER ] = makeAny( aParamSeq );
                         }
                     }
                     catch( RuntimeException& )
                     {
-                        SAL_WARN("oox.ppt", "OOX: Exception in CmdTimeNodeContext::endFastElement()" );
+                        OSL_TRACE( "OOX: Exception in CmdTimeNodeContext::endFastElement()" );
                     }
                 }
             }
@@ -346,6 +351,10 @@ namespace oox { namespace ppt {
                 mbConcurrent = attribs.getBool( XML_concurrent, false );
                 mnNextAc = xAttribs->getOptionalValueToken( XML_nextAc, 0 );
                 mnPrevAc = xAttribs->getOptionalValueToken( XML_prevAc, 0 );
+            }
+
+        virtual ~SequenceTimeNodeContext() throw()
+            {
             }
 
         virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override
@@ -417,6 +426,9 @@ namespace oox { namespace ppt {
             , m_byColor( AnimationColorSpace::RGB, 0, 0, 0)
             {
             }
+        virtual ~AnimColorContext() throw()
+            {
+            }
 
         virtual void onEndElement() override
             {
@@ -424,8 +436,8 @@ namespace oox { namespace ppt {
                 if( isCurrentElement( mnElement ) )
                 {
                     NodePropertyMap & rProps(mpNode->getNodeProperties());
-                    rProps[ NP_DIRECTION ] <<= mnDir == XML_cw;
-                    rProps[ NP_COLORINTERPOLATION ] <<= mnColorSpace == XML_hsl ? AnimationColorSpace::HSL : AnimationColorSpace::RGB;
+                    rProps[ NP_DIRECTION ] = makeAny( mnDir == XML_cw );
+                    rProps[ NP_COLORINTERPOLATION ] = makeAny( mnColorSpace == XML_hsl ? AnimationColorSpace::HSL : AnimationColorSpace::RGB );
                     const GraphicHelper& rGraphicHelper = getFilter().getGraphicHelper();
                     if( maToClr.isUsed() )
                         mpNode->setTo( Any( maToClr.getColor( rGraphicHelper ) ) );
@@ -522,7 +534,7 @@ namespace oox { namespace ppt {
                         nEnum = AnimationCalcMode::DISCRETE;
                         break;
                     }
-                    aProps[ NP_CALCMODE ] <<= nEnum;
+                    aProps[ NP_CALCMODE ] = makeAny(nEnum);
                 }
                 OUString aStr;
                 aStr = xAttribs->getOptionalValue( XML_from );
@@ -543,7 +555,7 @@ namespace oox { namespace ppt {
                 mnValueType = xAttribs->getOptionalValueToken( XML_valueType, 0 );
             }
 
-        virtual ~AnimContext() throw () override
+        virtual ~AnimContext() throw ()
             {
                 ::std::list< TimeAnimationValue >::iterator iter, end;
                 int nKeyTimes = maTavList.size();
@@ -612,7 +624,11 @@ namespace oox { namespace ppt {
                 // TODO what to do with mbZoomContents
                 mbZoomContents = attribs.getBool( XML_zoomContents, false );
                 pNode->getNodeProperties()[ NP_TRANSFORMTYPE ]
-                    <<= (sal_Int16)AnimationTransformType::SCALE;
+                    = makeAny((sal_Int16)AnimationTransformType::SCALE);
+            }
+
+        virtual ~AnimScaleContext( ) throw( )
+            {
             }
 
         virtual void onEndElement() override
@@ -690,24 +706,28 @@ namespace oox { namespace ppt {
                 AttributeList attribs( xAttribs );
 
                 pNode->getNodeProperties()[ NP_TRANSFORMTYPE ]
-                    <<= (sal_Int16)AnimationTransformType::ROTATE;
+                    = makeAny((sal_Int16)AnimationTransformType::ROTATE);
                 // see also DFF_msofbtAnimateRotationData in
                 // sd/source/filter/ppt/pptinanimations.cxx
                 if(attribs.hasAttribute( XML_by ) )
                 {
-                    double fBy = attribs.getDouble( XML_by, 0.0 ) / PER_DEGREE; //1 PowerPoint-angle-unit = 1/60000 degree
-                    pNode->setBy( makeAny( fBy ) );
+                    sal_Int32 nBy = attribs.getInteger( XML_by, 0 );
+                    pNode->setBy( makeAny( (double) nBy ) );
                 }
                 if(attribs.hasAttribute( XML_from ) )
                 {
-                    double fFrom = attribs.getDouble( XML_from, 0.0 ) / PER_DEGREE;
-                    pNode->setFrom( makeAny( fFrom ) );
+                    sal_Int32 nFrom = attribs.getInteger( XML_from, 0 );
+                    pNode->setFrom( makeAny( (double) nFrom ) );
                 }
                 if(attribs.hasAttribute( XML_to ) )
                 {
-                    double fTo = attribs.getDouble( XML_to, 0.0 ) / PER_DEGREE;
-                    pNode->setTo( makeAny( fTo ) );
+                    sal_Int32 nTo = attribs.getInteger( XML_to, 0 );
+                    pNode->setTo( makeAny( (double) nTo ) );
                 }
+            }
+
+        virtual ~AnimRotContext( ) throw( )
+            {
             }
 
         virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override
@@ -735,7 +755,7 @@ namespace oox { namespace ppt {
             : TimeNodeContext( rParent, aElement, xAttribs, pNode )
             {
                 pNode->getNodeProperties()[ NP_TRANSFORMTYPE ]
-                    <<= (sal_Int16)AnimationTransformType::TRANSLATE;
+                    = makeAny((sal_Int16)AnimationTransformType::TRANSLATE);
 
                 AttributeList attribs( xAttribs );
                 sal_Int32 nOrigin = xAttribs->getOptionalValueToken( XML_origin, 0 );
@@ -756,11 +776,15 @@ namespace oox { namespace ppt {
                 if (aStr.endsWith("E"))
                     aStr = aStr.copy(0, aStr.getLength() - 1);
                 aStr = aStr.trim();
-                pNode->getNodeProperties()[ NP_PATH ] <<= aStr;
+                pNode->getNodeProperties()[ NP_PATH ] = makeAny(aStr);
                 mnPathEditMode = xAttribs->getOptionalValueToken( XML_pathEditMode, 0 );
                 msPtsTypes = xAttribs->getOptionalValue( XML_ptsTypes );
                 mnAngle = attribs.getInteger( XML_rAng, 0 );
                 // TODO make sure the units are right. Likely not.
+            }
+
+        virtual ~AnimMotionContext( ) throw()
+            {
             }
 
         virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override
@@ -840,6 +864,10 @@ namespace oox { namespace ppt {
                     aFilter.setMode( nDir != XML_out );
                     pNode->setTransitionFilter( aFilter );
                 }
+            }
+
+        virtual ~AnimEffectContext( ) throw()
+            {
             }
 
         virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override
@@ -981,7 +1009,7 @@ namespace oox { namespace ppt {
             break;
         case PPT_TOKEN( video ):
             nNodeType = AnimationNodeType::AUDIO;
-            SAL_WARN("oox.ppt", "OOX: video requested, gave Audio instead" );
+            OSL_TRACE( "OOX: video requested, gave Audio instead" );
             break;
 
         default:

@@ -97,7 +97,6 @@
 #include <editeng/xmlcnitm.hxx>
 #include <editeng/flditem.hxx>
 #include <editeng/eeitem.hxx>
-#include <formula/errorcodes.hxx>
 #include <xmloff/xmlerror.hxx>
 #include <xmloff/XMLEventExport.hxx>
 
@@ -131,14 +130,25 @@
 #include <com/sun/star/io/XSeekable.hpp>
 #include <com/sun/star/sheet/XUsedAreaCursor.hpp>
 #include <com/sun/star/sheet/XCellRangeAddressable.hpp>
+#include <com/sun/star/sheet/XAreaLinks.hpp>
+#include <com/sun/star/sheet/XAreaLink.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
 #include <com/sun/star/sheet/XUniqueCellFormatRangesSupplier.hpp>
+#include <com/sun/star/sheet/XCellRangesQuery.hpp>
+#include <com/sun/star/sheet/CellFlags.hpp>
+#include <com/sun/star/sheet/XArrayFormulaRange.hpp>
+#include <com/sun/star/sheet/XLabelRanges.hpp>
 #include <com/sun/star/sheet/XLabelRange.hpp>
+#include <com/sun/star/sheet/XNamedRanges.hpp>
+#include <com/sun/star/sheet/XNamedRange.hpp>
+#include <com/sun/star/sheet/XCellRangeReferrer.hpp>
 #include <com/sun/star/sheet/NamedRangeFlag.hpp>
 #include <com/sun/star/sheet/XSheetLinkable.hpp>
 #include <com/sun/star/sheet/GlobalSheetSettings.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
 #include <com/sun/star/table/XColumnRowRange.hpp>
+#include <com/sun/star/text/XText.hpp>
+#include <com/sun/star/util/XMergeable.hpp>
 #include <com/sun/star/util/XProtectable.hpp>
 
 #include <com/sun/star/chart2/XChartDocument.hpp>
@@ -306,10 +316,15 @@ class ScXMLShapeExport : public XMLShapeExport
 {
 public:
     explicit ScXMLShapeExport(SvXMLExport& rExp) : XMLShapeExport(rExp) {}
+    virtual ~ScXMLShapeExport();
 
     /** is called before a shape element for the given XShape is exported */
     virtual void onExport( const uno::Reference < drawing::XShape >& xShape ) override;
 };
+
+ScXMLShapeExport::~ScXMLShapeExport()
+{
+}
 
 void ScXMLShapeExport::onExport( const uno::Reference < drawing::XShape >& xShape )
 {
@@ -367,7 +382,7 @@ ScXMLExport::ScXMLExport(
         pMergedRangesContainer = new ScMyMergedRangesContainer();
         pValidationsContainer = new ScMyValidationsContainer();
         mpCellsItr.reset(new ScMyNotEmptyCellsIterator(*this));
-        pDefaults = new ScMyDefaultStyles;
+        pDefaults = new ScMyDefaultStyles();
     }
     pCellStyles = new ScFormatRangeStyles();
 
@@ -494,7 +509,7 @@ void ScXMLExport::CollectSharedData(SCTAB& nTableCount, sal_Int32& nShapesCount)
 
     nTableCount = xIndex->getCount();
     if (!pSharedData)
-        pSharedData = new ScMySharedData(nTableCount);
+        CreateSharedData(nTableCount);
 
     pCellStyles->AddNewTable(nTableCount - 1);
 
@@ -615,7 +630,7 @@ void ScXMLExport::CollectShapesAutoStyles(SCTAB nTableCount)
                 if (pShapeList)
                 {
                     ScMyShapeList::const_iterator aEndItr(pShapeList->end());
-                    while ( aShapeItr != aEndItr && ( aShapeItr->aAddress.Tab() == nTable ) )
+                    while (aShapeItr != aEndItr && (static_cast<sal_Int32>(aShapeItr->aAddress.Tab()) == nTable))
                     {
                         GetShapeExport()->collectShapeAutoStyles(aShapeItr->xShape);
                         IncrementProgressBar(false);
@@ -628,7 +643,7 @@ void ScXMLExport::CollectShapesAutoStyles(SCTAB nTableCount)
                     for (ScMyNoteShapeList::const_iterator aNoteShapeItr = rNoteShapes.begin(), aNoteShapeEndItr = rNoteShapes.end();
                          aNoteShapeItr != aNoteShapeEndItr; ++aNoteShapeItr)
                     {
-                        if ( aNoteShapeItr->aPos.Tab() == nTable )
+                        if (static_cast<sal_Int32>(aNoteShapeItr->aPos.Tab()) == nTable)
                             GetShapeExport()->collectShapeAutoStyles(aNoteShapeItr->xShape);
                     }
                 }
@@ -697,7 +712,7 @@ void ScXMLExport::GetAreaLinks( ScMyAreaLinksContainer& rAreaLinks )
             if (pLink)
             {
                 ScMyAreaLink aAreaLink;
-                aAreaLink.aDestRange = pLink->GetDestArea();
+                ScUnoConversion::FillApiRange( aAreaLink.aDestRange, pLink->GetDestArea() );
                 aAreaLink.sSourceStr = pLink->GetSource();
                 aAreaLink.sFilter = pLink->GetFilter();
                 aAreaLink.sFilterOptions = pLink->GetOptions();
@@ -787,7 +802,7 @@ void ScXMLExport::CloseHeaderColumn()
     EndElement(XML_NAMESPACE_TABLE, XML_TABLE_HEADER_COLUMNS, true);
 }
 
-void ScXMLExport::ExportColumns(const sal_Int32 nTable, const ScRange& aColumnHeaderRange, const bool bHasColumnHeader)
+void ScXMLExport::ExportColumns(const sal_Int32 nTable, const table::CellRangeAddress& aColumnHeaderRange, const bool bHasColumnHeader)
 {
     sal_Int32 nColsRepeated (1);
     sal_Int32 nIndex;
@@ -803,7 +818,7 @@ void ScXMLExport::ExportColumns(const sal_Int32 nTable, const ScRange& aColumnHe
         bool bIsVisible(true);
         nIndex = pColumnStyles->GetStyleNameIndex(nTable, nColumn, bIsVisible);
 
-        const bool bIsHeader = bHasColumnHeader && (aColumnHeaderRange.aStart.Col() <= nColumn) && (nColumn <= aColumnHeaderRange.aEnd.Col());
+        const bool bIsHeader = bHasColumnHeader && (aColumnHeaderRange.StartColumn <= nColumn) && (nColumn <= aColumnHeaderRange.EndColumn);
         if (bIsHeader != bWasHeader)
         {
             if (bIsHeader)
@@ -1323,7 +1338,9 @@ void ScXMLExport::WriteRowContent()
                     AddAttribute(XML_NAMESPACE_TABLE, XML_CONTENT_VALIDATION_NAME, pValidationsContainer->GetValidationName(nPrevValidationIndex));
                 if (nCols > 1)
                 {
-                    AddAttribute(sAttrColumnsRepeated, OUString::number(nCols));
+                    OUStringBuffer aBuf;
+                    ::sax::Converter::convertNumber(aBuf, nCols);
+                    AddAttribute(sAttrColumnsRepeated, aBuf.makeStringAndClear());
                 }
                 SvXMLElementExport aElemC(*this, sElemCell, true, true);
                 nIndex = aRange.nIndex;
@@ -1344,7 +1361,9 @@ void ScXMLExport::WriteRowContent()
             AddAttribute(XML_NAMESPACE_TABLE, XML_CONTENT_VALIDATION_NAME, pValidationsContainer->GetValidationName(nPrevValidationIndex));
         if (nCols > 1)
         {
-            AddAttribute(sAttrColumnsRepeated, OUString::number(nCols));
+            OUStringBuffer aBuf;
+            ::sax::Converter::convertNumber(aBuf, nCols);
+            AddAttribute(sAttrColumnsRepeated, aBuf.makeStringAndClear());
         }
         SvXMLElementExport aElemC(*this, sElemCell, true, true);
     }
@@ -1364,7 +1383,9 @@ void ScXMLExport::WriteRowStartTag(
     }
     if (nEqualRows > 1)
     {
-        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_ROWS_REPEATED, OUString::number(nEqualRows));
+        OUStringBuffer aBuf;
+        ::sax::Converter::convertNumber(aBuf, nEqualRows);
+        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_ROWS_REPEATED, aBuf.makeStringAndClear());
     }
 
     StartElement( sElemRow, true);
@@ -1394,13 +1415,13 @@ void ScXMLExport::OpenNewRow(
         if (bHasRowHeader && bRowHeaderOpen)
             OpenHeaderRows();
     }
-    if (bHasRowHeader && !bRowHeaderOpen && nStartRow >= aRowHeaderRange.aStart.Row() && nStartRow <= aRowHeaderRange.aEnd.Row())
+    if (bHasRowHeader && !bRowHeaderOpen && nStartRow >= aRowHeaderRange.StartRow && nStartRow <= aRowHeaderRange.EndRow)
     {
-        if (nStartRow == aRowHeaderRange.aStart.Row())
+        if (nStartRow == aRowHeaderRange.StartRow)
             OpenHeaderRows();
         sal_Int32 nEquals;
-        if (aRowHeaderRange.aEnd.Row() < nStartRow + nEqualRows - 1)
-            nEquals = aRowHeaderRange.aEnd.Row() - nStartRow + 1;
+        if (aRowHeaderRange.EndRow < nStartRow + nEqualRows - 1)
+            nEquals = aRowHeaderRange.EndRow - nStartRow + 1;
         else
             nEquals = nEqualRows;
         WriteRowStartTag(nIndex, nEquals, bHidden, bFiltered);
@@ -1471,7 +1492,7 @@ void ScXMLExport::OpenRow(const sal_Int32 nTable, const sal_Int32 nStartRow, con
                         bFiltered = rRowAttr.rowFiltered(nTable, nRow, nEndRowFiltered);
                 }
                 if (nIndex == nPrevIndex && bHidden == bPrevHidden && bFiltered == bPrevFiltered &&
-                    !(bHasRowHeader && ((nRow == aRowHeaderRange.aStart.Row()) || (nRow - 1 == aRowHeaderRange.aEnd.Row()))) &&
+                    !(bHasRowHeader && ((nRow == aRowHeaderRange.StartRow) || (nRow - 1 == aRowHeaderRange.EndRow))) &&
                     !(pGroupRows->IsGroupStart(nRow)) &&
                     !(pGroupRows->IsGroupEnd(nRow - 1)))
                     ++nEqualRows;
@@ -1517,7 +1538,7 @@ void ScXMLExport::CloseRow(const sal_Int32 nRow)
     if (nOpenRow > -1)
     {
         EndElement(sElemRow, true);
-        if (bHasRowHeader && nRow == aRowHeaderRange.aEnd.Row())
+        if (bHasRowHeader && nRow == aRowHeaderRange.EndRow)
         {
             CloseHeaderRows();
             bRowHeaderOpen = false;
@@ -1615,8 +1636,8 @@ void ScXMLExport::ExportFormatRanges(const sal_Int32 nStartCol, const sal_Int32 
     }
 }
 
-void ScXMLExport::GetColumnRowHeader(bool& rHasColumnHeader, ScRange& rColumnHeaderRange,
-                                     bool& rHasRowHeader, ScRange& rRowHeaderRange,
+void ScXMLExport::GetColumnRowHeader(bool& rHasColumnHeader, table::CellRangeAddress& rColumnHeaderRange,
+                                     bool& rHasRowHeader, table::CellRangeAddress& rRowHeaderRange,
                                      OUString& rPrintRanges) const
 {
     uno::Reference <sheet::XPrintAreas> xPrintAreas (xCurrentTable, uno::UNO_QUERY);
@@ -1624,20 +1645,8 @@ void ScXMLExport::GetColumnRowHeader(bool& rHasColumnHeader, ScRange& rColumnHea
     {
         rHasRowHeader = xPrintAreas->getPrintTitleRows();
         rHasColumnHeader = xPrintAreas->getPrintTitleColumns();
-        table::CellRangeAddress rTempRowHeaderRange = xPrintAreas->getTitleRows();
-        rRowHeaderRange = ScRange(rTempRowHeaderRange.StartColumn,
-                                  rTempRowHeaderRange.StartRow,
-                                  rTempRowHeaderRange.Sheet,
-                                  rTempRowHeaderRange.EndColumn,
-                                  rTempRowHeaderRange.EndRow,
-                                  rTempRowHeaderRange.Sheet);
-        table::CellRangeAddress rTempColumnHeaderRange = xPrintAreas->getTitleColumns();
-        rColumnHeaderRange = ScRange(rTempColumnHeaderRange.StartColumn,
-                                  rTempColumnHeaderRange.StartRow,
-                                  rTempColumnHeaderRange.Sheet,
-                                  rTempColumnHeaderRange.EndColumn,
-                                  rTempColumnHeaderRange.EndRow,
-                                  rTempColumnHeaderRange.Sheet);
+        rRowHeaderRange = xPrintAreas->getTitleRows();
+        rColumnHeaderRange = xPrintAreas->getTitleColumns();
         uno::Sequence< table::CellRangeAddress > aRangeList( xPrintAreas->getPrintAreas() );
         ScRangeStringConverter::GetStringFromRangeList( rPrintRanges, aRangeList, pDoc, FormulaGrammar::CONV_OOO );
     }
@@ -1840,16 +1849,6 @@ const ScXMLEditAttributeMap& ScXMLExport::GetEditAttributeMap() const
     return *mpEditAttrMap;
 }
 
-void ScXMLExport::RegisterDefinedStyleNames( uno::Reference< css::sheet::XSpreadsheetDocument > & xSpreadDoc )
-{
-    ScFormatSaveData* pFormatData = ScModelObj::getImplementation(xSpreadDoc)->GetFormatSaveData();
-    auto xAutoStylePool = GetAutoStylePool();
-    for (const auto& rFormatInfo : pFormatData->maIDToName)
-    {
-        xAutoStylePool->RegisterDefinedName(XML_STYLE_FAMILY_TABLE_CELL, rFormatInfo.second);
-    }
-}
-
 void ScXMLExport::ExportContent_()
 {
     nCurrentTable = 0;
@@ -1858,7 +1857,7 @@ void ScXMLExport::ExportContent_()
         SCTAB nTableCount(0);
         sal_Int32 nShapesCount(0);
         CollectSharedData(nTableCount, nShapesCount);
-        OSL_FAIL("no shared data set");
+        OSL_FAIL("no shared data setted");
         if (!pSharedData)
             return;
     }
@@ -1945,10 +1944,6 @@ void ScXMLExport::ExportContent_()
 
 void ScXMLExport::ExportStyles_( bool bUsed )
 {
-    Reference <sheet::XSpreadsheetDocument> xSpreadDoc( GetModel(), uno::UNO_QUERY );
-    if (xSpreadDoc.is())
-        RegisterDefinedStyleNames( xSpreadDoc);
-
     if (!pSharedData)
     {
         SCTAB nTableCount(0);
@@ -2006,10 +2001,6 @@ void ScXMLExport::AddStyleFromCells(const uno::Reference<beans::XPropertySet>& x
                                     const uno::Reference<sheet::XSpreadsheet>& xTable,
                                     sal_Int32 nTable, const OUString* pOldName)
 {
-    css::uno::Any aAny = xProperties->getPropertyValue("FormatID");
-    sal_uInt64 nKey = 0;
-    aAny >>= nKey;
-
     //! pass xCellRanges instead
     uno::Reference<sheet::XSheetCellRanges> xCellRanges( xProperties, uno::UNO_QUERY );
 
@@ -2093,22 +2084,8 @@ void ScXMLExport::AddStyleFromCells(const uno::Reference<beans::XPropertySet>& x
             else
             {
                 OUString sName;
-                bool bAdded = false;
-                if (nKey)
-                {
-                    Reference <sheet::XSpreadsheetDocument> xSpreadDoc( GetModel(), uno::UNO_QUERY );
-                    ScFormatSaveData* pFormatData = ScModelObj::getImplementation(xSpreadDoc)->GetFormatSaveData();
-                    auto itr = pFormatData->maIDToName.find(nKey);
-                    if (itr != pFormatData->maIDToName.end())
-                    {
-                        sName = itr->second;
-                        bAdded = GetAutoStylePool()->AddNamed(sName, XML_STYLE_FAMILY_TABLE_CELL, sStyleName, aPropStates);
-                        if (bAdded)
-                            GetAutoStylePool()->RegisterName(XML_STYLE_FAMILY_TABLE_CELL, sName);
-                    }
-                }
                 bool bIsAutoStyle(true);
-                if (bAdded || GetAutoStylePool()->Add(sName, XML_STYLE_FAMILY_TABLE_CELL, sStyleName, aPropStates))
+                if (GetAutoStylePool()->Add(sName, XML_STYLE_FAMILY_TABLE_CELL, sStyleName, aPropStates))
                 {
                     OUString* pTemp(new OUString(sName));
                     if (!pCellStyles->AddStyleName(pTemp, nIndex))
@@ -2238,7 +2215,7 @@ void ScXMLExport::AddStyleFromRow(const uno::Reference<beans::XPropertySet>& xRo
     }
 }
 
-static uno::Any lcl_GetEnumerated( uno::Reference<container::XEnumerationAccess> const & xEnumAccess, sal_Int32 nIndex )
+static uno::Any lcl_GetEnumerated( uno::Reference<container::XEnumerationAccess> xEnumAccess, sal_Int32 nIndex )
 {
     uno::Any aRet;
     uno::Reference<container::XEnumeration> xEnum( xEnumAccess->createEnumeration() );
@@ -2274,9 +2251,6 @@ void ScXMLExport::ExportAutoStyles_()
 
     if (getExportFlags() & SvXMLExportFlags::CONTENT)
     {
-        // Reserve the loaded cell style names.
-        RegisterDefinedStyleNames( xSpreadDoc);
-
         //  re-create automatic styles with old names from stored data
         ScSheetSaveData* pSheetData = ScModelObj::getImplementation(xSpreadDoc)->GetSheetSaveData();
         if (pSheetData && pDoc)
@@ -2707,7 +2681,7 @@ void ScXMLExport::ExportMasterStyles_()
     GetPageExport()->exportMasterStyles( true );
 }
 
-void ScXMLExport::CollectInternalShape( uno::Reference< drawing::XShape > const & xShape )
+void ScXMLExport::CollectInternalShape( uno::Reference< drawing::XShape > xShape )
 {
     // detective objects and notes
     if( SvxShape* pShapeImp = SvxShape::getImplementation( xShape ) )
@@ -2763,17 +2737,14 @@ bool ScXMLExport::GetMerged (const table::CellRangeAddress* pCellAddress,
                 uno::Reference<sheet::XCellRangeAddressable> xCellAddress (xCursor, uno::UNO_QUERY);
                 xCursor->collapseToMergedArea();
                 table::CellRangeAddress aCellAddress2(xCellAddress->getRangeAddress());
-                ScRange aScRange = ScRange( aCellAddress2.StartColumn, aCellAddress2.StartRow, aCellAddress2.Sheet,
-                                            aCellAddress2.EndColumn, aCellAddress2.EndRow, aCellAddress2.Sheet );
-
-                if ((aScRange.aEnd.Row() > nRow ||
-                    aScRange.aEnd.Col() > nCol) &&
-                    aScRange.aStart.Row() == nRow &&
-                    aScRange.aStart.Col() == nCol)
+                if ((aCellAddress2.EndRow > nRow ||
+                    aCellAddress2.EndColumn > nCol) &&
+                    aCellAddress2.StartRow == nRow &&
+                    aCellAddress2.StartColumn == nCol)
                 {
-                    pMergedRangesContainer->AddRange(aScRange);
-                    pSharedData->SetLastColumn(aScRange.aEnd.Tab(), aScRange.aEnd.Col());
-                    pSharedData->SetLastRow(aScRange.aEnd.Tab(), aScRange.aEnd.Row());
+                    pMergedRangesContainer->AddRange(aCellAddress2);
+                    pSharedData->SetLastColumn(aCellAddress2.Sheet, aCellAddress2.EndColumn);
+                    pSharedData->SetLastRow(aCellAddress2.Sheet, aCellAddress2.EndRow);
                 }
                 else
                     bReady = true;
@@ -2792,7 +2763,7 @@ bool ScXMLExport::GetMerged (const table::CellRangeAddress* pCellAddress,
 }
 
 bool ScXMLExport::IsMatrix (const ScAddress& aCell,
-                            ScRange& aCellAddress, bool& bIsFirst) const
+                            table::CellRangeAddress& aCellAddress, bool& bIsFirst) const
 {
     bIsFirst = false;
 
@@ -2800,15 +2771,15 @@ bool ScXMLExport::IsMatrix (const ScAddress& aCell,
 
     if (pDoc && pDoc->GetMatrixFormulaRange(aCell, aMatrixRange))
     {
-        aCellAddress = aMatrixRange;
-        if ((aCellAddress.aStart.Col() == aCell.Col() && aCellAddress.aStart.Row() == aCell.Row()) &&
-            (aCellAddress.aEnd.Col() > aCell.Col() || aCellAddress.aEnd.Row() > aCell.Row()))
+        ScUnoConversion::FillApiRange( aCellAddress, aMatrixRange );
+        if ((aCellAddress.StartColumn == aCell.Col() && aCellAddress.StartRow == aCell.Row()) &&
+            (aCellAddress.EndColumn > aCell.Col() || aCellAddress.EndRow > aCell.Row()))
         {
             bIsFirst = true;
             return true;
         }
-        else if (aCellAddress.aStart.Col() != aCell.Col() || aCellAddress.aStart.Row() != aCell.Row() ||
-            aCellAddress.aEnd.Col() != aCell.Col() || aCellAddress.aEnd.Row()!= aCell.Row())
+        else if (aCellAddress.StartColumn != aCell.Col() || aCellAddress.StartRow != aCell.Row() ||
+            aCellAddress.EndColumn != aCell.Col() || aCellAddress.EndRow != aCell.Row())
             return true;
         else
         {
@@ -2883,7 +2854,7 @@ void ScXMLExport::WriteTable(sal_Int32 nTable, const Reference<sheet::XSpreadshe
         }
     }
     OUString sPrintRanges;
-    ScRange aColumnHeaderRange;
+    table::CellRangeAddress aColumnHeaderRange;
     bool bHasColumnHeader;
     GetColumnRowHeader(bHasColumnHeader, aColumnHeaderRange, bHasRowHeader, aRowHeaderRange, sPrintRanges);
     if( !sPrintRanges.isEmpty() )
@@ -2940,10 +2911,10 @@ void ScXMLExport::WriteTable(sal_Int32 nTable, const Reference<sheet::XSpreadshe
     pGroupRows->NewTable();
     FillColumnRowGroups();
     if (bHasColumnHeader)
-        pSharedData->SetLastColumn(nTable, aColumnHeaderRange.aEnd.Col());
+        pSharedData->SetLastColumn(nTable, aColumnHeaderRange.EndColumn);
     bRowHeaderOpen = false;
     if (bHasRowHeader)
-        pSharedData->SetLastRow(nTable, aRowHeaderRange.aEnd.Row());
+        pSharedData->SetLastRow(nTable, aRowHeaderRange.EndRow);
     pDefaults->FillDefaultStyles(nTable, pSharedData->GetLastRow(nTable),
         pSharedData->GetLastColumn(nTable), pCellStyles, pDoc);
     pRowFormatRanges->SetColDefaults(&pDefaults->GetColDefaults());
@@ -3110,9 +3081,9 @@ void writeContent(
 
 void flushParagraph(
     ScXMLExport& rExport, const OUString& rParaText,
-    rtl::Reference<XMLPropertySetMapper> const & xMapper, rtl::Reference<SvXMLAutoStylePoolP> const & xStylePool,
+    rtl::Reference<XMLPropertySetMapper> xMapper, rtl::Reference<SvXMLAutoStylePoolP> xStylePool,
     const ScXMLEditAttributeMap& rAttrMap,
-    std::vector<editeng::Section>::const_iterator it, std::vector<editeng::Section>::const_iterator const & itEnd )
+    std::vector<editeng::Section>::const_iterator it, std::vector<editeng::Section>::const_iterator itEnd )
 {
     OUString aElemName = rExport.GetNamespaceMap().GetQNameByKey(
         XML_NAMESPACE_TEXT, GetXMLToken(XML_P));
@@ -3151,10 +3122,14 @@ void ScXMLExport::WriteCell(ScMyCell& aCell, sal_Int32 nEqualCellCount)
     bool bIsFirstMatrixCell(aCell.bIsMatrixBase);
     if (bIsFirstMatrixCell)
     {
-        SCCOL nColumns( aCell.aMatrixRange.aEnd.Col() - aCell.aMatrixRange.aStart.Col() + 1 );
-        SCROW nRows( aCell.aMatrixRange.aEnd.Row() - aCell.aMatrixRange.aStart.Row() + 1 );
-        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_MATRIX_COLUMNS_SPANNED, OUString::number(nColumns));
-        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_MATRIX_ROWS_SPANNED, OUString::number(nRows));
+        sal_Int32 nColumns(aCell.aMatrixRange.EndColumn - aCell.aMatrixRange.StartColumn + 1);
+        sal_Int32 nRows(aCell.aMatrixRange.EndRow - aCell.aMatrixRange.StartRow + 1);
+        OUStringBuffer sColumns;
+        OUStringBuffer sRows;
+        ::sax::Converter::convertNumber(sColumns, nColumns);
+        ::sax::Converter::convertNumber(sRows, nRows);
+        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_MATRIX_COLUMNS_SPANNED, sColumns.makeStringAndClear());
+        AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_MATRIX_ROWS_SPANNED, sRows.makeStringAndClear());
     }
     bool bIsEmpty(false);
     switch (aCell.nType)
@@ -3210,7 +3185,7 @@ void ScXMLExport::WriteCell(ScMyCell& aCell, sal_Int32 nEqualCellCount)
                             AddAttribute(sAttrFormula, GetNamespaceMap().GetQNameByKey(nNamespacePrefix, aFormula.copy(1, aFormula.getLength()-2), false));
                         }
                     }
-                    if (pFormulaCell->GetErrCode() != FormulaError::NONE)
+                    if (pFormulaCell->GetErrCode())
                     {
                         AddAttribute(sAttrValueType, XML_STRING);
                         AddAttribute(sAttrStringValue, aCell.maBaseCell.getString(pDoc));
@@ -3263,10 +3238,14 @@ void ScXMLExport::WriteCell(ScMyCell& aCell, sal_Int32 nEqualCellCount)
     {
         if (aCell.bIsMergedBase)
         {
-            SCCOL nColumns( aCell.aMergeRange.aEnd.Col() - aCell.aMergeRange.aStart.Col() + 1 );
-            SCROW nRows( aCell.aMergeRange.aEnd.Row() - aCell.aMergeRange.aStart.Row() + 1 );
-            AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_SPANNED, OUString::number(nColumns));
-            AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_ROWS_SPANNED, OUString::number(nRows));
+            sal_Int32 nColumns(aCell.aMergeRange.EndColumn - aCell.aMergeRange.StartColumn + 1);
+            sal_Int32 nRows(aCell.aMergeRange.EndRow - aCell.aMergeRange.StartRow + 1);
+            OUStringBuffer sColumns;
+            OUStringBuffer sRows;
+            ::sax::Converter::convertNumber(sColumns, nColumns);
+            ::sax::Converter::convertNumber(sRows, nRows);
+            AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_SPANNED, sColumns.makeStringAndClear());
+            AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_ROWS_SPANNED, sRows.makeStringAndClear());
         }
     }
     SvXMLElementExport aElemC(*this, *pCellString, true, true);
@@ -3293,7 +3272,7 @@ void ScXMLExport::WriteCell(ScMyCell& aCell, sal_Int32 nEqualCellCount)
                 ScCellFormat::GetOutputString(*pDoc, aCell.maCellAddress, aCell.maBaseCell);
 
             bool bPrevCharWasSpace = true;
-            GetTextParagraphExport()->exportCharacterData(aParaStr, bPrevCharWasSpace);
+            GetTextParagraphExport()->exportText(aParaStr, bPrevCharWasSpace);
         }
     }
     WriteShapes(aCell);
@@ -3384,7 +3363,9 @@ void ScXMLExport::ExportShape(const uno::Reference < drawing::XShape >& xShape, 
         sal_Int32 nZOrder = 0;
         if (xShapeProps->getPropertyValue("ZOrder") >>= nZOrder)
         {
-            AddAttribute(XML_NAMESPACE_DRAW, XML_ZINDEX, OUString::number(nZOrder));
+            OUStringBuffer sBuffer;
+            ::sax::Converter::convertNumber(sBuffer, nZOrder);
+            AddAttribute(XML_NAMESPACE_DRAW, XML_ZINDEX, sBuffer.makeStringAndClear());
         }
         uno::Reference< beans::XPropertySetInfo > xPropSetInfo = xShapeProps->getPropertySetInfo();
         if( xPropSetInfo->hasPropertyByName( sPropCLSID ) )
@@ -3407,9 +3388,9 @@ void ScXMLExport::ExportShape(const uno::Reference < drawing::XShape >& xShape, 
                             if (pListener)
                             {
                                 const ScRangeListRef& rRangeList = pListener->GetRangeList();
-                                if ( rRangeList.is() )
+                                if ( rRangeList.Is() )
                                 {
-                                    ScRangeStringConverter::GetStringFromRangeList( sRanges, rRangeList.get(), pDoc, FormulaGrammar::CONV_OOO );
+                                    ScRangeStringConverter::GetStringFromRangeList( sRanges, rRangeList, pDoc, FormulaGrammar::CONV_OOO );
                                     if ( !sRanges.isEmpty() )
                                     {
                                         bIsChart = true;
@@ -3502,7 +3483,7 @@ void ScXMLExport::WriteShapes(const ScMyCell& rMyCell)
     if( rMyCell.bHasShape && !rMyCell.aShapeList.empty() && pDoc )
     {
         awt::Point aPoint;
-        tools::Rectangle aRect = pDoc->GetMMRect(rMyCell.maCellAddress.Col(), rMyCell.maCellAddress.Row(),
+        Rectangle aRect = pDoc->GetMMRect(rMyCell.maCellAddress.Col(), rMyCell.maCellAddress.Row(),
             rMyCell.maCellAddress.Col(), rMyCell.maCellAddress.Row(), rMyCell.maCellAddress.Tab());
         bool bNegativePage = pDoc->IsNegativePage(rMyCell.maCellAddress.Tab());
         if (bNegativePage)
@@ -3579,8 +3560,10 @@ void ScXMLExport::WriteAreaLink( const ScMyCell& rMyCell )
         if( !rAreaLink.sFilterOptions.isEmpty() )
             AddAttribute( XML_NAMESPACE_TABLE, XML_FILTER_OPTIONS, rAreaLink.sFilterOptions );
         OUStringBuffer sValue;
-        AddAttribute( XML_NAMESPACE_TABLE, XML_LAST_COLUMN_SPANNED, OUString::number(rAreaLink.GetColCount()) );
-        AddAttribute( XML_NAMESPACE_TABLE, XML_LAST_ROW_SPANNED, OUString::number(rAreaLink.GetRowCount()) );
+        ::sax::Converter::convertNumber( sValue, rAreaLink.GetColCount() );
+        AddAttribute( XML_NAMESPACE_TABLE, XML_LAST_COLUMN_SPANNED, sValue.makeStringAndClear() );
+        ::sax::Converter::convertNumber( sValue, rAreaLink.GetRowCount() );
+        AddAttribute( XML_NAMESPACE_TABLE, XML_LAST_ROW_SPANNED, sValue.makeStringAndClear() );
         if( rAreaLink.nRefresh )
         {
             ::sax::Converter::convertDuration( sValue,
@@ -3703,6 +3686,7 @@ void ScXMLExport::WriteDetective( const ScMyCell& rMyCell )
                 SvXMLElementExport aRangeElem( *this, XML_NAMESPACE_TABLE, XML_HIGHLIGHTED_RANGE, true, true );
                 ++aObjItr;
             }
+            OUStringBuffer aBuffer;
             ScMyDetectiveOpVec::const_iterator aOpItr(rOpVec.begin());
             ScMyDetectiveOpVec::const_iterator aEndOpItr(rOpVec.end());
             while(aOpItr != aEndOpItr)
@@ -3710,7 +3694,8 @@ void ScXMLExport::WriteDetective( const ScMyCell& rMyCell )
                 OUString sOpString;
                 ScXMLConverter::GetStringFromDetOpType( sOpString, aOpItr->eOpType );
                 AddAttribute( XML_NAMESPACE_TABLE, XML_NAME, sOpString );
-                AddAttribute( XML_NAMESPACE_TABLE, XML_INDEX, OUString::number(aOpItr->nIndex) );
+                ::sax::Converter::convertNumber( aBuffer, aOpItr->nIndex );
+                AddAttribute( XML_NAMESPACE_TABLE, XML_INDEX, aBuffer.makeStringAndClear() );
                 SvXMLElementExport aRangeElem( *this, XML_NAMESPACE_TABLE, XML_OPERATION, true, true );
                 ++aOpItr;
             }
@@ -3729,6 +3714,11 @@ void ScXMLExport::SetRepeatAttribute(sal_Int32 nEqualCellCount, bool bIncProgres
         if (bIncProgress)
             IncrementProgressBar(false, nEqualCellCount);
     }
+}
+
+bool ScXMLExport::IsCellTypeEqual (const ScMyCell& aCell1, const ScMyCell& aCell2)
+{
+    return (aCell1.nType == aCell2.nType);
 }
 
 bool ScXMLExport::IsEditCell(ScMyCell& rCell)
@@ -3758,8 +3748,8 @@ bool ScXMLExport::IsCellEqual (ScMyCell& aCell1, ScMyCell& aCell2)
             {
                 if ((((aCell1.nStyleIndex == aCell2.nStyleIndex) && (aCell1.bIsAutoStyle == aCell2.bIsAutoStyle)) ||
                      ((aCell1.nStyleIndex == aCell2.nStyleIndex) && (aCell1.nStyleIndex == -1))) &&
-                    aCell1.nValidationIndex == aCell2.nValidationIndex &&
-                    aCell1.nType == aCell2.nType)
+                    (aCell1.nValidationIndex == aCell2.nValidationIndex) &&
+                    IsCellTypeEqual(aCell1, aCell2))
                 {
                     switch ( aCell1.nType )
                     {
@@ -3844,7 +3834,9 @@ void ScXMLExport::WriteCalculationSettings(const uno::Reference <sheet::XSpreads
                 AddAttribute(XML_NAMESPACE_TABLE, XML_USE_WILDCARDS, XML_TRUE);
             if (nYear2000 != 1930)
             {
-                AddAttribute(XML_NAMESPACE_TABLE, XML_NULL_YEAR, OUString::number(nYear2000));
+                OUStringBuffer sBuffer;
+                ::sax::Converter::convertNumber(sBuffer, nYear2000);
+                AddAttribute(XML_NAMESPACE_TABLE, XML_NULL_YEAR, sBuffer.makeStringAndClear());
             }
             SvXMLElementExport aCalcSettings(*this, XML_NAMESPACE_TABLE, XML_CALCULATION_SETTINGS, true, true);
             {
@@ -3862,7 +3854,9 @@ void ScXMLExport::WriteCalculationSettings(const uno::Reference <sheet::XSpreads
                         AddAttribute(XML_NAMESPACE_TABLE, XML_STATUS, XML_ENABLE);
                     if (nIterationCount != 100)
                     {
-                        AddAttribute(XML_NAMESPACE_TABLE, XML_STEPS, OUString::number(nIterationCount));
+                        ::sax::Converter::convertNumber(sBuffer,
+                                nIterationCount);
+                        AddAttribute(XML_NAMESPACE_TABLE, XML_STEPS, sBuffer.makeStringAndClear());
                     }
                     if (!::rtl::math::approxEqual(fIterationEpsilon, 0.001))
                     {
@@ -3952,20 +3946,20 @@ void ScXMLExport::WriteScenario()
     {
         OUString sComment;
         Color       aColor;
-        ScScenarioFlags nFlags;
+        sal_uInt16  nFlags;
         pDoc->GetScenarioData(static_cast<SCTAB>(nCurrentTable), sComment, aColor, nFlags);
-        if (!(nFlags & ScScenarioFlags::ShowFrame))
+        if (!(nFlags & SC_SCENARIO_SHOWFRAME))
             AddAttribute(XML_NAMESPACE_TABLE, XML_DISPLAY_BORDER, XML_FALSE);
         OUStringBuffer aBuffer;
         ::sax::Converter::convertColor(aBuffer, aColor.GetColor());
         AddAttribute(XML_NAMESPACE_TABLE, XML_BORDER_COLOR, aBuffer.makeStringAndClear());
-        if (!(nFlags & ScScenarioFlags::TwoWay))
+        if (!(nFlags & SC_SCENARIO_TWOWAY))
             AddAttribute(XML_NAMESPACE_TABLE, XML_COPY_BACK, XML_FALSE);
-        if (!(nFlags & ScScenarioFlags::Attrib))
+        if (!(nFlags & SC_SCENARIO_ATTRIB))
             AddAttribute(XML_NAMESPACE_TABLE, XML_COPY_STYLES, XML_FALSE);
-        if (nFlags & ScScenarioFlags::Value)
+        if (nFlags & SC_SCENARIO_VALUE)
             AddAttribute(XML_NAMESPACE_TABLE, XML_COPY_FORMULAS, XML_FALSE);
-        if (nFlags & ScScenarioFlags::Protected)
+        if (nFlags & SC_SCENARIO_PROTECT)
             AddAttribute(XML_NAMESPACE_TABLE, XML_PROTECTED, XML_TRUE);
         ::sax::Converter::convertBool(aBuffer,
                 pDoc->IsActiveScenario(static_cast<SCTAB>(nCurrentTable)));
@@ -4167,7 +4161,7 @@ OUString getCondFormatEntryType(const ScColorScaleEntry& rEntry, bool bFirst = t
 OUString getIconSetName(ScIconSetType eType)
 {
     const char* pName = nullptr;
-    const ScIconSetMap* pMap = ScIconSetFormat::g_IconSetMap;
+    ScIconSetMap* pMap = ScIconSetFormat::getIconSetMap();
     for(;pMap->pName;++pMap)
     {
         if(pMap->eType == eType)
@@ -4437,7 +4431,7 @@ void ScXMLExport::ExportConditionalFormat(SCTAB nTab)
                         ::sax::Converter::convertColor(aBuffer, pFormatData->maPositiveColor.GetColor());
                         AddAttribute(XML_NAMESPACE_CALC_EXT, XML_POSITIVE_COLOR, aBuffer.makeStringAndClear());
 
-                        aBuffer.truncate();
+                        aBuffer = OUStringBuffer();
                         ::sax::Converter::convertColor(aBuffer, pFormatData->maAxisColor.GetColor());
                         AddAttribute(XML_NAMESPACE_CALC_EXT, XML_AXIS_COLOR, aBuffer.makeStringAndClear());
                         SvXMLElementExport aElementDataBar(*this, XML_NAMESPACE_CALC_EXT, XML_DATA_BAR, true, true);
@@ -4835,7 +4829,7 @@ void ScXMLExport::GetViewSettings(uno::Sequence<beans::PropertyValue>& rProps)
                 SfxObjectShell* pEmbeddedObj = pDocObj->GetEmbeddedObject();
                 if (pEmbeddedObj)
                 {
-                    tools::Rectangle aRect(pEmbeddedObj->GetVisArea());
+                    Rectangle aRect(pEmbeddedObj->GetVisArea());
                     sal_uInt16 i(0);
                     pProps[i].Name = "VisibleAreaTop";
                     pProps[i].Value <<= static_cast<sal_Int32>(aRect.getY());
@@ -4919,6 +4913,11 @@ void ScXMLExport::GetConfigurationSettings(uno::Sequence<beans::PropertyValue>& 
 XMLShapeExport* ScXMLExport::CreateShapeExport()
 {
     return new ScXMLShapeExport(*this);
+}
+
+void ScXMLExport::CreateSharedData(const sal_Int32 nTableCount)
+{
+    pSharedData = new ScMySharedData(nTableCount);
 }
 
 XMLNumberFormatAttributesExportHelper* ScXMLExport::GetNumberFormatAttributesExportHelper()
@@ -5028,6 +5027,7 @@ sal_uInt32 ScXMLExport::exportDoc( enum XMLTokenEnum eClass )
 
 // XExporter
 void SAL_CALL ScXMLExport::setSourceDocument( const uno::Reference<lang::XComponent>& xComponent )
+                            throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SvXMLExport::setSourceDocument( xComponent );
@@ -5057,6 +5057,7 @@ void SAL_CALL ScXMLExport::setSourceDocument( const uno::Reference<lang::XCompon
 
 // XFilter
 sal_Bool SAL_CALL ScXMLExport::filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDoc)
@@ -5068,6 +5069,7 @@ sal_Bool SAL_CALL ScXMLExport::filter( const css::uno::Sequence< css::beans::Pro
 }
 
 void SAL_CALL ScXMLExport::cancel()
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if (pDoc)
@@ -5077,6 +5079,7 @@ void SAL_CALL ScXMLExport::cancel()
 
 // XInitialization
 void SAL_CALL ScXMLExport::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+    throw(css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SvXMLExport::initialize(aArguments);
@@ -5084,6 +5087,7 @@ void SAL_CALL ScXMLExport::initialize( const css::uno::Sequence< css::uno::Any >
 
 // XUnoTunnel
 sal_Int64 SAL_CALL ScXMLExport::getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier )
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     return SvXMLExport::getSomething(aIdentifier);

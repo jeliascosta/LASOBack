@@ -51,14 +51,14 @@ private:
 
     void            CheckState();
 
-    DECL_LINK( ClickButtonHdl, Button*, void );
-    DECL_LINK( SelectListBoxHdl, ListBox&, void );
-    DECL_LINK( StartShowHdl, Button*, void );
+    DECL_LINK_TYPED( ClickButtonHdl, Button*, void );
+    DECL_LINK_TYPED( SelectListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( StartShowHdl, Button*, void );
     void SelectHdl(void*);
 
 public:
                 SdCustomShowDlg( vcl::Window* pWindow, SdDrawDocument& rDrawDoc );
-                virtual ~SdCustomShowDlg() override;
+                virtual ~SdCustomShowDlg();
     virtual void dispose() override;
     bool         IsModified() const { return bModified; }
     bool         IsCustomShow() const;
@@ -84,18 +84,18 @@ private:
     void            CheckState();
     void            CheckCustomShow();
 
-    DECL_LINK( ClickButtonHdl, Button*, void );
-    DECL_LINK( ClickButtonEditHdl, Edit&, void );
-    DECL_LINK( ClickButtonHdl3, SvTreeListBox*, void );
-    DECL_LINK( ClickButtonHdl4, ListBox&, void );
-    DECL_LINK( OKHdl, Button*, void );
+    DECL_LINK_TYPED( ClickButtonHdl, Button*, void );
+    DECL_LINK_TYPED( ClickButtonEditHdl, Edit&, void );
+    DECL_LINK_TYPED( ClickButtonHdl3, SvTreeListBox*, void );
+    DECL_LINK_TYPED( ClickButtonHdl4, ListBox&, void );
+    DECL_LINK_TYPED( OKHdl, Button*, void );
     void ClickButtonHdl2(void*);
 
 public:
 
                     SdDefineCustomShowDlg( vcl::Window* pWindow,
                             SdDrawDocument& rDrawDoc, SdCustomShow*& rpCS );
-                    virtual ~SdDefineCustomShowDlg() override;
+                    virtual ~SdDefineCustomShowDlg();
     virtual void    dispose() override;
 
     bool            IsModified() const { return bModified; }

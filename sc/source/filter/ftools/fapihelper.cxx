@@ -135,7 +135,7 @@ ScfPropertySet::~ScfPropertySet()
         xPropSetOpt->enableChangeListenerNotification(true);
 }
 
-void ScfPropertySet::Set( Reference< XPropertySet > const & xPropSet )
+void ScfPropertySet::Set( Reference< XPropertySet > xPropSet )
 {
     mxPropSet = xPropSet;
     mxMultiPropSet.set( mxPropSet, UNO_QUERY );

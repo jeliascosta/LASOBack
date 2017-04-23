@@ -37,16 +37,13 @@
 #include <com/sun/star/util/XURLTransformer.hpp>
 
 #include <comphelper/processfactory.hxx>
-#include <o3tl/string_view.hxx>
 #include <osl/mutex.hxx>
 #include <osl/diagnose.h>
 #include <sal/types.h>
 
-#include <guid.hxx>
-
 #include <string.h>
 
-#define EXT_STREAM_LENGTH 4
+#define EXT_STREAM_LENGTH 16
 
 namespace {
 
@@ -56,11 +53,15 @@ const sal_Int32 nConstBufferSize = 32000;
 
 using namespace ::com::sun::star;
 
+extern OUString  getStorageTypeFromGUID_Impl( GUID* guid );
+extern OUString  getServiceNameFromGUID_Impl( GUID* );
+extern OUString  getFilterNameFromGUID_Impl( GUID* );
+
 const OUString aOfficeEmbedStreamName( "package_stream" );
 const OUString aExtentStreamName( "properties_stream" );
 
 uno::Reference< io::XInputStream > createTempXInStreamFromIStream(
-                                        uno::Reference< lang::XMultiServiceFactory > const & xFactory,
+                                        uno::Reference< lang::XMultiServiceFactory > xFactory,
                                         IStream *pStream )
 {
     uno::Reference< io::XInputStream > xResult;
@@ -87,7 +88,7 @@ uno::Reference< io::XInputStream > createTempXInStreamFromIStream(
         sal_uInt32 nRead = 0;
         do
         {
-            pStream->Read( aBuffer.getArray(), nConstBufferSize, &nRead );
+            pStream->Read( (void*)aBuffer.getArray(), nConstBufferSize, &nRead );
 
             if ( nRead < nConstBufferSize )
                 aBuffer.realloc( nRead );
@@ -113,7 +114,7 @@ uno::Reference< io::XInputStream > createTempXInStreamFromIStream(
     return xResult;
 }
 
-HRESULT copyXTempOutToIStream( uno::Reference< io::XOutputStream > const & xTempOut, IStream* pStream )
+HRESULT copyXTempOutToIStream( uno::Reference< io::XOutputStream > xTempOut, IStream* pStream )
 {
     if ( !xTempOut.is() || !pStream )
         return E_FAIL;
@@ -151,7 +152,7 @@ HRESULT copyXTempOutToIStream( uno::Reference< io::XOutputStream > const & xTemp
         }
 
         sal_uInt32 nWritten = 0;
-        hr = pStream->Write( aBuffer.getArray(), nReadBytes, &nWritten );
+        hr = pStream->Write( (void*)aBuffer.getArray(), nReadBytes, &nWritten );
         if ( !SUCCEEDED( hr ) || nWritten != nReadBytes )
             return E_FAIL;
 
@@ -168,9 +169,9 @@ EmbedDocument_Impl::EmbedDocument_Impl( const uno::Reference< lang::XMultiServic
 : m_refCount( 0L )
 , m_xFactory( xFactory )
 , m_guid( *guid )
-, m_bIsDirty( false )
+, m_bIsDirty( sal_False )
 , m_nAdviseNum( 0 )
-, m_bIsInVerbHandling( false )
+, m_bIsInVerbHandling( sal_False )
 //, m_bLoadedFromFile( sal_False )
 {
     m_xOwnAccess = new EmbeddedDocumentInstanceAccess_Impl( this );
@@ -185,7 +186,7 @@ EmbedDocument_Impl::~EmbedDocument_Impl()
     if ( m_pDocHolder->HasFrame() && m_pDocHolder->IsLink() )
     {
         // a link with frame should be only disconnected, not closed
-        m_pDocHolder->DisconnectFrameDocument( true );
+        m_pDocHolder->DisconnectFrameDocument( sal_True );
     }
     else
     {
@@ -196,7 +197,7 @@ EmbedDocument_Impl::~EmbedDocument_Impl()
     m_pDocHolder->release();
 }
 
-uno::Sequence< beans::PropertyValue > EmbedDocument_Impl::fillArgsForLoading_Impl( uno::Reference< io::XInputStream > const & xStream, DWORD /*nStreamMode*/, LPCOLESTR pFilePath )
+uno::Sequence< beans::PropertyValue > EmbedDocument_Impl::fillArgsForLoading_Impl( uno::Reference< io::XInputStream > xStream, DWORD /*nStreamMode*/, LPCOLESTR pFilePath )
 {
     uno::Sequence< beans::PropertyValue > aArgs( 3 );
 
@@ -238,7 +239,7 @@ uno::Sequence< beans::PropertyValue > EmbedDocument_Impl::fillArgsForLoading_Imp
     return aArgs;
 }
 
-uno::Sequence< beans::PropertyValue > EmbedDocument_Impl::fillArgsForStoring_Impl( uno::Reference< io::XOutputStream > const & xStream)
+uno::Sequence< beans::PropertyValue > EmbedDocument_Impl::fillArgsForStoring_Impl( uno::Reference< io::XOutputStream > xStream)
 {
     uno::Sequence< beans::PropertyValue > aArgs( xStream.is() ? 2 : 1 );
 
@@ -263,7 +264,7 @@ HRESULT EmbedDocument_Impl::SaveTo_Impl( IStorage* pStg )
     // should not enter NoScribble mode
     CComPtr< IStream > pOrigOwn = m_pOwnStream;
     CComPtr< IStream > pOrigExt = m_pExtStream;
-    HRESULT hr = Save( pStg, false );
+    HRESULT hr = Save( pStg, sal_False );
     pStg->Commit( STGC_ONLYIFCURRENT );
     m_pOwnStream = pOrigOwn;
     m_pExtStream = pOrigExt;
@@ -279,65 +280,65 @@ STDMETHODIMP EmbedDocument_Impl::QueryInterface( REFIID riid, void FAR* FAR* ppv
     if(IsEqualIID(riid, IID_IUnknown))
     {
         AddRef();
-        *ppv = static_cast<IUnknown*>(static_cast<IPersistStorage*>(this));
+        *ppv = (IUnknown*) (IPersistStorage*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IPersist))
     {
         AddRef();
-        *ppv = static_cast<IPersist*>(static_cast<IPersistStorage*>(this));
+        *ppv = (IPersist*) (IPersistStorage*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IExternalConnection))
     {
         AddRef();
-        *ppv = static_cast<IExternalConnection*>(this);
+        *ppv = (IExternalConnection*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IPersistStorage))
     {
         AddRef();
-        *ppv = static_cast<IPersistStorage*>(this);
+        *ppv = (IPersistStorage*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IDataObject))
     {
         AddRef();
-        *ppv = static_cast<IDataObject*>(this);
+        *ppv = (IDataObject*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IOleObject))
     {
         AddRef();
-        *ppv = static_cast<IOleObject*>(this);
+        *ppv = (IOleObject*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IOleWindow))
     {
         AddRef();
-        *ppv = static_cast<IOleWindow*>(this);
+        *ppv = (IOleWindow*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IOleInPlaceObject))
     {
         AddRef();
-        *ppv = static_cast<IOleInPlaceObject*>(this);
+        *ppv = (IOleInPlaceObject*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IPersistFile))
     {
         AddRef();
-        *ppv = static_cast<IPersistFile*>(this);
+        *ppv = (IPersistFile*) this;
         return S_OK;
     }
     else if (IsEqualIID(riid, IID_IDispatch))
     {
         AddRef();
-        *ppv = static_cast<IDispatch*>(this);
+        *ppv = (IDispatch*) this;
         return S_OK;
     }
 
-    *ppv = nullptr;
+    *ppv = NULL;
     return ResultFromScode(E_NOINTERFACE);
 }
 
@@ -400,7 +401,7 @@ STDMETHODIMP EmbedDocument_Impl::InitNew( IStorage *pStg )
         if ( m_xFactory.is() && pStg )
         {
             uno::Reference< frame::XModel > aDocument(
-                            m_xFactory->createInstance( o3tl::toOUString(getServiceNameFromGUID_Impl( &m_guid )) ),
+                            m_xFactory->createInstance( getServiceNameFromGUID_Impl( &m_guid ) ),
                             uno::UNO_QUERY );
             if ( aDocument.is() )
             {
@@ -422,11 +423,11 @@ STDMETHODIMP EmbedDocument_Impl::InitNew( IStorage *pStg )
 
                 if ( hr == S_OK )
                 {
-                    wchar_t const * aCurType = getStorageTypeFromGUID_Impl( &m_guid ); // ???
+                    OUString aCurType = getStorageTypeFromGUID_Impl( &m_guid ); // ???
                     CLIPFORMAT cf = (CLIPFORMAT)RegisterClipboardFormatA( "Embedded Object" );
                     hr = WriteFmtUserTypeStg( pStg,
                                             cf,                         // ???
-                                            const_cast<wchar_t *>(aCurType) );
+                                            reinterpret_cast<LPWSTR>(( sal_Unicode* )aCurType.getStr()) );
 
                     if ( hr == S_OK )
                     {
@@ -448,7 +449,7 @@ STDMETHODIMP EmbedDocument_Impl::InitNew( IStorage *pStg )
                             {
 
                                 m_pMasterStorage = pStg;
-                                m_bIsDirty = true;
+                                m_bIsDirty = sal_True;
                             }
                             else
                                 hr = E_FAIL;
@@ -485,7 +486,7 @@ STDMETHODIMP EmbedDocument_Impl::Load( IStorage *pStg )
 
     DWORD nStreamMode = aStat.grfMode;
     hr = pStg->OpenStream( reinterpret_cast<LPCWSTR>(aOfficeEmbedStreamName.getStr()),
-                            nullptr,
+                            0,
                             nStreamMode & 0x73,
                             0,
                             &m_pOwnStream );
@@ -494,7 +495,7 @@ STDMETHODIMP EmbedDocument_Impl::Load( IStorage *pStg )
     if ( SUCCEEDED( hr ) )
     {
         hr = pStg->OpenStream( reinterpret_cast<LPCWSTR>(aExtentStreamName.getStr()),
-                                nullptr,
+                                0,
                                 nStreamMode & 0x73,
                                 0,
                                 &m_pExtStream );
@@ -511,9 +512,9 @@ STDMETHODIMP EmbedDocument_Impl::Load( IStorage *pStg )
         if ( SUCCEEDED( hr ) )
         {
             sal_uInt32 nRead;
-            sal_Int32 aInf[EXT_STREAM_LENGTH];
-            hr = m_pExtStream->Read( aInf, sizeof aInf, &nRead );
-            if ( nRead != sizeof aInf ) hr = E_FAIL;
+            sal_Int8 aInf[EXT_STREAM_LENGTH];
+            hr = m_pExtStream->Read( (void*)aInf, EXT_STREAM_LENGTH, &nRead );
+            if ( nRead != EXT_STREAM_LENGTH ) hr = E_FAIL;
 
             if ( SUCCEEDED( hr ) )
             {
@@ -521,8 +522,8 @@ STDMETHODIMP EmbedDocument_Impl::Load( IStorage *pStg )
                 // aRectToSet.top = *((sal_Int32*)&aInf[4]);
                 // aRectToSet.right = *((sal_Int32*)&aInf[8]);
                 // aRectToSet.bottom = *((sal_Int32*)&aInf[12]);
-                aSizeToSet.cx = aInf[2] - aInf[0];
-                aSizeToSet.cy = aInf[3] - aInf[1];
+                aSizeToSet.cx = *((sal_Int32*)&aInf[8]) - *((sal_Int32*)aInf);
+                aSizeToSet.cy = *((sal_Int32*)&aInf[12]) - *((sal_Int32*)&aInf[4]);
             }
         }
     }
@@ -535,7 +536,7 @@ STDMETHODIMP EmbedDocument_Impl::Load( IStorage *pStg )
         if ( xTempIn.is() )
         {
             uno::Reference< frame::XModel > aDocument(
-                                                m_xFactory->createInstance( o3tl::toOUString(getServiceNameFromGUID_Impl( &m_guid )) ),
+                                                m_xFactory->createInstance( getServiceNameFromGUID_Impl( &m_guid ) ),
                                                 uno::UNO_QUERY );
             if ( aDocument.is() )
             {
@@ -588,7 +589,7 @@ STDMETHODIMP EmbedDocument_Impl::Save( IStorage *pStgSave, BOOL fSameAsLoad )
     if ( !fSameAsLoad && pStgSave != m_pMasterStorage )
     {
         OSL_ENSURE( m_pMasterStorage, "How could the document be initialized without storage!??\n" );
-        HRESULT hr = m_pMasterStorage->CopyTo( NULL, nullptr, nullptr, pStgSave );
+        HRESULT hr = m_pMasterStorage->CopyTo( NULL, NULL, NULL, pStgSave );
         if ( FAILED( hr ) ) return E_FAIL;
 
         STATSTG aStat;
@@ -626,7 +627,7 @@ STDMETHODIMP EmbedDocument_Impl::Save( IStorage *pStgSave, BOOL fSameAsLoad )
     {
         try
         {
-            xStorable->storeToURL( "private:stream",
+            xStorable->storeToURL( OUString( "private:stream" ),
                                         fillArgsForStoring_Impl( xTempOut ) );
             hr = copyXTempOutToIStream( xTempOut, pTargetStream );
             if ( SUCCEEDED( hr ) )
@@ -643,10 +644,14 @@ STDMETHODIMP EmbedDocument_Impl::Save( IStorage *pStgSave, BOOL fSameAsLoad )
                     if ( SUCCEEDED( hr ) )
                     {
                         sal_uInt32 nWritten;
-                        sal_Int32 aInf[EXT_STREAM_LENGTH] = {0, 0, aSize.cx, aSize.cy};
+                        sal_Int8 aInf[EXT_STREAM_LENGTH];
+                        *((sal_Int32*)aInf) = 0;
+                        *((sal_Int32*)&aInf[4]) = 0;
+                        *((sal_Int32*)&aInf[8]) = aSize.cx;
+                        *((sal_Int32*)&aInf[12]) = aSize.cy;
 
-                        hr = pNewExtStream->Write( aInf, sizeof aInf, &nWritten );
-                        if ( nWritten != sizeof aInf ) hr = E_FAIL;
+                        hr = pNewExtStream->Write( (void*)aInf, EXT_STREAM_LENGTH, &nWritten );
+                        if ( nWritten != EXT_STREAM_LENGTH ) hr = E_FAIL;
 
                         if ( SUCCEEDED( hr ) )
                         {
@@ -656,8 +661,8 @@ STDMETHODIMP EmbedDocument_Impl::Save( IStorage *pStgSave, BOOL fSameAsLoad )
                             {
                                 uno::Reference< util::XModifiable > xMod( m_pDocHolder->GetDocument(), uno::UNO_QUERY );
                                 if ( xMod.is() )
-                                    xMod->setModified( false );
-                                m_bIsDirty = false;
+                                    xMod->setModified( sal_False );
+                                m_bIsDirty = sal_False;
                             }
                         }
                     }
@@ -692,20 +697,20 @@ STDMETHODIMP EmbedDocument_Impl::SaveCompleted( IStorage *pStgNew )
 
     DWORD nStreamMode = aStat.grfMode;
     hr = m_pMasterStorage->OpenStream( reinterpret_cast<LPCWSTR>(aOfficeEmbedStreamName.getStr()),
-                                        nullptr,
+                                        0,
                                         nStreamMode & 0x73,
                                         0,
                                         &m_pOwnStream );
     if ( FAILED( hr ) || !m_pOwnStream ) return E_OUTOFMEMORY;
 
     hr = m_pMasterStorage->OpenStream( reinterpret_cast<LPCWSTR>(aExtentStreamName.getStr()),
-                                        nullptr,
+                                        0,
                                         nStreamMode & 0x73,
                                         0,
                                         &m_pExtStream );
     if ( FAILED( hr ) || !m_pExtStream ) return E_OUTOFMEMORY;
 
-    bool bModified = false;
+    sal_Bool bModified = sal_False;
     uno::Reference< util::XModifiable > xMod( m_pDocHolder->GetDocument(), uno::UNO_QUERY );
     if ( xMod.is() )
         bModified = xMod->isModified();
@@ -743,18 +748,18 @@ STDMETHODIMP EmbedDocument_Impl::Load( LPCOLESTR pszFileName, DWORD /*dwMode*/ )
         return E_FAIL;
 
     DWORD nStreamMode = STGM_CREATE | STGM_READWRITE | STGM_DELETEONRELEASE | STGM_SHARE_EXCLUSIVE;
-    HRESULT hr = StgCreateDocfile( nullptr,
+    HRESULT hr = StgCreateDocfile( NULL,
                                      nStreamMode ,
                                      0,
                                      &m_pMasterStorage );
 
     if ( FAILED( hr ) || !m_pMasterStorage ) return E_FAIL;
 
-    o3tl::u16string_view aCurType = getServiceNameFromGUID_Impl( &m_guid ); // ???
+    OUString aCurType = getServiceNameFromGUID_Impl( &m_guid ); // ???
     CLIPFORMAT cf = (CLIPFORMAT)RegisterClipboardFormatA( "Embedded Object" );
     hr = WriteFmtUserTypeStg( m_pMasterStorage,
                             cf,                         // ???
-                            const_cast<wchar_t *>(reinterpret_cast<wchar_t const *>(aCurType.data())) );
+                            reinterpret_cast<LPWSTR>(( sal_Unicode* )aCurType.getStr()) );
     if ( FAILED( hr ) ) return E_FAIL;
 
     hr = m_pMasterStorage->SetClass( m_guid );
@@ -776,11 +781,11 @@ STDMETHODIMP EmbedDocument_Impl::Load( LPCOLESTR pszFileName, DWORD /*dwMode*/ )
 
 
     uno::Reference< frame::XModel > aDocument(
-                    m_xFactory->createInstance( o3tl::toOUString(getServiceNameFromGUID_Impl( &m_guid )) ),
+                    m_xFactory->createInstance( getServiceNameFromGUID_Impl( &m_guid ) ),
                     uno::UNO_QUERY );
     if ( aDocument.is() )
     {
-        m_pDocHolder->SetDocument( aDocument, true );
+        m_pDocHolder->SetDocument( aDocument, sal_True );
 
         uno::Reference< frame::XLoadable > xLoadable( m_pDocHolder->GetDocument(), uno::UNO_QUERY );
         if( xLoadable.is() )
@@ -805,7 +810,7 @@ STDMETHODIMP EmbedDocument_Impl::Load( LPCOLESTR pszFileName, DWORD /*dwMode*/ )
             cf = (CLIPFORMAT)RegisterClipboardFormatA( "Embedded Object" );
             hr = WriteFmtUserTypeStg( m_pMasterStorage,
                                     cf,                         // ???
-                                    const_cast<wchar_t *>(reinterpret_cast<wchar_t const *>(aCurType.data())) );
+                                    reinterpret_cast<LPWSTR>(( sal_Unicode* )aCurType.getStr()) );
 
             if ( SUCCEEDED( hr ) )
             {
@@ -821,16 +826,20 @@ STDMETHODIMP EmbedDocument_Impl::Load( LPCOLESTR pszFileName, DWORD /*dwMode*/ )
                     if ( SUCCEEDED( hr ) )
                     {
                         sal_uInt32 nWritten;
-                        sal_Int32 aInf[EXT_STREAM_LENGTH] = {0, 0, aSize.cx, aSize.cy};
+                        sal_Int8 aInf[EXT_STREAM_LENGTH];
+                        *((sal_Int32*)aInf) = 0;
+                        *((sal_Int32*)&aInf[4]) = 0;
+                        *((sal_Int32*)&aInf[8]) = aSize.cx;
+                        *((sal_Int32*)&aInf[12]) = aSize.cy;
 
-                        hr = m_pExtStream->Write( aInf, sizeof aInf, &nWritten );
-                        if ( nWritten != sizeof aInf ) hr = E_FAIL;
+                        hr = m_pExtStream->Write( (void*)aInf, EXT_STREAM_LENGTH, &nWritten );
+                        if ( nWritten != EXT_STREAM_LENGTH ) hr = E_FAIL;
                     }
                 }
             }
 
             if ( SUCCEEDED( hr ) )
-                m_bIsDirty = true;
+                m_bIsDirty = sal_True;
             else
                 hr = E_FAIL;
         }
@@ -838,9 +847,9 @@ STDMETHODIMP EmbedDocument_Impl::Load( LPCOLESTR pszFileName, DWORD /*dwMode*/ )
         if ( FAILED( hr ) )
         {
             m_pDocHolder->CloseDocument();
-            m_pOwnStream = nullptr;
-            m_pExtStream = nullptr;
-            m_pMasterStorage = nullptr;
+            m_pOwnStream = NULL;
+            m_pExtStream = NULL;
+            m_pMasterStorage = NULL;
         }
     }
 
@@ -903,7 +912,7 @@ STDMETHODIMP EmbedDocument_Impl::GetCurFile( LPOLESTR *ppszFileName )
     HRESULT hr = CoGetMalloc( 1, &pMalloc );
     if ( FAILED( hr ) || !pMalloc ) return E_FAIL;
 
-    *ppszFileName = static_cast<LPOLESTR>( pMalloc->Alloc( sizeof( sal_Unicode ) * ( m_aFileName.getLength() + 1 ) ) );
+    *ppszFileName = (LPOLESTR)( pMalloc->Alloc( sizeof( sal_Unicode ) * ( m_aFileName.getLength() + 1 ) ) );
     wcsncpy( *ppszFileName, reinterpret_cast<LPCWSTR>(m_aFileName.getStr()), m_aFileName.getLength() + 1 );
 
     return m_aFileName.getLength() ? S_OK : S_FALSE;
@@ -919,12 +928,12 @@ LockedEmbedDocument_Impl EmbeddedDocumentInstanceAccess_Impl::GetEmbedDocument()
 void EmbeddedDocumentInstanceAccess_Impl::ClearEmbedDocument()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    m_pEmbedDocument = nullptr;
+    m_pEmbedDocument = NULL;
 }
 
 
 LockedEmbedDocument_Impl::LockedEmbedDocument_Impl()
-: m_pEmbedDocument( nullptr )
+: m_pEmbedDocument( NULL )
 {}
 
 LockedEmbedDocument_Impl::LockedEmbedDocument_Impl( EmbedDocument_Impl* pEmbedDocument )

@@ -30,7 +30,6 @@
 #include <com/sun/star/sdb/application/XDatabaseDocumentUI.hpp>
 #include <com/sun/star/frame/XModel2.hpp>
 #include <com/sun/star/frame/XStorable.hpp>
-#include <com/sun/star/util/CloseVetoException.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/frame/XComponentLoader.hpp>
 #include <com/sun/star/util/XModifiable.hpp>
@@ -39,6 +38,7 @@
 
 #include <comphelper/namedvaluecollection.hxx>
 #include <cppuhelper/exc_hlp.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <rtl/ref.hxx>
 #include <svl/filenotation.hxx>
 #include <tools/diagnose_ex.h>
@@ -85,7 +85,7 @@ namespace dbmm
 
     // helper
     static void lcl_getControllers_throw(const Reference< XModel2 >& _rxDocument,
-        std::list< Reference< XController2 > >& _out_rControllers )
+        ::std::list< Reference< XController2 > >& _out_rControllers )
     {
         _out_rControllers.clear();
         Reference< XEnumeration > xControllerEnum( _rxDocument->getControllers(), UNO_SET_THROW );
@@ -137,7 +137,7 @@ namespace dbmm
 
         declarePath( PATH_DEFAULT, {STATE_CLOSE_SUB_DOCS, STATE_BACKUP_DBDOC, STATE_MIGRATE, STATE_SUMMARY} );
 
-        SetPageSizePixel( LogicToPixel( ::Size( TAB_PAGE_WIDTH, TAB_PAGE_HEIGHT ), MapUnit::MapAppFont ) );
+        SetPageSizePixel( LogicToPixel( ::Size( TAB_PAGE_WIDTH, TAB_PAGE_HEIGHT ), MAP_APPFONT ) );
         SetRoadmapInteractive( true );
         enableAutomaticNextButtonState();
         defaultButton( WizardButtonFlags::NEXT );
@@ -257,7 +257,22 @@ namespace dbmm
         return true;
     }
 
-    IMPL_LINK_NOARG( MacroMigrationDialog, OnStartMigration, void*, void )
+    bool MacroMigrationDialog::leaveState( WizardState _nState )
+    {
+        return MacroMigrationDialog_Base::leaveState( _nState );
+    }
+
+    MacroMigrationDialog::WizardState MacroMigrationDialog::determineNextState( WizardState _nCurrentState ) const
+    {
+        return MacroMigrationDialog_Base::determineNextState( _nCurrentState );
+    }
+
+    bool MacroMigrationDialog::onFinish()
+    {
+        return MacroMigrationDialog_Base::onFinish();
+    }
+
+    IMPL_LINK_NOARG_TYPED( MacroMigrationDialog, OnStartMigration, void*, void )
     {
         // prevent closing
         m_pData->bMigrationIsRunning = true;
@@ -308,11 +323,11 @@ namespace dbmm
         try
         {
             // collect all controllers of our document
-            std::list< Reference< XController2 > > aControllers;
+            ::std::list< Reference< XController2 > > aControllers;
             lcl_getControllers_throw( m_pData->xDocumentModel, aControllers );
 
             // close all sub documents of all controllers
-            for (   std::list< Reference< XController2 > >::const_iterator pos = aControllers.begin();
+            for (   ::std::list< Reference< XController2 > >::const_iterator pos = aControllers.begin();
                     pos != aControllers.end() && bSuccess;
                     ++pos
                 )
@@ -419,8 +434,8 @@ namespace dbmm
 
     void MacroMigrationDialog::impl_reloadDocument_nothrow( bool _bMigrationSuccess )
     {
-        typedef std::pair< Reference< XFrame >, OUString > ViewDescriptor;
-        std::list< ViewDescriptor > aViews;
+        typedef ::std::pair< Reference< XFrame >, OUString > ViewDescriptor;
+        ::std::list< ViewDescriptor > aViews;
 
         try
         {
@@ -446,7 +461,7 @@ namespace dbmm
             aDocumentArgs.remove( "URL" );
 
             // collect all controllers of our document
-            std::list< Reference< XController2 > > aControllers;
+            ::std::list< Reference< XController2 > > aControllers;
             lcl_getControllers_throw( m_pData->xDocumentModel, aControllers );
 
             // close all those controllers

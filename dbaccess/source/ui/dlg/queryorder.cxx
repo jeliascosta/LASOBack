@@ -143,7 +143,7 @@ void DlgOrderCrit::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG( DlgOrderCrit, FieldListSelectHdl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( DlgOrderCrit, FieldListSelectHdl, ListBox&, void )
 {
     EnableLines();
 }
@@ -216,6 +216,8 @@ OUString DlgOrderCrit::GetOrderList( ) const
 {
     Reference<XDatabaseMetaData> xMetaData = m_xConnection->getMetaData();
     OUString sQuote  = xMetaData.is() ? xMetaData->getIdentifierQuoteString() : OUString();
+    static const char sDESC[] = " DESC ";
+    static const char sASC[] = " ASC ";
 
     Reference< XNameAccess> xColumns = Reference< XColumnsSupplier >(m_xQueryComposer,UNO_QUERY)->getColumns();
 
@@ -230,9 +232,9 @@ OUString DlgOrderCrit::GetOrderList( ) const
             OUString sName = m_aColumnList[i]->GetSelectEntry();
             sOrder += ::dbtools::quoteName(sQuote,sName);
             if(m_aValueList[i]->GetSelectEntryPos())
-                sOrder += " DESC ";
+                sOrder += sDESC;
             else
-                sOrder += " ASC ";
+                sOrder += sASC;
         }
     }
     return sOrder;

@@ -104,7 +104,7 @@ namespace dbaui
         osl_atomic_increment( &m_refCount );
 
         Reference<XConnection> xConnection;
-        getDescriptor()[ DataAccessDescriptorProperty::Connection ] >>= xConnection;
+        getDescriptor()[ daConnection ] >>= xConnection;
         lcl_setListener( xConnection, this, true );
 
         // do not pass the form itself as source result set, since the client might operate on the form, which
@@ -116,9 +116,9 @@ namespace dbaui
         OSL_ENSURE( xResultSetClone.is(), "ODataClipboard::ODataClipboard: could not clone the form's result set" );
         lcl_setListener( xResultSetClone, this, true );
 
-        getDescriptor()[DataAccessDescriptorProperty::Cursor]           <<= xResultSetClone;
-        getDescriptor()[DataAccessDescriptorProperty::Selection]        <<= i_rSelectedRows;
-        getDescriptor()[DataAccessDescriptorProperty::BookmarkSelection]<<= i_bBookmarkSelection;
+        getDescriptor()[daCursor]           <<= xResultSetClone;
+        getDescriptor()[daSelection]        <<= i_rSelectedRows;
+        getDescriptor()[daBookmarkSelection]<<= i_bBookmarkSelection;
         addCompatibleSelectionDescription( i_rSelectedRows );
 
         if ( xConnection.is() && i_rORB.is() )
@@ -139,9 +139,9 @@ namespace dbaui
         if (nUserObjectId == SotClipboardFormatId::RTF || nUserObjectId == SotClipboardFormatId::HTML )
         {
             ODatabaseImportExport* pExport = static_cast<ODatabaseImportExport*>(pUserObject);
-            if ( pExport && rxOStm.is() )
+            if ( pExport && rxOStm.Is() )
             {
-                pExport->setStream(rxOStm.get());
+                pExport->setStream(&rxOStm);
                 return pExport->Write();
             }
         }
@@ -194,45 +194,45 @@ namespace dbaui
             m_pRtf.clear();
         }
 
-        if ( getDescriptor().has( DataAccessDescriptorProperty::Connection ) )
+        if ( getDescriptor().has( daConnection ) )
         {
-            Reference<XConnection> xConnection( getDescriptor()[DataAccessDescriptorProperty::Connection], UNO_QUERY );
+            Reference<XConnection> xConnection( getDescriptor()[daConnection], UNO_QUERY );
             lcl_setListener( xConnection, this, false );
         }
 
-        if ( getDescriptor().has( DataAccessDescriptorProperty::Cursor ) )
+        if ( getDescriptor().has( daCursor ) )
         {
-            Reference< XResultSet > xResultSet( getDescriptor()[ DataAccessDescriptorProperty::Cursor ], UNO_QUERY );
+            Reference< XResultSet > xResultSet( getDescriptor()[ daCursor ], UNO_QUERY );
             lcl_setListener( xResultSet, this, false );
         }
 
         ODataAccessObjectTransferable::ObjectReleased( );
     }
 
-    void SAL_CALL ODataClipboard::disposing( const css::lang::EventObject& i_rSource )
+    void SAL_CALL ODataClipboard::disposing( const css::lang::EventObject& i_rSource ) throw (css::uno::RuntimeException, std::exception)
     {
         ODataAccessDescriptor& rDescriptor( getDescriptor() );
 
-        if ( rDescriptor.has( DataAccessDescriptorProperty::Connection ) )
+        if ( rDescriptor.has( daConnection ) )
         {
-            Reference< XConnection > xConnection( rDescriptor[DataAccessDescriptorProperty::Connection], UNO_QUERY );
+            Reference< XConnection > xConnection( rDescriptor[daConnection], UNO_QUERY );
             if ( xConnection == i_rSource.Source )
             {
-                rDescriptor.erase( DataAccessDescriptorProperty::Connection );
+                rDescriptor.erase( daConnection );
             }
         }
 
-        if ( rDescriptor.has( DataAccessDescriptorProperty::Cursor ) )
+        if ( rDescriptor.has( daCursor ) )
         {
-            Reference< XResultSet > xResultSet( rDescriptor[ DataAccessDescriptorProperty::Cursor ], UNO_QUERY );
+            Reference< XResultSet > xResultSet( rDescriptor[ daCursor ], UNO_QUERY );
             if ( xResultSet == i_rSource.Source )
             {
-                rDescriptor.erase( DataAccessDescriptorProperty::Cursor );
+                rDescriptor.erase( daCursor );
                 // Selection and BookmarkSelection are meaningless without a result set
-                if ( rDescriptor.has( DataAccessDescriptorProperty::Selection ) )
-                    rDescriptor.erase( DataAccessDescriptorProperty::Selection );
-                if ( rDescriptor.has( DataAccessDescriptorProperty::BookmarkSelection ) )
-                    rDescriptor.erase( DataAccessDescriptorProperty::BookmarkSelection );
+                if ( rDescriptor.has( daSelection ) )
+                    rDescriptor.erase( daSelection );
+                if ( rDescriptor.has( daBookmarkSelection ) )
+                    rDescriptor.erase( daBookmarkSelection );
             }
         }
 

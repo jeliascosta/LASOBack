@@ -36,9 +36,11 @@ public:
         const css::uno::Reference< css::frame::XModel >& xModel,
         const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess );
 
+    virtual ~ScVbaComments() {}
+
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
 
     // ScVbaComments_BASE
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override;

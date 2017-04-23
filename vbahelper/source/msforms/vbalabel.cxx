@@ -29,7 +29,7 @@ ScVbaLabel::ScVbaLabel(  const css::uno::Reference< XHelperInterface >& xParent,
 
 // Attributes
 OUString SAL_CALL
-ScVbaLabel::getCaption()
+ScVbaLabel::getCaption() throw (css::uno::RuntimeException, std::exception)
 {
     OUString Label;
     m_xProps->getPropertyValue( "Label" ) >>= Label;
@@ -37,18 +37,18 @@ ScVbaLabel::getCaption()
 }
 
 void SAL_CALL
-ScVbaLabel::setCaption( const OUString& _caption )
+ScVbaLabel::setCaption( const OUString& _caption ) throw (css::uno::RuntimeException, std::exception)
 {
     m_xProps->setPropertyValue( "Label", uno::makeAny( _caption ) );
 }
 uno::Any SAL_CALL
-ScVbaLabel::getValue()
+ScVbaLabel::getValue() throw (css::uno::RuntimeException, std::exception)
 {
     return uno::makeAny( getCaption() );
 }
 
 void SAL_CALL
-ScVbaLabel::setValue( const uno::Any& _value )
+ScVbaLabel::setValue( const uno::Any& _value ) throw (css::uno::RuntimeException, std::exception)
 {
     OUString sCaption;
     _value >>= sCaption;
@@ -56,19 +56,19 @@ ScVbaLabel::setValue( const uno::Any& _value )
 }
 
 OUString SAL_CALL
-ScVbaLabel::getAccelerator()
+ScVbaLabel::getAccelerator() throw (css::uno::RuntimeException, std::exception)
 {
     // #STUB
     return OUString();
 }
 
 void SAL_CALL
-ScVbaLabel::setAccelerator( const OUString& /*_accelerator*/ )
+ScVbaLabel::setAccelerator( const OUString& /*_accelerator*/ ) throw (css::uno::RuntimeException, std::exception)
 {
     // #STUB
 }
 
-uno::Reference< msforms::XNewFont > SAL_CALL ScVbaLabel::getFont()
+uno::Reference< msforms::XNewFont > SAL_CALL ScVbaLabel::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new VbaNewFont( m_xProps );
 }
@@ -78,22 +78,22 @@ OUString ScVbaLabel::getServiceImplName()
     return OUString( "ScVbaLabel" );
 }
 
-sal_Int32 SAL_CALL ScVbaLabel::getBackColor()
+sal_Int32 SAL_CALL ScVbaLabel::getBackColor() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getBackColor();
 }
 
-void SAL_CALL ScVbaLabel::setBackColor( sal_Int32 nBackColor )
+void SAL_CALL ScVbaLabel::setBackColor( sal_Int32 nBackColor ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setBackColor( nBackColor );
 }
 
-sal_Bool SAL_CALL ScVbaLabel::getAutoSize()
+sal_Bool SAL_CALL ScVbaLabel::getAutoSize() throw (uno::RuntimeException, std::exception)
 {
     return ScVbaControl::getAutoSize();
 }
 
-void SAL_CALL ScVbaLabel::setAutoSize( sal_Bool bAutoSize )
+void SAL_CALL ScVbaLabel::setAutoSize( sal_Bool bAutoSize ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setAutoSize( bAutoSize );
 }

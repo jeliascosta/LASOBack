@@ -158,7 +158,7 @@ class Job : public  ::cppu::WeakImplHelper<
             indicates in which state the internal job currently exist.
 
             We can use this information to throw any suitable veto exception
-            to prevent the environment against dying or suppress superfluous dispose()
+            to prevent the environment against dying or suppress superflous dispose()
             calls at the job.
          */
         ERunState m_eRunState;
@@ -171,7 +171,7 @@ class Job : public  ::cppu::WeakImplHelper<
                       const css::uno::Reference< css::frame::XFrame >&              xFrame );
                  Job( const css::uno::Reference< css::uno::XComponentContext >& xContext  ,
                       const css::uno::Reference< css::frame::XModel >&              xModel );
-        virtual ~Job(                                                                      ) override;
+        virtual ~Job(                                                                      );
 
         void     setDispatchResultFake( const css::uno::Reference< css::frame::XDispatchResultListener >& xListener    ,
                                         const css::uno::Reference< css::uno::XInterface >&                xSourceFake  );
@@ -192,19 +192,21 @@ class Job : public  ::cppu::WeakImplHelper<
 
         // XJobListener
         virtual void SAL_CALL jobFinished( const css::uno::Reference< css::task::XAsyncJob >& xJob,
-                                           const css::uno::Any&                               aResult ) override;
+                                           const css::uno::Any&                               aResult ) throw(css::uno::RuntimeException, std::exception) override;
 
         // XTerminateListener
-        virtual void SAL_CALL queryTermination ( const css::lang::EventObject& aEvent ) override;
-        virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL queryTermination ( const css::lang::EventObject& aEvent ) throw(css::frame::TerminationVetoException,
+                                                                                              css::uno::RuntimeException, std::exception          ) override;
+        virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception          ) override;
 
         // XCloseListener
         virtual void SAL_CALL queryClosing ( const css::lang::EventObject& aEvent         ,
-                                                   sal_Bool                bGetsOwnership ) override;
-        virtual void SAL_CALL notifyClosing( const css::lang::EventObject& aEvent         ) override;
+                                                   sal_Bool                bGetsOwnership ) throw(css::util::CloseVetoException,
+                                                                                                  css::uno::RuntimeException, std::exception   ) override;
+        virtual void SAL_CALL notifyClosing( const css::lang::EventObject& aEvent         ) throw(css::uno::RuntimeException, std::exception   ) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 } // namespace framework

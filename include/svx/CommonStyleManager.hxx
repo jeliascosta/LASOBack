@@ -11,12 +11,10 @@
 #define INCLUDED_SVX_COMMONSTYLEMANAGER_HXX
 
 #include <sfx2/StyleManager.hxx>
-#include <sfx2/StylePreviewRenderer.hxx>
-#include <svx/svxdllapi.h>
 
-class OutputDevice;
-class SfxObjectShell;
-class SfxStyleSheetBase;
+#include <vcl/outdev.hxx>
+#include <svx/svxdllapi.h>
+#include <rsc/rscsfx.hxx>
 
 namespace svx
 {
@@ -28,9 +26,12 @@ public:
         : StyleManager(rShell)
     {}
 
+    virtual ~CommonStyleManager()
+    {}
+
     virtual sfx2::StylePreviewRenderer* CreateStylePreviewRenderer(
                                             OutputDevice& rOutputDev, SfxStyleSheetBase* pStyle,
-                                            long nMaxHeight) override;
+                                            long nMaxHeight = 32) override;
 };
 
 } // end namespace svx

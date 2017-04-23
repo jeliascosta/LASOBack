@@ -49,7 +49,7 @@ static const char TIMEOUT_NODENAME[] = "Timeout";
 
 OConnectionPool::OConnectionPool(const Reference< XDriver >& _xDriver,
                                  const Reference< XInterface >& _xDriverNode,
-                                 const Reference< css::reflection::XProxyFactory >& _rxProxyFactory)
+                                 const Reference< ::com::sun::star::reflection::XProxyFactory >& _rxProxyFactory)
     :m_xDriver(_xDriver)
     ,m_xDriverNode(_xDriverNode)
     ,m_xProxyFactory(_rxProxyFactory)
@@ -77,8 +77,8 @@ OConnectionPool::~OConnectionPool()
     clear(false);
 }
 
-struct TRemoveEventListenerFunctor : std::unary_function<TPooledConnections::value_type,void>
-                                    ,std::unary_function<TActiveConnectionMap::value_type,void>
+struct TRemoveEventListenerFunctor : ::std::unary_function<TPooledConnections::value_type,void>
+                                    ,::std::unary_function<TActiveConnectionMap::value_type,void>
 {
     OConnectionPool* m_pConnectionPool;
     bool m_bDispose;
@@ -113,7 +113,7 @@ struct TRemoveEventListenerFunctor : std::unary_function<TPooledConnections::val
     }
 };
 
-struct TConnectionPoolFunctor : std::unary_function<TConnectionMap::value_type,void>
+struct TConnectionPoolFunctor : ::std::unary_function<TConnectionMap::value_type,void>
 {
     OConnectionPool* m_pConnectionPool;
 
@@ -124,7 +124,7 @@ struct TConnectionPoolFunctor : std::unary_function<TConnectionMap::value_type,v
     }
     void operator()(const TConnectionMap::value_type& _aValue)
     {
-        std::for_each(_aValue.second.aConnections.begin(),_aValue.second.aConnections.end(),TRemoveEventListenerFunctor(m_pConnectionPool,true));
+        ::std::for_each(_aValue.second.aConnections.begin(),_aValue.second.aConnections.end(),TRemoveEventListenerFunctor(m_pConnectionPool,true));
     }
 };
 
@@ -135,10 +135,10 @@ void OConnectionPool::clear(bool _bDispose)
     if(m_xInvalidator->isTicking())
         m_xInvalidator->stop();
 
-    std::for_each(m_aPool.begin(),m_aPool.end(),TConnectionPoolFunctor(this));
+    ::std::for_each(m_aPool.begin(),m_aPool.end(),TConnectionPoolFunctor(this));
     m_aPool.clear();
 
-    std::for_each(m_aActiveConnections.begin(),m_aActiveConnections.end(),TRemoveEventListenerFunctor(this,_bDispose));
+    ::std::for_each(m_aActiveConnections.begin(),m_aActiveConnections.end(),TRemoveEventListenerFunctor(this,_bDispose));
     m_aActiveConnections.clear();
 
     Reference< XComponent >  xComponent(m_xDriverNode, UNO_QUERY);
@@ -152,7 +152,7 @@ m_xDriverNode.clear();
 m_xDriver.clear();
 }
 
-Reference< XConnection > SAL_CALL OConnectionPool::getConnectionWithInfo( const OUString& _rURL, const Sequence< PropertyValue >& _rInfo )
+Reference< XConnection > SAL_CALL OConnectionPool::getConnectionWithInfo( const OUString& _rURL, const Sequence< PropertyValue >& _rInfo ) throw(SQLException, RuntimeException)
 {
     MutexGuard aGuard(m_aMutex);
 
@@ -173,7 +173,7 @@ Reference< XConnection > SAL_CALL OConnectionPool::getConnectionWithInfo( const 
     return xConnection;
 }
 
-void SAL_CALL OConnectionPool::disposing( const css::lang::EventObject& Source )
+void SAL_CALL OConnectionPool::disposing( const ::com::sun::star::lang::EventObject& Source ) throw (RuntimeException, std::exception)
 {
     Reference<XConnection> xConnection(Source.Source,UNO_QUERY);
     if(xConnection.is())
@@ -235,7 +235,7 @@ void OConnectionPool::invalidatePooledConnections()
     {
         if(!(--(aIter->second.nALiveCount))) // connections are invalid
         {
-            std::for_each(aIter->second.aConnections.begin(),aIter->second.aConnections.end(),TRemoveEventListenerFunctor(this,true));
+            ::std::for_each(aIter->second.aConnections.begin(),aIter->second.aConnections.end(),TRemoveEventListenerFunctor(this,true));
 
             aIter->second.aConnections.clear();
 
@@ -285,7 +285,7 @@ Reference< XConnection> OConnectionPool::getPooledConnection(TConnectionMap::ite
     return xConnection;
 }
 
-void SAL_CALL OConnectionPool::propertyChange( const PropertyChangeEvent& evt )
+void SAL_CALL OConnectionPool::propertyChange( const PropertyChangeEvent& evt ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     if(TIMEOUT_NODENAME == evt.PropertyName)
     {

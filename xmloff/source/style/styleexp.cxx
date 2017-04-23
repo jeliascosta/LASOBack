@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlnmspe.hxx>
@@ -28,7 +25,6 @@
 #include <xmloff/attrlist.hxx>
 #include <xmloff/xmlprmap.hxx>
 #include <xmloff/xmlexppr.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/xml/sax/XExtendedDocumentHandler.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
@@ -100,7 +96,7 @@ bool XMLStyleExport::exportStyle(
     if( xPropSetInfo->hasPropertyByName( sIsPhysical ) )
     {
         aAny = xPropSet->getPropertyValue( sIsPhysical );
-        if( !*o3tl::doAccess<bool>(aAny) )
+        if( !*static_cast<sal_Bool const *>(aAny.getValue()) )
             return false;
     }
 
@@ -168,7 +164,7 @@ bool XMLStyleExport::exportStyle(
     if( xPropSetInfo->hasPropertyByName( sIsAutoUpdate ) )
     {
         aAny = xPropSet->getPropertyValue( sIsAutoUpdate );
-        if( *o3tl::doAccess<bool>(aAny) )
+        if( *static_cast<sal_Bool const *>(aAny.getValue()) )
             GetExport().AddAttribute( XML_NAMESPACE_STYLE, XML_AUTO_UPDATE,
                                       XML_TRUE );
     }
@@ -185,7 +181,7 @@ bool XMLStyleExport::exportStyle(
             if( nOutlineLevel > 0 )
             {
                 OUStringBuffer sTmp;
-                sTmp.append(nOutlineLevel);
+                sTmp.append( static_cast<sal_Int32>(nOutlineLevel));
                 GetExport().AddAttribute( XML_NAMESPACE_STYLE,
                                           XML_DEFAULT_OUTLINE_LEVEL,
                                           sTmp.makeStringAndClear() );
@@ -442,7 +438,7 @@ void XMLStyleExport::exportStyleFamily(
                     xPropSet->getPropertySetInfo();
 
                 if (xPropSetInfo->hasPropertyByName( sFollowStyle ))
-                    pExportedStyles.reset(new std::set<OUString>);
+                    pExportedStyles.reset(new std::set<OUString>());
                 bFirstStyle = false;
             }
 
@@ -478,7 +474,7 @@ void XMLStyleExport::exportStyleFamily(
             if (xPropSetInfo->hasPropertyByName( sIsPhysical ))
             {
                 Any aAny( xPropSet->getPropertyValue( sIsPhysical ) );
-                if (!*o3tl::doAccess<bool>(aAny))
+                if (!*static_cast<sal_Bool const *>(aAny.getValue()))
                     continue;
             }
 

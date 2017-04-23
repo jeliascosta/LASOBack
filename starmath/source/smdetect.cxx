@@ -43,7 +43,7 @@ SmFilterDetect::~SmFilterDetect()
 {
 }
 
-OUString SAL_CALL SmFilterDetect::detect( Sequence< PropertyValue >& lDescriptor )
+OUString SAL_CALL SmFilterDetect::detect( Sequence< PropertyValue >& lDescriptor ) throw( RuntimeException, std::exception )
 {
     MediaDescriptor aMediaDesc( lDescriptor );
     uno::Reference< io::XInputStream > xInStream ( aMediaDesc[MediaDescriptor::PROP_INPUTSTREAM()], uno::UNO_QUERY );
@@ -76,7 +76,7 @@ OUString SAL_CALL SmFilterDetect::detect( Sequence< PropertyValue >& lDescriptor
             if ( aStorage->IsStream("Equation Native") )
             {
                 sal_uInt8 nVersion;
-                if ( GetMathTypeVersion( aStorage.get(), nVersion ) && nVersion <=3 )
+                if ( GetMathTypeVersion( aStorage, nVersion ) && nVersion <=3 )
                     return OUString("math_MathType_3x");
             }
         }
@@ -96,7 +96,7 @@ OUString SAL_CALL SmFilterDetect::detect( Sequence< PropertyValue >& lDescriptor
         aBuffer[nBufferSize] = 0;
         pInStrm->Seek( STREAM_SEEK_TO_BEGIN );
         pInStrm->StartReadingUnicodeText( RTL_TEXTENCODING_DONTKNOW ); // avoid BOM marker
-        sal_uLong nBytesRead = pInStrm->ReadBytes( aBuffer, nBufferSize );
+        sal_uLong nBytesRead = pInStrm->Read( aBuffer, nBufferSize );
         if (nBytesRead >= 6)
         {
             bool bIsMathType = false;
@@ -119,19 +119,19 @@ OUString SAL_CALL SmFilterDetect::detect( Sequence< PropertyValue >& lDescriptor
 }
 
 /* XServiceInfo */
-OUString SAL_CALL SmFilterDetect::getImplementationName()
+OUString SAL_CALL SmFilterDetect::getImplementationName() throw( RuntimeException, std::exception )
 {
     return impl_getStaticImplementationName();
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL SmFilterDetect::supportsService( const OUString& sServiceName )
+sal_Bool SAL_CALL SmFilterDetect::supportsService( const OUString& sServiceName ) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL SmFilterDetect::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL SmFilterDetect::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     return impl_getStaticSupportedServiceNames();
 }
@@ -149,7 +149,7 @@ OUString SmFilterDetect::impl_getStaticImplementationName()
 }
 
 /* Helper for registry */
-Reference< XInterface > SAL_CALL SmFilterDetect::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager )
+Reference< XInterface > SAL_CALL SmFilterDetect::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager ) throw( Exception )
 {
     return Reference< XInterface >( *new SmFilterDetect( xServiceManager ) );
 }

@@ -22,20 +22,12 @@
 #include <cstdlib>
 
 #include "PageMarginControl.hxx"
-#include "PropertyPanel.hrc"
-
-#include <editeng/sizeitem.hxx>
-#include <sfx2/dispatch.hxx>
-#include <svx/svxids.hrc>
-#include <svx/pageitem.hxx>
-#include <svl/itempool.hxx>
-#include <svl/intitem.hxx>
+#include "PagePropertyPanel.hxx"
+#include "PagePropertyPanel.hrc"
 
 #include <swtypes.hxx>
-#include <cmdid.h>
 
-#include <com/sun/star/document/XUndoManagerSupplier.hpp>
-
+#include <svx/sidebar/ValueSetWithTextControl.hxx>
 #include <vcl/settings.hxx>
 
 #define SWPAGE_LEFT_GVALUE      "Sw_Page_Left"
@@ -44,185 +36,99 @@
 #define SWPAGE_DOWN_GVALUE      "Sw_Page_Down"
 #define SWPAGE_MIRROR_GVALUE    "Sw_Page_Mirrored"
 
-namespace
-{
-    FieldUnit lcl_GetFieldUnit()
-    {
-        FieldUnit eUnit = FUNIT_INCH;
-        const SfxPoolItem* pItem = nullptr;
-        SfxItemState eState = SfxViewFrame::Current()->GetBindings().GetDispatcher()->QueryState( SID_ATTR_METRIC, pItem );
-        if ( pItem && eState >= SfxItemState::DEFAULT )
-        {
-            eUnit = (FieldUnit)static_cast<const SfxUInt16Item*>( pItem )->GetValue();
-        }
-        else
-        {
-            return SfxModule::GetCurrentFieldUnit();
-        }
-
-        return eUnit;
-    }
-
-    MapUnit lcl_GetUnit()
-    {
-        SfxItemPool &rPool = SfxGetpApp()->GetPool();
-        sal_uInt16 nWhich = rPool.GetWhich( SID_ATTR_PAGE_SIZE );
-        return rPool.GetMetric( nWhich );
-    }
-
-    const css::uno::Reference< css::document::XUndoManager > getUndoManager( const css::uno::Reference< css::frame::XFrame >& rxFrame )
-    {
-        const css::uno::Reference< css::frame::XController >& xController = rxFrame->getController();
-        if ( xController.is() )
-        {
-            const css::uno::Reference< css::frame::XModel >& xModel = xController->getModel();
-            if ( xModel.is() )
-            {
-                const css::uno::Reference< css::document::XUndoManagerSupplier > xSuppUndo( xModel, css::uno::UNO_QUERY_THROW );
-                if ( xSuppUndo.is() )
-                {
-                    const css::uno::Reference< css::document::XUndoManager > xUndoManager( xSuppUndo->getUndoManager(), css::uno::UNO_QUERY_THROW );
-                    return xUndoManager;
-                }
-            }
-        }
-
-        return css::uno::Reference< css::document::XUndoManager > ();
-    }
-}
-
 namespace sw { namespace sidebar {
 
-PageMarginControl::PageMarginControl( sal_uInt16 nId )
-    : SfxPopupWindow( nId, "PageMarginControl", "modules/swriter/ui/pagemargincontrol.ui" )
-    , m_nPageLeftMargin(0)
-    , m_nPageRightMargin(0)
-    , m_nPageTopMargin(0)
-    , m_nPageBottomMargin(0)
-    , m_bMirrored(false)
-    , m_eUnit( lcl_GetUnit() )
-    , m_bUserCustomValuesAvailable( false )
-    , m_nUserCustomPageLeftMargin( 0 )
-    , m_nUserCustomPageRightMargin( 0 )
-    , m_nUserCustomPageTopMargin( 0 )
-    , m_nUserCustomPageBottomMargin( 0 )
-    , m_bUserCustomMirrored( false )
-    , m_bCustomValuesUsed( false )
+PageMarginControl::PageMarginControl(
+    vcl::Window* pParent,
+    PagePropertyPanel& rPanel,
+    const SvxLongLRSpaceItem& aPageLRMargin,
+    const SvxLongULSpaceItem& aPageULMargin,
+    const bool bMirrored,
+    const Size& rPageSize,
+    const bool bLandscape,
+    const FieldUnit eFUnit,
+    const SfxMapUnit eUnit )
+    : svx::sidebar::PopupControl( pParent, SW_RES(RID_POPUP_SWPAGE_MARGIN) )
+    , mpMarginValueSet( VclPtr<svx::sidebar::ValueSetWithTextControl>::Create( svx::sidebar::ValueSetWithTextControl::IMAGE_TEXT, this, SW_RES(VS_MARGIN) ) )
+    , maCustom(VclPtr<FixedText>::Create(this, SW_RES(FT_CUSTOM)))
+    , maLeft(VclPtr<FixedText>::Create(this, SW_RES(FT_LEFT)))
+    , maInner(VclPtr<FixedText>::Create(this, SW_RES(FT_INNER)))
+    , maLeftMarginEdit(VclPtr<MetricField>::Create(this, SW_RES(MF_SWLEFT_MARGIN)))
+    , maRight(VclPtr<FixedText>::Create(this, SW_RES(FT_RIGHT)))
+    , maOuter(VclPtr<FixedText>::Create(this, SW_RES(FT_OUTER)))
+    , maRightMarginEdit(VclPtr<MetricField>::Create(this, SW_RES(MF_SWRIGHT_MARGIN)))
+    , maTop(VclPtr<FixedText>::Create(this, SW_RES(FT_TOP)))
+    , maTopMarginEdit(VclPtr<MetricField>::Create(this, SW_RES(MF_SWTOP_MARGIN)))
+    , maBottom(VclPtr<FixedText>::Create(this, SW_RES(FT_BOTTOM)))
+    , maBottomMarginEdit(VclPtr<MetricField>::Create(this, SW_RES(MF_SWBOTTOM_MARGIN)))
+    , maWidthHeightField(VclPtr<MetricField>::Create( this, SW_RES(FLD_WIDTH_HEIGHT) ) )
+    , mnPageLeftMargin( aPageLRMargin.GetLeft() )
+    , mnPageRightMargin( aPageLRMargin.GetRight() )
+    , mnPageTopMargin( aPageULMargin.GetUpper() )
+    , mnPageBottomMargin( aPageULMargin.GetLower() )
+    , mbMirrored( bMirrored )
+    , meUnit( eUnit )
+    , mbUserCustomValuesAvailable(false)
+    , mnUserCustomPageLeftMargin(0)
+    , mnUserCustomPageRightMargin(0)
+    , mnUserCustomPageTopMargin(0)
+    , mnUserCustomPageBottomMargin(0)
+    , mbUserCustomMirrored(false)
+    , mbCustomValuesUsed( false )
+    , mrPagePropPanel(rPanel)
 {
-    bool bLandscape = false;
-    const SfxPoolItem* pItem;
-    const SvxSizeItem* pSize = nullptr;
-    const SvxLongLRSpaceItem* pLRItem = nullptr;
-    const SvxLongULSpaceItem* pULItem = nullptr;
-    if ( SfxViewFrame::Current() )
-    {
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->QueryState( SID_ATTR_PAGE, pItem );
-        bLandscape = static_cast<const SvxPageItem*>( pItem )->IsLandscape();
-        m_bMirrored = static_cast<const SvxPageItem*>( pItem )->GetPageUsage() == SvxPageUsage::Mirror;
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->QueryState( SID_ATTR_PAGE_SIZE, pItem );
-        pSize = static_cast<const SvxSizeItem*>( pItem );
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->QueryState( SID_ATTR_PAGE_LRSPACE, pItem );
-        pLRItem = static_cast<const SvxLongLRSpaceItem*>( pItem );
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->QueryState( SID_ATTR_PAGE_ULSPACE, pItem );
-        pULItem = static_cast<const SvxLongULSpaceItem*>( pItem );
-    }
+    maWidthHeightField->Hide();
+    SetFieldUnit( *maWidthHeightField.get(), eFUnit );
 
-    if ( pLRItem )
-    {
-        m_nPageLeftMargin = pLRItem->GetLeft();
-        m_nPageRightMargin = pLRItem->GetRight();
-    }
+    mbUserCustomValuesAvailable = GetUserCustomValues();
 
-    if ( pULItem )
-    {
-        m_nPageTopMargin = pULItem->GetUpper();
-        m_nPageBottomMargin = pULItem->GetLower();
-    }
+    mpMarginValueSet->SetStyle( mpMarginValueSet->GetStyle() | WB_3DLOOK | WB_NO_DIRECTSELECT );
+    mpMarginValueSet->SetColor( GetSettings().GetStyleSettings().GetMenuColor() );
 
-    if ( bLandscape )
-    {
-        get( m_pNarrow, "narrowL" );
-        get( m_pNormal, "normalL" );
-        get( m_pWide, "wideL" );
-        get( m_pMirrored, "mirroredL" );
-        get( m_pLast, "lastL" );
-    }
-    else
-    {
-        get( m_pNarrow, "narrow" );
-        get( m_pNormal, "normal" );
-        get( m_pWide, "wide" );
-        get( m_pMirrored, "mirrored" );
-        get( m_pLast, "last" );
-    }
+    FillValueSet( bLandscape, mbUserCustomValuesAvailable );
 
-    m_pNarrow->Show();
-    m_pNormal->Show();
-    m_pWide->Show();
-    m_pMirrored->Show();
-    m_pLast->Show();
+    mpMarginValueSet->SetNoSelection();
+    mpMarginValueSet->SetSelectHdl( LINK(this, PageMarginControl,ImplMarginHdl ) );
+    mpMarginValueSet->Show();
 
-    m_pNarrow->SetClickHdl( LINK( this, PageMarginControl, SelectMarginHdl ) );
-    m_pNormal->SetClickHdl( LINK( this, PageMarginControl, SelectMarginHdl ) );
-    m_pWide->SetClickHdl( LINK( this, PageMarginControl, SelectMarginHdl ) );
-    m_pMirrored->SetClickHdl( LINK( this, PageMarginControl, SelectMarginHdl ) );
-    m_pLast->SetClickHdl( LINK( this, PageMarginControl, SelectMarginHdl ) );
+    SelectValueSetItem();
 
-    get( m_pContainer, "container" );
-    m_pWidthHeightField = VclPtr<MetricField>::Create( m_pContainer.get(), (WinBits)0 );
-    m_pWidthHeightField->Hide();
-    m_pWidthHeightField->SetUnit( FUNIT_CM );
-    m_pWidthHeightField->SetMax( 9999 );
-    m_pWidthHeightField->SetDecimalDigits( 2 );
-    m_pWidthHeightField->SetSpinSize( 10 );
-    m_pWidthHeightField->SetLast( 9999 );
-    SetFieldUnit( *m_pWidthHeightField.get(), lcl_GetFieldUnit() );
-
-    m_bUserCustomValuesAvailable = GetUserCustomValues();
-
-    FillHelpText( m_bUserCustomValuesAvailable );
-
-    get( m_pLeftMarginEdit, "left" );
-    get( m_pRightMarginEdit, "right" );
-    get( m_pTopMarginEdit, "top" );
-    get( m_pBottomMarginEdit, "bottom" );
-
+    SetFieldUnit( *maLeftMarginEdit.get(), eFUnit );
     Link<Edit&,void> aLinkLR = LINK( this, PageMarginControl, ModifyLRMarginHdl );
-    m_pLeftMarginEdit->SetModifyHdl( aLinkLR );
-    SetMetricValue( *m_pLeftMarginEdit.get(), m_nPageLeftMargin, m_eUnit );
+    maLeftMarginEdit->SetModifyHdl( aLinkLR );
+    SetMetricValue( *maLeftMarginEdit.get(), mnPageLeftMargin, meUnit );
 
-    m_pRightMarginEdit->SetModifyHdl( aLinkLR );
-    SetMetricValue( *m_pRightMarginEdit.get(), m_nPageRightMargin, m_eUnit );
+    SetFieldUnit( *maRightMarginEdit.get(), eFUnit );
+    maRightMarginEdit->SetModifyHdl( aLinkLR );
+    SetMetricValue( *maRightMarginEdit.get(), mnPageRightMargin, meUnit );
 
     Link<Edit&,void> aLinkUL = LINK( this, PageMarginControl, ModifyULMarginHdl );
-    m_pTopMarginEdit->SetModifyHdl( aLinkUL );
-    SetMetricValue( *m_pTopMarginEdit.get(), m_nPageTopMargin, m_eUnit );
+    SetFieldUnit( *maTopMarginEdit.get(), eFUnit );
+    maTopMarginEdit->SetModifyHdl( aLinkUL );
+    SetMetricValue( *maTopMarginEdit.get(), mnPageTopMargin, meUnit );
 
-    m_pBottomMarginEdit->SetModifyHdl( aLinkUL );
-    SetMetricValue( *m_pBottomMarginEdit.get(), m_nPageBottomMargin, m_eUnit );
+    SetFieldUnit( *maBottomMarginEdit.get(), eFUnit );
+    maBottomMarginEdit->SetModifyHdl( aLinkUL );
+    SetMetricValue( *maBottomMarginEdit.get(), mnPageBottomMargin, meUnit );
 
-    m_aPageSize = pSize->GetSize();
-    SetMetricFieldMaxValues( m_aPageSize );
+    SetMetricFieldMaxValues(rPageSize);
 
-    get( m_pLeft, "leftLabel" );
-    get( m_pRight, "rightLabel" );
-    get( m_pInner, "innerLabel" );
-    get( m_pOuter, "outerLabel" );
-
-    if ( m_bMirrored )
+    if ( mbMirrored )
     {
-        m_pLeft->Hide();
-        m_pRight->Hide();
-        m_pInner->Show();
-        m_pOuter->Show();
+        maLeft->Hide();
+        maRight->Hide();
+        maInner->Show();
+        maOuter->Show();
     }
     else
     {
-        m_pLeft->Show();
-        m_pRight->Show();
-        m_pInner->Hide();
-        m_pOuter->Hide();
+        maLeft->Show();
+        maRight->Show();
+        maInner->Hide();
+        maOuter->Hide();
     }
+
+    FreeResource();
 }
 
 PageMarginControl::~PageMarginControl()
@@ -232,64 +138,63 @@ PageMarginControl::~PageMarginControl()
 
 void PageMarginControl::dispose()
 {
+    mpMarginValueSet.disposeAndClear();
+
     StoreUserCustomValues();
 
-    m_pLeft.disposeAndClear();
-    m_pRight.disposeAndClear();
-    m_pInner.disposeAndClear();
-    m_pOuter.disposeAndClear();
-    m_pLeftMarginEdit.disposeAndClear();
-    m_pRightMarginEdit.disposeAndClear();
-    m_pTopMarginEdit.disposeAndClear();
-    m_pBottomMarginEdit.disposeAndClear();
-    m_pNarrow.disposeAndClear();
-    m_pNormal.disposeAndClear();
-    m_pWide.disposeAndClear();
-    m_pMirrored.disposeAndClear();
-    m_pLast.disposeAndClear();
-
-    m_pWidthHeightField.disposeAndClear();
-    m_pContainer.disposeAndClear();
-
-    SfxPopupWindow::dispose();
+    maCustom.disposeAndClear();
+    maLeft.disposeAndClear();
+    maInner.disposeAndClear();
+    maLeftMarginEdit.disposeAndClear();
+    maRight.disposeAndClear();
+    maOuter.disposeAndClear();
+    maRightMarginEdit.disposeAndClear();
+    maTop.disposeAndClear();
+    maTopMarginEdit.disposeAndClear();
+    maBottom.disposeAndClear();
+    maBottomMarginEdit.disposeAndClear();
+    maWidthHeightField.disposeAndClear();
+    svx::sidebar::PopupControl::dispose();
 }
 
-void PageMarginControl::SetMetricFieldMaxValues( const Size& rPageSize )
+void PageMarginControl::SetMetricFieldMaxValues(const Size& rPageSize)
 {
-    const long nML = m_pLeftMarginEdit->Denormalize( m_pLeftMarginEdit->GetValue( FUNIT_TWIP ) );
-    const long nMR = m_pRightMarginEdit->Denormalize( m_pRightMarginEdit->GetValue( FUNIT_TWIP ) );
-    const long nMT = m_pTopMarginEdit->Denormalize( m_pTopMarginEdit->GetValue( FUNIT_TWIP ) );
-    const long nMB = m_pBottomMarginEdit->Denormalize( m_pBottomMarginEdit->GetValue( FUNIT_TWIP ) );
+    const long nML = maLeftMarginEdit->Denormalize( maLeftMarginEdit->GetValue(FUNIT_TWIP) );
+    const long nMR = maRightMarginEdit->Denormalize( maRightMarginEdit->GetValue(FUNIT_TWIP) );
+    const long nMT = maTopMarginEdit->Denormalize(maTopMarginEdit->GetValue(FUNIT_TWIP) );
+    const long nMB = maBottomMarginEdit->Denormalize( maBottomMarginEdit->GetValue(FUNIT_TWIP) );
 
-    const long nPH  = LogicToLogic( rPageSize.Height(), (MapUnit)m_eUnit, MapUnit::MapTwip );
-    const long nPW  = LogicToLogic( rPageSize.Width(),  (MapUnit)m_eUnit, MapUnit::MapTwip );
+    const long nPH  = LogicToLogic( rPageSize.Height(), (MapUnit)meUnit, MAP_TWIP );
+    const long nPW  = LogicToLogic( rPageSize.Width(),  (MapUnit)meUnit, MAP_TWIP );
 
     // Left
     long nMax = nPW - nMR - MINBODY;
-    m_pLeftMarginEdit->SetMax( m_pLeftMarginEdit->Normalize( nMax ), FUNIT_TWIP );
+    maLeftMarginEdit->SetMax(maLeftMarginEdit->Normalize(nMax), FUNIT_TWIP);
 
     // Right
     nMax = nPW - nML - MINBODY;
-    m_pRightMarginEdit->SetMax( m_pRightMarginEdit->Normalize( nMax ), FUNIT_TWIP );
+    maRightMarginEdit->SetMax(maRightMarginEdit->Normalize(nMax), FUNIT_TWIP);
 
     //Top
     nMax = nPH - nMB - MINBODY;
-    m_pTopMarginEdit->SetMax( m_pTopMarginEdit->Normalize( nMax ), FUNIT_TWIP );
+    maTopMarginEdit->SetMax(maTopMarginEdit->Normalize(nMax), FUNIT_TWIP);
 
     //Bottom
     nMax = nPH - nMT -  MINBODY;
-    m_pBottomMarginEdit->SetMax( m_pTopMarginEdit->Normalize( nMax ), FUNIT_TWIP );
+    maBottomMarginEdit->SetMax(maTopMarginEdit->Normalize(nMax), FUNIT_TWIP);
 }
 
-void PageMarginControl::FillHelpText( const bool bUserCustomValuesAvailable )
+void PageMarginControl::FillValueSet(
+    const bool bLandscape,
+    const bool bUserCustomValuesAvailable )
 {
-    const OUString aLeft = SW_RESSTR( STR_MARGIN_TOOLTIP_LEFT );
-    const OUString aRight = SW_RESSTR( STR_MARGIN_TOOLTIP_RIGHT );
-    const OUString aTop = SW_RESSTR( STR_MARGIN_TOOLTIP_TOP );
-    const OUString aBottom = SW_RESSTR( STR_MARGIN_TOOLTIP_BOT );
+    const OUString aLeft = SW_RESSTR(STR_MARGIN_TOOLTIP_LEFT);
+    const OUString aRight = SW_RESSTR(STR_MARGIN_TOOLTIP_RIGHT);
+    const OUString aTop = SW_RESSTR(STR_MARGIN_TOOLTIP_TOP);
+    const OUString aBottom = SW_RESSTR(STR_MARGIN_TOOLTIP_BOT);
 
-    SetMetricValue( *m_pWidthHeightField.get(), SWPAGE_NARROW_VALUE, m_eUnit );
-    const OUString aNarrowValText = m_pWidthHeightField->GetText();
+    SetMetricValue( *maWidthHeightField.get(), SWPAGE_NARROW_VALUE, meUnit );
+    const OUString aNarrowValText = maWidthHeightField->GetText();
     OUString aHelpText = aLeft;
     aHelpText += aNarrowValText;
     aHelpText += aRight;
@@ -298,10 +203,12 @@ void PageMarginControl::FillHelpText( const bool bUserCustomValuesAvailable )
     aHelpText += aNarrowValText;
     aHelpText += aBottom;
     aHelpText += aNarrowValText;
-    m_pNarrow->SetQuickHelpText( aHelpText );
+    mpMarginValueSet->AddItem(
+        Image((bLandscape) ? SW_RES(IMG_NARROW_L) : SW_RES(IMG_NARROW)), nullptr,
+        SW_RESSTR(STR_NARROW), &aHelpText );
 
-    SetMetricValue( *m_pWidthHeightField.get(), SWPAGE_NORMAL_VALUE, m_eUnit );
-    const OUString aNormalValText = m_pWidthHeightField->GetText();
+    SetMetricValue( *maWidthHeightField.get(), SWPAGE_NORMAL_VALUE, meUnit );
+    const OUString aNormalValText = maWidthHeightField->GetText();
     aHelpText = aLeft;
     aHelpText += aNormalValText;
     aHelpText += aRight;
@@ -310,12 +217,14 @@ void PageMarginControl::FillHelpText( const bool bUserCustomValuesAvailable )
     aHelpText += aNormalValText;
     aHelpText += aBottom;
     aHelpText += aNormalValText;
-    m_pNormal->SetQuickHelpText( aHelpText );
+    mpMarginValueSet->AddItem(
+        Image((bLandscape) ? SW_RES(IMG_NORMAL_L) : SW_RES(IMG_NORMAL)), nullptr,
+        SW_RESSTR(STR_NORMAL), &aHelpText );
 
-    SetMetricValue( *m_pWidthHeightField.get(), SWPAGE_WIDE_VALUE1, m_eUnit );
-    const OUString aWide1ValText = m_pWidthHeightField->GetText();
-    SetMetricValue( *m_pWidthHeightField.get(), SWPAGE_WIDE_VALUE2, m_eUnit );
-    const OUString aWide2ValText = m_pWidthHeightField->GetText();
+    SetMetricValue( *maWidthHeightField.get(), SWPAGE_WIDE_VALUE1, meUnit );
+    const OUString aWide1ValText = maWidthHeightField->GetText();
+    SetMetricValue( *maWidthHeightField.get(), SWPAGE_WIDE_VALUE2, meUnit );
+    const OUString aWide2ValText = maWidthHeightField->GetText();
     aHelpText = aLeft;
     aHelpText += aWide2ValText;
     aHelpText += aRight;
@@ -324,184 +233,205 @@ void PageMarginControl::FillHelpText( const bool bUserCustomValuesAvailable )
     aHelpText += aWide1ValText;
     aHelpText += aBottom;
     aHelpText += aWide1ValText;
-    m_pWide->SetQuickHelpText( aHelpText );
+    mpMarginValueSet->AddItem(
+        Image((bLandscape) ? SW_RES(IMG_WIDE_L) : SW_RES(IMG_WIDE)), nullptr,
+        SW_RESSTR(STR_WIDE), &aHelpText );
 
-    const OUString aInner = SW_RESSTR( STR_MARGIN_TOOLTIP_INNER );
-    const OUString aOuter = SW_RESSTR( STR_MARGIN_TOOLTIP_OUTER );
+    const OUString aInner = SW_RESSTR(STR_MARGIN_TOOLTIP_INNER);
+    const OUString aOuter = SW_RESSTR(STR_MARGIN_TOOLTIP_OUTER);
 
-    SetMetricValue( *m_pWidthHeightField.get(), SWPAGE_WIDE_VALUE3, m_eUnit );
-    const OUString aWide3ValText = m_pWidthHeightField->GetText();
+    SetMetricValue( *maWidthHeightField.get(), SWPAGE_WIDE_VALUE3, meUnit );
+    const OUString aWide3ValText = maWidthHeightField->GetText();
     aHelpText = aInner;
     aHelpText += aWide3ValText;
     aHelpText += aOuter;
-    aHelpText += aWide1ValText;
+    aHelpText += aWide3ValText;
     aHelpText += aTop;
     aHelpText += aWide1ValText;
     aHelpText += aBottom;
     aHelpText += aWide1ValText;
-    m_pMirrored->SetQuickHelpText( aHelpText );
+    mpMarginValueSet->AddItem(
+        Image((bLandscape) ? SW_RES(IMG_MIRRORED_L) : SW_RES(IMG_MIRRORED)), nullptr,
+        SW_RESSTR(STR_MIRRORED), &aHelpText );
 
     if ( bUserCustomValuesAvailable )
     {
-        aHelpText = m_bUserCustomMirrored ? aInner : aLeft;
-        SetMetricValue( *m_pWidthHeightField.get(), m_nUserCustomPageLeftMargin, m_eUnit );
-        aHelpText += m_pWidthHeightField->GetText();
-        aHelpText += m_bUserCustomMirrored ? aOuter : aRight;
-        SetMetricValue( *m_pWidthHeightField.get(), m_nUserCustomPageRightMargin, m_eUnit );
-        aHelpText += m_pWidthHeightField->GetText();
+        aHelpText = mbUserCustomMirrored ? aInner : aLeft;
+        SetMetricValue( *maWidthHeightField.get(), mnUserCustomPageLeftMargin, meUnit );
+        aHelpText += maWidthHeightField->GetText();
+        aHelpText += mbUserCustomMirrored ? aOuter : aRight;
+        SetMetricValue( *maWidthHeightField.get(), mnUserCustomPageRightMargin, meUnit );
+        aHelpText += maWidthHeightField->GetText();
         aHelpText += aTop;
-        SetMetricValue( *m_pWidthHeightField.get(), m_nUserCustomPageTopMargin, m_eUnit );
-        aHelpText += m_pWidthHeightField->GetText();
+        SetMetricValue( *maWidthHeightField.get(), mnUserCustomPageTopMargin, meUnit );
+        aHelpText += maWidthHeightField->GetText();
         aHelpText += aBottom;
-        SetMetricValue( *m_pWidthHeightField.get(), m_nUserCustomPageBottomMargin, m_eUnit );
-        aHelpText += m_pWidthHeightField->GetText();
+        SetMetricValue( *maWidthHeightField.get(), mnUserCustomPageBottomMargin, meUnit );
+        aHelpText += maWidthHeightField->GetText();
     }
     else
     {
         aHelpText.clear();
     }
-    m_pLast->SetQuickHelpText( aHelpText );
+    mpMarginValueSet->AddItem(
+        Image((bUserCustomValuesAvailable) ? SW_RES(IMG_CUSTOM) : SW_RES(IMG_CUSTOM_DIS)), nullptr,
+        SW_RESSTR(STR_LCVALUE), &aHelpText );
 }
 
-IMPL_LINK( PageMarginControl, SelectMarginHdl, Button*, pControl, void )
+void PageMarginControl::SelectValueSetItem()
 {
-    bool bMirrored = false;
-    bool bApplyNewPageMargins = true;
-    if( pControl == m_pNarrow.get() )
+    const long cTolerance = 5;
+
+    if( std::abs(mnPageLeftMargin - SWPAGE_NARROW_VALUE) <= cTolerance &&
+        std::abs(mnPageRightMargin - SWPAGE_NARROW_VALUE) <= cTolerance &&
+        std::abs(mnPageTopMargin - SWPAGE_NARROW_VALUE) <= cTolerance &&
+        std::abs(mnPageBottomMargin - SWPAGE_NARROW_VALUE) <= cTolerance &&
+        !mbMirrored )
     {
-        m_nPageLeftMargin = SWPAGE_NARROW_VALUE;
-        m_nPageRightMargin = SWPAGE_NARROW_VALUE;
-        m_nPageTopMargin = SWPAGE_NARROW_VALUE;
-        m_nPageBottomMargin = SWPAGE_NARROW_VALUE;
-        bMirrored = false;
+        mpMarginValueSet->SelectItem(1);
     }
-    if( pControl == m_pNormal.get() )
+    else if( std::abs(mnPageLeftMargin - SWPAGE_NORMAL_VALUE) <= cTolerance &&
+        std::abs(mnPageRightMargin - SWPAGE_NORMAL_VALUE) <= cTolerance &&
+        std::abs(mnPageTopMargin - SWPAGE_NORMAL_VALUE) <= cTolerance &&
+        std::abs(mnPageBottomMargin - SWPAGE_NORMAL_VALUE) <= cTolerance &&
+        !mbMirrored )
     {
-        m_nPageLeftMargin = SWPAGE_NORMAL_VALUE;
-        m_nPageRightMargin = SWPAGE_NORMAL_VALUE;
-        m_nPageTopMargin = SWPAGE_NORMAL_VALUE;
-        m_nPageBottomMargin = SWPAGE_NORMAL_VALUE;
-        bMirrored = false;
+        mpMarginValueSet->SelectItem(2);
     }
-    if( pControl == m_pWide.get() )
+    else if( std::abs(mnPageLeftMargin - SWPAGE_WIDE_VALUE2) <= cTolerance &&
+        std::abs(mnPageRightMargin - SWPAGE_WIDE_VALUE2) <= cTolerance &&
+        std::abs(mnPageTopMargin - SWPAGE_WIDE_VALUE1) <= cTolerance &&
+        std::abs(mnPageBottomMargin - SWPAGE_WIDE_VALUE1) <= cTolerance &&
+        !mbMirrored )
     {
-        m_nPageLeftMargin = SWPAGE_WIDE_VALUE2;
-        m_nPageRightMargin = SWPAGE_WIDE_VALUE2;
-        m_nPageTopMargin = SWPAGE_WIDE_VALUE1;
-        m_nPageBottomMargin = SWPAGE_WIDE_VALUE1;
-        bMirrored = false;
+        mpMarginValueSet->SelectItem(3);
     }
-    if( pControl == m_pMirrored.get() )
+    else if( std::abs(mnPageLeftMargin - SWPAGE_WIDE_VALUE3) <= cTolerance &&
+        std::abs(mnPageRightMargin - SWPAGE_WIDE_VALUE1) <= cTolerance &&
+        std::abs(mnPageTopMargin - SWPAGE_WIDE_VALUE1) <= cTolerance &&
+        std::abs(mnPageBottomMargin - SWPAGE_WIDE_VALUE1) <= cTolerance &&
+        mbMirrored )
     {
-        m_nPageLeftMargin = SWPAGE_WIDE_VALUE3;
-        m_nPageRightMargin = SWPAGE_WIDE_VALUE1;
-        m_nPageTopMargin = SWPAGE_WIDE_VALUE1;
-        m_nPageBottomMargin = SWPAGE_WIDE_VALUE1;
-        bMirrored = true;
+        mpMarginValueSet->SelectItem(4);
     }
-    if( pControl == m_pLast.get() )
+    else
     {
-        if ( m_bUserCustomValuesAvailable )
+        mpMarginValueSet->SelectItem(0);
+    }
+    mpMarginValueSet->SetFormat();
+    mpMarginValueSet->Invalidate();
+    mpMarginValueSet->StartSelection();
+};
+
+IMPL_LINK_TYPED(PageMarginControl, ImplMarginHdl, ValueSet*, pControl, void)
+{
+    if ( pControl == mpMarginValueSet )
+    {
+        bool bMirrored = false;
+        bool bApplyNewPageMargins = true;
+        switch ( mpMarginValueSet->GetSelectItemId() )
         {
-            m_nPageLeftMargin = m_nUserCustomPageLeftMargin;
-            m_nPageRightMargin = m_nUserCustomPageRightMargin;
-            m_nPageTopMargin = m_nUserCustomPageTopMargin;
-            m_nPageBottomMargin = m_nUserCustomPageBottomMargin;
-            bMirrored = m_bUserCustomMirrored;
+        case 1:
+            mnPageLeftMargin = SWPAGE_NARROW_VALUE;
+            mnPageRightMargin = SWPAGE_NARROW_VALUE;
+            mnPageTopMargin = SWPAGE_NARROW_VALUE;
+            mnPageBottomMargin = SWPAGE_NARROW_VALUE;
+            bMirrored = false;
+            break;
+        case 2:
+            mnPageLeftMargin = SWPAGE_NORMAL_VALUE;
+            mnPageRightMargin = SWPAGE_NORMAL_VALUE;
+            mnPageTopMargin = SWPAGE_NORMAL_VALUE;
+            mnPageBottomMargin = SWPAGE_NORMAL_VALUE;
+            bMirrored = false;
+            break;
+        case 3:
+            mnPageLeftMargin = SWPAGE_WIDE_VALUE2;
+            mnPageRightMargin = SWPAGE_WIDE_VALUE2;
+            mnPageTopMargin = SWPAGE_WIDE_VALUE1;
+            mnPageBottomMargin = SWPAGE_WIDE_VALUE1;
+            bMirrored = false;
+            break;
+        case 4:
+            mnPageLeftMargin = SWPAGE_WIDE_VALUE3;
+            mnPageRightMargin = SWPAGE_WIDE_VALUE1;
+            mnPageTopMargin = SWPAGE_WIDE_VALUE1;
+            mnPageBottomMargin = SWPAGE_WIDE_VALUE1;
+            bMirrored = true;
+            break;
+        case 5:
+            if ( mbUserCustomValuesAvailable )
+            {
+                mnPageLeftMargin = mnUserCustomPageLeftMargin;
+                mnPageRightMargin = mnUserCustomPageRightMargin;
+                mnPageTopMargin = mnUserCustomPageTopMargin;
+                mnPageBottomMargin = mnUserCustomPageBottomMargin;
+                bMirrored = mbUserCustomMirrored;
+            }
+            else
+            {
+                bApplyNewPageMargins = false;
+            }
+            break;
+        }
+
+        if ( bApplyNewPageMargins )
+        {
+            mrPagePropPanel.StartUndo();
+            mpMarginValueSet->SetNoSelection();
+            mrPagePropPanel.ExecuteMarginLRChange( mnPageLeftMargin, mnPageRightMargin );
+            mrPagePropPanel.ExecuteMarginULChange( mnPageTopMargin, mnPageBottomMargin );
+            if ( mbMirrored != bMirrored )
+            {
+                mbMirrored = bMirrored;
+                mrPagePropPanel.ExecutePageLayoutChange( mbMirrored );
+            }
+            mrPagePropPanel.EndUndo();
+
+            mbCustomValuesUsed = false;
+            mrPagePropPanel.ClosePageMarginPopup();
         }
         else
         {
-            bApplyNewPageMargins = false;
+            // back to initial selection
+            SelectValueSetItem();
         }
     }
-
-    if ( bApplyNewPageMargins )
-    {
-        const css::uno::Reference< css::document::XUndoManager > xUndoManager( getUndoManager( SfxViewFrame::Current()->GetFrame().GetFrameInterface() ) );
-        if ( xUndoManager.is() )
-            xUndoManager->enterUndoContext( "" );
-
-        ExecuteMarginLRChange( m_nPageLeftMargin, m_nPageRightMargin );
-        ExecuteMarginULChange( m_nPageTopMargin, m_nPageBottomMargin );
-        if ( m_bMirrored != bMirrored )
-        {
-            m_bMirrored = bMirrored;
-            ExecutePageLayoutChange( m_bMirrored );
-        }
-
-        if ( xUndoManager.is() )
-            xUndoManager->leaveUndoContext();
-
-        m_bCustomValuesUsed = false;
-        EndPopupMode();
-    }
 }
 
-void PageMarginControl::ExecuteMarginLRChange(
-    const long nPageLeftMargin,
-    const long nPageRightMargin )
+IMPL_LINK_NOARG_TYPED( PageMarginControl, ModifyLRMarginHdl, Edit&, void )
 {
-    if ( SfxViewFrame::Current() )
-    {
-        std::unique_ptr<SvxLongLRSpaceItem> pPageLRMarginItem( new SvxLongLRSpaceItem( 0, 0, SID_ATTR_PAGE_LRSPACE ) );
-        pPageLRMarginItem->SetLeft( nPageLeftMargin );
-        pPageLRMarginItem->SetRight( nPageRightMargin );
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->ExecuteList( SID_ATTR_PAGE_LRSPACE,
-                SfxCallMode::RECORD, { pPageLRMarginItem.get() } );
-        pPageLRMarginItem.reset();
-    }
+    mpMarginValueSet->SetNoSelection();
+    mpMarginValueSet->SelectItem(0);
+    mpMarginValueSet->SetFormat();
+    mpMarginValueSet->Invalidate();
+    mpMarginValueSet->StartSelection();
+
+    mnPageLeftMargin = GetCoreValue( *maLeftMarginEdit.get(), meUnit );
+    mnPageRightMargin = GetCoreValue( *maRightMarginEdit.get(), meUnit );
+    mrPagePropPanel.ExecuteMarginLRChange( mnPageLeftMargin, mnPageRightMargin );
+    mbCustomValuesUsed = true;
 }
 
-void PageMarginControl::ExecuteMarginULChange(
-    const long nPageTopMargin,
-    const long nPageBottomMargin )
+IMPL_LINK_NOARG_TYPED( PageMarginControl, ModifyULMarginHdl, Edit&, void )
 {
-    if ( SfxViewFrame::Current() )
-    {
-        std::unique_ptr<SvxLongULSpaceItem> pPageULMarginItem( new SvxLongULSpaceItem( 0, 0, SID_ATTR_PAGE_ULSPACE ) );
-        pPageULMarginItem->SetUpper( nPageTopMargin );
-        pPageULMarginItem->SetLower( nPageBottomMargin );
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->ExecuteList( SID_ATTR_PAGE_ULSPACE,
-                SfxCallMode::RECORD, { pPageULMarginItem.get() } );
-        pPageULMarginItem.reset();
-    }
-}
+    mpMarginValueSet->SetNoSelection();
+    mpMarginValueSet->SelectItem(0);
+    mpMarginValueSet->SetFormat();
+    mpMarginValueSet->Invalidate();
+    mpMarginValueSet->StartSelection();
 
-void PageMarginControl::ExecutePageLayoutChange( const bool bMirrored )
-{
-    if ( SfxViewFrame::Current() )
-    {
-        std::unique_ptr<SvxPageItem> pPageItem( new SvxPageItem( SID_ATTR_PAGE ) );
-        pPageItem->SetPageUsage( bMirrored ? SvxPageUsage::Mirror : SvxPageUsage::All );
-        SfxViewFrame::Current()->GetBindings().GetDispatcher()->ExecuteList( SID_ATTR_PAGE,
-                SfxCallMode::RECORD, { pPageItem.get() } );
-        pPageItem.reset();
-    }
-}
-
-IMPL_LINK_NOARG( PageMarginControl, ModifyLRMarginHdl, Edit&, void )
-{
-    m_nPageLeftMargin = GetCoreValue( *m_pLeftMarginEdit.get(), m_eUnit );
-    m_nPageRightMargin = GetCoreValue( *m_pRightMarginEdit.get(), m_eUnit );
-    ExecuteMarginLRChange( m_nPageLeftMargin, m_nPageRightMargin );
-    SetMetricFieldMaxValues( m_aPageSize );
-    m_bCustomValuesUsed = true;
-}
-
-IMPL_LINK_NOARG( PageMarginControl, ModifyULMarginHdl, Edit&, void )
-{
-    m_nPageTopMargin = GetCoreValue( *m_pTopMarginEdit.get(), m_eUnit );
-    m_nPageBottomMargin = GetCoreValue( *m_pBottomMarginEdit.get(), m_eUnit );
-    ExecuteMarginULChange( m_nPageTopMargin, m_nPageBottomMargin );
-    SetMetricFieldMaxValues( m_aPageSize );
-    m_bCustomValuesUsed = true;
+    mnPageTopMargin = GetCoreValue( *maTopMarginEdit.get(), meUnit );
+    mnPageBottomMargin = GetCoreValue( *maBottomMarginEdit.get(), meUnit );
+    mrPagePropPanel.ExecuteMarginULChange( mnPageTopMargin, mnPageBottomMargin );
+    mbCustomValuesUsed = true;
 }
 
 bool PageMarginControl::GetUserCustomValues()
 {
     bool bUserCustomValuesAvailable = false;
 
-    SvtViewOptions aWinOpt( EViewType::Window, SWPAGE_LEFT_GVALUE );
+    SvtViewOptions aWinOpt( E_WINDOW, SWPAGE_LEFT_GVALUE );
     if ( aWinOpt.Exists() )
     {
         css::uno::Sequence < css::beans::NamedValue > aSeq = aWinOpt.GetUserData();
@@ -509,11 +439,11 @@ bool PageMarginControl::GetUserCustomValues()
         if ( aSeq.getLength())
             aSeq[0].Value >>= aTmp;
         OUString aWinData( aTmp );
-        m_nUserCustomPageLeftMargin = aWinData.toInt32();
+        mnUserCustomPageLeftMargin = aWinData.toInt32();
         bUserCustomValuesAvailable = true;
     }
 
-    SvtViewOptions aWinOpt2( EViewType::Window, SWPAGE_RIGHT_GVALUE );
+    SvtViewOptions aWinOpt2( E_WINDOW, SWPAGE_RIGHT_GVALUE );
     if ( aWinOpt2.Exists() )
     {
         css::uno::Sequence < css::beans::NamedValue > aSeq = aWinOpt2.GetUserData();
@@ -521,23 +451,23 @@ bool PageMarginControl::GetUserCustomValues()
         if ( aSeq.getLength())
             aSeq[0].Value >>= aTmp;
         OUString aWinData( aTmp );
-        m_nUserCustomPageRightMargin = aWinData.toInt32();
+        mnUserCustomPageRightMargin = aWinData.toInt32();
         bUserCustomValuesAvailable = true;
     }
 
-    SvtViewOptions aWinOpt3( EViewType::Window, SWPAGE_TOP_GVALUE );
+    SvtViewOptions aWinOpt3( E_WINDOW, SWPAGE_TOP_GVALUE );
     if ( aWinOpt3.Exists() )
     {
         css::uno::Sequence < css::beans::NamedValue > aSeq = aWinOpt3.GetUserData();
         OUString aTmp;
-        if ( aSeq.getLength() )
+        if ( aSeq.getLength())
             aSeq[0].Value >>= aTmp;
         OUString aWinData( aTmp );
-        m_nUserCustomPageTopMargin = aWinData.toInt32();
+        mnUserCustomPageTopMargin = aWinData.toInt32();
         bUserCustomValuesAvailable = true;
     }
 
-    SvtViewOptions aWinOpt4( EViewType::Window, SWPAGE_DOWN_GVALUE );
+    SvtViewOptions aWinOpt4( E_WINDOW, SWPAGE_DOWN_GVALUE );
     if ( aWinOpt4.Exists() )
     {
         css::uno::Sequence < css::beans::NamedValue > aSeq = aWinOpt4.GetUserData();
@@ -545,11 +475,11 @@ bool PageMarginControl::GetUserCustomValues()
         if ( aSeq.getLength())
             aSeq[0].Value >>= aTmp;
         OUString aWinData( aTmp );
-        m_nUserCustomPageBottomMargin = aWinData.toInt32();
+        mnUserCustomPageBottomMargin = aWinData.toInt32();
         bUserCustomValuesAvailable = true;
     }
 
-    SvtViewOptions aWinOpt5( EViewType::Window, SWPAGE_MIRROR_GVALUE );
+    SvtViewOptions aWinOpt5( E_WINDOW, SWPAGE_MIRROR_GVALUE );
     if ( aWinOpt5.Exists() )
     {
         css::uno::Sequence < css::beans::NamedValue > aSeq = aWinOpt5.GetUserData();
@@ -557,7 +487,7 @@ bool PageMarginControl::GetUserCustomValues()
         if ( aSeq.getLength())
             aSeq[0].Value >>= aTmp;
         OUString aWinData( aTmp );
-        m_bUserCustomMirrored = aWinData.toInt32() != 0;
+        mbUserCustomMirrored = aWinData.toInt32() != 0;
         bUserCustomValuesAvailable = true;
     }
 
@@ -566,36 +496,36 @@ bool PageMarginControl::GetUserCustomValues()
 
 void PageMarginControl::StoreUserCustomValues()
 {
-    if ( !m_bCustomValuesUsed )
+    if ( !mbCustomValuesUsed )
     {
         return;
     }
 
-    css::uno::Sequence < css::beans::NamedValue > aSeq( 1 );
-    SvtViewOptions aWinOpt( EViewType::Window, SWPAGE_LEFT_GVALUE );
+    css::uno::Sequence < css::beans::NamedValue > aSeq(1);
+    SvtViewOptions aWinOpt( E_WINDOW, SWPAGE_LEFT_GVALUE );
 
     aSeq[0].Name = "mnPageLeftMargin";
-    aSeq[0].Value <<= OUString::number( m_nPageLeftMargin );
+    aSeq[0].Value <<= OUString::number( mnPageLeftMargin );
     aWinOpt.SetUserData( aSeq );
 
-    SvtViewOptions aWinOpt2( EViewType::Window, SWPAGE_RIGHT_GVALUE );
+    SvtViewOptions aWinOpt2( E_WINDOW, SWPAGE_RIGHT_GVALUE );
     aSeq[0].Name = "mnPageRightMargin";
-    aSeq[0].Value <<= OUString::number( m_nPageRightMargin );
+    aSeq[0].Value <<= OUString::number( mnPageRightMargin );
     aWinOpt2.SetUserData( aSeq );
 
-    SvtViewOptions aWinOpt3( EViewType::Window, SWPAGE_TOP_GVALUE );
+    SvtViewOptions aWinOpt3( E_WINDOW, SWPAGE_TOP_GVALUE );
     aSeq[0].Name = "mnPageTopMargin";
-    aSeq[0].Value <<= OUString::number( m_nPageTopMargin );
+    aSeq[0].Value <<= OUString::number( mnPageTopMargin );
     aWinOpt3.SetUserData( aSeq );
 
-    SvtViewOptions aWinOpt4( EViewType::Window, SWPAGE_DOWN_GVALUE );
+    SvtViewOptions aWinOpt4( E_WINDOW, SWPAGE_DOWN_GVALUE );
     aSeq[0].Name = "mnPageBottomMargin";
-    aSeq[0].Value <<= OUString::number( m_nPageBottomMargin );
+    aSeq[0].Value <<= OUString::number( mnPageBottomMargin );
     aWinOpt4.SetUserData( aSeq );
 
-    SvtViewOptions aWinOpt5( EViewType::Window, SWPAGE_MIRROR_GVALUE );
+    SvtViewOptions aWinOpt5( E_WINDOW, SWPAGE_MIRROR_GVALUE );
     aSeq[0].Name = "mbMirrored";
-    aSeq[0].Value <<= OUString::number( (m_bMirrored ? 1 : 0) );
+    aSeq[0].Value <<= OUString::number( (mbMirrored ? 1 : 0) );
     aWinOpt5.SetUserData( aSeq );
 }
 

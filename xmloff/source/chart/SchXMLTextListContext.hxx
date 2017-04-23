@@ -33,7 +33,7 @@ public:
     SchXMLTextListContext( SvXMLImport& rImport,
                             const OUString& rLocalName,
                             css::uno::Sequence< OUString>& rTextList );
-    virtual ~SchXMLTextListContext() override;
+    virtual ~SchXMLTextListContext();
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 

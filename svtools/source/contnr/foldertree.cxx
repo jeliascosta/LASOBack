@@ -14,8 +14,8 @@
 
 FolderTree::FolderTree( vcl::Window* pParent, WinBits nBits )
     : SvTreeListBox( pParent, nBits | WB_SORT | WB_TABSTOP )
-    , m_aFolderImage(BitmapEx(SvtResId(RID_BMP_FOLDER)))
-    , m_aFolderExpandedImage(BitmapEx(SvtResId(RID_BMP_FOLDER_OPEN)))
+    , m_aFolderImage( SvtResId( IMG_SVT_FOLDER ) )
+    , m_aFolderExpandedImage( SvtResId( IMG_SVT_FOLDER_OPEN ) )
 {
     Reference< XComponentContext > xContext = ::comphelper::getProcessComponentContext();
     Reference< XInteractionHandler > xInteractionHandler(
@@ -62,7 +62,7 @@ void FolderTree::FillTreeEntry( SvTreeListEntry* pEntry )
             EnumerationResult eResult =
                 xContentEnumerator->enumerateFolderContentSync( aFolder, m_aBlackList );
 
-            if ( EnumerationResult::SUCCESS == eResult )
+            if ( SUCCESS == eResult )
             {
                 for(SortingData_Impl* i : aContent)
                 {
@@ -116,7 +116,7 @@ void FolderTree::SetTreePath( OUString const & sUrl )
     INetURLObject aUrl( sUrl );
     aUrl.setFinalSlash();
 
-    OUString sPath = aUrl.GetURLPath( INetURLObject::DecodeMechanism::WithCharset );
+    OUString sPath = aUrl.GetURLPath( INetURLObject::DECODE_WITH_CHARSET );
 
     SvTreeListEntry* pEntry = First();
     bool end = false;
@@ -130,7 +130,7 @@ void FolderTree::SetTreePath( OUString const & sUrl )
             INetURLObject aUrlObj( sNodeUrl );
             aUrlObj.setFinalSlash();
 
-            sNodeUrl = aUrlObj.GetURLPath( INetURLObject::DecodeMechanism::WithCharset );
+            sNodeUrl = aUrlObj.GetURLPath( INetURLObject::DECODE_WITH_CHARSET );
 
             if( sPath == sNodeUrl )
             {

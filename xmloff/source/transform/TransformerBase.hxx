@@ -78,31 +78,42 @@ protected:
                                       const OUString& rQName );
 
 public:
-    XMLTransformerBase( XMLTransformerActionInit *pInit,
-                           ::xmloff::token::XMLTokenEnum *pTKMapInit ) throw();
-    virtual ~XMLTransformerBase() throw() override;
+    XMLTransformerBase( XMLTransformerActionInit *pInit=nullptr,
+                           ::xmloff::token::XMLTokenEnum *pTKMapInit=nullptr ) throw();
+    virtual ~XMLTransformerBase() throw();
 
     // css::xml::sax::XDocumentHandler
-    virtual void SAL_CALL startDocument() override;
-    virtual void SAL_CALL endDocument() override;
+    virtual void SAL_CALL startDocument()
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL endDocument()
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL startElement(const OUString& aName,
-                              const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs) override;
-    virtual void SAL_CALL endElement(const OUString& aName) override;
-    virtual void SAL_CALL characters(const OUString& aChars) override;
-    virtual void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces) override;
+                              const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL endElement(const OUString& aName)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL characters(const OUString& aChars)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL processingInstruction(const OUString& aTarget,
-                                       const OUString& aData) override;
-    virtual void SAL_CALL setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator) override;
+                                       const OUString& aData)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
 
     // css::xml::sax::XExtendedDocumentHandler
-    virtual void SAL_CALL startCDATA() override;
-    virtual void SAL_CALL endCDATA() override;
-    virtual void SAL_CALL comment(const OUString& sComment) override;
-    virtual void SAL_CALL allowLineBreak() override;
-    virtual void SAL_CALL unknown(const OUString& sString) override;
+    virtual void SAL_CALL startCDATA() throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL endCDATA() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL comment(const OUString& sComment)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL allowLineBreak()
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL unknown(const OUString& sString)
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // C++
     const css::uno::Reference< css::xml::sax::XDocumentHandler > & GetDocHandler() { return m_xHandler; }
@@ -142,9 +153,9 @@ public:
                                     sal_uInt16 nPrefixOnly=0xffffU ) const;
 
     bool ConvertURIToOASIS( OUString& rURI,
-                                bool bSupportPackage ) const;
+                                bool bSupportPackage=false ) const;
     bool ConvertURIToOOo( OUString& rURI,
-                                bool bSupportPackage ) const;
+                                bool bSupportPackage=false ) const;
 
     /** renames the given rOutAttributeValue if one of the parameters contains a
         matching token in its lower 16 bits.  The value is converted to the
@@ -171,8 +182,8 @@ public:
     const XMLTransformerContext *GetAncestorContext( sal_uInt32 i ) const;
 
     // C++
-    void SetClass( const OUString& r ) { m_aClass = r; }
-    const OUString& GetClass() const { return m_aClass; }
+    inline void SetClass( const OUString& r ) { m_aClass = r; }
+    inline const OUString& GetClass() const { return m_aClass; }
 
     bool isWriter() const;
 

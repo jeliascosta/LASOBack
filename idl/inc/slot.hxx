@@ -25,12 +25,12 @@
 
 class SvMetaSlot : public SvMetaAttribute
 {
-public:
     tools::SvRef<SvMetaType>      aSlotType;
     tools::SvRef<SvMetaSlot>      aMethod;
     SvIdentifier     aGroupId;
     SvIdentifier     aExecMethod;
     SvIdentifier     aStateMethod;
+    SvBOOL           aPseudoSlots;
 
     SvBOOL           aToggle;
     SvBOOL           aAutoUpdate;
@@ -47,9 +47,14 @@ public:
     SvBOOL           aAccelConfig;
     SvBOOL           aFastCall;
     SvBOOL           aContainer;
+    SvBOOL           aImageRotation;
+    SvBOOL           aImageReflection;
+    SvIdentifier     aPseudoPrefix;
     OString          aDisableFlags;
+    SvMetaSlot*      pLinkedSlot;
     SvMetaSlot*      pNextSlot;
     sal_uLong        nListPos;
+    SvMetaEnumValue* pEnumValue;
     SvBOOL           aReadOnlyDoc;
     SvBOOL           aExport;
 
@@ -59,10 +64,15 @@ public:
                             size_t nStart,
                             SvIdlDataBase & rBase, SvStream & rOutStm );
 
+    void            SetEnumValue(SvMetaEnumValue *p) { pEnumValue = p; }
     OString         GetMangleName() const;
     bool            IsVariable() const;
     bool            IsMethod() const;
 
+protected:
+    void    SetToggle( bool bSet ) { aToggle = bSet; }
+    void    SetAutoUpdate( bool bSet ) { aAutoUpdate = bSet; }
+    void    SetAsynchron( bool bSet ) { aAsynchron = bSet; }
     void    SetRecordPerItem( bool bSet )
             {
                 aRecordPerItem = bSet;
@@ -81,8 +91,12 @@ public:
                 if( bSet )
                     aRecordPerItem = aRecordPerSet = false;
             }
+    void    SetRecordAbsolute( bool bSet ) { aRecordAbsolute = bSet; }
 
 public:
+            SvMetaObject *  MakeClone() const;
+            SvMetaSlot *Clone() const { return static_cast<SvMetaSlot *>(MakeClone()); }
+
             SvMetaSlot();
             SvMetaSlot( SvMetaType * pType );
 
@@ -92,6 +106,7 @@ public:
     const OString&      GetExecMethod() const;
     const OString&      GetStateMethod() const;
     const OString&      GetDisableFlags() const;
+    bool                GetPseudoSlots() const;
     bool                GetToggle() const;
     bool                GetAutoUpdate() const;
 
@@ -102,11 +117,14 @@ public:
     bool                GetNoRecord() const;
     bool                GetRecordAbsolute() const;
 
+    const OString&      GetPseudoPrefix() const;
     bool                GetMenuConfig() const;
     bool                GetToolBoxConfig() const;
     bool                GetAccelConfig() const;
     bool                GetFastCall() const;
     bool                GetContainer() const;
+    bool                GetImageRotation() const;
+    bool                GetImageReflection() const;
     bool                GetReadOnlyDoc() const;
     bool                GetExport() const;
     bool                GetHidden() const;
@@ -116,13 +134,14 @@ public:
     void                SetListPos(sal_uLong n)
                         { nListPos = n; }
     void                ResetSlotPointer()
-                        { pNextSlot = nullptr; }
+                        { pNextSlot = pLinkedSlot = nullptr; }
 
     virtual bool        Test( SvTokenStream & rInStm ) override;
     virtual void        ReadAttributesSvIdl( SvIdlDataBase & rBase,
                                              SvTokenStream & rInStm ) override;
     virtual bool        ReadSvIdl( SvIdlDataBase &, SvTokenStream & rInStm ) override;
-    virtual void        Insert( SvSlotElementList& ) override;
+    virtual void        Insert( SvSlotElementList&, const OString& rPrefix,
+                                SvIdlDataBase& ) override;
     void                WriteSlotStubs( const OString& rShellName,
                                     ByteStringList & rList,
                                     SvStream & rOutStm );

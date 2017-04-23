@@ -50,14 +50,14 @@ namespace framework
 {
 
 // Wrapper class to notify controller about events from combobox.
-// Unfortunaltly the events are notified through virtual methods instead
+// Unfortunaltly the events are notifed through virtual methods instead
 // of Listeners.
 
 class SpinfieldControl : public SpinField
 {
     public:
         SpinfieldControl( vcl::Window* pParent, WinBits nStyle, SpinfieldToolbarController* pSpinfieldToolbarController );
-        virtual ~SpinfieldControl() override;
+        virtual ~SpinfieldControl();
         virtual void dispose() override;
 
         virtual void Up() override;
@@ -183,6 +183,7 @@ SpinfieldToolbarController::~SpinfieldToolbarController()
 }
 
 void SAL_CALL SpinfieldToolbarController::dispose()
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 

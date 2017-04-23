@@ -61,9 +61,8 @@ OUString SAL_CALL getHebrewNativeNumberString(const OUString& aNumberString, boo
 
 OUString SAL_CALL getCyrillicNativeNumberString(const OUString& aNumberString);
 
-/// @throws RuntimeException
 OUString SAL_CALL AsciiToNativeChar( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        Sequence< sal_Int32 >& offset, bool useOffset, sal_Int16 number )
+        Sequence< sal_Int32 >& offset, bool useOffset, sal_Int16 number ) throw(RuntimeException)
 {
     const sal_Unicode *src = inStr.getStr() + startPos;
     rtl_uString *newStr = rtl_uString_alloc(nCount);
@@ -97,8 +96,9 @@ bool SAL_CALL AsciiToNative_numberMaker(const sal_Unicode *str, sal_Int32 begin,
     sal_Unicode multiChar = (multiChar_index == -1 ? 0 : number->multiplierChar[multiChar_index]);
     if ( len <= number->multiplierExponent[number->exponentCount-1] ) {
         if (number->multiplierExponent[number->exponentCount-1] > 1) {
+            sal_Int16 i;
             bool bNotZero = false;
-            for (sal_Int32 i = 0; i < len; i++, begin++) {
+            for (i = 0; i < len; i++, begin++) {
                 if (bNotZero || str[begin] != NUMBER_ZERO) {
                     dst[count] = numberChar[str[begin] - NUMBER_ZERO];
                     if (useOffset)
@@ -161,9 +161,8 @@ bool SAL_CALL AsciiToNative_numberMaker(const sal_Unicode *str, sal_Int32 begin,
     }
 }
 
-/// @throws RuntimeException
 OUString SAL_CALL AsciiToNative( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        Sequence< sal_Int32 >& offset, bool useOffset, const Number* number )
+        Sequence< sal_Int32 >& offset, bool useOffset, const Number* number ) throw(RuntimeException)
 {
     OUString aRet;
 
@@ -298,9 +297,8 @@ static void SAL_CALL NativeToAscii_numberMaker(sal_Int16 max, sal_Int16 prev, co
     }
 }
 
-/// @throws RuntimeException
 static OUString SAL_CALL NativeToAscii(const OUString& inStr,
-        sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset, bool useOffset )
+        sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset, bool useOffset ) throw(RuntimeException)
 {
     OUString aRet;
 
@@ -523,7 +521,7 @@ static sal_Int16 SAL_CALL getLanguageNumber( const Locale& rLocale)
 }
 
 OUString SAL_CALL NativeNumberSupplierService::getNativeNumberString(const OUString& aNumberString, const Locale& rLocale,
-                sal_Int16 nNativeNumberMode, Sequence< sal_Int32 >& offset)
+                sal_Int16 nNativeNumberMode, Sequence< sal_Int32 >& offset) throw (RuntimeException)
 {
     if (!isValidNatNum(rLocale, nNativeNumberMode))
         return aNumberString;
@@ -580,7 +578,7 @@ OUString SAL_CALL NativeNumberSupplierService::getNativeNumberString(const OUStr
         if (!aLocale.Language.equals(rLocale.Language) ||
                 !aLocale.Country.equals(rLocale.Country) ||
                 !aLocale.Variant.equals(rLocale.Variant)) {
-            LocaleDataItem item = LocaleDataImpl::get()->getLocaleItem( rLocale );
+            LocaleDataItem item = LocaleDataImpl().getLocaleItem( rLocale );
             aLocale = rLocale;
             DecimalChar[NumberChar_HalfWidth]=item.decimalSeparator.toChar();
             if (DecimalChar[NumberChar_HalfWidth] > 0x7E || DecimalChar[NumberChar_HalfWidth] < 0x21)
@@ -608,13 +606,13 @@ OUString SAL_CALL NativeNumberSupplierService::getNativeNumberString(const OUStr
 }
 
 OUString SAL_CALL NativeNumberSupplierService::getNativeNumberString(const OUString& aNumberString, const Locale& rLocale,
-                sal_Int16 nNativeNumberMode)
+                sal_Int16 nNativeNumberMode) throw (RuntimeException, std::exception)
 {
     Sequence< sal_Int32 > offset;
     return getNativeNumberString(aNumberString, rLocale, nNativeNumberMode, offset);
 }
 
-sal_Unicode SAL_CALL NativeNumberSupplierService::getNativeNumberChar( const sal_Unicode inChar, const Locale& rLocale, sal_Int16 nNativeNumberMode )
+sal_Unicode SAL_CALL NativeNumberSupplierService::getNativeNumberChar( const sal_Unicode inChar, const Locale& rLocale, sal_Int16 nNativeNumberMode ) throw(css::uno::RuntimeException)
 {
     if (nNativeNumberMode == NativeNumberMode::NATNUM0) { // Ascii
         for (const auto & i : NumberChar)
@@ -658,7 +656,7 @@ sal_Unicode SAL_CALL NativeNumberSupplierService::getNativeNumberChar( const sal
     return inChar;
 }
 
-sal_Bool SAL_CALL NativeNumberSupplierService::isValidNatNum( const Locale& rLocale, sal_Int16 nNativeNumberMode )
+sal_Bool SAL_CALL NativeNumberSupplierService::isValidNatNum( const Locale& rLocale, sal_Int16 nNativeNumberMode ) throw (RuntimeException, std::exception)
 {
     sal_Int16 langnum = getLanguageNumber(rLocale);
 
@@ -686,7 +684,7 @@ sal_Bool SAL_CALL NativeNumberSupplierService::isValidNatNum( const Locale& rLoc
     return false;
 }
 
-NativeNumberXmlAttributes SAL_CALL NativeNumberSupplierService::convertToXmlAttributes( const Locale& rLocale, sal_Int16 nNativeNumberMode )
+NativeNumberXmlAttributes SAL_CALL NativeNumberSupplierService::convertToXmlAttributes( const Locale& rLocale, sal_Int16 nNativeNumberMode ) throw (RuntimeException, std::exception)
 {
     static const sal_Int16 attShort         = 0;
     static const sal_Int16 attMedium        = 1;
@@ -765,7 +763,7 @@ static bool natNumIn(sal_Int16 num, const sal_Int16 natnum[], sal_Int16 len)
     return false;
 }
 
-sal_Int16 SAL_CALL NativeNumberSupplierService::convertFromXmlAttributes( const NativeNumberXmlAttributes& aAttr )
+sal_Int16 SAL_CALL NativeNumberSupplierService::convertFromXmlAttributes( const NativeNumberXmlAttributes& aAttr ) throw (RuntimeException, std::exception)
 {
     sal_Unicode numberChar[NumberChar_Count];
     for (sal_Int16 i = 0; i < NumberChar_Count; i++)
@@ -815,7 +813,7 @@ sal_Int16 SAL_CALL NativeNumberSupplierService::convertFromXmlAttributes( const 
 struct HebrewNumberChar {
     sal_Unicode code;
     sal_Int16 value;
-} const HebrewNumberCharArray[] = {
+} HebrewNumberCharArray[] = {
     { 0x05ea, 400 },
     { 0x05ea, 400 },
     { 0x05e9, 300 },
@@ -922,7 +920,7 @@ static sal_Unicode cyrillicTen = 0x0456;
 struct CyrillicNumberChar {
     sal_Unicode code;
     sal_Int16 value;
-} const CyrillicNumberCharArray[] = {
+} CyrillicNumberCharArray[] = {
     { 0x0446, 900 },
     { 0x047f, 800 },
     { 0x0471, 700 },
@@ -1032,23 +1030,23 @@ OUString SAL_CALL getCyrillicNativeNumberString(const OUString& aNumberString)
         return aNumberString;
 }
 
-static const sal_Char implementationName[] = "com.sun.star.i18n.NativeNumberSupplier";
+static const sal_Char* implementationName = "com.sun.star.i18n.NativeNumberSupplier";
 
-OUString SAL_CALL NativeNumberSupplierService::getImplementationName()
+OUString SAL_CALL NativeNumberSupplierService::getImplementationName() throw( RuntimeException, std::exception )
 {
-    return OUString(implementationName);
+    return OUString::createFromAscii( implementationName );
 }
 
 sal_Bool SAL_CALL
-NativeNumberSupplierService::supportsService(const OUString& rServiceName)
+NativeNumberSupplierService::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-NativeNumberSupplierService::getSupportedServiceNames()
+NativeNumberSupplierService::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
-    Sequence< OUString > aRet {implementationName};
+    Sequence< OUString > aRet { OUString::createFromAscii( implementationName ) };
     return aRet;
 }
 

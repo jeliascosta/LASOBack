@@ -28,7 +28,6 @@
 #include <com/sun/star/accessibility/AccessibleRelationType.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <comphelper/sequence.hxx>
 #include "dbu_qry.hrc"
 
@@ -52,7 +51,7 @@ namespace dbaui
     }
     void OTableWindowAccess::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
     {
-        if ( rVclWindowEvent.GetId() == VclEventId::ObjectDying )
+        if ( rVclWindowEvent.GetId() == VCLEVENT_OBJECT_DYING )
         {
             ::osl::MutexGuard aGuard( m_aMutex );
             m_pTable = nullptr;
@@ -60,26 +59,37 @@ namespace dbaui
 
         VCLXAccessibleComponent::ProcessWindowEvent( rVclWindowEvent );
     }
-    Any SAL_CALL OTableWindowAccess::queryInterface( const Type& aType )
+    Any SAL_CALL OTableWindowAccess::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
     {
         Any aRet(VCLXAccessibleComponent::queryInterface( aType ));
         return aRet.hasValue() ? aRet : OTableWindowAccess_BASE::queryInterface( aType );
     }
-    Sequence< Type > SAL_CALL OTableWindowAccess::getTypes(  )
+    Sequence< Type > SAL_CALL OTableWindowAccess::getTypes(  ) throw (RuntimeException, std::exception)
     {
         return ::comphelper::concatSequences(VCLXAccessibleComponent::getTypes(),OTableWindowAccess_BASE::getTypes());
     }
-    OUString SAL_CALL OTableWindowAccess::getImplementationName()
+    OUString SAL_CALL OTableWindowAccess::getImplementationName() throw(RuntimeException, std::exception)
+    {
+        return getImplementationName_Static();
+    }
+    Sequence< OUString > SAL_CALL OTableWindowAccess::getSupportedServiceNames() throw(RuntimeException, std::exception)
+    {
+        return getSupportedServiceNames_Static();
+    }
+    // XServiceInfo - static methods
+    Sequence< OUString > OTableWindowAccess::getSupportedServiceNames_Static() throw( RuntimeException )
+    {
+        Sequence< OUString > aSupported(2);
+        aSupported[0] = "com.sun.star.accessibility.Accessible";
+        aSupported[1] = "com.sun.star.accessibility.AccessibleContext";
+        return aSupported;
+    }
+    OUString OTableWindowAccess::getImplementationName_Static() throw( RuntimeException )
     {
         return OUString("org.openoffice.comp.dbu.TableWindowAccessibility");
     }
-    Sequence< OUString > SAL_CALL OTableWindowAccess::getSupportedServiceNames()
-    {
-        return { "com.sun.star.accessibility.Accessible",
-                 "com.sun.star.accessibility.AccessibleContext" };
-    }
     // XAccessibleContext
-    sal_Int32 SAL_CALL OTableWindowAccess::getAccessibleChildCount(  )
+    sal_Int32 SAL_CALL OTableWindowAccess::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         sal_Int32 nCount = 0;
@@ -91,7 +101,7 @@ namespace dbaui
         }
         return nCount;
     }
-    Reference< XAccessible > SAL_CALL OTableWindowAccess::getAccessibleChild( sal_Int32 i )
+    Reference< XAccessible > SAL_CALL OTableWindowAccess::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException,RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         Reference< XAccessible > aRet;
@@ -119,7 +129,7 @@ namespace dbaui
         }
         return aRet;
     }
-    sal_Int32 SAL_CALL OTableWindowAccess::getAccessibleIndexInParent(  )
+    sal_Int32 SAL_CALL OTableWindowAccess::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         sal_Int32 nIndex = -1;
@@ -135,24 +145,24 @@ namespace dbaui
         }
         return nIndex;
     }
-    sal_Int16 SAL_CALL OTableWindowAccess::getAccessibleRole(  )
+    sal_Int16 SAL_CALL OTableWindowAccess::getAccessibleRole(  ) throw (RuntimeException, std::exception)
     {
         return AccessibleRole::PANEL; // ? or may be an AccessibleRole::WINDOW
     }
-    Reference< XAccessibleRelationSet > SAL_CALL OTableWindowAccess::getAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > SAL_CALL OTableWindowAccess::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         return this;
     }
     // XAccessibleComponent
-    Reference< XAccessible > SAL_CALL OTableWindowAccess::getAccessibleAtPoint( const awt::Point& _aPoint )
+    Reference< XAccessible > SAL_CALL OTableWindowAccess::getAccessibleAtPoint( const awt::Point& _aPoint ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         Reference< XAccessible > aRet;
         if(m_pTable && !m_pTable->IsDisposed())
         {
             Point aPoint(_aPoint.X,_aPoint.Y);
-            tools::Rectangle aRect(m_pTable->GetDesktopRectPixel());
+            Rectangle aRect(m_pTable->GetDesktopRectPixel());
             if( aRect.IsInside(aPoint) )
                 aRet = this;
             else if( m_pTable->GetListBox()->GetDesktopRectPixel().IsInside(aPoint))
@@ -175,12 +185,12 @@ namespace dbaui
         return xReturn;
     }
 
-    sal_Int32 SAL_CALL OTableWindowAccess::getRelationCount(  )
+    sal_Int32 SAL_CALL OTableWindowAccess::getRelationCount(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         return m_pTable ? m_pTable->getTableView()->getConnectionCount(m_pTable) : sal_Int32(0);
     }
-    AccessibleRelation SAL_CALL OTableWindowAccess::getRelation( sal_Int32 nIndex )
+    AccessibleRelation SAL_CALL OTableWindowAccess::getRelation( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         if( nIndex < 0 || nIndex >= getRelationCount() )
@@ -197,13 +207,13 @@ namespace dbaui
         }
         return aRet;
     }
-    sal_Bool SAL_CALL OTableWindowAccess::containsRelation( sal_Int16 aRelationType )
+    sal_Bool SAL_CALL OTableWindowAccess::containsRelation( sal_Int16 aRelationType ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         return      AccessibleRelationType::CONTROLLER_FOR == aRelationType
                 &&  m_pTable && m_pTable->getTableView()->ExistsAConn(m_pTable);
     }
-    AccessibleRelation SAL_CALL OTableWindowAccess::getRelationByType( sal_Int16 aRelationType )
+    AccessibleRelation SAL_CALL OTableWindowAccess::getRelationByType( sal_Int16 aRelationType ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         if( AccessibleRelationType::CONTROLLER_FOR == aRelationType && m_pTable)
@@ -213,7 +223,7 @@ namespace dbaui
 
             auto aIter = pView->getTableConnections(m_pTable);
             auto aEnd = rConnectionList.end();
-            std::vector< Reference<XInterface> > aRelations;
+            ::std::vector< Reference<XInterface> > aRelations;
             aRelations.reserve(5); // just guessing
             for (; aIter != aEnd ; ++aIter )
             {
@@ -227,11 +237,11 @@ namespace dbaui
         }
         return AccessibleRelation();
     }
-    OUString SAL_CALL OTableWindowAccess::getTitledBorderText(  )
+    OUString SAL_CALL OTableWindowAccess::getTitledBorderText(  ) throw (RuntimeException, std::exception)
     {
         return getAccessibleName(  );
     }
-    OUString SAL_CALL OTableWindowAccess::getAccessibleName(  )
+    OUString SAL_CALL OTableWindowAccess::getAccessibleName(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex  );
         OUString sAccessibleName;
@@ -239,7 +249,7 @@ namespace dbaui
             sAccessibleName = m_pTable->getTitle();
         return sAccessibleName;
     }
-    Reference< XAccessibleContext > SAL_CALL OTableWindowAccess::getAccessibleContext(  )
+    Reference< XAccessibleContext > SAL_CALL OTableWindowAccess::getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return this;
     }

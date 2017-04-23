@@ -31,12 +31,12 @@
     emboss, relief.
 */
 
-class EDITENG_DLLPUBLIC SvxCharReliefItem : public SfxEnumItem<FontRelief>
+class EDITENG_DLLPUBLIC SvxCharReliefItem : public SfxEnumItem
 {
 public:
     static SfxPoolItem* CreateDefault();
 
-    SvxCharReliefItem( FontRelief eValue /*= FontRelief::NONE*/,
+    SvxCharReliefItem( FontRelief eValue /*= RELIEF_NONE*/,
                        const sal_uInt16 nId );
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -44,19 +44,19 @@ public:
     virtual SvStream&       Store(SvStream & rStrm, sal_uInt16 nIVer) const override;
     virtual sal_uInt16      GetVersion( sal_uInt16 nFileVersion ) const override;
 
-    virtual OUString        GetValueTextByPos( sal_uInt16 nPos ) const override;
+    virtual OUString   GetValueTextByPos( sal_uInt16 nPos ) const override;
     virtual sal_uInt16      GetValueCount() const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper * = nullptr ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    SvxCharReliefItem& operator=( const SvxCharReliefItem& rItem )
+    inline SvxCharReliefItem& operator=( const SvxCharReliefItem& rItem )
     {
         SetValue( rItem.GetValue() );
         return *this;

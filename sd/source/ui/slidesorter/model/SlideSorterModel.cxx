@@ -103,7 +103,8 @@ SlideSorterModel::SlideSorterModel (SlideSorter& rSlideSorter)
     : maMutex(),
       mrSlideSorter(rSlideSorter),
       mxSlides(),
-      meEditMode(EditMode::Page),
+      mePageKind(PK_STANDARD),
+      meEditMode(EM_PAGE),
       maPageDescriptors(0)
 {
 }
@@ -278,7 +279,7 @@ void SlideSorterModel::Resync()
     // Check if document and this model really differ.
     bool bIsUpToDate (true);
     SdDrawDocument* pDocument = GetDocument();
-    if (pDocument!=nullptr && maPageDescriptors.size()==pDocument->GetSdPageCount(PageKind::Standard))
+    if (pDocument!=nullptr && maPageDescriptors.size()==pDocument->GetSdPageCount(mePageKind))
     {
         for (sal_Int32 nIndex=0,nCount=maPageDescriptors.size(); nIndex<nCount; ++nIndex)
         {
@@ -295,6 +296,7 @@ void SlideSorterModel::Resync()
     else
     {
         bIsUpToDate = false;
+        OSL_TRACE("models differ");
     }
 
     if ( ! bIsUpToDate)
@@ -438,7 +440,7 @@ void SlideSorterModel::UpdatePageList()
     {
         switch (meEditMode)
         {
-            case EditMode::MasterPage:
+            case EM_MASTERPAGE:
             {
                 Reference<drawing::XMasterPagesSupplier> xSupplier (
                     xController->getModel(), UNO_QUERY);
@@ -449,7 +451,7 @@ void SlideSorterModel::UpdatePageList()
             }
             break;
 
-            case EditMode::Page:
+            case EM_PAGE:
             {
                 Reference<drawing::XDrawPagesSupplier> xSupplier (
                     xController->getModel(), UNO_QUERY);
@@ -526,9 +528,9 @@ bool SlideSorterModel::NotifyPageEvent (const SdrPage* pSdrPage)
 
     // We are only interested in pages that are currently served by this
     // model.
-    if (pPage->GetPageKind() != PageKind::Standard)
+    if (pPage->GetPageKind() != mePageKind)
         return false;
-    if (pPage->IsMasterPage() != (meEditMode==EditMode::MasterPage))
+    if (pPage->IsMasterPage() != (meEditMode==EM_MASTERPAGE))
         return false;
 
     //NotifyPageEvent is called for add, remove, *and* change position so for
@@ -634,10 +636,10 @@ SdPage* SlideSorterModel::GetPage (const sal_Int32 nSdIndex) const
     SdDrawDocument* pModel = const_cast<SlideSorterModel*>(this)->GetDocument();
     if (pModel != nullptr)
     {
-        if (meEditMode == EditMode::Page)
-            return pModel->GetSdPage ((sal_uInt16)nSdIndex, PageKind::Standard);
+        if (meEditMode == EM_PAGE)
+            return pModel->GetSdPage ((sal_uInt16)nSdIndex, mePageKind);
         else
-            return pModel->GetMasterSdPage ((sal_uInt16)nSdIndex, PageKind::Standard);
+            return pModel->GetMasterSdPage ((sal_uInt16)nSdIndex, mePageKind);
     }
     else
         return nullptr;

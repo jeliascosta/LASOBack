@@ -100,9 +100,8 @@ SwUndoPageDesc::SwUndoPageDesc(const SwPageDesc & _aOld,
                                const SwPageDesc & _aNew,
                                SwDoc * _pDoc)
     : SwUndo( _aOld.GetName() != _aNew.GetName() ?
-              SwUndoId::RENAME_PAGEDESC :
-              SwUndoId::CHANGE_PAGEDESC,
-              _pDoc ),
+              UNDO_RENAME_PAGEDESC :
+              UNDO_CHANGE_PAGEDESC ),
       aOld(_aOld, _pDoc), aNew(_aNew, _pDoc), pDoc(_pDoc), bExchange( false )
 {
     OSL_ENSURE(nullptr != pDoc, "no document?");
@@ -148,20 +147,17 @@ SwUndoPageDesc::SwUndoPageDesc(const SwPageDesc & _aOld,
             SwFrameFormat* pFormat = new SwFrameFormat( *rNewHead.GetHeaderFormat() );
             // The Ctor of this object will remove the duplicate!
             SwFormatHeader aFormatHeader(pFormat);
-            (void)aFormatHeader;
             if (!rNewDesc.IsHeaderShared())
             {
                 pFormat = new SwFrameFormat( *rNewDesc.GetLeft().GetHeader().GetHeaderFormat() );
                 // The Ctor of this object will remove the duplicate!
                 SwFormatHeader aLeftHeader(pFormat);
-                (void)aLeftHeader;
             }
             if (!rNewDesc.IsFirstShared())
             {
                 pFormat = new SwFrameFormat( *rNewDesc.GetFirstMaster().GetHeader().GetHeaderFormat() );
                 // The Ctor of this object will remove the duplicate!
                 SwFormatHeader aFirstHeader(pFormat);
-                (void)aFirstHeader;
             }
         }
         // Same procedure for footers...
@@ -170,20 +166,17 @@ SwUndoPageDesc::SwUndoPageDesc(const SwPageDesc & _aOld,
             SwFrameFormat* pFormat = new SwFrameFormat( *rNewFoot.GetFooterFormat() );
             // The Ctor of this object will remove the duplicate!
             SwFormatFooter aFormatFooter(pFormat);
-            (void)aFormatFooter;
             if (!rNewDesc.IsFooterShared())
             {
                 pFormat = new SwFrameFormat( *rNewDesc.GetLeft().GetFooter().GetFooterFormat() );
                 // The Ctor of this object will remove the duplicate!
                 SwFormatFooter aLeftFooter(pFormat);
-                (void)aLeftFooter;
             }
             if (!rNewDesc.IsFirstShared())
             {
                 pFormat = new SwFrameFormat( *rNewDesc.GetFirstMaster().GetFooter().GetFooterFormat() );
                 // The Ctor of this object will remove the duplicate!
                 SwFormatFooter aFirstFooter(pFormat);
-                (void)aFirstFooter;
             }
         }
 
@@ -372,7 +365,7 @@ SwRewriter SwUndoPageDesc::GetRewriter() const
 
 SwUndoPageDescCreate::SwUndoPageDescCreate(const SwPageDesc * pNew,
                                            SwDoc * _pDoc)
-    : SwUndo(SwUndoId::CREATE_PAGEDESC, _pDoc), pDesc(pNew), aNew(*pNew, _pDoc),
+    : SwUndo(UNDO_CREATE_PAGEDESC), pDesc(pNew), aNew(*pNew, _pDoc),
       pDoc(_pDoc)
 {
     OSL_ENSURE(nullptr != pDoc, "no document?");
@@ -424,7 +417,7 @@ SwRewriter SwUndoPageDescCreate::GetRewriter() const
 
 SwUndoPageDescDelete::SwUndoPageDescDelete(const SwPageDesc & _aOld,
                                            SwDoc * _pDoc)
-    : SwUndo(SwUndoId::DELETE_PAGEDESC, _pDoc), aOld(_aOld, _pDoc), pDoc(_pDoc)
+    : SwUndo(UNDO_DELETE_PAGEDESC), aOld(_aOld, _pDoc), pDoc(_pDoc)
 {
     OSL_ENSURE(nullptr != pDoc, "no document?");
 }

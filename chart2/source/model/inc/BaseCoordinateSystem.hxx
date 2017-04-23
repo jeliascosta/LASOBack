@@ -58,16 +58,18 @@ public:
         const css::uno::Reference< css::uno::XComponentContext > & xContext,
         sal_Int32 nDimensionCount = 2 );
     explicit BaseCoordinateSystem( const BaseCoordinateSystem & rSource );
-    virtual ~BaseCoordinateSystem() override;
+    virtual ~BaseCoordinateSystem();
 
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw(css::beans::UnknownPropertyException) override;
 
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     // ____ XPropertySet ____
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -76,37 +78,55 @@ public:
 
 protected:
     // ____ XCoordinateSystem ____
-    virtual ::sal_Int32 SAL_CALL getDimension() override;
+    virtual ::sal_Int32 SAL_CALL getDimension()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setAxisByDimension(
         ::sal_Int32 nDimension,
         const css::uno::Reference< css::chart2::XAxis >& xAxis,
-        ::sal_Int32 nIndex ) override;
+        ::sal_Int32 nIndex )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::chart2::XAxis > SAL_CALL getAxisByDimension(
-        ::sal_Int32 nDimension, ::sal_Int32 nIndex ) override;
-    virtual ::sal_Int32 SAL_CALL getMaximumAxisIndexByDimension( ::sal_Int32 nDimension ) override;
+        ::sal_Int32 nDimension, ::sal_Int32 nIndex )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getMaximumAxisIndexByDimension( ::sal_Int32 nDimension )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XChartTypeContainer ____
     virtual void SAL_CALL addChartType(
-        const css::uno::Reference< css::chart2::XChartType >& aChartType ) override;
+        const css::uno::Reference< css::chart2::XChartType >& aChartType )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeChartType(
-        const css::uno::Reference< css::chart2::XChartType >& aChartType ) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > > SAL_CALL getChartTypes() override;
+        const css::uno::Reference< css::chart2::XChartType >& aChartType )
+        throw (css::container::NoSuchElementException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > > SAL_CALL getChartTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setChartTypes(
-        const css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > >& aChartTypes ) override;
+        const css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > >& aChartTypes )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyBroadcaster ____
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent ) override;
+        const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source ) override;
+        const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
@@ -121,10 +141,10 @@ protected:
 
 private:
     sal_Int32                                             m_nDimensionCount;
-    typedef std::vector< std::vector< css::uno::Reference< css::chart2::XAxis > > > tAxisVecVecType;
+    typedef ::std::vector< ::std::vector< css::uno::Reference< css::chart2::XAxis > > > tAxisVecVecType;
     tAxisVecVecType m_aAllAxis; //outer sequence is the dimension; inner sequence is the axis index that indicates main or secondary axis
     css::uno::Sequence< css::uno::Any >                  m_aOrigin;
-    std::vector< css::uno::Reference< css::chart2::XChartType > >          m_aChartTypes;
+    ::std::vector< css::uno::Reference< css::chart2::XChartType > >          m_aChartTypes;
 };
 
 } //  namespace chart

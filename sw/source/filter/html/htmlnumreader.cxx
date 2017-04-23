@@ -43,12 +43,12 @@
 using namespace css;
 
 // <UL TYPE=...>
-static HTMLOptionEnum<sal_Unicode> aHTMLULTypeTable[] =
+static HTMLOptionEnum aHTMLULTypeTable[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_ULTYPE_disc,    HTML_BULLETCHAR_DISC   },
-    { OOO_STRING_SVTOOLS_HTML_ULTYPE_circle,  HTML_BULLETCHAR_CIRCLE },
-    { OOO_STRING_SVTOOLS_HTML_ULTYPE_square,  HTML_BULLETCHAR_SQUARE },
-    { nullptr,                                0                      }
+    { OOO_STRING_SVTOOLS_HTML_ULTYPE_disc,      HTML_BULLETCHAR_DISC   },
+    { OOO_STRING_SVTOOLS_HTML_ULTYPE_circle,    HTML_BULLETCHAR_CIRCLE },
+    { OOO_STRING_SVTOOLS_HTML_ULTYPE_square,    HTML_BULLETCHAR_SQUARE },
+    { nullptr,                                        0                      }
 };
 
 
@@ -56,30 +56,31 @@ void SwHTMLParser::NewNumBulList( int nToken )
 {
     SwHTMLNumRuleInfo& rInfo = GetNumInfo();
 
-    // Create a new paragraph
+    // Erstmal einen neuen Absatz aufmachen
     bool bSpace = (rInfo.GetDepth() + m_nDefListDeep) == 0;
     if( m_pPam->GetPoint()->nContent.GetIndex() )
         AppendTextNode( bSpace ? AM_SPACE : AM_NOSPACE, false );
     else if( bSpace )
         AddParSpace();
 
-    // Increment the numbering depth
+    // Die Numerierung-Ebene erhoehen
     rInfo.IncDepth();
     sal_uInt8 nLevel = (sal_uInt8)( (rInfo.GetDepth() <= MAXLEVEL ? rInfo.GetDepth()
                                                         : MAXLEVEL) - 1 );
 
-    // Create rules if needed
+    // ggf. ein Regelwerk anlegen
     if( !rInfo.GetNumRule() )
     {
-        sal_uInt16 nPos = m_xDoc->MakeNumRule( m_xDoc->GetUniqueNumRuleName() );
-        rInfo.SetNumRule( m_xDoc->GetNumRuleTable()[nPos] );
+        sal_uInt16 nPos = m_pDoc->MakeNumRule( m_pDoc->GetUniqueNumRuleName() );
+        rInfo.SetNumRule( m_pDoc->GetNumRuleTable()[nPos] );
     }
 
-    // Change the format for this level if that hasn't happened yet for this level
+    // das Format anpassen, falls es fuer den Level noch nicht
+    // geschehen ist!
     bool bNewNumFormat = rInfo.GetNumRule()->GetNumFormat( nLevel ) == nullptr;
     bool bChangeNumFormat = false;
 
-    // Create the default numbering format
+    // das default Numerierungsformat erstellen
     SwNumFormat aNumFormat( rInfo.GetNumRule()->Get(nLevel) );
     rInfo.SetNodeStartValue( nLevel );
     if( bNewNumFormat )
@@ -92,15 +93,17 @@ void SwHTMLParser::NewNumBulList( int nToken )
         }
         else
         {
-            // We'll set a default style because the UI does the same. This meant a 9pt font, which
-            // was not the case in Netscape. That didn't bother anyone so far
+            // Wir setzen hier eine Zeichenvorlage, weil die UI das auch
+            // so macht. Dadurch wurd immer auch eine 9pt-Schrift
+            // eingestellt, was in Netscape nicht der Fall ist. Bisher hat
+            // das noch niemanden gestoert.
             // #i63395# - Only apply user defined default bullet font
             if ( numfunc::IsDefBulletFontUserDefined() )
             {
                 aNumFormat.SetBulletFont( &numfunc::GetDefBulletFont() );
             }
             aNumFormat.SetNumberingType(SVX_NUM_CHAR_SPECIAL);
-            aNumFormat.SetBulletChar( cBulletChar );
+            aNumFormat.SetBulletChar( cBulletChar );       // das Bulletzeichen !!
             nChrFormatPoolId = RES_POOLCHR_BUL_LEVEL;
         }
 
@@ -121,11 +124,12 @@ void SwHTMLParser::NewNumBulList( int nToken )
     }
     else if( 1 != aNumFormat.GetStart() )
     {
-        // If the layer has already been used, the start value may need to be set hard to the paragraph.
+        // Wenn die Ebene schon mal benutzt wurde, muss der Start-Wert
+        // ggf. hart am Absatz gesetzt werden.
         rInfo.SetNodeStartValue( nLevel, 1 );
     }
 
-    // and set that in the options
+    // und es ggf. durch die Optionen veraendern
     OUString aId, aStyle, aClass, aLang, aDir;
     OUString aBulletSrc;
     sal_Int16 eVertOri = text::VertOrientation::NONE;
@@ -157,7 +161,7 @@ void SwHTMLParser::NewNumBulList( int nToken )
                     break;
 
                 case HTML_UNORDERLIST_ON:
-                    aNumFormat.SetBulletChar( rOption.GetEnum(
+                    aNumFormat.SetBulletChar( (sal_Unicode)rOption.GetEnum(
                                     aHTMLULTypeTable,aNumFormat.GetBulletChar() ) );
                     bChangeNumFormat = true;
                     break;
@@ -205,80 +209,84 @@ void SwHTMLParser::NewNumBulList( int nToken )
             nHeight = (sal_uInt16)rOption.GetNumber();
             break;
         case HTML_O_ALIGN:
-            eVertOri = rOption.GetEnum( aHTMLImgVAlignTable, eVertOri );
+            eVertOri =
+                (sal_Int16)rOption.GetEnum( aHTMLImgVAlignTable,
+                                                static_cast< sal_uInt16 >(eVertOri) );
             break;
         }
     }
 
     if( !aBulletSrc.isEmpty() )
     {
-        // A bullet list with graphics
+        // Eine Bullet-Liste mit Grafiken
         aNumFormat.SetNumberingType(SVX_NUM_BITMAP);
 
-        // Create the graphic as a brush
+        // Die Grafik als Brush anlegen
         SvxBrushItem aBrushItem( RES_BACKGROUND );
         aBrushItem.SetGraphicLink( aBulletSrc );
         aBrushItem.SetGraphicPos( GPOS_AREA );
 
-        // Only set size if given a width and a height
+        // Die Groesse nur beachten, wenn Breite und Hoehe vorhanden sind
         Size aTwipSz( nWidth, nHeight), *pTwipSz=nullptr;
         if( nWidth!=USHRT_MAX && nHeight!=USHRT_MAX )
         {
             aTwipSz =
                 Application::GetDefaultDevice()->PixelToLogic( aTwipSz,
-                                                    MapMode(MapUnit::MapTwip) );
+                                                    MapMode(MAP_TWIP) );
             pTwipSz = &aTwipSz;
         }
 
-        // Only set orientation if given one
+        // Die Ausrichtung auch nur beachten, wenn eine Ausrichtung
+        // angegeben wurde
         aNumFormat.SetGraphicBrush( &aBrushItem, pTwipSz,
                             text::VertOrientation::NONE!=eVertOri ? &eVertOri : nullptr);
 
-        // Remember the graphic to not put it into the paragraph
+        // Und noch die Grafik merken, um sie in den Absaetzen nicht
+        // einzufuegen
         m_aBulletGrfs[nLevel] = aBulletSrc;
         bChangeNumFormat = true;
     }
     else
         m_aBulletGrfs[nLevel].clear();
 
-    // don't number the current paragraph (for now)
+    // den aktuellen Absatz erst einmal nicht numerieren
     {
         sal_uInt8 nLvl = nLevel;
         SetNodeNum( nLvl );
     }
 
-    // create a new context
+    // einen neuen Kontext anlegen
     HTMLAttrContext *pCntxt = new HTMLAttrContext( static_cast< sal_uInt16 >(nToken) );
 
-    // Parse styles
+    // Styles parsen
     if( HasStyleOptions( aStyle, aId, aClass, &aLang, &aDir ) )
     {
-        SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+        SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
         SvxCSS1PropertyInfo aPropInfo;
 
         if( ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo, &aLang, &aDir ) )
         {
             if( bNewNumFormat )
             {
-                if( aPropInfo.m_bLeftMargin )
+                if( aPropInfo.bLeftMargin )
                 {
-                    // Default indent has already been added
+                    // Der Der Default-Einzug wurde schon eingefuegt.
                     sal_uInt16 nAbsLSpace =
                         aNumFormat.GetAbsLSpace() - HTML_NUMBUL_MARGINLEFT;
-                    if( aPropInfo.m_nLeftMargin < 0 &&
-                        nAbsLSpace < -aPropInfo.m_nLeftMargin )
+                    if( aPropInfo.nLeftMargin < 0 &&
+                        nAbsLSpace < -aPropInfo.nLeftMargin )
                         nAbsLSpace = 0U;
-                    else if( aPropInfo.m_nLeftMargin > USHRT_MAX ||
+                    else if( aPropInfo.nLeftMargin > USHRT_MAX ||
                              (long)nAbsLSpace +
-                                            aPropInfo.m_nLeftMargin > USHRT_MAX )
+                                            aPropInfo.nLeftMargin > USHRT_MAX )
                         nAbsLSpace = USHRT_MAX;
                     else
-                        nAbsLSpace = nAbsLSpace + (sal_uInt16)aPropInfo.m_nLeftMargin;
+                        nAbsLSpace = nAbsLSpace + (sal_uInt16)aPropInfo.nLeftMargin;
 
                     aNumFormat.SetAbsLSpace( nAbsLSpace );
                     bChangeNumFormat = true;
                 }
-                if( aPropInfo.m_bTextIndent )
+                if( aPropInfo.bTextIndent )
                 {
                     short nTextIndent =
                         static_cast<const SvxLRSpaceItem &>(aItemSet.Get( RES_LR_SPACE ))
@@ -286,19 +294,9 @@ void SwHTMLParser::NewNumBulList( int nToken )
                     aNumFormat.SetFirstLineOffset( nTextIndent );
                     bChangeNumFormat = true;
                 }
-                if( aPropInfo.m_bNumbering )
-                {
-                    aNumFormat.SetNumberingType(aPropInfo.m_nNumberingType);
-                    bChangeNumFormat = true;
-                }
-                if( aPropInfo.m_bBullet )
-                {
-                    aNumFormat.SetBulletChar( aPropInfo.m_cBulletChar );
-                    bChangeNumFormat = true;
-                }
             }
-            aPropInfo.m_bLeftMargin = aPropInfo.m_bTextIndent = false;
-            if( !aPropInfo.m_bRightMargin )
+            aPropInfo.bLeftMargin = aPropInfo.bTextIndent = false;
+            if( !aPropInfo.bRightMargin )
                 aItemSet.ClearItem( RES_LR_SPACE );
 
             // #i89812# - Perform change to list style before calling <DoPositioning(..)>,
@@ -307,7 +305,7 @@ void SwHTMLParser::NewNumBulList( int nToken )
             if( bChangeNumFormat )
             {
                 rInfo.GetNumRule()->Set( nLevel, aNumFormat );
-                m_xDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
+                m_pDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
                 bChangeNumFormat = false;
             }
 
@@ -320,12 +318,12 @@ void SwHTMLParser::NewNumBulList( int nToken )
     if( bChangeNumFormat )
     {
         rInfo.GetNumRule()->Set( nLevel, aNumFormat );
-        m_xDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
+        m_pDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
     }
 
     PushContext( pCntxt );
 
-    // set attributes to the current template
+    // die Attribute der neuen Vorlage setzen
     SetTextCollAttrs( pCntxt );
 }
 
@@ -333,9 +331,10 @@ void SwHTMLParser::EndNumBulList( int nToken )
 {
     SwHTMLNumRuleInfo& rInfo = GetNumInfo();
 
-    // A new paragraph needs to be created, when
-    // - the current one isn't empty (it contains text or paragraph-bound objects)
-    // - the current one is numbered
+    // Ein neuer Absatz muss aufgemacht werden, wenn
+    // - der aktuelle nicht leer ist, also Text oder absatzgebundene Objekte
+    //   enthaelt.
+    // - der aktuelle Absatz numeriert ist.
     bool bAppend = m_pPam->GetPoint()->nContent.GetIndex() > 0;
     if( !bAppend )
     {
@@ -352,16 +351,18 @@ void SwHTMLParser::EndNumBulList( int nToken )
     else if( bSpace )
         AddParSpace();
 
-    // get current context from stack
+    // den aktuellen Kontext vom Stack holen
     HTMLAttrContext *pCntxt = nToken!=0 ? PopContext( static_cast< sal_uInt16 >(nToken & ~1) ) : nullptr;
 
-    // Don't end a list because of a token, if the context wasn't created or mustn't be ended
+    // Keine Liste aufgrund eines Tokens beenden, wenn der Kontext
+    // nie angelgt wurde oder nicht beendet werden darf.
     if( rInfo.GetDepth()>0 && (!nToken || pCntxt) )
     {
         rInfo.DecDepth();
-        if( !rInfo.GetDepth() )     // was that the last level?
+        if( !rInfo.GetDepth() )     // wars der letze Level ?
         {
-            // The formats not yet modified are now modified, to ease editing
+            // Die noch nicht angepassten Formate werden jetzt noch
+            // angepasst, damit es sich besser Editieren laesst.
             const SwNumFormat *pRefNumFormat = nullptr;
             bool bChanged = false;
             for( sal_uInt16 i=0; i<MAXLEVEL; i++ )
@@ -375,7 +376,7 @@ void SwHTMLParser::EndNumBulList( int nToken )
                 {
                     SwNumFormat aNumFormat( rInfo.GetNumRule()->Get(i) );
                     aNumFormat.SetNumberingType(pRefNumFormat->GetNumberingType() != SVX_NUM_BITMAP
-                                                ? pRefNumFormat->GetNumberingType() : SVX_NUM_CHAR_SPECIAL);
+                                        ? pRefNumFormat->GetNumberingType() : style::NumberingType::CHAR_SPECIAL);
                     if( SVX_NUM_CHAR_SPECIAL == aNumFormat.GetNumberingType() )
                     {
                         // #i63395# - Only apply user defined default bullet font
@@ -393,10 +394,11 @@ void SwHTMLParser::EndNumBulList( int nToken )
                 }
             }
             if( bChanged )
-                m_xDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
+                m_pDoc->ChgNumRuleFormats( *rInfo.GetNumRule() );
 
-            // On the last append, the NumRule item and NodeNum object were copied.
-            // Now we need to delete them. ResetAttr deletes the NodeNum object aswell
+            // Beim letzen Append wurde das NumRule-Item und das
+            // NodeNum-Objekt mit kopiert. Beides muessen wir noch
+            // loeschen. Das ResetAttr loescht das NodeNum-Objekt mit!
             m_pPam->GetNode().GetTextNode()->ResetAttr( RES_PARATR_NUMRULE );
 
             rInfo.Clear();
@@ -408,7 +410,7 @@ void SwHTMLParser::EndNumBulList( int nToken )
         }
     }
 
-    // end attributes
+    // und noch Attribute beenden
     bool bSetAttrs = false;
     if( pCntxt )
     {
@@ -421,7 +423,7 @@ void SwHTMLParser::EndNumBulList( int nToken )
         SetTextCollAttrs();
 
     if( bSetAttrs )
-        SetAttr();  // Set paragraph attributes asap because of Javascript
+        SetAttr();  // Absatz-Atts wegen JavaScript moeglichst schnell setzen
 
 }
 
@@ -462,10 +464,10 @@ void SwHTMLParser::NewNumBulListItem( int nToken )
         }
     }
 
-    // create a new paragraph
+    // einen neuen Absatz aufmachen
     if( m_pPam->GetPoint()->nContent.GetIndex() )
         AppendTextNode( AM_NOSPACE, false );
-    m_bNoParSpace = false;    // no space in <LI>!
+    m_bNoParSpace = false;    // In <LI> wird kein Abstand eingefuegt!
 
     const bool bCountedInList = nToken != HTML_LISTHEADER_ON;
 
@@ -478,7 +480,7 @@ void SwHTMLParser::NewNumBulListItem( int nToken )
     }
     else
     {
-        aNumRuleName = m_xDoc->GetUniqueNumRuleName();
+        aNumRuleName = m_pDoc->GetUniqueNumRuleName();
         SwNumRule aNumRule( aNumRuleName,
                             SvxNumberFormat::LABEL_WIDTH_AND_POSITION );
         SwNumFormat aNumFormat( aNumRule.Get( 0 ) );
@@ -493,12 +495,14 @@ void SwHTMLParser::NewNumBulListItem( int nToken )
         aNumFormat.SetFirstLineOffset( HTML_NUMBUL_INDENT );
         aNumRule.Set( 0, aNumFormat );
 
-        m_xDoc->MakeNumRule( aNumRuleName, &aNumRule );
+        m_pDoc->MakeNumRule( aNumRuleName, &aNumRule );
 
         OSL_ENSURE( !m_nOpenParaToken,
                 "Jetzt geht ein offenes Absatz-Element verloren" );
-        // We'll act like we're in a paragraph. On the next paragraph, at least numbering is gone,
-        // that's gonna be taken over by the next AppendTextNode
+        // Wir tun so, als ob wir in einem Absatz sind. Dann wird
+        // beim naechsten Absatz wenigstens die Numerierung
+        // weggeschmissen, die nach dem naechsten AppendTextNode uebernommen
+        // wird.
         m_nOpenParaToken = static_cast< sal_uInt16 >(nToken);
     }
 
@@ -527,7 +531,7 @@ void SwHTMLParser::NewNumBulListItem( int nToken )
     // Styles parsen
     if( HasStyleOptions( aStyle, aId, aClass, &aLang, &aDir ) )
     {
-        SfxItemSet aItemSet( m_xDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
+        SfxItemSet aItemSet( m_pDoc->GetAttrPool(), m_pCSS1Parser->GetWhichMap() );
         SvxCSS1PropertyInfo aPropInfo;
 
         if( ParseStyleOptions( aStyle, aId, aClass, aItemSet, aPropInfo, &aLang, &aDir ) )
@@ -539,21 +543,21 @@ void SwHTMLParser::NewNumBulListItem( int nToken )
 
     PushContext( pCntxt );
 
-    // set the new template
+    // die neue Vorlage setzen
     SetTextCollAttrs( pCntxt );
 
-    // Refresh scrollbar
+    // Laufbalkenanzeige aktualisieren
     ShowStatline();
 }
 
 void SwHTMLParser::EndNumBulListItem( int nToken, bool bSetColl,
                                       bool /*bLastPara*/ )
 {
-    // Create a new paragraph
+    // einen neuen Absatz aufmachen
     if( !nToken && m_pPam->GetPoint()->nContent.GetIndex() )
         AppendTextNode( AM_NOSPACE );
 
-    // Get context to that token and pop it from stack
+    // Kontext zu dem Token suchen und vom Stack holen
     HTMLAttrContext *pCntxt = nullptr;
     auto nPos = m_aContexts.size();
     nToken &= ~1;
@@ -574,21 +578,21 @@ void SwHTMLParser::EndNumBulListItem( int nToken, bool bSetColl,
         case HTML_UNORDERLIST_ON:
         case HTML_MENULIST_ON:
         case HTML_DIRLIST_ON:
-            // Don't care about LI/LH outside the current list
+            // keine LI/LH ausserhalb der aktuellen Liste betrachten
             nPos = m_nContextStMin;
             break;
         }
     }
 
-    // end attributes
+    // und noch Attribute beenden
     if( pCntxt )
     {
         EndContext( pCntxt );
-        SetAttr();  // set paragraph attributes asap because of Javascript
+        SetAttr();  // Absatz-Atts wegen JavaScript moeglichst schnell setzen
         delete pCntxt;
     }
 
-    // set current template
+    // und die bisherige Vorlage setzen
     if( bSetColl )
         SetTextCollAttrs();
 }
@@ -605,7 +609,8 @@ void SwHTMLParser::SetNodeNum( sal_uInt8 nLevel )
     pTextNode->SetAttrListLevel( nLevel );
     pTextNode->SetCountedInList( false );
 
-    // Invalidate NumRule, it may have been set valid because of an EndAction
+    // NumRule invalidieren, weil sie durch ein EndAction bereits
+    // auf valid geschaltet worden sein kann.
     GetNumInfo().GetNumRule()->SetInvalidRule( false );
 }
 

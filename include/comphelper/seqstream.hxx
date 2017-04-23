@@ -46,19 +46,27 @@ public:
     SequenceInputStream(css::uno::Sequence<sal_Int8> const & rData);
 
 // css::io::XInputStream
-    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence<sal_Int8>& aData, sal_Int32 nBytesToRead ) override;
+    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence<sal_Int8>& aData, sal_Int32 nBytesToRead )
+        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException,
+              css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence<sal_Int8>& aData, sal_Int32 nMaxBytesToRead ) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence<sal_Int8>& aData, sal_Int32 nMaxBytesToRead )
+        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException,
+              css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
+        throw(css::io::NotConnectedException, css::io::BufferSizeExceededException,
+              css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL available(  ) override;
+    virtual sal_Int32 SAL_CALL available(  )
+        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL closeInput(  ) override;
+    virtual void SAL_CALL closeInput(  )
+        throw(css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL seek( sal_Int64 location ) override;
-    virtual sal_Int64 SAL_CALL getPosition(  ) override;
-    virtual sal_Int64 SAL_CALL getLength(  ) override;
+    virtual void SAL_CALL seek( sal_Int64 location ) throw (css::lang::IllegalArgumentException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getPosition(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getLength(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
 private:
     inline sal_Int32 avail();
@@ -71,8 +79,6 @@ class SAL_DLLPUBLIC_TEMPLATE OSequenceOutputStream_Base
 
 class COMPHELPER_DLLPUBLIC OSequenceOutputStream : public OSequenceOutputStream_Base
 {
-private:
-    void finalizeOutput();
 protected:
     css::uno::Sequence< sal_Int8 >&                 m_rSequence;
     double                                          m_nResizeFactor;
@@ -87,7 +93,7 @@ protected:
     ::osl::Mutex                                    m_aMutex;
 
 protected:
-    virtual ~OSequenceOutputStream() override { if (m_bConnected) finalizeOutput(); }
+    virtual ~OSequenceOutputStream() { if (m_bConnected) closeOutput(); }
 
 public:
     /** constructs the object. Everything written into the stream through the XOutputStream methods will be forwarded
@@ -99,7 +105,7 @@ public:
         @param      _nResizeFactor      the factor which is used for resizing the sequence when necessary. In every
                                         resize step, the new sequence size will be calculated by multiplying the current
                                         size with this factor, rounded off to the next multiple of 4.
-        @param      _nMinimumResize     the minimal number of bytes which is additionally allocated on resizing
+        @param      _nMinimumResize     the minmal number of bytes which is additionally allocated on resizing
         @see        closeOutput
     */
     OSequenceOutputStream(
@@ -109,14 +115,14 @@ public:
         );
 
     /// same as XOutputStream::writeBytes (as expected :)
-    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) override;
+    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
     /// this is a dummy in this implementation, no buffering is used
-    virtual void SAL_CALL flush(  ) override;
+    virtual void SAL_CALL flush(  ) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
     /** closes the output stream. In the case of this class, this means that the sequence used for writing is
         resized to the really used size and not used any further, every subsequent call to one of the XOutputStream
         methods will throw a <code>NotConnectedException</code>.
     */
-    virtual void SAL_CALL closeOutput(  ) override;
+    virtual void SAL_CALL closeOutput(  ) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 };
 
 } // namespace comphelper

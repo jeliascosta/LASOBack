@@ -9,7 +9,14 @@
 
 $(eval $(call gb_CppunitTest_CppunitTest,writerperfect_calc))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,writerperfect_calc))
+$(eval $(call gb_CppunitTest_use_externals,writerperfect_calc,\
+	boost_headers \
+))
+
+$(eval $(call gb_CppunitTest_use_api,writerperfect_calc,\
+	offapi \
+	udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_libraries,writerperfect_calc,\
 	comphelper \
@@ -20,8 +27,11 @@ $(eval $(call gb_CppunitTest_use_libraries,writerperfect_calc,\
 	tl \
 	ucbhelper \
 	unotest \
-	wpftqahelper \
 	$(gb_UWINAPI) \
+))
+
+$(eval $(call gb_CppunitTest_use_static_libraries,writerperfect_calc,\
+	writerperfect_importtestbase \
 ))
 
 $(eval $(call gb_CppunitTest_use_ure,writerperfect_calc))

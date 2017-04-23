@@ -43,7 +43,7 @@ public:
     ~RangeSelectionHelper();
 
     bool hasRangeSelection();
-    css::uno::Reference< css::sheet::XRangeSelection > const & getRangeSelection();
+    css::uno::Reference< css::sheet::XRangeSelection > getRangeSelection();
     void raiseRangeSelectionDocument();
     bool chooseRange(
         const OUString & aCurrentRange,

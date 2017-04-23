@@ -33,7 +33,6 @@
 #include <svtools/valueset.hxx>
 #include <svtools/transfer.hxx>
 #include <sfx2/shell.hxx>
-#include <xmloff/autolayout.hxx>
 
 #include <com/sun/star/ui/XSidebar.hpp>
 
@@ -73,7 +72,7 @@ public:
         vcl::Window* pParent,
         ViewShellBase& rViewShellBase,
         const css::uno::Reference<css::ui::XSidebar>& rxSidebar);
-    virtual ~LayoutMenu() override;
+    virtual ~LayoutMenu();
     virtual void dispose() override;
 
     void Dispose();
@@ -87,7 +86,7 @@ public:
     virtual css::ui::LayoutSize GetHeightForWidth (const sal_Int32 nWidth) override;
 
     // From vcl::Window
-    virtual void Paint (vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
+    virtual void Paint (vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void Resize() override;
 
     /** Show a context menu when the right mouse button is pressed.
@@ -188,11 +187,11 @@ private:
 
     /** When clicked then set the current page of the view in the center pane.
     */
-    DECL_LINK(ClickHandler, ValueSet*, void);
-    DECL_LINK(StateChangeHandler, const OUString&, void);
-    DECL_LINK(EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, void);
-    DECL_LINK(WindowEventHandler, VclWindowEvent&, void);
-    DECL_LINK(OnMenuItemSelected, Menu*, bool);
+    DECL_LINK_TYPED(ClickHandler, ValueSet*, void);
+    DECL_LINK_TYPED(StateChangeHandler, const OUString&, void);
+    DECL_LINK_TYPED(EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, void);
+    DECL_LINK_TYPED(WindowEventHandler, VclWindowEvent&, void);
+    DECL_LINK_TYPED(OnMenuItemSelected, Menu*, bool);
 };
 
 } } // end of namespace ::sd::toolpanel

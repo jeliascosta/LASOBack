@@ -37,10 +37,28 @@ private:
 
 public:
                         ExtTextEngine();
-                        virtual ~ExtTextEngine() override;
+                        virtual ~ExtTextEngine();
 
     TextSelection       MatchGroup( const TextPaM& rCursor ) const;
-    bool                Search( TextSelection& rSel, const i18nutil::SearchOptions& rSearchOptions, bool bForward = true );
+    bool                Search( TextSelection& rSel, const css::util::SearchOptions& rSearchOptions, bool bForward = true );
+};
+
+class VCL_DLLPUBLIC ExtTextView : public TextView
+{
+protected:
+    bool            ImpIndentBlock( bool bRight );
+
+public:
+                    ExtTextView( ExtTextEngine* pEng, vcl::Window* pWindow );
+                    virtual ~ExtTextView();
+
+    bool            MatchGroup();
+
+    bool            Search( const css::util::SearchOptions& rSearchOptions, bool bForward );
+    sal_uInt16      Replace( const css::util::SearchOptions& rSearchOptions, bool bAll, bool bForward );
+
+    bool            IndentBlock();
+    bool            UnindentBlock();
 };
 
 #endif // INCLUDED_VCL_XTEXTEDT_HXX

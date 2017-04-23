@@ -46,6 +46,7 @@ class DLLEXPORT HIODev
         virtual ~HIODev();
 
         virtual bool open() = 0;
+        virtual void close() = 0;
         virtual void flush() = 0;
         virtual int  state() const = 0;
 /* gzip routine wrapper */
@@ -72,7 +73,7 @@ struct gz_stream;
  * This controls the HStream given by constructor
  * @short Stream IO device
  */
-class HStreamIODev final: public HIODev
+class HStreamIODev : public HIODev
 {
     private:
 /* zlib으로 압축을 풀기 위한 자료 구조 */
@@ -80,11 +81,15 @@ class HStreamIODev final: public HIODev
         gz_stream *_gzfp;
     public:
         explicit HStreamIODev(HStream* stream);
-        virtual ~HStreamIODev() override;
+        virtual ~HStreamIODev();
 /**
  * Check whether the stream is available
  */
         virtual bool open() override;
+/**
+ * Free stream object
+ */
+        virtual void close() override;
 /**
  * If the stream is gzipped, flush the stream.
  */
@@ -122,7 +127,7 @@ class HStreamIODev final: public HIODev
  * Move current pointer of stream as amount of size
  */
         virtual size_t skipBlock( size_t size ) override;
-    private:
+    protected:
 /**
  * Initialize this object
  */
@@ -134,15 +139,16 @@ class HStreamIODev final: public HIODev
  * The HMemIODev class controls the Input/Output device.
  * @short Memory IO device
  */
-class HMemIODev final: public HIODev
+class HMemIODev : public HIODev
 {
     uchar *ptr;
     size_t pos, length;
     public:
         HMemIODev(char *s, size_t len);
-        virtual ~HMemIODev() override;
+        virtual ~HMemIODev();
 
         virtual bool open() override;
+        virtual void close() override;
         virtual void flush() override;
         virtual int  state() const override;
 /* gzip routine wrapper */
@@ -157,7 +163,7 @@ class HMemIODev final: public HIODev
         virtual bool read4b(int &out) override;
         virtual size_t readBlock( void *ptr, size_t size ) override;
         virtual size_t skipBlock( size_t size ) override;
-    private:
+    protected:
         virtual void init() override;
 };
 #endif // INCLUDED_HWPFILTER_SOURCE_HIODEV_H

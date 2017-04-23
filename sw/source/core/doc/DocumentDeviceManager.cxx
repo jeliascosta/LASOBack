@@ -78,7 +78,7 @@ void DocumentDeviceManager::setPrinter(/*[in]*/ SfxPrinter *pP,/*[in]*/ bool bDe
         if ( mpPrt )
         {
             MapMode aMapMode( mpPrt->GetMapMode() );
-            aMapMode.SetMapUnit( MapUnit::MapTwip );
+            aMapMode.SetMapUnit( MAP_TWIP );
             mpPrt->SetMapMode( aMapMode );
         }
 
@@ -151,9 +151,9 @@ void DocumentDeviceManager::setReferenceDeviceType(/*[in]*/ bool bNewVirtual, /*
         {
             VirtualDevice* pMyVirDev = getVirtualDevice( true );
             if ( !bNewHiRes )
-                pMyVirDev->SetReferenceDevice( VirtualDevice::RefDevMode::Dpi600 );
+                pMyVirDev->SetReferenceDevice( VirtualDevice::REFDEV_MODE06 );
             else
-                pMyVirDev->SetReferenceDevice( VirtualDevice::RefDevMode::MSO1 );
+                pMyVirDev->SetReferenceDevice( VirtualDevice::REFDEV_MODE_MSO1 );
 
             if( m_rDoc.getIDocumentDrawModelAccess().GetDrawModel() )
                 m_rDoc.getIDocumentDrawModelAccess().GetDrawModel()->SetRefDevice( pMyVirDev );
@@ -265,14 +265,14 @@ VirtualDevice& DocumentDeviceManager::CreateVirtualDevice_() const
     VclPtr<VirtualDevice> pNewVir = VclPtr<VirtualDevice>::Create(DeviceFormat::BITMASK);
 #endif
 
-    pNewVir->SetReferenceDevice( VirtualDevice::RefDevMode::MSO1 );
+    pNewVir->SetReferenceDevice( VirtualDevice::REFDEV_MODE_MSO1 );
 
     // #i60945# External leading compatibility for unix systems.
     if ( m_rDoc.GetDocumentSettingManager().get(DocumentSettingId::UNIX_FORCE_ZERO_EXT_LEADING ) )
         pNewVir->Compat_ZeroExtleadBug();
 
     MapMode aMapMode( pNewVir->GetMapMode() );
-    aMapMode.SetMapUnit( MapUnit::MapTwip );
+    aMapMode.SetMapUnit( MAP_TWIP );
     pNewVir->SetMapMode( aMapMode );
 
     const_cast<DocumentDeviceManager*>(this)->setVirtualDevice( pNewVir );
@@ -284,7 +284,7 @@ SfxPrinter& DocumentDeviceManager::CreatePrinter_() const
     OSL_ENSURE( ! mpPrt, "Do not call CreatePrinter_(), call getPrinter() instead" );
 
 #if OSL_DEBUG_LEVEL > 1
-    SAL_INFO("sw", "Printer will be created!" );
+    OSL_TRACE( "Printer will be created!" );
 #endif
 
     // We create a default SfxPrinter.

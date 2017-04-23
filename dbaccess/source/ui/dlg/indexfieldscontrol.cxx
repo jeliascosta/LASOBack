@@ -113,7 +113,7 @@ namespace dbaui
         return true;
     }
 
-    void IndexFieldsControl::PaintCell( OutputDevice& _rDev, const tools::Rectangle& _rRect, sal_uInt16 _nColumnId ) const
+    void IndexFieldsControl::PaintCell( OutputDevice& _rDev, const Rectangle& _rRect, sal_uInt16 _nColumnId ) const
     {
         Point aPos(_rRect.TopLeft());
         aPos.X() += 1;
@@ -284,6 +284,11 @@ namespace dbaui
         return true;
     }
 
+    bool IndexFieldsControl::IsModified() const
+    {
+        return EditBrowseBox::IsModified();
+    }
+
     bool IndexFieldsControl::SaveModified()
     {
         if (!IsModified())
@@ -375,7 +380,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK( IndexFieldsControl, OnListEntrySelected, DbaMouseDownListBoxController&, rController, void )
+    IMPL_LINK_TYPED( IndexFieldsControl, OnListEntrySelected, DbaMouseDownListBoxController&, rController, void )
     {
         ListBoxControl& rListBox = rController.GetListBox();
         if (!rListBox.IsTravelSelect())

@@ -48,18 +48,25 @@ GalleryPreview::GalleryPreview(vcl::Window* pParent, WinBits nStyle, GalleryThem
     InitSettings();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(GalleryPreview, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(GalleryPreview)
+{
+    WinBits nWinBits = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinBits |= WB_BORDER;
+    rRet = VclPtr<GalleryPreview>::Create(pParent, nWinBits);
+}
 
 Size GalleryPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(70, 88), MapUnit::MapAppFont);
+    return LogicToPixel(Size(70, 88), MAP_APPFONT);
 }
 
 bool GalleryPreview::SetGraphic( const INetURLObject& _aURL )
 {
     bool bRet = true;
     Graphic aGraphic;
-    if( ::avmedia::MediaWindow::isMediaURL( _aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ), "" ) )
+    if( ::avmedia::MediaWindow::isMediaURL( _aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ), "" ) )
     {
         aGraphic = BitmapEx( GAL_RES( RID_SVXBMP_GALLERY_MEDIA ) );
     }
@@ -91,7 +98,7 @@ void GalleryPreview::DataChanged( const DataChangedEvent& rDCEvt )
         Window::DataChanged( rDCEvt );
 }
 
-bool GalleryPreview::ImplGetGraphicCenterRect( const Graphic& rGraphic, tools::Rectangle& rResultRect ) const
+bool GalleryPreview::ImplGetGraphicCenterRect( const Graphic& rGraphic, Rectangle& rResultRect ) const
 {
     const Size  aWinSize( GetOutputSizePixel() );
     Size        aNewSize( LogicToPixel( rGraphic.GetPrefSize(), rGraphic.GetPrefMapMode() ) );
@@ -117,14 +124,14 @@ bool GalleryPreview::ImplGetGraphicCenterRect( const Graphic& rGraphic, tools::R
         const Point aNewPos( ( aWinSize.Width()  - aNewSize.Width() ) >> 1,
                              ( aWinSize.Height() - aNewSize.Height() ) >> 1 );
 
-        rResultRect = tools::Rectangle( aNewPos, aNewSize );
+        rResultRect = Rectangle( aNewPos, aNewSize );
         bRet = true;
     }
 
     return bRet;
 }
 
-void GalleryPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void GalleryPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     Window::Paint(rRenderContext, rRect);
 
@@ -170,21 +177,21 @@ void GalleryPreview::KeyInput(const KeyEvent& rKEvt)
             break;
 
             case KEY_HOME:
-                pBrowser->Travel( GalleryBrowserTravel::First );
+                pBrowser->Travel( GALLERYBROWSERTRAVEL_FIRST );
             break;
 
             case KEY_END:
-                pBrowser->Travel( GalleryBrowserTravel::Last );
+                pBrowser->Travel( GALLERYBROWSERTRAVEL_LAST );
             break;
 
             case KEY_LEFT:
             case KEY_UP:
-                pBrowser->Travel( GalleryBrowserTravel::Previous );
+                pBrowser->Travel( GALLERYBROWSERTRAVEL_PREVIOUS );
             break;
 
             case KEY_RIGHT:
             case KEY_DOWN:
-                pBrowser->Travel( GalleryBrowserTravel::Next );
+                pBrowser->Travel( GALLERYBROWSERTRAVEL_NEXT );
             break;
 
             default:
@@ -244,7 +251,7 @@ void GalleryPreview::PreviewMedia( const INetURLObject& rURL )
         }
 
         if (pFloater)
-            pFloater->setURL( rURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous ), "", true );
+            pFloater->setURL( rURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS ), "", true );
     }
 }
 
@@ -297,7 +304,7 @@ void GalleryIconView::UserDraw(const UserDrawEvent& rUDEvt)
 
     if (nId && mpTheme)
     {
-        const tools::Rectangle& rRect = rUDEvt.GetRect();
+        const Rectangle& rRect = rUDEvt.GetRect();
         const Size aSize(rRect.GetWidth(), rRect.GetHeight());
         BitmapEx aBitmapEx;
         Size aPreparedSize;
@@ -451,10 +458,10 @@ OUString GalleryListView::GetCellText(long _nRow, sal_uInt16 /*nColumnId*/) cons
     return sRet;
 }
 
-tools::Rectangle GalleryListView::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex)
+Rectangle GalleryListView::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex)
 {
     DBG_ASSERT(_nColumnPos >= 0 && _nColumnPos <= USHRT_MAX, "GalleryListView::GetFieldCharacterBounds: _nColumnId overflow");
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if ( SeekRow(_nRow) )
     {
         SvxFont aFont( GetFont() );
@@ -481,7 +488,7 @@ sal_Int32 GalleryListView::GetFieldIndexAtPoint(sal_Int32 _nRow,sal_Int32 _nColu
     return nRet;
 }
 
-void GalleryListView::PaintField(vcl::RenderContext& rDev, const tools::Rectangle& rRect, sal_uInt16 /*nColumnId*/) const
+void GalleryListView::PaintField(vcl::RenderContext& rDev, const Rectangle& rRect, sal_uInt16 /*nColumnId*/) const
 {
     rDev.Push( PushFlags::CLIPREGION );
     rDev.IntersectClipRegion( rRect );

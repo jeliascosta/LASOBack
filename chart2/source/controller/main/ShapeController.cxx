@@ -64,6 +64,11 @@ ShapeController::~ShapeController()
 {
 }
 
+void ShapeController::initialize()
+{
+    FeatureCommandDispatchBase::initialize();
+}
+
 // WeakComponentImplHelperBase
 void ShapeController::disposing()
 {
@@ -71,6 +76,7 @@ void ShapeController::disposing()
 
 // XEventListener
 void ShapeController::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -223,7 +229,7 @@ void ShapeController::describeSupportedFeatures()
     implDescribeSupportedFeature( ".uno:ParagraphDialog",           COMMAND_ID_PARAGRAPH_DIALOG,            CommandGroup::EDIT );
 }
 
-IMPL_LINK( ShapeController, CheckNameHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
+IMPL_LINK_TYPED( ShapeController, CheckNameHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
 {
     OUString aName;
     rDialog.GetName( aName );
@@ -244,10 +250,10 @@ void ShapeController::executeDispatch_FormatLine()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawModelWrapper* pDrawModelWrapper = m_pChartController->GetDrawModelWrapper();
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawModelWrapper && pDrawViewWrapper )
+        if ( pParent && pDrawModelWrapper && pDrawViewWrapper )
         {
             SdrObject* pSelectedObj = pDrawViewWrapper->getSelectedObject();
             SfxItemSet aAttr( pDrawViewWrapper->GetDefaultAttr() );
@@ -259,8 +265,8 @@ void ShapeController::executeDispatch_FormatLine()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                ScopedVclPtr< SfxAbstractTabDialog > pDlg(
-                    pFact->CreateSvxLineTabDialog( pChartWindow, &aAttr, &pDrawModelWrapper->getSdrModel(),
+                std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                    pFact->CreateSvxLineTabDialog( pParent, &aAttr, &pDrawModelWrapper->getSdrModel(),
                         pSelectedObj, bHasMarked ) );
                 if ( pDlg->Execute() == RET_OK )
                 {
@@ -284,10 +290,10 @@ void ShapeController::executeDispatch_FormatArea()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawModelWrapper* pDrawModelWrapper = m_pChartController->GetDrawModelWrapper();
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawModelWrapper && pDrawViewWrapper )
+        if ( pParent && pDrawModelWrapper && pDrawViewWrapper )
         {
             SfxItemSet aAttr( pDrawViewWrapper->GetDefaultAttr() );
             bool bHasMarked = pDrawViewWrapper->AreObjectsMarked();
@@ -298,10 +304,12 @@ void ShapeController::executeDispatch_FormatArea()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                ScopedVclPtr< AbstractSvxAreaTabDialog > pDlg(
-                    pFact->CreateSvxAreaTabDialog( pChartWindow, &aAttr, &pDrawModelWrapper->getSdrModel(), true ) );
+                std::unique_ptr< AbstractSvxAreaTabDialog > pDlg(
+                    pFact->CreateSvxAreaTabDialog( pParent, &aAttr, &pDrawModelWrapper->getSdrModel(), true ) );
                 if ( pDlg.get() )
                 {
+                    SfxItemPool& rItemPool = pDrawViewWrapper->GetModel()->GetItemPool();
+                    SfxItemSet aSet( rItemPool, rItemPool.GetFirstWhich(), rItemPool.GetLastWhich() );
                     if ( pDlg->Execute() == RET_OK )
                     {
                         const SfxItemSet* pOutAttr = pDlg->GetOutputItemSet();
@@ -325,9 +333,9 @@ void ShapeController::executeDispatch_TextAttributes()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawViewWrapper )
+        if ( pParent && pDrawViewWrapper )
         {
             SfxItemSet aAttr( pDrawViewWrapper->GetDefaultAttr() );
             bool bHasMarked = pDrawViewWrapper->AreObjectsMarked();
@@ -338,8 +346,8 @@ void ShapeController::executeDispatch_TextAttributes()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                ScopedVclPtr< SfxAbstractTabDialog > pDlg(
-                    pFact->CreateTextTabDialog( pChartWindow, &aAttr, pDrawViewWrapper ) );
+                std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                    pFact->CreateTextTabDialog( pParent, &aAttr, pDrawViewWrapper ) );
                 if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                 {
                     const SfxItemSet* pOutAttr = pDlg->GetOutputItemSet();
@@ -362,9 +370,9 @@ void ShapeController::executeDispatch_TransformDialog()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawViewWrapper )
+        if ( pParent && pDrawViewWrapper )
         {
             SdrObject* pSelectedObj = pDrawViewWrapper->getSelectedObject();
             if ( pSelectedObj && pSelectedObj->GetObjIdentifier() == OBJ_CAPTION )
@@ -377,8 +385,8 @@ void ShapeController::executeDispatch_TransformDialog()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    ScopedVclPtr< SfxAbstractTabDialog > pDlg(
-                        pFact->CreateCaptionDialog( pChartWindow, pDrawViewWrapper ) );
+                    std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                        pFact->CreateCaptionDialog( pParent, pDrawViewWrapper ) );
                     if ( pDlg.get() )
                     {
                         const sal_uInt16* pRange = pDlg->GetInputRanges( *aAttr.GetPool() );
@@ -401,8 +409,8 @@ void ShapeController::executeDispatch_TransformDialog()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    ScopedVclPtr< SfxAbstractTabDialog > pDlg(
-                        pFact->CreateSvxTransformTabDialog( pChartWindow, &aGeoAttr, pDrawViewWrapper ) );
+                    std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                        pFact->CreateSvxTransformTabDialog( pParent, &aGeoAttr, pDrawViewWrapper ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                     {
                         const SfxItemSet* pOutAttr = pDlg->GetOutputItemSet();
@@ -430,7 +438,7 @@ void ShapeController::executeDispatch_ObjectTitleDescription()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    ScopedVclPtr< AbstractSvxObjectTitleDescDialog > pDlg(
+                    std::unique_ptr< AbstractSvxObjectTitleDescDialog > pDlg(
                         pFact->CreateSvxObjectTitleDescDialog( aTitle, aDescription ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                     {
@@ -460,7 +468,7 @@ void ShapeController::executeDispatch_RenameObject()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    ScopedVclPtr< AbstractSvxObjectNameDialog > pDlg(
+                    std::unique_ptr< AbstractSvxObjectNameDialog > pDlg(
                         pFact->CreateSvxObjectNameDialog( aName ) );
                     pDlg->SetCheckNameHdl( LINK( this, ShapeController, CheckNameHdl ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
@@ -531,15 +539,15 @@ void ShapeController::executeDispatch_FontDialog()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawModelWrapper* pDrawModelWrapper = m_pChartController->GetDrawModelWrapper();
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawModelWrapper && pDrawViewWrapper )
+        if ( pParent && pDrawModelWrapper && pDrawViewWrapper )
         {
             SfxItemSet aAttr( pDrawViewWrapper->GetModel()->GetItemPool() );
             pDrawViewWrapper->GetAttributes( aAttr );
             ViewElementListProvider aViewElementListProvider( pDrawModelWrapper );
-            ScopedVclPtrInstance< ShapeFontDialog > pDlg( pChartWindow, &aAttr, &aViewElementListProvider );
+            ScopedVclPtrInstance< ShapeFontDialog > pDlg( pParent, &aAttr, &aViewElementListProvider );
             if ( pDlg->Execute() == RET_OK )
             {
                 const SfxItemSet* pOutAttr = pDlg->GetOutputItemSet();
@@ -554,9 +562,9 @@ void ShapeController::executeDispatch_ParagraphDialog()
     SolarMutexGuard aGuard;
     if ( m_pChartController )
     {
-        VclPtr<ChartWindow> pChartWindow( m_pChartController->GetChartWindow() );
+        vcl::Window* pParent = dynamic_cast< vcl::Window* >( m_pChartController->m_pChartWindow.get() );
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
-        if ( pChartWindow && pDrawViewWrapper )
+        if ( pParent && pDrawViewWrapper )
         {
             SfxItemPool& rPool = pDrawViewWrapper->GetModel()->GetItemPool();
             SfxItemSet aAttr( rPool );
@@ -572,12 +580,12 @@ void ShapeController::executeDispatch_ParagraphDialog()
                                     0 );
             aNewAttr.Put( aAttr );
             aNewAttr.Put( SvxHyphenZoneItem( false, SID_ATTR_PARA_HYPHENZONE ) );
-            aNewAttr.Put( SvxFormatBreakItem( SvxBreak::NONE, SID_ATTR_PARA_PAGEBREAK ) );
+            aNewAttr.Put( SvxFormatBreakItem( SVX_BREAK_NONE, SID_ATTR_PARA_PAGEBREAK ) );
             aNewAttr.Put( SvxFormatSplitItem( true, SID_ATTR_PARA_SPLIT)  );
             aNewAttr.Put( SvxWidowsItem( 0, SID_ATTR_PARA_WIDOWS) );
             aNewAttr.Put( SvxOrphansItem( 0, SID_ATTR_PARA_ORPHANS) );
 
-            ScopedVclPtrInstance< ShapeParagraphDialog > pDlg( pChartWindow, &aNewAttr );
+            ScopedVclPtrInstance< ShapeParagraphDialog > pDlg( pParent, &aNewAttr );
             if ( pDlg->Execute() == RET_OK )
             {
                 const SfxItemSet* pOutAttr = pDlg->GetOutputItemSet();
@@ -669,7 +677,7 @@ SdrObject* ShapeController::getLastAdditionalShape()
 
 bool ShapeController::isBackwardPossible()
 {
-    if ( m_pChartController && m_pChartController->isAdditionalShapeSelected() )
+    if ( m_pChartController && m_pChartController->m_aSelection.isAdditionalShapeSelected() )
     {
         SolarMutexGuard aGuard;
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();
@@ -688,7 +696,7 @@ bool ShapeController::isBackwardPossible()
 
 bool ShapeController::isForwardPossible()
 {
-    if ( m_pChartController && m_pChartController->isAdditionalShapeSelected() )
+    if ( m_pChartController && m_pChartController->m_aSelection.isAdditionalShapeSelected() )
     {
         SolarMutexGuard aGuard;
         DrawViewWrapper* pDrawViewWrapper = m_pChartController->GetDrawViewWrapper();

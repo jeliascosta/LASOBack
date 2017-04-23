@@ -18,11 +18,9 @@
  */
 
 #include "filrow.hxx"
-#include "filtask.hxx"
+#include "shell.hxx"
 #include "prov.hxx"
-#include <com/sun/star/script/CannotConvertException.hpp>
 #include <com/sun/star/script/Converter.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <comphelper/processfactory.hxx>
 
 using namespace fileaccess;
@@ -38,7 +36,7 @@ using namespace css::uno;
 // Function for TypeConverting
 
 template< class _type_ >
-bool convert( TaskManager* pShell,
+bool convert( shell* pShell,
                   uno::Reference< script::XTypeConverter >& xConverter,
                   uno::Any& rValue,
                   _type_& aReturn  )
@@ -77,7 +75,7 @@ bool convert( TaskManager* pShell,
 }
 
 
-XRow_impl::XRow_impl( TaskManager* pMyShell,const uno::Sequence< uno::Any >& seq )
+XRow_impl::XRow_impl( shell* pMyShell,const uno::Sequence< uno::Any >& seq )
     : m_aValueMap( seq ),
       m_nWasNull(false),
       m_pMyShell( pMyShell ),
@@ -91,7 +89,10 @@ XRow_impl::~XRow_impl()
 
 
 sal_Bool SAL_CALL
-XRow_impl::wasNull()
+XRow_impl::wasNull(
+           void )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
   return m_nWasNull;
 }
@@ -100,6 +101,8 @@ XRow_impl::wasNull()
 OUString SAL_CALL
 XRow_impl::getString(
              sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
   if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
     throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -112,6 +115,8 @@ XRow_impl::getString(
 sal_Bool SAL_CALL
 XRow_impl::getBoolean(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -125,6 +130,8 @@ XRow_impl::getBoolean(
 sal_Int8 SAL_CALL
 XRow_impl::getByte(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -137,6 +144,8 @@ XRow_impl::getByte(
 sal_Int16 SAL_CALL
 XRow_impl::getShort(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -150,6 +159,8 @@ XRow_impl::getShort(
 sal_Int32 SAL_CALL
 XRow_impl::getInt(
           sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -162,6 +173,8 @@ XRow_impl::getInt(
 sal_Int64 SAL_CALL
 XRow_impl::getLong(
            sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -174,6 +187,8 @@ XRow_impl::getLong(
 float SAL_CALL
 XRow_impl::getFloat(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -186,6 +201,8 @@ XRow_impl::getFloat(
 double SAL_CALL
 XRow_impl::getDouble(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -198,6 +215,8 @@ XRow_impl::getDouble(
 uno::Sequence< sal_Int8 > SAL_CALL
 XRow_impl::getBytes(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -210,6 +229,8 @@ XRow_impl::getBytes(
 util::Date SAL_CALL
 XRow_impl::getDate(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -222,6 +243,8 @@ XRow_impl::getDate(
 util::Time SAL_CALL
 XRow_impl::getTime(
     sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+         uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -234,6 +257,8 @@ XRow_impl::getTime(
 util::DateTime SAL_CALL
 XRow_impl::getTimestamp(
             sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
   if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
     throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -247,6 +272,8 @@ XRow_impl::getTimestamp(
 uno::Reference< io::XInputStream > SAL_CALL
 XRow_impl::getBinaryStream(
                sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
   if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
     throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -260,6 +287,8 @@ XRow_impl::getBinaryStream(
 uno::Reference< io::XInputStream > SAL_CALL
 XRow_impl::getCharacterStream(
                   sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
   if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
       throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -274,18 +303,22 @@ uno::Any SAL_CALL
 XRow_impl::getObject(
     sal_Int32 columnIndex,
     const uno::Reference< container::XNameAccess >& )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
+    uno::Any  Value;
     osl::MutexGuard aGuard( m_aMutex );
-    uno::Any Value = m_aValueMap[columnIndex - 1];
-    m_nWasNull = !Value.hasValue();
+    m_nWasNull = ::convert<uno::Any>( m_pMyShell,m_xTypeConverter,m_aValueMap[ --columnIndex ],Value );
     return Value;
 }
 
 uno::Reference< sdbc::XRef > SAL_CALL
 XRow_impl::getRef(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -301,6 +334,8 @@ XRow_impl::getRef(
 uno::Reference< sdbc::XBlob > SAL_CALL
 XRow_impl::getBlob(
            sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -316,6 +351,8 @@ XRow_impl::getBlob(
 uno::Reference< sdbc::XClob > SAL_CALL
 XRow_impl::getClob(
            sal_Int32 columnIndex )
+  throw( sdbc::SQLException,
+     uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );
@@ -332,6 +369,8 @@ XRow_impl::getClob(
 uno::Reference< sdbc::XArray > SAL_CALL
 XRow_impl::getArray(
     sal_Int32 columnIndex )
+    throw( sdbc::SQLException,
+           uno::RuntimeException, std::exception)
 {
     if( columnIndex < 1 || columnIndex > m_aValueMap.getLength() )
         throw sdbc::SQLException( THROW_WHERE, uno::Reference< uno::XInterface >(), OUString(), 0, uno::Any() );

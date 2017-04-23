@@ -41,7 +41,8 @@ void TraceRequest (const Reference<XConfigurationChangeRequest>& rxRequest)
 {
     Reference<container::XNamed> xNamed (rxRequest, UNO_QUERY);
     if (xNamed.is())
-        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    " << xNamed->getName());
+        SAL_INFO("sd.fwk", OSL_THIS_FUNC << ":    " <<
+            OUStringToOString(xNamed->getName(), RTL_TEXTENCODING_UTF8).getStr());
 }
 
 #endif
@@ -109,7 +110,7 @@ void ChangeRequestQueueProcessor::StartProcessing()
     }
 }
 
-IMPL_LINK_NOARG(ChangeRequestQueueProcessor, ProcessEvent, void*, void)
+IMPL_LINK_NOARG_TYPED(ChangeRequestQueueProcessor, ProcessEvent, void*, void)
 {
     ::osl::MutexGuard aGuard (maMutex);
 

@@ -19,6 +19,8 @@
 
 #include <sal/config.h>
 
+#include <cctype>
+
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
 #include <basegfx/point/b2dpoint.hxx>
@@ -63,7 +65,7 @@ namespace dxcanvas
         GraphicsSharedPtr mpGraphics;
     public:
         explicit GraphicsProviderImpl( Gdiplus::Graphics* pGraphics ) : mpGraphics( pGraphics ) {}
-        virtual GraphicsSharedPtr getGraphics() override { return mpGraphics; }
+        virtual GraphicsSharedPtr getGraphics() { return mpGraphics; }
     };
 
     Canvas::Canvas( const uno::Sequence< uno::Any >&                aArguments,
@@ -101,7 +103,7 @@ namespace dxcanvas
         sal_Int64 nPtr = 0;
         maArguments[0] >>= nPtr;
         OutputDevice* pOutDev = reinterpret_cast<OutputDevice*>(nPtr);
-        ENSURE_ARG_OR_THROW( pOutDev != nullptr,"Canvas::initialize: invalid OutDev pointer" );
+        ENSURE_ARG_OR_THROW( pOutDev != NULL,"Canvas::initialize: invalid OutDev pointer" );
 
         // setup helper
         maDeviceHelper.init( pSysData->hDC, pOutDev, *this );
@@ -124,7 +126,7 @@ namespace dxcanvas
         CanvasBaseT::disposeThis();
     }
 
-    OUString SAL_CALL Canvas::getServiceName(  )
+    OUString SAL_CALL Canvas::getServiceName(  ) throw (uno::RuntimeException)
     {
         return OUString( CANVAS_SERVICE_NAME );
     }
@@ -162,7 +164,7 @@ namespace dxcanvas
         sal_Int64 nPtr = 0;
         maArguments[0] >>= nPtr;
         OutputDevice* pOutDev = reinterpret_cast<OutputDevice*>(nPtr);
-        ENSURE_ARG_OR_THROW( pOutDev != nullptr,"Canvas::initialize: invalid OutDev pointer" );
+        ENSURE_ARG_OR_THROW( pOutDev != NULL,"Canvas::initialize: invalid OutDev pointer" );
 
         // setup helper
         maDeviceHelper.init( pSysData->hDC, pOutDev, *this );
@@ -172,7 +174,7 @@ namespace dxcanvas
         // here. for this, check whether the HDC has a bitmap
         // selected.
         HBITMAP hBmp;
-        hBmp=static_cast<HBITMAP>(GetCurrentObject(pSysData->hDC, OBJ_BITMAP));
+        hBmp=(HBITMAP)GetCurrentObject(pSysData->hDC, OBJ_BITMAP);
         if( !hBmp || GetObjectType(pSysData->hDC) != OBJ_MEMDC )
         {
             throw lang::NoSupportException( "Passed HDC is no mem DC/has no bitmap selected!");
@@ -181,7 +183,7 @@ namespace dxcanvas
         mpTarget.reset( new DXBitmap(
                             BitmapSharedPtr(
                                 Gdiplus::Bitmap::FromHBITMAP(
-                                    hBmp, nullptr) ),
+                                    hBmp, 0) ),
                             false ));
 
         maCanvasHelper.setTarget( mpTarget );
@@ -200,7 +202,7 @@ namespace dxcanvas
         BitmapCanvasBaseT::disposeThis();
     }
 
-    OUString SAL_CALL BitmapCanvas::getServiceName(  )
+    OUString SAL_CALL BitmapCanvas::getServiceName(  ) throw (uno::RuntimeException)
     {
         return OUString( BITMAPCANVAS_SERVICE_NAME );
     }
@@ -217,7 +219,7 @@ namespace dxcanvas
         return xRet;
     }
 
-    sdecl::class_<Canvas, sdecl::with_args<true> > const serviceImpl1(&initCanvas);
+    sdecl::class_<Canvas, sdecl::with_args<true> > serviceImpl1(&initCanvas);
     const sdecl::ServiceDecl dxCanvasDecl(
         serviceImpl1,
         CANVAS_IMPLEMENTATION_NAME,
@@ -231,7 +233,7 @@ namespace dxcanvas
     }
 
     namespace sdecl = comphelper::service_decl;
-    sdecl::class_<BitmapCanvas, sdecl::with_args<true> > const serviceImpl2(&initBitmapCanvas);
+    sdecl::class_<BitmapCanvas, sdecl::with_args<true> > serviceImpl2(&initBitmapCanvas);
     const sdecl::ServiceDecl dxBitmapCanvasDecl(
         serviceImpl2,
         BITMAPCANVAS_IMPLEMENTATION_NAME,

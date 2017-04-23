@@ -28,6 +28,7 @@
 #include <com/sun/star/beans/XPropertyState.hpp>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <cppuhelper/propshlp.hxx>
+#include <cppuhelper/proptypehlp.hxx>
 #include <comphelper/property.hxx>
 #include <comphelper/propagg.hxx>
 #include <tools/debug.hxx>
@@ -39,7 +40,7 @@ using namespace comphelper;
 namespace frm
 {
 
-//= assignment property handle <-> property name
+//= assigment property handle <-> property name
 //= used by the PropertySetAggregationHelper
 
 

@@ -33,7 +33,7 @@ public:
         sal_Int32 const nStart,
         bool const bInClipboard );
 
-    virtual ~SwTextAnnotationField() override;
+    virtual ~SwTextAnnotationField();
 
     ::sw::mark::IMark* GetAnnotationMark() const;
 };

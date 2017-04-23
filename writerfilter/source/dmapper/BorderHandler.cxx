@@ -34,6 +34,7 @@ using namespace ::com::sun::star;
 
 BorderHandler::BorderHandler( bool bOOXML ) :
 LoggedProperties("BorderHandler"),
+m_nCurrentBorderPosition( BORDER_TOP ),
 m_nLineWidth(15), // Word default, in twips
 m_nLineType(0),
 m_nLineColor(0),
@@ -166,7 +167,7 @@ PropertyMapPtr  BorderHandler::getProperties()
     };
     PropertyMapPtr pPropertyMap(new PropertyMap);
     // don't fill in default properties
-    if( m_bOOXML )
+    if( m_bOOXML || m_nCurrentBorderPosition )
     {
         for( sal_Int32 nProp = 0; nProp < BORDER_COUNT; ++nProp)
         {
@@ -201,7 +202,7 @@ beans::PropertyValue BorderHandler::getInteropGrabBag(const OUString& aName)
     else
         aRet.Name = aName;
 
-    aRet.Value <<= comphelper::containerToSequence(m_aInteropGrabBag);
+    aRet.Value = uno::makeAny(comphelper::containerToSequence(m_aInteropGrabBag));
     return aRet;
 }
 
@@ -209,7 +210,7 @@ void BorderHandler::appendGrabBag(const OUString& aKey, const OUString& aValue)
 {
     beans::PropertyValue aProperty;
     aProperty.Name = aKey;
-    aProperty.Value <<= aValue;
+    aProperty.Value = uno::makeAny(aValue);
     m_aInteropGrabBag.push_back(aProperty);
 }
 

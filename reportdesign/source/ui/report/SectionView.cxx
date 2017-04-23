@@ -67,13 +67,13 @@ void OSectionView::MarkListHasChanged()
 }
 
 
-void OSectionView::MakeVisible( const tools::Rectangle& rRect, vcl::Window& rWin )
+void OSectionView::MakeVisible( const Rectangle& rRect, vcl::Window& rWin )
 {
     // visible area
     MapMode aMap( rWin.GetMapMode() );
     const Point aOrg( aMap.GetOrigin() );
     const Size aVisSize( rWin.GetOutputSize() );
-    const tools::Rectangle aVisRect( Point(-aOrg.X(),-aOrg.Y()), aVisSize );
+    const Rectangle aVisRect( Point(-aOrg.X(),-aOrg.Y()), aVisSize );
 
     // check, if rectangle is inside visible area
     if ( !aVisRect.IsInside( rRect ) )
@@ -132,9 +132,9 @@ void OSectionView::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
         const SdrObject* pObj = pSdrHint->GetObject();
         const SdrHintKind eKind = pSdrHint->GetKind();
         // check for change of selected object
-        if(SdrHintKind::ObjectChange == eKind && pObj && IsObjMarked(const_cast<SdrObject*>(pObj)))
+        if(HINT_OBJCHG == eKind && pObj && IsObjMarked(const_cast<SdrObject*>(pObj)))
             AdjustMarkHdl();
-        else if ( eKind == SdrHintKind::ObjectRemoved )
+        else if ( eKind == HINT_OBJREMOVED )
             ObjectRemovedInAliveMode(pObj);
     }
 }

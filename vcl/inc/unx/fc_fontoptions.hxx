@@ -40,15 +40,19 @@ public:
                         FontConfigFontOptions(FcPattern* pPattern) :
                             meEmbeddedBitmap(EMBEDDEDBITMAP_DONTKNOW),
                             meAntiAlias(ANTIALIAS_DONTKNOW),
-                            meAutoHint(FontAutoHint::DontKnow),
-                            meHinting(FontHinting::DontKnow),
+                            meAutoHint(AUTOHINT_DONTKNOW),
+                            meHinting(HINTING_DONTKNOW),
                             meHintStyle(FontHintStyle::Slight),
                             mpPattern(pPattern) {}
                         ~FontConfigFontOptions();
 
+    FontAutoHint        GetUseAutoHint() const { return meAutoHint; }
+    FontHintStyle       GetHintStyle() const { return meHintStyle; }
+    bool                DontUseEmbeddedBitmaps() const { return meEmbeddedBitmap == EMBEDDEDBITMAP_FALSE; }
+    bool                DontUseAntiAlias() const { return meAntiAlias == ANTIALIAS_FALSE; }
+    bool                DontUseHinting() const { return (meHinting == HINTING_FALSE) || (GetHintStyle() == FontHintStyle::NONE); }
     void                SyncPattern(const OString& rFileName, int nFontFace, bool bEmbolden);
     FcPattern*          GetPattern() const;
-    static void         cairo_font_options_substitute(FcPattern* pPattern);
 private:
     FcPattern* mpPattern;
 };

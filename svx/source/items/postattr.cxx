@@ -26,7 +26,6 @@
 SfxPoolItem* SvxPostItAuthorItem::CreateDefault() { return new SvxPostItAuthorItem(0); }
 SfxPoolItem* SvxPostItDateItem::CreateDefault() { return new SvxPostItDateItem(0); }
 SfxPoolItem* SvxPostItTextItem::CreateDefault() { return new SvxPostItTextItem(0); }
-SfxPoolItem* SvxPostItIdItem::CreateDefault() { return new SvxPostItIdItem(0); }
 
 SvxPostItAuthorItem::SvxPostItAuthorItem( sal_uInt16 _nWhich )
 {
@@ -44,17 +43,17 @@ SvxPostItAuthorItem::SvxPostItAuthorItem( const OUString& rAuthor,
 bool SvxPostItAuthorItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SfxItemPresentation::Nameless:
+        case SFX_ITEM_PRESENTATION_NAMELESS:
             rText = GetValue();
             return true;
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText = SVX_RESSTR(RID_SVXITEMS_AUTHOR_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -84,17 +83,17 @@ SvxPostItDateItem::SvxPostItDateItem( const OUString& rDate, sal_uInt16 _nWhich 
 bool SvxPostItDateItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SfxItemPresentation::Nameless:
+        case SFX_ITEM_PRESENTATION_NAMELESS:
             rText = GetValue();
             return true;
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText = SVX_RESSTR(RID_SVXITEMS_DATE_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -113,26 +112,28 @@ SvxPostItTextItem::SvxPostItTextItem( sal_uInt16 _nWhich )
     SetWhich( _nWhich );
 }
 
+
 SvxPostItTextItem::SvxPostItTextItem( const OUString& rText, sal_uInt16 _nWhich ) :
 
     SfxStringItem( _nWhich, rText )
 {
 }
 
+
 bool SvxPostItTextItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SfxItemPresentation::Nameless:
+        case SFX_ITEM_PRESENTATION_NAMELESS:
             rText = GetValue();
             return true;
-        case SfxItemPresentation::Complete:
+        case SFX_ITEM_PRESENTATION_COMPLETE:
             rText = SVX_RESSTR(RID_SVXITEMS_TEXT_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -140,20 +141,11 @@ bool SvxPostItTextItem::GetPresentation
     return false;
 }
 
+
 SfxPoolItem* SvxPostItTextItem::Clone( SfxItemPool * ) const
 {
     return new SvxPostItTextItem( *this );
 }
 
-
-SvxPostItIdItem::SvxPostItIdItem( sal_uInt16 _nWhich )
-{
-    SetWhich( _nWhich );
-}
-
-SfxPoolItem* SvxPostItIdItem::Clone( SfxItemPool * ) const
-{
-    return new SvxPostItIdItem( *this );
-}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -78,10 +78,10 @@ private:
     OUString                aLastFile;
     ::std::vector< long >   aVerbVector;
 
-    DECL_LINK( ClickSearchHdl, Button*, void );
-    DECL_LINK( ClickActionHdl, ListBox&, void );
-    DECL_LINK( SelectTreeHdl, SvTreeListBox*, void );
-    DECL_LINK( CheckFileHdl, Control&, void );
+    DECL_LINK_TYPED( ClickSearchHdl, Button*, void );
+    DECL_LINK_TYPED( ClickActionHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectTreeHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( CheckFileHdl, Control&, void );
 
     void                    UpdateTree();
     void                    OpenFileDialog();
@@ -93,7 +93,7 @@ private:
 
 public:
             SdTPAction( vcl::Window* pParent, const SfxItemSet& rInAttrs );
-            virtual ~SdTPAction() override;
+            virtual ~SdTPAction();
     virtual void dispose() override;
 
     static  VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet& );
@@ -102,7 +102,7 @@ public:
     virtual void Reset( const SfxItemSet * ) override;
 
     virtual void ActivatePage( const SfxItemSet& rSet ) override;
-    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg DeactivatePage( SfxItemSet* pSet ) override;
 
     void    Construct();
 

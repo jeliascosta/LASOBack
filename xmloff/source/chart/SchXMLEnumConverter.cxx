@@ -17,9 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include "SchXMLEnumConverter.hxx"
+
 #include <com/sun/star/chart/ChartLegendPosition.hpp>
 #include <com/sun/star/chart/ChartLegendExpansion.hpp>
-#include "SchXMLEnumConverter.hxx"
+
 #include <rtl/instance.hxx>
 
 using namespace ::xmloff::token;
@@ -28,40 +30,42 @@ using namespace ::com::sun::star;
 namespace
 {
 
-const SvXMLEnumMapEntry<chart::ChartLegendPosition> aXMLLegendPositionEnumMap[] =
+const SvXMLEnumMapEntry aXMLLegendPositionEnumMap[] =
 {
     { XML_START,    chart::ChartLegendPosition_LEFT     },
     { XML_TOP,      chart::ChartLegendPosition_TOP      },
     { XML_END,      chart::ChartLegendPosition_RIGHT    },
     { XML_BOTTOM,   chart::ChartLegendPosition_BOTTOM   },
-    { XML_TOKEN_INVALID, (chart::ChartLegendPosition)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
 class XMLLegendPositionPropertyHdl : public XMLEnumPropertyHdl
 {
 public:
     XMLLegendPositionPropertyHdl()
-        : XMLEnumPropertyHdl( aXMLLegendPositionEnumMap) {}
+        : XMLEnumPropertyHdl( aXMLLegendPositionEnumMap, cppu::UnoType<chart::ChartLegendPosition>::get()) {}
+    virtual ~XMLLegendPositionPropertyHdl() {};
 };
 
 struct TheLegendPositionPropertyHdl : public rtl::Static< XMLLegendPositionPropertyHdl, TheLegendPositionPropertyHdl >
 {
 };
 
-const SvXMLEnumMapEntry<chart::ChartLegendExpansion> aXMLLegendExpansionEnumMap[] =
+const SvXMLEnumMapEntry aXMLLegendExpansionEnumMap[] =
 {
     { XML_WIDE,        chart::ChartLegendExpansion_WIDE },
     { XML_HIGH,        chart::ChartLegendExpansion_HIGH },
     { XML_BALANCED,    chart::ChartLegendExpansion_BALANCED },
     { XML_CUSTOM,      chart::ChartLegendExpansion_CUSTOM },
-    { XML_TOKEN_INVALID, (chart::ChartLegendExpansion)0 }
+    { XML_TOKEN_INVALID, 0 }
 };
 
 class XMLLegendExpansionPropertyHdl : public XMLEnumPropertyHdl
 {
 public:
     XMLLegendExpansionPropertyHdl()
-        : XMLEnumPropertyHdl( aXMLLegendExpansionEnumMap) {}
+        : XMLEnumPropertyHdl( aXMLLegendExpansionEnumMap, cppu::UnoType<chart::ChartLegendExpansion>::get()) {}
+    virtual ~XMLLegendExpansionPropertyHdl() {};
 };
 
 struct TheLegendExpansionPropertyHdl : public rtl::Static< XMLLegendExpansionPropertyHdl, TheLegendExpansionPropertyHdl >

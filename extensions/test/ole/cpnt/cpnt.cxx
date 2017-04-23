@@ -318,7 +318,7 @@ OComponent::~OComponent()
 }
 
 
-// functions ==============================================================================
+// Funktions ==============================================================================
 
 Reference<XInterface> SAL_CALL OComponent_CreateInstance( const Reference<XMultiServiceFactory> & rSMgr ) throw(RuntimeException)
 {

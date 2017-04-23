@@ -49,6 +49,7 @@ ScAppOptions::ScAppOptions( const ScAppOptions& rCpy ) : pLRUList( nullptr )
 
 ScAppOptions::~ScAppOptions()
 {
+    delete [] pLRUList;
 }
 
 void ScAppOptions::SetDefaults()
@@ -65,7 +66,8 @@ void ScAppOptions::SetDefaults()
     bAutoComplete   = true;
     bDetectiveAuto  = true;
 
-    pLRUList.reset( new sal_uInt16[5] );               // sinnvoll vorbelegen
+    delete [] pLRUList;
+    pLRUList = new sal_uInt16[5];               // sinnvoll vorbelegen
     pLRUList[0] = SC_OPCODE_SUM;
     pLRUList[1] = SC_OPCODE_AVERAGE;
     pLRUList[2] = SC_OPCODE_MIN;
@@ -93,7 +95,7 @@ ScAppOptions& ScAppOptions::operator=( const ScAppOptions& rCpy )
     eZoomType       = rCpy.eZoomType;
     bSynchronizeZoom = rCpy.bSynchronizeZoom;
     nZoom           = rCpy.nZoom;
-    SetLRUFuncList( rCpy.pLRUList.get(), rCpy.nLRUFuncCount );
+    SetLRUFuncList( rCpy.pLRUList, rCpy.nLRUFuncCount );
     nStatusFunc     = rCpy.nStatusFunc;
     bAutoComplete   = rCpy.bAutoComplete;
     bDetectiveAuto  = rCpy.bDetectiveAuto;
@@ -111,17 +113,19 @@ ScAppOptions& ScAppOptions::operator=( const ScAppOptions& rCpy )
 
 void ScAppOptions::SetLRUFuncList( const sal_uInt16* pList, const sal_uInt16 nCount )
 {
+    delete [] pLRUList;
+
     nLRUFuncCount = nCount;
 
     if ( nLRUFuncCount > 0 )
     {
-        pLRUList.reset( new sal_uInt16[nLRUFuncCount] );
+        pLRUList = new sal_uInt16[nLRUFuncCount];
 
         for ( sal_uInt16 i=0; i<nLRUFuncCount; i++ )
             pLRUList[i] = pList[i];
     }
     else
-        pLRUList.reset();
+        pLRUList = nullptr;
 }
 
 //  Config Item containing app options
@@ -212,12 +216,14 @@ static void lcl_GetSortList( Any& rDest )
 #define SCLAYOUTOPT_ZOOMTYPE        3
 #define SCLAYOUTOPT_SYNCZOOM        4
 #define SCLAYOUTOPT_STATUSBARMULTI  5
+#define SCLAYOUTOPT_COUNT           6
 
 #define CFGPATH_INPUT       "Office.Calc/Input"
 
 #define SCINPUTOPT_LASTFUNCS        0
 #define SCINPUTOPT_AUTOINPUT        1
 #define SCINPUTOPT_DET_AUTO         2
+#define SCINPUTOPT_COUNT            3
 
 #define CFGPATH_REVISION    "Office.Calc/Revision/Color"
 
@@ -225,24 +231,29 @@ static void lcl_GetSortList( Any& rDest )
 #define SCREVISOPT_INSERTION        1
 #define SCREVISOPT_DELETION         2
 #define SCREVISOPT_MOVEDENTRY       3
+#define SCREVISOPT_COUNT            4
 
 #define CFGPATH_CONTENT     "Office.Calc/Content/Update"
 
 #define SCCONTENTOPT_LINK           0
+#define SCCONTENTOPT_COUNT          1
 
 #define CFGPATH_SORTLIST    "Office.Calc/SortList"
 
 #define SCSORTLISTOPT_LIST          0
+#define SCSORTLISTOPT_COUNT         1
 
 #define CFGPATH_MISC        "Office.Calc/Misc"
 
 #define SCMISCOPT_DEFOBJWIDTH       0
 #define SCMISCOPT_DEFOBJHEIGHT      1
 #define SCMISCOPT_SHOWSHAREDDOCWARN 2
+#define SCMISCOPT_COUNT             3
 
 #define CFGPATH_COMPAT      "Office.Calc/Compatibility"
 
 #define SCCOMPATOPT_KEY_BINDING     0
+#define SCCOMPATOPT_COUNT           1
 
 // Default value of Layout/Other/StatusbarMultiFunction
 #define SCLAYOUTOPT_STATUSBARMULTI_DEFAULTVAL         514
@@ -264,62 +275,126 @@ static sal_uInt32 lcl_ConvertStatusBarFuncSetToSingle( sal_uInt32 nFuncSet )
 
 Sequence<OUString> ScAppCfg::GetLayoutPropertyNames()
 {
-    const bool bIsMetric = ScOptionsUtil::IsMetricSystem();
+    static const char* aPropNames[] =
+    {
+        "Other/MeasureUnit/NonMetric",  // SCLAYOUTOPT_MEASURE
+        "Other/StatusbarFunction",      // SCLAYOUTOPT_STATUSBAR
+        "Zoom/Value",                   // SCLAYOUTOPT_ZOOMVAL
+        "Zoom/Type",                    // SCLAYOUTOPT_ZOOMTYPE
+        "Zoom/Synchronize",             // SCLAYOUTOPT_SYNCZOOM
+        "Other/StatusbarMultiFunction"  // SCLAYOUTOPT_STATUSBARMULTI
+    };
+    Sequence<OUString> aNames(SCLAYOUTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCLAYOUTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
 
-    return {(bIsMetric ? OUString("Other/MeasureUnit/Metric")
-                       : OUString("Other/MeasureUnit/NonMetric")),  // SCLAYOUTOPT_MEASURE
-             "Other/StatusbarFunction",                             // SCLAYOUTOPT_STATUSBAR
-             "Zoom/Value",                                          // SCLAYOUTOPT_ZOOMVAL
-             "Zoom/Type",                                           // SCLAYOUTOPT_ZOOMTYPE
-             "Zoom/Synchronize",                                    // SCLAYOUTOPT_SYNCZOOM
-             "Other/StatusbarMultiFunction"};                       // SCLAYOUTOPT_STATUSBARMULTI
+    //  adjust for metric system
+    if (ScOptionsUtil::IsMetricSystem())
+        pNames[SCLAYOUTOPT_MEASURE] = "Other/MeasureUnit/Metric";
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetInputPropertyNames()
 {
-    return {"LastFunctions",            // SCINPUTOPT_LASTFUNCS
-            "AutoInput",                // SCINPUTOPT_AUTOINPUT
-            "DetectiveAuto"};           // SCINPUTOPT_DET_AUTO
+    static const char* aPropNames[] =
+    {
+        "LastFunctions",            // SCINPUTOPT_LASTFUNCS
+        "AutoInput",                // SCINPUTOPT_AUTOINPUT
+        "DetectiveAuto"             // SCINPUTOPT_DET_AUTO
+    };
+    Sequence<OUString> aNames(SCINPUTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCINPUTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetRevisionPropertyNames()
 {
-    return {"Change",                   // SCREVISOPT_CHANGE
-            "Insertion",                // SCREVISOPT_INSERTION
-            "Deletion",                 // SCREVISOPT_DELETION
-            "MovedEntry"};              // SCREVISOPT_MOVEDENTRY
+    static const char* aPropNames[] =
+    {
+        "Change",                   // SCREVISOPT_CHANGE
+        "Insertion",                // SCREVISOPT_INSERTION
+        "Deletion",                 // SCREVISOPT_DELETION
+        "MovedEntry"                // SCREVISOPT_MOVEDENTRY
+    };
+    Sequence<OUString> aNames(SCREVISOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCREVISOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetContentPropertyNames()
 {
-    return {"Link"};                    // SCCONTENTOPT_LINK
+    static const char* aPropNames[] =
+    {
+        "Link"                      // SCCONTENTOPT_LINK
+    };
+    Sequence<OUString> aNames(SCCONTENTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCCONTENTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetSortListPropertyNames()
 {
-    return {"List"};                    // SCSORTLISTOPT_LIST
+    static const char* aPropNames[] =
+    {
+        "List"                      // SCSORTLISTOPT_LIST
+    };
+    Sequence<OUString> aNames(SCSORTLISTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCSORTLISTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetMiscPropertyNames()
 {
-    return {"DefaultObjectSize/Width",      // SCMISCOPT_DEFOBJWIDTH
-            "DefaultObjectSize/Height",     // SCMISCOPT_DEFOBJHEIGHT
-            "SharedDocument/ShowWarning"};  // SCMISCOPT_SHOWSHAREDDOCWARN
+    static const char* aPropNames[] =
+    {
+        "DefaultObjectSize/Width",      // SCMISCOPT_DEFOBJWIDTH
+        "DefaultObjectSize/Height",     // SCMISCOPT_DEFOBJHEIGHT
+        "SharedDocument/ShowWarning"    // SCMISCOPT_SHOWSHAREDDOCWARN
+    };
+    Sequence<OUString> aNames(SCMISCOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCMISCOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 Sequence<OUString> ScAppCfg::GetCompatPropertyNames()
 {
-    return {"KeyBindings/BaseGroup"};   // SCCOMPATOPT_KEY_BINDING
+    static const char* aPropNames[] =
+    {
+        "KeyBindings/BaseGroup"         // SCCOMPATOPT_KEY_BINDING
+    };
+    Sequence<OUString> aNames(SCCOMPATOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for (int i = 0; i < SCCOMPATOPT_COUNT; ++i)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 ScAppCfg::ScAppCfg() :
-    aLayoutItem( CFGPATH_LAYOUT ),
-    aInputItem( CFGPATH_INPUT ),
-    aRevisionItem( CFGPATH_REVISION ),
-    aContentItem( CFGPATH_CONTENT ),
-    aSortListItem( CFGPATH_SORTLIST ),
-    aMiscItem( CFGPATH_MISC ),
-    aCompatItem( CFGPATH_COMPAT )
+    aLayoutItem( OUString( CFGPATH_LAYOUT ) ),
+    aInputItem( OUString( CFGPATH_INPUT ) ),
+    aRevisionItem( OUString( CFGPATH_REVISION ) ),
+    aContentItem( OUString( CFGPATH_CONTENT ) ),
+    aSortListItem( OUString( CFGPATH_SORTLIST ) ),
+    aMiscItem( OUString( CFGPATH_MISC ) ),
+    aCompatItem( OUString(CFGPATH_COMPAT ) )
 {
     sal_Int32 nIntVal = 0;
 
@@ -541,7 +616,7 @@ ScAppCfg::ScAppCfg() :
     }
     aCompatItem.SetCommitLink( LINK(this, ScAppCfg, CompatCommitHdl) );
 }
- IMPL_LINK_NOARG(ScAppCfg, LayoutCommitHdl, ScLinkConfigItem&, void)
+ IMPL_LINK_NOARG_TYPED(ScAppCfg, LayoutCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetLayoutPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -574,7 +649,7 @@ ScAppCfg::ScAppCfg() :
     aLayoutItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, InputCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, InputCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetInputPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -598,7 +673,7 @@ IMPL_LINK_NOARG(ScAppCfg, InputCommitHdl, ScLinkConfigItem&, void)
     aInputItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, RevisionCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, RevisionCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetRevisionPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -625,7 +700,7 @@ IMPL_LINK_NOARG(ScAppCfg, RevisionCommitHdl, ScLinkConfigItem&, void)
     aRevisionItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, ContentCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, ContentCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetContentPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -643,7 +718,7 @@ IMPL_LINK_NOARG(ScAppCfg, ContentCommitHdl, ScLinkConfigItem&, void)
     aContentItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, SortListCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, SortListCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetSortListPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -661,7 +736,7 @@ IMPL_LINK_NOARG(ScAppCfg, SortListCommitHdl, ScLinkConfigItem&, void)
     aSortListItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, MiscCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, MiscCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetMiscPropertyNames();
     Sequence<Any> aValues(aNames.getLength());
@@ -672,10 +747,10 @@ IMPL_LINK_NOARG(ScAppCfg, MiscCommitHdl, ScLinkConfigItem&, void)
         switch(nProp)
         {
             case SCMISCOPT_DEFOBJWIDTH:
-                pValues[nProp] <<= GetDefaultObjectSizeWidth();
+                pValues[nProp] <<= (sal_Int32) GetDefaultObjectSizeWidth();
                 break;
             case SCMISCOPT_DEFOBJHEIGHT:
-                pValues[nProp] <<= GetDefaultObjectSizeHeight();
+                pValues[nProp] <<= (sal_Int32) GetDefaultObjectSizeHeight();
                 break;
             case SCMISCOPT_SHOWSHAREDDOCWARN:
                 pValues[nProp] <<= GetShowSharedDocumentWarning();
@@ -685,7 +760,7 @@ IMPL_LINK_NOARG(ScAppCfg, MiscCommitHdl, ScLinkConfigItem&, void)
     aMiscItem.PutProperties(aNames, aValues);
 }
 
-IMPL_LINK_NOARG(ScAppCfg, CompatCommitHdl, ScLinkConfigItem&, void)
+IMPL_LINK_NOARG_TYPED(ScAppCfg, CompatCommitHdl, ScLinkConfigItem&, void)
 {
     Sequence<OUString> aNames = GetCompatPropertyNames();
     Sequence<Any> aValues(aNames.getLength());

@@ -186,7 +186,7 @@ public:
 
     XFListStyle& operator=(const XFListStyle& other);
 
-    virtual ~XFListStyle() override;
+    virtual ~XFListStyle();
 
 public:
     void    SetDisplayLevel(sal_Int32 level, sal_Int16 nShowLevel);
@@ -200,12 +200,12 @@ public:
 
     void    SetListBullet(sal_Int32 level,
                             OUString const & bullet_char,
-                            const OUString& fontname,
-                            const OUString& prefix,
-                            const OUString& suffix
+                            const OUString& fontname = "",
+                            const OUString& prefix = "",
+                            const OUString& suffix = ""
                             );
 
-    void    SetListNumber( sal_Int32 level, XFNumFmt& numFmt, sal_Int16 nStartValue );
+    void    SetListNumber( sal_Int32 level, XFNumFmt& numFmt,   sal_Int16 nStartValue = 1 );
 
     virtual enumXFStyle GetStyleFamily() override
     {

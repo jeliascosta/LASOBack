@@ -77,7 +77,10 @@ struct StdFontInfo
     explicit            StdFontInfo();
     explicit            StdFontInfo(
                             const OUString& rName,
-                            sal_uInt32 nHeight );
+                            sal_uInt32 nHeight,
+                            sal_uInt16 nWeight = OLE_STDFONT_NORMAL,
+                            sal_uInt16 nCharSet = WINDOWS_CHARSET_ANSI,
+                            sal_uInt8 nFlags = 0 );
 };
 
 
@@ -102,7 +105,7 @@ namespace OleHelper
     OOX_DLLPUBLIC sal_Int32    decodeOleColor(
                             const GraphicHelper& rGraphicHelper,
                             sal_uInt32 nOleColor,
-                            bool bDefaultColorBgr );
+                            bool bDefaultColorBgr = true );
 
     /** Returns the OLE color from the passed UNO RGB color.
      */
@@ -151,7 +154,7 @@ protected:
                                   sal_Int32 nSize );
 public:
     MSConvertOCXControls( const css::uno::Reference< css::frame::XModel >& rxModel );
-    virtual ~MSConvertOCXControls() override;
+    virtual ~MSConvertOCXControls();
     bool ReadOCXStorage( tools::SvRef<SotStorage>& rSrc1, css::uno::Reference< css::form::XFormComponent > & rxFormComp );
     bool ReadOCXCtlsStream(tools::SvRef<SotStorageStream>& rSrc1, css::uno::Reference< css::form::XFormComponent > & rxFormComp,
                                    sal_Int32 nPos, sal_Int32 nSize );

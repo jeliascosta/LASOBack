@@ -29,22 +29,33 @@ class Impl_OlePres
 {
     SotClipboardFormatId nFormat;
     sal_uInt16      nAspect;
-    std::unique_ptr<GDIMetaFile>
-                    pMtf;
+    GDIMetaFile *   pMtf;
 
     sal_uInt32      nAdvFlags;
-    Size            aSize;      // size in 100TH_MM
+    sal_Int32       nJobLen;
+    sal_uInt8*      pJob;
+    Size            aSize;      // Groesse in 100TH_MM
 public:
-    explicit Impl_OlePres()
-        : nFormat( SotClipboardFormatId::GDIMETAFILE )
+    explicit Impl_OlePres( SotClipboardFormatId nF )
+        : nFormat( nF )
         , nAspect( ASPECT_CONTENT )
         , pMtf( nullptr )
-        , nAdvFlags( 0x2 )  // found in document
+        , nAdvFlags( 0x2 )  // in Dokument gefunden
+        , nJobLen( 0 )
+        , pJob( nullptr )
     {}
+    ~Impl_OlePres()
+    {
+        delete pJob;
+        delete pMtf;
+    }
     void    SetMtf( const GDIMetaFile & rMtf )
             {
-                pMtf.reset( new GDIMetaFile( rMtf ) );
+                if( pMtf )
+                    delete pMtf;
+                pMtf = new GDIMetaFile( rMtf );
             }
+    SotClipboardFormatId GetFormat() const { return nFormat; }
     void                 SetAspect( sal_uInt16 nAsp ) { nAspect = nAsp; }
     void                 SetAdviseFlags( sal_uLong nAdv ) { nAdvFlags = nAdv; }
     void                 SetSize( const Size & rSize ) { aSize = rSize; }

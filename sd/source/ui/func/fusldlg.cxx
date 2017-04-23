@@ -61,15 +61,15 @@ void FuSlideShowDlg::DoExecute( SfxRequest& )
     PresentationSettings& rPresentationSettings = mpDoc->getPresentationSettings();
 
     SfxItemSet      aDlgSet( mpDoc->GetPool(), ATTR_PRESENT_START, ATTR_PRESENT_END );
-    std::vector<OUString> aPageNameList(mpDoc->GetSdPageCount( PageKind::Standard ));
+    std::vector<OUString> aPageNameList(mpDoc->GetSdPageCount( PK_STANDARD ));
     const OUString& rPresPage = rPresentationSettings.maPresPage;
     OUString        aFirstPage;
     SdPage*         pPage = nullptr;
     long            nPage;
 
-    for( nPage = mpDoc->GetSdPageCount( PageKind::Standard ) - 1L; nPage >= 0L; nPage-- )
+    for( nPage = mpDoc->GetSdPageCount( PK_STANDARD ) - 1L; nPage >= 0L; nPage-- )
     {
-        pPage = mpDoc->GetSdPage( (sal_uInt16) nPage, PageKind::Standard );
+        pPage = mpDoc->GetSdPage( (sal_uInt16) nPage, PK_STANDARD );
         OUString aStr( pPage->GetName() );
 
         if ( aStr.isEmpty() )
@@ -104,11 +104,11 @@ void FuSlideShowDlg::DoExecute( SfxRequest& )
     aDlgSet.Put( SfxUInt32Item( ATTR_PRESENT_PAUSE_TIMEOUT, rPresentationSettings.mnPauseTimeout ) );
     aDlgSet.Put( SfxBoolItem( ATTR_PRESENT_SHOW_PAUSELOGO, rPresentationSettings.mbShowPauseLogo ) );
 
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
     aDlgSet.Put( SfxInt32Item( ATTR_PRESENT_DISPLAY, pOptions->GetDisplay() ) );
 
     SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-    ScopedVclPtr<AbstractSdStartPresDlg> pDlg(pFact ? pFact->CreateSdStartPresentationDlg(mpWindow, aDlgSet, aPageNameList, pCustomShowList) : nullptr);
+    std::unique_ptr<AbstractSdStartPresDlg> pDlg(pFact ? pFact->CreateSdStartPresentationDlg(mpWindow, aDlgSet, aPageNameList, pCustomShowList) : nullptr);
     if( pDlg && (pDlg->Execute() == RET_OK) )
     {
         OUString aPage;

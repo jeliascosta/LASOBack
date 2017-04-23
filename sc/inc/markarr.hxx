@@ -21,7 +21,6 @@
 #define INCLUDED_SC_INC_MARKARR_HXX
 
 #include "address.hxx"
-#include <memory>
 
 #define SC_MARKARRAY_DELTA    4
 
@@ -33,9 +32,9 @@ struct ScMarkEntry
 
 class ScMarkArray
 {
-    SCSIZE                            nCount;
-    SCSIZE                            nLimit;
-    std::unique_ptr<ScMarkEntry[]>    pData;
+    SCSIZE          nCount;
+    SCSIZE          nLimit;
+    ScMarkEntry*    pData;
 
 friend class ScMarkArrayIter;
 friend class ScDocument;                // for FillInfo
@@ -44,7 +43,7 @@ public:
             ScMarkArray();
             ScMarkArray( ScMarkArray&& rArray );
             ~ScMarkArray();
-    void    Reset( bool bMarked = false, SCSIZE nNeeded = 1 );
+    void    Reset( bool bMarked = false );
     bool    GetMark( SCROW nRow ) const;
     void    SetMarkArea( SCROW nStartRow, SCROW nEndRow, bool bMarked );
     bool    IsAllMarked( SCROW nStartRow, SCROW nEndRow ) const;

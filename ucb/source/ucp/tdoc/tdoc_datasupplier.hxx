@@ -42,7 +42,7 @@ public:
     ResultSetDataSupplier(
         const css::uno::Reference< css::uno::XComponentContext >& rxContext,
         const rtl::Reference< Content >& rContent );
-    virtual ~ResultSetDataSupplier() override;
+    virtual ~ResultSetDataSupplier();
 
     virtual OUString queryContentIdentifierString( sal_uInt32 nIndex ) override;
     virtual css::uno::Reference< css::ucb::XContentIdentifier >
@@ -62,7 +62,8 @@ public:
 
     virtual void close() override;
 
-    virtual void validate() override;
+    virtual void validate()
+        throw( css::ucb::ResultSetException ) override;
 };
 
 } // namespace tdoc_ucp

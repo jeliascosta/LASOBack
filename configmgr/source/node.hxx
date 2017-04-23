@@ -57,7 +57,7 @@ protected:
     explicit Node(int layer);
     explicit Node(const Node & other);
 
-    virtual ~Node() override;
+    virtual ~Node();
 
     int layer_;
     int finalized_;

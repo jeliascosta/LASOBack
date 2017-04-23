@@ -26,6 +26,7 @@ OGLManager::~OGLManager()
 }
 
 uno::Reference< media::XPlayer > SAL_CALL OGLManager::createPlayer( const OUString& rURL )
+    throw (uno::RuntimeException, std::exception)
 {
     OGLPlayer* pPlayer( new OGLPlayer() );
     if( pPlayer->create(rURL) )
@@ -38,19 +39,22 @@ uno::Reference< media::XPlayer > SAL_CALL OGLManager::createPlayer( const OUStri
     }
 }
 
-OUString SAL_CALL OGLManager::getImplementationName()
+OUString SAL_CALL OGLManager::getImplementationName() throw ( uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.avmedia.Manager_OpenGL");
 }
 
 sal_Bool SAL_CALL OGLManager::supportsService( const OUString& rServiceName )
+        throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL OGLManager::getSupportedServiceNames()
+        throw ( uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.media.Manager_OpenGL" };
+    ::uno::Sequence< OUString > aRet { "com.sun.star.media.Manager_OpenGL" };
+    return aRet;
 }
 
 } // namespace ogl

@@ -22,13 +22,12 @@
 
 #include <comphelper/comphelperdllapi.h>
 #include <com/sun/star/task/PasswordRequestMode.hpp>
-#include <com/sun/star/task/XInteractionAbort.hpp>
 #include <com/sun/star/task/XInteractionRequest.hpp>
 #include <cppuhelper/implbase.hxx>
-#include <rtl/ref.hxx>
 
 namespace comphelper {
 
+class AbortContinuation;
 class PasswordContinuation;
 
 
@@ -44,25 +43,22 @@ class COMPHELPER_DLLPUBLIC SimplePasswordRequest :
         public cppu::WeakImplHelper<css::task::XInteractionRequest>
 {
 public:
-    explicit    SimplePasswordRequest();
-    virtual     ~SimplePasswordRequest() override;
+    explicit    SimplePasswordRequest( css::task::PasswordRequestMode eMode );
+    virtual     ~SimplePasswordRequest();
 
     bool         isPassword() const;
 
     OUString     getPassword() const;
 
 private:
-    SimplePasswordRequest(SimplePasswordRequest const&) = delete;
-    SimplePasswordRequest& operator=(SimplePasswordRequest const&) = delete;
-
     // XInteractionRequest
-    virtual css::uno::Any SAL_CALL getRequest() override;
-    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual css::uno::Any SAL_CALL getRequest() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
-    css::uno::Any                         maRequest;
-    css::uno::Reference<css::task::XInteractionAbort> mxAbort;
-    rtl::Reference<PasswordContinuation>  mxPassword;
+    css::uno::Any      maRequest;
+    css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > maContinuations;
+    PasswordContinuation *          mpPassword;
 };
 
 
@@ -78,7 +74,7 @@ public:
                             css::task::PasswordRequestMode eMode,
                             const OUString& rDocumentUrl,
                             bool bPasswordToModify = false );
-    virtual             ~DocPasswordRequest() override;
+    virtual             ~DocPasswordRequest();
 
     bool            isPassword() const;
 
@@ -88,17 +84,14 @@ public:
     bool            getRecommendReadOnly() const;
 
 private:
-    DocPasswordRequest(DocPasswordRequest const&) = delete;
-    DocPasswordRequest& operator=(DocPasswordRequest const&) = delete;
-
     // XInteractionRequest
-    virtual css::uno::Any SAL_CALL getRequest() override;
-    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual css::uno::Any SAL_CALL getRequest() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
-    css::uno::Any                         maRequest;
-    css::uno::Reference<css::task::XInteractionAbort> mxAbort;
-    rtl::Reference<PasswordContinuation>  mxPassword;
+    css::uno::Any      maRequest;
+    css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > maContinuations;
+    PasswordContinuation *          mpPassword;
 };
 
 

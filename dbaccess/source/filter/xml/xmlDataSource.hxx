@@ -41,7 +41,7 @@ namespace dbaxml
                     const OUString& rLName,
                     const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
                     const UsedFor _eUsedFor = eDataSource );
-        virtual ~OXMLDataSource() override;
+        virtual ~OXMLDataSource();
 
         virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                     const OUString& rLocalName,

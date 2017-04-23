@@ -25,8 +25,9 @@
 
 namespace sdr {
 
-PolyPolygonEditor::PolyPolygonEditor( const basegfx::B2DPolyPolygon& rPolyPolygon)
+PolyPolygonEditor::PolyPolygonEditor( const basegfx::B2DPolyPolygon& rPolyPolygon, bool bClosed )
 : maPolyPolygon( rPolyPolygon )
+, mbIsClosed( bClosed )
 {
 }
 
@@ -45,8 +46,7 @@ bool PolyPolygonEditor::DeletePoints( const std::set< sal_uInt16 >& rAbsPoints )
 
             aCandidate.remove(nPnt);
 
-
-            if( aCandidate.count() < 2L )
+            if( ( mbIsClosed && aCandidate.count() < 3L) || (aCandidate.count() < 2L) )
             {
                 maPolyPolygon.remove(nPoly);
             }
@@ -88,7 +88,7 @@ bool PolyPolygonEditor::SetSegmentsKind(SdrPathSegmentKind eKind, const std::set
 
                 if(bContolUsed)
                 {
-                    if(SdrPathSegmentKind::Toggle == eKind || SdrPathSegmentKind::Line == eKind)
+                    if(SDRPATHSEGMENT_TOGGLE == eKind || SDRPATHSEGMENT_LINE == eKind)
                     {
                         // remove control
                         aCandidate.resetNextControlPoint(nPntNum);
@@ -98,7 +98,7 @@ bool PolyPolygonEditor::SetSegmentsKind(SdrPathSegmentKind eKind, const std::set
                 }
                 else
                 {
-                    if(SdrPathSegmentKind::Toggle == eKind || SdrPathSegmentKind::Curve == eKind)
+                    if(SDRPATHSEGMENT_TOGGLE == eKind || SDRPATHSEGMENT_CURVE == eKind)
                     {
                         // add control
                         const basegfx::B2DPoint aStart(aCandidate.getB2DPoint(nPntNum));

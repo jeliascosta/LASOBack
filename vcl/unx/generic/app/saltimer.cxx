@@ -23,9 +23,17 @@
 #include <unistd.h>
 
 #include <unx/salunx.h>
+#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/saltimer.h>
 #include <unx/salinst.h>
+
+void X11SalData::Timeout( bool idle )
+{
+    ImplSVData* pSVData = ImplGetSVData();
+    if( pSVData->mpSalTimer )
+        pSVData->mpSalTimer->CallCallback( idle );
+}
 
 void SalXLib::StopTimer()
 {

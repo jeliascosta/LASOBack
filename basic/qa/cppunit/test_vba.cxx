@@ -25,6 +25,7 @@ namespace
     {
         public:
         VBATest() : BootstrapFixture(true, false) {}
+        virtual ~VBATest(){}
         void testMiscVBAFunctions();
         void testMiscOLEStuff();
         // Adds code needed to register the test suite
@@ -55,47 +56,6 @@ void VBATest::testMiscVBAFunctions()
         "format.vb",
         "replace.vb",
         "stringplusdouble.vb",
-        "chr.vb",
-        "abs.vb",
-        "array.vb",
-        "asc.vb",
-        "atn.vb",
-        "cbool.vb",
-        "cdate.vb",
-        "cdbl.vb",
-        "choose.vb",
-        "cos.vb",
-        "cint.vb",
-        "clng.vb",
-        "csng.vb",
-        "cstr.vb",
-        "cvdate.vb",
-        "cverr.vb",
-        "dateadd.vb",
-        "datediff.vb",
-        "datepart.vb",
-        "day.vb",
-        "error.vb",
-        "exp.vb",
-        "fix.vb",
-        "hex.vb",
-        "hour.vb",
-        "formatnumber.vb",
-        "iif.vb",
-        "instr.vb",
-        "instrrev.vb",
-        "int.vb",
-        "iserror.vb",
-        "ismissing.vb",
-        "isnull.vb",
-        "isobject.vb",
-        "join.vb",
-        "lbound.vb",
-        "isarray.vb",
-        "isdate.vb",
-        "isempty.vb",
-        "isnumeric.vb",
-        "lcase.vb",
 #ifndef WIN32 // missing 64bit Currency marshalling.
         "win32compat.vb", // windows compatibility hooks.
 #endif
@@ -109,28 +69,28 @@ void VBATest::testMiscVBAFunctions()
 
     for ( sal_uInt32  i=0; i<SAL_N_ELEMENTS( macroSource ); ++i )
     {
-        OUString sMacroURL = sMacroPathURL
-                           + OUString::createFromAscii( macroSource[ i ] );
+        OUString sMacroURL( sMacroPathURL );
+        sMacroURL += OUString::createFromAscii( macroSource[ i ] );
 
         MacroSnippet myMacro;
         myMacro.LoadSourceFromFile( sMacroURL );
         SbxVariableRef pReturn = myMacro.Run();
-        if ( pReturn.is() )
+        if ( pReturn )
         {
             fprintf(stderr, "macro result for %s\n", macroSource[ i ] );
             fprintf(stderr, "macro returned:\n%s\n", OUStringToOString( pReturn->GetOUString(), RTL_TEXTENCODING_UTF8 ).getStr() );
         }
-        CPPUNIT_ASSERT_MESSAGE("No return variable huh?", pReturn.get() != nullptr );
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Result not as expected", OUString("OK"), pReturn->GetOUString() );
+        CPPUNIT_ASSERT_MESSAGE("No return variable huh?", pReturn != nullptr );
+        CPPUNIT_ASSERT_MESSAGE("Result not as expected", pReturn->GetOUString() == "OK" );
     }
 }
 
 void VBATest::testMiscOLEStuff()
 {
-// Not much point even trying to run except on Windows.
-// (Without Excel doesn't really do anything anyway,
-// see "so skip test" below.)
-#if defined(_WIN32)
+// Not much point even trying to run except on Windows. Does not work
+// on 64-bit Windows with Excel installed. (Without Excel doesn't
+// really do anything anyway, see "so skip test" below.)
+#if defined(_WIN32) && !defined(_WIN64)
     // test if we have the necessary runtime environment
     // to run the OLE tests.
     uno::Reference< lang::XMultiServiceFactory > xOLEFactory;
@@ -151,15 +111,13 @@ void VBATest::testMiscOLEStuff()
     if ( !bOk )
         return; // can't do anything, skip test
 
-    const int nBufSize = 1024 * 4;
-    wchar_t sBuf[nBufSize];
-    SQLGetInstalledDriversW( sBuf, nBufSize, nullptr );
+    sal_Unicode sBuf[1024*4];
+    SQLGetInstalledDriversW( sBuf, sizeof( sBuf ), nullptr );
 
-    const wchar_t *pODBCDriverName = sBuf;
+    const sal_Unicode *pODBCDriverName = sBuf;
     bool bFound = false;
     for (; wcslen( pODBCDriverName ) != 0; pODBCDriverName += wcslen( pODBCDriverName ) + 1 ) {
-        if( wcscmp( pODBCDriverName, L"Microsoft Excel Driver (*.xls)" ) == 0 ||
-            wcscmp( pODBCDriverName, L"Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)" ) == 0 ) {
+        if ( wcsstr( pODBCDriverName, L"Microsoft Excel Driver" ) != nullptr ) {
             bFound = true;
             break;
         }
@@ -170,36 +128,32 @@ void VBATest::testMiscOLEStuff()
     const char* macroSource[] = {
         "ole_ObjAssignNoDflt.vb",
         "ole_ObjAssignToNothing.vb",
-#if !defined(_WIN64)
-        // This test uses Microsoft.Jet.OLEDB.4.0 Provider, that is unavailable on Win64
         "ole_dfltObjDflMethod.vb",
-#endif
     };
 
     OUString sMacroPathURL = m_directories.getURLFromSrc("/basic/qa/vba_tests/");
 
-    uno::Sequence< uno::Any > aArgs(2);
+    uno::Sequence< uno::Any > aArgs(1);
     // path to test document
-    OUString sPath = m_directories.getPathFromSrc("/basic/qa/vba_tests/data/ADODBdata.xls");
+    OUString sPath = m_directories.getPathFromSrc("/basic/qa/vba_tests/data/");
+    sPath += "ADODBdata.xls";
     sPath = sPath.replaceAll( "/", "\\" );
 
-    aArgs[ 0 ] <<= sPath;
-    aArgs[ 1 ] <<= OUString(
-        reinterpret_cast<sal_Unicode const *>(pODBCDriverName));
+    aArgs[ 0 ] = uno::makeAny( sPath );
 
     for ( sal_uInt32  i=0; i<SAL_N_ELEMENTS( macroSource ); ++i )
     {
-        OUString sMacroURL = sMacroPathURL
-                           + OUString::createFromAscii( macroSource[ i ] );
+        OUString sMacroURL( sMacroPathURL );
+        sMacroURL += OUString::createFromAscii( macroSource[ i ] );
         MacroSnippet myMacro;
         myMacro.LoadSourceFromFile( sMacroURL );
         SbxVariableRef pReturn = myMacro.Run( aArgs );
-        if ( pReturn.is() )
+        if ( pReturn )
         {
             fprintf(stderr, "macro result for %s\n", macroSource[ i ] );
             fprintf(stderr, "macro returned:\n%s\n", OUStringToOString( pReturn->GetOUString(), RTL_TEXTENCODING_UTF8 ).getStr() );
         }
-        CPPUNIT_ASSERT_MESSAGE("No return variable huh?", pReturn.get() != nullptr );
+        CPPUNIT_ASSERT_MESSAGE("No return variable huh?", pReturn != NULL );
         CPPUNIT_ASSERT_MESSAGE("Result not as expected", pReturn->GetOUString() == "OK" );
     }
 #else

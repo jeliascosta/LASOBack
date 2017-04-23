@@ -36,31 +36,31 @@
 #include <com/sun/star/sdbc/XResultSetUpdate.hpp>
 #include <com/sun/star/sdbc/XRowUpdate.hpp>
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <connectivity/CommonTools.hxx>
 #include <comphelper/propertycontainer.hxx>
 #include <connectivity/FValue.hxx>
 #include <connectivity/dbtoolsdllapi.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <salhelper/simplereferenceobject.hxx>
 
 namespace connectivity
 {
-    typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XResultSet,
-                                               css::sdbc::XRow,
-                                               css::sdbc::XResultSetMetaDataSupplier,
-                                               css::util::XCancellable,
-                                               css::sdbc::XWarningsSupplier,
-                                               css::sdbc::XCloseable,
-                                               css::lang::XInitialization,
-                                               css::lang::XServiceInfo,
-                                               css::sdbc::XColumnLocate> ODatabaseMetaDataResultSet_BASE;
+    typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XResultSet,
+                                               ::com::sun::star::sdbc::XRow,
+                                               ::com::sun::star::sdbc::XResultSetMetaDataSupplier,
+                                               ::com::sun::star::util::XCancellable,
+                                               ::com::sun::star::sdbc::XWarningsSupplier,
+                                               ::com::sun::star::sdbc::XCloseable,
+                                               ::com::sun::star::lang::XInitialization,
+                                               ::com::sun::star::lang::XServiceInfo,
+                                               ::com::sun::star::sdbc::XColumnLocate> ODatabaseMetaDataResultSet_BASE;
 
     //  typedef ORefVector<ORowSetValue>    ORow;
     //  typedef ORefVector<ORow>            ORows;
 
     class OOO_DLLPUBLIC_DBTOOLS ODatabaseMetaDataResultSet :
-                                        public cppu::BaseMutex,
+                                        public comphelper::OBaseMutex,
                                         public  ODatabaseMetaDataResultSet_BASE,
                                         public  ::comphelper::OPropertyContainer,
                                         public  ::comphelper::OPropertyArrayUsageHelper<ODatabaseMetaDataResultSet>
@@ -112,8 +112,8 @@ namespace connectivity
 
     private:
         ORowSetValue                    m_aEmptyValue;
-        css::uno::WeakReferenceHelper    m_aStatement;
-        css::uno::Reference< css::sdbc::XResultSetMetaData>        m_xMetaData;
+        ::com::sun::star::uno::WeakReferenceHelper    m_aStatement;
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSetMetaData>        m_xMetaData;
         sal_Int32                       m_nColPos;
 
         sal_Int32                       m_nFetchSize;
@@ -122,8 +122,7 @@ namespace connectivity
         sal_Int32                       m_nResultSetConcurrency;
 
         void construct();
-        /// @throws css::sdbc::SQLException
-        void checkIndex(sal_Int32 columnIndex );
+        void checkIndex(sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException);
         void setType(MetaDataResultSetType _eType);
 
     protected:
@@ -139,7 +138,7 @@ namespace connectivity
         // OPropertySetHelper
         virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
-        virtual ~ODatabaseMetaDataResultSet() override;
+        virtual ~ODatabaseMetaDataResultSet();
     public:
 
         virtual void    SAL_CALL acquire() throw() override;
@@ -154,77 +153,75 @@ namespace connectivity
 
         // XServiceInfo
 
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_Static(  );
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  );
+        static OUString getImplementationName_Static(  ) throw(::com::sun::star::uno::RuntimeException);
+        static ::com::sun::star::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw (::com::sun::star::uno::RuntimeException);
 
     protected:
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
         // ::cppu::OComponentHelper
         virtual void SAL_CALL disposing() override;
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+        virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         //XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+        virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         // XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         // XResultSet
-        virtual sal_Bool SAL_CALL next(  ) override;
-        virtual sal_Bool SAL_CALL isBeforeFirst(  ) override;
-        virtual sal_Bool SAL_CALL isAfterLast(  ) override;
-        virtual sal_Bool SAL_CALL isFirst(  ) override;
-        virtual sal_Bool SAL_CALL isLast(  ) override;
-        virtual void SAL_CALL beforeFirst(  ) override;
-        virtual void SAL_CALL afterLast(  ) override;
-        virtual sal_Bool SAL_CALL first(  ) override;
-        virtual sal_Bool SAL_CALL last(  ) override;
-        virtual sal_Int32 SAL_CALL getRow(  ) override;
-        virtual sal_Bool SAL_CALL absolute( sal_Int32 row ) override;
-        virtual sal_Bool SAL_CALL relative( sal_Int32 rows ) override;
-        virtual sal_Bool SAL_CALL previous(  ) override;
-        virtual void SAL_CALL refreshRow(  ) override;
-        virtual sal_Bool SAL_CALL rowUpdated(  ) override;
-        virtual sal_Bool SAL_CALL rowInserted(  ) override;
-        virtual sal_Bool SAL_CALL rowDeleted(  ) override;
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getStatement(  ) override;
+        virtual sal_Bool SAL_CALL next(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isBeforeFirst(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isAfterLast(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isFirst(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isLast(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL beforeFirst(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL afterLast(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL first(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL last(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getRow(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL absolute( sal_Int32 row ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL relative( sal_Int32 rows ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL previous(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL refreshRow(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL rowUpdated(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL rowInserted(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL rowDeleted(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL getStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         // XRow
-        virtual sal_Bool SAL_CALL wasNull(  ) override;
-        virtual OUString SAL_CALL getString( sal_Int32 columnIndex ) override;
-        virtual sal_Bool SAL_CALL getBoolean( sal_Int32 columnIndex ) override;
-        virtual sal_Int8 SAL_CALL getByte( sal_Int32 columnIndex ) override;
-        virtual sal_Int16 SAL_CALL getShort( sal_Int32 columnIndex ) override;
-        virtual sal_Int32 SAL_CALL getInt( sal_Int32 columnIndex ) override;
-        virtual sal_Int64 SAL_CALL getLong( sal_Int32 columnIndex ) override;
-        virtual float SAL_CALL getFloat( sal_Int32 columnIndex ) override;
-        virtual double SAL_CALL getDouble( sal_Int32 columnIndex ) override;
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getBytes( sal_Int32 columnIndex ) override;
-        virtual css::util::Date SAL_CALL getDate( sal_Int32 columnIndex ) override;
-        virtual css::util::Time SAL_CALL getTime( sal_Int32 columnIndex ) override;
-        virtual css::util::DateTime SAL_CALL getTimestamp( sal_Int32 columnIndex ) override;
-        virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getBinaryStream( sal_Int32 columnIndex ) override;
-        virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getCharacterStream( sal_Int32 columnIndex ) override;
-        virtual css::uno::Any SAL_CALL getObject( sal_Int32 columnIndex, const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
-        virtual css::uno::Reference< css::sdbc::XRef > SAL_CALL getRef( sal_Int32 columnIndex ) override;
-        virtual css::uno::Reference< css::sdbc::XBlob > SAL_CALL getBlob( sal_Int32 columnIndex ) override;
-        virtual css::uno::Reference< css::sdbc::XClob > SAL_CALL getClob( sal_Int32 columnIndex ) override;
-        virtual css::uno::Reference< css::sdbc::XArray > SAL_CALL getArray( sal_Int32 columnIndex ) override;
+        virtual sal_Bool SAL_CALL wasNull(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getString( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL getBoolean( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int8 SAL_CALL getByte( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int16 SAL_CALL getShort( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getInt( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual sal_Int64 SAL_CALL getLong( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual float SAL_CALL getFloat( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual double SAL_CALL getDouble( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Sequence< sal_Int8 > SAL_CALL getBytes( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::util::Date SAL_CALL getDate( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::util::Time SAL_CALL getTime( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::util::DateTime SAL_CALL getTimestamp( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream > SAL_CALL getBinaryStream( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream > SAL_CALL getCharacterStream( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Any SAL_CALL getObject( sal_Int32 columnIndex, const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XRef > SAL_CALL getRef( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XBlob > SAL_CALL getBlob( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XClob > SAL_CALL getClob( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XArray > SAL_CALL getArray( sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         // XResultSetMetaDataSupplier
-        virtual css::uno::Reference< css::sdbc::XResultSetMetaData > SAL_CALL getMetaData(  ) override;
+        virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSetMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         // XCancellable
-        virtual void SAL_CALL cancel(  ) override;
+        virtual void SAL_CALL cancel(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         // XCloseable
-        virtual void SAL_CALL close(  ) override;
+        virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         // XWarningsSupplier
-        virtual css::uno::Any SAL_CALL getWarnings(  ) override;
-        virtual void SAL_CALL clearWarnings(  ) override;
+        virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         // XColumnLocate
-        virtual sal_Int32 SAL_CALL findColumn( const OUString& columnName ) override;
+        virtual sal_Int32 SAL_CALL findColumn( const OUString& columnName ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
         // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any >& aArguments ) throw (::com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
         void setCatalogsMap();
         void setSchemasMap();
@@ -248,31 +245,31 @@ namespace connectivity
         // some methods to get already defined ORowSetValues
         // this increase the reuse of ORowSetValues
         /// return an empty ORowSetValueDecorator
-        static ORowSetValueDecoratorRef const & getEmptyValue();
+        static ORowSetValueDecoratorRef getEmptyValue();
         /// return an ORowSetValueDecorator with 0 as value
-        static ORowSetValueDecoratorRef const & get0Value();
+        static ORowSetValueDecoratorRef get0Value();
         /// return an ORowSetValueDecorator with 1 as value
-        static ORowSetValueDecoratorRef const & get1Value();
+        static ORowSetValueDecoratorRef get1Value();
         /// return an ORowSetValueDecorator with ColumnSearch::BASIC as value
-        static ORowSetValueDecoratorRef const & getBasicValue();
+        static ORowSetValueDecoratorRef getBasicValue();
         /// return an ORowSetValueDecorator with string SELECT as value
-        static ORowSetValueDecoratorRef const & getSelectValue();
+        static ORowSetValueDecoratorRef getSelectValue();
         /// return an ORowSetValueDecorator with string INSERT as value
-        static ORowSetValueDecoratorRef const & getInsertValue();
+        static ORowSetValueDecoratorRef getInsertValue();
         /// return an ORowSetValueDecorator with string DELETE as value
-        static ORowSetValueDecoratorRef const & getDeleteValue();
+        static ORowSetValueDecoratorRef getDeleteValue();
         /// return an ORowSetValueDecorator with string UPDATE as value
-        static ORowSetValueDecoratorRef const & getUpdateValue();
+        static ORowSetValueDecoratorRef getUpdateValue();
         /// return an ORowSetValueDecorator with string CREATE as value
-        static ORowSetValueDecoratorRef const & getCreateValue();
+        static ORowSetValueDecoratorRef getCreateValue();
         /// return an ORowSetValueDecorator with string READ as value
-        static ORowSetValueDecoratorRef const & getReadValue();
+        static ORowSetValueDecoratorRef getReadValue();
         /// return an ORowSetValueDecorator with string ALTER as value
-        static ORowSetValueDecoratorRef const & getAlterValue();
+        static ORowSetValueDecoratorRef getAlterValue();
         /// return an ORowSetValueDecorator with string DROP as value
-        static ORowSetValueDecoratorRef const & getDropValue();
+        static ORowSetValueDecoratorRef getDropValue();
         /// return an ORowSetValueDecorator with string ' as value
-        static ORowSetValueDecoratorRef const & getQuoteValue();
+        static ORowSetValueDecoratorRef getQuoteValue();
 
     };
 }

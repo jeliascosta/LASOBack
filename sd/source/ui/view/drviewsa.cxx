@@ -20,6 +20,7 @@
 #include "DrawViewShell.hxx"
 #include <com/sun/star/scanner/ScannerManager.hpp>
 #include <cppuhelper/implbase.hxx>
+#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 #include <editeng/sizeitem.hxx>
 #include <svx/svdlayer.hxx>
@@ -72,7 +73,7 @@
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
-using vcl::EnumContext;
+using sfx2::sidebar::EnumContext;
 
 namespace sd {
 
@@ -88,14 +89,19 @@ private:
 public:
 
                             explicit ScannerEventListener( DrawViewShell* pParent ) : mpParent( pParent )  {}
+                            virtual ~ScannerEventListener();
 
     // XEventListener
-    virtual void SAL_CALL   disposing( const lang::EventObject& rEventObject ) override;
+    virtual void SAL_CALL   disposing( const lang::EventObject& rEventObject ) throw (uno::RuntimeException, std::exception) override;
 
     void                    ParentDestroyed() { mpParent = nullptr; }
 };
 
-void SAL_CALL ScannerEventListener::disposing( const lang::EventObject& rEventObject )
+ScannerEventListener::~ScannerEventListener()
+{
+}
+
+void SAL_CALL ScannerEventListener::disposing( const lang::EventObject& rEventObject ) throw (uno::RuntimeException, std::exception)
 {
     if( mpParent )
         mpParent->ScannerEvent( rEventObject );
@@ -109,7 +115,7 @@ DrawViewShell::DrawViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBas
     , mpSelectionChangeHandler(new svx::sidebar::SelectionChangeHandler(
           [this] () { return this->GetSidebarContextName(); },
           uno::Reference<frame::XController>(&rViewShellBase.GetDrawController()),
-          vcl::EnumContext::Context::Default))
+          sfx2::sidebar::EnumContext::Context_Default))
 {
     if (pFrameViewArgument != nullptr)
         mpFrameView = pFrameViewArgument;
@@ -122,15 +128,10 @@ DrawViewShell::DrawViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBas
     SetContextName(GetSidebarContextName());
 
     doShow();
-
-    ConfigureAppBackgroundColor();
-    SD_MOD()->GetColorConfig().AddListener(this);
 }
 
 DrawViewShell::~DrawViewShell()
 {
-    SD_MOD()->GetColorConfig().RemoveListener(this);
-
     mpSelectionChangeHandler->Disconnect();
 
     mpAnnotationManager.reset();
@@ -176,11 +177,11 @@ DrawViewShell::~DrawViewShell()
         }
     }
 
-    if ( mxClipEvtLstnr.is() )
+    if ( mpClipEvtLstnr )
     {
-        mxClipEvtLstnr->RemoveListener( GetActiveWindow() );
-        mxClipEvtLstnr->ClearCallbackLink();        // prevent callback if another thread is waiting
-        mxClipEvtLstnr.clear();
+        mpClipEvtLstnr->AddRemoveListener( GetActiveWindow(), false );
+        mpClipEvtLstnr->ClearCallbackLink();        // prevent callback if another thread is waiting
+        mpClipEvtLstnr->release();
     }
 
     delete mpDrawView;
@@ -200,9 +201,14 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
     mpActualPage = nullptr;
     mbMousePosFreezed = false;
     mbReadOnly = GetDocSh()->IsReadOnly();
-    mxClipEvtLstnr.clear();
+    mpClipEvtLstnr = nullptr;
     mbPastePossible = false;
     mbIsLayerModeActive = false;
+
+    svtools::ColorConfig aColorConfig;
+    mnAppBackgroundColor = Color( aColorConfig.GetColorValue( svtools::APPBACKGROUND ).nColor );
+    if (comphelper::LibreOfficeKit::isActive())
+        mnAppBackgroundColor = COL_TRANSPARENT;
 
     mpFrameView->Connect();
 
@@ -220,19 +226,19 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
     // to set it in order to resync frame view and this view.
     mpFrameView->SetPageKind(eInitialPageKind);
     mePageKind = eInitialPageKind;
-    meEditMode = EditMode::Page;
+    meEditMode = EM_PAGE;
     DocumentType eDocType = GetDoc()->GetDocumentType(); // RTTI does not work here
     switch (mePageKind)
     {
-        case PageKind::Standard:
+        case PK_STANDARD:
             meShellType = ST_IMPRESS;
             break;
 
-        case PageKind::Notes:
+        case PK_NOTES:
             meShellType = ST_NOTES;
             break;
 
-        case PageKind::Handout:
+        case PK_HANDOUT:
             meShellType = ST_HANDOUT;
             break;
     }
@@ -249,7 +255,7 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
         aVisAreaPos = pDocSh->GetVisArea(ASPECT_CONTENT).TopLeft();
     }
 
-    mpDrawView->SetWorkArea(::tools::Rectangle(Point() - aVisAreaPos - aPageOrg, aSize));
+    mpDrawView->SetWorkArea(Rectangle(Point() - aVisAreaPos - aPageOrg, aSize));
 
     // objects can not grow bigger than ViewSize
     GetDoc()->SetMaxObjSize(aSize);
@@ -259,33 +265,36 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
 
     /* In order to set the correct EditMode of the FrameView, we select another
        one (small trick).  */
-    if (mpFrameView->GetViewShEditMode(/*mePageKind*/) == EditMode::Page)
+    if (mpFrameView->GetViewShEditMode(/*mePageKind*/) == EM_PAGE)
     {
-        meEditMode = EditMode::MasterPage;
+        meEditMode = EM_MASTERPAGE;
     }
     else
     {
-        meEditMode = EditMode::Page;
+        meEditMode = EM_PAGE;
     }
 
     // Use configuration of FrameView
     ReadFrameViewData(mpFrameView);
 
-    if( eDocType == DocumentType::Draw )
+    if( eDocType == DOCUMENT_TYPE_DRAW )
     {
+        SetHelpId( SD_IF_SDGRAPHICVIEWSHELL );
         GetActiveWindow()->SetHelpId( HID_SDGRAPHICVIEWSHELL );
     }
     else
     {
-        if (mePageKind == PageKind::Notes)
+        if (mePageKind == PK_NOTES)
         {
+            SetHelpId( SID_NOTES_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_NOTES_MODE );
 
             // AutoLayouts have to be created
             GetDoc()->StopWorkStartupDelay();
         }
-        else if (mePageKind == PageKind::Handout)
+        else if (mePageKind == PK_HANDOUT)
         {
+            SetHelpId( SID_HANDOUT_MASTER_MODE );
             GetActiveWindow()->SetHelpId( CMD_SID_HANDOUT_MASTER_MODE );
 
             // AutoLayouts have to be created
@@ -293,6 +302,7 @@ void DrawViewShell::Construct(DrawDocShell* pDocSh, PageKind eInitialPageKind)
         }
         else
         {
+            SetHelpId( SD_IF_SDDRAWVIEWSHELL );
             GetActiveWindow()->SetHelpId( HID_SDDRAWVIEWSHELL );
         }
     }
@@ -352,7 +362,7 @@ void DrawViewShell::Shutdown()
     if(SlideShow::IsRunning( GetViewShellBase() ) )
     {
         // Turn off effects.
-        GetDrawView()->SetAnimationMode(SdrAnimationMode::Disable);
+        GetDrawView()->SetAnimationMode(SDR_ANIMATION_DISABLE);
     }
 }
 
@@ -433,7 +443,7 @@ void DrawViewShell::SetupPage (Size &rSize,
         {
             if( bSize )
             {
-                ::tools::Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
+                Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
                 pPage->ScaleObjects(rSize, aBorderRect, bScaleAll);
                 pPage->SetSize(rSize);
 
@@ -446,9 +456,9 @@ void DrawViewShell::SetupPage (Size &rSize,
                 pPage->SetLwrBorder(nLower);
             }
 
-            if ( mePageKind == PageKind::Standard )
+            if ( mePageKind == PK_STANDARD )
             {
-                GetDoc()->GetMasterSdPage(i, PageKind::Notes)->CreateTitleAndLayout();
+                GetDoc()->GetMasterSdPage(i, PK_NOTES)->CreateTitleAndLayout();
             }
 
             pPage->CreateTitleAndLayout();
@@ -466,7 +476,7 @@ void DrawViewShell::SetupPage (Size &rSize,
         {
             if( bSize )
             {
-                ::tools::Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
+                Rectangle aBorderRect(nLeft, nUpper, nRight, nLower);
                 pPage->ScaleObjects(rSize, aBorderRect, bScaleAll);
                 pPage->SetSize(rSize);
             }
@@ -478,9 +488,9 @@ void DrawViewShell::SetupPage (Size &rSize,
                 pPage->SetLwrBorder(nLower);
             }
 
-            if ( mePageKind == PageKind::Standard )
+            if ( mePageKind == PK_STANDARD )
             {
-                SdPage* pNotesPage = GetDoc()->GetSdPage(i, PageKind::Notes);
+                SdPage* pNotesPage = GetDoc()->GetSdPage(i, PK_NOTES);
                 pNotesPage->SetAutoLayout( pNotesPage->GetAutoLayout() );
             }
 
@@ -488,9 +498,9 @@ void DrawViewShell::SetupPage (Size &rSize,
         }
     }
 
-    if ( mePageKind == PageKind::Standard )
+    if ( mePageKind == PK_STANDARD )
     {
-        SdPage* pHandoutPage = GetDoc()->GetSdPage(0, PageKind::Handout);
+        SdPage* pHandoutPage = GetDoc()->GetSdPage(0, PK_HANDOUT);
         pHandoutPage->CreateTitleAndLayout(true);
     }
 
@@ -509,7 +519,7 @@ void DrawViewShell::SetupPage (Size &rSize,
         aVisAreaPos = GetDocSh()->GetVisArea(ASPECT_CONTENT).TopLeft();
     }
 
-    GetView()->SetWorkArea(::tools::Rectangle(Point() - aVisAreaPos - aPageOrg, aSize));
+    GetView()->SetWorkArea(Rectangle(Point() - aVisAreaPos - aPageOrg, aSize));
 
     UpdateScrollBars();
 
@@ -585,7 +595,7 @@ void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
 
                 aPagePos.X() -= aPageSize.Width()  / 2;
 
-                ::tools::Rectangle aFullPageZoomRect( aPagePos, aPageSize );
+                Rectangle aFullPageZoomRect( aPagePos, aPageSize );
                 aZoomItem.AddSnappingPoint( pActiveWindow->GetZoomForRect( aFullPageZoomRect ) );
             }
             aZoomItem.AddSnappingPoint(100);
@@ -605,7 +615,7 @@ void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
         // position- and size items
         if ( mpDrawView->IsAction() )
         {
-            ::tools::Rectangle aRect;
+            Rectangle aRect;
             mpDrawView->TakeActionRect( aRect );
 
             if ( aRect.IsEmpty() )
@@ -627,7 +637,7 @@ void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
         {
             if ( mpDrawView->AreObjectsMarked() )
             {
-                ::tools::Rectangle aRect = mpDrawView->GetAllMarkedRect();
+                Rectangle aRect = mpDrawView->GetAllMarkedRect();
                 pPageView->LogicToPagePos(aRect);
 
                 // Show the position of the selected shape(s)
@@ -719,7 +729,8 @@ void DrawViewShell::GetStatusBarState(SfxItemSet& rSet)
 
 void DrawViewShell::Notify (SfxBroadcaster&, const SfxHint& rHint)
 {
-    if (rHint.GetId()==SfxHintId::ModeChanged)
+    const SfxSimpleHint* pSimple = dynamic_cast< const SfxSimpleHint* >(&rHint);
+    if (pSimple!=nullptr && pSimple->GetId()==SFX_HINT_MODECHANGED)
     {
         // Change to selection when turning on read-only mode.
         if(GetDocSh()->IsReadOnly() && dynamic_cast< FuSelection* >( GetCurrentFunction().get() ) )
@@ -755,20 +766,20 @@ void DrawViewShell::GetAnnotationState (SfxItemSet& rItemSet )
 
 ::rtl::OUString DrawViewShell::GetSidebarContextName() const
 {
-    svx::sidebar::SelectionAnalyzer::ViewType eViewType (svx::sidebar::SelectionAnalyzer::ViewType::Standard);
+    svx::sidebar::SelectionAnalyzer::ViewType eViewType (svx::sidebar::SelectionAnalyzer::VT_Standard);
     switch (mePageKind)
     {
-        case PageKind::Handout:
-            eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Handout;
+        case PK_HANDOUT:
+            eViewType = svx::sidebar::SelectionAnalyzer::VT_Handout;
             break;
-        case PageKind::Notes:
-            eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Notes;
+        case PK_NOTES:
+            eViewType = svx::sidebar::SelectionAnalyzer::VT_Notes;
             break;
-        case PageKind::Standard:
-            if (meEditMode == EditMode::MasterPage)
-                eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Master;
+        case PK_STANDARD:
+            if (meEditMode == EM_MASTERPAGE)
+                eViewType = svx::sidebar::SelectionAnalyzer::VT_Master;
             else
-                eViewType = svx::sidebar::SelectionAnalyzer::ViewType::Standard;
+                eViewType = svx::sidebar::SelectionAnalyzer::VT_Standard;
             break;
     }
     return EnumContext::GetContextName(

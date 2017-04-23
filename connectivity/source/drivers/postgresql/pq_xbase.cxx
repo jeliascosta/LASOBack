@@ -59,9 +59,9 @@ namespace pq_sdbc_driver
 
 ReflectionBase::ReflectionBase(
     const OUString &implName,
-    const css::uno::Sequence< OUString > &supportedServices,
+    const ::com::sun::star::uno::Sequence< OUString > &supportedServices,
     const ::rtl::Reference< RefCountedMutex >& refMutex,
-    const css::uno::Reference< css::sdbc::XConnection > &conn,
+    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > &conn,
     ConnectionSettings *pSettings,
     cppu::IPropertyArrayHelper & props /* must survive this object !*/ )
     : ReflectionBase_BASE( refMutex->mutex ),
@@ -81,10 +81,11 @@ cppu::IPropertyArrayHelper & ReflectionBase::getInfoHelper()
 }
 
 sal_Bool ReflectionBase::convertFastPropertyValue(
-    css::uno::Any & rConvertedValue,
-    css::uno::Any & rOldValue,
+    ::com::sun::star::uno::Any & rConvertedValue,
+    ::com::sun::star::uno::Any & rOldValue,
     sal_Int32 nHandle,
-    const css::uno::Any& rValue )
+    const ::com::sun::star::uno::Any& rValue )
+    throw (::com::sun::star::lang::IllegalArgumentException)
 {
 
     rOldValue = m_values[nHandle];
@@ -94,21 +95,25 @@ sal_Bool ReflectionBase::convertFastPropertyValue(
 }
 
 void ReflectionBase::setPropertyValue_NoBroadcast_public(
-    const OUString & name, const css::uno::Any & value )
+    const OUString & name, const com::sun::star::uno::Any & value )
 {
     sal_Int32 nHandle = m_propsDesc.getHandleByName( name );
     if( -1 == nHandle  )
     {
-        throw css::uno::RuntimeException(
-            "Unknown property '" + name + "' in " + m_implName,
-            *this );
+        OUStringBuffer buf(128);
+        buf.append( "Unknown property '" );
+        buf.append( name );
+        buf.append( "' in " );
+        buf.append( m_implName );
+        throw com::sun::star::uno::RuntimeException( buf.makeStringAndClear() , *this );
     }
     setFastPropertyValue_NoBroadcast( nHandle , value );
 }
 
 void ReflectionBase::setFastPropertyValue_NoBroadcast(
     sal_Int32 nHandle,
-    const css::uno::Any& rValue )
+    const ::com::sun::star::uno::Any& rValue )
+    throw (::com::sun::star::uno::Exception, std::exception)
 {
 //     OUString s;
 //     rValue >>= s;
@@ -118,7 +123,7 @@ void ReflectionBase::setFastPropertyValue_NoBroadcast(
 }
 
 void ReflectionBase::getFastPropertyValue(
-    css::uno::Any& rValue,
+    ::com::sun::star::uno::Any& rValue,
     sal_Int32 nHandle ) const
 {
     rValue = m_values[nHandle];
@@ -129,31 +134,36 @@ void ReflectionBase::getFastPropertyValue(
 
 }
 
-Reference < css::beans::XPropertySetInfo >  ReflectionBase::getPropertySetInfo()
+Reference < ::com::sun::star::beans::XPropertySetInfo >  ReflectionBase::getPropertySetInfo()
+        throw(com::sun::star::uno::RuntimeException, std::exception)
 {
     return OPropertySetHelper::createPropertySetInfo( m_propsDesc );
 }
 
 OUString ReflectionBase::getImplementationName()
+        throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return m_implName;
 }
 
 sal_Bool ReflectionBase::supportsService(const OUString& ServiceName)
+        throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > ReflectionBase::getSupportedServiceNames()
+        throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return m_supportedServices;
 }
 
 
-Sequence< css::uno::Type > ReflectionBase::getTypes()
+Sequence< com::sun::star::uno::Type > ReflectionBase::getTypes()
+        throw( com::sun::star::uno::RuntimeException, std::exception )
 {
     osl::MutexGuard guard( m_refMutex->mutex );
-    static Sequence< css::uno::Type > collection(
+    static Sequence< ::com::sun::star::uno::Type > collection(
             ::comphelper::concatSequences(
                 ::cppu::OPropertySetHelper::getTypes(),
                 ReflectionBase_BASE::getTypes() ) );
@@ -161,15 +171,16 @@ Sequence< css::uno::Type > ReflectionBase::getTypes()
 }
 
 
-css::uno::Any ReflectionBase::queryInterface(
-    const css::uno::Type & reqType )
+com::sun::star::uno::Any ReflectionBase::queryInterface(
+    const com::sun::star::uno::Type & reqType )
+    throw (com::sun::star::uno::RuntimeException, std::exception)
 {
     Any ret = ReflectionBase_BASE::queryInterface( reqType );
     return ret.hasValue() ? ret : OPropertySetHelper::queryInterface( reqType );
 
 }
 
-Sequence< sal_Int8> ReflectionBase::getImplementationId()
+Sequence< sal_Int8> ReflectionBase::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -191,7 +202,7 @@ void ReflectionBase::copyValuesFrom( const Reference< XPropertySet > & set )
     }
 }
 
-OUString ReflectionBase::getName(  )
+OUString ReflectionBase::getName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     Statics & st = getStatics();
     if( getInfoHelper().hasPropertyByName( st.SCHEMA_NAME ) )
@@ -204,6 +215,7 @@ OUString ReflectionBase::getName(  )
 
 
 void ReflectionBase::setName( const OUString& /* aName */ )
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     throw RuntimeException(
         "pq_sdbc::ReflectionBase::setName not implemented",

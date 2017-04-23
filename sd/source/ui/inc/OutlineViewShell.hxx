@@ -56,13 +56,13 @@ public:
         SfxViewFrame* pFrame,
         ViewShellBase& rViewShellBase,
         vcl::Window* pParentWindow,
-        FrameView* pFrameView);
+        FrameView* pFrameView = nullptr);
 
-    virtual ~OutlineViewShell() override;
+    virtual ~OutlineViewShell();
 
     virtual void Shutdown() override;
 
-    virtual void Paint(const ::tools::Rectangle& rRect, ::sd::Window* pWin) override;
+    virtual void Paint(const Rectangle& rRect, ::sd::Window* pWin) override;
 
     /** Arrange and resize the GUI elements like rulers, sliders, and
         buttons as well as the actual document view according to the size of
@@ -100,7 +100,7 @@ public:
     void FuSupport(SfxRequest &rReq);
 
     virtual void SetZoom(long nZoom) override;
-    virtual void SetZoomRect(const ::tools::Rectangle& rZoomRect) override;
+    virtual void SetZoomRect(const Rectangle& rZoomRect) override;
 
     void Execute(SfxRequest& rReq);
 
@@ -111,13 +111,13 @@ public:
     virtual bool KeyInput(const KeyEvent& rKEvt, ::sd::Window* pWin) override;
     virtual void MouseButtonUp(const MouseEvent& rMEvt, ::sd::Window* pWin) override;
 
-    sal_uLong   ReadRtf(SvStream& rInput, const OUString& rBaseURL);
+    sal_uLong   Read(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
 
-    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
-    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
+    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
+    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
 
     /** this method is called when the visible area of the view from this viewshell is changed */
-    virtual void VisAreaChanged(const ::tools::Rectangle& rRect) override;
+    virtual void VisAreaChanged(const Rectangle& rRect) override;
 
     /** Create an accessible object representing the specified window.
         @param pWindow
@@ -149,14 +149,15 @@ public:
     void UpdateOutlineObject( SdPage* pPage, Paragraph* pPara );
 
 private:
+    void ShowSlideShow(SfxRequest& rReq);
     OutlineView* pOlView;
     SdPage*         pLastPage; // For efficient processing of the preview
-    rtl::Reference<TransferableClipboardListener> mxClipEvtLstnr;
+    TransferableClipboardListener* pClipEvtLstnr;
     bool            bPastePossible;
     bool mbInitialized;
 
     void Construct (DrawDocShell* pDocSh);
-    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
+    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
 };
 
 } // end of namespace sd

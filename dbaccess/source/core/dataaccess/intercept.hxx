@@ -37,61 +37,88 @@ class OInterceptor : public ::cppu::WeakImplHelper< css::frame::XDispatchProvide
                                                     css::frame::XInterceptorInfo,
                                                     css::frame::XDispatch >
 {
-    DECL_LINK( OnDispatch, void*, void );
+    DECL_LINK_TYPED( OnDispatch, void*, void );
 protected:
-    virtual ~OInterceptor() override;
+    virtual ~OInterceptor();
 public:
 
     explicit OInterceptor( ODocumentDefinition* _pContentHolder );
 
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL dispose();
+    void SAL_CALL dispose() throw(css::uno::RuntimeException);
 
     //XDispatch
     virtual void SAL_CALL
     dispatch(
         const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
     addStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL ) override;
+        const css::util::URL& URL )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     virtual void SAL_CALL
     removeStatusListener(
         const css::uno::Reference< css::frame::XStatusListener >& Control,
-        const css::util::URL& URL ) override;
+        const css::util::URL& URL )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     //XInterceptorInfo
     virtual css::uno::Sequence< OUString >
-    SAL_CALL getInterceptedURLs(  ) override;
+    SAL_CALL getInterceptedURLs(  )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     //XDispatchProvider ( inherited by XDispatchProviderInterceptor )
     virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL
     queryDispatch(
         const css::util::URL& URL,
         const OUString& TargetFrameName,
-        sal_Int32 SearchFlags ) override;
+        sal_Int32 SearchFlags )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL
     queryDispatches(
-        const css::uno::Sequence< css::frame::DispatchDescriptor >& Requests ) override;
+        const css::uno::Sequence< css::frame::DispatchDescriptor >& Requests )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     //XDispatchProviderInterceptor
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-    getSlaveDispatchProvider(  ) override;
+    getSlaveDispatchProvider(  )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     virtual void SAL_CALL
     setSlaveDispatchProvider(
-        const css::uno::Reference< css::frame::XDispatchProvider >& NewDispatchProvider ) override;
+        const css::uno::Reference< css::frame::XDispatchProvider >& NewDispatchProvider )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-    getMasterDispatchProvider(  ) override;
+    getMasterDispatchProvider(  )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
     virtual void SAL_CALL
     setMasterDispatchProvider(
-        const css::uno::Reference< css::frame::XDispatchProvider >& NewSupplier ) override;
+        const css::uno::Reference< css::frame::XDispatchProvider >& NewSupplier )
+        throw (
+            css::uno::RuntimeException, std::exception
+        ) override;
 
 private:
 

@@ -25,7 +25,7 @@ namespace
     {
         GError* m_pError;
         public:
-            explicit GErrorWrapper() : m_pError(nullptr) {}
+            explicit GErrorWrapper(GError* pError) : m_pError(pError) {}
             ~GErrorWrapper() noexcept(false)
             {
                 if(!m_pError)
@@ -41,7 +41,7 @@ namespace
         const OString sFullInterface = OUStringToOString("org.freedesktop.PackageKit." + sInterface, RTL_TEXTENCODING_ASCII_US);
         GDBusProxy* proxy = nullptr;
         {
-            GErrorWrapper error;
+            GErrorWrapper error(nullptr);
             proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
                                G_DBUS_PROXY_FLAGS_NONE, nullptr,
                                "org.freedesktop.PackageKit",
@@ -71,7 +71,7 @@ void request(
     auto iactUtf8(OUStringToOString(interaction, RTL_TEXTENCODING_UTF8));
     std::shared_ptr<GDBusProxy> proxy(
         lcl_GetPackageKitProxy("Modify"), GObjectDeleter<GDBusProxy>());
-    GErrorWrapper error;
+    GErrorWrapper error(nullptr);
     g_dbus_proxy_call_sync(
         proxy.get(), method,
         g_variant_new(
@@ -94,6 +94,7 @@ namespace shell { namespace sessioninstall
 void SyncDbusSessionHelper::InstallPackageFiles(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & files,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallPackageFiles", xid, files, interaction);
 }
@@ -101,6 +102,7 @@ void SyncDbusSessionHelper::InstallPackageFiles(
 void SyncDbusSessionHelper::InstallProvideFiles(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & files,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallProvideFiles", xid, files, interaction);
 }
@@ -108,6 +110,7 @@ void SyncDbusSessionHelper::InstallProvideFiles(
 void SyncDbusSessionHelper::InstallCatalogs(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & files,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallCatalogs", xid, files, interaction);
 }
@@ -115,6 +118,7 @@ void SyncDbusSessionHelper::InstallCatalogs(
 void SyncDbusSessionHelper::InstallPackageNames(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & packages,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallPackageNames", xid, packages, interaction);
 }
@@ -122,6 +126,7 @@ void SyncDbusSessionHelper::InstallPackageNames(
 void SyncDbusSessionHelper::InstallMimeTypes(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & mimeTypes,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallMimeTypes", xid, mimeTypes, interaction);
 }
@@ -129,6 +134,7 @@ void SyncDbusSessionHelper::InstallMimeTypes(
 void SyncDbusSessionHelper::InstallFontconfigResources(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & resources,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallFontconfigResources", xid, resources, interaction);
 }
@@ -136,6 +142,7 @@ void SyncDbusSessionHelper::InstallFontconfigResources(
 void SyncDbusSessionHelper::InstallGStreamerResources(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & resources,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallGStreamerResources", xid, resources, interaction);
 }
@@ -143,6 +150,7 @@ void SyncDbusSessionHelper::InstallGStreamerResources(
 void SyncDbusSessionHelper::RemovePackageByFiles(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & files,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("RemovePackageByFiles", xid, files, interaction);
 }
@@ -150,16 +158,17 @@ void SyncDbusSessionHelper::RemovePackageByFiles(
 void SyncDbusSessionHelper::InstallPrinterDrivers(
     sal_uInt32 xid, css::uno::Sequence<OUString> const & files,
     OUString const & interaction)
+    throw (css::uno::RuntimeException, std::exception)
 {
     request("InstallPrinteDrivers", xid, files, interaction);
 }
 
-    void SAL_CALL SyncDbusSessionHelper::IsInstalled( const OUString& sPackagename, const OUString& sInteraction, sal_Bool& o_isInstalled )
+    void SAL_CALL SyncDbusSessionHelper::IsInstalled( const OUString& sPackagename, const OUString& sInteraction, sal_Bool& o_isInstalled ) throw (RuntimeException, std::exception)
     {
         const OString sPackagenameAscii = OUStringToOString(sPackagename, RTL_TEXTENCODING_ASCII_US);
         const OString sInteractionAscii = OUStringToOString(sInteraction, RTL_TEXTENCODING_ASCII_US);
         std::shared_ptr<GDBusProxy> proxy(lcl_GetPackageKitProxy("Query"), GObjectDeleter<GDBusProxy>());
-        GErrorWrapper error;
+        GErrorWrapper error(nullptr);
         std::shared_ptr<GVariant> result(g_dbus_proxy_call_sync (proxy.get(),
                          "IsInstalled",
                          g_variant_new ("(ss)",

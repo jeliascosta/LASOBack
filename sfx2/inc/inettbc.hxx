@@ -34,8 +34,8 @@ private:
     SvtURLBox*              GetURLBox() const;
     void                    OpenURL( const OUString& rName, bool bNew ) const;
 
-    DECL_LINK(        OpenHdl, SvtURLBox*, void );
-    DECL_LINK(        SelectHdl, ComboBox&, void );
+    DECL_LINK_TYPED(        OpenHdl, SvtURLBox*, void );
+    DECL_LINK_TYPED(        SelectHdl, ComboBox&, void );
 
     struct ExecuteInfo
     {
@@ -44,14 +44,14 @@ private:
         css::uno::Sequence< css::beans::PropertyValue >  aArgs;
     };
 
-    DECL_STATIC_LINK( SfxURLToolBoxControl_Impl, ExecuteHdl_Impl, void*, void );
+    DECL_STATIC_LINK_TYPED( SfxURLToolBoxControl_Impl, ExecuteHdl_Impl, void*, void );
 
 public:
 
                             SFX_DECL_TOOLBOX_CONTROL();
 
                             SfxURLToolBoxControl_Impl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rBox );
-    virtual                 ~SfxURLToolBoxControl_Impl() override;
+    virtual                 ~SfxURLToolBoxControl_Impl();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window* pParent ) override;
     virtual void            StateChanged( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState ) override;

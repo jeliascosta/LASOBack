@@ -51,9 +51,7 @@ namespace drawinglayer
                 double fFullDotDashLen = 0.0);
             StrokeAttribute();
             StrokeAttribute(const StrokeAttribute& rCandidate);
-            StrokeAttribute(StrokeAttribute&& rCandidate);
             StrokeAttribute& operator=(const StrokeAttribute& rCandidate);
-            StrokeAttribute& operator=(StrokeAttribute&& rCandidate);
             ~StrokeAttribute();
 
             // checks if the incarnation is default constructed

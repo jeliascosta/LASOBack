@@ -19,6 +19,7 @@ class PoolItemTest : public CppUnit::TestFixture
 {
   public:
              PoolItemTest() {}
+    virtual ~PoolItemTest() {}
 
     void testPool();
 
@@ -34,71 +35,71 @@ class PoolItemTest : public CppUnit::TestFixture
 void PoolItemTest::testPool()
 {
     SfxItemInfo aItems[] =
-        { { 1, true },
-          { 2, false /* not poolable */ },
-          { 3, false },
-          { 4, false /* not poolable */}
+        { { 0, true },
+          { 1, false /* not poolable */ },
+          { 2, false },
+          { 3, false /* not poolable */}
         };
 
-    SfxItemPool *pPool = new SfxItemPool("testpool", 1, 4, aItems);
+    SfxItemPool *pPool = new SfxItemPool("testpool", 0, 3, aItems);
     SfxItemPool_Impl *pImpl = SfxItemPool_Impl::GetImpl(pPool);
     CPPUNIT_ASSERT(pImpl != nullptr);
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(4), pImpl->maPoolItems.size());
+    CPPUNIT_ASSERT(pImpl->maPoolItems.size() == 4);
 
     // Poolable
-    SfxVoidItem aItemOne( 1 );
-    SfxVoidItem aNotherOne( 1 );
+    SfxVoidItem aItemZero( 0 );
+    SfxVoidItem aNotherZero( 0 );
 
     {
-        CPPUNIT_ASSERT(!pImpl->maPoolItems[0]);
-        const SfxPoolItem &rVal = pPool->Put(aItemOne);
-        CPPUNIT_ASSERT(bool(rVal == aItemOne));
+        CPPUNIT_ASSERT(pImpl->maPoolItems[0] == nullptr);
+        const SfxPoolItem &rVal = pPool->Put(aItemZero);
+        CPPUNIT_ASSERT(rVal == aItemZero);
         CPPUNIT_ASSERT(pImpl->maPoolItems[0] != nullptr);
-        const SfxPoolItem &rVal2 = pPool->Put(aNotherOne);
-        CPPUNIT_ASSERT(bool(rVal2 == rVal));
-        CPPUNIT_ASSERT_EQUAL(&rVal, &rVal2);
+        const SfxPoolItem &rVal2 = pPool->Put(aNotherZero);
+        CPPUNIT_ASSERT(rVal2 == rVal);
+        CPPUNIT_ASSERT(&rVal2 == &rVal);
 
         // Clones on Put ...
-        CPPUNIT_ASSERT(&rVal2 != &aItemOne);
-        CPPUNIT_ASSERT(&rVal2 != &aNotherOne);
-        CPPUNIT_ASSERT(&rVal != &aItemOne);
-        CPPUNIT_ASSERT(&rVal != &aNotherOne);
+        CPPUNIT_ASSERT(&rVal2 != &aItemZero);
+        CPPUNIT_ASSERT(&rVal2 != &aNotherZero);
+        CPPUNIT_ASSERT(&rVal != &aItemZero);
+        CPPUNIT_ASSERT(&rVal != &aNotherZero);
     }
 
     // non-poolable
-    SfxVoidItem aItemTwo( 2 );
-    SfxVoidItem aNotherTwo( 2 );
+    SfxVoidItem aItemOne( 1 );
+    SfxVoidItem aNotherOne( 1 );
     {
-        CPPUNIT_ASSERT(!pImpl->maPoolItems[1]);
-        const SfxPoolItem &rVal = pPool->Put(aItemTwo);
-        CPPUNIT_ASSERT(bool(rVal == aItemTwo));
+        CPPUNIT_ASSERT(pImpl->maPoolItems[1] == nullptr);
+        const SfxPoolItem &rVal = pPool->Put(aItemOne);
+        CPPUNIT_ASSERT(rVal == aItemOne);
         CPPUNIT_ASSERT(pImpl->maPoolItems[1] != nullptr);
 
-        const SfxPoolItem &rVal2 = pPool->Put(aNotherTwo);
-        CPPUNIT_ASSERT(bool(rVal2 == rVal));
+        const SfxPoolItem &rVal2 = pPool->Put(aNotherOne);
+        CPPUNIT_ASSERT(rVal2 == rVal);
         CPPUNIT_ASSERT(&rVal2 != &rVal);
     }
 
     // Test rehash
-    for (SfxPoolItemArray_Impl *pSlice : pImpl->maPoolItems)
+    for (size_t i = 0; i < pImpl->maPoolItems.size(); ++i)
     {
+        SfxPoolItemArray_Impl *pSlice = pImpl->maPoolItems[i];
         if (pSlice)
             pSlice->ReHash();
     }
 
     // Test removal.
-    SfxVoidItem aRemoveFour(4);
-    SfxVoidItem aNotherFour(4);
-    const SfxPoolItem &rKeyFour = pPool->Put(aRemoveFour);
-    pPool->Put(aNotherFour);
+    SfxVoidItem aRemoveThree(3);
+    SfxVoidItem aNotherThree(3);
+    const SfxPoolItem &rKeyThree = pPool->Put(aRemoveThree);
+    pPool->Put(aNotherThree);
     CPPUNIT_ASSERT(pImpl->maPoolItems[3]->size() > 0);
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0), pImpl->maPoolItems[3]->maFree.size());
-    pPool->Remove(rKeyFour);
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), pImpl->maPoolItems[3]->maFree.size());
-    pPool->Put(aNotherFour);
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(0), pImpl->maPoolItems[3]->maFree.size());
+    CPPUNIT_ASSERT(pImpl->maPoolItems[3]->maFree.size() == 0);
+    pPool->Remove(rKeyThree);
+    CPPUNIT_ASSERT(pImpl->maPoolItems[3]->maFree.size() == 1);
+    pPool->Put(aNotherThree);
+    CPPUNIT_ASSERT(pImpl->maPoolItems[3]->maFree.size() == 0);
 }
-
 
 CPPUNIT_TEST_SUITE_REGISTRATION(PoolItemTest);
 

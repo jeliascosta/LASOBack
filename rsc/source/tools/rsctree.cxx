@@ -301,8 +301,8 @@ bool NameNode::Insert( NameNode * pTN )
 
 void NameNode::OrderTree()
 {
-    NameNode * pTmpLeft = Left();
-    NameNode * pTmpRight = Right();
+    NameNode * pTmpLeft = static_cast<NameNode *>(Left());
+    NameNode * pTmpRight = static_cast<NameNode *>(Right());
 
     pLeft = nullptr;
     pRight = nullptr;
@@ -314,8 +314,8 @@ void NameNode::SubOrderTree( NameNode * pOrderNode )
 {
     if( pOrderNode )
     {
-        NameNode * pTmpLeft = pOrderNode->Left();
-        NameNode * pTmpRight = pOrderNode->Right();
+        NameNode * pTmpLeft = static_cast<NameNode *>(pOrderNode->Left());
+        NameNode * pTmpRight = static_cast<NameNode *>(pOrderNode->Right());
         pOrderNode->pLeft = nullptr;
         pOrderNode->pRight = nullptr;
         Insert( pOrderNode );
@@ -331,9 +331,9 @@ IdNode * IdNode::Search( sal_uInt32 nTypeName ) const
 
 COMPARE IdNode::Compare( const NameNode * pSearch ) const
 {
-    if( GetId() < static_cast<const IdNode *>(pSearch)->GetId() )
+    if( GetId() < (sal_uInt32)(static_cast<const IdNode *>(pSearch)->GetId()) )
         return LESS;
-    else if( GetId() > static_cast<const IdNode *>(pSearch)->GetId() )
+    else if( GetId() > (sal_uInt32)(static_cast<const IdNode *>(pSearch)->GetId()) )
         return GREATER;
     else
         return EQUAL;
@@ -355,5 +355,34 @@ sal_uInt32 IdNode::GetId() const
     return 0xFFFFFFFF;
 }
 
+StringNode * StringNode::Search( const char * pSearch ) const
+{
+    return static_cast<StringNode *>(NameNode::Search( static_cast<const void *>(pSearch) ));
+}
+
+COMPARE StringNode::Compare( const NameNode * pSearch ) const
+{
+    int nCmp = strcmp( m_aName.getStr(),
+                       static_cast<const StringNode *>(pSearch)->m_aName.getStr() );
+    if( nCmp < 0 )
+        return LESS;
+    else if( nCmp > 0 )
+        return GREATER;
+    else
+        return EQUAL;
+}
+
+// pSearch is a pointer to const char *
+COMPARE StringNode::Compare( const void * pSearch ) const
+{
+    int nCmp = strcmp( m_aName.getStr(), static_cast<const char *>(pSearch) );
+
+    if( nCmp < 0 )
+        return LESS;
+    else if( nCmp > 0 )
+        return GREATER;
+    else
+        return EQUAL;
+}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

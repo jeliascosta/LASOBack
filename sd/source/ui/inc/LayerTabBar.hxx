@@ -38,8 +38,7 @@ public:
     LayerTabBar (
         DrawViewShell* pDrViewSh,
         vcl::Window* pParent);
-    virtual void dispose() override;
-    virtual ~LayerTabBar() override;
+    virtual ~LayerTabBar();
 
     /** Inform all listeners of this control that the current layer has been
         activated.  Call this method after switching the current layer and is

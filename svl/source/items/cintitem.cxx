@@ -26,14 +26,16 @@
 // virtual
 bool CntByteItem::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(dynamic_cast<const CntByteItem*>(&rItem) != nullptr);
+    DBG_ASSERT(dynamic_cast<const CntByteItem*>( &rItem ) !=  nullptr,
+               "CntByteItem::operator ==(): Bad type");
     return m_nValue == (static_cast< const CntByteItem * >(&rItem))->m_nValue;
 }
 
 // virtual
-bool CntByteItem::GetPresentation(SfxItemPresentation, MapUnit, MapUnit,
-                                  OUString & rText,
-                                  const IntlWrapper *) const
+bool CntByteItem::GetPresentation(SfxItemPresentation,
+                                                 SfxMapUnit, SfxMapUnit,
+                                                 OUString & rText,
+                                                 const IntlWrapper *) const
 {
     rText = OUString::number( m_nValue );
     return true;
@@ -57,7 +59,7 @@ bool CntByteItem::PutValue(const css::uno::Any& rVal, sal_uInt8)
         return true;
     }
 
-    SAL_WARN("svl.items", "CntByteItem::PutValue - Wrong type!");
+    OSL_FAIL( "CntByteItem::PutValue - Wrong type!" );
     return false;
 }
 
@@ -94,15 +96,17 @@ CntUInt16Item::CntUInt16Item(sal_uInt16 which, SvStream & rStream) :
 // virtual
 bool CntUInt16Item::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(dynamic_cast<const CntUInt16Item*>(&rItem) != nullptr);
-    return m_nValue == static_cast<const CntUInt16Item *>(&rItem)->m_nValue;
+    DBG_ASSERT(dynamic_cast< const CntUInt16Item* >(&rItem) !=  nullptr,
+               "CntUInt16Item::operator ==(): Bad type");
+    return m_nValue == (static_cast< const CntUInt16Item * >(&rItem))->
+                        m_nValue;
 }
 
 // virtual
 bool CntUInt16Item::GetPresentation(SfxItemPresentation,
-                                    MapUnit, MapUnit,
-                                    OUString & rText,
-                                    const IntlWrapper *)
+                                                   SfxMapUnit, SfxMapUnit,
+                                                   OUString & rText,
+                                                   const IntlWrapper *)
     const
 {
     rText = OUString::number( m_nValue );
@@ -123,12 +127,12 @@ bool CntUInt16Item::PutValue(const css::uno::Any& rVal, sal_uInt8)
     sal_Int32 nValue = 0;
     if (rVal >>= nValue)
     {
-        SAL_WARN_IF(nValue > USHRT_MAX, "svl.items", "Overflow in UInt16 value!");
-        m_nValue = static_cast<sal_uInt16>(nValue);
+        DBG_ASSERT( nValue <= USHRT_MAX, "Overflow in UInt16 value!");
+        m_nValue = (sal_uInt16)nValue;
         return true;
     }
 
-    SAL_WARN("svl.items", "CntUInt16Item::PutValue - Wrong type!");
+    OSL_FAIL( "CntUInt16Item::PutValue - Wrong type!" );
     return false;
 }
 
@@ -162,15 +166,17 @@ CntInt32Item::CntInt32Item(sal_uInt16 which, SvStream & rStream)
 // virtual
 bool CntInt32Item::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(dynamic_cast<const CntInt32Item*>(&rItem) != nullptr);
-    return m_nValue == static_cast<const CntInt32Item *>(&rItem)->m_nValue;
+    DBG_ASSERT(dynamic_cast< const CntInt32Item*>(&rItem) !=  nullptr,
+               "CntInt32Item::operator ==(): Bad type");
+    return m_nValue == (static_cast< const CntInt32Item * >(&rItem))->
+                        m_nValue;
 }
 
 // virtual
 bool CntInt32Item::GetPresentation(SfxItemPresentation,
-                                   MapUnit, MapUnit,
-                                   OUString & rText,
-                                   const IntlWrapper *) const
+                                                  SfxMapUnit, SfxMapUnit,
+                                                  OUString & rText,
+                                                  const IntlWrapper *) const
 {
     rText = OUString::number( m_nValue );
     return true;
@@ -194,7 +200,7 @@ bool CntInt32Item::PutValue(const css::uno::Any& rVal, sal_uInt8)
         return true;
     }
 
-    SAL_WARN("svl.items", "CntInt32Item::PutValue - Wrong type!");
+    OSL_FAIL( "CntInt32Item::PutValue - Wrong type!" );
     return false;
 }
 
@@ -229,15 +235,17 @@ CntUInt32Item::CntUInt32Item(sal_uInt16 which, SvStream & rStream) :
 // virtual
 bool CntUInt32Item::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(dynamic_cast<const CntUInt32Item*>(&rItem) != nullptr);
-    return m_nValue == static_cast<const CntUInt32Item *>(&rItem)->m_nValue;
+    DBG_ASSERT(dynamic_cast< const CntUInt32Item* >(&rItem) !=  nullptr,
+               "CntUInt32Item::operator ==(): Bad type");
+    return m_nValue == (static_cast< const CntUInt32Item * >(&rItem))->
+                        m_nValue;
 }
 
 // virtual
 bool CntUInt32Item::GetPresentation(SfxItemPresentation,
-                                    MapUnit, MapUnit,
-                                    OUString & rText,
-                                    const IntlWrapper *)
+                                                   SfxMapUnit, SfxMapUnit,
+                                                   OUString & rText,
+                                                   const IntlWrapper *)
     const
 {
     rText = OUString::number(m_nValue);
@@ -248,7 +256,7 @@ bool CntUInt32Item::GetPresentation(SfxItemPresentation,
 bool CntUInt32Item::QueryValue(css::uno::Any& rVal, sal_uInt8) const
 {
     sal_Int32 nValue = m_nValue;
-    SAL_WARN_IF(nValue < 0, "svl.items", "Overflow in UInt32 value!");
+    DBG_ASSERT( nValue>=0, "Overflow in UInt32 value!");
     rVal <<= nValue;
     return true;
 }
@@ -259,12 +267,12 @@ bool CntUInt32Item::PutValue(const css::uno::Any& rVal, sal_uInt8)
     sal_Int32 nValue = 0;
     if (rVal >>= nValue)
     {
-        SAL_WARN_IF(nValue < 0, "svl.items", "Overflow in UInt32 value!");
+        DBG_ASSERT( nValue>=0, "Overflow in UInt32 value!");
         m_nValue = nValue;
         return true;
     }
 
-    SAL_WARN("svl.items", "CntUInt32Item::PutValue - Wrong type!");
+    OSL_FAIL( "CntUInt32Item::PutValue - Wrong type!" );
     return false;
 }
 

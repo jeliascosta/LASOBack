@@ -57,12 +57,12 @@ VclPtr<SfxTabPage> ScTpPrintOptions::Create( vcl::Window* pParent, const SfxItem
     return VclPtr<ScTpPrintOptions>::Create( pParent, *rAttrSet );
 }
 
-DeactivateRC ScTpPrintOptions::DeactivatePage( SfxItemSet* pSetP )
+SfxTabPage::sfxpg ScTpPrintOptions::DeactivatePage( SfxItemSet* pSetP )
 {
     if ( pSetP )
         FillItemSet( pSetP );
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void ScTpPrintOptions::Reset( const SfxItemSet* rCoreSet )
@@ -109,7 +109,7 @@ bool ScTpPrintOptions::FillItemSet( SfxItemSet* rCoreAttrs )
         aOpt.SetSkipEmpty( m_pSkipEmptyPagesCB->IsChecked() );
         aOpt.SetAllSheets( !m_pSelectedSheetsCB->IsChecked() );
         aOpt.SetForceBreaks( m_pForceBreaksCB->IsChecked() );
-        rCoreAttrs->Put( ScTpPrintItem( aOpt ) );
+        rCoreAttrs->Put( ScTpPrintItem( SID_SCPRINTOPTIONS, aOpt ) );
         if ( bSelectedSheetsChanged )
         {
             rCoreAttrs->Put( SfxBoolItem( SID_PRINT_SELECTEDSHEET, m_pSelectedSheetsCB->IsChecked() ) );

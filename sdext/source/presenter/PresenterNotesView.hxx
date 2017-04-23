@@ -39,19 +39,21 @@
 #include <rtl/ref.hxx>
 #include <memory>
 
+namespace {
+    typedef cppu::WeakComponentImplHelper<
+        css::awt::XWindowListener,
+        css::awt::XPaintListener,
+        css::drawing::framework::XView,
+        css::drawing::XDrawView,
+        css::awt::XKeyListener
+        > PresenterNotesViewInterfaceBase;
+}
+
 namespace sdext { namespace presenter {
 
 class PresenterButton;
 class PresenterScrollBar;
 class PresenterTextView;
-
-typedef cppu::WeakComponentImplHelper<
-    css::awt::XWindowListener,
-    css::awt::XPaintListener,
-    css::drawing::framework::XView,
-    css::drawing::XDrawView,
-    css::awt::XKeyListener
-    > PresenterNotesViewInterfaceBase;
 
 /** A drawing framework view of the notes of a slide.  At the moment this is
     a simple text view that does not show the original formatting of the
@@ -68,12 +70,12 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterNotesView() override;
+    virtual ~PresenterNotesView();
 
     virtual void SAL_CALL disposing() override;
 
     /** Typically called from setCurrentSlide() with the notes page that is
-        associated with the slide given to setCurrentSlide().
+        associeted with the slide given to setCurrentSlide().
 
         Iterates over all text shapes on the given notes page and displays
         the concatenated text of these.
@@ -88,39 +90,51 @@ public:
     // lang::XEventListener
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XResourceId
 
-    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
+    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XKeyListener
 
-    virtual void SAL_CALL keyPressed (const css::awt::KeyEvent& rEvent) override;
-    virtual void SAL_CALL keyReleased (const css::awt::KeyEvent& rEvent) override;
+    virtual void SAL_CALL keyPressed (const css::awt::KeyEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL keyReleased (const css::awt::KeyEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XResourceId> mxViewId;
@@ -152,6 +166,12 @@ private:
     void Scroll (const double nDistance);
     void SetTop (const double nTop);
     void UpdateScrollBar();
+
+    /** This method throws a DisposedException when the object has already been
+        disposed.
+    */
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sdext::presenter

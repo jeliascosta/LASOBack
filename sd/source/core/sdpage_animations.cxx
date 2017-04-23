@@ -18,6 +18,7 @@
  */
 
 #include <com/sun/star/animations/ParallelTimeContainer.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/presentation/EffectNodeType.hpp>
 #include <com/sun/star/presentation/ParagraphTarget.hpp>
 #include <comphelper/processfactory.hxx>
@@ -39,7 +40,7 @@ using namespace ::com::sun::star::presentation;
 using ::com::sun::star::drawing::XShape;
 
 /** returns a helper class to manipulate effects inside the main sequence */
-sd::MainSequencePtr const & SdPage::getMainSequence()
+sd::MainSequencePtr SdPage::getMainSequence()
 {
     if( nullptr == mpMainSequence.get() )
         mpMainSequence.reset( new sd::MainSequence( getAnimationNode() ) );
@@ -48,7 +49,7 @@ sd::MainSequencePtr const & SdPage::getMainSequence()
 }
 
 /** returns the main animation node */
-Reference< XAnimationNode > const & SdPage::getAnimationNode()
+Reference< XAnimationNode > SdPage::getAnimationNode() throw (RuntimeException)
 {
     if( !mxAnimationNode.is() )
     {
@@ -61,7 +62,7 @@ Reference< XAnimationNode > const & SdPage::getAnimationNode()
     return mxAnimationNode;
 }
 
-void SdPage::setAnimationNode( Reference< XAnimationNode >& xNode )
+void SdPage::setAnimationNode( Reference< XAnimationNode >& xNode ) throw (RuntimeException)
 {
     mxAnimationNode = xNode;
     if( mpMainSequence.get() )

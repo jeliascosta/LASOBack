@@ -42,8 +42,6 @@
 #include <com/sun/star/container/XEnumerationAccess.hpp>
 #include <com/sun/star/container/XEnumeration.hpp>
 
-#include <stdio.h>
-
 #if defined ( UNX )
 #include <limits.h>
 #define _MAX_PATH PATH_MAX
@@ -168,6 +166,8 @@ Sequence< OUString > Test_Manager_Impl::getSupportedServiceNames_Static() throw 
 *
 *
 ****/
+
+#include <stdio.h>
 
 extern "C" void SAL_CALL test_ServiceManager()
 {

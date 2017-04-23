@@ -42,7 +42,7 @@ namespace frm
         ORichTextUnoWrapper( EditEngine& _rEngine, IEngineTextChangeListener* _pTextChangeListener );
 
     protected:
-        virtual ~ORichTextUnoWrapper() throw() override;
+        virtual ~ORichTextUnoWrapper() throw();
 
 
     private:
@@ -54,8 +54,7 @@ namespace frm
     {
     private:
         EditEngine&                 m_rEngine;
-        std::unique_ptr<SvxTextForwarder>
-                                    m_pTextForwarder;
+        SvxTextForwarder*           m_pTextForwarder;
         IEngineTextChangeListener*  m_pTextChangeListener;
 
     public:
@@ -67,7 +66,7 @@ namespace frm
         virtual void                UpdateData() override;
 
     protected:
-        virtual ~RichTextEditSource() override;
+        virtual ~RichTextEditSource();
 
     private:
         RichTextEditSource( const RichTextEditSource& _rSource ) = delete;

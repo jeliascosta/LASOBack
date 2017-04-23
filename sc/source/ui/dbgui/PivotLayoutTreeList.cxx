@@ -17,6 +17,8 @@
 #include "pivot.hxx"
 #include "scabstdlg.hxx"
 
+using namespace std;
+
 VCL_BUILDER_FACTORY_ARGS(ScPivotLayoutTreeList,
                          WB_BORDER | WB_TABSTOP | WB_CLIPCHILDREN |
                          WB_FORCE_MAKEVISIBLE)
@@ -51,10 +53,10 @@ bool ScPivotLayoutTreeList::DoubleClickHdl()
 
     ScAbstractDialogFactory* pFactory = ScAbstractDialogFactory::Create();
 
-    std::vector<ScDPName> aDataFieldNames;
+    vector<ScDPName> aDataFieldNames;
     mpParent->PushDataFieldNames(aDataFieldNames);
 
-    ScopedVclPtr<AbstractScDPSubtotalDlg> pDialog(
+    std::unique_ptr<AbstractScDPSubtotalDlg> pDialog(
         pFactory->CreateScDPSubtotalDlg(this, mpParent->maPivotTableObject, rCurrentLabelData, rCurrentFunctionData, aDataFieldNames));
 
     if (pDialog->Execute() == RET_OK)
@@ -71,8 +73,10 @@ void ScPivotLayoutTreeList::FillFields(ScPivotFieldVector& rFieldVector)
     Clear();
     maItemValues.clear();
 
-    for (ScPivotField& rField : rFieldVector)
+    ScPivotFieldVector::iterator it;
+    for (it = rFieldVector.begin(); it != rFieldVector.end(); ++it)
     {
+        ScPivotField& rField = *it;
         OUString aLabel = mpParent->GetItem( rField.nCol )->maName;
         ScItemValue* pItemValue = new ScItemValue( aLabel, rField.nCol, rField.nFuncMask );
         maItemValues.push_back(std::unique_ptr<ScItemValue>(pItemValue));

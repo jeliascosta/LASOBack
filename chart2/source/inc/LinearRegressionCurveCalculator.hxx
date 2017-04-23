@@ -29,14 +29,15 @@ class LinearRegressionCurveCalculator : public PolynomialRegressionCurveCalculat
 {
 public:
     LinearRegressionCurveCalculator();
-    virtual ~LinearRegressionCurveCalculator() override;
+    virtual ~LinearRegressionCurveCalculator();
 
 private:
     virtual void SAL_CALL setRegressionProperties(
         sal_Int32 aDegree,
         sal_Bool  aForceIntercept,
         double    aInterceptValue,
-        sal_Int32 aPeriod) override;
+        sal_Int32 aPeriod)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<css::geometry::RealPoint2D> SAL_CALL getCurveValues(
         double min,
@@ -44,7 +45,9 @@ private:
         sal_Int32 nPointCount,
         const css::uno::Reference<css::chart2::XScaling>& xScalingX,
         const css::uno::Reference<css::chart2::XScaling>& xScalingY,
-        sal_Bool bMaySkipPointsInCalculation ) override;
+        sal_Bool bMaySkipPointsInCalculation )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 };
 
 } //  namespace chart

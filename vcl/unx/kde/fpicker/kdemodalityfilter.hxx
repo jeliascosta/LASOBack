@@ -42,7 +42,7 @@ private:
 
 public:
     KDEModalityFilter( WId nWinId );
-    virtual ~KDEModalityFilter() override;
+    virtual ~KDEModalityFilter();
 
     virtual bool eventFilter( QObject *pObject, QEvent *pEvent ) override;
 };

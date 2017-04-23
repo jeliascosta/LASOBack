@@ -47,10 +47,11 @@ namespace connectivity
 
         class MQueryExpressionBase {
         public:
-            enum class node_type {
+            typedef enum {
+                Unknown,
                 StringExpr,
                 Expr
-            };
+            } node_type;
 
         protected:
             node_type   m_eNodeType;
@@ -60,8 +61,8 @@ namespace connectivity
         public:
             virtual ~MQueryExpressionBase() {}
 
-            bool   isStringExpr( ) const { return m_eNodeType == node_type::StringExpr; }
-            bool   isExpr( ) const { return m_eNodeType == node_type::Expr; }
+            bool   isStringExpr( ) const { return m_eNodeType == StringExpr; }
+            bool   isExpr( ) const { return m_eNodeType == Expr; }
         };
 
         class MQueryExpressionString : public MQueryExpressionBase {
@@ -75,7 +76,7 @@ namespace connectivity
             MQueryExpressionString( const OUString&     lhs,
                                     MQueryOp::cond_type cond,
                                     const OUString&     rhs )
-                : MQueryExpressionBase( MQueryExpressionBase::node_type::StringExpr )
+                : MQueryExpressionBase( MQueryExpressionBase::StringExpr )
                 , m_aName( lhs )
                 , m_aBooleanCondition( cond )
                 , m_aValue( rhs )
@@ -84,7 +85,7 @@ namespace connectivity
 
             MQueryExpressionString( const OUString&     lhs,
                                     MQueryOp::cond_type cond )
-                : MQueryExpressionBase( MQueryExpressionBase::node_type::StringExpr )
+                : MQueryExpressionBase( MQueryExpressionBase::StringExpr )
                 , m_aName( lhs )
                 , m_aBooleanCondition( cond )
                 , m_aValue( OUString() )
@@ -101,7 +102,7 @@ namespace connectivity
             friend class MQueryHelper;
 
         public:
-            typedef std::vector< MQueryExpressionBase* > ExprVector;
+            typedef ::std::vector< MQueryExpressionBase* > ExprVector;
 
             typedef enum {
                 AND,
@@ -122,11 +123,11 @@ namespace connectivity
             bool_cond getExpressionCondition( ) const
                             { return m_aExprCondType; }
 
-            MQueryExpression() : MQueryExpressionBase( MQueryExpressionBase::node_type::Expr ),
+            MQueryExpression() : MQueryExpressionBase( MQueryExpressionBase::Expr ),
                                  m_aExprCondType( OR )
                             {}
 
-            virtual ~MQueryExpression() override {
+            virtual ~MQueryExpression() {
                 for (ExprVector::iterator i(m_aExprVector.begin());
                      i != m_aExprVector.end(); ++i)
                 {
@@ -158,13 +159,16 @@ namespace connectivity
             void            setValue( const OString &key, const OUString & rValue);
         };
 
-        class MQueryHelper final
+        class MQueryHelper
         {
         private:
             typedef std::vector< MQueryHelperResultEntry* > resultsArray;
 
             mutable ::osl::Mutex        m_aMutex;
             resultsArray        m_aResults;
+            sal_uInt32          m_nIndex;
+            bool            m_bHasMore;
+            bool            m_bAtEnd;
             void            append(MQueryHelperResultEntry* resEnt );
             void            clear_results();
             OColumnAlias        m_rColumnAlias;
@@ -173,7 +177,7 @@ namespace connectivity
 
         public:
             explicit                   MQueryHelper(const OColumnAlias& _ca);
-                                       ~MQueryHelper();
+            virtual                    ~MQueryHelper();
 
             void                       reset();
             MQueryHelperResultEntry*   getByIndex( sal_uInt32 nRow );
@@ -184,7 +188,7 @@ namespace connectivity
             sal_Int32                  executeQuery(OConnection* xConnection, MQueryExpression & expr);
             const OColumnAlias&        getColumnAlias() const { return m_rColumnAlias; }
             bool                       hadError() const { return m_aError.is(); }
-            ErrorDescriptor&    getError() { return m_aError; }
+            inline ErrorDescriptor&    getError() { return m_aError; }
 
             void                       setAddressbook( OUString&);
         };

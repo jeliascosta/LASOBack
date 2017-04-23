@@ -53,8 +53,8 @@ class ContinuationFilterSelect : public comphelper::OInteraction< css::document:
 
     // uno interface
     public:
-        virtual void            SAL_CALL setFilter( const OUString& sFilter ) override;
-        virtual OUString SAL_CALL getFilter(                                ) override;
+        virtual void            SAL_CALL setFilter( const OUString& sFilter ) throw( css::uno::RuntimeException, std::exception ) override;
+        virtual OUString SAL_CALL getFilter(                                ) throw( css::uno::RuntimeException, std::exception ) override;
 
     // member
     private:
@@ -71,14 +71,14 @@ ContinuationFilterSelect::ContinuationFilterSelect()
 
 // handler should use it after selection to set user specified filter for transport
 
-void SAL_CALL ContinuationFilterSelect::setFilter( const OUString& sFilter )
+void SAL_CALL ContinuationFilterSelect::setFilter( const OUString& sFilter ) throw( css::uno::RuntimeException, std::exception )
 {
     m_sFilter = sFilter;
 }
 
 // read access to transported filter
 
-OUString SAL_CALL ContinuationFilterSelect::getFilter()
+OUString SAL_CALL ContinuationFilterSelect::getFilter() throw( css::uno::RuntimeException, std::exception )
 {
     return m_sFilter;
 }
@@ -91,13 +91,14 @@ public:
     OUString getFilter() const;
 
 public:
-    virtual css::uno::Any SAL_CALL getRequest() override;
-    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual css::uno::Any SAL_CALL getRequest() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL getContinuations() throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     css::uno::Any                                                                       m_aRequest;
-    rtl::Reference<comphelper::OInteractionAbort>                                       m_xAbort;
-    rtl::Reference<ContinuationFilterSelect>                                            m_xFilter;
+    css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > >    m_lContinuations;
+    comphelper::OInteractionAbort*                                                      m_pAbort;
+    ContinuationFilterSelect*                                                           m_pFilter;
 };
 
 // initialize instance with all necessary information
@@ -112,8 +113,12 @@ RequestFilterSelect_Impl::RequestFilterSelect_Impl( const OUString& sURL )
                                                        sURL                                          );
     m_aRequest <<= aFilterRequest;
 
-    m_xAbort  = new comphelper::OInteractionAbort;
-    m_xFilter = new ContinuationFilterSelect;
+    m_pAbort  = new comphelper::OInteractionAbort;
+    m_pFilter = new ContinuationFilterSelect;
+
+    m_lContinuations.realloc( 2 );
+    m_lContinuations[0].set( m_pAbort  );
+    m_lContinuations[1].set( m_pFilter );
 }
 
 // return abort state of interaction
@@ -121,21 +126,21 @@ RequestFilterSelect_Impl::RequestFilterSelect_Impl( const OUString& sURL )
 
 bool RequestFilterSelect_Impl::isAbort() const
 {
-    return m_xAbort->wasSelected();
+    return m_pAbort->wasSelected();
 }
 
 // return user selected filter
-// Return value valid for non aborted interaction only. Please check "isAbort()" before you call these only!
+// Return value valid for non aborted interaction only. Please check "isAbort()" before you call these ony!
 
 OUString RequestFilterSelect_Impl::getFilter() const
 {
-    return m_xFilter->getFilter();
+    return m_pFilter->getFilter();
 }
 
 // handler call it to get type of request
 // Is hard coded to "please select filter" here. see ctor for further information.
 
-css::uno::Any SAL_CALL RequestFilterSelect_Impl::getRequest()
+css::uno::Any SAL_CALL RequestFilterSelect_Impl::getRequest() throw( css::uno::RuntimeException, std::exception )
 {
     return m_aRequest;
 }
@@ -145,18 +150,20 @@ css::uno::Any SAL_CALL RequestFilterSelect_Impl::getRequest()
 // After interaction we support read access on these continuations on our c++ interface to
 // return user decision.
 
-css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL RequestFilterSelect_Impl::getContinuations()
+css::uno::Sequence< css::uno::Reference< css::task::XInteractionContinuation > > SAL_CALL RequestFilterSelect_Impl::getContinuations() throw( css::uno::RuntimeException, std::exception )
 {
-    return { m_xAbort.get(), m_xFilter.get() };
+    return m_lContinuations;
 }
 
 RequestFilterSelect::RequestFilterSelect( const OUString& sURL )
-    : mxImpl(new RequestFilterSelect_Impl( sURL ))
 {
+    pImp = new RequestFilterSelect_Impl( sURL );
+    pImp->acquire();
 }
 
 RequestFilterSelect::~RequestFilterSelect()
 {
+    pImp->release();
 }
 
 // return abort state of interaction
@@ -164,20 +171,20 @@ RequestFilterSelect::~RequestFilterSelect()
 
 bool RequestFilterSelect::isAbort() const
 {
-    return mxImpl->isAbort();
+    return pImp->isAbort();
 }
 
 // return user selected filter
-// Return value valid for non aborted interaction only. Please check "isAbort()" before you call these only!
+// Return value valid for non aborted interaction only. Please check "isAbort()" before you call these ony!
 
 OUString RequestFilterSelect::getFilter() const
 {
-    return mxImpl->getFilter();
+    return pImp->getFilter();
 }
 
 uno::Reference < task::XInteractionRequest > RequestFilterSelect::GetRequest()
 {
-    return mxImpl.get();
+    return uno::Reference < task::XInteractionRequest > (pImp);
 }
 
 class InteractionRequest_Impl : public ::cppu::WeakImplHelper< css::task::XInteractionRequest >
@@ -193,16 +200,18 @@ public:
         m_lContinuations = lContinuations;
     }
 
-    virtual uno::Any SAL_CALL getRequest() override;
-    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual uno::Any SAL_CALL getRequest() throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations()
+            throw( uno::RuntimeException, std::exception ) override;
 };
 
-uno::Any SAL_CALL InteractionRequest_Impl::getRequest()
+uno::Any SAL_CALL InteractionRequest_Impl::getRequest() throw( uno::RuntimeException, std::exception )
 {
     return m_aRequest;
 }
 
 uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL InteractionRequest_Impl::getContinuations()
+    throw( uno::RuntimeException, std::exception )
 {
     return m_lContinuations;
 }

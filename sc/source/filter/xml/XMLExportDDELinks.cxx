@@ -65,7 +65,9 @@ void ScXMLExportDDELinks::WriteCell(const ScMatrixValue& aVal, sal_Int32 nRepeat
 
     if (nRepeat > 1)
     {
-        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_REPEATED, OUString::number(nRepeat));
+        OUStringBuffer aBuf;
+        ::sax::Converter::convertNumber(aBuf, nRepeat);
+        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_REPEATED, aBuf.makeStringAndClear());
     }
     SvXMLElementExport(rExport, XML_NAMESPACE_TABLE, XML_TABLE_CELL, true, true);
 }
@@ -86,7 +88,9 @@ void ScXMLExportDDELinks::WriteTable(const sal_Int32 nPos)
     SvXMLElementExport aTableElem(rExport, XML_NAMESPACE_TABLE, XML_TABLE, true, true);
     if (nCols > 1)
     {
-        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_REPEATED, OUString::number(nCols));
+        OUStringBuffer aBuf;
+        ::sax::Converter::convertNumber(aBuf, static_cast<sal_Int32>(nCols));
+        rExport.AddAttribute(XML_NAMESPACE_TABLE, XML_NUMBER_COLUMNS_REPEATED, aBuf.makeStringAndClear());
     }
     {
         SvXMLElementExport aElemCol(rExport, XML_NAMESPACE_TABLE, XML_TABLE_COLUMN, true, true);

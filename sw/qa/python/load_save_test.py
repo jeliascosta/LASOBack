@@ -51,7 +51,7 @@ class LoadSaveTest(unittest.TestCase):
         cls.m_TargetDir = "/tmp/out/"
         cls.dirs = []
         cls.files = []
-        cls.file_name = ""
+        cls.fileName = ""
 
     @classmethod
     def tearDownClass(cls):
@@ -60,34 +60,37 @@ class LoadSaveTest(unittest.TestCase):
     def testLoadStore(self):
         self.dirs, self.files = self.getDirAndFile(self.m_SourceDir)
         self.makeDirs(self.m_TargetDir)
-        for self.file_name in self.files:
+        for self.fileName in self.files:
             self.tstDoc()
 
     def tstDoc(self):
         try:
             props = [("ReadOnly", True)]
-            load_props = tuple([self.mkPropertyValue(name, value) for (name, value) in props])
+            loadProps = tuple([self.mkPropertyValue(name, value) for (name, value) in props])
 
             m_xMSF = self.xContext.ServiceManager
             desktop = m_xMSF.createInstanceWithContext('com.sun.star.frame.Desktop', self.xContext)
 
             filepath = os.path.abspath("FIXME")
             if os.name == "nt":
-                source_file = ''.join(("file:///", filepath, "/", quote(self.file_name)))
+                sourceFile = "file:///" + filepath + "/" + quote(self.fileName)
             else:
-                source_file = ''.join(("file://", quote(filepath), "/", quote(self.file_name)))
-
-            self.xDoc = desktop.loadComponentFromURL(source_file, "_blank", 0, load_props)
+                sourceFile = "file://" + quote(filepath) + "/" + quote(self.fileName)
+            self.xDoc = desktop.loadComponentFromURL(sourceFile, "_blank", 0, loadProps)
             assert(self.xDoc)
 
             if os.name == "nt":
-                target_file = ''.join(("file:///", self.m_TargetDir, quote(self.m_SourceDir), "/", quote(self.file_name)))
+                targetFile = "file:///" + self.m_TargetDir + quote(self.m_SourceDir) + "/" + quote(self.fileName)
             else:
-                target_file = ''.join(("file://", quote(self.m_TargetDir), quote(self.m_SourceDir), "/", quote(self.fileName)))
+                targetFile = "file://" +
+                            quote(self.m_TargetDir) +
+                            quote(self.m_SourceDir) +
+                            "/" +
+                            quote(self.fileName)
 
             p1 = PropertyValue()
             PropValue = uno.Any("[]com.sun.star.beans.PropertyValue", (p1,))
-            uno.invoke(self.xDoc, "storeToURL", (target_file, PropValue))
+            uno.invoke(self.xDoc, "storeToURL", (targetFile, PropValue))
 
         except Exception:
             raise
@@ -95,8 +98,7 @@ class LoadSaveTest(unittest.TestCase):
     def getDirAndFile(self, dir):
 
         root2 = os.mkdir(dir)
-        root_path = ''.join((dir, "/", dir, ".odt"))
-        root = open(root_path, 'a')
+        root = open(dir + "/" + dir + ".odt", 'a')
 
         self.getDirAndFileNames(dir)
         return self.dirs, self.files
@@ -111,8 +113,8 @@ class LoadSaveTest(unittest.TestCase):
                 fdName += "/"
 
             for subfile in subfiles:
-                subfile_name = fdName + subfile
-                self.getDirAndFileNames(subfile_name)
+                subfileName = fdName + subfile
+                self.getDirAndFileNames(subfileName)
 
         if os.path.isfile(fdName):
             self.files.append(fdName.split('/')[-1])
@@ -127,6 +129,5 @@ class LoadSaveTest(unittest.TestCase):
                 f = os.mkdir(target + dir)
                 self.assertTrue(os.path.exists(target + dir))
 
-        target_path = ''.join((target, dir, "/", self.m_SourceDir, ".odt"))
-        root = open(target_path, 'a')
-        filepath = os.path.abspath(target_path)
+        root = open(target + dir + "/" + self.m_SourceDir + ".odt", 'a')
+        filepath = os.path.abspath(target + dir + "/" + self.m_SourceDir + ".odt")

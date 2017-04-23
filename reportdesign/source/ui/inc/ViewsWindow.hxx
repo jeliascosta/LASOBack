@@ -37,21 +37,20 @@
 #include "SectionWindow.hxx"
 
 class SdrHdl;
-
 namespace rptui
 {
     class OReportWindow;
     class OReportSection;
     class OSectionView;
-    enum class ControlModification;
 
-    struct RectangleLess : public ::std::binary_function< tools::Rectangle, tools::Rectangle, bool>
+
+    struct RectangleLess : public ::std::binary_function< Rectangle, Rectangle, bool>
     {
         enum CompareMode { POS_LEFT,POS_RIGHT,POS_UPPER,POS_DOWN,POS_CENTER_HORIZONTAL,POS_CENTER_VERTICAL };
         CompareMode m_eCompareMode;
         Point       m_aRefPoint;
         RectangleLess(CompareMode _eCompareMode,const Point& _rRefPoint ) : m_eCompareMode(_eCompareMode),m_aRefPoint(_rRefPoint){}
-        bool operator() (const tools::Rectangle& lhs, const tools::Rectangle& rhs) const
+        bool operator() (const Rectangle& lhs, const Rectangle& rhs) const
         {
             switch(m_eCompareMode)
             {
@@ -76,7 +75,7 @@ namespace rptui
                         ,   public utl::ConfigurationListener
                         ,   public IMarkedSection
     {
-        typedef ::std::multimap<tools::Rectangle,::std::pair<SdrObject*,OSectionView*>,RectangleLess>      TRectangleMap;
+        typedef ::std::multimap<Rectangle,::std::pair<SdrObject*,OSectionView*>,RectangleLess>      TRectangleMap;
     public:
         typedef ::std::vector< VclPtr<OSectionWindow> >                                TSectionsMap;
 
@@ -92,7 +91,7 @@ namespace rptui
         */
         TSectionsMap::iterator getIteratorAtPos(sal_uInt16 _nPos);
         void collectRectangles(TRectangleMap& _rMap);
-        static void collectBoundResizeRect(const TRectangleMap& _rSortRectangles, ControlModification _nControlModification,bool _bAlignAtSection,tools::Rectangle& _rBound,tools::Rectangle& _rResize);
+        static void collectBoundResizeRect(const TRectangleMap& _rSortRectangles,sal_Int32 _nControlModification,bool _bAlignAtSection,bool _bBoundRects,Rectangle& _rBound,Rectangle& _rResize);
         void impl_resizeSectionWindow(OSectionWindow& _rSectionWindow,Point& _rStartPoint,bool _bSet);
 
         OViewsWindow(OViewsWindow&) = delete;
@@ -103,12 +102,12 @@ namespace rptui
         virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
         virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
 
-        virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
-        virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+        virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
+        virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
     public:
         OViewsWindow(
             OReportWindow* _pReportWindow);
-        virtual ~OViewsWindow() override;
+        virtual ~OViewsWindow();
         virtual void dispose() override;
 
         // Window overrides
@@ -116,7 +115,7 @@ namespace rptui
 
         void resize(const OSectionWindow& _rSectionWindow);
 
-        OReportWindow*       getView()           const { return m_pParent; }
+        inline OReportWindow*       getView()           const { return m_pParent; }
 
         /** removes the section at the given position.
         *
@@ -130,7 +129,7 @@ namespace rptui
         */
         void            addSection(const css::uno::Reference< css::report::XSection >& _xSection
                                     ,const OUString& _sColorEntry
-                                    ,sal_uInt16 _nPosition);
+                                    ,sal_uInt16 _nPosition = USHRT_MAX);
 
         sal_uInt16          getSectionCount() const;
         /** return the section at the given position
@@ -152,9 +151,9 @@ namespace rptui
         */
         sal_Int32       getTotalHeight() const;
 
-        bool     empty() const { return m_aSections.empty(); }
+        inline bool     empty() const { return m_aSections.empty(); }
         void            SetMode( DlgEdMode m_eMode );
-        void            SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType);
+        void            SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType = OUString());
         const OUString& GetInsertObjString() const { return m_sShapeType;}
         /** copies the current selection in this section
         */
@@ -214,7 +213,7 @@ namespace rptui
 
         /** align all marked objects in all sections
         */
-        void alignMarkedObjects(ControlModification _nControlModification, bool _bAlignAtSection);
+        void alignMarkedObjects(sal_Int32 _nControlModification,bool _bAlignAtSection);
 
         /** creates a default object
         *
@@ -233,7 +232,7 @@ namespace rptui
 
         /** returns the current position in the list
         */
-        sal_uInt16 getPosition(const OSectionWindow* _pSectionWindow) const;
+        sal_uInt16 getPosition(const OSectionWindow* _pSectionWindow = nullptr) const;
 
         /** calls on every section BrkAction
         *
@@ -242,10 +241,11 @@ namespace rptui
         void BegMarkObj(const Point& _aPnt,const OSectionView* _pSection);
 
     private:
-        void BegDragObj_createInvisibleObjectAtPosition(const tools::Rectangle& _aRect, const OSectionView& _rSection);
+        void BegDragObj_createInvisibleObjectAtPosition(const Rectangle& _aRect, const OSectionView& _rSection);
         void EndDragObj_removeInvisibleObjects();
         Point m_aDragDelta;
         ::std::vector<SdrObject*> m_aBegDragTempList;
+        bool isObjectInMyTempList(SdrObject *);
     public:
         void BegDragObj(const Point& _aPnt, SdrHdl* _pHdl,const OSectionView* _pSection);
         void EndDragObj(bool _bDragIntoNewSection,const OSectionView* _pSection,const Point& _aPnt);

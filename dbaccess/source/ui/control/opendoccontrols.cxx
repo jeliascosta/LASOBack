@@ -118,7 +118,7 @@ namespace dbaui
         m_sModule = OUString::createFromAscii( _pAsciiModuleName );
 
         // our label should equal the UI text of the "Open" command
-        OUString sLabel(vcl::CommandInfoProvider::GetLabelForCommand(".uno:Open", m_sModule));
+        OUString sLabel(vcl::CommandInfoProvider::Instance().GetCommandPropertyFromModule(".uno:Open", m_sModule));
         SetText(" " + sLabel.replaceAll("~", ""));
 
         // Place icon left of text and both centered in the button.
@@ -178,9 +178,9 @@ namespace dbaui
                         aURL.SetPass( sPassword );
 
                     if ( sTitle.isEmpty() )
-                        sTitle = aURL.getBase( INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::Unambiguous );
+                        sTitle = aURL.getBase( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_UNAMBIGUOUS );
 
-                    OUString sDecodedURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+                    OUString sDecodedURL = aURL.GetMainURL( INetURLObject::NO_DECODE );
 
                     sal_Int32 nPos = InsertEntry( sTitle );
                     m_aURLs.insert( MapIndexToStringPair::value_type( nPos, StringPair( sDecodedURL, sFilter ) ) );
@@ -240,8 +240,8 @@ namespace dbaui
         sal_Int32 nItemIndex = LISTBOX_ENTRY_NOTFOUND;
         if ( GetIndexForPoint( aRequestPos, nItemIndex ) != -1 )
         {
-            tools::Rectangle aItemRect( GetBoundingRectangle( nItemIndex ) );
-            aItemRect = tools::Rectangle(
+            Rectangle aItemRect( GetBoundingRectangle( nItemIndex ) );
+            aItemRect = Rectangle(
                 OutputToScreenPixel( aItemRect.TopLeft() ),
                 OutputToScreenPixel( aItemRect.BottomRight() ) );
             OUString sHelpText = impl_getDocumentAtIndex( nItemIndex, true ).first;

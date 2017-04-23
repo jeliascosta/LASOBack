@@ -22,11 +22,6 @@
 #include "cppdef.h"
 #include "cpp.h"
 
-static void doinclude( void );
-static void doif( int hash );
-static int openinclude( char*, int );
-static int hasdirectory( char*, char*, int );
-
 /*
  * Generate (by hand-inspection) a set of unique values for each control
  * operator.  Note that this is not guaranteed to work for non-Ascii
@@ -120,7 +115,6 @@ int control(int counter)
             if (++ifptr >= &ifstack[BLK_NEST])
                 goto if_nest_err;
             *ifptr = 0;                     /* !WAS_COMPILING       */
-            /* fall through */
         case L_line:                        /* Many                 */
             /*
              * Are pragma's always processed?
@@ -166,7 +160,7 @@ int control(int counter)
          * We subtract 1 as we want the number of the next line.
          */
         line = atoi(work) - 1;              /* Reset line number    */
-        for (tp = work; isdigit((unsigned char)*tp) || type[(int)*tp] == SPA; tp++)
+        for (tp = work; isdigit(*tp) || type[(int)*tp] == SPA; tp++)
             ;                               /* Skip over digits     */
         if (*tp != EOS)                     /* Got a filename, so:  */
         {
@@ -311,7 +305,7 @@ int control(int counter)
  * is always suppressed, so we don't need to evaluate anything.  This
  * suppresses unnecessary warnings.
  */
-static void doif(int hash)
+void doif(int hash)
 {
     int c;
     int found;
@@ -364,7 +358,7 @@ static void doif(int hash)
  * Note: the November 12 draft forbids '>' in the #include <file> format.
  * This restriction is unnecessary and not implemented.
  */
-static void doinclude()
+void doinclude()
 {
     int c;
     int delim;
@@ -412,7 +406,7 @@ static void doinclude()
  * active files.  Returns TRUE if the file was opened, FALSE
  * if openinclude() fails.  No error message is printed.
  */
-static int openinclude(char* filename, int searchlocal)
+int openinclude(char* filename, int searchlocal)
 {
     char** incptr;
     char tmpname[NFWORK]; /* Filename work area   */
@@ -506,7 +500,7 @@ static int openinclude(char* filename, int searchlocal)
  * node/device/directory part of the string is copied to result and
  * hasdirectory returns TRUE.  Else, nothing is copied and it returns FALSE.
  */
-static int hasdirectory(char* source, char* result, int max)
+int hasdirectory(char* source, char* result, int max)
 {
 #if HOST == SYS_UNIX
     char* tp;

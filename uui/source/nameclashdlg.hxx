@@ -39,7 +39,7 @@ class NameClashDialog : public ModalDialog
     OUString maSameName;
     OUString maNewName;
 
-    DECL_LINK( ButtonHdl_Impl, Button *, void );
+    DECL_LINK_TYPED( ButtonHdl_Impl, Button *, void );
 
 public:
     NameClashDialog( vcl::Window* pParent, ResMgr* pResMgr,
@@ -47,7 +47,7 @@ public:
                      OUString const & rClashingName,
                      OUString const & rProposedNewName,
                      bool bAllowOverwrite );
-    virtual ~NameClashDialog() override;
+    virtual ~NameClashDialog();
     virtual void dispose() override;
     const OUString& getNewName() const { return maNewName; }
 };

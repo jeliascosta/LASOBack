@@ -20,7 +20,7 @@ package lib;
 
 /**
  * StatusException is used to pass a Status object from a test code which is
- * terminated abnormally. In many cases this is because of an exception thrown,
+ * terminated abnormaly. In many cases this is because of an exception thrown,
  * but that can also be any other event that hinders the test execution.
  */
 public class StatusException extends RuntimeException {

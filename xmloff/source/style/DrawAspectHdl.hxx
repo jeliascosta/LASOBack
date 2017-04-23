@@ -28,7 +28,7 @@
 class DrawAspectHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~DrawAspectHdl() override;
+    virtual ~DrawAspectHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

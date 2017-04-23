@@ -28,12 +28,12 @@ FontSubsetInfo::FontSubsetInfo()
     : m_nAscent( 0)
     , m_nDescent( 0)
     , m_nCapHeight( 0)
-    , m_nFontType( FontType::NO_FONT)
+    , m_nFontType( FontSubsetInfo::NO_FONT)
     , mpInFontBytes( nullptr)
     , mnInByteLength( 0)
-    , meInFontType( FontType::NO_FONT)
+    , meInFontType( FontSubsetInfo::NO_FONT)
     , mpSftTTFont( nullptr)
-    , mnReqFontTypeMask( FontType::NO_FONT )
+    , mnReqFontTypeMask(0)
     , mpOutFile(nullptr)
     , mpReqFontName(nullptr)
     , mpReqGlyphIds(nullptr)
@@ -48,10 +48,10 @@ FontSubsetInfo::~FontSubsetInfo()
 
 // prepare subsetting for fonts where the input font file is mapped
 bool FontSubsetInfo::LoadFont(
-    FontType eInFontType,
+    FontSubsetInfo::FontType eInFontType,
     const unsigned char* pInFontBytes, int nInByteLength)
 {
-    SAL_WARN_IF( (mpSftTTFont != nullptr), "vcl", "Subset from SFT and from mapped font-file requested");
+    DBG_ASSERT( (mpSftTTFont == nullptr), "Subset from SFT and from mapped font-file requested");
     meInFontType = eInFontType;
     mpInFontBytes = pInFontBytes;
     mnInByteLength = nInByteLength;
@@ -61,14 +61,14 @@ bool FontSubsetInfo::LoadFont(
 // prepare subsetting for fonts that are known to the SFT-parser
 bool FontSubsetInfo::LoadFont( vcl::TrueTypeFont* pSftTTFont )
 {
-    SAL_WARN_IF( (mpInFontBytes != nullptr), "vcl", "Subset from SFT and from mapped font-file requested");
+    DBG_ASSERT( (mpInFontBytes == nullptr), "Subset from SFT and from mapped font-file requested");
     mpSftTTFont = pSftTTFont;
-    meInFontType = FontType::ANY_SFNT;
+    meInFontType = ANY_SFNT;
     return (mpSftTTFont == nullptr);
 }
 
 bool FontSubsetInfo::CreateFontSubset(
-    FontType nReqFontTypeMask,
+    int nReqFontTypeMask,
     FILE* pOutFile, const char* pReqFontName,
     const sal_GlyphId* pReqGlyphIds, const sal_uInt8* pReqEncodedIds, int nReqGlyphCount,
     sal_Int32* pOutGlyphWidths)
@@ -88,21 +88,21 @@ bool FontSubsetInfo::CreateFontSubset(
 
     // TODO: better match available input-type to possible subset-types
     switch( meInFontType) {
-    case FontType::SFNT_TTF:
-    case FontType::SFNT_CFF:
-    case FontType::ANY_SFNT:
+    case SFNT_TTF:
+    case SFNT_CFF:
+    case ANY_SFNT:
         bOK = CreateFontSubsetFromSfnt( pOutGlyphWidths);
         break;
-    case FontType::CFF_FONT:
+    case CFF_FONT:
         bOK = CreateFontSubsetFromCff( pOutGlyphWidths);
         break;
-    case FontType::TYPE1_PFA:
-    case FontType::TYPE1_PFB:
-    case FontType::ANY_TYPE1:
+    case TYPE1_PFA:
+    case TYPE1_PFB:
+    case ANY_TYPE1:
         bOK = CreateFontSubsetFromType1( pOutGlyphWidths);
         break;
         // fall through
-    case FontType::NO_FONT:
+    case NO_FONT:
         // fall through
     default:
         OSL_FAIL( "unhandled type in CreateFontSubset()");
@@ -120,7 +120,7 @@ bool FontSubsetInfo::CreateFontSubsetFromSfnt( sal_Int32* pOutGlyphWidths )
     const sal_uInt8* pCffBytes = nullptr;
     if( GetSfntTable( mpSftTTFont, O_CFF, &pCffBytes, &nCffLength))
     {
-        LoadFont( FontType::CFF_FONT, pCffBytes, nCffLength);
+        LoadFont( CFF_FONT, pCffBytes, nCffLength);
         const bool bOK = CreateFontSubsetFromCff( pOutGlyphWidths);
         return bOK;
     }
@@ -128,26 +128,25 @@ bool FontSubsetInfo::CreateFontSubsetFromSfnt( sal_Int32* pOutGlyphWidths )
     // handle SFNT_TTF fonts
     // by forwarding the subset request to AG's sft subsetter
 #if 1 // TODO: remove conversion tp 16bit glyphids when sft-subsetter has been updated
-    std::vector<sal_uInt16> aShortGlyphIds;
-    aShortGlyphIds.reserve(mnReqGlyphCount);
-    for (int i = 0; i < mnReqGlyphCount; ++i)
-        aShortGlyphIds.push_back((sal_uInt16)mpReqGlyphIds[i]);
+    sal_uInt16 aShortGlyphIds[256];
+    for( int i = 0; i < mnReqGlyphCount; ++i)
+        aShortGlyphIds[i] = (sal_uInt16)mpReqGlyphIds[i];
     // remove const_cast when sft-subsetter is const-correct
     sal_uInt8* pEncArray = const_cast<sal_uInt8*>( mpReqEncodedIds );
 #endif
     int nSFTErr = vcl::SF_BADARG;
-    if( mnReqFontTypeMask & FontType::TYPE42_FONT )
+    if( (mnReqFontTypeMask & TYPE42_FONT) != 0 )
     {
         nSFTErr = CreateT42FromTTGlyphs( mpSftTTFont, mpOutFile, mpReqFontName,
-            aShortGlyphIds.data(), pEncArray, mnReqGlyphCount );
+            aShortGlyphIds, pEncArray, mnReqGlyphCount );
     }
-    else if( mnReqFontTypeMask & FontType::TYPE3_FONT )
+    else if( (mnReqFontTypeMask & TYPE3_FONT) != 0 )
     {
         nSFTErr = CreateT3FromTTGlyphs( mpSftTTFont, mpOutFile, mpReqFontName,
-            aShortGlyphIds.data(), pEncArray, mnReqGlyphCount,
+            aShortGlyphIds, pEncArray, mnReqGlyphCount,
                     0 /* 0 = horizontal, 1 = vertical */ );
     }
-    else if( mnReqFontTypeMask & FontType::SFNT_TTF )
+    else if( (mnReqFontTypeMask & SFNT_TTF) != 0 )
     {
         // TODO: use CreateTTFromTTGlyphs()
         // TODO: move functionality from callers here

@@ -296,7 +296,7 @@ FormattedField::StaticFormatter::~StaticFormatter()
 }
 
 
-FormattedField::FormattedField(vcl::Window* pParent, WinBits nStyle)
+FormattedField::FormattedField(vcl::Window* pParent, WinBits nStyle, SvNumberFormatter* pInitialFormatter)
     :SpinField(pParent, nStyle)
     ,m_aLastSelection(0,0)
     ,m_dMinValue(0)
@@ -319,6 +319,12 @@ FormattedField::FormattedField(vcl::Window* pParent, WinBits nStyle)
     ,m_pLastOutputColor(nullptr)
     ,m_bUseInputStringForFormatting(false)
 {
+
+    if (pInitialFormatter)
+    {
+        m_pFormatter = pInitialFormatter;
+        m_nFormatKey = 0;
+    }
 }
 
 VCL_BUILDER_FACTORY_ARGS(FormattedField, WB_BORDER | WB_SPIN)
@@ -339,8 +345,11 @@ void FormattedField::SetText( const OUString& rStr, const Selection& rNewSelecti
 
 void FormattedField::SetTextFormatted(const OUString& rStr)
 {
-    SAL_INFO_IF(ImplGetFormatter()->IsTextFormat(m_nFormatKey), "svtools",
-        "FormattedField::SetTextFormatted : valid only with text formats !");
+
+#if defined DBG_UTIL
+    if (ImplGetFormatter()->IsTextFormat(m_nFormatKey))
+         SAL_INFO("svtools", "FormattedField::SetTextFormatted : valid only with text formats !");
+#endif
 
     m_sCurrentTextValue = rStr;
 
@@ -396,7 +405,7 @@ void FormattedField::SetTextFormatted(const OUString& rStr)
     m_ValueState = valueString;
 }
 
-OUString const & FormattedField::GetTextValue() const
+OUString FormattedField::GetTextValue() const
 {
     if (m_ValueState != valueString )
     {
@@ -636,7 +645,7 @@ void FormattedField::SetThousandsSep(bool _bUseSeparator)
     bool bThousand, IsRed;
     sal_uInt16 nPrecision, nAnzLeading;
     ImplGetFormatter()->GetFormatSpecialInfo(m_nFormatKey, bThousand, IsRed, nPrecision, nAnzLeading);
-    if (bThousand == _bUseSeparator)
+    if (bThousand == (bool)_bUseSeparator)
         return;
 
     // we need the language for the following
@@ -742,7 +751,7 @@ void FormattedField::ReFormat()
     }
 }
 
-bool FormattedField::EventNotify(NotifyEvent& rNEvt)
+bool FormattedField::Notify(NotifyEvent& rNEvt)
 {
 
     if ((rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && !IsReadOnly())
@@ -810,7 +819,7 @@ bool FormattedField::EventNotify(NotifyEvent& rNEvt)
         }
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void FormattedField::SetMinValue(double dMin)

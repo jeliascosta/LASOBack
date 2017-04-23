@@ -31,7 +31,7 @@ class PreviewValueSet
 {
 public:
     explicit PreviewValueSet (vcl::Window* pParent);
-    virtual ~PreviewValueSet() override;
+    virtual ~PreviewValueSet();
 
     void SetRightMouseClickHandler (const Link<const MouseEvent&,void>& rLink);
     virtual void Resize() override;

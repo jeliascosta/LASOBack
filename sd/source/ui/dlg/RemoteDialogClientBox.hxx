@@ -59,7 +59,7 @@ struct ClientBoxEntry
     bool m_bActive :1;
     std::shared_ptr<ClientInfo> m_pClientInfo;
 
-    explicit ClientBoxEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
+    explicit ClientBoxEntry(std::shared_ptr<ClientInfo> pClientInfo);
    ~ClientBoxEntry();
 
 };
@@ -77,10 +77,11 @@ public:
     {
         m_pParent = pParent;
     }
-    virtual ~ClientRemovedListener() override;
+    virtual ~ClientRemovedListener();
 
     // XEventListener
-    virtual void SAL_CALL disposing(css::lang::EventObject const & evt) override;
+    virtual void SAL_CALL disposing(css::lang::EventObject const & evt)
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 class ClientBox : public Control
@@ -100,11 +101,11 @@ class ClientBox : public Control
 
     VclPtr<NumericBox> m_aPinBox;
     VclPtr<PushButton> m_aDeauthoriseButton;
-    ::tools::Rectangle m_sPinTextRect;
+    Rectangle m_sPinTextRect;
 
     VclPtr<ScrollBar> m_aScrollBar;
 
-    rtl::Reference< ClientRemovedListener > m_xRemoveListener;
+    css::uno::Reference< ClientRemovedListener > m_xRemoveListener;
 
     //This mutex is used for synchronizing access to m_vEntries.
     //Currently it is used to synchronize adding, removing entries and
@@ -120,33 +121,33 @@ class ClientBox : public Control
     void CalcActiveHeight( const long nPos );
     long GetTotalHeight() const;
     void SetupScrollBar();
-    void DrawRow(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect, const TClientBoxEntry& rEntry);
+    void DrawRow(vcl::RenderContext& rRenderContext, const Rectangle& rRect, const TClientBoxEntry& rEntry);
     bool HandleCursorKey( sal_uInt16 nKeyCode );
     void DeleteRemoved();
 
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
-    DECL_LINK( DeauthoriseHdl, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( DeauthoriseHdl, Button*, void );
 
 public:
     ClientBox( vcl::Window* pParent, WinBits nStyle );
-    virtual ~ClientBox() override;
+    virtual ~ClientBox();
     virtual void dispose() override;
 
     void MouseButtonDown( const MouseEvent& rMEvt ) override;
-    void Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle &rPaintRect ) override;
+    void Paint( vcl::RenderContext& rRenderContext, const Rectangle &rPaintRect ) override;
     void Resize() override;
     Size GetOptimalSize() const override;
-    bool EventNotify( NotifyEvent& rNEvt ) override;
+    bool Notify( NotifyEvent& rNEvt ) override;
 
     TClientBoxEntry GetEntryData( long nPos ) { return m_vEntries[ nPos ]; }
     long GetActiveEntryIndex();
-    ::tools::Rectangle GetEntryRect( const long nPos ) const;
+    Rectangle GetEntryRect( const long nPos ) const;
     long PointToPos( const Point& rPos );
     void DoScroll( long nDelta );
     void RecalcAll();
 
     void selectEntry( const long nPos );
-    void addEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
+    long addEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
     void clearEntries();
 
     OUString getPin();

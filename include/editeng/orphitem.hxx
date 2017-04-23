@@ -44,11 +44,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxOrphansItem& operator=( const SvxOrphansItem& rOrphans )
+    inline SvxOrphansItem& operator=( const SvxOrphansItem& rOrphans )
     {
         SetValue( rOrphans.GetValue() );
         return *this;

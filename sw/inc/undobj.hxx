@@ -26,7 +26,6 @@
 #include <tools/solar.h>
 #include <SwRewriter.hxx>
 #include <swundo.hxx>
-#include <o3tl/typed_flags_set.hxx>
 
 class SwHistory;
 class SwIndex;
@@ -39,8 +38,6 @@ class SwNodeIndex;
 class SwNodeRange;
 class SwRedlineData;
 class SwRedlineSaveDatas;
-enum class RedlineFlags;
-enum class RndStdIds;
 
 namespace sw {
     class UndoRedoContext;
@@ -51,12 +48,11 @@ class SwUndo
     : public SfxUndoAction
 {
     SwUndoId const m_nId;
-    RedlineFlags   nOrigRedlineFlags;
-    ViewShellId    m_nViewShellId;
+    sal_uInt16 nOrigRedlineMode;
 
 protected:
     bool bCacheComment;
-    mutable std::unique_ptr<OUString> pComment;
+    mutable OUString * pComment;
 
     static void RemoveIdxFromSection( SwDoc&, sal_uLong nSttIdx, sal_uLong* pEndIdx = nullptr );
     static void RemoveIdxFromRange( SwPaM& rPam, bool bMoveNext );
@@ -73,16 +69,18 @@ protected:
     */
     virtual SwRewriter GetRewriter() const;
 
+    // return type is sal_uInt16 because this overrides SfxUndoAction::GetId()
+    virtual sal_uInt16 GetId() const override { return static_cast<sal_uInt16>(m_nId); }
+
     // the 4 methods that derived classes have to override
     // base implementation does nothing
     virtual void RepeatImpl( ::sw::RepeatContext & );
+    bool CanRepeatImpl( ::sw::RepeatContext & ) const;
 public: // should not be public, but ran into trouble in untbl.cxx
     virtual void UndoImpl( ::sw::UndoRedoContext & ) = 0;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) = 0;
 
 private:
-    /// Try to obtain the view shell ID of the current view.
-    static ViewShellId CreateViewShellId(const SwDoc* pDoc);
     // SfxUndoAction
     virtual void Undo() override;
     virtual void Redo() override;
@@ -92,10 +90,8 @@ private:
     virtual bool CanRepeat(SfxRepeatTarget &) const override;
 
 public:
-    SwUndo(SwUndoId const nId, const SwDoc* pDoc);
-    virtual ~SwUndo() override;
-
-    SwUndoId GetId() const { return m_nId; }
+    SwUndo(SwUndoId const nId);
+    virtual ~SwUndo();
 
     /**
        Returns textual comment for this undo object.
@@ -108,13 +104,10 @@ public:
     */
     virtual OUString GetComment() const override;
 
-    /// See SfxUndoAction::GetViewShellId().
-    ViewShellId GetViewShellId() const override;
-
     // UndoObject remembers which mode was turned on.
     // In Undo/Redo/Repeat this remembered mode is switched on.
-    RedlineFlags GetRedlineFlags() const { return nOrigRedlineFlags; }
-    void SetRedlineFlags( RedlineFlags eMode ) { nOrigRedlineFlags = eMode; }
+    sal_uInt16 GetRedlineMode() const { return nOrigRedlineMode; }
+    void SetRedlineMode( sal_uInt16 eMode ) { nOrigRedlineMode = eMode; }
 
     bool IsDelBox() const;
 
@@ -126,22 +119,21 @@ public:
     static bool HasHiddenRedlines( const SwRedlineSaveDatas& rSData );
 };
 
-enum class DelContentType : sal_uInt16
+typedef sal_uInt16 DelContentType;
+namespace nsDelContentType
 {
-    Ftn          = 0x01,
-    Fly          = 0x02,
-    Bkm          = 0x08,
-    AllMask      = 0x0b,
-    CheckNoCntnt = 0x80,
-};
-namespace o3tl {
-    template<> struct typed_flags<DelContentType> : is_typed_flags<DelContentType, 0x8b> {};
+    const DelContentType DELCNT_FTN = 0x01;
+    const DelContentType DELCNT_FLY = 0x02;
+    const DelContentType DELCNT_TOC = 0x04;
+    const DelContentType DELCNT_BKM = 0x08;
+    const DelContentType DELCNT_ALL = 0x0F;
+    const DelContentType DELCNT_CHKNOCNTNT = 0x80;
 }
 
 /// will DelContentIndex destroy a frame anchored at character at rAnchorPos?
 bool IsDestroyFrameAnchoredAtChar(SwPosition const & rAnchorPos,
         SwPosition const & rStart, SwPosition const & rEnd, const SwDoc* doc,
-        DelContentType const nDelContentType = DelContentType::AllMask);
+        DelContentType const nDelContentType = nsDelContentType::DELCNT_ALL);
 
 // This class has to be inherited into an Undo-object if it saves content
 // for Redo/Undo...
@@ -149,7 +141,7 @@ class SwUndoSaveContent
 {
 protected:
 
-    std::unique_ptr<SwHistory> pHistory;
+    SwHistory* pHistory;
 
     // Needed for deletion of content. For Redo content is moved into the
     // UndoNodesArray. These methods always create a new node to insert
@@ -157,7 +149,7 @@ protected:
     // MoveTo:      moves from the NodesArray into the UndoNodesArray.
     // MoveFrom:    moves from the UndoNodesArray into the NodesArray.
     static void MoveToUndoNds( SwPaM& rPam,
-                        SwNodeIndex* pNodeIdx,
+                        SwNodeIndex* pNodeIdx = nullptr,
                         sal_uLong* pEndNdIdx = nullptr, sal_Int32 * pEndCntIdx = nullptr );
     static void MoveFromUndoNds( SwDoc& rDoc, sal_uLong nNodeIdx,
                           SwPosition& rInsPos,
@@ -173,7 +165,7 @@ protected:
     // Before moving stuff into UndoNodes-Array care has to be taken that
     // the content-bearing attributes are removed from the nodes-array.
     void DelContentIndex( const SwPosition& pMark, const SwPosition& pPoint,
-                        DelContentType nDelContentType = DelContentType::AllMask );
+                        DelContentType nDelContentType = nsDelContentType::DELCNT_ALL );
 
 public:
     SwUndoSaveContent();
@@ -201,8 +193,8 @@ public:
     void RestoreSection( SwDoc* pDoc, SwNodeIndex* pIdx, sal_uInt16 nSectType );
     void RestoreSection( SwDoc* pDoc, const SwNodeIndex& rInsPos );
 
-    const SwHistory* GetHistory() const { return pHistory.get(); }
-          SwHistory* GetHistory()       { return pHistory.get(); }
+    const SwHistory* GetHistory() const { return pHistory; }
+          SwHistory* GetHistory()       { return pHistory; }
 };
 
 // This class saves the PaM as sal_uInt16's and is able to restore it
@@ -229,7 +221,7 @@ class SwUndoInserts : public SwUndo, public SwUndRng, private SwUndoSaveContent
 {
     SwTextFormatColl *pTextFormatColl, *pLastNdColl;
     std::vector<SwFrameFormat*>* pFrameFormats;
-    std::vector< std::shared_ptr<SwUndoInsLayFormat> > m_FlyUndos;
+    ::std::vector< std::shared_ptr<SwUndoInsLayFormat> > m_FlyUndos;
     SwRedlineData* pRedlData;
     bool bSttWasTextNd;
 protected:
@@ -240,7 +232,7 @@ protected:
 
     SwUndoInserts( SwUndoId nUndoId, const SwPaM& );
 public:
-    virtual ~SwUndoInserts() override;
+    virtual ~SwUndoInserts();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -269,7 +261,7 @@ protected:
     SwFrameFormat* pFrameFormat;          // The saved FlyFormat.
     sal_uLong nNdPgPos;
     sal_Int32 nCntPos;         // Page at/in paragraph.
-    RndStdIds nRndId;
+    sal_uInt16 nRndId;
     bool bDelFormat;           // Delete saved format.
 
     void InsFly(::sw::UndoRedoContext & rContext, bool bShowSel = true);
@@ -281,7 +273,7 @@ protected:
     sal_uLong GetMvNodeCnt() const { return SwUndoSaveSection::GetMvNodeCnt(); }
 
 public:
-    virtual ~SwUndoFlyBase() override;
+    virtual ~SwUndoFlyBase();
 
 };
 
@@ -292,7 +284,7 @@ class SwUndoInsLayFormat : public SwUndoFlyBase
 public:
     SwUndoInsLayFormat( SwFrameFormat* pFormat, sal_uLong nNodeIdx, sal_Int32 nCntIdx );
 
-    virtual ~SwUndoInsLayFormat() override;
+    virtual ~SwUndoInsLayFormat();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

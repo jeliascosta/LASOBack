@@ -181,7 +181,7 @@ void XMLLineNumberingImportContext::ProcessAttribute(
 
         case XML_TOK_LINENUMBERING_NUMBER_POSITION:
         {
-            static const SvXMLEnumMapEntry<sal_Int16> aLineNumberPositionMap[] =
+            static const SvXMLEnumMapEntry aLineNumberPositionMap[] =
             {
                 { XML_LEFT,     style::LineNumberPosition::LEFT },
                 { XML_RIGHT,    style::LineNumberPosition::RIGHT },
@@ -190,8 +190,12 @@ void XMLLineNumberingImportContext::ProcessAttribute(
                 { XML_TOKEN_INVALID, 0 }
             };
 
-            (void)SvXMLUnitConverter::convertEnum(nNumberPosition, sValue,
-                                                  aLineNumberPositionMap);
+            sal_uInt16 nTmp16;
+            if (SvXMLUnitConverter::convertEnum(nTmp16, sValue,
+                                                aLineNumberPositionMap))
+            {
+                nNumberPosition = nTmp16;
+            }
             break;
         }
 

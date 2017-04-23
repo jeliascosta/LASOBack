@@ -37,7 +37,7 @@ public:
 
     // basic constructor, used from SdrObject.
     explicit ViewContactOfSdrMediaObj( SdrMediaObj& rMediaObj );
-    virtual ~ViewContactOfSdrMediaObj() override;
+    virtual ~ViewContactOfSdrMediaObj();
 
 public:
 

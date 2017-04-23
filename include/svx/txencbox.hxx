@@ -34,7 +34,7 @@ private:
 
 public:
     SvxTextEncodingBox( vcl::Window* pParent, WinBits nBits );
-    virtual ~SvxTextEncodingBox() override;
+    virtual ~SvxTextEncodingBox();
     virtual void dispose() override;
 
     /** Fill with all known encodings but exclude those matching one or more
@@ -53,7 +53,7 @@ public:
             RTL_TEXTENCODING_GB_18030. Normally, this flag should be set to
             <TRUE/> whenever the box is used in import dialogs. */
     void                FillFromTextEncodingTable(
-                            bool bExcludeImportSubsets,
+                            bool bExcludeImportSubsets = false,
                             sal_uInt32 nExcludeInfoFlags = 0,
                             sal_uInt32 nButIncludeInfoFlags = 0
                             );
@@ -74,7 +74,7 @@ public:
             RTL_TEXTENCODING_GB_18030. Normally, this flag should be set to
             <TRUE/> whenever the box is used in import dialogs. */
     void                FillFromDbTextEncodingMap(
-                            bool bExcludeImportSubsets,
+                            bool bExcludeImportSubsets = false,
                             sal_uInt32 nExcludeInfoFlags = 0
                             );
 

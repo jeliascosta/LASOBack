@@ -39,7 +39,7 @@ namespace cppcanvas
                               const css::uno::Reference<
                                       css::rendering::XCustomSprite >&                    rSprite,
                               const ImplSpriteCanvas::TransformationArbiterSharedPtr&     rTransformArbiter );
-            virtual ~ImplCustomSprite() override;
+            virtual ~ImplCustomSprite();
 
             virtual CanvasSharedPtr getContentCanvas() const override;
 

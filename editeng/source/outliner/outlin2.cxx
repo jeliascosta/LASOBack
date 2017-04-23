@@ -173,7 +173,7 @@ OUString Outliner::GetWord( sal_Int32 nPara, sal_Int32 nIndex )
     return pEditEngine->GetWord( nPara, nIndex );
 }
 
-void Outliner::Draw( OutputDevice* pOutDev, const tools::Rectangle& rOutRect )
+void Outliner::Draw( OutputDevice* pOutDev, const Rectangle& rOutRect )
 {
     pEditEngine->Draw( pOutDev, rOutRect );
 }
@@ -283,7 +283,7 @@ EEControlBits Outliner::GetControlWord() const
     return pEditEngine->GetControlWord();
 }
 
-void Outliner::SetAsianCompressionMode( CharCompressType n )
+void Outliner::SetAsianCompressionMode( sal_uInt16 n )
 {
     pEditEngine->SetAsianCompressionMode( n );
 }
@@ -444,7 +444,7 @@ bool Outliner::IsTextPos( const Point& rPaperPos, sal_uInt16 nBorder, bool* pbBu
         sal_Int32 nPara = pEditEngine->FindParagraph( aDocPos.Y() );
         if ( ( nPara != EE_PARA_NOT_FOUND ) && ImplHasNumberFormat( nPara ) )
         {
-            tools::Rectangle aBulArea = ImpCalcBulletArea( nPara, true, true );
+            Rectangle aBulArea = ImpCalcBulletArea( nPara, true, true );
             if ( aBulArea.IsInside( rPaperPos ) )
             {
                 bTextPos = true;
@@ -549,6 +549,11 @@ void Outliner::SetDefaultHorizontalTextDirection( EEHorizontalTextDirection eHTe
 EEHorizontalTextDirection Outliner::GetDefaultHorizontalTextDirection() const
 {
     return pEditEngine->GetDefaultHorizontalTextDirection();
+}
+
+SvtScriptType Outliner::GetScriptType( const ESelection& rSelection ) const
+{
+    return pEditEngine->GetScriptType( rSelection );
 }
 
 LanguageType Outliner::GetLanguage( sal_Int32 nPara, sal_Int32 nPos ) const

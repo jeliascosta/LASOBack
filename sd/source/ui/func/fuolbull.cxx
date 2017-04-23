@@ -81,7 +81,7 @@ void FuOutlineBullet::DoExecute( SfxRequest& rReq )
 
         // create and execute dialog
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdOutlineBulletTabDlg(mpViewShell->GetActiveWindow(), &aNewAttr, mpView) : nullptr);
+        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdOutlineBulletTabDlg(mpViewShell->GetActiveWindow(), &aNewAttr, mpView) : nullptr);
         if( pDlg )
         {
             if ( pPageItem )
@@ -158,7 +158,7 @@ void FuOutlineBullet::SetCurrentBulletsNumbering(SfxRequest& rReq)
 
     const DrawViewShell* pDrawViewShell = dynamic_cast< DrawViewShell* >(mpViewShell);
     //Init bullet level in "Customize" tab page in bullet dialog in master page view
-    const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EditMode::MasterPage;
+    const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EM_MASTERPAGE;
     if ( bInMasterView )
     {
         SdrObject* pObj = mpView->GetTextEditObject();
@@ -199,7 +199,7 @@ void FuOutlineBullet::SetCurrentBulletsNumbering(SfxRequest& rReq)
         // get numbering rule corresponding to <nIdx> and apply the needed number formats to <pNumRule>
         NBOTypeMgrBase* pNumRuleMgr =
             NBOutlineTypeMgrFact::CreateInstance(
-                nSId == FN_SVX_SET_BULLET ? NBOType::Bullets : NBOType::Numbering );
+                nSId == FN_SVX_SET_BULLET ? eNBOType::BULLETS : eNBOType::NUMBERING );
         if ( pNumRuleMgr )
         {
             sal_uInt16 nActNumLvl = (sal_uInt16)0xFFFF;
@@ -266,11 +266,10 @@ void FuOutlineBullet::SetCurrentBulletsNumbering(SfxRequest& rReq)
     {
         mpView->ChangeMarkedObjectsBulletsNumbering( bToggle, nSId == FN_SVX_SET_BULLET, bInMasterView ? nullptr : pNumRule );
     }
-
-    if (bInMasterView && pNumRule)
+    if ( bInMasterView )
     {
         SfxItemSet aSetAttr( mpViewShell->GetPool(), EE_ITEMS_START, EE_ITEMS_END );
-        aSetAttr.Put(SvxNumBulletItem( *pNumRule, nNumItemId ));
+        aSetAttr.Put(SvxNumBulletItem( *pNumRule ), nNumItemId);
         mpView->SetAttributes(aSetAttr);
     }
 
@@ -315,7 +314,7 @@ const SfxPoolItem* FuOutlineBullet::GetNumBulletItem(SfxItemSet& aNewAttr, sal_u
                 for(size_t nNum = 0; nNum < nCount; ++nNum)
                 {
                     SdrObject* pObj = rMarkList.GetMark(nNum)->GetMarkedSdrObj();
-                    if( pObj->GetObjInventor() == SdrInventor::Default )
+                    if( pObj->GetObjInventor() == SdrInventor )
                     {
                         switch(pObj->GetObjIdentifier())
                         {
@@ -345,8 +344,7 @@ const SfxPoolItem* FuOutlineBullet::GetNumBulletItem(SfxItemSet& aNewAttr, sal_u
 
             //DBG_ASSERT( pItem, "No EE_PARA_NUMBULLET in the Pool!" );
 
-            std::unique_ptr<SfxPoolItem> pNewItem(pItem->CloneSetWhich(EE_PARA_NUMBULLET));
-            aNewAttr.Put(*pNewItem);
+            aNewAttr.Put(*pItem, EE_PARA_NUMBULLET);
 
             if(bTitle && aNewAttr.GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET )
             {

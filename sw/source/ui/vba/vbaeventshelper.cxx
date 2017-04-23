@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include "service.hxx"
 #include "vbaeventshelper.hxx"
 #include <com/sun/star/script/ModuleType.hpp>
 #include <com/sun/star/script/vba/VBAEventId.hpp>
@@ -27,6 +24,7 @@
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::script::vba::VBAEventId;
+using namespace ::ooo::vba;
 
 SwVbaEventsHelper::SwVbaEventsHelper( uno::Sequence< css::uno::Any > const& aArgs, uno::Reference< uno::XComponentContext > const& xContext ) :
     VbaEventsHelperBase( aArgs, xContext )
@@ -45,7 +43,7 @@ SwVbaEventsHelper::~SwVbaEventsHelper()
 }
 
 bool SwVbaEventsHelper::implPrepareEvent( EventQueue& rEventQueue,
-        const EventHandlerInfo& rInfo, const uno::Sequence< uno::Any >& /*rArgs*/ )
+        const EventHandlerInfo& rInfo, const uno::Sequence< uno::Any >& /*rArgs*/ ) throw (uno::RuntimeException)
 {
     switch( rInfo.mnEventId )
     {
@@ -63,20 +61,20 @@ bool SwVbaEventsHelper::implPrepareEvent( EventQueue& rEventQueue,
 }
 
 uno::Sequence< uno::Any > SwVbaEventsHelper::implBuildArgumentList( const EventHandlerInfo& /*rInfo*/,
-        const uno::Sequence< uno::Any >& /*rArgs*/ )
+        const uno::Sequence< uno::Any >& /*rArgs*/ ) throw (lang::IllegalArgumentException)
 {
     // no event handler expects any arguments
     return uno::Sequence< uno::Any >();
 }
 
 void SwVbaEventsHelper::implPostProcessEvent( EventQueue& /*rEventQueue*/,
-        const EventHandlerInfo& /*rInfo*/, bool /*bCancel*/ )
+        const EventHandlerInfo& /*rInfo*/, bool /*bCancel*/ ) throw (uno::RuntimeException)
 {
     // nothing to do after any event
 }
 
 OUString SwVbaEventsHelper::implGetDocumentModuleName( const EventHandlerInfo& /*rInfo*/,
-        const uno::Sequence< uno::Any >& /*rArgs*/ ) const
+        const uno::Sequence< uno::Any >& /*rArgs*/ ) const throw (lang::IllegalArgumentException)
 {
     // TODO: get actual codename from document
     return OUString( "ThisDocument" );
@@ -85,8 +83,8 @@ OUString SwVbaEventsHelper::implGetDocumentModuleName( const EventHandlerInfo& /
 namespace vbaeventshelper
 {
 namespace sdecl = comphelper::service_decl;
-sdecl::inheritingClass_<SwVbaEventsHelper, sdecl::with_args<true> > const serviceImpl;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::inheritingClass_<SwVbaEventsHelper, sdecl::with_args<true> > serviceImpl;
+extern sdecl::ServiceDecl const serviceDecl(
     serviceImpl,
     "SwVbaEventsHelper",
     "com.sun.star.document.vba.VBATextEventProcessor" );

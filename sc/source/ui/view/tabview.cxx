@@ -44,13 +44,13 @@
 #include "AccessibilityHints.hxx"
 #include "appoptio.hxx"
 #include "attrib.hxx"
-#include <comphelper/lok.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
-#include <sfx2/lokhelper.hxx>
+#include "hintwin.hxx"
 
 #include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 
+#include <string>
 #include <algorithm>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <basegfx/tools/zoomtools.hxx>
 
@@ -79,7 +79,7 @@ ScCornerButton::~ScCornerButton()
 {
 }
 
-void ScCornerButton::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void ScCornerButton::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
     SetBackground(rStyleSettings.GetFaceColor());
@@ -109,14 +109,14 @@ void ScCornerButton::Paint(vcl::RenderContext& rRenderContext, const tools::Rect
 
         rRenderContext.SetLineColor();
         rRenderContext.SetFillColor(aCenter);
-        rRenderContext.DrawRect(tools::Rectangle(nCenterX, nCenterY, nCenterX, nPosY));
-        rRenderContext.DrawRect(tools::Rectangle(nCenterX, nCenterY, nDarkX, nCenterY));
+        rRenderContext.DrawRect(Rectangle(nCenterX, nCenterY, nCenterX, nPosY));
+        rRenderContext.DrawRect(Rectangle(nCenterX, nCenterY, nDarkX, nCenterY));
         rRenderContext.SetFillColor(aOuter);
-        rRenderContext.DrawRect(tools::Rectangle(0, 0, nPosX, nCenterY - 1));
+        rRenderContext.DrawRect(Rectangle(0, 0, nPosX, nCenterY - 1));
         if (bLayoutRTL)
-            rRenderContext.DrawRect(tools::Rectangle(nCenterX + 1, nCenterY, nPosX, nPosY));
+            rRenderContext.DrawRect(Rectangle(nCenterX + 1, nCenterY, nPosX, nPosY));
         else
-            rRenderContext.DrawRect(tools::Rectangle(0, nCenterY, nCenterX - 1, nPosY));
+            rRenderContext.DrawRect(Rectangle(0, nCenterY, nCenterX - 1, nPosY));
     }
 
     //  both buttons have the same look now - only dark right/bottom lines
@@ -206,14 +206,12 @@ ScTabView::ScTabView( vcl::Window* pParent, ScDocShell& rDocSh, ScTabViewShell* 
     aCornerButton( VclPtr<ScCornerButton>::Create( pFrameWin, &aViewData, false ) ),
     aTopButton( VclPtr<ScCornerButton>::Create( pFrameWin, &aViewData, true ) ),
     aScrollBarBox( VclPtr<ScrollBarBox>::Create( pFrameWin, WB_SIZEABLE ) ),
-    mxInputHintOO(),
+    mpInputHintWindow( nullptr ),
     pPageBreakData( nullptr ),
     pBrushDocument( nullptr ),
     pDrawBrushSet( nullptr ),
     pTimerWindow( nullptr ),
-    aExtraEditViewManager( pViewShell, pGridWin ),
     nTipVisible( 0 ),
-    nTipAlign( QuickHelpFlags::NONE ),
     nPrevDragPos( 0 ),
     meBlockMode(None),
     nBlockStartX( 0 ),
@@ -271,7 +269,7 @@ void ScTabView::ResetTimer()
     pTimerWindow = nullptr;
 }
 
-IMPL_LINK_NOARG(ScTabView, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ScTabView, TimerHdl, Timer *, void)
 {
     if (pTimerWindow)
         pTimerWindow->MouseMove( aTimerMEvt );
@@ -336,12 +334,12 @@ void ScTabView::DoResize( const Point& rOffset, const Size& rSize, bool bInner )
     if ( bMinimized )
         return;
 
-    float fScaleFactor = pFrameWin->GetDPIScaleFactor();
+    sal_Int32 aScaleFactor = pFrameWin->GetDPIScaleFactor();
 
-    long nSplitSizeX = SPLIT_HANDLE_SIZE * fScaleFactor;
+    long nSplitSizeX = SPLIT_HANDLE_SIZE * aScaleFactor;
     if ( aViewData.GetHSplitMode() == SC_SPLIT_FIX )
         nSplitSizeX = 1;
-    long nSplitSizeY = SPLIT_HANDLE_SIZE * fScaleFactor;
+    long nSplitSizeY = SPLIT_HANDLE_SIZE * aScaleFactor;
     if ( aViewData.GetVSplitMode() == SC_SPLIT_FIX )
         nSplitSizeY = 1;
 
@@ -533,10 +531,10 @@ void ScTabView::DoResize( const Point& rOffset, const Size& rSize, bool bInner )
     //  SetDragRectPixel also without Scrollbars etc., when already split
     if ( bHScroll || aViewData.GetHSplitMode() != SC_SPLIT_NONE )
         pHSplitter->SetDragRectPixel(
-            tools::Rectangle( nPosX, nPosY, nPosX+nSizeX, nPosY+nSizeY ), pFrameWin );
+            Rectangle( nPosX, nPosY, nPosX+nSizeX, nPosY+nSizeY ), pFrameWin );
     if ( bVScroll || aViewData.GetVSplitMode() != SC_SPLIT_NONE )
         pVSplitter->SetDragRectPixel(
-            tools::Rectangle( nPosX, nPosY, nPosX+nSizeX, nPosY+nSizeY ), pFrameWin );
+            Rectangle( nPosX, nPosY, nPosX+nSizeX, nPosY+nSizeY ), pFrameWin );
 
     if (bTabControl && ! bHScroll )
     {
@@ -742,7 +740,7 @@ void ScTabView::DoResize( const Point& rOffset, const Size& rSize, bool bInner )
     UpdateVarZoom();    //  update variable zoom types (after resizing GridWindows)
 
     if (aViewData.GetViewShell()->HasAccessibilityObjects())
-        aViewData.GetViewShell()->BroadcastAccessibility(SfxHint(SfxHintId::ScAccWindowResized));
+        aViewData.GetViewShell()->BroadcastAccessibility(SfxSimpleHint(SC_HINT_ACC_WINDOWRESIZED));
 }
 
 void ScTabView::UpdateVarZoom()
@@ -842,7 +840,7 @@ void ScTabView::GetBorderSize( SvBorder& rBorder, const Size& /* rSize */ )
         ::std::swap( rBorder.Left(), rBorder.Right() );
 }
 
-IMPL_LINK_NOARG(ScTabView, TabBarResize, TabBar*, void)
+IMPL_LINK_NOARG_TYPED(ScTabView, TabBarResize, TabBar*, void)
 {
     if (aViewData.IsHScrollMode())
     {
@@ -896,7 +894,7 @@ long ScTabView::GetTabBarWidth() const
     return pTabControl->GetSizePixel().Width();
 }
 
-double ScTabView::GetRelTabBarWidth()
+double ScTabView::GetRelTabBarWidth() const
 {
     return 0.5;
 }
@@ -1019,7 +1017,7 @@ bool ScTabView::ScrollCommand( const CommandEvent& rCEvt, ScSplitPos ePos )
     return bDone;
 }
 
-IMPL_LINK_NOARG(ScTabView, EndScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG_TYPED(ScTabView, EndScrollHdl, ScrollBar*, void)
 {
     if ( bDragging )
     {
@@ -1028,7 +1026,7 @@ IMPL_LINK_NOARG(ScTabView, EndScrollHdl, ScrollBar*, void)
     }
 }
 
-IMPL_LINK( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
+IMPL_LINK_TYPED( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
 {
     bool bHoriz = ( pScroll == aHScrollLeft.get() || pScroll == aHScrollRight.get() );
     long nViewPos;
@@ -1042,7 +1040,7 @@ IMPL_LINK( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
     bool bLayoutRTL = aViewData.GetDocument()->IsLayoutRTL( aViewData.GetTabNo() );
 
     ScrollType eType = pScroll->GetType();
-    if ( eType == ScrollType::Drag )
+    if ( eType == SCROLL_DRAG )
     {
         if (!bDragging)
         {
@@ -1080,7 +1078,7 @@ IMPL_LINK( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
             long nScrollPos = GetScrollBarPos( *pScroll ) + nScrollMin;
 
             OUString aHelpStr;
-            tools::Rectangle aRect;
+            Rectangle aRect;
             QuickHelpFlags nAlign;
             if (bHoriz)
             {
@@ -1111,27 +1109,27 @@ IMPL_LINK( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
     long nDelta = pScroll->GetDelta();
     switch ( eType )
     {
-        case ScrollType::LineUp:
+        case SCROLL_LINEUP:
             nDelta = -1;
             break;
-        case ScrollType::LineDown:
+        case SCROLL_LINEDOWN:
             nDelta = 1;
             break;
-        case ScrollType::PageUp:
+        case SCROLL_PAGEUP:
             if ( pScroll == aHScrollLeft.get() ) nDelta = -(long) aViewData.PrevCellsX( SC_SPLIT_LEFT );
             if ( pScroll == aHScrollRight.get() ) nDelta = -(long) aViewData.PrevCellsX( SC_SPLIT_RIGHT );
             if ( pScroll == aVScrollTop.get() ) nDelta = -(long) aViewData.PrevCellsY( SC_SPLIT_TOP );
             if ( pScroll == aVScrollBottom.get() ) nDelta = -(long) aViewData.PrevCellsY( SC_SPLIT_BOTTOM );
             if (nDelta==0) nDelta=-1;
             break;
-        case ScrollType::PageDown:
+        case SCROLL_PAGEDOWN:
             if ( pScroll == aHScrollLeft.get() ) nDelta = aViewData.VisibleCellsX( SC_SPLIT_LEFT );
             if ( pScroll == aHScrollRight.get() ) nDelta = aViewData.VisibleCellsX( SC_SPLIT_RIGHT );
             if ( pScroll == aVScrollTop.get() ) nDelta = aViewData.VisibleCellsY( SC_SPLIT_TOP );
             if ( pScroll == aVScrollBottom.get() ) nDelta = aViewData.VisibleCellsY( SC_SPLIT_BOTTOM );
             if (nDelta==0) nDelta=1;
             break;
-        case ScrollType::Drag:
+        case SCROLL_DRAG:
             {
                 // only scroll in the correct direction, do not jitter around hidden ranges
                 long nScrollMin = 0;        // simulate RangeMin
@@ -1163,7 +1161,7 @@ IMPL_LINK( ScTabView, ScrollHdl, ScrollBar*, pScroll, void )
 
     if (nDelta)
     {
-        bool bUpdate = ( eType != ScrollType::Drag );    // don't alter the ranges while dragging
+        bool bUpdate = ( eType != SCROLL_DRAG );    // don't alter the ranges while dragging
         if ( bHoriz )
             ScrollX( nDelta, (pScroll == aHScrollLeft.get()) ? SC_SPLIT_LEFT : SC_SPLIT_RIGHT, bUpdate );
         else
@@ -1532,7 +1530,7 @@ bool ScTabView::UpdateVisibleRange()
 
 // ---  Splitter  --------------------------------------------------------
 
-IMPL_LINK( ScTabView, SplitHdl, Splitter*, pSplitter, void )
+IMPL_LINK_TYPED( ScTabView, SplitHdl, Splitter*, pSplitter, void )
 {
     if ( pSplitter == pHSplitter )
         DoHSplit( pHSplitter->GetSplitPosPixel() );
@@ -1719,7 +1717,7 @@ Point ScTabView::GetChartInsertPos( const Size& rSize, const ScRange& rCellRange
     if ( aViewData.GetVSplitMode() == SC_SPLIT_FIX )
         eUsedPart = (WhichH(eUsedPart)==SC_SPLIT_LEFT) ? SC_SPLIT_BOTTOMLEFT : SC_SPLIT_BOTTOMRIGHT;
 
-    ScGridWindow* pWin = pGridWin[eUsedPart].get();
+    ScGridWindow* pWin = pGridWin[eUsedPart];
     OSL_ENSURE( pWin, "Window not found" );
     if (pWin)
     {
@@ -1728,7 +1726,7 @@ Point ScTabView::GetChartInsertPos( const Size& rSize, const ScRange& rCellRange
         //  get the visible rectangle in logic units
 
         MapMode aDrawMode = pWin->GetDrawMapMode();
-        tools::Rectangle aVisible( pWin->PixelToLogic( tools::Rectangle( Point(0,0), pWin->GetOutputSizePixel() ), aDrawMode ) );
+        Rectangle aVisible( pWin->PixelToLogic( Rectangle( Point(0,0), pWin->GetOutputSizePixel() ), aDrawMode ) );
 
         ScDocument* pDoc = aViewData.GetDocument();
         SCTAB nTab = aViewData.GetTabNo();
@@ -1749,7 +1747,7 @@ Point ScTabView::GetChartInsertPos( const Size& rSize, const ScRange& rCellRange
 
         //  get the logic position of the selection
 
-        tools::Rectangle aSelection = pDoc->GetMMRect( rCellRange.aStart.Col(), rCellRange.aStart.Row(),
+        Rectangle aSelection = pDoc->GetMMRect( rCellRange.aStart.Col(), rCellRange.aStart.Row(),
                                                 rCellRange.aEnd.Col(), rCellRange.aEnd.Row(), nTab );
 
         long nLeftSpace = aSelection.Left() - aVisible.Left();
@@ -1803,7 +1801,7 @@ Point ScTabView::GetChartInsertPos( const Size& rSize, const ScRange& rCellRange
 
         // move the position if the object doesn't fit in the screen
 
-        tools::Rectangle aCompareRect( aInsertPos, Size( nNeededWidth, nNeededHeight ) );
+        Rectangle aCompareRect( aInsertPos, Size( nNeededWidth, nNeededHeight ) );
         if ( aCompareRect.Right() > aVisible.Right() )
             aInsertPos.X() -= aCompareRect.Right() - aVisible.Right();
         if ( aCompareRect.Bottom() > aVisible.Bottom() )
@@ -1823,7 +1821,7 @@ Point ScTabView::GetChartInsertPos( const Size& rSize, const ScRange& rCellRange
     return aInsertPos;
 }
 
-Point ScTabView::GetChartDialogPos( const Size& rDialogSize, const tools::Rectangle& rLogicChart )
+Point ScTabView::GetChartDialogPos( const Size& rDialogSize, const Rectangle& rLogicChart )
 {
     // rDialogSize must be in pixels, rLogicChart in 1/100 mm. Return value is in pixels.
 
@@ -1836,17 +1834,17 @@ Point ScTabView::GetChartDialogPos( const Size& rDialogSize, const tools::Rectan
     if ( aViewData.GetVSplitMode() == SC_SPLIT_FIX )
         eUsedPart = (WhichH(eUsedPart)==SC_SPLIT_LEFT) ? SC_SPLIT_BOTTOMLEFT : SC_SPLIT_BOTTOMRIGHT;
 
-    ScGridWindow* pWin = pGridWin[eUsedPart].get();
+    ScGridWindow* pWin = pGridWin[eUsedPart];
     OSL_ENSURE( pWin, "Window not found" );
     if (pWin)
     {
         MapMode aDrawMode = pWin->GetDrawMapMode();
-        tools::Rectangle aObjPixel = pWin->LogicToPixel( rLogicChart, aDrawMode );
-        tools::Rectangle aObjAbs( pWin->OutputToAbsoluteScreenPixel( aObjPixel.TopLeft() ),
+        Rectangle aObjPixel = pWin->LogicToPixel( rLogicChart, aDrawMode );
+        Rectangle aObjAbs( pWin->OutputToAbsoluteScreenPixel( aObjPixel.TopLeft() ),
                            pWin->OutputToAbsoluteScreenPixel( aObjPixel.BottomRight() ) );
 
-        tools::Rectangle aDesktop = pWin->GetDesktopRectPixel();
-        Size aSpace = pWin->LogicToPixel( Size( 8, 12 ), MapUnit::MapAppFont );
+        Rectangle aDesktop = pWin->GetDesktopRectPixel();
+        Size aSpace = pWin->LogicToPixel( Size( 8, 12 ), MAP_APPFONT );
 
         ScDocument* pDoc = aViewData.GetDocument();
         SCTAB nTab = aViewData.GetTabNo();
@@ -2154,7 +2152,7 @@ void ScTabView::SetNewVisArea()
     vcl::Window* pActive = pGridWin[aViewData.GetActivePart()];
     if (pActive)
         aViewData.GetViewShell()->VisAreaChanged(
-            pActive->PixelToLogic(tools::Rectangle(Point(),pActive->GetOutputSizePixel())) );
+            pActive->PixelToLogic(Rectangle(Point(),pActive->GetOutputSizePixel())) );
     if (pDrawView)
         pDrawView->VisAreaChanged();    // no window passed on -> for all windows
 
@@ -2180,12 +2178,12 @@ void ScTabView::SetNewVisArea()
         }
     }
     if (aViewData.GetViewShell()->HasAccessibilityObjects())
-        aViewData.GetViewShell()->BroadcastAccessibility(SfxHint(SfxHintId::ScAccVisAreaChanged));
+        aViewData.GetViewShell()->BroadcastAccessibility(SfxSimpleHint(SC_HINT_ACC_VISAREACHANGED));
 }
 
 bool ScTabView::HasPageFieldDataAtCursor() const
 {
-    ScGridWindow* pWin = pGridWin[aViewData.GetActivePart()].get();
+    ScGridWindow* pWin = pGridWin[aViewData.GetActivePart()];
     SCCOL nCol = aViewData.GetCurX();
     SCROW nRow = aViewData.GetCurY();
     if (pWin)
@@ -2196,7 +2194,7 @@ bool ScTabView::HasPageFieldDataAtCursor() const
 
 void ScTabView::StartDataSelect()
 {
-    ScGridWindow* pWin = pGridWin[aViewData.GetActivePart()].get();
+    ScGridWindow* pWin = pGridWin[aViewData.GetActivePart()];
     SCCOL nCol = aViewData.GetCurX();
     SCROW nRow = aViewData.GetCurY();
 
@@ -2305,279 +2303,82 @@ void ScTabView::SetAutoSpellData( SCCOL nPosX, SCROW nPosY, const std::vector<ed
     }
 }
 
-OUString ScTabView::getRowColumnHeaders(const tools::Rectangle& rRectangle)
+OUString ScTabView::getRowColumnHeaders(const Rectangle& rRectangle)
 {
     ScDocument* pDoc = aViewData.GetDocument();
     if (!pDoc)
         return OUString();
 
-    if (rRectangle.IsEmpty())
-        return OUString();
-
-    rtl::OUStringBuffer aBuffer(256);
-    aBuffer.append("{ \"commandName\": \".uno:ViewRowColumnHeaders\",\n");
-
-    SCROW nStartRow = 0;
-    SCROW nEndRow = 0;
-    SCCOL nStartCol = 0;
     SCCOL nEndCol = 0;
+    SCROW nEndRow = 0;
+    pDoc->GetTiledRenderingArea(aViewData.GetTabNo(), nEndCol, nEndRow);
 
-    /// *** start collecting ROWS ***
-
-    /// 1) compute start and end rows
-
+    boost::property_tree::ptree aRows;
+    long nTotal = 0;
     long nTotalPixels = 0;
-    if (rRectangle.Top() < rRectangle.Bottom())
-    {
-        long nUpperBoundPx = rRectangle.Top() / TWIPS_PER_PIXEL;
-        long nLowerBoundPx = rRectangle.Bottom() / TWIPS_PER_PIXEL;
-        nEndRow = MAXTILEDROW;
-        for (SCROW nRow = 0; nRow <= MAXTILEDROW; ++nRow)
-        {
-            if (nTotalPixels > nLowerBoundPx)
-            {
-                nEndRow = nRow; // first row below the rectangle
-                break;
-            }
-
-            const sal_uInt16 nSize = pDoc->GetRowHeight(nRow, aViewData.GetTabNo());
-            const long nSizePx = ScViewData::ToPixel(nSize, 1.0 / TWIPS_PER_PIXEL);
-
-            nTotalPixels += nSizePx;
-
-            if (nTotalPixels < nUpperBoundPx)
-            {
-                nStartRow = nRow; // last row above the rectangle
-                continue;
-            }
-        }
-
-        nStartRow -= 1;
-        nEndRow += 2;
-
-        if (nStartRow < 0) nStartRow = 0;
-        if (nEndRow > MAXTILEDROW) nEndRow = MAXTILEDROW;
-    }
-
-    aBuffer.ensureCapacity( aBuffer.getCapacity() + (50 * (nEndRow - nStartRow + 1)) );
-
-
-    long nVisibleRows = nEndRow - nStartRow;
-    if (nVisibleRows < 25)
-        nVisibleRows = 25;
-
-
-    /// 2) if we are approaching current max tiled row, signal a size changed event
-    ///    and invalidate the involved area
-
-    if (nEndRow > aViewData.GetMaxTiledRow() - nVisibleRows)
-    {
-        ScDocShell* pDocSh = aViewData.GetDocShell();
-        ScModelObj* pModelObj = pDocSh ? ScModelObj::getImplementation( pDocSh->GetModel() ) : nullptr;
-        Size aOldSize(0, 0);
-        if (pModelObj)
-            aOldSize = pModelObj->getDocumentSize();
-
-        aViewData.SetMaxTiledRow(std::min(std::max(nEndRow, aViewData.GetMaxTiledRow()) + nVisibleRows, (long)(MAXTILEDROW)));
-
-        Size aNewSize(0, 0);
-        if (pModelObj)
-            aNewSize = pModelObj->getDocumentSize();
-
-        if (pDocSh)
-        {
-            // Provide size in the payload, so clients don't have to
-            // call lok::Document::getDocumentSize().
-            std::stringstream ss;
-            ss << aNewSize.Width() << ", " << aNewSize.Height();
-            OString sSize = ss.str().c_str();
-            aViewData.GetViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sSize.getStr());
-
-            // New area extended to the bottom of the sheet after last row
-            // excluding overlapping area with aNewColArea
-            tools::Rectangle aNewRowArea(0, aOldSize.getHeight(), aOldSize.getWidth(), aNewSize.getHeight());
-
-            // Only invalidate if spreadsheet extended to the bottom
-            if (aNewRowArea.getHeight())
-            {
-                SfxLokHelper::notifyInvalidation(aViewData.GetViewShell(), aNewRowArea.toString());
-            }
-        }
-    }
-
-
-    /// 3) create string data for rows
-
-    aBuffer.append("\"rows\": [\n");
-
-    bool bFirstRow = true;
-    if (nStartRow  == 0 && nStartRow != nEndRow)
-    {
-        aBuffer.append("{ \"text\": \"").append("0").append("\", ");
-        aBuffer.append("\"size\": \"").append(OUString::number(0)).append("\" }");
-        bFirstRow = false;
-    }
-
-    nTotalPixels = 0;
-    for (SCROW nRow = 0; nRow < nEndRow; ++nRow)
+    for (SCROW nRow = 0; nRow <= nEndRow; ++nRow)
     {
         // nSize will be 0 for hidden rows.
-        const sal_uInt16 nSize = pDoc->GetRowHeight(nRow, aViewData.GetTabNo());
-        const long nSizePx = ScViewData::ToPixel(nSize, 1.0 / TWIPS_PER_PIXEL);
-        nTotalPixels += nSizePx;
-
-        if (nRow < nStartRow)
-            continue;
-
+        sal_uInt16 nSize = pDoc->GetRowHeight(nRow, aViewData.GetTabNo());
+        long nSizePixels = ScViewData::ToPixel(nSize, aViewData.GetPPTY());
         OUString aText = pRowBar[SC_SPLIT_BOTTOM]->GetEntryText(nRow);
 
-        if (!bFirstRow)
+        bool bSkip = false;
+        if (!rRectangle.IsEmpty())
         {
-            aBuffer.append(", ");
+            long nTop = std::max(rRectangle.Top(), nTotal);
+            long nBottom = std::min(rRectangle.Bottom(), nTotal + nSize);
+            if (nBottom < nTop)
+                // They do not intersect.
+                bSkip = true;
         }
-        else
+        if (!bSkip)
         {
-            aText = OUString::number(nStartRow + 1);
+            boost::property_tree::ptree aRow;
+            aRow.put("size", OString::number((nTotalPixels + nSizePixels) / aViewData.GetPPTY()).getStr());
+            aRow.put("text", aText.toUtf8().getStr());
+            aRows.push_back(std::make_pair("", aRow));
         }
-
-        aBuffer.append("{ \"text\": \"").append(aText).append("\", ");
-        aBuffer.append("\"size\": \"").append(OUString::number(nTotalPixels * TWIPS_PER_PIXEL)).append("\" }");
-        bFirstRow = false;
+        nTotal += nSize;
+        nTotalPixels += nSizePixels;
     }
 
-    aBuffer.append("]");
-    ///  end collecting ROWS
-
-
-    aBuffer.append(",\n");
-
-    /// *** start collecting COLS ***
-
-    /// 1) compute start and end columns
-
+    boost::property_tree::ptree aCols;
+    nTotal = 0;
     nTotalPixels = 0;
-    if (rRectangle.Left() < rRectangle.Right())
+    for (SCCOL nCol = 0; nCol <= nEndCol; ++nCol)
     {
-        long nLeftBoundPx = rRectangle.Left() / TWIPS_PER_PIXEL;
-        long nRightBoundPx = rRectangle.Right() / TWIPS_PER_PIXEL;
-        nEndCol = MAXCOL;
-        for (SCCOL nCol = 0; nCol <= MAXCOL; ++nCol)
-        {
-            if (nTotalPixels > nRightBoundPx)
-            {
-                nEndCol = nCol;
-                break;
-            }
-
-            const sal_uInt16 nSize = pDoc->GetColWidth(nCol, aViewData.GetTabNo());
-            const long nSizePx = ScViewData::ToPixel(nSize, 1.0 / TWIPS_PER_PIXEL);
-            nTotalPixels += nSizePx;
-            if (nTotalPixels < nLeftBoundPx)
-            {
-                nStartCol = nCol;
-                continue;
-            }
-        }
-
-        nStartCol -= 1;
-        nEndCol += 2;
-
-        if (nStartCol < 0) nStartCol = 0;
-        if (nEndCol > MAXCOL) nEndCol = MAXCOL;
-    }
-
-    aBuffer.ensureCapacity( aBuffer.getCapacity() + (50 * (nEndCol - nStartCol + 1)) );
-
-    long nVisibleCols = nEndCol - nStartCol;
-    if (nVisibleCols < 10)
-        nVisibleCols = 10;
-
-
-    /// 2) if we are approaching current max tiled column, signal a size changed event
-    ///    and invalidate the involved area
-
-    if (nEndCol > aViewData.GetMaxTiledCol() - nVisibleCols)
-    {
-        ScDocShell* pDocSh = aViewData.GetDocShell();
-        ScModelObj* pModelObj = pDocSh ? ScModelObj::getImplementation( pDocSh->GetModel() ) : nullptr;
-        Size aOldSize(0, 0);
-        if (pModelObj)
-            aOldSize = pModelObj->getDocumentSize();
-
-        aViewData.SetMaxTiledCol(std::min(std::max(nEndCol, aViewData.GetMaxTiledCol()) + nVisibleCols, (long)(MAXCOL)));
-
-        Size aNewSize(0, 0);
-        if (pModelObj)
-            aNewSize = pModelObj->getDocumentSize();
-
-        if (pDocSh)
-        {
-            // Provide size in the payload, so clients don't have to
-            // call lok::Document::getDocumentSize().
-            std::stringstream ss;
-            ss << aNewSize.Width() << ", " << aNewSize.Height();
-            OString sSize = ss.str().c_str();
-            aViewData.GetViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_DOCUMENT_SIZE_CHANGED, sSize.getStr());
-
-            // New area extended to the right of the sheet after last column
-            // including overlapping area with aNewRowArea
-            tools::Rectangle aNewColArea(aOldSize.getWidth(), 0, aNewSize.getWidth(), aNewSize.getHeight());
-
-            // Only invalidate if spreadsheet extended to the bottom
-            if (aNewColArea.getWidth())
-            {
-                SfxLokHelper::notifyInvalidation(aViewData.GetViewShell(), aNewColArea.toString());
-            }
-        }
-    }
-
-
-    /// 3) create string data for columns
-
-    aBuffer.append("\"columns\": [\n");
-
-    bool bFirstCol = true;
-    if (nStartCol  == 0 && nStartCol != nEndCol )
-    {
-        aBuffer.append("{ \"text\": \"").append("0").append("\", ");
-        aBuffer.append("\"size\": \"").append(OUString::number(0)).append("\" }");
-        bFirstCol = false;
-    }
-
-    nTotalPixels = 0;
-    for (SCCOL nCol = 0; nCol < nEndCol; ++nCol)
-    {
-        // nSize will be 0 for hidden columns.
-        const sal_uInt16 nSize = pDoc->GetColWidth(nCol, aViewData.GetTabNo());
-        const long nSizePx = ScViewData::ToPixel(nSize, 1.0 / TWIPS_PER_PIXEL);
-        nTotalPixels += nSizePx;
-
-        if (nCol < nStartCol)
-            continue;
-
+        sal_uInt16 nSize = pDoc->GetColWidth(nCol, aViewData.GetTabNo());
+        long nSizePixels = ScViewData::ToPixel(nSize, aViewData.GetPPTX());
         OUString aText = pColBar[SC_SPLIT_LEFT]->GetEntryText(nCol);
 
-        if (!bFirstCol)
+        bool bSkip = false;
+        if (!rRectangle.IsEmpty())
         {
-            aBuffer.append(", ");
+            long nLeft = std::max(rRectangle.Left(), nTotal);
+            long nRight = std::min(rRectangle.Right(), nTotal + nSize);
+            if (nRight < nLeft)
+                // They do not intersect.
+                bSkip = true;
         }
-        else
+        if (!bSkip)
         {
-            aText = OUString::number(nStartCol + 1);
+            boost::property_tree::ptree aCol;
+            aCol.put("size", OString::number((nTotalPixels + nSizePixels) / aViewData.GetPPTX()).getStr());
+            aCol.put("text", aText.toUtf8().getStr());
+            aCols.push_back(std::make_pair("", aCol));
         }
-
-        aBuffer.append("{ \"text\": \"").append(aText).append("\", ");
-        aBuffer.append("\"size\": \"").append(OUString::number(nTotalPixels * TWIPS_PER_PIXEL)).append("\" }");
-        bFirstCol = false;
+        nTotal += nSize;
+        nTotalPixels += nSizePixels;
     }
 
-    aBuffer.append("]");
-    ///  end collecting COLs
-
-    aBuffer.append("\n}");
-    OUString sRet = aBuffer.makeStringAndClear();
-
-    return sRet;
+    boost::property_tree::ptree aTree;
+    aTree.put("commandName", ".uno:ViewRowColumnHeaders");
+    aTree.add_child("rows", aRows);
+    aTree.add_child("columns", aCols);
+    std::stringstream aStream;
+    boost::property_tree::write_json(aStream, aTree);
+    return OUString::fromUtf8(aStream.str().c_str());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

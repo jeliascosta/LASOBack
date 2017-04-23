@@ -37,14 +37,14 @@ public:
 
     PieChart( const css::uno::Reference< css::chart2::XChartType >& xChartTypeModel
             , sal_Int32 nDimensionCount, bool bExcludingPositioning );
-    virtual ~PieChart() override;
+    virtual ~PieChart();
 
     /** This method creates all shapes needed for representing the pie chart.
      */
     virtual void createShapes() override;
     virtual void rearrangeLabelToAvoidOverlapIfRequested( const css::awt::Size& rPageSize ) override;
 
-    virtual void setScales( const std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis ) override;
+    virtual void setScales( const ::std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis ) override;
     virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
 
     virtual css::drawing::Direction3D  getPreferredDiagramAspectRatio() const override;
@@ -110,8 +110,7 @@ struct PieLabelInfo;
     void                performLabelBestFit(ShapeParam& rShapeParam, PieLabelInfo& rPieLabelInfo);
 
 private: //member
-    std::unique_ptr<PiePositionHelper>
-                          m_pPosHelper;
+    PiePositionHelper*    m_pPosHelper;
     bool                  m_bUseRings;
     bool                  m_bSizeExcludesLabelsAndExplodedSegments;
 
@@ -134,7 +133,7 @@ private: //member
         css::awt::Point aPreviousPosition;
     };
 
-    std::vector< PieLabelInfo > m_aLabelInfoList;
+    ::std::vector< PieLabelInfo > m_aLabelInfoList;
 
     double m_fMaxOffset;    /// cached max offset value (init'ed to NaN)
 };

@@ -62,7 +62,7 @@ OUString SalGtkPicker::uritounicode(const gchar* pIn)
             OUString sEncoded(pEncodedFileName, strlen(pEncodedFileName),
                 osl_getThreadTextEncoding());
             g_free (pEncodedFileName);
-            INetURLObject aCurrentURL(sEncoded, FSysStyle::Unix);
+            INetURLObject aCurrentURL(sEncoded, INetURLObject::FSYS_UNX);
             aCurrentURL.SetHost(aURL.GetHost());
             sURL = aCurrentURL.getExternalURL();
         }
@@ -134,6 +134,7 @@ RunDialog::~RunDialog()
 }
 
 void SAL_CALL RunDialog::windowOpened(const css::lang::EventObject& e)
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -153,10 +154,12 @@ void SAL_CALL RunDialog::windowOpened(const css::lang::EventObject& e)
 }
 
 void SAL_CALL RunDialog::queryTermination( const css::lang::EventObject& )
+        throw(css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL RunDialog::notifyTermination( const css::lang::EventObject& )
+        throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -198,6 +201,7 @@ SalGtkPicker::~SalGtkPicker()
 }
 
 void SAL_CALL SalGtkPicker::implsetDisplayDirectory( const OUString& aDirectory )
+    throw( lang::IllegalArgumentException, uno::RuntimeException )
 {
     OSL_ASSERT( m_pDialog != nullptr );
 
@@ -209,13 +213,13 @@ void SAL_CALL SalGtkPicker::implsetDisplayDirectory( const OUString& aDirectory 
     if( aTxt.endsWith("/") )
         aTxt = aTxt.copy( 0, aTxt.getLength() - 1 );
 
-    SAL_INFO( "vcl", "setting path to " << aTxt );
+    OSL_TRACE( "setting path to %s", aTxt.getStr() );
 
     gtk_file_chooser_set_current_folder_uri( GTK_FILE_CHOOSER( m_pDialog ),
         aTxt.getStr() );
 }
 
-OUString SAL_CALL SalGtkPicker::implgetDisplayDirectory()
+OUString SAL_CALL SalGtkPicker::implgetDisplayDirectory() throw( uno::RuntimeException )
 {
     OSL_ASSERT( m_pDialog != nullptr );
 
@@ -227,7 +231,7 @@ OUString SAL_CALL SalGtkPicker::implgetDisplayDirectory()
     return aCurrentFolderName;
 }
 
-void SAL_CALL SalGtkPicker::implsetTitle( const OUString& aTitle )
+void SAL_CALL SalGtkPicker::implsetTitle( const OUString& aTitle ) throw( uno::RuntimeException )
 {
     OSL_ASSERT( m_pDialog != nullptr );
 

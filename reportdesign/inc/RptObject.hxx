@@ -36,10 +36,13 @@
 
 namespace rptui
 {
-typedef ::std::multimap< sal_Int16, OUString > IndexToNameMap;
+typedef ::std::multimap< sal_Int16, OUString, ::std::less< sal_Int16 > > IndexToNameMap;
     enum DlgEdHintKind
     {
+        RPTUI_HINT_UNKNOWN,
         RPTUI_HINT_WINDOWSCROLLED,
+        RPTUI_HINT_LAYERCHANGED,
+        RPTUI_HINT_OBJORDERCHANGED,
         RPTUI_HINT_SELECTIONCHANGED
     };
 
@@ -53,9 +56,9 @@ typedef ::std::multimap< sal_Int16, OUString > IndexToNameMap;
         void operator =(DlgEdHint&) = delete;
     public:
         DlgEdHint( DlgEdHintKind eHint );
-        virtual ~DlgEdHint() override;
+        virtual ~DlgEdHint();
 
-        DlgEdHintKind    GetKind() const { return eHintKind; }
+        inline DlgEdHintKind    GetKind() const { return eHintKind; }
     };
 
 
@@ -80,9 +83,9 @@ protected:
 
     virtual ~OObjectBase();
 
-    bool isListening() const { return m_bIsListening; }
+    inline bool isListening() const { return m_bIsListening; }
 
-    void SetPropsFromRect(const tools::Rectangle& _rRect);
+    void SetPropsFromRect(const Rectangle& _rRect);
 
     virtual SdrPage* GetImplPage() const = 0;
 
@@ -101,8 +104,7 @@ public:
     void StartListening();
     void EndListening(bool bRemoveListener = true);
     // PropertyChangeListener
-    /// @throws css::uno::RuntimeException
-    virtual void _propertyChange( const  css::beans::PropertyChangeEvent& evt );
+    virtual void _propertyChange( const  css::beans::PropertyChangeEvent& evt ) throw(css::uno::RuntimeException);
     virtual void initializeOle() {}
 
     bool        supportsService( const OUString& _sServiceName ) const;
@@ -139,20 +141,20 @@ protected:
 
     virtual void NbcMove( const Size& rSize ) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual bool EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd) override;
 
     virtual SdrPage* GetImplPage() const override;
 
 public:
 
-    virtual ~OCustomShape() override;
+    virtual ~OCustomShape();
 
     virtual css::uno::Reference< css::beans::XPropertySet> getAwtComponent() override;
 
     virtual css::uno::Reference< css::uno::XInterface > getUnoShape() override;
     virtual sal_uInt16 GetObjIdentifier() const override;
-    virtual SdrInventor GetObjInventor() const override;
+    virtual sal_uInt32 GetObjInventor() const override;
 
 private:
     virtual void impl_setUnoShape( const css::uno::Reference< css::uno::XInterface >& rxUnoShape ) override;
@@ -183,20 +185,20 @@ protected:
 
     virtual void NbcMove( const Size& rSize ) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual bool EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd) override;
 
     virtual SdrPage* GetImplPage() const override;
 
 public:
 
-    virtual ~OOle2Obj() override;
+    virtual ~OOle2Obj();
 
     virtual css::uno::Reference< css::beans::XPropertySet> getAwtComponent() override;
 
     virtual css::uno::Reference< css::uno::XInterface > getUnoShape() override;
     virtual sal_uInt16 GetObjIdentifier() const override;
-    virtual SdrInventor GetObjInventor() const override;
+    virtual sal_uInt32 GetObjInventor() const override;
     // Clone() should make a complete copy of the object.
     virtual OOle2Obj* Clone() const override;
     virtual void initializeOle() override;
@@ -224,18 +226,18 @@ protected:
                 ,const OUString& rModelName
                 ,sal_uInt16   _nObjectType);
 
-    virtual ~OUnoObject() override;
+    virtual ~OUnoObject();
 
     virtual void NbcMove( const Size& rSize ) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual bool EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd) override;
 
     virtual SdrPage* GetImplPage() const override;
 
 public:
 
-    virtual void _propertyChange( const  css::beans::PropertyChangeEvent& evt ) override;
+    virtual void _propertyChange( const  css::beans::PropertyChangeEvent& evt ) throw(css::uno::RuntimeException) override;
 
     /** creates the m_xMediator when it doesn't already exist.
         @param  _bReverse   when set to <TRUE/> then the properties from the uno control will be copied into report control
@@ -248,7 +250,7 @@ public:
 
     virtual css::uno::Reference< css::uno::XInterface > getUnoShape() override;
     virtual sal_uInt16 GetObjIdentifier() const override;
-    virtual SdrInventor GetObjInventor() const override;
+    virtual sal_uInt32 GetObjInventor() const override;
     virtual OUnoObject* Clone() const override;
 
     OUnoObject& operator=(const OUnoObject& rObj);

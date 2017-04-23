@@ -26,23 +26,22 @@ class OutlinerView;
 class SwView;
 class SwPostItMgr;
 struct SpellCallbackInfo;
-namespace sw { namespace annotation {
-    class SwAnnotationWin;
-} }
 
 namespace sw { namespace sidebarwindows {
+
+class SwSidebarWin;
 
 class SidebarTextControl : public Control
 {
     private:
-        sw::annotation::SwAnnotationWin& mrSidebarWin;
+        SwSidebarWin& mrSidebarWin;
         SwView& mrDocView;
         SwPostItMgr& mrPostItMgr;
 
     protected:
-        virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+        virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
         /// @see OutputDevice::LogicInvalidate().
-        void LogicInvalidate(const tools::Rectangle* pRectangle) override;
+        void LogicInvalidate(const Rectangle* pRectangle) override;
         virtual void    Command( const CommandEvent& rCEvt ) override;
         virtual void    LoseFocus() override;
         virtual void    RequestHelp(const HelpEvent &rEvt) override;
@@ -50,11 +49,11 @@ class SidebarTextControl : public Control
         virtual Selection GetSurroundingTextSelection() const override;
 
     public:
-        SidebarTextControl( sw::annotation::SwAnnotationWin& rSidebarWin,
+        SidebarTextControl( SwSidebarWin& rSidebarWin,
                            WinBits nBits,
                            SwView& rDocView,
                            SwPostItMgr& rPostItMgr );
-        virtual ~SidebarTextControl() override;
+        virtual ~SidebarTextControl();
         virtual void dispose() override;
 
         virtual void GetFocus() override;
@@ -65,7 +64,7 @@ class SidebarTextControl : public Control
 
         OutlinerView* GetTextView() const;
 
-        DECL_LINK( OnlineSpellCallback, SpellCallbackInfo&, void );
+        DECL_LINK_TYPED( OnlineSpellCallback, SpellCallbackInfo&, void );
 
         virtual css::uno::Reference< css::accessibility::XAccessible > CreateAccessible() override;
 

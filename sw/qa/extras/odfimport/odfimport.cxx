@@ -242,96 +242,11 @@ DECLARE_ODFIMPORT_TEST(testOdtBorders, "borders_ooo33.odt")
     } while(xParaEnum->hasMoreElements());
 }
 
-DECLARE_ODFIMPORT_TEST(testTdf41542_borderlessPadding, "tdf41542_borderlessPadding.odt")
-{
-    // the page style's borderless padding should force this to 3 pages, not 1
-    CPPUNIT_ASSERT_EQUAL( 3, getPages() );
-}
-
 DECLARE_ODFIMPORT_TEST(testPageStyleLayoutDefault, "hello.odt")
 {
     uno::Reference<beans::XPropertySet> xPropertySet(getStyles("PageStyles")->getByName("Default Style"), uno::UNO_QUERY);
     // This was style::PageStyleLayout_MIRRORED.
     CPPUNIT_ASSERT_EQUAL(style::PageStyleLayout_ALL, getProperty<style::PageStyleLayout>(xPropertySet, "PageStyleLayout"));
-}
-
-DECLARE_ODFIMPORT_TEST(testTdf64038, "space.odt")
-{
-    // no space
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(4), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(4), 2)->getString());
-    // one space
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(6), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(6), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(7), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(7), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(7), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(8), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" b"), getRun(getParagraph(8), 2)->getString());
-    // two spaces
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(10), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(10), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(10), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(11), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(11), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(12), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(12), 2)->getString());
-    // three spaces
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(14), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(14), 2)->getString());
-    // no space
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(17), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(17), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(17), 3)->getString());
-    // one space
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(19), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(19), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(19), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(20), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(20), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(20), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(21), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(21), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(21), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(22), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(22), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" b"), getRun(getParagraph(22), 3)->getString());
-    // two spaces
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(24), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(24), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(24), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(25), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(25), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(25), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(26), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(26), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" b"), getRun(getParagraph(26), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(27), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("   "), getRun(getParagraph(27), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(27), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(28), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(28), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" b"), getRun(getParagraph(28), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(29), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(29), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(29), 3)->getString());
-    // three spaces
-    CPPUNIT_ASSERT_EQUAL(OUString("a"), getRun(getParagraph(31), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("   "), getRun(getParagraph(31), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(31), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(32), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(32), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(32), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(33), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" "), getRun(getParagraph(33), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString(" b"), getRun(getParagraph(33), 3)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(34), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(34), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(34), 3)->getString());
-    // four spaces
-    CPPUNIT_ASSERT_EQUAL(OUString("a "), getRun(getParagraph(36), 1)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("  "), getRun(getParagraph(36), 2)->getString());
-    CPPUNIT_ASSERT_EQUAL(OUString("b"), getRun(getParagraph(36), 3)->getString());
 }
 
 DECLARE_ODFIMPORT_TEST(testTdf74524, "tdf74524.odt")
@@ -659,12 +574,11 @@ DECLARE_ODFIMPORT_TEST(testSpellmenuRedline, "spellmenu-redline.odt")
     OUString aParaText;
     uno::Reference<linguistic2::XSpellAlternatives> xAlt;
     SwSpellPopup aPopup(pWrtShell, xAlt, aParaText);
-    Menu& rMenu = aPopup.GetMenu();
     // Make sure that if we show the spellcheck popup menu (for the current
     // document, which contains redlines), then the last two entries will be
     // always 'go to next/previous change'.
-    CPPUNIT_ASSERT_EQUAL(OString("next"), rMenu.GetItemIdent(rMenu.GetItemId(rMenu.GetItemCount() - 2)));
-    CPPUNIT_ASSERT_EQUAL(OString("prev"), rMenu.GetItemIdent(rMenu.GetItemId(rMenu.GetItemCount() - 1)));
+    CPPUNIT_ASSERT_EQUAL(sal_uInt16(FN_REDLINE_NEXT_CHANGE), aPopup.GetItemId(aPopup.GetItemCount() - 2));
+    CPPUNIT_ASSERT_EQUAL(sal_uInt16(FN_REDLINE_PREV_CHANGE), aPopup.GetItemId(aPopup.GetItemCount() - 1));
 }
 
 DECLARE_ODFIMPORT_TEST(testAnnotationFormatting, "annotation-formatting.odt")
@@ -726,50 +640,10 @@ DECLARE_ODFIMPORT_TEST(testTdf103025, "tdf103025.odt")
     CPPUNIT_ASSERT_EQUAL(OUString("2014-03"), parseDump("/root/page[5]/header/tab[2]/row[2]/cell[3]/txt/Special", "rText"));
 }
 
-DECLARE_ODFIMPORT_TEST(testTdf76322_columnBreakInHeader, "tdf76322_columnBreakInHeader.docx")
-{
-// column breaks were ignored. First line should start in column 2
-    CPPUNIT_ASSERT_EQUAL( OUString("Test1"), parseDump("/root/page[1]/header/section/column[2]/body/txt/text()") );
-}
-
-DECLARE_ODFIMPORT_TEST(testTdf76349_1columnBreak, "tdf76349_1columnBreak.odt")
-{
-    //single-column breaks should only be treated as page breaks for MS formats - should be only one page here.
-    uno::Reference<frame::XModel> xModel(mxComponent, uno::UNO_QUERY);
-    uno::Reference<text::XTextViewCursorSupplier> xTextViewCursorSupplier(xModel->getCurrentController(), uno::UNO_QUERY);
-    uno::Reference<text::XPageCursor> xCursor(xTextViewCursorSupplier->getViewCursor(), uno::UNO_QUERY);
-    xCursor->jumpToLastPage();
-    CPPUNIT_ASSERT_EQUAL(sal_Int16(1), xCursor->getPage());
-}
-
 DECLARE_ODFIMPORT_TEST(testTdf96113, "tdf96113.odt")
 {
     // Background of the formula frame was white (0xffffff), not green.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(0x00ff00), getProperty<sal_Int32>(getShape(1), "BackColor"));
-}
-
-DECLARE_ODFIMPORT_TEST(testFdo47267, "fdo47267-3.odt")
-{
-    // This was a Style Families getByName() crash
-}
-
-DECLARE_ODFIMPORT_TEST(testTdf75221, "tdf75221.odt")
-{
-    // When "Don't add space between paragraphs of the same style" setting set,
-    // spacing between same-style paragraphs must be equal to their line spacing.
-    // It used to be 0.
-    OUString top = parseDump("/root/page/body/txt[2]/infos/prtBounds", "top");
-    CPPUNIT_ASSERT(top.toInt32() > 0);
-}
-
-DECLARE_ODFIMPORT_TEST(testTdf101729, "tdf101729.odt")
-{
-    sal_Int32 l = parseDump("/root/page/body/tab/row/cell[1]/infos/bounds", "left").toInt32();
-    sal_Int32 w = parseDump("/root/page/body/tab/row/cell[1]/infos/bounds", "width").toInt32();
-    sal_Int32 x = parseDump("/root/page/body/tab/row/cell[1]/txt/infos/bounds", "left").toInt32();
-    // Make sure the text does not go outside and verify it is centered roughly
-    CPPUNIT_ASSERT( l + w / 4 < x  );
-    CPPUNIT_ASSERT( x < l + 3 * w / 4);
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

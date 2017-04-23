@@ -23,7 +23,6 @@ $(eval $(call gb_Module_add_targets,sfx2,\
     CustomTarget_classification \
     Library_sfx \
     Package_classification \
-    Package_emoji \
 ))
 
 $(eval $(call gb_Module_add_l10n_targets,sfx2,\
@@ -60,10 +59,5 @@ endif
 
 #todo: clean up quickstarter stuff in both libraries
 #todo: move standard pool to svl
-
-# screenshots
-$(eval $(call gb_Module_add_screenshot_targets,sfx2,\
-    CppunitTest_sfx2_dialogs_test \
-))
 
 # vim: set noet sw=4 ts=4:

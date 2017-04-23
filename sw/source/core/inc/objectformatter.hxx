@@ -20,7 +20,6 @@
 #define INCLUDED_SW_SOURCE_CORE_INC_OBJECTFORMATTER_HXX
 
 #include <sal/types.h>
-#include <memory>
 
 class SwFrame;
 // #i26945#
@@ -42,6 +41,10 @@ class SwObjectFormatter
         // page frame, at which the floating screen objects are registered.
         const SwPageFrame& mrPageFrame;
 
+        // boolean, indicating that only as-character anchored objects have to
+        // be formatted.
+        bool mbFormatOnlyAsCharAnchored;
+
         // value of document compatibility option 'Consider wrapping style on
         // object positioning'
         const bool mbConsiderWrapOnObjPos;
@@ -51,7 +54,7 @@ class SwObjectFormatter
 
         // data structure to collect page number of object's 'anchor'
         // #i26945#
-        std::unique_ptr<SwPageNumAndTypeOfAnchors> mpPgNumAndTypeOfAnchors;
+        SwPageNumAndTypeOfAnchors* mpPgNumAndTypeOfAnchors;
 
         /** helper method for method <FormatObj_(..)> - performs the intrinsic
             format of the layout of the given layout frame and all its lower
@@ -74,7 +77,7 @@ class SwObjectFormatter
 
     protected:
         SwObjectFormatter( const SwPageFrame& _rPageFrame,
-                           SwLayAction* _pLayAction,
+                           SwLayAction* _pLayAction = nullptr,
                            const bool _bCollectPgNumOfAnchors = false );
 
         static SwObjectFormatter* CreateObjFormatter( SwFrame& _rAnchorFrame,
@@ -83,19 +86,24 @@ class SwObjectFormatter
 
         virtual SwFrame& GetAnchorFrame() = 0;
 
-        const SwPageFrame& GetPageFrame() const
+        inline const SwPageFrame& GetPageFrame() const
         {
             return mrPageFrame;
         }
 
-        bool ConsiderWrapOnObjPos() const
+        inline bool ConsiderWrapOnObjPos() const
         {
             return mbConsiderWrapOnObjPos;
         }
 
-        SwLayAction* GetLayAction()
+        inline SwLayAction* GetLayAction()
         {
             return mpLayAction;
+        }
+
+        inline bool FormatOnlyAsCharAnchored() const
+        {
+            return mbFormatOnlyAsCharAnchored;
         }
 
         /** performs the intrinsic format of a given floating screen object and its content.

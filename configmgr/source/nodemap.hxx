@@ -39,7 +39,8 @@ class NodeMap
     typedef NodeMapImpl::const_iterator const_iterator;
     typedef NodeMapImpl::value_type value_type;
 
-    NodeMap() { clearCache(); }
+     NodeMap() { clearCache(); }
+    ~NodeMap() {}
     bool empty() const { return maImpl.empty(); }
     iterator find(const OUString &aStr) { return maImpl.find( aStr ); }
 

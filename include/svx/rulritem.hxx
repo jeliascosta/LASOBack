@@ -36,9 +36,9 @@ class SVX_DLLPUBLIC SvxLongLRSpaceItem : public SfxPoolItem
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
 
@@ -69,9 +69,9 @@ class SVX_DLLPUBLIC SvxLongULSpaceItem : public SfxPoolItem
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
 
@@ -101,9 +101,9 @@ protected:
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
 
@@ -133,10 +133,10 @@ struct SVX_DLLPUBLIC SvxColumnDescription
 
     SvxColumnDescription(const SvxColumnDescription &rCopy);
 
-    SvxColumnDescription(long start, long end, bool bVis);
+    SvxColumnDescription(long start, long end, bool bVis = true);
 
     SvxColumnDescription(long start, long end,
-                         long endMin, long endMax, bool bVis);
+                         long endMin, long endMax, bool bVis = true);
 
     bool operator==(const SvxColumnDescription &rCmp) const;
     bool operator!=(const SvxColumnDescription &rCmp) const;
@@ -169,10 +169,10 @@ protected:
     virtual bool operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper * = nullptr ) const override;
+                                                 SfxMapUnit eCoreMetric,
+                                                 SfxMapUnit ePresMetric,
+                                                 OUString &rText,
+                                                 const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem* Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool         QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
@@ -183,9 +183,9 @@ public:
     // right edge of the surrounding frame
     // nLeft, nRight each the distance to the surrounding frame
     SvxColumnItem(sal_uInt16 nAct = 0);
-    SvxColumnItem(sal_uInt16 nActCol, sal_uInt16 nLeft, sal_uInt16 nRight); // Table with borders
+    SvxColumnItem(sal_uInt16 nActCol, sal_uInt16 nLeft, sal_uInt16 nRight = 0); // Table with borders
     SvxColumnItem(const SvxColumnItem& aItem);
-    virtual ~SvxColumnItem() override;
+    virtual ~SvxColumnItem();
 
     SvxColumnItem &operator=(const SvxColumnItem &);
 
@@ -195,6 +195,7 @@ public:
     SvxColumnDescription&       GetActiveColumnDescription();
 
     sal_uInt16  Count() const;
+    void        Insert(const SvxColumnDescription& rDesc, sal_uInt16 nPos);
     void        Append(const SvxColumnDescription& rDesc);
     void        SetLeft(long aLeft);
     void        SetRight(long aRight);
@@ -224,9 +225,9 @@ protected:
     virtual bool             operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;

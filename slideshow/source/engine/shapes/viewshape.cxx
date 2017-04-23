@@ -141,7 +141,7 @@ namespace slideshow
                     if( rAttr->isCharPostureValid() )
                     {
                         aParms.maFontLetterForm =
-                            rAttr->getCharPosture() == (sal_Int16)awt::FontSlant_NONE ?
+                            rAttr->getCharPosture() == awt::FontSlant_NONE ?
                             rendering::PanoseLetterForm::ANYTHING :
                             rendering::PanoseLetterForm::OBLIQUE_CONTACT;
                     }
@@ -285,7 +285,7 @@ namespace slideshow
                                       const ::basegfx::B2DRectangle&        rOrigBounds,
                                       const ::basegfx::B2DRectangle&        rBounds,
                                       const ::basegfx::B2DRectangle&        rUnitBounds,
-                                      UpdateFlags                           nUpdateFlags,
+                                      int                                   nUpdateFlags,
                                       const ShapeAttributeLayerSharedPtr&   pAttr,
                                       const VectorOfDocTreeNodes&           rSubsets,
                                       double                                nPrio,
@@ -429,9 +429,9 @@ namespace slideshow
             // process flags
             // =============
 
-            bool bRedrawRequired( mbForceUpdate || (nUpdateFlags & UpdateFlags::Force) );
+            bool bRedrawRequired( mbForceUpdate || (nUpdateFlags & FORCE) );
 
-            if( mbForceUpdate || (nUpdateFlags & UpdateFlags::Alpha) )
+            if( mbForceUpdate || (nUpdateFlags & ALPHA) )
             {
                 mpSprite->setAlpha( (pAttr && pAttr->isAlphaValid()) ?
                                     ::basegfx::clamp(pAttr->getAlpha(),
@@ -439,7 +439,7 @@ namespace slideshow
                                                      1.0) :
                                     1.0 );
             }
-            if( mbForceUpdate || (nUpdateFlags & UpdateFlags::Clip) )
+            if( mbForceUpdate || (nUpdateFlags & CLIP) )
             {
                 if( pAttr && pAttr->isClipValid() )
                 {
@@ -468,7 +468,7 @@ namespace slideshow
                 else
                     mpSprite->clip();
             }
-            if( mbForceUpdate || (nUpdateFlags & UpdateFlags::Content) )
+            if( mbForceUpdate || (nUpdateFlags & CONTENT) )
             {
                 bRedrawRequired = true;
 
@@ -503,7 +503,7 @@ namespace slideshow
                                 const GDIMetaFileSharedPtr&         rMtf,
                                 const ::basegfx::B2DRectangle&      rBounds,
                                 const ::basegfx::B2DRectangle&      rUpdateBounds,
-                                UpdateFlags                         nUpdateFlags,
+                                int                                 nUpdateFlags,
                                 const ShapeAttributeLayerSharedPtr& pAttr,
                                 const VectorOfDocTreeNodes&         rSubsets,
                                 bool                                bIsVisible ) const
@@ -522,9 +522,9 @@ namespace slideshow
 
             // since we have no sprite here, _any_ update request
             // translates into a required redraw.
-            bool bRedrawRequired( mbForceUpdate || nUpdateFlags != UpdateFlags::NONE );
+            bool bRedrawRequired( mbForceUpdate || nUpdateFlags != 0 );
 
-            if( nUpdateFlags & UpdateFlags::Content )
+            if( (nUpdateFlags & CONTENT) )
             {
                 // TODO(P1): maybe provide some appearance change methods at
                 // the Renderer interface
@@ -832,13 +832,13 @@ namespace slideshow
 
         bool ViewShape::update( const GDIMetaFileSharedPtr& rMtf,
                                 const RenderArgs&           rArgs,
-                                UpdateFlags                 nUpdateFlags,
+                                int                         nUpdateFlags,
                                 bool                        bIsVisible ) const
         {
             ENSURE_OR_RETURN_FALSE( mpViewLayer->getCanvas(), "ViewShape::update(): Invalid layer canvas" );
 
             // Shall we render to a sprite, or to a plain canvas?
-            if( mbAnimationMode )
+            if( isBackgroundDetached() )
                 return renderSprite( mpViewLayer,
                                      rMtf,
                                      rArgs.maOrigBounds,

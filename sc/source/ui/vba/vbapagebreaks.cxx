@@ -18,7 +18,6 @@
  */
 #include "vbapagebreaks.hxx"
 #include "vbapagebreak.hxx"
-#include <basic/sberrors.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <ooo/vba/excel/XWorksheet.hpp>
 using namespace ::com::sun::star;
@@ -40,32 +39,28 @@ public:
     {
     }
 
-    /// @throws css::uno::RuntimeException
-    sal_Int32 getAPIStartofRange( const uno::Reference< excel::XRange >& xRange )
+    sal_Int32 getAPIStartofRange( const uno::Reference< excel::XRange >& xRange ) throw (css::uno::RuntimeException)
     {
         if( m_bColumn )
             return xRange->getColumn() - 1;
         return xRange->getRow() - 1;
     }
 
-    /// @throws uno::RuntimeException
-    sal_Int32 getAPIEndIndexofRange( const uno::Reference< excel::XRange >& xRange, sal_Int32 nUsedStart )
+    sal_Int32 getAPIEndIndexofRange( const uno::Reference< excel::XRange >& xRange, sal_Int32 nUsedStart ) throw (uno::RuntimeException)
     {
         if( m_bColumn )
             return nUsedStart + xRange->Columns( uno::Any() )->getCount() - 1;
         return nUsedStart + xRange->Rows( uno::Any() )->getCount();
     }
 
-    /// @throws uno::RuntimeException
-    uno::Sequence<sheet::TablePageBreakData> getAllPageBreaks()
+    uno::Sequence<sheet::TablePageBreakData> getAllPageBreaks() throw (uno::RuntimeException)
     {
         if( m_bColumn )
             return mxSheetPageBreak->getColumnPageBreaks();
         return mxSheetPageBreak->getRowPageBreaks();
     }
 
-    /// @throws uno::RuntimeException
-    uno::Reference<container::XIndexAccess> getRowColContainer()
+    uno::Reference<container::XIndexAccess> getRowColContainer() throw (uno::RuntimeException)
     {
         uno::Reference< table::XColumnRowRange > xColumnRowRange( mxSheetPageBreak, uno::UNO_QUERY_THROW );
         uno::Reference<container::XIndexAccess> xIndexAccess;
@@ -76,22 +71,19 @@ public:
         return xIndexAccess;
     }
 
-    /// @throws uno::RuntimeException
-    sheet::TablePageBreakData getTablePageBreakData( sal_Int32 nAPIItemIndex );
-    /// @throws css::script::BasicErrorException
-    /// @throws css::uno::RuntimeException
-    uno::Any Add( const css::uno::Any& Before );
+    sheet::TablePageBreakData getTablePageBreakData( sal_Int32 nAPIItemIndex ) throw (uno::RuntimeException);
+    uno::Any Add( const css::uno::Any& Before ) throw ( css::script::BasicErrorException, css::uno::RuntimeException);
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount(  ) override;
-    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
-    virtual uno::Type SAL_CALL getElementType(  ) override
+    virtual sal_Int32 SAL_CALL getCount(  ) throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override;
+    virtual uno::Type SAL_CALL getElementType(  ) throw (uno::RuntimeException, std::exception) override
     {
         if( m_bColumn )
              return cppu::UnoType<excel::XVPageBreak>::get();
         return  cppu::UnoType<excel::XHPageBreak>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements(  ) override
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return true;
     }
@@ -102,7 +94,7 @@ public:
 *  also considers the position and sizes of shapes and manually inserted page breaks
 *  Note: In MS  there is a limit of 1026 horizontal page breaks per sheet.
 */
-sal_Int32 SAL_CALL RangePageBreaks::getCount(  )
+sal_Int32 SAL_CALL RangePageBreaks::getCount(  ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nCount = 0;
     uno::Reference< excel::XWorksheet > xWorksheet( mxParent, uno::UNO_QUERY_THROW );
@@ -123,7 +115,7 @@ sal_Int32 SAL_CALL RangePageBreaks::getCount(  )
     return nCount;
 }
 
-uno::Any SAL_CALL RangePageBreaks::getByIndex( sal_Int32 Index )
+uno::Any SAL_CALL RangePageBreaks::getByIndex( sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if( (Index < getCount()) && ( Index >= 0 ))
     {
@@ -141,7 +133,7 @@ uno::Any SAL_CALL RangePageBreaks::getByIndex( sal_Int32 Index )
     throw lang::IndexOutOfBoundsException();
 }
 
-sheet::TablePageBreakData RangePageBreaks::getTablePageBreakData( sal_Int32 nAPIItemIndex )
+sheet::TablePageBreakData RangePageBreaks::getTablePageBreakData( sal_Int32 nAPIItemIndex ) throw (uno::RuntimeException)
 {
     sal_Int32 index = -1;
     sheet::TablePageBreakData aTablePageBreakData;
@@ -166,7 +158,7 @@ sheet::TablePageBreakData RangePageBreaks::getTablePageBreakData( sal_Int32 nAPI
     return aTablePageBreakData;
 }
 
-uno::Any RangePageBreaks::Add( const css::uno::Any& Before )
+uno::Any RangePageBreaks::Add( const css::uno::Any& Before ) throw ( css::script::BasicErrorException, css::uno::RuntimeException)
 {
     uno::Reference< excel::XRange > xRange;
     Before >>= xRange;
@@ -193,12 +185,12 @@ class RangePageBreaksEnumWrapper : public EnumerationHelper_BASE
     sal_Int32 nIndex;
 public:
     explicit RangePageBreaksEnumWrapper( const uno::Reference< container::XIndexAccess >& xIndexAccess ) : m_xIndexAccess( xIndexAccess ), nIndex( 0 ) {}
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return ( nIndex < m_xIndexAccess->getCount() );
     }
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( nIndex < m_xIndexAccess->getCount() )
             return m_xIndexAccess->getByIndex( nIndex++ );
@@ -208,12 +200,12 @@ public:
 
 ScVbaHPageBreaks::ScVbaHPageBreaks( const uno::Reference< XHelperInterface >& xParent,
                                     const uno::Reference< uno::XComponentContext >& xContext,
-                                    uno::Reference< sheet::XSheetPageBreak >& xSheetPageBreak):
+                                    uno::Reference< sheet::XSheetPageBreak >& xSheetPageBreak) throw (uno::RuntimeException):
                           ScVbaHPageBreaks_BASE( xParent,xContext, new RangePageBreaks( xParent, xContext, xSheetPageBreak, false ))
 {
 }
 
-uno::Any SAL_CALL ScVbaHPageBreaks::Add( const uno::Any& Before)
+uno::Any SAL_CALL ScVbaHPageBreaks::Add( const uno::Any& Before) throw ( script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     RangePageBreaks* pPageBreaks = dynamic_cast< RangePageBreaks* >( m_xIndexAccess.get() );
     if( pPageBreaks )
@@ -224,7 +216,7 @@ uno::Any SAL_CALL ScVbaHPageBreaks::Add( const uno::Any& Before)
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaHPageBreaks::createEnumeration()
+ScVbaHPageBreaks::createEnumeration() throw (uno::RuntimeException)
 {
     return new RangePageBreaksEnumWrapper( m_xIndexAccess );
 }
@@ -236,7 +228,7 @@ ScVbaHPageBreaks::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Type
-ScVbaHPageBreaks::getElementType()
+ScVbaHPageBreaks::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<excel::XHPageBreak>::get();
 }
@@ -262,7 +254,7 @@ ScVbaHPageBreaks::getServiceNames()
 //VPageBreak
 ScVbaVPageBreaks::ScVbaVPageBreaks( const uno::Reference< XHelperInterface >& xParent,
                                     const uno::Reference< uno::XComponentContext >& xContext,
-                                    uno::Reference< sheet::XSheetPageBreak >& xSheetPageBreak )
+                                    uno::Reference< sheet::XSheetPageBreak >& xSheetPageBreak ) throw ( uno::RuntimeException )
 :   ScVbaVPageBreaks_BASE( xParent, xContext, new RangePageBreaks( xParent, xContext, xSheetPageBreak, true ) )
 {
 }
@@ -272,7 +264,7 @@ ScVbaVPageBreaks::~ScVbaVPageBreaks()
 }
 
 uno::Any SAL_CALL
-ScVbaVPageBreaks::Add( const uno::Any& Before )
+ScVbaVPageBreaks::Add( const uno::Any& Before ) throw ( script::BasicErrorException, uno::RuntimeException, std::exception )
 {
     RangePageBreaks* pPageBreaks = dynamic_cast< RangePageBreaks* >( m_xIndexAccess.get() );
     if( pPageBreaks )
@@ -283,7 +275,7 @@ ScVbaVPageBreaks::Add( const uno::Any& Before )
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaVPageBreaks::createEnumeration()
+ScVbaVPageBreaks::createEnumeration() throw ( uno::RuntimeException )
 {
     return new RangePageBreaksEnumWrapper( m_xIndexAccess );
 }
@@ -295,7 +287,7 @@ ScVbaVPageBreaks::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Type
-ScVbaVPageBreaks::getElementType()
+ScVbaVPageBreaks::getElementType() throw ( uno::RuntimeException )
 {
     return cppu::UnoType<excel::XVPageBreak>::get();
 }

@@ -29,9 +29,11 @@
 
 namespace sd {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::view::XRenderable
-    > DocumentRendererInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::view::XRenderable
+        > DocumentRendererInterfaceBase;
+}
 
 class DocumentRenderer
     : protected ::cppu::BaseMutex,
@@ -39,22 +41,25 @@ class DocumentRenderer
 {
 public:
     DocumentRenderer (ViewShellBase& rBase);
-    virtual ~DocumentRenderer() override;
+    virtual ~DocumentRenderer();
 
     // XRenderable
     virtual sal_Int32 SAL_CALL getRendererCount (
         const css::uno::Any& aSelection,
-        const css::uno::Sequence<css::beans::PropertyValue >& xOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue >& xOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<css::beans::PropertyValue> SAL_CALL getRenderer (
         sal_Int32 nRenderer,
         const css::uno::Any& rSelection,
-        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL render (
         sal_Int32 nRenderer,
         const css::uno::Any& rSelection,
-        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 private:
     class Implementation;

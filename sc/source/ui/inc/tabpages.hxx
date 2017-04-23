@@ -21,6 +21,7 @@
 #define INCLUDED_SC_SOURCE_UI_INC_TABPAGES_HXX
 
 #include <vcl/group.hxx>
+#include <svtools/stdctrl.hxx>
 #include <sfx2/tabdlg.hxx>
 
 class ScTabPageProtection : public SfxTabPage
@@ -34,12 +35,12 @@ public:
     virtual bool        FillItemSet     ( SfxItemSet* rCoreAttrs ) override;
     virtual void        Reset           ( const SfxItemSet* ) override;
 
-    virtual ~ScTabPageProtection() override;
+    virtual ~ScTabPageProtection();
     virtual void dispose() override;
 
 protected:
     using SfxTabPage::DeactivatePage;
-    virtual DeactivateRC   DeactivatePage  ( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage  ( SfxItemSet* pSet = nullptr ) override;
 
 private:
                 ScTabPageProtection( vcl::Window*            pParent,
@@ -58,7 +59,7 @@ private:
     bool            bHidePrint;
 
     // Handler:
-    DECL_LINK( ButtonClickHdl, Button*, void );
+    DECL_LINK_TYPED( ButtonClickHdl, Button*, void );
     void        UpdateButtons();
 };
 

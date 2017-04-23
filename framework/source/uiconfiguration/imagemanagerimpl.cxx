@@ -28,13 +28,9 @@
 #include <com/sun/star/ui/UIElementType.hpp>
 #include <com/sun/star/ui/ConfigurationEvent.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/IllegalAccessException.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
-#include <com/sun/star/embed/InvalidStorageException.hpp>
-#include <com/sun/star/embed/StorageWrappedTargetException.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XStream.hpp>
 #include <com/sun/star/ui/ImageType.hpp>
 
@@ -68,23 +64,26 @@ using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::ui;
 using namespace ::cppu;
 
-const sal_Int16 MAX_IMAGETYPE_VALUE       = css::ui::ImageType::SIZE_32;
+// Image sizes for our toolbars/menus
+const sal_Int32 IMAGE_SIZE_NORMAL         = 16;
+const sal_Int32 IMAGE_SIZE_LARGE          = 26;
+const sal_Int16 MAX_IMAGETYPE_VALUE       = css::ui::ImageType::SIZE_LARGE;
 
 static const char   IMAGE_FOLDER[]        = "images";
 static const char   BITMAPS_FOLDER[]      = "Bitmaps";
 
+static const char   ModuleImageList[]     = "private:resource/images/moduleimages";
+
 static const o3tl::enumarray<vcl::ImageType, const char*> IMAGELIST_XML_FILE =
 {
     "sc_imagelist.xml",
-    "lc_imagelist.xml",
-    "xc_imagelist.xml"
+    "lc_imagelist.xml"
 };
 
 static const o3tl::enumarray<vcl::ImageType, const char*> BITMAP_FILE_NAMES =
 {
     "sc_userimages.png",
-    "lc_userimages.png",
-    "xc_userimages.png"
+    "lc_userimages.png"
 };
 
 namespace framework
@@ -222,49 +221,43 @@ bool GlobalImageList::hasImage( vcl::ImageType nImageType, const OUString& rComm
 
 static bool implts_checkAndScaleGraphic( uno::Reference< XGraphic >& rOutGraphic, const uno::Reference< XGraphic >& rInGraphic, vcl::ImageType nImageType )
 {
-    static Size aNormSize(16, 16);
-    static Size aLargeSize(26, 26);
-    static Size aSize32(32, 32);
+    static Size   aNormSize( IMAGE_SIZE_NORMAL, IMAGE_SIZE_NORMAL );
+    static Size   aLargeSize( IMAGE_SIZE_LARGE, IMAGE_SIZE_LARGE );
 
     if ( !rInGraphic.is() )
     {
-        rOutGraphic = uno::Reference<graphic::XGraphic>();
+        rOutGraphic = Image().GetXGraphic();
         return false;
     }
 
     // Check size and scale it
-    Graphic aImage(rInGraphic);
+    Image  aImage( rInGraphic );
     Size   aSize = aImage.GetSizePixel();
     bool   bMustScale( false );
 
-    if (nImageType == vcl::ImageType::Size26)
-        bMustScale = (aSize != aLargeSize);
-    else if (nImageType == vcl::ImageType::Size32)
-        bMustScale = (aSize != aSize32);
+    if ( nImageType == vcl::ImageType::Color_Large )
+        bMustScale = ( aSize != aLargeSize );
     else
-        bMustScale = (aSize != aNormSize);
+        bMustScale = ( aSize != aNormSize );
 
-    if (bMustScale)
+    if ( bMustScale )
     {
         BitmapEx aBitmap = aImage.GetBitmapEx();
         aBitmap.Scale( aNormSize );
-        aImage = Graphic(aBitmap);
+        aImage = Image( aBitmap );
         rOutGraphic = aImage.GetXGraphic();
     }
     else
         rOutGraphic = rInGraphic;
-
     return true;
 }
 
 static vcl::ImageType implts_convertImageTypeToIndex( sal_Int16 nImageType )
 {
-    if (nImageType & css::ui::ImageType::SIZE_LARGE)
-        return vcl::ImageType::Size26;
-    else if (nImageType & css::ui::ImageType::SIZE_32)
-        return vcl::ImageType::Size32;
-    else
-        return vcl::ImageType::Size16;
+    vcl::ImageType nIndex( vcl::ImageType::Color );
+    if ( nImageType & css::ui::ImageType::SIZE_LARGE )
+        nIndex = vcl::ImageType::Color_Large;
+    return nIndex;
 }
 
 ImageList* ImageManagerImpl::implts_getUserImageList( vcl::ImageType nImageType )
@@ -407,7 +400,7 @@ bool ImageManagerImpl::implts_storeUserImages(
             ImageListItemDescriptor* pList = new ImageListItemDescriptor;
             aUserImageListInfo.pImageList->push_back( std::unique_ptr<ImageListItemDescriptor>(pList) );
 
-            pList->pImageItemList.reset( new ImageItemListDescriptor );
+            pList->pImageItemList = new ImageItemListDescriptor;
             for ( sal_uInt16 i=0; i < pImageList->GetImageCount(); i++ )
             {
                 ImageItemDescriptor* pItem = new ImageItemDescriptor;
@@ -515,12 +508,13 @@ ImageManagerImpl::ImageManagerImpl( const uno::Reference< uno::XComponentContext
     m_xContext( rxContext )
     , m_pOwner(pOwner)
     , m_pDefaultImageList( nullptr )
-    , m_aResourceString( "private:resource/images/moduleimages" )
+    , m_aResourceString( ModuleImageList )
     , m_aListenerContainer( m_mutex )
     , m_bUseGlobal(_bUseGlobal)
     , m_bReadOnly( true )
     , m_bInitialized( false )
     , m_bModified( false )
+    , m_bConfigRead( false )
     , m_bDisposed( false )
 {
     for ( vcl::ImageType n : o3tl::enumrange<vcl::ImageType>() )
@@ -537,7 +531,7 @@ ImageManagerImpl::~ImageManagerImpl()
 
 void ImageManagerImpl::dispose()
 {
-    uno::Reference< uno::XInterface > xOwner(m_pOwner);
+    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
     css::lang::EventObject aEvent( xOwner );
     m_aListenerContainer.disposeAndClear( aEvent );
 
@@ -546,6 +540,7 @@ void ImageManagerImpl::dispose()
         m_xUserConfigStorage.clear();
         m_xUserImageStorage.clear();
         m_xUserRootCommit.clear();
+        m_bConfigRead = false;
         m_bModified = false;
         m_bDisposed = true;
 
@@ -560,7 +555,7 @@ void ImageManagerImpl::dispose()
     }
 
 }
-void ImageManagerImpl::addEventListener( const uno::Reference< XEventListener >& xListener )
+void ImageManagerImpl::addEventListener( const uno::Reference< XEventListener >& xListener ) throw (css::uno::RuntimeException)
 {
     {
         SolarMutexGuard g;
@@ -573,7 +568,7 @@ void ImageManagerImpl::addEventListener( const uno::Reference< XEventListener >&
     m_aListenerContainer.addInterface( cppu::UnoType<XEventListener>::get(), xListener );
 }
 
-void ImageManagerImpl::removeEventListener( const uno::Reference< XEventListener >& xListener )
+void ImageManagerImpl::removeEventListener( const uno::Reference< XEventListener >& xListener ) throw (css::uno::RuntimeException)
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     m_aListenerContainer.removeInterface( cppu::UnoType<XEventListener>::get(), xListener );
@@ -625,6 +620,7 @@ void ImageManagerImpl::initialize( const Sequence< Any >& aArguments )
 
 // XImageManagerImpl
 void ImageManagerImpl::reset()
+throw (css::uno::RuntimeException, lang::IllegalAccessException)
 {
     SolarMutexGuard g;
 
@@ -651,6 +647,7 @@ void ImageManagerImpl::reset()
 }
 
 Sequence< OUString > ImageManagerImpl::getAllImageNames( ::sal_Int16 nImageType )
+throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 
@@ -689,6 +686,7 @@ Sequence< OUString > ImageManagerImpl::getAllImageNames( ::sal_Int16 nImageType 
 }
 
 bool ImageManagerImpl::hasImage( ::sal_Int16 nImageType, const OUString& aCommandURL )
+throw (css::lang::IllegalArgumentException, css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 
@@ -718,17 +716,10 @@ bool ImageManagerImpl::hasImage( ::sal_Int16 nImageType, const OUString& aComman
     return false;
 }
 
-namespace
-{
-    css::uno::Reference< css::graphic::XGraphic > GetXGraphic(const Image &rImage)
-    {
-        return Graphic(rImage.GetBitmapEx()).GetXGraphic();
-    }
-}
-
 Sequence< uno::Reference< XGraphic > > ImageManagerImpl::getImages(
     ::sal_Int16 nImageType,
     const Sequence< OUString >& aCommandURLSequence )
+throw ( css::lang::IllegalArgumentException, css::uno::RuntimeException )
 {
     SolarMutexGuard g;
 
@@ -767,7 +758,7 @@ Sequence< uno::Reference< XGraphic > > ImageManagerImpl::getImages(
                 aImage = rGlobalImageList->getImageFromCommandURL( nIndex, aStrArray[n] );
         }
 
-        aGraphSeq[n] = GetXGraphic(aImage);
+        aGraphSeq[n] = aImage.GetXGraphic();
     }
 
     return aGraphSeq;
@@ -777,6 +768,10 @@ void ImageManagerImpl::replaceImages(
     ::sal_Int16 nImageType,
     const Sequence< OUString >& aCommandURLSequence,
     const Sequence< uno::Reference< XGraphic > >& aGraphicsSequence )
+throw (css::lang::IllegalArgumentException,
+       css::lang::IllegalAccessException,
+       css::uno::RuntimeException,
+       std::exception)
 {
     CmdToXGraphicNameAccess* pInsertedImages( nullptr );
     CmdToXGraphicNameAccess* pReplacedImages( nullptr );
@@ -829,7 +824,7 @@ void ImageManagerImpl::replaceImages(
         }
     }
 
-    uno::Reference< uno::XInterface > xOwner(m_pOwner);
+    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
     // Notify listeners
     if ( pInsertedImages != nullptr )
     {
@@ -838,8 +833,8 @@ void ImageManagerImpl::replaceImages(
         aInsertEvent.Accessor        <<= xOwner;
         aInsertEvent.Source          = xOwner;
         aInsertEvent.ResourceURL     = m_aResourceString;
-        aInsertEvent.Element         <<= uno::Reference< XNameAccess >(
-                                           static_cast< OWeakObject *>( pInsertedImages ), UNO_QUERY );
+        aInsertEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                        static_cast< OWeakObject *>( pInsertedImages ), UNO_QUERY ));
         implts_notifyContainerListener( aInsertEvent, NotifyOp_Insert );
     }
     if ( pReplacedImages != nullptr )
@@ -850,13 +845,16 @@ void ImageManagerImpl::replaceImages(
         aReplaceEvent.Source          = xOwner;
         aReplaceEvent.ResourceURL     = m_aResourceString;
         aReplaceEvent.ReplacedElement = Any();
-        aReplaceEvent.Element         <<= uno::Reference< XNameAccess >(
-                                            static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY );
+        aReplaceEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                            static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY ));
         implts_notifyContainerListener( aReplaceEvent, NotifyOp_Replace );
     }
 }
 
 void ImageManagerImpl::removeImages( ::sal_Int16 nImageType, const Sequence< OUString >& aCommandURLSequence )
+throw ( css::lang::IllegalArgumentException,
+        css::lang::IllegalAccessException,
+        css::uno::RuntimeException)
 {
     CmdToXGraphicNameAccess* pRemovedImages( nullptr );
     CmdToXGraphicNameAccess* pReplacedImages( nullptr );
@@ -883,13 +881,14 @@ void ImageManagerImpl::removeImages( ::sal_Int16 nImageType, const Sequence< OUS
             pDefaultImageList = implts_getDefaultImageList();
         }
         ImageList*                        pImageList        = implts_getUserImageList(nIndex);
-        uno::Reference<XGraphic> xEmptyGraphic;
+        uno::Reference< XGraphic >        xEmptyGraphic( Image().GetXGraphic() );
 
         for ( sal_Int32 i = 0; i < aCommandURLSequence.getLength(); i++ )
         {
             sal_uInt16 nPos = pImageList->GetImagePos( aCommandURLSequence[i] );
             if ( nPos != IMAGELIST_IMAGE_NOTFOUND )
             {
+                Image aImage = pImageList->GetImage( nPos );
                 sal_uInt16 nId   = pImageList->GetImageId( nPos );
                 pImageList->RemoveImage( nId );
 
@@ -910,7 +909,7 @@ void ImageManagerImpl::removeImages( ::sal_Int16 nImageType, const Sequence< OUS
                     {
                         if ( !pReplacedImages )
                             pReplacedImages = new CmdToXGraphicNameAccess();
-                        pReplacedImages->addElement(aCommandURLSequence[i], GetXGraphic(aNewImage));
+                        pReplacedImages->addElement( aCommandURLSequence[i], aNewImage.GetXGraphic() );
                     }
                 } // if ( m_bUseGlobal )
                 else
@@ -930,39 +929,46 @@ void ImageManagerImpl::removeImages( ::sal_Int16 nImageType, const Sequence< OUS
     }
 
     // Notify listeners
-    uno::Reference< uno::XInterface > xOwner(m_pOwner);
+    uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
     if ( pRemovedImages != nullptr )
     {
         ConfigurationEvent aRemoveEvent;
-        aRemoveEvent.aInfo           <<= nImageType;
-        aRemoveEvent.Accessor        <<= xOwner;
+        aRemoveEvent.aInfo           = uno::makeAny( nImageType );
+        aRemoveEvent.Accessor        = uno::makeAny( xOwner );
         aRemoveEvent.Source          = xOwner;
         aRemoveEvent.ResourceURL     = m_aResourceString;
-        aRemoveEvent.Element         <<= uno::Reference< XNameAccess >(
-                                            static_cast< OWeakObject *>( pRemovedImages ), UNO_QUERY );
+        aRemoveEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                            static_cast< OWeakObject *>( pRemovedImages ), UNO_QUERY ));
         implts_notifyContainerListener( aRemoveEvent, NotifyOp_Remove );
     }
     if ( pReplacedImages != nullptr )
     {
         ConfigurationEvent aReplaceEvent;
-        aReplaceEvent.aInfo           <<= nImageType;
-        aReplaceEvent.Accessor        <<= xOwner;
+        aReplaceEvent.aInfo           = uno::makeAny( nImageType );
+        aReplaceEvent.Accessor        = uno::makeAny( xOwner );
         aReplaceEvent.Source          = xOwner;
         aReplaceEvent.ResourceURL     = m_aResourceString;
         aReplaceEvent.ReplacedElement = Any();
-        aReplaceEvent.Element         <<= uno::Reference< XNameAccess >(
-                                            static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY );
+        aReplaceEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                            static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY ));
         implts_notifyContainerListener( aReplaceEvent, NotifyOp_Replace );
     }
 }
 
 void ImageManagerImpl::insertImages( ::sal_Int16 nImageType, const Sequence< OUString >& aCommandURLSequence, const Sequence< uno::Reference< XGraphic > >& aGraphicSequence )
+throw ( css::container::ElementExistException,
+        css::lang::IllegalArgumentException,
+        css::lang::IllegalAccessException,
+        css::uno::RuntimeException)
 {
     replaceImages(nImageType,aCommandURLSequence,aGraphicSequence);
 }
 
 // XUIConfigurationPersistence
 void ImageManagerImpl::reload()
+    throw (css::uno::Exception,
+           css::uno::RuntimeException,
+           std::exception)
 {
     SolarMutexClearableGuard aGuard;
 
@@ -1007,14 +1013,14 @@ void ImageManagerImpl::reload()
                         if ( !pReplacedImages )
                             pReplacedImages = new CmdToXGraphicNameAccess();
                         pReplacedImages->addElement( aNewUserCmdImageSet[j],
-                                                     GetXGraphic(pImageList->GetImage(aNewUserCmdImageSet[j])) );
+                                                     pImageList->GetImage( aNewUserCmdImageSet[j] ).GetXGraphic() );
                     }
                     else
                     {
                         if ( !pInsertedImages )
                             pInsertedImages = new CmdToXGraphicNameAccess();
                         pInsertedImages->addElement( aNewUserCmdImageSet[j],
-                                                     GetXGraphic(pImageList->GetImage(aNewUserCmdImageSet[j])) );
+                                                     pImageList->GetImage( aNewUserCmdImageSet[j] ).GetXGraphic() );
                     }
                 }
 
@@ -1028,8 +1034,8 @@ void ImageManagerImpl::reload()
                     rGlobalImageList  = implts_getGlobalImageList();
                     pDefaultImageList = implts_getDefaultImageList();
                 }
-                uno::Reference<XGraphic> xEmptyGraphic;
-                CommandMap::const_iterator pIter = aOldUserCmdImageSet.begin();
+                uno::Reference< XGraphic >        xEmptyGraphic( Image().GetXGraphic() );
+                CommandMap::const_iterator        pIter = aOldUserCmdImageSet.begin();
                 while ( pIter != aOldUserCmdImageSet.end() )
                 {
                     if ( !pIter->second )
@@ -1052,7 +1058,7 @@ void ImageManagerImpl::reload()
                                 // Image has been found in the module/global image list => replace user image
                                 if ( !pReplacedImages )
                                     pReplacedImages = new CmdToXGraphicNameAccess();
-                                pReplacedImages->addElement(pIter->first, GetXGraphic(aImage));
+                                pReplacedImages->addElement( pIter->first, aImage.GetXGraphic() );
                             }
                         } // if ( m_bUseGlobal )
                         else
@@ -1069,39 +1075,39 @@ void ImageManagerImpl::reload()
                 aGuard.clear();
 
                 // Now notify our listeners. Unlock mutex to prevent deadlocks
-                uno::Reference< uno::XInterface > xOwner(m_pOwner);
+                uno::Reference< uno::XInterface > xOwner(static_cast< OWeakObject* >(m_pOwner));
                 if ( pInsertedImages != nullptr )
                 {
                     ConfigurationEvent aInsertEvent;
-                    aInsertEvent.aInfo           <<=(sal_uInt16)i;
-                    aInsertEvent.Accessor        <<= xOwner;
+                    aInsertEvent.aInfo           = uno::makeAny( (sal_uInt16)i );
+                    aInsertEvent.Accessor        = uno::makeAny( xOwner );
                     aInsertEvent.Source          = xOwner;
                     aInsertEvent.ResourceURL     = m_aResourceString;
-                    aInsertEvent.Element         <<= uno::Reference< XNameAccess >(
-                                                       static_cast< OWeakObject *>( pInsertedImages ), UNO_QUERY );
+                    aInsertEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                                    static_cast< OWeakObject *>( pInsertedImages ), UNO_QUERY ));
                     implts_notifyContainerListener( aInsertEvent, NotifyOp_Insert );
                 }
                 if ( pReplacedImages != nullptr )
                 {
                     ConfigurationEvent aReplaceEvent;
-                    aReplaceEvent.aInfo           <<= (sal_uInt16)i;
-                    aReplaceEvent.Accessor        <<= xOwner;
+                    aReplaceEvent.aInfo           = uno::makeAny( (sal_uInt16)i );
+                    aReplaceEvent.Accessor        = uno::makeAny( xOwner );
                     aReplaceEvent.Source          = xOwner;
                     aReplaceEvent.ResourceURL     = m_aResourceString;
                     aReplaceEvent.ReplacedElement = Any();
-                    aReplaceEvent.Element         <<= uno::Reference< XNameAccess >(
-                                                    static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY );
+                    aReplaceEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                                    static_cast< OWeakObject *>( pReplacedImages ), UNO_QUERY ));
                     implts_notifyContainerListener( aReplaceEvent, NotifyOp_Replace );
                 }
                 if ( pRemovedImages != nullptr )
                 {
                     ConfigurationEvent aRemoveEvent;
-                    aRemoveEvent.aInfo           <<= (sal_uInt16)i;
-                    aRemoveEvent.Accessor        <<= xOwner;
+                    aRemoveEvent.aInfo           = uno::makeAny( (sal_uInt16)i );
+                    aRemoveEvent.Accessor        = uno::makeAny( xOwner );
                     aRemoveEvent.Source          = xOwner;
                     aRemoveEvent.ResourceURL     = m_aResourceString;
-                    aRemoveEvent.Element         <<= uno::Reference< XNameAccess >(
-                                                        static_cast< OWeakObject *>( pRemovedImages ), UNO_QUERY );
+                    aRemoveEvent.Element         = uno::makeAny( uno::Reference< XNameAccess >(
+                                                        static_cast< OWeakObject *>( pRemovedImages ), UNO_QUERY ));
                     implts_notifyContainerListener( aRemoveEvent, NotifyOp_Remove );
                 }
 
@@ -1112,6 +1118,9 @@ void ImageManagerImpl::reload()
 }
 
 void ImageManagerImpl::store()
+    throw (css::uno::Exception,
+           css::uno::RuntimeException,
+           std::exception)
 {
     SolarMutexGuard g;
 
@@ -1144,6 +1153,9 @@ void ImageManagerImpl::store()
 }
 
 void ImageManagerImpl::storeToStorage( const uno::Reference< XStorage >& Storage )
+    throw (css::uno::Exception,
+           css::uno::RuntimeException,
+           std::exception)
 {
     SolarMutexGuard g;
 
@@ -1174,18 +1186,20 @@ void ImageManagerImpl::storeToStorage( const uno::Reference< XStorage >& Storage
 }
 
 bool ImageManagerImpl::isModified()
+throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
     return m_bModified;
 }
 
-bool ImageManagerImpl::isReadOnly()
+bool ImageManagerImpl::isReadOnly() throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
     return m_bReadOnly;
 }
 // XUIConfiguration
 void ImageManagerImpl::addConfigurationListener( const uno::Reference< css::ui::XUIConfigurationListener >& xListener )
+throw (css::uno::RuntimeException)
 {
     {
         SolarMutexGuard g;
@@ -1199,6 +1213,7 @@ void ImageManagerImpl::addConfigurationListener( const uno::Reference< css::ui::
 }
 
 void ImageManagerImpl::removeConfigurationListener( const uno::Reference< css::ui::XUIConfigurationListener >& xListener )
+throw (css::uno::RuntimeException)
 {
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
     m_aListenerContainer.removeInterface( cppu::UnoType<XUIConfigurationListener>::get(), xListener );

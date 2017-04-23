@@ -406,9 +406,11 @@ bool ScDPFilteredCache::isRowQualified(sal_Int32 nRow, const vector<Criterion>& 
     return true;
 }
 
-#if DUMP_PIVOT_TABLE
+#if DEBUG_PIVOT_TABLE
+using std::cout;
+using std::endl;
 
-void ScDPFilteredCache::dumpRowFlag( const RowFlagType& rFlag )
+void ScDPFilteredCache::dumpRowFlag(const RowFlagType& rFlag) const
 {
     RowFlagType::const_iterator it = rFlag.begin(), itEnd = rFlag.end();
     bool bShow = it->second;

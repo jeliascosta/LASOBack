@@ -26,6 +26,7 @@
 #include <sal/log.hxx>
 #include <unicode/numfmt.h>
 #include "unicode_data.h"
+#include <com/sun/star/i18n/UnicodeType.hpp>
 #include <rtl/character.hxx>
 #include <memory>
 
@@ -36,40 +37,299 @@
 
 using namespace ::com::sun::star::i18n;
 
-struct DefaultScriptTypeList {
-    com::sun::star::i18n::UnicodeScript from;
-    com::sun::star::i18n::UnicodeScript to;
-    com::sun::star::i18n::UnicodeScript value;
+static const ScriptTypeList defaultTypeList[] = {
+    { UnicodeScript_kBasicLatin,
+      UnicodeScript_kBasicLatin,
+      UnicodeScript_kBasicLatin },      // 0,
+    { UnicodeScript_kLatin1Supplement,
+      UnicodeScript_kLatin1Supplement,
+      UnicodeScript_kLatin1Supplement },// 1,
+    { UnicodeScript_kLatinExtendedA,
+      UnicodeScript_kLatinExtendedA,
+      UnicodeScript_kLatinExtendedA }, // 2,
+    { UnicodeScript_kLatinExtendedB,
+      UnicodeScript_kLatinExtendedB,
+      UnicodeScript_kLatinExtendedB }, // 3,
+    { UnicodeScript_kIPAExtension,
+      UnicodeScript_kIPAExtension,
+      UnicodeScript_kIPAExtension }, // 4,
+    { UnicodeScript_kSpacingModifier,
+      UnicodeScript_kSpacingModifier,
+      UnicodeScript_kSpacingModifier }, // 5,
+    { UnicodeScript_kCombiningDiacritical,
+      UnicodeScript_kCombiningDiacritical,
+      UnicodeScript_kCombiningDiacritical }, // 6,
+    { UnicodeScript_kGreek,
+      UnicodeScript_kGreek,
+      UnicodeScript_kGreek }, // 7,
+    { UnicodeScript_kCyrillic,
+      UnicodeScript_kCyrillic,
+      UnicodeScript_kCyrillic }, // 8,
+    { UnicodeScript_kArmenian,
+      UnicodeScript_kArmenian,
+      UnicodeScript_kArmenian }, // 9,
+    { UnicodeScript_kHebrew,
+      UnicodeScript_kHebrew,
+      UnicodeScript_kHebrew }, // 10,
+    { UnicodeScript_kArabic,
+      UnicodeScript_kArabic,
+      UnicodeScript_kArabic }, // 11,
+    { UnicodeScript_kSyriac,
+      UnicodeScript_kSyriac,
+      UnicodeScript_kSyriac }, // 12,
+    { UnicodeScript_kThaana,
+      UnicodeScript_kThaana,
+      UnicodeScript_kThaana }, // 13,
+    { UnicodeScript_kDevanagari,
+      UnicodeScript_kDevanagari,
+      UnicodeScript_kDevanagari }, // 14,
+    { UnicodeScript_kBengali,
+      UnicodeScript_kBengali,
+      UnicodeScript_kBengali }, // 15,
+    { UnicodeScript_kGurmukhi,
+      UnicodeScript_kGurmukhi,
+      UnicodeScript_kGurmukhi }, // 16,
+    { UnicodeScript_kGujarati,
+      UnicodeScript_kGujarati,
+      UnicodeScript_kGujarati }, // 17,
+    { UnicodeScript_kOriya,
+      UnicodeScript_kOriya,
+      UnicodeScript_kOriya }, // 18,
+    { UnicodeScript_kTamil,
+      UnicodeScript_kTamil,
+      UnicodeScript_kTamil }, // 19,
+    { UnicodeScript_kTelugu,
+      UnicodeScript_kTelugu,
+      UnicodeScript_kTelugu }, // 20,
+    { UnicodeScript_kKannada,
+      UnicodeScript_kKannada,
+      UnicodeScript_kKannada }, // 21,
+    { UnicodeScript_kMalayalam,
+      UnicodeScript_kMalayalam,
+      UnicodeScript_kMalayalam }, // 22,
+    { UnicodeScript_kSinhala,
+      UnicodeScript_kSinhala,
+      UnicodeScript_kSinhala }, // 23,
+    { UnicodeScript_kThai,
+      UnicodeScript_kThai,
+      UnicodeScript_kThai }, // 24,
+    { UnicodeScript_kLao,
+      UnicodeScript_kLao,
+      UnicodeScript_kLao }, // 25,
+    { UnicodeScript_kTibetan,
+      UnicodeScript_kTibetan,
+      UnicodeScript_kTibetan }, // 26,
+    { UnicodeScript_kMyanmar,
+      UnicodeScript_kMyanmar,
+      UnicodeScript_kMyanmar }, // 27,
+    { UnicodeScript_kGeorgian,
+      UnicodeScript_kGeorgian,
+      UnicodeScript_kGeorgian }, // 28,
+    { UnicodeScript_kHangulJamo,
+      UnicodeScript_kHangulJamo,
+      UnicodeScript_kHangulJamo }, // 29,
+    { UnicodeScript_kEthiopic,
+      UnicodeScript_kEthiopic,
+      UnicodeScript_kEthiopic }, // 30,
+    { UnicodeScript_kCherokee,
+      UnicodeScript_kCherokee,
+      UnicodeScript_kCherokee }, // 31,
+    { UnicodeScript_kUnifiedCanadianAboriginalSyllabics,
+      UnicodeScript_kUnifiedCanadianAboriginalSyllabics,
+      UnicodeScript_kUnifiedCanadianAboriginalSyllabics }, // 32,
+    { UnicodeScript_kOgham,
+      UnicodeScript_kOgham,
+      UnicodeScript_kOgham }, // 33,
+    { UnicodeScript_kRunic,
+      UnicodeScript_kRunic,
+      UnicodeScript_kRunic }, // 34,
+    { UnicodeScript_kKhmer,
+      UnicodeScript_kKhmer,
+      UnicodeScript_kKhmer }, // 35,
+    { UnicodeScript_kMongolian,
+      UnicodeScript_kMongolian,
+      UnicodeScript_kMongolian }, // 36,
+    { UnicodeScript_kLatinExtendedAdditional,
+      UnicodeScript_kLatinExtendedAdditional,
+      UnicodeScript_kLatinExtendedAdditional }, // 37,
+    { UnicodeScript_kGreekExtended,
+      UnicodeScript_kGreekExtended,
+      UnicodeScript_kGreekExtended }, // 38,
+    { UnicodeScript_kGeneralPunctuation,
+      UnicodeScript_kGeneralPunctuation,
+      UnicodeScript_kGeneralPunctuation }, // 39,
+    { UnicodeScript_kSuperSubScript,
+      UnicodeScript_kSuperSubScript,
+      UnicodeScript_kSuperSubScript }, // 40,
+    { UnicodeScript_kCurrencySymbolScript,
+      UnicodeScript_kCurrencySymbolScript,
+      UnicodeScript_kCurrencySymbolScript }, // 41,
+    { UnicodeScript_kSymbolCombiningMark,
+      UnicodeScript_kSymbolCombiningMark,
+      UnicodeScript_kSymbolCombiningMark }, // 42,
+    { UnicodeScript_kLetterlikeSymbol,
+      UnicodeScript_kLetterlikeSymbol,
+      UnicodeScript_kLetterlikeSymbol }, // 43,
+    { UnicodeScript_kNumberForm,
+      UnicodeScript_kNumberForm,
+      UnicodeScript_kNumberForm }, // 44,
+    { UnicodeScript_kArrow,
+      UnicodeScript_kArrow,
+      UnicodeScript_kArrow }, // 45,
+    { UnicodeScript_kMathOperator,
+      UnicodeScript_kMathOperator,
+      UnicodeScript_kMathOperator }, // 46,
+    { UnicodeScript_kMiscTechnical,
+      UnicodeScript_kMiscTechnical,
+      UnicodeScript_kMiscTechnical }, // 47,
+    { UnicodeScript_kControlPicture,
+      UnicodeScript_kControlPicture,
+      UnicodeScript_kControlPicture }, // 48,
+    { UnicodeScript_kOpticalCharacter,
+      UnicodeScript_kOpticalCharacter,
+      UnicodeScript_kOpticalCharacter }, // 49,
+    { UnicodeScript_kEnclosedAlphanumeric,
+      UnicodeScript_kEnclosedAlphanumeric,
+      UnicodeScript_kEnclosedAlphanumeric }, // 50,
+    { UnicodeScript_kBoxDrawing,
+      UnicodeScript_kBoxDrawing,
+      UnicodeScript_kBoxDrawing }, // 51,
+    { UnicodeScript_kBlockElement,
+      UnicodeScript_kBlockElement,
+      UnicodeScript_kBlockElement }, // 52,
+    { UnicodeScript_kGeometricShape,
+      UnicodeScript_kGeometricShape,
+      UnicodeScript_kGeometricShape }, // 53,
+    { UnicodeScript_kMiscSymbol,
+      UnicodeScript_kMiscSymbol,
+      UnicodeScript_kMiscSymbol }, // 54,
+    { UnicodeScript_kDingbat,
+      UnicodeScript_kDingbat,
+      UnicodeScript_kDingbat }, // 55,
+    { UnicodeScript_kBraillePatterns,
+      UnicodeScript_kBraillePatterns,
+      UnicodeScript_kBraillePatterns }, // 56,
+    { UnicodeScript_kCJKRadicalsSupplement,
+      UnicodeScript_kCJKRadicalsSupplement,
+      UnicodeScript_kCJKRadicalsSupplement }, // 57,
+    { UnicodeScript_kKangxiRadicals,
+      UnicodeScript_kKangxiRadicals,
+      UnicodeScript_kKangxiRadicals }, // 58,
+    { UnicodeScript_kIdeographicDescriptionCharacters,
+      UnicodeScript_kIdeographicDescriptionCharacters,
+      UnicodeScript_kIdeographicDescriptionCharacters }, // 59,
+    { UnicodeScript_kCJKSymbolPunctuation,
+      UnicodeScript_kCJKSymbolPunctuation,
+      UnicodeScript_kCJKSymbolPunctuation }, // 60,
+    { UnicodeScript_kHiragana,
+      UnicodeScript_kHiragana,
+      UnicodeScript_kHiragana }, // 61,
+    { UnicodeScript_kKatakana,
+      UnicodeScript_kKatakana,
+      UnicodeScript_kKatakana }, // 62,
+    { UnicodeScript_kBopomofo,
+      UnicodeScript_kBopomofo,
+      UnicodeScript_kBopomofo }, // 63,
+    { UnicodeScript_kHangulCompatibilityJamo,
+      UnicodeScript_kHangulCompatibilityJamo,
+      UnicodeScript_kHangulCompatibilityJamo }, // 64,
+    { UnicodeScript_kKanbun,
+      UnicodeScript_kKanbun,
+      UnicodeScript_kKanbun }, // 65,
+    { UnicodeScript_kBopomofoExtended,
+      UnicodeScript_kBopomofoExtended,
+      UnicodeScript_kBopomofoExtended }, // 66,
+    { UnicodeScript_kEnclosedCJKLetterMonth,
+      UnicodeScript_kEnclosedCJKLetterMonth,
+      UnicodeScript_kEnclosedCJKLetterMonth }, // 67,
+    { UnicodeScript_kCJKCompatibility,
+      UnicodeScript_kCJKCompatibility,
+      UnicodeScript_kCJKCompatibility }, // 68,
+    { UnicodeScript_k_CJKUnifiedIdeographsExtensionA,
+      UnicodeScript_k_CJKUnifiedIdeographsExtensionA,
+      UnicodeScript_k_CJKUnifiedIdeographsExtensionA }, // 69,
+    { UnicodeScript_kCJKUnifiedIdeograph,
+      UnicodeScript_kCJKUnifiedIdeograph,
+      UnicodeScript_kCJKUnifiedIdeograph }, // 70,
+    { UnicodeScript_kYiSyllables,
+      UnicodeScript_kYiSyllables,
+      UnicodeScript_kYiSyllables }, // 71,
+    { UnicodeScript_kYiRadicals,
+      UnicodeScript_kYiRadicals,
+      UnicodeScript_kYiRadicals }, // 72,
+    { UnicodeScript_kHangulSyllable,
+      UnicodeScript_kHangulSyllable,
+      UnicodeScript_kHangulSyllable }, // 73,
+    { UnicodeScript_kHighSurrogate,
+      UnicodeScript_kHighSurrogate,
+      UnicodeScript_kHighSurrogate }, // 74,
+    { UnicodeScript_kHighPrivateUseSurrogate,
+      UnicodeScript_kHighPrivateUseSurrogate,
+      UnicodeScript_kHighPrivateUseSurrogate }, // 75,
+    { UnicodeScript_kLowSurrogate,
+      UnicodeScript_kLowSurrogate,
+      UnicodeScript_kLowSurrogate }, // 76,
+    { UnicodeScript_kPrivateUse,
+      UnicodeScript_kPrivateUse,
+      UnicodeScript_kPrivateUse }, // 77,
+    { UnicodeScript_kCJKCompatibilityIdeograph,
+      UnicodeScript_kCJKCompatibilityIdeograph,
+      UnicodeScript_kCJKCompatibilityIdeograph }, // 78,
+    { UnicodeScript_kAlphabeticPresentation,
+      UnicodeScript_kAlphabeticPresentation,
+      UnicodeScript_kAlphabeticPresentation }, // 79,
+    { UnicodeScript_kArabicPresentationA,
+      UnicodeScript_kArabicPresentationA,
+      UnicodeScript_kArabicPresentationA }, // 80,
+    { UnicodeScript_kCombiningHalfMark,
+      UnicodeScript_kCombiningHalfMark,
+      UnicodeScript_kCombiningHalfMark }, // 81,
+    { UnicodeScript_kCJKCompatibilityForm,
+      UnicodeScript_kCJKCompatibilityForm,
+      UnicodeScript_kCJKCompatibilityForm }, // 82,
+    { UnicodeScript_kSmallFormVariant,
+      UnicodeScript_kSmallFormVariant,
+      UnicodeScript_kSmallFormVariant }, // 83,
+    { UnicodeScript_kArabicPresentationB,
+      UnicodeScript_kArabicPresentationB,
+      UnicodeScript_kArabicPresentationB }, // 84,
+    { UnicodeScript_kNoScript,
+      UnicodeScript_kNoScript,
+      UnicodeScript_kNoScript }, // 85,
+    { UnicodeScript_kHalfwidthFullwidthForm,
+      UnicodeScript_kHalfwidthFullwidthForm,
+      UnicodeScript_kHalfwidthFullwidthForm }, // 86,
+    { UnicodeScript_kScriptCount,
+      UnicodeScript_kScriptCount,
+      UnicodeScript_kNoScript } // 87,
 };
 
+sal_Int16 SAL_CALL
+unicode::getUnicodeScriptType( const sal_Unicode ch, const ScriptTypeList* typeList, sal_Int16 unknownType ) {
 
-template<class L, typename T>
-T getScriptType( const sal_Unicode ch, const L* typeList, T unknownType ) {
+    if (!typeList) {
+        typeList = defaultTypeList;
+        unknownType = UnicodeScript_kNoScript;
+    }
 
-    sal_Int16 i = 0;
-    css::i18n::UnicodeScript type = typeList[0].to;
-    while (type < UnicodeScript_kScriptCount && ch > UnicodeScriptType[(int)type][UnicodeScriptTypeTo]) {
+    sal_Int16 i = 0, type = typeList[0].to;
+    while (type < UnicodeScript_kScriptCount && ch > UnicodeScriptType[type][UnicodeScriptTypeTo]) {
         type = typeList[++i].to;
     }
 
     return (type < UnicodeScript_kScriptCount &&
-            ch >= UnicodeScriptType[static_cast<int>(typeList[i].from)][(int)UnicodeScriptTypeFrom]) ?
+            ch >= UnicodeScriptType[typeList[i].from][UnicodeScriptTypeFrom]) ?
             typeList[i].value : unknownType;
-}
-
-sal_Int16 SAL_CALL
-unicode::getUnicodeScriptType( const sal_Unicode ch, const ScriptTypeList* typeList, sal_Int16 unknownType ) {
-    return getScriptType(ch, typeList, unknownType);
 }
 
 sal_Unicode SAL_CALL
 unicode::getUnicodeScriptStart( UnicodeScript type) {
-    return UnicodeScriptType[(int)type][UnicodeScriptTypeFrom];
+    return UnicodeScriptType[type][UnicodeScriptTypeFrom];
 }
 
 sal_Unicode SAL_CALL
 unicode::getUnicodeScriptEnd( UnicodeScript type) {
-    return UnicodeScriptType[(int)type][UnicodeScriptTypeTo];
+    return UnicodeScriptType[type][UnicodeScriptTypeTo];
 }
 
 sal_Int16 SAL_CALL
@@ -697,32 +957,6 @@ OString SAL_CALL unicode::getExemplarLanguageForUScriptCode(UScriptCode eScript)
             sRet = "sa-Sidd";
             break;
 #endif
-#if (U_ICU_VERSION_MAJOR_NUM >= 58)
-        case USCRIPT_ADLAM:
-            sRet = "mis";   // Adlm - Adlam for Fulani, no language code
-            break;
-        case USCRIPT_BHAIKSUKI:
-            sRet = "mis";   // Bhks - Bhaiksuki for some Buddhist texts, no language code
-            break;
-        case USCRIPT_MARCHEN:
-            sRet = "bo-Marc";
-            break;
-        case USCRIPT_NEWA:
-            sRet = "new-Newa";
-            break;
-        case USCRIPT_OSAGE:
-            sRet = "osa-Osge";
-            break;
-        case USCRIPT_HAN_WITH_BOPOMOFO:
-            sRet = "mis";   // Hanb - Han with Bopomofo, zh-Hanb ?
-            break;
-        case USCRIPT_JAMO:
-            sRet = "mis";   // Jamo - Jamo subset of Hangul, ko-Jamo ?
-            break;
-        case USCRIPT_SYMBOLS_EMOJI:
-            sRet = "mis";   // Zsye - Emoji variant
-            break;
-#endif
     }
     return sRet;
 }
@@ -742,7 +976,7 @@ OUString SAL_CALL unicode::formatPercent(double dNumber,
     // http://www.unicode.org/cldr/charts/24/by_type/numbers.number_formatting_patterns.html
     // so format using French which has the desired rules
     if (aLangTag.getLanguage() == "es" || aLangTag.getLanguage() == "sl")
-        aLangTag.reset("fr-FR");
+        aLangTag = LanguageTag("fr-FR");
 
     icu::Locale aLocale = LanguageTagIcu::getIcuLocale(aLangTag);
 
@@ -764,6 +998,14 @@ OUString SAL_CALL unicode::formatPercent(double dNumber,
         return aRet.replace(0x00A0, 0x202F);
     }
     return aRet;
+}
+
+ToggleUnicodeCodepoint::ToggleUnicodeCodepoint ()
+{
+    maInput = OUStringBuffer();
+    maOutput = OUStringBuffer();
+    maUtf16 = OUStringBuffer();
+    maCombining = OUStringBuffer();
 }
 
 bool ToggleUnicodeCodepoint::AllowMoreInput(sal_Unicode uChar)
@@ -893,7 +1135,7 @@ bool ToggleUnicodeCodepoint::AllowMoreInput(sal_Unicode uChar)
                     else if( maInput.indexOf("U+") == 8 )
                         mbAllowMoreChars = false;
                     // a hex character. Add to string.
-                    else if( rtl::isAsciiHexDigit(uChar) )
+                    else if( isxdigit(uChar) )
                     {
                         mbIsHexString = true;
                         maInput.insertUtf32(0, uChar);
@@ -932,21 +1174,21 @@ OUString ToggleUnicodeCodepoint::StringToReplace()
     mbAllowMoreChars = false;
 
     //validate unicode notation.
-    OUString sIn;
+    OUStringBuffer sIn;
     sal_uInt32 nUnicode = 0;
     sal_Int32 nUPlus = maInput.indexOf("U+");
     //if U+ notation used, strip off all extra chars added not in U+ notation
     if( nUPlus != -1 )
     {
-        maInput.remove(0, nUPlus);
-        sIn = maInput.copy(2).toString();
+        maInput = maInput.copy(nUPlus);
+        sIn = maInput.copy(2);
         nUPlus = sIn.indexOf("U+");
     }
     else
-        sIn = maInput.toString();
+        sIn = maInput;
     while( nUPlus != -1 )
     {
-        nUnicode = sIn.copy(0, nUPlus).toUInt32(16);
+        nUnicode = sIn.copy(0, nUPlus).toString().toUInt32(16);
         //prevent creating control characters or invalid Unicode values
         if( !rtl::isUnicodeCodePoint(nUnicode) || nUnicode < 0x20  )
             maInput = sIn.copy(nUPlus);
@@ -954,7 +1196,7 @@ OUString ToggleUnicodeCodepoint::StringToReplace()
         nUPlus =  sIn.indexOf("U+");
     }
 
-    nUnicode = sIn.toUInt32(16);
+    nUnicode = sIn.toString().toUInt32(16);
     if( !rtl::isUnicodeCodePoint(nUnicode) || nUnicode < 0x20 )
        maInput.truncate().append( sIn[sIn.getLength()-1] );
     return maInput.toString();
@@ -976,7 +1218,7 @@ sal_uInt32 ToggleUnicodeCodepoint::CharsToDelete()
 OUString ToggleUnicodeCodepoint::ReplacementString()
 {
     OUString sIn = StringToReplace();
-    OUStringBuffer output = "";
+    maOutput = "";
     sal_Int32 nUPlus = sIn.indexOf("U+");
     // convert from hex notation to glyph
     if( nUPlus != -1 || (sIn.getLength() > 1 && mbIsHexString) )
@@ -990,13 +1232,13 @@ OUString ToggleUnicodeCodepoint::ReplacementString()
         while( nUPlus > 0 )
         {
             nUnicode = sIn.copy(0, nUPlus).toUInt32(16);
-            output.appendUtf32( nUnicode );
+            maOutput.appendUtf32( nUnicode );
 
             sIn = sIn.copy(nUPlus+2);
             nUPlus = sIn.indexOf("U+");
         }
         nUnicode = sIn.toUInt32(16);
-        output.appendUtf32( nUnicode );
+        maOutput.appendUtf32( nUnicode );
     }
     // convert from glyph to hex notation
     else
@@ -1008,11 +1250,11 @@ OUString ToggleUnicodeCodepoint::ReplacementString()
             //pad with zeros - minimum length of 4.
             for( sal_Int32 i = 4 - aTmp.getLength(); i > 0; --i )
                 aTmp.insert( 0,"0" );
-            output.append( "U+" );
-            output.append( aTmp );
+            maOutput.append( "U+" );
+            maOutput.append( aTmp );
         }
     }
-    return output.toString();
+    return maOutput.toString();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

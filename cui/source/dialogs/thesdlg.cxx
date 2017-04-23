@@ -63,8 +63,8 @@ LookUpComboBox::LookUpComboBox(vcl::Window *pParent)
 {
     EnableAutoSize(true);
 
-    m_aModifyIdle.SetInvokeHandler( LINK( this, LookUpComboBox, ModifyTimer_Hdl ) );
-    m_aModifyIdle.SetPriority( TaskPriority::LOWEST );
+    m_aModifyIdle.SetIdleHdl( LINK( this, LookUpComboBox, ModifyTimer_Hdl ) );
+    m_aModifyIdle.SetPriority( SchedulerPriority::LOWEST );
 
     EnableAutocomplete( false );
 }
@@ -92,7 +92,7 @@ void LookUpComboBox::Modify()
     m_aModifyIdle.Start();
 }
 
-IMPL_LINK_NOARG( LookUpComboBox, ModifyTimer_Hdl, Timer *, void )
+IMPL_LINK_NOARG_TYPED( LookUpComboBox, ModifyTimer_Hdl, Idle *, void )
 {
     m_pDialog->LookUp( GetText() );
     m_aModifyIdle.Stop();
@@ -255,7 +255,7 @@ void ThesaurusAlternativesCtrl::KeyInput( const KeyEvent& rKEvt )
         SvxCheckListBox::KeyInput( rKEvt );
 }
 
-void ThesaurusAlternativesCtrl::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
+void ThesaurusAlternativesCtrl::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if (!m_pDialog->WordFound())
     {
@@ -275,6 +275,7 @@ uno::Sequence< uno::Reference< linguistic2::XMeaning > > SvxThesaurusDialog::que
         OUString& rTerm,
         const lang::Locale& rLocale,
         const beans::PropertyValues& rProperties )
+    throw(lang::IllegalArgumentException, uno::RuntimeException)
 {
     uno::Sequence< uno::Reference< linguistic2::XMeaning > > aMeanings(
             xThesaurus->queryMeanings( rTerm, rLocale, rProperties ) );
@@ -335,7 +336,7 @@ void SvxThesaurusDialog::LookUp( const OUString &rText )
     LookUp_Impl();
 }
 
-IMPL_LINK( SvxThesaurusDialog, LeftBtnHdl_Impl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SvxThesaurusDialog, LeftBtnHdl_Impl, Button *, pBtn, void )
 {
     if (pBtn && aLookUpHistory.size() >= 2)
     {
@@ -346,7 +347,7 @@ IMPL_LINK( SvxThesaurusDialog, LeftBtnHdl_Impl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK( SvxThesaurusDialog, LanguageHdl_Impl, ListBox&, rLB, void )
+IMPL_LINK_TYPED( SvxThesaurusDialog, LanguageHdl_Impl, ListBox&, rLB, void )
 {
     OUString aLangText( rLB.GetSelectEntry() );
     LanguageType nLang = SvtLanguageTable::GetLanguageType( aLangText );
@@ -376,7 +377,7 @@ void SvxThesaurusDialog::LookUp_Impl()
     m_pLeftBtn->Enable( aLookUpHistory.size() > 1 );
 }
 
-IMPL_LINK( SvxThesaurusDialog, WordSelectHdl_Impl, ComboBox&, rBox, void )
+IMPL_LINK_TYPED( SvxThesaurusDialog, WordSelectHdl_Impl, ComboBox&, rBox, void )
 {
     if (!m_pWordCB->IsTravelSelect())  // act only upon return key and not when traveling with cursor keys
     {
@@ -388,7 +389,7 @@ IMPL_LINK( SvxThesaurusDialog, WordSelectHdl_Impl, ComboBox&, rBox, void )
     }
 }
 
-IMPL_LINK( SvxThesaurusDialog, AlternativesSelectHdl_Impl, SvTreeListBox *, pBox, void )
+IMPL_LINK_TYPED( SvxThesaurusDialog, AlternativesSelectHdl_Impl, SvTreeListBox *, pBox, void )
 {
     SvTreeListEntry *pEntry = pBox ? pBox->GetCurEntry() : nullptr;
     if (pEntry)
@@ -404,7 +405,7 @@ IMPL_LINK( SvxThesaurusDialog, AlternativesSelectHdl_Impl, SvTreeListBox *, pBox
     }
 }
 
-IMPL_LINK( SvxThesaurusDialog, AlternativesDoubleClickHdl_Impl, SvTreeListBox*, pBox, bool )
+IMPL_LINK_TYPED( SvxThesaurusDialog, AlternativesDoubleClickHdl_Impl, SvTreeListBox*, pBox, bool )
 {
     SvTreeListEntry *pEntry = pBox ? pBox->GetCurEntry() : nullptr;
     if (pEntry)
@@ -428,7 +429,7 @@ IMPL_LINK( SvxThesaurusDialog, AlternativesDoubleClickHdl_Impl, SvTreeListBox*, 
     return false;
 }
 
-IMPL_STATIC_LINK( SvxThesaurusDialog, SelectFirstHdl_Impl, void *, p, void )
+IMPL_STATIC_LINK_TYPED( SvxThesaurusDialog, SelectFirstHdl_Impl, void *, p, void )
 {
     SvxCheckListBox* pBox = static_cast<SvxCheckListBox*>(p);
     if (pBox && pBox->GetEntryCount() >= 2)
@@ -439,7 +440,7 @@ IMPL_STATIC_LINK( SvxThesaurusDialog, SelectFirstHdl_Impl, void *, p, void )
 
 SvxThesaurusDialog::SvxThesaurusDialog(
     vcl::Window* pParent,
-    uno::Reference< linguistic2::XThesaurus > const & xThes,
+    uno::Reference< linguistic2::XThesaurus >  xThes,
     const OUString &rWord,
     LanguageType nLanguage)
     : SvxStandardDialog(pParent, "ThesaurusDialog", "cui/ui/thesaurus.ui")
@@ -533,7 +534,7 @@ void SvxThesaurusDialog::dispose()
     SvxStandardDialog::dispose();
 }
 
-IMPL_LINK_NOARG( SvxThesaurusDialog, ReplaceBtnHdl_Impl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SvxThesaurusDialog, ReplaceBtnHdl_Impl, Button *, void )
 {
     EndDialog(RET_OK);
 }
@@ -545,7 +546,9 @@ void SvxThesaurusDialog::SetWindowTitle( LanguageType nLanguage )
     sal_Int32 nIndex = aStr.indexOf( '(' );
     if( nIndex != -1 )
         aStr = aStr.copy( 0, nIndex - 1 );
-    aStr += " (" + SvtLanguageTable::GetLanguageString( nLanguage ) + ")";
+    aStr += " (";
+    aStr += SvtLanguageTable::GetLanguageString( nLanguage );
+    aStr += ")";
     SetText( aStr );    // set window title
 }
 

@@ -38,16 +38,19 @@ bool FreehandImportFilter::doDetectFormat(librevenge::RVNGInputStream &rInput, O
 
 // XServiceInfo
 OUString SAL_CALL FreehandImportFilter::getImplementationName()
+throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Draw.FreehandImportFilter");
 }
 
 sal_Bool SAL_CALL FreehandImportFilter::supportsService(const OUString &rServiceName)
+throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL FreehandImportFilter::getSupportedServiceNames()
+throw (RuntimeException, std::exception)
 {
     Sequence < OUString > aRet(2);
     OUString *pArray = aRet.getArray();

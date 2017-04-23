@@ -29,7 +29,7 @@ def createFastChildContextFromFactory(model):
 
     if (pFactory.get() != NULL)
     {
-        ResourceType nResource;
+        ResourceType_t nResource;
         Id nElementId;
         if (pFactory->getElementId(nDefine, Element, nResource, nElementId))
         {
@@ -41,10 +41,10 @@ def createFastChildContextFromFactory(model):
     for resource in [r.getAttribute("resource") for r in model.getElementsByTagName("resource")]:
         if resource not in resources:
             resources.append(resource)
-            print("""            case ResourceType::%s:
+            print("""            case RT_%s:
                 aResult.set(OOXMLFastHelper<OOXMLFastContextHandler%s>::createAndSetParentAndDefine(pHandler, Element, nId, nElementId));
                 break;""" % (resource, resource))
-    print("""            case ResourceType::Any:
+    print("""            case RT_Any:
                 aResult.set(createFastChildContextFromStart(pHandler, Element));
                 break;
             default:
@@ -105,7 +105,17 @@ def createFastChildContextFromStart(model):
 
 
 def fastTokenToId(model):
-    print("""
+    print("""namespace tokenmap {
+struct token { const char* name; Token_t nToken; };
+class Perfect_Hash
+{
+private:
+  static inline unsigned int hash (const char* str, unsigned int len);
+public:
+  static struct token* in_word_set (const char* str, unsigned int len);
+};
+}
+
 std::string fastTokenToId(sal_uInt32 nToken)
 {
 

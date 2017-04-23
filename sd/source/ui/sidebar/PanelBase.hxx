@@ -44,7 +44,7 @@ public:
     PanelBase (
         vcl::Window* pParentWindow,
         ViewShellBase& rViewShellBase);
-    virtual ~PanelBase() override;
+    virtual ~PanelBase();
     virtual void dispose() override;
 
     virtual void Resize() override;

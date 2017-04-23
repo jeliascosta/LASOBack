@@ -29,6 +29,8 @@
 #include "formulacell.hxx"
 #include "dociter.hxx"
 
+extern sal_uInt16 nScFillModeMouseModifier;             // global.cxx
+
 // ---  Referenz-Eingabe / Fill-Cursor
 
 void ScTabView::HideTip()
@@ -39,10 +41,6 @@ void ScTabView::HideTip()
         vcl::Window* pWin = pGridWin[eWhich];
         Help::HidePopover(pWin, nTipVisible);
         nTipVisible = 0;
-        aTipRectangle = tools::Rectangle();
-        nTipAlign = QuickHelpFlags::NONE;
-        sTipString.clear();
-        sTopParent.clear();
     }
 }
 
@@ -55,7 +53,7 @@ void ScTabView::ShowRefTip()
         SCROW nStartY = aViewData.GetRefStartY();
         SCCOL nEndX   = aViewData.GetRefEndX();
         SCROW nEndY   = aViewData.GetRefEndY();
-        if ( nEndX != nStartX || nEndY != nStartY )     // not for a single cell
+        if ( nEndX != nStartX || nEndY != nStartY )     // nicht fuer einzelne Zelle
         {
             bool bLeft = ( nEndX < nStartX );
             bool bTop  = ( nEndY < nStartY );
@@ -80,27 +78,21 @@ void ScTabView::ShowRefTip()
                 QuickHelpFlags nFlags = ( bLeft ? QuickHelpFlags::Right : QuickHelpFlags::Left ) |
                                 ( bTop ? QuickHelpFlags::Bottom : QuickHelpFlags::Top );
 
-                // not over the edited formula
+                // nicht ueber die editierte Formel
                 if ( !bTop && aViewData.HasEditView( eWhich ) &&
                         nEndY+1 == aViewData.GetEditViewRow() )
                 {
-                    //  then align at the upper border of edited cell
-                    aPos.Y() -= 2;      // the three from above
+                    //  dann an der oberen Kante der editierten Zelle ausrichten
+                    aPos.Y() -= 2;      // die 3 von oben
                     nFlags = ( nFlags & ~QuickHelpFlags::Top ) | QuickHelpFlags::Bottom;
                 }
 
-                tools::Rectangle aRect( pWin->OutputToScreenPixel( aPos ), Size(1,1) );
+                Rectangle aRect( pWin->OutputToScreenPixel( aPos ), Size(1,1) );
 
-                // Test if changed.
-                if (!nTipVisible || nFlags != nTipAlign || aRect != aTipRectangle || sTipString != aHelp || sTopParent != pWin)
-                {
-                    HideTip();
-                    nTipVisible = Help::ShowPopover(pWin, aRect, aHelp, nFlags);
-                    aTipRectangle = aRect;
-                    nTipAlign = nFlags;
-                    sTipString = aHelp;
-                    sTopParent = pWin;
-                }
+                //! Test, ob geaendert ??
+
+                HideTip();
+                nTipVisible = Help::ShowPopover(pWin, aRect, aHelp, nFlags);
                 bDone = true;
             }
         }
@@ -130,11 +122,11 @@ void ScTabView::StopRefMode()
             if ( nStartX == nEndX && nStartY == nEndY )
                 pDoc->ExtendMerge( nStartX, nStartY, nEndX, nEndY, aViewData.GetTabNo() );
 
-            PaintArea( nStartX,nStartY,nEndX,nEndY, ScUpdateMode::Marks );
+            PaintArea( nStartX,nStartY,nEndX,nEndY, SC_UPDATE_MARKS );
         }
 
         pSelEngine->Reset();
-        pSelEngine->SetAddMode( false );        //! shouldn't that happen during reset?
+        pSelEngine->SetAddMode( false );        //! sollte das nicht bei Reset passieren?
 
         ScSplitPos eOld = pSelEngine->GetWhich();
         ScSplitPos eNew = aViewData.GetActivePart();
@@ -142,7 +134,7 @@ void ScTabView::StopRefMode()
         {
             pSelEngine->SetWindow( pGridWin[ eNew ] );
             pSelEngine->SetWhich( eNew );
-            pSelEngine->SetVisibleArea( tools::Rectangle(Point(),
+            pSelEngine->SetVisibleArea( Rectangle(Point(),
                                         pGridWin[eNew]->GetOutputSizePixel()) );
             pGridWin[eOld]->MoveMouseStatus(*pGridWin[eNew]);
         }
@@ -179,7 +171,7 @@ void ScTabView::DoneRefMode( bool bContinue )
         if ( nStartX == nEndX && nStartY == nEndY )
             pDoc->ExtendMerge( nStartX, nStartY, nEndX, nEndY, aViewData.GetTabNo() );
 
-        PaintArea( nStartX,nStartY,nEndX,nEndY, ScUpdateMode::Marks );
+        PaintArea( nStartX,nStartY,nEndX,nEndY, SC_UPDATE_MARKS );
     }
 }
 
@@ -189,8 +181,8 @@ void ScTabView::UpdateRef( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ )
 
     if (!aViewData.IsRefMode())
     {
-        //  This will happen, when first at a reference dialog with Control in
-        //  the table is clicked. Then append the new reference to the old content:
+        //  Das kommt vor, wenn bei einem Referenz-Dialog als erstes mit Control in die
+        //  die Tabelle geklickt wird. Dann die neue Referenz an den alten Inhalt anhaengen:
 
         ScModule* pScMod = SC_MOD();
         if (pScMod->IsFormulaMode())
@@ -247,10 +239,10 @@ void ScTabView::UpdateRef( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ )
         SCCOL nPaintEndX;
         SCROW nPaintEndY;
         if (aRect.GetDiff( nPaintStartX, nPaintStartY, nPaintEndX, nPaintEndY ))
-            PaintArea( nPaintStartX, nPaintStartY, nPaintEndX, nPaintEndY, ScUpdateMode::Marks );
+            PaintArea( nPaintStartX, nPaintStartY, nPaintEndX, nPaintEndY, SC_UPDATE_MARKS );
     }
 
-    //  autocomplete for Auto-Fill
+    //  Tip-Hilfe fuer Auto-Fill
     if ( aViewData.GetRefType() == SC_REFTYPE_FILL && Help::IsQuickHelpEnabled() )
     {
         vcl::Window* pWin = GetActiveWin();
@@ -265,7 +257,7 @@ void ScTabView::UpdateRef( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ )
             if ( aViewData.GetFillMode() == ScFillMode::MATRIX && !(nScFillModeMouseModifier & KEY_MOD1) )
             {
                 aHelpStr = ScGlobal::GetRscString( STR_TIP_RESIZEMATRIX );
-                SCCOL nCols = nEndX + 1 - aViewData.GetRefStartX(); // order is right
+                SCCOL nCols = nEndX + 1 - aViewData.GetRefStartX(); // Reihenfolge ist richtig
                 SCROW nRows = nEndY + 1 - aViewData.GetRefStartY();
                 aHelpStr = aHelpStr.replaceFirst("%1", OUString::number(nRows) );
                 aHelpStr = aHelpStr.replaceFirst("%2", OUString::number(nCols) );
@@ -277,24 +269,17 @@ void ScTabView::UpdateRef( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ )
 
             if (aHelpStr.getLength())
             {
-                //  depending on direction the upper or lower corner
+                //  je nach Richtung die obere oder untere Ecke:
                 SCCOL nAddX = ( nEndX >= aMarkRange.aEnd.Col() ) ? 1 : 0;
                 SCROW nAddY = ( nEndY >= aMarkRange.aEnd.Row() ) ? 1 : 0;
                 Point aPos = aViewData.GetScrPos( nEndX+nAddX, nEndY+nAddY, aViewData.GetActivePart() );
                 aPos.X() += 8;
                 aPos.Y() += 4;
                 aPos = pWin->OutputToScreenPixel( aPos );
-                tools::Rectangle aRect( aPos, aPos );
+                Rectangle aRect( aPos, aPos );
                 QuickHelpFlags nAlign = QuickHelpFlags::Left|QuickHelpFlags::Top;
-                if (!nTipVisible || nAlign != nTipAlign || aRect != aTipRectangle || sTipString != aHelpStr || sTopParent != pWin)
-                {
-                    HideTip();
-                    nTipVisible = Help::ShowPopover(pWin, aRect, aHelpStr, nAlign);
-                    aTipRectangle = aRect;
-                    nTipAlign = nAlign;
-                    sTipString = aHelpStr;
-                    sTopParent = pWin;
-                }
+                HideTip();
+                nTipVisible = Help::ShowPopover(pWin, aRect, aHelpStr, nAlign);
             }
         }
     }
@@ -318,10 +303,10 @@ void ScTabView::InitRefMode( SCCOL nCurX, SCROW nCurY, SCTAB nCurZ, ScRefType eT
             SCROW nEndY = nCurY;
             pDoc->ExtendMerge( nStartX, nStartY, nEndX, nEndY, aViewData.GetTabNo() );
 
-            //! draw only markings over content!
-            PaintArea( nStartX,nStartY,nEndX,nEndY, ScUpdateMode::Marks );
+            //! nur Markierung ueber Inhalte zeichnen!
+            PaintArea( nStartX,nStartY,nEndX,nEndY, SC_UPDATE_MARKS );
 
-            //  SetReference without Merge-Adjustment
+            //  SetReference ohne Merge-Anpassung
             ScRange aRef( nCurX,nCurY,nCurZ, nCurX,nCurY,nCurZ );
             SC_MOD()->SetReference( aRef, pDoc, &rMark );
         }
@@ -345,9 +330,9 @@ long ScTabView::GetScrollBarPos( ScrollBar& rScroll )
     return rScroll.GetThumbPos();
 }
 
-//  UpdateScrollBars - set visible area and scroll width of scroll bars
+//  UpdateScrollBars - sichtbaren Bereich und Scrollweite der Scrollbars einstellen
 
-static long lcl_UpdateBar( ScrollBar& rScroll, SCCOLROW nSize )        // Size = (complete) cells
+static long lcl_UpdateBar( ScrollBar& rScroll, SCCOLROW nSize )        // Size = (komplette) Zellen
 {
     long nOldPos;
     long nNewPos;
@@ -356,7 +341,7 @@ static long lcl_UpdateBar( ScrollBar& rScroll, SCCOLROW nSize )        // Size =
     rScroll.SetPageSize( static_cast<long>(nSize) );
     nNewPos = rScroll.GetThumbPos();
 #ifndef UNX
-    rScroll.SetPageSize( 1 );               // always possible !
+    rScroll.SetPageSize( 1 );               // immer moeglich !
 #endif
 
     return nNewPos - nOldPos;
@@ -457,10 +442,10 @@ void ScTabView::InvertHorizontal( ScVSplitPos eWhich, long nDragPos )
     for (sal_uInt16 i=0; i<4; i++)
         if (WhichV((ScSplitPos)i)==eWhich)
         {
-            ScGridWindow* pWin = pGridWin[i].get();
+            ScGridWindow* pWin = pGridWin[i];
             if (pWin)
             {
-                tools::Rectangle aRect( 0,nDragPos, pWin->GetOutputSizePixel().Width()-1,nDragPos+HDR_SLIDERSIZE-1 );
+                Rectangle aRect( 0,nDragPos, pWin->GetOutputSizePixel().Width()-1,nDragPos+HDR_SLIDERSIZE-1 );
                 pWin->Update();
                 pWin->DoInvertRect( aRect );    // Pixel
             }
@@ -472,10 +457,10 @@ void ScTabView::InvertVertical( ScHSplitPos eWhich, long nDragPos )
     for (sal_uInt16 i=0; i<4; i++)
         if (WhichH((ScSplitPos)i)==eWhich)
         {
-            ScGridWindow* pWin = pGridWin[i].get();
+            ScGridWindow* pWin = pGridWin[i];
             if (pWin)
             {
-                tools::Rectangle aRect( nDragPos,0, nDragPos+HDR_SLIDERSIZE-1,pWin->GetOutputSizePixel().Height()-1 );
+                Rectangle aRect( nDragPos,0, nDragPos+HDR_SLIDERSIZE-1,pWin->GetOutputSizePixel().Height()-1 );
                 pWin->Update();
                 pWin->DoInvertRect( aRect );    // Pixel
             }

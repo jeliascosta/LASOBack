@@ -47,6 +47,7 @@ void SAL_CALL createRegistryInfo_OSQLMessageDialog();
 void SAL_CALL createRegistryInfo_OTableControl();
 void SAL_CALL createRegistryInfo_OTableFilterDialog();
 void SAL_CALL createRegistryInfo_OTextConnectionSettingsDialog();
+void SAL_CALL createRegistryInfo_OToolboxController();
 void SAL_CALL createRegistryInfo_OUserSettingsDialog();
 void SAL_CALL createRegistryInfo_OViewControl();
 void SAL_CALL createRegistryInfo_SbaXGridControl();

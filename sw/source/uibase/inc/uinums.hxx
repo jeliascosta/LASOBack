@@ -53,7 +53,7 @@ class SW_DLLPUBLIC SwNumRulesWithName
         SwNumFormatGlobal( const SwNumFormatGlobal& );
         ~SwNumFormatGlobal();
 
-        SwNumFormat MakeNumFormat(SwWrtShell& rSh) const;
+        void ChgNumFormat( SwWrtShell& rSh, SwNumFormat& rChg ) const;
     };
 
     SwNumFormatGlobal* aFormats[ MAXLEVEL ];
@@ -73,16 +73,17 @@ public:
     SwNumRulesWithName &operator=(const SwNumRulesWithName &);
 
     const OUString& GetName() const               { return maName; }
-    SwNumRule* MakeNumRule(SwWrtShell& rSh) const;
+    void MakeNumRule( SwWrtShell& rSh, SwNumRule& rChg ) const;
+
 
     void GetNumFormat(size_t, SwNumFormat const*&, OUString const*&) const;
 };
 
-class SW_DLLPUBLIC SwChapterNumRules final
+class SW_DLLPUBLIC SwChapterNumRules
 {
 public:
     enum { nMaxRules = MAX_NUM_RULES };         // currently 9 defined forms
-private:
+protected:
     SwNumRulesWithName   *pNumRules[ MAX_NUM_RULES ];
 
     void Init();
@@ -90,12 +91,13 @@ private:
 
 public:
     SwChapterNumRules();
-    ~SwChapterNumRules();
+    virtual ~SwChapterNumRules();
 
     inline const SwNumRulesWithName*    GetRules(sal_uInt16 nIdx) const;
     void CreateEmptyNumRule(sal_uInt16 nIdx); // for import
     void ApplyNumRules( const SwNumRulesWithName &rCopy,
                         sal_uInt16 nIdx);
+
 };
 
 inline const SwNumRulesWithName *SwChapterNumRules::GetRules(sal_uInt16 nIdx) const

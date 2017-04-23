@@ -26,6 +26,7 @@
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
 #include <com/sun/star/text/RelOrientation.hpp>
+#include <com/sun/star/text/WrapTextMode.hpp>
 
 #include <oox/drawingml/drawingmltypes.hxx>
 #include <tools/resmgr.hxx>
@@ -210,11 +211,11 @@ void WrapHandler::lcl_sprm( Sprm& )
 {
 }
 
-text::WrapTextMode WrapHandler::getWrapMode( )
+sal_Int32 WrapHandler::getWrapMode( )
 {
     // The wrap values do not map directly to our wrap mode,
     // e.g. none in .docx actually means through in LO.
-    text::WrapTextMode nMode = text::WrapTextMode_THROUGH;
+    sal_Int32 nMode = text::WrapTextMode_THROUGHT;
 
     switch ( m_nType )
     {
@@ -241,7 +242,7 @@ text::WrapTextMode WrapHandler::getWrapMode( )
             break;
         case NS_ooxml::LN_Value_vml_wordprocessingDrawing_ST_WrapType_none:
         default:
-            nMode = text::WrapTextMode_THROUGH;
+            nMode = text::WrapTextMode_THROUGHT;
     }
 
     return nMode;

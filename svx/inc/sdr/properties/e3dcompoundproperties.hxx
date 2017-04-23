@@ -42,10 +42,13 @@ namespace sdr
             E3dCompoundProperties(const E3dCompoundProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~E3dCompoundProperties() override;
+            virtual ~E3dCompoundProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
+
+            // get itemset
+            virtual const SfxItemSet& GetObjectItemSet() const override;
 
             // Get merged ItemSet. Normally, this maps directly to GetObjectItemSet(), but may
             // be overridden e.g for group objects to return a merged ItemSet of the object.

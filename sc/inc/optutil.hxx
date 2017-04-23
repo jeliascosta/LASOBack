@@ -47,7 +47,7 @@ public:
     virtual void    Notify( const css::uno::Sequence<OUString>& aPropertyNames ) override;
     virtual void    ImplCommit() override;
 
-    using ConfigItem::SetModified;
+    void    SetModified()   { ConfigItem::SetModified(); }
     css::uno::Sequence< css::uno::Any>
             GetProperties(const css::uno::Sequence< OUString >& rNames)
                             { return ConfigItem::GetProperties( rNames ); }

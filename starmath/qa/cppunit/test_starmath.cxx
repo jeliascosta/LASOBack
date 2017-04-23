@@ -44,19 +44,6 @@ public:
     void editUndoRedo();
     void editMarker();
     void editFailure();
-    void ParseErrorUnexpectedToken();
-    void ParseErrorPoundExpected();
-    void ParseErrorColorExpected();
-    void ParseErrorLgroupExpected();
-    void ParseErrorRgroupExpected();
-    void ParseErrorLbraceExpected();
-    void ParseErrorRbraceExpected();
-    void ParseErrorParentMismatch();
-    void ParseErrorRightExpected();
-    void ParseErrorFontExpected();
-    void ParseErrorSizeExpected();
-    void ParseErrorDoubleAlign();
-    void ParseErrorDoubleSubsupscript();
 
     void replacePlaceholder();
     void viewZoom();
@@ -65,19 +52,6 @@ public:
     CPPUNIT_TEST(editUndoRedo);
     CPPUNIT_TEST(editMarker);
     CPPUNIT_TEST(editFailure);
-    CPPUNIT_TEST(ParseErrorUnexpectedToken);
-    CPPUNIT_TEST(ParseErrorPoundExpected);
-    CPPUNIT_TEST(ParseErrorColorExpected);
-    CPPUNIT_TEST(ParseErrorLgroupExpected);
-    CPPUNIT_TEST(ParseErrorRgroupExpected);
-    CPPUNIT_TEST(ParseErrorLbraceExpected);
-    CPPUNIT_TEST(ParseErrorRbraceExpected);
-    CPPUNIT_TEST(ParseErrorParentMismatch);
-    CPPUNIT_TEST(ParseErrorRightExpected);
-    CPPUNIT_TEST(ParseErrorFontExpected);
-    CPPUNIT_TEST(ParseErrorSizeExpected);
-    CPPUNIT_TEST(ParseErrorDoubleAlign);
-    CPPUNIT_TEST(ParseErrorDoubleSubsupscript);
     CPPUNIT_TEST(replacePlaceholder);
     CPPUNIT_TEST(viewZoom);
     CPPUNIT_TEST_SUITE_END();
@@ -108,7 +82,7 @@ void Test::setUp()
         SfxModelFlags::DISABLE_DOCUMENT_RECOVERY);
     m_xDocShRef->DoInitNew();
 
-    SfxViewFrame *pViewFrame = SfxViewFrame::LoadHiddenDocument(*m_xDocShRef, SFX_INTERFACE_NONE);
+    SfxViewFrame *pViewFrame = SfxViewFrame::LoadHiddenDocument(*m_xDocShRef, 0);
 
     CPPUNIT_ASSERT_MESSAGE("Should have a SfxViewFrame", pViewFrame);
 
@@ -128,7 +102,7 @@ void Test::tearDown()
     m_pSmCmdBoxWindow.disposeAndClear();
     m_pDispatcher.reset();
     m_xDocShRef->DoClose();
-    m_xDocShRef.clear();
+    m_xDocShRef.Clear();
 
     BootstrapFixture::tearDown();
 }
@@ -140,12 +114,11 @@ void Test::editMarker()
         m_pEditWindow->SetText(sMarkedText);
         m_pEditWindow->Flush();
         OUString sFinalText = m_pEditWindow->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be equal text", sMarkedText, sFinalText);
+        CPPUNIT_ASSERT_MESSAGE("Should be equal text", sFinalText == sMarkedText);
     }
 
     {
         OUString sTargetText("a under b under c");
-        ESelection aSelection;
 
         m_pEditWindow->SelNextMark();
         m_pEditWindow->Delete();
@@ -156,21 +129,13 @@ void Test::editMarker()
         m_pEditWindow->Delete();
         m_pEditWindow->InsertText("c");
 
-        // should be safe i.e. do nothing
-        m_pEditWindow->SelNextMark();
-        aSelection = m_pEditWindow->GetSelection();
-        CPPUNIT_ASSERT_EQUAL(sal_Int32(0), aSelection.nStartPara);
-        CPPUNIT_ASSERT_EQUAL(sal_Int32(19), aSelection.nStartPos);
-        CPPUNIT_ASSERT_EQUAL(sal_Int32(0), aSelection.nEndPara);
-        CPPUNIT_ASSERT_EQUAL(sal_Int32(19), aSelection.nEndPos);
-
         m_pEditWindow->SelPrevMark();
         m_pEditWindow->Delete();
         m_pEditWindow->InsertText("b");
 
         // tdf#106116: should be safe i.e. do nothing
         m_pEditWindow->SelPrevMark();
-        aSelection = m_pEditWindow->GetSelection();
+        auto aSelection = m_pEditWindow->GetSelection();
         CPPUNIT_ASSERT_EQUAL(sal_Int32(0), aSelection.nStartPara);
         CPPUNIT_ASSERT_EQUAL(sal_Int32(9), aSelection.nStartPos);
         CPPUNIT_ASSERT_EQUAL(sal_Int32(0), aSelection.nEndPara);
@@ -178,7 +143,7 @@ void Test::editMarker()
 
         m_pEditWindow->Flush();
         OUString sFinalText = m_pEditWindow->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be a under b under c", sTargetText, sFinalText);
+        CPPUNIT_ASSERT_MESSAGE("Should be a under b under c", sFinalText == sTargetText);
     }
 
     {
@@ -193,140 +158,23 @@ void Test::editFailure()
 
     const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
 
-    CPPUNIT_ASSERT_MESSAGE("Should be a SmParseError::ColorExpected",
-        pErrorDesc && pErrorDesc->m_eType == SmParseError::ColorExpected);
+    CPPUNIT_ASSERT_MESSAGE("Should be a PE_COLOR_EXPECTED",
+        pErrorDesc && pErrorDesc->m_eType == PE_COLOR_EXPECTED);
 
     pErrorDesc = m_xDocShRef->GetParser().PrevError();
 
-    CPPUNIT_ASSERT_MESSAGE("Should be a SmParseError::UnexpectedChar",
-        pErrorDesc && pErrorDesc->m_eType == SmParseError::UnexpectedChar);
+    CPPUNIT_ASSERT_MESSAGE("Should be a PE_UNEXPECTED_CHAR",
+        pErrorDesc && pErrorDesc->m_eType == PE_UNEXPECTED_CHAR);
 
     pErrorDesc = m_xDocShRef->GetParser().PrevError();
 
-    CPPUNIT_ASSERT_MESSAGE("Should be a SmParseError::RgroupExpected",
-        pErrorDesc && pErrorDesc->m_eType == SmParseError::RgroupExpected);
+    CPPUNIT_ASSERT_MESSAGE("Should be a PE_RGROUP_EXPECTED",
+        pErrorDesc && pErrorDesc->m_eType == PE_RGROUP_EXPECTED);
 
     const SmErrorDesc *pLastErrorDesc = m_xDocShRef->GetParser().PrevError();
 
     CPPUNIT_ASSERT_MESSAGE("Should be three syntax errors",
         pLastErrorDesc && pLastErrorDesc == pErrorDesc);
-}
-
-void Test::ParseErrorUnexpectedToken()
-{
-    m_xDocShRef->SetText("\\foo");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::UnexpectedToken expected",
-                           SmParseError::UnexpectedToken == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorPoundExpected()
-{
-    m_xDocShRef->SetText("matrix {1#2##a##b#c}");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::PoundExpected expected",
-                           SmParseError::PoundExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorColorExpected()
-{
-    m_xDocShRef->SetText("color 42 x");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::ColorExpected expected",
-                           SmParseError::ColorExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorLgroupExpected()
-{
-    m_xDocShRef->SetText("stack 42");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::LgroupExpected expected",
-                           SmParseError::LgroupExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorRgroupExpected()
-{
-    m_xDocShRef->SetText("stack {a#b#c)");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::RgroupExpected expected",
-                           SmParseError::RgroupExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorLbraceExpected()
-{
-    m_xDocShRef->SetText("left 42");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::LbraceExpected expected",
-                           SmParseError::LbraceExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorRbraceExpected()
-{
-    m_xDocShRef->SetText("left ( foo right x");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::RbraceExpected expected",
-                           SmParseError::RbraceExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorParentMismatch()
-{
-    m_xDocShRef->SetText("lbrace foo rceil");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::ParentMismatch expected",
-                           SmParseError::ParentMismatch == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorRightExpected()
-{
-    m_xDocShRef->SetText("left ( x mline y )");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::RightExpected expected",
-                           SmParseError::RightExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorFontExpected()
-{
-    m_xDocShRef->SetText("font small bar");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::FontExpected expected",
-                           SmParseError::FontExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorSizeExpected()
-{
-    m_xDocShRef->SetText("size small baz");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::SizeExpected expected",
-                           SmParseError::SizeExpected == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorDoubleAlign()
-{
-    m_xDocShRef->SetText("alignl alignc x");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::DoubleAlign expected",
-                           SmParseError::DoubleAlign == pErrorDesc->m_eType);
-}
-
-void Test::ParseErrorDoubleSubsupscript()
-{
-    m_xDocShRef->SetText("x_y_z");
-    const SmErrorDesc *pErrorDesc = m_xDocShRef->GetParser().NextError();
-    CPPUNIT_ASSERT(pErrorDesc);
-    CPPUNIT_ASSERT_MESSAGE("SmParseError::DoubleSubsupscript expected",
-                           SmParseError::DoubleSubsupscript == pErrorDesc->m_eType);
 }
 
 void Test::editUndoRedo()
@@ -338,7 +186,7 @@ void Test::editUndoRedo()
         rEditEngine.SetText(0, sStringOne);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringOne);
+        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringOne == sFinalText);
     }
 
     OUString sStringTwo("a over b");
@@ -346,7 +194,7 @@ void Test::editUndoRedo()
         rEditEngine.SetText(0, sStringTwo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringTwo);
+        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringTwo == sFinalText);
     }
 
     SfxRequest aUndo(SID_UNDO, SfxCallMode::SYNCHRON, SmDocShell::GetPool());
@@ -355,7 +203,7 @@ void Test::editUndoRedo()
         m_xDocShRef->Execute(aUndo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings much match", sFinalText, sStringOne);
+        CPPUNIT_ASSERT_MESSAGE("Strings much match", sStringOne == sFinalText);
     }
 
     {
@@ -370,7 +218,7 @@ void Test::editUndoRedo()
         m_xDocShRef->Execute(aRedo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings much match", sFinalText, sStringOne);
+        CPPUNIT_ASSERT_MESSAGE("Strings much match", sStringOne == sFinalText);
     }
 
     {
@@ -405,7 +253,7 @@ void Test::viewZoom()
         rEditEngine.SetText(0, sStringOne);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringOne);
+        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringOne == sFinalText);
     }
 
     SmGraphicWindow &rGraphicWindow = m_pViewShell->GetGraphicWindow();
@@ -423,7 +271,7 @@ void Test::viewZoom()
         SfxRequest aZoomOut(SID_ZOOMOUT, SfxCallMode::SYNCHRON, m_pViewShell->GetPool());
         m_pViewShell->Execute(aZoomOut);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be equal", nOrigZoom, nFinalZoom);
+        CPPUNIT_ASSERT_MESSAGE("Should be equal", nFinalZoom == nOrigZoom);
     }
 
     sal_uInt16 nOptimalZoom=0;
@@ -441,7 +289,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be optimal zoom", nOptimalZoom, nFinalZoom);
+        CPPUNIT_ASSERT_MESSAGE("Should be optimal zoom", nFinalZoom == nOptimalZoom);
     }
 
 //To-Do: investigate GetPrinter logic of SvxZoomType::PAGEWIDTH/SvxZoomType::WHOLEPAGE to ensure
@@ -487,7 +335,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be 50%", static_cast<sal_uInt16>(50), nFinalZoom);
+        CPPUNIT_ASSERT_MESSAGE("Should be 50%", nFinalZoom == 50);
     }
 
     {
@@ -496,7 +344,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be Clipped to 25%", static_cast<sal_uInt16>(25), nFinalZoom);
+        CPPUNIT_ASSERT_MESSAGE("Should be Clipped to 25%", nFinalZoom == 25);
     }
 
     {
@@ -505,7 +353,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be Clipped to 800%", static_cast<sal_uInt16>(800), nFinalZoom);
+        CPPUNIT_ASSERT_MESSAGE("Should be Clipped to 800%", nFinalZoom == 800);
     }
 
 }

@@ -20,6 +20,8 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_PIVOTCACHEBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_PIVOTCACHEBUFFER_HXX
 
+#include <com/sun/star/table/CellAddress.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include <com/sun/star/util/DateTime.hpp>
 #include <oox/helper/containerhelper.hxx>
 #include <oox/helper/refvector.hxx>
@@ -70,14 +72,27 @@ public:
     /** Reads the index of a shared item. */
     void                readIndex( SequenceInputStream& rStrm );
 
+    /** Reads the string value from a pivot cache item. */
+    void                readString( BiffInputStream& rStrm, const WorkbookHelper& rHelper );
+    /** Reads the double value from a pivot cache item. */
+    void                readDouble( BiffInputStream& rStrm );
+    /** Reads the integer value from a pivot cache item. */
+    void                readInteger( BiffInputStream& rStrm );
+    /** Reads the date/time value from a pivot cache item. */
+    void                readDate( BiffInputStream& rStrm );
+    /** Reads the boolean value from a pivot cache item. */
+    void                readBool( BiffInputStream& rStrm );
+    /** Reads the error code value from a pivot cache item. */
+    void                readError( BiffInputStream& rStrm );
+
     /** Returns the type of the item. */
-    sal_Int32    getType() const { return mnType; }
+    inline sal_Int32    getType() const { return mnType; }
     /** Returns the value of the item. */
-    const css::uno::Any& getValue() const { return maValue; }
+    inline const css::uno::Any& getValue() const { return maValue; }
     /** Returns the string representation of the item. */
     OUString     getName() const;
     /** Returns true if the item is unused. */
-    bool         isUnused() const { return mbUnused; }
+    inline bool         isUnused() const { return mbUnused; }
 
 private:
 friend class PivotCacheItemList;
@@ -97,11 +112,13 @@ public:
     void                importItem( sal_Int32 nElement, const AttributeList& rAttribs );
     /** Imports the item from the passed stream and record. */
     void                importItem( sal_Int32 nRecId, SequenceInputStream& rStrm );
+    /** Imports a complete item list from the passed stream. */
+    void                importItemList( BiffInputStream& rStrm, sal_uInt16 nCount );
 
     /** Returns true, if this item list is empty. */
-    bool         empty() const { return maItems.empty(); }
+    inline bool         empty() const { return maItems.empty(); }
     /** Returns the size of the item list. */
-    size_t       size() const { return maItems.size(); }
+    inline size_t       size() const { return maItems.size(); }
 
     /** Returns the specified item. */
     const PivotCacheItem* getCacheItem( sal_Int32 nItemIdx ) const;
@@ -150,6 +167,7 @@ struct PCSharedItemsModel
     bool                mbIsNumeric;        /// True = has numeric item(s), maybe other types except date.
     bool                mbIsInteger;        /// True = has numeric item(s) with only integers, maybe other types except date.
     bool                mbHasLongText;      /// True = contains strings with >255 characters.
+    bool                mbHasLongIndexes;   /// True = indexes to shared items are 16-bit (BIFF only).
 
     explicit            PCSharedItemsModel();
 };
@@ -168,7 +186,7 @@ struct PCFieldGroupModel
     bool                mbDateGroup;        /// True = items are grouped by date ranges or by item names.
     bool                mbAutoStart;        /// True = start value for range groups is calculated from source data.
     bool                mbAutoEnd;          /// True = end value for range groups is calculated from source data.
-    OUString            msFinalGroupName ;  /// Finalized group name of this field used in internal pivot table collection.
+    OUString            msFinalGroupName ;  /// Finalized group name of this field used in internal pivot table collaction.
 
 
     explicit            PCFieldGroupModel();
@@ -183,7 +201,7 @@ struct PivotCacheGroupItem
     OUString     maOrigName;
     OUString     maGroupName;
 
-    explicit     PivotCacheGroupItem( const OUString& rItemName ) :
+    inline explicit     PivotCacheGroupItem( const OUString& rItemName ) :
                             maOrigName( rItemName ), maGroupName( rItemName ) {}
 };
 
@@ -224,33 +242,39 @@ public:
     /** Imports one or more group items from the passed record. */
     void                importPCDFGroupItem( sal_Int32 nRecId, SequenceInputStream& rStrm );
 
+    /** Imports pivot cache field settings from the PCDFIELD record. */
+    void                importPCDField( BiffInputStream& rStrm );
+    /** Imports numeric grouping settings from the PCDFRANGEPR record. */
+    void                importPCDFRangePr( BiffInputStream& rStrm );
+    /** Imports the mapping between group items and base items from the PCDFDISCRETEPR record. */
+    void                importPCDFDiscretePr( BiffInputStream& rStrm );
     /** Apply user Captions to imported group data */
     void                applyItemCaptions( const IdCaptionPairList& vCaptions );
 
     /** Returns true, if the field is based on source data, or false if it is grouped or calculated. */
-    bool         isDatabaseField() const { return maFieldModel.mbDatabaseField; }
+    inline bool         isDatabaseField() const { return maFieldModel.mbDatabaseField; }
 
     /** Returns true, if the field contains a list of shared items. */
-    bool         hasSharedItems() const { return !maSharedItems.empty(); }
+    inline bool         hasSharedItems() const { return !maSharedItems.empty(); }
     /** Returns true, if the field contains a list of grouping items. */
-    bool         hasGroupItems() const { return !maGroupItems.empty(); }
+    inline bool         hasGroupItems() const { return !maGroupItems.empty(); }
     /** Returns true, if the field has inplace numeric grouping settings. */
-    bool         hasNumericGrouping() const { return maFieldGroupModel.mbRangeGroup && !maFieldGroupModel.mbDateGroup; }
+    inline bool         hasNumericGrouping() const { return maFieldGroupModel.mbRangeGroup && !maFieldGroupModel.mbDateGroup; }
     /** Returns true, if the field has inplace date grouping settings. */
-    bool         hasDateGrouping() const { return maFieldGroupModel.mbRangeGroup && maFieldGroupModel.mbDateGroup; }
+    inline bool         hasDateGrouping() const { return maFieldGroupModel.mbRangeGroup && maFieldGroupModel.mbDateGroup; }
     /** Returns true, if the field has a parent group field that groups the items of this field. */
-    bool         hasParentGrouping() const { return maFieldGroupModel.mnParentField >= 0; }
+    inline bool         hasParentGrouping() const { return maFieldGroupModel.mnParentField >= 0; }
 
     /** Returns the name of the cache field. */
-    const OUString& getName() const { return maFieldModel.maName; }
+    inline const OUString& getName() const { return maFieldModel.maName; }
     /** Returns the index of the parent group field that groups the items of this field. */
-    sal_Int32    getParentGroupField() const { return maFieldGroupModel.mnParentField; }
+    inline sal_Int32    getParentGroupField() const { return maFieldGroupModel.mnParentField; }
     /** Returns the index of the base field grouping is based on. */
-    sal_Int32    getGroupBaseField() const { return maFieldGroupModel.mnBaseField; }
+    inline sal_Int32    getGroupBaseField() const { return maFieldGroupModel.mnBaseField; }
     /** Returns the finalized group name of this field.  */
-    const OUString& getFinalGroupName() const { return maFieldGroupModel.msFinalGroupName; }
+    inline const OUString& getFinalGroupName() const { return maFieldGroupModel.msFinalGroupName; }
     /** Set the finalized group name of this field.  */
-    void            setFinalGroupName(const OUString& rFinalGroupName) { maFieldGroupModel.msFinalGroupName = rFinalGroupName; }
+    inline void            setFinalGroupName(const OUString& rFinalGroupName) { maFieldGroupModel.msFinalGroupName = rFinalGroupName; }
 
     /** Returns the shared or group item with the specified index. */
     const PivotCacheItem* getCacheItem( sal_Int32 nItemIdx ) const;
@@ -282,6 +306,9 @@ public:
     /** Reads an item from the PCRECORD record and writes it to the passed sheet. */
     void                importPCRecordItem( SequenceInputStream& rStrm,
                             WorksheetHelper& rSheetHelper, sal_Int32 nCol, sal_Int32 nRow ) const;
+    /** Reads an item index from the PCITEM_INDEXLIST record and writes the item to the passed sheet. */
+    void                importPCItemIndex( BiffInputStream& rStrm,
+                            WorksheetHelper& rSheetHelper, sal_Int32 nCol, sal_Int32 nRow ) const;
 
 private:
     /** Tries to write the passed value to the passed sheet position. */
@@ -309,6 +336,7 @@ struct PCDefinitionModel
     double              mfRefreshedDate;    /// Date/time of last refresh.
     sal_Int32           mnRecords;          /// Number of data records in the cache.
     sal_Int32           mnMissItemsLimit;   /// Limit for discarding unused items.
+    sal_uInt16          mnDatabaseFields;   /// Number of database (source data) fields (BIFF only).
     bool                mbInvalid;          /// True = cache needs refresh.
     bool                mbSaveData;         /// True = cached item values are present.
     bool                mbRefreshOnLoad;    /// True = try to refresh cache on load.
@@ -336,7 +364,8 @@ struct PCWorksheetSourceModel
     OUString     maRelId;            /// Relation identifier for an external document URL.
     OUString     maSheet;            /// Sheet name for cell range or sheet-local defined names.
     OUString     maDefName;          /// Defined name containing a cell range if present.
-    ScRange      maRange;            /// Source cell range of the data.
+    css::table::CellRangeAddress
+                 maRange;            /// Source cell range of the data.
 
     explicit            PCWorksheetSourceModel();
 };
@@ -360,22 +389,27 @@ public:
     /** Reads sheet source settings from the PCDSHEETSOURCE record. */
     void                importPCDSheetSource( SequenceInputStream& rStrm, const ::oox::core::Relations& rRelations );
 
+    /** Reads pivot cache global settings from the PCDEFINITION record. */
+    void                importPCDefinition( BiffInputStream& rStrm );
+
     /** Creates and returns a new pivot cache field. */
-    PivotCacheField&    createCacheField();
+    PivotCacheField&    createCacheField( bool bInitDatabaseField = false );
     /** Checks validity of source data and creates a dummy data sheet for external sheet sources. */
     void                finalizeImport();
 
     /** Returns true, if the pivot cache is based on a valid data source, so
         that pivot tables can be created based on this pivot cache. */
-    bool         isValidDataSource() const { return mbValidSource; }
+    inline bool         isValidDataSource() const { return mbValidSource; }
     /** Returns true, if the pivot cache is based on a dummy sheet created in finalizeImport. */
-    bool         isBasedOnDummySheet() const { return mbDummySheet; }
+    inline bool         isBasedOnDummySheet() const { return mbDummySheet; }
     /** Returns the internal cell range the cache is based on. */
-    const ScRange&
+    inline const css::table::CellRangeAddress&
                         getSourceRange() const { return maSheetSrcModel.maRange; }
     /** Returns the relation identifier of the pivot cache records fragment. */
-    const OUString& getRecordsRelId() const { return maDefModel.maRelId; }
+    inline const OUString& getRecordsRelId() const { return maDefModel.maRelId; }
 
+    /** Returns the number of pivot cache fields. */
+    sal_Int32           getCacheFieldCount() const;
     /** Returns the cache field with the specified index. */
     PivotCacheField* getCacheField( sal_Int32 nFieldIdx );
     const PivotCacheField* getCacheField( sal_Int32 nFieldIdx ) const;
@@ -391,6 +425,9 @@ public:
 
     /** Reads a PCRECORD record and writes all item values to the passed sheet. */
     void                importPCRecord( SequenceInputStream& rStrm,
+                            WorksheetHelper& rSheetHelper, sal_Int32 nRowIdx ) const;
+    /** Reads a PCITEM_INDEXLIST record and writes all item values to the passed sheet. */
+    void                importPCItemIndexList( BiffInputStream& rStrm,
                             WorksheetHelper& rSheetHelper, sal_Int32 nRowIdx ) const;
 
 private:

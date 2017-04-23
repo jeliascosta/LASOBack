@@ -72,7 +72,7 @@ public:
                     , const OUString& rTitleText
                     , const css::uno::Reference< css::frame::XModel >& xModel
                     , const css::uno::Reference< css::uno::XComponentContext > & xContext
-                    , ReferenceSizeProvider * pRefSizeProvider );
+                    , ReferenceSizeProvider * pRefSizeProvider = nullptr );
 
     static void removeTitle( eTitleType nTitleIndex
                     , const css::uno::Reference< css::frame::XModel >& xModel );

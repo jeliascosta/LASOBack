@@ -45,17 +45,17 @@ String RID_SVXSTR_GALLERY_ID_EXISTS
 
 Bitmap RID_SVXBMP_THEME_NORMAL_BIG
 {
-    File = "galnorl.png" ;
+    File = "galnorl.bmp" ;
 };
 
 Bitmap RID_SVXBMP_THEME_READONLY_BIG
 {
-    File = "galrdol.png" ;
+    File = "galrdol.bmp" ;
 };
 
 Bitmap RID_SVXBMP_THEME_DEFAULT_BIG
 {
-    File = "galdefl.png" ;
+    File = "galdefl.bmp" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -68,20 +68,18 @@ namespace cmis
 
     OUString DataSupplier::queryContentIdentifierString( sal_uInt32 nIndex )
     {
-        auto const xTemp(queryContentIdentifier(nIndex));
-        return (xTemp.is()) ? xTemp->getContentIdentifier() : OUString();
+        return queryContentIdentifier( nIndex )->getContentIdentifier( );
     }
 
     uno::Reference< ucb::XContentIdentifier > DataSupplier::queryContentIdentifier( sal_uInt32 nIndex )
     {
-        auto const xTemp(queryContent(nIndex));
-        return (xTemp.is()) ? xTemp->getIdentifier() : uno::Reference<ucb::XContentIdentifier>();
+        return queryContent( nIndex )->getIdentifier( );
     }
 
     uno::Reference< ucb::XContent > DataSupplier::queryContent( sal_uInt32 nIndex )
     {
-        if (!getResult(nIndex))
-            return uno::Reference<ucb::XContent>();
+        if ( nIndex > maResults.size() )
+            getData( );
 
         return maResults[ nIndex ]->xContent;
     }
@@ -166,7 +164,7 @@ namespace cmis
     {
     }
 
-    void DataSupplier::validate()
+    void DataSupplier::validate() throw( ucb::ResultSetException )
     {
     }
 

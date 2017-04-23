@@ -9,7 +9,7 @@
 
 #include <sal/config.h>
 
-#include <epoxy/gl.h>
+#include <GL/glew.h>
 
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/point/b2dpoint.hxx>
@@ -58,7 +58,8 @@ namespace oglcanvas
         CanvasCustomSpriteBaseT::disposeThis();
     }
 
-    void SAL_CALL CanvasCustomSprite::setAlpha( double alpha )
+    void SAL_CALL CanvasCustomSprite::setAlpha( double alpha ) throw (lang::IllegalArgumentException,
+                                                                      uno::RuntimeException, std::exception)
     {
         canvas::tools::verifyRange( alpha, 0.0, 1.0 );
 
@@ -68,7 +69,8 @@ namespace oglcanvas
 
     void SAL_CALL CanvasCustomSprite::move( const geometry::RealPoint2D&  aNewPos,
                                             const rendering::ViewState&   viewState,
-                                            const rendering::RenderState& renderState )
+                                            const rendering::RenderState& renderState ) throw (lang::IllegalArgumentException,
+                                                                                               uno::RuntimeException, std::exception)
     {
         canvas::tools::verifyArgs(aNewPos, viewState, renderState,
                                   OSL_THIS_FUNC,
@@ -85,38 +87,39 @@ namespace oglcanvas
         maPosition *= aTransform;
     }
 
-    void SAL_CALL CanvasCustomSprite::transform( const geometry::AffineMatrix2D& aTransformation )
+    void SAL_CALL CanvasCustomSprite::transform( const geometry::AffineMatrix2D& aTransformation ) throw (lang::IllegalArgumentException,
+                                                                                                          uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         maTransformation = aTransformation;
     }
 
-    void SAL_CALL CanvasCustomSprite::clip( const uno::Reference< rendering::XPolyPolygon2D >& xClip )
+    void SAL_CALL CanvasCustomSprite::clip( const uno::Reference< rendering::XPolyPolygon2D >& xClip ) throw (uno::RuntimeException, std::exception)
     {
         mxClip = xClip;
     }
 
-    void SAL_CALL CanvasCustomSprite::setPriority( double nPriority )
+    void SAL_CALL CanvasCustomSprite::setPriority( double nPriority ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         mfPriority = nPriority;
     }
 
-    void SAL_CALL CanvasCustomSprite::show()
+    void SAL_CALL CanvasCustomSprite::show() throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if( mpSpriteCanvas.is() )
             mpSpriteCanvas->show(this);
     }
 
-    void SAL_CALL CanvasCustomSprite::hide()
+    void SAL_CALL CanvasCustomSprite::hide() throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if( mpSpriteCanvas.is() )
             mpSpriteCanvas->hide(this);
     }
 
-    uno::Reference< rendering::XCanvas > SAL_CALL CanvasCustomSprite::getContentCanvas()
+    uno::Reference< rendering::XCanvas > SAL_CALL CanvasCustomSprite::getContentCanvas() throw (uno::RuntimeException, std::exception)
     {
         return this;
     }
@@ -194,6 +197,14 @@ namespace oglcanvas
                     const ::basegfx::B2DPolygon& rTriangulatedPolygon(
                         ::basegfx::triangulator::triangulate(
                             ::basegfx::unotools::b2DPolyPolygonFromXPolyPolygon2D(mxClip)));
+
+                    basegfx::B2DPolygon rTriangleList(
+                        basegfx::tools::clipTriangleListOnRange(
+                            rTriangulatedPolygon,
+                            basegfx::B2DRange(
+                                0,0,
+                                aSpriteSizePixel.getX(),
+                                aSpriteSizePixel.getY())));
 
                     glBegin(GL_TRIANGLES);
                     for( sal_uInt32 i=0; i<rTriangulatedPolygon.count(); i++ )

@@ -22,8 +22,7 @@
 #include <unotools/datetime.hxx>
 #include <xmloff/attrlist.hxx>
 
-#include "documentsignaturehelper.hxx"
-#include "xsecctl.hxx"
+#include <xsecctl.hxx>
 
 using namespace com::sun::star;
 
@@ -54,6 +53,7 @@ struct OOXMLSecExporter::Impl
     void writeSignedInfo();
     void writeCanonicalizationMethod();
     void writeCanonicalizationTransform();
+    void writeDigestMethod();
     void writeSignatureMethod();
     void writeSignedInfoReferences();
     void writeSignatureValue();
@@ -69,17 +69,21 @@ struct OOXMLSecExporter::Impl
     /// Writes <SignatureInfoV1>.
     void writeSignatureInfo();
     void writePackageSignature();
+    void writeSignedProperties();
 };
 
 bool OOXMLSecExporter::Impl::isOOXMLBlacklist(const OUString& rStreamName)
 {
-    static const std::initializer_list<OUStringLiteral> vBlacklist =
+#if !HAVE_BROKEN_STATIC_INITIALIZER_LIST
+    static
+#endif
+    const std::initializer_list<OUStringLiteral> vBlacklist =
     {
-        "/%5BContent_Types%5D.xml",
-        "/docProps/app.xml",
-        "/docProps/core.xml",
+        OUStringLiteral("/%5BContent_Types%5D.xml"),
+        OUStringLiteral("/docProps/app.xml"),
+        OUStringLiteral("/docProps/core.xml"),
         // Don't attempt to sign other signatures for now.
-        "/_xmlsignatures"
+        OUStringLiteral("/_xmlsignatures")
     };
     // Just check the prefix, as we don't care about the content type part of the stream name.
     return std::find_if(vBlacklist.begin(), vBlacklist.end(), [&](const OUStringLiteral& rLiteral)
@@ -90,50 +94,61 @@ bool OOXMLSecExporter::Impl::isOOXMLBlacklist(const OUString& rStreamName)
 
 bool OOXMLSecExporter::Impl::isOOXMLRelationBlacklist(const OUString& rRelationName)
 {
-    static const std::initializer_list<OUStringLiteral> vBlacklist =
+#if !HAVE_BROKEN_STATIC_INITIALIZER_LIST
+    static
+#endif
+    const std::initializer_list<OUStringLiteral> vBlacklist =
     {
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-        "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin"
+        OUStringLiteral("http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"),
+        OUStringLiteral("http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"),
+        OUStringLiteral("http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin")
     };
     return std::find(vBlacklist.begin(), vBlacklist.end(), rRelationName) != vBlacklist.end();
 }
 
 void OOXMLSecExporter::Impl::writeSignedInfo()
 {
-    m_xDocumentHandler->startElement("SignedInfo", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_SIGNEDINFO, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
 
     writeCanonicalizationMethod();
     writeSignatureMethod();
     writeSignedInfoReferences();
 
-    m_xDocumentHandler->endElement("SignedInfo");
+    m_xDocumentHandler->endElement(TAG_SIGNEDINFO);
 }
 
 void OOXMLSecExporter::Impl::writeCanonicalizationMethod()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("Algorithm", ALGO_C14N);
-    m_xDocumentHandler->startElement("CanonicalizationMethod", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    m_xDocumentHandler->endElement("CanonicalizationMethod");
+    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_C14N);
+    m_xDocumentHandler->startElement(TAG_CANONICALIZATIONMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    m_xDocumentHandler->endElement(TAG_CANONICALIZATIONMETHOD);
 
 }
 
 void OOXMLSecExporter::Impl::writeCanonicalizationTransform()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("Algorithm", ALGO_C14N);
-    m_xDocumentHandler->startElement("Transform", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    m_xDocumentHandler->endElement("Transform");
+    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_C14N);
+    m_xDocumentHandler->startElement(TAG_TRANSFORM, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    m_xDocumentHandler->endElement(TAG_TRANSFORM);
 
+}
+
+void OOXMLSecExporter::Impl::writeDigestMethod()
+{
+    rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
+    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_XMLDSIGSHA256);
+    m_xDocumentHandler->startElement(TAG_DIGESTMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    m_xDocumentHandler->endElement(TAG_DIGESTMETHOD);
 }
 
 void OOXMLSecExporter::Impl::writeSignatureMethod()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("Algorithm", ALGO_RSASHA256);
-    m_xDocumentHandler->startElement("SignatureMethod", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    m_xDocumentHandler->endElement("SignatureMethod");
+    pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_RSASHA256);
+    m_xDocumentHandler->startElement(TAG_SIGNATUREMETHOD, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    m_xDocumentHandler->endElement(TAG_SIGNATUREMETHOD);
 }
 
 void OOXMLSecExporter::Impl::writeSignedInfoReferences()
@@ -149,58 +164,58 @@ void OOXMLSecExporter::Impl::writeSignedInfoReferences()
                     pAttributeList->AddAttribute("Type", "http://www.w3.org/2000/09/xmldsig#Object");
                 else
                     pAttributeList->AddAttribute("Type", "http://uri.etsi.org/01903#SignedProperties");
-                pAttributeList->AddAttribute("URI", "#" + rReference.ouURI);
-                m_xDocumentHandler->startElement("Reference", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+                pAttributeList->AddAttribute(ATTR_URI, CHAR_FRAGMENT + rReference.ouURI);
+                m_xDocumentHandler->startElement(TAG_REFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
             }
             if (rReference.ouURI == "idSignedProperties")
             {
-                m_xDocumentHandler->startElement("Transforms", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+                m_xDocumentHandler->startElement(TAG_TRANSFORMS, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
                 writeCanonicalizationTransform();
-                m_xDocumentHandler->endElement("Transforms");
+                m_xDocumentHandler->endElement(TAG_TRANSFORMS);
             }
 
-            DocumentSignatureHelper::writeDigestMethod(m_xDocumentHandler);
-            m_xDocumentHandler->startElement("DigestValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+            writeDigestMethod();
+            m_xDocumentHandler->startElement(TAG_DIGESTVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
             m_xDocumentHandler->characters(rReference.ouDigestValue);
-            m_xDocumentHandler->endElement("DigestValue");
-            m_xDocumentHandler->endElement("Reference");
+            m_xDocumentHandler->endElement(TAG_DIGESTVALUE);
+            m_xDocumentHandler->endElement(TAG_REFERENCE);
         }
     }
 }
 
 void OOXMLSecExporter::Impl::writeSignatureValue()
 {
-    m_xDocumentHandler->startElement("SignatureValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_SIGNATUREVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     m_xDocumentHandler->characters(m_rInformation.ouSignatureValue);
-    m_xDocumentHandler->endElement("SignatureValue");
+    m_xDocumentHandler->endElement(TAG_SIGNATUREVALUE);
 }
 
 void OOXMLSecExporter::Impl::writeKeyInfo()
 {
-    m_xDocumentHandler->startElement("KeyInfo", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    m_xDocumentHandler->startElement("X509Data", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    m_xDocumentHandler->startElement("X509Certificate", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_KEYINFO, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_X509DATA, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_X509CERTIFICATE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     m_xDocumentHandler->characters(m_rInformation.ouX509Certificate);
-    m_xDocumentHandler->endElement("X509Certificate");
-    m_xDocumentHandler->endElement("X509Data");
-    m_xDocumentHandler->endElement("KeyInfo");
+    m_xDocumentHandler->endElement(TAG_X509CERTIFICATE);
+    m_xDocumentHandler->endElement(TAG_X509DATA);
+    m_xDocumentHandler->endElement(TAG_KEYINFO);
 }
 
 void OOXMLSecExporter::Impl::writePackageObject()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("Id", "idPackageObject");
-    m_xDocumentHandler->startElement("Object", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    pAttributeList->AddAttribute(ATTR_ID, "idPackageObject");
+    m_xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
 
     writeManifest();
     writePackageObjectSignatureProperties();
 
-    m_xDocumentHandler->endElement("Object");
+    m_xDocumentHandler->endElement(TAG_OBJECT);
 }
 
 void OOXMLSecExporter::Impl::writeManifest()
 {
-    m_xDocumentHandler->startElement("Manifest", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_MANIFEST, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     const SignatureReferenceInformations& rReferences = m_rInformation.vSignatureReferenceInfors;
     for (const SignatureReferenceInformation& rReference : rReferences)
     {
@@ -212,7 +227,7 @@ void OOXMLSecExporter::Impl::writeManifest()
             writeManifestReference(rReference);
         }
     }
-    m_xDocumentHandler->endElement("Manifest");
+    m_xDocumentHandler->endElement(TAG_MANIFEST);
 }
 
 void OOXMLSecExporter::Impl::writeRelationshipTransform(const OUString& rURI)
@@ -221,8 +236,8 @@ void OOXMLSecExporter::Impl::writeRelationshipTransform(const OUString& rURI)
     uno::Reference<io::XInputStream> xRelStream(xHierarchicalStorageAccess->openStreamElementByHierarchicalName(rURI, embed::ElementModes::READ), uno::UNO_QUERY);
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("Algorithm", ALGO_RELATIONSHIP);
-        m_xDocumentHandler->startElement("Transform", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_ALGORITHM, ALGO_RELATIONSHIP);
+        m_xDocumentHandler->startElement(TAG_TRANSFORM, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
 
     uno::Sequence< uno::Sequence<beans::StringPair> > aRelationsInfo = comphelper::OFOPXMLHelper::ReadRelationsInfoSequence(xRelStream, rURI, m_xComponentContext);
@@ -242,34 +257,34 @@ void OOXMLSecExporter::Impl::writeRelationshipTransform(const OUString& rURI)
             continue;
 
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("xmlns:mdssi", NS_MDSSI);
-        pAttributeList->AddAttribute("SourceId", aId);
-        m_xDocumentHandler->startElement("mdssi:RelationshipReference", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-        m_xDocumentHandler->endElement("mdssi:RelationshipReference");
+        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_MDSSI, NS_MDSSI);
+        pAttributeList->AddAttribute(ATTR_SOURCEID, aId);
+        m_xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_RELATIONSHIPREFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        m_xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_RELATIONSHIPREFERENCE);
     }
 
-    m_xDocumentHandler->endElement("Transform");
+    m_xDocumentHandler->endElement(TAG_TRANSFORM);
 }
 
 void OOXMLSecExporter::Impl::writePackageObjectSignatureProperties()
 {
-    m_xDocumentHandler->startElement("SignatureProperties", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_SIGNATUREPROPERTIES, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("Id", "idSignatureTime");
-        pAttributeList->AddAttribute("Target", "#idPackageSignature");
-        m_xDocumentHandler->startElement("SignatureProperty", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_ID, "idSignatureTime");
+        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
+        m_xDocumentHandler->startElement(TAG_SIGNATUREPROPERTY, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("xmlns:mdssi", NS_MDSSI);
-        m_xDocumentHandler->startElement("mdssi:SignatureTime", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_MDSSI, NS_MDSSI);
+        m_xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_SIGNATURETIME, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
-    m_xDocumentHandler->startElement("mdssi:Format", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_FORMAT, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     m_xDocumentHandler->characters("YYYY-MM-DDThh:mm:ssTZD");
-    m_xDocumentHandler->endElement("mdssi:Format");
+    m_xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_FORMAT);
 
-    m_xDocumentHandler->startElement("mdssi:Value", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(NSTAG_MDSSI ":" TAG_VALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     if (!m_rInformation.ouDateTime.isEmpty())
         m_aSignatureTimeValue = m_rInformation.ouDateTime;
     else
@@ -284,18 +299,18 @@ void OOXMLSecExporter::Impl::writePackageObjectSignatureProperties()
         }
     }
     m_xDocumentHandler->characters(m_aSignatureTimeValue);
-    m_xDocumentHandler->endElement("mdssi:Value");
+    m_xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_VALUE);
 
-    m_xDocumentHandler->endElement("mdssi:SignatureTime");
-    m_xDocumentHandler->endElement("SignatureProperty");
-    m_xDocumentHandler->endElement("SignatureProperties");
+    m_xDocumentHandler->endElement(NSTAG_MDSSI ":" TAG_SIGNATURETIME);
+    m_xDocumentHandler->endElement(TAG_SIGNATUREPROPERTY);
+    m_xDocumentHandler->endElement(TAG_SIGNATUREPROPERTIES);
 }
 
 void OOXMLSecExporter::Impl::writeManifestReference(const SignatureReferenceInformation& rReference)
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("URI", rReference.ouURI);
-    m_xDocumentHandler->startElement("Reference", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    pAttributeList->AddAttribute(ATTR_URI, rReference.ouURI);
+    m_xDocumentHandler->startElement(TAG_REFERENCE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
 
     // Transforms
     if (rReference.ouURI.endsWith("?ContentType=application/vnd.openxmlformats-package.relationships+xml"))
@@ -309,45 +324,45 @@ void OOXMLSecExporter::Impl::writeManifestReference(const SignatureReferenceInfo
         if (nQueryPos != -1)
             aURI = aURI.copy(0, nQueryPos);
 
-        m_xDocumentHandler->startElement("Transforms", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+        m_xDocumentHandler->startElement(TAG_TRANSFORMS, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
 
         writeRelationshipTransform(aURI);
         writeCanonicalizationTransform();
 
-        m_xDocumentHandler->endElement("Transforms");
+        m_xDocumentHandler->endElement(TAG_TRANSFORMS);
     }
 
-    DocumentSignatureHelper::writeDigestMethod(m_xDocumentHandler);
-    m_xDocumentHandler->startElement("DigestValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    writeDigestMethod();
+    m_xDocumentHandler->startElement(TAG_DIGESTVALUE, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     m_xDocumentHandler->characters(rReference.ouDigestValue);
-    m_xDocumentHandler->endElement("DigestValue");
-    m_xDocumentHandler->endElement("Reference");
+    m_xDocumentHandler->endElement(TAG_DIGESTVALUE);
+    m_xDocumentHandler->endElement(TAG_REFERENCE);
 }
 
 void OOXMLSecExporter::Impl::writeOfficeObject()
 {
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("Id", "idOfficeObject");
-        m_xDocumentHandler->startElement("Object", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_ID, "idOfficeObject");
+        m_xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
-    m_xDocumentHandler->startElement("SignatureProperties", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_SIGNATUREPROPERTIES, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("Id", "idOfficeV1Details");
-        pAttributeList->AddAttribute("Target", "#idPackageSignature");
-        m_xDocumentHandler->startElement("SignatureProperty", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_ID, "idOfficeV1Details");
+        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
+        m_xDocumentHandler->startElement(TAG_SIGNATUREPROPERTY, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
     writeSignatureInfo();
-    m_xDocumentHandler->endElement("SignatureProperty");
-    m_xDocumentHandler->endElement("SignatureProperties");
-    m_xDocumentHandler->endElement("Object");
+    m_xDocumentHandler->endElement(TAG_SIGNATUREPROPERTY);
+    m_xDocumentHandler->endElement(TAG_SIGNATUREPROPERTIES);
+    m_xDocumentHandler->endElement(TAG_OBJECT);
 }
 
 void OOXMLSecExporter::Impl::writeSignatureInfo()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("xmlns", "http://schemas.microsoft.com/office/2006/digsig");
+    pAttributeList->AddAttribute(ATTR_XMLNS, "http://schemas.microsoft.com/office/2006/digsig");
     m_xDocumentHandler->startElement("SignatureInfoV1", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
 
     m_xDocumentHandler->startElement("SetupId", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
@@ -398,18 +413,63 @@ void OOXMLSecExporter::Impl::writeSignatureInfo()
 
 void OOXMLSecExporter::Impl::writePackageSignature()
 {
-    m_xDocumentHandler->startElement("Object", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement(TAG_OBJECT, uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
     {
         rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("xmlns:xd", NS_XD);
-        pAttributeList->AddAttribute("Target", "#idPackageSignature");
-        m_xDocumentHandler->startElement("xd:QualifyingProperties", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+        pAttributeList->AddAttribute(ATTR_XMLNS ":" NSTAG_XD, NS_XD);
+        pAttributeList->AddAttribute(ATTR_TARGET, "#idPackageSignature");
+        m_xDocumentHandler->startElement(NSTAG_XD ":" TAG_QUALIFYINGPROPERTIES, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
     }
 
-    DocumentSignatureHelper::writeSignedProperties(m_xDocumentHandler, m_rInformation, m_aSignatureTimeValue);
+    // FIXME why does this part crash NSS when MOZILLA_CERTIFICATE_FOLDER is not set?
+    static bool bTest = getenv("LO_TESTNAME");
+    if (!bTest)
+        writeSignedProperties();
 
-    m_xDocumentHandler->endElement("xd:QualifyingProperties");
-    m_xDocumentHandler->endElement("Object");
+    m_xDocumentHandler->endElement(NSTAG_XD ":" TAG_QUALIFYINGPROPERTIES);
+    m_xDocumentHandler->endElement(TAG_OBJECT);
+}
+
+void OOXMLSecExporter::Impl::writeSignedProperties()
+{
+    {
+        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
+        pAttributeList->AddAttribute(ATTR_ID, "idSignedProperties");
+        m_xDocumentHandler->startElement(NSTAG_XD ":" TAG_SIGNEDPROPERTIES, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    }
+
+    m_xDocumentHandler->startElement("xd:SignedSignatureProperties", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement("xd:SigningTime", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->characters(m_aSignatureTimeValue);
+    m_xDocumentHandler->endElement("xd:SigningTime");
+    m_xDocumentHandler->startElement("xd:SigningCertificate", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement("xd:Cert", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement("xd:CertDigest", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    writeDigestMethod();
+
+    m_xDocumentHandler->startElement("DigestValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    assert(!m_rInformation.ouCertDigest.isEmpty());
+    m_xDocumentHandler->characters(m_rInformation.ouCertDigest);
+    m_xDocumentHandler->endElement("DigestValue");
+
+    m_xDocumentHandler->endElement("xd:CertDigest");
+    m_xDocumentHandler->startElement("xd:IssuerSerial", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement("X509IssuerName", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->characters(m_rInformation.ouX509IssuerName);
+    m_xDocumentHandler->endElement("X509IssuerName");
+    m_xDocumentHandler->startElement("X509SerialNumber", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->characters(m_rInformation.ouX509SerialNumber);
+    m_xDocumentHandler->endElement("X509SerialNumber");
+    m_xDocumentHandler->endElement("xd:IssuerSerial");
+    m_xDocumentHandler->endElement("xd:Cert");
+    m_xDocumentHandler->endElement("xd:SigningCertificate");
+    m_xDocumentHandler->startElement("xd:SignaturePolicyIdentifier", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->startElement("xd:SignaturePolicyImplied", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
+    m_xDocumentHandler->endElement("xd:SignaturePolicyImplied");
+    m_xDocumentHandler->endElement("xd:SignaturePolicyIdentifier");
+    m_xDocumentHandler->endElement("xd:SignedSignatureProperties");
+
+    m_xDocumentHandler->endElement(NSTAG_XD ":" TAG_SIGNEDPROPERTIES);
 }
 
 OOXMLSecExporter::OOXMLSecExporter(const uno::Reference<uno::XComponentContext>& xComponentContext,
@@ -420,14 +480,16 @@ OOXMLSecExporter::OOXMLSecExporter(const uno::Reference<uno::XComponentContext>&
 {
 }
 
-OOXMLSecExporter::~OOXMLSecExporter() = default;
+OOXMLSecExporter::~OOXMLSecExporter()
+{
+}
 
 void OOXMLSecExporter::writeSignature()
 {
     rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("xmlns", NS_XMLDSIG);
-    pAttributeList->AddAttribute("Id", "idPackageSignature");
-    m_pImpl->m_xDocumentHandler->startElement("Signature", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
+    pAttributeList->AddAttribute(ATTR_XMLNS, NS_XMLDSIG);
+    pAttributeList->AddAttribute(ATTR_ID, "idPackageSignature");
+    m_pImpl->m_xDocumentHandler->startElement(TAG_SIGNATURE, uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
 
     m_pImpl->writeSignedInfo();
     m_pImpl->writeSignatureValue();
@@ -436,7 +498,7 @@ void OOXMLSecExporter::writeSignature()
     m_pImpl->writeOfficeObject();
     m_pImpl->writePackageSignature();
 
-    m_pImpl->m_xDocumentHandler->endElement("Signature");
+    m_pImpl->m_xDocumentHandler->endElement(TAG_SIGNATURE);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

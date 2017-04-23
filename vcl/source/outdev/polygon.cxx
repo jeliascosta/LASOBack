@@ -64,8 +64,8 @@ void OutputDevice::DrawPolyPolygon( const tools::PolyPolygon& rPolyPoly )
 
     // use b2dpolygon drawing if possible
     if((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-       mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
-       RasterOp::OverPaint == GetRasterOp() &&
+       mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
+       ROP_OVERPAINT == GetRasterOp() &&
        (IsLineColor() || IsFillColor()))
     {
         const basegfx::B2DHomMatrix aTransform = ImplGetDeviceTransformation();
@@ -177,8 +177,8 @@ void OutputDevice::DrawPolygon( const tools::Polygon& rPoly )
 
     // use b2dpolygon drawing if possible
     if((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-       mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
-       RasterOp::OverPaint == GetRasterOp() &&
+       mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
+       ROP_OVERPAINT == GetRasterOp() &&
        (IsLineColor() || IsFillColor()))
     {
         const basegfx::B2DHomMatrix aTransform = ImplGetDeviceTransformation();
@@ -226,7 +226,7 @@ void OutputDevice::DrawPolygon( const tools::Polygon& rPoly )
     // #100127# Forward beziers to sal, if any
     if( aPoly.HasFlags() )
     {
-        const PolyFlags* pFlgAry = aPoly.GetConstFlagAry();
+        const sal_uInt8* pFlgAry = aPoly.GetConstFlagAry();
         if( !mpGraphics->DrawPolygonBezier( nPoints, pPtAry, pFlgAry, this ) )
         {
             aPoly = tools::Polygon::SubdivideBezier(aPoly);
@@ -280,8 +280,8 @@ void OutputDevice::ImplDrawPolyPolygonWithB2DPolyPolygon(const basegfx::B2DPolyP
         InitFillColor();
 
     if((mnAntialiasing & AntialiasingFlags::EnableB2dDraw) &&
-       mpGraphics->supportsOperation(OutDevSupportType::B2DDraw) &&
-       RasterOp::OverPaint == GetRasterOp() &&
+       mpGraphics->supportsOperation(OutDevSupport_B2DDraw) &&
+       ROP_OVERPAINT == GetRasterOp() &&
        (IsLineColor() || IsFillColor()))
     {
         const basegfx::B2DHomMatrix aTransform(ImplGetDeviceTransformation());
@@ -339,10 +339,10 @@ void OutputDevice::ImplDrawPolyPolygon( sal_uInt16 nPoly, const tools::PolyPolyg
 
     sal_uInt32 aStackAry1[OUTDEV_POLYPOLY_STACKBUF];
     PCONSTSALPOINT aStackAry2[OUTDEV_POLYPOLY_STACKBUF];
-    PolyFlags* aStackAry3[OUTDEV_POLYPOLY_STACKBUF];
+    sal_uInt8* aStackAry3[OUTDEV_POLYPOLY_STACKBUF];
     sal_uInt32* pPointAry;
-    PCONSTSALPOINT*    pPointAryAry;
-    const PolyFlags**  pFlagAryAry;
+    PCONSTSALPOINT*     pPointAryAry;
+    const sal_uInt8** pFlagAryAry;
     sal_uInt16 i = 0;
     sal_uInt16 j = 0;
     sal_uInt16 last = 0;
@@ -351,13 +351,13 @@ void OutputDevice::ImplDrawPolyPolygon( sal_uInt16 nPoly, const tools::PolyPolyg
     {
         pPointAry       = new sal_uInt32[nPoly];
         pPointAryAry    = new PCONSTSALPOINT[nPoly];
-        pFlagAryAry     = new const PolyFlags*[nPoly];
+        pFlagAryAry     = new const sal_uInt8*[nPoly];
     }
     else
     {
         pPointAry       = aStackAry1;
         pPointAryAry    = aStackAry2;
-        pFlagAryAry     = const_cast<const PolyFlags**>(aStackAry3);
+        pFlagAryAry     = const_cast<const sal_uInt8**>(aStackAry3);
     }
 
     do

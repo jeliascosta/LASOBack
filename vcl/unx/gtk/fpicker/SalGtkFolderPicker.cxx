@@ -63,10 +63,11 @@ SalGtkFolderPicker::SalGtkFolderPicker( const uno::Reference< uno::XComponentCon
 }
 
 void SAL_CALL SalGtkFolderPicker::setDisplayDirectory( const OUString& aDirectory )
+    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_ASSERT( m_pDialog != nullptr );
 
     OString aTxt = unicodetouri( aDirectory );
     if( aTxt.isEmpty() ){
@@ -76,17 +77,17 @@ void SAL_CALL SalGtkFolderPicker::setDisplayDirectory( const OUString& aDirector
     if( aTxt.endsWith("/") )
         aTxt = aTxt.copy( 0, aTxt.getLength() - 1 );
 
-    SAL_INFO( "vcl", "setting path to " << aTxt );
+    OSL_TRACE( "setting path to %s", aTxt.getStr() );
 
     gtk_file_chooser_set_current_folder_uri( GTK_FILE_CHOOSER( m_pDialog ),
         aTxt.getStr() );
 }
 
-OUString SAL_CALL SalGtkFolderPicker::getDisplayDirectory()
+OUString SAL_CALL SalGtkFolderPicker::getDisplayDirectory() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_ASSERT( m_pDialog != nullptr );
 
     gchar* pCurrentFolder =
         gtk_file_chooser_get_current_folder_uri( GTK_FILE_CHOOSER( m_pDialog ) );
@@ -96,11 +97,11 @@ OUString SAL_CALL SalGtkFolderPicker::getDisplayDirectory()
     return aCurrentFolderName;
 }
 
-OUString SAL_CALL SalGtkFolderPicker::getDirectory()
+OUString SAL_CALL SalGtkFolderPicker::getDirectory() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_ASSERT( m_pDialog != nullptr );
 
     gchar* pSelectedFolder =
         gtk_file_chooser_get_uri( GTK_FILE_CHOOSER( m_pDialog ) );
@@ -111,27 +112,29 @@ OUString SAL_CALL SalGtkFolderPicker::getDirectory()
 }
 
 void SAL_CALL SalGtkFolderPicker::setDescription( const OUString& /*rDescription*/ )
+    throw( uno::RuntimeException, std::exception )
 {
 }
 
 // XExecutableDialog functions
 
-void SAL_CALL SalGtkFolderPicker::setTitle( const OUString& aTitle )
+void SAL_CALL SalGtkFolderPicker::setTitle( const OUString& aTitle ) throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_ASSERT( m_pDialog != nullptr );
 
     OString aWindowTitle = OUStringToOString( aTitle, RTL_TEXTENCODING_UTF8 );
 
     gtk_window_set_title( GTK_WINDOW( m_pDialog ), aWindowTitle.getStr() );
 }
 
-sal_Int16 SAL_CALL SalGtkFolderPicker::execute()
+sal_Int16 SAL_CALL SalGtkFolderPicker::execute() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_TRACE( "1: HERE WE ARE");
+    OSL_ASSERT( m_pDialog != nullptr );
 
     sal_Int16 retVal = 0;
 
@@ -166,11 +169,11 @@ sal_Int16 SAL_CALL SalGtkFolderPicker::execute()
 
 // XCancellable
 
-void SAL_CALL SalGtkFolderPicker::cancel()
+void SAL_CALL SalGtkFolderPicker::cancel() throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
-    assert( m_pDialog != nullptr );
+    OSL_ASSERT( m_pDialog != nullptr );
 
     // TODO m_pImpl->cancel();
 }

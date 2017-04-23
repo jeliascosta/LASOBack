@@ -34,13 +34,15 @@ namespace shape
 
 WpsContext::WpsContext(ContextHandler2Helper& rParent, uno::Reference<drawing::XShape> xShape)
     : ContextHandler2(rParent),
-      mxShape(std::move(xShape))
+      mxShape(xShape)
 {
     mpShape.reset(new oox::drawingml::Shape("com.sun.star.drawing.CustomShape"));
     mpShape->setWps(true);
 }
 
-WpsContext::~WpsContext() = default;
+WpsContext::~WpsContext()
+{
+}
 
 oox::core::ContextHandlerRef WpsContext::onCreateContext(sal_Int32 nElementToken, const oox::AttributeList& rAttribs)
 {
@@ -104,10 +106,10 @@ oox::core::ContextHandlerRef WpsContext::onCreateContext(sal_Int32 nElementToken
 
                     // If the text is not rotated the way the shape wants it already, set the angle.
                     const sal_Int32 nRotation = -270;
-                    if (static_cast<long>(basegfx::rad2deg(fRotate)) != NormAngle360(static_cast<long>(nRotation) * 100) / 100)
+                    if (static_cast<long>(basegfx::rad2deg(fRotate)) != NormAngle360(nRotation * 100) / 100)
                     {
                         comphelper::SequenceAsHashMap aCustomShapeGeometry(xPropertySet->getPropertyValue("CustomShapeGeometry"));
-                        aCustomShapeGeometry["TextPreRotateAngle"] <<= nRotation;
+                        aCustomShapeGeometry["TextPreRotateAngle"] = uno::makeAny(nRotation);
                         xPropertySet->setPropertyValue("CustomShapeGeometry", uno::makeAny(aCustomShapeGeometry.getAsConstPropertyValueList()));
                     }
                 }
@@ -179,9 +181,9 @@ oox::core::ContextHandlerRef WpsContext::onCreateContext(sal_Int32 nElementToken
         {
             uno::Reference<beans::XPropertySet> xPropertySet(mxShape, uno::UNO_QUERY);
             oox::OptValue<OUString> presetShapeName = rAttribs.getString(XML_prst);
-            const OUString& preset = presetShapeName.get();
+            OUString preset = presetShapeName.get();
             comphelper::SequenceAsHashMap aCustomShapeGeometry(xPropertySet->getPropertyValue("CustomShapeGeometry"));
-            aCustomShapeGeometry["PresetTextWarp"] <<= preset;
+            aCustomShapeGeometry["PresetTextWarp"] = uno::makeAny(preset);
             xPropertySet->setPropertyValue("CustomShapeGeometry", uno::makeAny(aCustomShapeGeometry.getAsConstPropertyValueList()));
         }
         break;

@@ -20,7 +20,6 @@ $(eval $(call gb_CppunitTest_use_libraries,sw_rtfexport, \
     cppu \
 	cppuhelper \
     sal \
-    sfx \
 	sw \
     test \
     unotest \
@@ -41,7 +40,10 @@ $(eval $(call gb_CppunitTest_set_include,sw_rtfexport,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sw_rtfexport))
+$(eval $(call gb_CppunitTest_use_api,sw_rtfexport,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_rtfexport))
 $(eval $(call gb_CppunitTest_use_vcl,sw_rtfexport))

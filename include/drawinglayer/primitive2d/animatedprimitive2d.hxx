@@ -25,7 +25,7 @@
 #include <drawinglayer/primitive2d/groupprimitive2d.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
-#include <memory>
+
 
 // predefines
 namespace drawinglayer { namespace animation {
@@ -58,8 +58,9 @@ namespace drawinglayer
                 to an animation state [0.0 .. 1.0]. This member contains a cloned
                 definition and is owned by this implementation.
              */
-            std::unique_ptr<animation::AnimationEntry>      mpAnimationEntry;
+            animation::AnimationEntry*                      mpAnimationEntry;
 
+            /// bitfield
             /** flag if this is a text or graphic animation. Necessary since SdrViews need to differentiate
                 between both types if they are on/off
              */
@@ -82,7 +83,7 @@ namespace drawinglayer
                 bool bIsTextAnimation);
 
             /// destructor - needed due to mpAnimationEntry
-            virtual ~AnimatedSwitchPrimitive2D() override;
+            virtual ~AnimatedSwitchPrimitive2D();
 
             /// data read access
             const animation::AnimationEntry& getAnimationEntry() const { return *mpAnimationEntry; }
@@ -99,7 +100,7 @@ namespace drawinglayer
                 depends on the point in time, so the default implementation is
                 not useful here, it needs to be handled locally
              */
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer
@@ -122,10 +123,11 @@ namespace drawinglayer
             /// constructor
             AnimatedBlinkPrimitive2D(
                 const animation::AnimationEntry& rAnimationEntry,
-                const Primitive2DContainer& rChildren);
+                const Primitive2DContainer& rChildren,
+                bool bIsTextAnimation);
 
             /// create local decomposition
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()
@@ -157,10 +159,11 @@ namespace drawinglayer
             AnimatedInterpolatePrimitive2D(
                 const std::vector< basegfx::B2DHomMatrix >& rmMatrixStack,
                 const animation::AnimationEntry& rAnimationEntry,
-                const Primitive2DContainer& rChildren);
+                const Primitive2DContainer& rChildren,
+                bool bIsTextAnimation);
 
             /// create local decomposition
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()

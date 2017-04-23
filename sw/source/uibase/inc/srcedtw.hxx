@@ -35,15 +35,15 @@ class ScrollBar;
 class SwSrcView;
 class SwSrcEditWindow;
 class TextEngine;
-class TextView;
+class ExtTextView;
 class DataChangedEvent;
 
 class TextViewOutWin : public vcl::Window
 {
-    TextView*    pTextView;
+    ExtTextView*    pTextView;
 
 protected:
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
     virtual void    KeyInput( const KeyEvent& rKeyEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -55,7 +55,7 @@ public:
         TextViewOutWin(vcl::Window* pParent, WinBits nBits) :
             Window(pParent, nBits), pTextView(nullptr){}
 
-    void    SetTextView( TextView* pView ) {pTextView = pView;}
+    void    SetTextView( ExtTextView* pView ) {pTextView = pView;}
 
 };
 
@@ -64,36 +64,38 @@ class SwSrcEditWindow : public vcl::Window, public SfxListener
 private:
     class ChangesListener;
     friend class ChangesListener;
-    TextView*       m_pTextView;
-    ExtTextEngine*  m_pTextEngine;
+    ExtTextView*    pTextView;
+    ExtTextEngine*  pTextEngine;
 
-    VclPtr<TextViewOutWin> m_pOutWin;
-    VclPtr<ScrollBar>      m_pHScrollbar,
-                           m_pVScrollbar;
+    VclPtr<TextViewOutWin> pOutWin;
+    VclPtr<ScrollBar>      pHScrollbar,
+                           pVScrollbar;
 
-    SwSrcView*      m_pSrcView;
+    SwSrcView*      pSrcView;
 
-    rtl::Reference< ChangesListener > m_xListener;
+    rtl::Reference< ChangesListener > listener_;
     osl::Mutex mutex_;
     css::uno::Reference< css::beans::XMultiPropertySet >
-        m_xNotifier;
+        notifier_;
 
-    long            m_nCurTextWidth;
-    sal_uInt16          m_nStartLine;
-    rtl_TextEncoding m_eSourceEncoding;
-    bool            m_bReadonly;
-    bool            m_bHighlighting;
+    long            nCurTextWidth;
+    sal_uInt16          nStartLine;
+    rtl_TextEncoding eSourceEncoding;
+    bool            bReadonly;
+    bool            bDoSyntaxHighlight;
+    bool            bHighlighting;
 
-    Idle            m_aSyntaxIdle;
-    std::set<sal_uInt16>   m_aSyntaxLineTable;
+    Idle            aSyntaxIdle;
+    std::set<sal_uInt16>   aSyntaxLineTable;
 
     void            ImpDoHighlight( const OUString& rSource, sal_uInt16 nLineOff );
 
     using OutputDevice::SetFont;
     void            SetFont();
 
-    DECL_LINK( SyntaxTimerHdl, Timer *, void );
+    DECL_LINK_TYPED( SyntaxTimerHdl, Idle *, void );
 
+    using Window::Notify;
     using Window::Invalidate;
 
 protected:
@@ -108,37 +110,39 @@ protected:
 
     virtual void    Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-    DECL_LINK(ScrollHdl, ScrollBar*, void);
+    DECL_LINK_TYPED(ScrollHdl, ScrollBar*, void);
 
 public:
                     SwSrcEditWindow( vcl::Window* pParent, SwSrcView* pParentView );
-                    virtual ~SwSrcEditWindow() override;
+                    virtual ~SwSrcEditWindow();
     virtual void    dispose() override;
 
     void            SetScrollBarRanges();
     void            InitScrollBars();
-    void            Read(SvStream& rInput) { m_pTextEngine->Read(rInput); }
-    void            Write(SvStream& rOutput) { m_pTextEngine->Write(rOutput); }
+    void            Read(SvStream& rInput) { pTextEngine->Read(rInput); }
+    void            Write(SvStream& rOutput) { pTextEngine->Write(rOutput); }
 
-    TextView*       GetTextView()
-                        {return m_pTextView;}
+    ExtTextView*    GetTextView()
+                        {return pTextView;}
     TextEngine*     GetTextEngine()
-                        {return m_pTextEngine;}
-    SwSrcView*      GetSrcView() {return m_pSrcView;}
+                        {return pTextEngine;}
+    SwSrcView*      GetSrcView() {return pSrcView;}
 
-    TextViewOutWin* GetOutWin() {return m_pOutWin;}
+    TextViewOutWin* GetOutWin() {return pOutWin;}
 
     virtual void    Invalidate( InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
 
     void            ClearModifyFlag()
-                        { m_pTextEngine->SetModified(false); }
+                        { pTextEngine->SetModified(false); }
     bool            IsModified() const
-                        { return m_pTextEngine->IsModified();}
+                        { return pTextEngine->IsModified();}
 
-    void            SetReadonly(bool bSet){m_bReadonly = bSet;}
-    bool            IsReadonly(){return m_bReadonly;}
+    void            SetReadonly(bool bSet){bReadonly = bSet;}
+    bool            IsReadonly(){return bReadonly;}
 
-    void            SetStartLine(sal_uInt16 nLine){m_nStartLine = nLine;}
+    void            DoDelayedSyntaxHighlight( sal_uInt16 nPara );
+
+    void            SetStartLine(sal_uInt16 nLine){nStartLine = nLine;}
 
     virtual void    Command( const CommandEvent& rCEvt ) override;
     void            HandleWheelCommand( const CommandEvent& rCEvt );

@@ -30,7 +30,7 @@ class SvxSearchFormatDialog : public SfxTabDialog
 {
 public:
     SvxSearchFormatDialog( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxSearchFormatDialog() override;
+    virtual ~SvxSearchFormatDialog();
     virtual void dispose() override;
 
 protected:
@@ -51,7 +51,7 @@ class SvxSearchAttributeDialog : public ModalDialog
 public:
     SvxSearchAttributeDialog( vcl::Window* pParent, SearchAttrItemList& rLst,
                               const sal_uInt16* pWhRanges );
-    virtual ~SvxSearchAttributeDialog() override;
+    virtual ~SvxSearchAttributeDialog();
     virtual void dispose() override;
 
 private:
@@ -60,7 +60,7 @@ private:
 
     SearchAttrItemList& rList;
 
-    DECL_LINK(OKHdl, Button*, void);
+    DECL_LINK_TYPED(OKHdl, Button*, void);
 };
 
 // class SvxSearchSimilarityDialog ---------------------------------------
@@ -79,7 +79,7 @@ public:
                                 sal_uInt16 nOther,
                                 sal_uInt16 nShorter,
                                 sal_uInt16 nLonger );
-    virtual ~SvxSearchSimilarityDialog() override;
+    virtual ~SvxSearchSimilarityDialog();
     virtual void dispose() override;
 
     sal_uInt16  GetOther()      { return (sal_uInt16)m_pOtherFld->GetValue(); }

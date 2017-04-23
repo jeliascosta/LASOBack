@@ -81,40 +81,49 @@ public:
   AquaClipboard(NSPasteboard* pasteboard = nullptr,
                 bool bUseSystemClipboard = true);
 
-  virtual ~AquaClipboard() override;
+  virtual ~AquaClipboard();
   AquaClipboard(const AquaClipboard&) = delete;
   AquaClipboard& operator=(const AquaClipboard&) = delete;
 
   // XClipboard
 
-  virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents() override;
+  virtual css::uno::Reference< css::datatransfer::XTransferable > SAL_CALL getContents()
+    throw( css::uno::RuntimeException, std::exception ) override;
 
   virtual void SAL_CALL setContents( const css::uno::Reference< css::datatransfer::XTransferable >& xTransferable,
-                                     const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner ) override;
+                                     const css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner >& xClipboardOwner )
+    throw( css::uno::RuntimeException, std::exception ) override;
 
-  virtual OUString SAL_CALL getName() override;
+  virtual OUString SAL_CALL getName()
+    throw( css::uno::RuntimeException, std::exception ) override;
 
   // XClipboardEx
 
-  virtual sal_Int8 SAL_CALL getRenderingCapabilities() override;
+  virtual sal_Int8 SAL_CALL getRenderingCapabilities()
+    throw( css::uno::RuntimeException, std::exception ) override;
 
   // XClipboardNotifier
 
-  virtual void SAL_CALL addClipboardListener( const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
+  virtual void SAL_CALL addClipboardListener( const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
+    throw( css::uno::RuntimeException, std::exception ) override;
 
-  virtual void SAL_CALL removeClipboardListener( const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener ) override;
+  virtual void SAL_CALL removeClipboardListener( const css::uno::Reference< css::datatransfer::clipboard::XClipboardListener >& listener )
+    throw( css::uno::RuntimeException, std::exception ) override;
 
   // XFlushableClipboard
 
-  virtual void SAL_CALL flushClipboard( ) override;
+  virtual void SAL_CALL flushClipboard( ) throw( css::uno::RuntimeException, std::exception ) override;
 
   // XServiceInfo
 
-  virtual OUString SAL_CALL getImplementationName() override;
+  virtual OUString SAL_CALL getImplementationName()
+    throw(css::uno::RuntimeException, std::exception) override;
 
-  virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+  virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+    throw(css::uno::RuntimeException, std::exception) override;
 
-  virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+  virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception) override;
 
   /* Get a reference to the used pastboard.
    */
@@ -122,8 +131,8 @@ public:
 
   /* Notify the current clipboard owner that he is no longer the clipboard owner.
    */
-  void fireLostClipboardOwnershipEvent(css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner> const & oldOwner,
-                                       css::uno::Reference< css::datatransfer::XTransferable > const & oldContent);
+  void fireLostClipboardOwnershipEvent(css::uno::Reference< css::datatransfer::clipboard::XClipboardOwner> oldOwner,
+                                       css::uno::Reference< css::datatransfer::XTransferable > oldContent);
 
   void pasteboardChangedOwner();
 

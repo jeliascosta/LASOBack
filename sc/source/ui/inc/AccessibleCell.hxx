@@ -69,7 +69,7 @@ private:
     virtual void SAL_CALL disposing() override;
 
 protected:
-    virtual ~ScAccessibleCell() override;
+    virtual ~ScAccessibleCell();
 
     using ScAccessibleCellBase::IsDefunc;
 
@@ -85,16 +85,20 @@ public:
     ///=====  XAccessibleComponent  ============================================
 
     virtual css::uno::Reference< css::accessibility::XAccessible >
-        SAL_CALL getAccessibleAtPoint( const css::awt::Point& rPoint ) override;
+        SAL_CALL getAccessibleAtPoint( const css::awt::Point& rPoint )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL grabFocus(  ) override;
+    virtual void SAL_CALL grabFocus(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     /// Return the object's current bounding box relative to the desktop.
-    virtual tools::Rectangle GetBoundingBoxOnScreen() const override;
+    virtual Rectangle GetBoundingBoxOnScreen() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the object's current bounding box relative to the parent object.
-    virtual tools::Rectangle GetBoundingBox() const override;
+    virtual Rectangle GetBoundingBox() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
 public:
     ///=====  XAccessibleContext  ==============================================
@@ -102,38 +106,49 @@ public:
     /// Return the number of currently visible children.
     /// override to calculate this on demand
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount()
+                    throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the specified child or NULL if index is invalid.
     /// override to calculate this on demand
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild(sal_Int32 nIndex) override;
+        getAccessibleChild(sal_Int32 nIndex)
+        throw (css::uno::RuntimeException,
+                css::lang::IndexOutOfBoundsException, std::exception) override;
 
     /// Return the set of current states.
     virtual css::uno::Reference<
             css::accessibility::XAccessibleStateSet> SAL_CALL
-        getAccessibleStateSet() override;
+        getAccessibleStateSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<
         css::accessibility::XAccessibleRelationSet> SAL_CALL
-           getAccessibleRelationSet() override;
+           getAccessibleRelationSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     ///=====  XServiceInfo  ====================================================
 
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Returns a list of all supported services.
     */
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Any SAL_CALL getExtendedAttributes() override;
+    virtual css::uno::Any SAL_CALL getExtendedAttributes()
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException,
+               std::exception) override;
 
     // Override this method to handle cell's ParaIndent attribute specially.
-    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes ) override;
+    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes )
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 private:
     ScTabViewShell* mpViewShell;
     ScAccessibleDocument* mpAccDoc;
@@ -152,7 +167,7 @@ private:
 
     ::std::unique_ptr< SvxEditSource > CreateEditSource(ScTabViewShell* pViewShell, ScAddress aCell, ScSplitPos eSplitPos);
 
-    void FillDependents(utl::AccessibleRelationSetHelper* pRelationSet);
+    void FillDependends(utl::AccessibleRelationSetHelper* pRelationSet);
     void FillPrecedents(utl::AccessibleRelationSetHelper* pRelationSet);
     void AddRelation(const ScAddress& rCell,
         const sal_uInt16 aRelationType,

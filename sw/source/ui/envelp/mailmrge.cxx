@@ -24,6 +24,7 @@
 #include <tools/urlobj.hxx>
 #include <svl/urihelper.hxx>
 #include <unotools/pathoptions.hxx>
+#include <svl/mailenum.hxx>
 #include <svx/svxdlg.hxx>
 #include <svx/dialogs.hrc>
 #include <helpid.h>
@@ -89,16 +90,20 @@ class SwXSelChgLstnr_Impl : public cppu::WeakImplHelper
     SwMailMergeDlg& rParent;
 public:
     explicit SwXSelChgLstnr_Impl(SwMailMergeDlg& rParentDlg);
+    virtual ~SwXSelChgLstnr_Impl();
 
-    virtual void SAL_CALL selectionChanged( const EventObject& aEvent ) override;
-    virtual void SAL_CALL disposing( const EventObject& Source ) override;
+    virtual void SAL_CALL selectionChanged( const EventObject& aEvent ) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const EventObject& Source ) throw (RuntimeException, std::exception) override;
 };
 
 SwXSelChgLstnr_Impl::SwXSelChgLstnr_Impl(SwMailMergeDlg& rParentDlg) :
     rParent(rParentDlg)
 {}
 
-void SwXSelChgLstnr_Impl::selectionChanged( const EventObject&  )
+SwXSelChgLstnr_Impl::~SwXSelChgLstnr_Impl()
+{}
+
+void SwXSelChgLstnr_Impl::selectionChanged( const EventObject&  ) throw (RuntimeException, std::exception)
 {
     //call the parent to enable selection mode
     Sequence <Any> aSelection;
@@ -115,7 +120,7 @@ void SwXSelChgLstnr_Impl::selectionChanged( const EventObject&  )
     }
 }
 
-void SwXSelChgLstnr_Impl::disposing( const EventObject&  )
+void SwXSelChgLstnr_Impl::disposing( const EventObject&  ) throw (RuntimeException, std::exception)
 {
     OSL_FAIL("disposing");
 }
@@ -151,7 +156,7 @@ SwMailMergeDlg::SwMailMergeDlg(vcl::Window* pParent, SwWrtShell& rShell,
 
     get(m_pSaveMergedDocumentFT, "savemergeddoclabel");
     get(m_pSaveSingleDocRB, "singledocument");
-    get(m_pSaveIndividualRB, "individualdocuments");
+    get(m_pSaveIndividualRB, "idividualdocuments");
     get(m_pGenerateFromDataBaseCB, "generate");
 
     get(m_pColumnFT, "fieldlabel");
@@ -375,7 +380,7 @@ void SwMailMergeDlg::dispose()
         OUString* pData = static_cast< OUString* >( m_pFilterLB->GetEntryData(nFilter) );
         delete pData;
     }
-    pImpl.reset();
+    delete pImpl;
     m_pBeamerWin.clear();
     m_pAllRB.clear();
     m_pMarkedRB.clear();
@@ -415,7 +420,7 @@ void SwMailMergeDlg::Apply()
 {
 }
 
-IMPL_LINK( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
 {
     if (pBtn == m_pOkBTN) {
         if( ExecQryShell() )
@@ -423,7 +428,7 @@ IMPL_LINK( SwMailMergeDlg, ButtonHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
 {
     bool bPrint = pBtn == m_pPrinterRB;
     m_pSingleJobsCB->Enable(bPrint);
@@ -446,7 +451,7 @@ IMPL_LINK( SwMailMergeDlg, OutputTypeHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
+IMPL_LINK_TYPED( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
 {
     bool bIndividual = pBtn == m_pSaveIndividualRB;
 
@@ -464,7 +469,7 @@ IMPL_LINK( SwMailMergeDlg, SaveTypeHdl, Button*,  pBtn, void )
     }
 }
 
-IMPL_LINK( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
+IMPL_LINK_TYPED( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
 {
     bool bEnable = static_cast<CheckBox*>(pBox)->IsChecked();
     m_pColumnFT->Enable( bEnable );
@@ -476,7 +481,7 @@ IMPL_LINK( SwMailMergeDlg, FilenameHdl, Button*, pBox, void )
     m_pFilterLB->Enable( bEnable );
 }
 
-IMPL_LINK_NOARG(SwMailMergeDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwMailMergeDlg, ModifyHdl, Edit&, void)
 {
     m_pFromRB->Check();
 }
@@ -594,7 +599,7 @@ OUString SwMailMergeDlg::GetTargetURL() const
     return sPath;
 }
 
-IMPL_LINK_NOARG(SwMailMergeDlg, InsertPathHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwMailMergeDlg, InsertPathHdl, Button*, void)
 {
     uno::Reference< XComponentContext > xContext( ::comphelper::getProcessComponentContext() );
     uno::Reference < XFolderPicker2 > xFP = FolderPicker::create(xContext);

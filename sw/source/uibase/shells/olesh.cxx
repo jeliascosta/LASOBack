@@ -21,7 +21,7 @@
 #include <sfx2/request.hxx>
 #include <sfx2/objface.hxx>
 #include <sfx2/objitem.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <wrtsh.hxx>
 #include <view.hxx>
 #include <helpid.h>
@@ -30,6 +30,7 @@
 #include <olesh.hxx>
 
 #include <cmdid.h>
+#include <popup.hrc>
 #include <shells.hrc>
 
 #define SwOleShell
@@ -42,7 +43,7 @@ void SwOleShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("oleobject");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_OLE_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_OLE_TOOLBOX);
 }
 
 SwOleShell::SwOleShell(SwView &_rView) :
@@ -50,7 +51,8 @@ SwOleShell::SwOleShell(SwView &_rView) :
 
 {
     SetName("Object");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::OLE));
+    SetHelpId(SW_OLESHELL);
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_OLE));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

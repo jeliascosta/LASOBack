@@ -22,28 +22,27 @@
 #include "MutexContainer.hxx"
 #include "ModifyListenerHelper.hxx"
 #include "charttoolsdllapi.hxx"
+#include "LineProperties.hxx"
 
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/uno3.hxx>
 
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/beans/XPropertyState.hpp>
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include <com/sun/star/lang/XServiceInfo.hpp>
+#include <com/sun/star/lang/XServiceName.hpp>
+#include <com/sun/star/util/XCloneable.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <com/sun/star/chart2/data/XDataSource.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/beans/XPropertyState.hpp>
 #include <com/sun/star/chart/ErrorBarStyle.hpp>
-#include <com/sun/star/drawing/LineStyle.hpp>
-#include <com/sun/star/drawing/LineJoint.hpp>
-#include <com/sun/star/drawing/LineDash.hpp>
-#include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/lang/XServiceName.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/XComponentContext.hpp>
-#include <com/sun/star/util/XCloneable.hpp>
-#include <com/sun/star/util/Color.hpp>
 
 namespace chart
 {
+
+OOO_DLLPUBLIC_CHARTTOOLS    css::uno::Reference< css::beans::XPropertySet > createErrorBar(
+    const css::uno::Reference< css::uno::XComponentContext > & xContext );
 
 namespace impl
 {
@@ -61,16 +60,10 @@ typedef ::cppu::WeakImplHelper<
 
 class ErrorBar :
         public MutexContainer,
-        public impl::ErrorBar_Base
+        public impl::ErrorBar_Base,
+        public LineProperties
 {
 private:
-    OUString maDashName;
-    css::drawing::LineDash maLineDash;
-    sal_Int32 mnLineWidth;
-    css::drawing::LineStyle meLineStyle;
-    css::util::Color maLineColor;
-    sal_Int16 mnLineTransparence;
-    css::drawing::LineJoint meLineJoint;
     bool mbShowPositiveError;
     bool mbShowNegativeError;
     double mfPositiveError;
@@ -79,59 +72,85 @@ private:
     sal_Int32 meStyle;
 
 public:
-    OOO_DLLPUBLIC_CHARTTOOLS explicit ErrorBar();
-    virtual ~ErrorBar() override;
+    explicit ErrorBar( const css::uno::Reference< css::uno::XComponentContext > & xContext );
+    virtual ~ErrorBar();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+        getPropertySetInfo() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue )
+        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName )
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XPropertyState
-    virtual css::beans::PropertyState SAL_CALL getPropertyState( const OUString& rPropName ) override;
+    virtual css::beans::PropertyState SAL_CALL getPropertyState( const OUString& rPropName )
+        throw (css::beans::UnknownPropertyException, std::exception) override;
     virtual css::uno::Sequence< css::beans::PropertyState > SAL_CALL getPropertyStates(
-            const css::uno::Sequence< OUString >& rPropNames ) override;
-    virtual void SAL_CALL setPropertyToDefault( const OUString& rPropName ) override;
-    virtual css::uno::Any SAL_CALL getPropertyDefault( const OUString& rPropName ) override;
+            const css::uno::Sequence< OUString >& rPropNames )
+        throw (css::beans::UnknownPropertyException, std::exception) override;
+    virtual void SAL_CALL setPropertyToDefault( const OUString& rPropName )
+        throw (css::beans::UnknownPropertyException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyDefault( const OUString& rPropName )
+        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, std::exception) override;
 
 protected:
     ErrorBar( const ErrorBar & rOther );
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyBroadcaster ____
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent ) override;
+        const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source ) override;
+        const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDataSink ____
-    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > >& aData ) override;
+    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > >& aData )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDataSource ____
-    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences() override;
+    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
-    typedef std::vector< css::uno::Reference<
+    css::uno::Reference< css::uno::XComponentContext >
+                        m_xContext;
+
+    typedef ::std::vector< css::uno::Reference<
             css::chart2::data::XLabeledDataSequence > > tDataSequenceContainer;
     tDataSequenceContainer m_aDataSequences;
 

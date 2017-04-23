@@ -21,19 +21,20 @@
 
 #include <unotools/unotoolsdllapi.h>
 #include <unotools/configitem.hxx>
-#include <memory>
 
 struct SvtFilterOptions_Impl;
 class UNOTOOLS_DLLPUBLIC SvtFilterOptions : public utl::ConfigItem
 {
 private:
-    std::unique_ptr<SvtFilterOptions_Impl> pImpl;
+    SvtFilterOptions_Impl* pImp;
+
+    const css::uno::Sequence<OUString>& GetPropertyNames();
 
     virtual void            ImplCommit() override;
 
 public:
                     SvtFilterOptions();
-    virtual        ~SvtFilterOptions() override;
+    virtual        ~SvtFilterOptions();
 
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
     void                    Load();

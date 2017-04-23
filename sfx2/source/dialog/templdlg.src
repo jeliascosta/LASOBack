@@ -21,19 +21,17 @@
 #include "dialog.hrc"
 #include "helpid.hrc"
 
-Bitmap RID_SFXBMP_WATERCAN
+ImageList DLG_STYLE_DESIGNER
 {
-    File = "sc05554.png";
-};
-
-Bitmap RID_SFXBMP_NEW_BY_EXAMPLE
-{
-    File = "sc05555.png";
-};
-
-Bitmap RID_SFXBMP_UPDATE_BY_EXAMPLE
-{
-    File = "sc05556.png";
+    Prefix = "sc";
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
+    IdList =
+    {
+        SID_STYLE_WATERCAN ;
+        SID_STYLE_NEW_BY_EXAMPLE ;
+        SID_STYLE_UPDATE_BY_EXAMPLE ;
+    };
+    IdCount = { 3 ; };
 };
 
 // Strings ---------------------------------------------------------------
@@ -45,21 +43,6 @@ String STR_STYLE_ELEMTLIST
 String STR_STYLE_FILTER_HIERARCHICAL
 {
     Text [ en-US ] = "Hierarchical" ;
-};
-
-String STR_STYLE_FILL_FORMAT_MODE
-{
-    Text [ en-US ] = "Fill Format Mode" ;
-};
-
-String STR_STYLE_NEW_STYLE_FROM_SELECTION
-{
-    Text [ en-US ] = "New Style from Selection" ;
-};
-
-String STR_STYLE_UPDATE_STYLE
-{
-    Text [ en-US ] = "Update Style" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

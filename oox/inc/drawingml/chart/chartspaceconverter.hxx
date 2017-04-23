@@ -37,7 +37,7 @@ class ChartSpaceConverter : public ConverterBase< ChartSpaceModel >
 {
 public:
     explicit            ChartSpaceConverter( const ConverterRoot& rParent, ChartSpaceModel& rModel );
-    virtual             ~ChartSpaceConverter() override;
+    virtual             ~ChartSpaceConverter();
 
     /** Converts the contained OOXML chart model to a chart2 document. */
     void                convertFromModel(

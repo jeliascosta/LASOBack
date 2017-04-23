@@ -30,7 +30,7 @@
 
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
-#include <com/sun/star/lang/NoSupportException.hpp>
+
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/xforms/XModel.hpp>
@@ -284,6 +284,7 @@ Submission* Submission::getSubmission(
 
 
 void Submission::liveCheck()
+    throw( RuntimeException )
 {
     bool bValid = mxModel.is();
 
@@ -326,7 +327,7 @@ Model* Submission::getModelImpl() const
 
 #define REGISTER_PROPERTY_BOOL( property )   \
     registerProperty( PROPERTY( property, bool ), \
-    new BooleanPropertyAccessor< Submission >( this, &Submission::set##property, &Submission::get##property ) );
+    new BooleanPropertyAccessor< Submission, bool >( this, &Submission::set##property, &Submission::get##property ) );
 
 void Submission::initializePropertySet()
 {
@@ -354,6 +355,7 @@ void Submission::initializePropertySet()
 
 sal_Bool SAL_CALL Submission::convertFastPropertyValue(
     Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue )
+    throw ( IllegalArgumentException )
 {
     if ( nHandle == HANDLE_IncludeNamespacePrefixes )
     {
@@ -376,11 +378,13 @@ sal_Bool SAL_CALL Submission::convertFastPropertyValue(
 }
 
 OUString SAL_CALL Submission::getName()
+    throw( RuntimeException, std::exception )
 {
     return getID();
 }
 
 void SAL_CALL Submission::setName( const OUString& sID )
+    throw( RuntimeException, std::exception )
 {
     setID( sID );
 }
@@ -388,6 +392,7 @@ void SAL_CALL Submission::setName( const OUString& sID )
 
 sal_Int64 SAL_CALL Submission::getSomething(
     const Sequence<sal_Int8>& aId )
+    throw( RuntimeException, std::exception )
 {
     return ( aId == getUnoTunnelID() ) ? reinterpret_cast<sal_Int64>(this) : 0;
 }
@@ -401,6 +406,9 @@ static OUString lcl_message( const OUString& rID, const OUString& rText )
 
 void SAL_CALL Submission::submitWithInteraction(
     const Reference<XInteractionHandler>& _rxHandler )
+    throw ( VetoException,
+            WrappedTargetException,
+            RuntimeException, std::exception )
 {
     // as long as this class is not really threadsafe, we need to copy
     // the members we're interested in
@@ -426,7 +434,7 @@ void SAL_CALL Submission::submitWithInteraction(
 
         if( _rxHandler.is() )
         {
-            // laboriously create interaction request
+            // labouriously create interaction request
             comphelper::OInteractionRequest* pRequest
                 = new comphelper::OInteractionRequest(
                     makeAny( aInvalidDataException ) );
@@ -489,18 +497,18 @@ void SAL_CALL Submission::submitWithInteraction(
     }
 }
 
-void SAL_CALL Submission::submit( )
+void SAL_CALL Submission::submit( ) throw ( VetoException, WrappedTargetException, RuntimeException, std::exception )
 {
     submitWithInteraction( nullptr );
 }
 
-void SAL_CALL Submission::addSubmissionVetoListener( const Reference< XSubmissionVetoListener >& /*listener*/ )
+void SAL_CALL Submission::addSubmissionVetoListener( const Reference< XSubmissionVetoListener >& /*listener*/ ) throw (NoSupportException, RuntimeException, std::exception)
 {
     // TODO
     throw NoSupportException();
 }
 
-void SAL_CALL Submission::removeSubmissionVetoListener( const Reference< XSubmissionVetoListener >& /*listener*/ )
+void SAL_CALL Submission::removeSubmissionVetoListener( const Reference< XSubmissionVetoListener >& /*listener*/ ) throw (NoSupportException, RuntimeException, std::exception)
 {
     // TODO
     throw NoSupportException();
@@ -582,31 +590,31 @@ Reference< XDocumentFragment > Submission::createSubmissionDocument(const Refere
 
 // some forwarding: XPropertySet is implemented in our base class,
 // but also available as base of XSubmission
-Reference< css::beans::XPropertySetInfo > SAL_CALL Submission::getPropertySetInfo(  )
+Reference< css::beans::XPropertySetInfo > SAL_CALL Submission::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return PropertySetBase::getPropertySetInfo();
 }
-void SAL_CALL Submission::setPropertyValue( const OUString& aPropertyName, const Any& aValue )
+void SAL_CALL Submission::setPropertyValue( const OUString& aPropertyName, const Any& aValue ) throw(UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     PropertySetBase::setPropertyValue( aPropertyName, aValue );
 }
-Any SAL_CALL Submission::getPropertyValue( const OUString& PropertyName )
+Any SAL_CALL Submission::getPropertyValue( const OUString& PropertyName ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     return PropertySetBase::getPropertyValue( PropertyName );
 }
-void SAL_CALL Submission::addPropertyChangeListener( const OUString& aPropertyName, const Reference< css::beans::XPropertyChangeListener >& xListener )
+void SAL_CALL Submission::addPropertyChangeListener( const OUString& aPropertyName, const Reference< css::beans::XPropertyChangeListener >& xListener ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     PropertySetBase::addPropertyChangeListener( aPropertyName, xListener );
 }
-void SAL_CALL Submission::removePropertyChangeListener( const OUString& aPropertyName, const Reference< css::beans::XPropertyChangeListener >& aListener )
+void SAL_CALL Submission::removePropertyChangeListener( const OUString& aPropertyName, const Reference< css::beans::XPropertyChangeListener >& aListener ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     PropertySetBase::removePropertyChangeListener( aPropertyName, aListener );
 }
-void SAL_CALL Submission::addVetoableChangeListener( const OUString& PropertyName, const Reference< css::beans::XVetoableChangeListener >& aListener )
+void SAL_CALL Submission::addVetoableChangeListener( const OUString& PropertyName, const Reference< css::beans::XVetoableChangeListener >& aListener ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     PropertySetBase::addVetoableChangeListener( PropertyName, aListener );
 }
-void SAL_CALL Submission::removeVetoableChangeListener( const OUString& PropertyName, const Reference< css::beans::XVetoableChangeListener >& aListener )
+void SAL_CALL Submission::removeVetoableChangeListener( const OUString& PropertyName, const Reference< css::beans::XVetoableChangeListener >& aListener ) throw(UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     PropertySetBase::removeVetoableChangeListener( PropertyName, aListener );
 }

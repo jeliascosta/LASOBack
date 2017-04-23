@@ -25,7 +25,7 @@ class XMLTextOrientationHdl : public XMLPropertyHandler
 {
 private:
 public:
-    virtual ~XMLTextOrientationHdl() override;
+    virtual ~XMLTextOrientationHdl();
 
     virtual bool importXML( const OUString& rStrImpValue,
                                 css::uno::Any& rValue,

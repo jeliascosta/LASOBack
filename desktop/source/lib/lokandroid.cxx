@@ -257,7 +257,7 @@ extern "C" SAL_JNI_EXPORT void JNICALL Java_org_libreoffice_kit_Document_initial
     pDocument->pClass->initializeForRendering(pDocument, NULL);
 }
 
-extern "C" SAL_JNI_EXPORT jint JNICALL Java_org_libreoffice_kit_Document_saveAs
+extern "C" SAL_JNI_EXPORT jint JNICALL Java_org_libreoffice_kit_Office_saveAs
     (JNIEnv* pEnv, jobject aObject, jstring sUrl, jstring sFormat, jstring sOptions)
 {
     LibreOfficeKitDocument* pDocument = getHandle<LibreOfficeKitDocument>(pEnv, aObject);
@@ -321,8 +321,7 @@ extern "C" SAL_JNI_EXPORT jstring JNICALL Java_org_libreoffice_kit_Document_getT
     const char* pMimeType = pEnv->GetStringUTFChars(mimeType, NULL);
 
     char* pUsedMimeType = 0;
-    LibreOfficeKitDocumentClass* pcls = pDocument->pClass;
-    char* pSelection = pcls->getTextSelection(pDocument, pMimeType, &pUsedMimeType);
+    char* pSelection = pDocument->pClass->getTextSelection(pDocument, pMimeType, &pUsedMimeType);
     free(pUsedMimeType);
 
     pEnv->ReleaseStringUTFChars(mimeType, pMimeType);

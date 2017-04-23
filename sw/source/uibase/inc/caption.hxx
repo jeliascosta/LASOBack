@@ -47,43 +47,43 @@ public:
     InsCaptionOpt(const InsCaptionOpt&);
     ~InsCaptionOpt();
 
-    bool&            UseCaption()                    { return bUseCaption; }
-    bool             UseCaption() const              { return bUseCaption; }
+    inline bool&            UseCaption()                    { return bUseCaption; }
+    inline bool             UseCaption() const              { return bUseCaption; }
 
-    SwCapObjType     GetObjType() const              { return eObjType; }
+    inline SwCapObjType     GetObjType() const              { return eObjType; }
 
-    const SvGlobalName&  GetOleId() const                { return aOleId; }
+    inline const SvGlobalName&  GetOleId() const                { return aOleId; }
 
-    const OUString&  GetCategory() const             { return sCategory; }
-    void             SetCategory(const OUString& rCat) { sCategory = rCat; }
+    inline const OUString&  GetCategory() const             { return sCategory; }
+    inline void             SetCategory(const OUString& rCat) { sCategory = rCat; }
 
-    sal_uInt16           GetNumType() const              { return nNumType; }
-    void             SetNumType(const sal_uInt16 nNT)    { nNumType = nNT; }
+    inline sal_uInt16           GetNumType() const              { return nNumType; }
+    inline void             SetNumType(const sal_uInt16 nNT)    { nNumType = nNT; }
 
     const OUString&  GetNumSeparator() const { return sNumberSeparator; }
     void                    SetNumSeparator(const OUString& rSet) {sNumberSeparator = rSet;}
 
-    const OUString&  GetCaption() const              { return sCaption; }
-    void             SetCaption(const OUString& rCap)  { sCaption = rCap; }
+    inline const OUString&  GetCaption() const              { return sCaption; }
+    inline void             SetCaption(const OUString& rCap)  { sCaption = rCap; }
 
-    sal_uInt16           GetPos() const                  { return nPos; }
-    void             SetPos(const sal_uInt16 nP)         { nPos = nP; }
+    inline sal_uInt16           GetPos() const                  { return nPos; }
+    inline void             SetPos(const sal_uInt16 nP)         { nPos = nP; }
 
-    sal_uInt16           GetLevel() const                { return nLevel; }
-    void             SetLevel(const sal_uInt16 nLvl)     { nLevel = nLvl; }
+    inline sal_uInt16           GetLevel() const                { return nLevel; }
+    inline void             SetLevel(const sal_uInt16 nLvl)     { nLevel = nLvl; }
 
-    const OUString&  GetSeparator() const                { return sSeparator; }
-    void             SetSeparator(const OUString& rSep)    { sSeparator = rSep; }
+    inline const OUString&  GetSeparator() const                { return sSeparator; }
+    inline void             SetSeparator(const OUString& rSep)    { sSeparator = rSep; }
 
     const OUString&         GetCharacterStyle() const { return sCharacterStyle; }
     void                    SetCharacterStyle(const OUString& rStyle)
                                     { sCharacterStyle = rStyle; }
 
-    bool&            IgnoreSeqOpts()                 { return bIgnoreSeqOpts; }
-    bool             IgnoreSeqOpts() const           { return bIgnoreSeqOpts; }
+    inline bool&            IgnoreSeqOpts()                 { return bIgnoreSeqOpts; }
+    inline bool             IgnoreSeqOpts() const           { return bIgnoreSeqOpts; }
 
-    bool&            CopyAttributes()                { return bCopyAttributes; }
-    bool             CopyAttributes() const          { return bCopyAttributes; }
+    inline bool&            CopyAttributes()                { return bCopyAttributes; }
+    inline bool             CopyAttributes() const          { return bCopyAttributes; }
 
     InsCaptionOpt&          operator= ( const InsCaptionOpt& rOpt );
 };

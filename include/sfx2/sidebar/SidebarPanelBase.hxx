@@ -19,10 +19,10 @@
 #ifndef INCLUDED_SFX2_SIDEBAR_SIDEBARPANELBASE_HXX
 #define INCLUDED_SFX2_SIDEBAR_SIDEBARPANELBASE_HXX
 
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <sfx2/sidebar/IContextChangeReceiver.hxx>
 
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase5.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 #include <com/sun/star/frame/XController.hpp>
@@ -39,12 +39,16 @@ namespace vcl { class Window; }
 
 namespace sfx2 { namespace sidebar {
 
-typedef cppu::WeakComponentImplHelper<css::ui::XContextChangeEventListener,
+namespace
+{
+
+typedef cppu::WeakComponentImplHelper5<css::ui::XContextChangeEventListener,
                                        css::ui::XUIElement,
                                        css::ui::XToolPanel,
                                        css::ui::XSidebarPanel,
                                        css::ui::XUpdateModel>
             SidebarPanelBaseInterfaceBase;
+}
 
 /** Base class for sidebar panels that provides some convenience
     functionality.
@@ -59,39 +63,51 @@ public:
                                                            const css::ui::LayoutSize& rLayoutSize);
 
     // XContextChangeEventListener
-    virtual void SAL_CALL notifyContextChangeEvent (const css::ui::ContextChangeEventObject& rEvent) override;
+    virtual void SAL_CALL notifyContextChangeEvent (const css::ui::ContextChangeEventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XUIElement
-    virtual css::uno::Reference<css::frame::XFrame> SAL_CALL getFrame() override;
-    virtual OUString SAL_CALL getResourceURL() override;
-    virtual sal_Int16 SAL_CALL getType() override;
-    virtual css::uno::Reference<css::uno::XInterface> SAL_CALL getRealInterface() override;
+    virtual css::uno::Reference<css::frame::XFrame> SAL_CALL getFrame()
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getResourceURL()
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getType()
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::uno::XInterface> SAL_CALL getRealInterface()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XToolPanel
     virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL createAccessible(
-                const css::uno::Reference<css::accessibility::XAccessible>& rxParentAccessible) override;
-    virtual css::uno::Reference<css::awt::XWindow> SAL_CALL getWindow() override;
+                const css::uno::Reference<css::accessibility::XAccessible>& rxParentAccessible)
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference<css::awt::XWindow> SAL_CALL getWindow()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XSidebarPanel
-    virtual css::ui::LayoutSize SAL_CALL getHeightForWidth(sal_Int32 nWidth) override;
-    virtual sal_Int32 SAL_CALL getMinimalWidth() override;
+    virtual css::ui::LayoutSize SAL_CALL getHeightForWidth(sal_Int32 nWidth)
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getMinimalWidth()
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XUpdateModel
-    virtual void SAL_CALL updateModel(const css::uno::Reference<css::frame::XModel>& xModel) override;
+    virtual void SAL_CALL updateModel(const css::uno::Reference<css::frame::XModel>& xModel)
+        throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
     css::uno::Reference<css::frame::XFrame> mxFrame;
 
     SidebarPanelBase(const OUString& rsResourceURL, const css::uno::Reference<css::frame::XFrame>& rxFrame,
                      vcl::Window* pWindow, const css::ui::LayoutSize& rLayoutSize);
-    virtual ~SidebarPanelBase() override;
+    virtual ~SidebarPanelBase();
     SidebarPanelBase(const SidebarPanelBase&) = delete;
     SidebarPanelBase& operator=( const SidebarPanelBase& ) = delete;
 
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing()
+        throw (css::uno::RuntimeException) override;
 
 private:
     VclPtr<vcl::Window> mpControl;

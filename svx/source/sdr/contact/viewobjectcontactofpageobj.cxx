@@ -46,7 +46,7 @@ private:
 public:
     // basic constructor/destructor
     explicit PagePrimitiveExtractor(ViewObjectContactOfPageObj& rVOC);
-    virtual ~PagePrimitiveExtractor() override;
+    virtual ~PagePrimitiveExtractor();
 
     // LazyInvalidate request. Supported here to not automatically
     // invalidate the second interaction state all the time at the
@@ -54,7 +54,7 @@ public:
     virtual void setLazyInvalidate(ViewObjectContact& rVOC) override;
 
     // From baseclass Timer, the timeout call triggered by the LazyInvalidate mechanism
-    virtual void Invoke() final override;
+    virtual void Invoke() override;
 
     // get primitive visualization
     drawinglayer::primitive2d::Primitive2DContainer createPrimitive2DSequenceForPage(const DisplayInfo& rDisplayInfo);
@@ -77,14 +77,14 @@ public:
 
 PagePrimitiveExtractor::PagePrimitiveExtractor(
     ViewObjectContactOfPageObj& rVOC)
-:   ObjectContactOfPagePainter(rVOC.GetObjectContact()),
+:   ObjectContactOfPagePainter(nullptr, rVOC.GetObjectContact()),
     mrViewObjectContactOfPageObj(rVOC)
 {
     // make this renderer a preview renderer
     setPreviewRenderer(true);
 
     // init timer
-    SetPriority(TaskPriority::HIGH);
+    SetPriority(SchedulerPriority::HIGH);
     Stop();
 }
 
@@ -197,7 +197,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewObjectContactOfPageObj::crea
     // get PageObject's geometry
     basegfx::B2DHomMatrix aPageObjectTransform;
     {
-        const tools::Rectangle aPageObjectModelData(rPageObject.GetLastBoundRect());
+        const Rectangle aPageObjectModelData(rPageObject.GetLastBoundRect());
         const basegfx::B2DRange aPageObjectBound(
             aPageObjectModelData.Left(), aPageObjectModelData.Top(),
             aPageObjectModelData.Right(), aPageObjectModelData.Bottom());
@@ -270,7 +270,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewObjectContactOfPageObj::crea
         {
             const uno::Reference< drawing::XDrawPage > xDrawPage(GetXDrawPageForSdrPage(const_cast< SdrPage*>(pPage)));
             const drawinglayer::primitive2d::Primitive2DReference xPagePreview(new drawinglayer::primitive2d::PagePreviewPrimitive2D(
-                xDrawPage, aPageObjectTransform, fPageWidth, fPageHeight, xPageContent));
+                xDrawPage, aPageObjectTransform, fPageWidth, fPageHeight, xPageContent, true));
             xRetval = drawinglayer::primitive2d::Primitive2DContainer { xPagePreview };
         }
     }

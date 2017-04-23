@@ -19,6 +19,8 @@
 
 #include <sal/config.h>
 
+#include <ctype.h>
+
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
 #include <basegfx/point/b2dpoint.hxx>
@@ -80,14 +82,14 @@ namespace dxcanvas
 
         uno::Reference< awt::XWindow > xParentWindow;
         maArguments[4] >>= xParentWindow;
-        auto pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if( !pParentWindow )
             throw lang::NoSupportException( "Parent window not VCL window, or canvas out-of-process!" );
 
         awt::Rectangle aRect;
         maArguments[2] >>= aRect;
 
-        bool bIsFullscreen( false );
+        sal_Bool bIsFullscreen( sal_False );
         maArguments[3] >>= bIsFullscreen;
 
         // setup helper
@@ -114,40 +116,40 @@ namespace dxcanvas
         SpriteCanvasBaseT::disposeThis();
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         // avoid repaints on hidden window (hidden: not mapped to
         // screen). Return failure, since the screen really has _not_
         // been updated (caller should try again later)
-        return mbIsVisible && SpriteCanvasBaseT::showBuffer( bUpdateAll );
+        return !mbIsVisible ? false : SpriteCanvasBaseT::showBuffer( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         // avoid repaints on hidden window (hidden: not mapped to
         // screen). Return failure, since the screen really has _not_
         // been updated (caller should try again later)
-        return mbIsVisible && SpriteCanvasBaseT::switchBuffer( bUpdateAll );
+        return !mbIsVisible ? false : SpriteCanvasBaseT::switchBuffer( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll ) throw (uno::RuntimeException)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         // avoid repaints on hidden window (hidden: not mapped to
         // screen). Return failure, since the screen really has _not_
         // been updated (caller should try again later)
-        return mbIsVisible && maCanvasHelper.updateScreen(
+        return !mbIsVisible ? false : maCanvasHelper.updateScreen(
             ::basegfx::unotools::b2IRectangleFromAwtRectangle(maBounds),
             bUpdateAll,
             mbSurfaceDirty );
     }
 
-    OUString SAL_CALL SpriteCanvas::getServiceName(  )
+    OUString SAL_CALL SpriteCanvas::getServiceName(  ) throw (uno::RuntimeException)
     {
         return OUString( SPRITECANVAS_SERVICE_NAME );
     }
@@ -178,7 +180,7 @@ namespace dxcanvas
         return xRet;
     }
 
-    sdecl::class_<SpriteCanvas, sdecl::with_args<true> > const serviceImpl(&initCanvas);
+    sdecl::class_<SpriteCanvas, sdecl::with_args<true> > serviceImpl(&initCanvas);
     const sdecl::ServiceDecl dxSpriteCanvasDecl(
         serviceImpl,
         SPRITECANVAS_IMPLEMENTATION_NAME,

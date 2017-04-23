@@ -47,15 +47,15 @@ jclass java_sql_Clob::getMyClass() const
     return theClass;
 }
 
-sal_Int64 SAL_CALL java_sql_Clob::length(  )
+sal_Int64 SAL_CALL java_sql_Clob::length(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     jlong out(0);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
 
     {
         // initialize temporary variable
-        static const char * const cSignature = "()J";
-        static const char * const cMethodName = "length";
+        static const char * cSignature = "()J";
+        static const char * cMethodName = "length";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -65,14 +65,14 @@ sal_Int64 SAL_CALL java_sql_Clob::length(  )
     return (sal_Int64)out;
 }
 
-OUString SAL_CALL java_sql_Clob::getSubString( sal_Int64 pos, sal_Int32 subStringLength )
+OUString SAL_CALL java_sql_Clob::getSubString( sal_Int64 pos, sal_Int32 subStringLength ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
     OUString aStr;
     {
         // initialize temporary variable
-        static const char * const cSignature = "(JI)Ljava/lang/String;";
-        static const char * const cMethodName = "getSubString";
+        static const char * cSignature = "(JI)Ljava/lang/String;";
+        static const char * cMethodName = "getSubString";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -84,7 +84,7 @@ OUString SAL_CALL java_sql_Clob::getSubString( sal_Int64 pos, sal_Int32 subStrin
     return  aStr;
 }
 
-css::uno::Reference< css::io::XInputStream > SAL_CALL java_sql_Clob::getCharacterStream(  )
+::com::sun::star::uno::Reference< ::com::sun::star::io::XInputStream > SAL_CALL java_sql_Clob::getCharacterStream(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     SDBThreadAttach t;
     static jmethodID mID(nullptr);
@@ -94,7 +94,7 @@ css::uno::Reference< css::io::XInputStream > SAL_CALL java_sql_Clob::getCharacte
     return out==nullptr ? nullptr : new java_io_Reader( t.pEnv, out );
 }
 
-sal_Int64 SAL_CALL java_sql_Clob::position( const OUString& searchstr, sal_Int32 start )
+sal_Int64 SAL_CALL java_sql_Clob::position( const OUString& searchstr, sal_Int32 start ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     jlong out(0);
     SDBThreadAttach t; OSL_ENSURE(t.pEnv,"Java Enviroment geloescht worden!");
@@ -104,8 +104,8 @@ sal_Int64 SAL_CALL java_sql_Clob::position( const OUString& searchstr, sal_Int32
         // convert Parameter
         args[0].l = convertwchar_tToJavaString(t.pEnv,searchstr);
         // initialize temporary Variable
-        static const char * const cSignature = "(Ljava/lang/String;I)J";
-        static const char * const cMethodName = "position";
+        static const char * cSignature = "(Ljava/lang/String;I)J";
+        static const char * cMethodName = "position";
         // execute Java-Call
         static jmethodID mID(nullptr);
         obtainMethodId_throwSQL(t.pEnv, cMethodName,cSignature, mID);
@@ -116,7 +116,7 @@ sal_Int64 SAL_CALL java_sql_Clob::position( const OUString& searchstr, sal_Int32
     return (sal_Int64)out;
 }
 
-sal_Int64 SAL_CALL java_sql_Clob::positionOfClob( const css::uno::Reference< css::sdbc::XClob >& /*pattern*/, sal_Int64 /*start*/ )
+sal_Int64 SAL_CALL java_sql_Clob::positionOfClob( const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XClob >& /*pattern*/, sal_Int64 /*start*/ ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XClob::positionOfClob", *this );
     // this was put here in CWS warnings01. The previous implementation was defective, as it did ignore

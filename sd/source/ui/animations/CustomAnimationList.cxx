@@ -147,8 +147,8 @@ OUString getShapeDescription( const Reference< XShape >& xShape, bool bWithText 
             {
                 aDescription += ": ";
 
-                aText = aText.replace( '\n', ' ' );
-                aText = aText.replace( '\r', ' ' );
+                aText = aText.replace( (sal_Unicode)'\n', (sal_Unicode)' ' );
+                aText = aText.replace( (sal_Unicode)'\r', (sal_Unicode)' ' );
 
                 aDescription += aText;
             }
@@ -157,7 +157,7 @@ OUString getShapeDescription( const Reference< XShape >& xShape, bool bWithText 
     return aDescription;
 }
 
-static OUString getDescription( const Any& rTarget, bool bWithText )
+static OUString getDescription( const Any& rTarget, bool bWithText = true )
 {
     OUString aDescription;
 
@@ -202,8 +202,9 @@ class CustomAnimationListEntryItem : public SvLBoxString
 {
 public:
     CustomAnimationListEntryItem(const OUString& aDescription,
-                                 const CustomAnimationEffectPtr& pEffect, CustomAnimationList* pParent);
-    void InitViewData(SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* = nullptr) override;
+                                 CustomAnimationEffectPtr pEffect, CustomAnimationList* pParent);
+    virtual ~CustomAnimationListEntryItem();
+    void InitViewData(SvTreeListBox*,SvTreeListEntry*,SvViewDataItem*) override;
     SvLBoxItem* Create() const override;
     void Clone(SvLBoxItem* pSource) override;
 
@@ -215,11 +216,11 @@ private:
     OUString        msEffectName;
     CustomAnimationEffectPtr mpEffect;
     const CustomAnimationPresets* mpCustomAnimationPresets;
-    static const long nIconWidth = 19;
-    static const long nItemMinHeight = 38;
+    const long nIconWidth = 19;
+    const long nItemMinHeight = 38;
 };
 
-CustomAnimationListEntryItem::CustomAnimationListEntryItem( const OUString& aDescription, const CustomAnimationEffectPtr& pEffect, CustomAnimationList* pParent  )
+CustomAnimationListEntryItem::CustomAnimationListEntryItem( const OUString& aDescription, CustomAnimationEffectPtr pEffect, CustomAnimationList* pParent  )
 : SvLBoxString( aDescription )
 , mpParent( pParent )
 , msDescription( aDescription )
@@ -240,6 +241,12 @@ CustomAnimationListEntryItem::CustomAnimationListEntryItem( const OUString& aDes
     }
     msEffectName = msEffectName.replaceFirst( "%1" , mpCustomAnimationPresets->getUINameForPresetId(mpEffect->getPresetId()));
 }
+
+
+CustomAnimationListEntryItem::~CustomAnimationListEntryItem()
+{
+}
+
 
 void CustomAnimationListEntryItem::InitViewData( SvTreeListBox* pView, SvTreeListEntry* pEntry, SvViewDataItem* pViewData )
 {
@@ -268,11 +275,11 @@ void CustomAnimationListEntryItem::Paint(const Point& rPos, SvTreeListBox& rDev,
     sal_Int16 nNodeType = mpEffect->getNodeType();
     if (nNodeType == EffectNodeType::ON_CLICK )
     {
-        rRenderContext.DrawImage( aPos, mpParent->getImage(BMP_CUSTOMANIMATION_ON_CLICK));
+        rRenderContext.DrawImage( aPos, mpParent->getImage(IMG_CUSTOMANIMATION_ON_CLICK));
     }
     else if (nNodeType == EffectNodeType::AFTER_PREVIOUS)
     {
-        rRenderContext.DrawImage(aPos, mpParent->getImage(BMP_CUSTOMANIMATION_AFTER_PREVIOUS));
+        rRenderContext.DrawImage(aPos, mpParent->getImage(IMG_CUSTOMANIMATION_AFTER_PREVIOUS));
     }
     else if (nNodeType == EffectNodeType::WITH_PREVIOUS)
     {
@@ -290,25 +297,25 @@ void CustomAnimationListEntryItem::Paint(const Point& rPos, SvTreeListBox& rDev,
     switch (mpEffect->getPresetClass())
     {
     case EffectPresetClass::ENTRANCE:
-        nImage = BMP_CUSTOMANIMATION_ENTRANCE_EFFECT; break;
+        nImage = IMG_CUSTOMANIMATION_ENTRANCE_EFFECT; break;
     case EffectPresetClass::EXIT:
-        nImage = BMP_CUSTOMANIMATION_EXIT_EFFECT; break;
+        nImage =  IMG_CUSTOMANIMATION_EXIT_EFFECT; break;
     case EffectPresetClass::EMPHASIS:
-        nImage = BMP_CUSTOMANIMATION_EMPHASIS_EFFECT; break;
+        nImage =  IMG_CUSTOMANIMATION_EMPHASIS_EFFECT; break;
     case EffectPresetClass::MOTIONPATH:
-        nImage = BMP_CUSTOMANIMATION_MOTION_PATH; break;
+        nImage = IMG_CUSTOMANIMATION_MOTION_PATH; break;
     case EffectPresetClass::OLEACTION:
-        nImage = BMP_CUSTOMANIMATION_OLE; break;
+        nImage = IMG_CUSTOMANIMATION_OLE; break;
     case EffectPresetClass::MEDIACALL:
         switch (mpEffect->getCommand())
         {
         case EffectCommands::TOGGLEPAUSE:
-            nImage = BMP_CUSTOMANIMATION_MEDIA_PAUSE; break;
+            nImage = IMG_CUSTOMANIMATION_MEDIA_PAUSE; break;
         case EffectCommands::STOP:
-            nImage = BMP_CUSTOMANIMATION_MEDIA_STOP; break;
+            nImage = IMG_CUSTOMANIMATION_MEDIA_STOP; break;
         case EffectCommands::PLAY:
         default:
-            nImage = BMP_CUSTOMANIMATION_MEDIA_PLAY; break;
+            nImage = IMG_CUSTOMANIMATION_MEDIA_PLAY; break;
         }
         break;
     default:
@@ -342,7 +349,8 @@ class CustomAnimationListEntry : public SvTreeListEntry
 {
 public:
     CustomAnimationListEntry();
-    explicit CustomAnimationListEntry(const CustomAnimationEffectPtr& pEffect);
+    explicit CustomAnimationListEntry( CustomAnimationEffectPtr pEffect );
+    virtual ~CustomAnimationListEntry();
 
     const CustomAnimationEffectPtr& getEffect() const { return mpEffect; }
 
@@ -354,8 +362,12 @@ CustomAnimationListEntry::CustomAnimationListEntry()
 {
 }
 
-CustomAnimationListEntry::CustomAnimationListEntry(const CustomAnimationEffectPtr& pEffect)
+CustomAnimationListEntry::CustomAnimationListEntry( CustomAnimationEffectPtr pEffect )
 : mpEffect( pEffect )
+{
+}
+
+CustomAnimationListEntry::~CustomAnimationListEntry()
 {
 }
 
@@ -363,8 +375,8 @@ class CustomAnimationTriggerEntryItem : public SvLBoxString
 {
 public:
     explicit        CustomAnimationTriggerEntryItem( const OUString& aDescription );
-
-    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* = nullptr ) override;
+    virtual         ~CustomAnimationTriggerEntryItem();
+    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* ) override;
     SvLBoxItem*     Create() const override;
     void            Clone( SvLBoxItem* pSource ) override;
     virtual void Paint(const Point& rPos, SvTreeListBox& rOutDev, vcl::RenderContext& rRenderContext,
@@ -372,11 +384,15 @@ public:
 
 private:
     OUString        msDescription;
-    static const long nIconWidth = 19;
+    const long nIconWidth = 19;
 };
 
 CustomAnimationTriggerEntryItem::CustomAnimationTriggerEntryItem( const OUString& aDescription )
 : SvLBoxString( aDescription ), msDescription( aDescription )
+{
+}
+
+CustomAnimationTriggerEntryItem::~CustomAnimationTriggerEntryItem()
 {
 }
 
@@ -398,7 +414,7 @@ void CustomAnimationTriggerEntryItem::Paint(const Point& rPos, SvTreeListBox& rD
 
     Point aPos(0, rPos.Y());
 
-    ::tools::Rectangle aOutRect(aPos, aSize);
+    Rectangle aOutRect(aPos, aSize);
 
     // fill the background
     Color aColor(rRenderContext.GetSettings().GetStyleSettings().GetDialogColor());
@@ -418,7 +434,7 @@ void CustomAnimationTriggerEntryItem::Paint(const Point& rPos, SvTreeListBox& rD
     // draw the category title
 
     int nVertBorder = ((aSize.Height() - rDev.GetTextHeight()) >> 1);
-    int nHorzBorder = rRenderContext.LogicToPixel(Size(3, 3), MapUnit::MapAppFont).Width();
+    int nHorzBorder = rRenderContext.LogicToPixel(Size(3, 3), MAP_APPFONT).Width();
 
     aOutRect.Left() += nHorzBorder;
     aOutRect.Right() -= nHorzBorder;
@@ -445,8 +461,9 @@ CustomAnimationList::CustomAnimationList( vcl::Window* pParent )
     , mnLastGroupId(0)
     , mpLastParentEntry(nullptr)
 {
+
     EnableContextMenuHandling();
-    SetSelectionMode( SelectionMode::Multiple );
+    SetSelectionMode( MULTIPLE_SELECTION );
     SetOptimalImageIndent();
     SetNodeDefaultImages();
 }
@@ -455,13 +472,13 @@ VCL_BUILDER_FACTORY(CustomAnimationList)
 
 const Image&  CustomAnimationList::getImage( sal_uInt16 nId )
 {
-    DBG_ASSERT( (nId >= BMP_CUSTOMANIMATION_ON_CLICK) && (nId <= BMP_CUSTOMANIMATION_MEDIA_STOP), "sd::CustomAnimationList::getImage(), illegal index!" );
+    DBG_ASSERT( (nId >= IMG_CUSTOMANIMATION_ON_CLICK) && (nId <= IMG_CUSTOMANIMATION_MEDIA_STOP), "sd::CustomAnimationList::getImage(), illegal index!" );
 
-    Image& rImage = maImages[nId - BMP_CUSTOMANIMATION_ON_CLICK];
+    Image& rImage = maImages[nId - IMG_CUSTOMANIMATION_ON_CLICK];
 
     // load on demand
     if( rImage.GetSizePixel().Width() == 0 )
-        rImage = Image(BitmapEx(SdResId(nId)));
+        rImage = Image(SdResId( nId ) );
 
     return rImage;
 }
@@ -477,10 +494,6 @@ void CustomAnimationList::dispose()
         mpMainSequence->removeListener( this );
 
     clear();
-
-    mxMenu.disposeAndClear();
-    mxBuilder.reset();
-
     SvTreeListBox::dispose();
 }
 
@@ -489,12 +502,8 @@ void CustomAnimationList::KeyInput( const KeyEvent& rKEvt )
     const int nKeyCode = rKEvt.GetKeyCode().GetCode();
     switch( nKeyCode )
     {
-        case KEY_DELETE:
-            mpController->onContextMenu("remove");
-            return;
-        case KEY_INSERT:
-            mpController->onContextMenu("create");
-            return;
+        case KEY_DELETE:    mpController->onContextMenu( CM_REMOVE ); return;
+        case KEY_INSERT:    mpController->onContextMenu( CM_CREATE ); return;
         case KEY_SPACE:
             {
                 const Point aPos;
@@ -897,11 +906,10 @@ bool CustomAnimationList::DoubleClickHdl()
     return false;
 }
 
-VclPtr<PopupMenu> CustomAnimationList::CreateContextMenu()
+std::unique_ptr<PopupMenu> CustomAnimationList::CreateContextMenu()
 {
-    mxMenu.disposeAndClear();
-    mxBuilder.reset(new VclBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/effectmenu.ui", ""));
-    mxMenu.set(mxBuilder->get_menu("menu"));
+    std::unique_ptr<PopupMenu> pMenu(
+        new PopupMenu(SdResId( RID_EFFECT_CONTEXTMENU )));
 
     sal_Int16 nNodeType = -1;
     sal_Int16 nEntries = 0;
@@ -930,18 +938,23 @@ VclPtr<PopupMenu> CustomAnimationList::CreateContextMenu()
         pEntry = static_cast< CustomAnimationListEntry* >(NextSelected( pEntry ));
     }
 
-    mxMenu->CheckItem(mxMenu->GetItemId("onclick"), nNodeType == EffectNodeType::ON_CLICK);
-    mxMenu->CheckItem(mxMenu->GetItemId("withprev"), nNodeType == EffectNodeType::WITH_PREVIOUS);
-    mxMenu->CheckItem(mxMenu->GetItemId("afterprev"), nNodeType == EffectNodeType::AFTER_PREVIOUS);
-    mxMenu->EnableItem(mxMenu->GetItemId("options"), nEntries == 1);
-    mxMenu->EnableItem(mxMenu->GetItemId("timing"), nEntries == 1);
+    pMenu->CheckItem( CM_WITH_CLICK, nNodeType == EffectNodeType::ON_CLICK );
+    pMenu->CheckItem( CM_WITH_PREVIOUS, nNodeType == EffectNodeType::WITH_PREVIOUS );
+    pMenu->CheckItem( CM_AFTER_PREVIOUS, nNodeType == EffectNodeType::AFTER_PREVIOUS );
+    pMenu->EnableItem( CM_OPTIONS, nEntries == 1 );
+    pMenu->EnableItem( CM_DURATION, nEntries == 1 );
 
-    return mxMenu;
+    return pMenu;
 }
 
 void CustomAnimationList::ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry )
 {
-    mpController->onContextMenu(mxMenu->GetItemIdent(nSelectedPopupEntry));
+    mpController->onContextMenu( nSelectedPopupEntry );
+}
+
+void CustomAnimationList::SetTabs()
+{
+    SvTreeListBox::SetTabs();
 }
 
 void CustomAnimationList::notify_change()
@@ -950,7 +963,7 @@ void CustomAnimationList::notify_change()
     mpController->onSelect();
 }
 
-void CustomAnimationList::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
+void CustomAnimationList::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if( mbIgnorePaint )
         return;
@@ -962,9 +975,9 @@ void CustomAnimationList::Paint(vcl::RenderContext& rRenderContext, const ::tool
     {
         Color aOldColor(rRenderContext.GetTextColor());
         rRenderContext.SetTextColor(rRenderContext.GetSettings().GetStyleSettings().GetDisableColor());
-        ::Point aOffset(rRenderContext.LogicToPixel(Point(6, 6), MapUnit::MapAppFont));
+        ::Point aOffset(rRenderContext.LogicToPixel(Point(6, 6), MAP_APPFONT));
 
-        ::tools::Rectangle aRect(Point(0,0), GetOutputSizePixel());
+        Rectangle aRect(Point(0,0), GetOutputSizePixel());
 
         aRect.Left() += aOffset.X();
         aRect.Top() += aOffset.Y();

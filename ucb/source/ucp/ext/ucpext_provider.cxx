@@ -20,7 +20,6 @@
 #include "ucpext_provider.hxx"
 #include "ucpext_content.hxx"
 
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <ucbhelper/contentidentifier.hxx>
 #include <osl/diagnose.h>
 #include <osl/mutex.hxx>
@@ -55,19 +54,19 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    OUString SAL_CALL ContentProvider::getImplementationName_static()
+    OUString SAL_CALL ContentProvider::getImplementationName_static() throw (RuntimeException)
     {
         return OUString(  "org.openoffice.comp.ucp.ext.ContentProvider"  );
     }
 
 
-    OUString SAL_CALL ContentProvider::getImplementationName()
+    OUString SAL_CALL ContentProvider::getImplementationName() throw (RuntimeException, std::exception)
     {
         return getImplementationName_static();
     }
 
 
-    Sequence< OUString > SAL_CALL ContentProvider::getSupportedServiceNames_static(  )
+    Sequence< OUString > SAL_CALL ContentProvider::getSupportedServiceNames_static(  ) throw (RuntimeException)
     {
         Sequence< OUString > aServiceNames(2);
         aServiceNames[0] = "com.sun.star.ucb.ContentProvider";
@@ -76,7 +75,7 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    Sequence< OUString > SAL_CALL ContentProvider::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL ContentProvider::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
         return getSupportedServiceNames_static();
     }
@@ -113,6 +112,7 @@ namespace ucb { namespace ucp { namespace ext
 
 
     Reference< XContent > SAL_CALL ContentProvider::queryContent( const Reference< XContentIdentifier  >& i_rIdentifier )
+        throw( IllegalIdentifierException, RuntimeException, std::exception )
     {
         // Check URL scheme...
         const OUString sScheme( "vnd.sun.star.extension" );

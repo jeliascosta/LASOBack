@@ -18,7 +18,7 @@
 
 class SvStream;
 
-class OOO_DLLPUBLIC_TEST XmlWriter final
+class OOO_DLLPUBLIC_TEST XmlWriter
 {
 private:
     SvStream* mpStream;
@@ -26,7 +26,7 @@ private:
 
 public:
     XmlWriter(SvStream* pStream);
-    ~XmlWriter();
+    virtual ~XmlWriter();
 
     void startDocument();
     void endDocument();

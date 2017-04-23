@@ -119,7 +119,7 @@ void OApplicationController::convertToView(const OUString& _sName)
                 ::dbtools::composeTableName( xMeta, sCatalog, sSchema, sName, false, ::dbtools::EComposeRule::InTableDefinitions ) );
             Reference<XPropertySet> xView = ::dbaui::createView(sNewName,xConnection,xSourceObject);
             if ( !xView.is() )
-                throw SQLException(ModuleRes(STR_NO_TABLE_FORMAT_INSIDE),*this, "S1000",0,Any());
+                throw SQLException(OUString(ModuleRes(STR_NO_TABLE_FORMAT_INSIDE)),*this,OUString( "S1000" ) ,0,Any());
             getContainer()->elementAdded(E_TABLE,sNewName,makeAny(xView));
         }
     }
@@ -156,6 +156,11 @@ void OApplicationController::pasteFormat(SotClipboardFormatId _nFormatId)
     }
 }
 
+void OApplicationController::openDataSourceAdminDialog()
+{
+    openDialog( "com.sun.star.sdb.DatasourceAdministrationDialog" );
+}
+
 void OApplicationController::openDialog( const OUString& _sServiceName )
 {
     try
@@ -175,7 +180,7 @@ void OApplicationController::openDialog( const OUString& _sServiceName )
                 xWindow = VCLUnoHelper::GetInterface(getView()->Window::GetParent());
         }
         // the parent window
-        aArgs[nArgPos++] <<= PropertyValue( "ParentWindow",
+        aArgs[nArgPos++] <<= PropertyValue( OUString("ParentWindow"),
                                     0,
                                     makeAny(xWindow),
                                     PropertyState_DIRECT_VALUE);
@@ -187,7 +192,7 @@ void OApplicationController::openDialog( const OUString& _sServiceName )
         if ( !sInitialSelection.isEmpty() )
         {
             aArgs[ nArgPos++ ] <<= PropertyValue(
-                "InitialSelection", 0,
+                OUString( "InitialSelection" ), 0,
                 makeAny( sInitialSelection ), PropertyState_DIRECT_VALUE );
         }
 
@@ -216,6 +221,11 @@ void OApplicationController::openDialog( const OUString& _sServiceName )
     }
 }
 
+void OApplicationController::openTableFilterDialog()
+{
+    openDialog( "com.sun.star.sdb.TableFilterDialog" );
+}
+
 void OApplicationController::refreshTables()
 {
     if ( getContainer() && getContainer()->getDetailView() )
@@ -238,7 +248,12 @@ void OApplicationController::refreshTables()
     }
 }
 
-void SAL_CALL OApplicationController::propertyChange( const PropertyChangeEvent& evt )
+void OApplicationController::openDirectSQLDialog()
+{
+    openDialog( SERVICE_SDB_DIRECTSQLDIALOG );
+}
+
+void SAL_CALL OApplicationController::propertyChange( const PropertyChangeEvent& evt ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -286,14 +301,14 @@ void SAL_CALL OApplicationController::propertyChange( const PropertyChangeEvent&
     modified(aEvt);
 }
 
-Reference< XDataSource > SAL_CALL OApplicationController::getDataSource()
+Reference< XDataSource > SAL_CALL OApplicationController::getDataSource() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
     Reference< XDataSource > xDataSource( m_xDataSource, UNO_QUERY );
     return xDataSource;
 }
 
-Reference< XWindow > SAL_CALL OApplicationController::getApplicationMainWindow()
+Reference< XWindow > SAL_CALL OApplicationController::getApplicationMainWindow() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
     Reference< XFrame > xFrame( getFrame(), UNO_QUERY_THROW );
@@ -301,25 +316,25 @@ Reference< XWindow > SAL_CALL OApplicationController::getApplicationMainWindow()
     return xWindow;
 }
 
-Sequence< Reference< XComponent > > SAL_CALL OApplicationController::getSubComponents()
+Sequence< Reference< XComponent > > SAL_CALL OApplicationController::getSubComponents() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
     return m_pSubComponentManager->getSubComponents();
 }
 
-Reference< XConnection > SAL_CALL OApplicationController::getActiveConnection()
+Reference< XConnection > SAL_CALL OApplicationController::getActiveConnection() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
     return m_xDataSourceConnection.getTyped();
 }
 
-sal_Bool SAL_CALL OApplicationController::isConnected(  )
+sal_Bool SAL_CALL OApplicationController::isConnected(  ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
     return m_xDataSourceConnection.is();
 }
 
-void SAL_CALL OApplicationController::connect(  )
+void SAL_CALL OApplicationController::connect(  ) throw (SQLException, RuntimeException, std::exception)
 {
     SQLExceptionInfo aError;
     SharedConnection xConnection = ensureConnection( &aError );
@@ -334,7 +349,7 @@ void SAL_CALL OApplicationController::connect(  )
     }
 }
 
-beans::Pair< ::sal_Int32, OUString > SAL_CALL OApplicationController::identifySubComponent( const Reference< XComponent >& i_rSubComponent )
+beans::Pair< ::sal_Int32, OUString > SAL_CALL OApplicationController::identifySubComponent( const Reference< XComponent >& i_rSubComponent ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( getMutex() );
 
@@ -352,7 +367,7 @@ beans::Pair< ::sal_Int32, OUString > SAL_CALL OApplicationController::identifySu
     return beans::Pair< ::sal_Int32, OUString >( nType, sName );
 }
 
-sal_Bool SAL_CALL OApplicationController::closeSubComponents(  )
+sal_Bool SAL_CALL OApplicationController::closeSubComponents(  ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -426,13 +441,13 @@ void OApplicationController::impl_validateObjectTypeAndName_throw( const sal_Int
 }
 
 Reference< XComponent > SAL_CALL OApplicationController::loadComponent( ::sal_Int32 ObjectType,
-    const OUString& ObjectName, sal_Bool ForEditing )
+    const OUString& ObjectName, sal_Bool ForEditing ) throw (IllegalArgumentException, NoSuchElementException, SQLException, RuntimeException, std::exception)
 {
     return loadComponentWithArguments( ObjectType, ObjectName, ForEditing, Sequence< PropertyValue >() );
 }
 
 Reference< XComponent > SAL_CALL OApplicationController::loadComponentWithArguments( ::sal_Int32 ObjectType,
-    const OUString& ObjectName, sal_Bool ForEditing, const Sequence< PropertyValue >& Arguments )
+    const OUString& ObjectName, sal_Bool ForEditing, const Sequence< PropertyValue >& Arguments ) throw (IllegalArgumentException, NoSuchElementException, SQLException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -450,12 +465,12 @@ Reference< XComponent > SAL_CALL OApplicationController::loadComponentWithArgume
     return xComponent;
 }
 
-Reference< XComponent > SAL_CALL OApplicationController::createComponent( ::sal_Int32 i_nObjectType, Reference< XComponent >& o_DocumentDefinition  )
+Reference< XComponent > SAL_CALL OApplicationController::createComponent( ::sal_Int32 i_nObjectType, Reference< XComponent >& o_DocumentDefinition  ) throw (IllegalArgumentException, SQLException, RuntimeException, std::exception)
 {
     return createComponentWithArguments( i_nObjectType, Sequence< PropertyValue >(), o_DocumentDefinition );
 }
 
-Reference< XComponent > SAL_CALL OApplicationController::createComponentWithArguments( ::sal_Int32 i_nObjectType, const Sequence< PropertyValue >& i_rArguments, Reference< XComponent >& o_DocumentDefinition )
+Reference< XComponent > SAL_CALL OApplicationController::createComponentWithArguments( ::sal_Int32 i_nObjectType, const Sequence< PropertyValue >& i_rArguments, Reference< XComponent >& o_DocumentDefinition ) throw (IllegalArgumentException, NoSuchElementException, SQLException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -471,13 +486,13 @@ Reference< XComponent > SAL_CALL OApplicationController::createComponentWithArgu
     return xComponent;
 }
 
-void SAL_CALL OApplicationController::registerContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor )
+void SAL_CALL OApplicationController::registerContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor ) throw (RuntimeException, std::exception)
 {
     if ( Interceptor.is() )
         m_aContextMenuInterceptors.addInterface( Interceptor );
 }
 
-void SAL_CALL OApplicationController::releaseContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor )
+void SAL_CALL OApplicationController::releaseContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor ) throw (RuntimeException, std::exception)
 {
     m_aContextMenuInterceptors.removeInterface( Interceptor );
 }
@@ -517,7 +532,7 @@ void OApplicationController::askToReconnect()
         bool bClear = true;
         if ( !m_pSubComponentManager->empty() )
         {
-            ScopedVclPtrInstance< MessageDialog > aQry(getView(), ModuleRes(STR_QUERY_CLOSEDOCUMENTS), VclMessageType::Question, VclButtonsType::YesNo);
+            ScopedVclPtrInstance< MessageDialog > aQry(getView(), ModuleRes(STR_QUERY_CLOSEDOCUMENTS), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
             switch (aQry->Execute())
             {
                 case RET_YES:
@@ -618,7 +633,7 @@ bool OApplicationController::isRenameDeleteAllowed(ElementType _eType, bool _bDe
             bCompareRes = getContainer()->getSelectionCount() == 1;
             if ( bEnabled && bCompareRes && E_TABLE == eType )
             {
-                std::vector< OUString> aList;
+                ::std::vector< OUString> aList;
                 getSelectionElementNames(aList);
 
                 try
@@ -675,7 +690,7 @@ void OApplicationController::onLoadedMenu(const Reference< css::frame::XLayoutMa
 
 void OApplicationController::doAction(sal_uInt16 _nId, const ElementOpenMode _eOpenMode)
 {
-    std::vector< OUString> aList;
+    ::std::vector< OUString> aList;
     getSelectionElementNames(aList);
     ElementType eType = getContainer()->getElementType();
     ::comphelper::NamedValueCollection aArguments;
@@ -686,16 +701,16 @@ void OApplicationController::doAction(sal_uInt16 _nId, const ElementOpenMode _eO
         eOpenMode = E_OPEN_NORMAL;
     }
 
-    std::vector< std::pair< OUString ,Reference< XModel > > > aComponents;
-    std::vector< OUString>::const_iterator aEnd = aList.end();
-    for (std::vector< OUString>::const_iterator aIter = aList.begin(); aIter != aEnd; ++aIter)
+    ::std::vector< ::std::pair< OUString ,Reference< XModel > > > aComponents;
+    ::std::vector< OUString>::const_iterator aEnd = aList.end();
+    for (::std::vector< OUString>::const_iterator aIter = aList.begin(); aIter != aEnd; ++aIter)
     {
         if ( SID_DB_APP_CONVERTTOVIEW == _nId )
             convertToView(*aIter);
         else
         {
             Reference< XModel > xModel( openElementWithArguments( *aIter, eType, eOpenMode, _nId,aArguments ), UNO_QUERY );
-            aComponents.push_back( std::pair< OUString, Reference< XModel > >( *aIter, xModel ) );
+            aComponents.push_back( ::std::pair< OUString, Reference< XModel > >( *aIter, xModel ) );
         }
     }
 
@@ -703,8 +718,8 @@ void OApplicationController::doAction(sal_uInt16 _nId, const ElementOpenMode _eO
     if ( _eOpenMode == E_OPEN_FOR_MAIL )
     {
 
-        std::vector< std::pair< OUString ,Reference< XModel > > >::const_iterator componentIter = aComponents.begin();
-        std::vector< std::pair< OUString ,Reference< XModel > > >::const_iterator componentEnd = aComponents.end();
+        ::std::vector< ::std::pair< OUString ,Reference< XModel > > >::const_iterator componentIter = aComponents.begin();
+        ::std::vector< ::std::pair< OUString ,Reference< XModel > > >::const_iterator componentEnd = aComponents.end();
         OUString aDocTypeString;
         SfxMailModel aSendMail;
         SfxMailModel::SendMailResult eResult = SfxMailModel::SEND_MAIL_OK;

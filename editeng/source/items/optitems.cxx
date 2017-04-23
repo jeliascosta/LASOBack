@@ -53,8 +53,8 @@ SfxSpellCheckItem::SfxSpellCheckItem( const SfxSpellCheckItem& rItem ) :
 bool SfxSpellCheckItem::GetPresentation
 (
     SfxItemPresentation ,
-    MapUnit             ,
-    MapUnit             ,
+    SfxMapUnit          ,
+    SfxMapUnit          ,
     OUString&           ,
     const IntlWrapper*
 )   const
@@ -71,7 +71,7 @@ SfxPoolItem* SfxSpellCheckItem::Clone( SfxItemPool* ) const
 
 bool SfxSpellCheckItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==(rItem), "unequal types" );
     return ( xSpellCheck == static_cast<const SfxSpellCheckItem&>( rItem ).GetXSpellChecker() );
 }
 
@@ -97,7 +97,7 @@ SfxHyphenRegionItem::SfxHyphenRegionItem( const SfxHyphenRegionItem& rItem ) :
 
 bool SfxHyphenRegionItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
+    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
 
     return ( ( static_cast<const SfxHyphenRegionItem&>( rAttr ).nMinLead == nMinLead ) &&
              ( static_cast<const SfxHyphenRegionItem&>( rAttr ).nMinTrail == nMinTrail ) );
@@ -113,16 +113,16 @@ SfxPoolItem* SfxHyphenRegionItem::Clone( SfxItemPool* ) const
 bool SfxHyphenRegionItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             ,
-    MapUnit             ,
+    SfxMapUnit          ,
+    SfxMapUnit          ,
     OUString&           rText,
     const IntlWrapper*
 )   const
 {
     rText = rText +
-            EditResId::GetString(RID_SVXITEMS_HYPHEN_MINLEAD).replaceAll("%1", OUString::number(nMinLead)) +
+            EE_RESSTR(RID_SVXITEMS_HYPHEN_MINLEAD).replaceAll("%1", OUString::number(nMinLead)) +
             "," +
-            EditResId::GetString(RID_SVXITEMS_HYPHEN_MINTRAIL).replaceAll("%1", OUString::number(nMinTrail));
+            EE_RESSTR(RID_SVXITEMS_HYPHEN_MINTRAIL).replaceAll("%1", OUString::number(nMinTrail));
     return true;
 }
 

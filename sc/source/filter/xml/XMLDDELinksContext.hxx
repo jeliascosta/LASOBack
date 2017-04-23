@@ -22,17 +22,18 @@
 
 #include <xmloff/xmlictxt.hxx>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 #include <list>
 
-class ScXMLDDELinksContext : public ScXMLImportContext
+class ScXMLDDELinksContext : public SvXMLImportContext
 {
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDELinksContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLDDELinksContext() override;
+    virtual ~ScXMLDDELinksContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -51,7 +52,7 @@ struct ScDDELinkCell
 
 typedef std::list<ScDDELinkCell> ScDDELinkCells;
 
-class ScXMLDDELinkContext : public ScXMLImportContext
+class ScXMLDDELinkContext : public SvXMLImportContext
 {
     ScDDELinkCells  aDDELinkTable;
     ScDDELinkCells  aDDELinkRow;
@@ -63,12 +64,14 @@ class ScXMLDDELinkContext : public ScXMLImportContext
     sal_Int32       nRows;
     sal_uInt8       nMode;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDELinkContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList);
 
-    virtual ~ScXMLDDELinkContext() override;
+    virtual ~ScXMLDDELinkContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -87,17 +90,19 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLDDESourceContext : public ScXMLImportContext
+class ScXMLDDESourceContext : public SvXMLImportContext
 {
     ScXMLDDELinkContext* pDDELink;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDESourceContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDDELinkContext* pDDELink);
 
-    virtual ~ScXMLDDESourceContext() override;
+    virtual ~ScXMLDDESourceContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -106,17 +111,19 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLDDETableContext : public ScXMLImportContext
+class ScXMLDDETableContext : public SvXMLImportContext
 {
     ScXMLDDELinkContext* pDDELink;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDETableContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDDELinkContext* pDDELink);
 
-    virtual ~ScXMLDDETableContext() override;
+    virtual ~ScXMLDDETableContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -125,17 +132,19 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLDDEColumnContext : public ScXMLImportContext
+class ScXMLDDEColumnContext : public SvXMLImportContext
 {
     ScXMLDDELinkContext* pDDELink;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDEColumnContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDDELinkContext* pDDELink);
 
-    virtual ~ScXMLDDEColumnContext() override;
+    virtual ~ScXMLDDEColumnContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -144,18 +153,20 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLDDERowContext : public ScXMLImportContext
+class ScXMLDDERowContext : public SvXMLImportContext
 {
     ScXMLDDELinkContext*    pDDELink;
     sal_Int32               nRows;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDERowContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDDELinkContext* pDDELink);
 
-    virtual ~ScXMLDDERowContext() override;
+    virtual ~ScXMLDDERowContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -164,7 +175,7 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLDDECellContext : public ScXMLImportContext
+class ScXMLDDECellContext : public SvXMLImportContext
 {
     OUString        sValue;
     double          fValue;
@@ -175,13 +186,15 @@ class ScXMLDDECellContext : public ScXMLImportContext
 
     ScXMLDDELinkContext* pDDELink;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 public:
     ScXMLDDECellContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         ScXMLDDELinkContext* pDDELink);
 
-    virtual ~ScXMLDDECellContext() override;
+    virtual ~ScXMLDDECellContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

@@ -46,6 +46,7 @@
 #include <comphelper/fileurl.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/sequenceashashmap.hxx>
+#include <comphelper/stillreadwriteinteraction.hxx>
 #include <comphelper/string.hxx>
 #include <comphelper/types.hxx>
 #include <tools/urlobj.hxx>
@@ -107,8 +108,8 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::beans;
 using namespace ::cppu;
 
-#define IODLG_CONFIGNAME        "FilePicker_Save"
-#define IMPGRF_CONFIGNAME       "FilePicker_Graph"
+#define IODLG_CONFIGNAME        OUString("FilePicker_Save")
+#define IMPGRF_CONFIGNAME       OUString("FilePicker_Graph")
 #define USERITEM_NAME           "UserItem"
 
 namespace sfx2
@@ -154,38 +155,38 @@ OUString DecodeSpaces_Impl( const OUString& rSource );
 // FileDialogHelper_Impl
 
 // XFilePickerListener Methods
-void SAL_CALL FileDialogHelper_Impl::fileSelectionChanged( const FilePickerEvent& aEvent )
+void SAL_CALL FileDialogHelper_Impl::fileSelectionChanged( const FilePickerEvent& aEvent ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     mpAntiImpl->FileSelectionChanged( aEvent );
 }
 
-void SAL_CALL FileDialogHelper_Impl::directoryChanged( const FilePickerEvent& aEvent )
+void SAL_CALL FileDialogHelper_Impl::directoryChanged( const FilePickerEvent& aEvent ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     mpAntiImpl->DirectoryChanged( aEvent );
 }
 
-OUString SAL_CALL FileDialogHelper_Impl::helpRequested( const FilePickerEvent& aEvent )
+OUString SAL_CALL FileDialogHelper_Impl::helpRequested( const FilePickerEvent& aEvent ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     return sfx2::FileDialogHelper::HelpRequested( aEvent );
 }
 
-void SAL_CALL FileDialogHelper_Impl::controlStateChanged( const FilePickerEvent& aEvent )
+void SAL_CALL FileDialogHelper_Impl::controlStateChanged( const FilePickerEvent& aEvent ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     mpAntiImpl->ControlStateChanged( aEvent );
 }
 
-void SAL_CALL FileDialogHelper_Impl::dialogSizeChanged()
+void SAL_CALL FileDialogHelper_Impl::dialogSizeChanged() throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     mpAntiImpl->DialogSizeChanged();
 }
 
 // XDialogClosedListener Methods
-void SAL_CALL FileDialogHelper_Impl::dialogClosed( const DialogClosedEvent& _rEvent )
+void SAL_CALL FileDialogHelper_Impl::dialogClosed( const DialogClosedEvent& _rEvent ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     mpAntiImpl->DialogClosed( _rEvent );
@@ -288,7 +289,7 @@ void FileDialogHelper_Impl::handleControlStateChanged( const FilePickerEvent& aE
             break;
 
         case ExtendedFilePickerElementIds::CHECKBOX_PREVIEW:
-            updatePreviewState(true);
+            updatePreviewState();
             break;
     }
 }
@@ -300,7 +301,7 @@ void FileDialogHelper_Impl::handleDialogSizeChanged()
 }
 
 // XEventListener Methods
-void SAL_CALL FileDialogHelper_Impl::disposing( const EventObject& )
+void SAL_CALL FileDialogHelper_Impl::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     dispose();
@@ -338,7 +339,7 @@ OUString FileDialogHelper_Impl::getCurrentFilterUIName() const
 
 void FileDialogHelper_Impl::LoadLastUsedFilter( const OUString& _rContextIdentifier )
 {
-    SvtViewOptions aDlgOpt( EViewType::Dialog, IODLG_CONFIGNAME );
+    SvtViewOptions aDlgOpt( E_DIALOG, IODLG_CONFIGNAME );
 
     if( aDlgOpt.Exists() )
     {
@@ -348,12 +349,17 @@ void FileDialogHelper_Impl::LoadLastUsedFilter( const OUString& _rContextIdentif
     }
 }
 
+void FileDialogHelper_Impl::SaveLastUsedFilter( const OUString& _rContextIdentifier )
+{
+    SvtViewOptions( E_DIALOG, IODLG_CONFIGNAME ).SetUserItem( _rContextIdentifier,
+                        makeAny( getFilterWithExtension( getFilter() ) ) );
+}
+
 void FileDialogHelper_Impl::SaveLastUsedFilter()
 {
     const OUString* pConfigId = GetLastFilterConfigId( meContext );
     if( pConfigId )
-        SvtViewOptions( EViewType::Dialog, IODLG_CONFIGNAME ).SetUserItem( *pConfigId,
-                            makeAny( getFilterWithExtension( getFilter() ) ) );
+        SaveLastUsedFilter( *pConfigId );
 }
 
 std::shared_ptr<const SfxFilter> FileDialogHelper_Impl::getCurentSfxFilter()
@@ -427,10 +433,8 @@ bool FileDialogHelper_Impl::isInOpenMode() const
         case FILEOPEN_SIMPLE:
         case FILEOPEN_LINK_PREVIEW_IMAGE_TEMPLATE:
         case FILEOPEN_PLAY:
-        case FILEOPEN_LINK_PLAY:
         case FILEOPEN_READONLY_VERSION:
         case FILEOPEN_LINK_PREVIEW:
-        case FILEOPEN_PREVIEW:
             bRet = true;
     }
 
@@ -531,7 +535,7 @@ void FileDialogHelper_Impl::enablePasswordBox( bool bInit )
 
     if( bInit )
     {
-        // in case of initialization previous state is not interesting
+        // in case of inintialization previous state is not interesting
         if( mbIsPwdEnabled )
         {
             uno::Reference< XFilePickerControlAccess > xCtrlAccess( mxFileDlg, UNO_QUERY );
@@ -602,12 +606,12 @@ void FileDialogHelper_Impl::updateVersions()
         INetURLObject aObj( aPathSeq[0] );
 
         if ( ( aObj.GetProtocol() == INetProtocol::File ) &&
-            ( utl::UCBContentHelper::IsDocument( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) ) ) )
+            ( utl::UCBContentHelper::IsDocument( aObj.GetMainURL( INetURLObject::NO_DECODE ) ) ) )
         {
             try
             {
                 uno::Reference< embed::XStorage > xStorage = ::comphelper::OStorageHelper::GetStorageFromURL(
-                                                                aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ),
+                                                                aObj.GetMainURL( INetURLObject::NO_DECODE ),
                                                                 embed::ElementModes::READ );
 
                 DBG_ASSERT( xStorage.is(), "The method must return the storage or throw an exception!" );
@@ -657,7 +661,7 @@ void FileDialogHelper_Impl::updateVersions()
     }
 }
 
-IMPL_LINK_NOARG(FileDialogHelper_Impl, TimeOutHdl_Impl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(FileDialogHelper_Impl, TimeOutHdl_Impl, Idle *, void)
 {
     if ( !mbHasPreview )
         return;
@@ -704,7 +708,7 @@ IMPL_LINK_NOARG(FileDialogHelper_Impl, TimeOutHdl_Impl, Timer *, void)
                     aBmp.Scale( nYRatio, nYRatio );
 
                 // Convert to true color, to allow CopyPixel
-                aBmp.Convert( BmpConversion::N24Bit );
+                aBmp.Convert( BMP_CONVERSION_24BIT );
 
                 // and copy it into the Any
                 SvMemoryStream aData;
@@ -822,10 +826,8 @@ static open_or_save_t lcl_OpenOrSave(sal_Int16 const nDialogType)
         case FILEOPEN_SIMPLE:
         case FILEOPEN_LINK_PREVIEW_IMAGE_TEMPLATE:
         case FILEOPEN_PLAY:
-        case FILEOPEN_LINK_PLAY:
         case FILEOPEN_READONLY_VERSION:
         case FILEOPEN_LINK_PREVIEW:
-        case FILEOPEN_PREVIEW:
             return OPEN;
         case FILESAVE_SIMPLE:
         case FILESAVE_AUTOEXTENSION_PASSWORD:
@@ -886,10 +888,12 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
     mbHasVersions           = false;
     mbHasPreview            = false;
     mbShowPreview           = false;
+    mbAddGraphicFilter      = bool(nFlags & FileDialogFlags::Graphic);
     mbDeleteMatcher         = false;
     mbInsert                = bool(nFlags & FileDialogFlags::Insert);
     mbExport                = bool(nFlags & FileDialogFlags::Export);
     mbIsSaveDlg             = false;
+    mbIsSaveACopyDlg        = bool(nFlags & FileDialogFlags::SaveACopy);
     mbPwdCheckBoxState      = false;
     mbSelection             = false;
     mbSelectionEnabled      = true;
@@ -984,16 +988,12 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
                 mbHasPreview = true;
 
                 // aPreviewTimer
-                maPreviewIdle.SetPriority( TaskPriority::LOWEST );
-                maPreviewIdle.SetInvokeHandler( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
+                maPreviewIdle.SetPriority( SchedulerPriority::LOWEST );
+                maPreviewIdle.SetIdleHdl( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
                 break;
 
             case FILEOPEN_PLAY:
                 nTemplateDescription = TemplateDescription::FILEOPEN_PLAY;
-                break;
-
-            case FILEOPEN_LINK_PLAY:
-                nTemplateDescription = TemplateDescription::FILEOPEN_LINK_PLAY;
                 break;
 
             case FILEOPEN_READONLY_VERSION:
@@ -1005,22 +1005,14 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
                 nTemplateDescription = TemplateDescription::FILEOPEN_LINK_PREVIEW;
                 mbHasPreview = true;
                 // aPreviewTimer
-                maPreviewIdle.SetPriority( TaskPriority::LOWEST );
-                maPreviewIdle.SetInvokeHandler( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
+                maPreviewIdle.SetPriority( SchedulerPriority::LOWEST );
+                maPreviewIdle.SetIdleHdl( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
                 break;
 
             case FILESAVE_AUTOEXTENSION:
                 nTemplateDescription = TemplateDescription::FILESAVE_AUTOEXTENSION;
                 mbHasAutoExt = true;
                 mbIsSaveDlg = true;
-                break;
-
-            case FILEOPEN_PREVIEW:
-                nTemplateDescription = TemplateDescription::FILEOPEN_PREVIEW;
-                mbHasPreview = true;
-                // aPreviewTimer
-                maPreviewIdle.SetPriority( TaskPriority::LOWEST );
-                maPreviewIdle.SetInvokeHandler( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
                 break;
 
             default:
@@ -1039,29 +1031,29 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
         {
             aInitArguments[0] <<= nTemplateDescription;
             if ( mpPreferredParentWindow )
-                aInitArguments[1] <<= VCLUnoHelper::GetInterface( mpPreferredParentWindow );
+                aInitArguments[1] <<= makeAny( VCLUnoHelper::GetInterface( mpPreferredParentWindow ) );
         }
         else
         {
             aInitArguments[0] <<= NamedValue(
-                                    "TemplateDescription",
+                                    OUString( "TemplateDescription"  ),
                                     makeAny( nTemplateDescription )
                                 );
 
             aInitArguments[1] <<= NamedValue(
-                                    "StandardDir",
+                                    OUString( "StandardDir"  ),
                                     makeAny( sStandardDir )
                                 );
 
             aInitArguments[2] <<= NamedValue(
-                                    "BlackList",
+                                    OUString( "BlackList"  ),
                                     makeAny( rBlackList )
                                 );
 
 
             if ( mpPreferredParentWindow )
                 aInitArguments[3] <<= NamedValue(
-                                        "ParentWindow",
+                                        OUString( "ParentWindow"  ),
                                         makeAny( VCLUnoHelper::GetInterface( mpPreferredParentWindow ) )
                                     );
         }
@@ -1081,7 +1073,7 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
     if ( nFlags & FileDialogFlags::MultiSelection )
         mxFileDlg->setMultiSelectionMode( true );
 
-    if ( nFlags & FileDialogFlags::Graphic ) // generate graphic filter only on demand
+    if (mbAddGraphicFilter) // generate graphic filter only on demand
     {
         addGraphicFilter();
     }
@@ -1098,7 +1090,7 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
     }
 
     // Save a copy dialog
-    if ( nFlags & FileDialogFlags::SaveACopy )
+    if ( mbIsSaveACopyDlg )
     {
         mxFileDlg->setTitle( SfxResId( STR_PB_SAVEACOPY ).toString() );
     }
@@ -1135,7 +1127,7 @@ FileDialogHelper_Impl::~FileDialogHelper_Impl()
     if ( mbDeleteMatcher )
         delete mpMatcher;
 
-    maPreviewIdle.ClearInvokeHandler();
+    maPreviewIdle.SetIdleHdl( Link<Idle *, void>() );
 
     ::comphelper::disposeComponent( mxFileDlg );
 }
@@ -1171,7 +1163,7 @@ void FileDialogHelper_Impl::setControlHelpIds( const sal_Int16* _pControlId, con
     }
 }
 
-IMPL_LINK_NOARG( FileDialogHelper_Impl, InitControls, void*, void )
+IMPL_LINK_NOARG_TYPED( FileDialogHelper_Impl, InitControls, void*, void )
 {
     mnPostUserEventId = nullptr;
     enablePasswordBox( true );
@@ -1234,7 +1226,7 @@ void FileDialogHelper_Impl::implInitializeFileName( )
                     if ( bAutoExtChecked )
                     {   // cut the extension
                         aObj.removeExtension( );
-                        mxFileDlg->setDefaultName( aObj.GetName( INetURLObject::DecodeMechanism::WithCharset ) );
+                        mxFileDlg->setDefaultName( aObj.GetName( INetURLObject::DECODE_WITH_CHARSET ) );
                     }
                 }
             }
@@ -1320,7 +1312,8 @@ void FileDialogHelper_Impl::implGetAndCacheFiles(const uno::Reference< XInterfac
     if (pFilter)
     {
         sExtension = pFilter->GetDefaultExtension ();
-        sExtension = sExtension.replaceAll("*", "").replaceAll(".", "");
+        sExtension = comphelper::string::remove(sExtension, '*');
+        sExtension = comphelper::string::remove(sExtension, '.');
     }
 
     // a) the new way (optional!)
@@ -1355,7 +1348,7 @@ void FileDialogHelper_Impl::implGetAndCacheFiles(const uno::Reference< XInterfac
                 else
                     aPath.setName( lFiles[i] );
 
-                rpURLList.push_back(aPath.GetMainURL(INetURLObject::DecodeMechanism::NONE));
+                rpURLList.push_back(aPath.GetMainURL(INetURLObject::NO_DECODE));
             }
         }
     }
@@ -1407,7 +1400,7 @@ ErrCode FileDialogHelper_Impl::execute( std::vector<OUString>& rpURLList,
     {
         SvtSecurityOptions aSecOpt;
         mbPwdCheckBoxState = (
-            aSecOpt.IsOptionSet( SvtSecurityOptions::EOption::DocWarnRecommendPassword ) );
+            aSecOpt.IsOptionSet( SvtSecurityOptions::E_DOCWARN_RECOMMENDPASSWORD ) );
     }
 
     rpURLList.clear();
@@ -1576,7 +1569,7 @@ void FileDialogHelper_Impl::verifyPath()
     }
     INetURLObject url(maPath);
     if (url.GetProtocol() != INetProtocol::File
-        || url.getName(0, true, INetURLObject::DecodeMechanism::WithCharset) != "tmp")
+        || url.getName(0, true, INetURLObject::DECODE_WITH_CHARSET) != "tmp")
     {
         return;
     }
@@ -1586,15 +1579,15 @@ void FileDialogHelper_Impl::verifyPath()
     }
     url.insertName(
         maFileName, false, INetURLObject::LAST_SEGMENT,
-        INetURLObject::EncodeMechanism::All);
+        INetURLObject::ENCODE_ALL);
     OUString sysPathU;
     osl::FileBase::RC e = osl::FileBase::getSystemPathFromFileURL(
-        url.GetMainURL(INetURLObject::DecodeMechanism::NONE), sysPathU);
+        url.GetMainURL(INetURLObject::NO_DECODE), sysPathU);
     if (e != osl::FileBase::E_None) {
         SAL_WARN(
             "sfx.dialog",
             "getSystemPathFromFileURL("
-                << url.GetMainURL(INetURLObject::DecodeMechanism::NONE) << ") failed with "
+                << url.GetMainURL(INetURLObject::NO_DECODE) << ") failed with "
                 << +e);
         return;
     }
@@ -1621,8 +1614,6 @@ void FileDialogHelper_Impl::verifyPath()
         maPath = SvtPathOptions().GetWorkPath();
         mxFileDlg->setDisplayDirectory( maPath );
     }
-#else
-    (void) this;
 #endif
 }
 
@@ -1921,7 +1912,7 @@ void FileDialogHelper_Impl::saveConfig()
 
     if ( mbHasPreview )
     {
-        SvtViewOptions aDlgOpt( EViewType::Dialog, IMPGRF_CONFIGNAME );
+        SvtViewOptions aDlgOpt( E_DIALOG, IMPGRF_CONFIGNAME );
         OUString aUserData(GRF_CONFIG_STR);
 
         try
@@ -1934,7 +1925,7 @@ void FileDialogHelper_Impl::saveConfig()
             INetURLObject aObj( getPath() );
 
             if ( aObj.GetProtocol() == INetProtocol::File )
-                SetToken( aUserData, 2, ' ', aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+                SetToken( aUserData, 2, ' ', aObj.GetMainURL( INetURLObject::NO_DECODE ) );
 
             OUString aFilter = getFilter();
             aFilter = EncodeSpaces_Impl( aFilter );
@@ -1947,7 +1938,7 @@ void FileDialogHelper_Impl::saveConfig()
     else
     {
         bool bWriteConfig = false;
-        SvtViewOptions aDlgOpt( EViewType::Dialog, IODLG_CONFIGNAME );
+        SvtViewOptions aDlgOpt( E_DIALOG, IODLG_CONFIGNAME );
         OUString aUserData(STD_CONFIG_STR);
 
         if ( aDlgOpt.Exists() )
@@ -2024,9 +2015,7 @@ namespace
             sPathCheck += ".";
             try
             {
-                ::ucbhelper::Content aContent( sPathCheck,
-                                               utl::UCBContentHelper::getDefaultCommandEnvironment(),
-                                               comphelper::getProcessComponentContext() );
+                ::ucbhelper::Content aContent( sPathCheck, uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
                 bValid = aContent.isFolder();
             }
             catch( const Exception& ) {}
@@ -2049,7 +2038,7 @@ void FileDialogHelper_Impl::loadConfig()
 
     if ( mbHasPreview )
     {
-        SvtViewOptions aViewOpt( EViewType::Dialog, IMPGRF_CONFIGNAME );
+        SvtViewOptions aViewOpt( E_DIALOG, IMPGRF_CONFIGNAME );
         OUString aUserData;
 
         if ( aViewOpt.Exists() )
@@ -2095,7 +2084,7 @@ void FileDialogHelper_Impl::loadConfig()
     }
     else
     {
-        SvtViewOptions aViewOpt( EViewType::Dialog, IODLG_CONFIGNAME );
+        SvtViewOptions aViewOpt( E_DIALOG, IODLG_CONFIGNAME );
         OUString aUserData;
 
         if ( aViewOpt.Exists() )
@@ -2274,9 +2263,9 @@ FileDialogHelper::FileDialogHelper(
 {
     // the wildcard here is expected in form "*.extension"
     OUString aWildcard;
-    if ( aExtName.indexOf( '*' ) != 0 )
+    if ( aExtName.indexOf( (sal_Unicode)'*' ) != 0 )
     {
-        if ( !aExtName.isEmpty() && aExtName.indexOf( '.' ) != 0 )
+        if ( !aExtName.isEmpty() && aExtName.indexOf( (sal_Unicode)'.' ) != 0 )
             aWildcard = "*.";
         else
             aWildcard = "*";
@@ -2309,7 +2298,7 @@ void FileDialogHelper::SetContext( Context _eNewContext )
     mpImpl->SetContext( _eNewContext );
 }
 
-IMPL_LINK_NOARG(FileDialogHelper, ExecuteSystemFilePicker, void*, void)
+IMPL_LINK_NOARG_TYPED(FileDialogHelper, ExecuteSystemFilePicker, void*, void)
 {
     m_nError = mpImpl->execute();
     m_aDialogClosedLink.Call( this );
@@ -2438,7 +2427,7 @@ Sequence< OUString > FileDialogHelper::GetSelectedFiles() const
                 else
                     aPath.setName( lFiles[i] );
 
-                aResultSeq[i-1] = aPath.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+                aResultSeq[i-1] = aPath.GetMainURL( INetURLObject::NO_DECODE );
             }
         }
         else
@@ -2493,9 +2482,9 @@ void FileDialogHelper::SetDisplayDirectory( const OUString& _rPath )
 
     INetURLObject aObj( _rPath );
 
-    OUString sFileName = aObj.GetName( INetURLObject::DecodeMechanism::WithCharset );
+    OUString sFileName = aObj.GetName( INetURLObject::DECODE_WITH_CHARSET );
     aObj.removeSegment();
-    OUString sPath = aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+    OUString sPath = aObj.GetMainURL( INetURLObject::NO_DECODE );
 
     int nIsFolder = impl_isFolder( _rPath );
     if ( nIsFolder == 0 ||
@@ -2507,7 +2496,7 @@ void FileDialogHelper::SetDisplayDirectory( const OUString& _rPath )
     else
     {
         INetURLObject aObjPathName( _rPath );
-        OUString sFolder( aObjPathName.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+        OUString sFolder( aObjPathName.GetMainURL( INetURLObject::NO_DECODE ) );
         if ( sFolder.isEmpty() )
         {
             // _rPath is not a valid path -> fallback to home directory
@@ -2591,24 +2580,16 @@ ErrCode FileOpenDialog_Impl( sal_Int16 nDialogType,
                              const css::uno::Sequence< OUString >& rBlackList )
 {
     ErrCode nRet;
-    std::unique_ptr<FileDialogHelper> pDialog;
-    // Sign existing PDF: only works with PDF files and they are opened
-    // read-only to discourage editing (which would invalidate existing
-    // signatures).
-    if (nFlags & FileDialogFlags::SignPDF)
-        pDialog.reset(new FileDialogHelper(nDialogType, nFlags, SfxResId(STR_SFX_FILTERNAME_PDF).toString(), "pdf", rStandardDir, rBlackList));
-    else
-        pDialog.reset(new FileDialogHelper(nDialogType, nFlags, rFact, nDialog, SfxFilterFlags::NONE, SfxFilterFlags::NONE, rStandardDir, rBlackList));
+    FileDialogHelper aDialog( nDialogType, nFlags,
+            rFact, nDialog, SfxFilterFlags::NONE, SfxFilterFlags::NONE, rStandardDir, rBlackList );
 
     OUString aPath;
     if ( pPath )
         aPath = *pPath;
 
-    nRet = pDialog->Execute(rpURLList, rpSet, rFilter, aPath);
+    nRet = aDialog.Execute( rpURLList, rpSet, rFilter, aPath );
     DBG_ASSERT( rFilter.indexOf(": ") == -1, "Old filter name used!");
 
-    if (rpSet && nFlags & FileDialogFlags::SignPDF)
-        rpSet->Put(SfxBoolItem(SID_DOC_READONLY, true));
     return nRet;
 }
 

@@ -22,28 +22,28 @@ interface BaseTextDrawBase
     [
         ExecMethod = Execute;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_TRANSFORM
     [
         ExecMethod = Execute;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_GROUP
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_UNGROUP
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ENTER_GROUP
@@ -64,28 +64,28 @@ interface BaseTextDrawBase
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FRAME_TO_BOTTOM
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_FRAME_UP
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_FRAME_DOWN
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_DELETE
@@ -93,7 +93,7 @@ interface BaseTextDrawBase
         ExecMethod = Execute ;
         StateMethod = GetState ;
         FastCall = FALSE ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_BACKSPACE
@@ -101,7 +101,7 @@ interface BaseTextDrawBase
         ExecMethod = Execute ;
         StateMethod = GetState ;
         FastCall = FALSE ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     // #i68101#
@@ -109,13 +109,13 @@ interface BaseTextDrawBase
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     FN_NAME_SHAPE
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 }
 

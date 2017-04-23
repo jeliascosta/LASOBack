@@ -47,18 +47,18 @@ OComponentHelper::~OComponentHelper()
 {
 }
 
-Any OComponentHelper::queryInterface( Type const & rType )
+Any OComponentHelper::queryInterface( Type const & rType ) throw (RuntimeException, std::exception)
 {
     return OWeakAggObject::queryInterface( rType );
 }
-Any OComponentHelper::queryAggregation( Type const & rType )
+Any OComponentHelper::queryAggregation( Type const & rType ) throw (RuntimeException, std::exception)
 {
     if (rType == cppu::UnoType<lang::XComponent>::get())
     {
         void * p = static_cast< lang::XComponent * >( this );
         return Any( &p, rType );
     }
-    if (rType == cppu::UnoType<lang::XTypeProvider>::get())
+    else if (rType == cppu::UnoType<lang::XTypeProvider>::get())
     {
         void * p = static_cast< lang::XTypeProvider * >( this );
         return Any( &p, rType );
@@ -112,7 +112,7 @@ void OComponentHelper::release() throw()
     OWeakAggObject::release();
 }
 
-Sequence< Type > OComponentHelper::getTypes()
+Sequence< Type > OComponentHelper::getTypes() throw (RuntimeException, std::exception)
 {
     static OTypeCollection * s_pTypes = nullptr;
     if (! s_pTypes)
@@ -138,6 +138,7 @@ void OComponentHelper::disposing()
 
 // XComponent
 void OComponentHelper::dispose()
+    throw(css::uno::RuntimeException, std::exception)
 {
     // An frequently programming error is to release the last
     // reference to this object in the disposing message.
@@ -203,13 +204,14 @@ void OComponentHelper::dispose()
         // in a multithreaded environment, it can't be avoided
         // that dispose is called twice.
         // However this condition is traced, because it MAY indicate an error.
-        SAL_WARN("cppuhelper",  "OComponentHelper::dispose() - dispose called twice" );
+        OSL_TRACE( "OComponentHelper::dispose() - dispose called twice" );
     }
 }
 
 // XComponent
 void OComponentHelper::addEventListener(
     const Reference<XEventListener > & rxListener )
+    throw(css::uno::RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( rBHelper.rMutex );
     if (rBHelper.bDisposed || rBHelper.bInDispose)
@@ -227,6 +229,7 @@ void OComponentHelper::addEventListener(
 // XComponent
 void OComponentHelper::removeEventListener(
     const Reference<XEventListener > & rxListener )
+    throw(css::uno::RuntimeException, std::exception)
 {
     rBHelper.removeListener( cppu::UnoType<decltype(rxListener)>::get(), rxListener );
 }

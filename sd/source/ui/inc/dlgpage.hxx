@@ -37,13 +37,13 @@ private:
     XGradientListRef      mpGradientList;
     XHatchListRef         mpHatchingList;
     XBitmapListRef        mpBitmapList;
-    XPatternListRef       mpPatternList;
     sal_uInt16            mnArea;
     sal_uInt16            mnPage;
-    sal_uInt16            mnTransparence;
+
 public:
 
-    SdPageDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SfxItemSet* pAttr, bool bAreaPage );
+    SdPageDlg( SfxObjectShell* pDocSh, vcl::Window* pParent, const SfxItemSet* pAttr, bool bAreaPage = true );
+    virtual ~SdPageDlg() {};
 
     virtual void PageCreated(sal_uInt16 nId, SfxTabPage& rPage) override;
 };

@@ -20,7 +20,7 @@ public:
         SfxBindings* pB, SfxChildWindow* pCW,
         vcl::Window* pParent, ScViewData* pViewData );
 
-    virtual ~ScZTestDialog() override;
+    virtual ~ScZTestDialog();
 
     virtual bool Close() override;
 

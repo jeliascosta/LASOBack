@@ -10,7 +10,7 @@
 #ifndef INCLUDED_SC_SOURCE_UI_INC_CONDFORMATMGR_HXX
 #define INCLUDED_SC_SOURCE_UI_INC_CONDFORMATMGR_HXX
 
-#include "scres.hrc"
+#include "sc.hrc"
 
 #include <vcl/dialog.hxx>
 #include <vcl/layout.hxx>
@@ -48,7 +48,7 @@ class ScCondFormatManagerDlg : public ModalDialog
 {
 public:
     ScCondFormatManagerDlg(vcl::Window* pParent, ScDocument* pDoc, const ScConditionalFormatList* pFormatList);
-    virtual ~ScCondFormatManagerDlg() override;
+    virtual ~ScCondFormatManagerDlg();
     virtual void dispose() override;
 
     ScConditionalFormatList* GetConditionalFormatList();
@@ -67,10 +67,10 @@ private:
 
     ScDocument* mpDoc;
 
-    DECL_LINK(RemoveBtnHdl, Button*, void);
-    DECL_LINK(EditBtnClickHdl, Button*, void);
-    DECL_LINK(AddBtnHdl, Button*, void);
-    DECL_LINK(EditBtnHdl, SvTreeListBox*, bool);
+    DECL_LINK_TYPED(RemoveBtnHdl, Button*, void);
+    DECL_LINK_TYPED(EditBtnClickHdl, Button*, void);
+    DECL_LINK_TYPED(AddBtnHdl, Button*, void);
+    DECL_LINK_TYPED(EditBtnHdl, SvTreeListBox*, bool);
 
     bool mbModified;
 };

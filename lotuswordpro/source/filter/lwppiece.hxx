@@ -87,7 +87,7 @@ public:
     {
         LwpDLVList::Read();
         if( m_pOverride )
-            m_pOverride->Read(m_pObjStrm.get());
+            m_pOverride->Read(m_pObjStrm);
     }
 
     LwpOverride* GetOverride()
@@ -95,7 +95,7 @@ public:
         return m_pOverride;
     }
 protected:
-    virtual ~LwpVirtualPiece() override
+    virtual ~LwpVirtualPiece()
     {
         if( m_pOverride )
             delete m_pOverride;
@@ -113,7 +113,7 @@ public:
     }
 
 private:
-    virtual ~LwpParaBorderPiece() override {}
+    virtual ~LwpParaBorderPiece() {}
 };
 
 class LwpBreaksPiece : public LwpVirtualPiece
@@ -125,7 +125,7 @@ public:
     }
 
 private:
-    virtual ~LwpBreaksPiece() override {}
+    virtual ~LwpBreaksPiece() {}
 };
 
 class LwpNumberingPiece : public LwpVirtualPiece
@@ -137,7 +137,7 @@ public:
     }
 
 private:
-    virtual ~LwpNumberingPiece() override {}
+    virtual ~LwpNumberingPiece() {}
 };
 
 class LwpTabPiece : public LwpVirtualPiece
@@ -149,7 +149,7 @@ public:
     }
 
 private:
-    virtual ~LwpTabPiece() override {}
+    virtual ~LwpTabPiece() {}
 };
 
 class LwpBackgroundPiece : public LwpVirtualPiece
@@ -161,7 +161,7 @@ public:
     }
 
 private:
-    virtual ~LwpBackgroundPiece() override {}
+    virtual ~LwpBackgroundPiece() {}
 };
 
 class LwpAlignmentPiece : public LwpVirtualPiece
@@ -173,7 +173,7 @@ public:
     }
 
 private:
-    virtual ~LwpAlignmentPiece() override {}
+    virtual ~LwpAlignmentPiece() {}
 };
 
 class LwpIndentPiece : public LwpVirtualPiece
@@ -185,7 +185,7 @@ public:
     }
 
 private:
-    virtual ~LwpIndentPiece() override {}
+    virtual ~LwpIndentPiece() {}
 };
 
 class LwpSpacingPiece : public LwpVirtualPiece
@@ -197,7 +197,7 @@ public:
     }
 
 private:
-    virtual ~LwpSpacingPiece() override {}
+    virtual ~LwpSpacingPiece() {}
 };
 
 class LwpAmikakePiece : public LwpVirtualPiece
@@ -209,7 +209,7 @@ public:
     }
 
 private:
-    virtual ~LwpAmikakePiece() override {}
+    virtual ~LwpAmikakePiece() {}
 };
 
 class LwpCharacterBorderPiece : public LwpVirtualPiece
@@ -221,7 +221,7 @@ public:
     }
 
 private:
-    virtual ~LwpCharacterBorderPiece() override {}
+    virtual ~LwpCharacterBorderPiece() {}
 };
 
 #endif

@@ -34,12 +34,15 @@ XMLChangeImportContext::XMLChangeImportContext(
     SvXMLImport& rImport,
     sal_Int16 nPrefix,
     const OUString& rLocalName,
-    Element const eElement,
-    bool bOutsideOfParagraph)
-    :   SvXMLImportContext(rImport, nPrefix, rLocalName)
-    ,   m_Element(eElement)
-    ,   m_bIsOutsideOfParagraph(bOutsideOfParagraph)
+    bool bStart,
+    bool bEnd,
+    bool bOutsideOfParagraph) :
+        SvXMLImportContext(rImport, nPrefix, rLocalName),
+        bIsStart(bStart),
+        bIsEnd(bEnd),
+        bIsOutsideOfParagraph(bOutsideOfParagraph)
 {
+    DBG_ASSERT(bStart || bEnd, "Must be either start, end, or both!");
 }
 
 XMLChangeImportContext::~XMLChangeImportContext()
@@ -66,14 +69,14 @@ void XMLChangeImportContext::StartElement(
                 GetImport().GetTextImport();
             OUString sID = xAttrList->getValueByIndex(nAttr);
 
-            // <text:change> is both start and end
-            if (Element::START == m_Element || Element::POINT == m_Element)
-                rHelper->RedlineSetCursor(sID, true, m_bIsOutsideOfParagraph);
-            if (Element::END == m_Element || Element::POINT == m_Element)
-                rHelper->RedlineSetCursor(sID, false, m_bIsOutsideOfParagraph);
+            // call for bStart and bEnd (may both be true)
+            if (bIsStart)
+                rHelper->RedlineSetCursor(sID, true, bIsOutsideOfParagraph);
+            if (bIsEnd)
+                rHelper->RedlineSetCursor(sID, false, bIsOutsideOfParagraph);
 
             // outside of paragraph and still open? set open redline ID
-            if (m_bIsOutsideOfParagraph)
+            if (bIsOutsideOfParagraph)
             {
                 rHelper->SetOpenRedlineId(sID);
             }

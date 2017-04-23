@@ -19,25 +19,42 @@
 
 #include "formdlgs.hrc"
 #include "ForResId.hrc"
+#include "helpids.hrc"
 
-Bitmap BMP_STR_CLOSE
+#define STD_MASKCOLOR Color { Red=0xFFFF; Green=0x0000; Blue=0xFFFF; }
+
+Image BMP_STR_CLOSE
 {
-    File = "fapclose.png";
+    ImageBitmap = Bitmap { File = "fapclose.bmp"; };
+    MaskColor = STD_MASKCOLOR;
 };
 
-Bitmap BMP_STR_OPEN
+Image BMP_STR_OPEN
 {
-    File = "fapopen.png";
+    ImageBitmap = Bitmap { File = "fapopen.bmp"; };
+    MaskColor = STD_MASKCOLOR;
 };
 
-Bitmap BMP_STR_END
+Image BMP_STR_END
 {
-    File = "fapok.png";
+    ImageBitmap = Bitmap { File = "fapok.bmp"; };
+    MaskColor = STD_MASKCOLOR;
 };
 
-Bitmap BMP_STR_ERROR
+Image BMP_STR_ERROR
 {
-    File = "faperror.png";
+    ImageBitmap = Bitmap { File = "faperror.bmp"; };
+    MaskColor = STD_MASKCOLOR;
+};
+
+String STR_STRUCT_ERR1
+{
+    Text [ en-US ] = "=?" ;
+};
+
+String STR_STRUCT_ERR2
+{
+    Text [ en-US ] = "Error" ;
 };
 
 String STR_TITLE1
@@ -55,9 +72,13 @@ String STR_END
     Text [ en-US ] = "~End" ;
 };
 
-Bitmap RID_BMP_REFBTN1
+Image RID_BMP_REFBTN1
 {
-    File = "refinp1.png";
+    ImageBitmap = Bitmap
+    {
+        File = "refinp1.bmp";
+    };
+    MaskColor = STD_MASKCOLOR;
 };
 
 String RID_STR_SHRINK
@@ -65,9 +86,13 @@ String RID_STR_SHRINK
     Text [ en-US ] = "Shrink" ;
 };
 
-Bitmap RID_BMP_REFBTN2
+Image RID_BMP_REFBTN2
 {
-    File = "refinp2.png";
+    ImageBitmap = Bitmap
+    {
+        File = "refinp2.bmp";
+    };
+    MaskColor = STD_MASKCOLOR;
 };
 
 String RID_STR_EXPAND

@@ -124,11 +124,6 @@ namespace drawinglayer
         {
         }
 
-        FillGradientAttribute::FillGradientAttribute(FillGradientAttribute&& rCandidate)
-        :   mpFillGradientAttribute(std::move(rCandidate.mpFillGradientAttribute))
-        {
-        }
-
         FillGradientAttribute::~FillGradientAttribute()
         {
         }
@@ -141,12 +136,6 @@ namespace drawinglayer
         FillGradientAttribute& FillGradientAttribute::operator=(const FillGradientAttribute& rCandidate)
         {
             mpFillGradientAttribute = rCandidate.mpFillGradientAttribute;
-            return *this;
-        }
-
-        FillGradientAttribute& FillGradientAttribute::operator=(FillGradientAttribute&& rCandidate)
-        {
-            mpFillGradientAttribute = std::move(rCandidate.mpFillGradientAttribute);
             return *this;
         }
 

@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgusenode.hxx>
+#include <svgio/svgreader/svgusenode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
-#include <svgdocument.hxx>
+#include <svgio/svgreader/svgdocument.hxx>
 
 namespace svgio
 {
@@ -41,6 +41,7 @@ namespace svgio
 
         SvgUseNode::~SvgUseNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgUseNode::getSvgStyleAttributes() const
@@ -80,7 +81,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX = aNum;
+                        setX(aNum);
                     }
                     break;
                 }
@@ -90,7 +91,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY = aNum;
+                        setY(aNum);
                     }
                     break;
                 }
@@ -102,7 +103,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maWidth = aNum;
+                            setWidth(aNum);
                         }
                     }
                     break;
@@ -115,7 +116,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maHeight = aNum;
+                            setHeight(aNum);
                         }
                     }
                     break;

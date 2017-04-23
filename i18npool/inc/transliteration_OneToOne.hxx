@@ -30,23 +30,29 @@ class transliteration_OneToOne : public transliteration_commonclass
 {
 public:
         OUString SAL_CALL
-        transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset  ) override;
+        transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset  )
+            throw(css::uno::RuntimeException, std::exception) override;
 
         sal_Unicode SAL_CALL
-        transliterateChar2Char( sal_Unicode inChar) override;
+        transliterateChar2Char( sal_Unicode inChar)
+           throw(css::uno::RuntimeException,
+                 css::i18n::MultipleCharsOutputException, std::exception) override;
 
         // Methods which are shared.
-        sal_Int16 SAL_CALL getType() override;
+        sal_Int16 SAL_CALL getType() throw(css::uno::RuntimeException, std::exception) override;
 
         OUString SAL_CALL
-        folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset) override;
+        folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset)
+            throw(css::uno::RuntimeException, std::exception) override;
 
         sal_Bool SAL_CALL
         equals( const OUString& str1, sal_Int32 pos1, sal_Int32 nCount1, sal_Int32& nMatch1,
-                const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2 ) override;
+                const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2 )
+           throw(css::uno::RuntimeException, std::exception) override;
 
         css::uno::Sequence< OUString > SAL_CALL
-        transliterateRange( const OUString& str1, const OUString& str2 ) override;
+        transliterateRange( const OUString& str1, const OUString& str2 )
+             throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
         TransFunc func;
@@ -60,37 +66,19 @@ public: \
     name (); \
     OUString SAL_CALL \
     transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset ) \
-     override; \
+    throw(css::uno::RuntimeException, std::exception) override; \
     sal_Unicode SAL_CALL \
     transliterateChar2Char( sal_Unicode inChar) \
-     override; \
+    throw(css::uno::RuntimeException, \
+        css::i18n::MultipleCharsOutputException, std::exception) override; \
 };
 
 TRANSLITERATION_ONETOONE( fullwidthToHalfwidth )
+TRANSLITERATION_ONETOONE(halfwidthToFullwidth)
 TRANSLITERATION_ONETOONE( fullwidthKatakanaToHalfwidthKatakana )
+TRANSLITERATION_ONETOONE(halfwidthKatakanaToFullwidthKatakana)
 TRANSLITERATION_ONETOONE( fullwidthToHalfwidthLikeASC )
-
-class halfwidthToFullwidth : public transliteration_OneToOne
-{
-public:
-    halfwidthToFullwidth();
-    OUString SAL_CALL
-    transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset ) override;
-};
-class halfwidthKatakanaToFullwidthKatakana : public transliteration_OneToOne
-{
-public:
-    halfwidthKatakanaToFullwidthKatakana();
-    OUString SAL_CALL
-    transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset ) override;
-};
-class halfwidthToFullwidthLikeJIS : public transliteration_OneToOne
-{
-public:
-    halfwidthToFullwidthLikeJIS();
-    OUString SAL_CALL
-    transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, css::uno::Sequence< sal_Int32 >& offset ) override;
-};
+TRANSLITERATION_ONETOONE( halfwidthToFullwidthLikeJIS )
 
 #undef TRANSLITERATION_ONETOONE
 

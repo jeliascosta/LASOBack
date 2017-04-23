@@ -55,7 +55,7 @@ void OEvoabDriver::disposing()
 {
     ::osl::MutexGuard aGuard(m_aMutex);
 
-    // when driver will be destroyed so all our connections have to be destroyed as well
+    // when driver will be destroied so all our connections have to be destroied as well
     for (OWeakRefArray::iterator i = m_xConnections.begin(); m_xConnections.end() != i; ++i)
     {
         Reference< XComponent > xComp(i->get(), UNO_QUERY);
@@ -65,7 +65,7 @@ void OEvoabDriver::disposing()
             {
                 xComp->dispose();
             }
-            catch (const css::lang::DisposedException&)
+            catch (const com::sun::star::lang::DisposedException&)
             {
                 xComp.clear();
             }
@@ -79,7 +79,7 @@ void OEvoabDriver::disposing()
 
 // static ServiceInfo
 
-OUString OEvoabDriver::getImplementationName_Static(  )
+OUString OEvoabDriver::getImplementationName_Static(  ) throw(RuntimeException)
 {
     return OUString(EVOAB_DRIVER_IMPL_NAME);
     // this name is referenced in the configuration and in the evoab.xml
@@ -87,7 +87,7 @@ OUString OEvoabDriver::getImplementationName_Static(  )
 }
 
 
-Sequence< OUString > OEvoabDriver::getSupportedServiceNames_Static(  )
+Sequence< OUString > OEvoabDriver::getSupportedServiceNames_Static(  ) throw (RuntimeException)
 {
     // which service is supported
     // for more information @see com.sun.star.sdbc.Driver
@@ -95,28 +95,28 @@ Sequence< OUString > OEvoabDriver::getSupportedServiceNames_Static(  )
     return aSNS;
 }
 
-OUString SAL_CALL OEvoabDriver::getImplementationName(  )
+OUString SAL_CALL OEvoabDriver::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL OEvoabDriver::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OEvoabDriver::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
-Sequence< OUString > SAL_CALL OEvoabDriver::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL OEvoabDriver::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
 
-css::uno::Reference< css::uno::XInterface >  SAL_CALL connectivity::evoab::OEvoabDriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory)
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL connectivity::evoab::OEvoabDriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
 {
     return *(new OEvoabDriver(_rxFactory));
 }
 
-Reference< XConnection > SAL_CALL OEvoabDriver::connect( const OUString& url, const Sequence< PropertyValue >& info )
+Reference< XConnection > SAL_CALL OEvoabDriver::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (ODriver_BASE::rBHelper.bDisposed)
@@ -134,12 +134,13 @@ Reference< XConnection > SAL_CALL OEvoabDriver::connect( const OUString& url, co
 }
 
 sal_Bool SAL_CALL OEvoabDriver::acceptsURL( const OUString& url )
+    throw(SQLException, RuntimeException, std::exception)
 {
     return acceptsURL_Stat(url);
 }
 
 
-Sequence< DriverPropertyInfo > SAL_CALL OEvoabDriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
+Sequence< DriverPropertyInfo > SAL_CALL OEvoabDriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( ! acceptsURL(url) )
     {
@@ -153,12 +154,12 @@ Sequence< DriverPropertyInfo > SAL_CALL OEvoabDriver::getPropertyInfo( const OUS
 }
 
 
-sal_Int32 SAL_CALL OEvoabDriver::getMajorVersion(  )
+sal_Int32 SAL_CALL OEvoabDriver::getMajorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 1;
 }
 
-sal_Int32 SAL_CALL OEvoabDriver::getMinorVersion(  )
+sal_Int32 SAL_CALL OEvoabDriver::getMinorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 0;
 }

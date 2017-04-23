@@ -59,9 +59,7 @@ public class TabController extends TestCase {
 
     @Override
     public TestEnvironment createTestEnvironment(TestParameters param,
-                                                 PrintWriter log)
-        throws com.sun.star.uno.Exception
-    {
+                                                 PrintWriter log) {
         XInterface oObj = null;
         XControl xCtrl1 = null;
         XTabControllerModel tabCtrlModel = null;

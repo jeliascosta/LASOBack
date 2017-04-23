@@ -17,13 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <boost/property_tree/json_parser.hpp>
-
-#include <sal/config.h>
-
-#include <comphelper/string.hxx>
-#include <AnnotationWin.hxx>
-#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/image.hxx>
 #include <vcl/virdev.hxx>
@@ -37,8 +30,6 @@
 #include <toolkit/helper/vclunohelper.hxx>
 #include <toolkit/awt/vclxdevice.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
-#include <editeng/svxacorr.hxx>
-#include <editeng/acorrcfg.hxx>
 #include <cmdid.h>
 #include <swtypes.hxx>
 #include <wdocsh.hxx>
@@ -68,7 +59,6 @@
 #include <unodraw.hxx>
 #include <svl/eitem.hxx>
 #include <pagedesc.hxx>
-#include <unotools/datetime.hxx>
 #include <unotools/textsearch.hxx>
 #include <unocrsr.hxx>
 #include <unofieldcoll.hxx>
@@ -84,6 +74,7 @@
 #include <globals.hrc>
 #include <unomid.h>
 #include <unotools/printwarningoptions.hxx>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/lang/ServiceNotRegisteredException.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
@@ -123,7 +114,6 @@
 #include <drawdoc.hxx>
 #include <SwStyleNameMapper.hxx>
 #include <osl/file.hxx>
-#include <comphelper/lok.hxx>
 #include <comphelper/storagehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <unotools/saveopt.hxx>
@@ -134,7 +124,6 @@
 #include <editeng/langitem.hxx>
 #include <docary.hxx>
 #include <i18nlangtag/languagetag.hxx>
-#include <i18nutil/searchopt.hxx>
 
 #include <format.hxx>
 #include <charfmt.hxx>
@@ -144,10 +133,10 @@
 #include <svl/stylepool.hxx>
 #include <swatrset.hxx>
 #include <view.hxx>
-#include <viscrs.hxx>
 #include <srcview.hxx>
 #include <edtwin.hxx>
 #include <swdtflvr.hxx>
+#include <SidebarWin.hxx>
 #include <PostItMgr.hxx>
 
 #include <svtools/langtab.hxx>
@@ -174,6 +163,14 @@ using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::document;
 using ::osl::FileBase;
+
+#define SW_CREATE_DASH_TABLE            0x01
+#define SW_CREATE_GRADIENT_TABLE        0x02
+#define SW_CREATE_HATCH_TABLE           0x03
+#define SW_CREATE_BITMAP_TABLE          0x04
+#define SW_CREATE_TRANSGRADIENT_TABLE   0x05
+#define SW_CREATE_MARKER_TABLE          0x06
+#define SW_CREATE_DRAW_DEFAULTS         0x07
 
 static SwPrintUIOptions * lcl_GetPrintUIOptions(
     SwDocShell * pDocShell,
@@ -217,7 +214,7 @@ static SwPrintUIOptions * lcl_GetPrintUIOptions(
     {
         sal_uInt16 nMax = nCurrentPage;
         const SwPageFrame *pPage = dynamic_cast<const SwPageFrame*>(pFrame->Lower());
-        while (pPage && nMax-- > 0)
+        for ( ; nMax-- > 0; )
         {
             if (pPage->Frame().Height() == 0)
                 nCurrentPage--;
@@ -233,7 +230,7 @@ static SwTextFormatColl *lcl_GetParaStyle(const OUString& rCollName, SwDoc* pDoc
     if( !pColl )
     {
         const sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName(
-            rCollName, SwGetPoolIdFromName::TxtColl );
+            rCollName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
         if( USHRT_MAX != nId )
             pColl = pDoc->getIDocumentStylePoolAccess().GetTextCollFromPool( nId );
     }
@@ -278,6 +275,7 @@ const Sequence< sal_Int8 > & SwXTextDocument::getUnoTunnelId()
 }
 
 sal_Int64 SAL_CALL SwXTextDocument::getSomething( const Sequence< sal_Int8 >& rId )
+    throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -305,7 +303,7 @@ sal_Int64 SAL_CALL SwXTextDocument::getSomething( const Sequence< sal_Int8 >& rI
     return (xNumTunnel.is()) ? xNumTunnel->getSomething(rId) : 0;
 }
 
-Any SAL_CALL SwXTextDocument::queryInterface( const uno::Type& rType )
+Any SAL_CALL SwXTextDocument::queryInterface( const uno::Type& rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = SwXTextDocumentBaseClass::queryInterface(rType);
     if ( !aRet.hasValue() )
@@ -348,12 +346,12 @@ void SAL_CALL SwXTextDocument::release()throw()
     SfxBaseModel::release();
 }
 
-Reference< XAdapter > SwXTextDocument::queryAdapter(  )
+Reference< XAdapter > SwXTextDocument::queryAdapter(  ) throw(RuntimeException, std::exception)
 {
     return SfxBaseModel::queryAdapter();
 }
 
-Sequence< uno::Type > SAL_CALL SwXTextDocument::getTypes()
+Sequence< uno::Type > SAL_CALL SwXTextDocument::getTypes() throw(RuntimeException, std::exception)
 {
     Sequence< uno::Type > aBaseTypes = SfxBaseModel::getTypes();
     Sequence< uno::Type > aTextTypes = SwXTextDocumentBaseClass::getTypes();
@@ -426,6 +424,7 @@ SwXTextDocument::SwXTextDocument(SwDocShell* pShell)
     mxLinkTargetSupplier(),
     mxXRedlines(),
     m_pHiddenViewFrame(nullptr),
+    pPropertyHelper(nullptr),
     m_pPrintUIOptions( nullptr ),
     m_pRenderData( nullptr ),
     // #i117783#
@@ -455,11 +454,12 @@ SwXTextDocument::~SwXTextDocument()
 
 SwXDocumentPropertyHelper * SwXTextDocument::GetPropertyHelper ()
 {
-    if(!mxPropertyHelper.is())
+    if(!xPropertyHelper.is())
     {
-        mxPropertyHelper = new SwXDocumentPropertyHelper(*pDocShell->GetDoc());
+        pPropertyHelper = new SwXDocumentPropertyHelper(*pDocShell->GetDoc());
+        xPropertyHelper = static_cast<cppu::OWeakObject*>(pPropertyHelper);
     }
-    return mxPropertyHelper.get();
+    return pPropertyHelper;
 }
 
 void SwXTextDocument::GetNumberFormatter()
@@ -497,7 +497,7 @@ void SwXTextDocument::GetNumberFormatter()
     }
 }
 
-Reference< XText >  SwXTextDocument::getText()
+Reference< XText >  SwXTextDocument::getText() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -510,14 +510,14 @@ Reference< XText >  SwXTextDocument::getText()
     return xBodyText;
 }
 
-void SwXTextDocument::reformat()
+void SwXTextDocument::reformat() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
         throw RuntimeException();
 }
 
-void SwXTextDocument::lockControllers()
+void SwXTextDocument::lockControllers() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(IsValid())
@@ -529,7 +529,7 @@ void SwXTextDocument::lockControllers()
         throw RuntimeException();
 }
 
-void SwXTextDocument::unlockControllers()
+void SwXTextDocument::unlockControllers() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!aActionArr.empty())
@@ -542,23 +542,24 @@ void SwXTextDocument::unlockControllers()
         throw RuntimeException();
 }
 
-sal_Bool SwXTextDocument::hasControllersLocked()
+sal_Bool SwXTextDocument::hasControllersLocked() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     return !aActionArr.empty();
 }
 
-Reference< frame::XController >  SwXTextDocument::getCurrentController()
+Reference< frame::XController >  SwXTextDocument::getCurrentController() throw( RuntimeException, std::exception )
 {
     return SfxBaseModel::getCurrentController();
 }
 
 void SwXTextDocument::setCurrentController(const Reference< frame::XController > & xController)
+    throw( NoSuchElementException, RuntimeException, std::exception )
 {
     SfxBaseModel::setCurrentController(xController);
 }
 
-Reference< XInterface >  SwXTextDocument::getCurrentSelection()
+Reference< XInterface >  SwXTextDocument::getCurrentSelection() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< XInterface >  xRef;
@@ -579,36 +580,37 @@ Reference< XInterface >  SwXTextDocument::getCurrentSelection()
 }
 
 sal_Bool SwXTextDocument::attachResource(const OUString& aURL, const Sequence< beans::PropertyValue >& aArgs)
+        throw( RuntimeException, std::exception )
 {
     return SfxBaseModel::attachResource(aURL, aArgs);
 }
 
-OUString SwXTextDocument::getURL()
+OUString SwXTextDocument::getURL() throw( RuntimeException, std::exception )
 {
     return SfxBaseModel::getURL();
 }
 
-Sequence< beans::PropertyValue > SwXTextDocument::getArgs()
+Sequence< beans::PropertyValue > SwXTextDocument::getArgs() throw( RuntimeException, std::exception )
 {
     return SfxBaseModel::getArgs();
 }
 
-void SwXTextDocument::connectController(const Reference< frame::XController > & xController)
+void SwXTextDocument::connectController(const Reference< frame::XController > & xController) throw( RuntimeException, std::exception )
 {
     SfxBaseModel::connectController(xController);
 }
 
-void SwXTextDocument::disconnectController(const Reference< frame::XController > & xController)
+void SwXTextDocument::disconnectController(const Reference< frame::XController > & xController) throw( RuntimeException, std::exception )
 {
     SfxBaseModel::disconnectController(xController);
 }
 
-void SwXTextDocument::dispose()
+void SwXTextDocument::dispose() throw( RuntimeException, std::exception )
 {
     SfxBaseModel::dispose();
 }
 
-void SwXTextDocument::close( sal_Bool bDeliverOwnership )
+void SwXTextDocument::close( sal_Bool bDeliverOwnership ) throw( util::CloseVetoException, RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(IsValid() && m_pHiddenViewFrame)
@@ -616,17 +618,18 @@ void SwXTextDocument::close( sal_Bool bDeliverOwnership )
     SfxBaseModel::close(bDeliverOwnership);
 }
 
-void SwXTextDocument::addEventListener(const Reference< lang::XEventListener > & aListener)
+void SwXTextDocument::addEventListener(const Reference< lang::XEventListener > & aListener) throw( RuntimeException, std::exception )
 {
     SfxBaseModel::addEventListener(aListener);
 }
 
-void SwXTextDocument::removeEventListener(const Reference< lang::XEventListener > & aListener)
+void SwXTextDocument::removeEventListener(const Reference< lang::XEventListener > & aListener) throw( RuntimeException, std::exception )
 {
     SfxBaseModel::removeEventListener(aListener);
 }
 
 Reference< XPropertySet > SwXTextDocument::getLineNumberingProperties()
+            throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(IsValid())
@@ -642,6 +645,7 @@ Reference< XPropertySet > SwXTextDocument::getLineNumberingProperties()
 }
 
 Reference< XIndexReplace >  SwXTextDocument::getChapterNumberingRules()
+                                    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -653,7 +657,7 @@ Reference< XIndexReplace >  SwXTextDocument::getChapterNumberingRules()
     return mxXChapterNumbering;
 }
 
-Reference< XIndexAccess >  SwXTextDocument::getNumberingRules()
+Reference< XIndexAccess >  SwXTextDocument::getNumberingRules() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -665,7 +669,7 @@ Reference< XIndexAccess >  SwXTextDocument::getNumberingRules()
     return mxXNumberingRules;
 }
 
-Reference< XIndexAccess >  SwXTextDocument::getFootnotes()
+Reference< XIndexAccess >  SwXTextDocument::getFootnotes() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -678,7 +682,7 @@ Reference< XIndexAccess >  SwXTextDocument::getFootnotes()
 }
 
 Reference< XPropertySet >  SAL_CALL
-        SwXTextDocument::getFootnoteSettings()
+        SwXTextDocument::getFootnoteSettings() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -690,7 +694,7 @@ Reference< XPropertySet >  SAL_CALL
     return mxXFootnoteSettings;
 }
 
-Reference< XIndexAccess >  SwXTextDocument::getEndnotes()
+Reference< XIndexAccess >  SwXTextDocument::getEndnotes() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -702,7 +706,7 @@ Reference< XIndexAccess >  SwXTextDocument::getEndnotes()
     return mxXEndnotes;
 }
 
-Reference< XPropertySet >  SwXTextDocument::getEndnoteSettings()
+Reference< XPropertySet >  SwXTextDocument::getEndnoteSettings() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -715,6 +719,7 @@ Reference< XPropertySet >  SwXTextDocument::getEndnoteSettings()
 }
 
 Reference< util::XReplaceDescriptor >  SwXTextDocument::createReplaceDescriptor()
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< util::XReplaceDescriptor >  xRet = new SwXTextSearch;
@@ -735,10 +740,11 @@ SwUnoCursor* SwXTextDocument::CreateCursorForSearch(Reference< XTextCursor > & x
 }
 
 sal_Int32 SwXTextDocument::replaceAll(const Reference< util::XSearchDescriptor > & xDesc)
+                                        throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
-    Reference< XUnoTunnel > xDescTunnel(xDesc, UNO_QUERY_THROW);
-    if(!IsValid() || !xDescTunnel->getSomething(SwXTextSearch::getUnoTunnelId()))
+    Reference< XUnoTunnel > xDescTunnel(xDesc, UNO_QUERY);
+    if(!IsValid() || !xDescTunnel.is() || !xDescTunnel->getSomething(SwXTextSearch::getUnoTunnelId()))
         throw RuntimeException();
 
     Reference< XTextCursor >  xCursor;
@@ -747,13 +753,13 @@ sal_Int32 SwXTextDocument::replaceAll(const Reference< util::XSearchDescriptor >
     const SwXTextSearch* pSearch = reinterpret_cast<const SwXTextSearch*>(
             xDescTunnel->getSomething(SwXTextSearch::getUnoTunnelId()));
 
-    int eRanges(FindRanges::InBody|FindRanges::InSelAll);
+    int eRanges(FND_IN_BODY|FND_IN_SELALL);
 
-    i18nutil::SearchOptions2 aSearchOpt;
+    util::SearchOptions2 aSearchOpt;
     pSearch->FillSearchOptions( aSearchOpt );
 
-    SwDocPositions eStart = pSearch->m_bBack ? SwDocPositions::End : SwDocPositions::Start;
-    SwDocPositions eEnd = pSearch->m_bBack ? SwDocPositions::Start : SwDocPositions::End;
+    SwDocPositions eStart = pSearch->bBack ? DOCPOS_END : DOCPOS_START;
+    SwDocPositions eEnd = pSearch->bBack ? DOCPOS_START : DOCPOS_END;
 
     // Search should take place anywhere
     pUnoCursor->SetRemainInSection(false);
@@ -775,16 +781,16 @@ sal_Int32 SwXTextDocument::replaceAll(const Reference< util::XSearchDescriptor >
         pSearch->FillSearchItemSet(aSearch);
         pSearch->FillReplaceItemSet(aReplace);
         bool bCancel;
-        nResult = (sal_Int32)pUnoCursor->Find( aSearch, !pSearch->m_bStyles,
+        nResult = (sal_Int32)pUnoCursor->Find( aSearch, !pSearch->bStyles,
                     eStart, eEnd, bCancel,
                     (FindRanges)eRanges,
-                    !pSearch->m_sSearchText.isEmpty() ? &aSearchOpt : nullptr,
+                    !pSearch->sSearchText.isEmpty() ? &aSearchOpt : nullptr,
                     &aReplace );
     }
-    else if(pSearch->m_bStyles)
+    else if(pSearch->bStyles)
     {
-        SwTextFormatColl *pSearchColl = lcl_GetParaStyle(pSearch->m_sSearchText, pUnoCursor->GetDoc());
-        SwTextFormatColl *pReplaceColl = lcl_GetParaStyle(pSearch->m_sReplaceText, pUnoCursor->GetDoc());
+        SwTextFormatColl *pSearchColl = lcl_GetParaStyle(pSearch->sSearchText, pUnoCursor->GetDoc());
+        SwTextFormatColl *pReplaceColl = lcl_GetParaStyle(pSearch->sReplaceText, pUnoCursor->GetDoc());
 
         bool bCancel;
         nResult = pUnoCursor->Find( *pSearchColl,
@@ -807,6 +813,7 @@ sal_Int32 SwXTextDocument::replaceAll(const Reference< util::XSearchDescriptor >
 }
 
 Reference< util::XSearchDescriptor >  SwXTextDocument::createSearchDescriptor()
+                                                    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< util::XSearchDescriptor >  xRet = new SwXTextSearch;
@@ -820,7 +827,7 @@ SwUnoCursor* SwXTextDocument::FindAny(const Reference< util::XSearchDescriptor >
                                      Reference< XTextCursor > & xCursor,
                                      bool bAll,
                                      sal_Int32& nResult,
-                                     Reference< XInterface > const & xLastResult)
+                                     Reference< XInterface >  xLastResult)
 {
     Reference< XUnoTunnel > xDescTunnel(xDesc, UNO_QUERY);
     if(!IsValid() || !xDescTunnel.is() || !xDescTunnel->getSomething(SwXTextSearch::getUnoTunnelId()))
@@ -871,24 +878,24 @@ SwUnoCursor* SwXTextDocument::FindAny(const Reference< util::XSearchDescriptor >
                             rRangeNode.FindFooterStartNode() ;
     }
 
-    i18nutil::SearchOptions2 aSearchOpt;
+    util::SearchOptions2 aSearchOpt;
     pSearch->FillSearchOptions( aSearchOpt );
 
 /**
  * The following combinations are allowed:
- *  - Search in the body:                   -> FindRanges::InBody
- *  - Search all in the body:               -> FindRanges::InBodyOnly | FindRanges::InSelAll
- *  - Search in selections: one / all       -> FindRanges::InSel  [ | FindRanges::InSelAll ]
- *  - Search outside the body: one / all    -> FindRanges::InOther [ | FindRanges::InSelAll ]
- *  - Search everywhere all:                -> FindRanges::InSelAll
+ *  - Search in the body:                   -> FND_IN_BODY
+ *  - Search all in the body:               -> FND_IN_BODYONLY | FND_IN_SELALL
+ *  - Search in selections: one / all       -> FND_IN_SEL  [ | FND_IN_SELALL ]
+ *  - Search outside the body: one / all    -> FND_IN_OTHER [ | FND_IN_SELALL ]
+ *  - Search everywhere all:                -> FND_IN_SELALL
  */
-    FindRanges eRanges(FindRanges::InBody);
+    int eRanges(FND_IN_BODY);
     if(bParentInExtra)
-        eRanges = FindRanges::InOther;
+        eRanges = FND_IN_OTHER;
     if(bAll) //always - everywhere?
-        eRanges = FindRanges::InSelAll;
-    SwDocPositions eStart = !bAll ? SwDocPositions::Curr : pSearch->m_bBack ? SwDocPositions::End : SwDocPositions::Start;
-    SwDocPositions eEnd = pSearch->m_bBack ? SwDocPositions::Start : SwDocPositions::End;
+        eRanges = FND_IN_SELALL;
+    SwDocPositions eStart = !bAll ? DOCPOS_CURR : pSearch->bBack ? DOCPOS_END : DOCPOS_START;
+    SwDocPositions eEnd = pSearch->bBack ? DOCPOS_START : DOCPOS_END;
 
     nResult = 0;
     for (int nSearchProc = 0; nSearchProc < 2; ++nSearchProc)
@@ -904,20 +911,20 @@ SwUnoCursor* SwXTextDocument::FindAny(const Reference< util::XSearchDescriptor >
                                 0);
             pSearch->FillSearchItemSet(aSearch);
             bool bCancel;
-            nResult = (sal_Int32)pUnoCursor->Find( aSearch, !pSearch->m_bStyles,
+            nResult = (sal_Int32)pUnoCursor->Find( aSearch, !pSearch->bStyles,
                         eStart, eEnd, bCancel,
-                        eRanges,
-                        !pSearch->m_sSearchText.isEmpty() ? &aSearchOpt : nullptr );
+                        (FindRanges)eRanges,
+                        !pSearch->sSearchText.isEmpty() ? &aSearchOpt : nullptr );
         }
-        else if(pSearch->m_bStyles)
+        else if(pSearch->bStyles)
         {
-            SwTextFormatColl *pSearchColl = lcl_GetParaStyle(pSearch->m_sSearchText, pUnoCursor->GetDoc());
+            SwTextFormatColl *pSearchColl = lcl_GetParaStyle(pSearch->sSearchText, pUnoCursor->GetDoc());
             //pSearch->sReplaceText
             SwTextFormatColl *pReplaceColl = nullptr;
             bool bCancel;
             nResult = (sal_Int32)pUnoCursor->Find( *pSearchColl,
                         eStart, eEnd, bCancel,
-                        eRanges, pReplaceColl );
+                        (FindRanges)eRanges, pReplaceColl );
         }
         else
         {
@@ -926,18 +933,19 @@ SwUnoCursor* SwXTextDocument::FindAny(const Reference< util::XSearchDescriptor >
             bool bCancel;
             nResult = (sal_Int32)pUnoCursor->Find( aSearchOpt, bSearchInNotes,
                     eStart, eEnd, bCancel,
-                    eRanges );
+                    (FindRanges)eRanges );
         }
-        if(nResult || (eRanges&(FindRanges::InSelAll|FindRanges::InOther)))
+        if(nResult || (eRanges&(FND_IN_SELALL|FND_IN_OTHER)))
             break;
         //second step - find in other
-        eRanges = FindRanges::InOther;
+        eRanges = FND_IN_OTHER;
     }
     return pUnoCursor;
 }
 
 Reference< XIndexAccess >
     SwXTextDocument::findAll(const Reference< util::XSearchDescriptor > & xDesc)
+                                                throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< XInterface >  xTmp;
@@ -952,6 +960,7 @@ Reference< XIndexAccess >
 }
 
 Reference< XInterface >  SwXTextDocument::findFirst(const Reference< util::XSearchDescriptor > & xDesc)
+                                            throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< XInterface >  xTmp;
@@ -973,6 +982,7 @@ Reference< XInterface >  SwXTextDocument::findFirst(const Reference< util::XSear
 
 Reference< XInterface >  SwXTextDocument::findNext(const Reference< XInterface > & xStartAt,
             const Reference< util::XSearchDescriptor > & xDesc)
+            throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Reference< XInterface >  xTmp;
@@ -996,6 +1006,7 @@ Reference< XInterface >  SwXTextDocument::findNext(const Reference< XInterface >
 }
 
 Sequence< beans::PropertyValue > SwXTextDocument::getPagePrintSettings()
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     Sequence< beans::PropertyValue > aSeq(9);
@@ -1073,6 +1084,7 @@ static OUString lcl_CreateOutlineString( size_t nIndex,
 }
 
 void SwXTextDocument::setPagePrintSettings(const Sequence< beans::PropertyValue >& aSettings)
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(IsValid())
@@ -1128,12 +1140,8 @@ void SwXTextDocument::setPagePrintSettings(const Sequence< beans::PropertyValue 
             }
             else if(sName == "IsLandscape")
             {
-                auto b = o3tl::tryAccess<bool>(rVal);
-                bException = bool(b);
-                if (b)
-                {
-                    aData.SetLandscape(*b);
-                }
+                bException =  (cppu::UnoType<bool>::get() != rVal.getValueType());
+                aData.SetLandscape(*static_cast<sal_Bool const *>(rVal.getValue()));
             }
             else
                 bException = true;
@@ -1147,11 +1155,12 @@ void SwXTextDocument::setPagePrintSettings(const Sequence< beans::PropertyValue 
 }
 
 void SwXTextDocument::printPages(const Sequence< beans::PropertyValue >& xOptions)
+    throw( IllegalArgumentException, RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(IsValid())
     {
-        SfxViewFrame* pFrame = SfxViewFrame::LoadHiddenDocument( *pDocShell, SfxInterfaceId(7) );
+        SfxViewFrame* pFrame = SfxViewFrame::LoadHiddenDocument( *pDocShell, 7 );
         SfxRequest aReq(FN_PRINT_PAGEPREVIEW, SfxCallMode::SYNCHRON,
                                     pDocShell->GetDoc()->GetAttrPool());
             aReq.AppendItem(SfxBoolItem(FN_PRINT_PAGEPREVIEW, true));
@@ -1188,9 +1197,9 @@ void SwXTextDocument::printPages(const Sequence< beans::PropertyValue >& xOption
             // Collate-Property
             else if ( rProp.Name == UNO_NAME_COLLATE )
             {
-                if ( auto b = o3tl::tryAccess<bool>(rProp.Value) )
+                if ( rProp.Value.getValueType() == cppu::UnoType<bool>::get())
 
-                    aReq.AppendItem(SfxBoolItem( SID_PRINT_COLLATE, *b ) );
+                    aReq.AppendItem(SfxBoolItem( SID_PRINT_COLLATE, *static_cast<sal_Bool const *>(rProp.Value.getValue()) ) );
                 else
                     throw IllegalArgumentException();
             }
@@ -1198,8 +1207,8 @@ void SwXTextDocument::printPages(const Sequence< beans::PropertyValue >& xOption
             // Sort-Property
             else if ( rProp.Name == UNO_NAME_SORT )
             {
-                if ( auto b = o3tl::tryAccess<bool>(rProp.Value) )
-                    aReq.AppendItem(SfxBoolItem( SID_PRINT_SORT, *b ) );
+                if ( rProp.Value.getValueType() == cppu::UnoType<bool>::get() )
+                    aReq.AppendItem(SfxBoolItem( SID_PRINT_SORT, *static_cast<sal_Bool const *>(rProp.Value.getValue()) ) );
                 else
                     throw IllegalArgumentException();
             }
@@ -1227,6 +1236,7 @@ void SwXTextDocument::printPages(const Sequence< beans::PropertyValue >& xOption
 }
 
 Reference< XNameAccess >  SwXTextDocument::getReferenceMarks()
+                                        throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1238,7 +1248,7 @@ Reference< XNameAccess >  SwXTextDocument::getReferenceMarks()
     return mxXReferenceMarks;
 }
 
-Reference< XEnumerationAccess >  SwXTextDocument::getTextFields()
+Reference< XEnumerationAccess >  SwXTextDocument::getTextFields() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1251,6 +1261,7 @@ Reference< XEnumerationAccess >  SwXTextDocument::getTextFields()
 }
 
 Reference< XNameAccess >  SwXTextDocument::getTextFieldMasters()
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1262,7 +1273,7 @@ Reference< XNameAccess >  SwXTextDocument::getTextFieldMasters()
     return mxXTextFieldMasters;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getEmbeddedObjects()
+Reference< XNameAccess >  SwXTextDocument::getEmbeddedObjects() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1274,7 +1285,7 @@ Reference< XNameAccess >  SwXTextDocument::getEmbeddedObjects()
     return mxXEmbeddedObjects;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getBookmarks()
+Reference< XNameAccess >  SwXTextDocument::getBookmarks() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1286,7 +1297,7 @@ Reference< XNameAccess >  SwXTextDocument::getBookmarks()
     return mxXBookmarks;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getTextSections()
+Reference< XNameAccess >  SwXTextDocument::getTextSections() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1298,7 +1309,7 @@ Reference< XNameAccess >  SwXTextDocument::getTextSections()
     return mxXTextSections;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getTextTables()
+Reference< XNameAccess >  SwXTextDocument::getTextTables() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1310,7 +1321,7 @@ Reference< XNameAccess >  SwXTextDocument::getTextTables()
     return mxXTextTables;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getGraphicObjects()
+Reference< XNameAccess >  SwXTextDocument::getGraphicObjects() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1322,7 +1333,7 @@ Reference< XNameAccess >  SwXTextDocument::getGraphicObjects()
     return mxXGraphicObjects;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getTextFrames()
+Reference< XNameAccess >  SwXTextDocument::getTextFrames() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1334,7 +1345,7 @@ Reference< XNameAccess >  SwXTextDocument::getTextFrames()
     return mxXTextFrames;
 }
 
-Reference< XNameAccess >  SwXTextDocument::getStyleFamilies()
+Reference< XNameAccess >  SwXTextDocument::getStyleFamilies() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1347,6 +1358,7 @@ Reference< XNameAccess >  SwXTextDocument::getStyleFamilies()
 }
 
 uno::Reference< style::XAutoStyles > SwXTextDocument::getAutoStyles(  )
+    throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1359,15 +1371,15 @@ uno::Reference< style::XAutoStyles > SwXTextDocument::getAutoStyles(  )
 
 }
 
-Reference< drawing::XDrawPage >  SwXTextDocument::getDrawPage()
+Reference< drawing::XDrawPage >  SwXTextDocument::getDrawPage() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
         throw RuntimeException();
     if(!mxXDrawPage.is())
     {
-        pDrawPage = new SwXDrawPage(pDocShell->GetDoc());
-        mxXDrawPage = pDrawPage;
+        static_cast<SwXTextDocument*>(this)->pDrawPage = new SwXDrawPage(pDocShell->GetDoc());
+        static_cast<SwXTextDocument*>(this)->mxXDrawPage = pDrawPage;
         // Create a Reference to trigger the complete initialization of the
         // object. Otherwise in some corner cases it would get initialized
         // at ::InitNewDoc -> which would get called during
@@ -1586,10 +1598,11 @@ void    SwXTextDocument::InitNewDoc()
         static_cast<SwXRedlines*>(pMarks)->Invalidate();
         mxXRedlines.clear();
     }
-    if(mxPropertyHelper.is())
+    if(xPropertyHelper.is())
     {
-        mxPropertyHelper->Invalidate();
-        mxPropertyHelper.clear();
+        pPropertyHelper->Invalidate();
+        xPropertyHelper = nullptr;
+        pPropertyHelper = nullptr;
     }
 }
 
@@ -1602,38 +1615,38 @@ css::uno::Reference<css::uno::XInterface> SwXTextDocument::create(
     {
         throw RuntimeException();
     }
-    const SwServiceType nType = SwXServiceProvider::GetProviderType(rServiceName);
-    if (nType != SwServiceType::Invalid)
+    const sal_uInt16 nType = SwXServiceProvider::GetProviderType(rServiceName);
+    if (nType != SW_SERVICE_INVALID)
     {
         return SwXServiceProvider::MakeInstance(nType, *pDocShell->GetDoc());
     }
     if (rServiceName == "com.sun.star.drawing.DashTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Dash);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_DASH_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.GradientTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Gradient);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_GRADIENT_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.HatchTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Hatch);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_HATCH_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.BitmapTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Bitmap);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_BITMAP_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.TransparencyGradientTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::TransGradient);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_TRANSGRADIENT_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.MarkerTable")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Marker);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_MARKER_TABLE);
     }
     if (rServiceName == "com.sun.star.drawing.Defaults")
     {
-        return GetPropertyHelper()->GetDrawTable(SwCreateDrawTable::Defaults);
+        return GetPropertyHelper()->GetDrawTable(SW_CREATE_DRAW_DEFAULTS);
     }
     if (rServiceName == "com.sun.star.document.Settings")
     {
@@ -1643,7 +1656,7 @@ css::uno::Reference<css::uno::XInterface> SwXTextDocument::create(
     {
         return static_cast<cppu::OWeakObject *>(
             new SvXMLEmbeddedObjectHelper(
-                *pDocShell, SvXMLEmbeddedObjectHelperMode::Read));
+                *pDocShell, EMBEDDEDOBJECTHELPER_MODE_READ));
     }
     if (rServiceName == "com.sun.star.text.DocumentSettings")
     {
@@ -1692,6 +1705,7 @@ css::uno::Reference<css::uno::XInterface> SwXTextDocument::create(
 }
 
 Reference< XInterface >  SwXTextDocument::createInstance(const OUString& rServiceName)
+                                        throw( Exception, RuntimeException, std::exception )
 {
     return create(rServiceName, nullptr);
 }
@@ -1699,11 +1713,13 @@ Reference< XInterface >  SwXTextDocument::createInstance(const OUString& rServic
 Reference< XInterface >  SwXTextDocument::createInstanceWithArguments(
         const OUString& ServiceSpecifier,
         const Sequence< Any >& Arguments)
+        throw( Exception, RuntimeException, std::exception )
 {
     return create(ServiceSpecifier, &Arguments);
 }
 
 Sequence< OUString > SwXTextDocument::getAvailableServiceNames()
+                                        throw( RuntimeException, std::exception )
 {
     static Sequence< OUString > aServices;
     if ( aServices.getLength() == 0 )
@@ -1726,7 +1742,7 @@ Sequence< OUString > SwXTextDocument::getAvailableServiceNames()
     return aServices;
 }
 
-OUString SwXTextDocument::getImplementationName()
+OUString SwXTextDocument::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("SwXTextDocument");
     /* // Matching the .component information:
@@ -1738,12 +1754,12 @@ OUString SwXTextDocument::getImplementationName()
     */
 }
 
-sal_Bool SwXTextDocument::supportsService(const OUString& rServiceName)
+sal_Bool SwXTextDocument::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-Sequence< OUString > SwXTextDocument::getSupportedServiceNames()
+Sequence< OUString > SwXTextDocument::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     bool bWebDoc    = (dynamic_cast<SwWebDocShell*>(    pDocShell) !=  nullptr );
     bool bGlobalDoc = (dynamic_cast<SwGlobalDocShell*>( pDocShell) !=  nullptr );
@@ -1765,7 +1781,7 @@ Sequence< OUString > SwXTextDocument::getSupportedServiceNames()
     return aRet;
 }
 
-Reference< XIndexAccess >  SwXTextDocument::getDocumentIndexes()
+Reference< XIndexAccess >  SwXTextDocument::getDocumentIndexes() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1777,13 +1793,16 @@ Reference< XIndexAccess >  SwXTextDocument::getDocumentIndexes()
     return mxXDocumentIndexes;
 }
 
-Reference< XPropertySetInfo >  SwXTextDocument::getPropertySetInfo()
+Reference< XPropertySetInfo >  SwXTextDocument::getPropertySetInfo() throw( RuntimeException, std::exception )
 {
     static Reference< XPropertySetInfo >  xRet = pPropSet->getPropertySetInfo();
     return xRet;
 }
 
 void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any& aValue)
+    throw (UnknownPropertyException, PropertyVetoException,
+           IllegalArgumentException, WrappedTargetException,
+           RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -1816,20 +1835,20 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
         case WID_DOC_CHANGES_RECORD:
         case WID_DOC_CHANGES_SHOW:
         {
-            bool bSet = *o3tl::doAccess<bool>(aValue);
-            RedlineFlags eMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
+            bool bSet = *static_cast<sal_Bool const *>(aValue.getValue());
+            sal_uInt16 eMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
             if(WID_DOC_CHANGES_SHOW == pEntry->nWID)
             {
-                eMode &= ~RedlineFlags(RedlineFlags::ShowInsert | RedlineFlags::ShowDelete);
-                eMode |= RedlineFlags::ShowInsert;
+                eMode &= ~(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE);
+                eMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT;
                 if( bSet )
-                    eMode |= RedlineFlags::ShowDelete;
+                    eMode |= nsRedlineMode_t::REDLINE_SHOW_DELETE;
             }
             else if(WID_DOC_CHANGES_RECORD == pEntry->nWID)
             {
-                eMode = bSet ? eMode|RedlineFlags::On : eMode&~RedlineFlags::On;
+                eMode = bSet ? eMode|nsRedlineMode_t::REDLINE_ON : eMode&~nsRedlineMode_t::REDLINE_ON;
             }
-            pDocShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags( eMode );
+            pDocShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)(eMode ));
         }
         break;
         case  WID_DOC_CHANGES_PASSWORD:
@@ -1841,9 +1860,9 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
                 pDoc->getIDocumentRedlineAccess().SetRedlinePassword(aNew);
                 if(aNew.getLength())
                 {
-                    RedlineFlags eMode = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
-                    eMode |= RedlineFlags::On;
-                    pDoc->getIDocumentRedlineAccess().SetRedlineFlags( eMode );
+                    sal_uInt16 eMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+                    eMode = eMode|nsRedlineMode_t::REDLINE_ON;
+                    pDoc->getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)(eMode ));
                 }
             }
         }
@@ -1856,25 +1875,25 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
         }
         break;
         case WID_DOC_HIDE_TIPS :
-            SW_MOD()->GetModuleConfig()->SetHideFieldTips(*o3tl::doAccess<bool>(aValue));
+            SW_MOD()->GetModuleConfig()->SetHideFieldTips(*static_cast<sal_Bool const *>(aValue.getValue()));
         break;
         case WID_DOC_REDLINE_DISPLAY:
         {
-            RedlineFlags eRedMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
-            eRedMode = eRedMode & (~RedlineFlags::ShowMask);
+            sal_Int16 eRedMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
+            eRedMode = eRedMode & (~nsRedlineMode_t::REDLINE_SHOW_MASK);
             sal_Int16 nSet = 0;
             aValue >>= nSet;
             switch(nSet)
             {
                 case RedlineDisplayType::NONE: break;
-                case RedlineDisplayType::INSERTED: eRedMode |= RedlineFlags::ShowInsert; break;
-                case RedlineDisplayType::REMOVED: eRedMode |= RedlineFlags::ShowDelete;  break;
+                case RedlineDisplayType::INSERTED: eRedMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT; break;
+                case RedlineDisplayType::REMOVED: eRedMode |= nsRedlineMode_t::REDLINE_SHOW_DELETE;  break;
                 case RedlineDisplayType::
-                        INSERTED_AND_REMOVED: eRedMode |= RedlineFlags::ShowInsert|RedlineFlags::ShowDelete;
+                        INSERTED_AND_REMOVED: eRedMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT|nsRedlineMode_t::REDLINE_SHOW_DELETE;
                 break;
                 default: throw IllegalArgumentException();
             }
-            pDocShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags(eRedMode);
+            pDocShell->GetDoc()->getIDocumentRedlineAccess().SetRedlineMode(eRedMode);
         }
         break;
         case WID_DOC_TWO_DIGIT_YEAR:
@@ -1889,7 +1908,7 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
         case WID_DOC_AUTOMATIC_CONTROL_FOCUS:
         {
             SwDrawModel * pDrawDoc;
-            bool bAuto = *o3tl::doAccess<bool>(aValue);
+            bool bAuto = *static_cast<sal_Bool const *>(aValue.getValue());
 
             if ( nullptr != ( pDrawDoc = pDocShell->GetDoc()->getIDocumentDrawModelAccess().GetDrawModel() ) )
                 pDrawDoc->SetAutoControlFocus( bAuto );
@@ -1909,7 +1928,7 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
         case WID_DOC_APPLY_FORM_DESIGN_MODE:
         {
             SwDrawModel * pDrawDoc;
-            bool bMode = *o3tl::doAccess<bool>(aValue);
+            bool bMode = *static_cast<sal_Bool const *>(aValue.getValue());
 
             if ( nullptr != ( pDrawDoc = pDocShell->GetDoc()->getIDocumentDrawModelAccess().GetDrawModel() ) )
                 pDrawDoc->SetOpenInDesignMode( bMode );
@@ -1963,6 +1982,7 @@ void SwXTextDocument::setPropertyValue(const OUString& rPropertyName, const Any&
 }
 
 Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2000,15 +2020,17 @@ Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
         case WID_DOC_CHANGES_RECORD:
         case WID_DOC_CHANGES_SHOW:
         {
-            const RedlineFlags eMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
+            const sal_uInt16 eMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
             bool bSet = false;
             if(WID_DOC_CHANGES_SHOW == pEntry->nWID)
             {
-                bSet = IDocumentRedlineAccess::IsShowChanges(eMode);
+                const sal_uInt16 nMask = nsRedlineMode_t::REDLINE_SHOW_INSERT |
+                                         nsRedlineMode_t::REDLINE_SHOW_DELETE;
+                bSet = (eMode & nMask) == nMask;
             }
             else if(WID_DOC_CHANGES_RECORD == pEntry->nWID)
             {
-                bSet = bool(eMode & RedlineFlags::On);
+                bSet = (eMode& nsRedlineMode_t::REDLINE_ON)  != 0;
             }
             aAny <<= bSet;
         }
@@ -2027,14 +2049,14 @@ Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
         break;
         case WID_DOC_REDLINE_DISPLAY:
         {
-            RedlineFlags eRedMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineFlags();
-            eRedMode = eRedMode & RedlineFlags::ShowMask;
+            sal_Int16 eRedMode = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineMode();
+            eRedMode = eRedMode & nsRedlineMode_t::REDLINE_SHOW_MASK;
             sal_Int16 nRet = RedlineDisplayType::NONE;
-            if(RedlineFlags::ShowInsert == eRedMode)
+            if(nsRedlineMode_t::REDLINE_SHOW_INSERT == eRedMode)
                 nRet = RedlineDisplayType::INSERTED;
-            else if(RedlineFlags::ShowDelete == eRedMode)
+            else if(nsRedlineMode_t::REDLINE_SHOW_DELETE == eRedMode)
                 nRet = RedlineDisplayType::REMOVED;
-            else if(RedlineFlags::ShowMask == eRedMode)
+            else if(nsRedlineMode_t::REDLINE_SHOW_MASK == eRedMode)
                 nRet = RedlineDisplayType::INSERTED_AND_REMOVED;
             aAny <<= nRet;
         }
@@ -2042,7 +2064,7 @@ Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
         case WID_DOC_FORBIDDEN_CHARS:
         {
             GetPropertyHelper();
-            Reference<XForbiddenCharacters> xRet(static_cast<cppu::OWeakObject*>(mxPropertyHelper.get()), UNO_QUERY);
+            Reference<XForbiddenCharacters> xRet(xPropertyHelper, UNO_QUERY);
             aAny <<= xRet;
         }
         break;
@@ -2093,7 +2115,7 @@ Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
             aAny <<= getRuntimeUID();
         break;
         case WID_DOC_LOCK_UPDATES :
-            aAny <<= pDocShell->GetDoc()->IsInReading();
+            aAny <<= static_cast<bool>( pDocShell->GetDoc()->IsInReading() );
         break;
         case WID_DOC_BUILDID:
             aAny <<= maBuildId;
@@ -2116,29 +2138,33 @@ Any SwXTextDocument::getPropertyValue(const OUString& rPropertyName)
 
 void SwXTextDocument::addPropertyChangeListener(const OUString& /*PropertyName*/,
     const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
 void SwXTextDocument::removePropertyChangeListener(const OUString& /*PropertyName*/,
     const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
 void SwXTextDocument::addVetoableChangeListener(const OUString& /*PropertyName*/,
     const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
 void SwXTextDocument::removeVetoableChangeListener(const OUString& /*PropertyName*/,
                         const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     OSL_FAIL("not implemented");
 }
 
-Reference< XNameAccess >  SwXTextDocument::getLinks()
+Reference< XNameAccess >  SwXTextDocument::getLinks() throw( RuntimeException, std::exception )
 {
     if(!mxLinkTargetSupplier.is())
     {
@@ -2147,7 +2173,7 @@ Reference< XNameAccess >  SwXTextDocument::getLinks()
     return mxLinkTargetSupplier;
 }
 
-Reference< XEnumerationAccess > SwXTextDocument::getRedlines(  )
+Reference< XEnumerationAccess > SwXTextDocument::getRedlines(  ) throw(RuntimeException, std::exception)
 {
     if(!mxXRedlines.is())
     {
@@ -2165,7 +2191,7 @@ void SwXTextDocument::NotifyRefreshListeners()
             & util::XRefreshListener::refreshed, ev);
 }
 
-void SwXTextDocument::refresh()
+void SwXTextDocument::refresh() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2178,6 +2204,7 @@ void SwXTextDocument::refresh()
 
 void SAL_CALL SwXTextDocument::addRefreshListener(
         const Reference<util::XRefreshListener> & xListener)
+throw (RuntimeException, std::exception)
 {
     // no need to lock here as m_pImpl is const and container threadsafe
     m_pImpl->m_RefreshListeners.addInterface(xListener);
@@ -2185,12 +2212,13 @@ void SAL_CALL SwXTextDocument::addRefreshListener(
 
 void SAL_CALL SwXTextDocument::removeRefreshListener(
         const Reference<util::XRefreshListener> & xListener)
+throw (RuntimeException, std::exception)
 {
     // no need to lock here as m_pImpl is const and container threadsafe
     m_pImpl->m_RefreshListeners.removeInterface(xListener);
 }
 
-void SwXTextDocument::updateLinks(  )
+void SwXTextDocument::updateLinks(  ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2206,6 +2234,7 @@ void SwXTextDocument::updateLinks(  )
 
 //XPropertyState
 PropertyState SAL_CALL SwXTextDocument::getPropertyState( const OUString& rPropertyName )
+    throw (UnknownPropertyException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     PropertyState eRet = PropertyState_DIRECT_VALUE;
@@ -2223,6 +2252,7 @@ PropertyState SAL_CALL SwXTextDocument::getPropertyState( const OUString& rPrope
 }
 
 Sequence< PropertyState > SAL_CALL SwXTextDocument::getPropertyStates( const Sequence< OUString >& rPropertyNames )
+    throw (UnknownPropertyException, RuntimeException, std::exception)
 {
     const sal_Int32 nCount = rPropertyNames.getLength();
     const OUString * pNames = rPropertyNames.getConstArray();
@@ -2236,6 +2266,7 @@ Sequence< PropertyState > SAL_CALL SwXTextDocument::getPropertyStates( const Seq
 }
 
 void SAL_CALL SwXTextDocument::setPropertyToDefault( const OUString& rPropertyName )
+    throw (UnknownPropertyException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2250,6 +2281,7 @@ void SAL_CALL SwXTextDocument::setPropertyToDefault( const OUString& rPropertyNa
 }
 
 Any SAL_CALL SwXTextDocument::getPropertyDefault( const OUString& rPropertyName )
+    throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2431,6 +2463,8 @@ static void lcl_SavePrintUIOptionsToDocumentPrintData(
 sal_Int32 SAL_CALL SwXTextDocument::getRendererCount(
         const uno::Any& rSelection,
         const uno::Sequence< beans::PropertyValue >& rxOptions )
+    throw (IllegalArgumentException, RuntimeException,
+           std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2481,7 +2515,7 @@ sal_Int32 SAL_CALL SwXTextDocument::getRendererCount(
             {
                 //create a hidden view to be able to export as PDF also in print preview
                 //pView and pSwView are not changed intentionally!
-                m_pHiddenViewFrame = SfxViewFrame::LoadHiddenDocument( *pRenderDocShell, SFX_INTERFACE_SFXDOCSH );
+                m_pHiddenViewFrame = SfxViewFrame::LoadHiddenDocument( *pRenderDocShell, 2 );
                 pViewShell = static_cast<SwView*>(m_pHiddenViewFrame->GetViewShell())->GetWrtShellPtr();
             }
             else
@@ -2618,6 +2652,8 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SwXTextDocument::getRenderer(
         sal_Int32 nRenderer,
         const uno::Any& rSelection,
         const uno::Sequence< beans::PropertyValue >& rxOptions )
+    throw (IllegalArgumentException, RuntimeException,
+           std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -2720,7 +2756,7 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SwXTextDocument::getRenderer(
                 // HTML source view and prospect adapt to the printer's paper size
                 aTmpSize = pPrinter->GetPaperSize();
                 aTmpSize = OutputDevice::LogicToLogic( aTmpSize,
-                            pPrinter->GetMapMode(), MapMode( MapUnit::Map100thMM ));
+                            pPrinter->GetMapMode(), MapMode( MAP_100TH_MM ));
                 aPageSize = awt::Size( aTmpSize.Width(), aTmpSize.Height() );
                 #if 0
                 // #i115048# it seems users didn't like getting double the formatted page size
@@ -2817,7 +2853,7 @@ uno::Sequence< beans::PropertyValue > SAL_CALL SwXTextDocument::getRenderer(
                 if ( pPrinter )
                 {
                     awt::Size aNewPageSize;
-                    const Size aPageSize = pPrinter->PixelToLogic( pPrinter->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) );
+                    const Size aPageSize = pPrinter->PixelToLogic( pPrinter->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) );
                     aNewPageSize = awt::Size( aPageSize.Width(), aPageSize.Height() );
                     if ( ( pPagePrintSettings->GetLandscape() &&
                            aPageSize.Width() < aPageSize.Height() ) ||
@@ -2883,6 +2919,8 @@ void SAL_CALL SwXTextDocument::render(
         sal_Int32 nRenderer,
         const uno::Any& rSelection,
         const uno::Sequence< beans::PropertyValue >& rxOptions )
+    throw (IllegalArgumentException, RuntimeException,
+           std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -3039,6 +3077,7 @@ void SAL_CALL SwXTextDocument::render(
 
 // xforms::XFormsSupplier
 Reference<XNameContainer> SAL_CALL SwXTextDocument::getXForms()
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if ( !pDocShell )
@@ -3048,6 +3087,7 @@ Reference<XNameContainer> SAL_CALL SwXTextDocument::getXForms()
 }
 
 uno::Reference< text::XFlatParagraphIterator > SAL_CALL SwXTextDocument::getFlatParagraphIterator(::sal_Int32 nTextMarkupType, sal_Bool bAutomatic)
+    throw ( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
     if (!IsValid())
@@ -3060,7 +3100,7 @@ uno::Reference< text::XFlatParagraphIterator > SAL_CALL SwXTextDocument::getFlat
             *pDocShell->GetDoc(), nTextMarkupType, bAutomatic);
 }
 
-uno::Reference< util::XCloneable > SwXTextDocument::createClone(  )
+uno::Reference< util::XCloneable > SwXTextDocument::createClone(  ) throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if(!IsValid())
@@ -3085,14 +3125,16 @@ void SwXTextDocument::paintTile( VirtualDevice &rDevice,
                                  int nTilePosX, int nTilePosY,
                                  long nTileWidth, long nTileHeight )
 {
-    SwViewShell* pViewShell = pDocShell->GetWrtShell();
+    SwDoc* pDoc = pDocShell->GetDoc();
+    SwViewShell* pViewShell = pDoc->getIDocumentLayoutAccess().GetCurrentViewShell();
     pViewShell->PaintTile(rDevice, nOutputWidth, nOutputHeight,
                           nTilePosX, nTilePosY, nTileWidth, nTileHeight);
 }
 
 Size SwXTextDocument::getDocumentSize()
 {
-    SwViewShell* pViewShell = pDocShell->GetWrtShell();
+    SwDoc* pDoc = pDocShell->GetDoc();
+    SwViewShell* pViewShell = pDoc->getIDocumentLayoutAccess().GetCurrentViewShell();
     Size aDocSize = pViewShell->GetDocSize();
 
     return Size(aDocSize.Width()  + 2L * DOCUMENTBORDER,
@@ -3158,7 +3200,7 @@ bool SwXTextDocument::isMimeTypeSupported()
     return aDataHelper.GetXTransferable().is() && SwTransferable::IsPaste(*pWrtShell, aDataHelper);
 }
 
-void SwXTextDocument::setClientVisibleArea(const tools::Rectangle& rRectangle)
+void SwXTextDocument::setClientVisibleArea(const Rectangle& rRectangle)
 {
     SwView* pView = pDocShell->GetView();
     if (!pView)
@@ -3179,109 +3221,19 @@ Pointer SwXTextDocument::getPointer()
     return pWrtShell->GetView().GetEditWin().GetPointer();
 }
 
-OUString SwXTextDocument::getTrackedChanges()
-{
-    const SwRedlineTable& rRedlineTable = pDocShell->GetDoc()->getIDocumentRedlineAccess().GetRedlineTable();
-    boost::property_tree::ptree aTrackedChanges;
-    for (SwRedlineTable::size_type i = 0; i < rRedlineTable.size(); ++i)
-    {
-        boost::property_tree::ptree aTrackedChange;
-        aTrackedChange.put("index", rRedlineTable[i]->GetId());
-        aTrackedChange.put("author", rRedlineTable[i]->GetAuthorString(1).toUtf8().getStr());
-        aTrackedChange.put("type", nsRedlineType_t::SwRedlineTypeToOUString(rRedlineTable[i]->GetRedlineData().GetType()).toUtf8().getStr());
-        aTrackedChange.put("comment", rRedlineTable[i]->GetRedlineData().GetComment().toUtf8().getStr());
-        aTrackedChange.put("description", rRedlineTable[i]->GetDescr().toUtf8().getStr());
-        OUString sDateTime = utl::toISO8601(rRedlineTable[i]->GetRedlineData().GetTimeStamp().GetUNODateTime());
-        aTrackedChange.put("dateTime", sDateTime.toUtf8().getStr());
-
-        SwContentNode* pContentNd = rRedlineTable[i]->GetContentNode();
-        SwView* pView = dynamic_cast<SwView*>(SfxViewShell::Current());
-        if (pView && pContentNd)
-        {
-            SwShellCursor aCursor(pView->GetWrtShell(), *(rRedlineTable[i]->Start()));
-            aCursor.SetMark();
-            aCursor.GetMark()->nNode = *pContentNd;
-            aCursor.GetMark()->nContent.Assign(pContentNd, rRedlineTable[i]->End()->nContent.GetIndex());
-
-            aCursor.FillRects();
-
-            SwRects* pRects(&aCursor);
-            std::vector<OString> aRects;
-            for(SwRect& rNextRect : *pRects)
-                aRects.push_back(rNextRect.SVRect().toString());
-
-            const OString sRects = comphelper::string::join("; ", aRects);
-            aTrackedChange.put("textRange", sRects.getStr());
-        }
-
-        aTrackedChanges.push_back(std::make_pair("", aTrackedChange));
-    }
-
-    boost::property_tree::ptree aTree;
-    aTree.add_child("redlines", aTrackedChanges);
-    std::stringstream aStream;
-    boost::property_tree::write_json(aStream, aTree);
-
-    return OUString::fromUtf8(aStream.str().c_str());
-}
-
-OUString SwXTextDocument::getTrackedChangeAuthors()
-{
-    return SW_MOD()->GetRedlineAuthorInfo();
-}
-
-OUString SwXTextDocument::getPostIts()
-{
-    SolarMutexGuard aGuard;
-    boost::property_tree::ptree aAnnotations;
-    for (std::list<SwSidebarItem*>::const_iterator i = pDocShell->GetView()->GetPostItMgr()->begin();
-         i != pDocShell->GetView()->GetPostItMgr()->end(); ++i )
-    {
-        sw::annotation::SwAnnotationWin* pWin = (*i)->pPostIt.get();
-
-        const SwPostItField* pField = pWin->GetPostItField();
-        const SwRect& aRect = pWin->GetAnchorRect();
-        const tools::Rectangle aSVRect(aRect.Pos().getX(),
-                                aRect.Pos().getY(),
-                                aRect.Pos().getX() + aRect.SSize().Width(),
-                                aRect.Pos().getY() + aRect.SSize().Height());
-        std::vector<OString> aRects;
-        for (const basegfx::B2DRange& aRange : pWin->GetAnnotationTextRanges())
-        {
-            const SwRect rect(aRange.getMinX(), aRange.getMinY(), aRange.getWidth(), aRange.getHeight());
-            aRects.push_back(rect.SVRect().toString());
-        }
-        const OString sRects = comphelper::string::join("; ", aRects);
-
-        boost::property_tree::ptree aAnnotation;
-        aAnnotation.put("id", pField->GetPostItId());
-        aAnnotation.put("parent", pWin->CalcParent());
-        aAnnotation.put("author", pField->GetPar1().toUtf8().getStr());
-        aAnnotation.put("text", pField->GetPar2().toUtf8().getStr());
-        aAnnotation.put("dateTime", utl::toISO8601(pField->GetDateTime().GetUNODateTime()));
-        aAnnotation.put("anchorPos", aSVRect.toString());
-        aAnnotation.put("textRange", sRects.getStr());
-
-        aAnnotations.push_back(std::make_pair("", aAnnotation));
-    }
-
-    boost::property_tree::ptree aTree;
-    aTree.add_child("comments", aAnnotations);
-    std::stringstream aStream;
-    boost::property_tree::write_json(aStream, aTree);
-
-    return OUString::fromUtf8(aStream.str().c_str());
-}
-
 int SwXTextDocument::getPart()
 {
     SolarMutexGuard aGuard;
 
-    SwView* pView = pDocShell->GetView();
-    if (!pView)
+    SwWrtShell* pWrtShell = pDocShell->GetWrtShell();
+    if (!pWrtShell)
         return 0;
 
-    return pView->getPart();
+    sal_uInt16 nPage, nLogPage;
+    OUString sDisplay;
+    pWrtShell->GetPageNumber(-1, pWrtShell->IsCursorVisible(), nPage, nLogPage, sDisplay);
+
+    return nPage - 1;
 }
 
 OUString SwXTextDocument::getPartName(int nPart)
@@ -3303,7 +3255,8 @@ void SwXTextDocument::initializeForTiledRendering(const css::uno::Sequence<css::
 {
     SolarMutexGuard aGuard;
 
-    SwViewShell* pViewShell = pDocShell->GetWrtShell();
+    SwDoc* pDoc = pDocShell->GetDoc();
+    SwViewShell* pViewShell = pDoc->getIDocumentLayoutAccess().GetCurrentViewShell();
 
     bool      bBookMode = false;
     sal_Int16 nColumns = 1;
@@ -3324,24 +3277,8 @@ void SwXTextDocument::initializeForTiledRendering(const css::uno::Sequence<css::
             aViewOption.SetHideWhitespaceMode(rValue.Value.get<bool>());
         else if (rValue.Name == ".uno:ShowBorderShadow" && rValue.Value.has<bool>())
             SwViewOption::SetAppearanceFlag(ViewOptFlags::Shadow , rValue.Value.get<bool>());
-        else if (rValue.Name == ".uno:Author" && rValue.Value.has<OUString>())
-        {
-            // Store the author name in the view.
-            pView->SetRedlineAuthor(rValue.Value.get<OUString>());
-            // Let the actual author name pick up the value from the current
-            // view, which would normally happen only during the next view
-            // switch.
-            pDocShell->SetView(pView);
-        }
     }
-
-    aViewOption.SetPostIts(comphelper::LibreOfficeKit::isTiledAnnotations());
     pViewShell->ApplyViewOptions(aViewOption);
-
-    // position the pages again after setting view options. Eg: if postit
-    // rendering is false, then there would be no sidebar, so width of the
-    // document needs to be adjusted
-    pViewShell->GetLayout()->CheckViewLayout( pViewShell->GetViewOptions(), nullptr );
 
     // Disable map mode, so that it's possible to send mouse event coordinates
     // directly in twips.
@@ -3353,14 +3290,15 @@ void SwXTextDocument::initializeForTiledRendering(const css::uno::Sequence<css::
     // causing 'Save' being disabled; so let's always save to the original
     // format
     SvtSaveOptions().SetWarnAlienFormat(false);
+}
 
-    // disable word auto-completion suggestions, the tooltips are not visible,
-    // and the editeng-like auto-completion is annoying
-    SvxAutoCorrCfg::Get().GetAutoCorrect()->GetSwFlags().bAutoCompleteWords = false;
+void SwXTextDocument::registerCallback(LibreOfficeKitCallback pCallback, void* pData)
+{
+    SolarMutexGuard aGuard;
 
-    // don't change the whitespace at the beginning of paragraphs, this is
-    // annoying when taking minutes without further formatting
-    SwEditShell::GetAutoFormatFlags()->bAFormatByInpDelSpacesAtSttEnd = false;
+    SwDoc* pDoc = pDocShell->GetDoc();
+    SwViewShell* pViewShell = pDoc->getIDocumentLayoutAccess().GetCurrentViewShell();
+    pViewShell->registerLibreOfficeKitCallback(pCallback, pData);
 }
 
 void SwXTextDocument::postKeyEvent(int nType, int nCharCode, int nKeyCode)
@@ -3456,7 +3394,7 @@ OString SwXTextDocument::getTextSelection(const char* pMimeType, OString& rUsedM
 
     if (SwPostItMgr* pPostItMgr = pDocShell->GetView()->GetPostItMgr())
     {
-        if (sw::annotation::SwAnnotationWin* pWin = pPostItMgr->GetActiveSidebarWin())
+        if (sw::sidebarwindows::SwSidebarWin* pWin = pPostItMgr->GetActiveSidebarWin())
         {
             // Editing postit text.
             EditView& rEditView = pWin->GetOutlinerView()->GetEditView();
@@ -3540,14 +3478,14 @@ void SwXTextDocument::resetSelection()
     pWrtShell->ResetSelect(nullptr, false);
 }
 
-void SAL_CALL SwXTextDocument::paintTile( const ::css::uno::Any& Parent, ::sal_Int32 nOutputWidth, ::sal_Int32 nOutputHeight, ::sal_Int32 nTilePosX, ::sal_Int32 nTilePosY, ::sal_Int32 nTileWidth, ::sal_Int32 nTileHeight )
+void SAL_CALL SwXTextDocument::paintTile( const ::css::uno::Any& Parent, ::sal_Int32 nOutputWidth, ::sal_Int32 nOutputHeight, ::sal_Int32 nTilePosX, ::sal_Int32 nTilePosY, ::sal_Int32 nTileWidth, ::sal_Int32 nTileHeight ) throw (::css::uno::RuntimeException, ::std::exception)
 {
     SystemGraphicsData aData;
     aData.nSize = sizeof(SystemGraphicsData);
     #if defined(_WIN32)
     sal_Int64 nWindowHandle;
     Parent >>= nWindowHandle;
-    aData.hWnd = reinterpret_cast<HWND>(nWindowHandle);
+    aData.hWnd = (HWND) nWindowHandle;
     ScopedVclPtrInstance<VirtualDevice> xDevice(&aData, Size(1, 1), DeviceFormat::DEFAULT);
     paintTile(*xDevice, nOutputWidth, nOutputHeight, nTilePosX, nTilePosY, nTileWidth, nTileHeight);
     #else
@@ -3578,6 +3516,9 @@ void SAL_CALL SwXTextDocument::operator delete( void * p) throw()
 uno::Sequence< lang::Locale > SAL_CALL SwXTextDocument::getDocumentLanguages(
         ::sal_Int16 nScriptTypes,
         ::sal_Int16 nMaxCount )
+    throw (lang::IllegalArgumentException,
+           uno::RuntimeException,
+           std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -3661,11 +3602,11 @@ uno::Sequence< lang::Locale > SAL_CALL SwXTextDocument::getDocumentLanguages(
     };
     for (IStyleAccess::SwAutoStyleFamily i : aFam)
     {
-        std::vector< std::shared_ptr<SfxItemSet> > rStyles;
+        std::vector< SfxItemSet_Pointer_t > rStyles;
         pDoc->GetIStyleAccess().getAllStyles(rStyles, i);
         while (!rStyles.empty())
         {
-            std::shared_ptr<SfxItemSet> pStyle = rStyles.back();
+            SfxItemSet_Pointer_t pStyle = rStyles.back();
             rStyles.pop_back();
             const SfxItemSet *pSet = dynamic_cast< const SfxItemSet * >(pStyle.get());
 
@@ -3783,6 +3724,7 @@ SwXLinkTargetSupplier::~SwXLinkTargetSupplier()
 }
 
 Any SwXLinkTargetSupplier::getByName(const OUString& rName)
+    throw( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception )
 {
     Any aRet;
     if(!pxDoc)
@@ -3794,49 +3736,56 @@ Any SwXLinkTargetSupplier::getByName(const OUString& rName)
 
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         pxDoc->getTextTables(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sFrames)
     {
         sSuffix += "frame";
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         pxDoc->getTextFrames(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sSections)
     {
         sSuffix += "region";
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         pxDoc->getTextSections(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sGraphics)
     {
         sSuffix += "graphic";
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         pxDoc->getGraphicObjects(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sOLEs)
     {
         sSuffix += "ole";
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         pxDoc->getEmbeddedObjects(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sOutlines)
     {
         sSuffix += "outline";
         Reference< XNameAccess >  xTables = new SwXLinkNameAccessWrapper(
                                         *pxDoc, rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xTables, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xTables, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else if(rName == sBookmarks)
     {
         sSuffix.clear();
         Reference< XNameAccess >  xBkms = new SwXLinkNameAccessWrapper(
                                         pxDoc->getBookmarks(), rName, sSuffix );
-        aRet <<= Reference< XPropertySet >(xBkms, UNO_QUERY);
+        Reference< XPropertySet >  xRet(xBkms, UNO_QUERY);
+        aRet.setValue(&xRet, cppu::UnoType<XPropertySet>::get());
     }
     else
         throw NoSuchElementException();
@@ -3844,6 +3793,7 @@ Any SwXLinkTargetSupplier::getByName(const OUString& rName)
 }
 
 Sequence< OUString > SwXLinkTargetSupplier::getElementNames()
+                                        throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet(7);
     OUString* pNames = aRet.getArray();
@@ -3858,6 +3808,7 @@ Sequence< OUString > SwXLinkTargetSupplier::getElementNames()
 }
 
 sal_Bool SwXLinkTargetSupplier::hasByName(const OUString& rName)
+                                    throw( RuntimeException, std::exception )
 {
     if( rName == sTables  ||
         rName == sFrames  ||
@@ -3871,34 +3822,37 @@ sal_Bool SwXLinkTargetSupplier::hasByName(const OUString& rName)
 }
 
 uno::Type  SwXLinkTargetSupplier::getElementType()
+                                    throw( RuntimeException, std::exception )
 {
     return cppu::UnoType<XPropertySet>::get();
 
 }
 
-sal_Bool SwXLinkTargetSupplier::hasElements()
+sal_Bool SwXLinkTargetSupplier::hasElements() throw( RuntimeException, std::exception )
 {
     return nullptr != pxDoc;
 }
 
-OUString SwXLinkTargetSupplier::getImplementationName()
+OUString SwXLinkTargetSupplier::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("SwXLinkTargetSupplier");
 }
 
 sal_Bool SwXLinkTargetSupplier::supportsService(const OUString& rServiceName)
+                                                throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SwXLinkTargetSupplier::getSupportedServiceNames()
+                                                throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.document.LinkTargets" };
     return aRet;
 }
 
 SwXLinkNameAccessWrapper::SwXLinkNameAccessWrapper(
-            Reference< XNameAccess > const & xAccess, const OUString& rLinkDisplayName, const OUString& sSuffix ) :
+            Reference< XNameAccess >  xAccess, const OUString& rLinkDisplayName, const OUString& sSuffix ) :
     xRealAccess(xAccess),
     pPropSet(aSwMapProvider.GetPropertySet(PROPERTY_MAP_LINK_TARGET)),
     sLinkSuffix(sSuffix),
@@ -3921,6 +3875,7 @@ SwXLinkNameAccessWrapper::~SwXLinkNameAccessWrapper()
 }
 
 Any SwXLinkNameAccessWrapper::getByName(const OUString& rName)
+    throw( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception )
 {
     Any aRet;
     bool bFound = false;
@@ -3948,7 +3903,7 @@ Any SwXLinkNameAccessWrapper::getByName(const OUString& rName)
                     if(sParam == lcl_CreateOutlineString(i, rOutlineNodes, pOutlRule))
                     {
                         Reference< XPropertySet >  xOutline = new SwXOutlineTarget(sParam);
-                        aRet <<= xOutline;
+                        aRet.setValue(&xOutline, cppu::UnoType<XPropertySet>::get());
                         bFound = true;
                     }
                 }
@@ -3971,6 +3926,7 @@ Any SwXLinkNameAccessWrapper::getByName(const OUString& rName)
 }
 
 Sequence< OUString > SwXLinkNameAccessWrapper::getElementNames()
+                                    throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet;
     if(pxDoc)
@@ -4007,6 +3963,7 @@ Sequence< OUString > SwXLinkNameAccessWrapper::getElementNames()
 }
 
 sal_Bool SwXLinkNameAccessWrapper::hasByName(const OUString& rName)
+    throw( RuntimeException, std::exception )
 {
     bool bRet = false;
     OUString sParam(rName);
@@ -4045,11 +4002,12 @@ sal_Bool SwXLinkNameAccessWrapper::hasByName(const OUString& rName)
 }
 
 uno::Type  SwXLinkNameAccessWrapper::getElementType()
+                                throw( RuntimeException, std::exception )
 {
     return cppu::UnoType<XPropertySet>::get();
 }
 
-sal_Bool SwXLinkNameAccessWrapper::hasElements()
+sal_Bool SwXLinkNameAccessWrapper::hasElements() throw( RuntimeException, std::exception )
 {
     bool bRet = false;
     if(pxDoc)
@@ -4064,6 +4022,7 @@ sal_Bool SwXLinkNameAccessWrapper::hasElements()
 }
 
 Reference< XPropertySetInfo >  SwXLinkNameAccessWrapper::getPropertySetInfo()
+                                        throw( RuntimeException, std::exception )
 {
     static Reference< XPropertySetInfo >  xRet = pPropSet->getPropertySetInfo();
     return xRet;
@@ -4071,6 +4030,11 @@ Reference< XPropertySetInfo >  SwXLinkNameAccessWrapper::getPropertySetInfo()
 
 void SwXLinkNameAccessWrapper::setPropertyValue(
     const OUString& , const Any& )
+    throw( UnknownPropertyException,
+            PropertyVetoException,
+            IllegalArgumentException,
+             WrappedTargetException,
+            RuntimeException, std::exception)
 {
     throw UnknownPropertyException();
 }
@@ -4081,36 +4045,43 @@ static Any lcl_GetDisplayBitmap(const OUString& _sLinkSuffix)
     OUString sLinkSuffix = _sLinkSuffix;
     if(!sLinkSuffix.isEmpty())
         sLinkSuffix = sLinkSuffix.copy(1);
-    sal_uInt16 nImgId(0);
+    ContentTypeId nImgId(ContentTypeId::UNKNOWN);
+    bool bNotFound = false;
 
     if(sLinkSuffix == "outline")
-        nImgId = RID_BMP_NAVI_OUTLINE;
+        nImgId = ContentTypeId::OUTLINE;
     else if(sLinkSuffix == "table")
-        nImgId = RID_BMP_NAVI_TABLE;
+        nImgId = ContentTypeId::TABLE;
     else if(sLinkSuffix == "frame")
-        nImgId = RID_BMP_NAVI_FRAME;
+        nImgId = ContentTypeId::FRAME;
     else if(sLinkSuffix == "graphic")
-        nImgId = RID_BMP_NAVI_GRAPHIC;
-    else if(sLinkSuffix == "ole")
-        nImgId = RID_BMP_NAVI_OLE;
-    else if(sLinkSuffix.isEmpty())
-        nImgId = RID_BMP_NAVI_BOOKMARK;
+        nImgId = ContentTypeId::GRAPHIC;
     else if(sLinkSuffix == "region")
-        nImgId = RID_BMP_NAVI_REGION;
-
-    if (nImgId)
+        nImgId = ContentTypeId::REGION;
+    else if(sLinkSuffix == "ole")
+        nImgId = ContentTypeId::OLE;
+    else if(sLinkSuffix.isEmpty())
+        nImgId = ContentTypeId::BOOKMARK;
+    else
+        bNotFound = true;
+    if(!bNotFound)
     {
-        aRet <<= VCLUnoHelper::CreateBitmap(BitmapEx(SW_RES(nImgId)));
+        ImageList aEntryImages( SW_RES(IMG_NAVI_ENTRYBMP) );
+        const Image& rImage = aEntryImages.GetImage( (int)nImgId + 2000 );
+        Bitmap aBitmap( rImage.GetBitmapEx().GetBitmap() );
+        Reference<awt::XBitmap> xBmp = VCLUnoHelper::CreateBitmap( aBitmap );
+        aRet.setValue( &xBmp, cppu::UnoType<awt::XBitmap>::get());
     }
     return aRet;
 }
 
 Any SwXLinkNameAccessWrapper::getPropertyValue(const OUString& rPropertyName)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     Any aRet;
     if( rPropertyName == UNO_LINK_DISPLAY_NAME )
     {
-        aRet <<= sLinkDisplayName;
+        aRet <<= OUString(sLinkDisplayName);
     }
     else if( rPropertyName == UNO_LINK_DISPLAY_BITMAP )
     {
@@ -4123,36 +4094,43 @@ Any SwXLinkNameAccessWrapper::getPropertyValue(const OUString& rPropertyName)
 
 void SwXLinkNameAccessWrapper::addPropertyChangeListener(
     const OUString& /*PropertyName*/, const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {}
 
 void SwXLinkNameAccessWrapper::removePropertyChangeListener(
     const OUString& /*PropertyName*/, const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {}
 
 void SwXLinkNameAccessWrapper::addVetoableChangeListener(
     const OUString& /*PropertyName*/, const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {}
 
 void SwXLinkNameAccessWrapper::removeVetoableChangeListener(
     const OUString& /*PropertyName*/, const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {}
 
 Reference< XNameAccess >  SwXLinkNameAccessWrapper::getLinks()
+                                    throw( RuntimeException, std::exception )
 {
     return this;
 }
 
-OUString SwXLinkNameAccessWrapper::getImplementationName()
+OUString SwXLinkNameAccessWrapper::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("SwXLinkNameAccessWrapper");
 }
 
 sal_Bool SwXLinkNameAccessWrapper::supportsService(const OUString& rServiceName)
+                                                    throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SwXLinkNameAccessWrapper::getSupportedServiceNames()
+                                                    throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.document.LinkTargets" };
     return aRet;
@@ -4168,7 +4146,7 @@ SwXOutlineTarget::~SwXOutlineTarget()
 {
 }
 
-Reference< XPropertySetInfo >  SwXOutlineTarget::getPropertySetInfo()
+Reference< XPropertySetInfo >  SwXOutlineTarget::getPropertySetInfo() throw( RuntimeException, std::exception )
 {
     static Reference< XPropertySetInfo >  xRet = pPropSet->getPropertySetInfo();
     return xRet;
@@ -4176,15 +4154,18 @@ Reference< XPropertySetInfo >  SwXOutlineTarget::getPropertySetInfo()
 
 void SwXOutlineTarget::setPropertyValue(
     const OUString& /*PropertyName*/, const Any& /*aValue*/)
+    throw( UnknownPropertyException, PropertyVetoException,
+         IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     throw UnknownPropertyException();
 }
 
 Any SwXOutlineTarget::getPropertyValue(const OUString& rPropertyName)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
     Any aRet;
     if(rPropertyName == UNO_LINK_DISPLAY_NAME)
-        aRet <<= sOutlineText;
+        aRet <<= OUString(sOutlineText);
     else
         throw UnknownPropertyException();
     return aRet;
@@ -4192,35 +4173,39 @@ Any SwXOutlineTarget::getPropertyValue(const OUString& rPropertyName)
 
 void SwXOutlineTarget::addPropertyChangeListener(
     const OUString& /*PropertyName*/, const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
 }
 
 void SwXOutlineTarget::removePropertyChangeListener(
     const OUString& /*PropertyName*/, const Reference< XPropertyChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
 }
 
 void SwXOutlineTarget::addVetoableChangeListener(
     const OUString& /*PropertyName*/, const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
 }
 
 void SwXOutlineTarget::removeVetoableChangeListener(
     const OUString& /*PropertyName*/, const Reference< XVetoableChangeListener > & /*aListener*/)
+    throw( UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception )
 {
 }
 
-OUString SwXOutlineTarget::getImplementationName()
+OUString SwXOutlineTarget::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("SwXOutlineTarget");
 }
 
-sal_Bool SwXOutlineTarget::supportsService(const OUString& ServiceName)
+sal_Bool SwXOutlineTarget::supportsService(const OUString& ServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > SwXOutlineTarget::getSupportedServiceNames()
+Sequence< OUString > SwXOutlineTarget::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence<OUString> aRet { "com.sun.star.document.LinkTarget" };
 
@@ -4237,7 +4222,7 @@ SwXDocumentPropertyHelper::~SwXDocumentPropertyHelper()
 {
 }
 
-Reference<XInterface> SwXDocumentPropertyHelper::GetDrawTable(SwCreateDrawTable nWhich)
+Reference<XInterface> SwXDocumentPropertyHelper::GetDrawTable(short nWhich)
 {
     Reference<XInterface> xRet;
     if(m_pDoc)
@@ -4246,37 +4231,37 @@ Reference<XInterface> SwXDocumentPropertyHelper::GetDrawTable(SwCreateDrawTable 
         {
             // #i52858#
             // assure that Draw model is created, if it doesn't exist.
-            case SwCreateDrawTable::Dash         :
+            case SW_CREATE_DASH_TABLE         :
                 if(!xDashTable.is())
                     xDashTable = SvxUnoDashTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xDashTable;
             break;
-            case SwCreateDrawTable::Gradient     :
+            case SW_CREATE_GRADIENT_TABLE     :
                 if(!xGradientTable.is())
                     xGradientTable = SvxUnoGradientTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xGradientTable;
             break;
-            case SwCreateDrawTable::Hatch        :
+            case SW_CREATE_HATCH_TABLE        :
                 if(!xHatchTable.is())
                     xHatchTable = SvxUnoHatchTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xHatchTable;
             break;
-            case SwCreateDrawTable::Bitmap       :
+            case SW_CREATE_BITMAP_TABLE       :
                 if(!xBitmapTable.is())
                     xBitmapTable = SvxUnoBitmapTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xBitmapTable;
             break;
-            case SwCreateDrawTable::TransGradient:
+            case SW_CREATE_TRANSGRADIENT_TABLE:
                 if(!xTransGradientTable.is())
                     xTransGradientTable = SvxUnoTransGradientTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xTransGradientTable;
             break;
-            case SwCreateDrawTable::Marker       :
+            case SW_CREATE_MARKER_TABLE       :
                 if(!xMarkerTable.is())
                     xMarkerTable = SvxUnoMarkerTable_createInstance( m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel() );
                 xRet = xMarkerTable;
             break;
-            case  SwCreateDrawTable::Defaults:
+            case  SW_CREATE_DRAW_DEFAULTS:
                 if(!xDrawDefaults.is())
                     xDrawDefaults = static_cast<cppu::OWeakObject*>(new SwSvxUnoDrawPool(m_pDoc));
                 xRet = xDrawDefaults;
@@ -4329,11 +4314,11 @@ SwViewOptionAdjust_Impl::AdjustViewOptions(SwPrintData const*const pPrtOptions, 
     // to avoid unnecessary reformatting the view options related to the content
     // below should only change if necessary, that is if respective content is present
     const bool bContainsHiddenChars         = m_pShell->GetDoc()->ContainsHiddenChars();
-    const SwFieldType* pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::HiddenText );
+    const SwFieldType* pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( RES_HIDDENTXTFLD );
     const bool bContainsHiddenFields        = pFieldType && pFieldType->HasWriterListeners();
-    pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::HiddenPara );
+    pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( RES_HIDDENPARAFLD );
     const bool bContainsHiddenParagraphs    = pFieldType && pFieldType->HasWriterListeners();
-    pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::JumpEdit );
+    pFieldType = m_pShell->GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( RES_JUMPEDITFLD );
     const bool bContainsPlaceHolders        = pFieldType && pFieldType->HasWriterListeners();
     const bool bContainsFields              = m_pShell->IsAnyFieldInDoc();
 

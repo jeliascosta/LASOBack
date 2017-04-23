@@ -79,7 +79,7 @@ void SwLabPrtPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_LINK( SwLabPrtPage, CountHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( SwLabPrtPage, CountHdl, Button *, pButton, void )
 {
     if (pButton == m_pPrtSetup)
     {
@@ -116,12 +116,12 @@ void SwLabPrtPage::ActivatePage( const SfxItemSet& rSet )
     Reset(&rSet);
 }
 
-DeactivateRC SwLabPrtPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwLabPrtPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if ( _pSet )
         FillItemSet(_pSet);
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void SwLabPrtPage::FillItem(SwLabItem& rItem)

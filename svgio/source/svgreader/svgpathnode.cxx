@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgpathnode.hxx>
+#include <svgio/svgreader/svgpathnode.hxx>
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 
 namespace svgio
@@ -91,7 +91,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maPathLength = aNum;
+                        setPathLength(aNum);
                     }
                     break;
                 }

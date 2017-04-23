@@ -43,11 +43,9 @@
 #include <svl/zformat.hxx>
 #include <svl/languageoptions.hxx>
 #include <editeng/editstat.hxx>
-#include <formula/errorcodes.hxx>
 
 #include "appluno.hxx"
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 #include "document.hxx"
 #include "docsh.hxx"
 #include "docuno.hxx"
@@ -81,11 +79,17 @@
 #include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/sheet/XSheetCellRange.hpp>
+#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
+#include <com/sun/star/util/XMergeable.hpp>
+#include <com/sun/star/sheet/CellInsertMode.hpp>
+#include <com/sun/star/sheet/XCellRangeMovement.hpp>
 #include <com/sun/star/document/XActionLockable.hpp>
-#include <com/sun/star/util/MalformedNumberFormatException.hpp>
 #include <com/sun/star/util/NumberFormat.hpp>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
+#include <com/sun/star/sheet/XNamedRanges.hpp>
 #include <com/sun/star/sheet/NamedRangeFlag.hpp>
+#include <com/sun/star/sheet/XNamedRange.hpp>
 #include <com/sun/star/sheet/XLabelRanges.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -115,7 +119,7 @@ uno::Sequence< OUString > SAL_CALL ScXMLImport_getSupportedServiceNames() throw(
 }
 
 uno::Reference< uno::XInterface > SAL_CALL ScXMLImport_createInstance(
-    const uno::Reference< lang::XMultiServiceFactory > & rSMgr )
+    const uno::Reference< lang::XMultiServiceFactory > & rSMgr ) throw( uno::Exception )
 {
     // return (cppu::OWeakObject*)new ScXMLImport(IMPORT_ALL);
     return static_cast<cppu::OWeakObject*>(new ScXMLImport( comphelper::getComponentContext(rSMgr), ScXMLImport_getImplementationName(), SvXMLImportFlags::ALL ));
@@ -133,7 +137,7 @@ uno::Sequence< OUString > SAL_CALL ScXMLImport_Meta_getSupportedServiceNames() t
 }
 
 uno::Reference< uno::XInterface > SAL_CALL ScXMLImport_Meta_createInstance(
-    const uno::Reference< lang::XMultiServiceFactory > & rSMgr )
+    const uno::Reference< lang::XMultiServiceFactory > & rSMgr ) throw( uno::Exception )
 {
     // return (cppu::OWeakObject*)new ScXMLImport(IMPORT_META);
     return static_cast<cppu::OWeakObject*>(new ScXMLImport( comphelper::getComponentContext(rSMgr), ScXMLImport_Meta_getImplementationName(), SvXMLImportFlags::META ));
@@ -151,7 +155,7 @@ uno::Sequence< OUString > SAL_CALL ScXMLImport_Styles_getSupportedServiceNames()
 }
 
 uno::Reference< uno::XInterface > SAL_CALL ScXMLImport_Styles_createInstance(
-    const uno::Reference< lang::XMultiServiceFactory > & rSMgr )
+    const uno::Reference< lang::XMultiServiceFactory > & rSMgr ) throw( uno::Exception )
 {
     // return (cppu::OWeakObject*)new ScXMLImport(SvXMLImportFlagsSTYLES|SvXMLImportFlags::AUTOSTYLES|SvXMLImportFlags::MASTERSTYLES|SvXMLImportFlags::FONTDECLS);
     return static_cast<cppu::OWeakObject*>(new ScXMLImport( comphelper::getComponentContext(rSMgr), ScXMLImport_Styles_getImplementationName(), SvXMLImportFlags::STYLES|SvXMLImportFlags::AUTOSTYLES|SvXMLImportFlags::MASTERSTYLES|SvXMLImportFlags::FONTDECLS));
@@ -169,7 +173,7 @@ uno::Sequence< OUString > SAL_CALL ScXMLImport_Content_getSupportedServiceNames(
 }
 
 uno::Reference< uno::XInterface > SAL_CALL ScXMLImport_Content_createInstance(
-    const uno::Reference< lang::XMultiServiceFactory > & rSMgr )
+    const uno::Reference< lang::XMultiServiceFactory > & rSMgr ) throw( uno::Exception )
 {
     // return (cppu::OWeakObject*)new ScXMLImport(SvXMLImportFlags::META|SvXMLImportFlags::STYLES|SvXMLImportFlags::MASTERSTYLES|SvXMLImportFlags::AUTOSTYLES|SvXMLImportFlags::CONTENT|SvXMLImportFlags::SCRIPTS|SvXMLImportFlags::SETTINGS|SvXMLImportFlags::FONTDECLS);
     return static_cast<cppu::OWeakObject*>(new ScXMLImport( comphelper::getComponentContext(rSMgr), ScXMLImport_Content_getImplementationName(), SvXMLImportFlags::AUTOSTYLES|SvXMLImportFlags::CONTENT|SvXMLImportFlags::SCRIPTS|SvXMLImportFlags::FONTDECLS));
@@ -187,7 +191,7 @@ uno::Sequence< OUString > SAL_CALL ScXMLImport_Settings_getSupportedServiceNames
 }
 
 uno::Reference< uno::XInterface > SAL_CALL ScXMLImport_Settings_createInstance(
-    const uno::Reference< lang::XMultiServiceFactory > & rSMgr )
+    const uno::Reference< lang::XMultiServiceFactory > & rSMgr ) throw( uno::Exception )
 {
     // return (cppu::OWeakObject*)new ScXMLImport(SvXMLImportFlags::SETTINGS);
     return static_cast<cppu::OWeakObject*>(new ScXMLImport( comphelper::getComponentContext(rSMgr), ScXMLImport_Settings_getImplementationName(), SvXMLImportFlags::SETTINGS ));
@@ -229,29 +233,16 @@ protected:
     ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
+
     ScXMLDocContext_Impl( ScXMLImport& rImport,
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference<xml::sax::XAttributeList>& xAttrList );
-
-    ScXMLDocContext_Impl( ScXMLImport& rImport,
-        sal_Int32 nElement,
-        const uno::Reference<xml::sax::XFastAttributeList>& xAttrList );
+    virtual ~ScXMLDocContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
         const uno::Reference<xml::sax::XAttributeList>& xAttrList ) override;
-
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
-
-    virtual void SAL_CALL startFastElement (sal_Int32 nElement,
-        const css::uno::Reference< css::xml::sax::XFastAttributeList >& xAttrList) override;
-
-    virtual void SAL_CALL characters(const OUString & aChars) override;
-
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
 };
 
 ScXMLDocContext_Impl::ScXMLDocContext_Impl( ScXMLImport& rImport, sal_uInt16 nPrfx,
@@ -262,9 +253,7 @@ SvXMLImportContext( rImport, nPrfx, rLName )
 
 }
 
-ScXMLDocContext_Impl::ScXMLDocContext_Impl( ScXMLImport& rImport, sal_Int32 /*nElement*/,
-                                           const uno::Reference<xml::sax::XFastAttributeList>& /*xAttrList*/ ) :
-SvXMLImportContext( rImport )
+ScXMLDocContext_Impl::~ScXMLDocContext_Impl()
 {
 }
 
@@ -278,23 +267,11 @@ public:
         const uno::Reference<xml::sax::XAttributeList>& i_xAttrList,
         const uno::Reference<document::XDocumentProperties>& i_xDocProps);
 
-    ScXMLFlatDocContext_Impl( ScXMLImport& i_rImport,
-        sal_Int32 nElement,
-        const uno::Reference<xml::sax::XFastAttributeList>& i_xAttrList,
-        const uno::Reference<document::XDocumentProperties>& i_xDocProps);
+    virtual ~ScXMLFlatDocContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 i_nPrefix, const OUString& i_rLocalName,
         const uno::Reference<xml::sax::XAttributeList>& i_xAttrList) override;
-
-    virtual void SAL_CALL startFastElement (sal_Int32 nElement,
-        const css::uno::Reference< css::xml::sax::XFastAttributeList >& xAttrList) override;
-
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
-
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
 };
 
 ScXMLFlatDocContext_Impl::ScXMLFlatDocContext_Impl( ScXMLImport& i_rImport,
@@ -308,14 +285,7 @@ SvXMLMetaDocumentContext(i_rImport, i_nPrefix, i_rLName,
 {
 }
 
-ScXMLFlatDocContext_Impl::ScXMLFlatDocContext_Impl( ScXMLImport& i_rImport, sal_Int32 nElement,
-                                                   const uno::Reference<xml::sax::XFastAttributeList>& i_xAttrList,
-                                                   const uno::Reference<document::XDocumentProperties>& i_xDocProps) :
-SvXMLImportContext(i_rImport),
-ScXMLDocContext_Impl(i_rImport, nElement, i_xAttrList),
-SvXMLMetaDocumentContext(i_rImport, nElement, i_xDocProps)
-{
-}
+ScXMLFlatDocContext_Impl::~ScXMLFlatDocContext_Impl() { }
 
 SvXMLImportContext *ScXMLFlatDocContext_Impl::CreateChildContext(
     sal_uInt16 i_nPrefix, const OUString& i_rLocalName,
@@ -332,49 +302,39 @@ SvXMLImportContext *ScXMLFlatDocContext_Impl::CreateChildContext(
     }
 }
 
-uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
-    ScXMLFlatDocContext_Impl::createFastChildContext( sal_Int32 nElement,
-    const uno::Reference< xml::sax::XFastAttributeList > & xAttrList )
+class ScXMLBodyContext_Impl : public SvXMLImportContext
 {
-    if ( nElement != ( NAMESPACE_TOKEN( XML_NAMESPACE_OFFICE ) | XML_META ) )
-        return ScXMLDocContext_Impl::createFastChildContext( nElement, xAttrList );
-    else
-        return new SvXMLImportContext( GetImport() );
-}
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
-void SAL_CALL ScXMLFlatDocContext_Impl::startFastElement(sal_Int32 nElement,
-    const uno::Reference< xml::sax::XFastAttributeList > & xAttrList)
-{
-    SvXMLMetaDocumentContext::startFastElement( nElement, xAttrList );
-}
-
-void SAL_CALL ScXMLFlatDocContext_Impl::endFastElement(sal_Int32 nElement)
-{
-    SvXMLMetaDocumentContext::endFastElement( nElement );
-}
-
-class ScXMLBodyContext_Impl : public ScXMLImportContext
-{
 public:
-    ScXMLBodyContext_Impl( ScXMLImport& rImport, sal_Int32 nElement,
-        const uno::Reference< xml::sax::XFastAttributeList > & xAttrList );
 
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
+    ScXMLBodyContext_Impl( ScXMLImport& rImport, sal_uInt16 nPrfx,
+        const OUString& rLName,
+        const uno::Reference< xml::sax::XAttributeList > & xAttrList );
+    virtual ~ScXMLBodyContext_Impl();
+
+    virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
+        const OUString& rLocalName,
+        const uno::Reference< xml::sax::XAttributeList > & xAttrList ) override;
 };
 
-ScXMLBodyContext_Impl::ScXMLBodyContext_Impl( ScXMLImport& rImport, sal_Int32 /*nElement*/,
-                                             const uno::Reference< xml::sax::XFastAttributeList > & /* xAttrList */ ) :
-ScXMLImportContext( rImport )
+ScXMLBodyContext_Impl::ScXMLBodyContext_Impl( ScXMLImport& rImport,
+                                             sal_uInt16 nPrfx, const OUString& rLName,
+                                             const uno::Reference< xml::sax::XAttributeList > & /* xAttrList */ ) :
+SvXMLImportContext( rImport, nPrfx, rLName )
 {
 }
 
-uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
-    ScXMLBodyContext_Impl::createFastChildContext( sal_Int32 nElement,
-    const uno::Reference< xml::sax::XFastAttributeList > & xAttrList )
+ScXMLBodyContext_Impl::~ScXMLBodyContext_Impl()
 {
-    return GetScImport().CreateBodyContext( nElement, xAttrList );
+}
+
+SvXMLImportContext *ScXMLBodyContext_Impl::CreateChildContext(
+    sal_uInt16 /* nPrefix */,
+    const OUString& rLocalName,
+    const uno::Reference< xml::sax::XAttributeList > & xAttrList )
+{
+    return GetScImport().CreateBodyContext( rLocalName, xAttrList );
 }
 
 SvXMLImportContext *ScXMLDocContext_Impl::CreateChildContext( sal_uInt16 nPrefix,
@@ -410,6 +370,11 @@ SvXMLImportContext *ScXMLDocContext_Impl::CreateChildContext( sal_uInt16 nPrefix
         if (GetScImport().getImportFlags() & SvXMLImportFlags::SCRIPTS)
             pContext = GetScImport().CreateScriptContext( rLocalName );
         break;
+    case XML_TOK_DOC_BODY:
+        if (GetScImport().getImportFlags() & SvXMLImportFlags::CONTENT)
+            pContext = new ScXMLBodyContext_Impl( GetScImport(), nPrefix,
+            rLocalName, xAttrList );
+        break;
     case XML_TOK_DOC_SETTINGS:
         if (GetScImport().getImportFlags() & SvXMLImportFlags::SETTINGS)
             pContext = new XMLDocumentSettingsContext(GetScImport(), nPrefix, rLocalName, xAttrList );
@@ -420,45 +385,6 @@ SvXMLImportContext *ScXMLDocContext_Impl::CreateChildContext( sal_uInt16 nPrefix
         pContext = new SvXMLImportContext( GetImport(), nPrefix, rLocalName );
 
     return pContext;
-}
-
-uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
-    ScXMLDocContext_Impl::createFastChildContext( sal_Int32 nElement,
-    const uno::Reference< xml::sax::XFastAttributeList > & xAttrList )
-{
-    SvXMLImportContext *pContext(nullptr);
-
-    const SvXMLTokenMap& rTokenMap(GetScImport().GetDocElemTokenMap());
-    switch( rTokenMap.Get( nElement ) )
-    {
-        case XML_TOK_DOC_BODY:
-        if (GetScImport().getImportFlags() & SvXMLImportFlags::CONTENT)
-            pContext = new ScXMLBodyContext_Impl( GetScImport(),
-                                                nElement, xAttrList );
-        break;
-
-        //TODO: handle all other cases
-        default:
-           pContext = new SvXMLImportContext( GetImport() );
-    }
-
-    if(!pContext)
-        pContext = new SvXMLImportContext( GetImport() );
-
-    return pContext;
-}
-
-void SAL_CALL ScXMLDocContext_Impl::startFastElement(sal_Int32 /*nElement*/,
-    const uno::Reference< xml::sax::XFastAttributeList > & /*xAttrList*/)
-{
-}
-
-void SAL_CALL ScXMLDocContext_Impl::endFastElement(sal_Int32 /*nElement*/)
-{
-}
-
-void SAL_CALL ScXMLDocContext_Impl::characters(const OUString &)
-{
 }
 
 const SvXMLTokenMap& ScXMLImport::GetDocElemTokenMap()
@@ -2025,7 +1951,13 @@ SvXMLImportContext *ScXMLImport::CreateContext( sal_uInt16 nPrefix,
 {
     SvXMLImportContext *pContext = nullptr;
 
-    if ( (XML_NAMESPACE_OFFICE == nPrefix) &&
+    if( (XML_NAMESPACE_OFFICE == nPrefix) &&
+        ( IsXMLToken(rLocalName, XML_DOCUMENT_STYLES) ||
+        IsXMLToken(rLocalName, XML_DOCUMENT_CONTENT) ||
+        IsXMLToken(rLocalName, XML_DOCUMENT_SETTINGS) )) {
+            pContext = new ScXMLDocContext_Impl( *this, nPrefix, rLocalName,
+                xAttrList );
+    } else if ( (XML_NAMESPACE_OFFICE == nPrefix) &&
         ( IsXMLToken(rLocalName, XML_DOCUMENT_META)) ) {
             pContext = CreateMetaContext(rLocalName);
     } else if ( (XML_NAMESPACE_OFFICE == nPrefix) &&
@@ -2038,36 +1970,6 @@ SvXMLImportContext *ScXMLImport::CreateContext( sal_uInt16 nPrefix,
     }
     else
         pContext = SvXMLImport::CreateContext( nPrefix, rLocalName, xAttrList );
-
-    return pContext;
-}
-
-SvXMLImportContext *ScXMLImport::CreateFastContext( sal_Int32 nElement,
-        const uno::Reference< xml::sax::XFastAttributeList >& xAttrList )
-{
-    SvXMLImportContext *pContext = nullptr;
-
-    switch( nElement )
-    {
-    case ( NAMESPACE_TOKEN( XML_NAMESPACE_OFFICE ) | XML_DOCUMENT_STYLES ):
-    case ( NAMESPACE_TOKEN( XML_NAMESPACE_OFFICE ) | XML_DOCUMENT_CONTENT ):
-    case ( NAMESPACE_TOKEN( XML_NAMESPACE_OFFICE ) | XML_DOCUMENT_SETTINGS ):
-        pContext = new ScXMLDocContext_Impl( *this, nElement, xAttrList );
-        break;
-
-    case ( NAMESPACE_TOKEN( XML_NAMESPACE_OFFICE ) | XML_DOCUMENT ):
-    {
-        uno::Reference<document::XDocumentPropertiesSupplier> xDPS(
-            GetModel(), uno::UNO_QUERY_THROW);
-        // flat OpenDocument file format
-        pContext = new ScXMLFlatDocContext_Impl( *this, nElement,
-            xAttrList, xDPS->getDocumentProperties());
-        break;
-    }
-
-    default:
-        pContext = new SvXMLImportContext( *this );
-    }
 
     return pContext;
 }
@@ -2319,6 +2221,7 @@ ScXMLImport::~ScXMLImport() throw()
 }
 
 void ScXMLImport::initialize( const css::uno::Sequence<css::uno::Any>& aArguments )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     SvXMLImport::initialize(aArguments);
 
@@ -2361,10 +2264,10 @@ SvXMLImportContext *ScXMLImport::CreateStylesContext(const OUString& rLocalName,
     return pContext;
 }
 
-SvXMLImportContext *ScXMLImport::CreateBodyContext(const sal_Int32 nElement,
-                                                   const uno::Reference<xml::sax::XFastAttributeList>& xAttrList)
+SvXMLImportContext *ScXMLImport::CreateBodyContext(const OUString& rLocalName,
+                                                   const uno::Reference<xml::sax::XAttributeList>& xAttrList)
 {
-    return new ScXMLBodyContext(*this, nElement, xAttrList);
+    return new ScXMLBodyContext(*this, XML_NAMESPACE_OFFICE, rLocalName, xAttrList);
 }
 
 SvXMLImportContext *ScXMLImport::CreateMetaContext(
@@ -2645,7 +2548,7 @@ void ScXMLImport::SetViewSettings(const uno::Sequence<beans::PropertyValue>& aVi
                 SfxObjectShell* pEmbeddedObj = pDocObj->GetEmbeddedObject();
                 if (pEmbeddedObj)
                 {
-                    tools::Rectangle aRect;
+                    Rectangle aRect;
                     aRect.setX( nLeft );
                     aRect.setY( nTop );
                     aRect.setWidth( nWidth );
@@ -2758,9 +2661,9 @@ sal_Int32 ScXMLImport::SetCurrencySymbol(const sal_Int32 nKey, const OUString& r
             }
             catch ( const util::MalformedNumberFormatException& rException )
             {
-                OUString sErrorMessage("Error in Formatstring ");
+                OUString sErrorMessage("Fehler im Formatstring ");
                 sErrorMessage += sFormatString;
-                sErrorMessage += " at position ";
+                sErrorMessage += " an Position ";
                 sErrorMessage += OUString::number(rException.CheckPos);
                 uno::Sequence<OUString> aSeq { sErrorMessage };
                 uno::Reference<xml::sax::XLocator> xLocator;
@@ -2934,14 +2837,6 @@ void ScXMLImport::SetStyleToRanges()
                 sal_Int32 nNumberFormat(pStyle->GetNumberFormat());
                 SetType(xProperties, nNumberFormat, nPrevCellType, sPrevCurrency);
 
-                css::uno::Any aAny = xProperties->getPropertyValue("FormatID");
-                sal_uInt64 nKey = 0;
-                if ((aAny >>= nKey) && nKey)
-                {
-                    ScFormatSaveData* pFormatSaveData = ScModelObj::getImplementation(GetModel())->GetFormatSaveData();
-                    pFormatSaveData->maIDToName.insert(std::pair<sal_uInt64, OUString>(nKey, sPrevStyleName));
-                }
-
                 // store first cell of first range for each style, once per sheet
                 uno::Sequence<table::CellRangeAddress> aAddresses(xSheetCellRanges->getRangeAddresses());
                 pStyle->ApplyCondFormat(aAddresses);
@@ -3039,7 +2934,7 @@ XMLNumberFormatAttributesExportHelper* ScXMLImport::GetNumberFormatAttributesExp
 ScMyStyleNumberFormats* ScXMLImport::GetStyleNumberFormats()
 {
     if (!pStyleNumberFormats)
-        pStyleNumberFormats = new ScMyStyleNumberFormats;
+        pStyleNumberFormats = new ScMyStyleNumberFormats();
     return pStyleNumberFormats;
 }
 
@@ -3051,6 +2946,7 @@ void ScXMLImport::SetStylesToRangesFinished()
 
 // XImporter
 void SAL_CALL ScXMLImport::setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ScXMLImport::MutexGuard aGuard(*this);
     SvXMLImport::setTargetDocument( xDoc );
@@ -3072,6 +2968,7 @@ void SAL_CALL ScXMLImport::setTargetDocument( const css::uno::Reference< css::la
 
 // css::xml::sax::XDocumentHandler
 void SAL_CALL ScXMLImport::startDocument()
+throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception )
 {
     ScXMLImport::MutexGuard aGuard(*this);
     SvXMLImport::startDocument();
@@ -3122,7 +3019,7 @@ sal_Int32 ScXMLImport::GetRangeType(const OUString& sRangeType)
 {
     sal_Int32 nRangeType(0);
     OUStringBuffer sBuffer;
-    sal_Int32 i = 0;
+    sal_Int16 i = 0;
     while (i <= sRangeType.getLength())
     {
         if ((i == sRangeType.getLength()) || (sRangeType[i] == ' '))
@@ -3146,7 +3043,8 @@ sal_Int32 ScXMLImport::GetRangeType(const OUString& sRangeType)
 
 void ScXMLImport::SetLabelRanges()
 {
-    if (pMyLabelRanges)
+    ScMyLabelRanges* pLabelRanges = GetLabelRanges();
+    if (pLabelRanges)
     {
         uno::Reference <beans::XPropertySet> xPropertySet (GetModel(), uno::UNO_QUERY);
         if (xPropertySet.is())
@@ -3162,8 +3060,8 @@ void ScXMLImport::SetLabelRanges()
                 table::CellRangeAddress aLabelRange;
                 table::CellRangeAddress aDataRange;
 
-                ScMyLabelRanges::iterator aItr = pMyLabelRanges->begin();
-                while (aItr != pMyLabelRanges->end())
+                ScMyLabelRanges::iterator aItr = pLabelRanges->begin();
+                while (aItr != pLabelRanges->end())
                 {
                     sal_Int32 nOffset1(0);
                     sal_Int32 nOffset2(0);
@@ -3179,7 +3077,7 @@ void ScXMLImport::SetLabelRanges()
                     }
 
                     delete *aItr;
-                    aItr = pMyLabelRanges->erase(aItr);
+                    aItr = pLabelRanges->erase(aItr);
                 }
             }
         }
@@ -3236,7 +3134,8 @@ public:
 
 void ScXMLImport::SetNamedRanges()
 {
-    if (!m_pMyNamedExpressions)
+    ScMyNamedExpressions* pNamedExpressions = GetNamedExpressions();
+    if (!pNamedExpressions)
         return;
 
     if (!pDoc)
@@ -3244,7 +3143,7 @@ void ScXMLImport::SetNamedRanges()
 
     // Insert the namedRanges
     ScRangeName* pRangeNames = pDoc->GetRangeName();
-    ::std::for_each(m_pMyNamedExpressions->begin(), m_pMyNamedExpressions->end(), RangeNameInserter(pDoc, *pRangeNames));
+    ::std::for_each(pNamedExpressions->begin(), pNamedExpressions->end(), RangeNameInserter(pDoc, *pRangeNames));
 }
 
 void ScXMLImport::SetSheetNamedRanges()
@@ -3281,6 +3180,9 @@ void ScXMLImport::SetStringRefSyntaxIfMissing()
 }
 
 void SAL_CALL ScXMLImport::endDocument()
+    throw(css::xml::sax::SAXException,
+          css::uno::RuntimeException,
+          std::exception)
 {
     ScXMLImport::MutexGuard aGuard(*this);
     if (getImportFlags() & SvXMLImportFlags::CONTENT)
@@ -3508,12 +3410,12 @@ void ScXMLImport::ExtractFormulaNamespaceGrammar(
     reGrammar = eDefaultGrammar;
 }
 
-FormulaError ScXMLImport::GetFormulaErrorConstant( const OUString& rStr ) const
+bool ScXMLImport::IsFormulaErrorConstant( const OUString& rStr ) const
 {
     if (!mpComp)
-        return FormulaError::NONE;
+        return false;
 
-    return mpComp->GetErrorConstant(rStr);
+    return mpComp->GetErrorConstant(rStr) > 0;
 }
 
 ScEditEngineDefaulter* ScXMLImport::GetEditEngine()
@@ -3521,7 +3423,7 @@ ScEditEngineDefaulter* ScXMLImport::GetEditEngine()
     if (!mpEditEngine)
     {
         mpEditEngine.reset(new ScEditEngineDefaulter(pDoc->GetEnginePool()));
-        mpEditEngine->SetRefMapMode(MapUnit::Map100thMM);
+        mpEditEngine->SetRefMapMode(MAP_100TH_MM);
         mpEditEngine->SetEditTextObjectPool(pDoc->GetEditPool());
         mpEditEngine->SetUpdateMode(false);
         mpEditEngine->EnableUndo(false);

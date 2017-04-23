@@ -65,7 +65,8 @@ namespace slideshow
                                         const DrawShapeSharedPtr&       rDrawShape,
                                         const WakeupEventSharedPtr&     rWakeupEvent,
                                         const ::std::vector<double>&    rTimeouts,
-                                        ::std::size_t                   nNumLoops );
+                                        ::std::size_t                   nNumLoops,
+                                        CycleMode                       eCycleMode );
             IntrinsicAnimationActivity(const IntrinsicAnimationActivity&) = delete;
             IntrinsicAnimationActivity& operator=(const IntrinsicAnimationActivity&) = delete;
 
@@ -84,6 +85,7 @@ namespace slideshow
             WakeupEventSharedPtr                    mpWakeupEvent;
             IntrinsicAnimationEventHandlerSharedPtr mpListener;
             ::std::vector<double>                   maTimeouts;
+            CycleMode                               meCycleMode;
             ::std::size_t                           mnCurrIndex;
             ::std::size_t                           mnNumLoops;
             ::std::size_t                           mnLoopCount;
@@ -113,12 +115,14 @@ namespace slideshow
                                                                 const DrawShapeSharedPtr&       rDrawShape,
                                                                 const WakeupEventSharedPtr&     rWakeupEvent,
                                                                 const ::std::vector<double>&    rTimeouts,
-                                                                ::std::size_t                   nNumLoops ) :
+                                                                ::std::size_t                   nNumLoops,
+                                                                CycleMode                       eCycleMode ) :
             maContext( rContext ),
             mpDrawShape( rDrawShape ),
             mpWakeupEvent( rWakeupEvent ),
             mpListener( new IntrinsicAnimationListener(*this) ),
             maTimeouts( rTimeouts ),
+            meCycleMode( eCycleMode ),
             mnCurrIndex(0),
             mnNumLoops(nNumLoops),
             mnLoopCount(0),
@@ -173,16 +177,12 @@ namespace slideshow
                 return false;
             }
 
-            const ::std::size_t nNumFrames(maTimeouts.size());
-
             // mnNumLoops == 0 means infinite looping
             if( mnNumLoops != 0 &&
                 mnLoopCount >= mnNumLoops )
             {
-                // #i55294# After finishing the loops, display the last frame
-                // powerpoint 2013 and firefox etc show the last frame when
-                // the animation ends
-                pDrawShape->setIntrinsicAnimationFrame(nNumFrames - 1);
+                // #i55294# After finishing the loops, display the first frame
+                pDrawShape->setIntrinsicAnimationFrame( 0 );
                 maContext.mpSubsettableShapeManager->notifyShapeUpdate( pDrawShape );
 
                 end();
@@ -191,14 +191,36 @@ namespace slideshow
             }
 
             ::std::size_t       nNewIndex = 0;
+            const ::std::size_t nNumFrames(maTimeouts.size());
+            switch( meCycleMode )
+            {
+                case CYCLE_LOOP:
+                {
+                    pDrawShape->setIntrinsicAnimationFrame( mnCurrIndex );
 
-            pDrawShape->setIntrinsicAnimationFrame( mnCurrIndex );
+                    mpWakeupEvent->start();
+                    mpWakeupEvent->setNextTimeout( maTimeouts[mnCurrIndex] );
 
-            mpWakeupEvent->start();
-            mpWakeupEvent->setNextTimeout( maTimeouts[mnCurrIndex] );
+                    mnLoopCount += (mnCurrIndex + 1) / nNumFrames;
+                    nNewIndex = (mnCurrIndex + 1) % nNumFrames;
+                    break;
+                }
 
-            mnLoopCount += (mnCurrIndex + 1) / nNumFrames;
-            nNewIndex = (mnCurrIndex + 1) % nNumFrames;
+                case CYCLE_PINGPONGLOOP:
+                {
+                    ::std::size_t nTrueIndex( mnCurrIndex < nNumFrames ?
+                                              mnCurrIndex :
+                                              2*nNumFrames - mnCurrIndex - 1 );
+                    pDrawShape->setIntrinsicAnimationFrame( nTrueIndex );
+
+                    mpWakeupEvent->start();
+                    mpWakeupEvent->setNextTimeout( maTimeouts[nTrueIndex] );
+
+                    mnLoopCount += (mnCurrIndex + 1) / (2*nNumFrames);
+                    nNewIndex = (mnCurrIndex + 1) % 2*nNumFrames;
+                    break;
+                }
+            }
 
             maContext.mrEventQueue.addEvent( mpWakeupEvent );
             maContext.mpSubsettableShapeManager->notifyShapeUpdate( pDrawShape );
@@ -237,14 +259,16 @@ namespace slideshow
             const DrawShapeSharedPtr&       rDrawShape,
             const WakeupEventSharedPtr&     rWakeupEvent,
             const ::std::vector<double>&    rTimeouts,
-            ::std::size_t                   nNumLoops )
+            ::std::size_t                   nNumLoops,
+            CycleMode                       eCycleMode )
         {
             return ActivitySharedPtr(
                 new IntrinsicAnimationActivity(rContext,
                                                rDrawShape,
                                                rWakeupEvent,
                                                rTimeouts,
-                                               nNumLoops) );
+                                               nNumLoops,
+                                               eCycleMode) );
         }
     }
 }

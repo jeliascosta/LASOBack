@@ -126,11 +126,13 @@ void SAL_CALL PresenterSlidePreview::disposing()
 //----- XResourceId -----------------------------------------------------------
 
 Reference<XResourceId> SAL_CALL PresenterSlidePreview::getResourceId()
+    throw (RuntimeException, std::exception)
 {
     return mxViewId;
 }
 
 sal_Bool SAL_CALL PresenterSlidePreview::isAnchorOnly()
+    throw (RuntimeException, std::exception)
 {
     return false;
 }
@@ -138,6 +140,7 @@ sal_Bool SAL_CALL PresenterSlidePreview::isAnchorOnly()
 //----- XWindowListener -------------------------------------------------------
 
 void SAL_CALL PresenterSlidePreview::windowResized (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -146,11 +149,13 @@ void SAL_CALL PresenterSlidePreview::windowResized (const awt::WindowEvent& rEve
 }
 
 void SAL_CALL PresenterSlidePreview::windowMoved (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
 }
 
 void SAL_CALL PresenterSlidePreview::windowShown (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -159,6 +164,7 @@ void SAL_CALL PresenterSlidePreview::windowShown (const lang::EventObject& rEven
 }
 
 void SAL_CALL PresenterSlidePreview::windowHidden (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
 }
@@ -166,6 +172,7 @@ void SAL_CALL PresenterSlidePreview::windowHidden (const lang::EventObject& rEve
 //----- XPaintListener --------------------------------------------------------
 
 void SAL_CALL PresenterSlidePreview::windowPaint (const awt::PaintEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -181,6 +188,7 @@ void SAL_CALL PresenterSlidePreview::windowPaint (const awt::PaintEvent& rEvent)
 //----- lang::XEventListener --------------------------------------------------
 
 void SAL_CALL PresenterSlidePreview::disposing (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     if (rEvent.Source == mxWindow)
     {
@@ -193,6 +201,7 @@ void SAL_CALL PresenterSlidePreview::disposing (const lang::EventObject& rEvent)
 //----- XDrawView -------------------------------------------------------------
 
 void SAL_CALL PresenterSlidePreview::setCurrentPage (const Reference<drawing::XDrawPage>& rxSlide)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     ::osl::MutexGuard aGuard (::osl::Mutex::getGlobalMutex());
@@ -200,6 +209,7 @@ void SAL_CALL PresenterSlidePreview::setCurrentPage (const Reference<drawing::XD
 }
 
 Reference<drawing::XDrawPage> SAL_CALL PresenterSlidePreview::getCurrentPage()
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     return nullptr;
@@ -373,6 +383,7 @@ void PresenterSlidePreview::Resize()
 }
 
 void PresenterSlidePreview::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
 {
     if (PresenterSlidePreviewInterfaceBase::rBHelper.bDisposed || PresenterSlidePreviewInterfaceBase::rBHelper.bInDispose)
     {

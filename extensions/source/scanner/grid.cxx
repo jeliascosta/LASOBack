@@ -29,7 +29,6 @@
 #include <vcl/builderfactory.hxx>
 
 #include <algorithm>
-#include <limits>
 #include <memory>
 
 class GridWindow : public vcl::Window
@@ -60,12 +59,12 @@ class GridWindow : public vcl::Window
         bool isHit(vcl::Window& rWin, const Point& rPos)
         {
             const Point aOffset(rWin.PixelToLogic(Point(mnOffX, mnOffY)));
-            const tools::Rectangle aTarget(maPos - aOffset, maPos + aOffset);
+            const Rectangle aTarget(maPos - aOffset, maPos + aOffset);
             return aTarget.IsInside(rPos);
         }
     };
 
-    tools::Rectangle       m_aGridArea;
+    Rectangle       m_aGridArea;
 
     double          m_fMinX;
     double          m_fMinY;
@@ -88,10 +87,8 @@ class GridWindow : public vcl::Window
     bool            m_bCutValues;
 
     // stuff for handles
-    using Handles = std::vector<impHandle>;
-    static constexpr auto npos = std::numeric_limits<Handles::size_type>::max();
-    Handles m_aHandles;
-    Handles::size_type m_nDragIndex;
+    std::vector< impHandle >    m_aHandles;
+    sal_uInt32                  m_nDragIndex;
 
     BitmapEx        m_aMarkerBitmap;
 
@@ -123,16 +120,16 @@ class GridWindow : public vcl::Window
 public:
     explicit GridWindow(vcl::Window* pParent);
     void Init(double* pXValues, double* pYValues, int nValues, bool bCutValues, const BitmapEx &rMarkerBitmap);
-    virtual ~GridWindow() override;
+    virtual ~GridWindow();
     virtual void dispose() override;
 
     void setBoundings( double fMinX, double fMinY, double fMaxX, double fMaxY );
 
     double* getNewYValues() { return m_pNewYValues; }
 
-    void ChangeMode(ResetType nType);
+    void ChangeMode(int nType);
 
-    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
 };
 
 GridWindow::GridWindow(vcl::Window* pParent)
@@ -154,9 +151,9 @@ GridWindow::GridWindow(vcl::Window* pParent)
     , m_BmOffY(0)
     , m_bCutValues(false)
     , m_aHandles()
-    , m_nDragIndex(npos)
+    , m_nDragIndex(0xffffffff)
 {
-    SetMapMode(MapMode(MapUnit::MapPixel));
+    SetMapMode(MapMode(MAP_PIXEL));
 }
 
 void GridWindow::Init(double* pXValues, double* pYValues, int nValues, bool bCutValues, const BitmapEx &rMarkerBitmap)
@@ -200,7 +197,7 @@ void GridWindow::onResize()
 
 Size GridWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(240, 200), MapUnit::MapAppFont);
+    return LogicToPixel(Size(240, 200), MAP_APPFONT);
 }
 
 GridDialog::GridDialog(double* pXValues, double* pYValues, int nValues, vcl::Window* pParent )
@@ -528,7 +525,7 @@ void GridWindow::drawHandles(vcl::RenderContext& rRenderContext)
     }
 }
 
-void GridWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void GridWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     Window::Paint(rRenderContext, rRect);
     drawGrid(rRenderContext);
@@ -539,11 +536,11 @@ void GridWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangl
 
 void GridWindow::MouseMove( const MouseEvent& rEvt )
 {
-    if( rEvt.GetButtons() == MOUSE_LEFT && m_nDragIndex != npos )
+    if( rEvt.GetButtons() == MOUSE_LEFT && m_nDragIndex != 0xffffffff )
     {
         Point aPoint( rEvt.GetPosPixel() );
 
-        if( m_nDragIndex == 0 || m_nDragIndex == m_aHandles.size() - 1L)
+        if( m_nDragIndex == 0L || m_nDragIndex == m_aHandles.size() - 1L)
         {
             aPoint.X() = m_aHandles[m_nDragIndex].maPos.X();
         }
@@ -574,9 +571,9 @@ void GridWindow::MouseButtonUp( const MouseEvent& rEvt )
 {
     if( rEvt.GetButtons() == MOUSE_LEFT )
     {
-        if( m_nDragIndex != npos )
+        if( m_nDragIndex != 0xffffffff )
         {
-            m_nDragIndex = npos;
+            m_nDragIndex = 0xffffffff;
             computeNew();
             Invalidate(m_aGridArea);
         }
@@ -588,9 +585,9 @@ void GridWindow::MouseButtonUp( const MouseEvent& rEvt )
 void GridWindow::MouseButtonDown( const MouseEvent& rEvt )
 {
     Point aPoint( rEvt.GetPosPixel() );
-    Handles::size_type nMarkerIndex = npos;
+    sal_uInt32 nMarkerIndex = 0xffffffff;
 
-    for(Handles::size_type a(0L); nMarkerIndex == npos && a < m_aHandles.size(); a++)
+    for(sal_uInt32 a(0L); nMarkerIndex == 0xffffffff && a < m_aHandles.size(); a++)
     {
         if(m_aHandles[a].isHit(*this, aPoint))
         {
@@ -601,7 +598,7 @@ void GridWindow::MouseButtonDown( const MouseEvent& rEvt )
     if( rEvt.GetButtons() == MOUSE_LEFT )
     {
         // user wants to drag a button
-        if( nMarkerIndex != npos )
+        if( nMarkerIndex != 0xffffffff )
         {
             m_nDragIndex = nMarkerIndex;
         }
@@ -609,13 +606,13 @@ void GridWindow::MouseButtonDown( const MouseEvent& rEvt )
     else if( rEvt.GetButtons() == MOUSE_RIGHT )
     {
         // user wants to add/delete a button
-        if( nMarkerIndex != npos )
+        if( nMarkerIndex != 0xffffffff )
         {
             if( nMarkerIndex != 0L && nMarkerIndex != m_aHandles.size() - 1L)
             {
                 // delete marker under mouse
                 if( m_nDragIndex == nMarkerIndex )
-                    m_nDragIndex = npos;
+                    m_nDragIndex = 0xffffffff;
 
                 m_aHandles.erase(m_aHandles.begin() + nMarkerIndex);
             }
@@ -634,11 +631,11 @@ void GridWindow::MouseButtonDown( const MouseEvent& rEvt )
     Window::MouseButtonDown( rEvt );
 }
 
-void GridWindow::ChangeMode(ResetType nType)
+void GridWindow::ChangeMode(int nType)
 {
     switch( nType )
     {
-        case ResetType::LINEAR_ASCENDING:
+        case LINEAR_ASCENDING:
         {
             for( int i = 0; i < m_nValues; i++ )
             {
@@ -646,7 +643,7 @@ void GridWindow::ChangeMode(ResetType nType)
             }
         }
         break;
-        case ResetType::LINEAR_DESCENDING:
+        case LINEAR_DESCENDING:
         {
             for( int i = 0; i < m_nValues; i++ )
             {
@@ -654,13 +651,13 @@ void GridWindow::ChangeMode(ResetType nType)
             }
         }
         break;
-        case ResetType::RESET:
+        case RESET:
         {
             if( m_pOrigYValues && m_pNewYValues && m_nValues )
                 memcpy( m_pNewYValues, m_pOrigYValues, m_nValues*sizeof(double) );
         }
         break;
-        case ResetType::EXPONENTIAL:
+        case EXPONENTIAL:
         {
             for( int i = 0; i < m_nValues; i++ )
             {
@@ -702,12 +699,12 @@ void GridWindow::ChangeMode(ResetType nType)
     Invalidate();
 }
 
-IMPL_LINK( GridDialog, ClickButtonHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( GridDialog, ClickButtonHdl, Button*, pButton, void )
 {
     if (pButton == m_pResetButton)
     {
         int nType = m_pResetTypeBox->GetSelectEntryPos();
-        m_pGridWindow->ChangeMode((ResetType)nType);
+        m_pGridWindow->ChangeMode(nType);
     }
 }
 

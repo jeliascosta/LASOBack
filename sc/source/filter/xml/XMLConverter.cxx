@@ -19,7 +19,6 @@
 
 #include "XMLConverter.hxx"
 #include <com/sun/star/util/DateTime.hpp>
-#include <com/sun/star/sheet/GeneralFunction2.hpp>
 #include <tools/datetime.hxx>
 #include <sax/tools/converter.hxx>
 #include <xmloff/xmltoken.hxx>
@@ -29,7 +28,6 @@
 #include "convuno.hxx"
 #include "document.hxx"
 #include "ftools.hxx"
-#include "generalfunction.hxx"
 
 using namespace ::com::sun::star;
 using namespace xmloff::token;
@@ -73,37 +71,6 @@ sheet::GeneralFunction ScXMLConverter::GetFunctionFromString( const OUString& sF
     return sheet::GeneralFunction_NONE;
 }
 
-ScGeneralFunction ScXMLConverter::GetFunctionFromString2( const OUString& sFunction )
-{
-    if( IsXMLToken(sFunction, XML_SUM ) )
-        return ScGeneralFunction::SUM;
-    if( IsXMLToken(sFunction, XML_AUTO ) )
-        return ScGeneralFunction::AUTO;
-    if( IsXMLToken(sFunction, XML_COUNT ) )
-        return ScGeneralFunction::COUNT;
-    if( IsXMLToken(sFunction, XML_COUNTNUMS ) )
-        return ScGeneralFunction::COUNTNUMS;
-    if( IsXMLToken(sFunction, XML_PRODUCT ) )
-        return ScGeneralFunction::PRODUCT;
-    if( IsXMLToken(sFunction, XML_AVERAGE ) )
-        return ScGeneralFunction::AVERAGE;
-    if( IsXMLToken(sFunction, XML_MEDIAN ) )
-        return ScGeneralFunction::MEDIAN;
-    if( IsXMLToken(sFunction, XML_MAX ) )
-        return ScGeneralFunction::MAX;
-    if( IsXMLToken(sFunction, XML_MIN ) )
-        return ScGeneralFunction::MIN;
-    if( IsXMLToken(sFunction, XML_STDEV ) )
-        return ScGeneralFunction::STDEV;
-    if( IsXMLToken(sFunction, XML_STDEVP ) )
-        return ScGeneralFunction::STDEVP;
-    if( IsXMLToken(sFunction, XML_VAR ) )
-        return ScGeneralFunction::VAR;
-    if( IsXMLToken(sFunction, XML_VARP ) )
-        return ScGeneralFunction::VARP;
-    return ScGeneralFunction::NONE;
-}
-
 ScSubTotalFunc ScXMLConverter::GetSubTotalFuncFromString( const OUString& sFunction )
 {
     if( IsXMLToken(sFunction, XML_SUM ) )
@@ -116,8 +83,6 @@ ScSubTotalFunc ScXMLConverter::GetSubTotalFuncFromString( const OUString& sFunct
         return SUBTOTAL_FUNC_PROD;
     if( IsXMLToken(sFunction, XML_AVERAGE ) )
         return SUBTOTAL_FUNC_AVE;
-    if( IsXMLToken(sFunction, XML_MEDIAN ) )
-        return SUBTOTAL_FUNC_MED;
     if( IsXMLToken(sFunction, XML_MAX ) )
         return SUBTOTAL_FUNC_MAX;
     if( IsXMLToken(sFunction, XML_MIN ) )
@@ -135,28 +100,27 @@ ScSubTotalFunc ScXMLConverter::GetSubTotalFuncFromString( const OUString& sFunct
 
 void ScXMLConverter::GetStringFromFunction(
         OUString& rString,
-        sal_Int16 eFunction )
+        const sheet::GeneralFunction eFunction )
 {
     OUString sFuncStr;
     switch( eFunction )
     {
-        case sheet::GeneralFunction2::AUTO:       sFuncStr = GetXMLToken( XML_AUTO );         break;
-        case sheet::GeneralFunction2::AVERAGE:    sFuncStr = GetXMLToken( XML_AVERAGE );      break;
-        case sheet::GeneralFunction2::MEDIAN:     sFuncStr = GetXMLToken( XML_MEDIAN );       break;
-        case sheet::GeneralFunction2::COUNT:      sFuncStr = GetXMLToken( XML_COUNT );        break;
-        case sheet::GeneralFunction2::COUNTNUMS:  sFuncStr = GetXMLToken( XML_COUNTNUMS );    break;
-        case sheet::GeneralFunction2::MAX:        sFuncStr = GetXMLToken( XML_MAX );          break;
-        case sheet::GeneralFunction2::MIN:        sFuncStr = GetXMLToken( XML_MIN );          break;
-        case sheet::GeneralFunction2::NONE:       sFuncStr = GetXMLToken( XML_NONE );         break;
-        case sheet::GeneralFunction2::PRODUCT:    sFuncStr = GetXMLToken( XML_PRODUCT );      break;
-        case sheet::GeneralFunction2::STDEV:      sFuncStr = GetXMLToken( XML_STDEV );        break;
-        case sheet::GeneralFunction2::STDEVP:     sFuncStr = GetXMLToken( XML_STDEVP );       break;
-        case sheet::GeneralFunction2::SUM:        sFuncStr = GetXMLToken( XML_SUM );          break;
-        case sheet::GeneralFunction2::VAR:        sFuncStr = GetXMLToken( XML_VAR );          break;
-        case sheet::GeneralFunction2::VARP:       sFuncStr = GetXMLToken( XML_VARP );         break;
+        case sheet::GeneralFunction_AUTO:       sFuncStr = GetXMLToken( XML_AUTO );         break;
+        case sheet::GeneralFunction_AVERAGE:    sFuncStr = GetXMLToken( XML_AVERAGE );      break;
+        case sheet::GeneralFunction_COUNT:      sFuncStr = GetXMLToken( XML_COUNT );        break;
+        case sheet::GeneralFunction_COUNTNUMS:  sFuncStr = GetXMLToken( XML_COUNTNUMS );    break;
+        case sheet::GeneralFunction_MAX:        sFuncStr = GetXMLToken( XML_MAX );          break;
+        case sheet::GeneralFunction_MIN:        sFuncStr = GetXMLToken( XML_MIN );          break;
+        case sheet::GeneralFunction_NONE:       sFuncStr = GetXMLToken( XML_NONE );         break;
+        case sheet::GeneralFunction_PRODUCT:    sFuncStr = GetXMLToken( XML_PRODUCT );      break;
+        case sheet::GeneralFunction_STDEV:      sFuncStr = GetXMLToken( XML_STDEV );        break;
+        case sheet::GeneralFunction_STDEVP:     sFuncStr = GetXMLToken( XML_STDEVP );       break;
+        case sheet::GeneralFunction_SUM:        sFuncStr = GetXMLToken( XML_SUM );          break;
+        case sheet::GeneralFunction_VAR:        sFuncStr = GetXMLToken( XML_VAR );          break;
+        case sheet::GeneralFunction_VARP:       sFuncStr = GetXMLToken( XML_VARP );         break;
         default:
         {
-            assert(false);
+            // added to avoid warnings
         }
     }
     ScRangeStringConverter::AssignString( rString, sFuncStr, false );
@@ -170,7 +134,6 @@ void ScXMLConverter::GetStringFromFunction(
     switch( eFunction )
     {
         case SUBTOTAL_FUNC_AVE:     sFuncStr = GetXMLToken( XML_AVERAGE );      break;
-        case SUBTOTAL_FUNC_MED:     sFuncStr = GetXMLToken( XML_MEDIAN );       break;
         case SUBTOTAL_FUNC_CNT:     sFuncStr = GetXMLToken( XML_COUNT );        break;
         case SUBTOTAL_FUNC_CNT2:    sFuncStr = GetXMLToken( XML_COUNTNUMS );    break;
         case SUBTOTAL_FUNC_MAX:     sFuncStr = GetXMLToken( XML_MAX );          break;

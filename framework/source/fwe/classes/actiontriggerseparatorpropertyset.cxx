@@ -59,6 +59,7 @@ ActionTriggerSeparatorPropertySet::~ActionTriggerSeparatorPropertySet()
 
 // XInterface
 Any SAL_CALL ActionTriggerSeparatorPropertySet::queryInterface( const Type& aType )
+throw ( RuntimeException, std::exception )
 {
     Any a = ::cppu::queryInterface(
                 aType,
@@ -90,23 +91,26 @@ void ActionTriggerSeparatorPropertySet::release() throw()
 
 // XServiceInfo
 OUString SAL_CALL ActionTriggerSeparatorPropertySet::getImplementationName()
+throw ( RuntimeException, std::exception )
 {
     return OUString( IMPLEMENTATIONNAME_ACTIONTRIGGERSEPARATOR );
 }
 
 sal_Bool SAL_CALL ActionTriggerSeparatorPropertySet::supportsService( const OUString& ServiceName )
+throw ( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL ActionTriggerSeparatorPropertySet::getSupportedServiceNames()
+throw ( RuntimeException, std::exception )
 {
     Sequence<OUString> seqServiceNames { SERVICENAME_ACTIONTRIGGERSEPARATOR };
     return seqServiceNames;
 }
 
 // XTypeProvider
-Sequence< Type > SAL_CALL ActionTriggerSeparatorPropertySet::getTypes()
+Sequence< Type > SAL_CALL ActionTriggerSeparatorPropertySet::getTypes() throw ( RuntimeException, std::exception )
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -137,7 +141,7 @@ Sequence< Type > SAL_CALL ActionTriggerSeparatorPropertySet::getTypes()
     return pTypeCollection->getTypes();
 }
 
-Sequence< sal_Int8 > SAL_CALL ActionTriggerSeparatorPropertySet::getImplementationId()
+Sequence< sal_Int8 > SAL_CALL ActionTriggerSeparatorPropertySet::getImplementationId() throw ( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -147,6 +151,7 @@ sal_Bool SAL_CALL ActionTriggerSeparatorPropertySet::convertFastPropertyValue(
     Any&        aOldValue,
     sal_Int32   nHandle,
     const Any&  aValue  )
+throw( IllegalArgumentException )
 {
     //  Check, if value of property will changed in method "setFastPropertyValue_NoBroadcast()".
     //  Return sal_True, if changed - else return sal_False.
@@ -168,6 +173,7 @@ sal_Bool SAL_CALL ActionTriggerSeparatorPropertySet::convertFastPropertyValue(
 
 void SAL_CALL ActionTriggerSeparatorPropertySet::setFastPropertyValue_NoBroadcast(
     sal_Int32 nHandle, const Any& aValue )
+throw( Exception, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -219,6 +225,7 @@ void SAL_CALL ActionTriggerSeparatorPropertySet::getFastPropertyValue(
 }
 
 Reference< XPropertySetInfo > SAL_CALL ActionTriggerSeparatorPropertySet::getPropertySetInfo()
+throw ( RuntimeException, std::exception )
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -245,7 +252,7 @@ const Sequence< Property > ActionTriggerSeparatorPropertySet::impl_getStaticProp
 {
     const Property pActionTriggerPropertys[] =
     {
-        Property( "SeparatorType", HANDLE_TYPE, cppu::UnoType<sal_Int16>::get(), PropertyAttribute::TRANSIENT )
+        Property( OUString( "SeparatorType" ), HANDLE_TYPE, cppu::UnoType<sal_Int16>::get(), PropertyAttribute::TRANSIENT )
     };
 
     // Use it to initialize sequence!
@@ -260,6 +267,7 @@ bool ActionTriggerSeparatorPropertySet::impl_tryToChangeProperty(
     const   Any&        aNewValue       ,
     Any&                aOldValue       ,
     Any&                aConvertedValue )
+throw( IllegalArgumentException )
 {
     // Set default return value if method failed.
     bool bReturn = false;

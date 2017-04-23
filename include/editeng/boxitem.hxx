@@ -67,7 +67,7 @@ public:
 
     explicit SvxBoxItem( const sal_uInt16 nId );
     SvxBoxItem( const SvxBoxItem &rCpy );
-    virtual ~SvxBoxItem() override;
+    virtual ~SvxBoxItem();
     SvxBoxItem &operator=( const SvxBoxItem& rBox );
 
     // "pure virtual Methods" from SfxPoolItem
@@ -76,8 +76,8 @@ public:
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    MapUnit eCoreMetric,
-                                    MapUnit ePresMetric,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -99,18 +99,17 @@ public:
     void    SetLine( const editeng::SvxBorderLine* pNew, SvxBoxItemLine nLine );
 
     sal_uInt16  GetDistance( SvxBoxItemLine nLine ) const;
-    sal_uInt16  GetSmallestDistance() const;
+    sal_uInt16  GetDistance() const;
 
     bool IsRemoveAdjacentCellBorder() const { return bRemoveAdjCellBorder; }
 
     void    SetDistance( sal_uInt16 nNew, SvxBoxItemLine nLine );
-    inline void SetAllDistances( sal_uInt16 nNew );
+    inline void SetDistance( sal_uInt16 nNew );
 
-    void SetRemoveAdjacentCellBorder( bool bSet ) { bRemoveAdjCellBorder = bSet; }
+    void SetRemoveAdjacentCellBorder( bool bSet = true ) { bRemoveAdjCellBorder = bSet; }
 
     // Line width plus Space plus inward distance
     // bEvenIfNoLine = TRUE -> Also return distance, when no Line is set
-    sal_uInt16  CalcLineWidth( SvxBoxItemLine nLine ) const;
     sal_uInt16  CalcLineSpace( SvxBoxItemLine nLine, bool bEvenIfNoLine = false ) const;
     bool HasBorder( bool bTreatPaddingAsBorder = false ) const;
     static css::table::BorderLine2 SvxLineToLine( const editeng::SvxBorderLine* pLine, bool bConvert );
@@ -118,7 +117,7 @@ public:
     static bool LineToSvxLine(const css::table::BorderLine2& rLine, editeng::SvxBorderLine& rSvxLine, bool bConvert);
 };
 
-inline void SvxBoxItem::SetAllDistances(sal_uInt16 const nNew)
+inline void SvxBoxItem::SetDistance( sal_uInt16 nNew )
 {
     nTopDist = nBottomDist = nLeftDist = nRightDist = nNew;
 }
@@ -185,14 +184,14 @@ public:
 
     explicit SvxBoxInfoItem( const sal_uInt16 nId );
     SvxBoxInfoItem( const SvxBoxInfoItem &rCpy );
-    virtual ~SvxBoxInfoItem() override;
+    virtual ~SvxBoxInfoItem();
     SvxBoxInfoItem &operator=( const SvxBoxInfoItem &rCpy );
 
     // "pure virtual Methods" from SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool            GetPresentation( SfxItemPresentation ePres,
-                                    MapUnit eCoreMetric,
-                                    MapUnit ePresMetric,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -212,10 +211,10 @@ public:
     bool                    IsTable() const             { return mbEnableHor && mbEnableVer; }
     void                    SetTable( bool bNew )       { mbEnableHor = mbEnableVer = bNew; }
 
-    bool             IsHorEnabled() const { return mbEnableHor; }
-    void             EnableHor( bool bEnable ) { mbEnableHor = bEnable; }
-    bool             IsVerEnabled() const { return mbEnableVer; }
-    void             EnableVer( bool bEnable ) { mbEnableVer = bEnable; }
+    inline bool             IsHorEnabled() const { return mbEnableHor; }
+    inline void             EnableHor( bool bEnable ) { mbEnableHor = bEnable; }
+    inline bool             IsVerEnabled() const { return mbEnableVer; }
+    inline void             EnableVer( bool bEnable ) { mbEnableVer = bEnable; }
 
     bool                    IsDist() const              { return bDist; }
     void                    SetDist( bool bNew )        { bDist = bNew; }

@@ -23,7 +23,7 @@
 #include "xmlsecuritycontext_mscryptimpl.hxx"
 #include "xmlstreamio.hxx"
 
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 #include "xmlsec/mscrypto/akmngr.h"
 
 using namespace ::com::sun::star::uno ;
@@ -36,7 +36,7 @@ using ::com::sun::star::xml::crypto::XXMLSecurityContext ;
 
 XMLSecurityContext_MSCryptImpl::XMLSecurityContext_MSCryptImpl()
     ://m_pKeysMngr( NULL ) ,
-     m_xSecurityEnvironment( nullptr )
+     m_xSecurityEnvironment( NULL )
 {
     //Init xmlsec library
     if( xmlSecInit() < 0 ) {
@@ -65,6 +65,7 @@ XMLSecurityContext_MSCryptImpl::~XMLSecurityContext_MSCryptImpl() {
 
 sal_Int32 SAL_CALL XMLSecurityContext_MSCryptImpl::addSecurityEnvironment(
     const css::uno::Reference< css::xml::crypto::XSecurityEnvironment >& aSecurityEnvironment)
+    throw (css::security::SecurityInfrastructureException, css::uno::RuntimeException)
 {
     if( !aSecurityEnvironment.is() )
     {
@@ -78,12 +79,14 @@ sal_Int32 SAL_CALL XMLSecurityContext_MSCryptImpl::addSecurityEnvironment(
 
 
 sal_Int32 SAL_CALL XMLSecurityContext_MSCryptImpl::getSecurityEnvironmentNumber(  )
+    throw (css::uno::RuntimeException)
 {
     return 1;
 }
 
 css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
     XMLSecurityContext_MSCryptImpl::getSecurityEnvironmentByIndex( sal_Int32 index )
+    throw (css::uno::RuntimeException)
 {
     if (index == 0)
     {
@@ -95,38 +98,41 @@ css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
 
 css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
     XMLSecurityContext_MSCryptImpl::getSecurityEnvironment(  )
+    throw (css::uno::RuntimeException)
 {
     return m_xSecurityEnvironment;
 }
 
 sal_Int32 SAL_CALL XMLSecurityContext_MSCryptImpl::getDefaultSecurityEnvironmentIndex(  )
+    throw (css::uno::RuntimeException)
 {
     return 0;
 }
 
 void SAL_CALL XMLSecurityContext_MSCryptImpl::setDefaultSecurityEnvironmentIndex( sal_Int32 /*nDefaultEnvIndex*/ )
+    throw (css::uno::RuntimeException)
 {
     //dummy
 }
 
 /* XServiceInfo */
-OUString SAL_CALL XMLSecurityContext_MSCryptImpl::getImplementationName() {
+OUString SAL_CALL XMLSecurityContext_MSCryptImpl::getImplementationName() throw( RuntimeException ) {
     return impl_getImplementationName() ;
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL XMLSecurityContext_MSCryptImpl::supportsService( const OUString& serviceName) {
+sal_Bool SAL_CALL XMLSecurityContext_MSCryptImpl::supportsService( const OUString& serviceName) throw( RuntimeException ) {
     Sequence< OUString > seqServiceNames = getSupportedServiceNames() ;
     const OUString* pArray = seqServiceNames.getConstArray() ;
     for( sal_Int32 i = 0 ; i < seqServiceNames.getLength() ; i ++ ) {
         if( *( pArray + i ) == serviceName )
-            return true ;
+            return sal_True ;
     }
-    return false ;
+    return sal_False ;
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL XMLSecurityContext_MSCryptImpl::getSupportedServiceNames() {
+Sequence< OUString > SAL_CALL XMLSecurityContext_MSCryptImpl::getSupportedServiceNames() throw( RuntimeException ) {
     return impl_getSupportedServiceNames() ;
 }
 
@@ -137,12 +143,12 @@ Sequence< OUString > XMLSecurityContext_MSCryptImpl::impl_getSupportedServiceNam
     return seqServiceNames ;
 }
 
-OUString XMLSecurityContext_MSCryptImpl::impl_getImplementationName() {
+OUString XMLSecurityContext_MSCryptImpl::impl_getImplementationName() throw( RuntimeException ) {
     return OUString("com.sun.star.xml.security.bridge.xmlsec.XMLSecurityContext_MSCryptImpl") ;
 }
 
 //Helper for registry
-Reference< XInterface > SAL_CALL XMLSecurityContext_MSCryptImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) {
+Reference< XInterface > SAL_CALL XMLSecurityContext_MSCryptImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) throw( RuntimeException ) {
     return Reference< XInterface >( *new XMLSecurityContext_MSCryptImpl ) ;
 }
 

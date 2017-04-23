@@ -68,9 +68,7 @@ namespace drawinglayer
                 bool bBiDiStrong = false);
             FontAttribute();
             FontAttribute(const FontAttribute& rCandidate);
-            FontAttribute(FontAttribute&& rCandidate);
             FontAttribute& operator=(const FontAttribute& rCandidate);
-            FontAttribute& operator=(FontAttribute&& rCandidate);
             ~FontAttribute();
 
             // compare operator

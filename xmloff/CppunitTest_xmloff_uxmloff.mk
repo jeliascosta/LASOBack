@@ -11,8 +11,8 @@ $(eval $(call gb_CppunitTest_CppunitTest,xmloff_uxmloff))
 
 $(eval $(call gb_CppunitTest_add_exception_objects,xmloff_uxmloff, \
     xmloff/qa/unit/uxmloff \
-	xmloff/qa/unit/tokenmap-test \
 ))
+
 
 $(eval $(call gb_CppunitTest_set_include,xmloff_uxmloff,\
     -I$(SRCDIR)/xmloff/inc \
@@ -21,11 +21,10 @@ $(eval $(call gb_CppunitTest_set_include,xmloff_uxmloff,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_custom_headers,xmloff_uxmloff, \
-	xmloff/generated \
+$(eval $(call gb_CppunitTest_use_api,xmloff_uxmloff,\
+    offapi \
+    udkapi \
 ))
-
-$(eval $(call gb_CppunitTest_use_sdk_api,xmloff_uxmloff))
 
 $(eval $(call gb_CppunitTest_use_ure,xmloff_uxmloff))
 $(eval $(call gb_CppunitTest_use_vcl,xmloff_uxmloff))
@@ -48,7 +47,6 @@ $(eval $(call gb_CppunitTest_use_libraries,xmloff_uxmloff, \
     svl \
 	test \
     tl \
-    unotest \
     utl \
     vcl \
 	$(gb_UWINAPI) \

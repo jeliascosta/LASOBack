@@ -38,7 +38,7 @@ public:
         std::vector<OUString*> &rNewSectionList );
 
     virtual ~SwXMLSectionList ( )
-        throw() override;
+        throw();
 };
 
 class SvXMLSectionListContext : public SvXMLImportContext
@@ -53,7 +53,7 @@ public:
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                            const OUString& rLocalName,
                            const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList ) override;
-    virtual ~SvXMLSectionListContext() override;
+    virtual ~SvXMLSectionListContext();
 };
 
 #endif

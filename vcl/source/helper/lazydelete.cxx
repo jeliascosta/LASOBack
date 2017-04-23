@@ -70,12 +70,12 @@ void DeleteOnDeinitBase::addDeinitContainer( DeleteOnDeinitBase* i_pContainer )
 {
     ImplSVData* pSVData = ImplGetSVData();
 
-    SAL_WARN_IF(  pSVData->mbDeInit, "vcl", "DeleteOnDeinit added after DeiInitVCL !" );
+    DBG_ASSERT( ! pSVData->mbDeInit, "DeleteOnDeinit added after DeiInitVCL !" );
     if( pSVData->mbDeInit )
         return;
 
     if( pSVData->mpDeinitDeleteList == nullptr )
-        pSVData->mpDeinitDeleteList = new std::list< DeleteOnDeinitBase* >;
+        pSVData->mpDeinitDeleteList = new std::list< DeleteOnDeinitBase* >();
     pSVData->mpDeinitDeleteList->push_back( i_pContainer );
 }
 

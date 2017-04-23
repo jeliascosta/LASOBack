@@ -54,12 +54,12 @@ uno::Sequence< OUString > lcl_getShapeOptionals()
 
 OShape::OShape(uno::Reference< uno::XComponentContext > const & _xContext)
 :ShapeBase(m_aMutex)
-,ShapePropertySet(_xContext,IMPLEMENTS_PROPERTY_SET,lcl_getShapeOptionals())
+,ShapePropertySet(_xContext,static_cast< Implements >(IMPLEMENTS_PROPERTY_SET),lcl_getShapeOptionals())
 ,m_aProps(m_aMutex,static_cast< container::XContainer*>( this ),_xContext)
 ,m_nZOrder(0)
 ,m_bOpaque(false)
 {
-    m_aProps.aComponent.m_sName  = RPT_RESSTRING(RID_STR_SHAPE);
+    m_aProps.aComponent.m_sName  = RPT_RESSTRING(RID_STR_SHAPE,m_aProps.aComponent.m_xContext->getServiceManager());
 }
 
 OShape::OShape(uno::Reference< uno::XComponentContext > const & _xContext
@@ -67,13 +67,13 @@ OShape::OShape(uno::Reference< uno::XComponentContext > const & _xContext
                ,uno::Reference< drawing::XShape >& _xShape
                ,const OUString& _sServiceName)
 :ShapeBase(m_aMutex)
-,ShapePropertySet(_xContext,IMPLEMENTS_PROPERTY_SET,lcl_getShapeOptionals())
+,ShapePropertySet(_xContext,static_cast< Implements >(IMPLEMENTS_PROPERTY_SET),lcl_getShapeOptionals())
 ,m_aProps(m_aMutex,static_cast< container::XContainer*>( this ),_xContext)
 ,m_nZOrder(0)
 ,m_bOpaque(false)
 ,m_sServiceName(_sServiceName)
 {
-    m_aProps.aComponent.m_sName  = RPT_RESSTRING(RID_STR_SHAPE);
+    m_aProps.aComponent.m_sName  = RPT_RESSTRING(RID_STR_SHAPE,m_aProps.aComponent.m_xContext->getServiceManager());
     m_aProps.aComponent.m_xFactory = _xFactory;
     osl_atomic_increment( &m_refCount );
     {
@@ -95,7 +95,7 @@ OShape::~OShape()
 //IMPLEMENT_FORWARD_XINTERFACE2(OShape,ShapeBase,ShapePropertySet)
 IMPLEMENT_FORWARD_REFCOUNT( OShape, ShapeBase )
 
-uno::Any SAL_CALL OShape::queryInterface( const uno::Type& _rType )
+uno::Any SAL_CALL OShape::queryInterface( const uno::Type& _rType ) throw (uno::RuntimeException, std::exception)
 {
     uno::Any aReturn = ShapeBase::queryInterface(_rType);
     if ( !aReturn.hasValue() )
@@ -108,7 +108,7 @@ uno::Any SAL_CALL OShape::queryInterface( const uno::Type& _rType )
 }
 
 
-void SAL_CALL OShape::dispose()
+void SAL_CALL OShape::dispose() throw(uno::RuntimeException, std::exception)
 {
     ShapePropertySet::dispose();
     cppu::WeakComponentImplHelperBase::dispose();
@@ -120,25 +120,25 @@ uno::Reference< uno::XInterface > OShape::create(uno::Reference< uno::XComponent
 }
 
 
-OUString OShape::getImplementationName_Static(  )
+OUString OShape::getImplementationName_Static(  ) throw(uno::RuntimeException)
 {
     return OUString("com.sun.star.comp.report.Shape");
 }
 
 
-OUString SAL_CALL OShape::getImplementationName(  )
+OUString SAL_CALL OShape::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-uno::Sequence< OUString > OShape::getSupportedServiceNames_Static(  )
+uno::Sequence< OUString > OShape::getSupportedServiceNames_Static(  ) throw(uno::RuntimeException)
 {
     uno::Sequence< OUString > aServices { SERVICE_SHAPE };
 
     return aServices;
 }
 
-uno::Sequence< OUString > SAL_CALL OShape::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL OShape::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
     if(m_sServiceName.isEmpty())
     {
@@ -154,7 +154,7 @@ uno::Sequence< OUString > SAL_CALL OShape::getSupportedServiceNames(  )
     }
 }
 
-sal_Bool SAL_CALL OShape::supportsService(const OUString& ServiceName)
+sal_Bool SAL_CALL OShape::supportsService(const OUString& ServiceName) throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -165,27 +165,27 @@ REPORTCOMPONENT_IMPL2(OShape,m_aProps.aComponent)
 REPORTCOMPONENT_MASTERDETAIL(OShape,m_aProps.aComponent)
 REPORTCONTROLFORMAT_IMPL2(OShape,m_aProps.aFormatProperties)
 
-::sal_Int32 SAL_CALL OShape::getControlBackground()
+::sal_Int32 SAL_CALL OShape::getControlBackground() throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-void SAL_CALL OShape::setControlBackground( ::sal_Int32 /*_backgroundcolor*/ )
+void SAL_CALL OShape::setControlBackground( ::sal_Int32 /*_backgroundcolor*/ ) throw (uno::RuntimeException,beans::UnknownPropertyException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-sal_Bool SAL_CALL OShape::getControlBackgroundTransparent()
+sal_Bool SAL_CALL OShape::getControlBackgroundTransparent() throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-void SAL_CALL OShape::setControlBackgroundTransparent( sal_Bool /*_controlbackgroundtransparent*/ )
+void SAL_CALL OShape::setControlBackgroundTransparent( sal_Bool /*_controlbackgroundtransparent*/ ) throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-uno::Reference< beans::XPropertySetInfo > SAL_CALL OShape::getPropertySetInfo(  )
+uno::Reference< beans::XPropertySetInfo > SAL_CALL OShape::getPropertySetInfo(  ) throw(uno::RuntimeException, std::exception)
 {
 
     //return ShapePropertySet::getPropertySetInfo();
@@ -205,7 +205,7 @@ cppu::IPropertyArrayHelper& OShape::getInfoHelper()
 }
 
 
-void SAL_CALL OShape::setPropertyValue( const OUString& aPropertyName, const uno::Any& aValue )
+void SAL_CALL OShape::setPropertyValue( const OUString& aPropertyName, const uno::Any& aValue ) throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(aPropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate )
@@ -215,7 +215,7 @@ void SAL_CALL OShape::setPropertyValue( const OUString& aPropertyName, const uno
         ShapePropertySet::setPropertyValue( aPropertyName, aValue );
 }
 
-uno::Any SAL_CALL OShape::getPropertyValue( const OUString& PropertyName )
+uno::Any SAL_CALL OShape::getPropertyValue( const OUString& PropertyName ) throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(PropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate )
@@ -226,7 +226,7 @@ uno::Any SAL_CALL OShape::getPropertyValue( const OUString& PropertyName )
     return uno::Any();
 }
 
-void SAL_CALL OShape::addPropertyChangeListener( const OUString& aPropertyName, const uno::Reference< beans::XPropertyChangeListener >& xListener )
+void SAL_CALL OShape::addPropertyChangeListener( const OUString& aPropertyName, const uno::Reference< beans::XPropertyChangeListener >& xListener ) throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(aPropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate || aPropertyName.isEmpty() )
@@ -236,7 +236,7 @@ void SAL_CALL OShape::addPropertyChangeListener( const OUString& aPropertyName, 
         ShapePropertySet::addPropertyChangeListener( aPropertyName, xListener );
 }
 
-void SAL_CALL OShape::removePropertyChangeListener( const OUString& aPropertyName, const uno::Reference< beans::XPropertyChangeListener >& aListener )
+void SAL_CALL OShape::removePropertyChangeListener( const OUString& aPropertyName, const uno::Reference< beans::XPropertyChangeListener >& aListener ) throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(aPropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate || aPropertyName.isEmpty() )
@@ -246,7 +246,7 @@ void SAL_CALL OShape::removePropertyChangeListener( const OUString& aPropertyNam
         ShapePropertySet::removePropertyChangeListener( aPropertyName, aListener );
 }
 
-void SAL_CALL OShape::addVetoableChangeListener( const OUString& PropertyName, const uno::Reference< beans::XVetoableChangeListener >& aListener )
+void SAL_CALL OShape::addVetoableChangeListener( const OUString& PropertyName, const uno::Reference< beans::XVetoableChangeListener >& aListener ) throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(PropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate || PropertyName.isEmpty() )
@@ -256,7 +256,7 @@ void SAL_CALL OShape::addVetoableChangeListener( const OUString& PropertyName, c
         ShapePropertySet::addVetoableChangeListener( PropertyName, aListener );
 }
 
-void SAL_CALL OShape::removeVetoableChangeListener( const OUString& PropertyName, const uno::Reference< beans::XVetoableChangeListener >& aListener )
+void SAL_CALL OShape::removeVetoableChangeListener( const OUString& PropertyName, const uno::Reference< beans::XVetoableChangeListener >& aListener ) throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     getInfoHelper();
     if( m_pAggHelper->classifyProperty(PropertyName) == OPropertyArrayAggregationHelper::PropertyOrigin::Aggregate || PropertyName.isEmpty() )
@@ -267,41 +267,41 @@ void SAL_CALL OShape::removeVetoableChangeListener( const OUString& PropertyName
 }
 
 // XReportControlModel
-OUString SAL_CALL OShape::getDataField()
+OUString SAL_CALL OShape::getDataField() throw ( beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-void SAL_CALL OShape::setDataField( const OUString& /*_datafield*/ )
+void SAL_CALL OShape::setDataField( const OUString& /*_datafield*/ ) throw (lang::IllegalArgumentException, beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     throw beans::UnknownPropertyException();
 }
 
-sal_Bool SAL_CALL OShape::getPrintWhenGroupChange()
+sal_Bool SAL_CALL OShape::getPrintWhenGroupChange() throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     return m_aProps.bPrintWhenGroupChange;
 }
 
-void SAL_CALL OShape::setPrintWhenGroupChange( sal_Bool _printwhengroupchange )
+void SAL_CALL OShape::setPrintWhenGroupChange( sal_Bool _printwhengroupchange ) throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     set(PROPERTY_PRINTWHENGROUPCHANGE,_printwhengroupchange,m_aProps.bPrintWhenGroupChange);
 }
 
-OUString SAL_CALL OShape::getConditionalPrintExpression()
+OUString SAL_CALL OShape::getConditionalPrintExpression() throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     return m_aProps.aConditionalPrintExpression;
 }
 
-void SAL_CALL OShape::setConditionalPrintExpression( const OUString& _conditionalprintexpression )
+void SAL_CALL OShape::setConditionalPrintExpression( const OUString& _conditionalprintexpression ) throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     set(PROPERTY_CONDITIONALPRINTEXPRESSION,_conditionalprintexpression,m_aProps.aConditionalPrintExpression);
 }
 
 
 // XCloneable
-uno::Reference< util::XCloneable > SAL_CALL OShape::createClone(  )
+uno::Reference< util::XCloneable > SAL_CALL OShape::createClone(  ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< report::XReportComponent> xSource = this;
     uno::Reference< report::XReportComponent> xSet;
@@ -329,95 +329,95 @@ uno::Reference< util::XCloneable > SAL_CALL OShape::createClone(  )
 }
 
 // XChild
-uno::Reference< uno::XInterface > SAL_CALL OShape::getParent(  )
+uno::Reference< uno::XInterface > SAL_CALL OShape::getParent(  ) throw (uno::RuntimeException, std::exception)
 {
     return OShapeHelper::getParent(this);
 }
 
-void SAL_CALL OShape::setParent( const uno::Reference< uno::XInterface >& Parent )
+void SAL_CALL OShape::setParent( const uno::Reference< uno::XInterface >& Parent ) throw (lang::NoSupportException, uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xParent = uno::Reference< container::XChild >(Parent,uno::UNO_QUERY);
 }
-uno::Reference< report::XFormatCondition > SAL_CALL OShape::createFormatCondition(  )
+uno::Reference< report::XFormatCondition > SAL_CALL OShape::createFormatCondition(  ) throw (uno::Exception, uno::RuntimeException, std::exception)
 {
     return new OFormatCondition(m_aProps.aComponent.m_xContext);
 }
 
 // XContainer
-void SAL_CALL OShape::addContainerListener( const uno::Reference< container::XContainerListener >& xListener )
+void SAL_CALL OShape::addContainerListener( const uno::Reference< container::XContainerListener >& xListener ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.addContainerListener(xListener);
 }
 
-void SAL_CALL OShape::removeContainerListener( const uno::Reference< container::XContainerListener >& xListener )
+void SAL_CALL OShape::removeContainerListener( const uno::Reference< container::XContainerListener >& xListener ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.removeContainerListener(xListener);
 }
 
 // XElementAccess
-uno::Type SAL_CALL OShape::getElementType(  )
+uno::Type SAL_CALL OShape::getElementType(  ) throw (uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<report::XFormatCondition>::get();
 }
 
-sal_Bool SAL_CALL OShape::hasElements(  )
+sal_Bool SAL_CALL OShape::hasElements(  ) throw (uno::RuntimeException, std::exception)
 {
     return m_aProps.hasElements();
 }
 
 // XIndexContainer
-void SAL_CALL OShape::insertByIndex( ::sal_Int32 Index, const uno::Any& Element )
+void SAL_CALL OShape::insertByIndex( ::sal_Int32 Index, const uno::Any& Element ) throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     m_aProps.insertByIndex(Index,Element);
 }
 
-void SAL_CALL OShape::removeByIndex( ::sal_Int32 Index )
+void SAL_CALL OShape::removeByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     m_aProps.removeByIndex(Index);
 }
 
 // XIndexReplace
-void SAL_CALL OShape::replaceByIndex( ::sal_Int32 Index, const uno::Any& Element )
+void SAL_CALL OShape::replaceByIndex( ::sal_Int32 Index, const uno::Any& Element ) throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     m_aProps.replaceByIndex(Index,Element);
 }
 
 // XIndexAccess
-::sal_Int32 SAL_CALL OShape::getCount(  )
+::sal_Int32 SAL_CALL OShape::getCount(  ) throw (uno::RuntimeException, std::exception)
 {
     return m_aProps.getCount();
 }
 
-uno::Any SAL_CALL OShape::getByIndex( ::sal_Int32 Index )
+uno::Any SAL_CALL OShape::getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     return m_aProps.getByIndex( Index );
 }
 
 // XShape
-awt::Point SAL_CALL OShape::getPosition(  )
+awt::Point SAL_CALL OShape::getPosition(  ) throw (uno::RuntimeException, std::exception)
 {
     return OShapeHelper::getPosition(this);
 }
 
-void SAL_CALL OShape::setPosition( const awt::Point& aPosition )
+void SAL_CALL OShape::setPosition( const awt::Point& aPosition ) throw (uno::RuntimeException, std::exception)
 {
     OShapeHelper::setPosition(aPosition,this);
 }
 
-awt::Size SAL_CALL OShape::getSize(  )
+awt::Size SAL_CALL OShape::getSize(  ) throw (uno::RuntimeException, std::exception)
 {
     return OShapeHelper::getSize(this);
 }
 
-void SAL_CALL OShape::setSize( const awt::Size& aSize )
+void SAL_CALL OShape::setSize( const awt::Size& aSize ) throw (beans::PropertyVetoException, uno::RuntimeException, std::exception)
 {
     OShapeHelper::setSize(aSize,this);
 }
 
 
 // XShapeDescriptor
-OUString SAL_CALL OShape::getShapeType(  )
+OUString SAL_CALL OShape::getShapeType(  ) throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     if ( m_aProps.aComponent.m_xShape.is() )
@@ -425,46 +425,46 @@ OUString SAL_CALL OShape::getShapeType(  )
     return OUString("com.sun.star.drawing.CustomShape");
 }
 
-::sal_Int32 SAL_CALL OShape::getZOrder()
+::sal_Int32 SAL_CALL OShape::getZOrder() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->getPropertyValue(PROPERTY_ZORDER) >>= m_nZOrder;
     return m_nZOrder;
 }
 
-void SAL_CALL OShape::setZOrder( ::sal_Int32 _zorder )
+void SAL_CALL OShape::setZOrder( ::sal_Int32 _zorder ) throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->setPropertyValue(PROPERTY_ZORDER,uno::makeAny(_zorder));
     set(PROPERTY_ZORDER,_zorder,m_nZOrder);
 }
 
-sal_Bool SAL_CALL OShape::getOpaque()
+sal_Bool SAL_CALL OShape::getOpaque() throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     return m_bOpaque;
 }
 
-void SAL_CALL OShape::setOpaque( sal_Bool _opaque )
+void SAL_CALL OShape::setOpaque( sal_Bool _opaque ) throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     set(PROPERTY_OPAQUE,_opaque,m_bOpaque);
 }
 
-drawing::HomogenMatrix3 SAL_CALL OShape::getTransformation()
+drawing::HomogenMatrix3 SAL_CALL OShape::getTransformation() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->getPropertyValue(PROPERTY_TRANSFORMATION) >>= m_Transformation;
     return m_Transformation;
 }
 
-void SAL_CALL OShape::setTransformation( const drawing::HomogenMatrix3& _transformation )
+void SAL_CALL OShape::setTransformation( const drawing::HomogenMatrix3& _transformation ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.aComponent.m_xProperty->setPropertyValue(PROPERTY_TRANSFORMATION,uno::makeAny(_transformation));
     set(PROPERTY_TRANSFORMATION,_transformation,m_Transformation);
 }
 
-OUString SAL_CALL OShape::getCustomShapeEngine()
+OUString SAL_CALL OShape::getCustomShapeEngine() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->getPropertyValue(PROPERTY_CUSTOMSHAPEENGINE) >>= m_CustomShapeEngine;
@@ -472,33 +472,33 @@ OUString SAL_CALL OShape::getCustomShapeEngine()
     return m_CustomShapeEngine;
 }
 
-void SAL_CALL OShape::setCustomShapeEngine( const OUString& _customshapeengine )
+void SAL_CALL OShape::setCustomShapeEngine( const OUString& _customshapeengine ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.aComponent.m_xProperty->setPropertyValue(PROPERTY_CUSTOMSHAPEENGINE,uno::makeAny(_customshapeengine));
     set(PROPERTY_CUSTOMSHAPEENGINE,_customshapeengine,m_CustomShapeEngine);
 }
 
-OUString SAL_CALL OShape::getCustomShapeData()
+OUString SAL_CALL OShape::getCustomShapeData() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->getPropertyValue(PROPERTY_CUSTOMSHAPEDATA) >>= m_CustomShapeData;
     return m_CustomShapeData;
 }
 
-void SAL_CALL OShape::setCustomShapeData( const OUString& _customshapedata )
+void SAL_CALL OShape::setCustomShapeData( const OUString& _customshapedata ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.aComponent.m_xProperty->setPropertyValue(PROPERTY_CUSTOMSHAPEDATA,uno::makeAny(_customshapedata));
     set(PROPERTY_CUSTOMSHAPEDATA,_customshapedata,m_CustomShapeData);
 }
 
-uno::Sequence< beans::PropertyValue > SAL_CALL OShape::getCustomShapeGeometry()
+uno::Sequence< beans::PropertyValue > SAL_CALL OShape::getCustomShapeGeometry() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     m_aProps.aComponent.m_xProperty->getPropertyValue(PROPERTY_CUSTOMSHAPEGEOMETRY) >>= m_CustomShapeGeometry;
     return m_CustomShapeGeometry;
 }
 
-void SAL_CALL OShape::setCustomShapeGeometry( const uno::Sequence< beans::PropertyValue >& _customshapegeometry )
+void SAL_CALL OShape::setCustomShapeGeometry( const uno::Sequence< beans::PropertyValue >& _customshapegeometry ) throw (uno::RuntimeException, std::exception)
 {
     m_aProps.aComponent.m_xProperty->setPropertyValue(PROPERTY_CUSTOMSHAPEGEOMETRY,uno::makeAny(_customshapegeometry));
     set(PROPERTY_CUSTOMSHAPEGEOMETRY,_customshapegeometry,m_CustomShapeGeometry);

@@ -21,7 +21,6 @@
 
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/lang/Locale.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/linguistic2/ConversionDictionaryType.hpp>
 #include <com/sun/star/linguistic2/XConversionDictionary.hpp>
 #include <com/sun/star/linguistic2/XConversionDictionaryList.hpp>
@@ -68,12 +67,12 @@ OUString GetConvDicMainURL( const OUString &rDicName, const OUString &rDirectory
     INetURLObject aURLObj;
     aURLObj.SetSmartProtocol( INetProtocol::File );
     aURLObj.SetSmartURL( rDirectoryURL );
-    aURLObj.Append( aFullDicName, INetURLObject::EncodeMechanism::All );
+    aURLObj.Append( aFullDicName, INetURLObject::ENCODE_ALL );
     DBG_ASSERT(!aURLObj.HasError(), "invalid URL");
     if (aURLObj.HasError())
         return OUString();
     else
-        return aURLObj.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+        return aURLObj.GetMainURL( INetURLObject::DECODE_TO_IURI );
 }
 
 class ConvDicNameContainer :
@@ -85,24 +84,25 @@ class ConvDicNameContainer :
 
 public:
     ConvDicNameContainer();
+    virtual ~ConvDicNameContainer();
     ConvDicNameContainer(const ConvDicNameContainer&) = delete;
     ConvDicNameContainer& operator=(const ConvDicNameContainer&) = delete;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) override;
+    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XNameContainer
-    virtual void SAL_CALL insertByName( const OUString& aName, const css::uno::Any& aElement ) override;
-    virtual void SAL_CALL removeByName( const OUString& Name ) override;
+    virtual void SAL_CALL insertByName( const OUString& aName, const css::uno::Any& aElement ) throw (css::lang::IllegalArgumentException, css::container::ElementExistException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName( const OUString& Name ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // looks for conversion dictionaries with the specified extension
     // in the directory and adds them to the container
@@ -121,6 +121,10 @@ public:
 };
 
 ConvDicNameContainer::ConvDicNameContainer()
+{
+}
+
+ConvDicNameContainer::~ConvDicNameContainer()
 {
 }
 
@@ -168,18 +172,21 @@ uno::Reference< XConversionDictionary > ConvDicNameContainer::GetByName(
 }
 
 uno::Type SAL_CALL ConvDicNameContainer::getElementType(  )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return uno::Type( cppu::UnoType<XConversionDictionary>::get());
 }
 
 sal_Bool SAL_CALL ConvDicNameContainer::hasElements(  )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return !aConvDics.empty();
 }
 
 uno::Any SAL_CALL ConvDicNameContainer::getByName( const OUString& rName )
+    throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     uno::Reference< XConversionDictionary > xRes( GetByName( rName ) );
@@ -189,6 +196,7 @@ uno::Any SAL_CALL ConvDicNameContainer::getByName( const OUString& rName )
 }
 
 uno::Sequence< OUString > SAL_CALL ConvDicNameContainer::getElementNames(  )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -201,6 +209,7 @@ uno::Sequence< OUString > SAL_CALL ConvDicNameContainer::getElementNames(  )
 }
 
 sal_Bool SAL_CALL ConvDicNameContainer::hasByName( const OUString& rName )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     return GetByName( rName ).is();
@@ -209,6 +218,7 @@ sal_Bool SAL_CALL ConvDicNameContainer::hasByName( const OUString& rName )
 void SAL_CALL ConvDicNameContainer::replaceByName(
         const OUString& rName,
         const uno::Any& rElement )
+    throw (IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -225,6 +235,7 @@ void SAL_CALL ConvDicNameContainer::replaceByName(
 void SAL_CALL ConvDicNameContainer::insertByName(
         const OUString& rName,
         const Any& rElement )
+    throw (IllegalArgumentException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -239,6 +250,7 @@ void SAL_CALL ConvDicNameContainer::insertByName(
 }
 
 void SAL_CALL ConvDicNameContainer::removeByName( const OUString& rName )
+    throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -256,7 +268,7 @@ void SAL_CALL ConvDicNameContainer::removeByName( const OUString& rName )
     {
         try
         {
-            ::ucbhelper::Content    aCnt( aObj.GetMainURL( INetURLObject::DecodeMechanism::NONE ),
+            ::ucbhelper::Content    aCnt( aObj.GetMainURL( INetURLObject::NO_DECODE ),
                                     uno::Reference< css::ucb::XCommandEnvironment >(),
                                     comphelper::getProcessComponentContext() );
             aCnt.executeCommand( "delete", makeAny( true ) );
@@ -300,7 +312,7 @@ void ConvDicNameContainer::AddConvDics(
             // get decoded dictionary file name
             INetURLObject aURLObj( aURL );
             OUString aDicName = aURLObj.getBase( INetURLObject::LAST_SEGMENT,
-                        true, INetURLObject::DecodeMechanism::WithCharset );
+                        true, INetURLObject::DECODE_WITH_CHARSET );
 
             uno::Reference < XConversionDictionary > xDic;
             if (nLang == LANGUAGE_KOREAN &&
@@ -341,34 +353,38 @@ void ConvDicList::MyAppExitListener::AtExit()
 ConvDicList::ConvDicList() :
     aEvtListeners( GetLinguMutex() )
 {
+    pNameContainer = nullptr;
     bDisposing = false;
 
-    mxExitListener = new MyAppExitListener( *this );
-    mxExitListener->Activate();
+    pExitListener = new MyAppExitListener( *this );
+    xExitListener = pExitListener;
+    pExitListener->Activate();
 }
 
 ConvDicList::~ConvDicList()
 {
-    if (!bDisposing && mxNameContainer.is())
-        mxNameContainer->FlushDics();
 
-    mxExitListener->Deactivate();
+    if (!bDisposing && pNameContainer)
+        pNameContainer->FlushDics();
+
+    pExitListener->Deactivate();
 }
 
 void ConvDicList::FlushDics()
 {
     // check only pointer to avoid creating the container when
     // the dictionaries were not accessed yet
-    if (mxNameContainer.is())
-        mxNameContainer->FlushDics();
+    if (pNameContainer)
+        pNameContainer->FlushDics();
 }
 
 ConvDicNameContainer & ConvDicList::GetNameContainer()
 {
-    if (!mxNameContainer.is())
+    if (!pNameContainer)
     {
-        mxNameContainer = new ConvDicNameContainer;
-        mxNameContainer->AddConvDics( GetDictionaryWriteablePath(), CONV_DIC_EXT  );
+        pNameContainer = new ConvDicNameContainer;
+        pNameContainer->AddConvDics( GetDictionaryWriteablePath(), CONV_DIC_EXT  );
+        xNameContainer = pNameContainer;
 
         // access list of text conversion dictionaries to activate
         SvtLinguOptions aOpt;
@@ -378,7 +394,7 @@ ConvDicNameContainer & ConvDicList::GetNameContainer()
         for (sal_Int32 i = 0;  i < nLen;  ++i)
         {
             uno::Reference< XConversionDictionary > xDic =
-                    mxNameContainer->GetByName( pActiveConvDics[i] );
+                    pNameContainer->GetByName( pActiveConvDics[i] );
             if (xDic.is())
                 xDic->setActive( true );
         }
@@ -386,30 +402,31 @@ ConvDicNameContainer & ConvDicList::GetNameContainer()
         // since there is no UI to active/deactivate the dictionaries
         // for chinese text conversion they should be activated by default
         uno::Reference< XConversionDictionary > xS2TDic(
-                    mxNameContainer->GetByName( "ChineseS2T" ), UNO_QUERY );
+                    pNameContainer->GetByName( "ChineseS2T" ), UNO_QUERY );
         uno::Reference< XConversionDictionary > xT2SDic(
-                    mxNameContainer->GetByName( "ChineseT2S" ), UNO_QUERY );
+                    pNameContainer->GetByName( "ChineseT2S" ), UNO_QUERY );
             if (xS2TDic.is())
                 xS2TDic->setActive( true );
             if (xT2SDic.is())
                 xT2SDic->setActive( true );
 
     }
-    return *mxNameContainer;
+    return *pNameContainer;
 }
 
-uno::Reference< container::XNameContainer > SAL_CALL ConvDicList::getDictionaryContainer(  )
+uno::Reference< container::XNameContainer > SAL_CALL ConvDicList::getDictionaryContainer(  ) throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     GetNameContainer();
-    DBG_ASSERT( mxNameContainer.is(), "missing name container" );
-    return mxNameContainer.get();
+    DBG_ASSERT( xNameContainer.is(), "missing name container" );
+    return xNameContainer;
 }
 
 uno::Reference< XConversionDictionary > SAL_CALL ConvDicList::addNewDictionary(
         const OUString& rName,
         const Locale& rLocale,
         sal_Int16 nConvDicType )
+    throw (NoSupportException, ElementExistException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -449,6 +466,7 @@ uno::Sequence< OUString > SAL_CALL ConvDicList::queryConversions(
         sal_Int16 nConversionDictionaryType,
         ConversionDirection eDirection,
         sal_Int32 nTextConversionOptions )
+    throw (IllegalArgumentException, NoSupportException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -487,6 +505,7 @@ sal_Int16 SAL_CALL ConvDicList::queryMaxCharCount(
         const Locale& rLocale,
         sal_Int16 nConversionDictionaryType,
         ConversionDirection eDirection )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -509,6 +528,7 @@ sal_Int16 SAL_CALL ConvDicList::queryMaxCharCount(
 }
 
 void SAL_CALL ConvDicList::dispose(  )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     if (!bDisposing)
@@ -523,6 +543,7 @@ void SAL_CALL ConvDicList::dispose(  )
 
 void SAL_CALL ConvDicList::addEventListener(
         const uno::Reference< XEventListener >& rxListener )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     if (!bDisposing && rxListener.is())
@@ -531,6 +552,7 @@ void SAL_CALL ConvDicList::addEventListener(
 
 void SAL_CALL ConvDicList::removeEventListener(
         const uno::Reference< XEventListener >& rxListener )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     if (!bDisposing && rxListener.is())
@@ -538,16 +560,19 @@ void SAL_CALL ConvDicList::removeEventListener(
 }
 
 OUString SAL_CALL ConvDicList::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL ConvDicList::supportsService( const OUString& rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL ConvDicList::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -559,9 +584,9 @@ uno::Sequence< OUString > ConvDicList::getSupportedServiceNames_Static()
     return aSNS;
 }
 
-/// @throws css::uno::Exception
 uno::Reference< uno::XInterface > SAL_CALL ConvDicList_CreateInstance(
         const uno::Reference< XMultiServiceFactory > & /*rSMgr*/ )
+    throw(Exception)
 {
     return StaticConvDicList::get();
 }

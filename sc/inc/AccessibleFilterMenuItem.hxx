@@ -40,35 +40,44 @@ public:
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
         ScMenuFloatingWindow* pWin, const OUString& rName, size_t nMenuPos);
 
-    virtual ~ScAccessibleFilterMenuItem() override;
+    virtual ~ScAccessibleFilterMenuItem();
 
     /// XAccessibleContext
 
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-        getAccessibleChild(sal_Int32 nIndex) override;
+        getAccessibleChild(sal_Int32 nIndex)
+            throw (css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessibleStateSet> SAL_CALL
-        getAccessibleStateSet() override;
+        getAccessibleStateSet()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// XAccessibleAction
 
-    virtual ::sal_Int32 SAL_CALL getAccessibleActionCount() override;
+    virtual ::sal_Int32 SAL_CALL getAccessibleActionCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL doAccessibleAction(sal_Int32 nIndex) override;
+    virtual sal_Bool SAL_CALL doAccessibleAction(sal_Int32 nIndex)
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getAccessibleActionDescription(sal_Int32 nIndex) override;
+    virtual OUString SAL_CALL getAccessibleActionDescription(sal_Int32 nIndex)
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessibleKeyBinding > SAL_CALL
-        getAccessibleActionKeyBinding(sal_Int32 nIndex) override;
+        getAccessibleActionKeyBinding(sal_Int32 nIndex)
+            throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     /// XInterface
 
     virtual css::uno::Any SAL_CALL queryInterface(
-        css::uno::Type const & rType ) override;
+        css::uno::Type const & rType )
+            throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
@@ -79,12 +88,15 @@ public:
 
 protected:
 
-    virtual tools::Rectangle GetBoundingBoxOnScreen() const override;
+    virtual Rectangle GetBoundingBoxOnScreen() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual tools::Rectangle GetBoundingBox() const override;
+    virtual Rectangle GetBoundingBox() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     bool isSelected() const;
+    bool isFocused() const;
     void updateStateSet();
 
 private:

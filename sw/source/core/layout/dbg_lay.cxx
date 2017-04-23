@@ -177,7 +177,7 @@ class SwSizeEnterLeave : public SwImplEnterLeave
 public:
     SwSizeEnterLeave( const SwFrame* pF, PROT nFunct, DbgAction nAct, void* pPar )
         : SwImplEnterLeave( pF, nFunct, nAct, pPar ), nFrameHeight( pF->Frame().Height() ) {}
-
+    virtual ~SwSizeEnterLeave() {}
     virtual void Leave() override;           // resize message
 };
 
@@ -187,7 +187,7 @@ class SwUpperEnterLeave : public SwImplEnterLeave
 public:
     SwUpperEnterLeave( const SwFrame* pF, PROT nFunct, DbgAction nAct, void* pPar )
         : SwImplEnterLeave( pF, nFunct, nAct, pPar ), nFrameId( 0 ) {}
-
+    virtual ~SwUpperEnterLeave() {}
     virtual void Enter() override;           // message
     virtual void Leave() override;           // message of FrameId from upper
 };
@@ -198,7 +198,7 @@ class SwFrameChangesLeave : public SwImplEnterLeave
 public:
     SwFrameChangesLeave( const SwFrame* pF, PROT nFunct, DbgAction nAct, void* pPar )
         : SwImplEnterLeave( pF, nFunct, nAct, pPar ), aFrame( pF->Frame() ) {}
-
+    virtual ~SwFrameChangesLeave() {}
     virtual void Enter() override;           // no message
     virtual void Leave() override;           // message when resizing the Frame area
 };
@@ -294,7 +294,7 @@ void SwImplProtocol::CheckLine( OString& rLine )
     rLine = rLine.replace( '\t', ' ' );
     if( '#' == rLine[0] )   // comments start with '#'
         return;
-    if( '[' == rLine[0] )   // section: FrameIds, type or function
+    if( '[' == rLine[0] )   // section: FrameIds, type or funciton
     {
         OString aTmp = rLine.getToken(0, ']');
         if (aTmp == "[frmid")      // section FrameIds

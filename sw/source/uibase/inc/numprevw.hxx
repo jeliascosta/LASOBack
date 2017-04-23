@@ -35,7 +35,7 @@ class NumberingPreview : public vcl::Window
     sal_uInt16          nActLevel;
 
     protected:
-        virtual void        Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect ) override;
+        virtual void        Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
 
     public:
         NumberingPreview(vcl::Window* pParent)
@@ -45,7 +45,7 @@ class NumberingPreview : public vcl::Window
         {
         }
 
-        virtual ~NumberingPreview() override;
+        virtual ~NumberingPreview();
 
         void    SetNumRule(const SwNumRule* pNum)
                     {pActNum = pNum; Invalidate();};

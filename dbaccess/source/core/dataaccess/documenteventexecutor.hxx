@@ -46,15 +46,15 @@ namespace dbaccess
             const css::uno::Reference< css::document::XEventsSupplier >& _rxDocument );
 
     protected:
-        virtual ~DocumentEventExecutor() override;
+        virtual ~DocumentEventExecutor();
 
         // css.document.XDocumentEventListener
-        virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) override;
+        virtual void SAL_CALL documentEventOccured( const css::document::DocumentEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
         // css.lang.XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
-        std::unique_ptr< DocumentEventExecutor_Data >   m_pData;
+        ::std::unique_ptr< DocumentEventExecutor_Data >   m_pData;
     };
 
 } // namespace dbaccess

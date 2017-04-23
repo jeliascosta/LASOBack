@@ -28,7 +28,6 @@
 #include <com/sun/star/graphic/XGraphicObject.hpp>
 #include <comphelper/propmultiplex.hxx>
 #include <cppuhelper/implbase2.hxx>
-#include <rtl/ref.hxx>
 
 using namespace comphelper;
 
@@ -47,7 +46,8 @@ class OImageControlModel
                 :public OImageControlModel_Base
                 ,public OBoundControlModel
 {
-    rtl::Reference<ImageProducer>                     m_xImageProducer;
+    css::uno::Reference< css::awt::XImageProducer>    m_xImageProducer;
+    ImageProducer*                                    m_pImageProducer;
     bool                                              m_bExternalGraphic;
     bool                                              m_bReadOnly;
     OUString                                          m_sImageURL;
@@ -59,38 +59,43 @@ protected:
     // UNO Anbindung
     virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
 
-    ImageProducer* GetImageProducer() { return m_xImageProducer.get(); }
+    inline ImageProducer* GetImageProducer() { return m_pImageProducer; }
 
 public:
     DECLARE_DEFAULT_LEAF_XTOR( OImageControlModel );
 
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
-    virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) override;
+    virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
 
-    virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue ) override;
+    virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue )
+        throw(css::lang::IllegalArgumentException) override;
 
     // UNO Anbindung
     DECLARE_UNO3_AGG_DEFAULTS(OImageControlModel, OBoundControlModel)
-    virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) override;
+    virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return OUString("com.sun.star.form.OImageControlModel"); }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
+
+    // OComponentHelper
+    virtual void SAL_CALL disposing() override;
 
     // XPersistObject
-    virtual OUString SAL_CALL getServiceName() override;
-    virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) override;
-    virtual void SAL_CALL read(const css::uno::Reference< css::io::XObjectInputStream>& _rxInStream) override;
+    virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL write(const css::uno::Reference< css::io::XObjectOutputStream>& _rxOutStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL read(const css::uno::Reference< css::io::XObjectInputStream>& _rxInStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
     // XImageProducerSupplier
-    virtual css::uno::Reference< css::awt::XImageProducer> SAL_CALL getImageProducer() override;
+    virtual css::uno::Reference< css::awt::XImageProducer> SAL_CALL getImageProducer() throw ( css::uno::RuntimeException, std::exception) override;
 
     // XImageProducer
-    virtual void SAL_CALL addConsumer( const css::uno::Reference< css::awt::XImageConsumer >& xConsumer ) override;
-    virtual void SAL_CALL removeConsumer( const css::uno::Reference< css::awt::XImageConsumer >& xConsumer ) override;
-    virtual void SAL_CALL startProduction(  ) override;
+    virtual void SAL_CALL addConsumer( const css::uno::Reference< css::awt::XImageConsumer >& xConsumer ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeConsumer( const css::uno::Reference< css::awt::XImageConsumer >& xConsumer ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL startProduction(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // OControlModel's property handling
     virtual void describeAggregateProperties(
@@ -119,7 +124,7 @@ protected:
     virtual void            resetNoBroadcast() override;
 
 protected:
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     void implConstruct();
 
@@ -134,7 +139,7 @@ protected:
     */
     bool    impl_updateStreamForURL_lck( const OUString& _rURL, ValueChangeInstigator _eInstigator );
 
-    DECL_LINK( OnImageImportDone, ::Graphic*, void );
+    DECL_LINK_TYPED( OnImageImportDone, ::Graphic*, void );
 };
 
 typedef ::cppu::ImplHelper2 <   css::awt::XMouseListener
@@ -154,26 +159,27 @@ public:
 
     // UNO
     DECLARE_UNO3_AGG_DEFAULTS( OImageControlControl, OBoundControl )
-    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) override;
+    virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return OUString("com.sun.star.form.OImageControlControl"); }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(std::exception) override;
 
     // XMouseListener
-    virtual void SAL_CALL mousePressed(const css::awt::MouseEvent& e) override;
-    virtual void SAL_CALL mouseReleased(const css::awt::MouseEvent& e) override;
-    virtual void SAL_CALL mouseEntered(const css::awt::MouseEvent& e) override;
-    virtual void SAL_CALL mouseExited(const css::awt::MouseEvent& e) override;
+    virtual void SAL_CALL mousePressed(const css::awt::MouseEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseReleased(const css::awt::MouseEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseEntered(const css::awt::MouseEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL mouseExited(const css::awt::MouseEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // OComponentHelper
     virtual void SAL_CALL disposing() override;

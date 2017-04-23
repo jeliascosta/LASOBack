@@ -50,12 +50,12 @@ protected:
     VclPtr<Dialog>          pDialog;
 
     Timer           aScrollTimer;           // for Autoscrolling
-    DECL_LINK( ScrollHdl, Timer *, void );
+    DECL_LINK_TYPED( ScrollHdl, Timer *, void );
     void ForceScroll(const Point& aPixPos);
 
     Timer           aDragTimer;             // for Drag&Drop
-    DECL_LINK( DragTimerHdl, Timer *, void );
-    DECL_LINK( DragHdl, void *, void );
+    DECL_LINK_TYPED( DragTimerHdl, Timer *, void );
+    DECL_LINK_TYPED( DragHdl, void *, void );
     bool            bIsInDragMode;
     Point           aMDPos;                 // Position of MouseButtonDown
 
@@ -83,7 +83,7 @@ public:
     // moved from inline to *.cxx
     virtual bool MouseButtonDown(const MouseEvent& rMEvt); // { return FALSE; }
 
-    sal_uInt8 Command(const CommandEvent& rCEvt);
+    virtual sal_uInt8 Command(const CommandEvent& rCEvt);
 
     virtual void Activate();
     virtual void Deactivate();
@@ -97,10 +97,10 @@ public:
     void    StopDragTimer();
 
     // Create default drawing objects via keyboard
-    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const tools::Rectangle& rRectangle);
+    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle);
 
 protected:
-    static void ImpForceQuadratic(tools::Rectangle& rRect);
+    static void ImpForceQuadratic(Rectangle& rRect);
 
 public:
     // #i33136#

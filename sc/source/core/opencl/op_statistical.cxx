@@ -194,7 +194,7 @@ void OpVar::GenSlidingWindowFunction(std::stringstream &ss,
         }
     }
     ss << "    if (fCount <= 1.0)\n";
-    ss << "        return CreateDoubleError(DivisionByZero);\n";
+    ss << "        return CreateDoubleError(errDivisionByZero);\n";
     ss << "    else\n";
     ss << "        return vSum * pow(fCount - 1.0,-1.0);\n";
     ss << "}\n";
@@ -2657,7 +2657,7 @@ void OpSlope::GenSlidingWindowFunction(std::stringstream &ss,
         ss << "    }\n";
 
         ss << "    if (fCount < 1.0)\n";
-        ss << "        return CreateDoubleError(NoValue);\n";
+        ss << "        return CreateDoubleError(errNoValue);\n";
         ss << "    else\n";
         ss << "    {\n";
         ss << "        fMeanX = fSumX * pow(fCount,-1.0);\n";
@@ -2701,7 +2701,7 @@ void OpSlope::GenSlidingWindowFunction(std::stringstream &ss,
         ss << "            fSumSqrDeltaX += (argX-fMeanX) * (argX-fMeanX);\n";
         ss << "        }\n";
         ss << "        if(fSumSqrDeltaX == 0.0)\n";
-        ss << "            return CreateDoubleError(DivisionByZero);\n";
+        ss << "            return CreateDoubleError(errDivisionByZero);\n";
         ss << "        else\n";
         ss << "        {\n";
         ss << "            return fSumDeltaXDeltaY*pow(fSumSqrDeltaX,-1.0);\n";
@@ -2978,7 +2978,7 @@ void OpCorrel::GenSlidingWindowFunction(
         ->GetType() != formula::svDoubleVectorRef||vSubArguments[1]
         ->GetFormulaToken()->GetType() != formula::svDoubleVectorRef )
         ///only support DoubleVector in OpCorrelfor GPU calculating.
-        throw Unhandled(__FILE__, __LINE__);
+        throw Unhandled();
     const formula::DoubleVectorRefToken* pCurDVRX =
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[0]->GetFormulaToken());
@@ -2986,7 +2986,7 @@ void OpCorrel::GenSlidingWindowFunction(
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[1]->GetFormulaToken());
     if(  pCurDVRX->GetRefRowSize() != pCurDVRY->GetRefRowSize() )
-         throw Unhandled(__FILE__, __LINE__);
+         throw Unhandled();
 
     ss << "\ndouble " << sSymName;
     ss << "_"<< BinFuncName() <<"(";
@@ -3239,7 +3239,7 @@ void OpPearson::GenSlidingWindowFunction(
         ->GetType() != formula::svDoubleVectorRef||vSubArguments[1]
         ->GetFormulaToken()->GetType() != formula::svDoubleVectorRef )
         ///only support DoubleVector in OpPearson for GPU calculating.
-        throw Unhandled(__FILE__, __LINE__);
+        throw Unhandled();
     const formula::DoubleVectorRefToken* pDVR =
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[0]->GetFormulaToken());
@@ -3247,7 +3247,7 @@ void OpPearson::GenSlidingWindowFunction(
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[1]->GetFormulaToken());
     if(  pDVR->GetRefRowSize() != pCurDVRY->GetRefRowSize() )
-         throw Unhandled(__FILE__, __LINE__);
+         throw Unhandled();
 
     size_t nCurWindowSize = pDVR->GetRefRowSize();
 
@@ -3321,7 +3321,7 @@ void OpPearson::GenSlidingWindowFunction(
     ss << "      double tmp = ( fSumDeltaXDeltaY / ";
     ss << "sqrt( fSumX * fSumY));\n\t";
     ss << "      if (isnan(tmp))\n";
-    ss << "          return CreateDoubleError(NoValue);\n";
+    ss << "          return CreateDoubleError(errNoValue);\n";
     ss << "      return tmp;\n";
     ss << "}\n";
 }
@@ -3459,7 +3459,7 @@ void OpGeoMean::GenSlidingWindowFunction(
             else if (!pCurDVR->IsStartFixed() && !pCurDVR->IsEndFixed())
                 ss << "    offset = get_group_id(1);\n";
             else
-                throw Unhandled(__FILE__, __LINE__);
+                throw Unhandled();
             ss << "    windowSize = ";
             ss << nCurWindowSize;
             ss << ";\n";
@@ -3841,7 +3841,7 @@ void OpRsq::GenSlidingWindowFunction(
         ->GetType() != formula::svDoubleVectorRef||vSubArguments[1]
         ->GetFormulaToken()->GetType() != formula::svDoubleVectorRef )
         ///only support DoubleVector in OpRsq for GPU calculating.
-        throw Unhandled(__FILE__, __LINE__);
+        throw Unhandled();
     const formula::DoubleVectorRefToken* pCurDVR1 =
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[0]->GetFormulaToken());
@@ -3849,7 +3849,7 @@ void OpRsq::GenSlidingWindowFunction(
         static_cast<const formula::DoubleVectorRefToken *>(
         vSubArguments[1]->GetFormulaToken());
     if(  pCurDVR1->GetRefRowSize() != pCurDVR2->GetRefRowSize() )
-         throw Unhandled(__FILE__, __LINE__);
+         throw Unhandled();
 
     size_t nCurWindowSize = pCurDVR1->GetRefRowSize();
 
@@ -4738,7 +4738,7 @@ void OpNormsinv:: GenSlidingWindowFunction
     ss << "z = q < 0.0 ? (-1)*z : z;\n";
     ss <<"}\n";
     ss <<"if (isnan(z))\n";
-    ss <<"    return CreateDoubleError(NoValue);\n";
+    ss <<"    return CreateDoubleError(errNoValue);\n";
     ss <<"return z;\n";
     ss <<"}\n";
 }
@@ -7012,7 +7012,7 @@ void OpCovar::GenSlidingWindowFunction(std::stringstream& ss,
                 ss << "    }\n";
             }
             ss << "    if(cnt < 1) {\n";
-            ss << "        return CreateDoubleError(NoValue);\n";
+            ss << "        return CreateDoubleError(errNoValue);\n";
             ss << "    }\n";
             ss << "    else {\n";
             ss << "        vMean0 = vSum0 / cnt;\n";

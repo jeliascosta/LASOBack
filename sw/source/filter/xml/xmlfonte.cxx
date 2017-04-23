@@ -18,6 +18,7 @@
  */
 
 #include "hintids.hxx"
+#include <com/sun/star/text/XTextDocument.hpp>
 #include <xmloff/XMLFontAutoStylePool.hxx>
 #include <editeng/fontitem.hxx>
 #include <unotext.hxx>

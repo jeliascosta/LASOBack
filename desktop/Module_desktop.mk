@@ -52,10 +52,6 @@ $(eval $(call gb_Module_add_targets,desktop,\
     Pagein_impress \
     Pagein_writer \
     CustomTarget_soffice \
-))
-
-ifeq ($(USING_X11), TRUE)
-$(eval $(call gb_Module_add_targets,desktop,\
     Package_sbase_sh \
     Package_scalc_sh \
     Package_sdraw_sh \
@@ -64,7 +60,6 @@ $(eval $(call gb_Module_add_targets,desktop,\
     Package_swriter_sh \
     Package_soffice_sh \
 ))
-endif
 endif
 endif
 endif
@@ -100,6 +95,10 @@ $(eval $(call gb_Module_add_targets,desktop,\
 
 else ifeq ($(OS),MACOSX)
 
+$(eval $(call gb_Module_add_targets,desktop,\
+    Package_desktop_install \
+))
+
 else ifeq ($(OS),ANDROID)
 
 else ifeq ($(OS),IOS)
@@ -132,7 +131,6 @@ $(eval $(call gb_Module_add_targets,desktop, \
 endif
 
 $(eval $(call gb_Module_add_check_targets,desktop, \
-    CppunitTest_desktop_app \
     CppunitTest_desktop_version \
 ))
 
@@ -141,10 +139,5 @@ $(eval $(call gb_Module_add_check_targets,desktop, \
     CppunitTest_desktop_lib \
 ))
 endif
-
-# screenshots
-$(eval $(call gb_Module_add_screenshot_targets,desktop,\
-    CppunitTest_desktop_dialogs_test \
-))
 
 # vim: set ts=4 sw=4 et:

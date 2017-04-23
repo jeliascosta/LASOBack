@@ -193,9 +193,7 @@ Const cstThisSub = &quot;CopyObject&quot;
 	CopyObject = False
 
 	If IsMissing(pvSourceDatabase) Then pvSourceDatabase = &quot;&quot;
-	If VarType(pvSourceDatabase) &lt;&gt; vbString Then
-		If Not Utils._CheckArgument(pvSourceDatabase, 1, OBJDATABASE) Then Goto Exit_Function
-	End If
+	If Not Utils._CheckArgument(pvSourceDatabase, 1, vbString, &quot;&quot;) Then Goto Exit_Function
 	If IsMissing(pvNewName) Then Call _TraceArguments()
 	If Not Utils._CheckArgument(pvNewName, 2, vbString) Then Goto Exit_Function
 	If IsMissing(pvSourceType) Then Call _TraceArguments()
@@ -204,36 +202,21 @@ Const cstThisSub = &quot;CopyObject&quot;
 	If IsMissing(pvSourceName) Then Call _TraceArguments()
 	If Not Utils._CheckArgument(pvSourceName, 2, vbString) Then Goto Exit_Function
 	
-Dim oSource As Object, oSourceDatabase As Object, oTarget As Object, oDatabase As Object, bSameDatabase As Boolean
-Dim oSourceTable As Object, oSourceColumns As Object, oSourceCol As Object, oTargetCol As Object, iRDBMS As Integer
+Dim oSource As Object, oSourceDatabase As Object, oTarget As Object, oDatabase As Object
+Dim oSourceTable As Object, oSourceColumns As Object, oSourceCol As Object, oTargetCol As Object
 Dim oSourceKeys As Object, oSourceKey As Object, oTargetKey As Object
 Dim i As Integer, j As Integer, sSql As String, vPrimaryKeys() As Variant
 Dim vNameComponents() As Variant, iNames As Integer, sSurround As String
-Dim vInputField As Variant, vFieldBinary() As Variant, vOutputField As Variant
-Dim oInput as Object, oOutput As Object, iNbFields As Integer, vValue As Variant
-Dim vBinary As Variant, lInputSize As Long, lOutputSize As Long
-Dim lInputRecs As Long, lInputMax As Long, vField As Variant, bProgressMeter As Boolean, sFile As String
-
-Const cstMaxBinlength = 2 * 65535
-Const cstChunkSize = 2 * 65535
-Const cstProgressMeterLimit = 100
 
 	Set oDatabase = Application._CurrentDb()
-	bSameDatabase = False
-	If VarType(pvSourceDatabase) = vbString Then
-		If pvSourceDatabase = &quot;&quot; Then
-			Set oSourceDatabase = oDatabase
-			bSameDatabase = True
-		Else
-			Set oSourceDatabase = Application.OpenDatabase(ConvertToUrl(pvSourceDatabase), , , True)
-			If IsNull(oSourceDatabase) Then Goto Exit_Function
-		End If
+	If pvSourceDatabase = &quot;&quot; Then
+		Set oSourceDatabase = oDatabase
 	Else
-		Set oSourceDatabase = pvSourceDatabase
+		Set oSourceDatabase = Application.OpenDatabase(ConvertToUrl(pvSourceDatabase), &quot;&quot;, &quot;&quot;, True)
+		If IsNull(oSourceDatabase) Then Goto Exit_Function
 	End If
 	
 	With oDatabase
-		iRDBMS = ._RDBMS
 		If ._DbConnect &lt;&gt; DBCONNECTBASE Then Goto Error_NotApplicable
 		Select Case pvSourceType
 
@@ -254,8 +237,7 @@ Const cstProgressMeterLimit = 100
 				Set oSource = oSourceDatabase.TableDefs(pvSourceName, True)
 				If IsNull(oSource) Then Goto Error_NotFound
 				Set oTarget = .TableDefs(pvNewName, True)
-				&apos;	A table with same name exists already ... drop it
-				If Not IsNull(oTarget) Then .Connection.getTables.dropByName(oTarget.Name)
+				If Not IsNull(oTarget) Then .Connection.getTables.dropByName(oTarget.Name)		&apos;	a table with same name exists already ... drop it
 				&apos;	Copy source table columns
 				Set oSourceTable = oSource.Table
 				Set oTarget = .Connection.getTables.createDataDescriptor
@@ -271,7 +253,18 @@ Const cstProgressMeterLimit = 100
 				For i = 0 To oSourceColumns.getCount() - 1
 					&apos;	Append each individual column to the table descriptor
 					Set oSourceCol = oSourceColumns.getByIndex(i)
-					_ConvertDataDescriptor oSourceCol, oSourceDatabase._RDBMS, oTargetCol, oDatabase
+					oTargetCol.Name = oSourceCol.Name
+					oTargetCol.ControlDefault = oSourceCol.ControlDefault
+					oTargetCol.Description = oSourceCol.Description
+					oTargetCol.FormatKey = oSourceCol.FormatKey
+					oTargetCol.HelpText = oSourceCol.HelpText
+					oTargetCol.Hidden = oSourceCol.Hidden
+					oTargetCol.IsCurrency = oSourceCol.IsCurrency
+					oTargetCol.IsNullable = oSourceCol.IsNullable
+					oTargetCol.Precision = oSourceCol.Precision
+					oTargetCol.Scale = oSourceCol.Scale
+					oTargetCol.Type = oSourceCol.Type
+					oTargetCol.TypeName = oSourceCol.TypeName
 					oTarget.Columns.appendByDescriptor(oTargetCol)
 				Next i
 				&apos;	Copy keys
@@ -284,100 +277,29 @@ Const cstProgressMeterLimit = 100
 					oTargetKey.Name = oSourceKey.Name
 					oTargetKey.ReferencedTable = oSourceKey.ReferencedTable
 					oTargetKey.Type = oSourceKey.Type
+&apos;					If oSourceKey.Type = com.sun.star.sdbcx.KeyType.PRIMARY Then vPrimaryKeys = oSourceKey.Columns.getElementNames()
 					oTargetKey.UpdateRule = oSourceKey.UpdateRule
 					Set oTargetCol = oTargetKey.Columns.createDataDescriptor()
  					For j = 0 To oSourceKey.Columns.getCount() - 1
 						Set oSourceCol = oSourceKey.Columns.getByIndex(j)
-						_ConvertDataDescriptor oSourceCol, oSourceDatabase._RDBMS, oTargetCol, oDatabase, True
+						oTargetCol.Name = oSourceCol.Name
+						oTargetCol.Description = oSourceCol.Description
+						oTargetCol.IsCurrency = oSourceCol.IsCurrency
+						oTargetCol.IsNullable = oSourceCol.IsNullable
+						oTargetCol.Precision = oSourceCol.Precision
+						oTargetCol.Scale = oSourceCol.Scale
+						oTargetCol.Type = oSourceCol.Type
+						oTargetCol.TypeName = oSourceCol.TypeName
 						oTargetKey.Columns.appendByDescriptor(oTargetCol)
 					Next j
 					oTarget.Keys.appendByDescriptor(oTargetKey)
 				Next i
 				&apos;	Duplicate table whole design
 				.Connection.getTables.appendByDescriptor(oTarget)
-
 				&apos;	Copy data
-				Select Case bSameDatabase
-					Case True
-					&apos;	Build SQL statement to copy data
-						sSurround = Utils._Surround(oSource.Name)
-						sSql = &quot;INSERT INTO &quot; &amp; Utils._Surround(pvNewName) &amp; &quot; SELECT &quot; &amp; sSurround &amp; &quot;.* FROM &quot; &amp; sSurround
-						DoCmd.RunSQL(sSql)
-					Case False
-					&apos;	Copy data row by row and field by field
-					&apos;	As it is slow ... display a progress meter
-						Set oInput = oSourceDatabase.OpenRecordset(oSource.Name, , , dbReadOnly)
-						Set oOutput = .Openrecordset(pvNewName)
-
-						With oInput
-							If Not ( ._BOF And ._EOF ) Then
-								.MoveLast
-								lInputMax = .RecordCount
-								lInputRecs = 0
-								.MoveFirst
-								bProgressMeter = ( lInputMax &gt; cstProgressMeterLimit )
-
-								iNbFields = .Fields().Count - 1
-								vFieldBinary = Array()
-								ReDim vFieldBinary(0 To iNbFields)
-								For i = 0 To iNbFields
-									vFieldBinary(i) = Utils._IsBinaryType(.Fields(i).Column.Type)
-								Next i
-							Else
-								bProgressMeter = False
-							End If
-							If bProgressMeter Then Application.SysCmd acSysCmdInitMeter, pvNewName &amp; &quot; 0 %&quot;, lInputMax
-							Do While Not .EOF()
-								oOutput.RowSet.moveToInsertRow()
-								oOutput._EditMode = dbEditAdd
-								For i = 0 To iNbFields
-									Set vInputField = .Fields(i)
-									Set vOutputField = oOutput.Fields(i)
-									If vFieldBinary(i) Then
-										lInputSize = vInputField.FieldSize
-										If lInputSize &lt;= cstMaxBinlength Then
-											vField =  Utils._getResultSetColumnValue(.RowSet, i + 1, True)
-											Utils._updateResultSetColumnValue(iRDBMS, oOutput.RowSet, i + 1, vField)
-										ElseIf oDatabase._BinaryStream Then
-											&apos;	Typically for SQLite where binary fields are limited
-											If lInputSize &gt; vOutputField._Precision Then
-												TraceError(TRACEWARNING, ERRPRECISION, Utils._CalledSub(), 0, 1, Array(vOutputField._Name, lInputRecs + 1))
-												Utils._updateResultSetColumnValue(iRDBMS, oOutput.RowSet, i + 1, Null)
-											Else
-												sFile = Utils._GetRandomFileName(&quot;BINARY&quot;)
-												vInputField._WriteAll(sFile, &quot;WriteAllBytes&quot;)
-												vOutputField._ReadAll(sFile, &quot;ReadAllBytes&quot;)
-												Kill ConvertToUrl(sFile)
-											End If
-										End If
-									Else
-										vField =  Utils._getResultSetColumnValue(.RowSet, i + 1)
-										If VarType(vField) = vbString Then
-											If Len(vField) &gt; vOutputField._Precision Then
-												TraceError(TRACEWARNING, ERRPRECISION, Utils._CalledSub(), 0, 1, Array(vOutputField._Name, lInputRecs + 1))
-											End If
-										End If
-										&apos;	Update is done anyway, if too long, with truncation
-										Utils._updateResultSetColumnValue(iRDBMS, oOutput.RowSet, i + 1, vField)
-									End If
-								Next i
-								If oOutput.RowSet.IsNew And oOutput.RowSet.IsModified Then oOutput.RowSet.insertRow()
-								oOutput._EditMode = dbEditNone
-								lInputRecs = lInputRecs + 1
-								If bProgressMeter Then
-									If lInputRecs Mod (lInputMax / 100) = 0 Then _
-										Application.SysCmd acSysCmdUpdateMeter, pvNewName &amp; &quot; &quot; &amp; CStr(CLng(lInputRecs * 100 / lInputMax)) &amp; &quot;%&quot;, lInputRecs
-								End If
-								.MoveNext
-							Loop
-						End With
-
-						oOutput.mClose()
-						Set oOutput = Nothing
-						oInput.mClose()
-						Set oInput = Nothing
-						if bProgressMeter Then Application.SysCmd acSysCmdClearStatus
-				End Select
+				sSurround = Utils._Surround(oSource.Name)
+				sSql = &quot;INSERT INTO &quot; &amp; Utils._Surround(pvNewName) &amp; &quot; SELECT &quot; &amp; sSurround &amp; &quot;.* FROM &quot; &amp; sSurround
+				DoCmd.RunSQL(sSql, dbSQLPassthrough)
 				
 			Case Else
 		End Select
@@ -386,15 +308,10 @@ Const cstProgressMeterLimit = 100
 	CopyObject = True
 	
 Exit_Function:
-	&apos;	Avoid closing the current database or the database object given as source argument
-	If VarType(pvSourceDatabase) = vbString And Not bSameDatabase Then
+	If pvSourceDatabase &lt;&gt; &quot;&quot; Then			&apos;	Avoid closing the current database
 		If Not IsNull(oSourceDatabase) Then oSourceDatabase.mClose()
 	End If
-	Set oSourceDatabase = Nothing
-	If Not IsNull(oOutput) Then oOutput.mClose()
-	Set oOutput = Nothing
-	If Not IsNull(oInput) Then oInput.mClose()
-	Set oInput = Nothing
+	Utils._ResetCalledSub(cstThisSub)
 	Set oSourceCol = Nothing
 	Set oSourceKey = Nothing
 	Set oSourceKeys = Nothing
@@ -404,7 +321,6 @@ Exit_Function:
 	Set oTargetCol = Nothing
 	Set oTargetKey = Nothing
 	Set oTarget = Nothing
-	Utils._ResetCalledSub(cstThisSub)
 	Exit Function
 Error_NotFound:
 	TraceError(TRACEFATAL, ERROBJECTNOTFOUND, Utils._CalledSub(), 0, , Array(Iif(pvSourceType = acQuery, _GetLabel(&quot;QUERY&quot;), _GetLabel(&quot;TABLE&quot;)), pvSourceName))
@@ -861,7 +777,7 @@ Public Function GoToRecord(Optional ByVal pvObjectType As Variant _
 							, Optional ByVal pvOffset As Variant _
 			) As Boolean
 
-&apos;Move to record indicated by pvRecord/pvOffset in the window designated by pvObjectType and pvObjectName
+&apos;Move to record indicated by pvRecord in the object designated by pvObjectType (MUST BE acDataForm)
 
 	If _ErrorHandler() Then On Local Error Goto Error_Function
 	GoToRecord = False
@@ -870,6 +786,9 @@ Const cstThisSub = &quot;GoTorecord&quot;
 	Utils._SetCalledSub(cstThisSub)
 	If IsMissing(pvObjectName) Then pvObjectName = &quot;&quot;
 	If IsMissing(pvObjectType) Then pvObjectType = acActiveDataObject
+&apos;	If IsMissing(pvObjectType) Then
+&apos;		If pvObjectName &lt;&gt; &quot;&quot; Then pvObjectType = acDataForm Else pvObjectType = acActiveDataObject
+&apos;	End If
 	If IsMissing(pvRecord) Then pvRecord = acNext
 	If IsMissing(pvOffset) Then pvOffset = 1
 	If Not (Utils._CheckArgument(pvObjectType, 1, Utils._AddNumeric() _
@@ -1884,7 +1803,7 @@ Const cstSemiColon = &quot;;&quot;
 					pvObjectType = acSendForm
 					pvObjectName = oWindow._Name
 				End If
-				sDirectory =  Utils._getTempDirectoryURL()
+				sDirectory =  _getTempDirectoryURL()
 				If Right(sDirectory, 1) &lt;&gt; &quot;/&quot; Then sDirectory = sDirectory &amp; &quot;/&quot;
 				If pvOutputFormat = &quot;&quot; Then
 					sOutputFormat = _PromptFormat(Array(&quot;PDF&quot;, &quot;ODT&quot;, &quot;DOC&quot;, &quot;HTML&quot;))			&apos;	Prompt user for format
@@ -2081,89 +2000,6 @@ Dim bFound As Boolean
 End Function		&apos;	_CheckColumnType	V0.9.1
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Sub _ConvertDataDescriptor(	ByRef poSource As Object _
-							, ByVal piSourceRDBMS As Integer _
-							, ByRef poTarget As Object _
-							, ByRef poDatabase As Object _
-							, ByVal Optional pbKey As Boolean _
-							)
-&apos;	Convert source column descriptor to target descriptor
-&apos;	If RDMSs identical, simply move property by property
-&apos;	Otherwise
-&apos;		- Use Type conversion tables (cfr. DataTypes By RDBMS.ods case study)
-&apos;		- Select among synonyms the entry with the lowest Precision at least &gt;= source Precision
-&apos;		- Derive TypeName and Precision values
-
-Dim vTypesReference() As Variant, vTypes() As Variant, vTypeNames() As Variant
-Dim i As Integer, iType As Integer, iTypeAlias As Integer
-Dim iNbTypes As Integer, iBestFit As Integer, lFitPrecision As Long, lPrecision As Long
-
-	On Local Error Goto Error_Sub
-	If IsMissing(pbKey) Then pbKey = False
-
-	poTarget.Name = poSource.Name
-	poTarget.Description = poSource.Description
-	If Not pbKey Then
-		poTarget.ControlDefault = poSource.ControlDefault
-		poTarget.FormatKey = poSource.FormatKey
-		poTarget.HelpText = poSource.HelpText
-		poTarget.Hidden = poSource.Hidden
-	End If
-	poTarget.IsCurrency = poSource.IsCurrency
-	poTarget.IsNullable = poSource.IsNullable
-	poTarget.Scale = poSource.Scale
-	
-	If piSourceRDBMS = poDatabase._RDBMS Or poDatabase._RDBMS = DBMS_UNKNOWN Then
-		poTarget.Type = poSource.Type
-		poTarget.Precision = poSource.Precision
-		poTarget.TypeName = poSource.TypeName
-		Goto Exit_Sub
-	End If
-
-	&apos;	Search DataType compatibility
-	With poDatabase
-		&apos;	Find source datatype entry in Reference array
-		iType = -1
-		For i = 0 To UBound(._ColumnTypesReference)
-			If ._ColumnTypesReference(i) = poSource.Type Then
-				iType = i
-				Exit For
-			End If
-		Next i
-		If iType = -1 Then Goto Error_Compatibility
-		iTypeAlias = ._ColumnTypesAlias(iType)
-		&apos;	Find best choice for the datatype of the target column
-		iNbTypes = UBound(._ColumnTypes)
-		iBestFit = -1
-		lFitPrecision = -2			&apos;	Some POSTGRES datatypes have a precision of -1
-		For i = 0 To iNbTypes
-			If ._ColumnTypes(i) = iTypeAlias Then	&apos;	Minimal fit = correct datatype
-				lPrecision = ._ColumnPrecisions(i)
-				If iBestFit = -1 _
-						Or (iBestFit &gt; -1 And poSource.Precision &gt; 0 And lPrecision &gt;= poSource.Precision And lPrecision &lt; lFitPrecision) _
-						Or (iBestFit &gt; -1 And poSource.Precision = 0 And lPrecision &gt; lFitPrecision) Then	&apos;	First fit or better fit
-					iBestFit = i
-					lFitPrecision = lPrecision
-				End If
-			End If
-		Next i
-		If iBestFit = -1 Then Goto Error_Compatibility
-		poTarget.Type = iTypeAlias
-		poTarget.Precision = lFitPrecision
-		poTarget.TypeName = ._ColumnTypeNames(iBestFit)
-	End With
-
-Exit_Sub:
-	Exit Sub
-Error_Compatibility:
-	TraceError(TRACEFATAL, ERRCOMPATIBILITY, Utils._CalledSub(), 0, 1, poSource.Name)
-	Goto Exit_Sub
-Error_Sub:
-	TraceError(TRACEABORT, Err, &quot;_ConvertDataDescriptor&quot;, Erl)
-	Goto Exit_Sub
-End Sub		&apos;	ConvertDataDescriptor	V1.6.0
-		
-REM -----------------------------------------------------------------------------------------------------------------------
 Private Function _DatabaseForm(psForm As String, psControl As String)
 &apos;Return DatabaseForm element of Form object (based on psForm which is known as a real form name)
 &apos;or of SubForm object (based on psControl which is checked for being a subform)
@@ -2218,6 +2054,27 @@ Dim sCommand As String
 	oResult = oDispatcher.executeDispatch(oDocument, psCommand, sTargetFrameName, 0, oArgs())
 
 End Sub				&apos;	_DispatchCommand	V1.3.0
+
+REM -----------------------------------------------------------------------------------------------------------------------
+Private Function _getTempDirectoryURL()	As String
+&apos;	Return the temporary directory defined in the OO Options (Paths)
+Dim sDirectory As String, oSettings As Object, oPathSettings As Object	
+
+	If _ErrorHandler() Then On Local Error Goto Error_Function
+	
+	_getTempDirectoryURL = &quot;&quot;
+	oPathSettings = createUnoService( &quot;com.sun.star.util.PathSettings&quot; )
+	sDirectory = oPathSettings.GetPropertyValue( &quot;Temp&quot; )
+	
+	_getTempDirectoryURL = sDirectory
+
+Exit_Function:
+	Exit Function
+Error_Function:
+	TraceError(&quot;ERROR&quot;, Err, &quot;_getTempDirectoryURL&quot;, Erl)
+	_getTempDirectoryURL = &quot;&quot;
+	Goto Exit_Function
+End Function	&apos;	_getTempDirectoryURL		V0.8.5
 
 REM -----------------------------------------------------------------------------------------------------------------------
 Public Function _getUpperShortcut(ByVal psShortcut As String, ByVal psLastComponent As String) As String
@@ -2308,9 +2165,15 @@ REM ----------------------------------------------------------------------------
 Private Function _PromptFormat(ByVal pvList As Variant) As String
 &apos;	Return user selection in Format dialog
 
-Dim oDialog As Object, iOKCancel As Integer, oControl As Object
-
-	Set oDialog = CreateUnoDialog(Utils._GetDialogLib().dlgFormat)
+Dim oDialog As Object, oDialogLib As Object, iOKCancel As Integer, oControl As Object
+	Set oDialogLib = DialogLibraries
+	If oDialogLib.hasByName(&quot;Access2BaseDev&quot;) Then
+		If Not oDialogLib.IsLibraryLoaded(&quot;Access2BaseDev&quot;) Then oDialogLib.loadLibrary(&quot;Access2BaseDev&quot;)
+		Set oDialog = CreateUnoDialog(DialogLibraries.Access2BaseDev.dlgFormat)
+	Else
+		If Not oDialogLib.IsLibraryLoaded(&quot;Access2Base&quot;) Then oDialogLib.loadLibrary(&quot;Access2Base&quot;)
+		Set oDialog = CreateUnoDialog(DialogLibraries.Access2Base.dlgFormat)
+	End If
 	oDialog.Title = _GetLabel(&quot;DLGFORMAT_TITLE&quot;)
 
 	Set oControl = oDialog.Model.getByName(&quot;lblFormat&quot;)

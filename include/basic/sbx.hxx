@@ -21,7 +21,7 @@
 #define INCLUDED_BASIC_SBX_HXX
 
 #include <tools/ref.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/lstner.hxx>
 
 #include <basic/sbxdef.hxx>
@@ -55,6 +55,7 @@ struct SbxParamInfo
     sal_uInt32     nUserData;      // IDs etc.
     SbxParamInfo( const OUString& s, SbxDataType t, SbxFlagBits n )
         : aName( s ), eType( t ), nFlags( n ), nUserData( 0 ) {}
+    ~SbxParamInfo() {}
 };
 
 typedef std::vector<std::unique_ptr<SbxParamInfo>> SbxParams;
@@ -75,7 +76,7 @@ class BASIC_DLLPUBLIC SbxInfo : public SvRefBase
 protected:
     void LoadData( SvStream&, sal_uInt16 );
     void StoreData( SvStream& ) const;
-    virtual ~SbxInfo() override;
+    virtual ~SbxInfo();
 public:
     SbxInfo();
     SbxInfo( const OUString&, sal_uInt32 );
@@ -89,11 +90,11 @@ public:
     void                SetComment( const OUString& r )   { aComment = r; }
 };
 
-class BASIC_DLLPUBLIC SbxHint : public SfxHint
+class BASIC_DLLPUBLIC SbxHint : public SfxSimpleHint
 {
     SbxVariable* pVar;
 public:
-    SbxHint( SfxHintId n, SbxVariable* v ) : SfxHint( n ), pVar( v ) {}
+    SbxHint( sal_uInt32 n, SbxVariable* v ) : SfxSimpleHint( n ), pVar( v ) {}
     SbxVariable* GetVar() const { return pVar; }
 };
 
@@ -101,8 +102,8 @@ public:
 class BASIC_DLLPUBLIC SbxAlias : public SbxVariable, public SfxListener
 {
     SbxVariableRef xAlias;
-    virtual ~SbxAlias() override;
-    virtual void Broadcast( SfxHintId ) override;
+    virtual ~SbxAlias();
+    virtual void Broadcast( sal_uInt32 ) override;
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 public:
     SbxAlias( const SbxAlias& );
@@ -117,22 +118,24 @@ struct SbxVarEntry;
 
 class BASIC_DLLPUBLIC SbxArray : public SbxBase
 {
+    typedef std::vector<SbxVarEntry> VarEntriesType;
+
 // #100883 Method to set method directly to parameter array
     friend class SbMethod;
     friend class SbClassModuleObject;
     friend SbxObject* cloneTypeObjectImpl( const SbxObject& rTypeObj );
     BASIC_DLLPRIVATE void PutDirect( SbxVariable* pVar, sal_uInt32 nIdx );
 
-    std::vector<SbxVarEntry> mVarEntries;          // The variables
+    VarEntriesType* mpVarEntries;          // The variables
 
 protected:
     SbxDataType eType;            // Data type of the array
-    virtual ~SbxArray() override;
+    virtual ~SbxArray();
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
 
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_ARRAY,1);
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_ARRAY,1);
     SbxArray( SbxDataType=SbxVARIANT );
     SbxArray( const SbxArray& );
     SbxArray& operator=( const SbxArray& );
@@ -144,6 +147,7 @@ public:
     SbxVariable*         Get( sal_uInt16 );
     void                 Put( SbxVariable*, sal_uInt16 );
     void                 Insert( SbxVariable*, sal_uInt16 );
+    void                 Remove( sal_uInt16 );
     void                 Remove( SbxVariable* );
     void                 Merge( SbxArray* );
     OUString             GetAlias( sal_uInt16 );
@@ -157,7 +161,7 @@ public:
     SbxVariable*         Get32( sal_uInt32 );
     void                 Put32( SbxVariable*, sal_uInt32 );
     void                 Insert32( SbxVariable*, sal_uInt32 );
-    void                 Remove( sal_uInt32 );
+    void                 Remove32( sal_uInt32 );
 };
 
 // SbxDimArray is an array that can dimensioned using BASIC conventions.
@@ -177,9 +181,9 @@ protected:
     sal_uInt32  Offset32( SbxArray* );
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
-    virtual ~SbxDimArray() override;
+    virtual ~SbxDimArray();
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_DIMARRAY,1);
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_DIMARRAY,1);
     SbxDimArray( SbxDataType=SbxVARIANT );
     SbxDimArray( const SbxDimArray& );
     SbxDimArray& operator=( const SbxDimArray& );
@@ -212,7 +216,7 @@ class BASIC_DLLPUBLIC SbxCollection : public SbxObject
 {
     BASIC_DLLPRIVATE void Initialize();
 protected:
-    virtual ~SbxCollection() override;
+    virtual ~SbxCollection();
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
     // Overridable methods (why not pure virtual?):
@@ -221,7 +225,7 @@ protected:
     virtual void CollRemove( SbxArray* pPar );
 
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_COLLECTION,1);
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_COLLECTION,1);
     SbxCollection( const OUString& rClassname );
     SbxCollection( const SbxCollection& );
     SbxCollection& operator=( const SbxCollection& );
@@ -235,21 +239,29 @@ class BASIC_DLLPUBLIC SbxStdCollection : public SbxCollection
 protected:
     OUString aElemClass;
     bool bAddRemoveOk;
-    virtual ~SbxStdCollection() override;
+    virtual ~SbxStdCollection();
     virtual bool LoadData( SvStream&, sal_uInt16 ) override;
     virtual bool StoreData( SvStream& ) const override;
     virtual void CollAdd( SbxArray* pPar ) override;
     virtual void CollRemove( SbxArray* pPar ) override;
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_FIXCOLLECTION,1);
-    SbxStdCollection( const OUString& rClassname, const OUString& rElemClass );
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_FIXCOLLECTION,1);
+    SbxStdCollection( const OUString& rClassname, const OUString& rElemClass, bool=true );
     SbxStdCollection( const SbxStdCollection& );
     SbxStdCollection& operator=( const SbxStdCollection& );
     virtual void Insert( SbxVariable* ) override;
 };
 
+#ifndef SBX_ARRAY_DECL_DEFINED
+#define SBX_ARRAY_DECL_DEFINED
 typedef tools::SvRef<SbxArray> SbxArrayRef;
+#endif
+
+#ifndef SBX_INFO_DECL_DEFINED
+#define SBX_INFO_DECL_DEFINED
 typedef tools::SvRef<SbxInfo> SbxInfoRef;
+#endif
+
 typedef tools::SvRef<SbxDimArray> SbxDimArrayRef;
 
 #endif

@@ -36,7 +36,7 @@
 
 using namespace com::sun::star;
 
-HtmlImportInfo::HtmlImportInfo( HtmlImportState eSt, SvParser* pPrsrs, const ESelection& rSel )
+ImportInfo::ImportInfo( ImportState eSt, SvParser* pPrsrs, const ESelection& rSel )
     : aSelection( rSel )
 {
     pParser     = pPrsrs;
@@ -46,34 +46,23 @@ HtmlImportInfo::HtmlImportInfo( HtmlImportState eSt, SvParser* pPrsrs, const ESe
     pAttrs      = nullptr;
 }
 
-HtmlImportInfo::~HtmlImportInfo()
-{
-}
-
-RtfImportInfo::RtfImportInfo( RtfImportState eSt, SvParser* pPrsrs, const ESelection& rSel )
-    : aSelection( rSel )
-{
-    pParser     = pPrsrs;
-    eState      = eSt;
-    nToken      = 0;
-    nTokenValue = 0;
-    pAttrs      = nullptr;
-}
-
-RtfImportInfo::~RtfImportInfo()
+ImportInfo::~ImportInfo()
 {
 }
 
 EditRTFParser::EditRTFParser(
     SvStream& rIn, EditSelection aSel, SfxItemPool& rAttrPool, EditEngine* pEditEngine) :
     SvxRTFParser(rAttrPool, rIn, nullptr),
-    aCurSel(aSel),
     mpEditEngine(pEditEngine),
-    aRTFMapMode(MapUnit::MapTwip),
-    nDefFont(0),
-    nDefTab(0),
-    bLastActionInsertParaBreak(false)
+    aRTFMapMode(MAP_TWIP)
 {
+    aCurSel         = aSel;
+    eDestCharSet    = RTL_TEXTENCODING_DONTKNOW;
+    nDefFont        = 0;
+    nDefTab         = 0;
+    nLastAction     = 0;
+    nDefFontHeight  = 0;
+
     SetInsPos(EditPosition(mpEditEngine, &aCurSel));
 
     // Convert the twips values ...
@@ -105,21 +94,21 @@ SvParserState EditRTFParser::CallParser()
     EditPaM aEnd1PaM = mpEditEngine->InsertParaBreak(aCurSel.Max());
     // aCurCel now points to the gap
 
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::Start, this, mpEditEngine->CreateESelection(aCurSel));
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        ImportInfo aImportInfo(RTFIMP_START, this, mpEditEngine->CreateESelection(aCurSel));
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
 
     SvParserState _eState = SvxRTFParser::CallParser();
 
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::End, this, mpEditEngine->CreateESelection(aCurSel));
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        ImportInfo aImportInfo(RTFIMP_END, this, mpEditEngine->CreateESelection(aCurSel));
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
 
-    if (bLastActionInsertParaBreak)
+    if ( nLastAction == ACTION_INSERTPARABRK )
     {
         ContentNode* pCurNode = aCurSel.Max().GetNode();
         sal_Int32 nPara = mpEditEngine->GetEditDoc().GetPos(pCurNode);
@@ -157,11 +146,11 @@ void EditRTFParser::AddRTFDefaultValues( const EditPaM& rStart, const EditPaM& r
 {
     // Problem: DefFont and DefFontHeight
     Size aSz( 12, 0 );
-    MapMode aPntMode( MapUnit::MapPoint );
+    MapMode aPntMode( MAP_POINT );
     MapMode _aEditMapMode(mpEditEngine->GetRefDevice()->GetMapMode().GetMapUnit());
     aSz = mpEditEngine->GetRefDevice()->LogicToLogic(aSz, &aPntMode, &_aEditMapMode);
     SvxFontHeightItem aFontHeightItem( aSz.Width(), 100, EE_CHAR_FONTHEIGHT );
-    vcl::Font aDefFont( GetFont( nDefFont ) );
+    vcl::Font aDefFont( GetDefFont() );
     SvxFontItem aFontItem( aDefFont.GetFamilyType(), aDefFont.GetFamilyName(),
                     aDefFont.GetStyleName(), aDefFont.GetPitch(), aDefFont.GetCharSet(), EE_CHAR_FONTINFO );
 
@@ -228,12 +217,12 @@ void EditRTFParser::NextToken( int nToken )
         }
         break;
     }
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::NextToken, this, mpEditEngine->CreateESelection(aCurSel));
+        ImportInfo aImportInfo(RTFIMP_NEXTTOKEN, this, mpEditEngine->CreateESelection(aCurSel));
         aImportInfo.nToken = nToken;
         aImportInfo.nTokenValue = short(nTokenValue);
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
 }
 
@@ -241,37 +230,37 @@ void EditRTFParser::UnknownAttrToken( int nToken, SfxItemSet* )
 {
     // for Tokens which are not evaluated in ReadAttr
     // Actually, only for Calc (RTFTokenHdl), so that RTF_INTBL
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::UnknownAttr, this, mpEditEngine->CreateESelection(aCurSel));
+        ImportInfo aImportInfo(RTFIMP_UNKNOWNATTR, this, mpEditEngine->CreateESelection(aCurSel));
         aImportInfo.nToken = nToken;
         aImportInfo.nTokenValue = short(nTokenValue);
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
 }
 
 void EditRTFParser::InsertText()
 {
     OUString aText( aToken );
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::InsertText, this, mpEditEngine->CreateESelection(aCurSel));
+        ImportInfo aImportInfo(RTFIMP_INSERTTEXT, this, mpEditEngine->CreateESelection(aCurSel));
         aImportInfo.aText = aText;
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
     aCurSel = mpEditEngine->InsertText(aCurSel, aText);
-    bLastActionInsertParaBreak = false;
+    nLastAction = ACTION_INSERTTEXT;
 }
 
 void EditRTFParser::InsertPara()
 {
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
-        RtfImportInfo aImportInfo(RtfImportState::InsertPara, this, mpEditEngine->CreateESelection(aCurSel));
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        ImportInfo aImportInfo(RTFIMP_INSERTPARA, this, mpEditEngine->CreateESelection(aCurSel));
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
     aCurSel = mpEditEngine->InsertParaBreak(aCurSel);
-    bLastActionInsertParaBreak = true;
+    nLastAction = ACTION_INSERTPARABRK;
 }
 
 void EditRTFParser::MovePos( bool const bForward )
@@ -304,7 +293,7 @@ void EditRTFParser::SetEndPrevPara( EditNodeIdx*& rpNodePos,
 
 bool EditRTFParser::IsEndPara( EditNodeIdx* pNd, sal_Int32 nCnt ) const
 {
-    return nCnt == pNd->GetNode()->Len();
+    return nCnt == ( static_cast<EditNodeIdx*>(pNd)->GetNode()->Len());
 }
 
 void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
@@ -319,7 +308,7 @@ void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
     const SfxPoolItem* pItem;
 
     // #i66167# adapt font heights to destination MapUnit if necessary
-    const MapUnit eDestUnit = mpEditEngine->GetEditDoc().GetItemPool().GetMetric(0);
+    const MapUnit eDestUnit = (MapUnit)(mpEditEngine->GetEditDoc().GetItemPool().GetMetric(0));
     const MapUnit eSrcUnit  = aRTFMapMode.GetMapUnit();
     if (eDestUnit != eSrcUnit)
     {
@@ -348,7 +337,7 @@ void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
 
         if( ( DFLT_ESC_AUTO_SUPER != nEsc ) && ( DFLT_ESC_AUTO_SUB != nEsc ) )
         {
-            nEsc *= 10; //HalfPoints => Twips was embezzled in RTFITEM.CXX!
+            nEsc *= 10; //HalPoints => Twips was embezzled in RTFITEM.CXX!
             SvxFont aFont;
             mpEditEngine->SeekCursor(aStartPaM.GetNode(), aStartPaM.GetIndex()+1, aFont);
             nEsc = nEsc * 100 / aFont.GetFontSize().Height();
@@ -358,12 +347,12 @@ void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
         }
     }
 
-    if (mpEditEngine->IsRtfImportHandlerSet())
+    if (mpEditEngine->IsImportHandlerSet())
     {
         EditSelection aSel( aStartPaM, aEndPaM );
-        RtfImportInfo aImportInfo(RtfImportState::SetAttr, this, mpEditEngine->CreateESelection(aSel));
+        ImportInfo aImportInfo(RTFIMP_SETATTR, this, mpEditEngine->CreateESelection(aSel));
         aImportInfo.pAttrs = &rSet;
-        mpEditEngine->CallRtfImportHandler(aImportInfo);
+        mpEditEngine->CallImportHandler(aImportInfo);
     }
 
     ContentNode* pSN = aStartPaM.GetNode();
@@ -509,10 +498,10 @@ void EditRTFParser::CreateStyleSheets()
 
 void EditRTFParser::CalcValue()
 {
-    const MapUnit eDestUnit = aEditMapMode.GetMapUnit();
+    const MapUnit eDestUnit = static_cast< MapUnit >( aEditMapMode.GetMapUnit() );
     const MapUnit eSrcUnit  = aRTFMapMode.GetMapUnit();
     if (eDestUnit != eSrcUnit)
-        nTokenValue = OutputDevice::LogicToLogic( nTokenValue, eSrcUnit, eDestUnit );
+        nTokenValue = OutputDevice::LogicToLogic( (long)nTokenValue, eSrcUnit, eDestUnit );
 }
 
 void EditRTFParser::ReadField()
@@ -577,7 +566,7 @@ void EditRTFParser::ReadField()
             SvxFieldItem aField( SvxURLField( aFldInst, aFldRslt, SVXURLFORMAT_REPR ), EE_FEATURE_FIELD  );
             aCurSel = mpEditEngine->InsertField(aCurSel, aField);
             mpEditEngine->UpdateFieldsOnly();
-            bLastActionInsertParaBreak = false;
+            nLastAction = ACTION_INSERTTEXT;
         }
     }
 

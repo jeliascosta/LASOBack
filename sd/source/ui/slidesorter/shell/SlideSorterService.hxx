@@ -35,11 +35,13 @@
 
 namespace sd { namespace slidesorter {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::XSlideSorterBase,
-    css::lang::XInitialization,
-    css::awt::XWindowListener
-> SlideSorterServiceInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::drawing::XSlideSorterBase,
+        css::lang::XInitialization,
+        css::awt::XWindowListener
+    > SlideSorterServiceInterfaceBase;
+}
 
 /** Implementation of the com.sun.star.drawing.SlideSorter service.
 */
@@ -48,97 +50,134 @@ class SlideSorterService
       public SlideSorterServiceInterfaceBase
 {
 public:
-    explicit SlideSorterService();
-    virtual ~SlideSorterService() override;
+    explicit SlideSorterService (
+        const css::uno::Reference<css::uno::XComponentContext>& rxContext);
+    virtual ~SlideSorterService();
     SlideSorterService(const SlideSorterService&) = delete;
     SlideSorterService& operator=(const SlideSorterService&) = delete;
     virtual void SAL_CALL disposing() override;
 
     // XInitialization
 
-    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments) override;
+    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XResourceId
 
-    css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
+    css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL isAnchorOnly() override;
+    sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage(
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Attributes
 
-    virtual css::uno::Reference<css::container::XIndexAccess> SAL_CALL getDocumentSlides() override;
+    virtual css::uno::Reference<css::container::XIndexAccess> SAL_CALL getDocumentSlides()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setDocumentSlides (
-        const css::uno::Reference<css::container::XIndexAccess >& rxSlides) override;
+        const css::uno::Reference<css::container::XIndexAccess >& rxSlides)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsHighlightCurrentSlide() override;
+    virtual sal_Bool SAL_CALL getIsHighlightCurrentSlide()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsHighlightCurrentSlide (sal_Bool bIsHighlightCurrentSlide) override;
+    virtual void SAL_CALL setIsHighlightCurrentSlide (sal_Bool bIsHighlightCurrentSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsShowSelection() override;
+    virtual sal_Bool SAL_CALL getIsShowSelection()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsShowSelection (sal_Bool bIsShowSelection) override;
+    virtual void SAL_CALL setIsShowSelection (sal_Bool bIsShowSelection)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsCenterSelection() override;
+    virtual sal_Bool SAL_CALL getIsCenterSelection()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsCenterSelection (sal_Bool bIsCenterSelection) override;
+    virtual void SAL_CALL setIsCenterSelection (sal_Bool bIsCenterSelection)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsSuspendPreviewUpdatesDuringFullScreenPresentation() override;
+    virtual sal_Bool SAL_CALL getIsSuspendPreviewUpdatesDuringFullScreenPresentation()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setIsSuspendPreviewUpdatesDuringFullScreenPresentation (
-        sal_Bool bIsSuspendPreviewUpdatesDuringFullScreenPresentation) override;
+        sal_Bool bIsSuspendPreviewUpdatesDuringFullScreenPresentation)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsOrientationVertical() override;
+    virtual sal_Bool SAL_CALL getIsOrientationVertical()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsOrientationVertical (sal_Bool bIsOrientationVertical) override;
+    virtual void SAL_CALL setIsOrientationVertical (sal_Bool bIsOrientationVertical)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsSmoothScrolling() override;
+    virtual sal_Bool SAL_CALL getIsSmoothScrolling()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsSmoothScrolling (sal_Bool bIsOrientationVertical) override;
+    virtual void SAL_CALL setIsSmoothScrolling (sal_Bool bIsOrientationVertical)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::util::Color SAL_CALL getBackgroundColor() override;
+    virtual css::util::Color SAL_CALL getBackgroundColor()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setBackgroundColor (css::util::Color aBackgroundColor) override;
+    virtual void SAL_CALL setBackgroundColor (css::util::Color aBackgroundColor)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::util::Color SAL_CALL getTextColor() override;
+    virtual css::util::Color SAL_CALL getTextColor()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setTextColor (css::util::Color aTextColor) override;
+    virtual void SAL_CALL setTextColor (css::util::Color aTextColor)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::util::Color SAL_CALL getSelectionColor() override;
+    virtual css::util::Color SAL_CALL getSelectionColor()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setSelectionColor (css::util::Color aSelectionColor) override;
+    virtual void SAL_CALL setSelectionColor (css::util::Color aSelectionColor)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::util::Color SAL_CALL getHighlightColor() override;
+    virtual css::util::Color SAL_CALL getHighlightColor()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setHighlightColor (css::util::Color aHighlightColor) override;
+    virtual void SAL_CALL setHighlightColor (css::util::Color aHighlightColor)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsUIReadOnly() override;
+    virtual sal_Bool SAL_CALL getIsUIReadOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsUIReadOnly (sal_Bool bIsUIReadOnly) override;
+    virtual void SAL_CALL setIsUIReadOnly (sal_Bool bIsUIReadOnly)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL getIsShowFocus() override;
+    virtual sal_Bool SAL_CALL getIsShowFocus()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setIsShowFocus (sal_Bool bIsShowFocus) override;
+    virtual void SAL_CALL setIsShowFocus (sal_Bool bIsShowFocus)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     std::shared_ptr<SlideSorter> mpSlideSorter;
@@ -147,10 +186,10 @@ private:
 
     void Resize();
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed() throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sd::slidesorter

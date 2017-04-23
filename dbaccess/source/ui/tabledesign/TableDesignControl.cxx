@@ -35,16 +35,15 @@ using namespace ::com::sun::star::util;
 #define HANDLE_ID 0
 
 OTableRowView::OTableRowView(vcl::Window* pParent)
-    : EditBrowseBox(pParent, EditBrowseBoxFlags::NONE, WB_TABSTOP|WB_HIDE|WB_3DLOOK,
-                    BrowserMode::COLUMNSELECTION | BrowserMode::MULTISELECTION |
-                    BrowserMode::AUTOSIZE_LASTCOL | BrowserMode::KEEPHIGHLIGHT |
-                    BrowserMode::HLINES | BrowserMode::VLINES)
-    , m_nDataPos(-1)
-    , m_nCurrentPos(-1)
-    , m_nCurUndoActId(0)
+    :EditBrowseBox(pParent, ModuleRes(RID_DB_TAB_EDITOR),EditBrowseBoxFlags::NONE,
+                    BrowserMode::COLUMNSELECTION | BrowserMode::MULTISELECTION | BrowserMode::AUTOSIZE_LASTCOL |
+                    BrowserMode::KEEPHIGHLIGHT | BrowserMode::HLINES | BrowserMode::VLINES)
+    ,m_nDataPos(-1)
+    ,m_nCurrentPos(-1)
+    ,m_nCurUndoActId(0)
+    ,m_bClipboardFilled(false)
 {
-    SetHelpId(HID_TABDESIGN_BACKGROUND);
-    SetSizePixel(LogicToPixel(Size(40, 12), MapUnit::MapAppFont));
+
 }
 
 void OTableRowView::Init()
@@ -108,13 +107,13 @@ void OTableRowView::Command(const CommandEvent& rEvt)
 
             if ( nColId == HANDLE_ID )
             {
-                ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
+                PopupMenu aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
                 long nSelectRowCount = GetSelectRowCount();
-                aContextMenu->EnableItem( SID_CUT, nSelectRowCount != 0);
-                aContextMenu->EnableItem( SID_COPY, nSelectRowCount  != 0);
-                aContextMenu->EnableItem( SID_PASTE, false );
-                aContextMenu->EnableItem( SID_DELETE, false );
-                switch (aContextMenu->Execute(this, rEvt.GetMousePosPixel()))
+                aContextMenu.EnableItem( SID_CUT, nSelectRowCount != 0);
+                aContextMenu.EnableItem( SID_COPY, nSelectRowCount  != 0);
+                aContextMenu.EnableItem( SID_PASTE, m_bClipboardFilled );
+                aContextMenu.EnableItem( SID_DELETE, false );
+                switch (aContextMenu.Execute(this, rEvt.GetMousePosPixel()))
                 {
                     case SID_CUT:
                         cut();

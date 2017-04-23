@@ -73,8 +73,19 @@ CurrentMasterPagesSelector::CurrentMasterPagesSelector (
     const css::uno::Reference<css::ui::XSidebar>& rxSidebar)
     : MasterPagesSelector (pParent, rDocument, rBase, rpContainer, rxSidebar)
 {
+    // For this master page selector only we change the default action for
+    // left clicks.
+    mnDefaultClickAction = SID_TP_APPLY_TO_SELECTED_SLIDES;
+
     Link<sd::tools::EventMultiplexerEvent&,void> aLink (LINK(this,CurrentMasterPagesSelector,EventMultiplexerListener));
-    rBase.GetEventMultiplexer()->AddEventListener(aLink);
+    rBase.GetEventMultiplexer()->AddEventListener(aLink,
+        sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE
+        | sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_NORMAL
+        | sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_MASTER
+        | sd::tools::EventMultiplexerEvent::EID_PAGE_ORDER
+        | sd::tools::EventMultiplexerEvent::EID_SHAPE_CHANGED
+        | sd::tools::EventMultiplexerEvent::EID_SHAPE_INSERTED
+        | sd::tools::EventMultiplexerEvent::EID_SHAPE_REMOVED);
 }
 
 CurrentMasterPagesSelector::~CurrentMasterPagesSelector()
@@ -115,13 +126,13 @@ void CurrentMasterPagesSelector::LateInit()
 
 void CurrentMasterPagesSelector::Fill (ItemList& rItemList)
 {
-    sal_uInt16 nPageCount = mrDocument.GetMasterSdPageCount(PageKind::Standard);
+    sal_uInt16 nPageCount = mrDocument.GetMasterSdPageCount(PK_STANDARD);
     // Remember the names of the master pages that have been inserted to
     // avoid double insertion.
     ::std::set<OUString> aMasterPageNames;
     for (sal_uInt16 nIndex=0; nIndex<nPageCount; nIndex++)
     {
-        SdPage* pMasterPage = mrDocument.GetMasterSdPage (nIndex, PageKind::Standard);
+        SdPage* pMasterPage = mrDocument.GetMasterSdPage (nIndex, PK_STANDARD);
         if (pMasterPage == nullptr)
             continue;
 
@@ -152,22 +163,22 @@ void CurrentMasterPagesSelector::Fill (ItemList& rItemList)
     }
 }
 
-OUString CurrentMasterPagesSelector::GetContextMenuUIFile() const
+ResId CurrentMasterPagesSelector::GetContextMenuResId() const
 {
-    return OUString("modules/simpress/ui/currentmastermenu.ui");
+    return SdResId(RID_TASKPANE_CURRENT_MASTERPAGESSELECTOR_POPUP);
 }
 
 void CurrentMasterPagesSelector::UpdateSelection()
 {
     // Iterate over all pages and for the selected ones put the name of
     // their master page into a set.
-    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PageKind::Standard);
+    sal_uInt16 nPageCount = mrDocument.GetSdPageCount(PK_STANDARD);
     ::std::set<OUString> aNames;
     sal_uInt16 nIndex;
     bool bLoop (true);
     for (nIndex=0; nIndex<nPageCount && bLoop; nIndex++)
     {
-        SdPage* pPage = mrDocument.GetSdPage (nIndex, PageKind::Standard);
+        SdPage* pPage = mrDocument.GetSdPage (nIndex, PK_STANDARD);
         if (pPage != nullptr && pPage->IsSelected())
         {
             if ( ! pPage->TRG_HasMasterPage())
@@ -202,9 +213,9 @@ void CurrentMasterPagesSelector::UpdateSelection()
     }
 }
 
-void CurrentMasterPagesSelector::ExecuteCommand(const OString &rIdent)
+void CurrentMasterPagesSelector::ExecuteCommand (const sal_Int32 nCommandId)
 {
-    if (rIdent == "delete")
+    if (nCommandId == SID_DELETE_MASTER_PAGE)
     {
         // Check once again that the master page can safely be deleted,
         // i.e. is not used.
@@ -219,45 +230,43 @@ void CurrentMasterPagesSelector::ExecuteCommand(const OString &rIdent)
         }
     }
     else
-        MasterPagesSelector::ExecuteCommand(rIdent);
+        MasterPagesSelector::ExecuteCommand(nCommandId);
 }
 
 void CurrentMasterPagesSelector::ProcessPopupMenu (Menu& rMenu)
 {
-    // Disable the delete entry when there is only one master page.
+    // Disable the SID_DELTE_MASTER slot when there is only one master page.
     if (mrDocument.GetMasterPageUserCount(GetSelectedMasterPage()) > 0)
     {
-        sal_uInt16 nItemid = rMenu.GetItemId("delete");
-        if (rMenu.GetItemPos(nItemid) != MENU_ITEM_NOTFOUND)
-            rMenu.EnableItem(nItemid, false);
+        if (rMenu.GetItemPos(SID_DELETE_MASTER_PAGE) != MENU_ITEM_NOTFOUND)
+            rMenu.EnableItem(SID_DELETE_MASTER_PAGE, false);
     }
 
     std::shared_ptr<DrawViewShell> pDrawViewShell (
         std::dynamic_pointer_cast<DrawViewShell>(mrBase.GetMainViewShell()));
     if (pDrawViewShell
-        && pDrawViewShell->GetEditMode() == EditMode::MasterPage)
+        && pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
     {
-        sal_uInt16 nItemid = rMenu.GetItemId("edit");
-        if (rMenu.GetItemPos(nItemid) != MENU_ITEM_NOTFOUND)
-            rMenu.EnableItem(nItemid, false);
+        if (rMenu.GetItemPos(SID_TP_EDIT_MASTER) != MENU_ITEM_NOTFOUND)
+            rMenu.EnableItem(SID_TP_EDIT_MASTER, false);
     }
 
     MasterPagesSelector::ProcessPopupMenu(rMenu);
 }
 
-IMPL_LINK(CurrentMasterPagesSelector,EventMultiplexerListener,
+IMPL_LINK_TYPED(CurrentMasterPagesSelector,EventMultiplexerListener,
     sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case EventMultiplexerEventId::CurrentPageChanged:
-        case EventMultiplexerEventId::EditModeNormal:
-        case EventMultiplexerEventId::EditModeMaster:
-        case EventMultiplexerEventId::SlideSortedSelection:
+        case sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
+        case sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_NORMAL:
+        case sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_MASTER:
+        case sd::tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION:
             UpdateSelection();
             break;
 
-        case EventMultiplexerEventId::PageOrder:
+        case sd::tools::EventMultiplexerEvent::EID_PAGE_ORDER:
             // This is tricky.  If a master page is removed, moved, or
             // added we have to wait until both the notes master page
             // and the standard master page have been removed, moved,
@@ -269,12 +278,11 @@ IMPL_LINK(CurrentMasterPagesSelector,EventMultiplexerListener,
                 MasterPagesSelector::Fill();
             break;
 
-        case EventMultiplexerEventId::ShapeChanged:
-        case EventMultiplexerEventId::ShapeInserted:
-        case EventMultiplexerEventId::ShapeRemoved:
-            InvalidatePreview(static_cast<const SdPage*>(rEvent.mpUserData));
+        case sd::tools::EventMultiplexerEvent::EID_SHAPE_CHANGED:
+        case sd::tools::EventMultiplexerEvent::EID_SHAPE_INSERTED:
+        case sd::tools::EventMultiplexerEvent::EID_SHAPE_REMOVED:
+           InvalidatePreview(static_cast<const SdPage*>(rEvent.mpUserData));
             break;
-        default: break;
     }
 }
 

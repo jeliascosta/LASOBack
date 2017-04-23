@@ -85,14 +85,15 @@ SfxObjectFactory::SfxObjectFactory
 (
     const SvGlobalName&     rName,
     SfxObjectShellFlags     nFlagsP,
-    const OUString&         sName
-) :    m_sFactoryName( sName ),
+    const char*             pName
+) :    pShortName( pName ),
        pImpl( new SfxObjectFactory_Impl ),
        nFlags( nFlagsP )
 {
-    pImpl->pFilterContainer = new SfxFilterContainer( m_sFactoryName );
+    pImpl->pFilterContainer = new SfxFilterContainer( OUString::createFromAscii( pName ) );
 
-    const OUString aShortName( m_sFactoryName.toAsciiLowerCase() );
+    OUString aShortName( OUString::createFromAscii( pShortName ) );
+    aShortName = aShortName.toAsciiLowerCase();
     pImpl->aClassName = rName;
     if ( aShortName == "swriter" )
         pImpl->pNameResId = new SfxResId( STR_DOCTYPENAME_SW );
@@ -172,9 +173,13 @@ void SfxObjectFactory::SetModule_Impl( SfxModule *pMod )
 void SfxObjectFactory::SetSystemTemplate( const OUString& rServiceName, const OUString& rTemplateName )
 {
     static const int nMaxPathSize = 16000;
+    static const char SERVICE_FILTER_FACTORY[] = "com.sun.star.document.FilterFactory";
+    static const char SERVICE_TYPE_DECTECTION[] = "com.sun.star.document.TypeDetection";
 
+    static const char CONF_ROOT[] = "/org.openoffice.Setup";
     OUString CONF_PATH = "Office/Factories/" + rServiceName;
     static const char PROP_DEF_TEMPL_CHANGED[] = "ooSetupFactorySystemDefaultTemplateChanged";
+    static const char PROP_ACTUAL_FILTER[] = "ooSetupFactoryActualFilter";
 
     static const char DEF_TPL_STR[] = "/soffice.";
 
@@ -192,17 +197,17 @@ void SfxObjectFactory::SetSystemTemplate( const OUString& rServiceName, const OU
         {
             uno::Reference< lang::XMultiServiceFactory > xFactory = ::comphelper::getProcessServiceFactory();
             uno::Reference< uno::XInterface > xConfig = ::comphelper::ConfigurationHelper::openConfig(
-                ::comphelper::getProcessComponentContext(), "/org.openoffice.Setup", ::comphelper::EConfigurationModes::Standard );
+                ::comphelper::getProcessComponentContext(), CONF_ROOT, ::comphelper::EConfigurationModes::Standard );
 
             OUString aActualFilter;
-            ::comphelper::ConfigurationHelper::readRelativeKey( xConfig, CONF_PATH, "ooSetupFactoryActualFilter" ) >>= aActualFilter;
+            ::comphelper::ConfigurationHelper::readRelativeKey( xConfig, CONF_PATH, PROP_ACTUAL_FILTER ) >>= aActualFilter;
             bool bChanged(false);
             ::comphelper::ConfigurationHelper::readRelativeKey( xConfig, CONF_PATH, PROP_DEF_TEMPL_CHANGED ) >>= bChanged;
 
             uno::Reference< container::XNameAccess > xFilterFactory(
-                xFactory->createInstance( "com.sun.star.document.FilterFactory" ), uno::UNO_QUERY_THROW );
+                xFactory->createInstance( SERVICE_FILTER_FACTORY ), uno::UNO_QUERY_THROW );
             uno::Reference< container::XNameAccess > xTypeDetection(
-                xFactory->createInstance( "com.sun.star.document.TypeDetection" ), uno::UNO_QUERY_THROW );
+                xFactory->createInstance( SERVICE_TYPE_DECTECTION ), uno::UNO_QUERY_THROW );
 
             OUString aActualFilterTypeName;
             uno::Sequence< beans::PropertyValue > aActuralFilterData;
@@ -306,7 +311,7 @@ OUString SfxObjectFactory::GetStandardTemplate( const OUString& rServiceName )
 std::shared_ptr<const SfxFilter> SfxObjectFactory::GetTemplateFilter() const
 {
     sal_uInt16 nVersion=0;
-    SfxFilterMatcher aMatcher ( m_sFactoryName );
+    SfxFilterMatcher aMatcher ( OUString::createFromAscii( pShortName ) );
     SfxFilterMatcherIter aIter( aMatcher );
     std::shared_ptr<const SfxFilter> pFilter;
     std::shared_ptr<const SfxFilter> pTemp = aIter.First();
@@ -341,7 +346,10 @@ const SvGlobalName& SfxObjectFactory::GetClassId() const
 
 OUString SfxObjectFactory::GetFactoryURL() const
 {
-    return "private:factory/" + m_sFactoryName;
+    OUStringBuffer aURLComposer;
+    aURLComposer.append("private:factory/");
+    aURLComposer.appendAscii(GetShortName());
+    return aURLComposer.makeStringAndClear();
 }
 
 OUString SfxObjectFactory::GetModuleName() const
@@ -370,11 +378,11 @@ OUString SfxObjectFactory::GetModuleName() const
 }
 
 
-sal_uInt16 SfxObjectFactory::GetViewNo_Impl( const SfxInterfaceId i_nViewId, const sal_uInt16 i_nFallback ) const
+sal_uInt16 SfxObjectFactory::GetViewNo_Impl( const sal_uInt16 i_nViewId, const sal_uInt16 i_nFallback ) const
 {
     for ( sal_uInt16 curViewNo = 0; curViewNo < GetViewFactoryCount(); ++curViewNo )
     {
-        const SfxInterfaceId curViewId = GetViewFactory( curViewNo ).GetOrdinal();
+        const sal_uInt16 curViewId = GetViewFactory( curViewNo ).GetOrdinal();
         if ( i_nViewId == curViewId )
            return curViewNo;
     }

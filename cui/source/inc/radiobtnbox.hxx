@@ -33,6 +33,7 @@ private:
     Point               m_aCurMousePoint;
 
 protected:
+    virtual void        SetTabs() override;
     virtual void        MouseButtonUp( const MouseEvent& _rMEvt ) override;
     virtual void        KeyInput( const KeyEvent& rKEvt ) override;
 

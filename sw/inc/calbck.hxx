@@ -66,7 +66,7 @@ namespace sw
     struct SW_DLLPUBLIC LegacyModifyHint final: SfxHint
     {
         LegacyModifyHint(const SfxPoolItem* pOld, const SfxPoolItem* pNew) : m_pOld(pOld), m_pNew(pNew) {};
-        virtual ~LegacyModifyHint() override;
+        virtual ~LegacyModifyHint();
         const SfxPoolItem* m_pOld;
         const SfxPoolItem* m_pNew;
     };
@@ -100,18 +100,18 @@ class SW_DLLPUBLIC SwClient : public ::sw::WriterListener
     friend class sw::ClientIteratorBase;
     template<typename E, typename S> friend class SwIterator;
 
-    SwModify *m_pRegisteredIn;        ///< event source
+    SwModify *pRegisteredIn;        ///< event source
 
 protected:
     // single argument ctors shall be explicit.
     inline explicit SwClient( SwModify* pToRegisterIn );
 
     // write access to pRegisteredIn shall be granted only to the object itself (protected access)
-    SwModify* GetRegisteredInNonConst() const { return m_pRegisteredIn; }
+    SwModify* GetRegisteredInNonConst() const { return pRegisteredIn; }
 
 public:
 
-    SwClient() : m_pRegisteredIn(nullptr) {}
+    SwClient() : pRegisteredIn(nullptr) {}
     virtual ~SwClient() override;
     // callbacks received from SwModify (friend class - so these methods can be private)
     // should be called only from SwModify the client is registered in
@@ -130,8 +130,8 @@ public:
     void ModifyNotification( const SfxPoolItem *pOldValue, const SfxPoolItem *pNewValue ) { this->Modify ( pOldValue, pNewValue ); }
     void SwClientNotifyCall( const SwModify& rModify, const SfxHint& rHint ) { SwClientNotify( rModify, rHint ); }
 
-    const SwModify* GetRegisteredIn() const { return m_pRegisteredIn; }
-    SwModify* GetRegisteredIn() { return m_pRegisteredIn; }
+    const SwModify* GetRegisteredIn() const { return pRegisteredIn; }
+    SwModify* GetRegisteredIn() { return pRegisteredIn; }
 
 
     // get information about attribute
@@ -178,7 +178,7 @@ public:
     // a more universal broadcasting mechanism
     inline void CallSwClientNotify( const SfxHint& rHint ) const;
 
-    virtual ~SwModify() override;
+    virtual ~SwModify();
 
     void Add(SwClient *pDepend);
     SwClient* Remove(SwClient *pDepend);
@@ -217,7 +217,7 @@ public:
     /** get Client information */
     virtual bool GetInfo( SfxPoolItem& rInfo) const override
         { return m_pToTell == nullptr || m_pToTell->GetInfo( rInfo ); }
-private:
+protected:
     virtual void Modify( const SfxPoolItem* pOldValue, const SfxPoolItem *pNewValue ) override
     {
         if( pNewValue && pNewValue->Which() == RES_OBJECTDYING )
@@ -256,8 +256,7 @@ namespace sw
             WriterListener* GetRightOfPos() { return m_pPosition->m_pRight; }
             WriterListener* GoStart()
             {
-                m_pPosition = m_rRoot.m_pWriterListeners;
-                if(m_pPosition)
+                if((m_pPosition = m_rRoot.m_pWriterListeners))
                     while( m_pPosition->m_pLeft )
                         m_pPosition = m_pPosition->m_pLeft;
                 return m_pCurrent = m_pPosition;
@@ -278,13 +277,10 @@ namespace sw
     };
 }
 
-class SwPageDesc;
-
 template< typename TElementType, typename TSource > class SwIterator final : private sw::ClientIteratorBase
 {
-    //static_assert(!std::is_base_of<SwPageDesc,TSource>::value, "SwPageDesc as TSource is deprecated.");
-    static_assert(std::is_base_of<SwClient,TElementType>::value, "TElementType needs to be derived from SwClient.");
-    static_assert(std::is_base_of<SwModify,TSource>::value, "TSource needs to be derived from SwModify.");
+    static_assert(std::is_base_of<SwClient,TElementType>::value, "TElementType needs to be derived from SwClient");
+    static_assert(std::is_base_of<SwModify,TSource>::value, "TSource needs to be derived from SwModify");
 public:
     SwIterator( const TSource& rSrc ) : sw::ClientIteratorBase(rSrc) {}
     TElementType* First()
@@ -342,7 +338,7 @@ public:
 };
 
 SwClient::SwClient( SwModify* pToRegisterIn )
-    : m_pRegisteredIn( nullptr )
+    : pRegisteredIn( nullptr )
 {
     if(pToRegisterIn)
         pToRegisterIn->Add(this);

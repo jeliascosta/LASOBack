@@ -25,7 +25,7 @@
 #include "docsignature.hxx"
 
 #include "helpid.hrc"
-#include <basidesh.hrc>
+#include "baside2.hrc"
 
 #include <basic/basmgr.hxx>
 #include <basic/basrdll.hxx>
@@ -115,7 +115,7 @@ void lcl_PrintHeader( Printer* pPrinter, sal_uInt16 nPages, sal_uInt16 nCurPage,
     long nXRight = aSz.Width() - Print::nRightMargin + Print::nBorder;
 
     if( bOutput )
-        pPrinter->DrawRect(tools::Rectangle(
+        pPrinter->DrawRect(Rectangle(
             Point(nXLeft, nYTop),
             Size(nXRight - nXLeft, aSz.Height() - nYTop - Print::nBottomMargin + Print::nBorder)
         ));
@@ -190,7 +190,7 @@ ModulWindow::ModulWindow (ModulWindowLayout* pParent, ScriptDocument const& rDoc
     SetBackground();
 }
 
-SbModuleRef const & ModulWindow::XModule()
+SbModuleRef ModulWindow::XModule()
 {
     // ModuleWindows can now be created as a result of the
     // modules getting created via the api. This is a result of an
@@ -200,7 +200,7 @@ SbModuleRef const & ModulWindow::XModule()
     // for m_xModule it may not yet be available, here we keep trying to access
     // the module until such time as it exists
 
-    if ( !m_xModule.is() )
+    if ( !m_xModule.Is() )
     {
         BasicManager* pBasMgr = GetDocument().getBasicManager();
         if ( pBasMgr )
@@ -246,7 +246,7 @@ void ModulWindow::DoInit()
     GetEditorWindow().InitScrollBars();
 }
 
-void ModulWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle&)
+void ModulWindow::Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle&)
 {
 }
 
@@ -258,7 +258,7 @@ void ModulWindow::Resize()
 
 void ModulWindow::CheckCompileBasic()
 {
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         // never compile while running!
         bool const bRunning = StarBASIC::IsRunning();
@@ -285,7 +285,7 @@ void ModulWindow::CheckCompileBasic()
 
             if ( bDone )
             {
-                GetBreakPoints().SetBreakPointsInBasic( m_xModule.get() );
+                GetBreakPoints().SetBreakPointsInBasic( m_xModule );
             }
 
             GetShell()->GetViewFrame()->GetWindow().LeaveWait();
@@ -304,21 +304,21 @@ void ModulWindow::BasicExecute()
     {
         if ( !aDocument.allowMacros() )
         {
-            ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_CANNOTRUNMACRO), VclMessageType::Warning)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_CANNOTRUNMACRO), VCL_MESSAGE_WARNING)->Execute();
             return;
         }
     }
 
     CheckCompileBasic();
 
-    if ( XModule().is() && m_xModule->IsCompiled() && !m_aStatus.bError )
+    if ( XModule().Is() && m_xModule->IsCompiled() && !m_aStatus.bError )
     {
         if ( GetBreakPoints().size() )
-            m_aStatus.nBasicFlags = m_aStatus.nBasicFlags | BasicDebugFlags::Break;
+            m_aStatus.nBasicFlags = m_aStatus.nBasicFlags | SbDEBUG_BREAK;
 
         if ( !m_aStatus.bIsRunning )
         {
-            DBG_ASSERT( m_xModule.is(), "No Module!" );
+            DBG_ASSERT( m_xModule.Is(), "Kein Modul!" );
             AddStatus( BASWIN_RUNNINGBASIC );
             sal_uInt16 nStart, nEnd;
             TextSelection aSel = GetEditView()->GetSelection();
@@ -364,31 +364,31 @@ void ModulWindow::CompileBasic()
 {
     CheckCompileBasic();
 
-    XModule().is() && m_xModule->IsCompiled();
+    XModule().Is() && m_xModule->IsCompiled();
 }
 
 void ModulWindow::BasicRun()
 {
-    m_aStatus.nBasicFlags = BasicDebugFlags::NONE;
+    m_aStatus.nBasicFlags = 0;
     BasicExecute();
 }
 
 void ModulWindow::BasicStepOver()
 {
-    m_aStatus.nBasicFlags = BasicDebugFlags::StepInto | BasicDebugFlags::StepOver;
+    m_aStatus.nBasicFlags = SbDEBUG_STEPINTO | SbDEBUG_STEPOVER;
     BasicExecute();
 }
 
 
 void ModulWindow::BasicStepInto()
 {
-    m_aStatus.nBasicFlags = BasicDebugFlags::StepInto;
+    m_aStatus.nBasicFlags = SbDEBUG_STEPINTO;
     BasicExecute();
 }
 
 void ModulWindow::BasicStepOut()
 {
-    m_aStatus.nBasicFlags = BasicDebugFlags::StepOut;
+    m_aStatus.nBasicFlags = SbDEBUG_STEPOUT;
     BasicExecute();
 }
 
@@ -488,9 +488,9 @@ void ModulWindow::ImportDialog()
 
 void ModulWindow::ToggleBreakPoint( sal_uLong nLine )
 {
-    DBG_ASSERT( XModule().is(), "No Modul!" );
+    DBG_ASSERT( XModule().Is(), "Kein Modul!" );
 
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         CheckCompileBasic();
         if ( m_aStatus.bError )
@@ -514,8 +514,8 @@ void ModulWindow::ToggleBreakPoint( sal_uLong nLine )
                     for ( sal_uInt16 nMethod = 0; nMethod < m_xModule->GetMethods()->Count(); nMethod++ )
                     {
                         SbMethod* pMethod = static_cast<SbMethod*>(m_xModule->GetMethods()->Get( nMethod ));
-                        assert(pMethod && "Method not found! (NULL)");
-                        pMethod->SetDebugFlags( pMethod->GetDebugFlags() | BasicDebugFlags::Break );
+                        assert(pMethod && "Methode nicht gefunden! (NULL)");
+                        pMethod->SetDebugFlags( pMethod->GetDebugFlags() | SbDEBUG_BREAK );
                     }
                 }
             }
@@ -525,9 +525,9 @@ void ModulWindow::ToggleBreakPoint( sal_uLong nLine )
 
 void ModulWindow::UpdateBreakPoint( const BreakPoint& rBrk )
 {
-    DBG_ASSERT( XModule().is(), "No Module!" );
+    DBG_ASSERT( XModule().Is(), "Kein Modul!" );
 
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         CheckCompileBasic();
 
@@ -560,7 +560,7 @@ void ModulWindow::BasicToggleBreakPointEnabled()
 {
     AssertValidEditEngine();
 
-    TextView* pView = GetEditView();
+    ExtTextView* pView = GetEditView();
     if ( pView )
     {
         TextSelection aSel = pView->GetSelection();
@@ -592,7 +592,7 @@ void ModulWindow::ManageBreakPoints()
 
 bool ModulWindow::BasicErrorHdl( StarBASIC * pBasic )
 {
-    GetShell()->GetViewFrame()->ToTop();
+    GoOnTop();
 
     // ReturnWert: BOOL
     //  FALSE:  cancel
@@ -617,7 +617,7 @@ bool ModulWindow::BasicErrorHdl( StarBASIC * pBasic )
     ErrorHandler::HandleError( StarBASIC::GetErrorCode() );
 
     // #i47002#
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
     if ( !pWindow )
         return false;
 
@@ -626,7 +626,7 @@ bool ModulWindow::BasicErrorHdl( StarBASIC * pBasic )
     return false;
 }
 
-BasicDebugFlags ModulWindow::BasicBreakHdl( StarBASIC* pBasic )
+long ModulWindow::BasicBreakHdl( StarBASIC* pBasic )
 {
     // #i69280 Required in Window despite normal usage in next command!
     (void)pBasic;
@@ -696,9 +696,9 @@ void ModulWindow::BasicAddWatch()
 
 void ModulWindow::EditMacro( const OUString& rMacroName )
 {
-    DBG_ASSERT( XModule().is(), "No Module!" );
+    DBG_ASSERT( XModule().Is(), "Kein Modul!" );
 
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         CheckCompileBasic();
 
@@ -757,11 +757,11 @@ bool ModulWindow::AllowUndo()
 
 void ModulWindow::UpdateData()
 {
-    DBG_ASSERT( XModule().is(), "No Module!" );
+    DBG_ASSERT( XModule().Is(), "Kein Modul!" );
     // UpdateData is called when the source has changed from outside
     // => interrupts undesired!
 
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         SetModule( m_xModule->GetSource32() );
 
@@ -778,7 +778,7 @@ void ModulWindow::UpdateData()
 
 sal_Int32 ModulWindow::countPages( Printer* pPrinter )
 {
-    return FormatAndPrint( pPrinter, -1 );
+    return FormatAndPrint( pPrinter );
 }
 
 void ModulWindow::printPage( sal_Int32 nPage, Printer* pPrinter )
@@ -804,7 +804,7 @@ sal_Int32 ModulWindow::FormatAndPrint( Printer* pPrinter, sal_Int32 nPrintPage )
     aFont.SetTransparent( true );
     aFont.SetFontSize( Size( 0, 360 ) );
     pPrinter->SetFont( aFont );
-    pPrinter->SetMapMode( MapUnit::Map100thMM );
+    pPrinter->SetMapMode( MAP_100TH_MM );
 
     OUString aTitle( CreateQualifiedName() );
 
@@ -1152,10 +1152,15 @@ bool ModulWindow::IsModified()
     return GetEditEngine() && GetEditEngine()->IsModified();
 }
 
+void ModulWindow::GoOnTop()
+{
+    GetShell()->GetViewFrame()->ToTop();
+}
+
 OUString ModulWindow::GetSbModuleName()
 {
     OUString aModuleName;
-    if ( XModule().is() )
+    if ( XModule().Is() )
         aModuleName = m_xModule->GetName();
     return aModuleName;
 }
@@ -1206,7 +1211,7 @@ sal_uInt16 ModulWindow::StartSearchAndReplace( const SvxSearchItem& rSearchItem,
 
     // one could also relinquish syntaxhighlighting/formatting instead of the stupid replace-everything...
     AssertValidEditEngine();
-    TextView* pView = GetEditView();
+    ExtTextView* pView = GetEditView();
     TextSelection aSel;
     if ( bFromStart )
     {
@@ -1268,19 +1273,19 @@ SearchOptionFlags ModulWindow::GetSearchOptions()
 
 void ModulWindow::BasicStarted()
 {
-    if ( XModule().is() )
+    if ( XModule().Is() )
     {
         m_aStatus.bIsRunning = true;
         BreakPointList& rList = GetBreakPoints();
         if ( rList.size() )
         {
             rList.ResetHitCount();
-            rList.SetBreakPointsInBasic( m_xModule.get() );
+            rList.SetBreakPointsInBasic( m_xModule );
             for ( sal_uInt16 nMethod = 0; nMethod < m_xModule->GetMethods()->Count(); nMethod++ )
             {
                 SbMethod* pMethod = static_cast<SbMethod*>(m_xModule->GetMethods()->Get( nMethod ));
-                assert(pMethod && "Method not found! (NULL)");
-                pMethod->SetDebugFlags( pMethod->GetDebugFlags() | BasicDebugFlags::Break );
+                assert(pMethod && "Methode nicht gefunden! (NULL)");
+                pMethod->SetDebugFlags( pMethod->GetDebugFlags() | SbDEBUG_BREAK );
             }
         }
     }
@@ -1299,7 +1304,7 @@ EntryDescriptor ModulWindow::CreateEntryDescriptor()
     LibraryLocation eLocation = aDocument.getLibraryLocation( aLibName );
     OUString aModName( GetName() );
     OUString aLibSubName;
-    if( m_xBasic.is() && aDocument.isInVBAMode() && XModule().is() )
+    if( m_xBasic.Is() && aDocument.isInVBAMode() && XModule().Is() )
     {
         switch( m_xModule->GetModuleType() )
         {
@@ -1395,7 +1400,7 @@ void ModulWindow::UpdateModule ()
     OUString const aModule = getTextEngineText(*GetEditEngine());
 
     // update module in basic
-    assert(m_xModule.is());
+    assert(m_xModule);
 
     // update module in module window
     SetModule(aModule);
@@ -1434,9 +1439,17 @@ void ModulWindowLayout::UpdateDebug (bool bBasicStopped)
     aStackWindow->UpdateCalls();
 }
 
-void ModulWindowLayout::Paint (vcl::RenderContext& rRenderContext, tools::Rectangle const&)
+void ModulWindowLayout::Paint (vcl::RenderContext& rRenderContext, Rectangle const&)
 {
     rRenderContext.DrawText(Point(), IDEResId(RID_STR_NOMODULE).toString());
+}
+
+// virtual
+void ModulWindowLayout::DataChanged (DataChangedEvent const& rDCEvt)
+{
+    Layout::DataChanged(rDCEvt);
+    if (rDCEvt.GetType() == DataChangedEventType::SETTINGS && (rDCEvt.GetFlags() & AllSettingsFlags::STYLE))
+        aSyntaxColors.SettingsChanged();
 }
 
 void ModulWindowLayout::Activating (BaseWindow& rChild)
@@ -1498,6 +1511,11 @@ ModulWindowLayout::SyntaxColors::SyntaxColors () :
 {
     aConfig.AddListener(this);
 
+    aColors[TokenType::Unknown] =
+    aColors[TokenType::Whitespace] =
+    aColors[TokenType::EOL] =
+        Application::GetSettings().GetStyleSettings().GetFieldTextColor();
+
     NewConfig(true);
 }
 
@@ -1506,8 +1524,22 @@ ModulWindowLayout::SyntaxColors::~SyntaxColors ()
     aConfig.RemoveListener(this);
 }
 
+void ModulWindowLayout::SyntaxColors::SettingsChanged ()
+{
+    Color const aColor = Application::GetSettings().GetStyleSettings().GetFieldTextColor();
+    if (aColor != aColors[TokenType::Unknown])
+    {
+        aColors[TokenType::Unknown] =
+        aColors[TokenType::Whitespace] =
+        aColors[TokenType::EOL] =
+            aColor;
+        if (pEditor)
+            pEditor->UpdateSyntaxHighlighting();
+    }
+}
+
 // virtual
-void ModulWindowLayout::SyntaxColors::ConfigurationChanged (utl::ConfigurationBroadcaster*, ConfigurationHints)
+void ModulWindowLayout::SyntaxColors::ConfigurationChanged (utl::ConfigurationBroadcaster*, sal_uInt32)
 {
     NewConfig(false);
 }
@@ -1522,36 +1554,14 @@ void ModulWindowLayout::SyntaxColors::NewConfig (bool bFirst)
     }
     const vIds[] =
     {
-        { TokenType::Unknown,     svtools::FONTCOLOR },
         { TokenType::Identifier,  svtools::BASICIDENTIFIER },
-        { TokenType::Whitespace,  svtools::FONTCOLOR },
         { TokenType::Number,      svtools::BASICNUMBER },
         { TokenType::String,      svtools::BASICSTRING },
-        { TokenType::EOL,         svtools::FONTCOLOR },
         { TokenType::Comment,     svtools::BASICCOMMENT },
         { TokenType::Error,       svtools::BASICERROR },
         { TokenType::Operator,    svtools::BASICOPERATOR },
         { TokenType::Keywords,    svtools::BASICKEYWORD },
     };
-
-    Color aDocColor = aConfig.GetColorValue(svtools::DOCCOLOR).nColor;
-    if (bFirst || aDocColor != m_aBackgroundColor)
-    {
-        m_aBackgroundColor = aDocColor;
-        if (!bFirst && pEditor)
-        {
-            pEditor->SetBackground(Wallpaper(m_aBackgroundColor));
-            pEditor->Invalidate();
-        }
-    }
-
-    Color aFontColor = aConfig.GetColorValue(svtools::FONTCOLOR).nColor;
-    if (bFirst || aFontColor != m_aFontColor)
-    {
-        m_aFontColor = aFontColor;
-        if (!bFirst && pEditor)
-            pEditor->ChangeFontColor(m_aFontColor);
-    }
 
     bool bChanged = false;
     for (unsigned i = 0; i != SAL_N_ELEMENTS(vIds); ++i)

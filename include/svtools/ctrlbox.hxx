@@ -33,19 +33,31 @@
 #include <o3tl/typed_flags_set.hxx>
 
 class FontList;
+class ImplColorListData;
 class ImpLineListData;
-enum class SvxBorderLineStyle : sal_Int16;
 
+typedef ::std::vector< ImplColorListData*    > ImpColorList;
 typedef ::std::vector< ImpLineListData*      > ImpLineList;
 typedef ::std::vector< FontMetric         > ImplFontList;
 
 /*************************************************************************
 
+Description
+============
+
+class ColorListBox
+
+Description
+
+Allows color selection
+
+--------------------------------------------------------------------------
+
 class LineListBox
 
 Description
 
-Allows selection of line styles and sizes. Note that before first insert,
+Allows selection of line styles and sizes. Not that before first insert,
 units and window size need to be set. Supported units are typographic point
 (pt) and millimeters (mm). For SourceUnit, pt, mm and twips are supported.
 All scalar numbers in 1/100 of the corresponding unit.
@@ -129,6 +141,79 @@ FontList; FontNameBox; FontStyleBox; FontSizeMenu
 
 *************************************************************************/
 
+class SVT_DLLPUBLIC ColorListBox : public ListBox
+{
+    ImpColorList*   pColorList; // separate liste, in case of user data are required from outside
+    Size            aImageSize;
+
+    using Window::ImplInit;
+    SVT_DLLPRIVATE void         ImplInit();
+    SVT_DLLPRIVATE void         ImplDestroyColorEntries();
+
+public:
+                    ColorListBox( vcl::Window* pParent,
+                                  WinBits nWinStyle = WB_BORDER );
+                    ColorListBox( vcl::Window* pParent, const ResId& rResId );
+    virtual         ~ColorListBox();
+    virtual void    dispose() override;
+
+    virtual void    UserDraw( const UserDrawEvent& rUDEvt ) override;
+
+    using ListBox::InsertEntry;
+    sal_Int32       InsertEntry( const OUString& rStr,
+                                 sal_Int32  nPos = LISTBOX_APPEND );
+    sal_Int32       InsertEntry( const Color& rColor, const OUString& rStr,
+                                 sal_Int32  nPos = LISTBOX_APPEND );
+    void            InsertAutomaticEntryColor(const Color &rAutoColorValue);
+    bool            IsAutomaticSelected() { return !GetSelectEntryPos(); }
+    using ListBox::RemoveEntry;
+    void            RemoveEntry( sal_Int32  nPos );
+    void            Clear();
+    void            CopyEntries( const ColorListBox& rBox );
+
+    using ListBox::GetEntryPos;
+    sal_Int32       GetEntryPos( const Color& rColor ) const;
+    Color           GetEntryColor( sal_Int32  nPos ) const;
+
+    void            SelectEntry( const OUString& rStr )
+                        { ListBox::SelectEntry( rStr ); }
+    void            SelectEntry( const Color& rColor );
+    Color           GetSelectEntryColor() const;
+    bool            IsEntrySelected(const OUString& rStr ) const
+    {
+        return ListBox::IsEntrySelected(rStr);
+    }
+
+    bool            IsEntrySelected(const Color& rColor) const
+    {
+        sal_Int32  nPos = GetEntryPos( rColor );
+        if ( nPos != LISTBOX_ENTRY_NOTFOUND )
+            return IsEntryPosSelected( nPos );
+        else
+            return false;
+    }
+
+private:
+                    ColorListBox( const ColorListBox& ) = delete;
+    ColorListBox&   operator =( const ColorListBox& ) = delete;
+};
+
+inline void ColorListBox::SelectEntry( const Color& rColor )
+{
+    sal_Int32  nPos = GetEntryPos( rColor );
+    if ( nPos != LISTBOX_ENTRY_NOTFOUND )
+        ListBox::SelectEntryPos( nPos );
+}
+
+inline Color ColorListBox::GetSelectEntryColor() const
+{
+    sal_Int32  nPos = GetSelectEntryPos();
+    Color aColor;
+    if ( nPos != LISTBOX_ENTRY_NOTFOUND )
+        aColor = GetEntryColor( nPos );
+    return aColor;
+}
+
 /**
     Class computing border widths shared between Line style listbox and the
     SvxBorderLine implementation.
@@ -152,10 +237,11 @@ enum class BorderWidthImplFlags
     CHANGE_LINE1    = 1,
     CHANGE_LINE2    = 2,
     CHANGE_DIST     = 4,
+    ADAPT_DIST      = 8,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<BorderWidthImplFlags> : is_typed_flags<BorderWidthImplFlags, 0x07> {};
+    template<> struct typed_flags<BorderWidthImplFlags> : is_typed_flags<BorderWidthImplFlags, 0x0f> {};
 }
 class SVT_DLLPUBLIC BorderWidthImpl
 {
@@ -207,7 +293,7 @@ class SVT_DLLPUBLIC LineListBox : public ListBox
 
     SVT_DLLPRIVATE void         ImpGetLine( long nLine1, long nLine2, long nDistance,
                                     Color nColor1, Color nColor2, Color nColorDist,
-                                    SvxBorderLineStyle nStyle, Bitmap& rBmp );
+                                    sal_uInt16 nStyle, Bitmap& rBmp );
     using Window::ImplInit;
     SVT_DLLPRIVATE void         ImplInit();
     void            UpdatePaintLineColor();       // returns sal_True if maPaintCol has changed
@@ -221,7 +307,7 @@ public:
     typedef Color (*ColorDistFunc)(Color, Color);
 
                     LineListBox( vcl::Window* pParent, WinBits nWinStyle = WB_BORDER );
-    virtual         ~LineListBox() override;
+    virtual         ~LineListBox();
     virtual void    dispose() override;
 
     /** Set the width in Twips */
@@ -232,21 +318,21 @@ public:
     using ListBox::InsertEntry;
     /** Insert a listbox entry with all widths in Twips. */
     void            InsertEntry(const BorderWidthImpl& rWidthImpl,
-                        SvxBorderLineStyle nStyle, long nMinWidth = 0,
+                        sal_uInt16 nStyle, long nMinWidth = 0,
                         ColorFunc pColor1Fn = &sameColor,
                         ColorFunc pColor2Fn = &sameColor,
                         ColorDistFunc pColorDistFn = &sameDistColor);
 
     using ListBox::GetEntryPos;
-    sal_Int32       GetEntryPos( SvxBorderLineStyle nStyle ) const;
-    SvxBorderLineStyle GetEntryStyle( sal_Int32 nPos ) const;
+    sal_Int32       GetEntryPos( sal_uInt16 nStyle = css::table::BorderLineStyle::SOLID ) const;
+    sal_uInt16      GetEntryStyle( sal_Int32  nPos ) const;
 
-    void            SelectEntry( SvxBorderLineStyle nStyle, bool bSelect = true );
-    SvxBorderLineStyle GetSelectEntryStyle() const;
+    void            SelectEntry( sal_uInt16 nStyle = css::table::BorderLineStyle::SOLID, bool bSelect = true );
+    sal_uInt16      GetSelectEntryStyle() const;
 
-    void            SetUnit( FieldUnit eNewUnit ) { eUnit = eNewUnit; }
+    inline void     SetUnit( FieldUnit eNewUnit ) { eUnit = eNewUnit; }
 
-    void            SetSourceUnit( FieldUnit eNewUnit ) { eSourceUnit = eNewUnit; }
+    inline void     SetSourceUnit( FieldUnit eNewUnit ) { eSourceUnit = eNewUnit; }
 
     void            SetColor( const Color& rColor );
     const Color&    GetColor() const { return aColor; }
@@ -254,9 +340,9 @@ public:
 protected:
 
     inline const Color&    GetPaintColor() const;
-    Color   GetColorLine1( sal_Int32  nPos );
-    Color   GetColorLine2( sal_Int32  nPos );
-    Color   GetColorDist( sal_Int32  nPos );
+    Color   GetColorLine1( sal_Int32  nPos = 0 );
+    Color   GetColorLine2( sal_Int32  nPos = 0 );
+    Color   GetColorDist( sal_Int32  nPos = 0 );
 
 private:
                     LineListBox( const LineListBox& ) = delete;
@@ -302,15 +388,15 @@ protected:
     void            SaveMRUEntries( const OUString& aFontMRUEntriesFile ) const;
 public:
                     FontNameBox( vcl::Window* pParent,
-                                 WinBits nWinStyle );
-    virtual         ~FontNameBox() override;
+                                 WinBits nWinStyle = WB_SORT );
+    virtual         ~FontNameBox();
     virtual void    dispose() override;
 
     virtual void    UserDraw( const UserDrawEvent& rUDEvt ) override;
 
     void            Fill( const FontList* pList );
 
-    void            EnableWYSIWYG( bool bEnable );
+    void            EnableWYSIWYG( bool bEnable = true );
 
 private:
     void            InitFontMRUEntriesFile();
@@ -371,21 +457,21 @@ protected:
     virtual OUString CreateFieldText( sal_Int64 nValue ) const override;
 
 public:
-                    FontSizeBox( vcl::Window* pParent, WinBits nWinStyle );
+                    FontSizeBox( vcl::Window* pParent, WinBits nWinStyle = 0 );
 
     void            Reformat() override;
     void            Modify() override;
 
     void            Fill( const FontMetric* pFontMetric, const FontList* pList );
 
-    void            EnableRelativeMode( sal_uInt16 nMin, sal_uInt16 nMax,
+    void            EnableRelativeMode( sal_uInt16 nMin = 50, sal_uInt16 nMax = 150,
                                         sal_uInt16 nStep = 5 );
-    void            EnablePtRelativeMode( short nMin, short nMax,
+    void            EnablePtRelativeMode( short nMin = -200, short nMax = 200,
                                           short nStep = 10 );
     bool            IsRelativeMode() const { return bRelativeMode; }
     void            SetRelative( bool bRelative );
     bool            IsRelative() const { return bRelative; }
-    void            SetPtRelative( bool bPtRel )
+    void            SetPtRelative( bool bPtRel = true )
                         { bPtRelative = bPtRel; SetRelative( true ); }
     bool            IsPtRelative() const { return bPtRelative; }
 

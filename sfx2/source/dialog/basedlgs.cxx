@@ -64,8 +64,15 @@ public:
 
 void SfxModelessDialog_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if( rHint.GetId() == SfxHintId::Dying) {
-        pMgr->Destroy();
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint )
+    {
+        switch( pSimpleHint->GetId() )
+        {
+            case SFX_HINT_DYING:
+                pMgr->Destroy();
+                break;
+        }
     }
 }
 
@@ -82,8 +89,15 @@ public:
 
 void SfxFloatingWindow_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if( rHint.GetId() == SfxHintId::Dying) {
-        pMgr->Destroy();
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint )
+    {
+        switch( pSimpleHint->GetId() )
+        {
+            case SFX_HINT_DYING:
+                pMgr->Destroy();
+                break;
+        }
     }
 }
 
@@ -100,7 +114,7 @@ void SfxModalDialog::SetDialogData_Impl()
         sConfigId = OUString::number(nUniqId);
     }
 
-    SvtViewOptions aDlgOpt(EViewType::Dialog, sConfigId);
+    SvtViewOptions aDlgOpt(E_DIALOG, sConfigId);
     aDlgOpt.SetWindowState(OStringToOUString(
         GetWindowState(WindowStateMask::Pos), RTL_TEXTENCODING_ASCII_US));
     if ( !aExtraData.isEmpty() )
@@ -126,7 +140,7 @@ void SfxModalDialog::GetDialogData_Impl()
         sConfigId = OUString::number(nUniqId);
     }
 
-    SvtViewOptions aDlgOpt(EViewType::Dialog, sConfigId);
+    SvtViewOptions aDlgOpt(E_DIALOG, sConfigId);
     if ( aDlgOpt.Exists() )
     {
         // load settings
@@ -138,13 +152,18 @@ void SfxModalDialog::GetDialogData_Impl()
     }
 }
 
+void SfxModalDialog::init()
+{
+    GetDialogData_Impl();
+}
+
 SfxModalDialog::SfxModalDialog(vcl::Window *pParent, const OUString& rID, const OUString& rUIXMLDescription )
 :   ModalDialog(pParent, rID, rUIXMLDescription),
     nUniqId(0), //todo: remove this member when the ResId using ctor is removed
     pInputSet(nullptr),
     pOutputSet(nullptr)
 {
-    GetDialogData_Impl();
+    init();
 }
 
 SfxModalDialog::~SfxModalDialog()
@@ -199,7 +218,7 @@ void SfxModelessDialog::StateChanged( StateChangedType nStateChange )
                 aPos.Y() += ( aParentSize.Height() - aDlgSize.Height() ) / 2;
 
                 Point aPoint;
-                tools::Rectangle aRect = GetDesktopRectPixel();
+                Rectangle aRect = GetDesktopRectPixel();
                 aPoint.X() = aRect.Right() - aDlgSize.Width();
                 aPoint.Y() = aRect.Bottom() - aDlgSize.Height();
 
@@ -270,7 +289,7 @@ void SfxModelessDialog::Move()
     Implements a timer event that is triggered by a move or resize of the window
     This will save config information to Views.xcu with a small delay
 */
-IMPL_LINK_NOARG(SfxModelessDialog, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SfxModelessDialog, TimerHdl, Idle *, void)
 {
     pImpl->aMoveIdle.Stop();
     if ( pImpl->bConstructed && pImpl->pMgr )
@@ -301,8 +320,8 @@ void SfxModelessDialog::Init(SfxBindings *pBindinx, SfxChildWindow *pCW)
     pImpl->bConstructed = false;
     if ( pBindinx )
         pImpl->StartListening( *pBindinx );
-    pImpl->aMoveIdle.SetPriority(TaskPriority::RESIZE);
-    pImpl->aMoveIdle.SetInvokeHandler(LINK(this,SfxModelessDialog,TimerHdl));
+    pImpl->aMoveIdle.SetPriority(SchedulerPriority::RESIZE);
+    pImpl->aMoveIdle.SetIdleHdl(LINK(this,SfxModelessDialog,TimerHdl));
 }
 
 /*  [Description]
@@ -310,7 +329,7 @@ void SfxModelessDialog::Init(SfxBindings *pBindinx, SfxChildWindow *pCW)
     If a ModelessDialog is enabled its ViewFrame wil be activated.
     This is necessary by PluginInFrames.
 */
-bool SfxModelessDialog::EventNotify( NotifyEvent& rEvt )
+bool SfxModelessDialog::Notify( NotifyEvent& rEvt )
 {
     if ( pImpl )
     {
@@ -322,20 +341,19 @@ bool SfxModelessDialog::EventNotify( NotifyEvent& rEvt )
         else if ( rEvt.GetType() == MouseNotifyEvent::LOSEFOCUS && !HasChildPathFocus() )
         {
             pBindings->SetActiveFrame( css::uno::Reference< css::frame::XFrame > () );
+            pImpl->pMgr->Deactivate_Impl();
         }
         else if( rEvt.GetType() == MouseNotifyEvent::KEYINPUT )
         {
             // First, allow KeyInput for Dialog functions ( TAB etc. )
-            if (!ModelessDialog::EventNotify(rEvt) && SfxViewShell::Current())
-            {
+            if ( !ModelessDialog::Notify( rEvt ) && SfxViewShell::Current() )
                 // then also for valid global accelerators.
                 return SfxViewShell::Current()->GlobalKeyInput_Impl( *rEvt.GetKeyEvent() );
-            }
             return true;
         }
     }
 
-    return ModelessDialog::EventNotify( rEvt );
+    return ModelessDialog::Notify( rEvt );
 }
 
 SfxModelessDialog::~SfxModelessDialog()
@@ -390,7 +408,7 @@ void SfxModelessDialog::FillInfo(SfxChildWinInfo& rInfo) const
 }
 
 
-bool SfxFloatingWindow::EventNotify( NotifyEvent& rEvt )
+bool SfxFloatingWindow::Notify( NotifyEvent& rEvt )
 
 /*  [Description]
 
@@ -411,21 +429,20 @@ bool SfxFloatingWindow::EventNotify( NotifyEvent& rEvt )
             if ( !HasChildPathFocus() )
             {
                 pBindings->SetActiveFrame( nullptr );
+                pImpl->pMgr->Deactivate_Impl();
             }
         }
         else if( rEvt.GetType() == MouseNotifyEvent::KEYINPUT )
         {
             // First, allow KeyInput for Dialog functions
-            if (!FloatingWindow::EventNotify(rEvt) && SfxViewShell::Current())
-            {
+            if ( !FloatingWindow::Notify( rEvt ) && SfxViewShell::Current() )
                 // then also for valid global accelerators.
                 return SfxViewShell::Current()->GlobalKeyInput_Impl( *rEvt.GetKeyEvent() );
-            }
             return true;
         }
     }
 
-    return FloatingWindow::EventNotify( rEvt );
+    return FloatingWindow::Notify( rEvt );
 }
 
 SfxFloatingWindow::SfxFloatingWindow( SfxBindings *pBindinx,
@@ -439,8 +456,8 @@ SfxFloatingWindow::SfxFloatingWindow( SfxBindings *pBindinx,
     pImpl->bConstructed = false;
     if ( pBindinx )
         pImpl->StartListening( *pBindinx );
-    pImpl->aMoveIdle.SetPriority(TaskPriority::RESIZE);
-    pImpl->aMoveIdle.SetInvokeHandler(LINK(this,SfxFloatingWindow,TimerHdl));
+    pImpl->aMoveIdle.SetPriority(SchedulerPriority::RESIZE);
+    pImpl->aMoveIdle.SetIdleHdl(LINK(this,SfxFloatingWindow,TimerHdl));
 }
 
 SfxFloatingWindow::SfxFloatingWindow( SfxBindings *pBindinx,
@@ -456,8 +473,8 @@ SfxFloatingWindow::SfxFloatingWindow( SfxBindings *pBindinx,
 
     if ( pBindinx )
         pImpl->StartListening( *pBindinx );
-    pImpl->aMoveIdle.SetPriority(TaskPriority::RESIZE);
-    pImpl->aMoveIdle.SetInvokeHandler(LINK(this,SfxFloatingWindow,TimerHdl));
+    pImpl->aMoveIdle.SetPriority(SchedulerPriority::RESIZE);
+    pImpl->aMoveIdle.SetIdleHdl(LINK(this,SfxFloatingWindow,TimerHdl));
 }
 
 bool SfxFloatingWindow::Close()
@@ -525,7 +542,7 @@ void SfxFloatingWindow::Move()
     Implements a timer event that is triggered by a move or resize of the window
     This will save config information to Views.xcu with a small delay
 */
-IMPL_LINK_NOARG(SfxFloatingWindow, TimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SfxFloatingWindow, TimerHdl, Idle *, void)
 {
     pImpl->aMoveIdle.Stop();
     if ( pImpl->bConstructed && pImpl->pMgr )
@@ -589,7 +606,7 @@ void SfxFloatingWindow::FillInfo(SfxChildWinInfo& rInfo) const
 
 // SfxSingleTabDialog ----------------------------------------------------
 
-IMPL_LINK_NOARG(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 
 /*  [Description]
 
@@ -612,8 +629,8 @@ IMPL_LINK_NOARG(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 
     if ( pImpl->m_pSfxPage->HasExchangeSupport() )
     {
-        DeactivateRC nRet = pImpl->m_pSfxPage->DeactivatePage( GetOutputSetImpl() );
-        if ( nRet != DeactivateRC::LeavePage )
+        int nRet = pImpl->m_pSfxPage->DeactivatePage( GetOutputSetImpl() );
+        if ( nRet != SfxTabPage::LEAVE_PAGE )
             return;
         else
             bModified = ( GetOutputItemSet()->Count() > 0 );
@@ -635,7 +652,7 @@ IMPL_LINK_NOARG(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
             sConfigId = OUString::number(GetUniqId());
         }
 
-        SvtViewOptions aPageOpt(EViewType::TabPage, sConfigId);
+        SvtViewOptions aPageOpt(E_TABPAGE, sConfigId);
         aPageOpt.SetUserItem( USERITEM_NAME, makeAny( OUString( sData ) ) );
         EndDialog( RET_OK );
     }
@@ -648,6 +665,7 @@ IMPL_LINK_NOARG(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet& rSet,
     const OUString& rID, const OUString& rUIXMLDescription)
     : SfxModalDialog(pParent, rID, rUIXMLDescription)
+    , fnGetRanges(nullptr)
     , pImpl(new SingleTabDlgImpl)
 {
     get(pOKBtn, "ok");
@@ -660,6 +678,7 @@ SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet& r
 SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window* pParent, const SfxItemSet* pInSet,
     const OUString& rID, const OUString& rUIXMLDescription)
     : SfxModalDialog(pParent, rID, rUIXMLDescription)
+    , fnGetRanges(nullptr)
     , pImpl(new SingleTabDlgImpl)
 {
     get(pOKBtn, "ok");
@@ -686,7 +705,7 @@ void SfxSingleTabDialog::dispose()
 }
 
 void SfxSingleTabDialog::SetTabPage(SfxTabPage* pTabPage,
-    sal_uInt32 nSettingsId)
+    GetTabPageRanges pRangesFunc, sal_uInt32 nSettingsId)
 /*  [Description]
 
     Insert a (new) TabPage; an existing page is deleted.
@@ -698,6 +717,7 @@ void SfxSingleTabDialog::SetTabPage(SfxTabPage* pTabPage,
     SetUniqId(nSettingsId);
     pImpl->m_pSfxPage.disposeAndClear();
     pImpl->m_pSfxPage = pTabPage;
+    fnGetRanges = pRangesFunc;
 
     if ( pImpl->m_pSfxPage )
     {
@@ -710,7 +730,7 @@ void SfxSingleTabDialog::SetTabPage(SfxTabPage* pTabPage,
             sConfigId = OUString::number(GetUniqId());
         }
 
-        SvtViewOptions aPageOpt(EViewType::TabPage, sConfigId);
+        SvtViewOptions aPageOpt(E_TABPAGE, sConfigId);
         Any aUserItem = aPageOpt.GetUserItem( USERITEM_NAME );
         OUString sUserData;
         aUserItem >>= sUserData;

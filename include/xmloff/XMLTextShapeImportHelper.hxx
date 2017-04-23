@@ -35,7 +35,7 @@ class XMLOFF_DLLPUBLIC XMLTextShapeImportHelper : public XMLShapeImportHelper
 public:
 
     XMLTextShapeImportHelper( SvXMLImport& rImp );
-    virtual ~XMLTextShapeImportHelper() override;
+    virtual ~XMLTextShapeImportHelper();
 
     virtual void addShape(
         css::uno::Reference< css::drawing::XShape >& rShape,

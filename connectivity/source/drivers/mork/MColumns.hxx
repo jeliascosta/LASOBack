@@ -35,7 +35,7 @@ namespace connectivity
             OTable* m_pTable;
 
             virtual sdbcx::ObjectType createObject(const OUString& _rName) override;
-            virtual void impl_refresh() override;
+            virtual void impl_refresh() throw(::com::sun::star::uno::RuntimeException) override;
         public:
             OColumns(   OTable* _pTable,
                         ::osl::Mutex& _rMutex,

@@ -26,8 +26,12 @@
 
 #include <toolkit/helper/listenermultiplexer.hxx>
 
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase2.hxx>
 #include <unordered_map>
+
+typedef ::cppu::WeakImplHelper2< css::container::XNameContainer,
+                                 css::container::XContainer > NameContainerHelper;
+
 
 namespace toolkit
 {
@@ -42,9 +46,7 @@ typedef std::unordered_map
 NameContainerNameMap;
 
 
-class ScriptEventContainer : public ::cppu::WeakImplHelper<
-                                        css::container::XNameContainer,
-                                        css::container::XContainer >
+class NameContainer_Impl : public NameContainerHelper
 {
     NameContainerNameMap mHashMap;
     css::uno::Sequence< OUString > mNames;
@@ -55,28 +57,60 @@ class ScriptEventContainer : public ::cppu::WeakImplHelper<
     ContainerListenerMultiplexer maContainerListeners;
 
 public:
-    ScriptEventContainer();
+    NameContainer_Impl( css::uno::Type const & aType )
+        : mnElementCount( 0 ),
+          mType( aType ),
+          maContainerListeners( *this )
+    {
+    }
 
     // Methods XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  )
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // Methods XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+        throw(css::container::NoSuchElementException,
+              css::lang::WrappedTargetException,
+              css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // Methods XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) override;
+    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement )
+        throw(css::lang::IllegalArgumentException,
+              css::container::NoSuchElementException,
+              css::lang::WrappedTargetException,
+              css::uno::RuntimeException, std::exception) override;
 
     // Methods XNameContainer
-    virtual void SAL_CALL insertByName( const OUString& aName, const css::uno::Any& aElement ) override;
-    virtual void SAL_CALL removeByName( const OUString& Name ) override;
+    virtual void SAL_CALL insertByName( const OUString& aName, const css::uno::Any& aElement )
+        throw(css::lang::IllegalArgumentException,
+              css::container::ElementExistException,
+              css::lang::WrappedTargetException,
+              css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName( const OUString& Name )
+        throw(css::container::NoSuchElementException,
+              css::lang::WrappedTargetException,
+              css::uno::RuntimeException, std::exception) override;
 
     // Methods XContainer
-    void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
-    void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
+    void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener )
+        throw(css::uno::RuntimeException, std::exception) override;
+    void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener )
+        throw(css::uno::RuntimeException, std::exception) override;
 };
+
+class ScriptEventContainer : public NameContainer_Impl
+{
+public:
+    ScriptEventContainer();
+};
+
 
 }   // namespace toolkit_namecontainer
 

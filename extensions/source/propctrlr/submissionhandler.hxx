@@ -25,7 +25,6 @@
 
 #include <com/sun/star/xforms/XSubmission.hpp>
 #include <comphelper/propmultiplex.hxx>
-#include <rtl/ref.hxx>
 
 namespace comphelper
 {
@@ -69,34 +68,33 @@ namespace pcr
     class SubmissionPropertyHandler : public EditPropertyHandler_Base, public ::comphelper::OPropertyChangeListener
     {
     private:
-        std::unique_ptr< SubmissionHelper >                    m_pHelper;
-        rtl::Reference<::comphelper::OPropertyChangeMultiplexer> m_xPropChangeMultiplexer;
+        ::osl::Mutex                                m_aMutex;
+        ::std::unique_ptr< SubmissionHelper >       m_pHelper;
+        ::comphelper::OPropertyChangeMultiplexer*   m_pPropChangeMultiplexer;
 
     public:
         explicit SubmissionPropertyHandler(
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext
         );
 
-        /// @throws css::uno::RuntimeException
-        static OUString SAL_CALL getImplementationName_static(  );
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  );
+        static OUString SAL_CALL getImplementationName_static(  ) throw (css::uno::RuntimeException);
+        static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  ) throw (css::uno::RuntimeException);
 
-        virtual ~SubmissionPropertyHandler() override;
+        virtual ~SubmissionPropertyHandler();
 
     protected:
         // XPropertyHandler overriables
-        virtual css::uno::Any               SAL_CALL getPropertyValue( const OUString& _rPropertyName ) override;
-        virtual void                        SAL_CALL setPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rValue ) override;
+        virtual css::uno::Any               SAL_CALL getPropertyValue( const OUString& _rPropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual void                        SAL_CALL setPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rValue ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Sequence< OUString >
-                                            SAL_CALL getActuatingProperties( ) override;
+                                            SAL_CALL getActuatingProperties( ) throw (css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Sequence< OUString >
-                                            SAL_CALL getSupersededProperties( ) override;
+                                            SAL_CALL getSupersededProperties( ) throw (css::uno::RuntimeException, std::exception) override;
         virtual css::inspection::LineDescriptor
-                                            SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) override;
-        virtual void                        SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool ) override;
-        virtual css::uno::Any               SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) override;
-        virtual css::uno::Any               SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) override;
+                                            SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) throw (css::beans::UnknownPropertyException, css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual void                        SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any               SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any               SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
 
         // PropertyHandler overridables
         virtual css::uno::Sequence< css::beans::Property >
@@ -105,7 +103,7 @@ namespace pcr
 
     private:
         // OPropertyChangeListener
-        virtual void _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) override;
+        virtual void _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException) override;
     };
 
 

@@ -70,14 +70,33 @@ Menu RID_SBA_RTF_PKEYPOPUP
     };
 };
 
-Bitmap BMP_UP
+
+Image IMG_UP
 {
-    File = "sortup.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "sortup.png" ;
+    };
+    MaskColor = Color
+    {
+        Red = 0xFFFF ;
+        Green = 0x0000 ;
+        Blue = 0xFFFF ;
+    };
 };
 
-Bitmap BMP_DOWN
+Image IMG_DOWN
 {
-    File = "sortdown.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "sortdown.png" ;
+    };
+    MaskColor = Color
+    {
+        Red = 0xFFFF ;
+        Green = 0x0000 ;
+        Blue = 0xFFFF ;
+    };
 };
 
 String STR_WIZ_TABLE_COPY

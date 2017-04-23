@@ -41,17 +41,16 @@ class CommentEnumeration : public EnumerationHelperImpl
 {
     css::uno::Reference< css::frame::XModel > mxModel;
 public:
-    /// @throws uno::RuntimeException
     CommentEnumeration(
             const uno::Reference< XHelperInterface >& xParent,
             const uno::Reference< uno::XComponentContext >& xContext,
             const uno::Reference< container::XEnumeration >& xEnumeration,
-            const uno::Reference< frame::XModel >& xModel ) :
+            const uno::Reference< frame::XModel >& xModel ) throw ( uno::RuntimeException ) :
         EnumerationHelperImpl( xParent, xContext, xEnumeration ),
         mxModel( xModel, uno::UNO_SET_THROW )
     {}
 
-    virtual uno::Any SAL_CALL nextElement() override
+    virtual uno::Any SAL_CALL nextElement() throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         return AnnotationToComment( m_xEnumeration->nextElement(), m_xContext, mxModel );
     }
@@ -71,7 +70,7 @@ ScVbaComments::ScVbaComments(
 // public helper functions
 
 uno::Reference< container::XEnumeration >
-ScVbaComments::createEnumeration()
+ScVbaComments::createEnumeration() throw (uno::RuntimeException)
 {
     uno::Reference< container::XEnumerationAccess > xEnumAccess( m_xIndexAccess, uno::UNO_QUERY_THROW );
     return new CommentEnumeration( mxParent, mxContext, xEnumAccess->createEnumeration(), mxModel );
@@ -84,7 +83,7 @@ ScVbaComments::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Type
-ScVbaComments::getElementType()
+ScVbaComments::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<excel::XComment>::get();
 }

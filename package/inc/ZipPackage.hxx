@@ -36,7 +36,6 @@
 #include <osl/file.h>
 #include <mutexholder.hxx>
 #include <vector>
-#include <memory>
 
 class ZipOutputStream;
 class ZipPackageFolder;
@@ -48,6 +47,13 @@ namespace com { namespace sun { namespace star {
     namespace uno { class XComponentContext; }
     namespace task { class XInteractionHandler; }
 } } }
+enum SegmentEnum
+{
+    e_Aborted = -1000,
+    e_Retry,
+    e_Finished,
+    e_Success = 0
+};
 
 enum InitialisationMode
 {
@@ -92,13 +98,14 @@ protected:
 
     InitialisationMode m_eMode;
 
-    rtl::Reference < ZipPackageFolder > m_xRootFolder;
+    css::uno::Reference < css::container::XNameContainer > m_xRootFolder;
     css::uno::Reference < css::io::XStream > m_xStream;
     css::uno::Reference < css::io::XInputStream > m_xContentStream;
     css::uno::Reference < css::io::XSeekable > m_xContentSeek;
     const css::uno::Reference < css::uno::XComponentContext > m_xContext;
 
-    std::unique_ptr<ZipFile> m_pZipFile;
+    ZipPackageFolder *m_pRootFolder;
+    ZipFile          *m_pZipFile;
 
     bool isLocalFile() const;
 
@@ -117,7 +124,7 @@ protected:
 
 public:
     ZipPackage( const css::uno::Reference < css::uno::XComponentContext > &xContext );
-    virtual ~ZipPackage() override;
+    virtual ~ZipPackage();
     ZipFile& getZipFile() { return *m_pZipFile;}
     sal_Int32 getFormat() const { return m_nFormat; }
 
@@ -132,34 +139,53 @@ public:
     const css::uno::Sequence< sal_Int8 > GetEncryptionKey();
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     // XHierarchicalNameAccess
-    virtual css::uno::Any SAL_CALL getByHierarchicalName( const OUString& aName ) override;
-    virtual sal_Bool SAL_CALL hasByHierarchicalName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByHierarchicalName( const OUString& aName )
+        throw(css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByHierarchicalName( const OUString& aName )
+        throw(css::uno::RuntimeException, std::exception) override;
     // XSingleServiceFactory
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance(  ) override;
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstance(  )
+        throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL createInstanceWithArguments( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw(css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     // XChangesBatch
-    virtual void SAL_CALL commitChanges(  ) override;
-    virtual sal_Bool SAL_CALL hasPendingChanges(  ) override;
-    virtual css::uno::Sequence< css::util::ElementChange > SAL_CALL getPendingChanges(  ) override;
+    virtual void SAL_CALL commitChanges(  )
+        throw(css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasPendingChanges(  )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::util::ElementChange > SAL_CALL getPendingChanges(  )
+        throw(css::uno::RuntimeException, std::exception) override;
     // XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
-    /// @throws css::uno::RuntimeException
-    static css::uno::Sequence < sal_Int8 > getUnoTunnelImplementationId();
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier )
+        throw(css::uno::RuntimeException, std::exception) override;
+    static css::uno::Sequence < sal_Int8 > getUnoTunnelImplementationId()
+        throw(css::uno::RuntimeException);
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue )
+        throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName )
+        throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+        throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+        throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw(css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Uno componentiseralation
     static OUString static_getImplementationName();

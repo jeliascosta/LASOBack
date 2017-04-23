@@ -68,6 +68,15 @@ namespace basegfx
             @param rPoint
             The 2D Point which will be copied.
         */
+        B2DPoint(const B2DPoint& rPoint)
+        :   B2DTuple(rPoint)
+        {}
+
+        /** Create a copy of a 2D Point
+
+            @param rPoint
+            The 2D Point which will be copied.
+        */
         explicit B2DPoint(const ::basegfx::B2IPoint& rPoint)
         :   B2DTuple(rPoint)
         {}
@@ -77,6 +86,9 @@ namespace basegfx
         */
         B2DPoint(const ::basegfx::B2DTuple& rTuple)
         :   B2DTuple(rTuple)
+        {}
+
+        ~B2DPoint()
         {}
 
         /** *=operator to allow usage from B2DPoint, too

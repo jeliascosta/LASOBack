@@ -72,14 +72,6 @@ MultiSelection::MultiSelection():
 {
 }
 
-void MultiSelection::Reset()
-{
-    aTotRange = Range(0, -1);
-    bCurValid = false;
-    // clear the old sub selections
-    ImplClear();
-}
-
 MultiSelection::MultiSelection( const MultiSelection& rOrig ) :
     aTotRange(rOrig.aTotRange),
     nSelCount(rOrig.nSelCount),
@@ -777,7 +769,7 @@ bool StringRangeEnumerator::getRangesFromString( const OUString& i_rPageRange,
                                                  sal_Int32 i_nMinNumber,
                                                  sal_Int32 i_nMaxNumber,
                                                  sal_Int32 i_nLogicalOffset,
-                                                 std::set< sal_Int32 > const * i_pPossibleValues
+                                                 std::set< sal_Int32 >* i_pPossibleValues
                                                )
 {
     o_rPageVector.clear();
@@ -793,7 +785,7 @@ bool StringRangeEnumerator::getRangesFromString( const OUString& i_rPageRange,
         o_rPageVector.push_back( *it );
     }
 
-    return aEnum.mbValidInput;
+    return aEnum.isValidInput();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

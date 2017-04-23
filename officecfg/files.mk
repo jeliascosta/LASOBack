@@ -7,6 +7,7 @@
 #
 
 officecfg_XCSFILES := \
+    FirstStartWizard \
     Inet \
     Interaction \
     LDAP \
@@ -47,6 +48,7 @@ officecfg_XCSFILES := \
     Office/ReportDesign \
     Office/Scripting \
     Office/Security \
+    Office/Substitution \
     Office/TabBrowse \
     Office/TableWizard \
     Office/TypeDetection \
@@ -80,12 +82,10 @@ officecfg_XCSFILES := \
     Office/UI/ImpressWindowState \
     Office/UI/MathCommands \
     Office/UI/MathWindowState \
-    Office/UI/Notebookbar \
     Office/UI/ReportCommands \
     Office/UI/Sidebar \
     Office/UI/StartModuleCommands \
     Office/UI/StartModuleWindowState \
-    Office/UI/ToolbarMode \
     Office/UI/WindowContentFactories \
     Office/UI/WindowState \
     Office/UI/WriterCommands \
@@ -96,6 +96,7 @@ officecfg_XCSFILES := \
     Office/UI/WriterWindowState \
     Office/UI/XFormsWindowState \
     Office/Views \
+    Office/WebWizard \
     Office/Writer \
     Office/WriterWeb \
     Setup \

@@ -70,14 +70,14 @@ struct SwTextSectionProperties_Impl
     OUString  m_sSectionFilter;
     OUString  m_sSectionRegion;
 
-    std::unique_ptr<SwFormatCol>                 m_pColItem;
-    std::unique_ptr<SvxBrushItem>             m_pBrushItem;
-    std::unique_ptr<SwFormatFootnoteAtTextEnd>         m_pFootnoteItem;
-    std::unique_ptr<SwFormatEndAtTextEnd>         m_pEndItem;
-    std::unique_ptr<SvXMLAttrContainerItem> m_pXMLAttr;
-    std::unique_ptr<SwFormatNoBalancedColumns> m_pNoBalanceItem;
-    std::unique_ptr<SvxFrameDirectionItem>    m_pFrameDirItem;
-    std::unique_ptr<SvxLRSpaceItem>           m_pLRSpaceItem;
+    ::std::unique_ptr<SwFormatCol>               m_pColItem;
+    ::std::unique_ptr<SvxBrushItem>           m_pBrushItem;
+    ::std::unique_ptr<SwFormatFootnoteAtTextEnd>       m_pFootnoteItem;
+    ::std::unique_ptr<SwFormatEndAtTextEnd>       m_pEndItem;
+    ::std::unique_ptr<SvXMLAttrContainerItem> m_pXMLAttr;
+    ::std::unique_ptr<SwFormatNoBalancedColumns> m_pNoBalanceItem;
+    ::std::unique_ptr<SvxFrameDirectionItem>  m_pFrameDirItem;
+    ::std::unique_ptr<SvxLRSpaceItem>         m_pLRSpaceItem;
 
     bool m_bDDE;
     bool m_bHidden;
@@ -112,7 +112,7 @@ public:
     const bool                  m_bIndexHeader;
     bool                        m_bIsDescriptor;
     OUString             m_sName;
-    std::unique_ptr<SwTextSectionProperties_Impl> m_pProps;
+    ::std::unique_ptr<SwTextSectionProperties_Impl> m_pProps;
 
     Impl(   SwXTextSection & rThis,
             SwSectionFormat *const pFormat, const bool bIndexHeader)
@@ -140,20 +140,17 @@ public:
         return *pFormat;
     }
 
-    /// @throws beans::UnknownPropertyException
-    /// @throws beans::PropertyVetoException,
-    /// @throws lang::IllegalArgumentException
-    /// @throws lang::WrappedTargetException,
-    /// @throws uno::RuntimeException
     void SAL_CALL SetPropertyValues_Impl(
             const uno::Sequence< OUString >& rPropertyNames,
-            const uno::Sequence< uno::Any >& aValues);
-    /// @throws beans::UnknownPropertyException
-    /// @throws lang::WrappedTargetException,
-    /// @throws uno::RuntimeException
+            const uno::Sequence< uno::Any >& aValues)
+        throw (beans::UnknownPropertyException, beans::PropertyVetoException,
+                lang::IllegalArgumentException, lang::WrappedTargetException,
+                uno::RuntimeException, std::exception);
     uno::Sequence< uno::Any > SAL_CALL
         GetPropertyValues_Impl(
-            const uno::Sequence< OUString >& rPropertyNames);
+            const uno::Sequence< OUString >& rPropertyNames)
+        throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+                uno::RuntimeException, std::exception);
 protected:
     // SwClient
     virtual void Modify(const SfxPoolItem *pOld, const SfxPoolItem *pNew) override;
@@ -229,12 +226,13 @@ const uno::Sequence< sal_Int8 > & SwXTextSection::getUnoTunnelId()
 
 sal_Int64 SAL_CALL
 SwXTextSection::getSomething(const uno::Sequence< sal_Int8 >& rId)
+throw (uno::RuntimeException, std::exception)
 {
     return ::sw::UnoTunnelImpl<SwXTextSection>(rId, this);
 }
 
 uno::Reference< text::XTextSection > SAL_CALL
-SwXTextSection::getParentSection()
+SwXTextSection::getParentSection() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -247,14 +245,14 @@ SwXTextSection::getParentSection()
 }
 
 uno::Sequence< uno::Reference< text::XTextSection > > SAL_CALL
-SwXTextSection::getChildSections()
+SwXTextSection::getChildSections() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     SwSectionFormat & rSectionFormat( m_pImpl->GetSectionFormatOrThrow() );
 
     SwSections aChildren;
-    rSectionFormat.GetChildSections(aChildren, SectionSort::Not, false);
+    rSectionFormat.GetChildSections(aChildren, SORTSECT_NOT, false);
     uno::Sequence<uno::Reference<text::XTextSection> > aSeq(aChildren.size());
     uno::Reference< text::XTextSection > * pArray = aSeq.getArray();
     for (size_t i = 0; i < aChildren.size(); ++i)
@@ -267,6 +265,7 @@ SwXTextSection::getChildSections()
 
 void SAL_CALL
 SwXTextSection::attach(const uno::Reference< text::XTextRange > & xTextRange)
+throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -296,7 +295,7 @@ SwXTextSection::attach(const uno::Reference< text::XTextRange > & xTextRange)
     //das muss jetzt true liefern
     ::sw::XTextRangeToSwPaM(aPam, xTextRange);
     UnoActionContext aCont(pDoc);
-    pDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::INSSECTION, nullptr );
+    pDoc->GetIDocumentUndoRedo().StartUndo( UNDO_INSSECTION, nullptr );
 
     if (m_pImpl->m_sName.isEmpty())
     {
@@ -341,9 +340,9 @@ SwXTextSection::attach(const uno::Reference< text::XTextRange > & xTextRange)
     SwSectionData aSect(eType, pDoc->GetUniqueSectionName(&m_pImpl->m_sName));
     aSect.SetCondition(m_pImpl->m_pProps->m_sCondition);
     aSect.SetLinkFileName(m_pImpl->m_pProps->m_sLinkFileName +
-        OUStringLiteral1(sfx2::cTokenSeparator) +
+        OUString(sfx2::cTokenSeparator) +
         m_pImpl->m_pProps->m_sSectionFilter +
-        OUStringLiteral1(sfx2::cTokenSeparator) +
+        OUString(sfx2::cTokenSeparator) +
         m_pImpl->m_pProps->m_sSectionRegion);
 
     aSect.SetHidden(m_pImpl->m_pProps->m_bHidden);
@@ -400,7 +399,7 @@ SwXTextSection::attach(const uno::Reference< text::XTextRange > & xTextRange)
     if (!pRet) // fdo#42450 text range could partially overlap existing section
     {
         // shouldn't have created an undo object yet
-        pDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::INSSECTION, nullptr );
+        pDoc->GetIDocumentUndoRedo().EndUndo( UNDO_INSSECTION, nullptr );
         throw lang::IllegalArgumentException(
                 "SwXTextSection::attach(): invalid TextRange",
                 static_cast< ::cppu::OWeakObject*>(this), 0);
@@ -427,13 +426,13 @@ SwXTextSection::attach(const uno::Reference< text::XTextRange > & xTextRange)
     }
 
     // Undo-Klammerung hier beenden
-    pDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::INSSECTION, nullptr );
+    pDoc->GetIDocumentUndoRedo().EndUndo( UNDO_INSSECTION, nullptr );
     m_pImpl->m_pProps.reset();
     m_pImpl->m_bIsDescriptor = false;
 }
 
 uno::Reference< text::XTextRange > SAL_CALL
-SwXTextSection::getAnchor()
+SwXTextSection::getAnchor() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -447,11 +446,11 @@ SwXTextSection::getAnchor()
             pIdx->GetNode().GetNodes().IsDocNodes() )
         {
             SwPaM aPaM(*pIdx);
-            aPaM.Move( fnMoveForward, GoInContent );
+            aPaM.Move( fnMoveForward, fnGoContent );
 
             const SwEndNode* pEndNode = pIdx->GetNode().EndOfSectionNode();
             SwPaM aEnd(*pEndNode);
-            aEnd.Move( fnMoveBackward, GoInContent );
+            aEnd.Move( fnMoveBackward, fnGoContent );
             xRet = SwXTextRange::CreateXTextRange(*pSectFormat->GetDoc(),
                 *aPaM.Start(), aEnd.Start());
         }
@@ -459,7 +458,7 @@ SwXTextSection::getAnchor()
     return xRet;
 }
 
-void SAL_CALL SwXTextSection::dispose()
+void SAL_CALL SwXTextSection::dispose() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -472,6 +471,7 @@ void SAL_CALL SwXTextSection::dispose()
 
 void SAL_CALL SwXTextSection::addEventListener(
         const uno::Reference< lang::XEventListener > & xListener)
+throw (uno::RuntimeException, std::exception)
 {
     // no need to lock here as m_pImpl is const and container threadsafe
     m_pImpl->m_EventListeners.addInterface(xListener);
@@ -479,13 +479,14 @@ void SAL_CALL SwXTextSection::addEventListener(
 
 void SAL_CALL SwXTextSection::removeEventListener(
         const uno::Reference< lang::XEventListener > & xListener)
+throw (uno::RuntimeException, std::exception)
 {
     // no need to lock here as m_pImpl is const and container threadsafe
     m_pImpl->m_EventListeners.removeInterface(xListener);
 }
 
 uno::Reference< beans::XPropertySetInfo > SAL_CALL
-SwXTextSection::getPropertySetInfo()
+SwXTextSection::getPropertySetInfo() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -495,7 +496,7 @@ SwXTextSection::getPropertySetInfo()
 }
 
 static void
-lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways)
+lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways = true)
 {
     if (rSection.GetType() == DDE_LINK_SECTION)
     {
@@ -511,8 +512,8 @@ lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways)
 
 static void
 lcl_UpdateSection(SwSectionFormat *const pFormat,
-    std::unique_ptr<SwSectionData> const& pSectionData,
-    std::unique_ptr<SfxItemSet> const& pItemSet,
+    ::std::unique_ptr<SwSectionData> const& pSectionData,
+    ::std::unique_ptr<SfxItemSet> const& pItemSet,
     bool const bLinkModeChanged, bool const bLinkUpdateAlways = true)
 {
     if (pFormat)
@@ -548,6 +549,9 @@ lcl_UpdateSection(SwSectionFormat *const pFormat,
 void SwXTextSection::Impl::SetPropertyValues_Impl(
     const uno::Sequence< OUString >& rPropertyNames,
     const uno::Sequence< uno::Any >& rValues)
+throw (beans::UnknownPropertyException, beans::PropertyVetoException,
+        lang::IllegalArgumentException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     if(rPropertyNames.getLength() != rValues.getLength())
     {
@@ -559,12 +563,12 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
         throw uno::RuntimeException();
     }
 
-    std::unique_ptr<SwSectionData> const pSectionData(
+    ::std::unique_ptr<SwSectionData> const pSectionData(
         (pFormat) ? new SwSectionData(*pFormat->GetSection()) : nullptr);
 
     OUString const*const pPropertyNames = rPropertyNames.getConstArray();
     uno::Any const*const pValues = rValues.getConstArray();
-    std::unique_ptr<SfxItemSet> pItemSet;
+    ::std::unique_ptr<SfxItemSet> pItemSet;
     bool bLinkModeChanged = false;
     bool bLinkMode = false;
 
@@ -612,7 +616,7 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
                     if (!m_pProps->m_bDDE)
                     {
                         m_pProps->m_sLinkFileName =
-                            OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
+                            OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
                         m_pProps->m_bDDE = true;
                     }
                     m_pProps->m_sLinkFileName = comphelper::string::setToken(
@@ -624,7 +628,7 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
                     OUString sLinkFileName(pSectionData->GetLinkFileName());
                     if (pSectionData->GetType() != DDE_LINK_SECTION)
                     {
-                        sLinkFileName = OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
+                        sLinkFileName = OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
                         pSectionData->SetType(DDE_LINK_SECTION);
                     }
                     sLinkFileName = comphelper::string::setToken(sLinkFileName,
@@ -678,8 +682,8 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
                             aLink.FileURL, URIHelper::GetMaybeFileHdl())
                         : OUString());
                     const OUString sFileName(
-                        sTmp + OUStringLiteral1(sfx2::cTokenSeparator) +
-                        aLink.FilterName + OUStringLiteral1(sfx2::cTokenSeparator) +
+                        sTmp + OUString(sfx2::cTokenSeparator) +
+                        aLink.FilterName + OUString(sfx2::cTokenSeparator) +
                         pSectionData->GetLinkFileName().getToken(2, sfx2::cTokenSeparator));
                     pSectionData->SetLinkFileName(sFileName);
                     if (sFileName.getLength() < 3)
@@ -709,7 +713,7 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
                     for (sal_Int32 i = comphelper::string::getTokenCount(sSectLink, sfx2::cTokenSeparator);
                          i < 3; ++i)
                     {
-                        sSectLink += OUStringLiteral1(sfx2::cTokenSeparator);
+                        sSectLink += OUString(sfx2::cTokenSeparator);
                     }
                     sSectLink = comphelper::string::setToken(sSectLink, 2, sfx2::cTokenSeparator, sLink);
                     pSectionData->SetLinkFileName(sSectLink);
@@ -876,7 +880,7 @@ void SwXTextSection::Impl::SetPropertyValues_Impl(
                         {
                             m_pProps->m_pFrameDirItem.reset(
                                 new SvxFrameDirectionItem(
-                                SvxFrameDirection::Horizontal_LR_TB, RES_FRAMEDIR));
+                                FRMDIR_HORI_LEFT_TOP, RES_FRAMEDIR));
                         }
                         pPutItem = m_pProps->m_pFrameDirItem.get();
                     }
@@ -907,6 +911,8 @@ void SAL_CALL
 SwXTextSection::setPropertyValues(
     const uno::Sequence< OUString >& rPropertyNames,
     const uno::Sequence< uno::Any >& rValues)
+throw (beans::PropertyVetoException, lang::IllegalArgumentException,
+        lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -927,6 +933,9 @@ SwXTextSection::setPropertyValues(
 
 void SwXTextSection::setPropertyValue(
     const OUString& rPropertyName, const uno::Any& rValue)
+throw (beans::UnknownPropertyException, beans::PropertyVetoException,
+        lang::IllegalArgumentException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -939,6 +948,8 @@ void SwXTextSection::setPropertyValue(
 uno::Sequence< uno::Any >
 SwXTextSection::Impl::GetPropertyValues_Impl(
         const uno::Sequence< OUString > & rPropertyNames )
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     SwSectionFormat *const pFormat = GetSectionFormat();
     if (!pFormat && !m_bIsDescriptor)
@@ -1216,7 +1227,7 @@ SwXTextSection::Impl::GetPropertyValues_Impl(
                         {
                             m_pProps->m_pFrameDirItem.reset(
                                 new SvxFrameDirectionItem(
-                                    SvxFrameDirection::Environment, RES_FRAMEDIR));
+                                    FRMDIR_ENVIRONMENT, RES_FRAMEDIR));
                         }
                         pQueryItem = m_pProps->m_pFrameDirItem.get();
                     }
@@ -1244,6 +1255,7 @@ SwXTextSection::Impl::GetPropertyValues_Impl(
 uno::Sequence< uno::Any > SAL_CALL
 SwXTextSection::getPropertyValues(
     const uno::Sequence< OUString >& rPropertyNames)
+throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Sequence< uno::Any > aValues;
@@ -1269,6 +1281,8 @@ SwXTextSection::getPropertyValues(
 
 uno::Any SAL_CALL
 SwXTextSection::getPropertyValue(const OUString& rPropertyName)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1279,12 +1293,14 @@ SwXTextSection::getPropertyValue(const OUString& rPropertyName)
 void SAL_CALL SwXTextSection::addPropertiesChangeListener(
     const uno::Sequence< OUString >& /*aPropertyNames*/,
     const uno::Reference< beans::XPropertiesChangeListener >& /*xListener*/ )
+throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::addPropertiesChangeListener(): not implemented");
 }
 
 void SAL_CALL SwXTextSection::removePropertiesChangeListener(
     const uno::Reference< beans::XPropertiesChangeListener >& /*xListener*/ )
+throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::removePropertiesChangeListener(): not implemented");
 }
@@ -1292,6 +1308,7 @@ void SAL_CALL SwXTextSection::removePropertiesChangeListener(
 void SAL_CALL SwXTextSection::firePropertiesChangeEvent(
     const uno::Sequence< OUString >& /*aPropertyNames*/,
     const uno::Reference< beans::XPropertiesChangeListener >& /*xListener*/ )
+        throw(uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::firePropertiesChangeEvent(): not implemented");
 }
@@ -1300,6 +1317,8 @@ void SAL_CALL
 SwXTextSection::addPropertyChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XPropertyChangeListener >& /*xListener*/)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+    uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::addPropertyChangeListener(): not implemented");
 }
@@ -1308,6 +1327,8 @@ void SAL_CALL
 SwXTextSection::removePropertyChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XPropertyChangeListener >& /*xListener*/)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+    uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::removePropertyChangeListener(): not implemented");
 }
@@ -1316,6 +1337,8 @@ void SAL_CALL
 SwXTextSection::addVetoableChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XVetoableChangeListener >& /*xListener*/)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+    uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::addVetoableChangeListener(): not implemented");
 }
@@ -1324,12 +1347,15 @@ void SAL_CALL
 SwXTextSection::removeVetoableChangeListener(
         const OUString& /*rPropertyName*/,
         const uno::Reference< beans::XVetoableChangeListener >& /*xListener*/)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     OSL_FAIL("SwXTextSection::removeVetoableChangeListener(): not implemented");
 }
 
 beans::PropertyState SAL_CALL
 SwXTextSection::getPropertyState(const OUString& rPropertyName)
+throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1340,6 +1366,7 @@ SwXTextSection::getPropertyState(const OUString& rPropertyName)
 uno::Sequence< beans::PropertyState > SAL_CALL
 SwXTextSection::getPropertyStates(
         const uno::Sequence< OUString >& rPropertyNames)
+throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1421,6 +1448,7 @@ SwXTextSection::getPropertyStates(
 
 void SAL_CALL
 SwXTextSection::setPropertyToDefault(const OUString& rPropertyName)
+throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1445,10 +1473,10 @@ SwXTextSection::setPropertyToDefault(const OUString& rPropertyName)
             static_cast<cppu::OWeakObject *>(this));
     }
 
-    std::unique_ptr<SwSectionData> const pSectionData(
+    ::std::unique_ptr<SwSectionData> const pSectionData(
         (pFormat) ? new SwSectionData(*pFormat->GetSection()) : nullptr);
 
-    std::unique_ptr<SfxItemSet> pNewAttrSet;
+    ::std::unique_ptr<SfxItemSet> pNewAttrSet;
     bool bLinkModeChanged = false;
 
     switch (pEntry->nWID)
@@ -1535,7 +1563,7 @@ SwXTextSection::setPropertyToDefault(const OUString& rPropertyName)
         break;
         default:
         {
-            if (SfxItemPool::IsWhich(pEntry->nWID))
+            if (pEntry->nWID <= SFX_WHICH_MAX)
             {
                 if (pFormat)
                 {
@@ -1563,6 +1591,8 @@ SwXTextSection::setPropertyToDefault(const OUString& rPropertyName)
 
 uno::Any SAL_CALL
 SwXTextSection::getPropertyDefault(const OUString& rPropertyName)
+throw (beans::UnknownPropertyException, lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1604,7 +1634,7 @@ SwXTextSection::getPropertyDefault(const OUString& rPropertyName)
             ::sw::GetDefaultTextContentValue(aRet, OUString(), pEntry->nWID);
         break;
         default:
-        if(pFormat && SfxItemPool::IsWhich(pEntry->nWID))
+        if(pFormat && pEntry->nWID <= SFX_WHICH_MAX)
         {
             SwDoc *const pDoc = pFormat->GetDoc();
             const SfxPoolItem& rDefItem =
@@ -1615,7 +1645,7 @@ SwXTextSection::getPropertyDefault(const OUString& rPropertyName)
     return aRet;
 }
 
-OUString SAL_CALL SwXTextSection::getName()
+OUString SAL_CALL SwXTextSection::getName() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1637,6 +1667,7 @@ OUString SAL_CALL SwXTextSection::getName()
 }
 
 void SAL_CALL SwXTextSection::setName(const OUString& rName)
+throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -1684,7 +1715,7 @@ void SAL_CALL SwXTextSection::setName(const OUString& rName)
 }
 
 OUString SAL_CALL
-SwXTextSection::getImplementationName()
+SwXTextSection::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
     return OUString("SwXTextSection");
 }
@@ -1697,12 +1728,13 @@ static char const*const g_ServicesTextSection[] =
 };
 
 sal_Bool SAL_CALL SwXTextSection::supportsService(const OUString& rServiceName)
+throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL
-SwXTextSection::getSupportedServiceNames()
+SwXTextSection::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
 {
     return ::sw::GetSupportedServiceNamesImpl(
                 SAL_N_ELEMENTS(g_ServicesTextSection),

@@ -41,7 +41,7 @@ private:
 
 public:
     X11OpenGLDeviceInfo();
-    virtual ~X11OpenGLDeviceInfo() override;
+    virtual ~X11OpenGLDeviceInfo();
 
     virtual bool isDeviceBlocked() override;
 

@@ -31,7 +31,7 @@ private:
 
 public:
     SwDrawModel( SwDoc* pDoc );
-    virtual ~SwDrawModel() override;
+    virtual ~SwDrawModel();
 
     const SwDoc& GetDoc() const { return *m_pDoc; }
           SwDoc& GetDoc()       { return *m_pDoc; }

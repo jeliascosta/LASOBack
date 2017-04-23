@@ -36,11 +36,14 @@ using codemaker::ExceptionTreeNode;
 
 ExceptionTreeNode * ExceptionTreeNode::add(rtl::OString const & theName) {
     std::unique_ptr< ExceptionTreeNode > node(new ExceptionTreeNode(theName));
-    children.push_back(std::move(node));
-    return children.back().get();
+    children.push_back(node.get());
+    return node.release();
 }
 
 void ExceptionTreeNode::clearChildren() {
+    for (ExceptionTreeNode* child : children) {
+        delete child;
+    }
     children.clear();
 }
 
@@ -82,7 +85,7 @@ void ExceptionTree::add(
                     break;
                 }
                 if ((*j)->name == *i) {
-                    node = j->get();
+                    node = *j;
                     break;
                 }
             }

@@ -21,10 +21,12 @@
 //      or project specific include files that are used frequently,
 //      but are changed infrequently
 
-#ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_STDAFX_H
-#define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_STDAFX_H
+#if !defined(AFX_STDAFX_H__5E2F9072_190F_47C7_8003_4D44FD308CB9__INCLUDED_)
+#define AFX_STDAFX_H__5E2F9072_190F_47C7_8003_4D44FD308CB9__INCLUDED_
 
+#if _MSC_VER > 1000
 #pragma once
+#endif // _MSC_VER > 1000
 
 // this turns off ATL's locking in the COM component implementations
 // (we don't need it since we use SolarMutex instead)

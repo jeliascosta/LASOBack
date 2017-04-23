@@ -18,8 +18,8 @@
  */
 
 #include <SidebarWinAcc.hxx>
-#include <AnnotationWin.hxx>
 
+#include <SidebarWin.hxx>
 #include <viewsh.hxx>
 #include <accmap.hxx>
 #include <toolkit/awt/vclxaccessiblecomponent.hxx>
@@ -32,7 +32,7 @@ namespace sw { namespace sidebarwindows {
 class SidebarWinAccessibleContext : public VCLXAccessibleComponent
 {
     public:
-        explicit SidebarWinAccessibleContext( sw::annotation::SwAnnotationWin& rSidebarWin,
+        explicit SidebarWinAccessibleContext( SwSidebarWin& rSidebarWin,
                                               SwViewShell& rViewShell,
                                               const SwFrame* pAnchorFrame )
             : VCLXAccessibleComponent( rSidebarWin.GetWindowPeer() )
@@ -43,6 +43,9 @@ class SidebarWinAccessibleContext : public VCLXAccessibleComponent
             rSidebarWin.SetAccessibleRole( css::accessibility::AccessibleRole::COMMENT );
         }
 
+        virtual ~SidebarWinAccessibleContext()
+        {}
+
         void ChangeAnchor( const SwFrame* pAnchorFrame )
         {
             osl::MutexGuard aGuard(maMutex);
@@ -51,7 +54,7 @@ class SidebarWinAccessibleContext : public VCLXAccessibleComponent
         }
 
         virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-            getAccessibleParent() override
+            getAccessibleParent() throw (css::uno::RuntimeException, std::exception) override
         {
             osl::MutexGuard aGuard(maMutex);
 
@@ -66,7 +69,7 @@ class SidebarWinAccessibleContext : public VCLXAccessibleComponent
             return xAccParent;
         }
 
-        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() override
+        virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() throw (css::uno::RuntimeException, std::exception) override
         {
             osl::MutexGuard aGuard(maMutex);
 
@@ -89,8 +92,8 @@ class SidebarWinAccessibleContext : public VCLXAccessibleComponent
         ::osl::Mutex maMutex;
 };
 
-// implementation of accessible for <SwAnnotationWin> instance
-SidebarWinAccessible::SidebarWinAccessible( sw::annotation::SwAnnotationWin& rSidebarWin,
+// implementation of accessible for <SwSidebarWin> instance
+SidebarWinAccessible::SidebarWinAccessible( SwSidebarWin& rSidebarWin,
                                             SwViewShell& rViewShell,
                                             const SwSidebarItem& rSidebarItem )
     : VCLXWindow()

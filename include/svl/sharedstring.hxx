@@ -25,13 +25,11 @@ public:
 
     SharedString();
     SharedString( rtl_uString* pData, rtl_uString* pDataIgnoreCase );
-    explicit SharedString( const OUString& rStr );
+    SharedString( const OUString& rStr );
     SharedString( const SharedString& r );
-    SharedString( SharedString&& r );
     ~SharedString();
 
     SharedString& operator= ( const SharedString& r );
-    SharedString& operator= ( SharedString&& r );
 
     bool operator== ( const SharedString& r ) const;
     bool operator!= ( const SharedString& r ) const;

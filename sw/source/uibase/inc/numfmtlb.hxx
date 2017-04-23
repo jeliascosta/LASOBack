@@ -38,28 +38,28 @@ class SW_DLLPUBLIC NumFormatListBox : public ListBox
                                               //to be shown in the number format dialog
     bool                bUseAutomaticLanguage;//determine whether language is automatically assigned
 
-    DECL_DLLPRIVATE_LINK( SelectHdl, ListBox&, void );
+    DECL_DLLPRIVATE_LINK_TYPED( SelectHdl, ListBox&, void );
 
-    SAL_DLLPRIVATE static double   GetDefValue(const short nFormatType);
-    SAL_DLLPRIVATE void            Init();
+    SAL_DLLPRIVATE double          GetDefValue(const short nFormatType) const;
+    SAL_DLLPRIVATE void            Init(short nFormatType);
     SAL_DLLPRIVATE SwView*         GetView();
 
 public:
     NumFormatListBox(vcl::Window* pWin, WinBits nStyle);
 
-    virtual ~NumFormatListBox() override;
+    virtual ~NumFormatListBox();
     virtual void    dispose() override;
 
     void            Clear();
 
-    void     SetOneArea(bool bOnlyOne) { bOneArea = bOnlyOne; }
+    inline void     SetOneArea(bool bOnlyOne = true) { bOneArea = bOnlyOne; }
 
     void            SetFormatType(const short nFormatType);
-    short    GetFormatType() const { return nCurrFormatType; }
+    inline short    GetFormatType() const { return nCurrFormatType; }
     void            SetDefFormat(const sal_uLong nDefFormat);
     sal_uLong           GetFormat() const;
 
-    LanguageType GetCurLanguage() const { return eCurLanguage;}
+    inline LanguageType GetCurLanguage() const { return eCurLanguage;}
     void                SetLanguage(LanguageType eSet)  { eCurLanguage = eSet;}
 
     void            SetAutomaticLanguage(bool bSet){bUseAutomaticLanguage = bSet;}

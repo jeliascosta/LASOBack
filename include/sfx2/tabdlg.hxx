@@ -30,7 +30,6 @@
 #include <svl/itempool.hxx>
 #include <svl/itemset.hxx>
 #include <com/sun/star/frame/XFrame.hpp>
-#include <o3tl/typed_flags_set.hxx>
 
 class SfxPoolItem;
 class SfxTabDialog;
@@ -51,8 +50,8 @@ class SFX2_DLLPUBLIC SfxTabDialogItem: public SfxSetItem
 {
 public:
                             SfxTabDialogItem( sal_uInt16 nId, const SfxItemSet& rItemSet );
-                            SfxTabDialogItem(const SfxTabDialogItem& rAttr, SfxItemPool* pItemPool);
-    virtual SfxPoolItem*    Clone(SfxItemPool* pToPool = nullptr) const override;
+                            SfxTabDialogItem(const SfxTabDialogItem& rAttr, SfxItemPool* pItemPool=nullptr);
+    virtual SfxPoolItem*    Clone(SfxItemPool* pToPool) const override;
     virtual SfxPoolItem*    Create(SvStream& rStream, sal_uInt16 nVersion) const override;
 };
 
@@ -61,7 +60,6 @@ class SFX2_DLLPUBLIC SfxTabDialog : public TabDialog
 private:
 friend class SfxTabPage;
 friend class SfxTabDialogController;
-friend class SfxTabDialogUIObject;
 
     VclPtr<VclBox>     m_pBox;
     VclPtr<TabControl> m_pTabCtrl;
@@ -88,13 +86,13 @@ friend class SfxTabDialogUIObject;
     bool                m_bItemsReset;
     bool                m_bStandardPushed;
 
-    DECL_DLLPRIVATE_LINK(ActivatePageHdl, TabControl*, void );
-    DECL_DLLPRIVATE_LINK(DeactivatePageHdl, TabControl*, bool );
-    DECL_DLLPRIVATE_LINK(OkHdl, Button*, void);
-    DECL_DLLPRIVATE_LINK(ResetHdl, Button*, void);
-    DECL_DLLPRIVATE_LINK(BaseFmtHdl, Button*, void);
-    DECL_DLLPRIVATE_LINK(UserHdl, Button*, void);
-    DECL_DLLPRIVATE_LINK(CancelHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK_TYPED(ActivatePageHdl, TabControl*, void );
+    DECL_DLLPRIVATE_LINK_TYPED(DeactivatePageHdl, TabControl*, bool );
+    DECL_DLLPRIVATE_LINK_TYPED(OkHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK_TYPED(ResetHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK_TYPED(BaseFmtHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK_TYPED(UserHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK_TYPED(CancelHdl, Button*, void);
     SAL_DLLPRIVATE void Init_Impl(bool bFmtFlag);
 
 protected:
@@ -124,7 +122,7 @@ public:
     SfxTabDialog(vcl::Window* pParent,
                  const OUString& rID, const OUString& rUIXMLDescription,
                  const SfxItemSet * = nullptr, bool bEditFmt = false);
-    virtual ~SfxTabDialog() override;
+    virtual ~SfxTabDialog();
     virtual void dispose() override;
 
     sal_uInt16          AddTabPage( const OString& rName,           // Name of the label for the page in the notebook .ui
@@ -164,8 +162,6 @@ public:
         return GetTabPage(m_pTabCtrl->GetCurPageId());
     }
 
-    virtual OString GetScreenshotId() const override;
-
     OUString            GetPageText( sal_uInt16 nPageId ) const
     {
         return m_pTabCtrl->GetPageText(nPageId);
@@ -201,26 +197,9 @@ public:
 
     //calls Ok without closing dialog
     bool Apply();
-
-    virtual FactoryFunction GetUITestFactory() const override;
-    // Screenshot interface
-    virtual std::vector<OString> getAllPageUIXMLDescriptions() const override;
-    virtual bool selectPageByUIXMLDescription(const OString& rUIXMLDescription) override;
 };
 
 namespace sfx { class ItemConnectionBase; }
-
-enum class DeactivateRC {
-    KeepPage   = 0x00,      // Error handling; page does not change
-    // 2. Fill an itemset for update
-    // parent examples, this pointer can be NULL all the time!
-    LeavePage  = 0x01,
-    // Set, refresh and update other Page
-    RefreshSet = 0x02
-};
-namespace o3tl {
-    template<> struct typed_flags<DeactivateRC> : is_typed_flags<DeactivateRC, 0x03> {};
-}
 
 class SFX2_DLLPUBLIC SfxTabPage: public TabPage
 {
@@ -243,7 +222,7 @@ protected:
     void                AddItemConnection( sfx::ItemConnectionBase* pConnection );
 
 public:
-    virtual             ~SfxTabPage() override;
+    virtual             ~SfxTabPage();
     virtual void        dispose() override;
 
     const SfxItemSet&   GetItemSet() const { return *pSet; }
@@ -256,10 +235,19 @@ public:
     void                SetExchangeSupport()
                             { bHasExchangeSupport = true; }
 
+    enum sfxpg {
+      KEEP_PAGE = 0x0000,      // Error handling; page does not change
+        // 2. Fill an itemset for update
+        // parent examples, this pointer can be NULL all the time!
+        LEAVE_PAGE = 0x0001,
+        // Set, refresh and update other Page
+        REFRESH_SET = 0x0002
+    };
+
         using TabPage::ActivatePage;
         using TabPage::DeactivatePage;
     virtual void            ActivatePage( const SfxItemSet& );
-    virtual DeactivateRC    DeactivatePage( SfxItemSet* pSet );
+    virtual sfxpg           DeactivatePage( SfxItemSet* pSet );
     void                    SetUserData(const OUString& rString)
                               { aUserString = rString; }
     const OUString&         GetUserData() { return aUserString; }

@@ -171,8 +171,16 @@ namespace vclcanvas
                                       const css::rendering::ViewState&     rViewState,
                                       const css::rendering::RenderState&   rRenderState );
 
+        enum ModulationMode
+        {
+            MODULATE_NONE,
+            MODULATE_WITH_DEVICECOLOR
+        };
+
         ::BitmapEx transformBitmap( const BitmapEx&                                     rBitmap,
-                                    const ::basegfx::B2DHomMatrix&                      rTransform );
+                                    const ::basegfx::B2DHomMatrix&                      rTransform,
+                                    const css::uno::Sequence< double >&                 rDeviceColor,
+                                    ModulationMode                                      eModulationMode );
 
     }
 }

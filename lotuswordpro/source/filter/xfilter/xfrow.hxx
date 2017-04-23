@@ -61,7 +61,6 @@
 #define INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_XFILTER_XFROW_HXX
 
 #include "xfcontent.hxx"
-#include <rtl/ref.hxx>
 #include <map>
 
 class XFCell;
@@ -71,10 +70,10 @@ class XFRow : public XFContent
 public:
     XFRow();
 
-    virtual ~XFRow() override;
+    virtual ~XFRow();
 
 public:
-    void    AddCell(rtl::Reference<XFCell>& rCell);
+    void    AddCell(XFCell *pCell);
 
     void    SetRepeated(sal_Int32 repeat);
 
@@ -96,7 +95,7 @@ public:
 
 private:
     XFTable     *m_pOwnerTable;
-    std::map<sal_Int32, rtl::Reference<XFCell>> m_aCells;
+    std::map<sal_Int32,XFCell*> m_aCells;
     sal_Int32   m_nRepeat;
     sal_Int32   m_nRow;
 };

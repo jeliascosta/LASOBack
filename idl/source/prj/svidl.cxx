@@ -35,14 +35,14 @@ bool FileMove_Impl( const OUString & rFile1, const OUString & rFile2, bool bImme
     sal_uLong nC2 = 1;
     if( !bImmerVerschieben )
     {
-        SvFileStream aOutStm1( rFile1, StreamMode::STD_READ );
-        SvFileStream aOutStm2( rFile2, StreamMode::STD_READ );
+        SvFileStream aOutStm1( rFile1, STREAM_STD_READ );
+        SvFileStream aOutStm2( rFile2, STREAM_STD_READ );
         if( aOutStm1.GetError() == SVSTREAM_OK )
         {
             std::unique_ptr<sal_uInt8[]> pBuf1(new sal_uInt8[ BR ]);
             std::unique_ptr<sal_uInt8[]> pBuf2(new sal_uInt8[ BR ]);
-            nC1 = aOutStm1.ReadBytes(pBuf1.get(), BR);
-            nC2 = aOutStm2.ReadBytes(pBuf2.get(), BR);
+            nC1 = aOutStm1.Read( pBuf1.get(), BR );
+            nC2 = aOutStm2.Read( pBuf2.get(), BR );
             while( nC1 == nC2 )
             {
                 if( memcmp( pBuf1.get(), pBuf2.get(), nC1 ) )
@@ -54,8 +54,8 @@ bool FileMove_Impl( const OUString & rFile1, const OUString & rFile2, bool bImme
                 {
                     if( 0x8000 != nC1 )
                         break;
-                    nC1 = aOutStm1.ReadBytes(pBuf1.get(), BR);
-                    nC2 = aOutStm2.ReadBytes(pBuf2.get(), BR);
+                    nC1 = aOutStm1.Read( pBuf1.get(), BR );
+                    nC2 = aOutStm2.Read( pBuf2.get(), BR );
                 }
             }
         }
@@ -130,7 +130,7 @@ int main ( int argc, char ** argv)
         if( nExit == 0 && !aCommand.aSlotMapFile.isEmpty() )
         {
             aTmpSlotMapFile = tempFileHelper(aCommand.aSlotMapFile);
-            SvFileStream aOutStm( aTmpSlotMapFile, StreamMode::READWRITE | StreamMode::TRUNC );
+            SvFileStream aOutStm( aTmpSlotMapFile, STREAM_READWRITE | StreamMode::TRUNC );
             if( !pDataBase->WriteSfx( aOutStm ) )
             {
                 nExit = -1;
@@ -142,7 +142,7 @@ int main ( int argc, char ** argv)
         if (nExit == 0 && !aCommand.m_DepFile.isEmpty())
         {
             aTmpDepFile = tempFileHelper(aCommand.m_DepFile);
-            SvFileStream aOutStm( aTmpDepFile, StreamMode::READWRITE | StreamMode::TRUNC );
+            SvFileStream aOutStm( aTmpDepFile, STREAM_READWRITE | StreamMode::TRUNC );
             pDataBase->WriteDepFile(aOutStm, aCommand.aTargetFile);
             if( aOutStm.GetError() != SVSTREAM_OK )
             {
@@ -195,7 +195,7 @@ int main ( int argc, char ** argv)
             {
                 // stamp file, because idl passed through correctly
                 SvFileStream aOutStm( aCommand.aTargetFile,
-                                StreamMode::READWRITE | StreamMode::TRUNC );
+                                STREAM_READWRITE | StreamMode::TRUNC );
             }
         }
     }

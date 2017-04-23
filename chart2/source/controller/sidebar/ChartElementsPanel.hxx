@@ -54,15 +54,15 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
-    // constructor/destructor
+    // constructor/destuctor
     ChartElementsPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
 
-    virtual ~ChartElementsPanel() override;
+    virtual ~ChartElementsPanel();
 
     virtual void dispose() override;
 
@@ -98,7 +98,7 @@ private:
     VclPtr<ListBox> mpLBLegendPosition;
     VclPtr<VclHBox> mpBoxLegend;
 
-    vcl::EnumContext maContext;
+    ::sfx2::sidebar::EnumContext            maContext;
 
     css::uno::Reference<css::frame::XModel> mxModel;
     css::uno::Reference<css::util::XModifyListener> mxListener;
@@ -112,8 +112,8 @@ private:
 
     void setTitleVisible(TitleHelper::eTitleType eTitle, bool bVisible);
 
-    DECL_LINK(CheckBoxHdl, Button*, void);
-    DECL_LINK(LegendPosHdl, ListBox&, void);
+    DECL_LINK_TYPED(CheckBoxHdl, Button*, void);
+    DECL_LINK_TYPED(LegendPosHdl, ListBox&, void);
 };
 
 } } // end of namespace ::chart::sidebar

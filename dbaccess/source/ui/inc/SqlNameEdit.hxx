@@ -27,10 +27,12 @@ namespace dbaui
     class OSQLNameChecker
     {
         OUString m_sAllowedChars;
+        bool        m_bOnlyUpperCase;
         bool        m_bCheck;           // true when we should check for invalid chars
     public:
         OSQLNameChecker(const OUString& _rAllowedChars)
             :m_sAllowedChars(_rAllowedChars)
+            ,m_bOnlyUpperCase(false)
             ,m_bCheck(true)
         {
         }
@@ -65,9 +67,9 @@ namespace dbaui
                             ,public OSQLNameChecker
     {
     public:
-        OSQLNameComboBox(vcl::Window* _pParent)
-            : ComboBox(_pParent, WB_BORDER)
-            , OSQLNameChecker(OUString())
+        OSQLNameComboBox(vcl::Window* _pParent,WinBits nStyle = WB_BORDER, const OUString& _rAllowedChars = OUString())
+            : ComboBox(_pParent,nStyle)
+            , OSQLNameChecker(_rAllowedChars)
         {
         }
 

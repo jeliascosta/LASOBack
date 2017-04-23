@@ -28,7 +28,6 @@
 #include <com/sun/star/geometry/IntegerSize2D.hpp>
 #include <com/sun/star/geometry/IntegerPoint2D.hpp>
 #include <com/sun/star/geometry/IntegerRectangle2D.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/rendering/XPolyPolygon2D.hpp>
 #include <com/sun/star/rendering/XGraphicDevice.hpp>
 #include <com/sun/star/awt/Size.hpp>
@@ -303,8 +302,9 @@ namespace basegfx
                     if( !xLinePoly.is() )
                     {
                         throw lang::IllegalArgumentException(
-                            "basegfx::unotools::b2DPolyPolygonFromXPolyPolygon2D(): Invalid input"
-                            "poly-polygon, cannot retrieve vertex data",
+                            OUString(
+                                    "basegfx::unotools::b2DPolyPolygonFromXPolyPolygon2D(): Invalid input"
+                                    "poly-polygon, cannot retrieve vertex data"),
                             uno::Reference< uno::XInterface >(),
                             0 );
                     }

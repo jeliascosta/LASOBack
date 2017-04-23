@@ -42,6 +42,16 @@ String STR_VALUE_NO
     Text [ en-US ] = "No" ;
 };
 
+String STR_VALUE_ASC
+{
+    Text [ en-US ] = "Ascending" ;
+};
+
+String STR_VALUE_DESC
+{
+    Text [ en-US ] = "Descending" ;
+};
+
 String STR_VALUE_NONE
 {
     // Bemerkung : sollte auch in anderen Sprachen irgendwie zum Wort 'Wert' passen : Wert - keiner ....
@@ -68,6 +78,11 @@ String STR_TAB_FIELD_COLUMN_DATATYPE
     Text [ en-US ] = "Field Type" ;
 };
 
+String STR_TAB_FIELD_LENGTH
+{
+    Text [ en-US ] = "Field length" ;
+};
+
 String STR_TAB_HELP_TEXT
 {
     Text [ en-US ] = "Description" ;
@@ -78,6 +93,11 @@ String STR_COLUMN_DESCRIPTION
     Text [ en-US ] = "Column Description" ;
 };
 
+String STR_TAB_FIELD_NULLABLE
+{
+    Text [ en-US ] = "Input required" ;
+};
+
 String STR_FIELD_AUTOINCREMENT
 {
     Text [ en-US ] = "~AutoValue";
@@ -86,6 +106,31 @@ String STR_FIELD_AUTOINCREMENT
 String STR_TAB_PROPERTIES
 {
     Text [ en-US ] = "Field Properties" ;
+};
+
+String STR_TABPAGE_GENERAL
+{
+    Text [ en-US ] = "General" ;
+};
+
+String STR_TAB_TABLE_DESCRIPTION
+{
+    Text [ en-US ] = "Description:";
+};
+
+String STR_TAB_TABLE_PROPERTIES
+{
+    Text [ en-US ] = "Table properties";
+};
+
+Control RID_DB_TAB_EDITOR
+{
+    Pos = MAP_APPFONT ( 0 , 0 ) ;
+    Size = MAP_APPFONT ( 40 , 12 ) ;
+    TabStop = TRUE ;
+    SvLook = TRUE ;
+    Hide = TRUE ;
+    HelpId = HID_TABDESIGN_BACKGROUND ;
 };
 
 Menu RID_TABLEDESIGNROWPOPUPMENU
@@ -159,6 +204,11 @@ String STR_TABED_UNDO_ROWINSERTED
 String STR_TABED_UNDO_NEWROWINSERTED
 {
     Text [ en-US ] = "Insert new row" ;
+};
+
+String STR_TABED_UNDO_PRIMKEY
+{
+    Text [ en-US ] = "Insert/remove primary key" ;
 };
 
 String STR_DEFAULT_VALUE
@@ -246,8 +296,9 @@ String STR_HELP_AUTOINCREMENT
     Text [ en-US ] = "Choose if this field should contain AutoIncrement values.\n\nYou can not enter data in fields of this type. An intrinsic value will be assigned to each new record automatically (resulting from the increment of the previous record)." ;
 };
 
-String STR_BUTTON_FORMAT
+PushButton PB_FORMAT
 {
+    TabStop = TRUE ;
     Text [ en-US ] = "~...";
 };
 
@@ -276,6 +327,11 @@ String STR_QRY_CONTINUE
     Text [ en-US ] = "Continue anyway?" ;
 };
 
+String STR_STAT_WARNING
+{
+    Text [ en-US ] = "Warning!" ;
+};
+
 String STR_TABLEDESIGN_CONNECTION_MISSING
 {
     Text [ en-US ] = "The table could not be saved due to problems connecting to the database.";
@@ -299,6 +355,11 @@ String STR_TABLEDESIGN_NO_PRIM_KEY_HEAD
 String STR_TABLEDESIGN_NO_PRIM_KEY
 {
     Text [ en-US ] = "A unique index or primary key is required for data record identification in this database.\nYou can only enter data into this table when one of these two structural conditions has been met.\n\nShould a primary key be created now?" ;
+};
+
+String STR_TABLEDESIGN_TITLE
+{
+    Text [ en-US ] = " - %PRODUCTNAME Base: Table Design";
 };
 
 String STR_TABLEDESIGN_ALTER_ERROR

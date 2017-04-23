@@ -40,7 +40,6 @@ $(eval $(call gb_Library_use_externals,comphelper,\
     boost_headers \
     icuuc \
     icu_headers \
-    zlib \
 ))
 
 $(eval $(call gb_Library_use_libraries,comphelper,\
@@ -77,7 +76,6 @@ $(eval $(call gb_Library_add_exception_objects,comphelper,\
     comphelper/source/misc/accimplaccess \
     comphelper/source/misc/anytostring \
     comphelper/source/misc/asyncnotification \
-    comphelper/source/misc/backupfilehelper \
     comphelper/source/misc/comphelper_module \
     comphelper/source/misc/comphelper_services \
     comphelper/source/misc/componentbase \
@@ -88,6 +86,7 @@ $(eval $(call gb_Library_add_exception_objects,comphelper,\
     comphelper/source/misc/docpasswordhelper \
     comphelper/source/misc/docpasswordrequest \
     comphelper/source/misc/documentinfo \
+    comphelper/source/misc/documentiologring \
     comphelper/source/misc/evtlistenerhlp \
     comphelper/source/misc/evtmethodhelper \
     comphelper/source/misc/fileurl \

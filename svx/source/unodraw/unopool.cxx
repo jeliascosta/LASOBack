@@ -73,7 +73,7 @@ void SvxUnoDrawPool::init()
     mpDefaultsPool->SetSecondaryPool(pOutlPool);
 
     SdrModel::SetTextDefaults( mpDefaultsPool, SdrEngineDefaults::GetFontHeight() );
-    mpDefaultsPool->SetDefaultMetric(SdrEngineDefaults::GetMapUnit());
+    mpDefaultsPool->SetDefaultMetric((SfxMapUnit)SdrEngineDefaults::GetMapUnit());
     mpDefaultsPool->FreezeIdRanges();
 }
 
@@ -93,6 +93,7 @@ SfxItemPool* SvxUnoDrawPool::getModelPool( bool bReadOnly ) throw()
 }
 
 void SvxUnoDrawPool::getAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, uno::Any& rValue )
+    throw(beans::UnknownPropertyException)
 {
     switch( pEntry->mnHandle )
     {
@@ -116,10 +117,10 @@ void SvxUnoDrawPool::getAny( SfxItemPool* pPool, const comphelper::PropertyMapEn
         }
     default:
         {
-            const MapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
+            const SfxMapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
 
             sal_uInt8 nMemberId = pEntry->mnMemberId & (~SFX_METRIC_ITEM);
-            if( eMapUnit == MapUnit::Map100thMM )
+            if( eMapUnit == SFX_MAPUNIT_100TH_MM )
                 nMemberId &= (~CONVERT_TWIPS);
 
             // DVO, OD 10.10.2003 #i18732#
@@ -131,8 +132,8 @@ void SvxUnoDrawPool::getAny( SfxItemPool* pPool, const comphelper::PropertyMapEn
 
 
     // check for needed metric translation
-    const MapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
-    if(pEntry->mnMemberId & SFX_METRIC_ITEM && eMapUnit != MapUnit::Map100thMM)
+    const SfxMapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
+    if(pEntry->mnMemberId & SFX_METRIC_ITEM && eMapUnit != SFX_MAPUNIT_100TH_MM)
     {
         SvxUnoConvertToMM( eMapUnit, rValue );
     }
@@ -147,11 +148,12 @@ void SvxUnoDrawPool::getAny( SfxItemPool* pPool, const comphelper::PropertyMapEn
 }
 
 void SvxUnoDrawPool::putAny( SfxItemPool* pPool, const comphelper::PropertyMapEntry* pEntry, const uno::Any& rValue )
+    throw(beans::UnknownPropertyException, lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     uno::Any aValue( rValue );
 
-    const MapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
-    if(pEntry->mnMemberId & SFX_METRIC_ITEM && eMapUnit != MapUnit::Map100thMM)
+    const SfxMapUnit eMapUnit = pPool->GetMetric((sal_uInt16)pEntry->mnHandle);
+    if(pEntry->mnMemberId & SFX_METRIC_ITEM && eMapUnit != SFX_MAPUNIT_100TH_MM)
     {
         SvxUnoConvertFromMM( eMapUnit, aValue );
     }
@@ -185,7 +187,7 @@ void SvxUnoDrawPool::putAny( SfxItemPool* pPool, const comphelper::PropertyMapEn
         {
             std::unique_ptr<SfxPoolItem> pNewItem( pPool->GetDefaultItem( nWhich ).Clone() );
             sal_uInt8 nMemberId = pEntry->mnMemberId & (~SFX_METRIC_ITEM);
-            if( pPool->GetMetric(nWhich) == MapUnit::Map100thMM )
+            if( pPool->GetMetric(nWhich) == SFX_MAPUNIT_100TH_MM )
                 nMemberId &= (~CONVERT_TWIPS);
 
             if( !pNewItem->PutValue( aValue, nMemberId ) )
@@ -197,6 +199,7 @@ void SvxUnoDrawPool::putAny( SfxItemPool* pPool, const comphelper::PropertyMapEn
 }
 
 void SvxUnoDrawPool::_setPropertyValues( const comphelper::PropertyMapEntry** ppEntries, const uno::Any* pValues )
+    throw(beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException )
 {
     SolarMutexGuard aGuard;
 
@@ -204,13 +207,14 @@ void SvxUnoDrawPool::_setPropertyValues( const comphelper::PropertyMapEntry** pp
 
     DBG_ASSERT( pPool, "I need a SfxItemPool!" );
     if( nullptr == pPool )
-        throw beans::UnknownPropertyException( "no pool, no properties..", static_cast<cppu::OWeakObject*>(this));
+        throw beans::UnknownPropertyException();
 
     while( *ppEntries )
         putAny( pPool, *ppEntries++, *pValues++ );
 }
 
 void SvxUnoDrawPool::_getPropertyValues( const comphelper::PropertyMapEntry** ppEntries, uno::Any* pValue )
+    throw(beans::UnknownPropertyException, lang::WrappedTargetException )
 {
     SolarMutexGuard aGuard;
 
@@ -218,13 +222,14 @@ void SvxUnoDrawPool::_getPropertyValues( const comphelper::PropertyMapEntry** pp
 
     DBG_ASSERT( pPool, "I need a SfxItemPool!" );
     if( nullptr == pPool )
-        throw beans::UnknownPropertyException( "no pool, no properties..", static_cast<cppu::OWeakObject*>(this));
+        throw beans::UnknownPropertyException();
 
     while( *ppEntries )
         getAny( pPool, *ppEntries++, *pValue++ );
 }
 
 void SvxUnoDrawPool::_getPropertyStates( const comphelper::PropertyMapEntry** ppEntries, beans::PropertyState* pStates )
+    throw(beans::UnknownPropertyException )
 {
     SolarMutexGuard aGuard;
 
@@ -287,6 +292,7 @@ void SvxUnoDrawPool::_getPropertyStates( const comphelper::PropertyMapEntry** pp
 }
 
 void SvxUnoDrawPool::_setPropertyToDefault( const comphelper::PropertyMapEntry* pEntry )
+    throw(beans::UnknownPropertyException )
 {
     SolarMutexGuard aGuard;
 
@@ -305,6 +311,7 @@ void SvxUnoDrawPool::_setPropertyToDefault( const comphelper::PropertyMapEntry* 
 }
 
 uno::Any SvxUnoDrawPool::_getPropertyDefault( const comphelper::PropertyMapEntry* pEntry )
+    throw(beans::UnknownPropertyException, lang::WrappedTargetException )
 {
     SolarMutexGuard aGuard;
 
@@ -325,11 +332,13 @@ uno::Any SvxUnoDrawPool::_getPropertyDefault( const comphelper::PropertyMapEntry
 // XInterface
 
 uno::Any SAL_CALL SvxUnoDrawPool::queryInterface( const uno::Type & rType )
+    throw( uno::RuntimeException, std::exception )
 {
     return OWeakAggObject::queryInterface( rType );
 }
 
 uno::Any SAL_CALL SvxUnoDrawPool::queryAggregation( const uno::Type & rType )
+    throw(uno::RuntimeException, std::exception)
 {
     uno::Any aAny;
 
@@ -344,7 +353,7 @@ uno::Any SAL_CALL SvxUnoDrawPool::queryAggregation( const uno::Type & rType )
     else if( rType == cppu::UnoType<beans::XMultiPropertySet>::get())
         aAny <<= uno::Reference< beans::XMultiPropertySet >(this);
     else
-        aAny = OWeakAggObject::queryAggregation( rType );
+        aAny <<= OWeakAggObject::queryAggregation( rType );
 
     return aAny;
 }
@@ -360,6 +369,7 @@ void SAL_CALL SvxUnoDrawPool::release() throw ( )
 }
 
 uno::Sequence< uno::Type > SAL_CALL SvxUnoDrawPool::getTypes()
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< uno::Type > aTypes( 6 );
     uno::Type* pTypes = aTypes.getArray();
@@ -375,22 +385,24 @@ uno::Sequence< uno::Type > SAL_CALL SvxUnoDrawPool::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL SvxUnoDrawPool::getImplementationId()
+    throw (uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 // XServiceInfo
-sal_Bool SAL_CALL SvxUnoDrawPool::supportsService( const  OUString& ServiceName )
+sal_Bool SAL_CALL SvxUnoDrawPool::supportsService( const  OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-OUString SAL_CALL SvxUnoDrawPool::getImplementationName()
+OUString SAL_CALL SvxUnoDrawPool::getImplementationName() throw( uno::RuntimeException, std::exception )
 {
     return OUString("SvxUnoDrawPool");
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoDrawPool::getSupportedServiceNames(  )
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSNS { "com.sun.star.drawing.Defaults" };
     return aSNS;

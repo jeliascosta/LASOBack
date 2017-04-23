@@ -55,8 +55,9 @@ void Slider::ImplInit( vcl::Window* pParent, WinBits nStyle )
     mnLineSize          = 1;
     mnPageSize          = 1;
     mnDelta             = 0;
+    mnDragDraw          = 0;
     mnStateFlags        = 0;
-    meScrollType        = ScrollType::DontKnow;
+    meScrollType        = SCROLL_DONTKNOW;
     mbCalcSize          = true;
     mbFullDrag          = true;
 
@@ -69,7 +70,7 @@ void Slider::ImplInit( vcl::Window* pParent, WinBits nStyle )
 }
 
 Slider::Slider( vcl::Window* pParent, WinBits nStyle ) :
-    Control(WindowType::SLIDER)
+    Control(WINDOW_SLIDER)
 {
     ImplInit( pParent, nStyle );
 }
@@ -110,7 +111,7 @@ void Slider::ImplInitSettings()
 
 void Slider::ImplUpdateRects( bool bUpdate )
 {
-    tools::Rectangle aOldThumbRect = maThumbRect;
+    Rectangle aOldThumbRect = maThumbRect;
     bool bInvalidateAll = false;
 
     if ( mnThumbPixRange )
@@ -138,8 +139,8 @@ void Slider::ImplUpdateRects( bool bUpdate )
             else
                 maChannel2Rect.SetEmpty();
 
-            const tools::Rectangle aControlRegion( tools::Rectangle( Point(0,0), Size( SLIDER_THUMB_SIZE, 10 ) ) );
-            tools::Rectangle aThumbBounds, aThumbContent;
+            const Rectangle aControlRegion( Rectangle( Point(0,0), Size( SLIDER_THUMB_SIZE, 10 ) ) );
+            Rectangle aThumbBounds, aThumbContent;
             if ( GetNativeControlRegion( ControlType::Slider, ControlPart::ThumbHorz,
                                          aControlRegion, ControlState::NONE, ImplControlValue(), OUString(),
                                          aThumbBounds, aThumbContent ) )
@@ -172,8 +173,8 @@ void Slider::ImplUpdateRects( bool bUpdate )
             else
                 maChannel2Rect.SetEmpty();
 
-            const tools::Rectangle aControlRegion( tools::Rectangle( Point(0,0), Size( 10, SLIDER_THUMB_SIZE ) ) );
-            tools::Rectangle aThumbBounds, aThumbContent;
+            const Rectangle aControlRegion( Rectangle( Point(0,0), Size( 10, SLIDER_THUMB_SIZE ) ) );
+            Rectangle aThumbBounds, aThumbContent;
             if ( GetNativeControlRegion( ControlType::Slider, ControlPart::ThumbVert,
                                          aControlRegion, ControlState::NONE, ImplControlValue(), OUString(),
                                          aThumbBounds, aThumbContent ) )
@@ -341,7 +342,7 @@ void Slider::ImplDraw(vcl::RenderContext& rRenderContext)
             sldValue.mnThumbState |= ControlState::ROLLOVER;
     }
 
-    const tools::Rectangle aCtrlRegion(Point(0,0), GetOutputSizePixel());
+    const Rectangle aCtrlRegion(Point(0,0), GetOutputSizePixel());
     bool bNativeOK = rRenderContext.DrawNativeControl(ControlType::Slider, nPart, aCtrlRegion, nState, sldValue, OUString());
     if (bNativeOK)
         return;
@@ -349,7 +350,7 @@ void Slider::ImplDraw(vcl::RenderContext& rRenderContext)
     if (!maChannel1Rect.IsEmpty())
     {
         long        nRectSize;
-        tools::Rectangle   aRect = maChannel1Rect;
+        Rectangle   aRect = maChannel1Rect;
         rRenderContext.SetLineColor(rStyleSettings.GetShadowColor());
         if (GetStyle() & WB_HORZ)
         {
@@ -393,7 +394,7 @@ void Slider::ImplDraw(vcl::RenderContext& rRenderContext)
     if (!maChannel2Rect.IsEmpty())
     {
         long nRectSize;
-        tools::Rectangle aRect = maChannel2Rect;
+        Rectangle aRect = maChannel2Rect;
         rRenderContext.SetLineColor(rStyleSettings.GetLightColor());
         if (GetStyle() & WB_HORZ)
         {
@@ -452,7 +453,7 @@ void Slider::ImplDraw(vcl::RenderContext& rRenderContext)
 bool Slider::ImplIsPageUp( const Point& rPos )
 {
     Size aSize = GetOutputSizePixel();
-    tools::Rectangle aRect = maChannel1Rect;
+    Rectangle aRect = maChannel1Rect;
     if ( GetStyle() & WB_HORZ )
     {
         aRect.Top()     = 0;
@@ -469,7 +470,7 @@ bool Slider::ImplIsPageUp( const Point& rPos )
 bool Slider::ImplIsPageDown( const Point& rPos )
 {
     Size aSize = GetOutputSizePixel();
-    tools::Rectangle aRect = maChannel2Rect;
+    Rectangle aRect = maChannel2Rect;
     if ( GetStyle() & WB_HORZ )
     {
         aRect.Top()     = 0;
@@ -505,23 +506,23 @@ long Slider::ImplDoAction( bool bCallEndSlide )
 
     switch ( meScrollType )
     {
-        case ScrollType::LineUp:
+        case SCROLL_LINEUP:
             nDelta = ImplSlide( mnThumbPos-mnLineSize, bCallEndSlide );
             break;
 
-        case ScrollType::LineDown:
+        case SCROLL_LINEDOWN:
             nDelta = ImplSlide( mnThumbPos+mnLineSize, bCallEndSlide );
             break;
 
-        case ScrollType::PageUp:
+        case SCROLL_PAGEUP:
             nDelta = ImplSlide( mnThumbPos-mnPageSize, bCallEndSlide );
             break;
 
-        case ScrollType::PageDown:
+        case SCROLL_PAGEDOWN:
             nDelta = ImplSlide( mnThumbPos+mnPageSize, bCallEndSlide );
             break;
 
-        case ScrollType::Set:
+        case SCROLL_SET:
             nDelta = ImplSlide( ImplCalcThumbPos( GetPointerPosPixel().X() ), bCallEndSlide );
             break;
         default:
@@ -538,7 +539,7 @@ void Slider::ImplDoMouseAction( const Point& rMousePos, bool bCallAction )
 
     switch ( meScrollType )
     {
-        case ScrollType::Set:
+        case SCROLL_SET:
         {
             const bool bUp = ImplIsPageUp( rMousePos ), bDown = ImplIsPageDown( rMousePos );
 
@@ -552,7 +553,7 @@ void Slider::ImplDoMouseAction( const Point& rMousePos, bool bCallAction )
             break;
         }
 
-        case ScrollType::PageUp:
+        case SCROLL_PAGEUP:
             if ( ImplIsPageUp( rMousePos ) )
             {
                 bAction = bCallAction;
@@ -562,7 +563,7 @@ void Slider::ImplDoMouseAction( const Point& rMousePos, bool bCallAction )
                 mnStateFlags &= ~SLIDER_STATE_CHANNEL1_DOWN;
             break;
 
-        case ScrollType::PageDown:
+        case SCROLL_PAGEDOWN:
             if ( ImplIsPageDown( rMousePos ) )
             {
                 bAction = bCallAction;
@@ -591,24 +592,24 @@ void Slider::ImplDoMouseAction( const Point& rMousePos, bool bCallAction )
 
 void Slider::ImplDoSlide( long nNewPos )
 {
-    if ( meScrollType != ScrollType::DontKnow )
+    if ( meScrollType != SCROLL_DONTKNOW )
         return;
 
-    meScrollType = ScrollType::Drag;
+    meScrollType = SCROLL_DRAG;
     ImplSlide( nNewPos, true );
-    meScrollType = ScrollType::DontKnow;
+    meScrollType = SCROLL_DONTKNOW;
 }
 
 void Slider::ImplDoSlideAction( ScrollType eScrollType )
 {
-    if ( (meScrollType != ScrollType::DontKnow) ||
-         (eScrollType == ScrollType::DontKnow) ||
-         (eScrollType == ScrollType::Drag) )
+    if ( (meScrollType != SCROLL_DONTKNOW) ||
+         (eScrollType == SCROLL_DONTKNOW) ||
+         (eScrollType == SCROLL_DRAG) )
         return;
 
     meScrollType = eScrollType;
     ImplDoAction( true );
-    meScrollType = ScrollType::DontKnow;
+    meScrollType = SCROLL_DONTKNOW;
 }
 
 void Slider::MouseButtonDown( const MouseEvent& rMEvt )
@@ -620,7 +621,7 @@ void Slider::MouseButtonDown( const MouseEvent& rMEvt )
 
         if ( maThumbRect.IsInside( rMousePos ) )
         {
-            meScrollType    = ScrollType::Drag;
+            meScrollType    = SCROLL_DRAG;
 
             // calculate additional values
             Point aCenterPos = maThumbRect.Center();
@@ -632,33 +633,33 @@ void Slider::MouseButtonDown( const MouseEvent& rMEvt )
         else if ( ImplIsPageUp( rMousePos ) )
         {
             if( GetStyle() & WB_SLIDERSET )
-                meScrollType = ScrollType::Set;
+                meScrollType = SCROLL_SET;
             else
             {
                 nTrackFlags = StartTrackingFlags::ButtonRepeat;
-                meScrollType = ScrollType::PageUp;
+                meScrollType = SCROLL_PAGEUP;
             }
         }
         else if ( ImplIsPageDown( rMousePos ) )
         {
             if( GetStyle() & WB_SLIDERSET )
-                meScrollType = ScrollType::Set;
+                meScrollType = SCROLL_SET;
             else
             {
                 nTrackFlags = StartTrackingFlags::ButtonRepeat;
-                meScrollType = ScrollType::PageDown;
+                meScrollType = SCROLL_PAGEDOWN;
             }
         }
 
         // Shall we start Tracking?
-        if( meScrollType != ScrollType::DontKnow )
+        if( meScrollType != SCROLL_DONTKNOW )
         {
             // store Start position for cancel and EndScroll delta
             mnStartPos = mnThumbPos;
-            ImplDoMouseAction( rMousePos, meScrollType != ScrollType::Set );
+            ImplDoMouseAction( rMousePos, meScrollType != SCROLL_SET );
             Update();
 
-            if( meScrollType != ScrollType::Set )
+            if( meScrollType != SCROLL_SET )
                 StartTracking( nTrackFlags );
         }
     }
@@ -666,7 +667,7 @@ void Slider::MouseButtonDown( const MouseEvent& rMEvt )
 
 void Slider::MouseButtonUp( const MouseEvent& )
 {
-    if( ScrollType::Set == meScrollType )
+    if( SCROLL_SET == meScrollType )
     {
         // reset Button and PageRect state
         const sal_uInt16 nOldStateFlags = mnStateFlags;
@@ -678,7 +679,7 @@ void Slider::MouseButtonUp( const MouseEvent& )
             Invalidate(InvalidateFlags::NoChildren | InvalidateFlags::NoErase);
         }
         ImplDoAction( true );
-        meScrollType = ScrollType::DontKnow;
+        meScrollType = SCROLL_DONTKNOW;
     }
 }
 
@@ -704,7 +705,7 @@ void Slider::Tracking( const TrackingEvent& rTEvt )
             Slide();
         }
 
-        if ( meScrollType == ScrollType::Drag )
+        if ( meScrollType == SCROLL_DRAG )
         {
             // after dragging, recalculate to a rounded Thumb position
             ImplCalc();
@@ -721,14 +722,14 @@ void Slider::Tracking( const TrackingEvent& rTEvt )
         mnDelta = mnThumbPos-mnStartPos;
         EndSlide();
         mnDelta = 0;
-        meScrollType = ScrollType::DontKnow;
+        meScrollType = SCROLL_DONTKNOW;
     }
     else
     {
         const Point rMousePos = rTEvt.GetMouseEvent().GetPosPixel();
 
         // special handling for dragging
-        if ( meScrollType == ScrollType::Drag )
+        if ( meScrollType == SCROLL_DRAG )
         {
             long nMovePix;
             Point aCenterPos = maThumbRect.Center();
@@ -784,20 +785,20 @@ void Slider::KeyInput( const KeyEvent& rKEvt )
 
             case KEY_LEFT:
             case KEY_UP:
-                ImplDoSlideAction( ScrollType::LineUp );
+                ImplDoSlideAction( SCROLL_LINEUP );
                 break;
 
             case KEY_RIGHT:
             case KEY_DOWN:
-                ImplDoSlideAction( ScrollType::LineDown );
+                ImplDoSlideAction( SCROLL_LINEDOWN );
                 break;
 
             case KEY_PAGEUP:
-                ImplDoSlideAction( ScrollType::PageUp );
+                ImplDoSlideAction( SCROLL_PAGEUP );
                 break;
 
             case KEY_PAGEDOWN:
-                ImplDoSlideAction( ScrollType::PageDown );
+                ImplDoSlideAction( SCROLL_PAGEDOWN );
                 break;
 
             default:
@@ -809,7 +810,7 @@ void Slider::KeyInput( const KeyEvent& rKEvt )
         Control::KeyInput( rKEvt );
 }
 
-void Slider::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
+void Slider::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
 {
     ImplDraw(rRenderContext);
 }
@@ -823,7 +824,7 @@ void Slider::Resize()
     Invalidate(InvalidateFlags::NoChildren | InvalidateFlags::NoErase);
 }
 
-void Slider::SetLinkedField(VclPtr<NumericField> const & pField)
+void Slider::SetLinkedField(VclPtr<NumericField> pField)
 {
     if (mpLinkedField)
     {
@@ -846,20 +847,25 @@ void Slider::SetLinkedField(VclPtr<NumericField> const & pField)
     }
 }
 
-IMPL_LINK_NOARG(Slider, LinkedFieldSpinnerHdl, SpinField&, void)
+IMPL_LINK_NOARG_TYPED(Slider, LinkedFieldSpinnerHdl, SpinField&, void)
 {
     if (mpLinkedField)
         SetThumbPos(mpLinkedField->GetValue());
 }
-IMPL_LINK_NOARG(Slider, LinkedFieldLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(Slider, LinkedFieldLoseFocusHdl, Control&, void)
 {
     if (mpLinkedField)
         SetThumbPos(mpLinkedField->GetValue());
 }
-IMPL_LINK_NOARG(Slider, LinkedFieldModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(Slider, LinkedFieldModifyHdl, Edit&, void)
 {
     if (mpLinkedField)
         SetThumbPos(mpLinkedField->GetValue());
+}
+
+void Slider::RequestHelp( const HelpEvent& rHEvt )
+{
+    Control::RequestHelp( rHEvt );
 }
 
 void Slider::StateChanged( StateChangedType nType )

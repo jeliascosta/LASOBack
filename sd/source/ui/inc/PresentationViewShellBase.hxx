@@ -37,7 +37,7 @@ public:
         macros.
     */
     PresentationViewShellBase (SfxViewFrame *pFrame, SfxViewShell* pOldShell);
-    virtual ~PresentationViewShellBase() override;
+    virtual ~PresentationViewShellBase();
 
 protected:
     virtual void InitializeFramework() override;

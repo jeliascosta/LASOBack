@@ -31,11 +31,11 @@ class ScDocument;
 
 /** All current charts in the calc will be locked in constructor and unlocked in destructor.
 */
-class ScChartLockGuard final
+class ScChartLockGuard
 {
 public:
                     ScChartLockGuard( ScDocument* pDoc );
-                    ~ScChartLockGuard();
+    virtual         ~ScChartLockGuard();
 
     void            AlsoLockThisChart( const css::uno::Reference< css::frame::XModel >& xModel );
 
@@ -48,11 +48,11 @@ private:
 /** Use this to lock all charts in the calc for a little time.
     They will unlock automatically unless you call StartOrContinueLocking() again.
 */
-class ScTemporaryChartLock final
+class ScTemporaryChartLock
 {
 public:
                     ScTemporaryChartLock( ScDocument* pDoc );
-                    ~ScTemporaryChartLock();
+    virtual         ~ScTemporaryChartLock();
 
     void            StartOrContinueLocking();
     void            StopLocking();
@@ -63,7 +63,7 @@ private:
     Timer                               maTimer;
     std::unique_ptr< ScChartLockGuard >   mapScChartLockGuard;
 
-    DECL_LINK(TimeoutHdl, Timer *, void);
+    DECL_LINK_TYPED(TimeoutHdl, Timer *, void);
 
     ScTemporaryChartLock( const ScTemporaryChartLock& ) = delete;
 };

@@ -31,7 +31,6 @@
 #include <svtools/valueset.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <sfx2/tabdlg.hxx>
-#include <svx/colorbox.hxx>
 #include <fmtclbl.hxx>
 #include <colex.hxx>
 #include <prcntfld.hxx>
@@ -61,14 +60,13 @@ class SwColumnDlg : public SfxModalDialog
     bool                bSelSectionChanged : 1;
     bool                bFrameChanged : 1;
 
-    DECL_LINK(ObjectListBoxHdl, ListBox&, void);
-    DECL_LINK(OkHdl, Button*, void);
+    DECL_LINK_TYPED(ObjectListBoxHdl, ListBox&, void);
+    DECL_LINK_TYPED(OkHdl, Button*, void);
     void ObjectHdl(ListBox*);
-    SfxItemSet* EvalCurrentSelection(void);
 
 public:
     SwColumnDlg(vcl::Window* pParent, SwWrtShell& rSh);
-    virtual ~SwColumnDlg() override;
+    virtual ~SwColumnDlg();
     virtual void dispose() override;
 };
 
@@ -92,14 +90,14 @@ class SwColumnPage : public SfxTabPage
 
     VclPtr<PushButton>     m_pBtnBack;
     VclPtr<FixedText>      m_pLbl1;
-    PercentField m_aEd1;
+    PercentField aEd1;
     VclPtr<FixedText>      m_pLbl2;
-    PercentField m_aEd2;
+    PercentField aEd2;
     VclPtr<FixedText>      m_pLbl3;
-    PercentField m_aEd3;
+    PercentField aEd3;
     VclPtr<PushButton>     m_pBtnNext;
-    PercentField m_aDistEd1;
-    PercentField m_aDistEd2;
+    PercentField aDistEd1;
+    PercentField aDistEd2;
     VclPtr<CheckBox>       m_pAutoWidthBox;
 
     VclPtr<FixedText>      m_pLineTypeLbl;
@@ -107,7 +105,7 @@ class SwColumnPage : public SfxTabPage
     VclPtr<FixedText>      m_pLineWidthLbl;
     VclPtr<MetricField>    m_pLineWidthEdit;
     VclPtr<FixedText>      m_pLineColorLbl;
-    VclPtr<SvxColorListBox> m_pLineColorDLB;
+    VclPtr<ColorListBox>   m_pLineColorDLB;
     VclPtr<FixedText>      m_pLineHeightLbl;
     VclPtr<MetricField>    m_pLineHeightEdit;
     VclPtr<FixedText>      m_pLinePosLbl;
@@ -120,35 +118,34 @@ class SwColumnPage : public SfxTabPage
     VclPtr<SwColExample>   m_pPgeExampleWN;
     VclPtr<SwColumnOnlyExample> m_pFrameExampleWN;
 
-    SwColMgr*       m_pColMgr;
+    SwColMgr*       pColMgr;
 
-    sal_uInt16          m_nFirstVis;
-    sal_uInt16          m_nCols;
-    long            m_nColWidth[nMaxCols];
-    long            m_nColDist[nMaxCols];
-    sal_uInt16          m_nMinWidth;
-    PercentField*   m_pModifiedField;
+    sal_uInt16          nFirstVis;
+    sal_uInt16          nCols;
+    long            nColWidth[nMaxCols];
+    long            nColDist[nMaxCols];
+    sal_uInt16          nMinWidth;
+    PercentField*   pModifiedField;
 
     std::map<VclPtr<MetricField>, PercentField*> m_aPercentFieldsMap;
 
-    bool            m_bFormat;
-    bool            m_bFrame;
-    bool            m_bHtmlMode;
-    bool            m_bLockUpdate;
+    bool            bFormat;
+    bool            bFrame;
+    bool            bHtmlMode;
+    bool            bLockUpdate;
 
     // Handler
-    DECL_LINK( ColModify, Edit&, void );
+    DECL_LINK_TYPED( ColModify, Edit&, void );
     void ColModify(NumericField*);
-    DECL_LINK( GapModify, Edit&, void );
-    DECL_LINK( EdModify, Edit&, void );
-    DECL_LINK( AutoWidthHdl, Button *, void );
-    DECL_LINK( SetDefaultsHdl, ValueSet *, void );
+    DECL_LINK_TYPED( GapModify, Edit&, void );
+    DECL_LINK_TYPED( EdModify, Edit&, void );
+    DECL_LINK_TYPED( AutoWidthHdl, Button *, void );
+    DECL_LINK_TYPED( SetDefaultsHdl, ValueSet *, void );
 
-    DECL_LINK( Up, Button *, void );
-    DECL_LINK( Down, Button *, void );
-    DECL_LINK( UpdateColMgr, Edit&, void );
-    DECL_LINK( UpdateColMgrListBox, ListBox&, void );
-    DECL_LINK( UpdateColMgrColorBox, SvxColorListBox&, void );
+    DECL_LINK_TYPED( Up, Button *, void );
+    DECL_LINK_TYPED( Down, Button *, void );
+    DECL_LINK_TYPED( UpdateColMgr, Edit&, void );
+    DECL_LINK_TYPED( UpdateColMgrListBox, ListBox&, void );
     void Timeout();
 
     void            Update(MetricField *pInteractiveField);
@@ -161,7 +158,7 @@ class SwColumnPage : public SfxTabPage
     using SfxTabPage::DeactivatePage;
 
     virtual void    ActivatePage(const SfxItemSet& rSet) override;
-    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
+    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
 
     void connectPercentField(PercentField &rWrap, const OString &rName);
 
@@ -171,7 +168,7 @@ class SwColumnPage : public SfxTabPage
 
 public:
     SwColumnPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwColumnPage() override;
+    virtual ~SwColumnPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -185,7 +182,7 @@ public:
 
     void SetFormatUsed(bool bFormatUsed)
     {
-        m_bFormat = bFormatUsed;
+        bFormat = bFormatUsed;
     }
 
     void ShowBalance(bool bShow)

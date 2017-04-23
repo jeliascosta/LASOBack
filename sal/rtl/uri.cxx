@@ -176,7 +176,7 @@ sal_uInt32 readUcs4(sal_Unicode const ** pBegin, sal_Unicode const * pEnd,
                     return nDstSize == 1
                         ? aDst[0] : rtl::combineSurrogates(aDst[0], aDst[1]);
                 }
-                if (nInfo == RTL_TEXTTOUNICODE_INFO_SRCBUFFERTOSMALL
+                else if (nInfo == RTL_TEXTTOUNICODE_INFO_SRCBUFFERTOSMALL
                          && pEnd - p >= 3 && p[0] == cEscapePrefix
                          && (nWeight1 = getHexWeight(p[1])) >= 0
                          && (nWeight2 = getHexWeight(p[2])) >= 0)
@@ -202,11 +202,13 @@ sal_uInt32 readUcs4(sal_Unicode const ** pBegin, sal_Unicode const * pEnd,
         }
         return nChar;
     }
-
-    *pType = EscapeNo;
-    return rtl::isHighSurrogate(nChar) && *pBegin < pEnd
-           && rtl::isLowSurrogate(**pBegin) ?
-               rtl::combineSurrogates(nChar, *(*pBegin)++) : nChar;
+    else
+    {
+        *pType = EscapeNo;
+        return rtl::isHighSurrogate(nChar) && *pBegin < pEnd
+               && rtl::isLowSurrogate(**pBegin) ?
+                   rtl::combineSurrogates(nChar, *(*pBegin)++) : nChar;
+    }
 }
 
 void writeUcs4(rtl_uString ** pBuffer, sal_Int32 * pCapacity, sal_uInt32 nUtf32)
@@ -303,8 +305,9 @@ bool writeEscapeChar(rtl_uString ** pBuffer, sal_Int32 * pCapacity,
         } else {
             if (bStrict) {
                 return false;
+            } else {
+                writeUcs4(pBuffer, pCapacity, nUtf32);
             }
-            writeUcs4(pBuffer, pCapacity, nUtf32);
         }
     }
     return true;
@@ -315,9 +318,9 @@ struct Component
     sal_Unicode const * pBegin;
     sal_Unicode const * pEnd;
 
-    Component(): pBegin(nullptr), pEnd(nullptr) {}
+    inline Component(): pBegin(nullptr), pEnd(nullptr) {}
 
-    bool isPresent() const { return pBegin != nullptr; }
+    inline bool isPresent() const { return pBegin != nullptr; }
 
     inline sal_Int32 getLength() const;
 };
@@ -356,7 +359,7 @@ void parseUriRef(rtl_uString const * pUriRef, Components * pComponents)
                 pPos = p;
                 break;
             }
-            if (!rtl::isAsciiAlphanumeric(*p) && *p != '+' && *p != '-'
+            else if (!rtl::isAsciiAlphanumeric(*p) && *p != '+' && *p != '-'
                      && *p != '.')
             {
                 break;
@@ -450,135 +453,79 @@ void appendPath(
 sal_Bool const * SAL_CALL rtl_getUriCharClass(rtl_UriCharClass eCharClass)
     SAL_THROW_EXTERN_C()
 {
-    static sal_Bool const aCharClass[][nCharClassSize] = {
-        {false, false, false, false, false, false, false, false,// None
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,   //  !"#$%&'
-         false, false, false, false, false, false, false, false,   // ()*+,-./
-         false, false, false, false, false, false, false, false,   // 01234567
-         false, false, false, false, false, false, false, false,   // 89:;<=>?
-         false, false, false, false, false, false, false, false,   // @ABCDEFG
-         false, false, false, false, false, false, false, false,   // HIJKLMNO
-         false, false, false, false, false, false, false, false,   // PQRSTUVW
-         false, false, false, false, false, false, false, false,   // XYZ[\]^_
-         false, false, false, false, false, false, false, false,   // `abcdefg
-         false, false, false, false, false, false, false, false,   // hijklmno
-         false, false, false, false, false, false, false, false,   // pqrstuvw
-         false, false, false, false, false, false, false, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// Uric
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true,  true,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true,  true, false,  true, false,  true,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true,  true, false,  true, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// UricNoSlash
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true, false,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true,  true, false,  true, false,  true,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// RelSegment
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true, false,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true, false,  true, false,  true, false, false,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// RegName
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true, false,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true,  true, false,  true, false, false,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// Userinfo
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true, false,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true,  true, false,  true, false, false,   // 89:;<=>?
-         false,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// Pchar
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true,  true,  true,  true, false,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true, false, false,  true, false, false,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false},  // xyz{|}~
-        {false, false, false, false, false, false, false, false,// UnoParamValue
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false, false, false, false, false, false, false, false,
-         false,  true, false, false,  true, false,  true,  true,   //  !"#$%&'
-          true,  true,  true,  true, false,  true,  true,  true,   // ()*+,-./
-          true,  true,  true,  true,  true,  true,  true,  true,   // 01234567
-          true,  true,  true, false, false, false, false,  true,   // 89:;<=>?
-          true,  true,  true,  true,  true,  true,  true,  true,   // @ABCDEFG
-          true,  true,  true,  true,  true,  true,  true,  true,   // HIJKLMNO
-          true,  true,  true,  true,  true,  true,  true,  true,   // PQRSTUVW
-          true,  true,  true, false, false, false, false,  true,   // XYZ[\]^_
-         false,  true,  true,  true,  true,  true,  true,  true,   // `abcdefg
-          true,  true,  true,  true,  true,  true,  true,  true,   // hijklmno
-          true,  true,  true,  true,  true,  true,  true,  true,   // pqrstuvw
-          true,  true,  true, false, false, false,  true, false}}; // xyz{|}~
+    static sal_Bool const aCharClass[][nCharClassSize]
+    = {{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* None */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* !"#$%&'()*+,-./*/
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*0123456789:;<=>?*/
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*@ABCDEFGHIJKLMNO*/
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*PQRSTUVWXYZ[\]^_*/
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*`abcdefghijklmno*/
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* Uric */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* UricNoSlash */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* RelSegment */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* RegName */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* Userinfo */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, /*0123456789:;<=>?*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* Pchar */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       },
+       { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* UnoParamValue */
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, /* !"#$%&'()*+,-./*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*0123456789:;<=>?*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*@ABCDEFGHIJKLMNO*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, /*PQRSTUVWXYZ[\]^_*/
+         0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*`abcdefghijklmno*/
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0  /*pqrstuvwxyz{|}~ */
+       }};
     assert(
         (eCharClass >= 0
          && (sal::static_int_cast< std::size_t >(eCharClass)

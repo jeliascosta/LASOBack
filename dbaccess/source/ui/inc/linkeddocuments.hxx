@@ -64,7 +64,7 @@ namespace dbaui
         );
         ~OLinkedDocumentsAccess();
 
-        bool isConnected() const { return m_xConnection.is(); }
+        inline bool isConnected() const { return m_xConnection.is(); }
 
         css::uno::Reference< css::lang::XComponent>
                 open(
@@ -82,16 +82,22 @@ namespace dbaui
                 );
 
         void    newFormWithPilot(
-                    const sal_Int32 _nCommandType,
-                    const OUString& _rObjectName
+                    const sal_Int32 _nCommandType = -1,
+                    const OUString& _rObjectName = OUString()
                 );
         void    newReportWithPilot(
-                    const sal_Int32 _nCommandType,
-                    const OUString& _rObjectName
+                    const sal_Int32 _nCommandType = -1,
+                    const OUString& _rObjectName = OUString()
                 );
         void    newQueryWithPilot();
         void    newTableWithPilot();
 
+        enum RESULT
+        {
+            ERROR,
+            SUCCESS,
+            CANCEL
+        };
     private:
         css::uno::Reference< css::lang::XComponent >
             impl_open(

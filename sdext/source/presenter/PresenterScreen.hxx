@@ -39,12 +39,14 @@ namespace sdext { namespace presenter {
 
 class PresenterController;
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::task::XJob
-    > PresenterScreenJobInterfaceBase;
-typedef ::cppu::WeakComponentImplHelper <
-    css::lang::XEventListener
-    > PresenterScreenInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::task::XJob
+        > PresenterScreenJobInterfaceBase;
+    typedef ::cppu::WeakComponentImplHelper <
+        css::lang::XEventListener
+        > PresenterScreenInterfaceBase;
+}
 
 /** The PresenterScreenJob service is instantiated every time a document is
     created or loaded.  In its execute() method it then filters out all
@@ -68,11 +70,14 @@ public:
     // XJob
 
     virtual css::uno::Any SAL_CALL execute(
-        const css::uno::Sequence<css::beans::NamedValue >& Arguments) override;
+        const css::uno::Sequence<css::beans::NamedValue >& Arguments)
+        throw (css::lang::IllegalArgumentException,
+            css::uno::Exception,
+            css::uno::RuntimeException, std::exception) override;
 
 private:
     explicit PresenterScreenJob (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterScreenJob() override;
+    virtual ~PresenterScreenJob();
 
     css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
 };
@@ -96,7 +101,7 @@ public:
     PresenterScreen (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const css::uno::Reference<css::frame::XModel2>& rxModel);
-    virtual ~PresenterScreen() override;
+    virtual ~PresenterScreen();
     PresenterScreen(const PresenterScreen&) = delete;
     PresenterScreen& operator=(const PresenterScreen&) = delete;
 
@@ -120,7 +125,7 @@ public:
 
     // XEventListener
 
-    virtual void SAL_CALL disposing ( const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing ( const css::lang::EventObject& rEvent) throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::frame::XModel2 > mxModel;

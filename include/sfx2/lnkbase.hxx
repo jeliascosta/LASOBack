@@ -79,7 +79,7 @@ private:
     bool                    bUseCache : 1;  // for Graphics Links!
     bool                    bWasLastEditOK : 1;
 
-    DECL_LINK( EndEditHdl, const OUString&, void );
+    DECL_LINK_TYPED( EndEditHdl, const OUString&, void );
 
     bool                    ExecuteEdit( const OUString& _rNewName );
 
@@ -96,16 +96,16 @@ protected:
                     m_xInputStreamToLoadFrom;
 
                     SvBaseLink();
-                    SvBaseLink( SfxLinkUpdateMode nLinkType, SotClipboardFormatId nContentType );
-    virtual         ~SvBaseLink() override;
+                    SvBaseLink( SfxLinkUpdateMode nLinkType, SotClipboardFormatId nContentType = SotClipboardFormatId::STRING );
+    virtual         ~SvBaseLink();
 
     void            GetRealObject_( bool bConnect = true );
 
     SvLinkSource*   GetRealObject()
                     {
-                        if( !xObj.is() )
+                        if( !xObj.Is() )
                             GetRealObject_();
-                        return xObj.get();
+                        return xObj;
                     }
 
 public:
@@ -120,7 +120,7 @@ public:
     sal_uInt16          GetObjType() const { return nObjType; }
 
     void            SetObj( SvLinkSource * pObj );
-    SvLinkSource*   GetObj() const  { return xObj.get(); }
+    SvLinkSource*   GetObj() const  { return xObj; }
 
     void            SetLinkSourceName( const OUString & rName );
     const OUString& GetLinkSourceName() const { return aLinkName;}
@@ -164,7 +164,7 @@ public:
     // #i88291#
     void            clearStreamToLoadFrom();
 
-    bool     WasLastEditOK() const       { return bWasLastEditOK; }
+    inline bool     WasLastEditOK() const       { return bWasLastEditOK; }
     FileDialogHelper & GetInsertFileDialog(const OUString& rFactory) const;
 };
 

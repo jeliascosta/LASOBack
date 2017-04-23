@@ -29,48 +29,54 @@ namespace sax
     public:
         // XDocumentHandler
         virtual void SAL_CALL
-        startDocument() override
+        startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->startDocument();
         }
 
         virtual void SAL_CALL
-        endDocument() override
+        endDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->endDocument();
         }
 
         virtual void SAL_CALL
         startElement(const OUString& aName,
-                const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs) override
+                const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->startElement(aName, xAttribs);
         }
 
         virtual void SAL_CALL
-        endElement(const OUString& aName) override
+        endElement(const OUString& aName) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->endElement(aName);
         }
 
         virtual void SAL_CALL
-        characters(const OUString& aChars) override
+        characters(const OUString& aChars) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->characters(aChars);
         }
 
         virtual void SAL_CALL
-        ignorableWhitespace(const OUString& aWhitespaces) override
+        ignorableWhitespace(const OUString& aWhitespaces) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->ignorableWhitespace(aWhitespaces);
         }
         virtual void SAL_CALL
-        processingInstruction(const OUString& aTarget, const OUString& aData) override
+        processingInstruction(const OUString& aTarget, const OUString& aData)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->processingInstruction(aTarget, aData);
         }
         virtual void SAL_CALL
-        setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator) override
+        setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->setDocumentLocator(xLocator);
         }
@@ -114,74 +120,81 @@ namespace sax
     public:
         // XDocumentHandler
         virtual void SAL_CALL
-        startDocument() override
+        startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->startDocument();
         }
 
         virtual void SAL_CALL
-        endDocument() override
+        endDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->endDocument();
         }
 
         virtual void SAL_CALL
         startElement(const OUString& aName,
-                const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs) override
+                const css::uno::Reference< css::xml::sax::XAttributeList > & xAttribs)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->startElement(aName, xAttribs);
         }
 
         virtual void SAL_CALL
-        endElement(const OUString& aName) override
+        endElement(const OUString& aName) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->endElement(aName);
         }
 
         virtual void SAL_CALL
-        characters(const OUString& aChars) override
+        characters(const OUString& aChars) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->characters(aChars);
         }
 
         virtual void SAL_CALL
-        ignorableWhitespace(const OUString& aWhitespaces) override
+        ignorableWhitespace(const OUString& aWhitespaces) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->ignorableWhitespace(aWhitespaces);
         }
         virtual void SAL_CALL
-        processingInstruction(const OUString& aTarget, const OUString& aData) override
+        processingInstruction(const OUString& aTarget, const OUString& aData)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->processingInstruction(aTarget, aData);
         }
         virtual void SAL_CALL
-        setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator) override
+        setDocumentLocator(const css::uno::Reference< css::xml::sax::XLocator > & xLocator)
+                throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->setDocumentLocator(xLocator);
         }
         // XExtendedDocumentHandler
         virtual void SAL_CALL
-        startCDATA() override
+        startCDATA() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->startCDATA();
         }
         virtual void SAL_CALL
-        endCDATA() override
+        endCDATA() throw (css::uno::RuntimeException, std::exception) override
         {
             m_handler->endCDATA();
         }
         virtual void SAL_CALL
-        comment(const OUString& sComment) override
+        comment(const OUString& sComment) throw (css::xml::sax::SAXException,
+                css::uno::RuntimeException, std::exception) override
         {
             m_handler->comment(sComment);
         }
         virtual void SAL_CALL
-        unknown(const OUString& sString) override
+        unknown(const OUString& sString) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->unknown(sString);
         }
         virtual void SAL_CALL
-        allowLineBreak() override
+        allowLineBreak() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override
         {
             m_handler->allowLineBreak();
         }

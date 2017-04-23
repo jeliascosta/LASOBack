@@ -31,11 +31,13 @@ class ChartSidebarModifyListener : public cppu::WeakImplHelper<css::util::XModif
 public:
 
     explicit ChartSidebarModifyListener(ChartSidebarModifyListenerParent* pParent);
-    virtual ~ChartSidebarModifyListener() override;
+    virtual ~ChartSidebarModifyListener();
 
-    virtual void SAL_CALL modified(const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL modified(const css::lang::EventObject& rEvent)
+        throw (::css::uno::RuntimeException, ::std::exception) override;
 
-    virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent)
+        throw (::css::uno::RuntimeException, ::std::exception) override;
 
 private:
     ChartSidebarModifyListenerParent* mpParent;

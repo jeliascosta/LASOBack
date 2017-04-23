@@ -21,13 +21,11 @@
 #define INCLUDED_OOX_TOKEN_TOKENMAP_HXX
 
 #include <vector>
-
-#include <com/sun/star/uno/Sequence.hxx>
 #include <oox/token/tokens.hxx>
 #include <rtl/instance.hxx>
 #include <rtl/ustring.hxx>
 #include <sal/log.hxx>
-#include <sal/types.h>
+#include <com/sun/star/uno/Sequence.hxx>
 
 namespace oox {
 

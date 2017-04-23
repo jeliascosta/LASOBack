@@ -48,12 +48,13 @@ namespace ftp {
 
         explicit FTPContentIdentifier(const OUString& ident);
 
-        virtual ~FTPContentIdentifier() override;
+        virtual ~FTPContentIdentifier();
 
         // XInterface
 
         virtual css::uno::Any SAL_CALL
-        queryInterface( const css::uno::Type& rType ) override;
+        queryInterface( const css::uno::Type& rType )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL acquire() throw() override;
 
@@ -63,19 +64,31 @@ namespace ftp {
 
         virtual
         css::uno::Sequence<css::uno::Type> SAL_CALL
-        getTypes() override;
+        getTypes()
+            throw(
+                css::uno::RuntimeException, std::exception
+            ) override;
 
         virtual css::uno::Sequence<sal_Int8> SAL_CALL
-        getImplementationId() override;
+        getImplementationId()
+            throw(
+                css::uno::RuntimeException, std::exception
+            ) override;
 
 
         // XContentIdentifier
 
         virtual OUString SAL_CALL
-        getContentIdentifier() override;
+        getContentIdentifier()
+            throw (
+                css::uno::RuntimeException, std::exception
+            ) override;
 
         virtual OUString SAL_CALL
-        getContentProviderScheme() override;
+        getContentProviderScheme()
+            throw (
+                css::uno::RuntimeException, std::exception
+            ) override;
 
 
     private:

@@ -29,9 +29,11 @@
 class CSmplMailClient : public cppu::WeakImplHelper<css::system::XSimpleMailClient>
 {
 public:
-    virtual css::uno::Reference<css::system::XSimpleMailMessage> SAL_CALL createSimpleMailMessage() override;
+    virtual css::uno::Reference<css::system::XSimpleMailMessage> SAL_CALL createSimpleMailMessage()
+        throw (css::uno::RuntimeException);
 
-    virtual void SAL_CALL sendSimpleMailMessage(const css::uno::Reference<css::system::XSimpleMailMessage>& xSimpleMailMessage, sal_Int32 aFlag) override;
+    virtual void SAL_CALL sendSimpleMailMessage(const css::uno::Reference<css::system::XSimpleMailMessage>& xSimpleMailMessage, sal_Int32 aFlag)
+        throw (css::lang::IllegalArgumentException, css::uno::Exception, css::uno::RuntimeException);
 
 private:
     void validateParameter(const css::uno::Reference<css::system::XSimpleMailMessage>& xSimpleMailMessage, sal_Int32 aFlag);

@@ -55,9 +55,10 @@
 #include <edtwin.hxx>
 #include <swwait.hxx>
 #include <shells.hrc>
+#include <popup.hrc>
 
 #include <sfx2/objface.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <svx/svdomedia.hxx>
 #include <svx/sdr/contact/viewcontactofsdrmediaobj.hxx>
 #include <avmedia/mediaitem.hxx>
@@ -74,7 +75,7 @@ void SwMediaShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("media");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_MEDIA_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_MEDIA_TOOLBOX);
 }
 
 void SwMediaShell::ExecMedia(SfxRequest &rReq)
@@ -190,7 +191,8 @@ SwMediaShell::SwMediaShell(SwView &_rView) :
 
 {
     SetName("Media Playback");
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Media));
+    SetHelpId(SW_MEDIASHELL);
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Media));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -321,35 +321,35 @@ sal_Int16 CharClass::getType( const OUString& rStr, sal_Int32 nPos ) const
     }
 }
 
-css::i18n::DirectionProperty CharClass::getCharacterDirection( const OUString& rStr, sal_Int32 nPos ) const
+sal_Int16 CharClass::getCharacterDirection( const OUString& rStr, sal_Int32 nPos ) const
 {
     try
     {
         if ( xCC.is() )
-            return (css::i18n::DirectionProperty)xCC->getCharacterDirection( rStr, nPos );
+            return xCC->getCharacterDirection( rStr, nPos );
         else
-            return css::i18n::DirectionProperty_LEFT_TO_RIGHT;
+            return 0;
     }
     catch ( const Exception& )
     {
         SAL_WARN( "unotools.i18n", "getCharacterDirection: Exception caught!" );
-        return css::i18n::DirectionProperty_LEFT_TO_RIGHT;
+        return 0;
     }
 }
 
-css::i18n::UnicodeScript CharClass::getScript( const OUString& rStr, sal_Int32 nPos ) const
+sal_Int16 CharClass::getScript( const OUString& rStr, sal_Int32 nPos ) const
 {
     try
     {
         if ( xCC.is() )
-            return (css::i18n::UnicodeScript) xCC->getScript( rStr, nPos );
+            return xCC->getScript( rStr, nPos );
         else
-            return UnicodeScript_kBasicLatin;
+            return 0;
     }
     catch ( const Exception& )
     {
         SAL_WARN( "unotools.i18n", "getScript: Exception caught!" );
-        return UnicodeScript_kBasicLatin;
+        return 0;
     }
 }
 

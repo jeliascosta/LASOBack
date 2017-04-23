@@ -66,6 +66,7 @@ XFList::XFList()
 {
     m_bOrdered = true;
     m_bContinueNumber = false;
+    m_pHeader = nullptr;
 }
 
 XFList::~XFList()
@@ -88,6 +89,10 @@ void    XFList::ToXml(IXFStream *pStrm)
     else
         pStrm->StartElement( "text:unordered-list" );
 
+    if( m_pHeader )
+    {
+        m_pHeader->ToXml(pStrm);
+    }
     XFContentContainer::ToXml(pStrm);
 
     if( m_bOrdered )

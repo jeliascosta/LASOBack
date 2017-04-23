@@ -23,12 +23,13 @@
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 
 using namespace ::swf;
+using namespace ::std;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::io;
 
 
-static MapMode aTWIPSMode( MapUnit::MapTwip );
-static MapMode a100thmmMode( MapUnit::Map100thMM );
+static MapMode aTWIPSMode( MAP_TWIP );
+static MapMode a100thmmMode( MAP_100TH_MM );
 
 static sal_Int32 map100thmm( sal_Int32 n100thMM )
 {
@@ -38,16 +39,11 @@ static sal_Int32 map100thmm( sal_Int32 n100thMM )
 }
 
 
-Writer::Writer( sal_Int32 nTWIPWidthOutput, sal_Int32 nTWIPHeightOutput, sal_Int32 nDocWidth, sal_Int32 nDocHeight, sal_Int32 nJPEGcompressMode )
-:   mnDocWidth( map100thmm(nDocWidth) ),
-    mnDocHeight( map100thmm(nDocHeight) ),
-    mnDocXScale( (double)nTWIPWidthOutput / mnDocWidth ),
-    mnDocYScale( (double)nTWIPHeightOutput / mnDocHeight ),
-    mpClipPolyPolygon( nullptr ),
+Writer::Writer( sal_Int32 nTWIPWidthOutput, sal_Int32 nTWIPHeightOutput, sal_Int32 nDocWidthInput, sal_Int32 nDocHeightInput, sal_Int32 nJPEGcompressMode )
+:   mpClipPolyPolygon( nullptr ),
     mpTag( nullptr ),
     mpSprite( nullptr ),
     mnNextId( 1 ),
-    mnFrames( 0 ),
     mnGlobalTransparency(0),
     mnJPEGCompressMode(nJPEGcompressMode)
 {
@@ -59,8 +55,16 @@ Writer::Writer( sal_Int32 nTWIPWidthOutput, sal_Int32 nTWIPHeightOutput, sal_Int
     mpMovieStream = maMovieTempFile.GetStream( StreamMode::WRITE|StreamMode::TRUNC );
     mpFontsStream = maFontsTempFile.GetStream( StreamMode::WRITE|StreamMode::TRUNC );
 
+    mnFrames = 0;
+
+    mnDocWidth = map100thmm( nDocWidthInput );
+    mnDocHeight = map100thmm( nDocHeightInput );
+
+    mnDocXScale = (double)nTWIPWidthOutput / mnDocWidth;
+    mnDocYScale = (double)nTWIPHeightOutput / mnDocHeight;
+
     // define an invisible button with the size of a page
-    tools::Rectangle aRect( 0, 0, (long)( mnDocWidth * mnDocXScale ), (long)( mnDocHeight * mnDocYScale ) );
+    Rectangle aRect( 0, 0, (long)( mnDocWidth * mnDocXScale ), (long)( mnDocHeight * mnDocYScale ) );
     tools::Polygon aPoly( aRect );
     FillStyle aFill = FillStyle( Color(COL_WHITE) );
     mnWhiteBackgroundShapeId = defineShape( aPoly, aFill );
@@ -106,7 +110,7 @@ void ImplCopySvStreamToXOutputStream( SvStream& rIn, Reference< XOutputStream > 
     sal_uInt32 nSize = rIn.Tell();
     rIn.Seek( STREAM_SEEK_TO_BEGIN );
 
-    Sequence< sal_Int8 > aBuffer( std::min( nBufferSize, nSize ) );
+    Sequence< sal_Int8 > aBuffer( min( nBufferSize, nSize ) );
 
     while( nSize )
     {
@@ -116,7 +120,7 @@ void ImplCopySvStreamToXOutputStream( SvStream& rIn, Reference< XOutputStream > 
             aBuffer.realloc( nSize );
         }
 
-        sal_uInt32 nRead = rIn.ReadBytes(aBuffer.getArray(), nBufferSize);
+        sal_uInt32 nRead = rIn.Read( aBuffer.getArray(), nBufferSize );
         DBG_ASSERT( nRead == nBufferSize, "ImplCopySvStreamToXOutputStream failed!" );
         xOut->writeBytes( aBuffer );
 
@@ -151,7 +155,7 @@ void Writer::storeTo( Reference< XOutputStream > &xOutStream )
 
     aHeader.WriteUInt32( 0 );
 
-    tools::Rectangle aDocRect( 0, 0, static_cast<long>(mnDocWidth*mnDocXScale), static_cast<long>(mnDocHeight*mnDocYScale) );
+    Rectangle aDocRect( 0, 0, static_cast<long>(mnDocWidth*mnDocXScale), static_cast<long>(mnDocHeight*mnDocYScale) );
 
     aHeader.addRect( aDocRect );
 

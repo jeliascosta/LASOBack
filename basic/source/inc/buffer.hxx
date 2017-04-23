@@ -21,13 +21,12 @@
 #define INCLUDED_BASIC_SOURCE_INC_BUFFER_HXX
 
 #include <rtl/ustring.hxx>
-#include <memory>
 
 class SbiParser;
 
 class SbiBuffer {
     SbiParser* pParser;             // for error messages
-    std::unique_ptr<char[]>  pBuf;
+    char*   pBuf;
     char*   pCur;
     sal_uInt32  nOff;
     sal_uInt32  nSize;

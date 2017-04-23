@@ -22,6 +22,9 @@
 #include <swtypes.hxx>
 #include <fmtruby.hxx>
 
+#include <memory>
+#include <vector>
+
 class SwRubyListEntry
 {
     OUString m_sText;
@@ -37,6 +40,8 @@ public:
           SwFormatRuby& GetRubyAttr()              { return m_aRubyAttr; }
     void SetRubyAttr( const SwFormatRuby& rAttr )  { m_aRubyAttr = rAttr; }
 };
+
+class SwRubyList : public std::vector<std::unique_ptr<SwRubyListEntry>> {};
 
 #endif  //_ INCLUDED_SW_INC_RUBYLIST_HXX
 

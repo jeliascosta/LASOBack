@@ -31,8 +31,8 @@
 #include <sfx2/dispatch.hxx>
 #include <sfx2/request.hxx>
 #include <svx/svdopath.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/obj3d.hxx>
-#include <svx/scene3d.hxx>
 #include <sfx2/event.hxx>
 #include <sfx2/docfile.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -106,8 +106,8 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
             const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
             const SdrGrafObj* pSdrGrafObj = dynamic_cast< const SdrGrafObj* >(pObj);
             const SdrOle2Obj* pSdrOle2Obj = dynamic_cast< const SdrOle2Obj* >(pObj);
-            SdrInventor nInv = pObj->GetObjInventor();
-            sal_uInt16  nId  = pObj->GetObjIdentifier();
+            sal_uInt32 nInv = pObj->GetObjInventor();
+            sal_uInt16 nId = pObj->GetObjIdentifier();
             SdrObjTransformInfoRec aInfoRec;
             pObj->TakeObjInfo( aInfoRec );
 
@@ -127,19 +127,19 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
 
             /* If it is not a group object or 3D object, we disable "enter
                group". */
-            if( !( ( dynamic_cast< const SdrObjGroup *>( pObj ) != nullptr && nInv == SdrInventor::Default ) ||
-                   ( dynamic_cast< const E3dScene* >(pObj) != nullptr ) ) )
+            if( !( ( dynamic_cast< const SdrObjGroup *>( pObj ) !=  nullptr && nInv == SdrInventor ) ||
+                (dynamic_cast< const E3dPolyScene* >(pObj) !=  nullptr|| dynamic_cast< const E3dScene* >(pObj) !=  nullptr /*|| pObj->ISA (E3dCompoundObject) */) ) )
             {
                 rSet.DisableItem( SID_ENTER_GROUP );
             }
 
             // If it is not a group object, we disable "ungroup"
-            if(!(dynamic_cast< const SdrObjGroup *>( pObj ) != nullptr && nInv == SdrInventor::Default))
+            if(!(dynamic_cast< const SdrObjGroup *>( pObj ) !=  nullptr && nInv == SdrInventor))
             {
                 rSet.DisableItem(SID_UNGROUP);
             }
 
-            if( nInv == SdrInventor::Default &&
+            if( nInv == SdrInventor &&
                (nId == OBJ_LINE ||
                 nId == OBJ_PLIN ||
                 nId == OBJ_PATHLINE ||
@@ -154,26 +154,26 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
             { // JOE: a group object may can be converted into a PathObj
                 rSet.DisableItem( SID_LINEEND_POLYGON );
             }
-            if(nInv == SdrInventor::Default &&
+            if(nInv == SdrInventor &&
                (nId == OBJ_PATHFILL || nId == OBJ_PATHLINE || !aInfoRec.bCanConvToPath))
                 rSet.DisableItem( SID_CHANGEBEZIER );
 
-            if( nInv == SdrInventor::Default &&
+            if( nInv == SdrInventor &&
                 ( nId == OBJ_POLY || nId == OBJ_PLIN || !aInfoRec.bCanConvToPoly ) &&
                 !GetView()->IsVectorizeAllowed() )
             {
                 rSet.DisableItem( SID_CHANGEPOLYGON );
             }
 
-            if(nInv == SdrInventor::Default && nId == OBJ_TABLE )
+            if(nInv == SdrInventor && nId == OBJ_TABLE )
             {
                 rSet.DisableItem( SID_TEXTATTR_DLG );
             }
 
-            if( nInv != SdrInventor::Default || nId != OBJ_MEASURE )
+            if( nInv != SdrInventor || nId != OBJ_MEASURE )
                 rSet.DisableItem( SID_MEASURE_DLG );
 
-            if( nInv != SdrInventor::Default || nId != OBJ_EDGE )
+            if( nInv != SdrInventor || nId != OBJ_EDGE )
                 rSet.DisableItem( SID_CONNECTION_DLG );
             else
             {
@@ -197,7 +197,7 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
                     rSet.DisableItem( SID_CONNECTION_NEW_ROUTING );
             }
 
-            if ( nInv == SdrInventor::E3d                          ||
+            if ( nInv == E3dInventor                          ||
                  (!mpDrawView->IsConvertToPathObjPossible() &&
                   !mpDrawView->IsShearAllowed()                  &&
                   !mpDrawView->IsDistortAllowed()) )
@@ -262,7 +262,7 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
         if( SfxItemState::DEFAULT == rSet.GetItemState( SID_OUTLINE_TEXT_AUTOFIT ) )
         {
             const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
-            const bool bSet = pObj->GetMergedItemSet().GetItem<SdrTextFitToSizeTypeItem>(SDRATTR_TEXT_FITTOSIZE)->GetValue() != SdrFitToSizeType::NONE;
+            const bool bSet = static_cast<const SdrTextFitToSizeTypeItem*>(pObj->GetMergedItemSet().GetItem(SDRATTR_TEXT_FITTOSIZE))->GetValue() != SDRTEXTFIT_NONE;
             rSet.Put(SfxBoolItem(SID_OUTLINE_TEXT_AUTOFIT, bSet));
         }
 
@@ -305,10 +305,10 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
             for( size_t i = 0; i < nMarkCount && !bText && i < 50; ++i )
             {
                 SdrObject* pObj = rMarkList.GetMark(i)->GetMarkedSdrObj();
-                SdrInventor nInv = pObj->GetObjInventor();
-                sal_uInt16  nId  = pObj->GetObjIdentifier();
+                sal_uInt32 nInv = pObj->GetObjInventor();
+                sal_uInt16 nId = pObj->GetObjIdentifier();
 
-                if (nInv == SdrInventor::Default)
+                if (nInv == SdrInventor)
                 {
                     switch (nId)
                     {
@@ -337,7 +337,7 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
                         case OBJ_TABLE: bTable = true; break;
                     }
                 }
-                else if (nInv == SdrInventor::E3d)
+                else if (nInv == E3dInventor)
                 {
                     if(dynamic_cast< const E3dScene *>( pObj ) !=  nullptr)
                         b3dObj = true;
@@ -457,6 +457,7 @@ void DrawViewShell::GetMenuStateSel( SfxItemSet &rSet )
         rSet.DisableItem( SID_FRAME_TO_BOTTOM );
         rSet.DisableItem( SID_BEFORE_OBJ );
         rSet.DisableItem( SID_BEHIND_OBJ );
+        rSet.DisableItem( SID_CONVERT );
         rSet.DisableItem( SID_POSITION );
 
         rSet.DisableItem( SID_SIZE_OPTIMAL );

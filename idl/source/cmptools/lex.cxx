@@ -17,11 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <ctype.h>
+
 #include <hash.hxx>
 #include <lex.hxx>
 #include <globals.hxx>
 #include <rtl/strbuf.hxx>
-#include<rtl/character.hxx>
 
 OString SvToken::GetTokenAsString() const
 {
@@ -75,13 +76,14 @@ void SvTokenStream::InitCtor()
     aStrFalse = OString("FALSE");
     nLine       = nColumn = 0;
     nBufPos     = 0;
+    nTabSize    = 4;
     nMaxPos     = 0;
     c           = GetNextChar();
     FillTokenList();
 }
 
 SvTokenStream::SvTokenStream( const OUString & rFileName )
-    : pInStream( new SvFileStream( rFileName, StreamMode::STD_READ ) )
+    : pInStream( new SvFileStream( rFileName, STREAM_STD_READ | StreamMode::NOCREATE ) )
     , aFileName( rFileName )
 {
     InitCtor();
@@ -89,6 +91,7 @@ SvTokenStream::SvTokenStream( const OUString & rFileName )
 
 SvTokenStream::~SvTokenStream()
 {
+    delete pInStream;
 }
 
 void SvTokenStream::FillTokenList()
@@ -123,9 +126,9 @@ void SvTokenStream::FillTokenList()
     pCurToken = aTokList.begin();
 }
 
-char SvTokenStream::GetNextChar()
+int SvTokenStream::GetNextChar()
 {
-    char nChar;
+    int nChar;
     while (aBufStr.getLength() <= nBufPos)
     {
         if (pInStream->ReadLine(aBufStr))
@@ -164,20 +167,18 @@ sal_uLong SvTokenStream::GetNumber()
 
     if( nLog == 16 )
     {
-        while( rtl::isAsciiHexDigit( static_cast<unsigned char>(c) ) )
+        while( isxdigit( c ) )
         {
-            if( rtl::isAsciiDigit( static_cast<unsigned char>(c) ) )
+            if( isdigit( c ) )
                 l = l * nLog + (c - '0');
             else
-                l = l * nLog
-                    + (rtl::toAsciiUpperCase( static_cast<unsigned char>(c) )
-                       - 'A' + 10 );
+                l = l * nLog + (toupper( c ) - 'A' + 10 );
             c = GetFastNextChar();
         }
     }
     else
     {
-        while( rtl::isAsciiDigit( static_cast<unsigned char>(c) ) || 'x' == c )
+        while( isdigit( c ) || 'x' == c )
         {
             l = l * nLog + (c - '0');
             c = GetFastNextChar();
@@ -194,8 +195,7 @@ bool SvTokenStream::MakeToken( SvToken & rToken )
         if( 0 == c )
             c = GetNextChar();
         // skip whitespace
-        while( rtl::isAsciiWhiteSpace( static_cast<unsigned char>(c) )
-               || 26 == c )
+        while( isspace( c ) || 26 == c )
         {
             c = GetFastNextChar();
             nColumn += c == '\t' ? nTabSize : 1;
@@ -209,7 +209,7 @@ bool SvTokenStream::MakeToken( SvToken & rToken )
     if( '/' == c )
     {
         // time optimization, no comments
-        char c1 = c;
+        int c1 = c;
         c = GetFastNextChar();
         if( '/' == c )
         {
@@ -248,7 +248,7 @@ bool SvTokenStream::MakeToken( SvToken & rToken )
         else
         {
             rToken.nType = SVTOKENTYPE::Char;
-            rToken.cChar = c1;
+            rToken.cChar = (char)c1;
         }
     }
     else if( c == '"' )
@@ -272,26 +272,25 @@ bool SvTokenStream::MakeToken( SvToken & rToken )
                 bDone = true;
             }
             else
-                aStr.append(c);
+                aStr.append(static_cast<char>(c));
         }
         if( IsEof() || ( SVSTREAM_OK != pInStream->GetError() ) )
             return false;
         rToken.nType   = SVTOKENTYPE::String;
         rToken.aString = aStr.makeStringAndClear();
     }
-    else if( rtl::isAsciiDigit( static_cast<unsigned char>(c) ) )
+    else if( isdigit( c ) )
     {
         rToken.nType = SVTOKENTYPE::Integer;
         rToken.nLong = GetNumber();
 
     }
-    else if( rtl::isAsciiAlpha (static_cast<unsigned char>(c)) || (c == '_') )
+    else if( isalpha (c) || (c == '_') )
     {
         OStringBuffer aBuf;
-        while( rtl::isAsciiAlphanumeric( static_cast<unsigned char>(c) )
-               || c == '_' )
+        while( isalnum( c ) || c == '_' )
         {
-            aBuf.append(c);
+            aBuf.append(static_cast<char>(c));
             c = GetFastNextChar();
         }
         OString aStr = aBuf.makeStringAndClear();
@@ -324,7 +323,7 @@ bool SvTokenStream::MakeToken( SvToken & rToken )
     else
     {
         rToken.nType = SVTOKENTYPE::Char;
-        rToken.cChar = c;
+        rToken.cChar = (char)c;
         c = GetFastNextChar();
     }
     rToken.SetLine( nLastLine );

@@ -52,11 +52,13 @@ ClassNameList g_aClassNames;
 IdlClassImpl::IdlClassImpl( IdlReflectionServiceImpl * pReflection,
                             const OUString & rName, typelib_TypeClass eTypeClass,
                             typelib_TypeDescription * pTypeDescr )
-    : m_xReflection( pReflection )
+    : _pReflection( pReflection )
     , _aName( rName )
     , _eTypeClass( (TypeClass)eTypeClass )
     , _pTypeDescr( pTypeDescr )
 {
+    if (_pReflection)
+        _pReflection->acquire();
     if (_pTypeDescr)
     {
         typelib_typedescription_acquire( _pTypeDescr );
@@ -75,7 +77,8 @@ IdlClassImpl::~IdlClassImpl()
 {
     if (_pTypeDescr)
         typelib_typedescription_release( _pTypeDescr );
-    m_xReflection.clear();
+    if (_pReflection)
+        _pReflection->release();
 
 #ifdef TEST_LIST_CLASSES
     ClassNameList::iterator iFind( std::find( g_aClassNames.begin(), g_aClassNames.end(), _aName ) );
@@ -87,16 +90,19 @@ IdlClassImpl::~IdlClassImpl()
 // XIdlClassImpl default implementation
 
 TypeClass IdlClassImpl::getTypeClass()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return _eTypeClass;
 }
 
 OUString IdlClassImpl::getName()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return _aName;
 }
 
 sal_Bool IdlClassImpl::equals( const Reference< XIdlClass >& xType )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return (xType.is() &&
             (xType->getTypeClass() == _eTypeClass) && (xType->getName() == _aName));
@@ -119,6 +125,7 @@ static const bool s_aAssignableFromTab[11][11] =
 };
 
 sal_Bool IdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & xType )
+    throw(css::uno::RuntimeException, std::exception)
 {
     TypeClass eAssign = getTypeClass();
     if (equals( xType ) || eAssign == TypeClass_ANY) // default shot
@@ -131,13 +138,14 @@ sal_Bool IdlClassImpl::isAssignableFrom( const Reference< XIdlClass > & xType )
         if (eAssign > TypeClass_VOID && eAssign < TypeClass_STRING &&
             eFrom > TypeClass_VOID && eFrom < TypeClass_STRING)
         {
-            return s_aAssignableFromTab[(int)eAssign-1][(int)eFrom-1];
+            return s_aAssignableFromTab[eAssign-1][eFrom-1];
         }
     }
     return false;
 }
 
 void IdlClassImpl::createObject( Any & rObj )
+    throw(css::uno::RuntimeException, std::exception)
 {
     rObj.clear();
     uno_any_destruct( &rObj, reinterpret_cast< uno_ReleaseFunc >(cpp_release) );
@@ -147,18 +155,21 @@ void IdlClassImpl::createObject( Any & rObj )
 // what TODO ????
 
 Sequence< Reference< XIdlClass > > IdlClassImpl::getClasses()
+    throw(css::uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "### unexpected use!" );
     return Sequence< Reference< XIdlClass > >();
 }
 
 Reference< XIdlClass > IdlClassImpl::getClass( const OUString & )
+    throw(css::uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "### unexpected use!" );
     return Reference< XIdlClass >();
 }
 
 Sequence< Reference< XIdlClass > > IdlClassImpl::getInterfaces()
+    throw(css::uno::RuntimeException, std::exception)
 {
 //      OSL_FAIL( "### unexpected use!" );
     return Sequence< Reference< XIdlClass > >();
@@ -166,45 +177,52 @@ Sequence< Reference< XIdlClass > > IdlClassImpl::getInterfaces()
 
 // structs, interfaces
 
-Sequence< Reference< XIdlClass > > IdlClassImpl::getSuperclasses()
+Sequence< Reference< XIdlClass > > IdlClassImpl::getSuperclasses() throw(css::uno::RuntimeException, std::exception)
 {
     return Sequence< Reference< XIdlClass > >();
 }
 // structs
 
 Reference< XIdlField > IdlClassImpl::getField( const OUString & )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Reference< XIdlField >();
 }
 
 Sequence< Reference< XIdlField > > IdlClassImpl::getFields()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Sequence< Reference< XIdlField > >();
 }
 // interfaces
 
 Uik IdlClassImpl::getUik()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Uik();
 }
 
 Reference< XIdlMethod > IdlClassImpl::getMethod( const OUString & )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Reference< XIdlMethod >();
 }
 
 Sequence< Reference< XIdlMethod > > IdlClassImpl::getMethods()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Sequence< Reference< XIdlMethod > >();
 }
 // array
 
 Reference< XIdlClass > IdlClassImpl::getComponentType()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Reference< XIdlClass >();
 }
 
 Reference< XIdlArray > IdlClassImpl::getArray()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return Reference< XIdlArray >();
 }
@@ -213,11 +231,12 @@ Reference< XIdlArray > IdlClassImpl::getArray()
 IdlMemberImpl::IdlMemberImpl( IdlReflectionServiceImpl * pReflection, const OUString & rName,
                               typelib_TypeDescription * pTypeDescr,
                               typelib_TypeDescription * pDeclTypeDescr )
-    : m_xReflection( pReflection )
+    : _pReflection( pReflection )
     , _aName( rName )
     , _pTypeDescr( pTypeDescr )
     , _pDeclTypeDescr( pDeclTypeDescr )
 {
+    _pReflection->acquire();
     typelib_typedescription_acquire( _pTypeDescr );
     if (! _pTypeDescr->bComplete)
         typelib_typedescription_complete( &_pTypeDescr );
@@ -230,11 +249,13 @@ IdlMemberImpl::~IdlMemberImpl()
 {
     typelib_typedescription_release( _pDeclTypeDescr );
     typelib_typedescription_release( _pTypeDescr );
+    _pReflection->release();
 }
 
 // XIdlMember
 
 Reference< XIdlClass > IdlMemberImpl::getDeclaringClass()
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (! _xDeclClass.is())
     {
@@ -247,6 +268,7 @@ Reference< XIdlClass > IdlMemberImpl::getDeclaringClass()
 }
 
 OUString IdlMemberImpl::getName()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return _aName;
 }

@@ -22,7 +22,6 @@
 #include <ooo/vba/excel/XFormatCondition.hpp>
 #include <com/sun/star/table/XCellRange.hpp>
 #include <com/sun/star/sheet/XCellRangeAddressable.hpp>
-#include <basic/sberrors.hxx>
 
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
@@ -37,7 +36,7 @@ ScVbaCondition< Ifc... >::ScVbaCondition(  const uno::Reference< XHelperInterfac
 
 template< typename... Ifc >
 sheet::ConditionOperator
-ScVbaCondition< Ifc... >::retrieveAPIOperator( const uno::Any& _aOperator)
+ScVbaCondition< Ifc... >::retrieveAPIOperator( const uno::Any& _aOperator) throw ( script::BasicErrorException )
 {
     sheet::ConditionOperator aRetAPIOperator = sheet::ConditionOperator_NONE;
     sal_Int32 nOperator = 0;
@@ -79,21 +78,21 @@ ScVbaCondition< Ifc... >::retrieveAPIOperator( const uno::Any& _aOperator)
 
 template< typename... Ifc >
 OUString
-ScVbaCondition< Ifc... >::Formula1( )
+ScVbaCondition< Ifc... >::Formula1( ) throw ( script::BasicErrorException, uno::RuntimeException )
 {
      return mxSheetCondition->getFormula1();
 }
 
 template< typename... Ifc >
 OUString
-ScVbaCondition< Ifc... >::Formula2( )
+ScVbaCondition< Ifc... >::Formula2( ) throw ( script::BasicErrorException, uno::RuntimeException )
 {
      return mxSheetCondition->getFormula2();
 }
 
 template< typename... Ifc >
 void
-ScVbaCondition< Ifc... >::setFormula1( const uno::Any& _aFormula1)
+ScVbaCondition< Ifc... >::setFormula1( const uno::Any& _aFormula1) throw ( script::BasicErrorException )
 {
     OUString sFormula;
     if ( (_aFormula1 >>= sFormula ))
@@ -107,7 +106,7 @@ ScVbaCondition< Ifc... >::setFormula1( const uno::Any& _aFormula1)
 
 template< typename... Ifc >
 sal_Int32
-ScVbaCondition< Ifc... >::Operator(bool _bIncludeFormulaValue)
+ScVbaCondition< Ifc... >::Operator(bool _bIncludeFormulaValue) throw ( script::BasicErrorException )
 {
     sal_Int32 retvalue = -1;
     sheet::ConditionOperator aConditionalOperator =  mxSheetCondition->getOperator();

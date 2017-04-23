@@ -84,7 +84,7 @@ void EditSelFunctionSet::DeselectAll()
 
 EditSelectionEngine::EditSelectionEngine() : SelectionEngine( nullptr )
 {
-    SetSelectionMode( SelectionMode::Range );
+    SetSelectionMode( RANGE_SELECTION );
     EnableDrag( true );
 }
 

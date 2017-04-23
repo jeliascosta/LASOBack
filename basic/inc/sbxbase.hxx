@@ -37,9 +37,7 @@ struct SbxAppData
     SbxError            eSbxError;  // Error code
     std::vector<std::unique_ptr<SbxFactory>>
                         m_Factories;
-
-    // Pointer to Format()-Command helper class
-    std::unique_ptr<SbxBasicFormater>   pBasicFormater;
+    SbxBasicFormater   *pBasicFormater;    // Pointer to Format()-Command helper class
 
     LanguageType        eBasicFormaterLangType;
     // It might be useful to store this class 'global' because some string resources are saved here

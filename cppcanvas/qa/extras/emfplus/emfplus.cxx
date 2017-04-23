@@ -13,7 +13,6 @@
 #include <com/sun/star/graphic/XGraphic.hpp>
 
 #include <comphelper/processfactory.hxx>
-#include <sfx2/app.hxx>
 #include <sfx2/objsh.hxx>
 #include <sfx2/sfxbasemodel.hxx>
 #include <test/unoapi_test.hxx>
@@ -30,11 +29,14 @@ public:
     {
     }
 
+    virtual ~Test()
+    {
+    }
+
     virtual void setUp() override
     {
         UnoApiTest::setUp();
         mxDesktop.set(frame::Desktop::create(comphelper::getComponentContext(getMultiServiceFactory())));
-        SfxApplication::GetOrCreate();
     };
 
     virtual void tearDown() override

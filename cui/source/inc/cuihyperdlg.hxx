@@ -68,9 +68,9 @@ private:
     bool            mbReadOnly  : 1;
     bool            mbIsHTMLDoc : 1;
 
-    DECL_LINK (ClickOkHdl_Impl, Button *, void );
-    DECL_LINK (ClickApplyHdl_Impl, Button *, void );
-    DECL_LINK (ClickCloseHdl_Impl, Button *, void );
+    DECL_LINK_TYPED (ClickOkHdl_Impl, Button *, void );
+    DECL_LINK_TYPED (ClickApplyHdl_Impl, Button *, void );
+    DECL_LINK_TYPED (ClickCloseHdl_Impl, Button *, void );
 
 protected:
     virtual bool            Close() override;
@@ -79,16 +79,16 @@ protected:
 
 public:
     SvxHpLinkDlg (vcl::Window* pParent, SfxBindings* pBindings );
-    virtual ~SvxHpLinkDlg () override;
+    virtual ~SvxHpLinkDlg ();
     virtual void dispose() override;
 
     virtual void            PageCreated( sal_uInt16 nId, IconChoicePage& rPage ) override;
 
     void                    SetPage( SvxHyperlinkItem* pItem );
     void                    SetReadOnlyMode( bool bReadOnly );
-    bool             IsHTMLDoc() const { return mbIsHTMLDoc; }
+    inline bool             IsHTMLDoc() const { return mbIsHTMLDoc; }
 
-    SfxDispatcher*   GetDispatcher() const { return mpBindings->GetDispatcher(); }
+    inline SfxDispatcher*   GetDispatcher() const { return mpBindings->GetDispatcher(); }
 };
 
 

@@ -43,7 +43,7 @@ class InteractionContinuationImpl : public ::cppu::OWeakObject,
     bool * m_pselect;
 
 public:
-    InteractionContinuationImpl( Type const & type, bool * pselect )
+    inline InteractionContinuationImpl( Type const & type, bool * pselect )
         : m_type( type ),
           m_pselect( pselect )
         { OSL_ASSERT(
@@ -52,10 +52,11 @@ public:
     // XInterface
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
-    virtual Any SAL_CALL queryInterface( Type const & type ) override;
+    virtual Any SAL_CALL queryInterface( Type const & type )
+        throw (RuntimeException, std::exception) override;
 
     // XInteractionContinuation
-    virtual void SAL_CALL select() override;
+    virtual void SAL_CALL select() throw (RuntimeException, std::exception) override;
 };
 
 // XInterface
@@ -73,6 +74,7 @@ void InteractionContinuationImpl::release() throw ()
 
 
 Any InteractionContinuationImpl::queryInterface( Type const & type )
+    throw (RuntimeException, std::exception)
 {
     if (type.isAssignableFrom( m_type )) {
         Reference<task::XInteractionContinuation> xThis(this);
@@ -84,7 +86,7 @@ Any InteractionContinuationImpl::queryInterface( Type const & type )
 
 // XInteractionContinuation
 
-void InteractionContinuationImpl::select()
+void InteractionContinuationImpl::select() throw (RuntimeException, std::exception)
 {
     *m_pselect = true;
 }
@@ -125,7 +127,7 @@ bool interactContinuation( Any const & request,
 
 // XAbortChannel
 
-void AbortChannel::sendAbort()
+void AbortChannel::sendAbort() throw (RuntimeException, std::exception)
 {
     m_aborted = true;
     if (m_xNext.is())

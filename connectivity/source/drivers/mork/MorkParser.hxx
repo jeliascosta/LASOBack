@@ -59,7 +59,21 @@ enum MorkErrors
 {
     NoError = 0,
     FailedToOpen,
+    UnsupportedVersion,
     DefectedFormat
+};
+
+// Mork term types
+enum MorkTerm
+{
+    NoneTerm = 0,
+    DictTerm,
+    GroupTerm,
+    TableTerm,
+    RowTerm,
+    CellTerm,
+    CommentTerm,
+    LiteralTerm
 };
 
 
@@ -69,7 +83,7 @@ class LO_DLLPUBLIC_MORK MorkParser
 {
 public:
 
-    explicit MorkParser();
+    explicit MorkParser( int defaultScope = 0x80 );
 
     /// Open and parse mork file
 
@@ -85,11 +99,11 @@ public:
 
     /// Return value of specified value oid
 
-    std::string const &getValue( int oid );
+    std::string &getValue( int oid );
 
     /// Return value of specified column oid
 
-    std::string const &getColumn( int oid );
+    std::string &getColumn( int oid );
 
     void retrieveLists(std::set<std::string>& lists);
     void getRecordKeysForListTable(std::string& listName, std::set<int>& records);
@@ -138,10 +152,12 @@ protected: // Data
 
     unsigned morkPos_;
     int nextAddValueId_;
+    int defaultScope_;
+    int defaultListScope_;
     int defaultTableId_;
 
     // Indicates entity is being parsed
-    enum class NP { Columns, Values, Rows } nowParsing_;
+    enum { NPColumns, NPValues, NPRows } nowParsing_;
 
 private:
     MorkParser(const MorkParser &) = delete;

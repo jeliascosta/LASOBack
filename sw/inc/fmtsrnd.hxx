@@ -20,41 +20,41 @@
 #define INCLUDED_SW_INC_FMTSRND_HXX
 
 #include "swdllapi.h"
-#include <com/sun/star/text/WrapTextMode.hpp>
 #include <hintids.hxx>
 #include <format.hxx>
 #include <svl/eitem.hxx>
 
+#include <fmtsrndenum.hxx>
 class IntlWrapper;
 
 // SwFormatSurround: How document content under the frame shall behave.
-class SW_DLLPUBLIC SwFormatSurround: public SfxEnumItem<css::text::WrapTextMode>
+class SW_DLLPUBLIC SwFormatSurround: public SfxEnumItem
 {
     bool    bAnchorOnly :1;
     bool    bContour    :1;
     bool    bOutside    :1;
 public:
-    SwFormatSurround( css::text::WrapTextMode eNew = css::text::WrapTextMode_PARALLEL );
+    SwFormatSurround( SwSurround eNew = SURROUND_PARALLEL );
     SwFormatSurround( const SwFormatSurround & );
     inline SwFormatSurround &operator=( const SwFormatSurround &rCpy );
 
     // "Pure virtual Methods" of SfxPoolItem.
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
-    virtual sal_uInt16      GetValueCount() const override;
+    virtual sal_uInt16          GetValueCount() const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper*    pIntl = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper*    pIntl = nullptr ) const override;
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    css::text::WrapTextMode GetSurround() const { return GetValue(); }
+    SwSurround GetSurround()const { return SwSurround( GetValue() ); }
     bool    IsAnchorOnly()  const { return bAnchorOnly; }
     bool    IsContour()     const { return bContour; }
     bool    IsOutside()     const { return bOutside; }
-    void    SetSurround  ( css::text::WrapTextMode eNew ) { SetValue( eNew ); }
+    void    SetSurround  ( SwSurround eNew ){ SfxEnumItem::SetValue( sal_uInt16( eNew ) ); }
     void    SetAnchorOnly( bool bNew )      { bAnchorOnly = bNew; }
     void    SetContour( bool bNew )         { bContour = bNew; }
     void    SetOutside( bool bNew )         { bOutside = bNew; }

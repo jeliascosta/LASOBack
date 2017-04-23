@@ -36,24 +36,25 @@ private:
 
 public:
     HeadersFootersIndexAccess( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< frame::XModel >& xModel, const uno::Reference< beans::XPropertySet >& xPageStyleProps, bool bHeader ) : mxParent( xParent ), mxContext( xContext ), mxModel( xModel ), mxPageStyleProps( xPageStyleProps ), mbHeader( bHeader ) {}
+    virtual ~HeadersFootersIndexAccess(){}
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount(  ) override
+    virtual sal_Int32 SAL_CALL getCount(  ) throw (uno::RuntimeException, std::exception) override
     {
         // first page, even pages and primary page
         return 3;
     }
-    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override
+    virtual uno::Any SAL_CALL getByIndex( sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if( Index < 1 || Index > 3 )
             throw lang::IndexOutOfBoundsException();
         return uno::makeAny( uno::Reference< word::XHeaderFooter >( new SwVbaHeaderFooter( mxParent,  mxContext, mxModel, mxPageStyleProps, mbHeader, Index ) ) );
     }
-    virtual uno::Type SAL_CALL getElementType(  ) override
+    virtual uno::Type SAL_CALL getElementType(  ) throw (uno::RuntimeException, std::exception) override
     {
         return cppu::UnoType<word::XHeaderFooter>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements(  ) override
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return true;
     }
@@ -65,12 +66,12 @@ class HeadersFootersEnumWrapper : public EnumerationHelper_BASE
     sal_Int32 nIndex;
 public:
     explicit HeadersFootersEnumWrapper( SwVbaHeadersFooters* _pHeadersFooters ) : pHeadersFooters( _pHeadersFooters ), nIndex( 0 ) {}
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+    virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
     {
         return ( nIndex < pHeadersFooters->getCount() );
     }
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( nIndex < pHeadersFooters->getCount() )
             return pHeadersFooters->Item( uno::makeAny( ++nIndex ), uno::Any() );
@@ -82,13 +83,13 @@ SwVbaHeadersFooters::SwVbaHeadersFooters( const uno::Reference< XHelperInterface
 {
 }
 
-::sal_Int32 SAL_CALL SwVbaHeadersFooters::getCount()
+::sal_Int32 SAL_CALL SwVbaHeadersFooters::getCount() throw (uno::RuntimeException)
 {
     // wdHeaderFooterFirstPage, wdHeaderFooterPrimary and wdHeaderFooterEvenPages
     return 3;
 }
 
-uno::Any SAL_CALL SwVbaHeadersFooters::Item( const uno::Any& Index1, const uno::Any& )
+uno::Any SAL_CALL SwVbaHeadersFooters::Item( const uno::Any& Index1, const uno::Any& ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException)
 {
     sal_Int32 nIndex = 0;
     Index1 >>= nIndex;
@@ -101,13 +102,13 @@ uno::Any SAL_CALL SwVbaHeadersFooters::Item( const uno::Any& Index1, const uno::
 
 // XEnumerationAccess
 uno::Type
-SwVbaHeadersFooters::getElementType()
+SwVbaHeadersFooters::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<word::XHeaderFooter>::get();
 }
 uno::Reference< container::XEnumeration >
 
-SwVbaHeadersFooters::createEnumeration()
+SwVbaHeadersFooters::createEnumeration() throw (uno::RuntimeException)
 {
     return new HeadersFootersEnumWrapper( this );
 }

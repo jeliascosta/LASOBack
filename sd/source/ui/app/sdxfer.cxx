@@ -125,14 +125,14 @@ SdTransferable::~SdTransferable()
 
     delete mpOLEDataHelper;
 
-    if( maDocShellRef.is() )
+    if( maDocShellRef.Is() )
     {
-        SfxObjectShell* pObj = maDocShellRef.get();
+        SfxObjectShell* pObj = maDocShellRef;
         ::sd::DrawDocShell* pDocSh = static_cast< ::sd::DrawDocShell*>(pObj);
         pDocSh->DoClose();
     }
 
-    maDocShellRef.clear();
+    maDocShellRef.Clear();
 
     if( mbOwnDocument )
         delete mpSdDrawDocumentIntern;
@@ -181,15 +181,15 @@ void SdTransferable::CreateObjectReplacement( SdrObject* pObj )
             catch( uno::Exception& )
             {}
         }
-        else if( dynamic_cast< const SdrGrafObj *>( pObj ) !=  nullptr && (mpSourceDoc && !SdDrawDocument::GetAnimationInfo( pObj )) )
+        else if( dynamic_cast< const SdrGrafObj *>( pObj ) !=  nullptr && (mpSourceDoc && !mpSourceDoc->GetAnimationInfo( pObj )) )
         {
             mpGraphic = new Graphic( static_cast< SdrGrafObj* >( pObj )->GetTransformedGraphic() );
         }
-        else if( pObj->IsUnoObj() && SdrInventor::FmForm == pObj->GetObjInventor() && ( pObj->GetObjIdentifier() == (sal_uInt16) OBJ_FM_BUTTON ) )
+        else if( pObj->IsUnoObj() && FmFormInventor == pObj->GetObjInventor() && ( pObj->GetObjIdentifier() == (sal_uInt16) OBJ_FM_BUTTON ) )
         {
             SdrUnoObj* pUnoCtrl = static_cast< SdrUnoObj* >( pObj );
 
-            if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
+            if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
             {
                 Reference< css::awt::XControlModel > xControlModel( pUnoCtrl->GetUnoControlModel() );
 
@@ -246,7 +246,7 @@ void SdTransferable::CreateObjectReplacement( SdrObject* pObj )
             }
         }
 
-        SdIMapInfo* pInfo = SdDrawDocument::GetIMapInfo( pObj );
+        SdIMapInfo* pInfo = static_cast< SdDrawDocument* >( pObj->GetModel() )->GetIMapInfo( static_cast< SdrObject* >( pObj ) );
 
         if( pInfo )
             mpImageMap = new ImageMap( pInfo->GetImageMap() );
@@ -261,7 +261,7 @@ void SdTransferable::CreateData()
     {
         mbOwnView = true;
 
-        SdPage* pPage = mpSdDrawDocument->GetSdPage(0, PageKind::Standard);
+        SdPage* pPage = mpSdDrawDocument->GetSdPage(0, PK_STANDARD);
 
         if( 1 == pPage->GetObjCount() )
             CreateObjectReplacement( pPage->GetObj( 0 ) );
@@ -287,10 +287,10 @@ void SdTransferable::CreateData()
         if( mpSourceDoc )
             mpSourceDoc->CreatingDataObj(nullptr);
 
-        if( !maDocShellRef.is() && mpSdDrawDocumentIntern->GetDocSh() )
+        if( !maDocShellRef.Is() && mpSdDrawDocumentIntern->GetDocSh() )
             maDocShellRef = mpSdDrawDocumentIntern->GetDocSh();
 
-        if( !maDocShellRef.is() )
+        if( !maDocShellRef.Is() )
         {
             OSL_FAIL( "SdTransferable::CreateData(), failed to create a model with persist, clipboard operation will fail for OLE objects!" );
             mbOwnDocument = true;
@@ -302,7 +302,7 @@ void SdTransferable::CreateData()
         SdrModel*           pOldModel = mpSdView->GetModel();
         SdStyleSheetPool*   pOldStylePool = static_cast<SdStyleSheetPool*>( pOldModel->GetStyleSheetPool() );
         SdStyleSheetPool*   pNewStylePool = static_cast<SdStyleSheetPool*>( mpSdDrawDocumentIntern->GetStyleSheetPool() );
-        SdPage*             pPage = mpSdDrawDocumentIntern->GetSdPage( 0, PageKind::Standard );
+        SdPage*             pPage = mpSdDrawDocumentIntern->GetSdPage( 0, PK_STANDARD );
         OUString            aOldLayoutName( pOldPage->GetLayoutName() );
 
         pPage->SetSize( pOldPage->GetSize() );
@@ -322,7 +322,7 @@ void SdTransferable::CreateData()
         mpSdDrawDocumentIntern && mpSdViewIntern &&
         mpSdDrawDocumentIntern->GetPageCount() )
     {
-        SdPage* pPage = mpSdDrawDocumentIntern->GetSdPage( 0, PageKind::Standard );
+        SdPage* pPage = mpSdDrawDocumentIntern->GetSdPage( 0, PK_STANDARD );
 
         if( 1 == mpSdDrawDocumentIntern->GetPageCount() )
         {
@@ -354,7 +354,7 @@ static bool lcl_HasOnlyControls( SdrModel* pModel )
         SdrPage* pPage = pModel->GetPage(0);
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
             SdrObject* pObj = aIter.Next();
             if ( pObj )
             {
@@ -416,7 +416,7 @@ void SdTransferable::AddSupportedFormats()
 
             AddFormat( SotClipboardFormatId::SVXB );
 
-            if( mpGraphic->GetType() == GraphicType::Bitmap )
+            if( mpGraphic->GetType() == GRAPHIC_BITMAP )
             {
                 AddFormat( SotClipboardFormatId::PNG );
                 AddFormat( SotClipboardFormatId::BITMAP );
@@ -445,10 +445,8 @@ void SdTransferable::AddSupportedFormats()
                 AddFormat( SotClipboardFormatId::BITMAP );
             }
 
-            if( lcl_HasOnlyOneTable( mpSdDrawDocument ) ) {
+            if( lcl_HasOnlyOneTable( mpSdDrawDocument ) )
                 AddFormat( SotClipboardFormatId::RTF );
-                AddFormat( SotClipboardFormatId::RICHTEXT );
-            }
         }
 
         if( mpImageMap )
@@ -499,7 +497,7 @@ bool SdTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
         {
             SfxObjectShellRef aOldRef( maDocShellRef );
 
-            maDocShellRef.clear();
+            maDocShellRef.Clear();
 
             if( mpSdViewIntern )
             {
@@ -510,7 +508,7 @@ bool SdTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
 
                 bOK = SetObject( pDoc, SDTRANSFER_OBJECTTYPE_DRAWMODEL, rFlavor );
 
-                if( maDocShellRef.is() )
+                if( maDocShellRef.Is() )
                 {
                     maDocShellRef->DoClose();
                 }
@@ -569,7 +567,7 @@ bool SdTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
                 SdrSwapGraphicsMode nOldSwapMode = mpSdDrawDocumentIntern->GetSwapGraphicsMode();
                 mpSdDrawDocumentIntern->SetSwapGraphicsMode( SdrSwapGraphicsMode::PURGE );
 
-                if( !maDocShellRef.is() )
+                if( !maDocShellRef.Is() )
                 {
                     maDocShellRef = new ::sd::DrawDocShell(
                         mpSdDrawDocumentIntern,
@@ -581,7 +579,7 @@ bool SdTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
                 }
 
                 maDocShellRef->SetVisArea( maVisArea );
-                bOK = SetObject( maDocShellRef.get(), SDTRANSFER_OBJECTTYPE_DRAWOLE, rFlavor );
+                bOK = SetObject( &maDocShellRef, SDTRANSFER_OBJECTTYPE_DRAWOLE, rFlavor );
 
                 mpSdDrawDocumentIntern->SetSwapGraphicsMode( nOldSwapMode );
             }
@@ -612,7 +610,7 @@ bool SdTransferable::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, void* 
 
                 {
                     css::uno::Reference<css::io::XOutputStream> xDocOut( new utl::OOutputStreamWrapper( *rxOStm ) );
-                    if( SvxDrawingLayerExport( pDoc, xDocOut, xComponent, (pDoc->GetDocumentType() == DocumentType::Impress) ? "com.sun.star.comp.Impress.XMLClipboardExporter" : "com.sun.star.comp.DrawingLayer.XMLExporter" ) )
+                    if( SvxDrawingLayerExport( pDoc, xDocOut, xComponent, (pDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS) ? "com.sun.star.comp.Impress.XMLClipboardExporter" : "com.sun.star.comp.DrawingLayer.XMLExporter" ) )
                         rxOStm->Commit();
                 }
 
@@ -725,7 +723,7 @@ void SdTransferable::SetPageBookmarks( const std::vector<OUString> &rPageBookmar
 
         if( mpSdViewIntern )
         {
-            SdPage* pPage = mpSdDrawDocument->GetSdPage( 0, PageKind::Standard );
+            SdPage* pPage = mpSdDrawDocument->GetSdPage( 0, PK_STANDARD );
 
             if( pPage )
             {
@@ -740,7 +738,7 @@ void SdTransferable::SetPageBookmarks( const std::vector<OUString> &rPageBookmar
     }
 }
 
-sal_Int64 SAL_CALL SdTransferable::getSomething( const css::uno::Sequence< sal_Int8 >& rId )
+sal_Int64 SAL_CALL SdTransferable::getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw( css::uno::RuntimeException, std::exception )
 {
     sal_Int64 nRet;
 
@@ -803,7 +801,7 @@ void SdTransferable::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
     const SdrHint* pSdrHint = dynamic_cast< const SdrHint* >( &rHint );
     if( pSdrHint )
     {
-        if( SdrHintKind::ModelCleared == pSdrHint->GetKind() )
+        if( HINT_MODELCLEARED == pSdrHint->GetKind() )
         {
             EndListening(*mpSourceDoc);
             mpSourceDoc = nullptr;
@@ -811,7 +809,8 @@ void SdTransferable::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
     }
     else
     {
-        if( rHint.GetId() == SfxHintId::Dying )
+        const SfxSimpleHint* pSimpleHint = dynamic_cast< const SfxSimpleHint * >(&rHint);
+        if(pSimpleHint && (pSimpleHint->GetId() == SFX_HINT_DYING) )
         {
             if( &rBC == mpSourceDoc )
                 mpSourceDoc = nullptr;

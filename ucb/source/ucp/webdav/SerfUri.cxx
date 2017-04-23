@@ -25,12 +25,13 @@
 #include "DAVException.hxx"
 #include "AprEnv.hxx"
 
-#include "urihelper.hxx"
+#include "../inc/urihelper.hxx"
 
 using namespace http_dav_ucp;
 
 
 SerfUri::SerfUri( const apr_uri_t * inUri )
+    throw ( DAVException )
     : mAprUri( *inUri )
     , mURI()
     , mScheme()
@@ -39,12 +40,12 @@ SerfUri::SerfUri( const apr_uri_t * inUri )
     , mPort()
     , mPath()
 {
-    if ( inUri == nullptr )
+    if ( inUri == 0 )
         throw DAVException( DAVException::DAV_INVALID_ARG );
 
     char * uri = apr_uri_unparse( apr_environment::AprEnv::getAprEnv()->getAprPool(), &mAprUri, 0 );
 
-    if ( uri == nullptr )
+    if ( uri == 0 )
         throw DAVException( DAVException::DAV_INVALID_ARG );
 
     init( &mAprUri );
@@ -53,6 +54,7 @@ SerfUri::SerfUri( const apr_uri_t * inUri )
 }
 
 SerfUri::SerfUri( const OUString & inUri )
+    throw ( DAVException )
     : mAprUri()
     , mURI()
     , mScheme()

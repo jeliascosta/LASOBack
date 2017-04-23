@@ -34,6 +34,7 @@
 #include <svx/svdopath.hxx>
 #include <svx/svdogrp.hxx>
 #include <svx/svdpage.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/svddef.hxx>
 #include <svx/svx3ditems.hxx>
 #include <svx/extrud3d.hxx>
@@ -41,7 +42,6 @@
 #include <vcl/svapp.hxx>
 #include <svx/xlnclit.hxx>
 #include <svx/sdasitm.hxx>
-#include <svx/scene3d.hxx>
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/drawing/Position3D.hpp>
 #include <com/sun/star/drawing/Direction3D.hpp>
@@ -178,7 +178,7 @@ drawing::Direction3D GetDirection3D( const SdrCustomShapeGeometryItem& rItem, co
 
 }
 
-EnhancedCustomShape3d::Transformation2D::Transformation2D( const SdrObject* pCustomShape, const tools::Rectangle& /*rBoundRect*/, const double *pM )
+EnhancedCustomShape3d::Transformation2D::Transformation2D( const SdrObject* pCustomShape, const Rectangle& /*rBoundRect*/, const double *pM )
     : aCenter( pCustomShape->GetSnapRect().Center() )
     , eProjectionMode( drawing::ProjectionMode_PARALLEL )
     , fSkewAngle(0.0)
@@ -269,9 +269,9 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
             fMap /= aFraction.GetDenominator();
             pMap = &fMap;
         }
-        if ( pModel->GetScaleUnit() != MapUnit::Map100thMM )
+        if ( pModel->GetScaleUnit() != MAP_100TH_MM )
         {
-            DBG_ASSERT( pModel->GetScaleUnit() == MapUnit::MapTwip, "EnhancedCustomShape3d::Current MapMode is Unsupported" );
+            DBG_ASSERT( pModel->GetScaleUnit() == MAP_TWIP, "EnhancedCustomShape3d::Current MapMode is Unsupported" );
             fMap *= 1440.0 / 2540.0;
             pMap = &fMap;
         }
@@ -280,7 +280,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
     {
         bool bIsMirroredX = static_cast<const SdrObjCustomShape*>(pCustomShape)->IsMirroredX();
         bool bIsMirroredY = static_cast<const SdrObjCustomShape*>(pCustomShape)->IsMirroredY();
-        tools::Rectangle aSnapRect( pCustomShape->GetLogicRect() );
+        Rectangle aSnapRect( pCustomShape->GetLogicRect() );
         long nObjectRotation = pCustomShape->GetRotateAngle();
         if ( nObjectRotation )
         {
@@ -320,13 +320,13 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
         const Any* pAny = rGeometryItem.GetPropertyValueByName( "Extrusion", "ProjectionMode" );
         if ( pAny )
             *pAny >>= eProjectionMode;
-        ProjectionType eProjectionType( eProjectionMode == drawing::ProjectionMode_PARALLEL ? ProjectionType::Parallel : ProjectionType::Perspective );
+        ProjectionType eProjectionType( eProjectionMode == drawing::ProjectionMode_PARALLEL ? PR_PARALLEL : PR_PERSPECTIVE );
         // pShape2d Convert in scenes which include 3D Objects
         E3dDefaultAttributes a3DDefaultAttr;
         a3DDefaultAttr.SetDefaultLatheCharacterMode( true );
         a3DDefaultAttr.SetDefaultExtrudeCharacterMode( true );
 
-        E3dScene* pScene = new E3dScene( a3DDefaultAttr );
+        E3dScene* pScene = new E3dPolyScene( a3DDefaultAttr );
 
         bool bSceneHasObjects ( false );
         bool bUseTwoFillStyles( false );
@@ -367,8 +367,8 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
             }
         }
 
-        tools::Rectangle aBoundRect2d;
-        SdrObjListIter aIter( *pShape2d, SdrIterMode::DeepNoGroups );
+        Rectangle aBoundRect2d;
+        SdrObjListIter aIter( *pShape2d, IM_DEEPNOGROUPS );
         const bool bMultipleSubObjects(aIter.Count() > 1);
 
         while( aIter.IsMore() )
@@ -476,7 +476,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                 }
 
                 const basegfx::B2DRange aTempRange(basegfx::tools::getRange(aPolyPoly));
-                const tools::Rectangle aBoundRect(basegfx::fround(aTempRange.getMinX()), basegfx::fround(aTempRange.getMinY()), basegfx::fround(aTempRange.getMaxX()), basegfx::fround(aTempRange.getMaxY()));
+                const Rectangle aBoundRect(basegfx::fround(aTempRange.getMinX()), basegfx::fround(aTempRange.getMinY()), basegfx::fround(aTempRange.getMaxX()), basegfx::fround(aTempRange.getMaxY()));
                 aBoundRect2d.Union( aBoundRect );
 
                 // #i122777# depth 0 is okay for planes when using double-sided
@@ -500,14 +500,14 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                         // from regular 3D objects for some time, also needs to be removed from CustomShapes
 
                         //Size aLogicalSize = aFillBmp.GetPrefSize();
-                        //if ( aFillBmp.GetPrefMapMode() == MapUnit::MapPixel )
-                        //  aLogicalSize = Application::GetDefaultDevice()->PixelToLogic( aLogicalSize, MapUnit::Map100thMM );
+                        //if ( aFillBmp.GetPrefMapMode() == MAP_PIXEL )
+                        //  aLogicalSize = Application::GetDefaultDevice()->PixelToLogic( aLogicalSize, MAP_100TH_MM );
                         //else
-                        //  aLogicalSize = OutputDevice::LogicToLogic( aLogicalSize, aFillBmp.GetPrefMapMode(), MapUnit::Map100thMM );
+                        //  aLogicalSize = OutputDevice::LogicToLogic( aLogicalSize, aFillBmp.GetPrefMapMode(), MAP_100TH_MM );
                         //aLogicalSize.Width()  *= 5;           ;//             :-(     nice scaling, look at engine3d/obj3d.cxx
                         //aLogicalSize.Height() *= 5;
                         //aFillBmp.SetPrefSize( aLogicalSize );
-                        //aFillBmp.SetPrefMapMode( MapUnit::Map100thMM );
+                        //aFillBmp.SetPrefMapMode( MAP_100TH_MM );
                         //p3DObj->SetMergedItem(XFillBitmapItem(String(), Graphic(aFillBmp)));
                     }
                     else
@@ -524,7 +524,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                                                 (sal_Int32)( (double)( aBoundRect.Top() - aSnapRect.Top() ) * (double)aBmpSize.Height() / (double)aSnapRect.GetHeight() ) );
                             Size aSize( (sal_Int32)( aBmpSize.Width() * fXScale ),
                                                     (sal_Int32)( aBmpSize.Height() * fYScale ) );
-                            tools::Rectangle aCropRect( aPt, aSize );
+                            Rectangle aCropRect( aPt, aSize );
                             aFillBmp.Crop( aCropRect );
                             p3DObj->SetMergedItem(XFillBitmapItem(OUString(), Graphic(aFillBmp)));
                         }
@@ -614,7 +614,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                 aNewTransform.rotate( 0.0, -fYRotate, 0.0 );
             if( fXRotate != 0.0 )
                 aNewTransform.rotate( -fXRotate, 0.0, 0.0 );
-            if ( eProjectionType == ProjectionType::Parallel )
+            if ( eProjectionType == PR_PARALLEL )
             {
                 double fSkew, fAlpha;
                 GetSkew( rGeometryItem, fSkew, fAlpha );
@@ -736,7 +736,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
     return pRet;
 }
 
-tools::Rectangle EnhancedCustomShape3d::CalculateNewSnapRect( const SdrObject* pCustomShape, const tools::Rectangle& rSnapRect, const tools::Rectangle& rBoundRect, const double* pMap )
+Rectangle EnhancedCustomShape3d::CalculateNewSnapRect( const SdrObject* pCustomShape, const Rectangle& rSnapRect, const Rectangle& rBoundRect, const double* pMap )
 {
     const SdrCustomShapeGeometryItem& rGeometryItem = static_cast<const SdrCustomShapeGeometryItem&>(pCustomShape->GetMergedItem( SDRATTR_CUSTOMSHAPE_GEOMETRY ));
     const Point aCenter( rSnapRect.Center() );

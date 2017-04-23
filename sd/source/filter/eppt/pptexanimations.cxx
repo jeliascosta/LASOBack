@@ -474,11 +474,9 @@ bool AnimationExporter::isEmptyNode( const Reference< XAnimationNode >& xNode ) 
     return true;
 }
 
-void AnimationExporter::exportNode( SvStream& rStrm, Reference< XAnimationNode > const & xNode_in, const Reference< XAnimationNode >* pParent, const sal_uInt16 nContainerRecType,
+void AnimationExporter::exportNode( SvStream& rStrm, Reference< XAnimationNode > xNode, const Reference< XAnimationNode >* pParent, const sal_uInt16 nContainerRecType,
                                     const sal_uInt16 nInstance, const sal_Int32 nGroupLevel, const bool bTakeBackInteractiveSequenceTiming, const sal_Int16 nFDef )
 {
-    auto xNode = xNode_in;
-
     if( (nGroupLevel == 4) && isEmptyNode( xNode ) )
         return;
 
@@ -876,7 +874,7 @@ void AnimationExporter::exportAnimNode( SvStream& rStrm, const Reference< XAnima
     WriteAnimationNode( rStrm, aAnim );
 }
 
-void AnimationExporter::GetUserData( const Sequence< NamedValue >& rUserData, const Any ** pAny, std::size_t nLen )
+void AnimationExporter::GetUserData( const Sequence< NamedValue >& rUserData, const Any ** pAny, sal_Size nLen )
 {
     // storing user data into pAny, to allow direct access later
     memset( pAny, 0, nLen );
@@ -1298,7 +1296,7 @@ void AnimationExporter::exportAnimEvent( SvStream& rStrm, const Reference< XAnim
                     else
                     {
                         aAny = xNode->getBegin();
-                        if ( nFlags & 0x10 )    // replace ON_NEXT with INDEFINITE
+                        if ( nFlags & 0x10 )    // replace ON_NEXT with IDEFINITE
                         {
                             if ( ( aAny >>= aEvent ) && ( aEvent.Trigger == EventTrigger::ON_NEXT ) )
                             {
@@ -1429,23 +1427,23 @@ Any AnimationExporter::convertAnimateValue( const Any& rSourceValue, const OUStr
         OUString aP( "," );
         if ( rSourceValue >>= aHSL )
         {
-            aDest += "hsl("
-                  +  OUString::number( (sal_Int32)( aHSL[ 0 ] / ( 360.0 / 255 ) ) )
-                  +  aP
-                  +  OUString::number( (sal_Int32)( aHSL[ 1 ] * 255.0 ) )
-                  +  aP
-                  +  OUString::number( (sal_Int32)( aHSL[ 2 ] * 255.0 ) )
-                  +  ")";
+            aDest += "hsl(";
+            aDest += OUString::number( (sal_Int32)( aHSL[ 0 ] / ( 360.0 / 255 ) ) );
+            aDest += aP;
+            aDest += OUString::number( (sal_Int32)( aHSL[ 1 ] * 255.0 ) );
+            aDest += aP;
+            aDest += OUString::number( (sal_Int32)( aHSL[ 2 ] * 255.0 ) );
+            aDest += ")";
         }
         else if ( rSourceValue >>= nColor )
         {
-            aDest += "rgb("
-                  +  OUString::number( ( (sal_Int8)nColor ) )
-                  +  aP
-                  +  OUString::number( ( (sal_Int8)( nColor >> 8 ) ) )
-                  +  aP
-                  +  OUString::number( ( (sal_Int8)( nColor >> 16 ) ) )
-                  +  ")";
+            aDest += "rgb(";
+            aDest += OUString::number( ( (sal_Int8)nColor ) );
+            aDest += aP;
+            aDest += OUString::number( ( (sal_Int8)( nColor >> 8 ) ) );
+            aDest += aP;
+            aDest += OUString::number( ( (sal_Int8)( nColor >> 16 ) ) );
+            aDest += ")";
         }
     }
     else if ( rAttributeName == "FillStyle" )

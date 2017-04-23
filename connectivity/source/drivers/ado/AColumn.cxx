@@ -37,12 +37,12 @@ using namespace com::sun::star::sdbc;
 
 void WpADOColumn::Create()
 {
-    _ADOColumn* pColumn = nullptr;
+    _ADOColumn* pColumn = NULL;
     HRESULT hr = CoCreateInstance(ADOS::CLSID_ADOCOLUMN_25,
-                          nullptr,
+                          NULL,
                           CLSCTX_INPROC_SERVER,
                           ADOS::IID_ADOCOLUMN_25,
-                          reinterpret_cast<void**>(&pColumn) );
+                          (void**)&pColumn );
 
 
     if( !FAILED( hr ) )
@@ -52,7 +52,7 @@ void WpADOColumn::Create()
     }
 }
 
-OAdoColumn::OAdoColumn(bool _bCase,OConnection* _pConnection,_ADOColumn* _pColumn)
+OAdoColumn::OAdoColumn(sal_Bool _bCase,OConnection* _pConnection,_ADOColumn* _pColumn)
     : connectivity::sdbcx::OColumn(_bCase)
     ,m_pConnection(_pConnection)
 {
@@ -63,7 +63,7 @@ OAdoColumn::OAdoColumn(bool _bCase,OConnection* _pConnection,_ADOColumn* _pColum
     fillPropertyValues();
 }
 
-OAdoColumn::OAdoColumn(bool _bCase,OConnection* _pConnection)
+OAdoColumn::OAdoColumn(sal_Bool _bCase,OConnection* _pConnection)
     : connectivity::sdbcx::OColumn(_bCase)
     ,m_pConnection(_pConnection)
 {
@@ -77,7 +77,7 @@ OAdoColumn::OAdoColumn(bool _bCase,OConnection* _pConnection)
 
 Sequence< sal_Int8 > OAdoColumn::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = nullptr;
+    static ::cppu::OImplementationId * pId = 0;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -90,9 +90,9 @@ Sequence< sal_Int8 > OAdoColumn::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// css::lang::XUnoTunnel
+// com::sun::star::lang::XUnoTunnel
 
-sal_Int64 OAdoColumn::getSomething( const Sequence< sal_Int8 > & rId )
+sal_Int64 OAdoColumn::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -107,11 +107,11 @@ void OAdoColumn::construct()
     registerProperty(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RELATEDCOLUMN),   PROPERTY_ID_RELATEDCOLUMN,  nAttrib,&m_ReferencedColumn,    ::cppu::UnoType<OUString>::get());
 }
 
-void OAdoColumn::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)
+void OAdoColumn::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)throw (Exception)
 {
     if(m_aColumn.IsValid())
     {
-        const sal_Char* pAdoPropertyName = nullptr;
+        const sal_Char* pAdoPropertyName = NULL;
 
         switch(nHandle)
         {
@@ -205,15 +205,15 @@ void OAdoColumn::fillPropertyValues()
             m_Scale = 4;
         m_Type              = ADOS::MapADOType2Jdbc(eType);
 
-        bool bForceTo = true;
+        sal_Bool bForceTo = sal_True;
         const OTypeInfoMap* pTypeInfoMap = m_pConnection->getTypeInfo();
         const OExtendedTypeInfo* pTypeInfo = OConnection::getTypeInfoFromType(*m_pConnection->getTypeInfo(),eType,OUString(),m_Precision,m_Scale,bForceTo);
         if ( pTypeInfo )
             m_TypeName = pTypeInfo->aSimpleType.aTypeName;
         else if ( eType == adVarBinary && ADOS::isJetEngine(m_pConnection->getEngineType()) )
         {
-            ::comphelper::UStringMixEqual aCase(false);
-            OTypeInfoMap::const_iterator aFind = std::find_if(pTypeInfoMap->begin(), pTypeInfoMap->end(),
+            ::comphelper::UStringMixEqual aCase(sal_False);
+            OTypeInfoMap::const_iterator aFind = ::std::find_if(pTypeInfoMap->begin(), pTypeInfoMap->end(),
                 [&aCase] (const OTypeInfoMap::value_type& typeInfo) {
                     return aCase(typeInfo.second->getDBName(), OUString("VarBinary"));
                 });
@@ -244,11 +244,11 @@ void OAdoColumn::fillPropertyValues()
 
             if ( aProps.IsValid() )
             {
-                m_IsAutoIncrement = OTools::getValue( aProps, OUString("Autoincrement") ).getBool();
+                m_IsAutoIncrement = static_cast<sal_Bool>( OTools::getValue( aProps, OUString("Autoincrement") ) ) == 1;
 
-                m_Description = OTools::getValue( aProps, OUString("Description") ).getString();
+                m_Description = OTools::getValue( aProps, OUString("Description") );
 
-                m_DefaultValue = OTools::getValue( aProps, OUString("Default") ).getString();
+                m_DefaultValue = OTools::getValue( aProps, OUString("Default") );
             }
         }
     }
@@ -258,5 +258,17 @@ WpADOColumn OAdoColumn::getColumnImpl() const
 {
     return m_aColumn;
 }
+
+
+void SAL_CALL OAdoColumn::acquire() throw()
+{
+    OColumn_ADO::acquire();
+}
+
+void SAL_CALL OAdoColumn::release() throw()
+{
+    OColumn_ADO::release();
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -53,7 +53,7 @@ sal_uInt16 SwEditShell::MakeGlossary( SwTextBlocks& rBlks, const OUString& rName
     if(bSaveRelFile)
     {
         INetURLObject aURL( rBlks.GetFileName() );
-        sBase = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        sBase = aURL.GetMainURL( INetURLObject::NO_DECODE );
     }
     rBlks.SetBaseURL( sBase );
 
@@ -63,9 +63,9 @@ sal_uInt16 SwEditShell::MakeGlossary( SwTextBlocks& rBlks, const OUString& rName
     rBlks.ClearDoc();
     if( rBlks.BeginPutDoc( rShortName, rName ) )
     {
-        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::DeleteRedlines );
+        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_DELETE_REDLINES );
         CopySelToDoc( pGDoc );
-        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::NONE );
+        rBlks.GetDoc()->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)0 );
         return rBlks.PutDoc();
     }
 
@@ -87,7 +87,7 @@ sal_uInt16 SwEditShell::SaveGlossaryDoc( SwTextBlocks& rBlock,
     if(bSaveRelFile)
     {
         INetURLObject aURL( rBlock.GetFileName() );
-        sBase = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+        sBase = aURL.GetMainURL( INetURLObject::NO_DECODE );
     }
     rBlock.SetBaseURL( sBase );
     sal_uInt16 nRet = USHRT_MAX;
@@ -212,7 +212,7 @@ bool SwEditShell::CopySelToDoc( SwDoc* pInsDoc )
                         ( bColSel || !pNd->GetTextNode() ) )
                     {
                         rPaM.SetMark();
-                        rPaM.Move( fnMoveForward, GoInContent );
+                        rPaM.Move( fnMoveForward, fnGoContent );
                         bRet = GetDoc()->getIDocumentContentOperations().CopyRange( rPaM, aPos, /*bCopyAll=*/false, /*bCheckPos=*/true )
                             || bRet;
                         rPaM.Exchange();
@@ -280,7 +280,7 @@ bool SwEditShell::GetSelectedText( OUString &rBuf, int nHndlParaBrk )
 #endif
         WriterRef xWrt;
         SwReaderWriter::GetWriter( FILTER_TEXT, OUString(), xWrt );
-        if( xWrt.is() )
+        if( xWrt.Is() )
         {
             // write selected areas into a ASCII document
             SwWriter aWriter( aStream, *this);
@@ -320,7 +320,7 @@ bool SwEditShell::GetSelectedText( OUString &rBuf, int nHndlParaBrk )
                     aStream.Seek( 0 );
                     aStream.ResetError();
                     //endian specific?, yipes!
-                    aStream.ReadBytes(pStr->buffer, nLen);
+                    aStream.Read(pStr->buffer, nLen);
                     rBuf = OUString(pStr, SAL_NO_ACQUIRE);
                 }
             }

@@ -24,10 +24,10 @@
 #include <svl/whiter.hxx>
 #include <svx/svdomedia.hxx>
 #include <svx/sdr/contact/viewcontactofsdrmediaobj.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 
 #include "mediash.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "viewdata.hxx"
 #include "drawview.hxx"
 #include "scresid.hxx"
@@ -39,7 +39,7 @@ SFX_IMPL_INTERFACE(ScMediaShell, ScDrawShell)
 
 void ScMediaShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_MEDIA_OBJECTBAR);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_MEDIA_OBJECTBAR);
 
     GetStaticInterface()->RegisterPopupMenu("media");
 }
@@ -48,8 +48,9 @@ void ScMediaShell::InitInterface_Impl()
 ScMediaShell::ScMediaShell(ScViewData* pData) :
     ScDrawShell(pData)
 {
+    SetHelpId(HID_SCSHELL_MEDIA);
     SetName( OUString( ScResId( SCSTR_MEDIASHELL ) ) );
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Media));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Media));
 }
 
 ScMediaShell::~ScMediaShell()

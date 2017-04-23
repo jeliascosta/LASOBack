@@ -35,17 +35,15 @@ private:
     sal_Int32 mnIndex;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaColumn( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, sal_Int32 nIndex );
-    virtual ~SwVbaColumn() override;
+    SwVbaColumn( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, sal_Int32 nIndex ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaColumn();
 
     // Methods
-    virtual sal_Int32 SAL_CALL getWidth() override;
-    virtual void SAL_CALL setWidth( sal_Int32 _width ) override;
-    virtual void SAL_CALL Select(  ) override;
+    virtual sal_Int32 SAL_CALL getWidth() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL setWidth( sal_Int32 _width ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL Select(  ) throw (css::uno::RuntimeException, std::exception) override;
 
-    /// @throws css::uno::RuntimeException
-    static void SelectColumn( const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::text::XTextTable >& xTextTable, sal_Int32 nStartColumn, sal_Int32 nEndColumn );
+    static void SelectColumn( const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::text::XTextTable >& xTextTable, sal_Int32 nStartColumn, sal_Int32 nEndColumn ) throw (css::uno::RuntimeException);
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

@@ -32,40 +32,84 @@
 #include "diadef.h"
 
 // layer attributes
-inline SfxStringItem makeSdAttrLayerName( const OUString& aStr )
+class SdAttrLayerName : public SfxStringItem
 {
-    return SfxStringItem( ATTR_LAYER_NAME, aStr );
-}
+public:
+    SdAttrLayerName( const OUString& aStr ) :
+        SfxStringItem( ATTR_LAYER_NAME, aStr ) {}
+};
 
-inline SfxStringItem makeSdAttrLayerTitle( const OUString& aStr = OUString() )
+class SdAttrLayerTitle : public SfxStringItem
 {
-    return SfxStringItem( ATTR_LAYER_TITLE, aStr );
-}
+public:
+    SdAttrLayerTitle() : SfxStringItem( ATTR_LAYER_TITLE, OUString()) {}
+    SdAttrLayerTitle( const OUString& aStr ) : SfxStringItem( ATTR_LAYER_TITLE, aStr ) {}
+};
 
-inline SfxStringItem makeSdAttrLayerDesc( const OUString& aStr = OUString() )
+class SdAttrLayerDesc : public SfxStringItem
 {
-    return SfxStringItem( ATTR_LAYER_DESC, aStr );
-}
+public:
+    SdAttrLayerDesc() : SfxStringItem( ATTR_LAYER_DESC, OUString()) {}
+    SdAttrLayerDesc( const OUString& aStr ) : SfxStringItem( ATTR_LAYER_DESC, aStr ) {}
+};
 
-inline SfxBoolItem makeSdAttrLayerVisible( bool bValue = true )
+class SdAttrLayerVisible : public SfxBoolItem
 {
-    return SfxBoolItem( ATTR_LAYER_VISIBLE, bValue );
-}
+public:
+    SdAttrLayerVisible( bool bValue = true ) :
+        SfxBoolItem( ATTR_LAYER_VISIBLE, bValue ) {}
+};
 
-inline SfxBoolItem makeSdAttrLayerPrintable( bool bValue = true )
+class SdAttrLayerPrintable : public SfxBoolItem
 {
-    return SfxBoolItem( ATTR_LAYER_PRINTABLE, bValue );
-}
+public:
+    SdAttrLayerPrintable( bool bValue = true ) :
+        SfxBoolItem( ATTR_LAYER_PRINTABLE, bValue ) {}
+};
 
-inline SfxBoolItem makeSdAttrLayerLocked( bool bValue = false )
+class SdAttrLayerLocked : public SfxBoolItem
 {
-    return SfxBoolItem( ATTR_LAYER_LOCKED, bValue );
-}
+public:
+    SdAttrLayerLocked( bool bValue = false ) :
+        SfxBoolItem( ATTR_LAYER_LOCKED, bValue ) {}
+};
 
-inline SfxBoolItem makeSdAttrLayerThisPage()
+class SdAttrLayerThisPage : public SfxBoolItem
 {
-    return SfxBoolItem( ATTR_LAYER_THISPAGE, false );
-}
+public:
+    SdAttrLayerThisPage( bool bValue = false ) :
+        SfxBoolItem( ATTR_LAYER_THISPAGE, bValue ) {}
+};
+
+class DiaEffectItem : public SfxEnumItem
+{
+public:
+            DiaEffectItem( SvStream& rIn );
+
+    virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
+    virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
+            sal_uInt16          GetValueCount() const override { return FADE_EFFECT_COUNT; }
+};
+
+class DiaSpeedItem : public SfxEnumItem
+{
+public:
+            DiaSpeedItem( SvStream& rIn );
+
+    virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
+    virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
+            sal_uInt16          GetValueCount() const override { return FADE_SPEED_COUNT; }
+};
+
+class DiaAutoItem : public SfxEnumItem
+{
+public:
+            DiaAutoItem( SvStream& rIn );
+
+    virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
+    virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
+            sal_uInt16          GetValueCount() const override { return PRESCHANGE_COUNT; }
+};
 
 #endif // INCLUDED_SD_INC_SDATTR_HXX
 

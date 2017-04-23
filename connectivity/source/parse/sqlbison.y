@@ -60,11 +60,11 @@ inline connectivity::OSQLInternalNode* newNode(const sal_Char* pNewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID = 0);
 
-inline connectivity::OSQLInternalNode* newNode(const OString& _newValue,
+inline connectivity::OSQLInternalNode* newNode(const OString& _NewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID = 0);
 
-inline connectivity::OSQLInternalNode* newNode(const OUString& _newValue,
+inline connectivity::OSQLInternalNode* newNode(const OUString& _NewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID = 0);
 
@@ -78,7 +78,9 @@ inline connectivity::OSQLInternalNode* newNode(const OUString& _newValue,
 
 extern connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
 
+#if !(defined MACOSX && defined PPC)
 #define YYERROR_VERBOSE
+#endif
 
 #define SQLyyerror(s)						\
 {											\
@@ -211,7 +213,7 @@ using namespace connectivity;
 %type <pParseNode> all_or_any_predicate any_all_some existence_test subquery quantified_comparison_predicate_part_2
 %type <pParseNode> scalar_exp_commalist parameter_ref literal parenthesized_boolean_value_expression
 %type <pParseNode> column_ref data_type column cursor parameter range_variable user /*like_check*/
-/* new rules at OJ */
+/* neue Regeln bei OJ */
 %type <pParseNode> derived_column as_clause table_name num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec set_fct_spec  scalar_subquery
 %type <pParseNode> position_exp extract_exp length_exp general_value_spec
@@ -255,8 +257,8 @@ using namespace connectivity;
 %type <pParseNode> opt_limit_offset_clause limit_offset_clause opt_fetch_first_clause
 %%
 
-/* Return Parse Tree to OSQLParser
- * (the access over yyval after calling the parser fails,
+/* Parse Tree an OSQLParser zurueckliefern
+ * (der Zugriff ueber yyval nach Aufruf des Parsers scheitert,
  *
  */
 sql_single_statement:
@@ -1598,7 +1600,7 @@ literal:
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
 				$$->append($2);
-				OSQLParser::reduceLiteral($$, true);
+				xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
 			}
 			else
 				YYERROR;
@@ -1610,7 +1612,7 @@ literal:
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
 				$$->append($2);
-				OSQLParser::reduceLiteral($$, true);
+				xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
 			}
 			else
 				YYERROR;
@@ -1622,7 +1624,7 @@ literal:
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
 				$$->append($2);
-				OSQLParser::reduceLiteral($$, true);
+				xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
 			}
 			else
 				YYERROR;
@@ -1634,7 +1636,7 @@ literal:
 				$$ = SQL_NEW_RULE;
 				$$->append($1);
 				$$->append($2);
-				OSQLParser::reduceLiteral($$, true);
+				xxx_pGLOBAL_SQLPARSER->reduceLiteral($$, sal_True);
 			}
 			else
 				YYERROR;
@@ -2611,7 +2613,7 @@ cross_union:
 	;
 
 qualified_join:
-		/* when SQL_TOKEN_NATURAL, then no join_spec */
+		/* wenn SQL_TOKEN_NATURAL, dann keine join_spec */
 		table_ref SQL_TOKEN_NATURAL join_type SQL_TOKEN_JOIN table_ref
 		{
 			$$ = SQL_NEW_RULE;
@@ -3856,19 +3858,19 @@ column:
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(OSQLParser::TokenIDToStr(nNod), SQLNodeType::Name);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	|	SQL_TOKEN_CHAR_LENGTH
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(OSQLParser::TokenIDToStr(nNod), SQLNodeType::Name);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	|	SQL_TOKEN_EXTRACT
 		{
 			sal_uInt32 nNod = $$->getRuleID();
 			delete $$;
-			$$ = newNode(OSQLParser::TokenIDToStr(nNod), SQLNodeType::Name);
+			$$ = newNode(xxx_pGLOBAL_SQLPARSER->TokenIDToStr(nNod), SQLNodeType::Name);
 		}
 	;
 case_expression:
@@ -4270,8 +4272,6 @@ using namespace ::com::sun::star::util;
 using namespace ::osl;
 using namespace ::dbtools;
 
-connectivity::OSQLParser* xxx_pGLOBAL_SQLPARSER;
-
 connectivity::OSQLInternalNode* newNode(const sal_Char* pNewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID)
@@ -4279,18 +4279,18 @@ connectivity::OSQLInternalNode* newNode(const sal_Char* pNewValue,
     return new connectivity::OSQLInternalNode(pNewValue, eNodeType, nNodeID);
 }
 
-connectivity::OSQLInternalNode* newNode(const OString& _newValue,
+connectivity::OSQLInternalNode* newNode(const OString& _NewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID)
 {
-    return new connectivity::OSQLInternalNode(_newValue, eNodeType, nNodeID);
+    return new connectivity::OSQLInternalNode(_NewValue, eNodeType, nNodeID);
 }
 
-connectivity::OSQLInternalNode* newNode(const OUString& _newValue,
+connectivity::OSQLInternalNode* newNode(const OUString& _NewValue,
         const connectivity::SQLNodeType eNodeType,
         const sal_uInt32 nNodeID)
 {
-    return new connectivity::OSQLInternalNode(_newValue, eNodeType, nNodeID);
+    return new connectivity::OSQLInternalNode(_NewValue, eNodeType, nNodeID);
 }
 
 OParseContext::OParseContext()
@@ -4408,11 +4408,11 @@ const Locale& OParseContext::getDefaultLocale()
 	return impl_getLocaleInstance();
 }
 
-// The (unfortunately global) yylval for the handing over of
-// values from the Scanner to the Parser. The global variable
-// is only used for a short term, the Parser reads the variable
-// immediately after the call of the Scanner into a same named own
-// member variable.
+// Der (leider globale) yylval fuer die Uebergabe von
+// Werten vom Scanner an den Parser. Die globale Variable
+// wird nur kurzzeitig verwendet, der Parser liest die Variable
+// sofort nach dem Scanner-Aufruf in eine gleichnamige eigene
+// Member-Variable.
 
 
 OUString ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode* pEscapeNode, bool bInternational)
@@ -4424,19 +4424,19 @@ OUString ConvertLikeToken(const OSQLParseNode* pTokenNode, const OSQLParseNode* 
 		if (pEscapeNode->count())
 			cEscape = pEscapeNode->getChild(1)->getTokenValue().toChar();
 
-		// Change place holder
+		// Platzhalter austauschen
 		aMatchStr = pTokenNode->getTokenValue();
 		const sal_Int32 nLen = aMatchStr.getLength();
 		OUStringBuffer sSearch,sReplace;
 		if ( bInternational )
 		{
-		    sSearch.append("%_");
-		    sReplace.append("*?");
+		    sSearch.appendAscii("%_",2);
+		    sReplace.appendAscii("*?",2);
 		}
 		else
 		{
-		    sSearch.append("*?");
-		    sReplace.append("%_");
+		    sSearch.appendAscii("*?",2);
+		    sReplace.appendAscii("%_",2);
 		}
 
 		bool wasEscape = false;
@@ -4479,9 +4479,9 @@ OParseContext		    OSQLParser::s_aDefaultContext;
 
 sal_Int32			OSQLParser::s_nRefCount	= 0;
 //	::osl::Mutex		OSQLParser::s_aMutex;
-OSQLScanner*		OSQLParser::s_pScanner = nullptr;
-OSQLParseNodesGarbageCollector*		OSQLParser::s_pGarbageCollector = nullptr;
-css::uno::Reference< css::i18n::XLocaleData4>  OSQLParser::s_xLocaleData = nullptr;
+OSQLScanner*		OSQLParser::s_pScanner = 0;
+OSQLParseNodesGarbageCollector*		OSQLParser::s_pGarbageCollector = 0;
+::com::sun::star::uno::Reference< ::com::sun::star::i18n::XLocaleData4>		OSQLParser::s_xLocaleData = NULL;
 
 void setParser(OSQLParser* _pParser)
 {
@@ -4504,8 +4504,8 @@ static OUString delComment( const OUString& rQuery )
 {
     // First a quick search if there is any "--" or "//" or "/*", if not then the whole
     // copying loop is pointless.
-    if (rQuery.indexOf("--") < 0 && rQuery.indexOf("//") < 0 &&
-            rQuery.indexOf("/*") < 0)
+    if (rQuery.indexOfAsciiL( "--", 2, 0) < 0 && rQuery.indexOfAsciiL( "//", 2, 0) < 0 &&
+            rQuery.indexOfAsciiL( "/*", 2, 0) < 0)
         return rQuery;
 
     const sal_Unicode* pCopy = rQuery.getStr();
@@ -4570,12 +4570,12 @@ OSQLParseNode* OSQLParser::parseTree(OUString& rErrorMessage,
 	OUString sTemp = delComment(rStatement);
 
 	// defines how to scan
-	s_pScanner->SetRule(OSQLScanner::GetSQLRule()); // initial
+	s_pScanner->SetRule(s_pScanner->GetSQLRule()); // initial
 	s_pScanner->prepareScan(sTemp, m_pContext, bInternational);
 
-	SQLyylval.pParseNode = nullptr;
+	SQLyylval.pParseNode = NULL;
 	//	SQLyypvt = NULL;
-	m_pParseTree = nullptr;
+	m_pParseTree = NULL;
 	m_sErrorMessage = "";
 
     // start parsing
@@ -4591,7 +4591,7 @@ OSQLParseNode* OSQLParser::parseTree(OUString& rErrorMessage,
 
 		// clear the garbage collector
 		(*s_pGarbageCollector)->clearAndDelete();
-		return nullptr;
+		return NULL;
 	}
 	else
 	{
@@ -4702,7 +4702,7 @@ sal_Int16 OSQLParser::buildNode(OSQLParseNode*& pAppend,OSQLParseNode* pCompare,
 {
 	OSQLParseNode* pColumnRef = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::column_ref));
 	pColumnRef->append(new OSQLInternalNode(m_sFieldName,SQLNodeType::Name));
-	OSQLParseNode* pComp = nullptr;
+	OSQLParseNode* pComp = NULL;
 	if ( SQL_ISTOKEN( pCompare, BETWEEN) && pLiteral2 )
 		pComp = new OSQLInternalNode("", SQLNodeType::Rule,OSQLParser::RuleID(OSQLParseNode::between_predicate_part_2));
 	else
@@ -4736,11 +4736,11 @@ sal_Int16 OSQLParser::buildStringNodes(OSQLParseNode*& pLiteral)
 		OSQLParseNode* pNewNode = new OSQLInternalNode(pLiteral->getTokenValue(), SQLNodeType::String);
 		pParent->replace(pLiteral, pNewNode);
 		delete pLiteral;
-		pLiteral = nullptr;
+		pLiteral = NULL;
 		return 1;
 	}
 
-	for(size_t i=0;i<pLiteral->count();++i)
+	for(sal_uInt32 i=0;i<pLiteral->count();++i)
 	{
 		OSQLParseNode* pChild = pLiteral->getChild(i);
 		buildStringNodes(pChild);
@@ -4769,7 +4769,7 @@ void OSQLParser::reduceLiteral(OSQLParseNode*& pLiteral, bool bAppendBlank)
 	OUStringBuffer aValue(pLiteral->getChild(0)->getTokenValue());
 	if (bAppendBlank)
 	{
-		aValue.append(" ");
+		aValue.appendAscii(" ");
 	}
 
 	aValue.append(pLiteral->getChild(1)->getTokenValue());
@@ -4816,7 +4816,7 @@ void OSQLParser::error(const sal_Char *fmt)
 
 int OSQLParser::SQLlex()
 {
-	return OSQLScanner::SQLlex();
+	return s_pScanner->SQLlex();
 }
 
 #if defined _MSC_VER

@@ -28,6 +28,7 @@
 #include <vcl/seleng.hxx>
 #include <o3tl/typed_flags_set.hxx>
 
+class ResId;
 class Point;
 class SvxIconChoiceCtrl_Impl;
 class Image;
@@ -38,6 +39,7 @@ enum class SvxIconViewFlags
     POS_LOCKED     = 0x0001,
     SELECTED       = 0x0002,
     FOCUSED        = 0x0004,
+    IN_USE         = 0x0008,
     CURSORED       = 0x0010, // Border around image
     POS_MOVED      = 0x0020, // Moved by Drag and Drop, but not logged
     DROP_TARGET    = 0x0040, // Set in QueryDrop
@@ -46,19 +48,23 @@ enum class SvxIconViewFlags
 };
 namespace o3tl
 {
-    template<> struct typed_flags<SvxIconViewFlags> : is_typed_flags<SvxIconViewFlags, 0x04f7> {};
+    template<> struct typed_flags<SvxIconViewFlags> : is_typed_flags<SvxIconViewFlags, 0x04ff> {};
 }
 
-enum class SvxIconChoiceCtrlTextMode
+enum SvxIconChoiceCtrlTextMode
 {
-    Full = 1,        //  Enlarge BoundRect southwards
-    Short            // Shorten with "..."
+    IcnShowTextFull = 1,        //  Enlarge BoundRect southwards
+    IcnShowTextShort,           // Shorten with "..."
+    IcnShowTextSmart,           // Show all text (not implemented)
+    IcnShowTextDontKnow         // Settings of the View
 };
 
-enum class SvxIconChoiceCtrlPositionMode
+enum SvxIconChoiceCtrlPositionMode
 {
-    Free,                // Free pixel-perfect positioning
-    AutoArrange,         // Auto arrange
+    IcnViewPositionModeFree = 0,                // Free pixel-perfekt positioning
+    IcnViewPositionModeAutoArrange = 1,         // Auto arrange
+    IcnViewPositionModeAutoAdjust = 2,          // Auto adjust
+    IcnViewPositionModeLast = IcnViewPositionModeAutoAdjust
 };
 
 class SvxIconChoiceCtrlEntry
@@ -74,8 +80,8 @@ class SvxIconChoiceCtrlEntry
     friend class EntryList_Impl;
     friend class IcnGridMap_Impl;
 
-    tools::Rectangle               aRect;              // Bounding-Rectangle of the entry
-    tools::Rectangle               aGridRect;          // Only valid in Grid-mode
+    Rectangle               aRect;              // Bounding-Rect of the entry
+    Rectangle               aGridRect;          // Only valid in Grid-mode
     sal_Int32               nPos;
 
     /*
@@ -113,6 +119,7 @@ class SvxIconChoiceCtrlEntry
 
 public:
                             SvxIconChoiceCtrlEntry( const OUString& rText, const Image& rImage );
+                            ~SvxIconChoiceCtrlEntry () {}
 
     const Image&            GetImage () const { return aImage; }
     void                    SetText ( const OUString& rText ) { aText = rText; }
@@ -133,13 +140,24 @@ public:
     bool                    IsPosLocked() const { return bool(nFlags & SvxIconViewFlags::POS_LOCKED); }
 };
 
+enum SvxIconChoiceCtrlColumnAlign
+{
+    IcnViewAlignLeft = 1,
+    IcnViewAlignRight,
+    IcnViewAlignCenter
+};
+
 class SvxIconChoiceCtrlColumnInfo
 {
+    OUString                aColText;
+    Image                   aColImage;
     long                    nWidth;
+    SvxIconChoiceCtrlColumnAlign    eAlignment;
+    sal_uInt16              nSubItem;
 
 public:
-                            SvxIconChoiceCtrlColumnInfo() :
-                                nWidth( 100 ) {}
+                            SvxIconChoiceCtrlColumnInfo( long nWd ) :
+                                nWidth( nWd ), eAlignment( IcnViewAlignLeft ), nSubItem( 0 ) {}
                             SvxIconChoiceCtrlColumnInfo( const SvxIconChoiceCtrlColumnInfo& );
 
     void                    SetWidth( long nWd ) { nWidth = nWd; }
@@ -153,11 +171,11 @@ public:
         WB_SMALL_ICON       // Text right to the icon, position does not mind
         WB_DETAILS          // Text right to the icon, limited positioning
         WB_BORDER
-        WB_NOHIDESELECTION  // Draw selection inactively, if not focused.
+        WB_NOHIDESELECTION  // Draw selection inaktively, if not focused.
         WB_NOHSCROLL
         WB_NOVSCROLL
         WB_NOSELECTION
-        WB_SMART_ARRANGE    // Keep Visible-Area at arrange
+        WB_SMART_ARRANGE    // Keep Vis-Area at arrange
         WB_ALIGN_TOP        // Align line vy line LTR
         WB_ALIGN_LEFT       // Align columns from top to bottom
         WB_NODRAGSELECTION  // No selection with tracking rectangle
@@ -178,7 +196,7 @@ public:
 #define WB_ALIGN_TOP            WB_TOP
 #define WB_ALIGN_LEFT           WB_LEFT
 #define WB_NOCOLUMNHEADER       WB_CENTER
-#define WB_HIGHLIGHTFRAME       WB_IGNORETAB
+#define WB_HIGHLIGHTFRAME       WB_INFO
 #define WB_NOASYNCSELECTHDL     WB_NOLABEL
 
 class MnemonicGenerator;
@@ -189,13 +207,14 @@ class SVT_DLLPUBLIC SvtIconChoiceCtrl : public Control
 
     Link<SvtIconChoiceCtrl*,void>  _aClickIconHdl;
     KeyEvent*                      _pCurKeyEvent;
-    std::unique_ptr<SvxIconChoiceCtrl_Impl>        _pImpl;
+    SvxIconChoiceCtrl_Impl*        _pImp;
+    bool                           _bAutoFontColor;
 
 protected:
 
     virtual void        KeyInput( const KeyEvent& rKEvt ) override;
     virtual void        Command( const CommandEvent& rCEvt ) override;
-    virtual void        Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void        MouseButtonUp( const MouseEvent& rMEvt ) override;
     virtual void        MouseMove( const MouseEvent& rMEvt ) override;
@@ -203,6 +222,7 @@ protected:
     virtual void        GetFocus() override;
     virtual void        LoseFocus() override;
     void                ClickIcon();
+    virtual void        StateChanged( StateChangedType nType ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
     virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
     static void         DrawEntryImage(
@@ -216,12 +236,12 @@ protected:
 
     virtual void        FillLayoutData() const override;
 
-    void                CallImplEventListeners(VclEventId nEvent, void* pData);
+    void                CallImplEventListeners(sal_uLong nEvent, void* pData);
 
 public:
 
-                        SvtIconChoiceCtrl( vcl::Window* pParent, WinBits nWinStyle );
-    virtual             ~SvtIconChoiceCtrl() override;
+                        SvtIconChoiceCtrl( vcl::Window* pParent, WinBits nWinStyle = WB_ICON | WB_BORDER );
+    virtual             ~SvtIconChoiceCtrl();
     virtual void        dispose() override;
 
     void                SetStyle( WinBits nWinStyle );
@@ -255,6 +275,8 @@ public:
 
     bool                DoKeyInput( const KeyEvent& rKEvt );
 
+    bool                IsEntryEditing() const;
+
     sal_Int32               GetEntryCount() const;
     SvxIconChoiceCtrlEntry* GetEntry( sal_Int32 nPos ) const;
     sal_Int32               GetEntryListPos( SvxIconChoiceCtrlEntry* pEntry ) const;
@@ -262,7 +284,7 @@ public:
     void                    SetCursor( SvxIconChoiceCtrlEntry* pEntry );
     SvxIconChoiceCtrlEntry* GetCursor() const;
 
-    // Re-calculation of cached view-data and invalidation of those in the view
+    // Re-calculation of cached view-data and invalidatiopn of those in the view
     void                    InvalidateEntry( SvxIconChoiceCtrlEntry* pEntry );
 
     // Entry is selectd, if the BoundRect is selected
@@ -272,14 +294,16 @@ public:
     SvxIconChoiceCtrlEntry* GetSelectedEntry() const;
 
 #ifdef DBG_UTIL
-    void                    SetEntryTextMode( SvxIconChoiceCtrlTextMode eMode, SvxIconChoiceCtrlEntry* pEntry );
+    void                    SetEntryTextMode( SvxIconChoiceCtrlTextMode eMode, SvxIconChoiceCtrlEntry* pEntry = nullptr );
 #endif
+
+    bool                AutoFontColor () { return _bAutoFontColor; }
 
     Point               GetPixelPos( const Point& rPosLogic ) const;
     void                SetSelectionMode( SelectionMode eMode );
 
-    tools::Rectangle           GetBoundingBox( SvxIconChoiceCtrlEntry* pEntry ) const;
-    tools::Rectangle           GetEntryCharacterBounds( const sal_Int32 _nEntryPos, const sal_Int32 _nCharacterIndex ) const;
+    Rectangle           GetBoundingBox( SvxIconChoiceCtrlEntry* pEntry ) const;
+    Rectangle           GetEntryCharacterBounds( const sal_Int32 _nEntryPos, const sal_Int32 _nCharacterIndex ) const;
 
     void                SetNoSelection();
 

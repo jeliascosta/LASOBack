@@ -416,15 +416,19 @@ String STR_TOXCHANGE
 };
 String STR_START_QUOTE
 {
-    Text [ en-US ] = "“";
+    Text [ en-US ] = "'";
 };
 String STR_END_QUOTE
 {
-    Text [ en-US ] = "”";
+    Text [ en-US ] = "'";
 };
 String STR_LDOTS
 {
     Text [ en-US ] = "...";
+};
+String STR_CLIPBOARD
+{
+    Text [ en-US ] = "clipboard";
 };
 String STR_MULTISEL
 {
@@ -440,7 +444,7 @@ String STR_PASTE_CLIPBOARD_UNDO
 };
 String STR_YIELDS
 {
-    Text [ en-US ] = "→";
+    Text [ en-US ] = "->";
 };
 String STR_OCCURRENCES_OF
 {
@@ -481,6 +485,10 @@ String STR_REDLINE_TABLE
 String STR_REDLINE_FMTCOLL
 {
     Text [ en-US ] = "Style changed";
+};
+String STR_REDLINE_MULTIPLE
+{
+    Text [ en-US ] = "multiple changes";
 };
 String STR_N_REDLINES
 {
@@ -620,7 +628,7 @@ String STR_FOOTNOTE
 };
 String STR_GRAPHIC
 {
-    Text[ en-US ] = "image";
+    Text[ en-US ] = "picture";
 };
 String STR_DRAWING_OBJECTS
 {
@@ -641,18 +649,6 @@ String STR_UNDO_FLYFRMFMT_TITLE
 String STR_UNDO_FLYFRMFMT_DESCRITPTION
 {
     Text[ en-US ] = "Change object description of $1";
-};
-String STR_UNDO_TBLSTYLE_CREATE
-{
-    Text[ en-US ] = "Create table style: $1";
-};
-String STR_UNDO_TBLSTYLE_DELETE
-{
-    Text[ en-US ] = "Delete table style: $1";
-};
-String STR_UNDO_TBLSTYLE_UPDATE
-{
-    Text[ en-US ] = "Update table style: $1";
 };
 String STR_UNDO_TABLE_DELETE
 {

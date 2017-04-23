@@ -36,7 +36,7 @@ namespace dbaui
         virtual void InitEntry(SvTreeListEntry* pEntry, const OUString& rStr, const Image& rImg1, const Image& rImg2, SvLBoxButtonKind eButtonKind) override;
 
     public:
-        OColumnTreeBox( vcl::Window* pParent );
+        OColumnTreeBox( vcl::Window* pParent, WinBits nBits = WB_BORDER );
 
         void FillListBox( const ODatabaseExport::TColumnVector& _rList);
         void SetReadOnly() { m_bReadOnly = true; }
@@ -65,11 +65,11 @@ namespace dbaui
         Image               m_aImgUp;
         Image               m_aImgDown;
 
-        DECL_LINK( ButtonClickHdl, Button *, void );
-        DECL_LINK( RightButtonClickHdl, Button *, void );
-        DECL_LINK( AllNoneClickHdl, Button *, void );
-        DECL_LINK( TableListClickHdl, SvTreeListBox*, void );
-        DECL_LINK( TableListRightSelectHdl, SvTreeListBox*, void );
+        DECL_LINK_TYPED( ButtonClickHdl, Button *, void );
+        DECL_LINK_TYPED( RightButtonClickHdl, Button *, void );
+        DECL_LINK_TYPED( AllNoneClickHdl, Button *, void );
+        DECL_LINK_TYPED( TableListClickHdl, SvTreeListBox*, void );
+        DECL_LINK_TYPED( TableListRightSelectHdl, SvTreeListBox*, void );
 
     public:
         virtual void            Reset ( ) override;
@@ -78,7 +78,7 @@ namespace dbaui
         virtual OUString        GetTitle() const override ;
 
         OWizNameMatching(vcl::Window* pParent);
-        virtual ~OWizNameMatching() override;
+        virtual ~OWizNameMatching();
         virtual void dispose() override;
     };
 }

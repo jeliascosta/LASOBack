@@ -28,7 +28,7 @@
 class ImpVclMEdit;
 class Timer;
 class ExtTextEngine;
-class TextView;
+class ExtTextView;
 
 class VCL_DLLPUBLIC VclMultiLineEdit : public Edit
 {
@@ -45,24 +45,24 @@ private:
 
 protected:
 
-    DECL_LINK( ImpUpdateDataHdl, Timer*, void );
+    DECL_LINK_TYPED( ImpUpdateDataHdl, Timer*, void );
     void            StateChanged( StateChangedType nType ) override;
     void            DataChanged( const DataChangedEvent& rDCEvt ) override;
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
     using Control::ImplInitSettings;
     void            ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
     static WinBits  ImplInitStyle( WinBits nStyle );
 
     ExtTextEngine*  GetTextEngine() const;
-    TextView*       GetTextView() const;
+    ExtTextView*    GetTextView() const;
     ScrollBar*      GetVScrollBar() const;
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 public:
                     VclMultiLineEdit( vcl::Window* pParent,
-                                      WinBits nWinStyle );
-    virtual         ~VclMultiLineEdit() override;
+                                      WinBits nWinStyle = WB_LEFT | WB_BORDER );
+    virtual         ~VclMultiLineEdit();
     virtual void    dispose() override;
 
     void            SelectionChanged();
@@ -82,7 +82,7 @@ public:
 
     void            EnableFocusSelectionHide( bool bHide );
 
-    virtual void    SetMaxTextLen(sal_Int32 nMaxLen) override;
+    virtual void    SetMaxTextLen(sal_Int32 nMaxLen = 0) override;
     virtual sal_Int32 GetMaxTextLen() const override;
 
     void            SetMaxTextWidth( sal_uLong nMaxWidth );

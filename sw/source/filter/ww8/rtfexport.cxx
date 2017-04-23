@@ -47,7 +47,6 @@
 #include <svx/xflclit.hxx>
 #include <editeng/hyphenzoneitem.hxx>
 #include <fmtmeta.hxx>
-#include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star;
 
@@ -112,8 +111,10 @@ void RtfExport::AppendBookmarks(const SwTextNode& rNode, sal_Int32 nAktPos, sal_
     IMarkVector aMarks;
     if (GetBookmarks(rNode, nAktPos, nAktPos + nLen, aMarks))
     {
-        for (const auto& pMark : aMarks)
+        for (IMarkVector::const_iterator it = aMarks.begin(), end = aMarks.end();
+                it != end; ++it)
         {
+            sw::mark::IMark* pMark = (*it);
             const sal_Int32 nStart = pMark->GetMarkStart().nContent.GetIndex();
             const sal_Int32 nEnd = pMark->GetMarkEnd().nContent.GetIndex();
 
@@ -147,8 +148,10 @@ void RtfExport::AppendAnnotationMarks(const SwTextNode& rNode, sal_Int32 nAktPos
     IMarkVector aMarks;
     if (GetAnnotationMarks(rNode, nAktPos, nAktPos + nLen, aMarks))
     {
-        for (const auto& pMark : aMarks)
+        for (IMarkVector::const_iterator it = aMarks.begin(), end = aMarks.end();
+                it != end; ++it)
         {
+            sw::mark::IMark* pMark = (*it);
             const sal_Int32 nStart = pMark->GetMarkStart().nContent.GetIndex();
             const sal_Int32 nEnd = pMark->GetMarkEnd().nContent.GetIndex();
 
@@ -292,7 +295,7 @@ void RtfExport::WriteHeadersFooters(sal_uInt8 nHeadFootFlags,
         WriteHeaderFooter(rFirstPageFormat, false, OOO_STRING_SVTOOLS_RTF_FOOTERF, true);
 }
 
-void RtfExport::OutputField(const SwField* pField, ww::eField eFieldType, const OUString& rFieldCmd, FieldFlags nMode)
+void RtfExport::OutputField(const SwField* pField, ww::eField eFieldType, const OUString& rFieldCmd, sal_uInt8 nMode)
 {
     m_pAttrOutput->WriteField_Impl(pField, eFieldType, rFieldCmd, nMode);
 }
@@ -319,24 +322,24 @@ void RtfExport::DoComboBox(const OUString& /*rName*/,
 void RtfExport::DoFormText(const SwInputField* pField)
 {
     OUString sResult = pField->ExpandField(true);
-    const OUString& rHelp = pField->GetHelp();
+    OUString sHelp(pField->GetHelp());
     OUString sName = pField->GetPar2();
-    const OUString& rStatus = pField->GetToolTip();
+    OUString sStatus = pField->GetToolTip();
     m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_FIELD "{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FLDINST "{ FORMTEXT }");
     m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FORMFIELD " {" OOO_STRING_SVTOOLS_RTF_FFTYPE "0");
-    if (!rHelp.isEmpty())
+    if (!sHelp.isEmpty())
         m_pAttrOutput->RunText().append(OOO_STRING_SVTOOLS_RTF_FFOWNHELP);
-    if (!rStatus.isEmpty())
+    if (!sStatus.isEmpty())
         m_pAttrOutput->RunText().append(OOO_STRING_SVTOOLS_RTF_FFOWNSTAT);
     m_pAttrOutput->RunText().append(OOO_STRING_SVTOOLS_RTF_FFTYPETXT  "0");
 
     if (!sName.isEmpty())
         m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFNAME " ").append(msfilter::rtfutil::OutString(sName, m_eDefaultEncoding)).append("}");
-    if (!rHelp.isEmpty())
-        m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFHELPTEXT " ").append(msfilter::rtfutil::OutString(rHelp, m_eDefaultEncoding)).append("}");
+    if (!sHelp.isEmpty())
+        m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFHELPTEXT " ").append(msfilter::rtfutil::OutString(sHelp, m_eDefaultEncoding)).append("}");
     m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFDEFTEXT " ").append(msfilter::rtfutil::OutString(sResult, m_eDefaultEncoding)).append("}");
-    if (!rStatus.isEmpty())
-        m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFSTATTEXT " ").append(msfilter::rtfutil::OutString(rStatus, m_eDefaultEncoding)).append("}");
+    if (!sStatus.isEmpty())
+        m_pAttrOutput->RunText().append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FFSTATTEXT " ").append(msfilter::rtfutil::OutString(sStatus, m_eDefaultEncoding)).append("}");
     m_pAttrOutput->RunText().append("}}}{" OOO_STRING_SVTOOLS_RTF_FLDRSLT " ");
     m_pAttrOutput->RunText().append(msfilter::rtfutil::OutString(sResult, m_eDefaultEncoding)).append("}}");
 }
@@ -470,19 +473,6 @@ void RtfExport::WriteInfo()
     Strm().WriteChar('}');
 }
 
-void RtfExport::WriteUserPropType(int nType)
-{
-    Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_PROPTYPE);
-    OutULong(nType);
-}
-
-void RtfExport::WriteUserPropValue(const OUString& rValue)
-{
-    Strm().WriteCharPtr("{" OOO_STRING_SVTOOLS_RTF_STATICVAL " ");
-    Strm().WriteCharPtr(msfilter::rtfutil::OutString(rValue, m_eDefaultEncoding).getStr());
-    Strm().WriteChar('}');
-}
-
 void RtfExport::WriteUserProps()
 {
     Strm().WriteChar('{').WriteCharPtr(OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_USERPROPS);
@@ -521,54 +511,18 @@ void RtfExport::WriteUserProps()
                 Strm().WriteCharPtr(msfilter::rtfutil::OutString(rProperty.Name, m_eDefaultEncoding).getStr());
                 Strm().WriteChar('}');
 
-                // Property value.
+                // Property value type.
                 OUString aValue;
-                double fValue;
-                bool bValue;
-                util::DateTime aDate;
-                uno::Any aAny = xPropertySet->getPropertyValue(rProperty.Name);
-                if (aAny >>= bValue)
+                if (xPropertySet->getPropertyValue(rProperty.Name) >>= aValue)
                 {
-                    WriteUserPropType(11);
-                    WriteUserPropValue(OUString::number(static_cast<int>(bValue)));
+                    Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_PROPTYPE);
+                    OutULong(30);
                 }
-                else if (aAny >>= aValue)
-                {
-                    WriteUserPropType(30);
-                    WriteUserPropValue(aValue);
-                }
-                else if (aAny >>= fValue)
-                {
-                    aValue = OUString::number(fValue);
-                    if (aValue.indexOf('.') == -1)
-                    {
-                        // Integer.
-                        WriteUserPropType(3);
-                        WriteUserPropValue(aValue);
-                    }
-                    else
-                    {
-                        // Real number.
-                        WriteUserPropType(5);
-                        WriteUserPropValue(aValue);
-                    }
-                }
-                else if (aAny >>= aDate)
-                {
-                    WriteUserPropType(64);
-                    // Format is 'YYYY. MM. DD.'.
-                    aValue += OUString::number(aDate.Year);
-                    aValue += ". ";
-                    if (aDate.Month < 10)
-                        aValue += "0";
-                    aValue += OUString::number(aDate.Month);
-                    aValue += ". ";
-                    if (aDate.Day < 10)
-                        aValue += "0";
-                    aValue += OUString::number(aDate.Day);
-                    aValue += ".";
-                    WriteUserPropValue(aValue);
-                }
+
+                // Property value.
+                Strm().WriteCharPtr("{" OOO_STRING_SVTOOLS_RTF_STATICVAL " ");
+                Strm().WriteCharPtr(msfilter::rtfutil::OutString(aValue, m_eDefaultEncoding).getStr());
+                Strm().WriteChar('}');
             }
         }
 
@@ -593,9 +547,9 @@ void RtfExport::WritePageDescTable()
 
         Strm().WriteCharPtr(SAL_NEWLINE_STRING).WriteChar('{').WriteCharPtr(OOO_STRING_SVTOOLS_RTF_PGDSC);
         OutULong(n).WriteCharPtr(OOO_STRING_SVTOOLS_RTF_PGDSCUSE);
-        OutULong((sal_uLong)rPageDesc.ReadUseOn());
+        OutULong(rPageDesc.ReadUseOn());
 
-        OutPageDescription(rPageDesc, false);
+        OutPageDescription(rPageDesc, false, false);
 
         // search for the next page description
         std::size_t i = nSize;
@@ -660,10 +614,10 @@ void RtfExport::ExportDocument_Impl()
         OutULong(pViewShell->GetViewOptions()->GetZoom());
     }
     // Record changes?
-    if (RedlineFlags::On & m_nOrigRedlineFlags)
+    if (nsRedlineMode_t::REDLINE_ON & m_nOrigRedlineMode)
         Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_REVISIONS);
     // Mirror margins?
-    if ((UseOnPage::Mirror & m_pDoc->GetPageDesc(0).ReadUseOn()) == UseOnPage::Mirror)
+    if ((nsUseOnPage::PD_MIRROR & m_pDoc->GetPageDesc(0).ReadUseOn()) == nsUseOnPage::PD_MIRROR)
         Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_MARGMIRROR);
     // Init sections
     m_pSections = new MSWordSections(*this);
@@ -680,7 +634,7 @@ void RtfExport::ExportDocument_Impl()
         sal_uInt32 const nMaxItem = rPool.GetItemCount2(RES_PROTECT);
         for (sal_uInt32 n = 0; n < nMaxItem; ++n)
         {
-            auto pProtect = static_cast<const SvxProtectItem*>(rPool.GetItem2(RES_PROTECT, n));
+            const SvxProtectItem* pProtect = static_cast<const SvxProtectItem*>(rPool.GetItem2(RES_PROTECT, n));
             if (pProtect && pProtect->IsContentProtected())
             {
                 Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_FORMPROT);
@@ -769,7 +723,7 @@ void RtfExport::ExportDocument_Impl()
         // All sections are unlocked by default
         Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_SECTUNLOCKED);
         OutLong(1);
-        OutPageDescription(rPageDesc, true);     // Changed bCheckForFirstPage to true so headers
+        OutPageDescription(rPageDesc, false, true);     // Changed bCheckForFirstPage to true so headers
         // following title page are correctly added - i13107
         if (pSttPgDsc)
         {
@@ -951,7 +905,9 @@ RtfExport::RtfExport(RtfExportFilter* pFilter, SwDoc* pDocument, SwPaM* pCurrent
     : MSWordExportBase(pDocument, pCurrentPam, pOriginalPam),
       m_pFilter(pFilter),
       m_pWriter(pWriter),
+      m_pAttrOutput(),
       m_pSections(nullptr),
+      m_pSdrExport(),
       m_bOutOutlineOnly(bOutOutlineOnly),
       m_eDefaultEncoding(rtl_getTextEncodingFromWindowsCharset(sw::ms::rtl_TextEncodingToWinCharset(DEF_ENCODING))),
       m_eCurrentEncoding(m_eDefaultEncoding),
@@ -960,19 +916,21 @@ RtfExport::RtfExport(RtfExportFilter* pFilter, SwDoc* pDocument, SwPaM* pCurrent
 {
     m_bExportModeRTF = true;
     // the attribute output for the document
-    m_pAttrOutput = o3tl::make_unique<RtfAttributeOutput>(*this);
+    m_pAttrOutput.reset(new RtfAttributeOutput(*this));
     // that just causes problems for RTF
     m_bSubstituteBullets = false;
     // needed to have a complete font table
     m_aFontHelper.bLoadAllFonts = true;
     // the related SdrExport
-    m_pSdrExport = o3tl::make_unique<RtfSdrExport>(*this);
+    m_pSdrExport.reset(new RtfSdrExport(*this));
 
     if (!m_pWriter)
         m_pWriter = &m_pFilter->m_aWriter;
 }
 
-RtfExport::~RtfExport() = default;
+RtfExport::~RtfExport()
+{
+}
 
 SvStream& RtfExport::Strm()
 {
@@ -984,7 +942,7 @@ SvStream& RtfExport::Strm()
 
 void RtfExport::setStream()
 {
-    m_pStream = o3tl::make_unique<SvMemoryStream>();
+    m_pStream.reset(new SvMemoryStream());
 }
 
 OString RtfExport::getStream()
@@ -1039,11 +997,11 @@ void RtfExport::OutDateTime(const sal_Char* pStr, const util::DateTime& rDT)
 
 sal_uInt16 RtfExport::GetColor(const Color& rColor) const
 {
-    for (const auto& rEntry : m_aColTable)
-        if (rEntry.second == rColor)
+    for (RtfColorTable::const_iterator it=m_aColTable.begin() ; it != m_aColTable.end(); ++it)
+        if ((*it).second == rColor)
         {
-            SAL_INFO("sw.rtf", OSL_THIS_FUNC << " returning " << rEntry.first << " (" << rColor.GetRed() << "," << rColor.GetGreen() << "," << rColor.GetBlue() << ")");
-            return rEntry.first;
+            SAL_INFO("sw.rtf", OSL_THIS_FUNC << " returning " << (*it).first << " (" << rColor.GetRed() << "," << rColor.GetGreen() << "," << rColor.GetBlue() << ")");
+            return (*it).first;
         }
     OSL_FAIL("No such Color in m_aColTable!");
     return 0;
@@ -1053,11 +1011,11 @@ void RtfExport::InsColor(const Color& rCol)
 {
     sal_uInt16 n;
     bool bAutoColorInTable = false;
-    for (const auto& rEntry : m_aColTable)
+    for (RtfColorTable::iterator it=m_aColTable.begin() ; it != m_aColTable.end(); ++it)
     {
-        if (rEntry.second == rCol)
+        if ((*it).second == rCol)
             return; // Already in the table
-        if (rEntry.second == COL_AUTO)
+        if ((*it).second == COL_AUTO)
             bAutoColorInTable = true;
     }
     if (rCol.GetColor() == COL_AUTO)
@@ -1115,7 +1073,7 @@ void RtfExport::OutColorTable()
 
     // char color
     {
-        auto pCol = static_cast<const SvxColorItem*>(GetDfltAttr(RES_CHRATR_COLOR));
+        const SvxColorItem* pCol = static_cast<const SvxColorItem*>(GetDfltAttr(RES_CHRATR_COLOR));
         InsColor(pCol->GetValue());
         if (nullptr != (pCol = static_cast<const SvxColorItem*>(rPool.GetPoolDefaultItem(RES_CHRATR_COLOR))))
             InsColor(pCol->GetValue());
@@ -1126,7 +1084,7 @@ void RtfExport::OutColorTable()
                 InsColor(pCol->GetValue());
         }
 
-        auto pUnder = static_cast<const SvxUnderlineItem*>(GetDfltAttr(RES_CHRATR_UNDERLINE));
+        const SvxUnderlineItem* pUnder = static_cast<const SvxUnderlineItem*>(GetDfltAttr(RES_CHRATR_UNDERLINE));
         InsColor(pUnder->GetColor());
         nMaxItem = rPool.GetItemCount2(RES_CHRATR_UNDERLINE);
         for (sal_uInt32 n = 0; n < nMaxItem; ++n)
@@ -1136,7 +1094,7 @@ void RtfExport::OutColorTable()
 
         }
 
-        auto pOver = static_cast<const SvxOverlineItem*>(GetDfltAttr(RES_CHRATR_OVERLINE));
+        const SvxOverlineItem* pOver = static_cast<const SvxOverlineItem*>(GetDfltAttr(RES_CHRATR_OVERLINE));
         InsColor(pOver->GetColor());
         nMaxItem = rPool.GetItemCount2(RES_CHRATR_OVERLINE);
         for (sal_uInt32 n = 0; n < nMaxItem; ++n)
@@ -1156,25 +1114,25 @@ void RtfExport::OutColorTable()
 
     for (const sal_uInt16* pIds = aBrushIds; *pIds; ++pIds)
     {
-        auto pBackground = static_cast<const SvxBrushItem*>(GetDfltAttr(*pIds));
-        InsColor(pBackground->GetColor());
-        if ((pBackground = static_cast<const SvxBrushItem*>(rPool.GetPoolDefaultItem(*pIds))))
+        const SvxBrushItem* pBkgrd = static_cast<const SvxBrushItem*>(GetDfltAttr(*pIds));
+        InsColor(pBkgrd->GetColor());
+        if (nullptr != (pBkgrd = static_cast<const SvxBrushItem*>(rPool.GetPoolDefaultItem(*pIds))))
         {
-            InsColor(pBackground->GetColor());
+            InsColor(pBkgrd->GetColor());
         }
         nMaxItem = rPool.GetItemCount2(*pIds);
         for (sal_uInt32 n = 0; n < nMaxItem; ++n)
         {
-            if ((pBackground = static_cast<const SvxBrushItem*>(rPool.GetItem2(*pIds , n))))
+            if (nullptr != (pBkgrd = static_cast<const SvxBrushItem*>(rPool.GetItem2(*pIds , n))))
             {
-                InsColor(pBackground->GetColor());
+                InsColor(pBkgrd->GetColor());
             }
         }
     }
 
     // shadow color
     {
-        auto pShadow = static_cast<const SvxShadowItem*>(GetDfltAttr(RES_SHADOW));
+        const SvxShadowItem* pShadow = static_cast<const SvxShadowItem*>(GetDfltAttr(RES_SHADOW));
         InsColor(pShadow->GetColor());
         if (nullptr != (pShadow = static_cast<const SvxShadowItem*>(rPool.GetPoolDefaultItem(RES_SHADOW))))
         {
@@ -1219,7 +1177,7 @@ void RtfExport::OutColorTable()
     nMaxItem = rPool.GetItemCount2(XATTR_FILLCOLOR);
     for (sal_uInt32 i = 0; i < nMaxItem; ++i)
     {
-        if (auto pItem = static_cast<const XFillColorItem*>(rPool.GetItem2(XATTR_FILLCOLOR, i)))
+        if (const XFillColorItem* pItem = static_cast<const XFillColorItem*>(rPool.GetItem2(XATTR_FILLCOLOR, i)))
             InsColor(pItem->GetColorValue());
     }
 
@@ -1244,32 +1202,32 @@ void RtfExport::InsStyle(sal_uInt16 nId, const OString& rStyle)
 
 OString* RtfExport::GetStyle(sal_uInt16 nId)
 {
-    auto it = m_aStyTable.find(nId);
-    if (it != m_aStyTable.end())
-        return &it->second;
+    std::map<sal_uInt16,OString>::iterator i = m_aStyTable.find(nId);
+    if (i != m_aStyTable.end())
+        return &i->second;
     return nullptr;
 }
 
 sal_uInt16 RtfExport::GetRedline(const OUString& rAuthor)
 {
-    auto it = m_aRedlineTable.find(rAuthor);
-    if (it != m_aRedlineTable.end())
-        return it->second;
+    std::map<OUString,sal_uInt16>::iterator i = m_aRedlineTable.find(rAuthor);
+    if (i != m_aRedlineTable.end())
+        return i->second;
 
-    const sal_uInt16 nId = m_aRedlineTable.size();
+    const sal_uInt16 nId = static_cast<sal_uInt16>(m_aRedlineTable.size());
     m_aRedlineTable.insert(std::pair<OUString,sal_uInt16>(rAuthor,nId));
     return nId;
 }
 
 const OUString* RtfExport::GetRedline(sal_uInt16 nId)
 {
-    for (const auto& rEntry : m_aRedlineTable)
-        if (rEntry.second == nId)
-            return &rEntry.first;
+    for (std::map<OUString,sal_uInt16>::iterator aIter = m_aRedlineTable.begin(); aIter != m_aRedlineTable.end(); ++aIter)
+        if ((*aIter).second == nId)
+            return &(*aIter).first;
     return nullptr;
 }
 
-void RtfExport::OutPageDescription(const SwPageDesc& rPgDsc, bool bCheckForFirstPage)
+void RtfExport::OutPageDescription(const SwPageDesc& rPgDsc, bool bWriteReset, bool bCheckForFirstPage)
 {
     SAL_INFO("sw.rtf", OSL_THIS_FUNC << " start");
     const SwPageDesc* pSave = m_pAktPageDesc;
@@ -1278,6 +1236,14 @@ void RtfExport::OutPageDescription(const SwPageDesc& rPgDsc, bool bCheckForFirst
     if (bCheckForFirstPage && m_pAktPageDesc->GetFollow() &&
             m_pAktPageDesc->GetFollow() != m_pAktPageDesc)
         m_pAktPageDesc = m_pAktPageDesc->GetFollow();
+
+    if (bWriteReset)
+    {
+        if (m_pCurPam->GetPoint()->nNode == m_pOrigPam->Start()->nNode)
+            Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_SECTD).WriteCharPtr(OOO_STRING_SVTOOLS_RTF_SBKNONE);
+        else
+            Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_SECT).WriteCharPtr(OOO_STRING_SVTOOLS_RTF_SECTD);
+    }
 
     if (m_pAktPageDesc->GetLandscape())
         Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_LNDSCPSXN);
@@ -1320,13 +1286,13 @@ void RtfExport::WriteHeaderFooter(const SfxPoolItem& rItem, bool bHeader)
 {
     if (bHeader)
     {
-        const auto& rHeader = static_cast<const SwFormatHeader&>(rItem);
+        const SwFormatHeader& rHeader = static_cast<const SwFormatHeader&>(rItem);
         if (!rHeader.IsActive())
             return;
     }
     else
     {
-        const auto& rFooter = static_cast<const SwFormatFooter&>(rItem);
+        const SwFormatFooter& rFooter = static_cast<const SwFormatFooter&>(rItem);
         if (!rFooter.IsActive())
             return;
     }
@@ -1364,8 +1330,8 @@ private:
 
 public:
     SwRTFWriter(const OUString& rFilterName, const OUString& rBaseURL);
-
-    sal_uLong WriteStream() override;
+    virtual ~SwRTFWriter();
+    virtual sal_uLong WriteStream() override;
 };
 
 SwRTFWriter::SwRTFWriter(const OUString& rFltName, const OUString& rBaseURL)
@@ -1374,6 +1340,9 @@ SwRTFWriter::SwRTFWriter(const OUString& rFltName, const OUString& rBaseURL)
     // export outline nodes, only (send outline to clipboard/presentation)
     m_bOutOutlineOnly = rFltName.startsWith("O");
 }
+
+SwRTFWriter::~SwRTFWriter()
+{}
 
 sal_uLong SwRTFWriter::WriteStream()
 {

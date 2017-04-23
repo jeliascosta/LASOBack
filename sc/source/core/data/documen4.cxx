@@ -19,7 +19,6 @@
 
 #include <svl/intitem.hxx>
 #include <svl/zforlist.hxx>
-#include <svl/zformat.hxx>
 #include <formula/token.hxx>
 
 #include "document.hxx"
@@ -111,7 +110,7 @@ bool ScDocument::Solver(SCCOL nFCol, SCROW nFRow, SCTAB nFTab,
             fBestX = fXPrev = fSaveVal;
 
             pFormula->Interpret();
-            bool bError = ( pFormula->GetErrCode() != FormulaError::NONE );
+            bool bError = ( pFormula->GetErrCode() != 0 );
             // bError always corresponds with fF
 
             fFPrev = pFormula->GetValue() - fTargetVal;
@@ -133,7 +132,7 @@ bool ScDocument::Solver(SCCOL nFCol, SCROW nFRow, SCTAB nFTab,
                 *pVCell = fX;
                 SetDirty( aVRange, false );
                 pFormula->Interpret();
-                bError = ( pFormula->GetErrCode() != FormulaError::NONE );
+                bError = ( pFormula->GetErrCode() != 0 );
                 fF = pFormula->GetValue() - fTargetVal;
 
                 if ( fF == fFPrev && !bError )
@@ -167,7 +166,7 @@ bool ScDocument::Solver(SCCOL nFCol, SCROW nFRow, SCTAB nFTab,
                             *pVCell = fHorX;
                             SetDirty( aVRange, false );
                             pFormula->Interpret();
-                            bHorMoveError = ( pFormula->GetErrCode() != FormulaError::NONE );
+                            bHorMoveError = ( pFormula->GetErrCode() != 0 );
                             if ( bHorMoveError )
                                 break;
 
@@ -244,12 +243,12 @@ bool ScDocument::Solver(SCCOL nFCol, SCROW nFRow, SCTAB nFTab,
             pFormula->Interpret();
             if ( !bDoneIteration )
             {
-                SetError( nVCol, nVRow, nVTab, FormulaError::NotAvailable );
+                SetError( nVCol, nVRow, nVTab, NOTAVAILABLE );
             }
         }
         else
         {
-            SetError( nVCol, nVRow, nVTab, FormulaError::NotAvailable );
+            SetError( nVCol, nVRow, nVTab, NOTAVAILABLE );
         }
     }
     return bRet;
@@ -277,9 +276,9 @@ void ScDocument::InsertMatrixFormula(SCCOL nCol1, SCROW nRow1,
     ScFormulaCell* pCell;
     ScAddress aPos( nCol1, nRow1, nTab1 );
     if (pArr)
-        pCell = new ScFormulaCell(this, aPos, *pArr, eGram, ScMatrixMode::Formula);
+        pCell = new ScFormulaCell(this, aPos, *pArr, eGram, MM_FORMULA);
     else
-        pCell = new ScFormulaCell( this, aPos, rFormula, eGram, ScMatrixMode::Formula );
+        pCell = new ScFormulaCell( this, aPos, rFormula, eGram, MM_FORMULA );
     pCell->SetMatColsRows( nCol2 - nCol1 + 1, nRow2 - nRow1 + 1 );
     ScMarkData::const_iterator itr = rMark.begin(), itrEnd = rMark.end();
     SCTAB nMax = static_cast<SCTAB>(maTabs.size());
@@ -298,7 +297,7 @@ void ScDocument::InsertMatrixFormula(SCCOL nCol1, SCROW nRow1,
             maTabs[*itr]->SetFormulaCell(
                 nCol1, nRow1,
                 new ScFormulaCell(
-                    *pCell, *this, ScAddress(nCol1, nRow1, *itr), ScCloneFlags::StartListening));
+                    *pCell, *this, ScAddress(nCol1, nRow1, *itr), SC_CLONECELL_STARTLISTENING));
     }
 
     ScAddress aBasePos(nCol1, nRow1, nTab1);
@@ -340,7 +339,7 @@ void ScDocument::InsertMatrixFormula(SCCOL nCol1, SCROW nRow1,
                 aRefData.SetAddress(aBasePos, aPos);
                 *t->GetSingleRef() = aRefData;
                 std::unique_ptr<ScTokenArray> pTokArr(aArr.Clone());
-                pCell = new ScFormulaCell(this, aPos, *pTokArr, eGram, ScMatrixMode::Reference);
+                pCell = new ScFormulaCell(this, aPos, *pTokArr, eGram, MM_REFERENCE);
                 pTab->SetFormulaCell(nCol, nRow, pCell);
             }
         }
@@ -427,7 +426,7 @@ void ScDocument::InsertTableOp(const ScTabOpParam& rParam,  // multiple (repeate
     aForString.append(ScCompiler::GetNativeSymbol( ocClose ));
 
     ScFormulaCell aRefCell( this, ScAddress( nCol1, nRow1, nTab1 ), aForString.makeStringAndClear(),
-           formula::FormulaGrammar::GRAM_NATIVE, ScMatrixMode::NONE );
+           formula::FormulaGrammar::GRAM_NATIVE, MM_NONE );
     for( j = nCol1; j <= nCol2; j++ )
         for( k = nRow1; k <= nRow2; k++ )
             for (i = 0; i < static_cast<SCTAB>(maTabs.size()); i++)
@@ -436,7 +435,7 @@ void ScDocument::InsertTableOp(const ScTabOpParam& rParam,  // multiple (repeate
                 for (; itr != itrEnd && *itr < nMax; ++itr)
                 if( maTabs[*itr] )
                     maTabs[*itr]->SetFormulaCell(
-                        j, k, new ScFormulaCell(aRefCell, *this, ScAddress(j, k, *itr), ScCloneFlags::StartListening));
+                        j, k, new ScFormulaCell(aRefCell, *this, ScAddress(j, k, *itr), SC_CLONECELL_STARTLISTENING));
             }
 }
 
@@ -652,16 +651,14 @@ bool ScDocument::GetSelectionFunction( ScSubTotalFunc eFunc,
 
 double ScDocument::RoundValueAsShown( double fVal, sal_uInt32 nFormat ) const
 {
-    const SvNumberformat* pFormat = GetFormatTable()->GetEntry( nFormat );
     short nType;
-    if (pFormat && (nType = pFormat->GetMaskedType()) != css::util::NumberFormat::DATE
-            && nType != css::util::NumberFormat::TIME && nType != css::util::NumberFormat::DATETIME )
+    if ( (nType = GetFormatTable()->GetType( nFormat )) != css::util::NumberFormat::DATE
+      && nType != css::util::NumberFormat::TIME && nType != css::util::NumberFormat::DATETIME )
     {
         short nPrecision;
         if ((nFormat % SV_COUNTRY_LANGUAGE_OFFSET) != 0)
         {
-            sal_uInt16 nIdx = pFormat->GetSubformatIndex( fVal );
-            nPrecision = (short)pFormat->GetFormatPrecision( nIdx );
+            nPrecision = (short)GetFormatTable()->GetFormatPrecision( nFormat );
             switch ( nType )
             {
                 case css::util::NumberFormat::PERCENT:      // 0.41% == 0.0041
@@ -669,33 +666,10 @@ double ScDocument::RoundValueAsShown( double fVal, sal_uInt32 nFormat ) const
                     break;
                 case css::util::NumberFormat::SCIENTIFIC:   // 1.23e-3 == 0.00123
                 {
-                    short nExp = 0;
                     if ( fVal > 0.0 )
-                        nExp = (short)floor( log10( fVal ) );
+                        nPrecision = sal::static_int_cast<short>( nPrecision - (short)floor( log10( fVal ) ) );
                     else if ( fVal < 0.0 )
-                        nExp = (short)floor( log10( -fVal ) );
-                    nPrecision -= nExp;
-                    short nInteger = (short)pFormat->GetFormatIntegerDigits( nIdx );
-                    if ( nInteger > 1 ) // Engineering notation
-                    {
-                        short nIncrement = nExp % nInteger;
-                        if ( nIncrement != 0 )
-                        {
-                            nPrecision += nIncrement;
-                            if (nExp < 0 )
-                                nPrecision += nInteger;
-                        }
-                    }
-                    break;
-                }
-                case css::util::NumberFormat::FRACTION:     // get value of fraction representation
-                {
-                    return pFormat->GetRoundFractionValue( fVal );
-                }
-                case css::util::NumberFormat::NUMBER:
-                case css::util::NumberFormat::CURRENCY:
-                {   // tdf#106253 Thousands divisors for format "0,"
-                    nPrecision -=  pFormat->GetThousandDivisorPrecision( nIdx );
+                        nPrecision = sal::static_int_cast<short>( nPrecision - (short)floor( log10( -fVal ) ) );
                     break;
                 }
             }
@@ -1269,7 +1243,7 @@ void ScDocument::CompareDocument( ScDocument& rOtherDoc )
                     //  combine
                     if ( nThisCol == nThisEndCol || ValidCol(static_cast<SCCOL>(pOtherCols[nThisCol+1])) )
                     {
-                        SCCOL nFirstNew = nThisCol;
+                        SCCOL nFirstNew = static_cast<SCCOL>(nThisCol);
                         while ( nFirstNew > 0 && pOtherCols[nFirstNew-1] > MAXCOL )
                             --nFirstNew;
                         SCCOL nDiff = nThisCol - nFirstNew;

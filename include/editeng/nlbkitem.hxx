@@ -26,6 +26,8 @@
 class EDITENG_DLLPUBLIC SvxNoLinebreakItem : public SfxBoolItem
 {
 public:
+    static SfxPoolItem* CreateDefault();
+
     SvxNoLinebreakItem( const bool bBreak /*= true*/,
                         const sal_uInt16 nId  );
 
@@ -35,11 +37,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxNoLinebreakItem& operator=(const SvxNoLinebreakItem& rLB)
+    inline SvxNoLinebreakItem& operator=(const SvxNoLinebreakItem& rLB)
         {
             SetValue( rLB.GetValue() );
             return *this;

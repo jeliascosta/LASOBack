@@ -48,9 +48,9 @@
 namespace pq_sdbc_driver
 {
 
-typedef ::cppu::WeakComponentImplHelper< css::lang::XServiceInfo,
-                                         css::sdbcx::XDataDescriptorFactory,
-                                         css::container::XNamed
+typedef ::cppu::WeakComponentImplHelper< ::com::sun::star::lang::XServiceInfo,
+                                          ::com::sun::star::sdbcx::XDataDescriptorFactory,
+                                          ::com::sun::star::container::XNamed
                                           > ReflectionBase_BASE;
 
 class ReflectionBase :
@@ -59,72 +59,81 @@ class ReflectionBase :
 {
 protected:
     const OUString m_implName;
-    const css::uno::Sequence< OUString > m_supportedServices;
+    const ::com::sun::star::uno::Sequence< OUString > m_supportedServices;
     ::rtl::Reference< RefCountedMutex > m_refMutex;
-    css::uno::Reference< css::sdbc::XConnection > m_conn;
+    ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > m_conn;
     ConnectionSettings *m_pSettings;
     cppu::IPropertyArrayHelper & m_propsDesc;
-    std::vector< css::uno::Any > m_values;
+    std::vector< com::sun::star::uno::Any > m_values;
 public:
     ReflectionBase(
         const OUString &implName,
-        const css::uno::Sequence< OUString > &supportedServices,
+        const ::com::sun::star::uno::Sequence< OUString > &supportedServices,
         const ::rtl::Reference< RefCountedMutex >& refMutex,
-        const css::uno::Reference< css::sdbc::XConnection > &conn,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > &conn,
         ConnectionSettings *pSettings,
         cppu::IPropertyArrayHelper & props /* must survive this object !*/ );
 
 public:
-    void copyValuesFrom( const css::uno::Reference< css::beans::XPropertySet > &set );
+    void copyValuesFrom( const com::sun::star::uno::Reference< com::sun::star::beans::XPropertySet > &set );
 
 public: // for initialization purposes only, not exported via an interface !
     void setPropertyValue_NoBroadcast_public(
-        const OUString & name, const css::uno::Any & value );
+        const OUString & name, const com::sun::star::uno::Any & value );
 
 public: //XInterface
     virtual void SAL_CALL acquire() throw() override { ReflectionBase_BASE::acquire(); }
     virtual void SAL_CALL release() throw() override { ReflectionBase_BASE::release(); }
-    virtual css::uno::Any  SAL_CALL queryInterface(
-        const css::uno::Type & reqType ) override;
+    virtual com::sun::star::uno::Any  SAL_CALL queryInterface(
+        const com::sun::star::uno::Type & reqType )
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // OPropertySetHelper
     virtual cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     virtual sal_Bool SAL_CALL convertFastPropertyValue(
-        css::uno::Any & rConvertedValue,
-        css::uno::Any & rOldValue,
+        ::com::sun::star::uno::Any & rConvertedValue,
+        ::com::sun::star::uno::Any & rOldValue,
         sal_Int32 nHandle,
-        const css::uno::Any& rValue ) override;
+        const ::com::sun::star::uno::Any& rValue )
+        throw (::com::sun::star::lang::IllegalArgumentException) override;
 
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
         sal_Int32 nHandle,
-        const css::uno::Any& rValue ) override;
+        const ::com::sun::star::uno::Any& rValue )
+        throw (::com::sun::star::uno::Exception, std::exception) override;
 
     using ::cppu::OPropertySetHelper::getFastPropertyValue;
 
     void SAL_CALL getFastPropertyValue(
-        css::uno::Any& rValue,
+        ::com::sun::star::uno::Any& rValue,
         sal_Int32 nHandle ) const override;
 
     // XPropertySet
-    css::uno::Reference < css::beans::XPropertySetInfo >  SAL_CALL getPropertySetInfo() override;
+    ::com::sun::star::uno::Reference < ::com::sun::star::beans::XPropertySetInfo >  SAL_CALL getPropertySetInfo()
+        throw(com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw(::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XTypeProvider, first implemented by OPropertySetHelper
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8> SAL_CALL getImplementationId() override;
+    virtual com::sun::star::uno::Sequence< com::sun::star::uno::Type > SAL_CALL getTypes()
+        throw( com::sun::star::uno::RuntimeException, std::exception ) override;
+    virtual com::sun::star::uno::Sequence< sal_Int8> SAL_CALL getImplementationId()
+        throw( com::sun::star::uno::RuntimeException, std::exception ) override;
 
 public: // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL
-    createDataDescriptor(  ) override = 0;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL
+    createDataDescriptor(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override = 0;
 
 public: // XNamed
-    virtual OUString SAL_CALL getName(  ) override;
-    virtual void SAL_CALL setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setName( const OUString& aName ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 };
 

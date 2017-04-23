@@ -43,12 +43,15 @@ namespace comphelper
 
     private:
         virtual ~ChainablePropertySetInfo()
-            throw() override;
+            throw();
 
         // XPropertySetInfo
-        virtual css::uno::Sequence< css::beans::Property > SAL_CALL getProperties() override;
-        virtual css::beans::Property SAL_CALL getPropertyByName( const OUString& aName ) override;
-        virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) override;
+        virtual css::uno::Sequence< css::beans::Property > SAL_CALL getProperties()
+            throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::beans::Property SAL_CALL getPropertyByName( const OUString& aName )
+            throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name )
+            throw(css::uno::RuntimeException, std::exception) override;
 
         PropertyInfoHash                            maMap;
         css::uno::Sequence < css::beans::Property > maProperties;

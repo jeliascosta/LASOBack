@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <ctype.h>
+
 #include <module.hxx>
 #include <globals.hxx>
 #include <database.hxx>

@@ -27,7 +27,6 @@
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/comphelperdllapi.h>
-#include <memory>
 
 namespace comphelper
 {
@@ -57,12 +56,12 @@ class COMPHELPER_DLLPUBLIC PropertySetInfo
     : public PropertySetInfo_BASE
 {
 private:
-    std::unique_ptr<PropertyMapImpl> mpImpl;
+    PropertyMapImpl* mpMap;
 public:
     PropertySetInfo() throw();
     PropertySetInfo( PropertyMapEntry const * pMap ) throw();
     PropertySetInfo(css::uno::Sequence<css::beans::Property> const &) throw();
-    virtual ~PropertySetInfo() throw() override;
+    virtual ~PropertySetInfo() throw();
 
     /** returns a stl map with all PropertyMapEntry pointer.<p>
         The key is the property name.
@@ -77,9 +76,9 @@ public:
     /** removes an already added PropertyMapEntry which string in mpName equals to aName */
     void remove( const OUString& aName ) throw();
 
-    virtual css::uno::Sequence< css::beans::Property > SAL_CALL getProperties() override;
-    virtual css::beans::Property SAL_CALL getPropertyByName( const OUString& aName ) override;
-    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) override;
+    virtual css::uno::Sequence< css::beans::Property > SAL_CALL getProperties() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::beans::Property SAL_CALL getPropertyByName( const OUString& aName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 }

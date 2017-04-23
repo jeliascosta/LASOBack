@@ -30,7 +30,7 @@ namespace {
 class Test : public CppUnit::TestFixture {
 public:
     Test();
-    virtual ~Test() override;
+    virtual ~Test();
 
     virtual void setUp() override;
     virtual void tearDown() override;
@@ -68,7 +68,7 @@ Test::Test()
 
 void Test::setUp()
 {
-    m_pDoc = new SdDrawDocument(DocumentType::Impress, nullptr);
+    m_pDoc = new SdDrawDocument(DOCUMENT_TYPE_IMPRESS, nullptr);
 }
 
 void Test::tearDown()

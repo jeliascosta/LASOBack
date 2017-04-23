@@ -53,6 +53,7 @@ public:
                                                const OUString& rName,
                                                bool bReadOnly, bool bNewFile,
                                                sal_uInt32 nId, bool bThemeNameFromResource );
+                            ~GalleryThemeEntry() {};
 
     const OUString&         GetThemeName() const { return aName; }
 
@@ -110,7 +111,7 @@ private:
     SAL_DLLPRIVATE void         ImplDeleteCachedTheme( GalleryTheme* pTheme );
 
                                 Gallery( const OUString& rMultiPath );
-                                virtual ~Gallery() override;
+                                virtual ~Gallery();
 
 public:
 

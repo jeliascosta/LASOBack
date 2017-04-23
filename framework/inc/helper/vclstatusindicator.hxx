@@ -70,19 +70,24 @@ class VCLStatusIndicator : public  ::cppu::WeakImplHelper< css::task::XStatusInd
         VCLStatusIndicator(const css::uno::Reference< css::awt::XWindow >&               xParentWindow);
 
         /// dtor
-        virtual ~VCLStatusIndicator() override;
+        virtual ~VCLStatusIndicator();
 
         /// XStatusIndicator
         virtual void SAL_CALL start(const OUString& sText ,
-                                          sal_Int32        nRange) override;
+                                          sal_Int32        nRange)
+            throw(css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL reset() override;
+        virtual void SAL_CALL reset()
+            throw(css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL end() override;
+        virtual void SAL_CALL end()
+            throw(css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL setText(const OUString& sText) override;
+        virtual void SAL_CALL setText(const OUString& sText)
+            throw(css::uno::RuntimeException, std::exception) override;
 
-        virtual void SAL_CALL setValue(sal_Int32 nValue) override;
+        virtual void SAL_CALL setValue(sal_Int32 nValue)
+            throw(css::uno::RuntimeException, std::exception) override;
 
     // helper
 

@@ -50,7 +50,7 @@ private:
         ~StaticFormatter();
 
         operator SvNumberFormatter* () { return GetFormatter(); }
-        SVT_DLLPUBLIC static SvNumberFormatter* GetFormatter();
+        SVT_DLLPUBLIC SvNumberFormatter* GetFormatter();
     };
 
 protected:
@@ -95,7 +95,7 @@ protected:
     bool                m_bUseInputStringForFormatting;
 
 public:
-    FormattedField(vcl::Window* pParent, WinBits nStyle);
+    FormattedField(vcl::Window* pParent, WinBits nStyle = 0, SvNumberFormatter* pInitialFormatter = nullptr);
 
     // Min-/Max-management
     bool    HasMinValue() const         { return m_bHasMin; }
@@ -181,7 +181,7 @@ public:
     //If someone does not care about all the double handling and just wants to print the text formatted.
     //(((The text will be formatted, using the Formatter, and then set)
     void SetTextFormatted(const OUString& rText);
-    OUString const & GetTextValue() const;
+    OUString  GetTextValue() const;
 
     void      SetDefaultText(const OUString& rDefault) { m_sDefaultText = rDefault; }
     const OUString& GetDefaultText() const { return m_sDefaultText; }
@@ -205,7 +205,7 @@ public:
     /** enables handling of not-a-number value.
 
         When this is set to <FALSE/> (the default), then invalid inputs (i.e. text which cannot be
-        interpreted, according to the current formatting) will be handled as if the default value
+        intepreted, according to the current formatting) will be handled as if the default value
         has been entered. GetValue the will return this default value.
 
         When set to <TRUE/>, then GetValue will return NaN (not a number, see <method scope="rtl::math">isNan</method>)
@@ -226,11 +226,11 @@ public:
     bool    IsUsingInputStringForFormatting() const { return m_bUseInputStringForFormatting;}
 
 protected:
-    virtual bool EventNotify(NotifyEvent& rNEvt) override;
+    virtual bool Notify(NotifyEvent& rNEvt) override;
     void impl_Modify(bool makeValueDirty = true);
     virtual void Modify() override;
 
-    // Override CheckText for input-time checks
+    // Override CheckTextfor input-time checks
     virtual bool CheckText(const OUString&) const { return true; }
 
     // any aspect of the current format has changed
@@ -258,14 +258,14 @@ protected:
     validation::NumberValidator*    m_pNumberValidator;
 
 public:
-    DoubleNumericField(vcl::Window* pParent, WinBits nStyle)
+    DoubleNumericField(vcl::Window* pParent, WinBits nStyle = 0)
         :FormattedField(pParent, nStyle)
         ,m_pNumberValidator( nullptr )
     {
         ResetConformanceTester();
     }
 
-    virtual ~DoubleNumericField() override;
+    virtual ~DoubleNumericField();
     virtual void dispose() override;
 
 protected:
@@ -283,7 +283,7 @@ class DoubleCurrencyField : public FormattedField
     bool       m_bChangingFormat;
 
 public:
-    DoubleCurrencyField(vcl::Window* pParent, WinBits nStyle);
+    DoubleCurrencyField(vcl::Window* pParent, WinBits nStyle = 0);
 
     const OUString& getCurrencySymbol() const { return m_sCurrencySymbol; }
     void        setCurrencySymbol(const OUString& rSymbol);

@@ -49,7 +49,8 @@ void ChartController::executeDispatch_EditData()
 
         {
             SolarMutexGuard aSolarGuard;
-            UndoLiveUpdateGuardWithData aUndoGuard(
+            // using assignment for broken gcc 3.3
+            UndoLiveUpdateGuardWithData aUndoGuard = UndoLiveUpdateGuardWithData(
                 SCH_RESSTR( STR_ACTION_EDIT_CHART_DATA ),
                 m_xUndoManager );
             ScopedVclPtrInstance<DataEditor> aDataEditorDialog( nullptr, xChartDoc, m_xCC );

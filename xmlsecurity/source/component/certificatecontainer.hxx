@@ -40,36 +40,32 @@ class CertificateContainer : public ::cppu::WeakImplHelper< css::lang::XServiceI
         Map certTrustMap;
 
         static bool SAL_CALL searchMap( const OUString & url, const OUString & certificate_name, Map &_certMap  );
-        /// @throws css::uno::RuntimeException
-        bool SAL_CALL isTemporaryCertificate( const OUString & url, const OUString & certificate_name );
-        /// @throws css::uno::RuntimeException
-        bool SAL_CALL isCertificateTrust( const OUString & url, const OUString & certificate_name );
+        bool SAL_CALL isTemporaryCertificate( const OUString & url, const OUString & certificate_name ) throw(css::uno::RuntimeException);
+        bool SAL_CALL isCertificateTrust( const OUString & url, const OUString & certificate_name ) throw(css::uno::RuntimeException);
 
     public:
 
         explicit CertificateContainer(const css::uno::Reference< css::lang::XMultiServiceFactory >& ) {}
+        virtual ~CertificateContainer() {}
 
-        virtual sal_Bool SAL_CALL addCertificate( const OUString & url, const OUString & certificate_name, sal_Bool trust ) override;
-        virtual css::security::CertificateContainerStatus SAL_CALL hasCertificate( const OUString & url, const OUString & certificate_name ) override;
+        virtual sal_Bool SAL_CALL addCertificate( const OUString & url, const OUString & certificate_name, sal_Bool trust ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::security::CertificateContainerStatus SAL_CALL hasCertificate( const OUString & url, const OUString & certificate_name ) throw(css::uno::RuntimeException, std::exception) override;
 
         // provide factory
-        /// @throws css::uno::RuntimeException
-        static OUString SAL_CALL impl_getStaticImplementationName( );
+        static OUString SAL_CALL impl_getStaticImplementationName( ) throw(css::uno::RuntimeException);
 
-        /// @throws css::uno::RuntimeException
         static css::uno::Sequence< OUString > SAL_CALL
-                    impl_getStaticSupportedServiceNames(  );
+                    impl_getStaticSupportedServiceNames(  ) throw(css::uno::RuntimeException);
 
-        /// @throws css::uno::RuntimeException
         static css::uno::Reference< css::uno::XInterface > SAL_CALL
-                    impl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
+                    impl_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager ) throw( css::uno::RuntimeException );
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Sequence< OUString > SAL_CALL
-                    getSupportedServiceNames(  ) override;
+                    getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 };
 

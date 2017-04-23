@@ -47,6 +47,7 @@ struct SfxPrinter_Impl
         mbSelection ( true ),
         mbFromTo    ( true ),
         mbRange     ( true ) {}
+    ~SfxPrinter_Impl() {}
 };
 
 struct SfxPrintOptDlg_Impl
@@ -135,7 +136,6 @@ SfxPrinter::SfxPrinter( SfxItemSet* pTheOptions,
 
 
 SfxPrinter::SfxPrinter( const SfxPrinter& rPrinter ) :
-    VclReferenceBase(),
     Printer( rPrinter.GetName() ),
     pOptions( rPrinter.GetOptions().Clone() ),
     pImpl( new SfxPrinter_Impl ),
@@ -222,7 +222,7 @@ SfxPrintOptionsDialog::~SfxPrintOptionsDialog()
 
 void SfxPrintOptionsDialog::dispose()
 {
-    pDlgImpl.reset();
+    delete pDlgImpl;
     pPage.disposeAndClear();
     delete pOptions;
     ModalDialog::dispose();
@@ -243,7 +243,7 @@ short SfxPrintOptionsDialog::Execute()
 }
 
 
-bool SfxPrintOptionsDialog::EventNotify( NotifyEvent& rNEvt )
+bool SfxPrintOptionsDialog::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -251,7 +251,7 @@ bool SfxPrintOptionsDialog::EventNotify( NotifyEvent& rNEvt )
             return true; // help disabled -> <F1> does nothing
     }
 
-    return ModalDialog::EventNotify( rNEvt );
+    return ModalDialog::Notify( rNEvt );
 }
 
 

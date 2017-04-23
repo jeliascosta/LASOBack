@@ -22,10 +22,14 @@
 #include <tools/toolsdllapi.h>
 #include <tools/resmgr.hxx>
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC Resource
+class TOOLS_DLLPUBLIC Resource
 {
 protected:
     ResMgr* m_pResMgr;
+
+    // check availability of Resource
+    bool                IsAvailableRes( const ResId& rId ) const
+        { return m_pResMgr->IsAvailable( rId, this ); }
 
     // Load a Resource
     void                GetRes( const ResId& rResId );
@@ -47,6 +51,10 @@ protected:
     static sal_uInt32   GetObjSizeRes( RSHEADER_TYPE * pHT )
     { return ResMgr::GetObjSize( pHT ); }
 
+    // get a 32bit value from Resource data
+    static sal_Int32    GetLongRes( void * pLong )
+    { return ResMgr::GetLong( pLong ); }
+
     // read a 32bit value from resource data and increment pointer
     sal_Int32 ReadLongRes()
     { return m_pResMgr->ReadLong(); }
@@ -60,12 +68,19 @@ protected:
     OString ReadByteStringRes()
     { return m_pResMgr->ReadByteString(); }
 
+    // free the resource from m_pResMgr's stack (pass this ptr for validation)
+    void FreeResource()
+    { m_pResMgr->PopContext( this ); }
+
     // constructors
     Resource() : m_pResMgr( nullptr ) {}
+    Resource( const ResId& rResId );
 
 public:
 #ifdef DBG_UTIL
     ~Resource() { TestRes(); }
+#else
+    ~Resource() {}
 #endif
 };
 

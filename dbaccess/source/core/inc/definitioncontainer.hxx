@@ -50,7 +50,7 @@ namespace dbaccess
 class ODefinitionContainer_Impl : public OContentHelper_Impl
 {
 public:
-    typedef std::map< OUString, TContentPtr >  NamedDefinitions;
+    typedef ::std::map< OUString, TContentPtr >  NamedDefinitions;
     typedef NamedDefinitions::iterator                  iterator;
     typedef NamedDefinitions::const_iterator            const_iterator;
 
@@ -58,18 +58,18 @@ private:
     NamedDefinitions    m_aDefinitions;
 
 public:
-    size_t size() const { return m_aDefinitions.size(); }
+    inline size_t size() const { return m_aDefinitions.size(); }
 
-    const_iterator begin() const   { return m_aDefinitions.begin(); }
-    const_iterator end() const     { return m_aDefinitions.end(); }
+    inline const_iterator begin() const   { return m_aDefinitions.begin(); }
+    inline const_iterator end() const     { return m_aDefinitions.end(); }
 
-    const_iterator find( const OUString& _rName ) const { return m_aDefinitions.find( _rName ); }
+    inline const_iterator find( const OUString& _rName ) const { return m_aDefinitions.find( _rName ); }
            const_iterator find( const TContentPtr& _pDefinition ) const;
 
-    void erase( const OUString& _rName ) { m_aDefinitions.erase( _rName ); }
+    inline void erase( const OUString& _rName ) { m_aDefinitions.erase( _rName ); }
     void erase( const TContentPtr& _pDefinition );
 
-    void insert( const OUString& _rName, TContentPtr _pDefinition )
+    inline void insert( const OUString& _rName, TContentPtr _pDefinition )
     {
         m_aDefinitions.insert( NamedDefinitions::value_type( _rName, _pDefinition ) );
     }
@@ -140,14 +140,14 @@ protected:
     const PContainerApprove& getElementApproval() const { return m_pElementApproval; }
 
 protected:
-    virtual ~ODefinitionContainer() override;
+    virtual ~ODefinitionContainer();
 
-    const ODefinitionContainer_Impl& getDefinitions() const
+    inline const ODefinitionContainer_Impl& getDefinitions() const
     {
         return dynamic_cast< const ODefinitionContainer_Impl& >( *m_pImpl.get() );
     }
 
-    ODefinitionContainer_Impl&  getDefinitions()
+    inline       ODefinitionContainer_Impl&  getDefinitions()
     {
         return dynamic_cast<       ODefinitionContainer_Impl& >( *m_pImpl.get() );
     }
@@ -164,51 +164,53 @@ public:
 // css::uno::XInterface
     DECLARE_XINTERFACE( )
 
-    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes() override;
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 // css::lang::XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration(  ) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount(  ) override;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 _nIndex ) override;
+    virtual sal_Int32 SAL_CALL getCount(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 _nIndex ) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameContainer
-    virtual void SAL_CALL insertByName( const OUString& _rName, const css::uno::Any& aElement ) override;
-    virtual void SAL_CALL removeByName( const OUString& _rName ) override;
+    virtual void SAL_CALL insertByName( const OUString& _rName, const css::uno::Any& aElement ) throw(css::lang::IllegalArgumentException, css::container::ElementExistException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName( const OUString& _rName ) throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString& _rName, const css::uno::Any& aElement ) override;
+    virtual void SAL_CALL replaceByName( const OUString& _rName, const css::uno::Any& aElement ) throw(css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XContainer
-    virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
-    virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
+    virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XContainerApproveBroadcaster
-    virtual void SAL_CALL addContainerApproveListener( const css::uno::Reference< css::container::XContainerApproveListener >& Listener ) override;
-    virtual void SAL_CALL removeContainerApproveListener( const css::uno::Reference< css::container::XContainerApproveListener >& Listener ) override;
+    virtual void SAL_CALL addContainerApproveListener( const css::uno::Reference< css::container::XContainerApproveListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeContainerApproveListener( const css::uno::Reference< css::container::XContainerApproveListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
 
 // css::lang::XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XPropertyChangeListener
-    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
     // XVetoableChangeListener
-    virtual void SAL_CALL vetoableChange( const css::beans::PropertyChangeEvent& aEvent ) override;
+    virtual void SAL_CALL vetoableChange( const css::beans::PropertyChangeEvent& aEvent ) throw (css::beans::PropertyVetoException, css::uno::RuntimeException, std::exception) override;
 
 protected:
     // helper
@@ -230,7 +232,7 @@ protected:
         @see    createObject
     */
     css::uno::Reference< css::ucb::XContent >
-                implGetByName(const OUString& _rName, bool _bCreateIfNecessary);
+                implGetByName(const OUString& _rName, bool _bCreateIfNecessary) throw (css::container::NoSuchElementException);
 
     /** quickly checks if there already is an element with a given name. No access to the configuration occurs, i.e.
         if there is such an object which is not already loaded, it won't be loaded now.
@@ -292,7 +294,7 @@ protected:
             ListenerType _eType
         );
 
-    SAL_CALL operator css::uno::Reference< css::uno::XInterface > () const
+    inline SAL_CALL operator css::uno::Reference< css::uno::XInterface > () const
     {
         return const_cast< XContainer* >( static_cast< const XContainer* >( this ) );
     }
@@ -318,7 +320,7 @@ private:
             const css::uno::Reference< css::ucb::XContent >& _rxObject
         ) const;
 
-    bool impl_haveAnyListeners_nothrow() const
+    inline bool impl_haveAnyListeners_nothrow() const
     {
         return ( m_aContainerListeners.getLength() > 0 ) || ( m_aApproveListeners.getLength() > 0 );
     }

@@ -69,12 +69,14 @@ interface XPackageTypeInfo
     /** returns an icon for a package.
 
         @param highContrast
-               argument is ignored
+               return high contrast icon
         @param smallIcon
-               argument is ignored
+               return a small icon (e.g. 16x16 pixel),
+               else return a big one (e.g. 26x26 pixel)
         @return
-               empty any
-        @deprecated
+                currently an unsigned short
+                (resource id for deploymentgui resource file),
+                `VOID` any if none is available
     */
     any getIcon( [in] boolean highContrast, [in] boolean smallIcon );
 };

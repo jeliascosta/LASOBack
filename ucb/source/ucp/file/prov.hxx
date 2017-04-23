@@ -36,7 +36,6 @@
 #include <com/sun/star/ucb/XFileIdentifierConverter.hpp>
 #include <com/sun/star/container/XHierarchicalNameAccess.hpp>
 #include <cppuhelper/implbase.hxx>
-#include <memory>
 
 // FileProvider
 
@@ -46,7 +45,7 @@ namespace fileaccess {
     // Forward declaration
 
     class BaseContent;
-    class TaskManager;
+    class shell;
 
     class FileProvider: public cppu::WeakImplHelper <
         css::lang::XServiceInfo,
@@ -60,17 +59,23 @@ namespace fileaccess {
     public:
 
         explicit FileProvider( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~FileProvider() override;
+        virtual ~FileProvider();
 
         // XServiceInfo
         virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName(
+            void )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService(
+            const OUString& ServiceName )
+            throw(css::uno::RuntimeException, std::exception ) override;
 
         virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames(
+            void )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
 
         static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL
@@ -84,70 +89,99 @@ namespace fileaccess {
         // XInitialization
         virtual void SAL_CALL
         initialize(
-            const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+            const css::uno::Sequence< css::uno::Any >& aArguments )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
 
         // XContentProvider
         virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
         queryContent(
-            const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier ) override;
+            const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier )
+            throw( css::ucb::IllegalIdentifierException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         // XContentIdentifierFactory
 
         virtual css::uno::Reference< css::ucb::XContentIdentifier > SAL_CALL
         createContentIdentifier(
-            const OUString& ContentId ) override;
+            const OUString& ContentId )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
 
         virtual sal_Int32 SAL_CALL
         compareContentIds(
             const css::uno::Reference< css::ucb::XContentIdentifier >& Id1,
-            const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 ) override;
+            const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         // XProperySet
 
         virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo(  ) override;
+        getPropertySetInfo(  )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
         setPropertyValue(
             const OUString& aPropertyName,
-            const css::uno::Any& aValue ) override;
+            const css::uno::Any& aValue )
+            throw( css::beans::UnknownPropertyException,
+                   css::beans::PropertyVetoException,
+                   css::lang::IllegalArgumentException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual css::uno::Any SAL_CALL
         getPropertyValue(
-            const OUString& PropertyName ) override;
+            const OUString& PropertyName )
+            throw( css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
         addPropertyChangeListener(
             const OUString& aPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+            throw( css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual void SAL_CALL
         removePropertyChangeListener(
             const OUString& aPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+            throw( css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
         addVetoableChangeListener(
             const OUString& PropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+            throw( css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
         removeVetoableChangeListener(
             const OUString& PropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+            throw( css::beans::UnknownPropertyException,
+                   css::lang::WrappedTargetException,
+                   css::uno::RuntimeException, std::exception) override;
 
 
         // XFileIdentifierConverter
 
         virtual sal_Int32 SAL_CALL
-        getFileProviderLocality( const OUString& BaseURL ) override;
+        getFileProviderLocality( const OUString& BaseURL )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
         virtual OUString SAL_CALL getFileURLFromSystemPath( const OUString& BaseURL,
-                                                            const OUString& SystemPath ) override;
+                                                            const OUString& SystemPath )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
-        virtual OUString SAL_CALL getSystemPathFromFileURL( const OUString& URL ) override;
+        virtual OUString SAL_CALL getSystemPathFromFileURL( const OUString& URL )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
 
     private:
@@ -165,7 +199,7 @@ namespace fileaccess {
 
         css::uno::Reference< css::beans::XPropertySetInfo >     m_xPropertySetInfo;
 
-        std::unique_ptr<TaskManager>                            m_pMyShell;
+        shell*                                                  m_pMyShell;
     };
 
 }       // end namespace fileaccess

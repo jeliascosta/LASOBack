@@ -42,15 +42,17 @@
 
 namespace sdext { namespace presenter {
 
-typedef cppu::WeakComponentImplHelper<
-    css::presentation::XSlideShowView,
-    css::awt::XPaintListener,
-    css::awt::XMouseListener,
-    css::awt::XMouseMotionListener,
-    css::awt::XWindowListener,
-    css::drawing::framework::XView,
-    css::drawing::XDrawView
-    > PresenterSlideShowViewInterfaceBase;
+namespace {
+    typedef cppu::WeakComponentImplHelper<
+        css::presentation::XSlideShowView,
+        css::awt::XPaintListener,
+        css::awt::XMouseListener,
+        css::awt::XMouseMotionListener,
+        css::awt::XWindowListener,
+        css::drawing::framework::XView,
+        css::drawing::XDrawView
+        > PresenterSlideShowViewInterfaceBase;
+}
 
 /** Life view in a secondary window of a full screen slide show.
 */
@@ -65,7 +67,7 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterSlideShowView() override;
+    virtual ~PresenterSlideShowView();
     PresenterSlideShowView(const PresenterSlideShowView&) = delete;
     PresenterSlideShowView& operator=(const PresenterSlideShowView&) = delete;
 
@@ -79,94 +81,124 @@ public:
     // XSlideShowView
 
     virtual css::uno::Reference<
-        css::rendering::XSpriteCanvas > SAL_CALL getCanvas() override;
+        css::rendering::XSpriteCanvas > SAL_CALL getCanvas()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL clear() override;
+    virtual void SAL_CALL clear()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::geometry::AffineMatrix2D SAL_CALL getTransformation() override;
+    virtual css::geometry::AffineMatrix2D SAL_CALL getTransformation()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::geometry::IntegerSize2D SAL_CALL getTranslationOffset() override;
+    virtual css::geometry::IntegerSize2D SAL_CALL getTranslationOffset()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addTransformationChangedListener(
         const css::uno::Reference<
-            css::util::XModifyListener >& xListener) override;
+            css::util::XModifyListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeTransformationChangedListener(
         const css::uno::Reference<
-            css::util::XModifyListener >& xListener) override;
+            css::util::XModifyListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addPaintListener(
         const css::uno::Reference<
-            css::awt::XPaintListener >& xListener) override;
+            css::awt::XPaintListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removePaintListener(
         const css::uno::Reference<
-            css::awt::XPaintListener >& xListener) override;
+            css::awt::XPaintListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addMouseListener(
         const css::uno::Reference<
-            css::awt::XMouseListener >& xListener) override;
+            css::awt::XMouseListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeMouseListener(
         const css::uno::Reference<
-            css::awt::XMouseListener >& xListener) override;
+            css::awt::XMouseListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL addMouseMotionListener(
         const css::uno::Reference<
-            css::awt::XMouseMotionListener >& xListener) override;
+            css::awt::XMouseMotionListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL removeMouseMotionListener(
         const css::uno::Reference<
-            css::awt::XMouseMotionListener >& xListener) override;
+            css::awt::XMouseMotionListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setMouseCursor(::sal_Int16 nPointerShape) override;
+    virtual void SAL_CALL setMouseCursor(::sal_Int16 nPointerShape)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::awt::Rectangle SAL_CALL getCanvasArea(  ) override;
+    virtual css::awt::Rectangle SAL_CALL getCanvasArea(  )
+    throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XMouseListener
-    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mousePressed (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseReleased (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseEntered (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseExited (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XMouseMotionListener
 
-    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseDragged (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent) override;
+    virtual void SAL_CALL mouseMoved (const css::awt::MouseEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XView
 
     virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL
-        getResourceId() override;
+        getResourceId()
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // CachablePresenterView
 
@@ -203,6 +235,7 @@ private:
 
     SharedBitmapDescriptor mpBackground;
 
+    bool mbIsInModifyNotification;
     bool mbIsForcedPaintPending;
     bool mbIsPaintPending;
     OUString msClickToExitPresentationText;
@@ -226,12 +259,21 @@ private:
     void PaintInnerWindow (const css::awt::PaintEvent& rEvent);
     void PaintEndSlide (const css::awt::Rectangle& rRepaintBox);
 
+    /** The slide show relies on the back buffer of the canvas not being
+        modified.  With a shared canvas there are times when that can not be
+        guaranteed.
+        Call this method when the back buffer may have changed its content,
+        like when the window has been moved but not resized.
+    */
+    void ForceRepaint();
+
     void CreateBackgroundPolygons();
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
 
     void impl_addAndConfigureView();
 };

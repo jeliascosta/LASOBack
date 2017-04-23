@@ -46,7 +46,7 @@ public:
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             css::text::TextContentAnchorType eDefaultAnchorType );
-    virtual ~XMLTextFrameHyperlinkContext() override;
+    virtual ~XMLTextFrameHyperlinkContext();
 
     virtual void EndElement() override;
 

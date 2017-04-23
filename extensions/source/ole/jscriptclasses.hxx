@@ -50,27 +50,20 @@ public:
     BEGIN_COM_MAP(JScriptValue)
         COM_INTERFACE_ENTRY(IDispatch)
         COM_INTERFACE_ENTRY(IJScriptValueObject)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
     // IDispatch -------------------------------------------
-    STDMETHOD( GetTypeInfoCount)(UINT *pctinfo) override;
+    STDMETHOD( GetTypeInfoCount)(UINT *pctinfo);
 
     STDMETHOD( GetTypeInfo)( UINT iTInfo,
                              LCID lcid,
-                             ITypeInfo **ppTInfo) override;
+                             ITypeInfo **ppTInfo);
 
     STDMETHOD( GetIDsOfNames)( REFIID riid,
                                LPOLESTR *rgszNames,
                                UINT cNames,
                                LCID lcid,
-                               DISPID *rgDispId) override;
+                               DISPID *rgDispId);
 
     STDMETHOD( Invoke)( DISPID dispIdMember,
                         REFIID riid,
@@ -79,22 +72,22 @@ public:
                         DISPPARAMS *pDispParams,
                         VARIANT *pVarResult,
                         EXCEPINFO *pExcepInfo,
-                        UINT *puArgErr) override;
+                        UINT *puArgErr);
     // IJScriptOutParam --------------------------------------
 
-    STDMETHOD( Set)( VARIANT type, VARIANT value) override;
-    STDMETHOD( Get)( VARIANT *val) override;
-    STDMETHOD( InitOutParam)() override;
-    STDMETHOD( InitInOutParam)( VARIANT type, VARIANT value) override;
-    STDMETHOD( IsOutParam)( VARIANT_BOOL * flag) override;
-    STDMETHOD( IsInOutParam)( VARIANT_BOOL * flag) override;
-    STDMETHOD( GetValue)( BSTR* type, VARIANT *value) override;
+    STDMETHOD( Set)( VARIANT type, VARIANT value);
+    STDMETHOD( Get)( VARIANT *val);
+    STDMETHOD( InitOutParam)();
+    STDMETHOD( InitInOutParam)( VARIANT type, VARIANT value);
+    STDMETHOD( IsOutParam)( VARIANT_BOOL * flag);
+    STDMETHOD( IsInOutParam)( VARIANT_BOOL * flag);
+    STDMETHOD( GetValue)( BSTR* type, VARIANT *value);
 
 
     CComVariant m_varValue;
     CComBSTR m_bstrType;
-    bool m_bOutParam: 1;
-    bool m_bInOutParam: 1;
+    unsigned m_bOutParam: 1;
+    unsigned m_bInOutParam: 1;
 
 };
 
@@ -109,27 +102,20 @@ public:
 
     BEGIN_COM_MAP(JScriptOutParam)
         COM_INTERFACE_ENTRY(IDispatch)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
     // IDispatch -------------------------------------------
-    STDMETHOD( GetTypeInfoCount)(UINT *pctinfo) override;
+    STDMETHOD( GetTypeInfoCount)(UINT *pctinfo);
 
     STDMETHOD( GetTypeInfo)( UINT iTInfo,
                              LCID lcid,
-                             ITypeInfo **ppTInfo) override;
+                             ITypeInfo **ppTInfo);
 
     STDMETHOD( GetIDsOfNames)( REFIID riid,
                                LPOLESTR *rgszNames,
                                UINT cNames,
                                LCID lcid,
-                               DISPID *rgDispId) override;
+                               DISPID *rgDispId);
 
     STDMETHOD( Invoke)( DISPID dispIdMember,
                         REFIID riid,
@@ -138,7 +124,7 @@ public:
                         DISPPARAMS *pDispParams,
                         VARIANT *pVarResult,
                         EXCEPINFO *pExcepInfo,
-                        UINT *puArgErr) override;
+                        UINT *puArgErr);
 
 
 private:

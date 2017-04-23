@@ -36,15 +36,16 @@ class SvxUnoTransGradientTable : public SvxUnoNameItemTable
 {
 public:
     explicit SvxUnoTransGradientTable( SdrModel* pModel ) throw();
+    virtual ~SvxUnoTransGradientTable() throw();
 
     virtual NameOrIndex* createItem() const throw() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual uno::Sequence<  OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence<  OUString > SAL_CALL getSupportedServiceNames(  ) throw( uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual uno::Type SAL_CALL getElementType(  ) override;
+    virtual uno::Type SAL_CALL getElementType(  ) throw( uno::RuntimeException, std::exception) override;
 };
 
 SvxUnoTransGradientTable::SvxUnoTransGradientTable( SdrModel* pModel ) throw()
@@ -52,12 +53,17 @@ SvxUnoTransGradientTable::SvxUnoTransGradientTable( SdrModel* pModel ) throw()
 {
 }
 
-OUString SAL_CALL SvxUnoTransGradientTable::getImplementationName()
+SvxUnoTransGradientTable::~SvxUnoTransGradientTable() throw()
+{
+}
+
+OUString SAL_CALL SvxUnoTransGradientTable::getImplementationName() throw( uno::RuntimeException, std::exception )
 {
     return OUString("SvxUnoTransGradientTable");
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoTransGradientTable::getSupportedServiceNames(  )
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSNS { "com.sun.star.drawing.TransparencyGradientTable" };
     return aSNS;
@@ -72,6 +78,7 @@ NameOrIndex* SvxUnoTransGradientTable::createItem() const throw()
 
 // XElementAccess
 uno::Type SAL_CALL SvxUnoTransGradientTable::getElementType(  )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::UnoType<awt::Gradient>::get();
 }

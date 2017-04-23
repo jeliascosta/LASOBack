@@ -46,12 +46,15 @@ class UcbContentProviderProxyFactory : public cppu::WeakImplHelper <
 public:
     explicit UcbContentProviderProxyFactory(
             const css::uno::Reference< css::lang::XMultiServiceFactory >& rxSMgr );
-    virtual ~UcbContentProviderProxyFactory() override;
+    virtual ~UcbContentProviderProxyFactory();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     static OUString getImplementationName_Static();
     static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
@@ -62,7 +65,8 @@ public:
 
     // XContentProviderFactory
     virtual css::uno::Reference< css::ucb::XContentProvider > SAL_CALL
-    createContentProvider( const OUString& Service ) override;
+    createContentProvider( const OUString& Service )
+        throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 
@@ -95,45 +99,62 @@ public:
     UcbContentProviderProxy(
             const css::uno::Reference< css::lang::XMultiServiceFactory >& rxSMgr,
             const OUString& Service );
-    virtual ~UcbContentProviderProxy() override;
+    virtual ~UcbContentProviderProxy();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XContentProviderSupplier
     virtual css::uno::Reference<
         css::ucb::XContentProvider > SAL_CALL
-    getContentProvider() override;
+    getContentProvider()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XContentProvider
     virtual css::uno::Reference<
         css::ucb::XContent > SAL_CALL
-    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier ) override;
+    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier )
+        throw( css::ucb::IllegalIdentifierException,
+               css::uno::RuntimeException, std::exception ) override;
     virtual sal_Int32 SAL_CALL
     compareContentIds( const css::uno::Reference< css::ucb::XContentIdentifier >& Id1,
-                       const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 ) override;
+                       const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XParameterizedContentProvider
     virtual css::uno::Reference< css::ucb::XContentProvider > SAL_CALL
     registerInstance( const OUString& Template,
                       const OUString& Arguments,
-                      sal_Bool ReplaceExisting ) override;
+                      sal_Bool ReplaceExisting )
+        throw( css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::ucb::XContentProvider > SAL_CALL
     deregisterInstance( const OUString& Template,
-                        const OUString& Arguments ) override;
+                        const OUString& Arguments )
+        throw( css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception ) override;
 };
 
 #endif // INCLUDED_UCB_SOURCE_CORE_PROVPROX_HXX

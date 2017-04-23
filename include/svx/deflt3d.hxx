@@ -25,8 +25,6 @@
 #include <svx/svxdllapi.h>
 #include <tools/color.hxx>
 
-enum class CubeFaces;
-
 /*************************************************************************
 |*
 |* Class for managing the 3D default attributes
@@ -44,7 +42,7 @@ private:
     // Cube object
     basegfx::B3DPoint   aDefaultCubePos;
     basegfx::B3DVector  aDefaultCubeSize;
-    CubeFaces           nDefaultCubeSideFlags;
+    sal_uInt16          nDefaultCubeSideFlags;
     bool                bDefaultCubePosIsCenter;
 
     // Sphere object
@@ -83,7 +81,7 @@ public:
     // Cube object
     const basegfx::B3DPoint& GetDefaultCubePos() { return aDefaultCubePos; }
     const basegfx::B3DVector& GetDefaultCubeSize() { return aDefaultCubeSize; }
-    CubeFaces GetDefaultCubeSideFlags() const { return nDefaultCubeSideFlags; }
+    sal_uInt16 GetDefaultCubeSideFlags() const { return nDefaultCubeSideFlags; }
     bool GetDefaultCubePosIsCenter() const { return bDefaultCubePosIsCenter; }
 
     // Sphere object

@@ -254,7 +254,7 @@ Const cstDatabaseForm = &quot;com.sun.star.comp.forms.ODatabaseForm&quot;
 	Set oObject = poEvent.Source
 	_EventSource = oObject
 	sArray = Split(Utils._getUNOTypeName(poEvent), &quot;.&quot;)
-	_EventType = UCase(sArray(UBound(sArray)))
+	_EventType = UCase(sArray(UBound(sArray))
 	If Utils._hasUNOProperty(poEvent, &quot;EventName&quot;) Then _EventName = poEvent.EventName
 
 	Select Case _EventType
@@ -420,8 +420,8 @@ Private Function _PropertyGet(ByVal psProperty As String) As Variant
 
 	If _ErrorHandler() Then On Local Error Goto Error_Function
 	Utils._SetCalledSub(&quot;Event.get&quot; &amp; psProperty)
-
-	_PropertyGet = EMPTY
+Dim vEMPTY As Variant
+	_PropertyGet = vEMPTY
 	
 	Select Case UCase(psProperty)
 		Case UCase(&quot;ButtonLeft&quot;)
@@ -486,11 +486,11 @@ Exit_Function:
 Trace_Error:
 	&apos;	Errors are not displayed to avoid display infinite cycling
 	TraceError(TRACEWARNING, ERRPROPERTY, Utils._CalledSub(), 0, False, psProperty)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	Goto Exit_Function
 Error_Function:
 	TraceError(TRACEABORT, Err, &quot;Event._PropertyGet&quot;, Erl)
-	_PropertyGet = EMPTY
+	_PropertyGet = vEMPTY
 	GoTo Exit_Function
 End Function		&apos;	_PropertyGet	V1.1.0
 </script:module>

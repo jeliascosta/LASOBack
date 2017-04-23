@@ -50,12 +50,17 @@ class WeakPropertyChangeListener : public ::cppu::WeakImplHelper<css::beans::XPr
         css::uno::WeakReference<css::beans::XPropertyChangeListener> mxOwner;
 
     public:
-        explicit WeakPropertyChangeListener(css::uno::Reference<css::beans::XPropertyChangeListener> const & xOwner)
+        explicit WeakPropertyChangeListener(css::uno::Reference<css::beans::XPropertyChangeListener> xOwner)
             : mxOwner(xOwner)
         {
         }
 
-        virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent &rEvent ) override
+        virtual ~WeakPropertyChangeListener()
+        {
+        }
+
+        virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent &rEvent )
+            throw(css::uno::RuntimeException, std::exception) override
         {
             css::uno::Reference<css::beans::XPropertyChangeListener> xOwner(mxOwner.get(),
                 css::uno::UNO_QUERY);
@@ -65,7 +70,8 @@ class WeakPropertyChangeListener : public ::cppu::WeakImplHelper<css::beans::XPr
         }
 
         // lang.XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent) override
+        virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent)
+            throw(css::uno::RuntimeException, std::exception) override
         {
             css::uno::Reference<css::beans::XPropertyChangeListener> xOwner(mxOwner.get(),
                 css::uno::UNO_QUERY);
@@ -162,6 +168,7 @@ ImeStatusWindow::~ImeStatusWindow()
 }
 
 void SAL_CALL ImeStatusWindow::disposing(css::lang::EventObject const & )
+    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard(m_aMutex);
     m_xConfig = nullptr;
@@ -170,6 +177,7 @@ void SAL_CALL ImeStatusWindow::disposing(css::lang::EventObject const & )
 
 void SAL_CALL
 ImeStatusWindow::propertyChange(css::beans::PropertyChangeEvent const & )
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     SfxApplication* pApp = SfxApplication::Get();
@@ -189,12 +197,12 @@ css::uno::Reference< css::beans::XPropertySet > ImeStatusWindow::getConfig()
                 throw css::lang::DisposedException();
             if (!m_xContext.is())
                 throw css::uno::RuntimeException(
-                    "null comphelper::getProcessServiceFactory",
+                    OUString("null comphelper::getProcessServiceFactory"),
                     nullptr);
             css::uno::Reference< css::lang::XMultiServiceFactory > xProvider =
                 css::configuration::theDefaultProvider::get( m_xContext );
             css::beans::PropertyValue aArg(
-                "nodepath", -1,
+                OUString("nodepath"), -1,
                 css::uno::makeAny(
                     OUString(
                             "/org.openoffice.Office.Common/I18N/InputMethod")),
@@ -205,7 +213,13 @@ css::uno::Reference< css::beans::XPropertySet > ImeStatusWindow::getConfig()
                     xProvider->createInstanceWithArguments(
                         "com.sun.star.configuration.ConfigurationUpdateAccess",
                         aArgs),
-                    css::uno::UNO_QUERY_THROW);
+                    css::uno::UNO_QUERY);
+            if (!m_xConfig.is())
+                throw css::uno::RuntimeException(
+                    OUString(
+                                      "null com.sun.star.configuration."
+                                      "ConfigurationUpdateAccess"),
+                    nullptr);
             bAdd = true;
         }
         xConfig = m_xConfig;

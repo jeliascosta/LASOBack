@@ -34,6 +34,7 @@ class TestString: public CppUnit::TestFixture
 {
 public:
     void testNatural();
+    void testRemove();
     void testStripStart();
     void testStripEnd();
     void testStrip();
@@ -42,11 +43,10 @@ public:
     void testDecimalStringToNumber();
     void testIsdigitAsciiString();
     void testReverseString();
-    void testSplit();
-    void testRemoveAny();
 
     CPPUNIT_TEST_SUITE(TestString);
     CPPUNIT_TEST(testNatural);
+    CPPUNIT_TEST(testRemove);
     CPPUNIT_TEST(testStripStart);
     CPPUNIT_TEST(testStripEnd);
     CPPUNIT_TEST(testStrip);
@@ -55,8 +55,6 @@ public:
     CPPUNIT_TEST(testDecimalStringToNumber);
     CPPUNIT_TEST(testIsdigitAsciiString);
     CPPUNIT_TEST(testReverseString);
-    CPPUNIT_TEST(testSplit);
-    CPPUNIT_TEST(testRemoveAny);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -64,7 +62,7 @@ void TestString::testDecimalStringToNumber()
 {
     OUString s1("1234");
     CPPUNIT_ASSERT_EQUAL((sal_uInt32)1234, comphelper::string::decimalStringToNumber(s1));
-    s1 += OUStringLiteral1(0x07C6);
+    s1 += OUString(static_cast<sal_Unicode>(0x07C6));
     CPPUNIT_ASSERT_EQUAL((sal_uInt32)12346, comphelper::string::decimalStringToNumber(s1));
     // Codepoints on 2 16bits words
     sal_uInt32 utf16String[] = { 0x1D7FE /* 8 */, 0x1D7F7 /* 1 */};
@@ -91,26 +89,29 @@ class testCollator : public cppu::WeakImplHelper< i18n::XCollator >
 public:
     virtual sal_Int32 SAL_CALL compareSubstring(
         const OUString& str1, sal_Int32 off1, sal_Int32 len1,
-        const OUString& str2, sal_Int32 off2, sal_Int32 len2) override
+        const OUString& str2, sal_Int32 off2, sal_Int32 len2) throw(uno::RuntimeException, std::exception) override
     {
         return str1.copy(off1, len1).compareTo(str2.copy(off2, len2));
     }
     virtual sal_Int32 SAL_CALL compareString(
         const OUString& str1,
-        const OUString& str2) override
+        const OUString& str2) throw(uno::RuntimeException, std::exception) override
     {
         return str1.compareTo(str2);
     }
-    virtual sal_Int32 SAL_CALL loadDefaultCollator(const lang::Locale&, sal_Int32) override {return 0;}
+    virtual sal_Int32 SAL_CALL loadDefaultCollator(const lang::Locale&, sal_Int32)
+        throw(uno::RuntimeException, std::exception) override {return 0;}
     virtual sal_Int32 SAL_CALL loadCollatorAlgorithm(const OUString&,
-        const lang::Locale&, sal_Int32) override {return 0;}
+        const lang::Locale&, sal_Int32) throw(uno::RuntimeException, std::exception) override {return 0;}
     virtual void SAL_CALL loadCollatorAlgorithmWithEndUserOption(const OUString&,
-        const lang::Locale&, const uno::Sequence< sal_Int32 >&) override {}
-    virtual uno::Sequence< OUString > SAL_CALL listCollatorAlgorithms(const lang::Locale&) override
+        const lang::Locale&, const uno::Sequence< sal_Int32 >&) throw(uno::RuntimeException, std::exception) override {}
+    virtual uno::Sequence< OUString > SAL_CALL listCollatorAlgorithms(const lang::Locale&)
+        throw(uno::RuntimeException, std::exception) override
     {
         return uno::Sequence< OUString >();
     }
-    virtual uno::Sequence< sal_Int32 > SAL_CALL listCollatorOptions(const OUString&) override
+    virtual uno::Sequence< sal_Int32 > SAL_CALL listCollatorOptions(const OUString&)
+        throw(uno::RuntimeException, std::exception) override
     {
         return uno::Sequence< sal_Int32 >();
     }
@@ -122,59 +123,64 @@ class testBreakIterator : public cppu::WeakImplHelper< i18n::XBreakIterator >
 {
 public:
     virtual sal_Int32 SAL_CALL nextCharacters( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16, sal_Int32, sal_Int32& ) override {return -1;}
+        const lang::Locale&, sal_Int16, sal_Int32, sal_Int32& )
+            throw(uno::RuntimeException, std::exception) override {return -1;}
     virtual sal_Int32 SAL_CALL previousCharacters( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16, sal_Int32, sal_Int32& ) override {return -1;}
+        const lang::Locale&, sal_Int16, sal_Int32, sal_Int32& )
+            throw(uno::RuntimeException, std::exception) override {return -1;}
 
     virtual i18n::Boundary SAL_CALL previousWord( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16) override
+        const lang::Locale&, sal_Int16) throw(uno::RuntimeException, std::exception) override
         { return i18n::Boundary(); }
     virtual i18n::Boundary SAL_CALL nextWord( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16) override
+        const lang::Locale&, sal_Int16) throw(uno::RuntimeException, std::exception) override
         { return i18n::Boundary(); }
     virtual i18n::Boundary SAL_CALL getWordBoundary( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16, sal_Bool ) override
+        const lang::Locale&, sal_Int16, sal_Bool )
+        throw(uno::RuntimeException, std::exception) override
         { return i18n::Boundary(); }
 
     virtual sal_Bool SAL_CALL isBeginWord( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16 ) override
+        const lang::Locale&, sal_Int16 ) throw(uno::RuntimeException, std::exception) override
         { return false; }
     virtual sal_Bool SAL_CALL isEndWord( const OUString&, sal_Int32,
-        const lang::Locale& , sal_Int16 ) override
+        const lang::Locale& , sal_Int16 ) throw(uno::RuntimeException, std::exception) override
         { return false; }
     virtual sal_Int16 SAL_CALL getWordType( const OUString&, sal_Int32,
-        const lang::Locale& ) override
+        const lang::Locale& ) throw(uno::RuntimeException, std::exception) override
         { return 0; }
 
     virtual sal_Int32 SAL_CALL beginOfSentence( const OUString&, sal_Int32,
-        const lang::Locale& ) override
+        const lang::Locale& ) throw(uno::RuntimeException, std::exception) override
         { return 0; }
     virtual sal_Int32 SAL_CALL endOfSentence( const OUString& rText, sal_Int32,
-        const lang::Locale& ) override
+        const lang::Locale& ) throw(uno::RuntimeException, std::exception) override
         { return rText.getLength(); }
 
     virtual i18n::LineBreakResults SAL_CALL getLineBreak( const OUString&, sal_Int32,
         const lang::Locale&, sal_Int32,
         const i18n::LineBreakHyphenationOptions&,
-        const i18n::LineBreakUserOptions&) override
+        const i18n::LineBreakUserOptions&)
+        throw(uno::RuntimeException, std::exception) override
     {
         return i18n::LineBreakResults();
     }
 
-    virtual sal_Int16 SAL_CALL getScriptType( const OUString&, sal_Int32 ) override { return -1; }
+    virtual sal_Int16 SAL_CALL getScriptType( const OUString&, sal_Int32 )
+        throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL beginOfScript( const OUString&, sal_Int32,
-        sal_Int16 ) override { return -1; }
+        sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL endOfScript( const OUString&, sal_Int32,
-        sal_Int16 ) override { return -1; }
+        sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL previousScript( const OUString&, sal_Int32,
-        sal_Int16 ) override { return -1; }
+        sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL nextScript( const OUString&, sal_Int32,
-        sal_Int16 ) override { return -1; }
+        sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
 
     virtual sal_Int32 SAL_CALL beginOfCharBlock( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16 ) override { return -1; }
+        const lang::Locale&, sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL endOfCharBlock( const OUString& rText, sal_Int32 nStartPos,
-        const lang::Locale&, sal_Int16 CharType ) override
+        const lang::Locale&, sal_Int16 CharType ) throw(uno::RuntimeException, std::exception) override
     {
         const sal_Unicode *pStr = rText.getStr()+nStartPos;
         for (sal_Int32 nI = nStartPos; nI < rText.getLength(); ++nI)
@@ -188,9 +194,9 @@ public:
         return -1;
     }
     virtual sal_Int32 SAL_CALL previousCharBlock( const OUString&, sal_Int32,
-        const lang::Locale&, sal_Int16 ) override { return -1; }
+        const lang::Locale&, sal_Int16 ) throw(uno::RuntimeException, std::exception) override { return -1; }
     virtual sal_Int32 SAL_CALL nextCharBlock( const OUString& rText, sal_Int32 nStartPos,
-        const lang::Locale&, sal_Int16 CharType ) override
+        const lang::Locale&, sal_Int16 CharType ) throw(uno::RuntimeException, std::exception) override
     {
         const sal_Unicode *pStr = rText.getStr()+nStartPos;
         for (sal_Int32 nI = nStartPos; nI < rText.getLength(); ++nI)
@@ -214,8 +220,8 @@ void TestString::testNatural()
 
 // --- Some generic tests to ensure we do not alter original behavior
 // outside what we want
-    CPPUNIT_ASSERT_EQUAL(
-        static_cast<sal_Int32>(0), compareNatural("ABC", "ABC", xCollator, xBI, lang::Locale())
+    CPPUNIT_ASSERT(
+        compareNatural("ABC", "ABC", xCollator, xBI, lang::Locale()) == 0
     );
     // Case sensitivity
     CPPUNIT_ASSERT(
@@ -265,9 +271,23 @@ void TestString::testNatural()
     CPPUNIT_ASSERT(
         compareNatural("abc010", "abc08", xCollator, xBI, lang::Locale()) > 0
     );
-    CPPUNIT_ASSERT_EQUAL(
-        static_cast<sal_Int32>(0), compareNatural("apple10apple", "apple10apple", xCollator, xBI, lang::Locale())
+    CPPUNIT_ASSERT(
+        compareNatural("apple10apple", "apple10apple", xCollator, xBI, lang::Locale()) == 0
     );
+}
+
+void TestString::testRemove()
+{
+    OString aIn("abc");
+    OString aOut;
+
+    aOut = ::comphelper::string::remove(aIn, 'b');
+    CPPUNIT_ASSERT(aOut == "ac");
+
+    aIn = "aaa";
+
+    aOut = ::comphelper::string::remove(aIn, 'a');
+    CPPUNIT_ASSERT(aOut.isEmpty());
 }
 
 void TestString::testStripStart()
@@ -276,10 +296,10 @@ void TestString::testStripStart()
     OString aOut;
 
     aOut = ::comphelper::string::stripStart(aIn, 'b');
-    CPPUNIT_ASSERT_EQUAL(OString("abc"), aOut);
+    CPPUNIT_ASSERT(aOut == "abc");
 
     aOut = ::comphelper::string::stripStart(aIn, 'a');
-    CPPUNIT_ASSERT_EQUAL(OString("bc"), aOut);
+    CPPUNIT_ASSERT(aOut == "bc");
 
     aIn = "aaa";
     aOut = ::comphelper::string::stripStart(aIn, 'a');
@@ -287,7 +307,7 @@ void TestString::testStripStart()
 
     aIn = "aba";
     aOut = ::comphelper::string::stripStart(aIn, 'a');
-    CPPUNIT_ASSERT_EQUAL(OString("ba"), aOut);
+    CPPUNIT_ASSERT(aOut == "ba");
 }
 
 void TestString::testStripEnd()
@@ -296,10 +316,10 @@ void TestString::testStripEnd()
     OString aOut;
 
     aOut = ::comphelper::string::stripEnd(aIn, 'b');
-    CPPUNIT_ASSERT_EQUAL(OString("abc"), aOut);
+    CPPUNIT_ASSERT(aOut == "abc");
 
     aOut = ::comphelper::string::stripEnd(aIn, 'c');
-    CPPUNIT_ASSERT_EQUAL(OString("ab"), aOut);
+    CPPUNIT_ASSERT(aOut == "ab");
 
     aIn = "aaa";
     aOut = ::comphelper::string::stripEnd(aIn, 'a');
@@ -307,7 +327,7 @@ void TestString::testStripEnd()
 
     aIn = "aba";
     aOut = ::comphelper::string::stripEnd(aIn, 'a');
-    CPPUNIT_ASSERT_EQUAL(OString("ab"), aOut);
+    CPPUNIT_ASSERT(aOut == "ab");
 }
 
 void TestString::testStrip()
@@ -316,10 +336,10 @@ void TestString::testStrip()
     OString aOut;
 
     aOut = ::comphelper::string::strip(aIn, 'b');
-    CPPUNIT_ASSERT_EQUAL(OString("abc"), aOut);
+    CPPUNIT_ASSERT(aOut == "abc");
 
     aOut = ::comphelper::string::strip(aIn, 'c');
-    CPPUNIT_ASSERT_EQUAL(OString("ab"), aOut);
+    CPPUNIT_ASSERT(aOut == "ab");
 
     aIn = "aaa";
     aOut = ::comphelper::string::strip(aIn, 'a');
@@ -327,7 +347,7 @@ void TestString::testStrip()
 
     aIn = "aba";
     aOut = ::comphelper::string::strip(aIn, 'a');
-    CPPUNIT_ASSERT_EQUAL(OString("b"), aOut);
+    CPPUNIT_ASSERT(aOut == "b");
 }
 
 void TestString::testToken()
@@ -339,13 +359,13 @@ void TestString::testToken()
     CPPUNIT_ASSERT(aOut.isEmpty());
 
     aOut = aIn.getToken(0, '.');
-    CPPUNIT_ASSERT_EQUAL(OString("10"), aOut);
+    CPPUNIT_ASSERT(aOut == "10");
 
     aOut = aIn.getToken(1, '.');
-    CPPUNIT_ASSERT_EQUAL(OString("11"), aOut);
+    CPPUNIT_ASSERT(aOut == "11");
 
     aOut = aIn.getToken(2, '.');
-    CPPUNIT_ASSERT_EQUAL(OString("12"), aOut);
+    CPPUNIT_ASSERT(aOut == "12");
 
     aOut = aIn.getToken(3, '.');
     CPPUNIT_ASSERT(aOut.isEmpty());
@@ -357,13 +377,13 @@ void TestString::testTokenCount()
     sal_Int32 nOut;
 
     nOut = ::comphelper::string::getTokenCount(aIn, '.');
-    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(3), nOut);
+    CPPUNIT_ASSERT(nOut == 3);
 
     nOut = ::comphelper::string::getTokenCount(aIn, 'X');
-    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(1), nOut);
+    CPPUNIT_ASSERT(nOut == 1);
 
     nOut = ::comphelper::string::getTokenCount(OString(), 'X');
-    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(0), nOut);
+    CPPUNIT_ASSERT(nOut == 0);
 }
 
 void TestString::testReverseString()
@@ -371,37 +391,7 @@ void TestString::testReverseString()
     OString aIn("ABC");
     OString aOut = ::comphelper::string::reverseString(aIn);
 
-    CPPUNIT_ASSERT_EQUAL(OString("CBA"), aOut);
-}
-
-void TestString::testSplit()
-{
-    OUString aIn("CTRL+ALT+F1");
-    std::vector<OUString> aRet = ::comphelper::string::split(aIn, '+');
-    CPPUNIT_ASSERT_EQUAL(size_t(3), aRet.size());
-    CPPUNIT_ASSERT_EQUAL(OUString("CTRL"), aRet[0]);
-    CPPUNIT_ASSERT_EQUAL(OUString("ALT"), aRet[1]);
-    CPPUNIT_ASSERT_EQUAL(OUString("F1"), aRet[2]);
-}
-
-void TestString::testRemoveAny()
-{
-    using namespace ::comphelper::string;
-    OUString in("abcAAAbbC");
-    sal_Unicode const test1 [] = { 'a', 0 };
-    CPPUNIT_ASSERT_EQUAL(OUString("bcAAAbbC"), removeAny(in, test1));
-    sal_Unicode const test2 [] = { 0 };
-    CPPUNIT_ASSERT_EQUAL(in, removeAny(in, test2));
-    sal_Unicode const test3 [] = { 'A', 0 };
-    CPPUNIT_ASSERT_EQUAL(OUString("abcbbC"), removeAny(in, test3));
-    sal_Unicode const test4 [] = { 'A', 'a', 0 };
-    CPPUNIT_ASSERT_EQUAL(OUString("bcbbC"), removeAny(in, test4));
-    sal_Unicode const test5 [] = { 'C', 0 };
-    CPPUNIT_ASSERT_EQUAL(OUString("abcAAAbb"), removeAny(in, test5));
-    sal_Unicode const test6 [] = { 'X', 0 };
-    CPPUNIT_ASSERT_EQUAL(in, removeAny(in, test6));
-    sal_Unicode const test7 [] = { 'A', 'B', 'C', 'a', 'b', 'c', 0 };
-    CPPUNIT_ASSERT_EQUAL(OUString(""), removeAny(in, test7));
+    CPPUNIT_ASSERT(aOut == "CBA");
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestString);

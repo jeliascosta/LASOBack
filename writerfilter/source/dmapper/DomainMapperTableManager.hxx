@@ -71,6 +71,7 @@ class DomainMapperTableManager : public TableManager
     bool m_bTableSizeTypeInserted;
     /// Table layout algorithm, IOW if we should consider fixed column width or not.
     sal_uInt32 m_nLayoutType;
+    sal_Int32 m_nMaxFixedWidth;
 
     std::unique_ptr<TablePropertiesHandler> m_pTablePropsHandler;
     PropertyMapPtr            m_pStyleProps;
@@ -80,11 +81,11 @@ class DomainMapperTableManager : public TableManager
 public:
 
     DomainMapperTableManager();
-    virtual ~DomainMapperTableManager() override;
+    virtual ~DomainMapperTableManager();
 
     // use this method to avoid adding the properties for the table
     // but in the provided properties map.
-    void SetStyleProperties( PropertyMapPtr pProperties ) { m_pStyleProps = pProperties; };
+    inline void SetStyleProperties( PropertyMapPtr pProperties ) { m_pStyleProps = pProperties; };
 
     virtual bool sprm(Sprm & rSprm) override;
     bool attribute(Id nName, Value & val);
@@ -151,7 +152,10 @@ public:
         m_nLayoutType = nLayoutType;
     }
 
-    using TableManager::isInCell;
+    bool isInCell()
+    {
+        return TableManager::isInCell();
+    }
 
     void setIsInShape(bool bIsInShape);
 

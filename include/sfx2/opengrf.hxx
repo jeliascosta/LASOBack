@@ -33,6 +33,7 @@ public:
 
     short                   Execute();
 
+    void                    SetPath( const OUString& rPath );
     void                    SetPath( const OUString& rPath, bool bLinkState );
     OUString                GetPath() const;
 

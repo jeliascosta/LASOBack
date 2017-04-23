@@ -22,6 +22,6 @@
 -o forms.OFixedTextModel
 -o forms.OFormattedControl
 #i109939 -o forms.OFormattedFieldWrapper
-# LETS A DOCUMENT OPEN -o forms.OFormsCollection
+# L‰SST EIN DOKUMENT OFFEN -o forms.OFormsCollection
 -o forms.OGridControlModel
 -o forms.OGroupBoxControl

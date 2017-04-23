@@ -45,7 +45,7 @@ namespace svt { namespace table
             UnoControlTableModel const & i_owner,
             css::uno::Reference< css::awt::grid::XGridColumn > const & i_gridColumn
         );
-        virtual ~UnoGridColumnFacade() override;
+        virtual ~UnoGridColumnFacade();
         UnoGridColumnFacade(const UnoGridColumnFacade&) = delete;
         UnoGridColumnFacade& operator=(const UnoGridColumnFacade&) = delete;
 

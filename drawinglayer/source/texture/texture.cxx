@@ -615,7 +615,7 @@ namespace drawinglayer
                 && mnSteps == pCompare->mnSteps);
         }
 
-        void GeoTexSvxHatch::appendTransformations(std::vector< basegfx::B2DHomMatrix >& rMatrices)
+        void GeoTexSvxHatch::appendTransformations(::std::vector< basegfx::B2DHomMatrix >& rMatrices)
         {
             if(mbDefinitionRangeEqualsOutputRange)
             {
@@ -641,7 +641,7 @@ namespace drawinglayer
                 // calculate vertical start value and a security maximum integer value to avoid death loops
                 double fStart(basegfx::snapToNearestMultiple(aBackUnitRange.getMinY(), mfDistance));
                 const sal_uInt32 nNeededIntegerSteps(basegfx::fround((aBackUnitRange.getHeight() / mfDistance) + 0.5));
-                sal_uInt32 nMaxIntegerSteps(std::min(nNeededIntegerSteps, sal_uInt32(10000)));
+                sal_uInt32 nMaxIntegerSteps(::std::min(nNeededIntegerSteps, sal_uInt32(10000)));
 
                 while(fStart < aBackUnitRange.getMaxY() && nMaxIntegerSteps)
                 {
@@ -720,20 +720,9 @@ namespace drawinglayer
                 && mfOffsetY == pCompare->mfOffsetY);
         }
 
-        sal_uInt32 GeoTexSvxTiled::getNumberOfTiles() const
-        {
-            return iterateTiles(nullptr);
-        }
-
-        void GeoTexSvxTiled::appendTransformations(std::vector< basegfx::B2DHomMatrix >& rMatrices) const
-        {
-            iterateTiles(&rMatrices);
-        }
-
-        sal_Int32 GeoTexSvxTiled::iterateTiles(std::vector< basegfx::B2DHomMatrix >* pMatrices) const
+        void GeoTexSvxTiled::appendTransformations(::std::vector< basegfx::B2DHomMatrix >& rMatrices)
         {
             const double fWidth(maRange.getWidth());
-            sal_Int32 nTiles = 0;
 
             if(!basegfx::fTools::equalZero(fWidth))
             {
@@ -785,19 +774,12 @@ namespace drawinglayer
                             for(double fPosY((nPosX % 2) ? fStartY - fHeight + (mfOffsetY * fHeight) : fStartY);
                                 basegfx::fTools::less(fPosY, 1.0); fPosY += fHeight)
                             {
-                                if(pMatrices)
-                                {
-                                    pMatrices->push_back(
-                                        basegfx::tools::createScaleTranslateB2DHomMatrix(
-                                            fWidth,
-                                            fHeight,
-                                            fPosX,
-                                            fPosY));
-                                }
-                                else
-                                {
-                                    nTiles++;
-                                }
+                                rMatrices.push_back(
+                                    basegfx::tools::createScaleTranslateB2DHomMatrix(
+                                        fWidth,
+                                        fHeight,
+                                        fPosX,
+                                        fPosY));
                             }
                         }
                     }
@@ -808,26 +790,17 @@ namespace drawinglayer
                             for(double fPosX((nPosY % 2) ? fStartX - fWidth + (mfOffsetX * fWidth) : fStartX);
                                 basegfx::fTools::less(fPosX, 1.0); fPosX += fWidth)
                             {
-                                if(pMatrices)
-                                {
-                                    pMatrices->push_back(
-                                        basegfx::tools::createScaleTranslateB2DHomMatrix(
-                                            fWidth,
-                                            fHeight,
-                                            fPosX,
-                                            fPosY));
-                                }
-                                else
-                                {
-                                    nTiles++;
-                                }
+                                rMatrices.push_back(
+                                    basegfx::tools::createScaleTranslateB2DHomMatrix(
+                                        fWidth,
+                                        fHeight,
+                                        fPosX,
+                                        fPosY));
                             }
                         }
                     }
                 }
             }
-
-            return nTiles;
         }
     } // end of namespace texture
 } // end of namespace drawinglayer

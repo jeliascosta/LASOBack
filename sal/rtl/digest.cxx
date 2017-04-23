@@ -135,7 +135,8 @@ rtlDigestAlgorithm SAL_CALL rtl_digest_queryAlgorithm (rtlDigest Digest)
     Digest_Impl *pImpl = static_cast<Digest_Impl *>(Digest);
     if (pImpl)
         return pImpl->m_algorithm;
-    return rtl_Digest_AlgorithmInvalid;
+    else
+        return rtl_Digest_AlgorithmInvalid;
 }
 
 /*
@@ -147,7 +148,8 @@ sal_uInt32 SAL_CALL rtl_digest_queryLength (rtlDigest Digest)
     Digest_Impl *pImpl = static_cast<Digest_Impl *>(Digest);
     if (pImpl)
         return pImpl->m_length;
-    return 0;
+    else
+        return 0;
 }
 
 /*
@@ -162,7 +164,8 @@ rtlDigestError SAL_CALL rtl_digest_init (
     {
         if (pImpl->m_init)
             return pImpl->m_init (Digest, pData, nDatLen);
-        return rtl_Digest_E_None;
+        else
+            return rtl_Digest_E_None;
     }
     return rtl_Digest_E_Argument;
 }
@@ -177,7 +180,8 @@ rtlDigestError SAL_CALL rtl_digest_update (
     Digest_Impl *pImpl = static_cast<Digest_Impl *>(Digest);
     if (pImpl && pImpl->m_update)
         return pImpl->m_update (Digest, pData, nDatLen);
-    return rtl_Digest_E_Argument;
+    else
+        return rtl_Digest_E_Argument;
 }
 
 /*
@@ -190,7 +194,8 @@ rtlDigestError SAL_CALL rtl_digest_get (
     Digest_Impl *pImpl = static_cast<Digest_Impl *>(Digest);
     if (pImpl && pImpl->m_get)
         return pImpl->m_get (Digest, pBuffer, nBufLen);
-    return rtl_Digest_E_Argument;
+    else
+        return rtl_Digest_E_Argument;
 }
 
 /*

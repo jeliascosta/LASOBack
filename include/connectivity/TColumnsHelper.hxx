@@ -33,12 +33,12 @@ namespace connectivity
     */
     class OOO_DLLPUBLIC_DBTOOLS OColumnsHelper : public sdbcx::OCollection
     {
-        std::unique_ptr<OColumnsHelperImpl> m_pImpl;
+        OColumnsHelperImpl* m_pImpl;
     protected:
         OTableHelper*   m_pTable;
 
         virtual sdbcx::ObjectType createObject(const OUString& _rName) override;
-        virtual void impl_refresh() override;
+        virtual void impl_refresh() throw(css::uno::RuntimeException) override;
         virtual css::uno::Reference< css::beans::XPropertySet > createDescriptor() override;
         virtual sdbcx::ObjectType appendObject( const OUString& _rForName, const css::uno::Reference< css::beans::XPropertySet >& descriptor ) override;
         virtual void dropObject(sal_Int32 _nPos, const OUString& _sElementName) override;
@@ -49,13 +49,13 @@ namespace connectivity
                         ,const TStringVector &_rVector
                         ,bool _bUseHardRef = true
                     );
-        virtual ~OColumnsHelper() override;
+        virtual ~OColumnsHelper();
 
         /** set the parent of the columns. Can also be <NULL/>.
             @param  _pTable
                 The parent.
         */
-        void setParent(OTableHelper* _pTable) { m_pTable = _pTable;}
+        inline void setParent(OTableHelper* _pTable) { m_pTable = _pTable;}
     };
 }
 #endif // INCLUDED_CONNECTIVITY_TCOLUMNSHELPER_HXX

@@ -9758,8 +9758,7 @@ module com {
     };
     published enum WrapTextMode {
      NONE = 0,
-     THROUGH = 1,
-     THROUGHT = THROUGH,  //Errant spelling deprecated in version 5.4
+     THROUGHT = 1,
      PARALLEL = 2,
      DYNAMIC = 3,
      LEFT = 4,

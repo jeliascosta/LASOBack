@@ -44,6 +44,7 @@
 
 #include "unx/saldisp.hxx"
 #include "unx/saldata.hxx"
+#include "unx/salframe.h"
 #include "unx/sm.hxx"
 #include "unx/i18n_im.hxx"
 #include "unx/i18n_xkb.hxx"
@@ -53,7 +54,6 @@
 #include <X11/Xproto.h>
 
 #include "salinst.hxx"
-#include "saltimer.hxx"
 
 #include <osl/signal.h>
 #include <osl/thread.h>
@@ -311,6 +311,7 @@ void X11SalData::PushXErrorLevel( bool bIgnore )
     XErrorStackEntry& rEnt = m_aXErrorHandlerStack.back();
     rEnt.m_bWas = false;
     rEnt.m_bIgnore = bIgnore;
+    rEnt.m_nLastErrorRequest = 0;
     rEnt.m_aHandler = XSetErrorHandler( XErrorHdl );
 }
 
@@ -333,9 +334,6 @@ SalXLib::SalXLib()
     nFDs_                   = 0;
     FD_ZERO( &aReadFDS_ );
     FD_ZERO( &aExceptionFDS_ );
-
-    m_pInputMethod          = nullptr;
-    m_pDisplay              = nullptr;
 
     m_pTimeoutFDS[0] = m_pTimeoutFDS[1] = -1;
     if (pipe (m_pTimeoutFDS) != -1)
@@ -378,8 +376,6 @@ SalXLib::~SalXLib()
     // close 'wakeup' pipe.
     close (m_pTimeoutFDS[0]);
     close (m_pTimeoutFDS[1]);
-
-    delete m_pInputMethod;
 }
 
 static Display *OpenX11Display(OString& rDisplay)
@@ -436,14 +432,14 @@ static Display *OpenX11Display(OString& rDisplay)
 
 void SalXLib::Init()
 {
-    m_pInputMethod = new SalI18N_InputMethod;
-    m_pInputMethod->SetLocale();
+    SalI18N_InputMethod* pInputMethod = new SalI18N_InputMethod;
+    pInputMethod->SetLocale();
     XrmInitialize();
 
     OString aDisplay;
-    m_pDisplay = OpenX11Display(aDisplay);
+    Display *pDisp = OpenX11Display(aDisplay);
 
-    if ( !m_pDisplay )
+    if ( !pDisp )
     {
         OUString aProgramFileURL;
         osl_getExecutableFile( &aProgramFileURL.pData );
@@ -460,6 +456,11 @@ void SalXLib::Init()
         std::fflush( stderr );
         exit(0);
     }
+
+    SalX11Display *pSalDisplay = new SalX11Display( pDisp );
+
+    pInputMethod->CreateMethod( pDisp );
+    pSalDisplay->SetupInput( pInputMethod );
 }
 
 extern "C" {
@@ -480,7 +481,9 @@ void EmitFontpathWarning()
 static void PrintXError( Display *pDisplay, XErrorEvent *pEvent )
 {
     char msg[ 120 ] = "";
+#if ! ( defined LINUX && defined PPC )
     XGetErrorText( pDisplay, pEvent->error_code, msg, sizeof( msg ) );
+#endif
     std::fprintf( stderr, "X-Error: %s\n", msg );
     if( pEvent->request_code < SAL_N_ELEMENTS( XRequest ) )
     {
@@ -563,13 +566,6 @@ void X11SalData::XError( Display *pDisplay, XErrorEvent *pEvent )
     m_aXErrorHandlerStack.back().m_bWas = true;
 }
 
-void X11SalData::Timeout( bool idle )
-{
-    ImplSVData* pSVData = ImplGetSVData();
-    if( pSVData->mpSalTimer )
-        pSVData->mpSalTimer->CallCallback( idle );
-}
-
 struct YieldEntry
 {
     int         fd;         // file descriptor for reading
@@ -578,9 +574,9 @@ struct YieldEntry
     YieldFunc       queued;     // read and queue up events
     YieldFunc       handle;     // handle pending events
 
-    int  HasPendingEvent()   const { return pending( fd, data ); }
-    int  IsEventQueued()     const { return queued( fd, data ); }
-    void HandleNextEvent()   const { handle( fd, data ); }
+    inline int  HasPendingEvent()   const { return pending( fd, data ); }
+    inline int  IsEventQueued()     const { return queued( fd, data ); }
+    inline void HandleNextEvent()   const { handle( fd, data ); }
 };
 
 #define MAX_NUM_DESCRIPTORS 128
@@ -592,8 +588,8 @@ void SalXLib::Insert( int nFD, void* data,
                       YieldFunc     queued,
                       YieldFunc     handle )
 {
-    SAL_WARN_IF( !nFD, "vcl", "can not insert stdin descriptor" );
-    SAL_WARN_IF( yieldTable[nFD].fd, "vcl", "SalXLib::Insert fd twice" );
+    DBG_ASSERT( nFD, "can not insert stdin descriptor" );
+    DBG_ASSERT( !yieldTable[nFD].fd, "SalXLib::Insert fd twice" );
 
     yieldTable[nFD].fd      = nFD;
     yieldTable[nFD].data    = data;
@@ -683,7 +679,7 @@ SalXLib::Yield( bool bWait, bool bHandleAllCurrentEvents )
         YieldEntry* pEntry = &(yieldTable[nFD]);
         if ( pEntry->fd )
         {
-            SAL_WARN_IF( nFD != pEntry->fd, "vcl", "wrong fd in Yield()" );
+            DBG_ASSERT( nFD == pEntry->fd, "wrong fd in Yield()" );
             for( int i = 0; i < nMaxEvents && pEntry->HasPendingEvent(); i++ )
             {
                 pEntry->HandleNextEvent();

@@ -46,7 +46,7 @@ CurrentSlideManager::CurrentSlideManager (SlideSorter& rSlideSorter)
       maSwitchPageDelayTimer()
 {
     maSwitchPageDelayTimer.SetTimeout(100);
-    maSwitchPageDelayTimer.SetInvokeHandler(LINK(this,CurrentSlideManager,SwitchPageCallback));
+    maSwitchPageDelayTimer.SetTimeoutHdl(LINK(this,CurrentSlideManager,SwitchPageCallback));
 }
 
 CurrentSlideManager::~CurrentSlideManager()
@@ -94,12 +94,16 @@ void CurrentSlideManager::ReleaseCurrentSlide()
     mnCurrentSlideIndex = -1;
 }
 
+bool CurrentSlideManager::IsCurrentSlideIsValid()
+{
+    return mnCurrentSlideIndex >= 0 && mnCurrentSlideIndex<mrSlideSorter.GetModel().GetPageCount();
+}
+
 void CurrentSlideManager::AcquireCurrentSlide (const sal_Int32 nSlideIndex)
 {
     mnCurrentSlideIndex = nSlideIndex;
 
-    // if current slide valid
-    if (mnCurrentSlideIndex >= 0 && mnCurrentSlideIndex<mrSlideSorter.GetModel().GetPageCount())
+    if (IsCurrentSlideIsValid())
     {
         // Get a descriptor for the XDrawPage reference.  Note that the
         // given XDrawPage may or may not be member of the slide sorter
@@ -232,7 +236,7 @@ void CurrentSlideManager::HandleModelChange()
     }
 }
 
-IMPL_LINK_NOARG(CurrentSlideManager, SwitchPageCallback, Timer *, void)
+IMPL_LINK_NOARG_TYPED(CurrentSlideManager, SwitchPageCallback, Timer *, void)
 {
     if (mpCurrentSlide)
     {

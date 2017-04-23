@@ -76,7 +76,7 @@ UIConfigElementWrapperBase::~UIConfigElementWrapperBase()
 {
 }
 
-Any SAL_CALL UIConfigElementWrapperBase::queryInterface( const Type& _rType )
+Any SAL_CALL UIConfigElementWrapperBase::queryInterface( const Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = UIConfigElementWrapperBase_BASE::queryInterface( _rType );
     if ( !aRet.hasValue() )
@@ -84,7 +84,7 @@ Any SAL_CALL UIConfigElementWrapperBase::queryInterface( const Type& _rType )
     return aRet;
 }
 
-Sequence< Type > SAL_CALL UIConfigElementWrapperBase::getTypes(  )
+Sequence< Type > SAL_CALL UIConfigElementWrapperBase::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return comphelper::concatSequences(
         UIConfigElementWrapperBase_BASE::getTypes(),
@@ -93,24 +93,26 @@ Sequence< Type > SAL_CALL UIConfigElementWrapperBase::getTypes(  )
 }
 
 // XComponent
-void SAL_CALL UIConfigElementWrapperBase::addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
+void SAL_CALL UIConfigElementWrapperBase::addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception)
 {
     m_aListenerContainer.addInterface( cppu::UnoType<css::lang::XEventListener>::get(), xListener );
 }
 
-void SAL_CALL UIConfigElementWrapperBase::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener )
+void SAL_CALL UIConfigElementWrapperBase::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception)
 {
     m_aListenerContainer.removeInterface( cppu::UnoType<css::lang::XEventListener>::get(), aListener );
 }
 
 // XEventListener
 void SAL_CALL UIConfigElementWrapperBase::disposing( const EventObject& )
+throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
     m_xConfigSource.clear();
 }
 
 void SAL_CALL UIConfigElementWrapperBase::initialize( const Sequence< Any >& aArguments )
+throw ( Exception, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -143,22 +145,22 @@ void SAL_CALL UIConfigElementWrapperBase::initialize( const Sequence< Any >& aAr
 }
 
 // XUpdatable
-void SAL_CALL UIConfigElementWrapperBase::update()
+void SAL_CALL UIConfigElementWrapperBase::update() throw (css::uno::RuntimeException, std::exception)
 {
     // can be implemented by derived class
 }
 
-void SAL_CALL UIConfigElementWrapperBase::elementInserted( const css::ui::ConfigurationEvent& )
+void SAL_CALL UIConfigElementWrapperBase::elementInserted( const css::ui::ConfigurationEvent& ) throw (css::uno::RuntimeException, std::exception)
 {
     // can be implemented by derived class
 }
 
-void SAL_CALL UIConfigElementWrapperBase::elementRemoved( const css::ui::ConfigurationEvent& )
+void SAL_CALL UIConfigElementWrapperBase::elementRemoved( const css::ui::ConfigurationEvent& ) throw (css::uno::RuntimeException, std::exception)
 {
     // can be implemented by derived class
 }
 
-void SAL_CALL UIConfigElementWrapperBase::elementReplaced( const css::ui::ConfigurationEvent& )
+void SAL_CALL UIConfigElementWrapperBase::elementReplaced( const css::ui::ConfigurationEvent& ) throw (css::uno::RuntimeException, std::exception)
 {
     // can be implemented by derived class
 }
@@ -167,7 +169,7 @@ void SAL_CALL UIConfigElementWrapperBase::elementReplaced( const css::ui::Config
 sal_Bool SAL_CALL UIConfigElementWrapperBase::convertFastPropertyValue( Any&       aConvertedValue ,
                                                                         Any&       aOldValue       ,
                                                                         sal_Int32  nHandle         ,
-                                                                        const Any& aValue             )
+                                                                        const Any& aValue             ) throw( css::lang::IllegalArgumentException )
 {
     //  Initialize state with sal_False !!!
     //  (Handle can be invalid)
@@ -248,7 +250,7 @@ sal_Bool SAL_CALL UIConfigElementWrapperBase::convertFastPropertyValue( Any&    
 }
 
 void SAL_CALL UIConfigElementWrapperBase::setFastPropertyValue_NoBroadcast(   sal_Int32               nHandle ,
-                                                                        const css::uno::Any&    aValue  )
+                                                                        const css::uno::Any&    aValue  ) throw( css::uno::Exception, std::exception )
 {
     switch( nHandle )
     {
@@ -397,7 +399,7 @@ void SAL_CALL UIConfigElementWrapperBase::getFastPropertyValue( css::uno::Any& a
     return(*pInfoHelper);
 }
 
-css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL UIConfigElementWrapperBase::getPropertySetInfo()
+css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL UIConfigElementWrapperBase::getPropertySetInfo() throw (css::uno::RuntimeException, std::exception)
 {
     // Optimize this method !
     // We initialize a static variable only one time. And we don't must use a mutex at every call!
@@ -432,21 +434,21 @@ const css::uno::Sequence< css::beans::Property > UIConfigElementWrapperBase::imp
 
     const css::beans::Property pProperties[] =
     {
-        css::beans::Property( UIELEMENT_PROPNAME_CONFIGLISTENER, UIELEMENT_PROPHANDLE_CONFIGLISTENER , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
-        css::beans::Property( UIELEMENT_PROPNAME_CONFIGSOURCE, UIELEMENT_PROPHANDLE_CONFIGSOURCE   , cppu::UnoType<css::ui::XUIConfigurationManager>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
-        css::beans::Property( UIELEMENT_PROPNAME_FRAME, UIELEMENT_PROPHANDLE_FRAME          , cppu::UnoType<css::frame::XFrame>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
-        css::beans::Property( UIELEMENT_PROPNAME_NOCLOSE, UIELEMENT_PROPHANDLE_NOCLOSE        , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT ),
-        css::beans::Property( UIELEMENT_PROPNAME_PERSISTENT, UIELEMENT_PROPHANDLE_PERSISTENT     , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
-        css::beans::Property( UIELEMENT_PROPNAME_RESOURCEURL, UIELEMENT_PROPHANDLE_RESOURCEURL    , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
-        css::beans::Property( UIELEMENT_PROPNAME_TYPE, UIELEMENT_PROPHANDLE_TYPE           , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
-        css::beans::Property( UIELEMENT_PROPNAME_XMENUBAR, UIELEMENT_PROPHANDLE_XMENUBAR       , cppu::UnoType<css::awt::XMenuBar>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY )
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_CONFIGLISTENER), UIELEMENT_PROPHANDLE_CONFIGLISTENER , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_CONFIGSOURCE), UIELEMENT_PROPHANDLE_CONFIGSOURCE   , cppu::UnoType<css::ui::XUIConfigurationManager>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_FRAME), UIELEMENT_PROPHANDLE_FRAME          , cppu::UnoType<css::frame::XFrame>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_NOCLOSE), UIELEMENT_PROPHANDLE_NOCLOSE        , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_PERSISTENT), UIELEMENT_PROPHANDLE_PERSISTENT     , cppu::UnoType<sal_Bool>::get(), css::beans::PropertyAttribute::TRANSIENT  ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_RESOURCEURL), UIELEMENT_PROPHANDLE_RESOURCEURL    , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_TYPE), UIELEMENT_PROPHANDLE_TYPE           , cppu::UnoType<OUString>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY ),
+        css::beans::Property( OUString(UIELEMENT_PROPNAME_XMENUBAR), UIELEMENT_PROPHANDLE_XMENUBAR       , cppu::UnoType<css::awt::XMenuBar>::get(), css::beans::PropertyAttribute::TRANSIENT | css::beans::PropertyAttribute::READONLY )
     };
     // Use it to initialize sequence!
     const css::uno::Sequence< css::beans::Property > lPropertyDescriptor( pProperties, UIELEMENT_PROPCOUNT );
     // Return "PropertyDescriptor"
     return lPropertyDescriptor;
 }
-void SAL_CALL UIConfigElementWrapperBase::setSettings( const Reference< XIndexAccess >& xSettings )
+void SAL_CALL UIConfigElementWrapperBase::setSettings( const Reference< XIndexAccess >& xSettings ) throw ( RuntimeException, std::exception )
 {
     SolarMutexClearableGuard aLock;
 
@@ -484,7 +486,7 @@ void SAL_CALL UIConfigElementWrapperBase::setSettings( const Reference< XIndexAc
 void UIConfigElementWrapperBase::impl_fillNewData()
 {
 }
-Reference< XIndexAccess > SAL_CALL UIConfigElementWrapperBase::getSettings( sal_Bool bWriteable )
+Reference< XIndexAccess > SAL_CALL UIConfigElementWrapperBase::getSettings( sal_Bool bWriteable ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -494,20 +496,20 @@ Reference< XIndexAccess > SAL_CALL UIConfigElementWrapperBase::getSettings( sal_
     return m_xConfigData;
 }
 
-Reference< XFrame > SAL_CALL UIConfigElementWrapperBase::getFrame()
+Reference< XFrame > SAL_CALL UIConfigElementWrapperBase::getFrame() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     Reference< XFrame > xFrame( m_xWeakFrame );
     return xFrame;
 }
 
-OUString SAL_CALL UIConfigElementWrapperBase::getResourceURL()
+OUString SAL_CALL UIConfigElementWrapperBase::getResourceURL() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     return m_aResourceURL;
 }
 
-::sal_Int16 SAL_CALL UIConfigElementWrapperBase::getType()
+::sal_Int16 SAL_CALL UIConfigElementWrapperBase::getType() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     return m_nType;

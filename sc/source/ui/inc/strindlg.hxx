@@ -32,7 +32,7 @@ public:
         const OUString& rEditTitle,
         const OUString& rDefault,
         const OString& sHelpId, const OString& sEditHelpId);
-    virtual ~ScStringInputDlg() override;
+    virtual ~ScStringInputDlg();
     virtual void dispose() override;
     OUString GetInputString() const
     {

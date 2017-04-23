@@ -38,6 +38,10 @@ XMLControlOOoTransformerContext::XMLControlOOoTransformerContext(
 {
 }
 
+XMLControlOOoTransformerContext::~XMLControlOOoTransformerContext()
+{
+}
+
 void XMLControlOOoTransformerContext::StartElement(
     const Reference< XAttributeList >& rAttrList )
 {

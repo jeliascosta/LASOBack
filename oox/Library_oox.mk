@@ -151,7 +151,7 @@ $(eval $(call gb_Library_add_exception_objects,oox,\
     oox/source/drawingml/effectpropertiescontext \
     oox/source/drawingml/embeddedwavaudiofile \
     oox/source/drawingml/fillproperties \
-    oox/source/drawingml/misccontexts \
+    oox/source/drawingml/fillpropertiesgroupcontext \
     oox/source/drawingml/graphicshapecontext \
     oox/source/drawingml/guidcontext \
     oox/source/drawingml/hyperlinkcontext \
@@ -311,12 +311,6 @@ $(eval $(call gb_Library_add_cxxobjects,oox,\
 else
 $(eval $(call gb_Library_add_exception_objects,oox,\
     oox/source/drawingml/color \
-))
-endif
-
-ifeq ($(CPUNAME),M68K)
-$(eval $(call gb_Library_add_cxxflags,oox,\
-    -mlong-jump-table-offsets \
 ))
 endif
 

@@ -75,7 +75,7 @@ public:
     AccessibleContextBase (
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
         const sal_Int16 aRole);
-    virtual ~AccessibleContextBase() override;
+    virtual ~AccessibleContextBase();
 
 
     /** Call all accessiblity event listeners to inform them about the
@@ -102,11 +102,11 @@ public:
             whether the given description overrules the existing one.  An
             origin with a lower numerical value overrides one with a higher
             value.
-        @throws css::uno::RuntimeException
     */
     void SetAccessibleDescription (
         const OUString& rsDescription,
-        StringOrigin eDescriptionOrigin);
+        StringOrigin eDescriptionOrigin)
+        throw (css::uno::RuntimeException);
 
     /** Set a new description and, provided that the new name differs from
         the old one, broadcast an accessibility event.
@@ -116,11 +116,11 @@ public:
             The origin of the name.  This is used to determine whether the
             given name overrules the existing one.  An origin with a lower
             numerical value overrides one with a higher value.
-        @throws css::uno::RuntimeException
     */
     void SetAccessibleName (
         const OUString& rsName,
-        StringOrigin eNameOrigin);
+        StringOrigin eNameOrigin)
+        throw (css::uno::RuntimeException);
 
     /** Set the specified state (turn it on) and send events to all
         listeners to inform them of the change.
@@ -162,73 +162,84 @@ public:
 
         @param rRelationSet
             The new relation set that replaces the old one.
-
-        @throws css::uno::RuntimeException
     */
     void SetRelationSet (
-        const css::uno::Reference< css::accessibility::XAccessibleRelationSet>& rxRelationSet);
+        const css::uno::Reference< css::accessibility::XAccessibleRelationSet>& rxRelationSet)
+        throw (css::uno::RuntimeException);
 
 
     //=====  XAccessible  =====================================================
 
     /// Return the XAccessibleContext.
     virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL
-        getAccessibleContext() override;
+        getAccessibleContext() throw (css::uno::RuntimeException, std::exception) override;
 
 
     //=====  XAccessibleContext  ==============================================
 
     /// Return the number of currently visible children.
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount() throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the specified child or throw exception.
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild (sal_Int32 nIndex) override;
+        getAccessibleChild (sal_Int32 nIndex)
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     /// Return a reference to the parent.
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleParent() override;
+        getAccessibleParent()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return this objects index among the parents children.
     virtual sal_Int32 SAL_CALL
-        getAccessibleIndexInParent() override;
+        getAccessibleIndexInParent()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return this object's role.
     virtual sal_Int16 SAL_CALL
-        getAccessibleRole() override;
+        getAccessibleRole()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return this object's description.
     virtual OUString SAL_CALL
-        getAccessibleDescription() override;
+        getAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the object's current name.
     virtual OUString SAL_CALL
-        getAccessibleName() override;
+        getAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return NULL to indicate that an empty relation set.
     virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet> SAL_CALL
-        getAccessibleRelationSet() override;
+        getAccessibleRelationSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the set of current states.
     virtual css::uno::Reference< css::accessibility::XAccessibleStateSet> SAL_CALL
-        getAccessibleStateSet() override;
+        getAccessibleStateSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Return the parents locale or throw exception if this object has no
         parent yet/anymore.
     */
     virtual css::lang::Locale SAL_CALL
-        getLocale() override;
+        getLocale()
+        throw (css::uno::RuntimeException,
+            css::accessibility::IllegalAccessibleComponentStateException, std::exception) override;
 
     //=====  XAccessibleEventBroadcaster  ========================================
 
     virtual void SAL_CALL
         addAccessibleEventListener (
-            const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
+            const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         removeAccessibleEventListener (
-            const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
+            const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 
     //=====  XServiceInfo  ====================================================
@@ -236,18 +247,21 @@ public:
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Return whether the specified service is supported by this class.
     */
     virtual sal_Bool SAL_CALL
-        supportsService (const OUString& sServiceName) override;
+        supportsService (const OUString& sServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Returns a list of all supported services.  In this case that is just
         the AccessibleContext service.
     */
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 
     //=====  XTypeProvider  ===================================================
@@ -255,7 +269,8 @@ public:
     /** Returns a implementation id.
     */
     virtual css::uno::Sequence<sal_Int8> SAL_CALL
-        getImplementationId() override;
+        getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     /** The state set.
@@ -275,18 +290,18 @@ protected:
         @return
             The returned string is a unique (among the accessible object's
             siblings) name.
-        @throws css::uno::RuntimeException
     */
-    virtual OUString CreateAccessibleName();
+    virtual OUString CreateAccessibleName()
+        throw (css::uno::RuntimeException, std::exception);
 
     /** Create the accessible object's descriptive string.  May be called
         more than once.
         @return
             Descriptive string.  Not necessarily unique.
-        @throws css::uno::RuntimeException
     */
     virtual OUString
-        CreateAccessibleDescription();
+        CreateAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception);
 
     void FireEvent (const css::accessibility::AccessibleEventObject& aEvent);
 
@@ -294,9 +309,9 @@ protected:
         state of being disposed).  If that is the case then
         DisposedException is thrown to inform the (indirect) caller of the
         foul deed.
-        @throws css::lang::DisposedException
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
 
     /** Check whether or not the object has been disposed (or is in the
         state of being disposed).

@@ -28,7 +28,6 @@
 #include <memory>
 
 #include <o3tl/enumarray.hxx>
-#include <o3tl/typed_flags_set.hxx>
 
 class SwWrtShell;
 class SwContentType;
@@ -51,28 +50,12 @@ enum class EditEntryMode
     RENAME        = 5,
 };
 
-// Flags for PopupMenu-enable/disable
-enum class MenuEnableFlags {
-    NONE        = 0x0000,
-    InsertIdx   = 0x0001,
-    InsertFile  = 0x0002,
-    InsertText  = 0x0004,
-    Edit        = 0x0008,
-    Delete      = 0x0010,
-    Update      = 0x0020,
-    UpdateSel   = 0x0040,
-    EditLink    = 0x0080
-};
-namespace o3tl {
-    template<> struct typed_flags<MenuEnableFlags> : is_typed_flags<MenuEnableFlags, 0x00ff> {};
-}
-
 /** TreeListBox for content indicator */
 class SwContentTree
     : public SvTreeListBox
     , public SfxListener
 {
-    VclPtr<SwNavigationPI> m_xDialog;
+    ImageList           m_aEntryImages;
     OUString            m_sSpace;
     AutoTimer           m_aUpdTimer;
 
@@ -101,8 +84,9 @@ class SwContentTree
     ContentTypeId       m_nLastSelType;
     sal_uInt8           m_nOutlineLevel;
 
-    enum class State { ACTIVE, CONSTANT, HIDDEN } m_eState;
-
+    bool                m_bIsActive           :1;
+    bool                m_bIsConstant         :1;
+    bool                m_bIsHidden           :1;
     bool                m_bDocChgdInDragging  :1;
     bool                m_bIsInternalDrag     :1;
     bool                m_bIsRoot             :1;
@@ -110,11 +94,12 @@ class SwContentTree
     bool                m_bIsLastReadOnly     :1;
     bool                m_bIsOutlineMoveable  :1;
     bool                m_bViewHasChanged     :1;
+    bool                m_bIsImageListInitialized : 1;
 
     static bool         bIsInDrag;
 
     bool                m_bIsKeySpace;
-    tools::Rectangle           m_aOldRectangle;
+    Rectangle           m_aOldRectangle;
 
     /**
      * Before any data will be deleted, the last active entry has to be found.
@@ -158,7 +143,7 @@ protected:
                                     SvTreeListEntry*& rpNewParent,
                                     sal_uLong&        rNewChildPos
                                 ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
 
     void            EditEntry( SvTreeListEntry* pEntry, EditEntryMode nMode );
@@ -166,12 +151,12 @@ protected:
     void            GotoContent(SwContent* pCnt);
     static void     SetInDrag(bool bSet) {bIsInDrag = bSet;}
 
-    virtual VclPtr<PopupMenu> CreateContextMenu() override;
+    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
     virtual void    ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry ) override;
 
 public:
-    SwContentTree(vcl::Window* pParent, SwNavigationPI* pDialog);
-    virtual ~SwContentTree() override;
+    SwContentTree(vcl::Window* pParent, const ResId& rResId);
+    virtual ~SwContentTree();
     virtual void dispose() override;
     OUString        GetEntryAltText( SvTreeListEntry* pEntry ) const override;
     OUString        GetEntryLongDescription( SvTreeListEntry* pEntry ) const override;
@@ -198,7 +183,9 @@ public:
     void            SetConstantShell(SwWrtShell* pSh);
 
     SwWrtShell*     GetWrtShell()
-        { return State::HIDDEN == m_eState ? m_pHiddenShell : m_pActiveShell; }
+                        {return m_bIsActive||m_bIsConstant ?
+                                    m_pActiveShell :
+                                        m_pHiddenShell;}
 
     static bool     IsInDrag() {return bIsInDrag;}
 
@@ -211,21 +198,21 @@ public:
     virtual bool    Collapse( SvTreeListEntry* pParent ) override;
 
     /** Execute commands of the Navigator */
-    void            ExecCommand(const OUString& rCmd, bool bModifier);
+    void            ExecCommand(sal_uInt16 nCmd, bool bModifier);
 
     void            ShowTree();
     /** folded together will not be glidled */
     void            HideTree();
 
-    bool            IsConstantView() { return State::CONSTANT == m_eState; }
-    bool            IsActiveView()   { return State::ACTIVE == m_eState; }
-    bool            IsHiddenView()   { return State::HIDDEN == m_eState; }
+    bool            IsConstantView() {return m_bIsConstant;}
+    bool            IsActiveView()   {return m_bIsActive;}
+    bool            IsHiddenView()   {return m_bIsHidden;}
 
     const SwWrtShell*   GetActiveWrtShell() {return m_pActiveShell;}
     SwWrtShell*         GetHiddenWrtShell() {return m_pHiddenShell;}
 
-    DECL_LINK( ContentDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK( TimerUpdate, Timer *, void );
+    DECL_LINK_TYPED( ContentDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( TimerUpdate, Timer *, void );
 
     virtual sal_IntPtr GetTabPos( SvTreeListEntry*, SvLBoxTab* ) override;
     virtual void    RequestingChildren( SvTreeListEntry* pParent ) override;
@@ -233,8 +220,8 @@ public:
     virtual void    KeyInput(const KeyEvent& rKEvt) override;
 
     virtual bool    Select( SvTreeListEntry* pEntry, bool bSelect=true ) override;
-    virtual Size    GetOptimalSize() const override;
 
+    using Control::Notify; // FIXME why do we have 2 of these
     virtual void Notify(SfxBroadcaster& rBC, SfxHint const& rHint) override;
 
 };
@@ -259,9 +246,10 @@ namespace sfx2 { class FileDialogHelper; }
 class SwGlobalTree : public SvTreeListBox
 {
 private:
-    VclPtr<SwNavigationPI>  xDialog;
-    AutoTimer               aUpdateTimer;
-    OUString                aContextStrings[GLOBAL_CONTEXT_COUNT];
+    AutoTimer           aUpdateTimer;
+    OUString            aContextStrings[GLOBAL_CONTEXT_COUNT];
+
+    ImageList           aEntryImages;
 
     SwWrtShell*             pActiveShell;
     SvTreeListEntry*        pEmphasisEntry; // Drag'n Drop emphasis
@@ -273,13 +261,14 @@ private:
 
     bool                bIsInternalDrag     :1;
     bool                bLastEntryEmphasis  :1; // Drag'n Drop
+    bool                bIsImageListInitialized : 1;
 
     static const SfxObjectShell* pShowShell;
 
     void        InsertRegion( const SwGlblDocContent* _pContent,
                               const css::uno::Sequence< OUString >& _rFiles );
 
-    DECL_LINK(  DialogClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK_TYPED(  DialogClosedHdl, sfx2::FileDialogHelper*, void );
 
     using SvTreeListBox::DoubleClickHdl;
     using SvTreeListBox::ExecuteDrop;
@@ -322,27 +311,27 @@ protected:
 
     void            Clear();
 
-    DECL_LINK( PopupHdl, Menu*, bool );
-    DECL_LINK( Timeout, Timer*, void );
-    DECL_LINK( DoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( PopupHdl, Menu*, bool );
+    DECL_LINK_TYPED( Timeout, Timer*, void );
+    DECL_LINK_TYPED( DoubleClickHdl, SvTreeListBox*, bool );
 
     SwNavigationPI* GetParentWindow();
 
     void            OpenDoc(const SwGlblDocContent*);
     void            GotoContent(const SwGlblDocContent*);
-    MenuEnableFlags GetEnableFlags() const;
+    sal_uInt16          GetEnableFlags() const;
 
+    static const SfxObjectShell*    GetShowShell() {return pShowShell;}
     static void     SetShowShell(const SfxObjectShell*pSet) {pShowShell = pSet;}
-    DECL_STATIC_LINK(SwGlobalTree, ShowFrameHdl, void*, void);
+    DECL_STATIC_LINK_TYPED(SwGlobalTree, ShowFrameHdl, void*, void);
 
-    virtual VclPtr<PopupMenu> CreateContextMenu() override;
+    virtual std::unique_ptr<PopupMenu> CreateContextMenu() override;
     virtual void    ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry ) override;
 
 public:
-    SwGlobalTree(vcl::Window* pParent, SwNavigationPI* pDialog);
-    virtual ~SwGlobalTree() override;
+    SwGlobalTree(vcl::Window* pParent, const ResId& rResId);
+    virtual ~SwGlobalTree();
     virtual void        dispose() override;
-    virtual Size        GetOptimalSize() const override;
 
     void                TbxMenuHdl(sal_uInt16 nTbxId, ToolBox* pBox);
     void                InsertRegion( const SwGlblDocContent* pCont,
@@ -352,7 +341,7 @@ public:
     void                ShowTree();
     void                HideTree();
 
-    void                ExecCommand(const OUString& rCmd);
+    void                ExecCommand(sal_uInt16 nCmd);
 
     void                Display(bool bOnlyUpdateUserData = false);
 

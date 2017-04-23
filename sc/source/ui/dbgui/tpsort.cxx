@@ -36,7 +36,7 @@
 #include "userlist.hxx"
 #include "rangeutl.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "globstr.hrc"
 
 #include "sortkeydlg.hxx"
@@ -133,6 +133,8 @@ void ScTabPageSortFields::Init()
     OSL_ENSURE( pViewData, "ViewData not found!" );
 
     nFieldArr.push_back( 0 );
+    nFirstCol = 0;
+    nFirstRow = 0;
 
     // Create three sort key dialogs by default
     for ( sal_uInt16 i=0; i<nSortKeyCount; i++ )
@@ -267,7 +269,9 @@ bool ScTabPageSortFields::FillItemSet( SfxItemSet* rArgSet )
         if ( pDlg && bSortByRows != pDlg->GetByRows() )
         {
             for ( sal_uInt16 i=0; i<nSortKeyCount; i++ )
-                aNewSortData.maKeyState[i].nField = 0;
+                aNewSortData.maKeyState[i].nField = ( bSortByRows ?
+                        static_cast<SCCOLROW>(nFirstRow) :
+                        static_cast<SCCOLROW>(nFirstCol) );
         }
         else
         {
@@ -315,7 +319,7 @@ void ScTabPageSortFields::ActivatePage( const SfxItemSet& rSet )
     }
 }
 
-DeactivateRC ScTabPageSortFields::DeactivatePage( SfxItemSet* pSetP )
+SfxTabPage::sfxpg ScTabPageSortFields::DeactivatePage( SfxItemSet* pSetP )
 {
     if ( pDlg )
     {
@@ -329,7 +333,7 @@ DeactivateRC ScTabPageSortFields::DeactivatePage( SfxItemSet* pSetP )
     if ( pSetP )
         FillItemSet( pSetP );
 
-    return DeactivateRC::LeavePage;
+    return SfxTabPage::LEAVE_PAGE;
 }
 
 void ScTabPageSortFields::FillFieldLists( sal_uInt16 nStartField )
@@ -438,7 +442,7 @@ void ScTabPageSortFields::SetLastSortKey( sal_uInt16 nItem )
 
 // Handler:
 
-IMPL_LINK( ScTabPageSortFields, SelectHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScTabPageSortFields, SelectHdl, ListBox&, rLb, void )
 {
     OUString aSelEntry = rLb.GetSelectEntry();
     ScSortKeyItems::iterator pIter;
@@ -503,7 +507,6 @@ ScTabPageSortOptions::ScTabPageSortOptions( vcl::Window*             pParent,
     get(m_pBtnHeader, "header");
     get(m_pBtnFormats, "formats");
     get(m_pBtnNaturalSort, "naturalsort");
-    get(m_pBtnIncComments, "includenotes");
     get(m_pBtnCopyResult, "copyresult");
     get(m_pLbOutPos, "outarealb");
     get(m_pEdOutPos, "outareaed");
@@ -516,6 +519,10 @@ ScTabPageSortOptions::ScTabPageSortOptions( vcl::Window*             pParent,
     get(m_pLbLanguage, "language");
     Init();
     SetExchangeSupport();
+
+    m_pLbOutPos->SetAccessibleName(m_pBtnCopyResult->GetText());
+    m_pEdOutPos->SetAccessibleName(m_pBtnCopyResult->GetText());
+    m_pLbSortUser->SetAccessibleName(m_pBtnSortUser->GetText());
 }
 
 ScTabPageSortOptions::~ScTabPageSortOptions()
@@ -536,7 +543,6 @@ void ScTabPageSortOptions::dispose()
     m_pBtnHeader.clear();
     m_pBtnFormats.clear();
     m_pBtnNaturalSort.clear();
-    m_pBtnIncComments.clear();
     m_pBtnCopyResult.clear();
     m_pLbOutPos.clear();
     m_pEdOutPos.clear();
@@ -658,7 +664,6 @@ void ScTabPageSortOptions::Reset( const SfxItemSet* /* rArgSet */ )
     m_pBtnFormats->Check       ( aSortData.bIncludePattern );
     m_pBtnHeader->Check        ( aSortData.bHasHeader );
     m_pBtnNaturalSort->Check   ( aSortData.bNaturalSort );
-    m_pBtnIncComments->Check   ( aSortData.bIncludeComments );
 
     if ( aSortData.bByRow )
     {
@@ -723,7 +728,6 @@ bool ScTabPageSortOptions::FillItemSet( SfxItemSet* rArgSet )
     aNewSortData.bHasHeader      = m_pBtnHeader->IsChecked();
     aNewSortData.bCaseSens       = m_pBtnCase->IsChecked();
     aNewSortData.bNaturalSort    = m_pBtnNaturalSort->IsChecked();
-    aNewSortData.bIncludeComments= m_pBtnIncComments->IsChecked();
     aNewSortData.bIncludePattern = m_pBtnFormats->IsChecked();
     aNewSortData.bInplace        = !m_pBtnCopyResult->IsChecked();
     aNewSortData.nDestCol        = theOutPos.Col();
@@ -779,7 +783,7 @@ void ScTabPageSortOptions::ActivatePage( const SfxItemSet& rSet )
     }
 }
 
-DeactivateRC ScTabPageSortOptions::DeactivatePage( SfxItemSet* pSetP )
+SfxTabPage::sfxpg ScTabPageSortOptions::DeactivatePage( SfxItemSet* pSetP )
 {
     bool bPosInputOk = true;
 
@@ -826,7 +830,7 @@ DeactivateRC ScTabPageSortOptions::DeactivatePage( SfxItemSet* pSetP )
     if ( pSetP && bPosInputOk )
         FillItemSet( pSetP );
 
-    return bPosInputOk ? DeactivateRC::LeavePage : DeactivateRC::KeepPage;
+    return bPosInputOk ? SfxTabPage::LEAVE_PAGE : SfxTabPage::KEEP_PAGE;
 }
 
 void ScTabPageSortOptions::FillUserSortListBox()
@@ -845,7 +849,7 @@ void ScTabPageSortOptions::FillUserSortListBox()
 
 // Handler:
 
-IMPL_LINK( ScTabPageSortOptions, EnableHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( ScTabPageSortOptions, EnableHdl, Button*, pButton, void )
 {
     CheckBox* pBox = static_cast<CheckBox*>(pButton);
     if (pBox == m_pBtnCopyResult)
@@ -874,7 +878,7 @@ IMPL_LINK( ScTabPageSortOptions, EnableHdl, Button*, pButton, void )
     }
 }
 
-IMPL_LINK( ScTabPageSortOptions, SelOutPosHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScTabPageSortOptions, SelOutPosHdl, ListBox&, rLb, void )
 {
     if (&rLb == m_pLbOutPos)
     {
@@ -888,7 +892,7 @@ IMPL_LINK( ScTabPageSortOptions, SelOutPosHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK( ScTabPageSortOptions, SortDirHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( ScTabPageSortOptions, SortDirHdl, Button *, pBtn, void )
 {
     if (pBtn == m_pBtnTopDown)
     {
@@ -927,7 +931,7 @@ void ScTabPageSortOptions::EdOutPosModHdl( Edit* pEd )
     }
 }
 
-IMPL_LINK_NOARG(ScTabPageSortOptions, FillAlgorHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScTabPageSortOptions, FillAlgorHdl, ListBox&, void)
 {
     m_pLbAlgorithm->SetUpdateMode( false );
     m_pLbAlgorithm->Clear();

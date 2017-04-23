@@ -44,8 +44,8 @@ public:
 
     ULONG MAPILogon(
         ULONG ulUIParam,
-        LPSTR lpszProfileName,
-        LPSTR lpszPassword,
+        LPTSTR lpszProfileName,
+        LPTSTR lpszPassword,
         FLAGS flFlags,
         ULONG ulReserved,
         LPLHANDLE lplhSession );

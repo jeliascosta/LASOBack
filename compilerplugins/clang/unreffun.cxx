@@ -13,6 +13,7 @@
 #include "clang/AST/Attr.h"
 #include "clang/Sema/SemaInternal.h" // warn_unused_function
 
+#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -32,9 +33,15 @@ bool hasCLanguageLinkageType(FunctionDecl const * decl) {
     if (decl->isExternC()) {
         return true;
     }
+#if CLANG_VERSION >= 30300
     if (decl->isInExternCContext()) {
         return true;
     }
+#else
+    if (decl->getCanonicalDecl()->getDeclContext()->isExternCContext()) {
+        return true;
+    }
+#endif
     return false;
 }
 
@@ -80,7 +87,7 @@ bool UnrefFun::VisitFunctionDecl(FunctionDecl const * decl) {
     {
         Decl const * prev = getPreviousNonFriendDecl(decl);
         if (prev != nullptr/* && prev != decl->getPrimaryTemplate()*/) {
-            // Workaround for redeclarations that introduce visibility attributes
+            // Workaround for redeclarations that introduce visiblity attributes
             // (as is done with
             //
             //  SAL_DLLPUBLIC_EXPORT GType lok_doc_view_get_type();
@@ -110,9 +117,13 @@ bool UnrefFun::VisitFunctionDecl(FunctionDecl const * decl) {
         //TODO: is that the first?
     if (canon->isDeleted() || canon->isReferenced()
         || !(canon->isDefined()
-             ? decl->isThisDeclarationADefinition() : decl->isFirstDecl())
-        || !compiler.getSourceManager().isInMainFile(canon->getLocation())
-        || isInUnoIncludeFile(canon)
+             ? decl->isThisDeclarationADefinition()
+             : compat::isFirstDecl(*decl))
+        || !compat::isInMainFile(
+            compiler.getSourceManager(), canon->getLocation())
+        || isInUnoIncludeFile(
+            compiler.getSourceManager().getSpellingLoc(
+                canon->getNameInfo().getLoc()))
         || canon->isMain()
         || (decl->getTemplatedKind() == FunctionDecl::TK_FunctionTemplate
             && (decl->getDescribedFunctionTemplate()->spec_begin()
@@ -123,36 +134,32 @@ bool UnrefFun::VisitFunctionDecl(FunctionDecl const * decl) {
     {
         return true;
     }
-    LinkageInfo info(canon->getLinkageAndVisibility());
-    if (info.getLinkage() == ExternalLinkage
+    compat::LinkageInfo info(canon->getLinkageAndVisibility());
+    if (compat::getLinkage(info) == ExternalLinkage
         && hasCLanguageLinkageType(canon) && canon->isDefined()
-        && ((decl == canon && info.getVisibility() == DefaultVisibility)
+        && ((decl == canon && compat::getVisibility(info) == DefaultVisibility)
             || ((canon->hasAttr<ConstructorAttr>()
                  || canon->hasAttr<DestructorAttr>())
-                && info.getVisibility() == HiddenVisibility)))
-    {
-        return true;
-    }
-    auto loc = decl->getLocation();
-    if (compiler.getSourceManager().isMacroBodyExpansion(loc)
-        && (Lexer::getImmediateMacroName(
-                loc, compiler.getSourceManager(), compiler.getLangOpts())
-            == "MDDS_MTV_DEFINE_ELEMENT_CALLBACKS"))
+                && compat::getVisibility(info) == HiddenVisibility)))
     {
         return true;
     }
     report(
         DiagnosticsEngine::Warning,
         (canon->isDefined()
+#if CLANG_VERSION >= 30400
          ? (canon->isExternallyVisible()
             ? "Unreferenced externally visible function%0 definition"
             : "Unreferenced externally invisible function%0 definition")
+#else
+         ? "Unreferenced function%0 definition"
+#endif
          : "Unreferenced function%0 declaration"),
         decl->getLocation())
         << (decl->getTemplatedKind() == FunctionDecl::TK_FunctionTemplate
             ? " template" : "")
         << decl->getSourceRange();
-    if (canon->isDefined() && !decl->isFirstDecl()) {
+    if (canon->isDefined() && !compat::isFirstDecl(*decl)) {
         report(
             DiagnosticsEngine::Note, "first declaration is here",
             canon->getLocation())

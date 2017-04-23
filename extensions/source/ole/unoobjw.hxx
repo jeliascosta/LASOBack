@@ -53,7 +53,7 @@ struct hash_IUnknown_Impl
 {
     size_t operator()(const IUnknown* p) const
     {
-        return reinterpret_cast<size_t>(p);
+        return (size_t)p;
     }
 };
 
@@ -85,7 +85,7 @@ typedef std::unordered_map
 typedef std::unordered_map
 <
     OUString,
-    bool,
+    sal_Bool,
     OUStringHash
 > BadNameMap;
 
@@ -110,28 +110,28 @@ public:
 
 
     InterfaceOleWrapper_Impl(Reference<XMultiServiceFactory>& xFactory, sal_uInt8 unoWrapperClass, sal_uInt8 comWrapperClass);
-    ~InterfaceOleWrapper_Impl() override;
+    ~InterfaceOleWrapper_Impl();
 
     /* IUnknown methods */
-    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj) override;
-    STDMETHOD_(ULONG, AddRef)() override;
-    STDMETHOD_(ULONG, Release)() override;
+    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     /* IDispatch methods */
-    STDMETHOD( GetTypeInfoCount )( unsigned int * pctinfo ) override;
-    STDMETHOD( GetTypeInfo )( unsigned int itinfo, LCID lcid, ITypeInfo ** pptinfo ) override;
+    STDMETHOD( GetTypeInfoCount )( unsigned int * pctinfo );
+    STDMETHOD( GetTypeInfo )( unsigned int itinfo, LCID lcid, ITypeInfo ** pptinfo );
     STDMETHOD( GetIDsOfNames )( REFIID riid, OLECHAR ** rgszNames, unsigned int cNames,
-                                LCID lcid, DISPID * rgdispid ) override;
+                                LCID lcid, DISPID * rgdispid );
     STDMETHOD( Invoke )( DISPID dispidMember, REFIID riid, LCID lcid, unsigned short wFlags,
                          DISPPARAMS * pdispparams, VARIANT * pvarResult, EXCEPINFO * pexcepinfo,
-                         unsigned int * puArgErr ) override;
+                         unsigned int * puArgErr );
 
     /* IDispatchEx methods */
 
     virtual HRESULT STDMETHODCALLTYPE GetDispID(
         /* [in] */ BSTR bstrName,
         /* [in] */ DWORD grfdex,
-        /* [out] */ DISPID __RPC_FAR *pid) override;
+        /* [out] */ DISPID __RPC_FAR *pid);
 
     virtual /* [local] */ HRESULT STDMETHODCALLTYPE InvokeEx(
         /* [in] */ DISPID id,
@@ -140,49 +140,50 @@ public:
         /* [in] */ DISPPARAMS __RPC_FAR *pdp,
         /* [out] */ VARIANT __RPC_FAR *pvarRes,
         /* [out] */ EXCEPINFO __RPC_FAR *pei,
-        /* [unique][in] */ IServiceProvider __RPC_FAR *pspCaller) override;
+        /* [unique][in] */ IServiceProvider __RPC_FAR *pspCaller);
 
     virtual HRESULT STDMETHODCALLTYPE DeleteMemberByName(
         /* [in] */ BSTR bstr,
-        /* [in] */ DWORD grfdex) override;
+        /* [in] */ DWORD grfdex);
 
     virtual HRESULT STDMETHODCALLTYPE DeleteMemberByDispID(
-        /* [in] */ DISPID id) override;
+        /* [in] */ DISPID id);
 
     virtual HRESULT STDMETHODCALLTYPE GetMemberProperties(
         /* [in] */ DISPID id,
         /* [in] */ DWORD grfdexFetch,
-        /* [out] */ DWORD __RPC_FAR *pgrfdex) override;
+        /* [out] */ DWORD __RPC_FAR *pgrfdex);
 
     virtual HRESULT STDMETHODCALLTYPE GetMemberName(
         /* [in] */ DISPID id,
-        /* [out] */ BSTR __RPC_FAR *pbstrName) override;
+        /* [out] */ BSTR __RPC_FAR *pbstrName);
 
     virtual HRESULT STDMETHODCALLTYPE GetNextDispID(
         /* [in] */ DWORD grfdex,
         /* [in] */ DISPID id,
-        /* [out] */ DISPID __RPC_FAR *pid) override;
+        /* [out] */ DISPID __RPC_FAR *pid);
 
     virtual HRESULT STDMETHODCALLTYPE GetNameSpaceParent(
-        /* [out] */ IUnknown __RPC_FAR *__RPC_FAR *ppunk) override;
+        /* [out] */ IUnknown __RPC_FAR *__RPC_FAR *ppunk);
 
     // XBridgeSupplier2 ---------------------------------------------------
     virtual Any SAL_CALL createBridge(const Any& modelDepObject,
                                 const Sequence<sal_Int8>& ProcessId,
                                 sal_Int16 sourceModelType,
-                                sal_Int16 destModelType) override;
+                                sal_Int16 destModelType)
+            throw (IllegalArgumentException, RuntimeException);
 
     //XInitialization -----------------------------------------------------
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException);
 
     // IUnoObjectWrapper
-    STDMETHOD( getWrapperXInterface)( Reference<XInterface>* pXInt) override;
-    STDMETHOD( getOriginalUnoObject)( Reference<XInterface>* pXInt) override;
-    STDMETHOD( getOriginalUnoStruct)( Any * pStruct) override;
+    STDMETHOD( getWrapperXInterface)( Reference<XInterface>* pXInt);
+    STDMETHOD( getOriginalUnoObject)( Reference<XInterface>* pXInt);
+    STDMETHOD( getOriginalUnoStruct)( Any * pStruct);
 
     // UnoConversionUtility
-    virtual Reference< XInterface > createUnoWrapperInstance() override;
-    virtual Reference< XInterface > createComWrapperInstance() override;
+    virtual Reference< XInterface > createUnoWrapperInstance();
+    virtual Reference< XInterface > createComWrapperInstance();
 
 
 protected:
@@ -193,16 +194,16 @@ protected:
                                         EXCEPINFO * pexcepinfo, OUString & name );
 
     virtual HRESULT doSetProperty( DISPPARAMS * pdispparams, VARIANT * pvarResult,
-                                        EXCEPINFO * pexcepinfo, unsigned int * puArgErr, OUString & name, Sequence<Any> const & params);
+                                        EXCEPINFO * pexcepinfo, unsigned int * puArgErr, OUString & name, Sequence<Any> params);
 
     virtual HRESULT InvokeGeneral( DISPID dispidMember, unsigned short wFlags,
                          DISPPARAMS * pdispparams, VARIANT * pvarResult, EXCEPINFO * pexcepinfo,
-                         unsigned int * puArgErr, bool& bHandled);
+                         unsigned int * puArgErr, sal_Bool& bHandled);
 
     void convertDispparamsArgs( DISPID id, unsigned short wFlags, DISPPARAMS* pdispparams,
                             Sequence<Any>& rSeq);
 
-    bool getInvocationInfoForCall(DISPID id, InvocationInfo& info);
+    sal_Bool getInvocationInfoForCall(DISPID id, InvocationInfo& info);
 
     Reference<XInvocation>                  m_xInvocation;
     Reference<XExactName>                   m_xExactName;
@@ -238,23 +239,23 @@ class UnoObjectWrapperRemoteOpt: public InterfaceOleWrapper_Impl
 {
 public:
     UnoObjectWrapperRemoteOpt( Reference<XMultiServiceFactory>& aFactory, sal_uInt8 unoWrapperClass, sal_uInt8 comWrapperClass);
-    ~UnoObjectWrapperRemoteOpt() override;
+    ~UnoObjectWrapperRemoteOpt();
 
     STDMETHOD( GetIDsOfNames )( REFIID riid, OLECHAR ** rgszNames, unsigned int cNames,
-                                LCID lcid, DISPID * rgdispid ) override;
+                                LCID lcid, DISPID * rgdispid );
     STDMETHOD( Invoke )( DISPID dispidMember, REFIID riid, LCID lcid, unsigned short wFlags,
                          DISPPARAMS * pdispparams, VARIANT * pvarResult, EXCEPINFO * pexcepinfo,
-                         unsigned int * puArgErr ) override;
+                         unsigned int * puArgErr );
 
     // UnoConversionUtility
     // If UNO interfaces are converted in methods of this class then
     // they are always wrapped with instances of this class
-    virtual Reference< XInterface > createUnoWrapperInstance() override;
+    virtual Reference< XInterface > createUnoWrapperInstance();
 
 protected:
 
-    static HRESULT methodInvoke( DISPID dispidMember, DISPPARAMS * pdispparams, VARIANT * pvarResult,
-                              EXCEPINFO * pexcepinfo, unsigned int * puArgErr, Sequence<Any> const & params);
+        HRESULT methodInvoke( DISPID dispidMember, DISPPARAMS * pdispparams, VARIANT * pvarResult,
+                              EXCEPINFO * pexcepinfo, unsigned int * puArgErr, Sequence<Any> params);
     // In GetIDsOfNames are blindly passed out, that is without verifying
     // the name. If two names are passed in during different calls to
     // GetIDsOfNames and the names differ only in their cases then different

@@ -24,7 +24,6 @@
 #include "impfontmetric.hxx"
 #include "impfontmetricdata.hxx"
 #include "PhysicalFontFace.hxx"
-#include "sft.hxx"
 
 #include <vector>
 #include <set>
@@ -36,30 +35,28 @@ using namespace ::rtl;
 using namespace ::utl;
 
 FontMetric::FontMetric()
-:   mxImplMetric( new ImplFontMetric() )
+:   mpImplMetric( new ImplFontMetric() )
 {}
 
 FontMetric::FontMetric( const FontMetric& rFontMetric )
     : Font( rFontMetric )
-    , mxImplMetric( rFontMetric.mxImplMetric )
+    , mpImplMetric( rFontMetric.mpImplMetric )
 {}
 
 FontMetric::~FontMetric()
 {
-    mxImplMetric = nullptr;
+    mpImplMetric = nullptr;
 }
 
-FontMetric& FontMetric::operator=(const FontMetric& rFontMetric)
+FontMetric& FontMetric::operator=( const FontMetric& rFontMetric )
 {
-    Font::operator=(rFontMetric);
-    mxImplMetric = rFontMetric.mxImplMetric;
-    return *this;
-}
+    Font::operator=( rFontMetric );
 
-FontMetric& FontMetric::operator=(FontMetric&& rFontMetric)
-{
-    Font::operator=(std::move(rFontMetric));
-    mxImplMetric = std::move(rFontMetric.mxImplMetric);
+    if( mpImplMetric != rFontMetric.mpImplMetric )
+    {
+        mpImplMetric = rFontMetric.mpImplMetric;
+    }
+
     return *this;
 }
 
@@ -67,91 +64,116 @@ bool FontMetric::operator==( const FontMetric& rFontMetric ) const
 {
     if( !Font::operator==( rFontMetric ) )
         return false;
-    if( mxImplMetric == rFontMetric.mxImplMetric )
+    if( mpImplMetric == rFontMetric.mpImplMetric )
         return true;
-    if( *mxImplMetric == *rFontMetric.mxImplMetric  )
+    if( *mpImplMetric == *rFontMetric.mpImplMetric  )
         return true;
     return false;
 }
 
+FontType FontMetric::GetType() const
+{
+    return (mpImplMetric->IsScalable() ? TYPE_SCALABLE : TYPE_RASTER);
+}
+
 long FontMetric::GetAscent() const
 {
-    return mxImplMetric->GetAscent();
+    return mpImplMetric->GetAscent();
 }
 
 void FontMetric::SetAscent( long nAscent )
 {
-    mxImplMetric->SetAscent( nAscent );
+    mpImplMetric->SetAscent( nAscent );
 }
 
 long FontMetric::GetDescent() const
 {
-    return mxImplMetric->GetDescent();
+    return mpImplMetric->GetDescent();
 }
 
 void FontMetric::SetDescent( long nDescent )
 {
-    mxImplMetric->SetDescent( nDescent );
+    mpImplMetric->SetDescent( nDescent );
 }
 
 long FontMetric::GetInternalLeading() const
 {
-    return mxImplMetric->GetInternalLeading();
+    return mpImplMetric->GetInternalLeading();
 }
 
 void FontMetric::SetInternalLeading( long nLeading )
 {
-    mxImplMetric->SetInternalLeading( nLeading );
+    mpImplMetric->SetInternalLeading( nLeading );
 }
 
 long FontMetric::GetExternalLeading() const
 {
-    return mxImplMetric->GetExternalLeading();
+    return mpImplMetric->GetExternalLeading();
 }
 
 void FontMetric::SetExternalLeading( long nLeading )
 {
-    mxImplMetric->SetExternalLeading( nLeading );
+    mpImplMetric->SetExternalLeading( nLeading );
 }
 
 long FontMetric::GetLineHeight() const
 {
-    return mxImplMetric->GetLineHeight();
+    return mpImplMetric->GetLineHeight();
 }
 
 void FontMetric::SetLineHeight( long nHeight )
 {
-    mxImplMetric->SetLineHeight( nHeight );
+    mpImplMetric->SetLineHeight( nHeight );
 }
 
 long FontMetric::GetSlant() const
 {
-    return mxImplMetric->GetSlant();
+    return mpImplMetric->GetSlant();
 }
 
 void FontMetric::SetSlant( long nSlant )
 {
-    mxImplMetric->SetSlant( nSlant );
+    mpImplMetric->SetSlant( nSlant );
 }
 
 long FontMetric::GetBulletOffset() const
 {
-    return mxImplMetric->GetBulletOffset();
+    return mpImplMetric->GetBulletOffset();
 }
 
 void FontMetric::SetBulletOffset( long nOffset )
 {
-    mxImplMetric->SetBulletOffset( nOffset );
+    mpImplMetric->SetBulletOffset( nOffset );
+}
+
+bool FontMetric::IsScalable() const
+{
+    return mpImplMetric->IsScalable();
+}
+
+void FontMetric::SetScalableFlag(bool bScalable)
+{
+    mpImplMetric->SetScalableFlag( bScalable );
 }
 
 bool FontMetric::IsFullstopCentered() const
 {
-    return mxImplMetric->IsFullstopCentered();
+    return mpImplMetric->IsFullstopCentered();
 }
 
 void FontMetric::SetFullstopCenteredFlag(bool bScalable)
 {
-    mxImplMetric->SetFullstopCenteredFlag( bScalable );
+    mpImplMetric->SetFullstopCenteredFlag( bScalable );
+}
+
+bool FontMetric::IsBuiltInFont() const
+{
+    return mpImplMetric->IsBuiltInFont();
+}
+
+void FontMetric::SetBuiltInFontFlag( bool bIsBuiltInFont )
+{
+    mpImplMetric->SetBuiltInFontFlag( bIsBuiltInFont );
 }
 
 
@@ -163,12 +185,17 @@ ImplFontMetric::ImplFontMetric()
     mnLineHeight( 0 ),
     mnSlant( 0 ),
     mnBulletOffset( 0 ),
-    mbFullstopCentered( false )
+    mnRefCount( 0 ),
+    mbScalableFont( false ),
+    mbFullstopCentered( false ),
+    mbDevice( false )
 {}
 
 bool ImplFontMetric::operator==( const ImplFontMetric& r ) const
 {
-    if (mbFullstopCentered != r.mbFullstopCentered)
+    if(    mbScalableFont     != r.mbScalableFont
+        || mbFullstopCentered != r.mbFullstopCentered
+        || mbDevice           != r.mbDevice) // mbDevice == built-in font flag
         return false;
     if( mnAscent     != r.mnAscent )
         return false;
@@ -186,7 +213,7 @@ bool ImplFontMetric::operator==( const ImplFontMetric& r ) const
 
 ImplFontMetricData::ImplFontMetricData( const FontSelectPattern& rFontSelData )
     : FontAttributes( rFontSelData )
-    , mnHeight ( rFontSelData.mnHeight )
+    , mnRefCount ( 0 )
     , mnWidth ( rFontSelData.mnWidth )
     , mnOrientation( (short)(rFontSelData.mnOrientation) )
     , mnAscent( 0 )
@@ -195,6 +222,9 @@ ImplFontMetricData::ImplFontMetricData( const FontSelectPattern& rFontSelData )
     , mnExtLeading( 0 )
     , mnSlant( 0 )
     , mnMinKashida( 0 )
+    , mbScalableFont( false )
+    , mbTrueTypeFont( false )
+    , mbKernableFont( false )
     , mbFullstopCentered( false )
     , mnBulletOffset( 0 )
     , mnUnderlineSize( 0 )
@@ -223,17 +253,21 @@ ImplFontMetricData::ImplFontMetricData( const FontSelectPattern& rFontSelData )
     , mnDStrikeoutOffset1( 0 )
     , mnDStrikeoutOffset2( 0 )
 {
-    // initialize the used font name
+    // intialize the used font name
     if( rFontSelData.mpFontData )
     {
         SetFamilyName( rFontSelData.mpFontData->GetFamilyName() );
         SetStyleName( rFontSelData.mpFontData->GetStyleName() );
+        SetBuiltInFontFlag( rFontSelData.mpFontData->IsBuiltInFont() );
+        SetKernableFlag( true );
     }
     else
     {
         sal_Int32 nTokenPos = 0;
         SetFamilyName( GetNextFontToken( rFontSelData.GetFamilyName(), nTokenPos ) );
         SetStyleName( rFontSelData.GetStyleName() );
+        SetBuiltInFontFlag( false );
+        SetKernableFlag( false );
     }
 }
 
@@ -325,7 +359,7 @@ void ImplFontMetricData::ImplInitTextLineSize( const OutputDevice* pDev )
     if (MsLangId::isCJK(rFont.GetLanguage()))
     {
         const OUString sFullstop( sal_Unicode( 0x3001 ) ); // Fullwidth fullstop
-        tools::Rectangle aRect;
+        Rectangle aRect;
         pDev->GetTextBoundRect( aRect, sFullstop );
         const sal_uInt16 nH = rFont.GetFontSize().Height();
         const sal_uInt16 nB = aRect.Left();
@@ -388,76 +422,6 @@ void ImplFontMetricData::ImplInitAboveTextLineSize()
         mnAboveWUnderlineSize = ((nWCalcSize*50)+50) / 100;
 
     mnAboveWUnderlineOffset = nCeiling + (nIntLeading + 1) / 2;
-}
-
-/*
- * Calculate line spacing:
- *
- * - hhea metrics should be used, since hhea is a mandatory font table and
- *   should always be present.
- * - But if OS/2 is present, it should be used since it is mandatory in
- *   Windows.
- *   OS/2 has Typo and Win metrics, but the later was meant to control
- *   text clipping not line spacing and can be ridiculously large.
- *   Unfortunately many Windows application incorrectly use the Win metrics
- *   (thanks to GDI’s TEXTMETRIC) and old fonts might be designed with this
- *   in mind, so OpenType introduced a flag for fonts to indicate that they
- *   really want to use Typo metrics. So for best backward compatibility:
- *   - Use Win metrics if available.
- *   - Unless USE_TYPO_METRICS flag is set, in which case use Typo metrics.
-*/
-void ImplFontMetricData::ImplCalcLineSpacing(const std::vector<uint8_t>& rHheaData,
-        const std::vector<uint8_t>& rOS2Data, int nUPEM)
-{
-    mnAscent = mnDescent = mnExtLeading = mnIntLeading = 0;
-
-    double fScale = static_cast<double>(mnHeight) / nUPEM;
-
-    vcl::TTGlobalFontInfo rInfo;
-    memset(&rInfo, 0, sizeof(vcl::TTGlobalFontInfo));
-    GetTTFontMterics(rHheaData, rOS2Data, &rInfo);
-
-    // Try hhea table first.
-    if (rInfo.ascender || rInfo.descender)
-    {
-        mnAscent     =  rInfo.ascender  * fScale;
-        mnDescent    = -rInfo.descender * fScale;
-        mnExtLeading =  rInfo.linegap   * fScale;
-    }
-
-    // But if OS/2 is present, prefer it.
-    if (rInfo.winAscent || rInfo.winDescent || rInfo.typoAscender || rInfo.typoDescender)
-    {
-        if (mnAscent == 0 && mnDescent == 0)
-        {
-            mnAscent     = rInfo.winAscent  * fScale;
-            mnDescent    = rInfo.winDescent * fScale;
-            mnExtLeading = 0;
-        }
-
-        const uint16_t kUseTypoMetricsMask = 1 << 7;
-        if (rInfo.fsSelection & kUseTypoMetricsMask)
-        {
-            mnAscent     =  rInfo.typoAscender  * fScale;
-            mnDescent    = -rInfo.typoDescender * fScale;
-            mnExtLeading =  rInfo.typoLineGap   * fScale;
-        }
-    }
-
-    if (mnAscent || mnDescent)
-        mnIntLeading = mnAscent + mnDescent - mnHeight;
-
-    SAL_INFO("vcl.gdi.fontmetric",
-                  "fsSelection: "   << rInfo.fsSelection
-             << ", typoAscender: "  << rInfo.typoAscender
-             << ", typoDescender: " << rInfo.typoDescender
-             << ", typoLineGap: "   << rInfo.typoLineGap
-             << ", winAscent: "     << rInfo.winAscent
-             << ", winDescent: "    << rInfo.winDescent
-             << ", ascender: "      << rInfo.ascender
-             << ", descender: "     << rInfo.descender
-             << ", linegap: "       << rInfo.linegap
-             );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

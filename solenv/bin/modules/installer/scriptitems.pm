@@ -632,8 +632,8 @@ sub replace_setup_variables
 
     my $productname = $hashref->{'PRODUCTNAME'};
     my $productversion = $hashref->{'PRODUCTVERSION'};
-    my $libo_version_major = "";
-    if ( $hashref->{'LIBO_VERSION_MAJOR'} ) { $libo_version_major = $hashref->{'LIBO_VERSION_MAJOR'}; }
+    my $userdirproductversion = "";
+    if ( $hashref->{'USERDIRPRODUCTVERSION'} ) { $userdirproductversion = $hashref->{'USERDIRPRODUCTVERSION'}; }
     my $productkey = $productname . " " . $productversion;
 
     # string $buildid, which is used to replace the setup variable <buildid>
@@ -653,7 +653,7 @@ sub replace_setup_variables
 
     if ( $localminor =~ /^\s*\w(\d+)\w*\s*$/ ) { $localminor = $1; }
 
-    my $updateid = $productname . "_" . $libo_version_major . "_" . $$languagestringref;
+    my $updateid = $productname . "_" . $userdirproductversion . "_" . $$languagestringref;
     $updateid =~ s/ /_/g;
 
     for ( my $i = 0; $i <= $#{$itemsarrayref}; $i++ )
@@ -1595,7 +1595,6 @@ sub collect_directories_from_filesarray
                 $directoryhash{'specificlanguage'} = $onefile->{'specificlanguage'};
                 $directoryhash{'Dir'} = $onefile->{'Dir'};
                 $directoryhash{'modules'} = $onefile->{'modules'}; # NEW, saving modules
-                $directoryhash{'gid'} = $onefile->{'gid'};
 
                 $predefinedprogdir_added ||= $onefile->{'Dir'} eq "PREDEFINED_PROGDIR";
 
@@ -1605,15 +1604,6 @@ sub collect_directories_from_filesarray
             {
                 # Adding the modules to the module list!
                 $alldirectoryhash{$destinationpath}->{'modules'} .= "," . $onefile->{'modules'};
-                # Save file's gid iff this directory appears in only a single
-                # file's FILELIST (so that unused directories will be filtered
-                # out in remove_not_required_spellcheckerlanguage_files, based
-                # on gid):
-                if ($alldirectoryhash{$destinationpath}->{'gid'}
-                    ne $onefile->{'gid'})
-                {
-                    $alldirectoryhash{$destinationpath}->{'gid'} = '';
-                }
             }
         } while ($destinationpath =~ s/(^.*\S)\Q$installer::globals::separator\E(\S.*?)\s*$/$1/);  # as long as the path contains slashes
     }

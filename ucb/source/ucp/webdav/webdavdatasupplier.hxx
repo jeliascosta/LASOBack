@@ -21,9 +21,6 @@
 #ifndef INCLUDED_UCB_SOURCE_UCP_WEBDAV_WEBDAVDATASUPPLIER_HXX
 #define INCLUDED_UCB_SOURCE_UCP_WEBDAV_WEBDAVDATASUPPLIER_HXX
 
-#include <sal/config.h>
-
-#include <memory>
 #include <vector>
 #include <rtl/ref.hxx>
 #include <ucbhelper/resultset.hxx>
@@ -37,7 +34,7 @@ class ContentProperties;
 
 class DataSupplier : public ucbhelper::ResultSetDataSupplier
 {
-    std::unique_ptr<DataSupplier_Impl> m_pImpl;
+    DataSupplier_Impl* m_pImpl;
 
 private:
     bool getData();
@@ -47,7 +44,7 @@ public:
               const rtl::Reference< Content >& rContent,
               sal_Int32 nOpenMode);
 
-    virtual ~DataSupplier() override;
+    virtual ~DataSupplier();
 
     virtual OUString queryContentIdentifierString( sal_uInt32 nIndex ) override;
     virtual css::uno::Reference< css::ucb::XContentIdentifier >
@@ -67,7 +64,8 @@ public:
 
     virtual void close() override;
 
-    virtual void validate() override;
+    virtual void validate()
+        throw( css::ucb::ResultSetException ) override;
 };
 
 }

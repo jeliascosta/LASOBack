@@ -31,7 +31,6 @@
 #include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ucb/UnsupportedDataSinkException.hpp>
 #include <com/sun/star/ucb/InteractiveIOException.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XActiveDataStreamer.hpp>
 #include <com/sun/star/io/TempFile.hpp>
 #include <com/sun/star/ucb/DocumentHeaderField.hpp>
@@ -80,16 +79,16 @@ public:
     {}
 
     // XActiveDataControl.
-    virtual void SAL_CALL   addListener ( const Reference<XStreamListener> &/*rxListener*/) override {}
-    virtual void SAL_CALL   removeListener ( const Reference<XStreamListener> &/*rxListener*/) override {}
-    virtual void SAL_CALL   start() override {}
-    virtual void SAL_CALL   terminate() override
+    virtual void SAL_CALL   addListener ( const Reference<XStreamListener> &/*rxListener*/) throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   removeListener ( const Reference<XStreamListener> &/*rxListener*/) throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   start() throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   terminate() throw(RuntimeException, std::exception) override
                             { m_xLockBytes->terminate_Impl(); }
 
     // XActiveDataSink.
-    virtual void SAL_CALL   setInputStream ( const Reference<XInputStream> &rxInputStream) override
+    virtual void SAL_CALL   setInputStream ( const Reference<XInputStream> &rxInputStream) throw(RuntimeException, std::exception) override
                             { m_xLockBytes->setInputStream_Impl (rxInputStream); }
-    virtual Reference<XInputStream> SAL_CALL getInputStream() override
+    virtual Reference<XInputStream> SAL_CALL getInputStream() throw(RuntimeException, std::exception) override
                             { return m_xLockBytes->getInputStream_Impl(); }
 };
 
@@ -107,16 +106,16 @@ public:
     {}
 
     // XActiveDataControl.
-    virtual void SAL_CALL   addListener ( const Reference<XStreamListener> &/*rxListener*/) override {}
-    virtual void SAL_CALL   removeListener ( const Reference<XStreamListener> &/*rxListener*/) override {}
-    virtual void SAL_CALL   start() override {}
-    virtual void SAL_CALL   terminate() override
+    virtual void SAL_CALL   addListener ( const Reference<XStreamListener> &/*rxListener*/) throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   removeListener ( const Reference<XStreamListener> &/*rxListener*/) throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   start() throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   terminate() throw(RuntimeException, std::exception) override
                             { m_xLockBytes->terminate_Impl(); }
 
     // XActiveDataStreamer
-    virtual void SAL_CALL   setStream( const Reference< XStream >& aStream ) override
+    virtual void SAL_CALL   setStream( const Reference< XStream >& aStream ) throw(RuntimeException, std::exception) override
                             { m_xStream = aStream; m_xLockBytes->setStream_Impl( aStream ); }
-    virtual Reference< XStream > SAL_CALL getStream() override
+    virtual Reference< XStream > SAL_CALL getStream() throw(RuntimeException, std::exception) override
                             { return m_xStream; }
 };
 
@@ -135,10 +134,10 @@ public:
                                 , m_xProgressHandler( rxProgressHandler )
                             {}
 
-    virtual Reference<XInteractionHandler> SAL_CALL getInteractionHandler() override
+    virtual Reference<XInteractionHandler> SAL_CALL getInteractionHandler() throw (RuntimeException, std::exception) override
     { return m_xInteractionHandler; }
 
-    virtual Reference<XProgressHandler> SAL_CALL    getProgressHandler() override
+    virtual Reference<XProgressHandler> SAL_CALL    getProgressHandler() throw (RuntimeException, std::exception) override
     { return m_xProgressHandler; }
 };
 
@@ -150,15 +149,15 @@ class UcbPropertiesChangeListener_Impl : public ::cppu::WeakImplHelper< XPropert
 public:
     UcbLockBytesRef         m_xLockBytes;
 
-    explicit UcbPropertiesChangeListener_Impl( UcbLockBytesRef const & rRef )
+    explicit UcbPropertiesChangeListener_Impl( UcbLockBytesRef rRef )
         : m_xLockBytes( rRef )
     {}
 
-    virtual void SAL_CALL   disposing ( const EventObject &/*rEvent*/) override {}
-    virtual void SAL_CALL   propertiesChange ( const Sequence<PropertyChangeEvent> &rEvent) override;
+    virtual void SAL_CALL   disposing ( const EventObject &/*rEvent*/) throw(RuntimeException, std::exception) override {}
+    virtual void SAL_CALL   propertiesChange ( const Sequence<PropertyChangeEvent> &rEvent) throw(RuntimeException, std::exception) override;
 };
 
-void SAL_CALL UcbPropertiesChangeListener_Impl::propertiesChange ( const Sequence<PropertyChangeEvent> &rEvent)
+void SAL_CALL UcbPropertiesChangeListener_Impl::propertiesChange ( const Sequence<PropertyChangeEvent> &rEvent) throw(RuntimeException, std::exception)
 {
     sal_Int32 i, n = rEvent.getLength();
     for (i = 0; i < n; i++)
@@ -177,7 +176,7 @@ void SAL_CALL UcbPropertiesChangeListener_Impl::propertiesChange ( const Sequenc
 
                     if (aName.compareToIgnoreAsciiCaseAscii("Expires") == 0)
                     {
-                        DateTime aExpires( DateTime::EMPTY );
+                        DateTime aExpires (0, 0);
                         if (INetMIMEMessage::ParseDateField (aValue, aExpires))
                         {
                             aExpires.ConvertToLocalTime();
@@ -220,18 +219,26 @@ class Moderator
     // returns. This would imply that these class must be refcounted!!!
 
 public:
-    /// @throws ContentCreationException
-    /// @throws RuntimeException
     Moderator(
-        Reference < XContent > const & xContent,
-        Reference < XInteractionHandler > const & xInteract,
+        Reference < XContent >& xContent,
+        Reference < XInteractionHandler >& xInteract,
         const Command& rArg
-    );
+    )
+        throw(
+            ContentCreationException,
+            RuntimeException
+        );
 
-    enum class ResultType {
+    virtual ~Moderator();
+
+    enum ResultType {
         NORESULT,
 
         INTERACTIONREQUEST,    // reply expected
+
+        PROGRESSPUSH,
+        PROGRESSUPDATE,
+        PROGRESSPOP,
 
         INPUTSTREAM,
         STREAM,
@@ -257,7 +264,7 @@ public:
 
     protected:
         bool applies() const override {
-            return m_aModerator.m_aResultType != ResultType::NORESULT;
+            return m_aModerator.m_aResultType != NORESULT;
         }
 
     private:
@@ -267,7 +274,7 @@ public:
     struct Result {
         ResultType        type;
         Any               result;
-        IOErrorCode       ioErrorCode;
+        sal_Int32         ioErrorCode;
     };
 
     Result getResult(const sal_uInt32 milliSec);
@@ -275,6 +282,7 @@ public:
     enum ReplyType {
         NOREPLY,
         EXIT,
+        RETRY,
         REQUESTHANDLED
     };
 
@@ -315,7 +323,7 @@ private:
 
     ConditionRes      m_aRes;
     ResultType        m_aResultType;
-    IOErrorCode       m_nIOErrorCode;
+    sal_Int32         m_nIOErrorCode;
     Any               m_aResult;
 
     friend class ConditionRep;
@@ -334,15 +342,22 @@ public:
 
     explicit ModeratorsActiveDataStreamer(Moderator &theModerator);
 
+    virtual ~ModeratorsActiveDataStreamer();
+
     // XActiveDataStreamer
     virtual void SAL_CALL
     setStream(
         const Reference< XStream >& aStream
-    ) override;
+    )
+        throw(
+            RuntimeException, std::exception
+        ) override;
 
     virtual Reference<XStream> SAL_CALL
     getStream (
         void
+    ) throw(
+        RuntimeException, std::exception
     ) override
     {
         osl::MutexGuard aGuard(m_aMutex);
@@ -363,15 +378,22 @@ public:
 
     explicit ModeratorsActiveDataSink(Moderator &theModerator);
 
+    virtual ~ModeratorsActiveDataSink();
+
     // XActiveDataSink.
     virtual void SAL_CALL
     setInputStream (
         const Reference<XInputStream> &rxInputStream
-    ) override;
+    )
+        throw(
+            RuntimeException, std::exception
+        ) override;
 
     virtual Reference<XInputStream> SAL_CALL
     getInputStream (
         void
+    ) throw(
+        RuntimeException, std::exception
     ) override
     {
         osl::MutexGuard aGuard(m_aMutex);
@@ -389,11 +411,18 @@ ModeratorsActiveDataSink::ModeratorsActiveDataSink(Moderator &theModerator)
 {
 }
 
+ModeratorsActiveDataSink::~ModeratorsActiveDataSink()
+{
+}
+
 // XActiveDataSink.
 void SAL_CALL
 ModeratorsActiveDataSink::setInputStream (
     const Reference<XInputStream> &rxInputStream
 )
+    throw(
+        RuntimeException, std::exception
+    )
 {
     m_aModerator.setInputStream(rxInputStream);
     osl::MutexGuard aGuard(m_aMutex);
@@ -407,11 +436,18 @@ ModeratorsActiveDataStreamer::ModeratorsActiveDataStreamer(
 {
 }
 
+ModeratorsActiveDataStreamer::~ModeratorsActiveDataStreamer()
+{
+}
+
 // XActiveDataStreamer.
 void SAL_CALL
 ModeratorsActiveDataStreamer::setStream (
     const Reference<XStream> &rxStream
 )
+    throw(
+        RuntimeException, std::exception
+    )
 {
     m_aModerator.setStream(rxStream);
     osl::MutexGuard aGuard(m_aMutex);
@@ -425,8 +461,11 @@ public:
 
     explicit ModeratorsInteractionHandler(Moderator &theModerator);
 
+    virtual ~ModeratorsInteractionHandler();
+
     virtual void SAL_CALL
-    handle( const Reference<XInteractionRequest >& Request ) override;
+    handle( const Reference<XInteractionRequest >& Request )
+        throw (RuntimeException, std::exception) override;
 
 private:
 
@@ -439,25 +478,36 @@ ModeratorsInteractionHandler::ModeratorsInteractionHandler(
 {
 }
 
+ModeratorsInteractionHandler::~ModeratorsInteractionHandler()
+{
+}
+
 void SAL_CALL
 ModeratorsInteractionHandler::handle(
     const Reference<XInteractionRequest >& Request
 )
+    throw (
+        RuntimeException, std::exception
+    )
 {
     // wakes up the mainthread
     m_aModerator.handle(Request);
 }
 
 Moderator::Moderator(
-    Reference < XContent > const & xContent,
-    Reference < XInteractionHandler > const & xInteract,
+    Reference < XContent >& xContent,
+    Reference < XInteractionHandler >& xInteract,
     const Command& rArg
 )
+    throw(
+        css::ucb::ContentCreationException,
+        css::uno::RuntimeException
+    )
     : m_aMutex(),
 
       m_aRes(m_aMutex,*this),
-      m_aResultType(ResultType::NORESULT),
-      m_nIOErrorCode(IOErrorCode_ABORT),
+      m_aResultType(NORESULT),
+      m_nIOErrorCode(0),
       m_aResult(),
 
       m_aRep(m_aMutex,*this),
@@ -506,6 +556,10 @@ Moderator::Moderator(
         m_aArg.Argument <<= aOpenArg;
 }
 
+Moderator::~Moderator()
+{
+}
+
 Moderator::Result Moderator::getResult(const sal_uInt32 milliSec)
 {
     Result ret;
@@ -516,11 +570,11 @@ Moderator::Result Moderator::getResult(const sal_uInt32 milliSec)
         ret.ioErrorCode = m_nIOErrorCode;
 
         // reset
-        m_aResultType = ResultType::NORESULT;
+        m_aResultType = NORESULT;
     }
     catch (const salhelper::ConditionWaiter::timedout&)
     {
-        ret.type = ResultType::TIMEDOUT;
+        ret.type = TIMEDOUT;
     }
 
     return ret;
@@ -539,7 +593,7 @@ void Moderator::handle( const Reference<XInteractionRequest >& Request )
     do {
         {
             salhelper::ConditionModifier aMod(m_aRes);
-            m_aResultType = ResultType::INTERACTIONREQUEST;
+            m_aResultType = INTERACTIONREQUEST;
             m_aResult <<= Request;
         }
 
@@ -561,7 +615,7 @@ void Moderator::handle( const Reference<XInteractionRequest >& Request )
                 }
             }
 
-            // resignal the exit condition
+            // resignal the exitcondition
             setReply(EXIT);
             break;
         }
@@ -572,7 +626,7 @@ void Moderator::setStream(const Reference< XStream >& aStream)
 {
     {
         salhelper::ConditionModifier aMod(m_aRes);
-        m_aResultType = ResultType::STREAM;
+        m_aResultType = STREAM;
         m_aResult <<= aStream;
     }
     ReplyType aReplyType;
@@ -589,7 +643,7 @@ void Moderator::setInputStream(const Reference<XInputStream> &rxInputStream)
 {
     {
         salhelper::ConditionModifier aMod(m_aRes);
-        m_aResultType = ResultType::INPUTSTREAM;
+        m_aResultType = INPUTSTREAM;
         m_aResult <<= rxInputStream;
     }
     ReplyType aReplyType;
@@ -606,35 +660,35 @@ void SAL_CALL Moderator::run()
 {
     osl_setThreadName("utl::Moderator");
 
-    ResultType  aResultType;
-    Any         aResult;
-    IOErrorCode nIOErrorCode = IOErrorCode_ABORT;
+    ResultType aResultType;
+    Any        aResult;
+    sal_Int32  nIOErrorCode = 0;
 
     try
     {
         aResult = m_aContent.executeCommand(m_aArg.Name,m_aArg.Argument);
-        aResultType = ResultType::RESULT;
+        aResultType = RESULT;
     }
     catch (const CommandAbortedException&)
     {
-        aResultType = ResultType::COMMANDABORTED;
+        aResultType = COMMANDABORTED;
     }
     catch (const CommandFailedException&)
     {
-        aResultType = ResultType::COMMANDFAILED;
+        aResultType = COMMANDFAILED;
     }
     catch (const InteractiveIOException& r)
     {
         nIOErrorCode = r.Code;
-        aResultType = ResultType::INTERACTIVEIO;
+        aResultType = INTERACTIVEIO;
     }
     catch (const UnsupportedDataSinkException &)
     {
-        aResultType = ResultType::UNSUPPORTED;
+        aResultType = UNSUPPORTED;
     }
     catch (const Exception&)
     {
-        aResultType = ResultType::GENERAL;
+        aResultType = GENERAL;
     }
 
     {
@@ -666,10 +720,10 @@ static bool UCBOpenContentSync_(
 
 static bool UCBOpenContentSync(
     const UcbLockBytesRef& xLockBytes,
-    Reference < XContent > const & xContent,
+    Reference < XContent > xContent,
     const Command& rArg,
     const Reference < XInterface >& xSink,
-    Reference < XInteractionHandler > const & xInteract )
+    Reference < XInteractionHandler > xInteract )
 {
     // http protocol must be handled in a special way:
     //        during the opening process the input stream may change
@@ -731,7 +785,22 @@ static bool UCBOpenContentSync(
         res = pMod->getResult(nTimeout);
 
         switch(res.type) {
-        case Moderator::ResultType::STREAM:
+        case Moderator::PROGRESSPUSH:
+            {
+                pMod->setReply(Moderator::REQUESTHANDLED);
+                break;
+            }
+        case Moderator::PROGRESSUPDATE:
+            {
+                pMod->setReply(Moderator::REQUESTHANDLED);
+                break;
+            }
+        case Moderator::PROGRESSPOP:
+            {
+                pMod->setReply(Moderator::REQUESTHANDLED);
+                break;
+            }
+        case Moderator::STREAM:
             {
                 Reference<XStream> result;
                 if(res.result >>= result) {
@@ -745,7 +814,7 @@ static bool UCBOpenContentSync(
                 pMod->setReply(Moderator::REQUESTHANDLED);
                 break;
             }
-        case Moderator::ResultType::INPUTSTREAM:
+        case Moderator::INPUTSTREAM:
             {
                 Reference<XInputStream> result;
                 res.result >>= result;
@@ -758,7 +827,7 @@ static bool UCBOpenContentSync(
                 pMod->setReply(Moderator::REQUESTHANDLED);
                 break;
             }
-        case Moderator::ResultType::TIMEDOUT:
+        case Moderator::TIMEDOUT:
             {
                 Reference<XInteractionRetry> xRet;
                 if(xInteract.is()) {
@@ -800,7 +869,7 @@ static bool UCBOpenContentSync(
 
                 break;
             }
-        case Moderator::ResultType::INTERACTIONREQUEST:
+        case Moderator::INTERACTIONREQUEST:
             {
                 Reference<XInteractionRequest> Request;
                 res.result >>= Request;
@@ -808,25 +877,25 @@ static bool UCBOpenContentSync(
                 pMod->setReply(Moderator::REQUESTHANDLED);
                 break;
             }
-        case Moderator::ResultType::RESULT:
+        case Moderator::RESULT:
             {
                 bResultAchieved = true;
                 aResult = res.result;
                 break;
             }
-        case Moderator::ResultType::COMMANDABORTED:
+        case Moderator::COMMANDABORTED:
             {
                 bAborted = true;
                 xLockBytes->SetError( ERRCODE_ABORT );
                 break;
             }
-        case Moderator::ResultType::COMMANDFAILED:
+        case Moderator::COMMANDFAILED:
             {
                 bAborted = true;
                 xLockBytes->SetError( ERRCODE_ABORT );
                 break;
             }
-        case Moderator::ResultType::INTERACTIVEIO:
+        case Moderator::INTERACTIVEIO:
             {
                 bException = true;
                 if ( res.ioErrorCode == IOErrorCode_ACCESS_DENIED ||
@@ -840,7 +909,7 @@ static bool UCBOpenContentSync(
                     xLockBytes->SetError( ERRCODE_IO_GENERAL );
                 break;
             }
-        case Moderator::ResultType::UNSUPPORTED:
+        case Moderator::UNSUPPORTED:
             {
                 bException = true;
                 xLockBytes->SetError( ERRCODE_IO_NOTSUPPORTED );
@@ -980,7 +1049,7 @@ UcbLockBytes::UcbLockBytes()
     , m_bDontClose( false )
     , m_bStreamValid  (false)
 {
-    SetSynchronMode();
+    SetSynchronMode( true );
 }
 
 UcbLockBytes::~UcbLockBytes()
@@ -1099,8 +1168,13 @@ void UcbLockBytes::terminate_Impl()
     }
 }
 
+void UcbLockBytes::SetSynchronMode (bool bSynchron)
+{
+    SvLockBytes::SetSynchronMode (bSynchron);
+}
+
 ErrCode UcbLockBytes::ReadAt(sal_uInt64 const nPos,
-        void *pBuffer, std::size_t nCount, std::size_t *pRead) const
+        void *pBuffer, sal_uLong nCount, sal_uLong *pRead) const
 {
     if ( IsSynchronMode() )
     {
@@ -1162,13 +1236,13 @@ ErrCode UcbLockBytes::ReadAt(sal_uInt64 const nPos,
 
     memcpy (pBuffer, aData.getConstArray(), nSize);
     if (pRead)
-        *pRead = static_cast<std::size_t>(nSize);
+        *pRead = sal_uLong(nSize);
 
     return ERRCODE_NONE;
 }
 
 ErrCode UcbLockBytes::WriteAt(sal_uInt64 const nPos, const void *pBuffer,
-        std::size_t nCount, std::size_t *pWritten)
+        sal_uLong nCount, sal_uLong *pWritten)
 {
     if ( pWritten )
         *pWritten = 0;
@@ -1228,7 +1302,7 @@ ErrCode UcbLockBytes::SetSize (sal_uInt64 const nNewSize)
 {
     SvLockBytesStat aStat;
     Stat( &aStat, (SvLockBytesStatFlag) 0 );
-    std::size_t nSize = aStat.nSize;
+    sal_uLong nSize = aStat.nSize;
 
     if ( nSize > nNewSize )
     {
@@ -1239,13 +1313,13 @@ ErrCode UcbLockBytes::SetSize (sal_uInt64 const nNewSize)
             nSize = 0;
         }
         else {
-            SAL_INFO("unotools.ucbhelper", "Not truncable!");
+            SAL_INFO("unotools.ucbhelper", "Not truncatable!");
         }
     }
 
     if ( nSize < nNewSize )
     {
-        std::size_t nDiff = nNewSize-nSize, nCount=0;
+        sal_uLong nDiff = nNewSize-nSize, nCount=0;
         sal_uInt8* pBuffer = new sal_uInt8[ nDiff ];
         memset(pBuffer, 0, nDiff); // initialize for enhanced security
         WriteAt( nSize, pBuffer, nDiff, &nCount );
@@ -1324,12 +1398,12 @@ UcbLockBytesRef UcbLockBytes::CreateLockBytes( const Reference < XContent >& xCo
         return nullptr;
 
     UcbLockBytesRef xLockBytes = new UcbLockBytes;
-    xLockBytes->SetSynchronMode();
+    xLockBytes->SetSynchronMode( true );
     Reference< XActiveDataControl > xSink;
     if ( eOpenMode & StreamMode::WRITE )
-        xSink = static_cast<XActiveDataControl*>(new UcbStreamer_Impl( xLockBytes.get() ));
+        xSink = static_cast<XActiveDataControl*>(new UcbStreamer_Impl( xLockBytes ));
     else
-        xSink = static_cast<XActiveDataControl*>(new UcbDataSink_Impl( xLockBytes.get() ));
+        xSink = static_cast<XActiveDataControl*>(new UcbDataSink_Impl( xLockBytes ));
 
     if ( rProps.getLength() )
     {

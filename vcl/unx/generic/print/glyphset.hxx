@@ -41,25 +41,53 @@ class GlyphSet
 private:
 
     sal_Int32           mnFontID;
-    bool                mbVertical;
-    OString             maBaseName;
+    bool            mbVertical;
+    OString        maBaseName;
+    fonttype::type      meBaseType;
     rtl_TextEncoding    mnBaseEncoding;
+    bool                mbUseFontEncoding;
 
+    typedef std::unordered_map< sal_Unicode, sal_uInt8 > char_map_t;
+    typedef std::list< char_map_t > char_list_t;
     typedef std::unordered_map< sal_GlyphId, sal_uInt8 > glyph_map_t;
     typedef std::list< glyph_map_t > glyph_list_t;
 
-    glyph_list_t        maGlyphList;
+    char_list_t     maCharList;
+    glyph_list_t    maGlyphList;
 
-    OString     GetGlyphSetName (sal_Int32 nGlyphSetID);
+    OString    GetGlyphSetName (sal_Int32 nGlyphSetID);
+    OString    GetCharSetName (sal_Int32 nGlyphSetID);
+    sal_Int32       GetGlyphSetEncoding (sal_Int32 nGlyphSetID);
+    OString    GetGlyphSetEncodingName (sal_Int32 nGlyphSetID);
 
-    bool        GetGlyphID (sal_GlyphId nGlyphId,
+    OString    GetReencodedFontName (sal_Int32 nGlyphSetID);
+    void            PSDefineReencodedFont (osl::File* pOutFile,
+                                           sal_Int32 nGlyphSetID);
+
+    bool        GetCharID (sal_Unicode nChar,
+                                unsigned char* nOutGlyphID, sal_Int32* nOutGlyphSetID);
+    bool        LookupCharID (sal_Unicode nChar,
+                                   unsigned char* nOutGlyphID, sal_Int32* nOutGlyphSetID);
+    bool        AddCharID (sal_Unicode nChar,
+                                unsigned char* nOutGlyphID,
+                                sal_Int32* nOutGlyphSetID);
+    bool        GetGlyphID (sal_GlyphId nGlyphId, sal_Unicode nUnicode,
                                 unsigned char* nOutGlyphID, sal_Int32* nOutGlyphSetID);
     bool        LookupGlyphID (sal_GlyphId nGlyphId,
                                    unsigned char* nOutGlyphID, sal_Int32* nOutGlyphSetID);
-    bool        AddGlyphID (sal_GlyphId nGlyphId,
+    bool        AddGlyphID (sal_GlyphId nGlyphId, sal_Unicode nUnicode,
                                 unsigned char* nOutGlyphID,
                                 sal_Int32* nOutGlyphSetID);
+    static void     AddNotdef (char_map_t &rCharMap);
     static void     AddNotdef (glyph_map_t &rGlyphMap);
+    static unsigned char  GetAnsiMapping (sal_Unicode nUnicodeChar);
+    static unsigned char  GetSymbolMapping (sal_Unicode nUnicodeChar);
+
+    void            ImplDrawText (PrinterGfx &rGfx, const Point& rPoint,
+                                  const sal_Unicode* pStr, sal_Int16 nLen);
+    void            ImplDrawText (PrinterGfx &rGfx, const Point& rPoint,
+                                  const sal_Unicode* pStr, sal_Int16 nLen,
+                                  const sal_Int32* pDeltaArray);
 
 public:
 
@@ -67,16 +95,26 @@ public:
     ~GlyphSet ();
 
     sal_Int32       GetFontID () { return mnFontID;}
+    fonttype::type  GetFontType () { return meBaseType;}
     static OString
     GetReencodedFontName (rtl_TextEncoding nEnc,
                           const OString &rFontName);
-
+    static OString
+    GetGlyphSetEncodingName (rtl_TextEncoding nEnc,
+                             const OString &rFontName);
     bool            IsVertical () { return mbVertical;}
 
-    void            DrawGlyph (PrinterGfx& rGfx,
-                               const Point& rPoint,
-                               const sal_GlyphId nGlyphId,
-                               const sal_Int32 nDelta);
+    void            DrawText (PrinterGfx &rGfx, const Point& rPoint,
+                              const sal_Unicode* pStr, sal_Int16 nLen,
+                              const sal_Int32* pDeltaArray = nullptr);
+    void            DrawGlyphs (PrinterGfx& rGfx,
+                                const Point& rPoint,
+                                const sal_GlyphId* pGlyphIds,
+                                const sal_Unicode* pUnicodes,
+                                sal_Int16 nLen,
+                                const sal_Int32* pDeltaArray,
+                                bool bUseGlyphs=true);
+    void        PSUploadEncoding(osl::File* pOutFile, PrinterGfx &rGfx);
     void        PSUploadFont (osl::File& rOutFile, PrinterGfx &rGfx, bool bAsType42, std::list< OString >& rSuppliedFonts );
 };
 

@@ -22,6 +22,9 @@
 #include "infotips.hxx"
 #include "propsheets.hxx"
 #include "columninfo.hxx"
+#ifdef __MINGW32__
+#include <algorithm>
+#endif
 #include "thumbviewer.hxx"
 #include "shlxthdl.hxx"
 
@@ -48,7 +51,7 @@ CClassFactory::~CClassFactory()
 
 HRESULT STDMETHODCALLTYPE CClassFactory::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject)
 {
-    *ppvObject = nullptr;
+    *ppvObject = 0;
 
     if (IID_IUnknown == riid || IID_IClassFactory == riid)
     {
@@ -87,10 +90,10 @@ HRESULT STDMETHODCALLTYPE CClassFactory::CreateInstance(
             REFIID riid,
             void __RPC_FAR *__RPC_FAR *ppvObject)
 {
-    if ((pUnkOuter != nullptr))
+    if ((pUnkOuter != NULL))
         return CLASS_E_NOAGGREGATION;
 
-    IUnknown* pUnk = nullptr;
+    IUnknown* pUnk = 0;
 
     if (CLSID_PROPERTYSHEET_HANDLER == m_Clsid)
         pUnk = static_cast<IShellExtInit*>(new CPropertySheet());
@@ -104,7 +107,7 @@ HRESULT STDMETHODCALLTYPE CClassFactory::CreateInstance(
     else if (CLSID_THUMBVIEWER_HANDLER == m_Clsid)
         pUnk = static_cast<IExtractImage*>(new CThumbviewer());
 
-    if (nullptr == pUnk)
+    if (0 == pUnk)
     {
         return E_OUTOFMEMORY;
     }

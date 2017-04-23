@@ -43,7 +43,8 @@ void lcl_exportPrettyPrinting(const uno::Reference< xml::sax::XDocumentHandler >
     SvtSaveOptions aSaveOpt;
     if ( aSaveOpt.IsPrettyPrinting() )
     {
-        _xDelegatee->ignorableWhitespace(" ");
+        static const char s_sWhitespaces[] = " ";
+        _xDelegatee->ignorableWhitespace(s_sWhitespaces);
     }
 }
 
@@ -75,6 +76,7 @@ ExportDocumentHandler::ExportDocumentHandler(uno::Reference< uno::XComponentCont
     ,m_nColumnCount(0)
     ,m_bTableRowsStarted(false)
     ,m_bFirstRowExported(false)
+    ,m_bExportChar(false)
     ,m_bCountColumnHeader(false)
 {
 }
@@ -88,18 +90,19 @@ ExportDocumentHandler::~ExportDocumentHandler()
     }
 }
 IMPLEMENT_GET_IMPLEMENTATION_ID(ExportDocumentHandler)
+IMPLEMENT_FORWARD_REFCOUNT( ExportDocumentHandler, ExportDocumentHandler_BASE )
 
-OUString SAL_CALL ExportDocumentHandler::getImplementationName(  )
+OUString SAL_CALL ExportDocumentHandler::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL ExportDocumentHandler::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL ExportDocumentHandler::supportsService( const OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-uno::Sequence< OUString > SAL_CALL ExportDocumentHandler::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL ExportDocumentHandler::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aSupported;
     if ( m_xServiceInfo.is() )
@@ -107,13 +110,13 @@ uno::Sequence< OUString > SAL_CALL ExportDocumentHandler::getSupportedServiceNam
     return ::comphelper::concatSequences(getSupportedServiceNames_static(),aSupported);
 }
 
-OUString ExportDocumentHandler::getImplementationName_Static(  )
+OUString ExportDocumentHandler::getImplementationName_Static(  ) throw(uno::RuntimeException)
 {
     return OUString("com.sun.star.comp.report.ExportDocumentHandler");
 }
 
 
-uno::Sequence< OUString > ExportDocumentHandler::getSupportedServiceNames_static(  )
+uno::Sequence< OUString > ExportDocumentHandler::getSupportedServiceNames_static(  ) throw(uno::RuntimeException)
 {
     uno::Sequence< OUString > aSupported { "com.sun.star.report.ExportDocumentHandler" };
     return aSupported;
@@ -125,17 +128,17 @@ uno::Reference< uno::XInterface > SAL_CALL ExportDocumentHandler::create( const 
     return *(new ExportDocumentHandler( _rxContext ));
 }
 // xml::sax::XDocumentHandler:
-void SAL_CALL ExportDocumentHandler::startDocument()
+void SAL_CALL ExportDocumentHandler::startDocument() throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     m_xDelegatee->startDocument();
 }
 
-void SAL_CALL ExportDocumentHandler::endDocument()
+void SAL_CALL ExportDocumentHandler::endDocument() throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     m_xDelegatee->endDocument();
 }
 
-void SAL_CALL ExportDocumentHandler::startElement(const OUString & _sName, const uno::Reference< xml::sax::XAttributeList > & xAttribs)
+void SAL_CALL ExportDocumentHandler::startElement(const OUString & _sName, const uno::Reference< xml::sax::XAttributeList > & xAttribs) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     bool bExport = true;
     if ( _sName == "office:chart" )
@@ -143,7 +146,7 @@ void SAL_CALL ExportDocumentHandler::startElement(const OUString & _sName, const
         SvXMLAttributeList* pList = new SvXMLAttributeList();
         uno::Reference< xml::sax::XAttributeList > xNewAttribs = pList;
         OUStringBuffer sValue;
-        static const SvXMLEnumMapEntry<sal_uInt16> aXML_CommnadTypeEnumMap[] =
+        static const SvXMLEnumMapEntry aXML_CommnadTypeEnumMap[] =
         {
             { XML_TABLE, sdb::CommandType::TABLE },
             { XML_QUERY, sdb::CommandType::QUERY },
@@ -233,7 +236,7 @@ void SAL_CALL ExportDocumentHandler::startElement(const OUString & _sName, const
         m_xDelegatee->startElement(_sName,xAttribs);
 }
 
-void SAL_CALL ExportDocumentHandler::endElement(const OUString & _sName)
+void SAL_CALL ExportDocumentHandler::endElement(const OUString & _sName) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     bool bExport = true;
     OUString sNewName = _sName;
@@ -266,29 +269,34 @@ void SAL_CALL ExportDocumentHandler::endElement(const OUString & _sName)
         m_xDelegatee->endElement(sNewName);
 }
 
-void SAL_CALL ExportDocumentHandler::characters(const OUString & aChars)
+void SAL_CALL ExportDocumentHandler::characters(const OUString & aChars) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     if ( !(m_bTableRowsStarted || m_bFirstRowExported) )
     {
         m_xDelegatee->characters(aChars);
     }
+    else if ( m_bExportChar )
+    {
+        static const char s_sZero[] = "0";
+        m_xDelegatee->characters(s_sZero);
+    }
 }
 
-void SAL_CALL ExportDocumentHandler::ignorableWhitespace(const OUString & aWhitespaces)
+void SAL_CALL ExportDocumentHandler::ignorableWhitespace(const OUString & aWhitespaces) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     m_xDelegatee->ignorableWhitespace(aWhitespaces);
 }
 
-void SAL_CALL ExportDocumentHandler::processingInstruction(const OUString & aTarget, const OUString & aData)
+void SAL_CALL ExportDocumentHandler::processingInstruction(const OUString & aTarget, const OUString & aData) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     m_xDelegatee->processingInstruction(aTarget,aData);
 }
 
-void SAL_CALL ExportDocumentHandler::setDocumentLocator(const uno::Reference< xml::sax::XLocator > & xLocator)
+void SAL_CALL ExportDocumentHandler::setDocumentLocator(const uno::Reference< xml::sax::XLocator > & xLocator) throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     m_xDelegatee->setDocumentLocator(xLocator);
 }
-void SAL_CALL ExportDocumentHandler::initialize( const uno::Sequence< uno::Any >& _aArguments )
+void SAL_CALL ExportDocumentHandler::initialize( const uno::Sequence< uno::Any >& _aArguments ) throw (uno::Exception, uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     comphelper::SequenceAsHashMap aArgs(_aArguments);
@@ -299,8 +307,8 @@ void SAL_CALL ExportDocumentHandler::initialize( const uno::Sequence< uno::Any >
     if ( !m_xDelegatee.is() || !m_xModel.is() )
         throw uno::Exception();
 
-    m_xDatabaseDataProvider.set(m_xModel->getDataProvider(),uno::UNO_QUERY_THROW);
-    if ( !m_xDatabaseDataProvider->getActiveConnection().is() )
+    m_xDatabaseDataProvider.set(m_xModel->getDataProvider(),uno::UNO_QUERY);
+    if ( !m_xDatabaseDataProvider.is() || !m_xDatabaseDataProvider->getActiveConnection().is() )
         throw uno::Exception();
 
     uno::Reference< reflection::XProxyFactory > xProxyFactory = reflection::ProxyFactory::create( m_xContext );
@@ -334,13 +342,13 @@ void SAL_CALL ExportDocumentHandler::initialize( const uno::Sequence< uno::Any >
     }
 }
 
-uno::Any SAL_CALL ExportDocumentHandler::queryInterface( const uno::Type& _rType )
+uno::Any SAL_CALL ExportDocumentHandler::queryInterface( const uno::Type& _rType ) throw (uno::RuntimeException, std::exception)
 {
     uno::Any aReturn = ExportDocumentHandler_BASE::queryInterface(_rType);
     return aReturn.hasValue() ? aReturn : (m_xProxy.is() ? m_xProxy->queryAggregation(_rType) : aReturn);
 }
 
-uno::Sequence< uno::Type > SAL_CALL ExportDocumentHandler::getTypes(  )
+uno::Sequence< uno::Type > SAL_CALL ExportDocumentHandler::getTypes(  ) throw (uno::RuntimeException, std::exception)
 {
     if ( m_xTypeProvider.is() )
         return ::comphelper::concatSequences(
@@ -357,17 +365,20 @@ void ExportDocumentHandler::exportTableRows()
 
     const OUString sValueType( lcl_createAttribute(XML_NP_OFFICE, XML_VALUE_TYPE) );
 
+    static const char s_sFieldPrefix[] = "field:[";
+    static const char s_sFieldPostfix[] = "]";
     const OUString sCell( lcl_createAttribute(XML_NP_TABLE, XML_TABLE_CELL) );
     const OUString sP( lcl_createAttribute(XML_NP_TEXT, XML_P) );
     const OUString sFtext(lcl_createAttribute(XML_NP_RPT,XML_FORMATTED_TEXT) );
     const OUString sRElement(lcl_createAttribute(XML_NP_RPT,XML_REPORT_ELEMENT) );
     const OUString sRComponent( lcl_createAttribute(XML_NP_RPT,XML_REPORT_COMPONENT) ) ;
     const OUString sFormulaAttrib( lcl_createAttribute(XML_NP_RPT,XML_FORMULA) );
+    static const char s_sString[] = "string";
     static const char s_sFloat[] = "float";
 
     SvXMLAttributeList* pCellAtt = new SvXMLAttributeList();
     uno::Reference< xml::sax::XAttributeList > xCellAtt = pCellAtt;
-    pCellAtt->AddAttribute(sValueType, "string");
+    pCellAtt->AddAttribute(sValueType,s_sString);
 
     bool bRemoveString = true;
     OUString sFormula;
@@ -391,9 +402,9 @@ void ExportDocumentHandler::exportTableRows()
     }
     for(sal_Int32 i = 0; i < nCount ; ++i)
     {
-        sFormula = "field:[";
+        sFormula = s_sFieldPrefix;
         sFormula += m_aColumns[i];
-        sFormula += "]";
+        sFormula += s_sFieldPostfix;
         SvXMLAttributeList* pList = new SvXMLAttributeList();
         uno::Reference< xml::sax::XAttributeList > xAttribs = pList;
         pList->AddAttribute(sFormulaAttrib,sFormula);

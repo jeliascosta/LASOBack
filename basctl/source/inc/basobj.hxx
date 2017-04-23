@@ -74,17 +74,12 @@ namespace basctl
     // new methods for macros
 
     OUString        ChooseMacro(
-        const css::uno::Reference< css::frame::XModel >& rxLimitToDocument, const css::uno::Reference< css::frame::XFrame >& xDocFrame,
-        bool bChooseOnly, const OUString& rMacroDesc );
-    inline OUString ChooseMacro(
         const css::uno::Reference< css::frame::XModel >& rxLimitToDocument,
-        bool bChooseOnly, const OUString& rMacroDesc )
-    { return ChooseMacro(rxLimitToDocument, css::uno::Reference< css::frame::XFrame >(), bChooseOnly, rMacroDesc); }
+        bool bChooseOnly, const OUString& rMacroDesc );
 
-    /// @throws css::container::NoSuchElementException
-    /// @throws css::uno::RuntimeException
     css::uno::Sequence< OUString > GetMethodNames(
-        const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rModName );
+        const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rModName )
+        throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception);
 
     bool            HasMethod(
         const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rModName, const OUString& rMethName );
@@ -94,13 +89,10 @@ namespace basctl
     /** renames a dialog
 
         Will show an error message when renaming fails because the new name is already used.
-
-        @throws css::container::ElementExistException
-        @throws css::container::NoSuchElementException
-        @throws css::uno::RuntimeException
     */
     bool            RenameDialog(
-        vcl::Window* pErrorParent, const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rOldName, const OUString& rNewName );
+        vcl::Window* pErrorParent, const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rOldName, const OUString& rNewName )
+        throw (css::container::ElementExistException, css::container::NoSuchElementException, css::uno::RuntimeException, std::exception);
 
     bool            RemoveDialog( const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rDlgName );
 

@@ -12,7 +12,6 @@ $(eval $(call gb_InstallModule_InstallModule,scp2/base))
 $(eval $(call gb_InstallModule_use_auto_install_libs,scp2/base,\
 	base \
 	base_brand \
-	firebirdsdbc \
 	postgresqlsdbc \
 ))
 

@@ -19,32 +19,35 @@
 #ifndef INCLUDED_SC_SOURCE_UI_SIDEBAR_CELLBORDERSTYLECONTROL_HXX
 #define INCLUDED_SC_SOURCE_UI_SIDEBAR_CELLBORDERSTYLECONTROL_HXX
 
+#include <svx/sidebar/PopupControl.hxx>
 #include <vcl/button.hxx>
-#include <vcl/fixed.hxx>
-#include <vcl/floatwin.hxx>
 #include <vcl/toolbox.hxx>
-
-class SfxDispatcher;
+#include <vcl/fixed.hxx>
 
 namespace sc { namespace sidebar {
 
-class CellBorderStylePopup : public FloatingWindow
+class CellAppearancePropertyPanel;
+
+class CellBorderStyleControl : public svx::sidebar::PopupControl
 {
 private:
-    SfxDispatcher*                  mpDispatcher;
+    CellAppearancePropertyPanel&    mrCellAppearancePropertyPanel;
     VclPtr<ToolBox>                 maTBBorder1;
     VclPtr<ToolBox>                 maTBBorder2;
     VclPtr<ToolBox>                 maTBBorder3;
+    VclPtr<FixedLine>               maFL1;
+    VclPtr<FixedLine>               maFL2;
+    Image*                          mpImageList;
 
     void Initialize();
 
-    DECL_LINK(TB1SelectHdl, ToolBox *, void);
-    DECL_LINK(TB2SelectHdl, ToolBox *, void);
-    DECL_LINK(TB3SelectHdl, ToolBox *, void);
+    DECL_LINK_TYPED(TB1SelectHdl, ToolBox *, void);
+    DECL_LINK_TYPED(TB2SelectHdl, ToolBox *, void);
+    DECL_LINK_TYPED(TB3SelectHdl, ToolBox *, void);
 
 public:
-    explicit CellBorderStylePopup(SfxDispatcher* pDispatcher);
-    virtual ~CellBorderStylePopup() override;
+    CellBorderStyleControl(vcl::Window* pParent, CellAppearancePropertyPanel& rPanel);
+    virtual ~CellBorderStyleControl();
     virtual void dispose() override;
 };
 

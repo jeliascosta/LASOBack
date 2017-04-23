@@ -92,7 +92,8 @@ namespace rptui
             for ( sal_Int32 i=0; i<nCount; ++i )
             {
                 xFormatCondition.set( _rxRptControlModel->getByIndex( i ), UNO_QUERY_THROW );
-                sFormulaExpression = ReportFormula(xFormatCondition->getFormula()).getExpression();
+                ReportFormula aFormula( xFormatCondition->getFormula() );
+                sFormulaExpression = aFormula.getExpression();
 
                 for (   ConditionalExpressions::const_iterator loop = m_aConditionalExpressions.begin();
                         loop != m_aConditionalExpressions.end();
@@ -104,8 +105,8 @@ namespace rptui
 
                     // the expression matches -> translate it to the new data source of the report control model
                     sFormulaExpression = loop->second->assembleExpression( sNewUnprefixed, sLHS, sRHS );
-                    ReportFormula aFormula(ReportFormula(ReportFormula::Expression, sFormulaExpression));
-                    xFormatCondition->setFormula(aFormula.getCompleteFormula());
+                    aFormula = ReportFormula( ReportFormula::Expression, sFormulaExpression );
+                    xFormatCondition->setFormula( aFormula.getCompleteFormula() );
                     break;
                 }
             }

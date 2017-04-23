@@ -36,13 +36,13 @@ The axes and data series are subobjects which are created and managed by the
 diagram.
 */
 
-class VDiagram final
+class VDiagram
 {
 public: //methods
     VDiagram( const css::uno::Reference<css::chart2::XDiagram>& xDiagram,
               const css::drawing::Direction3D& rPreferredAspectRatio,
               sal_Int32 nDimension = 3 );
-    ~VDiagram();
+    virtual ~VDiagram();
 
     void init(
         const css::uno::Reference<css::drawing::XShapes>& xTarget,

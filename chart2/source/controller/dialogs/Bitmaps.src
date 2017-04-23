@@ -18,61 +18,81 @@
  */
 #include "Bitmaps.hrc"
 
-Bitmap BMP_TYPE_COLUMN
+Image IMG_TYPE_COLUMN
 {
-    File = "typecolumn_16.png";
+    ImageBitmap = Bitmap { File = "typecolumn_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_BAR
+Image IMG_TYPE_BAR
 {
-    File = "typebar_16.png";
+    ImageBitmap = Bitmap { File = "typebar_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_PIE
+Image IMG_TYPE_PIE
 {
-    File = "typepie_16.png";
+    ImageBitmap = Bitmap { File = "typepie_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_LINE
+Image IMG_TYPE_LINE
 {
-    File = "typepointline_16.png";
+    ImageBitmap = Bitmap { File = "typepointline_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_XY
+Image IMG_TYPE_XY
 {
-    File = "typexy_16.png";
+    ImageBitmap = Bitmap { File = "typexy_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_AREA
+Image IMG_TYPE_AREA
 {
-    File = "typearea_16.png";
+    ImageBitmap = Bitmap { File = "typearea_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_NET
+Image IMG_TYPE_NET
 {
-    File = "typenet_16.png";
+    ImageBitmap = Bitmap { File = "typenet_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_STOCK
+Image IMG_TYPE_STOCK
 {
-    File = "typestock_16.png";
+    ImageBitmap = Bitmap { File = "typestock_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_COLUMN_LINE
+Image IMG_TYPE_COLUMN_LINE
 {
-    File = "typecolumnline_16.png";
+    ImageBitmap = Bitmap { File = "typecolumnline_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_BUBBLE
+Image IMG_TYPE_BUBBLE
 {
-    File = "typebubble_16.png";
+    ImageBitmap = Bitmap { File = "typebubble_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
-Bitmap BMP_TYPE_GL3D_BAR
+Image IMG_TYPE_GL3D_BAR
 {
-    File = "typegl3dbar_16.png";
+    ImageBitmap = Bitmap { File = "typegl3dbar_16.png" ; };
+    MaskColor = STD_MASKCOLOR;
 };
-
+Image IMG_STEP_START
+{
+    ImageBitmap = Bitmap { File = "step_start_30.png" ; };
+    MaskColor = STD_MASKCOLOR;
+};
+Image IMG_STEP_END
+{
+    ImageBitmap = Bitmap { File = "step_end_30.png" ; };
+    MaskColor = STD_MASKCOLOR;
+};
+Image IMG_STEP_CENTER_X
+{
+    ImageBitmap = Bitmap { File = "step_center_x_30.png" ; };
+    MaskColor = STD_MASKCOLOR;
+};
+Image IMG_STEP_CENTER_Y
+{
+    ImageBitmap = Bitmap { File = "step_center_y_30.png" ; };
+    MaskColor = STD_MASKCOLOR;
+};
 Bitmap BMP_BUBBLE_1
 {
     File = "bubble_52x60.png" ;
@@ -175,7 +195,6 @@ Bitmap BMP_COLUMNS_2D_1
 {
     File = "columns_52x60.png" ;
 };
-
 Bitmap BMP_COLUMNS_2D_2
 {
     File = "columnstack_52x60.png" ;
@@ -487,66 +506,98 @@ Bitmap BMP_STOCK_4
 };
 
 //error indicator
-Bitmap BMP_INDICATE_BOTH_VERTI
+Image BMP_INDICATE_BOTH_VERTI
 {
-    File = "errorbothverti_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errorbothverti_30.png" ;
+    };
 };
-
-Bitmap BMP_INDICATE_DOWN
+Image BMP_INDICATE_DOWN
 {
-    File = "errordown_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errordown_30.png" ;
+    };
 };
-
-Bitmap BMP_INDICATE_UP
+Image BMP_INDICATE_UP
 {
-    File = "errorup_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errorup_30.png" ;
+    };
 };
-
-Bitmap BMP_INDICATE_BOTH_HORI
+Image BMP_INDICATE_BOTH_HORI
 {
-    File = "errorbothhori_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errorbothhori_30.png" ;
+    };
 };
-
-Bitmap BMP_INDICATE_RIGHT
+Image BMP_INDICATE_RIGHT
 {
-    File = "errorright_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errorright_30.png" ;
+    };
 };
-
-Bitmap BMP_INDICATE_LEFT
+Image BMP_INDICATE_LEFT
 {
-    File = "errorleft_30.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "errorleft_30.png" ;
+    };
 };
 
 //regression curves
-
-Bitmap BMP_REGRESSION_LINEAR
+Image BMP_REGRESSION_NONE
 {
-    File = "reglin.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "regno.png" ;
+    };
 };
-
-Bitmap BMP_REGRESSION_LOG
+Image BMP_REGRESSION_LINEAR
 {
-    File = "reglog.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "reglin.png" ;
+    };
 };
-
-Bitmap BMP_REGRESSION_EXP
+Image BMP_REGRESSION_LOG
 {
-    File = "regexp.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "reglog.png" ;
+    };
 };
-
-Bitmap BMP_REGRESSION_POWER
+Image BMP_REGRESSION_EXP
 {
-    File = "regpow.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "regexp.png" ;
+    };
 };
-
-Bitmap BMP_REGRESSION_POLYNOMIAL
+Image BMP_REGRESSION_POWER
 {
-    File = "regpoly.png" ;
+    ImageBitmap = Bitmap
+    {
+        File = "regpow.png" ;
+    };
 };
-
-Bitmap BMP_REGRESSION_MOVING_AVERAGE
+Image BMP_REGRESSION_POLYNOMIAL
 {
-    File = "regavg.png";
+    ImageBitmap = Bitmap
+    {
+        File = "regpoly.png" ;
+    };
+};
+Image BMP_REGRESSION_MOVING_AVERAGE
+{
+    ImageBitmap = Bitmap
+    {
+        File = "regavg.png" ;
+    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

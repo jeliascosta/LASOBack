@@ -84,10 +84,10 @@ SwExtTextInput::~SwExtTextInput()
                     if( bInsText )
                     {
                         rIdx = nSttCnt;
-                        pDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::OVERWRITE, nullptr );
+                        pDoc->GetIDocumentUndoRedo().StartUndo( UNDO_OVERWRITE, nullptr );
                         pDoc->getIDocumentContentOperations().Overwrite( *this, sText.copy( 0, nOWLen ) );
                         pDoc->getIDocumentContentOperations().InsertString( *this, sText.copy( nOWLen ) );
-                        pDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::OVERWRITE, nullptr );
+                        pDoc->GetIDocumentUndoRedo().EndUndo( UNDO_OVERWRITE, nullptr );
                     }
                 }
                 else
@@ -256,7 +256,7 @@ void SwDoc::DeleteExtTextInput( SwExtTextInput* pDel )
     if( pDel == mpExtInputRing )
     {
         if( pDel->GetNext() != mpExtInputRing )
-            mpExtInputRing = pDel->GetNext();
+            mpExtInputRing = static_cast<SwPaM*>(pDel->GetNext());
         else
             mpExtInputRing = nullptr;
     }

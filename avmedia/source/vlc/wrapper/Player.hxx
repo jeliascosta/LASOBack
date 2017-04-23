@@ -63,7 +63,7 @@ namespace wrapper
         unsigned getWidth() const;
         unsigned getHeight() const;
 
-        operator libvlc_media_player_t*()
+        inline operator libvlc_media_player_t*()
         {
             return mPlayer;
         }

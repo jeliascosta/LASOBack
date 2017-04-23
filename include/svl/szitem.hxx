@@ -33,12 +33,13 @@ private:
 public:
                              SfxSizeItem( sal_uInt16 nWhich, const Size& rVal );
                              SfxSizeItem( const SfxSizeItem& );
+                             virtual ~SfxSizeItem() {}
 
-    virtual bool             GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText,
-                                  const IntlWrapper * = nullptr ) const override;
+    virtual bool GetPresentation( SfxItemPresentation ePres,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText,
+                                    const IntlWrapper * = nullptr ) const override;
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual bool             QueryValue( css::uno::Any& rVal,

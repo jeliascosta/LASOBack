@@ -20,24 +20,24 @@
 #include <svtools/controldims.hrc>
 #include "dp_gui.hrc"
 
-Bitmap RID_BMP_WARNING
+Image RID_IMG_WARNING
 {
-    File = "caution_16.png";
+    ImageBitmap = Bitmap { File = "caution_16.png"; };
 };
 
-Bitmap RID_BMP_LOCKED
+Image RID_IMG_LOCKED
 {
-    File = "lock_16.png";
+    ImageBitmap = Bitmap { File = "lock_16.png"; };
 };
 
-Bitmap RID_BMP_SHARED
+Image RID_IMG_SHARED
 {
-    File = "shared_16.png";
+    ImageBitmap = Bitmap { File = "shared_16.png"; };
 };
 
-Bitmap RID_BMP_EXTENSION
+Image RID_IMG_EXTENSION
 {
-    File = "extension_32.png";
+    ImageBitmap = Bitmap { File = "extension_32.png"; };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

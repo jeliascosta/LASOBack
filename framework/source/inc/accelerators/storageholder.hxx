@@ -32,7 +32,7 @@ class XMLBasedAcceleratorConfiguration;
 /**
     TODO document me
  */
-class StorageHolder final
+class StorageHolder
 {
 
     // types
@@ -79,7 +79,7 @@ class StorageHolder final
 
         /** @short  TODO
          */
-        ~StorageHolder();
+        virtual ~StorageHolder();
 
         /** @short  TODO
          */

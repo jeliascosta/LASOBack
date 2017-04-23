@@ -47,6 +47,7 @@ protected:
     virtual void            SpellStart( SvxSpellArea eArea ) override;
     virtual void            SpellContinue() override;    // Check area
     virtual void            ReplaceAll( const OUString &rNewText, sal_Int16 nLanguage ) override;
+    virtual void            SpellEnd() override;
     virtual bool            SpellMore() override;
     virtual bool            HasOtherCnt() override;
 
@@ -129,7 +130,7 @@ protected:
 
 public:
     EdtAutoCorrDoc(EditEngine* pE, ContentNode* pCurNode, sal_Int32 nCrsr, sal_Unicode cIns);
-    virtual ~EdtAutoCorrDoc() override;
+    virtual ~EdtAutoCorrDoc();
 
     virtual bool    Delete( sal_Int32 nStt, sal_Int32 nEnd ) override;
     virtual bool    Insert( sal_Int32 nPos, const OUString& rTxt ) override;

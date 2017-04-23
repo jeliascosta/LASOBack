@@ -277,7 +277,7 @@ void ScConversionEngineBase::FillFromCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
 ScSpellingEngine::ScSpellingEngine(
         SfxItemPool* pEnginePoolP, ScViewData& rViewData,
         ScDocument* pUndoDoc, ScDocument* pRedoDoc,
-        css::uno::Reference< css::linguistic2::XSpellChecker1 > const & xSpeller ) :
+        css::uno::Reference< css::linguistic2::XSpellChecker1 > xSpeller ) :
     ScConversionEngineBase( pEnginePoolP, rViewData, pUndoDoc, pRedoDoc )
 {
     SetSpeller( xSpeller );
@@ -285,11 +285,17 @@ ScSpellingEngine::ScSpellingEngine(
 
 void ScSpellingEngine::ConvertAll( EditView& rEditView )
 {
-    EESpellState eState = EESpellState::Ok;
+    EESpellState eState = EE_SPELL_OK;
     if( FindNextConversionCell() )
         eState = rEditView.StartSpeller( true );
 
-    OSL_ENSURE( eState != EESpellState::NoSpeller, "ScSpellingEngine::Convert - no spell checker" );
+    OSL_ENSURE( eState != EE_SPELL_NOSPELLER, "ScSpellingEngine::Convert - no spell checker" );
+    if( eState == EE_SPELL_NOLANGUAGE )
+    {
+        vcl::Window* pParent = GetDialogParent();
+        ScWaitCursorOff aWaitOff( pParent );
+        ScopedVclPtrInstance<InfoBox>( pParent, ScGlobal::GetRscString( STR_NOLANGERR ) )->Execute();
+    }
 }
 
 bool ScSpellingEngine::SpellNextDocument()
@@ -299,7 +305,7 @@ bool ScSpellingEngine::SpellNextDocument()
 
 bool ScSpellingEngine::NeedsConversion()
 {
-    return HasSpellErrors() != EESpellState::Ok;
+    return HasSpellErrors() != EE_SPELL_OK;
 }
 
 bool ScSpellingEngine::ShowTableWrapDialog()

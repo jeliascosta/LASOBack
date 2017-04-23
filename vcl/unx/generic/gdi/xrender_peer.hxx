@@ -47,6 +47,8 @@ public:
 
     // the methods below are thin wrappers for the XRENDER API
     XRenderPictFormat* FindVisualFormat( Visual* ) const;
+    XRenderPictFormat* FindPictureFormat( unsigned long nMask,
+        const XRenderPictFormat& ) const;
     Picture     CreatePicture( Drawable, const XRenderPictFormat*,
                     unsigned long nDrawable, const XRenderPictureAttributes* ) const;
     void        ChangePicture( Picture, unsigned long nValueMask,
@@ -77,6 +79,12 @@ inline XRenderPictFormat* XRenderPeer::FindStandardFormat(int nFormat) const
 inline XRenderPictFormat* XRenderPeer::FindVisualFormat( Visual* pVisual ) const
 {
     return XRenderFindVisualFormat ( mpDisplay, pVisual );
+}
+
+inline XRenderPictFormat* XRenderPeer::FindPictureFormat( unsigned long nFormatMask,
+    const XRenderPictFormat& rFormatAttr ) const
+{
+    return XRenderFindFormat( mpDisplay, nFormatMask, &rFormatAttr, 0 );
 }
 
 inline Picture XRenderPeer::CreatePicture( Drawable aDrawable,
@@ -127,7 +135,7 @@ inline void XRenderPeer::CompositeTrapezoids( int nOp,
         nXSrc, nYSrc, pXT, nCount );
 }
 
-inline XRenderColor GetXRenderColor( SalColor rSalColor, double fTransparency )
+inline XRenderColor GetXRenderColor( const SalColor& rSalColor, double fTransparency = 0.0 )
 {
     XRenderColor aRetVal;
     // convert the SalColor

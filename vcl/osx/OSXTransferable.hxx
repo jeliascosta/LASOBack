@@ -37,21 +37,24 @@
 class OSXTransferable : public ::cppu::WeakImplHelper<css::datatransfer::XTransferable>
 {
 public:
-  explicit OSXTransferable(css::uno::Reference< css::datatransfer::XMimeContentTypeFactory> const & rXMimeCntFactory,
+  explicit OSXTransferable(css::uno::Reference< css::datatransfer::XMimeContentTypeFactory> rXMimeCntFactory,
                            DataFlavorMapperPtr_t pDataFlavorMapper,
                            NSPasteboard* pasteboard);
 
-  virtual ~OSXTransferable() override;
+  virtual ~OSXTransferable();
   OSXTransferable(const OSXTransferable&) = delete;
   OSXTransferable& operator=(const OSXTransferable&) = delete;
 
   // XTransferable
 
-  virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor ) override;
+  virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor )
+    throw( css::datatransfer::UnsupportedFlavorException, css::io::IOException, css::uno::RuntimeException, std::exception ) override;
 
-  virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  ) override;
+  virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  )
+    throw( css::uno::RuntimeException, std::exception ) override;
 
-  virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor ) override;
+  virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor )
+    throw( css::uno::RuntimeException, std::exception ) override;
 
   // Helper functions not part of the XTransferable interface
 

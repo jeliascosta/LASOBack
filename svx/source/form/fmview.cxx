@@ -90,6 +90,8 @@ void FmFormView::Init()
 {
     pFormShell = nullptr;
     pImpl = new FmXFormView(this);
+    pImpl->acquire();
+
 
     // Model setzen
     SdrModel* pModel = GetModel();
@@ -136,6 +138,8 @@ FmFormView::~FmFormView()
         pFormShell->SetView( nullptr );
 
     pImpl->notifyViewDying();
+    pImpl->release();
+    pImpl = nullptr;
 }
 
 
@@ -159,7 +163,7 @@ void FmFormView::MarkListHasChanged()
             pImpl->m_pMarkedGrid = nullptr;
             if ( pImpl->m_xWindow.is() )
             {
-                pImpl->m_xWindow->removeFocusListener(pImpl.get());
+                pImpl->m_xWindow->removeFocusListener(pImpl);
                 pImpl->m_xWindow = nullptr;
             }
             SetMoveOutside(false);
@@ -363,12 +367,17 @@ void FmFormView::HideSdrPage()
 }
 
 
+SdrModel* FmFormView::GetMarkedObjModel() const
+{
+    return E3dView::GetMarkedObjModel();
+}
+
 void FmFormView::ActivateControls(SdrPageView* pPageView)
 {
     if (!pPageView)
         return;
 
-    for (sal_uInt32 i = 0; i < pPageView->PageWindowCount(); ++i)
+    for (sal_uInt32 i = 0L; i < pPageView->PageWindowCount(); ++i)
     {
         const SdrPageWindow& rPageWindow = *pPageView->GetPageWindow(i);
         pImpl->addWindow(rPageWindow);
@@ -381,7 +390,7 @@ void FmFormView::DeactivateControls(SdrPageView* pPageView)
     if( !pPageView )
         return;
 
-    for (sal_uInt32 i = 0; i < pPageView->PageWindowCount(); ++i)
+    for (sal_uInt32 i = 0L; i < pPageView->PageWindowCount(); ++i)
     {
         const SdrPageWindow& rPageWindow = *pPageView->GetPageWindow(i);
         pImpl->removeWindow(rPageWindow.GetControlContainer() );
@@ -413,9 +422,9 @@ SdrObject* FmFormView::CreateFieldControl(const OUString& rFieldDesc) const
 
     ODataAccessDescriptor aColumnDescriptor;
     aColumnDescriptor.setDataSource(sDataSource);
-    aColumnDescriptor[ DataAccessDescriptorProperty::Command ]          <<= sObjectName;
-    aColumnDescriptor[ DataAccessDescriptorProperty::CommandType ]      <<= nObjectType;
-    aColumnDescriptor[ DataAccessDescriptorProperty::ColumnName ]       <<= sFieldName;
+    aColumnDescriptor[ daCommand ]          <<= sObjectName;
+    aColumnDescriptor[ daCommandType ]      <<= nObjectType;
+    aColumnDescriptor[ daColumnName ]       <<= sFieldName;
 
     return pImpl->implCreateFieldControl( aColumnDescriptor );
 }
@@ -428,7 +437,7 @@ void FmFormView::InsertControlContainer(const Reference< css::awt::XControlConta
         SdrPageView* pPageView = GetSdrPageView();
         if( pPageView )
         {
-            for( sal_uInt32 i = 0; i < pPageView->PageWindowCount(); i++ )
+            for( sal_uInt32 i = 0L; i < pPageView->PageWindowCount(); i++ )
             {
                 const SdrPageWindow& rPageWindow = *pPageView->GetPageWindow(i);
 
@@ -491,7 +500,7 @@ bool FmFormView::KeyInput(const KeyEvent& rKEvt, vcl::Window* pWin)
                     pImpl->m_pMarkedGrid = pObj;
                     pImpl->m_xWindow = xWindow;
                     // add as listener to get notified when ESC will be pressed inside the grid
-                    pImpl->m_xWindow->addFocusListener(pImpl.get());
+                    pImpl->m_xWindow->addFocusListener(pImpl);
                     SetMoveOutside(true);
                     //OLMRefreshAllIAOManagers();
                     xWindow->setFocus();
@@ -567,7 +576,7 @@ FmFormObj* FmFormView::getMarkedGrid() const
 
 void FmFormView::createControlLabelPair( OutputDevice* _pOutDev, sal_Int32 _nXOffsetMM, sal_Int32 _nYOffsetMM,
     const Reference< XPropertySet >& _rxField, const Reference< XNumberFormats >& _rxNumberFormats,
-    sal_uInt16 _nControlObjectID, const OUString& _rFieldPostfix, SdrInventor _nInventor, sal_uInt16 _nLabelObjectID,
+    sal_uInt16 _nControlObjectID, const OUString& _rFieldPostfix, sal_uInt32 _nInventor, sal_uInt16 _nLabelObjectID,
     SdrPage* _pLabelPage, SdrPage* _pControlPage, SdrModel* _pModel, SdrUnoObj*& _rpLabel, SdrUnoObj*& _rpControl )
 {
     FmXFormView::createControlLabelPair(

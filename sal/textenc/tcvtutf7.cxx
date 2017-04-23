@@ -306,7 +306,7 @@ sal_Size ImplUTF7ToUnicode( SAL_UNUSED_PARAMETER const void*, void* pContext,
                             *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                             break;
                         }
-                        if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) != RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
+                        else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) != RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
                         {
                             if ( pDestBuf >= pEndDestBuf )
                             {
@@ -337,7 +337,7 @@ sal_Size ImplUTF7ToUnicode( SAL_UNUSED_PARAMETER const void*, void* pContext,
                 }
                 else
                 {
-                    /* No direct encoded character, then the buffer is */
+                    /* No direct encoded charcater, then the buffer is */
                     /* corrupt */
                     if ( c > 0x7F )
                     {
@@ -347,7 +347,7 @@ sal_Size ImplUTF7ToUnicode( SAL_UNUSED_PARAMETER const void*, void* pContext,
                             *pInfo |= RTL_TEXTTOUNICODE_INFO_ERROR;
                             break;
                         }
-                        if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) != RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
+                        else if ( (nFlags & RTL_TEXTTOUNICODE_FLAGS_INVALID_MASK) != RTL_TEXTTOUNICODE_FLAGS_INVALID_IGNORE )
                         {
                             if ( pDestBuf >= pEndDestBuf )
                             {

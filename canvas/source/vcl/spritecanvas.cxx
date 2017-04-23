@@ -119,17 +119,17 @@ namespace vclcanvas
         SpriteCanvasBaseT::disposeThis();
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::showBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
     {
         return updateScreen( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::switchBuffer( sal_Bool bUpdateAll ) throw (uno::RuntimeException)
     {
         return updateScreen( bUpdateAll );
     }
 
-    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll )
+    sal_Bool SAL_CALL SpriteCanvas::updateScreen( sal_Bool bUpdateAll ) throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -140,7 +140,7 @@ namespace vclcanvas
                                                                   mbSurfaceDirty);
     }
 
-    OUString SAL_CALL SpriteCanvas::getServiceName(  )
+    OUString SAL_CALL SpriteCanvas::getServiceName(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return OUString( SPRITECANVAS_SERVICE_NAME );
     }

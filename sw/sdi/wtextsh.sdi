@@ -22,7 +22,7 @@ interface WebText : BaseText
     [
         ExecMethod = ExecInsert ;
         StateMethod = StateInsert ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     // Here should the slots are be inserted, but O N L Y those that are supported
     // by StarWriter/WEB

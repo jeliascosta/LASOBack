@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <o3tl/any.hxx>
-
 #include <svl/zforlist.hxx>
 #include <svl/zformat.hxx>
 
@@ -131,13 +127,13 @@ bool SwUserField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL1:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
             nSubType &= (~nsSwExtendedSubType::SUB_INVISIBLE);
         else
             nSubType |= nsSwExtendedSubType::SUB_INVISIBLE;
         break;
     case FIELD_PROP_BOOL2:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
             nSubType |= nsSwExtendedSubType::SUB_CMD;
         else
             nSubType &= (~nsSwExtendedSubType::SUB_CMD);
@@ -156,7 +152,7 @@ bool SwUserField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
 }
 
 SwUserFieldType::SwUserFieldType( SwDoc* pDocPtr, const OUString& aNam )
-    : SwValueFieldType( pDocPtr, SwFieldIds::User ),
+    : SwValueFieldType( pDocPtr, RES_USERFLD ),
     nValue( 0 ),
     nType(nsSwGetSetExpType::GSE_STRING)
 {
@@ -199,7 +195,7 @@ OUString SwUserFieldType::GetName() const
 void SwUserFieldType::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
 {
     if( !pOld && !pNew )
-        bValidValue = false;
+        ChgValid( false );
 
     NotifyClients( pOld, pNew );
 
@@ -207,7 +203,7 @@ void SwUserFieldType::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )
     if ( !IsModifyLocked() )
     {
         LockModify();
-        GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Input )->UpdateFields();
+        GetDoc()->getIDocumentFieldsAccess().GetSysFieldType( RES_INPUTFLD )->UpdateFields();
         UnlockModify();
     }
 }
@@ -219,7 +215,7 @@ double SwUserFieldType::GetValue( SwCalc& rCalc )
 
     if(!rCalc.Push( this ))
     {
-        rCalc.SetCalcError( SwCalcError::Syntax );
+        rCalc.SetCalcError( CALC_SYNTAX );
         return 0;
     }
     nValue = rCalc.Calculate( aContent ).GetDouble();
@@ -291,7 +287,7 @@ bool SwUserFieldType::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= 0 != (nsSwGetSetExpType::GSE_EXPR&nType);
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -316,7 +312,7 @@ bool SwUserFieldType::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aContent;
         break;
     case FIELD_PROP_BOOL1:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
         {
             nType |= nsSwGetSetExpType::GSE_EXPR;
             nType &= ~nsSwGetSetExpType::GSE_STRING;
@@ -328,7 +324,7 @@ bool SwUserFieldType::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }

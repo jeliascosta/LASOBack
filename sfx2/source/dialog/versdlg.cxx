@@ -85,7 +85,7 @@ public:
 
 SfxVersionTableDtor::SfxVersionTableDtor( const uno::Sequence < util::RevisionTag >& rInfo )
 {
-    for ( sal_Int32 n=0; n<rInfo.getLength(); n++ )
+    for ( sal_Int32 n=0; n<(sal_Int32)rInfo.getLength(); n++ )
     {
         SfxVersionInfo* pInfo = new SfxVersionInfo;
         pInfo->aName = rInfo[n].Identifier;
@@ -99,7 +99,7 @@ SfxVersionTableDtor::SfxVersionTableDtor( const uno::Sequence < util::RevisionTa
 
 SfxVersionTableDtor::SfxVersionTableDtor( const uno::Sequence < document::CmisVersion >& rInfo )
 {
-    for ( sal_Int32 n=0; n<rInfo.getLength(); n++ )
+    for ( sal_Int32 n=0; n<(sal_Int32)rInfo.getLength(); n++ )
     {
         SfxVersionInfo* pInfo = new SfxVersionInfo;
         pInfo->aName = rInfo[n].Id;
@@ -188,7 +188,7 @@ void SfxVersionsTabListBox_Impl::setColSizes()
     long aStaticTabs[] = { 3, 0, 0, 0 };
     aStaticTabs[2] = nMax;
     aStaticTabs[3] = nMax + nMaxAuthorWidth;
-    SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
+    SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
 }
 
 SfxVersionDialog::SfxVersionDialog ( SfxViewFrame* pVwFrame, bool bIsSaveVersionOnClose )
@@ -207,7 +207,7 @@ SfxVersionDialog::SfxVersionDialog ( SfxViewFrame* pVwFrame, bool bIsSaveVersion
 
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("versions");
     Size aControlSize(260, 114);
-    aControlSize = pContainer->LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = pContainer->LogicToPixel(aControlSize, MAP_APPFONT);
     pContainer->set_width_request(aControlSize.Width());
     pContainer->set_height_request(aControlSize.Height());
 
@@ -227,7 +227,7 @@ SfxVersionDialog::SfxVersionDialog ( SfxViewFrame* pVwFrame, bool bIsSaveVersion
 
     m_pVersionBox->GrabFocus();
     m_pVersionBox->SetStyle( m_pVersionBox->GetStyle() | WB_HSCROLL | WB_CLIPCHILDREN );
-    m_pVersionBox->SetSelectionMode( SelectionMode::Single );
+    m_pVersionBox->SetSelectionMode( SINGLE_SELECTION );
 
     long nTabs_Impl[] = { 3, 0, 0, 0 };
 
@@ -374,13 +374,13 @@ void SfxVersionDialog::Open_Impl()
     Close();
 }
 
-IMPL_LINK_NOARG(SfxVersionDialog, DClickHdl_Impl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG_TYPED(SfxVersionDialog, DClickHdl_Impl, SvTreeListBox*, bool)
 {
     Open_Impl();
     return false;
 }
 
-IMPL_LINK_NOARG(SfxVersionDialog, SelectHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SfxVersionDialog, SelectHdl_Impl, SvTreeListBox*, void)
 {
     bool bEnable = ( m_pVersionBox->FirstSelected() != nullptr );
     SfxObjectShell* pObjShell = pViewFrame->GetObjectShell();
@@ -394,7 +394,7 @@ IMPL_LINK_NOARG(SfxVersionDialog, SelectHdl_Impl, SvTreeListBox*, void)
     m_pCompareButton->Enable(bEnable && eState >= SfxItemState::DEFAULT);
 }
 
-IMPL_LINK( SfxVersionDialog, ButtonHdl_Impl, Button*, pButton, void )
+IMPL_LINK_TYPED( SfxVersionDialog, ButtonHdl_Impl, Button*, pButton, void )
 {
     SfxObjectShell *pObjShell = pViewFrame->GetObjectShell();
     SvTreeListEntry *pEntry = m_pVersionBox->FirstSelected();
@@ -520,7 +520,7 @@ void SfxViewVersionDialog_Impl::dispose()
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK(SfxViewVersionDialog_Impl, ButtonHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(SfxViewVersionDialog_Impl, ButtonHdl, Button*, pButton, void)
 {
     assert(pButton == m_pOKButton);
     (void)pButton;
@@ -540,7 +540,7 @@ SfxCmisVersionsDialog::SfxCmisVersionsDialog ( SfxViewFrame* pVwFrame )
 
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("versions");
     Size aControlSize(260, 114);
-    aControlSize = pContainer->LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = pContainer->LogicToPixel(aControlSize, MAP_APPFONT);
     pContainer->set_width_request(aControlSize.Width());
     pContainer->set_height_request(aControlSize.Height());
 
@@ -548,7 +548,7 @@ SfxCmisVersionsDialog::SfxCmisVersionsDialog ( SfxViewFrame* pVwFrame )
 
     m_pVersionBox->GrabFocus();
     m_pVersionBox->SetStyle( m_pVersionBox->GetStyle() | WB_HSCROLL | WB_CLIPCHILDREN );
-    m_pVersionBox->SetSelectionMode( SelectionMode::Single );
+    m_pVersionBox->SetSelectionMode( SINGLE_SELECTION );
 
     long nTabs_Impl[] = { 3, 0, 0, 0 };
 

@@ -55,6 +55,8 @@ class SW_DLLPUBLIC SwHHCWrapper : public editeng::HangulHanjaConversion
     bool        ConvNext_impl();        ///< former SpellNext
     bool        FindConvText_impl();    ///< former FindSpellError
 
+    /// from SwSpellWrapper copied and modified
+    bool        HasOtherCnt_impl();
     void        ConvStart_impl( SwConversionArgs *pConvArgs, SvxSpellArea eSpell );   ///< former SpellStart
     void        ConvEnd_impl( SwConversionArgs *pConvArgs );                          ///< former SpellEnd
     bool        ConvContinue_impl( SwConversionArgs *pConvArgs );                     ///< former SpellContinue
@@ -66,6 +68,9 @@ class SW_DLLPUBLIC SwHHCWrapper : public editeng::HangulHanjaConversion
                             const css::uno::Sequence< sal_Int32 > *pOffsets,
                             SwPaM *pCursor );
     void        ChangeText_impl( const OUString &rNewText, bool bKeepAttributes );
+
+    inline bool IsDrawObj()             { return m_bIsDrawObj; }
+    inline void SetDrawObj( bool bNew ) { m_bIsDrawObj = bNew; }
 
 protected:
     virtual void    GetNextPortion( OUString& rNextPortion,
@@ -92,7 +97,7 @@ public:
         sal_Int32 nConvOptions, bool bIsInteractive,
         bool bStart, bool bOther, bool bSelection );
 
-    virtual ~SwHHCWrapper() override;
+    virtual ~SwHHCWrapper();
 
     void    Convert();
 };

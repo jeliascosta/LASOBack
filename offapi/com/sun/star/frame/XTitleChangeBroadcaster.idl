@@ -25,15 +25,15 @@
 
  module com {  module sun {  module star {  module frame {
 
-/** Allows to register for title changed events.
+/** todo document me
  */
 interface XTitleChangeBroadcaster : com::sun::star::uno::XInterface
 {
-    /** Add a listener
+    /** todo document me
      */
     void addTitleChangeListener ( [in] com::sun::star::frame::XTitleChangeListener xListener );
 
-    /** Remove a listener
+    /** todo document me
      */
     void removeTitleChangeListener ( [in] com::sun::star::frame::XTitleChangeListener xListener );
 };

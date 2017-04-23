@@ -44,10 +44,10 @@ class EditToolbarController : public ComplexToolbarController
                                sal_uInt16 nID,
                                sal_Int32 nWidth,
                                const OUString& aCommand );
-        virtual ~EditToolbarController() override;
+        virtual ~EditToolbarController();
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
 
         // called from EditControl
         void Modify();

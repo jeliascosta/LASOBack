@@ -25,24 +25,35 @@
 #include <viewdata.hxx>
 #include <stringutil.hxx>
 #include <documentlinkmgr.hxx>
-#include <o3tl/enumarray.hxx>
 
+#include <config_orcus.h>
 #include "officecfg/Office/Calc.hxx"
 
 
+#if ENABLE_ORCUS
 #if defined(_WIN32)
 #define __ORCUS_STATIC_LIB
 #endif
 #include <orcus/csv_parser.hpp>
+#endif
 
 #include <queue>
 
 namespace sc {
 
-static o3tl::enumarray<DebugTime, double> fTimes { 0.0, 0.0, 0.0 };
+enum {
+    DEBUG_TIME_IMPORT,
+    DEBUG_TIME_RECALC,
+    DEBUG_TIME_RENDER,
+    DEBUG_TIME_MAX
+};
 
-double datastream_get_time(DebugTime nIdx)
+static double fTimes[DEBUG_TIME_MAX] = { 0.0, 0.0, 0.0 };
+
+double datastream_get_time(int nIdx)
 {
+    if( nIdx < 0 || nIdx >= (int)SAL_N_ELEMENTS( fTimes ) )
+        return -1;
     return fTimes[ nIdx ];
 }
 
@@ -54,6 +65,8 @@ inline double getNow()
     osl_getSystemTime(&now);
     return static_cast<double>(now.Seconds) + static_cast<double>(now.Nanosec) / 1000000000.0;
 }
+
+#if ENABLE_ORCUS
 
 class CSVHandler
 {
@@ -93,6 +106,8 @@ public:
     }
 };
 
+#endif
+
 }
 
 namespace datastreams {
@@ -120,7 +135,9 @@ class ReaderThread : public salhelper::Thread
     osl::Condition maCondReadStream;
     osl::Condition maCondConsume;
 
+#if ENABLE_ORCUS
     orcus::csv::parser_config maConfig;
+#endif
 
 public:
 
@@ -130,11 +147,13 @@ public:
         mnColCount(nColCount),
         mbTerminate(false)
     {
+#if ENABLE_ORCUS
         maConfig.delimiters.push_back(',');
         maConfig.text_qualifier = '"';
+#endif
     }
 
-    virtual ~ReaderThread() override
+    virtual ~ReaderThread()
     {
         delete mpStream;
         emptyLineQueue(maPendingLines);
@@ -219,9 +238,11 @@ private:
             {
                 rLine.maCells.clear();
                 mpStream->ReadLine(rLine.maLine);
+#if ENABLE_ORCUS
                 CSVHandler aHdl(rLine, mnColCount);
                 orcus::csv_parser<CSVHandler> parser(rLine.maLine.getStr(), rLine.maLine.getLength(), aHdl, maConfig);
                 parser.parse();
+#endif
             }
 
             aGuard.reset(); // lock
@@ -309,7 +330,7 @@ DataStream::DataStream(ScDocShell *pShell, const OUString& rURL, const ScRange& 
     mbIsUpdate(false)
 {
     maImportTimer.SetTimeout(0);
-    maImportTimer.SetInvokeHandler( LINK(this, DataStream, ImportTimerHdl) );
+    maImportTimer.SetTimeoutHdl( LINK(this, DataStream, ImportTimerHdl) );
 
     Decode(rURL, rRange, nLimit, eMove, nSettings);
 }
@@ -441,7 +462,7 @@ void DataStream::Refresh()
     mpDocShell->DoHardRecalc(true);
     mpDocShell->SetDocumentModified();
 
-    fTimes[ DebugTime::Recalc ] = getNow() - fStart;
+    fTimes[ DEBUG_TIME_RECALC ] = getNow() - fStart;
 
     mfLastRefreshTime = getNow();
     mnLinesSinceRefresh = 0;
@@ -489,6 +510,8 @@ void DataStream::MoveData()
     }
 }
 
+#if ENABLE_ORCUS
+
 void DataStream::Text2Doc()
 {
     Line aLine = ConsumeLine();
@@ -523,7 +546,7 @@ void DataStream::Text2Doc()
         }
     }
 
-    fTimes[ DebugTime::Import ] = getNow() - fStart;
+    fTimes[ DEBUG_TIME_IMPORT ] = getNow() - fStart;
 
     if (meMove == NO_MOVE)
         return;
@@ -543,6 +566,12 @@ void DataStream::Text2Doc()
     ++mnLinesSinceRefresh;
 }
 
+#else
+
+void DataStream::Text2Doc() {}
+
+#endif
+
 bool DataStream::ImportData()
 {
     if (!mbValuesInLine)
@@ -556,7 +585,7 @@ bool DataStream::ImportData()
     return mbRunning;
 }
 
-IMPL_LINK_NOARG(DataStream, ImportTimerHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(DataStream, ImportTimerHdl, Timer *, void)
 {
     if (ImportData())
         maImportTimer.Start();

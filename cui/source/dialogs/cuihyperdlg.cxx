@@ -86,10 +86,10 @@ SvxHpLinkDlg::SvxHpLinkDlg (vcl::Window* pParent, SfxBindings* pBindings)
     std::vector<Image> imgVector;
     OUString aStrTitle;
     SvxIconChoiceCtrlEntry *pEntry;
-    imgVector.push_back(Image(BitmapEx(CUI_RES(RID_SVXBMP_HLINETTP))));
-    imgVector.push_back(Image(BitmapEx(CUI_RES(RID_SVXBMP_HLMAILTP))));
-    imgVector.push_back(Image(BitmapEx(CUI_RES(RID_SVXBMP_HLDOCTP))));
-    imgVector.push_back(Image(BitmapEx(CUI_RES(RID_SVXBMP_HLDOCNTP))));
+    imgVector.push_back( Image( CUI_RES ( RID_SVXBMP_HLINETTP ) ) );
+    imgVector.push_back( Image( CUI_RES ( RID_SVXBMP_HLMAILTP ) ) );
+    imgVector.push_back( Image( CUI_RES ( RID_SVXBMP_HLDOCTP  ) ) );
+    imgVector.push_back( Image( CUI_RES ( RID_SVXBMP_HLDOCNTP ) ) );
 
     for(Image &aImage : imgVector )
     {
@@ -117,8 +117,8 @@ SvxHpLinkDlg::SvxHpLinkDlg (vcl::Window* pParent, SfxBindings* pBindings)
     mpItemSet = new SfxItemSet( SfxGetpApp()->GetPool(), SID_HYPERLINK_GETLINK,
                                SID_HYPERLINK_SETLINK );
 
-    SvxHyperlinkItem aItem(SID_HYPERLINK_GETLINK);
-    mpItemSet->Put(aItem);
+    SvxHyperlinkItem aItem;
+    mpItemSet->Put (aItem, SID_HYPERLINK_GETLINK);
 
     SetInputSet (mpItemSet);
 
@@ -161,7 +161,7 @@ SvxHpLinkDlg::~SvxHpLinkDlg ()
 void SvxHpLinkDlg::dispose()
 {
     // delete config item, so the base class (IconChoiceDialog) can not load it on the next start
-    SvtViewOptions aViewOpt( EViewType::TabDialog, OUString::number(SID_HYPERLINK_DIALOG) );
+    SvtViewOptions aViewOpt( E_TABDIALOG, OUString::number(SID_HYPERLINK_DIALOG) );
     aViewOpt.Delete();
 
     delete mpItemSet;
@@ -200,7 +200,8 @@ void SvxHpLinkDlg::Apply()
 
         const SvxHyperlinkItem *aItem = static_cast<const SvxHyperlinkItem *>(
                                       aItemSet.GetItem (SID_HYPERLINK_SETLINK));
-        if ( !aItem->GetURL().isEmpty() )
+        OUString aStrEmpty;
+        if ( aItem->GetURL() != aStrEmpty )
             GetDispatcher()->ExecuteList(SID_HYPERLINK_SETLINK,
                     SfxCallMode::ASYNCHRON | SfxCallMode::RECORD, { aItem });
 
@@ -262,7 +263,7 @@ void SvxHpLinkDlg::Move()
 }
 
 /// Click on OK button
-IMPL_LINK_NOARG(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
 {
     Apply();
     Close();
@@ -274,7 +275,7 @@ IMPL_LINK_NOARG(SvxHpLinkDlg, ClickOkHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
 {
     Apply();
 }
@@ -285,7 +286,7 @@ IMPL_LINK_NOARG(SvxHpLinkDlg, ClickApplyHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHpLinkDlg, ClickCloseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHpLinkDlg, ClickCloseHdl_Impl, Button*, void)
 {
     Close();
 }

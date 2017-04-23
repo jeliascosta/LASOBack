@@ -31,7 +31,7 @@
 #include <svx/svdorect.hxx>
 #include <svx/svdocirc.hxx>
 #include <svx/svdomeas.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/itemiter.hxx>
 #include <svx/xenum.hxx>
 #include <svx/xlineit0.hxx>
@@ -88,7 +88,7 @@ SdrAttrObj::~SdrAttrObj()
 {
 }
 
-const tools::Rectangle& SdrAttrObj::GetSnapRect() const
+const Rectangle& SdrAttrObj::GetSnapRect() const
 {
     if(bSnapRectDirty)
     {
@@ -121,18 +121,19 @@ void SdrAttrObj::SetModel(SdrModel* pNewModel)
 
 void SdrAttrObj::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    bool bDataChg(SfxHintId::DataChanged == rHint.GetId());
+    const SfxSimpleHint* pSimple = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    bool bDataChg(pSimple && SFX_HINT_DATACHANGED == pSimple->GetId());
 
     if(bDataChg)
     {
-        tools::Rectangle aBoundRect = GetLastBoundRect();
+        Rectangle aBoundRect = GetLastBoundRect();
         SetBoundRectDirty();
         SetRectsDirty(true);
 
         // This may have led to object change
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SdrUserCallType::ChangeAttr, aBoundRect);
+        SendUserCall(SDRUSERCALL_CHGATTR, aBoundRect);
     }
 }
 

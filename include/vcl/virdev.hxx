@@ -33,14 +33,6 @@ class VCL_DLLPUBLIC VirtualDevice : public OutputDevice
     friend class Application;
     friend class ::OutputDevice;
     friend class Printer;
-public:
-    // reference device modes for different compatibility levels
-    enum class RefDevMode { NONE = 0,
-                            Dpi600 = 1,      // 600 dpi
-                            MSO1 = 3,
-                            PDF1 = 4,
-                            Custom = 5
-                          };
 
 private:
     SalVirtualDevice*   mpVirDev;
@@ -50,8 +42,7 @@ private:
     bool                mbScreenComp;
     DeviceFormat        meFormat;
     DeviceFormat        meAlphaFormat;
-    RefDevMode          meRefDevMode;
-    bool                mbForceZeroExtleadBug;
+    sal_uInt8           meRefDevMode;
 
     SAL_DLLPRIVATE void ImplInitVirDev( const OutputDevice* pOutDev, long nDX, long nDY, DeviceFormat eFormat, const SystemGraphicsData *pData = nullptr );
     SAL_DLLPRIVATE bool InnerImplSetOutputSizePixel( const Size& rNewSize, bool bErase,
@@ -66,7 +57,12 @@ private:
 
         @since \#i32109#
      */
-    SAL_DLLPRIVATE void ImplFillOpaqueRectangle( const tools::Rectangle& rRect );
+    SAL_DLLPRIVATE void ImplFillOpaqueRectangle( const Rectangle& rRect );
+
+    // TODO: add extra member for refdev backward compatibility options
+    #define REFDEV_FORCE_ZERO_EXTLEAD 0x80
+    SAL_DLLPRIVATE bool ForceZeroExtleadBug() const
+        { return ((meRefDevMode & REFDEV_FORCE_ZERO_EXTLEAD) != 0); }
 
 protected:
     virtual bool AcquireGraphics() const override;
@@ -121,7 +117,7 @@ public:
     explicit            VirtualDevice(const SystemGraphicsData *pData, const Size &rSize,
                                       DeviceFormat eFormat);
 
-    virtual             ~VirtualDevice() override;
+    virtual             ~VirtualDevice();
     virtual void        dispose() override;
 
     virtual void        EnableRTL( bool bEnable = true ) override;
@@ -134,6 +130,14 @@ public:
 
     bool                SetOutputSize( const Size& rNewSize )
                             { return SetOutputSizePixel( LogicToPixel( rNewSize ) ); }
+
+    // reference device modes for different compatibility levels
+    enum RefDevMode {   REFDEV_NONE = 0,
+                        REFDEV_MODE06 = 1,      // 600 dpi
+                        REFDEV_MODE_MSO1 = 3,
+                        REFDEV_MODE_PDF1 = 4,
+                        REFDEV_CUSTOM = 5
+                    };
 
     void                SetReferenceDevice( RefDevMode );
 

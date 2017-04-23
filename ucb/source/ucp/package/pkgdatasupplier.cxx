@@ -28,7 +28,6 @@
 #include <osl/diagnose.h>
 #include <com/sun/star/container/XEnumeration.hpp>
 #include <com/sun/star/container/XNamed.hpp>
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/providerhelper.hxx>
 #include "pkgdatasupplier.hxx"
@@ -431,6 +430,7 @@ void DataSupplier::close()
 
 // virtual
 void DataSupplier::validate()
+    throw( ucb::ResultSetException )
 {
     if ( m_pImpl->m_bThrowException )
         throw ucb::ResultSetException();

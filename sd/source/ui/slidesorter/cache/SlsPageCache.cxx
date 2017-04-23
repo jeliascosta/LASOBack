@@ -74,7 +74,7 @@ void PageCache::SetMarkedPreviewBitmap (
 
 void PageCache::RequestPreviewBitmap (const CacheKey aKey)
 {
-    return mpImplementation->RequestPreviewBitmap(aKey, true);
+    return mpImplementation->RequestPreviewBitmap(aKey);
 }
 
 void PageCache::InvalidatePreviewBitmap (

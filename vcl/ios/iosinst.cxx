@@ -23,7 +23,7 @@
 
 #include "ios/iosinst.hxx"
 #include "headless/svpdummies.hxx"
-#include "unx/gendata.hxx"
+#include "generic/gendata.hxx"
 #include "quartz/utils.h"
 #include <vcl/layout.hxx>
 #include <vcl/settings.hxx>
@@ -42,9 +42,9 @@ public:
     virtual bool ErrorTrapPop( bool ) { return false; }
 };
 
-void IosSalInstance::GetWorkArea( tools::Rectangle& rRect )
+void IosSalInstance::GetWorkArea( Rectangle& rRect )
 {
-    rRect = tools::Rectangle( Point( 0, 0 ),
+    rRect = Rectangle( Point( 0, 0 ),
                        Size( viewWidth, viewHeight ) );
 }
 
@@ -96,7 +96,7 @@ public:
             SetPosSize(0, 0, viewWidth, viewHeight, SAL_FRAME_POSSIZE_WIDTH | SAL_FRAME_POSSIZE_HEIGHT);
     }
 
-    virtual void GetWorkArea( tools::Rectangle& rRect ) override
+    virtual void GetWorkArea( Rectangle& rRect ) override
     {
         IosSalInstance::getInstance()->GetWorkArea( rRect );
     }
@@ -118,6 +118,7 @@ public:
         aStyleSet.SetMenuFont( aFont );
         aStyleSet.SetToolFont( aFont );
         aStyleSet.SetLabelFont( aFont );
+        aStyleSet.SetInfoFont( aFont );
         aStyleSet.SetRadioCheckFont( aFont );
         aStyleSet.SetPushButtonFont( aFont );
         aStyleSet.SetFieldFont( aFont );

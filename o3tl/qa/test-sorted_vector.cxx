@@ -36,38 +36,41 @@ public:
     void testBasics()
     {
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent> > aVec;
-        std::unique_ptr<SwContent> p1( new SwContent(1) );
-        std::unique_ptr<SwContent> p2( new SwContent(2) );
+        SwContent *p1 = new SwContent(1);
+        SwContent *p2 = new SwContent(2);
         SwContent *p3 = new SwContent(3);
-        std::unique_ptr<SwContent> p4( new SwContent(4) );
+        SwContent *p4 = new SwContent(4);
 
         CPPUNIT_ASSERT( aVec.insert(p3).second );
-        CPPUNIT_ASSERT( aVec.insert(p1.get()).second );
+        CPPUNIT_ASSERT( aVec.insert(p1).second );
         CPPUNIT_ASSERT( !aVec.insert(p3).second );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(2), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 2 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), aVec[0] );
-        CPPUNIT_ASSERT_EQUAL( p3, aVec[1] );
+        CPPUNIT_ASSERT( aVec[0] == p1 );
+        CPPUNIT_ASSERT( aVec[1] == p3 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), *aVec.begin() );
-        CPPUNIT_ASSERT_EQUAL( p3, *(aVec.end()-1) );
+        CPPUNIT_ASSERT( *aVec.begin() == p1 );
+        CPPUNIT_ASSERT( *(aVec.end()-1) == p3 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), aVec.front() );
-        CPPUNIT_ASSERT_EQUAL( p3, aVec.back() );
+        CPPUNIT_ASSERT( aVec.front() == p1 );
+        CPPUNIT_ASSERT( aVec.back() == p3 );
 
-        CPPUNIT_ASSERT( aVec.find(p1.get()) != aVec.end() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<std::ptrdiff_t>(0), aVec.find(p1.get()) - aVec.begin() );
+        CPPUNIT_ASSERT( aVec.find(p1) != aVec.end() );
+        CPPUNIT_ASSERT( aVec.find(p1) - aVec.begin() == 0 );
         CPPUNIT_ASSERT( aVec.find(p3) != aVec.end() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<std::ptrdiff_t>(1), aVec.find(p3) - aVec.begin() );
-        CPPUNIT_ASSERT( bool(aVec.find(p2.get()) == aVec.end()) );
-        CPPUNIT_ASSERT( bool(aVec.find(p4.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.find(p3) - aVec.begin() == 1 );
+        CPPUNIT_ASSERT( aVec.find(p2) == aVec.end() );
+        CPPUNIT_ASSERT( aVec.find(p4) == aVec.end() );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1.get()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.size() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.erase(p2.get()) );
+        CPPUNIT_ASSERT( aVec.erase(p1) == 1 );
+        CPPUNIT_ASSERT( aVec.size() == 1 );
+        CPPUNIT_ASSERT( aVec.erase(p2) == 0 );
 
         aVec.DeleteAndDestroyAll();
+        delete p1;
+        delete p2;
+        delete p4;
     }
 
     void testErase()
@@ -76,169 +79,184 @@ public:
         SwContent *p1 = new SwContent(1);
         SwContent *p2 = new SwContent(2);
         SwContent *p3 = new SwContent(3);
-        std::unique_ptr<SwContent> p4( new SwContent(4) );
+        SwContent *p4 = new SwContent(4);
 
         aVec.insert(p1);
         aVec.insert(p2);
         aVec.insert(p3);
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(2), aVec.size() );
+        CPPUNIT_ASSERT( aVec.erase(p1) == 1 );
+        CPPUNIT_ASSERT( aVec.size() == 2 );
 
         aVec.erase(1);
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 1 );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.erase(p4.get()) );
+        CPPUNIT_ASSERT( aVec.erase(p4) == 0 );
 
         aVec.clear();
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 0 );
 
         aVec.insert(p1);
         aVec.insert(p2);
         aVec.insert(p3);
         aVec.DeleteAndDestroyAll();
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 0 );
+        delete p4;
     }
 
     void testInsertRange()
     {
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent> > aVec1;
-        std::unique_ptr<SwContent> p1( new SwContent(1) );
-        std::unique_ptr<SwContent> p2( new SwContent(2) );
-        std::unique_ptr<SwContent> p3( new SwContent(3) );
+        SwContent *p1 = new SwContent(1);
+        SwContent *p2 = new SwContent(2);
+        SwContent *p3 = new SwContent(3);
 
-        aVec1.insert(p1.get());
-        aVec1.insert(p2.get());
-        aVec1.insert(p3.get());
+        aVec1.insert(p1);
+        aVec1.insert(p2);
+        aVec1.insert(p3);
 
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent> > aVec2;
         aVec2.insert( aVec1 );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(3), aVec2.size() );
+        CPPUNIT_ASSERT( aVec2.size() == 3 );
+        delete p1;
+        delete p2;
+        delete p3;
     }
 
     void testLowerBound()
     {
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent> > aVec;
-        std::unique_ptr<SwContent> p1( new SwContent(1) );
-        std::unique_ptr<SwContent> p2( new SwContent(2) );
-        std::unique_ptr<SwContent> p3( new SwContent(3) );
-        std::unique_ptr<SwContent> p4( new SwContent(4) );
+        SwContent *p1 = new SwContent(1);
+        SwContent *p2 = new SwContent(2);
+        SwContent *p3 = new SwContent(3);
+        SwContent *p4 = new SwContent(4);
 
-        aVec.insert(p1.get());
-        aVec.insert(p2.get());
-        aVec.insert(p3.get());
+        aVec.insert(p1);
+        aVec.insert(p2);
+        aVec.insert(p3);
 
-        CPPUNIT_ASSERT( bool(aVec.lower_bound(p1.get()) == aVec.begin()) );
-        CPPUNIT_ASSERT( bool(aVec.lower_bound(p4.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.lower_bound(p1) == aVec.begin() );
+        CPPUNIT_ASSERT( aVec.lower_bound(p4) == aVec.end() );
+        delete p1;
+        delete p2;
+        delete p3;
+        delete p4;
     }
 
     void testBasics_FindPtr()
     {
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent>,
             o3tl::find_partialorder_ptrequals> aVec;
-        std::unique_ptr<SwContent> p1( new SwContent(1) );
-        std::unique_ptr<SwContent> p2( new SwContent(2) );
+        SwContent *p1 = new SwContent(1);
+        SwContent *p2 = new SwContent(2);
         SwContent *p2_2 = new SwContent(2);
-        std::unique_ptr<SwContent> p2_3( new SwContent(2) );
+        SwContent *p2_3 = new SwContent(2);
         SwContent *p2_4 = new SwContent(2);
         SwContent *p3 = new SwContent(3);
-        std::unique_ptr<SwContent> p4( new SwContent(4) );
+        SwContent *p4 = new SwContent(4);
 
         CPPUNIT_ASSERT( aVec.insert(p3).second );
-        CPPUNIT_ASSERT( aVec.insert(p1.get()).second );
+        CPPUNIT_ASSERT( aVec.insert(p1).second );
         CPPUNIT_ASSERT( !aVec.insert(p3).second );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(2), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 2 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), aVec[0] );
-        CPPUNIT_ASSERT_EQUAL( p3, aVec[1] );
+        CPPUNIT_ASSERT( aVec[0] == p1 );
+        CPPUNIT_ASSERT( aVec[1] == p3 );
 
         CPPUNIT_ASSERT( aVec.insert(p2_2).second );
-        CPPUNIT_ASSERT( aVec.insert(p2_3.get()).second );
+        CPPUNIT_ASSERT( aVec.insert(p2_3).second );
         CPPUNIT_ASSERT( !aVec.insert(p2_2).second );
         CPPUNIT_ASSERT( aVec.insert(p2_4).second );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(5), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 5 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), *aVec.begin() );
-        CPPUNIT_ASSERT_EQUAL( p3, *(aVec.end()-1) );
+        CPPUNIT_ASSERT( *aVec.begin() == p1 );
+        CPPUNIT_ASSERT( *(aVec.end()-1) == p3 );
 
-        CPPUNIT_ASSERT_EQUAL( p1.get(), aVec.front() );
-        CPPUNIT_ASSERT_EQUAL( p3, aVec.back() );
+        CPPUNIT_ASSERT( aVec.front() == p1 );
+        CPPUNIT_ASSERT( aVec.back() == p3 );
 
-        CPPUNIT_ASSERT( aVec.find(p1.get()) != aVec.end() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<std::ptrdiff_t>(0), aVec.find(p1.get()) - aVec.begin() );
+        CPPUNIT_ASSERT( aVec.find(p1) != aVec.end() );
+        CPPUNIT_ASSERT( aVec.find(p1) - aVec.begin() == 0 );
         CPPUNIT_ASSERT( aVec.find(p3) != aVec.end() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<std::ptrdiff_t>(4), aVec.find(p3) - aVec.begin() );
-        CPPUNIT_ASSERT( bool(aVec.find(p2.get()) == aVec.end()) );
-        CPPUNIT_ASSERT( bool(aVec.find(p4.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.find(p3) - aVec.begin() == 4 );
+        CPPUNIT_ASSERT( aVec.find(p2) == aVec.end() );
+        CPPUNIT_ASSERT( aVec.find(p4) == aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p2_2) != aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p2_2) - aVec.begin() >= 1 );
         CPPUNIT_ASSERT( aVec.find(p2_2) - aVec.begin() <  4 );
-        CPPUNIT_ASSERT( aVec.find(p2_3.get()) != aVec.end() );
-        CPPUNIT_ASSERT( aVec.find(p2_3.get()) - aVec.begin() >= 1 );
-        CPPUNIT_ASSERT( aVec.find(p2_3.get()) - aVec.begin() <  4 );
+        CPPUNIT_ASSERT( aVec.find(p2_3) != aVec.end() );
+        CPPUNIT_ASSERT( aVec.find(p2_3) - aVec.begin() >= 1 );
+        CPPUNIT_ASSERT( aVec.find(p2_3) - aVec.begin() <  4 );
         CPPUNIT_ASSERT( aVec.find(p2_4) != aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p2_4) - aVec.begin() >= 1 );
         CPPUNIT_ASSERT( aVec.find(p2_4) - aVec.begin() <  4 );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1.get()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(4), aVec.size() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.erase(p2.get()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p2_3.get()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(3), aVec.size() );
+        CPPUNIT_ASSERT( aVec.erase(p1) == 1 );
+        CPPUNIT_ASSERT( aVec.size() == 4 );
+        CPPUNIT_ASSERT( aVec.erase(p2) == 0 );
+        CPPUNIT_ASSERT( aVec.erase(p2_3) == 1 );
+        CPPUNIT_ASSERT( aVec.size() == 3 );
 
         aVec.DeleteAndDestroyAll();
+        delete p1;
+        delete p2;
+        delete p2_3;
+        delete p4;
     }
 
     void testErase_FindPtr()
     {
         o3tl::sorted_vector<SwContent*, o3tl::less_ptr_to<SwContent>,
             o3tl::find_partialorder_ptrequals> aVec;
-        std::unique_ptr<SwContent> p1( new SwContent(1) );
+        SwContent *p1 = new SwContent(1);
         SwContent *p1_2 = new SwContent(1);
-        std::unique_ptr<SwContent> p1_3( new SwContent(1) );
+        SwContent *p1_3 = new SwContent(1);
         SwContent *p2 = new SwContent(2);
         SwContent *p3 = new SwContent(3);
-        std::unique_ptr<SwContent> p4( new SwContent(4) );
+        SwContent *p4 = new SwContent(4);
 
-        aVec.insert(p1.get());
+        aVec.insert(p1);
         aVec.insert(p2);
         aVec.insert(p3);
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1.get()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(2), aVec.size() );
+        CPPUNIT_ASSERT( aVec.erase(p1) == 1 );
+        CPPUNIT_ASSERT( aVec.size() == 2 );
 
         aVec.erase(1);
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 1 );
 
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.erase(p4.get()) );
+        CPPUNIT_ASSERT( aVec.erase(p4) == 0 );
 
         aVec.clear();
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 0 );
 
-        aVec.insert(p1.get());
+        aVec.insert(p1);
         aVec.insert(p2);
         aVec.insert(p3);
         aVec.insert(p1_2);
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(4), aVec.size() );
-        aVec.insert(p1_3.get());
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(5), aVec.size() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1.get()) );
-        CPPUNIT_ASSERT( bool(aVec.find(p1.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.size() == 4 );
+        aVec.insert(p1_3);
+        CPPUNIT_ASSERT( aVec.size() == 5 );
+        CPPUNIT_ASSERT( aVec.erase(p1) == 1 );
+        CPPUNIT_ASSERT( aVec.find(p1) == aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p1_2) != aVec.end() );
-        CPPUNIT_ASSERT( aVec.find(p1_3.get()) != aVec.end() );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(1), aVec.erase(p1_3.get()) );
-        CPPUNIT_ASSERT( bool(aVec.find(p1.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.find(p1_3) != aVec.end() );
+        CPPUNIT_ASSERT( aVec.erase(p1_3) == 1 );
+        CPPUNIT_ASSERT( aVec.find(p1) == aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p1_2) != aVec.end() );
-        CPPUNIT_ASSERT( bool(aVec.find(p1_3.get()) == aVec.end()) );
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.erase(p1_3.get()) );
-        CPPUNIT_ASSERT( bool(aVec.find(p1.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.find(p1_3) == aVec.end() );
+        CPPUNIT_ASSERT( aVec.erase(p1_3) == 0 );
+        CPPUNIT_ASSERT( aVec.find(p1) == aVec.end() );
         CPPUNIT_ASSERT( aVec.find(p1_2) != aVec.end() );
-        CPPUNIT_ASSERT( bool(aVec.find(p1_3.get()) == aVec.end()) );
+        CPPUNIT_ASSERT( aVec.find(p1_3) == aVec.end() );
 
         aVec.DeleteAndDestroyAll();
-        CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(0), aVec.size() );
+        CPPUNIT_ASSERT( aVec.size() == 0 );
+        delete p1;
+        delete p1_3;
+        delete p4;
     }
 
 

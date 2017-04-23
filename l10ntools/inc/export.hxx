@@ -103,9 +103,9 @@ enum class ExportListType {
     NONE, String, Filter, Item, Paired
 };
 
-enum class StringType {
-    Text, QuickHelpText, Title
-};
+#define STRING_TYP_TEXT             0x0010
+#define STRING_TYP_QUICKHELPTEXT    0x0040
+#define STRING_TYP_TITLE            0x0080
 
 
 typedef ::std::vector< ResData* > ResStack;
@@ -128,6 +128,7 @@ private:
     bool bNextMustBeDefineEOL;          ///< define but no \ at lineend
     std::size_t nLevel; // res. recursive? how deep?
     ExportListType nList;                       ///< cur. res. is List
+    std::size_t nListIndex;
     std::size_t nListLevel;
     bool bMergeMode;
     OString sMergeSrc;
@@ -152,7 +153,7 @@ private:
     static void CleanValue( OString &rValue );
     static OString GetText(const OString &rSource, int nToken);
 
-    void ResData2Output( MergeEntrys *pEntry, StringType nType, const OString& rTextType );
+    void ResData2Output( MergeEntrys *pEntry, sal_uInt16 nType, const OString& rTextType );
     void MergeRest( ResData *pResData );
     static void ConvertMergeContent( OString &rText );
     static void ConvertExportContent( OString &rText );
@@ -161,6 +162,8 @@ private:
     void SetChildWithText();
 
     static void CutComment( OString &rText );
+
+    void WriteUTF8ByteOrderMarkToOutput() { *aOutput.mSimple << '\xEF' << '\xBB' << '\xBF'; }
 
 public:
     Export( const OString &rOutput );
@@ -204,7 +207,7 @@ public:
         sTitle[ rId ] = rTitle;
         bTitleFirst[ rId ] = true;
     }
-    bool GetText( OString &rReturn, StringType nTyp, const OString &nLangIndex, bool bDel = false );
+    bool GetText( OString &rReturn, sal_uInt16 nTyp, const OString &nLangIndex, bool bDel = false );
 
     /**
       Generate QTZ string with ResData
@@ -246,11 +249,15 @@ class MergeDataHashMap
         {
         }
 
+        ~MergeDataHashMap()
+        {
+        }
+
         typedef HashMap_t::iterator iterator;
         typedef HashMap_t::const_iterator const_iterator;
 
         std::pair<iterator,bool> insert(const OString& rKey, MergeData* pMergeData);
-        iterator const & find(const OString& rKey);
+        iterator find(const OString& rKey);
 
         iterator begin() {return m_aHashMap.begin();}
         iterator end() {return m_aHashMap.end();}
@@ -278,13 +285,13 @@ class MergeData
 public:
     OString sGID;
     OString sLID;
-    std::unique_ptr<MergeEntrys> pMergeEntrys;
+    MergeEntrys* pMergeEntrys;
 private:
     MergeDataHashMap::iterator m_aNextData;
 public:
     MergeData( const OString &rGID, const OString &rLID );
     ~MergeData();
-    MergeEntrys* GetMergeEntries() { return pMergeEntrys.get();}
+    MergeEntrys* GetMergeEntries() { return pMergeEntrys;}
 
 };
 
@@ -299,7 +306,7 @@ class MergeDataFile
         MergeDataHashMap aMap;
         std::set<OString> aLanguageSet;
 
-        MergeData *GetMergeData( ResData *pResData , bool bCaseSensitive = false );
+        MergeData *GetMergeData( ResData *pResData , bool bCaseSensitve = false );
         void InsertEntry(const OString &rTYP, const OString &rGID,
             const OString &rLID, const OString &nLang,
             const OString &rTEXT, const OString &rQHTEXT,
@@ -319,7 +326,7 @@ class MergeDataFile
         MergeEntrys *GetMergeEntrysCaseSensitive( ResData *pResData );
 
         static OString CreateKey(const OString& rTYP, const OString& rGID,
-            const OString& rLID, const OString& rFilename, bool bCaseSensitive);
+            const OString& rLID, const OString& rFilename , bool bCaseSensitive = false);
 };
 
 

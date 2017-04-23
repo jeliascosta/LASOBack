@@ -28,7 +28,7 @@
 class XMLEscapementPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLEscapementPropHdl() override;
+    virtual ~XMLEscapementPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -37,7 +37,7 @@ public:
 class XMLEscapementHeightPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLEscapementHeightPropHdl() override;
+    virtual ~XMLEscapementHeightPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

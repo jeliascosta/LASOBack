@@ -108,18 +108,17 @@ namespace
     }
 }
 
-IMPL_STATIC_LINK(
-    FmFormObjFactory, MakeObject, SdrObjCreatorParams, aParams, SdrObject*)
+IMPL_STATIC_LINK_TYPED(
+    FmFormObjFactory, MakeObject, SdrObjFactory*, pObjFactory, void)
 {
-    SdrObject* pNewObj = nullptr;
-    if (aParams.nInventor == SdrInventor::FmForm)
+    if (pObjFactory->nInventor == FmFormInventor)
     {
         OUString sServiceSpecifier;
 
         typedef ::std::vector< ::std::pair< OUString, Any > > PropertyValueArray;
         PropertyValueArray aInitialProperties;
 
-        switch ( aParams.nObjIdentifier )
+        switch ( pObjFactory->nIdentifier )
         {
             case OBJ_FM_EDIT:
                 sServiceSpecifier = FM_COMPONENT_EDIT;
@@ -215,9 +214,9 @@ IMPL_STATIC_LINK(
 
         // create the actual object
         if ( !sServiceSpecifier.isEmpty() )
-            pNewObj = new FmFormObj(sServiceSpecifier);
+            pObjFactory->pNewObj = new FmFormObj(sServiceSpecifier);
         else
-            pNewObj = new FmFormObj();
+            pObjFactory->pNewObj = new FmFormObj();
 
         // initialize some properties which we want to differ from the defaults
         for (   PropertyValueArray::const_iterator aInitProp = aInitialProperties.begin();
@@ -226,13 +225,12 @@ IMPL_STATIC_LINK(
             )
         {
             lcl_initProperty(
-                static_cast< FmFormObj* >( pNewObj ),
+                static_cast< FmFormObj* >( pObjFactory->pNewObj ),
                 aInitProp->first,
                 aInitProp->second
             );
         }
     }
-    return pNewObj;
 }
 
 

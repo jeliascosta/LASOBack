@@ -55,7 +55,7 @@ public:
     inline ConfigurationListenerProperty(const rtl::Reference< ConfigurationListener > &xListener,
                                              const OUString &rProp );
 
-    virtual inline ~ConfigurationListenerProperty() override;
+    virtual inline ~ConfigurationListenerProperty();
 
     uno_type get() const { return maValue; }
 };
@@ -74,7 +74,7 @@ public:
                     css::uno::UNO_QUERY_THROW )
     { }
 
-    virtual ~ConfigurationListener() override
+    virtual ~ConfigurationListener()
     {
         dispose();
     }
@@ -89,11 +89,13 @@ public:
     void dispose();
 
     // XPropertyChangeListener implementation
-    virtual void SAL_CALL disposing(css::lang::EventObject const &) override;
+    virtual void SAL_CALL disposing(css::lang::EventObject const &)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Notify of the property change
     virtual void SAL_CALL propertyChange(
-        css::beans::PropertyChangeEvent const &rEvt ) override;
+        css::beans::PropertyChangeEvent const &rEvt )
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 template< typename uno_type > ConfigurationListenerProperty< uno_type >::ConfigurationListenerProperty(const rtl::Reference< ConfigurationListener > &xListener, const OUString &rProp )

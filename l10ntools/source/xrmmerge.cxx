@@ -40,16 +40,16 @@ using namespace std;
 void yyerror( const char * );
 
 // set of global variables
-static bool bMergeMode;
-static bool bDisplayName;
-static bool bExtensionDescription;
-static OString sLanguage;
-static OString sInputFileName;
-static OString sOutputFile;
-static OString sMergeSrc;
-static OString sLangAttribute;
-static OString sResourceType;
-static XRMResParser *pParser = nullptr;
+bool bMergeMode;
+bool bDisplayName;
+bool bExtensionDescription;
+OString sLanguage;
+OString sInputFileName;
+OString sOutputFile;
+OString sMergeSrc;
+OString sLangAttribute;
+OString sResourceType;
+XRMResParser *pParser = nullptr;
 
 extern "C" {
 // the whole interface to lexer is in this extern "C" section
@@ -411,7 +411,7 @@ void XRMResMerge::WorkOnDesc(
                 OString sContent;
                 if ( !sCur.equalsIgnoreAsciiCase("en-US")  &&
                     ( pEntrys->GetText(
-                        sContent, StringType::Text, sCur, true )) &&
+                        sContent, STRING_TYP_TEXT, sCur, true )) &&
                     !sContent.isEmpty())
                 {
                     OString sText( sContent );
@@ -499,7 +499,7 @@ void XRMResMerge::EndOfText(
                 OString sContent;
                 if (!sCur.equalsIgnoreAsciiCase("en-US") &&
                     ( pEntrys->GetText(
-                        sContent, StringType::Text, sCur, true )) &&
+                        sContent, STRING_TYP_TEXT, sCur, true )) &&
                     !sContent.isEmpty() &&
                     helper::isWellFormedXML( sContent ))
                 {

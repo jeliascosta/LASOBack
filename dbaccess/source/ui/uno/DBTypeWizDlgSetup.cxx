@@ -56,7 +56,7 @@ ODBTypeWizDialogSetup::ODBTypeWizDialogSetup(const Reference< XComponentContext 
         &m_bStartTableWizard, cppu::UnoType<bool>::get());
 }
 
-Sequence<sal_Int8> SAL_CALL ODBTypeWizDialogSetup::getImplementationId(  )
+Sequence<sal_Int8> SAL_CALL ODBTypeWizDialogSetup::getImplementationId(  ) throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -67,28 +67,28 @@ Reference< XInterface > SAL_CALL ODBTypeWizDialogSetup::Create(const Reference< 
     return xDBWizard;
 }
 
-OUString SAL_CALL ODBTypeWizDialogSetup::getImplementationName()
+OUString SAL_CALL ODBTypeWizDialogSetup::getImplementationName() throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-OUString ODBTypeWizDialogSetup::getImplementationName_Static()
+OUString ODBTypeWizDialogSetup::getImplementationName_Static() throw(RuntimeException)
 {
     return OUString("org.openoffice.comp.dbu.ODBTypeWizDialogSetup");
 }
 
-css::uno::Sequence<OUString> SAL_CALL ODBTypeWizDialogSetup::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL ODBTypeWizDialogSetup::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
-css::uno::Sequence<OUString> ODBTypeWizDialogSetup::getSupportedServiceNames_Static()
+css::uno::Sequence<OUString> ODBTypeWizDialogSetup::getSupportedServiceNames_Static() throw(RuntimeException)
 {
     css::uno::Sequence<OUString> aSupported { "com.sun.star.sdb.DatabaseWizardDialog" };
     return aSupported;
 }
 
-Reference<XPropertySetInfo>  SAL_CALL ODBTypeWizDialogSetup::getPropertySetInfo()
+Reference<XPropertySetInfo>  SAL_CALL ODBTypeWizDialogSetup::getPropertySetInfo() throw(RuntimeException, std::exception)
 {
     return createPropertySetInfo( getInfoHelper() );
 }

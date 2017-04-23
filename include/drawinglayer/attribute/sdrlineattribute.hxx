@@ -62,9 +62,7 @@ namespace drawinglayer
                 double fFullDotDashLen);
             SdrLineAttribute();
             SdrLineAttribute(const SdrLineAttribute& rCandidate);
-            SdrLineAttribute(SdrLineAttribute&& rCandidate);
             SdrLineAttribute& operator=(const SdrLineAttribute& rCandidate);
-            SdrLineAttribute& operator=(SdrLineAttribute&& rCandidate);
             ~SdrLineAttribute();
 
             // checks if the incarnation is default constructed

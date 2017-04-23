@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SVX_XMLEOHLP_HXX
 #define INCLUDED_SVX_XMLEOHLP_HXX
 
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase2.hxx>
 #include <osl/mutex.hxx>
 #include <map>
 #include <com/sun/star/container/XNameContainer.hpp>
@@ -29,21 +29,24 @@
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
 #include <svx/svxdllapi.h>
 
-enum class SvXMLEmbeddedObjectHelperMode
+enum SvXMLEmbeddedObjectHelperMode
 {
-    Read, Write
+    EMBEDDEDOBJECTHELPER_MODE_READ = 0,
+    EMBEDDEDOBJECTHELPER_MODE_WRITE = 1
 };
 
 namespace comphelper { class IEmbeddedHelper; }
 
 class SvGlobalName;
+struct OUStringLess;
 class OutputStorageWrapper_Impl;
 
 
 class SVX_DLLPUBLIC SvXMLEmbeddedObjectHelper :
-    public cppu::WeakComponentImplHelper< css::document::XEmbeddedObjectResolver, css::container::XNameAccess >
+    public ::cppu::WeakComponentImplHelper2< css::document::XEmbeddedObjectResolver, css::container::XNameAccess >
 {
-    typedef ::std::map< OUString, OutputStorageWrapper_Impl* > SvXMLEmbeddedObjectHelper_Impl;
+    typedef ::std::map< OUString, OutputStorageWrapper_Impl*,
+                         OUStringLess > SvXMLEmbeddedObjectHelper_Impl;
 private:
 
     ::osl::Mutex                maMutex;
@@ -69,7 +72,7 @@ private:
                                        bool *pGraphicRepl=nullptr,
                                        bool *pOasisFormat=nullptr ) const;
 
-    SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage > const & ImplGetContainerStorage(
+    SVX_DLLPRIVATE css::uno::Reference < css::embed::XStorage > ImplGetContainerStorage(
                                     const OUString& rStorageName );
 
     SVX_DLLPRIVATE void                 ImplReadObject(
@@ -87,7 +90,7 @@ private:
 protected:
 
                                 SvXMLEmbeddedObjectHelper();
-                                virtual ~SvXMLEmbeddedObjectHelper() override;
+                                virtual ~SvXMLEmbeddedObjectHelper();
     void                        Init( const css::uno::Reference < css::embed::XStorage >&,
                                       ::comphelper::IEmbeddedHelper& rDocPersist,
                                       SvXMLEmbeddedObjectHelperMode eCreateMode );
@@ -109,17 +112,19 @@ public:
                                     SvXMLEmbeddedObjectHelperMode eCreateMode );
     static void                 Destroy( SvXMLEmbeddedObjectHelper* pSvXMLEmbeddedObjectHelper );
 
+    void                        Flush();
+
     // XEmbeddedObjectResolver
-    virtual OUString SAL_CALL resolveEmbeddedObjectURL( const OUString& aURL ) override;
+    virtual OUString SAL_CALL resolveEmbeddedObjectURL( const OUString& aURL ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 
     static void splitObjectURL(const OUString& aURLNoPar,

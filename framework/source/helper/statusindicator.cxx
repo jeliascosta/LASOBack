@@ -35,6 +35,7 @@ StatusIndicator::~StatusIndicator()
 
 void SAL_CALL StatusIndicator::start(const OUString& sText ,
                                      sal_Int32       nRange)
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (comphelper::LibreOfficeKit::isActive())
     {
@@ -53,6 +54,7 @@ void SAL_CALL StatusIndicator::start(const OUString& sText ,
 }
 
 void SAL_CALL StatusIndicator::end()
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (comphelper::LibreOfficeKit::isActive())
     {
@@ -68,6 +70,7 @@ void SAL_CALL StatusIndicator::end()
 }
 
 void SAL_CALL StatusIndicator::reset()
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (comphelper::LibreOfficeKit::isActive())
         return;
@@ -81,6 +84,7 @@ void SAL_CALL StatusIndicator::reset()
 }
 
 void SAL_CALL StatusIndicator::setText(const OUString& sText)
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (comphelper::LibreOfficeKit::isActive())
         return;
@@ -94,11 +98,12 @@ void SAL_CALL StatusIndicator::setText(const OUString& sText)
 }
 
 void SAL_CALL StatusIndicator::setValue(sal_Int32 nValue)
+    throw(css::uno::RuntimeException, std::exception)
 {
     if (comphelper::LibreOfficeKit::isActive())
     {
         int nPercent = (100*nValue)/m_nRange;
-        if (nPercent >= m_nLastCallbackPercent)
+        if (nPercent != m_nLastCallbackPercent)
         {
             comphelper::LibreOfficeKit::statusIndicatorSetValue(nPercent);
             m_nLastCallbackPercent = nPercent;

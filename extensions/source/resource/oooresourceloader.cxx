@@ -19,7 +19,6 @@
 
 
 #include <oooresourceloader.hxx>
-#include <com/sun/star/resource/MissingResourceException.hpp>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include <tools/simplerm.hxx>
@@ -80,12 +79,12 @@ namespace extensions { namespace resource
     {
     private:
         typedef std::shared_ptr< StringResourceAccess >  ResourceTypePtr;
-        typedef std::map< OUString, ResourceTypePtr >  ResourceTypes;
+        typedef ::std::map< OUString, ResourceTypePtr >  ResourceTypes;
 
         ::osl::Mutex                    m_aMutex;
         Reference< XResourceBundle >    m_xParent;
         Locale                          m_aLocale;
-        std::unique_ptr<SimpleResMgr>   m_pResourceManager;
+        SimpleResMgr*                   m_pResourceManager;
         ResourceTypes                   m_aResourceTypes;
 
     public:
@@ -96,23 +95,23 @@ namespace extensions { namespace resource
         );
 
     protected:
-        virtual ~OpenOfficeResourceBundle() override;
+        virtual ~OpenOfficeResourceBundle();
 
     public:
         // XResourceBundle
-        virtual css::uno::Reference< css::resource::XResourceBundle > SAL_CALL getParent() override;
-        virtual void SAL_CALL setParent( const css::uno::Reference< css::resource::XResourceBundle >& _parent ) override;
-        virtual css::lang::Locale SAL_CALL getLocale(  ) override;
-        virtual css::uno::Any SAL_CALL getDirectElement( const OUString& key ) override;
+        virtual css::uno::Reference< css::resource::XResourceBundle > SAL_CALL getParent() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setParent( const css::uno::Reference< css::resource::XResourceBundle >& _parent ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::lang::Locale SAL_CALL getLocale(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getDirectElement( const OUString& key ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XNameAccess (base of XResourceBundle)
-        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess (base of XNameAccess)
-        virtual css::uno::Type SAL_CALL getElementType(  ) override;
-        virtual sal_Bool SAL_CALL hasElements(  ) override;
+        virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         /** retrievs the element with the given key, without asking our parent bundle
@@ -148,13 +147,13 @@ namespace extensions { namespace resource
     }
 
 
-    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceLoader::loadBundle_Default( const OUString& _baseName )
+    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceLoader::loadBundle_Default( const OUString& _baseName ) throw (MissingResourceException, RuntimeException, std::exception)
     {
         return loadBundle( _baseName, Application::GetSettings().GetUILanguageTag().getLocale() );
     }
 
 
-    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceLoader::loadBundle( const OUString& _baseName, const Locale& _locale )
+    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceLoader::loadBundle( const OUString& _baseName, const Locale& _locale ) throw (MissingResourceException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -178,11 +177,13 @@ namespace extensions { namespace resource
         :m_aLocale( _rLocale )
         ,m_pResourceManager( nullptr )
     {
-        m_pResourceManager.reset( new SimpleResMgr( OUStringToOString( _rBaseName, RTL_TEXTENCODING_UTF8 ).getStr(),
-                LanguageTag( m_aLocale) ) );
+        m_pResourceManager = new SimpleResMgr( OUStringToOString( _rBaseName, RTL_TEXTENCODING_UTF8 ).getStr(),
+                LanguageTag( m_aLocale) );
 
         if ( !m_pResourceManager->IsValid() )
         {
+            delete m_pResourceManager;
+            m_pResourceManager = nullptr;
             throw MissingResourceException();
         }
 
@@ -193,21 +194,22 @@ namespace extensions { namespace resource
 
     OpenOfficeResourceBundle::~OpenOfficeResourceBundle()
     {
+        delete m_pResourceManager;
     }
 
-    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceBundle::getParent()
+    Reference< XResourceBundle > SAL_CALL OpenOfficeResourceBundle::getParent() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         return m_xParent;
     }
 
-    void SAL_CALL OpenOfficeResourceBundle::setParent( const Reference< XResourceBundle >& _parent )
+    void SAL_CALL OpenOfficeResourceBundle::setParent( const Reference< XResourceBundle >& _parent ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         m_xParent = _parent;
     }
 
-    Locale SAL_CALL OpenOfficeResourceBundle::getLocale(  )
+    Locale SAL_CALL OpenOfficeResourceBundle::getLocale(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         return m_aLocale;
@@ -247,7 +249,7 @@ namespace extensions { namespace resource
         return _out_Element.hasValue();
     }
 
-    Any SAL_CALL OpenOfficeResourceBundle::getDirectElement( const OUString& _key )
+    Any SAL_CALL OpenOfficeResourceBundle::getDirectElement( const OUString& _key ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -256,7 +258,7 @@ namespace extensions { namespace resource
         return aElement;
     }
 
-    Any SAL_CALL OpenOfficeResourceBundle::getByName( const OUString& _key )
+    Any SAL_CALL OpenOfficeResourceBundle::getByName( const OUString& _key ) throw (NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -273,14 +275,15 @@ namespace extensions { namespace resource
         return aElement;
     }
 
-    Sequence< OUString > SAL_CALL OpenOfficeResourceBundle::getElementNames(  )
+    Sequence< OUString > SAL_CALL OpenOfficeResourceBundle::getElementNames(  ) throw (RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
         OSL_FAIL( "OpenOfficeResourceBundle::getElementNames: not implemented!" );
             // the (Simple)ResManager does not provide an API to enumerate the resources
         return Sequence< OUString >( );
     }
 
-    sal_Bool SAL_CALL OpenOfficeResourceBundle::hasByName( const OUString& _key )
+    sal_Bool SAL_CALL OpenOfficeResourceBundle::hasByName( const OUString& _key ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -295,12 +298,12 @@ namespace extensions { namespace resource
         return true;
     }
 
-    Type SAL_CALL OpenOfficeResourceBundle::getElementType(  )
+    Type SAL_CALL OpenOfficeResourceBundle::getElementType(  ) throw (RuntimeException, std::exception)
     {
         return ::cppu::UnoType< Any >::get();
     }
 
-    sal_Bool SAL_CALL OpenOfficeResourceBundle::hasElements(  )
+    sal_Bool SAL_CALL OpenOfficeResourceBundle::hasElements(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         OSL_FAIL( "OpenOfficeResourceBundle::hasElements: not implemented!" );

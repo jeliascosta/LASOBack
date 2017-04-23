@@ -297,7 +297,7 @@ TOTypeInfoSP getTypeInfoFromType(const OTypeInfoMap& _rTypeInfo,
     TOTypeInfoSP pTypeInfo;
     _brForceToType = false;
     // search for type
-    std::pair<OTypeInfoMap::const_iterator, OTypeInfoMap::const_iterator> aPair = _rTypeInfo.equal_range(_nType);
+    ::std::pair<OTypeInfoMap::const_iterator, OTypeInfoMap::const_iterator> aPair = _rTypeInfo.equal_range(_nType);
     OTypeInfoMap::const_iterator aIter = aPair.first;
     if(aIter != _rTypeInfo.end()) // compare with end is correct here
     {
@@ -427,7 +427,7 @@ TOTypeInfoSP getTypeInfoFromType(const OTypeInfoMap& _rTypeInfo,
 void fillTypeInfo(  const Reference< css::sdbc::XConnection>& _rxConnection,
                     const OUString& _rsTypeNames,
                     OTypeInfoMap& _rTypeInfoMap,
-                    std::vector<OTypeInfoMap::iterator>& _rTypeInfoIters)
+                    ::std::vector<OTypeInfoMap::iterator>& _rTypeInfoIters)
 {
     if(!_rxConnection.is())
         return;
@@ -436,10 +436,12 @@ void fillTypeInfo(  const Reference< css::sdbc::XConnection>& _rxConnection,
     // Information for a single SQL type
     if(xRs.is())
     {
+        static const char aB1[] = " [ ";
+        static const char aB2[] = " ]";
         Reference<XResultSetMetaData> xResultSetMetaData = Reference<XResultSetMetaDataSupplier>(xRs,UNO_QUERY)->getMetaData();
         ::connectivity::ORowSetValue aValue;
-        std::vector<sal_Int32> aTypes;
-        std::vector<sal_Bool> aNullable;
+        ::std::vector<sal_Int32> aTypes;
+        ::std::vector<sal_Bool> aNullable;
         // Loop on the result set until we reach end of file
         while (xRs->next())
         {
@@ -618,11 +620,11 @@ void fillTypeInfo(  const Reference< css::sdbc::XConnection>& _rxConnection,
             if ( !aName.isEmpty() )
             {
                 pInfo->aUIName = aName;
-                pInfo->aUIName += " [ ";
+                pInfo->aUIName += aB1;
             }
             pInfo->aUIName += pInfo->aTypeName;
             if ( !aName.isEmpty() )
-                pInfo->aUIName += " ]";
+                pInfo->aUIName += aB2;
             // Now that we have the type info, save it in the multimap
             _rTypeInfoMap.insert(OTypeInfoMap::value_type(pInfo->nType,pInfo));
         }
@@ -723,10 +725,10 @@ sal_Int32 mapTextAllign(const SvxCellHorJustify& _eAlignment)
     sal_Int32 nAlignment = css::awt::TextAlign::LEFT;
     switch (_eAlignment)
     {
-        case SvxCellHorJustify::Standard:
-        case SvxCellHorJustify::Left:      nAlignment = css::awt::TextAlign::LEFT;    break;
-        case SvxCellHorJustify::Center:    nAlignment = css::awt::TextAlign::CENTER;  break;
-        case SvxCellHorJustify::Right:     nAlignment = css::awt::TextAlign::RIGHT;   break;
+        case SVX_HOR_JUSTIFY_STANDARD:
+        case SVX_HOR_JUSTIFY_LEFT:      nAlignment = css::awt::TextAlign::LEFT;    break;
+        case SVX_HOR_JUSTIFY_CENTER:    nAlignment = css::awt::TextAlign::CENTER;  break;
+        case SVX_HOR_JUSTIFY_RIGHT:     nAlignment = css::awt::TextAlign::RIGHT;   break;
         default:
             SAL_WARN("dbaccess.ui", "Invalid TextAlign!");
     }
@@ -735,12 +737,12 @@ sal_Int32 mapTextAllign(const SvxCellHorJustify& _eAlignment)
 
 SvxCellHorJustify mapTextJustify(sal_Int32 _nAlignment)
 {
-    SvxCellHorJustify eJustify = SvxCellHorJustify::Left;
+    SvxCellHorJustify eJustify = SVX_HOR_JUSTIFY_LEFT;
     switch (_nAlignment)
     {
-        case css::awt::TextAlign::LEFT     : eJustify = SvxCellHorJustify::Left; break;
-        case css::awt::TextAlign::CENTER   : eJustify = SvxCellHorJustify::Center; break;
-        case css::awt::TextAlign::RIGHT    : eJustify = SvxCellHorJustify::Right; break;
+        case css::awt::TextAlign::LEFT     : eJustify = SVX_HOR_JUSTIFY_LEFT; break;
+        case css::awt::TextAlign::CENTER   : eJustify = SVX_HOR_JUSTIFY_CENTER; break;
+        case css::awt::TextAlign::RIGHT    : eJustify = SVX_HOR_JUSTIFY_RIGHT; break;
         default:
             SAL_WARN("dbaccess.ui", "Invalid TextAlign!");
     }
@@ -760,7 +762,7 @@ void callColumnFormatDialog(const Reference<XPropertySet>& xAffectedCol,
             bool bHasFormat = xInfo->hasPropertyByName(PROPERTY_FORMATKEY);
             sal_Int32 nDataType = ::comphelper::getINT32(xField->getPropertyValue(PROPERTY_TYPE));
 
-            SvxCellHorJustify eJustify(SvxCellHorJustify::Standard);
+            SvxCellHorJustify eJustify(SVX_HOR_JUSTIFY_STANDARD);
             Any aAlignment = xAffectedCol->getPropertyValue(PROPERTY_ALIGN);
             if (aAlignment.hasValue())
                 eJustify = dbaui::mapTextJustify(::comphelper::getINT16(aAlignment));
@@ -809,17 +811,17 @@ bool callColumnFormatDialog(vcl::Window* _pParent,
         0
     };
 
-    std::vector<SfxPoolItem*> pDefaults
+    SfxPoolItem* pDefaults[] =
     {
         new SfxRangeItem(SBA_DEF_RANGEFORMAT, SBA_DEF_FMTVALUE, SBA_ATTR_ALIGN_HOR_JUSTIFY),
         new SfxUInt32Item(SBA_DEF_FMTVALUE),
-        new SvxHorJustifyItem(SvxCellHorJustify::Standard, SBA_ATTR_ALIGN_HOR_JUSTIFY),
+        new SvxHorJustifyItem(SVX_HOR_JUSTIFY_STANDARD, SBA_ATTR_ALIGN_HOR_JUSTIFY),
         new SfxBoolItem(SID_ATTR_NUMBERFORMAT_ONE_AREA, false),
         new SvxNumberInfoItem(SID_ATTR_NUMBERFORMAT_INFO)
     };
 
-    SfxItemPool* pPool = new SfxItemPool("GridBrowserProperties", SBA_DEF_RANGEFORMAT, SBA_ATTR_ALIGN_HOR_JUSTIFY, aItemInfos, &pDefaults);
-    pPool->SetDefaultMetric( MapUnit::MapTwip );    // ripped, don't understand why
+    SfxItemPool* pPool = new SfxItemPool(OUString("GridBrowserProperties"), SBA_DEF_RANGEFORMAT, SBA_ATTR_ALIGN_HOR_JUSTIFY, aItemInfos, pDefaults);
+    pPool->SetDefaultMetric( SFX_MAPUNIT_TWIP );    // ripped, don't understand why
     pPool->FreezeIdRanges();                        // the same
 
     std::unique_ptr<SfxItemSet> pFormatDescriptor(new SfxItemSet(*pPool, aAttrMap));
@@ -988,11 +990,11 @@ void adjustBrowseBoxColumnWidth( ::svt::EditBrowseBox* _pBox, sal_uInt16 _nColId
     sal_uInt32 nDefaultWidth = _pBox->GetDefaultColumnWidth( _pBox->GetColumnTitle( _nColId ) );
     if ( nDefaultWidth != _pBox->GetColumnWidth( _nColId ) )
     {
-        Size aSizeMM = _pBox->PixelToLogic( Size( _pBox->GetColumnWidth( _nColId ), 0 ), MapMode( MapUnit::MapMM ) );
+        Size aSizeMM = _pBox->PixelToLogic( Size( _pBox->GetColumnWidth( _nColId ), 0 ), MapMode( MAP_MM ) );
         nColSize = aSizeMM.Width() * 10;
     }
 
-    Size aDefaultMM = _pBox->PixelToLogic( Size( nDefaultWidth, 0 ), MapMode( MapUnit::MapMM ) );
+    Size aDefaultMM = _pBox->PixelToLogic( Size( nDefaultWidth, 0 ), MapMode( MAP_MM ) );
 
     ScopedVclPtrInstance< DlgSize > aColumnSizeDlg( _pBox, nColSize, false, aDefaultMM.Width() * 10 );
     if ( aColumnSizeDlg->Execute() )
@@ -1005,7 +1007,7 @@ void adjustBrowseBoxColumnWidth( ::svt::EditBrowseBox* _pBox, sal_uInt16 _nColId
         else
         {
             Size aSizeMM( nValue / 10, 0 );
-            nValue = _pBox->LogicToPixel( aSizeMM, MapMode( MapUnit::MapMM ) ).Width();
+            nValue = _pBox->LogicToPixel( aSizeMM, MapMode( MAP_MM ) ).Width();
         }
         _pBox->SetColumnWidth( _nColId, nValue );
     }
@@ -1038,14 +1040,14 @@ void fillAutoIncrementValue(const Reference<XPropertySet>& _xDatasource,
         _xDatasource->getPropertyValue(PROPERTY_INFO) >>= aInfo;
 
         // search the right propertyvalue
-        const PropertyValue* pValue =std::find_if(aInfo.getConstArray(),
+        const PropertyValue* pValue =::std::find_if(aInfo.getConstArray(),
                                                     aInfo.getConstArray() + aInfo.getLength(),
-                                                    std::bind2nd(TPropertyValueEqualFunctor(),PROPERTY_AUTOINCREMENTCREATION));
+                                                    ::std::bind2nd(TPropertyValueEqualFunctor(),PROPERTY_AUTOINCREMENTCREATION));
         if ( pValue && pValue != (aInfo.getConstArray() + aInfo.getLength()) )
             pValue->Value >>= _rsAutoIncrementValue;
-        pValue =std::find_if(aInfo.getConstArray(),
+        pValue =::std::find_if(aInfo.getConstArray(),
                                                     aInfo.getConstArray() + aInfo.getLength(),
-                                                    std::bind2nd(TPropertyValueEqualFunctor(),OUString("IsAutoRetrievingEnabled") ));
+                                                    ::std::bind2nd(TPropertyValueEqualFunctor(),OUString("IsAutoRetrievingEnabled") ));
         if ( pValue && pValue != (aInfo.getConstArray() + aInfo.getLength()) )
             pValue->Value >>= _rAutoIncrementValueEnabled;
     }
@@ -1079,7 +1081,7 @@ OUString getStrippedDatabaseName(const Reference<XPropertySet>& _xDataSource,OUS
     OUString sName = _rsDatabaseName;
     INetURLObject aURL(sName);
     if ( aURL.GetProtocol() != INetProtocol::NotValid )
-        sName = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DecodeMechanism::Unambiguous);
+        sName = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DECODE_UNAMBIGUOUS);
     return sName;
 }
 
@@ -1098,6 +1100,60 @@ void AppendConfigToken( OUString& _rURL, bool _bQuestionMark )
     _rURL += utl::ConfigManager::getLocale();
     _rURL += "&System=";
     _rURL += SvtHelpOptions().GetSystem();
+}
+
+namespace
+{
+
+    bool GetHelpAnchor_Impl( const OUString& _rURL, OUString& _rAnchor )
+    {
+        bool bRet = false;
+        OUString sAnchor;
+
+        try
+        {
+            ::ucbhelper::Content aCnt( INetURLObject( _rURL ).GetMainURL( INetURLObject::NO_DECODE ),
+                                 Reference< css::ucb::XCommandEnvironment >(),
+                                 comphelper::getProcessComponentContext() );
+            if ( ( aCnt.getPropertyValue("AnchorName") >>= sAnchor ) )
+            {
+
+                if ( !sAnchor.isEmpty() )
+                {
+                    _rAnchor = sAnchor;
+                    bRet = true;
+                }
+            }
+            else
+            {
+                SAL_WARN( "dbaccess.ui", "Property 'AnchorName' is missing" );
+            }
+        }
+        catch( Exception& )
+        {
+        }
+
+        return bRet;
+    }
+} // anonymous
+
+css::util::URL createHelpAgentURL(const OUString& _sModuleName, const OString& sHelpId)
+{
+    css::util::URL aURL;
+    aURL.Complete = "vnd.sun.star.help://" +
+        _sModuleName + "/" + OStringToOUString(sHelpId, RTL_TEXTENCODING_UTF8);
+
+    OUString sAnchor;
+    OUString sTempURL = aURL.Complete;
+    AppendConfigToken( sTempURL, true );
+    bool bHasAnchor = GetHelpAnchor_Impl( sTempURL, sAnchor );
+    AppendConfigToken(aURL.Complete,true);
+    if ( bHasAnchor )
+    {
+        aURL.Complete += "#";
+        aURL.Complete += sAnchor;
+    }
+    return aURL;
 }
 
 void setEvalDateFormatForFormatter(Reference< css::util::XNumberFormatter >& _rxFormatter)
@@ -1379,7 +1435,7 @@ bool insertHierachyElement( vcl::Window* _pParent, const Reference< XComponentCo
                                     sTargetName,
                                     sLabel,
                                     aNameChecker,
-                                    SADFlags::AdditionalDescription | SADFlags::TitlePasteAs );
+                                    SAD_ADDITIONAL_DESCRIPTION | SAD_TITLE_PASTE_AS );
             if ( RET_OK != aAskForName->Execute() )
                 // cancelled by the user
                 return false;
@@ -1391,7 +1447,7 @@ bool insertHierachyElement( vcl::Window* _pParent, const Reference< XComponentCo
     {
         OUString sError(ModuleRes(STR_NAME_ALREADY_EXISTS));
         sError = sError.replaceFirst("#",sNewName);
-        throw SQLException(sError,nullptr,"S1000",0,Any());
+        throw SQLException(sError,nullptr,OUString("S1000") ,0,Any());
     }
 
     try

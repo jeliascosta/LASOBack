@@ -51,7 +51,7 @@ OEnumerationByName::~OEnumerationByName()
 }
 
 
-sal_Bool SAL_CALL OEnumerationByName::hasMoreElements(  )
+sal_Bool SAL_CALL OEnumerationByName::hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -69,6 +69,7 @@ sal_Bool SAL_CALL OEnumerationByName::hasMoreElements(  )
 
 
 css::uno::Any SAL_CALL OEnumerationByName::nextElement(  )
+        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -90,6 +91,7 @@ css::uno::Any SAL_CALL OEnumerationByName::nextElement(  )
 
 
 void SAL_CALL OEnumerationByName::disposing(const css::lang::EventObject& aEvent)
+        throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -148,7 +150,7 @@ OEnumerationByIndex::~OEnumerationByIndex()
 }
 
 
-sal_Bool SAL_CALL OEnumerationByIndex::hasMoreElements(  )
+sal_Bool SAL_CALL OEnumerationByIndex::hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -166,6 +168,7 @@ sal_Bool SAL_CALL OEnumerationByIndex::hasMoreElements(  )
 
 
 css::uno::Any SAL_CALL OEnumerationByIndex::nextElement(  )
+        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -187,6 +190,7 @@ css::uno::Any SAL_CALL OEnumerationByIndex::nextElement(  )
 
 
 void SAL_CALL OEnumerationByIndex::disposing(const css::lang::EventObject& aEvent)
+        throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -242,7 +246,7 @@ OAnyEnumeration::~OAnyEnumeration()
 }
 
 
-sal_Bool SAL_CALL OAnyEnumeration::hasMoreElements(  )
+sal_Bool SAL_CALL OAnyEnumeration::hasMoreElements(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aLock(m_aLock);
 
@@ -251,6 +255,7 @@ sal_Bool SAL_CALL OAnyEnumeration::hasMoreElements(  )
 
 
 css::uno::Any SAL_CALL OAnyEnumeration::nextElement(  )
+        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     if ( ! hasMoreElements())
         throw css::container::NoSuchElementException();

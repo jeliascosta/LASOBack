@@ -37,6 +37,8 @@ public:
 
     void setExternalData( ::sw::tExternalDataType eType, ::sw::tExternalDataPointer pPayload) override;
     ::sw::tExternalDataPointer getExternalData(::sw::tExternalDataType eType) override;
+
+    virtual ~DocumentExternalDataManager() {};
 };
 
 }

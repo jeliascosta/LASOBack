@@ -32,15 +32,15 @@ class SwTextTOXMark : public SwTextAttrEnd
 
 public:
     SwTextTOXMark( SwTOXMark& rAttr,
-            sal_Int32 const nStart, sal_Int32 const*const pEnd);
-    virtual ~SwTextTOXMark() override;
+            sal_Int32 const nStart, sal_Int32 const*const pEnd = nullptr);
+    virtual ~SwTextTOXMark();
 
     virtual sal_Int32 *GetEnd() override;     // SwTextAttr
 
     void CopyTOXMark( SwDoc* pDestDoc );
 
     // get and set TextNode pointer
-    const SwTextNode* GetpTextNd() const { return m_pTextNode; }
+    inline const SwTextNode* GetpTextNd() const { return m_pTextNode; }
     inline const SwTextNode& GetTextNode() const;
     void ChgTextNode( SwTextNode* pNew ) { m_pTextNode = pNew; }
 };

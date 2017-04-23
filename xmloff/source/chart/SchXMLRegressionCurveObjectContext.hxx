@@ -39,7 +39,7 @@ public:
         const css::uno::Reference< css::chart2::XDataSeries >& xSeries,
         const css::awt::Size & rChartSize );
 
-    virtual ~SchXMLRegressionCurveObjectContext() override;
+    virtual ~SchXMLRegressionCurveObjectContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual SvXMLImportContext* CreateChildContext(
@@ -66,7 +66,7 @@ public:
         const css::awt::Size & rChartSize,
         RegressionStyle & rRegressionStyle );
 
-    virtual ~SchXMLEquationContext() override;
+    virtual ~SchXMLEquationContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 

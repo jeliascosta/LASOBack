@@ -111,6 +111,8 @@ protected:
 
     virtual void Output(const OString & rOutput)=0;
 
+    static void Error(const OString &rError);
+
 private:
     void ExecuteAnalyzedToken( int nToken, char *pToken );
     void AddText(
@@ -147,7 +149,7 @@ public:
         const OString &rOutputFile,
         const OString &rFilePath
     );
-    virtual ~CfgExport() override;
+    virtual ~CfgExport();
 };
 
 /// Merge strings to *.xcu files
@@ -173,7 +175,7 @@ public:
     CfgMerge(
         const OString &rMergeSource, const OString &rOutputFile,
         const OString &rFilename, const OString &rLanguage );
-    virtual ~CfgMerge() override;
+    virtual ~CfgMerge();
 };
 
 #endif

@@ -34,7 +34,7 @@
  *   In 'fsm' there is a line for each state X charset X nextstate.
  *   List chars that overwrite previous entries later (e.g. C_ALPH
  *   can be overridden by '_' by a later entry; and C_XX is the
- *   universal set, and should always be first.
+ *   the universal set, and should always be first.
  *   States above S_SELF are represented in the big table as negative values.
  *   S_SELF and S_SELFB encode the resulting token type in the upper bits.
  *   These actions differ in that S_SELF doesn't have a lookahead char,
@@ -73,7 +73,7 @@ struct fsm
     int nextstate;                      /* enter this state if +ve */
 };
 
-static /*const*/ struct fsm fsm[] = {
+ /*const*/ struct fsm fsm[] = {
     /* start state */
          {START, {C_XX}, ACT(UNCLASS, S_SELF)},
          {START, {' ', '\t', '\v'}, WS1},
@@ -492,7 +492,6 @@ continue2:
 
                 case S_STNL:
                     error(ERROR, "Unterminated string or char const");
-                    /* fall through */
                 case S_NL:
                     tp->t = ip;
                     tp->type = NL;
@@ -517,7 +516,6 @@ continue2:
                 case S_EOFCOM:
                     error(WARNING, "EOF inside comment");
                     --ip;
-                    /* fall through */
                 case S_COMMENT:
                     if (!Cflag)
                     {

@@ -36,12 +36,12 @@ using namespace ::com::sun::star::lang;
 
 // static ServiceInfo
 
-OUString ODriver::getImplementationName_Static(  )
+OUString ODriver::getImplementationName_Static(  ) throw(RuntimeException)
 {
     return OUString("com.sun.star.comp.sdbc.calc.ODriver");
 }
 
-OUString SAL_CALL ODriver::getImplementationName(  )
+OUString SAL_CALL ODriver::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
@@ -49,15 +49,15 @@ OUString SAL_CALL ODriver::getImplementationName(  )
 // service names from file::OFileDriver
 
 
-css::uno::Reference< css::uno::XInterface > SAL_CALL
-    connectivity::calc::ODriver_CreateInstance(const css::uno::Reference<
-        css::lang::XMultiServiceFactory >& _rxFactory)
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL
+    connectivity::calc::ODriver_CreateInstance(const ::com::sun::star::uno::Reference<
+        ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
 {
     return *(new ODriver( comphelper::getComponentContext(_rxFactory) ));
 }
 
 Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url,
-    const Sequence< PropertyValue >& info )
+    const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (ODriver_BASE::rBHelper.bDisposed)
@@ -75,11 +75,12 @@ Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url,
 }
 
 sal_Bool SAL_CALL ODriver::acceptsURL( const OUString& url )
+                throw(SQLException, RuntimeException, std::exception)
 {
     return url.startsWith("sdbc:calc:");
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ )
+Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( !acceptsURL(url) )
     {

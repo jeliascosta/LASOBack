@@ -32,7 +32,7 @@ namespace sdr
         public:
             // basic constructor, used from SdrObject.
             ViewContactOfE3dCube(E3dCubeObj& rCubeObj);
-            virtual ~ViewContactOfE3dCube() override;
+            virtual ~ViewContactOfE3dCube();
 
             // access to SdrObject
             const E3dCubeObj& GetE3dCubeObj() const

@@ -18,6 +18,7 @@
  */
 
 #include <sal/macros.h>
+#include <tools/debug.hxx>
 #include <unotools/pathoptions.hxx>
 #include <svl/lngmisc.hxx>
 #include <ucbhelper/content.hxx>
@@ -67,12 +68,14 @@ osl::Mutex &    GetLinguMutex()
     return LinguMutex::get();
 }
 
-const LocaleDataWrapper & GetLocaleDataWrapper( LanguageType nLang )
+LocaleDataWrapper & GetLocaleDataWrapper( sal_Int16 nLang )
 {
     static LocaleDataWrapper aLclDtaWrp( SvtSysLocale().GetLanguageTag() );
 
-    if (nLang != aLclDtaWrp.getLoadedLanguageTag().getLanguageType())
-        aLclDtaWrp.setLanguageTag( LanguageTag( nLang ) );
+    const LanguageTag &rLcl = aLclDtaWrp.getLoadedLanguageTag();
+    LanguageTag aLcl( nLang );
+    if (aLcl != rLcl)
+        aLclDtaWrp.setLanguageTag( aLcl );
     return aLclDtaWrp;
 }
 
@@ -124,11 +127,12 @@ static inline sal_Int32 Minimum( sal_Int32 n1, sal_Int32 n2, sal_Int32 n3 )
 class IntArray2D
 {
 private:
-    std::unique_ptr<sal_Int32[]>  pData;
-    int                           n1, n2;
+    sal_Int32  *pData;
+    int         n1, n2;
 
 public:
     IntArray2D( int nDim1, int nDim2 );
+    ~IntArray2D();
 
     sal_Int32 & Value( int i, int k  );
 };
@@ -137,14 +141,19 @@ IntArray2D::IntArray2D( int nDim1, int nDim2 )
 {
     n1 = nDim1;
     n2 = nDim2;
-    pData.reset( new sal_Int32[n1 * n2] );
+    pData = new sal_Int32[n1 * n2];
+}
+
+IntArray2D::~IntArray2D()
+{
+    delete[] pData;
 }
 
 sal_Int32 & IntArray2D::Value( int i, int k  )
 {
-    assert( (0 <= i && i < n1) && "first index out of range" );
-    assert( (0 <= k && k < n2) && "second index out of range" );
-    assert( (i * n2 + k < n1 * n2) && "index out of range" );
+    DBG_ASSERT( 0 <= i && i < n1, "first index out of range" );
+    DBG_ASSERT( 0 <= k && k < n2, "first index out of range" );
+    DBG_ASSERT( i * n2 + k < n1 * n2, "index out of range" );
     return pData[ i * n2 + k ];
 }
 
@@ -292,8 +301,8 @@ uno::Reference< XDictionaryEntry > SearchDicList(
         if ( axDic.is() && axDic->isActive()
             && (nLang == nLanguage  ||  LinguIsUnspecified( nLang)) )
         {
-            // DictionaryType_MIXED is deprecated
-            SAL_WARN_IF(eType == DictionaryType_MIXED, "linguistic", "unexpected dictionary type");
+            DBG_ASSERT( eType != DictionaryType_MIXED,
+                "lng : unexpected dictionary type" );
 
             if (   (!bSearchPosDics  &&  eType == DictionaryType_NEGATIVE)
                 || ( bSearchPosDics  &&  eType == DictionaryType_POSITIVE))
@@ -470,7 +479,7 @@ static bool GetAltSpelling( sal_Int16 &rnChgPos, sal_Int16 &rnChgLen, OUString &
 
         rnChgPos = sal::static_int_cast< sal_Int16 >(nPosL);
         rnChgLen = sal::static_int_cast< sal_Int16 >(nAltPosR - nPosL);
-        assert( rnChgLen >= 0 && "nChgLen < 0");
+        DBG_ASSERT( rnChgLen >= 0, "nChgLen < 0");
 
         sal_Int32 nTxtStart = nPosL;
         sal_Int32 nTxtLen   = nAltPosR - nPosL + 1;
@@ -559,7 +568,7 @@ uno::Reference< XHyphenatedWord > RebuildHyphensAndControlChars(
 
         if (nOrigHyphenPos == -1  ||  nOrigHyphenationPos == -1)
         {
-            SAL_WARN( "linguistic", "failed to get nOrigHyphenPos or nOrigHyphenationPos" );
+            DBG_ASSERT( false, "failed to get nOrigHyphenPos or nOrigHyphenationPos" );
         }
         else
         {
@@ -698,7 +707,7 @@ bool IsNumeric( const OUString &rText )
         for(sal_Int32 i = 0; i < nLen; ++i)
         {
             sal_Unicode cChar = rText[ i ];
-            if ( !('0' <= cChar  &&  cChar <= '9') )
+            if ( !((sal_Unicode)'0' <= cChar  &&  cChar <= (sal_Unicode)'9') )
             {
                 bRes = false;
                 break;
@@ -723,7 +732,7 @@ uno::Reference< XSearchableDictionaryList > GetDictionaryList()
     }
     catch (const uno::Exception &)
     {
-        SAL_WARN( "linguistic", "createInstance failed" );
+        DBG_ASSERT( false, "createInstance failed" );
     }
 
     return xRef;
@@ -750,7 +759,7 @@ AppExitListener::AppExitListener()
     }
     catch (const uno::Exception &)
     {
-        SAL_WARN( "linguistic", "createInstance failed" );
+        DBG_ASSERT( false, "createInstance failed" );
     }
 }
 
@@ -772,6 +781,7 @@ void AppExitListener::Deactivate()
 
 void SAL_CALL
     AppExitListener::disposing( const EventObject& rEvtSource )
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -783,11 +793,13 @@ void SAL_CALL
 
 void SAL_CALL
     AppExitListener::queryTermination( const EventObject& /*rEvtSource*/ )
+        throw(frame::TerminationVetoException, RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL
     AppExitListener::notifyTermination( const EventObject& rEvtSource )
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 

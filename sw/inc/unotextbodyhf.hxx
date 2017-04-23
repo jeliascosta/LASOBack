@@ -45,7 +45,7 @@ class SwXBodyText
 
 protected:
 
-    virtual ~SwXBodyText() override;
+    virtual ~SwXBodyText();
 
 public:
 
@@ -55,41 +55,53 @@ public:
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface(
-            const css::uno::Type& rType) override;
+            const css::uno::Type& rType)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw() override { OWeakObject::acquire(); }
     virtual void SAL_CALL release() throw() override { OWeakObject::release(); }
 
     // XAggregation
     virtual css::uno::Any SAL_CALL queryAggregation(
-            const css::uno::Type& rType) override;
+            const css::uno::Type& rType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
     virtual css::uno::Sequence< css::uno::Type >
-        SAL_CALL getTypes() override;
+        SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-        getImplementationId() override;
+        getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL supportsService(
-            const OUString& rServiceName) override;
+            const OUString& rServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration >  SAL_CALL
-        createEnumeration() override;
+        createEnumeration()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XSimpleText
     virtual css::uno::Reference< css::text::XTextCursor >  SAL_CALL
-        createTextCursor() override;
+        createTextCursor()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextCursor >  SAL_CALL
         createTextCursorByRange(
-            const css::uno::Reference< css::text::XTextRange > & xTextPosition) override;
+            const css::uno::Reference< css::text::XTextRange > & xTextPosition)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -112,9 +124,10 @@ protected:
 
     virtual const SwStartNode *GetStartNode() const override;
     virtual css::uno::Reference< css::text::XTextCursor >
-        CreateCursor() override;
+        CreateCursor()
+        throw (css::uno::RuntimeException) override;
 
-    virtual ~SwXHeadFootText() override;
+    virtual ~SwXHeadFootText();
 
     SwXHeadFootText(SwFrameFormat & rHeadFootFormat, const bool bIsHeader);
 
@@ -126,37 +139,48 @@ public:
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface(
-            const css::uno::Type& rType) override;
+            const css::uno::Type& rType)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw() override { OWeakObject::acquire(); }
     virtual void SAL_CALL release() throw() override { OWeakObject::release(); }
 
     // XTypeProvider
     virtual css::uno::Sequence< css::uno::Type >
-        SAL_CALL getTypes() override;
+        SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-        getImplementationId() override;
+        getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL supportsService(
-            const OUString& rServiceName) override;
+            const OUString& rServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration >  SAL_CALL
-        createEnumeration() override;
+        createEnumeration()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XSimpleText
     virtual css::uno::Reference< css::text::XTextCursor >  SAL_CALL
-        createTextCursor() override;
+        createTextCursor()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextCursor >  SAL_CALL
         createTextCursorByRange(
-            const css::uno::Reference< css::text::XTextRange > & xTextPosition) override;
+            const css::uno::Reference< css::text::XTextRange > & xTextPosition)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 

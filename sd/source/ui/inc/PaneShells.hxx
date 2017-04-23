@@ -41,7 +41,7 @@ private:
 
 public:
     LeftImpressPaneShell();
-    virtual ~LeftImpressPaneShell() override;
+    virtual ~LeftImpressPaneShell();
 };
 
 /** Shell that displays the left pane for Draw.  The shell does not do
@@ -59,7 +59,7 @@ private:
 
 public:
     LeftDrawPaneShell();
-    virtual ~LeftDrawPaneShell() override;
+    virtual ~LeftDrawPaneShell();
 };
 
 } // end of namespace sd

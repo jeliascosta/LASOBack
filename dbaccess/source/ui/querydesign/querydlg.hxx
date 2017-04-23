@@ -54,9 +54,9 @@ namespace dbaui
         css::uno::Reference< css::sdbc::XConnection > m_xConnection;
 
 
-        DECL_LINK( OKClickHdl, Button*, void );
-        DECL_LINK( LBChangeHdl, ListBox&, void );
-        DECL_LINK( NaturalToggleHdl, CheckBox&, void );
+        DECL_LINK_TYPED( OKClickHdl, Button*, void );
+        DECL_LINK_TYPED( LBChangeHdl, ListBox&, void );
+        DECL_LINK_TYPED( NaturalToggleHdl, CheckBox&, void );
 
         /** setJoinType enables and set the new join type
             @param  _eNewJoinType   the new jointype
@@ -68,7 +68,7 @@ namespace dbaui
                     OJoinTableView::OTableWindowMap*    _pTableMap,
                     const css::uno::Reference< css::sdbc::XConnection >& _xConnection,
                     bool _bAllowTableSelect);
-        virtual ~DlgQryJoin() override;
+        virtual ~DlgQryJoin();
         virtual void dispose() override;
         EJoinType GetJoinType() const { return eJoinType; };
 

@@ -37,19 +37,22 @@ class VCLXAccessibleHeaderBar : public VCLXAccessibleComponent
 
 public:
     VclPtr<HeaderBar>  m_pHeadBar;
-    virtual ~VCLXAccessibleHeaderBar() override;
+    virtual ~VCLXAccessibleHeaderBar();
+
+    virtual void ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent ) override;
+    virtual void FillAccessibleStateSet( utl::AccessibleStateSetHelper& rStateSet ) override;
 
     VCLXAccessibleHeaderBar( VCLXWindow* pVCLXindow );
 
     // XAccessibleContext
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
-    virtual sal_Int16 SAL_CALL getAccessibleRole(  ) override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XServiceInfo
-    virtual ::rtl::OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual ::rtl::OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::rtl::OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
 public:
     virtual void SAL_CALL disposing() override;
@@ -65,7 +68,7 @@ class VCLXHeaderBar :  public VCLXWindow
 {
 public:
     VCLXHeaderBar(vcl::Window* pHeaderBar);
-    virtual ~VCLXHeaderBar() override;
+    virtual ~VCLXHeaderBar();
 
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > CreateAccessibleContext() override;
 

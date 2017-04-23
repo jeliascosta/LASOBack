@@ -63,7 +63,7 @@ using com::sun::star::beans::XPropertySet;
 namespace pq_sdbc_driver
 {
 Key::Key( const ::rtl::Reference< RefCountedMutex > & refMutex,
-          const Reference< css::sdbc::XConnection > & connection,
+          const Reference< com::sun::star::sdbc::XConnection > & connection,
           ConnectionSettings *pSettings,
           const OUString & schemaName,
           const OUString & tableName )
@@ -78,7 +78,7 @@ Key::Key( const ::rtl::Reference< RefCountedMutex > & refMutex,
       m_tableName( tableName )
 {}
 
-Reference< XPropertySet > Key::createDataDescriptor(  )
+Reference< XPropertySet > Key::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     KeyDescriptor * pKeyDescriptor = new KeyDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -87,7 +87,7 @@ Reference< XPropertySet > Key::createDataDescriptor(  )
     return Reference< XPropertySet > ( pKeyDescriptor );
 }
 
-Reference< XNameAccess > Key::getColumns(  )
+Reference< XNameAccess > Key::getColumns(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     // TODO: cash columns object !
     if( !m_keyColumns.is() )
@@ -103,7 +103,7 @@ Reference< XNameAccess > Key::getColumns(  )
     return m_keyColumns;
 }
 
-Sequence<Type > Key::getTypes()
+Sequence<Type > Key::getTypes() throw( RuntimeException, std::exception )
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -112,7 +112,7 @@ Sequence<Type > Key::getTypes()
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<css::sdbcx::XColumnsSupplier>::get(),
+                cppu::UnoType<com::sun::star::sdbcx::XColumnsSupplier>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -120,12 +120,12 @@ Sequence<Type > Key::getTypes()
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> Key::getImplementationId()
+Sequence< sal_Int8> Key::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any Key::queryInterface( const Type & reqType )
+Any Key::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
 {
     Any ret;
 
@@ -133,13 +133,13 @@ Any Key::queryInterface( const Type & reqType )
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< css::sdbcx::XColumnsSupplier * > ( this ) );
+            static_cast< com::sun::star::sdbcx::XColumnsSupplier * > ( this ) );
     return ret;
 }
 
 
 KeyDescriptor::KeyDescriptor( const ::rtl::Reference< RefCountedMutex > & refMutex,
-          const Reference< css::sdbc::XConnection > & connection,
+          const Reference< com::sun::star::sdbc::XConnection > & connection,
           ConnectionSettings *pSettings )
     : ReflectionBase(
         getStatics().refl.keyDescriptor.implName,
@@ -151,7 +151,7 @@ KeyDescriptor::KeyDescriptor( const ::rtl::Reference< RefCountedMutex > & refMut
 {
 }
 
-Reference< XPropertySet > KeyDescriptor::createDataDescriptor(  )
+Reference< XPropertySet > KeyDescriptor::createDataDescriptor(  ) throw (RuntimeException, std::exception)
 {
     KeyDescriptor * pKeyDescriptor = new KeyDescriptor(
         m_refMutex, m_conn, m_pSettings );
@@ -160,7 +160,7 @@ Reference< XPropertySet > KeyDescriptor::createDataDescriptor(  )
     return Reference< XPropertySet > ( pKeyDescriptor );
 }
 
-Reference< XNameAccess > KeyDescriptor::getColumns(  )
+Reference< XNameAccess > KeyDescriptor::getColumns(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     // TODO: cash columns object !
     if( !m_keyColumns.is() )
@@ -170,7 +170,7 @@ Reference< XNameAccess > KeyDescriptor::getColumns(  )
     return m_keyColumns;
 }
 
-Sequence<Type > KeyDescriptor::getTypes()
+Sequence<Type > KeyDescriptor::getTypes() throw( RuntimeException, std::exception )
 {
     static cppu::OTypeCollection *pCollection;
     if( ! pCollection )
@@ -179,7 +179,7 @@ Sequence<Type > KeyDescriptor::getTypes()
         if( !pCollection )
         {
             static cppu::OTypeCollection collection(
-                cppu::UnoType<css::sdbcx::XColumnsSupplier>::get(),
+                cppu::UnoType<com::sun::star::sdbcx::XColumnsSupplier>::get(),
                 ReflectionBase::getTypes());
             pCollection = &collection;
         }
@@ -187,12 +187,12 @@ Sequence<Type > KeyDescriptor::getTypes()
     return pCollection->getTypes();
 }
 
-Sequence< sal_Int8> KeyDescriptor::getImplementationId()
+Sequence< sal_Int8> KeyDescriptor::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any KeyDescriptor::queryInterface( const Type & reqType )
+Any KeyDescriptor::queryInterface( const Type & reqType ) throw (RuntimeException, std::exception)
 {
     Any ret;
 
@@ -200,7 +200,7 @@ Any KeyDescriptor::queryInterface( const Type & reqType )
     if( ! ret.hasValue() )
         ret = ::cppu::queryInterface(
             reqType,
-            static_cast< css::sdbcx::XColumnsSupplier * > ( this ) );
+            static_cast< com::sun::star::sdbcx::XColumnsSupplier * > ( this ) );
     return ret;
 }
 

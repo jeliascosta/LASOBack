@@ -26,26 +26,21 @@
 
 //   Defines
 
-enum class SdrPathSmoothKind
-{
-    DontCare,   // only for status query
-    Angular,    // angular
-    Asymmetric, // asymmetric, normal Smooth
-    Symmetric   // symmetric
-};
-enum class SdrPathSegmentKind
-{
-    DontCare,  // only for status query
-    Line,      // straight path segment
-    Curve,     // curve path segment (Bezier)
-    Toggle     // only for Set: Toggle
-};
-enum class SdrObjClosedKind
-{
-    DontCare,    // only for status query
-    Open,        // non-closed object (line, polyline, ...)
-    Closed       // closed object (polygon, ...)
-};
+
+enum SdrPathSmoothKind  {SDRPATHSMOOTH_DONTCARE,   // only for status query
+                         SDRPATHSMOOTH_ANGULAR,    // angular
+                         SDRPATHSMOOTH_ASYMMETRIC, // asymmetric, normal Smooth
+                         SDRPATHSMOOTH_SYMMETRIC}; // symmetric
+
+enum SdrPathSegmentKind {SDRPATHSEGMENT_DONTCARE,  // only for status query
+                         SDRPATHSEGMENT_LINE,      // straight path segment
+                         SDRPATHSEGMENT_CURVE,     // curve path segment (Bezier)
+                         SDRPATHSEGMENT_TOGGLE};   // only for Set: Toggle
+
+enum SdrObjClosedKind   {SDROBJCLOSED_DONTCARE,    // only for status query
+                         SDROBJCLOSED_OPEN,        // non-closed object (line, polyline, ...)
+                         SDROBJCLOSED_CLOSED,      // closed object (polygon, ...)
+                         SDROBJCLOSED_TOGGLE};     // only for Set: Toggle (not implemented yet)
 
 class IPolyPolygonEditorController
 {

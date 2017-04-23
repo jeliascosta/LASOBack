@@ -74,7 +74,7 @@ bool DrawViewShell::RenameSlide( sal_uInt16 nPageId, const OUString & rName  )
     SdPage* pPageToRename = nullptr;
     PageKind ePageKind = GetPageKind();
 
-    if( GetEditMode() == EditMode::Page )
+    if( GetEditMode() == EM_PAGE )
     {
         pPageToRename = GetDoc()->GetSdPage( nPageId - 1, ePageKind );
 
@@ -95,10 +95,10 @@ bool DrawViewShell::RenameSlide( sal_uInt16 nPageId, const OUString & rName  )
         // rename
         pPageToRename->SetName( rName );
 
-        if( ePageKind == PageKind::Standard )
+        if( ePageKind == PK_STANDARD )
         {
             // also rename notes-page
-            SdPage* pNotesPage = GetDoc()->GetSdPage( nPageId - 1, PageKind::Notes );
+            SdPage* pNotesPage = GetDoc()->GetSdPage( nPageId - 1, PK_NOTES );
             pNotesPage->SetName( rName );
         }
     }
@@ -138,7 +138,7 @@ bool DrawViewShell::RenameSlide( sal_uInt16 nPageId, const OUString & rName  )
     return bSuccess;
 }
 
-IMPL_LINK( DrawViewShell, RenameSlideHdl, AbstractSvxNameDialog&, rDialog, bool )
+IMPL_LINK_TYPED( DrawViewShell, RenameSlideHdl, AbstractSvxNameDialog&, rDialog, bool )
 {
     OUString aNewName;
     rDialog.GetName( aNewName );

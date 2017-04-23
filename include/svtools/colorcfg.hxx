@@ -98,12 +98,13 @@ private:
     static ColorConfig_Impl* m_pImpl;
 public:
     ColorConfig();
-    virtual ~ColorConfig() override;
+    virtual ~ColorConfig();
 
     // get the configured value - if bSmart is set the default color setting is provided
     // instead of the automatic color
     ColorConfigValue        GetColorValue(ColorConfigEntry eEntry, bool bSmart = true) const;
     static Color            GetDefaultColor(ColorConfigEntry eEntry);
+    void Reload();
 };
 
 class SVT_DLLPUBLIC EditableColorConfig

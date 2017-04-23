@@ -26,7 +26,6 @@
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
 #include <com/sun/star/uno/Sequence.h>
 #include <rtl/ustrbuf.hxx>
-#include <memory>
 
 #define XML_WRITTENNUMBERSTYLES "WrittenNumberStyles"
 
@@ -43,19 +42,20 @@ class SvXMLNumUsedList_Impl;
 struct SvXMLEmbeddedTextEntry;
 class SvXMLEmbeddedTextEntryArr;
 
-class XMLOFF_DLLPUBLIC SvXMLNumFmtExport final
+class XMLOFF_DLLPUBLIC SvXMLNumFmtExport
 {
 private:
     SvXMLExport&                rExport;
     OUString             sPrefix;
     SvNumberFormatter*          pFormatter;
     OUStringBuffer       sTextContent;
-    std::unique_ptr<SvXMLNumUsedList_Impl>      pUsedList;
+    SvXMLNumUsedList_Impl*      pUsedList;
     CharClass*                  pCharClass;
     LocaleDataWrapper*          pLocaleData;
 
     SAL_DLLPRIVATE void AddCalendarAttr_Impl( const OUString& rCalendar );
     SAL_DLLPRIVATE void AddStyleAttr_Impl( bool bLong );
+    SAL_DLLPRIVATE void AddTextualAttr_Impl( bool bText );
     SAL_DLLPRIVATE void AddLanguageAttr_Impl( sal_Int32 nLang );
 
     SAL_DLLPRIVATE void AddToTextElement_Impl( const OUString& rString );
@@ -69,7 +69,7 @@ private:
     SAL_DLLPRIVATE void WriteScientificElement_Impl( sal_Int32 nDecimals, sal_Int32 nMinDecimals, sal_Int32 nInteger,
                                         bool bGrouping, sal_Int32 nExp, sal_Int32 nExpInterval, bool bExpSign );
     SAL_DLLPRIVATE void WriteFractionElement_Impl( sal_Int32 nInteger, bool bGrouping,
-                                                   const SvNumberformat& rFormat, sal_uInt16 nPart );
+                                        sal_Int32 nNumeratorDigits, sal_Int32 nDenominatorDigits, sal_Int32 nDenominator );
     SAL_DLLPRIVATE void WriteCurrencyElement_Impl( const OUString& rString,
                                         const OUString& rExt );
     SAL_DLLPRIVATE void WriteBooleanElement_Impl();
@@ -103,7 +103,7 @@ public:
                        const css::uno::Reference< css::util::XNumberFormatsSupplier >& rSupp,
                        const OUString& rPrefix );
 
-    ~SvXMLNumFmtExport();
+    virtual ~SvXMLNumFmtExport();
 
     // core API
     void Export( bool bIsAutoStyle);
@@ -114,7 +114,7 @@ public:
     // get the style name that was generated for a key
     OUString GetStyleName( sal_uInt32 nKey );
 
-    css::uno::Sequence<sal_Int32> GetWasUsed();
+    void GetWasUsed(css::uno::Sequence<sal_Int32>& rWasUsed);
     void SetWasUsed(const css::uno::Sequence<sal_Int32>& rWasUsed);
 
 

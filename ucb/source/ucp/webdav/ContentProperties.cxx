@@ -189,7 +189,7 @@ const PropertyValue * ContentProperties::get(
 
             ++it;
         }
-        return nullptr;
+        return 0;
     }
     else
         return &(*it).second;
@@ -509,7 +509,7 @@ void ContentProperties::addProperty( const OUString & rName,
         OUString aValue;
         rValue >>= aValue;
 
-        // Map DAV:resourcetype to UCP:IsFolder, UCP:IsDocument, UCP:ContentType
+        // Map DAV:resourceype to UCP:IsFolder, UCP:IsDocument, UCP:ContentType
         bool bFolder =
             aValue.equalsIgnoreAsciiCase( "collection" );
 
@@ -539,7 +539,7 @@ namespace
     bool isCachable( OUString const & rName,
                      bool isCaseSensitive )
     {
-        const OUString aNonCachableProps [] =
+        static const OUString aNonCachableProps [] =
         {
             DAVProperties::LOCKDISCOVERY,
 

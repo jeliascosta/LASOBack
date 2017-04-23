@@ -77,6 +77,7 @@ namespace o3tl
 class SVX_DLLPUBLIC SvxRuler: public Ruler, public SfxListener
 {
     friend class SvxRulerItem;
+    using Window::Notify;
 
     std::vector<std::unique_ptr<SvxRulerItem> > pCtrlItems;
 
@@ -126,7 +127,7 @@ class SVX_DLLPUBLIC SvxRuler: public Ruler, public SfxListener
 
     void StartListening_Impl();
     long GetCorrectedDragPos(bool bLeft = true, bool bRight = true );
-    void DrawLine_Impl(long &lTabPos, int, bool Horizontal);
+    void DrawLine_Impl(long &lTabPos, int, bool Horizontal = true);
     sal_uInt16 GetObjectBordersOff(sal_uInt16 nIdx) const;
 
     // page borders or surrounding frame
@@ -213,16 +214,17 @@ class SVX_DLLPUBLIC SvxRuler: public Ruler, public SfxListener
     long GetLeftMin() const;
     long GetRightMax() const;
 
-    DECL_LINK( TabMenuSelect, Menu *, bool );
-    DECL_LINK( MenuSelect, Menu *, bool );
+    DECL_LINK_TYPED( TabMenuSelect, Menu *, bool );
+    DECL_LINK_TYPED( MenuSelect, Menu *, bool );
     void PrepareProportional_Impl(RulerType);
 
-    enum class UpdateType
+    enum UpdateType
     {
-        MoveLeft,
-        MoveRight
+        MOVE_ALL,
+        MOVE_LEFT,
+        MOVE_RIGHT
     };
-    void UpdateParaContents_Impl(long lDiff, UpdateType);
+    void UpdateParaContents_Impl(long lDiff, UpdateType = MOVE_ALL);
 
 protected:
     virtual void    Command( const CommandEvent& rCEvt ) override;
@@ -259,13 +261,13 @@ public:
 
     SvxRuler(vcl::Window* pParent, vcl::Window *pEditWin, SvxRulerSupportFlags nRulerFlags,
              SfxBindings &rBindings, WinBits nWinStyle = WB_STDRULER);
-    virtual ~SvxRuler() override;
+    virtual ~SvxRuler();
     virtual void dispose() override;
 
     void SetDefTabDist(long);
 
     // set/get NullOffset in logic units
-    void SetNullOffsetLogic(long lOff);
+    void SetNullOffsetLogic(long lOff = 0);
 
     void SetActive(bool bOn = true);
 
@@ -275,7 +277,7 @@ public:
     }
 
     //#i24363# tab stops relative to indent
-    void SetTabsRelativeToIndent( bool bRel );
+    void SetTabsRelativeToIndent( bool bRel = true );
 };
 
 #endif

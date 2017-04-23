@@ -36,21 +36,24 @@ class ChartTypeUnoDlg : public ChartTypeUnoDlg_BASE
 public:
     ChartTypeUnoDlg( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
+    // XServiceInfo - static methods
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+    static OUString getImplementationName_Static() throw( css::uno::RuntimeException );
 private:
-    virtual ~ChartTypeUnoDlg() override;
+    virtual ~ChartTypeUnoDlg();
 
     // OGenericUnoDialog overridables
     virtual void implInitialize(const css::uno::Any& _rValue) override;
     virtual VclPtr<Dialog> createDialog(vcl::Window* _pParent) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
     // OPropertyArrayUsageHelper

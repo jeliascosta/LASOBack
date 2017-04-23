@@ -98,11 +98,11 @@ public:
     // convenience methods
 
     /// get epoch start (should be 01Jan1970)
-    const DateTime&     getEpochStart() const
+    inline  const DateTime&     getEpochStart() const
                                     { return aEpochStart; }
 
     /// set a local (!) Gregorian DateTime
-    void                setGregorianDateTime( const DateTime& rDateTime )
+    inline  void                setGregorianDateTime( const DateTime& rDateTime )
                                     { setLocalDateTime( rDateTime - aEpochStart ); }
 
 };

@@ -34,94 +34,54 @@ namespace
 
 const long INFO_BAR_BASE_HEIGHT = 40;
 
-void GetInfoBarColors(InfoBarType ibType, BColor&  rBackgroundColor, BColor& rForegroundColor, BColor& rMessageColor)
-{
-    switch (ibType)
-    {
-    case InfoBarType::Info: // blue; #00529B/0,82,155; #BDE5F8/189,229,248
-        rBackgroundColor = basegfx::BColor(0.741, 0.898, 0.973);
-        rForegroundColor = basegfx::BColor(0.0, 0.322, 0.608);
-        rMessageColor = basegfx::BColor(0.0, 0.322, 0.608);
-        break;
-    case InfoBarType::Success: // green; #4F8A10/79,138,16; #DFF2BF/223,242,191
-        rBackgroundColor = basegfx::BColor(0.874,0.949,0.749);
-        rForegroundColor = basegfx::BColor(0.31,0.541,0.063);
-        rMessageColor = basegfx::BColor(0.31,0.541,0.063);
-        break;
-    case InfoBarType::Warning: // orange; #9F6000/159,96,0; #FEEFB3/254,239,179
-        rBackgroundColor = basegfx::BColor(0.996,0.937,0.702);
-        rForegroundColor = basegfx::BColor(0.623,0.376,0.0);
-        rMessageColor = basegfx::BColor(0.623,0.376,0.0);
-        break;
-    case InfoBarType::Danger: // red; #D8000C/216,0,12; #FFBABA/255,186,186
-        rBackgroundColor = basegfx::BColor(1.0,0.729,0.729);
-        rForegroundColor = basegfx::BColor(0.847,0.0,0.047);
-        rMessageColor = basegfx::BColor(0.847,0.0,0.047);
-        break;
-    }//switch
+const BColor constLightColor(1.0, 1.0, 191.0 / 255.0);
+const BColor constDarkColor(217.0 / 255.0, 217.0 / 255.0, 78.0 / 255.0);
 
-    //remove this?
+void lclDetermineLightDarkColor(BColor& rLightColor, BColor& rDarkColor)
+{
     const StyleSettings& rSettings = Application::GetSettings().GetStyleSettings();
     if (rSettings.GetHighContrastMode())
     {
-        rBackgroundColor = rSettings.GetLightColor().getBColor();
-        rForegroundColor = rSettings.GetDialogTextColor().getBColor();
+        rLightColor = rSettings.GetLightColor().getBColor();
+        rDarkColor = rSettings.GetDialogTextColor().getBColor();
     }
-
-}
-OUString GetInfoBarIconName(InfoBarType ibType)
-{
-
-    OUString aRet;
-
-    switch (ibType)
+    else
     {
-    case InfoBarType::Info:
-       aRet = "vcl/res/infobox.svg";
-       break;
-    case InfoBarType::Success:
-        aRet = "cmd/lc_apply.svg";
-        break;
-    case InfoBarType::Warning:
-        aRet = "vcl/res/warningbox.svg";
-        break;
-    case InfoBarType::Danger:
-        aRet = "vcl/res/errorbox.svg";
-        break;
-    }//switch
-
-    return aRet;
+        rLightColor = constLightColor;
+        rDarkColor = constDarkColor;
+    }
 }
 
 class SfxCloseButton : public PushButton
 {
     basegfx::BColor m_aBackgroundColor;
     basegfx::BColor m_aForegroundColor;
-    basegfx::BColor m_aMessageColor;
 
 public:
     explicit SfxCloseButton(vcl::Window* pParent) : PushButton(pParent, 0)
     {
-        GetInfoBarColors(InfoBarType::Warning,m_aBackgroundColor,m_aForegroundColor,m_aMessageColor);
+        lclDetermineLightDarkColor(m_aBackgroundColor, m_aForegroundColor);
     }
 
-    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
+    virtual ~SfxCloseButton() {}
+
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
 
     void setBackgroundColor(const basegfx::BColor& rColor);
     void setForegroundColor(const basegfx::BColor& rColor);
 };
 
-void SfxCloseButton::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle&)
+void SfxCloseButton::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     const ViewInformation2D aNewViewInfos;
     const unique_ptr<BaseProcessor2D> pProcessor(
                 createBaseProcessor2DFromOutputDevice(rRenderContext, aNewViewInfos));
 
-    const ::tools::Rectangle aRect(Point(0, 0), PixelToLogic(GetSizePixel()));
+    const Rectangle aRect(Point(0, 0), PixelToLogic(GetSizePixel()));
 
     drawinglayer::primitive2d::Primitive2DContainer aSeq(2);
 
-    //  background
+    // Light background
     B2DPolygon aPolygon;
     aPolygon.append(B2DPoint(aRect.Left(), aRect.Top()));
     aPolygon.append(B2DPoint(aRect.Right(), aRect.Top()));
@@ -170,30 +130,33 @@ void SfxCloseButton::setForegroundColor(const basegfx::BColor& rColor)
 
 SfxInfoBarWindow::SfxInfoBarWindow(vcl::Window* pParent, const OUString& sId,
        const OUString& sMessage,
-       InfoBarType ibType,
-       WinBits nMessageStyle = WB_LEFT|WB_VCENTER) :
+       const basegfx::BColor* pBackgroundColor,
+       const basegfx::BColor* pForegroundColor,
+       const basegfx::BColor* pMessageColor,
+       WinBits nMessageStyle ) :
     Window(pParent, 0),
     m_sId(sId),
-    m_pImage(VclPtr<FixedImage>::Create(this, nMessageStyle)),
     m_pMessage(VclPtr<FixedText>::Create(this, nMessageStyle)),
     m_pCloseBtn(VclPtr<SfxCloseButton>::Create(this)),
     m_aActionBtns()
 {
-    basegfx::BColor aBackgroundColor;
-    basegfx::BColor aForegroundColor;
-    basegfx::BColor aMessageColor;
-    GetInfoBarColors(ibType,aBackgroundColor,aForegroundColor,aMessageColor);
-    static_cast<SfxCloseButton*>(m_pCloseBtn.get())->setBackgroundColor(aBackgroundColor);
-    static_cast<SfxCloseButton*>(m_pCloseBtn.get())->setForegroundColor(aForegroundColor);
-    m_pMessage->SetControlForeground(Color(aMessageColor));
+    lclDetermineLightDarkColor(m_aBackgroundColor, m_aForegroundColor);
+    if (pBackgroundColor)
+    {
+        m_aBackgroundColor = *pBackgroundColor;
+        static_cast<SfxCloseButton*>(m_pCloseBtn.get())->setBackgroundColor(m_aBackgroundColor);
+    }
+    if (pForegroundColor)
+    {
+        m_aForegroundColor = *pForegroundColor;
+        static_cast<SfxCloseButton*>(m_pCloseBtn.get())->setForegroundColor(m_aForegroundColor);
+    }
+    if (pMessageColor)
+        m_pMessage->SetControlForeground(Color(*pMessageColor));
 
-    float fScaleFactor = GetDPIScaleFactor();
+    sal_Int32 nScaleFactor = GetDPIScaleFactor();
     long nWidth = pParent->GetSizePixel().getWidth();
-    SetPosSizePixel(Point(0, 0), Size(nWidth, INFO_BAR_BASE_HEIGHT * fScaleFactor));
-
-    m_pImage->SetImage(Image(BitmapEx(GetInfoBarIconName(ibType))));
-    m_pImage->SetPaintTransparent(true);
-    m_pImage->Show();
+    SetPosSizePixel(Point(0, 0), Size(nWidth, INFO_BAR_BASE_HEIGHT * nScaleFactor));
 
     m_pMessage->SetText(sMessage);
     m_pMessage->Show();
@@ -223,20 +186,19 @@ void SfxInfoBarWindow::dispose()
     for ( auto it = m_aActionBtns.begin( ); it != m_aActionBtns.end( ); ++it )
         it->disposeAndClear();
 
-    m_pImage.disposeAndClear();
     m_pMessage.disposeAndClear();
     m_pCloseBtn.disposeAndClear();
     m_aActionBtns.clear( );
     vcl::Window::dispose();
 }
 
-void SfxInfoBarWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rPaintRect)
+void SfxInfoBarWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaintRect)
 {
     const ViewInformation2D aNewViewInfos;
     const unique_ptr<BaseProcessor2D> pProcessor(
                 createBaseProcessor2DFromOutputDevice(rRenderContext, aNewViewInfos));
 
-    const ::tools::Rectangle aRect(Point(0, 0), PixelToLogic(GetSizePixel()));
+    const Rectangle aRect(Point(0, 0), PixelToLogic(GetSizePixel()));
 
     drawinglayer::primitive2d::Primitive2DContainer aSeq(2);
 
@@ -271,33 +233,30 @@ void SfxInfoBarWindow::Paint(vcl::RenderContext& rRenderContext, const ::tools::
 
 void SfxInfoBarWindow::Resize()
 {
-    float fScaleFactor = GetDPIScaleFactor();
+    sal_Int32 nScaleFactor = GetDPIScaleFactor();
 
     long nWidth = GetSizePixel().getWidth();
-    m_pCloseBtn->SetPosSizePixel(Point(nWidth - 25 * fScaleFactor, 15 * fScaleFactor), Size(10 * fScaleFactor, 10 * fScaleFactor));
+    m_pCloseBtn->SetPosSizePixel(Point(nWidth - 25 * nScaleFactor, 15 * nScaleFactor), Size(10 * nScaleFactor, 10 * nScaleFactor));
 
     // Reparent the buttons and place them on the right of the bar
-    long nX = m_pCloseBtn->GetPosPixel().getX() - 15 * fScaleFactor;
-    long nButtonGap = 5 * fScaleFactor;
+    long nX = m_pCloseBtn->GetPosPixel().getX() - 15 * nScaleFactor;
+    long nButtonGap = 5 * nScaleFactor;
 
     for (auto it = m_aActionBtns.begin(); it != m_aActionBtns.end(); ++it)
     {
         long nButtonWidth = (*it)->GetSizePixel().getWidth();
         nX -= nButtonWidth;
-        (*it)->SetPosSizePixel(Point(nX, 5 * fScaleFactor), Size(nButtonWidth, 30 * fScaleFactor));
+        (*it)->SetPosSizePixel(Point(nX, 5 * nScaleFactor), Size(nButtonWidth, 30 * nScaleFactor));
         nX -= nButtonGap;
     }
 
-    m_pImage->SetPosSizePixel(Point(4,4), Size(32, 32));
-
-    Point aMessagePosition(32 + 10 * fScaleFactor, 10 * fScaleFactor);
-    Size aMessageSize(nX - 20 * fScaleFactor, 20 * fScaleFactor);
+    Point aMessagePosition(10 * nScaleFactor, 10 * nScaleFactor);
+    Size aMessageSize(nX - 20 * nScaleFactor, 20 * nScaleFactor);
 
     m_pMessage->SetPosSizePixel(aMessagePosition, aMessageSize);
-
 }
 
-IMPL_LINK_NOARG(SfxInfoBarWindow, CloseHandler, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxInfoBarWindow, CloseHandler, Button*, void)
 {
     static_cast<SfxInfoBarContainerWindow*>(GetParent())->removeInfoBar(this);
 }
@@ -322,22 +281,16 @@ void SfxInfoBarContainerWindow::dispose()
     Window::dispose();
 }
 
-VclPtr<SfxInfoBarWindow> SfxInfoBarContainerWindow::appendInfoBar(const OUString& sId,
+SfxInfoBarWindow* SfxInfoBarContainerWindow::appendInfoBar(const OUString& sId,
                                                            const OUString& sMessage,
-                                                           InfoBarType ibType,
+                                                           const basegfx::BColor* pBackgroundColor,
+                                                           const basegfx::BColor* pForegroundColor,
+                                                           const basegfx::BColor* pMessageColor,
                                                            WinBits nMessageStyle)
 {
     Size aSize = GetSizePixel();
 
-    VclPtrInstance<SfxInfoBarWindow> pInfoBar(this, sId, sMessage, ibType, nMessageStyle);
-
-    basegfx::BColor aBackgroundColor;
-    basegfx::BColor aForegroundColor;
-    basegfx::BColor aMessageColor;
-    GetInfoBarColors(ibType,aBackgroundColor,aForegroundColor,aMessageColor);
-    pInfoBar->m_aBackgroundColor = aBackgroundColor;
-    pInfoBar->m_aForegroundColor = aForegroundColor;
-
+    VclPtrInstance<SfxInfoBarWindow> pInfoBar(this, sId, sMessage, pBackgroundColor, pForegroundColor, pMessageColor, nMessageStyle);
     pInfoBar->SetPosPixel(Point(0, aSize.getHeight()));
     pInfoBar->Show();
     m_pInfoBars.push_back(pInfoBar);
@@ -348,22 +301,25 @@ VclPtr<SfxInfoBarWindow> SfxInfoBarContainerWindow::appendInfoBar(const OUString
     return pInfoBar;
 }
 
-VclPtr<SfxInfoBarWindow> SfxInfoBarContainerWindow::getInfoBar(const OUString& sId)
+SfxInfoBarWindow* SfxInfoBarContainerWindow::getInfoBar(const OUString& sId)
 {
     for (auto it = m_pInfoBars.begin(); it != m_pInfoBars.end(); ++it)
     {
         if ((*it)->getId() == sId)
-            return *it;
+            return it->get();
     }
     return nullptr;
 }
 
-void SfxInfoBarContainerWindow::removeInfoBar(VclPtr<SfxInfoBarWindow> const & pInfoBar)
+void SfxInfoBarContainerWindow::removeInfoBar(SfxInfoBarWindow* pInfoBar)
 {
+    // Store a VclPtr to the pInfoBar while we remove it from m_pInfoBars
+    ScopedVclPtr<SfxInfoBarWindow> pTmp(pInfoBar);
+
     // Remove
     for (auto it = m_pInfoBars.begin(); it != m_pInfoBars.end(); ++it)
     {
-        if (pInfoBar == *it)
+        if (pInfoBar == it->get())
         {
             it->disposeAndClear();
             m_pInfoBars.erase(it);

@@ -43,8 +43,8 @@ void ScDDComboBoxButton::SetOutputDevice( OutputDevice* pOutputDevice )
 
 void ScDDComboBoxButton::SetOptSizePixel()
 {
-    aBtnSize = pOut->LogicToPixel( Size(0,11), MapUnit::MapAppFont );
-    //aBtnSize.Width() = GetSystemMetrics( SM_CXVSCROLL ) - 1; // Win SDK function
+    aBtnSize = pOut->LogicToPixel( Size(0,11), MAP_APPFONT );
+    //aBtnSize.Width() = GetSystemMetrics( SM_CXVSCROLL ) - 1; // Win SDK-Funktion
     aBtnSize.Width() = pOut->GetSettings().GetStyleSettings().GetScrollBarSize();
 }
 
@@ -61,13 +61,13 @@ void ScDDComboBoxButton::Draw( const Point& rAt,
     Color       aOldLine   = pOut->GetLineColor();
     bool        bOldEnable = pOut->IsMapModeEnabled();
 
-    tools::Rectangle   aBtnRect( rAt, rSize );
+    Rectangle   aBtnRect( rAt, rSize );
 
     pOut->EnableMapMode( false );
 
     DecorationView aDecoView( pOut);
 
-    tools::Rectangle aInnerRect=aDecoView.DrawButton( aBtnRect, DrawButtonFlags::Default );
+    Rectangle aInnerRect=aDecoView.DrawButton( aBtnRect, DrawButtonFlags::Default );
 
     aInnerRect.Left()   += 1;
     aInnerRect.Top()    += 1;
@@ -94,11 +94,11 @@ void ScDDComboBoxButton::Draw( const Point& rAt,
         pOut->SetFillColor();
 }
 
-void ScDDComboBoxButton::ImpDrawArrow( const tools::Rectangle& rRect )
+void ScDDComboBoxButton::ImpDrawArrow( const Rectangle& rRect )
 {
     // no need to save old line and fill color here (is restored after the call)
 
-    tools::Rectangle   aPixRect = rRect;
+    Rectangle   aPixRect = rRect;
     Point       aCenter  = aPixRect.Center();
     Size        aSize    = aPixRect.GetSize();
 
@@ -110,7 +110,7 @@ void ScDDComboBoxButton::ImpDrawArrow( const tools::Rectangle& rRect )
     aSize4.Width() = aSize.Width() >> 2;
     aSize4.Height() = aSize.Height() >> 2;
 
-    tools::Rectangle aTempRect = aPixRect;
+    Rectangle aTempRect = aPixRect;
 
     const StyleSettings& rSett = Application::GetSettings().GetStyleSettings();
     Color aColor( rSett.GetButtonTextColor().GetColor() );

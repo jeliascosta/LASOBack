@@ -38,10 +38,10 @@ namespace frm
         );
 
     protected:
-        virtual ~OParametrizedAttributeDispatcher() override;
+        virtual ~OParametrizedAttributeDispatcher();
 
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) throw (css::uno::RuntimeException, std::exception) override;
 
         // OAttributeDispatcher
         virtual void    fillFeatureEventFromAttributeState( css::frame::FeatureStateEvent& _rEvent, const AttributeState& _rState ) const override;

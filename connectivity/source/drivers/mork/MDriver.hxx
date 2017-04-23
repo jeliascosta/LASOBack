@@ -34,6 +34,10 @@ class MorkDriver:
 {
 public:
     explicit MorkDriver(const css::uno::Reference< css::uno::XComponentContext >& context);
+    static OUString getImplementationName_Static()
+        throw(css::uno::RuntimeException);
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static()
+        throw (css::uno::RuntimeException);
 
     const css::uno::Reference< com::sun::star::lang::XMultiServiceFactory >& getFactory(){return m_xFactory;}
     const OUString& getProfilePath() {return m_sProfilePath;}
@@ -42,33 +46,40 @@ private:
     MorkDriver(const MorkDriver&) = delete;
     MorkDriver& operator=(const MorkDriver&) = delete;
 
-    virtual ~MorkDriver() override {}
+    virtual ~MorkDriver() {}
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL connect(
         OUString const & url,
-        css::uno::Sequence< css::beans::PropertyValue > const & info) override;
+        css::uno::Sequence< css::beans::PropertyValue > const & info)
+        throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Bool SAL_CALL acceptsURL(
-        OUString const & url) override;
+        OUString const & url)
+        throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< css::sdbc::DriverPropertyInfo > SAL_CALL
     getPropertyInfo(
         OUString const & url,
-        css::uno::Sequence< css::beans::PropertyValue > const & info) override;
+        css::uno::Sequence< css::beans::PropertyValue > const & info)
+        throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getMajorVersion() override;
+    virtual sal_Int32 SAL_CALL getMajorVersion()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getMinorVersion() override;
+    virtual sal_Int32 SAL_CALL getMinorVersion()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     css::uno::Reference< css::uno::XComponentContext > context_;
-    css::uno::Reference< css::lang::XMultiServiceFactory > m_xFactory;
+    css::uno::Reference< com::sun::star::lang::XMultiServiceFactory > m_xFactory;
     OUString m_sProfilePath;
 };
 

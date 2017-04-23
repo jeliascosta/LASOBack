@@ -73,7 +73,7 @@ protected:
     static void GetChildren( SwAccessibleMap& rAccMap,
                              const SwRect& rVisArea,
                              const SwFrame& rFrame,
-                             std::list< sw::access::SwAccessibleChild >& rChildren,
+                             ::std::list< sw::access::SwAccessibleChild >& rChildren,
                              bool bInPagePreview );
 
     bool IsEditable( SwViewShell *pVSh ) const;
@@ -87,12 +87,12 @@ public:
     inline bool IsShowing( const SwAccessibleMap& rAccMap ) const;
 
 protected:
-    bool IsInPagePreview() const
+    inline bool IsInPagePreview() const
     {
         return mbIsInPagePreview;
     }
 
-    void ClearFrame()
+    inline void ClearFrame()
     {
         mpFrame = nullptr;
     }
@@ -101,6 +101,9 @@ protected:
                        const SwFrame *pFrame,
                        bool bIsPagePreview );
     virtual ~SwAccessibleFrame();
+
+    // MT: Move to private area?
+    bool bIsAccDocUse;
 public:
     // Return the SwFrame this context is attached to.
     const SwFrame* GetFrame() const { return mpFrame; };
@@ -112,8 +115,8 @@ public:
                              const sw::access::SwAccessibleChild& rChild ) const;
 
 protected:
-    // Return the bounding box of the frame clipped to the visible area.
-    // If no frame is specified, use this' frame.
+    // Return the bounding box of the frame clipped to the vis area. If
+    // no frame is specified, use this' frame.
     SwRect GetBounds( const SwAccessibleMap& rAccMap,
                       const SwFrame *pFrame = nullptr );
 
@@ -129,14 +132,14 @@ protected:
     sw::access::SwAccessibleChild GetChildAtPixel( const Point& rPos,
                                                    SwAccessibleMap& rAccMap ) const;
     void GetChildren( SwAccessibleMap& rAccMap,
-                      std::list< sw::access::SwAccessibleChild >& rChildren ) const;
+                      ::std::list< sw::access::SwAccessibleChild >& rChildren ) const;
 
-    void SetVisArea( const SwRect& rNewVisArea )
+    inline void SetVisArea( const SwRect& rNewVisArea )
     {
         maVisArea = rNewVisArea;
     }
 
-    const SwRect& GetVisArea() const
+    inline const SwRect& GetVisArea() const
     {
         return maVisArea;
     }

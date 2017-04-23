@@ -48,7 +48,8 @@ struct CellModel
 /** Stores data about cell formulas. */
 struct CellFormulaModel
 {
-    ScRange             maFormulaRef;       /// Formula range for array/shared formulas and data tables.
+    css::table::CellRangeAddress
+                        maFormulaRef;       /// Formula range for array/shared formulas and data tables.
     sal_Int32           mnFormulaType;      /// Type of the formula (regular, array, shared, table).
     sal_Int32           mnSharedId;         /// Identifier of a shared formula (OOXML only).
 
@@ -128,17 +129,21 @@ public:
 
     /** Inserts the passed token array as array formula. */
     void                createArrayFormula(
-                            const ScRange& rRange,
+                            const css::table::CellRangeAddress& rRange,
                             const ApiTokenSequence& rTokens );
     /** Sets a multiple table operation to the passed range. */
     void                createTableOperation(
-                            const ScRange& rRange,
+                            const css::table::CellRangeAddress& rRange,
                             const DataTableModel& rModel );
 
     /** Sets default cell formatting for the specified range of rows. */
     void                setRowFormat( sal_Int32 nRow, sal_Int32 nXfId, bool bCustomFormat );
     /** Merges the cells in the passed cell range. */
-    void                setMergedRange( const ScRange& rRange );
+    void                setMergedRange( const css::table::CellRangeAddress& rRange );
+    /** Sets a standard number format (constant from com.sun.star.util.NumberFormat) to the specified cell. */
+    void                setStandardNumFmt(
+                            const ScAddress& rCellAddr,
+                            sal_Int16 nStdNumFmt );
 
     /** Processes the cell formatting data of the passed cell. */
     void                setCellFormat( const CellModel& rModel );
@@ -159,22 +164,22 @@ private:
 
     /** Inserts the passed array formula into the sheet. */
     void                finalizeArrayFormula(
-                            const ScRange& rRange,
+                            const css::table::CellRangeAddress& rRange,
                             const ApiTokenSequence& rTokens ) const;
     /** Inserts the passed table operation into the sheet. */
     void finalizeTableOperation(
-        const ScRange& rRange, const DataTableModel& rModel );
+        const css::table::CellRangeAddress& rRange, const DataTableModel& rModel );
 
     /** Writes all cell formatting attributes to the passed cell range list. (depreciates writeXfIdRangeProperties) */
-    void                applyCellMerging( const ScRange& rRange );
-    void                addColXfStyle( sal_Int32 nXfId, sal_Int32 nFormatId, const ScRange& rAddress, bool bProcessRowRange = false );
+    void                applyCellMerging( const css::table::CellRangeAddress& rRange );
+    void                addColXfStyle( sal_Int32 nXfId, sal_Int32 nFormatId, const css::table::CellRangeAddress& rAddress, bool bProcessRowRange = false );
 private:
     /** Stores cell range address and formula token array of an array formula. */
-    typedef std::pair< ScRange, ApiTokenSequence > ArrayFormula;
+    typedef ::std::pair< css::table::CellRangeAddress, ApiTokenSequence > ArrayFormula;
     typedef ::std::list< ArrayFormula > ArrayFormulaList;
 
     /** Stores cell range address and settings of a table operation. */
-    typedef std::pair< ScRange, DataTableModel > TableOperation;
+    typedef ::std::pair< css::table::CellRangeAddress, DataTableModel > TableOperation;
     typedef ::std::list< TableOperation > TableOperationList;
 
     /** Stores information about a range of rows with equal cell formatting. */
@@ -189,7 +194,7 @@ private:
     };
 
     typedef ::std::pair< sal_Int32, sal_Int32 > XfIdNumFmtKey;
-    typedef ::std::map< XfIdNumFmtKey, ScRangeList > XfIdRangeListMap;
+    typedef ::std::map< XfIdNumFmtKey, ApiCellRangeList > XfIdRangeListMap;
 
     typedef ::std::pair< sal_Int32, sal_Int32 > RowRange;
     struct RowRangeStyle
@@ -210,10 +215,11 @@ private:
     /** Stores information about a merged cell range. */
     struct MergedRange
     {
-        ScRange             maRange;            /// The formatted cell range.
+        css::table::CellRangeAddress
+                            maRange;            /// The formatted cell range.
         sal_Int32           mnHorAlign;         /// Horizontal alignment in the range.
 
-        explicit            MergedRange( const ScRange& rRange );
+        explicit            MergedRange( const css::table::CellRangeAddress& rRange );
         explicit            MergedRange( const ScAddress& rAddress, sal_Int32 nHorAlign );
         bool                tryExpand( const ScAddress& rAddress, sal_Int32 nHorAlign );
     };

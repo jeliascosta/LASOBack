@@ -21,6 +21,9 @@ interface Application
     SID_AUTOPILOTMENU // ole(no) api(final/play/rec)
     [
     ]
+    SID_FORMATMENU // ole(no) api(no)
+    [
+    ]
     SID_HELPMENU // ole(no) api(no)
     [
     ]
@@ -50,6 +53,10 @@ interface Application
     [
         ExecMethod = MiscExec_Impl ;
     ]
+    SID_HELPONHELP // ole(no) api(final/todo)
+    [
+        ExecMethod = MiscExec_Impl ;
+    ]
     SID_EXTENDEDHELP // ole(no) api(final/play/norec)
     [
         ExecMethod = MiscExec_Impl ;
@@ -64,6 +71,14 @@ interface Application
     [
         ExecMethod = MiscExec_Impl ;
         StateMethod = MiscState_Impl ;
+    ]
+    SID_LOADCONFIG // ole(no) api(final/play)
+    [
+        ExecMethod = MiscExec_Impl ;
+    ]
+    SID_SAVECONFIG // ole(no) api(final/play)
+    [
+        ExecMethod = MiscExec_Impl ;
     ]
     SID_CONFIG // ole(no) api(final/play/rec)
     [
@@ -120,6 +135,10 @@ interface Application
         ExecMethod = MiscExec_Impl ;
         StateMethod = MiscState_Impl ;
     ]
+    SID_UPDATE_CONFIG
+    [
+        ExecMethod = MiscExec_Impl ;
+    ]
     SID_ADDONS
     [
     ]
@@ -129,14 +148,6 @@ interface Application
         StateMethod = MiscState_Impl ;
     ]
     SID_SEND_FEEDBACK
-    [
-        ExecMethod = MiscExec_Impl ;
-    ]
-    SID_Q_AND_A
-    [
-        ExecMethod = MiscExec_Impl ;
-    ]
-    SID_DOCUMENTATION
     [
         ExecMethod = MiscExec_Impl ;
     ]
@@ -150,11 +161,6 @@ interface Application
     ]
     SID_RECENTFILELIST
     [
-    ]
-    SID_TOOLBAR_MODE
-    [
-        ExecMethod = MiscExec_Impl ;
-        StateMethod = MiscState_Impl ;
     ]
     SID_AVAILABLE_TOOLBARS
     [
@@ -201,15 +207,9 @@ interface Application
         ExecMethod = MiscExec_Impl ;
         StateMethod = MiscState_Impl ;
     ]
-    SID_MENUBAR
+    SID_HELP_TUTORIALS
     [
         ExecMethod = MiscExec_Impl ;
-        StateMethod = MiscState_Impl ;
-    ]
-    SID_SAFE_MODE
-    [
-        ExecMethod = MiscExec_Impl ;
-        StateMethod = MiscState_Impl ;
     ]
 }
 
@@ -259,6 +259,11 @@ shell SfxApplication
     SID_OFFICE_CHECK_PLZ
     [
         ExecMethod = OfaExec_Impl;
+    ]
+    SID_SD_AUTOPILOT // status(final|play)
+    [
+        ExecMethod = OfaExec_Impl;
+        StateMethod = OfaState_Impl;
     ]
     SID_NEWSD // status(final|play)
     [

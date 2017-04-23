@@ -42,7 +42,7 @@ public:
                             ::oox::core::XmlFilterBase& rFilter,
                             const OUString& rFragmentPath,
                             Theme& rTheme );
-    virtual             ~ThemeFragmentHandler() override;
+    virtual             ~ThemeFragmentHandler();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 

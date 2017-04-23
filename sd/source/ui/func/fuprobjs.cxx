@@ -22,7 +22,7 @@
 #include <vcl/msgbox.hxx>
 #include <svl/style.hxx>
 #include <editeng/outliner.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 
 #include "app.hrc"
 #include "res_bmp.hrc"
@@ -139,7 +139,7 @@ void FuPresentationObjects::DoExecute( SfxRequest& )
             SfxStyleSheetBase& rStyleSheet = *pStyleSheet;
 
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdPresLayoutTemplateDlg( mpDocSh, mpViewShell->GetActiveWindow(), SdResId( nDlgId ), rStyleSheet, ePO, pStyleSheetPool ) : nullptr);
+            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdPresLayoutTemplateDlg( mpDocSh, mpViewShell->GetActiveWindow(), SdResId( nDlgId ), rStyleSheet, ePO, pStyleSheetPool ) : nullptr);
             if( pDlg && (pDlg->Execute() == RET_OK) )
             {
                 const SfxItemSet* pOutSet = pDlg->GetOutputItemSet();
@@ -149,7 +149,7 @@ void FuPresentationObjects::DoExecute( SfxRequest& )
                 mpDocSh->GetUndoManager()->AddUndoAction(pAction);
 
                 pStyleSheet->GetItemSet().Put( *pOutSet );
-                static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxHint( SfxHintId::DataChanged ) );
+                static_cast<SfxStyleSheet*>( pStyleSheet )->Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
             }
         }
     }

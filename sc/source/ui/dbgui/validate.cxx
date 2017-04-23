@@ -34,7 +34,7 @@
 #include <sfx2/app.hxx>
 
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 
 #include "stringutil.hxx"
 #include "validat.hxx"
@@ -82,9 +82,9 @@ const sal_uInt16 ScTPValidationValue::pValueRanges[] =
 };
 
 ScValidationDlg::ScValidationDlg(vcl::Window* pParent, const SfxItemSet* pArgSet,
-    ScTabViewShell *pTabViewSh)
+    ScTabViewShell *pTabViewSh, SfxBindings *pB /*= NULL*/)
     : ScValidationDlgBase(pParent ? pParent : SfxGetpApp()->GetTopWindow(),
-        "ValidationDialog", "modules/scalc/ui/validationdialog.ui", pArgSet, nullptr)
+        "ValidationDialog", "modules/scalc/ui/validationdialog.ui", pArgSet, pB)
     , m_pTabVwSh(pTabViewSh)
     , m_nValuePageId(0)
     , m_bOwnRefHdlr(false)
@@ -272,7 +272,7 @@ void lclGetFormulaFromStringList( OUString& rFmlaStr, const OUString& rStringLis
 {
     rFmlaStr.clear();
     sal_Int32 nTokenCnt = comphelper::string::getTokenCount(rStringList, '\n');
-    for( sal_Int32 nToken = 0, nStringIx = 0; nToken < nTokenCnt; ++nToken )
+    for( sal_Int32 nToken = 0, nStringIx = 0; nToken < (sal_Int32) nTokenCnt; ++nToken )
     {
         OUString aToken( rStringList.getToken( 0, '\n', nStringIx ) );
         ScGlobal::AddQuotes( aToken, '"' );
@@ -338,7 +338,7 @@ ScTPValidationValue::ScTPValidationValue( vcl::Window* pParent, const SfxItemSet
     get(m_pEdMin, "min");
     m_pEdMin->SetReferences(nullptr, m_pFtMin);
     get(m_pEdList, "minlist");
-    Size aSize(LogicToPixel(Size(174, 105), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(174, 105), MAP_APPFONT));
     m_pEdList->set_width_request(aSize.Width());
     m_pEdList->set_height_request(aSize.Height());
     get(m_pFtMax, "maxft");
@@ -564,7 +564,7 @@ void ScTPValidationValue::RemoveRefDlg()
 {
     if( ScValidationDlg *pValidationDlg = GetValidationDlg() )
     {
-        if( pValidationDlg->RemoveRefDlg(true) )
+        if( pValidationDlg->RemoveRefDlg() )
         {
             pValidationDlg->SetHandler( nullptr );
             pValidationDlg->SetSetRefHdl( nullptr );
@@ -581,7 +581,7 @@ void ScTPValidationValue::RemoveRefDlg()
     }
 }
 
-IMPL_LINK_NOARG(ScTPValidationValue, EditSetFocusHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(ScTPValidationValue, EditSetFocusHdl, Control&, void)
 {
     const sal_Int32 nPos = m_pLbAllow->GetSelectEntryPos();
 
@@ -591,7 +591,7 @@ IMPL_LINK_NOARG(ScTPValidationValue, EditSetFocusHdl, Control&, void)
     }
 }
 
-IMPL_LINK( ScTPValidationValue, KillFocusHdl, Control&, rControl, void )
+IMPL_LINK_TYPED( ScTPValidationValue, KillFocusHdl, Control&, rControl, void )
 {
     vcl::Window* pWnd = static_cast<vcl::Window*>(&rControl);
     if( pWnd == m_pRefEdit || pWnd == m_pBtnRef )
@@ -603,7 +603,7 @@ IMPL_LINK( ScTPValidationValue, KillFocusHdl, Control&, rControl, void )
                 }
 }
 
-IMPL_LINK_NOARG(ScTPValidationValue, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScTPValidationValue, SelectHdl, ListBox&, void)
 {
     const sal_Int32 nLbPos = m_pLbAllow->GetSelectEntryPos();
     bool bEnable = (nLbPos != SC_VALIDDLG_ALLOW_ANY);
@@ -665,7 +665,7 @@ IMPL_LINK_NOARG(ScTPValidationValue, SelectHdl, ListBox&, void)
     m_pBtnRef->Show( bRange );  // cell range picker
 }
 
-IMPL_LINK_NOARG(ScTPValidationValue, CheckHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScTPValidationValue, CheckHdl, Button*, void)
 {
     m_pCbSort->Enable( m_pCbShow->IsChecked() );
 }
@@ -830,7 +830,7 @@ bool ScTPValidationError::FillItemSet( SfxItemSet* rArgSet )
     return true;
 }
 
-IMPL_LINK_NOARG(ScTPValidationError, SelectActionHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScTPValidationError, SelectActionHdl, ListBox&, void)
 {
     ScValidErrorStyle eStyle = (ScValidErrorStyle) m_pLbAction->GetSelectEntryPos();
     bool bMacro = ( eStyle == SC_VALERR_MACRO );
@@ -840,13 +840,13 @@ IMPL_LINK_NOARG(ScTPValidationError, SelectActionHdl, ListBox&, void)
     m_pEdError->Enable( !bMacro );
 }
 
-IMPL_LINK_NOARG(ScTPValidationError, ClickSearchHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScTPValidationError, ClickSearchHdl, Button*, void)
 {
     // Use static SfxApplication method to bring up selector dialog for
     // choosing a script
     OUString aScriptURL = SfxApplication::ChooseScript();
 
-    if ( !aScriptURL.isEmpty() )
+    if ( aScriptURL != nullptr && !aScriptURL.isEmpty() )
     {
         m_pEdtTitle->SetText( aScriptURL );
     }

@@ -51,23 +51,9 @@ namespace drawinglayer
         }
 
         /// default: just return children, so all renderers not supporting group will use its content
-        void GroupPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer GroupPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            getChildren(rVisitor);
-        }
-
-        sal_Int64 SAL_CALL GroupPrimitive2D::estimateUsage()
-        {
-            size_t nRet(0);
-            for (auto& it : getChildren())
-            {
-                uno::Reference<util::XAccounting> const xAcc(it, uno::UNO_QUERY);
-                if (xAcc.is())
-                {
-                    nRet += xAcc->estimateUsage();
-                }
-            }
-            return nRet;
+            return getChildren();
         }
 
         // provide unique ID

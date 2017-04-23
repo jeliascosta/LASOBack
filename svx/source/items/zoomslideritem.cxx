@@ -74,7 +74,7 @@ SvStream& SvxZoomSliderItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/
 
 bool SvxZoomSliderItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
+    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
 
     const SvxZoomSliderItem& rItem = static_cast<const SvxZoomSliderItem&>(rAttr);
 

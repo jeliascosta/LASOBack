@@ -50,7 +50,7 @@ OConnection::OConnection(const SQLHANDLE _pDriverHandle,ODBCDriver* _pDriver)
                          ,m_aConnectionHandle(nullptr)
                          ,m_pDriverHandleCopy(_pDriverHandle)
                          ,m_nStatementCount(0)
-                         ,m_bClosed(false)
+                         ,m_bClosed(true)
                          ,m_bUseCatalog(false)
                          ,m_bUseOldDateFormat(false)
                          ,m_bParameterSubstitution(false)
@@ -86,7 +86,7 @@ OConnection::~OConnection()
 
 void SAL_CALL OConnection::release() throw()
 {
-    release_ChildImpl();
+    relase_ChildImpl();
 }
 
 oslGenericFunction OConnection::getOdbcFunction(ODBC3SQLFunctionId _nIndex)  const
@@ -109,7 +109,7 @@ SQLRETURN OConnection::OpenConnection(const OUString& aConnectStr, sal_Int32 nTi
     memset(szConnStrOut,'\0',4096);
     memset(szConnStrIn,'\0',2048);
     OString aConStr(OUStringToOString(aConnectStr,getTextEncoding()));
-    memcpy(szConnStrIn, aConStr.getStr(), std::min<sal_Int32>((sal_Int32)2048,aConStr.getLength()));
+    memcpy(szConnStrIn, aConStr.getStr(), ::std::min<sal_Int32>((sal_Int32)2048,aConStr.getLength()));
 
 #ifndef MACOSX
     N3SQLSetConnectAttr(m_aConnectionHandle,SQL_ATTR_LOGIN_TIMEOUT,reinterpret_cast<SQLPOINTER>(nTimeOut),SQL_IS_UINTEGER);
@@ -122,7 +122,7 @@ SQLRETURN OConnection::OpenConnection(const OUString& aConnectStr, sal_Int32 nTi
     nSQLRETURN = N3SQLDriverConnect(m_aConnectionHandle,
                       nullptr,
                       szConnStrIn,
-                      (SQLSMALLINT) std::min((sal_Int32)2048,aConStr.getLength()),
+                      (SQLSMALLINT) ::std::min((sal_Int32)2048,aConStr.getLength()),
                       szConnStrOut,
                       (SQLSMALLINT) (sizeof(szConnStrOut)/sizeof(SDB_ODBC_CHAR)) -1,
                       &cbConnStrOut,
@@ -135,7 +135,7 @@ SQLRETURN OConnection::OpenConnection(const OUString& aConnectStr, sal_Int32 nTi
     nSQLRETURN = N3SQLDriverConnect(m_aConnectionHandle,
                       nullptr,
                       szConnStrIn,
-                      (SQLSMALLINT) std::min<sal_Int32>((sal_Int32)2048,aConStr.getLength()),
+                      (SQLSMALLINT) ::std::min<sal_Int32>((sal_Int32)2048,aConStr.getLength()),
                       szConnStrOut,
                       (SQLSMALLINT) sizeof szConnStrOut,
                       &cbConnStrOut,
@@ -176,7 +176,7 @@ SQLRETURN OConnection::OpenConnection(const OUString& aConnectStr, sal_Int32 nTi
     return nSQLRETURN;
 }
 
-SQLRETURN OConnection::Construct(const OUString& url,const Sequence< PropertyValue >& info)
+SQLRETURN OConnection::Construct(const OUString& url,const Sequence< PropertyValue >& info)  throw(SQLException, std::exception)
 {
     m_aConnectionHandle  = SQL_NULL_HANDLE;
     m_sURL  = url;
@@ -191,55 +191,68 @@ SQLRETURN OConnection::Construct(const OUString& url,const Sequence< PropertyVal
     OUString aDSN("DSN="), aUID, aPWD, aSysDrvSettings;
     aDSN += url.copy(nLen+1);
 
+    const char* pUser       = "user";
+    const char* pTimeout    = "Timeout";
+    const char* pSilent     = "Silent";
+    const char* pPwd        = "password";
+    const char* pUseCatalog = "UseCatalog";
+    const char* pSysDrv     = "SystemDriverSettings";
+    const char* pCharSet    = "CharSet";
+    const char* pParaName   = "ParameterNameSubstitution";
+    const char* pPrivName   = "IgnoreDriverPrivileges";
+    const char* pVerColName = "PreventGetVersionColumns";   // #i60273#
+    const char* pRetrieving = "IsAutoRetrievingEnabled";
+    const char* pRetriStmt  = "AutoRetrievingStatement";
+
     sal_Int32 nTimeout = 20;
     bool bSilent = true;
     const PropertyValue *pBegin = info.getConstArray();
     const PropertyValue *pEnd   = pBegin + info.getLength();
     for(;pBegin != pEnd;++pBegin)
     {
-        if( pBegin->Name == "Timeout")
+        if( pBegin->Name.equalsAscii(pTimeout))
             OSL_VERIFY( pBegin->Value >>= nTimeout );
-        else if( pBegin->Name == "Silent")
+        else if( pBegin->Name.equalsAscii(pSilent))
             OSL_VERIFY( pBegin->Value >>= bSilent );
-        else if( pBegin->Name == "IgnoreDriverPrivileges")
+        else if( pBegin->Name.equalsAscii(pPrivName))
             OSL_VERIFY( pBegin->Value >>= m_bIgnoreDriverPrivileges );
-        else if( pBegin->Name == "PreventGetVersionColumns")
+        else if( pBegin->Name.equalsAscii(pVerColName))
             OSL_VERIFY( pBegin->Value >>= m_bPreventGetVersionColumns );
-        else if( pBegin->Name == "ParameterNameSubstitution")
+        else if( pBegin->Name.equalsAscii(pParaName))
             OSL_VERIFY( pBegin->Value >>= m_bParameterSubstitution );
-        else if( pBegin->Name == "IsAutoRetrievingEnabled")
+        else if( pBegin->Name.equalsAscii(pRetrieving))
         {
             bool bAutoRetrievingEnabled = false;
             OSL_VERIFY( pBegin->Value >>= bAutoRetrievingEnabled );
             enableAutoRetrievingEnabled(bAutoRetrievingEnabled);
         }
-        else if( pBegin->Name == "AutoRetrievingStatement")
+        else if( pBegin->Name.equalsAscii(pRetriStmt))
         {
             OUString sGeneratedValueStatement;
             OSL_VERIFY( pBegin->Value >>= sGeneratedValueStatement );
             setAutoRetrievingStatement(sGeneratedValueStatement);
         }
-        else if( pBegin->Name == "user")
+        else if( pBegin->Name.equalsAscii(pUser))
         {
             OSL_VERIFY( pBegin->Value >>= aUID );
             aDSN = aDSN + ";UID=" + aUID;
         }
-        else if( pBegin->Name == "password")
+        else if( pBegin->Name.equalsAscii(pPwd))
         {
             OSL_VERIFY( pBegin->Value >>= aPWD );
             aDSN = aDSN + ";PWD=" + aPWD;
         }
-        else if( pBegin->Name == "UseCatalog")
+        else if( pBegin->Name.equalsAscii(pUseCatalog))
         {
              OSL_VERIFY( pBegin->Value >>= m_bUseCatalog );
         }
-        else if( pBegin->Name == "SystemDriverSettings")
+        else if( pBegin->Name.equalsAscii(pSysDrv))
         {
             OSL_VERIFY( pBegin->Value >>= aSysDrvSettings );
             aDSN += ";";
             aDSN += aSysDrvSettings;
         }
-        else if( pBegin->Name == "CharSet")
+        else if( pBegin->Name.equalsAscii(pCharSet))
         {
             OUString sIanaName;
             OSL_VERIFY( pBegin->Value >>= sIanaName );
@@ -268,7 +281,7 @@ SQLRETURN OConnection::Construct(const OUString& url,const Sequence< PropertyVal
 IMPLEMENT_SERVICE_INFO(OConnection, "com.sun.star.sdbc.drivers.odbc.OConnection", "com.sun.star.sdbc.Connection")
 
 
-Reference< XStatement > SAL_CALL OConnection::createStatement(  )
+Reference< XStatement > SAL_CALL OConnection::createStatement(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -278,7 +291,7 @@ Reference< XStatement > SAL_CALL OConnection::createStatement(  )
     return xReturn;
 }
 
-Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement( const OUString& sql )
+Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -288,13 +301,13 @@ Reference< XPreparedStatement > SAL_CALL OConnection::prepareStatement( const OU
     return xReturn;
 }
 
-Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall( const OUString& /*sql*/ )
+Reference< XPreparedStatement > SAL_CALL OConnection::prepareCall( const OUString& /*sql*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::prepareCall", *this );
     return nullptr;
 }
 
-OUString SAL_CALL OConnection::nativeSQL( const OUString& sql )
+OUString SAL_CALL OConnection::nativeSQL( const OUString& sql ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -305,7 +318,7 @@ OUString SAL_CALL OConnection::nativeSQL( const OUString& sql )
     return OUString(pOut,nOutLen,getTextEncoding());
 }
 
-void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit )
+void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -317,7 +330,7 @@ void SAL_CALL OConnection::setAutoCommit( sal_Bool autoCommit )
                                    m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-sal_Bool SAL_CALL OConnection::getAutoCommit(  )
+sal_Bool SAL_CALL OConnection::getAutoCommit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -329,7 +342,7 @@ sal_Bool SAL_CALL OConnection::getAutoCommit(  )
     return nOption == SQL_AUTOCOMMIT_ON ;
 }
 
-void SAL_CALL OConnection::commit(  )
+void SAL_CALL OConnection::commit(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -338,7 +351,7 @@ void SAL_CALL OConnection::commit(  )
     OTools::ThrowException(this,N3SQLEndTran(SQL_HANDLE_DBC,m_aConnectionHandle,SQL_COMMIT),m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-void SAL_CALL OConnection::rollback(  )
+void SAL_CALL OConnection::rollback(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -347,14 +360,14 @@ void SAL_CALL OConnection::rollback(  )
     OTools::ThrowException(this,N3SQLEndTran(SQL_HANDLE_DBC,m_aConnectionHandle,SQL_ROLLBACK),m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-sal_Bool SAL_CALL OConnection::isClosed(  )
+sal_Bool SAL_CALL OConnection::isClosed(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
     return OConnection_BASE::rBHelper.bDisposed;
 }
 
-Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  )
+Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -369,7 +382,7 @@ Reference< XDatabaseMetaData > SAL_CALL OConnection::getMetaData(  )
     return xMetaData;
 }
 
-void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly )
+void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -380,13 +393,13 @@ void SAL_CALL OConnection::setReadOnly( sal_Bool readOnly )
         m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-sal_Bool SAL_CALL OConnection::isReadOnly()
+sal_Bool SAL_CALL OConnection::isReadOnly() throw(SQLException, RuntimeException, std::exception)
 {
     // const member which will initialized only once
     return m_bReadOnly;
 }
 
-void SAL_CALL OConnection::setCatalog( const OUString& catalog )
+void SAL_CALL OConnection::setCatalog( const OUString& catalog ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -398,7 +411,7 @@ void SAL_CALL OConnection::setCatalog( const OUString& catalog )
         m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-OUString SAL_CALL OConnection::getCatalog(  )
+OUString SAL_CALL OConnection::getCatalog(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -413,7 +426,7 @@ OUString SAL_CALL OConnection::getCatalog(  )
     return OUString(pCat,nValueLen,getTextEncoding());
 }
 
-void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level )
+void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -425,7 +438,7 @@ void SAL_CALL OConnection::setTransactionIsolation( sal_Int32 level )
                                    m_aConnectionHandle,SQL_HANDLE_DBC,*this);
 }
 
-sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  )
+sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -439,7 +452,7 @@ sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  )
     return nTxn;
 }
 
-Reference< css::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  )
+Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -448,13 +461,13 @@ Reference< css::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  )
     return nullptr;
 }
 
-void SAL_CALL OConnection::setTypeMap( const Reference< css::container::XNameAccess >& /*typeMap*/ )
+void SAL_CALL OConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::setTypeMap", *this );
 }
 
 // XCloseable
-void SAL_CALL OConnection::close(  )
+void SAL_CALL OConnection::close(  ) throw(SQLException, RuntimeException, std::exception)
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -465,12 +478,12 @@ void SAL_CALL OConnection::close(  )
 }
 
 // XWarningsSupplier
-Any SAL_CALL OConnection::getWarnings(  )
+Any SAL_CALL OConnection::getWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
     return Any();
 }
 
-void SAL_CALL OConnection::clearWarnings(  )
+void SAL_CALL OConnection::clearWarnings(  ) throw(SQLException, RuntimeException, std::exception)
 {
 }
 
@@ -480,16 +493,21 @@ void OConnection::disposing()
 
     OConnection_BASE::disposing();
 
-    for (std::map< SQLHANDLE,OConnection*>::iterator aConIter = m_aConnections.begin();aConIter != m_aConnections.end();++aConIter )
+    for (::std::map< SQLHANDLE,OConnection*>::iterator aConIter = m_aConnections.begin();aConIter != m_aConnections.end();++aConIter )
         aConIter->second->dispose();
 
-    std::map< SQLHANDLE,OConnection*>().swap(m_aConnections);
+    ::std::map< SQLHANDLE,OConnection*>().swap(m_aConnections);
 
     if(!m_bClosed)
         N3SQLDisconnect(m_aConnectionHandle);
     m_bClosed   = true;
 
     dispose_ChildImpl();
+}
+
+OConnection* OConnection::cloneConnection()
+{
+    return new OConnection(m_pDriverHandleCopy,m_pDriver);
 }
 
 SQLHANDLE OConnection::createStatementHandle()
@@ -501,7 +519,7 @@ SQLHANDLE OConnection::createStatementHandle()
         sal_Int32 nMaxStatements = getMetaData()->getMaxStatements();
         if(nMaxStatements && nMaxStatements <= m_nStatementCount)
         {
-            OConnection* pConnection = new OConnection(m_pDriverHandleCopy,m_pDriver);
+            OConnection* pConnection = cloneConnection();
             pConnection->acquire();
             pConnection->Construct(m_sURL,getConnectionInfo());
             pConnectionTemp = pConnection;
@@ -516,7 +534,7 @@ SQLHANDLE OConnection::createStatementHandle()
     N3SQLAllocHandle(SQL_HANDLE_STMT,pConnectionTemp->getConnection(),&aStatementHandle);
     ++m_nStatementCount;
     if(bNew)
-        m_aConnections.insert(std::map< SQLHANDLE,OConnection*>::value_type(aStatementHandle,pConnectionTemp));
+        m_aConnections.insert(::std::map< SQLHANDLE,OConnection*>::value_type(aStatementHandle,pConnectionTemp));
 
     return aStatementHandle;
 
@@ -527,7 +545,7 @@ void OConnection::freeStatementHandle(SQLHANDLE& _pHandle)
     if( SQL_NULL_HANDLE == _pHandle )
         return;
 
-    std::map< SQLHANDLE,OConnection*>::iterator aFind = m_aConnections.find(_pHandle);
+    ::std::map< SQLHANDLE,OConnection*>::iterator aFind = m_aConnections.find(_pHandle);
 
     N3SQLFreeStmt(_pHandle,SQL_RESET_PARAMS);
     N3SQLFreeStmt(_pHandle,SQL_UNBIND);

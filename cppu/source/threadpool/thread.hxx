@@ -41,16 +41,16 @@ namespace cppu_threadpool {
                         JobQueue * ,
                         const ::rtl::ByteSequence &aThreadId,
                         bool bAsynchron );
-        virtual ~ORequestThread() override;
+        virtual ~ORequestThread();
 
         void setTask( JobQueue * , const ::rtl::ByteSequence & aThreadId , bool bAsynchron );
 
         bool launch();
 
-        static void * operator new(std::size_t size)
+        static inline void * operator new(std::size_t size)
         { return SimpleReferenceObject::operator new(size); }
 
-        static void operator delete(void * pointer)
+        static inline void operator delete(void * pointer)
         { SimpleReferenceObject::operator delete(pointer); }
 
     private:

@@ -21,6 +21,7 @@
 #include <editeng/eeitem.hxx>
 #include <com/sun/star/uno/Any.hxx>
 
+#include <toolkit/helper/vclunohelper.hxx>
 #include <editeng/fontitem.hxx>
 #include <editeng/fhgtitem.hxx>
 #include <editeng/postitem.hxx>
@@ -30,7 +31,6 @@
 #include <editeng/wrlmitem.hxx>
 #include <editeng/memberids.hrc>
 #include <svl/itempool.hxx>
-#include <vcl/unohelp.hxx>
 
 #include <editeng/unofdesc.hxx>
 #include <editeng/svxfont.hxx>
@@ -48,7 +48,7 @@ void SvxUnoFontDescriptor::ConvertToFont( const awt::FontDescriptor& rDesc, vcl:
     rFont.SetPitch( (FontPitch)rDesc.Pitch );
     rFont.SetOrientation( (short)(rDesc.Orientation*10) );
     rFont.SetKerning( rDesc.Kerning ? FontKerning::FontSpecific : FontKerning::NONE );
-    rFont.SetWeight( vcl::unohelper::ConvertFontWeight(rDesc.Weight) );
+    rFont.SetWeight( VCLUnoHelper::ConvertFontWeight(rDesc.Weight) );
     rFont.SetItalic( (FontItalic)rDesc.Slant );
     rFont.SetUnderline( (FontLineStyle)rDesc.Underline );
     rFont.SetStrikeout( (FontStrikeout)rDesc.Strikeout );
@@ -66,8 +66,8 @@ void SvxUnoFontDescriptor::ConvertFromFont( const vcl::Font& rFont, awt::FontDes
     rDesc.Pitch = sal::static_int_cast< sal_Int16 >(rFont.GetPitch());
     rDesc.Orientation = static_cast< float >(rFont.GetOrientation() / 10);
     rDesc.Kerning = rFont.IsKerning();
-    rDesc.Weight = vcl::unohelper::ConvertFontWeight( rFont.GetWeight() );
-    rDesc.Slant = vcl::unohelper::ConvertFontSlant( rFont.GetItalic() );
+    rDesc.Weight = VCLUnoHelper::ConvertFontWeight( rFont.GetWeight() );
+    rDesc.Slant = VCLUnoHelper::ConvertFontSlant( rFont.GetItalic() );
     rDesc.Underline = sal::static_int_cast< sal_Int16 >(rFont.GetUnderline());
     rDesc.Strikeout = sal::static_int_cast< sal_Int16 >(rFont.GetStrikeout());
     rDesc.WordLineMode = rFont.IsWordLineMode();
@@ -95,28 +95,28 @@ void SvxUnoFontDescriptor::FillItemSet( const awt::FontDescriptor& rDesc, SfxIte
     }
 
     {
-        SvxPostureItem aPostureItem( ITALIC_NONE, EE_CHAR_ITALIC );
+        SvxPostureItem aPostureItem( (FontItalic)0, EE_CHAR_ITALIC );
         aTemp <<= rDesc.Slant;
         static_cast<SfxPoolItem*>(&aPostureItem)->PutValue( aTemp, MID_POSTURE );
         rSet.Put(aPostureItem);
     }
 
     {
-        SvxUnderlineItem aUnderlineItem( LINESTYLE_NONE, EE_CHAR_UNDERLINE );
+        SvxUnderlineItem aUnderlineItem( (FontLineStyle)0, EE_CHAR_UNDERLINE );
         aTemp <<= (sal_Int16)rDesc.Underline;
         static_cast<SfxPoolItem*>(&aUnderlineItem)->PutValue( aTemp, MID_TL_STYLE );
         rSet.Put( aUnderlineItem );
     }
 
     {
-        SvxWeightItem aWeightItem( WEIGHT_DONTKNOW, EE_CHAR_WEIGHT );
+        SvxWeightItem aWeightItem( (FontWeight)0, EE_CHAR_WEIGHT );
         aTemp <<= rDesc.Weight;
         static_cast<SfxPoolItem*>(&aWeightItem)->PutValue( aTemp, MID_WEIGHT );
         rSet.Put( aWeightItem );
     }
 
     {
-        SvxCrossedOutItem aCrossedOutItem( STRIKEOUT_NONE, EE_CHAR_STRIKEOUT );
+        SvxCrossedOutItem aCrossedOutItem( (FontStrikeout)0, EE_CHAR_STRIKEOUT );
         aTemp <<= rDesc.Strikeout;
         static_cast<SfxPoolItem*>(&aCrossedOutItem)->PutValue( aTemp, MID_CROSS_OUT );
         rSet.Put( aCrossedOutItem );

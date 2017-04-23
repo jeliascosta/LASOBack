@@ -58,15 +58,14 @@ public:
     virtual void SAL_CALL disposing () override;
 
     // XEventListener
-    virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) override;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL notifyEvent( const css::document::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     void ExecuteAnnotation (SfxRequest& rRequest);
     void GetAnnotationState (SfxItemSet& rItemSet);
 
     void ExecuteInsertAnnotation(SfxRequest& rReq);
     void ExecuteDeleteAnnotation(SfxRequest& rReq);
-    void ExecuteEditAnnotation(SfxRequest& rReq);
     void ExecuteReplyToAnnotation(SfxRequest& rReq);
 
     void SelectNextAnnotation(bool bForeward);
@@ -74,12 +73,12 @@ public:
     void SelectAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, bool bEdit = false );
     void GetSelectedAnnotation( css::uno::Reference< css::office::XAnnotation >& xAnnotation );
 
-    void InsertAnnotation(const OUString& rText);
+    void InsertAnnotation();
     void DeleteAnnotation( const css::uno::Reference< css::office::XAnnotation >& xAnnotation );
     void DeleteAnnotationsByAuthor( const OUString& sAuthor );
     void DeleteAllAnnotations();
 
-    void ExecuteAnnotationContextMenu( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, vcl::Window* pParent, const ::tools::Rectangle& rContextRect, bool bButtonMenu = false );
+    void ExecuteAnnotationContextMenu( const css::uno::Reference< css::office::XAnnotation >& xAnnotation, vcl::Window* pParent, const Rectangle& rContextRect, bool bButtonMenu = false );
 
     static Color GetColorDark(sal_uInt16 aAuthorIndex);
     static Color GetColorLight(sal_uInt16 aAuthorIndex);
@@ -96,14 +95,16 @@ public:
 
     void invalidateSlots();
 
-    DECL_LINK(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
-    DECL_LINK(UpdateTagsHdl, void *, void);
+    DECL_LINK_TYPED(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
+    DECL_LINK_TYPED(UpdateTagsHdl, void *, void);
 
     void UpdateTags(bool bSynchron = false);
     void CreateTags();
     void DisposeTags();
 
     SdPage* GetNextPage( SdPage* pPage, bool bForeward );
+    SdPage* GetFirstPage();
+    SdPage* GetLastPage();
 
     SdPage* GetCurrentPage();
 
@@ -129,8 +130,6 @@ private:
     bool mbPopupMenuActive;
     ImplSVEvent * mnUpdateTagsEvent;
     vcl::Font maFont;
-
-    css::uno::Reference<css::office::XAnnotation> GetAnnotationById(sal_uInt32 nAnnotationId);
 };
 
 OUString getAnnotationDateTimeString( const css::uno::Reference< css::office::XAnnotation >& xAnnotation );

@@ -33,6 +33,39 @@ using namespace store;
 
 /*========================================================================
  *
+ * SharedCount::Allocator.
+ *
+ *======================================================================*/
+SharedCount::Allocator &
+SharedCount::Allocator::get()
+{
+    static Allocator g_aSharedCountAllocator;
+    return g_aSharedCountAllocator;
+}
+
+SharedCount::Allocator::Allocator()
+{
+    m_cache = rtl_cache_create (
+        "store_shared_count_cache",
+        sizeof(long),
+        0, // objalign
+        nullptr, // constructor
+        nullptr, // destructor
+        nullptr, // reclaim
+        nullptr, // userarg
+        nullptr, // default source
+        0  // flags
+        );
+}
+
+SharedCount::Allocator::~Allocator()
+{
+    rtl_cache_destroy (m_cache);
+    m_cache = nullptr;
+}
+
+/*========================================================================
+ *
  * PageData::Allocator_Impl (default allocator).
  *
  *======================================================================*/
@@ -56,7 +89,7 @@ public:
 protected:
     /** Destruction.
      */
-    virtual ~Allocator_Impl() override;
+    virtual ~Allocator_Impl();
 
 private:
     /** Representation.
@@ -80,8 +113,8 @@ storeError
 PageData::Allocator_Impl::initialize (sal_uInt16 nPageSize)
 {
     char name[RTL_CACHE_NAME_LENGTH + 1];
-    std::size_t size = sal::static_int_cast<std::size_t>(nPageSize);
-    (void) snprintf (name, sizeof(name), "store_page_alloc_%" SAL_PRI_SIZET "u", size);
+    sal_Size size = sal::static_int_cast< sal_Size >(nPageSize);
+    (void) snprintf (name, sizeof(name), "store_page_alloc_%" SAL_PRIuUINTPTR, size);
 
     m_page_cache = rtl_cache_create (name, size, 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0);
     if (!m_page_cache)

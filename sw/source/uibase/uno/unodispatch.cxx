@@ -33,11 +33,11 @@
 
 using namespace ::com::sun::star;
 
-static const char cURLFormLetter[] = ".uno:DataSourceBrowser/FormLetter";
-static const char cURLInsertContent[] = ".uno:DataSourceBrowser/InsertContent";//data into fields
-static const char cURLInsertColumns[] = ".uno:DataSourceBrowser/InsertColumns";//data into text
-static const char cURLDocumentDataSource[] = ".uno:DataSourceBrowser/DocumentDataSource";//current data source of the document
-static const sal_Char cInternalDBChangeNotification[] = ".uno::Writer/DataSourceChanged";
+static const char* cURLFormLetter      = ".uno:DataSourceBrowser/FormLetter";
+static const char* cURLInsertContent   = ".uno:DataSourceBrowser/InsertContent";//data into fields
+static const char* cURLInsertColumns   = ".uno:DataSourceBrowser/InsertColumns";//data into text
+static const char* cURLDocumentDataSource  = ".uno:DataSourceBrowser/DocumentDataSource";//current data source of the document
+static const sal_Char* cInternalDBChangeNotification = ".uno::Writer/DataSourceChanged";
 
 SwXDispatchProviderInterceptor::SwXDispatchProviderInterceptor(SwView& rVw) :
     m_pView(&rVw)
@@ -63,16 +63,17 @@ SwXDispatchProviderInterceptor::~SwXDispatchProviderInterceptor()
 
 uno::Reference< frame::XDispatch > SwXDispatchProviderInterceptor::queryDispatch(
     const util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags )
+        throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     uno::Reference< frame::XDispatch> xResult;
     // create some dispatch ...
     if(m_pView && aURL.Complete.startsWith(".uno:DataSourceBrowser/"))
     {
-        if(aURL.Complete == cURLFormLetter ||
-            aURL.Complete == cURLInsertContent ||
-                aURL.Complete == cURLInsertColumns ||
-                    aURL.Complete == cURLDocumentDataSource)
+        if(aURL.Complete.equalsAscii(cURLFormLetter) ||
+            aURL.Complete.equalsAscii(cURLInsertContent) ||
+                aURL.Complete.equalsAscii(cURLInsertColumns)||
+                    aURL.Complete.equalsAscii(cURLDocumentDataSource))
         {
             if(!m_xDispatch.is())
                 m_xDispatch = new SwXDispatch(*m_pView);
@@ -87,18 +88,8 @@ uno::Reference< frame::XDispatch > SwXDispatchProviderInterceptor::queryDispatch
     return xResult;
 }
 
-uno::Sequence<OUString> SAL_CALL SwXDispatchProviderInterceptor::getInterceptedURLs()
-{
-    uno::Sequence<OUString> aRet =
-    {
-         OUString(".uno:DataSourceBrowser/*")
-    };
-
-    return aRet;
-}
-
 uno::Sequence< uno::Reference< frame::XDispatch > > SwXDispatchProviderInterceptor::queryDispatches(
-    const uno::Sequence< frame::DispatchDescriptor >& aDescripts )
+    const uno::Sequence< frame::DispatchDescriptor >& aDescripts ) throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     uno::Sequence< uno::Reference< frame::XDispatch> > aReturn(aDescripts.getLength());
@@ -113,32 +104,35 @@ uno::Sequence< uno::Reference< frame::XDispatch > > SwXDispatchProviderIntercept
 }
 
 uno::Reference< frame::XDispatchProvider > SwXDispatchProviderInterceptor::getSlaveDispatchProvider(  )
+        throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     return m_xSlaveDispatcher;
 }
 
 void SwXDispatchProviderInterceptor::setSlaveDispatchProvider(
-    const uno::Reference< frame::XDispatchProvider >& xNewDispatchProvider )
+    const uno::Reference< frame::XDispatchProvider >& xNewDispatchProvider ) throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     m_xSlaveDispatcher = xNewDispatchProvider;
 }
 
 uno::Reference< frame::XDispatchProvider > SwXDispatchProviderInterceptor::getMasterDispatchProvider(  )
+        throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     return m_xMasterDispatcher;
 }
 
 void SwXDispatchProviderInterceptor::setMasterDispatchProvider(
-    const uno::Reference< frame::XDispatchProvider >& xNewSupplier )
+    const uno::Reference< frame::XDispatchProvider >& xNewSupplier ) throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     m_xMasterDispatcher = xNewSupplier;
 }
 
 void SwXDispatchProviderInterceptor::disposing( const lang::EventObject& )
+    throw(uno::RuntimeException, std::exception)
 {
     DispatchMutexLock_Impl aLock(*this);
     if (m_xIntercepted.is())
@@ -164,6 +158,7 @@ const uno::Sequence< sal_Int8 > & SwXDispatchProviderInterceptor::getUnoTunnelId
 
 sal_Int64 SwXDispatchProviderInterceptor::getSomething(
     const uno::Sequence< sal_Int8 >& aIdentifier )
+        throw(uno::RuntimeException, std::exception)
 {
     if( aIdentifier.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -208,6 +203,7 @@ SwXDispatch::~SwXDispatch()
 
 void SwXDispatch::dispatch(const util::URL& aURL,
     const uno::Sequence< beans::PropertyValue >& aArgs)
+        throw (uno::RuntimeException, std::exception)
 {
     if(!m_pView)
         throw uno::RuntimeException();
@@ -219,17 +215,17 @@ void SwXDispatch::dispatch(const util::URL& aURL,
 #else
     SwWrtShell& rSh = m_pView->GetWrtShell();
     SwDBManager* pDBManager = rSh.GetDBManager();
-    if(aURL.Complete == cURLInsertContent)
+    if(aURL.Complete.equalsAscii(cURLInsertContent))
     {
         svx::ODataAccessDescriptor aDescriptor(aArgs);
         SwMergeDescriptor aMergeDesc( DBMGR_MERGE, rSh, aDescriptor );
         pDBManager->Merge(aMergeDesc);
     }
-    else if(aURL.Complete == cURLInsertColumns)
+    else if(aURL.Complete.equalsAscii(cURLInsertColumns))
     {
         SwDBManager::InsertText(rSh, aArgs);
     }
-    else if(aURL.Complete == cURLFormLetter)
+    else if(aURL.Complete.equalsAscii(cURLFormLetter))
     {
         SfxUsrAnyItem aDBProperties(FN_PARAM_DATABASE_PROPERTIES, uno::makeAny(aArgs));
         m_pView->GetViewFrame()->GetDispatcher()->ExecuteList(
@@ -238,11 +234,11 @@ void SwXDispatch::dispatch(const util::URL& aURL,
             { &aDBProperties });
     }
 #endif
-    else if(aURL.Complete == cURLDocumentDataSource)
+    else if(aURL.Complete.equalsAscii(cURLDocumentDataSource))
     {
         OSL_FAIL("SwXDispatch::dispatch: this URL is not to be dispatched!");
     }
-    else if(aURL.Complete == cInternalDBChangeNotification)
+    else if(aURL.Complete.equalsAscii(cInternalDBChangeNotification))
     {
         frame::FeatureStateEvent aEvent;
         aEvent.IsEnabled = true;
@@ -251,8 +247,8 @@ void SwXDispatch::dispatch(const util::URL& aURL,
         const SwDBData& rData = m_pView->GetWrtShell().GetDBDesc();
         svx::ODataAccessDescriptor aDescriptor;
         aDescriptor.setDataSource(rData.sDataSource);
-        aDescriptor[svx::DataAccessDescriptorProperty::Command]       <<= rData.sCommand;
-        aDescriptor[svx::DataAccessDescriptorProperty::CommandType]   <<= rData.nCommandType;
+        aDescriptor[svx::daCommand]       <<= rData.sCommand;
+        aDescriptor[svx::daCommandType]   <<= rData.nCommandType;
 
         aEvent.State <<= aDescriptor.createPropertyValueSequence();
         aEvent.IsEnabled = !rData.sDataSource.isEmpty();
@@ -261,7 +257,7 @@ void SwXDispatch::dispatch(const util::URL& aURL,
         for(aListIter = m_aListenerList.begin(); aListIter != m_aListenerList.end(); ++aListIter)
         {
             StatusStruct_Impl aStatus = *aListIter;
-            if(aStatus.aURL.Complete == cURLDocumentDataSource)
+            if(aStatus.aURL.Complete.equalsAscii(cURLDocumentDataSource))
             {
                 aEvent.FeatureURL = aStatus.aURL;
                 aStatus.xListener->statusChanged( aEvent );
@@ -274,15 +270,15 @@ void SwXDispatch::dispatch(const util::URL& aURL,
 }
 
 void SwXDispatch::addStatusListener(
-    const uno::Reference< frame::XStatusListener >& xControl, const util::URL& aURL )
+    const uno::Reference< frame::XStatusListener >& xControl, const util::URL& aURL ) throw(uno::RuntimeException, std::exception)
 {
     if(!m_pView)
         throw uno::RuntimeException();
-    ShellMode eMode = m_pView->GetShellMode();
-    bool bEnable = ShellMode::Text == eMode  ||
-                       ShellMode::ListText == eMode  ||
-                       ShellMode::TableText == eMode  ||
-                       ShellMode::TableListText == eMode;
+    ShellModes eMode = m_pView->GetShellMode();
+    bool bEnable = SHELL_MODE_TEXT == eMode  ||
+                       SHELL_MODE_LIST_TEXT == eMode  ||
+                       SHELL_MODE_TABLE_TEXT == eMode  ||
+                       SHELL_MODE_TABLE_LIST_TEXT == eMode;
 
     m_bOldEnable = bEnable;
     frame::FeatureStateEvent aEvent;
@@ -291,14 +287,14 @@ void SwXDispatch::addStatusListener(
     aEvent.FeatureURL = aURL;
 
     // one of the URLs requires a special state ....
-    if (aURL.Complete == cURLDocumentDataSource)
+    if (aURL.Complete.equalsAscii(cURLDocumentDataSource))
     {
         const SwDBData& rData = m_pView->GetWrtShell().GetDBDesc();
 
         svx::ODataAccessDescriptor aDescriptor;
         aDescriptor.setDataSource(rData.sDataSource);
-        aDescriptor[svx::DataAccessDescriptorProperty::Command]       <<= rData.sCommand;
-        aDescriptor[svx::DataAccessDescriptorProperty::CommandType]   <<= rData.nCommandType;
+        aDescriptor[svx::daCommand]       <<= rData.sCommand;
+        aDescriptor[svx::daCommandType]   <<= rData.nCommandType;
 
         aEvent.State <<= aDescriptor.createPropertyValueSequence();
         aEvent.IsEnabled = !rData.sDataSource.isEmpty();
@@ -322,7 +318,7 @@ void SwXDispatch::addStatusListener(
 }
 
 void SwXDispatch::removeStatusListener(
-    const uno::Reference< frame::XStatusListener >& xControl, const util::URL&  )
+    const uno::Reference< frame::XStatusListener >& xControl, const util::URL&  ) throw(uno::RuntimeException, std::exception)
 {
     StatusListenerList::iterator aListIter = m_aListenerList.begin();
     for(aListIter = m_aListenerList.begin(); aListIter != m_aListenerList.end(); ++aListIter)
@@ -343,13 +339,13 @@ void SwXDispatch::removeStatusListener(
     }
 }
 
-void SwXDispatch::selectionChanged( const lang::EventObject&  )
+void SwXDispatch::selectionChanged( const lang::EventObject&  ) throw(uno::RuntimeException, std::exception)
 {
-    ShellMode eMode = m_pView->GetShellMode();
-    bool bEnable = ShellMode::Text == eMode  ||
-                       ShellMode::ListText == eMode  ||
-                       ShellMode::TableText == eMode  ||
-                       ShellMode::TableListText == eMode;
+    ShellModes eMode = m_pView->GetShellMode();
+    bool bEnable = SHELL_MODE_TEXT == eMode  ||
+                       SHELL_MODE_LIST_TEXT == eMode  ||
+                       SHELL_MODE_TABLE_TEXT == eMode  ||
+                       SHELL_MODE_TABLE_LIST_TEXT == eMode;
     if(bEnable != m_bOldEnable)
     {
         m_bOldEnable = bEnable;
@@ -362,14 +358,14 @@ void SwXDispatch::selectionChanged( const lang::EventObject&  )
         {
             StatusStruct_Impl aStatus = *aListIter;
             aEvent.FeatureURL = aStatus.aURL;
-            if (aStatus.aURL.Complete != cURLDocumentDataSource)
+            if (!aStatus.aURL.Complete.equalsAscii(cURLDocumentDataSource))
                 // the document's data source does not depend on the selection, so it's state does not change here
                 aStatus.xListener->statusChanged( aEvent );
         }
     }
 }
 
-void SwXDispatch::disposing( const lang::EventObject& rSource )
+void SwXDispatch::disposing( const lang::EventObject& rSource ) throw(uno::RuntimeException, std::exception)
 {
     uno::Reference<view::XSelectionSupplier> xSupplier(rSource.Source, uno::UNO_QUERY);
     uno::Reference<view::XSelectionChangeListener> xThis = this;

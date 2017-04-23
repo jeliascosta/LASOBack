@@ -24,12 +24,12 @@
 
 #include <rscflag.hxx>
 
-RscFlag::RscFlag( Atom nId, RESOURCE_TYPE nTypeId )
+RscFlag::RscFlag( Atom nId, sal_uInt32 nTypeId )
     : RscConst( nId, nTypeId )
 {
 }
 
-sal_uInt32 RscFlag::Size() const
+sal_uInt32 RscFlag::Size()
 {
     return ALIGNED_SIZE( sizeof( RscFlagInst ) *
             ( 1 + (nEntries -1) / (sizeof( sal_uInt32 ) * 8) ) );
@@ -270,7 +270,7 @@ void RscFlag::WriteSrc( const RSCINST & rInst, FILE * fOutput,
 }
 
 ERRTYPE RscFlag::WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                          RscTypCont *, sal_uInt32 )
+                          RscTypCont *, sal_uInt32, bool )
 {
     sal_Int32   lVal = 0;
     sal_uInt32  i = 0, Flag = 0, nIndex = 0;
@@ -288,14 +288,16 @@ ERRTYPE RscFlag::WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
             Flag = 1;
     }
 
-    aMem.Put( lVal );
+    aMem.Put( (sal_Int32)lVal );
     return ERR_OK;
 }
 
-RscClient::RscClient( Atom nId, RESOURCE_TYPE nTypeId, RscFlag * pClass,
+RscClient::RscClient( Atom nId, sal_uInt32 nTypeId, RscFlag * pClass,
                       Atom nConstantId )
-    : RscTop(nId, nTypeId), pRefClass(pClass), nConstId(nConstantId)
+    : RscTop ( nId, nTypeId )
 {
+   pRefClass = pClass;
+   nConstId = nConstantId;
 }
 
 RSCCLASS_TYPE RscClient::GetClassType() const

@@ -353,7 +353,7 @@ namespace drawinglayer
                     const Primitive2DContainer aContent { xRefA };
 
                     // create and add animated switch primitive
-                    return Primitive2DReference(new AnimatedBlinkPrimitive2D(aAnimationList, aContent));
+                    return Primitive2DReference(new AnimatedBlinkPrimitive2D(aAnimationList, aContent, true));
                 }
                 else
                 {
@@ -369,7 +369,7 @@ namespace drawinglayer
                 {
                     // get scroll direction
                     const SdrTextAniDirection eDirection(rText.getSdrText().GetObject().GetTextAniDirection());
-                    const bool bHorizontal(SdrTextAniDirection::Left == eDirection || SdrTextAniDirection::Right == eDirection);
+                    const bool bHorizontal(SDRTEXTANI_LEFT == eDirection || SDRTEXTANI_RIGHT == eDirection);
 
                     // decompose to get separated values for the scroll box
                     basegfx::B2DVector aScale, aTranslate;
@@ -438,15 +438,14 @@ namespace drawinglayer
                         // use the decomposition to force to simple text primitives, those will no longer
                         // need the outliner for formatting (alternatively it is also possible to just add
                         // pNew to aNewPrimitiveSequence)
-                        Primitive2DContainer aAnimSequence;
-                        pNew->get2DDecomposition(aAnimSequence, aViewInformation2D);
+                        Primitive2DContainer aAnimSequence(pNew->get2DDecomposition(aViewInformation2D));
                         delete pNew;
 
                         // create a new animatedInterpolatePrimitive and add it
                         std::vector< basegfx::B2DHomMatrix > aMatrixStack;
                         aMatrixStack.push_back(aLeft);
                         aMatrixStack.push_back(aRight);
-                        const Primitive2DReference xRefA(new AnimatedInterpolatePrimitive2D(aMatrixStack, aAnimationList, aAnimSequence));
+                        const Primitive2DReference xRefA(new AnimatedInterpolatePrimitive2D(aMatrixStack, aAnimationList, aAnimSequence, true));
                         const Primitive2DContainer aContent { xRefA };
 
                         // scrolling needs an encapsulating clipping primitive

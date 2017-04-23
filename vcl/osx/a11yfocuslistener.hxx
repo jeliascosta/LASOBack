@@ -30,10 +30,10 @@ class AquaA11yFocusListener : public KeyboardFocusListener
     static rtl::Reference< AquaA11yFocusListener > theListener;
 
     AquaA11yFocusListener();
-    virtual ~AquaA11yFocusListener() override {};
+    virtual ~AquaA11yFocusListener() {};
 public:
 
-    static rtl::Reference< AquaA11yFocusListener > const & get();
+    static rtl::Reference< AquaA11yFocusListener > get();
 
     id getFocusedUIElement();
 

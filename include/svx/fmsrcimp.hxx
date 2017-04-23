@@ -29,7 +29,7 @@
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
 #include <com/sun/star/util/XNumberFormatter.hpp>
 
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <osl/mutex.hxx>
 #include <unotools/charclass.hxx>
 #include <unotools/collatorwrapper.hxx>
@@ -38,7 +38,22 @@
 #include <deque>
 #include <vector>
 
-enum class TransliterationFlags;
+/**
+ * class FmSearchThread
+ */
+class FmSearchEngine;
+class SAL_WARN_UNUSED FmSearchThread : public ::osl::Thread
+{
+    FmSearchEngine*            m_pEngine;
+    Link<FmSearchThread*,void> m_aTerminationHdl;
+
+    virtual void SAL_CALL run() override;
+    virtual void SAL_CALL onTerminated() override;
+
+public:
+    FmSearchThread(FmSearchEngine* pEngine) : m_pEngine(pEngine) { }
+    void setTerminationHandler(Link<FmSearchThread*,void> aHdl) { m_aTerminationHdl = aHdl; }
+};
 
 /**
  * struct FmSearchProgress - the owner of SearchEngine receives this structure for status updates
@@ -46,10 +61,10 @@ enum class TransliterationFlags;
  */
 struct FmSearchProgress
 {
-    enum class State { Progress, ProgressCounting, Canceled, Successful, NothingFound, Error };
+    enum STATE { STATE_PROGRESS, STATE_PROGRESS_COUNTING, STATE_CANCELED, STATE_SUCCESSFULL, STATE_NOTHINGFOUND, STATE_ERROR };
     // (move to new record; progress during counting of records; cancelled; record found; nothing found;
     // any non-processable error)
-    State       aSearchState;
+    STATE       aSearchState;
 
     // current record - always valid (e.g. of interest for continuing search in case of cancellation)
     sal_uInt32  nCurrentRecord;
@@ -66,7 +81,7 @@ struct FmSearchProgress
  * class FmRecordCountListener - utility class for FmSearchEngine, listens at a certain cursor and provides
  *                               the differences in RecordCount
  */
-class SAL_WARN_UNUSED FmRecordCountListener : public cppu::WeakImplHelper< css::beans::XPropertyChangeListener >
+class SAL_WARN_UNUSED FmRecordCountListener : public ::cppu::WeakImplHelper1< css::beans::XPropertyChangeListener>
 {
 // attribute
     Link<sal_Int32,void>     m_lnkWhoWantsToKnow;
@@ -80,16 +95,16 @@ public:
 public:
     FmRecordCountListener(const css::uno::Reference< css::sdbc::XResultSet >& dbcCursor);
     // the set has to support the sdb::ResultSet service
-    virtual ~FmRecordCountListener() override;
+    virtual ~FmRecordCountListener();
 
     //  DECLARE_UNO3_AGG_DEFAULTS(FmPropertyListener, UsrObject)
     //  virtual sal_Bool queryInterface(css::uno::Uik aUik, css::uno::Reference< css::uno::XInterface >& rOut);
 
     // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw(css::uno::RuntimeException, std::exception) override;
 
     // css::beans::XPropertyChangeListener
-    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) override;
+    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception) override;
 
     void DisConnect();
 
@@ -144,14 +159,16 @@ namespace svxform {
     };
 }
 
+enum FMSEARCH_MODE { SM_BRUTE, SM_ALLOWSCHEDULE, SM_USETHREAD };
+
 typedef std::vector< css::uno::Reference< css::uno::XInterface> > InterfaceArray;
 
-class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
+class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine
 {
     friend class FmSearchThread;
 
-    enum class SearchResult { Found, NotFound, Error, Cancelled };
-    enum class SearchFor { String, Null, NotNull };
+    enum SEARCH_RESULT { SR_FOUND, SR_NOTFOUND, SR_ERROR, SR_CANCELED };
+    enum SEARCHFOR_TYPE { SEARCHFOR_STRING, SEARCHFOR_NULL, SEARCHFOR_NOTNULL };
 
     CursorWrapper                   m_xSearchCursor;
     std::deque<sal_Int32>           m_arrFieldMapping;
@@ -160,6 +177,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
 
     // the formatter
     css::uno::Reference< css::util::XNumberFormatsSupplier >  m_xFormatSupplier;
+    css::uno::Reference< css::util::XNumberFormatter >        m_xFormatter;
 
     CharClass               m_aCharacterClassficator;
     CollatorWrapper         m_aStringCompare;
@@ -179,6 +197,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
     typedef std::vector<svxform::ControlTextWrapper*> ControlTextSuppliers;
     ControlTextSuppliers    m_aControlTexts;
 
+    bool                    m_bUsingTextComponents;
     CursorWrapper           m_xOriginalIterator;
     CursorWrapper           m_xClonedIterator;
 
@@ -188,8 +207,8 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
 
     // Communication with the thread that does the actual searching
     OUString            m_strSearchExpression;              // forward direction
-    SearchFor      m_eSearchForType;                   // ditto
-    SearchResult       m_srResult;                         // backward direction
+    SEARCHFOR_TYPE      m_eSearchForType;                   // ditto
+    SEARCH_RESULT       m_srResult;                         // backward direction
 
     // The link we broadcast the progress and the result to
     Link<const FmSearchProgress*,void>  m_aProgressHandler;
@@ -197,6 +216,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
     bool                m_bCancelAsynchRequest : 1;     // should be cancelled?
     ::osl::Mutex        m_aCancelAsynchAccess;          // access to_bCancelAsynchRequest (technically only
                                                         // relevant for m_eMode == SM_USETHREAD)
+    FMSEARCH_MODE   m_eMode;                            // current mode
 
     // parameters for the search
     bool        m_bFormatter : 1;       // use field formatting
@@ -213,7 +233,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmSearchEngine final
 
     sal_uInt16  m_nPosition;            // if not regular or levenshtein, then one of the MATCHING_... values
 
-    TransliterationFlags m_nTransliterationFlags;
+    sal_Int32   m_nTransliterationFlags;
 
 
 // member access
@@ -255,13 +275,14 @@ public:
     sal_uInt16  GetLevLonger() const                { return m_nLevLonger; }
     // all Lev. values will only be considered in case of m_bLevenshtein==sal_True
 
-    void        SetTransliterationFlags(TransliterationFlags _nFlags)  { m_nTransliterationFlags = _nFlags; }
-    TransliterationFlags
-                GetTransliterationFlags() const             { return m_nTransliterationFlags; }
+    void        SetTransliterationFlags(sal_Int32 _nFlags)  { m_nTransliterationFlags = _nFlags; }
+    sal_Int32   GetTransliterationFlags() const             { return m_nTransliterationFlags; }
 
     void    SetPosition(sal_uInt16 nValue)      { m_nPosition = nValue; }
     sal_uInt16  GetPosition() const             { return m_nPosition; }
     // position will be ignored in case of m_bWildCard==sal_True
+
+    FMSEARCH_MODE GetSearchMode() const { return m_eMode; }
 
 public:
     /** two constructs, both analogical to FmSearchDialog, therefore look this up for explanations ....
@@ -276,9 +297,10 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
         const css::uno::Reference< css::sdbc::XResultSet >& xCursor,
         const OUString& strVisibleFields,
-        const InterfaceArray& arrFields);
+        const InterfaceArray& arrFields,
+        FMSEARCH_MODE eMode);
 
-    ~FmSearchEngine();
+    virtual ~FmSearchEngine();
 
     /** the link will be called on every record and after the completion of the search, the parameter is a pointer to
         a FmSearchProgress structure
@@ -313,7 +335,7 @@ public:
     void SwitchToContext(const css::uno::Reference< css::sdbc::XResultSet >& xCursor, const OUString& strVisibleFields, const InterfaceArray& arrFields,
         sal_Int32 nFieldIndex);
 
-private:
+protected:
     void Init(const OUString& strVisibleFields);
 
     void SearchNextImpl();
@@ -322,17 +344,18 @@ private:
     // start a thread-search (or call SearchNextImpl directly, depending on the search mode)
     void ImplStartNextSearch();
 
+private:
     SVX_DLLPRIVATE void clearControlTexts();
     SVX_DLLPRIVATE void fillControlTexts(const InterfaceArray& arrFields);
 
     // three methods implementing a complete search loop (null/not null, wildcard, SearchText)
     // (they all have some code in common, but with this solution we have to do a distinction only once per search (before
     // starting the loop), not in every loop step
-    SVX_DLLPRIVATE SearchResult SearchSpecial(bool _bSearchForNull, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
+    SVX_DLLPRIVATE SEARCH_RESULT SearchSpecial(bool _bSearchForNull, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
         const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd);
-    SVX_DLLPRIVATE SearchResult SearchWildcard(const OUString& strExpression, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
+    SVX_DLLPRIVATE SEARCH_RESULT SearchWildcard(const OUString& strExpression, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
         const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd);
-    SVX_DLLPRIVATE SearchResult SearchRegularApprox(const OUString& strExpression, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
+    SVX_DLLPRIVATE SEARCH_RESULT SearchRegularApprox(const OUString& strExpression, sal_Int32& nFieldPos, FieldCollection::iterator& iterFieldLoop,
         const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd);
 
     SVX_DLLPRIVATE void PropagateProgress(bool _bDontPropagateOverflow);
@@ -344,10 +367,16 @@ private:
     SVX_DLLPRIVATE bool MoveField(sal_Int32& nPos, FieldCollection::iterator& iter, const FieldCollection::iterator& iterBegin, const FieldCollection::iterator& iterEnd);
     // moves the iterator with respect to the direction/overflow iterator/overflow cursor
     SVX_DLLPRIVATE void BuildAndInsertFieldInfo(const css::uno::Reference< css::container::XIndexAccess >& xAllFields, sal_Int32 nField);
+    // builds a FieldInfo in relation to field number nField (in xAllFields) and adds it to m_arrUsedFields
+    // xAllFields needs to support the DatabaseRecord service
+    SVX_DLLPRIVATE OUString FormatField(const FieldInfo& rField);
+    // formats the field with the NumberFormatter
 
-    void OnSearchTerminated();
+    SVX_DLLPRIVATE bool HasPreviousLoc() { return m_aPreviousLocBookmark.hasValue(); }
+
+    DECL_LINK_TYPED(OnSearchTerminated, FmSearchThread*, void);
     // is used by SearchThread, after the return from this handler the thread removes itself
-    DECL_LINK(OnNewRecordCount, sal_Int32, void);
+    DECL_LINK_TYPED(OnNewRecordCount, sal_Int32, void);
 };
 
 #endif // INCLUDED_SVX_FMSRCIMP_HXX

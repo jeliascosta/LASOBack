@@ -39,12 +39,14 @@
 
 namespace sdext { namespace presenter {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::framework::XView,
-    css::drawing::XDrawView,
-    css::awt::XPaintListener,
-    css::awt::XWindowListener
-> PresenterSlidePreviewInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::drawing::framework::XView,
+        css::drawing::XDrawView,
+        css::awt::XPaintListener,
+        css::awt::XWindowListener
+    > PresenterSlidePreviewInterfaceBase;
+}
 
 /** Static preview of a slide.  Typically used for the preview of the next
     slide.
@@ -62,40 +64,50 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::drawing::framework::XPane>& rxAnchorPane,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterSlidePreview() override;
+    virtual ~PresenterSlidePreview();
     PresenterSlidePreview(const PresenterSlidePreview&) = delete;
     PresenterSlidePreview& operator=(const PresenterSlidePreview&) = delete;
     virtual void SAL_CALL disposing() override;
 
     // XResourceId
 
-    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId() override;
+    virtual css::uno::Reference<css::drawing::framework::XResourceId> SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDrawView
 
     virtual void SAL_CALL setCurrentPage (
-        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide) override;
+        const css::uno::Reference<css::drawing::XDrawPage>& rxSlide)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage() override;
+    virtual css::uno::Reference<css::drawing::XDrawPage> SAL_CALL getCurrentPage()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     ::rtl::Reference<PresenterController> mpPresenterController;
@@ -135,10 +147,10 @@ private:
     */
     void Resize();
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed() throw (css::lang::DisposedException);
 };
 
 } } // end of namespace ::sd::presenter

@@ -31,9 +31,6 @@
 #include <vcl/window.hxx>
 #include <basegfx/vector/b2isize.hxx>
 
-#include <cairo-xlib.h>
-#include <cairo-xlib-xrender.h>
-
 namespace
 {
     Pixmap limitXCreatePixmap(Display *display, Drawable d, unsigned int width, unsigned int height, unsigned int depth)
@@ -55,6 +52,9 @@ namespace
 
 namespace cairo
 {
+
+#include <cairo-xlib.h>
+#include <cairo-xlib-xrender.h>
 
     X11SysData::X11SysData() :
         pDisplay(nullptr),
@@ -253,7 +253,7 @@ namespace cairo
         SystemGraphicsData aSystemGraphicsData;
 
         aSystemGraphicsData.nSize = sizeof(SystemGraphicsData);
-        aSystemGraphicsData.hDrawable = mpPixmap ? mpPixmap->mhDrawable : maSysData.hDrawable;
+        aSystemGraphicsData.hDrawable = getDrawable();
         aSystemGraphicsData.pXRenderFormat = getRenderFormat();
 
         int width = cairo_xlib_surface_get_width(mpSurface.get());

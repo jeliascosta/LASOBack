@@ -39,6 +39,9 @@ ifeq ($(strip $(gb_COMPILEROPTFLAGS)),)
 gb_COMPILEROPTFLAGS := -O2
 endif
 
+gb_SHORTSTDC3 := 1
+gb_SHORTSTDCPP3 := 6
+
 gb_CPPU_ENV := gcc3
 
 gb_AFLAGS := $(AFLAGS)
@@ -88,10 +91,12 @@ ifeq ($(shell expr '$(GCC_VERSION)' '>=' 600),1)
 gb_CFLAGS_COMMON += \
     -Wduplicated-cond \
     -Wlogical-op \
+    -Wnull-dereference \
     -Wshift-overflow=2
 gb_CXXFLAGS_COMMON += \
     -Wduplicated-cond \
     -Wlogical-op \
+    -Wnull-dereference \
     -Wshift-overflow=2 \
     -Wunused-const-variable=1
 endif
@@ -101,16 +106,22 @@ gb_CXXFLAGS_COMMON += -Wimplicit-fallthrough
 endif
 
 
+ifeq ($(HAVE_GCC_VISIBILITY_FEATURE),TRUE)
+gb_VISIBILITY_FLAGS := -DHAVE_GCC_VISIBILITY_FEATURE
 # If CC or CXX already include -fvisibility=hidden, don't duplicate it
 ifeq (,$(filter -fvisibility=hidden,$(CC)))
-gb_VISIBILITY_FLAGS := -fvisibility=hidden
+gb__visibility_hidden := -fvisibility=hidden
 ifeq ($(COM_IS_CLANG),TRUE)
 ifneq ($(filter -fsanitize=%,$(CC)),)
-gb_VISIBILITY_FLAGS := -fvisibility-ms-compat
+gb__visibility_hidden := -fvisibility-ms-compat
 endif
 endif
+gb_VISIBILITY_FLAGS += $(gb__visibility_hidden)
 endif
+ifneq ($(HAVE_GCC_VISIBILITY_BROKEN),TRUE)
 gb_VISIBILITY_FLAGS_CXX := -fvisibility-inlines-hidden
+endif
+endif
 gb_CXXFLAGS_COMMON += $(gb_VISIBILITY_FLAGS_CXX)
 
 ifeq ($(HAVE_GCC_STACK_PROTECTOR_STRONG),TRUE)
@@ -126,7 +137,7 @@ gb_CXXFLAGS_COMMON += -fpch-preprocess -Winvalid-pch
 endif
 endif
 
-gb_CFLAGS_WERROR = $(if $(ENABLE_WERROR),-Werror)
+gb_CFLAGS_WERROR := $(if $(ENABLE_WERROR),-Werror)
 
 # This is the default in non-C++11 mode
 ifeq ($(COM_IS_CLANG),TRUE)
@@ -186,7 +197,7 @@ ifeq ($(HAVE_GCC_FNO_DEFAULT_INLINE),TRUE)
 FNO_DEFAULT_INLINE=-fno-default-inline
 endif
 
-gb_DEBUG_CFLAGS := $(FINLINE_LIMIT0) $(FNO_INLINE)
+gb_DEBUG_CFLAGS := $(gb_DEBUGINFO_FLAGS) $(FINLINE_LIMIT0) $(FNO_INLINE)
 gb_DEBUG_CXXFLAGS := $(FNO_DEFAULT_INLINE)
 
 
@@ -207,13 +218,11 @@ ifneq ($(UPDATE_FILES),)
 gb_COMPILER_PLUGINS += -Xclang -plugin-arg-loplugin -Xclang --scope=$(UPDATE_FILES)
 endif
 endif
-# set CCACHE_CPP2=1 to prevent clang generating spurious warnings
-gb_COMPILER_SETUP := CCACHE_CPP2=1
-gb_COMPILER_PLUGINS_SETUP := ICECC_EXTRAFILES=$(SRCDIR)/include/sal/log-areas.dox CCACHE_EXTRAFILES=$(SRCDIR)/include/sal/log-areas.dox
+# extra EF variable to make the command line shorter (just like is done with $(SRCDIR) etc.)
+gb_COMPILER_PLUGINS_SETUP := EF=$(SRCDIR)/include/sal/log-areas.dox && ICECC_EXTRAFILES=$$EF CCACHE_EXTRAFILES=$$EF
 gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS := \
     -Xclang -plugin-arg-loplugin -Xclang --warnings-as-errors
 else
-gb_COMPILER_SETUP :=
 gb_COMPILER_PLUGINS :=
 gb_COMPILER_PLUGINS_SETUP :=
 gb_COMPILER_PLUGINS_WARNINGS_AS_ERRORS :=

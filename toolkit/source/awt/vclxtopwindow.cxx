@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/SystemDependent.hpp>
 #include <com/sun/star/awt/SystemDependentXWindow.hpp>
 
@@ -58,7 +55,7 @@ VCLXTopWindow_Base::~VCLXTopWindow_Base()
 {
 }
 
-Any VCLXTopWindow_Base::queryInterface( const Type & rType )
+Any VCLXTopWindow_Base::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     css::uno::Any aRet( VCLXTopWindow_XBase::queryInterface( rType ) );
 
@@ -69,7 +66,7 @@ Any VCLXTopWindow_Base::queryInterface( const Type & rType )
     return aRet;
 }
 
-Sequence< Type > VCLXTopWindow_Base::getTypes()
+Sequence< Type > VCLXTopWindow_Base::getTypes() throw(RuntimeException, std::exception)
 {
     Sequence< Type > aTypes( VCLXTopWindow_XBase::getTypes() );
     if ( m_bWHWND )
@@ -77,7 +74,7 @@ Sequence< Type > VCLXTopWindow_Base::getTypes()
     return aTypes;
 }
 
-css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 SystemType )
+css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal_Int8 >& /*ProcessId*/, sal_Int16 SystemType ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -119,21 +116,21 @@ css::uno::Any VCLXTopWindow_Base::getWindowHandle( const css::uno::Sequence< sal
     return aRet;
 }
 
-void VCLXTopWindow_Base::addTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener )
+void VCLXTopWindow_Base::addTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     GetTopWindowListenersImpl().addInterface( rxListener );
 }
 
-void VCLXTopWindow_Base::removeTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener )
+void VCLXTopWindow_Base::removeTopWindowListener( const css::uno::Reference< css::awt::XTopWindowListener >& rxListener ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     GetTopWindowListenersImpl().removeInterface( rxListener );
 }
 
-void VCLXTopWindow_Base::toFront(  )
+void VCLXTopWindow_Base::toFront(  ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -142,11 +139,11 @@ void VCLXTopWindow_Base::toFront(  )
         static_cast<WorkWindow*>(pWindow)->ToTop( ToTopFlags::RestoreWhenMin );
 }
 
-void VCLXTopWindow_Base::toBack(  )
+void VCLXTopWindow_Base::toBack(  ) throw(css::uno::RuntimeException, std::exception)
 {
 }
 
-void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuBar >& rxMenu )
+void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuBar >& rxMenu ) throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -166,7 +163,7 @@ void VCLXTopWindow_Base::setMenuBar( const css::uno::Reference< css::awt::XMenuB
 }
 
 
-sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized()
+sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -178,7 +175,7 @@ sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMaximized()
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized )
+void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -190,7 +187,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMaximized( sal_Bool _ismaximized )
 }
 
 
-sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized()
+sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -202,7 +199,7 @@ sal_Bool SAL_CALL VCLXTopWindow_Base::getIsMinimized()
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized )
+void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -214,7 +211,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized )
 }
 
 
-::sal_Int32 SAL_CALL VCLXTopWindow_Base::getDisplay()
+::sal_Int32 SAL_CALL VCLXTopWindow_Base::getDisplay() throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -226,7 +223,7 @@ void SAL_CALL VCLXTopWindow_Base::setIsMinimized( sal_Bool _isMinimized )
 }
 
 
-void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display )
+void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display ) throw (RuntimeException, IndexOutOfBoundsException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -244,7 +241,7 @@ void SAL_CALL VCLXTopWindow_Base::setDisplay( ::sal_Int32 _display )
 //  class VCLXTopWindow
 
 
-void VCLXTopWindow::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
+void VCLXTopWindow::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
 {
     VCLXContainer::ImplGetPropertyIds( rIds );
 }
@@ -269,7 +266,7 @@ vcl::Window* VCLXTopWindow::GetWindowImpl()
 }
 
 // css::uno::XInterface
-css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType )
+css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Any aRet( VCLXTopWindow_Base::queryInterface( rType ) );
 
@@ -279,12 +276,12 @@ css::uno::Any VCLXTopWindow::queryInterface( const css::uno::Type & rType )
     return aRet;
 }
 
-css::uno::Sequence< sal_Int8 > VCLXTopWindow::getImplementationId()
+css::uno::Sequence< sal_Int8 > VCLXTopWindow::getImplementationId() throw(css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-css::uno::Sequence< css::uno::Type > VCLXTopWindow::getTypes()
+css::uno::Sequence< css::uno::Type > VCLXTopWindow::getTypes() throw(css::uno::RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences( VCLXTopWindow_Base::getTypes(), VCLXContainer::getTypes() );
 }

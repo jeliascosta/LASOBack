@@ -39,6 +39,10 @@ class EditTextIterator
      */
     const EditTextObject* seek();
 
+    /**
+     * Increment current position by one.
+     */
+    void incPos();
     void incBlock();
     /**
      * Initialize members w.r.t the dynamic column container in the given table.

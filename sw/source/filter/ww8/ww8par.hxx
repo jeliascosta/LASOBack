@@ -27,6 +27,8 @@
 #include <fltshell.hxx>
 
 #include <svx/svdobj.hxx>
+#define SW_DRAWLAYER 0x30334353
+#define SW_UD_IMAPDATA      2
 
 #include <vector>
 #include <stack>
@@ -52,7 +54,6 @@
 #include <editeng/lrspitem.hxx>
 #include <oox/ole/olehelper.hxx>
 
-#define SW_UD_IMAPDATA      2
 
 class SwDoc;
 class SwPaM;
@@ -164,7 +165,7 @@ private:
     std::vector<WW8LSTInfo* > maLSTInfos;
     std::vector<std::unique_ptr<WW8LFOInfo>> m_LFOInfos;// D. from PLF LFO, sorted exactly like in the WW8 Stream
     sal_uInt16       nUniqueList; // current number for creating unique list names
-    SprmResult GrpprlHasSprm(sal_uInt16 nId, sal_uInt8& rSprms, sal_uInt8 nLen);
+    sal_uInt8* GrpprlHasSprm(sal_uInt16 nId, sal_uInt8& rSprms, sal_uInt8 nLen);
     WW8LSTInfo* GetLSTByListId(    sal_uInt32  nIdLst     ) const;
     //the rParaSprms returns back the original word paragraph indent
     //sprms which are attached to this numbering level
@@ -220,7 +221,7 @@ public:
     rtl_TextEncoding m_eRTLFontSrcCharSet;    // rtl_TextEncoding for the font
     rtl_TextEncoding m_eCJKFontSrcCharSet;    // rtl_TextEncoding for the font
     SwFormat*      m_pFormat;
-    std::shared_ptr<WW8FlyPara> m_xWWFly;
+    WW8FlyPara* m_pWWFly;
     SwNumRule*  m_pOutlineNumrule;
     long        m_nFilePos;
     sal_uInt16      m_nBase;
@@ -260,7 +261,7 @@ public:
         m_eRTLFontSrcCharSet(0),
         m_eCJKFontSrcCharSet(0),
         m_pFormat( nullptr ),
-        m_xWWFly( nullptr ),
+        m_pWWFly( nullptr ),
         m_pOutlineNumrule( nullptr ),
         m_nFilePos( 0 ),
         m_nBase( 0 ),
@@ -282,6 +283,11 @@ public:
         m_bParaAutoAfter(false)
 
     {}
+
+    ~SwWW8StyInf()
+    {
+        delete m_pWWFly;
+    }
 
     void SetOrgWWIdent( const OUString& rName, const sal_uInt16 nId )
     {
@@ -368,7 +374,7 @@ protected:
         SwFltStackEntry& rEntry) override;
 
     virtual sal_Int32 GetCurrAttrCP() const override;
-    virtual bool IsParaEndInCPs(sal_Int32 nStart, sal_Int32 nEnd, bool bSdOD) const override;
+    virtual bool IsParaEndInCPs(sal_Int32 nStart,sal_Int32 nEnd,bool bSdOD=true) const override;
     //Clear the para end position recorded in reader intermittently for the least impact on loading performance
     virtual void ClearParaEndPosition() override;
     virtual bool CheckSdOD(sal_Int32 nStart,sal_Int32 nEnd) override;
@@ -381,7 +387,7 @@ public:
 
     void NewAttr(const SwPosition& rPos, const SfxPoolItem& rAttr);
 
-    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId, bool bTstEnde=true, long nHand=LONG_MAX, bool consumedByField=false) override;
+    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId=0, bool bTstEnde=true, long nHand=LONG_MAX, bool consumedByField=false) override;
 
     void SetToggleAttr(sal_uInt8 nId, bool bOn)
     {
@@ -488,17 +494,17 @@ inline bool get_flag( Type nBitField, Type nMask )
 
 template< typename ReturnType, typename Type >
 inline ReturnType ulimit_cast( Type nValue, ReturnType nMax )
-{ return static_cast< ReturnType >( std::min< Type >( nValue, nMax ) ); }
+{ return static_cast< ReturnType >( ::std::min< Type >( nValue, nMax ) ); }
 
 template< typename ReturnType, typename Type >
 inline ReturnType ulimit_cast( Type nValue )
-{ return ulimit_cast( nValue, std::numeric_limits< ReturnType >::max() ); }
+{ return ulimit_cast( nValue, ::std::numeric_limits< ReturnType >::max() ); }
 
 class SwMacroInfo : public SdrObjUserData
 {
 public:
     SwMacroInfo();
-    virtual ~SwMacroInfo() override;
+    virtual ~SwMacroInfo();
 
     virtual SdrObjUserData* Clone( SdrObject* pObj ) const override;
 
@@ -506,7 +512,7 @@ public:
     const OUString& GetHlink() const { return maHlink; }
     void SetTarFrame( const OUString& rTarFrame ) { maTarFrame = rTarFrame; }
     const OUString& GetTarFrame() const { return maTarFrame; }
-    void SetShapeId( sal_Int32 rShapeId ) { mnShapeId = rShapeId; }
+    void SetShapeId( const sal_Int32& rShapeId ) { mnShapeId = rShapeId; }
     const sal_Int32& GetShapeId() const { return mnShapeId; }
     void SetName( const OUString& rName ) { maNameStr = rName; }
     const OUString& GetName() const { return maNameStr; }
@@ -608,7 +614,7 @@ public:
     const SwPosition &GetStartPos() const { return maTmpPos; }
 };
 
-enum class eF_ResT { OK, TEXT, TAGIGN, READ_FSPA };
+enum eF_ResT{ FLD_OK, FLD_TEXT, FLD_TAGIGN, FLD_TAGTXT, FLD_READ_FSPA };
 
 class SwWW8Shade
 {
@@ -644,7 +650,7 @@ public:
     WW8FormulaControl(const OUString& rN, SwWW8ImplReader &rRdr)
         : mrRdr(rRdr), mfUnknown(0), mfDropdownIndex(0),
         mfToolTip(0), mfNoMark(0), mfUseSize(0), mfNumbersOnly(0), mfDateOnly(0),
-        mfUnused(0), mhpsCheckBox(20), mnChecked(0), mnMaxLen(0), msName( rN )
+        mfUnused(0), mnSize(0), mhpsCheckBox(20), mnChecked(0), mnMaxLen(0), msName( rN )
     {
     }
     sal_uInt8 mfUnknown:2;
@@ -655,6 +661,7 @@ public:
     sal_uInt8 mfNumbersOnly:1;
     sal_uInt8 mfDateOnly:1;
     sal_uInt8 mfUnused:3;
+    sal_uInt16 mnSize;
 
     sal_uInt16 mhpsCheckBox;
     sal_uInt16 mnChecked;
@@ -726,9 +733,10 @@ public:
         css::uno::Reference<  css::drawing::XShape > *pShape, bool bFloatingCtrl) override;
     void ExportControl(WW8Export &rWrt, const SdrUnoObj& rFormObj);
     bool ReadOCXStream( tools::SvRef<SotStorage>& rSrc1,
-        css::uno::Reference< css::drawing::XShape > *pShapeRef,
+        css::uno::Reference< css::drawing::XShape > *pShapeRef=nullptr,
         bool bFloatingCtrl=false );
 private:
+    sal_uInt32 GenerateObjectID() { return ++mnObjectId; }
     SwPaM *pPaM;
     sal_uInt32 mnObjectId;
 };
@@ -740,15 +748,15 @@ private:
     SvStream *pFallbackStream;
     std::map<sal_uInt32,OString> aOldEscherBlipCache;
 
-    virtual bool GetOLEStorageName( sal_uInt32 nOLEId, OUString& rStorageName,
+    virtual bool GetOLEStorageName( long nOLEId, OUString& rStorageName,
         tools::SvRef<SotStorage>& rSrcStorage, css::uno::Reference < css::embed::XStorage >& rDestStorage ) const override;
     virtual bool ShapeHasText( sal_uLong nShapeId, sal_uLong nFilePos ) const override;
     // #i32596# - new parameter <_nCalledByGroup>, which
     // indicates, if the OLE object is imported inside a group object
-    virtual SdrObject* ImportOLE( sal_uInt32 nOLEId,
+    virtual SdrObject* ImportOLE( long nOLEId,
                                   const Graphic& rGrf,
-                                  const tools::Rectangle& rBoundRect,
-                                  const tools::Rectangle& rVisArea,
+                                  const Rectangle& rBoundRect,
+                                  const Rectangle& rVisArea,
                                   const int _nCalledByGroup,
                                   sal_Int64 nAspect ) const override;
 
@@ -762,7 +770,7 @@ public:
     void DisableFallbackStream();
     void EnableFallbackStream();
 protected:
-    virtual SdrObject* ProcessObj( SvStream& rSt, DffObjData& rObjData, void* pData, tools::Rectangle& rTextRect, SdrObject* pObj ) override;
+    virtual SdrObject* ProcessObj( SvStream& rSt, DffObjData& rObjData, void* pData, Rectangle& rTextRect, SdrObject* pObj ) override;
 };
 
 class wwSection
@@ -775,6 +783,7 @@ public:
     SwSection *mpSection;
     SwPageDesc *mpPage;
     SvxFrameDirection meDir;
+    short mLinkId;
 
     sal_uInt32 nPgWidth;
     sal_uInt32 nPgLeft;
@@ -812,8 +821,8 @@ private:
     */
     SwWW8ImplReader& mrReader;
     std::deque<wwSection> maSegments;
-    typedef std::deque<wwSection>::iterator mySegIter;
-    typedef std::deque<wwSection>::reverse_iterator mySegrIter;
+    typedef ::std::deque<wwSection>::iterator mySegIter;
+    typedef ::std::deque<wwSection>::reverse_iterator mySegrIter;
 
     //Num of page desc's entered into the document
     sal_uInt16 mnDesc;
@@ -852,6 +861,7 @@ private:
         sal_uInt32 nNetWidth);
     bool SectionIsProtected(const wwSection &rSection) const;
     void SetLeftRight(wwSection &rSection);
+    bool IsNewDoc() const;
     /*
      The segment we're inserting, the start of the segments container, and the
      nodeindex of where we want the page break to (normally the segments start
@@ -1215,8 +1225,8 @@ private:
 
     WW8PLCF_HdFt* m_pHdFt;        // pointer to Header / Footer - scanner class
 
-    std::unique_ptr<WW8FlyPara> m_xWFlyPara;      // WW-parameter
-    std::unique_ptr<WW8SwFlyPara> m_xSFlyPara;    // Sw parameters created from previous
+    WW8FlyPara* m_pWFlyPara;      // WW-parameter
+    WW8SwFlyPara* m_pSFlyPara;    // Sw parameters created from previous
 
     WW8TabDesc* m_pTableDesc;     // description of table properties
     //Keep track of tables within tables
@@ -1224,6 +1234,8 @@ private:
 
     ANLDRuleMap m_aANLDRules;
     WW8_OLST* m_pNumOlst;         // position in text
+
+    SwNode* m_pNode_FLY_AT_PARA; // set: WW8SwFlyPara()   read: CreateSwTable()
 
     SdrModel* m_pDrawModel;
     SdrPage* m_pDrawPg;
@@ -1279,6 +1291,9 @@ private:
     sal_uInt8 m_nWwNumType;            // outline / number / enumeration
     sal_uInt8 m_nListLevel;
 
+    sal_uInt8 m_nPgChpDelim;           // ChapterDelim from PageNum
+    sal_uInt8 m_nPgChpLevel;           // ChapterLevel of Heading from PageNum
+
     bool m_bNewDoc;          // new document?
     bool m_bSkipImages;      // skip images for text extraction/indexing
     bool m_bReadNoTable;        // no tables
@@ -1333,6 +1348,7 @@ private:
     bool m_bDropCap;
     sal_Int32 m_nDropCap;
 
+    int m_nIdctHint;
     bool m_bBidi;
     bool m_bReadTable;
     std::shared_ptr<SwPaM> m_pTableEndPaM;
@@ -1439,20 +1455,20 @@ private:
     // them for now
     static bool SetBorder(SvxBoxItem& rBox, const WW8_BRCVer9* pbrc,
         short *pSizeArray=nullptr, sal_uInt8 nSetBorders=0xFF);
-    static void GetBorderDistance(const WW8_BRCVer9* pbrc, tools::Rectangle& rInnerDist);
+    static void GetBorderDistance(const WW8_BRCVer9* pbrc, Rectangle& rInnerDist);
     static sal_uInt16 GetParagraphAutoSpace(bool fDontUseHTMLAutoSpacing);
     static bool SetShadow(SvxShadowItem& rShadow, const short *pSizeArray,
         const WW8_BRCVer9& aRightBrc);
     //returns true is a shadow was set
     static bool SetFlyBordersShadow(SfxItemSet& rFlySet, const WW8_BRCVer9 *pbrc,
-        short *SizeArray);
+        short *SizeArray=nullptr);
     static void SetPageBorder(SwFrameFormat &rFormat, const wwSection &rSection);
 
     static sal_Int32 MatchSdrBoxIntoFlyBoxItem( const Color& rLineColor,
         MSO_LineStyle eLineStyle, MSO_LineDashing eDashing, MSO_SPT eShapeType, sal_Int32 &rLineWidth,
         SvxBoxItem& rBox );
     void MatchSdrItemsIntoFlySet( SdrObject*    pSdrObj, SfxItemSet &aFlySet,
-        MSO_LineStyle eLineStyle, MSO_LineDashing eDashing, MSO_SPT eShapeType, tools::Rectangle &rInnerDist );
+        MSO_LineStyle eLineStyle, MSO_LineDashing eDashing, MSO_SPT eShapeType, Rectangle &rInnerDist );
     static void AdjustLRWrapForWordMargins(const SvxMSDffImportRec &rRecord,
         SvxLRSpaceItem &rLR);
     static void AdjustULWrapForWordMargins(const SvxMSDffImportRec &rRecord,
@@ -1468,7 +1484,7 @@ private:
     //Apo == Absolutely Positioned Object, MSWord's old-style frames
     WW8FlyPara *ConstructApo(const ApoTestResults &rApo,
         const WW8_TablePos *pTabPos);
-    bool StartApo(const ApoTestResults &rApo, const WW8_TablePos *pTabPos);
+    bool StartApo(const ApoTestResults &rApo, const WW8_TablePos *pTabPos, SvxULSpaceItem* pULSpaceItem = nullptr);
     void StopApo();
     bool TestSameApo(const ApoTestResults &rApo, const WW8_TablePos *pTabPos);
     ApoTestResults TestApo(int nCellLevel, bool bTableRowEnd,
@@ -1498,10 +1514,10 @@ private:
     SwFrameFormat* ImportGraf(SdrTextObj* pTextObj = nullptr, SwFrameFormat* pFlyFormat = nullptr);
 
     SdrObject* ImportOleBase( Graphic& rGraph, const Graphic* pGrf=nullptr,
-        const SfxItemSet* pFlySet=nullptr, const tools::Rectangle& aVisArea = tools::Rectangle() );
+        const SfxItemSet* pFlySet=nullptr, const Rectangle& aVisArea = Rectangle() );
 
     SwFrameFormat* ImportOle( const Graphic* = nullptr, const SfxItemSet* pFlySet = nullptr,
-        const SfxItemSet* pGrfSet = nullptr, const tools::Rectangle& aVisArea = tools::Rectangle() );
+        const SfxItemSet* pGrfSet = nullptr, const Rectangle& aVisArea = Rectangle() );
     SwFlyFrameFormat* InsertOle(SdrOle2Obj &rObject, const SfxItemSet &rFlySet,
         const SfxItemSet *rGrfSet);
 
@@ -1519,10 +1535,11 @@ private:
 
     void ReadDocVars();
 
-    bool StartTable(WW8_CP nStartCp);
+    bool StartTable(WW8_CP nStartCp, SvxULSpaceItem* pULSpaceItem = nullptr);
     bool InEqualApo(int nLvl) const;
     bool InLocalApo() const { return InEqualApo(m_nInTable); }
     bool InEqualOrHigherApo(int nLvl) const;
+    bool InAnyApo() const { return InEqualOrHigherApo(1); }
     void TabCellEnd();
     void StopTable();
     bool IsInvalidOrToBeMergedTabCell() const;
@@ -1557,7 +1574,7 @@ private:
     SdrObject *ReadArc(WW8_DPHEAD* pHd, SfxAllItemSet &rSet);
     SdrObject *ReadPolyLine(WW8_DPHEAD* pHd, SfxAllItemSet &rSet);
     void InsertTxbxStyAttrs( SfxItemSet& rS, sal_uInt16 nColl );
-    void InsertAttrsAsDrawingAttrs(WW8_CP nStartCp, WW8_CP nEndCp, ManTypes eType, bool bONLYnPicLocFc=false);
+    void InsertAttrsAsDrawingAttrs(long nStartCp, long nEndCp, ManTypes eType, bool bONLYnPicLocFc=false);
 
     bool GetTxbxTextSttEndCp(WW8_CP& rStartCp, WW8_CP& rEndCp, sal_uInt16 nTxBxS,
         sal_uInt16 nSequence);
@@ -1692,7 +1709,6 @@ public:     // really private, but can only be done public
     void Read_BoldUsw(sal_uInt16 nId, const sal_uInt8*, short nLen);
     void Read_Bidi(sal_uInt16 nId, const sal_uInt8*, short nLen);
     void Read_BoldBiDiUsw(sal_uInt16 nId, const sal_uInt8*, short nLen);
-    void Read_AmbiguousSPRM(sal_uInt16 nId, const sal_uInt8*, short nLen);
     void Read_SubSuper(         sal_uInt16, const sal_uInt8*, short nLen );
     bool ConvertSubToGraphicPlacement();
     static SwFrameFormat *ContainsSingleInlineGraphic(const SwPaM &rRegion);
@@ -1846,7 +1862,7 @@ public:     // really private, but can only be done public
 
     void DeleteFormImpl();
 
-    short ImportSprm(const sal_uInt8* pPos, sal_Int32 nMemLen, sal_uInt16 nId = 0);
+    short ImportSprm( const sal_uInt8* pPos, sal_uInt16 nId = 0 );
 
     bool SearchRowEnd(WW8PLCFx_Cp_FKP* pPap,WW8_CP &rStartCp, int nLevel) const;
 
@@ -1876,7 +1892,8 @@ public:     // really private, but can only be done public
     rtl_TextEncoding GetCJKCharSetFromLanguage();
 
     void PostProcessAttrs();
-    void ReadEmbeddedData(SvStream& rStrm, SwDocShell* pDocShell, struct HyperLinksTable& hlStr);
+    static void ReadEmbeddedData(SvMemoryStream& rStrm, SwDocShell* pDocShell, struct HyperLinksTable& hlStr);
+    static OUString ReadRawUniString(SvMemoryStream& rStrm, sal_uInt16 nChars, bool b16Bit);
 };
 
 bool CanUseRemoteLink(const OUString &rGrfName);

@@ -35,6 +35,7 @@
 #include <svx/sxenditm.hxx>
 
 #include "connect.hxx"
+#include "paragrph.hrc"
 
 const sal_uInt16 SvxConnectionPage::pRanges[] =
 {
@@ -92,7 +93,7 @@ SvxConnectionPage::SvxConnectionPage( vcl::Window* pWindow, const SfxItemSet& rI
     get(m_pCtlPreview,"CTL_PREVIEW");
 
     SfxItemPool* pPool = rOutAttrs.GetPool();
-    DBG_ASSERT( pPool, "Where is the pool" );
+    DBG_ASSERT( pPool, "Wo ist der Pool" );
     eUnit = pPool->GetMetric( SDRATTR_EDGENODE1HORZDIST );
 
     FillTypeLB();
@@ -377,7 +378,7 @@ bool SvxConnectionPage::FillItemSet( SfxItemSet* rAttrs)
 
 void SvxConnectionPage::Construct()
 {
-    DBG_ASSERT( pView, "No valid View transfer!" );
+    DBG_ASSERT( pView, "Keine gueltige View Uebergeben!" );
 
     m_pCtlPreview->SetView( pView );
     m_pCtlPreview->Construct();
@@ -395,11 +396,11 @@ VclPtr<SfxTabPage> SvxConnectionPage::Create( vcl::Window* pWindow,
     return VclPtr<SvxConnectionPage>::Create( pWindow, *rAttrs );
 }
 
-IMPL_LINK( SvxConnectionPage, ChangeAttrListBoxHdl_Impl, ListBox&, r, void )
+IMPL_LINK_TYPED( SvxConnectionPage, ChangeAttrListBoxHdl_Impl, ListBox&, r, void )
 {
     ChangeAttrHdl_Impl(&r);
 }
-IMPL_LINK( SvxConnectionPage, ChangeAttrEditHdl_Impl, Edit&, r, void )
+IMPL_LINK_TYPED( SvxConnectionPage, ChangeAttrEditHdl_Impl, Edit&, r, void )
 {
     ChangeAttrHdl_Impl(&r);
 }

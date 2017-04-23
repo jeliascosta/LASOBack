@@ -63,7 +63,7 @@ void OApplicationSwapWindow::dispose()
 
 void OApplicationSwapWindow::Resize()
 {
-    Size aFLSize = LogicToPixel( Size( 8, 0 ), MapUnit::MapAppFont );
+    Size aFLSize = LogicToPixel( Size( 8, 0 ), MAP_APPFONT );
     long nX = 0;
     if ( m_aIconControl->GetEntryCount() != 0 )
         nX = m_aIconControl->GetBoundingBox( m_aIconControl->GetEntry(0) ).GetWidth() + aFLSize.Width();
@@ -149,7 +149,7 @@ bool OApplicationSwapWindow::onContainerSelected( ElementType _eType )
     return false;
 }
 
-IMPL_LINK(OApplicationSwapWindow, OnContainerSelectHdl, SvtIconChoiceCtrl*, _pControl, void)
+IMPL_LINK_TYPED(OApplicationSwapWindow, OnContainerSelectHdl, SvtIconChoiceCtrl*, _pControl, void)
 {
     SvxIconChoiceCtrlEntry* pEntry = _pControl->GetSelectedEntry();
     ElementType eType = E_NONE;
@@ -160,7 +160,7 @@ IMPL_LINK(OApplicationSwapWindow, OnContainerSelectHdl, SvtIconChoiceCtrl*, _pCo
     }
 }
 
-IMPL_LINK_NOARG(OApplicationSwapWindow, ChangeToLastSelected, void*, void)
+IMPL_LINK_NOARG_TYPED(OApplicationSwapWindow, ChangeToLastSelected, void*, void)
 {
     selectContainer(m_eLastType);
 }

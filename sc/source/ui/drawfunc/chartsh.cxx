@@ -25,7 +25,7 @@
 #include <sfx2/app.hxx>
 #include <sfx2/objface.hxx>
 #include <sfx2/request.hxx>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <svl/whiter.hxx>
 #include <vcl/msgbox.hxx>
 
@@ -49,8 +49,7 @@ SFX_IMPL_INTERFACE(ScChartShell, ScDrawShell)
 
 void ScChartShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT,
-                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_SERVER,
                                             RID_DRAW_OBJECTBAR);
 
     GetStaticInterface()->RegisterPopupMenu("chart");
@@ -60,8 +59,9 @@ void ScChartShell::InitInterface_Impl()
 ScChartShell::ScChartShell(ScViewData* pData) :
     ScDrawShell(pData)
 {
+    SetHelpId( HID_SCSHELL_CHARTSH );
     SetName( "ChartObject" );
-    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context::Chart));
+    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Chart));
 }
 
 ScChartShell::~ScChartShell()

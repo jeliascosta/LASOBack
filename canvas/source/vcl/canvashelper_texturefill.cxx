@@ -106,7 +106,7 @@ namespace vclcanvas
          */
         void fillLinearGradient( OutputDevice&                                  rOutDev,
                                  const ::basegfx::B2DHomMatrix&                 rTextureTransform,
-                                 const ::tools::Rectangle&                             rBounds,
+                                 const ::Rectangle&                             rBounds,
                                  unsigned int                                   nStepCount,
                                  const ::canvas::ParametricPolyPolygon::Values& rValues,
                                  const std::vector< ::Color >&                  rColors )
@@ -264,7 +264,7 @@ namespace vclcanvas
 
         void fillPolygonalGradient( OutputDevice&                                  rOutDev,
                                     const ::basegfx::B2DHomMatrix&                 rTextureTransform,
-                                    const ::tools::Rectangle&                             rBounds,
+                                    const ::Rectangle&                             rBounds,
                                     unsigned int                                   nStepCount,
                                     bool                                           bFillNonOverlapping,
                                     const ::canvas::ParametricPolyPolygon::Values& rValues,
@@ -488,7 +488,7 @@ namespace vclcanvas
                              const ::canvas::ParametricPolyPolygon::Values& rValues,
                              const std::vector< ::Color >&                  rColors,
                              const ::basegfx::B2DHomMatrix&                 rTextureTransform,
-                             const ::tools::Rectangle&                             rBounds,
+                             const ::Rectangle&                             rBounds,
                              unsigned int                                   nStepCount,
                              bool                                           bFillNonOverlapping )
         {
@@ -523,9 +523,9 @@ namespace vclcanvas
 
         int numColorSteps( const ::Color& rColor1, const ::Color& rColor2 )
         {
-            return std::max(
+            return ::std::max(
                 labs( rColor1.GetRed() - rColor2.GetRed() ),
-                std::max(
+                ::std::max(
                     labs( rColor1.GetGreen() - rColor2.GetGreen() ),
                     labs( rColor1.GetBlue()  - rColor2.GetBlue() ) ) );
         }
@@ -563,7 +563,7 @@ namespace vclcanvas
 
             // determine maximal bound rect of texture-filled
             // polygon
-            const ::tools::Rectangle aPolygonDeviceRectOrig(
+            const ::Rectangle aPolygonDeviceRectOrig(
                 rPoly.GetBoundRect() );
 
             if( tools::isRectangle( rPoly ) )
@@ -734,7 +734,7 @@ namespace vclcanvas
 
                 // determine maximal bound rect of texture-filled
                 // polygon
-                const ::tools::Rectangle aPolygonDeviceRect(
+                const ::Rectangle aPolygonDeviceRect(
                     aPolyPoly.GetBoundRect() );
 
 
@@ -760,7 +760,7 @@ namespace vclcanvas
                                                             aRect,
                                                             aTotalTransform );
 
-                const ::tools::Rectangle aIntegerTextureDeviceRect(
+                const ::Rectangle aIntegerTextureDeviceRect(
                     vcl::unotools::rectangleFromB2DRectangle( aTextureDeviceRect ) );
 
                 if( bRectangularPolygon &&
@@ -857,7 +857,9 @@ namespace vclcanvas
                         // complex transformation, use generic affine bitmap
                         // transformation
                         aBmpEx = tools::transformBitmap( aBmpEx,
-                                                         aTotalTransform);
+                                                         aTotalTransform,
+                                                         uno::Sequence< double >(),
+                                                         tools::MODULATE_NONE);
 
                         pGrfObj.reset( new GraphicObject( aBmpEx ) );
 

@@ -38,7 +38,7 @@ class SD_DLLPUBLIC FrameView
 public:
     FrameView(SdDrawDocument* pDrawDoc, FrameView* pFrameView = nullptr );
     FrameView(const FrameView& rFrameView);
-    virtual ~FrameView() override;
+    virtual ~FrameView();
 
     void Connect();
     void Disconnect();
@@ -79,9 +79,9 @@ public:
                  { mbNoAttribs = bNoAttr; }
     bool IsNoAttribs() const { return mbNoAttribs; }
 
-    void SetVisArea(const ::tools::Rectangle& rVisArea)
+    void SetVisArea(const Rectangle& rVisArea)
                  { maVisArea = rVisArea; }
-    const ::tools::Rectangle& GetVisArea() { return maVisArea; }
+    const Rectangle& GetVisArea() { return maVisArea; }
 
     void SetPageKind(PageKind eKind) { mePageKind = eKind; }
     PageKind GetPageKind() const { return mePageKind; }
@@ -124,10 +124,10 @@ public:
                  { mbQuickEdit = bQEdit; }
     bool IsQuickEdit() const { return mbQuickEdit; }
 
-    void        SetDoubleClickTextEdit( bool bOn ) { mbDoubleClickTextEdit = bOn; }
+    void        SetDoubleClickTextEdit( bool bOn = true ) { mbDoubleClickTextEdit = bOn; }
     bool    IsDoubleClickTextEdit() const { return mbDoubleClickTextEdit; }
 
-    void        SetClickChangeRotation( bool bOn ) { mbClickChangeRotation = bOn; }
+    void        SetClickChangeRotation( bool bOn = true ) { mbClickChangeRotation = bOn; }
     bool    IsClickChangeRotation() const { return mbClickChangeRotation; }
 
     /** Remember the type of the view shell that was (or soon will be)
@@ -165,8 +165,8 @@ public:
     void SetIsNavigatorShowingAllShapes (const bool bIsNavigatorShowingAllShapes);
     bool IsNavigatorShowingAllShapes() const { return mbIsNavigatorShowingAllShapes;}
 
-    void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse );
-    void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse );
+    void    WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false );
+    void    ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false );
 
 private:
     sal_uInt16          mnRefCount;
@@ -179,7 +179,7 @@ private:
     SdrHelpLineList     maHandoutHelpLines;
     bool                mbNoColors;        ///< structuring mode
     bool                mbNoAttribs;       ///< structuring mode
-    ::tools::Rectangle           maVisArea;         ///< visible area
+    Rectangle           maVisArea;         ///< visible area
     PageKind            mePageKind;        ///< kind of page (standard, notes, handout)
     sal_uInt16          mnSelectedPage;
     PageKind            mePageKindOnLoad;

@@ -28,7 +28,7 @@
 #include "dialog.hrc"
 
 
-IMPL_LINK( SfxPasswordDialog, EditModifyHdl, Edit&, rEdit, void )
+IMPL_LINK_TYPED( SfxPasswordDialog, EditModifyHdl, Edit&, rEdit, void )
 {
     ModifyHdl(&rEdit);
 }
@@ -63,11 +63,11 @@ void SfxPasswordDialog::ModifyHdl(Edit* pEdit)
     mpOKBtn->Enable( bEnable );
 }
 
-IMPL_LINK_NOARG(SfxPasswordDialog, OKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SfxPasswordDialog, OKHdl, Button*, void)
 {
     bool bConfirmFailed = bool( mnExtras & SfxShowExtras::CONFIRM ) &&
                           ( GetConfirm() != GetPassword() );
-    if( ( mnExtras & SfxShowExtras::CONFIRM2 ) && ( mpConfirm2ED->GetText() != GetPassword2() ) )
+    if( ( mnExtras & SfxShowExtras::CONFIRM2 ) && ( GetConfirm2() != GetPassword2() ) )
         bConfirmFailed = true;
     if ( bConfirmFailed )
     {
@@ -108,6 +108,8 @@ SfxPasswordDialog::SfxPasswordDialog(vcl::Window* pParent, const OUString* pGrou
     get(mpMinLengthFT, "minlenft");
 
     get(mpOKBtn, "ok");
+
+    mpPassword1ED->SetAccessibleName(SFX2_RESSTR(STR_PASSWD));
 
     Link<Edit&,void> aLink = LINK( this, SfxPasswordDialog, EditModifyHdl );
     mpPassword1ED->SetModifyHdl( aLink );

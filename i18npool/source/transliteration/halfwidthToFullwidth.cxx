@@ -37,6 +37,7 @@ halfwidthToFullwidth::halfwidthToFullwidth()
 
 OUString SAL_CALL
 halfwidthToFullwidth::transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
+  throw(RuntimeException, std::exception)
 {
     bool _useOffset = useOffset;
     // One to One mapping
@@ -47,6 +48,14 @@ halfwidthToFullwidth::transliterate( const OUString& inStr, sal_Int32 startPos, 
     // Composition: KA + voice-mark --> GA
     return widthfolding::compose_ja_voiced_sound_marks ( newStr, 0, newStr.getLength(), offset, _useOffset );
 }
+
+sal_Unicode SAL_CALL
+halfwidthToFullwidth::transliterateChar2Char( sal_Unicode inChar)
+  throw(RuntimeException, MultipleCharsOutputException, std::exception)
+{
+    return transliteration_OneToOne::transliterateChar2Char(inChar);
+}
+
 
 halfwidthKatakanaToFullwidthKatakana::halfwidthKatakanaToFullwidthKatakana()
 {
@@ -58,6 +67,7 @@ halfwidthKatakanaToFullwidthKatakana::halfwidthKatakanaToFullwidthKatakana()
 
 OUString SAL_CALL
 halfwidthKatakanaToFullwidthKatakana::transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
+  throw(RuntimeException, std::exception)
 {
     bool _useOffset = useOffset;
     // One to One mapping
@@ -69,6 +79,14 @@ halfwidthKatakanaToFullwidthKatakana::transliterate( const OUString& inStr, sal_
     return widthfolding::compose_ja_voiced_sound_marks ( newStr, 0, newStr.getLength(), offset, _useOffset );
 }
 
+sal_Unicode SAL_CALL
+halfwidthKatakanaToFullwidthKatakana::transliterateChar2Char( sal_Unicode inChar)
+  throw(RuntimeException, MultipleCharsOutputException, std::exception)
+{
+    return transliteration_OneToOne::transliterateChar2Char(inChar);
+}
+
+
 halfwidthToFullwidthLikeJIS::halfwidthToFullwidthLikeJIS()
 {
     func = nullptr;
@@ -79,6 +97,7 @@ halfwidthToFullwidthLikeJIS::halfwidthToFullwidthLikeJIS()
 
 OUString SAL_CALL
 halfwidthToFullwidthLikeJIS::transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount, Sequence< sal_Int32 >& offset )
+  throw(RuntimeException, std::exception)
 {
     bool _useOffset = useOffset;
     // One to One mapping
@@ -90,6 +109,12 @@ halfwidthToFullwidthLikeJIS::transliterate( const OUString& inStr, sal_Int32 sta
     return widthfolding::compose_ja_voiced_sound_marks ( newStr, 0, newStr.getLength(), offset, _useOffset, WIDTHFOLDNIG_DONT_USE_COMBINED_VU );
 }
 
+sal_Unicode SAL_CALL
+halfwidthToFullwidthLikeJIS::transliterateChar2Char( sal_Unicode inChar)
+  throw(RuntimeException, MultipleCharsOutputException, std::exception)
+{
+    return transliteration_OneToOne::transliterateChar2Char(inChar);
+}
 
 } } } }
 

@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <svtools/stdctrl.hxx>
+
 #include "anyrefdg.hxx"
 #include "rangeutl.hxx"
 #include "dbdata.hxx"
@@ -83,7 +85,7 @@ void ScFilterOptionsMgr::Init()
 
     pBtnCase   ->Check( rQueryData.bCaseSens );
     pBtnHeader ->Check( rQueryData.bHasHeader );
-    pBtnRegExp ->Check( rQueryData.eSearchType == utl::SearchParam::SearchType::Regexp );
+    pBtnRegExp ->Check( rQueryData.eSearchType == utl::SearchParam::SRCH_REGEXP );
     pBtnUnique ->Check( !rQueryData.bDuplicate );
 
     if ( pViewData && pDoc )
@@ -102,7 +104,7 @@ void ScFilterOptionsMgr::Init()
 
         theAreaStr = theCurArea.Format(ScRefFlags::RANGE_ABS_3D, pDoc, eConv);
 
-        // fill the target area list
+        // Zielbereichsliste fuellen
 
         pLbCopyArea->Clear();
         pLbCopyArea->InsertEntry( rStrUndefined, 0 );
@@ -118,12 +120,13 @@ void ScFilterOptionsMgr::Init()
             pLbCopyArea->SetEntryData( nInsert, new OUString( aRefStr ) );
         }
 
-        pBtnDestPers->Check();         // always on when called
+        pBtnDestPers->Check();         // beim Aufruf immer an
         pLbCopyArea->SelectEntryPos( 0 );
         pEdCopyArea->SetText( EMPTY_OUSTRING );
 
         /*
-         * Check whether the transferred area is a database area:
+         * Ueberpruefen, ob es sich bei dem uebergebenen
+         * Bereich um einen Datenbankbereich handelt:
          */
 
         theDbArea = theAreaStr;
@@ -159,7 +162,7 @@ void ScFilterOptionsMgr::Init()
             pFtDbArea->SetText( OUString() );
         }
 
-        // position to copy to:
+        // Kopierposition:
 
         if ( !rQueryData.bInplace )
         {
@@ -206,7 +209,7 @@ bool ScFilterOptionsMgr::VerifyPosStr( const OUString& rPosStr ) const
 
 // Handler:
 
-IMPL_LINK( ScFilterOptionsMgr, LbAreaSelHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScFilterOptionsMgr, LbAreaSelHdl, ListBox&, rLb, void )
 {
     if ( &rLb == pLbCopyArea )
     {
@@ -220,7 +223,7 @@ IMPL_LINK( ScFilterOptionsMgr, LbAreaSelHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK( ScFilterOptionsMgr, EdAreaModifyHdl, Edit&, rEd, void )
+IMPL_LINK_TYPED( ScFilterOptionsMgr, EdAreaModifyHdl, Edit&, rEd, void )
 {
     if ( &rEd == pEdCopyArea )
     {
@@ -246,7 +249,7 @@ IMPL_LINK( ScFilterOptionsMgr, EdAreaModifyHdl, Edit&, rEd, void )
     }
 }
 
-IMPL_LINK( ScFilterOptionsMgr, BtnCopyResultHdl, CheckBox&, rBox, void )
+IMPL_LINK_TYPED( ScFilterOptionsMgr, BtnCopyResultHdl, CheckBox&, rBox, void )
 {
     if ( &rBox == pBtnCopyResult )
     {

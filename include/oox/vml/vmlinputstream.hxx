@@ -20,19 +20,9 @@
 #ifndef INCLUDED_OOX_VML_VMLINPUTSTREAM_HXX
 #define INCLUDED_OOX_VML_VMLINPUTSTREAM_HXX
 
-#include <exception>
-
-#include <com/sun/star/io/BufferSizeExceededException.hpp>
-#include <com/sun/star/io/IOException.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <com/sun/star/uno/Sequence.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <rtl/string.hxx>
-#include <sal/types.h>
 
 namespace com { namespace sun { namespace star {
     namespace io { class XTextInputStream2; }
@@ -66,24 +56,23 @@ public:
     explicit            InputStream(
                             const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                             const css::uno::Reference< css::io::XInputStream >& rxInStrm );
-    virtual             ~InputStream() override;
+    virtual             ~InputStream();
 
-    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead ) override;
-    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead ) override;
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
-    virtual sal_Int32 SAL_CALL available() override;
-    virtual void SAL_CALL closeInput() override;
+    virtual sal_Int32 SAL_CALL readBytes( css::uno::Sequence< sal_Int8 >& rData, sal_Int32 nBytesToRead )
+                        throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL readSomeBytes( css::uno::Sequence< sal_Int8 >& rData, sal_Int32 nMaxBytesToRead )
+                        throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
+                        throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL available()
+                        throw (css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeInput()
+                        throw (css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
 private:
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    void                updateBuffer();
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    OString      readToElementBegin();
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
-    OString      readToElementEnd();
+    void                updateBuffer() throw (css::io::IOException, css::uno::RuntimeException);
+    OString      readToElementBegin() throw (css::io::IOException, css::uno::RuntimeException);
+    OString      readToElementEnd() throw (css::io::IOException, css::uno::RuntimeException);
 
 private:
     css::uno::Reference< css::io::XTextInputStream2 >

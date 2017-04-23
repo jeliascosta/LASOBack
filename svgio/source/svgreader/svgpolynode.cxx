@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgpolynode.hxx>
+#include <svgio/svgreader/svgpolynode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolypolygontools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
@@ -73,7 +73,7 @@ namespace svgio
                     {
                         if(aPath.count())
                         {
-                            if(!mbIsPolyline)
+                            if(!isPolyline())
                             {
                                 aPath.setClosed(true);
                             }
@@ -104,11 +104,11 @@ namespace svgio
         {
             const SvgStyleAttributes* pStyle = getSvgStyleAttributes();
 
-            if(pStyle && mpPolygon)
+            if(pStyle && getPolygon())
             {
                 drawinglayer::primitive2d::Primitive2DContainer aNewTarget;
 
-                pStyle->add_path(basegfx::B2DPolyPolygon(*mpPolygon), aNewTarget, nullptr);
+                pStyle->add_path(basegfx::B2DPolyPolygon(*getPolygon()), aNewTarget, nullptr);
 
                 if(!aNewTarget.empty())
                 {

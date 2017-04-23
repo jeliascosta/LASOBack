@@ -22,6 +22,7 @@
 #include <com/sun/star/awt/FontStrikeout.hpp>
 #include <com/sun/star/drawing/Hatch.hpp>
 #include <com/sun/star/style/CaseMap.hpp>
+#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <com/sun/star/xml/sax/XFastAttributeList.hpp>
 #include <osl/diagnose.h>
 #include <sax/tools/converter.hxx>
@@ -154,10 +155,10 @@ sal_Int16 GetCaseMap( sal_Int32 nToken )
 }
 
 /** converts a paragraph align to a ParaAdjust */
-ParagraphAdjust GetParaAdjust( sal_Int32 nAlign )
+sal_Int16 GetParaAdjust( sal_Int32 nAlign )
 {
     OSL_ASSERT((nAlign & sal_Int32(0xFFFF0000))==0);
-    ParagraphAdjust nEnum;
+    sal_Int16 nEnum;
     switch( nAlign )
     {
     case XML_ctr:

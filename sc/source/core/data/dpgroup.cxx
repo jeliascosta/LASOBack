@@ -33,6 +33,8 @@
 #include <rtl/math.hxx>
 
 #include <com/sun/star/sheet/DataPilotFieldGroupBy.hpp>
+#include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
+#include <com/sun/star/i18n/CalendarDisplayIndex.hpp>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -52,7 +54,7 @@ class ScDPGroupNumFilter : public ScDPFilteredCache::FilterBase
 {
 public:
     ScDPGroupNumFilter(const std::vector<ScDPItemData>& rValues, const ScDPNumGroupInfo& rInfo);
-
+    virtual ~ScDPGroupNumFilter() {}
     virtual bool match(const ScDPItemData &rCellData) const override;
     virtual std::vector<ScDPItemData> getMatchValues() const override;
 private:
@@ -108,6 +110,7 @@ std::vector<ScDPItemData> ScDPGroupNumFilter::getMatchValues() const
 class ScDPGroupDateFilter : public ScDPFilteredCache::FilterBase
 {
 public:
+    virtual ~ScDPGroupDateFilter() {}
     ScDPGroupDateFilter(
         const std::vector<ScDPItemData>& rValues, const Date& rNullDate, const ScDPNumGroupInfo& rNumInfo);
 
@@ -480,11 +483,12 @@ ScDPGroupTableData::ScDPGroupTableData( const shared_ptr<ScDPTableData>& pSource
 
     CreateCacheTable();
     nSourceCount = pSource->GetColumnCount();               // real columns, excluding data layout
-    pNumGroups.reset( new ScDPNumGroupDimension[nSourceCount] );
+    pNumGroups = new ScDPNumGroupDimension[nSourceCount];
 }
 
 ScDPGroupTableData::~ScDPGroupTableData()
 {
+    delete[] pNumGroups;
 }
 
 void ScDPGroupTableData::AddGroupDimension( const ScDPGroupDimension& rGroup )
@@ -1034,7 +1038,9 @@ long ScDPGroupTableData::Compare(long nDim, long nDataId1, long nDataId2)
     return ScDPItemData::Compare( *GetMemberById(nDim,  nDataId1),*GetMemberById(nDim,  nDataId2) );
 }
 
-#if DUMP_PIVOT_TABLE
+#if DEBUG_PIVOT_TABLE
+using std::cout;
+using std::endl;
 
 void ScDPGroupTableData::Dump() const
 {

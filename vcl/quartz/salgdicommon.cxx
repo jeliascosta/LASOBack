@@ -73,6 +73,7 @@ extern int DBG_DRAW_ROUNDS, DBG_DRAW_COUNTER, DBG_DRAW_DEPTH;
 
 using namespace vcl;
 
+typedef std::vector<unsigned char> ByteVector;
 
 static const basegfx::B2DPoint aHalfPointOfs ( 0.5, 0.5 );
 
@@ -194,7 +195,7 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
     }
 
     // get the raw-bytes from the font to be subset
-    std::vector<unsigned char> aBuffer;
+    ByteVector aBuffer;
     bool bCffOnly = false;
     if( !GetRawFontData( pFontData, aBuffer, &bCffOnly ) )
     {
@@ -208,13 +209,13 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
     {
         // provide the raw-CFF data to the subsetter
         ByteCount nCffLen = aBuffer.size();
-        rInfo.LoadFont( FontType::CFF_FONT, &aBuffer[0], nCffLen );
+        rInfo.LoadFont( FontSubsetInfo::CFF_FONT, &aBuffer[0], nCffLen );
 
         // NOTE: assuming that all glyphids requested on Aqua are fully translated
 
         // make the subsetter provide the requested subset
         FILE* pOutFile = fopen( aToFile.getStr(), "wb" );
-        bool bRC = rInfo.CreateFontSubset( FontType::TYPE1_PFB, pOutFile, nullptr,
+        bool bRC = rInfo.CreateFontSubset( FontSubsetInfo::TYPE1_PFB, pOutFile, nullptr,
                                            pGlyphIds, pEncoding, nGlyphCount, pGlyphWidths );
         fclose( pOutFile );
         return bRC;
@@ -234,10 +235,10 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
     // get details about the subsetted font
     TTGlobalFontInfo aTTInfo;
     ::GetTTGlobalFontInfo( pSftFont, &aTTInfo );
-    rInfo.m_nFontType = FontType::SFNT_TTF;
+    rInfo.m_nFontType = FontSubsetInfo::SFNT_TTF;
     rInfo.m_aPSName = OUString( aTTInfo.psname, std::strlen(aTTInfo.psname),
                                 RTL_TEXTENCODING_UTF8 );
-    rInfo.m_aFontBBox = tools::Rectangle( Point( aTTInfo.xMin, aTTInfo.yMin ),
+    rInfo.m_aFontBBox = Rectangle( Point( aTTInfo.xMin, aTTInfo.yMin ),
                                    Point( aTTInfo.xMax, aTTInfo.yMax ) );
     rInfo.m_nCapHeight = aTTInfo.yMax; // Well ...
     rInfo.m_nAscent = aTTInfo.winAscent;
@@ -274,7 +275,19 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
     {
         aTempEncs[i] = pEncoding[i];
 
-        sal_GlyphId aGlyphId(pGlyphIds[i]);
+        sal_GlyphId aGlyphId(pGlyphIds[i] & GF_IDXMASK);
+        if( pGlyphIds[i] & GF_ISCHAR )
+        {
+            bool bVertical = (pGlyphIds[i] & GF_ROTMASK) != 0;
+            aGlyphId = ::MapChar( pSftFont, static_cast<sal_uInt16>(aGlyphId), bVertical );
+            if( aGlyphId == 0 && pFontData->IsSymbolFont() )
+            {
+                // #i12824# emulate symbol aliasing U+FXXX <-> U+0XXX
+                aGlyphId = pGlyphIds[i] & GF_IDXMASK;
+                aGlyphId = (aGlyphId & 0xF000) ? (aGlyphId & 0x00FF) : (aGlyphId | 0xF000 );
+                aGlyphId = ::MapChar( pSftFont, static_cast<sal_uInt16>(aGlyphId), bVertical );
+            }
+        }
         aShortIDs[i] = static_cast<sal_uInt16>( aGlyphId );
         if( !aGlyphId && nNotDef < 0 )
         {
@@ -319,7 +332,7 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
 
     // write subset into destination file
     nRC = ::CreateTTFromTTGlyphs( pSftFont, aToFile.getStr(), aShortIDs,
-                                  aTempEncs, nGlyphCount, 0, nullptr );
+                                  aTempEncs, nGlyphCount, 0, nullptr, 0 );
     ::CloseTTFont(pSftFont);
     return (nRC == SF_OK);
 }
@@ -895,7 +908,7 @@ void AquaSalGraphics::drawLine( long nX1, long nY1, long nX2, long nY2 )
     SAL_INFO( "vcl.cg", "CGContextDrawPath(" << mrContext << ",kCGPathStroke)" );
     CGContextDrawPath( mrContext, kCGPathStroke );
 
-    tools::Rectangle aRefreshRect( nX1, nY1, nX2, nY2 );
+    Rectangle aRefreshRect( nX1, nY1, nX2, nY2 );
     (void) aRefreshRect;
     // Is a call to RefreshRect( aRefreshRect ) missing here?
 
@@ -1053,7 +1066,7 @@ bool AquaSalGraphics::drawPolyLine( const basegfx::B2DPolygon& rPolyLine,
     return true;
 }
 
-bool AquaSalGraphics::drawPolyLineBezier( sal_uInt32, const SalPoint*, const PolyFlags* )
+bool AquaSalGraphics::drawPolyLineBezier( sal_uInt32, const SalPoint*, const sal_uInt8* )
 {
     return false;
 }
@@ -1349,13 +1362,13 @@ void AquaSalGraphics::drawPolygon( sal_uInt32 nPoints, const SalPoint *pPtAry )
     DBG_DRAW_OPERATION_EXIT("drawPolygon");
 }
 
-bool AquaSalGraphics::drawPolygonBezier( sal_uInt32, const SalPoint*, const PolyFlags* )
+bool AquaSalGraphics::drawPolygonBezier( sal_uInt32, const SalPoint*, const sal_uInt8* )
 {
     return false;
 }
 
 bool AquaSalGraphics::drawPolyPolygonBezier( sal_uInt32, const sal_uInt32*,
-                                             const SalPoint* const*, const PolyFlags* const* )
+                                             const SalPoint* const*, const sal_uInt8* const* )
 {
     return false;
 }
@@ -1427,8 +1440,8 @@ void AquaSalGraphics::drawPolyLine( sal_uInt32 nPoints, const SalPoint *pPtAry )
         SAL_INFO( "vcl.cg", "CGContextAddLineToPoint(" << mrContext << "," << fX << "," << fY << ")" );
         CGContextAddLineToPoint( mrContext, fX, fY );
     }
-    SAL_INFO( "vcl.cg", "CGContextStrokePath(" << mrContext << ")" );
-    CGContextStrokePath(mrContext);
+    SAL_INFO( "vcl.cg", "CGContextDrawPath(" << mrContext << ",kCGPathStroke)" );
+    CGContextDrawPath( mrContext, kCGPathStroke );
 
     RefreshRect( nX, nY, nWidth, nHeight );
 
@@ -1448,7 +1461,7 @@ SalBitmap* AquaSalGraphics::getBitmap( long  nX, long  nY, long  nDX, long  nDY 
     ApplyXorContext();
 
     QuartzSalBitmap* pBitmap = new QuartzSalBitmap;
-    if( !pBitmap->Create( mxLayer, mnBitmapDepth, nX, nY, nDX, nDY, IsFlipped()) )
+    if( !pBitmap->Create( mxLayer, mnBitmapDepth, nX, nY, nDX, nDY) )
     {
         delete pBitmap;
         pBitmap = nullptr;
@@ -1532,9 +1545,10 @@ SalColor AquaSalGraphics::getPixel( long nX, long nY )
     return nSalColor;
 }
 
+#ifndef IOS
+
 void AquaSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
 {
-#ifndef IOS
     if( !mnRealDPIY )
     {
         initResolution( (mbWindow && mpFrame) ? mpFrame->getNSWindow() : nil );
@@ -1542,10 +1556,9 @@ void AquaSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
 
     rDPIX = mnRealDPIX;
     rDPIY = mnRealDPIY;
-#else
-    rDPIX = rDPIY = 200; // FIXME
-#endif
 }
+
+#endif
 
 void AquaSalGraphics::ImplDrawPixel( long nX, long nY, const RGBAColor& rColor )
 {
@@ -1880,8 +1893,8 @@ bool AquaSalGraphics::supportsOperation( OutDevSupportType eType ) const
     bool bRet = false;
     switch( eType )
     {
-    case OutDevSupportType::TransparentRect:
-    case OutDevSupportType::B2DDraw:
+    case OutDevSupport_TransparentRect:
+    case OutDevSupport_B2DDraw:
         bRet = true;
         break;
     default:
@@ -1956,7 +1969,7 @@ void AquaSalGraphics::SetROPLineColor( SalROPColor nROPColor )
     }
 }
 
-void AquaSalGraphics::SetXORMode( bool bSet )
+void AquaSalGraphics::SetXORMode( bool bSet, bool bInvertOnly )
 {
     // return early if XOR mode remains unchanged
     if( mbPrinter )
@@ -1969,7 +1982,7 @@ void AquaSalGraphics::SetXORMode( bool bSet )
         mnXorMode = 0;
         return;
     }
-    else if( bSet && mnXorMode == 0)
+    else if( bSet && bInvertOnly && mnXorMode == 0)
     {
         CGContextSetBlendMode( mrContext, kCGBlendModeDifference );
         mnXorMode = 2;
@@ -2015,7 +2028,7 @@ void AquaSalGraphics::SetXORMode( bool bSet )
 
 void AquaSalGraphics::updateResolution()
 {
-    SAL_WARN_IF( !mbWindow, "vcl", "updateResolution on inappropriate graphics" );
+    DBG_ASSERT( mbWindow, "updateResolution on inappropriate graphics" );
 
     initResolution( (mbWindow && mpFrame) ? mpFrame->getNSWindow() : nil );
 }
@@ -2139,7 +2152,7 @@ void XorEmulation::SetTarget( int nWidth, int nHeight, int nTargetDepth,
     {
         CGContextSetBlendMode( m_xMaskContext, kCGBlendModeDifference );
     }
-    // initialize the transformation matrix to the drawing target
+    // intialize the transformation matrix to the drawing target
     const CGAffineTransform aCTM = CGContextGetCTM( xTargetContext );
     CGContextConcatCTM( m_xMaskContext, aCTM );
     if( m_xTempContext )

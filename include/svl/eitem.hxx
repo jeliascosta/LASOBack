@@ -22,16 +22,15 @@
 
 #include <svl/svldllapi.h>
 #include <svl/cenumitm.hxx>
-#include <tools/stream.hxx>
 
 
-template<typename EnumT>
-class SfxEnumItem : public SfxEnumItemInterface
+class SVL_DLLPUBLIC SfxEnumItem
+    : public SfxEnumItemInterface
 {
-    EnumT m_nValue;
+    sal_uInt16 m_nValue;
 
 protected:
-    explicit SfxEnumItem(sal_uInt16 const nWhich, EnumT const nValue)
+    explicit SfxEnumItem(sal_uInt16 const nWhich =0, sal_uInt16 const nValue =0)
         : SfxEnumItemInterface(nWhich)
         , m_nValue(nValue)
     { }
@@ -41,46 +40,23 @@ protected:
         , m_nValue(rItem.m_nValue)
     { }
 
-    SfxEnumItem(sal_uInt16 const nWhich, SvStream & rStream)
-        : SfxEnumItemInterface(nWhich)
-    {
-        sal_uInt16 nTmp = 0;
-        rStream.ReadUInt16( nTmp );
-        m_nValue = static_cast<EnumT>(nTmp);
-    }
+    SfxEnumItem(sal_uInt16 const nWhich, SvStream & rStream);
 
 public:
 
-    EnumT GetValue() const { return m_nValue; }
+    sal_uInt16 GetValue() const { return m_nValue; }
 
-    void SetValue(EnumT nTheValue)
-    {
-        assert(GetRefCount() == 0 && "SfxEnumItem::SetValue(): Pooled item");
-        m_nValue = nTheValue;
-    }
+    void SetValue(sal_uInt16 nTheValue);
 
-    virtual SvStream & Store(SvStream & rStream, sal_uInt16) const override
-    {
-        rStream.WriteUInt16( static_cast<sal_uInt16>(m_nValue) );
-        return rStream;
-    }
+    // SfxPoolItem
+    virtual SvStream & Store(SvStream & rStream, sal_uInt16) const override;
 
-    virtual sal_uInt16 GetEnumValue() const override
-    {
-        return static_cast<sal_uInt16>(GetValue());
-    }
+    virtual sal_uInt16 GetEnumValue() const override;
 
-    virtual void SetEnumValue(sal_uInt16 nTheValue) override
-    {
-        SetValue(static_cast<EnumT>(nTheValue));
-    }
+    virtual void SetEnumValue(sal_uInt16 nTheValue) override;
 
-    virtual bool operator==(SfxPoolItem const & other) const override
-    {
-        return SfxEnumItemInterface::operator==(other) &&
-               m_nValue == static_cast<const SfxEnumItem<EnumT> &>(other).m_nValue;
-    }
 };
+
 
 class SVL_DLLPUBLIC SfxBoolItem
     : public SfxPoolItem
@@ -110,12 +86,10 @@ public:
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                                MapUnit, MapUnit,
+                                                SfxMapUnit, SfxMapUnit,
                                                 OUString & rText,
                                                 const IntlWrapper * = nullptr)
         const override;
-
-    virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 
     virtual bool QueryValue(css::uno::Any& rVal, sal_uInt8 = 0) const override;
 

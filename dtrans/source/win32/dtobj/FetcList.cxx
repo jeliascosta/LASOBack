@@ -20,7 +20,6 @@
 #include <osl/diagnose.h>
 #include "FetcList.hxx"
 #include "Fetc.hxx"
-#include <com/sun/star/container/NoSuchElementException.hpp>
 #include <com/sun/star/datatransfer/MimeContentTypeFactory.hpp>
 #include <com/sun/star/datatransfer/XMimeContentType.hpp>
 
@@ -31,6 +30,8 @@
 #include <algorithm>
 
 #include "MimeAttrib.hxx"
+
+// namespace directives
 
 using namespace com::sun::star::uno;
 using namespace com::sun::star::datatransfer;
@@ -65,7 +66,7 @@ void SAL_CALL CFormatEtcContainer::removeAllFormatEtc( )
     m_FormatMap.clear( );
 }
 
-bool CFormatEtcContainer::hasFormatEtc( const CFormatEtc& fetc ) const
+sal_Bool CFormatEtcContainer::hasFormatEtc( const CFormatEtc& fetc ) const
 {
     FormatEtcMap_t::const_iterator iter =
         find( m_FormatMap.begin(), m_FormatMap.end(), fetc );
@@ -73,7 +74,7 @@ bool CFormatEtcContainer::hasFormatEtc( const CFormatEtc& fetc ) const
     return ( iter != m_FormatMap.end( ) );
 }
 
-bool CFormatEtcContainer::hasElements( ) const
+sal_Bool CFormatEtcContainer::hasElements( ) const
 {
     return !m_FormatMap.empty();
 }
@@ -101,7 +102,7 @@ sal_uInt32 SAL_CALL CFormatEtcContainer::nextFormatEtc( LPFORMATETC lpFetc,
     return nFetched;
 }
 
-bool SAL_CALL CFormatEtcContainer::skipFormatEtc( sal_uInt32 aNum )
+sal_Bool SAL_CALL CFormatEtcContainer::skipFormatEtc( sal_uInt32 aNum )
 {
     FormatEtcMap_t::const_iterator iter_end = m_FormatMap.end( );
     for ( sal_uInt32 i = 0;
@@ -115,7 +116,7 @@ bool SAL_CALL CFormatEtcContainer::skipFormatEtc( sal_uInt32 aNum )
 CFormatRegistrar::CFormatRegistrar( const Reference< XComponentContext >& rxContext,
                                     const CDataFormatTranslator& aDataFormatTranslator ) :
     m_DataFormatTranslator( aDataFormatTranslator ),
-    m_bHasSynthesizedLocale( false ),
+    m_bHasSynthesizedLocale( sal_False ),
     m_xContext( rxContext )
 {
 }
@@ -145,7 +146,7 @@ void SAL_CALL CFormatRegistrar::RegisterFormats(
 {
     Sequence< DataFlavor > aFlavorList = aXTransferable->getTransferDataFlavors( );
     sal_Int32  nFlavors                = aFlavorList.getLength( );
-    bool   bUnicodeRegistered      = false;
+    sal_Bool   bUnicodeRegistered      = sal_False;
     DataFlavor aFlavor;
 
     for( sal_Int32 i = 0; i < nFlavors; i++ )
@@ -162,18 +163,18 @@ void SAL_CALL CFormatRegistrar::RegisterFormats(
         else
         {
             // if we haven't registered any text format up to now
-            if ( CDataFormatTranslator::isTextFormat( fetc.getClipformat() ) && !bUnicodeRegistered )
+            if ( m_DataFormatTranslator.isTextFormat( fetc.getClipformat() ) && !bUnicodeRegistered )
             {
                 // if the transferable supports unicode text we ignore
                 // any further text format the transferable offers
                 // because we can create it from Unicode text in addition
                 // we register CF_TEXT for non unicode clients
-                if ( CDataFormatTranslator::isUnicodeTextFormat( fetc.getClipformat() ) )
+                if ( m_DataFormatTranslator.isUnicodeTextFormat( fetc.getClipformat() ) )
                 {
                     aFormatEtcContainer.addFormatEtc( fetc ); // add CF_UNICODE
                     aFormatEtcContainer.addFormatEtc(
-                        CDataFormatTranslator::getFormatEtcForClipformat( CF_TEXT ) ); // add CF_TEXT
-                    bUnicodeRegistered = true;
+                        m_DataFormatTranslator.getFormatEtcForClipformat( CF_TEXT ) ); // add CF_TEXT
+                    bUnicodeRegistered = sal_True;
                 }
                 else if ( !hasUnicodeFlavor( aXTransferable ) )
                 {
@@ -189,26 +190,26 @@ void SAL_CALL CFormatRegistrar::RegisterFormats(
                         m_TxtCodePage = txtCP;
 
                         aFormatEtcContainer.addFormatEtc(
-                            CDataFormatTranslator::getFormatEtcForClipformat( CF_UNICODETEXT ) );
+                            m_DataFormatTranslator.getFormatEtcForClipformat( CF_UNICODETEXT ) );
 
                         if ( !IsOEMCP( m_TxtCodePage ) )
                             aFormatEtcContainer.addFormatEtc(
-                                CDataFormatTranslator::getFormatEtcForClipformat( CF_TEXT ) );
+                                m_DataFormatTranslator.getFormatEtcForClipformat( CF_TEXT ) );
                         else
                             aFormatEtcContainer.addFormatEtc(
-                                CDataFormatTranslator::getFormatEtcForClipformat( CF_OEMTEXT ) );
+                                m_DataFormatTranslator.getFormatEtcForClipformat( CF_OEMTEXT ) );
 
                         aFormatEtcContainer.addFormatEtc(
-                            CDataFormatTranslator::getFormatEtcForClipformat( CF_LOCALE ) );
+                            m_DataFormatTranslator.getFormatEtcForClipformat( CF_LOCALE ) );
 
                         // we save the flavor so it's easier when
                         // queried for it in XTDataObject::GetData(...)
                         m_RegisteredTextFlavor  = aFlavor;
-                        m_bHasSynthesizedLocale = true;
+                        m_bHasSynthesizedLocale = sal_True;
                     }
                 }
             }
-            else if ( CDataFormatTranslator::isTextHtmlFormat( fetc.getClipformat( ) ) ) // Html (Hyper Text...)
+            else if ( m_DataFormatTranslator.isTextHtmlFormat( fetc.getClipformat( ) ) ) // Html (Hyper Text...)
             {
                 // we add text/html ( HTML (HyperText Markup Language) )
                 aFormatEtcContainer.addFormatEtc( fetc );
@@ -216,23 +217,23 @@ void SAL_CALL CFormatRegistrar::RegisterFormats(
                 // and HTML Format
                 OUString htmlFormat( "HTML Format" );
                 aFormatEtcContainer.addFormatEtc(
-                    CDataFormatTranslator::getFormatEtcForClipformatName( htmlFormat ) );
+                    m_DataFormatTranslator.getFormatEtcForClipformatName( htmlFormat ) );
             }
         }
     }
 }
 
-bool SAL_CALL CFormatRegistrar::hasSynthesizedLocale( ) const
+sal_Bool SAL_CALL CFormatRegistrar::hasSynthesizedLocale( ) const
 {
     return m_bHasSynthesizedLocale;
 }
 
-LCID SAL_CALL CFormatRegistrar::getSynthesizedLocale( )
+LCID SAL_CALL CFormatRegistrar::getSynthesizedLocale( ) const
 {
     return m_TxtLocale;
 }
 
-sal_uInt32 SAL_CALL CFormatRegistrar::getRegisteredTextCodePage( )
+sal_uInt32 SAL_CALL CFormatRegistrar::getRegisteredTextCodePage( ) const
 {
     return m_TxtCodePage;
 }
@@ -242,19 +243,19 @@ DataFlavor SAL_CALL CFormatRegistrar::getRegisteredTextFlavor( ) const
     return m_RegisteredTextFlavor;
 }
 
-bool SAL_CALL CFormatRegistrar::isSynthesizeableFormat( const CFormatEtc& aFormatEtc )
+sal_Bool SAL_CALL CFormatRegistrar::isSynthesizeableFormat( const CFormatEtc& aFormatEtc ) const
 {
-    return ( CDataFormatTranslator::isOemOrAnsiTextFormat( aFormatEtc.getClipformat() ) ||
-             CDataFormatTranslator::isUnicodeTextFormat( aFormatEtc.getClipformat() ) ||
-             CDataFormatTranslator::isHTMLFormat( aFormatEtc.getClipformat() ) );
+    return ( m_DataFormatTranslator.isOemOrAnsiTextFormat( aFormatEtc.getClipformat() ) ||
+             m_DataFormatTranslator.isUnicodeTextFormat( aFormatEtc.getClipformat() ) ||
+             m_DataFormatTranslator.isHTMLFormat( aFormatEtc.getClipformat() ) );
 }
 
 inline
-bool SAL_CALL CFormatRegistrar::needsToSynthesizeAccompanyFormats( const CFormatEtc& aFormatEtc )
+sal_Bool SAL_CALL CFormatRegistrar::needsToSynthesizeAccompanyFormats( const CFormatEtc& aFormatEtc ) const
 {
-    return ( CDataFormatTranslator::isOemOrAnsiTextFormat( aFormatEtc.getClipformat() ) ||
-             CDataFormatTranslator::isUnicodeTextFormat( aFormatEtc.getClipformat() ) ||
-             CDataFormatTranslator::isTextHtmlFormat( aFormatEtc.getClipformat( ) ) );
+    return ( m_DataFormatTranslator.isOemOrAnsiTextFormat( aFormatEtc.getClipformat() ) ||
+             m_DataFormatTranslator.isUnicodeTextFormat( aFormatEtc.getClipformat() ) ||
+             m_DataFormatTranslator.isTextHtmlFormat( aFormatEtc.getClipformat( ) ) );
 }
 
 OUString SAL_CALL CFormatRegistrar::getCharsetFromDataFlavor( const DataFlavor& aFlavor )
@@ -284,7 +285,7 @@ OUString SAL_CALL CFormatRegistrar::getCharsetFromDataFlavor( const DataFlavor& 
     return charset;
 }
 
-bool SAL_CALL CFormatRegistrar::hasUnicodeFlavor( const Reference< XTransferable >& aXTransferable ) const
+sal_Bool SAL_CALL CFormatRegistrar::hasUnicodeFlavor( const Reference< XTransferable >& aXTransferable ) const
 {
     CFormatEtc fetc( CF_UNICODETEXT );
 
@@ -294,14 +295,20 @@ bool SAL_CALL CFormatRegistrar::hasUnicodeFlavor( const Reference< XTransferable
     return aXTransferable->isDataFlavorSupported( aFlavor );
 }
 
-bool SAL_CALL CFormatRegistrar::findLocaleForTextCodePage( )
+inline
+sal_Bool CFormatRegistrar::isEqualCurrentSystemCodePage( sal_uInt32 aCodePage ) const
+{
+    return ( (aCodePage == GetOEMCP()) || (aCodePage == GetACP()) );
+}
+
+sal_Bool SAL_CALL CFormatRegistrar::findLocaleForTextCodePage( )
 {
     m_TxtLocale = 0;
     EnumSystemLocalesA( CFormatRegistrar::EnumLocalesProc, LCID_INSTALLED );
-    return IsValidLocale( m_TxtLocale, LCID_INSTALLED );
+    return ( IsValidLocale( m_TxtLocale, LCID_INSTALLED ) ) ? sal_True : sal_False;
 }
 
-bool SAL_CALL CFormatRegistrar::isLocaleCodePage( LCID lcid, LCTYPE lctype, sal_uInt32 codepage )
+sal_Bool SAL_CALL CFormatRegistrar::isLocaleCodePage( LCID lcid, LCTYPE lctype, sal_uInt32 codepage )
 {
     char  buff[6];
     sal_uInt32 localeCodePage;
@@ -316,13 +323,13 @@ bool SAL_CALL CFormatRegistrar::isLocaleCodePage( LCID lcid, LCTYPE lctype, sal_
 }
 
 inline
-bool SAL_CALL CFormatRegistrar::isLocaleOemCodePage( LCID lcid, sal_uInt32 codepage )
+sal_Bool SAL_CALL CFormatRegistrar::isLocaleOemCodePage( LCID lcid, sal_uInt32 codepage )
 {
     return isLocaleCodePage( lcid, LOCALE_IDEFAULTCODEPAGE, codepage );
 }
 
 inline
-bool SAL_CALL CFormatRegistrar::isLocaleAnsiCodePage( LCID lcid, sal_uInt32 codepage )
+sal_Bool SAL_CALL CFormatRegistrar::isLocaleAnsiCodePage( LCID lcid, sal_uInt32 codepage )
 {
     return isLocaleCodePage( lcid, LOCALE_IDEFAULTANSICODEPAGE, codepage );
 }
@@ -330,16 +337,16 @@ bool SAL_CALL CFormatRegistrar::isLocaleAnsiCodePage( LCID lcid, sal_uInt32 code
 BOOL CALLBACK CFormatRegistrar::EnumLocalesProc( LPSTR lpLocaleStr )
 {
     // the lpLocaleStr parameter is hexadecimal
-    LCID lcid = strtol( lpLocaleStr, nullptr, 16 );
+    LCID lcid = strtol( lpLocaleStr, NULL, 16 );
 
     if ( isLocaleAnsiCodePage( lcid, CFormatRegistrar::m_TxtCodePage ) ||
          isLocaleOemCodePage( lcid, CFormatRegistrar::m_TxtCodePage ) )
     {
         CFormatRegistrar::m_TxtLocale = lcid;
-        return false; // stop enumerating
+        return sal_False; // stop enumerating
     }
 
-    return true;
+    return sal_True;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -68,12 +68,12 @@ namespace rptui
             :m_xGroup(_xGroup)
         {
         }
-        css::uno::Reference< css::report::XSection >   getHeader() { return m_xGroup->getHeader(); }
-        css::uno::Reference< css::report::XSection >   getFooter() { return m_xGroup->getFooter(); }
+        inline css::uno::Reference< css::report::XSection >   getHeader() { return m_xGroup->getHeader(); }
+        inline css::uno::Reference< css::report::XSection >   getFooter() { return m_xGroup->getFooter(); }
         const css::uno::Reference< css::report::XGroup >&     getGroup() { return m_xGroup; }
 
-        bool getHeaderOn() { return m_xGroup->getHeaderOn(); }
-        bool getFooterOn() { return m_xGroup->getFooterOn(); }
+        inline bool getHeaderOn() { return m_xGroup->getHeaderOn(); }
+        inline bool getFooterOn() { return m_xGroup->getFooterOn(); }
 
         static ::std::mem_fun_t< css::uno::Reference< css::report::XSection> , OGroupHelper> getMemberFunction(const css::uno::Reference< css::report::XSection >& _xSection);
 
@@ -89,16 +89,16 @@ namespace rptui
             :m_xReport(_xReport)
         {
         }
-        css::uno::Reference< css::report::XSection > getReportHeader() { return m_xReport->getReportHeader(); }
-        css::uno::Reference< css::report::XSection > getReportFooter() { return m_xReport->getReportFooter(); }
-        css::uno::Reference< css::report::XSection > getPageHeader()   { return m_xReport->getPageHeader(); }
-        css::uno::Reference< css::report::XSection > getPageFooter()   { return m_xReport->getPageFooter(); }
-        css::uno::Reference< css::report::XSection > getDetail()       { return m_xReport->getDetail(); }
+        inline css::uno::Reference< css::report::XSection > getReportHeader() { return m_xReport->getReportHeader(); }
+        inline css::uno::Reference< css::report::XSection > getReportFooter() { return m_xReport->getReportFooter(); }
+        inline css::uno::Reference< css::report::XSection > getPageHeader()   { return m_xReport->getPageHeader(); }
+        inline css::uno::Reference< css::report::XSection > getPageFooter()   { return m_xReport->getPageFooter(); }
+        inline css::uno::Reference< css::report::XSection > getDetail()       { return m_xReport->getDetail(); }
 
-        bool getReportHeaderOn() { return m_xReport->getReportHeaderOn(); }
-        bool getReportFooterOn() { return m_xReport->getReportFooterOn(); }
-        bool getPageHeaderOn() { return m_xReport->getPageHeaderOn(); }
-        bool getPageFooterOn() { return m_xReport->getPageFooterOn(); }
+        inline bool getReportHeaderOn() { return m_xReport->getReportHeaderOn(); }
+        inline bool getReportFooterOn() { return m_xReport->getReportFooterOn(); }
+        inline bool getPageHeaderOn() { return m_xReport->getPageHeaderOn(); }
+        inline bool getPageFooterOn() { return m_xReport->getPageFooterOn(); }
 
         static ::std::mem_fun_t< css::uno::Reference< css::report::XSection> , OReportHelper> getMemberFunction(const css::uno::Reference< css::report::XSection >& _xSection);
     };
@@ -112,7 +112,7 @@ namespace rptui
         UndoContext( SfxUndoManager& i_undoManager, const OUString& i_undoTitle )
             :m_rUndoManager( i_undoManager )
         {
-            m_rUndoManager.EnterListAction( i_undoTitle, OUString(), 0, ViewShellId(-1) );
+            m_rUndoManager.EnterListAction( i_undoTitle, OUString() );
         }
 
         ~UndoContext()
@@ -157,7 +157,7 @@ namespace rptui
     public:
         OCommentUndoAction( SdrModel& rMod
                             ,sal_uInt16 nCommentID);
-        virtual ~OCommentUndoAction() override;
+        virtual ~OCommentUndoAction();
 
         virtual OUString GetComment() const override { return m_strComment; }
         virtual void        Undo() override;
@@ -185,7 +185,7 @@ namespace rptui
                             ,const css::uno::Reference< css::container::XIndexContainer >& rContainer
                             ,const css::uno::Reference< css::uno::XInterface>& xElem
                             ,sal_uInt16 _nCommentId);
-        virtual ~OUndoContainerAction() override;
+        virtual ~OUndoContainerAction();
 
         virtual void Undo() override;
         virtual void Redo() override;

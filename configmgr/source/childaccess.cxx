@@ -151,6 +151,7 @@ void ChildAccess::release() throw () {
 }
 
 css::uno::Reference< css::uno::XInterface > ChildAccess::getParent()
+    throw (css::uno::RuntimeException, std::exception)
 {
     assert(thisIs(IS_ANY));
     osl::MutexGuard g(*lock_);
@@ -159,6 +160,7 @@ css::uno::Reference< css::uno::XInterface > ChildAccess::getParent()
 }
 
 void ChildAccess::setParent(css::uno::Reference< css::uno::XInterface > const &)
+    throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception)
 {
     assert(thisIs(IS_ANY));
     osl::MutexGuard g(*lock_);
@@ -169,6 +171,7 @@ void ChildAccess::setParent(css::uno::Reference< css::uno::XInterface > const &)
 
 sal_Int64 ChildAccess::getSomething(
     css::uno::Sequence< sal_Int8 > const & aIdentifier)
+    throw (css::uno::RuntimeException, std::exception)
 {
     assert(thisIs(IS_ANY));
     osl::MutexGuard g(*lock_);
@@ -268,8 +271,9 @@ css::uno::Any ChildAccess::asValue()
                 return child.is() ? child->asValue() : css::uno::Any();
             }
         }
-        value <<= css::uno::Reference< css::uno::XInterface >(
-                            static_cast< cppu::OWeakObject * >(this));
+        value = css::uno::makeAny(
+                        css::uno::Reference< css::uno::XInterface >(
+                                static_cast< cppu::OWeakObject * >(this)));
     }
     return value;
 }
@@ -340,6 +344,7 @@ void ChildAccess::addSupportedServiceNames(
 }
 
 css::uno::Any ChildAccess::queryInterface(css::uno::Type const & aType)
+    throw (css::uno::RuntimeException, std::exception)
 {
     assert(thisIs(IS_ANY));
     osl::MutexGuard g(*lock_);

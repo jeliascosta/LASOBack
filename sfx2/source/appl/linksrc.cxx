@@ -53,14 +53,14 @@ void SvLinkSourceTimer::Invoke()
     pOwner->SendDataChanged();
 }
 
-static void StartTimer( std::unique_ptr<SvLinkSourceTimer>& pTimer, SvLinkSource * pOwner,
+static void StartTimer( SvLinkSourceTimer ** ppTimer, SvLinkSource * pOwner,
                         sal_uIntPtr nTimeout )
 {
-    if( !pTimer )
+    if( !*ppTimer )
     {
-        pTimer.reset( new SvLinkSourceTimer( pOwner ) );
-        pTimer->SetTimeout( nTimeout );
-        pTimer->Start();
+        *ppTimer = new SvLinkSourceTimer( pOwner );
+        (*ppTimer)->SetTimeout( nTimeout );
+        (*ppTimer)->Start();
     }
 }
 
@@ -81,7 +81,13 @@ struct SvLinkSource_Entry_Impl
     explicit SvLinkSource_Entry_Impl( SvBaseLink* pLink )
         : xSink( pLink ), nAdviseModes( 0 ), bIsDataSink( false )
     {}
+
+    ~SvLinkSource_Entry_Impl();
 };
+
+SvLinkSource_Entry_Impl::~SvLinkSource_Entry_Impl()
+{
+}
 
 class SvLinkSource_Array_Impl
 {
@@ -176,12 +182,11 @@ struct SvLinkSource_Impl
 {
     SvLinkSource_Array_Impl aArr;
     OUString                aDataMimeType;
-    std::unique_ptr<SvLinkSourceTimer>
-                            pTimer;
+    SvLinkSourceTimer *     pTimer;
     sal_uIntPtr             nTimeout;
     css::uno::Reference<css::io::XInputStream>
-                            m_xInputStreamToLoadFrom;
-    bool                    m_bIsReadOnly;
+                           m_xInputStreamToLoadFrom;
+    bool               m_bIsReadOnly;
 
     SvLinkSource_Impl()
         : pTimer(nullptr)
@@ -189,7 +194,13 @@ struct SvLinkSource_Impl
         , m_bIsReadOnly(false)
     {
     }
+    ~SvLinkSource_Impl();
 };
+
+SvLinkSource_Impl::~SvLinkSource_Impl()
+{
+    delete pTimer;
+}
 
 SvLinkSource::SvLinkSource()
      : pImpl( new SvLinkSource_Impl )
@@ -268,14 +279,18 @@ void SvLinkSource::SendDataChanged()
             }
         }
     }
-    pImpl->pTimer.reset();
+    if( pImpl->pTimer )
+    {
+        delete pImpl->pTimer;
+        pImpl->pTimer = nullptr;
+    }
     pImpl->aDataMimeType.clear();
 }
 
 void SvLinkSource::NotifyDataChanged()
 {
     if( pImpl->nTimeout )
-        StartTimer( pImpl->pTimer, this, pImpl->nTimeout ); // New timeout
+        StartTimer( &pImpl->pTimer, this, pImpl->nTimeout ); // New timeout
     else
     {
         SvLinkSource_EntryIter_Impl aIter( pImpl->aArr );
@@ -298,7 +313,11 @@ void SvLinkSource::NotifyDataChanged()
                 }
             }
 
-        pImpl->pTimer.reset();
+        if( pImpl->pTimer )
+        {
+            delete pImpl->pTimer;
+            pImpl->pTimer = nullptr;
+        }
     }
 }
 
@@ -311,7 +330,7 @@ void SvLinkSource::DataChanged( const OUString & rMimeType,
     {   // only when no data was included
         // fire all data to the sink, independent of the requested format
         pImpl->aDataMimeType = rMimeType;
-        StartTimer( pImpl->pTimer, this, pImpl->nTimeout ); // New timeout
+        StartTimer( &pImpl->pTimer, this, pImpl->nTimeout ); // New timeout
     }
     else
     {
@@ -332,7 +351,11 @@ void SvLinkSource::DataChanged( const OUString & rMimeType,
             }
         }
 
-        pImpl->pTimer.reset();
+        if( pImpl->pTimer )
+        {
+            delete pImpl->pTimer;
+            pImpl->pTimer = nullptr;
+        }
     }
 }
 
@@ -350,7 +373,7 @@ void SvLinkSource::RemoveAllDataAdvise( SvBaseLink * pLink )
 {
     SvLinkSource_EntryIter_Impl aIter( pImpl->aArr );
     for( SvLinkSource_Entry_Impl* p = aIter.Curr(); p; p = aIter.Next() )
-        if( p->bIsDataSink && p->xSink.get() == pLink )
+        if( p->bIsDataSink && &p->xSink == pLink )
         {
             pImpl->aArr.DeleteAndDestroy( p );
         }
@@ -367,7 +390,7 @@ void SvLinkSource::RemoveConnectAdvise( SvBaseLink * pLink )
 {
     SvLinkSource_EntryIter_Impl aIter( pImpl->aArr );
     for( SvLinkSource_Entry_Impl* p = aIter.Curr(); p; p = aIter.Next() )
-        if( !p->bIsDataSink && p->xSink.get() == pLink )
+        if( !p->bIsDataSink && &p->xSink == pLink )
         {
             pImpl->aArr.DeleteAndDestroy( p );
         }

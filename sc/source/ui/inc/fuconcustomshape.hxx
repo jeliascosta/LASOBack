@@ -32,8 +32,10 @@ public:
     FuConstCustomShape(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pView,
                        SdrModel* pDoc, SfxRequest& rReq);
 
-    virtual ~FuConstCustomShape() override;
+    virtual ~FuConstCustomShape();
                                        // Mouse- & Key-Events
+    virtual bool KeyInput(const KeyEvent& rKEvt) override;
+    virtual bool MouseMove(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
@@ -41,7 +43,7 @@ public:
     virtual void Deactivate() override;
 
     // Create default drawing objects via keyboard
-    virtual SdrObject* CreateDefaultObject( const sal_uInt16 nID, const tools::Rectangle& rRectangle ) override;
+    virtual SdrObject* CreateDefaultObject( const sal_uInt16 nID, const Rectangle& rRectangle ) override;
 
     // #i33136#
     virtual bool doConstructOrthogonal() const override;

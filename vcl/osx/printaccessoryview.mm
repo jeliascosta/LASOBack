@@ -259,7 +259,7 @@ public:
             if( pVal )
             {
                 // ugly
-                if( name_it->second == "PrintContent" )
+                if( name_it->second.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("PrintContent")) )
                    pVal->Value <<= i_bValue ? sal_Int32(2) : sal_Int32(0);
                else
                    pVal->Value <<= i_bValue;
@@ -301,7 +301,7 @@ public:
                        -1;
 
             std::map< int, rtl::OUString >::const_iterator name_it = maTagToPropertyName.find( nTag );
-            if( name_it != maTagToPropertyName.end() && name_it->second != "PrintContent" )
+            if( name_it != maTagToPropertyName.end() && ! name_it->second.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("PrintContent")) )
             {
                 vcl::PrinterController * mpController = [mpAccessoryController printerController];
                 BOOL bEnabled = mpController->isUIOptionEnabled( name_it->second ) ? YES : NO;
@@ -889,7 +889,7 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
     aFieldRect.origin.y = rCurY - aFieldRect.size.height;
     [pFieldView setFrame: aFieldRect];
 
-    if( rCtrlType == "Range" )
+    if( rCtrlType.equalsAsciiL( RTL_CONSTASCII_STRINGPARAM( "Range" ) ) )
     {
         // add a stepper control
         NSRect aStepFrame = { { aFieldRect.origin.x + aFieldRect.size.width + 5,
@@ -1011,29 +1011,29 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
         for( int n = 0; n < aOptProp.getLength(); n++ )
         {
             const beans::PropertyValue& rEntry( aOptProp[ n ] );
-            if( rEntry.Name == "ControlType" )
+            if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("ControlType")) )
             {
                 rEntry.Value >>= aCtrlType;
             }
-            else if( rEntry.Name == "Choices" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Choices")) )
             {
                 rEntry.Value >>= aChoices;
             }
-            else if( rEntry.Name == "ChoicesDisabled" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("ChoicesDisabled")) )
             {
                 rEntry.Value >>= aChoicesDisabled;
             }
-            else if( rEntry.Name == "Property" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Property")) )
             {
                 PropertyValue aVal;
                 rEntry.Value >>= aVal;
                 aPropertyName = aVal.Name;
-                if( aPropertyName == "PrintContent" )
+                if( aPropertyName.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("PrintContent")) )
                     aVal.Value >>= aSelectionChecked;
             }
         }
-        if( aCtrlType == "Radio" &&
-            aPropertyName == "PrintContent" &&
+        if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Radio")) &&
+            aPropertyName.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("PrintContent")) &&
             aChoices.getLength() > 2 )
         {
             bAddSelectionCheckBox = true;
@@ -1062,74 +1062,74 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
         for( int n = 0; n < aOptProp.getLength(); n++ )
         {
             const beans::PropertyValue& rEntry( aOptProp[ n ] );
-            if( rEntry.Name == "Text" )
+            if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Text")) )
             {
                 rEntry.Value >>= aText;
                 aText = filterAccelerator( aText );
             }
-            else if( rEntry.Name == "ControlType" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("ControlType")) )
             {
                 rEntry.Value >>= aCtrlType;
             }
-            else if( rEntry.Name == "Choices" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Choices")) )
             {
                 rEntry.Value >>= aChoices;
             }
-            else if( rEntry.Name == "Property" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Property")) )
             {
                 PropertyValue aVal;
                 rEntry.Value >>= aVal;
                 aPropertyName = aVal.Name;
             }
-            else if( rEntry.Name == "Enabled" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Enabled")) )
             {
-                bool bValue = true;
+                sal_Bool bValue = true;
                 rEntry.Value >>= bValue;
                 bEnabled = bValue;
             }
-            else if( rEntry.Name == "MinValue" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("MinValue")) )
             {
                 rEntry.Value >>= nMinValue;
             }
-            else if( rEntry.Name == "MaxValue" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("MaxValue")) )
             {
                 rEntry.Value >>= nMaxValue;
             }
-            else if( rEntry.Name == "AttachToDependency" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("AttachToDependency")) )
             {
                 nAttachOffset = 20;
             }
-            else if( rEntry.Name == "InternalUIOnly" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("InternalUIOnly")) )
             {
-                bool bValue = false;
+                sal_Bool bValue = false;
                 rEntry.Value >>= bValue;
                 bIgnore = bValue;
             }
-            else if( rEntry.Name == "GroupingHint" )
+            else if( rEntry.Name.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("GroupingHint")) )
             {
                 rEntry.Value >>= aGroupHint;
             }
         }
 
-        if( aCtrlType == "Group" ||
-            aCtrlType == "Subgroup" ||
-            aCtrlType == "Radio" ||
-            aCtrlType == "List"  ||
-            aCtrlType == "Edit"  ||
-            aCtrlType == "Range"  ||
-            aCtrlType == "Bool" )
+        if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Group")) ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Subgroup")) ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Radio")) ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("List"))  ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Edit"))  ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Range"))  ||
+            aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Bool")) )
         {
             bool bIgnoreSubgroup = false;
 
             // with `setAccessoryView' method only one accessory view can be set
             // so create this single accessory view as tabbed for grouping
-            if( aCtrlType == "Group"
+            if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Group"))
                 || ! pCurParent
-                || ( aCtrlType == "Subgroup" && nCurY < -250 && ! bIgnore )
+                || ( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Subgroup")) && nCurY < -250 && ! bIgnore ) 
                )
             {
                 rtl::OUString aGroupTitle( aText );
-                if( aCtrlType == "Subgroup" )
+                if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Subgroup")) )
                     aGroupTitle = pControllerProperties->getMoreString();
 
                 // set size of current parent
@@ -1163,7 +1163,7 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
                 }
             }
 
-            if( aCtrlType == "Subgroup" && pCurParent )
+            if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Subgroup")) && pCurParent )
             {
                 bIgnoreSubgroup = bIgnore;
                 if( bIgnore )
@@ -1175,9 +1175,9 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
             {
                 continue;
             }
-            else if( aCtrlType == "Bool" && pCurParent )
+            else if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Bool")) && pCurParent )
             {
-                bool bVal = false;
+                sal_Bool bVal = false;
                 PropertyValue* pVal = pController->getValue( aPropertyName );
                 if( pVal )
                     pVal->Value >>= bVal;
@@ -1185,7 +1185,7 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
                          aText, true, aPropertyName, bVal,
                          aRightColumn, pControllerProperties, pCtrlTarget );
             }
-            else if( aCtrlType == "Radio" && pCurParent )
+            else if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Radio")) && pCurParent )
             {
                 // get currently selected value
                 sal_Int32 nSelectVal = 0;
@@ -1198,7 +1198,7 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
                           aLeftColumn, aRightColumn,
                           pControllerProperties, pCtrlTarget );
             }
-            else if( aCtrlType == "List" && pCurParent )
+            else if( aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("List")) && pCurParent )
             {
                 PropertyValue* pVal = pController->getValue( aPropertyName );
                 sal_Int32 aSelectVal = 0;
@@ -1210,8 +1210,8 @@ static void addEdit( NSView* pCurParent, long& rCurX, long& rCurY, long nAttachO
                          aLeftColumn, aRightColumn,
                          pControllerProperties, pCtrlTarget );
             }
-            else if( (aCtrlType == "Edit"
-                || aCtrlType == "Range") && pCurParent )
+            else if( (aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Edit"))
+                || aCtrlType.equalsAsciiL(RTL_CONSTASCII_STRINGPARAM("Range"))) && pCurParent )
             {
                 // current value
                 PropertyValue* pVal = pController->getValue( aPropertyName );

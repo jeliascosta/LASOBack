@@ -54,16 +54,8 @@
 
 #include "updatelogging.h"
 
-#include <onlineupdate/mozilla/Compiler.h>
-#include <onlineupdate/mozilla/Types.h>
-
-#ifdef _WIN32
-#include "nsWindowsRestart.cxx"
-#include "nsWindowsHelpers.h"
-#include "uachelper.h"
-#include "pathhash.h"
-#endif
-
+#include "mozilla/Compiler.h"
+#include "mozilla/Types.h"
 
 // Amount of the progress bar to use in each of the 3 update stages,
 // should total 100.0.
@@ -147,7 +139,7 @@ static bool sUseHardLinks = true;
 
 // This variable lives in libbz2.  It's declared in bzlib_private.h, so we just
 // declare it here to avoid including that entire header file.
-#if defined __GNUC__
+#if defined(HAVE_GCC_VISIBILITY_FEATURE)
 extern "C"  __attribute__((visibility("default"))) unsigned int BZ2_crc32Table[256];
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 extern "C" __global unsigned int BZ2_crc32Table[256];
@@ -1801,6 +1793,13 @@ PatchIfFile::Finish(int status)
 
 //-----------------------------------------------------------------------------
 
+#ifdef _WIN32
+#include "nsWindowsRestart.cxx"
+#include "nsWindowsHelpers.h"
+#include "uachelper.h"
+#include "pathhash.h"
+#endif
+
 static void
 LaunchCallbackApp(const NS_tchar *workingDir,
                   int argc,
@@ -3406,7 +3405,7 @@ int add_dir_entries(const NS_tchar *dirpath, ActionList *list)
   return rv;
 }
 
-#elif defined(__sun)
+#elif defined(SOLARIS)
 int add_dir_entries(const NS_tchar *dirpath, ActionList *list)
 {
   int rv = OK;

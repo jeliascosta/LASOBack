@@ -40,7 +40,7 @@ namespace dbaxml
                     ,const css::uno::Reference< css::container::XNameAccess >& _xParentContainer
                     ,const OUString& _sComponentServiceName
                     );
-        virtual ~OXMLComponent() override;
+        virtual ~OXMLComponent();
     };
 } // namespace dbaxml
 

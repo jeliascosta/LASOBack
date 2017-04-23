@@ -18,7 +18,6 @@
  */
 
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
 #include <com/sun/star/ui/dialogs/CommonFilePickerElementIds.hpp>
@@ -137,7 +136,7 @@ bool controlIdInfo( sal_Int16 nControlId, OUString &rType, sal_Int32 &rTitleId )
         { ExtendedFilePickerElementIds::LISTBOX_TEMPLATE,       &aListBox,    STR_SVT_FILEPICKER_TEMPLATES },
         { ExtendedFilePickerElementIds::LISTBOX_IMAGE_TEMPLATE, &aListBox,    STR_SVT_FILEPICKER_IMAGE_TEMPLATE },
         { ExtendedFilePickerElementIds::CHECKBOX_SELECTION,     &aCheckBox,   STR_SVT_FILEPICKER_SELECTION },
-        { 0, nullptr, 0 }
+        { 0, 0, 0 }
     };
 
     for ( pPtr = pArray; pPtr->nId && ( pPtr->nId != nControlId ); ++pPtr )
@@ -194,8 +193,8 @@ UnxFilePicker::UnxFilePicker( const uno::Reference<uno::XComponentContext>& )
           m_nFilePickerPid( -1 ),
           m_nFilePickerWrite( -1 ),
           m_nFilePickerRead( -1 ),
-          m_pNotifyThread( nullptr ),
-          m_pCommandThread( nullptr ),
+          m_pNotifyThread( NULL ),
+          m_pCommandThread( NULL ),
           m_pResMgr( ResMgr::CreateResMgr("fps_office") )
 {
 }
@@ -204,15 +203,15 @@ UnxFilePicker::~UnxFilePicker()
 {
     if ( m_nFilePickerPid > 0 )
     {
-        sendCommand( "exit" );
-        waitpid( m_nFilePickerPid, nullptr, 0 );
+        sendCommand( OUString( "exit" ) );
+        waitpid( m_nFilePickerPid, NULL, 0 );
     }
 
     if ( m_pCommandThread )
     {
         m_pCommandThread->join();
 
-        delete m_pCommandThread; m_pCommandThread = nullptr;
+        delete m_pCommandThread, m_pCommandThread = NULL;
     }
 
     if ( m_pNotifyThread )
@@ -221,7 +220,7 @@ UnxFilePicker::~UnxFilePicker()
 
         m_pNotifyThread->join();
 
-        delete m_pNotifyThread; m_pNotifyThread = nullptr;
+        delete m_pNotifyThread, m_pNotifyThread = NULL;
     }
 
     if ( m_nFilePickerWrite >= 0 )
@@ -230,10 +229,11 @@ UnxFilePicker::~UnxFilePicker()
     if ( m_nFilePickerRead >= 0 )
         close( m_nFilePickerRead );
 
-    delete m_pResMgr; m_pResMgr = nullptr;
+    delete m_pResMgr, m_pResMgr = NULL;
 }
 
 void SAL_CALL UnxFilePicker::addFilePickerListener( const uno::Reference<XFilePickerListener>& xListener )
+    throw( uno::RuntimeException, std::exception )
 {
     OSL_ASSERT( m_pNotifyThread );
     osl::MutexGuard aGuard( m_aMutex );
@@ -242,6 +242,7 @@ void SAL_CALL UnxFilePicker::addFilePickerListener( const uno::Reference<XFilePi
 }
 
 void SAL_CALL UnxFilePicker::removeFilePickerListener( const uno::Reference<XFilePickerListener>& xListener )
+    throw( uno::RuntimeException, std::exception )
 {
     OSL_ASSERT( m_pNotifyThread );
     osl::MutexGuard aGuard( m_aMutex );
@@ -250,6 +251,7 @@ void SAL_CALL UnxFilePicker::removeFilePickerListener( const uno::Reference<XFil
 }
 
 void SAL_CALL UnxFilePicker::setTitle( const OUString &rTitle )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -263,13 +265,14 @@ void SAL_CALL UnxFilePicker::setTitle( const OUString &rTitle )
 }
 
 sal_Int16 SAL_CALL UnxFilePicker::execute()
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
 
     // this is _not_ an osl::Condition, see i#93366
     m_pCommandThread->execCondition().reset();
 
-    sendCommand( "exec" );
+    sendCommand( OUString( "exec" ));
 
     m_pCommandThread->execCondition().wait();
 
@@ -279,17 +282,20 @@ sal_Int16 SAL_CALL UnxFilePicker::execute()
 }
 
 void SAL_CALL UnxFilePicker::setMultiSelectionMode( sal_Bool bMode )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    if ( bMode )
-        sendCommand( "setMultiSelection true" );
-    else
-        sendCommand( "setMultiSelection false" );
+    OUString aString = bMode?
+        OUString( "setMultiSelection true" ):
+        OUString( "setMultiSelection false" );
+
+    sendCommand( aString );
 }
 
 void SAL_CALL UnxFilePicker::setDefaultName( const OUString &rName )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -303,6 +309,7 @@ void SAL_CALL UnxFilePicker::setDefaultName( const OUString &rName )
 }
 
 void SAL_CALL UnxFilePicker::setDisplayDirectory( const OUString &rDirectory )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -316,28 +323,31 @@ void SAL_CALL UnxFilePicker::setDisplayDirectory( const OUString &rDirectory )
 }
 
 OUString SAL_CALL UnxFilePicker::getDisplayDirectory()
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    sendCommand( "getDirectory",
+    sendCommand( OUString( "getDirectory" ),
                  m_pCommandThread->getDirectoryCondition() );
 
     return m_pCommandThread->getDirectory();
 }
 
 uno::Sequence< OUString > SAL_CALL UnxFilePicker::getFiles()
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    sendCommand( "getFiles",
+    sendCommand( OUString( "getFiles" ),
                  m_pCommandThread->getFilesCondition() );
 
     return m_pCommandThread->getFiles();
 }
 
 void SAL_CALL UnxFilePicker::appendFilter( const OUString &rTitle, const OUString &rFilter )
+    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -353,6 +363,7 @@ void SAL_CALL UnxFilePicker::appendFilter( const OUString &rTitle, const OUStrin
 }
 
 void SAL_CALL UnxFilePicker::setCurrentFilter( const OUString &rTitle )
+    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -366,17 +377,19 @@ void SAL_CALL UnxFilePicker::setCurrentFilter( const OUString &rTitle )
 }
 
 OUString SAL_CALL UnxFilePicker::getCurrentFilter()
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    sendCommand( "getCurrentFilter",
+    sendCommand( OUString( "getCurrentFilter" ),
                  m_pCommandThread->getCurrentFilterCondition() );
 
     return m_pCommandThread->getCurrentFilter();
 }
 
 void SAL_CALL UnxFilePicker::appendFilterGroup( const OUString &rGroupTitle, const uno::Sequence<beans::StringPair> &rFilters )
+    throw( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -400,6 +413,7 @@ void SAL_CALL UnxFilePicker::appendFilterGroup( const OUString &rGroupTitle, con
 }
 
 void SAL_CALL UnxFilePicker::setValue( sal_Int16 nControlId, sal_Int16 nControlAction, const uno::Any &rValue )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -480,6 +494,7 @@ void SAL_CALL UnxFilePicker::setValue( sal_Int16 nControlId, sal_Int16 nControlA
 }
 
 uno::Any SAL_CALL UnxFilePicker::getValue( sal_Int16 nControlId, sal_Int16 nControlAction )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -505,6 +520,7 @@ uno::Any SAL_CALL UnxFilePicker::getValue( sal_Int16 nControlId, sal_Int16 nCont
 }
 
 void SAL_CALL UnxFilePicker::enableControl( sal_Int16 nControlId, sal_Bool bEnable )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -519,6 +535,7 @@ void SAL_CALL UnxFilePicker::enableControl( sal_Int16 nControlId, sal_Bool bEnab
 }
 
 void SAL_CALL UnxFilePicker::setLabel( sal_Int16 nControlId, const OUString &rLabel )
+    throw( uno::RuntimeException, std::exception )
 {
     checkFilePicker();
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -534,6 +551,7 @@ void SAL_CALL UnxFilePicker::setLabel( sal_Int16 nControlId, const OUString &rLa
 }
 
 OUString SAL_CALL UnxFilePicker::getLabel(sal_Int16 /*nControlId*/)
+    throw ( uno::RuntimeException, std::exception )
 {
     // FIXME getLabel() is not yet implemented
     checkFilePicker();
@@ -609,6 +627,7 @@ sal_Bool SAL_CALL UnxFilePicker::getShowState()
 */
 
 void SAL_CALL UnxFilePicker::initialize( const uno::Sequence<uno::Any> &rArguments )
+    throw( uno::Exception, uno::RuntimeException, std::exception )
 {
     initFilePicker();
 
@@ -616,14 +635,14 @@ void SAL_CALL UnxFilePicker::initialize( const uno::Sequence<uno::Any> &rArgumen
     uno::Any aAny;
     if ( 0 == rArguments.getLength( ) )
         throw lang::IllegalArgumentException(
-                "no arguments",
+                OUString( "no arguments" ),
                 static_cast< XFilePicker2* >( this ), 1 );
 
     aAny = rArguments[0];
 
     if ( ( aAny.getValueType() != cppu::UnoType<sal_Int16>::get()) && ( aAny.getValueType() != cppu::UnoType<sal_Int8>::get()) )
         throw lang::IllegalArgumentException(
-                "invalid argument type",
+                OUString( "invalid argument type" ),
                 static_cast< XFilePicker2* >( this ), 1 );
 
     sal_Int16 templateId = -1;
@@ -685,13 +704,6 @@ void SAL_CALL UnxFilePicker::initialize( const uno::Sequence<uno::Any> &rArgumen
             sendAppendControlCommand( ExtendedFilePickerElementIds::PUSHBUTTON_PLAY );
             break;
 
-        case FILEOPEN_LINK_PLAY:
-            sendCommand( aTypeOpen );
-
-            sendAppendControlCommand( ExtendedFilePickerElementIds::CHECKBOX_LINK );
-            sendAppendControlCommand( ExtendedFilePickerElementIds::PUSHBUTTON_PLAY );
-            break;
-
         case FILEOPEN_READONLY_VERSION:
             sendCommand( aTypeOpen );
 
@@ -712,21 +724,16 @@ void SAL_CALL UnxFilePicker::initialize( const uno::Sequence<uno::Any> &rArgumen
             sendAppendControlCommand( ExtendedFilePickerElementIds::CHECKBOX_AUTOEXTENSION );
             break;
 
-        case FILEOPEN_PREVIEW:
-            sendCommand( aTypeOpen );
-
-            sendAppendControlCommand( ExtendedFilePickerElementIds::CHECKBOX_PREVIEW );
-            break;
-
         default:
             throw lang::IllegalArgumentException(
-                    "Unknown template",
+                    OUString( "Unknown template" ),
                     static_cast< XFilePicker2* >( this ),
                     1 );
     }
 }
 
 void SAL_CALL UnxFilePicker::cancel()
+    throw ( uno::RuntimeException, std::exception )
 {
     // FIXME cancel() is not implemented
     checkFilePicker();
@@ -736,6 +743,7 @@ void SAL_CALL UnxFilePicker::cancel()
 }
 
 void SAL_CALL UnxFilePicker::disposing( const lang::EventObject &rEvent )
+    throw( uno::RuntimeException )
 {
     uno::Reference<XFilePickerListener> xFilePickerListener( rEvent.Source, uno::UNO_QUERY );
 
@@ -744,16 +752,19 @@ void SAL_CALL UnxFilePicker::disposing( const lang::EventObject &rEvent )
 }
 
 OUString SAL_CALL UnxFilePicker::getImplementationName()
+    throw( uno::RuntimeException, std::exception )
 {
     return OUString( FILE_PICKER_IMPL_NAME );
 }
 
 sal_Bool SAL_CALL UnxFilePicker::supportsService( const OUString& ServiceName )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL UnxFilePicker::getSupportedServiceNames()
+    throw( uno::RuntimeException, std::exception )
 {
     return FilePicker_getSupportedServiceNames();
 }
@@ -804,7 +815,7 @@ void UnxFilePicker::initFilePicker()
 
         // TODO pass here the real parent (not possible for system dialogs
         // yet), and default to GetDefDialogParent() only when the real parent
-        // is nullptr
+        // is NULL
         vcl::Window *pParentWin = Application::GetDefDialogParent();
         if ( pParentWin )
         {
@@ -817,7 +828,7 @@ void UnxFilePicker::initFilePicker()
         }
 
         // Execute the fpicker implementation
-        execlp( helper.getStr(), helper.getStr(), "--winid", pWinId, nullptr );
+        execlp( helper.getStr(), helper.getStr(), "--winid", pWinId, NULL );
 
         // Error, finish the child
         exit( -1 );
@@ -845,7 +856,7 @@ void UnxFilePicker::initFilePicker()
     return;
 }
 
-void UnxFilePicker::checkFilePicker()
+void UnxFilePicker::checkFilePicker() throw( css::uno::RuntimeException )
 {
     if ( m_nFilePickerPid > 0 )
     {
@@ -854,7 +865,7 @@ void UnxFilePicker::checkFilePicker()
     else
     {
         throw uno::RuntimeException(
-                "the external file picker does not run",
+                OUString( "the external file picker does not run" ),
                 *this );
     }
 }
@@ -903,6 +914,7 @@ void UnxFilePicker::sendAppendControlCommand( sal_Int16 nControlId )
 }
 
 uno::Sequence< OUString > SAL_CALL UnxFilePicker::getSelectedFiles()
+    throw( uno::RuntimeException, std::exception )
 {
     return getFiles();
 }

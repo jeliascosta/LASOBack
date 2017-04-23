@@ -30,7 +30,11 @@
 #include <vcl/layout.hxx>
 #include <osl/diagnose.h>
 #include <tools/diagnose_ex.h>
+#include "localresaccess.hxx"
 #include <unotools/syslocale.hxx>
+
+#define EF_VISITED      0x0001
+#define EF_DIRTY        0x0002
 
 namespace dbaui
 {
@@ -91,7 +95,7 @@ namespace dbaui
                 pValues->Name = ::comphelper::getString(xParamAsSet->getPropertyValue(PROPERTY_NAME));
                 m_pAllParams->InsertEntry(pValues->Name);
 
-                m_aVisitedParams.push_back(VisitFlags::NONE);
+                m_aVisitedParams.push_back(0);
                     // not visited, not dirty
             }
 
@@ -104,7 +108,7 @@ namespace dbaui
 
         Construct();
 
-        m_aResetVisitFlag.SetInvokeHandler(LINK(this, OParameterDialog, OnVisitedTimeout));
+        m_aResetVisitFlag.SetTimeoutHdl(LINK(this, OParameterDialog, OnVisitedTimeout));
     }
 
     OParameterDialog::~OParameterDialog()
@@ -153,7 +157,7 @@ namespace dbaui
         m_pParam->GrabFocus();
     }
 
-    IMPL_LINK_NOARG(OParameterDialog, OnValueLoseFocusHdl, Control&, void)
+    IMPL_LINK_NOARG_TYPED(OParameterDialog, OnValueLoseFocusHdl, Control&, void)
     {
         OnValueLoseFocus();
     }
@@ -162,7 +166,7 @@ namespace dbaui
     {
         if (m_nCurrentlySelected != LISTBOX_ENTRY_NOTFOUND)
         {
-            if ( !( m_aVisitedParams[ m_nCurrentlySelected ] & VisitFlags::Dirty ) )
+            if ( ( m_aVisitedParams[ m_nCurrentlySelected ] & EF_DIRTY ) == 0 )
                 // nothing to do, the value isn't dirty
                 return false;
         }
@@ -180,7 +184,7 @@ namespace dbaui
                 {
                     // with this the value isn't dirty anymore
                     if (m_nCurrentlySelected != LISTBOX_ENTRY_NOTFOUND)
-                        m_aVisitedParams[m_nCurrentlySelected] &= ~VisitFlags::Dirty;
+                        m_aVisitedParams[m_nCurrentlySelected] &= ~EF_DIRTY;
                 }
                 else
                 {
@@ -209,7 +213,7 @@ namespace dbaui
         return false;
     }
 
-    IMPL_LINK(OParameterDialog, OnButtonClicked, Button*, pButton, void)
+    IMPL_LINK_TYPED(OParameterDialog, OnButtonClicked, Button*, pButton, void)
     {
         if (m_pCancelBtn == pButton)
         {
@@ -244,7 +248,7 @@ namespace dbaui
 
                         OUString sValue;
                         pValues->Value >>= sValue;
-                        pValues->Value = m_aPredicateInput.getPredicateValue( sValue, xParamAsSet );
+                        pValues->Value <<= m_aPredicateInput.getPredicateValue( sValue, xParamAsSet );
                     }
                 }
                 catch(Exception&)
@@ -266,10 +270,10 @@ namespace dbaui
 
                 // search the next entry in list we haven't visited yet
                 sal_Int32 nNext = (nCurrent + 1) % nCount;
-                while ((nNext != nCurrent) && ( m_aVisitedParams[nNext] & VisitFlags::Visited ))
+                while ((nNext != nCurrent) && ( m_aVisitedParams[nNext] & EF_VISITED ))
                     nNext = (nNext + 1) % nCount;
 
-                if ( m_aVisitedParams[nNext] & VisitFlags::Visited )
+                if ( m_aVisitedParams[nNext] & EF_VISITED )
                     // there is no such "not visited yet" entry -> simply take the next one
                     nNext = (nCurrent + 1) % nCount;
 
@@ -283,7 +287,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG(OParameterDialog, OnEntryListBoxSelected, ListBox&, void)
+    IMPL_LINK_NOARG_TYPED(OParameterDialog, OnEntryListBoxSelected, ListBox&, void)
     {
         OnEntrySelected();
     }
@@ -305,7 +309,7 @@ namespace dbaui
                 return true;
             }
 
-            m_aFinalValues[m_nCurrentlySelected].Value <<= m_pParam->GetText();
+            m_aFinalValues[m_nCurrentlySelected].Value <<= OUString(m_pParam->GetText());
         }
 
         // initialize the controls with the new values
@@ -317,7 +321,7 @@ namespace dbaui
 
         // with this the value isn't dirty
         OSL_ENSURE(static_cast<size_t>(m_nCurrentlySelected) < m_aVisitedParams.size(), "OParameterDialog::OnEntrySelected : invalid current entry !");
-        m_aVisitedParams[m_nCurrentlySelected] &= ~VisitFlags::Dirty;
+        m_aVisitedParams[m_nCurrentlySelected] &= ~EF_DIRTY;
 
         m_aResetVisitFlag.SetTimeout(1000);
         m_aResetVisitFlag.Start();
@@ -325,22 +329,22 @@ namespace dbaui
         return false;
     }
 
-    IMPL_LINK_NOARG(OParameterDialog, OnVisitedTimeout, Timer*, void)
+    IMPL_LINK_NOARG_TYPED(OParameterDialog, OnVisitedTimeout, Timer*, void)
     {
         OSL_ENSURE(m_nCurrentlySelected != LISTBOX_ENTRY_NOTFOUND, "OParameterDialog::OnVisitedTimeout : invalid call !");
 
         // mark the currently selected entry as visited
         OSL_ENSURE(static_cast<size_t>(m_nCurrentlySelected) < m_aVisitedParams.size(), "OParameterDialog::OnVisitedTimeout : invalid entry !");
-        m_aVisitedParams[m_nCurrentlySelected] |= VisitFlags::Visited;
+        m_aVisitedParams[m_nCurrentlySelected] |= EF_VISITED;
 
         // was it the last "not visited yet" entry ?
-        std::vector<VisitFlags>::const_iterator aIter;
+        ByteVector::const_iterator aIter;
         for (   aIter = m_aVisitedParams.begin();
                 aIter < m_aVisitedParams.end();
                 ++aIter
             )
         {
-            if (!((*aIter) & VisitFlags::Visited))
+            if (((*aIter) & EF_VISITED) == 0)
                 break;
         }
         if (aIter == m_aVisitedParams.end())
@@ -371,11 +375,11 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG(OParameterDialog, OnValueModified, Edit&, void)
+    IMPL_LINK_NOARG_TYPED(OParameterDialog, OnValueModified, Edit&, void)
     {
         // mark the currently selected entry as dirty
         OSL_ENSURE(static_cast<size_t>(m_nCurrentlySelected) < m_aVisitedParams.size(), "OParameterDialog::OnValueModified : invalid entry !");
-        m_aVisitedParams[m_nCurrentlySelected] |= VisitFlags::Dirty;
+        m_aVisitedParams[m_nCurrentlySelected] |= EF_DIRTY;
 
         m_bNeedErrorOnCurrent = true;
     }

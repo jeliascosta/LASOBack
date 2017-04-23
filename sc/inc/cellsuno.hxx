@@ -31,7 +31,6 @@
 #include <svl/listener.hxx>
 #include <svl/itemprop.hxx>
 #include <com/sun/star/table/XTableChartsSupplier.hpp>
-#include <com/sun/star/table/XTablePivotChartsSupplier.hpp>
 #include <com/sun/star/chart/XChartDataArray.hpp>
 #include <com/sun/star/text/XTextFieldsSupplier.hpp>
 #include <com/sun/star/drawing/XDrawPageSupplier.hpp>
@@ -113,7 +112,7 @@ class ScLinkListener : public SvtListener
     Link<const SfxHint&,void>  aLink;
 public:
                     ScLinkListener(const Link<const SfxHint&,void>& rL) : aLink(rL) {}
-    virtual         ~ScLinkListener() override;
+    virtual         ~ScLinkListener();
     virtual void Notify( const SfxHint& rHint ) override;
 };
 
@@ -189,7 +188,7 @@ private:
     bool                    bGotDataChangedHint;
     XModifyListenerArr_Impl aValueListeners;
 
-    DECL_LINK( ValueListenerHdl, const SfxHint&, void );
+    DECL_LINK_TYPED( ValueListenerHdl, const SfxHint&, void );
 
 private:
     void            PaintGridRanges_Impl();
@@ -217,20 +216,23 @@ protected:
     virtual const SfxItemPropertyMap& GetItemPropertyMap();
     css::beans::PropertyState GetOnePropertyState(
                                 sal_uInt16 nItemWhich, const SfxItemPropertySimpleEntry* pEntry );
-    /// @throws css::uno::RuntimeException
     virtual void            GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& );
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception);
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue );
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                      css::uno::RuntimeException,
+                                      std::exception);
 
 public:
                             ScCellRangesBase(ScDocShell* pDocSh, const ScRange& rR);
                             ScCellRangesBase(ScDocShell* pDocSh, const ScRangeList& rR);
-    virtual                 ~ScCellRangesBase() override;
+    virtual                 ~ScCellRangesBase();
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
@@ -253,135 +255,228 @@ public:
     bool                    IsCursorOnly() const            { return bCursorOnly; }
 
                             // XSheetOperation
-    virtual double SAL_CALL computeFunction( css::sheet::GeneralFunction nFunction ) override;
-    virtual void SAL_CALL   clearContents( sal_Int32 nContentFlags ) override;
+    virtual double SAL_CALL computeFunction( css::sheet::GeneralFunction nFunction )
+                                throw(css::uno::Exception,
+                                      css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL   clearContents( sal_Int32 nContentFlags )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValue( const OUString& aPropertyName,
-                                    const css::uno::Any& aValue ) override;
+                                    const css::uno::Any& aValue )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addPropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removePropertyChangeListener( const OUString& aPropertyName,
-                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeVetoableChangeListener( const OUString& PropertyName,
-                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+                                    const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XMultiPropertySet
     virtual void SAL_CALL   setPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames,
-                                    const css::uno::Sequence< css::uno::Any >& aValues ) override;
+                                    const css::uno::Sequence< css::uno::Any >& aValues )
+                                throw (css::beans::PropertyVetoException,
+                                    css::lang::IllegalArgumentException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::uno::Any > SAL_CALL
-                            getPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames ) override;
+                            getPropertyValues( const css::uno::Sequence< OUString >& aPropertyNames )
+                                throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addPropertiesChangeListener( const css::uno::Sequence< OUString >& aPropertyNames,
-                                    const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertiesChangeListener( const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener )
+                                throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertiesChangeListener( const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener )
+                                throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL firePropertiesChangeEvent( const css::uno::Sequence< OUString >& aPropertyNames,
-                                    const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener ) override;
+                                    const css::uno::Reference< css::beans::XPropertiesChangeListener >& xListener )
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XTolerantMultiPropertySet
     virtual css::uno::Sequence< css::beans::SetPropertyTolerantFailed > SAL_CALL
         setPropertyValuesTolerant( const css::uno::Sequence< OUString >& aPropertyNames,
-                                    const css::uno::Sequence< css::uno::Any >& aValues ) override;
+                                    const css::uno::Sequence< css::uno::Any >& aValues )
+                                    throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::beans::GetPropertyTolerantResult > SAL_CALL
-        getPropertyValuesTolerant( const css::uno::Sequence< OUString >& aPropertyNames ) override;
+        getPropertyValuesTolerant( const css::uno::Sequence< OUString >& aPropertyNames )
+                                    throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::beans::GetDirectPropertyTolerantResult > SAL_CALL
-        getDirectPropertyValuesTolerant( const css::uno::Sequence< OUString >& aPropertyNames ) override;
+        getDirectPropertyValuesTolerant( const css::uno::Sequence< OUString >& aPropertyNames )
+                                    throw (css::uno::RuntimeException, std::exception) override;
 
                             // XPropertyState
     virtual css::beans::PropertyState SAL_CALL getPropertyState(
-                                    const OUString& PropertyName ) override;
+                                    const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::beans::PropertyState > SAL_CALL
                             getPropertyStates( const css::uno::Sequence<
-                                        OUString >& aPropertyName ) override;
-    virtual void SAL_CALL   setPropertyToDefault( const OUString& PropertyName ) override;
+                                        OUString >& aPropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setPropertyToDefault( const OUString& PropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyDefault(
-                                    const OUString& aPropertyName ) override;
+                                    const OUString& aPropertyName )
+                                throw(css::beans::UnknownPropertyException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XIndent
-    virtual void SAL_CALL   decrementIndent() override;
-    virtual void SAL_CALL   incrementIndent() override;
+    virtual void SAL_CALL   decrementIndent() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   incrementIndent() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XChartData
     virtual void SAL_CALL   addChartDataChangeEventListener(
-                                const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener ) override;
+                                const css::uno::Reference< css::chart::XChartDataChangeEventListener >& aListener )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void SAL_CALL   removeChartDataChangeEventListener( const css::uno::Reference<
-                                    css::chart::XChartDataChangeEventListener >& aListener ) override;
-    virtual double SAL_CALL getNotANumber() override;
-    virtual sal_Bool SAL_CALL isNotANumber( double nNumber ) override;
+                                    css::chart::XChartDataChangeEventListener >& aListener )
+                                throw (css::uno::RuntimeException,
+                                       std::exception) override;
+    virtual double SAL_CALL getNotANumber() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isNotANumber( double nNumber )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XChartDataArray
     virtual css::uno::Sequence< css::uno::Sequence< double > > SAL_CALL
-                            getData() override;
-    virtual void SAL_CALL   setData( const css::uno::Sequence< css::uno::Sequence< double > >& aData ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getRowDescriptions() override;
-    virtual void SAL_CALL setRowDescriptions( const css::uno::Sequence< OUString >& aRowDescriptions ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getColumnDescriptions() override;
-    virtual void SAL_CALL   setColumnDescriptions( const css::uno::Sequence< OUString >& aColumnDescriptions ) override;
+                            getData()
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
+    virtual void SAL_CALL   setData( const css::uno::Sequence< css::uno::Sequence< double > >& aData )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getRowDescriptions()
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL setRowDescriptions( const css::uno::Sequence< OUString >& aRowDescriptions )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getColumnDescriptions()
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL   setColumnDescriptions( const css::uno::Sequence< OUString >& aColumnDescriptions )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
 
                             // XCellRangesQuery
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryVisibleCells() override;
+                            queryVisibleCells()
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryEmptyCells() override;
+                            queryEmptyCells()
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryContentCells( sal_Int16 nContentFlags ) override;
+                            queryContentCells( sal_Int16 nContentFlags )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryFormulaCells( sal_Int32 nResultFlags ) override;
+                            queryFormulaCells( sal_Int32 nResultFlags )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
                             queryColumnDifferences(
-                                const css::table::CellAddress& aCompare ) override;
+                                const css::table::CellAddress& aCompare )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
                             queryRowDifferences(
-                                const css::table::CellAddress& aCompare ) override;
+                                const css::table::CellAddress& aCompare )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
                             queryIntersection(
-                                const css::table::CellRangeAddress& aRange ) override;
+                                const css::table::CellRangeAddress& aRange )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XFormulaQuery
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryDependents( sal_Bool bRecursive ) override;
+                            queryDependents( sal_Bool bRecursive )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellRanges > SAL_CALL
-                            queryPrecedents( sal_Bool bRecursive ) override;
+                            queryPrecedents( sal_Bool bRecursive )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
 
                             // XSearchable
     virtual css::uno::Reference< css::util::XSearchDescriptor > SAL_CALL
-                            createSearchDescriptor() override;
+                            createSearchDescriptor()
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL
-                            findAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+                            findAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
-                            findFirst( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+                            findFirst( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::uno::XInterface > SAL_CALL
                             findNext( const css::uno::Reference< css::uno::XInterface >& xStartAt,
-                                      const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+                                      const css::uno::Reference< css::util::XSearchDescriptor >& xDesc )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XReplaceable
     virtual css::uno::Reference< css::util::XReplaceDescriptor > SAL_CALL
-                            createReplaceDescriptor() override;
-    virtual sal_Int32 SAL_CALL replaceAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc ) override;
+                            createReplaceDescriptor() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL replaceAll( const css::uno::Reference< css::util::XSearchDescriptor >& xDesc )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
 
                             // XModifyBroadcaster
-    virtual void SAL_CALL   addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL   removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL   addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+                                throw (css::uno::RuntimeException,
+                                       std::exception) override;
+    virtual void SAL_CALL   removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     static const css::uno::Sequence<sal_Int8>& getUnoTunnelId();
     static ScCellRangesBase* getImplementation(const css::uno::Reference<css::uno::XInterface>& rObj);
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class SC_DLLPUBLIC ScCellRangesObj : public ScCellRangesBase,
@@ -397,9 +492,10 @@ private:
 
 public:
                             ScCellRangesObj(ScDocShell* pDocSh, const ScRangeList& rR);
-    virtual                 ~ScCellRangesObj() override;
+    virtual                 ~ScCellRangesObj();
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
@@ -407,55 +503,88 @@ public:
 
                             // XSheetCellRanges
     virtual css::uno::Reference< css::container::XEnumerationAccess > SAL_CALL
-                            getCells() override;
-    virtual OUString SAL_CALL getRangeAddressesAsString() override;
+                            getCells() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getRangeAddressesAsString()
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::table::CellRangeAddress > SAL_CALL
-                            getRangeAddresses() override;
+                            getRangeAddresses() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetCellRangeContainer
     virtual void SAL_CALL   addRangeAddress( const css::table::CellRangeAddress& rRange,
-                                        sal_Bool bMergeRanges ) override;
-    virtual void SAL_CALL   removeRangeAddress( const css::table::CellRangeAddress& rRange ) override;
+                                        sal_Bool bMergeRanges )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeRangeAddress( const css::table::CellRangeAddress& rRange )
+                                throw(css::container::NoSuchElementException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addRangeAddresses( const css::uno::Sequence<
                                         css::table::CellRangeAddress >& rRanges,
-                                        sal_Bool bMergeRanges ) override;
+                                        sal_Bool bMergeRanges )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeRangeAddresses( const css::uno::Sequence<
-                                        css::table::CellRangeAddress >& rRanges ) override;
+                                        css::table::CellRangeAddress >& rRanges )
+                                throw(css::container::NoSuchElementException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XNameContainer
     virtual void SAL_CALL   insertByName( const OUString& aName,
-                                const css::uno::Any& aElement ) override;
-    virtual void SAL_CALL   removeByName( const OUString& Name ) override;
+                                const css::uno::Any& aElement )
+                                    throw (css::lang::IllegalArgumentException,
+                                           css::container::ElementExistException,
+                                           css::lang::WrappedTargetException,
+                                           css::uno::RuntimeException,
+                                           std::exception) override;
+    virtual void SAL_CALL   removeByName( const OUString& Name )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XNameReplace
     virtual void SAL_CALL   replaceByName( const OUString& aName,
-                                const css::uno::Any& aElement ) override;
+                                const css::uno::Any& aElement )
+                                    throw(css::lang::IllegalArgumentException,
+                                        css::container::NoSuchElementException,
+                                        css::lang::WrappedTargetException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+                                throw(css::container::NoSuchElementException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL
-                            createEnumeration() override;
+                            createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class SC_DLLPUBLIC ScCellRangeObj : public ScCellRangesBase,
@@ -485,149 +614,189 @@ protected:
     const ScRange&          GetRange() const    { return aRange; }
     virtual const SfxItemPropertyMap& GetItemPropertyMap() override;
     virtual void GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& ) override;
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue ) override;
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                      css::uno::RuntimeException,
+                                      std::exception) override;
 
-    /// @throws css::lang::IndexOutOfBoundsException
-    /// @throws css::uno::RuntimeException
     css::uno::Reference< css::table::XCell >
-                            GetCellByPosition_Impl( sal_Int32 nColumn, sal_Int32 nRow );
+                            GetCellByPosition_Impl( sal_Int32 nColumn, sal_Int32 nRow )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::uno::RuntimeException);
 
-            /// @throws css::uno::RuntimeException
             void            SetArrayFormula_Impl( const OUString& rFormula,
                                 const OUString& rFormulaNmsp,
-                                const formula::FormulaGrammar::Grammar eGrammar );
+                                const formula::FormulaGrammar::Grammar eGrammar )
+                                    throw (css::uno::RuntimeException, std::exception);
 
 public:
                             ScCellRangeObj(ScDocShell* pDocSh, const ScRange& rR);
-    virtual                 ~ScCellRangeObj() override;
+    virtual                 ~ScCellRangeObj();
 
                             // uses ObjectShell from document, if set (returns NULL otherwise)
     static css::uno::Reference<css::table::XCellRange>
                             CreateRangeFromDoc( ScDocument* pDoc, const ScRange& rR );
 
     virtual css::uno::Any SAL_CALL queryInterface(
-                                const css::uno::Type & rType ) override;
+                                const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
     virtual void            RefChanged() override;
 
                             // XCellRangeAddressable
-    virtual css::table::CellRangeAddress SAL_CALL getRangeAddress() override;
+    virtual css::table::CellRangeAddress SAL_CALL getRangeAddress()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetCellRange
     virtual css::uno::Reference< css::sheet::XSpreadsheet > SAL_CALL
-                            getSpreadsheet() override;
+                            getSpreadsheet() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XArrayFormulaRange
-    virtual OUString SAL_CALL getArrayFormula() override;
-    virtual void SAL_CALL   setArrayFormula( const OUString& aFormula ) override;
+    virtual OUString SAL_CALL getArrayFormula() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setArrayFormula( const OUString& aFormula )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XArrayFormulaTokens
-    virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL getArrayTokens() override;
+    virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL getArrayTokens()
+                                throw (css::uno::RuntimeException,
+                                       std::exception) override;
     virtual void SAL_CALL   setArrayTokens( const css::uno::Sequence<
-                                    css::sheet::FormulaToken >& aTokens ) override;
+                                    css::sheet::FormulaToken >& aTokens )
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XCellRangeData
-    virtual css::uno::Sequence< css::uno::Sequence< css::uno::Any > > SAL_CALL getDataArray() override;
-    virtual void SAL_CALL   setDataArray( const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aArray ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::uno::Any > > SAL_CALL getDataArray()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setDataArray( const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& aArray )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellRangeFormula
     virtual css::uno::Sequence< css::uno::Sequence<
-                            OUString > > SAL_CALL getFormulaArray() override;
-    virtual void SAL_CALL   setFormulaArray( const css::uno::Sequence< css::uno::Sequence< OUString > >& aArray ) override;
+                            OUString > > SAL_CALL getFormulaArray()
+                                throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setFormulaArray( const css::uno::Sequence< css::uno::Sequence< OUString > >& aArray )
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XMultipleOperation
     virtual void SAL_CALL   setTableOperation(
                                 const css::table::CellRangeAddress& aFormulaRange,
                                 css::sheet::TableOperationMode nMode,
                                 const css::table::CellAddress& aColumnCell,
-                                const css::table::CellAddress& aRowCell ) override;
+                                const css::table::CellAddress& aRowCell )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XMergeable
-    virtual void SAL_CALL   merge( sal_Bool bMerge ) override;
-    virtual sal_Bool SAL_CALL getIsMerged() override;
+    virtual void SAL_CALL   merge( sal_Bool bMerge ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getIsMerged() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellSeries
     virtual void SAL_CALL   fillSeries( css::sheet::FillDirection nFillDirection,
                                 css::sheet::FillMode nFillMode,
                                 css::sheet::FillDateMode nFillDateMode,
-                                double fStep, double fEndValue ) override;
+                                double fStep, double fEndValue )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   fillAuto( css::sheet::FillDirection nFillDirection,
-                                sal_Int32 nSourceCount ) override;
+                                sal_Int32 nSourceCount )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XAutoFormattable
-    virtual void SAL_CALL   autoFormat( const OUString& aName ) override;
+    virtual void SAL_CALL   autoFormat( const OUString& aName )
+                                throw(css::lang::IllegalArgumentException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XSortable
     virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL
-                            createSortDescriptor() override;
+                            createSortDescriptor() throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   sort( const css::uno::Sequence<
-                                css::beans::PropertyValue >& xDescriptor ) override;
+                                css::beans::PropertyValue >& xDescriptor )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetFilterableEx
     virtual css::uno::Reference< css::sheet::XSheetFilterDescriptor > SAL_CALL
                             createFilterDescriptorByObject( const css::uno::Reference<
-                                css::sheet::XSheetFilterable >& xObject ) override;
+                                css::sheet::XSheetFilterable >& xObject )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetFilterable
     virtual css::uno::Reference< css::sheet::XSheetFilterDescriptor > SAL_CALL
-                            createFilterDescriptor( sal_Bool bEmpty ) override;
+                            createFilterDescriptor( sal_Bool bEmpty )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   filter( const css::uno::Reference<
-                                css::sheet::XSheetFilterDescriptor >& xDescriptor ) override;
+                                css::sheet::XSheetFilterDescriptor >& xDescriptor )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSubTotalCalculatable
     virtual css::uno::Reference< css::sheet::XSubTotalDescriptor > SAL_CALL
-                            createSubTotalDescriptor( sal_Bool bEmpty ) override;
+                            createSubTotalDescriptor( sal_Bool bEmpty )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   applySubTotals(const css::uno::Reference< css::sheet::XSubTotalDescriptor >& xDescriptor,
-                                sal_Bool bReplace) override;
-    virtual void SAL_CALL   removeSubTotals() override;
+                                sal_Bool bReplace)
+                                throw (css::uno::RuntimeException,
+                                       std::exception) override;
+    virtual void SAL_CALL   removeSubTotals() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XImportable
     virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL
-                            createImportDescriptor( sal_Bool bEmpty ) override;
-    virtual void SAL_CALL   doImport( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) override;
+                            createImportDescriptor( sal_Bool bEmpty )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   doImport( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellFormatRangesSupplier
     virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL
-                            getCellFormatRanges() override;
+                            getCellFormatRanges() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XUniqueCellFormatRangesSupplier
     virtual css::uno::Reference< css::container::XIndexAccess > SAL_CALL
-                            getUniqueCellFormatRanges() override;
+                            getUniqueCellFormatRanges() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XColumnRowRange
     virtual css::uno::Reference< css::table::XTableColumns > SAL_CALL
-                            getColumns() override;
+                            getColumns() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::table::XTableRows > SAL_CALL
-                            getRows() override;
+                            getRows() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellRange
     virtual css::uno::Reference< css::table::XCell > SAL_CALL
-                            getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) override;
+                            getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::table::XCellRange > SAL_CALL
                             getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop,
-                                sal_Int32 nRight, sal_Int32 nBottom ) override;
+                                sal_Int32 nRight, sal_Int32 nBottom )
+                                    throw(css::lang::IndexOutOfBoundsException,
+                                        css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::table::XCellRange > SAL_CALL
-                            getCellRangeByName( const OUString& aRange ) override;
-    /// @throws css::uno::RuntimeException
+                            getCellRangeByName( const OUString& aRange )
+                                throw(css::uno::RuntimeException, std::exception) override;
     css::uno::Reference< css::table::XCellRange >
-                            getCellRangeByName( const OUString& aRange,  const ScAddress::Details& rDetails );
+                            getCellRangeByName( const OUString& aRange,  const ScAddress::Details& rDetails )
+                                throw(css::uno::RuntimeException);
 
                             // XPropertySet override due to Range-Properties
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 //! really derive cell from range?
@@ -659,18 +828,23 @@ private:
 protected:
     virtual const SfxItemPropertyMap& GetItemPropertyMap() override;
     virtual void GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& ) override;
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue ) override;
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
 
 public:
     static const SvxItemPropertySet* GetEditPropertySet();
     static const SfxItemPropertyMap& GetCellPropertyMap();
 
                             ScCellObj(ScDocShell* pDocSh, const ScAddress& rP);
-    virtual                 ~ScCellObj() override;
+    virtual                 ~ScCellObj();
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
@@ -687,83 +861,108 @@ public:
                             // XText
     virtual void SAL_CALL   insertTextContent( const css::uno::Reference< css::text::XTextRange >& xRange,
                                 const css::uno::Reference< css::text::XTextContent >& xContent,
-                                sal_Bool bAbsorb ) override;
-    virtual void SAL_CALL   removeTextContent( const css::uno::Reference< css::text::XTextContent >& xContent ) override;
+                                sal_Bool bAbsorb )
+                                    throw(css::lang::IllegalArgumentException,
+                                          css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeTextContent( const css::uno::Reference< css::text::XTextContent >& xContent )
+                                    throw(css::container::NoSuchElementException,
+                                          css::uno::RuntimeException, std::exception) override;
 
                             // XSimpleText
     virtual css::uno::Reference< css::text::XTextCursor > SAL_CALL
-                            createTextCursor() override;
+                            createTextCursor() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextCursor > SAL_CALL
-                            createTextCursorByRange( const css::uno::Reference< css::text::XTextRange >& aTextPosition ) override;
+                            createTextCursorByRange( const css::uno::Reference< css::text::XTextRange >& aTextPosition )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   insertString( const css::uno::Reference< css::text::XTextRange >& xRange,
-                                        const OUString& aString, sal_Bool bAbsorb ) override;
+                                        const OUString& aString, sal_Bool bAbsorb )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   insertControlCharacter( const css::uno::Reference< css::text::XTextRange >& xRange,
-                                        sal_Int16 nControlCharacter, sal_Bool bAbsorb ) override;
+                                        sal_Int16 nControlCharacter, sal_Bool bAbsorb )
+                                    throw(css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XTextRange
     virtual css::uno::Reference< css::text::XText > SAL_CALL
-                            getText() override;
+                            getText() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
-                            getStart() override;
+                            getStart() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::text::XTextRange > SAL_CALL
-                            getEnd() override;
-    virtual OUString SAL_CALL getString() override;
-    virtual void SAL_CALL   setString( const OUString& aString ) override;
+                            getEnd() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getString() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setString( const OUString& aString )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL
-                            createEnumeration() override;
+                            createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCell
-    virtual OUString SAL_CALL getFormula() override;
-    virtual void SAL_CALL   setFormula( const OUString& aFormula ) override;
-    virtual void SAL_CALL   setFormulaResult( double nValue ) override;
-    virtual void SAL_CALL   setFormulaString( const OUString& aFormula ) override;
-    virtual double SAL_CALL getValue() override;
-    virtual void SAL_CALL   setValue( double nValue ) override;
-    virtual css::table::CellContentType SAL_CALL getType() override;
-    virtual sal_Int32 SAL_CALL getError() override;
+    virtual OUString SAL_CALL getFormula() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setFormula( const OUString& aFormula )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setFormulaResult( double nValue )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setFormulaString( const OUString& aFormula )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual double SAL_CALL getValue() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setValue( double nValue ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::table::CellContentType SAL_CALL getType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getError() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XFormulaTokens
-    virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL getTokens() override;
-    virtual void SAL_CALL   setTokens( const css::uno::Sequence< css::sheet::FormulaToken >& aTokens ) override;
+    virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL getTokens()
+                                throw (css::uno::RuntimeException,
+                                       std::exception) override;
+    virtual void SAL_CALL   setTokens( const css::uno::Sequence< css::sheet::FormulaToken >& aTokens )
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XCellAddressable
-    virtual css::table::CellAddress SAL_CALL getCellAddress() override;
+    virtual css::table::CellAddress SAL_CALL getCellAddress()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetAnnotationAnchor
     virtual css::uno::Reference< css::sheet::XSheetAnnotation > SAL_CALL
-                            getAnnotation() override;
+                            getAnnotation() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTextFieldsSupplier
     virtual css::uno::Reference< css::container::XEnumerationAccess > SAL_CALL
-                            getTextFields() override;
+                            getTextFields() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL
-                            getTextFieldMasters() override;
+                            getTextFieldMasters() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet override due to cell properties
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XActionLockable
-    virtual sal_Bool SAL_CALL isActionLocked() override;
-    virtual void SAL_CALL   addActionLock() override;
-    virtual void SAL_CALL   removeActionLock() override;
-    virtual void SAL_CALL   setActionLocks( sal_Int16 nLock ) override;
-    virtual sal_Int16 SAL_CALL resetActionLocks() override;
+    virtual sal_Bool SAL_CALL isActionLocked() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   addActionLock() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeActionLock() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setActionLocks( sal_Int16 nLock )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL resetActionLocks() throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScTableSheetObj : public ScCellRangeObj,
@@ -772,7 +971,6 @@ class ScTableSheetObj : public ScCellRangeObj,
                         public css::sheet::XSheetPageBreak,
                         public css::sheet::XCellRangeMovement,
                         public css::table::XTableChartsSupplier,
-                        public css::table::XTablePivotChartsSupplier,
                         public css::sheet::XDataPilotTablesSupplier,
                         public css::sheet::XScenariosSupplier,
                         public css::sheet::XSheetAnnotationsSupplier,
@@ -798,177 +996,237 @@ private:
 protected:
     virtual const SfxItemPropertyMap& GetItemPropertyMap() override;
     virtual void GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& ) override;
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue ) override;
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                      css::uno::RuntimeException,
+                                      std::exception) override;
 
 public:
                             ScTableSheetObj(ScDocShell* pDocSh, SCTAB nTab);
-    virtual                 ~ScTableSheetObj() override;
+    virtual                 ~ScTableSheetObj();
 
     void                    InitInsertSheet(ScDocShell* pDocSh, SCTAB nTab);
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
                             // XSpreadsheet
     virtual css::uno::Reference< css::sheet::XSheetCellCursor >
-                            SAL_CALL createCursor() override;
+                            SAL_CALL createCursor() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::sheet::XSheetCellCursor > SAL_CALL
                             createCursorByRange( const css::uno::Reference<
-                                css::sheet::XSheetCellRange >& aRange ) override;
+                                css::sheet::XSheetCellRange >& aRange )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetCellRange
     virtual css::uno::Reference< css::sheet::XSpreadsheet > SAL_CALL
-                            getSpreadsheet() override;
+                            getSpreadsheet() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellRange
     virtual css::uno::Reference< css::table::XCell > SAL_CALL
-                            getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow ) override;
+                            getCellByPosition( sal_Int32 nColumn, sal_Int32 nRow )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::table::XCellRange > SAL_CALL
                             getCellRangeByPosition( sal_Int32 nLeft, sal_Int32 nTop,
-                                sal_Int32 nRight, sal_Int32 nBottom ) override;
+                                sal_Int32 nRight, sal_Int32 nBottom )
+                                    throw(css::lang::IndexOutOfBoundsException,
+                                        css::uno::RuntimeException, std::exception) override;
     using ScCellRangeObj::getCellRangeByName;
     virtual css::uno::Reference< css::table::XCellRange > SAL_CALL
-                            getCellRangeByName( const OUString& aRange ) override;
+                            getCellRangeByName( const OUString& aRange )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetPageBreak
     virtual css::uno::Sequence< css::sheet::TablePageBreakData > SAL_CALL
-                            getColumnPageBreaks() override;
+                            getColumnPageBreaks() throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::sheet::TablePageBreakData > SAL_CALL
-                            getRowPageBreaks() override;
-    virtual void SAL_CALL   removeAllManualPageBreaks() override;
+                            getRowPageBreaks() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeAllManualPageBreaks() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XCellRangeMovement
     virtual void SAL_CALL   insertCells( const css::table::CellRangeAddress& aRange,
-                                css::sheet::CellInsertMode nMode ) override;
+                                css::sheet::CellInsertMode nMode )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   removeRange( const css::table::CellRangeAddress& aRange,
-                                css::sheet::CellDeleteMode nMode ) override;
+                                css::sheet::CellDeleteMode nMode )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   moveRange( const css::table::CellAddress& aDestination,
-                                const css::table::CellRangeAddress& aSource ) override;
+                                const css::table::CellRangeAddress& aSource )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   copyRange( const css::table::CellAddress& aDestination,
-                                const css::table::CellRangeAddress& aSource ) override;
+                                const css::table::CellRangeAddress& aSource )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTableChartsSupplier
     virtual css::uno::Reference< css::table::XTableCharts > SAL_CALL
-                            getCharts() override;
-
-                            // XTablePivotChartsSupplier
-    virtual css::uno::Reference<css::table::XTablePivotCharts> SAL_CALL
-                            getPivotCharts() override;
+                            getCharts() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XDataPilotTablesSupplier
     virtual css::uno::Reference< css::sheet::XDataPilotTables > SAL_CALL
-                            getDataPilotTables() override;
+                            getDataPilotTables() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XScenariosSupplier
     virtual css::uno::Reference< css::sheet::XScenarios > SAL_CALL
-                            getScenarios() override;
+                            getScenarios() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetAnnotationsSupplier
     virtual css::uno::Reference< css::sheet::XSheetAnnotations > SAL_CALL
-                            getAnnotations() override;
+                            getAnnotations() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XDrawPageSupplier
     virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL
-                            getDrawPage() override;
+                            getDrawPage() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPrintAreas
     virtual css::uno::Sequence< css::table::CellRangeAddress > SAL_CALL
-                            getPrintAreas() override;
+                            getPrintAreas() throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setPrintAreas( const css::uno::Sequence<
-                                css::table::CellRangeAddress >& aPrintAreas ) override;
-    virtual sal_Bool SAL_CALL getPrintTitleColumns() override;
-    virtual void SAL_CALL   setPrintTitleColumns( sal_Bool bPrintTitleColumns ) override;
-    virtual css::table::CellRangeAddress SAL_CALL getTitleColumns() override;
+                                css::table::CellRangeAddress >& aPrintAreas )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getPrintTitleColumns() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setPrintTitleColumns( sal_Bool bPrintTitleColumns )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::table::CellRangeAddress SAL_CALL getTitleColumns()
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setTitleColumns(
-                                const css::table::CellRangeAddress& aTitleColumns ) override;
-    virtual sal_Bool SAL_CALL getPrintTitleRows() override;
-    virtual void SAL_CALL   setPrintTitleRows( sal_Bool bPrintTitleRows ) override;
-    virtual css::table::CellRangeAddress SAL_CALL getTitleRows() override;
+                                const css::table::CellRangeAddress& aTitleColumns )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getPrintTitleRows() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setPrintTitleRows( sal_Bool bPrintTitleRows )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::table::CellRangeAddress SAL_CALL getTitleRows()
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setTitleRows(
-                                const css::table::CellRangeAddress& aTitleRows ) override;
+                                const css::table::CellRangeAddress& aTitleRows )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetLinkable
-    virtual css::sheet::SheetLinkMode SAL_CALL getLinkMode() override;
-    virtual void SAL_CALL   setLinkMode( css::sheet::SheetLinkMode nLinkMode ) override;
-    virtual OUString SAL_CALL getLinkUrl() override;
-    virtual void SAL_CALL   setLinkUrl( const OUString& aLinkUrl ) override;
-    virtual OUString SAL_CALL getLinkSheetName() override;
-    virtual void SAL_CALL   setLinkSheetName( const OUString& aLinkSheetName ) override;
+    virtual css::sheet::SheetLinkMode SAL_CALL getLinkMode()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setLinkMode( css::sheet::SheetLinkMode nLinkMode )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getLinkUrl() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setLinkUrl( const OUString& aLinkUrl )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getLinkSheetName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setLinkSheetName( const OUString& aLinkSheetName )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   link( const OUString& aUrl,
                                 const OUString& aSheetName,
                                 const OUString& aFilterName,
                                 const OUString& aFilterOptions,
-                                css::sheet::SheetLinkMode nMode ) override;
+                                css::sheet::SheetLinkMode nMode )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetAuditing
-    virtual sal_Bool SAL_CALL hideDependents( const css::table::CellAddress& aPosition ) override;
-    virtual sal_Bool SAL_CALL hidePrecedents( const css::table::CellAddress& aPosition ) override;
-    virtual sal_Bool SAL_CALL showDependents( const css::table::CellAddress& aPosition ) override;
-    virtual sal_Bool SAL_CALL showPrecedents( const css::table::CellAddress& aPosition ) override;
-    virtual sal_Bool SAL_CALL showErrors( const css::table::CellAddress& aPosition ) override;
-    virtual sal_Bool SAL_CALL showInvalid() override;
-    virtual void SAL_CALL   clearArrows() override;
+    virtual sal_Bool SAL_CALL hideDependents( const css::table::CellAddress& aPosition )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hidePrecedents( const css::table::CellAddress& aPosition )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL showDependents( const css::table::CellAddress& aPosition )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL showPrecedents( const css::table::CellAddress& aPosition )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL showErrors( const css::table::CellAddress& aPosition )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL showInvalid() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   clearArrows() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XSheetOutline
     virtual void SAL_CALL   group( const css::table::CellRangeAddress& aRange,
-                                css::table::TableOrientation nOrientation ) override;
+                                css::table::TableOrientation nOrientation )
+                                    throw (css::uno::RuntimeException,
+                                           std::exception) override;
     virtual void SAL_CALL   ungroup( const css::table::CellRangeAddress& aRange,
-                                css::table::TableOrientation nOrientation ) override;
-    virtual void SAL_CALL   autoOutline( const css::table::CellRangeAddress& aRange ) override;
-    virtual void SAL_CALL   clearOutline() override;
-    virtual void SAL_CALL   hideDetail( const css::table::CellRangeAddress& aRange ) override;
-    virtual void SAL_CALL   showDetail( const css::table::CellRangeAddress& aRange ) override;
+                                css::table::TableOrientation nOrientation )
+                                    throw (css::uno::RuntimeException,
+                                           std::exception) override;
+    virtual void SAL_CALL   autoOutline( const css::table::CellRangeAddress& aRange )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL   clearOutline()
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL   hideDetail( const css::table::CellRangeAddress& aRange )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
+    virtual void SAL_CALL   showDetail( const css::table::CellRangeAddress& aRange )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void SAL_CALL   showLevel( sal_Int16 nLevel,
-                                css::table::TableOrientation nOrientation ) override;
+                                css::table::TableOrientation nOrientation )
+                                    throw(css::uno::RuntimeException,
+                                          std::exception) override;
 
                             // XProtectable
-    virtual void SAL_CALL   protect( const OUString& aPassword ) override;
-    virtual void SAL_CALL   unprotect( const OUString& aPassword ) override;
-    virtual sal_Bool SAL_CALL isProtected() override;
+    virtual void SAL_CALL   protect( const OUString& aPassword )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   unprotect( const OUString& aPassword )
+                                throw(css::lang::IllegalArgumentException,
+                                    css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isProtected() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XScenario
-    virtual sal_Bool SAL_CALL getIsScenario() override;
-    virtual OUString SAL_CALL getScenarioComment() override;
-    virtual void SAL_CALL   setScenarioComment( const OUString& aScenarioComment ) override;
+    virtual sal_Bool SAL_CALL getIsScenario() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getScenarioComment() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setScenarioComment( const OUString& aScenarioComment )
+                                throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   addRanges( const css::uno::Sequence<
-                                css::table::CellRangeAddress >& aRanges ) override;
-    virtual void SAL_CALL   apply() override;
+                                css::table::CellRangeAddress >& aRanges )
+                                    throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   apply() throw(css::uno::RuntimeException, std::exception) override;
                             // XScenarioEnhanced
     virtual css::uno::Sequence< css::table::CellRangeAddress > SAL_CALL
-                            getRanges(  ) override;
+                            getRanges(  )
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                             // XExternalSheetName
-    virtual void SAL_CALL   setExternalName( const OUString& aUrl, const OUString& aSheetName ) override;
+    virtual void SAL_CALL   setExternalName( const OUString& aUrl, const OUString& aSheetName )
+                                throw (css::container::ElementExistException,
+                                       css::uno::RuntimeException, std::exception) override;
 
                             // XEventsSupplier
-    virtual css::uno::Reference< css::container::XNameReplace > SAL_CALL getEvents() override;
+    virtual css::uno::Reference< css::container::XNameReplace > SAL_CALL getEvents()
+                                throw (css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet override due to sheet properties
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XUnoTunnel
     virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence<
-                                    sal_Int8 >& aIdentifier ) override;
+                                    sal_Int8 >& aIdentifier )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
     static const css::uno::Sequence<sal_Int8>& getUnoTunnelId();
     static ScTableSheetObj* getImplementation(const css::uno::Reference< css::uno::XInterface>& rObj);
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScTableColumnObj : public ScCellRangeObj,
@@ -980,35 +1238,48 @@ private:
 protected:
     virtual const SfxItemPropertyMap& GetItemPropertyMap() override;
     virtual void GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& ) override;
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue ) override;
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                      css::uno::RuntimeException,
+                                      std::exception) override;
 
 public:
                             ScTableColumnObj(ScDocShell* pDocSh, SCCOL nCol, SCTAB nTab);
-    virtual                 ~ScTableColumnObj() override;
+    virtual                 ~ScTableColumnObj();
 
     virtual css::uno::Any SAL_CALL queryInterface(
-                                const css::uno::Type & rType ) override;
+                                const css::uno::Type & rType )
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   acquire() throw() override;
     virtual void SAL_CALL   release() throw() override;
 
                             // XNamed
-    virtual OUString SAL_CALL getName() override;
-    virtual void SAL_CALL   setName( const OUString& aName ) override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setName( const OUString& aName )
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XPropertySet override due to column properties
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScTableRowObj : public ScCellRangeObj
@@ -1019,22 +1290,31 @@ private:
 protected:
     virtual const SfxItemPropertyMap& GetItemPropertyMap() override;
     virtual void GetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                css::uno::Any& ) override;
+                                css::uno::Any& )
+                                throw(css::uno::RuntimeException,
+                                      std::exception) override;
     virtual void            SetOnePropertyValue( const SfxItemPropertySimpleEntry* pEntry,
-                                                const css::uno::Any& aValue ) override;
+                                                const css::uno::Any& aValue )
+                                throw(css::lang::IllegalArgumentException,
+                                      css::uno::RuntimeException,
+                                      std::exception) override;
 
 public:
                             ScTableRowObj(ScDocShell* pDocSh, SCROW nRow, SCTAB nTab);
-    virtual                 ~ScTableRowObj() override;
+    virtual                 ~ScTableRowObj();
 
                             // XPropertySet override due to row properties
     virtual css::uno::Reference< css::beans::XPropertySetInfo >
-                            SAL_CALL getPropertySetInfo() override;
+                            SAL_CALL getPropertySetInfo()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScCellsObj : public cppu::WeakImplHelper<
@@ -1048,22 +1328,26 @@ private:
 
 public:
                             ScCellsObj(ScDocShell* pDocSh, const ScRangeList& rR);
-    virtual                 ~ScCellsObj() override;
+    virtual                 ~ScCellsObj();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL
-                            createEnumeration() override;
+                            createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScCellsEnumeration : public cppu::WeakImplHelper<
@@ -1084,18 +1368,24 @@ private:
 
 public:
                             ScCellsEnumeration(ScDocShell* pDocSh, const ScRangeList& rR);
-    virtual                 ~ScCellsEnumeration() override;
+    virtual                 ~ScCellsEnumeration();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements() override;
-    virtual css::uno::Any SAL_CALL nextElement() override;
+    virtual sal_Bool SAL_CALL hasMoreElements() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL nextElement()
+                                throw(css::container::NoSuchElementException,
+                                        css::lang::WrappedTargetException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScCellFormatsObj : public cppu::WeakImplHelper<
@@ -1113,26 +1403,33 @@ private:
 
 public:
                             ScCellFormatsObj(ScDocShell* pDocSh, const ScRange& rR);
-    virtual                 ~ScCellFormatsObj() override;
+    virtual                 ~ScCellFormatsObj();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL
-                            createEnumeration() override;
+                            createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScCellFormatsEnumeration : public cppu::WeakImplHelper<
@@ -1154,18 +1451,24 @@ private:
 
 public:
                             ScCellFormatsEnumeration(ScDocShell* pDocSh, const ScRange& rR);
-    virtual                 ~ScCellFormatsEnumeration() override;
+    virtual                 ~ScCellFormatsEnumeration();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements() override;
-    virtual css::uno::Any SAL_CALL nextElement() override;
+    virtual sal_Bool SAL_CALL hasMoreElements() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL nextElement()
+                                throw(css::container::NoSuchElementException,
+                                        css::lang::WrappedTargetException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 typedef std::vector< ScRangeList > ScMyRangeLists;
@@ -1181,28 +1484,38 @@ private:
     ScRange                         aTotalRange;
     ScMyRangeLists                  aRangeLists;
 
+private:
+    void                            GetObjects_Impl();
+
 public:
                             ScUniqueCellFormatsObj(ScDocShell* pDocSh, const ScRange& rR);
-    virtual                 ~ScUniqueCellFormatsObj() override;
+    virtual                 ~ScUniqueCellFormatsObj();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index )
+                                throw(css::lang::IndexOutOfBoundsException,
+                                    css::lang::WrappedTargetException,
+                                    css::uno::RuntimeException, std::exception) override;
 
                             // XEnumerationAccess
     virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL
-                            createEnumeration() override;
+                            createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 class ScUniqueCellFormatsEnumeration : public cppu::WeakImplHelper<
@@ -1217,18 +1530,24 @@ private:
 
 public:
                             ScUniqueCellFormatsEnumeration(ScDocShell* pDocShell, const ScMyRangeLists& rRangeLists);
-    virtual                 ~ScUniqueCellFormatsEnumeration() override;
+    virtual                 ~ScUniqueCellFormatsEnumeration();
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
                             // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements() override;
-    virtual css::uno::Any SAL_CALL nextElement() override;
+    virtual sal_Bool SAL_CALL hasMoreElements() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL nextElement()
+                                throw(css::container::NoSuchElementException,
+                                        css::lang::WrappedTargetException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

@@ -45,13 +45,13 @@ protected:
     AccObjectManagerAgent* pAgent;
 public:
     AccEventListener( css::accessibility::XAccessible* pAcc, AccObjectManagerAgent* Agent);
-    virtual ~AccEventListener() override;
+    virtual ~AccEventListener();
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException) override;
 
     // XAccessibleEventListener
-    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) override;
+    virtual void SAL_CALL notifyEvent( const css::accessibility::AccessibleEventObject& aEvent ) throw (css::uno::RuntimeException) override;
 
     //for name changed event
     virtual void HandleNameChangedEvent(css::uno::Any name);

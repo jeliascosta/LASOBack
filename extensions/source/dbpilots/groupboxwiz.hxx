@@ -60,6 +60,9 @@ namespace dbp
         virtual bool                onFinish() override;
 
         virtual bool                approveControl(sal_Int16 _nClassId) override;
+
+    protected:
+        void createRadios();
     };
 
     class OGBWPage : public OControlWizardPage
@@ -84,7 +87,7 @@ namespace dbp
 
     public:
         explicit ORadioSelectionPage( OControlWizard* _pParent );
-        virtual ~ORadioSelectionPage() override;
+        virtual ~ORadioSelectionPage();
         virtual void dispose() override;
 
     protected:
@@ -96,9 +99,9 @@ namespace dbp
         virtual bool        commitPage( ::svt::WizardTypes::CommitPageReason _eReason ) override;
         virtual bool        canAdvance() const override;
 
-        DECL_LINK( OnMoveEntry, Button*, void );
-        DECL_LINK( OnEntrySelected, ListBox&, void );
-        DECL_LINK( OnNameModified, Edit&, void );
+        DECL_LINK_TYPED( OnMoveEntry, Button*, void );
+        DECL_LINK_TYPED( OnEntrySelected, ListBox&, void );
+        DECL_LINK_TYPED( OnNameModified, Edit&, void );
 
         void implCheckMoveButtons();
     };
@@ -112,7 +115,7 @@ namespace dbp
 
     public:
         explicit ODefaultFieldSelectionPage( OControlWizard* _pParent );
-        virtual ~ODefaultFieldSelectionPage() override;
+        virtual ~ODefaultFieldSelectionPage();
         virtual void dispose() override;
 
     protected:
@@ -135,7 +138,7 @@ namespace dbp
 
     public:
         explicit OOptionValuesPage( OControlWizard* _pParent );
-        virtual ~OOptionValuesPage() override;
+        virtual ~OOptionValuesPage();
         virtual void dispose() override;
 
     protected:
@@ -148,7 +151,7 @@ namespace dbp
 
         void implTraveledOptions();
 
-        DECL_LINK( OnOptionSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnOptionSelected, ListBox&, void );
     };
 
     class OOptionDBFieldPage : public ODBFieldPage
@@ -157,6 +160,8 @@ namespace dbp
         explicit OOptionDBFieldPage( OControlWizard* _pParent );
 
     protected:
+        OOptionGroupSettings& getSettings() { return static_cast<OGroupBoxWizard*>(getDialog())->getSettings(); }
+
         // ODBFieldPage overridables
         virtual OUString& getDBFieldSetting() override;
     };
@@ -168,7 +173,7 @@ namespace dbp
 
     public:
         explicit OFinalizeGBWPage( OControlWizard* _pParent );
-        virtual ~OFinalizeGBWPage() override;
+        virtual ~OFinalizeGBWPage();
         virtual void dispose() override;
 
     protected:

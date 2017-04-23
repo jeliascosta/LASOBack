@@ -55,10 +55,8 @@ class NeonUri
         void calculateURI ();
 
     public:
-        /// @throws DAVException
-        explicit NeonUri( const OUString & inUri );
-        /// @throws DAVException
-        explicit NeonUri( const ne_uri * inUri );
+        explicit NeonUri( const OUString & inUri ) throw ( DAVException );
+        explicit NeonUri( const ne_uri * inUri ) throw ( DAVException );
         ~NeonUri( );
 
         bool operator== ( const NeonUri & rOther ) const;

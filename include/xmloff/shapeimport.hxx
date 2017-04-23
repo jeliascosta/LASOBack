@@ -72,7 +72,9 @@ enum SdXMLGroupShapeElemTokenMap
 
     XML_TOK_GROUP_ANNOTATION,
 
-    XML_TOK_GROUP_A
+    XML_TOK_GROUP_A,
+
+    XML_TOK_GROUP_LAST
 };
 
 enum SdXMLFrameShapeElemTokenMap
@@ -82,9 +84,12 @@ enum SdXMLFrameShapeElemTokenMap
     XML_TOK_FRAME_OBJECT,
     XML_TOK_FRAME_OBJECT_OLE,
     XML_TOK_FRAME_PLUGIN,
+    XML_TOK_FRAME_FRAME,
     XML_TOK_FRAME_FLOATING_FRAME,
     XML_TOK_FRAME_APPLET,
-    XML_TOK_FRAME_TABLE
+    XML_TOK_FRAME_TABLE,
+
+    XML_TOK_FRAME_LAST
 };
 
 enum SdXML3DSceneShapeElemTokenMap
@@ -93,7 +98,20 @@ enum SdXML3DSceneShapeElemTokenMap
     XML_TOK_3DSCENE_3DCUBE,
     XML_TOK_3DSCENE_3DSPHERE,
     XML_TOK_3DSCENE_3DLATHE,
-    XML_TOK_3DSCENE_3DEXTRUDE
+    XML_TOK_3DSCENE_3DEXTRUDE,
+
+    XML_TOK_3DSCENE_LAST
+};
+
+enum SdXMLShapeAttrTokenMap
+{
+    XML_TOK_SHAPE_NAME,
+    XML_TOK_SHAPE_DRAWSTYLE_NAME_GRAPHICS,
+    XML_TOK_SHAPE_PRESENTATION_CLASS,
+    XML_TOK_SHAPE_DRAWSTYLE_NAME_PRESENTATION,
+    XML_TOK_SHAPE_TRANSFORM,
+    XML_TOK_SHAPE_IS_PLACEHOLDER,
+    XML_TOK_SHAPE_IS_USER_TRANSFORMED
 };
 
 enum SdXML3DObjectAttrTokenMap
@@ -118,6 +136,33 @@ enum SdXML3DSphereObjectAttrTokenMap
 {
     XML_TOK_3DSPHEREOBJ_CENTER,
     XML_TOK_3DSPHEREOBJ_SIZE
+};
+
+enum SdXMLPolygonShapeAttrTokenMap
+{
+    XML_TOK_POLYGONSHAPE_VIEWBOX,
+    XML_TOK_POLYGONSHAPE_POINTS
+};
+
+enum SdXMLPathShapeAttrTokenMap
+{
+    XML_TOK_PATHSHAPE_VIEWBOX,
+    XML_TOK_PATHSHAPE_D
+};
+
+enum SdXML3DSceneShapeAttrTokenMap
+{
+    XML_TOK_3DSCENESHAPE_TRANSFORM,
+    XML_TOK_3DSCENESHAPE_VRP,
+    XML_TOK_3DSCENESHAPE_VPN,
+    XML_TOK_3DSCENESHAPE_VUP,
+    XML_TOK_3DSCENESHAPE_PROJECTION,
+    XML_TOK_3DSCENESHAPE_DISTANCE,
+    XML_TOK_3DSCENESHAPE_FOCAL_LENGTH,
+    XML_TOK_3DSCENESHAPE_SHADOW_SLANT,
+    XML_TOK_3DSCENESHAPE_SHADE_MODE,
+    XML_TOK_3DSCENESHAPE_AMBIENT_COLOR,
+    XML_TOK_3DSCENESHAPE_LIGHTING_MODE
 };
 
 enum SdXML3DLightAttrTokenMap
@@ -145,7 +190,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
-    virtual ~SdXML3DLightContext() override;
+    virtual ~SdXML3DLightContext();
 
     sal_Int32 GetDiffuseColor() { return maDiffuseColor; }
     const ::basegfx::B3DVector& GetDirection() { return maDirection; }
@@ -159,7 +204,7 @@ protected:
     SvXMLImport& mrImport;
 
     // list for local light contexts
-    ::std::vector< rtl::Reference< SdXML3DLightContext > >
+    ::std::vector< SdXML3DLightContext* >
                                 maList;
 
     // local parameters which need to be read
@@ -183,6 +228,7 @@ protected:
 
 public:
     SdXML3DSceneAttributesHelper( SvXMLImport& rImporter );
+    ~SdXML3DSceneAttributesHelper();
 
     /** creates a 3d light context and adds it to the internal list for later processing */
     SvXMLImportContext * create3DLightContext( sal_uInt16 nPrfx, const OUString& rLName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
@@ -221,26 +267,26 @@ class XMLOFF_DLLPUBLIC XMLShapeImportHelper : public salhelper::SimpleReferenceO
 {
     std::unique_ptr<XMLShapeImportHelperImpl> mpImpl;
 
-    std::shared_ptr<XMLShapeImportPageContextImpl> mpPageContext;
+    XMLShapeImportPageContextImpl*  mpPageContext;
 
     // PropertySetMappers and factory
-    rtl::Reference<XMLSdPropHdlFactory>       mpSdPropHdlFactory;
-    rtl::Reference<SvXMLImportPropertyMapper> mpPropertySetMapper;
-    rtl::Reference<SvXMLImportPropertyMapper> mpPresPagePropsMapper;
+    XMLSdPropHdlFactory*        mpSdPropHdlFactory;
+    SvXMLImportPropertyMapper*      mpPropertySetMapper;
+    SvXMLImportPropertyMapper*      mpPresPagePropsMapper;
 
     // contexts for Style and AutoStyle import
-    rtl::Reference<SvXMLStylesContext> mxStylesContext;
-    rtl::Reference<SvXMLStylesContext> mxAutoStylesContext;
+    SvXMLStylesContext*         mpStylesContext;
+    SvXMLStylesContext*         mpAutoStylesContext;
 
     // contexts for xShape contents TokenMaps
-    std::unique_ptr<SvXMLTokenMap>              mpGroupShapeElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mpFrameShapeElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DSceneShapeElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DObjectAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DPolygonBasedAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DCubeObjectAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DSphereObjectAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap>              mp3DLightAttrTokenMap;
+    SvXMLTokenMap*              mpGroupShapeElemTokenMap;
+    SvXMLTokenMap*              mpFrameShapeElemTokenMap;
+    SvXMLTokenMap*              mp3DSceneShapeElemTokenMap;
+    SvXMLTokenMap*              mp3DObjectAttrTokenMap;
+    SvXMLTokenMap*              mp3DPolygonBasedAttrTokenMap;
+    SvXMLTokenMap*              mp3DCubeObjectAttrTokenMap;
+    SvXMLTokenMap*              mp3DSphereObjectAttrTokenMap;
+    SvXMLTokenMap*              mp3DLightAttrTokenMap;
 
     const OUString       msStartShape;
     const OUString       msEndShape;
@@ -257,7 +303,7 @@ public:
         const css::uno::Reference< css::frame::XModel>& rModel,
     SvXMLImportPropertyMapper *pExtMapper=nullptr );
 
-    virtual ~XMLShapeImportHelper() override;
+    virtual ~XMLShapeImportHelper();
 
     SvXMLShapeContext* CreateGroupChildContext(
         SvXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -289,14 +335,14 @@ public:
     const SvXMLTokenMap& Get3DLightAttrTokenMap();
 
     // Styles and AutoStyles contexts
-    SvXMLStylesContext* GetStylesContext() const { return mxStylesContext.get(); }
+    SvXMLStylesContext* GetStylesContext() const { return mpStylesContext; }
     void SetStylesContext(SvXMLStylesContext* pNew);
-    SvXMLStylesContext* GetAutoStylesContext() const { return mxAutoStylesContext.get(); }
+    SvXMLStylesContext* GetAutoStylesContext() const { return mpAutoStylesContext; }
     void SetAutoStylesContext(SvXMLStylesContext* pNew);
 
     // get factories and mappers
-    SvXMLImportPropertyMapper* GetPropertySetMapper() const { return mpPropertySetMapper.get(); }
-    SvXMLImportPropertyMapper* GetPresPagePropsMapper() const { return mpPresPagePropsMapper.get(); }
+    SvXMLImportPropertyMapper* GetPropertySetMapper() const { return mpPropertySetMapper; }
+    SvXMLImportPropertyMapper* GetPresPagePropsMapper() const { return mpPresPagePropsMapper; }
 
     // this function is called whenever the implementation classes like to add this new
     // shape to the given XShapes.
@@ -330,6 +376,11 @@ public:
     void addGluePointMapping( css::uno::Reference< css::drawing::XShape >& xShape,
                               sal_Int32 nSourceId, sal_Int32 nDestinnationId );
 
+    /** find mapping for given DestinationID. This allows to extract the original draw:id imported with a draw:glue-point */
+    sal_Int32 findGluePointMapping(
+        const css::uno::Reference< css::drawing::XShape >& xShape,
+        sal_Int32 nDestinnationId ) const;
+
     /** moves all current DestinationId's for rXShape by n */
     void moveGluePointMapping( const css::uno::Reference< css::drawing::XShape >& xShape, const sal_Int32 n );
 
@@ -358,7 +409,7 @@ public:
     /** queries the capability of the current model to create presentation shapes */
     bool IsPresentationShapesSupported();
 
-    XMLSdPropHdlFactory* GetSdPropHdlFactory() const { return mpSdPropHdlFactory.get(); }
+    XMLSdPropHdlFactory* GetSdPropHdlFactory() const { return mpSdPropHdlFactory; }
 
     const rtl::Reference< XMLTableImport >&     GetShapeTableImport();
 };

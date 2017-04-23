@@ -45,6 +45,7 @@ AccTableEventListener::~AccTableEventListener()
  *  @param AccessibleEventObject    the event object which contains information about event
  */
 void  AccTableEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
+throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 

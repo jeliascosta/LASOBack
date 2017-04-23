@@ -28,7 +28,7 @@ using namespace ::com::sun::star::io;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::xml::sax;
 
-FragmentBaseData::FragmentBaseData( XmlFilterBase& rFilter, const OUString& rFragmentPath, RelationsRef const & xRelations ) :
+FragmentBaseData::FragmentBaseData( XmlFilterBase& rFilter, const OUString& rFragmentPath, RelationsRef xRelations ) :
     mrFilter( rFilter ),
     maFragmentPath( rFragmentPath ),
     mxRelations( xRelations )
@@ -51,48 +51,48 @@ FragmentHandler::~FragmentHandler()
 
 // com.sun.star.xml.sax.XFastDocumentHandler interface ------------------------
 
-void FragmentHandler::startDocument()
+void FragmentHandler::startDocument() throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void FragmentHandler::endDocument()
+void FragmentHandler::endDocument() throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void FragmentHandler::setDocumentLocator( const Reference< XLocator >& rxLocator )
+void FragmentHandler::setDocumentLocator( const Reference< XLocator >& rxLocator ) throw( SAXException, RuntimeException, std::exception )
 {
     implSetLocator( rxLocator );
 }
 
 // com.sun.star.xml.sax.XFastContextHandler interface -------------------------
 
-void FragmentHandler::startFastElement( sal_Int32, const Reference< XFastAttributeList >& )
+void FragmentHandler::startFastElement( sal_Int32, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void FragmentHandler::startUnknownElement( const OUString&, const OUString&, const Reference< XFastAttributeList >& )
+void FragmentHandler::startUnknownElement( const OUString&, const OUString&, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void FragmentHandler::endFastElement( sal_Int32 )
+void FragmentHandler::endFastElement( sal_Int32 ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-void FragmentHandler::endUnknownElement( const OUString&, const OUString& )
+void FragmentHandler::endUnknownElement( const OUString&, const OUString& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 
-Reference< XFastContextHandler > FragmentHandler::createFastChildContext( sal_Int32, const Reference< XFastAttributeList >& )
-{
-    return nullptr;
-}
-
-Reference< XFastContextHandler > FragmentHandler::createUnknownChildContext( const OUString&, const OUString&, const Reference< XFastAttributeList >& )
+Reference< XFastContextHandler > FragmentHandler::createFastChildContext( sal_Int32, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
 {
     return nullptr;
 }
 
-void FragmentHandler::characters( const OUString& )
+Reference< XFastContextHandler > FragmentHandler::createUnknownChildContext( const OUString&, const OUString&, const Reference< XFastAttributeList >& ) throw( SAXException, RuntimeException, std::exception )
+{
+    return nullptr;
+}
+
+void FragmentHandler::characters( const OUString& ) throw( SAXException, RuntimeException, std::exception )
 {
 }
 

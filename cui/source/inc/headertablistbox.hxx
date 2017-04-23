@@ -30,11 +30,11 @@ private:
     VclPtr<HeaderBar>               maHeaderBar;
     VclPtr<SvHeaderTabListBox>      maListBox;
 protected:
-    DECL_LINK( HeaderEndDrag_Impl, HeaderBar*, void );
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+    DECL_LINK_TYPED( HeaderEndDrag_Impl, HeaderBar*, void );
+    virtual bool                Notify( NotifyEvent& rNEvt ) override;
 public:
     MacroEventListBox( vcl::Window* pParent, WinBits nStyle );
-    virtual ~MacroEventListBox() override;
+    virtual ~MacroEventListBox();
     virtual void dispose() override;
 
     virtual void Resize() override;

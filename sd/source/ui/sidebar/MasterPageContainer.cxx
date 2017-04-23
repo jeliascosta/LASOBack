@@ -53,7 +53,7 @@
 #include "pres.hxx"
 #include <osl/mutex.hxx>
 #include <osl/getglobalmutex.hxx>
-#include <xmloff/autolayout.hxx>
+#include <memory>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -120,7 +120,7 @@ public:
 
 private:
     Implementation();
-    virtual ~Implementation() override;
+    virtual ~Implementation();
 
     class Deleter { public:
         void operator() (Implementation* pObject) { delete pObject; }
@@ -164,6 +164,8 @@ private:
 
     Size maSmallPreviewSizePixel;
     Size maLargePreviewSizePixel;
+
+    bool mbContainerCleaningPending;
 
     typedef ::std::pair<MasterPageContainerChangeEvent::EventType,Token> EventData;
 
@@ -236,7 +238,7 @@ void MasterPageContainer::SetPreviewSize (PreviewSize eSize)
 {
     mePreviewSize = eSize;
     mpImpl->FireContainerChange(
-        MasterPageContainerChangeEvent::EventType::SIZE_CHANGED,
+        MasterPageContainerChangeEvent::SIZE_CHANGED,
         NIL_TOKEN);
 }
 
@@ -492,7 +494,9 @@ MasterPageContainer::Implementation::Implementation()
       maSmallPreviewNotAvailable(),
       maChangeListeners(),
       maSmallPreviewSizePixel(),
-      maLargePreviewSizePixel()
+      maLargePreviewSizePixel(),
+      mbContainerCleaningPending(true)
+
 {
     UpdatePreviewSizePixel();
 }
@@ -597,7 +601,7 @@ void MasterPageContainer::Implementation::UpdatePreviewSizePixel()
         maSmallPreviewSizePixel.Height() = nNewSmallHeight;
         maLargePreviewSizePixel.Height() = nNewLargeHeight;
         FireContainerChange(
-            MasterPageContainerChangeEvent::EventType::SIZE_CHANGED,
+            MasterPageContainerChangeEvent::SIZE_CHANGED,
             NIL_TOKEN);
     }
 }
@@ -635,7 +639,8 @@ MasterPageContainer::Token MasterPageContainer::Implementation::PutMasterPage (
 
         if ( ! bIgnore)
         {
-            CleanContainer();
+            if (mbContainerCleaningPending)
+                CleanContainer();
 
             aResult = maContainer.size();
             rpDescriptor->SetToken(aResult);
@@ -657,7 +662,7 @@ MasterPageContainer::Token MasterPageContainer::Implementation::PutMasterPage (
             maContainer.push_back(rpDescriptor);
             aEntry = maContainer.end()-1;
 
-            FireContainerChange(MasterPageContainerChangeEvent::EventType::CHILD_ADDED,aResult);
+            FireContainerChange(MasterPageContainerChangeEvent::CHILD_ADDED,aResult);
         }
     }
     else
@@ -963,11 +968,11 @@ bool MasterPageContainer::Implementation::UpdateDescriptor (
         mpDocument));
     if (nPageObjectModified == 1 && bSendEvents)
         FireContainerChange(
-            MasterPageContainerChangeEvent::EventType::DATA_CHANGED,
+            MasterPageContainerChangeEvent::DATA_CHANGED,
             rpDescriptor->maToken);
     if (nPageObjectModified == -1 && bSendEvents)
         FireContainerChange(
-            MasterPageContainerChangeEvent::EventType::CHILD_REMOVED,
+            MasterPageContainerChangeEvent::CHILD_REMOVED,
             rpDescriptor->maToken);
     if (nPageObjectModified && ! mbFirstPageObjectSeen)
         UpdatePreviewSizePixel();
@@ -981,7 +986,7 @@ bool MasterPageContainer::Implementation::UpdateDescriptor (
 
     if (bPreviewModified && bSendEvents)
         FireContainerChange(
-            MasterPageContainerChangeEvent::EventType::PREVIEW_CHANGED,
+            MasterPageContainerChangeEvent::PREVIEW_CHANGED,
             rpDescriptor->maToken);
 
     return nPageObjectModified || bPreviewModified;
@@ -992,6 +997,7 @@ void MasterPageContainer::Implementation::ReleaseDescriptor (Token aToken)
     if (aToken>=0 && (unsigned)aToken<maContainer.size())
     {
         maContainer[aToken].reset();
+        mbContainerCleaningPending = true;
     }
 }
 

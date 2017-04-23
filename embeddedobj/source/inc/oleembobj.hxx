@@ -37,7 +37,6 @@
 #include <com/sun/star/util/XCloseable.hpp>
 #include <com/sun/star/util/XCloseListener.hpp>
 #include <cppuhelper/implbase.hxx>
-#include <rtl/ref.hxx>
 
 #include <osl/thread.h>
 
@@ -56,7 +55,7 @@ class VerbExecutionController
     bool m_bWasEverActive;
     bool m_bVerbExecutionInProgress;
     oslThreadIdentifier m_nVerbExecutionThreadIdentifier;
-    bool m_bChangedOnVerbExecution;
+    sal_Bool m_bChangedOnVerbExecution;
 #endif
 
 public:
@@ -67,13 +66,13 @@ public:
     , m_bWasEverActive( false )
     , m_bVerbExecutionInProgress( false )
     , m_nVerbExecutionThreadIdentifier( 0 )
-    , m_bChangedOnVerbExecution( false )
+    , m_bChangedOnVerbExecution( sal_False )
 #endif
     {}
 
 #ifdef _WIN32
     void StartControlExecution();
-    bool EndControlExecution_WasModified();
+    sal_Bool EndControlExecution_WasModified();
     void ModificationNotificationIsDone();
     // no need to lock anything to check the value of the numeric members
     bool CanDoNotification() { return ( !m_bVerbExecutionInProgress && !m_bWasEverActive && !m_nNotificationLock ); }
@@ -178,7 +177,7 @@ class OleEmbeddedObject : public ::cppu::WeakImplHelper
     OUString m_aLinkURL; // ???
 
     // points to own view provider if the object has no server
-    rtl::Reference<OwnView_Impl> m_xOwnView;
+    OwnView_Impl*   m_pOwnView;
 
     // whether the object should be initialized from clipboard in case of default initialization
     bool m_bFromClipboard;
@@ -199,26 +198,26 @@ class OleEmbeddedObject : public ::cppu::WeakImplHelper
     css::uno::Reference< css::uno::XInterface > m_xParent;
 
 protected:
-    /// @throws css::uno::Exception
-    css::uno::Reference< css::io::XStream > TryToGetAcceptableFormat_Impl(
-                                    const css::uno::Reference< css::io::XStream >& xStream );
 
-    /// @throws css::io::IOException
-    /// @throws css::uno::RuntimeException
+    css::uno::Reference< css::io::XStream > TryToGetAcceptableFormat_Impl(
+                                    const css::uno::Reference< css::io::XStream >& xStream )
+        throw ( css::uno::Exception );
+
     css::uno::Reference< css::io::XStream > GetNewFilledTempStream_Impl(
-                                    const css::uno::Reference< css::io::XInputStream >& xInStream );
+                                    const css::uno::Reference< css::io::XInputStream >& xInStream )
+        throw( css::io::IOException, css::uno::RuntimeException );
 #ifdef _WIN32
     void SwitchComponentToRunningState_Impl();
 #endif
     void MakeEventListenerNotification_Impl( const OUString& aEventName );
 #ifdef _WIN32
-    void StateChangeNotification_Impl( bool bBeforeChange, sal_Int32 nOldState, sal_Int32 nNewState );
+    void StateChangeNotification_Impl( sal_Bool bBeforeChange, sal_Int32 nOldState, sal_Int32 nNewState );
     css::uno::Reference< css::io::XOutputStream > GetStreamForSaving();
 
 
     css::uno::Sequence< sal_Int32 > GetIntermediateVerbsSequence_Impl( sal_Int32 nNewState );
 
-    static css::uno::Sequence< sal_Int32 > GetReachableStatesList_Impl(
+    css::uno::Sequence< sal_Int32 > GetReachableStatesList_Impl(
                         const css::uno::Sequence< css::embed::VerbDescriptor >& aVerbList );
 #endif
 
@@ -235,41 +234,41 @@ protected:
 
     void GetRidOfComponent();
 
-    /// @throws css::uno::Exception
     void StoreToLocation_Impl(
                             const css::uno::Reference< css::embed::XStorage >& xStorage,
                             const OUString& sEntName,
                             const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs,
-                            bool bSaveAs );
+                            bool bSaveAs )
+        throw ( css::uno::Exception );
 #ifdef _WIN32
-    /// @throws css::uno::Exception
-    void StoreObjectToStream( css::uno::Reference< css::io::XOutputStream > const & xOutStream );
+    void StoreObjectToStream( css::uno::Reference< css::io::XOutputStream > xOutStream )
+        throw ( css::uno::Exception );
 #endif
-    /// @throws css::uno::Exception
     void InsertVisualCache_Impl(
             const css::uno::Reference< css::io::XStream >& xTargetStream,
-            const css::uno::Reference< css::io::XStream >& xCachedVisualRepresentation );
+            const css::uno::Reference< css::io::XStream >& xCachedVisualRepresentation )
+        throw ( css::uno::Exception );
 
-    /// @throws css::uno::Exception
-    void RemoveVisualCache_Impl( const css::uno::Reference< css::io::XStream >& xTargetStream );
+    void RemoveVisualCache_Impl( const css::uno::Reference< css::io::XStream >& xTargetStream )
+        throw ( css::uno::Exception );
 
     void SetVisReplInStream( bool bExists );
     bool HasVisReplInStream();
 
-    /// @throws css::uno::Exception
     css::embed::VisualRepresentation GetVisualRepresentationInNativeFormat_Impl(
-                    const css::uno::Reference< css::io::XStream >& xCachedVisRepr );
+                    const css::uno::Reference< css::io::XStream >& xCachedVisRepr )
+        throw ( css::uno::Exception );
 
     css::uno::Reference< css::io::XStream > TryToRetrieveCachedVisualRepresentation_Impl(
                     const css::uno::Reference< css::io::XStream >& xStream,
                     bool bAllowRepair50 = false )
         throw ();
 #ifdef _WIN32
-    bool SaveObject_Impl();
-    bool OnShowWindow_Impl( bool bShow );
-    void CreateOleComponent_Impl( OleComponent* pOleComponent = nullptr );
-    void CreateOleComponentAndLoad_Impl( OleComponent* pOleComponent = nullptr );
-    void CreateOleComponentFromClipboard_Impl( OleComponent* pOleComponent = nullptr );
+    sal_Bool SaveObject_Impl();
+    sal_Bool OnShowWindow_Impl( sal_Bool bShow );
+    void CreateOleComponent_Impl( OleComponent* pOleComponent = NULL );
+    void CreateOleComponentAndLoad_Impl( OleComponent* pOleComponent = NULL );
+    void CreateOleComponentFromClipboard_Impl( OleComponent* pOleComponent = NULL );
     OUString CreateTempURLEmpty_Impl();
     OUString GetTempURL_Impl();
     void SetObjectIsLink_Impl( bool bIsLink ) { m_bIsLink = bIsLink; }
@@ -296,49 +295,90 @@ public:
     OleEmbeddedObject( const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory );
 #endif
 
-    virtual ~OleEmbeddedObject() override;
+    virtual ~OleEmbeddedObject();
 
 #ifdef _WIN32
-    static void OnIconChanged_Impl();
+    void OnIconChanged_Impl();
     void OnViewChanged_Impl();
     void OnClosed_Impl();
 #endif
 
 // XEmbeddedObject
 
-    virtual void SAL_CALL changeState( sal_Int32 nNewState ) override;
+    virtual void SAL_CALL changeState( sal_Int32 nNewState )
+        throw ( css::embed::UnreachableStateException,
+                css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence< sal_Int32 > SAL_CALL getReachableStates() override;
+    virtual css::uno::Sequence< sal_Int32 > SAL_CALL getReachableStates()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int32 SAL_CALL getCurrentState() override;
+    virtual sal_Int32 SAL_CALL getCurrentState()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL doVerb( sal_Int32 nVerbID ) override;
+    virtual void SAL_CALL doVerb( sal_Int32 nVerbID )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::embed::UnreachableStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence< css::embed::VerbDescriptor > SAL_CALL getSupportedVerbs() override;
+    virtual css::uno::Sequence< css::embed::VerbDescriptor > SAL_CALL getSupportedVerbs()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL setClientSite(
-                const css::uno::Reference< css::embed::XEmbeddedClient >& xClient ) override;
+                const css::uno::Reference< css::embed::XEmbeddedClient >& xClient )
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Reference< css::embed::XEmbeddedClient > SAL_CALL getClientSite() override;
+    virtual css::uno::Reference< css::embed::XEmbeddedClient > SAL_CALL getClientSite()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL update() override;
+    virtual void SAL_CALL update()
+        throw ( css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setUpdateMode( sal_Int32 nMode ) override;
+    virtual void SAL_CALL setUpdateMode( sal_Int32 nMode )
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int64 SAL_CALL getStatus( sal_Int64 nAspect ) override;
+    virtual sal_Int64 SAL_CALL getStatus( sal_Int64 nAspect )
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setContainerName( const OUString& sName ) override;
+    virtual void SAL_CALL setContainerName( const OUString& sName )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
 
 // XVisualObject
 
-    virtual void SAL_CALL setVisualAreaSize( sal_Int64 nAspect, const css::awt::Size& aSize ) override;
+    virtual void SAL_CALL setVisualAreaSize( sal_Int64 nAspect, const css::awt::Size& aSize )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::awt::Size SAL_CALL getVisualAreaSize( sal_Int64 nAspect ) override;
+    virtual css::awt::Size SAL_CALL getVisualAreaSize( sal_Int64 nAspect )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::embed::VisualRepresentation SAL_CALL getPreferredVisualRepresentation( ::sal_Int64 nAspect ) override;
+    virtual css::embed::VisualRepresentation SAL_CALL getPreferredVisualRepresentation( ::sal_Int64 nAspect )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int32 SAL_CALL getMapUnit( sal_Int64 nAspect ) override;
+    virtual sal_Int32 SAL_CALL getMapUnit( sal_Int64 nAspect )
+        throw ( css::uno::Exception,
+                css::uno::RuntimeException, std::exception) override;
 
 
 // XEmbedPersist
@@ -348,88 +388,150 @@ public:
                     const OUString& sEntName,
                     sal_Int32 nEntryConnectionMode,
                     const css::uno::Sequence< css::beans::PropertyValue >& lArguments,
-                    const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs ) override;
+                    const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL storeToEntry( const css::uno::Reference< css::embed::XStorage >& xStorage, const OUString& sEntName, const css::uno::Sequence< css::beans::PropertyValue >& lArguments, const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs ) override;
+    virtual void SAL_CALL storeToEntry( const css::uno::Reference< css::embed::XStorage >& xStorage, const OUString& sEntName, const css::uno::Sequence< css::beans::PropertyValue >& lArguments, const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL storeAsEntry(
                 const css::uno::Reference< css::embed::XStorage >& xStorage,
                 const OUString& sEntName,
                 const css::uno::Sequence< css::beans::PropertyValue >& lArguments,
-                const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs ) override;
+                const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL saveCompleted( sal_Bool bUseNew ) override;
+    virtual void SAL_CALL saveCompleted( sal_Bool bUseNew )
+        throw ( css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL hasEntry() override;
+    virtual sal_Bool SAL_CALL hasEntry()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual OUString SAL_CALL getEntryName() override;
+    virtual OUString SAL_CALL getEntryName()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
 // XLinkageSupport
 
     virtual void SAL_CALL breakLink( const css::uno::Reference< css::embed::XStorage >& xStorage,
-                                     const OUString& sEntName ) override;
+                                     const OUString& sEntName )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL isLink() override;
+    virtual sal_Bool SAL_CALL isLink()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getLinkURL() override;
+    virtual OUString SAL_CALL getLinkURL()
+        throw ( css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception) override;
 
 // XCommonEmbedPersist
-    virtual void SAL_CALL storeOwn() override;
+    virtual void SAL_CALL storeOwn()
+        throw ( css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL isReadonly() override;
+    virtual sal_Bool SAL_CALL isReadonly()
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL reload(
                 const css::uno::Sequence< css::beans::PropertyValue >& lArguments,
-                const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs ) override;
+                const css::uno::Sequence< css::beans::PropertyValue >& lObjArgs )
+        throw ( css::lang::IllegalArgumentException,
+                css::embed::WrongStateException,
+                css::io::IOException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
 // XClassifiedObject
 
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getClassID() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getClassID()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual OUString SAL_CALL getClassName() override;
+    virtual OUString SAL_CALL getClassName()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL setClassInfo(
-                const css::uno::Sequence< sal_Int8 >& aClassID, const OUString& aClassName ) override;
+                const css::uno::Sequence< sal_Int8 >& aClassID, const OUString& aClassName )
+        throw ( css::lang::NoSupportException,
+                css::uno::RuntimeException, std::exception ) override;
 
 // XStateChangeBroadcaster
-    virtual void SAL_CALL addStateChangeListener( const css::uno::Reference< css::embed::XStateChangeListener >& xListener ) override;
-    virtual void SAL_CALL removeStateChangeListener( const css::uno::Reference< css::embed::XStateChangeListener >& xListener ) override;
+    virtual void SAL_CALL addStateChangeListener( const css::uno::Reference< css::embed::XStateChangeListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeStateChangeListener( const css::uno::Reference< css::embed::XStateChangeListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
 
 // XComponentSupplier
 
-    virtual css::uno::Reference< css::util::XCloseable > SAL_CALL getComponent() override;
+    virtual css::uno::Reference< css::util::XCloseable > SAL_CALL getComponent()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
 // XCloseable
 
-    virtual void SAL_CALL close( sal_Bool DeliverOwnership ) override;
+    virtual void SAL_CALL close( sal_Bool DeliverOwnership )
+        throw ( css::util::CloseVetoException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addCloseListener(
-                const css::uno::Reference< css::util::XCloseListener >& Listener ) override;
+                const css::uno::Reference< css::util::XCloseListener >& Listener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeCloseListener(
-                const css::uno::Reference< css::util::XCloseListener >& Listener ) override;
+                const css::uno::Reference< css::util::XCloseListener >& Listener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
 // XEventBroadcaster
     virtual void SAL_CALL addEventListener(
-                const css::uno::Reference< css::document::XEventListener >& Listener ) override;
+                const css::uno::Reference< css::document::XEventListener >& Listener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeEventListener(
-                const css::uno::Reference< css::document::XEventListener >& Listener ) override;
+                const css::uno::Reference< css::document::XEventListener >& Listener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
 // XInplaceObject ( only for wrapping scenario here )
 
     virtual void SAL_CALL setObjectRectangles( const css::awt::Rectangle& aPosRect,
-                                          const css::awt::Rectangle& aClipRect ) override;
+                                          const css::awt::Rectangle& aClipRect )
+        throw ( css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL enableModeless( sal_Bool bEnable ) override;
+    virtual void SAL_CALL enableModeless( sal_Bool bEnable )
+        throw ( css::embed::WrongStateException,
+                css::uno::Exception,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL translateAccelerators(
-                    const css::uno::Sequence< css::awt::KeyEvent >& aKeys ) override;
+                    const css::uno::Sequence< css::awt::KeyEvent >& aKeys )
+        throw ( css::embed::WrongStateException,
+                css::uno::RuntimeException, std::exception ) override;
 
     // XChild ( only for wrapping scenario here )
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) override;
-    virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
 
 };
 

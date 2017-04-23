@@ -16,63 +16,55 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-
+#include "LinePropertyPanel.hrc"
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <svx/dialogs.hrc>
 #include "helpid.hrc"
 
-Bitmap BMP_NONE_ICON
+Image IMG_NONE_ICON
 {
-    File = "symphony/blank.png";
+    ImageBitmap = Bitmap{File = "symphony/blank.png";};
 };
 
-Bitmap BMP_WIDTH1_ICON
+Image IMG_WIDTH1_ICON
 {
-    File = "symphony/width1.png";
+    ImageBitmap = Bitmap{File = "symphony/width1.png";};
 };
-
-Bitmap BMP_WIDTH2_ICON
+Image IMG_WIDTH2_ICON
 {
-    File = "symphony/width2.png";
+    ImageBitmap = Bitmap{File = "symphony/width2.png";};
 };
-
-Bitmap BMP_WIDTH3_ICON
+Image IMG_WIDTH3_ICON
 {
-    File = "symphony/width3.png";
+    ImageBitmap = Bitmap{File = "symphony/width3.png";};
 };
-
-Bitmap BMP_WIDTH4_ICON
+Image IMG_WIDTH4_ICON
 {
-    File = "symphony/width4.png";
+    ImageBitmap = Bitmap{File = "symphony/width4.png";};
 };
-
-Bitmap BMP_WIDTH5_ICON
+Image IMG_WIDTH5_ICON
 {
-    File = "symphony/width5.png";
+    ImageBitmap = Bitmap{File = "symphony/width5.png";};
 };
-
-Bitmap BMP_WIDTH6_ICON
+Image IMG_WIDTH6_ICON
 {
-    File = "symphony/width6.png";
+    ImageBitmap = Bitmap{File = "symphony/width6.png";};
 };
-
-Bitmap BMP_WIDTH7_ICON
+Image IMG_WIDTH7_ICON
 {
-    File = "symphony/width7.png";
+    ImageBitmap = Bitmap{File = "symphony/width7.png";};
 };
-
-Bitmap BMP_WIDTH8_ICON
+Image IMG_WIDTH8_ICON
 {
-    File = "symphony/width8.png";
+    ImageBitmap = Bitmap{File = "symphony/width8.png";};
 };
-
-Bitmap RID_SVXBMP_WIDTH_CUSTOM
+Image RID_SVXIMG_WIDTH_CUSTOM
 {
-    File = "symphony/last_custom_common.png";
+    ImageBitmap = Bitmap{File = "symphony/last_custom_common.png";};
 };
-
-Bitmap RID_SVXBMP_WIDTH_CUSTOM_GRAY
+Image RID_SVXIMG_WIDTH_CUSTOM_GRAY
 {
-    File = "symphony/last_custom_common_grey.png";
+    ImageBitmap = Bitmap{File = "symphony/last_custom_common_grey.png";};
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

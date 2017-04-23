@@ -20,17 +20,20 @@
 #include <sal/config.h>
 
 #include "itemdel.hxx"
-#include <vcl/idle.hxx>
+#include <vcl/svapp.hxx>
+#include <tools/errcode.hxx>
+#include <limits.h>
+#include <vector>
 
 #include <svl/itempool.hxx>
 
 class SfxItemDisruptor_Impl
 {
     SfxPoolItem *           pItem;
-    Idle m_Idle;
+    Link<Application*,void> aLink;
 
 private:
-    DECL_LINK( Delete, Timer*, void );
+    DECL_LINK_TYPED( Delete, Application*, void );
 
 public:
     explicit SfxItemDisruptor_Impl(SfxPoolItem *pItemToDesrupt);
@@ -40,25 +43,26 @@ public:
     SfxItemDisruptor_Impl& operator=(const SfxItemDisruptor_Impl&) = delete;
 };
 
-SfxItemDisruptor_Impl::SfxItemDisruptor_Impl(SfxPoolItem *const pItemToDisrupt)
-    : pItem(pItemToDisrupt)
-    , m_Idle("sfx SfxItemDisruptor_Impl::Delete")
+SfxItemDisruptor_Impl::SfxItemDisruptor_Impl( SfxPoolItem *pItemToDesrupt ):
+    pItem(pItemToDesrupt),
+    aLink( LINK(this, SfxItemDisruptor_Impl, Delete) )
 {
-    m_Idle.SetInvokeHandler(LINK(this, SfxItemDisruptor_Impl, Delete));
-    m_Idle.SetPriority(TaskPriority::DEFAULT_IDLE);
 
     DBG_ASSERT( 0 == pItem->GetRefCount(), "disrupting pooled item" );
-    pItem->SetKind(SfxItemKind::DeleteOnIdle);
+    pItem->SetKind( SFX_ITEMS_DELETEONIDLE );
 }
 
 void SfxItemDisruptor_Impl::LaunchDeleteOnIdle()
 {
-    m_Idle.Start();
+    // process in Idle
+    Application::InsertIdleHdl( aLink, 1 );
 }
 
 SfxItemDisruptor_Impl::~SfxItemDisruptor_Impl()
 {
-    m_Idle.Stop();
+
+    // remove from Idle-Handler
+    Application::RemoveIdleHdl( aLink );
 
     // reset RefCount (was set to SFX_ITEMS_SPECIAL before!)
     pItem->SetRefCount( 0 );
@@ -66,7 +70,7 @@ SfxItemDisruptor_Impl::~SfxItemDisruptor_Impl()
     delete pItem;
 }
 
-IMPL_LINK_NOARG(SfxItemDisruptor_Impl, Delete, Timer*, void)
+IMPL_LINK_NOARG_TYPED(SfxItemDisruptor_Impl, Delete, Application*, void)
 {
     delete this;
 }

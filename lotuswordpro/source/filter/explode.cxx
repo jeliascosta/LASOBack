@@ -183,7 +183,7 @@ sal_uInt32 Decompression::ReadBits(sal_uInt16 iCount, sal_uInt32 & nBits)
     {
         if (m_nBytesLeft == 0)
         {
-            m_nBytesLeft = m_pInStream->ReadBytes(m_Buffer, CHUNK);
+            m_nBytesLeft = m_pInStream->Read(m_Buffer, CHUNK);
             m_pBuffer = m_Buffer;
             if (m_nBytesLeft == 0)  return 1;
             }
@@ -242,7 +242,7 @@ sal_Int32 Decompression::explode()
             m_Output[m_nOutputBufferPos++] = (sal_uInt8)symbol;
             if (m_nOutputBufferPos == MAXWIN)
             {
-                m_pOutStream->WriteBytes(m_Output, m_nOutputBufferPos);
+                m_pOutStream->Write(m_Output, m_nOutputBufferPos);
                 m_nOutputBufferPos = 0;
             }
             continue;
@@ -299,7 +299,7 @@ sal_Int32 Decompression::explode()
 
             // - now copy LENGTH bytes from (output_ptr-DISTANCE) to output_ptr
             // write current buffer to output
-        m_pOutStream->WriteBytes(m_Output, m_nOutputBufferPos);
+        m_pOutStream->Write(m_Output, m_nOutputBufferPos);
         m_nOutputBufferPos = 0;
 
         // remember current position
@@ -312,7 +312,7 @@ sal_Int32 Decompression::explode()
         m_pOutStream->SeekRel(-(long)distance);
         sal_uInt8 sTemp[MAXWIN];
         sal_uInt32 nRead = distance > Length? Length:distance;
-        m_pOutStream->ReadBytes(sTemp, nRead);
+        m_pOutStream->Read(sTemp, nRead);
         if (nRead != Length)
         {
             // fill the buffer with read content repeatly until full
@@ -326,7 +326,7 @@ sal_Int32 Decompression::explode()
         m_pOutStream->Seek(nOutputPos);
 
            // write current buffer to output
-        m_pOutStream->WriteBytes(sTemp, Length);
+        m_pOutStream->Write(sTemp, Length);
     }
     return 0;
 }
@@ -451,11 +451,11 @@ void Decompression::fillArray()
     }
 }
 
-HuffmanTreeNode::HuffmanTreeNode(sal_uInt32 nValue )
+HuffmanTreeNode::HuffmanTreeNode(sal_uInt32 nValue , HuffmanTreeNode * pLeft , HuffmanTreeNode * pRight )
 {
     value = nValue;
-    left = nullptr;
-    right = nullptr;
+    left = pLeft;
+    right = pRight;
 }
 HuffmanTreeNode::~HuffmanTreeNode()
 {
@@ -474,15 +474,16 @@ HuffmanTreeNode::~HuffmanTreeNode()
 HuffmanTreeNode * HuffmanTreeNode::InsertNode(sal_uInt32 nValue, const sal_Char * pInCode)
 {
     HuffmanTreeNode *pNew = new HuffmanTreeNode(nValue);
-    std::string aCode(pInCode);
+    sal_Char pCode[32];
+        strcpy(pCode, pInCode );
 
     // query its parents
-    const sal_Char cLast = aCode.back();
-    aCode.pop_back();
-    HuffmanTreeNode * pParent = QueryNode(aCode.c_str());
+    sal_Char cLast = pCode[strlen(pCode) - 1];
+    pCode[strlen(pCode) - 1] = '\0';
+    HuffmanTreeNode * pParent = QueryNode(pCode);
     if (!pParent)
     {
-        pParent = InsertNode(0xffffffff, aCode.c_str());
+        pParent = InsertNode(0xffffffff, pCode);
     }
     if (cLast == '0')
         pParent->left = pNew;
@@ -491,7 +492,6 @@ HuffmanTreeNode * HuffmanTreeNode::InsertNode(sal_uInt32 nValue, const sal_Char 
 
     return pNew;
 }
-
 HuffmanTreeNode * HuffmanTreeNode::QueryNode(const sal_Char * pCode)
 {
     sal_uInt32 nLen = strlen(pCode);

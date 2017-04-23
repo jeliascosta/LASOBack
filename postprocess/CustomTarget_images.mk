@@ -27,26 +27,27 @@ $(packimages_DIR)/images%.zip : INDUSTRIAL_FALLBACK :=
 $(packimages_DIR)/%.zip : \
 		$(packimages_DIR)/sorted.lst \
 		$(packimages_DIR)/commandimagelist.ilst \
-		$(SRCDIR)/sfx2/source/sidebar/sidebar.ilst \
-		$(SRCDIR)/vcl/source/control/throbber.ilst \
 		$(call gb_Helper_optional,HELP,$(helpimages_DIR)/helpimg.ilst) \
-		$(call gb_Helper_optional,HELP,$(helpimages_DIR)/screenshotimg.ilst) \
 		$(call gb_Helper_optional,DBCONNECTIVITY,$(if $(ENABLE_JAVA),$(SRCDIR)/connectivity/source/drivers/hsqldb/hsqlui.ilst)) \
-		$(call gb_Helper_get_imagelists)
+		$(call gb_Postprocess_get_target,AllResources) \
+		$(call gb_Postprocess_get_target,AllUIConfigs)
 	$(call gb_Output_announce,$(subst $(WORKDIR)/,,$@),$(true),PRL,2)
 	$(call gb_Helper_abbreviate_dirs, \
-		ILSTFILE=$(call var2file,$(shell $(gb_MKTEMP)),100,$(filter %.ilst,$^)) && \
 		$(PERL) $(SRCDIR)/solenv/bin/packimages.pl \
 			$(if $(DEFAULT_THEME),\
 				-g $(packimages_DIR) -m $(packimages_DIR) -c $(packimages_DIR),\
 				-g $(SRCDIR)/icon-themes/$(subst images_,,$*) -m $(SRCDIR)/icon-themes/$(subst images_,,$*) -c $(SRCDIR)/icon-themes/$(subst images_,,$*) \
 			) \
 			$(INDUSTRIAL_FALLBACK) \
-			$(call gb_Helper_optional,HELP,-e $(SRCDIR)/helpcontent2/source) \
-			-l $${ILSTFILE} \
+			$(call gb_Helper_optional,HELP,-l $(helpimages_DIR) ) \
+			-l $(packimages_DIR) \
+			-l $(dir $(call gb_ResTarget_get_imagelist_target)) \
+			-l $(dir $(call gb_UIConfig_get_imagelist_target)) \
+			-l $(dir $(call gb_UIConfig_get_imagelist_target,modules/)) \
+			$(call gb_Helper_optional,DBCONNECTIVITY,$(if $(ENABLE_JAVA),-l $(SRCDIR)/connectivity/source/drivers/hsqldb)) \
+			$(call gb_Helper_optional,DBCONNECTIVITY,$(if $(ENABLE_FIREBIRD_SDBC),-l $(SRCDIR)/connectivity/source/drivers/firebird)) \
 			-s $< -o $@ \
-			$(if $(findstring s,$(MAKEFLAGS)),> /dev/null) && \
-		rm -rf $${ILSTFILE})
+			$(if $(findstring s,$(MAKEFLAGS)),> /dev/null))
 
 # commandimagelist.ilst and sorted.lst are phony to rebuild everything each time
 .PHONY : $(packimages_DIR)/commandimagelist.ilst $(packimages_DIR)/sorted.lst
@@ -58,7 +59,8 @@ $(packimages_DIR)/commandimagelist.ilst :
 			grep -e '/cmd/' | sed 's#^.*/icon-themes/[^/]*##' | $(SORT) | uniq | \
 			sed "s#^#%MODULE%#" | \
 			LC_ALL=C $(SORT) > $@.tmp && \
-		$(call gb_Helper_replace_if_different_and_touch,$@.tmp,$@))
+		$(PERL) $(SRCDIR)/solenv/bin/diffmv.pl $@.tmp $@ \
+			$(if $(findstring s,$(MAKEFLAGS)),2> /dev/null))
 
 $(packimages_DIR)/sorted.lst : \
 		$(SRCDIR)/postprocess/packimages/image-sort.lst \

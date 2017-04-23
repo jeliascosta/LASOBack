@@ -84,7 +84,7 @@ public class ColumnarSingleColumn extends ReportBuilderLayouter
     }
 
     @Override
-    protected void insertDetailFieldTitles(int lastGroupPosition)
+    protected void insertDetailFieldTitles(int lastGroupPostion)
     {
         // we won't extra field titles
     }

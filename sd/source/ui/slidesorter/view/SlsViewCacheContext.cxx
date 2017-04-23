@@ -65,8 +65,8 @@ void ViewCacheContext::NotifyPreviewCreation (
 
 bool ViewCacheContext::IsIdle()
 {
-    tools::IdleState nIdleState (tools::IdleDetection::GetIdleState(mrSlideSorter.GetContentWindow()));
-    if (nIdleState == tools::IdleState::Idle)
+    sal_Int32 nIdleState (tools::IdleDetection::GetIdleState(mrSlideSorter.GetContentWindow()));
+    if (nIdleState == tools::IdleDetection::IDET_IDLE)
         return true;
     else
         return false;
@@ -80,12 +80,12 @@ bool ViewCacheContext::IsVisible (cache::CacheKey aKey)
 
 const SdrPage* ViewCacheContext::GetPage (cache::CacheKey aKey)
 {
-    return aKey;
+    return static_cast<const SdrPage*>(aKey);
 }
 
 std::shared_ptr<std::vector<cache::CacheKey> > ViewCacheContext::GetEntryList (bool bVisible)
 {
-    std::shared_ptr<std::vector<cache::CacheKey> > pKeys (new std::vector<cache::CacheKey>);
+    std::shared_ptr<std::vector<cache::CacheKey> > pKeys (new std::vector<cache::CacheKey>());
 
     model::PageEnumeration aPageEnumeration (
         bVisible
@@ -103,12 +103,12 @@ std::shared_ptr<std::vector<cache::CacheKey> > ViewCacheContext::GetEntryList (b
 
 sal_Int32 ViewCacheContext::GetPriority (cache::CacheKey aKey)
 {
-    return - (aKey->GetPageNum()-1) / 2;
+    return - (static_cast<const SdrPage*>(aKey)->GetPageNum()-1) / 2;
 }
 
 model::SharedPageDescriptor ViewCacheContext::GetDescriptor (cache::CacheKey aKey)
 {
-    sal_uInt16 nPageIndex ((aKey->GetPageNum() - 1) / 2);
+    sal_uInt16 nPageIndex ((static_cast<const SdrPage*>(aKey)->GetPageNum() - 1) / 2);
     return mrModel.GetPageDescriptor(nPageIndex);
 }
 

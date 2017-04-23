@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgrectnode.hxx>
+#include <svgio/svgreader/svgrectnode.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 
@@ -42,6 +42,7 @@ namespace svgio
 
         SvgRectNode::~SvgRectNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgRectNode::getSvgStyleAttributes() const
@@ -71,7 +72,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX = aNum;
+                        setX(aNum);
                     }
                     break;
                 }
@@ -81,7 +82,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY = aNum;
+                        setY(aNum);
                     }
                     break;
                 }
@@ -93,7 +94,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maWidth = aNum;
+                            setWidth(aNum);
                         }
                     }
                     break;
@@ -106,7 +107,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maHeight = aNum;
+                            setHeight(aNum);
                         }
                     }
                     break;
@@ -119,7 +120,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maRx = aNum;
+                            setRx(aNum);
                         }
                     }
                     break;
@@ -132,7 +133,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maRy = aNum;
+                            setRy(aNum);
                         }
                     }
                     break;

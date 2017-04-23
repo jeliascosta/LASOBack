@@ -74,6 +74,8 @@ class SwFormatHoriOrient;
 class SwFormatAnchor;
 class SvxBoxItem;
 class SvxBrushItem;
+class XFillStyleItem;
+class XFillGradientItem;
 class SvxShadowItem;
 class SwFormatPageDesc;
 class SvxFormatBreakItem;
@@ -136,7 +138,7 @@ class SwTableBoxValue;
 class SwAttrPool : public SfxItemPool
 {
 private:
-    // helpers to add/rmove DrawingLayer ItemPool, used in constructor
+    //UUUU helpers to add/rmove DrawingLayer ItemPool, used in constructor
     // and destructor; still isolated to evtl. allow other use later, but
     // used bz default now to have it instantly as needed for DrawingLayer
     // FillStyle support
@@ -160,7 +162,7 @@ private:
 public:
     SwAttrPool( SwDoc* pDoc );
 protected:
-    virtual ~SwAttrPool() override;
+    virtual ~SwAttrPool();
 public:
 
           SwDoc* GetDoc()           { return m_pDoc; }
@@ -195,7 +197,7 @@ public:
     int Intersect_BC( const SfxItemSet& rSet, SwAttrSet* pOld, SwAttrSet* pNew );
 
     void GetPresentation( SfxItemPresentation ePres,
-        MapUnit eCoreMetric, MapUnit ePresMetric, OUString &rText ) const;
+        SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString &rText ) const;
 
     SwAttrPool* GetPool() const { return static_cast<SwAttrPool*>(SfxItemSet::GetPool()); }
 

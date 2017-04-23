@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgtrefnode.hxx>
-#include <svgdocument.hxx>
+#include <svgio/svgreader/svgtrefnode.hxx>
+#include <svgio/svgreader/svgdocument.hxx>
 
 namespace svgio
 {

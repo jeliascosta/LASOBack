@@ -50,7 +50,7 @@ namespace utl
 
     public:
         OComponentResourceModule( const OString& _rResFilePrefix );
-        virtual ~OComponentResourceModule() override;
+        virtual ~OComponentResourceModule();
 
         /// get the vcl res manager of the module
         ResMgr* getResManager();

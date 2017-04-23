@@ -40,13 +40,14 @@ private:
     bool bInCreate:1;
     bool bInEdit:1;
     bool bAddUndo:1;
+    bool bDoPaint:1;
 
 public:
     ScTableLink( ScDocShell* pDocSh, const OUString& rFile,
                     const OUString& rFilter, const OUString& rOpt, sal_uLong nRefresh );
     ScTableLink( SfxObjectShell* pShell, const OUString& rFile,
                     const OUString& rFilter, const OUString& rOpt, sal_uLong nRefresh );
-    virtual ~ScTableLink() override;
+    virtual ~ScTableLink();
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
         const OUString& rMimeType, const css::uno::Any & rValue ) override;
@@ -64,8 +65,8 @@ public:
 
     bool    IsUsed() const;
 
-    DECL_LINK( RefreshHdl, Timer*, void );
-    DECL_LINK( TableEndEditHdl, ::sfx2::SvBaseLink&, void );
+    DECL_LINK_TYPED( RefreshHdl, Timer*, void );
+    DECL_LINK_TYPED( TableEndEditHdl, ::sfx2::SvBaseLink&, void );
 };
 
 class ScDocument;
@@ -94,7 +95,7 @@ public:
     /** Create SfxMedium for stream read with SfxFilter and filter options set
         at the medium's SfxItemSet.
      */
-    static SfxMedium*   CreateMedium( const OUString& rFileName, std::shared_ptr<const SfxFilter> const & pFilter, const OUString& rOptions );
+    static SfxMedium*   CreateMedium( const OUString& rFileName, std::shared_ptr<const SfxFilter> pFilter, const OUString& rOptions );
 
     static OUString     GetOptions( SfxMedium& rMedium );
 

@@ -31,11 +31,12 @@ namespace connectivity
         class KabCatalog : public connectivity::sdbcx::OCatalog
         {
             KabConnection* m_pConnection;       // used to get the metadata
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > m_xMetaData; // just to make things easier
 
         public:
             explicit KabCatalog(KabConnection* _pCon);
 
-            KabConnection* getConnection() const { return m_pConnection; }
+            inline KabConnection* getConnection() const { return m_pConnection; }
 
             // implementation of the pure virtual methods
             virtual void refreshTables() override;
@@ -44,8 +45,8 @@ namespace connectivity
             virtual void refreshUsers() override;
 
             // XTablesSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTables(
-                    ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTables(
+                    ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
         };
     }
 }

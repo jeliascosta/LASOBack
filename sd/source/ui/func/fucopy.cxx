@@ -102,7 +102,7 @@ void FuCopy::DoExecute( SfxRequest& rReq )
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
             if( pFact )
             {
-                ScopedVclPtr<AbstractCopyDlg> pDlg(pFact->CreateCopyDlg(mpViewShell->GetActiveWindow(), aSet, mpView ));
+                std::unique_ptr<AbstractCopyDlg> pDlg(pFact->CreateCopyDlg(mpViewShell->GetActiveWindow(), aSet, mpDoc->GetColorList(), mpView ));
                 if (!pDlg)
                     return;
 
@@ -118,7 +118,7 @@ void FuCopy::DoExecute( SfxRequest& rReq )
 
                     default:
                     {
-                        pDlg.disposeAndClear();
+                        pDlg.reset();
                         mpView->EndUndo();
                     }
                     return; // Cancel
@@ -126,7 +126,7 @@ void FuCopy::DoExecute( SfxRequest& rReq )
             }
         }
 
-        ::tools::Rectangle           aRect;
+        Rectangle           aRect;
         sal_Int32               lWidth = 0, lHeight = 0, lSizeX = 0L, lSizeY = 0L, lAngle = 0L;
         sal_uInt16              nNumber = 0;
         Color               aStartColor, aEndColor;

@@ -18,6 +18,10 @@
  */
 
 
+#ifndef __cplusplus
+#error Need C++ to compile
+#endif
+
 #define UNICODE
 #define _UNICODE
 #include <tchar.h>
@@ -50,16 +54,16 @@ int displayLastError()
     FormatMessage(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM,
-        nullptr,
+        NULL,
         dwError,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-        reinterpret_cast<LPTSTR>(&lpMsgBuf),
+        (LPTSTR)&lpMsgBuf,
         0,
-        nullptr
+        NULL
     );
 
     // Display the string.
-    MessageBox( nullptr, static_cast<LPCTSTR>(lpMsgBuf), nullptr, MB_OK | MB_ICONERROR );
+    MessageBox( NULL, (LPCTSTR)lpMsgBuf, NULL, MB_OK | MB_ICONERROR );
 
     // Free the buffer.
     LocalFree( lpMsgBuf );
@@ -79,12 +83,12 @@ BOOL registerWindowClass( HINSTANCE _hAppInstance )
     wcx.cbClsExtra = 0;                         // no extra class memory
     wcx.cbWndExtra = 0;                         // no extra window memory
     wcx.hInstance = _hAppInstance;              // handle to instance
-    wcx.hIcon = nullptr;                        // predefined app. icon
-    wcx.hCursor = nullptr;                      // predefined arrow
-    wcx.hbrBackground = nullptr;                // no background brush
-    wcx.lpszMenuName =  nullptr;                // name of menu resource
+    wcx.hIcon = NULL;                           // predefined app. icon
+    wcx.hCursor = NULL;                         // predefined arrow
+    wcx.hbrBackground = NULL;                   // no background brush
+    wcx.lpszMenuName =  NULL;                   // name of menu resource
     wcx.lpszClassName = L"ODBCConfigMainClass"; // name of window class
-    wcx.hIconSm = nullptr;                      // small class icon
+    wcx.hIconSm = NULL;                         // small class icon
 
     return ( !!RegisterClassEx( &wcx ) );
 }
@@ -100,10 +104,10 @@ HWND initInstance( HINSTANCE _hAppInstance )
         CW_USEDEFAULT,          // default vertical position
         CW_USEDEFAULT,          // default width
         CW_USEDEFAULT,          // default height
-        nullptr,                // no owner window
-        nullptr,                // use class menu
+        (HWND) NULL,            // no owner window
+        (HMENU) NULL,           // use class menu
         _hAppInstance,          // handle to application instance
-        nullptr);               // no window-creation data
+        (LPVOID) NULL);         // no window-creation data
 
     // don't show the window, we only need it as parent handle for the
     // SQLManageDataSources function
@@ -111,7 +115,11 @@ HWND initInstance( HINSTANCE _hAppInstance )
 }
 
 // main window function
+#ifdef __MINGW32__
+extern "C" int APIENTRY WinMain( HINSTANCE _hAppInstance, HINSTANCE, LPSTR, int )
+#else
 extern "C" int APIENTRY _tWinMain( HINSTANCE _hAppInstance, HINSTANCE, LPTSTR, int )
+#endif
 {
     if ( !registerWindowClass( _hAppInstance ) )
         return FALSE;
@@ -121,16 +129,16 @@ extern "C" int APIENTRY _tWinMain( HINSTANCE _hAppInstance, HINSTANCE, LPTSTR, i
         return displayLastError();
 
     HMODULE hModule = LoadLibraryW( ODBC_UI_LIB_NAME );
-    if ( hModule == nullptr )
-        hModule = LoadLibraryExW( ODBC_UI_LIB_NAME, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH );
-    if ( hModule == nullptr )
+    if ( hModule == NULL )
+        hModule = LoadLibraryExW( ODBC_UI_LIB_NAME, NULL, LOAD_WITH_ALTERED_SEARCH_PATH );
+    if ( hModule == NULL )
         return displayLastError();
 
     FARPROC pManageDSProc = GetProcAddress( hModule, "SQLManageDataSources" );
-    if ( pManageDSProc == nullptr )
+    if ( pManageDSProc == NULL )
         return displayLastError();
 
-    TSQLManageDataSource pManageDS = reinterpret_cast<TSQLManageDataSource>(pManageDSProc);
+    TSQLManageDataSource pManageDS = (TSQLManageDataSource)pManageDSProc;
     if ( !( (*pManageDS)( hAppWindow ) ) )
         return displayLastError();
 

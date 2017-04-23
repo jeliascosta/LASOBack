@@ -43,11 +43,11 @@ using namespace cppu;
 
 void main( int argc, char * argv[] )
 {
-    css::uno::Reference< css::sdbc::XConnection>  m_xConnection;
-    css::uno::Reference< css::sdbc::XDriver>      m_xDriver;
+    ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection>  m_xConnection;
+    ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDriver>      m_xDriver;
 
     try{
-        Reference< css::lang::XMultiServiceFactory > xFac =
+        Reference< ::com::sun::star::lang::XMultiServiceFactory > xFac =
                 createRegistryServiceFactory(OUString("g:\\office50\\program\\applicat.rdb"),OUString());
         if(!xFac.is())
             return;

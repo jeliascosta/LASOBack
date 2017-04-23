@@ -64,7 +64,7 @@ protected:
     SwContentFrame( SwContentNode * const, SwFrame* );
 
     virtual void DestroyImpl() override;
-    virtual ~SwContentFrame() override;
+    virtual ~SwContentFrame();
 
 public:
 
@@ -76,15 +76,16 @@ public:
 
     inline const SwContentFrame *GetFollow() const;
     inline       SwContentFrame *GetFollow();
+    inline const SwContentFrame *GetPrecede() const;
     SwTextFrame* FindMaster() const;
 
     // layout dependent cursor travelling
     virtual bool LeftMargin( SwPaM * ) const;
     virtual bool RightMargin( SwPaM *, bool bAPI = false ) const;
-    virtual bool UnitUp( SwPaM *, const SwTwips nOffset,
-                         bool bSetInReadOnly ) const;
-    virtual bool UnitDown( SwPaM *, const SwTwips nOffset,
-                           bool bSetInReadOnly ) const;
+    virtual bool UnitUp( SwPaM *, const SwTwips nOffset = 0,
+                         bool bSetInReadOnly = false ) const;
+    virtual bool UnitDown( SwPaM *, const SwTwips nOffset = 0,
+                           bool bSetInReadOnly = false ) const;
 
     // nMaxHeight is the required height
     // bSplit indicates that the paragraph has to be split
@@ -131,6 +132,11 @@ inline const SwContentFrame *SwContentFrame::GetFollow() const
 inline SwContentFrame *SwContentFrame::GetFollow()
 {
     return static_cast<SwContentFrame*>(SwFlowFrame::GetFollow());
+}
+
+inline const SwContentFrame *SwContentFrame::GetPrecede() const
+{
+    return static_cast<const SwContentFrame*>(SwFlowFrame::GetPrecede());
 }
 
 #endif

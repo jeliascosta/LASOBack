@@ -228,7 +228,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
     RscStrList  aTmpList;
     char *      pStr;
     char **     ppStr;
-    RscPtrPtr   aCmdLine;
+    RscPtrPtr   aCmdLine;       // Kommandozeile
     sal_uInt32  i;
 
     pStr = ::ResponseFile( &aCmdLine, argv, argc );

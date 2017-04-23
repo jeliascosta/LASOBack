@@ -15,7 +15,13 @@ $(eval $(call gb_UnpackedTarball_add_patches,pixman,\
 	external/cairo/pixman/pixman-0.24.4.patch \
 ))
 
-ifeq ($(OS),WNT)
+ifeq ($(OS),ANDROID)
+$(eval $(call gb_UnpackedTarball_add_patches,pixman,\
+	external/cairo/pixman/pixman-0.24.4.android.patch \
+))
+endif
+
+ifeq ($(OS)$(COM),WNTMSC)
 $(eval $(call gb_UnpackedTarball_add_file,pixman,pixman,external/cairo/pixman/Makefile.win32.common))
 endif
 

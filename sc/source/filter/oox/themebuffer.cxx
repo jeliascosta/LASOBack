@@ -29,9 +29,20 @@ ThemeBuffer::ThemeBuffer( const WorkbookHelper& rHelper ) :
     WorkbookHelper( rHelper ),
     mxDefFontModel( new FontModel )
 {
-    //! TODO: locale dependent font name
-    mxDefFontModel->maName = "Cambria";
-    mxDefFontModel->mfHeight = 11.0;
+    switch( getFilterType() )
+    {
+        case FILTER_OOXML:
+            //! TODO: locale dependent font name
+            mxDefFontModel->maName = "Cambria";
+            mxDefFontModel->mfHeight = 11.0;
+        break;
+        case FILTER_BIFF:
+            //! TODO: BIFF dependent font name
+            mxDefFontModel->maName = "Arial";
+            mxDefFontModel->mfHeight = 10.0;
+        break;
+        case FILTER_UNKNOWN: break;
+    }
 }
 
 ThemeBuffer::~ThemeBuffer()

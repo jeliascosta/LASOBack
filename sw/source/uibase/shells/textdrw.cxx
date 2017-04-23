@@ -59,15 +59,15 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
     Point aStartPos(rSh.GetCharRect().Pos() + Point(0, 1));
 
     rSh.StartAction();
-    rSh.StartUndo( SwUndoId::UI_INSERT_URLBTN );
-    if (rSh.BeginCreate(OBJ_FM_BUTTON, SdrInventor::FmForm, aStartPos))
+    rSh.StartUndo( UNDO_UI_INSERT_URLBTN );
+    if (rSh.BeginCreate(OBJ_FM_BUTTON, FmFormInventor, aStartPos))
     {
         pSdrView->SetOrtho(false);
          Size aSz(GetView().GetEditWin().PixelToLogic(Size(140, 20)));
         Point aEndPos(aSz.Width(), aSz.Height());
 
         rSh.MoveCreate(aStartPos + aEndPos);
-        rSh.EndCreate(SdrCreateCmd::ForceEnd);
+        rSh.EndCreate(SDRCREATE_FORCEEND);
 
         const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
         if (rMarkList.GetMark(0))
@@ -87,7 +87,7 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
 
             uno::Any aTmp;
 
-            aTmp <<= rText;
+            aTmp <<= OUString(rText);
             xPropSet->setPropertyValue( "Label", aTmp );
 
             SfxMedium* pMedium = rSh.GetView().GetDocShell()->GetMedium();
@@ -95,7 +95,7 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
             if( pMedium )
                 aAbs = pMedium->GetURLObject();
 
-            aTmp <<= URIHelper::SmartRel2Abs(aAbs, rURL);
+            aTmp <<= OUString(URIHelper::SmartRel2Abs(aAbs, rURL));
             xPropSet->setPropertyValue( "TargetURL", aTmp );
 
             if( !rTarget.isEmpty() )
@@ -104,7 +104,8 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
                 xPropSet->setPropertyValue( "TargetFrame", aTmp );
             }
 
-            aTmp <<= form::FormButtonType_URL;
+            form::FormButtonType eButtonType = form::FormButtonType_URL;
+            aTmp.setValue( &eButtonType, ::cppu::UnoType<form::FormButtonType>::get());
             xPropSet->setPropertyValue( "ButtonType", aTmp );
 
 #if HAVE_FEATURE_AVMEDIA
@@ -122,7 +123,7 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
             rSh.UnSelectFrame();
         }
     }
-    rSh.EndUndo( SwUndoId::UI_INSERT_URLBTN );
+    rSh.EndUndo( UNDO_UI_INSERT_URLBTN );
     rSh.EndAction();
 }
 

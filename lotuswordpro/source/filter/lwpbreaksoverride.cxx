@@ -65,18 +65,21 @@
 #include "lwpatomholder.hxx"
 
 LwpBreaksOverride::LwpBreaksOverride()
-    : m_pNextStyle( new LwpAtomHolder )
 {
+    m_pNextStyle = new LwpAtomHolder();
 }
 
 LwpBreaksOverride::LwpBreaksOverride(LwpBreaksOverride const& rOther)
     : LwpOverride(rOther)
-    , m_pNextStyle(::clone(rOther.m_pNextStyle.get()))
+    , m_pNextStyle(nullptr)
 {
+    std::unique_ptr<LwpAtomHolder> pNextStyle(::clone(rOther.m_pNextStyle));
+    m_pNextStyle = pNextStyle.release();
 }
 
 LwpBreaksOverride::~LwpBreaksOverride()
 {
+    delete m_pNextStyle;
 }
 
 LwpBreaksOverride* LwpBreaksOverride::clone() const

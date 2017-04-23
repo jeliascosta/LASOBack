@@ -39,7 +39,7 @@ namespace pcr
     public:
         /** retrieves all descriptions of all possible values of the enumeration property
         */
-        virtual std::vector< OUString > SAL_CALL getDescriptions(
+        virtual ::std::vector< OUString > SAL_CALL getDescriptions(
             ) const = 0;
 
         /** converts a given description into a property value
@@ -55,6 +55,7 @@ namespace pcr
                 const css::uno::Any& _rEnumValue
             ) const = 0;
 
+        virtual ~IPropertyEnumRepresentation() { };
     };
 
 

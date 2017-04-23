@@ -82,13 +82,13 @@ public:
                             OutputDevice* pDevice, double nScaleX, double nScaleY,
                             const Fraction& rX, const Fraction& rY );
 
-    tools::Rectangle   GetEditArea( const ScPatternAttr* pPattern, bool bForceToTop );
+    Rectangle   GetEditArea( const ScPatternAttr* pPattern, bool bForceToTop );
 };
 
 class ScEditAttrTester
 {
     ScEditEngineDefaulter* pEngine;
-    std::unique_ptr<SfxItemSet> pEditAttrs;
+    SfxItemSet* pEditAttrs;
     bool        bNeedsObject;
     bool        bNeedsCellAttr;
 
@@ -110,7 +110,8 @@ protected:
     bool            bDeleteEnginePool;
     bool            bDeleteDefaults;
 
-                    ScEnginePoolHelper( SfxItemPool* pEnginePool, bool bDeleteEnginePool );
+                    ScEnginePoolHelper( SfxItemPool* pEnginePool,
+                        bool bDeleteEnginePool = false );
                     ScEnginePoolHelper( const ScEnginePoolHelper& rOrg );
     virtual         ~ScEnginePoolHelper();
 };
@@ -128,7 +129,7 @@ public:
                     /// If rOrg.bDeleteEnginePool: pool gets cloned and will be
                     /// deleted on destruction. Defaults are not set.
                     ScEditEngineDefaulter( const ScEditEngineDefaulter& rOrg );
-    virtual         ~ScEditEngineDefaulter() override;
+    virtual         ~ScEditEngineDefaulter();
 
                     /// Creates a copy of SfxItemSet if bRememberCopy set
     void            SetDefaults( const SfxItemSet& rDefaults, bool bRememberCopy = true );
@@ -235,7 +236,8 @@ class ScNoteEditEngine : public ScEditEngineDefaulter
 {
 
 public:
-    ScNoteEditEngine( SfxItemPool* pEnginePool, SfxItemPool* pTextObjectPool );
+    ScNoteEditEngine( SfxItemPool* pEnginePool,
+                SfxItemPool* pTextObjectPool = nullptr );
 
 };
 

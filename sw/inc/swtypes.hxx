@@ -28,7 +28,6 @@
 #include "swdllapi.h"
 #include <i18nlangtag/languagetag.hxx>
 #include <o3tl/typed_flags_set.hxx>
-#include <svx/swframetypes.hxx>
 
 namespace com { namespace sun { namespace star {
     namespace linguistic2{
@@ -61,7 +60,7 @@ typedef long SwTwips;
 
 // Converts Millimeters to Twips (1 mm == 56.905479 twips).
 template <typename T = SwTwips>
-constexpr T MmToTwips(const double mm) { return static_cast<T>(mm / 0.017573); }
+static SAL_CONSTEXPR T MmToTwips(const double mm) { return static_cast<T>(mm / 0.017573); }
 
 #define MM50   283  // 1/2 cm in TWIPS.
 
@@ -85,7 +84,7 @@ const SwTwips lMinBorder = 1134;
 
 // Margin left and above document.
 // Half of it is gap between the pages.
-//TODO: Replace with SwViewOption::defDocumentBorder
+//TODO: Replace with SwViewOption::GetDefDocumentBorder()
 #define DOCUMENTBORDER  284L
 
 // Constant strings.
@@ -134,9 +133,28 @@ const short lOutlineMinTextDistance = 216; // 0.15 inch = 0.38 cm
 // fields before INIT_FLDTYPES.
 #define INIT_SEQ_FLDTYPES   4
 
-extern ResMgr* pSwResMgr;
-    // defined in sw/source/uibase/app/swmodule.cxx for the sw library and in
-    // sw/source/ui/dialog/swdialmgr.cxx for the swui library
+// The former Rendevouz-IDs live on:
+// There are IDs for the anchors (SwFormatAnchor) and some others
+// that are only of importance for interfaces (SwDoc).
+enum RndStdIds
+{
+    FLY_AT_PARA,        // Anchored at paragraph.
+    FLY_AS_CHAR,        // Anchored as character.
+    FLY_AT_PAGE,        // Anchored at page.
+    FLY_AT_FLY,         // Anchored at frame.
+    FLY_AT_CHAR,        // Anchored at character.
+
+    RND_STD_HEADER,
+    RND_STD_FOOTER,
+    RND_STD_HEADERL,
+    RND_STD_HEADERR,
+    RND_STD_FOOTERL,
+    RND_STD_FOOTERR,
+
+    RND_DRAW_OBJECT     // A draw-Object! For the SwDoc-interface only!
+};
+
+extern ResMgr* pSwResMgr;           // Is in swapp0.cxx.
 #define SW_RES(i)       ResId(i,*pSwResMgr)
 #define SW_RESSTR(i)    SW_RES(i).toString()
 
@@ -168,16 +186,17 @@ enum class SetAttrMode
     /// when using this need to pay attention to ignore start/end flags of hint
     NOHINTADJUST    = 0x0008,  // No merging of ranges.
     NOFORMATATTR    = 0x0010,  // Do not change into format attribute.
-    APICALL         = 0x0020,  // Called from API (all UI related
+    DONTCHGNUMRULE  = 0x0020,  // Do not change NumRule.
+    APICALL         = 0x0040,  // Called from API (all UI related
                                                         // functionality will be disabled).
     /// Force hint expand (only matters for hints with CH_TXTATR).
-    FORCEHINTEXPAND = 0x0040,
+    FORCEHINTEXPAND = 0x0080,
     /// The inserted item is a copy -- intended for use in ndtxt.cxx.
-    IS_COPY         = 0x0080
+    IS_COPY         = 0x0100
 };
 namespace o3tl
 {
-    template<> struct typed_flags<SetAttrMode> : is_typed_flags<SetAttrMode, 0x0ff> {};
+    template<> struct typed_flags<SetAttrMode> : is_typed_flags<SetAttrMode, 0x1ff> {};
 }
 
 #define SW_ISPRINTABLE( c ) ( c >= ' ' && 127 != c )
@@ -254,12 +273,14 @@ enum PrepareHint
                             // Direction is communicated via pVoid:
                             //     MoveFwd: pVoid == 0
                             //     MoveBwd: pVoid == pOldPage
+    PREP_SWAP,              // Swap graphic; for graphics in visible area.
     PREP_REGISTER,          // Invalidate frames with registers.
     PREP_FTN_GONE,          // A Follow loses its footnote, possibly its first line can move up.
     PREP_MOVEFTN,           // A footnote changes its page. Its contents receives at first a
                             // height of zero in order to avoid too much noise. At formatting
                             // it checks whether it fits and if necessary changes its page again.
     PREP_ERGOSUM,           // Needed because of movement in FootnoteFrames. Check QuoVadis/ErgoSum.
+    PREP_END                // END.
 };
 
 enum FrameControlType

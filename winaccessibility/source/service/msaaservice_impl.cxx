@@ -64,32 +64,42 @@ private:
 
 public:
     MSAAServiceImpl ();
+    virtual ~MSAAServiceImpl();
 
     // XComponent - as used by VCL to lifecycle manage this bridge.
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& ) override
+    virtual void SAL_CALL dispose()
+        throw (css::uno::RuntimeException, std::exception);
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& )
+        throw (css::uno::RuntimeException, std::exception)
     { /* dummy */ }
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& ) override
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& )
+        throw (css::uno::RuntimeException, std::exception)
     { /* dummy */ }
 
     // XMSAAService
     virtual sal_Int64 SAL_CALL getAccObjectPtr(
-            sal_Int64 hWnd, sal_Int64 lParam, sal_Int64 wParam) override;
-    virtual void SAL_CALL handleWindowOpened(sal_Int64) override;
+            sal_Int64 hWnd, sal_Int64 lParam, sal_Int64 wParam)
+        throw (css::uno::RuntimeException, std::exception);
+    virtual void SAL_CALL handleWindowOpened(sal_Int64)
+        throw (css::uno::RuntimeException, std::exception);
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception);
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
+        throw (css::uno::RuntimeException, std::exception);
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception);
 };
 
 /**
-   * Implementation of getAccObjectPtr.
+   * Implemention of getAccObjectPtr.
    * @param
    * @return Com interface.
    */
 sal_Int64 MSAAServiceImpl::getAccObjectPtr(
         sal_Int64 hWnd, sal_Int64 lParam, sal_Int64 wParam)
+throw (RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -101,12 +111,13 @@ sal_Int64 MSAAServiceImpl::getAccObjectPtr(
 }
 
 /**
-   * Implementation of handleWindowOpened, the method will be invoked when a
+   * Implemention of handleWindowOpened, the method will be invoked when a
    * top window is opened and AT starts up.
    * @param
    * @return
    */
 void MSAAServiceImpl::handleWindowOpened(sal_Int64 nAcc)
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -120,27 +131,27 @@ void MSAAServiceImpl::handleWindowOpened(sal_Int64 nAcc)
     }
 }
 
-OUString MSAAServiceImpl::getImplementationName()
+OUString MSAAServiceImpl::getImplementationName() throw (RuntimeException, std::exception)
 {
     return getImplementationName_MSAAServiceImpl();
 }
 
 /**
-   * Implementation of XServiceInfo, return support service name.
+   * Implemention of XServiceInfo,return support service name.
    * @param Service name.
    * @return If the service name is supported.
    */
-sal_Bool MSAAServiceImpl::supportsService( OUString const & serviceName )
+sal_Bool MSAAServiceImpl::supportsService( OUString const & serviceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 /**
-   * Implementation of XServiceInfo, return all service names.
+   * Implemention of XServiceInfo,return all service names.
    * @param.
    * @return service name sequence.
    */
-Sequence< OUString > MSAAServiceImpl::getSupportedServiceNames()
+Sequence< OUString > MSAAServiceImpl::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
     return getSupportedServiceNames_MSAAServiceImpl();
 }
@@ -266,7 +277,12 @@ MSAAServiceImpl::MSAAServiceImpl()
         SAL_WARN( "iacc2", "No VCL toolkit interface to listen to for events");
 }
 
+MSAAServiceImpl::~MSAAServiceImpl()
+{
+}
+
 void MSAAServiceImpl::dispose()
+    throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -290,9 +306,9 @@ static struct ::cppu::ImplementationEntry s_component_entries [] =
             create_MSAAServiceImpl, getImplementationName_MSAAServiceImpl,
             getSupportedServiceNames_MSAAServiceImpl,
             ::cppu::createSingleComponentFactory,
-            nullptr, 0
+            0, 0
         },
-        { nullptr, nullptr, nullptr, nullptr, nullptr, 0 }
+        { 0, 0, 0, 0, 0, 0 }
     };
 }
 

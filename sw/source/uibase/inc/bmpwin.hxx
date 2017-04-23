@@ -34,14 +34,15 @@ private:
     bool        bHorz : 1;
     bool        bVert : 1;
     bool        bGraphic : 1;
+    bool        bLeftAlign : 1;
 
-    virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect) override;
 
     virtual Size GetOptimalSize() const override;
 
 public:
     BmpWindow(vcl::Window* pPar, WinBits nStyle);
-    virtual ~BmpWindow() override;
+    virtual ~BmpWindow();
     void MirrorVert(bool bMirror) { bVert = bMirror; Invalidate(); }
     void MirrorHorz(bool bMirror) { bHorz = bMirror; Invalidate(); }
     void SetGraphic(const Graphic& rGrf);

@@ -100,10 +100,10 @@ SwFrameDlg::SwFrameDlg( SfxViewFrame*       pViewFrame,
     SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
 
-    // remove?
+    //UUUU remove?
     // m_nBackgroundId = AddTabPage("background", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), 0);
 
-    // add Area and Transparence TabPages
+    //UUUU add Area and Transparence TabPages
     m_nAreaId = AddTabPage("area", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_AREA ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_AREA ));
     m_nTransparenceId = AddTabPage("transparence", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TRANSPARENCE ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_TRANSPARENCE ) );
 
@@ -123,7 +123,7 @@ SwFrameDlg::SwFrameDlg( SfxViewFrame*       pViewFrame,
             RemoveTabPage("crop");
         if( m_sDlgType != "FrameDialog" )
         {
-            // RemoveTabPage("background");
+            //UUUU RemoveTabPage("background");
             RemoveTabPage("area");
             RemoveTabPage("transparence");
         }
@@ -180,12 +180,22 @@ void SwFrameDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
             rPage.SetFrame( m_pWrtShell->GetView().GetViewFrame()->GetFrame().GetFrameInterface() );
         rPage.PageCreated(aNewSet);
     }
+    //UUUU
+    //else if (nId == m_nBackgroundId && m_sDlgType == "FrameDialog")
+    //{
+    //    sal_Int32 nFlagType = SVX_SHOW_SELECTOR;
+    //    if (!m_bHTMLMode)
+    //        nFlagType |= SVX_ENABLE_TRANSPARENCY;
+    //    aSet.Put (SfxUInt32Item(SID_FLAG_TYPE, nFlagType));
+    //
+    //    rPage.PageCreated(aSet);
+    //}
     else if (nId == m_nBorderId)
     {
         aSet.Put (SfxUInt16Item(SID_SWMODE_TYPE,static_cast<sal_uInt16>(SwBorderModes::FRAME)));
         rPage.PageCreated(aSet);
     }
-    // inits for Area and Transparency TabPages
+    //UUUU inits for Area and Transparency TabPages
     // The selection attribute lists (XPropertyList derivates, e.g. XColorList for
     // the color table) need to be added as items (e.g. SvxColorListItem) to make
     // these pages find the needed attributes for fill style suggestions.
@@ -194,7 +204,7 @@ void SwFrameDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
     else if (nId == m_nAreaId)
     {
         SfxItemSet aNew(*GetInputSetImpl()->GetPool(),
-                        SID_COLOR_TABLE, SID_PATTERN_LIST,
+                        SID_COLOR_TABLE, SID_BITMAP_LIST,
                         SID_OFFER_IMPORT, SID_OFFER_IMPORT, 0, 0);
 
         aNew.Put(m_rSet);

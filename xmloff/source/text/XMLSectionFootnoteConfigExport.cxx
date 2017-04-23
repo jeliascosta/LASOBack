@@ -89,7 +89,7 @@ void XMLSectionFootnoteConfigExport::exportXML(
                     rState.maValue >>= sNumSuffix;
                     break;
                 case CTF_SECTION_FOOTNOTE_END:
-                    SAL_WARN_IF( i != nIdx, "xmloff",
+                    DBG_ASSERT( i == nIdx,
                                 "received wrong property state index" );
                     rState.maValue >>= bEnd;
                     break;
@@ -118,7 +118,7 @@ void XMLSectionFootnoteConfigExport::exportXML(
                     rState.maValue >>= sNumSuffix;
                     break;
                 case CTF_SECTION_ENDNOTE_END:
-                    SAL_WARN_IF( i != nIdx, "xmloff",
+                    DBG_ASSERT( i == nIdx,
                                 "received wrong property state index" );
                     rState.maValue >>= bEnd;
                     break;
@@ -137,8 +137,10 @@ void XMLSectionFootnoteConfigExport::exportXML(
         if (bNumRestart)
         {
             // restart number is stored as 0.., but interpreted as 1..
+            ::sax::Converter::convertNumber(sBuf,
+                                              (sal_Int32)(nNumRestartAt+1));
             rExport.AddAttribute(XML_NAMESPACE_TEXT, XML_START_VALUE,
-                                 OUString::number(nNumRestartAt+1));
+                                 sBuf.makeStringAndClear());
         }
 
         if (bNumOwn)

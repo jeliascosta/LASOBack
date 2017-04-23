@@ -26,7 +26,6 @@
 #include "com/sun/star/lang/XServiceInfo.hpp"
 #include "com/sun/star/inspection/XStringRepresentation.hpp"
 #include "com/sun/star/lang/XInitialization.hpp"
-#include "com/sun/star/script/CannotConvertException.hpp"
 #include "com/sun/star/script/XTypeConverter.hpp"
 #include <com/sun/star/container/XHierarchicalNameAccess.hpp>
 #include <com/sun/star/reflection/XConstantsTypeDescription.hpp>
@@ -36,9 +35,9 @@
 #include <com/sun/star/util/Time.hpp>
 #include <comphelper/sequence.hxx>
 #include <connectivity/dbconversion.hxx>
-#include <tools/resary.hxx>
 #include "formresid.hrc"
 #include "pcrservices.hxx"
+#include <tools/StringListResource.hxx>
 #include <comphelper/types.hxx>
 #include "modulepcr.hxx"
 
@@ -75,19 +74,19 @@ public:
     StringRepresentation& operator=(const StringRepresentation&) = delete;
 
     // lang::XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) override;
-    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString & ServiceName) throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (uno::RuntimeException, std::exception) override;
 
     // inspection::XStringRepresentation:
-    virtual OUString SAL_CALL convertToControlValue(const uno::Any & PropertyValue) override;
-    virtual uno::Any SAL_CALL convertToPropertyValue(const OUString & ControlValue, const uno::Type & ControlValueType) override;
+    virtual OUString SAL_CALL convertToControlValue(const uno::Any & PropertyValue) throw (uno::RuntimeException, uno::Exception, std::exception) override;
+    virtual uno::Any SAL_CALL convertToPropertyValue(const OUString & ControlValue, const uno::Type & ControlValueType) throw (uno::RuntimeException, uno::Exception, std::exception) override;
 
     // lang::XInitialization:
-    virtual void SAL_CALL initialize(const uno::Sequence< uno::Any > & aArguments) override;
+    virtual void SAL_CALL initialize(const uno::Sequence< uno::Any > & aArguments) throw (uno::RuntimeException, uno::Exception, std::exception) override;
 
 private:
-    virtual ~StringRepresentation() override {}
+    virtual ~StringRepresentation() {}
 
     /** converts a generic value into a string representation
 
@@ -125,7 +124,7 @@ private:
 
     /** converts a string into his constant value if it exists, otherwise the type converter is used.
     * \param _rValue the value to be converted
-    * \param _ePropertyType the type of the property to be converted into
+    * \param _ePropertyType the type of the propery to be converted into
     * \return the converted value
     */
     uno::Any convertStringToSimple( const OUString& _rValue,const uno::TypeClass& _ePropertyType );
@@ -143,23 +142,23 @@ StringRepresentation::StringRepresentation(uno::Reference< uno::XComponentContex
 {}
 
 // com.sun.star.uno.XServiceInfo:
-OUString  SAL_CALL StringRepresentation::getImplementationName()
+OUString  SAL_CALL StringRepresentation::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
     return comp_StringRepresentation::_getImplementationName();
 }
 
-sal_Bool SAL_CALL StringRepresentation::supportsService(OUString const & serviceName)
+sal_Bool SAL_CALL StringRepresentation::supportsService(OUString const & serviceName) throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
-uno::Sequence< OUString >  SAL_CALL StringRepresentation::getSupportedServiceNames()
+uno::Sequence< OUString >  SAL_CALL StringRepresentation::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
 {
     return comp_StringRepresentation::_getSupportedServiceNames();
 }
 
 // inspection::XStringRepresentation:
-OUString SAL_CALL StringRepresentation::convertToControlValue(const uno::Any & PropertyValue)
+OUString SAL_CALL StringRepresentation::convertToControlValue(const uno::Any & PropertyValue) throw (uno::RuntimeException, uno::Exception, std::exception)
 {
     OUString sReturn;
     if ( !convertGenericValueToString( PropertyValue, sReturn ) )
@@ -179,7 +178,7 @@ OUString SAL_CALL StringRepresentation::convertToControlValue(const uno::Any & P
     return sReturn;
 }
 
-uno::Any SAL_CALL StringRepresentation::convertToPropertyValue(const OUString & ControlValue, const uno::Type & ControlValueType)
+uno::Any SAL_CALL StringRepresentation::convertToPropertyValue(const OUString & ControlValue, const uno::Type & ControlValueType) throw (uno::RuntimeException, uno::Exception, std::exception)
 {
     uno::Any aReturn;
 
@@ -243,7 +242,7 @@ struct CompareConstants {
 }
 
 // lang::XInitialization:
-void SAL_CALL StringRepresentation::initialize(const uno::Sequence< uno::Any > & aArguments)
+void SAL_CALL StringRepresentation::initialize(const uno::Sequence< uno::Any > & aArguments) throw (uno::RuntimeException, uno::Exception, std::exception)
 {
     sal_Int32 nLength = aArguments.getLength();
     if ( nLength )
@@ -379,11 +378,11 @@ bool StringRepresentation::convertGenericValueToString( const uno::Any& _rValue,
 
     case uno::TypeClass_BOOLEAN:
     {
-        ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_YESNO));
+        ::std::vector< OUString > aListEntries;
+        tools::StringListResource aRes(PcrRes(RID_RSC_ENUM_YESNO),aListEntries);
         bool bValue = false;
         _rValue >>= bValue;
-        _rStringRep = bValue ? aListEntries.GetString(1)
-                             : aListEntries.GetString(0);
+        _rStringRep = bValue ? aListEntries[1] : aListEntries[0];
     }
     break;
 
@@ -491,7 +490,7 @@ uno::Any StringRepresentation::convertStringToSimple( const OUString& _rValue,co
                     if ( *pIter == _rValue )
                     {
                         OSL_ENSURE(i < m_aConstants.getLength() ,"StringRepresentation::convertSimpleToString: Index is not in range of m_aValues");
-                        aReturn = m_aConstants[i]->getConstantValue();
+                        aReturn <<= m_aConstants[i]->getConstantValue();
                         break;
                     }
                 }
@@ -518,8 +517,9 @@ bool StringRepresentation::convertStringToGenericValue( const OUString& _rString
 
     case uno::TypeClass_BOOLEAN:
     {
-        ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_YESNO));
-        _rValue <<= aListEntries.GetString(0) != _rStringRep;
+        ::std::vector< OUString > aListEntries;
+        tools::StringListResource aRes(PcrRes(RID_RSC_ENUM_YESNO),aListEntries);
+        _rValue <<= aListEntries[0] != _rStringRep;
     }
     break;
 

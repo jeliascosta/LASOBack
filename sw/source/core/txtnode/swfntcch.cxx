@@ -17,18 +17,16 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <shellio.hxx>
 #include <viewsh.hxx>
 #include "swfntcch.hxx"
 #include "fmtcol.hxx"
 #include "swfont.hxx"
 
-// from atrstck.cxx
+// aus atrstck.cxx
 extern const sal_uInt8 StackPos[];
 
-// FontCache is created in txtinit.cxx TextInit_ and deleted in TextFinit
+// globale Variablen, werden in SwFntCch.Hxx bekanntgegeben
+// Der FontCache wird in TextInit.Cxx _TXTINIT erzeugt und in _TXTEXIT geloescht
 SwFontCache *pSwFontCache = nullptr;
 
 SwFontObj::SwFontObj( const void *pOwn, SwViewShell *pSh ) :
@@ -59,13 +57,8 @@ SwFontObj *SwFontAccess::Get( )
 
 SwCacheObj *SwFontAccess::NewObj( )
 {
-    const_cast<SwTextFormatColl*>(static_cast<const SwTextFormatColl*>(m_pOwner))->SetInSwFntCache( true );
-    return new SwFontObj( m_pOwner, pShell );
-}
-
-SAL_DLLPUBLIC_EXPORT void FlushFontCache()
-{
-    pSwFontCache->Flush();
+    const_cast<SwTextFormatColl*>(static_cast<const SwTextFormatColl*>(pOwner))->SetInSwFntCache( true );
+    return new SwFontObj( pOwner, pShell );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

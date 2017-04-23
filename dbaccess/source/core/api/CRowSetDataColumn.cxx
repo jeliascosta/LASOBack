@@ -26,7 +26,6 @@
 #include <cppuhelper/typeprovider.hxx>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <tools/debug.hxx>
 
 using namespace dbaccess;
@@ -125,7 +124,7 @@ void SAL_CALL ORowSetDataColumn::getFastPropertyValue( Any& rValue, sal_Int32 nH
         ODataColumn::getFastPropertyValue( rValue, nHandle );
 }
 
-void SAL_CALL ORowSetDataColumn::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue )
+void SAL_CALL ORowSetDataColumn::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue )throw (Exception, std::exception)
 {
     switch( nHandle )
     {
@@ -148,7 +147,7 @@ void SAL_CALL ORowSetDataColumn::setFastPropertyValue_NoBroadcast(sal_Int32 nHan
 sal_Bool SAL_CALL ORowSetDataColumn::convertFastPropertyValue( Any & rConvertedValue,
                                                             Any & rOldValue,
                                                             sal_Int32 nHandle,
-                                                            const Any& rValue )
+                                                            const Any& rValue ) throw (IllegalArgumentException)
 {
     bool bModified = false;
     switch( nHandle )
@@ -175,7 +174,7 @@ sal_Bool SAL_CALL ORowSetDataColumn::convertFastPropertyValue( Any & rConvertedV
     return bModified;
 }
 
-Sequence< sal_Int8 > ORowSetDataColumn::getImplementationId()
+Sequence< sal_Int8 > ORowSetDataColumn::getImplementationId() throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -198,7 +197,7 @@ ORowSetDataColumns::ORowSetDataColumns(
                 const ::rtl::Reference< ::connectivity::OSQLColumns>& _rColumns,
                 ::cppu::OWeakObject& _rParent,
                 ::osl::Mutex& _rMutex,
-                const std::vector< OUString> &_rVector
+                const ::std::vector< OUString> &_rVector
                 ) : connectivity::sdbcx::OCollection(_rParent,_bCase,_rMutex,_rVector)
                 ,m_aColumns(_rColumns)
 {
@@ -226,13 +225,13 @@ void SAL_CALL ORowSetDataColumns::disposing()
     m_aColumns = nullptr;
 }
 
-void ORowSetDataColumns::assign(const ::rtl::Reference< ::connectivity::OSQLColumns>& _rColumns,const std::vector< OUString> &_rVector)
+void ORowSetDataColumns::assign(const ::rtl::Reference< ::connectivity::OSQLColumns>& _rColumns,const ::std::vector< OUString> &_rVector)
 {
     m_aColumns = _rColumns;
     reFill(_rVector);
 }
 
-void ORowSetDataColumns::impl_refresh()
+void ORowSetDataColumns::impl_refresh() throw(css::uno::RuntimeException)
 {
 }
 

@@ -37,17 +37,17 @@ OleWrapperClientSite::~OleWrapperClientSite()
 
 STDMETHODIMP OleWrapperClientSite::QueryInterface( REFIID riid , void** ppv )
 {
-    *ppv=nullptr;
+    *ppv=NULL;
 
     if ( riid == IID_IUnknown )
-        *ppv = static_cast<IUnknown*>(this);
+        *ppv = (IUnknown*)this;
 
     if ( riid == IID_IOleClientSite )
-        *ppv = static_cast<IOleClientSite*>(this);
+        *ppv = (IOleClientSite*)this;
 
-    if ( *ppv != nullptr )
+    if ( *ppv != NULL )
     {
-        static_cast<IUnknown*>(*ppv)->AddRef();
+        ((IUnknown*)*ppv)->AddRef();
         return S_OK;
     }
 
@@ -72,12 +72,12 @@ void OleWrapperClientSite::disconnectOleComponent()
 {
     // must not be called from the descructor of OleComponent!!!
     osl::MutexGuard aGuard( m_aMutex );
-    m_pOleComp = nullptr;
+    m_pOleComp = NULL;
 }
 
 STDMETHODIMP OleWrapperClientSite::SaveObject()
 {
-    OleComponent* pLockComponent = nullptr;
+    OleComponent* pLockComponent = NULL;
     HRESULT hResult = E_FAIL;
 
     {
@@ -102,13 +102,13 @@ STDMETHODIMP OleWrapperClientSite::SaveObject()
 
 STDMETHODIMP OleWrapperClientSite::GetMoniker( DWORD, DWORD, LPMONIKER *ppmk )
 {
-    *ppmk = nullptr;
+    *ppmk = NULL;
     return E_NOTIMPL;
 }
 
 STDMETHODIMP OleWrapperClientSite::GetContainer( LPOLECONTAINER* ppContainer )
 {
-    *ppContainer = nullptr;
+    *ppContainer = NULL;
     return E_NOTIMPL;
 }
 
@@ -119,7 +119,7 @@ STDMETHODIMP OleWrapperClientSite::ShowObject()
 
 STDMETHODIMP OleWrapperClientSite::OnShowWindow( BOOL bShow )
 {
-    OleComponent* pLockComponent = nullptr;
+    OleComponent* pLockComponent = NULL;
 
     // TODO/LATER: redirect the notification to the main thread so that SolarMutex can be locked
     {

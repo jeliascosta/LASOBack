@@ -22,7 +22,7 @@
 #include "deployment.hrc"
 #include "unopkg_shared.h"
 #include "dp_identifier.hxx"
-#include "dp_gui.hrc"
+#include "../../deployment/gui/dp_gui.hrc"
 #include "lockfile.hxx"
 #include <vcl/svapp.hxx>
 #include <vcl/msgbox.hxx>
@@ -104,7 +104,7 @@ bool isOption( OptionInfo const * option_info, sal_uInt32 * pIndex )
     {
         ++(*pIndex);
         dp_misc::TRACE(__FILE__ ": identified option \'\'"
-            + OUStringLiteral1( option_info->m_short_option ) + "\n");
+            + OUString( option_info->m_short_option ) + "\n");
         return true;
     }
     if (arg[ 1 ] == '-' && rtl_ustr_ascii_compare(
@@ -211,9 +211,13 @@ OUString makeAbsoluteFileUrl(
     if (osl_getAbsoluteFileURL(
             base_url.pData, file_url.pData, &abs.pData ) != osl_File_E_None)
     {
-        throw RuntimeException(
-            "making absolute file url failed: \"" + base_url
-            + "\" (base-url) and \"" + file_url + "\" (file-url)!" );
+        OUStringBuffer buf;
+        buf.append( "making absolute file url failed: \"" );
+        buf.append( base_url );
+        buf.append( "\" (base-url) and \"" );
+        buf.append( file_url );
+        buf.append( "\" (file-url)!" );
+        throw RuntimeException( buf.makeStringAndClear() );
     }
     return abs[ abs.getLength() -1 ] == '/'
         ? abs.copy( 0, abs.getLength() -1 ) : abs;
@@ -280,9 +284,9 @@ void printf_package(
             xPackage->getBundle( Reference<task::XAbortChannel>(), xCmdEnv ) );
         printf_space( level + 1 );
         dp_misc::writeConsole("bundled Packages: {\n");
-        std::vector<Reference<deployment::XPackage> >vec_bundle;
+        ::std::vector<Reference<deployment::XPackage> >vec_bundle;
         ::comphelper::sequenceToContainer(vec_bundle, seq);
-        printf_packages( vec_bundle, std::vector<bool>(vec_bundle.size()),
+        printf_packages( vec_bundle, ::std::vector<bool>(vec_bundle.size()),
                          xCmdEnv, level + 2 );
         printf_space( level + 1 );
         dp_misc::writeConsole("}\n");
@@ -303,8 +307,8 @@ void printf_unaccepted_licenses(
 
 
 void printf_packages(
-    std::vector< Reference<deployment::XPackage> > const & allExtensions,
-    std::vector<bool> const & vecUnaccepted,
+    ::std::vector< Reference<deployment::XPackage> > const & allExtensions,
+    ::std::vector<bool> const & vecUnaccepted,
     Reference<XCommandEnvironment> const & xCmdEnv, sal_Int32 level )
 {
     OSL_ASSERT(allExtensions.size() == vecUnaccepted.size());
@@ -316,7 +320,7 @@ void printf_packages(
     }
     else
     {
-        typedef std::vector< Reference<deployment::XPackage> >::const_iterator I_EXT;
+        typedef ::std::vector< Reference<deployment::XPackage> >::const_iterator I_EXT;
         int index = 0;
         for (I_EXT i = allExtensions.begin(); i != allExtensions.end(); ++i, ++index)
         {

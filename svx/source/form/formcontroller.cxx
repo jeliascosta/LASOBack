@@ -48,8 +48,6 @@
 #include <com/sun/star/form/XReset.hpp>
 #include <com/sun/star/form/control/FilterControl.hpp>
 #include <com/sun/star/frame/XController.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/sdb/ParametersRequest.hpp>
 #include <com/sun/star/sdb/RowChangeAction.hpp>
 #include <com/sun/star/sdb/XInteractionSupplyParameters.hpp>
@@ -101,6 +99,7 @@ using namespace ::dbtools;
 
 css::uno::Reference< css::uno::XInterface > SAL_CALL
     FormController_NewInstance_Impl( const css::uno::Reference< css::lang::XMultiServiceFactory > & _rxORB )
+    throw (css::uno::Exception)
 {
     return *( new ::svxform::FormController( comphelper::getComponentContext(_rxORB) ) );
 }
@@ -431,11 +430,11 @@ public:
     const Sequence< PropertyValue >&   getValues() const { return m_aValues; }
 
 // XInteractionSupplyParameters
-    virtual void SAL_CALL setParameters( const Sequence< PropertyValue >& _rValues ) override;
+    virtual void SAL_CALL setParameters( const Sequence< PropertyValue >& _rValues ) throw(RuntimeException, std::exception) override;
 };
 
 
-void SAL_CALL OParameterContinuation::setParameters( const Sequence< PropertyValue >& _rValues )
+void SAL_CALL OParameterContinuation::setParameters( const Sequence< PropertyValue >& _rValues ) throw(RuntimeException, std::exception)
 {
     m_aValues = _rValues;
 }
@@ -464,14 +463,14 @@ public:
     }
 
     virtual OUString GetComponentServiceName() override {return OUString("Edit");}
-    virtual void SAL_CALL createPeer( const Reference< XToolkit > & rxToolkit, const Reference< XWindowPeer >  & rParentPeer ) override;
+    virtual void SAL_CALL createPeer( const Reference< XToolkit > & rxToolkit, const Reference< XWindowPeer >  & rParentPeer ) throw( RuntimeException, std::exception ) override;
 
 protected:
     virtual void ImplSetPeerProperty( const OUString& rPropName, const Any& rVal ) override;
 };
 
 
-void FmXAutoControl::createPeer( const Reference< XToolkit > & rxToolkit, const Reference< XWindowPeer >  & rParentPeer )
+void FmXAutoControl::createPeer( const Reference< XToolkit > & rxToolkit, const Reference< XWindowPeer >  & rParentPeer ) throw( RuntimeException, std::exception )
 {
     UnoControl::createPeer( rxToolkit, rParentPeer );
 
@@ -494,7 +493,7 @@ void FmXAutoControl::ImplSetPeerProperty( const OUString& rPropName, const Any& 
 }
 
 
-IMPL_LINK_NOARG( FormController, OnActivateTabOrder, Timer*, void )
+IMPL_LINK_NOARG_TYPED( FormController, OnActivateTabOrder, Idle*, void )
 {
     activateTabOrder();
 }
@@ -510,7 +509,7 @@ struct UpdateAllListeners : public ::std::unary_function< Reference< XDispatch >
     }
 };
 
-IMPL_LINK_NOARG( FormController, OnInvalidateFeatures, Timer*, void )
+IMPL_LINK_NOARG_TYPED( FormController, OnInvalidateFeatures, Timer*, void )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     for ( ::std::set< sal_Int16 >::const_iterator aLoop = m_aInvalidFeatures.begin();
@@ -540,6 +539,7 @@ FormController::FormController(const Reference< css::uno::XComponentContext > & 
                   ,m_aRowSetApproveListeners(m_aMutex)
                   ,m_aParameterListeners(m_aMutex)
                   ,m_aFilterListeners(m_aMutex)
+                  ,m_pControlBorderManager( new ::svxform::ControlBorderManager )
                   ,m_xFormOperations()
                   ,m_aMode( OUString( "DataMode"  ) )
                   ,m_aLoadEvent( LINK( this, FormController, OnLoad ) )
@@ -572,11 +572,11 @@ FormController::FormController(const Reference< css::uno::XComponentContext > & 
     }
     osl_atomic_decrement(&m_refCount);
 
-    m_aTabActivationIdle.SetPriority( TaskPriority::LOWEST );
-    m_aTabActivationIdle.SetInvokeHandler( LINK( this, FormController, OnActivateTabOrder ) );
+    m_aTabActivationIdle.SetPriority( SchedulerPriority::LOWEST );
+    m_aTabActivationIdle.SetIdleHdl( LINK( this, FormController, OnActivateTabOrder ) );
 
     m_aFeatureInvalidationTimer.SetTimeout( 200 );
-    m_aFeatureInvalidationTimer.SetInvokeHandler( LINK( this, FormController, OnInvalidateFeatures ) );
+    m_aFeatureInvalidationTimer.SetTimeoutHdl( LINK( this, FormController, OnInvalidateFeatures ) );
 }
 
 
@@ -609,6 +609,9 @@ FormController::~FormController()
         m_xAggregate->setDelegator( nullptr );
         m_xAggregate.clear();
     }
+
+    DELETEZ( m_pControlBorderManager );
+
 }
 
 
@@ -624,7 +627,7 @@ void SAL_CALL FormController::release() throw ()
 }
 
 
-Any SAL_CALL FormController::queryInterface( const Type& _rType )
+Any SAL_CALL FormController::queryInterface( const Type& _rType ) throw(RuntimeException, std::exception)
 {
     Any aRet = FormController_BASE::queryInterface( _rType );
     if ( !aRet.hasValue() )
@@ -635,12 +638,12 @@ Any SAL_CALL FormController::queryInterface( const Type& _rType )
 }
 
 
-Sequence< sal_Int8 > SAL_CALL FormController::getImplementationId()
+Sequence< sal_Int8 > SAL_CALL FormController::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Sequence< Type > SAL_CALL FormController::getTypes(  )
+Sequence< Type > SAL_CALL FormController::getTypes(  ) throw(RuntimeException, std::exception)
 {
     return comphelper::concatSequences(
         FormController_BASE::getTypes(),
@@ -649,17 +652,17 @@ Sequence< Type > SAL_CALL FormController::getTypes(  )
 }
 
 // XServiceInfo
-sal_Bool SAL_CALL FormController::supportsService(const OUString& ServiceName)
+sal_Bool SAL_CALL FormController::supportsService(const OUString& ServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-OUString SAL_CALL FormController::getImplementationName()
+OUString SAL_CALL FormController::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("org.openoffice.comp.svx.FormController");
 }
 
-Sequence< OUString> SAL_CALL FormController::getSupportedServiceNames()
+Sequence< OUString> SAL_CALL FormController::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     // service names which are supported only, but cannot be used to created an
     // instance at a service factory
@@ -671,13 +674,13 @@ Sequence< OUString> SAL_CALL FormController::getSupportedServiceNames()
 }
 
 
-sal_Bool SAL_CALL FormController::approveReset(const EventObject& /*rEvent*/)
+sal_Bool SAL_CALL FormController::approveReset(const EventObject& /*rEvent*/) throw( RuntimeException, std::exception )
 {
     return true;
 }
 
 
-void SAL_CALL FormController::resetted(const EventObject& rEvent)
+void SAL_CALL FormController::resetted(const EventObject& rEvent) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     if (getCurrentControl().is() &&  (getCurrentControl()->getModel() == rEvent.Source))
@@ -685,7 +688,7 @@ void SAL_CALL FormController::resetted(const EventObject& rEvent)
 }
 
 
-Sequence< OUString> const & FormController::getSupportedServiceNames_Static()
+Sequence< OUString> FormController::getSupportedServiceNames_Static()
 {
     static Sequence< OUString> aServices;
     if (!aServices.getLength())
@@ -761,12 +764,14 @@ void FormController::impl_setTextOnAllFilter_throw()
 
 sal_Bool FormController::convertFastPropertyValue( Any & /*rConvertedValue*/, Any & /*rOldValue*/,
                                             sal_Int32 /*nHandle*/, const Any& /*rValue*/ )
+                throw( IllegalArgumentException )
 {
     return false;
 }
 
 
 void FormController::setFastPropertyValue_NoBroadcast( sal_Int32 /*nHandle*/, const Any& /*rValue*/ )
+                         throw( Exception, std::exception )
 {
 }
 
@@ -850,7 +855,7 @@ void FormController::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) cons
 }
 
 
-Reference< XPropertySetInfo >  FormController::getPropertySetInfo()
+Reference< XPropertySetInfo >  FormController::getPropertySetInfo() throw( RuntimeException, std::exception )
 {
     static Reference< XPropertySetInfo >  xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -882,19 +887,19 @@ void FormController::fillProperties(
 
 // XFilterController
 
-void SAL_CALL FormController::addFilterControllerListener( const Reference< XFilterControllerListener >& Listener )
+void SAL_CALL FormController::addFilterControllerListener( const Reference< XFilterControllerListener >& Listener ) throw( RuntimeException, std::exception )
 {
     m_aFilterListeners.addInterface( Listener );
 }
 
 
-void SAL_CALL FormController::removeFilterControllerListener( const Reference< XFilterControllerListener >& Listener )
+void SAL_CALL FormController::removeFilterControllerListener( const Reference< XFilterControllerListener >& Listener ) throw( RuntimeException, std::exception )
 {
     m_aFilterListeners.removeInterface( Listener );
 }
 
 
-::sal_Int32 SAL_CALL FormController::getFilterComponents()
+::sal_Int32 SAL_CALL FormController::getFilterComponents() throw( css::uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -903,7 +908,7 @@ void SAL_CALL FormController::removeFilterControllerListener( const Reference< X
 }
 
 
-::sal_Int32 SAL_CALL FormController::getDisjunctiveTerms()
+::sal_Int32 SAL_CALL FormController::getDisjunctiveTerms() throw( css::uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -912,7 +917,7 @@ void SAL_CALL FormController::removeFilterControllerListener( const Reference< X
 }
 
 
-void SAL_CALL FormController::setPredicateExpression( ::sal_Int32 Component, ::sal_Int32 Term, const OUString& PredicateExpression )
+void SAL_CALL FormController::setPredicateExpression( ::sal_Int32 Component, ::sal_Int32 Term, const OUString& PredicateExpression ) throw( RuntimeException, IndexOutOfBoundsException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -931,7 +936,7 @@ void SAL_CALL FormController::setPredicateExpression( ::sal_Int32 Component, ::s
 }
 
 
-Reference< XControl > FormController::getFilterComponent( ::sal_Int32 Component )
+Reference< XControl > FormController::getFilterComponent( ::sal_Int32 Component ) throw( RuntimeException, IndexOutOfBoundsException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -943,7 +948,7 @@ Reference< XControl > FormController::getFilterComponent( ::sal_Int32 Component 
 }
 
 
-Sequence< Sequence< OUString > > FormController::getPredicateExpressions()
+Sequence< Sequence< OUString > > FormController::getPredicateExpressions() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -976,7 +981,7 @@ Sequence< Sequence< OUString > > FormController::getPredicateExpressions()
 }
 
 
-void SAL_CALL FormController::removeDisjunctiveTerm( ::sal_Int32 Term )
+void SAL_CALL FormController::removeDisjunctiveTerm( ::sal_Int32 Term ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     // SYNCHRONIZED -->
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
@@ -1017,7 +1022,7 @@ void SAL_CALL FormController::removeDisjunctiveTerm( ::sal_Int32 Term )
 }
 
 
-void SAL_CALL FormController::appendEmptyDisjunctiveTerm()
+void SAL_CALL FormController::appendEmptyDisjunctiveTerm() throw (RuntimeException, std::exception)
 {
     // SYNCHRONIZED -->
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
@@ -1028,7 +1033,7 @@ void SAL_CALL FormController::appendEmptyDisjunctiveTerm()
 }
 
 
-::sal_Int32 SAL_CALL FormController::getActiveTerm()
+::sal_Int32 SAL_CALL FormController::getActiveTerm() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1037,7 +1042,7 @@ void SAL_CALL FormController::appendEmptyDisjunctiveTerm()
 }
 
 
-void SAL_CALL FormController::setActiveTerm( ::sal_Int32 ActiveTerm )
+void SAL_CALL FormController::setActiveTerm( ::sal_Int32 ActiveTerm ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1054,14 +1059,14 @@ void SAL_CALL FormController::setActiveTerm( ::sal_Int32 ActiveTerm )
 
 // XElementAccess
 
-sal_Bool SAL_CALL FormController::hasElements()
+sal_Bool SAL_CALL FormController::hasElements() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return !m_aChildren.empty();
 }
 
 
-Type SAL_CALL  FormController::getElementType()
+Type SAL_CALL  FormController::getElementType() throw( RuntimeException, std::exception )
 {
     return cppu::UnoType<XFormController>::get();
 
@@ -1069,7 +1074,7 @@ Type SAL_CALL  FormController::getElementType()
 
 // XEnumerationAccess
 
-Reference< XEnumeration > SAL_CALL  FormController::createEnumeration()
+Reference< XEnumeration > SAL_CALL  FormController::createEnumeration() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return new ::comphelper::OEnumerationByIndex(this);
@@ -1077,14 +1082,14 @@ Reference< XEnumeration > SAL_CALL  FormController::createEnumeration()
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL FormController::getCount()
+sal_Int32 SAL_CALL FormController::getCount() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_aChildren.size();
 }
 
 
-Any SAL_CALL FormController::getByIndex(sal_Int32 Index)
+Any SAL_CALL FormController::getByIndex(sal_Int32 Index) throw( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (Index < 0 ||
@@ -1096,7 +1101,7 @@ Any SAL_CALL FormController::getByIndex(sal_Int32 Index)
 
 //  EventListener
 
-void SAL_CALL FormController::disposing(const EventObject& e)
+void SAL_CALL FormController::disposing(const EventObject& e) throw( RuntimeException, std::exception )
 {
     // Ist der Container disposed worden
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -1160,7 +1165,7 @@ void FormController::disposing()
     removeBoundFieldListener();
     stopFiltering();
 
-    m_aControlBorderManager.restoreAll();
+    m_pControlBorderManager->restoreAll();
 
     m_aFilterRows.clear();
 
@@ -1226,7 +1231,7 @@ namespace
 }
 
 
-void SAL_CALL FormController::propertyChange(const PropertyChangeEvent& evt)
+void SAL_CALL FormController::propertyChange(const PropertyChangeEvent& evt) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     if ( evt.PropertyName == FM_PROP_BOUNDFIELD )
@@ -1280,13 +1285,13 @@ void SAL_CALL FormController::propertyChange(const PropertyChangeEvent& evt)
             bool bEnable = lcl_shouldUseDynamicControlBorder( evt.Source, evt.NewValue );
             if ( bEnable )
             {
-                m_aControlBorderManager.enableDynamicBorderColor();
+                m_pControlBorderManager->enableDynamicBorderColor();
                 if ( m_xActiveControl.is() )
-                    m_aControlBorderManager.focusGained( m_xActiveControl.get() );
+                    m_pControlBorderManager->focusGained( m_xActiveControl.get() );
             }
             else
             {
-                m_aControlBorderManager.disableDynamicBorderColor();
+                m_pControlBorderManager->disableDynamicBorderColor();
             }
         }
     }
@@ -1427,7 +1432,7 @@ void FormController::toggleAutoFields(bool bAutoFields)
 }
 
 
-IMPL_LINK_NOARG(FormController, OnToggleAutoFields, void*, void)
+IMPL_LINK_NOARG_TYPED(FormController, OnToggleAutoFields, void*, void)
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 
@@ -1436,7 +1441,7 @@ IMPL_LINK_NOARG(FormController, OnToggleAutoFields, void*, void)
 
 // XTextListener
 
-void SAL_CALL FormController::textChanged(const TextEvent& e)
+void SAL_CALL FormController::textChanged(const TextEvent& e) throw( RuntimeException, std::exception )
 {
     // SYNCHRONIZED -->
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
@@ -1493,7 +1498,7 @@ void SAL_CALL FormController::textChanged(const TextEvent& e)
 
 // XItemListener
 
-void SAL_CALL FormController::itemStateChanged(const ItemEvent& /*rEvent*/)
+void SAL_CALL FormController::itemStateChanged(const ItemEvent& /*rEvent*/) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     impl_onModify();
@@ -1501,7 +1506,7 @@ void SAL_CALL FormController::itemStateChanged(const ItemEvent& /*rEvent*/)
 
 // XModificationBroadcaster
 
-void SAL_CALL FormController::addModifyListener(const Reference< XModifyListener > & l)
+void SAL_CALL FormController::addModifyListener(const Reference< XModifyListener > & l) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1509,7 +1514,7 @@ void SAL_CALL FormController::addModifyListener(const Reference< XModifyListener
 }
 
 
-void FormController::removeModifyListener(const Reference< XModifyListener > & l)
+void FormController::removeModifyListener(const Reference< XModifyListener > & l) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1518,7 +1523,7 @@ void FormController::removeModifyListener(const Reference< XModifyListener > & l
 
 // XModificationListener
 
-void FormController::modified( const EventObject& _rEvent )
+void FormController::modified( const EventObject& _rEvent ) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 
@@ -1611,13 +1616,13 @@ bool FormController::determineLockState() const
 
 //  FocusListener
 
-void FormController::focusGained(const FocusEvent& e)
+void FormController::focusGained(const FocusEvent& e) throw( RuntimeException, std::exception )
 {
     // SYNCHRONIZED -->
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
 
-    m_aControlBorderManager.focusGained( e.Source );
+    m_pControlBorderManager->focusGained( e.Source );
 
     Reference< XControl >  xControl(e.Source, UNO_QUERY);
     if (m_bDBConnection)
@@ -1748,7 +1753,7 @@ void FormController::focusGained(const FocusEvent& e)
 }
 
 
-IMPL_LINK_NOARG( FormController, OnActivated, void*, void )
+IMPL_LINK_NOARG_TYPED( FormController, OnActivated, void*, void )
 {
     EventObject aEvent;
     aEvent.Source = *this;
@@ -1756,7 +1761,7 @@ IMPL_LINK_NOARG( FormController, OnActivated, void*, void )
 }
 
 
-IMPL_LINK_NOARG( FormController, OnDeactivated, void*, void )
+IMPL_LINK_NOARG_TYPED( FormController, OnDeactivated, void*, void )
 {
     EventObject aEvent;
     aEvent.Source = *this;
@@ -1764,11 +1769,11 @@ IMPL_LINK_NOARG( FormController, OnDeactivated, void*, void )
 }
 
 
-void FormController::focusLost(const FocusEvent& e)
+void FormController::focusLost(const FocusEvent& e) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 
-    m_aControlBorderManager.focusLost( e.Source );
+    m_pControlBorderManager->focusLost( e.Source );
 
     Reference< XControl >  xControl(e.Source, UNO_QUERY);
     Reference< XWindowPeer >  xNext(e.NextFocus, UNO_QUERY);
@@ -1781,31 +1786,31 @@ void FormController::focusLost(const FocusEvent& e)
 }
 
 
-void SAL_CALL FormController::mousePressed( const awt::MouseEvent& /*_rEvent*/ )
+void SAL_CALL FormController::mousePressed( const awt::MouseEvent& /*_rEvent*/ ) throw (RuntimeException, std::exception)
 {
     // not interested in
 }
 
 
-void SAL_CALL FormController::mouseReleased( const awt::MouseEvent& /*_rEvent*/ )
+void SAL_CALL FormController::mouseReleased( const awt::MouseEvent& /*_rEvent*/ ) throw (RuntimeException, std::exception)
 {
     // not interested in
 }
 
 
-void SAL_CALL FormController::mouseEntered( const awt::MouseEvent& _rEvent )
+void SAL_CALL FormController::mouseEntered( const awt::MouseEvent& _rEvent ) throw (RuntimeException, std::exception)
 {
-    m_aControlBorderManager.mouseEntered( _rEvent.Source );
+    m_pControlBorderManager->mouseEntered( _rEvent.Source );
 }
 
 
-void SAL_CALL FormController::mouseExited( const awt::MouseEvent& _rEvent )
+void SAL_CALL FormController::mouseExited( const awt::MouseEvent& _rEvent ) throw (RuntimeException, std::exception)
 {
-    m_aControlBorderManager.mouseExited( _rEvent.Source );
+    m_pControlBorderManager->mouseExited( _rEvent.Source );
 }
 
 
-void SAL_CALL FormController::componentValidityChanged( const EventObject& _rSource )
+void SAL_CALL FormController::componentValidityChanged( const EventObject& _rSource ) throw (RuntimeException, std::exception)
 {
     Reference< XControl > xControl( findControl( m_aControls, Reference< XControlModel >( _rSource.Source, UNO_QUERY ), false, false ) );
     Reference< XValidatableFormComponent > xValidatable( _rSource.Source, UNO_QUERY );
@@ -1813,11 +1818,11 @@ void SAL_CALL FormController::componentValidityChanged( const EventObject& _rSou
     OSL_ENSURE( xControl.is() && xValidatable.is(), "FormController::componentValidityChanged: huh?" );
 
     if ( xControl.is() && xValidatable.is() )
-        m_aControlBorderManager.validityChanged( xControl, xValidatable );
+        m_pControlBorderManager->validityChanged( xControl, xValidatable );
 }
 
 
-void FormController::setModel(const Reference< XTabControllerModel > & Model)
+void FormController::setModel(const Reference< XTabControllerModel > & Model) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1909,17 +1914,17 @@ void FormController::setModel(const Reference< XTabControllerModel > & Model)
                 bool bEnableDynamicControlBorder = lcl_shouldUseDynamicControlBorder(
                     xModelProps.get(), xModelProps->getPropertyValue( FM_PROP_DYNAMIC_CONTROL_BORDER ) );
                 if ( bEnableDynamicControlBorder )
-                    m_aControlBorderManager.enableDynamicBorderColor();
+                    m_pControlBorderManager->enableDynamicBorderColor();
                 else
-                    m_aControlBorderManager.disableDynamicBorderColor();
+                    m_pControlBorderManager->disableDynamicBorderColor();
 
                 sal_Int32 nColor = 0;
                 if ( xModelProps->getPropertyValue( FM_PROP_CONTROL_BORDER_COLOR_FOCUS ) >>= nColor )
-                    m_aControlBorderManager.setStatusColor( ControlStatus::Focused, nColor );
+                    m_pControlBorderManager->setStatusColor( ControlStatus::Focused, nColor );
                 if ( xModelProps->getPropertyValue( FM_PROP_CONTROL_BORDER_COLOR_MOUSE ) >>= nColor )
-                    m_aControlBorderManager.setStatusColor( ControlStatus::MouseHover, nColor );
+                    m_pControlBorderManager->setStatusColor( ControlStatus::MouseHover, nColor );
                 if ( xModelProps->getPropertyValue( FM_PROP_CONTROL_BORDER_COLOR_INVALID ) >>= nColor )
-                    m_aControlBorderManager.setStatusColor( ControlStatus::Invalid, nColor );
+                    m_pControlBorderManager->setStatusColor( ControlStatus::Invalid, nColor );
             }
         }
     }
@@ -1930,7 +1935,7 @@ void FormController::setModel(const Reference< XTabControllerModel > & Model)
 }
 
 
-Reference< XTabControllerModel >  FormController::getModel()
+Reference< XTabControllerModel >  FormController::getModel() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -1996,7 +2001,7 @@ void FormController::removeFromEventAttacher(const Reference< XControl > & xCont
 }
 
 
-void FormController::setContainer(const Reference< XControlContainer > & xContainer)
+void FormController::setContainer(const Reference< XControlContainer > & xContainer) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     Reference< XTabControllerModel >  xTabModel(getModel());
@@ -2081,7 +2086,7 @@ void FormController::setContainer(const Reference< XControlContainer > & xContai
 }
 
 
-Reference< XControlContainer >  FormController::getContainer()
+Reference< XControlContainer >  FormController::getContainer() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2093,7 +2098,7 @@ Reference< XControlContainer >  FormController::getContainer()
 }
 
 
-Sequence< Reference< XControl > > FormController::getControls()
+Sequence< Reference< XControl > > FormController::getControls() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2133,7 +2138,7 @@ Sequence< Reference< XControl > > FormController::getControls()
 }
 
 
-void FormController::autoTabOrder()
+void FormController::autoTabOrder() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2144,7 +2149,7 @@ void FormController::autoTabOrder()
 }
 
 
-void FormController::activateTabOrder()
+void FormController::activateTabOrder() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2432,7 +2437,7 @@ void FormController::implControlInserted( const Reference< XControl>& _rxControl
         if ( xValidatable.is() )
         {
             xValidatable->addFormComponentValidityListener( this );
-            m_aControlBorderManager.validityChanged( _rxControl, xValidatable );
+            m_pControlBorderManager->validityChanged( _rxControl, xValidatable );
         }
     }
 
@@ -2533,7 +2538,7 @@ void FormController::removeControl(const Reference< XControl > & xControl)
 
 // XLoadListener
 
-void FormController::loaded(const EventObject& rEvent)
+void FormController::loaded(const EventObject& rEvent) throw( RuntimeException, std::exception )
 {
     OSL_ENSURE( rEvent.Source == m_xModelAsIndex, "FormController::loaded: where did this come from?" );
 
@@ -2549,7 +2554,7 @@ void FormController::loaded(const EventObject& rEvent)
             Any aVal        = xSet->getPropertyValue(FM_PROP_CYCLE);
             sal_Int32 aVal2 = 0;
             ::cppu::enum2int(aVal2,aVal);
-            m_bCycle        = !aVal.hasValue() || (form::TabulatorCycle)aVal2 == TabulatorCycle_RECORDS;
+            m_bCycle        = !aVal.hasValue() || aVal2 == TabulatorCycle_RECORDS;
             m_bCanUpdate    = canUpdate(xSet);
             m_bCanInsert    = canInsert(xSet);
             m_bCurrentRecordModified = ::comphelper::getBOOL(xSet->getPropertyValue(FM_PROP_ISMODIFIED));
@@ -2599,7 +2604,7 @@ void FormController::updateAllDispatchers() const
 }
 
 
-IMPL_LINK_NOARG(FormController, OnLoad, void*, void)
+IMPL_LINK_NOARG_TYPED(FormController, OnLoad, void*, void)
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     m_bLocked = determineLockState();
@@ -2615,7 +2620,7 @@ IMPL_LINK_NOARG(FormController, OnLoad, void*, void)
 }
 
 
-void FormController::unloaded(const EventObject& /*rEvent*/)
+void FormController::unloaded(const EventObject& /*rEvent*/) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2624,7 +2629,7 @@ void FormController::unloaded(const EventObject& /*rEvent*/)
 }
 
 
-void FormController::reloading(const EventObject& /*aEvent*/)
+void FormController::reloading(const EventObject& /*aEvent*/) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2636,7 +2641,7 @@ void FormController::reloading(const EventObject& /*aEvent*/)
 }
 
 
-void FormController::reloaded(const EventObject& aEvent)
+void FormController::reloaded(const EventObject& aEvent) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2645,7 +2650,7 @@ void FormController::reloaded(const EventObject& aEvent)
 }
 
 
-void FormController::unloading(const EventObject& /*aEvent*/)
+void FormController::unloading(const EventObject& /*aEvent*/) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2654,7 +2659,7 @@ void FormController::unloading(const EventObject& /*aEvent*/)
 }
 
 
-void FormController::unload()
+void FormController::unload() throw( RuntimeException )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2763,7 +2768,7 @@ void FormController::stopFormListening( const Reference< XPropertySet >& _rxForm
 
 // css::sdbc::XRowSetListener
 
-void FormController::cursorMoved(const EventObject& /*event*/)
+void FormController::cursorMoved(const EventObject& /*event*/) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2784,12 +2789,12 @@ void FormController::cursorMoved(const EventObject& /*event*/)
 }
 
 
-void FormController::rowChanged(const EventObject& /*event*/)
+void FormController::rowChanged(const EventObject& /*event*/) throw( RuntimeException, std::exception )
 {
     // not interested in ...
 }
 
-void FormController::rowSetChanged(const EventObject& /*event*/)
+void FormController::rowSetChanged(const EventObject& /*event*/) throw( RuntimeException, std::exception )
 {
     // not interested in ...
 }
@@ -2797,7 +2802,7 @@ void FormController::rowSetChanged(const EventObject& /*event*/)
 
 // XContainerListener
 
-void SAL_CALL FormController::elementInserted(const ContainerEvent& evt)
+void SAL_CALL FormController::elementInserted(const ContainerEvent& evt) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2843,7 +2848,7 @@ void SAL_CALL FormController::elementInserted(const ContainerEvent& evt)
 }
 
 
-void SAL_CALL FormController::elementReplaced(const ContainerEvent& evt)
+void SAL_CALL FormController::elementReplaced(const ContainerEvent& evt) throw( RuntimeException, std::exception )
 {
     // simulate an elementRemoved
     ContainerEvent aRemoveEvent( evt );
@@ -2858,7 +2863,7 @@ void SAL_CALL FormController::elementReplaced(const ContainerEvent& evt)
 }
 
 
-void SAL_CALL FormController::elementRemoved(const ContainerEvent& evt)
+void SAL_CALL FormController::elementRemoved(const ContainerEvent& evt) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2904,7 +2909,7 @@ Reference< XControl >  FormController::isInList(const Reference< XWindowPeer > &
 }
 
 
-void FormController::activateFirst()
+void FormController::activateFirst() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2915,7 +2920,7 @@ void FormController::activateFirst()
 }
 
 
-void FormController::activateLast()
+void FormController::activateLast() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2927,7 +2932,7 @@ void FormController::activateLast()
 
 // XFormController
 
-Reference< XFormOperations > SAL_CALL FormController::getFormOperations()
+Reference< XFormOperations > SAL_CALL FormController::getFormOperations() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2936,7 +2941,7 @@ Reference< XFormOperations > SAL_CALL FormController::getFormOperations()
 }
 
 
-Reference< XControl> SAL_CALL FormController::getCurrentControl()
+Reference< XControl> SAL_CALL FormController::getCurrentControl() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2944,14 +2949,14 @@ Reference< XControl> SAL_CALL FormController::getCurrentControl()
 }
 
 
-void SAL_CALL FormController::addActivateListener(const Reference< XFormControllerListener > & l)
+void SAL_CALL FormController::addActivateListener(const Reference< XFormControllerListener > & l) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
     m_aActivateListeners.addInterface(l);
 }
 
-void SAL_CALL FormController::removeActivateListener(const Reference< XFormControllerListener > & l)
+void SAL_CALL FormController::removeActivateListener(const Reference< XFormControllerListener > & l) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2959,7 +2964,7 @@ void SAL_CALL FormController::removeActivateListener(const Reference< XFormContr
 }
 
 
-void SAL_CALL FormController::addChildController( const Reference< XFormController >& ChildController )
+void SAL_CALL FormController::addChildController( const Reference< XFormController >& ChildController ) throw( RuntimeException, IllegalArgumentException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -2996,7 +3001,7 @@ void SAL_CALL FormController::addChildController( const Reference< XFormControll
 }
 
 
-Reference< XFormControllerContext > SAL_CALL FormController::getContext()
+Reference< XFormControllerContext > SAL_CALL FormController::getContext() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3004,7 +3009,7 @@ Reference< XFormControllerContext > SAL_CALL FormController::getContext()
 }
 
 
-void SAL_CALL FormController::setContext( const Reference< XFormControllerContext >& _context )
+void SAL_CALL FormController::setContext( const Reference< XFormControllerContext >& _context ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3012,7 +3017,7 @@ void SAL_CALL FormController::setContext( const Reference< XFormControllerContex
 }
 
 
-Reference< XInteractionHandler > SAL_CALL FormController::getInteractionHandler()
+Reference< XInteractionHandler > SAL_CALL FormController::getInteractionHandler() throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3020,7 +3025,7 @@ Reference< XInteractionHandler > SAL_CALL FormController::getInteractionHandler(
 }
 
 
-void SAL_CALL FormController::setInteractionHandler( const Reference< XInteractionHandler >& _interactionHandler )
+void SAL_CALL FormController::setInteractionHandler( const Reference< XInteractionHandler >& _interactionHandler ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3431,7 +3436,7 @@ void FormController::stopFiltering()
 
 // XModeSelector
 
-void FormController::setMode(const OUString& Mode)
+void FormController::setMode(const OUString& Mode) throw( NoSupportException, RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3459,7 +3464,7 @@ void FormController::setMode(const OUString& Mode)
 }
 
 
-OUString SAL_CALL FormController::getMode()
+OUString SAL_CALL FormController::getMode() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3468,7 +3473,7 @@ OUString SAL_CALL FormController::getMode()
 }
 
 
-Sequence< OUString > SAL_CALL FormController::getSupportedModes()
+Sequence< OUString > SAL_CALL FormController::getSupportedModes() throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3484,7 +3489,7 @@ Sequence< OUString > SAL_CALL FormController::getSupportedModes()
 }
 
 
-sal_Bool SAL_CALL FormController::supportsMode(const OUString& Mode)
+sal_Bool SAL_CALL FormController::supportsMode(const OUString& Mode) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3508,7 +3513,7 @@ vcl::Window* FormController::getDialogParentWindow()
     {
         Reference< XControl > xContainerControl( getContainer(), UNO_QUERY_THROW );
         Reference< XWindowPeer > xContainerPeer( xContainerControl->getPeer(), UNO_QUERY_THROW );
-        pParentWindow = VCLUnoHelper::GetWindow( xContainerPeer ).get();
+        pParentWindow = VCLUnoHelper::GetWindow( xContainerPeer );
     }
     catch( const Exception& )
     {
@@ -3648,7 +3653,7 @@ namespace
 
 // XRowSetApproveListener
 
-sal_Bool SAL_CALL FormController::approveRowChange(const RowChangeEvent& _rEvent)
+sal_Bool SAL_CALL FormController::approveRowChange(const RowChangeEvent& _rEvent) throw( RuntimeException, std::exception )
 {
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3736,7 +3741,7 @@ sal_Bool SAL_CALL FormController::approveRowChange(const RowChangeEvent& _rEvent
 }
 
 
-sal_Bool SAL_CALL FormController::approveCursorMove(const EventObject& event)
+sal_Bool SAL_CALL FormController::approveCursorMove(const EventObject& event) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3753,7 +3758,7 @@ sal_Bool SAL_CALL FormController::approveCursorMove(const EventObject& event)
 }
 
 
-sal_Bool SAL_CALL FormController::approveRowSetChange(const EventObject& event)
+sal_Bool SAL_CALL FormController::approveRowSetChange(const EventObject& event) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3771,7 +3776,7 @@ sal_Bool SAL_CALL FormController::approveRowSetChange(const EventObject& event)
 
 // XRowSetApproveBroadcaster
 
-void SAL_CALL FormController::addRowSetApproveListener(const Reference< XRowSetApproveListener > & _rxListener)
+void SAL_CALL FormController::addRowSetApproveListener(const Reference< XRowSetApproveListener > & _rxListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3780,7 +3785,7 @@ void SAL_CALL FormController::addRowSetApproveListener(const Reference< XRowSetA
 }
 
 
-void SAL_CALL FormController::removeRowSetApproveListener(const Reference< XRowSetApproveListener > & _rxListener)
+void SAL_CALL FormController::removeRowSetApproveListener(const Reference< XRowSetApproveListener > & _rxListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3790,7 +3795,7 @@ void SAL_CALL FormController::removeRowSetApproveListener(const Reference< XRowS
 
 // XErrorListener
 
-void SAL_CALL FormController::errorOccured(const SQLErrorEvent& aEvent)
+void SAL_CALL FormController::errorOccured(const SQLErrorEvent& aEvent) throw( RuntimeException, std::exception )
 {
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3811,7 +3816,7 @@ void SAL_CALL FormController::errorOccured(const SQLErrorEvent& aEvent)
 
 // XErrorBroadcaster
 
-void SAL_CALL FormController::addSQLErrorListener(const Reference< XSQLErrorListener > & aListener)
+void SAL_CALL FormController::addSQLErrorListener(const Reference< XSQLErrorListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3820,7 +3825,7 @@ void SAL_CALL FormController::addSQLErrorListener(const Reference< XSQLErrorList
 }
 
 
-void SAL_CALL FormController::removeSQLErrorListener(const Reference< XSQLErrorListener > & aListener)
+void SAL_CALL FormController::removeSQLErrorListener(const Reference< XSQLErrorListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3830,7 +3835,7 @@ void SAL_CALL FormController::removeSQLErrorListener(const Reference< XSQLErrorL
 
 // XDatabaseParameterBroadcaster2
 
-void SAL_CALL FormController::addDatabaseParameterListener(const Reference< XDatabaseParameterListener > & aListener)
+void SAL_CALL FormController::addDatabaseParameterListener(const Reference< XDatabaseParameterListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3839,7 +3844,7 @@ void SAL_CALL FormController::addDatabaseParameterListener(const Reference< XDat
 }
 
 
-void SAL_CALL FormController::removeDatabaseParameterListener(const Reference< XDatabaseParameterListener > & aListener)
+void SAL_CALL FormController::removeDatabaseParameterListener(const Reference< XDatabaseParameterListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3849,20 +3854,20 @@ void SAL_CALL FormController::removeDatabaseParameterListener(const Reference< X
 
 // XDatabaseParameterBroadcaster
 
-void SAL_CALL FormController::addParameterListener(const Reference< XDatabaseParameterListener > & aListener)
+void SAL_CALL FormController::addParameterListener(const Reference< XDatabaseParameterListener > & aListener) throw( RuntimeException, std::exception )
 {
     FormController::addDatabaseParameterListener( aListener );
 }
 
 
-void SAL_CALL FormController::removeParameterListener(const Reference< XDatabaseParameterListener > & aListener)
+void SAL_CALL FormController::removeParameterListener(const Reference< XDatabaseParameterListener > & aListener) throw( RuntimeException, std::exception )
 {
     FormController::removeDatabaseParameterListener( aListener );
 }
 
 // XDatabaseParameterListener
 
-sal_Bool SAL_CALL FormController::approveParameter(const DatabaseParameterEvent& aEvent)
+sal_Bool SAL_CALL FormController::approveParameter(const DatabaseParameterEvent& aEvent) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -3940,7 +3945,7 @@ sal_Bool SAL_CALL FormController::approveParameter(const DatabaseParameterEvent&
 
 // XConfirmDeleteBroadcaster
 
-void SAL_CALL FormController::addConfirmDeleteListener(const Reference< XConfirmDeleteListener > & aListener)
+void SAL_CALL FormController::addConfirmDeleteListener(const Reference< XConfirmDeleteListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3949,7 +3954,7 @@ void SAL_CALL FormController::addConfirmDeleteListener(const Reference< XConfirm
 }
 
 
-void SAL_CALL FormController::removeConfirmDeleteListener(const Reference< XConfirmDeleteListener > & aListener)
+void SAL_CALL FormController::removeConfirmDeleteListener(const Reference< XConfirmDeleteListener > & aListener) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -3959,7 +3964,7 @@ void SAL_CALL FormController::removeConfirmDeleteListener(const Reference< XConf
 
 // XConfirmDeleteListener
 
-sal_Bool SAL_CALL FormController::confirmDelete(const RowChangeEvent& aEvent)
+sal_Bool SAL_CALL FormController::confirmDelete(const RowChangeEvent& aEvent) throw( RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     impl_checkDisposed_throw();
@@ -4021,7 +4026,7 @@ sal_Bool SAL_CALL FormController::confirmDelete(const RowChangeEvent& aEvent)
 }
 
 
-void SAL_CALL FormController::invalidateFeatures( const Sequence< ::sal_Int16 >& Features )
+void SAL_CALL FormController::invalidateFeatures( const Sequence< ::sal_Int16 >& Features ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     // for now, just copy the ids of the features, because ....
@@ -4035,7 +4040,7 @@ void SAL_CALL FormController::invalidateFeatures( const Sequence< ::sal_Int16 >&
 }
 
 
-void SAL_CALL FormController::invalidateAllFeatures(  )
+void SAL_CALL FormController::invalidateAllFeatures(  ) throw (RuntimeException, std::exception)
 {
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
 
@@ -4050,6 +4055,7 @@ void SAL_CALL FormController::invalidateAllFeatures(  )
 Reference< XDispatch >
 FormController::interceptedQueryDispatch( const URL& aURL,
                                             const OUString& /*aTargetFrameName*/, sal_Int32 /*nSearchFlags*/)
+                                            throw( RuntimeException )
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     Reference< XDispatch >  xReturn;
@@ -4088,7 +4094,7 @@ FormController::interceptedQueryDispatch( const URL& aURL,
 }
 
 
-void SAL_CALL FormController::dispatch( const URL& _rURL, const Sequence< PropertyValue >& _rArgs )
+void SAL_CALL FormController::dispatch( const URL& _rURL, const Sequence< PropertyValue >& _rArgs ) throw (RuntimeException, std::exception)
 {
     if ( _rArgs.getLength() != 1 )
     {
@@ -4116,7 +4122,7 @@ void SAL_CALL FormController::dispatch( const URL& _rURL, const Sequence< Proper
 }
 
 
-void SAL_CALL FormController::addStatusListener( const Reference< XStatusListener >& _rxListener, const URL& _rURL )
+void SAL_CALL FormController::addStatusListener( const Reference< XStatusListener >& _rxListener, const URL& _rURL ) throw (RuntimeException, std::exception)
 {
     if (_rURL.Complete == FMURL_CONFIRM_DELETION)
     {
@@ -4134,19 +4140,19 @@ void SAL_CALL FormController::addStatusListener( const Reference< XStatusListene
 }
 
 
-Reference< XInterface > SAL_CALL FormController::getParent()
+Reference< XInterface > SAL_CALL FormController::getParent() throw( RuntimeException, std::exception )
 {
     return m_xParent;
 }
 
 
-void SAL_CALL FormController::setParent( const Reference< XInterface >& Parent)
+void SAL_CALL FormController::setParent( const Reference< XInterface >& Parent) throw( NoSupportException, RuntimeException, std::exception )
 {
     m_xParent = Parent;
 }
 
 
-void SAL_CALL FormController::removeStatusListener( const Reference< XStatusListener >& /*_rxListener*/, const URL& _rURL )
+void SAL_CALL FormController::removeStatusListener( const Reference< XStatusListener >& /*_rxListener*/, const URL& _rURL ) throw (RuntimeException, std::exception)
 {
     (void)_rURL;
     OSL_ENSURE(_rURL.Complete == FMURL_CONFIRM_DELETION, "FormController::removeStatusListener: invalid (unsupported) URL!");
@@ -4159,17 +4165,21 @@ Reference< XDispatchProviderInterceptor >  FormController::createInterceptor(con
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 #ifdef DBG_UTIL
     // check if we already have a interceptor for the given object
-    for ( const auto & it : m_aControlDispatchInterceptors )
+    for (   Interceptors::const_iterator aIter = m_aControlDispatchInterceptors.begin();
+            aIter != m_aControlDispatchInterceptors.end();
+            ++aIter
+        )
     {
-        if (it->getIntercepted() == _xInterception)
+        if ((*aIter)->getIntercepted() == _xInterception)
             OSL_FAIL("FormController::createInterceptor : we already do intercept this objects dispatches !");
     }
 #endif
 
-    rtl::Reference<DispatchInterceptionMultiplexer> pInterceptor(new DispatchInterceptionMultiplexer( _xInterception, this ));
-    m_aControlDispatchInterceptors.push_back( pInterceptor );
+    DispatchInterceptionMultiplexer* pInterceptor = new DispatchInterceptionMultiplexer( _xInterception, this );
+    pInterceptor->acquire();
+    m_aControlDispatchInterceptors.insert( m_aControlDispatchInterceptors.end(), pInterceptor );
 
-    return pInterceptor.get();
+    return pInterceptor;
 }
 
 
@@ -4186,7 +4196,7 @@ bool FormController::ensureInteractionHandler()
 }
 
 
-void SAL_CALL FormController::handle( const Reference< XInteractionRequest >& _rRequest )
+void SAL_CALL FormController::handle( const Reference< XInteractionRequest >& _rRequest ) throw (RuntimeException, std::exception)
 {
     if ( !ensureInteractionHandler() )
         return;
@@ -4198,20 +4208,28 @@ void FormController::deleteInterceptor(const Reference< XDispatchProviderInterce
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     // search the interceptor responsible for the given object
-    const auto aEnd = m_aControlDispatchInterceptors.end();
-    for ( auto aIter = m_aControlDispatchInterceptors.begin();
+    Interceptors::const_iterator aEnd = m_aControlDispatchInterceptors.end();
+    Interceptors::iterator aIter;
+    for (   aIter = m_aControlDispatchInterceptors.begin();
             aIter != aEnd;
             ++aIter
         )
     {
-        if ((*aIter)->getIntercepted() == _xInterception) {
-            // log off the interception from its interception object
-            (*aIter)->dispose();
-            // remove the interceptor from our array
-            m_aControlDispatchInterceptors.erase(aIter);
-            return;
-        }
+        if ((*aIter)->getIntercepted() == _xInterception)
+            break;
     }
+    if (aIter == aEnd)
+    {
+        return;
+    }
+
+    // log off the interception from its interception object
+    DispatchInterceptionMultiplexer* pInterceptorImpl = *aIter;
+    pInterceptorImpl->dispose();
+    pInterceptorImpl->release();
+
+    // remove the interceptor from our array
+    m_aControlDispatchInterceptors.erase(aIter);
 }
 
 
@@ -4228,7 +4246,7 @@ void FormController::implInvalidateCurrentControlDependentFeatures()
 }
 
 
-void SAL_CALL FormController::columnChanged( const EventObject& /*_event*/ )
+void SAL_CALL FormController::columnChanged( const EventObject& /*_event*/ ) throw (RuntimeException, std::exception)
 {
     implInvalidateCurrentControlDependentFeatures();
 }

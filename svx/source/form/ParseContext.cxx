@@ -20,35 +20,37 @@
 
 #include <sal/macros.h>
 #include "svx/ParseContext.hxx"
+#include "stringlistresource.hxx"
 #include "svx/fmresids.hrc"
 
 #include <svx/dialmgr.hxx>
 
 #include <unotools/syslocale.hxx>
-#include <tools/resary.hxx>
 #include <vcl/svapp.hxx>
 #include <osl/mutex.hxx>
 
 using namespace svxform;
 using namespace ::connectivity;
 
-OSystemParseContext::OSystemParseContext()
-    : IParseContext()
+OSystemParseContext::OSystemParseContext() : IParseContext()
 {
     SolarMutexGuard aGuard;
-    ResStringArray aLocalizedKeywords(SVX_RES(RID_RSC_SQL_INTERNATIONAL));
-    for (sal_uInt32 i = 0; i < aLocalizedKeywords.Count(); ++i)
-        m_aLocalizedKeywords.push_back(aLocalizedKeywords.GetString(i));
+
+    svx::StringListResource aKeywords( SVX_RES( RID_RSC_SQL_INTERNATIONAL ) );
+    aKeywords.get( m_aLocalizedKeywords );
 }
+
 
 OSystemParseContext::~OSystemParseContext()
 {
 }
 
+
 css::lang::Locale OSystemParseContext::getPreferredLocale( ) const
 {
     return SvtSysLocale().GetLanguageTag().getLocale();
 }
+
 
 OUString OSystemParseContext::getErrorMessage(ErrorCode _eCode) const
 {
@@ -68,10 +70,11 @@ OUString OSystemParseContext::getErrorMessage(ErrorCode _eCode) const
         case ErrorCode::InvalidColumn:         aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_COLUMN); break;
         case ErrorCode::InvalidTableExist:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_TABLE_EXISTS); break;
         case ErrorCode::InvalidQueryExist:     aMsg = SVX_RESSTR(RID_STR_SVT_SQL_SYNTAX_QUERY_EXISTS); break;
-        default: break;
+        case ErrorCode::None: break;
     }
     return aMsg;
 }
+
 
 OString OSystemParseContext::getIntlKeywordAscii(InternationalKeyCode _eKey) const
 {
@@ -156,7 +159,7 @@ namespace
         return s_nCounter;
     }
 
-    OSystemParseContext* getSharedContext(OSystemParseContext* _pContext, bool _bSet)
+    OSystemParseContext* getSharedContext(OSystemParseContext* _pContext = nullptr,bool _bSet = false)
     {
         static OSystemParseContext* s_pSharedContext = nullptr;
         if ( _pContext && !s_pSharedContext )
@@ -180,7 +183,7 @@ OParseContextClient::OParseContextClient()
     ::osl::MutexGuard aGuard( getSafteyMutex() );
     if ( 1 == osl_atomic_increment( &getCounter() ) )
     {   // first instance
-        getSharedContext( new OSystemParseContext, false );
+        getSharedContext( new OSystemParseContext );
     }
 }
 
@@ -196,7 +199,7 @@ OParseContextClient::~OParseContextClient()
 
 const OSystemParseContext* OParseContextClient::getParseContext() const
 {
-    return getSharedContext(nullptr, false);
+    return getSharedContext();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

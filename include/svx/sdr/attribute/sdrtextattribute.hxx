@@ -76,13 +76,12 @@ namespace drawinglayer
                 bool bInEditMode,
                 bool bFixedCellHeight,
                 bool bWrongSpell,
+                bool bToBeChained,
                 bool bChainable);
 
             SdrTextAttribute();
             SdrTextAttribute(const SdrTextAttribute& rCandidate);
-            SdrTextAttribute(SdrTextAttribute&& rCandidate);
             SdrTextAttribute& operator=(const SdrTextAttribute& rCandidate);
-            SdrTextAttribute& operator=(SdrTextAttribute&& rCandidate);
             ~SdrTextAttribute();
 
             // checks if the incarnation is default constructed

@@ -28,7 +28,7 @@
 class XMLCaseMapPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCaseMapPropHdl() override;
+    virtual ~XMLCaseMapPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -37,7 +37,7 @@ public:
 class XMLCaseMapVariantHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCaseMapVariantHdl() override;
+    virtual ~XMLCaseMapVariantHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

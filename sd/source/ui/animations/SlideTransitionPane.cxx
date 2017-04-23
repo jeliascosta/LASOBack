@@ -245,7 +245,7 @@ void lcl_CreateUndoForPages(
         return;
 
     OUString aComment( SdResId(STR_UNDO_SLIDE_PARAMS) );
-    pManager->EnterListAction(aComment, aComment, 0, rBase.GetViewShellId());
+    pManager->EnterListAction(aComment, aComment);
     SdUndoGroup* pUndoGroup = new SdUndoGroup( pDoc );
     pUndoGroup->SetComment( aComment );
 
@@ -383,11 +383,11 @@ public:
         set_vexpand( true );
         SetExtraSpacing( 2 );
     }
-    virtual ~TransitionPane() override { disposeOnce(); }
+    virtual ~TransitionPane() { disposeOnce(); }
 
     virtual Size GetOptimalSize() const override
     {
-        return LogicToPixel(Size(70, 88), MapUnit::MapAppFont);
+        return LogicToPixel(Size(70, 88), MAP_APPFONT);
     }
 };
 
@@ -404,32 +404,7 @@ SlideTransitionPane::SlideTransitionPane(
         mbHasSelection( false ),
         mbUpdatingControls( false ),
         mbIsMainViewChangePending( false ),
-        mbHorizontalLayout( false ),
         maLateInitTimer()
-{
-    Initialize(pDoc);
-}
-
-SlideTransitionPane::SlideTransitionPane(
-    Window * pParent,
-    ViewShellBase & rBase,
-    SdDrawDocument* pDoc,
-    const css::uno::Reference<css::frame::XFrame>& rxFrame,
-    bool /*bHorizontalLayout*/ ) :
-        PanelLayout( pParent, "SlideTransitionsPanel", "modules/simpress/ui/slidetransitionspanelhorizontal.ui", rxFrame ),
-
-        mrBase( rBase ),
-        mpDrawDoc( pDoc ),
-        mbHasSelection( false ),
-        mbUpdatingControls( false ),
-        mbIsMainViewChangePending( false ),
-        mbHorizontalLayout( true ),
-        maLateInitTimer()
-{
-    Initialize(pDoc);
-}
-
-void SlideTransitionPane::Initialize(SdDrawDocument* pDoc)
 {
     get(mpFT_VARIANT, "variant_label");
     get(mpLB_VARIANT, "variant_list");
@@ -496,7 +471,7 @@ void SlideTransitionPane::Initialize(SdDrawDocument* pDoc)
     addListener();
 
     maLateInitTimer.SetTimeout(200);
-    maLateInitTimer.SetInvokeHandler(LINK(this, SlideTransitionPane, LateInitCallback));
+    maLateInitTimer.SetTimeoutHdl(LINK(this, SlideTransitionPane, LateInitCallback));
     maLateInitTimer.Start();
 
     UpdateLook();
@@ -536,16 +511,9 @@ void SlideTransitionPane::DataChanged (const DataChangedEvent& rEvent)
 
 void SlideTransitionPane::UpdateLook()
 {
-    if( mbHorizontalLayout )
-    {
-        SetBackground(Wallpaper());
-    }
-    else
-    {
-        SetBackground(::sfx2::sidebar::Theme::GetWallpaper(::sfx2::sidebar::Theme::Paint_PanelBackground));
-        mpFT_duration->SetBackground(Wallpaper());
-        mpFT_SOUND->SetBackground(Wallpaper());
-    }
+    SetBackground(::sfx2::sidebar::Theme::GetWallpaper(::sfx2::sidebar::Theme::Paint_PanelBackground));
+    mpFT_duration->SetBackground(Wallpaper());
+    mpFT_SOUND->SetBackground(Wallpaper());
 }
 
 void SlideTransitionPane::onSelectionChanged()
@@ -570,7 +538,7 @@ void SlideTransitionPane::onChangeCurrentPage()
     }
     else
     {
-        pSelection.reset(new sd::slidesorter::SlideSorterViewShell::PageSelection);
+        pSelection.reset(new sd::slidesorter::SlideSorterViewShell::PageSelection());
         if( mxView.is() )
         {
             SdPage* pPage = SdPage::getImplementation( mxView->getCurrentPage() );
@@ -688,7 +656,7 @@ void SlideTransitionPane::updateControls()
         mpMF_ADVANCE_AUTO_AFTER->SetValue( aEffect.mfTime * 100.0);
     }
 
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
     mpCB_AUTO_PREVIEW->Check( pOptions->IsPreviewTransitions() );
 
     mbUpdatingControls = false;
@@ -732,7 +700,7 @@ void SlideTransitionPane::openSoundFileDialog()
     OUString aFile;
     DBG_ASSERT( mpLB_SOUND->GetSelectEntryPos() == 2,
                 "Dialog should only open when \"Other sound\" is selected" );
-    aFile = SvtPathOptions().GetWorkPath();
+    aFile = SvtPathOptions().GetGraphicPath();
 
     aFileDialog.SetPath( aFile );
 
@@ -925,8 +893,8 @@ void SlideTransitionPane::applyToSelectedPages(bool bPreview = true)
         {
             if (aEffect.mnType) // mnType = 0 denotes no transition
                 playCurrentEffect();
-            else if( mxView.is() )
-                SlideShow::Stop( mrBase );
+            else
+                stopEffects();
         }
 
         if (pFocusWindow)
@@ -944,10 +912,25 @@ void SlideTransitionPane::playCurrentEffect()
     }
 }
 
+void SlideTransitionPane::stopEffects()
+{
+    if( mxView.is() )
+    {
+        SlideShow::Stop( mrBase );
+    }
+}
+
 void SlideTransitionPane::addListener()
 {
     Link<tools::EventMultiplexerEvent&,void> aLink( LINK(this,SlideTransitionPane,EventMultiplexerListener) );
-    mrBase.GetEventMultiplexer()->AddEventListener( aLink );
+    mrBase.GetEventMultiplexer()->AddEventListener (
+        aLink,
+        tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION
+        | tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION
+        | tools::EventMultiplexerEvent::EID_CURRENT_PAGE
+        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
+        | tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
+        | tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED);
 }
 
 void SlideTransitionPane::removeListener()
@@ -956,31 +939,31 @@ void SlideTransitionPane::removeListener()
     mrBase.GetEventMultiplexer()->RemoveEventListener( aLink );
 }
 
-IMPL_LINK(SlideTransitionPane,EventMultiplexerListener,
+IMPL_LINK_TYPED(SlideTransitionPane,EventMultiplexerListener,
     tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case EventMultiplexerEventId::EditViewSelection:
+        case tools::EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION:
             onSelectionChanged();
             break;
 
-        case EventMultiplexerEventId::CurrentPageChanged:
-        case EventMultiplexerEventId::SlideSortedSelection:
+        case tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
+        case tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION:
             onChangeCurrentPage();
             break;
 
-        case EventMultiplexerEventId::MainViewRemoved:
+        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
             mxView.clear();
             onSelectionChanged();
             onChangeCurrentPage();
             break;
 
-        case EventMultiplexerEventId::MainViewAdded:
+        case tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
             mbIsMainViewChangePending = true;
             break;
 
-        case EventMultiplexerEventId::ConfigurationUpdated:
+        case tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED:
             if (mbIsMainViewChangePending)
             {
                 mbIsMainViewChangePending = false;
@@ -998,29 +981,24 @@ IMPL_LINK(SlideTransitionPane,EventMultiplexerListener,
             break;
 
         default:
-            if (rEvent.meEventId != EventMultiplexerEventId::Disposing)
-            {
-                onSelectionChanged();
-                onChangeCurrentPage();
-            }
             break;
     }
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, ApplyToAllButtonClicked, Button*, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, ApplyToAllButtonClicked, Button*, void)
 {
     DBG_ASSERT( mpDrawDoc, "Invalid Draw Document!" );
     if( !mpDrawDoc )
         return;
 
     ::sd::slidesorter::SharedPageSelection pPages (
-        new ::sd::slidesorter::SlideSorterViewShell::PageSelection);
+        new ::sd::slidesorter::SlideSorterViewShell::PageSelection());
 
-    sal_uInt16 nPageCount = mpDrawDoc->GetSdPageCount( PageKind::Standard );
+    sal_uInt16 nPageCount = mpDrawDoc->GetSdPageCount( PK_STANDARD );
     pPages->reserve( nPageCount );
     for( sal_uInt16 i=0; i<nPageCount; ++i )
     {
-        SdPage * pPage = mpDrawDoc->GetSdPage( i, PageKind::Standard );
+        SdPage * pPage = mpDrawDoc->GetSdPage( i, PK_STANDARD );
         if( pPage )
             pPages->push_back( pPage );
     }
@@ -1032,12 +1010,12 @@ IMPL_LINK_NOARG(SlideTransitionPane, ApplyToAllButtonClicked, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, PlayButtonClicked, Button*, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, PlayButtonClicked, Button*, void)
 {
     playCurrentEffect();
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, TransitionSelected, ValueSet *, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, TransitionSelected, ValueSet *, void)
 {
     updateVariants( mpVS_TRANSITION_ICONS->GetSelectItemId() - 1 );
     applyToSelectedPages();
@@ -1087,23 +1065,23 @@ void SlideTransitionPane::updateVariants( size_t nPresetOffset )
     }
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, AdvanceSlideRadioButtonToggled, RadioButton&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, AdvanceSlideRadioButtonToggled, RadioButton&, void)
 {
     updateControlState();
     applyToSelectedPages(false);
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, AdvanceTimeModified, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, AdvanceTimeModified, Edit&, void)
 {
     applyToSelectedPages(false);
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, VariantListBoxSelected, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, VariantListBoxSelected, ListBox&, void)
 {
     applyToSelectedPages();
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, DurationModifiedHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, DurationModifiedHdl, Edit&, void)
 {
     double duration_value = static_cast<double>(mpCBX_duration->GetValue());
     if(duration_value <= 0.0)
@@ -1112,12 +1090,12 @@ IMPL_LINK_NOARG(SlideTransitionPane, DurationModifiedHdl, Edit&, void)
         mpCBX_duration->SetValue(duration_value);
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, DurationLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, DurationLoseFocusHdl, Control&, void)
 {
     applyToSelectedPages();
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, SoundListBoxSelected, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, SoundListBoxSelected, ListBox&, void)
 {
     if( mpLB_SOUND->GetSelectEntryCount() )
     {
@@ -1132,18 +1110,18 @@ IMPL_LINK_NOARG(SlideTransitionPane, SoundListBoxSelected, ListBox&, void)
     applyToSelectedPages();
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, LoopSoundBoxChecked, Button*, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, LoopSoundBoxChecked, Button*, void)
 {
     applyToSelectedPages();
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, AutoPreviewClicked, Button*, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, AutoPreviewClicked, Button*, void)
 {
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
     pOptions->SetPreviewTransitions( mpCB_AUTO_PREVIEW->IsChecked() );
 }
 
-IMPL_LINK_NOARG(SlideTransitionPane, LateInitCallback, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SlideTransitionPane, LateInitCallback, Timer *, void)
 {
     const TransitionPresetList& rPresetList = TransitionPreset::getTransitionPresetList();
 

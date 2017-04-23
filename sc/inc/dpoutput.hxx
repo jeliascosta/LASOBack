@@ -23,8 +23,8 @@
 #include <com/sun/star/sheet/XDimensionsSupplier.hpp>
 #include <com/sun/star/sheet/DataResult.hpp>
 #include <com/sun/star/sheet/MemberResult.hpp>
+#include <com/sun/star/sheet/GeneralFunction.hpp>
 #include <com/sun/star/sheet/DataPilotOutputRangeType.hpp>
-#include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 
 #include "global.hxx"
 #include "address.hxx"
@@ -39,7 +39,7 @@ namespace com { namespace sun { namespace star { namespace sheet {
     struct DataPilotTablePositionData;
 }}}}
 
-namespace tools { class Rectangle; }
+class Rectangle;
 class ScDocument;
 struct ScDPOutLevelData;
 
@@ -49,9 +49,12 @@ private:
     ScDocument*             pDoc;
     css::uno::Reference< css::sheet::XDimensionsSupplier> xSource;
     ScAddress               aStartPos;
-    std::vector<ScDPOutLevelData>       pColFields;
-    std::vector<ScDPOutLevelData>       pRowFields;
-    std::vector<ScDPOutLevelData>       pPageFields;
+    ScDPOutLevelData*       pColFields;
+    ScDPOutLevelData*       pRowFields;
+    ScDPOutLevelData*       pPageFields;
+    long                    nColFieldCount;
+    long                    nRowFieldCount;
+    long                    nPageFieldCount;
     css::uno::Sequence< css::uno::Sequence< css::sheet::DataResult> > aData;
     OUString                aDataDescription;
 
@@ -115,10 +118,10 @@ public:
         field region. */
     bool            GetDataResultPositionData(::std::vector< css::sheet::DataPilotFieldFilter >& rFilters, const ScAddress& rPos);
 
-    long            GetHeaderDim( const ScAddress& rPos, css::sheet::DataPilotFieldOrientation& rOrient );
+    long            GetHeaderDim( const ScAddress& rPos, sal_uInt16& rOrient );
     bool GetHeaderDrag(
         const ScAddress& rPos, bool bMouseLeft, bool bMouseTop, long nDragDim,
-        tools::Rectangle& rPosRect, css::sheet::DataPilotFieldOrientation& rOrient, long& rDimPos );
+        Rectangle& rPosRect, sal_uInt16& rOrient, long& rDimPos );
     bool IsFilterButton( const ScAddress& rPos );
 
     void GetMemberResultNames(ScDPUniqueStringSet& rNames, long nDimension);

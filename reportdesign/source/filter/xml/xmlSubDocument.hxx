@@ -50,7 +50,7 @@ namespace rptxml
                     ,const css::uno::Reference< css::report::XReportComponent >& _xComponent
                     ,OXMLTable* _pContainer
                     ,OXMLCell* _pCellParent);
-        virtual ~OXMLSubDocument() override;
+        virtual ~OXMLSubDocument();
 
         virtual void EndElement() override;
         virtual void addMasterDetailPair(const ::std::pair< OUString,OUString >& _aPair) override;

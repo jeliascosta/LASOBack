@@ -40,7 +40,7 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 
 
-::rtl::Reference< jvmaccess::VirtualMachine > const & getJavaVM2(const ::rtl::Reference< jvmaccess::VirtualMachine >& _rVM = ::rtl::Reference< jvmaccess::VirtualMachine >(),
+::rtl::Reference< jvmaccess::VirtualMachine > getJavaVM2(const ::rtl::Reference< jvmaccess::VirtualMachine >& _rVM = ::rtl::Reference< jvmaccess::VirtualMachine >(),
                                                         bool _bSet = false)
 {
     static ::rtl::Reference< jvmaccess::VirtualMachine > s_VM;
@@ -203,7 +203,7 @@ void java_lang_Object::ThrowLoggedSQLException( const ::comphelper::ResourceBase
     SQLException aException;
     if ( lcl_translateJNIExceptionToUNOException( _pEnvironment, _rxContext, aException ) )
     {
-        _rLogger.log( css::logging::LogLevel::SEVERE, STR_LOG_THROWING_EXCEPTION, aException.Message, aException.SQLState, aException.ErrorCode );
+        _rLogger.log( ::com::sun::star::logging::LogLevel::SEVERE, STR_LOG_THROWING_EXCEPTION, aException.Message, aException.SQLState, aException.ErrorCode );
         throw aException;
     }
 }
@@ -468,7 +468,7 @@ jclass java_lang_Object::findMyClass(const char* _pClassName)
 {
     // the class must be fetched only once, therefore static
     SDBThreadAttach t;
-    jclass tempClass = t.pEnv->FindClass(_pClassName); OSL_ENSURE(tempClass,"Java : FindClass not successful!");
+    jclass tempClass = t.pEnv->FindClass(_pClassName); OSL_ENSURE(tempClass,"Java : FindClass nicht erfolgreich!");
     if(!tempClass)
     {
         t.pEnv->ExceptionDescribe();

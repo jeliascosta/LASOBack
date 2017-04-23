@@ -72,6 +72,7 @@ void SvNumberFormatsSupplierObj::SetNumberFormatter(SvNumberFormatter* pNew)
 // XNumberFormatsSupplier
 
 uno::Reference<beans::XPropertySet> SAL_CALL SvNumberFormatsSupplierObj::getNumberFormatSettings()
+                                        throw(uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( pImpl->aMutex );
 
@@ -79,6 +80,7 @@ uno::Reference<beans::XPropertySet> SAL_CALL SvNumberFormatsSupplierObj::getNumb
 }
 
 uno::Reference<util::XNumberFormats> SAL_CALL SvNumberFormatsSupplierObj::getNumberFormats()
+                                        throw(uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( pImpl->aMutex );
 
@@ -88,7 +90,7 @@ uno::Reference<util::XNumberFormats> SAL_CALL SvNumberFormatsSupplierObj::getNum
 // XUnoTunnel
 
 sal_Int64 SAL_CALL SvNumberFormatsSupplierObj::getSomething(
-                const uno::Sequence<sal_Int8 >& rId )
+                const uno::Sequence<sal_Int8 >& rId ) throw(uno::RuntimeException, std::exception)
 {
     if ( rId.getLength() == 16 &&
           0 == memcmp( getUnoTunnelId().getConstArray(),

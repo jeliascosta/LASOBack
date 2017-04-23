@@ -51,8 +51,8 @@ css::beans::Property* ImplGetProperties( sal_uInt16& rElementCount )
         {
             static css::beans::Property aPropTable[] =
             {
-                css::beans::Property( "Orientation", PROPERTY_Orientation, cppu::UnoType<sal_Int16>::get(), 0 ),
-                css::beans::Property( "Horizontal", PROPERTY_Horizontal, cppu::UnoType<bool>::get(), 0 )
+                css::beans::Property( OUString("Orientation"), PROPERTY_Orientation, cppu::UnoType<sal_Int16>::get(), 0 ),
+                css::beans::Property( OUString("Horizontal"), PROPERTY_Horizontal, cppu::UnoType<bool>::get(), 0 )
             };
             pProperties = aPropTable;
             nElements = sizeof( aPropTable ) / sizeof( css::beans::Property );
@@ -85,7 +85,7 @@ VCLXPrinterPropertySet::~VCLXPrinterPropertySet()
     mxPrinter.reset();
 }
 
-css::uno::Reference< css::awt::XDevice > const &  VCLXPrinterPropertySet::GetDevice()
+css::uno::Reference< css::awt::XDevice >  VCLXPrinterPropertySet::GetDevice()
 {
     if ( !mxPrnDevice.is() )
     {
@@ -96,7 +96,7 @@ css::uno::Reference< css::awt::XDevice > const &  VCLXPrinterPropertySet::GetDev
     return mxPrnDevice;
 }
 
-css::uno::Reference< css::beans::XPropertySetInfo > VCLXPrinterPropertySet::getPropertySetInfo(  )
+css::uno::Reference< css::beans::XPropertySetInfo > VCLXPrinterPropertySet::getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception)
 {
     static css::uno::Reference< css::beans::XPropertySetInfo >  xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -118,7 +118,7 @@ css::uno::Reference< css::beans::XPropertySetInfo > VCLXPrinterPropertySet::getP
     return *pPropertyArrayHelper ;
 }
 
-sal_Bool VCLXPrinterPropertySet::convertFastPropertyValue( css::uno::Any & rConvertedValue, css::uno::Any & rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue )
+sal_Bool VCLXPrinterPropertySet::convertFastPropertyValue( css::uno::Any & rConvertedValue, css::uno::Any & rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue ) throw (css::lang::IllegalArgumentException)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -155,7 +155,7 @@ sal_Bool VCLXPrinterPropertySet::convertFastPropertyValue( css::uno::Any & rConv
     return bDifferent;
 }
 
-void VCLXPrinterPropertySet::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue )
+void VCLXPrinterPropertySet::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any& rValue ) throw (css::uno::Exception, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -198,7 +198,7 @@ void VCLXPrinterPropertySet::getFastPropertyValue( css::uno::Any& rValue, sal_In
 }
 
 // css::awt::XPrinterPropertySet
-void VCLXPrinterPropertySet::setHorizontal( sal_Bool bHorizontal )
+void VCLXPrinterPropertySet::setHorizontal( sal_Bool bHorizontal ) throw(css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -207,11 +207,11 @@ void VCLXPrinterPropertySet::setHorizontal( sal_Bool bHorizontal )
     setFastPropertyValue( PROPERTY_Horizontal, aValue );
 }
 
-css::uno::Sequence< OUString > VCLXPrinterPropertySet::getFormDescriptions(  )
+css::uno::Sequence< OUString > VCLXPrinterPropertySet::getFormDescriptions(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
-    const sal_uInt16 nPaperBinCount = GetPrinter()->GetPaperBinCount();
+    sal_uInt16 nPaperBinCount = GetPrinter()->GetPaperBinCount();
     css::uno::Sequence< OUString > aDescriptions( nPaperBinCount );
     for ( sal_uInt16 n = 0; n < nPaperBinCount; n++ )
     {
@@ -227,7 +227,7 @@ css::uno::Sequence< OUString > VCLXPrinterPropertySet::getFormDescriptions(  )
     return aDescriptions;
 }
 
-void VCLXPrinterPropertySet::selectForm( const OUString& rFormDescription )
+void VCLXPrinterPropertySet::selectForm( const OUString& rFormDescription ) throw(css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -237,7 +237,7 @@ void VCLXPrinterPropertySet::selectForm( const OUString& rFormDescription )
     GetPrinter()->SetPaperBin( nPaperBin );
 }
 
-css::uno::Sequence< sal_Int8 > VCLXPrinterPropertySet::getBinarySetup(  )
+css::uno::Sequence< sal_Int8 > VCLXPrinterPropertySet::getBinarySetup(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -247,7 +247,7 @@ css::uno::Sequence< sal_Int8 > VCLXPrinterPropertySet::getBinarySetup(  )
     return css::uno::Sequence<sal_Int8>( static_cast<sal_Int8 const *>(aMem.GetData()), aMem.Tell() );
 }
 
-void VCLXPrinterPropertySet::setBinarySetup( const css::uno::Sequence< sal_Int8 >& data )
+void VCLXPrinterPropertySet::setBinarySetup( const css::uno::Sequence< sal_Int8 >& data ) throw(css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -276,7 +276,7 @@ VCLXPrinter::~VCLXPrinter()
 {
 }
 
-sal_Bool VCLXPrinter::start( const OUString& /*rJobName*/, sal_Int16 /*nCopies*/, sal_Bool /*bCollate*/ )
+sal_Bool VCLXPrinter::start( const OUString& /*rJobName*/, sal_Int16 /*nCopies*/, sal_Bool /*bCollate*/ ) throw(css::awt::PrinterException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -290,7 +290,7 @@ sal_Bool VCLXPrinter::start( const OUString& /*rJobName*/, sal_Int16 /*nCopies*/
     return bDone;
 }
 
-void VCLXPrinter::end(  )
+void VCLXPrinter::end(  ) throw(css::awt::PrinterException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -301,14 +301,14 @@ void VCLXPrinter::end(  )
     }
 }
 
-void VCLXPrinter::terminate(  )
+void VCLXPrinter::terminate(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
     mxListener.reset();
 }
 
-css::uno::Reference< css::awt::XDevice > VCLXPrinter::startPage(  )
+css::uno::Reference< css::awt::XDevice > VCLXPrinter::startPage(  ) throw(css::awt::PrinterException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -319,7 +319,7 @@ css::uno::Reference< css::awt::XDevice > VCLXPrinter::startPage(  )
     return GetDevice();
 }
 
-void VCLXPrinter::endPage(  )
+void VCLXPrinter::endPage(  ) throw(css::awt::PrinterException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -344,7 +344,7 @@ VCLXInfoPrinter::~VCLXInfoPrinter()
 }
 
 // css::awt::XInfoPrinter
-css::uno::Reference< css::awt::XDevice > VCLXInfoPrinter::createDevice(  )
+css::uno::Reference< css::awt::XDevice > VCLXInfoPrinter::createDevice(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( Mutex );
 
@@ -356,7 +356,7 @@ css::uno::Reference< css::awt::XDevice > VCLXInfoPrinter::createDevice(  )
 //    ----------------------------------------------------
 
 // css::awt::XPrinterServer
-css::uno::Sequence< OUString > VCLXPrinterServer::getPrinterNames(  )
+css::uno::Sequence< OUString > VCLXPrinterServer::getPrinterNames(  ) throw(css::uno::RuntimeException, std::exception)
 {
     const std::vector<OUString>& rQueues = Printer::GetPrinterQueues();
     sal_uInt32 nPrinters = rQueues.size();
@@ -368,14 +368,14 @@ css::uno::Sequence< OUString > VCLXPrinterServer::getPrinterNames(  )
     return aNames;
 }
 
-css::uno::Reference< css::awt::XPrinter > VCLXPrinterServer::createPrinter( const OUString& rPrinterName )
+css::uno::Reference< css::awt::XPrinter > VCLXPrinterServer::createPrinter( const OUString& rPrinterName ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::awt::XPrinter > xP;
     xP = new VCLXPrinter( rPrinterName );
     return xP;
 }
 
-css::uno::Reference< css::awt::XInfoPrinter > VCLXPrinterServer::createInfoPrinter( const OUString& rPrinterName )
+css::uno::Reference< css::awt::XInfoPrinter > VCLXPrinterServer::createInfoPrinter( const OUString& rPrinterName ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::awt::XInfoPrinter > xP;
     xP = new VCLXInfoPrinter( rPrinterName );
@@ -383,16 +383,19 @@ css::uno::Reference< css::awt::XInfoPrinter > VCLXPrinterServer::createInfoPrint
 }
 
 OUString VCLXPrinterServer::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.VCLXPrinterServer");
 }
 
 sal_Bool VCLXPrinterServer::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> VCLXPrinterServer::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         "com.sun.star.awt.PrinterServer", "stardiv.vcl.PrinterServer"};
@@ -403,7 +406,7 @@ stardiv_Toolkit_VCLXPrinterServer_get_implementation(
     css::uno::XComponentContext *,
     css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new VCLXPrinterServer);
+    return cppu::acquire(new VCLXPrinterServer());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

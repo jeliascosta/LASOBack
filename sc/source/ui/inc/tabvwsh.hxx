@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_UI_INC_TABVWSH_HXX
 #define INCLUDED_SC_SOURCE_UI_INC_TABVWSH_HXX
 
-#include <formula/errorcodes.hxx>
 #include <svx/fmshell.hxx>
 #include <svtools/htmlcfg.hxx>
 #include <sfx2/viewsh.hxx>
@@ -115,7 +114,7 @@ private:
 
     FmFormShell*            pFormShell;
 
-    std::unique_ptr<ScInputHandler> mpInputHandler;              // for OLE input cell
+    ScInputHandler*         pInputHandler;              // for OLE input cell
 
     ::editeng::SvxBorderLine*           pCurFrameLine;
 
@@ -153,13 +152,11 @@ private:
 
     bool                    bIsActive;
 
+    bool                    bChartAreaValid; // if chart is drawn
     bool                    bForceFocusOnCurCell; // #i123629#
 
-    bool                    bInPrepareClose;
-    bool                    bInDispose;
-
     ScRangeListRef          aChartSource;
-    tools::Rectangle               aChartPos;
+    Rectangle               aChartPos;
     SCTAB                   nChartDestTab;
     sal_uInt16              nCurRefDlgId;
 
@@ -172,18 +169,18 @@ private:
     OUString   maScope;
 
 private:
-    void    Construct( TriState nForceDesignMode );
+    void    Construct( TriState nForceDesignMode = TRISTATE_INDET );
 
     SfxShell*       GetMySubShell() const;
 
     void            DoReadUserData( const OUString& rData );
     void            DoReadUserDataSequence( const css::uno::Sequence< css::beans::PropertyValue >& rSettings );
 
-    DECL_LINK( SimpleRefClose, const OUString*, void );
-    DECL_LINK( SimpleRefDone, const OUString&, void );
-    DECL_LINK( SimpleRefAborted, const OUString&, void );
-    DECL_LINK( SimpleRefChange, const OUString&, void );
-    DECL_LINK( FormControlActivated, LinkParamNone*, void );
+    DECL_LINK_TYPED( SimpleRefClose, const OUString*, void );
+    DECL_LINK_TYPED( SimpleRefDone, const OUString&, void );
+    DECL_LINK_TYPED( SimpleRefAborted, const OUString&, void );
+    DECL_LINK_TYPED( SimpleRefChange, const OUString&, void );
+    DECL_LINK_TYPED( FormControlActivated, LinkParamNone*, void );
 
 protected:
     virtual void    Activate(bool bMDI) override;
@@ -192,18 +189,18 @@ protected:
 
     virtual void    ShowCursor(bool bOn) override;
 
-    virtual void    Move() override;     // notification
+    virtual void    Move() override;     // Benachrichtigung
 
-    virtual void    AdjustPosSizePixel( const Point &rPos, const Size &rSize ) override;     // old
+    virtual void    AdjustPosSizePixel( const Point &rPos, const Size &rSize ) override;     // alt
 
-    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize, bool inplaceEditModeChange ) override; // new
+    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize ) override;       // neu
     virtual void    OuterResizePixel( const Point &rOfs, const Size &rSize ) override;
     virtual void    SetZoomFactor( const Fraction &rZoomX, const Fraction &rZoomY ) override;
 
-    virtual void    QueryObjAreaPixel( tools::Rectangle& rRect ) const override;
+    virtual void    QueryObjAreaPixel( Rectangle& rRect ) const override;
 
-    virtual OUString GetSelectionText( bool bWholeWord = false ) override;
-    virtual bool     HasSelection( bool bText = true ) const override;
+    virtual OUString GetSelectionText( bool bWholeWord ) override;
+    virtual bool     HasSelection( bool bText ) const override;
 
     virtual void    WriteUserData(OUString &, bool bBrowse = false) override;
     virtual void    ReadUserData(const OUString &, bool bBrowse = false) override;
@@ -229,15 +226,14 @@ public:
                     ScTabViewShell( SfxViewFrame*           pViewFrame,
                                     SfxViewShell*           pOldSh );
 
-    virtual         ~ScTabViewShell() override;
+    virtual         ~ScTabViewShell();
 
     vcl::Window* GetDialogParent();
 
     bool            IsRefInputMode() const;
     void            ExecuteInputDirect();
 
-    const ScInputHandler* GetInputHandler() const { return mpInputHandler.get(); }
-    ScInputHandler* GetInputHandler() { return mpInputHandler.get(); }
+    ScInputHandler* GetInputHandler() const { return pInputHandler;}
     void            UpdateInputHandler( bool bForce = false, bool bStopEditing = true );
     void            UpdateInputHandlerCellAdjust( SvxCellHorJustify eJust );
     bool            TabKeyInput(const KeyEvent& rKEvt);
@@ -317,7 +313,7 @@ public:
 
     void            FillFieldData( ScHeaderFieldData& rData );
 
-    bool            GetChartArea( ScRangeListRef& rSource, tools::Rectangle& rDest, SCTAB& rTab ) const;
+    bool            GetChartArea( ScRangeListRef& rSource, Rectangle& rDest, SCTAB& rTab ) const;
 
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -349,7 +345,7 @@ public:
     void    InsertURL( const OUString& rName, const OUString& rURL, const OUString& rTarget,
                             sal_uInt16 nMode );
     void    InsertURLButton( const OUString& rName, const OUString& rURL, const OUString& rTarget,
-                            const Point* pInsPos );
+                            const Point* pInsPos = nullptr );
     void    InsertURLField( const OUString& rName, const OUString& rURL, const OUString& rTarget );
 
     bool    SelectObject( const OUString& rName );
@@ -362,9 +358,9 @@ public:
 
     static void UpdateNumberFormatter( const SvxNumberInfoItem&  rInfoItem );
 
-    void    ExecuteCellFormatDlg( SfxRequest& rReq, const OString &rTabPage);
+    void    ExecuteCellFormatDlg( SfxRequest& rReq, const OString &rTabPage = OString());
 
-    bool    GetFunction( OUString& rFuncStr, FormulaError nErrCode );
+    bool    GetFunction( OUString& rFuncStr, sal_uInt16 nErrCode = 0 );
 
     void    StartSimpleRefDialog( const OUString& rTitle, const OUString& rInitVal,
                                     bool bCloseOnButtonUp, bool bSingleCell, bool bMultiSelection );
@@ -383,18 +379,12 @@ public:
 
     bool IsActive() const { return bIsActive; }
     OUString GetFormula(ScAddress& rAddress);
-    bool    UseSubTotal(ScRangeList* pRangeList);
-    const   OUString DoAutoSum(bool& rRangeFinder, bool& rSubTotal);
 
     // ugly hack to call Define Names from Manage Names
     void    SwitchBetweenRefDialogs(SfxModelessDialog* pDialog);
     // #i123629#
     bool    GetForceFocusOnCurCell() const { return bForceFocusOnCurCell; }
     void SetForceFocusOnCurCell(bool bFlag) { bForceFocusOnCurCell=bFlag; }
-    /// See SfxViewShell::getPart().
-    int getPart() const override;
-    /// See SfxViewShell::NotifyCursor().
-    void NotifyCursor(SfxViewShell* pViewShell) const override;
 };
 
 #endif

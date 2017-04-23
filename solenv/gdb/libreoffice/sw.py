@@ -19,8 +19,8 @@ class SwPositionPrinter(object):
 
     def to_string(self):
         node = self.value['nNode']['m_pNode'].dereference();
-        block = node['m_pBlock'].dereference();
-        nodeindex = block['nStart'] + node['m_nOffset']
+        block = node['pBlock'].dereference();
+        nodeindex = block['nStart'] + node['nOffset']
         offset = self.value['nContent']['m_nIndex']
         return "%s (node %d, offset %d)" % (self.typename, nodeindex, offset)
 
@@ -33,8 +33,8 @@ class SwNodeIndexPrinter(object):
 
     def to_string(self):
         node = self.value['m_pNode'].dereference();
-        block = node['m_pBlock'].dereference();
-        nodeindex = block['nStart'] + node['m_nOffset']
+        block = node['pBlock'].dereference();
+        nodeindex = block['nStart'] + node['nOffset']
         return "%s (node %d)" % (self.typename, nodeindex)
 
 class SwIndexPrinter(object):
@@ -59,8 +59,8 @@ class SwPaMPrinter(object):
         return "%s" % (self.typename)
 
     def children(self):
-        next_ = self.value['m_pNext']
-        prev  = self.value['m_pPrev']
+        next_ = self.value['pNext']
+        prev  = self.value['pPrev']
         point = self.value['m_pPoint'].dereference()
         mark = self.value['m_pMark'].dereference()
         children = [ ( 'point', point), ( 'mark', mark ) ]
@@ -70,10 +70,8 @@ class SwPaMPrinter(object):
             children.append(("prev", prev))
         return children.__iter__()
 
-# apparently the purpose of this is to suppress printing all the extra members
-# that SwCursor and SwUnoCursor add
-class SwUnoCursorPrinter(SwPaMPrinter):
-    '''Prints SwUnoCursor.'''
+class SwUnoCrsrPrinter(SwPaMPrinter):
+    '''Prints SwUnoCrsr.'''
 
 class SwRectPrinter(object):
     '''Prints SwRect.'''
@@ -132,9 +130,8 @@ class SwXTextCursorImplPrinter(object):
         return "%s" % (self.typename)
 
     def children(self):
-        cursor = self.value['m_pUnoCursor']["m_pCursor"]["_M_ptr"]
-        registeredIn = cursor.dereference()
-        children = [('m_pUnoCursor', registeredIn)]
+        registeredIn = self.value['pRegisteredIn'].dereference()
+        children = [('registeredIn', registeredIn)]
         return children.__iter__()
 
 class SwUnoImplPtrPrinter(object):
@@ -178,7 +175,7 @@ class BigPtrArrayPrinter(object):
         self.value = value
 
     def to_string(self):
-        length = self.value['m_nSize']
+        length = self.value['nSize']
         if length > 0:
             return "%s of length %d" % (self.typename, length)
         else:
@@ -194,10 +191,10 @@ class BigPtrArrayPrinter(object):
     class _iterator(six.Iterator):
 
         def __init__(self, array):
-            self.blocks = array['m_ppInf']
-            self.count = array['m_nSize']
+            self.blocks = array['ppInf']
+            self.count = array['nSize']
             self.pos = 0
-            self.block_count = array['m_nBlock']
+            self.block_count = array['nBlock']
             self.block_pos = 0
             self.block = None
             self.indent = ""
@@ -292,7 +289,7 @@ def build_pretty_printers():
     printer.add('SwNodeIndex', SwNodeIndexPrinter)
     printer.add('SwIndex', SwIndexPrinter)
     printer.add('SwPaM', SwPaMPrinter)
-    printer.add('SwUnoCursor', SwUnoCursorPrinter)
+    printer.add('SwUnoCrsr', SwUnoCrsrPrinter)
     printer.add('SwRect', SwRectPrinter)
     printer.add('sw::mark::Bookmark', MarkBasePrinter)
     printer.add('sw::mark::MarkBase', MarkBasePrinter)

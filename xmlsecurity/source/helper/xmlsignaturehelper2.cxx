@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <xmlsignaturehelper.hxx>
+#include <xmlsecurity/xmlsignaturehelper.hxx>
 #include "xmlsignaturehelper2.hxx"
 
 #include <tools/solar.h>
@@ -32,9 +32,13 @@
 
 using namespace com::sun::star;
 
-ImplXMLSignatureListener::ImplXMLSignatureListener(XMLSignatureHelper& rXMLSignatureHelper)
-    : m_rXMLSignatureHelper(rXMLSignatureHelper)
+ImplXMLSignatureListener::ImplXMLSignatureListener(const Link<XMLSignatureCreationResult&,void>& rCreationResultListenerListener,
+                                                   const Link<XMLSignatureVerifyResult&,void>& rVerifyResultListenerListener,
+                                                   const Link<LinkParamNone*,void>& rStartSignatureElement)
 {
+    maCreationResultListenerListener = rCreationResultListenerListener;
+    maVerifyResultListenerListener = rVerifyResultListenerListener;
+    maStartVerifySignatureElementListener = rStartSignatureElement;
 }
 
 ImplXMLSignatureListener::~ImplXMLSignatureListener()
@@ -47,8 +51,23 @@ void ImplXMLSignatureListener::setNextHandler(
     m_xNextHandler = xNextHandler;
 }
 
+void SAL_CALL ImplXMLSignatureListener::signatureCreated( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus nResult )
+        throw (css::uno::RuntimeException, std::exception)
+{
+    XMLSignatureCreationResult aResult( securityId, nResult );
+    maCreationResultListenerListener.Call( aResult );
+}
+
+void SAL_CALL ImplXMLSignatureListener::signatureVerified( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus nResult )
+        throw (css::uno::RuntimeException, std::exception)
+{
+    XMLSignatureVerifyResult aResult( securityId, nResult );
+    maVerifyResultListenerListener.Call( aResult );
+}
+
 // XDocumentHandler
 void SAL_CALL ImplXMLSignatureListener::startDocument(  )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -57,6 +76,7 @@ void SAL_CALL ImplXMLSignatureListener::startDocument(  )
 }
 
 void SAL_CALL ImplXMLSignatureListener::endDocument(  )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -65,10 +85,11 @@ void SAL_CALL ImplXMLSignatureListener::endDocument(  )
 }
 
 void SAL_CALL ImplXMLSignatureListener::startElement( const OUString& aName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if ( aName == "Signature" )
     {
-        m_rXMLSignatureHelper.StartVerifySignatureElement();
+        maStartVerifySignatureElementListener.Call( nullptr );
     }
 
     if (m_xNextHandler.is())
@@ -78,6 +99,7 @@ void SAL_CALL ImplXMLSignatureListener::startElement( const OUString& aName, con
 }
 
 void SAL_CALL ImplXMLSignatureListener::endElement( const OUString& aName )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -86,6 +108,7 @@ void SAL_CALL ImplXMLSignatureListener::endElement( const OUString& aName )
 }
 
 void SAL_CALL ImplXMLSignatureListener::characters( const OUString& aChars )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -94,6 +117,7 @@ void SAL_CALL ImplXMLSignatureListener::characters( const OUString& aChars )
 }
 
 void SAL_CALL ImplXMLSignatureListener::ignorableWhitespace( const OUString& aWhitespaces )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -102,6 +126,7 @@ void SAL_CALL ImplXMLSignatureListener::ignorableWhitespace( const OUString& aWh
 }
 
 void SAL_CALL ImplXMLSignatureListener::processingInstruction( const OUString& aTarget, const OUString& aData )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -110,6 +135,7 @@ void SAL_CALL ImplXMLSignatureListener::processingInstruction( const OUString& a
 }
 
 void SAL_CALL ImplXMLSignatureListener::setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator )
+    throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception)
 {
     if (m_xNextHandler.is())
     {
@@ -129,10 +155,12 @@ UriBindingHelper::UriBindingHelper( const css::uno::Reference < css::embed::XSto
 }
 
 void SAL_CALL UriBindingHelper::setUriBinding( const OUString& /*uri*/, const uno::Reference< io::XInputStream >&)
+    throw (uno::Exception, uno::RuntimeException, std::exception)
 {
 }
 
 uno::Reference< io::XInputStream > SAL_CALL UriBindingHelper::getUriBinding( const OUString& uri )
+    throw (uno::Exception, uno::RuntimeException, std::exception)
 {
     uno::Reference< io::XInputStream > xInputStream;
     if ( mxStorage.is() )

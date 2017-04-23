@@ -79,13 +79,16 @@ class acc_Intersection
         Reference< security::XAccessControlContext > const & x2 );
 
 public:
+    virtual ~acc_Intersection();
+
     static inline Reference< security::XAccessControlContext > create(
         Reference< security::XAccessControlContext > const & x1,
         Reference< security::XAccessControlContext > const & x2 );
 
     // XAccessControlContext impl
     virtual void SAL_CALL checkPermission(
-        Any const & perm ) override;
+        Any const & perm )
+        throw (RuntimeException, std::exception) override;
 };
 
 inline acc_Intersection::acc_Intersection(
@@ -93,6 +96,9 @@ inline acc_Intersection::acc_Intersection(
     Reference< security::XAccessControlContext > const & x2 )
     : m_x1( x1 )
     , m_x2( x2 )
+{}
+
+acc_Intersection::~acc_Intersection()
 {}
 
 inline Reference< security::XAccessControlContext > acc_Intersection::create(
@@ -108,6 +114,7 @@ inline Reference< security::XAccessControlContext > acc_Intersection::create(
 
 void acc_Intersection::checkPermission(
     Any const & perm )
+    throw (RuntimeException, std::exception)
 {
     m_x1->checkPermission( perm );
     m_x2->checkPermission( perm );
@@ -125,13 +132,16 @@ class acc_Union
         Reference< security::XAccessControlContext > const & x2 );
 
 public:
+    virtual ~acc_Union();
+
     static inline Reference< security::XAccessControlContext > create(
         Reference< security::XAccessControlContext > const & x1,
         Reference< security::XAccessControlContext > const & x2 );
 
     // XAccessControlContext impl
     virtual void SAL_CALL checkPermission(
-        Any const & perm ) override;
+        Any const & perm )
+        throw (RuntimeException, std::exception) override;
 };
 
 inline acc_Union::acc_Union(
@@ -139,6 +149,9 @@ inline acc_Union::acc_Union(
     Reference< security::XAccessControlContext > const & x2 )
     : m_x1( x1 )
     , m_x2( x2 )
+{}
+
+acc_Union::~acc_Union()
 {}
 
 inline Reference< security::XAccessControlContext > acc_Union::create(
@@ -154,6 +167,7 @@ inline Reference< security::XAccessControlContext > acc_Union::create(
 
 void acc_Union::checkPermission(
     Any const & perm )
+    throw (RuntimeException, std::exception)
 {
     try
     {
@@ -178,13 +192,20 @@ public:
         : m_permissions( permissions )
     {}
 
+    virtual ~acc_Policy();
+
     // XAccessControlContext impl
     virtual void SAL_CALL checkPermission(
-        Any const & perm ) override;
+        Any const & perm )
+        throw (RuntimeException, std::exception) override;
 };
+
+acc_Policy::~acc_Policy()
+{}
 
 void acc_Policy::checkPermission(
     Any const & perm )
+    throw (RuntimeException, std::exception)
 {
     m_permissions.checkPermission( perm );
 }
@@ -203,7 +224,8 @@ public:
         Reference< security::XAccessControlContext > const & xRestriction );
 
     // XCurrentContext impl
-    virtual Any SAL_CALL getValueByName( OUString const & name ) override;
+    virtual Any SAL_CALL getValueByName( OUString const & name )
+        throw (RuntimeException, std::exception) override;
 };
 
 inline acc_CurrentContext::acc_CurrentContext(
@@ -213,12 +235,13 @@ inline acc_CurrentContext::acc_CurrentContext(
 {
     if (xRestriction.is())
     {
-        m_restriction <<= xRestriction;
+        m_restriction = makeAny( xRestriction );
     }
     // return empty any otherwise on getValueByName(), not null interface
 }
 
 Any acc_CurrentContext::getValueByName( OUString const & name )
+    throw (RuntimeException, std::exception)
 {
     if (name == s_acRestriction)
     {
@@ -267,7 +290,7 @@ class cc_reset
 public:
     explicit cc_reset( void * cc )
         : m_cc( cc ) {}
-    ~cc_reset()
+    inline ~cc_reset()
         { ::uno_setCurrentContext( m_cc, s_envType.pData, nullptr ); }
 };
 
@@ -315,26 +338,35 @@ protected:
 
 public:
     explicit AccessController( Reference< XComponentContext > const & xComponentContext );
+    virtual ~AccessController();
 
     //  XInitialization impl
     virtual void SAL_CALL initialize(
-        Sequence< Any > const & arguments ) override;
+        Sequence< Any > const & arguments )
+        throw (Exception, std::exception) override;
 
     // XAccessController impl
     virtual void SAL_CALL checkPermission(
-        Any const & perm ) override;
+        Any const & perm )
+        throw (RuntimeException, std::exception) override;
     virtual Any SAL_CALL doRestricted(
         Reference< security::XAction > const & xAction,
-        Reference< security::XAccessControlContext > const & xRestriction ) override;
+        Reference< security::XAccessControlContext > const & xRestriction )
+        throw (Exception, std::exception) override;
     virtual Any SAL_CALL doPrivileged(
         Reference< security::XAction > const & xAction,
-        Reference< security::XAccessControlContext > const & xRestriction ) override;
-    virtual Reference< security::XAccessControlContext > SAL_CALL getContext() override;
+        Reference< security::XAccessControlContext > const & xRestriction )
+        throw (Exception, std::exception) override;
+    virtual Reference< security::XAccessControlContext > SAL_CALL getContext()
+        throw (RuntimeException, std::exception) override;
 
     // XServiceInfo impl
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const & serviceName )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (RuntimeException, std::exception) override;
 };
 
 AccessController::AccessController( Reference< XComponentContext > const & xComponentContext )
@@ -383,7 +415,7 @@ AccessController::AccessController( Reference< XComponentContext > const & xComp
         }
     }
 
-    // switch on caching for DYNAMIC_ONLY and ON (shareable multi-user process)
+    // switch on caching for DYNAMIC_ONLY and ON (sharable multi-user process)
     if (ON == m_mode || DYNAMIC_ONLY == m_mode)
     {
         sal_Int32 cacheSize = 0; // multi-user cache size
@@ -399,6 +431,9 @@ AccessController::AccessController( Reference< XComponentContext > const & xComp
     }
 }
 
+AccessController::~AccessController()
+{}
+
 void AccessController::disposing()
 {
     m_mode = OFF; // avoid checks from now on xxx todo review/ better DYNAMIC_ONLY?
@@ -410,6 +445,7 @@ void AccessController::disposing()
 
 void AccessController::initialize(
     Sequence< Any > const & arguments )
+    throw (Exception, std::exception)
 {
     // xxx todo: review for forking
     // portal forking hack: re-initialize for another user-id
@@ -471,14 +507,16 @@ static void dumpPermissions(
     {
         buf.append( "> dumping default permissions:" );
     }
-    SAL_INFO("stoc", buf.makeStringAndClear() );
+    OString str( OUStringToOString( buf.makeStringAndClear(), RTL_TEXTENCODING_ASCII_US ) );
+    OSL_TRACE( "%s", str.getStr() );
     Sequence< OUString > permissions( collection.toStrings() );
     OUString const * p = permissions.getConstArray();
     for ( sal_Int32 nPos = 0; nPos < permissions.getLength(); ++nPos )
     {
-        SAL_INFO("stoc", p[ nPos ] );
+        OString str( OUStringToOString( p[ nPos ], RTL_TEXTENCODING_ASCII_US ) );
+        OSL_TRACE( "%s", str.getStr() );
     }
-    SAL_INFO("stoc", "> permission dump done" );
+    OSL_TRACE( "> permission dump done" );
 }
 #endif
 
@@ -613,7 +651,7 @@ PermissionCollection AccessController::getEffectivePermissions(
         buf.append( "\"" );
         OString str(
             OUStringToOString( buf.makeStringAndClear(), RTL_TEXTENCODING_ASCII_US ) );
-        SAL_INFO("stoc",( "%s", str.getStr() );
+        OSL_TRACE( "%s", str.getStr() );
 #endif
         return PermissionCollection( new AllPermission() );
     }
@@ -699,7 +737,10 @@ PermissionCollection AccessController::getEffectivePermissions(
     catch (const security::AccessControlException & exc) // wrapped into DeploymentException
     {
         clearPostPoned(); // safety: exception could have happened before checking postponed?
-        throw DeploymentException( "deployment error (AccessControlException occurred): " + exc.Message, exc.Context );
+        OUStringBuffer buf( 64 );
+        buf.append( "deployment error (AccessControlException occurred): " );
+        buf.append( exc.Message );
+        throw DeploymentException( buf.makeStringAndClear(), exc.Context );
     }
     catch (RuntimeException &)
     {
@@ -728,6 +769,7 @@ PermissionCollection AccessController::getEffectivePermissions(
 
 void AccessController::checkPermission(
     Any const & perm )
+    throw (RuntimeException, std::exception)
 {
     if (rBHelper.bDisposed)
     {
@@ -757,6 +799,7 @@ void AccessController::checkPermission(
 Any AccessController::doRestricted(
     Reference< security::XAction > const & xAction,
     Reference< security::XAccessControlContext > const & xRestriction )
+    throw (Exception, std::exception)
 {
     if (rBHelper.bDisposed)
     {
@@ -789,6 +832,7 @@ Any AccessController::doRestricted(
 Any AccessController::doPrivileged(
     Reference< security::XAction > const & xAction,
     Reference< security::XAccessControlContext > const & xRestriction )
+    throw (Exception, std::exception)
 {
     if (rBHelper.bDisposed)
     {
@@ -823,6 +867,7 @@ Any AccessController::doPrivileged(
 }
 
 Reference< security::XAccessControlContext > AccessController::getContext()
+    throw (RuntimeException, std::exception)
 {
     if (rBHelper.bDisposed)
     {
@@ -846,16 +891,19 @@ Reference< security::XAccessControlContext > AccessController::getContext()
 // XServiceInfo impl
 
 OUString AccessController::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.security.comp.stoc.AccessController");
 }
 
 sal_Bool AccessController::supportsService( OUString const & serviceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, serviceName);
 }
 
 Sequence< OUString > AccessController::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     Sequence<OUString> aSNS { SERVICE_NAME };
     return aSNS;

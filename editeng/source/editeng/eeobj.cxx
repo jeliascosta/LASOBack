@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
 #include <vcl/wrkwin.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/msgbox.hxx>
@@ -44,14 +41,14 @@ EditDataObject::~EditDataObject()
 }
 
 // uno::XInterface
-uno::Any EditDataObject::queryInterface( const uno::Type & rType )
+uno::Any EditDataObject::queryInterface( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aRet = ::cppu::queryInterface( rType, (static_cast< datatransfer::XTransferable* >(this)) );
     return (aRet.hasValue() ? aRet : OWeakObject::queryInterface( rType ));
 }
 
 // datatransfer::XTransferable
-uno::Any EditDataObject::getTransferData( const datatransfer::DataFlavor& rFlavor )
+uno::Any EditDataObject::getTransferData( const datatransfer::DataFlavor& rFlavor ) throw(datatransfer::UnsupportedFlavorException, io::IOException, uno::RuntimeException, std::exception)
 {
     uno::Any aAny;
 
@@ -60,7 +57,7 @@ uno::Any EditDataObject::getTransferData( const datatransfer::DataFlavor& rFlavo
     {
         aAny <<= GetString();
     }
-    else if ( ( nT == SotClipboardFormatId::EDITENGINE ) || ( nT == SotClipboardFormatId::RTF ) || ( nT == SotClipboardFormatId::RICHTEXT ) )
+    else if ( ( nT == SotClipboardFormatId::EDITENGINE ) || ( nT == SotClipboardFormatId::RTF ) )
     {
         // No RTF on demand any more:
         // 1) Was not working, because I had to flush() the clipboard immediately anyway
@@ -68,8 +65,7 @@ uno::Any EditDataObject::getTransferData( const datatransfer::DataFlavor& rFlavo
 
         SvMemoryStream* pStream = ( nT == SotClipboardFormatId::EDITENGINE ) ? &GetStream() : &GetRTFStream();
         pStream->Seek( STREAM_SEEK_TO_END );
-        sal_Int32 nLen = pStream->Tell();
-        if (nLen < 0) { abort(); }
+        sal_Size nLen = pStream->Tell();
         pStream->Seek(0);
 
         uno::Sequence< sal_Int8 > aSeq( nLen );
@@ -85,24 +81,22 @@ uno::Any EditDataObject::getTransferData( const datatransfer::DataFlavor& rFlavo
     return aAny;
 }
 
-uno::Sequence< datatransfer::DataFlavor > EditDataObject::getTransferDataFlavors(  )
+uno::Sequence< datatransfer::DataFlavor > EditDataObject::getTransferDataFlavors(  ) throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence< datatransfer::DataFlavor > aDataFlavors(4);
+    uno::Sequence< datatransfer::DataFlavor > aDataFlavors(3);
     SotExchange::GetFormatDataFlavor( SotClipboardFormatId::EDITENGINE, aDataFlavors.getArray()[0] );
     SotExchange::GetFormatDataFlavor( SotClipboardFormatId::STRING, aDataFlavors.getArray()[1] );
     SotExchange::GetFormatDataFlavor( SotClipboardFormatId::RTF, aDataFlavors.getArray()[2] );
-    SotExchange::GetFormatDataFlavor( SotClipboardFormatId::RICHTEXT, aDataFlavors.getArray()[3] );
 
     return aDataFlavors;
 }
 
-sal_Bool EditDataObject::isDataFlavorSupported( const datatransfer::DataFlavor& rFlavor )
+sal_Bool EditDataObject::isDataFlavorSupported( const datatransfer::DataFlavor& rFlavor ) throw(uno::RuntimeException, std::exception)
 {
     bool bSupported = false;
 
     SotClipboardFormatId nT = SotExchange::GetFormat( rFlavor );
-    if ( ( nT == SotClipboardFormatId::STRING ) || ( nT == SotClipboardFormatId::RTF ) || ( nT == SotClipboardFormatId::RICHTEXT )
-        || ( nT == SotClipboardFormatId::EDITENGINE ) )
+    if ( ( nT == SotClipboardFormatId::STRING ) || ( nT == SotClipboardFormatId::RTF ) || ( nT == SotClipboardFormatId::EDITENGINE ) )
         bSupported = true;
 
     return bSupported;

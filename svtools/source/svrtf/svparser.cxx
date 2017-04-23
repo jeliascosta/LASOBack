@@ -67,17 +67,18 @@ SvParser::SvParser( SvStream& rIn, sal_uInt8 nStackSize )
     , pImplData( nullptr )
     , nTokenValue( 0 )
     , bTokenHasValue( false )
-    , eState( SvParserState::NotStarted )
+    , eState( SVPAR_NOTSTARTED )
     , eSrcEnc( RTL_TEXTENCODING_DONTKNOW )
     , nNextChPos(0)
     , nNextCh(0)
+    , bDownloadingFile(false)
     , bUCS2BSrcEnc(false)
     , bSwitchToUCS2(false)
     , bRTF_InTextRead(false)
     , nTokenStackSize( nStackSize )
     , nTokenStackPos( 0 )
 {
-    eState = SvParserState::NotStarted;
+    eState = SVPAR_NOTSTARTED;
     if( nTokenStackSize < 3 )
         nTokenStackSize = 3;
     pTokenStack = new TokenStackType[ nTokenStackSize ];
@@ -104,6 +105,7 @@ void SvParser::ClearTxtConvContext()
 
 void SvParser::SetSrcEncoding( rtl_TextEncoding eEnc )
 {
+
     if( eEnc != eSrcEnc )
     {
         if( pImplData && pImplData->hConv )
@@ -132,7 +134,7 @@ void SvParser::SetSrcEncoding( rtl_TextEncoding eEnc )
         }
         else
         {
-            SAL_WARN( "svtools",
+            DBG_ASSERT( false,
                         "SvParser::SetSrcEncoding: invalid source encoding" );
             eSrcEnc = RTL_TEXTENCODING_DONTKNOW;
         }
@@ -197,7 +199,7 @@ sal_uInt32 SvParser::GetNextChar()
                         bErr = rInput.IsEof() || rInput.GetError();
                         if( !bErr && ( 0xbf == c3 ) )
                         {
-                            SetSrcEncoding(RTL_TEXTENCODING_UTF8);
+                            eSrcEnc = RTL_TEXTENCODING_UTF8;
                             bSeekBack = false;
                         }
                     }
@@ -313,7 +315,7 @@ sal_uInt32 SvParser::GetNextChar()
                                        "there is a converted character, but an error" );
                                     // There are still errors, but nothing we can
                                     // do
-                                    c = '?';
+                                    c = (sal_uInt32)'?';
                                     nChars = 1;
                                 }
                             }
@@ -391,13 +393,13 @@ sal_uInt32 SvParser::GetNextChar()
     }
 
     if ( ! rtl::isUnicodeCodePoint( c ) )
-        c = '?' ;
+        c = (sal_uInt32) '?' ;
 
     if( bErr )
     {
         if( ERRCODE_IO_PENDING == rInput.GetError() )
         {
-            eState = SvParserState::Pending;
+            eState = SVPAR_PENDING;
             return c;
         }
         else
@@ -426,7 +428,7 @@ int SvParser::GetNextToken()
         bTokenHasValue = false;
 
         nRet = GetNextToken_();
-        if( SvParserState::Pending == eState )
+        if( SVPAR_PENDING == eState )
             return nRet;
     }
 
@@ -444,15 +446,15 @@ int SvParser::GetNextToken()
         nRet = pTokenStackPos->nTokenId;
     }
     // no, now push actual value on stack
-    else if( SvParserState::Working == eState )
+    else if( SVPAR_WORKING == eState )
     {
         pTokenStackPos->sToken = aToken;
         pTokenStackPos->nTokenValue = nTokenValue;
         pTokenStackPos->bTokenHasValue = bTokenHasValue;
         pTokenStackPos->nTokenId = nRet;
     }
-    else if( SvParserState::Accepted != eState && SvParserState::Pending != eState )
-        eState = SvParserState::Error;       // an error occurred
+    else if( SVPAR_ACCEPTED != eState && SVPAR_PENDING != eState )
+        eState = SVPAR_ERROR;       // an error occurred
 
     return nRet;
 }
@@ -614,12 +616,17 @@ void SvParser::BuildWhichTable( std::vector<sal_uInt16> &rWhichMap,
 }
 
 
-IMPL_LINK_NOARG( SvParser, NewDataRead, LinkParamNone*, void )
+IMPL_LINK_NOARG_TYPED( SvParser, NewDataRead, LinkParamNone*, void )
 {
     switch( eState )
     {
-    case SvParserState::Pending:
-        eState = SvParserState::Working;
+    case SVPAR_PENDING:
+        // if file is loaded we are not allowed to continue
+        // instead should ignore the call.
+        if( IsDownloadingFile() )
+            break;
+
+        eState = SVPAR_WORKING;
         RestoreState();
 
         Continue( pImplData->nToken );
@@ -627,12 +634,16 @@ IMPL_LINK_NOARG( SvParser, NewDataRead, LinkParamNone*, void )
         if( ERRCODE_IO_PENDING == rInput.GetError() )
             rInput.ResetError();
 
-        if( SvParserState::Pending != eState )
+        if( SVPAR_PENDING != eState )
             ReleaseRef();                    // ready otherwise!
         break;
 
-    case SvParserState::NotStarted:
-    case SvParserState::Working:
+    case SVPAR_WAITFORDATA:
+        eState = SVPAR_WORKING;
+        break;
+
+    case SVPAR_NOTSTARTED:
+    case SVPAR_WORKING:
         break;
 
     default:

@@ -99,27 +99,27 @@ LwpFrib::LwpFrib(LwpPara* pPara)
 
 LwpFrib::~LwpFrib()
 {
+    delete m_pModifiers;
 }
 
 LwpFrib* LwpFrib::CreateFrib(LwpPara* pPara, LwpObjectStream* pObjStrm, sal_uInt8 fribtag,sal_uInt8 editID)
 {
     //Read Modifier
-    std::unique_ptr<ModifierInfo> xModInfo;
+    ModifierInfo* pModInfo = nullptr;
     if(fribtag & FRIB_TAG_MODIFIER)
     {
-        xModInfo.reset(new ModifierInfo);
-        xModInfo->CodePage = 0;
-        xModInfo->FontID = 0;
-        xModInfo->RevisionType = 0;
-        xModInfo->RevisionFlag = false;
-        xModInfo->HasCharStyle = false;
-        xModInfo->HasLangOverride = false;
-        xModInfo->HasHighlight = false;
-        ReadModifiers(pObjStrm, xModInfo.get());
+        pModInfo  = new ModifierInfo();
+        pModInfo->CodePage = 0;
+        pModInfo->FontID = 0;
+        pModInfo->RevisionFlag = false;
+        pModInfo->HasCharStyle = false;
+        pModInfo->HasLangOverride = false;
+        pModInfo->HasHighlight = false;
+        ReadModifiers( pObjStrm, pModInfo );
     }
 
     //Read frib data
-    std::unique_ptr<LwpFrib> newFrib;
+    LwpFrib* newFrib = nullptr;
     sal_uInt16 friblen = pObjStrm->QuickReaduInt16();
     sal_uInt8 fribtype = fribtag&~FRIB_TAG_TYPEMASK;
     switch(fribtype)
@@ -127,87 +127,87 @@ LwpFrib* LwpFrib::CreateFrib(LwpPara* pPara, LwpObjectStream* pObjStrm, sal_uInt
         case FRIB_TAG_INVALID:  //fall through
         case FRIB_TAG_EOP:      //fall through
         default:
-            newFrib.reset(new LwpFrib(pPara));
+            newFrib = new LwpFrib(pPara);
             break;
         case FRIB_TAG_TEXT:
         {
-            newFrib.reset(new LwpFribText(pPara, (fribtag & FRIB_TAG_NOUNICODE) != 0));
+            newFrib = new LwpFribText (pPara, (fribtag & FRIB_TAG_NOUNICODE) != 0);
             break;
         }
         case FRIB_TAG_TABLE:
-            newFrib.reset(new LwpFribTable(pPara));
+            newFrib = new LwpFribTable(pPara);
             break;
         case FRIB_TAG_TAB:
-            newFrib.reset(new LwpFribTab(pPara));
+            newFrib = new LwpFribTab(pPara);
             break;
         case FRIB_TAG_PAGEBREAK:
-            newFrib.reset(new LwpFribPageBreak(pPara));
+            newFrib = new LwpFribPageBreak(pPara);
             break;
         case FRIB_TAG_FRAME:
-            newFrib.reset(new LwpFribFrame(pPara));
+            newFrib = new LwpFribFrame(pPara);
             break;
         case FRIB_TAG_FOOTNOTE:
-            newFrib.reset(new LwpFribFootnote(pPara));
+            newFrib = new LwpFribFootnote(pPara);
             break;
         case FRIB_TAG_COLBREAK:
-            newFrib.reset(new LwpFribColumnBreak(pPara));
+            newFrib = new LwpFribColumnBreak(pPara);
             break;
         case FRIB_TAG_LINEBREAK:
-            newFrib.reset(new LwpFribLineBreak(pPara));
+            newFrib = new LwpFribLineBreak(pPara);
             break;
         case FRIB_TAG_HARDSPACE:
-            newFrib.reset(new LwpFribHardSpace(pPara));
+            newFrib = new LwpFribHardSpace(pPara);
             break;
         case FRIB_TAG_SOFTHYPHEN:
-            newFrib.reset(new LwpFribSoftHyphen(pPara));
+            newFrib = new LwpFribSoftHyphen(pPara);
             break;
         case FRIB_TAG_PARANUMBER:
-            newFrib.reset(new LwpFribParaNumber(pPara));
+            newFrib = new LwpFribParaNumber(pPara);
             break;
         case FRIB_TAG_UNICODE: //fall through
         case FRIB_TAG_UNICODE2: //fall through
         case FRIB_TAG_UNICODE3: //fall through
-            newFrib.reset(new LwpFribUnicode(pPara));
+            newFrib = new LwpFribUnicode(pPara);
             break;
         case FRIB_TAG_NOTE:
-            newFrib.reset(new LwpFribNote(pPara));
+            newFrib = new  LwpFribNote(pPara);
             break;
         case FRIB_TAG_SECTION:
-            newFrib.reset(new LwpFribSection(pPara));
+            newFrib = new LwpFribSection(pPara);
             break;
         case FRIB_TAG_PAGENUMBER:
-            newFrib.reset(new LwpFribPageNumber(pPara));
+            newFrib = new LwpFribPageNumber(pPara);
             break;
         case FRIB_TAG_DOCVAR:
-            newFrib.reset(new LwpFribDocVar(pPara));
+            newFrib = new LwpFribDocVar(pPara);
             break;
         case FRIB_TAG_BOOKMARK:
-            newFrib.reset(new LwpFribBookMark(pPara));
+            newFrib = new LwpFribBookMark(pPara);
             break;
         case FRIB_TAG_FIELD:
-            newFrib.reset(new LwpFribField(pPara));
+            newFrib = new LwpFribField(pPara);
             break;
         case FRIB_TAG_CHBLOCK:
-            newFrib.reset(new LwpFribCHBlock(pPara));
+            newFrib = new LwpFribCHBlock(pPara);
             break;
         case FRIB_TAG_RUBYMARKER:
-            newFrib.reset(new LwpFribRubyMarker(pPara));
+            newFrib = new LwpFribRubyMarker(pPara);
             break;
         case FRIB_TAG_RUBYFRAME:
-            newFrib.reset(new LwpFribRubyFrame(pPara));
+            newFrib = new LwpFribRubyFrame(pPara);
             break;
     }
 
     //Do not know why the fribTag judgement is necessary, to be checked with
-    if (fribtag & FRIB_TAG_MODIFIER)
+    if ( fribtag & FRIB_TAG_MODIFIER )
     {
-        newFrib->SetModifiers(xModInfo.release());
+        newFrib->SetModifiers(pModInfo);
     }
 
-    newFrib->m_nFribType = fribtype;
-    newFrib->m_nEditor = editID;
+    newFrib->SetType(fribtype);
+    newFrib->SetEditor(editID);
     newFrib->Read(pObjStrm, friblen);
-    return newFrib.release();
+    return newFrib;
 }
 
 void LwpFrib::Read(LwpObjectStream* pObjStrm, sal_uInt16 len)
@@ -219,7 +219,7 @@ void LwpFrib::SetModifiers(ModifierInfo* pModifiers)
 {
     if (pModifiers)
     {
-        m_pModifiers.reset( pModifiers );
+        m_pModifiers = pModifiers;
         m_ModFlag = true;
         if (pModifiers->RevisionFlag)
         {

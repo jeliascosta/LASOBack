@@ -36,9 +36,6 @@ class SVGExport;
 namespace vcl { class Font; }
 class OutputDevice;
 
-#ifdef _MSC_VER
-#pragma warning (disable : 4503) // FontNameMap gives decorated name length exceeded
-#endif
 
 class SVGFontExport
 {

@@ -47,6 +47,7 @@ namespace sdr
                 drawinglayer::primitive2d::createNewSdrLineFillShadowAttribute(rItemSet, false));
 
             // get sphere center and size for geometry
+            basegfx::B3DRange aSphereRange;
             const basegfx::B3DPoint aSpherePosition(GetE3dSphereObj().Center());
             const basegfx::B3DVector aSphereSize(GetE3dSphereObj().Size());
             basegfx::B3DHomMatrix aWorldTransform;

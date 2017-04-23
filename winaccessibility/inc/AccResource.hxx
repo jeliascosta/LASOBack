@@ -28,7 +28,7 @@ class SimpleResMgr;
 
 
 //= ResourceManager
-//= handling resources within the FormLayer library
+//= handling ressources within the FormLayer library
 
 class ResourceManager
 {

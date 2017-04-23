@@ -46,8 +46,8 @@ void ThreadManager::Init()
 {
     mpThreadListener.reset( new ThreadListener( *this ) );
 
-    maStartNewThreadIdle.SetPriority( TaskPriority::LOWEST );
-    maStartNewThreadIdle.SetInvokeHandler( LINK( this, ThreadManager, TryToStartNewThread ) );
+    maStartNewThreadIdle.SetPriority( SchedulerPriority::LOWEST );
+    maStartNewThreadIdle.SetIdleHdl( LINK( this, ThreadManager, TryToStartNewThread ) );
 }
 
 ThreadManager::~ThreadManager()
@@ -74,7 +74,7 @@ oslInterlockedCount ThreadManager::AddThread(
 
     // create new thread
     tThreadData aThreadData;
-    oslInterlockedCount nNewThreadID( osl_atomic_increment( &mnThreadIDCounter ) );
+    oslInterlockedCount nNewThreadID( RetrieveNewThreadID() );
     {
         aThreadData.nThreadID = nNewThreadID;
 
@@ -202,7 +202,7 @@ bool ThreadManager::StartThread( const tThreadData& rThreadData )
     return bThreadStarted;
 }
 
-IMPL_LINK_NOARG(ThreadManager, TryToStartNewThread, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ThreadManager, TryToStartNewThread, Idle *, void)
 {
     osl::MutexGuard aGuard(maMutex);
 

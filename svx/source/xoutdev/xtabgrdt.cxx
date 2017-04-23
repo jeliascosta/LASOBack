@@ -33,12 +33,11 @@
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <memory>
-#include <o3tl/make_unique.hxx>
 
 using namespace com::sun::star;
 
 XGradientList::XGradientList( const OUString& rPath, const OUString& rReferer )
-:   XPropertyList( XPropertyListType::Gradient, rPath, rReferer )
+:   XPropertyList( XGRADIENT_LIST, rPath, rReferer )
 {
 }
 
@@ -46,9 +45,14 @@ XGradientList::~XGradientList()
 {
 }
 
-void XGradientList::Replace(std::unique_ptr<XGradientEntry> pEntry, long nIndex)
+XGradientEntry* XGradientList::Replace(XGradientEntry* pEntry, long nIndex )
 {
-    XPropertyList::Replace(std::move(pEntry), nIndex);
+    return static_cast<XGradientEntry*>( XPropertyList::Replace( pEntry, nIndex ) );
+}
+
+XGradientEntry* XGradientList::Remove(long nIndex)
+{
+    return static_cast<XGradientEntry*>( XPropertyList::Remove( nIndex ) );
 }
 
 XGradientEntry* XGradientList::GetGradient(long nIndex) const
@@ -68,22 +72,22 @@ bool XGradientList::Create()
     rtl::OUStringBuffer aStr(SVX_RESSTR(RID_SVXSTR_GRADIENT));
     aStr.append(" 1");
     sal_Int32 nLen = aStr.getLength() - 1;
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_BLACK  ),RGB_Color(COL_WHITE  ),css::awt::GradientStyle_LINEAR    ,    0,10,10, 0,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_BLACK  ),RGB_Color(COL_WHITE  ),css::awt::GradientStyle_LINEAR    ,    0,10,10, 0,100,100),aStr.toString()));
     aStr[nLen] = '2';
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_BLUE   ),RGB_Color(COL_RED    ),css::awt::GradientStyle_AXIAL     ,  300,20,20,10,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_BLUE   ),RGB_Color(COL_RED    ),css::awt::GradientStyle_AXIAL     ,  300,20,20,10,100,100),aStr.toString()));
     aStr[nLen] = '3';
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_RED    ),RGB_Color(COL_YELLOW ),css::awt::GradientStyle_RADIAL    ,  600,30,30,20,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_RED    ),RGB_Color(COL_YELLOW ),css::awt::GradientStyle_RADIAL    ,  600,30,30,20,100,100),aStr.toString()));
     aStr[nLen] = '4';
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_YELLOW ),RGB_Color(COL_GREEN  ),css::awt::GradientStyle_ELLIPTICAL,  900,40,40,30,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_YELLOW ),RGB_Color(COL_GREEN  ),css::awt::GradientStyle_ELLIPTICAL,  900,40,40,30,100,100),aStr.toString()));
     aStr[nLen] = '5';
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_GREEN  ),RGB_Color(COL_MAGENTA),css::awt::GradientStyle_SQUARE    , 1200,50,50,40,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_GREEN  ),RGB_Color(COL_MAGENTA),css::awt::GradientStyle_SQUARE    , 1200,50,50,40,100,100),aStr.toString()));
     aStr[nLen] = '6';
-    Insert(o3tl::make_unique<XGradientEntry>(XGradient(RGB_Color(COL_MAGENTA),RGB_Color(COL_YELLOW ),css::awt::GradientStyle_RECT      , 1900,60,60,50,100,100),aStr.toString()));
+    Insert(new XGradientEntry(XGradient(RGB_Color(COL_MAGENTA),RGB_Color(COL_YELLOW ),css::awt::GradientStyle_RECT      , 1900,60,60,50,100,100),aStr.toString()));
 
     return true;
 }
 
-Bitmap XGradientList::CreateBitmap( long nIndex, const Size& rSize ) const
+Bitmap XGradientList::CreateBitmapForUI( long nIndex )
 {
     Bitmap aRetval;
 
@@ -92,6 +96,8 @@ Bitmap XGradientList::CreateBitmap( long nIndex, const Size& rSize ) const
     if(nIndex < Count())
     {
         const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
+        const Size& rSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
+
         // prepare polygon geometry for rectangle
         const basegfx::B2DPolygon aRectangle(
             basegfx::tools::createPolygonFromRect(
@@ -204,18 +210,6 @@ Bitmap XGradientList::CreateBitmap( long nIndex, const Size& rSize ) const
     }
 
     return aRetval;
-}
-
-Bitmap XGradientList::CreateBitmapForUI(long nIndex)
-{
-    const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
-    const Size& rSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
-    return CreateBitmap(nIndex, rSize);
-}
-
-Bitmap XGradientList::GetBitmapForPreview(long nIndex, const Size& rSize)
-{
-    return CreateBitmap(nIndex, rSize);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -16,13 +16,32 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+interface WebTextInTable
+{
+    import WebText;
+        import WebTable;
+}
+
+interface WebListInTable
+{
+    import WebText;
+        import WebList;
+        import WebTable;
+}
+
+interface WebListInText
+{
+    import WebList;
+    import WebText;
+}
+
 interface WebEditView : BaseTextEditView
 {
     SID_DRAW_TEXT_MARQUEE // status()
     [
         ExecMethod = ExecDraw ;
         StateMethod = GetDrawState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 }
 
@@ -94,14 +113,14 @@ interface WebSourceView
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_CUT // status(final|play)
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_COPY   // status(final|play)
@@ -114,7 +133,7 @@ interface WebSourceView
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_SELECTALL // status(final|play)

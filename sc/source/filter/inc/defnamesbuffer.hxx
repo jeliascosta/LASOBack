@@ -27,8 +27,14 @@
 
 class ScTokenArray;
 
+namespace com { namespace sun { namespace star {
+    namespace sheet { class XNamedRange; }
+} } }
+
 namespace oox {
 namespace xls {
+
+class BiffInputStreamPos;
 
 // codes for built-in names
 const sal_Unicode BIFF_DEFNAME_CONSOLIDATEAREA  = '\x00';
@@ -68,9 +74,9 @@ public:
     explicit            DefinedNameBase( const WorkbookHelper& rHelper );
 
     /** Returns the original name as imported from or exported to the file. */
-    const OUString& getModelName() const { return maModel.maName; }
+    inline const OUString& getModelName() const { return maModel.maName; }
     /** Returns the name as used in the Calc document. */
-    const OUString& getCalcName() const { return maCalcName; }
+    inline const OUString& getCalcName() const { return maCalcName; }
 
     /** Returns the original name as imported from or exported to the file. */
     const OUString& getUpcaseModelName() const;
@@ -102,31 +108,33 @@ public:
     void                convertFormula( const css::uno::Sequence<css::sheet::ExternalLinkInfo>& rExternalLinks );
     std::unique_ptr<ScTokenArray> getScTokens( const css::uno::Sequence<css::sheet::ExternalLinkInfo>& rExternalLinks );
     /** Returns true, if this defined name is global in the document. */
-    bool         isGlobalName() const { return mnCalcSheet < 0; }
+    inline bool         isGlobalName() const { return mnCalcSheet < 0; }
     /** Returns true, if this defined name is a special builtin name. */
-    bool         isBuiltinName() const { return mcBuiltinId != BIFF_DEFNAME_UNKNOWN; }
+    inline bool         isBuiltinName() const { return mcBuiltinId != BIFF_DEFNAME_UNKNOWN; }
     /** Returns true, if this defined name is a macro function call. */
-    bool         isMacroFunction() const { return maModel.mbMacro && maModel.mbFunction; }
+    inline bool         isMacroFunction() const { return maModel.mbMacro && maModel.mbFunction; }
     /** Returns true, if this defined name is a reference to a VBA macro. */
-    bool         isVBName() const { return maModel.mbMacro && maModel.mbVBName; }
+    inline bool         isVBName() const { return maModel.mbMacro && maModel.mbVBName; }
 
     /** Returns the 0-based sheet index for local names, or -1 for global names. */
-    sal_Int16    getLocalCalcSheet() const { return mnCalcSheet; }
+    inline sal_Int16    getLocalCalcSheet() const { return mnCalcSheet; }
     /** Returns the built-in identifier of the defined name. */
-    sal_Unicode  getBuiltinId() const { return mcBuiltinId; }
+    inline sal_Unicode  getBuiltinId() const { return mcBuiltinId; }
     /** Returns the token index used in API token arrays (com.sun.star.sheet.FormulaToken). */
-    sal_Int32    getTokenIndex() const { return mnTokenIndex; }
+    inline sal_Int32    getTokenIndex() const { return mnTokenIndex; }
     /** Tries to resolve the defined name to an absolute cell range. */
-    bool                getAbsoluteRange( ScRange& orRange ) const;
+    bool                getAbsoluteRange( css::table::CellRangeAddress& orRange ) const;
 
 private:
     typedef ::std::unique_ptr< StreamDataSequence >   StreamDataSeqPtr;
+    typedef ::std::unique_ptr< BiffInputStreamPos >   BiffStreamPosPtr;
 
     ScRangeData*        mpScRangeData;       /// ScRangeData of the defined name.
     sal_Int32           mnTokenIndex;       /// Name index used in API token array.
     sal_Int16           mnCalcSheet;        /// Calc sheet index for sheet-local names.
     sal_Unicode         mcBuiltinId;        /// Identifier for built-in defined names.
     StreamDataSeqPtr    mxFormula;          /// Formula data for BIFF12 import.
+    BiffStreamPosPtr    mxBiffStrm;         /// Cached BIFF stream for formula import.
 };
 
 typedef std::shared_ptr< DefinedName > DefinedNameRef;

@@ -45,6 +45,10 @@ namespace /* private */
         {
         }
 
+        virtual ~BigPtrEntryMock()
+        {
+        }
+
         sal_uLong getCount() const
         {
             return count_;
@@ -597,10 +601,10 @@ public:
     CPPUNIT_TEST_SUITE_END();
 };
 
-#if defined TIMELOG
+const char* START = "START: ";
+const char* END = "END: ";
 
-const char* const START = "START: ";
-const char* const END = "END: ";
+#if defined TIMELOG
 
 class PerformanceTracer
 {

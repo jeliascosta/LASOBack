@@ -51,9 +51,9 @@ namespace dbaui
         bool               m_bPKeyAllowed;
         bool               m_bUseHeaderAllowed;
 
-        DECL_LINK( AppendDataClickHdl, Button*, void );
-        DECL_LINK( RadioChangeHdl, Button*, void );
-        DECL_LINK( KeyClickHdl, Button*, void );
+        DECL_LINK_TYPED( AppendDataClickHdl, Button*, void );
+        DECL_LINK_TYPED( RadioChangeHdl, Button*, void );
+        DECL_LINK_TYPED( KeyClickHdl, Button*, void );
 
         bool checkAppendData();
         void SetAppendDataRadio();
@@ -65,7 +65,7 @@ namespace dbaui
         virtual OUString        GetTitle() const override ;
 
         OCopyTable( vcl::Window * pParent );
-        virtual ~OCopyTable() override;
+        virtual ~OCopyTable();
         virtual void dispose() override;
 
         bool IsOptionDefData() const { return m_pRB_DefData->IsChecked(); }
@@ -74,11 +74,11 @@ namespace dbaui
         OUString GetKeyName() const { return m_pEdKeyName->GetText(); }
 
         void setCreateStyleAction();
-        void disallowViews()
+        inline void disallowViews()
         {
             m_pRB_View->Disable();
         }
-        void disallowUseHeaderLine()
+        inline void disallowUseHeaderLine()
         {
             m_bUseHeaderAllowed = false;
             m_pCB_UseHeaderLine->Disable();

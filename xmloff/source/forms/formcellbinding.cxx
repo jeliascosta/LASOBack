@@ -83,12 +83,12 @@ namespace
     struct StringCompare : public ::std::unary_function< OUString, bool >
     {
     private:
-        const OUString & m_sReference;
+        const OUString m_sReference;
 
     public:
         explicit StringCompare( const OUString& _rReference ) : m_sReference( _rReference ) { }
 
-        bool operator()( const OUString& _rCompare )
+        inline bool operator()( const OUString& _rCompare )
         {
             return ( _rCompare == m_sReference );
         }

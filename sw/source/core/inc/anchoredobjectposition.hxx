@@ -75,7 +75,7 @@ namespace objectpositioning
                                        const SwFrame&  rPageAlignLayFrame,
                                        const SwTwips nProposedRelPosY,
                                        const bool bFollowTextFlow,
-                                       const bool bCheckBottom ) const;
+                                       const bool bCheckBottom = true ) const;
         SwTwips ImplAdjustHoriRelPos( const SwFrame&  _rPageAlignLayFrame,
                                        const SwTwips _nProposedRelPosX ) const;
 
@@ -84,28 +84,32 @@ namespace objectpositioning
         virtual ~SwAnchoredObjectPosition();
 
         // accessors for object and its corresponding data/information
-        SdrObject& GetObject() const
+        inline SdrObject& GetObject() const
         {
             return mrDrawObj;
         }
-        bool IsObjFly() const
+        inline bool IsObjFly() const
         {
             return mbIsObjFly;
         }
-        SwAnchoredObject& GetAnchoredObj() const
+        inline SwAnchoredObject& GetAnchoredObj() const
         {
             return *mpAnchoredObj;
         }
-        SwFrame& GetAnchorFrame() const
+        inline SwFrame& GetAnchorFrame() const
         {
             return *mpAnchorFrame;
         }
-        const SwFrameFormat& GetFrameFormat() const
+        inline SwContact& GetContact() const
+        {
+            return *mpContact;
+        }
+        inline const SwFrameFormat& GetFrameFormat() const
         {
             return *mpFrameFormat;
         }
         // #i62875#
-        bool DoesObjFollowsTextFlow() const
+        inline bool DoesObjFollowsTextFlow() const
         {
             return mbFollowTextFlow;
         }
@@ -181,7 +185,7 @@ namespace objectpositioning
             object has to be checked and thus, (if needed) the proposed
             relative position has to be adjusted. default value <true>
         */
-        SwTwips AdjustVertRelPos( const SwTwips nTopOfAnch,
+        inline SwTwips AdjustVertRelPos( const SwTwips nTopOfAnch,
                                           const bool bVert,
                                           const bool bVertL2R,
                                           const SwFrame& rPageAlignLayFrame,
@@ -261,7 +265,7 @@ namespace objectpositioning
 
             @return adjusted relative horizontal position in SwTwips.
         */
-        SwTwips AdjustHoriRelPos( const SwFrame&  _rPageAlignLayFrame,
+        inline SwTwips AdjustHoriRelPos( const SwFrame&  _rPageAlignLayFrame,
                                           const SwTwips _nProposedRelPosX ) const
         {
             return !mbDoNotCaptureAnchoredObj

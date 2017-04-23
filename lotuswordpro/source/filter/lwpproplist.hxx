@@ -75,7 +75,7 @@ public:
     const LwpAtomHolder& GetValue(){return m_Value;}
     const LwpAtomHolder& GetName(){return m_Name;}
 private:
-    virtual ~LwpPropListElement() override {}
+    virtual ~LwpPropListElement(){}
 
     LwpAtomHolder m_Name;
     LwpAtomHolder m_Value;
@@ -85,7 +85,8 @@ class LwpPropList : public LwpDLVListHead
 {
 public:
     LwpPropList(){}
-    using LwpDLVListHead::Read;
+    ~LwpPropList(){}
+    void Read(LwpObjectStream* pObjStrm);
     LwpPropListElement* GetFirst();
     OUString GetNamedProperty(const OUString& name);
     OUString EnumNamedProperty(OUString& name,OUString& value);

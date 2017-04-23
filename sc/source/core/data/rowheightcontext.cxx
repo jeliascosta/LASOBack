@@ -14,7 +14,6 @@ namespace sc {
 RowHeightContext::RowHeightContext(
     double fPPTX, double fPPTY, const Fraction& rZoomX, const Fraction& rZoomY,
     OutputDevice* pOutDev ) :
-    maHeights(0),
     mfPPTX(fPPTX), mfPPTY(fPPTY),
     maZoomX(rZoomX), maZoomY(rZoomY),
     mpOutDev(pOutDev),
@@ -33,7 +32,7 @@ void RowHeightContext::setForceAutoSize( bool b )
     mbForceAutoSize = b;
 }
 
-ScFlatUInt16RowSegments& RowHeightContext::getHeightArray()
+std::vector<sal_uInt16>& RowHeightContext::getHeightArray()
 {
     return maHeights;
 }

@@ -39,7 +39,7 @@ public:
 
     virtual StylePreviewRenderer* CreateStylePreviewRenderer(
                     OutputDevice& rOutputDev, SfxStyleSheetBase* pStyle,
-                    long nMaxHeight) = 0;
+                    long nMaxHeight = 32) = 0;
 };
 
 } // end namespace sfx2

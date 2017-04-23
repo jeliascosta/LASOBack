@@ -47,7 +47,6 @@
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/task/InteractionClassification.hpp>
 #include <com/sun/star/task/XInteractionApprove.hpp>
-#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ucb/XInteractionReplaceExistingData.hpp>
 #include <com/sun/star/ucb/NameClashResolveRequest.hpp>
 #include <com/sun/star/ucb/XContentAccess.hpp>
@@ -58,8 +57,6 @@
 #include <com/sun/star/packages/manifest/ManifestReader.hpp>
 #include <com/sun/star/packages/manifest/ManifestWriter.hpp>
 #include <com/sun/star/deployment/DependencyException.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
-#include <com/sun/star/deployment/ExtensionRemovedException.hpp>
 #include <com/sun/star/deployment/LicenseException.hpp>
 #include <com/sun/star/deployment/PlatformException.hpp>
 #include <com/sun/star/deployment/Prerequisites.hpp>
@@ -109,7 +106,7 @@ class BackendImpl : public ImplBaseT
             Reference<ucb::XCommandEnvironment> const & xCmdEnv,
             bool notifyDetectionError = true );
 
-        typedef std::vector< Reference<deployment::XPackage> > t_packagevec;
+        typedef ::std::vector< Reference<deployment::XPackage> > t_packagevec;
         void scanBundle(
             t_packagevec & bundle,
             ::rtl::Reference<AbortChannel> const & abortChannel,
@@ -120,7 +117,7 @@ class BackendImpl : public ImplBaseT
             ::rtl::Reference<AbortChannel> const & abortChannel,
             Reference<ucb::XCommandEnvironment> const & xCmdEnv,
             bool skip_registration = false );
-        std::vector<Reference<deployment::XPackage> > getPackagesFromDb(
+        ::std::vector<Reference<deployment::XPackage> > getPackagesFromDb(
             Reference<ucb::XCommandEnvironment> const & xCmdEnv);
         bool checkPlatform(
             Reference<ucb::XCommandEnvironment > const &  environment);
@@ -132,13 +129,13 @@ class BackendImpl : public ImplBaseT
             // throws css::uno::RuntimeException,
             // css::deployment::DeploymentException
 
-        /// @throws deployment::DeploymentException
-        /// @throws ucb::CommandFailedException
-        /// @throws ucb::CommandAbortedException
-        /// @throws RuntimeException
         bool checkLicense(
             Reference< ucb::XCommandEnvironment > const & xCmdEnv,
-            DescriptionInfoset const & description, bool bNoLicenseChecking);
+            DescriptionInfoset const & description, bool bNoLicenseChecking)
+                throw (deployment::DeploymentException,
+                       ucb::CommandFailedException,
+                       ucb::CommandAbortedException,
+                       RuntimeException);
         // @throws DeploymentException
         OUString getTextFromURL(
             const Reference< ucb::XCommandEnvironment >& xCmdEnv,
@@ -172,40 +169,69 @@ class BackendImpl : public ImplBaseT
             OUString const & identifier);
 
         // XPackage
-        virtual sal_Bool SAL_CALL isBundle() override;
+        virtual sal_Bool SAL_CALL isBundle() throw (RuntimeException, std::exception) override;
 
         virtual Sequence< Reference<deployment::XPackage> > SAL_CALL getBundle(
             Reference<task::XAbortChannel> const & xAbortChannel,
-            Reference<ucb::XCommandEnvironment> const & xCmdEnv ) override;
-        virtual OUString SAL_CALL getDescription() override;
+            Reference<ucb::XCommandEnvironment> const & xCmdEnv )
+            throw (deployment::DeploymentException,
+                   ucb::CommandFailedException,
+                   ucb::CommandAbortedException,
+                   lang::IllegalArgumentException, RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getDescription()
+            throw (deployment::ExtensionRemovedException, RuntimeException, std::exception) override;
 
-        virtual OUString SAL_CALL getLicenseText() override;
+        virtual OUString SAL_CALL getLicenseText()
+            throw (deployment::DeploymentException,
+                   deployment::ExtensionRemovedException,
+                   RuntimeException, std::exception) override;
 
         virtual void SAL_CALL exportTo(
             OUString const & destFolderURL, OUString const & newTitle,
             sal_Int32 nameClashAction,
-            Reference<ucb::XCommandEnvironment> const & xCmdEnv ) override;
+            Reference<ucb::XCommandEnvironment> const & xCmdEnv )
+            throw (deployment::ExtensionRemovedException,
+                   ucb::CommandFailedException,
+                   ucb::CommandAbortedException,
+                   ucb::ContentCreationException,
+                   RuntimeException, std::exception) override;
 
         virtual ::sal_Int32 SAL_CALL checkPrerequisites(
             const Reference< task::XAbortChannel >& xAbortChannel,
             const Reference< ucb::XCommandEnvironment >& xCmdEnv,
-            sal_Bool noLicenseChecking) override;
+            sal_Bool noLicenseChecking)
+            throw (deployment::ExtensionRemovedException,
+                   deployment::DeploymentException,
+                   ucb::CommandFailedException,
+                   ucb::CommandAbortedException,
+                   RuntimeException, std::exception) override;
 
         virtual sal_Bool SAL_CALL checkDependencies(
-            const Reference< ucb::XCommandEnvironment >& xCmdEnv ) override;
+            const Reference< ucb::XCommandEnvironment >& xCmdEnv )
+            throw (deployment::DeploymentException,
+                   deployment::ExtensionRemovedException,
+                   ucb::CommandFailedException,
+                   RuntimeException, std::exception) override;
 
-        virtual beans::Optional<OUString> SAL_CALL getIdentifier() override;
+        virtual beans::Optional<OUString> SAL_CALL getIdentifier()
+            throw (RuntimeException, std::exception) override;
 
-        virtual OUString SAL_CALL getVersion() override;
+        virtual OUString SAL_CALL getVersion()
+            throw (deployment::ExtensionRemovedException, RuntimeException, std::exception) override;
 
-        virtual Sequence<OUString> SAL_CALL getUpdateInformationURLs() override;
+        virtual Sequence<OUString> SAL_CALL getUpdateInformationURLs()
+            throw (deployment::ExtensionRemovedException, RuntimeException, std::exception) override;
 
-        virtual beans::StringPair SAL_CALL getPublisherInfo() override;
+        virtual beans::StringPair SAL_CALL getPublisherInfo()
+            throw (deployment::ExtensionRemovedException, RuntimeException, std::exception) override;
 
-        virtual OUString SAL_CALL getDisplayName() override;
+        virtual OUString SAL_CALL getDisplayName()
+            throw (deployment::ExtensionRemovedException, RuntimeException, std::exception) override;
 
         virtual Reference< graphic::XGraphic > SAL_CALL
-        getIcon( sal_Bool bHighContrast ) override;
+        getIcon( sal_Bool bHighContrast )
+            throw (deployment::ExtensionRemovedException,
+                   RuntimeException, std::exception) override;
     };
     friend class PackageImpl;
 
@@ -235,14 +261,18 @@ public:
         Reference<deployment::XPackageRegistry> const & xRootRegistry );
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const& name ) override;
-    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const& name )
+        throw (RuntimeException, std::exception) override;
+    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (RuntimeException, std::exception) override;
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
+    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception) override;
 
     using ImplBaseT::disposing;
 };
@@ -269,13 +299,13 @@ BackendImpl::BackendImpl(
       m_xBundleTypeInfo( new Package::TypeInfo(
                              "application/vnd.sun.star.package-bundle",
                              "*.oxt;*.uno.pkg",
-                             getResourceString(RID_STR_PACKAGE_BUNDLE)
-                             ) ),
+                             getResourceString(RID_STR_PACKAGE_BUNDLE),
+                             RID_IMG_DEF_PACKAGE_BUNDLE ) ),
       m_xLegacyBundleTypeInfo( new Package::TypeInfo(
                                    "application/vnd.sun.star.legacy-package-bundle",
                                    "*.zip",
-                                   m_xBundleTypeInfo->getShortDescription()
-                                   ) ),
+                                   m_xBundleTypeInfo->getShortDescription(),
+                                   RID_IMG_DEF_PACKAGE_BUNDLE ) ),
     m_typeInfos(2)
 {
     m_typeInfos[ 0 ] = m_xBundleTypeInfo;
@@ -298,17 +328,19 @@ void BackendImpl::disposing()
 }
 
 // XServiceInfo
-OUString BackendImpl::getImplementationName()
+OUString BackendImpl::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.deployment.bundle.PackageRegistryBackend");
 }
 
 sal_Bool BackendImpl::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence<OUString> BackendImpl::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return { OUString(BACKEND_SERVICE_NAME) };
 }
@@ -316,12 +348,14 @@ Sequence<OUString> BackendImpl::getSupportedServiceNames()
 // XPackageRegistry
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes()
+BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
 {
     return m_typeInfos;
 }
 
 void BackendImpl::packageRemoved(OUString const & url, OUString const & /*mediaType*/)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception)
 {
     //Notify the backend responsible for processing the different media
     //types that this extension was removed.
@@ -621,6 +655,10 @@ bool BackendImpl::PackageImpl::checkDependencies(
 bool BackendImpl::PackageImpl::checkLicense(
     css::uno::Reference< css::ucb::XCommandEnvironment > const & xCmdEnv,
     DescriptionInfoset const & info, bool alreadyInstalled)
+        throw (css::deployment::DeploymentException,
+            css::ucb::CommandFailedException,
+            css::ucb::CommandAbortedException,
+            css::uno::RuntimeException)
 {
     try
     {
@@ -641,7 +679,7 @@ bool BackendImpl::PackageImpl::checkLicense(
         //check correct value for attribute
         if ( ! (simplLicAttr->acceptBy == "user" || simplLicAttr->acceptBy == "admin"))
             throw css::deployment::DeploymentException(
-                "Could not obtain attribute simple-license@accept-by or it has no valid value", nullptr, Any());
+                "Could not obtain attribute simple-lincense@accept-by or it has no valid value", nullptr, Any());
 
 
         //Only use interaction if there is no version of this extension already installed
@@ -689,6 +727,11 @@ bool BackendImpl::PackageImpl::checkLicense(
         const css::uno::Reference< css::task::XAbortChannel >&,
         const css::uno::Reference< css::ucb::XCommandEnvironment >& xCmdEnv,
         sal_Bool alreadyInstalled)
+        throw (css::deployment::DeploymentException,
+               css::deployment::ExtensionRemovedException,
+               css::ucb::CommandFailedException,
+               css::ucb::CommandAbortedException,
+               css::uno::RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -713,6 +756,10 @@ bool BackendImpl::PackageImpl::checkLicense(
 
 sal_Bool BackendImpl::PackageImpl::checkDependencies(
         const css::uno::Reference< css::ucb::XCommandEnvironment >& xCmdEnv )
+        throw (deployment::DeploymentException,
+               deployment::ExtensionRemovedException,
+               ucb::CommandFailedException,
+               RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -724,6 +771,7 @@ sal_Bool BackendImpl::PackageImpl::checkDependencies(
 }
 
 beans::Optional<OUString> BackendImpl::PackageImpl::getIdentifier()
+    throw (RuntimeException, std::exception)
 {
     OUString identifier;
     if (m_bRemoved)
@@ -737,6 +785,7 @@ beans::Optional<OUString> BackendImpl::PackageImpl::getIdentifier()
 }
 
 OUString BackendImpl::PackageImpl::getVersion()
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -744,6 +793,7 @@ OUString BackendImpl::PackageImpl::getVersion()
 }
 
 Sequence<OUString> BackendImpl::PackageImpl::getUpdateInformationURLs()
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -751,16 +801,18 @@ Sequence<OUString> BackendImpl::PackageImpl::getUpdateInformationURLs()
 }
 
 beans::StringPair BackendImpl::PackageImpl::getPublisherInfo()
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
-    std::pair< OUString, OUString > aInfo = getDescriptionInfoset().getLocalizedPublisherNameAndURL();
+    ::std::pair< OUString, OUString > aInfo = getDescriptionInfoset().getLocalizedPublisherNameAndURL();
     beans::StringPair aStrPair( aInfo.first, aInfo.second );
     return aStrPair;
 }
 
 
 uno::Reference< graphic::XGraphic > BackendImpl::PackageImpl::getIcon( sal_Bool bHighContrast )
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception )
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -866,7 +918,7 @@ void BackendImpl::PackageImpl::processPackage_(
                 }
             }
             data.items.push_back(
-                std::make_pair(xPackage->getURL(),
+                ::std::make_pair(xPackage->getURL(),
                                  xPackage->getPackageType()->getMediaType()));
         }
         getMyBackend()->addDataToDb(getURL(), data);
@@ -920,6 +972,7 @@ void BackendImpl::PackageImpl::processPackage_(
 
 
 OUString BackendImpl::PackageImpl::getDescription()
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -947,6 +1000,9 @@ OUString BackendImpl::PackageImpl::getDescription()
 
 
 OUString BackendImpl::PackageImpl::getLicenseText()
+    throw (deployment::DeploymentException,
+           deployment::ExtensionRemovedException,
+           RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -973,6 +1029,9 @@ OUString BackendImpl::PackageImpl::getLicenseText()
 void BackendImpl::PackageImpl::exportTo(
     OUString const & destFolderURL, OUString const & newTitle,
     sal_Int32 nameClashAction, Reference<ucb::XCommandEnvironment> const & xCmdEnv )
+    throw (deployment::ExtensionRemovedException,
+           ucb::CommandFailedException, ucb::CommandAbortedException,
+           ucb::ContentCreationException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -1033,7 +1092,7 @@ void BackendImpl::PackageImpl::exportTo(
                     xResultSet, UNO_QUERY_THROW )->queryContent(),
                 xCmdEnv, getMyBackend()->getComponentContext() );
             if (! destFolderContent.transferContent(
-                    subContent, ::ucbhelper::InsertOperation::Copy,
+                    subContent, ::ucbhelper::InsertOperation_COPY,
                     OUString(), ucb::NameClash::OVERWRITE ))
                 throw RuntimeException( "UCB transferContent() failed!",
                                         static_cast<OWeakObject *>(this) );
@@ -1071,7 +1130,7 @@ void BackendImpl::PackageImpl::exportTo(
                             exc.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
         }
 
-        std::vector< Sequence<beans::PropertyValue> > manifest;
+        ::std::vector< Sequence<beans::PropertyValue> > manifest;
         manifest.reserve( bundle.getLength() );
         sal_Int32 baseURLlen = m_url_expanded.getLength();
         Reference<deployment::XPackage> const *pbundle = bundle.getConstArray();
@@ -1141,7 +1200,7 @@ void BackendImpl::PackageImpl::exportTo(
             }
 
             if (metainfFolderContent.transferContent(
-                  manifestContent, ::ucbhelper::InsertOperation::Copy,
+                  manifestContent, ::ucbhelper::InsertOperation_COPY,
                   OUString(), ucb::NameClash::OVERWRITE ))
             {
                 bSuccess = true;
@@ -1167,7 +1226,7 @@ void BackendImpl::PackageImpl::exportTo(
 }
 
 
-sal_Bool BackendImpl::PackageImpl::isBundle()
+sal_Bool BackendImpl::PackageImpl::isBundle() throw (RuntimeException, std::exception)
 {
     return true;
 }
@@ -1176,6 +1235,9 @@ sal_Bool BackendImpl::PackageImpl::isBundle()
 Sequence< Reference<deployment::XPackage> > BackendImpl::PackageImpl::getBundle(
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<ucb::XCommandEnvironment> const & xCmdEnv )
+    throw (deployment::DeploymentException,
+           ucb::CommandFailedException, ucb::CommandAbortedException,
+           lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     Sequence< Reference<deployment::XPackage> > * pBundle = m_pBundle;
     if (pBundle == nullptr)
@@ -1371,8 +1433,8 @@ void BackendImpl::PackageImpl::scanBundle(
 
 
     const LanguageTag& officeLocale = getOfficeLanguageTag();
-    const std::vector< OUString > officeFallbacks( officeLocale.getFallbackStrings( true));
-    const size_t nPenaltyMax = std::numeric_limits<size_t>::max();
+    const ::std::vector< OUString > officeFallbacks( officeLocale.getFallbackStrings( true));
+    const size_t nPenaltyMax = ::std::numeric_limits<size_t>::max();
     size_t descrPenalty = nPenaltyMax;
     OUString descrFile;
 
@@ -1429,7 +1491,7 @@ void BackendImpl::PackageImpl::scanBundle(
                 if (officeLocale.getLanguage() == descrTag.getLanguage())
                 {
                     size_t nPenalty = nPenaltyMax;
-                    const std::vector< OUString > descrFallbacks( descrTag.getFallbackStrings( true));
+                    const ::std::vector< OUString > descrFallbacks( descrTag.getFallbackStrings( true));
                     for (size_t o=0; o < officeFallbacks.size() && nPenalty == nPenaltyMax; ++o)
                     {
                         for (size_t d=0; d < descrFallbacks.size() && nPenalty == nPenaltyMax; ++d)
@@ -1568,6 +1630,7 @@ void BackendImpl::PackageImpl::scanLegacyBundle(
 }
 
 OUString BackendImpl::PackageImpl::getDisplayName()
+    throw (deployment::ExtensionRemovedException, RuntimeException, std::exception)
 {
     if (m_bRemoved)
         throw deployment::ExtensionRemovedException();
@@ -1579,13 +1642,13 @@ OUString BackendImpl::PackageImpl::getDisplayName()
         return sName;
 }
 
-std::vector<Reference<deployment::XPackage> >
+::std::vector<Reference<deployment::XPackage> >
 BackendImpl::PackageImpl::getPackagesFromDb(
     Reference<ucb::XCommandEnvironment> const & xCmdEnv)
 {
-    std::vector<Reference<deployment::XPackage> > retVector;
+    ::std::vector<Reference<deployment::XPackage> > retVector;
 
-    typedef std::vector< std::pair<OUString, OUString> >::const_iterator ITC;
+    typedef ::std::vector< ::std::pair<OUString, OUString> >::const_iterator ITC;
     for (ITC i = m_dbData.items.begin(); i != m_dbData.items.end(); ++i)
     {
         Reference<deployment::XPackage> xExtension =

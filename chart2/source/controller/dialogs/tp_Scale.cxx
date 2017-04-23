@@ -157,11 +157,16 @@ void ScaleTabPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_STATIC_LINK(
+IMPL_STATIC_LINK_TYPED(
     ScaleTabPage, FmtFieldModifiedHdl, Edit&, rEdit, void )
 {
     FormattedField& rFmtField = static_cast<FormattedField&>(rEdit);
     rFmtField.SetDefaultValue( rFmtField.GetValue() );
+}
+
+void ScaleTabPage::StateChanged( StateChangedType nType )
+{
+    TabPage::StateChanged( nType );
 }
 
 void ScaleTabPage::EnableControls()
@@ -212,7 +217,7 @@ void ScaleTabPage::EnableControls()
     EnableValueHdl(m_pCbx_AutoTimeResolution);
 }
 
-IMPL_LINK( ScaleTabPage, EnableValueHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( ScaleTabPage, EnableValueHdl, Button *, pButton, void )
 {
     CheckBox * pCbx = static_cast<CheckBox*>(pButton);
     bool bEnable = pCbx && !pCbx->IsChecked() && pCbx->IsEnabled();
@@ -252,7 +257,7 @@ enum AxisTypeListBoxEntry
     TYPE_DATE=2
 };
 
-IMPL_LINK_NOARG(ScaleTabPage, SelectAxisTypeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScaleTabPage, SelectAxisTypeHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pLB_AxisType->GetSelectEntryPos();
     if( nPos==TYPE_DATE )
@@ -313,7 +318,7 @@ void ScaleTabPage::Reset(const SfxItemSet* rInAttrs)
 
     const SfxPoolItem *pPoolItem = nullptr;
     if (rInAttrs->GetItemState(SCHATTR_AXIS_ALLOW_DATEAXIS, true, &pPoolItem) == SfxItemState::SET)
-        m_bAllowDateAxis = static_cast<const SfxBoolItem*>(pPoolItem)->GetValue();
+        m_bAllowDateAxis = (bool) static_cast<const SfxBoolItem*>(pPoolItem)->GetValue();
     m_nAxisType=chart2::AxisType::REALNUMBER;
     if (rInAttrs->GetItemState(SCHATTR_AXISTYPE, true, &pPoolItem) == SfxItemState::SET)
         m_nAxisType = (int) static_cast<const SfxInt32Item*>(pPoolItem)->GetValue();
@@ -323,7 +328,7 @@ void ScaleTabPage::Reset(const SfxItemSet* rInAttrs)
     {
         bool bAutoDateAxis = false;
         if (rInAttrs->GetItemState(SCHATTR_AXIS_AUTO_DATEAXIS, true, &pPoolItem) == SfxItemState::SET)
-            bAutoDateAxis = static_cast<const SfxBoolItem*>(pPoolItem)->GetValue();
+            bAutoDateAxis = (bool) static_cast<const SfxBoolItem*>(pPoolItem)->GetValue();
 
         sal_uInt16 nPos = 0;
         if( m_nAxisType==chart2::AxisType::DATE )
@@ -411,22 +416,22 @@ void ScaleTabPage::Reset(const SfxItemSet* rInAttrs)
     SetNumFormat();
 }
 
-DeactivateRC ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
+SfxTabPage::sfxpg ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
 {
     if( !pNumFormatter )
     {
         OSL_FAIL( "No NumberFormatter available" );
-        return DeactivateRC::LeavePage;
+        return LEAVE_PAGE;
     }
 
     bool bDateAxis = chart2::AxisType::DATE == m_nAxisType;
 
     sal_uInt32 nMinMaxOriginFmt = m_pFmtFldMax->GetFormatKey();
-    if (pNumFormatter->GetType(nMinMaxOriginFmt) == css::util::NumberFormat::TEXT)
+    if ((pNumFormatter->GetType(nMinMaxOriginFmt) & ~css::util::NumberFormat::DEFINED) == css::util::NumberFormat::TEXT)
         nMinMaxOriginFmt = 0;
     // numberformat_text cause numbers to fail being numbers...  Shouldn't happen, but can.
     sal_uInt32 nStepFmt = m_pFmtFldStepMain->GetFormatKey();
-    if (pNumFormatter->GetType(nStepFmt) == css::util::NumberFormat::TEXT)
+    if ((pNumFormatter->GetType(nStepFmt) & ~css::util::NumberFormat::DEFINED) == css::util::NumberFormat::TEXT)
         nStepFmt = 0;
 
     Control* pControl = nullptr;
@@ -522,12 +527,12 @@ DeactivateRC ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
     }
 
     if( ShowWarning( nErrStrId, pControl ) )
-        return DeactivateRC::KeepPage;
+        return KEEP_PAGE;
 
     if( pItemSet )
         FillItemSet( pItemSet );
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void ScaleTabPage::SetNumFormatter( SvNumberFormatter* pFormatter )

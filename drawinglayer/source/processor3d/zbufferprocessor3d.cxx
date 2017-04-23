@@ -47,9 +47,10 @@ private:
     basegfx::ip_double                                      maIntTexture;
     basegfx::ip_triple                                      maIntInvTexture;
 
-    // current material to use for rasterconversion
+    // current material to use for ratsreconversion
     const drawinglayer::attribute::MaterialAttribute3D*     mpCurrentMaterial;
 
+    // bitfield
     // some boolean flags for line span interpolator usages
     bool                                                    mbModifyColor : 1;
     bool                                                    mbUseTex : 1;
@@ -279,8 +280,8 @@ void ZBufferRasterConverter3D::processLineSpan(const basegfx::RasterConversionLi
     {
         if(nLine >= 0 && nLine < (sal_Int32)mrBuffer.getHeight())
         {
-            sal_uInt32 nXA(std::min(mrBuffer.getWidth(), (sal_uInt32)std::max((sal_Int32)0, basegfx::fround(rA.getX().getVal()))));
-            const sal_uInt32 nXB(std::min(mrBuffer.getWidth(), (sal_uInt32)std::max((sal_Int32)0, basegfx::fround(rB.getX().getVal()))));
+            sal_uInt32 nXA(::std::min(mrBuffer.getWidth(), (sal_uInt32)::std::max((sal_Int32)0, basegfx::fround(rA.getX().getVal()))));
+            const sal_uInt32 nXB(::std::min(mrBuffer.getWidth(), (sal_uInt32)::std::max((sal_Int32)0, basegfx::fround(rB.getX().getVal()))));
 
             if(nXA < nXB)
             {
@@ -299,14 +300,14 @@ void ZBufferRasterConverter3D::processLineSpan(const basegfx::RasterConversionLi
                 while(nXA < nXB)
                 {
                     // early-test Z values if we need to do anything at all
-                    const double fNewZ(std::max(0.0, std::min((double)0xffff, maIntZ.getVal())));
+                    const double fNewZ(::std::max(0.0, ::std::min((double)0xffff, maIntZ.getVal())));
                     const sal_uInt16 nNewZ(static_cast< sal_uInt16 >(fNewZ));
                     sal_uInt16& rOldZ(mrBuffer.getZ(nScanlineIndex));
 
                     if(nNewZ > rOldZ)
                     {
                         // detect color and opacity for this pixel
-                        const sal_uInt16 nOpacity(std::max((sal_Int16)0, static_cast< sal_Int16 >(decideColorAndOpacity(aNewColor) * 255.0)));
+                        const sal_uInt16 nOpacity(::std::max((sal_Int16)0, static_cast< sal_Int16 >(decideColorAndOpacity(aNewColor) * 255.0)));
 
                         if(nOpacity > 0)
                         {
@@ -376,6 +377,7 @@ private:
     basegfx::B3DPolyPolygon                                   maPolyPolygon;
     double                                                    mfCenterZ;
 
+    // bitfield
     bool                                                      mbModulate : 1;
     bool                                                      mbFilter : 1;
     bool                                                      mbSimpleTextureActive : 1;

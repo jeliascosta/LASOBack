@@ -54,26 +54,32 @@ private:
     Service(const Service&) = delete;
     Service& operator=(const Service&) = delete;
 
-    virtual ~Service() override {}
+    virtual ~Service() {}
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return read_only_access::getImplementationName(); }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     { return cppu::supportsService(this, ServiceName); }
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override
+    getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override
     { return read_only_access::getSupportedServiceNames(); }
 
     virtual void SAL_CALL initialize(
-        css::uno::Sequence< css::uno::Any > const & aArguments) override;
+        css::uno::Sequence< css::uno::Any > const & aArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Any SAL_CALL getByHierarchicalName(
-        OUString const & aName) override
+        OUString const & aName)
+        throw (
+            css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override
     { return getRoot()->getByHierarchicalName(aName); }
 
-    virtual sal_Bool SAL_CALL hasByHierarchicalName(OUString const & aName) override
+    virtual sal_Bool SAL_CALL hasByHierarchicalName(OUString const & aName)
+        throw (css::uno::RuntimeException, std::exception) override
     { return getRoot()->hasByHierarchicalName(aName); }
 
     rtl::Reference< RootAccess > getRoot();
@@ -85,6 +91,7 @@ private:
 };
 
 void Service::initialize(css::uno::Sequence< css::uno::Any > const & aArguments)
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     OUString locale;
     if (aArguments.getLength() != 1 || !(aArguments[0] >>= locale)) {

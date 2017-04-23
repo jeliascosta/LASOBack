@@ -54,7 +54,7 @@ static bool lcl_LoadFile( glTFFile* io_pFile, const OUString& rURL)
 
     const sal_Int64 nBytes = aStream.remainingSize();
     char* pBuffer = new char[nBytes];
-    aStream.ReadBytes(pBuffer, nBytes);
+    aStream.Read( pBuffer, nBytes );
     aStream.Close();
 
     io_pFile->buffer = pBuffer;
@@ -71,7 +71,7 @@ bool OGLPlayer::create( const OUString& rURL )
 
     // Convert URL to a system path
     const INetURLObject aURLObj(m_sURL);
-    const std::string sFilePath = OUStringToOString( aURLObj.getFSysPath(FSysStyle::Detect), RTL_TEXTENCODING_UTF8 ).getStr();
+    const std::string sFilePath = OUStringToOString( aURLObj.getFSysPath(INetURLObject::FSYS_DETECT), RTL_TEXTENCODING_UTF8 ).getStr();
 
     // Load *.json file and init renderer
     m_pHandle = gltf_renderer_init(sFilePath, m_vInputFiles);
@@ -123,8 +123,8 @@ bool OGLPlayer::create( const OUString& rURL )
 
     // Set timer
     m_aTimer.SetTimeout(8); // is 125fps enough for anyone ?
-    m_aTimer.SetPriority(TaskPriority::LOW);
-    m_aTimer.SetInvokeHandler(LINK(this,OGLPlayer,TimerHandler));
+    m_aTimer.SetPriority(SchedulerPriority::LOW);
+    m_aTimer.SetTimeoutHdl(LINK(this,OGLPlayer,TimerHandler));
 
     return true;
 }
@@ -139,7 +139,7 @@ void OGLPlayer::releaseInputFiles()
     m_vInputFiles.clear();
 }
 
-void SAL_CALL OGLPlayer::start()
+void SAL_CALL OGLPlayer::start() throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
@@ -152,7 +152,7 @@ void SAL_CALL OGLPlayer::start()
     m_bIsRendering = true;
 }
 
-void SAL_CALL OGLPlayer::stop()
+void SAL_CALL OGLPlayer::stop() throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
@@ -161,7 +161,7 @@ void SAL_CALL OGLPlayer::stop()
     m_bIsRendering = false;
 }
 
-sal_Bool SAL_CALL OGLPlayer::isPlaying()
+sal_Bool SAL_CALL OGLPlayer::isPlaying() throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
@@ -173,64 +173,64 @@ sal_Bool SAL_CALL OGLPlayer::isPlaying()
         return m_bIsRendering;
 }
 
-double SAL_CALL OGLPlayer::getDuration()
+double SAL_CALL OGLPlayer::getDuration() throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
     return gltf_animation_get_duration(m_pHandle);
 }
 
-void SAL_CALL OGLPlayer::setMediaTime( double fTime )
+void SAL_CALL OGLPlayer::setMediaTime( double fTime ) throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
     gltf_animation_set_time(m_pHandle, fTime);
 }
 
-double SAL_CALL OGLPlayer::getMediaTime()
+double SAL_CALL OGLPlayer::getMediaTime() throw ( css::uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
     return gltf_animation_get_time(m_pHandle);
 }
 
-void SAL_CALL OGLPlayer::setPlaybackLoop( sal_Bool bSet )
+void SAL_CALL OGLPlayer::setPlaybackLoop( sal_Bool bSet ) throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
     gltf_animation_set_looping(m_pHandle, bSet);
 }
 
-sal_Bool SAL_CALL OGLPlayer::isPlaybackLoop()
+sal_Bool SAL_CALL OGLPlayer::isPlaybackLoop() throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
     return gltf_animation_get_looping(m_pHandle);
 }
 
-void SAL_CALL OGLPlayer::setVolumeDB( sal_Int16 /*nVolumDB*/ )
+void SAL_CALL OGLPlayer::setVolumeDB( sal_Int16 /*nVolumDB*/ ) throw ( uno::RuntimeException, std::exception )
 {
     // OpenGL models have no sound.
 }
 
-sal_Int16 SAL_CALL OGLPlayer::getVolumeDB()
+sal_Int16 SAL_CALL OGLPlayer::getVolumeDB() throw ( uno::RuntimeException, std::exception )
 {
     // OpenGL models have no sound.
     return 0;
 }
 
-void SAL_CALL OGLPlayer::setMute( sal_Bool /*bSet*/ )
+void SAL_CALL OGLPlayer::setMute( sal_Bool /*bSet*/ ) throw ( uno::RuntimeException, std::exception )
 {
     // OpenGL models have no sound.
 }
 
-sal_Bool SAL_CALL OGLPlayer::isMute()
+sal_Bool SAL_CALL OGLPlayer::isMute() throw ( uno::RuntimeException, std::exception )
 {
     // OpenGL models have no sound.
     return false;
 }
 
-awt::Size SAL_CALL OGLPlayer::getPreferredPlayerWindowSize()
+awt::Size SAL_CALL OGLPlayer::getPreferredPlayerWindowSize() throw ( uno::RuntimeException, std::exception )
 {
     return awt::Size( 480, 360 );
 }
@@ -241,6 +241,7 @@ static bool lcl_CheckOpenGLRequirements()
 }
 
 uno::Reference< media::XPlayerWindow > SAL_CALL OGLPlayer::createPlayerWindow( const uno::Sequence< uno::Any >& rArguments )
+     throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -299,6 +300,7 @@ uno::Reference< media::XPlayerWindow > SAL_CALL OGLPlayer::createPlayerWindow( c
 }
 
 uno::Reference< media::XFrameGrabber > SAL_CALL OGLPlayer::createFrameGrabber()
+     throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard(m_aMutex);
     assert(m_pHandle);
@@ -339,21 +341,25 @@ uno::Reference< media::XFrameGrabber > SAL_CALL OGLPlayer::createFrameGrabber()
 }
 
 OUString SAL_CALL OGLPlayer::getImplementationName()
+     throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.avmedia.Player_OpenGL");
 }
 
 sal_Bool SAL_CALL OGLPlayer::supportsService( const OUString& rServiceName )
+     throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL OGLPlayer::getSupportedServiceNames()
+     throw ( uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.media.Player_OpenGL" };
+    uno::Sequence< OUString > aRet { "com.sun.star.media.Player_OpenGL" };
+    return aRet;
 }
 
-IMPL_LINK(OGLPlayer,TimerHandler,Timer*,pTimer,void)
+IMPL_LINK_TYPED(OGLPlayer,TimerHandler,Timer*,pTimer,void)
 {
     if (pTimer == &m_aTimer)
     {

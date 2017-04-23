@@ -30,10 +30,10 @@ class Layouter::Implementation
 {
 public:
     VclPtr<sd::Window> mpWindow;
-    static const sal_Int32 mnRequestedLeftBorder = 5;
-    static const sal_Int32 mnRequestedRightBorder = 5;
-    static const sal_Int32 mnRequestedTopBorder = 5;
-    static const sal_Int32 mnRequestedBottomBorder = 5;
+    sal_Int32 mnRequestedLeftBorder;
+    sal_Int32 mnRequestedRightBorder;
+    sal_Int32 mnRequestedTopBorder;
+    sal_Int32 mnRequestedBottomBorder;
     sal_Int32 mnLeftBorder;
     sal_Int32 mnRightBorder;
     sal_Int32 mnTopBorder;
@@ -103,7 +103,7 @@ public:
     sal_Int32 GetRowAtPosition (
         sal_Int32 nYPosition,
         bool bIncludeBordersAndGaps,
-        GapMembership eGapMembership) const;
+        GapMembership eGapMembership = GM_NONE) const;
 
     /** Calculate the column that the point with the given horizontal
         coordinate is over.  The vertical component is ignored.
@@ -118,7 +118,7 @@ public:
     sal_Int32 GetColumnAtPosition (
         sal_Int32 nXPosition,
         bool bIncludeBordersAndGaps,
-        GapMembership eGapMembership) const;
+        GapMembership eGapMembership = GM_NONE) const;
 
     /** This method is typically called from GetRowAtPosition() and
         GetColumnAtPosition() to handle a position that lies inside the gap
@@ -168,33 +168,33 @@ public:
     /** Return the bounding box of the preview or, when selected, of the page
         object.  Thus, it returns something like a visual bounding box.
     */
-    ::tools::Rectangle GetInnerBoundingBox (
+    Rectangle GetInnerBoundingBox (
         model::SlideSorterModel& rModel,
         const sal_Int32 nIndex) const;
 
     Range GetValidHorizontalSizeRange() const;
     Range GetValidVerticalSizeRange() const;
 
-    Range GetRangeOfVisiblePageObjects (const ::tools::Rectangle& aVisibleArea) const;
+    Range GetRangeOfVisiblePageObjects (const Rectangle& aVisibleArea) const;
     sal_Int32 GetIndex (
         const sal_Int32 nRow,
         const sal_Int32 nColumn,
         const bool bClampToValidRange) const;
 
-        ::tools::Rectangle GetPageObjectBox (
+        Rectangle GetPageObjectBox (
         const sal_Int32 nIndex,
         const bool bIncludeBorderAndGap = false) const;
 
-    ::tools::Rectangle GetPageObjectBox (
+    Rectangle GetPageObjectBox (
         const sal_Int32 nRow,
         const sal_Int32 nColumn) const;
 
-    ::tools::Rectangle AddBorderAndGap (
-        const ::tools::Rectangle& rBoundingBox,
+    Rectangle AddBorderAndGap (
+        const Rectangle& rBoundingBox,
         const sal_Int32 nRow,
         const sal_Int32 nColumn) const;
 
-    ::tools::Rectangle GetTotalBoundingBox() const;
+    Rectangle GetTotalBoundingBox() const;
 
     virtual ~Implementation();
 
@@ -348,14 +348,14 @@ Size Layouter::GetPageObjectSize() const
     return mpImplementation->maPageObjectSize;
 }
 
-::tools::Rectangle Layouter::GetPageObjectBox (
+Rectangle Layouter::GetPageObjectBox (
     const sal_Int32 nIndex,
     const bool bIncludeBorderAndGap) const
 {
     return mpImplementation->GetPageObjectBox(nIndex, bIncludeBorderAndGap);
 }
 
-::tools::Rectangle Layouter::GetTotalBoundingBox() const
+Rectangle Layouter::GetTotalBoundingBox() const
 {
     return mpImplementation->GetTotalBoundingBox();
 }
@@ -387,7 +387,7 @@ Range Layouter::GetValidVerticalSizeRange() const
     return mpImplementation->GetValidVerticalSizeRange();
 }
 
-Range Layouter::GetRangeOfVisiblePageObjects (const ::tools::Rectangle& aVisibleArea) const
+Range Layouter::GetRangeOfVisiblePageObjects (const Rectangle& aVisibleArea) const
 {
     return mpImplementation->GetRangeOfVisiblePageObjects(aVisibleArea);
 }
@@ -430,6 +430,10 @@ Layouter::Implementation::Implementation (
     sd::Window *pWindow,
     const std::shared_ptr<view::Theme>& rpTheme)
     : mpWindow(pWindow),
+      mnRequestedLeftBorder(5),
+      mnRequestedRightBorder(5),
+      mnRequestedTopBorder(5),
+      mnRequestedBottomBorder(5),
       mnLeftBorder(5),
       mnRightBorder(5),
       mnTopBorder(5),
@@ -454,6 +458,10 @@ Layouter::Implementation::Implementation (
 
 Layouter::Implementation::Implementation (const Implementation& rImplementation)
     : mpWindow(rImplementation.mpWindow),
+      mnRequestedLeftBorder(rImplementation.mnRequestedLeftBorder),
+      mnRequestedRightBorder(rImplementation.mnRequestedRightBorder),
+      mnRequestedTopBorder(rImplementation.mnRequestedTopBorder),
+      mnRequestedBottomBorder(rImplementation.mnRequestedBottomBorder),
       mnLeftBorder(rImplementation.mnLeftBorder),
       mnRightBorder(rImplementation.mnRightBorder),
       mnTopBorder(rImplementation.mnTopBorder),
@@ -687,8 +695,8 @@ void Layouter::Implementation::CalculateGeometricPosition (
     if (rPosition.IsAtRunStart())
     {
         // Place indicator at the top of the column.
-        const ::tools::Rectangle aOuterBox (GetPageObjectBox(nIndex));
-        const ::tools::Rectangle aInnerBox (GetInnerBoundingBox(rModel, nIndex));
+        const Rectangle aOuterBox (GetPageObjectBox(nIndex));
+        const Rectangle aInnerBox (GetInnerBoundingBox(rModel, nIndex));
         if (bIsVertical)
         {
             nLeadingLocation = aOuterBox.Top();
@@ -707,8 +715,8 @@ void Layouter::Implementation::CalculateGeometricPosition (
     {
         // Place indicator at the bottom/right of the column/row.
 
-        const ::tools::Rectangle aOuterBox (GetPageObjectBox(nIndex-1));
-        const ::tools::Rectangle aInnerBox (GetInnerBoundingBox(rModel, nIndex-1));
+        const Rectangle aOuterBox (GetPageObjectBox(nIndex-1));
+        const Rectangle aInnerBox (GetInnerBoundingBox(rModel, nIndex-1));
         if (bIsVertical)
         {
             nLeadingLocation = aInnerBox.Bottom();
@@ -728,8 +736,8 @@ void Layouter::Implementation::CalculateGeometricPosition (
     else
     {
         // Place indicator between two rows/columns.
-        const ::tools::Rectangle aBox1 (GetInnerBoundingBox(rModel, nIndex-1));
-        const ::tools::Rectangle aBox2 (GetInnerBoundingBox(rModel, nIndex));
+        const Rectangle aBox1 (GetInnerBoundingBox(rModel, nIndex-1));
+        const Rectangle aBox2 (GetInnerBoundingBox(rModel, nIndex));
         if (bIsVertical)
         {
             nLeadingLocation = aBox1.Bottom();
@@ -786,18 +794,18 @@ void Layouter::Implementation::CalculateGeometricPosition (
     }
 }
 
-::tools::Rectangle Layouter::Implementation::GetInnerBoundingBox (
+Rectangle Layouter::Implementation::GetInnerBoundingBox (
     model::SlideSorterModel& rModel,
     const sal_Int32 nIndex) const
 {
     model::SharedPageDescriptor pDescriptor (rModel.GetPageDescriptor(nIndex));
     if ( ! pDescriptor)
-        return ::tools::Rectangle();
+        return Rectangle();
 
-    PageObjectLayouter::Part ePart = PageObjectLayouter::Part::Preview;
+    PageObjectLayouter::Part ePart = PageObjectLayouter::Preview;
 
     if (pDescriptor->HasState(model::PageDescriptor::ST_Selected))
-        ePart = PageObjectLayouter::Part::PageObject;
+        ePart = PageObjectLayouter::PageObject;
 
     return mpPageObjectLayouter->GetBoundingBox(
             pDescriptor, ePart,
@@ -818,7 +826,7 @@ Range Layouter::Implementation::GetValidVerticalSizeRange() const
         mnTopBorder + maMaximalSize.Height() + mnBottomBorder);
 }
 
-Range Layouter::Implementation::GetRangeOfVisiblePageObjects (const ::tools::Rectangle& aVisibleArea) const
+Range Layouter::Implementation::GetRangeOfVisiblePageObjects (const Rectangle& aVisibleArea) const
 {
     const sal_Int32 nRow0 (GetRowAtPosition(aVisibleArea.Top(), true, GM_NEXT));
     const sal_Int32 nCol0 (GetColumnAtPosition(aVisibleArea.Left(),true, GM_NEXT));
@@ -899,25 +907,25 @@ sal_Int32 Layouter::Implementation::GetIndex (
         return -1;
 }
 
-::tools::Rectangle Layouter::Implementation::GetPageObjectBox (
+Rectangle Layouter::Implementation::GetPageObjectBox (
     const sal_Int32 nIndex,
     const bool bIncludeBorderAndGap) const
 {
     const sal_Int32 nRow (nIndex / mnColumnCount);
     const sal_Int32 nColumn (nIndex % mnColumnCount);
 
-    const ::tools::Rectangle aBoundingBox (GetPageObjectBox(nRow,nColumn));
+    const Rectangle aBoundingBox (GetPageObjectBox(nRow,nColumn));
     if (bIncludeBorderAndGap)
         return AddBorderAndGap(aBoundingBox, nRow, nColumn);
     else
         return aBoundingBox;
 }
 
-::tools::Rectangle Layouter::Implementation::GetPageObjectBox (
+Rectangle Layouter::Implementation::GetPageObjectBox (
     const sal_Int32 nRow,
     const sal_Int32 nColumn) const
 {
-    return ::tools::Rectangle(
+    return Rectangle(
         Point (mnLeftBorder
             + nColumn * maPageObjectSize.Width()
             + (nColumn>0 ? nColumn : 0) * mnHorizontalGap,
@@ -927,12 +935,12 @@ sal_Int32 Layouter::Implementation::GetIndex (
         maPageObjectSize);
 }
 
-::tools::Rectangle Layouter::Implementation::AddBorderAndGap (
-    const ::tools::Rectangle& rBoundingBox,
+Rectangle Layouter::Implementation::AddBorderAndGap (
+    const Rectangle& rBoundingBox,
     const sal_Int32 nRow,
     const sal_Int32 nColumn) const
 {
-    ::tools::Rectangle aBoundingBox (rBoundingBox);
+    Rectangle aBoundingBox (rBoundingBox);
 
     if (nColumn == 0)
         aBoundingBox.Left() = 0;
@@ -953,7 +961,7 @@ sal_Int32 Layouter::Implementation::GetIndex (
     return aBoundingBox;
 }
 
-::tools::Rectangle Layouter::Implementation::GetTotalBoundingBox() const
+Rectangle Layouter::Implementation::GetTotalBoundingBox() const
 {
     sal_Int32 nHorizontalSize = 0;
     sal_Int32 nVerticalSize = 0;
@@ -974,7 +982,7 @@ sal_Int32 Layouter::Implementation::GetIndex (
             nVerticalSize += (nRowCount-1) * mnVerticalGap;
     }
 
-    return ::tools::Rectangle (
+    return Rectangle (
         Point(0,0),
         Size (nHorizontalSize, nVerticalSize)
         );

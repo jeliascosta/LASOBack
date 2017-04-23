@@ -68,12 +68,15 @@ ScPageBreakData::ScPageBreakData(size_t nMax)
 {
     nUsed = 0;
     if (nMax)
-        pData.reset( new ScPrintRangeData[nMax] );
+        pData = new ScPrintRangeData[nMax];
+    else
+        pData = nullptr;
     nAlloc = nMax;
 }
 
 ScPageBreakData::~ScPageBreakData()
 {
+    delete[] pData;
 }
 
 ScPrintRangeData& ScPageBreakData::GetData(size_t nPos)

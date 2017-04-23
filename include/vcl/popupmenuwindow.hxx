@@ -28,8 +28,8 @@ private:
     struct ImplData;
     ImplData* mpImplData;
 public:
-    PopupMenuFloatingWindow( vcl::Window* pParent );
-    virtual ~PopupMenuFloatingWindow() override;
+    PopupMenuFloatingWindow( vcl::Window* pParent, WinBits nStyle = (WB_SYSTEMFLOATWIN|WB_SYSTEMWINDOW|WB_NOBORDER) );
+    virtual ~PopupMenuFloatingWindow();
     virtual void dispose() override;
 
     sal_uInt16      GetMenuStackLevel() const;

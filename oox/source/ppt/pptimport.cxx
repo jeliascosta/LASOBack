@@ -35,7 +35,6 @@
 #include "drawingml/table/tablestylelistfragmenthandler.hxx"
 #include "oox/helper/graphichelper.hxx"
 #include "oox/ole/vbaproject.hxx"
-#include <oox/ppt/presentationfragmenthandler.hxx>
 #include <oox/token/tokens.hxx>
 
 #include <services.hxx>
@@ -63,7 +62,7 @@ uno::Sequence< OUString > SAL_CALL PowerPointImport_getSupportedServiceNames()
     return aSeq;
 }
 
-uno::Reference< uno::XInterface > SAL_CALL PowerPointImport_createInstance( const Reference< XComponentContext >& rxContext )
+uno::Reference< uno::XInterface > SAL_CALL PowerPointImport_createInstance( const Reference< XComponentContext >& rxContext ) throw( Exception )
 {
     return static_cast< ::cppu::OWeakObject* >( new PowerPointImport( rxContext ) );
 }
@@ -72,7 +71,7 @@ uno::Reference< uno::XInterface > SAL_CALL PowerPointImport_createInstance( cons
 XmlFilterBase* PowerPointImport::mpDebugFilterBase = nullptr;
 #endif
 
-PowerPointImport::PowerPointImport( const Reference< XComponentContext >& rxContext ) :
+PowerPointImport::PowerPointImport( const Reference< XComponentContext >& rxContext ) throw( RuntimeException ) :
     XmlFilterBase( rxContext ),
     mxChartConv( new ::oox::drawingml::chart::ChartConverter )
 
@@ -104,7 +103,7 @@ bool PowerPointImport::importDocument()
     {
         // Construct a warning message.
         INetURLObject aURL(getFileUrl());
-        SfxErrorContext aContext(ERRCTX_SFX_OPENDOC, aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset), nullptr, RID_ERRCTX);
+        SfxErrorContext aContext(ERRCTX_SFX_OPENDOC, aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET), nullptr, RID_ERRCTX);
         OUString aWarning;
         aContext.GetString(ERRCODE_WARNING_MASK, aWarning);
         aWarning += ":\n";
@@ -158,7 +157,7 @@ sal_Int32 PowerPointImport::getSchemeColor( sal_Int32 nToken ) const
             }
             else
             {
-                SAL_WARN("oox", "OOX: PowerPointImport::mpThemePtr is NULL");
+                OSL_TRACE("OOX: PowerPointImport::mpThemePtr is NULL");
             }
         }
     }
@@ -170,7 +169,7 @@ const ::oox::drawingml::Theme* PowerPointImport::getCurrentTheme() const
     return mpActualSlidePersist ? mpActualSlidePersist->getTheme().get() : nullptr;
 }
 
-sal_Bool SAL_CALL PowerPointImport::filter( const Sequence< PropertyValue >& rDescriptor )
+sal_Bool SAL_CALL PowerPointImport::filter( const Sequence< PropertyValue >& rDescriptor ) throw( RuntimeException, std::exception )
 {
     if( XmlFilterBase::filter( rDescriptor ) )
         return true;
@@ -254,7 +253,7 @@ GraphicHelper* PowerPointImport::implCreateGraphicHelper() const
     return new ::oox::ole::VbaProject( getComponentContext(), getModel(), "Impress" );
 }
 
-OUString PowerPointImport::getImplementationName()
+OUString PowerPointImport::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return PowerPointImport_getImplementationName();
 }

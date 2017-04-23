@@ -96,20 +96,21 @@ sal_uInt16 Shell::SetPrinter( SfxPrinter *pNewPrinter, SfxPrinterChangeFlags )
 
 void Shell::SetMDITitle()
 {
-    OUString aTitle;
+    OUStringBuffer aTitleBuf;
     if ( !m_aCurLibName.isEmpty() )
     {
         LibraryLocation eLocation = m_aCurDocument.getLibraryLocation( m_aCurLibName );
-        aTitle = m_aCurDocument.getTitle(eLocation) + "." + m_aCurLibName ;
+        aTitleBuf = m_aCurDocument.getTitle(eLocation) + "." + m_aCurLibName ;
     }
     else
-        aTitle = IDE_RESSTR(RID_STR_ALL) ;
+        aTitleBuf = IDE_RESSTR(RID_STR_ALL) ;
 
     DocumentSignature aCurSignature( m_aCurDocument );
     if ( aCurSignature.getScriptingSignatureState() == SignatureState::OK )
     {
-        aTitle += " " + IDE_RESSTR(RID_STR_SIGNED) + " ";
+        aTitleBuf = aTitleBuf + " " + IDE_RESSTR(RID_STR_SIGNED) + " ";
     }
+    OUString aTitle(aTitleBuf.makeStringAndClear());
 
     SfxViewFrame* pViewFrame = GetViewFrame();
     if ( pViewFrame )
@@ -177,7 +178,7 @@ VclPtr<ModulWindow> Shell::CreateBasWin( const ScriptDocument& rDocument, const 
     {
         pWin->SetStatus( pWin->GetStatus() & ~BASWIN_SUSPENDED );
         nKey = GetWindowId( pWin );
-        DBG_ASSERT( nKey, "CreateBasWin: No Key - Window not found!" );
+        DBG_ASSERT( nKey, "CreateBasWin: Kein Key- Fenster nicht gefunden!" );
     }
     if( nKey && xLib.is() && rDocument.isInVBAMode() )
     {
@@ -208,8 +209,8 @@ VclPtr<ModulWindow> Shell::FindBasWin (
     bool bCreateIfNotExist, bool bFindSuspended
 )
 {
-    if (VclPtr<BaseWindow> pWin = FindWindow(rDocument, rLibName, rName, TYPE_MODULE, bFindSuspended))
-        return VclPtr<ModulWindow>(static_cast<ModulWindow*>(pWin.get()));
+    if (BaseWindow* pWin = FindWindow(rDocument, rLibName, rName, TYPE_MODULE, bFindSuspended))
+        return VclPtr<ModulWindow>(static_cast<ModulWindow*>(pWin));
     return bCreateIfNotExist ? CreateBasWin(rDocument, rLibName, rName) : nullptr;
 }
 

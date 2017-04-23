@@ -140,14 +140,14 @@ public:
         CPPUNIT_ASSERT_MESSAGE("importing simple rectangle from SVG-D",
                                tools::importFromSvgD( aPoly, aPath0, false, nullptr ));
         aExport = tools::exportToSvgD( aPoly, true, true, false );
-        const char sExportString[] = "m10 10h-20v-20h20z";
+        const char* sExportString = "m10 10h-20v-20h20z";
         CPPUNIT_ASSERT_MESSAGE("exporting rectangle to SVG-D",
-                               aExport == sExportString );
+                               aExport.equalsAscii(sExportString) );
         CPPUNIT_ASSERT_MESSAGE("importing simple rectangle from SVG-D (round-trip",
                                tools::importFromSvgD( aPoly, aExport, false, nullptr ));
         aExport = tools::exportToSvgD( aPoly, true, true, false );
         CPPUNIT_ASSERT_MESSAGE("exporting rectangle to SVG-D (round-trip)",
-                               aExport == sExportString);
+                               aExport.equalsAscii(sExportString));
 
         CPPUNIT_ASSERT_MESSAGE("importing simple bezier polygon from SVG-D",
                                tools::importFromSvgD( aPoly, aPath1, false, nullptr ));
@@ -167,11 +167,11 @@ public:
 
         // so for correct unit test i add the new exported string here as sExportStringSimpleBezier
         // and compare to it.
-        const char sExportStringSimpleBezier[] =
+        const char* sExportStringSimpleBezier =
             "m11430 0c-8890 3810 5715 6985 5715 6985"
             "l-17145-1905c0 0 22860-10160 16510 6350"
             "s-3810-11430-3810-11430z";
-        CPPUNIT_ASSERT_MESSAGE("exporting bezier polygon to SVG-D", aExport == sExportStringSimpleBezier);
+        CPPUNIT_ASSERT_MESSAGE("exporting bezier polygon to SVG-D", aExport.equalsAscii(sExportStringSimpleBezier));
 
         // Adaptions for B2DPolygon bezier change (see #i77162#):
 
@@ -188,7 +188,7 @@ public:
 
         // same here, the corrected export with the corrected B2DPolygon is simply more efficient,
         // so i needed to change the compare string. Also adding the re-import comparison below.
-        const char sExportString1[] =
+        const char* sExportString1 =
             "m1917 1114c-89-189-233-284-430-284-167 0-306 91-419 273s-170 370-17"
             "0 564c0 145 33 259 98 342 65 84 150 126 257 126q115.5 0 231-57s147-97 210-176 99-143 109-190c38-199 76-398 114"
             "-598zm840 1646c-133 73-312 139-537 197-225 57-440 86-644 87-483-1-866-132-1150-392-284-261-426-619-426-1076 0-"
@@ -201,17 +201,17 @@ public:
         CPPUNIT_ASSERT_MESSAGE("re-importing '@' from SVG-D", tools::importFromSvgD( aReImport, aExport, false, nullptr));
         CPPUNIT_ASSERT_MESSAGE("re-imported '@' needs to be identical", aReImport == aPoly);
 
-        CPPUNIT_ASSERT_MESSAGE("exporting '@' to SVG-D", aExport == sExportString1);
+        CPPUNIT_ASSERT_MESSAGE("exporting '@' to SVG-D", aExport.equalsAscii(sExportString1));
         CPPUNIT_ASSERT_MESSAGE("importing '@' from SVG-D (round-trip",
                                tools::importFromSvgD( aPoly, aExport, false, nullptr ));
         aExport = tools::exportToSvgD( aPoly, true, true, false );
         CPPUNIT_ASSERT_MESSAGE("exporting '@' to SVG-D (round-trip)",
-                               aExport == sExportString1);
+                               aExport.equalsAscii(sExportString1));
 
         CPPUNIT_ASSERT_MESSAGE("importing complex polygon from SVG-D",
                                tools::importFromSvgD( aPoly, aPath3, false, nullptr ));
         aExport = tools::exportToSvgD( aPoly, true, true, false );
-        const char sExportString2[] =
+        const char* sExportString2 =
             "m1598 125h306v2334h-306v-1105h-1293v1105h-305v-2334h305v973h1293"
             "zm2159 1015 78-44 85 235-91 47-91 40-90 34-90 29-89 21-88 16-88 10-88 3-102-4-97"
             "-12-91-19-85-26-40-16-39-18-38-20-36-22-34-24-33-26-32-27-30-30-29-31-27-33-25-3"
@@ -233,20 +233,20 @@ public:
             "11-95-3-100 3-101 11-95 17-90 24-85 30-79 38-75 21-35 23-35 25-32 26-32 28-30 29"
             "-28 30-26 31-24 33-22 34-20 35-18 36-16 37-15 39-12 40-11z";
         CPPUNIT_ASSERT_MESSAGE("exporting complex polygon to SVG-D",
-                               aExport == sExportString2);
+                               aExport.equalsAscii(sExportString2));
         CPPUNIT_ASSERT_MESSAGE("importing complex polygon from SVG-D (round-trip",
                                tools::importFromSvgD( aPoly, aExport, false, nullptr ));
         aExport = tools::exportToSvgD( aPoly, true, true, false );
         CPPUNIT_ASSERT_MESSAGE("exporting complex polygon to SVG-D (round-trip)",
-                               aExport == sExportString2);
+                               aExport.equalsAscii(sExportString2));
 
         const B2DPolygon aRect(
             tools::createPolygonFromRect( B2DRange(0.0,0.0,4000.0,4000.0) ));
         aExport = tools::exportToSvgD( B2DPolyPolygon(aRect), false, false, false );
 
-        const char sExportStringRect[] = "M0 0H4000V4000H0Z";
+        const char* sExportStringRect = "M0 0H4000V4000H0Z";
         CPPUNIT_ASSERT_MESSAGE("exporting to rectangle svg-d string",
-                               aExport == sExportStringRect);
+                               aExport.equalsAscii(sExportStringRect));
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -440,57 +440,37 @@ public:
     {
         B2DHomMatrix mat;
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", 0.0, mat.get(0,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", -1.0, mat.get(0,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", 0.0, mat.get(0,2), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", 1.0, mat.get(1,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", 0.0, mat.get(1,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi/2 yields exact matrix", 0.0, mat.get(1,2), 1E-12);
+        CPPUNIT_ASSERT_MESSAGE("rotate pi/2 yields exact matrix",
+                               mat.get(0,0) == 0.0 &&
+                               mat.get(0,1) == -1.0 &&
+                               mat.get(0,2) == 0.0 &&
+                               mat.get(1,0) == 1.0 &&
+                               mat.get(1,1) == 0.0 &&
+                               mat.get(1,2) == 0.0);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", -1.0, mat.get(0,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", 0.0, mat.get(0,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", 0.0, mat.get(1,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", -1.0, mat.get(1,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
+        CPPUNIT_ASSERT_MESSAGE("rotate pi yields exact matrix",
+                               mat.get(0,0) == -1.0 &&
+                               mat.get(0,1) == 0.0 &&
+                               mat.get(0,2) == 0.0 &&
+                               mat.get(1,0) == 0.0 &&
+                               mat.get(1,1) == -1.0 &&
+                               mat.get(1,2) == 0.0);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(0,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", 1.0, mat.get(0,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", -1.0, mat.get(1,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(1,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
+        CPPUNIT_ASSERT_MESSAGE("rotate 3/2 pi yields exact matrix",
+                               mat.get(0,0) == 0.0 &&
+                               mat.get(0,1) == 1.0 &&
+                               mat.get(0,2) == 0.0 &&
+                               mat.get(1,0) == -1.0 &&
+                               mat.get(1,1) == 0.0 &&
+                               mat.get(1,2) == 0.0);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 1.0, mat.get(0,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 0.0, mat.get(0,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 0.0, mat.get(1,0), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 1.0, mat.get(1,1), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
-            "rotate 2 pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
+        CPPUNIT_ASSERT_MESSAGE("rotate 2 pi yields exact matrix",
+                               mat.get(0,0) == 1.0 &&
+                               mat.get(0,1) == 0.0 &&
+                               mat.get(0,2) == 0.0 &&
+                               mat.get(1,0) == 0.0 &&
+                               mat.get(1,1) == 1.0 &&
+                               mat.get(1,2) == 0.0);
     }
 
     void translate()
@@ -681,10 +661,9 @@ public:
         double fDRot;
         double fDShX;
         aTest.decompose(aDScale, aDTrans, fDRot, fDShX);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 6425.0, aDScale.getX(), 1E-12);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 3938.0, aDScale.getY(), 1E-12);
+        CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", aDScale.getX() == 6425 && aDScale.getY() == 3938);
         CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", aDTrans.getX() == 10482 && aDTrans.getY() == 4921);
-        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 180*F_PI180, fDRot, 1E-12 );
+        CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", fDRot == 180*F_PI180);
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -799,52 +778,47 @@ public:
             tools::createPolygonFromRect(
                 B2DRange(0,0,1,1) ) );
 
-        B2DPolygon aRect2 {
-            {0, 0},
-            {1, 0},
-            {1, 0.5},
-            {1, 1},
-            {0, 1}
-        };
+        B2DPolygon aRect2;
+        aRect2.append( B2DPoint(0,0) );
+        aRect2.append( B2DPoint(1,0) );
+        aRect2.append( B2DPoint(1,.5));
+        aRect2.append( B2DPoint(1,1) );
+        aRect2.append( B2DPoint(0,1) );
         aRect2.setClosed(true);
 
-        B2DPolygon aNonRect1 {
-            {0, 0},
-            {1, 0},
-            {0.5, 1},
-            {0.5, 0}
-        };
+        B2DPolygon aNonRect1;
+        aNonRect1.append( B2DPoint(0,0) );
+        aNonRect1.append( B2DPoint(1,0) );
+        aNonRect1.append( B2DPoint(1,1) );
+        aNonRect1.append( B2DPoint(0.5,1) );
+        aNonRect1.append( B2DPoint(0.5,0) );
         aNonRect1.setClosed(true);
 
-        B2DPolygon aNonRect2 {
-            {0, 0},
-            {1, 1},
-            {1, 0},
-            {0, 1}
-        };
+        B2DPolygon aNonRect2;
+        aNonRect2.append( B2DPoint(0,0) );
+        aNonRect2.append( B2DPoint(1,1) );
+        aNonRect2.append( B2DPoint(1,0) );
+        aNonRect2.append( B2DPoint(0,1) );
         aNonRect2.setClosed(true);
 
-        B2DPolygon aNonRect3 {
-            {0, 0},
-            {1, 0},
-            {1, 1}
-        };
+        B2DPolygon aNonRect3;
+        aNonRect3.append( B2DPoint(0,0) );
+        aNonRect3.append( B2DPoint(1,0) );
+        aNonRect3.append( B2DPoint(1,1) );
         aNonRect3.setClosed(true);
 
-        B2DPolygon aNonRect4 {
-            {0, 0},
-            {1, 0},
-            {1, 1},
-            {0, 1}
-        };
+        B2DPolygon aNonRect4;
+        aNonRect4.append( B2DPoint(0,0) );
+        aNonRect4.append( B2DPoint(1,0) );
+        aNonRect4.append( B2DPoint(1,1) );
+        aNonRect4.append( B2DPoint(0,1) );
 
-        B2DPolygon aNonRect5 {
-            {0, 0},
-            {1, 0},
-            {1, 1},
-            {0, 1}
-        };
-        aNonRect5.setControlPoints(1, B2DPoint(1,0), B2DPoint(-11,0));
+        B2DPolygon aNonRect5;
+        aNonRect5.append( B2DPoint(0,0) );
+        aNonRect5.append( B2DPoint(1,0) );
+        aNonRect5.append( B2DPoint(1,1) );
+        aNonRect5.append( B2DPoint(0,1) );
+        aNonRect5.setControlPoints(1,B2DPoint(1,0),B2DPoint(-11,0));
         aNonRect5.setClosed(true);
 
         CPPUNIT_ASSERT_MESSAGE("checking rectangle-ness of rectangle 1",
@@ -1211,6 +1185,18 @@ public:
                                tools::rgb2hsv(BColor(.5,.25,.25)) == BColor(0,.5,.5));
     }
 
+    void ciexyzTest()
+    {
+        tools::rgb2ciexyz(maWhite);
+        tools::rgb2ciexyz(maBlack);
+        tools::rgb2ciexyz(maRed);
+        tools::rgb2ciexyz(maGreen);
+        tools::rgb2ciexyz(maBlue);
+        tools::rgb2ciexyz(maYellow);
+        tools::rgb2ciexyz(maMagenta);
+        tools::rgb2ciexyz(maCyan);
+    }
+
     // Change the following lines only, if you add, remove or rename
     // member functions of the current class,
     // because these macros are need by auto register mechanism.
@@ -1218,6 +1204,7 @@ public:
     CPPUNIT_TEST_SUITE(bcolor);
     CPPUNIT_TEST(hslTest);
     CPPUNIT_TEST(hsvTest);
+    CPPUNIT_TEST(ciexyzTest);
     CPPUNIT_TEST_SUITE_END();
 }; // class b2dvector
 

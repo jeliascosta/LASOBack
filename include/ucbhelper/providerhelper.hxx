@@ -112,7 +112,7 @@ protected:
       * This method registers a newly created content instance with the
       * content provider. It should be called directly after creating a new
       * content instance. The provider can reuse a registered instance upon
-      * subsequent requests for content instances with an identifier
+      * subsedent requests for content instances with an idententifier
       * of a registered instance.
       * Note that the provider does not hold a hard reference on the
       * registered instance. If last external reference is gone, the provider
@@ -133,11 +133,12 @@ public:
 
     ContentProviderImplHelper(
                 const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ContentProviderImplHelper() override;
+    virtual ~ContentProviderImplHelper();
 
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
@@ -147,19 +148,24 @@ public:
 
 
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-    getImplementationId() override;
+    getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< css::uno::Type > SAL_CALL
-    getTypes() override;
+    getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
 
 
     virtual OUString SAL_CALL
-    getImplementationName() override = 0;
+    getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override = 0;
     virtual sal_Bool SAL_CALL
-    supportsService( const OUString& ServiceName ) override;
+    supportsService( const OUString& ServiceName )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override = 0;
+    getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override = 0;
 
 
     // XContentProvider
@@ -177,10 +183,13 @@ public:
       *   content, otherwise
       */
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
-    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier ) override = 0;
+    queryContent( const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier )
+        throw( css::ucb::IllegalIdentifierException,
+               css::uno::RuntimeException, std::exception ) override = 0;
     virtual sal_Int32 SAL_CALL
     compareContentIds( const css::uno::Reference< css::ucb::XContentIdentifier >& Id1,
-                       const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 ) override;
+                       const css::uno::Reference< css::ucb::XContentIdentifier >& Id2 )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // Non-interface methods.

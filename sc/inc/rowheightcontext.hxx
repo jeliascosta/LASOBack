@@ -18,13 +18,11 @@
 
 #include <vector>
 
-#include "segmenttree.hxx"
-
 namespace sc {
 
 class SC_DLLPUBLIC RowHeightContext
 {
-    ScFlatUInt16RowSegments maHeights;
+    std::vector<sal_uInt16> maHeights;
 
     double mfPPTX;
     double mfPPTY;
@@ -55,7 +53,7 @@ public:
     void setForceAutoSize( bool b );
     bool isForceAutoSize() const { return mbForceAutoSize;}
 
-    ScFlatUInt16RowSegments& getHeightArray();
+    std::vector<sal_uInt16>& getHeightArray();
 };
 
 }

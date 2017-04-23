@@ -58,21 +58,21 @@ private:
 
 public:
     DrawDocShell (
-        SfxObjectCreateMode eMode,
-        bool bSdDataObj,
-        DocumentType=DocumentType::Impress);
+        SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED,
+        bool bSdDataObj=false,
+        DocumentType=DOCUMENT_TYPE_IMPRESS);
 
     DrawDocShell (
         SfxModelFlags nModelCreationFlags,
-        bool bSdDataObj,
-        DocumentType=DocumentType::Impress);
+        bool bSdDataObj=false,
+        DocumentType=DOCUMENT_TYPE_IMPRESS);
 
     DrawDocShell (
         SdDrawDocument* pDoc,
-        SfxObjectCreateMode eMode,
-        bool bSdDataObj,
-        DocumentType=DocumentType::Impress);
-    virtual ~DrawDocShell() override;
+        SfxObjectCreateMode eMode = SfxObjectCreateMode::EMBEDDED,
+        bool bSdDataObj=false,
+        DocumentType=DOCUMENT_TYPE_IMPRESS);
+    virtual ~DrawDocShell();
 
     void                    UpdateRefDevice();
     virtual void            Activate( bool bMDI ) override;
@@ -91,13 +91,14 @@ public:
     virtual bool            LoadFrom( SfxMedium& rMedium ) override;
     virtual bool            SaveAs( SfxMedium &rMedium  ) override;
 
-    virtual ::tools::Rectangle       GetVisArea(sal_uInt16 nAspect) const override;
+    virtual Rectangle       GetVisArea(sal_uInt16 nAspect) const override;
     virtual void            Draw(OutputDevice*, const JobSetup& rSetup, sal_uInt16 nAspect = ASPECT_CONTENT) override;
     virtual ::svl::IUndoManager*
                             GetUndoManager() override;
     virtual Printer*        GetDocumentPrinter() override;
     virtual void            OnDocumentPrinterChanged(Printer* pNewPrinter) override;
     virtual SfxStyleSheetBasePool* GetStyleSheetPool() override;
+    virtual Size            GetFirstPageSize() override;
     virtual void            FillClass(SvGlobalName* pClassName, SotClipboardFormatId* pFormat, OUString* pAppName, OUString* pFullTypeName, OUString* pShortTypeName, sal_Int32 nFileFormat, bool bTemplate = false ) const override;
     virtual void            SetModified( bool = true ) override;
     virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog( const SfxItemSet &rSet ) override;
@@ -132,8 +133,8 @@ public:
 
     bool                    IsMarked(  SdrObject* pObject  );
     // Optionally realize multi-selection of objects
-    bool                    GetObjectIsmarked(const OUString& rBookmark, bool bRealizeMultiSelectionOfObjects);
-    Bitmap                  GetPagePreviewBitmap(SdPage* pPage);
+    bool                    GetObjectIsmarked(const OUString& rBookmark, bool bRealizeMultiSelectionOfObjects = false);
+    Bitmap                  GetPagePreviewBitmap(SdPage* pPage, sal_uInt16 nMaxEdgePixel);
 
     /** checks, if the given name is a valid new name for a slide
 
@@ -183,14 +184,6 @@ public:
      */
     bool                    IsNewPageNameValid( OUString & rInOutPageName, bool bResetStringIfStandardName = false );
 
-    /** checks, if the given name is a *unique* name for an *existing* slide
-
-        @param rPageName the name of an existing slide
-
-        @return true, if the name is unique and the slide exists
-    */
-    bool                    IsPageNameUnique(const OUString& rPagName) const;
-
     /** Return the reference device for the current document.  When the
         inherited implementation returns a device then this is passed to the
         caller.  Otherwise the returned value depends on the printer
@@ -201,12 +194,14 @@ public:
     */
     virtual OutputDevice* GetDocumentRefDev() override;
 
-    DECL_LINK( RenameSlideHdl, AbstractSvxNameDialog&, bool );
+    DECL_LINK_TYPED( RenameSlideHdl, AbstractSvxNameDialog&, bool );
 
     // ExecuteSpellPopup now handled by DrawDocShell
-    DECL_LINK( OnlineSpellCallback, SpellCallbackInfo&, void );
+    DECL_LINK_TYPED( OnlineSpellCallback, SpellCallbackInfo&, void );
 
     void                    ClearUndoBuffer();
+
+    virtual void libreOfficeKitCallback(int nType, const char* pPayload) const override;
 
 protected:
 

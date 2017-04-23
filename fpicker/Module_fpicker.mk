@@ -32,9 +32,4 @@ $(eval $(call gb_Module_add_targets,fpicker,\
 ))
 endif
 
-# screenshots
-$(eval $(call gb_Module_add_screenshot_targets,fpicker,\
-    CppunitTest_fpicker_dialogs_test \
-))
-
 # vim: set noet sw=4 ts=4:

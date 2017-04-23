@@ -44,7 +44,7 @@ private:
 
 public:
                 ScFormatShell(ScViewData* pData);
-    virtual     ~ScFormatShell() override;
+    virtual     ~ScFormatShell();
 
     void        ExecuteNumFormat( SfxRequest& rReq );
     void        GetNumFormatState( SfxItemSet& rSet );

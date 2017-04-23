@@ -26,13 +26,16 @@
 #include <QtCore/QSocketNotifier>
 #include <unistd.h>
 
+namespace
+{
+
 class TestExcludeSocketNotifiers
     : public QObject
 {
     Q_OBJECT
     public:
         TestExcludeSocketNotifiers( const int* pipes );
-        virtual ~TestExcludeSocketNotifiers() override;
+        virtual ~TestExcludeSocketNotifiers();
         bool received;
     public slots:
         void slotReceived();
@@ -55,6 +58,8 @@ TestExcludeSocketNotifiers::~TestExcludeSocketNotifiers()
 void TestExcludeSocketNotifiers::slotReceived()
 {
     received = true;
+}
+
 }
 
 #define QVERIFY(a) \

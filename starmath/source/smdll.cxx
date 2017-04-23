@@ -38,7 +38,6 @@
 #include <starmath.hrc>
 
 #include <svx/xmlsecctrl.hxx>
-#include <o3tl/make_unique.hxx>
 
 namespace
 {
@@ -46,18 +45,18 @@ namespace
     {
     public:
         SmDLL();
+        ~SmDLL();
     };
 
     SmDLL::SmDLL()
     {
-        if ( SfxApplication::GetModule(SfxToolsModule::Math) )    // Module already active
+        SmModule** ppShlPtr = reinterpret_cast<SmModule**>(GetAppData(SHL_SM));
+        if ( *ppShlPtr )
             return;
 
         SfxObjectFactory& rFactory = SmDocShell::Factory();
-
-        auto pUniqueModule = o3tl::make_unique<SmModule>(&rFactory);
-        SmModule* pModule = pUniqueModule.get();
-        SfxApplication::SetModule(SfxToolsModule::Math, std::move(pUniqueModule));
+        SmModule *pModule = new SmModule( &rFactory );
+        *ppShlPtr = pModule;
 
         rFactory.SetDocumentServiceName( "com.sun.star.formula.FormulaProperties" );
 
@@ -65,7 +64,7 @@ namespace
         SmDocShell::RegisterInterface(pModule);
         SmViewShell::RegisterInterface(pModule);
 
-        SmViewShell::RegisterFactory(SFX_INTERFACE_SFXAPP);
+        SmViewShell::RegisterFactory(1);
 
         SvxZoomStatusBarControl::RegisterControl(SID_ATTR_ZOOM, pModule);
         SvxZoomSliderControl::RegisterControl(SID_ATTR_ZOOMSLIDER, pModule);
@@ -76,6 +75,17 @@ namespace
 
         SmCmdBoxWrapper::RegisterChildWindow(true);
         SmElementsDockingWindowWrapper::RegisterChildWindow(true);
+    }
+
+    SmDLL::~SmDLL()
+    {
+#if 0
+        // the SdModule must be destroyed
+        SmModule** ppShlPtr = (SmModule**) GetAppData(SHL_SM);
+        delete (*ppShlPtr);
+        (*ppShlPtr) = NULL;
+        *GetAppData(SHL_SM) = 0;
+#endif
     }
 
     struct theSmDLLInstance : public rtl::Static<SmDLL, theSmDLLInstance> {};

@@ -45,12 +45,13 @@ public:
 
 class SwEndnoter
 {
-    SwLayouter*                        pMaster;
-    SwSectionFrame*                    pSect;
-    std::unique_ptr<SwFootnoteFrames>  pEndArr;
+    SwLayouter* pMaster;
+    SwSectionFrame* pSect;
+    SwFootnoteFrames*    pEndArr;
 public:
     explicit SwEndnoter( SwLayouter* pLay )
-        : pMaster( pLay ), pSect( nullptr ) {}
+        : pMaster( pLay ), pSect( nullptr ), pEndArr( nullptr ) {}
+    ~SwEndnoter() { delete pEndArr; }
     void CollectEndnotes( SwSectionFrame* pSct );
     void CollectEndnote( SwFootnoteFrame* pFootnote );
     const SwSectionFrame* GetSect() const { return pSect; }
@@ -113,7 +114,7 @@ void SwEndnoter::CollectEndnote( SwFootnoteFrame* pFootnote )
         }
     }
     if( !pEndArr )
-        pEndArr.reset( new SwFootnoteFrames );  // deleted from the SwLayouter
+        pEndArr = new SwFootnoteFrames;  // deleted from the SwLayouter
     pEndArr->push_back( pFootnote );
 }
 
@@ -132,7 +133,8 @@ void SwEndnoter::InsertEndnotes()
     SwFootnoteBossFrame *pBoss = pRef ? pRef->FindFootnoteBossFrame()
                                : static_cast<SwFootnoteBossFrame*>(pSect->Lower());
     pBoss->MoveFootnotes_( *pEndArr );
-    pEndArr.reset();
+    delete pEndArr;
+    pEndArr = nullptr;
     pSect = nullptr;
 }
 
@@ -449,7 +451,7 @@ bool SwLayouter::MoveBwdSuppressed( const SwDoc& p_rDoc,
     aMoveBwdLayoutInfo.mnNewUpperPosY = p_rNewUpperFrame.Frame().Pos().Y();
     aMoveBwdLayoutInfo.mnNewUpperWidth = p_rNewUpperFrame.Frame().Width();
     aMoveBwdLayoutInfo.mnNewUpperHeight =  p_rNewUpperFrame.Frame().Height();
-    SwRectFnSet aRectFnSet(&p_rNewUpperFrame);
+    SWRECTFN( (&p_rNewUpperFrame) )
     const SwFrame* pLastLower( p_rNewUpperFrame.Lower() );
     while ( pLastLower && pLastLower->GetNext() )
     {
@@ -457,8 +459,8 @@ bool SwLayouter::MoveBwdSuppressed( const SwDoc& p_rDoc,
     }
     aMoveBwdLayoutInfo.mnFreeSpaceInNewUpper =
             pLastLower
-            ? aRectFnSet.BottomDist( pLastLower->Frame(), aRectFnSet.GetPrtBottom(p_rNewUpperFrame) )
-            : aRectFnSet.GetHeight(p_rNewUpperFrame.Frame());
+            ? (pLastLower->Frame().*fnRect->fnBottomDist)( (p_rNewUpperFrame.*fnRect->fnGetPrtBottom)() )
+            : (p_rNewUpperFrame.Frame().*fnRect->fnGetHeight)();
 
     // check for moving backward suppress threshold
     const sal_uInt16 cMoveBwdCountSuppressThreshold = 20;

@@ -42,7 +42,8 @@ class VCL_DLLPUBLIC FilterConfigItem
 
     static bool ImplGetPropertyValue( css::uno::Any& rAny,
                             const css::uno::Reference< css::beans::XPropertySet >& rXPropSet,
-                            const OUString& rPropName );
+                            const OUString& rPropName,
+                            bool bTestPropertyAvailability );
 
     void     ImpInitTree( const OUString& rTree );
 

@@ -77,7 +77,7 @@ sal_uInt16 SwDoc::FillRubyList( const SwPaM& rPam, SwRubyList& rList,
                      {
                         // goto next paragraph
                         aPam.DeleteMark();
-                        aPam.Move( fnMoveForward, GoInNode );
+                        aPam.Move( fnMoveForward, fnGoNode );
                      }
                      else
                         break;
@@ -93,11 +93,11 @@ sal_uInt16 SwDoc::FillRubyList( const SwPaM& rPam, SwRubyList& rList,
 void SwDoc::SetRubyList( const SwPaM& rPam, const SwRubyList& rList,
                             sal_uInt16 nMode )
 {
-    GetIDocumentUndoRedo().StartUndo( SwUndoId::SETRUBYATTR, nullptr );
+    GetIDocumentUndoRedo().StartUndo( UNDO_SETRUBYATTR, nullptr );
     std::set<sal_uInt16> aDelArr;
     aDelArr.insert( RES_TXTATR_CJK_RUBY );
 
-    SwRubyList::size_type nListEntry = 0;
+    sal_uInt16 nListEntry = 0;
 
     const SwPaM *_pStartCursor = rPam.GetNext(),
                 *_pStartCursor2 = _pStartCursor;
@@ -148,7 +148,7 @@ void SwDoc::SetRubyList( const SwPaM& rPam, const SwRubyList& rList,
                      {
                         // goto next paragraph
                         aPam.DeleteMark();
-                        aPam.Move( fnMoveForward, GoInNode );
+                        aPam.Move( fnMoveForward, fnGoNode );
                      }
                      else
                     {
@@ -174,7 +174,7 @@ void SwDoc::SetRubyList( const SwPaM& rPam, const SwRubyList& rList,
     } while( 30 > rList.size() &&
         (_pStartCursor = _pStartCursor->GetNext()) != _pStartCursor2 );
 
-    GetIDocumentUndoRedo().EndUndo( SwUndoId::SETRUBYATTR, nullptr );
+    GetIDocumentUndoRedo().EndUndo( UNDO_SETRUBYATTR, nullptr );
 }
 
 bool SwDoc::SelectNextRubyChars( SwPaM& rPam, SwRubyListEntry& rEntry, sal_uInt16 )

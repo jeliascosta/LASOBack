@@ -44,9 +44,10 @@ public:
 class SC_DLLPUBLIC ScTpDefaultsItem : public SfxPoolItem
 {
 public:
-    ScTpDefaultsItem( const ScDefaultsOptions& rOpt );
+    ScTpDefaultsItem( sal_uInt16 nWhich,
+                   const ScDefaultsOptions& rOpt );
     ScTpDefaultsItem( const ScTpDefaultsItem& rItem );
-    virtual ~ScTpDefaultsItem() override;
+    virtual ~ScTpDefaultsItem();
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;

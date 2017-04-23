@@ -59,28 +59,40 @@ class XMLFilter : public
 {
 public:
     explicit XMLFilter( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~XMLFilter() override;
+    virtual ~XMLFilter();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
 protected:
     // ____ XFilter ____
     virtual sal_Bool SAL_CALL filter(
-        const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) override;
-    virtual void SAL_CALL cancel() override;
+        const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XImporter ____
     virtual void SAL_CALL setTargetDocument(
-        const css::uno::Reference< css::lang::XComponent >& Document ) override;
+        const css::uno::Reference< css::lang::XComponent >& Document )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XExporter ____
     virtual void SAL_CALL setSourceDocument(
-        const css::uno::Reference< css::lang::XComponent >& Document ) override;
+        const css::uno::Reference< css::lang::XComponent >& Document )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
-    void setDocumentHandler(const OUString& _sDocumentHandler) { m_sDocumentHandler = _sDocumentHandler; }
+    inline void setDocumentHandler(const OUString& _sDocumentHandler) { m_sDocumentHandler = _sDocumentHandler; }
 
     virtual OUString getMediaType(bool _bOasis);
 
@@ -140,15 +152,22 @@ public:
     explicit XMLReportFilterHelper( css::uno::Reference< css::uno::XComponentContext > const & _xContext )
                             :XMLFilter(_xContext)
     {}
-protected:
-    virtual OUString SAL_CALL
-        getImplementationName() override
+    static OUString getImplementationName_Static()
     {
         return OUString( "com.sun.star.comp.chart2.report.XMLFilter" );
     }
+protected:
+    virtual OUString SAL_CALL
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override
+    {
+        return getImplementationName_Static();
+    }
     // ____ XImporter ____
     virtual void SAL_CALL setTargetDocument(
-        const css::uno::Reference< css::lang::XComponent >& Document ) override
+        const css::uno::Reference< css::lang::XComponent >& Document )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override
     {
         setDocumentHandler( "com.sun.star.comp.report.ImportDocumentHandler" );
         XMLFilter::setTargetDocument(Document);
@@ -156,7 +175,9 @@ protected:
 
     // ____ XExporter ____
     virtual void SAL_CALL setSourceDocument(
-        const css::uno::Reference< css::lang::XComponent >& Document ) override
+        const css::uno::Reference< css::lang::XComponent >& Document )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override
     {
         setDocumentHandler( "com.sun.star.comp.report.ExportDocumentHandler" );
         XMLFilter::setSourceDocument(Document);

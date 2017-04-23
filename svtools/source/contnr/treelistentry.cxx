@@ -168,12 +168,12 @@ namespace {
 
 class FindByType : public std::unary_function<SvLBoxItem, void>
 {
-    SvLBoxItemType meType;
+    sal_uInt16 mnId;
 public:
-    explicit FindByType(SvLBoxItemType eType) : meType(eType) {}
+    explicit FindByType(sal_uInt16 nId) : mnId(nId) {}
     bool operator() (const std::unique_ptr<SvLBoxItem>& rpItem) const
     {
-        return rpItem->GetType() == meType;
+        return rpItem->GetType() == mnId;
     }
 };
 
@@ -190,15 +190,15 @@ public:
 
 }
 
-const SvLBoxItem* SvTreeListEntry::GetFirstItem(SvLBoxItemType eType) const
+const SvLBoxItem* SvTreeListEntry::GetFirstItem( sal_uInt16 nId ) const
 {
-    ItemsType::const_iterator it = std::find_if(m_Items.begin(), m_Items.end(), FindByType(eType));
+    ItemsType::const_iterator it = std::find_if(m_Items.begin(), m_Items.end(), FindByType(nId));
     return (it == m_Items.end()) ? nullptr : (*it).get();
 }
 
-SvLBoxItem* SvTreeListEntry::GetFirstItem(SvLBoxItemType eType)
+SvLBoxItem* SvTreeListEntry::GetFirstItem( sal_uInt16 nId )
 {
-    ItemsType::iterator it = std::find_if(m_Items.begin(), m_Items.end(), FindByType(eType));
+    ItemsType::iterator it = std::find_if(m_Items.begin(), m_Items.end(), FindByType(nId));
     return (it == m_Items.end()) ? nullptr : (*it).get();
 }
 

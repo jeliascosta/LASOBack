@@ -37,14 +37,14 @@ namespace dbaui
         void            SetValue( sal_Int32 nVal );
 
     protected:
-        DECL_LINK( CbClickHdl, Button *, void );
+        DECL_LINK_TYPED( CbClickHdl, Button *, void );
 
         VclPtr<MetricField>    m_pMF_VALUE;
         VclPtr<CheckBox>       m_pCB_STANDARD;
 
     public:
         DlgSize( vcl::Window * pParent, sal_Int32 nVal, bool bRow, sal_Int32 _nAlternativeStandard = -1 );
-        virtual ~DlgSize() override;
+        virtual ~DlgSize();
         virtual void dispose() override;
         sal_Int32 GetValue();
     };

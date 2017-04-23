@@ -33,7 +33,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void MediaPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer MediaPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             Primitive2DContainer xRetval;
             xRetval.resize(1);
@@ -47,12 +47,13 @@ namespace drawinglayer
                     getBackgroundColor()));
             xRetval[0] = xRefBackground;
 
-            if(GraphicType::Bitmap == maSnapshot.GetType() || GraphicType::GdiMetafile == maSnapshot.GetType())
+            if(GRAPHIC_BITMAP == maSnapshot.GetType() || GRAPHIC_GDIMETAFILE == maSnapshot.GetType())
             {
                 const GraphicObject aGraphicObject(maSnapshot);
                 const GraphicAttr aGraphicAttr;
                 xRetval.resize(2);
-                xRetval[1] = new GraphicPrimitive2D(getTransform(), aGraphicObject, aGraphicAttr);
+                xRetval[0] = xRefBackground;
+                xRetval[1] = Primitive2DReference(new GraphicPrimitive2D(getTransform(), aGraphicObject, aGraphicAttr));
             }
 
             if(getDiscreteBorder())
@@ -89,7 +90,7 @@ namespace drawinglayer
                 }
             }
 
-            rContainer.insert(rContainer.end(), xRetval.begin(), xRetval.end());
+            return xRetval;
         }
 
         MediaPrimitive2D::MediaPrimitive2D(
@@ -114,7 +115,7 @@ namespace drawinglayer
                 const MediaPrimitive2D& rCompare = static_cast<const MediaPrimitive2D&>(rPrimitive);
 
                 return (getTransform() == rCompare.getTransform()
-                    && maURL == rCompare.maURL
+                    && getURL() == rCompare.getURL()
                     && getBackgroundColor() == rCompare.getBackgroundColor()
                     && getDiscreteBorder() == rCompare.getDiscreteBorder());
             }

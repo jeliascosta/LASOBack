@@ -35,7 +35,7 @@ namespace sdr
 
         public:
             ViewObjectContactOfPageSubObject(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageSubObject() override;
+            virtual ~ViewObjectContactOfPageSubObject();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
             virtual bool isPrimitiveGhosted(const DisplayInfo& rDisplayInfo) const override;
@@ -54,7 +54,7 @@ namespace sdr
 
         public:
             ViewObjectContactOfPageBackground(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageBackground() override;
+            virtual ~ViewObjectContactOfPageBackground();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -70,7 +70,7 @@ namespace sdr
         protected:
         public:
             ViewObjectContactOfMasterPage(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfMasterPage() override;
+            virtual ~ViewObjectContactOfMasterPage();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -88,7 +88,7 @@ namespace sdr
 
         public:
             ViewObjectContactOfPageFill(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageFill() override;
+            virtual ~ViewObjectContactOfPageFill();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -103,7 +103,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfPageShadow(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageShadow() override;
+            virtual ~ViewObjectContactOfPageShadow();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -118,7 +118,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfOuterPageBorder(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfOuterPageBorder() override;
+            virtual ~ViewObjectContactOfOuterPageBorder();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -133,7 +133,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfInnerPageBorder(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfInnerPageBorder() override;
+            virtual ~ViewObjectContactOfInnerPageBorder();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -148,7 +148,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfPageHierarchy(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageHierarchy() override;
+            virtual ~ViewObjectContactOfPageHierarchy();
 
             virtual drawinglayer::primitive2d::Primitive2DContainer getPrimitive2DSequenceHierarchy(DisplayInfo& rDisplayInfo) const override;
         };
@@ -166,7 +166,7 @@ namespace sdr
 
         public:
             ViewObjectContactOfPageGrid(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageGrid() override;
+            virtual ~ViewObjectContactOfPageGrid();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -184,7 +184,7 @@ namespace sdr
 
         public:
             ViewObjectContactOfPageHelplines(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfPageHelplines() override;
+            virtual ~ViewObjectContactOfPageHelplines();
 
             virtual bool isPrimitiveVisible(const DisplayInfo& rDisplayInfo) const override;
         };
@@ -199,7 +199,7 @@ namespace sdr
         {
         public:
             ViewObjectContactOfSdrPage(ObjectContact& rObjectContact, ViewContact& rViewContact);
-            virtual ~ViewObjectContactOfSdrPage() override;
+            virtual ~ViewObjectContactOfSdrPage();
 
             virtual drawinglayer::primitive2d::Primitive2DContainer getPrimitive2DSequenceHierarchy(DisplayInfo& rDisplayInfo) const override;
         };

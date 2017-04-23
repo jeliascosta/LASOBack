@@ -34,11 +34,12 @@ namespace connectivity
     enum class TAscendingOrder
     {
         ASC     = 1,            // ascending
+        NONE    = 0,
         DESC    = -1            // otherwise
     };
 
     class OKeySet;
-    class OKeyValue;                // simple class which holds a sal_Int32 and a std::vector<ORowSetValueDecoratorRef>
+    class OKeyValue;                // simple class which holds a sal_Int32 and a ::std::vector<ORowSetValueDecoratorRef>
 
     /**
         The class OSortIndex can be used to implement a sorted index.
@@ -47,29 +48,29 @@ namespace connectivity
     class OOO_DLLPUBLIC_DBTOOLS OSortIndex
     {
     public:
-        typedef std::vector< std::pair<sal_Int32,OKeyValue*> >  TIntValuePairVector;
-        typedef std::vector<OKeyType>                             TKeyTypeVector;
+        typedef ::std::vector< ::std::pair<sal_Int32,OKeyValue*> >  TIntValuePairVector;
+        typedef ::std::vector<OKeyType>                             TKeyTypeVector;
 
     private:
         TIntValuePairVector             m_aKeyValues;
         TKeyTypeVector                  m_aKeyType;
-        std::vector<TAscendingOrder>  m_aAscending;
+        ::std::vector<TAscendingOrder>  m_aAscending;
         bool                        m_bFrozen;
 
     public:
 
-        OSortIndex( const std::vector<OKeyType>& _aKeyType,
-                    const std::vector<TAscendingOrder>& _aAscending);
+        OSortIndex( const ::std::vector<OKeyType>& _aKeyType,
+                    const ::std::vector<TAscendingOrder>& _aAscending);
 
         ~OSortIndex();
 
-        static void * SAL_CALL operator new( size_t nSize )
+        inline static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        static void * SAL_CALL operator new( size_t,void* _pHint )
+        inline static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        static void SAL_CALL operator delete( void * pMem )
+        inline static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        static void SAL_CALL operator delete( void *,void* )
+        inline static void SAL_CALL operator delete( void *,void* )
             {  }
 
 
@@ -92,8 +93,8 @@ namespace connectivity
         */
         ::rtl::Reference<OKeySet> CreateKeySet();
 
-        const std::vector<OKeyType>& getKeyType() const { return m_aKeyType; }
-        TAscendingOrder getAscending(std::vector<TAscendingOrder>::size_type _nPos) const { return m_aAscending[_nPos]; }
+        inline const ::std::vector<OKeyType>& getKeyType() const { return m_aKeyType; }
+        inline TAscendingOrder getAscending(::std::vector<TAscendingOrder>::size_type _nPos) const { return m_aAscending[_nPos]; }
 
     };
 

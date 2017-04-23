@@ -105,6 +105,9 @@ ScaleAutomatism::ScaleAutomatism( const ScaleData& rSourceScale, const Date& rNu
     if( m_aSourceScale.Origin >>= fExplicitOrigin )
         expandValueRange( fExplicitOrigin, fExplicitOrigin);
 }
+ScaleAutomatism::~ScaleAutomatism()
+{
+}
 
 void ScaleAutomatism::resetValueRange( )
 {
@@ -261,7 +264,7 @@ void ScaleAutomatism::calculateExplicitIncrementAndScaleForCategory(
     if( bAutoMaximum && m_bExpandBorderToIncrementRhythm )
         rExplicitScale.Maximum = EquidistantTickFactory::getMaximumAtIncrement( rExplicitScale.Maximum, rExplicitIncrement );
 
-    //prevent performance killover
+    //prevent performace killover
     double fDistanceCount = ::rtl::math::approxFloor( (rExplicitScale.Maximum-rExplicitScale.Minimum) / rExplicitIncrement.Distance );
     if( static_cast< sal_Int32 >( fDistanceCount ) > MAXIMUM_MANUAL_INCREMENT_COUNT )
     {
@@ -353,7 +356,7 @@ void ScaleAutomatism::calculateExplicitIncrementAndScaleForLogarithmic(
         double fTempValue = fSourceMinimum;
         fSourceMinimum = -fSourceMaximum;
         fSourceMaximum = -fTempValue;
-        std::swap( bAutoMinimum, bAutoMaximum );
+        ::std::swap( bAutoMinimum, bAutoMaximum );
     }
 
     // *** STEP 2: find temporary (unrounded) axis minimum and maximum ***
@@ -518,7 +521,7 @@ void ScaleAutomatism::calculateExplicitIncrementAndScaleForLogarithmic(
                 rExplicitScale.Maximum = 10.0;
         }
         if( rExplicitScale.Maximum < rExplicitScale.Minimum )
-            std::swap( rExplicitScale.Maximum, rExplicitScale.Minimum );
+            ::std::swap( rExplicitScale.Maximum, rExplicitScale.Minimum );
     }
 
     //fill explicit sub increment
@@ -773,7 +776,7 @@ void ScaleAutomatism::calculateExplicitIncrementAndScaleForLinear(
         double fTempValue = fSourceMinimum;
         fSourceMinimum = -fSourceMaximum;
         fSourceMaximum = -fTempValue;
-        std::swap( bAutoMinimum, bAutoMaximum );
+        ::std::swap( bAutoMinimum, bAutoMaximum );
     }
 
     // *** STEP 2: find temporary (unrounded) axis minimum and maximum ***

@@ -56,7 +56,7 @@ Controller::~Controller()
 { }
 
 // XInterface
-Any SAL_CALL Controller::queryInterface( const Type & rType )
+Any SAL_CALL Controller::queryInterface( const Type & rType ) throw(RuntimeException, std::exception)
 {
     Any aReturn = SfxBaseController::queryInterface( rType );
     if ( !aReturn.hasValue() )
@@ -76,7 +76,7 @@ void SAL_CALL Controller::release() throw()
 }
 
 // XTypeProvider ( ::SfxBaseController )
-Sequence< Type > SAL_CALL Controller::getTypes()
+Sequence< Type > SAL_CALL Controller::getTypes() throw(RuntimeException, std::exception)
 {
     Sequence< Type > aTypes = ::comphelper::concatSequences(
         SfxBaseController::getTypes(),
@@ -86,13 +86,13 @@ Sequence< Type > SAL_CALL Controller::getTypes()
     return aTypes;
 }
 
-Sequence< sal_Int8 > SAL_CALL Controller::getImplementationId()
+Sequence< sal_Int8 > SAL_CALL Controller::getImplementationId() throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 // XPropertySet
-Reference< beans::XPropertySetInfo > SAL_CALL Controller::getPropertySetInfo()
+Reference< beans::XPropertySetInfo > SAL_CALL Controller::getPropertySetInfo() throw(RuntimeException, std::exception)
 {
     Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;

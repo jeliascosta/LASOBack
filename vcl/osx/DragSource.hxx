@@ -74,29 +74,32 @@ class DragSource : public ::cppu::BaseMutex,
 {
 public:
   DragSource();
-  virtual ~DragSource() override;
+  virtual ~DragSource();
   DragSource(const DragSource&) = delete;
   DragSource& operator=(const DragSource&) = delete;
 
   // XInitialization
-  virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+  virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+    throw(css::uno::Exception, std::exception/*, css::uno::RuntimeException*/) override;
 
   // XDragSource
-  virtual sal_Bool SAL_CALL isDragImageSupported(  ) override;
+  virtual sal_Bool SAL_CALL isDragImageSupported(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-  virtual sal_Int32 SAL_CALL getDefaultCursor(sal_Int8 dragAction) override;
+  virtual sal_Int32 SAL_CALL getDefaultCursor(sal_Int8 dragAction)
+    throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
   virtual void SAL_CALL startDrag( const css::datatransfer::dnd::DragGestureEvent& trigger,
                                    sal_Int8 sourceActions,
                                    sal_Int32 cursor,
                                    sal_Int32 image,
                                    const css::uno::Reference< css::datatransfer::XTransferable >& transferable,
-                                   const css::uno::Reference< css::datatransfer::dnd::XDragSourceListener >& listener ) override;
+                                   const css::uno::Reference< css::datatransfer::dnd::XDragSourceListener >& listener )
+    throw(css::uno::RuntimeException, std::exception) override;
 
   // XServiceInfo
-  virtual OUString SAL_CALL getImplementationName() override;
-  virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-  virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+  virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+  virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw (css::uno::RuntimeException, std::exception) override;
+  virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
   void saveMouseEvent(NSEvent* theEvent);
   unsigned int getSupportedDragOperations(bool isLocal) const;

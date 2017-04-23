@@ -24,7 +24,7 @@
 #include "xmlsecuritycontext_nssimpl.hxx"
 #include "xmlstreamio.hxx"
 
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 
 using namespace ::com::sun::star::uno ;
 using namespace ::com::sun::star::lang ;
@@ -65,6 +65,7 @@ XMLSecurityContext_NssImpl::~XMLSecurityContext_NssImpl()
 
 sal_Int32 SAL_CALL XMLSecurityContext_NssImpl::addSecurityEnvironment(
     const css::uno::Reference< css::xml::crypto::XSecurityEnvironment >& aSecurityEnvironment)
+    throw (css::security::SecurityInfrastructureException, css::uno::RuntimeException, std::exception)
 {
     if( !aSecurityEnvironment.is() )
     {
@@ -78,12 +79,14 @@ sal_Int32 SAL_CALL XMLSecurityContext_NssImpl::addSecurityEnvironment(
 
 
 sal_Int32 SAL_CALL XMLSecurityContext_NssImpl::getSecurityEnvironmentNumber(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     return m_vSecurityEnvironments.size();
 }
 
 css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
     XMLSecurityContext_NssImpl::getSecurityEnvironmentByIndex( sal_Int32 index )
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::xml::crypto::XSecurityEnvironment > xSecurityEnvironment;
 
@@ -99,6 +102,7 @@ css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
 
 css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
     XMLSecurityContext_NssImpl::getSecurityEnvironment(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (m_nDefaultEnvIndex >= 0 && m_nDefaultEnvIndex < ( sal_Int32 )m_vSecurityEnvironments.size())
         return getSecurityEnvironmentByIndex(m_nDefaultEnvIndex);
@@ -107,22 +111,24 @@ css::uno::Reference< css::xml::crypto::XSecurityEnvironment > SAL_CALL
 }
 
 sal_Int32 SAL_CALL XMLSecurityContext_NssImpl::getDefaultSecurityEnvironmentIndex(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     return m_nDefaultEnvIndex ;
 }
 
 void SAL_CALL XMLSecurityContext_NssImpl::setDefaultSecurityEnvironmentIndex( sal_Int32 nDefaultEnvIndex )
+    throw (css::uno::RuntimeException, std::exception)
 {
     m_nDefaultEnvIndex = nDefaultEnvIndex;
 }
 
 /* XServiceInfo */
-OUString SAL_CALL XMLSecurityContext_NssImpl::getImplementationName() {
+OUString SAL_CALL XMLSecurityContext_NssImpl::getImplementationName() throw( RuntimeException, std::exception ) {
     return impl_getImplementationName() ;
 }
 
 /* XServiceInfo */
-sal_Bool SAL_CALL XMLSecurityContext_NssImpl::supportsService( const OUString& serviceName) {
+sal_Bool SAL_CALL XMLSecurityContext_NssImpl::supportsService( const OUString& serviceName) throw( RuntimeException, std::exception ) {
     Sequence< OUString > seqServiceNames = getSupportedServiceNames() ;
     const OUString* pArray = seqServiceNames.getConstArray() ;
     for( sal_Int32 i = 0 ; i < seqServiceNames.getLength() ; i ++ ) {
@@ -133,7 +139,7 @@ sal_Bool SAL_CALL XMLSecurityContext_NssImpl::supportsService( const OUString& s
 }
 
 /* XServiceInfo */
-Sequence< OUString > SAL_CALL XMLSecurityContext_NssImpl::getSupportedServiceNames() {
+Sequence< OUString > SAL_CALL XMLSecurityContext_NssImpl::getSupportedServiceNames() throw( RuntimeException, std::exception ) {
     return impl_getSupportedServiceNames() ;
 }
 
@@ -144,16 +150,19 @@ Sequence< OUString > XMLSecurityContext_NssImpl::impl_getSupportedServiceNames()
     return seqServiceNames ;
 }
 
-OUString XMLSecurityContext_NssImpl::impl_getImplementationName() {
+OUString XMLSecurityContext_NssImpl::impl_getImplementationName() throw( RuntimeException ) {
     return OUString("com.sun.star.xml.security.bridge.xmlsec.XMLSecurityContext_NssImpl") ;
 }
 
 //Helper for registry
-Reference< XInterface > SAL_CALL XMLSecurityContext_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) {
+Reference< XInterface > SAL_CALL XMLSecurityContext_NssImpl::impl_createInstance( const Reference< XMultiServiceFactory >& ) throw( RuntimeException ) {
     return Reference< XInterface >( *new XMLSecurityContext_NssImpl ) ;
 }
 
 Reference< XSingleServiceFactory > XMLSecurityContext_NssImpl::impl_createFactory( const Reference< XMultiServiceFactory >& aServiceManager ) {
+    //Reference< XSingleServiceFactory > xFactory ;
+    //xFactory = ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName , impl_createInstance , impl_getSupportedServiceNames ) ;
+    //return xFactory ;
     return ::cppu::createSingleFactory( aServiceManager , impl_getImplementationName() , impl_createInstance , impl_getSupportedServiceNames() ) ;
 }
 

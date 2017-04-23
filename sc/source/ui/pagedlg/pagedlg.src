@@ -18,14 +18,15 @@
  */
 #include "pagedlg.hrc"
 
-Bitmap BMP_LEFTRIGHT
-{
-    File = "lftrgt.png";
-};
-
-Bitmap BMP_TOPDOWN
-{
-    File = "topdown.png";
-};
+Image IMG_LEFTRIGHT
+    {
+        ImageBitmap = Bitmap { File = "lftrgt.png" ; };
+        MaskColor = STD_MASKCOLOR;
+    };
+Image IMG_TOPDOWN
+    {
+        ImageBitmap = Bitmap { File = "topdown.png" ; };
+        MaskColor = STD_MASKCOLOR;
+    };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

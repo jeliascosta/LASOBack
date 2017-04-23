@@ -29,6 +29,13 @@
 #include <vcl/combobox.hxx>
 
 #include <vcl/menubtn.hxx>
+#include <com/sun/star/container/XEnumerationAccess.hpp>
+#include <com/sun/star/container/XHierarchicalNameAccess.hpp>
+#include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/container/XContentEnumerationAccess.hpp>
+#include <com/sun/star/container/XEnumeration.hpp>
+#include <com/sun/star/container/XElementAccess.hpp>
+#include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/text/XAutoTextContainer2.hpp>
 
 #include <rtl/ustring.hxx>
@@ -73,8 +80,6 @@ public:
     virtual void RequestHelp( const HelpEvent& rHEvt ) override;
     virtual Size GetOptimalSize() const override;
     void Clear();
-
-    virtual void ExpandedHdl() override;
 };
 
 class SwOneExampleFrame;
@@ -118,17 +123,17 @@ class SwGlossaryDlg : public SvxStandardDialog
     void EnableShortName(bool bOn = true);
     void ShowPreview();
 
-    DECL_LINK( NameModify, Edit&, void );
-    DECL_LINK( NameDoubleClick, SvTreeListBox*, bool );
-    DECL_LINK( GrpSelect, SvTreeListBox *, void );
-    DECL_LINK( MenuHdl, Menu *, bool );
-    DECL_LINK( EnableHdl, Menu *, bool );
-    DECL_LINK( BibHdl, Button *, void );
-    DECL_LINK( EditHdl, MenuButton *, void );
-    DECL_LINK( InsertHdl, Button *, void );
-    DECL_LINK( PathHdl, Button *, void );
-    DECL_LINK( CheckBoxHdl, Button*, void );
-    DECL_LINK( PreviewLoadedHdl, SwOneExampleFrame&, void );
+    DECL_LINK_TYPED( NameModify, Edit&, void );
+    DECL_LINK_TYPED( NameDoubleClick, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( GrpSelect, SvTreeListBox *, void );
+    DECL_LINK_TYPED( MenuHdl, Menu *, bool );
+    DECL_LINK_TYPED( EnableHdl, Menu *, bool );
+    DECL_LINK_TYPED( BibHdl, Button *, void );
+    DECL_LINK_TYPED( EditHdl, MenuButton *, void );
+    DECL_LINK_TYPED( InsertHdl, Button *, void );
+    DECL_LINK_TYPED( PathHdl, Button *, void );
+    DECL_LINK_TYPED( CheckBoxHdl, Button*, void );
+    DECL_LINK_TYPED( PreviewLoadedHdl, SwOneExampleFrame&, void );
 
     virtual void    Apply() override;
     void            Init();
@@ -140,9 +145,10 @@ class SwGlossaryDlg : public SvxStandardDialog
                         {rGroup = sResumeGroup; rShortName = sResumeShortName; return bResume;}
     void            SetResumeData(const OUString& rGroup, const OUString& rShortName)
                         {sResumeGroup = rGroup; sResumeShortName = rShortName; bResume = true;}
+    void            ResetResumeData() {bResume = false;}
 public:
     SwGlossaryDlg(SfxViewFrame* pViewFrame, SwGlossaryHdl* pGlosHdl, SwWrtShell *pWrtShell);
-    virtual ~SwGlossaryDlg() override;
+    virtual ~SwGlossaryDlg();
     virtual void dispose() override;
     OUString GetCurrGrpName() const;
     OUString GetCurrShortName() const

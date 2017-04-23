@@ -138,7 +138,7 @@ bool SdrExchangeView::Paste(const OUString& rStr, const Point& rPos, SdrObjList*
     if (!ImpGetPasteLayer(pLst,nLayer)) return false;
     bool bUnmark = (nOptions & (SdrInsertFlags::DONTMARK|SdrInsertFlags::ADDMARK))==SdrInsertFlags::NONE && !IsTextEdit();
     if (bUnmark) UnmarkAllObj();
-    tools::Rectangle aTextRect(0,0,500,500);
+    Rectangle aTextRect(0,0,500,500);
     SdrPage* pPage=pLst->GetPage();
     if (pPage!=nullptr) {
         aTextRect.SetSize(pPage->GetSize());
@@ -175,7 +175,7 @@ bool SdrExchangeView::Paste(SvStream& rInput, const OUString& rBaseURL, sal_uInt
     if (!ImpGetPasteLayer(pLst,nLayer)) return false;
     bool bUnmark=(nOptions&(SdrInsertFlags::DONTMARK|SdrInsertFlags::ADDMARK))==SdrInsertFlags::NONE && !IsTextEdit();
     if (bUnmark) UnmarkAllObj();
-    tools::Rectangle aTextRect(0,0,500,500);
+    Rectangle aTextRect(0,0,500,500);
     SdrPage* pPage=pLst->GetPage();
     if (pPage!=nullptr) {
         aTextRect.SetSize(pPage->GetSize());
@@ -281,7 +281,7 @@ bool SdrExchangeView::Paste(
         const SdrPage* pSrcPg=pSrcMod->GetPage(nPg);
 
         // Use SnapRect, not BoundRect here
-        tools::Rectangle aR=pSrcPg->GetAllObjSnapRect();
+        Rectangle aR=pSrcPg->GetAllObjSnapRect();
 
         if (bResize)
             ResizeRect(aR,aPt0,aXResize,aYResize);
@@ -342,7 +342,8 @@ bool SdrExchangeView::Paste(
                     pNeuObj->SetLayer(nLayer);
                 }
 
-                pDstLst->InsertObject(pNeuObj, SAL_MAX_SIZE);
+                SdrInsertReason aReason(SDRREASON_VIEWCALL);
+                pDstLst->InsertObject(pNeuObj, SAL_MAX_SIZE, &aReason);
 
                 if( bUndo )
                     AddUndo(GetModel()->GetSdrUndoFactory().CreateUndoNewObject(*pNeuObj));
@@ -417,9 +418,10 @@ void SdrExchangeView::ImpPasteObject(SdrObject* pObj, SdrObjList& rLst, const Po
     long xs=nSizX;
     long ys=nSizY;
     Point aPos(rCenter.X()-xs/2,rCenter.Y()-ys/2);
-    tools::Rectangle aR(aPos.X(),aPos.Y(),aPos.X()+xs,aPos.Y()+ys);
+    Rectangle aR(aPos.X(),aPos.Y(),aPos.X()+xs,aPos.Y()+ys);
     pObj->SetLogicRect(aR);
-    rLst.InsertObject(pObj, SAL_MAX_SIZE);
+    SdrInsertReason aReason(SDRREASON_VIEWCALL);
+    rLst.InsertObject(pObj, SAL_MAX_SIZE, &aReason);
 
     if( IsUndoEnabled() )
         AddUndo(GetModel()->GetSdrUndoFactory().CreateUndoNewObject(*pObj));
@@ -453,7 +455,7 @@ BitmapEx SdrExchangeView::GetMarkedObjBitmapEx(bool bNoVDevIfOneBmpMarked) const
                 SdrObject*  pGrafObjTmp = GetMarkedObjectByIndex( 0 );
                 SdrGrafObj* pGrafObj = dynamic_cast<SdrGrafObj*>( pGrafObjTmp  );
 
-                if( pGrafObj && ( pGrafObj->GetGraphicType() == GraphicType::Bitmap ) )
+                if( pGrafObj && ( pGrafObj->GetGraphicType() == GRAPHIC_BITMAP ) )
                 {
                     aBmp = pGrafObj->GetTransformedGraphic().GetBitmapEx();
                 }
@@ -496,7 +498,7 @@ BitmapEx SdrExchangeView::GetMarkedObjBitmapEx(bool bNoVDevIfOneBmpMarked) const
                     }
 
                     xPrimitives[a] = new drawinglayer::primitive2d::GroupPrimitive2D(
-                        pCandidate->GetViewContact().getViewIndependentPrimitive2DContainer());
+                        pCandidate->GetViewContact().getViewIndependentPrimitive2DSequence());
                 }
 
                 // get logic range
@@ -525,7 +527,7 @@ GDIMetaFile SdrExchangeView::GetMarkedObjMetaFile(bool bNoVDevIfOneMtfMarked) co
 
     if( AreObjectsMarked() )
     {
-        tools::Rectangle   aBound( GetMarkedObjBoundRect() );
+        Rectangle   aBound( GetMarkedObjBoundRect() );
         Size        aBoundSize( aBound.GetWidth(), aBound.GetHeight() );
         MapMode     aMap( mpModel->GetScaleUnit(), Point(), mpModel->GetScaleFraction(), mpModel->GetScaleFraction() );
 
@@ -628,11 +630,11 @@ Graphic SdrExchangeView::GetObjGraphic( const SdrModel* pModel, const SdrObject*
         }
 
         // if graphic could not be retrieved => go the hard way and create a MetaFile
-        if( ( GraphicType::NONE == aRet.GetType() ) || ( GraphicType::Default == aRet.GetType() ) )
+        if( ( GRAPHIC_NONE == aRet.GetType() ) || ( GRAPHIC_DEFAULT == aRet.GetType() ) )
         {
             ScopedVclPtrInstance< VirtualDevice > pOut;
             GDIMetaFile     aMtf;
-            const tools::Rectangle aBoundRect( pObj->GetCurrentBoundRect() );
+            const Rectangle aBoundRect( pObj->GetCurrentBoundRect() );
             const MapMode   aMap( pModel->GetScaleUnit(),
                                   Point(),
                                   pModel->GetScaleFraction(),
@@ -748,7 +750,8 @@ SdrModel* SdrExchangeView::GetMarkedObjModel() const
                 pNeuObj->SetModel( pNeuMod );
             }
 
-            pNeuPag->InsertObject(pNeuObj, SAL_MAX_SIZE);
+            SdrInsertReason aReason(SDRREASON_VIEWCALL);
+            pNeuPag->InsertObject(pNeuObj, SAL_MAX_SIZE, &aReason);
 
             // #i13033#
             aCloneList.AddPair(pObj, pNeuObj);

@@ -47,12 +47,12 @@ private:
 
     bool              bEmpty;
 
-    DECL_LINK(ButtonHdl, Button*, void);
-    DECL_LINK(EditModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(ButtonHdl, Button*, void);
+    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
 
 public:
-                    SvxPasswordDialog( vcl::Window* pParent, bool bAllowEmptyPasswords, bool bDisableOldPassword = false );
-    virtual         ~SvxPasswordDialog() override;
+                    SvxPasswordDialog( vcl::Window* pParent, bool bAllowEmptyPasswords = false, bool bDisableOldPassword = false );
+    virtual         ~SvxPasswordDialog();
     virtual void    dispose() override;
 
     OUString        GetOldPassword() const { return m_pOldPasswdED->GetText(); }

@@ -22,12 +22,22 @@
 #include <cppuhelper/factory.hxx>
 #include <cppuhelper/cppuhelperdllapi.h>
 
+// MinGW wants it the one way around while MSVC wants it the other (cf.
+// <sourceforge.net/support/tracker.php?aid=3514133> "Syntactic __cdecl
+// incompatibility with MSVC"; and everywhere else, SAL_CALL is empty, so
+// doesn't matter):
+#if defined __GNUC__
+#define MY_FN_PTR(name) SAL_CALL (* name)
+#else
+#define MY_FN_PTR(name) (SAL_CALL * name)
+#endif
+
 namespace cppu
 {
 /** One struct instance represents all data necessary for registering one service implementation.
 
  */
-struct SAL_WARN_UNUSED ImplementationEntry
+struct ImplementationEntry
 {
     /** Function that creates an instance of the implementation
      */
@@ -36,12 +46,12 @@ struct SAL_WARN_UNUSED ImplementationEntry
     /** Function that returns the implementation-name of the implementation
        (same as XServiceInfo.getImplementationName() ).
      */
-     rtl::OUString (SAL_CALL * getImplementationName)();
+     rtl::OUString MY_FN_PTR( getImplementationName )();
 
     /** Function that returns all supported servicenames of the implementation
        ( same as XServiceInfo.getSupportedServiceNames() ).
     */
-     css::uno::Sequence< rtl::OUString > (SAL_CALL * getSupportedServiceNames) ();
+     css::uno::Sequence< rtl::OUString > MY_FN_PTR( getSupportedServiceNames ) ();
 
     /** Function that creates a SingleComponentFactory.
 
@@ -49,7 +59,7 @@ struct SAL_WARN_UNUSED ImplementationEntry
         removed library unloading feature; always set to null.
     */
      css::uno::Reference< css::lang::XSingleComponentFactory >
-     (SAL_CALL * createFactory)(
+     MY_FN_PTR( createFactory )(
          ComponentFactoryFunc fptr,
          ::rtl::OUString const & rImplementationName,
          css::uno::Sequence< ::rtl::OUString > const & rServiceNames,

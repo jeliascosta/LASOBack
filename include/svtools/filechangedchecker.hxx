@@ -32,7 +32,7 @@ private:
     ::std::function<void ()> mpCallback;
 
     bool SVT_DLLPRIVATE getCurrentModTime(TimeValue& o_rValue) const;
-    DECL_LINK(TimerHandler, Timer *, void);
+    DECL_LINK_TYPED(TimerHandler, Idle *, void);
 
 public:
     void resetTimer();

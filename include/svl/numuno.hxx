@@ -35,6 +35,13 @@ namespace comphelper
 }
 
 
+//  SvNumberFormatterServiceObj must be registered as service somewhere
+
+css::uno::Reference<css::uno::XInterface> SAL_CALL
+    SvNumberFormatterServiceObj_NewInstance(
+        const css::uno::Reference< css::lang::XMultiServiceFactory>& rSMgr );
+
+
 //  SvNumberFormatsSupplierObj: aggregate to document,
 //  construct with SvNumberFormatter
 
@@ -48,19 +55,22 @@ private:
 public:
                                 SvNumberFormatsSupplierObj();
                                 SvNumberFormatsSupplierObj(SvNumberFormatter* pForm);
-    virtual                     ~SvNumberFormatsSupplierObj() override;
+    virtual                     ~SvNumberFormatsSupplierObj();
 
     void                        SetNumberFormatter(SvNumberFormatter* pNew);
     SvNumberFormatter*          GetNumberFormatter() const;
 
                                 // XNumberFormatsSupplier
     virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL
-                                getNumberFormatSettings() override;
+                                getNumberFormatSettings()
+                                    throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::util::XNumberFormats > SAL_CALL
-                                getNumberFormats() override;
+                                getNumberFormats()
+                                    throw(css::uno::RuntimeException, std::exception) override;
 
                                 // XUnoTunnel
-    virtual sal_Int64 SAL_CALL  getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+    virtual sal_Int64 SAL_CALL  getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier )
+                                        throw(css::uno::RuntimeException, std::exception) override;
 
     static const css::uno::Sequence<sal_Int8>& getUnoTunnelId();
     static SvNumberFormatsSupplierObj* getImplementation( const css::uno::Reference<

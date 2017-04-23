@@ -30,7 +30,10 @@ SfxViewShell *SfxViewFactory::CreateInstance(SfxViewFrame *pFrame, SfxViewShell 
 
 OUString SfxViewFactory::GetLegacyViewName() const
 {
-    return "view" + OUString::number( sal_uInt16( GetOrdinal() ) );
+    OUStringBuffer aViewName;
+    aViewName.append( "view" );
+    aViewName.append( sal_Int32( GetOrdinal() ) );
+    return aViewName.makeStringAndClear();
 }
 
 OUString SfxViewFactory::GetAPIViewName() const
@@ -38,7 +41,7 @@ OUString SfxViewFactory::GetAPIViewName() const
     if ( !m_sViewName.isEmpty() )
         return m_sViewName;
 
-    if ( GetOrdinal() == SFX_INTERFACE_NONE )
+    if ( GetOrdinal() == 0 )
         return OUString( "Default" );
 
     return GetLegacyViewName();
@@ -47,7 +50,7 @@ OUString SfxViewFactory::GetAPIViewName() const
 // CTOR / DTOR -----------------------------------------------------------
 
 SfxViewFactory::SfxViewFactory( SfxViewCtor fnC,
-                                SfxInterfaceId nOrdinal, const sal_Char* asciiViewName ):
+                                sal_uInt16 nOrdinal, const sal_Char* asciiViewName ):
     fnCreate(fnC),
     nOrd(nOrdinal),
     m_sViewName( OUString::createFromAscii( asciiViewName ) )

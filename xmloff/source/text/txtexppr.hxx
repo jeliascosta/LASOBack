@@ -67,22 +67,22 @@ public:
     XMLTextExportPropertySetMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper,
             SvXMLExport& rExt );
-    virtual ~XMLTextExportPropertySetMapper() override;
+    virtual ~XMLTextExportPropertySetMapper();
 
     virtual void handleElementItem(
         SvXMLExport& rExport,
         const XMLPropertyState& rProperty,
         SvXmlExportFlags nFlags,
-        const ::std::vector< XMLPropertyState > *pProperties,
-        sal_uInt32 nIdx ) const override;
+        const ::std::vector< XMLPropertyState > *pProperties = nullptr,
+        sal_uInt32 nIdx = 0 ) const override;
 
     virtual void handleSpecialItem(
         SvXMLAttributeList& rAttrList,
         const XMLPropertyState& rProperty,
         const SvXMLUnitConverter& rUnitConverter,
         const SvXMLNamespaceMap& rNamespaceMap,
-        const ::std::vector< XMLPropertyState > *pProperties,
-        sal_uInt32 nIdx ) const override;
+        const ::std::vector< XMLPropertyState > *pProperties = nullptr,
+        sal_uInt32 nIdx = 0 ) const override;
 };
 
 

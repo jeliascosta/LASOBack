@@ -8,7 +8,7 @@
  */
 package org.libreoffice.overlay;
 
-import org.libreoffice.LibreOfficeMainActivity;
+import android.app.Activity;
 import android.graphics.RectF;
 import android.util.Log;
 
@@ -64,7 +64,7 @@ public class DocumentOverlay {
         }
     }
 
-    public DocumentOverlay(LibreOfficeMainActivity context, LayerView layerView) {
+    public DocumentOverlay(Activity context, LayerView layerView) {
         mDocumentOverlayView = (DocumentOverlayView) context.findViewById(R.id.text_cursor_view);
         mDocumentOverlayLayer = new DocumentOverlayLayer();
         if (mDocumentOverlayView == null) {

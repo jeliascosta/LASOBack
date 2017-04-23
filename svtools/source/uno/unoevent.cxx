@@ -35,10 +35,12 @@ using css::beans::PropertyValue;
 
 
 static const char sAPI_ServiceName[] = "com.sun.star.container.XNameReplace";
+static const char sAPI_SvDetachedEventDescriptor[] = "SvDetachedEventDescriptor";
 static const char sEventType[] = "EventType";
 static const char sMacroName[] = "MacroName";
 static const char sLibrary[] = "Library";
 static const char sStarBasic[] = "StarBasic";
+static const char sJavaScript[] = "JavaScript";
 static const char sScript[] = "Script";
 static const char sNone[] = "None";
 
@@ -134,10 +136,10 @@ void getAnyFromMacro(Any& rAny, const SvxMacro& rMacro)
     }
 }
 
-/// @throws IllegalArgumentException
 void getMacroFromAny(
     SvxMacro& rMacro,
     const Any& rAny)
+        throw ( IllegalArgumentException )
 {
     // get sequence
     Sequence<PropertyValue> aSequence;
@@ -163,7 +165,7 @@ void getMacroFromAny(
                 eType = STARBASIC;
                 bTypeOK = true;
             }
-            else if (sTmp == "JavaScript")
+            else if (sTmp == sJavaScript)
             {
                 eType = JAVASCRIPT;
                 bTypeOK = true;
@@ -249,6 +251,11 @@ SvBaseEventDescriptor::~SvBaseEventDescriptor()
 void SvBaseEventDescriptor::replaceByName(
     const OUString& rName,
     const Any& rElement )
+    throw(
+        IllegalArgumentException,
+        NoSuchElementException,
+        WrappedTargetException,
+        RuntimeException, std::exception)
 {
     sal_uInt16 nMacroID = getMacroID(rName);
 
@@ -270,6 +277,10 @@ void SvBaseEventDescriptor::replaceByName(
 
 Any SvBaseEventDescriptor::getByName(
     const OUString& rName )
+    throw(
+        NoSuchElementException,
+        WrappedTargetException,
+        RuntimeException, std::exception)
 {
     sal_uInt16 nMacroID = getMacroID(rName);
 
@@ -286,6 +297,7 @@ Any SvBaseEventDescriptor::getByName(
 }
 
 Sequence<OUString> SvBaseEventDescriptor::getElementNames()
+    throw(RuntimeException, std::exception)
 {
     // create and fill sequence
     Sequence<OUString> aSequence(mnMacroItems);
@@ -299,27 +311,32 @@ Sequence<OUString> SvBaseEventDescriptor::getElementNames()
 
 sal_Bool SvBaseEventDescriptor::hasByName(
     const OUString& rName )
+    throw(RuntimeException, std::exception)
 {
     sal_uInt16 nMacroID = getMacroID(rName);
     return (nMacroID != 0);
 }
 
 Type SvBaseEventDescriptor::getElementType()
+    throw(RuntimeException, std::exception)
 {
     return cppu::UnoType<Sequence<PropertyValue>>::get();
 }
 
 sal_Bool SvBaseEventDescriptor::hasElements()
+    throw(RuntimeException, std::exception)
 {
     return mnMacroItems != 0;
 }
 
 sal_Bool SvBaseEventDescriptor::supportsService(const OUString& rServiceName)
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence<OUString> SvBaseEventDescriptor::getSupportedServiceNames()
+    throw(RuntimeException, std::exception)
 {
     Sequence<OUString> aSequence { sAPI_ServiceName };
 
@@ -363,6 +380,11 @@ SvEventDescriptor::~SvEventDescriptor()
 void SvEventDescriptor::replaceByName(
     const sal_uInt16 nEvent,
     const SvxMacro& rMacro)
+        throw(
+            IllegalArgumentException,
+            NoSuchElementException,
+            WrappedTargetException,
+            RuntimeException)
 {
     SvxMacroItem aItem(getMacroItemWhich());
     aItem.SetMacroTable(getMacroItem().GetMacroTable());
@@ -373,6 +395,10 @@ void SvEventDescriptor::replaceByName(
 void SvEventDescriptor::getByName(
     SvxMacro& rMacro,
     const sal_uInt16 nEvent )
+        throw(
+            NoSuchElementException,
+            WrappedTargetException,
+            RuntimeException)
 {
     const SvxMacroItem& rItem = getMacroItem();
     if( rItem.HasMacro( nEvent ) )
@@ -388,7 +414,7 @@ void SvEventDescriptor::getByName(
 SvDetachedEventDescriptor::SvDetachedEventDescriptor(
     const SvEventDescription* pSupportedMacroItems) :
     SvBaseEventDescriptor(pSupportedMacroItems),
-    sImplName("SvDetachedEventDescriptor")
+    sImplName(sAPI_SvDetachedEventDescriptor)
 {
     // allocate aMacros
     aMacros = new SvxMacro*[mnMacroItems];
@@ -425,6 +451,7 @@ sal_Int16 SvDetachedEventDescriptor::getIndex(const sal_uInt16 nID) const
 }
 
 OUString SvDetachedEventDescriptor::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
 {
     return sImplName;
 }
@@ -433,6 +460,11 @@ OUString SvDetachedEventDescriptor::getImplementationName()
 void SvDetachedEventDescriptor::replaceByName(
     const sal_uInt16 nEvent,
     const SvxMacro& rMacro)
+    throw(
+        IllegalArgumentException,
+        NoSuchElementException,
+        WrappedTargetException,
+        RuntimeException)
 {
     sal_Int16 nIndex = getIndex(nEvent);
     if (-1 == nIndex)
@@ -446,6 +478,10 @@ void SvDetachedEventDescriptor::replaceByName(
 void SvDetachedEventDescriptor::getByName(
     SvxMacro& rMacro,
     const sal_uInt16 nEvent )
+    throw(
+        NoSuchElementException,
+        WrappedTargetException,
+        RuntimeException)
 {
     sal_Int16 nIndex = getIndex(nEvent);
     if (-1 == nIndex )
@@ -457,6 +493,7 @@ void SvDetachedEventDescriptor::getByName(
 
 bool SvDetachedEventDescriptor::hasById(
     const sal_uInt16 nEvent ) const     /// item ID of event
+        throw(IllegalArgumentException)
 {
     sal_Int16 nIndex = getIndex(nEvent);
     if (-1 == nIndex)
@@ -476,6 +513,16 @@ SvMacroTableEventDescriptor::SvMacroTableEventDescriptor(
     const SvEventDescription* pSupportedMacroItems) :
         SvDetachedEventDescriptor(pSupportedMacroItems)
 {
+    copyMacrosFromTable(rMacroTable);
+}
+
+SvMacroTableEventDescriptor::~SvMacroTableEventDescriptor()
+{
+}
+
+void SvMacroTableEventDescriptor::copyMacrosFromTable(
+    const SvxMacroTableDtor& rMacroTable)
+{
     for(sal_Int16 i = 0; mpSupportedMacroItems[i].mnEvent != 0; i++)
     {
         const sal_uInt16 nEvent = mpSupportedMacroItems[i].mnEvent;
@@ -483,10 +530,7 @@ SvMacroTableEventDescriptor::SvMacroTableEventDescriptor(
         if (nullptr != pMacro)
             replaceByName(nEvent, *pMacro);
     }
-}
 
-SvMacroTableEventDescriptor::~SvMacroTableEventDescriptor()
-{
 }
 
 void SvMacroTableEventDescriptor::copyMacrosIntoTable(

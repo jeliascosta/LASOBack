@@ -49,7 +49,7 @@ class RequestQueue;
     timer is started that eventually calls ProcessRequest().  This is
     repeated until the queue is empty or Stop() is called.
 */
-class QueueProcessor final
+class QueueProcessor
 {
 public:
     typedef ::std::function<bool ()> IdleDetectionCallback;
@@ -59,7 +59,7 @@ public:
         const Size& rPreviewSize,
         const bool bDoSuperSampling,
         const SharedCacheContext& rpCacheContext);
-    ~QueueProcessor();
+    virtual ~QueueProcessor();
 
     /** Start the processor.  This implementation is timer based and waits
         an defined amount of time that depends on the given argument before
@@ -70,7 +70,7 @@ public:
             shorter then that for a low priority request (denoted by a value
             of 1.)  When the timer is already running it is not modified.
     */
-    void Start (int nPriorityClass);
+    void Start (int nPriorityClass = 0);
     void Stop();
     void Pause();
     void Resume();
@@ -92,7 +92,7 @@ private:
     ::osl::Mutex maMutex;
 
     Timer  maTimer;
-    DECL_LINK(ProcessRequestHdl, Timer *, void);
+    DECL_LINK_TYPED(ProcessRequestHdl, Timer *, void);
     sal_uInt32 mnTimeBetweenHighPriorityRequests;
     sal_uInt32 mnTimeBetweenLowPriorityRequests;
     sal_uInt32 mnTimeBetweenRequestsWhenNotIdle;

@@ -29,7 +29,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <osl/diagnose.h>
 
-//
+//UUUU
 #include <xmlsdtypes.hxx>
 #include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <xmloff/xmlerror.hxx>
@@ -39,7 +39,7 @@ using namespace ::xmloff::token;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 
-//
+//UUUU
 using namespace ::com::sun::star::beans;
 
 void PageStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
@@ -65,7 +65,7 @@ PageStyleContext::PageStyleContext( SvXMLImport& rImport,
         bool bDefaultStyle) :
     XMLPropStyleContext( rImport, nPrfx, rLName, xAttrList, rStyles, XML_STYLE_FAMILY_PAGE_MASTER, bDefaultStyle),
     sPageUsage(),
-    m_bIsFillStyleAlreadyConverted(false) //
+    m_bIsFillStyleAlreadyConverted(false) //UUUU
 {
 }
 
@@ -160,13 +160,13 @@ SvXMLImportContext *PageStyleContext::CreateChildContext(
 
 void PageStyleContext::FillPropertySet(const uno::Reference<beans::XPropertySet > & rPropSet)
 {
-    // need to filter out old fill definitions when the new ones are used. The new
+    //UUUU need to filter out old fill definitions when the new ones are used. The new
     // ones are used when a FillStyle is defined
     if(!m_bIsFillStyleAlreadyConverted && GetProperties().size())
     {
-        static ::rtl::OUString s_FillStyle("FillStyle");
-        static ::rtl::OUString s_HeaderFillStyle("HeaderFillStyle");
-        static ::rtl::OUString s_FooterFillStyle("FooterFillStyle");
+        static ::rtl::OUString s_FillStyle(RTL_CONSTASCII_USTRINGPARAM("FillStyle"));
+        static ::rtl::OUString s_HeaderFillStyle(RTL_CONSTASCII_USTRINGPARAM("HeaderFillStyle"));
+        static ::rtl::OUString s_FooterFillStyle(RTL_CONSTASCII_USTRINGPARAM("FooterFillStyle"));
 
         if(doNewDrawingLayerFillStyleDefinitionsExist(s_FillStyle))
         {
@@ -186,7 +186,7 @@ void PageStyleContext::FillPropertySet(const uno::Reference<beans::XPropertySet 
         m_bIsFillStyleAlreadyConverted = true;
     }
 
-    // do not use XMLPropStyleContext::FillPropertySet, we need to handle this ourselves since
+    //UUUU do not use XMLPropStyleContext::FillPropertySet, we need to handle this ourselves since
     // we have properties which use the MID_FLAG_NO_PROPERTY_IMPORT flag since they need some special
     // handling
     rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap = GetStyles()->GetImportPropertyMapper(GetFamily());
@@ -225,14 +225,14 @@ void PageStyleContext::FillPropertySet(const uno::Reference<beans::XPropertySet 
             XML_STYLE_FAMILY_SD_FILL_IMAGE_ID
         };
 
-        // Fill PropertySet, but let it handle special properties not itself
+        //UUUU Fill PropertySet, but let it handle special properties not itself
         xImpPrMap->FillPropertySet(GetProperties(), rPropSet, aContextIDs);
 
         // get property set mapper
         const rtl::Reference< XMLPropertySetMapper >& rMapper = xImpPrMap->getPropertySetMapper();
         Reference< XPropertySetInfo > xInfo;
 
-        // handle special attributes which have MID_FLAG_NO_PROPERTY_IMPORT set
+        //UUUU handle special attributes which have MID_FLAG_NO_PROPERTY_IMPORT set
         for(sal_uInt16 i = 0; aContextIDs[i].nContextID != -1; i++)
         {
             sal_Int32 nIndex = aContextIDs[i].nIndex;
@@ -260,7 +260,7 @@ void PageStyleContext::FillPropertySet(const uno::Reference<beans::XPropertySet 
                         rtl::OUString sStyleName;
                         rState.maValue >>= sStyleName;
 
-                        // translate the used name from ODF intern to the name used in the Model
+                        //UUUU translate the used name from ODF intern to the name used in the Model
                         sStyleName = GetImport().GetStyleDisplayName(aFamilies[i%4], sStyleName);
 
                         try
@@ -296,7 +296,7 @@ void PageStyleContext::FillPropertySet(const uno::Reference<beans::XPropertySet 
         OSL_ENSURE(xImpPrMap.is(), "Got no SvXMLImportPropertyMapper (!)");
     }
 
-    // old code, replaced by above stuff
+    //UUUU old code, replaced by above stuff
     // XMLPropStyleContext::FillPropertySet(rPropSet);
 
     if (!sPageUsage.isEmpty())

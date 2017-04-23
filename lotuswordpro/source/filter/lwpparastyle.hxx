@@ -76,7 +76,7 @@ class LwpParaStyle : public LwpTextStyle
 public:
     LwpParaStyle(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
 
-    virtual ~LwpParaStyle() override;
+    virtual ~LwpParaStyle();
 
     void        Read() override;
 
@@ -97,7 +97,7 @@ public:
     LwpParaBorderOverride* GetParaBorder() const;
     LwpBreaksOverride* GetBreaks() const;
     LwpTabOverride* GetTabOverride() const;
-    const LwpBulletOverride* GetBulletOverride() const { return &m_BulletOverride;}
+    LwpBulletOverride* GetBulletOverride() const { return m_pBulletOverride;}
     LwpNumberingOverride* GetNumberingOverride() const;
 public:
     static void ApplySubBorder(LwpBorderStuff* pBorderStuff, LwpBorderStuff::BorderType eType, XFBorders* pXFBorders);
@@ -113,8 +113,8 @@ private:
     LwpObjectID m_TabStyle;
     LwpObjectID m_BackgroundStyle;
 
-    LwpKinsokuOptsOverride  m_KinsokuOptsOverride;
-    LwpBulletOverride       m_BulletOverride;
+    LwpKinsokuOptsOverride* m_pKinsokuOptsOverride;
+    LwpBulletOverride*      m_pBulletOverride;
 };
 
 #endif

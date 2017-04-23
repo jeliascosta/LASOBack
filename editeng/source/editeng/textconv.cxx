@@ -87,7 +87,7 @@ bool TextConvWrapper::ConvNext_impl()
         {
             m_bStartDone = true;
             m_bEndDone  = false;
-            ConvStart_impl( SvxSpellArea::Body );
+            ConvStart_impl( SVX_SPELL_BODY );
             return true;
         }
         return false;
@@ -100,14 +100,14 @@ bool TextConvWrapper::ConvNext_impl()
         {
             m_bStartDone = true;
             m_bEndDone  = false;
-            ConvStart_impl( SvxSpellArea::Body );
+            ConvStart_impl( SVX_SPELL_BODY );
             return true;
         }
     }
     else if (!m_aConvSel.HasRange())
     {
         m_bStartChk = !m_bStartDone;
-        ConvStart_impl( m_bStartChk ? SvxSpellArea::BodyStart : SvxSpellArea::BodyEnd );
+        ConvStart_impl( m_bStartChk ? SVX_SPELL_BODY_START : SVX_SPELL_BODY_END );
         return true;
     }
 
@@ -160,7 +160,7 @@ void TextConvWrapper::ConvStart_impl( SvxSpellArea eArea )
     ImpEditEngine* pImpEE = m_pEditView->GetImpEditEngine();
     ConvInfo* pConvInfo = pImpEE->GetConvInfo();
 
-    if ( eArea == SvxSpellArea::BodyStart )
+    if ( eArea == SVX_SPELL_BODY_START )
     {
         // Is called when Spell-forward has reached the end, and to start over
         if ( m_bEndDone )
@@ -178,7 +178,7 @@ void TextConvWrapper::ConvStart_impl( SvxSpellArea eArea )
                     pEE->GetEditDoc().GetStartPaM() );
         }
     }
-    else if ( eArea == SvxSpellArea::BodyEnd )
+    else if ( eArea == SVX_SPELL_BODY_END )
     {
         // Is called when Spell-forward starts
         pConvInfo->bConvToEnd = true;
@@ -196,7 +196,7 @@ void TextConvWrapper::ConvStart_impl( SvxSpellArea eArea )
                 pEE->GetEditDoc().GetEndPaM() );
         }
     }
-    else if ( eArea == SvxSpellArea::Body )
+    else if ( eArea == SVX_SPELL_BODY )
     {
         // called by ConvNext_impl...
         pConvInfo->aConvContinue = pConvInfo->aConvStart;
@@ -542,7 +542,7 @@ void TextConvWrapper::ChangeText_impl( const OUString &rNewText, bool bKeepAttri
 void TextConvWrapper::Convert()
 {
     m_bStartChk = false;
-    ConvStart_impl( SvxSpellArea::BodyEnd );
+    ConvStart_impl( SVX_SPELL_BODY_END );
     ConvertDocument();
 }
 

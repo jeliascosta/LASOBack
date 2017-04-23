@@ -34,7 +34,7 @@ bool SfxInt64Item::operator== ( const SfxPoolItem& rItem ) const
 }
 
 bool SfxInt64Item::GetPresentation(
-    SfxItemPresentation, MapUnit, MapUnit, OUString& rText,
+    SfxItemPresentation, SfxMapUnit, SfxMapUnit, OUString& rText,
     const IntlWrapper* /*pIntlWrapper*/ ) const
 {
     rText = OUString::number(mnValue);

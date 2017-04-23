@@ -32,9 +32,11 @@ namespace com { namespace sun { namespace star {
 
 namespace connectivity { namespace odbc {
 
-/// @throws css::uno::Exception
-css::uno::Reference< css::uno::XInterface >
-ODBCDriver_CreateInstance( css::uno::Reference< css::lang::XMultiServiceFactory > const & factory);
+com::sun::star::uno::Reference< com::sun::star::uno::XInterface >
+ODBCDriver_CreateInstance(
+    com::sun::star::uno::Reference< com::sun::star::lang::XMultiServiceFactory >
+        const & factory)
+    throw (com::sun::star::uno::Exception);
 
 } }
 

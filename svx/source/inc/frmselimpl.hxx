@@ -37,41 +37,41 @@ class FrameBorder
 public:
     explicit FrameBorder(FrameBorderType eType);
 
-    FrameBorderType GetType() const
+    inline FrameBorderType GetType() const
     {
         return meType;
     }
 
-    bool IsEnabled() const
+    inline bool IsEnabled() const
     {
         return mbEnabled;
     }
     void Enable(FrameSelFlags nFlags);
 
-    FrameBorderState GetState() const
+    inline FrameBorderState GetState() const
     {
         return meState;
     }
     void SetState(FrameBorderState eState);
 
-    bool IsSelected() const { return mbSelected; }
-    void Select( bool bSelect ) { mbSelected = bSelect; }
+    inline bool IsSelected() const { return mbSelected; }
+    inline void Select( bool bSelect ) { mbSelected = bSelect; }
 
     const editeng::SvxBorderLine& GetCoreStyle() const { return maCoreStyle; }
     void SetCoreStyle( const editeng::SvxBorderLine* pStyle );
 
-    void SetUIColorPrim( const Color& rColor ) {maUIStyle.SetColorPrim( rColor ); }
-    void SetUIColorSecn( const Color& rColor ) {maUIStyle.SetColorSecn( rColor ); }
-    const frame::Style& GetUIStyle() const { return maUIStyle; }
+    inline void SetUIColorPrim( const Color& rColor ) {maUIStyle.SetColorPrim( rColor ); }
+    inline void SetUIColorSecn( const Color& rColor ) {maUIStyle.SetColorSecn( rColor ); }
+    inline const frame::Style& GetUIStyle() const { return maUIStyle; }
 
-    void ClearFocusArea() { maFocusArea.Clear(); }
+    inline void ClearFocusArea() { maFocusArea.Clear(); }
     void AddFocusPolygon( const tools::Polygon& rFocus );
     void MergeFocusToPolyPolygon( tools::PolyPolygon& rPPoly ) const;
 
-    void ClearClickArea() { maClickArea.Clear(); }
-    void AddClickRect( const tools::Rectangle& rRect );
+    inline void ClearClickArea() { maClickArea.Clear(); }
+    void AddClickRect( const Rectangle& rRect );
     bool ContainsClickPoint( const Point& rPos ) const;
-    tools::Rectangle GetClickBoundRect() const;
+    Rectangle GetClickBoundRect() const;
 
     void SetKeyboardNeighbors(FrameBorderType eLeft, FrameBorderType eRight,
                               FrameBorderType eTop, FrameBorderType eBottom);
@@ -95,11 +95,11 @@ private:
 
 typedef std::vector< FrameBorder* > FrameBorderPtrVec;
 
-struct FrameSelectorImpl
+struct FrameSelectorImpl : public Resource
 {
     FrameSelector&      mrFrameSel;     /// The control itself.
     ScopedVclPtr<VirtualDevice> mpVirDev; /// For all buffered drawing operations.
-    std::vector<Image>  maArrows;       /// Arrows in current system colors.
+    ImageList           maILArrows;     /// Arrows in current system colors.
     Color               maBackCol;      /// Background color.
     Color               maArrowCol;     /// Selection arrow color.
     Color               maMarkCol;      /// Selection marker color.
@@ -138,9 +138,14 @@ struct FrameSelectorImpl
     bool                mbClicked;      /// true = The control has been clicked at least one time.
     bool                mbHCMode;       /// true = High contrast mode.
 
-    rtl::Reference<a11y::AccFrameSelector> mxAccess;   /// Pointer to accessibility object of the control.
-    std::vector<rtl::Reference<a11y::AccFrameSelector>>
+    a11y::AccFrameSelector* mpAccess;   /// Pointer to accessibility object of the control.
+    css::uno::Reference<css::accessibility::XAccessible>
+                        mxAccess;       /// Reference to accessibility object of the control.
+    std::vector<a11y::AccFrameSelector*>
                         maChildVec;     /// Pointers to accessibility objects for frame borders.
+    std::vector<css::uno::Reference<css::accessibility::XAccessible> >
+                        mxChildVec;     /// References to accessibility objects for frame borders.
+
     explicit            FrameSelectorImpl( FrameSelector& rFrameSel );
                         ~FrameSelectorImpl();
 
@@ -173,6 +178,8 @@ struct FrameSelectorImpl
 
     /** Draws selection arrows for the specified frame border. */
     void                DrawArrows( const FrameBorder& rBorder );
+    /** Draws arrows in current selection state for all enabled frame borders. */
+    void                DrawAllArrows();
 
     /** Returns the color that has to be used to draw a frame border. */
     Color               GetDrawLineColor( const Color& rColor ) const;
@@ -217,19 +224,19 @@ struct FrameSelectorImpl
 /** Dummy predicate for frame border iterators to use all borders in a container. */
 struct FrameBorderDummy_Pred
 {
-    bool operator()( const FrameBorder* ) const { return true; }
+    inline bool operator()( const FrameBorder* ) const { return true; }
 };
 
 /** Predicate for frame border iterators to use only visible borders in a container. */
 struct FrameBorderVisible_Pred
 {
-    bool operator()( const FrameBorder* pBorder ) const { return pBorder->GetState() == FrameBorderState::Show; }
+    inline bool operator()( const FrameBorder* pBorder ) const { return pBorder->GetState() == FRAMESTATE_SHOW; }
 };
 
 /** Predicate for frame border iterators to use only selected borders in a container. */
 struct FrameBorderSelected_Pred
 {
-    bool operator()( const FrameBorder* pBorder ) const { return pBorder->IsSelected(); }
+    inline bool operator()( const FrameBorder* pBorder ) const { return pBorder->IsSelected(); }
 };
 
 /** Template class for all types of frame border iterators. */
@@ -244,9 +251,9 @@ public:
     typedef FrameBorderIterBase<Cont, Iter, Pred> this_type;
 
     explicit            FrameBorderIterBase( container_type& rCont );
-    bool         Is() const { return maIt != maEnd; }
+    inline bool         Is() const { return maIt != maEnd; }
     this_type&          operator++();
-    value_type   operator*() const { return *maIt; }
+    inline value_type   operator*() const { return *maIt; }
 
 private:
     iterator_type       maIt;

@@ -111,14 +111,17 @@ namespace svt
         void    reset();
 
     private:
+        void    impl_updateAll( const VclWindowEvent& _rTriggerEvent );
         void    impl_update( const VclWindowEvent& _rTriggerEvent, vcl::Window& _rWindow );
 
-        DECL_LINK( OnWindowEvent, VclWindowEvent&, void );
+        DECL_LINK_TYPED( OnWindowEvent, VclWindowEvent&, void );
 
     private:
         DialogController( const DialogController& ) = delete;
         DialogController& operator=( const DialogController& ) = delete;
     };
+    typedef std::shared_ptr< DialogController > PDialogController;
+
 
     //= ControlDependencyManager
 
@@ -172,7 +175,7 @@ namespace svt
             @param _pController
                 the controller to add to the manager. Must not be <NULL/>.
         */
-        void    addController( const std::shared_ptr<DialogController>& _pController );
+        void    addController( const PDialogController& _pController );
 
     private:
         ControlDependencyManager( const ControlDependencyManager& ) = delete;
@@ -221,8 +224,8 @@ namespace svt
     /** a helper class implementing the ->IWindowEventFilter interface,
         which filters for radio buttons or check boxes being toggled.
 
-        Technically, the class simply filters for the ->VclEventId::RadiobuttonToggle
-        and the ->VclEventId::CheckboxToggle event.
+        Technically, the class simply filters for the ->VCLEVENT_RADIOBUTTON_TOGGLE
+        and the ->VCLEVENT_CHECKBOX_TOGGLE event.
     */
     class SVT_DLLPUBLIC FilterForRadioOrCheckToggle : public IWindowEventFilter
     {
@@ -236,8 +239,8 @@ namespace svt
         bool payAttentionTo( const VclWindowEvent& _rEvent ) const override
         {
             if  (   ( _rEvent.GetWindow() == &m_rWindow )
-                &&  (   ( _rEvent.GetId() == VclEventId::RadiobuttonToggle )
-                    ||  ( _rEvent.GetId() == VclEventId::CheckboxToggle )
+                &&  (   ( _rEvent.GetId() == VCLEVENT_RADIOBUTTON_TOGGLE )
+                    ||  ( _rEvent.GetId() == VCLEVENT_CHECKBOX_TOGGLE )
                     )
                 )
                 return true;

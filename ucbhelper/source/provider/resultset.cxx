@@ -83,7 +83,7 @@ class PropertySetInfo :
         public lang::XTypeProvider,
         public beans::XPropertySetInfo
 {
-    std::unique_ptr<uno::Sequence< beans::Property >>  m_pProps;
+    uno::Sequence< beans::Property >*            m_pProps;
 
 private:
     bool queryProperty(
@@ -93,23 +93,30 @@ public:
     PropertySetInfo(
         const PropertyInfo* pProps,
         sal_Int32 nProps );
+    virtual ~PropertySetInfo();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XPropertySetInfo
-    virtual uno::Sequence< beans::Property > SAL_CALL getProperties() override;
+    virtual uno::Sequence< beans::Property > SAL_CALL getProperties()
+        throw( uno::RuntimeException, std::exception ) override;
     virtual beans::Property SAL_CALL getPropertyByName(
-            const OUString& aName ) override;
-    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name ) override;
+            const OUString& aName )
+        throw( beans::UnknownPropertyException, uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL hasPropertyByName( const OUString& Name )
+        throw( uno::RuntimeException, std::exception ) override;
 };
 
 typedef cppu::OMultiTypeInterfaceContainerHelperVar<OUString>
@@ -230,6 +237,7 @@ void SAL_CALL ResultSet::release()
 }
 
 css::uno::Any SAL_CALL ResultSet::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -262,20 +270,10 @@ XTYPEPROVIDER_IMPL_9( ResultSet,
 
 // XServiceInfo methods.
 
-OUString SAL_CALL ResultSet::getImplementationName()
-{
-    return OUString( "ResultSet" );
-}
 
-sal_Bool SAL_CALL ResultSet::supportsService( const OUString& ServiceName )
-{
-    return cppu::supportsService( this, ServiceName );
-}
-
-css::uno::Sequence< OUString > SAL_CALL ResultSet::getSupportedServiceNames()
-{
-    return { RESULTSET_SERVICE_NAME };
-}
+XSERVICEINFO_NOFACTORY_IMPL_1( ResultSet,
+                    OUString("ResultSet"),
+                    RESULTSET_SERVICE_NAME );
 
 
 // XComponent methods.
@@ -283,6 +281,7 @@ css::uno::Sequence< OUString > SAL_CALL ResultSet::getSupportedServiceNames()
 
 // virtual
 void SAL_CALL ResultSet::dispose()
+    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -308,6 +307,7 @@ void SAL_CALL ResultSet::dispose()
 // virtual
 void SAL_CALL ResultSet::addEventListener(
         const uno::Reference< lang::XEventListener >& Listener )
+    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -322,6 +322,7 @@ void SAL_CALL ResultSet::addEventListener(
 // virtual
 void SAL_CALL ResultSet::removeEventListener(
         const uno::Reference< lang::XEventListener >& Listener )
+    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -335,6 +336,7 @@ void SAL_CALL ResultSet::removeEventListener(
 
 // virtual
 uno::Reference< sdbc::XResultSetMetaData > SAL_CALL ResultSet::getMetaData()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -351,6 +353,7 @@ uno::Reference< sdbc::XResultSetMetaData > SAL_CALL ResultSet::getMetaData()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::next()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     // Note: Cursor is initially positioned before the first row.
     //       First call to 'next()' moves it to first row.
@@ -379,6 +382,7 @@ sal_Bool SAL_CALL ResultSet::next()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::isBeforeFirst()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_bAfterLast )
     {
@@ -400,6 +404,7 @@ sal_Bool SAL_CALL ResultSet::isBeforeFirst()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::isAfterLast()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     m_pImpl->m_xDataSupplier->validate();
     return m_pImpl->m_bAfterLast;
@@ -408,6 +413,7 @@ sal_Bool SAL_CALL ResultSet::isAfterLast()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::isFirst()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_bAfterLast )
     {
@@ -422,6 +428,7 @@ sal_Bool SAL_CALL ResultSet::isFirst()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::isLast()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_bAfterLast )
     {
@@ -443,6 +450,7 @@ sal_Bool SAL_CALL ResultSet::isLast()
 
 // virtual
 void SAL_CALL ResultSet::beforeFirst()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
     m_pImpl->m_bAfterLast = false;
@@ -453,6 +461,7 @@ void SAL_CALL ResultSet::beforeFirst()
 
 // virtual
 void SAL_CALL ResultSet::afterLast()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
     m_pImpl->m_bAfterLast = true;
@@ -462,6 +471,7 @@ void SAL_CALL ResultSet::afterLast()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::first()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     // getResult works zero-based!
     if ( m_pImpl->m_xDataSupplier->getResult( 0 ) )
@@ -480,6 +490,7 @@ sal_Bool SAL_CALL ResultSet::first()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::last()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     sal_Int32 nCount = m_pImpl->m_xDataSupplier->totalCount();
     if ( nCount )
@@ -498,6 +509,7 @@ sal_Bool SAL_CALL ResultSet::last()
 
 // virtual
 sal_Int32 SAL_CALL ResultSet::getRow()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_bAfterLast )
     {
@@ -512,6 +524,7 @@ sal_Int32 SAL_CALL ResultSet::getRow()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::absolute( sal_Int32 row )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
 /*
     If the row number is positive, the cursor moves to the given row number
@@ -584,6 +597,7 @@ sal_Bool SAL_CALL ResultSet::absolute( sal_Int32 row )
 
 // virtual
 sal_Bool SAL_CALL ResultSet::relative( sal_Int32 rows )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
 /*
     Attempting to move beyond the first/last row in the result set
@@ -653,6 +667,7 @@ sal_Bool SAL_CALL ResultSet::relative( sal_Int32 rows )
 
 // virtual
 sal_Bool SAL_CALL ResultSet::previous()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
 /*
     previous() is not the same as relative( -1 ) because it makes sense
@@ -682,6 +697,7 @@ sal_Bool SAL_CALL ResultSet::previous()
 
 // virtual
 void SAL_CALL ResultSet::refreshRow()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
     if ( m_pImpl->m_bAfterLast || ( m_pImpl->m_nPos == 0 ) )
@@ -694,6 +710,7 @@ void SAL_CALL ResultSet::refreshRow()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::rowUpdated()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     m_pImpl->m_xDataSupplier->validate();
     return false;
@@ -702,6 +719,7 @@ sal_Bool SAL_CALL ResultSet::rowUpdated()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::rowInserted()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     m_pImpl->m_xDataSupplier->validate();
     return false;
@@ -710,6 +728,7 @@ sal_Bool SAL_CALL ResultSet::rowInserted()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::rowDeleted()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     m_pImpl->m_xDataSupplier->validate();
     return false;
@@ -718,6 +737,7 @@ sal_Bool SAL_CALL ResultSet::rowDeleted()
 
 // virtual
 uno::Reference< uno::XInterface > SAL_CALL ResultSet::getStatement()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
 /*
     returns the Statement that produced this ResultSet object. If the
@@ -733,6 +753,7 @@ uno::Reference< uno::XInterface > SAL_CALL ResultSet::getStatement()
 
 // virtual
 sal_Bool SAL_CALL ResultSet::wasNull()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     // This method can not be implemented correctly!!! Imagine different
     // threads doing a getXYZ - wasNull calling sequence on the same
@@ -757,6 +778,7 @@ sal_Bool SAL_CALL ResultSet::wasNull()
 
 // virtual
 OUString SAL_CALL ResultSet::getString( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -779,6 +801,7 @@ OUString SAL_CALL ResultSet::getString( sal_Int32 columnIndex )
 
 // virtual
 sal_Bool SAL_CALL ResultSet::getBoolean( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -801,6 +824,7 @@ sal_Bool SAL_CALL ResultSet::getBoolean( sal_Int32 columnIndex )
 
 // virtual
 sal_Int8 SAL_CALL ResultSet::getByte( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -823,6 +847,7 @@ sal_Int8 SAL_CALL ResultSet::getByte( sal_Int32 columnIndex )
 
 // virtual
 sal_Int16 SAL_CALL ResultSet::getShort( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -845,6 +870,7 @@ sal_Int16 SAL_CALL ResultSet::getShort( sal_Int32 columnIndex )
 
 // virtual
 sal_Int32 SAL_CALL ResultSet::getInt( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -867,6 +893,7 @@ sal_Int32 SAL_CALL ResultSet::getInt( sal_Int32 columnIndex )
 
 // virtual
 sal_Int64 SAL_CALL ResultSet::getLong( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -889,6 +916,7 @@ sal_Int64 SAL_CALL ResultSet::getLong( sal_Int32 columnIndex )
 
 // virtual
 float SAL_CALL ResultSet::getFloat( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -911,6 +939,7 @@ float SAL_CALL ResultSet::getFloat( sal_Int32 columnIndex )
 
 // virtual
 double SAL_CALL ResultSet::getDouble( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -934,6 +963,7 @@ double SAL_CALL ResultSet::getDouble( sal_Int32 columnIndex )
 // virtual
 uno::Sequence< sal_Int8 > SAL_CALL
 ResultSet::getBytes( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -956,6 +986,7 @@ ResultSet::getBytes( sal_Int32 columnIndex )
 
 // virtual
 util::Date SAL_CALL ResultSet::getDate( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -978,6 +1009,7 @@ util::Date SAL_CALL ResultSet::getDate( sal_Int32 columnIndex )
 
 // virtual
 util::Time SAL_CALL ResultSet::getTime( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1001,6 +1033,7 @@ util::Time SAL_CALL ResultSet::getTime( sal_Int32 columnIndex )
 // virtual
 util::DateTime SAL_CALL
 ResultSet::getTimestamp( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1024,6 +1057,7 @@ ResultSet::getTimestamp( sal_Int32 columnIndex )
 // virtual
 uno::Reference< io::XInputStream > SAL_CALL
 ResultSet::getBinaryStream( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1047,6 +1081,7 @@ ResultSet::getBinaryStream( sal_Int32 columnIndex )
 // virtual
 uno::Reference< io::XInputStream > SAL_CALL
 ResultSet::getCharacterStream( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1071,6 +1106,7 @@ ResultSet::getCharacterStream( sal_Int32 columnIndex )
 uno::Any SAL_CALL ResultSet::getObject(
         sal_Int32 columnIndex,
         const uno::Reference< container::XNameAccess >& typeMap )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1094,6 +1130,7 @@ uno::Any SAL_CALL ResultSet::getObject(
 // virtual
 uno::Reference< sdbc::XRef > SAL_CALL
 ResultSet::getRef( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1117,6 +1154,7 @@ ResultSet::getRef( sal_Int32 columnIndex )
 // virtual
 uno::Reference< sdbc::XBlob > SAL_CALL
 ResultSet::getBlob( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1140,6 +1178,7 @@ ResultSet::getBlob( sal_Int32 columnIndex )
 // virtual
 uno::Reference< sdbc::XClob > SAL_CALL
 ResultSet::getClob( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1163,6 +1202,7 @@ ResultSet::getClob( sal_Int32 columnIndex )
 // virtual
 uno::Reference< sdbc::XArray > SAL_CALL
 ResultSet::getArray( sal_Int32 columnIndex )
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
     {
@@ -1188,6 +1228,7 @@ ResultSet::getArray( sal_Int32 columnIndex )
 
 // virtual
 void SAL_CALL ResultSet::close()
+    throw( sdbc::SQLException, uno::RuntimeException, std::exception )
 {
     m_pImpl->m_xDataSupplier->close();
     m_pImpl->m_xDataSupplier->validate();
@@ -1199,6 +1240,7 @@ void SAL_CALL ResultSet::close()
 
 // virtual
 OUString SAL_CALL ResultSet::queryContentIdentifierString()
+    throw( uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
         return m_pImpl->m_xDataSupplier->queryContentIdentifierString(
@@ -1211,6 +1253,7 @@ OUString SAL_CALL ResultSet::queryContentIdentifierString()
 // virtual
 uno::Reference< css::ucb::XContentIdentifier > SAL_CALL
 ResultSet::queryContentIdentifier()
+    throw( uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
         return m_pImpl->m_xDataSupplier->queryContentIdentifier(
@@ -1223,6 +1266,7 @@ ResultSet::queryContentIdentifier()
 // virtual
 uno::Reference< css::ucb::XContent > SAL_CALL
 ResultSet::queryContent()
+    throw( uno::RuntimeException, std::exception )
 {
     if ( m_pImpl->m_nPos && !m_pImpl->m_bAfterLast )
         return m_pImpl->m_xDataSupplier->queryContent( m_pImpl->m_nPos - 1 );
@@ -1237,6 +1281,7 @@ ResultSet::queryContent()
 // virtual
 uno::Reference< beans::XPropertySetInfo > SAL_CALL
 ResultSet::getPropertySetInfo()
+    throw( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -1251,6 +1296,11 @@ ResultSet::getPropertySetInfo()
 // virtual
 void SAL_CALL ResultSet::setPropertyValue( const OUString& aPropertyName,
                                            const uno::Any& )
+    throw( beans::UnknownPropertyException,
+           beans::PropertyVetoException,
+           lang::IllegalArgumentException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     if ( aPropertyName.isEmpty() )
         throw beans::UnknownPropertyException();
@@ -1275,6 +1325,9 @@ void SAL_CALL ResultSet::setPropertyValue( const OUString& aPropertyName,
 // virtual
 uno::Any SAL_CALL ResultSet::getPropertyValue(
         const OUString& PropertyName )
+    throw( beans::UnknownPropertyException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     if ( PropertyName.isEmpty() )
         throw beans::UnknownPropertyException();
@@ -1302,6 +1355,9 @@ uno::Any SAL_CALL ResultSet::getPropertyValue(
 void SAL_CALL ResultSet::addPropertyChangeListener(
         const OUString& aPropertyName,
         const uno::Reference< beans::XPropertyChangeListener >& xListener )
+    throw( beans::UnknownPropertyException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     // Note: An empty property name means a listener for "all" properties.
 
@@ -1325,6 +1381,9 @@ void SAL_CALL ResultSet::addPropertyChangeListener(
 void SAL_CALL ResultSet::removePropertyChangeListener(
         const OUString& aPropertyName,
         const uno::Reference< beans::XPropertyChangeListener >& xListener )
+    throw( beans::UnknownPropertyException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_pImpl->m_aMutex );
 
@@ -1344,6 +1403,9 @@ void SAL_CALL ResultSet::removePropertyChangeListener(
 void SAL_CALL ResultSet::addVetoableChangeListener(
         const OUString&,
         const uno::Reference< beans::XVetoableChangeListener >& )
+    throw( beans::UnknownPropertyException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     //  No constrained props, at the moment.
 }
@@ -1353,6 +1415,9 @@ void SAL_CALL ResultSet::addVetoableChangeListener(
 void SAL_CALL ResultSet::removeVetoableChangeListener(
         const OUString&,
         const uno::Reference< beans::XVetoableChangeListener >& )
+    throw( beans::UnknownPropertyException,
+           lang::WrappedTargetException,
+           uno::RuntimeException, std::exception )
 {
     //  No constrained props, at the moment.
 }
@@ -1402,7 +1467,7 @@ void ResultSet::rowCountChanged( sal_uInt32 nOld, sal_uInt32 nNew )
     propertyChanged(
         beans::PropertyChangeEvent(
             static_cast< cppu::OWeakObject * >( this ),
-            "RowCount",
+            OUString("RowCount"),
             false,
             1001,
             uno::makeAny( nOld ),     // old value
@@ -1418,7 +1483,7 @@ void ResultSet::rowCountFinal()
     propertyChanged(
         beans::PropertyChangeEvent(
             static_cast< cppu::OWeakObject * >( this ),
-            "IsRowCountFinal",
+            OUString("IsRowCountFinal"),
             false,
             1000,
             uno:: makeAny( false ),   // old value
@@ -1449,8 +1514,8 @@ namespace ucbhelper_impl {
 PropertySetInfo::PropertySetInfo(
     const PropertyInfo* pProps,
     sal_Int32 nProps )
-    : m_pProps( new uno::Sequence< beans::Property >( nProps ) )
 {
+    m_pProps = new uno::Sequence< beans::Property >( nProps );
 
     if ( nProps )
     {
@@ -1472,6 +1537,12 @@ PropertySetInfo::PropertySetInfo(
 }
 
 
+// virtual
+PropertySetInfo::~PropertySetInfo()
+{
+    delete m_pProps;
+}
+
 
 // XInterface methods.
 void SAL_CALL PropertySetInfo::acquire()
@@ -1488,6 +1559,7 @@ void SAL_CALL PropertySetInfo::release()
 
 css::uno::Any SAL_CALL PropertySetInfo::queryInterface(
                                 const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -1509,6 +1581,7 @@ XTYPEPROVIDER_IMPL_2( PropertySetInfo,
 
 // virtual
 uno::Sequence< beans::Property > SAL_CALL PropertySetInfo::getProperties()
+    throw( uno::RuntimeException, std::exception )
 {
     return uno::Sequence< beans::Property >( *m_pProps );
 }
@@ -1517,6 +1590,7 @@ uno::Sequence< beans::Property > SAL_CALL PropertySetInfo::getProperties()
 // virtual
 beans::Property SAL_CALL PropertySetInfo::getPropertyByName(
         const OUString& aName )
+    throw( beans::UnknownPropertyException, uno::RuntimeException, std::exception )
 {
     beans::Property aProp;
     if ( queryProperty( aName, aProp ) )
@@ -1529,6 +1603,7 @@ beans::Property SAL_CALL PropertySetInfo::getPropertyByName(
 // virtual
 sal_Bool SAL_CALL PropertySetInfo::hasPropertyByName(
         const OUString& Name )
+    throw( uno::RuntimeException, std::exception )
 {
     beans::Property aProp;
     return queryProperty( Name, aProp );

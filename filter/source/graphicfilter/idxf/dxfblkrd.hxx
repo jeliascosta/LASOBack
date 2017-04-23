@@ -23,7 +23,7 @@
 #include <dxfentrd.hxx>
 
 
-//---------------- A Block (= Set of Entities) --------------------------
+//---------------- Ein Block (= Menge von Entities) --------------------------
 
 
 class DXFBlock : public DXFEntities {
@@ -31,7 +31,7 @@ class DXFBlock : public DXFEntities {
 public:
 
     DXFBlock * pSucc;
-        // pointer to the next block in the list DXFBlocks::pFirst
+        // pointer to the nex block in the list DXFBlocks::pFirst
 
     // properties of blocks; commented with group codes:
     OString m_sName;                      //  2
@@ -45,11 +45,11 @@ public:
 
     void Read(DXFGroupReader & rDGR);
         // reads the block (including entities) from a dxf file
-        // by rGDR until a ENDBLK, ENDSEC or EOF.
+        // by rGDR until a ENDBLK, ENDSEC oder EOF.
 };
 
 
-//---------------- A set of blocks -----------------------------------
+//---------------- Eine Menge von Bloecken -----------------------------------
 
 
 class DXFBlocks {
@@ -63,7 +63,7 @@ public:
     ~DXFBlocks();
 
     void Read(DXFGroupReader & rDGR);
-        // reads all block per rDGR until a ENDSEC or EOF.
+        // reads all block per rDGR until a ENDSEC oder EOF.
 
     DXFBlock * Search(OString const& rName) const;
         // looks for a block with the name, return NULL if not successful

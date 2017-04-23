@@ -37,7 +37,7 @@
 #include <com/sun/star/frame/XDispatchProvider.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
 
-#include <tools/resary.hxx>
+#include <svtools/localresaccess.hxx>
 #include <tools/diagnose_ex.h>
 #include <osl/diagnose.h>
 
@@ -110,7 +110,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL SQLCommandDesigner::propertyChange( const PropertyChangeEvent& Event )
+    void SAL_CALL SQLCommandDesigner::propertyChange( const PropertyChangeEvent& Event ) throw (RuntimeException, std::exception)
     {
         OSL_ENSURE( m_xDesigner.is() && ( Event.Source == m_xDesigner ), "SQLCommandDesigner::propertyChange: where did this come from?" );
 
@@ -141,11 +141,11 @@ namespace pcr
     }
 
 
-    void SAL_CALL SQLCommandDesigner::disposing( const EventObject& Source )
+    void SAL_CALL SQLCommandDesigner::disposing( const EventObject& Source ) throw (RuntimeException, std::exception)
     {
         if ( m_xDesigner.is() && ( Source.Source == m_xDesigner ) )
         {
-            m_aCloseLink.Call( *this );
+            impl_designerClosed_nothrow();
             m_xDesigner.clear();
         }
     }
@@ -261,9 +261,8 @@ namespace pcr
             Reference< XTitle> xTitle(xQueryDesign,UNO_QUERY);
             if ( xTitle.is() )
             {
-                PcrRes aResId(RID_RSC_ENUM_COMMAND_TYPE);
-                ResStringArray aResList(aResId);
-                OUString sDisplayName = aResList.GetString(CommandType::COMMAND);
+                ::svt::OLocalResourceAccess aEnumStrings( PcrRes( RID_RSC_ENUM_COMMAND_TYPE ), RSC_RESOURCE );
+                OUString sDisplayName = PcrRes(CommandType::COMMAND + 1).toString();
                 xTitle->setTitle( sDisplayName );
             }
         }
@@ -298,13 +297,19 @@ namespace pcr
     }
 
 
+    void SQLCommandDesigner::impl_designerClosed_nothrow()
+    {
+        m_aCloseLink.Call( *this );
+    }
+
+
     void SQLCommandDesigner::impl_closeDesigner_nothrow()
     {
-        OSL_PRECOND( isActive(), "SQLCommandDesigner::impl_closeDesigner_nothrow: invalid call!" );
+        OSL_PRECOND( isActive(), "SQLCommandDesigner::impl_closeDesigner_nothrow: invalid calle!" );
         // close it
         try
         {
-            // do not listen anymore...
+            // do not listen anymore ....
             Reference< XPropertySet > xProps( m_xDesigner, UNO_QUERY );
             if ( xProps.is() )
                 xProps->removePropertyChangeListener( PROPERTY_ACTIVECOMMAND, this );
@@ -313,7 +318,7 @@ namespace pcr
             // instead of calling XCloseable::close directly. The latter method would also close
             // the frame, but not care for things like shutting down the office when the last
             // frame is gone ...
-            const UnoURL aCloseURL( ".uno:CloseDoc",
+            const UnoURL aCloseURL( OUString( ".uno:CloseDoc" ),
                 Reference< XMultiServiceFactory >( m_xORB, UNO_QUERY ) );
 
             Reference< XDispatchProvider > xProvider( m_xDesigner->getFrame(), UNO_QUERY_THROW );

@@ -37,22 +37,20 @@ protected:
 
 public:
     // XTypeProvider
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo - static methods
-    /// @throws css::uno::RuntimeException
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
-    /// @throws css::uno::RuntimeException
-    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static() throw( css::uno::RuntimeException );
+    static OUString getImplementationName_Static() throw( css::uno::RuntimeException );
     static css::uno::Reference< css::uno::XInterface >
             SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
     // OPropertyArrayUsageHelper

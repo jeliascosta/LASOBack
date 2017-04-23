@@ -26,8 +26,6 @@
 #include <comphelper/flagguard.hxx>
 #include <tools/diagnose_ex.h>
 #include <libxml/xmlwriter.h>
-#include <boost/property_tree/json_parser.hpp>
-#include <unotools/datetime.hxx>
 
 #include <vector>
 #include <list>
@@ -47,13 +45,24 @@ SfxUndoContext::~SfxUndoContext()
 }
 
 
+void SfxUndoAction::SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction)
+{
+    mpSfxLinkUndoAction = pSfxLinkUndoAction;
+}
+
+
 SfxUndoAction::~SfxUndoAction()
 {
+    if(mpSfxLinkUndoAction)
+    {
+        mpSfxLinkUndoAction->LinkedSfxUndoActionDestructed(*this);
+        mpSfxLinkUndoAction = nullptr;
+    }
 }
 
 
 SfxUndoAction::SfxUndoAction()
-    : m_aDateTime(DateTime::SYSTEM)
+:   mpSfxLinkUndoAction(nullptr)
 {
 }
 
@@ -70,15 +79,11 @@ OUString SfxUndoAction::GetComment() const
 }
 
 
-ViewShellId SfxUndoAction::GetViewShellId() const
+sal_uInt16 SfxUndoAction::GetId() const
 {
-    return ViewShellId(-1);
+    return 0;
 }
 
-const DateTime& SfxUndoAction::GetDateTime() const
-{
-    return m_aDateTime;
-}
 
 OUString SfxUndoAction::GetRepeatComment(SfxRepeatTarget&) const
 {
@@ -128,12 +133,10 @@ bool SfxUndoAction::CanRepeat(SfxRepeatTarget&) const
 
 void SfxUndoAction::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxUndoAction"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("sfxUndoAction"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("symbol"), BAD_CAST(typeid(*this).name()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("comment"), BAD_CAST(GetComment().toUtf8().getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("viewShellId"), BAD_CAST(OString::number((sal_Int32)GetViewShellId()).getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("dateTime"), BAD_CAST(utl::toISO8601(m_aDateTime.GetUNODateTime()).toUtf8().getStr()));
     xmlTextWriterEndElement(pWriter);
 }
 
@@ -215,11 +218,10 @@ void SfxUndoActions::Insert( SfxUndoAction* i_action, size_t i_pos )
 
 typedef ::std::vector< SfxUndoListener* >   UndoListeners;
 
-struct SfxUndoManager_Data
+struct SVL_DLLPRIVATE SfxUndoManager_Data
 {
     ::osl::Mutex    aMutex;
-    std::unique_ptr<SfxUndoArray>
-                    pUndoArray;
+    SfxUndoArray*   pUndoArray;
     SfxUndoArray*   pActUndoArray;
     SfxUndoArray*   pFatherUndoArray;
 
@@ -241,7 +243,12 @@ struct SfxUndoManager_Data
         ,mbDoing( false )
         ,mbClearUntilTopLevel( false )
     {
-        pActUndoArray = pUndoArray.get();
+        pActUndoArray = pUndoArray;
+    }
+
+    ~SfxUndoManager_Data()
+    {
+        delete pUndoArray;
     }
 
     // Copy assignment is forbidden and not implemented.
@@ -251,7 +258,7 @@ struct SfxUndoManager_Data
 
 namespace svl { namespace undo { namespace impl
 {
-    class LockGuard
+    class SVL_DLLPRIVATE LockGuard
     {
     public:
         explicit LockGuard( SfxUndoManager& i_manager )
@@ -272,7 +279,7 @@ namespace svl { namespace undo { namespace impl
     typedef void ( SfxUndoListener::*UndoListenerVoidMethod )();
     typedef void ( SfxUndoListener::*UndoListenerStringMethod )( const OUString& );
 
-    struct NotifyUndoListener : public ::std::unary_function< SfxUndoListener*, void >
+    struct SVL_DLLPRIVATE NotifyUndoListener : public ::std::unary_function< SfxUndoListener*, void >
     {
         explicit NotifyUndoListener( UndoListenerVoidMethod i_notificationMethod )
             :m_notificationMethod( i_notificationMethod )
@@ -312,7 +319,7 @@ namespace svl { namespace undo { namespace impl
         OUString                    m_sActionComment;
     };
 
-    class UndoManagerGuard
+    class SVL_DLLPRIVATE UndoManagerGuard
     {
     public:
         explicit UndoManagerGuard( SfxUndoManager_Data& i_managerData )
@@ -386,7 +393,14 @@ namespace svl { namespace undo { namespace impl
         {
             SfxUndoAction* pAction = m_aUndoActionsCleanup.front();
             m_aUndoActionsCleanup.pop_front();
-            delete pAction;
+            try
+            {
+                delete pAction;
+            }
+            catch( const Exception& )
+            {
+                DBG_UNHANDLED_EXCEPTION();
+            }
         }
 
         // handle scheduled notification
@@ -487,6 +501,13 @@ void SfxUndoManager::SetMaxUndoActionCount( size_t nMaxUndoActionCount )
     }
 
     m_xData->pActUndoArray->nMaxUndoActions = nMaxUndoActionCount;
+}
+
+
+size_t SfxUndoManager::GetMaxUndoActionCount() const
+{
+    UndoManagerGuard aGuard( *m_xData );
+    return m_xData->pActUndoArray->nMaxUndoActions;
 }
 
 
@@ -591,7 +612,7 @@ void SfxUndoManager::ImplClearUndo( UndoManagerGuard& i_guard )
 
 void SfxUndoManager::ImplClearRedo( UndoManagerGuard& i_guard, bool const i_currentLevel )
 {
-    SfxUndoArray* pUndoArray = ( i_currentLevel == IUndoManager::CurrentLevel ) ? m_xData->pActUndoArray : m_xData->pUndoArray.get();
+    SfxUndoArray* pUndoArray = ( i_currentLevel == IUndoManager::CurrentLevel ) ? m_xData->pActUndoArray : m_xData->pUndoArray;
 
     // clearance
     while ( pUndoArray->aUndoActions.size() > pUndoArray->nCurUndoAction )
@@ -634,7 +655,7 @@ bool SfxUndoManager::ImplAddUndoAction_NoNotify( SfxUndoAction *pAction, bool bT
         ImplClearRedo( i_guard, IUndoManager::CurrentLevel );
 
     // respect max number
-    if( m_xData->pActUndoArray == m_xData->pUndoArray.get() )
+    if( m_xData->pActUndoArray == m_xData->pUndoArray )
     {
         while(m_xData->pActUndoArray->aUndoActions.size() >= m_xData->pActUndoArray->nMaxUndoActions)
         {
@@ -675,7 +696,7 @@ void SfxUndoManager::AddUndoAction( SfxUndoAction *pAction, bool bTryMerge )
 size_t SfxUndoManager::GetUndoActionCount( bool const i_currentLevel ) const
 {
     UndoManagerGuard aGuard( *m_xData );
-    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray.get();
+    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray;
     return pUndoArray->nCurUndoAction;
 }
 
@@ -685,11 +706,22 @@ OUString SfxUndoManager::GetUndoActionComment( size_t nNo, bool const i_currentL
     UndoManagerGuard aGuard( *m_xData );
 
     OUString sComment;
-    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray.get();
+    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray;
     assert(nNo < pUndoArray->nCurUndoAction);
     if( nNo < pUndoArray->nCurUndoAction )
         sComment = pUndoArray->aUndoActions[ pUndoArray->nCurUndoAction - 1 - nNo ].pAction->GetComment();
     return sComment;
+}
+
+
+sal_uInt16 SfxUndoManager::GetUndoActionId() const
+{
+    UndoManagerGuard aGuard( *m_xData );
+
+    assert(m_xData->pActUndoArray->nCurUndoAction > 0);
+    if ( m_xData->pActUndoArray->nCurUndoAction == 0 )
+        return 0;
+    return m_xData->pActUndoArray->aUndoActions[m_xData->pActUndoArray->nCurUndoAction-1].pAction->GetId();
 }
 
 
@@ -813,7 +845,7 @@ size_t SfxUndoManager::GetRedoActionCount( bool const i_currentLevel ) const
 
 size_t SfxUndoManager::ImplGetRedoActionCount_Lock( bool const i_currentLevel ) const
 {
-    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray.get();
+    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray;
     return pUndoArray->aUndoActions.size() - pUndoArray->nCurUndoAction;
 }
 
@@ -835,7 +867,7 @@ OUString SfxUndoManager::GetRedoActionComment( size_t nNo, bool const i_currentL
 {
     OUString sComment;
     UndoManagerGuard aGuard( *m_xData );
-    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray.get();
+    const SfxUndoArray* pUndoArray = i_currentLevel ? m_xData->pActUndoArray : m_xData->pUndoArray;
     if ( (pUndoArray->nCurUndoAction + nNo) < pUndoArray->aUndoActions.size() )
     {
         sComment = pUndoArray->aUndoActions[ pUndoArray->nCurUndoAction + nNo ].pAction->GetComment();
@@ -987,8 +1019,7 @@ void SfxUndoManager::RemoveUndoListener( SfxUndoListener& i_listener )
  * Inserts a ListUndoAction and sets its UndoArray as current.
  */
 void SfxUndoManager::EnterListAction( const OUString& rComment,
-                                      const OUString &rRepeatComment, sal_uInt16 nId,
-                                      ViewShellId nViewShellId )
+                                      const OUString &rRepeatComment, sal_uInt16 nId )
 {
     UndoManagerGuard aGuard( *m_xData );
 
@@ -999,7 +1030,7 @@ void SfxUndoManager::EnterListAction( const OUString& rComment,
         return;
 
     m_xData->pFatherUndoArray = m_xData->pActUndoArray;
-    SfxListUndoAction* pAction = new SfxListUndoAction( rComment, rRepeatComment, nId, nViewShellId, m_xData->pActUndoArray );
+    SfxListUndoAction* pAction = new SfxListUndoAction( rComment, rRepeatComment, nId, m_xData->pActUndoArray );
     OSL_VERIFY( ImplAddUndoAction_NoNotify( pAction, false, false, aGuard ) );
     // expected to succeed: all conditions under which it could fail should have been checked already
     m_xData->pActUndoArray = pAction;
@@ -1018,7 +1049,7 @@ bool SfxUndoManager::IsInListAction() const
 
 bool SfxUndoManager::ImplIsInListAction_Lock() const
 {
-    return ( m_xData->pActUndoArray != m_xData->pUndoArray.get() );
+    return ( m_xData->pActUndoArray != m_xData->pUndoArray );
 }
 
 
@@ -1028,7 +1059,7 @@ size_t SfxUndoManager::GetListActionDepth() const
     size_t nDepth(0);
 
     SfxUndoArray* pLookup( m_xData->pActUndoArray );
-    while ( pLookup != m_xData->pUndoArray.get() )
+    while ( pLookup != m_xData->pUndoArray )
     {
         pLookup = pLookup->pFatherUndoArray;
         ++nDepth;
@@ -1243,103 +1274,24 @@ void SfxUndoManager::RemoveOldestUndoAction()
 
 void SfxUndoManager::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    UndoManagerGuard aGuard(*m_xData);
-
-    bool bOwns = false;
-    if (!pWriter)
-    {
-        pWriter = xmlNewTextWriterFilename("undo.xml", 0);
-        xmlTextWriterSetIndent(pWriter,1);
-        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
-        xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
-        bOwns = true;
-    }
-
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxUndoManager"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("sfxUndoManager"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("nUndoActionCount"), BAD_CAST(OString::number(GetUndoActionCount()).getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("nRedoActionCount"), BAD_CAST(OString::number(GetRedoActionCount()).getStr()));
 
-    xmlTextWriterStartElement(pWriter, BAD_CAST("undoActions"));
     for (size_t i = 0; i < GetUndoActionCount(); ++i)
-    {
-        const SfxUndoArray* pUndoArray = m_xData->pActUndoArray;
-        pUndoArray->aUndoActions[pUndoArray->nCurUndoAction - 1 - i].pAction->dumpAsXml(pWriter);
-    }
-    xmlTextWriterEndElement(pWriter);
-
-    xmlTextWriterStartElement(pWriter, BAD_CAST("redoActions"));
-    for (size_t i = 0; i < GetRedoActionCount(); ++i)
-    {
-        const SfxUndoArray* pUndoArray = m_xData->pActUndoArray;
-        pUndoArray->aUndoActions[pUndoArray->nCurUndoAction + i].pAction->dumpAsXml(pWriter);
-    }
-    xmlTextWriterEndElement(pWriter);
+        GetUndoAction(i)->dumpAsXml(pWriter);
 
     xmlTextWriterEndElement(pWriter);
-    if (bOwns)
-    {
-        xmlTextWriterEndDocument(pWriter);
-        xmlFreeTextWriter(pWriter);
-    }
-}
-
-/// Returns a JSON representation of pAction.
-boost::property_tree::ptree lcl_ActionToJson(size_t nIndex, SfxUndoAction* pAction)
-{
-    boost::property_tree::ptree aRet;
-    aRet.put("index", nIndex);
-    aRet.put("comment", pAction->GetComment().toUtf8().getStr());
-    aRet.put("viewId", (sal_Int32)pAction->GetViewShellId());
-    aRet.put("dateTime", utl::toISO8601(pAction->GetDateTime().GetUNODateTime()).toUtf8().getStr());
-    return aRet;
-}
-
-OUString SfxUndoManager::GetUndoActionsInfo() const
-{
-    boost::property_tree::ptree aActions;
-    const SfxUndoArray* pUndoArray = m_xData->pActUndoArray;
-    for (size_t i = 0; i < GetUndoActionCount(); ++i)
-    {
-        boost::property_tree::ptree aAction = lcl_ActionToJson(i, pUndoArray->aUndoActions[pUndoArray->nCurUndoAction - 1 - i].pAction);
-        aActions.push_back(std::make_pair("", aAction));
-    }
-
-    boost::property_tree::ptree aTree;
-    aTree.add_child("actions", aActions);
-    std::stringstream aStream;
-    boost::property_tree::write_json(aStream, aTree);
-    return OUString::fromUtf8(aStream.str().c_str());
-}
-
-OUString SfxUndoManager::GetRedoActionsInfo() const
-{
-    boost::property_tree::ptree aActions;
-    const SfxUndoArray* pUndoArray = m_xData->pActUndoArray;
-    size_t nCount = GetRedoActionCount();
-    for (size_t i = 0; i < nCount; ++i)
-    {
-        size_t nIndex = nCount - i - 1;
-        boost::property_tree::ptree aAction = lcl_ActionToJson(nIndex, pUndoArray->aUndoActions[pUndoArray->nCurUndoAction + nIndex].pAction);
-        aActions.push_back(std::make_pair("", aAction));
-    }
-
-    boost::property_tree::ptree aTree;
-    aTree.add_child("actions", aActions);
-    std::stringstream aStream;
-    boost::property_tree::write_json(aStream, aTree);
-    return OUString::fromUtf8(aStream.str().c_str());
 }
 
 struct SfxListUndoAction::Impl
 {
     sal_uInt16 mnId;
-    ViewShellId mnViewShellId;
 
     OUString maComment;
     OUString maRepeatComment;
 
-    Impl( sal_uInt16 nId, ViewShellId nViewShellId, const OUString& rComment, const OUString& rRepeatComment ) :
-        mnId(nId), mnViewShellId(nViewShellId), maComment(rComment), maRepeatComment(rRepeatComment) {}
+    Impl( sal_uInt16 nId, const OUString& rComment, const OUString& rRepeatComment ) :
+        mnId(nId), maComment(rComment), maRepeatComment(rRepeatComment) {}
 };
 
 sal_uInt16 SfxListUndoAction::GetId() const
@@ -1350,11 +1302,6 @@ sal_uInt16 SfxListUndoAction::GetId() const
 OUString SfxListUndoAction::GetComment() const
 {
     return mpImpl->maComment;
-}
-
-ViewShellId SfxListUndoAction::GetViewShellId() const
-{
-    return mpImpl->mnViewShellId;
 }
 
 void SfxListUndoAction::SetComment(const OUString& rComment)
@@ -1371,9 +1318,8 @@ SfxListUndoAction::SfxListUndoAction(
     const OUString &rComment,
     const OUString &rRepeatComment,
     sal_uInt16 nId,
-    ViewShellId nViewShellId,
     SfxUndoArray *pFather ) :
-    mpImpl(new Impl(nId, nViewShellId, rComment, rRepeatComment))
+    mpImpl(new Impl(nId, rComment, rRepeatComment))
 {
     pFatherUndoArray = pFather;
     nMaxUndoActions = USHRT_MAX;
@@ -1440,7 +1386,7 @@ bool SfxListUndoAction::Merge( SfxUndoAction *pNextAction )
 
 void SfxListUndoAction::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxListUndoAction"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("sfxListUndoAction"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("size"), BAD_CAST(OString::number(aUndoActions.size()).getStr()));
     SfxUndoAction::dumpAsXml(pWriter);
 
@@ -1450,6 +1396,90 @@ void SfxListUndoAction::dumpAsXml(xmlTextWriterPtr pWriter) const
     xmlTextWriterEndElement(pWriter);
 }
 
+/**
+ * Creates a LinkAction which points to another UndoManager.
+ * Gets that UndoManagers current Action and sets it as that UndoManager's
+ * associated Action.
+ */
+SfxLinkUndoAction::SfxLinkUndoAction(::svl::IUndoManager *pManager)
+{
+    pUndoManager = pManager;
+    SfxUndoManager* pUndoManagerImplementation = dynamic_cast< SfxUndoManager* >( pManager );
+    ENSURE_OR_THROW( pUndoManagerImplementation != nullptr, "unsupported undo manager implementation!" );
+
+    // yes, this cast is dirty. But reaching into the SfxUndoManager's implementation,
+    // directly accessing its internal stack, and tampering with an action on that stack
+    // is dirty, too.
+    if ( pManager->GetMaxUndoActionCount() )
+    {
+        size_t nPos = pManager->GetUndoActionCount()-1;
+        pAction = pUndoManagerImplementation->m_xData->pActUndoArray->aUndoActions[nPos].pAction;
+        pAction->SetLinkToSfxLinkUndoAction(this);
+    }
+    else
+        pAction = nullptr;
+}
+
+
+void SfxLinkUndoAction::Undo()
+{
+    if ( pAction )
+        pUndoManager->Undo();
+}
+
+
+void SfxLinkUndoAction::Redo()
+{
+    if ( pAction )
+        pUndoManager->Redo();
+}
+
+
+bool SfxLinkUndoAction::CanRepeat(SfxRepeatTarget& r) const
+{
+    return pAction && pAction->CanRepeat(r);
+}
+
+
+void SfxLinkUndoAction::Repeat(SfxRepeatTarget&r)
+{
+    if ( pAction && pAction->CanRepeat( r ) )
+        pAction->Repeat( r );
+}
+
+
+OUString SfxLinkUndoAction::GetComment() const
+{
+    if ( pAction )
+        return pAction->GetComment();
+    return OUString();
+}
+
+
+OUString SfxLinkUndoAction::GetRepeatComment(SfxRepeatTarget&r) const
+{
+    if ( pAction )
+        return pAction->GetRepeatComment(r);
+    return OUString();
+}
+
+
+SfxLinkUndoAction::~SfxLinkUndoAction()
+{
+    if( pAction )
+        pAction->SetLinkToSfxLinkUndoAction(nullptr);
+}
+
+
+void SfxLinkUndoAction::LinkedSfxUndoActionDestructed(const SfxUndoAction& rCandidate)
+{
+    assert(nullptr != pAction);
+    assert(pAction == &rCandidate && "Oops, the destroyed and linked UndoActions differ (!)");
+    (void)rCandidate;
+    pAction = nullptr;
+}
+
+
 SfxUndoArray::~SfxUndoArray()
 {
     while ( !aUndoActions.empty() )
@@ -1458,6 +1488,12 @@ SfxUndoArray::~SfxUndoArray()
         aUndoActions.Remove( aUndoActions.size() - 1 );
         delete pAction;
     }
+}
+
+
+sal_uInt16 SfxLinkUndoAction::GetId() const
+{
+      return pAction ? pAction->GetId() : 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

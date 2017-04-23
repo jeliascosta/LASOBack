@@ -30,6 +30,8 @@
 #include <chgviset.hxx>
 #include <richstringcontext.hxx>
 
+#include <memory>
+
 #include <com/sun/star/util/DateTime.hpp>
 
 using namespace com::sun::star;
@@ -42,7 +44,10 @@ enum RevisionType
 {
     REV_UNKNOWN = 0,
     REV_CELLCHANGE,
-    REV_INSERTROW
+    REV_INSERTROW,
+    REV_DELETEROW,
+    REV_INSERTCOL,
+    REV_DELETECOL
 };
 
 /**
@@ -263,7 +268,7 @@ void RevisionHeadersFragment::finalizeImport()
         const RevisionMetadata& rData = it->second;
         pCT->SetUser(rData.maUserName);
         pCT->SetFixDateTimeLocal(rData.maDateTime);
-        std::unique_ptr<oox::core::FastParser> xParser(oox::core::XmlFilterBase::createParser());
+        std::unique_ptr<oox::core::FastParser> xParser(getOoxFilter().createParser());
         rtl::Reference<oox::core::FragmentHandler> xFragment(new RevisionLogFragment(*this, aPath, *pCT));
         importOoxFragment(xFragment, *xParser);
     }

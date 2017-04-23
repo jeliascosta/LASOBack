@@ -89,8 +89,8 @@ public:
                           Action _eAction,
                           const css::uno::Reference< css::container::XIndexContainer >& xCont,
                           const css::uno::Reference< css::uno::XInterface >& xElem,
-                          sal_Int32 nIdx);
-    virtual ~FmUndoContainerAction() override;
+                          sal_Int32 nIdx = -1);
+    virtual ~FmUndoContainerAction();
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -109,7 +109,7 @@ class FmUndoModelReplaceAction : public SdrUndoAction
 
 public:
     FmUndoModelReplaceAction(FmFormModel& rMod, SdrUnoObj* pObject, const css::uno::Reference< css::awt::XControlModel>& xReplaced);
-    virtual ~FmUndoModelReplaceAction() override;
+    virtual ~FmUndoModelReplaceAction();
 
     virtual void Undo() override;
     virtual void Redo() override { Undo(); }
@@ -120,7 +120,7 @@ public:
 };
 
 
-class FmXUndoEnvironment
+class SVX_DLLPRIVATE FmXUndoEnvironment
     : public ::cppu::WeakImplHelper<   css::beans::XPropertyChangeListener
                                     ,   css::container::XContainerListener
                                     ,   css::util::XModifyListener
@@ -139,7 +139,7 @@ class FmXUndoEnvironment
 
 public:
     FmXUndoEnvironment(FmFormModel& _rModel);
-    virtual ~FmXUndoEnvironment() override;
+    virtual ~FmXUndoEnvironment();
 
     // UNO Anbindung
     //  SMART_UNO_DECLARATION(FmXUndoEnvironment, ::cppu::OWeakObject);
@@ -163,18 +163,18 @@ public:
 
 protected:
     // XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
 
     // XPropertyChangeListener
-    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) override;
+    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception) override;
 
     // XContainerListener
-    virtual void SAL_CALL elementInserted(const css::container::ContainerEvent& rEvent) override;
-    virtual void SAL_CALL elementReplaced(const css::container::ContainerEvent& rEvent) override;
-    virtual void SAL_CALL elementRemoved(const css::container::ContainerEvent& rEvent) override;
+    virtual void SAL_CALL elementInserted(const css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementReplaced(const css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementRemoved(const css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
 
     // XModifyListener
-    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
     void ModeChanged();
     void dispose();

@@ -656,7 +656,7 @@ void writeLine(
                     }
                     else
                     {
-                        SAL_WARN("cppu", pLine );
+                        OSL_TRACE( "%s", pLine );
                     }
                 }
             }
@@ -924,7 +924,9 @@ inline void EnvironmentsData::getEnvironment(
         *ppEnv = nullptr;
     }
 
-    OUString aKey = OUString::number( reinterpret_cast< sal_IntPtr >(pContext) ) + rEnvDcp;
+    OUString aKey(
+        OUString::number( reinterpret_cast< sal_IntPtr >(pContext) ) );
+    aKey += rEnvDcp;
 
     // try to find registered mapping
     OUString2EnvironmentMap::const_iterator const iFind(

@@ -43,7 +43,7 @@ private:
 
 public:
     SvxHlmarkTreeLBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SvxHlmarkTreeLBox() override;
+    virtual ~SvxHlmarkTreeLBox();
     virtual void dispose() override;
 
     void SetParentWnd(SvxHlinkDlgMarkWnd* pParent)
@@ -51,7 +51,7 @@ public:
         mpParentWnd = pParent;
     }
 
-    virtual void Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual Size GetOptimalSize() const override;
 };
 
@@ -86,13 +86,13 @@ protected:
 
     virtual void Move () override;
 
-    DECL_LINK( ClickApplyHdl_Impl, Button*, void );
-    DECL_LINK( DoubleClickApplyHdl_Impl, SvTreeListBox*, bool );
-    DECL_LINK( ClickCloseHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( ClickApplyHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( DoubleClickApplyHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( ClickCloseHdl_Impl, Button*, void );
 
 public:
     SvxHlinkDlgMarkWnd (SvxHyperlinkTabPageBase *pParent);
-    virtual ~SvxHlinkDlgMarkWnd() override;
+    virtual ~SvxHlinkDlgMarkWnd();
     virtual void dispose() override;
 
     bool MoveTo ( Point aNewPos );

@@ -47,8 +47,8 @@ SvStream& SfxFlagItem::Store(SvStream &rStream, sal_uInt16) const
 bool SfxFlagItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    MapUnit              /*eCoreMetric*/,
-    MapUnit              /*ePresentationMetric*/,
+    SfxMapUnit              /*eCoreMetric*/,
+    SfxMapUnit              /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -76,7 +76,7 @@ SfxPoolItem* SfxFlagItem::Create(SvStream &, sal_uInt16) const
 
 bool SfxFlagItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
     return static_cast<const SfxFlagItem&>(rItem).nVal == nVal;
 }
 

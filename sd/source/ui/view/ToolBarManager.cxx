@@ -28,7 +28,6 @@
 #include <com/sun/star/ui/UIElementType.hpp>
 
 #include <osl/mutex.hxx>
-#include <o3tl/enumrange.hxx>
 #include <rtl/ref.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/docfile.hxx>
@@ -194,16 +193,16 @@ public:
     void Update (ViewShellBase& rBase);
 
     /** Reset all tool bars in all groups and add tool bars and tool bar
-        shells to the ToolBarGroup::Permanent group for the specified ViewShell type.
+        shells to the TBG_PERMANENT group for the specified ViewShell type.
     */
     void MainViewShellChanged (ViewShell::ShellType nShellType);
 
     /** Reset all tool bars in all groups and add tool bars and tool bar
-        shells to the ToolBarGroup::Permanent group for the specified ViewShell.
+        shells to the TBG_PERMANENT group for the specified ViewShell.
     */
     void MainViewShellChanged (const ViewShell& rMainViewShell);
 
-    /** Reset all tool bars in the ToolBarGroup::Function group and add tool bars and tool bar
+    /** Reset all tool bars in the TBG_FUNCTION group and add tool bars and tool bar
         shells to this group for the current selection.
     */
     void SelectionHasChanged (
@@ -297,6 +296,8 @@ public:
     ToolBarRules& GetToolBarRules() { return maToolBarRules;}
 
 private:
+    const static OUString msToolBarResourcePrefix;
+
     mutable ::osl::Mutex maMutex;
     ViewShellBase& mrBase;
     std::shared_ptr<sd::tools::EventMultiplexer> mpEventMultiplexer;
@@ -322,9 +323,9 @@ private:
     static OUString GetToolBarResourceName (const OUString& rsBaseName);
     bool CheckPlugInMode (const OUString& rsName) const;
 
-    DECL_LINK(UpdateCallback, void *, void);
-    DECL_LINK(EventMultiplexerCallback, sd::tools::EventMultiplexerEvent&, void);
-    DECL_LINK(SetValidCallback, void*, void);
+    DECL_LINK_TYPED(UpdateCallback, void *, void);
+    DECL_LINK_TYPED(EventMultiplexerCallback, sd::tools::EventMultiplexerEvent&, void);
+    DECL_LINK_TYPED(SetValidCallback, void*, void);
 };
 
 //===== ToolBarManager ========================================================
@@ -510,6 +511,8 @@ void ToolBarManager::ToolBarsDestroyed()
 
 //===== ToolBarManager::Implementation =======================================
 
+const OUString ToolBarManager::Implementation::msToolBarResourcePrefix("private:resource/toolbar/");
+
 ToolBarManager::Implementation::Implementation (
     ViewShellBase& rBase,
     const std::shared_ptr<sd::tools::EventMultiplexer>& rpMultiplexer,
@@ -533,7 +536,11 @@ ToolBarManager::Implementation::Implementation (
       maToolBarRules(rpToolBarManager,rpViewShellManager)
 {
     Link<tools::EventMultiplexerEvent&,void> aLink (LINK(this,ToolBarManager::Implementation,EventMultiplexerCallback));
-    mpEventMultiplexer->AddEventListener( aLink );
+    mpEventMultiplexer->AddEventListener(
+        aLink,
+        tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED
+        | tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED
+        | tools::EventMultiplexerEvent::EID_PANE_MANAGER_DYING);
 }
 
 /** The order of statements is important.
@@ -605,8 +612,8 @@ void ToolBarManager::Implementation::ResetToolBars (ToolBarGroup eGroup)
 void ToolBarManager::Implementation::ResetAllToolBars()
 {
     SAL_INFO("sd.view", OSL_THIS_FUNC << ": resetting all tool bars");
-    for (auto i : o3tl::enumrange<ToolBarGroup>())
-        ResetToolBars(i);
+    for (int i=TBG_FIRST; i<=TBG_LAST; ++i)
+        ResetToolBars((ToolBarGroup)i);
 }
 
 void ToolBarManager::Implementation::AddToolBar (
@@ -688,7 +695,8 @@ void ToolBarManager::Implementation::PreUpdate()
         for (iToolBar=aToolBars.begin(); iToolBar!=aToolBars.end(); ++iToolBar)
         {
             OUString sFullName (GetToolBarResourceName(*iToolBar));
-            SAL_INFO("sd.view", OSL_THIS_FUNC << ":    turning off tool bar " << sFullName);
+            SAL_INFO("sd.view", OSL_THIS_FUNC << ":    turning off tool bar " <<
+                OUStringToOString(sFullName, RTL_TEXTENCODING_UTF8).getStr());
             mxLayouter->destroyElement(sFullName);
             maToolBarList.MarkToolBarAsNotActive(*iToolBar);
         }
@@ -718,7 +726,8 @@ void ToolBarManager::Implementation::PostUpdate()
         for (iToolBar=aToolBars.begin(); iToolBar!=aToolBars.end(); ++iToolBar)
         {
             OUString sFullName (GetToolBarResourceName(*iToolBar));
-            SAL_INFO("sd.view", OSL_THIS_FUNC << ":    turning on tool bar " << sFullName);
+            SAL_INFO("sd.view", OSL_THIS_FUNC << ":    turning on tool bar " <<
+                OUStringToOString(sFullName, RTL_TEXTENCODING_UTF8).getStr());
             mxLayouter->requestElement(sFullName);
             maToolBarList.MarkToolBarAsActive(*iToolBar);
         }
@@ -838,7 +847,7 @@ void ToolBarManager::Implementation::Update (
     }
 }
 
-IMPL_LINK_NOARG(ToolBarManager::Implementation, UpdateCallback, void*, void)
+IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, UpdateCallback, void*, void)
 {
     mnPendingUpdateCall = nullptr;
     if (mnLockCount == 0)
@@ -852,27 +861,29 @@ IMPL_LINK_NOARG(ToolBarManager::Implementation, UpdateCallback, void*, void)
     }
 }
 
-IMPL_LINK(ToolBarManager::Implementation,EventMultiplexerCallback,
+IMPL_LINK_TYPED(ToolBarManager::Implementation,EventMultiplexerCallback,
     sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     SolarMutexGuard g;
     switch (rEvent.meEventId)
     {
-        case EventMultiplexerEventId::ControllerAttached:
+        case tools::EventMultiplexerEvent::EID_CONTROLLER_ATTACHED:
             if (mnPendingSetValidCall == nullptr)
                 mnPendingSetValidCall
                     = Application::PostUserEvent(LINK(this,Implementation,SetValidCallback));
             break;
 
-        case EventMultiplexerEventId::ControllerDetached:
+        case tools::EventMultiplexerEvent::EID_CONTROLLER_DETACHED:
             SetValid(false);
             break;
 
-        default: break;
+        case tools::EventMultiplexerEvent::EID_PANE_MANAGER_DYING:
+            SetValid(false);
+            break;
     }
 }
 
-IMPL_LINK_NOARG(ToolBarManager::Implementation, SetValidCallback, void*, void)
+IMPL_LINK_NOARG_TYPED(ToolBarManager::Implementation, SetValidCallback, void*, void)
 {
     mnPendingSetValidCall = nullptr;
     SetValid(true);
@@ -881,7 +892,9 @@ IMPL_LINK_NOARG(ToolBarManager::Implementation, SetValidCallback, void*, void)
 OUString ToolBarManager::Implementation::GetToolBarResourceName (
     const OUString& rsBaseName)
 {
-    return "private:resource/toolbar/" + rsBaseName;
+    OUString sToolBarName (msToolBarResourcePrefix);
+    sToolBarName += rsBaseName;
+    return sToolBarName;
 }
 
 bool ToolBarManager::Implementation::CheckPlugInMode (const OUString& rsName) const
@@ -975,48 +988,48 @@ void ToolBarRules::MainViewShellChanged (ViewShell::ShellType nShellType)
         case ::sd::ViewShell::ST_NOTES:
         case ::sd::ViewShell::ST_HANDOUT:
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msOptionsToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msViewerToolBar);
             break;
 
         case ::sd::ViewShell::ST_DRAW:
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msOptionsToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msViewerToolBar);
             break;
 
         case ViewShell::ST_OUTLINE:
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msOutlineToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msViewerToolBar);
             mpToolBarManager->AddToolBarShell(
-                ToolBarManager::ToolBarGroup::Permanent, RID_DRAW_TEXT_TOOLBOX);
+                ToolBarManager::TBG_PERMANENT, RID_DRAW_TEXT_TOOLBOX);
             break;
 
         case ViewShell::ST_SLIDE_SORTER:
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msViewerToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msSlideSorterToolBar);
             mpToolBarManager->AddToolBar(
-                ToolBarManager::ToolBarGroup::Permanent,
+                ToolBarManager::TBG_PERMANENT,
                 ToolBarManager::msSlideSorterObjectBar);
             break;
 
@@ -1044,13 +1057,13 @@ void ToolBarRules::MainViewShellChanged (const ViewShell& rMainViewShell)
                 = dynamic_cast<const DrawViewShell*>(&rMainViewShell);
             if (pDrawViewShell != nullptr)
             {
-                if (pDrawViewShell->GetEditMode() == EditMode::MasterPage)
+                if (pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
                     mpToolBarManager->AddToolBar(
-                        ToolBarManager::ToolBarGroup::MasterMode,
+                        ToolBarManager::TBG_MASTER_MODE,
                         ToolBarManager::msMasterViewToolBar);
                 else if ( rMainViewShell.GetShellType() != ::sd::ViewShell::ST_DRAW )
                     mpToolBarManager->AddToolBar(
-                        ToolBarManager::ToolBarGroup::CommonTask,
+                        ToolBarManager::TBG_COMMON_TASK,
                         ToolBarManager::msCommonTaskToolBar);
             }
             break;
@@ -1069,26 +1082,26 @@ void ToolBarRules::SelectionHasChanged (
     mpToolBarManager->LockViewShellManager();
     bool bTextEdit = rView.IsTextEdit();
 
-    mpToolBarManager->ResetToolBars(ToolBarManager::ToolBarGroup::Function);
+    mpToolBarManager->ResetToolBars(ToolBarManager::TBG_FUNCTION);
 
     switch (rView.GetContext())
     {
-        case SdrViewContext::Graphic:
+        case SDRCONTEXT_GRAPHIC:
             if( !bTextEdit )
-                mpToolBarManager->SetToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_DRAW_GRAF_TOOLBOX);
+                mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_GRAF_TOOLBOX);
             break;
 
-        case SdrViewContext::Media:
+        case SDRCONTEXT_MEDIA:
             if( !bTextEdit )
-                mpToolBarManager->SetToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_DRAW_MEDIA_TOOLBOX);
+                mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_MEDIA_TOOLBOX);
             break;
 
-        case SdrViewContext::Table:
-            mpToolBarManager->SetToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_DRAW_TABLE_TOOLBOX);
+        case SDRCONTEXT_TABLE:
+            mpToolBarManager->SetToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_TABLE_TOOLBOX);
             bTextEdit = true;
             break;
 
-        case SdrViewContext::Standard:
+        case SDRCONTEXT_STANDARD:
         default:
             if( !bTextEdit )
             {
@@ -1099,7 +1112,7 @@ void ToolBarRules::SelectionHasChanged (
                     case ::sd::ViewShell::ST_NOTES:
                     case ::sd::ViewShell::ST_HANDOUT:
                         mpToolBarManager->SetToolBar(
-                            ToolBarManager::ToolBarGroup::Function,
+                            ToolBarManager::TBG_FUNCTION,
                             ToolBarManager::msDrawingObjectToolBar);
                         break;
                     default:
@@ -1110,20 +1123,20 @@ void ToolBarRules::SelectionHasChanged (
     }
 
     if( bTextEdit )
-        mpToolBarManager->AddToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_DRAW_TEXT_TOOLBOX);
+        mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_DRAW_TEXT_TOOLBOX);
 
     SdrView* pView = &const_cast<SdrView&>(rView);
     // Check if the extrusion tool bar and the fontwork tool bar have to
     // be activated.
     if (svx::checkForSelectedCustomShapes(pView, true /* bOnlyExtruded */ ))
-        mpToolBarManager->AddToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_SVX_EXTRUSION_BAR);
+        mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_SVX_EXTRUSION_BAR);
     sal_uInt32 nCheckStatus = 0;
     if (svx::checkForSelectedFontWork(pView, nCheckStatus))
-        mpToolBarManager->AddToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_SVX_FONTWORK_BAR);
+        mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_SVX_FONTWORK_BAR);
 
     // Switch on additional context-sensitive tool bars.
-    if (rView.GetContext() == SdrViewContext::PointEdit)
-        mpToolBarManager->AddToolBarShell(ToolBarManager::ToolBarGroup::Function, RID_BEZIER_TOOLBOX);
+    if (rView.GetContext() == SDRCONTEXT_POINTEDIT)
+        mpToolBarManager->AddToolBarShell(ToolBarManager::TBG_FUNCTION, RID_BEZIER_TOOLBOX);
 }
 
 void ToolBarRules::SubShellAdded (
@@ -1245,8 +1258,9 @@ bool ToolBarList::RemoveToolBar (
 
 void ToolBarList::MakeRequestedToolBarList (NameList& rRequestedToolBars) const
 {
-    for (auto eGroup : o3tl::enumrange<sd::ToolBarManager::ToolBarGroup>())
+    for (int i=sd::ToolBarManager::TBG_FIRST; i<=sd::ToolBarManager::TBG_LAST; ++i)
     {
+        ::sd::ToolBarManager::ToolBarGroup eGroup = (::sd::ToolBarManager::ToolBarGroup)i;
         Groups::const_iterator iGroup (maGroups.find(eGroup));
         if (iGroup != maGroups.end())
             ::std::copy(

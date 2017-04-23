@@ -37,7 +37,7 @@ public:
 protected:
     explicit SourceProviderEntityPad(bool published): published_(published) {}
 
-    virtual ~SourceProviderEntityPad() override {}
+    virtual ~SourceProviderEntityPad() {}
 
 private:
     bool const published_;
@@ -52,7 +52,7 @@ public:
     std::vector<unoidl::EnumTypeEntity::Member> members;
 
 private:
-    virtual ~SourceProviderEnumTypeEntityPad() throw () override {}
+    virtual ~SourceProviderEnumTypeEntityPad() throw () {}
 };
 
 class SourceProviderPlainStructTypeEntityPad: public SourceProviderEntityPad {
@@ -62,14 +62,14 @@ public:
         rtl::Reference<unoidl::PlainStructTypeEntity> const & theBaseEntity):
         SourceProviderEntityPad(published), baseName(theBaseName),
         baseEntity(theBaseEntity)
-    { assert(theBaseName.isEmpty() != theBaseEntity.is()); }
+    { assert(theBaseName.isEmpty() != (bool) theBaseEntity.is()); }
 
     OUString const baseName;
     rtl::Reference<unoidl::PlainStructTypeEntity> const baseEntity;
     std::vector<unoidl::PlainStructTypeEntity::Member> members;
 
 private:
-    virtual ~SourceProviderPlainStructTypeEntityPad() throw () override {}
+    virtual ~SourceProviderPlainStructTypeEntityPad() throw () {}
 };
 
 class SourceProviderPolymorphicStructTypeTemplateEntityPad:
@@ -84,7 +84,7 @@ public:
     std::vector<unoidl::PolymorphicStructTypeTemplateEntity::Member> members;
 
 private:
-    virtual ~SourceProviderPolymorphicStructTypeTemplateEntityPad() throw () override {}
+    virtual ~SourceProviderPolymorphicStructTypeTemplateEntityPad() throw () {}
 };
 
 class SourceProviderExceptionTypeEntityPad: public SourceProviderEntityPad {
@@ -94,14 +94,14 @@ public:
         rtl::Reference<unoidl::ExceptionTypeEntity> const & theBaseEntity):
         SourceProviderEntityPad(published), baseName(theBaseName),
         baseEntity(theBaseEntity)
-    { assert(theBaseName.isEmpty() != theBaseEntity.is()); }
+    { assert(theBaseName.isEmpty() != (bool) theBaseEntity.is()); }
 
     OUString const baseName;
     rtl::Reference<unoidl::ExceptionTypeEntity> const baseEntity;
     std::vector<unoidl::ExceptionTypeEntity::Member> members;
 
 private:
-    virtual ~SourceProviderExceptionTypeEntityPad() throw () override {}
+    virtual ~SourceProviderExceptionTypeEntityPad() throw () {}
 };
 
 class SourceProviderInterfaceTypeEntityPad: public SourceProviderEntityPad {
@@ -152,7 +152,7 @@ public:
     std::map<OUString, Member> allMembers;
 
 private:
-    virtual ~SourceProviderInterfaceTypeEntityPad() throw () override {}
+    virtual ~SourceProviderInterfaceTypeEntityPad() throw () {}
 
     bool checkBaseClashes(
         YYLTYPE location, yyscan_t yyscanner, SourceProviderScannerData * data,
@@ -187,7 +187,7 @@ public:
     std::vector<unoidl::ConstantGroupEntity::Member> members;
 
 private:
-    virtual ~SourceProviderConstantGroupEntityPad() throw () override {}
+    virtual ~SourceProviderConstantGroupEntityPad() throw () {}
 };
 
 class SourceProviderSingleInterfaceBasedServiceEntityPad:
@@ -233,7 +233,7 @@ public:
     std::vector<Constructor> constructors;
 
 private:
-    virtual ~SourceProviderSingleInterfaceBasedServiceEntityPad() throw () override {}
+    virtual ~SourceProviderSingleInterfaceBasedServiceEntityPad() throw () {}
 };
 
 class SourceProviderAccumulationBasedServiceEntityPad:
@@ -252,7 +252,7 @@ public:
         directProperties;
 
 private:
-    virtual ~SourceProviderAccumulationBasedServiceEntityPad() throw () override {}
+    virtual ~SourceProviderAccumulationBasedServiceEntityPad() throw () {}
 };
 
 struct SourceProviderEntity {

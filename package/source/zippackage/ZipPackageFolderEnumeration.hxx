@@ -36,16 +36,21 @@ protected:
 public:
     //ZipPackageFolderEnumeration (unordered_map < OUString, css::uno::Reference < css::container::XNamed >, hashFunc, eqFunc > &rInput);
     ZipPackageFolderEnumeration (ContentHash &rInput);
-    virtual ~ZipPackageFolderEnumeration() override;
+    virtual ~ZipPackageFolderEnumeration();
 
     // XEnumeration
-    virtual sal_Bool SAL_CALL hasMoreElements(  ) override;
-    virtual css::uno::Any SAL_CALL nextElement(  ) override;
+    virtual sal_Bool SAL_CALL hasMoreElements(  )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL nextElement(  )
+        throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 #endif

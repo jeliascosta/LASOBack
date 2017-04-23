@@ -32,13 +32,13 @@
 #include <unotools/moduleoptions.hxx>
 #include "dsitems.hxx"
 #include "dbaccess_helpid.hrc"
+#include "localresaccess.hxx"
 #include <osl/process.h>
 #include <vcl/msgbox.hxx>
 #include "dbadmin.hxx"
 #include <comphelper/types.hxx>
 #include <vcl/stdtext.hxx>
 #include "sqlmessage.hxx"
-#include "moduledbu.hxx"
 #include "odbcconfig.hxx"
 #include "dsselect.hxx"
 #include <svl/filenotation.hxx>
@@ -59,11 +59,15 @@
 #include <connectivity/CommonTools.hxx>
 #include <sfx2/docfilt.hxx>
 #include "dsnItem.hxx"
+#if defined(_WIN32)
+#define _ADO_DATALINK_BROWSE_
+#endif
 
-#if defined _WIN32
+#ifdef _ADO_DATALINK_BROWSE_
 #include <vcl/sysdata.hxx>
 #include "adodatalinks.hxx"
-#endif
+#endif //_ADO_DATALINK_BROWSE_
+
 
 namespace dbaui
 {
@@ -283,7 +287,7 @@ namespace dbaui
 
         return bChangedSomething;
     }
-    IMPL_LINK_NOARG(OConnectionTabPage, OnTestJavaClickHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(OConnectionTabPage, OnTestJavaClickHdl, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         bool bSuccess = false;
@@ -316,7 +320,7 @@ namespace dbaui
         m_pTestConnection->Enable(bEnableTestConnection);
         return true;
     }
-    IMPL_LINK(OConnectionTabPage, OnEditModified, Edit&, _rEdit, void)
+    IMPL_LINK_TYPED(OConnectionTabPage, OnEditModified, Edit&, _rEdit, void)
     {
         if ( &_rEdit == m_pJavaDriver )
             m_pTestJavaDriver->Enable( !m_pJavaDriver->GetText().trim().isEmpty() );

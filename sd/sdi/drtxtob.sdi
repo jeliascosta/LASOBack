@@ -197,12 +197,6 @@ shell TextObjectBar
         StateMethod = GetAttrState;
     ]
 
-    SID_HANGING_INDENT
-    [
-        ExecMethod = Execute ;
-        StateMethod = GetAttrState;
-    ]
-
     SID_OUTLINE_LEFT // ole : no, status : ?
     [
         ExecMethod = Execute ;

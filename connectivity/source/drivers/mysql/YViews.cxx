@@ -60,13 +60,14 @@ sdbcx::ObjectType OViews::createObject(const OUString& _rName)
     return new ::connectivity::sdbcx::OView(isCaseSensitive(),
                             sTable,
                             m_xMetaData,
+                            0,
                             OUString(),
                             sSchema,
                             sCatalog
                             );
 }
 
-void OViews::impl_refresh(  )
+void OViews::impl_refresh(  ) throw(RuntimeException)
 {
     static_cast<OMySQLCatalog&>(m_rParent).refreshTables();
 }

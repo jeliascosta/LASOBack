@@ -48,8 +48,8 @@ namespace dbaui
     public:
         OTableFieldControl( vcl::Window* pParent, OTableDesignHelpBar* pHelpBar);
 
-        using OFieldDescControl::BoolStringPersistent;
-        using OFieldDescControl::BoolStringUI;
+        OUString BoolStringPersistent(const OUString& rUIString) const { return OFieldDescControl::BoolStringPersistent(rUIString); }
+        OUString BoolStringUI(const OUString& rPersistentString) const { return OFieldDescControl::BoolStringUI(rPersistentString); }
 
         virtual css::uno::Reference< css::sdbc::XDatabaseMetaData> getMetaData() override;
         virtual css::uno::Reference< css::sdbc::XConnection> getConnection() override;

@@ -43,7 +43,7 @@ BOOL GetMsiPropA( MSIHANDLE hMSI, const char* pPropName, char** ppValue )
     if ( MsiGetPropertyA( hMSI, pPropName, const_cast<char *>(""), &sz ) == ERROR_MORE_DATA ) {
         sz++;
         DWORD nbytes = sz * sizeof( char );
-        char* buff = static_cast<char*>( malloc( nbytes ) );
+        char* buff = reinterpret_cast<char*>( malloc( nbytes ) );
         ZeroMemory( buff, nbytes );
         MsiGetPropertyA( hMSI, pPropName, buff, &sz );
         *ppValue = buff;
@@ -151,7 +151,7 @@ langid_to_string( LANGID langid )
         case MAKELANGID(LANG_NORWEGIAN, SUBLANG_NORWEGIAN_NYNORSK): return "nn";
         case MAKELANGID(LANG_SERBIAN, SUBLANG_SERBIAN_LATIN): return "sh";
         case MAKELANGID(LANG_SERBIAN, SUBLANG_SERBIAN_CYRILLIC): return "sr";
-        default: return nullptr;
+        default: return 0;
         }
     }
 }
@@ -164,7 +164,7 @@ static int num_ui_langs = 0;
 
 void add_ui_lang(char const * lang)
 {
-    if (lang != nullptr && num_ui_langs != SAL_N_ELEMENTS(ui_langs)) {
+    if (lang != 0 && num_ui_langs != SAL_N_ELEMENTS(ui_langs)) {
         ui_langs[num_ui_langs++] = lang;
     }
 }
@@ -172,7 +172,7 @@ void add_ui_lang(char const * lang)
 BOOL CALLBACK
 enum_ui_lang_proc (LPTSTR language, LONG_PTR /* unused_lParam */)
 {
-    long langid = strtol(language, nullptr, 16);
+    long langid = strtol(language, NULL, 16);
     if (langid > 0xFFFF)
         return TRUE;
     add_ui_lang(langid_to_string((LANGID) langid));
@@ -185,13 +185,8 @@ static BOOL
 present_in_ui_langs(const char *lang)
 {
     for (int i = 0; i < num_ui_langs; i++)
-    {
-        if (strchr (lang, '_') != nullptr)
-            if (memcmp (ui_langs[i], lang, std::min(strlen(ui_langs[i]), strlen(lang))) == 0)
-                return TRUE;
-        if (strcmp (ui_langs[i], lang) == 0)
+        if (memcmp (ui_langs[i], lang, std::min(strlen(ui_langs[i]), strlen(lang))) == 0)
             return TRUE;
-    }
     return FALSE;
 }
 
@@ -215,7 +210,7 @@ void addMatchingDictionaries(
         if (strcmp(lang, setup_native::languageDictionaries[i].language) == 0) {
             for (char const * const * p = setup_native::languageDictionaries[i].
                      dictionaries;
-                 *p != nullptr; ++p)
+                 *p != NULL; ++p)
             {
                 for (int j = 0; j != ndicts; ++j) {
                     if (_stricmp(*p, dicts[j].lang) == 0) {
@@ -313,13 +308,13 @@ extern "C" UINT __stdcall SelectLanguage( MSIHANDLE handle )
     /* Keep track of what UI languages are relevant, either the ones explicitly
      * requested with the UI_LANGS property, or all available on the system:
      */
-    char* pVal = nullptr;
+    char* pVal = NULL;
     if ( (GetMsiPropA( handle, "UI_LANGS", &pVal )) && pVal ) {
         char *str_ptr;
         str_ptr = strtok(pVal, ",");
-        for(; str_ptr != nullptr ;) {
+        for(; str_ptr != NULL ;) {
             add_ui_lang(str_ptr);
-            str_ptr = strtok(nullptr, ",");
+            str_ptr = strtok(NULL, ",");
         }
     } else {
         add_ui_lang(langid_to_string(GetSystemDefaultUILanguage()));
@@ -346,7 +341,7 @@ extern "C" UINT __stdcall SelectLanguage( MSIHANDLE handle )
     }
     if (!matches) {
         for (int i = 0; i < nlangs; i++) {
-            if (strcmp(langs[i].lang, "en_US") == 0) {
+            if (strcmp(langs[nlangs].lang, "en_US") == 0) {
                 langs[i].install = true;
                 matches = true;
                 break;

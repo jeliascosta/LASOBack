@@ -26,12 +26,19 @@
 
 namespace toolkit
 {
-    class ScrollableDialog : public Dialog
+    class ScrollableInterface
     {
     public:
-        enum ScrollBarVisibility { None, Vert, Hori, Both };
+        virtual ~ScrollableInterface() {}
+        virtual void    SetScrollWidth( long nWidth ) = 0;
+        virtual void    SetScrollHeight( long nHeight ) = 0;
+        virtual void    SetScrollLeft( long nLeft ) = 0;
+        virtual void    SetScrollTop( long Top ) = 0;
+    };
 
-    private:
+  template < class T >
+    class ScrollableWrapper : public T, public ScrollableInterface
+    {
         VclPtr<ScrollBar>  maHScrollBar;
         VclPtr<ScrollBar>  maVScrollBar;
         Size               maScrollArea;
@@ -39,24 +46,26 @@ namespace toolkit
         bool               mbHasVertBar;
         Point              mnScrollPos;
         long               mnScrWidth;
-        ScrollBarVisibility maScrollVis;
-
-        void    lcl_Scroll( long nX, long nY );
-        DECL_LINK( ScrollBarHdl, ScrollBar*, void );
 
     public:
-        ScrollableDialog( vcl::Window* pParent, WinBits nStyle = WB_STDDIALOG, Dialog::InitFlag eFlag = Dialog::InitFlag::Default );
-        virtual ~ScrollableDialog() override;
+        enum ScrollBarVisibility { None, Vert, Hori, Both };
+    private:
+        ScrollBarVisibility maScrollVis;
+        void    lcl_Scroll( long nX, long nY );
+    public:
+        ScrollableWrapper( vcl::Window* pParent, WinBits nStyle = WB_STDDIALOG, Dialog::InitFlag eFlag = Dialog::InitFlag::Default );
+        virtual ~ScrollableWrapper();
         virtual void dispose() override;
+        virtual void    SetScrollWidth( long nWidth ) override;
+        virtual void    SetScrollHeight( long nHeight ) override;
+        virtual void    SetScrollLeft( long nLeft ) override;
+        virtual void    SetScrollTop( long Top ) override;
+
+        void setScrollVisibility( ScrollBarVisibility rState );
+        DECL_LINK_TYPED( ScrollBarHdl, ScrollBar*, void );
+        virtual void ResetScrollBars();
         // Window
         virtual void Resize() override;
-
-        void    SetScrollWidth( long nWidth );
-        void    SetScrollHeight( long nHeight );
-        void    SetScrollLeft( long nLeft );
-        void    SetScrollTop( long Top );
-        void    setScrollVisibility( ScrollBarVisibility rState );
-        void    ResetScrollBars();
     };
 
 } // namespacetoolkit

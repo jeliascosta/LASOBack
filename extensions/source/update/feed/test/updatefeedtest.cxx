@@ -70,14 +70,16 @@ SAL_IMPLEMENT_MAIN()
     {
         uno::Sequence< uno::Reference< xml::dom::XElement > > theUpdateInfo =
             rUpdateInformationProvider->getUpdateInformation( theURLs, aExtension );
+
+        OSL_TRACE( "getUpdateInformation returns %d element(s)", theUpdateInfo.getLength() );
     }
     catch( const uno::Exception & e )
     {
-        SAL_WARN("extensions.update", "exception caught: " << e.Message);
+        OSL_TRACE( "exception caught: %s", OUStringToOString( e.Message, RTL_TEXTENCODING_UTF8 ).getStr());
     }
     catch( ... )
     {
-        SAL_WARN("extensions.update", "exception of undetermined type caught" );
+        OSL_TRACE( "exception of undetermined type caught" );
     }
 
 

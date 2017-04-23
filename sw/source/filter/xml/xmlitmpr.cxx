@@ -27,11 +27,11 @@ using ::xmloff::token::XML_TOKEN_INVALID;
 class SvXMLItemMapEntries_impl
 {
 public:
-    SvXMLItemMapEntry const * mpEntries;
+    SvXMLItemMapEntry* mpEntries;
     sal_uInt16 mnCount;
 };
 
-SvXMLItemMapEntries::SvXMLItemMapEntries( SvXMLItemMapEntry const * pEntries )
+SvXMLItemMapEntries::SvXMLItemMapEntries( SvXMLItemMapEntry* pEntries )
    : mpImpl( new SvXMLItemMapEntries_impl )
 {
     mpImpl->mpEntries = pEntries;
@@ -48,10 +48,10 @@ SvXMLItemMapEntries::~SvXMLItemMapEntries()
 {
 }
 
-SvXMLItemMapEntry const * SvXMLItemMapEntries::getByName(  sal_uInt16 nNameSpace,
+SvXMLItemMapEntry* SvXMLItemMapEntries::getByName(  sal_uInt16 nNameSpace,
                                                     const OUString& rString  ) const
 {
-    SvXMLItemMapEntry const * pMap = mpImpl->mpEntries;
+    SvXMLItemMapEntry* pMap = mpImpl->mpEntries;
     while( pMap && (pMap->eLocalName != XML_TOKEN_INVALID) )
     {
         if( pMap->nNameSpace == nNameSpace &&
@@ -63,7 +63,7 @@ SvXMLItemMapEntry const * SvXMLItemMapEntries::getByName(  sal_uInt16 nNameSpace
     return (pMap && (pMap->eLocalName != XML_TOKEN_INVALID)) ? pMap : nullptr;
 }
 
-SvXMLItemMapEntry const & SvXMLItemMapEntries::getByIndex( sal_uInt16 nIndex ) const
+SvXMLItemMapEntry& SvXMLItemMapEntries::getByIndex( sal_uInt16 nIndex ) const
 {
     return mpImpl->mpEntries[nIndex];
 }

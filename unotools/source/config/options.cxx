@@ -28,18 +28,19 @@ utl::ConfigurationListener::~ConfigurationListener() {}
 ConfigurationBroadcaster::ConfigurationBroadcaster()
 : mpList(nullptr)
 , m_nBroadcastBlocked( 0 )
-, m_nBlockedHint( ConfigurationHints::NONE )
+, m_nBlockedHint( 0 )
 {
 }
 
 ConfigurationBroadcaster::~ConfigurationBroadcaster()
 {
+    delete mpList;
 }
 
 void ConfigurationBroadcaster::AddListener( utl::ConfigurationListener* pListener )
 {
     if ( !mpList )
-        mpList.reset(new IMPL_ConfigurationListenerList);
+        mpList = new IMPL_ConfigurationListenerList;
     mpList->push_back( pListener );
 }
 
@@ -58,14 +59,14 @@ void ConfigurationBroadcaster::RemoveListener( utl::ConfigurationListener* pList
     }
 }
 
-void ConfigurationBroadcaster::NotifyListeners( ConfigurationHints nHint )
+void ConfigurationBroadcaster::NotifyListeners( sal_uInt32 nHint )
 {
     if ( m_nBroadcastBlocked )
         m_nBlockedHint |= nHint;
     else
     {
         nHint |= m_nBlockedHint;
-        m_nBlockedHint = ConfigurationHints::NONE;
+        m_nBlockedHint = 0;
         if ( mpList ) {
             for ( size_t n = 0; n < mpList->size(); n++ )
                 (*mpList)[ n ]->ConfigurationChanged( this, nHint );
@@ -80,7 +81,7 @@ void ConfigurationBroadcaster::BlockBroadcasts( bool bBlock )
     else if ( m_nBroadcastBlocked )
     {
         if ( --m_nBroadcastBlocked == 0 )
-            NotifyListeners( ConfigurationHints::NONE );
+            NotifyListeners( 0 );
     }
 }
 
@@ -92,7 +93,7 @@ Options::~Options()
 {
 }
 
-void Options::ConfigurationChanged( ConfigurationBroadcaster*, ConfigurationHints nHint )
+void Options::ConfigurationChanged( ConfigurationBroadcaster*, sal_uInt32 nHint )
 {
     NotifyListeners( nHint );
 }

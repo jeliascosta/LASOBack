@@ -73,9 +73,12 @@ namespace slideshow
                 {
                     maEvents.top().pEvent->dispose();
                 }
-                catch (const uno::Exception&)
+                catch (uno::Exception &)
                 {
-                    SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
+                    OSL_FAIL( OUStringToOString(
+                                    comphelper::anyToString(
+                                        cppu::getCaughtException() ),
+                                    RTL_TEXTENCODING_UTF8 ).getStr() );
                 }
                 maEvents.pop();
             }
@@ -254,7 +257,7 @@ namespace slideshow
                         // since this will also capture segmentation
                         // violations and the like. In such a case, we
                         // still better let our clients now...
-                        SAL_WARN("slideshow.eventqueue", "::presentation::internal::EventQueue: Event threw a SlideShowException, action might not have been fully performed" );
+                        OSL_TRACE( "::presentation::internal::EventQueue: Event threw a SlideShowException, action might not have been fully performed" );
                     }
                 }
                 else

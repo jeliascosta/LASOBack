@@ -59,7 +59,7 @@ namespace frm
     {
     }
 
-    OUString SAL_CALL OSpinButtonModel::getImplementationName()
+    OUString SAL_CALL OSpinButtonModel::getImplementationName() throw ( RuntimeException, std::exception )
     {
         return OUString( "com.sun.star.comp.forms.OSpinButtonModel" );
     }
@@ -68,7 +68,7 @@ namespace frm
         // OBoundControlModel, our real base class, claims to support the DataAwareControlModel
         // service, which isn't really true for us. We only derive from this class
         // to benefit from the functionality for binding to spreadsheet cells
-    Sequence< OUString > SAL_CALL OSpinButtonModel::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL OSpinButtonModel::getSupportedServiceNames() throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aOwnNames( 2 );
         aOwnNames[ 0 ] = FRM_SUN_COMPONENT_SPINBUTTON;
@@ -84,6 +84,12 @@ namespace frm
     }
 
     IMPLEMENT_DEFAULT_CLONING( OSpinButtonModel )
+
+
+    void SAL_CALL OSpinButtonModel::disposing()
+    {
+        OBoundControlModel::disposing();
+    }
 
 
     void OSpinButtonModel::describeFixedProperties( Sequence< Property >& _rProps ) const
@@ -110,7 +116,7 @@ namespace frm
     }
 
 
-    void OSpinButtonModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue )
+    void OSpinButtonModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue ) throw ( Exception, std::exception )
     {
         switch ( _nHandle )
         {
@@ -127,6 +133,7 @@ namespace frm
 
     sal_Bool OSpinButtonModel::convertFastPropertyValue(
                 Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
+                throw ( IllegalArgumentException )
     {
         bool bModified( false );
         switch ( _nHandle )
@@ -182,13 +189,14 @@ namespace frm
     }
 
 
-    OUString SAL_CALL OSpinButtonModel::getServiceName()
+    OUString SAL_CALL OSpinButtonModel::getServiceName() throw( RuntimeException, std::exception )
     {
         return OUString(FRM_SUN_COMPONENT_SPINBUTTON);
     }
 
 
     void SAL_CALL OSpinButtonModel::write( const Reference< XObjectOutputStream >& _rxOutStream )
+        throw( IOException, RuntimeException, std::exception )
     {
         OBoundControlModel::write( _rxOutStream );
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -204,7 +212,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OSpinButtonModel::read( const Reference< XObjectInputStream>& _rxInStream )
+    void SAL_CALL OSpinButtonModel::read( const Reference< XObjectInputStream>& _rxInStream ) throw( IOException, RuntimeException, std::exception )
     {
         OBoundControlModel::read( _rxInStream );
         ::osl::MutexGuard aGuard( m_aMutex );

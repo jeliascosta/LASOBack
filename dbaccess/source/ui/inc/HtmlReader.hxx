@@ -49,13 +49,15 @@ namespace dbaui
         sal_Int16           GetWidthPixel( const HTMLOption& rOption );
         void                setTextEncoding();
         void                fetchOptions();
-        virtual ~OHTMLReader() override;
+        virtual ~OHTMLReader();
 
     public:
         OHTMLReader(SvStream& rIn,
                     const SharedConnection& _rxConnection,
                     const css::uno::Reference< css::util::XNumberFormatter >& _rxNumberF,
-                    const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
+                    const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
+                    const TColumnVector* rList = nullptr,
+                    const OTypeInfoMap* _pInfoMap = nullptr);
         // required for automatic type recognition
         OHTMLReader(SvStream& rIn,
                     sal_Int32 nRows,

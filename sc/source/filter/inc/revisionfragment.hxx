@@ -26,7 +26,7 @@ public:
     explicit RevisionHeadersFragment(
         const WorkbookHelper& rHelper, const OUString& rFragmentPath );
 
-    virtual ~RevisionHeadersFragment() override;
+    virtual ~RevisionHeadersFragment();
 
 protected:
     virtual oox::core::ContextHandlerRef onCreateContext(
@@ -51,7 +51,7 @@ public:
     explicit RevisionLogFragment(
         const WorkbookHelper& rHelper, const OUString& rFragmentPath, ScChangeTrack& rChangeTrack );
 
-    virtual ~RevisionLogFragment() override;
+    virtual ~RevisionLogFragment();
 
 protected:
     virtual oox::core::ContextHandlerRef onCreateContext(

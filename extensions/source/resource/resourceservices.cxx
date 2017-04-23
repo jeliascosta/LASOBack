@@ -15,8 +15,8 @@
 
 namespace sdecl = ::comphelper::service_decl;
 
-sdecl::class_< ::extensions::resource::ResourceIndexAccess, sdecl::with_args<true> > const ResourceIndexAccessServiceImpl;
-sdecl::class_< ::extensions::resource::OpenOfficeResourceLoader> const OpenOfficeResourceLoaderServiceImpl;
+sdecl::class_< ::extensions::resource::ResourceIndexAccess, sdecl::with_args<true> > ResourceIndexAccessServiceImpl;
+sdecl::class_< ::extensions::resource::OpenOfficeResourceLoader> OpenOfficeResourceLoaderServiceImpl;
 
 const sdecl::ServiceDecl ResourceIndexAccessDecl(
     ResourceIndexAccessServiceImpl,

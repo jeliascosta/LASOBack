@@ -56,11 +56,11 @@ namespace dxcanvas
                        (nDriverId != rRHS.nDriverId ? nDriverId < rRHS.nDriverId :
                         (nDriverVersion != rRHS.nDriverVersion ? nDriverVersion < rRHS.nDriverVersion :
                          (nDriverSubVersion != rRHS.nDriverSubVersion ? nDriverSubVersion < rRHS.nDriverSubVersion :
-                          (nDriverBuildId != rRHS.nDriverBuildId && nDriverBuildId < rRHS.nDriverBuildId)))))));
+                          (nDriverBuildId != rRHS.nDriverBuildId ? nDriverBuildId < rRHS.nDriverBuildId : false)))))));
             }
         };
 
-        ~DXCanvasItem() override;
+        ~DXCanvasItem();
 
         bool isDeviceUsable( const DeviceInfo& rDeviceInfo ) const;
         bool isBlacklistCurrentDevice() const;

@@ -90,13 +90,17 @@ String STR_SURROUND_NONE
 {
     Text [ en-US ] = "No wrap" ;
 };
-String STR_SURROUND_THROUGH
+String STR_SURROUND_THROUGHT
 {
     Text [ en-US ] = "Through" ;
 };
 String STR_SURROUND_PARALLEL
 {
     Text [ en-US ] = "Parallel wrap" ;
+};
+String STR_SURROUND_COLUMN
+{
+    Text [ en-US ] = "Column Wrap" ;
 };
 String STR_SURROUND_LEFT
 {
@@ -105,6 +109,14 @@ String STR_SURROUND_LEFT
 String STR_SURROUND_RIGHT
 {
     Text [ en-US ] = "Right wrap" ;
+};
+String STR_SURROUND_INSIDE
+{
+    Text [ en-US ] = "Inner wrap" ;
+};
+String STR_SURROUND_OUTSIDE
+{
+    Text [ en-US ] = "Outer wrap" ;
 };
 String STR_SURROUND_ANCHORONLY
 {

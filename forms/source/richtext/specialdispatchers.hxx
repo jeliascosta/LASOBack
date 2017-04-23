@@ -32,10 +32,12 @@ namespace frm
         OSelectAllDispatcher( EditView& _rView, const css::util::URL&  _rURL );
 
     protected:
-        virtual ~OSelectAllDispatcher() override;
+        virtual ~OSelectAllDispatcher();
 
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
+            throw (css::uno::RuntimeException,
+                   std::exception) override;
 
         // ORichTextFeatureDispatcher
         virtual css::frame::FeatureStateEvent  buildStatusEvent() const override;
@@ -63,7 +65,7 @@ namespace frm
 
     protected:
         // XDispatch
-        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        virtual void SAL_CALL dispatch( const css::util::URL& URL, const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) throw (css::uno::RuntimeException, std::exception) override;
 
         // ORichTextFeatureDispatcher
         virtual css::frame::FeatureStateEvent  buildStatusEvent() const override;

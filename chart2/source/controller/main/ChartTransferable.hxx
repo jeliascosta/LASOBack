@@ -37,7 +37,7 @@ class ChartTransferable : public TransferableHelper
 {
 public:
     explicit ChartTransferable( SdrModel* pDrawModel, SdrObject* pSelectedObj, bool bDrawing = false );
-    virtual ~ChartTransferable() override;
+    virtual ~ChartTransferable();
 
 protected:
 

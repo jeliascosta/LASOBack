@@ -21,7 +21,6 @@
 #define INCLUDED_FPICKER_SOURCE_OFFICE_COMMONPICKER_HXX
 
 #include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/ui/dialogs/XControlInformation.hpp>
 #include <com/sun/star/ui/dialogs/XControlAccess.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -29,6 +28,7 @@
 #include <com/sun/star/awt/XWindow.hpp>
 #include <com/sun/star/util/XCancellable.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
+#include <comphelper/broadcasthelper.hxx>
 #include <comphelper/propertycontainer.hxx>
 #include <comphelper/proparrhlp.hxx>
 #include <comphelper/uno3.hxx>
@@ -52,7 +52,7 @@ namespace svt
     /** implements common functionality for the 2 UNO picker components
     */
     class OCommonPicker
-                    :public ::cppu::BaseMutex
+                    :public ::comphelper::OBaseMutex
                     ,public OCommonPicker_Base
                     ,public ::comphelper::OPropertyContainer
                     ,public ::comphelper::OPropertyArrayUsageHelper< OCommonPicker >
@@ -77,16 +77,16 @@ namespace svt
         OUString     m_aDisplayDirectory;
 
     protected:
-        SvtFileDialog_Base*  getDialog() { return m_pDlg; }
+        inline  SvtFileDialog_Base*  getDialog() { return m_pDlg; }
 
-        const    ::cppu::OBroadcastHelper&   GetBroadcastHelper() const  { return OCommonPicker_Base::rBHelper; }
-        ::cppu::OBroadcastHelper&   GetBroadcastHelper()        { return OCommonPicker_Base::rBHelper; }
+        inline const    ::cppu::OBroadcastHelper&   GetBroadcastHelper() const  { return OCommonPicker_Base::rBHelper; }
+        inline          ::cppu::OBroadcastHelper&   GetBroadcastHelper()        { return OCommonPicker_Base::rBHelper; }
 
     public:
         OCommonPicker();
 
     protected:
-        virtual ~OCommonPicker() override;
+        virtual ~OCommonPicker();
 
         // overridables
 
@@ -112,16 +112,16 @@ namespace svt
         virtual void SAL_CALL disposing() override;
 
 
-        // XEventListener
+        // XEventListner
 
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
 
         // property set related methods
 
 
         // XPropertySet pure methods
-        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
         // OPropertySetHelper pure methods
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
         // OPropertyArrayUsageHelper pure methods
@@ -129,40 +129,38 @@ namespace svt
 
         // OPropertySetHelper overridden methods
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
-                sal_Int32 _nHandle, const css::uno::Any& _rValue ) override;
+                sal_Int32 _nHandle, const css::uno::Any& _rValue ) throw (css::uno::Exception, std::exception) override;
 
 
         // XExecutableDialog functions
 
-        /// @throws css::uno::RuntimeException
-        virtual void SAL_CALL           setTitle( const OUString& _rTitle );
-        /// @throws css::uno::RuntimeException
-        virtual sal_Int16 SAL_CALL      execute();
+        virtual void SAL_CALL           setTitle( const OUString& _rTitle ) throw( css::uno::RuntimeException, std::exception );
+        virtual sal_Int16 SAL_CALL      execute() throw( css::uno::RuntimeException, std::exception );
 
 
         // XControlAccess functions
 
-        virtual void SAL_CALL setControlProperty( const OUString& aControlName, const OUString& aControlProperty, const css::uno::Any& aValue ) override;
-        virtual css::uno::Any SAL_CALL getControlProperty( const OUString& aControlName, const OUString& aControlProperty ) override;
+        virtual void SAL_CALL setControlProperty( const OUString& aControlName, const OUString& aControlProperty, const css::uno::Any& aValue ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getControlProperty( const OUString& aControlName, const OUString& aControlProperty ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 
         // XControlInformation functions
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedControls(  ) override;
-        virtual sal_Bool SAL_CALL isControlSupported( const OUString& aControlName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedControlProperties( const OUString& aControlName ) override;
-        virtual sal_Bool SAL_CALL isControlPropertySupported( const OUString& aControlName, const OUString& aControlProperty ) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedControls(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isControlSupported( const OUString& aControlName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedControlProperties( const OUString& aControlName ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isControlPropertySupported( const OUString& aControlName, const OUString& aControlProperty ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 
         // XCancellable functions
 
-        virtual void SAL_CALL cancel(  ) override;
+        virtual void SAL_CALL cancel(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 
         // XInitialization functions
 
 
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
 
 
         // misc
@@ -186,7 +184,7 @@ namespace svt
     private:
         void        stopWindowListening();
 
-        DECL_LINK( OnCancelPicker, void*, void );
+        DECL_LINK_TYPED( OnCancelPicker, void*, void );
     };
 
 }   // namespace svt

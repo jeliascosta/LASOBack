@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include <com/sun/star/chart2/LegendPosition.hpp>
 #include <com/sun/star/chart/ChartLegendExpansion.hpp>
@@ -264,8 +265,8 @@ void setLegendPos(const css::uno::Reference<css::frame::XModel>& xModel, sal_Int
             assert(false);
     }
 
-    xLegendProp->setPropertyValue("AnchorPosition", css::uno::Any(eLegendPos));
-    xLegendProp->setPropertyValue("Expansion", css::uno::Any(eExpansion));
+    xLegendProp->setPropertyValue("AnchorPosition", css::uno::makeAny(eLegendPos));
+    xLegendProp->setPropertyValue("Expansion", css::uno::makeAny(eExpansion));
 
     if (eLegendPos != chart2::LegendPosition_CUSTOM)
     {
@@ -503,7 +504,7 @@ void ChartElementsPanel::DataChanged(
 }
 
 void ChartElementsPanel::HandleContextChange(
-    const vcl::EnumContext& rContext)
+    const ::sfx2::sidebar::EnumContext& rContext)
 {
     if(maContext == rContext)
     {
@@ -536,7 +537,7 @@ void ChartElementsPanel::updateModel(
     xBroadcasterNew->addModifyListener(mxListener);
 }
 
-IMPL_LINK(ChartElementsPanel, CheckBoxHdl, Button*, pButton, void)
+IMPL_LINK_TYPED(ChartElementsPanel, CheckBoxHdl, Button*, pButton, void)
 {
     CheckBox* pCheckBox = static_cast<CheckBox*>(pButton);
     bool bChecked = pCheckBox->IsChecked();
@@ -579,7 +580,7 @@ IMPL_LINK(ChartElementsPanel, CheckBoxHdl, Button*, pButton, void)
         setGridVisible(mxModel, GridType::HOR_MINOR, bChecked);
 }
 
-IMPL_LINK_NOARG(ChartElementsPanel, LegendPosHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ChartElementsPanel, LegendPosHdl, ListBox&, void)
 {
     sal_Int32 nPos = mpLBLegendPosition->GetSelectEntryPos();
     setLegendPos(mxModel, nPos);
@@ -590,7 +591,7 @@ void ChartElementsPanel::setTitleVisible(TitleHelper::eTitleType eTitle, bool bV
     if (bVisible)
     {
         OUString aText = eTitle == TitleHelper::SUB_TITLE ? maTextSubTitle : maTextTitle;
-        TitleHelper::createOrShowTitle(eTitle, aText, mxModel, comphelper::getProcessComponentContext(), nullptr);
+        TitleHelper::createOrShowTitle(eTitle, aText, mxModel, comphelper::getProcessComponentContext());
     }
     else
     {

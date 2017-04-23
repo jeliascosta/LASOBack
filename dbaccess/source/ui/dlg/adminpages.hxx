@@ -42,7 +42,7 @@ namespace dbaui
 
     template < class T > class OSaveValueWrapper : public ISaveValueWrapper
     {
-        VclPtr<T>  m_pSaveValue;
+        T*  m_pSaveValue;
     public:
         explicit OSaveValueWrapper(T* _pSaveValue) : m_pSaveValue(_pSaveValue)
         { OSL_ENSURE(m_pSaveValue,"Illegal argument!"); }
@@ -53,7 +53,7 @@ namespace dbaui
 
     template < class T > class ODisableWrapper : public ISaveValueWrapper
     {
-        VclPtr<T>  m_pSaveValue;
+        T*  m_pSaveValue;
     public:
         explicit ODisableWrapper(T* _pSaveValue) : m_pSaveValue(_pSaveValue)
         { OSL_ENSURE(m_pSaveValue,"Illegal argument!"); }
@@ -88,7 +88,7 @@ namespace dbaui
             @param  _pItemSetHelper
                 the itemset helper
         */
-        void SetAdminDialog(IDatabaseSettingsDialog* _pDialog,IItemSetHelper* _pItemSetHelper)
+        inline void SetAdminDialog(IDatabaseSettingsDialog* _pDialog,IItemSetHelper* _pItemSetHelper)
         {
             OSL_ENSURE(_pDialog && _pItemSetHelper,"Values are NULL!");
             m_pAdminDialog = _pDialog;
@@ -125,7 +125,7 @@ namespace dbaui
 
     protected:
         /// default implementation: call FillItemSet, call prepareLeave,
-        virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
+        virtual sfxpg DeactivatePage(SfxItemSet* pSet) override;
         using SfxTabPage::DeactivatePage;
         /// default implementation: call implInitControls with the given item set and _bSaveValue = sal_False
         virtual void Reset(const SfxItemSet* _rCoreAttrs) override;
@@ -154,14 +154,14 @@ namespace dbaui
                 The list must be filled with the controls.
                 It is not allowed to clear the list before pusching data into it.
         */
-        virtual void fillControls(std::vector< ISaveValueWrapper* >& _rControlList) = 0;
+        virtual void fillControls(::std::vector< ISaveValueWrapper* >& _rControlList) = 0;
 
         /** will be called inside <method>implInitControls</method> to disable if necessary
             @param  _rControlList
                 The list must be filled with the controls.
                 It is not allowed to clear the list before pusching data into it.
         */
-        virtual void fillWindows(std::vector< ISaveValueWrapper* >& _rControlList) = 0;
+        virtual void fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList) = 0;
 
     public:
         /** fills the Boolean value into the item set when the value changed.
@@ -206,12 +206,12 @@ namespace dbaui
         /** This link be used for controls where the tabpage does not need to take any special action when the control
             is modified. The implementation just calls callModifiedHdl.
         */
-        DECL_LINK(OnControlModified, void*, void);
-        DECL_LINK(OnControlEditModifyHdl, Edit&, void);
-        DECL_LINK(OnControlModifiedClick, Button*, void);
-        DECL_LINK(ControlModifiedCheckBoxHdl, CheckBox&, void);
+        DECL_LINK_TYPED(OnControlModified, void*, void);
+        DECL_LINK_TYPED(OnControlEditModifyHdl, Edit&, void);
+        DECL_LINK_TYPED(OnControlModifiedClick, Button*, void);
+        DECL_LINK_TYPED(ControlModifiedCheckBoxHdl, CheckBox&, void);
 
-        DECL_LINK(OnTestConnectionClickHdl, Button*, void);
+        DECL_LINK_TYPED(OnTestConnectionClickHdl, Button*, void);
     };
 
     // ControlRelation

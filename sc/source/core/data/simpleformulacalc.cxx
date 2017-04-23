@@ -18,6 +18,7 @@
 ScSimpleFormulaCalculator::ScSimpleFormulaCalculator( ScDocument* pDoc, const ScAddress& rAddr,
         const OUString& rFormula, bool bMatrixFormula, formula::FormulaGrammar::Grammar eGram )
     : mnFormatType(0)
+    , mnFormatIndex(0)
     , mbCalculated(false)
     , maAddr(rAddr)
     , mpDoc(pDoc)
@@ -30,7 +31,7 @@ ScSimpleFormulaCalculator::ScSimpleFormulaCalculator( ScDocument* pDoc, const Sc
     ScCompiler aComp(mpDoc, maAddr);
     aComp.SetGrammar(eGram);
     mpCode.reset(aComp.CompileString(rFormula));
-    if(mpCode->GetCodeError() == FormulaError::NONE && mpCode->GetLen())
+    if(!mpCode->GetCodeError() && mpCode->GetLen())
         aComp.CompileTokenArray();
 }
 
@@ -79,6 +80,7 @@ void ScSimpleFormulaCalculator::Calculate()
         maMatrixFormulaResult = aStr.makeStringAndClear();
     }
     mnFormatType = aInt.GetRetFormatType();
+    mnFormatIndex = aInt.GetRetFormatIndex();
     maResult.SetToken(aInt.GetResultToken().get());
 }
 
@@ -97,12 +99,12 @@ bool ScSimpleFormulaCalculator::IsMatrix()
     return mbMatrixResult;
 }
 
-FormulaError ScSimpleFormulaCalculator::GetErrCode()
+sal_uInt16 ScSimpleFormulaCalculator::GetErrCode()
 {
     Calculate();
 
-    FormulaError nErr = mpCode->GetCodeError();
-    if (nErr != FormulaError::NONE)
+    sal_uInt16 nErr = mpCode->GetCodeError();
+    if (nErr)
         return nErr;
     return maResult.GetResultError();
 }
@@ -111,8 +113,8 @@ double ScSimpleFormulaCalculator::GetValue()
 {
     Calculate();
 
-    if ((mpCode->GetCodeError() == FormulaError::NONE) &&
-            maResult.GetResultError() == FormulaError::NONE)
+    if ((!mpCode->GetCodeError() || mpCode->GetCodeError() == formula::errDoubleRef) &&
+            !maResult.GetResultError())
         return maResult.GetDouble();
 
     return 0.0;
@@ -123,10 +125,10 @@ svl::SharedString ScSimpleFormulaCalculator::GetString()
     Calculate();
 
     if (mbMatrixResult)
-        return svl::SharedString( maMatrixFormulaResult);   // string not interned
+        return maMatrixFormulaResult;
 
-    if ((mpCode->GetCodeError() == FormulaError::NONE) &&
-            maResult.GetResultError() == FormulaError::NONE)
+    if ((!mpCode->GetCodeError() || mpCode->GetCodeError() == formula::errDoubleRef) &&
+            !maResult.GetResultError())
         return maResult.GetString();
 
     return svl::SharedString::getEmptyString();

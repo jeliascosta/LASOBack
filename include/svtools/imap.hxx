@@ -26,17 +26,19 @@
 #include <vector>
 
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class Size;
 class Fraction;
 class IMapObject;
 
-class SVT_DLLPUBLIC ImageMap final
+class SVT_DLLPUBLIC ImageMap
 {
 private:
 
     ::std::vector< IMapObject* > maList;
     OUString                     aName;
+
+protected:
 
     // binary saving/loading
     void                ImpWriteImageMap( SvStream& rOStm, const OUString& ) const ;
@@ -66,7 +68,7 @@ public:
                         ImageMap( const ImageMap& rImageMap );
 
                         // all IMapObjects are destroyed in the destructor
-                        ~ImageMap();
+    virtual             ~ImageMap();
 
     ImageMap&           operator=( const ImageMap& rImageMap );
 
@@ -100,6 +102,9 @@ public:
 
     // deletes all internal objects
     void                ClearImageMap();
+
+    // returns the current version number
+    static sal_uInt16   GetVersion() { return IMAGE_MAP_VERSION; }
 
     const OUString&     GetName() const { return aName; }
     void                SetName( const OUString& rName ) { aName = rName; }

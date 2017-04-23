@@ -98,9 +98,9 @@ public:
 
                         SgaObjectSound();
                         SgaObjectSound( const INetURLObject& rURL );
-    virtual            ~SgaObjectSound() override;
+    virtual            ~SgaObjectSound();
 
-    virtual SgaObjKind  GetObjKind() const override { return SgaObjKind::Sound; }
+    virtual SgaObjKind  GetObjKind() const override { return SGA_OBJ_SOUND; }
     virtual BitmapEx    GetThumbBmp() const override;
 };
 
@@ -124,8 +124,9 @@ public:
                         SgaObjectSvDraw();
                         SgaObjectSvDraw( const FmFormModel& rModel, const INetURLObject& rURL );
                         SgaObjectSvDraw( SvStream& rIStm, const INetURLObject& rURL );
+    virtual            ~SgaObjectSvDraw() {};
 
-    virtual SgaObjKind  GetObjKind() const override { return SgaObjKind::SvDraw; }
+    virtual SgaObjKind  GetObjKind() const override { return SGA_OBJ_SVDRAW; }
 };
 
 class SgaObjectBmp: public SgaObject
@@ -144,8 +145,9 @@ public:
                         SgaObjectBmp();
                         SgaObjectBmp( const INetURLObject& rURL );
                         SgaObjectBmp( const Graphic& rGraphic, const INetURLObject& rURL, const OUString& rFormat );
+    virtual             ~SgaObjectBmp() {};
 
-    virtual SgaObjKind  GetObjKind() const override { return SgaObjKind::Bitmap; }
+    virtual SgaObjKind  GetObjKind() const override { return SGA_OBJ_BMP; }
 };
 
 class SgaObjectAnim : public SgaObjectBmp
@@ -155,7 +157,9 @@ public:
                         SgaObjectAnim();
                         SgaObjectAnim( const Graphic& rGraphic, const INetURLObject& rURL, const OUString& rFormatName );
 
-    virtual SgaObjKind  GetObjKind() const override { return SgaObjKind::Animation; }
+    virtual            ~SgaObjectAnim() {};
+
+    virtual SgaObjKind  GetObjKind() const override { return SGA_OBJ_ANIM; }
 };
 
 class SgaObjectINet : public SgaObjectAnim
@@ -165,7 +169,9 @@ public:
                         SgaObjectINet();
                         SgaObjectINet( const Graphic& rGraphic, const INetURLObject& rURL, const OUString& rFormatName );
 
-    virtual SgaObjKind  GetObjKind() const override { return SgaObjKind::Inet; }
+    virtual            ~SgaObjectINet() {};
+
+    virtual SgaObjKind  GetObjKind() const override { return SGA_OBJ_INET; }
 };
 #endif
 

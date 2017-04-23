@@ -23,6 +23,8 @@
 class mgcLinearSystemD
 {
 public:
+  mgcLinearSystemD() {;}
+
   static double** NewMatrix (int N);
   static void DeleteMatrix (int N, double** A);
   static double* NewVector (int N);

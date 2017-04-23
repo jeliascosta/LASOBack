@@ -58,7 +58,7 @@ public:
         <br>
         @param nCachedElements number of elements to be cached; default param set to 128
     */
-    explicit inline LRU_Cache();
+    explicit inline LRU_Cache( sal_Int32 nCachedElements = 128 );
     /** Destructor: releases all cached elements and keys.
         <br>
     */
@@ -84,11 +84,11 @@ public:
 };
 
 template< class t_Key, class t_Val, class t_KeyHash >
-inline LRU_Cache< t_Key, t_Val, t_KeyHash >::LRU_Cache()
+inline LRU_Cache< t_Key, t_Val, t_KeyHash >::LRU_Cache( sal_Int32 nCachedElements )
 #ifdef __CACHE_DIAGNOSE
     : _nCachedElements( 4 )
 #else
-    : _nCachedElements( 256 )
+    : _nCachedElements( nCachedElements )
 #endif
     , _pBlock( nullptr )
     , _pHead( nullptr )

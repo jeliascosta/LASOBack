@@ -44,13 +44,13 @@ namespace connectivity
         OSQLScanner();
         virtual ~OSQLScanner();
 
-        static void * SAL_CALL operator new( size_t nSize )
+        inline static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        static void * SAL_CALL operator new( size_t,void* _pHint )
+        inline static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        static void SAL_CALL operator delete( void * pMem )
+        inline static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        static void SAL_CALL operator delete( void *,void* )
+        inline static void SAL_CALL operator delete( void *,void* )
             {  }
 
         sal_Int32 SQLyygetc();
@@ -72,7 +72,7 @@ namespace connectivity
         static sal_Int32 GetSQLRule();
         static sal_Int32 GetDATERule();
         static sal_Int32 GetSTRINGRule();
-        sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
+        inline sal_Int32 GetCurrentPos() const { return m_nCurrentPos; }
     };
 }
 

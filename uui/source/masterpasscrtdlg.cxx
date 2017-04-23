@@ -26,12 +26,12 @@
 // MasterPasswordCreateDialog---------------------------------------------------
 
 
-IMPL_LINK_NOARG(MasterPasswordCreateDialog, EditHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(MasterPasswordCreateDialog, EditHdl_Impl, Edit&, void)
 {
-    m_pOKBtn->Enable( m_pEDMasterPasswordCrt->GetText().getLength() >= 1 );
+    m_pOKBtn->Enable( m_pEDMasterPasswordCrt->GetText().getLength() >= nMinLen );
 }
 
-IMPL_LINK_NOARG(MasterPasswordCreateDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(MasterPasswordCreateDialog, OKHdl_Impl, Button*, void)
 {
     // compare both passwords and show message box if there are not equal!!
     if( m_pEDMasterPasswordCrt->GetText() == m_pEDMasterPasswordRepeat->GetText() )
@@ -50,6 +50,7 @@ IMPL_LINK_NOARG(MasterPasswordCreateDialog, OKHdl_Impl, Button*, void)
 MasterPasswordCreateDialog::MasterPasswordCreateDialog(vcl::Window* pParent, ResMgr* pResMgr)
     : ModalDialog(pParent, "SetMasterPasswordDialog", "uui/ui/setmasterpassworddlg.ui")
     , pResourceMgr(pResMgr)
+    , nMinLen(1)
 {
     get(m_pEDMasterPasswordCrt, "password1");
     get(m_pEDMasterPasswordRepeat, "password2");

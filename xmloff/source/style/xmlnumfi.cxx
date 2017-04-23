@@ -18,9 +18,6 @@
  */
 
 #include <comphelper/string.hxx>
-
-#include <o3tl/make_unique.hxx>
-
 #include <unotools/syslocale.hxx>
 
 #include <svl/zforlist.hxx>
@@ -65,11 +62,11 @@ struct SvXMLNumFmtEntry
 class SvXMLNumImpData
 {
     SvNumberFormatter*  pFormatter;
-    std::unique_ptr<SvXMLTokenMap>      pStylesElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap>      pStyleElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap>      pStyleAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap>      pStyleElemAttrTokenMap;
-    std::unique_ptr<LocaleDataWrapper>  pLocaleData;
+    SvXMLTokenMap*      pStylesElemTokenMap;
+    SvXMLTokenMap*      pStyleElemTokenMap;
+    SvXMLTokenMap*      pStyleAttrTokenMap;
+    SvXMLTokenMap*      pStyleElemAttrTokenMap;
+    LocaleDataWrapper*  pLocaleData;
     std::vector<SvXMLNumFmtEntry> m_NameEntries;
 
     uno::Reference< uno::XComponentContext > m_xContext;
@@ -78,6 +75,7 @@ public:
     SvXMLNumImpData(
         SvNumberFormatter* pFmt,
         const uno::Reference<uno::XComponentContext>& rxContext );
+    ~SvXMLNumImpData();
 
     SvNumberFormatter*      GetNumberFormatter() const  { return pFormatter; }
     const SvXMLTokenMap&    GetStylesElemTokenMap();
@@ -97,26 +95,21 @@ struct SvXMLNumberInfo
     sal_Int32   nInteger;
     sal_Int32   nExpDigits;
     sal_Int32   nExpInterval;
-    sal_Int32   nMinNumerDigits;
-    sal_Int32   nMinDenomDigits;
-    sal_Int32   nMaxNumerDigits;
-    sal_Int32   nMaxDenomDigits;
+    sal_Int32   nNumerDigits;
+    sal_Int32   nDenomDigits;
     sal_Int32   nFracDenominator;
     sal_Int32   nMinDecimalDigits;
-    sal_Int32   nZerosNumerDigits;
-    sal_Int32   nZerosDenomDigits;
     bool        bGrouping;
     bool        bDecReplace;
     bool        bExpSign;
     bool        bDecAlign;
     double      fDisplayFactor;
-    OUString    aIntegerFractionDelimiter;
     std::map<sal_Int32, OUString> m_EmbeddedElements;
 
     SvXMLNumberInfo()
     {
-        nDecimals = nInteger = nExpDigits = nExpInterval = nMinNumerDigits = nMinDenomDigits = nMaxNumerDigits = nMaxDenomDigits =
-            nFracDenominator = nMinDecimalDigits = nZerosNumerDigits = nZerosDenomDigits = -1;
+        nDecimals = nInteger = nExpDigits = nExpInterval = nNumerDigits = nDenomDigits =
+            nFracDenominator = nMinDecimalDigits = -1;
         bGrouping = bDecReplace = bDecAlign = false;
         bExpSign = true;
         fDisplayFactor = 1.0;
@@ -139,6 +132,7 @@ public:
                                     const OUString& rLName,
                                     SvXMLNumFormatContext& rParentContext, sal_uInt16 nNewType,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList );
+    virtual     ~SvXMLNumFmtElementContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                     const OUString& rLocalName,
@@ -160,6 +154,7 @@ public:
                                     const OUString& rLName,
                                     SvXMLNumFmtElementContext& rParentContext,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList );
+    virtual     ~SvXMLNumFmtEmbeddedTextContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                     const OUString& rLocalName,
@@ -179,6 +174,7 @@ public:
                                     const OUString& rLName,
                                     SvXMLNumFormatContext& rParentContext,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList );
+    virtual     ~SvXMLNumFmtMapContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                     const OUString& rLocalName,
@@ -198,6 +194,7 @@ public:
                                     const OUString& rLName,
                                     SvXMLNumFormatContext& rParentContext,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList );
+    virtual     ~SvXMLNumFmtPropContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                     const OUString& rLocalName,
@@ -244,7 +241,9 @@ enum SvXMLStyleAttrTokens
     XML_TOK_STYLE_ATTR_TRUNCATE_ON_OVERFLOW,
     XML_TOK_STYLE_ATTR_VOLATILE,
     XML_TOK_STYLE_ATTR_TRANSL_FORMAT,
+    XML_TOK_STYLE_ATTR_TRANSL_RFC_LANGUAGE_TAG,
     XML_TOK_STYLE_ATTR_TRANSL_LANGUAGE,
+    XML_TOK_STYLE_ATTR_TRANSL_SCRIPT,
     XML_TOK_STYLE_ATTR_TRANSL_COUNTRY,
     XML_TOK_STYLE_ATTR_TRANSL_STYLE
 };
@@ -263,11 +262,6 @@ enum SvXMLStyleElemAttrTokens
     XML_TOK_ELEM_ATTR_FORCED_EXPONENT_SIGN,
     XML_TOK_ELEM_ATTR_MIN_NUMERATOR_DIGITS,
     XML_TOK_ELEM_ATTR_MIN_DENOMINATOR_DIGITS,
-    XML_TOK_ELEM_ATTR_MAX_NUMERATOR_DIGITS,
-    XML_TOK_ELEM_ATTR_MAX_DENOMINATOR_VALUE,
-    XML_TOK_ELEM_ATTR_ZEROS_NUMERATOR_DIGITS,
-    XML_TOK_ELEM_ATTR_ZEROS_DENOMINATOR_DIGITS,
-    XML_TOK_ELEM_ATTR_INTEGER_FRACTION_DELIMITER,
     XML_TOK_ELEM_ATTR_RFC_LANGUAGE_TAG,
     XML_TOK_ELEM_ATTR_LANGUAGE,
     XML_TOK_ELEM_ATTR_SCRIPT,
@@ -303,18 +297,18 @@ static const ColorData aNumFmtStdColors[XML_NUMF_COLORCOUNT] =
 
 // maps for SvXMLUnitConverter::convertEnum
 
-static const SvXMLEnumMapEntry<bool> aStyleValueMap[] =
+static const SvXMLEnumMapEntry aStyleValueMap[] =
 {
-    { XML_SHORT,            false },
-    { XML_LONG,             true },
-    { XML_TOKEN_INVALID,    false }
+    { XML_SHORT,            sal_uInt16(false) },
+    { XML_LONG,             sal_uInt16(true) },
+    { XML_TOKEN_INVALID,    0 }
 };
 
-static const SvXMLEnumMapEntry<bool> aFormatSourceMap[] =
+static const SvXMLEnumMapEntry aFormatSourceMap[] =
 {
-    { XML_FIXED,            false },
-    { XML_LANGUAGE,         true },
-    { XML_TOKEN_INVALID,    false }
+    { XML_FIXED,            sal_uInt16(false) },
+    { XML_LANGUAGE,         sal_uInt16(true) },
+    { XML_TOKEN_INVALID,    0 }
 };
 
 struct SvXMLDefaultDateFormat
@@ -358,9 +352,23 @@ SvXMLNumImpData::SvXMLNumImpData(
     SvNumberFormatter* pFmt,
     const uno::Reference<uno::XComponentContext>& rxContext )
 :   pFormatter(pFmt),
+    pStylesElemTokenMap(nullptr),
+    pStyleElemTokenMap(nullptr),
+    pStyleAttrTokenMap(nullptr),
+    pStyleElemAttrTokenMap(nullptr),
+    pLocaleData(nullptr),
     m_xContext(rxContext)
 {
-    SAL_WARN_IF( !rxContext.is(), "xmloff", "got no service manager" );
+    DBG_ASSERT( rxContext.is(), "got no service manager" );
+}
+
+SvXMLNumImpData::~SvXMLNumImpData()
+{
+    delete pStylesElemTokenMap;
+    delete pStyleElemTokenMap;
+    delete pStyleAttrTokenMap;
+    delete pStyleElemAttrTokenMap;
+    delete pLocaleData;
 }
 
 sal_uInt32 SvXMLNumImpData::GetKeyForName( const OUString& rName )
@@ -458,7 +466,7 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStylesElemTokenMap()
             XML_TOKEN_MAP_END
         };
 
-        pStylesElemTokenMap = o3tl::make_unique<SvXMLTokenMap>( aStylesElemMap );
+        pStylesElemTokenMap = new SvXMLTokenMap( aStylesElemMap );
     }
     return *pStylesElemTokenMap;
 }
@@ -496,7 +504,7 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStyleElemTokenMap()
             XML_TOKEN_MAP_END
         };
 
-        pStyleElemTokenMap = o3tl::make_unique<SvXMLTokenMap>( aStyleElemMap );
+        pStyleElemTokenMap = new SvXMLTokenMap( aStyleElemMap );
     }
     return *pStyleElemTokenMap;
 }
@@ -527,7 +535,7 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStyleAttrTokenMap()
             XML_TOKEN_MAP_END
         };
 
-        pStyleAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>( aStyleAttrMap );
+        pStyleAttrTokenMap = new SvXMLTokenMap( aStyleAttrMap );
     }
     return *pStyleAttrTokenMap;
 }
@@ -554,15 +562,6 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStyleElemAttrTokenMap()
             { XML_NAMESPACE_NUMBER, XML_FORCED_EXPONENT_SIGN,    XML_TOK_ELEM_ATTR_FORCED_EXPONENT_SIGN },
             { XML_NAMESPACE_NUMBER, XML_MIN_NUMERATOR_DIGITS,    XML_TOK_ELEM_ATTR_MIN_NUMERATOR_DIGITS },
             { XML_NAMESPACE_NUMBER, XML_MIN_DENOMINATOR_DIGITS,  XML_TOK_ELEM_ATTR_MIN_DENOMINATOR_DIGITS },
-            { XML_NAMESPACE_LO_EXT, XML_MAX_NUMERATOR_DIGITS,    XML_TOK_ELEM_ATTR_MAX_NUMERATOR_DIGITS },
-            { XML_NAMESPACE_LO_EXT, XML_MAX_DENOMINATOR_VALUE,   XML_TOK_ELEM_ATTR_MAX_DENOMINATOR_VALUE },
-            { XML_NAMESPACE_NUMBER, XML_MAX_DENOMINATOR_VALUE,   XML_TOK_ELEM_ATTR_MAX_DENOMINATOR_VALUE },
-            { XML_NAMESPACE_LO_EXT, XML_ZEROS_NUMERATOR_DIGITS,  XML_TOK_ELEM_ATTR_ZEROS_NUMERATOR_DIGITS },
-            { XML_NAMESPACE_NUMBER, XML_ZEROS_NUMERATOR_DIGITS,  XML_TOK_ELEM_ATTR_ZEROS_NUMERATOR_DIGITS },
-            { XML_NAMESPACE_LO_EXT, XML_ZEROS_DENOMINATOR_DIGITS,XML_TOK_ELEM_ATTR_ZEROS_DENOMINATOR_DIGITS },
-            { XML_NAMESPACE_NUMBER, XML_ZEROS_DENOMINATOR_DIGITS,XML_TOK_ELEM_ATTR_ZEROS_DENOMINATOR_DIGITS },
-            { XML_NAMESPACE_LO_EXT, XML_INTEGER_FRACTION_DELIMITER, XML_TOK_ELEM_ATTR_INTEGER_FRACTION_DELIMITER },
-            { XML_NAMESPACE_NUMBER, XML_INTEGER_FRACTION_DELIMITER, XML_TOK_ELEM_ATTR_INTEGER_FRACTION_DELIMITER },
             { XML_NAMESPACE_NUMBER, XML_RFC_LANGUAGE_TAG,        XML_TOK_ELEM_ATTR_RFC_LANGUAGE_TAG     },
             { XML_NAMESPACE_NUMBER, XML_LANGUAGE,                XML_TOK_ELEM_ATTR_LANGUAGE             },
             { XML_NAMESPACE_NUMBER, XML_SCRIPT,                  XML_TOK_ELEM_ATTR_SCRIPT               },
@@ -573,7 +572,7 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStyleElemAttrTokenMap()
             XML_TOKEN_MAP_END
         };
 
-        pStyleElemAttrTokenMap = o3tl::make_unique<SvXMLTokenMap>( aStyleElemAttrMap );
+        pStyleElemAttrTokenMap = new SvXMLTokenMap( aStyleElemAttrMap );
     }
     return *pStyleElemAttrTokenMap;
 }
@@ -581,7 +580,7 @@ const SvXMLTokenMap& SvXMLNumImpData::GetStyleElemAttrTokenMap()
 const LocaleDataWrapper& SvXMLNumImpData::GetLocaleData( LanguageType nLang )
 {
     if ( !pLocaleData )
-        pLocaleData = o3tl::make_unique<LocaleDataWrapper>(
+        pLocaleData = new LocaleDataWrapper(
                pFormatter ? pFormatter->GetComponentContext() : m_xContext,
             LanguageTag( nLang ) );
     else
@@ -615,6 +614,10 @@ SvXMLNumFmtMapContext::SvXMLNumFmtMapContext( SvXMLImport& rImport,
                 sName = sValue;
         }
     }
+}
+
+SvXMLNumFmtMapContext::~SvXMLNumFmtMapContext()
+{
 }
 
 SvXMLImportContext* SvXMLNumFmtMapContext::CreateChildContext(
@@ -659,6 +662,10 @@ SvXMLNumFmtPropContext::SvXMLNumFmtPropContext( SvXMLImport& rImport,
             bColSet = ::sax::Converter::convertColor( m_nColor, sValue );
         }
     }
+}
+
+SvXMLNumFmtPropContext::~SvXMLNumFmtPropContext()
+{
 }
 
 SvXMLImportContext* SvXMLNumFmtPropContext::CreateChildContext(
@@ -706,6 +713,10 @@ SvXMLNumFmtEmbeddedTextContext::SvXMLNumFmtEmbeddedTextContext( SvXMLImport& rIm
                 nTextPosition = nAttrVal;
         }
     }
+}
+
+SvXMLNumFmtEmbeddedTextContext::~SvXMLNumFmtEmbeddedTextContext()
+{
 }
 
 SvXMLImportContext* SvXMLNumFmtEmbeddedTextContext::CreateChildContext(
@@ -901,7 +912,7 @@ SvXMLNumFmtElementContext::SvXMLNumFmtElementContext( SvXMLImport& rImport,
     sal_Int32 nAttrVal;
     bool bAttrBool(false);
     bool bVarDecimals = false;
-    bool bIsMaxDenominator = false;
+    sal_uInt16 nAttrEnum;
     double fAttrDouble;
 
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
@@ -962,41 +973,16 @@ SvXMLNumFmtElementContext::SvXMLNumFmtElementContext( SvXMLImport& rImport,
                     aNumInfo.bExpSign = bAttrBool;
                 break;
             case XML_TOK_ELEM_ATTR_MIN_NUMERATOR_DIGITS:
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 0 ))
-                    aNumInfo.nMinNumerDigits = nAttrVal;
+                if (::sax::Converter::convertNumber( nAttrVal, sValue, 1 ))  // at least one '?' (tdf#38097)
+                    aNumInfo.nNumerDigits = nAttrVal;
                 break;
-            case XML_TOK_ELEM_ATTR_MIN_DENOMINATOR_DIGITS:
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 0 ))
-                    aNumInfo.nMinDenomDigits = nAttrVal;
-                break;
-            case XML_TOK_ELEM_ATTR_MAX_NUMERATOR_DIGITS:
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 1 ))  // at least one '#'
-                    aNumInfo.nMaxNumerDigits = nAttrVal;
+            case XML_TOK_ELEM_ATTR_MIN_DENOMINATOR_DIGITS:  // while max-denominator-digits not treated (tdf#99661)
+                if (::sax::Converter::convertNumber( nAttrVal, sValue, 1 ))  // at least one '?' (tdf#38097)
+                    aNumInfo.nDenomDigits = nAttrVal;
                 break;
             case XML_TOK_ELEM_ATTR_DENOMINATOR_VALUE:
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 1 )) // 0 is not valid
-                {
-                    aNumInfo.nFracDenominator = nAttrVal;
-                    bIsMaxDenominator = false;
-                }
-                break;
-            case XML_TOK_ELEM_ATTR_MAX_DENOMINATOR_VALUE:  // part of ODF 1.3
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 1 ) && aNumInfo.nFracDenominator <= 0)
-                {   // if denominator value not yet defined
-                    aNumInfo.nFracDenominator = nAttrVal;
-                    bIsMaxDenominator = true;
-                }
-                break;
-            case XML_TOK_ELEM_ATTR_ZEROS_NUMERATOR_DIGITS:
                 if (::sax::Converter::convertNumber( nAttrVal, sValue, 0 ))
-                    aNumInfo.nZerosNumerDigits = nAttrVal;
-                break;
-            case XML_TOK_ELEM_ATTR_ZEROS_DENOMINATOR_DIGITS:
-                if (::sax::Converter::convertNumber( nAttrVal, sValue, 0 ))
-                    aNumInfo.nZerosDenomDigits = nAttrVal;
-                 break;
-            case XML_TOK_ELEM_ATTR_INTEGER_FRACTION_DELIMITER:
-                aNumInfo.aIntegerFractionDelimiter = sValue;
+                    aNumInfo.nFracDenominator = nAttrVal;
                 break;
             case XML_TOK_ELEM_ATTR_RFC_LANGUAGE_TAG:
                 aLanguageTagODF.maRfcLanguageTag = sValue;
@@ -1011,7 +997,8 @@ SvXMLNumFmtElementContext::SvXMLNumFmtElementContext( SvXMLImport& rImport,
                 aLanguageTagODF.maCountry = sValue;
                 break;
             case XML_TOK_ELEM_ATTR_STYLE:
-                SvXMLUnitConverter::convertEnum( bLong, sValue, aStyleValueMap );
+                if ( SvXMLUnitConverter::convertEnum( nAttrEnum, sValue, aStyleValueMap ) )
+                    bLong = (bool) nAttrEnum;
                 break;
             case XML_TOK_ELEM_ATTR_TEXTUAL:
                 if (::sax::Converter::convertBool( bAttrBool, sValue ))
@@ -1029,38 +1016,6 @@ SvXMLNumFmtElementContext::SvXMLNumFmtElementContext( SvXMLImport& rImport,
         else
             aNumInfo.nMinDecimalDigits = aNumInfo.nDecimals;
     }
-    if ( aNumInfo.nZerosDenomDigits > 0 )
-    {   // nMin = count of '0' and '?'
-        if ( aNumInfo.nMinDenomDigits < aNumInfo.nZerosDenomDigits )
-            aNumInfo.nMinDenomDigits = aNumInfo.nZerosDenomDigits;
-    }
-    else
-        aNumInfo.nZerosDenomDigits = 0;
-    if ( aNumInfo.nMinDenomDigits >= 0 )
-        if ( aNumInfo.nMaxDenomDigits < aNumInfo.nMinDenomDigits )
-            aNumInfo.nMaxDenomDigits = ( aNumInfo.nMinDenomDigits ? aNumInfo.nMinDenomDigits : 1 );
-    if ( aNumInfo.nZerosNumerDigits > 0 )
-    {
-        if ( aNumInfo.nMinNumerDigits < aNumInfo.nZerosNumerDigits )
-            aNumInfo.nMinNumerDigits = aNumInfo.nZerosNumerDigits;
-    }
-    else
-        aNumInfo.nZerosNumerDigits = 0;
-    if ( aNumInfo.nMinNumerDigits >= 0 )
-        if ( aNumInfo.nMaxNumerDigits < aNumInfo.nMinNumerDigits )
-            aNumInfo.nMaxNumerDigits = ( aNumInfo.nMinNumerDigits ? aNumInfo.nMinNumerDigits : 1 );
-    if ( bIsMaxDenominator && aNumInfo.nFracDenominator > 0 )
-    {
-        aNumInfo.nMaxDenomDigits = floor( log10( aNumInfo.nFracDenominator ) ) + 1;
-        aNumInfo.nFracDenominator = -1;  // Max denominator value only gives number of digits at denominator
-    }
-    if ( aNumInfo.nMaxDenomDigits > 0 )
-    {
-        if ( aNumInfo.nMinDenomDigits < 0 )
-            aNumInfo.nMinDenomDigits = 0;
-        else if ( aNumInfo.nMinDenomDigits > aNumInfo.nMaxDenomDigits )
-            aNumInfo.nMinDenomDigits = aNumInfo.nMaxDenomDigits;
-    }
 
     if ( !aLanguageTagODF.isEmpty() )
     {
@@ -1068,9 +1023,10 @@ SvXMLNumFmtElementContext::SvXMLNumFmtElementContext( SvXMLImport& rImport,
         if ( nElementLang == LANGUAGE_DONTKNOW )
             nElementLang = LANGUAGE_SYSTEM;         //! error handling for unknown locales?
     }
+}
 
-    if ( aNumInfo.aIntegerFractionDelimiter.isEmpty() )
-        aNumInfo.aIntegerFractionDelimiter = " ";
+SvXMLNumFmtElementContext::~SvXMLNumFmtElementContext()
+{
 }
 
 SvXMLImportContext* SvXMLNumFmtElementContext::CreateChildContext(
@@ -1124,7 +1080,7 @@ void SvXMLNumFmtElementContext::EndElement()
 
                 if ( rParent.ReplaceNfKeyword( NF_KEY_NNN, NF_KEY_NNNN ) )
                 {
-                    aContent.truncate();
+                    aContent = OUStringBuffer();
                 }
 
                 rParent.SetHasLongDoW( false );     // only once
@@ -1177,35 +1133,23 @@ void SvXMLNumFmtElementContext::EndElement()
                     : ( bEffLong ? NF_KEY_MM : NF_KEY_M ) ) );
             break;
         case XML_TOK_STYLE_YEAR:
+            rParent.UpdateCalendar( sCalendar );
 //! I18N doesn't provide SYSTEM or extended date information yet
+            // Y after G (era) is replaced by E, also if we're switching to the
+            // other second known calendar for a locale.
+            /* TODO: here only for zh-TW, handle for other locales as well. */
+            if ( rParent.HasEra() ||
+                    (sCalendar.equalsIgnoreAsciiCaseAscii("ROC") &&
+                     rParent.GetLocaleData().getLoadedLanguageTag().getBcp47() == "zh-TW"))
             {
-                // Y after G (era) is replaced by E for a secondary calendar.
-                // Do not replace for default calendar.
-                // Also replace Y by E if we're switching to the secondary
-                // calendar of a locale if it is known to implicitly use E.
-                bool bImplicitEC = (!sCalendar.isEmpty() &&
-                        rParent.GetLocaleData().doesSecondaryCalendarUseEC( sCalendar));
-                if (bImplicitEC || (!sCalendar.isEmpty() && rParent.HasEra()))
-                {
-                    // If E or EE is the first format keyword, passing
-                    // bImplicitEC=true suppresses the superfluous calendar
-                    // modifier for this format. This does not help for
-                    // something like [~cal]DD/MM/EE but so far only YMD order
-                    // is used with such calendars. Live with the modifier if
-                    // other keywords precede this.
-                    rParent.UpdateCalendar( sCalendar, bImplicitEC);
-                    rParent.AddNfKeyword(
-                            sal::static_int_cast< sal_uInt16 >(
-                                bEffLong ? NF_KEY_EEC : NF_KEY_EC ) );
-                }
-                else
-                {
-                    rParent.UpdateCalendar( sCalendar );
-                    rParent.AddNfKeyword(
-                            sal::static_int_cast< sal_uInt16 >(
-                                bEffLong ? NF_KEY_YYYY : NF_KEY_YY ) );
-                }
+                rParent.AddNfKeyword(
+                    sal::static_int_cast< sal_uInt16 >(
+                        bEffLong ? NF_KEY_EEC : NF_KEY_EC ) );
             }
+            else
+                rParent.AddNfKeyword(
+                    sal::static_int_cast< sal_uInt16 >(
+                        bEffLong ? NF_KEY_YYYY : NF_KEY_YY ) );
             break;
         case XML_TOK_STYLE_ERA:
             rParent.UpdateCalendar( sCalendar );
@@ -1268,22 +1212,15 @@ void SvXMLNumFmtElementContext::EndElement()
                     // add integer part only if min-integer-digits attribute is there
                     aNumInfo.nDecimals = 0;
                     rParent.AddNumber( aNumInfo );      // number without decimals
-                    OUStringBuffer sIntegerFractionDelimiter = aNumInfo.aIntegerFractionDelimiter;
-                    lcl_EnquoteIfNecessary( sIntegerFractionDelimiter, rParent );
-                    rParent.AddToCode( sIntegerFractionDelimiter.makeStringAndClear() ); // default is ' '
+                    rParent.AddToCode( ' ' );
                 }
 
                 //! build string and add at once
 
                 sal_Int32 i;
-                for (i=aNumInfo.nMaxNumerDigits; i > 0; i--)
+                for (i=0; i<aNumInfo.nNumerDigits; i++)
                 {
-                    if ( i > aNumInfo.nMinNumerDigits )
-                        rParent.AddToCode( '#' );
-                    else if ( i > aNumInfo.nZerosNumerDigits )
-                        rParent.AddToCode( '?' );
-                    else
-                        rParent.AddToCode( '0' );
+                    rParent.AddToCode( '?' );
                 }
                 rParent.AddToCode( '/' );
                 if ( aNumInfo.nFracDenominator > 0 )
@@ -1292,14 +1229,9 @@ void SvXMLNumFmtElementContext::EndElement()
                 }
                 else
                 {
-                    for (i=aNumInfo.nMaxDenomDigits; i > 0 ; i--)
+                    for (i=0; i<aNumInfo.nDenomDigits; i++)
                     {
-                        if ( i > aNumInfo.nMinDenomDigits )
-                            rParent.AddToCode( '#' );
-                        else if ( i > aNumInfo.nZerosDenomDigits )
-                            rParent.AddToCode( '?' );
-                        else
-                            rParent.AddToCode( '0' );
+                        rParent.AddToCode( '?');
                     }
                 }
             }
@@ -1396,6 +1328,7 @@ SvXMLNumFormatContext::SvXMLNumFormatContext( SvXMLImport& rImport,
     OUString sNatNumAttrScript, sNatNumAttrRfcLanguageTag;
     css::i18n::NativeNumberXmlAttributes aNatNumAttr;
     bool bAttrBool(false);
+    sal_uInt16 nAttrEnum;
 
     sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
     for( sal_Int16 i=0; i < nAttrCount; i++ )
@@ -1431,7 +1364,8 @@ SvXMLNumFormatContext::SvXMLNumFormatContext( SvXMLImport& rImport,
                     bAutoOrder = bAttrBool;
                 break;
             case XML_TOK_STYLE_ATTR_FORMAT_SOURCE:
-                SvXMLUnitConverter::convertEnum( bFromSystem, sValue, aFormatSourceMap );
+                if ( SvXMLUnitConverter::convertEnum( nAttrEnum, sValue, aFormatSourceMap ) )
+                    bFromSystem = (bool) nAttrEnum;
                 break;
             case XML_TOK_STYLE_ATTR_TRUNCATE_ON_OVERFLOW:
                 if (::sax::Converter::convertBool( bAttrBool, sValue ))
@@ -1446,8 +1380,14 @@ SvXMLNumFormatContext::SvXMLNumFormatContext( SvXMLImport& rImport,
             case XML_TOK_STYLE_ATTR_TRANSL_FORMAT:
                 aNatNumAttr.Format = sValue;
                 break;
+            case XML_TOK_STYLE_ATTR_TRANSL_RFC_LANGUAGE_TAG:
+                sNatNumAttrRfcLanguageTag = sValue;
+                break;
             case XML_TOK_STYLE_ATTR_TRANSL_LANGUAGE:
                 aNatNumAttr.Locale.Language = sValue;
+                break;
+            case XML_TOK_STYLE_ATTR_TRANSL_SCRIPT:
+                sNatNumAttrScript = sValue;
                 break;
             case XML_TOK_STYLE_ATTR_TRANSL_COUNTRY:
                 aNatNumAttr.Locale.Country = sValue;
@@ -1795,6 +1735,11 @@ sal_Int32 SvXMLNumFormatContext::CreateAndInsert(SvNumberFormatter* pFormatter)
         GetImport().AddNumberStyle( nKey, GetName() );
 
     return nKey;
+}
+
+void SvXMLNumFormatContext::Finish( bool bOverwrite )
+{
+    SvXMLStyleContext::Finish( bOverwrite );
 }
 
 const LocaleDataWrapper& SvXMLNumFormatContext::GetLocaleData() const
@@ -2235,16 +2180,16 @@ void SvXMLNumFormatContext::AddColor( sal_uInt32 const nColor )
     }
 }
 
-void SvXMLNumFormatContext::UpdateCalendar( const OUString& rNewCalendar, bool bImplicitSecondaryCalendarEC )
+void SvXMLNumFormatContext::UpdateCalendar( const OUString& rNewCalendar )
 {
     if ( rNewCalendar != sCalendar )
     {
         sCalendar = rNewCalendar;
-        if ( !sCalendar.isEmpty() && !bImplicitSecondaryCalendarEC )
+        if ( !sCalendar.isEmpty() )
         {
             aFormatCode.append( "[~" );            // intro for calendar code
             aFormatCode.append( sCalendar );
-            aFormatCode.append( ']' );    // end of calendar code
+            aFormatCode.append( ']' );    // end of "new" currency symbolcalendar code
         }
     }
 }
@@ -2262,7 +2207,7 @@ SvXMLNumFmtHelper::SvXMLNumFmtHelper(
     const uno::Reference<util::XNumberFormatsSupplier>& rSupp,
     const uno::Reference<uno::XComponentContext>& rxContext )
 {
-    SAL_WARN_IF( !rxContext.is(), "xmloff", "got no service manager" );
+    DBG_ASSERT( rxContext.is(), "got no service manager" );
 
     SvNumberFormatter* pFormatter = nullptr;
     SvNumberFormatsSupplierObj* pObj =
@@ -2270,22 +2215,24 @@ SvXMLNumFmtHelper::SvXMLNumFmtHelper(
     if (pObj)
         pFormatter = pObj->GetNumberFormatter();
 
-    pData = o3tl::make_unique<SvXMLNumImpData>( pFormatter, rxContext );
+    pData = new SvXMLNumImpData( pFormatter, rxContext );
 }
 
 SvXMLNumFmtHelper::SvXMLNumFmtHelper(
     SvNumberFormatter* pNumberFormatter,
     const uno::Reference<uno::XComponentContext>& rxContext )
 {
-    SAL_WARN_IF( !rxContext.is(), "xmloff", "got no service manager" );
+    DBG_ASSERT( rxContext.is(), "got no service manager" );
 
-    pData = o3tl::make_unique<SvXMLNumImpData>( pNumberFormatter, rxContext );
+    pData = new SvXMLNumImpData( pNumberFormatter, rxContext );
 }
 
 SvXMLNumFmtHelper::~SvXMLNumFmtHelper()
 {
     //  remove temporary (volatile) formats from NumberFormatter
     pData->RemoveVolatileFormats();
+
+    delete pData;
 }
 
 SvXMLStyleContext*  SvXMLNumFmtHelper::CreateChildContext( SvXMLImport& rImport,
@@ -2307,7 +2254,7 @@ SvXMLStyleContext*  SvXMLNumFmtHelper::CreateChildContext( SvXMLImport& rImport,
         case XML_TOK_STYLES_BOOLEAN_STYLE:
         case XML_TOK_STYLES_TEXT_STYLE:
             pContext = new SvXMLNumFormatContext( rImport, nPrefix, rLocalName,
-                                                    pData.get(), nToken, xAttrList, rStyles );
+                                                    pData, nToken, xAttrList, rStyles );
             break;
     }
 

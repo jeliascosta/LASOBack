@@ -149,6 +149,24 @@ namespace sfx2
         virtual bool
                     hasTrustedScriptingSignature( bool bAllowUIToAddAuthor ) = 0;
 
+        /** shows a warning that the document's signature is broken
+
+            Here, a similar note applies as to getScriptingSignatureState: This method doesn't
+            really belong here. It's just there because SfxObjectShell_Impl::bSignatureErrorIsShown
+            is not accessible where the method is called.
+            So, once the signature handling has been oursourced from SfxObjectShell/_Impl, so it
+            is re-usable in non-SFX contexts as well, this method here is also unneeded, probably.
+
+            @param _rxInteraction
+                the interaction handler to use for showing the warning. It is exactly the same
+                as passed to DocumentMacroMode::adjustMacroMode, so it is <NULL/> if and
+                only if the instance passed to that method was <NULL/>.
+        */
+        virtual void
+                    showBrokenSignatureWarning(
+                        const css::uno::Reference< css::task::XInteractionHandler >& _rxInteraction
+                    ) const = 0;
+
     protected:
         ~IMacroDocumentAccess() {}
     };
@@ -172,6 +190,7 @@ namespace sfx2
             DocumentMacroMode instance lives, at least
         */
         DocumentMacroMode( IMacroDocumentAccess& _rDocumentAccess );
+        ~DocumentMacroMode();
 
         /** allows macro execution in the document
 
@@ -227,7 +246,7 @@ namespace sfx2
             Note that if this method returns <FALSE/>, then subsequent calls of
             ->adjustMacroMode can still return <FALSE/>.
             That is, if the current macro execution mode for the document is not yet known
-            (and in particular <em>not</em> MacroExecMode::NEVER_EXECUTE), then ->isMacroExecutionDisallowed
+            (and inparticular <em>not</em> MacroExecMode::NEVER_EXECUTE), then ->isMacroExecutionDisallowed
             will return <FALSE/>.
             However, a subsequent call to ->adjustMacroMode can result in the user
             denying macro execution, in which ->adjustMacroMode will return <FALSE/>,

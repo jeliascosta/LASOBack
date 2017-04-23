@@ -39,11 +39,10 @@ class Date;
 namespace tools { class Time; }
 class CalendarWrapper;
 
-enum class DateOrder {
-    Invalid = -1,
-    MDY = 0,
+enum DateFormat {
+    MDY,
     DMY,
-    YMD,
+    YMD
 };
 
 enum MeasurementSystem {
@@ -59,24 +58,22 @@ class UNOTOOLS_DLLPUBLIC LocaleDataWrapper
     css::uno::Reference< css::i18n::XLocaleData4 >     xLD;
     LanguageTag                                        maLanguageTag;
     std::shared_ptr< css::i18n::Calendar2 >            xDefaultCalendar;
-    std::shared_ptr< css::i18n::Calendar2 >            xSecondaryCalendar;
     css::i18n::LocaleDataItem                          aLocaleDataItem;
     css::uno::Sequence< OUString >                     aReservedWordSeq;
     css::uno::Sequence< OUString >                     aDateAcceptancePatterns;
     css::uno::Sequence< sal_Int32 >                    aGrouping;
     // cached items
-    OUString                aLocaleItem[css::i18n::LocaleItem::COUNT];
-    OUString                aReservedWord[css::i18n::reservedWords::COUNT];
-    OUString                aCurrSymbol;
-    OUString                aCurrBankSymbol;
-    DateOrder               nDateOrder;
-    DateOrder               nLongDateOrder;
-    sal_uInt16              nCurrPositiveFormat;
-    sal_uInt16              nCurrNegativeFormat;
-    sal_uInt16              nCurrDigits;
-    bool                    bLocaleDataItemValid;
-    bool                    bReservedWordValid;
-    bool                    bSecondaryCalendarValid;
+    OUString               aLocaleItem[css::i18n::LocaleItem::COUNT];
+    OUString               aReservedWord[css::i18n::reservedWords::COUNT];
+    OUString               aCurrSymbol;
+    OUString               aCurrBankSymbol;
+    int                         nDateFormat;
+    int                         nLongDateFormat;
+    sal_uInt16                      nCurrPositiveFormat;
+    sal_uInt16                      nCurrNegativeFormat;
+    sal_uInt16                      nCurrDigits;
+    bool                        bLocaleDataItemValid;
+    bool                        bReservedWordValid;
     mutable ::utl::ReadWriteMutex   aMutex;
     struct Locale_Compare
     {
@@ -84,14 +81,17 @@ class UNOTOOLS_DLLPUBLIC LocaleDataWrapper
     };
     mutable std::map<css::lang::Locale, css::i18n::LocaleDataItem, Locale_Compare> maDataItemCache;
 
+    // dummies, to be implemented or provided by XML locale data
+    sal_Unicode                 cCurrZeroChar;
+
                                 // whenever Locale changes
     void                invalidateData();
 
     void                getOneLocaleItemImpl( sal_Int16 nItem );
-    const OUString&     getOneLocaleItem( sal_Int16 nItem ) const;
+    const OUString& getOneLocaleItem( sal_Int16 nItem ) const;
 
     void                getOneReservedWordImpl( sal_Int16 nWord );
-    const OUString&     getOneReservedWord( sal_Int16 nWord ) const;
+    const OUString& getOneReservedWord( sal_Int16 nWord ) const;
 
     void                getCurrSymbolsImpl();
     void                getCurrFormatsImpl();
@@ -101,11 +101,10 @@ class UNOTOOLS_DLLPUBLIC LocaleDataWrapper
                             sal_Int32& nPar, sal_Int32& nNum,
                             sal_Int32& nBlank, sal_Int32& nSym );
 
-    void                getDateOrdersImpl();
-    DateOrder           scanDateOrderImpl( const OUString& rCode );
+    void                getDateFormatsImpl();
+    DateFormat          scanDateFormatImpl( const OUString& rCode );
 
     void                getDefaultCalendarImpl();
-    void                getSecondaryCalendarImpl();
 
     sal_Unicode*        ImplAddFormatNum( sal_Unicode* pBuf,
                             sal_Int64 nNumber, sal_uInt16 nDecimals,
@@ -176,17 +175,13 @@ public:
     MeasurementSystem   mapMeasurementStringToEnum( const OUString& rMS ) const;
 
     /// Convenience method to obtain the default calendar.
-    const std::shared_ptr< css::i18n::Calendar2 >& getDefaultCalendar() const;
+    const std::shared_ptr< css::i18n::Calendar2 > getDefaultCalendar() const;
 
     /// Convenience method to obtain the day names of the default calendar.
     const css::uno::Sequence< css::i18n::CalendarItem2 > getDefaultCalendarDays() const;
 
     /// Convenience method to obtain the month names of the default calendar.
     const css::uno::Sequence< css::i18n::CalendarItem2 > getDefaultCalendarMonths() const;
-
-    /** If the secondary calendar, if any, is of the name passed AND number
-        formats using it usually use the E or EE keyword (EC|EEC). */
-    bool doesSecondaryCalendarUseEC( const OUString& rName ) const;
 
     /** Obtain digit grouping. The usually known grouping by thousands (#,###)
         is actually only one of possible groupings. Another one, for example,
@@ -245,8 +240,8 @@ public:
     sal_uInt16              getCurrDigits() const;
 
     // simple date and time formatting
-    DateOrder          getDateOrder() const;
-    DateOrder          getLongDateOrder() const;
+    DateFormat          getDateFormat() const;
+    DateFormat          getLongDateFormat() const;
     /// only numerical values of Gregorian calendar
     OUString       getDate( const Date& rDate ) const;
     OUString       getTime( const tools::Time& rTime, bool bSec = true,
@@ -262,7 +257,7 @@ public:
                          */
     OUString       getLongDate( const Date& rDate,
                             CalendarWrapper& rCal,
-                            bool bTwoDigitYear
+                            bool bTwoDigitYear = false
                             ) const;
 
                         /** Simple number formatting
@@ -284,14 +279,14 @@ public:
                             bool bUseThousandSep = true ) const;
 
     // dummy returns, to be implemented
-    sal_Unicode         getCurrZeroChar() const
-                                    { return '0'; }
-    static bool         isNumLeadingZero()
+    inline  sal_Unicode         getCurrZeroChar() const
+                                    { return cCurrZeroChar; }
+    static inline  bool         isNumLeadingZero()
                                     { return true; }
                                 /// standard decimal places
-    static sal_uInt16    getNumDigits()
+    static inline sal_uInt16    getNumDigits()
                                     { return 2; }
-    static bool         isNumTrailingZeros()
+    static inline  bool         isNumTrailingZeros()
                                     { return true; }
 
     // reserved words
@@ -313,7 +308,7 @@ public:
         OOO_ENABLE_LOCALE_DATA_CHECKS is set to 'Y' or 'Yes' (or any other
         string starting with 'Y') or '1'.
         Also used in conjunction with the number formatter. */
-    static  bool        areChecksEnabled()
+    static  inline  bool        areChecksEnabled()
                                     {
                                         if (nLocaleDataChecking == 0)
                                             evaluateLocaleDataChecking();
@@ -324,7 +319,7 @@ public:
         A string similar to "de_DE requested\n en_US loaded" is appended. */
     OUString appendLocaleInfo(const OUString& rDebugMsg) const;
 
-    /** Output a message during locale data checking. The (UTF-8) string is
+    /** Ouput a message during locale data checking. The (UTF-8) string is
         written to stderr and in a non-product build or if DBG_UTIL is enabled
         also raised as an assertion message box. */
     static  void                outputCheckMessage( const OUString& rMsg );

@@ -36,30 +36,30 @@ public:
        // IDropTarget
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             /* [in] */ REFIID riid,
-            /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject) override;
+            /* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject);
 
-    virtual ULONG STDMETHODCALLTYPE AddRef( ) override;
+    virtual ULONG STDMETHODCALLTYPE AddRef( );
 
-    virtual ULONG STDMETHODCALLTYPE Release( ) override;
+    virtual ULONG STDMETHODCALLTYPE Release( );
 
     virtual HRESULT STDMETHODCALLTYPE DragEnter(
             /* [unique][in] */ IDataObject __RPC_FAR *pDataObj,
             /* [in] */ DWORD grfKeyState,
             /* [in] */ POINTL pt,
-            /* [out][in] */ DWORD __RPC_FAR *pdwEffect) override;
+            /* [out][in] */ DWORD __RPC_FAR *pdwEffect);
 
     virtual HRESULT STDMETHODCALLTYPE DragOver(
             /* [in] */ DWORD grfKeyState,
             /* [in] */ POINTL pt,
-            /* [out][in] */ DWORD __RPC_FAR *pdwEffect) override;
+            /* [out][in] */ DWORD __RPC_FAR *pdwEffect);
 
-    virtual HRESULT STDMETHODCALLTYPE DragLeave( ) override;
+    virtual HRESULT STDMETHODCALLTYPE DragLeave( ) ;
 
     virtual HRESULT STDMETHODCALLTYPE Drop(
             /* [unique][in] */ IDataObject __RPC_FAR *pDataObj,
             /* [in] */ DWORD grfKeyState,
             /* [in] */ POINTL pt,
-            /* [out][in] */ DWORD __RPC_FAR *pdwEffect) override;
+            /* [out][in] */ DWORD __RPC_FAR *pdwEffect);
 
 };
 #endif

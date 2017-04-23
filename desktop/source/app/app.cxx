@@ -37,7 +37,6 @@
 #include "desktopcontext.hxx"
 #include "migration.hxx"
 
-#include <o3tl/runtimetooustring.hxx>
 #include <svl/languageoptions.hxx>
 #include <svtools/javacontext.hxx>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -81,9 +80,7 @@
 #include <toolkit/helper/vclunohelper.hxx>
 #include <comphelper/configuration.hxx>
 #include <comphelper/fileurl.hxx>
-#include <comphelper/threadpool.hxx>
 #include <comphelper/processfactory.hxx>
-#include <comphelper/backupfilehelper.hxx>
 #include <unotools/bootstrap.hxx>
 #include <unotools/configmgr.hxx>
 #include <unotools/moduleoptions.hxx>
@@ -103,7 +100,6 @@
 #include <vcl/settings.hxx>
 #include <sfx2/sfx.hrc>
 #include <sfx2/app.hxx>
-#include <sfx2/safemode.hxx>
 #include <svl/itemset.hxx>
 #include <svl/eitem.hxx>
 #include <basic/sbstar.hxx>
@@ -115,6 +111,12 @@
 #include <vcl/graphicfilter.hxx>
 
 #include "langselect.hxx"
+
+#include <config_telepathy.h>
+
+#if ENABLE_TELEPATHY
+#include <tubes/manager.hxx>
+#endif
 
 #if HAVE_FEATURE_BREAKPAD
 #include <fstream>
@@ -521,13 +523,13 @@ Desktop::Desktop()
     , m_aBootstrapError(BE_OK)
     , m_aBootstrapStatus(BS_OK)
 {
-    m_firstRunTimer.SetTimeout(3000); // 3 sec.
-    m_firstRunTimer.SetInvokeHandler(LINK(this, Desktop, AsyncInitFirstRun));
-    m_firstRunTimer.SetDebugName( "desktop::Desktop m_firstRunTimer" );
 }
 
 Desktop::~Desktop()
 {
+#if ENABLE_TELEPATHY
+    TeleManager::finalize();
+#endif
 }
 
 void Desktop::Init()
@@ -552,20 +554,6 @@ void Desktop::Init()
         SetBootstrapError( BE_UNO_SERVICEMANAGER, e.Message );
     }
 
-    // Check whether safe mode is enabled
-    CommandLineArgs& rCmdLine = GetCommandLineArgs();
-    // Check if we are restarting from safe mode - in that case we don't want to enter it again
-    if (sfx2::SafeMode::hasRestartFlag())
-        sfx2::SafeMode::removeRestartFlag();
-    else if (rCmdLine.IsSafeMode() || sfx2::SafeMode::hasFlag())
-        Application::EnableSafeMode();
-
-    // When we are in SafeMode we need to do changes before the configuration
-    // gets read (langselect::prepareLocale() by UNO API -> Components::Components)
-    // This may prepare SafeMode or restore from it by moving data in
-    // the UserConfiguration directory
-    comphelper::BackupFileHelper::reactOnSafeMode(Application::IsSafeModeEnabled());
-
     if ( m_aBootstrapError == BE_OK )
     {
         try
@@ -578,17 +566,6 @@ void Desktop::Init()
         catch (css::uno::Exception & e)
         {
             SetBootstrapError( BE_OFFICECONFIG_BROKEN, e.Message );
-        }
-
-        // test code for ProfileSafeMode to allow testing the fail
-        // of loading the office configuration initially. To use,
-        // either set to true and compile, or set a breakpoint
-        // in debugger and change the local bool
-        static bool bTryHardOfficeconfigBroken(false);
-
-        if (bTryHardOfficeconfigBroken)
-        {
-            SetBootstrapError(BE_OFFICECONFIG_BROKEN, OUString());
         }
     }
 
@@ -961,19 +938,11 @@ void Desktop::HandleBootstrapErrors(
     }
     else if ( aBootstrapError == BE_OFFICECONFIG_BROKEN )
     {
-        // set flag at BackupFileHelper to be able to know if _exit was called and
-        // actions are executed after this. This method we are in will not return,
-        // but end up in a _exit() call
-        comphelper::BackupFileHelper::setExitWasCalled();
-
-        // enter safe mode, too
-        sfx2::SafeMode::putFlag();
-
         OUString msg(
             GetMsgString(
-            STR_CONFIG_ERR_ACCESS_GENERAL,
-            ("A general error occurred while accessing your central"
-            " configuration. SafeMode is initiated.")));
+                STR_CONFIG_ERR_ACCESS_GENERAL,
+                ("A general error occurred while accessing your central"
+                 " configuration.")));
         if (!aErrorMessage.isEmpty()) {
             msg += "\n(\"" + aErrorMessage + "\")";
         }
@@ -1037,6 +1006,12 @@ void Desktop::HandleBootstrapErrors(
 }
 
 
+bool Desktop::isUIOnSessionShutdownAllowed()
+{
+    return officecfg::Office::Recovery::SessionShutdown::DocumentStoreUIEnabled
+        ::get();
+}
+
 namespace {
 
 bool crashReportInfoExists()
@@ -1052,6 +1027,7 @@ bool crashReportInfoExists()
         if (sep >= 0)
         {
             std::string key = line.substr(0, sep);
+            std::string value = line.substr(sep + 1);
             if (key == "DumpFile")
                 return true;
         }
@@ -1076,22 +1052,6 @@ void handleCrashReport()
 
     css::util::URL aURL;
     css::uno::Any aRet = xRecoveryUI->dispatchWithReturnValue(aURL, css::uno::Sequence< css::beans::PropertyValue >());
-    bool bRet = false;
-    aRet >>= bRet;
-}
-#endif
-
-#if !defined ANDROID
-void handleSafeMode()
-{
-    css::uno::Reference< css::uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
-
-    Reference< css::frame::XSynchronousDispatch > xSafeModeUI(
-        xContext->getServiceManager()->createInstanceWithContext("com.sun.star.comp.svx.SafeModeUI", xContext),
-        css::uno::UNO_QUERY_THROW);
-
-    css::util::URL aURL;
-    css::uno::Any aRet = xSafeModeUI->dispatchWithReturnValue(aURL, css::uno::Sequence< css::beans::PropertyValue >());
     bool bRet = false;
     aRet >>= bRet;
 }
@@ -1135,13 +1095,14 @@ void impl_checkRecoveryState(bool& bCrashed           ,
 bool impl_callRecoveryUI(bool bEmergencySave     ,
                          bool bExistsRecoveryData)
 {
+    static const char SERVICENAME_RECOVERYUI[] = "com.sun.star.comp.svx.RecoveryUI";
     static const char COMMAND_EMERGENCYSAVE[] = "vnd.sun.star.autorecovery:/doEmergencySave";
     static const char COMMAND_RECOVERY[] = "vnd.sun.star.autorecovery:/doAutoRecovery";
 
     css::uno::Reference< css::uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
 
     Reference< css::frame::XSynchronousDispatch > xRecoveryUI(
-        xContext->getServiceManager()->createInstanceWithContext("com.sun.star.comp.svx.RecoveryUI", xContext),
+        xContext->getServiceManager()->createInstanceWithContext(SERVICENAME_RECOVERYUI, xContext),
         css::uno::UNO_QUERY_THROW);
 
     Reference< css::util::XURLTransformer > xURLParser =
@@ -1160,9 +1121,23 @@ bool impl_callRecoveryUI(bool bEmergencySave     ,
     css::uno::Any aRet = xRecoveryUI->dispatchWithReturnValue(aURL, css::uno::Sequence< css::beans::PropertyValue >());
     bool bRet = false;
     aRet >>= bRet;
-    return bRet;
+    return !bEmergencySave || bRet;
 }
 
+}
+
+/*
+ * Save all open documents so they will be reopened
+ * the next time the application is started
+ *
+ * returns sal_True if at least one document could be saved...
+ *
+ */
+bool Desktop::SaveTasks()
+{
+    return impl_callRecoveryUI(
+        true , // sal_True => force emergency save
+        false);
 }
 
 namespace {
@@ -1273,14 +1248,7 @@ void Desktop::Exception(ExceptionCategory nCategory)
                                                     ( Application::IsInExecute()               )    // crashes during startup and shutdown should be ignored (they indicates a corrupt installation ...)
                                                   );
     if ( bAllowRecoveryAndSessionManagement )
-    {
-        // Save all open documents so they will be reopened
-        // the next time the application is started
-        // returns true if at least one document could be saved...
-        bRestart = impl_callRecoveryUI(
-                        true , // force emergency save
-                        false);
-    }
+        bRestart = SaveTasks();
 
     FlushConfiguration();
 
@@ -1466,7 +1434,11 @@ int Desktop::Main()
 
         SetSplashScreenProgress(30);
 
+        // set static variable to disable crash reporting
+        osl_setErrorReporting( false );
+
         // create title string
+        LanguageTag aLocale( LANGUAGE_SYSTEM);
         ResMgr* pLabelResMgr = GetDesktopResManager();
         OUString aTitle = pLabelResMgr ? ResId(RID_APPTITLE, *pLabelResMgr).toString() : OUString();
 
@@ -1604,6 +1576,11 @@ int Desktop::Main()
     aOptions.SetVCLSettings();
     SetSplashScreenProgress(60);
 
+#if ENABLE_TELEPATHY
+    bool bListen = rCmdLineArgs.IsInvisible();
+    TeleManager::init( bListen );
+#endif
+
     if ( !pExecGlobals->bRestartRequested )
     {
         Application::SetFilterHdl( LINK( this, Desktop, ImplInitFilterHdl ) );
@@ -1691,7 +1668,7 @@ int Desktop::Main()
         catch( const std::exception& exSTD)
         {
             RequestHandler::SetDowning();
-            FatalError(o3tl::runtimeToOUString(exSTD.what()));
+            FatalError( OUString::createFromAscii( exSTD.what()));
         }
         catch( ...)
         {
@@ -1754,28 +1731,7 @@ int Desktop::doShutdown()
 
     // remove temp directory
     RemoveTemporaryDirectory();
-
-    // flush evtl. configuration changes so that all config files in user
-    // dir are written
     FlushConfiguration();
-
-    if (pExecGlobals->bRestartRequested)
-    {
-        // a restart is already requested, usually due to a configuration change
-        // that needs a restart to get active. If this is the case, do not try
-        // to use SecureUserConfig to safe this still untested new configuration
-    }
-    else
-    {
-        // Test if SecureUserConfig is active. If yes and we are at this point, regular shutdown
-        // is in progress and the currently used configuration was working. Try to secure this
-        // working configuration for later eventually necessary restores
-        comphelper::BackupFileHelper aBackupFileHelper;
-
-        aBackupFileHelper.tryPush();
-        aBackupFileHelper.tryPushExtensionInfo();
-    }
-
     // The acceptors in the AcceptorMap must be released (in DeregisterServices)
     // with the solar mutex unlocked, to avoid deadlock:
     {
@@ -1785,13 +1741,10 @@ int Desktop::doShutdown()
         StarBASIC::DetachAllDocBasicItems();
 #endif
     }
-
     // be sure that path/language options gets destroyed before
     // UCB is deinitialized
     pExecGlobals->pLanguageOptions.reset( nullptr );
     pExecGlobals->pPathOptions.reset( nullptr );
-
-    comphelper::ThreadPool::getSharedOptimalPool().shutdown();
 
     bool bRR = pExecGlobals->bRestartRequested;
     delete pExecGlobals;
@@ -1808,7 +1761,7 @@ int Desktop::doShutdown()
     return EXIT_SUCCESS;
 }
 
-IMPL_STATIC_LINK( Desktop, ImplInitFilterHdl, ::ConvertData&, rData, bool )
+IMPL_STATIC_LINK_TYPED( Desktop, ImplInitFilterHdl, ::ConvertData&, rData, bool )
 {
     return GraphicFilter::GetGraphicFilter().GetFilterCallback().Call( rData );
 }
@@ -1953,9 +1906,14 @@ void Desktop::OverrideSystemSettings( AllSettings& rSettings )
 
     SvtMenuOptions aMenuOpt;
     hStyleSettings.SetUseImagesInMenus(aMenuOpt.GetMenuIconsState());
-    hStyleSettings.SetContextMenuShortcuts(aMenuOpt.GetContextMenuShortcuts());
     hStyleSettings.SetDragFullOptions( nDragFullOptions );
     rSettings.SetStyleSettings ( hStyleSettings );
+}
+
+
+IMPL_STATIC_LINK_TYPED(Desktop, AsyncInitFirstRun, Timer *, /*unused*/, void)
+{
+    DoFirstRunInitializations();
 }
 
 
@@ -1973,24 +1931,12 @@ class ExitTimer : public Timer
     }
 };
 
-IMPL_LINK_NOARG(Desktop, OpenClients_Impl, void*, void)
+IMPL_LINK_NOARG_TYPED(Desktop, OpenClients_Impl, void*, void)
 {
     try {
-        // #i114963#
-        // Enable IPC thread before OpenClients
-        //
-        // This is because it is possible for another client to connect during the OpenClients() call.
-        // This can happen on Windows when document is printed (not opened) and another client wants to print (when printing multiple documents).
-        // If the IPC thread is enabled after OpenClients, then the client will not be processed because the application will exit after printing. i.e RequestHandler::AreRequestsPending() will always return false
-        //
-        // ALSO:
-        //
-        // Multiple clients may request simultaneous connections.
-        // When this server closes down it attempts to recreate the pipe (in RequestHandler::Disable()).
-        // It's possible that the client has a pending connection request.
-        // When the IPC thread is not running, this connection locks (because maPipe.accept()) is never called
-        RequestHandler::SetReady();
         OpenClients();
+
+        RequestHandler::SetReady();
 
         CloseSplashScreen();
         CheckFirstRun( );
@@ -2007,6 +1953,12 @@ IMPL_LINK_NOARG(Desktop, OpenClients_Impl, void*, void)
         OUString a( "UNO exception during client open:\n"  );
         Application::Abort( a + e.Message );
     }
+}
+
+// enable acceptors
+IMPL_STATIC_LINK_NOARG_TYPED(Desktop, EnableAcceptors_Impl, void*, void)
+{
+    enableAcceptors();
 }
 
 void Desktop::OpenClients()
@@ -2051,7 +2003,7 @@ void Desktop::OpenClients()
 #if defined UNX
             aHelpURLBuffer.append("&System=UNX");
 #elif defined WNT
-            aHelpURLBuffer.append("&System=WIN");
+            aHelpURLBuffer.appendAscii("&System=WIN");
 #endif
             Application::GetHelp()->Start(
                 aHelpURLBuffer.makeStringAndClear(), nullptr);
@@ -2067,13 +2019,6 @@ void Desktop::OpenClients()
     // Further it's not acceptable to recover such documents without any UI. It can
     // need some time, where the user won't see any results and wait for finishing the office startup...
     bool bAllowRecoveryAndSessionManagement = ( !rArgs.IsNoRestore() ) && ( !rArgs.IsHeadless()  );
-
-#if !defined ANDROID
-    // Enter safe mode if requested
-    if (Application::IsSafeModeEnabled()) {
-        handleSafeMode();
-    }
-#endif
 
 #if HAVE_FEATURE_BREAKPAD
     if (crashReportInfoExists())
@@ -2133,9 +2078,8 @@ void Desktop::OpenClients()
         try
         {
             // specifies whether the UI-interaction on Session shutdown is allowed
-            bool bUIOnSessionShutdownAllowed = officecfg::Office::Recovery::SessionShutdown::DocumentStoreUIEnabled::get();
             xSessionListener = SessionListener::createWithOnQuitFlag(
-                    ::comphelper::getProcessComponentContext(), bUIOnSessionShutdownAllowed);
+                    ::comphelper::getProcessComponentContext(), isUIOnSessionShutdownAllowed());
         }
         catch(const css::uno::Exception& e)
         {
@@ -2157,8 +2101,6 @@ void Desktop::OpenClients()
     }
 #if HAVE_FEATURE_BREAKPAD
     CrashReporter::writeCommonInfo();
-    // write this information here to avoid depending on vcl in the crash reporter lib
-    CrashReporter::AddKeyValue("Language", Application::GetSettings().GetLanguageTag().getBcp47());
 #endif
 
     RequestHandler::EnableRequests();
@@ -2331,9 +2273,9 @@ OUString GetURL_Impl(
     // Use the provided parameters for smartRel2Abs to support the usage of '%' in system paths.
     // Otherwise this char won't get encoded and we are not able to load such files later,
     bool bWasAbsolute;
-    INetURLObject aURL     = aObj.smartRel2Abs( rName, bWasAbsolute, false, INetURLObject::EncodeMechanism::WasEncoded,
+    INetURLObject aURL     = aObj.smartRel2Abs( rName, bWasAbsolute, false, INetURLObject::WAS_ENCODED,
                                                 RTL_TEXTENCODING_UTF8, true );
-    OUString      aFileURL = aURL.GetMainURL(INetURLObject::DecodeMechanism::NONE);
+    OUString      aFileURL = aURL.GetMainURL(INetURLObject::NO_DECODE);
 
     ::osl::FileStatus aStatus( osl_FileStatus_Mask_FileURL );
     ::osl::DirectoryItem aItem;
@@ -2348,12 +2290,12 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
 {
     switch ( rAppEvent.GetEvent() )
     {
-    case ApplicationEvent::Type::Accept:
+    case ApplicationEvent::TYPE_ACCEPT:
         // every time an accept parameter is used we create an acceptor
         // with the corresponding accept-string
         createAcceptor(rAppEvent.GetStringData());
         break;
-    case ApplicationEvent::Type::Appear:
+    case ApplicationEvent::TYPE_APPEAR:
         if ( !GetCommandLineArgs().IsInvisible() )
         {
             Reference< css::uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
@@ -2392,20 +2334,20 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
                     xStartModule->attachFrame(xBackingFrame);
                     xContainerWindow->setVisible(true);
 
-                    VclPtr<vcl::Window> pCompWindow = VCLUnoHelper::GetWindow(xBackingFrame->getComponentWindow());
+                    vcl::Window* pCompWindow = VCLUnoHelper::GetWindow(xBackingFrame->getComponentWindow());
                     if (pCompWindow)
                         pCompWindow->Update();
                 }
             }
         }
         break;
-    case ApplicationEvent::Type::Help:
+    case ApplicationEvent::TYPE_HELP:
         displayCmdlineHelp(rAppEvent.GetStringData());
         break;
-    case ApplicationEvent::Type::Version:
+    case ApplicationEvent::TYPE_VERSION:
         displayVersion();
         break;
-    case ApplicationEvent::Type::Open:
+    case ApplicationEvent::TYPE_OPEN:
         {
             const CommandLineArgs& rCmdLine = GetCommandLineArgs();
             if ( !rCmdLine.IsInvisible() && !rCmdLine.IsTerminateAfterInit() )
@@ -2418,11 +2360,11 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
             }
         }
         break;
-    case ApplicationEvent::Type::OpenHelpUrl:
+    case ApplicationEvent::TYPE_OPENHELPURL:
         // start help for a specific URL
         Application::GetHelp()->Start(rAppEvent.GetStringData(), nullptr);
         break;
-    case ApplicationEvent::Type::Print:
+    case ApplicationEvent::TYPE_PRINT:
         {
             const CommandLineArgs& rCmdLine = GetCommandLineArgs();
             if ( !rCmdLine.IsInvisible() && !rCmdLine.IsTerminateAfterInit() )
@@ -2435,7 +2377,7 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
             }
         }
         break;
-    case ApplicationEvent::Type::PrivateDoShutdown:
+    case ApplicationEvent::TYPE_PRIVATE_DOSHUTDOWN:
         {
             Desktop* pD = dynamic_cast<Desktop*>(GetpApp());
             OSL_ENSURE( pD, "no desktop ?!?" );
@@ -2443,7 +2385,7 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
                 pD->doShutdown();
         }
         break;
-    case ApplicationEvent::Type::QuickStart:
+    case ApplicationEvent::TYPE_QUICKSTART:
         if ( !GetCommandLineArgs().IsInvisible()  )
         {
             // If the office has been started the second time its command line arguments are sent through a pipe
@@ -2455,7 +2397,7 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
             css::office::Quickstart::createStart(xContext, true/*Quickstart*/);
         }
         break;
-    case ApplicationEvent::Type::ShowDialog:
+    case ApplicationEvent::TYPE_SHOWDIALOG:
         // ignore all errors here. It's clicking a menu entry only ...
         // The user will try it again, in case nothing happens .-)
         try
@@ -2482,7 +2424,7 @@ void Desktop::HandleAppEvent( const ApplicationEvent& rAppEvent )
         catch(const css::uno::Exception&)
         {}
         break;
-    case ApplicationEvent::Type::Unaccept:
+    case ApplicationEvent::TYPE_UNACCEPT:
         // try to remove corresponding acceptor
         destroyAcceptor(rAppEvent.GetStringData());
         break;
@@ -2571,9 +2513,8 @@ void Desktop::CloseSplashScreen()
 }
 
 
-IMPL_STATIC_LINK_NOARG(Desktop, AsyncInitFirstRun, Timer *, void)
+void Desktop::DoFirstRunInitializations()
 {
-    // does initializations which are necessary for the first run of the office
     try
     {
         Reference< XJobExecutor > xExecutor = theJobExecutor::get( ::comphelper::getProcessComponentContext() );
@@ -2607,7 +2548,7 @@ void Desktop::ShowBackingComponent(Desktop * progress)
         // set the WB_EXT_DOCUMENT style. Normally, this is done by the TaskCreator service when a "_blank"
         // frame/window is created. Since we do not use the TaskCreator here, we need to mimic its behavior,
         // otherwise documents loaded into this frame will later on miss functionality depending on the style.
-        VclPtr<vcl::Window> pContainerWindow = VCLUnoHelper::GetWindow( xContainerWindow );
+        vcl::Window* pContainerWindow = VCLUnoHelper::GetWindow( xContainerWindow );
         SAL_WARN_IF( !pContainerWindow, "desktop.app", "Desktop::Main: no implementation access to the frame's container window!" );
         pContainerWindow->SetExtendedStyle( pContainerWindow->GetExtendedStyle() | WB_EXT_DOCUMENT );
         if (progress != nullptr)
@@ -2640,6 +2581,8 @@ void Desktop::CheckFirstRun( )
     {
         // use VCL timer, which won't trigger during shutdown if the
         // application exits before timeout
+        m_firstRunTimer.SetTimeout(3000); // 3 sec.
+        m_firstRunTimer.SetTimeoutHdl(LINK(this, Desktop, AsyncInitFirstRun));
         m_firstRunTimer.Start();
 
 #ifdef _WIN32
@@ -2649,7 +2592,7 @@ void Desktop::CheckFirstRun( )
         HKEY hKey;
         if ( ERROR_SUCCESS == RegOpenKey( HKEY_LOCAL_MACHINE,  "Software\\LibreOffice", &hKey ) )
         {
-            if ( ERROR_SUCCESS == RegQueryValueEx( hKey, TEXT("RunQuickstartAtFirstStart"), nullptr, nullptr, reinterpret_cast<LPBYTE>(szValue), &nValueSize ) )
+            if ( ERROR_SUCCESS == RegQueryValueEx( hKey, TEXT("RunQuickstartAtFirstStart"), NULL, NULL, (LPBYTE)szValue, &nValueSize ) )
             {
                 css::uno::Reference< css::uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
                 css::office::Quickstart::createAutoStart(xContext, true/*Quickstart*/, true/*bAutostart*/);

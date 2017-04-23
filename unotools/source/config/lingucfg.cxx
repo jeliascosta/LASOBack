@@ -29,7 +29,6 @@
 #include <rtl/instance.hxx>
 #include <sal/log.hxx>
 #include <osl/mutex.hxx>
-#include <tools/diagnose_ex.h>
 #include <i18nlangtag/mslangid.hxx>
 #include <i18nlangtag/languagetag.hxx>
 #include <tools/debug.hxx>
@@ -158,6 +157,7 @@ class SvtLinguConfigItem : public utl::ConfigItem
 
 public:
     SvtLinguConfigItem();
+    virtual ~SvtLinguConfigItem();
 
     // utl::ConfigItem
     virtual void    Notify( const css::uno::Sequence< OUString > &rPropertyNames ) override;
@@ -187,7 +187,7 @@ public:
 };
 
 SvtLinguConfigItem::SvtLinguConfigItem() :
-    utl::ConfigItem( "Office.Linguistic" )
+    utl::ConfigItem( OUString("Office.Linguistic") )
 {
     const uno::Sequence< OUString > &rPropertyNames = GetPropertyNames();
     LoadOptions( rPropertyNames );
@@ -197,10 +197,15 @@ SvtLinguConfigItem::SvtLinguConfigItem() :
     EnableNotification( rPropertyNames );
 }
 
+SvtLinguConfigItem::~SvtLinguConfigItem()
+{
+    //! Commit (SaveOptions) will be called by the d-tor of the base called !
+}
+
 void SvtLinguConfigItem::Notify( const uno::Sequence< OUString > &rPropertyNames )
 {
     LoadOptions( rPropertyNames );
-    NotifyListeners(ConfigurationHints::NONE);
+    NotifyListeners(0);
 }
 
 void SvtLinguConfigItem::ImplCommit()
@@ -358,17 +363,20 @@ uno::Any SvtLinguConfigItem::GetProperty( sal_Int32 nPropertyHandle ) const
         }
         case UPH_DEFAULT_LOCALE :
         {
-            aRes <<= LanguageTag::convertToLocale( rOpt.nDefaultLanguage, false);
+            lang::Locale aLocale( LanguageTag::convertToLocale( rOpt.nDefaultLanguage, false) );
+            aRes.setValue( &aLocale, cppu::UnoType<lang::Locale>::get());
             break;
         }
         case UPH_DEFAULT_LOCALE_CJK :
         {
-            aRes <<= LanguageTag::convertToLocale( rOpt.nDefaultLanguage_CJK, false);
+            lang::Locale aLocale( LanguageTag::convertToLocale( rOpt.nDefaultLanguage_CJK, false) );
+            aRes.setValue( &aLocale, cppu::UnoType<lang::Locale>::get());
             break;
         }
         case UPH_DEFAULT_LOCALE_CTL :
         {
-            aRes <<= LanguageTag::convertToLocale( rOpt.nDefaultLanguage_CTL, false);
+            lang::Locale aLocale( LanguageTag::convertToLocale( rOpt.nDefaultLanguage_CTL, false) );
+            aRes.setValue( &aLocale, cppu::UnoType<lang::Locale>::get());
             break;
         }
         case UPH_IS_IGNORE_POST_POSITIONAL_WORD :       pbVal = &rOpt.bIsIgnorePostPositionalWord; break;
@@ -385,7 +393,7 @@ uno::Any SvtLinguConfigItem::GetProperty( sal_Int32 nPropertyHandle ) const
         case UPH_IS_GRAMMAR_AUTO:                       pbVal = &rOpt.bIsGrammarAuto; break;
         case UPH_IS_GRAMMAR_INTERACTIVE:                pbVal = &rOpt.bIsGrammarInteractive; break;
         default :
-            SAL_WARN( "unotools.config", "unexpected property handle" );
+            DBG_ASSERT( false, "unexpected property handle" );
     }
 
     if (pbVal)
@@ -484,7 +492,7 @@ bool SvtLinguConfigItem::SetProperty( sal_Int32 nPropertyHandle, const uno::Any 
         case UPH_IS_GRAMMAR_AUTO:                       pbVal = &rOpt.bIsGrammarAuto; break;
         case UPH_IS_GRAMMAR_INTERACTIVE:                pbVal = &rOpt.bIsGrammarInteractive; break;
         default :
-            SAL_WARN( "unotools.config", "unexpected property handle" );
+            DBG_ASSERT( false, "unexpected property handle" );
     }
 
     if (pbVal)
@@ -530,7 +538,7 @@ bool SvtLinguConfigItem::SetProperty( sal_Int32 nPropertyHandle, const uno::Any 
     if (bMod)
         SetModified();
 
-    NotifyListeners(ConfigurationHints::NONE);
+    NotifyListeners(0);
     return bSucc;
 }
 
@@ -646,7 +654,7 @@ void SvtLinguConfigItem::LoadOptions( const uno::Sequence< OUString > &rProperyN
                 break;
 
                 default:
-                    SAL_WARN( "unotools.config", "unexpected case" );
+                    DBG_ASSERT( false, "unexpected case" );
             }
         }
 
@@ -663,6 +671,8 @@ bool SvtLinguConfigItem::SaveOptions( const uno::Sequence< OUString > &rProperyN
     osl::MutexGuard aGuard(theSvtLinguConfigItemMutex::get());
 
     bool bRet = false;
+    const uno::Type &rINT16    = cppu::UnoType<sal_Int16>::get();
+    const uno::Type &rINT32    = cppu::UnoType<sal_Int32>::get();
 
     sal_Int32 nProps = rProperyNames.getLength();
     uno::Sequence< uno::Any > aValues( nProps );
@@ -673,14 +683,14 @@ bool SvtLinguConfigItem::SaveOptions( const uno::Sequence< OUString > &rProperyN
         const SvtLinguOptions &rOpt = aOpt;
 
         OUString aTmp( lcl_LanguageToCfgLocaleStr( rOpt.nDefaultLanguage ) );
-        *pValue++ <<= aTmp;                               //   0
-        *pValue++ <<= rOpt.aActiveDics;                   //   1
+        *pValue++ = uno::makeAny( aTmp );                               //   0
+        *pValue++ = uno::makeAny( rOpt.aActiveDics );                   //   1
         *pValue++ <<= rOpt.bIsUseDictionaryList;        //   2
         *pValue++ <<= rOpt.bIsIgnoreControlCharacters;  //   3
         aTmp = lcl_LanguageToCfgLocaleStr( rOpt.nDefaultLanguage_CJK );
-        *pValue++ <<= aTmp;                               //   5
+        *pValue++ = uno::makeAny( aTmp );                               //   5
         aTmp = lcl_LanguageToCfgLocaleStr( rOpt.nDefaultLanguage_CTL );
-        *pValue++ <<= aTmp;                               //   6
+        *pValue++ = uno::makeAny( aTmp );                               //   6
 
         *pValue++ <<= rOpt.bIsSpellUpperCase;          //   7
         *pValue++ <<= rOpt.bIsSpellWithDigits;         //   8
@@ -689,13 +699,13 @@ bool SvtLinguConfigItem::SaveOptions( const uno::Sequence< OUString > &rProperyN
         *pValue++ <<= rOpt.bIsSpellSpecial;            //  11
         *pValue++ <<= rOpt.bIsSpellReverse;            //  14
 
-        *pValue++ <<= rOpt.nHyphMinLeading;            //  15
-        *pValue++ <<= rOpt.nHyphMinTrailing;           //  16
-        *pValue++ <<= rOpt.nHyphMinWordLength;         //  17
+        pValue++->setValue( &rOpt.nHyphMinLeading, rINT16 );           //  15
+        pValue++->setValue( &rOpt.nHyphMinTrailing, rINT16 );          //  16
+        pValue++->setValue( &rOpt.nHyphMinWordLength, rINT16 );        //  17
         *pValue++ <<= rOpt.bIsHyphSpecial;             //  18
         *pValue++ <<= rOpt.bIsHyphAuto;                //  19
 
-        *pValue++ <<= rOpt.aActiveConvDics;               //   20
+        *pValue++ = uno::makeAny( rOpt.aActiveConvDics );               //   20
 
         *pValue++ <<= rOpt.bIsIgnorePostPositionalWord; //  21
         *pValue++ <<= rOpt.bIsAutoCloseDialog;          //  22
@@ -707,7 +717,7 @@ bool SvtLinguConfigItem::SaveOptions( const uno::Sequence< OUString > &rProperyN
         *pValue++ <<= rOpt.bIsTranslateCommonTerms; //  27
         *pValue++ <<= rOpt.bIsReverseMapping; //  28
 
-        *pValue++ <<= rOpt.nDataFilesChangedCheckValue; //  29
+        pValue++->setValue( &rOpt.nDataFilesChangedCheckValue, rINT32 ); //  29
         *pValue++ <<= rOpt.bIsGrammarAuto; //  30
         *pValue++ <<= rOpt.bIsGrammarInteractive; // 31
 
@@ -771,7 +781,7 @@ bool SvtLinguConfigItem::IsReadOnly( sal_Int32 nPropertyHandle ) const
         case UPH_IS_GRAMMAR_AUTO:                       bReadOnly = rOpt.bROIsGrammarAuto; break;
         case UPH_IS_GRAMMAR_INTERACTIVE:                bReadOnly = rOpt.bROIsGrammarInteractive; break;
         default :
-            SAL_WARN( "unotools.config", "unexpected property handle" );
+            DBG_ASSERT( false, "unexpected property handle" );
     }
     return bReadOnly;
 }
@@ -779,7 +789,12 @@ bool SvtLinguConfigItem::IsReadOnly( sal_Int32 nPropertyHandle ) const
 static SvtLinguConfigItem *pCfgItem = nullptr;
 static sal_Int32           nCfgItemRefCount = 0;
 
+static const char aG_SupportedDictionaryFormats[] = "SupportedDictionaryFormats";
 static const char aG_Dictionaries[] = "Dictionaries";
+static const char aG_Locations[] = "Locations";
+static const char aG_Format[] = "Format";
+static const char aG_Locales[] = "Locales";
+static const char aG_DisabledDictionaries[] = "DisabledDictionaries";
 
 SvtLinguConfig::SvtLinguConfig()
 {
@@ -809,7 +824,7 @@ SvtLinguConfigItem & SvtLinguConfig::GetConfigItem()
     if (!pCfgItem)
     {
         pCfgItem = new SvtLinguConfigItem;
-        ItemHolder1::holdConfigItem(EItem::LinguConfig);
+        ItemHolder1::holdConfigItem(E_LINGUCFG);
     }
     return *pCfgItem;
 }
@@ -894,7 +909,7 @@ bool SvtLinguConfig::GetSupportedDictionaryFormatsFor(
         xNA.set( xNA->getByName("ServiceManager"), uno::UNO_QUERY_THROW );
         xNA.set( xNA->getByName( rSetName ), uno::UNO_QUERY_THROW );
         xNA.set( xNA->getByName( rSetEntry ), uno::UNO_QUERY_THROW );
-        if (xNA->getByName( "SupportedDictionaryFormats" ) >>= rFormatList)
+        if (xNA->getByName( aG_SupportedDictionaryFormats ) >>= rFormatList)
             bSuccess = true;
         DBG_ASSERT( rFormatList.getLength(), "supported dictionary format list is empty" );
     }
@@ -942,9 +957,9 @@ bool SvtLinguConfig::GetDictionaryEntry(
         uno::Sequence< OUString >  aLocations;
         OUString                   aFormatName;
         uno::Sequence< OUString >  aLocaleNames;
-        bSuccess =  (xNA->getByName( "Locations" ) >>= aLocations)  &&
-                    (xNA->getByName( "Format" )    >>= aFormatName) &&
-                    (xNA->getByName( "Locales" )   >>= aLocaleNames);
+        bSuccess =  (xNA->getByName( aG_Locations ) >>= aLocations)  &&
+                    (xNA->getByName( aG_Format )    >>= aFormatName) &&
+                    (xNA->getByName( aG_Locales )   >>= aLocaleNames);
         DBG_ASSERT( aLocations.getLength(), "Dictionary locations not set" );
         DBG_ASSERT( !aFormatName.isEmpty(), "Dictionary format name not set" );
         DBG_ASSERT( aLocaleNames.getLength(), "No locales set for the dictionary" );
@@ -982,7 +997,7 @@ uno::Sequence< OUString > SvtLinguConfig::GetDisabledDictionaries() const
     {
         uno::Reference< container::XNameAccess > xNA( GetMainUpdateAccess(), uno::UNO_QUERY_THROW );
         xNA.set( xNA->getByName("ServiceManager"), uno::UNO_QUERY_THROW );
-        xNA->getByName( "DisabledDictionaries" ) >>= aResult;
+        xNA->getByName( aG_DisabledDictionaries ) >>= aResult;
     }
     catch (uno::Exception &)
     {
@@ -1041,7 +1056,7 @@ std::vector< SvtLinguConfigDictionaryEntry > SvtLinguConfig::GetActiveDictionari
     return aRes;
 }
 
-uno::Reference< util::XChangesBatch > const & SvtLinguConfig::GetMainUpdateAccess() const
+uno::Reference< util::XChangesBatch > SvtLinguConfig::GetMainUpdateAccess() const
 {
     if (!m_xMainUpdateAccess.is())
     {
@@ -1055,7 +1070,7 @@ uno::Reference< util::XChangesBatch > const & SvtLinguConfig::GetMainUpdateAcces
             // get configuration update access
             beans::PropertyValue aValue;
             aValue.Name  = "nodepath";
-            aValue.Value <<= OUString("org.openoffice.Office.Linguistic");
+            aValue.Value = uno::makeAny(OUString("org.openoffice.Office.Linguistic"));
             uno::Sequence< uno::Any > aProps(1);
             aProps[0] <<= aValue;
             m_xMainUpdateAccess.set(
@@ -1101,7 +1116,7 @@ OUString SvtLinguConfig::GetVendorImageUrl_Impl(
     }
     catch (uno::Exception &)
     {
-        DBG_UNHANDLED_EXCEPTION();
+        DBG_ASSERT( false, "exception caught. GetVendorImageUrl_Impl failed" );
     }
     return aRes;
 }

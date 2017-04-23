@@ -74,7 +74,7 @@ class VCL_DLLPUBLIC PPDKey
 
 public:
     enum UIType { PickOne, PickMany, Boolean };
-    enum class SetupType { ExitServer, Prolog, DocumentSetup, PageSetup, JCLSetup, AnySetup };
+    enum SetupType { ExitServer, Prolog, DocumentSetup, PageSetup, JCLSetup, AnySetup };
 private:
 
     bool                m_bUIOption;
@@ -253,10 +253,9 @@ class VCL_DLLPUBLIC PPDContext
     bool checkConstraints( const PPDKey*, const PPDValue*, bool bDoReset );
     bool resetValue( const PPDKey*, bool bDefaultable = false );
 public:
-    PPDContext();
+    PPDContext( const PPDParser* pParser = nullptr );
     PPDContext( const PPDContext& rContext ) { operator=( rContext ); }
     PPDContext& operator=( const PPDContext& rContext );
-    PPDContext& operator=( PPDContext&& rContext );
     ~PPDContext();
 
     void setParser( const PPDParser* );

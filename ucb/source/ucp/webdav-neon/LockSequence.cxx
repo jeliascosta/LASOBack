@@ -38,7 +38,7 @@ using namespace com::sun::star;
 
 struct LockSequenceParseContext
 {
-    std::unique_ptr<ucb::Lock> pLock;
+    ucb::Lock * pLock;
     bool hasLockScope;
     bool hasLockType;
     bool hasDepth;
@@ -48,6 +48,8 @@ struct LockSequenceParseContext
     LockSequenceParseContext()
     : pLock( nullptr ), hasLockScope( false ), hasLockType( false ),
       hasDepth( false ), hasHREF( false ), hasTimeout( false ) {}
+
+    ~LockSequenceParseContext() { delete pLock; }
 };
 
 #define STATE_TOP (1)
@@ -131,7 +133,7 @@ extern "C" int LockSequence_chardata_callback(
     LockSequenceParseContext * pCtx
                     = static_cast< LockSequenceParseContext * >( userdata );
     if ( !pCtx->pLock )
-        pCtx->pLock.reset( new ucb::Lock );
+        pCtx->pLock = new ucb::Lock;
 
     // Beehive sends XML values containing trailing newlines.
     if ( buf[ len - 1 ] == 0x0a )
@@ -240,7 +242,7 @@ extern "C" int LockSequence_endelement_callback(
     LockSequenceParseContext * pCtx
                     = static_cast< LockSequenceParseContext * >( userdata );
     if ( !pCtx->pLock )
-        pCtx->pLock.reset( new ucb::Lock );
+        pCtx->pLock = new ucb::Lock;
 
     switch ( state )
     {

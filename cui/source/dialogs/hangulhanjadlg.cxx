@@ -30,7 +30,6 @@
 #include <vcl/decoview.hxx>
 #include <unotools/lingucfg.hxx>
 #include <unotools/linguprops.hxx>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/linguistic2/ConversionDictionaryType.hpp>
 #include <com/sun/star/linguistic2/ConversionDirection.hpp>
 #include <com/sun/star/linguistic2/ConversionDictionaryList.hpp>
@@ -39,7 +38,6 @@
 
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
-#include <svtools/svlbitm.hxx>
 #include "svtools/treelistentry.hxx"
 
 #define HHC editeng::HangulHanjaConversion
@@ -65,13 +63,13 @@ namespace svx
             OutputDevice& m_rDev;
 
         public:
-            FontSwitch( OutputDevice& _rDev, const vcl::Font& _rTemporaryFont )
+            inline FontSwitch( OutputDevice& _rDev, const vcl::Font& _rTemporaryFont )
                 :m_rDev( _rDev )
             {
                 m_rDev.Push( PushFlags::FONT );
                 m_rDev.SetFont( _rTemporaryFont );
             }
-            ~FontSwitch( )
+            inline ~FontSwitch( )
             {
                 m_rDev.Pop( );
             }
@@ -101,8 +99,9 @@ namespace svx
         const OUString& getSecondaryText() const { return m_sSecondaryText; }
 
     public:
-        void Paint( OutputDevice& _rDevice, const ::tools::Rectangle& _rRect, DrawTextFlags _nTextStyle,
-            ::tools::Rectangle* _pPrimaryLocation, ::tools::Rectangle* _pSecondaryLocation );
+        void Paint( OutputDevice& _rDevice, const Rectangle& _rRect, DrawTextFlags _nTextStyle,
+            Rectangle* _pPrimaryLocation = nullptr, Rectangle* _pSecondaryLocation = nullptr,
+            vcl::ControlLayoutData* _pLayoutData = nullptr );
     };
 
     PseudoRubyText::PseudoRubyText()
@@ -118,9 +117,14 @@ namespace svx
     }
 
 
-    void PseudoRubyText::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& _rRect, DrawTextFlags _nTextStyle,
-                               ::tools::Rectangle* _pPrimaryLocation, ::tools::Rectangle* _pSecondaryLocation )
+    void PseudoRubyText::Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect, DrawTextFlags _nTextStyle,
+                               Rectangle* _pPrimaryLocation, Rectangle* _pSecondaryLocation,
+                               vcl::ControlLayoutData* _pLayoutData )
     {
+        bool bLayoutOnly  = (nullptr != _pLayoutData);
+        MetricVector* pTextMetrics = bLayoutOnly ? &_pLayoutData->m_aUnicodeBoundRects : nullptr;
+        OUString* pDisplayText = bLayoutOnly ? &_pLayoutData->m_aDisplayText       : nullptr;
+
         Size aPlaygroundSize(_rRect.GetSize());
 
         // the font for the secondary text:
@@ -129,8 +133,8 @@ namespace svx
         aSmallerFont.SetFontHeight( (long)( 0.8 * aSmallerFont.GetFontHeight() ) );
 
         // let's calculate the size of our two texts
-        ::tools::Rectangle aPrimaryRect = rRenderContext.GetTextRect( _rRect, m_sPrimaryText, _nTextStyle );
-        ::tools::Rectangle aSecondaryRect;
+        Rectangle aPrimaryRect = rRenderContext.GetTextRect( _rRect, m_sPrimaryText, _nTextStyle );
+        Rectangle aSecondaryRect;
         {
             FontSwitch aFontRestore(rRenderContext, aSmallerFont);
             aSecondaryRect = rRenderContext.GetTextRect(_rRect, m_sSecondaryText, _nTextStyle);
@@ -138,7 +142,7 @@ namespace svx
 
         // position these rectangles properly
         // x-axis:
-        sal_Int32 nCombinedWidth = std::max( aSecondaryRect.GetWidth(), aPrimaryRect.GetWidth() );
+        sal_Int32 nCombinedWidth = ::std::max( aSecondaryRect.GetWidth(), aPrimaryRect.GetWidth() );
             // the rectangle where both texts will reside is as high as possible, and as wide as the
             // widest of both text rects
         aPrimaryRect.Left() = aSecondaryRect.Left() = _rRect.Left();
@@ -190,10 +194,10 @@ namespace svx
         nDrawTextStyle &= ~DrawTextFlags( DrawTextFlags::Right | DrawTextFlags::Left | DrawTextFlags::Bottom | DrawTextFlags::Top );
         nDrawTextStyle |= DrawTextFlags::Center | DrawTextFlags::VCenter;
 
-        rRenderContext.DrawText( aPrimaryRect, m_sPrimaryText, nDrawTextStyle );
+        rRenderContext.DrawText( aPrimaryRect, m_sPrimaryText, nDrawTextStyle, pTextMetrics, pDisplayText );
         {
             FontSwitch aFontRestore(rRenderContext, aSmallerFont);
-            rRenderContext.DrawText( aSecondaryRect, m_sSecondaryText, nDrawTextStyle );
+            rRenderContext.DrawText( aSecondaryRect, m_sSecondaryText, nDrawTextStyle, pTextMetrics, pDisplayText );
         }
 
         // outta here
@@ -212,7 +216,7 @@ namespace svx
         virtual Size    GetOptimalSize() const override;
 
     protected:
-        virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const ::tools::Rectangle& _rRect ) override;
+        virtual void    Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& _rRect ) override;
 
     private:
         PseudoRubyText m_aRubyText;
@@ -229,7 +233,7 @@ namespace svx
     }
 
 
-    void RubyRadioButton::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle&)
+    void RubyRadioButton::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
     {
         HideFocus();
 
@@ -239,10 +243,10 @@ namespace svx
         aImageSize.Width() = CalcZoom( aImageSize.Width() ) + 2;   // + 2 because otherwise the radiobuttons
         aImageSize.Height() = CalcZoom( aImageSize.Height() ) + 2; // appear a bit cut from right and top.
 
-        ::tools::Rectangle aOverallRect( Point( 0, 0 ), GetOutputSizePixel() );
+        Rectangle aOverallRect( Point( 0, 0 ), GetOutputSizePixel() );
         aOverallRect.Left() += aImageSize.Width() + 4;  // 4 is the separator between the image and the text
         // inflate the rect a little bit (because the VCL radio button does the same)
-        ::tools::Rectangle aTextRect( aOverallRect );
+        Rectangle aTextRect( aOverallRect );
         ++aTextRect.Left(); --aTextRect.Right();
         ++aTextRect.Top(); --aTextRect.Bottom();
 
@@ -269,19 +273,19 @@ namespace svx
             nTextStyle |= DrawTextFlags::Mnemonic;
 
         // paint the ruby text
-        ::tools::Rectangle aPrimaryTextLocation;
-        ::tools::Rectangle aSecondaryTextLocation;
+        Rectangle aPrimaryTextLocation;
+        Rectangle aSecondaryTextLocation;
 
         m_aRubyText.Paint(rRenderContext, aTextRect, nTextStyle, &aPrimaryTextLocation, &aSecondaryTextLocation);
 
         // the focus rectangle is to be painted around both texts
-        ::tools::Rectangle aCombinedRect(aPrimaryTextLocation);
+        Rectangle aCombinedRect(aPrimaryTextLocation);
         aCombinedRect.Union(aSecondaryTextLocation);
         SetFocusRect(aCombinedRect);
 
         // let the base class paint the radio button
         // for this, give it the proper location to paint the image (vertically centered, relative to our text)
-        ::tools::Rectangle aImageLocation( Point( 0, 0 ), aImageSize );
+        Rectangle aImageLocation( Point( 0, 0 ), aImageSize );
         sal_Int32 nTextHeight = aSecondaryTextLocation.Bottom() - aPrimaryTextLocation.Top();
         aImageLocation.Top() = aPrimaryTextLocation.Top() + ( nTextHeight - aImageSize.Height() ) / 2;
         aImageLocation.Bottom() = aImageLocation.Top() + aImageSize.Height();
@@ -306,7 +310,7 @@ namespace svx
     {
         vcl::Font aSmallerFont( GetFont() );
         aSmallerFont.SetFontHeight( static_cast<long>( 0.8 * aSmallerFont.GetFontHeight() ) );
-        ::tools::Rectangle rect( Point(), Size( SAL_MAX_INT32, SAL_MAX_INT32 ) );
+        Rectangle rect( Point(), Size( SAL_MAX_INT32, SAL_MAX_INT32 ) );
 
         Size aPrimarySize = GetTextRect( rect, m_aRubyText.getPrimaryText() ).GetSize();
         Size aSecondarySize;
@@ -343,7 +347,7 @@ namespace svx
     void SuggestionSet::UserDraw( const UserDrawEvent& rUDEvt )
     {
         vcl::RenderContext* pDev = rUDEvt.GetRenderContext();
-        ::tools::Rectangle aRect = rUDEvt.GetRect();
+        Rectangle aRect = rUDEvt.GetRect();
         sal_uInt16  nItemId = rUDEvt.GetItemId();
 
         OUString sText = *static_cast< OUString* >( GetItemData( nItemId ) );
@@ -475,11 +479,11 @@ namespace svx
         }
     }
 
-    IMPL_LINK( SuggestionDisplay, SelectSuggestionValueSetHdl, ValueSet*, pControl, void )
+    IMPL_LINK_TYPED( SuggestionDisplay, SelectSuggestionValueSetHdl, ValueSet*, pControl, void )
     {
         SelectSuggestionHdl(pControl);
     }
-    IMPL_LINK( SuggestionDisplay, SelectSuggestionListBoxHdl, ListBox&, rControl, void )
+    IMPL_LINK_TYPED( SuggestionDisplay, SelectSuggestionListBoxHdl, ListBox&, rControl, void )
     {
         SelectSuggestionHdl(&rControl);
     }
@@ -711,14 +715,14 @@ namespace svx
     }
 
 
-    IMPL_LINK_NOARG( HangulHanjaConversionDialog, OnSuggestionSelected, SuggestionDisplay&, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaConversionDialog, OnSuggestionSelected, SuggestionDisplay&, void )
     {
         m_pWordInput->SetText( m_pSuggestions->GetSelectEntry() );
         OnSuggestionModified( *m_pWordInput );
     }
 
 
-    IMPL_LINK_NOARG( HangulHanjaConversionDialog, OnSuggestionModified, Edit&, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaConversionDialog, OnSuggestionModified, Edit&, void )
     {
         m_pFind->Enable( m_pWordInput->IsValueChangedFromSaved() );
 
@@ -728,7 +732,7 @@ namespace svx
     }
 
 
-    IMPL_LINK( HangulHanjaConversionDialog, ClickByCharacterHdl, Button*, pBox, void )
+    IMPL_LINK_TYPED( HangulHanjaConversionDialog, ClickByCharacterHdl, Button*, pBox, void )
     {
         m_aClickByCharacterLink.Call( static_cast<CheckBox*>(pBox) );
 
@@ -737,7 +741,7 @@ namespace svx
     }
 
 
-    IMPL_LINK( HangulHanjaConversionDialog, OnConversionDirectionClicked, Button *, pBox, void )
+    IMPL_LINK_TYPED( HangulHanjaConversionDialog, OnConversionDirectionClicked, Button *, pBox, void )
     {
         CheckBox *pOtherBox = nullptr;
         if ( pBox == m_pHangulOnly )
@@ -753,7 +757,7 @@ namespace svx
         }
     }
 
-    IMPL_LINK_NOARG( HangulHanjaConversionDialog, OnOption, Button*, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaConversionDialog, OnOption, Button*, void )
     {
         ScopedVclPtrInstance< HangulHanjaOptionsDialog > aOptDlg(this);
         aOptDlg->Execute();
@@ -853,8 +857,8 @@ namespace svx
 
         if (!_bTryBothDirections)
         {
-            CheckBox *pBox = _ePrimaryConversionDirection == HHC::eHangulToHanja ?
-                                    m_pHangulOnly.get() : m_pHanjaOnly.get();
+            CheckBox *pBox = _ePrimaryConversionDirection == HHC::eHangulToHanja?
+                                    m_pHangulOnly : m_pHanjaOnly;
             pBox->Check();
             OnConversionDirectionClicked( pBox );
         }
@@ -962,7 +966,7 @@ namespace svx
         }
     }
 
-    IMPL_LINK_NOARG(HangulHanjaOptionsDialog, OkHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaOptionsDialog, OkHdl, Button*, void)
     {
         sal_uInt32              nCnt = m_aDictList.size();
         sal_uInt32              n = 0;
@@ -1015,7 +1019,7 @@ namespace svx
         EndDialog( RET_OK );
     }
 
-    IMPL_LINK_NOARG(HangulHanjaOptionsDialog, DictsLB_SelectHdl, SvTreeListBox*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaOptionsDialog, DictsLB_SelectHdl, SvTreeListBox*, void)
     {
         bool bSel = m_pDictsLB->FirstSelected() != nullptr;
 
@@ -1023,7 +1027,7 @@ namespace svx
         m_pDeletePB->Enable(bSel);
     }
 
-    IMPL_LINK_NOARG(HangulHanjaOptionsDialog, NewDictHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaOptionsDialog, NewDictHdl, Button*, void)
     {
         OUString                    aName;
         ScopedVclPtrInstance< HangulHanjaNewDictDialog > aNewDlg(this);
@@ -1054,7 +1058,7 @@ namespace svx
         }
     }
 
-    IMPL_LINK_NOARG(HangulHanjaOptionsDialog, EditDictHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaOptionsDialog, EditDictHdl, Button*, void)
     {
         SvTreeListEntry*    pEntry = m_pDictsLB->FirstSelected();
         DBG_ASSERT( pEntry, "+HangulHanjaEditDictDialog::EditDictHdl(): call of edit should not be possible with no selection!" );
@@ -1065,7 +1069,7 @@ namespace svx
         }
     }
 
-    IMPL_LINK_NOARG(HangulHanjaOptionsDialog, DeleteDictHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaOptionsDialog, DeleteDictHdl, Button*, void)
     {
         sal_uLong nSelPos = m_pDictsLB->GetSelectEntryPos();
         if( nSelPos != TREELIST_ENTRY_NOTFOUND )
@@ -1113,7 +1117,7 @@ namespace svx
         m_pDictsLB->set_height_request(m_pDictsLB->GetTextHeight() * 5);
         m_pDictsLB->set_width_request(m_pDictsLB->approximate_char_width() * 32);
         m_pDictsLB->SetStyle( m_pDictsLB->GetStyle() | WB_CLIPCHILDREN | WB_HSCROLL | WB_FORCE_MAKEVISIBLE );
-        m_pDictsLB->SetSelectionMode( SelectionMode::Single );
+        m_pDictsLB->SetSelectionMode( SINGLE_SELECTION );
         m_pDictsLB->SetHighlightRange();
         m_pDictsLB->SetSelectHdl( LINK( this, HangulHanjaOptionsDialog, DictsLB_SelectHdl ) );
         m_pDictsLB->SetDeselectHdl( LINK( this, HangulHanjaOptionsDialog, DictsLB_SelectHdl ) );
@@ -1180,7 +1184,7 @@ namespace svx
         pEntry->SetUserData( new OUString( _rName ) );
     }
 
-    IMPL_LINK_NOARG(HangulHanjaNewDictDialog, OKHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaNewDictDialog, OKHdl, Button*, void)
     {
         OUString  aName(comphelper::string::stripEnd(m_pDictNameED->GetText(), ' '));
 
@@ -1191,7 +1195,7 @@ namespace svx
         EndDialog( RET_OK );
     }
 
-    IMPL_LINK_NOARG(HangulHanjaNewDictDialog, ModifyHdl, Edit&, void)
+    IMPL_LINK_NOARG_TYPED(HangulHanjaNewDictDialog, ModifyHdl, Edit&, void)
     {
         OUString aName(comphelper::string::stripEnd(m_pDictNameED->GetText(), ' '));
 
@@ -1251,7 +1255,7 @@ namespace svx
         const OUString*     First();
         const OUString*     Next();
 
-        sal_uInt16   GetCount() const { return m_nNumOfEntries; }
+        inline sal_uInt16   GetCount() const { return m_nNumOfEntries; }
     };
 
     SuggestionList::SuggestionList() :
@@ -1487,12 +1491,12 @@ namespace svx
     }
 
 
-    IMPL_LINK_NOARG( HangulHanjaEditDictDialog, ScrollHdl, ScrollBar*, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaEditDictDialog, ScrollHdl, ScrollBar*, void )
     {
         UpdateScrollbar();
     }
 
-    IMPL_LINK_NOARG( HangulHanjaEditDictDialog, OriginalModifyHdl, Edit&, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaEditDictDialog, OriginalModifyHdl, Edit&, void )
     {
         m_bModifiedOriginal = true;
         m_aOriginal = comphelper::string::stripEnd( m_aOriginalLB->GetText(), ' ' );
@@ -1501,32 +1505,32 @@ namespace svx
         UpdateButtonStates();
     }
 
-    IMPL_LINK( HangulHanjaEditDictDialog, EditModifyHdl1, Edit&, rEdit, void )
+    IMPL_LINK_TYPED( HangulHanjaEditDictDialog, EditModifyHdl1, Edit&, rEdit, void )
     {
         EditModify( &rEdit, 0 );
     }
 
-    IMPL_LINK( HangulHanjaEditDictDialog, EditModifyHdl2, Edit&, rEdit, void )
+    IMPL_LINK_TYPED( HangulHanjaEditDictDialog, EditModifyHdl2, Edit&, rEdit, void )
     {
         EditModify( &rEdit, 1 );
     }
 
-    IMPL_LINK( HangulHanjaEditDictDialog, EditModifyHdl3, Edit&, rEdit, void )
+    IMPL_LINK_TYPED( HangulHanjaEditDictDialog, EditModifyHdl3, Edit&, rEdit, void )
     {
         EditModify( &rEdit, 2 );
     }
 
-    IMPL_LINK( HangulHanjaEditDictDialog, EditModifyHdl4, Edit&, rEdit, void )
+    IMPL_LINK_TYPED( HangulHanjaEditDictDialog, EditModifyHdl4, Edit&, rEdit, void )
     {
         EditModify( &rEdit, 3 );
     }
 
-    IMPL_LINK_NOARG( HangulHanjaEditDictDialog, BookLBSelectHdl, ListBox&, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaEditDictDialog, BookLBSelectHdl, ListBox&, void )
     {
         InitEditDictDialog( m_aBookLB->GetSelectEntryPos() );
     }
 
-    IMPL_LINK_NOARG( HangulHanjaEditDictDialog, NewPBPushHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaEditDictDialog, NewPBPushHdl, Button*, void )
     {
         DBG_ASSERT( m_pSuggestions, "-HangulHanjaEditDictDialog::NewPBPushHdl(): no suggestions... search in hell..." );
         Reference< XConversionDictionary >  xDict = m_rDictList[ m_nCurrentDict ];
@@ -1594,7 +1598,7 @@ namespace svx
         return bRemovedSomething;
     }
 
-    IMPL_LINK_NOARG( HangulHanjaEditDictDialog, DeletePBPushHdl, Button*, void )
+    IMPL_LINK_NOARG_TYPED( HangulHanjaEditDictDialog, DeletePBPushHdl, Button*, void )
     {
         if( DeleteEntryFromDictionary( m_aOriginal, m_rDictList[ m_nCurrentDict ] ) )
         {

@@ -21,7 +21,7 @@
 
 #include "invmerge.hxx"
 
-ScInvertMerger::ScInvertMerger( ::std::vector< tools::Rectangle >* pRectangles ) :
+ScInvertMerger::ScInvertMerger( ::std::vector< Rectangle >* pRectangles ) :
     pRects( pRectangles )
 {
     //  collect rectangles instead of inverting
@@ -47,13 +47,13 @@ void ScInvertMerger::Flush()
         size_t nComparePos = 0;
         while ( nComparePos < pRects->size() )
         {
-            tools::Rectangle aCompRect = (*pRects)[nComparePos];
+            Rectangle aCompRect = (*pRects)[nComparePos];
             sal_Int32 nBottom = aCompRect.Bottom();
             size_t nOtherPos = nComparePos + 1;
 
             while ( nOtherPos < pRects->size() )
             {
-                tools::Rectangle aOtherRect = (*pRects)[nOtherPos];
+                Rectangle aOtherRect = (*pRects)[nOtherPos];
                 if ( aOtherRect.Top() > nBottom + 1 )
                 {
                     // rectangles are sorted, so we can stop searching
@@ -121,9 +121,9 @@ void ScInvertMerger::FlushLine()
     aLineRect.SetEmpty();
 }
 
-void ScInvertMerger::AddRect( const tools::Rectangle& rRect )
+void ScInvertMerger::AddRect( const Rectangle& rRect )
 {
-    tools::Rectangle aJustified = rRect;
+    Rectangle aJustified = rRect;
     if ( rRect.Left() > rRect.Right() )     // switch for RTL layout
     {
         aJustified.Left() = rRect.Right();

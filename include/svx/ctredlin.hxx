@@ -20,46 +20,21 @@
 #ifndef INCLUDED_SVX_CTREDLIN_HXX
 #define INCLUDED_SVX_CTREDLIN_HXX
 
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-#include <svx/svxdllapi.h>
+#include <svtools/headbar.hxx>
 #include <svtools/simptabl.hxx>
 #include <svtools/svlbitm.hxx>
 #include <svtools/svtabbx.hxx>
-#include <svtools/treelistbox.hxx>
 #include <svtools/treelistentry.hxx>
-#include <tools/color.hxx>
-#include <tools/contnr.hxx>
-#include <tools/date.hxx>
 #include <tools/datetime.hxx>
-#include <tools/link.hxx>
-#include <tools/time.hxx>
-#include <tools/wintypes.hxx>
-#include <vcl/builder.hxx>
-#include <vcl/image.hxx>
-#include <vcl/outdev.hxx>
-#include <vcl/vclptr.hxx>
+#include <vcl/button.hxx>
+#include <vcl/combobox.hxx>
+#include <vcl/field.hxx>
+#include <vcl/fixed.hxx>
+#include <vcl/lstbox.hxx>
 #include <vcl/tabpage.hxx>
 #include <vcl/tabctrl.hxx>
-
-namespace utl {
-    class SearchParam;
-    class TextSearch;
-}
-
-namespace vcl { class Window; }
-
-class Button;
-class CheckBox;
-class DateField;
-class Edit;
-class FixedText;
-class ListBox;
-class Point;
-class PushButton;
-class SvViewDataEntry;
-class TimeField;
-struct SvSortData;
+#include <unotools/textsearch.hxx>
+#include <svx/svxdllapi.h>
 
 enum class SvxRedlinDateMode
 {
@@ -82,7 +57,7 @@ class SAL_WARN_UNUSED SvxRedlinEntry : public SvTreeListEntry
 {
 public:
                     SvxRedlinEntry();
-        virtual     ~SvxRedlinEntry() override;
+        virtual     ~SvxRedlinEntry();
 };
 
 /// Class for the representation of Strings depending on the font.
@@ -95,7 +70,7 @@ private:
 public:
                     SvLBoxColorString( const OUString& rStr, const Color& rCol);
                     SvLBoxColorString();
-                    virtual ~SvLBoxColorString() override;
+                    virtual ~SvLBoxColorString();
 
     /** Paint function of the SvLBoxColorString class.
 
@@ -138,19 +113,19 @@ protected:
 public:
 
     SvxRedlinTable(SvSimpleTableContainer& rParent, WinBits nBits = WB_BORDER);
-    virtual ~SvxRedlinTable() override;
+    virtual ~SvxRedlinTable();
     virtual void    dispose() override;
 
     // For FilterPage only {
-    void            SetFilterDate(bool bFlag);
+    void            SetFilterDate(bool bFlag=true);
     void            SetDateTimeMode(SvxRedlinDateMode nMode);
     void            SetFirstDate(const Date&);
     void            SetLastDate(const Date&);
     void            SetFirstTime(const tools::Time&);
     void            SetLastTime(const tools::Time&);
-    void            SetFilterAuthor(bool bFlag);
+    void            SetFilterAuthor(bool bFlag=true);
     void            SetAuthor(const OUString &);
-    void            SetFilterComment(bool bFlag);
+    void            SetFilterComment(bool bFlag=true);
     void            SetCommentParams( const utl::SearchParam* pSearchPara );
 
     void            UpdateFilterTest();
@@ -174,7 +149,7 @@ public:
         The rStr contains the entire redline entry; the columns are delimited by '\t'.
     */
     SvTreeListEntry* InsertEntry(const OUString &rStr, RedlinData *pUserData, const Color&,
-                                 SvTreeListEntry* pParent, sal_uIntPtr nPos = TREELIST_APPEND);
+                                 SvTreeListEntry* pParent = nullptr, sal_uIntPtr nPos = TREELIST_APPEND);
 
     /** Insert a redline entry.
 
@@ -182,7 +157,7 @@ public:
         rStr contains the rest of the redline entry; the columns are delimited by '\t'.
     */
     SvTreeListEntry* InsertEntry(const Image &rRedlineType, const OUString &rStr, RedlinData *pUserData,
-                                 SvTreeListEntry* pParent, sal_uIntPtr nPos = TREELIST_APPEND);
+                                 SvTreeListEntry* pParent = nullptr, sal_uIntPtr nPos = TREELIST_APPEND);
 
     virtual SvTreeListEntry* CreateEntry() const override;
 
@@ -218,22 +193,23 @@ private:
     VclPtr<Edit>           m_pEdComment;
     bool                   bModified;
 
-    DECL_LINK( SelDateHdl, ListBox&, void );
-    DECL_LINK( RowEnableHdl, Button*, void );
-    DECL_LINK( TimeHdl, Button*, void );
-    DECL_LINK( ModifyHdl, Edit&, void );
-    DECL_LINK( ModifyListBoxHdl, ListBox&, void );
-    DECL_LINK( ModifyDate, Edit&, void );
-    DECL_LINK( RefHandle, Button*, void );
+    DECL_LINK_TYPED( SelDateHdl, ListBox&, void );
+    DECL_LINK_TYPED( RowEnableHdl, Button*, void );
+    DECL_LINK_TYPED( TimeHdl, Button*, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( ModifyDate, Edit&, void );
+    DECL_LINK_TYPED( RefHandle, Button*, void );
 
 protected:
 
+    void            ShowDateFields(SvxRedlinDateMode nKind);
     void            EnableDateLine1(bool bFlag);
     void            EnableDateLine2(bool bFlag);
 
 public:
                     SvxTPFilter( vcl::Window * pParent);
-    virtual         ~SvxTPFilter() override;
+    virtual         ~SvxTPFilter();
     virtual void    dispose() override;
 
     virtual void    DeactivatePage() override;
@@ -275,11 +251,11 @@ public:
 
     void            ShowAction(bool bShow=true);
 
-    void            CheckDate(bool bFlag);
-    void            CheckAuthor(bool bFlag);
-    void            CheckRange(bool bFlag);
-    void            CheckAction(bool bFlag);
-    void            CheckComment(bool bFlag);
+    void            CheckDate(bool bFlag=true);
+    void            CheckAuthor(bool bFlag=true);
+    void            CheckRange(bool bFlag=true);
+    void            CheckAction(bool bFlag=true);
+    void            CheckComment(bool bFlag=true);
 
     ListBox*        GetLbAction() { return m_pLbAction;}
 
@@ -318,21 +294,21 @@ private:
     bool bEnableRejectAll;
     bool bEnableUndo;
 
-    DECL_LINK( PbClickHdl, Button*, void );
+    DECL_LINK_TYPED( PbClickHdl, Button*, void );
 
 public:
     SvxTPView(vcl::Window * pParent, VclBuilderContainer *pTopLevel);
-    virtual ~SvxTPView() override;
+    virtual ~SvxTPView();
     virtual void    dispose() override;
 
     void            InsertWriterHeader();
     void            InsertCalcHeader();
     SvxRedlinTable* GetTableControl() { return m_pViewData;}
 
-    void            EnableAccept(bool bFlag);
-    void            EnableAcceptAll(bool bFlag);
-    void            EnableReject(bool bFlag);
-    void            EnableRejectAll(bool bFlag);
+    void            EnableAccept(bool bFlag=true);
+    void            EnableAcceptAll(bool bFlag=true);
+    void            EnableReject(bool bFlag=true);
+    void            EnableRejectAll(bool bFlag=true);
     void            EnableUndo(bool bFlag=true);
     void            DisableUndo()       {EnableUndo(false);}
     void            ShowUndo();
@@ -368,13 +344,15 @@ private:
 public:
                     SvxAcceptChgCtr(vcl::Window* pParent, VclBuilderContainer* pTopLevel);
 
-                    virtual ~SvxAcceptChgCtr() override;
+                    virtual ~SvxAcceptChgCtr();
     virtual void    dispose() override;
 
     void            ShowFilterPage();
+    void            ShowViewPage();
 
     SvxTPFilter*    GetFilterPage() { return pTPFilter;}
     SvxTPView*      GetViewPage() { return pTPView;}
+    SvxRedlinTable* GetViewTable();
 };
 
 #endif // INCLUDED_SVX_CTREDLIN_HXX

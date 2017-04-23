@@ -50,6 +50,7 @@ class SvInplaceEdit2;
 class SvLBoxString;
 class SvLBoxButton;
 class SvLBoxContextBmp;
+class SvLBoxBmp;
 class SvImpLBox;
 class SvLBoxButtonData;
 struct SvLBoxDDInfo;
@@ -89,6 +90,7 @@ enum class SvLBoxTabFlags
                                // (on which Abo Tabpage/Extras/Option/Customize, etc. rely on)
                                // The first tab's position corresponds precisely to the Flags set
                                // and column widths
+    ALL              = 0x0f5f,
 };
 namespace o3tl
 {
@@ -115,6 +117,7 @@ namespace o3tl
 enum class SvTreeAccRoleType
 {
     NONE   = 0x00,
+    LIST   = 0x01,
     TREE   = 0x02
 };
 
@@ -123,7 +126,11 @@ typedef sal_Int64   ExtendedWinBits;
 // disable the behavior of automatically selecting a "CurEntry" upon painting the control
 #define EWB_NO_AUTO_CURENTRY        0x00000001
 
-enum class SvLBoxItemType {String, Button, ContextBmp};
+#define SV_ITEM_ID_LBOXSTRING       1
+#define SV_ITEM_ID_LBOXBMP          2
+#define SV_ITEM_ID_LBOXBUTTON       3
+#define SV_ITEM_ID_LBOXCONTEXTBMP   4
+#define SV_ITEM_ID_EXTENDRLBOXSTRING    5
 
 class SvLBoxTab
 {
@@ -131,7 +138,7 @@ class SvLBoxTab
     void*   pUserData;
 public:
             SvLBoxTab();
-            SvLBoxTab( long nPos, SvLBoxTabFlags nFlags );
+            SvLBoxTab( long nPos, SvLBoxTabFlags nFlags = SvLBoxTabFlags::ADJUST_LEFT );
             SvLBoxTab( const SvLBoxTab& );
             ~SvLBoxTab();
 
@@ -145,12 +152,16 @@ public:
     bool    IsEditable() const { return bool(nFlags & SvLBoxTabFlags::EDITABLE); }
 };
 
+// *********************************************************************
+// ****************************** Items ********************************
+// *********************************************************************
+
 class SVT_DLLPUBLIC SvLBoxItem
 {
 public:
                         SvLBoxItem();
     virtual             ~SvLBoxItem();
-    virtual SvLBoxItemType GetType() const = 0;
+    virtual sal_uInt16 GetType() const = 0;
     const Size&         GetSize(const SvTreeListBox* pView, const SvTreeListEntry* pEntry) const;
     static const Size&  GetSize(const SvViewDataEntry* pData, sal_uInt16 nItemPos);
 
@@ -164,6 +175,10 @@ public:
     // View-dependent data is not cloned
     virtual void        Clone(SvLBoxItem* pSource) = 0;
 };
+
+// *********************************************************************
+// ****************************** SvTreeListBox ************************
+// *********************************************************************
 
 #define WB_FORCE_SELECTION          ((WinBits)0x8000)
 
@@ -184,6 +199,7 @@ namespace o3tl
 {
     template<> struct typed_flags<DragDropMode> : is_typed_flags<DragDropMode, 0x003f> {};
 }
+
 
 enum class SvTreeListBoxFlags
 {
@@ -214,7 +230,7 @@ class SVT_DLLPUBLIC SvTreeListBox
     friend class IconViewImpl;
     friend class TreeControlPeer;
 
-    std::unique_ptr<SvTreeListBoxImpl> mpImpl;
+    SvTreeListBoxImpl* mpImpl;
     Link<SvTreeListBox*,void>  aCheckButtonHdl;
     Link<SvTreeListBox*,void>  aScrolledHdl;
     Link<SvTreeListBox*,void>  aExpandedHdl;
@@ -251,7 +267,7 @@ class SVT_DLLPUBLIC SvTreeListBox
     SvLBoxItem*             pEdItem;
 
 protected:
-    std::unique_ptr<SvImpLBox>              pImpl;
+    SvImpLBox*              pImp;
     short                   nColumns;
     short                   nEntryHeight;
     short                   nEntryWidth;
@@ -269,10 +285,10 @@ protected:
 private:
     void SetBaseModel(SvTreeList* pNewModel);
 
-    DECL_DLLPRIVATE_LINK( CheckButtonClick, SvLBoxButtonData *, void );
-    DECL_DLLPRIVATE_LINK( TextEditEndedHdl_Impl, SvInplaceEdit2&, void );
+    DECL_DLLPRIVATE_LINK_TYPED( CheckButtonClick, SvLBoxButtonData *, void );
+    DECL_DLLPRIVATE_LINK_TYPED( TextEditEndedHdl_Impl, SvInplaceEdit2&, void );
     // Handler that is called by TreeList to clone an Entry
-    DECL_DLLPRIVATE_LINK( CloneHdl_Impl, SvTreeListEntry*, SvTreeListEntry* );
+    DECL_DLLPRIVATE_LINK_TYPED( CloneHdl_Impl, SvTreeListEntry*, SvTreeListEntry* );
 
     // Handler and methods for Drag - finished handler.
     // The Handle retrieved by GetDragFinishedHdl can be set on the
@@ -282,7 +298,7 @@ private:
     // called for a deleted object.
     SVT_DLLPRIVATE static void AddBoxToDDList_Impl( const SvTreeListBox& rB );
     SVT_DLLPRIVATE static void RemoveBoxFromDDList_Impl( const SvTreeListBox& rB );
-    DECL_DLLPRIVATE_LINK( DragFinishHdl_Impl, sal_Int8, void );
+    DECL_DLLPRIVATE_LINK_TYPED( DragFinishHdl_Impl, sal_Int8, void );
 
 protected:
 
@@ -301,9 +317,10 @@ protected:
 
     // In-place editing
     SvInplaceEdit2*  pEdCtrl;
-    void            EditText( const OUString&, const tools::Rectangle&,const Selection&);
+    void            EditText( const OUString&, const Rectangle&,const Selection&);
     void            CancelTextEditing();
     bool            EditingCanceled() const;
+    bool            IsEmptyTextAllowed() const;
 
     // Return value must be derived from SvViewDataEntry!
     virtual SvViewDataEntry* CreateViewData( SvTreeListEntry* ) override;
@@ -340,7 +357,8 @@ protected:
 public:
 
     SvTreeListBox( vcl::Window* pParent, WinBits nWinStyle=0 );
-    virtual ~SvTreeListBox() override;
+    SvTreeListBox( vcl::Window* pParent, const ResId& rResId );
+    virtual ~SvTreeListBox();
     virtual void dispose() override;
 
     SvTreeList* GetModel() const
@@ -378,6 +396,7 @@ public:
     static SvTreeListEntry* PrevSibling( SvTreeListEntry* pEntry );
 
     bool            CopySelection( SvTreeListBox* pSource, SvTreeListEntry* pTarget );
+    bool            MoveSelection( SvTreeListBox* pSource, SvTreeListEntry* pTarget );
     bool            MoveSelectionCopyFallbackPossible( SvTreeListBox* pSource, SvTreeListEntry* pTarget, bool bAllowCopyFallback );
     void            RemoveSelection();
 
@@ -479,6 +498,8 @@ public:
 
     void                     SetDragOptions( sal_Int8 nOptions ) { nDragOptions = nOptions; }
 
+    static SvTreeListBox*    GetSourceView();
+
     virtual SvTreeListEntry* CloneEntry( SvTreeListEntry* pSource );
     virtual SvTreeListEntry* CreateEntry() const; // To create new Entries
 
@@ -508,7 +529,7 @@ public:
         @param pEntry
             The entry.
         @return  The bounding rectangle of an entry. */
-    tools::Rectangle           GetBoundingRect( SvTreeListEntry* pEntry );
+    Rectangle           GetBoundingRect( SvTreeListEntry* pEntry );
 
     /** Enables, that one cell of a tablistbox entry can be focused */
     void                EnableCellFocus();
@@ -532,13 +553,15 @@ protected:
     using SvListView::SelectAll;
 
     SVT_DLLPRIVATE short        GetHeightOffset( const Image& rBmp, Size& rLogicSize);
+    SVT_DLLPRIVATE void         GetHeightOffset( Size& rLogicSize);
 
     SVT_DLLPRIVATE void         SetEntryHeight( SvTreeListEntry* pEntry );
     SVT_DLLPRIVATE void         AdjustEntryHeight( const Image& rBmp );
     SVT_DLLPRIVATE void         AdjustEntryHeight();
 
     SVT_DLLPRIVATE void         ImpEntryInserted( SvTreeListEntry* pEntry );
-    SVT_DLLPRIVATE void         PaintEntry1( SvTreeListEntry&, long nLine, vcl::RenderContext& rRenderContext );
+    SVT_DLLPRIVATE void         PaintEntry1( SvTreeListEntry&, long nLine, vcl::RenderContext& rRenderContext,
+                                             SvLBoxTabFlags nTabFlagMask = SvLBoxTabFlags::ALL );
 
     SVT_DLLPRIVATE void         InitTreeView();
     SVT_DLLPRIVATE SvLBoxItem*  GetItem_Impl( SvTreeListEntry*, long nX, SvLBoxTab** ppTab );
@@ -554,7 +577,8 @@ protected:
     // Recalculate all tabs depending on TreeListStyle and Bitmap sizes
     // Is called automatically when inserting/changing Bitmaps, changing the Model etc.
     virtual void    SetTabs();
-    void            AddTab( long nPos, SvLBoxTabFlags nFlags );
+    void            AddTab( long nPos, SvLBoxTabFlags nFlags=SvLBoxTabFlags::ADJUST_LEFT,
+                            void* pUserData = nullptr );
     sal_uInt16      TabCount() const { return aTabs.size(); }
     SvLBoxTab*      GetFirstDynamicTab() const;
     SvLBoxTab*      GetFirstDynamicTab( sal_uInt16& rTabPos ) const;
@@ -583,7 +607,7 @@ protected:
     bool            IsCellFocusEnabled() const;
     bool            SetCurrentTabPos( sal_uInt16 _nNewPos );
     sal_uInt16      GetCurrentTabPos() const;
-    void            CallImplEventListeners(VclEventId nEvent, void* pData);
+    void            CallImplEventListeners(sal_uLong nEvent, void* pData);
 
     void            ImplEditEntry( SvTreeListEntry* pEntry );
 
@@ -613,7 +637,7 @@ public:
 
     /** Sets default bitmaps for collapsed and expanded nodes.
     */
-    void    SetNodeDefaultImages( )
+    inline  void    SetNodeDefaultImages( )
     {
         SetNodeBitmaps(
             GetDefaultCollapsedNodeImage( ),
@@ -661,11 +685,11 @@ public:
 
     void            EnableInplaceEditing( bool bEnable );
     // Edits the Entry's first StringItem, 0 == Cursor
-    void            EditEntry( SvTreeListEntry* pEntry );
+    void            EditEntry( SvTreeListEntry* pEntry = nullptr );
     virtual bool    EditingEntry( SvTreeListEntry* pEntry, Selection& );
     virtual bool    EditedEntry( SvTreeListEntry* pEntry, const OUString& rNewText );
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
@@ -685,11 +709,12 @@ public:
     virtual void    ModelHasRemoved( SvTreeListEntry* pEntry ) override;
     void            ModelHasEntryInvalidated( SvTreeListEntry* pEntry ) override;
 
+    void            ShowTargetEmphasis( SvTreeListEntry*, bool bShow );
     void            ScrollOutputArea( short nDeltaEntries );
 
     short           GetColumnsCount() const { return nColumns; }
     short           GetEntryHeight() const  { return nEntryHeight; }
-    void            SetEntryHeight( short nHeight, bool bForce = false );
+    void            SetEntryHeight( short nHeight );
     short           GetEntryWidth() const { return nEntryWidth; }
     void            SetEntryWidth( short nWidth );
     Size            GetOutputSizePixel() const;
@@ -715,7 +740,7 @@ public:
 
     SvTreeListEntry*    GetEntry( const Point& rPos, bool bHit = false ) const;
 
-    virtual tools::Rectangle GetFocusRect( SvTreeListEntry*, long nLine );
+    virtual Rectangle GetFocusRect( SvTreeListEntry*, long nLine );
     // Respects indentation
     virtual sal_IntPtr GetTabPos( SvTreeListEntry*, SvLBoxTab* );
     void            InvalidateEntry( SvTreeListEntry* );
@@ -736,14 +761,14 @@ public:
 
     using Window::Invalidate;
     virtual void    Invalidate( InvalidateFlags nFlags = InvalidateFlags::NONE) override;
-    virtual void    Invalidate( const tools::Rectangle&, InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
+    virtual void    Invalidate( const Rectangle&, InvalidateFlags nFlags = InvalidateFlags::NONE ) override;
 
     void            SetHighlightRange(sal_uInt16 nFirstTab=0, sal_uInt16 nLastTab=0xffff);
 
     // A Parent's Children are turned into Children of the Parent which comes next in hierarchy
     void            RemoveParentKeepChildren( SvTreeListEntry* pParent );
 
-    DECL_LINK( DefaultCompare, const SvSortData&, sal_Int32 );
+    DECL_LINK_TYPED( DefaultCompare, const SvSortData&, sal_Int32 );
     virtual void    ModelNotification( SvListAction nActionId, SvTreeListEntry* pEntry1,
                         SvTreeListEntry* pEntry2, sal_uLong nPos ) override;
 
@@ -760,7 +785,7 @@ public:
     void            ShowFocusRect( const SvTreeListEntry* pEntry );
     void            InitStartEntry();
 
-    virtual VclPtr<PopupMenu> CreateContextMenu();
+    virtual std::unique_ptr<PopupMenu> CreateContextMenu();
     virtual void    ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEntry );
 
     void            EnableContextMenuHandling();
@@ -772,8 +797,6 @@ public:
     virtual Size    GetOptimalSize() const override;
 
     void            SetAlternatingRowColors( const bool bEnable );
-
-    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 #define SV_LBOX_DD_FORMAT "SV_LBOX_DD_FORMAT"
@@ -789,9 +812,9 @@ class SvInplaceEdit2
     bool          bAlreadyInCallBack;
 
     void        CallCallBackHdl_Impl();
-    DECL_LINK( Timeout_Impl, Timer *, void );
-    DECL_LINK( ReturnHdl_Impl, Accelerator&, void );
-    DECL_LINK( EscapeHdl_Impl, Accelerator&, void );
+    DECL_LINK_TYPED( Timeout_Impl, Idle *, void );
+    DECL_LINK_TYPED( ReturnHdl_Impl, Accelerator&, void );
+    DECL_LINK_TYPED( EscapeHdl_Impl, Accelerator&, void );
 
 public:
                 SvInplaceEdit2( vcl::Window* pParent, const Point& rPos, const Size& rSize,
@@ -803,7 +826,7 @@ public:
     bool        EditingCanceled() const { return bCanceled; }
     OUString    GetText() const;
     OUString    GetSavedValue() const;
-    void        StopEditing( bool bCancel );
+    void        StopEditing( bool bCancel = false );
     void        Hide();
 };
 

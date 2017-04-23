@@ -38,13 +38,13 @@ class SvXMLStyleContext;
 typedef std::map< OUString, OUString > XMLTableTemplate;
 typedef std::map < OUString, std::shared_ptr< XMLTableTemplate > > XMLTableTemplateMap;
 
-class XMLOFF_DLLPUBLIC XMLTableImport : public salhelper::SimpleReferenceObject
+class XMLTableImport : public salhelper::SimpleReferenceObject
 {
     friend class XMLTableImportContext;
 
 public:
     XMLTableImport( SvXMLImport& rImport, const rtl::Reference< XMLPropertySetMapper >& xCellPropertySetMapper, const rtl::Reference< XMLPropertyHandlerFactory >& xFactoryRef );
-    virtual ~XMLTableImport() override;
+    virtual ~XMLTableImport();
 
     SvXMLImportContext* CreateTableContext( sal_uInt16 nPrfx, const OUString& rLName,
                                             css::uno::Reference< css::table::XColumnRowRange >& xColumnRowRange );
@@ -56,9 +56,6 @@ public:
     const rtl::Reference< SvXMLImportPropertyMapper >& GetColumnImportPropertySetMapper() const { return mxColumnImportPropertySetMapper; }
 
     void addTableTemplate( const OUString& rsStyleName, XMLTableTemplate& xTableTemplate );
-    /// Inserts to the doc template with given name.
-    void insertTabletemplate( const OUString& rsStyleName, bool bOverwrite);
-    /// Inserts all table templates.
     void finishStyles();
 
 private:

@@ -31,20 +31,20 @@ using namespace ::com::sun::star::lang;
 
 namespace comphelper
 {
-class PropertyMapImpl final
+class PropertyMapImpl
 {
 public:
     PropertyMapImpl() throw();
+    virtual ~PropertyMapImpl() throw();
 
     void add(PropertyMapEntry const * pMap) throw();
     void remove( const OUString& aName ) throw();
 
-    std::vector< Property > const & getProperties() throw();
+    std::vector< Property > getProperties() throw();
 
     const PropertyMap& getPropertyMap() const throw() { return maPropertyMap;}
 
-        /// @throws UnknownPropertyException
-    Property getPropertyByName( const OUString& aName );
+    Property getPropertyByName( const OUString& aName ) throw( UnknownPropertyException );
     bool hasPropertyByName( const OUString& aName ) throw();
 
 private:
@@ -54,6 +54,10 @@ private:
 }
 
 PropertyMapImpl::PropertyMapImpl() throw()
+{
+}
+
+PropertyMapImpl::~PropertyMapImpl() throw()
 {
 }
 
@@ -79,7 +83,7 @@ void PropertyMapImpl::remove( const OUString& aName ) throw()
     maProperties.clear();
 }
 
-std::vector< Property > const & PropertyMapImpl::getProperties() throw()
+std::vector< Property > PropertyMapImpl::getProperties() throw()
 {
     // maybe we have to generate the properties after
     // a change in the property map or at first call
@@ -106,7 +110,7 @@ std::vector< Property > const & PropertyMapImpl::getProperties() throw()
 }
 
 
-Property PropertyMapImpl::getPropertyByName( const OUString& aName )
+Property PropertyMapImpl::getPropertyByName( const OUString& aName ) throw( UnknownPropertyException )
 {
     PropertyMap::iterator aIter = maPropertyMap.find( aName );
 
@@ -125,18 +129,18 @@ bool PropertyMapImpl::hasPropertyByName( const OUString& aName ) throw()
 
 
 PropertySetInfo::PropertySetInfo() throw()
-    : mpImpl(new PropertyMapImpl)
 {
+    mpMap = new PropertyMapImpl();
 }
 
 PropertySetInfo::PropertySetInfo( PropertyMapEntry const * pMap ) throw()
-    : mpImpl(new PropertyMapImpl)
 {
-    mpImpl->add( pMap );
+    mpMap = new PropertyMapImpl();
+    mpMap->add( pMap );
 }
 
 PropertySetInfo::PropertySetInfo(uno::Sequence<beans::Property> const& rProps) throw()
-    : mpImpl(new PropertyMapImpl)
+    : mpMap(new PropertyMapImpl)
 {
     PropertyMapEntry * pEntries(new PropertyMapEntry[rProps.getLength() + 1]);
     PropertyMapEntry * pEntry(&pEntries[0]);
@@ -150,41 +154,42 @@ PropertySetInfo::PropertySetInfo(uno::Sequence<beans::Property> const& rProps) t
         ++pEntry;
     }
     pEntry->maName = OUString();
-    mpImpl->add(pEntries);
+    mpMap->add(pEntries);
 }
 
 PropertySetInfo::~PropertySetInfo() throw()
 {
+    delete mpMap;
 }
 
 void PropertySetInfo::add( PropertyMapEntry const * pMap ) throw()
 {
-    mpImpl->add( pMap );
+    mpMap->add( pMap );
 }
 
 void PropertySetInfo::remove( const OUString& aName ) throw()
 {
-    mpImpl->remove( aName );
+    mpMap->remove( aName );
 }
 
-Sequence< css::beans::Property > SAL_CALL PropertySetInfo::getProperties()
+Sequence< css::beans::Property > SAL_CALL PropertySetInfo::getProperties() throw(css::uno::RuntimeException, std::exception)
 {
-    return comphelper::containerToSequence(mpImpl->getProperties());
+    return comphelper::containerToSequence(mpMap->getProperties());
 }
 
-Property SAL_CALL PropertySetInfo::getPropertyByName( const OUString& aName )
+Property SAL_CALL PropertySetInfo::getPropertyByName( const OUString& aName ) throw(css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception)
 {
-    return mpImpl->getPropertyByName( aName );
+    return mpMap->getPropertyByName( aName );
 }
 
-sal_Bool SAL_CALL PropertySetInfo::hasPropertyByName( const OUString& Name )
+sal_Bool SAL_CALL PropertySetInfo::hasPropertyByName( const OUString& Name ) throw(css::uno::RuntimeException, std::exception)
 {
-    return mpImpl->hasPropertyByName( Name );
+    return mpMap->hasPropertyByName( Name );
 }
 
 const PropertyMap& PropertySetInfo::getPropertyMap() const throw()
 {
-    return mpImpl->getPropertyMap();
+    return mpMap->getPropertyMap();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

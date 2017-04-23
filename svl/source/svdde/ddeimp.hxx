@@ -41,15 +41,14 @@ class DdeInternal
 {
 public:
     static HDDEDATA CALLBACK CliCallback
-           ( UINT, UINT, HCONV, HSZ, HSZ, HDDEDATA, ULONG_PTR, ULONG_PTR );
+           ( WORD, WORD, HCONV, HSZ, HSZ, HDDEDATA, DWORD, DWORD );
     static HDDEDATA CALLBACK SvrCallback
-           ( UINT, UINT, HCONV, HSZ, HSZ, HDDEDATA, ULONG_PTR, ULONG_PTR );
+           ( WORD, WORD, HCONV, HSZ, HSZ, HDDEDATA, DWORD, DWORD );
+    static HDDEDATA CALLBACK InfCallback
+           ( WORD, WORD, HCONV, HSZ, HSZ, HDDEDATA, DWORD, DWORD );
     static DdeService*      FindService( HSZ );
     static DdeTopic*        FindTopic( DdeService&, HSZ );
     static DdeItem*         FindItem( DdeTopic&, HSZ );
-    static void DisconnectTopic(DdeTopic &, HCONV);
-    static void IncMonitor(DdeItem *pItem, HCONV);
-    static void DecMonitor(DdeItem *pItem, HCONV);
 };
 
 
@@ -66,8 +65,8 @@ public:
                 DdeString( DWORD, const OUString& );
                 ~DdeString();
 
-    bool        operator==( HSZ );
-    HSZ getHSZ();
+    int         operator==( HSZ );
+                operator HSZ();
     OUString toOUString() const { return m_aString; }
 };
 
@@ -75,8 +74,8 @@ public:
 struct DdeDataImp
 {
     HDDEDATA        hData;
-    void const *    pData;
-    DWORD           nData;
+    LPBYTE          pData;
+    long            nData;
     SotClipboardFormatId nFmt;
 };
 
@@ -88,6 +87,7 @@ public:
     sal_uInt16          nRefCount;
     std::vector<DdeConnection*> aConnections;
     // Server
+    sal_IntPtr      hCurConvSvr;
     DWORD           hDdeInstSvr;
     short           nInstanceSvr;
     DdeServices*    pServicesSvr;
@@ -97,9 +97,10 @@ public:
 
     DdeInstData()
         : nRefCount(0)
+        , hCurConvSvr(0)
         , hDdeInstSvr(0)
         , nInstanceSvr(0)
-        , pServicesSvr(nullptr)
+        , pServicesSvr(NULL)
         , hDdeInstCli(0)
         , nInstanceCli(0)
     {

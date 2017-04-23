@@ -158,16 +158,17 @@ namespace connectivity
         OSQLParseTreeIterator(
             const css::uno::Reference< css::sdbc::XConnection >& _rxConnection,
             const css::uno::Reference< css::container::XNameAccess >& _rxTables,
-            const OSQLParser& _rParser );
+            const OSQLParser& _rParser,
+            const OSQLParseNode* pRoot = nullptr );
         ~OSQLParseTreeIterator();
 
-        static void * SAL_CALL operator new( size_t nSize )
+        inline static void * SAL_CALL operator new( size_t nSize )
             { return ::rtl_allocateMemory( nSize ); }
-        static void * SAL_CALL operator new( size_t,void* _pHint )
+        inline static void * SAL_CALL operator new( size_t,void* _pHint )
             { return _pHint; }
-        static void SAL_CALL operator delete( void * pMem )
+        inline static void SAL_CALL operator delete( void * pMem )
             { ::rtl_freeMemory( pMem ); }
-        static void SAL_CALL operator delete( void *,void* )
+        inline static void SAL_CALL operator delete( void *,void* )
             {  }
 
         void dispose();
@@ -175,6 +176,7 @@ namespace connectivity
         // The parse tree to be analysed/traversed:
         // If NULL is passed, the current parse tree will be deleted and the error status cleared.
         void setParseTree(const OSQLParseNode * pNewParseTree);
+//      void setParser(const OSQLParser* _pParser) { m_pParser = _pParser; }
         const OSQLParseNode * getParseTree() const { return m_pParseTree; };
 
         // subtrees in case of a select statement
@@ -192,8 +194,8 @@ namespace connectivity
 
             The returned object contains a chain (via SQLException::NextException) of SQLExceptions.
         */
-        const css::sdbc::SQLException&   getErrors() const { return m_aErrors; }
-        bool hasErrors() const { return !m_aErrors.Message.isEmpty(); }
+        inline const css::sdbc::SQLException&   getErrors() const { return m_aErrors; }
+        inline bool hasErrors() const { return !m_aErrors.Message.isEmpty(); }
 
         // statement type (already set in setParseTree):
         OSQLStatementType getStatementType() const { return m_eStatementType; }
@@ -205,6 +207,15 @@ namespace connectivity
             order (depending on the statement type).
         */
         void traverseAll();
+
+        /** traverses selected parts of the statement tree, and fills our data with
+            the information obtained during traversal
+
+            @param _nIncludeMask
+                set of TraversalParts bits, specifying which information is to be collected.
+                Note TraversalParts is currently not
+        */
+        void traverseSome( TraversalParts _nIncludeMask );
 
         // The TableRangeMap contains all tables associated with the range name found first.
         const OSQLTables& getTables() const;
@@ -348,6 +359,12 @@ namespace connectivity
         */
         void impl_appendError( const css::sdbc::SQLException& _rError );
 
+        /** resets our errors
+        */
+        inline void impl_resetErrors()
+        {
+            m_aErrors = css::sdbc::SQLException();
+        }
         void impl_fillJoinConditions(const OSQLParseNode* i_pJoinCondition);
     };
 }

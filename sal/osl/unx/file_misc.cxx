@@ -103,7 +103,7 @@ void DirectoryItem_Impl::acquire()
 }
 void DirectoryItem_Impl::release()
 {
-    if (--m_RefCount == 0)
+    if (0 == --m_RefCount)
         delete this;
 }
 
@@ -143,13 +143,13 @@ oslFileError SAL_CALL osl_openDirectory(rtl_uString* ustrDirectoryURL, oslDirect
 
     char path[PATH_MAX];
 
-    if ((nullptr == ustrDirectoryURL) || (ustrDirectoryURL->length == 0) || (nullptr == pDirectory))
+    if ((nullptr == ustrDirectoryURL) || (0 == ustrDirectoryURL->length) || (nullptr == pDirectory))
         return osl_File_E_INVAL;
 
     /* convert file URL to system path */
     eRet = osl_getSystemPathFromFileURL_Ex(ustrDirectoryURL, &ustrSystemPath);
 
-    if( eRet != osl_File_E_None )
+    if( osl_File_E_None != eRet )
         return eRet;
 
     osl_systemPathRemoveSeparator(ustrSystemPath);
@@ -207,8 +207,11 @@ oslFileError SAL_CALL osl_openDirectory(rtl_uString* ustrDirectoryURL, oslDirect
                     *pDirectory = static_cast<oslDirectory>(pDirImpl);
                     return osl_File_E_None;
                 }
-                errno = ENOMEM;
-                closedir( pdir );
+                else
+                {
+                    errno = ENOMEM;
+                    closedir( pdir );
+                }
             }
             else
             {
@@ -269,9 +272,10 @@ static struct dirent* osl_readdir_impl_(DIR* pdir, bool bFilterLocalAndParentDir
     while ((pdirent = readdir(pdir)) != nullptr)
     {
         if (bFilterLocalAndParentDir &&
-            ((strcmp(pdirent->d_name, ".") == 0) || (strcmp(pdirent->d_name, "..") == 0)))
+            ((0 == strcmp(pdirent->d_name, ".")) || (0 == strcmp(pdirent->d_name, ".."))))
             continue;
-        break;
+        else
+            break;
     }
 
     return pdirent;
@@ -350,16 +354,16 @@ oslFileError SAL_CALL osl_getDirectoryItem( rtl_uString* ustrFileURL, oslDirecto
     oslFileError osl_error      = osl_File_E_INVAL;
 
     OSL_ASSERT((nullptr != ustrFileURL) && (nullptr != pItem));
-    if ((nullptr == ustrFileURL) || (ustrFileURL->length == 0) || (nullptr == pItem))
+    if ((nullptr == ustrFileURL) || (0 == ustrFileURL->length) || (nullptr == pItem))
         return osl_File_E_INVAL;
 
     osl_error = osl_getSystemPathFromFileURL_Ex(ustrFileURL, &ustrSystemPath);
-    if (osl_error != osl_File_E_None)
+    if (osl_File_E_None != osl_error)
         return osl_error;
 
     osl_systemPathRemoveSeparator(ustrSystemPath);
 
-    if (access_u(ustrSystemPath, F_OK) == -1)
+    if (-1 == access_u(ustrSystemPath, F_OK))
     {
         osl_error = oslTranslateFileError(OSL_FET_ERROR, errno);
     }
@@ -489,7 +493,8 @@ static int path_make_parent(sal_Unicode* path)
         *(path + i) = 0;
         return i;
     }
-    return 0;
+    else
+        return 0;
 }
 
 static int create_dir_with_callback(
@@ -517,7 +522,7 @@ static oslFileError create_dir_recursively_(
     oslDirectoryCreationCallbackFunc aDirectoryCreationCallbackFunc,
     void* pData)
 {
-    OSL_PRECOND((rtl_ustr_getLength(dir_path) > 0) && ((dir_path + (rtl_ustr_getLength(dir_path) - 1)) != (dir_path + rtl_ustr_lastIndexOfChar(dir_path, '/'))),
+    OSL_PRECOND((rtl_ustr_getLength(dir_path) > 0) && ((dir_path + (rtl_ustr_getLength(dir_path) - 1)) != (dir_path + rtl_ustr_lastIndexOfChar(dir_path, '/'))), \
     "Path must not end with a slash");
 
     int native_err = create_dir_with_callback(
@@ -538,7 +543,7 @@ static oslFileError create_dir_recursively_(
     oslFileError osl_error = create_dir_recursively_(
         dir_path, aDirectoryCreationCallbackFunc, pData);
 
-    if (osl_error != osl_File_E_None)
+    if (osl_File_E_None != osl_error)
         return osl_error;
 
        dir_path[pos] = '/';
@@ -770,8 +775,10 @@ static oslFileError osl_psz_copyFile( const sal_Char* pszPath, const sal_Char* p
     {
         return osl_File_E_ISDIR;
     }
-
-    /* mfe: file does not exists or is no dir */
+    else
+    {
+        /* mfe: file does not exists or is no dir */
+    }
 
     tErr = oslDoCopy(pszPath,pszDestPath,nMode,nSourceSize,DestFileExists);
 
@@ -917,8 +924,8 @@ static int oslDoCopyLink(const sal_Char* pszSourceFileName, const sal_Char* pszD
         nRet=errno;
         return nRet;
     }
-
-    pszLinkContent[ nRet ] = 0;
+    else
+        pszLinkContent[ nRet ] = 0;
 
     nRet = symlink(pszLinkContent,pszDestFileName);
 

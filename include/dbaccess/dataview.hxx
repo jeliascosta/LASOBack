@@ -19,30 +19,16 @@
 #ifndef INCLUDED_DBACCESS_DATAVIEW_HXX
 #define INCLUDED_DBACCESS_DATAVIEW_HXX
 
+#include <dbaccess/dbaccessdllapi.h>
+
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include <svtools/acceleratorexecute.hxx>
+#include <sal/macros.h>
+#include <vcl/fixed.hxx>
+
 #include <memory>
 
-#include <com/sun/star/uno/Reference.hxx>
-#include <dbaccess/dbaccessdllapi.h>
-#include <rtl/ref.hxx>
-#include <tools/wintypes.hxx>
-#include <vcl/outdev.hxx>
-#include <vcl/vclptr.hxx>
-#include <vcl/window.hxx>
-
-namespace com { namespace sun { namespace star {
-    namespace frame { class XFrame; }
-    namespace uno { class XComponentContext; }
-} } }
-
-namespace svt {
-    class AcceleratorExecute;
-}
-
-class DataChangedEvent;
 class FixedLine;
-class NotifyEvent;
-namespace tools { class Rectangle; }
-
 namespace dbaui
 {
     class IController;
@@ -60,7 +46,7 @@ namespace dbaui
                     IController& _rController,
                     const css::uno::Reference< css::uno::XComponentContext >& ,
                     WinBits nStyle = 0 );
-        virtual ~ODataView() override;
+        virtual ~ODataView();
         virtual void dispose() override;
 
         /// late construction
@@ -72,7 +58,7 @@ namespace dbaui
         virtual void StateChanged( StateChangedType nStateChange ) override;
         virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-        IController& getCommandController() const { return *m_xController.get(); }
+        inline IController& getCommandController() const { return *m_xController.get(); }
 
         const css::uno::Reference< css::uno::XComponentContext >& getORB() { return m_xContext;}
 
@@ -82,13 +68,13 @@ namespace dbaui
         void attachFrame(const css::uno::Reference< css::frame::XFrame >& _xFrame);
     protected:
         // window overridables
-        virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect ) override;
+        virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& _rRect ) override;
 
         /// re-arrange all controls, including the toolbox, it's separator, and the "real view"
-        virtual void resizeAll( const tools::Rectangle& _rPlayground );
+        virtual void resizeAll( const Rectangle& _rPlayground );
 
         // re-arrange the controls belonging to the document itself
-        virtual void resizeDocumentView( tools::Rectangle& _rPlayground );
+        virtual void resizeDocumentView( Rectangle& _rPlayground );
     };
 }
 #endif // INCLUDED_DBACCESS_DATAVIEW_HXX

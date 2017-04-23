@@ -51,6 +51,7 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
 static const char aVndSunStarUNO[] = "vnd.sun.star.UNO:";
+static const char aVndSunStarScript[] = "vnd.sun.star.script:";
 
 SvxMacroTabPage_Impl::SvxMacroTabPage_Impl( const SfxItemSet& rAttrSet )
     : pAssignPB(nullptr)
@@ -82,7 +83,7 @@ static long nTabs[] =
 #define LB_MACROS_ITEMPOS    2
 
 
-IMPL_LINK( MacroEventListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
+IMPL_LINK_TYPED( MacroEventListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
 {
     DBG_ASSERT( pBar == maHeaderBar.get(), "*MacroEventListBox::HeaderEndDrag_Impl: something is wrong here..." );
     (void)pBar;
@@ -109,15 +110,15 @@ IMPL_LINK( MacroEventListBox, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
                 long _nWidth = maHeaderBar->GetItemSize( i );
                 aSz.Width() =  _nWidth + nTmpSz;
                 nTmpSz += _nWidth;
-                maListBox->SetTab( i, PixelToLogic( aSz, MapMode( MapUnit::MapAppFont ) ).Width() );
+                maListBox->SetTab( i, PixelToLogic( aSz, MapMode( MAP_APPFONT ) ).Width() );
             }
         }
     }
 }
 
-bool MacroEventListBox::EventNotify( NotifyEvent& rNEvt )
+bool MacroEventListBox::Notify( NotifyEvent& rNEvt )
 {
-    bool bRet = Control::EventNotify(rNEvt);
+    bool bRet = Control::Notify( rNEvt );
 
     if( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
     {
@@ -152,11 +153,20 @@ void MacroEventListBox::dispose()
     Control::dispose();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(MacroEventListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(MacroEventListBox)
+{
+    WinBits nWinBits = WB_TABSTOP;
+
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nWinBits |= WB_BORDER;
+
+    rRet = VclPtr<MacroEventListBox>::Create(pParent, nWinBits);
+}
 
 Size MacroEventListBox::GetOptimalSize() const
 {
-    return LogicToPixel(Size(192, 72), MapMode(MapUnit::MapAppFont ));
+    return LogicToPixel(Size(192, 72), MapMode(MAP_APPFONT ));
 }
 
 void MacroEventListBox::Resize()
@@ -219,6 +229,7 @@ SvxMacroTabPage_::SvxMacroTabPage_(vcl::Window* pParent, const OString& rID,
     : SfxTabPage( pParent, rID, rUIXMLDescription, &rAttrSet ),
     m_xAppEvents(nullptr),
     m_xDocEvents(nullptr),
+    bReadOnly(false),
     bDocModified(false),
     bAppEvents(false),
     bInitialized(false)
@@ -433,6 +444,7 @@ class IconLBoxString : public SvLBoxString
 {
     Image* m_pMacroImg;
     Image* m_pComponentImg;
+    int m_nxImageOffset;
 
 public:
     IconLBoxString( const OUString& sText, Image* pMacroImg, Image* pComponentImg );
@@ -447,6 +459,7 @@ IconLBoxString::IconLBoxString( const OUString& sText,
         , m_pMacroImg( pMacroImg )
         , m_pComponentImg( pComponentImg )
 {
+    m_nxImageOffset = 20;
 }
 
 
@@ -469,12 +482,12 @@ void IconLBoxString::Paint(const Point& aPos, SvTreeListBox& /*aDevice*/, vcl::R
         }
         else
         {
-            aPureMethod = aURL.copy(strlen("vnd.sun.star.script:"));
+            aPureMethod = aURL.copy(strlen(aVndSunStarScript));
             aPureMethod = aPureMethod.copy( 0, aPureMethod.indexOf( '?' ) );
         }
 
         Point aPnt(aPos);
-        aPnt.X() += 20;
+        aPnt.X() += m_nxImageOffset;
         rRenderContext.DrawText(aPnt, aPureMethod);
     }
 }
@@ -506,11 +519,11 @@ void SvxMacroTabPage_::DisplayAppEvents( bool appEvents)
         return;
 
     Sequence< OUString > eventNames = nameReplace->getElementNames();
-    std::set< OUString > aEventNamesCache;
-    std::copy(
+    ::std::set< OUString > aEventNamesCache;
+    ::std::copy(
         eventNames.getConstArray(),
         eventNames.getConstArray() + eventNames.getLength(),
-        std::insert_iterator< std::set< OUString > >( aEventNamesCache, aEventNamesCache.end() )
+        ::std::insert_iterator< ::std::set< OUString > >( aEventNamesCache, aEventNamesCache.end() )
     );
 
     for (   EventDisplayNames::const_iterator displayableEvent = aDisplayNames.begin();
@@ -557,7 +570,7 @@ void SvxMacroTabPage_::DisplayAppEvents( bool appEvents)
 }
 
 // select event handler on the listbox
-IMPL_LINK_NOARG( SvxMacroTabPage_, SelectEvent_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED( SvxMacroTabPage_, SelectEvent_Impl, SvTreeListBox*, void)
 {
     SvHeaderTabListBox&        rListBox = mpImpl->pEventLB->GetListBox();
     SvTreeListEntry*           pE = rListBox.FirstSelected();
@@ -566,19 +579,19 @@ IMPL_LINK_NOARG( SvxMacroTabPage_, SelectEvent_Impl, SvTreeListBox*, void)
     if( !pE || LISTBOX_ENTRY_NOTFOUND ==
         ( nPos = rListBox.GetModel()->GetAbsPos( pE ) ) )
     {
-        DBG_ASSERT( pE, "Where does the empty entry come from?" );
+        DBG_ASSERT( pE, "wo kommt der leere Eintrag her?" );
         return;
     }
 
     EnableButtons();
 }
 
-IMPL_LINK( SvxMacroTabPage_, AssignDeleteHdl_Impl, Button*, pBtn, void )
+IMPL_LINK_TYPED( SvxMacroTabPage_, AssignDeleteHdl_Impl, Button*, pBtn, void )
 {
     GenericHandler_Impl( this, static_cast<PushButton*>(pBtn) );
 }
 
-IMPL_LINK_NOARG( SvxMacroTabPage_, DoubleClickHdl_Impl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG_TYPED( SvxMacroTabPage_, DoubleClickHdl_Impl, SvTreeListBox*, bool)
 {
     return GenericHandler_Impl( this, nullptr );
 }
@@ -593,7 +606,7 @@ long SvxMacroTabPage_::GenericHandler_Impl( SvxMacroTabPage_* pThis, PushButton*
     if( !pE || LISTBOX_ENTRY_NOTFOUND ==
         ( nPos = rListBox.GetModel()->GetAbsPos( pE ) ) )
     {
-        DBG_ASSERT( pE, "Where does the empty entry come from?" );
+        DBG_ASSERT( pE, "wo kommt der leere Eintrag her?" );
         return 0;
     }
 
@@ -714,12 +727,12 @@ void SvxMacroTabPage_::InitAndSetHandler( const Reference< container::XNameRepla
 
     rListBox.SetSelectHdl( LINK( this, SvxMacroTabPage_, SelectEvent_Impl ));
 
-    rListBox.SetSelectionMode( SelectionMode::Single );
+    rListBox.SetSelectionMode( SINGLE_SELECTION );
     rListBox.SetTabs( &nTabs[0] );
     Size aSize( nTabs[ 2 ], 0 );
-    rHeaderBar.InsertItem( ITEMID_EVENT, mpImpl->sStrEvent, LogicToPixel( aSize, MapMode( MapUnit::MapAppFont ) ).Width() );
+    rHeaderBar.InsertItem( ITEMID_EVENT, mpImpl->sStrEvent, LogicToPixel( aSize, MapMode( MAP_APPFONT ) ).Width() );
     aSize.Width() = 1764;        // don't know what, so 42^2 is best to use...
-    rHeaderBar.InsertItem( ITMEID_ASSMACRO, mpImpl->sAssignedMacro, LogicToPixel( aSize, MapMode( MapUnit::MapAppFont ) ).Width() );
+    rHeaderBar.InsertItem( ITMEID_ASSMACRO, mpImpl->sAssignedMacro, LogicToPixel( aSize, MapMode( MAP_APPFONT ) ).Width() );
     rListBox.SetSpaceBetweenEntries( 0 );
 
     mpImpl->pEventLB->Show();
@@ -769,7 +782,7 @@ void SvxMacroTabPage_::InitAndSetHandler( const Reference< container::XNameRepla
 // returns the two props EventType & Script for a given event name
 Any SvxMacroTabPage_::GetPropsByName( const OUString& eventName, EventsHash& eventsHash )
 {
-    const std::pair< OUString, OUString >& rAssignedEvent( eventsHash[ eventName ] );
+    const ::std::pair< OUString, OUString >& rAssignedEvent( eventsHash[ eventName ] );
 
     Any aReturn;
     ::comphelper::NamedValueCollection aProps;
@@ -785,7 +798,7 @@ Any SvxMacroTabPage_::GetPropsByName( const OUString& eventName, EventsHash& eve
 
 // converts the Any returned by GetByName into a pair which can be stored in
 // the EventHash
-std::pair< OUString, OUString  > SvxMacroTabPage_::GetPairFromAny( const Any& aAny )
+::std::pair< OUString, OUString  > SvxMacroTabPage_::GetPairFromAny( const Any& aAny )
 {
     Sequence< beans::PropertyValue > props;
     OUString type, url;
@@ -795,13 +808,13 @@ std::pair< OUString, OUString  > SvxMacroTabPage_::GetPairFromAny( const Any& aA
         type = aProps.getOrDefault( "EventType", type );
         url = aProps.getOrDefault( "Script", url );
     }
-    return std::make_pair( type, url );
+    return ::std::make_pair( type, url );
 }
 
 SvxMacroTabPage::SvxMacroTabPage(vcl::Window* pParent,
     const Reference< frame::XFrame >& _rxDocumentFrame,
     const SfxItemSet& rSet,
-    Reference< container::XNameReplace > const & xNameReplace,
+    Reference< container::XNameReplace > xNameReplace,
     sal_uInt16 nSelectedIndex)
     : SvxMacroTabPage_(pParent, "MacroAssignPage", "cui/ui/macroassignpage.ui", rSet)
 {
@@ -840,7 +853,7 @@ SvxMacroAssignDlg::SvxMacroAssignDlg( vcl::Window* pParent, const Reference< fra
 }
 
 
-IMPL_LINK_NOARG(AssignComponentDialog, ButtonHandler, Button*, void)
+IMPL_LINK_NOARG_TYPED(AssignComponentDialog, ButtonHandler, Button*, void)
 {
     OUString aMethodName = mpMethodEdit->GetText();
     maURL.clear();
@@ -880,7 +893,7 @@ void AssignComponentDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG( SvxMacroAssignSingleTabDialog, OKHdl_Impl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SvxMacroAssignSingleTabDialog, OKHdl_Impl, Button *, void )
 {
     GetTabPage()->FillItemSet( nullptr );
     EndDialog( RET_OK );

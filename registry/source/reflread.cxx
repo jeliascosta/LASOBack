@@ -66,7 +66,7 @@ public:
 
     ~BlopObject();
 
-    sal_uInt8 readBYTE(sal_uInt32 index) const
+    inline sal_uInt8 readBYTE(sal_uInt32 index) const
     {
         if (index >= m_bufferLen) {
             throw BoundsError();
@@ -74,7 +74,7 @@ public:
         return m_pBuffer[index];
     }
 
-    sal_Int16 readINT16(sal_uInt32 index) const
+    inline sal_Int16 readINT16(sal_uInt32 index) const
     {
         if (m_bufferLen < 2 || index >= m_bufferLen - 1) {
             throw BoundsError();
@@ -82,7 +82,7 @@ public:
         return ((m_pBuffer[index] << 8) | (m_pBuffer[index+1] << 0));
     }
 
-    sal_uInt16 readUINT16(sal_uInt32 index) const
+    inline sal_uInt16 readUINT16(sal_uInt32 index) const
     {
         if (m_bufferLen < 2 || index >= m_bufferLen - 1) {
             throw BoundsError();
@@ -90,7 +90,7 @@ public:
         return ((m_pBuffer[index] << 8) | (m_pBuffer[index+1] << 0));
     }
 
-    sal_Int32 readINT32(sal_uInt32 index) const
+    inline sal_Int32 readINT32(sal_uInt32 index) const
     {
         if (m_bufferLen < 4 || index >= m_bufferLen - 3) {
             throw BoundsError();
@@ -103,7 +103,7 @@ public:
         );
     }
 
-    sal_uInt32 readUINT32(sal_uInt32 index) const
+    inline sal_uInt32 readUINT32(sal_uInt32 index) const
     {
         if (m_bufferLen < 4 || index >= m_bufferLen - 3) {
             throw BoundsError();
@@ -116,7 +116,7 @@ public:
         );
     }
 
-    sal_Int64 readINT64(sal_uInt32 index) const
+    inline sal_Int64 readINT64(sal_uInt32 index) const
     {
         if (m_bufferLen < 8 || index >= m_bufferLen - 7) {
             throw BoundsError();
@@ -133,7 +133,7 @@ public:
         );
     }
 
-    sal_uInt64 readUINT64(sal_uInt32 index) const
+    inline sal_uInt64 readUINT64(sal_uInt32 index) const
     {
         if (m_bufferLen < 8 || index >= m_bufferLen - 7) {
             throw BoundsError();
@@ -267,6 +267,8 @@ public:
     {
     }
 
+    ~ConstantPool();
+
     sal_uInt32 parseIndex(); // throws std::bad_alloc
 
     CPInfoTag       readTag(sal_uInt16 index);
@@ -285,6 +287,10 @@ public:
     const sal_Unicode*  readStringConstant(sal_uInt16 index);
         // throws std::bad_alloc
 };
+
+ConstantPool::~ConstantPool()
+{
+}
 
 sal_uInt32 ConstantPool::parseIndex()
 {
@@ -885,6 +891,8 @@ public:
         }
     }
 
+    ~MethodList();
+
     sal_uInt32 parseIndex(); // throws std::bad_alloc
 
     const sal_Char* getMethodName(sal_uInt16 index);
@@ -901,6 +909,10 @@ public:
 private:
     sal_uInt16 calcMethodParamIndex( const sal_uInt16 index );
 };
+
+MethodList::~MethodList()
+{
+}
 
 sal_uInt16 MethodList::calcMethodParamIndex( const sal_uInt16 index )
 {
@@ -1020,10 +1032,6 @@ RTParamMode MethodList::getMethodParamMode(sal_uInt16 index, sal_uInt16 paramInd
     return aMode;
 }
 
-#if defined(__COVERITY__)
-extern "C" void __coverity_tainted_data_sanitize__(void *);
-#endif
-
 sal_uInt16 MethodList::getMethodExcCount(sal_uInt16 index)
 {
     sal_uInt16 aCount = 0;
@@ -1032,9 +1040,6 @@ sal_uInt16 MethodList::getMethodExcCount(sal_uInt16 index)
     {
         try {
             aCount = readUINT16(m_pIndex[index] + calcMethodParamIndex(readUINT16(m_pIndex[index] + METHOD_OFFSET_PARAM_COUNT)));
-#if defined(__COVERITY__)
-            __coverity_tainted_data_sanitize__(&aCount);
-#endif
         } catch (BlopObject::BoundsError &) {
             SAL_WARN("registry", "bad data");
         }
@@ -1218,7 +1223,8 @@ bool TYPEREG_CALLTYPE typereg_reader_create(
         try {
             entry.reset(
                 new TypeRegistryEntry(
-                    static_cast< sal_uInt8 const * >(buffer), length, copy));
+                    static_cast< sal_uInt8 const * >(buffer),
+                    static_cast< sal_uInt32 >(length), copy));
         } catch (std::bad_alloc &) {
             return false;
         }

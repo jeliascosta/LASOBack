@@ -18,7 +18,7 @@
  */
 
 #include <editeng/memberids.hrc>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/itemprop.hxx>
 #include <svx/unomid.hxx>
 #include <vcl/svapp.hxx>
@@ -89,7 +89,8 @@ ScDocDefaultsObj::~ScDocDefaultsObj()
 
 void ScDocDefaultsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // document gone
     }
@@ -101,13 +102,14 @@ void ScDocDefaultsObj::ItemsChanged()
     {
         //! if not in XML import, adjust row heights
 
-        pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PaintPartFlags::Grid);
+        pDocShell->PostPaint(ScRange(0, 0, 0, MAXCOL, MAXROW, MAXTAB), PAINT_GRID);
     }
 }
 
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScDocDefaultsObj::getPropertySetInfo()
+                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference<beans::XPropertySetInfo> aRef = new SfxItemPropertySetInfo(
@@ -117,6 +119,9 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScDocDefaultsObj::getPropertySe
 
 void SAL_CALL ScDocDefaultsObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
+                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+                        lang::IllegalArgumentException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -197,6 +202,8 @@ void SAL_CALL ScDocDefaultsObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScDocDefaultsObj::getPropertyValue( const OUString& aPropertyName )
+                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     //  use pool default if set
 
@@ -245,6 +252,7 @@ SC_IMPL_DUMMY_PROPERTY_LISTENER( ScDocDefaultsObj )
 // XPropertyState
 
 beans::PropertyState SAL_CALL ScDocDefaultsObj::getPropertyState( const OUString& aPropertyName )
+                                throw(beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -279,6 +287,7 @@ beans::PropertyState SAL_CALL ScDocDefaultsObj::getPropertyState( const OUString
 
 uno::Sequence<beans::PropertyState> SAL_CALL ScDocDefaultsObj::getPropertyStates(
                             const uno::Sequence<OUString>& aPropertyNames )
+                    throw(beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     //  the simple way: call getPropertyState
 
@@ -292,6 +301,7 @@ uno::Sequence<beans::PropertyState> SAL_CALL ScDocDefaultsObj::getPropertyStates
 }
 
 void SAL_CALL ScDocDefaultsObj::setPropertyToDefault( const OUString& aPropertyName )
+                            throw(beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -312,6 +322,8 @@ void SAL_CALL ScDocDefaultsObj::setPropertyToDefault( const OUString& aPropertyN
 }
 
 uno::Any SAL_CALL ScDocDefaultsObj::getPropertyDefault( const OUString& aPropertyName )
+                            throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                                    uno::RuntimeException, std::exception)
 {
     //  always use static default
 

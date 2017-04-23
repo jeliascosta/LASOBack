@@ -34,9 +34,10 @@ class SFX2_DLLPUBLIC SfxTemplatePanelControl : public vcl::Window
 {
 public:
     SfxTemplatePanelControl(SfxBindings* pBindings, vcl::Window* pParentWindow);
-    virtual ~SfxTemplatePanelControl() override;
+    virtual ~SfxTemplatePanelControl();
     virtual void dispose() override;
 
+    virtual void DataChanged( const DataChangedEvent& _rDCEvt ) override;
     virtual void Resize() override;
     virtual void StateChanged( StateChangedType nStateChange ) override;
 

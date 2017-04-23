@@ -25,7 +25,7 @@
 struct ImplConfigData;
 struct ImplGroupData;
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC Config
+class TOOLS_DLLPUBLIC Config
 {
 private:
     OUString            maFileName;
@@ -34,6 +34,7 @@ private:
     ImplGroupData*      mpActGroup;
     sal_uIntPtr         mnDataUpdateId;
     sal_uInt16          mnLockCount;
+    bool                mbPersistence;
 
     TOOLS_DLLPRIVATE bool           ImplUpdateConfig() const;
     TOOLS_DLLPRIVATE ImplGroupData* ImplGetGroup() const;

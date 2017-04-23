@@ -56,7 +56,7 @@ SwGlossaryGroupDlg::SwGlossaryGroupDlg(vcl::Window * pParent,
     get(m_pGroupTLB, "group");
 
     const int nAppFontUnits = 130;
-    long nWidth = LogicToPixel(Size(nAppFontUnits, 0), MapUnit::MapAppFont).Width();
+    long nWidth = LogicToPixel(Size(nAppFontUnits, 0), MAP_APPFONT).Width();
     m_pPathLB->set_width_request(nWidth);
     //just has to be something small, real size will be available space
     m_pGroupTLB->set_width_request(nWidth);
@@ -79,7 +79,7 @@ SwGlossaryGroupDlg::SwGlossaryGroupDlg(vcl::Window * pParent,
     for (size_t i = 0; i < rPathArr.size(); ++i)
     {
         INetURLObject aTempURL(rPathArr[i]);
-        const OUString sPath = aTempURL.GetMainURL(INetURLObject::DecodeMechanism::WithCharset );
+        const OUString sPath = aTempURL.GetMainURL(INetURLObject::DECODE_WITH_CHARSET );
         m_pPathLB->InsertEntry(sPath);
         sal_uLong nCaseReadonly = 0;
         utl::TempFile aTempFile(&sPath);
@@ -184,7 +184,7 @@ void SwGlossaryGroupDlg::Apply()
     }
 }
 
-IMPL_LINK_NOARG( SwGlossaryGroupDlg, SelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG_TYPED( SwGlossaryGroupDlg, SelectHdl, SvTreeListBox*, void )
 {
     m_pNewPB->Enable(false);
     SvTreeListEntry* pFirstEntry = m_pGroupTLB->FirstSelected();
@@ -207,10 +207,10 @@ IMPL_LINK_NOARG( SwGlossaryGroupDlg, SelectHdl, SvTreeListBox*, void )
     }
 }
 
-IMPL_LINK_NOARG(SwGlossaryGroupDlg, NewHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryGroupDlg, NewHdl, Button*, void)
 {
     OUString sGroup = m_pNameED->GetText()
-        + OUStringLiteral1(GLOS_DELIM)
+        + OUStringLiteral1<GLOS_DELIM>()
         + OUString::number(m_pPathLB->GetSelectEntryPos());
     OSL_ENSURE(!pGlosHdl->FindGroupName(sGroup), "group already available!");
     m_InsertedArr.push_back(sGroup);
@@ -226,7 +226,7 @@ IMPL_LINK_NOARG(SwGlossaryGroupDlg, NewHdl, Button*, void)
     m_pGroupTLB->GetModel()->Resort();
 }
 
-IMPL_LINK( SwGlossaryGroupDlg, DeleteHdl, Button*, pButton, void )
+IMPL_LINK_TYPED( SwGlossaryGroupDlg, DeleteHdl, Button*, pButton, void )
 {
     SvTreeListEntry* pEntry = m_pGroupTLB->FirstSelected();
     if(!pEntry)
@@ -275,7 +275,7 @@ IMPL_LINK( SwGlossaryGroupDlg, DeleteHdl, Button*, pButton, void )
     m_pNameED->SetText(aEmptyOUStr);
 }
 
-IMPL_LINK_NOARG(SwGlossaryGroupDlg, RenameHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryGroupDlg, RenameHdl, Button*, void)
 {
     SvTreeListEntry* pEntry = m_pGroupTLB->FirstSelected();
     GlosBibUserData* pUserData = static_cast<GlosBibUserData*>(pEntry->GetUserData());
@@ -283,7 +283,7 @@ IMPL_LINK_NOARG(SwGlossaryGroupDlg, RenameHdl, Button*, void)
 
     const OUString sNewTitle(m_pNameED->GetText());
     OUString sNewName = sNewTitle
-        + OUStringLiteral1(GLOS_DELIM)
+        + OUStringLiteral1<GLOS_DELIM>()
         + OUString::number(m_pPathLB->GetSelectEntryPos());
     OSL_ENSURE(!pGlosHdl->FindGroupName(sNewName), "group already available!");
 
@@ -302,8 +302,8 @@ IMPL_LINK_NOARG(SwGlossaryGroupDlg, RenameHdl, Button*, void)
     }
     if(!bDone)
     {
-        sEntry += OUStringLiteral1(RENAME_TOKEN_DELIM) + sNewName
-                + OUStringLiteral1(RENAME_TOKEN_DELIM) + sNewTitle;
+        sEntry += OUStringLiteral1<RENAME_TOKEN_DELIM>() + sNewName
+                + OUStringLiteral1<RENAME_TOKEN_DELIM>() + sNewTitle;
         m_RenamedArr.push_back(sEntry);
     }
     delete static_cast<GlosBibUserData*>(pEntry->GetUserData());
@@ -320,11 +320,11 @@ IMPL_LINK_NOARG(SwGlossaryGroupDlg, RenameHdl, Button*, void)
     m_pGroupTLB->GetModel()->Resort();
 }
 
-IMPL_LINK_NOARG(SwGlossaryGroupDlg, ModifyListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryGroupDlg, ModifyListBoxHdl, ListBox&, void)
 {
     ModifyHdl(*m_pNameED);
 }
-IMPL_LINK_NOARG(SwGlossaryGroupDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryGroupDlg, ModifyHdl, Edit&, void)
 {
     OUString sEntry(m_pNameED->GetText());
     bool bEnableNew = true;
@@ -425,7 +425,7 @@ void SwGlossaryGroupTLB::RequestHelp( const HelpEvent& rHEvt )
             if((aPos.X() + aSize.Width()) > GetSizePixel().Width())
                 aSize.Width() = GetSizePixel().Width() - aPos.X();
             aPos = OutputToScreenPixel(aPos);
-            tools::Rectangle aItemRect( aPos, aSize );
+            Rectangle aItemRect( aPos, aSize );
             GlosBibUserData* pData = static_cast<GlosBibUserData*>(pEntry->GetUserData());
             const OUString sMsg = pData->sPath + "/"
                                 + pData->sGroupName.getToken(0, GLOS_DELIM)

@@ -42,8 +42,7 @@ SvxGrfCrop::~SvxGrfCrop()
 
 bool SvxGrfCrop::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
-
+    DBG_ASSERT( SfxPoolItem::operator==( rAttr ), "not equal attributes" );
     const SvxGrfCrop& rCrop = static_cast<const SvxGrfCrop&>(rAttr);
     return nLeft    == rCrop.GetLeft() &&
            nRight   == rCrop.GetRight() &&
@@ -136,19 +135,19 @@ bool SvxGrfCrop::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
 }
 
 bool SvxGrfCrop::GetPresentation(
-    SfxItemPresentation ePres, MapUnit eCoreUnit, MapUnit /*ePresUnit*/,
+    SfxItemPresentation ePres, SfxMapUnit eCoreUnit, SfxMapUnit /*ePresUnit*/,
     OUString &rText, const IntlWrapper* pIntl ) const
 {
     rText.clear();
     switch( ePres )
     {
-    case SfxItemPresentation::Nameless:
+    case SFX_ITEM_PRESENTATION_NAMELESS:
         return true;
-    case SfxItemPresentation::Complete:
-        rText = "L: "  + OUString(::GetMetricText( GetLeft(), eCoreUnit, MapUnit::MapMM, pIntl )) +
-                " R: " + OUString(::GetMetricText( GetRight(), eCoreUnit, MapUnit::MapMM, pIntl )) +
-                " T: " + OUString(::GetMetricText( GetTop(), eCoreUnit, MapUnit::MapMM, pIntl )) +
-                " B: " + OUString(::GetMetricText( GetBottom(), eCoreUnit, MapUnit::MapMM, pIntl ));
+    case SFX_ITEM_PRESENTATION_COMPLETE:
+        rText = "L: "  + OUString(::GetMetricText( GetLeft(), eCoreUnit, SFX_MAPUNIT_MM, pIntl )) +
+                " R: " + OUString(::GetMetricText( GetRight(), eCoreUnit, SFX_MAPUNIT_MM, pIntl )) +
+                " T: " + OUString(::GetMetricText( GetTop(), eCoreUnit, SFX_MAPUNIT_MM, pIntl )) +
+                " B: " + OUString(::GetMetricText( GetBottom(), eCoreUnit, SFX_MAPUNIT_MM, pIntl ));
         return true;
         break;
 

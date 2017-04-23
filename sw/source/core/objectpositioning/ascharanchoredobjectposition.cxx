@@ -29,6 +29,7 @@
 #include <editeng/ulspitem.hxx>
 #include <fmtornt.hxx>
 
+#include <com/sun/star/text/HoriOrientation.hpp>
 
 using namespace ::com::sun::star;
 using namespace objectpositioning;
@@ -52,7 +53,7 @@ SwAsCharAnchoredObjectPosition::SwAsCharAnchoredObjectPosition(
       maAnchorPos ( Point() ),
       mnRelPos ( 0 ),
       maObjBoundRect ( SwRect() ),
-      mnLineAlignment ( sw::LineAlign::NONE )
+      mnLineAlignment ( 0 )
 {}
 
 /** destructor */
@@ -81,14 +82,14 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
     // swap anchor frame, if swapped. Note: destructor takes care of the 'undo'
     SwFrameSwapper aFrameSwapper( &rAnchorFrame, false );
 
-    SwRectFnSet aRectFnSet(&rAnchorFrame);
+    SWRECTFN( ( &rAnchorFrame ) )
 
     Point aAnchorPos( mrProposedAnchorPos );
 
     const SwFrameFormat& rFrameFormat = GetFrameFormat();
 
     SwRect aObjBoundRect( GetAnchoredObj().GetObjRect() );
-    SwTwips nObjWidth = aRectFnSet.GetWidth(aObjBoundRect);
+    SwTwips nObjWidth = (aObjBoundRect.*fnRect->fnGetWidth)();
 
     // determine spacing values considering layout-/text-direction
     const SvxLRSpaceItem& rLRSpace = rFrameFormat.GetLRSpace();
@@ -303,7 +304,7 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
             // set new anchor position and relative position
             SwFlyInContentFrame* pFlyInContentFrame = &(const_cast<SwFlyInContentFrame&>(rFlyInContentFrame));
             pFlyInContentFrame->SetRefPoint( aAnchorPos, aRelAttr, aRelPos );
-            if( nObjWidth != aRectFnSet.GetWidth(pFlyInContentFrame->Frame()) )
+            if( nObjWidth != (pFlyInContentFrame->Frame().*fnRect->fnGetWidth)() )
             {
                 // recalculate object bound rectangle, if object width has changed.
                 aObjBoundRect = GetAnchoredObj().GetObjRect();
@@ -313,7 +314,7 @@ void SwAsCharAnchoredObjectPosition::CalcPosition()
                 aObjBoundRect.Height( aObjBoundRect.Height() + rULSpace.GetLower() );
             }
         }
-        OSL_ENSURE( aRectFnSet.GetHeight(rFlyInContentFrame.Frame()),
+        OSL_ENSURE( (rFlyInContentFrame.Frame().*fnRect->fnGetHeight)(),
             "SwAnchoredObjectPosition::CalcPosition(..) - fly frame has an invalid height" );
     }
 
@@ -337,7 +338,7 @@ SwTwips SwAsCharAnchoredObjectPosition::GetRelPosToBase(
 {
     SwTwips nRelPosToBase = 0;
 
-    mnLineAlignment = sw::LineAlign::NONE;
+    mnLineAlignment = 0;
 
     const sal_Int16 eVertOrient = _rVert.GetVertOrient();
 
@@ -365,26 +366,26 @@ SwTwips SwAsCharAnchoredObjectPosition::GetRelPosToBase(
                 // positioning necessary. Also, the max. ascent isn't changed.
                 nRelPosToBase -= mnLineAscentInclObjs;
                 if ( eVertOrient == text::VertOrientation::LINE_CENTER )
-                    mnLineAlignment = sw::LineAlign::CENTER;
+                    mnLineAlignment = 2;
                 else if ( eVertOrient == text::VertOrientation::LINE_TOP )
-                    mnLineAlignment = sw::LineAlign::TOP;
+                    mnLineAlignment = 1;
                 else if ( eVertOrient == text::VertOrientation::LINE_BOTTOM )
-                    mnLineAlignment = sw::LineAlign::BOTTOM;
+                    mnLineAlignment = 3;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_CENTER )
             {
                 nRelPosToBase -= ( _nObjBoundHeight + mnLineAscentInclObjs - mnLineDescentInclObjs ) / 2;
-                mnLineAlignment = sw::LineAlign::CENTER;
+                mnLineAlignment = 2;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_TOP )
             {
                 nRelPosToBase -= mnLineAscentInclObjs;
-                mnLineAlignment = sw::LineAlign::TOP;
+                mnLineAlignment = 1;
             }
             else if ( eVertOrient == text::VertOrientation::LINE_BOTTOM )
             {
                 nRelPosToBase += mnLineDescentInclObjs - _nObjBoundHeight;
-                mnLineAlignment = sw::LineAlign::BOTTOM;
+                mnLineAlignment = 3;
             }
         }
     }

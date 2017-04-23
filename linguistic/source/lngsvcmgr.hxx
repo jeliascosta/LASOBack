@@ -30,7 +30,6 @@
 #include <com/sun/star/util/XModifyBroadcaster.hpp>
 #include <com/sun/star/util/XModifyListener.hpp>
 #include <unotools/configitem.hxx>
-#include <rtl/ref.hxx>
 #include <vcl/timer.hxx>
 #include <vcl/idle.hxx>
 #include <vector>
@@ -66,7 +65,19 @@ class LngSvcMgr :
 {
     friend class LngSvcMgrListenerHelper;
 
-    ::comphelper::OInterfaceContainerHelper2            aEvtListeners;
+    ::comphelper::OInterfaceContainerHelper2                   aEvtListeners;
+
+    css::uno::Reference<
+        css::linguistic2::XSpellChecker >              xSpellDsp;
+    css::uno::Reference<
+        css::linguistic2::XProofreadingIterator >      xGrammarDsp;
+    css::uno::Reference<
+        css::linguistic2::XHyphenator >                xHyphDsp;
+    css::uno::Reference<
+        css::linguistic2::XThesaurus >                 xThesDsp;
+
+    css::uno::Reference<
+        css::lang::XEventListener >                    xListenerHelper;
 
     css::uno::Reference<
         css::util::XModifyBroadcaster>                  xMB;
@@ -83,12 +94,12 @@ class LngSvcMgr :
     css::uno::Sequence<
         css::lang::Locale >                             aAvailThesLocales;
 
-    rtl::Reference<SpellCheckerDispatcher>              mxSpellDsp;
-    rtl::Reference<GrammarCheckingIterator>             mxGrammarDsp;
-    rtl::Reference<HyphenatorDispatcher>                mxHyphDsp;
-    rtl::Reference<ThesaurusDispatcher>                 mxThesDsp;
+    SpellCheckerDispatcher *                            pSpellDsp;
+    GrammarCheckingIterator *                           pGrammarDsp;
+    HyphenatorDispatcher *                              pHyphDsp;
+    ThesaurusDispatcher *                               pThesDsp;
 
-    rtl::Reference<LngSvcMgrListenerHelper>             mxListenerHelper;
+    LngSvcMgrListenerHelper *                           pListenerHelper;
 
     typedef std::vector< std::unique_ptr<SvcInfo> >    SvcInfoArray;
     SvcInfoArray *                                      pAvailSpellSvcs;
@@ -127,40 +138,42 @@ class LngSvcMgr :
 
     void UpdateAll();
     void stopListening();
-    DECL_LINK( updateAndBroadcast, Timer*, void );
+    DECL_LINK_TYPED( updateAndBroadcast, Idle*, void );
 
 public:
     LngSvcMgr();
-    virtual ~LngSvcMgr() override;
+    virtual ~LngSvcMgr();
 
     // XLinguServiceManager
-    virtual css::uno::Reference< css::linguistic2::XSpellChecker > SAL_CALL getSpellChecker(  ) override;
-    virtual css::uno::Reference< css::linguistic2::XHyphenator > SAL_CALL getHyphenator(  ) override;
-    virtual css::uno::Reference< css::linguistic2::XThesaurus > SAL_CALL getThesaurus(  ) override;
-    virtual sal_Bool SAL_CALL addLinguServiceManagerListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual sal_Bool SAL_CALL removeLinguServiceManagerListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServices( const OUString& aServiceName, const css::lang::Locale& aLocale ) override;
-    virtual void SAL_CALL setConfiguredServices( const OUString& aServiceName, const css::lang::Locale& aLocale, const css::uno::Sequence< OUString >& aServiceImplNames ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getConfiguredServices( const OUString& aServiceName, const css::lang::Locale& aLocale ) override;
+    virtual css::uno::Reference< css::linguistic2::XSpellChecker > SAL_CALL getSpellChecker(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::linguistic2::XHyphenator > SAL_CALL getHyphenator(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::linguistic2::XThesaurus > SAL_CALL getThesaurus(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL addLinguServiceManagerListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL removeLinguServiceManagerListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getAvailableServices( const OUString& aServiceName, const css::lang::Locale& aLocale )
+        throw (css::uno::RuntimeException,
+               std::exception) override;
+    virtual void SAL_CALL setConfiguredServices( const OUString& aServiceName, const css::lang::Locale& aLocale, const css::uno::Sequence< OUString >& aServiceImplNames ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getConfiguredServices( const OUString& aServiceName, const css::lang::Locale& aLocale ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XAvailableLocales
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getAvailableLocales( const OUString& aServiceName ) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getAvailableLocales( const OUString& aServiceName ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose(  ) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& rSource ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& rSource ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XModifyListener
-    virtual void SAL_CALL modified( const css::lang::EventObject& rEvent ) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& rEvent ) throw(css::uno::RuntimeException, std::exception) override;
 
     static inline OUString   getImplementationName_Static();
     static css::uno::Sequence< OUString > getSupportedServiceNames_Static() throw();

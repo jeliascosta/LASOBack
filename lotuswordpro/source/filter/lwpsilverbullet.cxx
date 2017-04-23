@@ -78,6 +78,7 @@ LwpSilverBullet::LwpSilverBullet(LwpObjectHeader& objHdr, LwpSvStream* pStrm)
 
 LwpSilverBullet::~LwpSilverBullet()
 {
+    delete m_pAtomHolder;
 }
 
 void LwpSilverBullet::Read()
@@ -85,7 +86,7 @@ void LwpSilverBullet::Read()
     LwpDLNFVList::Read();
 
     m_nFlags = m_pObjStrm->QuickReaduInt16();
-    m_aStory.ReadIndexed(m_pObjStrm.get());
+    m_aStory.ReadIndexed(m_pObjStrm);
 
     sal_uInt16 nNumPos = m_pObjStrm->QuickReaduInt16();
 
@@ -97,7 +98,7 @@ void LwpSilverBullet::Read()
 
     m_nUseCount = m_pObjStrm->QuickReaduInt32();
 
-    m_pAtomHolder->Read(m_pObjStrm.get());
+    m_pAtomHolder->Read(m_pObjStrm);
 }
 
 /**
@@ -107,7 +108,7 @@ void LwpSilverBullet::Read()
  */
 void LwpSilverBullet::RegisterStyle()
 {
-    std::unique_ptr<XFListStyle> xListStyle(new XFListStyle());
+    XFListStyle* pListStyle = new XFListStyle();
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
 
     GetBulletPara();
@@ -146,11 +147,11 @@ void LwpSilverBullet::RegisterStyle()
                     }
 
                     //set numbering format into the style-list.
-                    xListStyle->SetListNumber(nPos, aFmt, pParaNumber->GetStart()+1);
+                    pListStyle->SetListNumber(nPos, aFmt, pParaNumber->GetStart()+1);
 
                     if (bCumulative && nPos > 1)
                     {
-                        xListStyle->SetDisplayLevel(nPos, nDisplayLevel);
+                        pListStyle->SetDisplayLevel(nPos, nDisplayLevel);
                     }
 
                 }
@@ -166,18 +167,18 @@ void LwpSilverBullet::RegisterStyle()
                         aSuffix = aParaNumbering.pSuffix->GetText();
                     }
 
-                    xListStyle->SetListBullet(nPos, GetNumCharByStyleID(pParaNumber),
+                    pListStyle->SetListBullet(nPos, GetNumCharByStyleID(pParaNumber),
                         "Times New Roman", aPrefix, aSuffix);
                 }
 
-                xListStyle->SetListPosition(nPos, 0.0, 0.635, 0.0);
+                pListStyle->SetListPosition(nPos, 0.0, 0.635, 0.0);
                 aParaNumbering.clear();
             }
         }
     }
 
     //add style-list to style manager.
-    m_strStyleName = pXFStyleManager->AddStyle(xListStyle.release()).m_pStyle->GetStyleName();
+    m_strStyleName = pXFStyleManager->AddStyle(pListStyle).m_pStyle->GetStyleName();
 }
 
 /**
@@ -212,7 +213,7 @@ OUString LwpSilverBullet::GetBulletFontName()
 /**
  * @short:   Get bullet character of the bullet vo_para.
  * @descr:
- * @return:  An UChar32 bullet character.
+ * @return:  An UChar32 bulle character.
  */
 OUString LwpSilverBullet::GetBulletChar()
 {

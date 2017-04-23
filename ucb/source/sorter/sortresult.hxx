@@ -35,7 +35,6 @@
 #include <com/sun/star/ucb/XAnyCompareFactory.hpp>
 #include <com/sun/star/ucb/ListAction.hpp>
 #include <cppuhelper/implbase.hxx>
-#include <rtl/ref.hxx>
 #include <deque>
 
 namespace comphelper {
@@ -85,6 +84,28 @@ public:
 };
 
 
+class SimpleList
+{
+    std::deque < void* > maData;
+
+public:
+                     SimpleList(){}
+                    ~SimpleList(){ Clear(); }
+
+    sal_uInt32      Count() { return (sal_uInt32) maData.size(); }
+    void            Clear() { maData.clear(); }
+
+    void            Remove( sal_uInt32 nPos );
+    void            Remove( void* pData );
+
+    void            Append( void* pData )
+                        { maData.push_back( pData ); }
+    void            Insert( void* pData, sal_uInt32 nPos );
+    void*           GetObject( sal_uInt32 nPos ) const;
+    void            Replace( void* pData, sal_uInt32 nPos );
+};
+
+
 #define RESULTSET_SERVICE_NAME  "com.sun.star.ucb.SortedResultSet"
 
 
@@ -105,12 +126,12 @@ class SortedResultSet: public cppu::WeakImplHelper <
     css::uno::Reference < css::sdbc::XResultSet >            mxOriginal;
     css::uno::Reference < css::sdbc::XResultSet >            mxOther;
 
-    rtl::Reference<SRSPropertySetInfo> mpPropSetInfo;
+    SRSPropertySetInfo* mpPropSetInfo;
     SortInfo*           mpSortInfo;
     osl::Mutex          maMutex;
     SortedEntryList     maS2O;          // maps the sorted entries to the original ones
-    std::deque<sal_IntPtr> m_O2S;       /// maps the original Entries to the sorted ones
-    std::deque<SortListData*> m_ModList; /// keeps track of modified entries
+    SimpleList          maO2S;          // maps the original Entries to the sorted ones
+    SimpleList          maModList;      // keeps track of modified entries
     sal_IntPtr          mnLastSort;     // index of the last sorted entry;
     sal_IntPtr          mnCurEntry;     // index of the current entry
     sal_IntPtr          mnCount;        // total count of the elements
@@ -118,34 +139,35 @@ class SortedResultSet: public cppu::WeakImplHelper <
 
 
 private:
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
-    sal_IntPtr          FindPos( SortListData *pEntry, sal_IntPtr nStart, sal_IntPtr nEnd );
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
+
+    sal_IntPtr          FindPos( SortListData *pEntry, sal_IntPtr nStart, sal_IntPtr nEnd )
+                            throw( css::sdbc::SQLException, css::uno::RuntimeException );
     sal_IntPtr          Compare( SortListData *pOne,
-                                 SortListData *pTwo );
+                                 SortListData *pTwo )
+                            throw( css::sdbc::SQLException, css::uno::RuntimeException );
     void                BuildSortInfo( const css::uno::Reference< css::sdbc::XResultSet >& aResult,
                                        const css::uno::Sequence < css::ucb::NumberedSortingInfo > &xSortInfo,
                                        const css::uno::Reference< css::ucb::XAnyCompareFactory > &xCompFac );
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
     static sal_IntPtr   CompareImpl( const css::uno::Reference < css::sdbc::XResultSet >& xResultOne,
                                      const css::uno::Reference < css::sdbc::XResultSet >& xResultTwo,
                                      sal_IntPtr nIndexOne, sal_IntPtr nIndexTwo,
-                                     SortInfo* pSortInfo );
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
+                                     SortInfo* pSortInfo )
+                            throw( css::sdbc::SQLException, css::uno::RuntimeException );
     sal_IntPtr          CompareImpl( const css::uno::Reference < css::sdbc::XResultSet >& xResultOne,
                                      const css::uno::Reference < css::sdbc::XResultSet >& xResultTwo,
-                                     sal_IntPtr nIndexOne, sal_IntPtr nIndexTwo );
+                                     sal_IntPtr nIndexOne, sal_IntPtr nIndexTwo )
+                            throw( css::sdbc::SQLException, css::uno::RuntimeException );
     void                PropertyChanged( const css::beans::PropertyChangeEvent& rEvt );
 
 public:
-                        SortedResultSet( css::uno::Reference< css::sdbc::XResultSet > const & aResult );
-                        virtual ~SortedResultSet() override;
+                        SortedResultSet( css::uno::Reference< css::sdbc::XResultSet > aResult );
+                        virtual ~SortedResultSet();
 
-    sal_IntPtr          GetCount() const { return mnCount; }
+    const SortedEntryList&      GetS2OList() const { return maS2O; }
+    const SimpleList&           GetO2SList() const { return maO2S; }
+    const css::uno::Reference < css::sdbc::XResultSet >& GetResultSet() const { return mxOriginal; }
+    SortInfo*                   GetSortInfo() const { return mpSortInfo; }
+    sal_IntPtr                  GetCount() const { return mnCount; }
 
     void                CopyData( SortedResultSet* pSource );
     void                Initialize( const css::uno::Sequence < css::ucb::NumberedSortingInfo > &xSortInfo,
@@ -161,174 +183,248 @@ public:
     void                ResortNew( EventList* pList );
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException,
+               std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw( css::uno::RuntimeException,
+               std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException,
+               std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XComponent
     virtual void SAL_CALL
-    dispose() override;
+    dispose() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) override;
+    addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) override;
+    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XContentAccess
     virtual OUString SAL_CALL
-    queryContentIdentifierString() override;
+    queryContentIdentifierString()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::ucb::XContentIdentifier > SAL_CALL
-    queryContentIdentifier() override;
+    queryContentIdentifier()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::ucb::XContent > SAL_CALL
-    queryContent() override;
+    queryContent()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XResultSet
     virtual sal_Bool SAL_CALL
-    next() override;
+    next()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    isBeforeFirst() override;
+    isBeforeFirst()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    isAfterLast() override;
+    isAfterLast()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    isFirst() override;
+    isFirst()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    isLast() override;
+    isLast()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    beforeFirst() override;
+    beforeFirst()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    afterLast() override;
+    afterLast()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    first() override;
+    first()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    last() override;
+    last()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Int32 SAL_CALL
-    getRow() override;
+    getRow()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    absolute( sal_Int32 row ) override;
+    absolute( sal_Int32 row )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    relative( sal_Int32 rows ) override;
+    relative( sal_Int32 rows )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    previous() override;
+    previous()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    refreshRow() override;
+    refreshRow()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    rowUpdated() override;
+    rowUpdated()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    rowInserted() override;
+    rowInserted()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    rowDeleted() override;
+    rowDeleted()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::uno::XInterface > SAL_CALL
-    getStatement() override;
+    getStatement()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     // XRow
     virtual sal_Bool SAL_CALL
-    wasNull() override;
+    wasNull() throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual OUString SAL_CALL
-    getString( sal_Int32 columnIndex ) override;
+    getString( sal_Int32 columnIndex )
+    throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-    getBoolean( sal_Int32 columnIndex ) override;
+    getBoolean( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int8 SAL_CALL
-    getByte( sal_Int32 columnIndex ) override;
+    getByte( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int16 SAL_CALL
-    getShort( sal_Int32 columnIndex ) override;
+    getShort( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int32 SAL_CALL
-    getInt( sal_Int32 columnIndex ) override;
+    getInt( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int64 SAL_CALL
-    getLong( sal_Int32 columnIndex ) override;
+    getLong( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual float SAL_CALL
-    getFloat( sal_Int32 columnIndex ) override;
+    getFloat( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual double SAL_CALL
-    getDouble( sal_Int32 columnIndex ) override;
+    getDouble( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-    getBytes( sal_Int32 columnIndex ) override;
+    getBytes( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::util::Date SAL_CALL
-    getDate( sal_Int32 columnIndex ) override;
+    getDate( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::util::Time SAL_CALL
-    getTime( sal_Int32 columnIndex ) override;
+    getTime( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::util::DateTime SAL_CALL
-    getTimestamp( sal_Int32 columnIndex ) override;
+    getTimestamp( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference<
                 css::io::XInputStream > SAL_CALL
-    getBinaryStream( sal_Int32 columnIndex ) override;
+    getBinaryStream( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference<
                 css::io::XInputStream > SAL_CALL
-    getCharacterStream( sal_Int32 columnIndex ) override;
+    getCharacterStream( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Any SAL_CALL
     getObject( sal_Int32 columnIndex,
                const css::uno::Reference<
-                   css::container::XNameAccess >& typeMap ) override;
+                   css::container::XNameAccess >& typeMap )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::sdbc::XRef > SAL_CALL
-    getRef( sal_Int32 columnIndex ) override;
+    getRef( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::sdbc::XBlob > SAL_CALL
-    getBlob( sal_Int32 columnIndex ) override;
+    getBlob( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::sdbc::XClob > SAL_CALL
-    getClob( sal_Int32 columnIndex ) override;
+    getClob( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference<
                 css::sdbc::XArray > SAL_CALL
-    getArray( sal_Int32 columnIndex ) override;
+    getArray( sal_Int32 columnIndex )
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     // XCloseable
     virtual void SAL_CALL
-    close() override;
+    close()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
     // XResultSetMetaDataSupplier
     virtual css::uno::Reference< css::sdbc::XResultSetMetaData > SAL_CALL
-    getMetaData() override;
+    getMetaData()
+        throw( css::sdbc::SQLException, css::uno::RuntimeException, std::exception ) override;
 
 
     // XPropertySet
     virtual css::uno::Reference<
                 css::beans::XPropertySetInfo > SAL_CALL
-    getPropertySetInfo() override;
+    getPropertySetInfo()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
     setPropertyValue( const OUString& PropertyName,
-                      const css::uno::Any& Value ) override;
+                      const css::uno::Any& Value )
+        throw( css::beans::UnknownPropertyException,
+               css::beans::PropertyVetoException,
+               css::lang::IllegalArgumentException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Any SAL_CALL
-    getPropertyValue( const OUString& PropertyName ) override;
+    getPropertyValue( const OUString& PropertyName )
+        throw( css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
     addPropertyChangeListener( const OUString& PropertyName,
                                const css::uno::Reference<
-                                       css::beans::XPropertyChangeListener >& Listener ) override;
+                                       css::beans::XPropertyChangeListener >& Listener )
+        throw( css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
     removePropertyChangeListener( const OUString& PropertyName,
                                   const css::uno::Reference<
-                                      css::beans::XPropertyChangeListener >& Listener ) override;
+                                      css::beans::XPropertyChangeListener >& Listener )
+        throw( css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
     addVetoableChangeListener( const OUString& PropertyName,
                                const css::uno::Reference<
-                                       css::beans::XVetoableChangeListener >& Listener ) override;
+                                       css::beans::XVetoableChangeListener >& Listener )
+        throw( css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
     removeVetoableChangeListener( const OUString& PropertyName,
                                   const css::uno::Reference<
-                                      css::beans::XVetoableChangeListener >& aListener ) override;
+                                      css::beans::XVetoableChangeListener >& aListener )
+        throw( css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override;
 };
 
 #endif

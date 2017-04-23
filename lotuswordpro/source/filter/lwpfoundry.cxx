@@ -69,23 +69,28 @@
 #include "lwpsection.hxx"
 #include "lwpcharacterstyle.hxx"
 #include "lwpglobalmgr.hxx"
-#include "xfilter/xfstylemanager.hxx"
-#include "lwplayout.hxx"
 
 #include <osl/diagnose.h>
+
 
 LwpFoundry::LwpFoundry(LwpObjectStream *pStrm, LwpDocument* pDoc)
     : m_pDoc(pDoc)
     , m_bRegisteredAll(false)
+    , m_pPieceMgr(nullptr)
+    , m_pStyleMgr(nullptr)
 {
     Read(pStrm);
-    m_xDropcapMgr.reset(new LwpDropcapMgr);
-    m_xBulletStyleMgr.reset(new LwpBulletStyleMgr);
-    m_xBulletStyleMgr->SetFoundry(this);
+    m_pDropcapMgr = new LwpDropcapMgr;
+    m_pBulletStyleMgr = new LwpBulletStyleMgr();
+    m_pBulletStyleMgr->SetFoundry(this);
 }
 
 LwpFoundry::~LwpFoundry()
 {
+    delete m_pPieceMgr;
+    delete m_pStyleMgr;
+    delete m_pDropcapMgr;
+    delete m_pBulletStyleMgr;
 }
 
 void LwpFoundry::Read(LwpObjectStream *pStrm)
@@ -124,8 +129,9 @@ void LwpFoundry::Read(LwpObjectStream *pStrm)
 
     if (!m_pDoc->IsChildDoc() && LwpFileHeader::m_nFileRevision >= 0x000B)
     {
-        m_xPieceMgr.reset(new LwpPieceManager);
-        m_xPieceMgr->Read(pStrm);
+        m_pPieceMgr = new LwpPieceManager();
+
+        m_pPieceMgr->Read(pStrm);
     }
 
     if( LwpFileHeader::m_nFileRevision >= 0x000B)
@@ -139,8 +145,8 @@ void LwpFoundry::Read(LwpObjectStream *pStrm)
     }
     pStrm->SkipExtra();
 
-    m_xStyleMgr.reset(new LwpStyleManager);
-    m_xStyleMgr->SetFoundry(this);
+    m_pStyleMgr = new LwpStyleManager();
+    m_pStyleMgr->SetFoundry(this);
 }
 
 void LwpFoundry::ReadStyles(LwpObjectStream *pStrm)
@@ -163,6 +169,9 @@ void LwpFoundry::ReadStyles(LwpObjectStream *pStrm)
     m_DftRighColumnStyle.ReadIndexed(pStrm);
 
 }
+
+#include "xfilter/xfstylemanager.hxx"
+#include "lwplayout.hxx"
 
 void LwpFoundry::RegisterAllLayouts()
 {

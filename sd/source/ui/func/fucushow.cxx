@@ -57,7 +57,7 @@ rtl::Reference<FuPoor> FuCustomShowDlg::Create( ViewShell* pViewSh, ::sd::Window
 void FuCustomShowDlg::DoExecute( SfxRequest& )
 {
     SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-    ScopedVclPtr<AbstractSdCustomShowDlg> pDlg(pFact ? pFact->CreateSdCustomShowDlg(mpViewShell->GetActiveWindow(), *mpDoc) : nullptr);
+    std::unique_ptr<AbstractSdCustomShowDlg> pDlg(pFact ? pFact->CreateSdCustomShowDlg(mpViewShell->GetActiveWindow(), *mpDoc) : nullptr);
     if( pDlg )
     {
         sal_uInt16 nRet = pDlg->Execute();
@@ -67,11 +67,11 @@ void FuCustomShowDlg::DoExecute( SfxRequest& )
             sd::PresentationSettings& rSettings = mpDoc->getPresentationSettings();
             rSettings.mbCustomShow = pDlg->IsCustomShow();
         }
-        pDlg.disposeAndClear();
+        pDlg.reset();
 
         if( nRet == RET_YES )
         {
-            mpViewShell->SetStartShowWithDialog(true);
+            mpViewShell->SetStartShowWithDialog();
 
             mpViewShell->GetViewFrame()->GetDispatcher()->Execute( SID_PRESENTATION,
                     SfxCallMode::ASYNCHRON | SfxCallMode::RECORD );

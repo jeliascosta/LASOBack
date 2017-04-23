@@ -79,7 +79,7 @@ using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::io;
 
 // needs to be converted to a better data structure
-SfxFormalArgument const aFormalArgs[] = {
+SfxFormalArgument aFormalArgs[] = {
     { reinterpret_cast<SfxType*>(&aSfxStringItem_Impl), "SuggestedSaveAsName", SID_DEFAULTFILENAME },
     { reinterpret_cast<SfxType*>(&aSfxStringItem_Impl), "SuggestedSaveAsDir", SID_DEFAULTFILEPATH },
     { reinterpret_cast<SfxType*>(&aSfxStringItem_Impl), "VersionAuthor", SID_DOCINFO_AUTHOR },
@@ -129,6 +129,7 @@ static char const sViewOnly[] = "ViewOnly";
 static char const sDontEdit[] = "DontEdit";
 static char const sSilent[] = "Silent";
 static char const sJumpMark[] = "JumpMark";
+static char const sFileName[] = "FileName";
 static char const sSalvagedFile[] = "SalvagedFile";
 static char const sStatusInd[] = "StatusIndicator";
 static char const sModel[] = "Model";
@@ -136,6 +137,7 @@ static char const sFrame[] = "Frame";
 static char const sViewData[] = "ViewData";
 static char const sFilterData[] = "FilterData";
 static char const sSelectionOnly[] = "SelectionOnly";
+static char const sFilterFlags[] = "FilterFlags";
 static char const sMacroExecMode[] = "MacroExecutionMode";
 static char const sUpdateDocMode[] = "UpdateDocMode";
 static char const sMinimized[] = "Minimized";
@@ -180,6 +182,8 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
 
     if ( nSlotId == SID_OPENURL )
         nSlotId = SID_OPENDOC;
+    if ( nSlotId == SID_SAVEASURL )
+        nSlotId = SID_SAVEASDOC;
 
     sal_Int32 nCount = rArgs.getLength();
     if ( !nCount )
@@ -203,7 +207,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
         }
 
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
         pItem->SetWhich( nWhich );
         sal_uInt16 nSubCount = pType->nAttribs;
 
@@ -320,7 +324,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
         }
 
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(rArg.nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
         pItem->SetWhich( nWhich );
         const SfxType* pType = rArg.pType;
         sal_uInt16 nSubCount = pType->nAttribs;
@@ -688,7 +692,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
                     rSet.Put( stringList );
                 }
             }
-            else if ( aName == "FileName" )
+            else if ( aName == sFileName )
             {
                 OUString sVal;
                 bool bOK = ((rProp.Value >>= sVal) && !sVal.isEmpty());
@@ -760,7 +764,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
                 if (bOK)
                     rSet.Put( SfxStringItem( SID_CHARSET, sVal ) );
             }
-            else if ( aName == "FilterFlags" )
+            else if ( aName == sFilterFlags )
             {
                 OUString sVal;
                 bool bOK = ((rProp.Value >>= sVal) && !sVal.isEmpty());
@@ -918,7 +922,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
 
     if ( nSlotId == SID_OPENURL )
         nSlotId = SID_OPENDOC;
-    if ( nSlotId == SID_SAVEASREMOTE )
+    if ( nSlotId == SID_SAVEASURL || nSlotId == SID_SAVEASREMOTE )
         nSlotId = SID_SAVEASDOC;
 
     // find number of properties to avoid permanent reallocations in the sequence
@@ -1271,7 +1275,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
     {
         // slot is a property
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
         const SfxPoolItem* pItem = rSet.GetItem<SfxPoolItem>(nWhich, false);
         if ( pItem ) //???
         {
@@ -1323,7 +1327,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
     {
         const SfxFormalArgument &rArg = pSlot->GetFormalArgument( nArg );
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich( rArg.nSlotId );
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
         const SfxPoolItem* pItem = rSet.GetItem<SfxPoolItem>(nWhich, false);
         if ( pItem ) //???
         {
@@ -1655,18 +1659,20 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
 
 void SAL_CALL FilterOptionsContinuation::setFilterOptions(
                 const uno::Sequence<beans::PropertyValue>& rProps )
+        throw (uno::RuntimeException, std::exception)
 {
     rProperties = rProps;
 }
 
 uno::Sequence< beans::PropertyValue > SAL_CALL
     FilterOptionsContinuation::getFilterOptions()
+        throw (uno::RuntimeException, std::exception)
 {
     return rProperties;
 }
 
 
-RequestFilterOptions::RequestFilterOptions( uno::Reference< frame::XModel > const & rModel,
+RequestFilterOptions::RequestFilterOptions( uno::Reference< frame::XModel > rModel,
                               const uno::Sequence< beans::PropertyValue >& rProperties )
 {
     OUString temp;
@@ -1678,33 +1684,41 @@ RequestFilterOptions::RequestFilterOptions( uno::Reference< frame::XModel > cons
 
     m_aRequest <<= aOptionsRequest;
 
-    m_xAbort  = new comphelper::OInteractionAbort;
-    m_xOptions = new FilterOptionsContinuation;
+    m_pAbort  = new comphelper::OInteractionAbort;
+    m_pOptions = new FilterOptionsContinuation;
+
+    m_lContinuations.realloc( 2 );
+    m_lContinuations[0].set( m_pAbort  );
+    m_lContinuations[1].set( m_pOptions );
 }
 
 uno::Any SAL_CALL RequestFilterOptions::getRequest()
+        throw( uno::RuntimeException, std::exception )
 {
     return m_aRequest;
 }
 
 uno::Sequence< uno::Reference< task::XInteractionContinuation > >
     SAL_CALL RequestFilterOptions::getContinuations()
+        throw( uno::RuntimeException, std::exception )
 {
-    return { m_xAbort.get(), m_xOptions.get() };
+    return m_lContinuations;
 }
 
 
 class RequestPackageReparation_Impl : public ::cppu::WeakImplHelper< task::XInteractionRequest >
 {
     uno::Any m_aRequest;
-    rtl::Reference<comphelper::OInteractionApprove> m_xApprove;
-    rtl::Reference<comphelper::OInteractionDisapprove>  m_xDisapprove;
+    uno::Sequence< uno::Reference< task::XInteractionContinuation > > m_lContinuations;
+    comphelper::OInteractionApprove* m_pApprove;
+    comphelper::OInteractionDisapprove*  m_pDisapprove;
 
 public:
     explicit RequestPackageReparation_Impl( const OUString& aName );
     bool    isApproved();
-    virtual uno::Any SAL_CALL getRequest() override;
-    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual uno::Any SAL_CALL getRequest() throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations()
+        throw( uno::RuntimeException, std::exception ) override;
 };
 
 RequestPackageReparation_Impl::RequestPackageReparation_Impl( const OUString& aName )
@@ -1713,55 +1727,64 @@ RequestPackageReparation_Impl::RequestPackageReparation_Impl( const OUString& aN
     uno::Reference< uno::XInterface > temp2;
     document::BrokenPackageRequest aBrokenPackageRequest( temp, temp2, aName );
     m_aRequest <<= aBrokenPackageRequest;
-    m_xApprove = new comphelper::OInteractionApprove;
-    m_xDisapprove = new comphelper::OInteractionDisapprove;
+    m_pApprove = new comphelper::OInteractionApprove;
+    m_pDisapprove = new comphelper::OInteractionDisapprove;
+    m_lContinuations.realloc( 2 );
+    m_lContinuations[0].set( m_pApprove );
+    m_lContinuations[1].set( m_pDisapprove );
 }
 
 bool RequestPackageReparation_Impl::isApproved()
 {
-    return m_xApprove->wasSelected();
+    return m_pApprove->wasSelected();
 }
 
 uno::Any SAL_CALL RequestPackageReparation_Impl::getRequest()
+        throw( uno::RuntimeException, std::exception )
 {
     return m_aRequest;
 }
 
 uno::Sequence< uno::Reference< task::XInteractionContinuation > >
     SAL_CALL RequestPackageReparation_Impl::getContinuations()
+        throw( uno::RuntimeException, std::exception )
 {
-    return { m_xApprove.get(), m_xDisapprove.get() };
+    return m_lContinuations;
 }
 
 RequestPackageReparation::RequestPackageReparation( const OUString& aName )
-    : mxImpl(new RequestPackageReparation_Impl( aName ))
 {
+    pImp = new RequestPackageReparation_Impl( aName );
+    pImp->acquire();
 }
 
 RequestPackageReparation::~RequestPackageReparation()
 {
+    pImp->release();
 }
 
 bool RequestPackageReparation::isApproved()
 {
-    return mxImpl->isApproved();
+    return pImp->isApproved();
 }
 
 css::uno::Reference < task::XInteractionRequest > RequestPackageReparation::GetRequest()
 {
-    return mxImpl.get();
+    return css::uno::Reference < task::XInteractionRequest >(pImp);
 }
 
 
 class NotifyBrokenPackage_Impl : public ::cppu::WeakImplHelper< task::XInteractionRequest >
 {
     uno::Any m_aRequest;
-    rtl::Reference<comphelper::OInteractionAbort>  m_xAbort;
+    uno::Sequence< uno::Reference< task::XInteractionContinuation > > m_lContinuations;
+    comphelper::OInteractionAbort*  m_pAbort;
 
 public:
     explicit NotifyBrokenPackage_Impl(const OUString& rName);
-    virtual uno::Any SAL_CALL getRequest() override;
-    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations() override;
+    virtual uno::Any SAL_CALL getRequest() throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< uno::Reference< task::XInteractionContinuation > > SAL_CALL getContinuations()
+        throw( uno::RuntimeException, std::exception ) override;
 };
 
 NotifyBrokenPackage_Impl::NotifyBrokenPackage_Impl( const OUString& aName )
@@ -1770,32 +1793,38 @@ NotifyBrokenPackage_Impl::NotifyBrokenPackage_Impl( const OUString& aName )
     uno::Reference< uno::XInterface > temp2;
     document::BrokenPackageRequest aBrokenPackageRequest( temp, temp2, aName );
     m_aRequest <<= aBrokenPackageRequest;
-    m_xAbort = new comphelper::OInteractionAbort;
+    m_pAbort     = new comphelper::OInteractionAbort;
+    m_lContinuations.realloc( 1 );
+    m_lContinuations[0].set( m_pAbort  );
 }
 
 uno::Any SAL_CALL NotifyBrokenPackage_Impl::getRequest()
+        throw( uno::RuntimeException, std::exception )
 {
     return m_aRequest;
 }
 
 uno::Sequence< uno::Reference< task::XInteractionContinuation > >
     SAL_CALL NotifyBrokenPackage_Impl::getContinuations()
+        throw( uno::RuntimeException, std::exception )
 {
-    return { m_xAbort.get() };
+    return m_lContinuations;
 }
 
 NotifyBrokenPackage::NotifyBrokenPackage( const OUString& aName )
-    : mxImpl(new NotifyBrokenPackage_Impl( aName ))
 {
+    pImp = new NotifyBrokenPackage_Impl( aName );
+    pImp->acquire();
 }
 
 NotifyBrokenPackage::~NotifyBrokenPackage()
 {
+    pImp->release();
 }
 
 css::uno::Reference < task::XInteractionRequest > NotifyBrokenPackage::GetRequest()
 {
-    return mxImpl.get();
+    return css::uno::Reference < task::XInteractionRequest >(pImp);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

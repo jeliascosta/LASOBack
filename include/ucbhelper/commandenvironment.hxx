@@ -22,7 +22,7 @@
 
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <ucbhelper/ucbhelperdllapi.h>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <memory>
 
 namespace ucbhelper
@@ -35,7 +35,7 @@ struct CommandEnvironment_Impl;
   * be used to supply environments to commands executed by UCB contents.
   */
 class UCBHELPER_DLLPUBLIC CommandEnvironment :
-            public cppu::WeakImplHelper< css::ucb::XCommandEnvironment >
+            public cppu::WeakImplHelper1< css::ucb::XCommandEnvironment >
 {
     std::unique_ptr<CommandEnvironment_Impl> m_pImpl;
 
@@ -57,12 +57,16 @@ public:
     /**
       * Destructor.
       */
-    virtual ~CommandEnvironment() override;
+    virtual ~CommandEnvironment();
 
      // XCommandEnvironemnt
-    virtual css::uno::Reference< css::task::XInteractionHandler > SAL_CALL getInteractionHandler() override;
+    virtual css::uno::Reference< css::task::XInteractionHandler > SAL_CALL getInteractionHandler()
+        throw ( css::uno::RuntimeException,
+                std::exception ) override;
 
-    virtual css::uno::Reference< css::ucb::XProgressHandler > SAL_CALL getProgressHandler() override;
+    virtual css::uno::Reference< css::ucb::XProgressHandler > SAL_CALL getProgressHandler()
+        throw ( css::uno::RuntimeException,
+                std::exception ) override;
 };
 
 } /* namespace ucbhelper */

@@ -41,7 +41,7 @@ class SVL_DLLPUBLIC INetURLHistory : public SfxBroadcaster
     /** Construction/Destruction.
     */
     SAL_DLLPRIVATE INetURLHistory();
-    SAL_DLLPRIVATE virtual ~INetURLHistory() override;
+    SAL_DLLPRIVATE virtual ~INetURLHistory();
 
     /** Implementation.
     */
@@ -105,6 +105,7 @@ class SVL_DLLPUBLIC INetURLHistoryHint: public SfxHint
     const INetURLObject* pObj;
 public:
     explicit INetURLHistoryHint( const INetURLObject* Object ) : pObj(Object) {}
+    virtual ~INetURLHistoryHint() {}
     const INetURLObject* GetObject() const { return pObj; }
 };
 

@@ -42,6 +42,10 @@ namespace comphelper
                 throw css::lang::DisposedException( OUString(), &i_component );
         }
 
+        ~ComponentGuard()
+        {
+        }
+
         void clear()    { m_aGuard.clear(); }
         void reset()    { m_aGuard.reset(); }
 

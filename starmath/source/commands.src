@@ -86,25 +86,9 @@ String RID_XOVERY_HELP
     Text [ en-US ] = "Division (Fraction)" ;
 };
 String RID_XODIVIDEY        { Text = "<?> odivide <?> " ; };
-String RID_XODIVIDEY_HELP
-{
-    Text [ en-US ] = "Circled Slash" ;
-};
 String RID_XODOTY           { Text = "<?> odot <?> " ; };
-String RID_XODOTY_HELP
-{
-    Text [ en-US ] = "Circled Dot" ;
-};
 String RID_XOMINUSY         { Text = "<?> ominus <?> " ; };
-String RID_XOMINUSY_HELP
-{
-    Text [ en-US ] = "Circled Minus" ;
-};
 String RID_XOPLUSY          { Text = "<?> oplus <?> " ; };
-String RID_XOPLUSY_HELP
-{
-    Text [ en-US ] = "Circled Plus" ;
-};
 String RID_XOTIMESY         { Text = "<?> otimes <?> " ; };
 String RID_XOTIMESY_HELP
 {
@@ -171,10 +155,6 @@ String RID_XGGY_HELP
     Text [ en-US ] = "Is Much Greater Than" ;
 };
 String RID_XDEFY            { Text = "<?> def <?> " ; };
-String RID_XDEFY_HELP
-{
-    Text [ en-US ] = "Is Defined As" ;
-};
 String RID_XEQUIVY          { Text = "<?> equiv <?> " ; };
 String RID_XEQUIVY_HELP
 {
@@ -216,15 +196,7 @@ String RID_XTOWARDY_HELP
     Text [ en-US ] = "Toward" ;
 };
 String RID_XTRANSLY         { Text = "<?> transl <?> " ; };
-String RID_XTRANSLY_HELP
-{
-    Text [ en-US ] = "Corresponds To (Left)" ;
-};
 String RID_XTRANSRY         { Text = "<?> transr <?> " ; };
-String RID_XTRANSRY_HELP
-{
-    Text [ en-US ] = "Corresponds To (Right)" ;
-};
 String RID_XINY             { Text = "<?> in <?> " ; };
 String RID_XINY_HELP
 {
@@ -305,7 +277,7 @@ String RID_ABSX_HELP
 {
     Text [ en-US ] = "Absolute Value" ;
 };
-String RID_FACTX            { Text = "fact{<?>} " ; };
+String RID_FACTX            { Text = "fact {<?>} " ; };
 String RID_FACTX_HELP
 {
     Text [ en-US ] = "Factorial" ;
@@ -501,45 +473,7 @@ String RID_LIM_FROMTOX_HELP
     Text [ en-US ] = "Limes Sup/Sub script" ;
 };
 String RID_LIMINFX          { Text = "liminf <?> " ; };
-String RID_LIMINFX_HELP
-{
-    Text [ en-US ] = "Limit Inferior" ;
-};
-String RID_LIMINF_FROMX     { Text = "liminf from{<?>} <?> " ; };
-String RID_LIMINF_FROMX_HELP
-{
-    Text [ en-US ] = "Limit Inferior Subscript Bottom" ;
-};
-String RID_LIMINF_TOX       { Text = "liminf to{<?>} <?> " ; };
-String RID_LIMINF_TOX_HELP
-{
-    Text [ en-US ] = "Limit Inferior Superscript Top" ;
-};
-String RID_LIMINF_FROMTOX   { Text = "liminf from{<?>} to{<?>} <?> " ; };
-String RID_LIMINF_FROMTOX_HELP
-{
-    Text [ en-US ] = "Limit Inferior Sup/Sub script" ;
-};
 String RID_LIMSUPX          { Text = "limsup <?> " ; };
-String RID_LIMSUPX_HELP
-{
-    Text [ en-US ] = "Limit Superior" ;
-};
-String RID_LIMSUP_FROMX     { Text = "limsup from{<?>} <?> " ; };
-String RID_LIMSUP_FROMX_HELP
-{
-    Text [ en-US ] = "Limit Superior Subscript Bottom" ;
-};
-String RID_LIMSUP_TOX       { Text = "limsup to{<?>} <?> " ; };
-String RID_LIMSUP_TOX_HELP
-{
-    Text [ en-US ] = "Limit Superior Superscript Top" ;
-};
-String RID_LIMSUP_FROMTOX   { Text = "limsup from{<?>} to{<?>} <?> " ; };
-String RID_LIMSUP_FROMTOX_HELP
-{
-    Text [ en-US ] = "Limit Superior Sup/Sub script" ;
-};
 String RID_EXISTS           { Text = "exists " ; };
 String RID_EXISTS_HELP
 {
@@ -808,6 +742,16 @@ String RID_COLORX_MAGENTA_HELP
 {
     Text [ en-US ] = "Color Magenta" ;
 };
+String RID_COLORX_AQUA        { Text = "color aqua {<?>} " ; };
+String RID_COLORX_AQUA_HELP
+{
+    Text [ en-US ] = "Color Aqua" ;
+};
+String RID_COLORX_FUCHSIA     { Text = "color fuchsia {<?>} " ; };
+String RID_COLORX_FUCHSIA_HELP
+{
+    Text [ en-US ] = "Color Fuchsia" ;
+};
 String RID_COLORX_GRAY        { Text = "color gray {<?>} " ; };
 String RID_COLORX_GRAY_HELP
 {
@@ -958,11 +902,6 @@ String RID_SLMRANGLEXY      { Text = "left langle <?> mline <?> right rangle " ;
 String RID_SLMRANGLEXY_HELP
 {
     Text [ en-US ] = "Operator Brackets (Scalable)" ;
-};
-String RID_XEVALUATEDATY     { Text = "left none {<?>} right rline_{<?>} " ; };
-String RID_XEVALUATEDATY_HELP
-{
-    Text [ en-US ] = "Evaluated At" ;
 };
 String RID_XOVERBRACEY      { Text = "{<?>} overbrace {<?>} " ; };
 String RID_XOVERBRACEY_HELP
@@ -1124,7 +1063,7 @@ String RID_XWIDESLASHY_HELP
 {
     Text [ en-US ] = "Division (wideslash)" ;
 };
-String RID_XWIDEBSLASHY     { Text = "{<?>} widebslash {<?>} " ; };
+String RID_XWIDEBSLASHY     { Text = "<?> widebslash <?> " ; };
 String RID_XWIDEBSLASHY_HELP
 {
     Text [ en-US ] = "Division (counter wideslash)" ;
@@ -2374,12 +2313,6 @@ Menu RID_COMMANDMENU
                         Identifier = RID_SLRDLINEX;
                         HelpId = HID_SMA_SLRDLINEX;
                         Text = "left ldline x right rdline";
-                    };
-                    MenuItem
-                    {
-                        Identifier = RID_XEVALUATEDATY;
-                        HelpId = HID_SMA_XEVALUATEDATY;
-                        Text = "left none x right rline_y";
                     };
                     MenuItem
                     {

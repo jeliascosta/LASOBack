@@ -39,11 +39,11 @@ private:
 
     VclPtr<ListBox>             m_pNumeralsLB;
 
-    DECL_LINK( SequenceCheckingCB_Hdl, Button*, void );
+    DECL_LINK_TYPED( SequenceCheckingCB_Hdl, Button*, void );
 
 public:
     SvxCTLOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxCTLOptionsPage() override;
+    virtual ~SvxCTLOptionsPage();
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;

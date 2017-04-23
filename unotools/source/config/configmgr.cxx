@@ -28,6 +28,7 @@
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/Sequence.hxx>
+#include <osl/diagnose.h>
 #include <rtl/instance.hxx>
 #include <rtl/ustring.h>
 #include <rtl/ustring.hxx>
@@ -71,7 +72,7 @@ OUString getConfigurationString(OUString const & module, OUString const & path)
 {
     css::uno::Sequence< css::uno::Any > args(1);
     args[0] <<= css::beans::NamedValue(
-        "nodepath",
+        OUString("nodepath"),
         css::uno::makeAny(module));
     return
         css::uno::Reference< css::container::XHierarchicalNameAccess >(
@@ -148,11 +149,11 @@ css::uno::Reference< css::container::XHierarchicalNameAccess >
 utl::ConfigManager::acquireTree(utl::ConfigItem & item) {
     css::uno::Sequence< css::uno::Any > args(1);
     args[0] <<= css::beans::NamedValue(
-        "nodepath",
+        OUString("nodepath"),
         css::uno::makeAny("/org.openoffice." + item.GetSubTreeName()));
     if (item.GetMode() & ConfigItemMode::AllLocales) {
         args.realloc(2);
-        args[1] <<= css::beans::NamedValue("locale", css::uno::makeAny(OUString("*")));
+        args[1] <<= css::beans::NamedValue(OUString("locale"), css::uno::makeAny(OUString("*")));
     }
     return css::uno::Reference< css::container::XHierarchicalNameAccess >(
         getConfigurationProvider()->createInstanceWithArguments(
@@ -164,7 +165,7 @@ utl::ConfigManager::acquireTree(utl::ConfigItem & item) {
 utl::ConfigManager::ConfigManager() {}
 
 utl::ConfigManager::~ConfigManager() {
-    SAL_WARN_IF(!items_.empty(), "unotools.config", "ConfigManager not empty");
+    OSL_ASSERT(items_.empty());
 }
 
 css::uno::Reference< css::container::XHierarchicalNameAccess >
@@ -188,7 +189,7 @@ void utl::ConfigManager::removeConfigItem(utl::ConfigItem & item) {
 }
 
 void utl::ConfigManager::registerConfigItem(utl::ConfigItem * item) {
-    assert(item != nullptr);
+    OSL_ASSERT(item != nullptr);
     items_.push_back(item);
 }
 

@@ -52,7 +52,7 @@ namespace dbaccess
         void characters( const OUString& i_rCharacters );
 
     protected:
-        virtual ~SettingsImport() override;
+        virtual ~SettingsImport();
 
     protected:
         static void split( const OUString& i_rElementName, OUString& o_rNamespace, OUString& o_rLocalName );
@@ -85,7 +85,7 @@ namespace dbaccess
         ) override;
 
     private:
-        virtual ~IgnoringSettingsImport() override
+        virtual ~IgnoringSettingsImport()
         {
         }
     };
@@ -102,7 +102,7 @@ namespace dbaccess
         ) override;
 
     protected:
-        virtual ~OfficeSettingsImport() override;
+        virtual ~OfficeSettingsImport();
 
     private:
         // the settings collection to which |this| will contribute a single setting
@@ -116,7 +116,7 @@ namespace dbaccess
         explicit ConfigItemImport( ::comphelper::NamedValueCollection& o_rSettings );
 
     protected:
-        virtual ~ConfigItemImport() override;
+        virtual ~ConfigItemImport();
 
     public:
         // SettingsImport overridables
@@ -142,7 +142,7 @@ namespace dbaccess
         explicit ConfigItemSetImport( ::comphelper::NamedValueCollection& o_rSettings );
 
     protected:
-        virtual ~ConfigItemSetImport() override;
+        virtual ~ConfigItemSetImport();
 
     public:
         // SettingsImport overridables

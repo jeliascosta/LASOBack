@@ -125,12 +125,12 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
         break;
         case EE_PARA_SBL:
             aDebStr.append("SBL=");
-            if ( static_cast<const SvxLineSpacingItem&>(rItem).GetLineSpaceRule() == SvxLineSpaceRule::Min )
+            if ( static_cast<const SvxLineSpacingItem&>(rItem).GetLineSpaceRule() == SVX_LINE_SPACE_MIN )
             {
                 aDebStr.append("Min: ");
                 aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpace()));
             }
-            else if ( static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpaceRule() == SvxInterLineSpaceRule::Prop )
+            else if ( static_cast<const SvxLineSpacingItem&>(rItem).GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_PROP )
             {
                 aDebStr.append("Prop: ");
                 aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxLineSpacingItem&>(rItem).GetPropLineSpace()));
@@ -153,7 +153,7 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
                 for (sal_uInt16 i = 0; i < rTabs.Count(); ++i)
                 {
                     const SvxTabStop& rTab = rTabs[i];
-                    aDebStr.append(rTab.GetTabPos());
+                    aDebStr.append(static_cast<sal_Int32>(rTab.GetTabPos()));
                     aDebStr.append(' ');
                 }
                 aDebStr.append(')');
@@ -206,9 +206,9 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
             aDebStr.append("Groesse=");
             aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxFontHeightItem&>(rItem).GetHeight()));
             Size aSz( 0, static_cast<const SvxFontHeightItem&>(rItem).GetHeight() );
-            MapUnit eUnit = rPool.GetMetric( rItem.Which() );
-            MapMode aItemMapMode(eUnit);
-            MapMode aPntMap( MapUnit::MapPoint );
+            SfxMapUnit eUnit = rPool.GetMetric( rItem.Which() );
+            MapMode aItemMapMode( (MapUnit) eUnit );
+            MapMode aPntMap( MAP_POINT );
             aSz = OutputDevice::LogicToLogic( aSz, aItemMapMode, aPntMap );
             aDebStr.append(" Points=");
             aDebStr.append(static_cast<sal_Int32>(aSz.Height()));
@@ -276,9 +276,9 @@ OString DbgOutItem(const SfxItemPool& rPool, const SfxPoolItem& rItem)
             aDebStr.append("Kerning=");
             aDebStr.append(static_cast<sal_Int32>(static_cast<const SvxKerningItem&>(rItem).GetValue()));
             Size aSz( 0, (short)static_cast<const SvxKerningItem&>(rItem).GetValue() );
-            MapUnit eUnit = rPool.GetMetric( rItem.Which() );
-            MapMode aItemMapMode(eUnit);
-            MapMode aPntMap( MapUnit::MapPoint );
+            SfxMapUnit eUnit = rPool.GetMetric( rItem.Which() );
+            MapMode aItemMapMode( (MapUnit) eUnit );
+            MapMode aPntMap( MAP_POINT );
             aSz = OutputDevice::LogicToLogic( aSz, aItemMapMode, aPntMap );
             aDebStr.append(" Points=");
             aDebStr.append(static_cast<sal_Int32>(aSz.Height()));
@@ -354,13 +354,13 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
             const std::unique_ptr<EditCharAttrib>& rAttr = pPPortion->GetNode()->GetCharAttribs().GetAttribs()[z];
             OStringBuffer aCharAttribs;
             aCharAttribs.append("\nA");
-            aCharAttribs.append(nPortion);
+            aCharAttribs.append(static_cast<sal_Int32>(nPortion));
             aCharAttribs.append(":  ");
             aCharAttribs.append(static_cast<sal_Int32>(rAttr->GetItem()->Which()));
             aCharAttribs.append('\t');
-            aCharAttribs.append(rAttr->GetStart());
+            aCharAttribs.append(static_cast<sal_Int32>(rAttr->GetStart()));
             aCharAttribs.append('\t');
-            aCharAttribs.append(rAttr->GetEnd());
+            aCharAttribs.append(static_cast<sal_Int32>(rAttr->GetEnd()));
             if ( rAttr->IsEmpty() )
                 bZeroAttr = true;
             fprintf(fp, "%s => ", aCharAttribs.getStr());
@@ -375,18 +375,18 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
         OStringBuffer aPortionStr("\nText portions: #");
         aPortionStr.append(static_cast<sal_Int32>(nTextPortions));
         aPortionStr.append(" \nA");
-        aPortionStr.append(nPortion);
+        aPortionStr.append(static_cast<sal_Int32>(nPortion));
         aPortionStr.append(": Paragraph Length = ");
-        aPortionStr.append(pPPortion->GetNode()->Len());
+        aPortionStr.append(static_cast<sal_Int32>(pPPortion->GetNode()->Len()));
         aPortionStr.append("\nA");
-        aPortionStr.append(nPortion);
+        aPortionStr.append(static_cast<sal_Int32>(nPortion));
         aPortionStr.append(": ");
         sal_Int32 n = 0;
         for ( sal_Int32 z = 0; z < nTextPortions; ++z )
         {
             TextPortion& rPortion = pPPortion->GetTextPortions()[z];
             aPortionStr.append(' ');
-            aPortionStr.append(rPortion.GetLen());
+            aPortionStr.append(static_cast<sal_Int32>(rPortion.GetLen()));
             aPortionStr.append('(');
             aPortionStr.append(static_cast<sal_Int32>(rPortion.GetSize().Width()));
             aPortionStr.append(')');
@@ -397,27 +397,28 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
             n += rPortion.GetLen();
         }
         aPortionStr.append("\nA");
-        aPortionStr.append(nPortion);
+        aPortionStr.append(static_cast<sal_Int32>(nPortion));
         aPortionStr.append(": Total length: ");
-        aPortionStr.append(n);
+        aPortionStr.append(static_cast<sal_Int32>(n));
         if ( pPPortion->GetNode()->Len() != n )
             aPortionStr.append(" => Error !!!");
         fprintf(fp, "%s", aPortionStr.getStr());
 
         fprintf( fp, "\n\nLines:" );
         // First the content ...
-        for ( sal_Int32 nLine = 0; nLine < pPPortion->GetLines().Count(); nLine++ )
+        sal_uInt16 nLine;
+        for ( nLine = 0; nLine < pPPortion->GetLines().Count(); nLine++ )
         {
             EditLine& rLine = pPPortion->GetLines()[nLine];
 
             OString aLine(OUStringToOString(pPPortion->GetNode()->Copy(rLine.GetStart(), rLine.GetEnd() - rLine.GetStart()), RTL_TEXTENCODING_ASCII_US));
-            fprintf( fp, "\nLine %" SAL_PRIdINT32 "\t>%s<", nLine, aLine.getStr() );
+            fprintf( fp, "\nLine %i\t>%s<", nLine, aLine.getStr() );
         }
         // then the internal data ...
-        for ( sal_Int32 nLine = 0; nLine < pPPortion->GetLines().Count(); nLine++ )
+        for ( nLine = 0; nLine < pPPortion->GetLines().Count(); nLine++ )
         {
             EditLine& rLine = pPPortion->GetLines()[nLine];
-            fprintf( fp, "\nZeile %" SAL_PRIdINT32 ":\tStart: %" SAL_PRIdINT32 ",\tEnd: %" SAL_PRIdINT32, nLine, rLine.GetStart(), rLine.GetEnd() );
+            fprintf( fp, "\nZeile %i:\tStart: %" SAL_PRIdINT32 ",\tEnd: %" SAL_PRIdINT32, nLine, rLine.GetStart(), rLine.GetEnd() );
             fprintf( fp, "\t\tPortions: %" SAL_PRIdINT32 " - %" SAL_PRIdINT32 ".\tHight: %i, Ascent=%i", rLine.GetStartPortion(), rLine.GetEndPortion(), rLine.GetHeight(), rLine.GetMaxAscent() );
         }
 
@@ -454,7 +455,7 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
     fprintf( fp, "\n==================   EditEngine & Views   ======================================" );
     fprintf( fp, "\n================================================================================" );
     fprintf( fp, "\nControl: %x", unsigned( pEE->GetControlWord() ) );
-    fprintf( fp, "\nRefMapMode: %i", int( pEE->pImpEditEngine->pRefDev->GetMapMode().GetMapUnit() ) );
+    fprintf( fp, "\nRefMapMode: %i", pEE->pImpEditEngine->pRefDev->GetMapMode().GetMapUnit() );
     fprintf( fp, "\nPaperSize: %li x %li", pEE->GetPaperSize().Width(), pEE->GetPaperSize().Height() );
     fprintf( fp, "\nMaxAutoPaperSize: %li x %li", pEE->GetMaxAutoPaperSize().Width(), pEE->GetMaxAutoPaperSize().Height() );
     fprintf( fp, "\nMinAutoPaperSize: %li x %li", pEE->GetMinAutoPaperSize().Width(), pEE->GetMinAutoPaperSize().Height() );
@@ -465,8 +466,8 @@ void EditDbg::ShowEditEngineData( EditEngine* pEE, bool bInfoBox )
         EditView* pV = pEE->GetView( nView );
         DBG_ASSERT( pV, "View not found!" );
         fprintf( fp, "\nView %zu: Focus=%i", nView, pV->GetWindow()->HasFocus() );
-        tools::Rectangle aR( pV->GetOutputArea() );
-        fprintf( fp, "\n  OutputArea: nX=%li, nY=%li, dX=%li, dY=%li, MapMode = %i", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() , int( pV->GetWindow()->GetMapMode().GetMapUnit() ) );
+        Rectangle aR( pV->GetOutputArea() );
+        fprintf( fp, "\n  OutputArea: nX=%li, nY=%li, dX=%li, dY=%li, MapMode = %i", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() , pV->GetWindow()->GetMapMode().GetMapUnit() );
         aR = pV->GetVisArea();
         fprintf( fp, "\n  VisArea: nX=%li, nY=%li, dX=%li, dY=%li", aR.TopLeft().X(), aR.TopLeft().Y(), aR.GetSize().Width(), aR.GetSize().Height() );
         ESelection aSel = pV->GetSelection();

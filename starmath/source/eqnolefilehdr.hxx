@@ -23,6 +23,9 @@
 #include <sal/types.h>
 #include <sot/storage.hxx>
 
+class SotStorageStream;
+class SotStorage;
+
 #define EQNOLEFILEHDR_SIZE 28
 
 class EQNOLEFILEHDR
@@ -44,7 +47,7 @@ public:
     sal_uInt32   nReserved3; // not used
     sal_uInt32   nReserved4; // not used
 
-    void Read(SotStorageStream *pS)
+    inline void Read(SotStorageStream *pS)
     {
         pS->ReadUInt16( nCBHdr );
         pS->ReadUInt32( nVersion );
@@ -55,7 +58,7 @@ public:
         pS->ReadUInt32( nReserved3 );
         pS->ReadUInt32( nReserved4 );
     }
-    void Write(SotStorageStream *pS)
+    inline void Write(SotStorageStream *pS)
     {
         pS->WriteUInt16( nCBHdr );
         pS->WriteUInt32( nVersion );

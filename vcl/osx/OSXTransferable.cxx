@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <sal/types.h>
 #include <osl/diagnose.h>
 
@@ -33,9 +29,11 @@ using namespace osl;
 using namespace cppu;
 using namespace com::sun::star::uno;
 using namespace com::sun::star::datatransfer;
+using namespace com::sun::star::io;
 using namespace com::sun::star::lang;
+using namespace com::sun::star::container;
 
-namespace
+namespace // private
 {
     bool isValidFlavor( const DataFlavor& aFlavor )
     {
@@ -44,8 +42,8 @@ namespace
       return ((len > 0) && ((dtype == cppu::UnoType<Sequence<sal_Int8>>::get()) || (dtype == cppu::UnoType<OUString>::get())));
     }
 
-bool cmpAllContentTypeParameter(const Reference<XMimeContentType> & xLhs,
-                                               const Reference<XMimeContentType> & xRhs)
+bool cmpAllContentTypeParameter(const Reference<XMimeContentType> xLhs,
+                                               const Reference<XMimeContentType> xRhs)
 {
   Sequence<OUString> xLhsFlavors = xLhs->getParameters();
   Sequence<OUString> xRhsFlavors = xRhs->getParameters();
@@ -78,9 +76,9 @@ bool cmpAllContentTypeParameter(const Reference<XMimeContentType> & xLhs,
   return true;
 }
 
-} // unnamed namespace
+} // namespace private
 
-OSXTransferable::OSXTransferable(const Reference<XMimeContentTypeFactory> & rXMimeCntFactory,
+OSXTransferable::OSXTransferable(const Reference<XMimeContentTypeFactory> rXMimeCntFactory,
                                  DataFlavorMapperPtr_t pDataFlavorMapper,
                                  NSPasteboard* pasteboard) :
   mrXMimeCntFactory(rXMimeCntFactory),
@@ -98,6 +96,7 @@ OSXTransferable::~OSXTransferable()
 }
 
 Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
+  throw( UnsupportedFlavorException, IOException, RuntimeException, std::exception )
 {
   if (!isValidFlavor(aFlavor) || !isDataFlavorSupported(aFlavor))
     {
@@ -106,7 +105,7 @@ Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
     }
 
   bool bInternal(false);
-  NSString const * sysFormat =
+  NSString* sysFormat =
       (aFlavor.MimeType.startsWith("image/png"))
       ? DataFlavorMapper::openOfficeImageToSystemFlavor( mPasteboard )
       : mDataFlavorMapper->openOfficeToSystemFlavor(aFlavor, bInternal);
@@ -114,12 +113,12 @@ Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
 
   if ([sysFormat caseInsensitiveCompare: NSFilenamesPboardType] == NSOrderedSame)
     {
-      NSArray* sysData = [mPasteboard propertyListForType: const_cast<NSString *>(sysFormat)];
+      NSArray* sysData = [mPasteboard propertyListForType: sysFormat];
       dp = DataFlavorMapper::getDataProvider(sysFormat, sysData);
     }
   else
     {
-      NSData* sysData = [mPasteboard dataForType: const_cast<NSString *>(sysFormat)];
+      NSData* sysData = [mPasteboard dataForType: sysFormat];
       dp = DataFlavorMapper::getDataProvider(sysFormat, sysData);
     }
 
@@ -133,11 +132,13 @@ Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
 }
 
 Sequence< DataFlavor > SAL_CALL OSXTransferable::getTransferDataFlavors(  )
+    throw( RuntimeException, std::exception )
 {
   return mFlavorList;
 }
 
 sal_Bool SAL_CALL OSXTransferable::isDataFlavorSupported(const DataFlavor& aFlavor)
+    throw( RuntimeException, std::exception )
 {
     for (sal_Int32 i = 0; i < mFlavorList.getLength(); i++)
       if (compareDataFlavors(aFlavor, mFlavorList[i]))

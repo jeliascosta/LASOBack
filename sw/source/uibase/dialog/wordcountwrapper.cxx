@@ -28,11 +28,6 @@ SwWordCountWrapper::SwWordCountWrapper(   vcl::Window *pParentWindow,
     SetWindow(xAbstDlg->GetWindow());
 }
 
-SwWordCountWrapper::~SwWordCountWrapper()
-{
-    xAbstDlg.disposeAndClear();
-}
-
 SfxChildWinInfo SwWordCountWrapper::GetInfo() const
 {
     SfxChildWinInfo aInfo = SfxChildWindow::GetInfo();

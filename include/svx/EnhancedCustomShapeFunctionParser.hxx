@@ -24,7 +24,6 @@
 #include <com/sun/star/drawing/EnhancedCustomShapeParameter.hpp>
 #include <com/sun/star/drawing/EnhancedCustomShapeParameterType.hpp>
 #include <memory>
-#include <ostream>
 #include <vector>
 
 #include <svx/svxdllapi.h>
@@ -45,90 +44,44 @@ class EnhancedCustomShape2d;
 
 namespace EnhancedCustomShape {
 
-enum class ExpressionFunct
+enum ExpressionFunct
 {
-    Const,
+    FUNC_CONST,
 
-    EnumPi,
-    EnumLeft,
-    EnumTop,
-    EnumRight,
-    EnumBottom,
-    EnumXStretch,
-    EnumYStretch,
-    EnumHasStroke,
-    EnumHasFill,
-    EnumWidth,
-    EnumHeight,
-    EnumLogWidth,
-    EnumLogHeight,
-    EnumAdjustment,
-    EnumEquation,
+    ENUM_FUNC_PI,
+    ENUM_FUNC_LEFT,
+    ENUM_FUNC_TOP,
+    ENUM_FUNC_RIGHT,
+    ENUM_FUNC_BOTTOM,
+    ENUM_FUNC_XSTRETCH,
+    ENUM_FUNC_YSTRETCH,
+    ENUM_FUNC_HASSTROKE,
+    ENUM_FUNC_HASFILL,
+    ENUM_FUNC_WIDTH,
+    ENUM_FUNC_HEIGHT,
+    ENUM_FUNC_LOGWIDTH,
+    ENUM_FUNC_LOGHEIGHT,
+    ENUM_FUNC_ADJUSTMENT,
+    ENUM_FUNC_EQUATION,
 
-    UnaryAbs,
-    UnarySqrt,
-    UnarySin,
-    UnaryCos,
-    UnaryTan,
-    UnaryAtan,
-    UnaryNeg,
+    UNARY_FUNC_ABS,
+    UNARY_FUNC_SQRT,
+    UNARY_FUNC_SIN,
+    UNARY_FUNC_COS,
+    UNARY_FUNC_TAN,
+    UNARY_FUNC_ATAN,
+    UNARY_FUNC_NEG,
 
-    BinaryPlus,
-    BinaryMinus,
-    BinaryMul,
-    BinaryDiv,
-    BinaryMin,
-    BinaryMax,
-    BinaryAtan2,
+    BINARY_FUNC_PLUS,
+    BINARY_FUNC_MINUS,
+    BINARY_FUNC_MUL,
+    BINARY_FUNC_DIV,
+    BINARY_FUNC_MIN,
+    BINARY_FUNC_MAX,
+    BINARY_FUNC_ATAN2,
 
-    TernaryIf
+    TERNARY_FUNC_IF
 };
-
-template< typename charT, typename traits >
-inline std::basic_ostream<charT, traits> & operator <<(
-    std::basic_ostream<charT, traits> & stream, const ExpressionFunct& eFunc )
-{
-    switch (eFunc)
-    {
-    case ExpressionFunct::Const : return stream << "const";
-
-    case ExpressionFunct::EnumPi : return stream << "pi";
-    case ExpressionFunct::EnumLeft : return stream << "left";
-    case ExpressionFunct::EnumTop : return stream << "top";
-    case ExpressionFunct::EnumRight : return stream << "right";
-    case ExpressionFunct::EnumBottom : return stream << "bottom";
-    case ExpressionFunct::EnumXStretch : return stream << "xstretch";
-    case ExpressionFunct::EnumYStretch : return stream << "ystretch";
-    case ExpressionFunct::EnumHasStroke : return stream << "hasstroke";
-    case ExpressionFunct::EnumHasFill : return stream << "hasfill";
-    case ExpressionFunct::EnumWidth : return stream << "width";
-    case ExpressionFunct::EnumHeight : return stream << "height";
-    case ExpressionFunct::EnumLogWidth : return stream << "logwidth";
-    case ExpressionFunct::EnumLogHeight : return stream << "logheight";
-    case ExpressionFunct::EnumAdjustment : return stream << "adjustment";
-    case ExpressionFunct::EnumEquation : return stream << "equation";
-
-    case ExpressionFunct::UnaryAbs : return stream << "abs";
-    case ExpressionFunct::UnarySqrt : return stream << "sqrt";
-    case ExpressionFunct::UnarySin : return stream << "sin";
-    case ExpressionFunct::UnaryCos : return stream << "cos";
-    case ExpressionFunct::UnaryTan : return stream << "tan";
-    case ExpressionFunct::UnaryAtan : return stream << "atan";
-    case ExpressionFunct::UnaryNeg : return stream << "neg";
-
-    case ExpressionFunct::BinaryPlus : return stream << "plus";
-    case ExpressionFunct::BinaryMinus : return stream << "minus";
-    case ExpressionFunct::BinaryMul : return stream << "mul";
-    case ExpressionFunct::BinaryDiv : return stream << "div";
-    case ExpressionFunct::BinaryMin : return stream << "min";
-    case ExpressionFunct::BinaryMax : return stream << "max";
-    case ExpressionFunct::BinaryAtan2 : return stream << "atan2";
-
-    case ExpressionFunct::TernaryIf : return stream << "if";
-
-    default: return stream << "?(" << (int)eFunc << ")";
-    }
-}
 
 #define EXPRESSION_FLAG_SUMANGLE_MODE 1
 
@@ -166,6 +119,7 @@ public:
     virtual css::drawing::EnhancedCustomShapeParameter fillNode(
         std::vector< EnhancedCustomShapeEquation >& rEquations, ExpressionNode* pOptionalArg, sal_uInt32 nFlags ) = 0;
 };
+typedef std::shared_ptr< ExpressionNode > ExpressionNodeSharedPtr;
 
 /** This exception is thrown, when the arithmetic expression
     parser failed to parse a string.
@@ -233,7 +187,7 @@ public:
         @return the generated function object.
        */
 
-    SVX_DLLPUBLIC static std::shared_ptr<ExpressionNode> parseFunction( const OUString& rFunction, const EnhancedCustomShape2d& rCustoShape );
+    SVX_DLLPUBLIC static ExpressionNodeSharedPtr parseFunction( const OUString& rFunction, const EnhancedCustomShape2d& rCustoShape );
 
     // this is a singleton
     FunctionParser() = delete;

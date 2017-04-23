@@ -56,6 +56,7 @@ public:
         SfxItemPool & rItemPool,
         const awt::Size* pRefSize,
         const uno::Reference< beans::XPropertySet > & xParentProp );
+    virtual ~FormattedStringsConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
@@ -84,6 +85,10 @@ FormattedStringsConverter::FormattedStringsConverter(
     }
 }
 
+FormattedStringsConverter::~FormattedStringsConverter()
+{
+}
+
 const sal_uInt16 * FormattedStringsConverter::GetWhichPairs() const
 {
     return nCharacterPropertyWhichPairs;
@@ -100,7 +105,7 @@ TitleItemConverter::TitleItemConverter(
     m_aConverters.push_back( new GraphicPropertyItemConverter(
                                  rPropertySet, rItemPool, rDrawModel,
                                  xNamedPropertyContainerFactory,
-                                 GraphicObjectType::LineAndFillProperties ));
+                                 GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES ));
 
     // CharacterProperties are not at the title but at its contained XFormattedString objects
     // take the first formatted string in the sequence
@@ -118,7 +123,7 @@ TitleItemConverter::TitleItemConverter(
 
 TitleItemConverter::~TitleItemConverter()
 {
-    std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
+    ::std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
 }
 
 void TitleItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
@@ -161,6 +166,7 @@ bool TitleItemConverter::GetItemProperty( tWhichIdType nWhichId, tPropertyNameWi
 
 bool TitleItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -178,7 +184,7 @@ bool TitleItemConverter::ApplySpecialItem(
 
             if( ! bPropExisted || fOldVal != fVal )
             {
-                GetPropertySet()->setPropertyValue( "TextRotation" , uno::Any( fVal ));
+                GetPropertySet()->setPropertyValue( "TextRotation" , uno::makeAny( fVal ));
                 bChanged = true;
             }
         }
@@ -190,6 +196,7 @@ bool TitleItemConverter::ApplySpecialItem(
 
 void TitleItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+    throw( uno::Exception )
 {
     switch( nWhichId )
     {

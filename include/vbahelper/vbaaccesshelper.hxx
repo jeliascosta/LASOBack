@@ -19,31 +19,21 @@
 #ifndef INCLUDED_VBAHELPER_VBAACCESSHELPER_HXX
 #define INCLUDED_VBAHELPER_VBAACCESSHELPER_HXX
 
-#include <memory>
-
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <basic/basmgr.hxx>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/Exception.hpp>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/Sequence.hxx>
-#include <com/sun/star/uno/XInterface.hpp>
-#include <osl/diagnose.h>
-//#define VBAHELPER_DLLIMPLEMENTATION
-#include <vbahelper/vbadllapi.h>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <sfx2/objsh.hxx>
 #include <sfx2/docfilt.hxx>
 #include <sfx2/docfile.hxx>
+//#define VBAHELPER_DLLIMPLEMENTATION
+#include <vbahelper/vbadllapi.h>
+#include <memory>
 
 namespace ooo
 {
     namespace vba
     {
 
-        inline css::uno::Reference< css::lang::XMultiServiceFactory > getVBAServiceFactory( SfxObjectShell* pShell )
+        VBAHELPER_DLLPRIVATE inline css::uno::Reference< css::lang::XMultiServiceFactory > getVBAServiceFactory( SfxObjectShell* pShell )
         {
             css::uno::Any aUnoVar;
             if ( !pShell || ! pShell->GetBasicManager()->GetGlobalUNOConstant( "VBAGlobals", aUnoVar ) )
@@ -52,8 +42,7 @@ namespace ooo
             return xVBAFactory;
         }
 
-        /// @throws css::uno::Exception
-        inline css::uno::Reference< css::uno::XInterface > createVBAUnoAPIServiceWithArgs( SfxObjectShell* pShell,  const sal_Char* _pAsciiName, const css::uno::Sequence< css::uno::Any >& aArgs )
+        VBAHELPER_DLLPRIVATE inline css::uno::Reference< css::uno::XInterface > createVBAUnoAPIServiceWithArgs( SfxObjectShell* pShell,  const sal_Char* _pAsciiName, const css::uno::Sequence< css::uno::Any >& aArgs ) throw (css::uno::Exception)
         {
             OSL_PRECOND( pShell, "createVBAUnoAPIService: no shell!" );
             OUString sVarName( OUString::createFromAscii( _pAsciiName ) );
@@ -62,7 +51,7 @@ namespace ooo
         }
 
 
-        inline bool isAlienDoc( SfxObjectShell& rDocShell, const char* pMimeType )
+        VBAHELPER_DLLPRIVATE inline bool isAlienDoc( SfxObjectShell& rDocShell, const char* pMimeType )
         {
             bool bRes( false );
             const SfxMedium *pMedium = rDocShell.GetMedium();
@@ -71,10 +60,10 @@ namespace ooo
                 bRes = pFilt->GetMimeType().equalsAscii( pMimeType );
             return bRes;
         }
-        inline bool isAlienExcelDoc( SfxObjectShell& rDocShell ) { return isAlienDoc( rDocShell, "application/vnd.ms-excel" ); }
+        VBAHELPER_DLLPRIVATE inline bool isAlienExcelDoc( SfxObjectShell& rDocShell ) { return isAlienDoc( rDocShell, "application/vnd.ms-excel" ); }
         //VBAHELPER_DLLPRIVATE inline bool isAlienWordDoc( SfxObjectShell& rDocShell ) { return isAlienDoc( rDocShell, "application/vnd.ms-word" ); }
         // word seems to return an erroneous mime type :-/ "application/msword"  not consistent with the excel one
-        inline bool isAlienWordDoc( SfxObjectShell& rDocShell ) { return isAlienDoc( rDocShell, "application/msword" ); }
+        VBAHELPER_DLLPRIVATE inline bool isAlienWordDoc( SfxObjectShell& rDocShell ) { return isAlienDoc( rDocShell, "application/msword" ); }
 
     } // openoffice
 } // org

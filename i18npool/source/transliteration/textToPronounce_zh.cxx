@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/i18n/MultipleCharsOutputException.hpp>
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
 
@@ -29,7 +26,7 @@ using namespace com::sun::star::uno;
 
 namespace com { namespace sun { namespace star { namespace i18n {
 
-sal_Int16 SAL_CALL TextToPronounce_zh::getType()
+sal_Int16 SAL_CALL TextToPronounce_zh::getType() throw (RuntimeException, std::exception)
 {
     return TransliterationType::ONE_TO_ONE| TransliterationType::IGNORE;
 }
@@ -49,7 +46,7 @@ TextToPronounce_zh::getPronounce(const sal_Unicode ch)
 
 OUString SAL_CALL
 TextToPronounce_zh::folding(const OUString & inStr, sal_Int32 startPos,
-        sal_Int32 nCount, Sequence< sal_Int32 > & offset)
+        sal_Int32 nCount, Sequence< sal_Int32 > & offset) throw (RuntimeException, std::exception)
 {
     OUStringBuffer sb;
     const sal_Unicode * chArr = inStr.getStr() + startPos;
@@ -72,13 +69,13 @@ TextToPronounce_zh::folding(const OUString & inStr, sal_Int32 startPos,
 }
 
 OUString SAL_CALL
-TextToPronounce_zh::transliterateChar2String( sal_Unicode inChar)
+TextToPronounce_zh::transliterateChar2String( sal_Unicode inChar) throw(RuntimeException, std::exception)
 {
     return OUString(getPronounce(inChar));
 }
 
 sal_Unicode SAL_CALL
-TextToPronounce_zh::transliterateChar2Char( sal_Unicode inChar)
+TextToPronounce_zh::transliterateChar2Char( sal_Unicode inChar) throw(RuntimeException, MultipleCharsOutputException, std::exception)
 {
     const sal_Unicode* pron=getPronounce(inChar);
     if (!pron || !pron[0])
@@ -91,6 +88,7 @@ TextToPronounce_zh::transliterateChar2Char( sal_Unicode inChar)
 sal_Bool SAL_CALL
 TextToPronounce_zh::equals( const OUString & str1, sal_Int32 pos1, sal_Int32 nCount1, sal_Int32 & nMatch1,
         const OUString & str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32 & nMatch2)
+        throw (RuntimeException, std::exception)
 {
     sal_Int32 realCount;
     int i;  // loop variable

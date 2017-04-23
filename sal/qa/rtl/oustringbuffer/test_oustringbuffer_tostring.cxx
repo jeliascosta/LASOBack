@@ -42,12 +42,12 @@ CPPUNIT_TEST_SUITE_REGISTRATION(test::oustringbuffer::ToString);
 void test::oustringbuffer::ToString::testToString() {
     rtl::OUStringBuffer sb(rtl::OUString("test string"));
     rtl::OUString str = sb.toString();
-    CPPUNIT_ASSERT_EQUAL( rtl::OUString("test string"), str );
+    CPPUNIT_ASSERT( str == "test string" );
     // returned OUString must be independent from sb
-    sb.append( 'a' );
-    CPPUNIT_ASSERT_EQUAL( rtl::OUString("test string"), str );
+    sb.append( (sal_Unicode)'a' );
+    CPPUNIT_ASSERT( str == "test string" );
     sb.setLength(0);
-    CPPUNIT_ASSERT_EQUAL( rtl::OUString("test string"), str );
+    CPPUNIT_ASSERT( str == "test string" );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

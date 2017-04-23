@@ -21,16 +21,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <rscmgr.hxx>
 #include <rscdb.hxx>
 
-RscMgr::RscMgr( Atom nId, RESOURCE_TYPE nTypeId, RscTop * pSuperCl )
+RscMgr::RscMgr( Atom nId, sal_uInt32 nTypeId, RscTop * pSuperCl )
     : RscClass( nId, nTypeId, pSuperCl )
 {
 }
 
-sal_uInt32 RscMgr::Size() const
+sal_uInt32 RscMgr::Size()
 {
     return RscClass::Size() + ALIGNED_SIZE( sizeof( RscMgrInst ) );
 }
@@ -157,7 +158,7 @@ void RscMgr::WriteSrc( const RSCINST &, FILE *, RscTypCont *, sal_uInt32,
 
 ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
                                RscTypCont * pTC, const RscId &rId,
-                               sal_uInt32 nDeep )
+                               sal_uInt32 nDeep, bool bExtra )
 {
     RscMgrInst *    pClassData;
     ERRTYPE         aError;
@@ -195,13 +196,13 @@ ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
             if( pTmpRefClass == rInst.pClass )
             {
                 aError = aRefI.pClass->WriteRcHeader( aRefI, rMem, pTC,
-                                                       rId, nDeep );
+                                                       rId, nDeep, bExtra );
             }
             else
             {
                 RSCINST aRefInst = rInst.pClass->Create( nullptr, aRefI );
                 aError = aRefI.pClass->WriteRcHeader( aRefInst, rMem, pTC,
-                                                       rId, nDeep );
+                                                       rId, nDeep, bExtra );
                 pTmpRefClass->Destroy( aRefInst );
             }
         }
@@ -212,15 +213,15 @@ ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
 
             nOldSize = rMem.IncSize( 16 /*sizeof( RSHEADER_TYPE )*/ );
 
-            aError = rInst.pClass->WriteRc( rInst, rMem, pTC, nDeep );
+            aError = rInst.pClass->WriteRc( rInst, rMem, pTC, nDeep, bExtra );
             if( aError.IsOk() )
-                aError = WriteInstRc( rInst, rMem, pTC, nDeep );
+                aError = WriteInstRc( rInst, rMem, pTC, nDeep, bExtra );
             nLocalSize = rMem.Size();
 
             if( aError.IsOk() )
             {
                 // RscClass is skipped
-                aError = RscTop::WriteRc( rInst, rMem, pTC, nDeep );
+                aError = RscTop::WriteRc( rInst, rMem, pTC, nDeep, bExtra );
             }
 
             /*
@@ -232,7 +233,7 @@ ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
                 sal_uInt32          nLocalOff;  // local offset
             };
             */
-            sal_uInt32 nID = rId.GetNumber();
+            sal_uInt32 nID = rId;
             rMem.PutAt( nOldSize, nID );
             rMem.PutAt( nOldSize +4, (sal_uInt32)rInst.pClass->GetTypId() );
             rMem.PutAt( nOldSize +8, (sal_uInt32)(rMem.Size() - nOldSize) );
@@ -244,7 +245,7 @@ ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
 }
 
 ERRTYPE RscMgr::WriteRc( const RSCINST &, RscWriteRc &,
-                         RscTypCont *, sal_uInt32 )
+                         RscTypCont *, sal_uInt32, bool )
 
 {
     return ERR_OK;

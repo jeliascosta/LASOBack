@@ -33,7 +33,7 @@ public:
                            const OUString& rLName,
                            const XMLPropertyState& rProp,
                            ::std::vector< XMLPropertyState > &rProps );
-    virtual ~XMLSymbolImageContext() override;
+    virtual ~XMLSymbolImageContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual SvXMLImportContext *CreateChildContext(

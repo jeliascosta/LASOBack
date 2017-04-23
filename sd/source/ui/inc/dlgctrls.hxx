@@ -26,7 +26,6 @@
 #include "sdresid.hxx"
 #include "fadedef.h"
 #include "sddllapi.h"
-#include <memory>
 
 /**
  * FadeEffectLB
@@ -37,10 +36,15 @@ class SD_DLLPUBLIC FadeEffectLB : public ListBox
 {
 public:
     FadeEffectLB(vcl::Window* pParent, WinBits nStyle);
-    virtual ~FadeEffectLB() override;
+    virtual ~FadeEffectLB();
     virtual void dispose() override;
+    void         Fill();
 
-    std::unique_ptr<FadeEffectLBImpl> mpImpl;
+    void         FillVariantLB(ListBox& rVariantLB);
+
+    void                        applySelected( SdPage* pSlide, ListBox& rVariantLB ) const;
+
+    FadeEffectLBImpl*           mpImpl;
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_DLGCTRLS_HXX

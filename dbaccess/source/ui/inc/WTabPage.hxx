@@ -30,12 +30,12 @@ namespace dbaui
     {
     protected:
         VclPtr<OCopyTableWizard>           m_pParent;
-        bool                    m_bFirstTime;   // Page is called the first time; should be set in the reset methode
+        bool                    m_bFirstTime;   // Page wird das erste mal gerufen ; should be set in the reset methode
 
         OWizardPage( vcl::Window *pParent, const OString& rID, const OUString& rUIXMLDescription );
 
     public:
-        virtual ~OWizardPage() override;
+        virtual ~OWizardPage();
         virtual void dispose() override;
         virtual void        Reset ( )           = 0;
         virtual bool    LeavePage()         = 0;

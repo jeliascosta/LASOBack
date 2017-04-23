@@ -36,7 +36,6 @@
 #include "glob.hrc"
 #include "drawdoc.hxx"
 #include "ViewShell.hxx"
-#include "ViewShellBase.hxx"
 #include "anminfo.hxx"
 #include "unoaprms.hxx"
 #include "sdundogr.hxx"
@@ -123,7 +122,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
 
     // inspect first object
     pMark = rMarkList.GetMark(0);
-    pInfo = SdDrawDocument::GetAnimationInfo(pMark->GetMarkedSdrObj());
+    pInfo = mpDoc->GetAnimationInfo(pMark->GetMarkedSdrObj());
     if( pInfo )
     {
         bActive             = pInfo->mbActive;
@@ -180,7 +179,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
     {
         pMark = rMarkList.GetMark( nObject );
         SdrObject* pObject = pMark->GetMarkedSdrObj();
-        pInfo = SdDrawDocument::GetAnimationInfo(pObject);
+        pInfo = mpDoc->GetAnimationInfo(pObject);
         if( pInfo )
         {
             if( bActive != pInfo->mbActive )
@@ -291,11 +290,11 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
         SdrObject* pObject2 = rMarkList.GetMark(1)->GetMarkedSdrObj();
         SdrObjKind eKind1   = (SdrObjKind)pObject1->GetObjIdentifier();
         SdrObjKind eKind2   = (SdrObjKind)pObject2->GetObjIdentifier();
-        SdAnimationInfo* pInfo1 = SdDrawDocument::GetAnimationInfo(pObject1);
-        SdAnimationInfo* pInfo2 = SdDrawDocument::GetAnimationInfo(pObject2);
+        SdAnimationInfo* pInfo1 = mpDoc->GetAnimationInfo(pObject1);
+        SdAnimationInfo* pInfo2 = mpDoc->GetAnimationInfo(pObject2);
         pInfo  = nullptr;
 
-        if (pObject1->GetObjInventor() == SdrInventor::Default &&
+        if (pObject1->GetObjInventor() == SdrInventor &&
             ((eKind1 == OBJ_LINE) ||                        // 2 point line
              (eKind1 == OBJ_PLIN) ||                        // Polygon
              (eKind1 == OBJ_PATHLINE))                &&    // Bezier curve
@@ -304,7 +303,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
             pInfo = pInfo2;
         }
 
-        if (pObject2->GetObjInventor() == SdrInventor::Default &&
+        if (pObject2->GetObjInventor() == SdrInventor &&
             ((eKind2 == OBJ_LINE) ||                        // 2 point line
              (eKind2 == OBJ_PLIN) ||                        // Polygon
              (eKind2 == OBJ_PATHLINE))                &&    // Bezier curve
@@ -354,14 +353,14 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
         else if (nEffectSet == ATTR_MIXED)
             aSet.InvalidateItem( ATTR_ANIMATION_EFFECT );
         else
-            aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_EFFECT, (sal_uInt16)presentation::AnimationEffect_NONE));
+            aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_EFFECT, presentation::AnimationEffect_NONE));
 
         if (nTextEffectSet == ATTR_SET)
             aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_TEXTEFFECT, (sal_uInt16)eTextEffect));
         else if (nTextEffectSet == ATTR_MIXED)
             aSet.InvalidateItem( ATTR_ANIMATION_TEXTEFFECT );
         else
-            aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_TEXTEFFECT, (sal_uInt16)presentation::AnimationEffect_NONE));
+            aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_TEXTEFFECT, presentation::AnimationEffect_NONE));
 
         if (nSpeedSet == ATTR_SET)
             aSet.Put(SfxAllEnumItem(ATTR_ANIMATION_SPEED, (sal_uInt16)eSpeed));
@@ -413,7 +412,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
         else if (nClickActionSet == ATTR_MIXED)
             aSet.InvalidateItem(ATTR_ACTION);
         else
-            aSet.Put(SfxAllEnumItem(ATTR_ACTION, (sal_uInt16)presentation::ClickAction_NONE));
+            aSet.Put(SfxAllEnumItem(ATTR_ACTION, presentation::ClickAction_NONE));
 
         if (nBookmarkSet == ATTR_SET)
             aSet.Put(SfxStringItem(ATTR_ACTION_FILENAME, aBookmark));
@@ -425,7 +424,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
         else if (nSecondEffectSet == ATTR_MIXED)
             aSet.InvalidateItem( ATTR_ACTION_EFFECT );
         else
-            aSet.Put(SfxAllEnumItem(ATTR_ACTION_EFFECT, (sal_uInt16)presentation::AnimationEffect_NONE));
+            aSet.Put(SfxAllEnumItem(ATTR_ACTION_EFFECT, presentation::AnimationEffect_NONE));
 
         if (nSecondSpeedSet == ATTR_SET)
             aSet.Put(SfxAllEnumItem(ATTR_ACTION_EFFECTSPEED, (sal_uInt16)eSecondSpeed));
@@ -447,7 +446,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
             aSet.Put(SfxBoolItem(ATTR_ACTION_PLAYFULL, false));
 
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact ? pFact->CreatSdActionDialog(mpViewShell->GetActiveWindow(), &aSet, mpView) : nullptr);
+        std::unique_ptr<SfxAbstractDialog> pDlg(pFact ? pFact->CreatSdActionDialog(mpViewShell->GetActiveWindow(), &aSet, mpView) : nullptr);
 
         short nResult = pDlg ? pDlg->Execute() : static_cast<short>(RET_CANCEL);
 
@@ -620,7 +619,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
 
         // with 'following curves', we have an additional UndoAction
         // therefore cling? here
-        pUndoMgr->EnterListAction(aComment, aComment, 0, mpViewShell->GetViewShellBase().GetViewShellId());
+        pUndoMgr->EnterListAction(aComment, aComment);
 
         // create undo group
         SdUndoGroup* pUndoGroup = new SdUndoGroup(mpDoc);
@@ -637,7 +636,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
             SdrObjKind eKind2   = (SdrObjKind)pObject2->GetObjIdentifier();
             SdrObject* pRunningObj = nullptr;
 
-            if (pObject1->GetObjInventor() == SdrInventor::Default &&
+            if (pObject1->GetObjInventor() == SdrInventor &&
                 ((eKind1 == OBJ_LINE) ||        // 2 point line
                  (eKind1 == OBJ_PLIN) ||        // Polygon
                  (eKind1 == OBJ_PATHLINE)))     // Bezier curve
@@ -646,7 +645,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
                 pRunningObj = pObject2;
             }
 
-            if (pObject2->GetObjInventor() == SdrInventor::Default &&
+            if (pObject2->GetObjInventor() == SdrInventor &&
                 ((eKind2 == OBJ_LINE) ||        // 2 point line
                  (eKind2 == OBJ_PLIN) ||        // Polygon
                  (eKind2 == OBJ_PATHLINE)))     // Bezier curve
@@ -660,7 +659,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
             // push the running object to the end of the curve
             if (pRunningObj)
             {
-                ::tools::Rectangle aCurRect(pRunningObj->GetLogicRect());
+                Rectangle aCurRect(pRunningObj->GetLogicRect());
                 Point     aCurCenter(aCurRect.Center());
                 const ::basegfx::B2DPolyPolygon& rPolyPolygon = pPath->GetPathPoly();
                 sal_uInt32 nNoOfPolygons(rPolyPolygon.count());
@@ -679,7 +678,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
         {
             SdrObject* pObject = rMarkList.GetMark(nObject)->GetMarkedSdrObj();
 
-            pInfo = SdDrawDocument::GetAnimationInfo(pObject);
+            pInfo = mpDoc->GetAnimationInfo(pObject);
 
             bool bCreated = false;
             if( !pInfo )
@@ -729,7 +728,7 @@ void FuObjectAnimationParameters::DoExecute( SfxRequest& rReq )
                 pAction->SetSoundOn(pInfo->mbSoundOn, bSoundOn);
                 pAction->SetSound(pInfo->maSoundFile, aSound);
                 pAction->SetPlayFull(pInfo->mbPlayFull, bPlayFull);
-                pAction->SetPathObj(nullptr, pPath);
+                pAction->SetPathObj(pInfo->mpPathObj, pPath);
                 pAction->SetClickAction(pInfo->meClickAction, eClickAction);
                 pAction->SetBookmark(pInfo->GetBookmark(), aBookmark);
                 pAction->SetVerb(pInfo->mnVerb, (sal_uInt16)pInfo->GetBookmark().toInt32() );

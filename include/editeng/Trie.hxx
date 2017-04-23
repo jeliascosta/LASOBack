@@ -21,14 +21,14 @@ namespace editeng
 
 struct TrieNode;
 
-class EDITENG_DLLPUBLIC Trie final
+class EDITENG_DLLPUBLIC Trie
 {
 private:
     std::unique_ptr<TrieNode> mRoot;
 
 public:
     Trie();
-    ~Trie();
+    virtual ~Trie();
 
     void insert(const OUString& sInputString) const;
     void findSuggestions(const OUString& sWordPart, std::vector<OUString>& rSuggestionList) const;

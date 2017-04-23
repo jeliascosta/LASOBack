@@ -29,23 +29,26 @@ class UNOTOOLS_DLLPUBLIC SvtSaveOptions: public utl::detail::Options
 
 public:
 
-    enum class EOption
+    enum EOption
     {
-        AutoSaveTime,
-        UseUserData,
-        Backup,
-        AutoSave,
-        AutoSavePrompt,
-        DocInfSave,
-        SaveWorkingSet,
-        SaveDocView,
-        SaveRelInet,
-        SaveRelFsys,
-        DoPrettyPrinting,
-        WarnAlienFormat,
-        LoadDocPrinter,
-        OdfDefaultVersion,
-        UserAutoSave,
+        E_AUTOSAVETIME,
+        E_USEUSERDATA,
+        E_BACKUP,
+        E_AUTOSAVE,
+        E_AUTOSAVEPROMPT,
+        E_DOCINFSAVE,
+        E_SAVEWORKINGSET,
+        E_SAVEDOCVIEW,
+        E_SAVERELINET,
+        E_SAVERELFSYS,
+        E_SAVEUNPACKED,
+        E_DOPRETTYPRINTING,
+        E_WARNALIENFORMAT,
+        E_LOADDOCPRINTER,
+        E_ODFDEFAULTVERSION,
+        E_USESHA1INODF12,
+        E_USEBLOWFISHINODF12,
+        E_USERAUTOSAVE,
     };
 
     /** Keep enum values sorted that a less or greater compare maps to older
@@ -86,7 +89,7 @@ public:
     };
 
     SvtSaveOptions();
-    virtual ~SvtSaveOptions() override;
+    virtual ~SvtSaveOptions();
 
     void                    SetAutoSaveTime( sal_Int32 n );
     sal_Int32               GetAutoSaveTime() const;

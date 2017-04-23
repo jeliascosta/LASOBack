@@ -27,7 +27,7 @@
 namespace basctl
 {
 
-IMPL_LINK( DlgEdFunc, ScrollTimeout, Timer *, pTimer, void )
+IMPL_LINK_TYPED( DlgEdFunc, ScrollTimeout, Timer *, pTimer, void )
 {
     (void)pTimer;
     vcl::Window& rWindow = rParent.GetWindow();
@@ -43,7 +43,7 @@ void DlgEdFunc::ForceScroll( const Point& rPos )
     vcl::Window& rWindow  = rParent.GetWindow();
 
     static Point aDefPoint;
-    tools::Rectangle aOutRect( aDefPoint, rWindow.GetOutputSizePixel() );
+    Rectangle aOutRect( aDefPoint, rWindow.GetOutputSizePixel() );
     aOutRect = rWindow.PixelToLogic( aOutRect );
 
     ScrollBar* pHScroll = rParent.GetHScroll();
@@ -80,7 +80,7 @@ void DlgEdFunc::ForceScroll( const Point& rPos )
 DlgEdFunc::DlgEdFunc (DlgEditor& rParent_) :
     rParent(rParent_)
 {
-    aScrollTimer.SetInvokeHandler( LINK( this, DlgEdFunc, ScrollTimeout ) );
+    aScrollTimer.SetTimeoutHdl( LINK( this, DlgEdFunc, ScrollTimeout ) );
     aScrollTimer.SetTimeout( SELENG_AUTOREPEAT_INTERVAL );
 }
 
@@ -161,7 +161,7 @@ bool DlgEdFunc::KeyInput( const KeyEvent& rKEvt )
                 if (SdrHdl* pHdl = rHdlList.GetFocusHdl())
                 {
                     Point aHdlPosition( pHdl->GetPos() );
-                    tools::Rectangle aVisRect( aHdlPosition - Point( 100, 100 ), Size( 200, 200 ) );
+                    Rectangle aVisRect( aHdlPosition - Point( 100, 100 ), Size( 200, 200 ) );
                     rView.MakeVisible( aVisRect, rWindow );
                 }
 
@@ -227,11 +227,11 @@ bool DlgEdFunc::KeyInput( const KeyEvent& rKEvt )
                     if ( rView.IsMoveAllowed() )
                     {
                         // restrict movement to work area
-                        const tools::Rectangle& rWorkArea = rView.GetWorkArea();
+                        const Rectangle& rWorkArea = rView.GetWorkArea();
 
                         if ( !rWorkArea.IsEmpty() )
                         {
-                            tools::Rectangle aMarkRect( rView.GetMarkedObjRect() );
+                            Rectangle aMarkRect( rView.GetMarkedObjRect() );
                             aMarkRect.Move( nX, nY );
 
                             if ( !rWorkArea.IsInside( aMarkRect ) )
@@ -291,7 +291,7 @@ bool DlgEdFunc::KeyInput( const KeyEvent& rKEvt )
                         }
 
                         // make moved handle visible
-                        tools::Rectangle aVisRect( aEndPoint - Point( 100, 100 ), Size( 200, 200 ) );
+                        Rectangle aVisRect( aEndPoint - Point( 100, 100 ), Size( 200, 200 ) );
                         rView.MakeVisible( aVisRect, rWindow );
                     }
                 }
@@ -390,7 +390,7 @@ bool DlgEdFuncInsert::MouseButtonUp( const MouseEvent& rMEvt )
     // object creation active?
     if ( rView.IsCreateObj() )
     {
-        rView.EndCreateObj(SdrCreateCmd::ForceEnd);
+        rView.EndCreateObj(SDRCREATE_FORCEEND);
 
         if ( !rView.AreObjectsMarked() )
         {
@@ -464,9 +464,9 @@ void DlgEdFuncSelect::MouseButtonDown( const MouseEvent& rMEvt )
                 rView.UnmarkAll();
             else
             {
+                SdrObject* pObj;
                 SdrPageView* pPV;
-                SdrObject* pObj = rView.PickObj(aMDPos, nHitLog, pPV);
-                if (pObj)
+                if( rView.PickObj( aMDPos, nHitLog, pObj, pPV ) )
                 {
                     //if (dynamic_cast<DlgEdForm*>(pObj))
                     //  rView.UnmarkAll();

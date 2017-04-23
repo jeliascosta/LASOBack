@@ -172,7 +172,7 @@ template< typename T > css::uno::Any parseSingleValue(
     if (!parseValue(text, &val)) {
         throw css::uno::RuntimeException("invalid value");
     }
-    return css::uno::Any(val);
+    return css::uno::makeAny(val);
 }
 
 template< typename T > css::uno::Any parseListValue(
@@ -203,7 +203,7 @@ template< typename T > css::uno::Any parseListValue(
             t.length -= i + sep.length;
         }
     }
-    return css::uno::Any(comphelper::containerToSequence(seq));
+    return css::uno::makeAny(comphelper::containerToSequence(seq));
 }
 
 css::uno::Any parseValue(
@@ -256,12 +256,12 @@ ValueParser::~ValueParser() {}
 xmlreader::XmlReader::Text ValueParser::getTextMode() const {
     if (node_.is()) {
         switch (state_) {
-        case State::Text:
+        case STATE_TEXT:
             if (!items_.empty()) {
                 break;
             }
             SAL_FALLTHROUGH;
-        case State::IT:
+        case STATE_IT:
             return
                 (type_ == TYPE_STRING || type_ == TYPE_STRING_LIST ||
                  !separator_.isEmpty())
@@ -282,18 +282,18 @@ bool ValueParser::startElement(
         return false;
     }
     switch (state_) {
-    case State::Text:
+    case STATE_TEXT:
         if (nsId == xmlreader::XmlReader::NAMESPACE_NONE && name.equals("it") &&
             isListType(type_) && separator_.isEmpty())
         {
             pad_.clear();
                 // before first <it>, characters are not ignored; assume they
                 // are only whitespace
-            state_ = State::IT;
+            state_ = STATE_IT;
             return true;
         }
         SAL_FALLTHROUGH;
-    case State::IT:
+    case STATE_IT:
         if (nsId == xmlreader::XmlReader::NAMESPACE_NONE &&
             name.equals("unicode") &&
             (type_ == TYPE_STRING || type_ == TYPE_STRING_LIST))
@@ -327,7 +327,7 @@ bool ValueParser::startElement(
                 throw css::uno::RuntimeException(
                     "bad unicode scalar attribute in " + reader.getUrl());
             }
-            state_ = state_ == State::Text ? State::TextUnicode : State::ITUnicode;
+            state_ = State(state_ + 1);
             return true;
         }
         break;
@@ -343,7 +343,7 @@ bool ValueParser::endElement() {
         return false;
     }
     switch (state_) {
-    case State::Text:
+    case STATE_TEXT:
         {
             css::uno::Any *pValue = nullptr;
 
@@ -407,17 +407,15 @@ bool ValueParser::endElement() {
             node_.clear();
         }
         break;
-    case State::TextUnicode:
-        state_ = State::Text;
+    case STATE_TEXT_UNICODE:
+    case STATE_IT_UNICODE:
+        state_ = State(state_ - 1);
         break;
-    case State::ITUnicode:
-        state_ = State::IT;
-        break;
-    case State::IT:
+    case STATE_IT:
         items_.push_back(
             parseValue(OString(), pad_.get(), elementType(type_)));
         pad_.clear();
-        state_ = State::Text;
+        state_ = STATE_TEXT;
         break;
     }
     return true;
@@ -425,7 +423,7 @@ bool ValueParser::endElement() {
 
 void ValueParser::characters(xmlreader::Span const & text) {
     if (node_.is()) {
-        assert(state_ == State::Text || state_ == State::IT);
+        assert(state_ == STATE_TEXT || state_ == STATE_IT);
         pad_.add(text.begin, text.length);
     }
 }
@@ -436,7 +434,7 @@ void ValueParser::start(
     assert(node.is() && !node_.is());
     node_ = node;
     localizedName_ = localizedName;
-    state_ = State::Text;
+    state_ = STATE_TEXT;
 }
 
 
@@ -447,7 +445,7 @@ template< typename T > css::uno::Any ValueParser::convertItems() {
         assert(ok);
         (void) ok; // avoid warnings
     }
-    return css::uno::Any(seq);
+    return css::uno::makeAny(seq);
 }
 
 }

@@ -19,7 +19,6 @@
 #ifndef INCLUDED_FILTER_SOURCE_MSFILTER_ESCHESDO_HXX
 #define INCLUDED_FILTER_SOURCE_MSFILTER_ESCHESDO_HXX
 #include <filter/msfilter/escherex.hxx>
-#include <o3tl/any.hxx>
 #include <svx/unopage.hxx>
 #include <vcl/mapmod.hxx>
 
@@ -29,15 +28,14 @@
 enum ImplEESdrPageType { NORMAL = 0, MASTER = 1, NOTICE = 2, UNDEFINED = 3 };
 
 class ImplEESdrWriter;
-class SdrObject;
-class SdrPage;
+class ImplEscherExSdr;
 
 class ImplEESdrObject
 {
     css::uno::Reference< css::drawing::XShape >           mXShape;
 //  XTextRef            mXText; // TextRef des globalen Text
     css::uno::Any       mAny;
-    tools::Rectangle           maRect;
+    Rectangle           maRect;
     OUString            mType;
     sal_uInt32          mnShapeId;
     sal_uInt32          mnTextSize;
@@ -51,7 +49,7 @@ class ImplEESdrObject
 public:
     css::uno::Reference< css::beans::XPropertySet >   mXPropSet;
 
-    ImplEESdrObject( ImplEESdrWriter& rEx, const SdrObject& rObj, bool bOOXML );
+    ImplEESdrObject( ImplEscherExSdr& rEx, const SdrObject& rObj, bool bOOXML = false );
     ImplEESdrObject( ImplEESdrWriter& rEx, const css::uno::Reference< css::drawing::XShape >& rShape );
     ~ImplEESdrObject();
 
@@ -59,7 +57,7 @@ public:
     bool ImplGetPropertyValue( const OUString& rString ) { return ImplGetPropertyValue(rString.getStr()); }
 
     sal_Int32 ImplGetInt32PropertyValue( const sal_Unicode* pStr )
-    { return ImplGetPropertyValue( pStr ) ? *o3tl::doAccess<sal_Int32>(mAny) : 0; }
+    { return ImplGetPropertyValue( pStr ) ? *static_cast<sal_Int32 const *>(mAny.getValue()) : 0; }
     sal_Int32 ImplGetInt32PropertyValue( const OUString& rStr )
     { return ImplGetInt32PropertyValue(rStr.getStr()); }
 
@@ -68,9 +66,9 @@ public:
     const OUString&     GetType() const         { return mType; }
     void                SetType( const OUString& rS ) { mType = rS; }
 
-    const tools::Rectangle&    GetRect() const         { return maRect; }
+    const Rectangle&    GetRect() const         { return maRect; }
     void                SetRect( const Point& rPos, const Size& rSz );
-    void                SetRect( const tools::Rectangle& rRect )
+    void                SetRect( const Rectangle& rRect )
                             { maRect = rRect; }
 
     sal_Int32           GetAngle() const        { return mnAngle; }
@@ -107,43 +105,83 @@ class EscherExHostAppData;
 
 class ImplEESdrWriter
 {
+protected:
     EscherEx*           mpEscherEx;
     MapMode             maMapModeSrc;
     MapMode             maMapModeDest;
+
+    css::uno::Reference< css::task::XStatusIndicator >    mXStatusIndicator;
     css::uno::Reference< css::drawing::XDrawPage >        mXDrawPage;
     css::uno::Reference< css::drawing::XShapes >          mXShapes;
+
     SvStream*           mpPicStrm;
+
     // own extensions
+
     EscherExHostAppData*    mpHostAppData;
+
+    sal_uInt32              mnPagesWritten;
+
+    sal_uInt32              mnShapeMasterBody;
+
+    // per page values
+    sal_uInt32              mnIndices;
+    sal_uInt32              mnOutlinerCount;
+    sal_uInt32              mnStatMaxValue;
+
+    sal_uInt16              mnEffectCount;
+
     bool                    mbIsTitlePossible;
-    const SdrPage*          mpSdrPage;
-    EscherSolverContainer*  mpSolverContainer;
+    bool                    mbStatusIndicator;
+
+
+    explicit ImplEESdrWriter( EscherEx& rEx );
 
     bool                ImplInitPageValues();
-    void                ImplWritePage( EscherSolverContainer& rSolver );
+
+    void                ImplWritePage(
+                            EscherSolverContainer& rSolver );
+
     sal_uInt32          ImplWriteShape( ImplEESdrObject& rObj,
                             EscherSolverContainer& rSolver,
                             const bool bOOxmlExport = false );  // returns ShapeID
+
     static void         ImplFlipBoundingBox( ImplEESdrObject& rObj, EscherPropertyContainer& rPropOpt );
     void                ImplWriteAdditionalText(
-                            ImplEESdrObject& rObj,
-                            const Point& rTextRefPoint );
+                                        ImplEESdrObject& rObj,
+                                        const Point& rTextRefPoint );
     sal_uInt32          ImplEnterAdditionalTextGroup(
-                            const css::uno::Reference< css::drawing::XShape >& rShape,
-                            const tools::Rectangle* pBoundRect );
-    void                ImplFlushSolverContainer();
+                                const css::uno::Reference< css::drawing::XShape >& rShape,
+                                const Rectangle* pBoundRect = nullptr );
+
 
 public:
-    explicit            ImplEESdrWriter( EscherEx& rEx );
-                        ~ImplEESdrWriter();
     Point               ImplMapPoint( const Point& rPoint );
     Size                ImplMapSize( const Size& rSize );
     EscherExHostAppData* ImplGetHostData() { return mpHostAppData; }
+};
+
+class SdrObject;
+class SdrPage;
+
+class ImplEscherExSdr : public ImplEESdrWriter
+{
+private:
+    const SdrPage*          mpSdrPage;
+    EscherSolverContainer*  mpSolverContainer;
+
+public:
+    explicit            ImplEscherExSdr( EscherEx& rEx );
+    virtual             ~ImplEscherExSdr();
+
     bool                ImplInitPage( const SdrPage& rPage );
     bool                ImplInitUnoShapes( const css::uno::Reference< css::drawing::XShapes >& rxShapes );
     void                ImplWriteCurrentPage();
-    sal_uInt32          ImplWriteTheShape( ImplEESdrObject& rObj, bool ooxmlExport );
+
+    sal_uInt32          ImplWriteTheShape( ImplEESdrObject& rObj, bool ooxmlExport = false );
+
     void                ImplExitPage();
+    void                ImplFlushSolverContainer();
 };
 
 

@@ -179,9 +179,9 @@ void OReportPage::resetSpecialMode()
     m_bSpecialInsertMode = false;
 }
 
-void OReportPage::NbcInsertObject(SdrObject* pObj, size_t nPos)
+void OReportPage::NbcInsertObject(SdrObject* pObj, size_t nPos, const SdrInsertReason* pReason)
 {
-    SdrPage::NbcInsertObject(pObj, nPos);
+    SdrPage::NbcInsertObject(pObj, nPos, pReason);
 
     OUnoObject* pUnoObj = dynamic_cast< OUnoObject* >( pObj );
     if (getSpecialMode())

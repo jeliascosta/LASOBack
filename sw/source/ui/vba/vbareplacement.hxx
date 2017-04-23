@@ -31,16 +31,15 @@ private:
     css::uno::Reference< css::util::XPropertyReplace> mxPropertyReplace;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaReplacement( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::util::XPropertyReplace >& xPropertyReplace );
-    virtual ~SwVbaReplacement() override;
+    SwVbaReplacement( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::util::XPropertyReplace >& xPropertyReplace ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaReplacement();
 
     // Attributes
-    virtual OUString SAL_CALL getText() override;
-    virtual void SAL_CALL setText( const OUString& _text ) override;
+    virtual OUString SAL_CALL getText() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setText( const OUString& _text ) throw (css::uno::RuntimeException, std::exception) override;
 
     //Methods
-    virtual void SAL_CALL ClearFormatting() override;
+    virtual void SAL_CALL ClearFormatting() throw (css::uno::RuntimeException, std::exception) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

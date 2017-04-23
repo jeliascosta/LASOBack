@@ -18,7 +18,6 @@
  */
 
 #include "PageMasterPropHdlFactory.hxx"
-#include "enummaps.hxx"
 #include <xmloff/xmltypes.hxx>
 #include <xmloff/xmltoken.hxx>
 #include "xmlbahdl.hxx"
@@ -28,6 +27,8 @@
 #include "PageMasterPropHdl.hxx"
 #include <xmloff/PageMasterStyleMap.hxx>
 #include <com/sun/star/text/TextGridMode.hpp>
+
+//UUUU
 #include <xmloff/EnumPropertyHdl.hxx>
 #include <osl/diagnose.h>
 #include <com/sun/star/drawing/FillStyle.hpp>
@@ -39,9 +40,15 @@
 
 using namespace ::xmloff::token;
 using namespace ::com::sun::star;
+//UUUU
 using namespace ::com::sun::star::drawing;
 
-static SvXMLEnumMapEntry<sal_uInt16> const aXML_TextGridMode_ConstantMap[] =
+//UUUU
+extern SvXMLEnumMapEntry aXML_FillStyle_EnumMap[];
+extern SvXMLEnumMapEntry aXML_RefPoint_EnumMap[];
+extern SvXMLEnumMapEntry aXML_BitmapMode_EnumMap[];
+
+static SvXMLEnumMapEntry const aXML_TextGridMode_ConstantMap[] =
 {
     { XML_NONE,         text::TextGridMode::NONE },
     { XML_LINE,         text::TextGridMode::LINES },
@@ -68,16 +75,16 @@ const XMLPropertyHandler* XMLPageMasterPropHdlFactory::GetPropertyHandler( sal_I
         switch( nType )
         {
             case XML_PM_TYPE_PAGESTYLELAYOUT:
-                pHdl = new XMLPMPropHdl_PageStyleLayout;
+                pHdl = new XMLPMPropHdl_PageStyleLayout();
             break;
             case XML_PM_TYPE_NUMFORMAT:
-                pHdl = new XMLPMPropHdl_NumFormat;
+                pHdl = new XMLPMPropHdl_NumFormat();
             break;
             case XML_PM_TYPE_NUMLETTERSYNC:
-                pHdl = new XMLPMPropHdl_NumLetterSync;
+                pHdl = new XMLPMPropHdl_NumLetterSync();
             break;
             case XML_PM_TYPE_PAPERTRAYNUMBER:
-                pHdl = new XMLPMPropHdl_PaperTrayNumber;
+                pHdl = new XMLPMPropHdl_PaperTrayNumber();
             break;
             case XML_PM_TYPE_PRINTORIENTATION:
                 pHdl = new XMLNamedBoolPropertyHdl(
@@ -116,10 +123,10 @@ const XMLPropertyHandler* XMLPageMasterPropHdlFactory::GetPropertyHandler( sal_I
                 pHdl = new XMLNumberNonePropHdl( XML_CONTINUE, 2 );
             break;
             case XML_PM_TYPE_CENTER_HORIZONTAL:
-                pHdl = new XMLPMPropHdl_CenterHorizontal;
+                pHdl = new XMLPMPropHdl_CenterHorizontal();
             break;
             case XML_PM_TYPE_CENTER_VERTICAL:
-                pHdl = new XMLPMPropHdl_CenterVertical;
+                pHdl = new XMLPMPropHdl_CenterVertical();
             break;
             case XML_TYPE_TEXT_COLUMNS:
                 pHdl = new XMLTextColumnsPropertyHandler;
@@ -129,8 +136,9 @@ const XMLPropertyHandler* XMLPageMasterPropHdlFactory::GetPropertyHandler( sal_I
                     aXML_TextGridMode_ConstantMap, XML_NONE );
             break;
 
+            //UUUU
             case XML_SW_TYPE_FILLSTYLE:
-                pHdl = new XMLEnumPropertyHdl( aXML_FillStyle_EnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXML_FillStyle_EnumMap, cppu::UnoType<FillStyle>::get() );
                 break;
             case XML_SW_TYPE_FILLBITMAPSIZE:
                 pHdl = new XMLFillBitmapSizePropertyHandler();
@@ -139,16 +147,17 @@ const XMLPropertyHandler* XMLPageMasterPropHdlFactory::GetPropertyHandler( sal_I
                 pHdl = new XMLBitmapLogicalSizePropertyHandler();
                 break;
             case XML_SW_TYPE_BITMAP_REFPOINT:
-                pHdl = new XMLEnumPropertyHdl( aXML_RefPoint_EnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXML_RefPoint_EnumMap, cppu::UnoType<RectanglePoint>::get() );
                 break;
             case XML_SW_TYPE_BITMAP_MODE:
-                pHdl = new XMLEnumPropertyHdl( aXML_BitmapMode_EnumMap );
+                pHdl = new XMLEnumPropertyHdl( aXML_BitmapMode_EnumMap, cppu::UnoType<BitmapMode>::get() );
                 break;
             case XML_SW_TYPE_BITMAPREPOFFSETX:
             case XML_SW_TYPE_BITMAPREPOFFSETY:
                 pHdl = new XMLBitmapRepeatOffsetPropertyHandler(XML_SW_TYPE_BITMAPREPOFFSETX == nType);
                 break;
 
+            //UUUU
             default:
             {
                 OSL_ENSURE(false, "XMLPropertyHandler missing (!)");

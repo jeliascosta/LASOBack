@@ -100,7 +100,6 @@
 #include "lwpdropcapmgr.hxx"
 #include "lwptable.hxx"
 #include "lwpcelllayout.hxx"
-#include "lwpframelayout.hxx"
 
 // boost::polymorphic_downcast checks and reports (using assert), if the
 // cast is incorrect (in debug builds).
@@ -109,7 +108,7 @@ using boost::polymorphic_downcast;
 /**
  * @short   get text of paragraph
  */
-OUString const & LwpPara::GetContentText(bool bAllText)
+OUString LwpPara::GetContentText(bool bAllText)
 {
 //  rFont = m_FontID;
     if (bAllText)
@@ -149,10 +148,11 @@ XFParaStyle* LwpPara::GetXFParaStyle()
 /**
  * @short   get drop cap info
  */
+#include "lwpframelayout.hxx"
 void LwpPara::GatherDropcapInfo()
 {
-    m_nLines = m_pDropcapLayout->GetLines();
-    m_nChars = m_pDropcapLayout->GetChars();
+    SetDropcapLines(m_pDropcapLayout->GetLines());
+    SetDropcapChars(m_pDropcapLayout->GetChars());
 }
 /**
  * @short   get parent paragraph
@@ -225,8 +225,7 @@ void LwpPara::GetParaNumber(sal_uInt16 nPosition, ParaNumbering* pParaNumbering)
                     pParaNumbering->nNumLevel = nHideLevels;
 
                     //get suffix text frib
-                    pFrib = pFrib->GetNext();
-                    if ( pFrib )
+                    if ( (pFrib = pFrib->GetNext()) )
                     {
                         if( pFrib->GetType() == FRIB_TAG_TEXT )
                         {
@@ -260,8 +259,7 @@ void LwpPara::GetParaNumber(sal_uInt16 nPosition, ParaNumbering* pParaNumbering)
                     pParaNumbering->pParaNumber = static_cast<LwpFribParaNumber*>(pFrib);
 
                     //get suffix text frib
-                    pFrib = pFrib->GetNext();
-                    if ( pFrib )
+                    if ( (pFrib = pFrib->GetNext()) )
                     {
                         if (pFrib->GetType() == FRIB_TAG_TEXT)
                         {
@@ -462,7 +460,7 @@ void LwpPara::OverrideParaBullet(LwpParaProperty* pProps)
         {
             m_bHasBullet = true;
 
-            const LwpOverride* pBullet= pParaStyle->GetBulletOverride();
+            LwpOverride* pBullet= pParaStyle->GetBulletOverride();
             std::unique_ptr<LwpBulletOverride> pFinalBullet(
                 pBullet
                     ? polymorphic_downcast<LwpBulletOverride*>(pBullet->clone())
@@ -488,7 +486,7 @@ void LwpPara::OverrideParaBullet(LwpParaProperty* pProps)
     else
     {
 //      m_pBullOver = pParaStyle->GetBulletOverride();
-        const LwpBulletOverride* pBullOver = pParaStyle->GetBulletOverride();
+        LwpBulletOverride* pBullOver = pParaStyle->GetBulletOverride();
         if (pBullOver)
         {
             m_aSilverBulletID = pBullOver->GetSilverBullet();
@@ -544,7 +542,7 @@ void LwpPara::OverrideParaNumbering(LwpParaProperty* pProps)
         pOver->OverrideLevel(m_nLevel);
     }
 
-    m_pParaNumbering = std::move(pOver);
+    m_pParaNumbering.reset(pOver.release());
 }
 
 void LwpPara::FindLayouts()
@@ -595,7 +593,7 @@ LwpTabOverride* LwpPara::GetLocalTabOverride()
 */
 bool LwpPara::operator< (LwpPara& Other)
 {
-    return m_nOrdinal < Other.m_nOrdinal;
+    return m_nOrdinal < Other.GetOrdinal();
 }
 
 /**

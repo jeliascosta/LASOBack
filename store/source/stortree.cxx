@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
-
 #include "stortree.hxx"
 
 #include "sal/types.h"
@@ -43,7 +39,7 @@ using namespace store;
  * OStoreBTreeNodeData.
  */
 OStoreBTreeNodeData::OStoreBTreeNodeData (sal_uInt16 nPageSize)
-    : PageData (nPageSize)
+    : OStorePageData (nPageSize)
 {
     base::m_aGuard.m_nMagic = store::htonl(self::theTypeId);
     base::m_aDescr.m_nUsed  = store::htons(self::thePageSize); // usageCount(0)
@@ -362,7 +358,7 @@ storeError OStoreBTreeRootObject::change (
     // Change root.
     rxPageL.swap (xPage);
     {
-        std::shared_ptr<PageData> tmp (xPage.get());
+        PageHolder tmp (xPage.get());
         tmp.swap (m_xPage);
     }
 
@@ -385,7 +381,7 @@ storeError OStoreBTreeRootObject::find_lookup (
     // Init node w/ root page.
     testInvariant("OStoreBTreeRootObject::find_lookup(): enter");
     {
-        std::shared_ptr<PageData> tmp (m_xPage);
+        PageHolder tmp (m_xPage);
         tmp.swap (rNode.get());
     }
 
@@ -470,7 +466,7 @@ storeError OStoreBTreeRootObject::find_insert (
 
     // Init node w/ root page.
     {
-        std::shared_ptr<PageData> tmp (m_xPage);
+        PageHolder tmp (m_xPage);
         tmp.swap (rNode.get());
     }
 
@@ -519,7 +515,7 @@ storeError OStoreBTreeRootObject::find_insert (
         }
 
         // Let next page be current.
-        std::shared_ptr<PageData> tmp (aNext.get());
+        PageHolder tmp (aNext.get());
         tmp.swap (rNode.get());
     }
 

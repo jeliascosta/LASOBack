@@ -1687,7 +1687,7 @@ static bool storeProfile(osl_TProfileImpl* pProfile, bool bCleanup)
 static osl_TFile* osl_openTmpProfileImpl(osl_TProfileImpl* pProfile)
 {
     osl_TFile* pFile=nullptr;
-    sal_Char const * const pszExtension = "tmp";
+    sal_Char const * pszExtension = "tmp";
     sal_Char pszTmpName[PATH_MAX];
     oslProfileOption PFlags=0;
 
@@ -1842,18 +1842,20 @@ static bool releaseProfile(osl_TProfileImpl* pProfile)
     {
         return osl_closeProfile(static_cast<oslProfile>(pProfile));
     }
-
-    if (! (pProfile->m_Flags & (osl_Profile_READLOCK | osl_Profile_WRITELOCK | osl_Profile_FLUSHWRITE )))
+    else
     {
-        if (pProfile->m_Flags & FLG_MODIFIED)
+        if (! (pProfile->m_Flags & (osl_Profile_READLOCK | osl_Profile_WRITELOCK | osl_Profile_FLUSHWRITE )))
         {
-            bool bRet = storeProfile(pProfile, false);
-            SAL_WARN_IF(!bRet, "sal.osl", "storeProfile(pProfile, false) ==> false");
-            (void)bRet;
-        }
+            if (pProfile->m_Flags & FLG_MODIFIED)
+            {
+                bool bRet = storeProfile(pProfile, false);
+                SAL_WARN_IF(!bRet, "sal.osl", "storeProfile(pProfile, false) ==> false");
+                (void)bRet;
+            }
 
-        closeFileImpl(pProfile->m_pFile,pProfile->m_Flags);
-        pProfile->m_pFile = nullptr;
+            closeFileImpl(pProfile->m_pFile,pProfile->m_Flags);
+            pProfile->m_pFile = nullptr;
+        }
     }
 
     return true;

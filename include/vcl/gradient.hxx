@@ -28,10 +28,7 @@
 #include <o3tl/cow_wrapper.hxx>
 
 
-namespace tools
-{
 class Rectangle;
-}
 class Point;
 class SvStream;
 
@@ -64,7 +61,6 @@ private:
 public:
                     Gradient();
                     Gradient( const Gradient& rGradient );
-                    Gradient( Gradient&& rGradient );
                     Gradient( GradientStyle eStyle,
                               const Color& rStartColor,
                               const Color& rEndColor );
@@ -96,10 +92,9 @@ public:
     void            SetSteps( sal_uInt16 nSteps );
     sal_uInt16          GetSteps() const { return mpImplGradient->mnStepCount; }
 
-    void            GetBoundRect( const tools::Rectangle& rRect, tools::Rectangle &rBoundRect, Point& rCenter ) const;
+    void            GetBoundRect( const Rectangle& rRect, Rectangle &rBoundRect, Point& rCenter ) const;
 
     Gradient&       operator=( const Gradient& rGradient );
-    Gradient&       operator=( Gradient&& rGradient );
     bool            operator==( const Gradient& rGradient ) const;
     bool            operator!=( const Gradient& rGradient ) const
                         { return !(Gradient::operator==( rGradient )); }

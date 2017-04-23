@@ -19,9 +19,7 @@
 #include <com/sun/star/drawing/ShapeCollection.hpp>
 #include <com/sun/star/drawing/XShapeGrouper.hpp>
 #include <com/sun/star/drawing/XDrawPage.hpp>
-#include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
-#include <ooo/vba/office/MsoShapeType.hpp>
 
 #include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbashaperange.hxx>
@@ -36,11 +34,11 @@ class VbShapeRangeEnumHelper : public EnumerationHelper_BASE
         sal_Int32 nIndex;
 public:
     VbShapeRangeEnumHelper( const uno::Reference< XCollection >& xParent,  const uno::Reference< container::XIndexAccess >& xIndexAccess ) : m_xParent( xParent ), m_xIndexAccess( xIndexAccess ), nIndex( 0 ) {}
-        virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+        virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
         {
                 return ( nIndex < m_xIndexAccess->getCount() );
         }
-        virtual uno::Any SAL_CALL nextElement(  ) override
+        virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
         {
                 ScVbaShapeRange* pCollectionImpl = dynamic_cast< ScVbaShapeRange* >(m_xParent.get());
                 if ( pCollectionImpl && hasMoreElements() )
@@ -56,14 +54,14 @@ ScVbaShapeRange::ScVbaShapeRange( const uno::Reference< XHelperInterface >& xPar
 
 // Methods
 void SAL_CALL
-ScVbaShapeRange::Select(  )
+ScVbaShapeRange::Select(  ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< view::XSelectionSupplier > xSelectSupp( m_xModel->getCurrentController(), uno::UNO_QUERY_THROW );
     xSelectSupp->select( uno::makeAny( getShapes() ) );
 }
 
 uno::Reference< msforms::XShape > SAL_CALL
-ScVbaShapeRange::Group()
+ScVbaShapeRange::Group() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< drawing::XShapeGrouper > xShapeGrouper( m_xDrawPage, uno::UNO_QUERY_THROW );
     uno::Reference< drawing::XShapeGroup > xShapeGroup( xShapeGrouper->group( getShapes() ), uno::UNO_QUERY_THROW );
@@ -71,8 +69,8 @@ ScVbaShapeRange::Group()
     return uno::Reference< msforms::XShape >( new ScVbaShape( getParent(), mxContext, xShape, getShapes(), m_xModel, office::MsoShapeType::msoGroup ) );
 }
 
-uno::Reference< drawing::XShapes > const &
-ScVbaShapeRange::getShapes()
+uno::Reference< drawing::XShapes >
+ScVbaShapeRange::getShapes() throw (uno::RuntimeException)
 {
     if ( !m_xShapes.is() )
     {
@@ -87,7 +85,7 @@ ScVbaShapeRange::getShapes()
 
 
 void SAL_CALL
-ScVbaShapeRange::IncrementRotation( double Increment )
+ScVbaShapeRange::IncrementRotation( double Increment ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -98,7 +96,7 @@ ScVbaShapeRange::IncrementRotation( double Increment )
 }
 
 void SAL_CALL
-ScVbaShapeRange::IncrementLeft( double Increment )
+ScVbaShapeRange::IncrementLeft( double Increment ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -109,7 +107,7 @@ ScVbaShapeRange::IncrementLeft( double Increment )
 }
 
 void SAL_CALL
-ScVbaShapeRange::IncrementTop( double Increment )
+ScVbaShapeRange::IncrementTop( double Increment ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -119,7 +117,7 @@ ScVbaShapeRange::IncrementTop( double Increment )
     }
 }
 
-OUString SAL_CALL ScVbaShapeRange::getName()
+OUString SAL_CALL ScVbaShapeRange::getName() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -131,7 +129,7 @@ OUString SAL_CALL ScVbaShapeRange::getName()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setName( const OUString& _name )
+void SAL_CALL ScVbaShapeRange::setName( const OUString& _name ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -141,7 +139,7 @@ void SAL_CALL ScVbaShapeRange::setName( const OUString& _name )
     }
 }
 
-double SAL_CALL ScVbaShapeRange::getHeight()
+double SAL_CALL ScVbaShapeRange::getHeight() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -153,7 +151,7 @@ double SAL_CALL ScVbaShapeRange::getHeight()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setHeight( double _height )
+void SAL_CALL ScVbaShapeRange::setHeight( double _height ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -163,7 +161,7 @@ void SAL_CALL ScVbaShapeRange::setHeight( double _height )
     }
 }
 
-double SAL_CALL ScVbaShapeRange::getWidth()
+double SAL_CALL ScVbaShapeRange::getWidth() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -175,7 +173,7 @@ double SAL_CALL ScVbaShapeRange::getWidth()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setWidth( double _width )
+void SAL_CALL ScVbaShapeRange::setWidth( double _width ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -185,7 +183,7 @@ void SAL_CALL ScVbaShapeRange::setWidth( double _width )
     }
 }
 
-double SAL_CALL ScVbaShapeRange::getLeft()
+double SAL_CALL ScVbaShapeRange::getLeft() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -197,7 +195,7 @@ double SAL_CALL ScVbaShapeRange::getLeft()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setLeft( double _left )
+void SAL_CALL ScVbaShapeRange::setLeft( double _left ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -207,7 +205,7 @@ void SAL_CALL ScVbaShapeRange::setLeft( double _left )
     }
 }
 
-double SAL_CALL ScVbaShapeRange::getTop()
+double SAL_CALL ScVbaShapeRange::getTop() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -219,7 +217,7 @@ double SAL_CALL ScVbaShapeRange::getTop()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setTop( double _top )
+void SAL_CALL ScVbaShapeRange::setTop( double _top ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -229,7 +227,7 @@ void SAL_CALL ScVbaShapeRange::setTop( double _top )
     }
 }
 
-uno::Reference< ov::msforms::XLineFormat > SAL_CALL ScVbaShapeRange::getLine()
+uno::Reference< ov::msforms::XLineFormat > SAL_CALL ScVbaShapeRange::getLine() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -241,7 +239,7 @@ uno::Reference< ov::msforms::XLineFormat > SAL_CALL ScVbaShapeRange::getLine()
     throw uno::RuntimeException();
 }
 
-uno::Reference< ov::msforms::XFillFormat > SAL_CALL ScVbaShapeRange::getFill()
+uno::Reference< ov::msforms::XFillFormat > SAL_CALL ScVbaShapeRange::getFill() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -253,7 +251,7 @@ uno::Reference< ov::msforms::XFillFormat > SAL_CALL ScVbaShapeRange::getFill()
     throw uno::RuntimeException();
 }
 
-sal_Bool SAL_CALL ScVbaShapeRange::getLockAspectRatio()
+sal_Bool SAL_CALL ScVbaShapeRange::getLockAspectRatio() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -265,7 +263,7 @@ sal_Bool SAL_CALL ScVbaShapeRange::getLockAspectRatio()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setLockAspectRatio( sal_Bool _lockaspectratio )
+void SAL_CALL ScVbaShapeRange::setLockAspectRatio( sal_Bool _lockaspectratio ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -275,7 +273,7 @@ void SAL_CALL ScVbaShapeRange::setLockAspectRatio( sal_Bool _lockaspectratio )
     }
 }
 
-sal_Bool SAL_CALL ScVbaShapeRange::getLockAnchor()
+sal_Bool SAL_CALL ScVbaShapeRange::getLockAnchor() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -287,7 +285,7 @@ sal_Bool SAL_CALL ScVbaShapeRange::getLockAnchor()
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setLockAnchor( sal_Bool _lockanchor )
+void SAL_CALL ScVbaShapeRange::setLockAnchor( sal_Bool _lockanchor ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -297,7 +295,7 @@ void SAL_CALL ScVbaShapeRange::setLockAnchor( sal_Bool _lockanchor )
     }
 }
 
-::sal_Int32 SAL_CALL ScVbaShapeRange::getRelativeHorizontalPosition()
+::sal_Int32 SAL_CALL ScVbaShapeRange::getRelativeHorizontalPosition() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -309,7 +307,7 @@ void SAL_CALL ScVbaShapeRange::setLockAnchor( sal_Bool _lockanchor )
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setRelativeHorizontalPosition( ::sal_Int32 _relativehorizontalposition )
+void SAL_CALL ScVbaShapeRange::setRelativeHorizontalPosition( ::sal_Int32 _relativehorizontalposition ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -319,7 +317,7 @@ void SAL_CALL ScVbaShapeRange::setRelativeHorizontalPosition( ::sal_Int32 _relat
     }
 }
 
-::sal_Int32 SAL_CALL ScVbaShapeRange::getRelativeVerticalPosition()
+::sal_Int32 SAL_CALL ScVbaShapeRange::getRelativeVerticalPosition() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -331,7 +329,7 @@ void SAL_CALL ScVbaShapeRange::setRelativeHorizontalPosition( ::sal_Int32 _relat
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::setRelativeVerticalPosition( ::sal_Int32 _relativeverticalposition )
+void SAL_CALL ScVbaShapeRange::setRelativeVerticalPosition( ::sal_Int32 _relativeverticalposition ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -341,7 +339,7 @@ void SAL_CALL ScVbaShapeRange::setRelativeVerticalPosition( ::sal_Int32 _relativ
     }
 }
 
-uno::Any SAL_CALL ScVbaShapeRange::TextFrame(  )
+uno::Any SAL_CALL ScVbaShapeRange::TextFrame(  ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -353,7 +351,7 @@ uno::Any SAL_CALL ScVbaShapeRange::TextFrame(  )
     throw uno::RuntimeException();
 }
 
-uno::Any SAL_CALL ScVbaShapeRange::WrapFormat(  )
+uno::Any SAL_CALL ScVbaShapeRange::WrapFormat(  ) throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     sal_Int32 index = 1;
@@ -365,7 +363,7 @@ uno::Any SAL_CALL ScVbaShapeRange::WrapFormat(  )
     throw uno::RuntimeException();
 }
 
-void SAL_CALL ScVbaShapeRange::ZOrder( sal_Int32 ZOrderCmd )
+void SAL_CALL ScVbaShapeRange::ZOrder( sal_Int32 ZOrderCmd ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nLen = getCount();
     for ( sal_Int32 index = 1; index <= nLen; ++index )
@@ -376,13 +374,13 @@ void SAL_CALL ScVbaShapeRange::ZOrder( sal_Int32 ZOrderCmd )
 }
 
 uno::Type SAL_CALL
-ScVbaShapeRange::getElementType()
+ScVbaShapeRange::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<msforms::XShape>::get();
 }
 
 uno::Reference< container::XEnumeration > SAL_CALL
-ScVbaShapeRange::createEnumeration()
+ScVbaShapeRange::createEnumeration() throw (uno::RuntimeException)
 {
     return new VbShapeRangeEnumHelper( this, m_xIndexAccess );
 }

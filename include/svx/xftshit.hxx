@@ -30,16 +30,17 @@
 |*
 \************************************************************************/
 
-class SVX_DLLPUBLIC XFormTextShadowItem : public SfxEnumItem<XFormTextShadow>
+class SVX_DLLPUBLIC XFormTextShadowItem : public SfxEnumItem
 {
 public:
                             static SfxPoolItem* CreateDefault();
 
-                            XFormTextShadowItem(XFormTextShadow = XFormTextShadow::NONE);
+                            XFormTextShadowItem(XFormTextShadow = XFTSHADOW_NONE);
                             XFormTextShadowItem(SvStream& rIn);
     virtual SfxPoolItem*    Clone(SfxItemPool* pPool = nullptr) const override;
     virtual SfxPoolItem*    Create(SvStream& rIn, sal_uInt16 nVer) const override;
-    virtual sal_uInt16      GetValueCount() const override;
+    virtual sal_uInt16          GetValueCount() const override;
+    XFormTextShadow         GetValue() const { return (XFormTextShadow) SfxEnumItem::GetValue(); }
     // #FontWork#
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;

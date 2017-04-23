@@ -27,7 +27,7 @@ class KDEData : public X11SalData
     public:
         explicit KDEData( SalInstance *pInstance )
                         : X11SalData( SAL_DATA_KDE4, pInstance ) {}
-        virtual ~KDEData() override;
+        virtual ~KDEData();
 
         virtual void Init() override;
         virtual void initNWF() override;

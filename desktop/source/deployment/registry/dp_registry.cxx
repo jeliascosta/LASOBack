@@ -35,7 +35,6 @@
 #include <ucbhelper/content.hxx>
 #include <com/sun/star/uno/DeploymentException.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/XSingleComponentFactory.hpp>
@@ -64,7 +63,7 @@ typedef ::cppu::WeakComponentImplHelper<
 class PackageRegistryImpl : private MutexHolder, public t_helper
 {
     struct ci_string_hash {
-        std::size_t operator () ( OUString const & str ) const {
+        ::std::size_t operator () ( OUString const & str ) const {
             return str.toAsciiLowerCase().hashCode();
         }
     };
@@ -86,7 +85,7 @@ class PackageRegistryImpl : private MutexHolder, public t_helper
     t_string2string m_filter2mediaType;
     t_registryset m_ambiguousBackends;
     t_registryset m_allBackends;
-    std::vector< Reference<deployment::XPackageTypeInfo> > m_typesInfos;
+    ::std::vector< Reference<deployment::XPackageTypeInfo> > m_typesInfos;
 
     void insertBackend(
         Reference<deployment::XPackageRegistry> const & xBackend );
@@ -95,7 +94,7 @@ protected:
     inline void check();
     virtual void SAL_CALL disposing() override;
 
-    virtual ~PackageRegistryImpl() override;
+    virtual ~PackageRegistryImpl();
     PackageRegistryImpl() : t_helper( getMutex() ) {}
 
 
@@ -106,15 +105,21 @@ public:
         Reference<XComponentContext> const & xComponentContext );
 
     // XUpdatable
-    virtual void SAL_CALL update() override;
+    virtual void SAL_CALL update() throw (RuntimeException, std::exception) override;
 
     // XPackageRegistry
     virtual Reference<deployment::XPackage> SAL_CALL bindPackage(
         OUString const & url, OUString const & mediaType, sal_Bool bRemoved,
-        OUString const & identifier, Reference<XCommandEnvironment> const & xCmdEnv ) override;
+        OUString const & identifier, Reference<XCommandEnvironment> const & xCmdEnv )
+        throw (deployment::DeploymentException,
+               deployment::InvalidRemovedParameterException,
+               CommandFailedException,
+               lang::IllegalArgumentException, RuntimeException, std::exception) override;
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
+    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
+                throw (deployment::DeploymentException,
+                RuntimeException, std::exception) override;
 
 };
 
@@ -167,6 +172,8 @@ OUString normalizeMediaType( OUString const & mediaType )
 
 void PackageRegistryImpl::packageRemoved(
     OUString const & url, OUString const & mediaType)
+    throw (css::deployment::DeploymentException,
+           css::uno::RuntimeException, std::exception)
 {
     const t_string2registry::const_iterator i =
         m_mediaType2backend.find(mediaType);
@@ -194,7 +201,7 @@ void PackageRegistryImpl::insertBackend(
 
         const OUString mediaType( normalizeMediaType(
                                       xPackageType->getMediaType() ) );
-        std::pair<t_string2registry::iterator, bool> a_insertion(
+        ::std::pair<t_string2registry::iterator, bool> a_insertion(
             m_mediaType2backend.insert( t_string2registry::value_type(
                                             mediaType, xBackend ) ) );
         if (a_insertion.second)
@@ -227,7 +234,7 @@ void PackageRegistryImpl::insertBackend(
                     bool ambig = (token.indexOf('*') >= 0 ||
                                   token.indexOf('?') >= 0);
                     if (! ambig) {
-                        std::pair<t_string2string::iterator, bool> ins(
+                        ::std::pair<t_string2string::iterator, bool> ins(
                             m_filter2mediaType.insert(
                                 t_string2string::value_type(
                                     token, mediaType ) ) );
@@ -430,7 +437,7 @@ Reference<deployment::XPackageRegistry> PackageRegistryImpl::create(
 
 // XUpdatable: broadcast to backends
 
-void PackageRegistryImpl::update()
+void PackageRegistryImpl::update() throw (RuntimeException, std::exception)
 {
     check();
     t_registryset::const_iterator iPos( m_allBackends.begin() );
@@ -447,6 +454,9 @@ void PackageRegistryImpl::update()
 Reference<deployment::XPackage> PackageRegistryImpl::bindPackage(
     OUString const & url, OUString const & mediaType_, sal_Bool bRemoved,
     OUString const & identifier, Reference<XCommandEnvironment> const & xCmdEnv )
+    throw (deployment::DeploymentException, deployment::InvalidRemovedParameterException,
+           CommandFailedException,
+           lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     check();
     OUString mediaType(mediaType_);
@@ -529,7 +539,7 @@ Reference<deployment::XPackage> PackageRegistryImpl::bindPackage(
 
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-PackageRegistryImpl::getSupportedPackageTypes()
+PackageRegistryImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
 {
     return comphelper::containerToSequence(m_typesInfos);
 }

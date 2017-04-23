@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <comphelper/string.hxx>
-#include <i18nutil/transliteration.hxx>
-#include <i18nutil/searchopt.hxx>
 #include <svl/fstathelper.hxx>
 #include <osl/thread.h>
 #include <unotools/textsearch.hxx>
@@ -174,7 +174,7 @@ bool SwEditShell::UpdateTableOf( const SwTOXBase& rTOX, const SfxItemSet* pSet )
         ::StartProgress( STR_STATSTR_TOX_UPDATE, 0, 0, pDocSh );
         ::SetProgressText( STR_STATSTR_TOX_UPDATE, pDocSh );
 
-        pMyDoc->GetIDocumentUndoRedo().StartUndo(SwUndoId::TOXCHANGE, nullptr);
+        pMyDoc->GetIDocumentUndoRedo().StartUndo(UNDO_TOXCHANGE, nullptr);
 
         // create listing stub
         pTOX->Update(pSet);
@@ -189,7 +189,7 @@ bool SwEditShell::UpdateTableOf( const SwTOXBase& rTOX, const SfxItemSet* pSet )
         // insert page numbering
         pTOX->UpdatePageNum();
 
-        pMyDoc->GetIDocumentUndoRedo().EndUndo(SwUndoId::TOXCHANGE, nullptr);
+        pMyDoc->GetIDocumentUndoRedo().EndUndo(UNDO_TOXCHANGE, nullptr);
 
         ::EndProgress( pDocSh );
         EndAllAction();
@@ -217,9 +217,9 @@ const SwTOXType* SwEditShell::GetTOXType(TOXTypes eTyp, sal_uInt16 nId) const
 
 // manage keys for the alphabetical index
 
-void SwEditShell::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
+sal_uInt16 SwEditShell::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
 {
-    GetDoc()->GetTOIKeys( eTyp, rArr );
+    return GetDoc()->GetTOIKeys( eTyp, rArr );
 }
 
 sal_uInt16 SwEditShell::GetTOXCount() const
@@ -302,7 +302,7 @@ void SwEditShell::ApplyAutoMark()
         }
 
         //2.
-        SfxMedium aMedium( sAutoMarkURL, StreamMode::STD_READ );
+        SfxMedium aMedium( sAutoMarkURL, STREAM_STD_READ );
         SvStream& rStrm = *aMedium.GetInStream();
         Push();
         rtl_TextEncoding eChrSet = ::osl_getThreadTextEncoding();
@@ -311,15 +311,16 @@ void SwEditShell::ApplyAutoMark()
         sal_Int32 nLEV_Other    = 2;    //  -> changedChars;
         sal_Int32 nLEV_Longer   = 3;    //! -> deletedChars;
         sal_Int32 nLEV_Shorter  = 1;    //! -> insertedChars;
+        sal_Int32 nTransliterationFlags = 0;
 
         sal_Int32 nSrchFlags = SearchFlags::LEV_RELAXED;
 
-        i18nutil::SearchOptions2 aSearchOpt(
+        SearchOptions2 aSearchOpt(
                             SearchAlgorithms_ABSOLUTE, nSrchFlags,
                             "", "",
                             SvtSysLocale().GetLanguageTag().getLocale(),
                             nLEV_Other, nLEV_Longer, nLEV_Shorter,
-                            TransliterationFlags::NONE,
+                            nTransliterationFlags,
                             SearchAlgorithms2::ABSOLUTE,
                             '\\' );
 
@@ -353,12 +354,12 @@ void SwEditShell::ApplyAutoMark()
                     if (!bCaseSensitive)
                     {
                         aSearchOpt.transliterateFlags |=
-                                     TransliterationFlags::IGNORE_CASE;
+                                     TransliterationModules_IGNORE_CASE;
                     }
                     else
                     {
                         aSearchOpt.transliterateFlags &=
-                                    ~TransliterationFlags::IGNORE_CASE;
+                                    ~TransliterationModules_IGNORE_CASE;
                     }
                     if ( bWordOnly)
                         aSearchOpt.searchFlag |=  SearchFlags::NORM_WORD_ONLY;
@@ -372,8 +373,8 @@ void SwEditShell::ApplyAutoMark()
 
                     // todo/mba: assuming that notes shouldn't be searched
                     bool bSearchInNotes = false;
-                    sal_uLong nRet = Find( aSearchOpt, bSearchInNotes, SwDocPositions::Start, SwDocPositions::End, bCancel,
-                                    FindRanges::InSelAll );
+                    sal_uLong nRet = Find( aSearchOpt,  bSearchInNotes, DOCPOS_START, DOCPOS_END, bCancel,
+                                    (FindRanges)(FND_IN_SELALL) );
 
                     if(nRet)
                     {

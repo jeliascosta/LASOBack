@@ -7,7 +7,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include <ServiceDocumenter.hxx>
-#include <unotoolsservices.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <com/sun/star/system/XSystemShellExecute.hpp>
 using namespace com::sun::star;
@@ -16,6 +15,7 @@ using lang::XServiceInfo;
 using lang::XTypeProvider;
 
 void unotools::misc::ServiceDocumenter::showCoreDocs(const Reference<XServiceInfo>& xService)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if(!xService.is())
         return;
@@ -25,6 +25,7 @@ void unotools::misc::ServiceDocumenter::showCoreDocs(const Reference<XServiceInf
 }
 
 void unotools::misc::ServiceDocumenter::showInterfaceDocs(const Reference<XTypeProvider>& xTypeProvider)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if(!xTypeProvider.is())
         return;
@@ -41,6 +42,7 @@ void unotools::misc::ServiceDocumenter::showInterfaceDocs(const Reference<XTypeP
 }
 
 void unotools::misc::ServiceDocumenter::showServiceDocs(const Reference<XServiceInfo>& xService)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if(!xService.is())
         return;
@@ -57,8 +59,8 @@ void unotools::misc::ServiceDocumenter::showServiceDocs(const Reference<XService
 }
 
 namespace sdecl = ::comphelper::service_decl;
-sdecl::class_< unotools::misc::ServiceDocumenter > const ServiceDocumenterImpl;
-const sdecl::ServiceDecl ServiceDocumenterDecl(
+sdecl::class_< unotools::misc::ServiceDocumenter > ServiceDocumenterImpl;
+extern const sdecl::ServiceDecl ServiceDocumenterDecl(
     ServiceDocumenterImpl,
     "com.sun.star.comp.unotools.misc.ServiceDocumenter",
     "");

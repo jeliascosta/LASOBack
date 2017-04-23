@@ -31,7 +31,6 @@
 #include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/xml/sax/InputSource.hpp>
 #include <com/sun/star/xml/sax/Writer.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XActiveDataSource.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
@@ -84,10 +83,11 @@ XMLBasedAcceleratorConfiguration::XMLBasedAcceleratorConfiguration(const css::un
 
 XMLBasedAcceleratorConfiguration::~XMLBasedAcceleratorConfiguration()
 {
-    SAL_WARN_IF(m_pWriteCache, "fwk.accelerators", "XMLBasedAcceleratorConfiguration::~XMLBasedAcceleratorConfiguration(): Changes not flushed. Ignore it ...");
+    SAL_WARN_IF(m_pWriteCache, "fwk", "XMLBasedAcceleratorConfiguration::~XMLBasedAcceleratorConfiguration(): Changes not flushed. Ignore it ...");
 }
 
 css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XMLBasedAcceleratorConfiguration::getAllKeyEvents()
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     AcceleratorCache&          rCache = impl_getCFG();
@@ -96,6 +96,8 @@ css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XMLBasedAcceleratorConfigurati
 }
 
 OUString SAL_CALL XMLBasedAcceleratorConfiguration::getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent)
+    throw(css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception            )
 {
     SolarMutexGuard g;
     AcceleratorCache& rCache = impl_getCFG();
@@ -108,6 +110,8 @@ OUString SAL_CALL XMLBasedAcceleratorConfiguration::getCommandByKeyEvent(const c
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyEvent& aKeyEvent,
                                                     const OUString&    sCommand )
+                                                    throw(css::lang::IllegalArgumentException,
+                                                    css::uno::RuntimeException, std::exception         )
 {
     if (
         (aKeyEvent.KeyCode   == 0) &&
@@ -116,15 +120,15 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyE
         (aKeyEvent.Modifiers == 0)
         )
         throw css::lang::IllegalArgumentException(
-            "Such key event seems not to be supported by any operating system.",
-            static_cast< ::cppu::OWeakObject* >(this),
-            0);
+        OUString("Such key event seems not to be supported by any operating system."),
+        static_cast< ::cppu::OWeakObject* >(this),
+        0);
 
     if (sCommand.isEmpty())
         throw css::lang::IllegalArgumentException(
-            "Empty command strings are not allowed here.",
-            static_cast< ::cppu::OWeakObject* >(this),
-            1);
+        OUString("Empty command strings are not allowed here."),
+        static_cast< ::cppu::OWeakObject* >(this),
+        1);
 
     SolarMutexGuard g;
     AcceleratorCache& rCache = impl_getCFG(true); // sal_True => force getting of a writeable cache!
@@ -132,6 +136,8 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyE
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::removeKeyEvent(const css::awt::KeyEvent& aKeyEvent)
+throw(css::container::NoSuchElementException,
+      css::uno::RuntimeException, std::exception            )
 {
     SolarMutexGuard g;
     AcceleratorCache& rCache = impl_getCFG(true); // true => force using of a writeable cache
@@ -143,10 +149,13 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::removeKeyEvent(const css::awt::K
 }
 
 css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XMLBasedAcceleratorConfiguration::getKeyEventsByCommand(const OUString& sCommand)
+    throw(css::lang::IllegalArgumentException   ,
+          css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception            )
 {
     if (sCommand.isEmpty())
         throw css::lang::IllegalArgumentException(
-                "Empty command strings are not allowed here.",
+                OUString("Empty command strings are not allowed here."),
                 static_cast< ::cppu::OWeakObject* >(this),
                 1);
 
@@ -162,6 +171,8 @@ css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XMLBasedAcceleratorConfigurati
 }
 
 css::uno::Sequence< css::uno::Any > SAL_CALL XMLBasedAcceleratorConfiguration::getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList)
+    throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException,
+           css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -175,7 +186,7 @@ css::uno::Sequence< css::uno::Any > SAL_CALL XMLBasedAcceleratorConfiguration::g
         const OUString& rCommand = lCommandList[i];
         if (rCommand.isEmpty())
             throw css::lang::IllegalArgumentException(
-                    "Empty command strings are not allowed here.",
+                    OUString("Empty command strings are not allowed here."),
                     static_cast< ::cppu::OWeakObject* >(this),
                     (sal_Int16)i);
 
@@ -194,10 +205,13 @@ css::uno::Sequence< css::uno::Any > SAL_CALL XMLBasedAcceleratorConfiguration::g
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::removeCommandFromAllKeyEvents(const OUString& sCommand)
+    throw(css::lang::IllegalArgumentException   ,
+          css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception            )
 {
     if (sCommand.isEmpty())
         throw css::lang::IllegalArgumentException(
-                "Empty command strings are not allowed here.",
+                OUString("Empty command strings are not allowed here."),
                 static_cast< ::cppu::OWeakObject* >(this),
                 0);
 
@@ -205,12 +219,14 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::removeCommandFromAllKeyEvents(co
     AcceleratorCache& rCache = impl_getCFG(true); // sal_True => force getting of a writeable cache!
     if (!rCache.hasCommand(sCommand))
         throw css::container::NoSuchElementException(
-                "Command does not exists inside this container.",
+                OUString("Command does not exists inside this container."),
                 static_cast< ::cppu::OWeakObject* >(this));
     rCache.removeCommand(sCommand);
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::reload()
+    throw(css::uno::Exception       ,
+        css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::io::XStream > xStream;
     css::uno::Reference< css::io::XStream > xStreamNoLang;
@@ -230,8 +246,8 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::reload()
         xIn = xStream->getInputStream();
     if (!xIn.is())
         throw css::io::IOException(
-            "Could not open accelerator configuration for reading.",
-            static_cast< ::cppu::OWeakObject* >(this));
+        OUString("Could not open accelerator configuration for reading."),
+        static_cast< ::cppu::OWeakObject* >(this));
 
     // impl_ts_load() does not clear the cache
     {
@@ -252,6 +268,8 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::reload()
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::store()
+    throw(css::uno::Exception       ,
+        css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::io::XStream > xStream;
     {
@@ -266,8 +284,8 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::store()
 
     if (!xOut.is())
         throw css::io::IOException(
-            "Could not open accelerator configuration for saving.",
-            static_cast< ::cppu::OWeakObject* >(this));
+        OUString("Could not open accelerator configuration for saving."),
+        static_cast< ::cppu::OWeakObject* >(this));
 
     impl_ts_save(xOut);
 
@@ -278,6 +296,8 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::store()
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
+    throw(css::uno::Exception       ,
+          css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::io::XStream > xStream = StorageHolder::openSubStreamWithFallback(
                                                             xStorage,
@@ -290,7 +310,7 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::storeToStorage(const css::uno::R
 
     if (!xOut.is())
         throw css::io::IOException(
-                "Could not open accelerator configuration for saving.",
+                OUString("Could not open accelerator configuration for saving."),
                 static_cast< ::cppu::OWeakObject* >(this));
 
     impl_ts_save(xOut);
@@ -299,12 +319,14 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::storeToStorage(const css::uno::R
 }
 
 sal_Bool SAL_CALL XMLBasedAcceleratorConfiguration::isModified()
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
     return (m_pWriteCache != nullptr);
 }
 
 sal_Bool SAL_CALL XMLBasedAcceleratorConfiguration::isReadOnly()
+    throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::io::XStream > xStream;
     {
@@ -320,27 +342,32 @@ sal_Bool SAL_CALL XMLBasedAcceleratorConfiguration::isReadOnly()
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::setStorage(const css::uno::Reference< css::embed::XStorage >& /*xStorage*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::setStorage(): implement this HACK .-)");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::setStorage(): implement this HACK .-)");
 }
 
 sal_Bool SAL_CALL XMLBasedAcceleratorConfiguration::hasStorage()
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::hasStorage(): implement this HACK .-)");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::hasStorage(): implement this HACK .-)");
     return false;
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::addConfigurationListener(): implement me");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::addConfigurationListener(): implement me");
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::removeConfigurationListener(): implement me");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::removeConfigurationListener(): implement me");
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::reset()
+throw(css::uno::RuntimeException, std::exception)
 {
     {
         SolarMutexGuard g;
@@ -351,13 +378,15 @@ void SAL_CALL XMLBasedAcceleratorConfiguration::reset()
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::addResetListener(const css::uno::Reference< css::form::XResetListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::addResetListener(): implement me");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::addResetListener(): implement me");
 }
 
 void SAL_CALL XMLBasedAcceleratorConfiguration::removeResetListener(const css::uno::Reference< css::form::XResetListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XMLBasedAcceleratorConfiguration::removeResetListener(): implement me");
+    SAL_INFO("fwk", "XMLBasedAcceleratorConfiguration::removeResetListener(): implement me");
 }
 
 // IStorageListener
@@ -505,6 +534,7 @@ XCUBasedAcceleratorConfiguration::~XCUBasedAcceleratorConfiguration()
 }
 
 css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XCUBasedAcceleratorConfiguration::getAllKeyEvents()
+    throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -521,6 +551,8 @@ css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XCUBasedAcceleratorConfigurati
 }
 
 OUString SAL_CALL XCUBasedAcceleratorConfiguration::getCommandByKeyEvent(const css::awt::KeyEvent& aKeyEvent)
+    throw(css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception            )
 {
     SolarMutexGuard g;
 
@@ -540,6 +572,9 @@ OUString SAL_CALL XCUBasedAcceleratorConfiguration::getCommandByKeyEvent(const c
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyEvent& aKeyEvent,
                                                     const OUString&    sCommand )
+                                                    throw (css::lang::IllegalArgumentException,
+                                                           css::container::NoSuchElementException,
+                                                           css::uno::RuntimeException, std::exception)
 {
     SAL_INFO( "fwk.accelerators", "XCUBasedAcceleratorConfiguration::setKeyEvent" );
 
@@ -550,15 +585,15 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyE
         (aKeyEvent.Modifiers == 0)
         )
         throw css::lang::IllegalArgumentException(
-                "Such key event seems not to be supported by any operating system.",
+                OUString("Such key event seems not to be supported by any operating system."),
                 static_cast< ::cppu::OWeakObject* >(this),
                 0);
 
     if (sCommand.isEmpty())
                 throw css::lang::IllegalArgumentException(
-                    "Empty command strings are not allowed here.",
-                    static_cast< ::cppu::OWeakObject* >(this),
-                    1);
+                OUString("Empty command strings are not allowed here."),
+                static_cast< ::cppu::OWeakObject* >(this),
+                1);
 
     SolarMutexGuard g;
 
@@ -619,6 +654,8 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::setKeyEvent(const css::awt::KeyE
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::removeKeyEvent(const css::awt::KeyEvent& aKeyEvent)
+    throw(css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception            )
 {
     SolarMutexGuard g;
 
@@ -656,10 +693,13 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::removeKeyEvent(const css::awt::K
 }
 
 css::uno::Sequence< css::awt::KeyEvent > SAL_CALL XCUBasedAcceleratorConfiguration::getKeyEventsByCommand(const OUString& sCommand)
+    throw(css::lang::IllegalArgumentException   ,
+        css::container::NoSuchElementException,
+        css::uno::RuntimeException, std::exception            )
 {
     if (sCommand.isEmpty())
         throw css::lang::IllegalArgumentException(
-                "Empty command strings are not allowed here.",
+                OUString("Empty command strings are not allowed here."),
                 static_cast< ::cppu::OWeakObject* >(this),
                 1);
 
@@ -702,6 +742,8 @@ AcceleratorCache::TKeyList::const_iterator lcl_getPreferredKey(const Accelerator
 }
 
 css::uno::Sequence< css::uno::Any > SAL_CALL XCUBasedAcceleratorConfiguration::getPreferredKeyEventsForCommandList(const css::uno::Sequence< OUString >& lCommandList)
+    throw(css::lang::IllegalArgumentException, css::container::NoSuchElementException,
+          css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -715,7 +757,7 @@ css::uno::Sequence< css::uno::Any > SAL_CALL XCUBasedAcceleratorConfiguration::g
         const OUString& rCommand = lCommandList[i];
         if (rCommand.isEmpty())
             throw css::lang::IllegalArgumentException(
-                    "Empty command strings are not allowed here.",
+                    OUString("Empty command strings are not allowed here."),
                     static_cast< ::cppu::OWeakObject* >(this),
                     (sal_Int16)i);
 
@@ -738,10 +780,13 @@ css::uno::Sequence< css::uno::Any > SAL_CALL XCUBasedAcceleratorConfiguration::g
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::removeCommandFromAllKeyEvents(const OUString& sCommand)
+    throw(css::lang::IllegalArgumentException   ,
+        css::container::NoSuchElementException,
+        css::uno::RuntimeException, std::exception            )
 {
     if (sCommand.isEmpty())
         throw css::lang::IllegalArgumentException(
-                "Empty command strings are not allowed here.",
+                OUString("Empty command strings are not allowed here."),
                 static_cast< ::cppu::OWeakObject* >(this),
                 0);
 
@@ -752,7 +797,7 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::removeCommandFromAllKeyEvents(co
 
     if (!rPrimaryCache.hasCommand(sCommand) && !rSecondaryCache.hasCommand(sCommand))
         throw css::container::NoSuchElementException(
-                "Command does not exists inside this container.",
+                OUString("Command does not exists inside this container."),
                 static_cast< ::cppu::OWeakObject* >(this));
 
     if (rPrimaryCache.hasCommand(sCommand))
@@ -762,6 +807,8 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::removeCommandFromAllKeyEvents(co
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::reload()
+    throw(css::uno::Exception       ,
+        css::uno::RuntimeException, std::exception)
 {
     SAL_INFO( "fwk.accelerators", "XCUBasedAcceleratorConfiguration::reload()" );
 
@@ -796,6 +843,8 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::reload()
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::store()
+    throw(css::uno::Exception       ,
+          css::uno::RuntimeException, std::exception)
 {
     SAL_INFO( "fwk.accelerators", "XCUBasedAcceleratorConfiguration::store()" );
 
@@ -818,6 +867,8 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::store()
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::storeToStorage(const css::uno::Reference< css::embed::XStorage >& xStorage)
+    throw(css::uno::Exception       ,
+      css::uno::RuntimeException, std::exception)
 {
     // use m_aCache + old AcceleratorXMLWriter to store data directly on storage given as parameter ...
     if (!xStorage.is())
@@ -834,8 +885,8 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::storeToStorage(const css::uno::R
         xOut = xStream->getOutputStream();
     if (!xOut.is())
         throw css::io::IOException(
-            "Could not open accelerator configuration for saving.",
-            static_cast< ::cppu::OWeakObject* >(this));
+        OUString("Could not open accelerator configuration for saving."),
+        static_cast< ::cppu::OWeakObject* >(this));
 
     // the original m_aCache has been split into primary cache and secondary cache...
     // we should merge them before storing to storage
@@ -880,37 +931,44 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::storeToStorage(const css::uno::R
 }
 
 sal_Bool SAL_CALL XCUBasedAcceleratorConfiguration::isModified()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 sal_Bool SAL_CALL XCUBasedAcceleratorConfiguration::isReadOnly()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return false;
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::setStorage(const css::uno::Reference< css::embed::XStorage >& /*xStorage*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::setStorage(): implement this HACK .-)");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::setStorage(): implement this HACK .-)");
 }
 
 sal_Bool SAL_CALL XCUBasedAcceleratorConfiguration::hasStorage()
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::hasStorage(): implement this HACK .-)");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::hasStorage(): implement this HACK .-)");
         return false;
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::addConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::addConfigurationListener(): implement me");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::addConfigurationListener(): implement me");
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::removeConfigurationListener(const css::uno::Reference< css::ui::XUIConfigurationListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::removeConfigurationListener(): implement me");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::removeConfigurationListener(): implement me");
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::reset()
+    throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference< css::container::XNamed > xNamed(m_xCfg, css::uno::UNO_QUERY);
     OUString sConfig = xNamed->getName();
@@ -931,16 +989,19 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::reset()
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::addResetListener(const css::uno::Reference< css::form::XResetListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::addResetListener(): implement me");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::addResetListener(): implement me");
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::removeResetListener(const css::uno::Reference< css::form::XResetListener >& /*xListener*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
-    SAL_INFO("fwk.accelerators", "XCUBasedAcceleratorConfiguration::removeResetListener(): implement me");
+    SAL_INFO("fwk", "XCUBasedAcceleratorConfiguration::removeResetListener(): implement me");
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::changesOccurred(const css::util::ChangesEvent& aEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
     SAL_INFO( "fwk.accelerators", "XCUBasedAcceleratorConfiguration::changesOccurred()" );
 
@@ -991,7 +1052,26 @@ void SAL_CALL XCUBasedAcceleratorConfiguration::changesOccurred(const css::util:
 }
 
 void SAL_CALL XCUBasedAcceleratorConfiguration::disposing(const css::lang::EventObject& /*aSource*/)
+    throw(css::uno::RuntimeException, std::exception)
 {
+}
+
+void SAL_CALL XCUBasedAcceleratorConfiguration::dispose()
+    throw(css::uno::RuntimeException, std::exception)
+{
+    // nop
+}
+
+void SAL_CALL XCUBasedAcceleratorConfiguration::addEventListener( const css::uno::Reference< css::lang::XEventListener >& /*xListener*/ )
+    throw(css::uno::RuntimeException, std::exception)
+{
+    // nop
+}
+
+void SAL_CALL XCUBasedAcceleratorConfiguration::removeEventListener( const css::uno::Reference< css::lang::XEventListener >& /*xListener*/ )
+    throw(css::uno::RuntimeException, std::exception)
+{
+    // nop
 }
 
 void XCUBasedAcceleratorConfiguration::impl_ts_load( bool bPreferred, const css::uno::Reference< css::container::XNameAccess >& xCfg )

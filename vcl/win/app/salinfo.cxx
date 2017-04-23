@@ -66,7 +66,7 @@ bool WinSalSystem::handleMonitorCallback( sal_IntPtr hMonitor, sal_IntPtr, sal_I
         if( it != m_aDeviceNameToMonitor.end() )
         {
             DisplayMonitor& rMon( m_aMonitors[ it->second ] );
-            rMon.m_aArea = tools::Rectangle( Point( aInfo.rcMonitor.left,
+            rMon.m_aArea = Rectangle( Point( aInfo.rcMonitor.left,
                                              aInfo.rcMonitor.top ),
                                       Size( aInfo.rcMonitor.right - aInfo.rcMonitor.left,
                                             aInfo.rcMonitor.bottom - aInfo.rcMonitor.top ) );
@@ -94,7 +94,7 @@ bool WinSalSystem::initMonitors()
         int w = GetSystemMetrics( SM_CXSCREEN );
         int h = GetSystemMetrics( SM_CYSCREEN );
         m_aMonitors.push_back( DisplayMonitor( OUString(),
-                                               tools::Rectangle( Point(), Size( w, h ) ) ) );
+                                               Rectangle( Point(), Size( w, h ) ) ) );
         m_aDeviceNameToMonitor[ OUString() ] = 0;
         m_nPrimary = 0;
     }
@@ -104,7 +104,7 @@ bool WinSalSystem::initMonitors()
         aDev.cb = sizeof( aDev );
         DWORD nDevice = 0;
         std::unordered_map< OUString, int, OUStringHash > aDeviceStringCount;
-        while( EnumDisplayDevicesW( nullptr, nDevice++, &aDev, 0 ) )
+        while( EnumDisplayDevicesW( NULL, nDevice++, &aDev, 0 ) )
         {
             if( (aDev.StateFlags & DISPLAY_DEVICE_ACTIVE)
                 && !(aDev.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER) ) // sort out non/disabled monitors
@@ -119,11 +119,11 @@ bool WinSalSystem::initMonitors()
                     aDeviceStringCount[ aDeviceString ]++;
                 m_aDeviceNameToMonitor[ aDeviceName ] = m_aMonitors.size();
                 m_aMonitors.push_back( DisplayMonitor( aDeviceString,
-                                                       tools::Rectangle() ) );
+                                                       Rectangle() ) );
             }
         }
-        HDC aDesktopRC = GetDC( nullptr );
-        EnumDisplayMonitors( aDesktopRC, nullptr, ImplEnumMonitorProc, reinterpret_cast<LPARAM>(this) );
+        HDC aDesktopRC = GetDC( NULL );
+        EnumDisplayMonitors( aDesktopRC, NULL, ImplEnumMonitorProc, reinterpret_cast<LPARAM>(this) );
 
         // append monitor numbers to name strings
         std::unordered_map< OUString, int, OUStringHash > aDevCount( aDeviceStringCount );
@@ -136,7 +136,7 @@ bool WinSalSystem::initMonitors()
                 int nInstance = aDeviceStringCount[ rDev ] - (-- aDevCount[ rDev ] );
                 OUStringBuffer aBuf( rDev.getLength() + 8 );
                 aBuf.append( rDev );
-                aBuf.append( " (" );
+                aBuf.appendAscii( " (" );
                 aBuf.append( sal_Int32( nInstance ) );
                 aBuf.append( ')' );
                 m_aMonitors[ i ].m_aName = aBuf.makeStringAndClear();
@@ -159,10 +159,10 @@ unsigned int WinSalSystem::GetDisplayBuiltInScreen()
     return m_nPrimary;
 }
 
-tools::Rectangle WinSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
+Rectangle WinSalSystem::GetDisplayScreenPosSizePixel( unsigned int nScreen )
 {
     initMonitors();
-    return (nScreen < m_aMonitors.size()) ? m_aMonitors[nScreen].m_aArea : tools::Rectangle();
+    return (nScreen < m_aMonitors.size()) ? m_aMonitors[nScreen].m_aArea : Rectangle();
 }
 
 int WinSalSystem::ShowNativeMessageBox(const OUString& rTitle, const OUString& rMessage)
@@ -171,7 +171,7 @@ int WinSalSystem::ShowNativeMessageBox(const OUString& rTitle, const OUString& r
 
     ImplHideSplash();
     return MessageBoxW(
-        nullptr,
+        0,
         reinterpret_cast<LPCWSTR>(rMessage.getStr()),
         reinterpret_cast<LPCWSTR>(rTitle.getStr()),
         nFlags);

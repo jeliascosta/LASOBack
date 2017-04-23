@@ -38,26 +38,26 @@ namespace connectivity
             sal_Unicode m_cThousandDelimiter;
         public:
             OFlatConnection(ODriver*    _pDriver);
-            virtual ~OFlatConnection() override;
+            virtual ~OFlatConnection();
 
-            virtual void construct(const OUString& _rUrl,const css::uno::Sequence< css::beans::PropertyValue >& _rInfo ) override;
+            virtual void construct(const OUString& _rUrl,const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& _rInfo ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
             // own methods
-            bool     isHeaderLine()          const { return m_bHeaderLine;       }
-            sal_Unicode  getFieldDelimiter()     const { return m_cFieldDelimiter;   }
-            sal_Unicode  getStringDelimiter()    const { return m_cStringDelimiter;  }
-            sal_Unicode  getDecimalDelimiter()   const { return m_cDecimalDelimiter; }
-            sal_Unicode  getThousandDelimiter()  const { return m_cThousandDelimiter;}
-            sal_Int32    getMaxRowsToScan()      const { return m_nMaxRowsToScan;}
+            inline bool     isHeaderLine()          const { return m_bHeaderLine;       }
+            inline sal_Unicode  getFieldDelimiter()     const { return m_cFieldDelimiter;   }
+            inline sal_Unicode  getStringDelimiter()    const { return m_cStringDelimiter;  }
+            inline sal_Unicode  getDecimalDelimiter()   const { return m_cDecimalDelimiter; }
+            inline sal_Unicode  getThousandDelimiter()  const { return m_cThousandDelimiter;}
+            inline sal_Int32    getMaxRowsToScan()      const { return m_nMaxRowsToScan;}
             // XServiceInfo
             DECLARE_SERVICE_INFO();
 
             // XConnection
-            virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) override;
-            virtual css::uno::Reference< css::sdbcx::XTablesSupplier > createCatalog() override;
-            virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) override;
-            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) override;
-            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbcx::XTablesSupplier > createCatalog() override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         };
     }
 }

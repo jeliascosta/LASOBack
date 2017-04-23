@@ -15,6 +15,7 @@
 
 #include "clang/AST/Attr.h"
 
+#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -102,8 +103,10 @@ bool ReservedId::VisitNamedDecl(NamedDecl const * decl) {
         return true;
     }
     auto filename = compiler.getSourceManager().getFilename(spelLoc);
-    if (filename.startswith(SRCDIR "/bridges/source/cpp_uno/")
-        && filename.endswith("share.hxx"))
+    if ((filename
+         == SRCDIR "/bridges/source/cpp_uno/gcc3_linux_x86-64/share.hxx")
+        || (filename
+            == SRCDIR "/bridges/source/cpp_uno/gcc3_macosx_x86-64/share.hxx"))
     {
         return true;
     }
@@ -129,7 +132,6 @@ bool ReservedId::VisitNamedDecl(NamedDecl const * decl) {
             && s != "__PK11_GetKeyData"
                 // xmlsecurity/source/xmlsec/nss/nssrenam.h
             && s != "__data_start" // sal/osl/unx/system.cxx
-            && s != "__lxstat64" // setup_native/scripts/source/getuid.c
             && s != "__lxstat") // setup_native/scripts/source/getuid.c
         {
             report(

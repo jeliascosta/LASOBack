@@ -23,9 +23,6 @@
 #include <smmod.hxx>
 #include <view.hxx>
 #include <visitors.hxx>
-#include "document.hxx"
-#include "node.hxx"
-#include "uiobject.hxx"
 
 #include <o3tl/make_unique.hxx>
 #include <svl/stritem.hxx>
@@ -34,8 +31,8 @@
 #include <vcl/help.hxx>
 #include <vcl/settings.hxx>
 
-SmElement::SmElement(std::unique_ptr<SmNode>&& pNode, const OUString& aText, const OUString& aHelpText) :
-    mpNode(std::move(pNode)),
+SmElement::SmElement(SmNodePointer pNode, const OUString& aText, const OUString& aHelpText) :
+    mpNode(pNode),
     maText(aText),
     maHelpText(aHelpText)
 {}
@@ -43,13 +40,13 @@ SmElement::SmElement(std::unique_ptr<SmNode>&& pNode, const OUString& aText, con
 SmElement::~SmElement()
 {}
 
-const std::unique_ptr<SmNode>& SmElement::getNode()
+const SmNodePointer& SmElement::getNode()
 {
     return mpNode;
 }
 
 SmElementSeparator::SmElementSeparator() :
-    SmElement(std::unique_ptr<SmNode>(), OUString(), OUString())
+    SmElement(SmNodePointer(), OUString(), OUString())
 {}
 
 const sal_uInt16 SmElementsControl::aUnaryBinaryOperatorsList[][2] =
@@ -59,12 +56,11 @@ const sal_uInt16 SmElementsControl::aUnaryBinaryOperatorsList[][2] =
     {0xFFFF, 0},
     {RID_XPLUSY, RID_XPLUSY_HELP}, {RID_XMINUSY, RID_XMINUSY_HELP},
     {RID_XCDOTY, RID_XCDOTY_HELP}, {RID_XTIMESY, RID_XTIMESY_HELP},
-    {RID_XSYMTIMESY, RID_XSYMTIMESY_HELP}, {RID_XOVERY, RID_XOVERY_HELP},
+    {RID_XSYMTIMESY, RID_XSYMTIMESY_HELP}, {RID_XOTIMESY, RID_XOTIMESY_HELP},
+    {RID_XOVERY, RID_XOVERY_HELP},
     {RID_XDIVY, RID_XDIVY_HELP}, {RID_XSYMDIVIDEY, RID_XSYMDIVIDEY_HELP},
-    {RID_XOPLUSY, RID_XOPLUSY_HELP}, {RID_XOMINUSY, RID_XOMINUSY_HELP},
-    {RID_XODOTY, RID_XODOTY_HELP}, {RID_XOTIMESY, RID_XOTIMESY_HELP},
-    {RID_XODIVIDEY, RID_XODIVIDEY_HELP}, {RID_XCIRCY, RID_XCIRCY_HELP},
-    {RID_XWIDESLASHY, RID_XWIDESLASHY_HELP}, {RID_XWIDEBSLASHY, RID_XWIDEBSLASHY_HELP},
+    {RID_XCIRCY, RID_XCIRCY_HELP}, {RID_XWIDESLASHY, RID_XWIDESLASHY_HELP},
+    {RID_XWIDEBSLASHY, RID_XWIDEBSLASHY_HELP},
     {0xFFFF, 0},
     {RID_NEGX, RID_NEGX_HELP}, {RID_XANDY, RID_XANDY_HELP}, {RID_XORY, RID_XORY_HELP},
 };
@@ -79,8 +75,7 @@ const sal_uInt16 SmElementsControl::aRelationsList[][2] =
     {RID_XAPPROXY, RID_XAPPROXY_HELP}, {RID_XSIMY, RID_XSIMY_HELP}, {RID_XSIMEQY, RID_XSIMEQY_HELP},
     {RID_XEQUIVY, RID_XEQUIVY_HELP}, {RID_XPROPY, RID_XPROPY_HELP}, {RID_XPARALLELY, RID_XPARALLELY_HELP},
     {RID_XORTHOY, RID_XORTHOY_HELP}, {RID_XDIVIDESY, RID_XDIVIDESY_HELP}, {RID_XNDIVIDESY, RID_XNDIVIDESY_HELP},
-    {RID_XTOWARDY, RID_XTOWARDY_HELP}, {RID_XTRANSLY, RID_XTRANSLY_HELP}, {RID_XTRANSRY, RID_XTRANSRY_HELP},
-    {RID_XDEFY, RID_XDEFY_HELP},
+    {RID_XTOWARDY, RID_XTOWARDY_HELP},
     {0xFFFF, 0},
     {RID_DLARROW, RID_DLARROW_HELP}, {RID_DLRARROW, RID_DLRARROW_HELP}, {RID_DRARROW, RID_DRARROW_HELP},
     {0xFFFF, 0},
@@ -125,12 +120,6 @@ const sal_uInt16 SmElementsControl::aOperators[][2] =
     {RID_LIMX, RID_LIMX_HELP}, {RID_LIM_FROMX, RID_LIM_FROMX_HELP},
     {RID_LIM_TOX, RID_LIM_TOX_HELP}, {RID_LIM_FROMTOX, RID_LIM_FROMTOX_HELP},
     {0xFFFF, 0},
-    {RID_LIMINFX, RID_LIMINFX_HELP}, {RID_LIMINF_FROMX, RID_LIMINF_FROMX_HELP},
-    {RID_LIMINF_TOX, RID_LIMINF_TOX_HELP}, {RID_LIMINF_FROMTOX, RID_LIMINF_FROMTOX_HELP},
-    {0xFFFF, 0},
-    {RID_LIMSUPX, RID_LIMSUPX_HELP}, {RID_LIMSUP_FROMX, RID_LIMSUP_FROMX_HELP},
-    {RID_LIMSUP_TOX, RID_LIMSUP_TOX_HELP}, {RID_LIMSUP_FROMTOX, RID_LIMSUP_FROMTOX_HELP},
-    {0xFFFF, 0},
     {RID_SUMX, RID_SUMX_HELP}, {RID_SUM_FROMX, RID_SUM_FROMX_HELP},
     {RID_SUM_TOX, RID_SUM_TOX_HELP}, {RID_SUM_FROMTOX, RID_SUM_FROMTOX_HELP},
     {0xFFFF, 0},
@@ -152,11 +141,11 @@ const sal_uInt16 SmElementsControl::aOperators[][2] =
     {RID_LINTX, RID_LINTX_HELP}, {RID_LINT_FROMX, RID_LINT_FROMX_HELP},
     {RID_LINT_TOX, RID_LINT_TOX_HELP}, {RID_LINT_FROMTOX, RID_LINT_FROMTOX_HELP},
     {0xFFFF, 0},
-    {RID_LLINTX, RID_LLINTX_HELP}, {RID_LLINT_FROMX, RID_LLINT_FROMX_HELP},
-    {RID_LLINT_TOX, RID_LLINT_TOX_HELP}, {RID_LLINT_FROMTOX, RID_LLINT_FROMTOX_HELP},
+    {RID_LLINTX, RID_LINTX_HELP}, {RID_LLINT_FROMX, RID_LLINT_FROMX_HELP},
+    {RID_LLINT_TOX, RID_LINT_TOX_HELP}, {RID_LLINT_FROMTOX, RID_LLINT_FROMTOX_HELP},
     {0xFFFF, 0},
-    {RID_LLLINTX, RID_LLLINTX_HELP}, {RID_LLLINT_FROMX, RID_LLLINT_FROMX_HELP},
-    {RID_LLLINT_TOX, RID_LLLINT_TOX_HELP}, {RID_LLLINT_FROMTOX, RID_LLLINT_FROMTOX_HELP},
+    {RID_LLLINTX, RID_LINTX_HELP}, {RID_LLLINT_FROMX, RID_LLLINT_FROMX_HELP},
+    {RID_LLLINT_TOX, RID_LINT_TOX_HELP}, {RID_LLLINT_FROMTOX, RID_LLLINT_FROMTOX_HELP},
 };
 
 const sal_uInt16 SmElementsControl::aAttributes[][2] =
@@ -197,7 +186,6 @@ const sal_uInt16 SmElementsControl::aBrackets[][2] =
     {RID_SLRANGLEX, RID_SLRANGLEX_HELP}, {RID_SLMRANGLEXY, RID_SLMRANGLEXY_HELP},
     {RID_SLRCEILX, RID_SLRCEILX_HELP}, {RID_SLRFLOORX, RID_SLRFLOORX_HELP},
     {RID_SLRLINEX, RID_SLRLINEX_HELP}, {RID_SLRDLINEX, RID_SLRDLINEX_HELP},
-    {RID_XEVALUATEDATY, RID_XEVALUATEDATY_HELP},
     {0XFFFF, 0},
     {RID_XOVERBRACEY, RID_XOVERBRACEY_HELP}, {RID_XUNDERBRACEY, RID_XUNDERBRACEY_HELP},
 };
@@ -237,10 +225,9 @@ SmElementsControl::SmElementsControl(vcl::Window *pParent)
     , mbVerticalMode(true)
     , mxScroll(VclPtr<ScrollBar>::Create(this, WB_VERT))
 {
-    set_id("element_selector");
-    SetMapMode( MapMode(MapUnit::Map100thMM) );
+    SetMapMode( MapMode(MAP_100TH_MM) );
     SetDrawMode( DrawModeFlags::Default );
-    SetLayoutMode( ComplexTextLayoutFlags::Default );
+    SetLayoutMode( TEXT_LAYOUT_DEFAULT );
     SetDigitLanguage( LANGUAGE_ENGLISH );
 
     maFormat.SetBaseSize(PixelToLogic(Size(0, SmPtsTo100th_mm(12))));
@@ -308,7 +295,7 @@ void SmElementsControl::LayoutOrPaintContents(vcl::RenderContext *pContext)
                 x += boxX;
                 y = 0;
 
-                tools::Rectangle aSelectionRectangle(x + 5 - 1, y + 5,
+                Rectangle aSelectionRectangle(x + 5 - 1, y + 5,
                                               x + 5 + 1, nControlHeight - 5);
 
                 if (pContext)
@@ -320,7 +307,7 @@ void SmElementsControl::LayoutOrPaintContents(vcl::RenderContext *pContext)
                 x = 0;
                 y += boxY;
 
-                tools::Rectangle aSelectionRectangle(x + 5, y + 5 - 1,
+                Rectangle aSelectionRectangle(x + 5, y + 5 - 1,
                                               nControlWidth - 5, y + 5 + 1);
 
                 if (pContext)
@@ -355,7 +342,7 @@ void SmElementsControl::LayoutOrPaintContents(vcl::RenderContext *pContext)
                 pContext->SetFillColor(Color(230, 230, 230));
                 pContext->SetLineColor(Color(230, 230, 230));
 
-                pContext->DrawRect(PixelToLogic(tools::Rectangle(x + 2, y + 2, x + boxX - 2, y + boxY - 2)));
+                pContext->DrawRect(PixelToLogic(Rectangle(x + 2, y + 2, x + boxX - 2, y + boxY - 2)));
                 pContext->Pop();
             }
 
@@ -394,7 +381,7 @@ void SmElementsControl::LayoutOrPaintContents(vcl::RenderContext *pContext)
     }
 }
 
-void SmElementsControl::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void SmElementsControl::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     rRenderContext.Push();
     LayoutOrPaintContents(&rRenderContext);
@@ -413,7 +400,7 @@ void SmElementsControl::RequestHelp(const HelpEvent& rHEvt)
             for (std::unique_ptr<SmElement> & i : maElementList)
             {
                 SmElement* pElement = i.get();
-                tools::Rectangle aRect(pElement->mBoxLocation, pElement->mBoxSize);
+                Rectangle aRect(pElement->mBoxLocation, pElement->mBoxSize);
                 if (aRect.IsInside(aHelpEventPos))
                 {
                     pHelpElement = pElement;
@@ -425,7 +412,7 @@ void SmElementsControl::RequestHelp(const HelpEvent& rHEvt)
         if (!pHelpElement)
             return;
 
-        tools::Rectangle aHelpRect(pHelpElement->mBoxLocation, pHelpElement->mBoxSize);
+        Rectangle aHelpRect(pHelpElement->mBoxLocation, pHelpElement->mBoxSize);
         Point aPt = OutputToScreenPixel( aHelpRect.TopLeft() );
         aHelpRect.Left() = aPt.X();
         aHelpRect.Top()= aPt.Y();
@@ -449,28 +436,20 @@ void SmElementsControl::RequestHelp(const HelpEvent& rHEvt)
 
 void SmElementsControl::MouseMove( const MouseEvent& rMouseEvent )
 {
-    SmElement* pPrevElement = mpCurrentElement;
     mpCurrentElement = nullptr;
-    if (rMouseEvent.IsLeaveWindow())
-    {
-        LayoutOrPaintContents();
-        Invalidate();
-        return;
-    }
-    if (tools::Rectangle(Point(0, 0), GetOutputSizePixel()).IsInside(rMouseEvent.GetPosPixel()))
+    if (Rectangle(Point(0, 0), GetOutputSizePixel()).IsInside(rMouseEvent.GetPosPixel()))
     {
         for (std::unique_ptr<SmElement> & i : maElementList)
         {
             SmElement* element = i.get();
-            tools::Rectangle rect(element->mBoxLocation, element->mBoxSize);
+            Rectangle rect(element->mBoxLocation, element->mBoxSize);
             if (rect.IsInside(rMouseEvent.GetPosPixel()))
             {
-                if (pPrevElement != element)
+                if (mpCurrentElement != element)
                 {
                     mpCurrentElement = element;
                     LayoutOrPaintContents();
                     Invalidate();
-                    return;
                 }
             }
         }
@@ -484,12 +463,12 @@ void SmElementsControl::MouseButtonDown(const MouseEvent& rMouseEvent)
 {
     GrabFocus();
 
-    if (rMouseEvent.IsLeft() && tools::Rectangle(Point(0, 0), GetOutputSizePixel()).IsInside(rMouseEvent.GetPosPixel()) && maSelectHdlLink.IsSet())
+    if (rMouseEvent.IsLeft() && Rectangle(Point(0, 0), GetOutputSizePixel()).IsInside(rMouseEvent.GetPosPixel()) && maSelectHdlLink.IsSet())
     {
         for (std::unique_ptr<SmElement> & i : maElementList)
         {
             SmElement* element = i.get();
-            tools::Rectangle rect(element->mBoxLocation, element->mBoxSize);
+            Rectangle rect(element->mBoxLocation, element->mBoxSize);
             if (rect.IsInside(rMouseEvent.GetPosPixel()))
             {
                 maSelectHdlLink.Call(*element);
@@ -503,7 +482,7 @@ void SmElementsControl::MouseButtonDown(const MouseEvent& rMouseEvent)
     }
 }
 
-IMPL_LINK_NOARG( SmElementsControl, ScrollHdl, ScrollBar*, void )
+IMPL_LINK_NOARG_TYPED( SmElementsControl, ScrollHdl, ScrollBar*, void )
 {
     DoScroll(mxScroll->GetDelta());
 }
@@ -511,7 +490,7 @@ IMPL_LINK_NOARG( SmElementsControl, ScrollHdl, ScrollBar*, void )
 void SmElementsControl::DoScroll(long nDelta)
 {
     Point aNewPoint = mxScroll->GetPosPixel();
-    tools::Rectangle aRect(Point(), GetOutputSize());
+    Rectangle aRect(Point(), GetOutputSize());
     aRect.Right() -= mxScroll->GetSizePixel().Width();
     Scroll( 0, -nDelta, aRect );
     mxScroll->SetPosPixel(aNewPoint);
@@ -519,15 +498,20 @@ void SmElementsControl::DoScroll(long nDelta)
     Invalidate();
 }
 
+void SmElementsControl::addSeparator()
+{
+    maElementList.push_back(o3tl::make_unique<SmElementSeparator>());
+}
+
 void SmElementsControl::addElement(const OUString& aElementVisual, const OUString& aElementSource, const OUString& aHelpText)
 {
-    std::unique_ptr<SmNode> pNode(SmParser().ParseExpression(aElementVisual));
+    SmNodePointer pNode(SmParser().ParseExpression(aElementVisual));
 
     pNode->Prepare(maFormat, *mpDocShell);
     pNode->SetSize(Fraction(10,8));
     pNode->Arrange(*this, maFormat);
 
-    Size aSizePixel = LogicToPixel(Size(pNode->GetWidth(), pNode->GetHeight()), MapUnit::Map100thMM);
+    Size aSizePixel = LogicToPixel(Size(pNode->GetWidth(), pNode->GetHeight()), MAP_100TH_MM);
     if (aSizePixel.Width() > maMaxElementDimensions.Width()) {
         maMaxElementDimensions.Width() = aSizePixel.Width();
     }
@@ -536,7 +520,7 @@ void SmElementsControl::addElement(const OUString& aElementVisual, const OUStrin
         maMaxElementDimensions.Height() = aSizePixel.Height();
     }
 
-    maElementList.push_back(o3tl::make_unique<SmElement>(std::move(pNode), aElementSource, aHelpText));
+    maElementList.push_back(o3tl::make_unique<SmElement>(pNode, aElementSource, aHelpText));
 }
 
 void SmElementsControl::setElementSetId(sal_uInt16 aSetId)
@@ -553,7 +537,7 @@ void SmElementsControl::addElements(const sal_uInt16 aElementsArray[][2], sal_uI
         sal_uInt16 aElementId = aElementsArray[i][0];
         sal_uInt16 aElementIdHelp = aElementsArray[i][1];
         if (aElementId == 0xFFFF) {
-            maElementList.push_back(o3tl::make_unique<SmElementSeparator>());
+            addSeparator();
         } else {
             if (aElementId == RID_NEWLINE)
                 addElement(OUString( "\xe2\x86\xb5", 3, RTL_TEXTENCODING_UTF8 ), SM_RESSTR(aElementId), SM_RESSTR(aElementIdHelp));
@@ -646,6 +630,7 @@ void SmElementsControl::build()
 
     switch(maCurrentSetId)
     {
+        // we need to divide by 2 because of the matrix of two dimensions
         case RID_CATEGORY_UNARY_BINARY_OPERATORS:
             addElements(aUnaryBinaryOperatorsList, SAL_N_ELEMENTS(aUnaryBinaryOperatorsList));
         break;
@@ -694,12 +679,7 @@ void SmElementsControl::build()
 
 Size SmElementsControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(100, 100), MapMode(MapUnit::MapAppFont));
-}
-
-FactoryFunction SmElementsControl::GetUITestFactory() const
-{
-    return ElementSelectorUIObject::create;
+    return LogicToPixel(Size(100, 100), MapMode(MAP_APPFONT));
 }
 
 const sal_uInt16 SmElementsDockingWindow::aCategories[] = {
@@ -765,14 +745,14 @@ void SmElementsDockingWindow::ToggleFloatingMode()
     Invalidate();
 }
 
-void SmElementsDockingWindow::EndDocking( const tools::Rectangle& rReactangle, bool bFloatMode)
+void SmElementsDockingWindow::EndDocking( const Rectangle& rReactangle, bool bFloatMode)
 {
     SfxDockingWindow::EndDocking(rReactangle, bFloatMode);
     bool bVertical = ( GetAlignment() == SfxChildAlignment::TOP || GetAlignment() == SfxChildAlignment::BOTTOM );
     mpElementsControl->setVerticalMode(bVertical);
 }
 
-IMPL_LINK(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElement, void)
+IMPL_LINK_TYPED(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElement, void)
 {
     SmViewShell* pViewSh = GetView();
 
@@ -784,7 +764,7 @@ IMPL_LINK(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElement, voi
     }
 }
 
-IMPL_LINK( SmElementsDockingWindow, ElementSelectedHandle, ListBox&, rList, void)
+IMPL_LINK_TYPED( SmElementsDockingWindow, ElementSelectedHandle, ListBox&, rList, void)
 {
     for (sal_uInt16 aCurrentCategory : aCategories)
     {

@@ -68,7 +68,7 @@ uno::Reference< lang::XComponent > ScDataPilotTableObj::mxComponent;
 
 ScDataPilotTableObj::ScDataPilotTableObj()
     : CalcUnoApiTest("/sc/qa/extras/testdocuments"),
-      apitest::XNamed("DataPilotTable")
+      apitest::XNamed(OUString("DataPilotTable"))
 {
 }
 

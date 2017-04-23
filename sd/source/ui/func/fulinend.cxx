@@ -33,7 +33,6 @@
 #include "View.hxx"
 #include "Window.hxx"
 #include <memory>
-#include <o3tl/make_unique.hxx>
 
 namespace sd {
 
@@ -71,7 +70,7 @@ void FuLineEnd::DoExecute( SfxRequest& )
             pObj->TakeObjInfo( aInfoRec );
 
             if( aInfoRec.bCanConvToPath &&
-                pObj->GetObjInventor() == SdrInventor::Default &&
+                pObj->GetObjInventor() == SdrInventor &&
                 pObj->GetObjIdentifier() != OBJ_GRUP )
                 // bCanConvToPath is sal_True for group objects,
                 // but it crashes on ConvertToPathObj()!
@@ -114,7 +113,7 @@ void FuLineEnd::DoExecute( SfxRequest& )
         }
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact ? pFact->CreateSvxNameDialog( nullptr, aName, aDesc ) : nullptr);
+        std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact ? pFact->CreateSvxNameDialog( nullptr, aName, aDesc ) : nullptr);
 
         if( pDlg )
         {
@@ -133,7 +132,8 @@ void FuLineEnd::DoExecute( SfxRequest& )
 
                 if( bDifferent )
                 {
-                    pLineEndList->Insert(o3tl::make_unique<XLineEndEntry>(aPolyPolygon, aName));
+                    XLineEndEntry* pEntry = new XLineEndEntry( aPolyPolygon, aName );
+                    pLineEndList->Insert( pEntry);
                 }
                 else
                 {

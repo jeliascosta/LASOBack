@@ -62,7 +62,7 @@ namespace rptxml
                 const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
                 SvXMLStylesContext& rStyles, sal_uInt16 nFamily );
 
-        virtual ~OControlStyleContext() override;
+        virtual ~OControlStyleContext();
 
 
         virtual void FillPropertySet(const css::uno::Reference<
@@ -119,7 +119,7 @@ namespace rptxml
                 const OUString& rLName ,
                 const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
                 const bool bAutoStyles );
-        virtual ~OReportStylesContext() override;
+        virtual ~OReportStylesContext();
 
         virtual void EndElement() override;
 

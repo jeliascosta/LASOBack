@@ -29,7 +29,6 @@
 #include <com/sun/star/ucb/XPersistentPropertySet.hpp>
 #include <com/sun/star/ucb/OpenCommandArgument2.hpp>
 #include <com/sun/star/ucb/OpenMode.hpp>
-#include <com/sun/star/ucb/UnsupportedCommandException.hpp>
 #include <com/sun/star/ucb/XDynamicResultSet.hpp>
 #include <com/sun/star/deployment/PackageInformationProvider.hpp>
 
@@ -161,13 +160,13 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    OUString SAL_CALL Content::getImplementationName()
+    OUString SAL_CALL Content::getImplementationName() throw( RuntimeException, std::exception )
     {
         return OUString(  "org.openoffice.comp.ucp.ext.Content"  );
     }
 
 
-    Sequence< OUString > SAL_CALL Content::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL Content::getSupportedServiceNames() throw( RuntimeException, std::exception )
     {
         Sequence< OUString > aServiceNames(2);
         aServiceNames[0] = "com.sun.star.ucb.Content";
@@ -176,7 +175,7 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    OUString SAL_CALL Content::getContentType()
+    OUString SAL_CALL Content::getContentType() throw( RuntimeException, std::exception )
     {
         impl_determineContentType();
         return *m_aContentType;
@@ -184,6 +183,7 @@ namespace ucb { namespace ucp { namespace ext
 
 
     Any SAL_CALL Content::execute( const Command& aCommand, sal_Int32 /* CommandId */, const Reference< XCommandEnvironment >& i_rEvironment )
+        throw( Exception, CommandAbortedException, RuntimeException, std::exception )
     {
         Any aRet;
 
@@ -274,7 +274,7 @@ namespace ucb { namespace ucp { namespace ext
     }
 
 
-    void SAL_CALL Content::abort( sal_Int32 )
+    void SAL_CALL Content::abort( sal_Int32 ) throw( RuntimeException, std::exception )
     {
     }
 
@@ -418,22 +418,22 @@ namespace ucb { namespace ucp { namespace ext
         else
         {
             // Append all Core Properties.
-            xRow->appendString ( Property( "ContentType",
+            xRow->appendString ( Property( OUString("ContentType"),
                           -1,
                           cppu::UnoType<OUString>::get(),
                           PropertyAttribute::BOUND | PropertyAttribute::READONLY ),
                 ContentProvider::getArtificialNodeContentType() );
-            xRow->appendString ( Property( "Title",
+            xRow->appendString ( Property( OUString("Title"),
                           -1,
                           cppu::UnoType<OUString>::get(),
                           PropertyAttribute::BOUND | PropertyAttribute::READONLY ),
                 i_rTitle );
-            xRow->appendBoolean( Property( "IsDocument",
+            xRow->appendBoolean( Property( OUString("IsDocument"),
                           -1,
                           cppu::UnoType<bool>::get(),
                           PropertyAttribute::BOUND | PropertyAttribute::READONLY ),
                 false );
-            xRow->appendBoolean( Property( "IsFolder",
+            xRow->appendBoolean( Property( OUString("IsFolder"),
                           -1,
                           cppu::UnoType<bool>::get(),
                           PropertyAttribute::BOUND | PropertyAttribute::READONLY ),
@@ -537,22 +537,22 @@ namespace ucb { namespace ucp { namespace ext
             // Mandatory commands
 
             CommandInfo(
-                "getCommandInfo",
+                OUString(  "getCommandInfo"  ),
                 -1,
                 cppu::UnoType<void>::get()
             ),
             CommandInfo(
-                "getPropertySetInfo",
+                OUString(  "getPropertySetInfo"  ),
                 -1,
                 cppu::UnoType<void>::get()
             ),
             CommandInfo(
-                "getPropertyValues",
+                OUString(  "getPropertyValues"  ),
                 -1,
                 cppu::UnoType<Sequence< Property >>::get()
             ),
             CommandInfo(
-                "setPropertyValues",
+                OUString(  "setPropertyValues"  ),
                 -1,
                 cppu::UnoType<Sequence< PropertyValue >>::get()
             )
@@ -560,7 +560,7 @@ namespace ucb { namespace ucp { namespace ext
             // Optional standard commands
 
             , CommandInfo(
-                "open",
+                OUString(  "open"  ),
                 -1,
                 cppu::UnoType<OpenCommandArgument2>::get()
             )
@@ -575,25 +575,25 @@ namespace ucb { namespace ucp { namespace ext
         static const Property aProperties[] =
         {
             Property(
-                "ContentType",
+                OUString(  "ContentType"  ),
                 -1,
                 cppu::UnoType<OUString>::get(),
                 PropertyAttribute::BOUND | PropertyAttribute::READONLY
             ),
             Property(
-                "IsDocument",
+                OUString(  "IsDocument"  ),
                 -1,
                 cppu::UnoType<bool>::get(),
                 PropertyAttribute::BOUND | PropertyAttribute::READONLY
             ),
             Property(
-                "IsFolder",
+                OUString(  "IsFolder"  ),
                 -1,
                 cppu::UnoType<bool>::get(),
                 PropertyAttribute::BOUND | PropertyAttribute::READONLY
             ),
             Property(
-                "Title",
+                OUString(  "Title"  ),
                 -1,
                 cppu::UnoType<OUString>::get(),
                 PropertyAttribute::BOUND | PropertyAttribute::READONLY

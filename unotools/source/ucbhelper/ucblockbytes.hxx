@@ -89,7 +89,7 @@ class UcbLockBytes : public virtual SvLockBytes
 
                             UcbLockBytes();
 protected:
-    virtual                 ~UcbLockBytes() override;
+    virtual                 ~UcbLockBytes();
 
 public:
                             // properties: Referer, PostMimeType
@@ -102,8 +102,9 @@ public:
     static UcbLockBytesRef  CreateLockBytes( const css::uno::Reference < css::io::XStream >& xContent );
 
     // SvLockBytes
-    virtual ErrCode         ReadAt(sal_uInt64 nPos, void *pBuffer, std::size_t nCount, std::size_t *pRead) const override;
-    virtual ErrCode         WriteAt(sal_uInt64, const void*, std::size_t, std::size_t *pWritten) override;
+    virtual void            SetSynchronMode (bool bSynchron) override;
+    virtual ErrCode         ReadAt(sal_uInt64 nPos, void *pBuffer, sal_uLong nCount, sal_uLong *pRead) const override;
+    virtual ErrCode         WriteAt(sal_uInt64, const void*, sal_uLong, sal_uLong *pWritten) override;
     virtual ErrCode         Flush() const override;
     virtual ErrCode         SetSize(sal_uInt64) override;
     virtual ErrCode         Stat ( SvLockBytesStat *pStat, SvLockBytesStatFlag) const override;

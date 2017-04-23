@@ -37,7 +37,7 @@ CIIAObj::~CIIAObj()
 
 STDMETHODIMP CIIAObj::QueryInterface(REFIID riid, LPVOID FAR *ppv)
 {
-    *ppv=nullptr;
+    *ppv=NULL;
 
     if(IID_IUnknown==riid ||
        IID_IOleWindow==riid ||
@@ -45,9 +45,9 @@ STDMETHODIMP CIIAObj::QueryInterface(REFIID riid, LPVOID FAR *ppv)
         *ppv=this;
 
     //AddRef any interface we'll return.
-    if (nullptr!=*ppv)
+    if (NULL!=*ppv)
     {
-        static_cast<LPUNKNOWN>(*ppv)->AddRef();
+        ((LPUNKNOWN)*ppv)->AddRef();
         return NOERROR;
     }
 

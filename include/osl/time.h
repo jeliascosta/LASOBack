@@ -29,6 +29,10 @@
 #include <sal/saldllapi.h>
 #include <sal/types.h>
 
+/****************************************************************************/
+/* TimeValue                                                                */
+/****************************************************************************/
+
 #ifdef SAL_W32
 #   pragma pack(push, 8)
 #endif
@@ -40,10 +44,10 @@
 struct TimeValue {
     TimeValue() = default;
 
-    constexpr TimeValue(sal_uInt32 seconds, sal_uInt32 nanoseconds):
+    SAL_CONSTEXPR TimeValue(sal_uInt32 seconds, sal_uInt32 nanoseconds):
         Seconds(seconds), Nanosec(nanoseconds) {}
 
-    template<typename Rep, typename Period> constexpr
+    template<typename Rep, typename Period> SAL_CONSTEXPR
     TimeValue(std::chrono::duration<Rep, Period> const & duration):
         Seconds(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -82,8 +86,13 @@ typedef struct {
 extern "C" {
 #endif
 
+/****************************************************************************/
+/* oslDateTime */
+/****************************************************************************/
+
 typedef struct _oslDateTime
 {
+    /*----------------------------------------------------------------------*/
     /** contains the nanoseconds .
     */
     sal_uInt32 NanoSeconds;
@@ -92,26 +101,32 @@ typedef struct _oslDateTime
     */
     sal_uInt16 Seconds;
 
+    /*----------------------------------------------------------------------*/
     /** contains the minutes (0-59).
     */
     sal_uInt16 Minutes;
 
+    /*----------------------------------------------------------------------*/
     /** contains the hour (0-23).
     */
     sal_uInt16 Hours;
 
+    /*----------------------------------------------------------------------*/
     /** is the day of month (1-31).
     */
     sal_uInt16 Day;
 
+    /*----------------------------------------------------------------------*/
     /** is the day of week (0-6 , 0 : Sunday).
     */
     sal_uInt16 DayOfWeek;
 
+    /*----------------------------------------------------------------------*/
     /** is the month of year (1-12).
     */
     sal_uInt16 Month;
 
+    /*----------------------------------------------------------------------*/
     /** is the year.
     */
     sal_Int16 Year;
@@ -120,7 +135,7 @@ typedef struct _oslDateTime
 
 
 /** Get the current system time as TimeValue.
-    @retval false if any error occurs.
+    @return false if any error occurs.
 */
 SAL_DLLPUBLIC sal_Bool SAL_CALL osl_getSystemTime(
         TimeValue* pTimeVal );

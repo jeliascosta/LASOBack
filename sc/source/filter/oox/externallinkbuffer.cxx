@@ -20,10 +20,16 @@
 #include "externallinkbuffer.hxx"
 
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/sheet/ComplexReference.hpp>
 #include <com/sun/star/sheet/DDELinkInfo.hpp>
 #include <com/sun/star/sheet/ExternalLinkType.hpp>
+#include <com/sun/star/sheet/ExternalReference.hpp>
+#include <com/sun/star/sheet/ReferenceFlags.hpp>
+#include <com/sun/star/sheet/SingleReference.hpp>
 #include <com/sun/star/sheet/XDDELinks.hpp>
+#include <com/sun/star/sheet/XDDELink.hpp>
 #include <com/sun/star/sheet/XDDELinkResults.hpp>
+#include <com/sun/star/sheet/XExternalDocLink.hpp>
 #include <com/sun/star/sheet/XExternalDocLinks.hpp>
 #include <osl/diagnose.h>
 #include <rtl/strbuf.hxx>
@@ -33,6 +39,7 @@
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 #include "excelhandlers.hxx"
 #include "formulaparser.hxx"
 #include "worksheetbuffer.hxx"
@@ -41,6 +48,7 @@ namespace oox {
 namespace xls {
 
 using namespace ::com::sun::star::sheet;
+using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
 
 using ::oox::core::Relation;
@@ -129,7 +137,7 @@ void ExternalName::importExternalNameFlags( SequenceInputStream& rStrm )
     maExtNameModel.mbStdDocName = getFlag( nFlags, BIFF12_EXTNAME_STDDOCNAME );
     maExtNameModel.mbOleObj     = getFlag( nFlags, BIFF12_EXTNAME_OLEOBJECT );
     maExtNameModel.mbIconified  = getFlag( nFlags, BIFF12_EXTNAME_ICONIFIED );
-    OSL_ENSURE( (mrParentLink.getLinkType() == ExternalLinkType::OLE) == maExtNameModel.mbOleObj,
+    OSL_ENSURE( (mrParentLink.getLinkType() == LINKTYPE_OLE) == maExtNameModel.mbOleObj,
         "ExternalName::importExternalNameFlags - wrong OLE flag in external name" );
 }
 
@@ -161,9 +169,49 @@ void ExternalName::importDdeItemString( SequenceInputStream& rStrm )
     appendResultValue( BiffHelper::readString( rStrm ) );
 }
 
+#if 0
+sal_Int32 ExternalName::getSheetCacheIndex() const
+{
+    OSL_ENSURE( mrParentLink.getLinkType() == LINKTYPE_DDE, "ExternalName::getSheetCacheIndex - unexpected link type" );
+    sal_Int32 nCacheIdx = -1;
+    switch( getFilterType() )
+    {
+        case FILTER_OOXML:
+            // OOXML/BIFF12: zero-based index into sheet list, -1 means global name
+            if( maModel.mnSheet >= 0 )
+                nCacheIdx = mrParentLink.getSheetIndex( maModel.mnSheet );
+        break;
+        case FILTER_BIFF:
+            switch( getBiff() )
+            {
+                case BIFF2:
+                case BIFF3:
+                case BIFF4:
+                break;
+                case BIFF5:
+                    if( maModel.mnSheet > 0 )
+                        if( const ExternalLink* pExtLink = getExternalLinks().getExternalLink( maModel.mnSheet ).get() )
+                            if( pExtLink->getLinkType() == LINKTYPE_EXTERNAL )
+                                nCacheIdx = pExtLink->getSheetIndex();
+                break;
+                case BIFF8:
+                    if( maModel.mnSheet > 0 )
+                        nCacheIdx = mrParentLink.getSheetIndex( maModel.mnSheet - 1 );
+                break;
+                case BIFF_UNKNOWN:
+                break;
+            }
+        break;
+        case FILTER_UNKNOWN:
+        break;
+    }
+    return nCacheIdx;
+}
+#endif
+
 bool ExternalName::getDdeItemInfo( DDEItemInfo& orItemInfo ) const
 {
-    if( (mrParentLink.getLinkType() == ExternalLinkType::DDE) && !maModel.maName.isEmpty() )
+    if( (mrParentLink.getLinkType() == LINKTYPE_DDE) && !maModel.maName.isEmpty() )
     {
         orItemInfo.Item = maModel.maName;
         orItemInfo.Results = ContainerHelper::matrixToSequenceSequence( maResults );
@@ -174,7 +222,7 @@ bool ExternalName::getDdeItemInfo( DDEItemInfo& orItemInfo ) const
 
 bool ExternalName::getDdeLinkData( OUString& orDdeServer, OUString& orDdeTopic, OUString& orDdeItem )
 {
-    if( (mrParentLink.getLinkType() == ExternalLinkType::DDE) && !maModel.maName.isEmpty() )
+    if( (mrParentLink.getLinkType() == LINKTYPE_DDE) && !maModel.maName.isEmpty() )
     {
         // try to create a DDE link and to set the imported link results
         if( !mbDdeLinkCreated ) try
@@ -209,8 +257,8 @@ bool ExternalName::getDdeLinkData( OUString& orDdeServer, OUString& orDdeTopic, 
 
 void ExternalName::setResultSize( sal_Int32 nColumns, sal_Int32 nRows )
 {
-    OSL_ENSURE( (mrParentLink.getLinkType() == ExternalLinkType::DDE) || (mrParentLink.getLinkType() == ExternalLinkType::OLE),
-                "ExternalName::setResultSize - wrong link type" );
+    OSL_ENSURE( (mrParentLink.getLinkType() == LINKTYPE_DDE) || (mrParentLink.getLinkType() == LINKTYPE_OLE) ||
+        (mrParentLink.getLinkType() == LINKTYPE_MAYBE_DDE_OLE), "ExternalName::setResultSize - wrong link type" );
     OSL_ENSURE( (nRows > 0) && (nColumns > 0), "ExternalName::setResultSize - invalid matrix size" );
     const ScAddress& rMaxPos = getAddressConverter().getMaxApiAddress();
     if( (0 < nRows) && (nRows <= rMaxPos.Row() + 1) && (0 < nColumns) && (nColumns <= rMaxPos.Col() + 1) )
@@ -258,7 +306,7 @@ void LinkSheetRange::setExternalRange( sal_Int32 nDocLink, sal_Int32 nFirst, sal
 
 ExternalLink::ExternalLink( const WorkbookHelper& rHelper ) :
     WorkbookHelper( rHelper ),
-    meLinkType( ExternalLinkType::Unknown ),
+    meLinkType( LINKTYPE_UNKNOWN ),
     meFuncLibType( FUNCLIB_UNKNOWN )
 {
 }
@@ -287,7 +335,7 @@ void ExternalLink::importDdeLink( const AttributeList& rAttribs )
 {
     OUString aDdeService = rAttribs.getXString( XML_ddeService, OUString() );
     OUString aDdeTopic = rAttribs.getXString( XML_ddeTopic, OUString() );
-    setDdeOleTargetUrl( aDdeService, aDdeTopic, ExternalLinkType::DDE );
+    setDdeOleTargetUrl( aDdeService, aDdeTopic, LINKTYPE_DDE );
 }
 
 ExternalNameRef ExternalLink::importDdeItem( const AttributeList& rAttribs )
@@ -301,7 +349,7 @@ void ExternalLink::importOleLink( const Relations& rRelations, const AttributeLi
 {
     OUString aProgId = rAttribs.getXString( XML_progId, OUString() );
     OUString aTargetUrl = rRelations.getExternalTargetFromRelId( rAttribs.getString( R_TOKEN( id ), OUString() ) );
-    setDdeOleTargetUrl( aProgId, aTargetUrl, ExternalLinkType::OLE );
+    setDdeOleTargetUrl( aProgId, aTargetUrl, LINKTYPE_OLE );
 }
 
 ExternalNameRef ExternalLink::importOleItem( const AttributeList& rAttribs )
@@ -318,17 +366,17 @@ void ExternalLink::importExternalRef( SequenceInputStream& rStrm )
 
 void ExternalLink::importExternalSelf( SequenceInputStream& )
 {
-    meLinkType = ExternalLinkType::Self;
+    meLinkType = LINKTYPE_SELF;
 }
 
 void ExternalLink::importExternalSame( SequenceInputStream& )
 {
-    meLinkType = ExternalLinkType::Same;
+    meLinkType = LINKTYPE_SAME;
 }
 
 void ExternalLink::importExternalAddin( SequenceInputStream& )
 {
-    meLinkType = ExternalLinkType::Unknown;
+    meLinkType = LINKTYPE_UNKNOWN;
 }
 
 void ExternalLink::importExternalBook( const Relations& rRelations, SequenceInputStream& rStrm )
@@ -342,14 +390,14 @@ void ExternalLink::importExternalBook( const Relations& rRelations, SequenceInpu
         {
             OUString aDdeService, aDdeTopic;
             rStrm >> aDdeService >> aDdeTopic;
-            setDdeOleTargetUrl( aDdeService, aDdeTopic, ExternalLinkType::DDE );
+            setDdeOleTargetUrl( aDdeService, aDdeTopic, LINKTYPE_DDE );
         }
         break;
         case BIFF12_EXTERNALBOOK_OLE:
         {
             OUString aTargetUrl = rRelations.getExternalTargetFromRelId( BiffHelper::readString( rStrm ) );
             OUString aProgId = BiffHelper::readString( rStrm );
-            setDdeOleTargetUrl( aProgId, aTargetUrl, ExternalLinkType::OLE );
+            setDdeOleTargetUrl( aProgId, aTargetUrl, LINKTYPE_OLE );
         }
         break;
         default:
@@ -360,10 +408,9 @@ void ExternalLink::importExternalBook( const Relations& rRelations, SequenceInpu
 void ExternalLink::importExtSheetNames( SequenceInputStream& rStrm )
 {
     // load external sheet names and create the sheet caches in the Calc document
-    SAL_WARN_IF( (meLinkType != ExternalLinkType::External) && (meLinkType != ExternalLinkType::Library),
-        "sc.filter",
-        "Invalid link type: " << meLinkType );
-    if( meLinkType == ExternalLinkType::External )   // ignore sheets of external libraries
+    OSL_ENSURE( (meLinkType == LINKTYPE_EXTERNAL) || (meLinkType == LINKTYPE_LIBRARY),
+        "ExternalLink::importExtSheetNames - invalid link type" );
+    if( meLinkType == LINKTYPE_EXTERNAL )   // ignore sheets of external libraries
         for( sal_Int32 nSheet = 0, nCount = rStrm.readInt32(); !rStrm.isEof() && (nSheet < nCount); ++nSheet )
             insertExternalSheet( BiffHelper::readString( rStrm ) );
 }
@@ -380,19 +427,20 @@ ExternalLinkInfo ExternalLink::getLinkInfo() const
     ExternalLinkInfo aLinkInfo;
     switch( meLinkType )
     {
-        case ExternalLinkType::Self:
-        case ExternalLinkType::Same:
+        case LINKTYPE_SELF:
+        case LINKTYPE_SAME:
+        case LINKTYPE_INTERNAL:
             aLinkInfo.Type = css::sheet::ExternalLinkType::SELF;
         break;
-        case ExternalLinkType::External:
+        case LINKTYPE_EXTERNAL:
             aLinkInfo.Type = css::sheet::ExternalLinkType::DOCUMENT;
             aLinkInfo.Data <<= maTargetUrl;
         break;
-        case ExternalLinkType::Library:
+        case LINKTYPE_LIBRARY:
             // parser will return library function names in OPCODE_BAD string tokens
             aLinkInfo.Type = css::sheet::ExternalLinkType::SPECIAL;
         break;
-        case ExternalLinkType::DDE:
+        case LINKTYPE_DDE:
         {
             aLinkInfo.Type = css::sheet::ExternalLinkType::DDE;
             DDELinkInfo aDdeLinkInfo;
@@ -415,18 +463,20 @@ ExternalLinkInfo ExternalLink::getLinkInfo() const
 
 FunctionLibraryType ExternalLink::getFuncLibraryType() const
 {
-    return (meLinkType == ExternalLinkType::Library) ? meFuncLibType : FUNCLIB_UNKNOWN;
+    return (meLinkType == LINKTYPE_LIBRARY) ? meFuncLibType : FUNCLIB_UNKNOWN;
 }
 
 sal_Int32 ExternalLink::getDocumentLinkIndex() const
 {
-    OSL_ENSURE( meLinkType == ExternalLinkType::External, "ExternalLink::getDocumentLinkIndex - invalid link type" );
+    OSL_ENSURE( meLinkType == LINKTYPE_EXTERNAL, "ExternalLink::getDocumentLinkIndex - invalid link type" );
     return mxDocLink.is() ? mxDocLink->getTokenIndex() : -1;
 }
 
 sal_Int32 ExternalLink::getSheetCacheIndex( sal_Int32 nTabId ) const
 {
-    OSL_ENSURE( meLinkType == ExternalLinkType::External, "ExternalLink::getSheetCacheIndex - invalid link type" );
+    OSL_ENSURE( meLinkType == LINKTYPE_EXTERNAL, "ExternalLink::getSheetCacheIndex - invalid link type" );
+    OSL_ENSURE( (nTabId == 0) || (getFilterType() == FILTER_OOXML) || (getBiff() == BIFF8),
+        "ExternalLink::getSheetCacheIndex - invalid sheet index" );
     return ContainerHelper::getVectorElement( maSheetCaches, nTabId, -1 );
 }
 
@@ -449,19 +499,47 @@ void ExternalLink::getSheetRange( LinkSheetRange& orSheetRange, sal_Int32 nTabId
 {
     switch( meLinkType )
     {
-        case ExternalLinkType::Same:
+        case LINKTYPE_SAME:
             orSheetRange.setSameSheet();
         break;
 
-        case ExternalLinkType::Self:
+        case LINKTYPE_SELF:
+        case LINKTYPE_INTERNAL:
             orSheetRange.setRange( nTabId1, nTabId2 );
         break;
 
-        case ExternalLinkType::External:
+        case LINKTYPE_EXTERNAL:
         {
             sal_Int32 nDocLinkIdx = getDocumentLinkIndex();
-            // BIFF12: passed indexes point into sheet list of EXTSHEETLIST
-            orSheetRange.setExternalRange( nDocLinkIdx, getSheetCacheIndex( nTabId1 ), getSheetCacheIndex( nTabId2 ) );
+            switch( getFilterType() )
+            {
+                case FILTER_OOXML:
+                    // BIFF12: passed indexes point into sheet list of EXTSHEETLIST
+                    orSheetRange.setExternalRange( nDocLinkIdx, getSheetCacheIndex( nTabId1 ), getSheetCacheIndex( nTabId2 ) );
+                break;
+                case FILTER_BIFF:
+                    switch( getBiff() )
+                    {
+                        case BIFF2:
+                        case BIFF3:
+                        case BIFF4:
+                            orSheetRange.setExternalRange( nDocLinkIdx, getSheetCacheIndex( nTabId1 ), getSheetCacheIndex( nTabId2 ) );
+                        break;
+                        case BIFF5:
+                            // BIFF5: first sheet from this external link, last sheet is passed in nTabId2
+                            if( const ExternalLink* pExtLink2 = getExternalLinks().getExternalLink( nTabId2 ).get() )
+                                if( (pExtLink2->getLinkType() == LINKTYPE_EXTERNAL) && (maTargetUrl == pExtLink2->getTargetUrl()) )
+                                    orSheetRange.setExternalRange( nDocLinkIdx, getSheetCacheIndex(), pExtLink2->getSheetCacheIndex() );
+                        break;
+                        case BIFF8:
+                            // BIFF8: passed indexes point into sheet list of EXTERNALBOOK
+                            orSheetRange.setExternalRange( nDocLinkIdx, getSheetCacheIndex( nTabId1 ), getSheetCacheIndex( nTabId2 ) );
+                        break;
+                        case BIFF_UNKNOWN: break;
+                    }
+                break;
+                case FILTER_UNKNOWN: break;
+            }
         }
         break;
 
@@ -480,27 +558,23 @@ ExternalNameRef ExternalLink::getNameByIndex( sal_Int32 nIndex ) const
 
 void ExternalLink::setExternalTargetUrl( const OUString& rTargetUrl, const OUString& rTargetType )
 {
-    meLinkType = ExternalLinkType::Unknown;
+    meLinkType = LINKTYPE_UNKNOWN;
     if( rTargetType == CREATE_OFFICEDOC_RELATION_TYPE( "externalLinkPath" ) ||
             rTargetType == CREATE_OFFICEDOC_RELATION_TYPE_STRICT( "externalLinkPath" ) )
     {
         maTargetUrl = getBaseFilter().getAbsoluteUrl( rTargetUrl );
         if( !maTargetUrl.isEmpty() )
-            meLinkType = ExternalLinkType::External;
-    }
-    else if( rTargetType == CREATE_MSOFFICE_RELATION_TYPE( "xlExternalLinkPath/xlPathMissing" ) )
-    {
-        meLinkType = ExternalLinkType::PathMissing;
+            meLinkType = LINKTYPE_EXTERNAL;
     }
     else if( rTargetType == CREATE_MSOFFICE_RELATION_TYPE( "xlExternalLinkPath/xlLibrary" ) )
     {
-        meLinkType = ExternalLinkType::Library;
+        meLinkType = LINKTYPE_LIBRARY;
         meFuncLibType = FunctionProvider::getFuncLibTypeFromLibraryName( rTargetUrl );
     }
-    SAL_WARN_IF( meLinkType == ExternalLinkType::Unknown, "sc.filter", "Empty target URL or unknown target type, URL='" << rTargetUrl << "', type='" << rTargetType << "'" );
+    OSL_ENSURE( meLinkType != LINKTYPE_UNKNOWN, "ExternalLink::setExternalTargetUrl - empty target URL or unknown target type" );
 
     // create the external document link API object that will contain the sheet caches
-    if( meLinkType == ExternalLinkType::External ) try
+    if( meLinkType == LINKTYPE_EXTERNAL ) try
     {
         PropertySet aDocProps( getDocument() );
         Reference< XExternalDocLinks > xDocLinks( aDocProps.getAnyProperty( PROP_ExternalDocLinks ), UNO_QUERY_THROW );
@@ -515,7 +589,7 @@ void ExternalLink::setDdeOleTargetUrl( const OUString& rClassName, const OUStrin
 {
     maClassName = rClassName;
     maTargetUrl = rTargetUrl;
-    meLinkType = (maClassName.isEmpty() || maTargetUrl.isEmpty()) ?  ExternalLinkType::Unknown : eLinkType;
+    meLinkType = (maClassName.isEmpty() || maTargetUrl.isEmpty()) ?  LINKTYPE_UNKNOWN : eLinkType;
     OSL_ENSURE( meLinkType == eLinkType, "ExternalLink::setDdeOleTargetUrl - missing classname or target" );
 }
 
@@ -621,6 +695,8 @@ void ExternalLinkBuffer::importExternalSheets( SequenceInputStream& rStrm )
 Sequence< ExternalLinkInfo > ExternalLinkBuffer::getLinkInfos() const
 {
     ::std::vector< ExternalLinkInfo > aLinkInfos;
+    // XML formula parser also used in BIFF12 documents, e.g. replacement formulas in unsupported conditional formattings
+    OSL_ENSURE( getFilterType() == FILTER_OOXML, "ExternalLinkBuffer::getLinkInfos - unexpected file format" );
     // add entry for implicit index 0 (self reference to this document)
     aLinkInfos.push_back( mxSelfRef->getLinkInfo() );
     for( ExternalLinkVec::const_iterator aIt = maExtLinks.begin(), aEnd = maExtLinks.end(); aIt != aEnd; ++aIt )
@@ -631,18 +707,64 @@ Sequence< ExternalLinkInfo > ExternalLinkBuffer::getLinkInfos() const
 ExternalLinkRef ExternalLinkBuffer::getExternalLink( sal_Int32 nRefId, bool bUseRefSheets ) const
 {
     ExternalLinkRef xExtLink;
-    // OOXML: 0 = this document, otherwise one-based index into link list
-    if( !bUseRefSheets || !mbUseRefSheets )
-        xExtLink = (nRefId == 0) ? mxSelfRef : maLinks.get( nRefId - 1 );
-    // BIFF12: zero-based index into ref-sheets list
-    else if( const RefSheetsModel* pRefSheets = getRefSheets( nRefId ) )
-        xExtLink = maLinks.get( pRefSheets->mnExtRefId );
+    switch( getFilterType() )
+    {
+        case FILTER_OOXML:
+            // OOXML: 0 = this document, otherwise one-based index into link list
+            if( !bUseRefSheets || !mbUseRefSheets )
+                xExtLink = (nRefId == 0) ? mxSelfRef : maLinks.get( nRefId - 1 );
+            // BIFF12: zero-based index into ref-sheets list
+            else if( const RefSheetsModel* pRefSheets = getRefSheets( nRefId ) )
+                xExtLink = maLinks.get( pRefSheets->mnExtRefId );
+        break;
+        case FILTER_BIFF:
+            switch( getBiff() )
+            {
+                case BIFF2:
+                case BIFF3:
+                case BIFF4:
+                    // one-based index to EXTERNSHEET records
+                    xExtLink = maLinks.get( nRefId - 1 );
+                break;
+                case BIFF5:
+                    if( nRefId < 0 )
+                    {
+                        // internal links in formula tokens have negative index
+                        xExtLink = maLinks.get( -nRefId - 1 );
+                        if( xExtLink.get() && !xExtLink->isInternalLink() )
+                            xExtLink.reset();
+                    }
+                    else
+                    {
+                        // one-based index to EXTERNSHEET records
+                        xExtLink = maLinks.get( nRefId - 1 );
+                    }
+                break;
+                case BIFF8:
+                    // zero-based index into REF list in EXTERNSHEET record
+                    if( const RefSheetsModel* pRefSheets = getRefSheets( nRefId ) )
+                        xExtLink = maLinks.get( pRefSheets->mnExtRefId );
+                break;
+                case BIFF_UNKNOWN: break;
+            }
+        break;
+        case FILTER_UNKNOWN: break;
+    }
     return xExtLink;
+}
+
+LinkSheetRange ExternalLinkBuffer::getSheetRange( sal_Int32 nRefId, sal_Int16 nTabId1, sal_Int16 nTabId2 ) const
+{
+    OSL_ENSURE( getBiff() <= BIFF5, "ExternalLinkBuffer::getSheetRange - wrong BIFF version" );
+    LinkSheetRange aSheetRange;
+    if( const ExternalLink* pExtLink = getExternalLink( nRefId ).get() )
+        pExtLink->getSheetRange( aSheetRange, nTabId1, nTabId2 );
+    return aSheetRange;
 }
 
 LinkSheetRange ExternalLinkBuffer::getSheetRange( sal_Int32 nRefId ) const
 {
-    OSL_ENSURE( mbUseRefSheets, "ExternalLinkBuffer::getSheetRange - wrong BIFF version" );
+    OSL_ENSURE( ((getFilterType() == FILTER_OOXML) && mbUseRefSheets) || (getBiff() == BIFF8), "ExternalLinkBuffer::getSheetRange - wrong BIFF version" );
     LinkSheetRange aSheetRange;
     if( const ExternalLink* pExtLink = getExternalLink( nRefId ).get() )
         if( const RefSheetsModel* pRefSheets = getRefSheets( nRefId ) )

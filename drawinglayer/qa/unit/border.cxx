@@ -22,7 +22,6 @@
 #include <test/bootstrapfixture.hxx>
 #include <vcl/vclptr.hxx>
 #include <vcl/virdev.hxx>
-#include <editeng/borderline.hxx>
 
 using namespace com::sun::star;
 
@@ -58,13 +57,12 @@ void DrawinglayerBorderTest::testDoubleDecompositionSolid()
     basegfx::BColor aColorLeft;
     basegfx::BColor aColorGap;
     bool bHasGapColor = false;
-    SvxBorderLineStyle nStyle = SvxBorderLineStyle::DOUBLE;
+    sal_Int16 nStyle = table::BorderLineStyle::DOUBLE;
     rtl::Reference<drawinglayer::primitive2d::BorderLinePrimitive2D> aBorder(new drawinglayer::primitive2d::BorderLinePrimitive2D(aStart, aEnd, fLeftWidth, fDistance, fRightWidth, fExtendLeftStart, fExtendLeftEnd, fExtendRightStart, fExtendRightEnd, aColorRight, aColorLeft, aColorGap, bHasGapColor, nStyle));
 
     // Decompose it into polygons.
     drawinglayer::geometry::ViewInformation2D aView;
-    drawinglayer::primitive2d::Primitive2DContainer aContainer;
-    aBorder->get2DDecomposition(aContainer, aView);
+    drawinglayer::primitive2d::Primitive2DContainer aContainer = aBorder->get2DDecomposition(aView);
 
     // Make sure it results in two borders as it's a double one.
     CPPUNIT_ASSERT_EQUAL(static_cast<std::size_t>(2), aContainer.size());
@@ -108,7 +106,7 @@ void DrawinglayerBorderTest::testDoublePixelProcessing()
     basegfx::BColor aColorLeft;
     basegfx::BColor aColorGap;
     bool bHasGapColor = false;
-    SvxBorderLineStyle nStyle = SvxBorderLineStyle::DOUBLE;
+    sal_Int16 nStyle = table::BorderLineStyle::DOUBLE;
     rtl::Reference<drawinglayer::primitive2d::BorderLinePrimitive2D> xBorder(new drawinglayer::primitive2d::BorderLinePrimitive2D(aStart, aEnd, fLeftWidth, fDistance, fRightWidth, fExtendLeftStart, fExtendLeftEnd, fExtendRightStart, fExtendRightEnd, aColorRight, aColorLeft, aColorGap, bHasGapColor, nStyle));
     drawinglayer::primitive2d::Primitive2DContainer aPrimitives;
     aPrimitives.push_back(drawinglayer::primitive2d::Primitive2DReference(xBorder.get()));

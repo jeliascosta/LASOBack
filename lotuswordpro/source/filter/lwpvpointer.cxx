@@ -62,7 +62,7 @@ LwpVersionedPointer::LwpVersionedPointer(LwpObjectHeader& objHdr, LwpSvStream* p
 
 void LwpVersionedPointer::Read()
 {
-    m_PointerID.ReadIndexed(m_pObjStrm.get());
+    m_PointerID.ReadIndexed(m_pObjStrm);
     if( LwpFileHeader::m_nFileRevision < 0x0006 )
         m_pObjStrm->SkipExtra();
 }

@@ -30,7 +30,6 @@
 #include <xmloff/xmlnmspe.hxx>
 #include <o3tl/typed_flags_set.hxx>
 
-template<typename EnumT>
 struct SvXMLEnumMapEntry;
 
     // flags for common control attributes
@@ -142,9 +141,11 @@ namespace xmloff
     enum FormAttributes
     {
         faName,
+        faServiceName,
         faAction,
         faEnctype,
         faMethod,
+        faTargetFrame,
         faAllowDeletes,
         faAllowInserts,
         faAllowUpdates,
@@ -153,6 +154,7 @@ namespace xmloff
         faCommandType,
         faEscapeProcessing,
         faDatasource,
+        faConnectionResource,
         faDetailFiels,
         faFilter,
         faIgnoreResult,
@@ -212,7 +214,7 @@ namespace xmloff
             @param _nId
                 the id of the attribute. Has to be one of the DA_* constants.
         */
-        static sal_uInt16 getDatabaseAttributeNamespace(DAFlags )
+        static inline sal_uInt16 getDatabaseAttributeNamespace(DAFlags )
         {
             // nothing special here
             return XML_NAMESPACE_FORM;
@@ -234,7 +236,7 @@ namespace xmloff
             @param _nId
                 the id of the attribute. Has to be one of the BA_* constants.
         */
-        static sal_uInt16 getBindingAttributeNamespace(BAFlags )
+        static inline sal_uInt16 getBindingAttributeNamespace(BAFlags )
         {
             // nothing special here
             return XML_NAMESPACE_FORM;
@@ -256,7 +258,7 @@ namespace xmloff
             @param _nId
                 the id of the attribute
         */
-        static sal_uInt16 getOfficeFormsAttributeNamespace(OfficeFormsAttributes )
+        static inline sal_uInt16 getOfficeFormsAttributeNamespace(OfficeFormsAttributes )
         { // nothing special here
           return XML_NAMESPACE_FORM;
         }
@@ -269,7 +271,7 @@ namespace xmloff
         <p>The construction of this class is rather expensive (or at least it's initialization from outside),
         so it should be shared</p>
     */
-    class OAttribute2Property final
+    class OAttribute2Property
     {
     public:
         // TODO: maybe the following struct should be used for exports, too. In this case we would not need to
@@ -281,20 +283,19 @@ namespace xmloff
             css::uno::Type           aPropertyType;          // the property type
 
             // entries which are special to some value types
-            const SvXMLEnumMapEntry<sal_uInt16>*
-                                     pEnumMap;               // the enum map, if applicable
-            bool                     bInverseSemantics;      // for booleans: attribute and property value have the same or an inverse semantics?
+            const SvXMLEnumMapEntry*        pEnumMap;               // the enum map, if appliable
+            bool                        bInverseSemantics;      // for booleans: attribute and property value have the same or an inverse semantics?
 
             AttributeAssignment() : pEnumMap(nullptr), bInverseSemantics(false) { }
         };
 
-    private:
+    protected:
         typedef std::map<OUString, AttributeAssignment> AttributeAssignments;
         AttributeAssignments        m_aKnownProperties;
 
     public:
         OAttribute2Property();
-        ~OAttribute2Property();
+        virtual ~OAttribute2Property();
 
         /** return the AttributeAssignment which corresponds to the given attribute
 
@@ -375,21 +376,12 @@ namespace xmloff
             @param _pType
                 the type of the property. May be NULL, in this case 32bit integer is assumed.
         */
-        template<typename EnumT>
         void    addEnumProperty(
             const sal_Char* _pAttributeName, const OUString& _rPropertyName,
-            const EnumT _nAttributeDefault, const SvXMLEnumMapEntry<EnumT>* _pValueMap,
-            const css::uno::Type* _pType = nullptr)
-        {
-            addEnumPropertyImpl(_pAttributeName, _rPropertyName, static_cast<sal_uInt16>(_nAttributeDefault),
-                                reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(_pValueMap), _pType);
-        }
-
-    private:
-        void addEnumPropertyImpl(
-            const sal_Char* _pAttributeName, const OUString& _rPropertyName,
-            const sal_uInt16 _nAttributeDefault, const SvXMLEnumMapEntry<sal_uInt16>* _pValueMap,
+            const sal_uInt16 _nAttributeDefault, const SvXMLEnumMapEntry* _pValueMap,
             const css::uno::Type* _pType = nullptr);
+
+    protected:
         /// some common code for the various add*Property methods
         AttributeAssignment& implAdd(
             const sal_Char* _pAttributeName, const OUString& _rPropertyName,

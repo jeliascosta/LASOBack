@@ -43,7 +43,7 @@ public:
                                     const OUString& rLName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList );
 
-    virtual ~XMLEmbeddedObjectImportContext() override;
+    virtual ~XMLEmbeddedObjectImportContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,

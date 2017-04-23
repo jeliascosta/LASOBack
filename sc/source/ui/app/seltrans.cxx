@@ -44,7 +44,7 @@ static bool lcl_IsURLButton( SdrObject* pObject )
     bool bRet = false;
 
     SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObject );
-    if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
+    if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
        {
         uno::Reference<awt::XControlModel> xControlModel = pUnoCtrl->GetUnoControlModel();
         OSL_ENSURE( xControlModel.is(), "uno control without model" );
@@ -92,7 +92,7 @@ ScSelectionTransferObj* ScSelectionTransferObj::CreateFromView( ScTabView* pView
 
                         if ( nSdrObjKind == OBJ_GRAF )
                         {
-                            if ( static_cast<SdrGrafObj*>(pObj)->GetGraphic().GetType() == GraphicType::Bitmap )
+                            if ( static_cast<SdrGrafObj*>(pObj)->GetGraphic().GetType() == GRAPHIC_BITMAP )
                                 eMode = SC_SELTRANS_DRAW_BITMAP;
                             else
                                 eMode = SC_SELTRANS_DRAW_GRAPHIC;
@@ -141,7 +141,9 @@ ScSelectionTransferObj* ScSelectionTransferObj::CreateFromView( ScTabView* pView
 
 ScSelectionTransferObj::ScSelectionTransferObj( ScTabView* pSource, ScSelectionTransferMode eNewMode ) :
     pView( pSource ),
-    eMode( eNewMode )
+    eMode( eNewMode ),
+    pCellData( nullptr ),
+    pDrawData( nullptr )
 {
     //! store range for StillValid
 }
@@ -166,8 +168,16 @@ void ScSelectionTransferObj::ForgetView()
     pView = nullptr;
     eMode = SC_SELTRANS_INVALID;
 
-    mxCellData.clear();
-    mxDrawData.clear();
+    if (pCellData)
+    {
+        pCellData->release();
+        pCellData = nullptr;
+    }
+    if (pDrawData)
+    {
+        pDrawData->release();
+        pDrawData = nullptr;
+    }
 }
 
 void ScSelectionTransferObj::AddSupportedFormats()
@@ -191,7 +201,6 @@ void ScSelectionTransferObj::AddSupportedFormats()
             AddFormat( SotClipboardFormatId::DIF );
             AddFormat( SotClipboardFormatId::STRING );
             AddFormat( SotClipboardFormatId::RTF );
-            AddFormat( SotClipboardFormatId::RICHTEXT );
             if ( eMode == SC_SELTRANS_CELL )
                 AddFormat( SotClipboardFormatId::EDITENGINE );
             break;
@@ -248,7 +257,7 @@ void ScSelectionTransferObj::AddSupportedFormats()
 
 void ScSelectionTransferObj::CreateCellData()
 {
-    OSL_ENSURE( !mxCellData.is(), "CreateCellData twice" );
+    OSL_ENSURE( !pCellData, "CreateCellData twice" );
     if ( pView )
     {
         ScViewData& rViewData = pView->GetViewData();
@@ -268,7 +277,7 @@ void ScSelectionTransferObj::CreateCellData()
                 aDragShellRef = new ScDocShell;     // DocShell needs a Ref immediately
                 aDragShellRef->DoInitNew();
             }
-            ScDrawLayer::SetGlobalDrawPersist( aDragShellRef.get() );
+            ScDrawLayer::SetGlobalDrawPersist(aDragShellRef);
 
             ScDocument* pClipDoc = new ScDocument( SCDOCMODE_CLIP );
             // bApi = sal_True -> no error messages
@@ -291,23 +300,24 @@ void ScSelectionTransferObj::CreateCellData()
                 // SetDragHandlePos is not used - there is no mouse position
                 //? pTransferObj->SetVisibleTab( nTab );
 
-                SfxObjectShellRef aPersistRef( aDragShellRef.get() );
+                SfxObjectShellRef aPersistRef( aDragShellRef );
                 pTransferObj->SetDrawPersist( aPersistRef );    // keep persist for ole objects alive
 
                 pTransferObj->SetDragSource( pDocSh, aNewMark );
 
-                mxCellData = pTransferObj;
+                pCellData = pTransferObj;
+                pCellData->acquire();       // keep ref count up - released in ForgetView
             }
             else
                 delete pClipDoc;
         }
     }
-    OSL_ENSURE( mxCellData.is(), "can't create CellData" );
+    OSL_ENSURE( pCellData, "can't create CellData" );
 }
 
 void ScSelectionTransferObj::CreateDrawData()
 {
-    OSL_ENSURE( !mxDrawData.is(), "CreateDrawData twice" );
+    OSL_ENSURE( !pDrawData, "CreateDrawData twice" );
     if ( pView )
     {
         //  similar to ScDrawView::BeginDrag
@@ -326,7 +336,7 @@ void ScSelectionTransferObj::CreateDrawData()
                 aDragShellRef->DoInitNew();
             }
 
-            ScDrawLayer::SetGlobalDrawPersist( aDragShellRef.get() );
+            ScDrawLayer::SetGlobalDrawPersist(aDragShellRef);
             SdrModel* pModel = pDrawView->GetMarkedObjModel();
             ScDrawLayer::SetGlobalDrawPersist(nullptr);
 
@@ -341,30 +351,31 @@ void ScSelectionTransferObj::CreateDrawData()
             ScDrawTransferObj* pTransferObj = new ScDrawTransferObj( pModel, pDocSh, aObjDesc );
             uno::Reference<datatransfer::XTransferable> xTransferable( pTransferObj );
 
-            SfxObjectShellRef aPersistRef( aDragShellRef.get() );
+            SfxObjectShellRef aPersistRef( aDragShellRef );
             pTransferObj->SetDrawPersist( aPersistRef );    // keep persist for ole objects alive
             pTransferObj->SetDragSource( pDrawView );       // copies selection
 
-            mxDrawData = pTransferObj;
+            pDrawData = pTransferObj;
+            pDrawData->acquire();       // keep ref count up - released in ForgetView
         }
     }
-    OSL_ENSURE( mxDrawData.is(), "can't create DrawData" );
+    OSL_ENSURE( pDrawData, "can't create DrawData" );
 }
 
 ScTransferObj* ScSelectionTransferObj::GetCellData()
 {
-    if ( !mxCellData.is() && ( eMode == SC_SELTRANS_CELL || eMode == SC_SELTRANS_CELLS ) )
+    if ( !pCellData && ( eMode == SC_SELTRANS_CELL || eMode == SC_SELTRANS_CELLS ) )
         CreateCellData();
-    return mxCellData.get();
+    return pCellData;
 }
 
 ScDrawTransferObj* ScSelectionTransferObj::GetDrawData()
 {
-    if ( !mxDrawData.is() && ( eMode == SC_SELTRANS_DRAW_BITMAP || eMode == SC_SELTRANS_DRAW_GRAPHIC ||
-                               eMode == SC_SELTRANS_DRAW_BOOKMARK || eMode == SC_SELTRANS_DRAW_OLE ||
-                               eMode == SC_SELTRANS_DRAW_OTHER ) )
+    if ( !pDrawData && ( eMode == SC_SELTRANS_DRAW_BITMAP || eMode == SC_SELTRANS_DRAW_GRAPHIC ||
+                         eMode == SC_SELTRANS_DRAW_BOOKMARK || eMode == SC_SELTRANS_DRAW_OLE ||
+                         eMode == SC_SELTRANS_DRAW_OTHER ) )
         CreateDrawData();
-    return mxDrawData.get();
+    return pDrawData;
 }
 
 bool ScSelectionTransferObj::GetData(

@@ -28,8 +28,7 @@
 #include <functional>
 #include <algorithm>
 
-namespace {
-
+// can't have static linkage because SUNPRO 5.2 complains
 Point ImplTaskPaneListGetPos( const vcl::Window *w )
 {
     Point pos;
@@ -46,8 +45,6 @@ Point ImplTaskPaneListGetPos( const vcl::Window *w )
         pos = w->OutputToAbsoluteScreenPixel( w->GetPosPixel() );
 
     return pos;
-}
-
 }
 
 // compares window pos left-to-right
@@ -176,7 +173,7 @@ bool TaskPaneList::HandleKeyEvent(const KeyEvent& rKeyEvent)
         auto p = mTaskPanes.begin();
         while( p != mTaskPanes.end() )
         {
-            vcl::Window *pWin = p->get();
+            vcl::Window *pWin = *p;
             if( pWin->HasChildPathFocus( true ) )
             {
                 // Ctrl-F6 goes directly to the document
@@ -252,7 +249,7 @@ vcl::Window* TaskPaneList::FindNextSplitter( vcl::Window *pWindow )
                     p = mTaskPanes.begin();
                 if( (*p)->ImplIsSplitter() && (*p)->IsReallyVisible() && !(*p)->IsDialog() && (*p)->GetParent()->HasChildPathFocus() )
                 {
-                    pWindow = (*p).get();
+                    pWindow = *p;
                     break;
                 }
                 if( !pWindow )  // increment after test, otherwise first element is skipped
@@ -289,9 +286,9 @@ vcl::Window* TaskPaneList::FindNextFloat( vcl::Window *pWindow, bool bForward )
                 /* #i83908# do not use the menubar if it is native and invisible
                 */
                 if( (*p)->IsReallyVisible() && !(*p)->ImplIsSplitter() &&
-                    ( (*p)->GetType() != WindowType::MENUBARWINDOW || static_cast<MenuBarWindow*>(p->get())->CanGetFocus() ) )
+                    ( (*p)->GetType() != WINDOW_MENUBARWINDOW || static_cast<MenuBarWindow*>(p->get())->CanGetFocus() ) )
                 {
-                    pWindow = (*p).get();
+                    pWindow = *p;
                     break;
                 }
                 if( !pWindow )  // increment after test, otherwise first element is skipped

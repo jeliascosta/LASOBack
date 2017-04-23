@@ -53,9 +53,10 @@ namespace sd {
         OUString mPin;
 
         ClientInfoInternal( const OUString& rName,
+                            const bool bIsAlreadyAuthorised,
                             BufferedStreamSocket *pSocket,
                             const OUString& rPin ):
-                ClientInfo( rName, false ),
+                ClientInfo( rName, bIsAlreadyAuthorised ),
                 mpStreamSocket( pSocket ),
                 mPin( rPin ) {}
     };
@@ -129,7 +130,8 @@ void RemoteServer::execute()
             std::shared_ptr< ClientInfoInternal > pClient(
                 new ClientInfoInternal(
                     OStringToOUString( aName, RTL_TEXTENCODING_UTF8 ),
-                    pSocket, OStringToOUString( aPin, RTL_TEXTENCODING_UTF8 ) ) );
+                    false, pSocket, OStringToOUString( aPin,
+                                                                 RTL_TEXTENCODING_UTF8 ) ) );
             mAvailableClients.push_back( pClient );
 
             // Read off any additional non-empty lines

@@ -38,7 +38,7 @@ class Point;
 class SwFntCache : public SwCache
 {
 public:
-    SwFntCache() : SwCache(50
+    inline SwFntCache() : SwCache(50
 #ifdef DBG_UTIL
     , OString(RTL_CONSTASCII_STRINGPARAM("Global Font-Cache pFntCache"))
 #endif
@@ -61,20 +61,20 @@ class SwFntObj : public SwCacheObj
     friend void InitCore();
     friend void FinitCore();
 
-    vcl::Font m_aFont;
-    vcl::Font *m_pScrFont;
-    vcl::Font *m_pPrtFont;
-    VclPtr<OutputDevice> m_pPrinter;
-    sal_uInt16 m_nGuessedLeading;
-    sal_uInt16 m_nExtLeading;
-    sal_uInt16 m_nScrAscent;
-    sal_uInt16 m_nPrtAscent;
-    sal_uInt16 m_nScrHeight;
-    sal_uInt16 m_nPrtHeight;
-    sal_uInt16 m_nPropWidth;
-    sal_uInt16 m_nZoom;
-    bool m_bSymbol : 1;
-    bool m_bPaintBlank : 1;
+    vcl::Font aFont;
+    vcl::Font *pScrFont;
+    vcl::Font *pPrtFont;
+    VclPtr<OutputDevice> pPrinter;
+    sal_uInt16 nGuessedLeading;
+    sal_uInt16 nExtLeading;
+    sal_uInt16 nScrAscent;
+    sal_uInt16 nPrtAscent;
+    sal_uInt16 nScrHeight;
+    sal_uInt16 nPrtHeight;
+    sal_uInt16 nPropWidth;
+    sal_uInt16 nZoom;
+    bool bSymbol : 1;
+    bool bPaintBlank : 1;
 
     static long nPixWidth;
     static MapMode *pPixMap;
@@ -85,14 +85,14 @@ public:
     SwFntObj( const SwSubFont &rFont, const void* pOwner,
               SwViewShell const *pSh );
 
-    virtual ~SwFntObj() override;
+    virtual ~SwFntObj();
 
-    vcl::Font *GetScrFont()     { return m_pScrFont; }
-    vcl::Font& GetFont()        { return m_aFont; }
-    const vcl::Font& GetFont() const  { return m_aFont; }
+    inline       vcl::Font *GetScrFont()     { return pScrFont; }
+    inline       vcl::Font& GetFont()        { return aFont; }
+    inline const vcl::Font& GetFont() const  { return aFont; }
 
-    sal_uInt16 GetGuessedLeading() const  { return m_nGuessedLeading; }
-    sal_uInt16 GetExternalLeading() const  { return m_nExtLeading; }
+    inline sal_uInt16 GetGuessedLeading() const  { return nGuessedLeading; }
+    inline sal_uInt16 GetExternalLeading() const  { return nExtLeading; }
 
     sal_uInt16 GetFontAscent( const SwViewShell *pSh, const OutputDevice& rOut );
     sal_uInt16 GetFontHeight( const SwViewShell *pSh, const OutputDevice& rOut );
@@ -101,10 +101,10 @@ public:
     void GuessLeading( const SwViewShell& rSh, const FontMetric& rMet );
 
     void SetDevFont( const SwViewShell *pSh, OutputDevice& rOut );
-    OutputDevice* GetPrt() const { return m_pPrinter; }
-    sal_uInt16   GetZoom() const { return m_nZoom; }
-    sal_uInt16   GetPropWidth() const { return m_nPropWidth; }
-    bool     IsSymbol() const { return m_bSymbol; }
+    inline OutputDevice* GetPrt() const { return pPrinter; }
+    inline sal_uInt16   GetZoom() const { return nZoom; }
+    inline sal_uInt16   GetPropWidth() const { return nPropWidth; }
+    inline bool     IsSymbol() const { return bSymbol; }
 
     void   DrawText( SwDrawTextInfo &rInf );
     /// determine the TextSize (of the printer)
@@ -135,7 +135,7 @@ public:
     SwFntAccess( const void * &rMagic, sal_uInt16 &rIndex, const void *pOwner,
                  SwViewShell const *pShell,
                  bool bCheck = false  );
-    SwFntObj* Get() { return static_cast<SwFntObj*>( SwCacheAccess::Get() ); }
+    inline SwFntObj* Get() { return static_cast<SwFntObj*>( SwCacheAccess::Get() ); }
 };
 
 #endif

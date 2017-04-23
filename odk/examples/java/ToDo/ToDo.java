@@ -181,7 +181,7 @@ public class ToDo {
                 XSpreadsheet xspreadsheet = UnoRuntime.queryInterface(
                     XSpreadsheet.class, xindexaccess.getByIndex( 0 ));
 
-                // Querying for the interface XCellRange on the XSpreadsheet
+                // Querying for the interface XCellRange on the XSpeadsheet
                 XCellRange xcellrange = UnoRuntime.queryInterface( XCellRange.class, xspreadsheet );
 
                 /* Getting the gregorian calendar with the date on which to start

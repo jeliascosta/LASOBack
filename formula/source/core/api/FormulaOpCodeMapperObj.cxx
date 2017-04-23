@@ -21,7 +21,6 @@
 
 #include <utility>
 
-#include <formula/FormulaCompiler.hxx>
 #include "formula/FormulaOpCodeMapperObj.hxx"
 #include "formula/opcode.hxx"
 #include <comphelper/sequence.hxx>
@@ -32,7 +31,7 @@ namespace formula
 {
     using namespace ::com::sun::star;
 
-sal_Bool SAL_CALL FormulaOpCodeMapperObj::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL FormulaOpCodeMapperObj::supportsService( const OUString& _rServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
@@ -47,12 +46,14 @@ FormulaOpCodeMapperObj::~FormulaOpCodeMapperObj()
 }
 
 ::sal_Int32 SAL_CALL FormulaOpCodeMapperObj::getOpCodeExternal()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return ocExternal;
 }
 
 
 ::sal_Int32 SAL_CALL FormulaOpCodeMapperObj::getOpCodeUnknown()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return FormulaCompiler::OpCodeMap::getOpCodeUnknown();
 }
@@ -62,6 +63,8 @@ css::uno::Sequence< css::sheet::FormulaToken >
 SAL_CALL FormulaOpCodeMapperObj::getMappings(
         const css::uno::Sequence< OUString >& rNames,
         sal_Int32 nLanguage )
+    throw ( css::lang::IllegalArgumentException,
+            css::uno::RuntimeException, std::exception)
 {
     FormulaCompiler::OpCodeMapPtr xMap = m_pCompiler->GetOpCodeMap( nLanguage);
     if (!xMap)
@@ -73,6 +76,8 @@ SAL_CALL FormulaOpCodeMapperObj::getMappings(
 css::uno::Sequence< css::sheet::FormulaOpCodeMapEntry >
 SAL_CALL FormulaOpCodeMapperObj::getAvailableMappings(
         sal_Int32 nLanguage, sal_Int32 nGroups )
+    throw ( css::lang::IllegalArgumentException,
+            css::uno::RuntimeException, std::exception)
 {
     FormulaCompiler::OpCodeMapPtr xMap = m_pCompiler->GetOpCodeMap( nLanguage);
     if (!xMap)
@@ -80,7 +85,7 @@ SAL_CALL FormulaOpCodeMapperObj::getAvailableMappings(
     return xMap->createSequenceOfAvailableMappings( *m_pCompiler,nGroups);
 }
 
-OUString SAL_CALL FormulaOpCodeMapperObj::getImplementationName(  )
+OUString SAL_CALL FormulaOpCodeMapperObj::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
@@ -90,7 +95,7 @@ OUString SAL_CALL FormulaOpCodeMapperObj::getImplementationName_Static()
     return OUString( "simple.formula.FormulaOpCodeMapperObj" );
 }
 
-uno::Sequence< OUString > SAL_CALL FormulaOpCodeMapperObj::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL FormulaOpCodeMapperObj::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }

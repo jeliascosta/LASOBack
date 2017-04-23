@@ -11,6 +11,7 @@
 #include <iterator>
 #include <string>
 
+#include "compat.hxx"
 #include "plugin.hxx"
 
 // Second-guess that certain private special member function declarations for
@@ -57,7 +58,7 @@ void DeletedSpecial::run() {
 }
 
 bool DeletedSpecial::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
-    if (ignoreLocation(decl) || !decl->isFirstDecl() || decl->isDefined()
+    if (ignoreLocation(decl) || !compat::isFirstDecl(*decl) || decl->isDefined()
         || decl->isDefaulted() || decl->getAccess() != AS_private)
     {
         return true;

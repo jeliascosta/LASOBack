@@ -83,7 +83,7 @@ LanguageSelectionMenuController::~LanguageSelectionMenuController()
 }
 
 // XEventListener
-void SAL_CALL LanguageSelectionMenuController::disposing( const EventObject& )
+void SAL_CALL LanguageSelectionMenuController::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
 {
     Reference< css::awt::XMenuListener > xHolder(static_cast<OWeakObject *>(this), UNO_QUERY );
 
@@ -98,7 +98,7 @@ void SAL_CALL LanguageSelectionMenuController::disposing( const EventObject& )
 }
 
 // XStatusListener
-void SAL_CALL LanguageSelectionMenuController::statusChanged( const FeatureStateEvent& Event )
+void SAL_CALL LanguageSelectionMenuController::statusChanged( const FeatureStateEvent& Event ) throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -240,7 +240,7 @@ void LanguageSelectionMenuController::fillPopupMenu( Reference< css::awt::XPopup
     pPopupMenu->SetItemCommand( nItemId, aCmd_Dialog );
 }
 
-void SAL_CALL LanguageSelectionMenuController::updatePopupMenu()
+void SAL_CALL LanguageSelectionMenuController::updatePopupMenu() throw ( css::uno::RuntimeException, std::exception )
 {
     svt::PopupMenuControllerBase::updatePopupMenu();
 
@@ -275,7 +275,7 @@ void SAL_CALL LanguageSelectionMenuController::updatePopupMenu()
 }
 
 // XInitialization
-void SAL_CALL LanguageSelectionMenuController::initialize( const Sequence< Any >& aArguments )
+void SAL_CALL LanguageSelectionMenuController::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
 {
     osl::MutexGuard aLock( m_aMutex );
 

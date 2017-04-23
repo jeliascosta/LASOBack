@@ -55,7 +55,7 @@
 #define CHECK_OPENCL(status,name) \
 if( status != CL_SUCCESS )  \
 { \
-    SAL_WARN( "opencl", "OpenCL error code " << status << " at " SAL_DETAIL_WHERE "from " name ); \
+    SAL_WARN( "opencl", "OpenCL error code " << status << " at " SAL_DETAIL_WHERE " from " name ); \
     return false; \
 }
 
@@ -79,7 +79,7 @@ OString generateMD5(const void* pData, size_t length)
     SAL_WARN_IF(aError != rtl_Digest_E_None, "opencl", "md5 generation failed");
 
     OStringBuffer aBuffer;
-    const char* const pString = "0123456789ABCDEF";
+    const char* pString = "0123456789ABCDEF";
     for(sal_uInt8 val : pBuffer)
     {
         aBuffer.append(pString[val/16]);
@@ -88,7 +88,7 @@ OString generateMD5(const void* pData, size_t length)
     return aBuffer.makeStringAndClear();
 }
 
-OString const & getCacheFolder()
+OString getCacheFolder()
 {
     static OString aCacheFolder;
 
@@ -218,15 +218,16 @@ std::vector<std::shared_ptr<osl::File> > binaryGenerated( const char * clFileNam
     assert(pDevID == gpuEnv.mpDevID);
 
     OString fileName = createFileName(gpuEnv.mpDevID, clFileName);
-    auto pNewFile = std::make_shared<osl::File>(rtl::OStringToOUString(fileName, RTL_TEXTENCODING_UTF8));
+    osl::File* pNewFile = new osl::File(rtl::OStringToOUString(fileName, RTL_TEXTENCODING_UTF8));
     if(pNewFile->open(osl_File_OpenFlag_Read) == osl::FileBase::E_None)
     {
-        aGeneratedFiles.push_back(pNewFile);
+        aGeneratedFiles.push_back(std::shared_ptr<osl::File>(pNewFile));
         SAL_INFO("opencl.file", "Opening binary file '" << fileName << "' for reading: success");
     }
     else
     {
         SAL_INFO("opencl.file", "Opening binary file '" << fileName << "' for reading: FAIL");
+        delete pNewFile;
     }
 
     return aGeneratedFiles;
@@ -521,17 +522,15 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
 
     clGetDeviceInfo(gpuInfo->mpDevID, CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT, sizeof(cl_uint),
                     &nPreferredVectorWidthFloat, nullptr);
-    SAL_INFO("opencl", "CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT=" << nPreferredVectorWidthFloat);
-
     clGetPlatformInfo(gpuInfo->mpPlatformID, CL_PLATFORM_NAME, 64,
              pName, nullptr);
 
-#if defined (_WIN32)
-// the Win32 SDK 8.1 deprecates GetVersionEx()
-# ifdef _WIN32_WINNT_WINBLUE
-    const bool bIsNotWinOrIsWin8OrGreater = IsWindows8OrGreater();
-# else
     bool bIsNotWinOrIsWin8OrGreater = true;
+
+// the Win32 SDK 8.1 deprecates GetVersionEx()
+#ifdef _WIN32_WINNT_WINBLUE
+    bIsNotWinOrIsWin8OrGreater = IsWindows8OrGreater();
+#elif defined (_WIN32)
     OSVERSIONINFO aVersionInfo;
     memset( &aVersionInfo, 0, sizeof(aVersionInfo) );
     aVersionInfo.dwOSVersionInfoSize = sizeof( aVersionInfo );
@@ -542,9 +541,6 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
            (aVersionInfo.dwMajorVersion == 6 && aVersionInfo.dwMinorVersion < 2))
             bIsNotWinOrIsWin8OrGreater = false;
     }
-# endif
-#else
-    const bool bIsNotWinOrIsWin8OrGreater = true;
 #endif
 
     // Heuristic: Certain old low-end OpenCL implementations don't
@@ -554,12 +550,6 @@ bool initOpenCLRunEnv( GPUEnv *gpuInfo )
     gpuInfo->mbNeedsTDRAvoidance = ( nPreferredVectorWidthFloat == 4 ) ||
         ( !bIsNotWinOrIsWin8OrGreater &&
           OUString::createFromAscii(pName).indexOf("NVIDIA") > -1 );
-
-    size_t nMaxParameterSize;
-    clGetDeviceInfo(gpuInfo->mpDevID, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t),
-                    &nMaxParameterSize, nullptr);
-    SAL_INFO("opencl", "CL_DEVICE_MAX_PARAMETER_SIZE=" << nMaxParameterSize);
-
     return false;
 }
 
@@ -743,14 +733,16 @@ namespace {
 
 cl_device_id findDeviceIdByDeviceString(const OUString& rString, const std::vector<OpenCLPlatformInfo>& rPlatforms)
 {
-    for (const OpenCLPlatformInfo& rPlatform : rPlatforms)
+    std::vector<OpenCLPlatformInfo>::const_iterator it = rPlatforms.begin(), itEnd = rPlatforms.end();
+    for(; it != itEnd; ++it)
     {
-        for (const OpenCLDeviceInfo& rDeviceInfo : rPlatform.maDevices)
+        std::vector<OpenCLDeviceInfo>::const_iterator itr = it->maDevices.begin(), itrEnd = it->maDevices.end();
+        for(; itr != itrEnd; ++itr)
         {
-            OUString aDeviceId = rDeviceInfo.maVendor + " " + rDeviceInfo.maName;
-            if (rString == aDeviceId)
+            OUString aDeviceId = it->maVendor + " " + itr->maName;
+            if(rString == aDeviceId)
             {
-                return rDeviceInfo.device;
+                return static_cast<cl_device_id>(itr->device);
             }
         }
     }

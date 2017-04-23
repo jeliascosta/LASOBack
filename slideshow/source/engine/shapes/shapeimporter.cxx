@@ -60,16 +60,16 @@ namespace internal {
 
 namespace {
 
-std::unique_ptr<GraphicObject> importShapeGraphic(uno::Reference<beans::XPropertySet> const& xPropSet)
+bool importShapeGraphic(
+    GraphicObject & o_rGraphic,
+    uno::Reference<beans::XPropertySet> const& xPropSet )
 {
-    std::unique_ptr<GraphicObject> xRet;
-
     OUString aURL;
     if( !getPropertyValue( aURL, xPropSet, "GraphicURL") ||
         aURL.isEmpty() )
     {
         // no or empty property - cannot import shape graphic
-        return xRet;
+        return false;
     }
 
     OUString const aVndUrl(
@@ -85,7 +85,7 @@ std::unique_ptr<GraphicObject> importShapeGraphic(uno::Reference<beans::XPropert
         {
             OSL_FAIL( "ShapeImporter::importShape(): "
                         "embedded graphic has no graphic ID" );
-            return nullptr;
+            return false;
         }
 
         // unique ID string found in URL, extract
@@ -100,14 +100,14 @@ std::unique_ptr<GraphicObject> importShapeGraphic(uno::Reference<beans::XPropert
         // fetch already loaded graphic from graphic manager.
         OString const aOldString(OUStringToOString(aUniqueId,
             RTL_TEXTENCODING_UTF8));
-        xRet.reset(new GraphicObject(aOldString));
+        o_rGraphic = GraphicObject( aOldString );
 
 
-        if (GraphicType::Default == xRet->GetType()
-            || GraphicType::NONE == xRet->GetType())
+        if( GRAPHIC_DEFAULT == o_rGraphic.GetType()
+            || GRAPHIC_NONE == o_rGraphic.GetType() )
         {
             // even the GrfMgr does not seem to know this graphic
-            return nullptr;
+            return false;
         }
     }
     else
@@ -117,13 +117,13 @@ std::unique_ptr<GraphicObject> importShapeGraphic(uno::Reference<beans::XPropert
         INetURLObject aTmp( aURL );
         std::unique_ptr<SvStream> pGraphicStream(
             utl::UcbStreamHelper::CreateStream(
-                aTmp.GetMainURL( INetURLObject::DecodeMechanism::NONE ),
+                aTmp.GetMainURL( INetURLObject::NO_DECODE ),
                 StreamMode::READ ) );
         if( !pGraphicStream )
         {
             OSL_FAIL( "ShapeImporter::importShape(): "
                         "cannot create input stream for graphic" );
-            return nullptr;
+            return false;
         }
 
         Graphic aTmpGraphic;
@@ -132,12 +132,12 @@ std::unique_ptr<GraphicObject> importShapeGraphic(uno::Reference<beans::XPropert
         {
             OSL_FAIL( "ShapeImporter::importShape(): "
                         "Failed to import shape graphic from given URL" );
-            return nullptr;
+            return false;
         }
 
-        xRet.reset(new GraphicObject(aTmpGraphic));
+        o_rGraphic = GraphicObject( aTmpGraphic );
     }
-    return xRet;
+    return true;
 }
 
 /** This shape implementation just acts as a dummy for the layermanager.
@@ -307,17 +307,18 @@ ShapeSharedPtr ShapeImporter::createShape(
     }
     else if( shapeType == "com.sun.star.drawing.GraphicObjectShape" || shapeType == "com.sun.star.presentation.GraphicObjectShape" )
     {
+        GraphicObject aGraphicObject;
+
         // to get hold of GIF animations, inspect Graphic
         // objects more thoroughly (the plain-jane shape
         // metafile of course would only contain the first
         // animation frame)
-        std::unique_ptr<GraphicObject> xGraphicObject(importShapeGraphic(xPropSet));
-        if (!xGraphicObject)
+        if( !importShapeGraphic( aGraphicObject, xPropSet ) )
             return ShapeSharedPtr(); // error loading graphic -
                                      // no placeholders in
                                      // slideshow
 
-        if (!xGraphicObject->IsAnimated())
+        if( !aGraphicObject.IsAnimated() )
         {
             // no animation - simply utilize plain draw shape import
 
@@ -380,9 +381,9 @@ ShapeSharedPtr ShapeImporter::createShape(
 
 
         Graphic aGraphic(
-            xGraphicObject->GetTransformedGraphic(
-                xGraphicObject->GetPrefSize(),
-                xGraphicObject->GetPrefMapMode(),
+            aGraphicObject.GetTransformedGraphic(
+                aGraphicObject.GetPrefSize(),
+                aGraphicObject.GetPrefMapMode(),
                 aGraphAttrs ) );
 
         return DrawShape::create( xCurrShape,

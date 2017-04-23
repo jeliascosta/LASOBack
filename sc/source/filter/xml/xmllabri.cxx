@@ -30,7 +30,7 @@ ScXMLLabelRangesContext::ScXMLLabelRangesContext(
         sal_uInt16 nPrefix,
         const OUString& rLName,
         const uno::Reference< xml::sax::XAttributeList >& /* xAttrList */ ):
-    ScXMLImportContext( rImport, nPrefix, rLName )
+    SvXMLImportContext( rImport, nPrefix, rLName )
 {
     rImport.LockSolarMutex();
 }
@@ -69,7 +69,7 @@ ScXMLLabelRangeContext::ScXMLLabelRangeContext(
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference< xml::sax::XAttributeList >& xAttrList ) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     bColumnOrientation( false )
 {
     sal_Int16               nAttrCount(xAttrList.is() ? xAttrList->getLength() : 0);

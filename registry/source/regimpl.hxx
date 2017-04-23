@@ -28,6 +28,8 @@
 #include <osl/mutex.hxx>
 #include <store/store.hxx>
 
+#define REG_PAGESIZE 512
+
 // 5 bytes = 1 (byte for the type) + 4 (bytes for the size of the data)
 #define VALUE_HEADERSIZE    5
 #define VALUE_TYPEOFFSET    1
@@ -75,8 +77,8 @@ public:
 
     RegError    loadKey(RegKeyHandle hKey,
                         const OUString& regFileName,
-                        bool bWarings,
-                        bool bReport);
+                        bool bWarings=false,
+                        bool bReport=false);
 
     RegError    dumpRegistry(RegKeyHandle hKey) const;
 
@@ -107,14 +109,14 @@ private:
                                  ORegKey* pSourceKey,
                                  const OUString& valueName,
                                  sal_uInt32 nCut,
-                                 bool bWarnings,
-                                 bool bReport);
+                                 bool bWarnings=false,
+                                 bool bReport=false);
 
     static RegError checkBlop(store::OStoreStream& rValue,
                           const OUString& sTargetPath,
                           sal_uInt32 srcValueSize,
                           sal_uInt8* pSrcBuffer,
-                          bool bReport);
+                          bool bReport=false);
 
     static RegError mergeModuleValue(store::OStoreStream& rTargetValue,
                                  RegistryTypeReader& reader,
@@ -124,8 +126,8 @@ private:
                                 ORegKey* pSourceKey,
                                 const OUString& keyName,
                                 sal_uInt32 nCut,
-                                bool bWarnings,
-                                bool bReport);
+                                bool bWarnings=false,
+                                bool bReport=false);
 
     RegError    dumpValue(const OUString& sPath,
                           const OUString& sName,

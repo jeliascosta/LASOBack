@@ -94,7 +94,7 @@ void AddPointToPoly( css::drawing::PolyPolygonShape3D& rPoly
 */
 OOO_DLLPUBLIC_CHARTTOOLS css::drawing::Position3D getPointFromPoly(
                   const css::drawing::PolyPolygonShape3D& rPolygon
-                , sal_Int32 nPointIndex, sal_Int32 nPolyIndex );
+                , sal_Int32 nPointIndex, sal_Int32 nPolyIndex=0 );
 
 OOO_DLLPUBLIC_CHARTTOOLS
 void addPolygon( css::drawing::PolyPolygonShape3D& rRet
@@ -200,16 +200,16 @@ css::uno::Sequence< T >
 }
 
 template< typename T >
-    std::vector< T >
-    FlattenVector( const std::vector< std::vector< T > > & rVecVec )
+    ::std::vector< T >
+    FlattenVector( const ::std::vector< ::std::vector< T > > & rVecVec )
 {
-    typedef std::vector< T > tFlatVec;
-    typedef std::vector< tFlatVec > tVecVec;
+    typedef ::std::vector< T > tFlatVec;
+    typedef ::std::vector< tFlatVec > tVecVec;
 
     tFlatVec aResult;
     typename tVecVec::const_iterator aOuterEnd( rVecVec.end());
     for( typename tVecVec::const_iterator aOuterIt( rVecVec.begin()); aOuterIt != aOuterEnd; ++aOuterIt )
-        std::copy( aOuterIt->begin(), aOuterIt->end(), back_inserter( aResult ));
+        ::std::copy( aOuterIt->begin(), aOuterIt->end(), back_inserter( aResult ));
     return aResult;
 }
 

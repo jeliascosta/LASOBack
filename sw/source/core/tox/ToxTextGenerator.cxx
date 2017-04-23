@@ -87,23 +87,19 @@ ToxTextGenerator::GetNumStringOfFirstNode( const SwTOXSortTabBase& rBase, bool b
         sRet = pNd->GetNumString(bUsePrefix, nLevel);
     }
 
-    if (!sRet.isEmpty()) {
-        sRet += " ";// Makes sure spacing is done only when there is outline numbering
-    }
-
     return sRet;
 }
 
 
 ToxTextGenerator::ToxTextGenerator(const SwForm& toxForm,
-        std::shared_ptr<ToxTabStopTokenHandler> const & tabStopHandler)
+        std::shared_ptr<ToxTabStopTokenHandler> tabStopHandler)
 : mToxForm(toxForm),
   mLinkProcessor(new ToxLinkProcessor()),
   mTabStopTokenHandler(tabStopHandler)
-{}
+{;}
 
 ToxTextGenerator::~ToxTextGenerator()
-{}
+{;}
 
 OUString
 ToxTextGenerator::HandleChapterToken(const SwTOXSortTabBase& rBase, const SwFormToken& aToken,
@@ -173,7 +169,7 @@ ToxTextGenerator::GenerateText(SwDoc* pDoc, const std::vector<SwTOXSortTabBase*>
         sal_uInt16 nLvl = rBase.GetLevel();
         OSL_ENSURE( nLvl < mToxForm.GetFormMax(), "invalid FORM_LEVEL");
 
-        SvxTabStopItem aTStops( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
+        SvxTabStopItem aTStops( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
         // create an enumerator
         // #i21237#
         SwFormTokens aPattern = mToxForm.GetPattern(nLvl);
@@ -343,12 +339,12 @@ ToxTextGenerator::ConstructPageNumberPlaceholder(size_t numberOfToxSources)
         return retval;
     }
     // Place holder for the PageNumber; we only respect the first one
-    retval += OUStringLiteral1(C_NUM_REPL);
+    retval += OUString(C_NUM_REPL);
     for (size_t i = 1; i < numberOfToxSources; ++i) {
         retval += S_PAGE_DELI;
-        retval += OUStringLiteral1(C_NUM_REPL);
+        retval += OUString(C_NUM_REPL);
     }
-    retval += OUStringLiteral1(C_END_PAGE_NUM);
+    retval += OUString(C_END_PAGE_NUM);
     return retval;
 }
 

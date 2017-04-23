@@ -31,12 +31,12 @@ class SdGRFFilter : public SdFilter
 public:
     SdGRFFilter ( SfxMedium& rMedium, ::sd::DrawDocShell& rDocShell );
 
-    virtual ~SdGRFFilter() override;
+    virtual ~SdGRFFilter();
 
     bool    Import();
     bool    Export() override;
 
-    static void HandleGraphicFilterError( sal_uInt16 nFilterError, sal_uLong nStreamError );
+    static void HandleGraphicFilterError( sal_uInt16 nFilterError, sal_uLong nStreamError = ERRCODE_NONE );
 };
 
 #endif // INCLUDED_SD_INC_SDGRFFILTER_HXX

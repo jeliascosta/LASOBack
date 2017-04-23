@@ -66,6 +66,7 @@ namespace drawinglayer
             // the point in time
             double                                      mfViewTime;
 
+            // bitfield
             bool                                        mbReducedDisplayQuality : 1;
 
             // the complete PropertyValue representation (if already created)
@@ -432,11 +433,6 @@ namespace drawinglayer
         {
         }
 
-        ViewInformation2D::ViewInformation2D(ViewInformation2D&& rCandidate)
-        :   mpViewInformation2D(std::move(rCandidate.mpViewInformation2D))
-        {
-        }
-
         ViewInformation2D::~ViewInformation2D()
         {
         }
@@ -444,12 +440,6 @@ namespace drawinglayer
         ViewInformation2D& ViewInformation2D::operator=(const ViewInformation2D& rCandidate)
         {
             mpViewInformation2D = rCandidate.mpViewInformation2D;
-            return *this;
-        }
-
-        ViewInformation2D& ViewInformation2D::operator=(ViewInformation2D&& rCandidate)
-        {
-            mpViewInformation2D = std::move(rCandidate.mpViewInformation2D);
             return *this;
         }
 

@@ -47,9 +47,10 @@ namespace rptui
         virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
     public:
         OColorListener(vcl::Window* _pParent,const OUString& _sColorEntry);
-        virtual ~OColorListener() override;
+        virtual ~OColorListener();
         virtual void dispose() override;
 
+        using Window::Notify;
         // SfxListener
         virtual void Notify(SfxBroadcaster & rBc, SfxHint const & rHint) override;
 
@@ -60,10 +61,10 @@ namespace rptui
 
         /** returns if the section is marked
         */
-        bool isMarked() const { return m_bMarked; }
+        inline bool isMarked() const { return m_bMarked; }
 
-        void     setCollapsedHdl(const Link<OColorListener&,void>& _aLink ){ m_aCollapsedLink = _aLink; }
-        bool isCollapsed() const { return m_bCollapsed; }
+        inline void     setCollapsedHdl(const Link<OColorListener&,void>& _aLink ){ m_aCollapsedLink = _aLink; }
+        inline bool isCollapsed() const { return m_bCollapsed; }
 
         /** collapse or expand
          *

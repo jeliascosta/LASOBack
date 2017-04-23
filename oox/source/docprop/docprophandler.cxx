@@ -21,9 +21,7 @@
 
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/beans/PropertyExistException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/Locale.hpp>
-#include <com/sun/star/xml/sax/SAXException.hpp>
 
 #include <osl/time.h>
 #include <osl/diagnose.h>
@@ -99,25 +97,25 @@ util::DateTime OOXMLDocPropHandler::GetDateTimeFromW3CDTF( const OUString& aChar
     {
         aOslDTime.Year = (sal_Int16)aChars.copy( 0, 4 ).toInt32();
 
-        if ( nLen >= 7 && aChars[4] == '-' )
+        if ( nLen >= 7 && aChars[4] == (sal_Unicode)'-' )
         {
             aOslDTime.Month = (sal_uInt16)aChars.copy( 5, 2 ).toInt32();
 
-            if ( nLen >= 10 && aChars[7] == '-' )
+            if ( nLen >= 10 && aChars[7] == (sal_Unicode)'-' )
             {
                 aOslDTime.Day = (sal_uInt16)aChars.copy( 8, 2 ).toInt32();
 
-                if ( nLen >= 16 && aChars[10] == 'T' && aChars[13] == ':' )
+                if ( nLen >= 16 && aChars[10] == (sal_Unicode)'T' && aChars[13] == (sal_Unicode)':' )
                 {
                     aOslDTime.Hours = (sal_uInt16)aChars.copy( 11, 2 ).toInt32();
                     aOslDTime.Minutes = (sal_uInt16)aChars.copy( 14, 2 ).toInt32();
 
                     sal_Int32 nOptTime = 0;
-                    if ( nLen >= 19 && aChars[16] == ':' )
+                    if ( nLen >= 19 && aChars[16] == (sal_Unicode)':' )
                     {
                         aOslDTime.Seconds = (sal_uInt16)aChars.copy( 17, 2 ).toInt32();
                         nOptTime += 3;
-                        if ( nLen >= 20 && aChars[19] == '.' )
+                        if ( nLen >= 20 && aChars[19] == (sal_Unicode)'.' )
                         {
                             nOptTime += 1;
                             sal_Int32 digitPos = 20;
@@ -158,12 +156,12 @@ util::DateTime OOXMLDocPropHandler::GetDateTimeFromW3CDTF( const OUString& aChar
                     sal_Int32 nModif = 0;
                     if ( nLen >= 16 + nOptTime + 6 )
                     {
-                        if ( ( aChars[16 + nOptTime] == '+' || aChars[16 + nOptTime] == '-' )
-                          && aChars[16 + nOptTime + 3] == ':' )
+                        if ( ( aChars[16 + nOptTime] == (sal_Unicode)'+' || aChars[16 + nOptTime] == (sal_Unicode)'-' )
+                          && aChars[16 + nOptTime + 3] == (sal_Unicode)':' )
                         {
                             nModif = aChars.copy( 16 + nOptTime + 1, 2 ).toInt32() * 3600;
                             nModif += aChars.copy( 16 + nOptTime + 4, 2 ).toInt32() * 60;
-                            if ( aChars[16 + nOptTime] == '-' )
+                            if ( aChars[16 + nOptTime] == (sal_Unicode)'-' )
                                 nModif *= -1;
                         }
                     }
@@ -218,10 +216,6 @@ void OOXMLDocPropHandler::UpdateDocStatistic( const OUString& aChars )
     switch( m_nBlock )
     {
     case EXTPR_TOKEN( Characters ):
-        aName = "NonWhitespaceCharacterCount";
-        break;
-
-    case EXTPR_TOKEN( CharactersWithSpaces ):
         aName = "CharacterCount";
         break;
 
@@ -249,7 +243,7 @@ void OOXMLDocPropHandler::UpdateDocStatistic( const OUString& aChars )
         for ( sal_Int32 nInd = 0; nInd < nLen; nInd++ )
             if ( aSet[nInd].Name.equals( aName ) )
             {
-                aSet[nInd].Value <<= aChars.toInt32();
+                aSet[nInd].Value = uno::makeAny( aChars.toInt32() );
                 bFound = true;
                 break;
             }
@@ -258,7 +252,7 @@ void OOXMLDocPropHandler::UpdateDocStatistic( const OUString& aChars )
         {
             aSet.realloc( nLen + 1 );
             aSet[nLen].Name = aName;
-            aSet[nLen].Value <<= aChars.toInt32();
+            aSet[nLen].Value = uno::makeAny( aChars.toInt32() );
         }
 
         m_xDocProp->setDocumentStatistics( aSet );
@@ -268,21 +262,25 @@ void OOXMLDocPropHandler::UpdateDocStatistic( const OUString& aChars )
 // com.sun.star.xml.sax.XFastDocumentHandler
 
 void SAL_CALL OOXMLDocPropHandler::startDocument()
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL OOXMLDocPropHandler::endDocument()
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     InitNew();
 }
 
 void SAL_CALL OOXMLDocPropHandler::setDocumentLocator( const uno::Reference< xml::sax::XLocator >& )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
 }
 
 // com.sun.star.xml.sax.XFastContextHandler
 
 void SAL_CALL OOXMLDocPropHandler::startFastElement( ::sal_Int32 nElement, const uno::Reference< xml::sax::XFastAttributeList >& xAttribs )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     if ( !m_nInBlock && !m_nState )
     {
@@ -307,7 +305,7 @@ void SAL_CALL OOXMLDocPropHandler::startFastElement( ::sal_Int32 nElement, const
         if ( xAttribs.is() && xAttribs->hasAttribute( XML_name ) )
             m_aCustomPropertyName = xAttribs->getValue( XML_name );
     }
-    else if ( m_nState && m_nInBlock == 2 && getNamespace( nElement ) == NMSP_officeDocPropsVT )
+    else if ( m_nState && m_nInBlock && m_nInBlock == 2 && getNamespace( nElement ) == NMSP_officeDocPropsVT )
     {
         m_nType = nElement;
     }
@@ -323,6 +321,7 @@ void SAL_CALL OOXMLDocPropHandler::startFastElement( ::sal_Int32 nElement, const
 }
 
 void SAL_CALL OOXMLDocPropHandler::startUnknownElement( const OUString& aNamespace, const OUString& aName, const uno::Reference< xml::sax::XFastAttributeList >& )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     SAL_WARN("oox", "Unknown element " << aNamespace << ":" << aName);
 
@@ -333,6 +332,7 @@ void SAL_CALL OOXMLDocPropHandler::startUnknownElement( const OUString& aNamespa
 }
 
 void SAL_CALL OOXMLDocPropHandler::endFastElement( ::sal_Int32 )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     if ( m_nInBlock )
     {
@@ -373,23 +373,27 @@ void SAL_CALL OOXMLDocPropHandler::endFastElement( ::sal_Int32 )
 }
 
 void SAL_CALL OOXMLDocPropHandler::endUnknownElement( const OUString&, const OUString& )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     if ( m_nInBlock )
         m_nInBlock--;
 }
 
 uno::Reference< xml::sax::XFastContextHandler > SAL_CALL OOXMLDocPropHandler::createFastChildContext( ::sal_Int32, const uno::Reference< xml::sax::XFastAttributeList >& )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     // Should the arguments be parsed?
     return uno::Reference< xml::sax::XFastContextHandler >( static_cast< xml::sax::XFastContextHandler* >( this ) );
 }
 
 uno::Reference< xml::sax::XFastContextHandler > SAL_CALL OOXMLDocPropHandler::createUnknownChildContext( const OUString&, const OUString&, const uno::Reference< xml::sax::XFastAttributeList >& )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     return uno::Reference< xml::sax::XFastContextHandler >( static_cast< xml::sax::XFastContextHandler* >( this ) );
 }
 
 void SAL_CALL OOXMLDocPropHandler::characters( const OUString& aChars )
+    throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -509,7 +513,6 @@ void SAL_CALL OOXMLDocPropHandler::characters( const OUString& aChars )
                     break;
 
                 case EXTPR_TOKEN( Characters ):
-                case EXTPR_TOKEN( CharactersWithSpaces ):
                 case EXTPR_TOKEN( Pages ):
                 case EXTPR_TOKEN( Words ):
                 case EXTPR_TOKEN( Paragraphs ):
@@ -586,6 +589,7 @@ void SAL_CALL OOXMLDocPropHandler::characters( const OUString& aChars )
                     AddCustomProperty( uno::makeAny( aChars ) ); // the property has string type
                     break;
 
+                case EXTPR_TOKEN( CharactersWithSpaces ):
                 case EXTPR_TOKEN( Lines ):
                 case EXTPR_TOKEN( DigSig ):
                 case EXTPR_TOKEN( HeadingPairs ):
@@ -667,7 +671,7 @@ void SAL_CALL OOXMLDocPropHandler::characters( const OUString& aChars )
     catch( uno::Exception& e )
     {
         throw xml::sax::SAXException(
-            "Error while setting document property!",
+            OUString("Error while setting document property!"),
             uno::Reference< uno::XInterface >(),
             uno::makeAny( e ) );
     }

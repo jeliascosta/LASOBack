@@ -47,7 +47,8 @@ rtl::OString translateUnoToCppType(
 
 enum class IdentifierTranslationMode {
     Global,
-    NonGlobal
+    NonGlobal,
+    KeywordsOnly
 };
 
 rtl::OString translateUnoToCppIdentifier(

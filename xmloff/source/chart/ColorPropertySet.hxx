@@ -35,43 +35,74 @@ class ColorPropertySet : public ::cppu::WeakImplHelper<
 {
 public:
     explicit ColorPropertySet( sal_Int32 nColor );
-    virtual ~ColorPropertySet() override;
+    virtual ~ColorPropertySet();
 
 protected:
     // ____ XPropertySet ____
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setPropertyValue(
         const OUString& aPropertyName,
-        const css::uno::Any& aValue ) override;
+        const css::uno::Any& aValue )
+        throw (css::beans::UnknownPropertyException,
+               css::beans::PropertyVetoException,
+               css::lang::IllegalArgumentException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-        const OUString& PropertyName ) override;
+        const OUString& PropertyName )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addPropertyChangeListener(
         const OUString& aPropertyName,
-        const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+        const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removePropertyChangeListener(
         const OUString& aPropertyName,
-        const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+        const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addVetoableChangeListener(
         const OUString& PropertyName,
-        const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+        const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeVetoableChangeListener(
         const OUString& PropertyName,
-        const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+        const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ XPropertyState ____
     virtual css::beans::PropertyState SAL_CALL getPropertyState(
-        const OUString& PropertyName ) override;
+        const OUString& PropertyName )
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::beans::PropertyState > SAL_CALL getPropertyStates(
-        const css::uno::Sequence< OUString >& aPropertyName ) override;
+        const css::uno::Sequence< OUString >& aPropertyName )
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setPropertyToDefault(
-        const OUString& PropertyName ) override;
+        const OUString& PropertyName )
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyDefault(
-        const OUString& aPropertyName ) override;
+        const OUString& aPropertyName )
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference< css::beans::XPropertySetInfo > m_xInfo;
     OUString  m_aColorPropName;
     sal_Int32        m_nColor;
+    bool             m_bIsFillColor;
     sal_Int32        m_nDefaultColor;
 };
 

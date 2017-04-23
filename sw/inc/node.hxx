@@ -70,6 +70,7 @@ class IDocumentListItems;
 class Point;
 typedef std::vector<SwOLENode*> SwOLENodes; // docary.hxx
 
+//UUUU
 namespace drawinglayer { namespace attribute {
     class SdrAllFillAttributesHelper;
     typedef std::shared_ptr< SdrAllFillAttributesHelper > SdrAllFillAttributesHelperPtr;
@@ -81,7 +82,7 @@ class SW_DLLPUBLIC SwNode
 {
     friend class SwNodes;
 
-    SwNodeType m_nNodeType;
+    sal_uInt8 m_nNodeType;
 
     /// For text nodes: level of auto format. Was put here because we had still free bits.
     sal_uInt8 m_nAFormatNumLvl : 3;
@@ -101,15 +102,15 @@ class SW_DLLPUBLIC SwNode
 protected:
     SwStartNode* m_pStartOfSection;
 
-    SwNode( const SwNodeIndex &rWhere, const SwNodeType nNodeId );
+    SwNode( const SwNodeIndex &rWhere, const sal_uInt8 nNodeId );
 
     /// for the initial StartNode
-    SwNode( SwNodes& rNodes, sal_uLong nPos, const SwNodeType nNodeId );
+    SwNode( SwNodes& rNodes, sal_uLong nPos, const sal_uInt8 nNodeId );
 
 public:
     /** the = 0 forces the class to be an abstract base class, but the dtor can be still called
        from subclasses */
-    virtual ~SwNode() override = 0;
+    virtual ~SwNode() = 0;
 
 #ifdef DBG_UTIL
     long GetSerial() const { return m_nSerial; }
@@ -118,22 +119,22 @@ public:
     sal_uInt16 GetSectionLevel() const;
 
     inline sal_uLong StartOfSectionIndex() const;
-    const SwStartNode* StartOfSectionNode() const { return m_pStartOfSection; }
-    SwStartNode* StartOfSectionNode() { return m_pStartOfSection; }
+    inline const SwStartNode* StartOfSectionNode() const { return m_pStartOfSection; }
+    inline       SwStartNode* StartOfSectionNode() { return m_pStartOfSection; }
 
     inline sal_uLong EndOfSectionIndex() const;
     inline const SwEndNode* EndOfSectionNode() const;
     inline         SwEndNode* EndOfSectionNode();
 
-    sal_uInt8 GetAutoFormatLvl() const     { return m_nAFormatNumLvl; }
-    void SetAutoFormatLvl( sal_uInt8 nVal )      { m_nAFormatNumLvl = nVal; }
+    inline sal_uInt8 GetAutoFormatLvl() const     { return m_nAFormatNumLvl; }
+    inline void SetAutoFormatLvl( sal_uInt8 nVal )      { m_nAFormatNumLvl = nVal; }
 
-    void SetNumLSpace( bool bFlag )        { m_bSetNumLSpace = bFlag; }
+    inline void SetNumLSpace( bool bFlag )        { m_bSetNumLSpace = bFlag; }
 
-    bool IsIgnoreDontExpand() const  { return m_bIgnoreDontExpand; }
-    void SetIgnoreDontExpand( bool bNew )  { m_bIgnoreDontExpand = bNew; }
+    inline bool IsIgnoreDontExpand() const  { return m_bIgnoreDontExpand; }
+    inline void SetIgnoreDontExpand( bool bNew )  { m_bIgnoreDontExpand = bNew; }
 
-    SwNodeType   GetNodeType() const { return m_nNodeType; }
+    sal_uInt8   GetNodeType() const { return m_nNodeType; }
 
     inline       SwStartNode *GetStartNode();
     inline const SwStartNode *GetStartNode() const;
@@ -256,7 +257,7 @@ public:
     IDocumentListItems& getIDocumentListItems();
 
     /// Is node in the visible area of the Shell?
-    bool IsInVisibleArea( SwViewShell const * pSh ) const;
+    bool IsInVisibleArea( SwViewShell const * pSh = nullptr ) const;
     /// Is node in an protected area?
     bool IsInProtectSect() const;
     /**  Is node in something that is protected (range, frame,
@@ -274,7 +275,7 @@ public:
     /// If node is in a table return the respective table box.
     SwTableBox* GetTableBox() const;
 
-    sal_uLong GetIndex() const { return GetPos(); }
+    inline sal_uLong GetIndex() const { return GetPos(); }
 
     const SwTextNode* FindOutlineNodeOfLevel( sal_uInt8 nLvl ) const;
 
@@ -310,7 +311,7 @@ class SwStartNode: public SwNode
 
 protected:
     SwStartNode( const SwNodeIndex &rWhere,
-                 const SwNodeType nNodeType = SwNodeType::Start,
+                 const sal_uInt8 nNodeType = ND_STARTNODE,
                  SwStartNodeType = SwNormalStartNode );
 public:
     DECL_FIXEDMEMPOOL_NEWDEL(SwStartNode)
@@ -358,11 +359,11 @@ class SW_DLLPUBLIC SwContentNode: public SwModify, public SwNode, public SwIndex
     mutable bool mbSetModifyAtAttr;
 
 protected:
-    SwContentNode( const SwNodeIndex &rWhere, const SwNodeType nNodeType,
+    SwContentNode( const SwNodeIndex &rWhere, const sal_uInt8 nNodeType,
                 SwFormatColl *pFormatColl );
     /** the = 0 forces the class to be an abstract base class, but the dtor can be still called
        from subclasses */
-    virtual ~SwContentNode() override = 0;
+    virtual ~SwContentNode() = 0;
 
     /**  Attribute-set for all auto attributes of a ContentNode.
       (e.g. TextNode or NoTextNode). */
@@ -447,8 +448,8 @@ public:
     /** Does node has already its own auto-attributes?
      Access to SwAttrSet. */
     inline const SwAttrSet &GetSwAttrSet() const;
-    const SwAttrSet *GetpSwAttrSet() const { return static_cast<const SwAttrSet*>(mpAttrSet.get()); }
-    bool  HasSwAttrSet() const { return mpAttrSet != nullptr; }
+    inline const SwAttrSet *GetpSwAttrSet() const { return static_cast<const SwAttrSet*>(mpAttrSet.get()); }
+    inline bool  HasSwAttrSet() const { return mpAttrSet != nullptr; }
 
     virtual SwFormatColl* ChgFormatColl( SwFormatColl* );
     SwFormatColl* GetFormatColl() const { return const_cast<SwFormatColl*>(static_cast<const SwFormatColl*>(GetRegisteredIn())); }
@@ -468,15 +469,15 @@ public:
 
     /** determines the text direction for a certain
        position. @return -1, if text direction could *not* be determined. */
-    SvxFrameDirection GetTextDirection( const SwPosition& rPos,
+    short GetTextDirection( const SwPosition& rPos,
                             const Point* pPt ) const;
 
-    void SetModifyAtAttr( bool bSetModifyAtAttr ) const { mbSetModifyAtAttr = bSetModifyAtAttr; }
-    bool GetModifyAtAttr() const { return mbSetModifyAtAttr; }
+    inline void SetModifyAtAttr( bool bSetModifyAtAttr ) const { mbSetModifyAtAttr = bSetModifyAtAttr; }
+    inline bool GetModifyAtAttr() const { return mbSetModifyAtAttr; }
 
     static SwOLENodes* CreateOLENodesArray( const SwFormatColl& rColl, bool bOnlyWithInvalidSize );
 
-    // Access to DrawingLayer FillAttributes in a preprocessed form for primitive usage
+    //UUUU Access to DrawingLayer FillAttributes in a preprocessed form for primitive usage
     virtual drawinglayer::attribute::SdrAllFillAttributesHelperPtr getSdrAllFillAttributesHelper() const;
 
 private:
@@ -491,7 +492,7 @@ class SW_DLLPUBLIC SwTableNode : public SwStartNode, public SwModify
     friend class SwNodes;
     SwTable* m_pTable;
 protected:
-    virtual ~SwTableNode() override;
+    virtual ~SwTableNode();
 
 public:
     SwTableNode( const SwNodeIndex & );
@@ -534,7 +535,7 @@ private:
     std::unique_ptr<SwSection> const m_pSection;
 
 protected:
-    virtual ~SwSectionNode() override;
+    virtual ~SwSectionNode();
 
 public:
     SwSectionNode(SwNodeIndex const&,
@@ -584,80 +585,80 @@ private:
 
 inline       SwEndNode   *SwNode::GetEndNode()
 {
-     return SwNodeType::End == m_nNodeType ? static_cast<SwEndNode*>(this) : nullptr;
+     return ND_ENDNODE == m_nNodeType ? static_cast<SwEndNode*>(this) : nullptr;
 }
 inline const SwEndNode   *SwNode::GetEndNode() const
 {
-     return SwNodeType::End == m_nNodeType ? static_cast<const SwEndNode*>(this) : nullptr;
+     return ND_ENDNODE == m_nNodeType ? static_cast<const SwEndNode*>(this) : nullptr;
 }
 inline       SwStartNode *SwNode::GetStartNode()
 {
-     return SwNodeType::Start & m_nNodeType ? static_cast<SwStartNode*>(this) : nullptr;
+     return ND_STARTNODE & m_nNodeType ? static_cast<SwStartNode*>(this) : nullptr;
 }
 inline const SwStartNode *SwNode::GetStartNode() const
 {
-     return SwNodeType::Start & m_nNodeType ? static_cast<const SwStartNode*>(this) : nullptr;
+     return ND_STARTNODE & m_nNodeType ? static_cast<const SwStartNode*>(this) : nullptr;
 }
 inline       SwTableNode *SwNode::GetTableNode()
 {
-     return SwNodeType::Table == m_nNodeType ? static_cast<SwTableNode*>(this) : nullptr;
+     return ND_TABLENODE == m_nNodeType ? static_cast<SwTableNode*>(this) : nullptr;
 }
 inline const SwTableNode *SwNode::GetTableNode() const
 {
-     return SwNodeType::Table == m_nNodeType ? static_cast<const SwTableNode*>(this) : nullptr;
+     return ND_TABLENODE == m_nNodeType ? static_cast<const SwTableNode*>(this) : nullptr;
 }
 inline       SwSectionNode *SwNode::GetSectionNode()
 {
-     return SwNodeType::Section == m_nNodeType ? static_cast<SwSectionNode*>(this) : nullptr;
+     return ND_SECTIONNODE == m_nNodeType ? static_cast<SwSectionNode*>(this) : nullptr;
 }
 inline const SwSectionNode *SwNode::GetSectionNode() const
 {
-     return SwNodeType::Section == m_nNodeType ? static_cast<const SwSectionNode*>(this) : nullptr;
+     return ND_SECTIONNODE == m_nNodeType ? static_cast<const SwSectionNode*>(this) : nullptr;
 }
 inline       SwContentNode *SwNode::GetContentNode()
 {
-     return SwNodeType::ContentMask & m_nNodeType ? static_cast<SwContentNode*>(this) : nullptr;
+     return ND_CONTENTNODE & m_nNodeType ? static_cast<SwContentNode*>(this) : nullptr;
 }
 inline const SwContentNode *SwNode::GetContentNode() const
 {
-     return SwNodeType::ContentMask & m_nNodeType ? static_cast<const SwContentNode*>(this) : nullptr;
+     return ND_CONTENTNODE & m_nNodeType ? static_cast<const SwContentNode*>(this) : nullptr;
 }
 
 inline bool SwNode::IsStartNode() const
 {
-    return bool(SwNodeType::Start & m_nNodeType);
+    return (ND_STARTNODE & m_nNodeType) != 0;
 }
 inline bool SwNode::IsContentNode() const
 {
-    return bool(SwNodeType::ContentMask & m_nNodeType);
+    return (ND_CONTENTNODE & m_nNodeType) != 0;
 }
 inline bool SwNode::IsEndNode() const
 {
-    return SwNodeType::End == m_nNodeType;
+    return ND_ENDNODE == m_nNodeType;
 }
 inline bool SwNode::IsTextNode() const
 {
-    return SwNodeType::Text == m_nNodeType;
+    return ND_TEXTNODE == m_nNodeType;
 }
 inline bool SwNode::IsTableNode() const
 {
-    return SwNodeType::Table == m_nNodeType;
+    return ND_TABLENODE == m_nNodeType;
 }
 inline bool SwNode::IsSectionNode() const
 {
-    return SwNodeType::Section == m_nNodeType;
+    return ND_SECTIONNODE == m_nNodeType;
 }
 inline bool SwNode::IsNoTextNode() const
 {
-    return bool(SwNodeType::NoTextMask & m_nNodeType);
+    return (ND_NOTXTNODE & m_nNodeType) != 0;
 }
 inline bool SwNode::IsOLENode() const
 {
-    return SwNodeType::Ole == m_nNodeType;
+    return ND_OLENODE == m_nNodeType;
 }
 inline bool SwNode::IsGrfNode() const
 {
-    return SwNodeType::Grf == m_nNodeType;
+    return ND_GRFNODE == m_nNodeType;
 }
 
 inline const SwStartNode* SwNode::FindSttNodeByType( SwStartNodeType eTyp ) const
@@ -736,7 +737,7 @@ inline const SfxPoolItem& SwContentNode::GetAttr( sal_uInt16 nWhich,
 }
 
 inline SwPlaceholderNode::SwPlaceholderNode(const SwNodeIndex &rWhere)
-    : SwNode(rWhere, SwNodeType::PlaceHolder)
+    : SwNode(rWhere, ND_PLACEHOLDER)
 {
 }
 

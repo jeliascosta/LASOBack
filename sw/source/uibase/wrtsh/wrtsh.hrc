@@ -21,7 +21,14 @@
 
 #include "rcid.hrc"
 
-#define WRTSH_ACT_END RC_WRTSH_BEGIN
+#define STR_DDEERROR_APP1       (RC_WRTSH_BEGIN +  2)
+#define STR_DDEERROR_APP2       (RC_WRTSH_BEGIN +  3)
+#define STR_DDEERROR_DATA1      (RC_WRTSH_BEGIN +  4)
+#define STR_DDEERROR_DATA2      (RC_WRTSH_BEGIN +  5)
+#define STR_DDEERROR_LINK1      (RC_WRTSH_BEGIN +  6)
+#define STR_DDEERROR_LINK2      (RC_WRTSH_BEGIN +  7)
+
+#define WRTSH_ACT_END STR_DDEERROR_LINK2
 
 #if WRTSH_ACT_END > RC_WRTSH_END
 #error Resource-Id Ueberlauf

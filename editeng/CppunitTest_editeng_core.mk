@@ -29,14 +29,12 @@ $(eval $(call gb_CppunitTest_use_libraries,editeng_core, \
     salhelper \
     sax \
     sot \
-    sfx \
     svl \
     svt \
     test \
     tk \
     tl \
     ucbhelper \
-    unotest \
     utl \
     vcl \
     xo \
@@ -54,7 +52,10 @@ $(eval $(call gb_CppunitTest_set_include,editeng_core,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,editeng_core))
+$(eval $(call gb_CppunitTest_use_api,editeng_core,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,editeng_core))
 $(eval $(call gb_CppunitTest_use_vcl,editeng_core))

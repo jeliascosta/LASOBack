@@ -26,18 +26,15 @@ class LpSolverTest: public test::BootstrapFixture
 {
     uno::Reference<sheet::XSpreadsheetDocument> m_xDocument;
 
-    void testLpSolver();
-    void testCoinMPSolver();
-
-    void testSolver(OUString const & rName);
+    void test();
+    void testSolver(const uno::Reference<sheet::XSolver>& xSolver);
 
 public:
     virtual void setUp() override;
     virtual void tearDown() override;
 
     CPPUNIT_TEST_SUITE(LpSolverTest);
-    CPPUNIT_TEST(testLpSolver);
-    CPPUNIT_TEST(testCoinMPSolver);
+    CPPUNIT_TEST(test);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -57,25 +54,44 @@ void LpSolverTest::tearDown()
     test::BootstrapFixture::tearDown();
 }
 
-void LpSolverTest::testLpSolver()
+void LpSolverTest::test()
 {
-#ifdef ENABLE_LPSOLVE
-    testSolver("com.sun.star.comp.Calc.LpsolveSolver");
-#endif
-}
+    uno::Reference<container::XContentEnumerationAccess> xEnAc(
+            m_xContext->getServiceManager(), uno::UNO_QUERY_THROW);
+    uno::Reference<container::XEnumeration> xEnum = xEnAc->
+        createContentEnumeration( "com.sun.star.sheet.Solver" );
+    CPPUNIT_ASSERT(xEnum.is());
 
-void LpSolverTest::testCoinMPSolver()
-{
+    sal_Int32 nCount = 0;
+    while (xEnum->hasMoreElements())
+    {
+        uno::Reference<uno::XInterface> xIntFac;
+        xEnum->nextElement() >>= xIntFac;
+        CPPUNIT_ASSERT(xIntFac.is());
+        uno::Reference<lang::XServiceInfo> xInfo(xIntFac, uno::UNO_QUERY_THROW);
+        const OUString sName(xInfo->getImplementationName());
+        uno::Reference<sheet::XSolver> xSolver(m_xContext->getServiceManager()->
+                createInstanceWithContext(sName, m_xContext), uno::UNO_QUERY_THROW);
+        testSolver(xSolver);
+
+        uno::Reference<sheet::XSolverDescription> xDesc(xSolver, uno::UNO_QUERY_THROW);
+        const OString sMessage("Empty description for " +
+                OUStringToOString(sName, RTL_TEXTENCODING_UTF8));
+        CPPUNIT_ASSERT_MESSAGE(sMessage.getStr(), !xDesc->getComponentDescription().isEmpty());
+        ++nCount;
+    }
+    sal_Int32 nExpected = 0;
 #ifdef ENABLE_COINMP
-    testSolver("com.sun.star.comp.Calc.CoinMPSolver");
+    ++nExpected;
 #endif
+#ifdef ENABLE_LPSOLVE
+    ++nExpected;
+#endif
+    CPPUNIT_ASSERT_EQUAL(nExpected, nCount);
 }
 
-void LpSolverTest::testSolver(OUString const & rName)
+void LpSolverTest::testSolver(const uno::Reference<sheet::XSolver>& xSolver)
 {
-    uno::Reference<sheet::XSolver> xSolver(m_xContext->getServiceManager()->
-            createInstanceWithContext(rName, m_xContext), uno::UNO_QUERY_THROW);
-
     table::CellAddress aObjective(0, 0, 0);
 
     // "changing cells" - unknown variables
@@ -100,11 +116,7 @@ void LpSolverTest::testSolver(OUString const & rName)
     CPPUNIT_ASSERT(xSolver->getSuccess());
     uno::Sequence<double> aSolution = xSolver->getSolution();
     CPPUNIT_ASSERT_EQUAL(aSolution.getLength(), aVariables.getLength());
-    CPPUNIT_ASSERT_EQUAL(aSolution[0], 5.0);
-
-    uno::Reference<sheet::XSolverDescription> xDesc(xSolver, uno::UNO_QUERY_THROW);
-    const OString sMessage("Empty description for " + OUStringToOString(rName, RTL_TEXTENCODING_UTF8));
-    CPPUNIT_ASSERT_MESSAGE(sMessage.getStr(), !xDesc->getComponentDescription().isEmpty());
+    CPPUNIT_ASSERT_EQUAL(aSolution[0], (double)5.0);
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(LpSolverTest);

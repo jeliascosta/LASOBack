@@ -138,7 +138,7 @@ public:
      * @param   type of the object.
      * @descr   set the type to the draw object.
      */
-    void SetObjectType(DrawObjectType eType) { m_eType = eType; }
+    inline void SetObjectType(DrawObjectType eType) { m_eType = eType; }
 };
 
 /**
@@ -149,6 +149,7 @@ class LwpDrawGroup : public LwpDrawObj
 {
 public:
     explicit LwpDrawGroup(SvStream* pStream) : LwpDrawObj(pStream) {}
+    virtual ~LwpDrawGroup() {}
 
 protected:
     virtual void Read() override {}
@@ -171,6 +172,7 @@ private:
 
 public:
     LwpDrawLine(SvStream * pStream, DrawingOffsetAndScale* pTransData);
+    virtual ~LwpDrawLine() {}
 
 protected:
     virtual void Read() override;
@@ -191,7 +193,7 @@ private:
 
 public:
     LwpDrawPolyLine(SvStream * pStream, DrawingOffsetAndScale* pTransData);
-    virtual ~LwpDrawPolyLine() override;
+    virtual ~LwpDrawPolyLine();
 
 protected:
     virtual void Read() override;
@@ -212,7 +214,7 @@ private:
 
 public:
     LwpDrawPolygon(SvStream * pStream, DrawingOffsetAndScale* pTransData);
-    virtual ~LwpDrawPolygon() override;
+    virtual ~LwpDrawPolygon();
 
 protected:
     virtual void Read() override;
@@ -232,6 +234,7 @@ private:
 
 public:
     LwpDrawRectangle(SvStream* pStream, DrawingOffsetAndScale* pTransData);
+    virtual ~LwpDrawRectangle(){}
 
 protected:
     virtual void Read() override;
@@ -254,6 +257,7 @@ private:
 
 public:
     LwpDrawEllipse(SvStream * pStream, DrawingOffsetAndScale* pTransData);
+    virtual ~LwpDrawEllipse(){}
 
 protected:
     virtual void Read() override;
@@ -274,6 +278,7 @@ private:
 
 public:
     LwpDrawArc(SvStream * pStream, DrawingOffsetAndScale* pTransData);
+    virtual ~LwpDrawArc() {}
 
 protected:
     virtual void Read() override;
@@ -295,7 +300,7 @@ private:
 
 public:
     explicit LwpDrawTextBox(SvStream* pStream);
-    virtual ~LwpDrawTextBox() override;
+    virtual ~LwpDrawTextBox();
     static void SetFontStyle(rtl::Reference<XFFont> const & pFont, SdwTextBoxRecord* pRec);
 
 protected:
@@ -321,7 +326,7 @@ private:
 
 public:
     LwpDrawTextArt(SvStream* pStream, DrawingOffsetAndScale* pTransData);
-    virtual ~LwpDrawTextArt() override;
+    virtual ~LwpDrawTextArt();
 
 protected:
     virtual void Read() override;
@@ -338,6 +343,7 @@ class LwpDrawMetafile : public LwpDrawObj
 {
 public:
     explicit LwpDrawMetafile(SvStream* pStream);
+    virtual ~LwpDrawMetafile() {}
 
 protected:
     virtual void Read() override;
@@ -360,7 +366,7 @@ private:
     sal_uInt8* m_pImageData;
 public:
     explicit LwpDrawBitmap(SvStream* pStream);
-    virtual ~LwpDrawBitmap() override;
+    virtual ~LwpDrawBitmap();
 
 protected:
     virtual void Read() override;

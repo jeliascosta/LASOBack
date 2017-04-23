@@ -22,6 +22,9 @@
 
 #include <deque>
 
+#include <com/sun/star/lang/XServiceInfo.hpp>
+#include <com/sun/star/container/XEnumeration.hpp>
+#include <com/sun/star/text/XTextContent.hpp>
 
 #include <cppuhelper/implbase.hxx>
 
@@ -29,6 +32,7 @@
 #include <unobaseclass.hxx>
 
 
+class SwDepend;
 class SwNodeIndex;
 class SwPaM;
 class SwFrameFormat;
@@ -51,10 +55,10 @@ struct FrameClientSortListEntry
         : nIndex(i_nIndex), nOrder(i_nOrder), pFrameClient(i_pClient) { }
 };
 
-typedef std::deque< FrameClientSortListEntry >
+typedef ::std::deque< FrameClientSortListEntry >
     FrameClientSortList_t;
 
-typedef std::deque< std::shared_ptr<sw::FrameClient> >
+typedef ::std::deque< std::shared_ptr<sw::FrameClient> >
     FrameClientList_t;
 
 // #i28701# - adjust 4th parameter

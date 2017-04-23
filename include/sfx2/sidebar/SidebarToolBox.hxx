@@ -20,12 +20,14 @@
 #define INCLUDED_SFX2_SIDEBAR_SIDEBARTOOLBOX_HXX
 
 #include <sfx2/dllapi.h>
+#include <sfx2/sidebar/SidebarToolBox.hxx>
 #include <vcl/toolbox.hxx>
 #include <com/sun/star/frame/XDispatch.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/XToolbarController.hpp>
 #include <com/sun/star/util/URL.hpp>
 #include <map>
+
 
 namespace sfx2 { namespace sidebar {
 
@@ -38,44 +40,38 @@ class SFX2_DLLPUBLIC SidebarToolBox : public ToolBox
 {
 public:
     SidebarToolBox(vcl::Window* pParentWindow);
-    virtual ~SidebarToolBox() override;
+    virtual ~SidebarToolBox();
     virtual void dispose() override;
-
-    virtual ToolBoxButtonSize GetDefaultButtonSize() const;
 
     using ToolBox::InsertItem;
     virtual void InsertItem(const OUString& rCommand,
             const css::uno::Reference<css::frame::XFrame>& rFrame,
-            ToolBoxItemBits nBits,
-            const Size& rRequestedSize,
-            ImplToolItems::size_type nPos = APPEND) override;
+            ToolBoxItemBits nBits = ToolBoxItemBits::NONE,
+            const Size& rRequestedSize = Size(),
+            sal_uInt16 nPos = TOOLBOX_APPEND) override;
 
-    virtual bool EventNotify(NotifyEvent& rEvent) override;
+    virtual bool Notify (NotifyEvent& rEvent) override;
 
     void SetController(const sal_uInt16 nItemId,
                        const css::uno::Reference<css::frame::XToolbarController>& rxController);
 
     css::uno::Reference<css::frame::XToolbarController> GetFirstController();
 
-    void InitToolBox(VclBuilder::stringmap& rMap);
-
-protected:
+private:
     typedef std::map<sal_uInt16, css::uno::Reference<css::frame::XToolbarController>> ControllerContainer;
     ControllerContainer maControllers;
     bool mbAreHandlersRegistered;
-    bool mbUseDefaultButtonSize;
 
-    DECL_LINK(DropDownClickHandler, ToolBox*, void);
-    DECL_LINK(ClickHandler, ToolBox*, void);
-    DECL_LINK(DoubleClickHandler, ToolBox*, void);
-    DECL_LINK(SelectHandler, ToolBox*, void);
-    DECL_LINK(ChangedIconSizeHandler, LinkParamNone*, void );
+    DECL_LINK_TYPED(DropDownClickHandler, ToolBox*, void);
+    DECL_LINK_TYPED(ClickHandler, ToolBox*, void);
+    DECL_LINK_TYPED(DoubleClickHandler, ToolBox*, void);
+    DECL_LINK_TYPED(SelectHandler, ToolBox*, void);
 
     css::uno::Reference<css::frame::XToolbarController> GetControllerForItemId(const sal_uInt16 nItemId) const;
 
     void CreateController(const sal_uInt16 nItemId,
                           const css::uno::Reference<css::frame::XFrame>& rxFrame,
-                          const sal_Int32 nItemWidth);
+                          const sal_Int32 nItemWidth = 0);
     void RegisterHandlers();
 };
 

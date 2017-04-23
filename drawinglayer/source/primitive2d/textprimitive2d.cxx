@@ -124,7 +124,7 @@ namespace drawinglayer
                     // outlines already aligned to given, but wrong DXArray
                     if(getDXArray().size() && !basegfx::fTools::equal(aScale.getX(), 1.0))
                     {
-                        std::vector< double > aScaledDXArray = getDXArray();
+                        ::std::vector< double > aScaledDXArray = getDXArray();
                         const double fDXArrayScale(1.0 / aScale.getX());
 
                         for(double & a : aScaledDXArray)
@@ -164,54 +164,55 @@ namespace drawinglayer
             }
         }
 
-        void TextSimplePortionPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer TextSimplePortionPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            if(!getTextLength())
-                return;
-
             Primitive2DContainer aRetval;
-            basegfx::B2DPolyPolygonVector aB2DPolyPolyVector;
-            basegfx::B2DHomMatrix aPolygonTransform;
 
-            // get text outlines and their object transformation
-            getTextOutlinesAndTransformation(aB2DPolyPolyVector, aPolygonTransform);
-
-            // create primitives for the outlines
-            const sal_uInt32 nCount(aB2DPolyPolyVector.size());
-
-            if(!nCount)
-                return;
-
-            // alloc space for the primitives
-            aRetval.resize(nCount);
-
-            // color-filled polypolygons
-            for(sal_uInt32 a(0L); a < nCount; a++)
+            if(getTextLength())
             {
-                // prepare polypolygon
-                basegfx::B2DPolyPolygon& rPolyPolygon = aB2DPolyPolyVector[a];
-                rPolyPolygon.transform(aPolygonTransform);
-                aRetval[a] = new PolyPolygonColorPrimitive2D(rPolyPolygon, getFontColor());
+                basegfx::B2DPolyPolygonVector aB2DPolyPolyVector;
+                basegfx::B2DHomMatrix aPolygonTransform;
+
+                // get text outlines and their object transformation
+                getTextOutlinesAndTransformation(aB2DPolyPolyVector, aPolygonTransform);
+
+                // create primitives for the outlines
+                const sal_uInt32 nCount(aB2DPolyPolyVector.size());
+
+                if(nCount)
+                {
+                    // alloc space for the primitives
+                    aRetval.resize(nCount);
+
+                    // color-filled polypolygons
+                    for(sal_uInt32 a(0L); a < nCount; a++)
+                    {
+                        // prepare polypolygon
+                        basegfx::B2DPolyPolygon& rPolyPolygon = aB2DPolyPolyVector[a];
+                        rPolyPolygon.transform(aPolygonTransform);
+                        aRetval[a] = new PolyPolygonColorPrimitive2D(rPolyPolygon, getFontColor());
+                    }
+
+                    if(getFontAttribute().getOutline())
+                    {
+                        // decompose polygon transformation to single values
+                        basegfx::B2DVector aScale, aTranslate;
+                        double fRotate, fShearX;
+                        aPolygonTransform.decompose(aScale, aTranslate, fRotate, fShearX);
+
+                        // create outline text effect with current content and replace
+                        Primitive2DReference aNewTextEffect(new TextEffectPrimitive2D(
+                            aRetval,
+                            aTranslate,
+                            fRotate,
+                            TEXTEFFECTSTYLE2D_OUTLINE));
+
+                        aRetval = Primitive2DContainer { aNewTextEffect };
+                    }
+                }
             }
 
-            if(getFontAttribute().getOutline())
-            {
-                // decompose polygon transformation to single values
-                basegfx::B2DVector aScale, aTranslate;
-                double fRotate, fShearX;
-                aPolygonTransform.decompose(aScale, aTranslate, fRotate, fShearX);
-
-                // create outline text effect with current content and replace
-                Primitive2DReference aNewTextEffect(new TextEffectPrimitive2D(
-                    aRetval,
-                    aTranslate,
-                    fRotate,
-                    TextEffectStyle2D::Outline));
-
-                aRetval = Primitive2DContainer { aNewTextEffect };
-            }
-
-            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
+            return aRetval;
         }
 
         TextSimplePortionPrimitive2D::TextSimplePortionPrimitive2D(
@@ -219,7 +220,7 @@ namespace drawinglayer
             const OUString& rText,
             sal_Int32 nTextPosition,
             sal_Int32 nTextLength,
-            const std::vector< double >& rDXArray,
+            const ::std::vector< double >& rDXArray,
             const attribute::FontAttribute& rFontAttribute,
             const css::lang::Locale& rLocale,
             const basegfx::BColor& rFontColor,

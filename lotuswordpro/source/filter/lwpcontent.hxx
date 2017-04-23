@@ -74,6 +74,7 @@ class LwpContent : public LwpDLNFVList
 {
 public:
     LwpContent(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
+    virtual ~LwpContent(){}
 protected:
     LwpAssociatedLayouts m_LayoutsWithMe;
     sal_uInt16 m_nFlags;
@@ -146,6 +147,7 @@ class LwpHeadContent : public LwpContent
 {
 public:
     LwpHeadContent(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
+    virtual ~LwpHeadContent(){}
 protected:
     void Read() override;
 };

@@ -22,13 +22,13 @@
 
 #include <vcl/graph.hxx>
 
-class VCL_DLLPUBLIC GraphicNativeMetadata final
+class VCL_DLLPUBLIC GraphicNativeMetadata
 {
     sal_uInt16 mRotation;
 
 public:
     GraphicNativeMetadata();
-    ~GraphicNativeMetadata();
+    virtual ~GraphicNativeMetadata();
 
     bool read(Graphic& rGraphic);
     sal_uInt16 getRotation() { return mRotation;}

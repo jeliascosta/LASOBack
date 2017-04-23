@@ -21,9 +21,9 @@ private:
     VclPtr<PushButton> m_pDeleteBtn;
     VclPtr<OKButton>   m_pOKBtn;
 
-    DECL_LINK(AddHdl_Impl, Button*, void);
-    DECL_LINK(DeleteHdl_Impl, Button*, void);
-    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(AddHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(DeleteHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
 
     std::set<OUString> m_aURLs;
 
@@ -31,7 +31,7 @@ private:
 
 public:
     explicit TSAURLsDialog(vcl::Window* pParent);
-    virtual ~TSAURLsDialog() override;
+    virtual ~TSAURLsDialog();
     virtual void dispose() override;
 };
 

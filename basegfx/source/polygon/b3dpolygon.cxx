@@ -67,7 +67,7 @@ public:
 
 class CoordinateDataArray3D
 {
-    typedef std::vector< CoordinateData3D > CoordinateData3DVector;
+    typedef ::std::vector< CoordinateData3D > CoordinateData3DVector;
 
     CoordinateData3DVector                          maVector;
 
@@ -84,6 +84,10 @@ public:
 
     CoordinateDataArray3D(const CoordinateDataArray3D& rOriginal, sal_uInt32 nIndex, sal_uInt32 nCount)
     :   maVector(rOriginal.maVector.begin() + nIndex, rOriginal.maVector.begin() + (nIndex + nCount))
+    {
+    }
+
+    ~CoordinateDataArray3D()
     {
     }
 
@@ -216,13 +220,13 @@ public:
     {
         if(maVector.size() > 1)
         {
-            const sal_uInt32 nHalfSize(maVector.size() >> 1);
+            const sal_uInt32 nHalfSize(maVector.size() >> 1L);
             CoordinateData3DVector::iterator aStart(maVector.begin());
-            CoordinateData3DVector::iterator aEnd(maVector.end() - 1);
+            CoordinateData3DVector::iterator aEnd(maVector.end() - 1L);
 
             for(sal_uInt32 a(0); a < nHalfSize; a++)
             {
-                std::swap(*aStart, *aEnd);
+                ::std::swap(*aStart, *aEnd);
                 ++aStart;
                 --aEnd;
             }
@@ -243,7 +247,7 @@ public:
 
 class BColorArray
 {
-    typedef std::vector< ::basegfx::BColor > BColorDataVector;
+    typedef ::std::vector< ::basegfx::BColor > BColorDataVector;
 
     BColorDataVector                                    maVector;
     sal_uInt32                                          mnUsedEntries;
@@ -279,6 +283,10 @@ public:
 
             maVector.push_back(*aStart);
         }
+    }
+
+    ~BColorArray()
+    {
     }
 
     bool operator==(const BColorArray& rCandidate) const
@@ -381,13 +389,13 @@ public:
     {
         if(maVector.size() > 1)
         {
-            const sal_uInt32 nHalfSize(maVector.size() >> 1);
+            const sal_uInt32 nHalfSize(maVector.size() >> 1L);
             BColorDataVector::iterator aStart(maVector.begin());
-            BColorDataVector::iterator aEnd(maVector.end() - 1);
+            BColorDataVector::iterator aEnd(maVector.end() - 1L);
 
             for(sal_uInt32 a(0); a < nHalfSize; a++)
             {
-                std::swap(*aStart, *aEnd);
+                ::std::swap(*aStart, *aEnd);
                 ++aStart;
                 --aEnd;
             }
@@ -397,7 +405,7 @@ public:
 
 class NormalsArray3D
 {
-    typedef std::vector< ::basegfx::B3DVector > NormalsData3DVector;
+    typedef ::std::vector< ::basegfx::B3DVector > NormalsData3DVector;
 
     NormalsData3DVector                                 maVector;
     sal_uInt32                                          mnUsedEntries;
@@ -432,6 +440,10 @@ public:
 
             maVector.push_back(*aStart);
         }
+    }
+
+    ~NormalsArray3D()
+    {
     }
 
     bool operator==(const NormalsArray3D& rCandidate) const
@@ -534,13 +546,13 @@ public:
     {
         if(maVector.size() > 1)
         {
-            const sal_uInt32 nHalfSize(maVector.size() >> 1);
+            const sal_uInt32 nHalfSize(maVector.size() >> 1L);
             NormalsData3DVector::iterator aStart(maVector.begin());
-            NormalsData3DVector::iterator aEnd(maVector.end() - 1);
+            NormalsData3DVector::iterator aEnd(maVector.end() - 1L);
 
             for(sal_uInt32 a(0); a < nHalfSize; a++)
             {
-                std::swap(*aStart, *aEnd);
+                ::std::swap(*aStart, *aEnd);
                 ++aStart;
                 --aEnd;
             }
@@ -560,7 +572,7 @@ public:
 
 class TextureCoordinate2D
 {
-    typedef std::vector< ::basegfx::B2DPoint > TextureData2DVector;
+    typedef ::std::vector< ::basegfx::B2DPoint > TextureData2DVector;
 
     TextureData2DVector                                 maVector;
     sal_uInt32                                          mnUsedEntries;
@@ -595,6 +607,10 @@ public:
 
             maVector.push_back(*aStart);
         }
+    }
+
+    ~TextureCoordinate2D()
+    {
     }
 
     bool operator==(const TextureCoordinate2D& rCandidate) const
@@ -697,13 +713,13 @@ public:
     {
         if(maVector.size() > 1)
         {
-            const sal_uInt32 nHalfSize(maVector.size() >> 1);
+            const sal_uInt32 nHalfSize(maVector.size() >> 1L);
             TextureData2DVector::iterator aStart(maVector.begin());
-            TextureData2DVector::iterator aEnd(maVector.end() - 1);
+            TextureData2DVector::iterator aEnd(maVector.end() - 1L);
 
             for(sal_uInt32 a(0); a < nHalfSize; a++)
             {
-                std::swap(*aStart, *aEnd);
+                ::std::swap(*aStart, *aEnd);
                 ++aStart;
                 --aEnd;
             }
@@ -742,6 +758,7 @@ class ImplB3DPolygon
     // The calculated plane normal. mbPlaneNormalValid says if it's valid.
     ::basegfx::B3DVector                            maPlaneNormal;
 
+    // bitfield
     // flag which decides if this polygon is opened or closed
     bool                                            mbIsClosed : 1;
 
@@ -875,13 +892,13 @@ public:
 
     void setClosed(bool bNew)
     {
-        if(bNew != mbIsClosed)
+        if(bNew != (bool)mbIsClosed)
         {
             mbIsClosed = bNew;
         }
     }
 
-    bool impBColorsAreEqual(const ImplB3DPolygon& rCandidate) const
+    inline bool impBColorsAreEqual(const ImplB3DPolygon& rCandidate) const
     {
         bool bBColorsAreEqual(true);
 
@@ -909,7 +926,7 @@ public:
         return bBColorsAreEqual;
     }
 
-    bool impNormalsAreEqual(const ImplB3DPolygon& rCandidate) const
+    inline bool impNormalsAreEqual(const ImplB3DPolygon& rCandidate) const
     {
         bool bNormalsAreEqual(true);
 
@@ -937,7 +954,7 @@ public:
         return bNormalsAreEqual;
     }
 
-    bool impTextureCoordinatesAreEqual(const ImplB3DPolygon& rCandidate) const
+    inline bool impTextureCoordinatesAreEqual(const ImplB3DPolygon& rCandidate) const
     {
         bool bTextureCoordinatesAreEqual(true);
 
@@ -1332,7 +1349,7 @@ public:
         if(mbIsClosed)
         {
             // check for same start and end point
-            const sal_uInt32 nIndex(maPoints.count() - 1);
+            const sal_uInt32 nIndex(maPoints.count() - 1L);
 
             if(maPoints.getCoordinate(0) == maPoints.getCoordinate(nIndex))
             {
@@ -1356,19 +1373,19 @@ public:
         }
 
         // test for range
-        for(sal_uInt32 a(0); a < maPoints.count() - 1; a++)
+        for(sal_uInt32 a(0); a < maPoints.count() - 1L; a++)
         {
-            if(maPoints.getCoordinate(a) == maPoints.getCoordinate(a + 1))
+            if(maPoints.getCoordinate(a) == maPoints.getCoordinate(a + 1L))
             {
-                const bool bBColorEqual(!mpBColors || (mpBColors->getBColor(a) == mpBColors->getBColor(a + 1)));
+                const bool bBColorEqual(!mpBColors || (mpBColors->getBColor(a) == mpBColors->getBColor(a + 1L)));
 
                 if(bBColorEqual)
                 {
-                    const bool bNormalsEqual(!mpNormals || (mpNormals->getNormal(a) == mpNormals->getNormal(a + 1)));
+                    const bool bNormalsEqual(!mpNormals || (mpNormals->getNormal(a) == mpNormals->getNormal(a + 1L)));
 
                     if(bNormalsEqual)
                     {
-                        const bool bTextureCoordinatesEqual(!mpTextureCoordinates || (mpTextureCoordinates->getTextureCoordinate(a) == mpTextureCoordinates->getTextureCoordinate(a + 1)));
+                        const bool bTextureCoordinatesEqual(!mpTextureCoordinates || (mpTextureCoordinates->getTextureCoordinate(a) == mpTextureCoordinates->getTextureCoordinate(a + 1L)));
 
                         if(bTextureCoordinatesEqual)
                         {
@@ -1393,9 +1410,9 @@ public:
             {
                 bRemove = false;
 
-                if(maPoints.count() > 1)
+                if(maPoints.count() > 1L)
                 {
-                    const sal_uInt32 nIndex(maPoints.count() - 1);
+                    const sal_uInt32 nIndex(maPoints.count() - 1L);
                     bRemove = (maPoints.getCoordinate(0) == maPoints.getCoordinate(nIndex));
 
                     if(bRemove && mpBColors && !(mpBColors->getBColor(0) == mpBColors->getBColor(nIndex)))
@@ -1416,8 +1433,8 @@ public:
 
                 if(bRemove)
                 {
-                    const sal_uInt32 nIndex(maPoints.count() - 1);
-                    remove(nIndex, 1);
+                    const sal_uInt32 nIndex(maPoints.count() - 1L);
+                    remove(nIndex, 1L);
                 }
             } while(bRemove);
         }
@@ -1429,9 +1446,9 @@ public:
 
         // test as long as there are at least two points and as long as the index
         // is smaller or equal second last point
-        while((maPoints.count() > 1) && (nIndex <= maPoints.count() - 2))
+        while((maPoints.count() > 1L) && (nIndex <= maPoints.count() - 2L))
         {
-            const sal_uInt32 nNextIndex(nIndex + 1);
+            const sal_uInt32 nNextIndex(nIndex + 1L);
             bool bRemove(maPoints.getCoordinate(nIndex) == maPoints.getCoordinate(nNextIndex));
 
             if(bRemove && mpBColors && !(mpBColors->getBColor(nIndex) == mpBColors->getBColor(nNextIndex)))
@@ -1452,7 +1469,7 @@ public:
             if(bRemove)
             {
                 // if next is same as index and the control vectors are unused, delete index
-                remove(nIndex, 1);
+                remove(nIndex, 1L);
             }
             else
             {
@@ -1491,11 +1508,6 @@ namespace basegfx
     {
     }
 
-    B3DPolygon::B3DPolygon(B3DPolygon&& rPolygon) :
-        mpPolygon(std::move(rPolygon.mpPolygon))
-    {
-    }
-
     B3DPolygon::~B3DPolygon()
     {
     }
@@ -1503,12 +1515,6 @@ namespace basegfx
     B3DPolygon& B3DPolygon::operator=(const B3DPolygon& rPolygon)
     {
         mpPolygon = rPolygon.mpPolygon;
-        return *this;
-    }
-
-    B3DPolygon& B3DPolygon::operator=(B3DPolygon&& rPolygon)
-    {
-        mpPolygon = std::move(rPolygon.mpPolygon);
         return *this;
     }
 
@@ -1700,7 +1706,7 @@ namespace basegfx
 
     bool B3DPolygon::hasDoublePoints() const
     {
-        return (mpPolygon->count() > 1 && mpPolygon->hasDoublePoints());
+        return (mpPolygon->count() > 1L && mpPolygon->hasDoublePoints());
     }
 
     void B3DPolygon::removeDoublePoints()

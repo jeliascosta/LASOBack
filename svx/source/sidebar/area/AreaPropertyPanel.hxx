@@ -45,6 +45,7 @@ class XFillBitmapItem;
 
 namespace svx { namespace sidebar {
 
+class PopupContainer;
 class AreaTransparencyGradientControl;
 
 class AreaPropertyPanel : public AreaPropertyPanelBase
@@ -59,13 +60,13 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destructor
+    // constructor/destuctor
     AreaPropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         SfxBindings* pBindings);
 
-    virtual ~AreaPropertyPanel() override;
+    virtual ~AreaPropertyPanel();
 
     virtual void setFillTransparence(const XFillTransparenceItem& rItem) override;
     virtual void setFillFloatTransparence(const XFillFloatTransparenceItem& rItem) override;
@@ -84,7 +85,6 @@ private:
     ::sfx2::sidebar::ControllerItem maGradientListControl;
     ::sfx2::sidebar::ControllerItem maHatchListControl;
     ::sfx2::sidebar::ControllerItem maBitmapListControl;
-    ::sfx2::sidebar::ControllerItem maPatternListControl;
     ::sfx2::sidebar::ControllerItem maFillTransparenceController;
     ::sfx2::sidebar::ControllerItem maFillFloatTransparenceController;
 

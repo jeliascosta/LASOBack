@@ -31,7 +31,7 @@
 namespace dbaccess
 {
 
-    typedef std::map< OUString, css::uno::Sequence< css::beans::PropertyValue > >
+    typedef ::std::map< OUString, css::uno::Sequence< css::beans::PropertyValue > >
             DocumentEventsData;
 
     // DocumentEvents
@@ -44,7 +44,7 @@ namespace dbaccess
     {
     public:
         DocumentEvents( ::cppu::OWeakObject& _rParent, ::osl::Mutex& _rMutex, DocumentEventsData& _rEventsData );
-        virtual ~DocumentEvents() override;
+        virtual ~DocumentEvents();
 
         DocumentEvents(const DocumentEvents&) = delete;
         const DocumentEvents& operator=(const DocumentEvents&) = delete;
@@ -56,19 +56,19 @@ namespace dbaccess
         virtual void SAL_CALL release() throw() override;
 
         // XNameReplace
-        virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) override;
+        virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) throw (css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
         // XNameAccess
-        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType(  ) override;
-        virtual sal_Bool SAL_CALL hasElements(  ) override;
+        virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
-        std::unique_ptr< DocumentEvents_Data >  m_pData;
+        ::std::unique_ptr< DocumentEvents_Data >  m_pData;
     };
 
 } // namespace dbaccess

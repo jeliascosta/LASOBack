@@ -29,7 +29,7 @@ oslFileError oslTranslateFileError(bool bIsError, int Errno)
 
     /* Have a look at file_error_transl.hxx for
        the reason that we do this here */
-    if (bIsError && (Errno == 0))
+    if (bIsError && (0 == Errno))
         return osl_error;
 
     switch(Errno)

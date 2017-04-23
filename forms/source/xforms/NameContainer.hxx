@@ -44,6 +44,12 @@ protected:
     typedef std::map<OUString,T> map_t;
     map_t maItems;
 
+
+    bool hasItems()
+    {
+        return ! maItems.empty();
+    }
+
     typename map_t::const_iterator findItem( const OUString& rName )
     {
         return maItems.find( rName );
@@ -78,19 +84,22 @@ protected:
 public:
 
     NameContainer() {}
+    virtual ~NameContainer() {}
 
 
     // methods for XElementAccess
 
 
-    virtual css::uno::Type SAL_CALL getElementType() override
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw( css::uno::RuntimeException, std::exception ) override
     {
         return cppu::UnoType<T>::get();
     }
 
-    virtual sal_Bool SAL_CALL hasElements() override
+    virtual sal_Bool SAL_CALL hasElements()
+        throw( css::uno::RuntimeException, std::exception ) override
     {
-        return ! maItems.empty();
+        return hasItems();
     }
 
 
@@ -98,7 +107,10 @@ public:
 
 
     virtual css::uno::Any SAL_CALL getByName(
-        const OUString& rName ) override
+        const OUString& rName )
+        throw( css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override
     {
         typename map_t::const_iterator aIter = findItem( rName );
         if( aIter == maItems.end() )
@@ -107,13 +119,15 @@ public:
             return css::uno::makeAny( aIter->second );
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getElementNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getElementNames()
+        throw( css::uno::RuntimeException, std::exception ) override
     {
         return comphelper::mapKeysToSequence(maItems);
     }
 
     virtual sal_Bool SAL_CALL hasByName(
-        const OUString& rName ) override
+        const OUString& rName )
+        throw( css::uno::RuntimeException, std::exception ) override
     {
         return hasItem( rName );
     }
@@ -124,7 +138,11 @@ public:
 
     virtual void SAL_CALL replaceByName(
         const OUString& rName,
-        const css::uno::Any& aElement ) override
+        const css::uno::Any& aElement )
+        throw( css::lang::IllegalArgumentException,
+               css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override
     {
         T aItem;
         if( aElement >>= aItem )
@@ -142,7 +160,11 @@ public:
 
     virtual void SAL_CALL insertByName(
         const OUString& rName,
-        const css::uno::Any& aElement ) override
+        const css::uno::Any& aElement )
+        throw( css::lang::IllegalArgumentException,
+               css::container::ElementExistException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception ) override
     {
         T aItem;
         if( aElement >>= aItem )
@@ -155,7 +177,10 @@ public:
     }
 
     virtual void SAL_CALL removeByName(
-        const OUString& rName ) override
+        const OUString& rName )
+        throw( css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override
     {
         if( hasByName( rName ) )
             remove( rName );

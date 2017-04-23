@@ -87,7 +87,7 @@ namespace dxcanvas
 
     private:
         virtual ::basegfx::B2DPolyPolygon polyPolygonFromXPolyPolygon2D(
-            css::uno::Reference< css::rendering::XPolyPolygon2D >& xPoly ) const override;
+            css::uno::Reference< css::rendering::XPolyPolygon2D >& xPoly ) const;
 
         /// Returns true, if the sprite _really_ needs redraw
         bool needRedraw() const;

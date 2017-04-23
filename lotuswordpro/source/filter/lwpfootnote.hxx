@@ -65,7 +65,6 @@
 #include "lwpobj.hxx"
 #include "lwpsection.hxx"
 #include "lwpborderstuff.hxx"
-#include "lwptable.hxx"
 
 // Footnote types are built up from these numbers
 #define FN_MASK_ENDNOTE         0x80
@@ -104,6 +103,7 @@ class LwpFribFootnote: public LwpFrib
 
 public:
     explicit LwpFribFootnote(LwpPara* pPara );
+    virtual ~LwpFribFootnote(){}
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     void RegisterNewStyle();
     void XFConvert(XFContentContainer* pCont);
@@ -124,7 +124,7 @@ class LwpFootnote : public LwpOrderedObject
 {
 public:
     LwpFootnote(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpFootnote() override;
+    virtual ~LwpFootnote();
     void RegisterStyle() override;
     void XFConvert(XFContentContainer * pCont) override;
 protected:
@@ -147,10 +147,12 @@ private:
 /**
  * @brief VO_FOOTNOTETABLE object
 */
+#include "lwptable.hxx"
 class LwpFootnoteTable : public LwpTable
 {
 public:
     LwpFootnoteTable(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
+    virtual ~LwpFootnoteTable(){}
 protected:
     void Read() override;
 };
@@ -166,6 +168,7 @@ public:
         , m_nStartingNumber(0)
         {}
 
+    ~LwpFootnoteNumberOptions(){}
     void Read(LwpObjectStream* pObjStrm);
 private:
     sal_uInt16 m_nFlag;
@@ -204,6 +207,7 @@ public:
         , m_nBelow(0)
         {}
 
+    ~LwpFootnoteSeparatorOptions(){}
     void Read(LwpObjectStream* pObjStrm);
 private:
     sal_uInt16 m_nFlag;
@@ -241,7 +245,7 @@ protected:
     void RegisterFootnoteStyle();
     void RegisterEndnoteStyle();
 private:
-    virtual ~LwpFootnoteOptions() override;
+    virtual ~LwpFootnoteOptions();
 
     sal_uInt16 m_nFlag;
     LwpFootnoteNumberOptions m_FootnoteNumbering;

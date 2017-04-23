@@ -38,7 +38,7 @@ private:
 
 public:
     SvxBasicIDEOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxBasicIDEOptionsPage() override;
+    virtual ~SvxBasicIDEOptionsPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rSet );

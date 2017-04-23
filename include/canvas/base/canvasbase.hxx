@@ -41,13 +41,13 @@ namespace canvas
         problem with UNO partial interface implementation actually is,
         that you cannot do it the plain way, since deriving from a
         common base subclass always introduces the whole set of pure
-        virtuals, that your baseclass helper just overridden) and your
+        virtuals, that your baseclass helper just overrided) and your
         implementation class. You then only have to implement the
         functionality <em>besides</em> XCanvas.
 
         <pre>
         Example:
-        typedef ::cppu::WeakComponentImplHelper < css::rendering::XSpriteCanvas,
+        typedef ::cppu::WeakComponentImplHelper4< css::rendering::XSpriteCanvas,
                                                   css::lang::XInitialization,
                                                   css::lang::XServiceInfo,
                                                   css::lang::XServiceName > CanvasBase_Base;
@@ -61,12 +61,12 @@ namespace canvas
         </pre>
 
         @tpl Base
-        Base class to use, most probably the
-        WeakComponentImplHelper template with the appropriate
+        Base class to use, most probably one of the
+        WeakComponentImplHelperN templates with the appropriate
         interfaces. At least XCanvas should be among them (why else
         would you use this template, then?). Base class must have an
         Base( const Mutex& ) constructor (like the
-        WeakComponentImplHelper template has). As the very least,
+        WeakComponentImplHelperN templates have). As the very least,
         the base class must be derived from uno::XInterface, as some
         error reporting mechanisms rely on that.
 
@@ -80,7 +80,7 @@ namespace canvas
 
         @tpl Mutex
         Lock strategy to use. Defaults to using the
-        BaseMutex-provided lock.  Every time one of the methods is
+        OBaseMutex-provided lock.  Every time one of the methods is
         entered, an object of type Mutex is created with m_aMutex as
         the sole parameter, and destroyed again when the method scope
         is left.
@@ -122,7 +122,7 @@ namespace canvas
         }
 
         // XCanvas
-        virtual void SAL_CALL clear() override
+        virtual void SAL_CALL clear() throw (css::uno::RuntimeException, std::exception) override
         {
             MutexType aGuard( BaseType::m_aMutex );
 
@@ -133,7 +133,10 @@ namespace canvas
 
         virtual void SAL_CALL drawPoint(const css::geometry::RealPoint2D&     aPoint,
                                         const css::rendering::ViewState&      viewState,
-                                        const css::rendering::RenderState&    renderState) override
+                                        const css::rendering::RenderState&    renderState)
+            throw (css::lang::IllegalArgumentException,
+                   css::uno::RuntimeException,
+                   std::exception) override
         {
             tools::verifyArgs(aPoint, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -147,7 +150,10 @@ namespace canvas
         virtual void SAL_CALL drawLine(const css::geometry::RealPoint2D&  aStartPoint,
                                        const css::geometry::RealPoint2D&  aEndPoint,
                                        const css::rendering::ViewState&   viewState,
-                                       const css::rendering::RenderState& renderState) override
+                                       const css::rendering::RenderState& renderState)
+                                            throw (css::lang::IllegalArgumentException,
+                                                   css::uno::RuntimeException,
+                                                   std::exception) override
         {
             tools::verifyArgs(aStartPoint, aEndPoint, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -163,7 +169,10 @@ namespace canvas
         virtual void SAL_CALL drawBezier( const css::geometry::RealBezierSegment2D&    aBezierSegment,
                                           const css::geometry::RealPoint2D&            aEndPoint,
                                           const css::rendering::ViewState&             viewState,
-                                          const css::rendering::RenderState&           renderState ) override
+                                          const css::rendering::RenderState&           renderState )
+                                            throw (css::lang::IllegalArgumentException,
+                                                   css::uno::RuntimeException,
+                                                   std::exception) override
         {
             tools::verifyArgs(aBezierSegment, aEndPoint, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -179,7 +188,10 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCachedPrimitive > SAL_CALL
             drawPolyPolygon(const css::uno::Reference< css::rendering::XPolyPolygon2D >& xPolyPolygon,
                             const css::rendering::ViewState&                             viewState,
-                            const css::rendering::RenderState&                           renderState) override
+                            const css::rendering::RenderState&                           renderState)
+                                throw (css::lang::IllegalArgumentException,
+                                       css::uno::RuntimeException,
+                                       std::exception) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -196,7 +208,10 @@ namespace canvas
             strokePolyPolygon(const css::uno::Reference< css::rendering::XPolyPolygon2D >&   xPolyPolygon,
                               const css::rendering::ViewState&                               viewState,
                               const css::rendering::RenderState&                             renderState,
-                              const css::rendering::StrokeAttributes&                        strokeAttributes) override
+                              const css::rendering::StrokeAttributes&                        strokeAttributes)
+                                throw (css::lang::IllegalArgumentException,
+                                       css::uno::RuntimeException,
+                                       std::exception) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, strokeAttributes,
                               OSL_THIS_FUNC,
@@ -214,7 +229,8 @@ namespace canvas
                                        const css::rendering::ViewState&                               viewState,
                                        const css::rendering::RenderState&                             renderState,
                                        const css::uno::Sequence< css::rendering::Texture >&           textures,
-                                       const css::rendering::StrokeAttributes&                        strokeAttributes ) override
+                                       const css::rendering::StrokeAttributes&                        strokeAttributes ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                                          css::uno::RuntimeException) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, strokeAttributes,
                               OSL_THIS_FUNC,
@@ -233,7 +249,8 @@ namespace canvas
                                             const css::rendering::RenderState&                            renderState,
                                             const css::uno::Sequence< css::rendering::Texture >&          textures,
                                             const css::uno::Reference< css::geometry::XMapping2D >&       xMapping,
-                                            const css::rendering::StrokeAttributes&                       strokeAttributes ) override
+                                            const css::rendering::StrokeAttributes&                       strokeAttributes ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                                              css::uno::RuntimeException) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, textures, xMapping, strokeAttributes,
                               OSL_THIS_FUNC,
@@ -250,7 +267,8 @@ namespace canvas
             queryStrokeShapes( const css::uno::Reference< css::rendering::XPolyPolygon2D >&                xPolyPolygon,
                                const css::rendering::ViewState&                                            viewState,
                                const css::rendering::RenderState&                                          renderState,
-                               const css::rendering::StrokeAttributes&                                     strokeAttributes ) override
+                               const css::rendering::StrokeAttributes&                                     strokeAttributes ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                                  css::uno::RuntimeException) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, strokeAttributes,
                               OSL_THIS_FUNC,
@@ -266,7 +284,10 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCachedPrimitive > SAL_CALL
             fillPolyPolygon(const css::uno::Reference< css::rendering::XPolyPolygon2D >&               xPolyPolygon,
                              const css::rendering::ViewState&                                          viewState,
-                             const css::rendering::RenderState&                                        renderState) override
+                             const css::rendering::RenderState&                                        renderState)
+                                throw (css::lang::IllegalArgumentException,
+                                       css::uno::RuntimeException,
+                                       std::exception) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -283,7 +304,10 @@ namespace canvas
             fillTexturedPolyPolygon(const css::uno::Reference< css::rendering::XPolyPolygon2D >& xPolyPolygon,
                                     const css::rendering::ViewState&                             viewState,
                                     const css::rendering::RenderState&                           renderState,
-                                    const css::uno::Sequence< css::rendering::Texture >&         textures) override
+                                    const css::uno::Sequence< css::rendering::Texture >&         textures)
+                                        throw (css::lang::IllegalArgumentException,
+                                               css::uno::RuntimeException,
+                                               std::exception) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, textures,
                               OSL_THIS_FUNC,
@@ -301,7 +325,7 @@ namespace canvas
                                           const css::rendering::ViewState&                                viewState,
                                           const css::rendering::RenderState&                              renderState,
                                           const css::uno::Sequence< css::rendering::Texture >&            textures,
-                                          const css::uno::Reference< css::geometry::XMapping2D >&         xMapping ) override
+                                          const css::uno::Reference< css::geometry::XMapping2D >&         xMapping ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException) override
         {
             tools::verifyArgs(xPolyPolygon, viewState, renderState, textures, xMapping,
                               OSL_THIS_FUNC,
@@ -318,7 +342,8 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCanvasFont > SAL_CALL
             createFont( const css::rendering::FontRequest&                                     fontRequest,
                         const css::uno::Sequence< css::beans::PropertyValue >&                 extraFontProperties,
-                        const css::geometry::Matrix2D&                                         fontMatrix ) override
+                        const css::geometry::Matrix2D&                                         fontMatrix ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                css::uno::RuntimeException) override
         {
             tools::verifyArgs(fontRequest,
                               // dummy, to keep argPos in sync
@@ -335,7 +360,8 @@ namespace canvas
 
         virtual css::uno::Sequence< css::rendering::FontInfo > SAL_CALL
             queryAvailableFonts( const css::rendering::FontInfo&                          aFilter,
-                                 const css::uno::Sequence< css::beans::PropertyValue >&   aFontProperties ) override
+                                 const css::uno::Sequence< css::beans::PropertyValue >&   aFontProperties ) throw (css::lang::IllegalArgumentException,
+                                                                                                                                             css::uno::RuntimeException) override
         {
             tools::verifyArgs(aFilter,
                               OSL_THIS_FUNC,
@@ -352,7 +378,10 @@ namespace canvas
                      const css::uno::Reference< css::rendering::XCanvasFont >&                xFont,
                      const css::rendering::ViewState&                                         viewState,
                      const css::rendering::RenderState&                                       renderState,
-                     sal_Int8                                                                 textDirection) override
+                     sal_Int8                                                                 textDirection)
+                throw (css::lang::IllegalArgumentException,
+                       css::uno::RuntimeException,
+                       std::exception) override
         {
             tools::verifyArgs(xFont, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -372,7 +401,10 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCachedPrimitive > SAL_CALL
             drawTextLayout(const css::uno::Reference< css::rendering::XTextLayout >&               laidOutText,
                             const css::rendering::ViewState&                                       viewState,
-                            const css::rendering::RenderState&                                     renderState) override
+                            const css::rendering::RenderState&                                     renderState)
+                            throw (css::lang::IllegalArgumentException,
+                                   css::uno::RuntimeException,
+                                   std::exception) override
         {
             tools::verifyArgs(laidOutText, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -389,7 +421,7 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCachedPrimitive > SAL_CALL
             drawBitmap( const css::uno::Reference< css::rendering::XBitmap >&              xBitmap,
                         const css::rendering::ViewState&                                   viewState,
-                        const css::rendering::RenderState&                                 renderState ) override
+                        const css::rendering::RenderState&                                 renderState ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException) override
         {
             tools::verifyArgs(xBitmap, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -405,7 +437,7 @@ namespace canvas
         virtual css::uno::Reference< css::rendering::XCachedPrimitive > SAL_CALL
             drawBitmapModulated( const css::uno::Reference< css::rendering::XBitmap >&                 xBitmap,
                                  const css::rendering::ViewState&                                      viewState,
-                                 const css::rendering::RenderState&                                    renderState ) override
+                                 const css::rendering::RenderState&                                    renderState ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException) override
         {
             tools::verifyArgs(xBitmap, viewState, renderState,
                               OSL_THIS_FUNC,
@@ -419,7 +451,7 @@ namespace canvas
         }
 
         virtual css::uno::Reference< css::rendering::XGraphicDevice >   SAL_CALL
-            getDevice() override
+            getDevice() throw (css::uno::RuntimeException) override
         {
             MutexType aGuard( BaseType::m_aMutex );
 

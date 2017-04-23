@@ -34,12 +34,12 @@ private:
     SdrGrafObj*     pGrafEdit;
 
     virtual void    ObjectAreaChanged() override;
-    virtual void    RequestNewObjectArea( tools::Rectangle& ) override;
+    virtual void    RequestNewObjectArea( Rectangle& ) override;
     virtual void    ViewChanged() override;
 
 public:
                     ScClient( ScTabViewShell* pViewShell, vcl::Window* pDraw, SdrModel* pSdrModel, SdrOle2Obj* pObj );
-    virtual         ~ScClient() override;
+    virtual         ~ScClient();
 
     void            SetGrafEdit(SdrGrafObj* pNew)   { pGrafEdit = pNew; }
     SdrOle2Obj*     GetDrawObj();

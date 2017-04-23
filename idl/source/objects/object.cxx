@@ -20,6 +20,7 @@
 #include <sal/config.h>
 
 #include <algorithm>
+#include <ctype.h>
 
 #include <rtl/strbuf.hxx>
 #include <osl/diagnose.h>
@@ -90,7 +91,7 @@ void SvMetaClass::ReadContextSvIdl( SvIdlDataBase & rBase,
                 aI.SetValue( rBase.GetUniqueId() );
                 xAttr->SetSlotId( aI );
             }
-            aAttrList.push_back( xAttr.get() );
+            aAttrList.push_back( xAttr );
             return;
         }
     }
@@ -128,7 +129,7 @@ bool SvMetaClass::TestAttribute( SvIdlDataBase & rBase, SvTokenStream & rInStm,
              }
         }
     }
-    SvMetaClass * pSC = aSuperClass.get();
+    SvMetaClass * pSC = aSuperClass;
     if( pSC )
         return pSC->TestAttribute( rBase, rInStm, rAttr );
     return true;
@@ -149,7 +150,7 @@ sal_uInt16 SvMetaClass::WriteSlotParamArray( SvIdlDataBase & rBase,
 }
 
 sal_uInt16 SvMetaClass::WriteSlots( const OString& rShellName,
-                                SvSlotElementList & rSlotList,
+                                sal_uInt16 nCount, SvSlotElementList & rSlotList,
                                 SvIdlDataBase & rBase,
                                 SvStream & rOutStm )
 {
@@ -157,7 +158,7 @@ sal_uInt16 SvMetaClass::WriteSlots( const OString& rShellName,
     for ( size_t i = 0, n = rSlotList.size(); i < n; ++i )
     {
         SvMetaSlot * pAttr = rSlotList[ i ];
-        nSCount = nSCount + pAttr->WriteSlotMap( rShellName, nSCount,
+        nSCount = nSCount + pAttr->WriteSlotMap( rShellName, nCount + nSCount,
                                         rSlotList, i, rBase,
                                         rOutStm );
     }
@@ -192,7 +193,7 @@ void SvMetaClass::InsertSlots( SvSlotElementList& rList, std::vector<sal_uLong>&
             // Write only if not already written by subclass or
             // imported interface.
             rSuperList.push_back(nId);
-            pAttr->Insert(rList);
+            pAttr->Insert(rList, rPrefix, rBase);
         }
     }
 
@@ -200,7 +201,7 @@ void SvMetaClass::InsertSlots( SvSlotElementList& rList, std::vector<sal_uLong>&
     // written any more.
     // It is prohibited that Shell and SuperShell directly import the same
     //class.
-    if( GetMetaTypeType() == MetaTypeType::Shell && aSuperClass.is() )
+    if( GetMetaTypeType() == MetaTypeType::Shell && aSuperClass.Is() )
         aSuperClass->FillClasses( rClassList );
 
     // Write all attributes of the imported classes, as long as they have
@@ -220,7 +221,7 @@ void SvMetaClass::InsertSlots( SvSlotElementList& rList, std::vector<sal_uLong>&
     }
 
     // only write superclass if no shell and not in the list
-    if( GetMetaTypeType() != MetaTypeType::Shell && aSuperClass.is() )
+    if( GetMetaTypeType() != MetaTypeType::Shell && aSuperClass.Is() )
     {
         aSuperClass->InsertSlots( rList, rSuperList, rClassList, rPrefix, rBase );
     }
@@ -244,7 +245,7 @@ void SvMetaClass::FillClasses( SvMetaClassList & rList )
     }
 
     // my superclass
-    if( aSuperClass.is() )
+    if( aSuperClass.Is() )
         aSuperClass->FillClasses( rList );
 }
 
@@ -319,7 +320,7 @@ void SvMetaClass::WriteSfx( SvIdlDataBase & rBase, SvStream & rOutStm )
     rOutStm.WriteChar( '{' ) << endl;
 
     // write all attributes
-    WriteSlots( GetName(), aSlotList, rBase, rOutStm );
+    WriteSlots( GetName(), 0, aSlotList, rBase, rOutStm );
     if( nSlotCount )
         Back2Delimiter( rOutStm );
     else

@@ -149,7 +149,7 @@ private:
     bool mbRDP;
 
     void GetData();
-    static void FillBlacklist();
+    void FillBlacklist();
     bool FindBlocklistedDeviceInList();
 
     static OUString* mpDeviceVendors[wgl::DeviceVendorMax];
@@ -159,9 +159,9 @@ public:
     WinOpenGLDeviceInfo();
 
     static OUString GetDeviceVendor(wgl::DeviceVendor eVendor);
-    virtual ~WinOpenGLDeviceInfo() override;
+    virtual ~WinOpenGLDeviceInfo();
 
-    virtual bool isDeviceBlocked() override;
+    virtual bool isDeviceBlocked();
 
     const OUString& GetDriverVersion() const
     {
@@ -208,8 +208,8 @@ public:
     }
 
     static bool FindBlocklistedDeviceInList(std::vector<wgl::DriverInfo>& aDeviceInfos,
-                                            OUString const & sDriverVersion, OUString const & sAdapterVendorID,
-                                            OUString const & sAdapterDeviceID, uint32_t nWindowsVersion);
+                                            OUString sDriverVersion, OUString sAdapterVendorID,
+                                            OUString sAdapterDeviceID, uint32_t nWindowsVersion);
 };
 
 #endif

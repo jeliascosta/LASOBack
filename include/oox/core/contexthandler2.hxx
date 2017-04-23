@@ -227,7 +227,7 @@ class OOX_DLLPUBLIC ContextHandler2 : public ContextHandler, public ContextHandl
 {
 public:
     explicit            ContextHandler2( ContextHandler2Helper& rParent );
-    virtual             ~ContextHandler2() override;
+    virtual             ~ContextHandler2();
 
     // resolve ambiguity from base classes
     virtual void SAL_CALL acquire() throw() override { ContextHandler::acquire(); }
@@ -238,15 +238,23 @@ public:
     virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
                         createFastChildContext(
                             sal_Int32 nElement,
-                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs ) final override;
+                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs )
+                            throw(  css::xml::sax::SAXException,
+                                    css::uno::RuntimeException, std::exception ) final override;
 
     virtual void SAL_CALL startFastElement(
                             sal_Int32 nElement,
-                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs ) final override;
+                            const css::uno::Reference< css::xml::sax::XFastAttributeList >& rxAttribs )
+                            throw(  css::xml::sax::SAXException,
+                                    css::uno::RuntimeException, std::exception ) final override;
 
-    virtual void SAL_CALL characters( const OUString& rChars ) final override;
+    virtual void SAL_CALL characters( const OUString& rChars )
+                            throw(  css::xml::sax::SAXException,
+                                    css::uno::RuntimeException, std::exception ) final override;
 
-    virtual void SAL_CALL endFastElement( sal_Int32 nElement ) final override;
+    virtual void SAL_CALL endFastElement( sal_Int32 nElement )
+                            throw(  css::xml::sax::SAXException,
+                                    css::uno::RuntimeException, std::exception ) final override;
 
     // oox.core.ContextHandler interface --------------------------------------
 

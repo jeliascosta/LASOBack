@@ -53,6 +53,7 @@ class MyApp : public Application
 {
 public:
     MyApp();
+    virtual ~MyApp();
 
     MyApp(const MyApp&) = delete;
     const MyApp& operator=(const MyApp&) = delete;
@@ -61,6 +62,12 @@ public:
     virtual int Main() override;
     virtual void DeInit() override;
 };
+
+
+MyApp::~MyApp()
+{
+}
+
 
 MyApp::MyApp()
 {
@@ -151,12 +158,15 @@ public:
                  Reference<XComponentContext> const & xComponentContext );
 
     // XAsynchronousExecutableDialog
-    virtual void SAL_CALL setDialogTitle( OUString const & aTitle ) override;
+    virtual void SAL_CALL setDialogTitle( OUString const & aTitle )
+        throw (RuntimeException, std::exception) override;
     virtual void SAL_CALL startExecuteModal(
-        Reference< ui::dialogs::XDialogClosedListener > const & xListener ) override;
+        Reference< ui::dialogs::XDialogClosedListener > const & xListener )
+        throw (RuntimeException, std::exception) override;
 
     // XJobExecutor
-    virtual void SAL_CALL trigger( OUString const & event ) override;
+    virtual void SAL_CALL trigger( OUString const & event )
+        throw (RuntimeException, std::exception) override;
 };
 
 
@@ -183,6 +193,7 @@ ServiceImpl::ServiceImpl( Sequence<Any> const& args,
 // XAsynchronousExecutableDialog
 
 void ServiceImpl::setDialogTitle( OUString const & title )
+    throw (RuntimeException, std::exception)
 {
     if ( dp_gui::TheExtensionManager::s_ExtMgr.is() )
     {
@@ -200,9 +211,10 @@ void ServiceImpl::setDialogTitle( OUString const & title )
 
 void ServiceImpl::startExecuteModal(
     Reference< ui::dialogs::XDialogClosedListener > const & xListener )
+    throw (RuntimeException, std::exception)
 {
     bool bCloseDialog = true;  // only used if m_bShowUpdateOnly is true
-    std::unique_ptr<Application> app;
+    ::std::unique_ptr<Application> app;
     //ToDo: synchronize access to s_dialog !!!
     if (! dp_gui::TheExtensionManager::s_ExtMgr.is())
     {
@@ -284,7 +296,7 @@ void ServiceImpl::startExecuteModal(
 
 // XJobExecutor
 
-void ServiceImpl::trigger( OUString const &rEvent )
+void ServiceImpl::trigger( OUString const &rEvent ) throw (RuntimeException, std::exception)
 {
     if ( rEvent == "SHOW_UPDATE_DIALOG" )
         m_bShowUpdateOnly = true;
@@ -294,19 +306,19 @@ void ServiceImpl::trigger( OUString const &rEvent )
     startExecuteModal( Reference< ui::dialogs::XDialogClosedListener >() );
 }
 
-sdecl::class_<ServiceImpl, sdecl::with_args<true> > const serviceSI;
+sdecl::class_<ServiceImpl, sdecl::with_args<true> > serviceSI;
 sdecl::ServiceDecl const serviceDecl(
     serviceSI,
     "com.sun.star.comp.deployment.ui.PackageManagerDialog",
     "com.sun.star.deployment.ui.PackageManagerDialog" );
 
-sdecl::class_<LicenseDialog, sdecl::with_args<true> > const licenseSI;
+sdecl::class_<LicenseDialog, sdecl::with_args<true> > licenseSI;
 sdecl::ServiceDecl const licenseDecl(
     licenseSI,
     "com.sun.star.comp.deployment.ui.LicenseDialog",
     "com.sun.star.deployment.ui.LicenseDialog" );
 
-sdecl::class_<UpdateRequiredDialogService, sdecl::with_args<true> > const updateSI;
+sdecl::class_<UpdateRequiredDialogService, sdecl::with_args<true> > updateSI;
 sdecl::ServiceDecl const updateDecl(
     updateSI,
     "com.sun.star.comp.deployment.ui.UpdateRequiredDialog",

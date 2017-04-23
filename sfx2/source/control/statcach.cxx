@@ -18,7 +18,7 @@
  */
 
 
-#ifdef __sun
+#ifdef SOLARIS
 #include <ctime>
 #endif
 
@@ -30,8 +30,6 @@
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/frame/FrameActionEvent.hpp>
 #include <com/sun/star/frame/FrameAction.hpp>
-#include <framework/dispatchhelper.hxx>
-#include <com/sun/star/frame/DispatchResultState.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <cppuhelper/weak.hxx>
 #include <svl/eitem.hxx>
@@ -65,7 +63,7 @@ BindDispatch_Impl::BindDispatch_Impl( const css::uno::Reference< css::frame::XDi
     aStatus.IsEnabled = true;
 }
 
-void SAL_CALL BindDispatch_Impl::disposing( const css::lang::EventObject& )
+void SAL_CALL BindDispatch_Impl::disposing( const css::lang::EventObject& ) throw( css::uno::RuntimeException, std::exception )
 {
     if ( xDisp.is() )
     {
@@ -74,7 +72,7 @@ void SAL_CALL BindDispatch_Impl::disposing( const css::lang::EventObject& )
     }
 }
 
-void SAL_CALL  BindDispatch_Impl::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+void SAL_CALL  BindDispatch_Impl::statusChanged( const css::frame::FeatureStateEvent& rEvent ) throw( css::uno::RuntimeException, std::exception )
 {
     aStatus = rEvent;
     if ( !pCache )
@@ -164,22 +162,17 @@ void BindDispatch_Impl::Release()
 }
 
 
-sal_Int16 BindDispatch_Impl::Dispatch( const css::uno::Sequence < css::beans::PropertyValue >& aProps, bool bForceSynchron )
+void BindDispatch_Impl::Dispatch( const uno::Sequence < beans::PropertyValue >& aProps, bool bForceSynchron )
 {
-    sal_Int16 eRet = css::frame::DispatchResultState::DONTKNOW;
-
     if ( xDisp.is() && aStatus.IsEnabled )
     {
-        ::rtl::Reference< ::framework::DispatchHelper > xHelper( new ::framework::DispatchHelper(nullptr));
-        css::uno::Any aResult = xHelper->executeDispatch(xDisp, aURL, bForceSynchron, aProps);
-
-        css::frame::DispatchResultEvent aEvent;
-        aResult >>= aEvent;
-
-        eRet = aEvent.State;
+        sal_Int32 nLength = aProps.getLength();
+        uno::Sequence < beans::PropertyValue > aProps2 = aProps;
+        aProps2.realloc(nLength+1);
+        aProps2[nLength].Name = "SynchronMode";
+        aProps2[nLength].Value <<= bForceSynchron ;
+        xDisp->dispatch( aURL, aProps2 );
     }
-
-    return eRet;
 }
 
 
@@ -486,22 +479,17 @@ css::uno::Reference< css::frame::XDispatch >  SfxStateCache::GetDispatch() const
     return css::uno::Reference< css::frame::XDispatch > ();
 }
 
-sal_Int16 SfxStateCache::Dispatch( const SfxItemSet* pSet, bool bForceSynchron )
+void SfxStateCache::Dispatch( const SfxItemSet* pSet, bool bForceSynchron )
 {
     // protect pDispatch against destruction in the call
     css::uno::Reference < css::frame::XStatusListener > xKeepAlive( pDispatch );
-    sal_Int16 eRet = css::frame::DispatchResultState::DONTKNOW;
-
     if ( pDispatch )
     {
         uno::Sequence < beans::PropertyValue > aArgs;
         if (pSet)
             TransformItems( nId, *pSet, aArgs );
-
-        eRet = pDispatch->Dispatch( aArgs, bForceSynchron );
+        pDispatch->Dispatch( aArgs, bForceSynchron );
     }
-
-    return eRet;
 }
 
 

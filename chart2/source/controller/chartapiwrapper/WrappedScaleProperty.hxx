@@ -54,26 +54,22 @@ public:
     };
 
 public:
-    WrappedScaleProperty(tScaleProperty eScaleProperty, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
-    virtual ~WrappedScaleProperty() override;
+    WrappedScaleProperty( tScaleProperty eScaleProperty, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~WrappedScaleProperty();
 
     static void addWrappedProperties( std::vector< WrappedProperty* >& rList, const std::shared_ptr< Chart2ModelContact >& spChart2ModelContact );
 
-    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
 protected: //methods
-    /// @throws css::beans::UnknownPropertyException
-    /// @throws css::beans::PropertyVetoException
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::lang::WrappedTargetException
-    /// @throws css::uno::RuntimeException
-    void setPropertyValue( tScaleProperty eScaleProperty, const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const;
-    /// @throws css::beans::UnknownPropertyException
-    /// @throws css::lang::WrappedTargetException
-    /// @throws css::uno::RuntimeException
-    css::uno::Any getPropertyValue( tScaleProperty eScaleProperty, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const;
+    void setPropertyValue( tScaleProperty eScaleProperty, const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException);
+    css::uno::Any getPropertyValue( tScaleProperty eScaleProperty, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException);
 
 private: //member
     std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;

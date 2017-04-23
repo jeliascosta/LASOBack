@@ -32,10 +32,12 @@ using namespace ::com::sun::star;
 namespace canvas
 {
     CachedPrimitiveBase::CachedPrimitiveBase( const rendering::ViewState&                   rUsedViewState,
-                                              const uno::Reference< rendering::XCanvas >&   rTarget ) :
+                                              const uno::Reference< rendering::XCanvas >&   rTarget,
+                                              bool                                          bFailForChangedViewTransform ) :
         CachedPrimitiveBase_Base( m_aMutex ),
         maUsedViewState( rUsedViewState ),
-        mxTarget( rTarget )
+        mxTarget( rTarget ),
+        mbFailForChangedViewTransform( bFailForChangedViewTransform )
     {
     }
 
@@ -51,7 +53,7 @@ namespace canvas
         mxTarget.clear();
     }
 
-    sal_Int8 SAL_CALL CachedPrimitiveBase::redraw( const rendering::ViewState& aState )
+    sal_Int8 SAL_CALL CachedPrimitiveBase::redraw( const rendering::ViewState& aState ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     {
         ::basegfx::B2DHomMatrix aUsedTransformation;
         ::basegfx::B2DHomMatrix aNewTransformation;
@@ -63,7 +65,8 @@ namespace canvas
 
         const bool bSameViewTransforms( aUsedTransformation == aNewTransformation );
 
-        if( !bSameViewTransforms )
+        if( mbFailForChangedViewTransform &&
+            !bSameViewTransforms )
         {
             // differing transformations, don't try to draft the
             // output, just plain fail here.
@@ -76,19 +79,21 @@ namespace canvas
                          bSameViewTransforms );
     }
 
-    OUString SAL_CALL CachedPrimitiveBase::getImplementationName(  )
+    OUString SAL_CALL CachedPrimitiveBase::getImplementationName(  ) throw (uno::RuntimeException, std::exception)
     {
         return OUString("canvas::CachedPrimitiveBase");
     }
 
-    sal_Bool SAL_CALL CachedPrimitiveBase::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL CachedPrimitiveBase::supportsService( const OUString& ServiceName ) throw (uno::RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    uno::Sequence< OUString > SAL_CALL CachedPrimitiveBase::getSupportedServiceNames(  )
+    uno::Sequence< OUString > SAL_CALL CachedPrimitiveBase::getSupportedServiceNames(  ) throw (uno::RuntimeException, std::exception)
     {
-        return { "com.sun.star.rendering.CachedBitmap" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CachedBitmap" };
+
+        return aRet;
     }
 }
 

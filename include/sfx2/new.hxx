@@ -34,9 +34,8 @@ class SfxObjectShellLock;
 class SfxObjectShell;
 
 
-enum class SfxNewFileDialogMode {
-    NONE, Preview, LoadTemplate
-};
+#define SFXWB_PREVIEW 0x0003
+#define SFXWB_LOAD_TEMPLATE 0x0004
 
 enum class SfxTemplateFlags
 {
@@ -64,8 +63,8 @@ private:
 
 public:
 
-    SfxNewFileDialog(vcl::Window *pParent, SfxNewFileDialogMode nFlags);
-    virtual ~SfxNewFileDialog() override;
+    SfxNewFileDialog(vcl::Window *pParent, sal_uInt16 nFlags = 0);
+    virtual ~SfxNewFileDialog();
     virtual void dispose() override;
 
     // Returns false, when '- No -' is set as Template

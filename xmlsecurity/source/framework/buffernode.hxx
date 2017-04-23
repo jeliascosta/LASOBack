@@ -28,7 +28,7 @@
 class ElementMark;
 class ElementCollector;
 
-class BufferNode final
+class BufferNode
 /****** buffernode.hxx/CLASS BufferNode ***************************************
  *
  *   NAME
@@ -78,6 +78,7 @@ private:
 public:
     explicit BufferNode(
         const css::uno::Reference< css::xml::wrapper::XXMLElementWrapper >& xXMLElement);
+    virtual ~BufferNode() {};
 
     bool isECOfBeforeModifyIncluded(sal_Int32 nIgnoredSecurityId) const;
         void setReceivedAll();

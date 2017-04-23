@@ -21,7 +21,6 @@
 #define INCLUDED_DBACCESS_SOURCE_SDBTOOLS_CONNECTION_OBJECTNAMES_HXX
 
 #include "connectiondependent.hxx"
-#include "module_sdbt.hxx"
 
 #include <com/sun/star/sdb/tools/XObjectNames.hpp>
 
@@ -35,13 +34,14 @@ namespace sdbtools
     // ObjectNames
     typedef ::cppu::WeakImplHelper<   css::sdb::tools::XObjectNames
                                   >   ObjectNames_Base;
+    struct ObjectNames_Impl;
     /** default implementation for XObjectNames
     */
     class ObjectNames   :public ObjectNames_Base
                         ,public ConnectionDependentComponent
     {
     private:
-        SdbtClient  m_aModuleClient;    // keep the module alive as long as this instance lives
+        ::std::unique_ptr< ObjectNames_Impl >   m_pImpl;
 
     public:
         /** constructs the instance
@@ -60,14 +60,14 @@ namespace sdbtools
         );
 
         // XObjectNames
-        virtual OUString SAL_CALL suggestName( ::sal_Int32 CommandType, const OUString& BaseName ) override;
-        virtual OUString SAL_CALL convertToSQLName( const OUString& Name ) override;
-        virtual sal_Bool SAL_CALL isNameUsed( ::sal_Int32 CommandType, const OUString& Name ) override;
-        virtual sal_Bool SAL_CALL isNameValid( ::sal_Int32 CommandType, const OUString& Name ) override;
-        virtual void SAL_CALL checkNameForCreate( ::sal_Int32 CommandType, const OUString& Name ) override;
+        virtual OUString SAL_CALL suggestName( ::sal_Int32 CommandType, const OUString& BaseName ) throw (css::lang::IllegalArgumentException, css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL convertToSQLName( const OUString& Name ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isNameUsed( ::sal_Int32 CommandType, const OUString& Name ) throw (css::lang::IllegalArgumentException, css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isNameValid( ::sal_Int32 CommandType, const OUString& Name ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL checkNameForCreate( ::sal_Int32 CommandType, const OUString& Name ) throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~ObjectNames() override;
+        virtual ~ObjectNames();
 
     private:
         ObjectNames( const ObjectNames& ) = delete;

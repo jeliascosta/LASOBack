@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <cstddef>
-
 #include <vcl/textdata.hxx>
 #include <textdat2.hxx>
 
@@ -59,92 +55,41 @@ TETextPortionList::~TETextPortionList()
     Reset();
 }
 
-TETextPortion* TETextPortionList::operator[]( std::size_t nPos )
-{
-    return maPortions[ nPos ];
-}
-
-std::vector<TETextPortion*>::iterator TETextPortionList::begin()
-{
-    return maPortions.begin();
-}
-
-std::vector<TETextPortion*>::const_iterator TETextPortionList::begin() const
-{
-    return maPortions.begin();
-}
-
-std::vector<TETextPortion*>::iterator TETextPortionList::end()
-{
-    return maPortions.end();
-}
-
-std::vector<TETextPortion*>::const_iterator TETextPortionList::end() const
-{
-    return maPortions.end();
-}
-
-bool TETextPortionList::empty() const
-{
-    return maPortions.empty();
-}
-
-std::size_t TETextPortionList::size() const
-{
-    return maPortions.size();
-}
-
-std::vector<TETextPortion*>::iterator TETextPortionList::erase( std::vector<TETextPortion*>::iterator aIter )
-{
-    return maPortions.erase( aIter );
-}
-
-std::vector<TETextPortion*>::iterator TETextPortionList::insert( std::vector<TETextPortion*>::iterator aIter,
-                                                                 TETextPortion* pTP )
-{
-    return maPortions.insert( aIter, pTP );
-}
-
-void TETextPortionList::push_back( TETextPortion* pTP )
-{
-    maPortions.push_back( pTP );
-}
-
 void TETextPortionList::Reset()
 {
-    for ( auto pTP : maPortions )
-        delete pTP;
-    maPortions.clear();
-}
-
-void TETextPortionList::DeleteFromPortion( std::size_t nDelFrom )
-{
-    SAL_WARN_IF( ( nDelFrom >= maPortions.size() ) && ( (nDelFrom != 0) || (maPortions.size() != 0) ), "vcl", "DeleteFromPortion: Out of range" );
-    for ( auto it = maPortions.begin() + nDelFrom; it != maPortions.end(); ++it )
+    for ( iterator it = begin(); it != end(); ++it )
         delete *it;
-    maPortions.erase( maPortions.begin() + nDelFrom, maPortions.end() );
+    clear();
 }
 
-std::size_t TETextPortionList::FindPortion( sal_Int32 nCharPos, sal_Int32& nPortionStart, bool bPreferStartingPortion )
+void TETextPortionList::DeleteFromPortion( sal_uInt16 nDelFrom )
+{
+    DBG_ASSERT( ( nDelFrom < size() ) || ( (nDelFrom == 0) && (size() == 0) ), "DeleteFromPortion: Out of range" );
+    for ( iterator it = begin() + nDelFrom; it != end(); ++it )
+        delete *it;
+    erase( begin() + nDelFrom, end() );
+}
+
+sal_uInt16 TETextPortionList::FindPortion( sal_Int32 nCharPos, sal_Int32& nPortionStart, bool bPreferStartingPortion )
 {
     // find left portion at nCharPos at portion border
     sal_Int32 nTmpPos = 0;
-    for ( std::size_t nPortion = 0; nPortion < maPortions.size(); nPortion++ )
+    for ( size_t nPortion = 0; nPortion < size(); nPortion++ )
     {
-        TETextPortion* pPortion = maPortions[ nPortion ];
+        TETextPortion* pPortion = operator[]( nPortion );
         nTmpPos += pPortion->GetLen();
         if ( nTmpPos >= nCharPos )
         {
             // take this one if we don't prefer the starting portion, or if it's the last one
-            if ( ( nTmpPos != nCharPos ) || !bPreferStartingPortion || ( nPortion == maPortions.size() - 1 ) )
+            if ( ( nTmpPos != nCharPos ) || !bPreferStartingPortion || ( nPortion == size() - 1 ) )
             {
                 nPortionStart = nTmpPos - pPortion->GetLen();
                 return nPortion;
             }
         }
     }
-    OSL_FAIL( "FindPortion: Not found!" );
-    return ( maPortions.size() - 1 );
+    OSL_FAIL( "FindPortion: Nicht gefunden!" );
+    return ( size() - 1 );
 }
 
 TEParaPortion::TEParaPortion( TextNode* pN )
@@ -183,7 +128,7 @@ void TEParaPortion::MarkInvalid( sal_Int32 nStart, sal_Int32 nDiff )
         }
         else
         {
-            SAL_WARN_IF( ( nDiff < 0 ) && ( (nStart+nDiff) < 0 ), "vcl", "MarkInvalid: Diff out of Range" );
+            DBG_ASSERT( ( nDiff >= 0 ) || ( (nStart+nDiff) >= 0 ), "MarkInvalid: Diff out of Range" );
             mnInvalidPosStart = std::min( mnInvalidPosStart, nDiff < 0 ? nStart+nDiff : nDiff );
             mnInvalidDiff = 0;
             mbSimple = false;
@@ -215,9 +160,9 @@ void TEParaPortion::MarkSelectionInvalid( sal_Int32 nStart, sal_Int32 /*nEnd*/ )
     mbSimple = false;
 }
 
-std::vector<TextLine>::size_type TEParaPortion::GetLineNumber( sal_Int32 nChar, bool bInclEnd )
+sal_uInt16 TEParaPortion::GetLineNumber( sal_Int32 nChar, bool bInclEnd )
 {
-    for ( std::vector<TextLine>::size_type nLine = 0; nLine < maLines.size(); nLine++ )
+    for ( size_t nLine = 0; nLine < maLines.size(); nLine++ )
     {
         TextLine& rLine = maLines[ nLine ];
         if ( ( bInclEnd && ( rLine.GetEnd() >= nChar ) ) ||
@@ -236,19 +181,19 @@ std::vector<TextLine>::size_type TEParaPortion::GetLineNumber( sal_Int32 nChar, 
 void TEParaPortion::CorrectValuesBehindLastFormattedLine( sal_uInt16 nLastFormattedLine )
 {
     sal_uInt16 nLines = maLines.size();
-    SAL_WARN_IF( !nLines, "vcl", "CorrectPortionNumbersFromLine: Leere Portion?" );
+    DBG_ASSERT( nLines, "CorrectPortionNumbersFromLine: Leere Portion?" );
     if ( nLastFormattedLine < ( nLines - 1 ) )
     {
         const TextLine& rLastFormatted = maLines[ nLastFormattedLine ];
         const TextLine& rUnformatted = maLines[ nLastFormattedLine+1 ];
-        std::ptrdiff_t nPortionDiff = rUnformatted.GetStartPortion() - rLastFormatted.GetEndPortion();
+        short nPortionDiff = rUnformatted.GetStartPortion() - rLastFormatted.GetEndPortion();
         sal_Int32 nTextDiff = rUnformatted.GetStart() - rLastFormatted.GetEnd();
         nTextDiff++;    // LastFormatted.GetEnd() was inclusive => subtracted one too much!
 
         // The first unformatted one has to start exactly one portion past the last
         // formatted one.
         // If a portion got split in the changed row, nLastEnd could be > nNextStart!
-        std::ptrdiff_t nPDiff = -( nPortionDiff-1 );
+        short nPDiff = sal::static_int_cast< short >(-( nPortionDiff-1 ));
         const sal_Int32 nTDiff = -( nTextDiff-1 );
         if ( nPDiff || nTDiff )
         {
@@ -256,11 +201,11 @@ void TEParaPortion::CorrectValuesBehindLastFormattedLine( sal_uInt16 nLastFormat
             {
                 TextLine& rLine = maLines[ nL ];
 
-                rLine.SetStartPortion(rLine.GetStartPortion() + nPDiff);
-                rLine.SetEndPortion(rLine.GetEndPortion() + nPDiff);
+                rLine.GetStartPortion() = rLine.GetStartPortion() + nPDiff;
+                rLine.GetEndPortion() = rLine.GetEndPortion() + nPDiff;
 
-                rLine.SetStart(rLine.GetStart() + nTDiff);
-                rLine.SetEnd(rLine.GetEnd() + nTDiff);
+                rLine.GetStart() = rLine.GetStart() + nTDiff;
+                rLine.GetEnd() = rLine.GetEnd() + nTDiff;
 
                 rLine.SetValid();
             }
@@ -279,7 +224,7 @@ IdleFormatter::IdleFormatter()
 {
     mpView = nullptr;
     mnRestarts = 0;
-    SetPriority(TaskPriority::HIGH);
+    SetPriority(SchedulerPriority::HIGH);
 }
 
 IdleFormatter::~IdleFormatter()
@@ -297,7 +242,7 @@ void IdleFormatter::DoIdleFormat( TextView* pV, sal_uInt16 nMaxRestarts )
     if ( mnRestarts > nMaxRestarts )
     {
         mnRestarts = 0;
-        Invoke();
+        ((Link<Idle *, void>&)GetIdleHdl()).Call( this );
     }
     else
     {
@@ -311,15 +256,15 @@ void IdleFormatter::ForceTimeout()
     {
         Stop();
         mnRestarts = 0;
-        Invoke();
+        ((Link<Idle *, void>&)GetIdleHdl()).Call( this );
     }
 }
 
-TextHint::TextHint( SfxHintId Id ) : SfxHint( Id ), mnValue(0)
+TextHint::TextHint( sal_uInt32 Id ) : SfxSimpleHint( Id ), mnValue(0)
 {
 }
 
-TextHint::TextHint( SfxHintId Id, sal_uLong nValue ) : SfxHint( Id ), mnValue(nValue)
+TextHint::TextHint( sal_uInt32 Id, sal_uLong nValue ) : SfxSimpleHint( Id ), mnValue(nValue)
 {
 }
 
@@ -335,18 +280,21 @@ TEIMEInfos::TEIMEInfos( const TextPaM& rPos, const OUString& rOldTextAfterStartP
 
 TEIMEInfos::~TEIMEInfos()
 {
+    delete[] pAttribs;
 }
 
 void TEIMEInfos::CopyAttribs(const ExtTextInputAttr* pA, sal_Int32 nL)
 {
     nLen = nL;
-    pAttribs.reset( new ExtTextInputAttr[ nL ] );
-    memcpy( pAttribs.get(), pA, nL*sizeof(ExtTextInputAttr) );
+    delete[] pAttribs;
+    pAttribs = new ExtTextInputAttr[ nL ];
+    memcpy( pAttribs, pA, nL*sizeof(ExtTextInputAttr) );
 }
 
 void TEIMEInfos::DestroyAttribs()
 {
-    pAttribs.reset();
+    delete[] pAttribs;
+    pAttribs = nullptr;
     nLen = 0;
 }
 

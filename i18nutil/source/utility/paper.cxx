@@ -290,43 +290,39 @@ PaperInfo PaperInfo::getSystemDefaultPaper()
         }
 
 #if defined(LC_PAPER) && defined(_GNU_SOURCE)
+
+        union paperword { char *string; int word; };
+
         // try LC_PAPER
-        locale_t loc = newlocale(LC_PAPER_MASK, "", static_cast<locale_t>(0));
-        if (loc != static_cast<locale_t>(0))
+        paperword w, h;
+        w.string = nl_langinfo(_NL_PAPER_WIDTH);
+        h.string = nl_langinfo(_NL_PAPER_HEIGHT);
+
+        //glibc stores sizes as integer mm units
+        w.word *= 100;
+        h.word *= 100;
+
+        for ( size_t i = 0; i < nTabSize; ++i )
         {
-            union paperword { char *string; int word; };
-            paperword w, h;
-            w.string = nl_langinfo_l(_NL_PAPER_WIDTH, loc);
-            h.string = nl_langinfo_l(_NL_PAPER_HEIGHT, loc);
+            if (i == PAPER_USER) continue;
 
-            freelocale(loc);
+            //glibc stores sizes as integer mm units, and so is inaccurate. To
+            //find a standard paper size we calculate the standard paper sizes
+            //into equally inaccurate mm and compare
+            long width = (aDinTab[i].m_nWidth + 50) / 100;
+            long height = (aDinTab[i].m_nHeight + 50) / 100;
 
-            //glibc stores sizes as integer mm units
-            w.word *= 100;
-            h.word *= 100;
-
-            for ( size_t i = 0; i < nTabSize; ++i )
+            if (width == w.word/100 && height == h.word/100)
             {
-                if (i == PAPER_USER) continue;
-
-                //glibc stores sizes as integer mm units, and so is inaccurate.
-                //To find a standard paper size we calculate the standard paper
-                //sizes into equally inaccurate mm and compare
-                long width = (aDinTab[i].m_nWidth + 50) / 100;
-                long height = (aDinTab[i].m_nHeight + 50) / 100;
-
-                if (width == w.word/100 && height == h.word/100)
-                {
-                    w.word = aDinTab[i].m_nWidth;
-                    h.word = aDinTab[i].m_nHeight;
-                    break;
-                }
+                w.word = aDinTab[i].m_nWidth;
+                h.word = aDinTab[i].m_nHeight;
+                break;
             }
-
-            aInstance = PaperInfo(w.word, h.word);
-            bInitialized = true;
-            return aInstance;
         }
+
+        aInstance = PaperInfo(w.word, h.word);
+        bInitialized = true;
+        return aInstance;
 #endif
     }
 #endif

@@ -60,17 +60,17 @@ inline int PtTo10Mu( int nPoints ) { return (int)((((double)nPoints)*35.27777778
 
 static void copyJobDataToJobSetup( ImplJobSetup* pJobSetup, JobData& rData )
 {
-    pJobSetup->SetOrientation( rData.m_eOrientation == orientation::Landscape ? Orientation::Landscape : Orientation::Portrait );
+    pJobSetup->meOrientation    = (Orientation)(rData.m_eOrientation == orientation::Landscape ? ORIENTATION_LANDSCAPE : ORIENTATION_PORTRAIT);
 
     // copy page size
     OUString aPaper;
     int width, height;
 
     rData.m_aContext.getPageSize( aPaper, width, height );
-    pJobSetup->SetPaperFormat( PaperInfo::fromPSName(OUStringToOString( aPaper, RTL_TEXTENCODING_ISO_8859_1 )) );
-    pJobSetup->SetPaperWidth( 0 );
-    pJobSetup->SetPaperHeight( 0 );
-    if( pJobSetup->GetPaperFormat() == PAPER_USER )
+    pJobSetup->mePaperFormat    = PaperInfo::fromPSName(OUStringToOString( aPaper, RTL_TEXTENCODING_ISO_8859_1 ));
+    pJobSetup->mnPaperWidth     = 0;
+    pJobSetup->mnPaperHeight    = 0;
+    if( pJobSetup->mePaperFormat == PAPER_USER )
     {
         // transform to 100dth mm
         width               = PtTo10Mu( width );
@@ -78,13 +78,13 @@ static void copyJobDataToJobSetup( ImplJobSetup* pJobSetup, JobData& rData )
 
         if( rData.m_eOrientation == psp::orientation::Portrait )
         {
-            pJobSetup->SetPaperWidth( width );
-            pJobSetup->SetPaperHeight( height );
+            pJobSetup->mnPaperWidth = width;
+            pJobSetup->mnPaperHeight= height;
         }
         else
         {
-            pJobSetup->SetPaperWidth( height );
-            pJobSetup->SetPaperHeight( width );
+            pJobSetup->mnPaperWidth = height;
+            pJobSetup->mnPaperHeight= width;
         }
     }
 
@@ -92,29 +92,27 @@ static void copyJobDataToJobSetup( ImplJobSetup* pJobSetup, JobData& rData )
     const PPDKey* pKey = nullptr;
     const PPDValue* pValue = nullptr;
 
-    pJobSetup->SetPaperBin( 0xffff );
+    pJobSetup->mnPaperBin = 0xffff;
     if( rData.m_pParser )
         pKey                    = rData.m_pParser->getKey( OUString( "InputSlot"  ) );
     if( pKey )
         pValue                  = rData.m_aContext.getValue( pKey );
     if( pKey && pValue )
     {
-        int nPaperBin;
-        for( nPaperBin = 0;
-             pValue != pKey->getValue( nPaperBin ) &&
-                 nPaperBin < pKey->countValues();
-             nPaperBin++ );
-        pJobSetup->SetPaperBin(
-            (nPaperBin == pKey->countValues()
-             || pValue == pKey->getDefaultValue())
-            ? 0xffff : nPaperBin);
+        for( pJobSetup->mnPaperBin = 0;
+             pValue != pKey->getValue( pJobSetup->mnPaperBin ) &&
+                 pJobSetup->mnPaperBin < pKey->countValues();
+             pJobSetup->mnPaperBin++ )
+            ;
+        if( pJobSetup->mnPaperBin >= pKey->countValues() || pValue == pKey->getDefaultValue() )
+            pJobSetup->mnPaperBin = 0xffff;
     }
 
     // copy duplex
     pKey = nullptr;
     pValue = nullptr;
 
-    pJobSetup->SetDuplexMode( DuplexMode::Unknown );
+    pJobSetup->meDuplexMode = DUPLEX_UNKNOWN;
     if( rData.m_pParser )
         pKey = rData.m_pParser->getKey( OUString( "Duplex"  ) );
     if( pKey )
@@ -125,43 +123,43 @@ static void copyJobDataToJobSetup( ImplJobSetup* pJobSetup, JobData& rData )
             pValue->m_aOption.startsWithIgnoreAsciiCase( "Simplex" )
            )
         {
-            pJobSetup->SetDuplexMode( DuplexMode::Off );
+            pJobSetup->meDuplexMode = DUPLEX_OFF;
         }
         else if( pValue->m_aOption.equalsIgnoreAsciiCase( "DuplexNoTumble" ) )
         {
-            pJobSetup->SetDuplexMode( DuplexMode::LongEdge );
+            pJobSetup->meDuplexMode = DUPLEX_LONGEDGE;
         }
         else if( pValue->m_aOption.equalsIgnoreAsciiCase( "DuplexTumble" ) )
         {
-            pJobSetup->SetDuplexMode( DuplexMode::ShortEdge );
+            pJobSetup->meDuplexMode = DUPLEX_SHORTEDGE;
         }
     }
 
     // copy the whole context
-    if( pJobSetup->GetDriverData() )
-        rtl_freeMemory( const_cast<sal_uInt8*>(pJobSetup->GetDriverData()) );
+    if( pJobSetup->mpDriverData )
+        rtl_freeMemory( pJobSetup->mpDriverData );
 
     sal_uInt32 nBytes;
     void* pBuffer = nullptr;
     if( rData.getStreamBuffer( pBuffer, nBytes ) )
     {
-        pJobSetup->SetDriverDataLen( nBytes );
-        pJobSetup->SetDriverData( static_cast<sal_uInt8*>(pBuffer) );
+        pJobSetup->mnDriverDataLen = nBytes;
+        pJobSetup->mpDriverData = static_cast<sal_uInt8*>(pBuffer);
     }
     else
     {
-        pJobSetup->SetDriverDataLen( 0 );
-        pJobSetup->SetDriverData( nullptr );
+        pJobSetup->mnDriverDataLen = 0;
+        pJobSetup->mpDriverData = nullptr;
     }
 }
 
 // SalInstance
 
 SalInfoPrinter* SvpSalInstance::CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
-                                                   ImplJobSetup*        pJobSetup )
+                                                   ImplJobSetup*            pJobSetup )
 {
     // create and initialize SalInfoPrinter
-    SvpSalInfoPrinter* pPrinter = new SvpSalInfoPrinter;
+    SvpSalInfoPrinter* pPrinter = new SvpSalInfoPrinter();
 
     if( pJobSetup )
     {
@@ -170,13 +168,12 @@ SalInfoPrinter* SvpSalInstance::CreateInfoPrinter( SalPrinterQueueInfo* pQueueIn
         pPrinter->m_aJobData = aInfo;
         pPrinter->m_aPrinterGfx.Init( pPrinter->m_aJobData );
 
-        if( pJobSetup->GetDriverData() )
-            JobData::constructFromStreamBuffer( pJobSetup->GetDriverData(),
-                                                pJobSetup->GetDriverDataLen(), aInfo );
+        if( pJobSetup->mpDriverData )
+            JobData::constructFromStreamBuffer( pJobSetup->mpDriverData, pJobSetup->mnDriverDataLen, aInfo );
 
-        pJobSetup->SetSystem( JOBSETUP_SYSTEM_UNIX );
-        pJobSetup->SetPrinterName( pQueueInfo->maPrinterName );
-        pJobSetup->SetDriver( aInfo.m_aDriverName );
+        pJobSetup->mnSystem         = JOBSETUP_SYSTEM_UNIX;
+        pJobSetup->maPrinterName    = pQueueInfo->maPrinterName;
+        pJobSetup->maDriver         = aInfo.m_aDriverName;
         copyJobDataToJobSetup( pJobSetup, aInfo );
     }
 

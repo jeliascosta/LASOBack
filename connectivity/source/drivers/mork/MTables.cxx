@@ -53,7 +53,7 @@ sdbcx::ObjectType OTables::createObject(const OUString& _rName)
     return xRet;
 }
 
-void OTables::impl_refresh(  )
+void OTables::impl_refresh(  ) throw(RuntimeException)
 {
     static_cast<OCatalog&>(m_rParent).refreshTables();
 }

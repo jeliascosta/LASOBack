@@ -35,14 +35,14 @@ namespace
 {
 
 struct lcl_getPropertyStateByHandle :
-        public std::unary_function< sal_Int32,  beans::PropertyState >
+        public ::std::unary_function< sal_Int32,  beans::PropertyState >
 {
     explicit lcl_getPropertyStateByHandle(
         const ::property::impl::ImplOPropertySet::tPropertyMap & rMap )
             : m_rMap( rMap )
     {}
 
-    beans::PropertyState operator() ( sal_Int32 nHandle )
+    inline beans::PropertyState operator() ( sal_Int32 nHandle )
     {
         if( m_rMap.end() == m_rMap.find( nHandle ))
             return beans::PropertyState_DEFAULT_VALUE;
@@ -55,25 +55,25 @@ private:
 
 template< typename K, typename V >
 struct lcl_eraseMapEntry :
-        public std::unary_function< K, void >
+        public ::std::unary_function< K, void >
 {
-    explicit lcl_eraseMapEntry( std::map< K, V > & rMap )
+    explicit lcl_eraseMapEntry( ::std::map< K, V > & rMap )
             : m_rMap( rMap )
     {}
 
-    void operator() ( const K & aKey )
+    inline void operator() ( const K & aKey )
     {
         m_rMap.erase( aKey );
     }
 
 private:
-    std::map< K, V > m_rMap;
+    ::std::map< K, V > m_rMap;
 };
 
 struct lcl_replaceInterfacePropertiesByClones :
-    public std::unary_function< ::property::impl::ImplOPropertySet::tPropertyMap::value_type, void >
+    public ::std::unary_function< ::property::impl::ImplOPropertySet::tPropertyMap::value_type, void >
 {
-    void operator() ( ::property::impl::ImplOPropertySet::tPropertyMap::value_type & rProp )
+    inline void operator() ( ::property::impl::ImplOPropertySet::tPropertyMap::value_type & rProp )
     {
         if( rProp.second.hasValue() &&
             rProp.second.getValueType().getTypeClass() == uno::TypeClass_INTERFACE )
@@ -97,13 +97,9 @@ ImplOPropertySet::ImplOPropertySet()
 
 ImplOPropertySet::ImplOPropertySet( const ImplOPropertySet & rOther )
 {
-    std::copy( rOther.m_aProperties.begin(), rOther.m_aProperties.end(),
-                 std::inserter( m_aProperties, m_aProperties.begin() ));
-
-    // clone interface properties
-    std::for_each( m_aProperties.begin(), m_aProperties.end(),
-                     lcl_replaceInterfacePropertiesByClones());
-
+    ::std::copy( rOther.m_aProperties.begin(), rOther.m_aProperties.end(),
+                 ::std::inserter( m_aProperties, m_aProperties.begin() ));
+    cloneInterfaceProperties();
     m_xStyle.set( ::chart::CloneHelper::CreateRefClone< style::XStyle >()( rOther.m_xStyle ));
 }
 
@@ -113,11 +109,11 @@ beans::PropertyState ImplOPropertySet::GetPropertyStateByHandle( sal_Int32 nHand
 }
 
 Sequence< beans::PropertyState > ImplOPropertySet::GetPropertyStatesByHandle(
-    const std::vector< sal_Int32 > & aHandles ) const
+    const ::std::vector< sal_Int32 > & aHandles ) const
 {
     Sequence< beans::PropertyState > aResult( aHandles.size());
 
-    std::transform( aHandles.begin(), aHandles.end(),
+    ::std::transform( aHandles.begin(), aHandles.end(),
                       aResult.getArray(),
                       lcl_getPropertyStateByHandle( m_aProperties ));
 
@@ -135,9 +131,9 @@ void ImplOPropertySet::SetPropertyToDefault( sal_Int32 nHandle )
 }
 
 void ImplOPropertySet::SetPropertiesToDefault(
-    const std::vector< sal_Int32 > & aHandles )
+    const ::std::vector< sal_Int32 > & aHandles )
 {
-    std::for_each( aHandles.begin(), aHandles.end(),
+    ::std::for_each( aHandles.begin(), aHandles.end(),
                      lcl_eraseMapEntry< sal_Int32, Any >( m_aProperties ) );
 }
 
@@ -176,6 +172,12 @@ bool ImplOPropertySet::SetStyle( const Reference< style::XStyle > & xStyle )
 
     m_xStyle = xStyle;
     return true;
+}
+
+void ImplOPropertySet::cloneInterfaceProperties()
+{
+    ::std::for_each( m_aProperties.begin(), m_aProperties.end(),
+                     lcl_replaceInterfacePropertiesByClones());
 }
 
 } //  namespace impl

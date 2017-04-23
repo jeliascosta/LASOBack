@@ -31,7 +31,7 @@ using namespace com::sun::star;
 using namespace com::sun::star::ucb;
 
 
-ContentEventNotifier::ContentEventNotifier( TaskManager* pMyShell,
+ContentEventNotifier::ContentEventNotifier( shell* pMyShell,
                                             const uno::Reference< XContent >& xCreatorContent,
                                             const uno::Reference< XContentIdentifier >& xCreatorId,
                                             const std::vector< uno::Reference< uno::XInterface > >& sListeners )
@@ -43,7 +43,7 @@ ContentEventNotifier::ContentEventNotifier( TaskManager* pMyShell,
 }
 
 
-ContentEventNotifier::ContentEventNotifier( TaskManager* pMyShell,
+ContentEventNotifier::ContentEventNotifier( shell* pMyShell,
                                             const uno::Reference< XContent >& xCreatorContent,
                                             const uno::Reference< XContentIdentifier >& xCreatorId,
                                             const uno::Reference< XContentIdentifier >& xOldId,
@@ -206,6 +206,7 @@ PropertyChangeNotifier::PropertyChangeNotifier(
 
 PropertyChangeNotifier::~PropertyChangeNotifier()
 {
+    delete m_pListeners;
 }
 
 

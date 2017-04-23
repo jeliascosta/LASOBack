@@ -36,15 +36,15 @@ public:
         @param rMessage
         A message containing any details about the exception.
      */
-    SAL_EXCEPTION_DLLPRIVATE MalformedUriException(
+    inline SAL_EXCEPTION_DLLPRIVATE MalformedUriException(
         rtl::OUString const & rMessage): m_aMessage(rMessage) {}
 
-    SAL_EXCEPTION_DLLPRIVATE MalformedUriException(
+    inline SAL_EXCEPTION_DLLPRIVATE MalformedUriException(
         MalformedUriException const & other): m_aMessage(other.m_aMessage) {}
 
-    SAL_EXCEPTION_DLLPRIVATE ~MalformedUriException() {}
+    inline SAL_EXCEPTION_DLLPRIVATE ~MalformedUriException() {}
 
-    SAL_EXCEPTION_DLLPRIVATE MalformedUriException operator =(
+    inline SAL_EXCEPTION_DLLPRIVATE MalformedUriException operator =(
         MalformedUriException const & rOther)
     { m_aMessage = rOther.m_aMessage; return *this; }
 
@@ -54,7 +54,7 @@ public:
         A reference to the message.  The reference is valid for the lifetime of
         this MalformedUriException.
      */
-    SAL_EXCEPTION_DLLPRIVATE rtl::OUString const & getMessage() const
+    inline SAL_EXCEPTION_DLLPRIVATE rtl::OUString const & getMessage() const
     { return m_aMessage; }
 
 private:

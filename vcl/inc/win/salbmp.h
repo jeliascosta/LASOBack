@@ -31,6 +31,7 @@ class   BitmapColor;
 class   BitmapPalette;
 class   SalGraphics;
 namespace Gdiplus { class Bitmap; }
+typedef std::shared_ptr< Gdiplus::Bitmap > GdiPlusBmpPtr;
 
 class WinSalBitmap : public SalBitmap
 {
@@ -49,7 +50,7 @@ private:
     // evtl. buffered GdiPlusBmp. This is needed since the GdiPlusBmp is a single
     // instance and remembered only on the content-WinSalBitmap, not on the
     // alpha-WinSalBitmap.
-    std::shared_ptr< Gdiplus::Bitmap >       maGdiPlusBitmap;
+    GdiPlusBmpPtr       maGdiPlusBitmap;
     const WinSalBitmap* mpAssociatedAlpha;
 
     sal_uInt16          mnBitCount;
@@ -62,7 +63,7 @@ public:
     HGLOBAL             ImplGethDIB() const { return mhDIB; }
     HBITMAP             ImplGethDDB() const { return mhDDB; }
 
-    std::shared_ptr< Gdiplus::Bitmap > ImplGetGdiPlusBitmap(const WinSalBitmap* pAlphaSource = nullptr) const;
+    GdiPlusBmpPtr ImplGetGdiPlusBitmap(const WinSalBitmap* pAlphaSource = 0) const;
 
     static HGLOBAL      ImplCreateDIB( const Size& rSize, sal_uInt16 nBitCount, const BitmapPalette& rPal );
     static HANDLE       ImplCopyDIBOrDDB( HANDLE hHdl, bool bDIB );
@@ -73,7 +74,7 @@ public:
 public:
 
                         WinSalBitmap();
-    virtual             ~WinSalBitmap() override;
+    virtual             ~WinSalBitmap();
 
 public:
 
@@ -95,7 +96,6 @@ public:
     virtual void                ReleaseBuffer( BitmapBuffer* pBuffer, BitmapAccessMode nMode ) override;
     virtual bool                GetSystemData( BitmapSystemData& rData ) override;
 
-    virtual bool                ScalingSupported() const override;
     virtual bool                Scale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag ) override;
     virtual bool                Replace( const Color& rSearchColor, const Color& rReplaceColor, sal_uLong nTol ) override;
 };

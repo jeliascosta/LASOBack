@@ -23,6 +23,7 @@
 #include "DataBrowser.hxx"
 #include "DataBrowserModel.hxx"
 #include "Strings.hrc"
+#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "DiagramHelper.hxx"
 #include "ChartModelHelper.hxx"
@@ -51,6 +52,25 @@
 #include <algorithm>
 #include <functional>
 
+/*  BrowserMode::COLUMNSELECTION :  single cells may be selected rather than only
+                               entire rows
+    BROWSER_(H|V)LINES :       show horizontal or vertical grid-lines
+
+    BROWSER_AUTO_(H|V)SCROLL : scroll automated horizontally or vertically when
+                               cursor is moved beyond the edge of the dialog
+    BrowserMode::HIDESELECT     :   Do not mark the current row with selection color
+                               (usually blue)
+
+ */
+#define BROWSER_STANDARD_FLAGS  \
+    BrowserMode::COLUMNSELECTION | \
+    BrowserMode::HLINES | BrowserMode::VLINES | \
+    BrowserMode::AUTO_HSCROLL | BrowserMode::AUTO_VSCROLL | \
+    BrowserMode::HIDESELECT
+
+// BrowserMode::HIDECURSOR would prevent flickering in edit fields, but navigating
+// with shift up/down, and entering non-editable cells would be problematic,
+// e.g.  the first cell, or when being in read-only mode
 
 using namespace ::com::sun::star;
 using ::com::sun::star::uno::Reference;
@@ -59,22 +79,6 @@ using namespace ::svt;
 
 namespace
 {
-/*  BrowserMode::COLUMNSELECTION : single cells may be selected rather than only
-                                   entire rows
-    BrowserMode::(H|V)LINES : show horizontal or vertical grid-lines
-    BrowserMode::AUTO_(H|V)SCROLL : scroll automated horizontally or vertically when
-                                    cursor is moved beyond the edge of the dialog
-    BrowserMode::HIDESELECT : Do not mark the current row with selection color
-                              (usually blue)
-  ! BrowserMode::HIDECURSOR would prevent flickering in edit fields, but navigating
-        with shift up/down, and entering non-editable cells would be problematic,
-        e.g.  the first cell, or when being in read-only mode
-*/
-const BrowserMode BrowserStdFlags = BrowserMode::COLUMNSELECTION |
-                                    BrowserMode::HLINES | BrowserMode::VLINES |
-                                    BrowserMode::AUTO_HSCROLL | BrowserMode::AUTO_VSCROLL |
-                                    BrowserMode::HIDESELECT;
-
 sal_Int32 lcl_getRowInData( long nRow )
 {
     return static_cast< sal_Int32 >( nRow );
@@ -101,7 +105,7 @@ public:
 
     void setStartColumn( sal_Int32 nStartColumn );
     sal_Int32 getStartColumn() const { return m_nStartColumn;}
-    void SetShowWarningBox( bool bShowWarning );
+    void SetShowWarningBox( bool bShowWarning = true );
 
 private:
     sal_Int32 m_nStartColumn;
@@ -181,8 +185,8 @@ private:
     Link<SeriesHeaderEdit*,void> m_aChangeLink;
 
     void notifyChanges();
-    DECL_LINK( SeriesNameChanged, Edit&, void );
-    DECL_LINK( SeriesNameEdited, Edit&, void );
+    DECL_LINK_TYPED( SeriesNameChanged, Edit&, void );
+    DECL_LINK_TYPED( SeriesNameEdited, Edit&, void );
 
     static Image GetChartTypeImage(
         const Reference< chart2::XChartType > & xChartType,
@@ -244,29 +248,29 @@ void SeriesHeader::SetPos( const Point & rPos )
 
     // chart type symbol
     Size aSize( nSymbolHeight, nSymbolHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
     m_spSymbol->set_width_request(aSize.Width());
     m_spSymbol->set_height_request(aSize.Height());
 
     // series name edit field
     aSize.setWidth(nSymbolDistance);
-    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
     m_spSeriesName->set_margin_left(aSize.Width() + 2);
     aSize.setWidth( m_nWidth - nSymbolHeight - nSymbolDistance );
     sal_Int32 nHeight = 12;
     aSize.setHeight( nHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
     m_spSeriesName->set_width_request(aSize.Width());
     m_spSeriesName->set_height_request(aSize.Height());
 
     // color bar
     aSize.setWidth(1);
-    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
     m_spColorBar->set_margin_left(aSize.Width() + 2);
     nHeight = 3;
     aSize.setWidth( m_nWidth - 1 );
     aSize.setHeight( nHeight );
-    aSize = m_pDevice->LogicToPixel( aSize, MapUnit::MapAppFont );
+    aSize = m_pDevice->LogicToPixel( aSize, MAP_APPFONT );
     m_spColorBar->set_width_request(aSize.Width());
     m_spColorBar->set_height_request(aSize.Height());
 }
@@ -279,7 +283,7 @@ void SeriesHeader::SetWidth( sal_Int32 nWidth )
 
 void SeriesHeader::SetPixelWidth( sal_Int32 nWidth )
 {
-    SetWidth( m_pDevice->PixelToLogic( Size( nWidth, 0 ), MapUnit::MapAppFont ).getWidth());
+    SetWidth( m_pDevice->PixelToLogic( Size( nWidth, 0 ), MAP_APPFONT ).getWidth());
 }
 
 void SeriesHeader::SetChartType(
@@ -321,12 +325,12 @@ void SeriesHeader::SetEditChangedHdl( const Link<SeriesHeaderEdit*,void> & rLink
     m_aChangeLink = rLink;
 }
 
-IMPL_LINK_NOARG(SeriesHeader, SeriesNameChanged, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SeriesHeader, SeriesNameChanged, Edit&, void)
 {
     notifyChanges();
 }
 
-IMPL_LINK_NOARG(SeriesHeader, SeriesNameEdited, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SeriesHeader, SeriesNameEdited, Edit&, void)
 {
     m_bSeriesNameChangePending = true;
 }
@@ -353,40 +357,40 @@ Image SeriesHeader::GetChartTypeImage(
 
     if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_AREA )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_AREA)));
+        aResult = Image( SchResId( IMG_TYPE_AREA ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_COLUMN )
     {
         if( bSwapXAndYAxis )
-            aResult = Image(BitmapEx(SchResId(BMP_TYPE_BAR)));
+            aResult = Image( SchResId( IMG_TYPE_BAR ) );
         else
-            aResult = Image(BitmapEx(SchResId(BMP_TYPE_COLUMN)));
+            aResult = Image( SchResId( IMG_TYPE_COLUMN ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_LINE )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_LINE)) );
+        aResult = Image( SchResId( IMG_TYPE_LINE ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_SCATTER )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_XY)));
+        aResult = Image( SchResId( IMG_TYPE_XY ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_PIE )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_PIE)));
+        aResult = Image( SchResId( IMG_TYPE_PIE ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_NET
           || aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_FILLED_NET )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_NET)));
+        aResult = Image( SchResId( IMG_TYPE_NET ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_CANDLESTICK )
     {
         // @todo: correct image for candle-stick type
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_STOCK)));
+        aResult = Image( SchResId( IMG_TYPE_STOCK ) );
     }
     else if( aChartTypeName == CHART2_SERVICE_NAME_CHARTTYPE_BUBBLE )
     {
-        aResult = Image(BitmapEx(SchResId(BMP_TYPE_BUBBLE)));
+        aResult = Image( SchResId( IMG_TYPE_BUBBLE ) );
     }
 
     return aResult;
@@ -403,7 +407,7 @@ namespace
     with focus is set at pIndex if pOutIndex is not 0.
 */
 bool lcl_SeriesHeaderHasFocus(
-    const std::vector< std::shared_ptr< ::chart::impl::SeriesHeader > > & rSeriesHeader,
+    const ::std::vector< std::shared_ptr< ::chart::impl::SeriesHeader > > & rSeriesHeader,
     sal_Int32 * pOutIndex = nullptr )
 {
     sal_Int32 nIndex = 0;
@@ -420,7 +424,7 @@ bool lcl_SeriesHeaderHasFocus(
 }
 
 sal_Int32 lcl_getColumnInDataOrHeader(
-    sal_uInt16 nCol, const std::vector< std::shared_ptr< ::chart::impl::SeriesHeader > > & rSeriesHeader )
+    sal_uInt16 nCol, const ::std::vector< std::shared_ptr< ::chart::impl::SeriesHeader > > & rSeriesHeader )
 {
     sal_Int32 nColIdx = 0;
     bool bHeaderHasFocus( lcl_SeriesHeaderHasFocus( rSeriesHeader, &nColIdx ));
@@ -436,7 +440,7 @@ sal_Int32 lcl_getColumnInDataOrHeader(
 } // anonymous namespace
 
 DataBrowser::DataBrowser( vcl::Window* pParent, WinBits nStyle, bool bLiveUpdate ) :
-    ::svt::EditBrowseBox( pParent, EditBrowseBoxFlags::SMART_TAB_TRAVEL | EditBrowseBoxFlags::HANDLE_COLUMN_TEXT, nStyle, BrowserStdFlags ),
+    ::svt::EditBrowseBox( pParent, EditBrowseBoxFlags::SMART_TAB_TRAVEL | EditBrowseBoxFlags::HANDLE_COLUMN_TEXT, nStyle, BROWSER_STANDARD_FLAGS ),
     m_nSeekRow( 0 ),
     m_bIsReadOnly( false ),
     m_bIsDirty( false ),
@@ -497,15 +501,7 @@ bool DataBrowser::MayDeleteColumn() const
         && ( ColCount() > 2 );
 }
 
-bool DataBrowser::MayMoveUpRows() const
-{
-    return ! IsReadOnly()
-        && ( !lcl_SeriesHeaderHasFocus( m_aSeriesHeaders ))
-        && ( GetCurRow() > 0 )
-        && ( GetCurRow() <= GetRowCount() - 1 );
-}
-
-bool DataBrowser::MayMoveDownRows() const
+bool DataBrowser::MaySwapRows() const
 {
     return ! IsReadOnly()
         && ( !lcl_SeriesHeaderHasFocus( m_aSeriesHeaders ))
@@ -513,24 +509,7 @@ bool DataBrowser::MayMoveDownRows() const
         && ( GetCurRow() < GetRowCount() - 1 );
 }
 
-bool DataBrowser::MayMoveLeftColumns() const
-{
-    // if a series header (except the last one) has the focus
-    {
-        sal_Int32 nColIndex(0);
-        if( lcl_SeriesHeaderHasFocus( m_aSeriesHeaders, &nColIndex ))
-            return (static_cast< sal_uInt32 >( nColIndex ) <= (m_aSeriesHeaders.size() - 1)) && (static_cast< sal_uInt32 >( nColIndex ) != 0);
-    }
-
-    sal_Int32 nColIdx = lcl_getColumnInDataOrHeader( GetCurColumnId(), m_aSeriesHeaders );
-    return ! IsReadOnly()
-        && ( nColIdx > 1 )
-        && ( nColIdx <= ColCount() - 2 )
-        && m_apDataBrowserModel.get()
-        && !m_apDataBrowserModel->isCategoriesColumn( nColIdx );
-}
-
-bool DataBrowser::MayMoveRightColumns() const
+bool DataBrowser::MaySwapColumns() const
 {
     // if a series header (except the last one) has the focus
     {
@@ -580,7 +559,7 @@ void DataBrowser::RenewTable()
     OUString aDefaultSeriesName(SCH_RESSTR(STR_COLUMN_LABEL));
     replaceParamterInString( aDefaultSeriesName, "%COLUMNNUMBER", OUString::number( 24 ) );
     sal_Int32 nColumnWidth = GetDataWindow().GetTextWidth( aDefaultSeriesName )
-        + GetDataWindow().LogicToPixel( Point( 4 + impl::SeriesHeader::GetRelativeAppFontXPosForNameField(), 0 ), MapUnit::MapAppFont ).X();
+        + GetDataWindow().LogicToPixel( Point( 4 + impl::SeriesHeader::GetRelativeAppFontXPosForNameField(), 0 ), MAP_APPFONT ).X();
     sal_Int32 nColumnCount = m_apDataBrowserModel->getColumnCount();
     // nRowCount is a member of a base class
     sal_Int32 nRowCountLocal = m_apDataBrowserModel->getMaxRowCount();
@@ -590,8 +569,8 @@ void DataBrowser::RenewTable()
     }
 
     RowInserted( 1, nRowCountLocal );
-    GoToRow( std::min( nOldRow, GetRowCount() - 1 ));
-    GoToColumnId( std::min( nOldColId, static_cast< sal_uInt16 >( ColCount() - 1 )));
+    GoToRow( ::std::min( nOldRow, GetRowCount() - 1 ));
+    GoToColumnId( ::std::min( nOldColId, static_cast< sal_uInt16 >( ColCount() - 1 )));
 
     Dialog* pDialog = GetParentDialog();
     vcl::Window* pWin = pDialog->get<VclContainer>("columns");
@@ -638,8 +617,13 @@ OUString DataBrowser::GetColString( sal_Int32 nColumnId ) const
 {
     OSL_ASSERT( m_apDataBrowserModel.get());
     if( nColumnId > 0 )
-        return OUString( m_apDataBrowserModel->getRoleOfColumn( nColumnId - 1 ));
+        return OUString( m_apDataBrowserModel->getRoleOfColumn( static_cast< sal_Int32 >( nColumnId ) - 1 ));
     return OUString();
+}
+
+OUString DataBrowser::GetRowString( sal_Int32 nRow )
+{
+    return OUString::number(nRow + 1);
 }
 
 OUString DataBrowser::GetCellText( long nRow, sal_uInt16 nColumnId ) const
@@ -648,7 +632,7 @@ OUString DataBrowser::GetCellText( long nRow, sal_uInt16 nColumnId ) const
 
     if( nColumnId == 0 )
     {
-        aResult = OUString::number(static_cast< sal_Int32 >( nRow ) + 1);
+        aResult = GetRowString( static_cast< sal_Int32 >( nRow ));
     }
     else if( nRow >= 0 && m_apDataBrowserModel.get())
     {
@@ -926,29 +910,7 @@ void DataBrowser::RemoveRow()
     }
 }
 
-void DataBrowser::MoveLeftColumn()
-{
-    sal_Int32 nColIdx = lcl_getColumnInDataOrHeader( GetCurColumnId(), m_aSeriesHeaders );
-
-    if( nColIdx > 0 &&
-        m_apDataBrowserModel.get())
-    {
-        // save changes made to edit-field
-        if( IsModified() )
-            SaveModified();
-
-        m_apDataBrowserModel->swapDataSeries( nColIdx - 1 );
-
-        // keep cursor in swapped column
-        if(( 0 < GetCurColumnId() ) && ( GetCurColumnId() <= ColCount() - 1 ))
-        {
-            Dispatch( BROWSER_CURSORLEFT );
-        }
-        RenewTable();
-    }
-}
-
-void DataBrowser::MoveRightColumn()
+void DataBrowser::SwapColumn()
 {
     sal_Int32 nColIdx = lcl_getColumnInDataOrHeader( GetCurColumnId(), m_aSeriesHeaders );
 
@@ -970,29 +932,7 @@ void DataBrowser::MoveRightColumn()
     }
 }
 
-void DataBrowser::MoveUpRow()
-{
-     sal_Int32 nRowIdx = lcl_getRowInData( GetCurRow());
-
-     if( nRowIdx > 0 &&
-        m_apDataBrowserModel.get())
-    {
-        // save changes made to edit-field
-        if( IsModified() )
-            SaveModified();
-
-        m_apDataBrowserModel->swapDataPointForAllSeries( nRowIdx - 1 );
-
-        // keep cursor in swapped row
-        if(( 0 < GetCurRow() ) && ( GetCurRow() <= GetRowCount() - 1 ))
-        {
-            Dispatch( BROWSER_CURSORUP );
-        }
-        RenewTable();
-    }
-}
-
-void DataBrowser::MoveDownRow()
+void DataBrowser::SwapRow()
 {
      sal_Int32 nRowIdx = lcl_getRowInData( GetCurRow());
 
@@ -1021,7 +961,7 @@ void DataBrowser::SetCursorMovedHdl( const Link<DataBrowser*,void>& rLink )
 
 // implementations for ::svt::EditBrowseBox (pure virtual methods)
 void DataBrowser::PaintCell(
-    OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId ) const
+    OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId ) const
 {
     Point aPos( rRect.TopLeft());
     aPos.X() += 1;
@@ -1096,10 +1036,10 @@ bool DataBrowser::IsTabAllowed( bool bForward ) const
     {
         m_aNumberEditField->UseInputStringForFormatting();
         m_aNumberEditField->SetFormatKey( GetNumberFormatKey( nRow, nCol ));
-        return m_rNumberEditController.get();
+        return m_rNumberEditController;
     }
 
-    return m_rTextEditController.get();
+    return m_rTextEditController;
 }
 
 void DataBrowser::InitController(
@@ -1195,9 +1135,9 @@ bool DataBrowser::SaveModified()
             double fValue = 0.0;
             bChangeValid = false;
             if( isDateTimeString( aText, fValue ) )
-                bChangeValid = m_apDataBrowserModel->setCellAny( nCol, nRow, uno::Any( fValue ) );
+                bChangeValid = m_apDataBrowserModel->setCellAny( nCol, nRow, uno::makeAny( fValue ) );
             if(!bChangeValid)
-                bChangeValid = m_apDataBrowserModel->setCellAny( nCol, nRow, uno::Any( aText ) );
+                bChangeValid = m_apDataBrowserModel->setCellAny( nCol, nRow, uno::makeAny( aText ) );
         }
         break;
         case DataBrowserModel::TEXT:
@@ -1233,6 +1173,11 @@ bool DataBrowser::EndEditing()
         return true;
     else
         return ShowQueryBox();
+}
+
+sal_Int16 DataBrowser::GetFirstVisibleColumNumber() const
+{
+    return GetFirstVisibleColNumber();
 }
 
 void DataBrowser::ColumnResized( sal_uInt16 nColId )
@@ -1309,7 +1254,7 @@ void DataBrowser::ImplAdjustHeaderControls()
     pColorWin->set_margin_left(nCurrentPos);
 
     tSeriesHeaderContainer::iterator aIt( m_aSeriesHeaders.begin());
-    sal_uInt16 i = GetFirstVisibleColNumber();
+    sal_uInt16 i = this->GetFirstVisibleColumNumber();
     while( (aIt != m_aSeriesHeaders.end()) && ((*aIt)->GetStartColumn() < i) )
     {
         (*aIt)->Hide();
@@ -1344,7 +1289,7 @@ void DataBrowser::ImplAdjustHeaderControls()
     }
 }
 
-IMPL_LINK( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
+IMPL_LINK_TYPED( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
 {
     impl::SeriesHeaderEdit* pEdit = static_cast<impl::SeriesHeaderEdit*>(&rControl);
     pEdit->SetShowWarningBox( !m_bDataValid );
@@ -1359,7 +1304,7 @@ IMPL_LINK( DataBrowser, SeriesHeaderGotFocus, Control&, rControl, void )
     }
 }
 
-IMPL_LINK( DataBrowser, SeriesHeaderChanged, impl::SeriesHeaderEdit*, pEdit, void )
+IMPL_LINK_TYPED( DataBrowser, SeriesHeaderChanged, impl::SeriesHeaderEdit*, pEdit, void )
 {
     if( pEdit )
     {
@@ -1379,7 +1324,7 @@ IMPL_LINK( DataBrowser, SeriesHeaderChanged, impl::SeriesHeaderEdit*, pEdit, voi
                     Reference< container::XIndexReplace > xIndexReplace( xLabeledSeq->getLabel(), uno::UNO_QUERY );
                     if( xIndexReplace.is())
                         xIndexReplace->replaceByIndex(
-                            0, uno::Any( OUString( pEdit->GetText())));
+                            0, uno::makeAny( OUString( pEdit->GetText())));
                 }
             }
         }

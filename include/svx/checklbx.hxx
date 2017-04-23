@@ -19,19 +19,10 @@
 #ifndef INCLUDED_SVX_CHECKLBX_HXX
 #define INCLUDED_SVX_CHECKLBX_HXX
 
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <svtools/treelistbox.hxx>
-#include <svx/svxdllapi.h>
-#include <tools/contnr.hxx>
-#include <tools/solar.h>
-#include <tools/wintypes.hxx>
-#include <vcl/event.hxx>
-#include <vcl/window.hxx>
+#include <svtools/svlbitm.hxx>
 
-class Image;
-class SvLBoxButtonData;
-class SvTreeListEntry;
+#include <svx/svxdllapi.h>
 
 // class SvxCheckListBox -------------------------------------------------
 
@@ -54,7 +45,7 @@ private:
 public:
     SvxCheckListBox( vcl::Window* pParent, WinBits nWinStyle = 0 );
     void SetNormalStaticImage(const Image& rNormalStaticImage);
-    virtual ~SvxCheckListBox() override;
+    virtual ~SvxCheckListBox();
     virtual void dispose() override;
 
     void            InsertEntry         ( const OUString& rStr,

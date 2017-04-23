@@ -31,7 +31,7 @@ private:
 
 public:
                  IntroWindow();
-    virtual      ~IntroWindow() override;
+    virtual      ~IntroWindow();
     virtual void dispose() override;
 
 };

@@ -67,56 +67,53 @@ void GraphicObject::ImplAfterDataChange()
     mnDataChangeTimeStamp = aIncrementingTimeOfLastDataChange++;
 
     // check memory footprint of all GraphicObjects managed and evtl. take action
-    mpGlobalMgr->ImplCheckSizeOfSwappedInGraphics(this);
+    if (mpMgr)
+        mpMgr->ImplCheckSizeOfSwappedInGraphics(this);
 }
 
-GraphicObject::GraphicObject()
-    : mbAutoSwapped(false)
-    , mbIsInSwapIn(false)
-    , mbIsInSwapOut(false)
+GraphicObject::GraphicObject( const GraphicManager* pMgr ) :
+    maLink      (),
+    maUserData  ()
 {
-    ImplEnsureGraphicManager();
+    ImplConstruct();
     ImplAssignGraphicData();
-    mpGlobalMgr->ImplRegisterObj(*this, maGraphic, nullptr, nullptr);
+    ImplSetGraphicManager( pMgr );
 }
 
-GraphicObject::GraphicObject(const Graphic& rGraphic)
-    : maGraphic(rGraphic)
-    , mbAutoSwapped(false)
-    , mbIsInSwapIn(false)
-    , mbIsInSwapOut(false)
+GraphicObject::GraphicObject( const Graphic& rGraphic, const GraphicManager* pMgr ) :
+    maGraphic   ( rGraphic ),
+    maLink      (),
+    maUserData  ()
 {
-    ImplEnsureGraphicManager();
+    ImplConstruct();
     ImplAssignGraphicData();
-    mpGlobalMgr->ImplRegisterObj(*this, maGraphic, nullptr, nullptr);
+    ImplSetGraphicManager( pMgr );
 }
 
-GraphicObject::GraphicObject(const GraphicObject& rGraphicObj)
-    : maGraphic(rGraphicObj.GetGraphic())
-    , maAttr(rGraphicObj.maAttr)
-    , maLink(rGraphicObj.maLink)
-    , maUserData(rGraphicObj.maUserData)
-    , mbAutoSwapped(false)
-    , mbIsInSwapIn(false)
-    , mbIsInSwapOut(false)
+GraphicObject::GraphicObject( const GraphicObject& rGraphicObj, const GraphicManager* pMgr ) :
+    SvDataCopyStream(),
+    maGraphic   ( rGraphicObj.GetGraphic() ),
+    maAttr      ( rGraphicObj.maAttr ),
+    maLink      ( rGraphicObj.maLink ),
+    maUserData  ( rGraphicObj.maUserData )
 {
+    ImplConstruct();
     ImplAssignGraphicData();
-    mpGlobalMgr->ImplRegisterObj(*this, maGraphic, nullptr, &rGraphicObj);
+    ImplSetGraphicManager( pMgr, nullptr, &rGraphicObj );
     if( rGraphicObj.HasUserData() && rGraphicObj.IsSwappedOut() )
         SetSwapState();
 }
 
-GraphicObject::GraphicObject(const OString& rUniqueID)
-    : mbAutoSwapped(false)
-    , mbIsInSwapIn(false)
-    , mbIsInSwapOut(false)
+GraphicObject::GraphicObject( const OString& rUniqueID, const GraphicManager* pMgr ) :
+    maLink      (),
+    maUserData  ()
 {
-    ImplEnsureGraphicManager();
+    ImplConstruct();
 
     // assign default properties
     ImplAssignGraphicData();
 
-    mpGlobalMgr->ImplRegisterObj(*this, maGraphic, &rUniqueID, nullptr);
+    ImplSetGraphicManager( pMgr, &rUniqueID );
 
     // update properties
     ImplAssignGraphicData();
@@ -124,13 +121,34 @@ GraphicObject::GraphicObject(const OString& rUniqueID)
 
 GraphicObject::~GraphicObject()
 {
-    mpGlobalMgr->ImplUnregisterObj( *this );
-
-    if (!mpGlobalMgr->ImplHasObjects())
+    if( mpMgr )
     {
-        delete mpGlobalMgr;
-        mpGlobalMgr = nullptr;
+        mpMgr->ImplUnregisterObj( *this );
+
+        if( ( mpMgr == mpGlobalMgr ) && !mpGlobalMgr->ImplHasObjects() )
+        {
+            delete mpGlobalMgr;
+            mpGlobalMgr = nullptr;
+        }
     }
+
+    delete mpSwapOutTimer;
+    delete mpSimpleCache;
+}
+
+void GraphicObject::ImplConstruct()
+{
+    mpMgr = nullptr;
+    maSwapStreamHdl = Link<const GraphicObject*, SvStream*>();
+    mpSwapOutTimer = nullptr;
+    mpSimpleCache = nullptr;
+    mnAnimationLoopCount = 0;
+    mbAutoSwapped = false;
+    mbIsInSwapIn = false;
+    mbIsInSwapOut = false;
+
+    // Init with a unique, increasing ID
+    mnDataChangeTimeStamp = aIncrementingTimeOfLastDataChange++;
 }
 
 void GraphicObject::ImplAssignGraphicData()
@@ -149,28 +167,56 @@ void GraphicObject::ImplAssignGraphicData()
     ImplAfterDataChange();
 }
 
-void GraphicObject::ImplEnsureGraphicManager()
+void GraphicObject::ImplSetGraphicManager( const GraphicManager* pMgr, const OString* pID, const GraphicObject* pCopyObj )
 {
-    if (!mpGlobalMgr)
+    if( !mpMgr || ( pMgr != mpMgr ) )
     {
-        if (!utl::ConfigManager::IsAvoidConfig())
-        {
-            mpGlobalMgr = new GraphicManager(
-                (officecfg::Office::Common::Cache::GraphicManager::
-                 TotalCacheSize::get()),
-                (officecfg::Office::Common::Cache::GraphicManager::
-                 ObjectCacheSize::get()));
-            mpGlobalMgr->SetCacheTimeout(
-                officecfg::Office::Common::Cache::GraphicManager::
-                ObjectReleaseTime::get());
-        }
+        if( !pMgr && mpMgr && ( mpMgr == mpGlobalMgr ) )
+            return;
         else
         {
-            mpGlobalMgr = new GraphicManager(
-                20000,
-                20000);
-            mpGlobalMgr->SetCacheTimeout(
-                20000);
+            if( mpMgr )
+            {
+                mpMgr->ImplUnregisterObj( *this );
+
+                if( ( mpMgr == mpGlobalMgr ) && !mpGlobalMgr->ImplHasObjects() )
+                {
+                    delete mpGlobalMgr;
+                    mpGlobalMgr = nullptr;
+                }
+            }
+
+            if( !pMgr )
+            {
+                if( !mpGlobalMgr )
+                {
+                    if (!utl::ConfigManager::IsAvoidConfig())
+                    {
+                        mpGlobalMgr = new GraphicManager(
+                            (officecfg::Office::Common::Cache::GraphicManager::
+                             TotalCacheSize::get()),
+                            (officecfg::Office::Common::Cache::GraphicManager::
+                             ObjectCacheSize::get()));
+                        mpGlobalMgr->SetCacheTimeout(
+                            officecfg::Office::Common::Cache::GraphicManager::
+                            ObjectReleaseTime::get());
+                    }
+                    else
+                    {
+                        mpGlobalMgr = new GraphicManager(
+                            20000,
+                            20000);
+                        mpGlobalMgr->SetCacheTimeout(
+                            20000);
+                    }
+                }
+
+                mpMgr = mpGlobalMgr;
+            }
+            else
+                mpMgr = const_cast<GraphicManager*>(pMgr);
+
+            mpMgr->ImplRegisterObj( *this, maGraphic, pID, pCopyObj );
         }
     }
 }
@@ -203,7 +249,7 @@ void GraphicObject::ImplAutoSwapIn()
                                 if( pIStm )
                                 {
                                     ReadGraphic( *pIStm, maGraphic );
-                                    mbAutoSwapped = ( maGraphic.GetType() != GraphicType::NONE );
+                                    mbAutoSwapped = ( maGraphic.GetType() != GRAPHIC_NONE );
                                 }
                             }
                         }
@@ -220,15 +266,15 @@ void GraphicObject::ImplAutoSwapIn()
                 }
                 else
                 {
-                    DBG_ASSERT( ( GraphicType::NONE == meType ) || ( GraphicType::Default == meType ),
+                    DBG_ASSERT( ( GRAPHIC_NONE == meType ) || ( GRAPHIC_DEFAULT == meType ),
                                 "GraphicObject::ImplAutoSwapIn: could not get stream to swap in graphic! (=>KA)" );
                 }
             }
 
             mbIsInSwapIn = false;
 
-            if (!mbAutoSwapped)
-                mpGlobalMgr->ImplGraphicObjectWasSwappedIn( *this );
+            if( !mbAutoSwapped && mpMgr )
+                mpMgr->ImplGraphicObjectWasSwappedIn( *this );
         }
         ImplAssignGraphicData();
     }
@@ -239,12 +285,12 @@ bool GraphicObject::ImplGetCropParams( OutputDevice* pOut, Point& rPt, Size& rSz
 {
     bool bRet = false;
 
-    if( GetType() != GraphicType::NONE )
+    if( GetType() != GRAPHIC_NONE )
     {
-        tools::Polygon aClipPoly( tools::Rectangle( rPt, rSz ) );
+        tools::Polygon aClipPoly( Rectangle( rPt, rSz ) );
         const sal_uInt16 nRot10 = pAttr->GetRotation() % 3600;
         const Point     aOldOrigin( rPt );
-        const MapMode   aMap100( MapUnit::Map100thMM );
+        const MapMode   aMap100( MAP_100TH_MM );
         Size            aSize100;
         long            nTotalWidth, nTotalHeight;
 
@@ -258,7 +304,7 @@ bool GraphicObject::ImplGetCropParams( OutputDevice* pOut, Point& rPt, Size& rSz
 
         rClipPolyPoly = aClipPoly;
 
-        if( maGraphic.GetPrefMapMode() == MapUnit::MapPixel )
+        if( maGraphic.GetPrefMapMode() == MAP_PIXEL )
             aSize100 = Application::GetDefaultDevice()->PixelToLogic( maGraphic.GetPrefSize(), aMap100 );
         else
         {
@@ -307,10 +353,11 @@ GraphicObject& GraphicObject::operator=( const GraphicObject& rGraphicObj )
 {
     if( &rGraphicObj != this )
     {
-        mpGlobalMgr->ImplUnregisterObj( *this );
+        mpMgr->ImplUnregisterObj( *this );
 
         maSwapStreamHdl = Link<const GraphicObject*, SvStream*>();
-        mxSimpleCache.reset();
+        delete mpSimpleCache;
+        mpSimpleCache = nullptr;
 
         maGraphic = rGraphicObj.GetGraphic();
         maAttr = rGraphicObj.maAttr;
@@ -318,7 +365,8 @@ GraphicObject& GraphicObject::operator=( const GraphicObject& rGraphicObj )
         maUserData = rGraphicObj.maUserData;
         ImplAssignGraphicData();
         mbAutoSwapped = false;
-        mpGlobalMgr->ImplRegisterObj( *this, maGraphic, nullptr, &rGraphicObj );
+        mpMgr = rGraphicObj.mpMgr;
+        mpMgr->ImplRegisterObj( *this, maGraphic, nullptr, &rGraphicObj );
         if( rGraphicObj.HasUserData() && rGraphicObj.IsSwappedOut() )
             SetSwapState();
     }
@@ -338,7 +386,12 @@ OString GraphicObject::GetUniqueID() const
     if ( !IsInSwapIn() && IsEPS() )
         const_cast<GraphicObject*>(this)->FireSwapInRequest();
 
-    return mpGlobalMgr->ImplGetUniqueID(*this);
+    OString aRet;
+
+    if( mpMgr )
+        aRet = mpMgr->ImplGetUniqueID( *this );
+
+    return aRet;
 }
 
 SvStream* GraphicObject::GetSwapStream() const
@@ -353,8 +406,11 @@ void GraphicObject::SetAttr( const GraphicAttr& rAttr )
 {
     maAttr = rAttr;
 
-    if (mxSimpleCache && (mxSimpleCache->maAttr != rAttr))
-        mxSimpleCache.reset();
+    if( mpSimpleCache && ( mpSimpleCache->maAttr != rAttr ) )
+    {
+        delete mpSimpleCache;
+        mpSimpleCache = nullptr;
+    }
 }
 
 void GraphicObject::SetLink()
@@ -396,20 +452,21 @@ void GraphicObject::SetSwapStreamHdl(const Link<const GraphicObject*, SvStream*>
     maSwapStreamHdl = rHdl;
 
     sal_uInt32 const nSwapOutTimeout(GetCacheTimeInMs());
-    if (nSwapOutTimeout)
+    if( nSwapOutTimeout )
     {
-        if (!mxSwapOutTimer)
+        if( !mpSwapOutTimer )
         {
-            mxSwapOutTimer.reset(new Timer("svtools::GraphicObject mpSwapOutTimer"));
-            mxSwapOutTimer->SetInvokeHandler( LINK( this, GraphicObject, ImplAutoSwapOutHdl ) );
+            mpSwapOutTimer = new Timer("SwapOutTimer");
+            mpSwapOutTimer->SetTimeoutHdl( LINK( this, GraphicObject, ImplAutoSwapOutHdl ) );
         }
 
-        mxSwapOutTimer->SetTimeout( nSwapOutTimeout );
-        mxSwapOutTimer->Start();
+        mpSwapOutTimer->SetTimeout( nSwapOutTimeout );
+        mpSwapOutTimer->Start();
     }
     else
     {
-        mxSwapOutTimer.reset();
+        delete mpSwapOutTimer;
+        mpSwapOutTimer = nullptr;
     }
 }
 
@@ -421,6 +478,13 @@ void GraphicObject::FireSwapInRequest()
 void GraphicObject::FireSwapOutRequest()
 {
     ImplAutoSwapOutHdl( nullptr );
+}
+
+void GraphicObject::GraphicManagerDestroyed()
+{
+    // we're alive, but our manager doesn't live anymore ==> connect to default manager
+    mpMgr = nullptr;
+    ImplSetGraphicManager( nullptr );
 }
 
 bool GraphicObject::IsCached( OutputDevice* pOut, const Point& rPt, const Size& rSz,
@@ -438,7 +502,7 @@ bool GraphicObject::IsCached( OutputDevice* pOut, const Point& rPt, const Size& 
             bool bRectClip;
             ImplGetCropParams( pOut, aPt, aSz, pAttr, aClipPolyPoly, bRectClip );
         }
-        bRet = mpGlobalMgr->IsInCache( pOut, aPt, aSz, *this, ( pAttr ? *pAttr : GetAttr() ) );
+        bRet = mpMgr->IsInCache( pOut, aPt, aSz, *this, ( pAttr ? *pAttr : GetAttr() ) );
     }
     else
         bRet = false;
@@ -458,7 +522,7 @@ bool GraphicObject::Draw( OutputDevice* pOut, const Point& rPt, const Size& rSz,
     bool bRet;
 
     // #i29534# Provide output rects for PDF writer
-    tools::Rectangle           aCropRect;
+    Rectangle           aCropRect;
 
     if( !( GraphicManagerDrawFlags::USE_DRAWMODE_SETTINGS & nFlags ) )
         pOut->SetDrawMode( nOldDrawMode & ~DrawModeFlags( DrawModeFlags::SettingsLine | DrawModeFlags::SettingsFill | DrawModeFlags::SettingsText | DrawModeFlags::SettingsGradient ) );
@@ -503,7 +567,7 @@ bool GraphicObject::Draw( OutputDevice* pOut, const Point& rPt, const Size& rSz,
         }
     }
 
-    bRet = mpGlobalMgr->DrawObj( pOut, aPt, aSz, *this, aAttr, nFlags, bCached );
+    bRet = mpMgr->DrawObj( pOut, aPt, aSz, *this, aAttr, nFlags, bCached );
 
     if( bCropped )
         pOut->Pop();
@@ -514,8 +578,8 @@ bool GraphicObject::Draw( OutputDevice* pOut, const Point& rPt, const Size& rSz,
     // (code above needs to call GetGraphic twice)
     if( bCached )
     {
-        if (mxSwapOutTimer)
-            mxSwapOutTimer->Start();
+        if( mpSwapOutTimer )
+            mpSwapOutTimer->Start();
         else
             FireSwapOutRequest();
     }
@@ -523,8 +587,8 @@ bool GraphicObject::Draw( OutputDevice* pOut, const Point& rPt, const Size& rSz,
     return bRet;
 }
 
-void GraphicObject::DrawTiled( OutputDevice* pOut, const tools::Rectangle& rArea, const Size& rSize,
-                               const Size& rOffset, GraphicManagerDrawFlags nFlags, int nTileCacheSize1D )
+void GraphicObject::DrawTiled( OutputDevice* pOut, const Rectangle& rArea, const Size& rSize,
+                               const Size& rOffset, const GraphicAttr* pAttr, GraphicManagerDrawFlags nFlags, int nTileCacheSize1D )
 {
     if( pOut == nullptr || rSize.Width() == 0 || rSize.Height() == 0 )
         return;
@@ -542,11 +606,11 @@ void GraphicObject::DrawTiled( OutputDevice* pOut, const tools::Rectangle& rArea
     while (((sal_Int64)rSize.Height() * nTileCacheSize1D) > SAL_MAX_UINT16)
         nTileCacheSize1D /= 2;
 
-    ImplDrawTiled( pOut, rArea, aOutTileSize, rOffset, nullptr, nFlags, nTileCacheSize1D );
+    ImplDrawTiled( pOut, rArea, aOutTileSize, rOffset, pAttr, nFlags, nTileCacheSize1D );
 }
 
 bool GraphicObject::StartAnimation( OutputDevice* pOut, const Point& rPt, const Size& rSz,
-                                    long nExtraData,
+                                    long nExtraData, const GraphicAttr* pAttr, GraphicManagerDrawFlags /*nFlags*/,
                                     OutputDevice* pFirstFrameOutDev )
 {
     bool bRet = false;
@@ -555,7 +619,7 @@ bool GraphicObject::StartAnimation( OutputDevice* pOut, const Point& rPt, const 
 
     if( !IsSwappedOut() )
     {
-        const GraphicAttr aAttr( GetAttr() );
+        const GraphicAttr aAttr( pAttr ? *pAttr : GetAttr() );
 
         if( mbAnimated )
         {
@@ -580,13 +644,16 @@ bool GraphicObject::StartAnimation( OutputDevice* pOut, const Point& rPt, const 
                 }
             }
 
-            if (!mxSimpleCache || (mxSimpleCache->maAttr != aAttr) || pFirstFrameOutDev)
+            if( !mpSimpleCache || ( mpSimpleCache->maAttr != aAttr ) || pFirstFrameOutDev )
             {
-                mxSimpleCache.reset(new GrfSimpleCacheObj(GetTransformedGraphic(&aAttr), aAttr));
-                mxSimpleCache->maGraphic.SetAnimationNotifyHdl(GetGraphic().GetAnimationNotifyHdl());
+                if( mpSimpleCache )
+                    delete mpSimpleCache;
+
+                mpSimpleCache = new GrfSimpleCacheObj( GetTransformedGraphic( &aAttr ), aAttr );
+                mpSimpleCache->maGraphic.SetAnimationNotifyHdl( GetAnimationNotifyHdl() );
             }
 
-            mxSimpleCache->maGraphic.StartAnimation(pOut, aPt, aSz, nExtraData, pFirstFrameOutDev);
+            mpSimpleCache->maGraphic.StartAnimation( pOut, aPt, aSz, nExtraData, pFirstFrameOutDev );
 
             if( bCropped )
                 pOut->Pop();
@@ -602,8 +669,8 @@ bool GraphicObject::StartAnimation( OutputDevice* pOut, const Point& rPt, const 
 
 void GraphicObject::StopAnimation( OutputDevice* pOut, long nExtraData )
 {
-    if (mxSimpleCache)
-        mxSimpleCache->maGraphic.StopAnimation(pOut, nExtraData);
+    if( mpSimpleCache )
+        mpSimpleCache->maGraphic.StopAnimation( pOut, nExtraData );
 }
 
 const Graphic& GraphicObject::GetGraphic() const
@@ -614,44 +681,37 @@ const Graphic& GraphicObject::GetGraphic() const
     //fdo#50697 If we've been asked to provide the graphic, then reset
     //the cache timeout to start from now and not remain at the
     //time of creation
-    // restart SwapOut timer; this is like touching in a cache to reset to the full timeout value
-    if (pThis->mxSwapOutTimer && pThis->mxSwapOutTimer->IsActive())
-    {
-        pThis->mxSwapOutTimer->Stop();
-        pThis->mxSwapOutTimer->Start();
-    }
+    pThis->restartSwapOutTimer();
 
     return maGraphic;
 }
 
 void GraphicObject::SetGraphic( const Graphic& rGraphic, const GraphicObject* pCopyObj )
 {
-    mpGlobalMgr->ImplUnregisterObj( *this );
+    mpMgr->ImplUnregisterObj( *this );
 
-    if (mxSwapOutTimer)
-        mxSwapOutTimer->Stop();
+    if( mpSwapOutTimer )
+        mpSwapOutTimer->Stop();
 
     maGraphic = rGraphic;
     mbAutoSwapped = false;
     ImplAssignGraphicData();
     maLink.clear();
-    mxSimpleCache.reset();
+    delete mpSimpleCache;
+    mpSimpleCache = nullptr;
 
-    mpGlobalMgr->ImplRegisterObj( *this, maGraphic, nullptr, pCopyObj);
+    mpMgr->ImplRegisterObj( *this, maGraphic, nullptr, pCopyObj);
 
-    if (mxSwapOutTimer)
-        mxSwapOutTimer->Start();
+    if( mpSwapOutTimer )
+        mpSwapOutTimer->Start();
 
 
 }
 
 void GraphicObject::SetGraphic( const Graphic& rGraphic, const OUString& rLink )
 {
-    // in case we are called from a situation where rLink and maLink are the same thing,
-    // we need a copy because SetGraphic clears maLink
-    OUString sLinkCopy = rLink;
     SetGraphic( rGraphic );
-    maLink = sLinkCopy;
+    maLink = rLink;
 }
 
 Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMode& rDestMap, const GraphicAttr& rAttr ) const
@@ -663,18 +723,18 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
 
     // #104115# Convert the crop margins to graphic object mapmode
     const MapMode aMapGraph( aTransGraphic.GetPrefMapMode() );
-    const MapMode aMap100( MapUnit::Map100thMM );
+    const MapMode aMap100( MAP_100TH_MM );
 
     Size aCropLeftTop;
     Size aCropRightBottom;
 
-    if( GraphicType::GdiMetafile == eType )
+    if( GRAPHIC_GDIMETAFILE == eType )
     {
         GDIMetaFile aMtf( aTransGraphic.GetGDIMetaFile() );
 
-        if( aMapGraph == MapUnit::MapPixel )
+        if( aMapGraph == MAP_PIXEL )
         {
-            // crops are in 1/100th mm -> to aMapGraph -> to MapUnit::MapPixel
+            // crops are in 1/100th mm -> to aMapGraph -> to MAP_PIXEL
             aCropLeftTop = Application::GetDefaultDevice()->LogicToPixel(
                 Size(rAttr.GetLeftCrop(), rAttr.GetTopCrop()),
                 aMap100);
@@ -703,7 +763,7 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
         {
             const MapMode aMtfMapMode( aMtf.GetPrefMapMode() );
 
-            tools::Rectangle aClipRect( aMtfMapMode.GetOrigin().X() + aCropLeftTop.Width(),
+            Rectangle aClipRect( aMtfMapMode.GetOrigin().X() + aCropLeftTop.Width(),
                                  aMtfMapMode.GetOrigin().Y() + aCropLeftTop.Height(),
                                  aMtfMapMode.GetOrigin().X() + aSrcSize.Width() - aCropRightBottom.Width(),
                                  aMtfMapMode.GetOrigin().Y() + aSrcSize.Height() - aCropRightBottom.Height() );
@@ -737,17 +797,17 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
 
         aTransGraphic = aMtf;
     }
-    else if( GraphicType::Bitmap == eType )
+    else if( GRAPHIC_BITMAP == eType )
     {
         BitmapEx aBitmapEx( aTransGraphic.GetBitmapEx() );
-        tools::Rectangle aCropRect;
+        Rectangle aCropRect;
 
         // convert crops to pixel
         if(rAttr.IsCropped())
         {
-            if( aMapGraph == MapUnit::MapPixel )
+            if( aMapGraph == MAP_PIXEL )
             {
-                // crops are in 1/100th mm -> to MapUnit::MapPixel
+                // crops are in 1/100th mm -> to MAP_PIXEL
                 aCropLeftTop = Application::GetDefaultDevice()->LogicToPixel(
                     Size(rAttr.GetLeftCrop(), rAttr.GetTopCrop()),
                     aMap100);
@@ -757,7 +817,7 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
             }
             else
             {
-                // crops are in GraphicObject units -> to MapUnit::MapPixel
+                // crops are in GraphicObject units -> to MAP_PIXEL
                 aCropLeftTop = Application::GetDefaultDevice()->LogicToPixel(
                     Size(rAttr.GetLeftCrop(), rAttr.GetTopCrop()),
                     aMapGraph);
@@ -797,7 +857,7 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
             }
 
             // setup crop rectangle in pixel
-            aCropRect = tools::Rectangle( aCropLeftTop.Width(), aCropLeftTop.Height(),
+            aCropRect = Rectangle( aCropLeftTop.Width(), aCropLeftTop.Height(),
                                  aSrcSizePixel.Width() - aCropRightBottom.Width(),
                                  aSrcSizePixel.Height() - aCropRightBottom.Height() );
         }
@@ -805,16 +865,17 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
         // #105641# Also crop animations
         if( aTransGraphic.IsAnimated() )
         {
+            sal_uInt16 nFrame;
             Animation aAnim( aTransGraphic.GetAnimation() );
 
-            for( size_t nFrame=0; nFrame<aAnim.Count(); ++nFrame )
+            for( nFrame=0; nFrame<aAnim.Count(); ++nFrame )
             {
                 AnimationBitmap aAnimBmp( aAnim.Get( nFrame ) );
 
-                if( !aCropRect.IsInside( tools::Rectangle(aAnimBmp.aPosPix, aAnimBmp.aSizePix) ) )
+                if( !aCropRect.IsInside( Rectangle(aAnimBmp.aPosPix, aAnimBmp.aSizePix) ) )
                 {
                     // setup actual cropping (relative to frame position)
-                    tools::Rectangle aCropRectRel( aCropRect );
+                    Rectangle aCropRectRel( aCropRect );
                     aCropRectRel.Move( -aAnimBmp.aPosPix.X(),
                                        -aAnimBmp.aPosPix.Y() );
 
@@ -851,7 +912,7 @@ Graphic GraphicObject::GetTransformedGraphic( const Size& rDestSize, const MapMo
                 Point aPosOffset( aCropLeftTop.Width() < 0 ? -aCropLeftTop.Width() : 0,
                                   aCropLeftTop.Height() < 0 ? -aCropLeftTop.Height() : 0 );
 
-                for( size_t nFrame=0; nFrame<aAnim.Count(); ++nFrame )
+                for( nFrame=0; nFrame<aAnim.Count(); ++nFrame )
                 {
                     AnimationBitmap aAnimBmp( aAnim.Get( nFrame ) );
 
@@ -892,7 +953,7 @@ Graphic GraphicObject::GetTransformedGraphic( const GraphicAttr* pAttr ) const /
     {
         if( aAttr.IsSpecialDrawMode() || aAttr.IsAdjusted() || aAttr.IsMirrored() || aAttr.IsRotated() || aAttr.IsTransparent() )
         {
-            if( GetType() == GraphicType::Bitmap )
+            if( GetType() == GRAPHIC_BITMAP )
             {
                 if( IsAnimated() )
                 {
@@ -917,7 +978,7 @@ Graphic GraphicObject::GetTransformedGraphic( const GraphicAttr* pAttr ) const /
         }
         else
         {
-            if( ( GetType() == GraphicType::Bitmap ) && IsAnimated() )
+            if( ( GetType() == GRAPHIC_BITMAP ) && IsAnimated() )
             {
                 Animation aAnimation( maGraphic.GetAnimation() );
                 aAnimation.SetLoopCount( mnAnimationLoopCount );
@@ -935,8 +996,8 @@ bool GraphicObject::SwapOut()
 {
     const bool bRet = !mbAutoSwapped && maGraphic.SwapOut();
 
-    if (bRet)
-        mpGlobalMgr->ImplGraphicObjectWasSwappedOut( *this );
+    if( bRet && mpMgr )
+        mpMgr->ImplGraphicObjectWasSwappedOut( *this );
 
     return bRet;
 }
@@ -954,8 +1015,8 @@ bool GraphicObject::SwapOut( SvStream* pOStm )
         bRet = bRet && maGraphic.SwapOut( pOStm );
     }
 
-    if (bRet)
-        mpGlobalMgr->ImplGraphicObjectWasSwappedOut(*this);
+    if( bRet && mpMgr )
+        mpMgr->ImplGraphicObjectWasSwappedOut( *this );
 
     return bRet;
 }
@@ -973,8 +1034,8 @@ bool GraphicObject::SwapIn()
     {
         bRet = maGraphic.SwapIn();
 
-        if (bRet)
-            mpGlobalMgr->ImplGraphicObjectWasSwappedIn(*this);
+        if( bRet && mpMgr )
+            mpMgr->ImplGraphicObjectWasSwappedIn( *this );
     }
 
     if( bRet )
@@ -991,11 +1052,12 @@ void GraphicObject::SetSwapState()
     {
         mbAutoSwapped = true;
 
-        mpGlobalMgr->ImplGraphicObjectWasSwappedOut(*this);
+        if( mpMgr )
+            mpMgr->ImplGraphicObjectWasSwappedOut( *this );
     }
 }
 
-IMPL_LINK_NOARG(GraphicObject, ImplAutoSwapOutHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(GraphicObject, ImplAutoSwapOutHdl, Timer *, void)
 {
     if( !IsSwappedOut() )
     {
@@ -1022,8 +1084,8 @@ IMPL_LINK_NOARG(GraphicObject, ImplAutoSwapOutHdl, Timer *, void)
         mbIsInSwapOut = false;
     }
 
-    if (mxSwapOutTimer)
-        mxSwapOutTimer->Start();
+    if( mpSwapOutTimer )
+        mpSwapOutTimer->Start();
 }
 
 #define UNO_NAME_GRAPHOBJ_URLPREFIX "vnd.sun.star.GraphicObject:"
@@ -1091,12 +1153,12 @@ basegfx::B2DVector GraphicObject::calculateCropScaling(
     double fRightCrop,
     double fBottomCrop) const
 {
-    const MapMode aMapMode100thmm(MapUnit::Map100thMM);
+    const MapMode aMapMode100thmm(MAP_100TH_MM);
     Size aBitmapSize(GetPrefSize());
     double fFactorX(1.0);
     double fFactorY(1.0);
 
-    if(MapUnit::MapPixel == GetPrefMapMode().GetMapUnit())
+    if(MAP_PIXEL == GetPrefMapMode().GetMapUnit())
     {
         aBitmapSize = Application::GetDefaultDevice()->PixelToLogic(aBitmapSize, aMapMode100thmm);
     }
@@ -1121,5 +1183,14 @@ basegfx::B2DVector GraphicObject::calculateCropScaling(
     return basegfx::B2DVector(fFactorX,fFactorY);
 }
 
+// restart SwapOut timer
+void GraphicObject::restartSwapOutTimer() const
+{
+    if( mpSwapOutTimer && mpSwapOutTimer->IsActive() )
+    {
+        mpSwapOutTimer->Stop();
+        mpSwapOutTimer->Start();
+    }
+}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

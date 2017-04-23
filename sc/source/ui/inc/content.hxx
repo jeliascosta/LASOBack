@@ -43,6 +43,7 @@ const sal_uLong SC_CONTENT_NOCHILD  = ~0UL;
 class ScContentTree : public SvTreeListBox
 {
     VclPtr<ScNavigatorDlg>  pParentWindow;
+    ImageList               aEntryImages;
     o3tl::enumarray<ScContentId, SvTreeListEntry*> pRootNodes;
     ScContentId             nRootType;          // set as Root
     OUString                aManualDoc;         // Switched in Navigator (Title)
@@ -97,10 +98,11 @@ class ScContentTree : public SvTreeListBox
 
     ScDocument* GetSourceDocument();
 
-    DECL_LINK( ContentDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK( ExecDragHdl, void*, void );
+    DECL_LINK_TYPED( ContentDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( ExecDragHdl, void*, void );
 public:
     SvTreeListEntry* pTmpEntry;
+    bool m_bFirstPaint;
 
 protected:
 
@@ -116,8 +118,8 @@ protected:
     virtual void        InitEntry(SvTreeListEntry*,const OUString&,const Image&,const Image&, SvLBoxButtonKind) override;
 
 public:
-    ScContentTree(vcl::Window* pParent, ScNavigatorDlg* pNavigatorDlg);
-    virtual ~ScContentTree() override;
+            ScContentTree( vcl::Window* pParent, const ResId& rResId );
+            virtual ~ScContentTree();
     virtual void dispose() override;
 
     OUString getAltLongDescText(SvTreeListEntry* pEntry, bool isAltText) const;
@@ -128,7 +130,6 @@ public:
     void     SetNavigatorDlgFlag(bool isInNavigateDlg){ bisInNavigatoeDlg=isInNavigateDlg;};
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
-    virtual Size    GetOptimalSize() const override;
 
     void    InitWindowBits( bool bButtons );
 

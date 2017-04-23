@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include "service.hxx"
 #include "vbahyperlink.hxx"
 #include <vbahelper/helperdecl.hxx>
 #include <com/sun/star/container/XIndexAccess.hpp>
@@ -34,7 +31,7 @@ using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
 ScVbaHyperlink::ScVbaHyperlink( const uno::Sequence< uno::Any >& rArgs,
-        const uno::Reference< uno::XComponentContext >& rxContext ) :
+        const uno::Reference< uno::XComponentContext >& rxContext ) throw (lang::IllegalArgumentException, uno::RuntimeException) :
     HyperlinkImpl_BASE( getXSomethingFromArgs< XHelperInterface >( rArgs, 0 ), rxContext ),
     mxCell( getXSomethingFromArgs< table::XCell >( rArgs, 1, false ) ),
     mnType( office::MsoHyperlinkType::msoHyperlinkRange )
@@ -47,7 +44,7 @@ ScVbaHyperlink::ScVbaHyperlink( const uno::Sequence< uno::Any >& rArgs,
 ScVbaHyperlink::ScVbaHyperlink( const uno::Reference< XHelperInterface >& rxAnchor,
         const uno::Reference< uno::XComponentContext >& rxContext,
         const uno::Any& rAddress, const uno::Any& rSubAddress,
-        const uno::Any& rScreenTip, const uno::Any& rTextToDisplay ) :
+        const uno::Any& rScreenTip, const uno::Any& rTextToDisplay ) throw (uno::RuntimeException) :
     HyperlinkImpl_BASE( rxAnchor, rxContext ) // parent of Hyperlink is the anchor object
 {
     // extract parameters, Address must not be empty
@@ -105,52 +102,52 @@ ScVbaHyperlink::~ScVbaHyperlink()
 {
 }
 
-OUString ScVbaHyperlink::getName()
+OUString ScVbaHyperlink::getName() throw (uno::RuntimeException, std::exception)
 {
     // it seems this attribute is same as TextToDisplay
     return getTextToDisplay();
 }
 
-void ScVbaHyperlink::setName( const OUString& rName )
+void ScVbaHyperlink::setName( const OUString& rName ) throw (uno::RuntimeException, std::exception)
 {
     setTextToDisplay( rName );
 }
 
-OUString ScVbaHyperlink::getAddress()
+OUString ScVbaHyperlink::getAddress() throw (uno::RuntimeException, std::exception)
 {
     return getUrlComponents().first;
 }
 
-void ScVbaHyperlink::setAddress( const OUString& rAddress )
+void ScVbaHyperlink::setAddress( const OUString& rAddress ) throw (uno::RuntimeException, std::exception)
 {
     UrlComponents aUrlComp = getUrlComponents();
     aUrlComp.first = rAddress;
     setUrlComponents( aUrlComp );
 }
 
-OUString ScVbaHyperlink::getSubAddress()
+OUString ScVbaHyperlink::getSubAddress() throw (uno::RuntimeException, std::exception)
 {
     return getUrlComponents().second;
 }
 
-void ScVbaHyperlink::setSubAddress( const OUString& rSubAddress )
+void ScVbaHyperlink::setSubAddress( const OUString& rSubAddress ) throw (uno::RuntimeException, std::exception)
 {
     UrlComponents aUrlComp = getUrlComponents();
     aUrlComp.second = rSubAddress;
     setUrlComponents( aUrlComp );
 }
 
-OUString SAL_CALL ScVbaHyperlink::getScreenTip()
+OUString SAL_CALL ScVbaHyperlink::getScreenTip() throw (uno::RuntimeException, std::exception)
 {
     return maScreenTip;
 }
 
-void SAL_CALL ScVbaHyperlink::setScreenTip( const OUString& rScreenTip )
+void SAL_CALL ScVbaHyperlink::setScreenTip( const OUString& rScreenTip ) throw (uno::RuntimeException, std::exception)
 {
     maScreenTip = rScreenTip;
 }
 
-OUString ScVbaHyperlink::getTextToDisplay()
+OUString ScVbaHyperlink::getTextToDisplay() throw (uno::RuntimeException, std::exception)
 {
     ensureTextField();
     OUString aTextToDisplay;
@@ -158,18 +155,18 @@ OUString ScVbaHyperlink::getTextToDisplay()
     return aTextToDisplay;
 }
 
-void ScVbaHyperlink::setTextToDisplay( const OUString& rTextToDisplay )
+void ScVbaHyperlink::setTextToDisplay( const OUString& rTextToDisplay ) throw (uno::RuntimeException, std::exception)
 {
     ensureTextField();
     mxTextField->setPropertyValue("Representation", uno::Any( rTextToDisplay ) );
 }
 
-sal_Int32 SAL_CALL ScVbaHyperlink::getType()
+sal_Int32 SAL_CALL ScVbaHyperlink::getType() throw (uno::RuntimeException, std::exception)
 {
     return mnType;
 }
 
-uno::Reference< excel::XRange > SAL_CALL ScVbaHyperlink::getRange()
+uno::Reference< excel::XRange > SAL_CALL ScVbaHyperlink::getRange() throw (uno::RuntimeException, std::exception)
 {
     if( mnType == office::MsoHyperlinkType::msoHyperlinkRange )
     {
@@ -188,7 +185,7 @@ uno::Reference< excel::XRange > SAL_CALL ScVbaHyperlink::getRange()
     throw uno::RuntimeException();
 }
 
-uno::Reference< msforms::XShape > SAL_CALL ScVbaHyperlink::getShape()
+uno::Reference< msforms::XShape > SAL_CALL ScVbaHyperlink::getShape() throw (uno::RuntimeException, std::exception)
 {
     // error if called at a range Hyperlink object
     return uno::Reference< msforms::XShape >( getParent(), uno::UNO_QUERY_THROW );
@@ -198,13 +195,13 @@ VBAHELPER_IMPL_XHELPERINTERFACE( ScVbaHyperlink, "ooo.vba.excel.Hyperlink" )
 
 // private --------------------------------------------------------------------
 
-void ScVbaHyperlink::ensureTextField()
+void ScVbaHyperlink::ensureTextField() throw (uno::RuntimeException)
 {
     if( !mxTextField.is() )
         throw uno::RuntimeException();
 }
 
-ScVbaHyperlink::UrlComponents ScVbaHyperlink::getUrlComponents()
+ScVbaHyperlink::UrlComponents ScVbaHyperlink::getUrlComponents() throw (uno::RuntimeException)
 {
     ensureTextField();
     OUString aUrl;
@@ -215,7 +212,7 @@ ScVbaHyperlink::UrlComponents ScVbaHyperlink::getUrlComponents()
     return UrlComponents( aUrl.copy( 0, nHashPos ), aUrl.copy( nHashPos + 1 ) );
 }
 
-void ScVbaHyperlink::setUrlComponents( const UrlComponents& rUrlComp )
+void ScVbaHyperlink::setUrlComponents( const UrlComponents& rUrlComp ) throw (uno::RuntimeException)
 {
     ensureTextField();
     OUStringBuffer aUrl( rUrlComp.first );
@@ -227,8 +224,8 @@ void ScVbaHyperlink::setUrlComponents( const UrlComponents& rUrlComp )
 namespace hyperlink
 {
 namespace sdecl = comphelper::service_decl;
-sdecl::vba_service_class_<ScVbaHyperlink, sdecl::with_args<true> > const serviceImpl;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::vba_service_class_<ScVbaHyperlink, sdecl::with_args<true> > serviceImpl;
+extern sdecl::ServiceDecl const serviceDecl(
     serviceImpl,
     "ScVbaHyperlink",
     "ooo.vba.excel.Hyperlink" );

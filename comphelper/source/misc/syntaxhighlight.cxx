@@ -281,6 +281,7 @@ public:
     HighlighterLanguage const aLanguage;
 
     explicit Tokenizer( HighlighterLanguage aLang );
+    ~Tokenizer();
 
     void getHighlightPortions(const OUString& rLine,
                                /*out*/std::vector<HighlightPortion>& portions) const;
@@ -664,6 +665,10 @@ SyntaxHighlighter::Tokenizer::Tokenizer( HighlighterLanguage aLang ): aLanguage(
 
     ppListKeyWords = nullptr;
     nKeyWordCount = 0;
+}
+
+SyntaxHighlighter::Tokenizer::~Tokenizer()
+{
 }
 
 void SyntaxHighlighter::Tokenizer::getHighlightPortions(const OUString& rLine,

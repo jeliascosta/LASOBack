@@ -28,7 +28,7 @@
 using namespace ::svxform;
 
 
-::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL SvxFmMSFactory::createInstance(const OUString& rServiceSpecifier)
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL SvxFmMSFactory::createInstance(const OUString& rServiceSpecifier) throw( ::com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception )
 {
     ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  xRet;
     if ( rServiceSpecifier.startsWith( "com.sun.star.form.component." ) )
@@ -47,29 +47,42 @@ using namespace ::svxform;
 }
 
 
-::com::sun::star::uno::Sequence< OUString > SAL_CALL SvxFmMSFactory::getAvailableServiceNames()
+// Encapsulation violation: We *know* that
+// SvxUnoDrawMSFactory::createInstanceWithArguments() always throws.
+
+SAL_WNOUNREACHABLE_CODE_PUSH
+
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL  SvxFmMSFactory::createInstanceWithArguments(const OUString& ServiceSpecifier, const ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any >& Arguments) throw( ::com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception )
 {
-    static const OUStringLiteral aSvxComponentServiceNameList[] =
+    return SvxUnoDrawMSFactory::createInstanceWithArguments(ServiceSpecifier, Arguments );
+}
+
+SAL_WNOUNREACHABLE_CODE_POP
+
+
+::com::sun::star::uno::Sequence< OUString > SAL_CALL SvxFmMSFactory::getAvailableServiceNames() throw( ::com::sun::star::uno::RuntimeException, std::exception )
+{
+    static const OUString aSvxComponentServiceNameList[] =
     {
-        FM_SUN_COMPONENT_TEXTFIELD,
-        FM_SUN_COMPONENT_FORM,
-        FM_SUN_COMPONENT_LISTBOX,
-        FM_SUN_COMPONENT_COMBOBOX,
-        FM_SUN_COMPONENT_RADIOBUTTON,
-        FM_SUN_COMPONENT_GROUPBOX,
-        FM_SUN_COMPONENT_FIXEDTEXT,
-        FM_SUN_COMPONENT_COMMANDBUTTON,
-        FM_SUN_COMPONENT_CHECKBOX,
-        FM_SUN_COMPONENT_GRIDCONTROL,
-        FM_SUN_COMPONENT_IMAGEBUTTON,
-        FM_SUN_COMPONENT_FILECONTROL,
-        FM_SUN_COMPONENT_TIMEFIELD,
-        FM_SUN_COMPONENT_DATEFIELD,
-        FM_SUN_COMPONENT_NUMERICFIELD,
-        FM_SUN_COMPONENT_CURRENCYFIELD,
-        FM_SUN_COMPONENT_PATTERNFIELD,
-        FM_SUN_COMPONENT_HIDDENCONTROL,
-        FM_SUN_COMPONENT_IMAGECONTROL
+        OUString(FM_SUN_COMPONENT_TEXTFIELD),
+        OUString(FM_SUN_COMPONENT_FORM),
+        OUString(FM_SUN_COMPONENT_LISTBOX),
+        OUString(FM_SUN_COMPONENT_COMBOBOX),
+        OUString(FM_SUN_COMPONENT_RADIOBUTTON),
+        OUString(FM_SUN_COMPONENT_GROUPBOX),
+        OUString(FM_SUN_COMPONENT_FIXEDTEXT),
+        OUString(FM_SUN_COMPONENT_COMMANDBUTTON),
+        OUString(FM_SUN_COMPONENT_CHECKBOX),
+        OUString(FM_SUN_COMPONENT_GRIDCONTROL),
+        OUString(FM_SUN_COMPONENT_IMAGEBUTTON),
+        OUString(FM_SUN_COMPONENT_FILECONTROL),
+        OUString(FM_SUN_COMPONENT_TIMEFIELD),
+        OUString(FM_SUN_COMPONENT_DATEFIELD),
+        OUString(FM_SUN_COMPONENT_NUMERICFIELD),
+        OUString(FM_SUN_COMPONENT_CURRENCYFIELD),
+        OUString(FM_SUN_COMPONENT_PATTERNFIELD),
+        OUString(FM_SUN_COMPONENT_HIDDENCONTROL),
+        OUString(FM_SUN_COMPONENT_IMAGECONTROL)
     };
 
     static const sal_uInt16 nSvxComponentServiceNameListCount = SAL_N_ELEMENTS(aSvxComponentServiceNameList);

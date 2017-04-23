@@ -36,15 +36,19 @@ public:
 
     // XMimeContentTypeFactory
 
-    virtual css::uno::Reference< css::datatransfer::XMimeContentType > SAL_CALL createMimeContentType( const OUString& aContentType ) override;
+    virtual css::uno::Reference< css::datatransfer::XMimeContentType > SAL_CALL createMimeContentType( const OUString& aContentType )
+        throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
 
-    virtual OUString SAL_CALL getImplementationName(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw(css::uno::RuntimeException, std::exception) override;
 
 private:
     ::osl::Mutex                                                                           m_aMutex;

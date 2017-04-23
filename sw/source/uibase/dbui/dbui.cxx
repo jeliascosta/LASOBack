@@ -108,7 +108,7 @@ void CreateMonitor::SetCurrentPosition( sal_Int32 nCurrent )
 CancelableDialog::CancelableDialog( vcl::Window *pParent, bool modal,
         const OUString& rID, const OUString& rUIXMLDescription )
     : Dialog( pParent , rID, rUIXMLDescription,
-              modal ? WindowType::MODALDIALOG : WindowType::MODELESSDIALOG )
+              modal ? WINDOW_MODALDIALOG : WINDOW_MODELESSDIALOG )
     , mbModal( modal )
 {
     get(m_pCancelButton, "cancel");

@@ -20,16 +20,14 @@
 #define INCLUDED_SW_SOURCE_UIBASE_INC_NAVIPI_HXX
 
 #include <vcl/lstbox.hxx>
-#include <vcl/toolbox.hxx>
 #include <vcl/idle.hxx>
 #include <svl/lstner.hxx>
 #include <svtools/transfer.hxx>
 #include <sfx2/childwin.hxx>
 #include <sfx2/ctrlitem.hxx>
 #include <sfx2/tbxctrl.hxx>
-#include <svx/sidebar/PanelLayout.hxx>
 #include <conttree.hxx>
-#include <ndarr.hxx>
+#include <popbox.hxx>
 
 class SwWrtShell;
 class SwNavigationPI;
@@ -40,37 +38,29 @@ class SwView;
 class SwNavigationConfig;
 class SfxObjectShellLock;
 class SfxChildWindowContext;
+class SwNavigationPI;
 enum class RegionMode;
 class SpinField;
 
-class SwNavHelpToolBox : public ToolBox
+class SwNavHelpToolBox : public SwHelpToolBox
 {
-    VclPtr<SwNavigationPI> m_xDialog;
     virtual void    MouseButtonDown(const MouseEvent &rEvt) override;
     virtual void    RequestHelp( const HelpEvent& rHEvt ) override;
-    virtual void    dispose() override;
-public:
-    SwNavHelpToolBox(Window* pParent);
-    void SetDialog(SwNavigationPI* pDialog)
-    {
-        m_xDialog = pDialog;
-    }
-    ~SwNavHelpToolBox() override;
+    public:
+        SwNavHelpToolBox(SwNavigationPI* pParent, const ResId &rResId);
 };
 
-class SwNavigationPI : public PanelLayout,
-                       public SfxControllerItem, public SfxListener
+class SwNavigationPI : public vcl::Window,
+                        public SfxControllerItem, public SfxListener
 {
     friend class SwNavigationChild;
     friend class SwContentTree;
     friend class SwGlobalTree;
 
     VclPtr<SwNavHelpToolBox>    m_aContentToolBox;
-    VclPtr<ToolBox>             m_aGlobalToolBox;
-    VclPtr<NumEditAction>       m_xEdit;
-    VclPtr<VclContainer>        m_aContentBox;
+    VclPtr<SwHelpToolBox>       m_aGlobalToolBox;
+    ImageList                   m_aContentImageList;
     VclPtr<SwContentTree>       m_aContentTree;
-    VclPtr<VclContainer>        m_aGlobalBox;
     VclPtr<SwGlobalTree>        m_aGlobalTree;
     VclPtr<ListBox>             m_aDocListBox;
     Idle                m_aPageChgIdle;
@@ -86,12 +76,18 @@ class SwNavigationPI : public PanelLayout,
     VclPtr<SfxPopupWindow>      m_pPopupWindow;
     VclPtr<SfxPopupWindow>      m_pFloatingWindow;
 
+    SfxChildWindowContext* m_pContextWin;
+
     SwNavigationConfig  *m_pConfig;
     SfxBindings         &m_rBindings;
 
+    long    m_nDocLBIniHeight;
+    long    m_nWishWidth;
     sal_uInt16  m_nAutoMarkIdx;
     RegionMode  m_nRegionMode; // 0 - URL, 1 - region with link 2 - region without link
-    Size        m_aExpandedSize;
+    short   m_nZoomIn;
+    short   m_nZoomOutInit;
+    short   m_nZoomOut;
 
     bool    m_bIsZoomedIn : 1;
     bool    m_bPageCtrlsVisible : 1;
@@ -104,44 +100,51 @@ class SwNavigationPI : public PanelLayout,
     void FillBox();
     void MakeMark();
 
-    DECL_LINK( DocListBoxSelectHdl, ListBox&, void );
-    DECL_LINK( ToolBoxSelectHdl, ToolBox *, void );
-    DECL_LINK( ToolBoxClickHdl, ToolBox *, void );
-    DECL_LINK( ToolBoxDropdownClickHdl, ToolBox*, void );
-    DECL_LINK( EditAction, NumEditAction&, void );
-    DECL_LINK( EditGetFocus, Control&, void );
-    DECL_LINK( DoneLink, SfxPoolItem *, void );
-    DECL_LINK( MenuSelectHdl, Menu *, bool );
-    DECL_LINK( ChangePageHdl, Timer*, void );
-    DECL_LINK( PageEditModifyHdl, SpinField&, void );
-    DECL_LINK( PopupModeEndHdl, FloatingWindow*, void );
-    DECL_LINK( ClosePopupWindow, SfxPopupWindow *, void );
+    DECL_LINK_TYPED( DocListBoxSelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( ToolBoxSelectHdl, ToolBox *, void );
+    DECL_LINK_TYPED( ToolBoxClickHdl, ToolBox *, void );
+    DECL_LINK_TYPED( ToolBoxDropdownClickHdl, ToolBox*, void );
+    DECL_LINK_TYPED( EditAction, NumEditAction&, void );
+    DECL_LINK_TYPED( EditGetFocus, Control&, void );
+    DECL_LINK_TYPED( DoneLink, SfxPoolItem *, void );
+    DECL_LINK_TYPED( MenuSelectHdl, Menu *, bool );
+    DECL_LINK_TYPED( ChangePageHdl, Idle*, void );
+    DECL_LINK_TYPED( PageEditModifyHdl, SpinField&, void );
+    DECL_LINK_TYPED( PopupModeEndHdl, FloatingWindow*, void );
+    DECL_LINK_TYPED( ClosePopupWindow, SfxPopupWindow *, void );
     void UsePage();
 
+    void InitImageList();
     void SetPopupWindow( SfxPopupWindow* );
 
+    using Window::Notify;
+    using Window::StateChanged;
+
 protected:
+
+    virtual         void Resize() override;
+    virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
     // release ObjectShellLock early enough for app end
     virtual void    Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
     NumEditAction&  GetPageEdit();
-    void            ToggleTree();
+    bool            ToggleTree();
     void            SetGlobalMode(bool bSet) {m_bGlobalMode = bSet;}
 
 public:
 
-    SwNavigationPI(SfxBindings*, vcl::Window*);
-    virtual ~SwNavigationPI() override;
+    SwNavigationPI(SfxBindings*, SfxChildWindowContext*, vcl::Window*);
+    virtual ~SwNavigationPI();
     virtual void    dispose() override;
 
+    void            GotoPage(); // jump to page; bindable function
+
     void            UpdateListBox();
-    void            MoveOutline(SwOutlineNodes::size_type nSource, SwOutlineNodes::size_type nTarget, bool bWithCilds);
+    void            MoveOutline(sal_uInt16 nSource, sal_uInt16 nTarget, bool bWithCilds);
 
     virtual void    StateChanged( sal_uInt16 nSID, SfxItemState eState,
                                             const SfxPoolItem* pState ) override;
-
-    virtual void    StateChanged(StateChangedType nStateChange) override;
 
     static OUString CreateDropFileName( TransferableDataHelper& rData );
     static OUString CleanEntry(const OUString& rEntry);
@@ -156,7 +159,7 @@ public:
     bool            IsGlobalMode() const {return    m_bGlobalMode;}
 
     SwView*         GetCreateView() const;
-    void            CreateNavigationTool(const tools::Rectangle& rRect, bool bSetFocus, vcl::Window *pParent);
+    void            CreateNavigationTool(const Rectangle& rRect, bool bSetFocus, vcl::Window *pParent);
 };
 
 class SwNavigationChild : public SfxChildWindowContext
@@ -170,7 +173,7 @@ public:
     //! soon obsolete !
     static  SfxChildWindowContext* CreateImpl(vcl::Window *pParent,
                 SfxBindings *pBindings, SfxChildWinInfo* pInfo );
-    static  void RegisterChildWindowContext(SfxModule *pMod);
+    static  void RegisterChildWindowContext(SfxModule *pMod=nullptr);
 };
 
 #endif

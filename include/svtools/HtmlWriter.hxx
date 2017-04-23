@@ -18,7 +18,7 @@
 
 class SvStream;
 
-class SVT_DLLPUBLIC HtmlWriter final
+class SVT_DLLPUBLIC HtmlWriter
 {
 private:
     std::vector<OString> maElementStack;
@@ -28,10 +28,11 @@ private:
     bool mbElementOpen;
     bool mbContentWritten;
     bool mbPrettyPrint;
+    rtl_TextEncoding maEncoding;
 
 public:
     HtmlWriter(SvStream& rStream);
-    ~HtmlWriter();
+    virtual ~HtmlWriter();
 
     void prettyPrint(bool b);
 

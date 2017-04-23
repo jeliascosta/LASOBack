@@ -60,7 +60,7 @@ namespace pcr
     namespace
     {
 
-        struct StringCompare : public std::unary_function< OUString, bool >
+        struct StringCompare : public ::std::unary_function< OUString, bool >
         {
         private:
             OUString m_sReference;
@@ -68,7 +68,7 @@ namespace pcr
         public:
             explicit StringCompare( const OUString& _rReference ) : m_sReference( _rReference ) { }
 
-            bool operator()( const OUString& _rCompare )
+            inline bool operator()( const OUString& _rCompare )
             {
                 return ( _rCompare == m_sReference );
             }
@@ -306,7 +306,7 @@ namespace pcr
             OSL_ENSURE( xBindingProps.is() || !_rxBinding.is(), "CellBindingHelper::getAddressFromCellBinding: no property set for the binding!" );
             if ( xBindingProps.is() )
             {
-                bReturn = ( xBindingProps->getPropertyValue( PROPERTY_BOUND_CELL ) >>= _rAddress );
+                bReturn = (bool)( xBindingProps->getPropertyValue( PROPERTY_BOUND_CELL ) >>= _rAddress );
             }
         }
         catch( const Exception& )
@@ -382,7 +382,7 @@ namespace pcr
             if ( xDocumentFactory.is() )
                 aAvailableServices = xDocumentFactory->getAvailableServiceNames( );
 
-            const OUString* pFound = std::find_if(
+            const OUString* pFound = ::std::find_if(
                 aAvailableServices.getConstArray(),
                 aAvailableServices.getConstArray() + aAvailableServices.getLength(),
                 StringCompare( _rService )

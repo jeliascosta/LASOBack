@@ -24,7 +24,7 @@
 #include "mvtabdlg.hxx"
 #include "document.hxx"
 #include "docsh.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 #include "global.hxx"
 #include "scresid.hxx"
 #include "globstr.hrc"
@@ -160,10 +160,10 @@ void ScMoveTableDlg::CheckNewTabName()
         return;
     }
 
-    bool bMoveInCurrentDoc = pBtnMove->IsChecked() && pLbDoc->GetSelectEntryPos() == mnCurrentDocPos;
+    bool bMoveInCurrentDoc = (pBtnMove->IsChecked() && IsCurrentDocSelected());
     bool bFound = false;
     const sal_Int32 nLast = pLbTable->GetEntryCount();
-    for ( sal_Int32 i=0; i<nLast && !bFound; ++i )
+    for ( sal_uInt16 i=0; i<nLast && !bFound; ++i )
     {
         if ( aNewName.equals(pLbTable->GetEntry(i)) )
         {
@@ -193,6 +193,11 @@ ScDocument* ScMoveTableDlg::GetSelectedDoc()
 {
     sal_Int32 nPos = pLbDoc->GetSelectEntryPos();
     return static_cast<ScDocument*>(pLbDoc->GetEntryData(nPos));
+}
+
+bool ScMoveTableDlg::IsCurrentDocSelected() const
+{
+    return pLbDoc->GetSelectEntryPos() == mnCurrentDocPos;
 }
 
 void ScMoveTableDlg::Init()
@@ -250,13 +255,13 @@ void ScMoveTableDlg::InitDocListBox()
 
 // Handler:
 
-IMPL_LINK( ScMoveTableDlg, CheckBtnHdl, RadioButton&, rBtn, void )
+IMPL_LINK_TYPED( ScMoveTableDlg, CheckBtnHdl, RadioButton&, rBtn, void )
 {
     if (&rBtn == pBtnCopy)
         ResetRenameInput();
 }
 
-IMPL_LINK_NOARG(ScMoveTableDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScMoveTableDlg, OkHdl, Button*, void)
 {
     const sal_Int32 nDocSel  = pLbDoc->GetSelectEntryPos();
     const sal_Int32 nDocLast = pLbDoc->GetEntryCount()-1;
@@ -289,7 +294,7 @@ IMPL_LINK_NOARG(ScMoveTableDlg, OkHdl, Button*, void)
     EndDialog( RET_OK );
 }
 
-IMPL_LINK( ScMoveTableDlg, SelHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( ScMoveTableDlg, SelHdl, ListBox&, rLb, void )
 {
     if ( &rLb == pLbDoc )
     {
@@ -314,7 +319,7 @@ IMPL_LINK( ScMoveTableDlg, SelHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK( ScMoveTableDlg, CheckNameHdl, Edit&, rEdt, void )
+IMPL_LINK_TYPED( ScMoveTableDlg, CheckNameHdl, Edit&, rEdt, void )
 {
     if ( &rEdt == pEdTabName )
     {

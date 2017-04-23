@@ -40,7 +40,7 @@ gb_OSDEFS := \
 	-DUNX \
 	-D_REENTRANT \
 	-DNO_PTHREAD_PRIORITY \
-	$(LFS_CFLAGS) \
+	$(EXTRA_CDEFS) \
 
 gb_CFLAGS := \
 	$(gb_CFLAGS_COMMON) \
@@ -61,7 +61,7 @@ gb_OBJCFLAGS := -x objective-c
 gb_COMPILERDEFS += \
 		-DBOOST_DETAIL_NO_CONTAINER_FWD
 
-gb_DEBUG_CFLAGS := -fno-inline
+gb_DEBUG_CFLAGS := -g -fno-inline
 
 # LinkTarget class
 
@@ -69,6 +69,13 @@ gb_LinkTarget_CFLAGS := $(gb_CFLAGS)
 gb_LinkTarget_CXXFLAGS := $(gb_CXXFLAGS)
 gb_LinkTarget_OBJCXXFLAGS := $(gb_CXXFLAGS) $(gb_OBJCXXFLAGS)
 gb_LinkTarget_OBJCFLAGS := $(gb_CFLAGS) $(gb_OBJCFLAGS)
+
+ifeq ($(gb_SYMBOL),$(true))
+gb_LinkTarget_CFLAGS += -g
+gb_LinkTarget_CXXFLAGS += -g
+gb_LinkTarget_OBJCXXFLAGS += -g
+gb_LinkTarget_OBJCFLAGS += -g
+endif
 
 define gb_LinkTarget__get_liblinkflags
 $(patsubst lib%.a,-l%,$(foreach lib,$(1),$(call gb_Library_get_filename,$(lib))))

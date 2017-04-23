@@ -20,18 +20,11 @@
 #include <com/sun/star/frame/Desktop.hpp>
 #include <com/sun/star/frame/XModel2.hpp>
 
-#include <com/sun/star/awt/Gradient.hpp>
-#include <com/sun/star/drawing/FillStyle.hpp>
-#include <com/sun/star/drawing/XDrawPagesSupplier.hpp>
-#include <com/sun/star/drawing/XDrawPages.hpp>
-#include <com/sun/star/drawing/XDrawPage.hpp>
-#include <com/sun/star/drawing/XShapes.hpp>
-#include <com/sun/star/container/XIndexAccess.hpp>
-
 #include <vcl/scheduler.hxx>
 #include <osl/thread.hxx>
 #include <FactoryIds.hxx>
 #include <sdmod.hxx>
+#include <tools/shl.hxx>
 #include <svx/sdr/table/tablecontroller.hxx>
 #include <sfx2/request.hxx>
 #include <svx/svxids.hrc>
@@ -59,14 +52,12 @@ public:
     void testTdf96708();
     void testTdf99396();
     void testTdf99396TextEdit();
-    void testFillGradient();
 
     CPPUNIT_TEST_SUITE(SdMiscTest);
     CPPUNIT_TEST(testTdf96206);
     CPPUNIT_TEST(testTdf96708);
     CPPUNIT_TEST(testTdf99396);
     CPPUNIT_TEST(testTdf99396TextEdit);
-    CPPUNIT_TEST(testFillGradient);
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -84,7 +75,7 @@ sd::DrawDocShellRef SdMiscTest::Load(const OUString& rURL, sal_Int32 nFormat)
 
     // 1. Open the document
     sd::DrawDocShellRef xDocSh = loadURL(rURL, nFormat);
-    CPPUNIT_ASSERT_MESSAGE("Failed to load file.", xDocSh.is());
+    CPPUNIT_ASSERT_MESSAGE("Failed to load file.", xDocSh.Is());
 
     uno::Reference< frame::XModel2 > xModel2(xDocSh->GetModel(), uno::UNO_QUERY);
     CPPUNIT_ASSERT(xModel2.is());
@@ -124,11 +115,11 @@ void SdMiscTest::testTdf96206()
     auto pSSVS = sd::slidesorter::SlideSorterViewShell::GetSlideSorter(pViewShell->GetViewShellBase());
     auto& rSSController = pSSVS->GetSlideSorter().GetController();
 
-    const sal_uInt16 nMasterPageCnt1 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::Standard);
+    const sal_uInt16 nMasterPageCnt1 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::PK_STANDARD);
     CPPUNIT_ASSERT_EQUAL(sal_uInt16(2), nMasterPageCnt1);
     rSSController.GetClipboard().DoCopy();
     rSSController.GetClipboard().DoPaste();
-    const sal_uInt16 nMasterPageCnt2 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::Standard);
+    const sal_uInt16 nMasterPageCnt2 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::PK_STANDARD);
     CPPUNIT_ASSERT_EQUAL(nMasterPageCnt1, nMasterPageCnt2);
 
     xDocSh->DoClose();
@@ -142,7 +133,7 @@ void SdMiscTest::testTdf96708()
     auto& rSSController = pSSVS->GetSlideSorter().GetController();
     auto& rPageSelector = rSSController.GetPageSelector();
 
-    const sal_uInt16 nMasterPageCnt1 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::Standard);
+    const sal_uInt16 nMasterPageCnt1 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::PK_STANDARD);
     CPPUNIT_ASSERT_EQUAL(sal_uInt16(4), nMasterPageCnt1);
     rPageSelector.SelectAllPages();
     rSSController.GetClipboard().DoCopy();
@@ -152,7 +143,7 @@ void SdMiscTest::testTdf96708()
     Scheduler::ProcessTaskScheduling(true);
 
     rSSController.GetClipboard().DoPaste();
-    const sal_uInt16 nMasterPageCnt2 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::Standard);
+    const sal_uInt16 nMasterPageCnt2 = xDocSh->GetDoc()->GetMasterSdPageCount(PageKind::PK_STANDARD);
     CPPUNIT_ASSERT_EQUAL(nMasterPageCnt1, nMasterPageCnt2);
 
     xDocSh->DoClose();
@@ -204,7 +195,7 @@ void SdMiscTest::testTdf99396TextEdit()
         SfxItemSet aEditAttr(xDocSh->GetDoc()->GetPool());
         pView->GetAttributes(aEditAttr);
         SfxItemSet aNewAttr(*(aEditAttr.GetPool()), aEditAttr.GetRanges());
-        aNewAttr.Put(SvxAdjustItem(SvxAdjust::Right, EE_PARA_JUST));
+        aNewAttr.Put(SvxAdjustItem(SVX_ADJUST_RIGHT, EE_PARA_JUST));
         aRequest.Done(aNewAttr);
         const SfxItemSet* pArgs = aRequest.GetArgs();
         pView->SetAttributes(*pArgs);
@@ -222,13 +213,13 @@ void SdMiscTest::testTdf99396TextEdit()
         uno::Reference<table::XTable> xTable = pTableObject->getTable();
         uno::Reference<beans::XPropertySet> xCell(xTable->getCellByPosition(0, 0), uno::UNO_QUERY);
         drawing::TextVerticalAdjust eAdjust = xCell->getPropertyValue("TextVerticalAdjust").get<drawing::TextVerticalAdjust>();
-        CPPUNIT_ASSERT_EQUAL((int)drawing::TextVerticalAdjust_BOTTOM, (int)eAdjust);
+        CPPUNIT_ASSERT_EQUAL(drawing::TextVerticalAdjust_BOTTOM, eAdjust);
     }
     {
         const EditTextObject& rEdit = pTableObject->getText(0)->GetOutlinerParaObject()->GetTextObject();
         const SfxItemSet& rParaAttribs = rEdit.GetParaAttribs(0);
         auto pAdjust = static_cast<const SvxAdjustItem*>(rParaAttribs.GetItem(EE_PARA_JUST));
-        CPPUNIT_ASSERT_EQUAL(SvxAdjust::Right, pAdjust->GetAdjust());
+        CPPUNIT_ASSERT_EQUAL(SVX_ADJUST_RIGHT, pAdjust->GetAdjust());
     }
 
     // Now undo.
@@ -240,13 +231,13 @@ void SdMiscTest::testTdf99396TextEdit()
         uno::Reference<beans::XPropertySet> xCell(xTable->getCellByPosition(0, 0), uno::UNO_QUERY);
         drawing::TextVerticalAdjust eAdjust = xCell->getPropertyValue("TextVerticalAdjust").get<drawing::TextVerticalAdjust>();
         // This failed: Undo() did not change it from drawing::TextVerticalAdjust_BOTTOM.
-        CPPUNIT_ASSERT_EQUAL((int)drawing::TextVerticalAdjust_TOP, (int)eAdjust);
+        CPPUNIT_ASSERT_EQUAL(drawing::TextVerticalAdjust_TOP, eAdjust);
     }
     {
         const EditTextObject& rEdit = pTableObject->getText(0)->GetOutlinerParaObject()->GetTextObject();
         const SfxItemSet& rParaAttribs = rEdit.GetParaAttribs(0);
         auto pAdjust = static_cast<const SvxAdjustItem*>(rParaAttribs.GetItem(EE_PARA_JUST));
-        CPPUNIT_ASSERT_EQUAL(SvxAdjust::Center, pAdjust->GetAdjust());
+        CPPUNIT_ASSERT_EQUAL(SVX_ADJUST_CENTER, pAdjust->GetAdjust());
     }
 
 
@@ -263,39 +254,6 @@ void SdMiscTest::testTdf99396TextEdit()
 
 
     xDocSh->DoClose();
-}
-
-void SdMiscTest::testFillGradient()
-{
-    ::sd::DrawDocShellRef xDocShRef = new ::sd::DrawDocShell(SfxObjectCreateMode::EMBEDDED, false);
-    uno::Reference<drawing::XDrawPagesSupplier> xDrawPagesSupplier = getDoc( xDocShRef );
-    uno::Reference<drawing::XDrawPages> xDrawPages = xDrawPagesSupplier->getDrawPages();
-    // Insert a new page.
-    uno::Reference<drawing::XDrawPage> xDrawPage(xDrawPages->insertNewByIndex(0), uno::UNO_QUERY_THROW );
-    uno::Reference<drawing::XShapes> xShapes(xDrawPage,uno::UNO_QUERY_THROW);
-    uno::Reference<lang::XMultiServiceFactory> const xDoc(xDocShRef->GetDoc()->getUnoModel(), uno::UNO_QUERY);
-    // Create a rectangle
-    uno::Reference<drawing::XShape> xShape1(xDoc->createInstance("com.sun.star.drawing.RectangleShape"),uno::UNO_QUERY_THROW );
-    uno::Reference<beans::XPropertySet> xPropSet(xShape1, uno::UNO_QUERY_THROW);
-    // Set FillStyle and FillGradient
-    awt::Gradient aGradient;
-    aGradient.StartColor = sal_Int32(RGB_COLORDATA(255, 0, 0));
-    aGradient.EndColor = sal_Int32(RGB_COLORDATA(0, 255, 0));
-    xPropSet->setPropertyValue("FillStyle", uno::makeAny(drawing::FillStyle_GRADIENT));
-    xPropSet->setPropertyValue("FillGradient", uno::makeAny(aGradient));
-    // Add the rectangle to the page.
-    xShapes->add(xShape1);
-
-    // Retrieve the shape and check FillStyle and FillGradient
-    uno::Reference<container::XIndexAccess> xIndexAccess(xDrawPage, uno::UNO_QUERY_THROW);
-    uno::Reference<beans::XPropertySet > xPropSet2(xIndexAccess->getByIndex(0), uno::UNO_QUERY_THROW);
-    drawing::FillStyle eFillStyle;
-    awt::Gradient aGradient2;
-    CPPUNIT_ASSERT(xPropSet2->getPropertyValue("FillStyle") >>= eFillStyle);
-    CPPUNIT_ASSERT_EQUAL((int)drawing::FillStyle_GRADIENT, (int)eFillStyle);
-    CPPUNIT_ASSERT(xPropSet2->getPropertyValue("FillGradient") >>= aGradient2);
-    CPPUNIT_ASSERT_EQUAL(sal_Int32(RGB_COLORDATA(255, 0, 0)),aGradient2.StartColor);
-    CPPUNIT_ASSERT_EQUAL(sal_Int32(RGB_COLORDATA(0, 255, 0)),aGradient2.EndColor);
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(SdMiscTest);

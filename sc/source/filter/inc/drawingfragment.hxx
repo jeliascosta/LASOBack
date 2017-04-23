@@ -21,6 +21,7 @@
 #define INCLUDED_SC_SOURCE_FILTER_INC_DRAWINGFRAGMENT_HXX
 
 #include <com/sun/star/awt/Rectangle.hpp>
+#include <com/sun/star/awt/Size.hpp>
 #include <oox/drawingml/shapegroupcontext.hxx>
 #include <oox/ole/axcontrol.hxx>
 #include <oox/drawingml/shape.hxx>
@@ -60,7 +61,7 @@ public:
     explicit            Shape(
                             const WorksheetHelper& rHelper,
                             const AttributeList& rAttribs,
-                            const sal_Char* pcServiceName );
+                            const sal_Char* pcServiceName = nullptr );
 
 protected:
     virtual void        finalizeXShape(
@@ -144,7 +145,7 @@ public:
     explicit            VmlDrawing( const WorksheetHelper& rHelper );
 
     /** Returns the drawing shape for a cell note at the specified position. */
-    const ::oox::vml::ShapeBase* getNoteShape( const ScAddress& rPos ) const;
+    const ::oox::vml::ShapeBase* getNoteShape( const css::table::CellAddress& rPos ) const;
 
     /** Filters cell note shapes. */
     virtual bool        isShapeSupported( const ::oox::vml::ShapeBase& rShape ) const override;

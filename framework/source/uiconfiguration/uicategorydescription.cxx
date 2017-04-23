@@ -51,32 +51,42 @@ using namespace framework;
 
 namespace {
 
+static const char GENERIC_MODULE_NAME[]                     = "generic";
+static const char CONFIGURATION_ROOT_ACCESS[]               = "/org.openoffice.Office.UI.";
+static const char CONFIGURATION_CATEGORY_ELEMENT_ACCESS[]   = "/Commands/Categories";
+static const char CONFIGURATION_PROPERTY_NAME[]             = "Name";
+
 class ConfigurationAccess_UICategory : public ::cppu::WeakImplHelper<XNameAccess,XContainerListener>
 {
     osl::Mutex aMutex;
     public:
                                   ConfigurationAccess_UICategory( const OUString& aModuleName, const Reference< XNameAccess >& xGenericUICommands, const Reference< XComponentContext >& rxContext );
-        virtual                   ~ConfigurationAccess_UICategory() override;
+        virtual                   ~ConfigurationAccess_UICategory();
 
         // XNameAccess
-        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
+        virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+            throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+        virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType() override;
+        virtual css::uno::Type SAL_CALL getElementType()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL hasElements() override;
+        virtual sal_Bool SAL_CALL hasElements()
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // container.XContainerListener
-        virtual void SAL_CALL     elementInserted( const ContainerEvent& aEvent ) override;
-        virtual void SAL_CALL     elementRemoved ( const ContainerEvent& aEvent ) override;
-        virtual void SAL_CALL     elementReplaced( const ContainerEvent& aEvent ) override;
+        virtual void SAL_CALL     elementInserted( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL     elementRemoved ( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL     elementReplaced( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
 
         // lang.XEventListener
-        virtual void SAL_CALL disposing( const EventObject& aEvent ) override;
+        virtual void SAL_CALL disposing( const EventObject& aEvent ) throw(RuntimeException, std::exception) override;
 
     protected:
         Any                       getUINameFromID( const OUString& rId );
@@ -105,14 +115,15 @@ class ConfigurationAccess_UICategory : public ::cppu::WeakImplHelper<XNameAccess
 //  XInterface, XTypeProvider
 
 ConfigurationAccess_UICategory::ConfigurationAccess_UICategory( const OUString& aModuleName, const Reference< XNameAccess >& rGenericUICategories, const Reference< XComponentContext >& rxContext ) :
-    m_aConfigCategoryAccess( "/org.openoffice.Office.UI." ),
-    m_aPropUIName( "Name" ),
+    m_aConfigCategoryAccess( CONFIGURATION_ROOT_ACCESS ),
+    m_aPropUIName( CONFIGURATION_PROPERTY_NAME ),
     m_xGenericUICategories( rGenericUICategories ),
     m_bConfigAccessInitialized( false ),
     m_bCacheFilled( false )
 {
     // Create configuration hierarchical access name
-    m_aConfigCategoryAccess += aModuleName + "/Commands/Categories";
+    m_aConfigCategoryAccess += aModuleName;
+    m_aConfigCategoryAccess += CONFIGURATION_CATEGORY_ELEMENT_ACCESS;
 
     m_xConfigProvider = theDefaultProvider::get( rxContext );
 }
@@ -128,6 +139,7 @@ ConfigurationAccess_UICategory::~ConfigurationAccess_UICategory()
 
 // XNameAccess
 Any SAL_CALL ConfigurationAccess_UICategory::getByName( const OUString& rId )
+throw ( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     osl::MutexGuard g(aMutex);
     if ( !m_bConfigAccessInitialized )
@@ -147,22 +159,26 @@ Any SAL_CALL ConfigurationAccess_UICategory::getByName( const OUString& rId )
 }
 
 Sequence< OUString > SAL_CALL ConfigurationAccess_UICategory::getElementNames()
+throw ( RuntimeException, std::exception )
 {
     return getAllIds();
 }
 
 sal_Bool SAL_CALL ConfigurationAccess_UICategory::hasByName( const OUString& rId )
+throw (css::uno::RuntimeException, std::exception)
 {
     return getByName( rId ).hasValue();
 }
 
 // XElementAccess
 Type SAL_CALL ConfigurationAccess_UICategory::getElementType()
+throw ( RuntimeException, std::exception )
 {
     return( cppu::UnoType<OUString>::get());
 }
 
 sal_Bool SAL_CALL ConfigurationAccess_UICategory::hasElements()
+throw ( RuntimeException, std::exception )
 {
     // There must be global categories!
     return true;
@@ -328,20 +344,20 @@ void ConfigurationAccess_UICategory::initializeConfigAccess()
 }
 
 // container.XContainerListener
-void SAL_CALL ConfigurationAccess_UICategory::elementInserted( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICategory::elementInserted( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL ConfigurationAccess_UICategory::elementRemoved ( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICategory::elementRemoved ( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL ConfigurationAccess_UICategory::elementReplaced( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICategory::elementReplaced( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
 }
 
 // lang.XEventListener
-void SAL_CALL ConfigurationAccess_UICategory::disposing( const EventObject& aEvent )
+void SAL_CALL ConfigurationAccess_UICategory::disposing( const EventObject& aEvent ) throw(RuntimeException, std::exception)
 {
     // SAFE
     // remove our reference to the config access
@@ -357,20 +373,25 @@ class UICategoryDescription :  public UICommandDescription
 {
 public:
     explicit UICategoryDescription( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+    virtual ~UICategoryDescription();
 
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.framework.UICategoryDescription");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
-        return {"com.sun.star.ui.UICategoryDescription"};
+        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UICategoryDescription" };
+        return aSeq;
     }
 
 };
@@ -384,13 +405,17 @@ UICategoryDescription::UICategoryDescription( const Reference< XComponentContext
 
     // insert generic categories mappings
     m_aModuleToCommandFileMap.insert( ModuleToCommandFileMap::value_type(
-        OUString("generic"), aGenericCategories ));
+        OUString(GENERIC_MODULE_NAME ), aGenericCategories ));
 
     UICommandsHashMap::iterator pCatIter = m_aUICommandsHashMap.find( aGenericCategories );
     if ( pCatIter != m_aUICommandsHashMap.end() )
         pCatIter->second = m_xGenericUICommands;
 
     impl_fillElements("ooSetupFactoryCmdCategoryConfigRef");
+}
+
+UICategoryDescription::~UICategoryDescription()
+{
 }
 
 struct Instance {

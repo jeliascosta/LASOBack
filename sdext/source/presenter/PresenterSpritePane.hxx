@@ -51,7 +51,7 @@ public:
     PresenterSpritePane (
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterSpritePane() override;
+    virtual ~PresenterSpritePane();
 
     virtual void SAL_CALL disposing() override;
 
@@ -61,23 +61,30 @@ public:
 
     // XPane
 
-    virtual css::uno::Reference<css::awt::XWindow> SAL_CALL getWindow() override;
+    virtual css::uno::Reference<css::awt::XWindow> SAL_CALL getWindow()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::rendering::XCanvas> SAL_CALL getCanvas() override;
+    virtual css::uno::Reference<css::rendering::XCanvas> SAL_CALL getCanvas()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XWindowListener
 
-    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowResized (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent) override;
+    virtual void SAL_CALL windowMoved (const css::awt::WindowEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowShown (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL windowHidden (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XPaintListener
 
-    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent) override;
+    virtual void SAL_CALL windowPaint (const css::awt::PaintEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::awt::XWindow> mxParentWindow;

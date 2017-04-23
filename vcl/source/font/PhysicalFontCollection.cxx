@@ -17,8 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <map>
-
+#include <config_graphite.h>
+#if ENABLE_GRAPHITE
+#include "graphite_features.hxx"
+#endif
 #include <i18nlangtag/mslangid.hxx>
 #include <unotools/configmgr.hxx>
 #include <unotools/fontdefs.hxx>
@@ -158,6 +160,9 @@ void PhysicalFontCollection::ImplInitGenericGlyphFallback() const
         PhysicalFontFamily* pFallbackFont = FindFontFamily( aTokenName );
 
         if( !pFallbackFont )
+            continue;
+
+        if( !pFallbackFont->IsScalable() )
             continue;
 
         // keep the best font of the glyph fallback sub-list
@@ -869,7 +874,7 @@ PhysicalFontFamily* PhysicalFontCollection::ImplFindFontFamilyOfDefaultFont() co
     if (!utl::ConfigManager::IsAvoidConfig())
     {
         const utl::DefaultFontConfiguration& rDefaults = utl::DefaultFontConfiguration::get();
-        LanguageTag aLanguageTag("en");
+        LanguageTag aLanguageTag( OUString( "en"));
         OUString aFontname = rDefaults.getDefaultFont( aLanguageTag, DefaultFontType::SANS_UNICODE );
         pFoundData = FindFontFamilyByTokenNames( aFontname );
 
@@ -918,7 +923,7 @@ PhysicalFontFamily* PhysicalFontCollection::ImplFindFontFamilyOfDefaultFont() co
     return pFoundData;
 }
 
-PhysicalFontCollection* PhysicalFontCollection::Clone() const
+PhysicalFontCollection* PhysicalFontCollection::Clone( bool bEmbeddable ) const
 {
     PhysicalFontCollection* pClonedCollection = new PhysicalFontCollection;
     pClonedCollection->mbMapNames     = mbMapNames;
@@ -932,7 +937,7 @@ PhysicalFontCollection* PhysicalFontCollection::Clone() const
     for(; it != maPhysicalFontFamilies.end(); ++it )
     {
         const PhysicalFontFamily* pFontFace = (*it).second;
-        pFontFace->UpdateCloneFontList(*pClonedCollection);
+        pFontFace->UpdateCloneFontList( *pClonedCollection, bEmbeddable );
     }
 
     return pClonedCollection;
@@ -970,49 +975,11 @@ ImplDeviceFontSizeList* PhysicalFontCollection::GetDeviceFontSizeList( const OUS
     return pDeviceFontSizeList;
 }
 
-// These are the metric-compatible replacement fonts that are bundled with
-// LibreOffice, we prefer them over generic substitutions that might be
-// provided by the system.
-static const std::map<OUString, OUString> aMetricCompatibleMap =
-{
-    { "Times New Roman", "Liberation Serif" },
-    { "Arial",           "Liberation Sans" },
-    { "Arial Narrow",    "Liberation Sans Narrow" },
-    { "Courier New",     "Liberation Mono" },
-    { "Cambria",         "Caladea" },
-    { "Calibri",         "Carlito" },
-};
-
-static bool FindMetricCompatibleFont(FontSelectPattern& rFontSelData)
-{
-    for (const auto& aSub : aMetricCompatibleMap)
-    {
-        if (rFontSelData.maSearchName == GetEnglishSearchFontName(aSub.first))
-        {
-            rFontSelData.maSearchName = aSub.second;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& rFSD ) const
 {
     // give up if no fonts are available
     if( !Count() )
         return nullptr;
-
-    if (getenv("SAL_NO_FONT_LOOKUP") != nullptr)
-    {
-        // Hard code the use of Liberation Sans and skip font search.
-        sal_Int32 nIndex = 0;
-        rFSD.maTargetName = GetNextFontToken(rFSD.GetFamilyName(), nIndex);
-        rFSD.maSearchName = "liberationsans";
-        PhysicalFontFamily* pFont = ImplFindFontFamilyBySearchName(rFSD.maSearchName);
-        assert(pFont);
-        return pFont;
-    }
 
     bool bMultiToken = false;
     sal_Int32 nTokenPos = 0;
@@ -1022,17 +989,21 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
         rFSD.maTargetName = GetNextFontToken( rFSD.GetFamilyName(), nTokenPos );
         aSearchName = rFSD.maTargetName;
 
+#if ENABLE_GRAPHITE
         // Until features are properly supported, they are appended to the
         // font name, so we need to strip them off so the font is found.
-        sal_Int32 nFeat = aSearchName.indexOf(FontSelectPatternAttributes::FEAT_PREFIX);
+        sal_Int32 nFeat = aSearchName.indexOf(grutils::GrFeatureParser::FEAT_PREFIX);
         OUString aOrigName = rFSD.maTargetName;
         OUString aBaseFontName = aSearchName.copy( 0, (nFeat != -1) ? nFeat : aSearchName.getLength() );
 
-        if (nFeat != -1)
+        if (nFeat != -1 &&
+            -1 != aSearchName.indexOf(grutils::GrFeatureParser::FEAT_ID_VALUE_SEPARATOR, nFeat))
         {
             aSearchName = aBaseFontName;
             rFSD.maTargetName = aBaseFontName;
         }
+
+#endif
 
         aSearchName = GetEnglishSearchFontName( aSearchName );
         ImplFontSubstitute( aSearchName );
@@ -1064,9 +1035,10 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
             }
         }
 
+#if ENABLE_GRAPHITE
         // restore the features to make the font selection data unique
         rFSD.maTargetName = aOrigName;
-
+#endif
         // check if the current font name token or its substitute is valid
         PhysicalFontFamily* pFoundData = ImplFindFontFamilyBySearchName( aSearchName );
         if( pFoundData )
@@ -1075,9 +1047,10 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
         // some systems provide special customization
         // e.g. they suggest "serif" as UI-font, but this name cannot be used directly
         //      because the system wants to map it to another font first, e.g. "Helvetica"
-
+#if ENABLE_GRAPHITE
         // use the target name to search in the prematch hook
         rFSD.maTargetName = aBaseFontName;
+#endif
 
         // Related: fdo#49271 RTF files often contain weird-ass
         // Win 3.1/Win95 style fontnames which attempt to put the
@@ -1093,16 +1066,16 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
                 return pFoundData;
         }
 
-        if (FindMetricCompatibleFont(rFSD) ||
-            (mpPreMatchHook && mpPreMatchHook->FindFontSubstitute(rFSD)))
+        if( mpPreMatchHook )
         {
-            aSearchName = GetEnglishSearchFontName(aSearchName);
+            if( mpPreMatchHook->FindFontSubstitute( rFSD ) )
+                aSearchName = GetEnglishSearchFontName( aSearchName );
         }
-
+#if ENABLE_GRAPHITE
         // the prematch hook uses the target name to search, but we now need
         // to restore the features to make the font selection data unique
         rFSD.maTargetName = aOrigName;
-
+#endif
         pFoundData = ImplFindFontFamilyBySearchName( aSearchName );
         if( pFoundData )
             return pFoundData;
@@ -1127,11 +1100,9 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
         }
         else
             nTokenPos = -1;
-        if (FindMetricCompatibleFont(rFSD) ||
-            (mpPreMatchHook && mpPreMatchHook->FindFontSubstitute(rFSD)))
-        {
-            aSearchName = GetEnglishSearchFontName( aSearchName );
-        }
+        if( mpPreMatchHook )
+            if( mpPreMatchHook->FindFontSubstitute( rFSD ) )
+                aSearchName = GetEnglishSearchFontName( aSearchName );
         ImplFontSubstitute( aSearchName );
         PhysicalFontFamily* pFoundData = ImplFindFontFamilyBySearchName( aSearchName );
         if( pFoundData )
@@ -1167,7 +1138,9 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
             a korean bitmap font that is not suitable here. Use the font replacement table,
             that automatically leads to the desired "HG Mincho Light J". Same story for
             MS Gothic, there are thai and korean "Gothic" fonts, so we even prefer Andale */
-            if ((aSearchName != "msmincho") && (aSearchName != "msgothic"))
+            static const char aMS_Mincho[] = "msmincho";
+            static const char aMS_Gothic[] = "msgothic";
+            if ((aSearchName != aMS_Mincho) && (aSearchName != aMS_Gothic))
                 // TODO: add heuristic to only throw out the fake ms* fonts
 #endif
             {
@@ -1201,7 +1174,7 @@ PhysicalFontFamily* PhysicalFontCollection::FindFontFamily( FontSelectPattern& r
     // if a target symbol font is not available use a default symbol font
     if( rFSD.IsSymbolFont() )
     {
-        LanguageTag aDefaultLanguageTag("en");
+        LanguageTag aDefaultLanguageTag( OUString( "en"));
         if (utl::ConfigManager::IsAvoidConfig())
             aSearchName = "OpenSymbol";
         else

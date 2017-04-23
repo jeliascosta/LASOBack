@@ -26,23 +26,22 @@ namespace connectivity
         class Tables: public ::connectivity::sdbcx::OCollection
         {
         protected:
-            css::uno::Reference< css::sdbc::XDatabaseMetaData >
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >
                 m_xMetaData;
 
-            static OUString createStandardColumnPart(const css::uno::Reference< css::beans::XPropertySet >& xColProp,const css::uno::Reference< com::sun::star::sdbc::XConnection>& _xConnection);
-
             // OCollection
-            virtual void impl_refresh() override;
+            virtual void impl_refresh()
+                throw(::com::sun::star::uno::RuntimeException) override;
             virtual ::connectivity::sdbcx::ObjectType createObject(
                                                 const ::rtl::OUString& rName) override;
-            virtual css::uno::Reference< css::beans::XPropertySet >
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >
                     createDescriptor() override;
             virtual ::connectivity::sdbcx::ObjectType appendObject(
                         const OUString& rName,
-                        const css::uno::Reference< css::beans::XPropertySet >& rDescriptor) override;
+                        const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& rDescriptor) override;
 
         public:
-            Tables(const css::uno::Reference< css::sdbc::XDatabaseMetaData >& rMetaData,
+            Tables(const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData >& rMetaData,
                    ::cppu::OWeakObject& rParent,
                    ::osl::Mutex& rMutex,
                    ::connectivity::TStringVector& rNames) : sdbcx::OCollection(rParent, true, rMutex, rNames), m_xMetaData(rMetaData) {}

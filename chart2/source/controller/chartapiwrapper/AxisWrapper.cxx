@@ -21,6 +21,7 @@
 #include "AxisHelper.hxx"
 #include "TitleHelper.hxx"
 #include "Chart2ModelContact.hxx"
+#include "ContainerHelper.hxx"
 #include "macros.hxx"
 #include "WrappedDirectStateProperty.hxx"
 #include "GridWrapper.hxx"
@@ -52,6 +53,7 @@
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::chart2;
+using namespace ::chart::ContainerHelper;
 
 using ::com::sun::star::beans::Property;
 using ::com::sun::star::uno::Reference;
@@ -60,6 +62,7 @@ using ::com::sun::star::uno::Any;
 
 namespace
 {
+static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Axis";
 
 enum
 {
@@ -102,7 +105,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     //Properties for scaling:
     rOutProperties.push_back(
@@ -374,14 +377,14 @@ struct StaticAxisWrapperPropertyArray_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< css::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         lcl_AddPropertiesToVector( aProperties );
         ::chart::CharacterProperties::AddPropertiesToVector( aProperties );
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
         ::chart::wrapper::WrappedScaleTextProperties::addProperties( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -400,7 +403,7 @@ namespace wrapper
 {
 
 AxisWrapper::AxisWrapper(
-    tAxisType eType, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact) :
+    tAxisType eType, std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
         m_spChart2ModelContact( spChart2ModelContact ),
         m_aEventListenerContainer( m_aMutex ),
         m_eType( eType )
@@ -412,7 +415,7 @@ AxisWrapper::~AxisWrapper()
 }
 
 // ____ chart::XAxis ____
-Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getAxisTitle()
+Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getAxisTitle() throw (uno::RuntimeException, std::exception)
 {
     if( !m_xAxisTitle.is() )
     {
@@ -441,7 +444,7 @@ Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getAxisTitle()
     }
     return m_xAxisTitle;
 }
-Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMajorGrid()
+Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMajorGrid() throw (uno::RuntimeException, std::exception)
 {
     if( !m_xMajorGrid.is() )
     {
@@ -464,7 +467,7 @@ Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMajorGrid()
     }
     return m_xMajorGrid;
 }
-Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMinorGrid()
+Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMinorGrid() throw (uno::RuntimeException, std::exception)
 {
     if( !m_xMinorGrid.is() )
     {
@@ -490,35 +493,42 @@ Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getMinorGrid()
 
 // ____ XShape ____
 awt::Point SAL_CALL AxisWrapper::getPosition()
+    throw (uno::RuntimeException, std::exception)
 {
     awt::Point aResult( m_spChart2ModelContact->GetAxisPosition( this->getAxis() ) );
     return aResult;
 }
 
 void SAL_CALL AxisWrapper::setPosition( const awt::Point& /*aPosition*/ )
+    throw (uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "trying to set position of Axis" );
 }
 
 awt::Size SAL_CALL AxisWrapper::getSize()
+    throw (uno::RuntimeException, std::exception)
 {
     awt::Size aSize( m_spChart2ModelContact->GetAxisSize( this->getAxis() ) );
     return aSize;
 }
 
 void SAL_CALL AxisWrapper::setSize( const awt::Size& /*aSize*/ )
+    throw (beans::PropertyVetoException,
+           uno::RuntimeException, std::exception)
 {
     OSL_FAIL( "trying to set size of Axis" );
 }
 
 // ____ XShapeDescriptor (base of XShape) ____
 OUString SAL_CALL AxisWrapper::getShapeType()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.chart.ChartAxis");
 }
 
 // ____ XNumberFormatsSupplier ____
 uno::Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getNumberFormatSettings()
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< util::XNumberFormatsSupplier > xNumSuppl( m_spChart2ModelContact->getChartModel(), uno::UNO_QUERY );
     if( xNumSuppl.is() )
@@ -528,6 +538,7 @@ uno::Reference< beans::XPropertySet > SAL_CALL AxisWrapper::getNumberFormatSetti
 }
 
 uno::Reference< util::XNumberFormats > SAL_CALL AxisWrapper::getNumberFormats()
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< util::XNumberFormatsSupplier > xNumSuppl( m_spChart2ModelContact->getChartModel(), uno::UNO_QUERY );
     if( xNumSuppl.is() )
@@ -555,6 +566,7 @@ void AxisWrapper::getDimensionAndMainAxisBool( tAxisType eType, sal_Int32& rnDim
 
 // ____ XComponent ____
 void SAL_CALL AxisWrapper::dispose()
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< uno::XInterface > xSource( static_cast< ::cppu::OWeakObject* >( this ) );
     m_aEventListenerContainer.disposeAndClear( lang::EventObject( xSource ) );
@@ -568,12 +580,14 @@ void SAL_CALL AxisWrapper::dispose()
 
 void SAL_CALL AxisWrapper::addEventListener(
     const Reference< lang::XEventListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.addInterface( xListener );
 }
 
 void SAL_CALL AxisWrapper::removeEventListener(
     const Reference< lang::XEventListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.removeInterface( aListener );
 }
@@ -585,7 +599,7 @@ void AxisWrapper::updateReferenceSize()
     if( xProp.is() )
     {
         if( xProp->getPropertyValue("ReferencePageSize").hasValue() )
-            xProp->setPropertyValue("ReferencePageSize", uno::Any(
+            xProp->setPropertyValue("ReferencePageSize", uno::makeAny(
             m_spChart2ModelContact->GetPageSize() ));
     }
 }
@@ -618,7 +632,7 @@ Reference< chart2::XAxis > AxisWrapper::getAxis()
             xAxis = AxisHelper::createAxis( nDimensionIndex, bMainAxis, xDiagram, m_spChart2ModelContact->m_xContext );
             Reference< beans::XPropertySet > xProp( xAxis, uno::UNO_QUERY );
             if( xProp.is() )
-                xProp->setPropertyValue("Show", uno::Any( false ) );
+                xProp->setPropertyValue("Show", uno::makeAny( false ) );
         }
     }
     catch( const uno::Exception & ex )
@@ -641,7 +655,7 @@ const Sequence< beans::Property >& AxisWrapper::getPropertySequence()
 
 const std::vector< WrappedProperty* > AxisWrapper::createWrappedProperties()
 {
-    std::vector< ::chart::WrappedProperty* > aWrappedProperties;
+    ::std::vector< ::chart::WrappedProperty* > aWrappedProperties;
 
     aWrappedProperties.push_back( new WrappedTextRotationProperty() );
     aWrappedProperties.push_back( new WrappedProperty("Marks","MajorTickmarks") );
@@ -679,23 +693,38 @@ const std::vector< WrappedProperty* > AxisWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-OUString SAL_CALL AxisWrapper::getImplementationName()
+Sequence< OUString > AxisWrapper::getSupportedServiceNames_Static()
 {
-    return OUString("com.sun.star.comp.chart.Axis");
+    Sequence< OUString > aServices( 3 );
+    aServices[ 0 ] = "com.sun.star.chart.ChartAxis";
+    aServices[ 1 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
+    aServices[ 2 ] = "com.sun.star.style.CharacterProperties";
+
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
+OUString SAL_CALL AxisWrapper::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString AxisWrapper::getImplementationName_Static()
+{
+    return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL AxisWrapper::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL AxisWrapper::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        "com.sun.star.chart.ChartAxis",
-        "com.sun.star.xml.UserDefinedAttributesSupplier",
-        "com.sun.star.style.CharacterProperties"
-    };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace wrapper

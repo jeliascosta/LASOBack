@@ -21,6 +21,8 @@
 #include <rtl/math.hxx>
 #include <unotools/collatorwrapper.hxx>
 #include <unotools/localedatawrapper.hxx>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
+#include <com/sun/star/i18n/CollatorOptions.hpp>
 #include <comphelper/processfactory.hxx>
 #include <editeng/unolingu.hxx>
 #include <docary.hxx>
@@ -61,8 +63,8 @@ LocaleDataWrapper*  SwSortElement::pLclData = nullptr;
 
 // List of all sorted elements
 
-typedef std::multiset<SwSortTextElement> SwSortTextElements;
-typedef std::multiset<SwSortBoxElement> SwSortBoxElements;
+typedef ::std::multiset<SwSortTextElement> SwSortTextElements;
+typedef ::std::multiset<SwSortBoxElement> SwSortBoxElements;
 
 /// Construct a SortElement for the Sort
 void SwSortElement::Init( SwDoc* pD, const SwSortOptions& rOpt,
@@ -304,7 +306,7 @@ bool SwDoc::SortText(const SwPaM& rPaM, const SwSortOptions& rOpt)
         SwFormatAnchor const*const pAnchor = &pFormat->GetAnchor();
         SwPosition const*const pAPos = pAnchor->GetContentAnchor();
 
-        if (pAPos && (RndStdIds::FLY_AT_PARA == pAnchor->GetAnchorId()) &&
+        if (pAPos && (FLY_AT_PARA == pAnchor->GetAnchorId()) &&
             pStart->nNode <= pAPos->nNode && pAPos->nNode <= pEnd->nNode )
             return false;
     }
@@ -322,7 +324,7 @@ bool SwDoc::SortText(const SwPaM& rPaM, const SwSortOptions& rOpt)
     bool const bUndo = GetIDocumentUndoRedo().DoesUndo();
     if( bUndo )
     {
-        GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
     }
 
     SwPaM* pRedlPam = nullptr;
@@ -337,7 +339,7 @@ bool SwDoc::SortText(const SwPaM& rPaM, const SwSortOptions& rOpt)
         if( pCNd )
             pRedlPam->GetMark()->nContent = pCNd->Len();
 
-        if( getIDocumentRedlineAccess().IsRedlineOn() && !IDocumentRedlineAccess::IsShowOriginal( getIDocumentRedlineAccess().GetRedlineFlags() ) )
+        if( getIDocumentRedlineAccess().IsRedlineOn() && !IDocumentRedlineAccess::IsShowOriginal( getIDocumentRedlineAccess().GetRedlineMode() ) )
         {
             if( bUndo )
             {
@@ -471,7 +473,7 @@ bool SwDoc::SortText(const SwPaM& rPaM, const SwSortOptions& rOpt)
     GetIDocumentUndoRedo().DoUndo( bUndo );
     if( bUndo )
     {
-        GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
 
     return true;
@@ -753,8 +755,7 @@ FlatFndBox::FlatFndBox(SwDoc* pDocPtr, const FndBox_& rBox) :
     nRow(0),
     nCol(0)
 { // If the array is symmetric
-    bSym = CheckLineSymmetry(rBoxRef);
-    if( bSym )
+    if( (bSym = CheckLineSymmetry(rBoxRef)) )
     {
         // Determine column/row count
         nCols = GetColCount(rBoxRef);

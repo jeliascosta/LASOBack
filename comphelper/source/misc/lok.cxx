@@ -17,11 +17,7 @@ namespace LibreOfficeKit
 
 static bool g_bActive(false);
 
-static bool g_bPartInInvalidation(false);
-
-static bool g_bTiledPainting(false);
-
-static bool g_bTiledAnnotations(true);
+static bool g_bViewCallback(false);
 
 void setActive(bool bActive)
 {
@@ -33,46 +29,14 @@ bool isActive()
     return g_bActive;
 }
 
-void setPartInInvalidation(bool bPartInInvalidation)
+void setViewCallback(bool bViewCallback)
 {
-    g_bPartInInvalidation = bPartInInvalidation;
+    g_bViewCallback = bViewCallback;
 }
 
-bool isPartInInvalidation()
+bool isViewCallback()
 {
-    return g_bPartInInvalidation;
-}
-
-void setTiledPainting(bool bTiledPainting)
-{
-    g_bTiledPainting = bTiledPainting;
-}
-
-bool isTiledPainting()
-{
-    return g_bTiledPainting;
-}
-
-void setTiledAnnotations(bool bTiledAnnotations)
-{
-    g_bTiledAnnotations = bTiledAnnotations;
-}
-
-bool isTiledAnnotations()
-{
-    return g_bTiledAnnotations;
-}
-
-static bool g_bLocalRendering(false);
-
-void setLocalRendering(bool bLocalRendering)
-{
-    g_bLocalRendering = bLocalRendering;
-}
-
-bool isLocalRendering()
-{
-    return g_bLocalRendering;
+    return g_bViewCallback;
 }
 
 static void (*pStatusIndicatorCallback)(void *data, statusIndicatorCallbackType type, int percent)(nullptr);

@@ -22,11 +22,11 @@ namespace writerfilter
 namespace rtftok
 {
 /// Handles the import of drawings using RTF markup.
-class RTFSdrImport final
+class RTFSdrImport
 {
 public:
     RTFSdrImport(RTFDocumentImpl& rImport, css::uno::Reference<css::lang::XComponent> const& xDstDoc);
-    ~RTFSdrImport();
+    virtual ~RTFSdrImport();
 
     enum ShapeOrPict { SHAPE, PICT };
     void resolve(RTFShape& rShape, bool bClose, ShapeOrPict shapeOrPict);

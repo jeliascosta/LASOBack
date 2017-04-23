@@ -29,7 +29,6 @@
 #include <com/sun/star/frame/XLayoutManager.hpp>
 #include <sal/macros.h>
 #include <osl/time.h>
-#include <tools/urlobj.hxx>
 
 
 using namespace ::com::sun::star::io;
@@ -197,9 +196,9 @@ void OptimizerDialog::UpdateConfiguration()
 }
 
 
-OptimizerDialog::OptimizerDialog( const Reference< XComponentContext > &rxContext, Reference< XFrame >& rxFrame, Reference< XDispatch > const & rxStatusDispatcher ) :
+OptimizerDialog::OptimizerDialog( const Reference< XComponentContext > &rxContext, Reference< XFrame >& rxFrame, Reference< XDispatch > rxStatusDispatcher ) :
     UnoDialog( rxContext, rxFrame ),
-    ConfigurationAccess( rxContext ),
+    ConfigurationAccess( rxContext, nullptr ),
     mnCurrentStep( 0 ),
     mnTabIndex( 0 ),
     mxFrame( rxFrame ),
@@ -347,6 +346,7 @@ void OptimizerDialog::UpdateStatus( const css::uno::Sequence< css::beans::Proper
 
 
 void ItemListener::itemStateChanged( const ItemEvent& Event )
+    throw ( RuntimeException, std::exception )
 {
     try
     {
@@ -474,11 +474,13 @@ void ItemListener::itemStateChanged( const ItemEvent& Event )
     }
 }
 void ItemListener::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
 
 void ActionListener::actionPerformed( const ActionEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     switch( TKGet( rEvent.ActionCommand ) )
     {
@@ -509,14 +511,24 @@ void ActionListener::actionPerformed( const ActionEvent& rEvent )
                 Reference< XStorable > xStorable( mrOptimizerDialog.mxController->getModel(), UNO_QUERY );
                 if ( xStorable.is() && xStorable->hasLocation() )
                 {
-                    INetURLObject aURLObj( xStorable->getLocation() );
-                    if ( !aURLObj.hasFinalSlash() &&
-                         aURLObj.setExtension( "mini", INetURLObject::LAST_SEGMENT, false ) ) {
-                        // tdf#105382 uri-decode file name
-                        auto aName( aURLObj.getName( INetURLObject::LAST_SEGMENT,
-                                                     false,
-                                                     INetURLObject::DecodeMechanism::WithCharset ) );
-                        aFileOpenDialog.setDefaultName( aName );
+                    OUString aLocation( xStorable->getLocation() );
+                    if ( !aLocation.isEmpty() )
+                    {
+                        sal_Int32 nIndex = aLocation.lastIndexOf( '/', aLocation.getLength() - 1 );
+                        if ( nIndex >= 0 )
+                        {
+                            if ( nIndex < aLocation.getLength() - 1 )
+                                aLocation = aLocation.copy( nIndex + 1 );
+
+                            // remove extension
+                            nIndex = aLocation.lastIndexOf( '.', aLocation.getLength() - 1 );
+                            if ( nIndex >= 0 )
+                                aLocation = aLocation.copy( 0, nIndex );
+
+                            // adding .mini
+                            aLocation = aLocation.concat( ".mini" );
+                            aFileOpenDialog.setDefaultName( aLocation );
+                        }
                     }
                 }
                  bool bDialogExecuted = aFileOpenDialog.execute() == dialogs::ExecutableDialogResults::OK;
@@ -611,11 +623,13 @@ void ActionListener::actionPerformed( const ActionEvent& rEvent )
     }
 }
 void ActionListener::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
 
 void ActionListenerListBox0Pg0::actionPerformed( const ActionEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     if ( !rEvent.ActionCommand.isEmpty() )
     {
@@ -627,11 +641,13 @@ void ActionListenerListBox0Pg0::actionPerformed( const ActionEvent& rEvent )
     mrOptimizerDialog.UpdateControlStates();
 }
 void ActionListenerListBox0Pg0::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
 
 void TextListenerFormattedField0Pg1::textChanged( const TextEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     double fDouble = 0;
     Any aAny = mrOptimizerDialog.getControlProperty( "FormattedField0Pg1", "EffectiveValue" );
@@ -639,11 +655,13 @@ void TextListenerFormattedField0Pg1::textChanged( const TextEvent& /* rEvent */ 
         mrOptimizerDialog.SetConfigProperty( TK_JPEGQuality, Any( (sal_Int32)fDouble ) );
 }
 void TextListenerFormattedField0Pg1::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
 
 void TextListenerComboBox0Pg1::textChanged( const TextEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     OUString aString;
     Any aAny = mrOptimizerDialog.getControlProperty( "ComboBox0Pg1", "Text" );
@@ -665,11 +683,13 @@ void TextListenerComboBox0Pg1::textChanged( const TextEvent& /* rEvent */ )
     }
 }
 void TextListenerComboBox0Pg1::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
 
 void SpinListenerFormattedField0Pg1::up( const SpinEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     double fDouble;
     Any aAny = mrOptimizerDialog.getControlProperty( "FormattedField0Pg1", "EffectiveValue" );
@@ -683,6 +703,7 @@ void SpinListenerFormattedField0Pg1::up( const SpinEvent& /* rEvent */ )
     }
 }
 void SpinListenerFormattedField0Pg1::down( const SpinEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     double fDouble;
     Any aAny = mrOptimizerDialog.getControlProperty( "FormattedField0Pg1", "EffectiveValue" );
@@ -696,16 +717,19 @@ void SpinListenerFormattedField0Pg1::down( const SpinEvent& /* rEvent */ )
     }
 }
 void SpinListenerFormattedField0Pg1::first( const SpinEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     mrOptimizerDialog.setControlProperty( "FormattedField0Pg1", "EffectiveValue", Any( static_cast< double >( 0 ) ) );
     mrOptimizerDialog.SetConfigProperty( TK_JPEGQuality, Any( (sal_Int32)0 ) );
 }
 void SpinListenerFormattedField0Pg1::last( const SpinEvent& /* rEvent */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     mrOptimizerDialog.setControlProperty( "FormattedField0Pg1", "EffectiveValue", Any( static_cast< double >( 100 ) ) );
     mrOptimizerDialog.SetConfigProperty( TK_JPEGQuality, Any( (sal_Int32)100 ) );
 }
 void SpinListenerFormattedField0Pg1::disposing( const css::lang::EventObject& /* Source */ )
+    throw ( css::uno::RuntimeException, std::exception )
 {
 }
 

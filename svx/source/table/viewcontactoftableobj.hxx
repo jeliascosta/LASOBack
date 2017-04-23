@@ -30,6 +30,12 @@ namespace sdr
         class ViewContactOfTableObj : public ViewContactOfSdrObj
         {
         protected:
+            // internal access to SdrTextObj
+            const sdr::table::SdrTableObj& GetTableObj() const
+            {
+                return static_cast<const sdr::table::SdrTableObj&>(GetSdrObject());
+            }
+
             // This method is responsible for creating the graphical visualisation data derived ONLY from
             // the model data
             virtual drawinglayer::primitive2d::Primitive2DContainer createViewIndependentPrimitive2DSequence() const override;
@@ -37,7 +43,7 @@ namespace sdr
         public:
             // basic constructor, used from SdrObject.
             explicit ViewContactOfTableObj(sdr::table::SdrTableObj& rTextObj);
-            virtual ~ViewContactOfTableObj() override;
+            virtual ~ViewContactOfTableObj();
         };
     } // end of namespace contact
 } // end of namespace sdr

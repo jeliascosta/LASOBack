@@ -37,6 +37,9 @@
 #include <svl/stritem.hxx>
 #include <svl/eitem.hxx>
 
+#include <com/sun/star/i18n/TransliterationModules.hpp>
+#include <com/sun/star/i18n/TransliterationModulesExtra.hpp>
+
 #include "viewutil.hxx"
 #include "global.hxx"
 #include "chgtrack.hxx"
@@ -61,10 +64,7 @@ void ScViewUtil::PutItemScript( SfxItemSet& rShellSet, const SfxItemSet& rCoreSe
     aSetItem.GetItemSet().PutExtended( rCoreSet, SfxItemState::DONTCARE, SfxItemState::SET );
     const SfxPoolItem* pI = aSetItem.GetItemOfScript( nScript );
     if (pI)
-    {
-        std::unique_ptr<SfxPoolItem> pNewItem(pI->CloneSetWhich(nWhichId));
-        rShellSet.Put( *pNewItem );
-    }
+        rShellSet.Put( *pI, nWhichId );
     else
         rShellSet.InvalidateItem( nWhichId );
 }
@@ -98,37 +98,37 @@ sal_uInt16 ScViewUtil::GetEffLanguage( ScDocument* pDoc, const ScAddress& rPos )
     return eLnge;
 }
 
-TransliterationFlags ScViewUtil::GetTransliterationType( sal_uInt16 nSlotID )
+sal_Int32 ScViewUtil::GetTransliterationType( sal_uInt16 nSlotID )
 {
-    TransliterationFlags nType = TransliterationFlags::NONE;
+    sal_Int32 nType = 0;
     switch ( nSlotID )
     {
         case SID_TRANSLITERATE_SENTENCE_CASE:
-            nType = TransliterationFlags::SENTENCE_CASE;
+            nType = css::i18n::TransliterationModulesExtra::SENTENCE_CASE;
             break;
         case SID_TRANSLITERATE_TITLE_CASE:
-            nType = TransliterationFlags::TITLE_CASE;
+            nType = css::i18n::TransliterationModulesExtra::TITLE_CASE;
             break;
         case SID_TRANSLITERATE_TOGGLE_CASE:
-            nType = TransliterationFlags::TOGGLE_CASE;
+            nType = css::i18n::TransliterationModulesExtra::TOGGLE_CASE;
             break;
         case SID_TRANSLITERATE_UPPER:
-            nType = TransliterationFlags::LOWERCASE_UPPERCASE;
+            nType = css::i18n::TransliterationModules_LOWERCASE_UPPERCASE;
             break;
         case SID_TRANSLITERATE_LOWER:
-            nType = TransliterationFlags::UPPERCASE_LOWERCASE;
+            nType = css::i18n::TransliterationModules_UPPERCASE_LOWERCASE;
             break;
         case SID_TRANSLITERATE_HALFWIDTH:
-            nType = TransliterationFlags::FULLWIDTH_HALFWIDTH;
+            nType = css::i18n::TransliterationModules_FULLWIDTH_HALFWIDTH;
             break;
         case SID_TRANSLITERATE_FULLWIDTH:
-            nType = TransliterationFlags::HALFWIDTH_FULLWIDTH;
+            nType = css::i18n::TransliterationModules_HALFWIDTH_FULLWIDTH;
             break;
         case SID_TRANSLITERATE_HIRAGANA:
-            nType = TransliterationFlags::KATAKANA_HIRAGANA;
+            nType = css::i18n::TransliterationModules_KATAKANA_HIRAGANA;
             break;
         case SID_TRANSLITERATE_KATAGANA:
-            nType = TransliterationFlags::HIRAGANA_KATAKANA;
+            nType = css::i18n::TransliterationModules_HIRAGANA_KATAKANA;
             break;
     }
     return nType;
@@ -350,7 +350,7 @@ bool ScViewUtil::ExecuteCharMap( const SvxFontItem& rOldFont,
         SfxAllItemSet aSet( rFrame.GetObjectShell()->GetPool() );
         aSet.Put( SfxBoolItem( FN_PARAM_1, false ) );
         aSet.Put( SvxFontItem( rOldFont.GetFamily(), rOldFont.GetFamilyName(), rOldFont.GetStyleName(), rOldFont.GetPitch(), rOldFont.GetCharSet(), aSet.GetPool()->GetWhich( SID_ATTR_CHAR_FONT ) ) );
-        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( &rFrame.GetWindow(), aSet, rFrame.GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
+        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( &rFrame.GetWindow(), aSet, rFrame.GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
         if ( pDlg->Execute() == RET_OK )
         {
             const SfxStringItem* pItem = SfxItemSet::GetItem<SfxStringItem>(pDlg->GetOutputItemSet(), SID_CHARMAP, false);

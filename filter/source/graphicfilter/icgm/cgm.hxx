@@ -22,6 +22,9 @@
 
 #include <com/sun/star/frame/XModel.hpp>
 
+#define CGM_IMPORT_CGM      0x00000001
+#define CGM_EXPORT_IMPRESS  0x00000100
+
 #include <rtl/ustring.hxx>
 #include <vector>
 #include <vcl/vclptr.hxx>
@@ -31,7 +34,7 @@ class   Graphic;
 class   SvStream;
 class   CGMChart;
 class   CGMBitmap;
-class   CGMImpressOutAct;
+class   CGMOutAct;
 class   CGMElements;
 class   GDIMetaFile;
 class   VirtualDevice;
@@ -41,10 +44,11 @@ class CGM
         friend class CGMChart;
         friend class CGMBitmap;
         friend class CGMElements;
+        friend class CGMOutAct;
         friend class CGMImpressOutAct;
 
-        double              mnOutdx;                // Output size in 1/100TH mm
-        double              mnOutdy;                // on which is mapped
+        double              mnOutdx;                // Ausgabe Groesse in 1/100TH mm
+        double              mnOutdy;                // auf das gemappt wird
         double              mnVDCXadd;
         double              mnVDCYadd;
         double              mnVDCXmul;
@@ -64,15 +68,14 @@ class CGM
         bool                mbPictureBody;
         bool                mbFigure;
         bool                mbFirstOutPut;
-        bool                mbInDefaultReplacement;
-        sal_uInt32          mnAct4PostReset;
+        sal_uInt32              mnAct4PostReset;
         CGMBitmap*          mpBitmapInUse;
         CGMChart*           mpChart;                // if sal_True->"SHWSLIDEREC"
                                                     //  otherwise "BEGINPIC" commands
                                                     // controls page inserting
         CGMElements*        pElement;
         CGMElements*        pCopyOfE;
-        CGMImpressOutAct*   mpOutAct;
+        CGMOutAct*          mpOutAct;
         ::std::vector< sal_uInt8 * > maDefRepList;
         ::std::vector< sal_uInt32  > maDefRepSizeList;
 
@@ -84,6 +87,7 @@ class CGM
         sal_uInt8*              mpBuf;          // source stream operation -> then this is allocated for
                                             //                            the temp input buffer
 
+        sal_uInt32              mnMode;         // source description
         sal_uInt32              mnEscape;
         sal_uInt32              mnElementClass;
         sal_uInt32              mnElementID;
@@ -98,7 +102,6 @@ class CGM
         double              ImplGetFloat( RealPrecision, sal_uInt32 nRealSize );
         sal_uInt32          ImplGetBitmapColor( bool bDirectColor = false );
         void                ImplSetMapMode();
-        void                ImplSetUnderlineMode();
         void                ImplMapDouble( double& );
         void                ImplMapX( double& );
         void                ImplMapY( double& );
@@ -134,7 +137,7 @@ class CGM
 
                             ~CGM();
 
-                            CGM(css::uno::Reference< css::frame::XModel > const & rModel);
+                            CGM( sal_uInt32 nMode, css::uno::Reference< css::frame::XModel > const & rModel );
         GDIMetaFile*        mpGDIMetaFile;
         sal_uInt32          GetBackGroundColor();
         bool                IsValid() const { return mbStatus; };

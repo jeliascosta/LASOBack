@@ -31,7 +31,7 @@ void Test::testSingleElement()
     {   // lowercase
         OUString test1 = GetEnglishSearchFontName( "SYMBOL" );
         CPPUNIT_ASSERT_EQUAL( OUString("symbol"),test1);
-        //trailing whitespaces
+        //trailingWhitespaces
         test1 = GetEnglishSearchFontName( "Symbol    " );
         CPPUNIT_ASSERT_EQUAL(OUString("symbol"),test1);
         //no longer remove script suffixes

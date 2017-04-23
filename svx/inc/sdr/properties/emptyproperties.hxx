@@ -56,7 +56,7 @@ namespace sdr
             EmptyProperties(const EmptyProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~EmptyProperties() override;
+            virtual ~EmptyProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
@@ -75,7 +75,7 @@ namespace sdr
 
             // clear single item direct, do not do any notifies or things like that.
             // Also supports complete deleteion of items when default parameter 0 is used.
-            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich) override;
+            virtual void ClearObjectItemDirect(const sal_uInt16 nWhich = 0) override;
 
             // set complete item set
             virtual void SetObjectItemSet(const SfxItemSet& rSet) override;

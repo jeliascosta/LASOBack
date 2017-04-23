@@ -30,14 +30,14 @@
 class IFinishedThreadListener
 {
 public:
-        virtual ~IFinishedThreadListener()
+        inline virtual ~IFinishedThreadListener()
         {
         };
 
         virtual void NotifyAboutFinishedThread( const oslInterlockedCount nThreadID ) = 0;
 
 protected:
-        IFinishedThreadListener()
+        inline IFinishedThreadListener()
         {
         };
 };

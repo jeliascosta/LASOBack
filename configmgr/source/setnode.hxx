@@ -57,7 +57,7 @@ public:
 private:
     SetNode(SetNode const & other, bool keepTemplateName);
 
-    virtual ~SetNode() override;
+    virtual ~SetNode();
 
     virtual Kind kind() const override;
 

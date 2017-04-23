@@ -190,12 +190,14 @@ namespace svx
 
     ControllerFeatures::ControllerFeatures( IControllerFeatureInvalidation* _pInvalidationCallback )
         :m_pInvalidationCallback( _pInvalidationCallback )
+        ,m_pImpl( nullptr )
     {
     }
 
 
-    ControllerFeatures::ControllerFeatures( const Reference< XFormController >& _rxController )
-        :m_pInvalidationCallback( nullptr )
+    ControllerFeatures::ControllerFeatures( const Reference< XFormController >& _rxController, IControllerFeatureInvalidation* _pInvalidationCallback )
+        :m_pInvalidationCallback( _pInvalidationCallback )
+        ,m_pImpl( nullptr )
     {
         assign( _rxController );
     }
@@ -205,6 +207,7 @@ namespace svx
     {
         dispose();
         m_pImpl = new FormControllerHelper( _rxController, m_pInvalidationCallback );
+        m_pImpl->acquire();
     }
 
 
@@ -216,10 +219,11 @@ namespace svx
 
     void ControllerFeatures::dispose()
     {
-        if ( m_pImpl.is() )
+        if ( m_pImpl )
         {
             m_pImpl->dispose();
-            m_pImpl.clear();
+            m_pImpl->release();
+            m_pImpl = nullptr;
         }
     }
 
@@ -381,7 +385,7 @@ namespace svx
     }
 
 
-    void SAL_CALL FormControllerHelper::invalidateFeatures( const Sequence< ::sal_Int16 >& Features )
+    void SAL_CALL FormControllerHelper::invalidateFeatures( const Sequence< ::sal_Int16 >& Features ) throw (RuntimeException, std::exception)
     {
         if ( !m_pInvalidationCallback )
             // nobody's interested in ...
@@ -399,7 +403,7 @@ namespace svx
     }
 
 
-    void SAL_CALL FormControllerHelper::invalidateAllFeatures()
+    void SAL_CALL FormControllerHelper::invalidateAllFeatures() throw (RuntimeException, std::exception)
     {
         if ( !m_pInvalidationCallback )
             // nobody's interested in ...
@@ -442,14 +446,14 @@ namespace svx
     }
 
 
-    void SAL_CALL FormControllerHelper::errorOccured( const SQLErrorEvent& Event )
+    void SAL_CALL FormControllerHelper::errorOccured( const SQLErrorEvent& Event ) throw (RuntimeException, std::exception)
     {
         OSL_ENSURE( !m_aOperationError.hasValue(), "FormControllerHelper::errorOccurred: two errors during one operation?" );
         m_aOperationError = Event.Reason;
     }
 
 
-    void SAL_CALL FormControllerHelper::disposing( const EventObject& /*_Source*/ )
+    void SAL_CALL FormControllerHelper::disposing( const EventObject& /*_Source*/ ) throw (RuntimeException, std::exception)
     {
         // not interested in
     }

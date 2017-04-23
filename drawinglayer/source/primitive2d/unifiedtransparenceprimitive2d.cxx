@@ -61,12 +61,12 @@ namespace drawinglayer
             return getChildren().getB2DRange( rViewInformation);
         }
 
-        void UnifiedTransparencePrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer UnifiedTransparencePrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             if(0.0 == getTransparence())
             {
                 // no transparence used, so just use the content
-                getChildren(rVisitor);
+                return getChildren();
             }
             else if(getTransparence() > 0.0 && getTransparence() < 1.0)
             {
@@ -95,11 +95,13 @@ namespace drawinglayer
                 aTransparenceContent[1] = Primitive2DReference(new PolygonHairlinePrimitive2D(aPolygon, aGray));
 
                 // create sub-transparence group with a gray-colored rectangular fill polygon
-                rVisitor.append(new TransparencePrimitive2D(getChildren(), aTransparenceContent));
+                const Primitive2DReference xRefB(new TransparencePrimitive2D(getChildren(), aTransparenceContent));
+                return Primitive2DContainer { xRefB };
             }
             else
             {
                 // completely transparent or invalid definition, add nothing
+                return Primitive2DContainer();
             }
         }
 

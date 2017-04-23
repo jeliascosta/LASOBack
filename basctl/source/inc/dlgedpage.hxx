@@ -42,7 +42,7 @@ private:
 public:
 
     explicit DlgEdPage( DlgEdModel& rModel, bool bMasterPage = false );
-    virtual ~DlgEdPage() override;
+    virtual ~DlgEdPage();
 
     virtual SdrPage* Clone() const override;
     virtual SdrPage* Clone( SdrModel* pNewModel ) const override;

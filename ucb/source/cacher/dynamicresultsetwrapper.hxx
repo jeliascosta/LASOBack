@@ -33,9 +33,7 @@
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/ucb/XDynamicResultSetListener.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
-#include <rtl/ref.hxx>
 
-#include <memory>
 
 class DynamicResultSetWrapperListener;
 class DynamicResultSetWrapper
@@ -48,11 +46,13 @@ private:
     bool                    m_bDisposed; ///Dispose call ready.
     bool                    m_bInDispose;///In dispose call
     osl::Mutex              m_aContainerMutex;
-    std::unique_ptr<comphelper::OInterfaceContainerHelper2>
+    comphelper::OInterfaceContainerHelper2*
                             m_pDisposeEventListeners;
 protected:
-    rtl::Reference<DynamicResultSetWrapperListener>
+    css::uno::Reference< css::ucb::XDynamicResultSetListener >
                             m_xMyListenerImpl;
+    DynamicResultSetWrapperListener*
+                            m_pMyListenerImpl;
 
     css::uno::Reference< css::uno::XComponentContext >
                             m_xContext;
@@ -83,10 +83,10 @@ protected:
 protected:
     void SAL_CALL impl_init();
     void SAL_CALL impl_deinit();
-    /// @throws css::lang::DisposedException
-    /// @throws css::uno::RuntimeException
     void SAL_CALL
-    impl_EnsureNotDisposed();
+    impl_EnsureNotDisposed()
+        throw( css::lang::DisposedException,
+               css::uno::RuntimeException );
 
     virtual void SAL_CALL
     impl_InitResultSetOne( const css::uno::Reference<
@@ -98,56 +98,69 @@ protected:
 public:
 
     DynamicResultSetWrapper(
-        css::uno::Reference< css::ucb::XDynamicResultSet > const & xOrigin
+        css::uno::Reference< css::ucb::XDynamicResultSet > xOrigin
         , const css::uno::Reference< css::uno::XComponentContext > & rxContext );
 
-    virtual ~DynamicResultSetWrapper() override;
+    virtual ~DynamicResultSetWrapper();
 
 
     // XInterface
     virtual css::uno::Any SAL_CALL
-    queryInterface( const css::uno::Type & rType ) override;
+    queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XDynamicResultSet
     virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL
-    getStaticResultSet() override;
+    getStaticResultSet()
+        throw( css::ucb::ListenerAlreadySetException
+        , css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    setListener( const css::uno::Reference< css::ucb::XDynamicResultSetListener > & Listener ) override;
+    setListener( const css::uno::Reference< css::ucb::XDynamicResultSetListener > & Listener )
+        throw( css::ucb::ListenerAlreadySetException
+            , css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    connectToCache( const css::uno::Reference< css::ucb::XDynamicResultSet > & xCache ) override;
+    connectToCache( const css::uno::Reference< css::ucb::XDynamicResultSet > & xCache )
+        throw( css::ucb::ListenerAlreadySetException
+            , css::ucb::AlreadyInitializedException
+            , css::ucb::ServiceNotFoundException
+            , css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int16 SAL_CALL
-    getCapabilities() override;
+    getCapabilities() throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XComponent ( base of XDynamicResultSet )
     virtual void SAL_CALL
-    dispose() override;
+    dispose() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) override;
+    addEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL
-    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener ) override;
+    removeEventListener( const css::uno::Reference< css::lang::XEventListener >& Listener )
+            throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XSourceInitialization
 
     virtual void SAL_CALL
-    setSource(  const css::uno::Reference< css::uno::XInterface > & Source ) override;
+    setSource(  const css::uno::Reference< css::uno::XInterface > & Source )
+         throw( css::ucb::AlreadyInitializedException
+                , css::uno::RuntimeException, std::exception ) override;
 
 
     // own methods:
-    /// @throws css::uno::RuntimeException
     virtual void SAL_CALL
-    impl_disposing( const css::lang::EventObject& Source );
+    impl_disposing( const css::lang::EventObject& Source )
+        throw( css::uno::RuntimeException );
 
-    /// @throws css::uno::RuntimeException
     void SAL_CALL
-    impl_notify( const css::ucb::ListEvent& Changes );
+    impl_notify( const css::ucb::ListEvent& Changes )
+        throw( css::uno::RuntimeException );
 };
 
 
@@ -162,11 +175,12 @@ protected:
 public:
     DynamicResultSetWrapperListener( DynamicResultSetWrapper* pOwner );
 
-    virtual ~DynamicResultSetWrapperListener() override;
+    virtual ~DynamicResultSetWrapperListener();
 
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
@@ -175,11 +189,13 @@ public:
     // XEventListener ( base of XDynamicResultSetListener )
 
     virtual void SAL_CALL
-    disposing( const css::lang::EventObject& Source ) override;
+    disposing( const css::lang::EventObject& Source )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XDynamicResultSetListener
     virtual void SAL_CALL
-    notify( const css::ucb::ListEvent& Changes ) override;
+    notify( const css::ucb::ListEvent& Changes )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // own methods:

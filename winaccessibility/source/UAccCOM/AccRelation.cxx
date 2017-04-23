@@ -50,7 +50,7 @@ STDMETHODIMP CAccRelation::get_relationType(BSTR * relationType)
 
     ENTER_PROTECTED_BLOCK
 
-    if (relationType == nullptr)
+    if (relationType == NULL)
         return E_INVALIDARG;
 
     int type = relation.RelationType;
@@ -85,7 +85,7 @@ STDMETHODIMP CAccRelation::get_nTargets(long * nTargets)
 
     ENTER_PROTECTED_BLOCK
 
-    if (nTargets == nullptr)
+    if (nTargets == NULL)
         return E_INVALIDARG;
 
     Sequence< Reference< XInterface > > xTargets = relation.TargetSet;
@@ -107,7 +107,7 @@ STDMETHODIMP CAccRelation::get_target(long targetIndex, IUnknown * * target)
 
     ENTER_PROTECTED_BLOCK
 
-    if (target == nullptr)
+    if (target == NULL)
         return E_FAIL;
 
     Sequence< Reference< XInterface > > xTargets = relation.TargetSet;
@@ -116,12 +116,12 @@ STDMETHODIMP CAccRelation::get_target(long targetIndex, IUnknown * * target)
         return E_FAIL;
 
     Reference<XAccessible> xRAcc(xTargets[targetIndex], UNO_QUERY);
-    IAccessible* pRet = nullptr;
+    IAccessible* pRet = NULL;
 
     BOOL isGet = CMAccessible::get_IAccessibleFromXAccessible(xRAcc.get(), &pRet);
     if(isGet)
     {
-        *target = /*(IAccessible2 *)*/static_cast<IUnknown*>(pRet);
+        *target = /*(IAccessible2 *)*/(IUnknown*)pRet;
         pRet->AddRef();
         return S_OK;
     }
@@ -145,25 +145,25 @@ STDMETHODIMP CAccRelation::get_targets(long, IUnknown * * target, long * nTarget
     ENTER_PROTECTED_BLOCK
 
     // #CHECK#
-    if(target == nullptr)
+    if(target == NULL)
         return E_INVALIDARG;
-    if (nTargets == nullptr)
+    if (nTargets == NULL)
         return E_INVALIDARG;
 
     Sequence< Reference< XInterface > > xTargets = relation.TargetSet;
     int nCount = xTargets.getLength();
 
-    *target = static_cast<IUnknown*>(::CoTaskMemAlloc(nCount*sizeof(IUnknown)));
+    *target = (IUnknown*)::CoTaskMemAlloc(nCount*sizeof(IUnknown));
 
     // #CHECK Memory Allocation#
-    if(*target == nullptr)
+    if(*target == NULL)
     {
         return E_FAIL;
     }
 
     for(int i=0; i<nCount ; i++)
     {
-        IUnknown* pAcc = nullptr;
+        IUnknown* pAcc = NULL;
         HRESULT hr = get_target(i,&pAcc);
         if(SUCCEEDED(hr))
             target[i] = pAcc;

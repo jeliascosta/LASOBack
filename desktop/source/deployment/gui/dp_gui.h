@@ -26,6 +26,7 @@
 #include <rtl/ref.hxx>
 #include <rtl/instance.hxx>
 #include <osl/thread.hxx>
+#include <cppuhelper/implbase2.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/button.hxx>

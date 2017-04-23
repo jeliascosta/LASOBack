@@ -24,8 +24,6 @@
 #include <IDocumentRedlineAccess.hxx>
 
 #include "swfont.hxx"
-
-#include <cstddef>
 #include <vector>
 
 class SwTextNode;
@@ -35,7 +33,7 @@ class SwAttrHandler;
 
 class SwExtend
 {
-    std::unique_ptr<SwFont> pFnt;
+    SwFont *pFnt;
     const std::vector<ExtTextInputAttr> &rArr;
     sal_Int32 nStart;
     sal_Int32 nPos;
@@ -44,15 +42,16 @@ class SwExtend
     bool Inside() const { return ( nPos >= nStart && nPos < nEnd ); }
     static void ActualizeFont( SwFont &rFnt, ExtTextInputAttr nAttr );
 public:
-    SwExtend( const std::vector<ExtTextInputAttr> &rA, sal_Int32 nSt ) : rArr( rA ),
+    SwExtend( const std::vector<ExtTextInputAttr> &rA, sal_Int32 nSt ) : pFnt(nullptr), rArr( rA ),
         nStart( nSt ), nPos( COMPLETE_STRING ), nEnd( nStart + rA.size() ) {}
+    ~SwExtend() { delete pFnt; }
     bool IsOn() const { return pFnt != nullptr; }
-    void Reset() { pFnt.reset(); nPos = COMPLETE_STRING; }
+    void Reset() { if( pFnt ) { delete pFnt; pFnt = nullptr; } nPos = COMPLETE_STRING; }
     bool Leave( SwFont& rFnt, sal_Int32 nNew )
         { return pFnt && Leave_( rFnt, nNew ); }
     short Enter( SwFont& rFnt, sal_Int32 nNew );
     sal_Int32 Next( sal_Int32 nNext );
-    SwFont* GetFont()  { return pFnt.get(); }
+    SwFont* GetFont()  { return pFnt; }
     void UpdateFont( SwFont &rFnt ) { ActualizeFont( rFnt, rArr[ nPos - nStart ] ); }
 };
 
@@ -73,7 +72,7 @@ class SwRedlineItr
 
     void Clear_( SwFont* pFnt );
     bool ChkSpecialUnderline_() const;
-    void FillHints( std::size_t nAuthor, RedlineType_t eType );
+    void FillHints( sal_uInt16 nAuthor, RedlineType_t eType );
     short Seek_( SwFont& rFnt, sal_Int32 nNew, sal_Int32 nOld );
     sal_Int32 GetNextRedln_( sal_Int32 nNext );
     short EnterExtend( SwFont& rFnt, sal_Int32 nNew ) {
@@ -89,29 +88,29 @@ public:
         sal_Int32 nRedlPos, bool bShw, const std::vector<ExtTextInputAttr> *pArr = nullptr,
         sal_Int32 nExtStart = COMPLETE_STRING );
     ~SwRedlineItr();
-    bool IsOn() const { return bOn || ( pExt && pExt->IsOn() ); }
-    void Clear( SwFont* pFnt ) { if( bOn ) Clear_( pFnt ); }
+    inline bool IsOn() const { return bOn || ( pExt && pExt->IsOn() ); }
+    inline void Clear( SwFont* pFnt ) { if( bOn ) Clear_( pFnt ); }
     void ChangeTextAttr( SwFont* pFnt, SwTextAttr &rHt, bool bChg );
-    short Seek( SwFont& rFnt, sal_Int32 nNew, sal_Int32 nOld ) {
+    inline short Seek( SwFont& rFnt, sal_Int32 nNew, sal_Int32 nOld ) {
         if( bShow || pExt ) return Seek_( rFnt, nNew, nOld );
         return 0;
     }
-    void Reset() { if( nAct != nFirst ) nAct = COMPLETE_STRING;
+    inline void Reset() { if( nAct != nFirst ) nAct = COMPLETE_STRING;
                           if( pExt ) pExt->Reset(); }
-    sal_Int32 GetNextRedln( sal_Int32 nNext ) {
+    inline sal_Int32 GetNextRedln( sal_Int32 nNext ) {
         if( bShow || pExt ) return GetNextRedln_( nNext );
         return nNext;
     }
-    bool ChkSpecialUnderline() const
+    inline bool ChkSpecialUnderline() const
         { return IsOn() && ChkSpecialUnderline_(); }
     bool CheckLine( sal_Int32 nChkStart, sal_Int32 nChkEnd );
-    bool LeaveExtend( SwFont& rFnt, sal_Int32 nNew )
+    inline bool LeaveExtend( SwFont& rFnt, sal_Int32 nNew )
         { return pExt->Leave(rFnt, nNew ); }
-    bool ExtOn() {
+    inline bool ExtOn() {
         if( pExt ) return pExt->IsOn();
         return false;
     }
-    void UpdateExtFont( SwFont &rFnt ) {
+    inline void UpdateExtFont( SwFont &rFnt ) {
         OSL_ENSURE( ExtOn(), "UpdateExtFont without ExtOn" );
         pExt->UpdateFont( rFnt ); }
 };

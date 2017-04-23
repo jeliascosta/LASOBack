@@ -54,6 +54,11 @@
   #include "OSXBluetoothWrapper.hxx"
 #endif
 
+#ifdef __MINGW32__
+// Value taken from http://msdn.microsoft.com/en-us/library/windows/desktop/ms738518%28v=vs.85%29.aspx
+#define NS_BTH 16
+#endif
+
 #include "Communicator.hxx"
 
 using namespace sd;
@@ -93,6 +98,7 @@ struct sd::BluetoothServer::Impl {
     GMainContext *mpContext;
     DBusConnection *mpConnection;
     DBusObject *mpService;
+    volatile bool mbExitMainloop;
     enum BluezVersion { BLUEZ4, BLUEZ5, UNKNOWN };
     BluezVersion maBluezVersion;
 
@@ -100,6 +106,7 @@ struct sd::BluetoothServer::Impl {
         : mpContext( g_main_context_new() )
         , mpConnection( nullptr )
         , mpService( nullptr )
+        , mbExitMainloop( false )
         , maBluezVersion( UNKNOWN )
     { }
 
@@ -212,7 +219,7 @@ getBluez5Adapter(DBusConnection *pConnection)
     if (!pMsg)
         return nullptr;
 
-    const gchar* const pInterfaceType = "org.bluez.Adapter1";
+    const gchar* pInterfaceType = "org.bluez.Adapter1";
 
     pMsg = sendUnrefAndWaitForReply( pConnection, pMsg );
 
@@ -288,7 +295,7 @@ bluez4GetDefaultService( DBusConnection *pConnection )
 {
     DBusMessage *pMsg;
     DBusMessageIter it;
-    const gchar* const pInterfaceType = "org.bluez.Service";
+    const gchar* pInterfaceType = "org.bluez.Service";
 
     // org.bluez.manager only exists for bluez 4.
     // getMethodCall should return NULL if there is any issue e.g. the
@@ -459,7 +466,7 @@ sal_Int32 OSXBluetoothWrapper::readLine( OString& aLine )
             std::ostringstream s;
             if (mBuffer.size() > 0)
             {
-                for (unsigned char *p = reinterpret_cast<unsigned char *>(mBuffer.data()); p != reinterpret_cast<unsigned char *>(mBuffer.data()) + mBuffer.size(); p++)
+                for (unsigned char *p = reinterpret_cast<unsigned char *>(&mBuffer.front()); p != reinterpret_cast<unsigned char *>(&mBuffer.front()) + mBuffer.size(); p++)
                 {
                     if (*p == '\n')
                         s << "\\n";
@@ -1202,7 +1209,7 @@ void SAL_CALL BluetoothServer::run()
 
         // TODO: exit on SD deinit
         // Probably best to do that in SdModule::~SdModule?
-        while (true)
+        while (!mpImpl->mbExitMainloop)
         {
             aDBusFD.revents = 0;
             g_main_context_iteration( mpImpl->mpContext, TRUE );
@@ -1242,7 +1249,7 @@ void SAL_CALL BluetoothServer::run()
 
     mpImpl->mpConnection = pConnection;
 
-    while( true )
+    while( !mpImpl->mbExitMainloop )
     {
         aDBusFD.revents = 0;
         aSocketFD.revents = 0;
@@ -1329,7 +1336,7 @@ void SAL_CALL BluetoothServer::run()
     aAddr.btAddr = 0;
     aAddr.serviceClassId = GUID_NULL;
     aAddr.port = BT_PORT_ANY; // Select any free socket.
-    if ( bind( aSocket, reinterpret_cast<SOCKADDR*>(&aAddr), sizeof(aAddr) ) == SOCKET_ERROR )
+    if ( bind( aSocket, (SOCKADDR*) &aAddr, sizeof(aAddr) ) == SOCKET_ERROR )
     {
         closesocket( aSocket );
         WSACleanup();
@@ -1365,7 +1372,7 @@ void SAL_CALL BluetoothServer::run()
         L"LibreOffice Impress Remote Control");
     aRecord.lpszComment = const_cast<wchar_t *>(
         L"Remote control of presentations over bluetooth.");
-    aRecord.lpServiceClassId = const_cast<LPGUID>(&SerialPortServiceClass_UUID);
+    aRecord.lpServiceClassId = (LPGUID) &SerialPortServiceClass_UUID;
     aRecord.dwNameSpace = NS_BTH;
     aRecord.dwNumberOfCsAddrs = 1;
     aRecord.lpcsaBuffer = &aAddrInfo;
@@ -1389,7 +1396,7 @@ void SAL_CALL BluetoothServer::run()
     while ( true )
     {
         SOCKET socket;
-        if ( (socket = accept(aSocket, reinterpret_cast<sockaddr*>(&aRemoteAddr), &aRemoteAddrLen)) == INVALID_SOCKET )
+        if ( (socket = accept(aSocket, (sockaddr*) &aRemoteAddr, &aRemoteAddrLen)) == INVALID_SOCKET )
         {
             closesocket( aSocket );
             WSACleanup();

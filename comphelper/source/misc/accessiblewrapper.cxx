@@ -235,7 +235,7 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OWrappedAccessibleChildrenManager::disposing( const EventObject& _rSource )
+    void SAL_CALL OWrappedAccessibleChildrenManager::disposing( const EventObject& _rSource ) throw (RuntimeException, std::exception)
     {
         // this should come from one of the inner XAccessible's of our children
         Reference< XAccessible > xSource( _rSource.Source, UNO_QUERY );
@@ -295,7 +295,7 @@ namespace comphelper
     IMPLEMENT_FORWARD_REFCOUNT( OAccessibleWrapper, OComponentProxyAggregation )
 
 
-    Any OAccessibleWrapper::queryInterface( const Type& _rType )
+    Any OAccessibleWrapper::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
     {
         // #111089# instead of the inner XAccessible the proxy XAccessible must be returned
         Any aReturn = OAccessibleWrapper_Base::queryInterface( _rType );
@@ -318,7 +318,7 @@ namespace comphelper
     }
 
 
-    Reference< XAccessibleContext > SAL_CALL OAccessibleWrapper::getAccessibleContext(  )
+    Reference< XAccessibleContext > SAL_CALL OAccessibleWrapper::getAccessibleContext(  ) throw (RuntimeException, std::exception)
     {
         // see if the context is still alive (we cache it)
         Reference< XAccessibleContext > xContext = m_aContext;
@@ -347,15 +347,18 @@ namespace comphelper
         ,m_xInnerContext( _rxInnerAccessibleContext )
         ,m_xOwningAccessible( _rxOwningAccessible )
         ,m_xParentAccessible( _rxParentAccessible )
-        // initialize the mapper for our children
-        ,m_xChildMapper( new OWrappedAccessibleChildrenManager( getComponentContext() ) )
+        ,m_pChildMapper( nullptr )
     {
+        // initialize the mapper for our children
+        m_pChildMapper = new OWrappedAccessibleChildrenManager( getComponentContext() );
+        m_pChildMapper->acquire();
+
         // determine if we're allowed to cache children
         Reference< XAccessibleStateSet > xStates( m_xInnerContext->getAccessibleStateSet( ) );
         OSL_ENSURE( xStates.is(), "OAccessibleContextWrapperHelper::OAccessibleContextWrapperHelper: no inner state set!" );
-        m_xChildMapper->setTransientChildren( !xStates.is() || xStates->contains( AccessibleStateType::MANAGES_DESCENDANTS) );
+        m_pChildMapper->setTransientChildren( !xStates.is() || xStates->contains( AccessibleStateType::MANAGES_DESCENDANTS) );
 
-        m_xChildMapper->setOwningAccessible( m_xOwningAccessible );
+        m_pChildMapper->setOwningAccessible( m_xOwningAccessible );
     }
 
 
@@ -380,10 +383,13 @@ namespace comphelper
     OAccessibleContextWrapperHelper::~OAccessibleContextWrapperHelper( )
     {
         OSL_ENSURE( m_rBHelper.bDisposed, "OAccessibleContextWrapperHelper::~OAccessibleContextWrapperHelper: you should ensure (in your dtor) that the object is disposed!" );
+
+        m_pChildMapper->release();
+        m_pChildMapper = nullptr;
     }
 
 
-    Any SAL_CALL OAccessibleContextWrapperHelper::queryInterface( const Type& _rType )
+    Any SAL_CALL OAccessibleContextWrapperHelper::queryInterface( const Type& _rType ) throw (RuntimeException, std::exception)
     {
         Any aReturn = OComponentProxyAggregationHelper::queryInterface( _rType );
         if ( !aReturn.hasValue() )
@@ -395,21 +401,21 @@ namespace comphelper
     IMPLEMENT_FORWARD_XTYPEPROVIDER2( OAccessibleContextWrapperHelper, OComponentProxyAggregationHelper, OAccessibleContextWrapperHelper_Base )
 
 
-    sal_Int32 OAccessibleContextWrapperHelper::baseGetAccessibleChildCount(  )
+    sal_Int32 OAccessibleContextWrapperHelper::baseGetAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleChildCount();
     }
 
 
-    Reference< XAccessible > OAccessibleContextWrapperHelper::baseGetAccessibleChild( sal_Int32 i )
+    Reference< XAccessible > OAccessibleContextWrapperHelper::baseGetAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         // get the child of the wrapped component
         Reference< XAccessible > xInnerChild = m_xInnerContext->getAccessibleChild( i );
-        return m_xChildMapper->getAccessibleWrapperFor( xInnerChild );
+        return m_pChildMapper->getAccessibleWrapperFor( xInnerChild );
     }
 
 
-    Reference< XAccessibleRelationSet > OAccessibleContextWrapperHelper::baseGetAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > OAccessibleContextWrapperHelper::baseGetAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleRelationSet();
             // TODO: if this relation set would contain relations to siblings, we would normally need
@@ -417,7 +423,7 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OAccessibleContextWrapperHelper::notifyEvent( const AccessibleEventObject& _rEvent )
+    void SAL_CALL OAccessibleContextWrapperHelper::notifyEvent( const AccessibleEventObject& _rEvent ) throw (RuntimeException, std::exception)
     {
 #if OSL_DEBUG_LEVEL > 0
         if ( AccessibleEventId::STATE_CHANGED == _rEvent.EventId )
@@ -440,22 +446,22 @@ namespace comphelper
 
             // translate the event
             queryInterface( cppu::UnoType<XInterface>::get() ) >>= aTranslatedEvent.Source;
-            m_xChildMapper->translateAccessibleEvent( _rEvent, aTranslatedEvent );
+            m_pChildMapper->translateAccessibleEvent( _rEvent, aTranslatedEvent );
 
             // see if any of these notifications affect our child manager
-            m_xChildMapper->handleChildNotification( _rEvent );
+            m_pChildMapper->handleChildNotification( _rEvent );
 
             if ( aTranslatedEvent.NewValue == m_xInner )
-                aTranslatedEvent.NewValue <<= aTranslatedEvent.Source;
+                aTranslatedEvent.NewValue = makeAny(aTranslatedEvent.Source);
             if ( aTranslatedEvent.OldValue == m_xInner )
-                aTranslatedEvent.OldValue <<= aTranslatedEvent.Source;
+                aTranslatedEvent.OldValue = makeAny(aTranslatedEvent.Source);
         }
 
         notifyTranslatedEvent( aTranslatedEvent );
     }
 
 
-    void SAL_CALL OAccessibleContextWrapperHelper::dispose()
+    void SAL_CALL OAccessibleContextWrapperHelper::dispose() throw( RuntimeException, std::exception )
     {
         ::osl::MutexGuard aGuard( m_rBHelper.rMutex );
 
@@ -466,14 +472,14 @@ namespace comphelper
             xBroadcaster->removeAccessibleEventListener( this );
 
         // dispose the child cache/map
-        m_xChildMapper->dispose();
+        m_pChildMapper->dispose();
 
         // let the base class dispose the inner component
         OComponentProxyAggregationHelper::dispose();
     }
 
 
-    void SAL_CALL OAccessibleContextWrapperHelper::disposing( const EventObject& _rEvent )
+    void SAL_CALL OAccessibleContextWrapperHelper::disposing( const EventObject& _rEvent )  throw (RuntimeException, std::exception)
     {
         // simply disambiguate this
         OComponentProxyAggregationHelper::disposing( _rEvent );
@@ -501,74 +507,74 @@ namespace comphelper
     }
 
 
-    sal_Int32 SAL_CALL OAccessibleContextWrapper::getAccessibleChildCount(  )
+    sal_Int32 SAL_CALL OAccessibleContextWrapper::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         return baseGetAccessibleChildCount();
     }
 
 
-    Reference< XAccessible > SAL_CALL OAccessibleContextWrapper::getAccessibleChild( sal_Int32 i )
+    Reference< XAccessible > SAL_CALL OAccessibleContextWrapper::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         return baseGetAccessibleChild( i );
     }
 
 
-    Reference< XAccessible > SAL_CALL OAccessibleContextWrapper::getAccessibleParent(  )
+    Reference< XAccessible > SAL_CALL OAccessibleContextWrapper::getAccessibleParent(  ) throw (RuntimeException, std::exception)
     {
         return m_xParentAccessible;
     }
 
 
-    sal_Int32 SAL_CALL OAccessibleContextWrapper::getAccessibleIndexInParent(  )
+    sal_Int32 SAL_CALL OAccessibleContextWrapper::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleIndexInParent();
     }
 
 
-    sal_Int16 SAL_CALL OAccessibleContextWrapper::getAccessibleRole(  )
+    sal_Int16 SAL_CALL OAccessibleContextWrapper::getAccessibleRole(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleRole();
     }
 
 
-    OUString SAL_CALL OAccessibleContextWrapper::getAccessibleDescription(  )
+    OUString SAL_CALL OAccessibleContextWrapper::getAccessibleDescription(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleDescription();
     }
 
 
-    OUString SAL_CALL OAccessibleContextWrapper::getAccessibleName(  )
+    OUString SAL_CALL OAccessibleContextWrapper::getAccessibleName(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleName();
     }
 
 
-    Reference< XAccessibleRelationSet > SAL_CALL OAccessibleContextWrapper::getAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > SAL_CALL OAccessibleContextWrapper::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         return baseGetAccessibleRelationSet();
     }
 
 
-    Reference< XAccessibleStateSet > SAL_CALL OAccessibleContextWrapper::getAccessibleStateSet(  )
+    Reference< XAccessibleStateSet > SAL_CALL OAccessibleContextWrapper::getAccessibleStateSet(  ) throw (RuntimeException, std::exception)
     {
         return m_xInnerContext->getAccessibleStateSet();
     }
 
 
-    Locale SAL_CALL OAccessibleContextWrapper::getLocale(  )
+    Locale SAL_CALL OAccessibleContextWrapper::getLocale(  ) throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
     {
         return m_xInnerContext->getLocale();
     }
 
 
-    void OAccessibleContextWrapper::notifyTranslatedEvent( const AccessibleEventObject& _rEvent )
+    void OAccessibleContextWrapper::notifyTranslatedEvent( const AccessibleEventObject& _rEvent ) throw (RuntimeException)
     {
         if ( m_nNotifierClient )
             AccessibleEventNotifier::addEvent( m_nNotifierClient, _rEvent );
     }
 
 
-    void SAL_CALL OAccessibleContextWrapper::addAccessibleEventListener( const Reference< XAccessibleEventListener >& _rxListener )
+    void SAL_CALL OAccessibleContextWrapper::addAccessibleEventListener( const Reference< XAccessibleEventListener >& _rxListener ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( !m_nNotifierClient )
@@ -577,7 +583,7 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OAccessibleContextWrapper::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& _rxListener )
+    void SAL_CALL OAccessibleContextWrapper::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& _rxListener ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
         if ( m_nNotifierClient )
@@ -592,7 +598,7 @@ namespace comphelper
     }
 
 
-    void SAL_CALL OAccessibleContextWrapper::disposing()
+    void SAL_CALL OAccessibleContextWrapper::disposing()  throw (RuntimeException)
     {
         AccessibleEventNotifier::TClientId nClientId( 0 );
 

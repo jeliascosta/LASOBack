@@ -96,7 +96,7 @@ namespace frm
                 break;
 
             case PROPERTY_ID_FONT_SLANT:
-                aValue <<= _rFont.Slant;
+                aValue = makeAny(_rFont.Slant);
                 break;
 
             case PROPERTY_ID_FONT_UNDERLINE:
@@ -108,7 +108,7 @@ namespace frm
                 break;
 
             case PROPERTY_ID_FONT_WORDLINEMODE:
-                aValue <<= _rFont.WordLineMode;
+                aValue = makeAny( _rFont.WordLineMode );
                 break;
 
             default:
@@ -238,7 +238,7 @@ namespace frm
             break;
 
         case PROPERTY_ID_FONT:
-            _rValue <<= m_aFont;
+            _rValue = makeAny( m_aFont );
             break;
 
         default:
@@ -249,7 +249,7 @@ namespace frm
 
 
     bool FontControlModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue,
-                sal_Int32 _nHandle, const Any& _rValue )
+                sal_Int32 _nHandle, const Any& _rValue ) throw( IllegalArgumentException )
     {
         bool bModified = false;
         switch( _nHandle )
@@ -347,10 +347,10 @@ namespace frm
         return bModified;
     }
 
-    /// @throws Exception
+
     static void setFastPropertyValue_NoBroadcast_implimpl(
             FontDescriptor & rFont,
-            sal_Int32 nHandle, const Any& rValue)
+            sal_Int32 nHandle, const Any& rValue) throw (Exception)
     {
         switch (nHandle)
         {
@@ -434,7 +434,7 @@ namespace frm
     void FontControlModel::setFastPropertyValue_NoBroadcast_impl(
             ::cppu::OPropertySetHelper & rBase,
             void (::cppu::OPropertySetHelper::*pSet)(sal_Int32, Any const&),
-            sal_Int32 nHandle, const Any& rValue)
+            sal_Int32 nHandle, const Any& rValue) throw (Exception)
     {
         if (isFontAggregateProperty(nHandle))
         {

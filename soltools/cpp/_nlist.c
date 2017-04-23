@@ -42,9 +42,8 @@ struct kwtab
     char *kw;
     int val;
     int flag;
-};
+}   kwtab[] =
 
-static struct kwtab kwtab[] =
 {
         {"if", KIF, ISKW},
         {"ifdef", KIFDEF, ISKW},

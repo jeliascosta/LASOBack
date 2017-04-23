@@ -41,7 +41,7 @@ SfxViewShell* OutlineViewShellBase::CreateInstance (
     pBase->LateInit(framework::FrameworkHelper::msOutlineViewURL);
     return pBase;
 }
-void OutlineViewShellBase::RegisterFactory( SfxInterfaceId nPrio )
+void OutlineViewShellBase::RegisterFactory( sal_uInt16 nPrio )
 {
     pFactory = new SfxViewFactory(&CreateInstance,nPrio,"Outline");
     InitFactory();

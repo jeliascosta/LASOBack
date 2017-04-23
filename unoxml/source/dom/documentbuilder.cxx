@@ -63,7 +63,8 @@ namespace DOM
     class CDefaultEntityResolver : public cppu::WeakImplHelper< XEntityResolver >
     {
     public:
-        virtual InputSource SAL_CALL resolveEntity( const OUString& sPublicId, const OUString& sSystemId ) override
+        virtual InputSource SAL_CALL resolveEntity( const OUString& sPublicId, const OUString& sSystemId )
+            throw (css::uno::RuntimeException, std::exception) override
         {
             InputSource is;
             is.sPublicId = sPublicId;
@@ -87,7 +88,7 @@ namespace DOM
     };
 
     CDocumentBuilder::CDocumentBuilder()
-        : m_xEntityResolver(new CDefaultEntityResolver)
+        : m_xEntityResolver(new CDefaultEntityResolver())
     {
         // init libxml. libxml will protect itself against multiple
         // initializations so there is no problem here if this gets
@@ -121,37 +122,44 @@ namespace DOM
     }
 
     Sequence< OUString > SAL_CALL CDocumentBuilder::getSupportedServiceNames()
+        throw (RuntimeException, std::exception)
     {
         return CDocumentBuilder::_getSupportedServiceNames();
     }
 
     OUString SAL_CALL CDocumentBuilder::getImplementationName()
+        throw (RuntimeException, std::exception)
     {
         return CDocumentBuilder::_getImplementationName();
     }
 
     sal_Bool SAL_CALL CDocumentBuilder::supportsService(const OUString& aServiceName)
+        throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, aServiceName);
     }
 
     Reference< XDOMImplementation > SAL_CALL CDocumentBuilder::getDOMImplementation()
+        throw (RuntimeException, std::exception)
     {
 
         return Reference< XDOMImplementation >();
     }
 
     sal_Bool SAL_CALL CDocumentBuilder::isNamespaceAware()
+        throw (RuntimeException, std::exception)
     {
         return true;
     }
 
     sal_Bool SAL_CALL CDocumentBuilder::isValidating()
+        throw (RuntimeException, std::exception)
     {
         return false;
     }
 
     Reference< XDocument > SAL_CALL CDocumentBuilder::newDocument()
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_Mutex);
 
@@ -299,15 +307,8 @@ namespace DOM
         throw saxex;
     }
 
-    namespace {
-
-    struct XmlFreeParserCtxt {
-        void operator ()(xmlParserCtxt * p) const { xmlFreeParserCtxt(p); }
-    };
-
-    }
-
     Reference< XDocument > SAL_CALL CDocumentBuilder::parse(const Reference< XInputStream >& is)
+        throw (RuntimeException, SAXParseException, IOException, std::exception)
     {
         if (!is.is()) {
             throw RuntimeException();
@@ -315,17 +316,8 @@ namespace DOM
 
         ::osl::MutexGuard const g(m_Mutex);
 
-        // IO context struct.  Must outlive pContext, as destroying that via
-        // xmlFreeParserCtxt may still access this context_t
-        context_t c;
-        c.pBuilder = this;
-        c.rInputStream = is;
-        // we did not open the stream, thus we do not close it.
-        c.close = false;
-        c.freeOnClose = false;
-
-        std::unique_ptr<xmlParserCtxt, XmlFreeParserCtxt> const pContext(
-                xmlNewParserCtxt());
+        std::shared_ptr<xmlParserCtxt> const pContext(
+                xmlNewParserCtxt(), xmlFreeParserCtxt);
 
         // register error functions to prevent errors being printed
         // on the console
@@ -334,6 +326,13 @@ namespace DOM
         pContext->sax->warning = warning_func;
         pContext->sax->resolveEntity = resolve_func;
 
+        // IO context struct
+        context_t c;
+        c.pBuilder = this;
+        c.rInputStream = is;
+        // we did not open the stream, thus we do not close it.
+        c.close = false;
+        c.freeOnClose = false;
         xmlDocPtr const pDoc = xmlCtxtReadIO(pContext.get(),
                 xmlIO_read_func, xmlIO_close_func, &c, nullptr, nullptr, 0);
 
@@ -346,11 +345,12 @@ namespace DOM
     }
 
     Reference< XDocument > SAL_CALL CDocumentBuilder::parseURI(const OUString& sUri)
+        throw (RuntimeException, SAXParseException, IOException, std::exception)
     {
         ::osl::MutexGuard const g(m_Mutex);
 
-        std::unique_ptr<xmlParserCtxt, XmlFreeParserCtxt> const pContext(
-                xmlNewParserCtxt());
+        std::shared_ptr<xmlParserCtxt> const pContext(
+                xmlNewParserCtxt(), xmlFreeParserCtxt);
         pContext->_private = this;
         pContext->sax->error = error_func;
         pContext->sax->warning = warning_func;
@@ -369,6 +369,7 @@ namespace DOM
 
     void SAL_CALL
     CDocumentBuilder::setEntityResolver(Reference< XEntityResolver > const& xER)
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_Mutex);
 
@@ -376,6 +377,7 @@ namespace DOM
     }
 
     Reference< XEntityResolver > SAL_CALL CDocumentBuilder::getEntityResolver()
+        throw (RuntimeException)
     {
         ::osl::MutexGuard const g(m_Mutex);
 
@@ -384,6 +386,7 @@ namespace DOM
 
     void SAL_CALL
     CDocumentBuilder::setErrorHandler(Reference< XErrorHandler > const& xEH)
+        throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_Mutex);
 

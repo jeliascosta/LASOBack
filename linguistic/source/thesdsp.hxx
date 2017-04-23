@@ -63,19 +63,23 @@ class ThesaurusDispatcher :
 
 public:
     ThesaurusDispatcher();
-    virtual ~ThesaurusDispatcher() override;
+    virtual ~ThesaurusDispatcher();
 
     // XSupportedLocales
     virtual css::uno::Sequence< css::lang::Locale > SAL_CALL
-        getLocales() override;
+        getLocales()
+            throw(css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL
-        hasLocale( const css::lang::Locale& aLocale ) override;
+        hasLocale( const css::lang::Locale& aLocale )
+            throw(css::uno::RuntimeException, std::exception) override;
 
     // XThesaurus
     virtual css::uno::Sequence< css::uno::Reference< css::linguistic2::XMeaning > > SAL_CALL
         queryMeanings( const OUString& aTerm,
                 const css::lang::Locale& aLocale,
-                const css::beans::PropertyValues& aProperties ) override;
+                const css::beans::PropertyValues& aProperties )
+            throw(css::lang::IllegalArgumentException,
+                  css::uno::RuntimeException, std::exception) override;
 
     // LinguDispatcher
     virtual void

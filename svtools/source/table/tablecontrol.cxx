@@ -69,7 +69,7 @@ namespace svt { namespace table
 
     void TableControl::dispose()
     {
-        CallEventListeners( VclEventId::ObjectDying );
+        CallEventListeners( VCLEVENT_OBJECT_DYING );
 
         m_pImpl->setModel( PTableModel() );
         m_pImpl->disposeAccessible();
@@ -290,7 +290,7 @@ namespace svt { namespace table
     Reference<XAccessible> TableControl::CreateAccessibleControl( sal_Int32 _nIndex )
     {
         (void)_nIndex;
-        SAL_WARN( "svtools", "TableControl::CreateAccessibleControl: to be overwritten!" );
+        DBG_ASSERT( false, "TableControl::CreateAccessibleControl: to be overwritten!" );
         return nullptr;
     }
 
@@ -424,7 +424,7 @@ namespace svt { namespace table
 
                 rStateSet.AddState( AccessibleStateType::FOCUSABLE );
 
-                if ( m_pImpl->getSelEngine()->GetSelectionMode() == SelectionMode::Multiple )
+                if ( m_pImpl->getSelEngine()->GetSelectionMode() == MULTIPLE_SELECTION )
                     rStateSet.AddState( AccessibleStateType::MULTI_SELECTABLE);
 
                 if ( HasChildPathFocus() )
@@ -498,7 +498,7 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
+    Rectangle TableControl::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
     {
         return Control::GetWindowExtentsRelative( pRelativeWindow );
     }
@@ -600,7 +600,7 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex)
+    Rectangle TableControl::GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex)
     {
         (void)_nRow;
         (void)_nColumnPos;
@@ -616,31 +616,31 @@ namespace svt { namespace table
     }
 
 
-    tools::Rectangle TableControl::calcHeaderRect(bool _bIsColumnBar )
+    Rectangle TableControl::calcHeaderRect(bool _bIsColumnBar )
     {
         return m_pImpl->calcHeaderRect( !_bIsColumnBar );
     }
 
 
-    tools::Rectangle TableControl::calcHeaderCellRect( bool _bIsColumnBar, sal_Int32 nPos )
+    Rectangle TableControl::calcHeaderCellRect( bool _bIsColumnBar, sal_Int32 nPos )
     {
         return m_pImpl->calcHeaderCellRect( _bIsColumnBar, nPos );
     }
 
 
-    tools::Rectangle TableControl::calcTableRect()
+    Rectangle TableControl::calcTableRect()
     {
         return m_pImpl->calcTableRect();
     }
 
 
-    tools::Rectangle TableControl::calcCellRect( sal_Int32 _nRowPos, sal_Int32 _nColPos )
+    Rectangle TableControl::calcCellRect( sal_Int32 _nRowPos, sal_Int32 _nColPos )
     {
         return m_pImpl->calcCellRect( _nRowPos, _nColPos );
     }
 
 
-    IMPL_LINK_NOARG(TableControl, ImplSelectHdl, LinkParamNone*, void)
+    IMPL_LINK_NOARG_TYPED(TableControl, ImplSelectHdl, LinkParamNone*, void)
     {
         Select();
     }
@@ -648,7 +648,7 @@ namespace svt { namespace table
 
     void TableControl::Select()
     {
-        ImplCallEventListenersAndHandler( VclEventId::TableRowSelect, nullptr );
+        ImplCallEventListenersAndHandler( VCLEVENT_TABLEROW_SELECT, nullptr );
 
         if ( m_pImpl->isAccessibleAlive() )
         {

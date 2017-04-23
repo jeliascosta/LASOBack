@@ -30,8 +30,8 @@ struct ScRTFCellDefault
 {
     SfxItemSet          aItemSet;
     SCCOL               nCol;
-    sal_uInt16          nTwips;         // right border of cell
-    SCCOL               nColOverlap;    // MergeCell if >1, merged cells if 0
+    sal_uInt16          nTwips;         // rechter Rand der Zelle
+    SCCOL               nColOverlap;    // MergeCell wenn >1, merged cells wenn 0
 
     ScRTFCellDefault( SfxItemPool* pPool )
         : aItemSet(*pPool)
@@ -54,7 +54,7 @@ private:
     DefaultList maDefaultList;
     size_t mnCurPos;
 
-    ScRTFColTwips       aColTwips;
+    ScRTFColTwips*      pColTwips;
     ScRTFCellDefault*   pInsDefault;
     ScRTFCellDefault*   pActDefault;
     ScRTFCellDefault*   pDefMerge;
@@ -62,18 +62,18 @@ private:
     sal_uInt16          nLastWidth;
     bool                bNewDef;
 
-    DECL_LINK( RTFImportHdl, RtfImportInfo&, void );
+    DECL_LINK_TYPED( RTFImportHdl, ImportInfo&, void );
     inline void         NextRow();
     void                EntryEnd( ScEEParseEntry*, const ESelection& );
-    void                ProcToken( RtfImportInfo* );
+    void                ProcToken( ImportInfo* );
     void                ColAdjust();
     bool                SeekTwips( sal_uInt16 nTwips, SCCOL* pCol );
-    void                NewCellRow( RtfImportInfo* );
+    void                NewCellRow( ImportInfo* );
 
 public:
                         ScRTFParser( EditEngine* );
-    virtual             ~ScRTFParser() override;
-    virtual sal_uLong   Read( SvStream&, const OUString& rBaseURL ) override;
+    virtual             ~ScRTFParser();
+    virtual sal_uLong       Read( SvStream&, const OUString& rBaseURL ) override;
 };
 
 #endif

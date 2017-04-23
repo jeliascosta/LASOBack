@@ -49,6 +49,22 @@ using namespace ::com::sun::star::frame;
 //  Namespace
 
 static const char CONFIGURATION_ROOT_ACCESS[]           = "/org.openoffice.Office.UI.";
+static const char CONFIGURATION_CMD_ELEMENT_ACCESS[]    = "/UserInterface/Commands";
+static const char CONFIGURATION_POP_ELEMENT_ACCESS[]    = "/UserInterface/Popups";
+static const char CONFIGURATION_PROPERTY_LABEL[]        = "Label";
+static const char CONFIGURATION_PROPERTY_CONTEXT_LABEL[] = "ContextLabel";
+static const char CONFIGURATION_PROPERTY_POPUP_LABEL[]   = "PopupLabel";
+static const char CONFIGURATION_PROPERTY_TOOLTIP_LABEL[] = "TooltipLabel";
+static const char CONFIGURATION_PROPERTY_TARGET_URL[]    = "TargetURL";
+
+// Property names of the resulting Property Set
+static const char PROPSET_LABEL[]                       = "Label";
+static const char PROPSET_NAME[]                        = "Name";
+static const char PROPSET_POPUP[]                       = "Popup";
+static const char PROPSET_POPUPLABEL[]                  = "PopupLabel";
+static const char PROPSET_TOOLTIPLABEL[]                = "TooltipLabel";
+static const char PROPSET_TARGETURL[]                   = "TargetURL";
+static const char PROPSET_PROPERTIES[]                  = "Properties";
 
 // Special resource URLs to retrieve additional information
 static const char PRIVATE_RESOURCE_URL[]                = "private:";
@@ -68,27 +84,32 @@ class ConfigurationAccess_UICommand : // Order is necessary for right initializa
     osl::Mutex m_aMutex;
     public:
                                   ConfigurationAccess_UICommand( const OUString& aModuleName, const Reference< XNameAccess >& xGenericUICommands, const Reference< XComponentContext >& rxContext );
-        virtual                   ~ConfigurationAccess_UICommand() override;
+        virtual                   ~ConfigurationAccess_UICommand();
 
         // XNameAccess
-        virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
+        virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+            throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+        virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType() override;
+        virtual css::uno::Type SAL_CALL getElementType()
+            throw (css::uno::RuntimeException, std::exception) override;
 
-        virtual sal_Bool SAL_CALL hasElements() override;
+        virtual sal_Bool SAL_CALL hasElements()
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // container.XContainerListener
-        virtual void SAL_CALL     elementInserted( const ContainerEvent& aEvent ) override;
-        virtual void SAL_CALL     elementRemoved ( const ContainerEvent& aEvent ) override;
-        virtual void SAL_CALL     elementReplaced( const ContainerEvent& aEvent ) override;
+        virtual void SAL_CALL     elementInserted( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL     elementRemoved ( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL     elementReplaced( const ContainerEvent& aEvent ) throw(RuntimeException, std::exception) override;
 
         // lang.XEventListener
-        virtual void SAL_CALL disposing( const EventObject& aEvent ) override;
+        virtual void SAL_CALL disposing( const EventObject& aEvent ) throw(RuntimeException, std::exception) override;
 
     protected:
         css::uno::Any SAL_CALL getByNameImpl( const OUString& aName );
@@ -97,7 +118,6 @@ class ConfigurationAccess_UICommand : // Order is necessary for right initializa
         {
             CmdToInfoMap() : bPopup( false ),
                              bCommandNameCreated( false ),
-                             bIsExperimental( false ),
                              nProperties( 0 ) {}
 
             OUString            aLabel;
@@ -108,7 +128,6 @@ class ConfigurationAccess_UICommand : // Order is necessary for right initializa
             OUString            aTargetURL;
             bool                bPopup : 1,
                                 bCommandNameCreated : 1;
-            bool                bIsExperimental;
             sal_Int32           nProperties;
         };
 
@@ -137,14 +156,12 @@ class ConfigurationAccess_UICommand : // Order is necessary for right initializa
         OUString                     m_aPropUIPopupLabel;
         OUString                     m_aPropUITooltipLabel;
         OUString                     m_aPropUITargetURL;
-        OUString                     m_aPropUIIsExperimental;
         OUString                     m_aPropLabel;
         OUString                     m_aPropName;
         OUString                     m_aPropPopup;
         OUString                     m_aPropPopupLabel;
         OUString                     m_aPropTooltipLabel;
         OUString                     m_aPropTargetURL;
-        OUString                     m_aPropIsExperimental;
         OUString                     m_aPropProperties;
         OUString                     m_aPrivateResourceURL;
         Reference< XNameAccess >          m_xGenericUICommands;
@@ -167,20 +184,18 @@ class ConfigurationAccess_UICommand : // Order is necessary for right initializa
 ConfigurationAccess_UICommand::ConfigurationAccess_UICommand( const OUString& aModuleName, const Reference< XNameAccess >& rGenericUICommands, const Reference< XComponentContext>& rxContext ) :
     m_aConfigCmdAccess( CONFIGURATION_ROOT_ACCESS ),
     m_aConfigPopupAccess( CONFIGURATION_ROOT_ACCESS ),
-    m_aPropUILabel( "Label" ),
-    m_aPropUIContextLabel( "ContextLabel" ),
-    m_aPropUIPopupLabel( "PopupLabel" ),
-    m_aPropUITooltipLabel( "TooltipLabel" ),
-    m_aPropUITargetURL( "TargetURL" ),
-    m_aPropUIIsExperimental( "IsExperimental" ),
-    m_aPropLabel( "Label" ),
-    m_aPropName( "Name" ),
-    m_aPropPopup( "Popup" ),
-    m_aPropPopupLabel( "PopupLabel" ),
-    m_aPropTooltipLabel( "TooltipLabel" ),
-    m_aPropTargetURL( "TargetURL" ),
-    m_aPropIsExperimental( "IsExperimental" ),
-    m_aPropProperties( "Properties" ),
+    m_aPropUILabel( CONFIGURATION_PROPERTY_LABEL ),
+    m_aPropUIContextLabel( CONFIGURATION_PROPERTY_CONTEXT_LABEL ),
+    m_aPropUIPopupLabel( CONFIGURATION_PROPERTY_POPUP_LABEL ),
+    m_aPropUITooltipLabel( CONFIGURATION_PROPERTY_TOOLTIP_LABEL ),
+    m_aPropUITargetURL( CONFIGURATION_PROPERTY_TARGET_URL ),
+    m_aPropLabel( PROPSET_LABEL ),
+    m_aPropName( PROPSET_NAME ),
+    m_aPropPopup( PROPSET_POPUP ),
+    m_aPropPopupLabel( PROPSET_POPUPLABEL ),
+    m_aPropTooltipLabel( PROPSET_TOOLTIPLABEL ),
+    m_aPropTargetURL( PROPSET_TARGETURL ),
+    m_aPropProperties( PROPSET_PROPERTIES ),
     m_aPrivateResourceURL( PRIVATE_RESOURCE_URL ),
     m_xGenericUICommands( rGenericUICommands ),
     m_bConfigAccessInitialized( false ),
@@ -188,11 +203,13 @@ ConfigurationAccess_UICommand::ConfigurationAccess_UICommand( const OUString& aM
     m_bGenericDataRetrieved( false )
 {
     // Create configuration hierarchical access name
-    m_aConfigCmdAccess += aModuleName + "/UserInterface/Commands";
+    m_aConfigCmdAccess += aModuleName;
+    m_aConfigCmdAccess += CONFIGURATION_CMD_ELEMENT_ACCESS;
 
     m_xConfigProvider = theDefaultProvider::get( rxContext );
 
-    m_aConfigPopupAccess += aModuleName + "/UserInterface/Popups";
+    m_aConfigPopupAccess += aModuleName;
+    m_aConfigPopupAccess += CONFIGURATION_POP_ELEMENT_ACCESS;
 }
 
 ConfigurationAccess_UICommand::~ConfigurationAccess_UICommand()
@@ -244,6 +261,7 @@ Any SAL_CALL ConfigurationAccess_UICommand::getByNameImpl( const OUString& rComm
 }
 
 Any SAL_CALL ConfigurationAccess_UICommand::getByName( const OUString& rCommandURL )
+throw ( NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     Any aRet( getByNameImpl( rCommandURL ) );
     if( !aRet.hasValue() )
@@ -253,22 +271,26 @@ Any SAL_CALL ConfigurationAccess_UICommand::getByName( const OUString& rCommandU
 }
 
 Sequence< OUString > SAL_CALL ConfigurationAccess_UICommand::getElementNames()
+throw ( RuntimeException, std::exception )
 {
     return getAllCommands();
 }
 
 sal_Bool SAL_CALL ConfigurationAccess_UICommand::hasByName( const OUString& rCommandURL )
+throw (css::uno::RuntimeException, std::exception)
 {
     return getByNameImpl( rCommandURL ).hasValue();
 }
 
 // XElementAccess
 Type SAL_CALL ConfigurationAccess_UICommand::getElementType()
+throw ( RuntimeException, std::exception )
 {
     return( cppu::UnoType<Sequence< PropertyValue >>::get() );
 }
 
 sal_Bool SAL_CALL ConfigurationAccess_UICommand::hasElements()
+throw ( RuntimeException, std::exception )
 {
     // There must are global commands!
     return true;
@@ -291,7 +313,7 @@ Any ConfigurationAccess_UICommand::getSequenceFromCache( const OUString& aComman
         if ( !pIter->second.bCommandNameCreated )
             fillInfoFromResult( pIter->second, pIter->second.aLabel );
 
-        Sequence< PropertyValue > aPropSeq( 8 );
+        Sequence< PropertyValue > aPropSeq( 7 );
         aPropSeq[0].Name  = m_aPropLabel;
         aPropSeq[0].Value = !pIter->second.aContextLabel.isEmpty() ?
                 makeAny( pIter->second.aContextLabel ): makeAny( pIter->second.aLabel );
@@ -307,8 +329,6 @@ Any ConfigurationAccess_UICommand::getSequenceFromCache( const OUString& aComman
         aPropSeq[5].Value <<= pIter->second.aTooltipLabel;
         aPropSeq[6].Name  = m_aPropTargetURL;
         aPropSeq[6].Value <<= pIter->second.aTargetURL;
-        aPropSeq[7].Name = m_aPropIsExperimental;
-        aPropSeq[7].Value <<= pIter->second.bIsExperimental;
         return makeAny( aPropSeq );
     }
 
@@ -338,7 +358,6 @@ void ConfigurationAccess_UICommand::impl_fill(const Reference< XNameAccess >& _x
                     xNameAccess->getByName( m_aPropUIPopupLabel )   >>= aCmdToInfo.aPopupLabel;
                     xNameAccess->getByName( m_aPropUITooltipLabel )   >>= aCmdToInfo.aTooltipLabel;
                     xNameAccess->getByName( m_aPropUITargetURL )    >>= aCmdToInfo.aTargetURL;
-                    xNameAccess->getByName( m_aPropUIIsExperimental ) >>= aCmdToInfo.bIsExperimental;
                     xNameAccess->getByName( m_aPropProperties )     >>= aCmdToInfo.nProperties;
 
                     m_aCmdInfoCache.insert( CommandToInfoCache::value_type( aNameSeq[i], aCmdToInfo ));
@@ -548,21 +567,21 @@ void ConfigurationAccess_UICommand::initializeConfigAccess()
 }
 
 // container.XContainerListener
-void SAL_CALL ConfigurationAccess_UICommand::elementInserted( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICommand::elementInserted( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_aMutex);
     m_bCacheFilled = false;
     fillCache();
 }
 
-void SAL_CALL ConfigurationAccess_UICommand::elementRemoved( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICommand::elementRemoved( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_aMutex);
     m_bCacheFilled = false;
     fillCache();
 }
 
-void SAL_CALL ConfigurationAccess_UICommand::elementReplaced( const ContainerEvent& )
+void SAL_CALL ConfigurationAccess_UICommand::elementReplaced( const ContainerEvent& ) throw(RuntimeException, std::exception)
 {
     osl::MutexGuard g(m_aMutex);
     m_bCacheFilled = false;
@@ -570,7 +589,7 @@ void SAL_CALL ConfigurationAccess_UICommand::elementReplaced( const ContainerEve
 }
 
 // lang.XEventListener
-void SAL_CALL ConfigurationAccess_UICommand::disposing( const EventObject& aEvent )
+void SAL_CALL ConfigurationAccess_UICommand::disposing( const EventObject& aEvent ) throw(RuntimeException, std::exception)
 {
     // SAFE
     // remove our reference to the config access
@@ -652,6 +671,7 @@ void UICommandDescription::impl_fillElements(const sal_Char* _pName)
 }
 
 Any SAL_CALL UICommandDescription::getByName( const OUString& aName )
+throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
     Any a;
 
@@ -692,6 +712,7 @@ Any SAL_CALL UICommandDescription::getByName( const OUString& aName )
 }
 
 Sequence< OUString > SAL_CALL UICommandDescription::getElementNames()
+throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
 
@@ -699,6 +720,7 @@ Sequence< OUString > SAL_CALL UICommandDescription::getElementNames()
 }
 
 sal_Bool SAL_CALL UICommandDescription::hasByName( const OUString& aName )
+throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard g(rBHelper.rMutex);
 
@@ -708,11 +730,13 @@ sal_Bool SAL_CALL UICommandDescription::hasByName( const OUString& aName )
 
 // XElementAccess
 Type SAL_CALL UICommandDescription::getElementType()
+throw (css::uno::RuntimeException, std::exception)
 {
     return( cppu::UnoType<XNameAccess>::get());
 }
 
 sal_Bool SAL_CALL UICommandDescription::hasElements()
+throw (css::uno::RuntimeException, std::exception)
 {
     // generic UI commands are always available!
     return true;

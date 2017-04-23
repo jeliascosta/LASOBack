@@ -33,10 +33,12 @@
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/families.hxx>
 #include <xmloff/xmltoken.hxx>
-#include <sax/fastattribs.hxx>
+#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/table/XColumnRowRange.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
+
+#include <com/sun/star/table/CellAddress.hpp>
 
 #define SC_ISFILTERED "IsFiltered"
 
@@ -44,55 +46,55 @@ using namespace com::sun::star;
 using namespace xmloff::token;
 
 ScXMLTableRowContext::ScXMLTableRowContext( ScXMLImport& rImport,
-                                      sal_Int32 /*nElement*/,
-                                      const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) :
-    ScXMLImportContext( rImport ),
+                                      sal_uInt16 nPrfx,
+                                      const OUString& rLName,
+                                      const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) :
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     sVisibility(GetXMLToken(XML_VISIBLE)),
     nRepeatedRows(1),
     bHasCell(false)
 {
     OUString sCellStyleName;
+    sal_Int16 nAttrCount(xAttrList.is() ? xAttrList->getLength() : 0);
     const SvXMLTokenMap& rAttrTokenMap(GetScImport().GetTableRowAttrTokenMap());
-    if ( xAttrList.is() )
+    for( sal_Int16 i=0; i < nAttrCount; ++i )
     {
-        sax_fastparser::FastAttributeList *pAttribList;
-        assert( dynamic_cast< sax_fastparser::FastAttributeList *>( xAttrList.get() ) != nullptr );
-        pAttribList = static_cast< sax_fastparser::FastAttributeList *>( xAttrList.get() );
+        const OUString& sAttrName(xAttrList->getNameByIndex( i ));
+        OUString aLocalName;
+        sal_uInt16 nPrefix(GetScImport().GetNamespaceMap().GetKeyByAttrName(
+                                            sAttrName, &aLocalName ));
+        const OUString& sValue(xAttrList->getValueByIndex( i ));
 
-        for ( auto it = pAttribList->begin(); it != pAttribList->end(); ++it)
+        switch( rAttrTokenMap.Get( nPrefix, aLocalName ) )
         {
-            switch( rAttrTokenMap.Get( it.getToken() ) )
+            case XML_TOK_TABLE_ROW_ATTR_STYLE_NAME:
             {
-                case XML_TOK_TABLE_ROW_ATTR_STYLE_NAME:
-                {
-                    sStyleName = it.toString();
-                }
-                break;
-                case XML_TOK_TABLE_ROW_ATTR_VISIBILITY:
-                {
-                    sVisibility = it.toString();
-                }
-                break;
-                case XML_TOK_TABLE_ROW_ATTR_REPEATED:
-                {
-                    nRepeatedRows = std::max( it.toInt32(), (sal_Int32) 1 );
-                    nRepeatedRows = std::min( nRepeatedRows, MAXROWCOUNT );
-                }
-                break;
-                case XML_TOK_TABLE_ROW_ATTR_DEFAULT_CELL_STYLE_NAME:
-                {
-                    sCellStyleName = it.toString();
-                }
-                break;
-                /*case XML_TOK_TABLE_ROW_ATTR_USE_OPTIMAL_HEIGHT:
-                {
-                    sOptimalHeight = it.toString();
-                }
-                break;*/
+                sStyleName = sValue;
             }
+            break;
+            case XML_TOK_TABLE_ROW_ATTR_VISIBILITY:
+            {
+                sVisibility = sValue;
+            }
+            break;
+            case XML_TOK_TABLE_ROW_ATTR_REPEATED:
+            {
+                nRepeatedRows = std::max( sValue.toInt32(), (sal_Int32) 1 );
+                nRepeatedRows = std::min( nRepeatedRows, MAXROWCOUNT );
+            }
+            break;
+            case XML_TOK_TABLE_ROW_ATTR_DEFAULT_CELL_STYLE_NAME:
+            {
+                sCellStyleName = sValue;
+            }
+            break;
+            /*case XML_TOK_TABLE_ROW_ATTR_USE_OPTIMAL_HEIGHT:
+            {
+                sOptimalHeight = sValue;
+            }
+            break;*/
         }
     }
-
     GetScImport().GetTables().AddRow();
     GetScImport().GetTables().SetRowStyle(sCellStyleName);
 }
@@ -101,21 +103,21 @@ ScXMLTableRowContext::~ScXMLTableRowContext()
 {
 }
 
-uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
-        ScXMLTableRowContext::createFastChildContext( sal_Int32 nElement,
-        const uno::Reference< xml::sax::XFastAttributeList > & xAttrList )
+SvXMLImportContext *ScXMLTableRowContext::CreateChildContext( sal_uInt16 nPrefix,
+                                            const OUString& rLName,
+                                            const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList )
 {
     SvXMLImportContext *pContext(nullptr);
 
     const SvXMLTokenMap& rTokenMap(GetScImport().GetTableRowElemTokenMap());
-    switch( rTokenMap.Get( nElement ) )
+    switch( rTokenMap.Get( nPrefix, rLName ) )
     {
     case XML_TOK_TABLE_ROW_CELL:
 //      if( IsInsertCellPossible() )
         {
             bHasCell = true;
-            pContext = new ScXMLTableRowCellContext( GetScImport(), nElement,
-                                                       xAttrList, false, static_cast<SCROW>(nRepeatedRows)
+            pContext = new ScXMLTableRowCellContext( GetScImport(), nPrefix,
+                                                      rLName, xAttrList, false, static_cast<SCROW>(nRepeatedRows)
                                                       //this
                                                       );
         }
@@ -124,8 +126,8 @@ uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
 //      if( IsInsertCellPossible() )
         {
             bHasCell = true;
-            pContext = new ScXMLTableRowCellContext( GetScImport(), nElement,
-                                                      xAttrList, true, static_cast<SCROW>(nRepeatedRows)
+            pContext = new ScXMLTableRowCellContext( GetScImport(), nPrefix,
+                                                      rLName, xAttrList, true, static_cast<SCROW>(nRepeatedRows)
                                                       //this
                                                       );
         }
@@ -133,12 +135,12 @@ uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
     }
 
     if( !pContext )
-        pContext = new SvXMLImportContext( GetImport() );
+        pContext = new SvXMLImportContext( GetImport(), nPrefix, rLName );
 
     return pContext;
 }
 
-void SAL_CALL ScXMLTableRowContext::endFastElement(sal_Int32 /*nElement*/)
+void ScXMLTableRowContext::EndElement()
 {
     ScXMLImport& rXMLImport(GetScImport());
     if (!bHasCell && nRepeatedRows > 1)
@@ -210,11 +212,12 @@ void SAL_CALL ScXMLTableRowContext::endFastElement(sal_Int32 /*nElement*/)
 }
 
 ScXMLTableRowsContext::ScXMLTableRowsContext( ScXMLImport& rImport,
-                                      sal_Int32 /*nElement*/,
-                                      const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList,
+                                      sal_uInt16 nPrfx,
+                                      const OUString& rLName,
+                                      const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       const bool bTempHeader,
                                       const bool bTempGroup ) :
-    ScXMLImportContext( rImport ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     nHeaderStartRow(0),
     nGroupStartRow(0),
     bHeader(bTempHeader),
@@ -232,11 +235,17 @@ ScXMLTableRowsContext::ScXMLTableRowsContext( ScXMLImport& rImport,
     {
         nGroupStartRow = rImport.GetTables().GetCurrentRow();
         ++nGroupStartRow;
-        if ( xAttrList.is() &&
-            xAttrList->hasAttribute( NAMESPACE_TOKEN( XML_NAMESPACE_TABLE ) | XML_DISPLAY ) )
+        sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
+        for( sal_Int16 i=0; i < nAttrCount; ++i )
         {
-            bGroupDisplay = IsXMLToken( xAttrList->getValue(
-                                NAMESPACE_TOKEN( XML_NAMESPACE_TABLE ) | XML_DISPLAY ), XML_TRUE );
+            const OUString& sAttrName(xAttrList->getNameByIndex( i ));
+            OUString aLocalName;
+            sal_uInt16 nPrefix(GetScImport().GetNamespaceMap().GetKeyByAttrName(
+                                                sAttrName, &aLocalName ));
+            const OUString& sValue(xAttrList->getValueByIndex( i ));
+
+            if ((nPrefix == XML_NAMESPACE_TABLE) && IsXMLToken(aLocalName, XML_DISPLAY))
+                bGroupDisplay = IsXMLToken(sValue, XML_TRUE);
         }
     }
 }
@@ -245,42 +254,45 @@ ScXMLTableRowsContext::~ScXMLTableRowsContext()
 {
 }
 
-uno::Reference< xml::sax::XFastContextHandler > SAL_CALL
-        ScXMLTableRowsContext::createFastChildContext( sal_Int32 nElement,
-        const uno::Reference< xml::sax::XFastAttributeList > & xAttrList )
+SvXMLImportContext *ScXMLTableRowsContext::CreateChildContext( sal_uInt16 nPrefix,
+                                            const OUString& rLName,
+                                            const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList )
 {
     SvXMLImportContext *pContext(nullptr);
 
     const SvXMLTokenMap& rTokenMap(GetScImport().GetTableRowsElemTokenMap());
-    switch( rTokenMap.Get( nElement ) )
+    switch( rTokenMap.Get( nPrefix, rLName ) )
     {
     case XML_TOK_TABLE_ROWS_ROW_GROUP:
-        pContext = new ScXMLTableRowsContext( GetScImport(), nElement, xAttrList,
+        pContext = new ScXMLTableRowsContext( GetScImport(), nPrefix,
+                                                   rLName, xAttrList,
                                                    false, true );
         break;
     case XML_TOK_TABLE_ROWS_HEADER_ROWS:
-        pContext = new ScXMLTableRowsContext( GetScImport(), nElement, xAttrList,
+        pContext = new ScXMLTableRowsContext( GetScImport(), nPrefix,
+                                                   rLName, xAttrList,
                                                    true, false );
         break;
     case XML_TOK_TABLE_ROWS_ROWS:
-        pContext = new ScXMLTableRowsContext( GetScImport(), nElement, xAttrList,
+        pContext = new ScXMLTableRowsContext( GetScImport(), nPrefix,
+                                                   rLName, xAttrList,
                                                    false, false );
         break;
     case XML_TOK_TABLE_ROWS_ROW:
-            pContext = new ScXMLTableRowContext( GetScImport(), nElement,
-                                                      xAttrList//,
+            pContext = new ScXMLTableRowContext( GetScImport(), nPrefix,
+                                                      rLName, xAttrList//,
                                                       //this
                                                       );
         break;
     }
 
     if( !pContext )
-        pContext = new SvXMLImportContext( GetImport() );
+        pContext = new SvXMLImportContext( GetImport(), nPrefix, rLName );
 
     return pContext;
 }
 
-void SAL_CALL ScXMLTableRowsContext::endFastElement(sal_Int32 /*nElement*/)
+void ScXMLTableRowsContext::EndElement()
 {
     ScXMLImport& rXMLImport(GetScImport());
     if (bHeader)
@@ -321,7 +333,7 @@ void SAL_CALL ScXMLTableRowsContext::endFastElement(sal_Int32 /*nElement*/)
                 ScOutlineTable* pOutlineTable(pDoc->GetOutlineTable(nSheet, true));
                 ScOutlineArray& rRowArray(pOutlineTable->GetRowArray());
                 bool bResized;
-                rRowArray.Insert(nGroupStartRow, nGroupEndRow, bResized, !bGroupDisplay);
+                rRowArray.Insert(static_cast<SCROW>(nGroupStartRow), static_cast<SCROW>(nGroupEndRow), bResized, !bGroupDisplay);
             }
         }
     }

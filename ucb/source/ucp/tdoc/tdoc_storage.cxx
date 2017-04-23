@@ -21,11 +21,7 @@
 
 #include "com/sun/star/beans/XPropertySet.hpp"
 #include "com/sun/star/embed/ElementModes.hpp"
-#include "com/sun/star/embed/InvalidStorageException.hpp"
 #include "com/sun/star/embed/StorageFactory.hpp"
-#include "com/sun/star/embed/StorageWrappedTargetException.hpp"
-#include "com/sun/star/io/IOException.hpp"
-#include "com/sun/star/packages/NoEncryptionException.hpp"
 #include <osl/diagnose.h>
 #include "comphelper/processfactory.hxx"
 
@@ -60,6 +56,8 @@ StorageElementFactory::~StorageElementFactory()
 
 uno::Reference< embed::XStorage >
 StorageElementFactory::createTemporaryStorage()
+    throw ( uno::Exception,
+            uno::RuntimeException )
 {
     uno::Reference< embed::XStorage > xStorage;
     uno::Reference< lang::XSingleServiceFactory > xStorageFac;
@@ -82,6 +80,11 @@ StorageElementFactory::createTemporaryStorage()
 uno::Reference< embed::XStorage >
 StorageElementFactory::createStorage( const OUString & rUri,
                                       StorageAccessMode eMode )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -89,7 +92,8 @@ StorageElementFactory::createStorage( const OUString & rUri,
          ( eMode != READ_WRITE_NOCREATE ) &&
          ( eMode != READ_WRITE_CREATE ) )
         throw lang::IllegalArgumentException(
-            "Invalid open mode!",
+            OUString(
+                "Invalid open mode!" ),
             uno::Reference< uno::XInterface >(),
             sal_Int16( 2 ) );
 
@@ -97,7 +101,8 @@ StorageElementFactory::createStorage( const OUString & rUri,
     if ( aUri.isRoot() )
     {
         throw lang::IllegalArgumentException(
-            "Root never has a storage!",
+            OUString(
+                "Root never has a storage!" ),
             uno::Reference< uno::XInterface >(),
             sal_Int16( 1 ) );
     }
@@ -169,7 +174,7 @@ StorageElementFactory::createStorage( const OUString & rUri,
         bool bWritable = ( ( eMode == READ_WRITE_NOCREATE )
                             || ( eMode == READ_WRITE_CREATE ) );
 
-        rtl::Reference< Storage > xElement(
+        uno::Reference< Storage > xElement(
             new Storage( m_xContext, this, aUriKey, xParentStorage, xStorage ) );
 
         aIt = m_aMap.insert(
@@ -228,6 +233,12 @@ StorageElementFactory::createStorage( const OUString & rUri,
 uno::Reference< io::XInputStream >
 StorageElementFactory::createInputStream( const OUString & rUri,
                                           const OUString & rPassword )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            packages::WrongPasswordException,
+            uno::RuntimeException )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -252,6 +263,12 @@ uno::Reference< io::XOutputStream >
 StorageElementFactory::createOutputStream( const OUString & rUri,
                                            const OUString & rPassword,
                                            bool bTruncate )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            packages::WrongPasswordException,
+            uno::RuntimeException )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -291,6 +308,12 @@ uno::Reference< io::XStream >
 StorageElementFactory::createStream( const OUString & rUri,
                                      const OUString & rPassword,
                                      bool bTruncate )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            packages::WrongPasswordException,
+            uno::RuntimeException )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
@@ -335,6 +358,11 @@ void StorageElementFactory::releaseElement( Storage * pElement )
 
 uno::Reference< embed::XStorage > StorageElementFactory::queryParentStorage(
         const OUString & rUri, StorageAccessMode eMode )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException )
 {
     uno::Reference< embed::XStorage > xParentStorage;
 
@@ -356,6 +384,11 @@ uno::Reference< embed::XStorage > StorageElementFactory::queryStorage(
         const uno::Reference< embed::XStorage > & xParentStorage,
         const OUString & rUri,
         StorageAccessMode eMode )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException )
 {
     uno::Reference< embed::XStorage > xStorage;
 
@@ -371,12 +404,14 @@ uno::Reference< embed::XStorage > StorageElementFactory::queryStorage(
         {
             if ( eMode == READ_WRITE_CREATE )
                 throw lang::IllegalArgumentException(
-                    "Invalid open mode: document storages cannot be created!",
+                    OUString(
+                        "Invalid open mode: document storages cannot be "
+                        "created!" ),
                     uno::Reference< uno::XInterface >(),
                     sal_Int16( 2 ) );
             else
                 throw embed::InvalidStorageException(
-                    "Invalid document id!",
+                    OUString( "Invalid document id!" ),
                     uno::Reference< uno::XInterface >() );
         }
 
@@ -432,7 +467,8 @@ uno::Reference< embed::XStorage > StorageElementFactory::queryStorage(
             OSL_FAIL( "Property OpenMode not supported!" );
 
             throw embed::StorageWrappedTargetException(
-                    "Bug! Value of property OpenMode has wrong type!",
+                    OUString(
+                        "Bug! Value of property OpenMode has wrong type!" ),
                     uno::Reference< uno::XInterface >(),
                     uno::makeAny( e ) );
         }
@@ -441,7 +477,8 @@ uno::Reference< embed::XStorage > StorageElementFactory::queryStorage(
             OSL_FAIL( "Caught WrappedTargetException!" );
 
             throw embed::StorageWrappedTargetException(
-                    "WrappedTargetException during getPropertyValue!",
+                    OUString(
+                        "WrappedTargetException during getPropertyValue!" ),
                     uno::Reference< uno::XInterface >(),
                     uno::makeAny( e ) );
         }
@@ -492,13 +529,20 @@ StorageElementFactory::queryStream(
                 const OUString & rPassword,
                 StorageAccessMode eMode,
                 bool bTruncate )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            packages::WrongPasswordException,
+            uno::RuntimeException )
 {
     osl::MutexGuard aGuard( m_aMutex );
 
     if ( !xParentStorage.is() )
     {
         throw lang::IllegalArgumentException(
-            "No parent storage!",
+            OUString(
+                "No parent storage!" ),
             uno::Reference< uno::XInterface >(),
             sal_Int16( 2 ) );
     }
@@ -507,14 +551,16 @@ StorageElementFactory::queryStream(
     if ( aUri.isRoot() )
     {
         throw lang::IllegalArgumentException(
-            "Root never is a stream!",
+            OUString(
+                "Root never is a stream!" ),
             uno::Reference< uno::XInterface >(),
             sal_Int16( 2 ) );
     }
     else if ( aUri.isDocument() )
     {
         throw lang::IllegalArgumentException(
-            "A document never is a stream!",
+            OUString(
+                "A document never is a stream!" ),
             uno::Reference< uno::XInterface >(),
             sal_Int16( 2 ) );
     }
@@ -551,7 +597,8 @@ StorageElementFactory::queryStream(
             OSL_FAIL( "StorageElementFactory::queryStream : Unknown open mode!" );
 
             throw embed::InvalidStorageException(
-                "Unknown open mode!",
+                OUString(
+                    "Unknown open mode!" ),
                 uno::Reference< uno::XInterface >() );
     }
 
@@ -607,7 +654,8 @@ StorageElementFactory::queryStream(
     if ( !xStream.is() )
     {
         throw embed::InvalidStorageException(
-            "No stream!",
+            OUString(
+                "No stream!" ),
             uno::Reference< uno::XInterface >() );
     }
 

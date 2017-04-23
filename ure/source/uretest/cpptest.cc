@@ -42,7 +42,9 @@ class Service: public cppu::WeakImplHelper1< test::types::XTest > {
 public:
     Service() {}
 
-    virtual void SAL_CALL throwException() {
+    virtual void SAL_CALL throwException()
+        throw (test::types::TestException, css::uno::RuntimeException)
+    {
         throw test::types::TestException(
             rtl::OUString("test"),
             static_cast< cppu::OWeakObject * >(this));

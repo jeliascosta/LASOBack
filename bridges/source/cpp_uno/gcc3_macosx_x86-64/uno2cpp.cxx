@@ -23,16 +23,16 @@
 #include <typeinfo>
 
 #include "rtl/alloc.h"
+#include "rtl/ustrbuf.hxx"
 
 #include <com/sun/star/uno/genfunc.hxx>
 #include "com/sun/star/uno/RuntimeException.hpp"
-#include <o3tl/runtimetooustring.hxx>
 #include <uno/data.h>
 
-#include <bridge.hxx>
-#include <types.hxx>
-#include "unointerfaceproxy.hxx"
-#include "vtables.hxx"
+#include <bridges/cpp_uno/shared/bridge.hxx>
+#include <bridges/cpp_uno/shared/types.hxx>
+#include "bridges/cpp_uno/shared/unointerfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/vtables.hxx"
 
 #include "abi.hxx"
 #include "callvirtualmethod.hxx"
@@ -95,6 +95,14 @@ void INSERT_INT8(
         *pDS++ = *static_cast<sal_uInt8 const *>( pSV );
 }
 
+void appendCString(OUStringBuffer & buffer, char const * text) {
+    if (text != nullptr) {
+        buffer.append(
+            OStringToOUString(OString(text), RTL_TEXTENCODING_ISO_8859_1));
+            // use 8859-1 to avoid conversion failure
+    }
+}
+
 }
 
 static void cpp_call(
@@ -104,7 +112,7 @@ static void cpp_call(
     sal_Int32 nParams, typelib_MethodParameter * pParams,
     void * pUnoReturn, void * pUnoArgs[], uno_Any ** ppUnoExc )
 {
-    // Maximum space for [complex ret ptr], values | ptr ...
+    // Maxium space for [complex ret ptr], values | ptr ...
     // (but will be used less - some of the values will be in pGPR and pFPR)
       sal_uInt64 *pStack = static_cast<sal_uInt64 *>(__builtin_alloca( (nParams + 3) * sizeof(sal_uInt64) ));
       sal_uInt64 *pStackStart = pStack;
@@ -234,13 +242,18 @@ static void cpp_call(
                 pAdjustedThisPtr, aVtableSlot.index,
                 pCppReturn, pReturnTypeRef, bSimpleReturn,
                 pStackStart, ( pStack - pStackStart ),
-                pGPR, pFPR );
+                pGPR, nGPR,
+                pFPR, nFPR );
         } catch (const Exception &) {
             throw;
         } catch (const std::exception & e) {
+            OUStringBuffer buf;
+            buf.append("C++ code threw ");
+            appendCString(buf, typeid(e).name());
+            buf.append(": ");
+            appendCString(buf, e.what());
             throw RuntimeException(
-                "C++ code threw " + o3tl::runtimeToOUString(typeid(e).name())
-                + ": " + o3tl::runtimeToOUString(e.what()));
+                buf.makeStringAndClear());
         } catch (...) {
             throw RuntimeException("C++ code threw unknown exception");
         }
@@ -427,7 +440,7 @@ void unoInterfaceProxyDispatch(
     default:
     {
         ::com::sun::star::uno::RuntimeException aExc(
-            "illegal member type description!",
+            OUString("illegal member type description!"),
             ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >() );
 
         Type const & rExcType = cppu::UnoType<decltype(aExc)>::get();

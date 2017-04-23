@@ -19,26 +19,55 @@
 
 #include "sal/config.h"
 
-#include "system.h"
-#include "time.hxx"
+#include <iostream>
+#include <stdlib.h>
 
+#include "system.h"
 #include <osl/process.h>
 #include <sal/main.h>
 #include <sal/types.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
+//From time.c
+void sal_initGlobalTimer();
+
+// _set_invalid_parameter_handler appears unavailable with MinGW:
+#if defined _MSC_VER
+namespace {
+
+extern "C" void invalidParameterHandler(
+    wchar_t const * expression, wchar_t const * function, wchar_t const * file,
+    unsigned int line, SAL_UNUSED_PARAMETER uintptr_t)
+{
+    std::wcerr
+        << L"Invalid parameter in \"" << (expression ? expression : L"???")
+        << L"\" (" << (function ? function : L"???") << ") at "
+        << (file ? file : L"???") << L':' << line << std::endl;
+}
+
+}
+#endif
 
 // Prototypes for initialization and deinitialization of SAL library
 
 void sal_detail_initialize(int argc, char ** argv)
 {
+#if defined(_WIN64) && _MSC_VER <= 1800
+    // tdf#99410: MSVC 2013 runtime library has problems with some math functions if
+    // the CPU supports them and they are disabled in the OS
+    _set_FMA3_enable(0);
+#endif
+
     sal_initGlobalTimer();
     // SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
     // SetDllDirectoryW(L"");
     // SetSearchPathMode(
     //   BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
     HMODULE h = GetModuleHandleW(L"kernel32.dll");
-    if (h != nullptr) {
+    if (h != 0) {
         FARPROC p;
 #ifndef _WIN64
         p = GetProcAddress(h, "SetProcessDEPPolicy");
@@ -47,11 +76,11 @@ void sal_detail_initialize(int argc, char ** argv)
         }
 #endif
         p = GetProcAddress(h, "SetDllDirectoryW");
-        if (p != nullptr) {
+        if (p != 0) {
             reinterpret_cast< BOOL (WINAPI *)(LPCWSTR) >(p)(L"");
         }
         p = GetProcAddress(h, "SetSearchPathMode");
-        if (p != nullptr) {
+        if (p != 0) {
             reinterpret_cast< BOOL (WINAPI *)(DWORD) >(p)(0x8001);
         }
     }
@@ -80,6 +109,14 @@ void sal_detail_initialize(int argc, char ** argv)
         // How to handle a very unlikely error ???
     }
 
+#if defined _MSC_VER // appears unavailable with MinGW
+    // It appears that at least some jvm.dll versions can cause calls to
+    // _fileno(NULL), which leads to a call of the invalid parameter handler,
+    // and the default handler causes the application to crash, so install a
+    // "harmless" one (cf. fdo#38913):
+    _set_invalid_parameter_handler(&invalidParameterHandler);
+#endif
+
     osl_setCommandArgs(argc, argv);
 }
 
@@ -91,6 +128,8 @@ void sal_detail_deinitialize()
     }
 }
 
+#ifdef __cplusplus
 }   // extern "C"
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

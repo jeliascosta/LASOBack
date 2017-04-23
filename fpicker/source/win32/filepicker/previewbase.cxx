@@ -28,7 +28,7 @@ using namespace com::sun::star::lang;
 
 PreviewBase::PreviewBase() :
     m_ImageFormat(css::ui::dialogs::FilePreviewImageFormats::BITMAP),
-    m_bShowState(false)
+    m_bShowState(sal_False)
 {
 }
 
@@ -38,33 +38,34 @@ PreviewBase::~PreviewBase()
 }
 
 
-sal_Int32 SAL_CALL PreviewBase::getTargetColorDepth()
+sal_Int32 SAL_CALL PreviewBase::getTargetColorDepth() throw (RuntimeException)
 {
     return 0;
 }
 
 
-sal_Int32 SAL_CALL PreviewBase::getAvailableWidth()
+sal_Int32 SAL_CALL PreviewBase::getAvailableWidth() throw (RuntimeException)
 {
     return 0;
 }
 
 
-sal_Int32 SAL_CALL PreviewBase::getAvailableHeight()
+sal_Int32 SAL_CALL PreviewBase::getAvailableHeight() throw (RuntimeException)
 {
     return 0;
 }
 
 
 void SAL_CALL PreviewBase::setImage( sal_Int16 aImageFormat, const css::uno::Any& aImage )
+    throw (IllegalArgumentException, RuntimeException)
 {
     if (aImageFormat != css::ui::dialogs::FilePreviewImageFormats::BITMAP)
         throw IllegalArgumentException(
-            "unsupported image format", nullptr, 1);
+            "unsupported image format", 0, 1);
 
     if (aImage.hasValue() && (aImage.getValueType() != cppu::UnoType<Sequence<sal_Int8>>::get()))
         throw IllegalArgumentException(
-            "invalid image data", nullptr, 2);
+            "invalid image data", 0, 2);
 
      // save the new image data and force a redraw
     m_ImageData   = aImage;
@@ -79,20 +80,20 @@ void SAL_CALL PreviewBase::getImage(sal_Int16& aImageFormat,css::uno::Any& aImag
 }
 
 
-bool SAL_CALL PreviewBase::setShowState( bool bShowState )
+sal_Bool SAL_CALL PreviewBase::setShowState( sal_Bool bShowState ) throw (RuntimeException)
 {
     m_bShowState = bShowState;
-    return true;
+    return sal_True;
 }
 
 
-bool SAL_CALL PreviewBase::getShowState()
+sal_Bool SAL_CALL PreviewBase::getShowState() throw (RuntimeException)
 {
-    return false;
+    return sal_False;
 }
 
 
-bool SAL_CALL PreviewBase::getImaginaryShowState() const
+sal_Bool SAL_CALL PreviewBase::getImaginaryShowState() const
 {
     return m_bShowState;
 }
@@ -100,7 +101,7 @@ bool SAL_CALL PreviewBase::getImaginaryShowState() const
 
 HWND SAL_CALL PreviewBase::getWindowHandle() const
 {
-    return nullptr;
+    return 0;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

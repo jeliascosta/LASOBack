@@ -33,8 +33,10 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void HelplinePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer HelplinePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
+            std::vector< BasePrimitive2D* > aTempPrimitiveTarget;
+
             if(!rViewInformation.getViewport().isEmpty() && !getDirection().equalZero())
             {
                 // position to view coordinates, DashLen and DashLen in logic
@@ -55,7 +57,7 @@ namespace drawinglayer
                         aLineA.append(aEndA);
                         aLineA.transform(rViewInformation.getInverseObjectToViewTransformation());
                         PolygonMarkerPrimitive2D* pNewA = new PolygonMarkerPrimitive2D(aLineA, getRGBColA(), getRGBColB(), getDiscreteDashLength());
-                        rContainer.push_back(pNewA);
+                        aTempPrimitiveTarget.push_back(pNewA);
 
                         const basegfx::B2DVector aPerpendicularNormalizedDirection(basegfx::getPerpendicular(aNormalizedDirection));
                         const basegfx::B2DPoint aStartB(aViewPosition - aPerpendicularNormalizedDirection);
@@ -65,7 +67,7 @@ namespace drawinglayer
                         aLineB.append(aEndB);
                         aLineB.transform(rViewInformation.getInverseObjectToViewTransformation());
                         PolygonMarkerPrimitive2D* pNewB = new PolygonMarkerPrimitive2D(aLineB, getRGBColA(), getRGBColB(), getDiscreteDashLength());
-                        rContainer.push_back(pNewB);
+                        aTempPrimitiveTarget.push_back(pNewB);
 
                         break;
                     }
@@ -116,7 +118,7 @@ namespace drawinglayer
                                 basegfx::B2DPolygon aPart(aResult.getB2DPolygon(a));
                                 aPart.transform(rViewInformation.getInverseObjectToViewTransformation());
                                 PolygonMarkerPrimitive2D* pNew = new PolygonMarkerPrimitive2D(aPart, getRGBColA(), getRGBColB(), getDiscreteDashLength());
-                                rContainer.push_back(pNew);
+                                aTempPrimitiveTarget.push_back(pNew);
                             }
                         }
 
@@ -124,6 +126,17 @@ namespace drawinglayer
                     }
                 }
             }
+
+            // prepare return value
+            Primitive2DContainer aRetval(aTempPrimitiveTarget.size());
+
+            for(size_t a(0); a < aTempPrimitiveTarget.size(); a++)
+            {
+                const Primitive2DReference xRef(aTempPrimitiveTarget[a]);
+                aRetval[a] = xRef;
+            }
+
+            return aRetval;
         }
 
         HelplinePrimitive2D::HelplinePrimitive2D(
@@ -162,7 +175,7 @@ namespace drawinglayer
             return false;
         }
 
-        void HelplinePrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer HelplinePrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -183,7 +196,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
         }
 
         // provide unique ID

@@ -22,29 +22,31 @@
 
 #include <basic/sbxprop.hxx>
 #include <basic/sbdef.hxx>
+#include <basic/basicdllapi.h>
 
 class SbModule;
 
-class SbProperty : public SbxProperty
+class BASIC_DLLPUBLIC SbProperty : public SbxProperty
 {
     friend class SbiFactory;
     friend class SbModule;
     friend class SbProcedureProperty;
     SbModule* pMod;
-    SbProperty( const OUString&, SbxDataType, SbModule* );
-    virtual ~SbProperty() override;
+    bool     bInvalid;
+    BASIC_DLLPRIVATE SbProperty( const OUString&, SbxDataType, SbModule* );
+    virtual ~SbProperty();
 public:
-    SBX_DECL_PERSIST_NODATA(SBXID_BASICPROP,1);
+    SBX_DECL_PERSIST_NODATA(SBXCR_SBX,SBXID_BASICPROP,1);
     SbModule* GetModule() { return pMod; }
 };
 
 typedef tools::SvRef<SbProperty> SbPropertyRef;
 
-class SbProcedureProperty : public SbxProperty
+class BASIC_DLLPUBLIC SbProcedureProperty : public SbxProperty
 {
     bool mbSet;     // Flag for set command
 
-    virtual ~SbProcedureProperty() override;
+    virtual ~SbProcedureProperty();
 
 public:
     SbProcedureProperty( const OUString& r, SbxDataType t )

@@ -30,30 +30,25 @@
 #include <rtl/uri.hxx>
 #include <rtl/bootstrap.hxx>
 #include <sal/log.hxx>
-#include <tools/urlobj.hxx>
 #include <osl/diagnose.h>
 #include <osl/file.hxx>
 #include <osl/security.hxx>
 #include <cppuhelper/weakref.hxx>
 #include <cppuhelper/exc_hlp.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <comphelper/sequence.hxx>
 #include <xmlscript/xml_helper.hxx>
 #include <svl/inettype.hxx>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
 #include <com/sun/star/beans/UnknownPropertyException.hpp>
 #include <com/sun/star/util/XUpdatable.hpp>
 #include <com/sun/star/sdbc/XResultSet.hpp>
 #include <com/sun/star/sdbc/XRow.hpp>
-#include <com/sun/star/ucb/CommandAbortedException.hpp>
-#include <com/sun/star/ucb/CommandFailedException.hpp>
 #include <com/sun/star/ucb/XContentAccess.hpp>
 #include <com/sun/star/ucb/NameClash.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
-#include <com/sun/star/deployment/InvalidRemovedParameterException.hpp>
 #include <com/sun/star/deployment/VersionException.hpp>
 #include <com/sun/star/deployment/InstallException.hpp>
 #include <com/sun/star/deployment/Prerequisites.hpp>
@@ -190,8 +185,8 @@ void PackageManagerImpl::initActivationLayer(
                                          ::ucbhelper::INCLUDE_DOCUMENTS_ONLY ) );
 
             // get all temp directories:
-            std::vector<OUString> tempEntries;
-            std::vector<OUString> removedEntries;
+            ::std::vector<OUString> tempEntries;
+            ::std::vector<OUString> removedEntries;
             while (xResultSet->next())
             {
                 OUString title(
@@ -219,7 +214,7 @@ void PackageManagerImpl::initActivationLayer(
             for (OUString & tempEntry : tempEntries)
             {
                 const MatchTempDir match( tempEntry );
-                if (std::none_of( id2temp.begin(), id2temp.end(), match ))
+                if (::std::none_of( id2temp.begin(), id2temp.end(), match ))
                 {
                     const OUString url(
                         makeURL(m_activePackages_expanded, tempEntry ) );
@@ -228,7 +223,7 @@ void PackageManagerImpl::initActivationLayer(
                     //added extensions if there is no xxx.tmpremoved file.
                     if (bShared)
                     {
-                        if (std::find(removedEntries.begin(), removedEntries.end(), tempEntry) ==
+                        if (::std::find(removedEntries.begin(), removedEntries.end(), tempEntry) ==
                             removedEntries.end())
                         {
                             continue;
@@ -284,30 +279,14 @@ void PackageManagerImpl::initRegistryBackends()
                          m_xComponentContext ) );
 }
 
-namespace {
-
-osl::FileBase::RC createDirectory(OUString const & url) {
-    auto e = osl::Directory::create(url);
-    if (e != osl::FileBase::E_NOENT) {
-        return e;
-    }
-    INetURLObject o(url);
-    if (!o.removeSegment()) {
-        return osl::FileBase::E_INVAL; // anything but E_None/E_EXIST
-    }
-    e = createDirectory(o.GetMainURL(INetURLObject::DecodeMechanism::NONE));
-    if (e != osl::FileBase::E_None && e != osl::FileBase::E_EXIST) {
-        return e;
-    }
-    return osl::Directory::create(url);
-}
-
-bool isMacroURLReadOnly( const OUString &rMacro )
+// this overcomes previous rumors that the sal API is misleading
+// as to whether a directory is truly read-only or not
+static bool isMacroURLReadOnly( const OUString &rMacro )
 {
     OUString aDirURL( rMacro );
     ::rtl::Bootstrap::expandMacros( aDirURL );
 
-    ::osl::FileBase::RC aErr = createDirectory( aDirURL );
+    ::osl::FileBase::RC aErr = ::osl::Directory::create( aDirURL );
     if ( aErr == ::osl::FileBase::E_None )
         return false; // it will be writeable
     if ( aErr != ::osl::FileBase::E_EXIST )
@@ -335,7 +314,6 @@ bool isMacroURLReadOnly( const OUString &rMacro )
     return bError;
 }
 
-}
 
 Reference<deployment::XPackageManager> PackageManagerImpl::create(
     Reference<XComponentContext> const & xComponentContext,
@@ -486,7 +464,7 @@ void PackageManagerImpl::disposing()
 
 // XComponent
 
-void PackageManagerImpl::dispose()
+void PackageManagerImpl::dispose() throw (RuntimeException, std::exception)
 {
     //Do not call check here. We must not throw an exception here if the object
     //is being disposed or is already disposed. See com.sun.star.lang.XComponent
@@ -495,7 +473,7 @@ void PackageManagerImpl::dispose()
 
 
 void PackageManagerImpl::addEventListener(
-    Reference<lang::XEventListener> const & xListener )
+    Reference<lang::XEventListener> const & xListener ) throw (RuntimeException, std::exception)
 {
     //Do not call check here. We must not throw an exception here if the object
     //is being disposed or is already disposed. See com.sun.star.lang.XComponent
@@ -504,7 +482,7 @@ void PackageManagerImpl::addEventListener(
 
 
 void PackageManagerImpl::removeEventListener(
-    Reference<lang::XEventListener> const & xListener )
+    Reference<lang::XEventListener> const & xListener ) throw (RuntimeException, std::exception)
 {
     //Do not call check here. We must not throw an exception here if the object
     //is being disposed or is already disposed. See com.sun.star.lang.XComponent
@@ -513,7 +491,7 @@ void PackageManagerImpl::removeEventListener(
 
 // XPackageManager
 
-OUString PackageManagerImpl::getContext()
+OUString PackageManagerImpl::getContext() throw (RuntimeException, std::exception)
 {
     check();
     return m_context;
@@ -521,7 +499,7 @@ OUString PackageManagerImpl::getContext()
 
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-PackageManagerImpl::getSupportedPackageTypes()
+PackageManagerImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
 {
     OSL_ASSERT( m_xRegistry.is() );
     return m_xRegistry->getSupportedPackageTypes();
@@ -529,6 +507,7 @@ PackageManagerImpl::getSupportedPackageTypes()
 
 
 Reference<task::XAbortChannel> PackageManagerImpl::createAbortChannel()
+    throw (RuntimeException, std::exception)
 {
     check();
     return new AbortChannel;
@@ -538,6 +517,7 @@ Reference<task::XAbortChannel> PackageManagerImpl::createAbortChannel()
 
 void PackageManagerImpl::addModifyListener(
     Reference<util::XModifyListener> const & xListener )
+    throw (RuntimeException, std::exception)
 {
     check();
     rBHelper.addListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
@@ -546,6 +526,7 @@ void PackageManagerImpl::addModifyListener(
 
 void PackageManagerImpl::removeModifyListener(
     Reference<util::XModifyListener> const & xListener )
+    throw (RuntimeException, std::exception)
 {
     check();
     rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
@@ -636,7 +617,7 @@ OUString PackageManagerImpl::insertToActivationLayer(
             buf.makeStringAndClear(), xCmdEnv, m_xComponentContext );
     }
     if (! destFolderContent.transferContent(
-            sourceContent, ::ucbhelper::InsertOperation::Copy,
+            sourceContent, ::ucbhelper::InsertOperation_COPY,
             title, NameClash::OVERWRITE ))
         throw RuntimeException( "UCB transferContent() failed!", nullptr );
 
@@ -691,6 +672,9 @@ Reference<deployment::XPackage> PackageManagerImpl::importExtension(
     Reference<deployment::XPackage> const & extension,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException, CommandFailedException,
+           CommandAbortedException, lang::IllegalArgumentException,
+           RuntimeException, std::exception)
 {
     return addPackage(extension->getURL(), Sequence<beans::NamedValue>(),
                       OUString(), xAbortChannel, xCmdEnv_);
@@ -705,6 +689,9 @@ Reference<deployment::XPackage> PackageManagerImpl::addPackage(
     OUString const & mediaType_,
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException, CommandFailedException,
+           CommandAbortedException, lang::IllegalArgumentException,
+           RuntimeException, std::exception)
 {
     check();
     if (m_readOnly)
@@ -725,7 +712,7 @@ Reference<deployment::XPackage> PackageManagerImpl::addPackage(
 
     try {
         ::ucbhelper::Content sourceContent;
-        (void)create_ucb_content( &sourceContent, url, xCmdEnv ); // throws exc
+        create_ucb_content( &sourceContent, url, xCmdEnv ); // throws exc
         const OUString title( StrTitle::getTitle( sourceContent ) );
         const OUString title_enc( ::rtl::Uri::encode(
                                       title, rtl_UriCharClassPchar,
@@ -747,7 +734,7 @@ Reference<deployment::XPackage> PackageManagerImpl::addPackage(
             create_folder( &docFolderContent, m_context, xCmdEnv );
             // copy into document, first:
             if (! docFolderContent.transferContent(
-                    sourceContent, ::ucbhelper::InsertOperation::Copy,
+                    sourceContent, ::ucbhelper::InsertOperation_COPY,
                     OUString(),
                     NameClash::ASK /* xxx todo: ASK not needed? */))
                 throw RuntimeException("UCB transferContent() failed!", nullptr );
@@ -856,6 +843,9 @@ void PackageManagerImpl::removePackage(
     OUString const & id, OUString const & fileName,
     Reference<task::XAbortChannel> const & /*xAbortChannel*/,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException, CommandFailedException,
+           CommandAbortedException, lang::IllegalArgumentException,
+           RuntimeException, std::exception)
 {
     check();
 
@@ -882,7 +872,7 @@ void PackageManagerImpl::removePackage(
             //shared extension was "deleted". When a user starts OOo, then it
             //will check if something changed in the shared repository. Based on
             //the flag file it will then recognize, that the extension was
-            //deleted and can then update the extension database of the shared
+            //deleted and can then update the extnesion database of the shared
             //extensions in the user installation.
             if ( xPackage.is() && !m_readOnly && !xPackage->isRemoved() && (m_context == "shared"))
             {
@@ -1010,7 +1000,7 @@ Sequence< Reference<deployment::XPackage> >
 PackageManagerImpl::getDeployedPackages_(
     Reference<XCommandEnvironment> const & xCmdEnv )
 {
-    std::vector< Reference<deployment::XPackage> > packages;
+    ::std::vector< Reference<deployment::XPackage> > packages;
     ActivePackages::Entries id2temp( m_activePackagesDB->getEntries() );
     ActivePackages::Entries::const_iterator iPos( id2temp.begin() );
     ActivePackages::Entries::const_iterator const iEnd( id2temp.end() );
@@ -1045,6 +1035,8 @@ PackageManagerImpl::getDeployedPackages_(
 Reference<deployment::XPackage> PackageManagerImpl::getDeployedPackage(
     OUString const & id, OUString const & fileName,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException, CommandFailedException,
+           lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     check();
     Reference<XCommandEnvironment> xCmdEnv;
@@ -1087,6 +1079,9 @@ Sequence< Reference<deployment::XPackage> >
 PackageManagerImpl::getDeployedPackages(
     Reference<task::XAbortChannel> const &,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException, CommandFailedException,
+           CommandAbortedException, lang::IllegalArgumentException,
+           RuntimeException, std::exception)
 {
     check();
     Reference<XCommandEnvironment> xCmdEnv;
@@ -1130,6 +1125,9 @@ PackageManagerImpl::getDeployedPackages(
 void PackageManagerImpl::reinstallDeployedPackages(
     sal_Bool force, Reference<task::XAbortChannel> const &  /*xAbortChannel*/,
     Reference<XCommandEnvironment> const & xCmdEnv_ )
+    throw (deployment::DeploymentException,
+           CommandFailedException, CommandAbortedException,
+           lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     check();
     if (!force && office_is_running())
@@ -1184,6 +1182,7 @@ void PackageManagerImpl::reinstallDeployedPackages(
 
 
 sal_Bool SAL_CALL PackageManagerImpl::isReadOnly(  )
+        throw (css::uno::RuntimeException, std::exception)
 {
     return m_readOnly;
 }
@@ -1332,7 +1331,7 @@ bool PackageManagerImpl::synchronizeAddedExtensions(
             //installed the extension it was already checked if there is one with the
             //same identifier.
             const MatchTempDir match(titleEncoded);
-            if (std::none_of( id2temp.begin(), id2temp.end(), match ))
+            if (::std::none_of( id2temp.begin(), id2temp.end(), match ))
             {
 
                 // The folder was not found in the data base, so it must be
@@ -1417,6 +1416,11 @@ bool PackageManagerImpl::synchronizeAddedExtensions(
 sal_Bool PackageManagerImpl::synchronize(
     Reference<task::XAbortChannel> const & xAbortChannel,
     Reference<css::ucb::XCommandEnvironment> const & xCmdEnv)
+    throw (css::deployment::DeploymentException,
+           css::ucb::ContentCreationException,
+           css::ucb::CommandFailedException,
+           css::ucb::CommandAbortedException,
+           css::uno::RuntimeException, std::exception)
 {
     check();
     bool bModified = false;
@@ -1431,8 +1435,9 @@ sal_Bool PackageManagerImpl::synchronize(
 
 Sequence< Reference<deployment::XPackage> > PackageManagerImpl::getExtensionsWithUnacceptedLicenses(
     Reference<ucb::XCommandEnvironment> const & xCmdEnv)
+    throw (deployment::DeploymentException, RuntimeException, std::exception)
 {
-    std::vector<Reference<deployment::XPackage> > vec;
+    ::std::vector<Reference<deployment::XPackage> > vec;
 
     try
     {
@@ -1492,6 +1497,11 @@ sal_Int32 PackageManagerImpl::checkPrerequisites(
     css::uno::Reference<css::deployment::XPackage> const & extension,
     css::uno::Reference<css::task::XAbortChannel> const & xAbortChannel,
     css::uno::Reference<css::ucb::XCommandEnvironment> const & xCmdEnv )
+    throw (css::deployment::DeploymentException,
+           css::ucb::CommandFailedException,
+           css::ucb::CommandAbortedException,
+           css::lang::IllegalArgumentException,
+           css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -1566,6 +1576,7 @@ PackageManagerImpl::CmdEnvWrapperImpl::CmdEnvWrapperImpl(
 
 Reference<task::XInteractionHandler>
 PackageManagerImpl::CmdEnvWrapperImpl::getInteractionHandler()
+    throw (RuntimeException, std::exception)
 {
     return m_xUserInteractionHandler;
 }
@@ -1573,6 +1584,7 @@ PackageManagerImpl::CmdEnvWrapperImpl::getInteractionHandler()
 
 Reference<XProgressHandler>
 PackageManagerImpl::CmdEnvWrapperImpl::getProgressHandler()
+    throw (RuntimeException, std::exception)
 {
     return this;
 }
@@ -1580,6 +1592,7 @@ PackageManagerImpl::CmdEnvWrapperImpl::getProgressHandler()
 // XProgressHandler
 
 void PackageManagerImpl::CmdEnvWrapperImpl::push( Any const & Status )
+    throw (RuntimeException, std::exception)
 {
     if (m_xLogFile.is())
         m_xLogFile->push( Status );
@@ -1589,6 +1602,7 @@ void PackageManagerImpl::CmdEnvWrapperImpl::push( Any const & Status )
 
 
 void PackageManagerImpl::CmdEnvWrapperImpl::update( Any const & Status )
+    throw (RuntimeException, std::exception)
 {
     if (m_xLogFile.is())
         m_xLogFile->update( Status );
@@ -1597,7 +1611,7 @@ void PackageManagerImpl::CmdEnvWrapperImpl::update( Any const & Status )
 }
 
 
-void PackageManagerImpl::CmdEnvWrapperImpl::pop()
+void PackageManagerImpl::CmdEnvWrapperImpl::pop() throw (RuntimeException, std::exception)
 {
     if (m_xLogFile.is())
         m_xLogFile->pop();

@@ -51,39 +51,36 @@
 
 class SvxURLField;
 
-enum class SdrViewContext {
-    Standard,
-    PointEdit,
-    GluePointEdit,
-    Graphic,
-    Media,
-    Table
-};
+enum SdrViewContext {SDRCONTEXT_STANDARD,
+                     SDRCONTEXT_POINTEDIT,
+                     SDRCONTEXT_GLUEPOINTEDIT,
+                     SDRCONTEXT_GRAPHIC,
+                     SDRCONTEXT_MEDIA,
+                     SDRCONTEXT_TABLE};
 
-enum class SdrEventKind {
-    NONE,
-    TextEdit,
-    MoveAction,
-    EndAction,
-    BackAction,
-    EndCreate,
-    EndDrag,
-    MarkObj,
-    MarkPoint,
-    MarkGluePoint,
-    BeginMark,
-    BeginInsertObjPoint,
-    EndInsertObjPoint,
-    BeginInsertGluePoint,
-    BeginDragHelpline,
-    BeginDragObj,
-    BeginCreateObj,
-    BeginMacroObj,
-    BeginTextEdit,
-    EndMark,
-    BrkMark,
-    ExecuteUrl
-};
+enum SdrEventKind  {SDREVENT_NONE,
+                    SDREVENT_TEXTEDIT,
+                    SDREVENT_MOVACTION,
+                    SDREVENT_ENDACTION,
+                    SDREVENT_BCKACTION,
+                    SDREVENT_BRKACTION,
+                    SDREVENT_ENDCREATE,
+                    SDREVENT_ENDDRAG,
+                    SDREVENT_MARKOBJ,
+                    SDREVENT_MARKPOINT,
+                    SDREVENT_MARKGLUEPOINT,
+                    SDREVENT_BEGMARK,
+                    SDREVENT_BEGINSOBJPOINT,
+                    SDREVENT_ENDINSOBJPOINT,
+                    SDREVENT_BEGINSGLUEPOINT,
+                    SDREVENT_BEGDRAGHELPLINE,
+                    SDREVENT_BEGDRAGOBJ,
+                    SDREVENT_BEGCREATEOBJ,
+                    SDREVENT_BEGMACROOBJ,
+                    SDREVENT_BEGTEXTEDIT,
+                    SDREVENT_ENDMARK,
+                    SDREVENT_BRKMARK,
+                    SDREVENT_EXECUTEURL};
 
 /* for PickAnything() */
 enum class SdrMouseEventKind
@@ -144,7 +141,7 @@ class SVX_DLLPUBLIC SdrDropMarkerOverlay
 
 public:
     SdrDropMarkerOverlay(const SdrView& rView, const SdrObject& rObject);
-    SdrDropMarkerOverlay(const SdrView& rView, const tools::Rectangle& rRectangle);
+    SdrDropMarkerOverlay(const SdrView& rView, const Rectangle& rRectangle);
     SdrDropMarkerOverlay(const SdrView& rView, const Point& rStart, const Point& rEnd);
     ~SdrDropMarkerOverlay();
 };
@@ -168,7 +165,7 @@ protected:
 
 public:
     explicit SdrView(SdrModel* pModel1, OutputDevice* pOut = nullptr);
-    virtual ~SdrView() override;
+    virtual ~SdrView();
 
     // The default value for all dispatchers is activated. If the app for example
     // wants to intervene in MouseDispatcher for special treatment, you have to
@@ -199,10 +196,10 @@ public:
     virtual bool MouseMove(const MouseEvent& rMEvt, vcl::Window* pWin) override;
     virtual bool Command(const CommandEvent& rCEvt, vcl::Window* pWin) override;
 
-    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
     bool SetAttributes(const SfxItemSet& rSet, bool bReplaceAll=false) { return SdrCreateView::SetAttributes(rSet,bReplaceAll); }
-    bool SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr) { return SdrCreateView::SetStyleSheet(pStyleSheet,bDontRemoveHardAttr); }
+    bool SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr=false) { return SdrCreateView::SetStyleSheet(pStyleSheet,bDontRemoveHardAttr); }
 
     /* new interface src537 */
     bool GetAttributes(SfxItemSet& rTargetSet, bool bOnlyHardAttr=false) const;
@@ -227,7 +224,7 @@ public:
     void MarkAll();
     void UnmarkAll();
 
-    const tools::Rectangle& GetMarkedRect() const;
+    const Rectangle& GetMarkedRect() const;
 
     virtual void DeleteMarked();
 
@@ -236,7 +233,7 @@ public:
     //   bAddMark=TRUE: add to existing selection (->Shift)
     //   bUnmark=TRUE: remove objects from selection which are inside of
     //                 the enveloped frame.
-    bool BegMark(const Point& rPnt, bool bAddMark, bool bUnmark);
+    bool BegMark(const Point& rPnt, bool bAddMark=false, bool bUnmark=false);
 
     // The following actions are possible:
     //   - ObjectCreating
@@ -274,7 +271,7 @@ public:
 //     bool MouseMove(const MouseEvent& rMEvt, vcl::Window* pWin);
 //     bool Command(const CommandEvent& rCEvt, vcl::Window* pWin);
 //
-//   Exchange (Clipboard currently without SdrPrivateData):
+//   Exchange (Clipboard derzeit noch ohne SdrPrivateData):
 //   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //     sal_Bool Cut(sal_uIntPtr nFormat=SDR_ANYFORMAT);
 //     sal_Bool Yank(sal_uIntPtr nFormat=SDR_ANYFORMAT);

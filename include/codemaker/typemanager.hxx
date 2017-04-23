@@ -56,7 +56,7 @@ public:
         rtl::Reference< unoidl::Entity > * entity) const;
 
 private:
-    virtual ~TypeManager() override;
+    virtual ~TypeManager();
 
     rtl::Reference< unoidl::Manager > manager_;
     std::vector< rtl::Reference< unoidl::Provider > > primaryProviders_;

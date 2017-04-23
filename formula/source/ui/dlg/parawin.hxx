@@ -20,9 +20,9 @@
 #ifndef INCLUDED_FORMULA_SOURCE_UI_DLG_PARAWIN_HXX
 #define INCLUDED_FORMULA_SOURCE_UI_DLG_PARAWIN_HXX
 
+#include <svtools/stdctrl.hxx>
 #include <svtools/svmedit.hxx>
 #include <vcl/lstbox.hxx>
-#include <vcl/fixed.hxx>
 #include <vcl/group.hxx>
 #include <vcl/tabpage.hxx>
 #include <vcl/tabctrl.hxx>
@@ -92,33 +92,38 @@ private:
         ::std::vector<OUString>
                         aParaArray;
 
-        DECL_LINK( ScrollHdl, ScrollBar*, void);
-        DECL_LINK( ModifyHdl, ArgInput&, void );
-        DECL_LINK( GetEdFocusHdl, ArgInput&, void );
-        DECL_LINK( GetFxFocusHdl, ArgInput&, void );
-        DECL_LINK( GetFxHdl, ArgInput&, void );
+        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void);
+        DECL_LINK_TYPED( ModifyHdl, ArgInput&, void );
+        DECL_LINK_TYPED( GetEdFocusHdl, ArgInput&, void );
+        DECL_LINK_TYPED( GetFxFocusHdl, ArgInput&, void );
+        DECL_LINK_TYPED( GetFxHdl, ArgInput&, void );
 
 protected:
 
         void            SliderMoved();
         void            ArgumentModified();
+        void            FxClick();
 
         void            InitArgInput( sal_uInt16 nPos, FixedText& rFtArg, PushButton& rBtnFx,
                                         ArgEdit& rEdArg, RefButton& rRefBtn);
 
+        void            DelParaArray();
         void            SetArgumentDesc(const OUString& aText);
         void            SetArgumentText(const OUString& aText);
 
 
         void            SetArgName      (sal_uInt16 no,const OUString &aArg);
         void            SetArgNameFont  (sal_uInt16 no,const vcl::Font&);
+        void            SetArgVal       (sal_uInt16 no,const OUString &aArg);
 
+        void            HideParaLine(sal_uInt16 no);
+        void            ShowParaLine(sal_uInt16 no);
         void            UpdateArgDesc( sal_uInt16 nArg );
         void            UpdateArgInput( sal_uInt16 nOffset, sal_uInt16 i );
 
 public:
                         ParaWin(vcl::Window* pParent,IControlReferenceHandler* _pDlg);
-                        virtual ~ParaWin() override;
+                        virtual ~ParaWin();
         virtual void    dispose() override;
 
         void            SetFunctionDesc(const IFunctionDescription* pFDesc);

@@ -41,7 +41,7 @@ public:
 
 void TestThread::run() {
 #if defined(_WIN32)
-    if (std::getenv("URE_TEST_SETTHREADNAME") != nullptr) {
+    if (std::getenv("URE_TEST_SETTHREADNAME") != 0) {
         // On Windows, setting thread names appears to only take effect when the
         // process is being debugged, so attach a debugger now:
         std::cout << "set: ";
@@ -76,5 +76,7 @@ void Test::test() {
 CPPUNIT_TEST_SUITE_REGISTRATION(Test);
 
 }
+
+CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

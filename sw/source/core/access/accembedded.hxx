@@ -29,16 +29,17 @@ class SwAccessibleEmbeddedObject : public   SwAccessibleNoTextFrame
 
 {
 protected:
-    virtual ~SwAccessibleEmbeddedObject() override;
+    virtual ~SwAccessibleEmbeddedObject();
 
 public:
-    SwAccessibleEmbeddedObject(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+    SwAccessibleEmbeddedObject( SwAccessibleMap* pInitMap,
                                 const SwFlyFrame* pFlyFrame );
 
     // XInterface
 
     virtual css::uno::Any SAL_CALL
-        queryInterface (const css::uno::Type & rType) override;
+        queryInterface (const css::uno::Type & rType)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         acquire()
@@ -52,22 +53,26 @@ public:
 
     // Returns an identifier for the implementation of this object.
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Return whether the specified service is supported by this class.
     virtual sal_Bool SAL_CALL
-        supportsService (const OUString& sServiceName) override;
+        supportsService (const OUString& sServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Returns a list of all supported services.  In this case that is just
     // the AccessibleContext service.
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleExtendedAttributes
-        virtual css::uno::Any SAL_CALL getExtendedAttributes() override ;
+        virtual css::uno::Any SAL_CALL getExtendedAttributes()
+            throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override ;
 };
 
 #endif

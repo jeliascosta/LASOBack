@@ -84,18 +84,25 @@ ScHTMLImport::ScHTMLImport( ScDocument* pDocP, const OUString& rBaseURL, const S
         }
         aPageSize.Width() -= nLeftMargin + nRightMargin;
         aPageSize.Height() -= nTopMargin + nBottomMargin;
-        aPageSize = pDefaultDev->LogicToPixel( aPageSize, MapMode( MapUnit::MapTwip ) );
+        aPageSize = pDefaultDev->LogicToPixel( aPageSize, MapMode( MAP_TWIP ) );
     }
     else
     {
         OSL_FAIL("no StyleSheet?!?");
         aPageSize = pDefaultDev->LogicToPixel(
-            SvxPaperInfo::GetPaperSize( PAPER_A4 ), MapMode( MapUnit::MapTwip ) );
+            SvxPaperInfo::GetPaperSize( PAPER_A4 ), MapMode( MAP_TWIP ) );
     }
     if( bCalcWidthHeight )
-        mpParser.reset( new ScHTMLLayoutParser( mpEngine.get(), rBaseURL, aPageSize, pDocP ));
+        mpParser = new ScHTMLLayoutParser( mpEngine, rBaseURL, aPageSize, pDocP );
     else
-        mpParser.reset( new ScHTMLQueryParser( mpEngine.get(), pDocP ));
+        mpParser = new ScHTMLQueryParser( mpEngine, pDocP );
+}
+
+ScHTMLImport::~ScHTMLImport()
+{
+    // Ordering is important, otherwise we get an error in some other Dtor!
+    // OK, as ScEEImport is the Base Class
+    delete static_cast<ScHTMLParser*>(mpParser);        // before EditEngine!
 }
 
 void ScHTMLImport::InsertRangeName( ScDocument* pDoc, const OUString& rName, const ScRange& rRange )
@@ -113,7 +120,7 @@ void ScHTMLImport::WriteToDocument(
 {
     ScEEImport::WriteToDocument( bSizeColsRows, nOutputFactor, pFormatter, bConvertDate );
 
-    const ScHTMLParser* pParser = static_cast<ScHTMLParser*>(mpParser.get());
+    const ScHTMLParser* pParser = GetParser();
     const ScHTMLTable* pGlobTable = pParser->GetGlobalTable();
     if( !pGlobTable )
         return;

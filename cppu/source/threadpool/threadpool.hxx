@@ -20,7 +20,7 @@
 #ifndef INCLUDED_CPPU_SOURCE_THREADPOOL_THREADPOOL_HXX
 #define INCLUDED_CPPU_SOURCE_THREADPOOL_THREADPOOL_HXX
 
-#include <vector>
+#include <list>
 #include <unordered_map>
 
 #include <osl/conditn.hxx>
@@ -58,10 +58,13 @@ namespace cppu_threadpool {
     typedef std::unordered_map
     <
         ::rtl::ByteSequence, // ThreadID
-        std::pair < JobQueue * , JobQueue * >,
+        ::std::pair < JobQueue * , JobQueue * >,
         HashThreadId,
         EqualThreadId
     > ThreadIdHashMap;
+
+    typedef ::std::list < sal_Int64 > DisposedCallerList;
+
 
     struct WaitingThread
     {
@@ -72,7 +75,7 @@ namespace cppu_threadpool {
             rtl::Reference<ORequestThread> const & theThread);
     };
 
-    typedef std::list < struct ::cppu_threadpool::WaitingThread * > WaitingThreadList;
+    typedef ::std::list < struct ::cppu_threadpool::WaitingThread * > WaitingThreadList;
 
     class DisposedCallerAdmin;
     typedef std::shared_ptr<DisposedCallerAdmin> DisposedCallerAdminHolder;
@@ -90,7 +93,7 @@ namespace cppu_threadpool {
 
     private:
         ::osl::Mutex m_mutex;
-        std::vector< sal_Int64 > m_lst;
+        DisposedCallerList m_lst;
     };
 
     class ThreadAdmin
@@ -107,7 +110,7 @@ namespace cppu_threadpool {
         ::osl::Mutex m_mutex;
 
     private:
-        std::list< rtl::Reference< ORequestThread > > m_lst;
+        ::std::list< rtl::Reference< ORequestThread > > m_lst;
         bool m_disposed;
     };
 
@@ -118,7 +121,7 @@ namespace cppu_threadpool {
     {
     public:
         ThreadPool();
-        virtual ~ThreadPool() override;
+        virtual ~ThreadPool();
 
         void dispose( sal_Int64 nDisposeId );
         void destroy( sal_Int64 nDisposeId );

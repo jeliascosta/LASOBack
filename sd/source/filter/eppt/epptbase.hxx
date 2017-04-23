@@ -120,8 +120,7 @@ class PPTExBulletProvider
         SvMemoryStream          aBuExOutlineStream;
         SvMemoryStream          aBuExMasterStream;
 
-        std::unique_ptr<EscherGraphicProvider>
-                                pGraphicProv;
+        EscherGraphicProvider*  pGraphicProv;
 
     public:
 
@@ -180,7 +179,7 @@ public:
 
     sal_uInt32  GetId( FontCollectionEntry& rFontDescriptor );
 
-    sal_uInt32  GetCount() const { return maFonts.size(); };
+    inline sal_uInt32  GetCount() const { return maFonts.size(); };
 
     const FontCollectionEntry* GetById( sal_uInt32 nId );
 
@@ -211,6 +210,9 @@ enum PPTExTextAttr
     ParaAttr_TextOfs,
     ParaAttr_BulletOfs,
     ParaAttr_DefaultTab,
+    ParaAttr_AsianLB_1,
+    ParaAttr_AsianLB_2,
+    ParaAttr_AsianLB_3,
     ParaAttr_BiDi,
     CharAttr_Bold,
     CharAttr_Italic,
@@ -328,7 +330,7 @@ protected:
     css::uno::Reference< css::drawing::XShape >               mXShape;
     css::awt::Size         maSize;
     css::awt::Point        maPosition;
-    ::tools::Rectangle           maRect;
+    Rectangle           maRect;
     OString        mType;
     bool            mbPresObj;
     bool            mbEmptyPresObj;
@@ -352,9 +354,9 @@ protected:
     FontCollection      maFontCollection;
 
     virtual void ImplWriteSlide( sal_uInt32 /* nPageNum */, sal_uInt32 /* nMasterNum */, sal_uInt16 /* nMode */,
-                                 bool /* bHasBackground */, css::uno::Reference< css::beans::XPropertySet > const & /* aXBackgroundPropSet */ ) {}
+                                 bool /* bHasBackground */, css::uno::Reference< css::beans::XPropertySet > /* aXBackgroundPropSet */ ) {}
     virtual void ImplWriteNotes( sal_uInt32 nPageNum ) = 0;
-    virtual void ImplWriteSlideMaster( sal_uInt32 /* nPageNum */, css::uno::Reference< css::beans::XPropertySet > const & /* aXBackgroundPropSet */ ) {}
+    virtual void ImplWriteSlideMaster( sal_uInt32 /* nPageNum */, css::uno::Reference< css::beans::XPropertySet > /* aXBackgroundPropSet */ ) {}
     virtual void ImplWriteLayout( sal_Int32 /* nOffset */, sal_uInt32 /* nMasterNum */ ) {}
 
     virtual void exportPPTPre( const std::vector< css::beans::PropertyValue >& ) {}
@@ -364,13 +366,13 @@ protected:
     virtual bool ImplCreateMainNotes()=0;
 
     bool GetStyleSheets();
-    bool GetShapeByIndex( sal_uInt32 nIndex, bool bGroup );
+    bool GetShapeByIndex( sal_uInt32 nIndex, bool bGroup = false );
 
     bool CreateMainNotes();
 
     css::awt::Size   MapSize( const css::awt::Size& );
     css::awt::Point  MapPoint( const css::awt::Point& );
-    ::tools::Rectangle        MapRectangle( const css::awt::Rectangle& );
+    Rectangle        MapRectangle( const css::awt::Rectangle& );
 
     bool ContainsOtherShapeThanPlaceholders();
 

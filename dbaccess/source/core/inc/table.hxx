@@ -30,6 +30,7 @@
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/sdbc/XConnection.hpp>
 
+#include <cppuhelper/compbase7.hxx>
 #include "apitools.hxx"
 #include "datasettings.hxx"
 #include <column.hxx>
@@ -101,7 +102,6 @@ namespace dbaccess
             @param          _rName          the name of the table
             @param          _rType          the type of the table, as supplied by the driver
             @param          _rDesc          the description of the table, as supplied by the driver
-            @throws css::sdbc::SQLException
         */
         ODBTable(connectivity::sdbcx::OCollection* _pTables
                 ,const css::uno::Reference< css::sdbc::XConnection >& _rxConn
@@ -110,21 +110,22 @@ namespace dbaccess
                 , const OUString& _rName
                 ,const OUString& _rType
                 , const OUString& _rDesc
-                ,const css::uno::Reference< css::container::XNameAccess >& _rxColumnDefinitions);
+                ,const css::uno::Reference< css::container::XNameAccess >& _rxColumnDefinitions)
+            throw(css::sdbc::SQLException);
 
-        /// @throws css::sdbc::SQLException
         ODBTable(connectivity::sdbcx::OCollection* _pTables
-                ,const css::uno::Reference< css::sdbc::XConnection >& _rxConn);
-        virtual ~ODBTable() override;
+                ,const css::uno::Reference< css::sdbc::XConnection >& _rxConn)
+                throw(css::sdbc::SQLException);
+        virtual ~ODBTable();
 
         // ODescriptor
         virtual void construct() override;
 
         //XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        DECLARE_XINTERFACE()
         //XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw (css::uno::RuntimeException, std::exception) override;
         static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
 
     // css::lang::XServiceInfo
@@ -134,13 +135,13 @@ namespace dbaccess
         virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle) const override;
 
     // css::sdbcx::XRename,
-        virtual void SAL_CALL rename( const OUString& _rNewName ) override;
+        virtual void SAL_CALL rename( const OUString& _rNewName ) throw(css::sdbc::SQLException, css::container::ElementExistException, css::uno::RuntimeException, std::exception) override;
 
     // css::sdbcx::XAlterTable,
-        virtual void SAL_CALL alterColumnByName( const OUString& _rName, const css::uno::Reference< css::beans::XPropertySet >& _rxDescriptor ) override;
+        virtual void SAL_CALL alterColumnByName( const OUString& _rName, const css::uno::Reference< css::beans::XPropertySet >& _rxDescriptor ) throw(css::sdbc::SQLException, css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
 
         // css::lang::XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 
     private:
         using OTable_Base::createArrayHelper;

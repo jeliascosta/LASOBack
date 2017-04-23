@@ -82,11 +82,11 @@ namespace pcr
         /** determines whether the SQL Command designer is currently active, i.e.
             if there currently exists a frame which allows the user entering the SQL command
         */
-        bool isActive() const { return m_xDesigner.is(); }
+        inline bool isActive() const { return m_xDesigner.is(); }
 
         /** returns the property adapter used by the instance
         */
-        const ::rtl::Reference< ISQLCommandAdapter >& getPropertyAdapter() const { return m_xObjectAdapter; }
+        inline const ::rtl::Reference< ISQLCommandAdapter >& getPropertyAdapter() const { return m_xObjectAdapter; }
 
         /** raises the designer window to top
             @precond
@@ -110,13 +110,13 @@ namespace pcr
 
     protected:
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~SQLCommandDesigner() override;
+        virtual ~SQLCommandDesigner();
 
         /** opens a new frame for interactively designing an SQL command
             @precond
@@ -148,6 +148,11 @@ namespace pcr
         */
         css::uno::Reference< css::frame::XFrame >
             impl_createEmptyParentlessTask_nothrow() const;
+
+        /** called whenever the component denoted by m_xDesigner has been closed
+            <em>by an external instance</em>
+        */
+        void impl_designerClosed_nothrow();
 
         /** closes the component denoted by m_xDesigner
             @precond
@@ -188,7 +193,7 @@ namespace pcr
         /// sets a new EscapeProcessing property value
         virtual void     setEscapeProcessing( const bool _bEscapeProcessing ) const = 0;
 
-        virtual ~ISQLCommandAdapter() override;
+        virtual ~ISQLCommandAdapter();
     };
 
 

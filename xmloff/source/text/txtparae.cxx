@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <o3tl/any.hxx>
 #include <xmloff/unointerfacetouniqueidentifiermapper.hxx>
 #include <tools/debug.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -216,7 +213,7 @@ namespace
     class FieldParamExporter
     {
         public:
-            FieldParamExporter(SvXMLExport* const pExport, Reference<XNameContainer> const & xFieldParams)
+            FieldParamExporter(SvXMLExport* const pExport, Reference<XNameContainer> xFieldParams)
                 : m_pExport(pExport)
                 , m_xFieldParams(xFieldParams)
                 { };
@@ -468,7 +465,7 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
         xPropMapper = GetRubyPropMapper();
         break;
     }
-    SAL_WARN_IF( !xPropMapper.is(), "xmloff", "There is the property mapper?" );
+    DBG_ASSERT( xPropMapper.is(), "There is the property mapper?" );
 
     vector< XMLPropertyState > aPropStates =
             xPropMapper->Filter( rPropSet );
@@ -516,13 +513,13 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
                             xNumPropSet->getPropertySetInfo()
                                        ->hasPropertyByName( "IsAutomatic" ) )
                         {
-                            bAdd = *o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "IsAutomatic" ));
+                            bAdd = *static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "IsAutomatic" ).getValue());
                             // Check on outline style (#i73361#)
                             if ( bAdd &&
                                  xNumPropSet->getPropertySetInfo()
                                            ->hasPropertyByName( "NumberingIsOutline" ) )
                             {
-                                bAdd = !(*o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "NumberingIsOutline" )));
+                                bAdd = !(*static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "NumberingIsOutline" ).getValue()));
                             }
                         }
                         else
@@ -531,7 +528,7 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
                         }
                     }
                     if( bAdd )
-                        maListAutoPool.Add( xNumRule );
+                        pListAutoPool->Add( xNumRule );
                 }
             }
             break;
@@ -599,7 +596,7 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
         xPropMapper = GetParaPropMapper();
         break;
     }
-    SAL_WARN_IF( !xPropMapper.is(), "xmloff", "There is the property mapper?" );
+    DBG_ASSERT( xPropMapper.is(), "There is the property mapper?" );
 
     vector< XMLPropertyState > aPropStates(xPropMapper->Filter( rPropSet ));
 
@@ -622,13 +619,13 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
                     xNumPropSet->getPropertySetInfo()
                                ->hasPropertyByName( "IsAutomatic" ) )
                 {
-                    bAdd = *o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "IsAutomatic" ));
+                    bAdd = *static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "IsAutomatic" ).getValue());
                     // Check on outline style (#i73361#)
                     if ( bAdd &&
                          xNumPropSet->getPropertySetInfo()
                                    ->hasPropertyByName( "NumberingIsOutline" ) )
                     {
-                        bAdd = !(*o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "NumberingIsOutline" )));
+                        bAdd = !(*static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "NumberingIsOutline" ).getValue()));
                     }
                 }
                 else
@@ -637,7 +634,7 @@ void XMLTextParagraphExport::Add( sal_uInt16 nFamily,
                 }
             }
             if( bAdd )
-                maListAutoPool.Add( xNumRule );
+                pListAutoPool->Add( xNumRule );
         }
     }
 
@@ -693,7 +690,7 @@ OUString XMLTextParagraphExport::Find(
         xPropMapper = GetRubyPropMapper();
         break;
     }
-    SAL_WARN_IF( !xPropMapper.is(), "xmloff", "There is the property mapper?" );
+    DBG_ASSERT( xPropMapper.is(), "There is the property mapper?" );
     if( !xPropMapper.is() )
         return sName;
     vector< XMLPropertyState > aPropStates(xPropMapper->Filter( rPropSet ));
@@ -806,7 +803,7 @@ void XMLTextParagraphExport::exportListChange(
         else if ( rPrevInfo.GetLevel() > rNextInfo.GetLevel() )
         {
             // close corresponding sub lists
-            SAL_WARN_IF( rNextInfo.GetLevel() <= 0, "xmloff",
+            DBG_ASSERT( rNextInfo.GetLevel() > 0,
                         "<rPrevInfo.GetLevel() > 0> not hold. Serious defect." );
             nListLevelsToBeClosed = rPrevInfo.GetLevel() - rNextInfo.GetLevel();
         }
@@ -851,7 +848,7 @@ void XMLTextParagraphExport::exportListChange(
         else if ( rNextInfo.GetLevel() > rPrevInfo.GetLevel() )
         {
             // open corresponding sub lists
-            SAL_WARN_IF( rPrevInfo.GetLevel() <= 0, "xmloff",
+            DBG_ASSERT( rPrevInfo.GetLevel() > 0,
                         "<rPrevInfo.GetLevel() > 0> not hold. Serious defect." );
             nListLevelsToBeOpened = rNextInfo.GetLevel() - rPrevInfo.GetLevel();
         }
@@ -1161,7 +1158,7 @@ XMLTextParagraphExport::XMLTextParagraphExport(
     pBoundFrameSets(new BoundFrameSets(GetExport().GetModel())),
     pFieldExport( nullptr ),
     pListElements( nullptr ),
-    maListAutoPool( this->GetExport() ),
+    pListAutoPool( new XMLTextListAutoStylePool( this->GetExport() ) ),
     pSectionExport( nullptr ),
     pIndexMarkExport( nullptr ),
     pRedlineExport( nullptr ),
@@ -1188,6 +1185,7 @@ XMLTextParagraphExport::XMLTextParagraphExport(
     sFootnote("Footnote"),
     sFootnoteCounting("FootnoteCounting"),
     sFrame("Frame"),
+    sFrameStyleName("FrameStyleName"),
     sGraphicFilter("GraphicFilter"),
     sGraphicRotation("GraphicRotation"),
     sGraphicURL("GraphicURL"),
@@ -1247,7 +1245,6 @@ XMLTextParagraphExport::XMLTextParagraphExport(
     sTextFieldStart( "TextFieldStart"  ),
     sTextFieldEnd( "TextFieldEnd"  ),
     sTextFieldStartEnd( "TextFieldStartEnd"  ),
-    sFrameStyleName("FrameStyleName"),
     aCharStyleNamesPropInfoCache( sCharStyleNames )
 {
     rtl::Reference < XMLPropertySetMapper > xPropMapper(new XMLTextPropertySetMapper( TextPropMap::PARA, true ));
@@ -1320,11 +1317,12 @@ XMLTextParagraphExport::~XMLTextParagraphExport()
     delete pSectionExport;
     delete pFieldExport;
     delete pListElements;
+    delete pListAutoPool;
 #ifdef DBG_UTIL
     txtparae_bContainsIllegalCharacters = false;
 #endif
     PopTextListsHelper();
-    SAL_WARN_IF( !maTextListsHelperStack.empty(), "xmloff",
+    DBG_ASSERT( maTextListsHelperStack.empty(),
                 "misusage of text lists helper stack - it is not empty. Serious defect" );
 }
 
@@ -1459,13 +1457,13 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
             }
 
             Any aAny = xAutoStyleFamilies->getByName( sName );
-            Reference< XAutoStyleFamily > xAutoStyles = *o3tl::doAccess<Reference<XAutoStyleFamily>>(aAny);
+            Reference< XAutoStyleFamily > xAutoStyles = *static_cast<Reference<XAutoStyleFamily> const *>(aAny.getValue());
             Reference < XEnumeration > xAutoStylesEnum( xAutoStyles->createEnumeration() );
 
             while ( xAutoStylesEnum->hasMoreElements() )
             {
                 aAny = xAutoStylesEnum->nextElement();
-                Reference< XAutoStyle > xAutoStyle = *o3tl::doAccess<Reference<XAutoStyle>>(aAny);
+                Reference< XAutoStyle > xAutoStyle = *static_cast<Reference<XAutoStyle> const *>(aAny.getValue());
                 Reference < XPropertySet > xPSet( xAutoStyle, uno::UNO_QUERY );
                 Add( nFamily, xPSet, nullptr, true );
             }
@@ -1482,9 +1480,9 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
         while ( xTextFieldsEnum->hasMoreElements() )
         {
             Any aAny = xTextFieldsEnum->nextElement();
-            Reference< XTextField > xTextField = *o3tl::doAccess<Reference<XTextField>>(aAny);
+            Reference< XTextField > xTextField = *static_cast<Reference<XTextField> const *>(aAny.getValue());
             exportTextField( xTextField, bAutoStyles, bIsProgress,
-                !xAutoStylesSupp.is(), nullptr );
+                !xAutoStylesSupp.is() );
             try
             {
                 Reference < XPropertySet > xSet( xTextField, UNO_QUERY );
@@ -1560,7 +1558,7 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
             for( sal_Int32 i = 0; i < nCount; ++i )
             {
                 Any aAny = xSections->getByIndex( i );
-                Reference< XTextSection > xSection = *o3tl::doAccess<Reference<XTextSection>>(aAny);
+                Reference< XTextSection > xSection = *static_cast<Reference<XTextSection> const *>(aAny.getValue());
                 Reference < XPropertySet > xPSet( xSection, uno::UNO_QUERY );
                 Add( XML_STYLE_FAMILY_TEXT_SECTION, xPSet );
             }
@@ -1578,7 +1576,7 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
             for( sal_Int32 i = 0; i < nCount; ++i )
             {
                 Any aAny = xTables->getByIndex( i );
-                Reference< XTextTable > xTable = *o3tl::doAccess<Reference<XTextTable>>(aAny);
+                Reference< XTextTable > xTable = *static_cast<Reference<XTextTable> const *>(aAny.getValue());
                 exportTable( xTable, true, true );
             }
         }
@@ -1608,13 +1606,13 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
                         xNumPropSet->getPropertySetInfo()
                                    ->hasPropertyByName( "IsAutomatic" ) )
                     {
-                        bAdd = *o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "IsAutomatic" ));
+                        bAdd = *static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "IsAutomatic" ).getValue());
                         // Check on outline style (#i73361#)
                         if ( bAdd &&
                              xNumPropSet->getPropertySetInfo()
                                        ->hasPropertyByName( "NumberingIsOutline" ) )
                         {
-                            bAdd = !(*o3tl::doAccess<bool>(xNumPropSet->getPropertyValue( "NumberingIsOutline" )));
+                            bAdd = !(*static_cast<sal_Bool const *>(xNumPropSet->getPropertyValue( "NumberingIsOutline" ).getValue()));
                         }
                     }
                     else
@@ -1623,7 +1621,7 @@ bool XMLTextParagraphExport::collectTextAutoStylesOptimized( bool bIsProgress )
                     }
                 }
                 if( bAdd )
-                    maListAutoPool.Add( xNumRule );
+                    pListAutoPool->Add( xNumRule );
             }
         }
     }
@@ -1651,7 +1649,7 @@ void XMLTextParagraphExport::exportText(
 
     // #97718# footnotes don't supply paragraph enumerations in some cases
     // This is always a bug, but at least we don't want to crash.
-    SAL_WARN_IF( !xParaEnum.is(), "xmloff", "We need a paragraph enumeration" );
+    DBG_ASSERT( xParaEnum.is(), "We need a paragraph enumeration" );
     if( ! xParaEnum.is() )
         return;
 
@@ -1727,7 +1725,7 @@ void XMLTextParagraphExport::exportText(
         pRedlineExport->ExportStartOrEndRedline( xPropertySet, false );
 }
 
-void XMLTextParagraphExport::exportTextContentEnumeration(
+bool XMLTextParagraphExport::exportTextContentEnumeration(
         const Reference < XEnumeration > & rContEnum,
         bool bAutoStyles,
         const Reference < XTextSection > & rBaseSection,
@@ -1736,10 +1734,10 @@ void XMLTextParagraphExport::exportTextContentEnumeration(
         const Reference < XPropertySet > *pRangePropSet,
         bool bExportLevels, TextPNS eExtensionNS )
 {
-    SAL_WARN_IF( !rContEnum.is(), "xmloff", "No enumeration to export!" );
+    DBG_ASSERT( rContEnum.is(), "No enumeration to export!" );
     bool bHasMoreElements = rContEnum->hasMoreElements();
     if( !bHasMoreElements )
-        return;
+        return false;
 
     XMLTextNumRuleInfo aPrevNumInfo;
     XMLTextNumRuleInfo aNextNumInfo;
@@ -1804,7 +1802,7 @@ void XMLTextParagraphExport::exportTextContentEnumeration(
                     pSectionExport->ExportMasterDocHeadingDummies();
 
                 while (rContEnum->hasMoreElements() &&
-                       XMLSectionExport::IsInSection( xCurrentTextSection,
+                       pSectionExport->IsInSection( xCurrentTextSection,
                                                     xTxtCntnt, true ))
                 {
                     xTxtCntnt.set(rContEnum->nextElement(), uno::UNO_QUERY);
@@ -1813,7 +1811,7 @@ void XMLTextParagraphExport::exportTextContentEnumeration(
                 }
                 // the first non-mute element still needs to be processed
                 bHoldElement =
-                    ! XMLSectionExport::IsInSection( xCurrentTextSection,
+                    ! pSectionExport->IsInSection( xCurrentTextSection,
                                                    xTxtCntnt, false );
             }
             else
@@ -1869,7 +1867,7 @@ void XMLTextParagraphExport::exportTextContentEnumeration(
         }
         else
         {
-            SAL_WARN_IF( xTxtCntnt.is(), "xmloff", "unknown text content" );
+            DBG_ASSERT( !xTxtCntnt.is(), "unknown text content" );
         }
 
         if( !bAutoStyles )
@@ -1889,6 +1887,8 @@ void XMLTextParagraphExport::exportTextContentEnumeration(
                                     aPrevNumInfo, aNextNumInfo,
                                     bAutoStyles );
     }
+
+    return true;
 }
 
 void XMLTextParagraphExport::exportParagraph(
@@ -2027,7 +2027,7 @@ void XMLTextParagraphExport::exportParagraph(
                             if (xCNSupplier.is())
                             {
                                 Reference< XIndexReplace > xNumRule ( xCNSupplier->getChapterNumberingRules() );
-                                SAL_WARN_IF( !xNumRule.is(), "xmloff", "no chapter numbering rules" );
+                                DBG_ASSERT( xNumRule.is(), "no chapter numbering rules" );
 
                                 if (xNumRule.is())
                                 {
@@ -2126,8 +2126,6 @@ void XMLTextParagraphExport::exportParagraph(
         }
     }
 
-    bool bPrevCharIsSpace(true); // true because whitespace at start is ignored
-
     if( bAutoStyles )
     {
         if( bHasContentEnum )
@@ -2135,32 +2133,35 @@ void XMLTextParagraphExport::exportParagraph(
                                     xContentEnum, bAutoStyles, xSection,
                                     bIsProgress );
         if ( bHasPortions )
-        {
-            exportTextRangeEnumeration(xTextEnum, bAutoStyles, bIsProgress, bPrevCharIsSpace);
-        }
+            exportTextRangeEnumeration( xTextEnum, bAutoStyles, bIsProgress );
     }
     else
     {
+        bool bPrevCharIsSpace = true;
         enum XMLTokenEnum eElem =
             0 < nOutlineLevel ? XML_H : XML_P;
         SvXMLElementExport aElem( GetExport(), eExtensionNS == TextPNS::EXTENSION ? XML_NAMESPACE_LO_EXT : XML_NAMESPACE_TEXT, eElem,
                                   true, false );
         if( bHasContentEnum )
-        {
-            exportTextContentEnumeration(
+            bPrevCharIsSpace = !exportTextContentEnumeration(
                                     xContentEnum, bAutoStyles, xSection,
                                     bIsProgress );
-        }
-        exportTextRangeEnumeration(xTextEnum, bAutoStyles, bIsProgress, bPrevCharIsSpace);
+        exportTextRangeEnumeration( xTextEnum, bAutoStyles, bIsProgress,
+                                     bPrevCharIsSpace );
     }
 }
 
 void XMLTextParagraphExport::exportTextRangeEnumeration(
         const Reference < XEnumeration > & rTextEnum,
         bool bAutoStyles, bool bIsProgress,
-        bool & rPrevCharIsSpace)
+        bool bPrvChrIsSpc )
 {
+    static const char sMeta[] = "InContentMetadata";
     static const char sFieldMarkName[] = "__FieldMark_";
+    static const char sAnnotation[] = "Annotation";
+    static const char sAnnotationEnd[] = "AnnotationEnd";
+
+    bool bPrevCharIsSpace = bPrvChrIsSpc;
 
     /* This is  used for exporting to strict OpenDocument 1.2, in which case traditional
      * bookmarks are used instead of fieldmarks. */
@@ -2180,17 +2181,19 @@ void XMLTextParagraphExport::exportTextRangeEnumeration(
             if( sType.equals(sText))
             {
                 exportTextRange( xTxtRange, bAutoStyles,
-                                 rPrevCharIsSpace, openFieldMark);
+                                 bPrevCharIsSpace, openFieldMark);
             }
             else if( sType.equals(sTextField))
             {
-                exportTextField(xTxtRange, bAutoStyles, bIsProgress, &rPrevCharIsSpace);
+                exportTextField( xTxtRange, bAutoStyles, bIsProgress );
+                bPrevCharIsSpace = false;
             }
-            else if ( sType == "Annotation" )
+            else if ( sType == sAnnotation )
             {
-                exportTextField(xTxtRange, bAutoStyles, bIsProgress, &rPrevCharIsSpace);
+                exportTextField( xTxtRange, bAutoStyles, bIsProgress );
+                bPrevCharIsSpace = false;
             }
-            else if ( sType == "AnnotationEnd" )
+            else if ( sType == sAnnotationEnd )
             {
                 if (!bAutoStyles)
                 {
@@ -2219,12 +2222,14 @@ void XMLTextParagraphExport::exportTextRangeEnumeration(
                                                     xSection, bIsProgress, true,
                                                      &xPropSet  );
 
+                bPrevCharIsSpace = false;
             }
             else if (sType.equals(sFootnote))
             {
                 exportTextFootnote(xPropSet,
                                    xTxtRange->getString(),
                                    bAutoStyles, bIsProgress );
+                bPrevCharIsSpace = false;
             }
             else if (sType.equals(sBookmark))
             {
@@ -2253,9 +2258,9 @@ void XMLTextParagraphExport::exportTextRangeEnumeration(
             {
                 exportRuby(xPropSet, bAutoStyles);
             }
-            else if (sType == "InContentMetadata")
+            else if (sType == sMeta)
             {
-                exportMeta(xPropSet, bAutoStyles, bIsProgress, rPrevCharIsSpace);
+                exportMeta(xPropSet, bAutoStyles, bIsProgress);
             }
             else if (sType.equals(sTextFieldStart))
             {
@@ -2411,18 +2416,19 @@ void XMLTextParagraphExport::exportTextRangeEnumeration(
             Reference<XServiceInfo> xServiceInfo( xTxtRange, UNO_QUERY );
             if( xServiceInfo->supportsService( sTextFieldService ) )
             {
-                exportTextField(xTxtRange, bAutoStyles, bIsProgress, &rPrevCharIsSpace);
+                exportTextField( xTxtRange, bAutoStyles, bIsProgress );
+                bPrevCharIsSpace = false;
             }
             else
             {
                 // no TextPortionType property -> non-Writer app -> text
-                exportTextRange(xTxtRange, bAutoStyles, rPrevCharIsSpace, openFieldMark);
+                exportTextRange( xTxtRange, bAutoStyles, bPrevCharIsSpace, openFieldMark );
             }
         }
     }
 
 // now that there are nested enumerations for meta(-field), this may be valid!
-//  SAL_WARN_IF( bOpenRuby, "xmloff", "Red Alert: Ruby still open!" );
+//  DBG_ASSERT( !bOpenRuby, "Red Alert: Ruby still open!" );
 }
 
 void XMLTextParagraphExport::exportTable(
@@ -2433,17 +2439,17 @@ void XMLTextParagraphExport::exportTable(
 
 void XMLTextParagraphExport::exportTextField(
         const Reference < XTextRange > & rTextRange,
-        bool bAutoStyles, bool bIsProgress, bool *const pPrevCharIsSpace)
+        bool bAutoStyles, bool bIsProgress )
 {
     Reference < XPropertySet > xPropSet( rTextRange, UNO_QUERY );
     // non-Writer apps need not support Property TextField, so test first
     if (xPropSet->getPropertySetInfo()->hasPropertyByName( sTextField ))
     {
         Reference < XTextField > xTxtFld(xPropSet->getPropertyValue( sTextField ), uno::UNO_QUERY);
-        SAL_WARN_IF( !xTxtFld.is(), "xmloff", "text field missing" );
+        DBG_ASSERT( xTxtFld.is(), "text field missing" );
         if( xTxtFld.is() )
         {
-            exportTextField(xTxtFld, bAutoStyles, bIsProgress, true, pPrevCharIsSpace);
+            exportTextField(xTxtFld, bAutoStyles, bIsProgress, true);
         }
         else
         {
@@ -2456,7 +2462,7 @@ void XMLTextParagraphExport::exportTextField(
 void XMLTextParagraphExport::exportTextField(
         const Reference < XTextField > & xTextField,
         const bool bAutoStyles, const bool bIsProgress,
-        const bool bRecursive, bool *const pPrevCharIsSpace)
+        const bool bRecursive )
 {
     if ( bAutoStyles )
     {
@@ -2465,8 +2471,7 @@ void XMLTextParagraphExport::exportTextField(
     }
     else
     {
-        assert(pPrevCharIsSpace);
-        pFieldExport->ExportField(xTextField, bIsProgress, *pPrevCharIsSpace);
+        pFieldExport->ExportField( xTextField, bIsProgress );
     }
 }
 
@@ -2502,13 +2507,13 @@ void XMLTextParagraphExport::exportTextMark(
 
         // start, end, or point-reference?
         sal_Int8 nElement;
-        if( *o3tl::doAccess<bool>(rPropSet->getPropertyValue(sIsCollapsed)) )
+        if( *static_cast<sal_Bool const *>(rPropSet->getPropertyValue(sIsCollapsed).getValue()) )
         {
             nElement = 0;
         }
         else
         {
-            nElement = *o3tl::doAccess<bool>(rPropSet->getPropertyValue(sIsStart)) ? 1 : 2;
+            nElement = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue(sIsStart).getValue()) ? 1 : 2;
         }
 
         // bookmark, bookmark-start: xml:id and RDFa for RDF metadata
@@ -2520,8 +2525,9 @@ void XMLTextParagraphExport::exportTextMark(
         }
 
         // export element
-        assert(pElements != nullptr);
-        assert(0 <= nElement && nElement <= 2);
+        DBG_ASSERT(pElements != nullptr, "illegal element array");
+        DBG_ASSERT(nElement >= 0, "illegal element number");
+        DBG_ASSERT(nElement <= 2, "illegal element number");
         SvXMLElementExport aElem(GetExport(),
                                  XML_NAMESPACE_TEXT, pElements[nElement],
                                  false, false);
@@ -2587,8 +2593,9 @@ XMLShapeExportFlags XMLTextParagraphExport::addTextFrameAttributes(
         rPropSet->getPropertyValue( sAnchorPageNo ) >>= nPage;
         SAL_WARN_IF(nPage <= 0, "xmloff",
                 "ERROR: writing invalid anchor-page-number 0");
+        ::sax::Converter::convertNumber( sValue, (sal_Int32)nPage );
         GetExport().AddAttribute( XML_NAMESPACE_TEXT, XML_ANCHOR_PAGE_NUMBER,
-                                  OUString::number( nPage ) );
+                                  sValue.makeStringAndClear() );
     }
     else
     {
@@ -2666,7 +2673,7 @@ XMLShapeExportFlags XMLTextParagraphExport::addTextFrameAttributes(
     bool bSyncWidth = false;
     if( xPropSetInfo->hasPropertyByName( sIsSyncWidthToHeight ) )
     {
-        bSyncWidth = *o3tl::doAccess<bool>(rPropSet->getPropertyValue( sIsSyncWidthToHeight ));
+        bSyncWidth = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue( sIsSyncWidthToHeight ).getValue());
         if( bSyncWidth )
             GetExport().AddAttribute( XML_NAMESPACE_STYLE, XML_REL_WIDTH,
                                       XML_SCALE );
@@ -2675,7 +2682,7 @@ XMLShapeExportFlags XMLTextParagraphExport::addTextFrameAttributes(
     {
         sal_Int16 nRelWidth =  0;
         rPropSet->getPropertyValue( sRelativeWidth ) >>= nRelWidth;
-        SAL_WARN_IF( nRelWidth < 0 || nRelWidth > 254, "xmloff",
+        DBG_ASSERT( nRelWidth >= 0 && nRelWidth <= 254,
                     "Got illegal relative width from API" );
         if( nRelWidth > 0 )
         {
@@ -2694,7 +2701,7 @@ XMLShapeExportFlags XMLTextParagraphExport::addTextFrameAttributes(
     bool bSyncHeight = false;
     if( xPropSetInfo->hasPropertyByName( sIsSyncHeightToWidth ) )
     {
-        bSyncHeight = *o3tl::doAccess<bool>(rPropSet->getPropertyValue( sIsSyncHeightToWidth ));
+        bSyncHeight = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue( sIsSyncHeightToWidth ).getValue());
     }
     sal_Int16 nRelHeight =  0;
     if( !bSyncHeight && xPropSetInfo->hasPropertyByName( sRelativeHeight ) )
@@ -2746,8 +2753,9 @@ XMLShapeExportFlags XMLTextParagraphExport::addTextFrameAttributes(
         rPropSet->getPropertyValue( sZOrder ) >>= nZIndex;
         if( -1 != nZIndex )
         {
+            ::sax::Converter::convertNumber( sValue, nZIndex );
             GetExport().AddAttribute( XML_NAMESPACE_DRAW, XML_ZINDEX,
-                                      OUString::number( nZIndex ) );
+                                      sValue.makeStringAndClear() );
         }
     }
 
@@ -2917,8 +2925,8 @@ void XMLTextParagraphExport::_exportTextFrame(
         SvXMLElementExport aElement( GetExport(), XML_NAMESPACE_DRAW,
                                   XML_TEXT_BOX, true, true );
 
-        // frames bound to frame
-        exportFrameFrames( false, bIsProgress, &xTxtFrame );
+        // frame bound frames
+        exportFramesBoundToFrame( xTxtFrame, bIsProgress );
 
         exportText( xTxt, false, bIsProgress, true );
     }
@@ -2960,7 +2968,7 @@ void XMLTextParagraphExport::exportContour(
 
     if( rPropSetInfo->hasPropertyByName( sIsPixelContour ) )
     {
-        bPixel = *o3tl::doAccess<bool>(rPropSet->getPropertyValue( sIsPixelContour ));
+        bPixel = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue( sIsPixelContour ).getValue());
     }
 
     // svg: width
@@ -3022,8 +3030,8 @@ void XMLTextParagraphExport::exportContour(
 
     if( rPropSetInfo->hasPropertyByName( sIsAutomaticContour ) )
     {
-        bool bTmp = *o3tl::doAccess<bool>(rPropSet->getPropertyValue(
-                                            sIsAutomaticContour ));
+        bool bTmp = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue(
+                                            sIsAutomaticContour ).getValue());
         GetExport().AddAttribute( XML_NAMESPACE_DRAW,
                       XML_RECREATE_ON_EDIT, bTmp ? XML_TRUE : XML_FALSE );
     }
@@ -3058,7 +3066,7 @@ void XMLTextParagraphExport::_exportTextGraphic(
         OUStringBuffer sRet( GetXMLToken(XML_ROTATE).getLength()+4 );
         sRet.append( GetXMLToken(XML_ROTATE));
         sRet.append( '(' );
-        sRet.append( (sal_Int32)nVal );
+        ::sax::Converter::convertNumber( sRet, (sal_Int32)nVal );
         sRet.append( ')' );
         GetExport().AddAttribute( XML_NAMESPACE_SVG, XML_TRANSFORM,
                                   sRet.makeStringAndClear() );
@@ -3141,14 +3149,14 @@ void XMLTextParagraphExport::_exportTextGraphic(
 
 void XMLTextParagraphExport::_collectTextEmbeddedAutoStyles(const Reference < XPropertySet > & )
 {
-    SAL_WARN( "xmloff", "no API implementation avialable" );
+    DBG_ASSERT( false, "no API implementation avialable" );
 }
 
 void XMLTextParagraphExport::_exportTextEmbedded(
         const Reference < XPropertySet > &,
         const Reference < XPropertySetInfo > & )
 {
-    SAL_WARN( "xmloff", "no API implementation avialable" );
+    DBG_ASSERT( false, "no API implementation avialable" );
 }
 
 void XMLTextParagraphExport::exportEvents( const Reference < XPropertySet > & rPropSet )
@@ -3243,7 +3251,7 @@ bool XMLTextParagraphExport::addHyperlinkAttributes(
          && ( !rPropState.is()
               || PropertyState_DIRECT_VALUE == rPropState->getPropertyState( sServerMap ) ) )
     {
-        bServerMap = *o3tl::doAccess<bool>(rPropSet->getPropertyValue( sServerMap ));
+        bServerMap = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue( sServerMap ).getValue());
         if ( bServerMap )
             bExport = true;
     }
@@ -3325,7 +3333,7 @@ void XMLTextParagraphExport::exportTextRangeSpan(
         SvXMLElementExport aElem2( GetExport(), TEXT == openFieldMark,
             XML_NAMESPACE_TEXT, XML_TEXT_INPUT,
             false, false );
-        exportCharacterData(aText, rPrevCharIsSpace);
+        exportText( aText, rPrevCharIsSpace );
         openFieldMark = NONE;
     }
 }
@@ -3380,7 +3388,7 @@ void XMLTextParagraphExport::exportTextRange(
     }
 }
 
-void XMLTextParagraphExport::exportCharacterData(const OUString& rText,
+void XMLTextParagraphExport::exportText( const OUString& rText,
                                            bool& rPrevCharIsSpace )
 {
     sal_Int32 nExpStartPos = 0;
@@ -3429,7 +3437,7 @@ void XMLTextParagraphExport::exportCharacterData(const OUString& rText,
            // the text that has not been exported by now has to be exported now.
         if( nPos > nExpStartPos && !bExpCharAsText )
         {
-            SAL_WARN_IF( 0 != nSpaceChars, "xmloff", "pending spaces" );
+            DBG_ASSERT( 0==nSpaceChars, "pending spaces" );
             OUString sExp( rText.copy( nExpStartPos, nPos - nExpStartPos ) );
             GetExport().Characters( sExp );
             nExpStartPos = nPos;
@@ -3440,12 +3448,12 @@ void XMLTextParagraphExport::exportCharacterData(const OUString& rText,
         // exported now.
         if( nSpaceChars > 0 && !bCurrCharIsSpace )
         {
-            SAL_WARN_IF( nExpStartPos != nPos, "xmloff", " pending characters" );
+            DBG_ASSERT( nExpStartPos == nPos, " pending characters" );
 
             if( nSpaceChars > 1 )
             {
                 OUStringBuffer sTmp;
-                sTmp.append( nSpaceChars );
+                sTmp.append( (sal_Int32)nSpaceChars );
                 GetExport().AddAttribute( XML_NAMESPACE_TEXT, XML_C,
                               sTmp.makeStringAndClear() );
             }
@@ -3490,14 +3498,14 @@ void XMLTextParagraphExport::exportCharacterData(const OUString& rText,
         // position for text is the position behind the current position.
         if( !bExpCharAsText )
         {
-            SAL_WARN_IF( nExpStartPos != nPos, "xmloff", "wrong export start pos" );
+            DBG_ASSERT( nExpStartPos == nPos, "wrong export start pos" );
             nExpStartPos = nPos+1;
         }
     }
 
     if( nExpStartPos < nEndPos )
     {
-        SAL_WARN_IF( 0 != nSpaceChars, "xmloff", " pending spaces " );
+        DBG_ASSERT( 0==nSpaceChars, " pending spaces " );
         OUString sExp( rText.copy( nExpStartPos, nEndPos - nExpStartPos ) );
         GetExport().Characters( sExp );
     }
@@ -3508,7 +3516,7 @@ void XMLTextParagraphExport::exportCharacterData(const OUString& rText,
         if( nSpaceChars > 1 )
         {
             OUStringBuffer sTmp;
-            sTmp.append( nSpaceChars );
+            sTmp.append( (sal_Int32)nSpaceChars );
             GetExport().AddAttribute( XML_NAMESPACE_TEXT, XML_C,
                           sTmp.makeStringAndClear() );
         }
@@ -3612,7 +3620,7 @@ void XMLTextParagraphExport::exportTextAutoStyles()
                                   GetExport().GetMM100UnitConverter(),
                                   GetExport().GetNamespaceMap() );
 
-    maListAutoPool.exportXML();
+    pListAutoPool->exportXML();
 }
 
 void XMLTextParagraphExport::exportRuby(
@@ -3620,11 +3628,11 @@ void XMLTextParagraphExport::exportRuby(
     bool bAutoStyles )
 {
     // early out: a collapsed ruby makes no sense
-    if (*o3tl::doAccess<bool>(rPropSet->getPropertyValue(sIsCollapsed)))
+    if (*static_cast<sal_Bool const *>(rPropSet->getPropertyValue(sIsCollapsed).getValue()))
         return;
 
     // start value ?
-    bool bStart = *o3tl::doAccess<bool>(rPropSet->getPropertyValue(sIsStart));
+    bool bStart = *static_cast<sal_Bool const *>(rPropSet->getPropertyValue(sIsStart).getValue());
 
     if (bAutoStyles)
     {
@@ -3639,7 +3647,7 @@ void XMLTextParagraphExport::exportRuby(
             // ruby start
 
             // we can only start a ruby if none is open
-            assert(!bOpenRuby && "Can't open a ruby inside of ruby!");
+            DBG_ASSERT(! bOpenRuby, "Can't open a ruby inside of ruby!");
             if( bOpenRuby )
                 return;
 
@@ -3649,8 +3657,9 @@ void XMLTextParagraphExport::exportRuby(
 
             // ruby style
             GetExport().CheckAttrList();
-            OUString sStyleName(Find(XML_STYLE_FAMILY_TEXT_RUBY, rPropSet, ""));
-            SAL_WARN_IF(sStyleName.isEmpty(), "xmloff", "Can't find ruby style!");
+            OUString sStyleName(Find( XML_STYLE_FAMILY_TEXT_RUBY, rPropSet,
+                                        "" ));
+            DBG_ASSERT(!sStyleName.isEmpty(), "I can't find the style!");
             GetExport().AddAttribute(XML_NAMESPACE_TEXT,
                                      XML_STYLE_NAME, sStyleName);
 
@@ -3666,7 +3675,7 @@ void XMLTextParagraphExport::exportRuby(
             // ruby end
 
             // check for an open ruby
-            assert(bOpenRuby && "Can't close a ruby if none is open!");
+            DBG_ASSERT(bOpenRuby, "Can't close a ruby if none is open!");
             if( !bOpenRuby )
                 return;
 
@@ -3697,8 +3706,10 @@ void XMLTextParagraphExport::exportRuby(
 
 void XMLTextParagraphExport::exportMeta(
     const Reference<XPropertySet> & i_xPortion,
-    bool i_bAutoStyles, bool i_isProgress, bool & rPrevCharIsSpace)
+    bool i_bAutoStyles, bool i_isProgress)
 {
+    static const char sMeta[] = "InContentMetadata";
+
     bool doExport(!i_bAutoStyles); // do not export element if autostyles
     // check version >= 1.2
     switch (GetExport().getDefaultVersion()) {
@@ -3708,7 +3719,7 @@ void XMLTextParagraphExport::exportMeta(
     }
 
     const Reference< XTextContent > xTextContent(
-            i_xPortion->getPropertyValue("InContentMetadata"), UNO_QUERY_THROW);
+            i_xPortion->getPropertyValue(sMeta), UNO_QUERY_THROW);
     const Reference< XEnumerationAccess > xEA( xTextContent, UNO_QUERY_THROW );
     const Reference< XEnumeration > xTextEnum( xEA->createEnumeration() );
 
@@ -3728,7 +3739,7 @@ void XMLTextParagraphExport::exportMeta(
         XML_NAMESPACE_TEXT, XML_META, false, false );
 
     // recurse to export content
-    exportTextRangeEnumeration(xTextEnum, i_bAutoStyles, i_isProgress, rPrevCharIsSpace);
+    exportTextRangeEnumeration( xTextEnum, i_bAutoStyles, i_isProgress );
 }
 
 void XMLTextParagraphExport::PreventExportOfControlsInMuteSections(
@@ -3741,7 +3752,7 @@ void XMLTextParagraphExport::PreventExportOfControlsInMuteSections(
         // if we don't have shapes or a form export, there's nothing to do
         return;
     }
-    SAL_WARN_IF( pSectionExport == nullptr, "xmloff", "We need the section export." );
+    DBG_ASSERT( pSectionExport != nullptr, "We need the section export." );
 
     Reference<XEnumeration> xShapesEnum = pBoundFrameSets->GetShapes()->createEnumeration();
     if(!xShapesEnum.is())

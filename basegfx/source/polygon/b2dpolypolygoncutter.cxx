@@ -90,11 +90,11 @@ namespace basegfx
             }
         };
 
-        typedef std::vector< PN > PNV;
-        typedef std::vector< VN > VNV;
-        typedef std::vector< SN > SNV;
-        typedef std::pair< basegfx::B2DPoint /*orig*/, basegfx::B2DPoint /*repl*/ > CorrectionPair;
-        typedef std::vector< CorrectionPair > CorrectionTable;
+        typedef ::std::vector< PN > PNV;
+        typedef ::std::vector< VN > VNV;
+        typedef ::std::vector< SN > SNV;
+        typedef ::std::pair< basegfx::B2DPoint /*orig*/, basegfx::B2DPoint /*repl*/ > CorrectionPair;
+        typedef ::std::vector< CorrectionPair > CorrectionTable;
 
         class solver
         {
@@ -161,14 +161,14 @@ namespace basegfx
 
             void impSwitchNext(PN& rPNa, PN& rPNb)
             {
-                std::swap(rPNa.mnIN, rPNb.mnIN);
+                ::std::swap(rPNa.mnIN, rPNb.mnIN);
 
                 if(mbIsCurve)
                 {
                     VN& rVNa = maVNV[rPNa.mnI];
                     VN& rVNb = maVNV[rPNb.mnI];
 
-                    std::swap(rVNa.maNext, rVNb.maNext);
+                    ::std::swap(rVNa.maNext, rVNb.maNext);
                 }
 
                 if(!mbChanged)
@@ -429,7 +429,7 @@ namespace basegfx
             void impSolve()
             {
                 // sort by point to identify common nodes easier
-                std::sort(maSNV.begin(), maSNV.end());
+                ::std::sort(maSNV.begin(), maSNV.end());
 
                 // handle common nodes
                 const sal_uInt32 nNodeCount(maSNV.size());
@@ -540,7 +540,7 @@ namespace basegfx
                             const sal_uInt32 nCandCount(aCandidate.count());
 
                             // If it's not a bezier curve, at least three points would be needed to have a
-                            // topological relevant (not empty) polygon. Since it's not known here if trivial
+                            // topological relevant (not empty) polygon. Since its not known here if trivial
                             // edges (dead ends) will be kept or sorted out, add non-bezier polygons with
                             // more than one point.
                             // For bezier curves, the minimum for defining an area is also one.
@@ -745,7 +745,7 @@ namespace basegfx
             if(nCount > 1)
             {
                 sal_uInt32 a, b;
-                std::vector< StripHelper > aHelpers;
+                ::std::vector< StripHelper > aHelpers;
                 aHelpers.resize(nCount);
 
                 for(a = 0; a < nCount; a++)
@@ -815,7 +815,7 @@ namespace basegfx
 
             if(nCount)
             {
-                if(nCount == 1)
+                if(nCount == 1L)
                 {
                     if(!bKeepAboveZero && B2VectorOrientation::Positive == tools::getOrientation(rCandidate.getB2DPolygon(0)))
                     {
@@ -825,7 +825,7 @@ namespace basegfx
                 else
                 {
                     sal_uInt32 a, b;
-                    std::vector< StripHelper > aHelpers;
+                    ::std::vector< StripHelper > aHelpers;
                     aHelpers.resize(nCount);
 
                     for(a = 0; a < nCount; a++)
@@ -834,15 +834,15 @@ namespace basegfx
                         StripHelper* pNewHelper = &(aHelpers[a]);
                         pNewHelper->maRange = tools::getRange(aCandidate);
                         pNewHelper->meOrinetation = tools::getOrientation(aCandidate);
-                        pNewHelper->mnDepth = (B2VectorOrientation::Negative == pNewHelper->meOrinetation ? -1 : 0);
+                        pNewHelper->mnDepth = (B2VectorOrientation::Negative == pNewHelper->meOrinetation ? -1L : 0);
                     }
 
-                    for(a = 0; a < nCount - 1; a++)
+                    for(a = 0; a < nCount - 1L; a++)
                     {
                         const B2DPolygon aCandA(rCandidate.getB2DPolygon(a));
                         StripHelper& rHelperA = aHelpers[a];
 
-                        for(b = a + 1; b < nCount; b++)
+                        for(b = a + 1L; b < nCount; b++)
                         {
                             const B2DPolygon aCandB(rCandidate.getB2DPolygon(b));
                             StripHelper& rHelperB = aHelpers[b];
@@ -897,7 +897,7 @@ namespace basegfx
                     for(a = 0; a < nCount; a++)
                     {
                         const StripHelper& rHelper = aHelpers[a];
-                        bool bAcceptEntry(bKeepAboveZero ? 1 <= rHelper.mnDepth : 0 == rHelper.mnDepth);
+                        bool bAcceptEntry(bKeepAboveZero ? 1L <= rHelper.mnDepth : 0 == rHelper.mnDepth);
 
                         if(bAcceptEntry)
                         {
@@ -1047,17 +1047,16 @@ namespace basegfx
                         const B2DRange aCandidateRange(aCandidate.getB2DRange());
                         bool bCouldMergeSimple(false);
 
-                        for(auto & b: aResult)
+                        for(sal_uInt32 b(0); !bCouldMergeSimple && b < aResult.size(); b++)
                         {
-                            basegfx::B2DPolyPolygon aTarget(b);
+                            basegfx::B2DPolyPolygon aTarget(aResult[b]);
                             const B2DRange aTargetRange(aTarget.getB2DRange());
 
                             if(!aCandidateRange.overlaps(aTargetRange))
                             {
                                 aTarget.append(aCandidate);
-                                b = aTarget;
+                                aResult[b] = aTarget;
                                 bCouldMergeSimple = true;
-                                break;
                             }
                         }
 

@@ -58,7 +58,7 @@ void SwTextShell::ExecIdx(SfxRequest &rReq)
         {
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "Dialog creation failed!");
-            ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateVclAbstractDialog( pMDI, GetShell(), DLG_EDIT_AUTHMARK));
+            std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateVclAbstractDialog( pMDI, GetShell(), DLG_EDIT_AUTHMARK));
             OSL_ENSURE(pDlg, "Dialog creation failed!");
             pDlg->Execute();
         }
@@ -84,7 +84,7 @@ void SwTextShell::ExecIdx(SfxRequest &rReq)
             {   // Several marks, which should it be?
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                ScopedVclPtr<VclAbstractDialog> pMultDlg(pFact->CreateMultiTOXMarkDlg(pMDI, aMgr));
+                std::unique_ptr<VclAbstractDialog> pMultDlg(pFact->CreateMultiTOXMarkDlg(pMDI, aMgr));
                 OSL_ENSURE(pMultDlg, "Dialog creation failed!");
                 nRet = pMultDlg->Execute();
             }
@@ -92,7 +92,7 @@ void SwTextShell::ExecIdx(SfxRequest &rReq)
             {
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateIndexMarkModalDlg(pMDI, GetShell(), aMgr.GetCurTOXMark()));
+                std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateIndexMarkModalDlg(pMDI, GetShell(), aMgr.GetCurTOXMark()));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
                 pDlg->Execute();
             }
@@ -115,7 +115,7 @@ void SwTextShell::ExecIdx(SfxRequest &rReq)
                             0   );
             SwWrtShell& rSh = GetShell();
             SwRect aRect;
-            rSh.CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
+            rSh.CalcBoundRect(aRect, FLY_AS_CHAR);
 
             long nWidth = aRect.Width();
             aSet.Put(SwFormatFrameSize(ATT_VAR_SIZE, nWidth));
@@ -138,9 +138,9 @@ void SwTextShell::ExecIdx(SfxRequest &rReq)
             }
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "Dialog creation failed!");
-            ScopedVclPtr<AbstractMultiTOXTabDialog> pDlg(pFact->CreateMultiTOXTabDialog(
+            std::unique_ptr<AbstractMultiTOXTabDialog> pDlg(pFact->CreateMultiTOXTabDialog(
                                                         pMDI, aSet, rSh, const_cast<SwTOXBase*>(pCurTOX),
-                                                        bGlobal));
+                                                        USHRT_MAX, bGlobal));
             OSL_ENSURE(pDlg, "Dialog creation failed!");
             pDlg->Execute();
         }
@@ -239,7 +239,7 @@ void SwTextShell::GetIdxState(SfxItemSet &rSet)
             rSet.Put(SfxBoolItem(FN_INSERT_AUTH_ENTRY_DLG, nullptr != pAuthMark));
 
         if( bInReadonly || !pField ||
-            pField->GetTyp()->Which() != SwFieldIds::TableOfAuthorities)
+            pField->GetTyp()->Which() != RES_AUTHORITY)
             rSet.DisableItem(FN_EDIT_AUTH_ENTRY_DLG);
         rSet.DisableItem(FN_REMOVE_CUR_TOX);
     }

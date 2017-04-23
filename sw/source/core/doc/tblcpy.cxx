@@ -45,7 +45,6 @@
 #include <redline.hxx>
 #include <fmtfsize.hxx>
 #include <list>
-#include <deque>
 #include <memory>
 #include <o3tl/make_unique.hxx>
 
@@ -69,7 +68,7 @@ namespace
 
     typedef std::vector< BoxSpanInfo > BoxStructure;
     typedef std::vector< BoxStructure > LineStructure;
-    typedef std::deque< sal_uLong > ColumnStructure;
+    typedef std::list< sal_uLong > ColumnStructure;
 
     struct SubBox
     {
@@ -192,7 +191,7 @@ namespace
             maCols.push_front(0);
             const SwTableLine* pLine = rFndLines.front()->GetLine();
             const sal_uInt16 nStartLn = rTable.GetTabLines().GetPos( pLine );
-            SwTableLines::size_type nEndLn = nStartLn;
+            sal_uInt16 nEndLn = nStartLn;
             if( rFndLines.size() > 1 )
             {
                 pLine = rFndLines.back()->GetLine();
@@ -201,9 +200,10 @@ namespace
             if( nStartLn < USHRT_MAX && nEndLn < USHRT_MAX )
             {
                 const SwTableLines &rLines = rTable.GetTabLines();
-                if( bNoSelection && nMinSize > nEndLn - nStartLn + 1 )
+                if( bNoSelection &&
+                    nMinSize > static_cast<LineStructure::size_type>(nEndLn - nStartLn + 1) )
                 {
-                    SwTableLines::size_type nNewEndLn = nStartLn + nMinSize - 1;
+                    LineStructure::size_type nNewEndLn = nStartLn + nMinSize - 1;
                     if( nNewEndLn >= rLines.size() )
                     {
                         mnAddLine = nNewEndLn - rLines.size() + 1;
@@ -221,7 +221,7 @@ namespace
                 maLines.resize( nEndLn - nStartLn + 1 );
                 const SwSelBoxes* pSelBoxes = &rSelBoxes;
                 sal_uInt16 nCnt = 0;
-                for( SwTableLines::size_type nLine = nStartLn; nLine <= nEndLn; ++nLine )
+                for( sal_uInt16 nLine = nStartLn; nLine <= nEndLn; ++nLine )
                 {
                     addLine( nCnt, rLines[nLine]->GetTabBoxes(),
                              pSelBoxes, rTable.IsNewModel() );
@@ -334,7 +334,8 @@ namespace
         }
         if( rpCol == maCols.end() || *rpCol > rnBorder )
         {
-            rpCol = maCols.insert( rpCol, rnBorder );
+            maCols.insert( rpCol, rnBorder );
+            --rpCol;
             incColSpan( nLine, rnCol );
         }
         aInfo.mnColSpan = rnCol - nLeftCol;
@@ -561,8 +562,8 @@ static void lcl_CpyBox( const SwTable& rCpyTable, const SwTableBox* pCpyBox,
             SwFormatAnchor const*const pAnchor = &pFly->GetAnchor();
             SwPosition const*const pAPos = pAnchor->GetContentAnchor();
             if (pAPos &&
-                ((RndStdIds::FLY_AT_PARA == pAnchor->GetAnchorId()) ||
-                 (RndStdIds::FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
+                ((FLY_AT_PARA == pAnchor->GetAnchorId()) ||
+                 (FLY_AT_CHAR == pAnchor->GetAnchorId())) &&
                 aInsIdx <= pAPos->nNode && pAPos->nNode <= aEndNdIdx )
             {
                 pDoc->getIDocumentLayoutAccess().DelLayoutFormat( pFly );
@@ -615,7 +616,7 @@ static void lcl_CpyBox( const SwTable& rCpyTable, const SwTableBox* pCpyBox,
             {
                 SwPaM aPam( aSavePos );
                 aPam.SetMark();
-                aPam.Move( fnMoveForward, GoInSection );
+                aPam.Move( fnMoveForward, fnGoSection );
                 pDoc->SetTextFormatColl( aPam, pColl );
             }
         }

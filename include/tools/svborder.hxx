@@ -23,7 +23,7 @@
 #include <tools/toolsdllapi.h>
 #include <tools/gen.hxx>
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC SvBorder
+class TOOLS_DLLPUBLIC SvBorder
 {
     long nTop, nRight, nBottom, nLeft;
 
@@ -72,7 +72,7 @@ public:
     long    Left()   const { return nLeft; }
 };
 
-TOOLS_DLLPUBLIC tools::Rectangle & operator += ( tools::Rectangle & rRect, const SvBorder & rBorder );
+TOOLS_DLLPUBLIC Rectangle & operator += ( Rectangle & rRect, const SvBorder & rBorder );
 
 #endif
 

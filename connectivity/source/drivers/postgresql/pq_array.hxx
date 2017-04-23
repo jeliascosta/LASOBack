@@ -45,19 +45,19 @@
 namespace pq_sdbc_driver
 {
 
-class Array : public cppu::WeakImplHelper< css::sdbc::XArray >
+class Array : public cppu::WeakImplHelper< com::sun::star::sdbc::XArray >
 {
-    std::vector< css::uno::Any > m_data;
-    css::uno::Reference< css::uno::XInterface > m_owner;
-    css::uno::Reference< css::script::XTypeConverter > m_tc;
+    std::vector< com::sun::star::uno::Any > m_data;
+    com::sun::star::uno::Reference< com::sun::star::uno::XInterface > m_owner;
+    com::sun::star::uno::Reference< com::sun::star::script::XTypeConverter > m_tc;
     rtl::Reference< RefCountedMutex > m_refMutex;
 
 public:
     Array(
         const rtl::Reference< RefCountedMutex > & mutex,
-        const std::vector< css::uno::Any > & data,
-        const css::uno::Reference< css::uno::XInterface > & owner,
-        const css::uno::Reference< css::script::XTypeConverter > &tc) :
+        const std::vector< com::sun::star::uno::Any > & data,
+        const com::sun::star::uno::Reference< com::sun::star::uno::XInterface > & owner,
+        const com::sun::star::uno::Reference< com::sun::star::script::XTypeConverter > &tc) :
         m_data( data ),
         m_owner( owner ),
         m_tc( tc ),
@@ -67,26 +67,32 @@ public:
 public: // XArray
 
     // Methods
-    virtual OUString SAL_CALL getBaseTypeName(  ) override;
+    virtual OUString SAL_CALL getBaseTypeName(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getBaseType(  ) override;
+    virtual sal_Int32 SAL_CALL getBaseType(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getArray(
-        const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+    virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > SAL_CALL getArray(
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getArrayAtIndex(
+    virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any > SAL_CALL getArrayAtIndex(
         sal_Int32 index,
         sal_Int32 count,
-        const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL
     getResultSet(
-        const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL getResultSetAtIndex(
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL getResultSetAtIndex(
         sal_Int32 index,
         sal_Int32 count,
-        const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+        const ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 private:
     void checkRange( sal_Int32 index, sal_Int32 count );

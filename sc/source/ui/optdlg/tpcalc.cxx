@@ -112,8 +112,7 @@ VclPtr<SfxTabPage> ScTpCalcOptions::Create( vcl::Window* pParent, const SfxItemS
 
 void ScTpCalcOptions::Reset( const SfxItemSet* /* rCoreAttrs */ )
 {
-    sal_uInt16  d,m;
-    sal_Int16   y;
+    sal_uInt16  d,m,y;
 
     *pLocalOptions  = *pOldOptions;
 
@@ -167,7 +166,7 @@ void ScTpCalcOptions::Reset( const SfxItemSet* /* rCoreAttrs */ )
 
 bool ScTpCalcOptions::FillItemSet( SfxItemSet* rCoreAttrs )
 {
-    // every other options are updated in handlers
+    // alle weiteren Optionen werden in den Handlern aktualisiert
     pLocalOptions->SetIterCount( (sal_uInt16)m_pEdSteps->GetValue() );
     pLocalOptions->SetIgnoreCase( !m_pBtnCase->IsChecked() );
     pLocalOptions->SetCalcAsShown( m_pBtnCalc->IsChecked() );
@@ -191,18 +190,18 @@ bool ScTpCalcOptions::FillItemSet( SfxItemSet* rCoreAttrs )
         return false;
 }
 
-DeactivateRC ScTpCalcOptions::DeactivatePage( SfxItemSet* pSetP )
+SfxTabPage::sfxpg ScTpCalcOptions::DeactivatePage( SfxItemSet* pSetP )
 {
-    DeactivateRC nReturn = DeactivateRC::KeepPage;
+    sfxpg nReturn = KEEP_PAGE;
 
     double fEps;
     if( m_pEdEps->GetValue( fEps ) && (fEps > 0.0) )
     {
         pLocalOptions->SetIterEps( fEps );
-        nReturn = DeactivateRC::LeavePage;
+        nReturn = LEAVE_PAGE;
     }
 
-    if ( nReturn == DeactivateRC::KeepPage )
+    if ( nReturn == KEEP_PAGE )
     {
         ScopedVclPtrInstance<MessageDialog>( this,
                   ScGlobal::GetRscString( STR_INVALID_EPS )
@@ -218,7 +217,7 @@ DeactivateRC ScTpCalcOptions::DeactivatePage( SfxItemSet* pSetP )
 
 // Handler:
 
-IMPL_LINK( ScTpCalcOptions, RadioClickHdl, Button*, pBtn, void )
+IMPL_LINK_TYPED( ScTpCalcOptions, RadioClickHdl, Button*, pBtn, void )
 {
     if (pBtn == m_pBtnDateStd)
     {
@@ -234,7 +233,7 @@ IMPL_LINK( ScTpCalcOptions, RadioClickHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK( ScTpCalcOptions, CheckClickHdl, Button*, p, void )
+IMPL_LINK_TYPED( ScTpCalcOptions, CheckClickHdl, Button*, p, void )
 {
     CheckBox* pBtn = static_cast<CheckBox*>(p);
     if (pBtn == m_pBtnGeneralPrec)

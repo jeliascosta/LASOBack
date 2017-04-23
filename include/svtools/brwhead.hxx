@@ -31,10 +31,11 @@ class SVT_DLLPUBLIC BrowserHeader: public HeaderBar
     VclPtr<BrowseBox>   _pBrowseBox;
 
 public:
-    virtual             ~BrowserHeader() override;
+    virtual             ~BrowserHeader();
     virtual void        dispose() override;
 protected:
     virtual void        Command( const CommandEvent& rCEvt ) override;
+    virtual void        Select() override;
     virtual void        EndDrag() override;
 
 public:

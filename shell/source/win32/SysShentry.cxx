@@ -22,15 +22,20 @@
 #include <osl/diagnose.h>
 #include "SysShExec.hxx"
 
-using namespace ::com::sun::star::uno;
-using namespace ::com::sun::star::container;
-using namespace ::com::sun::star::lang;
-using namespace ::com::sun::star::registry;
-using namespace ::cppu;
+
+// namespace directives
+
+
+using namespace ::com::sun::star::uno       ;
+using namespace ::com::sun::star::container ;
+using namespace ::com::sun::star::lang      ;
+using namespace ::com::sun::star::registry  ;
+using namespace ::cppu                      ;
 using com::sun::star::system::XSystemShellExecute;
 
 #define SYSSHEXEC_SERVICE_NAME  "com.sun.star.system.SystemShellExecute"
 #define SYSSHEXEC_IMPL_NAME     "com.sun.star.sys.shell.SystemShellExecute"
+
 
 namespace
 {
@@ -43,10 +48,14 @@ namespace
 extern "C"
 {
 
+// component_getFactory
+// returns a factory to create XFilePicker-Services
+
+
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL syssh_component_getFactory(
         const sal_Char* pImplName, void*, void* /*pRegistryKey*/ )
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
 
     if ( 0 == rtl_str_compare( pImplName, SYSSHEXEC_IMPL_NAME ) )
     {

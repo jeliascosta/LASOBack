@@ -74,29 +74,17 @@ namespace utl
             startComponentListening(xConfigNodeComp);
 
         if (isValid())
-            m_bEscapeNames = isSetNode() && Reference< XStringEscape >::query(m_xDirectAccess).is();
+            setEscape(isSetNode());
     }
 
     OConfigurationNode::OConfigurationNode(const OConfigurationNode& _rSource)
-        : OEventListenerAdapter()
-        , m_xHierarchyAccess(_rSource.m_xHierarchyAccess)
-        , m_xDirectAccess(_rSource.m_xDirectAccess)
-        , m_xReplaceAccess(_rSource.m_xReplaceAccess)
-        , m_xContainerAccess(_rSource.m_xContainerAccess)
-        , m_bEscapeNames(_rSource.m_bEscapeNames)
-    {
-        Reference< XComponent > xConfigNodeComp(m_xDirectAccess, UNO_QUERY);
-        if (xConfigNodeComp.is())
-            startComponentListening(xConfigNodeComp);
-    }
-
-    OConfigurationNode::OConfigurationNode(OConfigurationNode&& _rSource)
-        : OEventListenerAdapter()
-        , m_xHierarchyAccess(std::move(_rSource.m_xHierarchyAccess))
-        , m_xDirectAccess(std::move(_rSource.m_xDirectAccess))
-        , m_xReplaceAccess(std::move(_rSource.m_xReplaceAccess))
-        , m_xContainerAccess(std::move(_rSource.m_xContainerAccess))
-        , m_bEscapeNames(std::move(_rSource.m_bEscapeNames))
+        :OEventListenerAdapter()
+        ,m_xHierarchyAccess(_rSource.m_xHierarchyAccess)
+        ,m_xDirectAccess(_rSource.m_xDirectAccess)
+        ,m_xReplaceAccess(_rSource.m_xReplaceAccess)
+        ,m_xContainerAccess(_rSource.m_xContainerAccess)
+        ,m_bEscapeNames(_rSource.m_bEscapeNames)
+        ,m_sCompletePath(_rSource.m_sCompletePath)
     {
         Reference< XComponent > xConfigNodeComp(m_xDirectAccess, UNO_QUERY);
         if (xConfigNodeComp.is())
@@ -112,23 +100,7 @@ namespace utl
         m_xContainerAccess = _rSource.m_xContainerAccess;
         m_xReplaceAccess = _rSource.m_xReplaceAccess;
         m_bEscapeNames = _rSource.m_bEscapeNames;
-
-        Reference< XComponent > xConfigNodeComp(m_xDirectAccess, UNO_QUERY);
-        if (xConfigNodeComp.is())
-            startComponentListening(xConfigNodeComp);
-
-        return *this;
-    }
-
-    OConfigurationNode& OConfigurationNode::operator=(OConfigurationNode&& _rSource)
-    {
-        stopAllComponentListening();
-
-        m_xHierarchyAccess = std::move(_rSource.m_xHierarchyAccess);
-        m_xDirectAccess = std::move(_rSource.m_xDirectAccess);
-        m_xContainerAccess = std::move(_rSource.m_xContainerAccess);
-        m_xReplaceAccess = std::move(_rSource.m_xReplaceAccess);
-        m_bEscapeNames = std::move(_rSource.m_bEscapeNames);
+        m_sCompletePath = _rSource.m_sCompletePath;
 
         Reference< XComponent > xConfigNodeComp(m_xDirectAccess, UNO_QUERY);
         if (xConfigNodeComp.is())
@@ -329,6 +301,11 @@ namespace utl
             OSL_FAIL("OConfigurationNode::openNode: caught an exception while retrieving the node!");
         }
         return OConfigurationNode();
+    }
+
+    void OConfigurationNode::setEscape(bool _bEnable)
+    {
+        m_bEscapeNames = _bEnable && Reference< XStringEscape >::query(m_xDirectAccess).is();
     }
 
     bool OConfigurationNode::isSetNode() const

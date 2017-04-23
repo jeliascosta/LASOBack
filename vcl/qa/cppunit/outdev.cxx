@@ -40,7 +40,7 @@ void VclOutdevTest::testVirtualDevice()
     pVDev->DrawPixel(Point(31,30),COL_RED);
 
     Size aSize = pVDev->GetOutputSizePixel();
-    CPPUNIT_ASSERT_EQUAL(Size(32,32), aSize);
+    CPPUNIT_ASSERT(aSize == Size(32,32));
 
     Bitmap aBmp = pVDev->GetBitmap(Point(),aSize);
 
@@ -75,7 +75,7 @@ void VclOutdevTest::testVirtualDevice()
 #if 0
     VclPtr<vcl::Window> pWin = VclPtr<WorkWindow>::Create( (vcl::Window *)nullptr );
     CPPUNIT_ASSERT( pWin );
-    OutputDevice *pOutDev = pWin.get();
+    OutputDevice *pOutDev = static_cast< OutputDevice * >( pWin );
 #endif
 }
 

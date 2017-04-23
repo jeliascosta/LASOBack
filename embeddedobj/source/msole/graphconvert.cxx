@@ -34,7 +34,6 @@
 #include <tools/stream.hxx>
 #include <vcl/graphicfilter.hxx>
 
-#include <graphconvert.hxx>
 #include "mtnotification.hxx"
 #include "oleembobj.hxx"
 
@@ -42,7 +41,7 @@
 using namespace ::com::sun::star;
 
 
-bool ConvertBufferToFormat( void* pBuf,
+sal_Bool ConvertBufferToFormat( void* pBuf,
                                 sal_uInt32 nBufSize,
                                 const OUString& aMimeType,
                                 uno::Any& aResult )
@@ -57,11 +56,11 @@ bool ConvertBufferToFormat( void* pBuf,
         if (rFilter.CanImportGraphic(OUString(), aMemoryStream, GRFILTER_FORMAT_DONTKNOW, &nRetFormat) == GRFILTER_OK &&
                 rFilter.GetImportFormatMediaType(nRetFormat) == aMimeType)
         {
-            aResult <<= uno::Sequence< sal_Int8 >( static_cast< const sal_Int8* >( aMemoryStream.GetData() ), aMemoryStream.Seek( STREAM_SEEK_TO_END ) );
-            return true;
+            aResult <<= uno::Sequence< sal_Int8 >( reinterpret_cast< const sal_Int8* >( aMemoryStream.GetData() ), aMemoryStream.Seek( STREAM_SEEK_TO_END ) );
+            return sal_True;
         }
 
-        uno::Sequence < sal_Int8 > aData( static_cast<sal_Int8*>(pBuf), nBufSize );
+        uno::Sequence < sal_Int8 > aData( (sal_Int8*)pBuf, nBufSize );
         uno::Reference < io::XInputStream > xIn = new comphelper::SequenceInputStream( aData );
         try
         {
@@ -81,15 +80,15 @@ bool ConvertBufferToFormat( void* pBuf,
                 aOutMediaProperties[1].Value <<= aMimeType;
 
                 xGraphicProvider->storeGraphic( xGraphic, aOutMediaProperties );
-                aResult <<= uno::Sequence< sal_Int8 >( static_cast< const sal_Int8* >( aNewStream.GetData() ), aNewStream.Seek( STREAM_SEEK_TO_END ) );
-                return true;
+                aResult <<= uno::Sequence< sal_Int8 >( reinterpret_cast< const sal_Int8* >( aNewStream.GetData() ), aNewStream.Seek( STREAM_SEEK_TO_END ) );
+                return sal_True;
             }
         }
         catch (const uno::Exception&)
         {}
     }
 
-    return false;
+    return sal_False;
 }
 
 
@@ -102,7 +101,7 @@ MainThreadNotificationRequest::MainThreadNotificationRequest( const ::rtl::Refer
 , m_nAspect( nAspect )
 {}
 
-void SAL_CALL MainThreadNotificationRequest::notify (const uno::Any& )
+void SAL_CALL MainThreadNotificationRequest::notify (const uno::Any& ) throw (uno::RuntimeException)
 {
     if ( m_pObject )
     {
@@ -117,7 +116,7 @@ void SAL_CALL MainThreadNotificationRequest::notify (const uno::Any& )
                 else if ( m_nAspect == embed::Aspects::MSOLE_CONTENT )
                     m_pObject->OnViewChanged_Impl();
                 else if ( m_nAspect == embed::Aspects::MSOLE_ICON )
-                    OleEmbeddedObject::OnIconChanged_Impl();
+                    m_pObject->OnIconChanged_Impl();
             }
         }
         catch( const uno::Exception& )

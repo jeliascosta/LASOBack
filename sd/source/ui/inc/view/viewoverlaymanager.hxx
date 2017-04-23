@@ -35,13 +35,13 @@ class ViewOverlayManager : public SfxListener
 {
 public:
     ViewOverlayManager( ViewShellBase& rViewShellBase );
-    virtual ~ViewOverlayManager() override;
+    virtual ~ViewOverlayManager();
 
     void onZoomChanged();
     void UpdateTags();
 
-    DECL_LINK(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
-    DECL_LINK(UpdateTagsHdl, void *, void);
+    DECL_LINK_TYPED(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
+    DECL_LINK_TYPED(UpdateTagsHdl, void *, void);
 
     bool CreateTags();
     bool DisposeTags();

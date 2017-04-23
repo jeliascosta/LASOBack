@@ -100,7 +100,7 @@ namespace dbp
 
     public:
         explicit OContentTableSelection( OListComboWizard* _pParent );
-        virtual ~OContentTableSelection() override;
+        virtual ~OContentTableSelection();
         virtual void dispose() override;
 
     protected:
@@ -113,8 +113,8 @@ namespace dbp
         virtual bool        canAdvance() const override;
 
     protected:
-        DECL_LINK( OnTableDoubleClicked, ListBox&, void );
-        DECL_LINK( OnTableSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnTableDoubleClicked, ListBox&, void );
+        DECL_LINK_TYPED( OnTableSelected, ListBox&, void );
     };
 
     class OContentFieldSelection : public OLCPage
@@ -127,12 +127,15 @@ namespace dbp
 
     public:
         explicit OContentFieldSelection( OListComboWizard* _pParent );
-        virtual ~OContentFieldSelection() override;
+        virtual ~OContentFieldSelection();
         virtual void dispose() override;
 
     protected:
-        DECL_LINK( OnFieldSelected, ListBox&, void );
-        DECL_LINK( OnTableDoubleClicked, ListBox&, void );
+        DECL_LINK_TYPED( OnFieldSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnTableDoubleClicked, ListBox&, void );
+
+        // TabPage overridables
+        virtual void ActivatePage() override;
 
         // OWizardPage overridables
         virtual void        initializePage() override;
@@ -149,7 +152,7 @@ namespace dbp
 
     public:
         explicit OLinkFieldsPage( OListComboWizard* _pParent );
-        virtual ~OLinkFieldsPage() override;
+        virtual ~OLinkFieldsPage();
         virtual void dispose() override;
 
     protected:
@@ -164,8 +167,8 @@ namespace dbp
     private:
         void implCheckFinish();
 
-        DECL_LINK(OnSelectionModified, Edit&, void);
-        DECL_LINK(OnSelectionModifiedCombBox, ComboBox&, void);
+        DECL_LINK_TYPED(OnSelectionModified, Edit&, void);
+        DECL_LINK_TYPED(OnSelectionModifiedCombBox, ComboBox&, void);
     };
 
     class OComboDBFieldPage : public ODBFieldPage
@@ -174,6 +177,8 @@ namespace dbp
         explicit OComboDBFieldPage( OControlWizard* _pParent );
 
     protected:
+        OListComboSettings& getSettings() { return static_cast<OListComboWizard*>(getDialog())->getSettings(); }
+
         // TabPage overridables
         virtual void ActivatePage() override;
 

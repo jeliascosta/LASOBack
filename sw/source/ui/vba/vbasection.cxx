@@ -25,7 +25,7 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaSection::SwVbaSection( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< frame::XModel >& xModel, const uno::Reference< beans::XPropertySet >& xProps ) :
+SwVbaSection::SwVbaSection( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< frame::XModel >& xModel, const uno::Reference< beans::XPropertySet >& xProps ) throw ( uno::RuntimeException ) :
     SwVbaSection_BASE( rParent, rContext ), mxModel( xModel ), mxPageProps( xProps )
 {
 }
@@ -34,16 +34,16 @@ SwVbaSection::~SwVbaSection()
 {
 }
 
-sal_Bool SAL_CALL SwVbaSection::getProtectedForForms()
+sal_Bool SAL_CALL SwVbaSection::getProtectedForForms() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL SwVbaSection::setProtectedForForms( sal_Bool /*_protectedforforms*/ )
+void SAL_CALL SwVbaSection::setProtectedForForms( sal_Bool /*_protectedforforms*/ ) throw (uno::RuntimeException, std::exception)
 {
 }
 
-uno::Any SAL_CALL SwVbaSection::Headers( const uno::Any& index )
+uno::Any SAL_CALL SwVbaSection::Headers( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< XCollection > xCol( new SwVbaHeadersFooters( this, mxContext, mxModel, mxPageProps, true ) );
     if ( index.hasValue() )
@@ -51,7 +51,7 @@ uno::Any SAL_CALL SwVbaSection::Headers( const uno::Any& index )
     return uno::makeAny( xCol );
 }
 
-uno::Any SAL_CALL SwVbaSection::Footers( const uno::Any& index )
+uno::Any SAL_CALL SwVbaSection::Footers( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< XCollection > xCol( new SwVbaHeadersFooters( this, mxContext, mxModel, mxPageProps, false ) );
     if ( index.hasValue() )
@@ -60,7 +60,7 @@ uno::Any SAL_CALL SwVbaSection::Footers( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaSection::PageSetup( )
+SwVbaSection::PageSetup( ) throw (uno::RuntimeException, std::exception)
 {
     return uno::makeAny( uno::Reference< word::XPageSetup >( new SwVbaPageSetup( this, mxContext, mxModel, mxPageProps ) ) );
 }

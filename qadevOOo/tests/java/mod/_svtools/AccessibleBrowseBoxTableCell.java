@@ -61,7 +61,7 @@ import com.sun.star.util.URL;
  */
 public class AccessibleBrowseBoxTableCell extends TestCase {
 
-    static XDesktop xDesktop;
+    static XDesktop the_Desk;
     static XTextDocument xTextDoc;
 
     /**
@@ -69,7 +69,8 @@ public class AccessibleBrowseBoxTableCell extends TestCase {
      */
     @Override
     protected void initialize(TestParameters Param, PrintWriter log) throws Exception {
-        xDesktop = DesktopTools.createDesktop(Param.getMSF());
+        the_Desk = UnoRuntime.queryInterface(
+                    XDesktop.class, DesktopTools.createDesktop(Param.getMSF()) );
     }
 
     /**
@@ -141,7 +142,7 @@ public class AccessibleBrowseBoxTableCell extends TestCase {
 
         util.utils.waitForEventIdle(tParam.getMSF());
 
-        XFrame the_frame1 = xDesktop.getCurrentFrame();
+        XFrame the_frame1 = the_Desk.getCurrentFrame();
 
         if (the_frame1 == null) {
             log.println("Current frame was not found !!!");

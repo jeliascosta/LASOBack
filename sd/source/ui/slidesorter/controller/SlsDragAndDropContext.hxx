@@ -58,9 +58,11 @@ public:
     void UpdatePosition (
         const Point& rMousePosition,
         const InsertionIndicatorHandler::Mode eMode,
-        const bool bAllowAutoScroll);
+        const bool bAllowAutoScroll = true);
 
-    void SetTargetSlideSorter(const Point& rMousePosition);
+    void SetTargetSlideSorter (
+        const Point& rMousePosition = Point(0,0),
+        const InsertionIndicatorHandler::Mode eMode = InsertionIndicatorHandler::UnknownMode);
 
 private:
     SlideSorter* mpTargetSlideSorter;

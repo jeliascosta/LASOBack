@@ -23,6 +23,7 @@
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/document/XImporter.hpp>
 #include <com/sun/star/document/XExporter.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <cppuhelper/implbase.hxx>
 
@@ -46,30 +47,43 @@ class SwXFilterOptions : public ::cppu::WeakImplHelper<
 
 public:
                             SwXFilterOptions();
-    virtual                 ~SwXFilterOptions() override;
+    virtual                 ~SwXFilterOptions();
 
                             // XPropertyAccess
     virtual css::uno::Sequence< css::beans::PropertyValue >
-                            SAL_CALL getPropertyValues() override;
+                            SAL_CALL getPropertyValues() throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL   setPropertyValues( const css::uno::Sequence<
-                                    css::beans::PropertyValue >& aProps ) override;
+                                    css::beans::PropertyValue >& aProps )
+                                throw (css::beans::UnknownPropertyException,
+                                        css::beans::PropertyVetoException,
+                                        css::lang::IllegalArgumentException,
+                                        css::lang::WrappedTargetException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XExecutableDialog
-    virtual void SAL_CALL   setTitle( const OUString& aTitle ) override;
-    virtual sal_Int16 SAL_CALL execute() override;
+    virtual void SAL_CALL   setTitle( const OUString& aTitle )
+                                throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL execute() throw (css::uno::RuntimeException, std::exception) override;
 
                             // XImporter
     virtual void SAL_CALL   setTargetDocument( const css::uno::Reference<
-                                    css::lang::XComponent >& xDoc ) override;
+                                    css::lang::XComponent >& xDoc )
+                                throw (css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XExporter
     virtual void SAL_CALL   setSourceDocument( const css::uno::Reference<
-                                    css::lang::XComponent >& xDoc ) override;
+                                    css::lang::XComponent >& xDoc )
+                                throw (css::lang::IllegalArgumentException,
+                                        css::uno::RuntimeException, std::exception) override;
 
                             // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+                                throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                                throw(css::uno::RuntimeException, std::exception) override;
 
 };
 

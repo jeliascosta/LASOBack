@@ -31,7 +31,7 @@ private:
 
 public:
     SvxLinkWarningDialog(vcl::Window* pParent, const OUString& _rFileName);
-    virtual ~SvxLinkWarningDialog() override;
+    virtual ~SvxLinkWarningDialog();
     virtual void dispose() override;
 };
 

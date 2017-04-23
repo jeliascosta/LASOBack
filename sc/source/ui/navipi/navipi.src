@@ -17,76 +17,238 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "scres.hrc"
+#include "navipi.hrc"
 
-Bitmap RID_BMP_CONTENT_TABLE
+Window RID_SCDLG_NAVIGATOR
 {
-    File = "nc01.png";
+    SVLook = TRUE ;
+    HelpId = HID_SC_NAVIGATOR ;
+    Size = MAP_APPFONT ( 115 , 116 ) ;
+    OutputSize = TRUE ;
+    DialogControl = TRUE ;
+    Hide = TRUE ;
+    Text [ en-US ] = "Navigator" ;
+    FixedText FT_ROW
+    {
+        Pos = MAP_APPFONT ( 2 , 19 ) ;
+         // an kleinere Toolbox-Bitmaps angepasst
+        Size = MAP_APPFONT ( 19 , 10 ) ;
+        Text [ en-US ] = "Row" ;
+    };
+    NumericField ED_ROW
+    {
+        HelpId = HID_SC_NAVIPI_ROW ;
+        Border = TRUE ;
+        Pos = MAP_APPFONT ( 31 , 18 ) ;
+         // an kleinere Toolbox-Bitmaps angepasst
+        Size = MAP_APPFONT ( 30 , 12 ) ;
+        Right = TRUE ;
+        Repeat = TRUE ;
+        Spin = TRUE ;
+        SpinSize = 1 ;
+        Minimum = 1 ;
+        First = 1 ;
+        QuickHelpText [ en-US ] = "Row" ;
+    };
+    FixedText FT_COL
+    {
+        Pos = MAP_APPFONT ( 2 , 5 ) ;
+        Size = MAP_APPFONT ( 23 , 10 ) ;
+        Text [ en-US ] = "Column" ;
+    };
+    SpinField ED_COL
+    {
+        HelpId = HID_SC_NAVIPI_COL ;
+        Border = TRUE ;
+        Pos = MAP_APPFONT ( 31 , 4 ) ;
+        Size = MAP_APPFONT ( 30 , 12 ) ;
+        Right = TRUE ;
+        Repeat = TRUE ;
+        Spin = TRUE ;
+        QuickHelpText [ en-US ] = "Column" ;
+    };
+    Control LB_ENTRIES
+    {
+         // "Control" braucht immer eigene HelpId
+        HelpId = HID_SC_NAVIPI_ENTRIES ;
+        Border = TRUE ;
+        Pos = MAP_APPFONT ( 2 , 35 ) ;
+        Size = MAP_APPFONT ( 110 , 100 ) ;
+        TabStop = TRUE ;
+    };
+    ListBox LB_DOCUMENTS
+    {
+        HelpId = HID_SC_NAVIPI_DOC ;
+        Border = TRUE ;
+        Pos = MAP_APPFONT ( 2 , 89 ) ;
+        Size = MAP_APPFONT ( 82 , 50 ) ;
+        TabStop = TRUE ;
+        DropDown = TRUE ;
+        QuickHelpText [ en-US ] = "Document" ;
+    };
+    ImageList IL_CMD
+    {
+        Prefix = "na";
+        MaskColor = STD_MASKCOLOR ;
+        IdList =
+        {
+            IID_DATA ;
+            IID_UP ;
+            IID_DOWN ;
+            IID_SCENARIOS ;
+            IID_DROPMODE ;
+            IID_CHANGEROOT ;
+            IID_ZOOMOUT ;
+        };
+        IdCount = { 8 ; };
+    };
+    ToolBox TBX_CMD
+    {
+        Pos = MAP_APPFONT ( 66 , 3 ) ;
+        HelpId = HID_SC_NAVIPI_TOOLBOX ;
+        SVLook = TRUE ;
+        Border = FALSE ;
+        LineCount = 2 ;
+        ItemList =
+        {
+            ToolBoxItem
+            {
+                Identifier = IID_DATA ;
+                HelpId = HID_SC_NAVIPI_DATA ;
+                Text [ en-US ] = "Data Range" ;
+            };
+            ToolBoxItem
+            {
+                Identifier = IID_UP ;
+                HelpId = HID_SC_NAVIPI_UP ;
+                Text [ en-US ] = "Start" ;
+            };
+            ToolBoxItem
+            {
+                Identifier = IID_DOWN ;
+                HelpId = HID_SC_NAVIPI_DOWN ;
+                Text [ en-US ] = "End" ;
+            };
+
+            ToolBoxItem { Type = TOOLBOXITEM_BREAK ; };
+
+            ToolBoxItem
+            {
+                Identifier = IID_ZOOMOUT ;
+                HelpId = HID_SC_NAVIPI_ZOOM ;
+                Text [ en-US ] = "Contents" ;
+            };
+            ToolBoxItem
+            {
+                Identifier = IID_CHANGEROOT ;
+                HelpId = HID_SC_NAVIPI_ROOT ;
+                Text [ en-US ] = "Toggle" ;
+            };
+            ToolBoxItem
+            {
+                Identifier = IID_SCENARIOS ;
+                HelpId = HID_SC_NAVIPI_SCEN ;
+                Text [ en-US ] = "Scenarios" ;
+            };
+            ToolBoxItem
+            {
+                Identifier = IID_DROPMODE ;
+                HelpId = HID_SC_NAVIPI_DROP ;
+                DropDown = TRUE ;
+                Text [ en-US ] = "Drag Mode" ;
+            };
+        };
+    };
+    String STR_DRAGMODE
+    {
+        Text [ en-US ] = "Drag Mode" ;
+    };
+    String STR_DISPLAY
+    {
+        Text [ en-US ] = "Display" ;
+    };
+    String STR_ACTIVE
+    {
+        Text [ en-US ] = "active" ;
+    };
+    String STR_NOTACTIVE
+    {
+        Text [ en-US ] = "inactive" ;
+    };
+    String STR_HIDDEN
+    {
+        Text [ en-US ] = "hidden" ;
+    };
+    String STR_ACTIVEWIN
+    {
+        Text [ en-US ] = "Active Window" ;
+    };
+
+    String STR_QHLP_SCEN_LISTBOX
+    {
+        Text [ en-US ] = "Scenario Name";
+    };
+
+    String STR_QHLP_SCEN_COMMENT
+    {
+        Text [ en-US ] = "Comment";
+    };
+
 };
 
-Bitmap RID_BMP_CONTENT_RANGENAME
+ImageList RID_IMAGELIST_NAVCONT
 {
-    File = "nc02.png";
+    Prefix = "nc";
+    MaskColor = STD_MASKCOLOR ;
+    // SC_CONTENT_...
+    IdList =
+    {
+        1 ;
+        2 ;
+        3 ;
+        4 ;
+        5 ;
+        6 ;
+        7 ;
+        8 ;
+    };
+    IdCount = { 8 ; };
 };
 
-Bitmap RID_BMP_CONTENT_DBAREA
+Image RID_IMG_DROP_URL
 {
-    File = "nc03.png";
+    ImageBitmap = Bitmap { File = "dropurl.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
-Bitmap RID_BMP_CONTENT_GRAPHIC
+Image RID_IMG_DROP_LINK
 {
-    File = "nc04.png";
+    ImageBitmap = Bitmap { File = "droplink.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
-Bitmap RID_BMP_CONTENT_OLEOBJECT
+Image RID_IMG_DROP_COPY
 {
-    File = "nc05.png";
+    ImageBitmap = Bitmap { File = "dropcopy.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
-Bitmap RID_BMP_CONTENT_NOTE
+Image IMG_ELEMENT_DEFAULT
 {
-    File = "nc06.png";
+    ImageBitmap = Bitmap { File = "xml_element.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
-Bitmap RID_BMP_CONTENT_AREALINK
+Image IMG_ELEMENT_REPEAT
 {
-    File = "nc07.png";
+    ImageBitmap = Bitmap { File = "xml_element_repeat.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
-Bitmap RID_BMP_CONTENT_DRAWING
+Image IMG_ELEMENT_ATTRIBUTE
 {
-    File = "nc08.png";
-};
-
-Bitmap RID_BMP_DROP_URL
-{
-    File = "dropurl.png";
-};
-
-Bitmap RID_BMP_DROP_LINK
-{
-    File = "droplink.png";
-};
-
-Bitmap RID_BMP_DROP_COPY
-{
-    File = "dropcopy.png";
-};
-
-Bitmap RID_BMP_ELEMENT_DEFAULT
-{
-    File = "xml_element.png";
-};
-
-Bitmap RID_BMP_ELEMENT_REPEAT
-{
-    File = "xml_element_repeat.png";
-};
-
-Bitmap RID_BMP_ELEMENT_ATTRIBUTE
-{
-    File = "xml_attribute.png";
+    ImageBitmap = Bitmap { File = "xml_attribute.png" ; };
+    MaskColor = STD_MASKCOLOR ;
 };
 
 //  content description strings are also used in ScLinkTargetsObj
@@ -136,44 +298,49 @@ String SCSTR_CONTENT_DRAWING
     Text [ en-US ] = "Drawing objects";
 };
 
-String SCSTR_DRAGMODE
+ // PopupMenu -------------------------------------------------------------
+Menu RID_POPUP_DROPMODE
 {
-    Text [ en-US ] = "Drag Mode" ;
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = RID_DROPMODE_URL ;
+            HelpId = HID_SC_DROPMODE_URL ;
+            Text [ en-US ] = "Insert as Hyperlink" ;
+        };
+        MenuItem
+        {
+            Identifier = RID_DROPMODE_LINK ;
+            HelpId = HID_SC_DROPMODE_LINK ;
+            Text [ en-US ] = "Insert as Link" ;
+        };
+        MenuItem
+        {
+            Identifier = RID_DROPMODE_COPY ;
+            HelpId = HID_SC_DROPMODE_COPY ;
+            Text [ en-US ] = "Insert as Copy" ;
+        };
+    };
 };
 
-String SCSTR_DISPLAY
+Menu RID_POPUP_NAVIPI_SCENARIO
 {
-    Text [ en-US ] = "Display" ;
-};
-
-String SCSTR_ACTIVE
-{
-    Text [ en-US ] = "active" ;
-};
-
-String SCSTR_NOTACTIVE
-{
-    Text [ en-US ] = "inactive" ;
-};
-
-String SCSTR_HIDDEN
-{
-    Text [ en-US ] = "hidden" ;
-};
-
-String SCSTR_ACTIVEWIN
-{
-    Text [ en-US ] = "Active Window" ;
-};
-
-String SCSTR_QHLP_SCEN_LISTBOX
-{
-    Text [ en-US ] = "Scenario Name";
-};
-
-String SCSTR_QHLP_SCEN_COMMENT
-{
-    Text [ en-US ] = "Comment";
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = RID_NAVIPI_SCENARIO_DELETE ;
+            HelpId = HID_SC_SCENARIO_DELETE ;
+            Text [ en-US ] = "Delete" ;
+        };
+        MenuItem
+        {
+            Identifier = RID_NAVIPI_SCENARIO_EDIT ;
+            HelpId = HID_SC_SCENARIO_EDIT ;
+            Text [ en-US ] = "Properties..." ;
+        };
+    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

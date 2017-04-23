@@ -29,7 +29,7 @@ class SwURLStateChanged : public SfxListener
     SwDoc* pDoc;
 public:
     SwURLStateChanged( SwDoc* pD );
-    virtual ~SwURLStateChanged() override;
+    virtual ~SwURLStateChanged();
 
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 };

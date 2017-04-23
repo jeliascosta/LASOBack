@@ -90,12 +90,12 @@ void xforms_addXFormsModel(
     }
 
     // TODO: implement proper error handling
-    SAL_WARN_IF( !bSuccess, "xmloff", "can't import model" );
+    DBG_ASSERT( bSuccess, "can't import model" );
     (void)bSuccess;
 }
 
 static Reference<XPropertySet> lcl_findXFormsBindingOrSubmission(
-    Reference<frame::XModel> const & xDocument,
+    Reference<frame::XModel>& xDocument,
     const OUString& rBindingID,
     bool bBinding )
 {
@@ -150,14 +150,14 @@ static Reference<XPropertySet> lcl_findXFormsBindingOrSubmission(
 }
 
 Reference<XPropertySet> xforms_findXFormsBinding(
-    Reference<frame::XModel> const & xDocument,
+    Reference<frame::XModel>& xDocument,
     const OUString& rBindingID )
 {
     return lcl_findXFormsBindingOrSubmission( xDocument, rBindingID, true );
 }
 
 Reference<XPropertySet> xforms_findXFormsSubmission(
-    Reference<frame::XModel> const & xDocument,
+    Reference<frame::XModel>& xDocument,
     const OUString& rBindingID )
 {
     return lcl_findXFormsBindingOrSubmission( xDocument, rBindingID, false );
@@ -203,7 +203,7 @@ sal_uInt16 xforms_getTypeClass(
     if( nToken != XML_TOK_UNKNOWN )
     {
         // we found an XSD name: then get the proper API name for it
-        SAL_WARN_IF( !xRepository.is(), "xmloff", "can't find type without repository");
+        DBG_ASSERT( xRepository.is(), "can't find type without repository");
         switch( nToken )
         {
         case XML_STRING:

@@ -84,7 +84,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OReferenceValueComponent::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue )
+    void SAL_CALL OReferenceValueComponent::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue ) throw (Exception, std::exception)
     {
         switch ( _nHandle )
         {
@@ -119,7 +119,7 @@ namespace frm
     }
 
 
-    sal_Bool SAL_CALL OReferenceValueComponent::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
+    sal_Bool SAL_CALL OReferenceValueComponent::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw (IllegalArgumentException)
     {
         bool bModified = false;
         switch ( _nHandle )
@@ -169,7 +169,7 @@ namespace frm
             aTypes.push_front( cppu::UnoType<OUString>::get() );
             // push_front, because this is the preferred type
 
-        return comphelper::containerToSequence(aTypes);
+        return comphelper::containerToSequence<Type>(aTypes);
     }
 
 

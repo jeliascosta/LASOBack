@@ -17,14 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#ifndef INCLUDED_SAL_OSL_UNX_BACKTRACE_H
-#define INCLUDED_SAL_OSL_UNX_BACKTRACE_H
-
-#if defined (LINUX)
-
-#include <execinfo.h>
-
-#else
+#if defined (SOLARIS) || defined (FREEBSD) || defined (NETBSD) || \
+    defined (OPENBSD) || defined (DRAGONFLY) || defined (MACOSX)
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,8 +27,6 @@ extern "C" {
 /* backtrace function with same behaviour as defined in GNU libc */
 
 int backtrace( void **buffer, int max_frames );
-
-char ** backtrace_symbols(void * const * buffer, int size);
 
 void backtrace_symbols_fd( void **buffer, int size, int fd );
 
@@ -51,8 +43,10 @@ struct frame {
 } /* extern "C" */
 #endif
 
-#endif
+#endif /* defined SOLARIS || FREEBSD || NETBSD || OPENBSD */
 
+#if defined (LINUX)
+#include <execinfo.h>
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

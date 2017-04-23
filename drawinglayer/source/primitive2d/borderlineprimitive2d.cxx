@@ -25,7 +25,6 @@
 #include <drawinglayer/primitive2d/polygonprimitive2d.hxx>
 #include <drawinglayer/primitive2d/polypolygonprimitive2d.hxx>
 #include <svtools/borderhelper.hxx>
-#include <editeng/borderline.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -175,13 +174,15 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
             return basegfx::B2DPolyPolygon( clipPolygon );
         }
 
-        void BorderLinePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer BorderLinePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
-            createDecomposition(rContainer, rViewInformation, false);
+            return createDecomposition(rViewInformation, false);
         }
 
-        void BorderLinePrimitive2D::createDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const
+        Primitive2DContainer BorderLinePrimitive2D::createDecomposition(const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const
         {
+            Primitive2DContainer xRetval;
+
             if(!getStart().equal(getEnd()) && ( isInsideUsed() || isOutsideUsed() ) )
             {
                 // get data and vectors
@@ -198,6 +199,8 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                     const basegfx::B2DPoint aTmpStart(getStart() - (fExt * aVector));
                     const basegfx::B2DPoint aTmpEnd(getEnd() + (fExt * aVector));
 
+                    xRetval.resize(2);
+
                     double fLeftWidth = getLeftWidth();
                     bool bLeftHairline = lcl_UseHairline(fLeftWidth, getStart(), getEnd(), rViewInformation);
                     if (bLeftHairline)
@@ -211,25 +214,25 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                     // "inside" line
 
                     if (bLeftHairline)
-                        rContainer.push_back(makeHairLinePrimitive(
-                            getStart(), getEnd(), aVector, getRGBColorLeft(), 0.0));
+                        xRetval[0] = makeHairLinePrimitive(
+                            getStart(), getEnd(), aVector, getRGBColorLeft(), 0.0);
                     else
                     {
                         double fWidth = bPixelCorrection ? std::round(fLeftWidth) : fLeftWidth;
-                        rContainer.push_back(makeSolidLinePrimitive(
-                            aClipRegion, aTmpStart, aTmpEnd, aVector, getRGBColorLeft(), fWidth, -fLeftWidth/2.0));
+                        xRetval[0] = makeSolidLinePrimitive(
+                            aClipRegion, aTmpStart, aTmpEnd, aVector, getRGBColorLeft(), fWidth, -fLeftWidth/2.0);
                     }
 
                     // "outside" line
 
                     if (bRightHairline)
-                        rContainer.push_back(makeHairLinePrimitive(
-                            getStart(), getEnd(), aVector, getRGBColorRight(), fLeftWidth+mfDistance));
+                        xRetval[1] = makeHairLinePrimitive(
+                            getStart(), getEnd(), aVector, getRGBColorRight(), fLeftWidth+mfDistance);
                     else
                     {
                         double fWidth = bPixelCorrection ? std::round(fRightWidth) : fRightWidth;
-                        rContainer.push_back(makeSolidLinePrimitive(
-                            aClipRegion, aTmpStart, aTmpEnd, aVector, getRGBColorRight(), fWidth, mfDistance+fRightWidth/2.0));
+                        xRetval[1] = makeSolidLinePrimitive(
+                            aClipRegion, aTmpStart, aTmpEnd, aVector, getRGBColorRight(), fWidth, mfDistance+fRightWidth/2.0);
                     }
                 }
                 else
@@ -241,7 +244,7 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                     const basegfx::B2DPoint aTmpEnd(getEnd() + (fExt * aVector));
 
                     // Get which is the line to show
-                    bool bIsSolidline = mnStyle == SvxBorderLineStyle::SOLID;
+                    bool bIsSolidline = isSolidLine();
                     double nWidth = getLeftWidth();
                     basegfx::BColor aColor = getRGBColorLeft();
                     if ( basegfx::fTools::equal( 0.0, mfLeftWidth ) )
@@ -260,7 +263,8 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                         aPolygon.append( getStart() );
                         aPolygon.append( getEnd() );
 
-                        rContainer.push_back(new PolygonHairlinePrimitive2D(
+                        xRetval.resize(1);
+                        xRetval[0] = Primitive2DReference(new PolygonHairlinePrimitive2D(
                             aPolygon,
                             aColor));
                     }
@@ -296,6 +300,7 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                         }
 
                         sal_uInt32 n = aDashed.count();
+                        xRetval.resize(n);
                         for (sal_uInt32 i = 0; i < n; ++i)
                         {
                             basegfx::B2DPolygon aDash = aDashed.getB2DPolygon(i);
@@ -306,18 +311,20 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
                                 basegfx::B2DRange aRange = aDash.getB2DRange();
                                 aDash2.append(basegfx::B2DPoint(aRange.getMinX(), aRange.getMinY()));
                                 aDash2.append(basegfx::B2DPoint(aRange.getMaxX(), aRange.getMinY()));
-                                rContainer.push_back(
+                                xRetval[i] = Primitive2DReference(
                                     new PolygonHairlinePrimitive2D(aDash2, aColor));
                             }
                             else
                             {
-                                rContainer.push_back(
+                                xRetval[i] = Primitive2DReference(
                                     new PolyPolygonColorPrimitive2D(basegfx::B2DPolyPolygon(aDash), aColor));
                             }
                         }
                     }
                 }
             }
+
+            return xRetval;
         }
 
         BorderLinePrimitive2D::BorderLinePrimitive2D(
@@ -334,7 +341,7 @@ primitive2d::Primitive2DReference makeSolidLinePrimitive(
             const basegfx::BColor& rRGBColorLeft,
             const basegfx::BColor& rRGBColorGap,
             bool bHasGapColor,
-            SvxBorderLineStyle nStyle,
+            const short nStyle,
             double fPatternScale)
         :   BufferedDecompositionPrimitive2D(),
             maStart(rStart),

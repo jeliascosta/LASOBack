@@ -55,6 +55,7 @@ using namespace ::cppu;
 // the OSL_ENSURE in CTOR has to be changed too, when adding new defines
 
 void SAL_CALL OInterceptor::dispose()
+    throw( RuntimeException )
 {
     EventObject aEvt( *this );
 
@@ -104,7 +105,7 @@ struct DispatchHelper
 };
 
 //XDispatch
-void SAL_CALL OInterceptor::dispatch( const URL& URL,const Sequence<PropertyValue >& Arguments )
+void SAL_CALL OInterceptor::dispatch( const URL& URL,const Sequence<PropertyValue >& Arguments ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( !m_pContentHolder )
@@ -174,7 +175,7 @@ void SAL_CALL OInterceptor::dispatch( const URL& URL,const Sequence<PropertyValu
     }
 }
 
-IMPL_LINK( OInterceptor, OnDispatch, void*, _pDispatcher, void )
+IMPL_LINK_TYPED( OInterceptor, OnDispatch, void*, _pDispatcher, void )
 {
     std::unique_ptr<DispatchHelper> pHelper( static_cast< DispatchHelper* >( _pDispatcher ) );
     try
@@ -199,6 +200,9 @@ void SAL_CALL OInterceptor::addStatusListener(
     const Reference<
     XStatusListener >& Control,
     const URL& URL )
+    throw (
+        RuntimeException, std::exception
+    )
 {
     if(!Control.is())
         return;
@@ -275,6 +279,9 @@ void SAL_CALL OInterceptor::removeStatusListener(
     const Reference<
     XStatusListener >& Control,
     const URL& URL )
+    throw (
+        RuntimeException, std::exception
+    )
 {
     if(!(Control.is() && m_pStatCL))
         return;
@@ -287,7 +294,7 @@ void SAL_CALL OInterceptor::removeStatusListener(
 
 
 //XInterceptorInfo
-Sequence< OUString > SAL_CALL OInterceptor::getInterceptedURLs(  )
+Sequence< OUString > SAL_CALL OInterceptor::getInterceptedURLs(  )   throw ( RuntimeException, std::exception    )
 {
     // now implemented as update
     return m_aInterceptedURL;
@@ -297,6 +304,7 @@ Sequence< OUString > SAL_CALL OInterceptor::getInterceptedURLs(  )
 // XDispatchProvider
 
 Reference< XDispatch > SAL_CALL OInterceptor::queryDispatch( const URL& URL,const OUString& TargetFrameName,sal_Int32 SearchFlags )
+    throw (RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard(m_aMutex);
     const OUString* pIter = m_aInterceptedURL.getConstArray();
@@ -313,7 +321,7 @@ Reference< XDispatch > SAL_CALL OInterceptor::queryDispatch( const URL& URL,cons
         return Reference<XDispatch>();
 }
 
-Sequence< Reference< XDispatch > > SAL_CALL OInterceptor::queryDispatches(  const Sequence<DispatchDescriptor >& Requests )
+Sequence< Reference< XDispatch > > SAL_CALL OInterceptor::queryDispatches(  const Sequence<DispatchDescriptor >& Requests ) throw (     RuntimeException, std::exception    )
 {
     Sequence< Reference< XDispatch > > aRet;
     osl::MutexGuard aGuard(m_aMutex);
@@ -342,7 +350,7 @@ Sequence< Reference< XDispatch > > SAL_CALL OInterceptor::queryDispatches(  cons
 
 //XDispatchProviderInterceptor
 
-Reference< XDispatchProvider > SAL_CALL OInterceptor::getSlaveDispatchProvider(  )
+Reference< XDispatchProvider > SAL_CALL OInterceptor::getSlaveDispatchProvider(  )  throw ( RuntimeException, std::exception    )
 {
     osl::MutexGuard aGuard(m_aMutex);
     return m_xSlaveDispatchProvider;
@@ -350,6 +358,7 @@ Reference< XDispatchProvider > SAL_CALL OInterceptor::getSlaveDispatchProvider( 
 
 void SAL_CALL
 OInterceptor::setSlaveDispatchProvider( const Reference< XDispatchProvider >& NewDispatchProvider )
+    throw (     RuntimeException, std::exception    )
 {
     osl::MutexGuard aGuard(m_aMutex);
     m_xSlaveDispatchProvider = NewDispatchProvider;
@@ -357,6 +366,9 @@ OInterceptor::setSlaveDispatchProvider( const Reference< XDispatchProvider >& Ne
 
 
 Reference< XDispatchProvider > SAL_CALL OInterceptor::getMasterDispatchProvider(  )
+    throw (
+        RuntimeException, std::exception
+    )
 {
     osl::MutexGuard aGuard(m_aMutex);
     return m_xMasterDispatchProvider;
@@ -365,6 +377,9 @@ Reference< XDispatchProvider > SAL_CALL OInterceptor::getMasterDispatchProvider(
 
 void SAL_CALL OInterceptor::setMasterDispatchProvider(
     const Reference< XDispatchProvider >& NewSupplier )
+    throw (
+        RuntimeException, std::exception
+    )
 {
     osl::MutexGuard aGuard(m_aMutex);
     m_xMasterDispatchProvider = NewSupplier;

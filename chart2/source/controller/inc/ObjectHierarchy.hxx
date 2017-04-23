@@ -41,7 +41,8 @@ class ImplObjectHierarchy;
 class ObjectHierarchy
 {
 public:
-    typedef std::vector< ObjectIdentifier > tChildContainer;
+    typedef ObjectIdentifier tOID;
+    typedef ::std::vector< tOID > tChildContainer;
 
     /** @param bFlattenDiagram
             If <TRUE/>, the content of the diagram (data series, wall, floor,
@@ -55,38 +56,38 @@ public:
         bool bOrderingForElementSelector = false );
     ~ObjectHierarchy();
 
-    static ObjectIdentifier      getRootNodeOID();
-    static bool      isRootNode( const ObjectIdentifier& rOID );
+    static tOID      getRootNodeOID();
+    static bool      isRootNode( const tOID& rOID );
 
     /// equal to getChildren( getRootNodeOID())
     tChildContainer  getTopLevelChildren() const;
-    bool             hasChildren( const ObjectIdentifier& rParent ) const;
-    tChildContainer  getChildren( const ObjectIdentifier& rParent ) const;
+    bool             hasChildren( const tOID& rParent ) const;
+    tChildContainer  getChildren( const tOID& rParent ) const;
 
-    tChildContainer  getSiblings( const ObjectIdentifier& rNode ) const;
+    tChildContainer  getSiblings( const tOID& rNode ) const;
 
     /// The result is empty, if the node cannot be found in the tree
-    ObjectIdentifier             getParent( const ObjectIdentifier& rNode ) const;
+    tOID             getParent( const tOID& rNode ) const;
     /// @returns -1, if no parent can be determined
-    sal_Int32        getIndexInParent( const ObjectIdentifier& rNode ) const;
+    sal_Int32        getIndexInParent( const tOID& rNode ) const;
 
 private:
 
-    std::unique_ptr< impl::ImplObjectHierarchy > m_apImpl;
+    ::std::unique_ptr< impl::ImplObjectHierarchy > m_apImpl;
 };
 
 class ObjectKeyNavigation
 {
 public:
-    explicit ObjectKeyNavigation( const ObjectIdentifier & rCurrentOID,
+    explicit ObjectKeyNavigation( const ObjectHierarchy::tOID & rCurrentOID,
                                   const css::uno::Reference< css::chart2::XChartDocument > & xChartDocument,
                                   ExplicitValueProvider * pExplicitValueProvider = nullptr );
 
     bool handleKeyEvent( const css::awt::KeyEvent & rEvent );
-    const ObjectIdentifier& getCurrentSelection() const { return m_aCurrentOID;}
+    const ObjectHierarchy::tOID& getCurrentSelection() const { return m_aCurrentOID;}
 
 private:
-    void setCurrentSelection( const ObjectIdentifier& rOID );
+    void setCurrentSelection( const ObjectHierarchy::tOID& rOID );
     bool first();
     bool last();
     bool next();
@@ -96,9 +97,10 @@ private:
     bool veryFirst();
     bool veryLast();
 
-    ObjectIdentifier m_aCurrentOID;
+    ObjectHierarchy::tOID m_aCurrentOID;
     css::uno::Reference< css::chart2::XChartDocument > m_xChartDocument;
     ExplicitValueProvider * m_pExplicitValueProvider;
+    bool m_bStepDownInDiagram;
 };
 
 } //  namespace chart

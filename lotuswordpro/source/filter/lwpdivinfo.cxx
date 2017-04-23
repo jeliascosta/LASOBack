@@ -77,18 +77,18 @@ void LwpDivInfo::Read()
 {
 
     SkipFront();
-    m_ParentID.ReadIndexed(m_pObjStrm.get());
+    m_ParentID.ReadIndexed(m_pObjStrm);
     if (LwpFileHeader::m_nFileRevision < 0x0006)
     {
         m_pObjStrm->SkipExtra();
     }
-    m_Name.Read(m_pObjStrm.get());
+    m_Name.Read(m_pObjStrm);
     if (LwpFileHeader::m_nFileRevision < 0x0006)
     {
         m_pObjStrm->SkipExtra();
     }
 
-    m_LayoutID.ReadIndexed(m_pObjStrm.get());
+    m_LayoutID.ReadIndexed(m_pObjStrm);
     m_nFlags = m_pObjStrm->QuickReaduInt16();
     if (LwpFileHeader::m_nFileRevision < 0x0010)  // In 98, graphic links count too
     {
@@ -96,16 +96,16 @@ void LwpDivInfo::Read()
             m_nFlags &= ~DI_KNOWIFANYOLEDDELINKS;
     }
 
-    m_ExternalName.Read(m_pObjStrm.get());
-    m_ExternalType.Read(m_pObjStrm.get());
-    m_ClassName.Read(m_pObjStrm.get());
-    m_InitialLayoutID.ReadIndexed(m_pObjStrm.get());
+    m_ExternalName.Read(m_pObjStrm);
+    m_ExternalType.Read(m_pObjStrm);
+    m_ClassName.Read(m_pObjStrm);
+    m_InitialLayoutID.ReadIndexed(m_pObjStrm);
 
     m_nPageNoStyle = m_pObjStrm->QuickReaduInt16();
-    m_TabColor.Read(m_pObjStrm.get());
+    m_TabColor.Read(m_pObjStrm);
 
     // read filler page stuff
-    m_FillerPageTextID.ReadIndexed(m_pObjStrm.get());
+    m_FillerPageTextID.ReadIndexed(m_pObjStrm);
 
     // read external file object stuff
     sal_uInt16 type = m_pObjStrm->QuickReaduInt16();
@@ -119,20 +119,20 @@ void LwpDivInfo::SkipFront()
 {
     LwpObjectID toSkip;
 
-    toSkip.ReadIndexed(m_pObjStrm.get()); // skip ListNext;
+    toSkip.ReadIndexed(m_pObjStrm); // skip ListNext;
     if (LwpFileHeader::m_nFileRevision < 0x0006)
     {
         m_pObjStrm->SkipExtra();
     }
-    toSkip.ReadIndexed(m_pObjStrm.get()); // skip ListPrevious;
+    toSkip.ReadIndexed(m_pObjStrm); // skip ListPrevious;
     if (LwpFileHeader::m_nFileRevision < 0x0006)
     {
         m_pObjStrm->SkipExtra();
     }
-    toSkip.ReadIndexed(m_pObjStrm.get()); // skip Head;
+    toSkip.ReadIndexed(m_pObjStrm); // skip Head;
     if (LwpFileHeader::m_nFileRevision < 0x0006)
     {
-        toSkip.ReadIndexed(m_pObjStrm.get()); //skip tail
+        toSkip.ReadIndexed(m_pObjStrm); //skip tail
         m_pObjStrm->SkipExtra();
     }
 }
@@ -155,7 +155,7 @@ void LwpDivInfo::GetNumberOfPages(sal_uInt16 & nPageno)
 
 sal_uInt16 LwpDivInfo::GetMaxNumberOfPages()
 {
-    LwpDocument* pDiv = dynamic_cast<LwpDocument*>(m_ParentID.obj().get());
+    LwpDocument* pDiv = GetDivision();
     if(!pDiv)
         return 0;
     LwpDLVListHeadTailHolder* pHeadTail = dynamic_cast<LwpDLVListHeadTailHolder*>(pDiv->GetPageHintsID().obj().get());

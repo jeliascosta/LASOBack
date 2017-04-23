@@ -26,7 +26,7 @@
 
 
 // A container for custom controls
-// the container is responsible for
+// the container is resposible for
 // the destruction of the custom
 // controls
 
@@ -34,14 +34,14 @@
 class CCustomControlContainer : public CCustomControl
 {
 public:
-    virtual ~CCustomControlContainer() override;
+    virtual ~CCustomControlContainer();
 
-    virtual void SAL_CALL Align() override;
-    virtual void SAL_CALL SetFont(HFONT hFont) override;
+    virtual void SAL_CALL Align();
+    virtual void SAL_CALL SetFont(HFONT hFont);
 
-    virtual void SAL_CALL AddControl(CCustomControl* aCustomControl) override;
-    virtual void SAL_CALL RemoveControl(CCustomControl* aCustomControl) override;
-    virtual void SAL_CALL RemoveAllControls() override;
+    virtual void SAL_CALL AddControl(CCustomControl* aCustomControl);
+    virtual void SAL_CALL RemoveControl(CCustomControl* aCustomControl);
+    virtual void SAL_CALL RemoveAllControls();
 
 private:
     typedef std::list<CCustomControl*> ControlContainer_t;

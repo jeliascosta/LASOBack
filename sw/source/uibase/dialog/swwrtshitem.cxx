@@ -18,10 +18,8 @@
  */
 
 #include "swwrtshitem.hxx"
-#include <globals.hrc>
-
-SwWrtShellItem::SwWrtShellItem( SwWrtShell* pSh )
-    : SfxPoolItem( SID_WRT_SHELL ), pWrtSh( pSh )
+SwWrtShellItem::SwWrtShellItem( sal_uInt16 _nWhich, SwWrtShell* pSh )
+    : SfxPoolItem( _nWhich ), pWrtSh( pSh )
 {
 
 }

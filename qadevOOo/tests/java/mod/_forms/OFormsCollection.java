@@ -117,9 +117,7 @@ public class OFormsCollection extends TestCase {
     */
     @Override
     protected TestEnvironment createTestEnvironment(TestParameters Param,
-                                                                 PrintWriter log)
-        throws com.sun.star.uno.Exception
-    {
+                                                                 PrintWriter log) {
         XInterface oObj = null;
         XDrawPage oDP = null;
 

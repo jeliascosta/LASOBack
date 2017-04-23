@@ -95,7 +95,7 @@ SwAsciiFilterDlg::SwAsciiFilterDlg( vcl::Window* pParent, SwDocShell& rDocSh,
     {
         char aBuffer[ 4098 ];
         const sal_uLong nOldPos = pStream->Tell();
-        const size_t nBytesRead = pStream->ReadBytes(aBuffer, 4096);
+        const sal_uLong nBytesRead = pStream->Read( aBuffer, 4096 );
         pStream->Seek( nOldPos );
 
         if( nBytesRead <= 4096 )
@@ -292,7 +292,7 @@ void SwAsciiFilterDlg::FillOptions( SwAsciiOptions& rOptions )
             if( -1 != nEnd )
                 GetExtraData() = GetExtraData().replaceAt( nStt, nEnd - nStt + 1, "" );
         }
-        GetExtraData() += sFindNm + sData + OUStringLiteral1(cDialogExtraDataClose);
+        GetExtraData() += sFindNm + sData + OUStringLiteral1<cDialogExtraDataClose>();
     }
 }
 
@@ -318,7 +318,7 @@ LineEnd SwAsciiFilterDlg::GetCRLF() const
     return eEnd;
 }
 
-IMPL_LINK( SwAsciiFilterDlg, CharSetSelHdl, ListBox&, rListBox, void )
+IMPL_LINK_TYPED( SwAsciiFilterDlg, CharSetSelHdl, ListBox&, rListBox, void )
 {
     SvxTextEncodingBox* pBox = static_cast<SvxTextEncodingBox*>(&rListBox);
     LineEnd eOldEnd = GetCRLF(), eEnd = (LineEnd)-1;
@@ -393,7 +393,7 @@ IMPL_LINK( SwAsciiFilterDlg, CharSetSelHdl, ListBox&, rListBox, void )
         m_pLanguageLB->SelectLanguage( nLng );
 }
 
-IMPL_LINK( SwAsciiFilterDlg, LineEndHdl, RadioButton&, rBtn, void )
+IMPL_LINK_TYPED( SwAsciiFilterDlg, LineEndHdl, RadioButton&, rBtn, void )
 {
     if( m_bSaveLineStatus )
         rBtn.SaveValue();

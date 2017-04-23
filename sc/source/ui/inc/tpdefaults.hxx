@@ -24,20 +24,20 @@ public:
 
     virtual bool FillItemSet(SfxItemSet* rCoreSet) override;
     virtual void Reset(const SfxItemSet* rCoreSet) override;
-    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
+    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
 
 private:
     explicit ScTpDefaultsOptions(vcl::Window* pParent, const SfxItemSet& rCoreSet);
-    virtual ~ScTpDefaultsOptions() override;
+    virtual ~ScTpDefaultsOptions();
     virtual void dispose() override;
 
     void CheckNumSheets();
     void CheckPrefix(Edit* pEdit);
     void OnFocusPrefixInput(Edit* pEdit);
 
-    DECL_LINK( NumModifiedHdl, Edit&, void );
-    DECL_LINK( PrefixModifiedHdl, Edit&, void );
-    DECL_LINK( PrefixEditOnFocusHdl, Control&, void );
+    DECL_LINK_TYPED( NumModifiedHdl, Edit&, void );
+    DECL_LINK_TYPED( PrefixModifiedHdl, Edit&, void );
+    DECL_LINK_TYPED( PrefixEditOnFocusHdl, Control&, void );
 
 private:
     VclPtr<NumericField> m_pEdNSheets;

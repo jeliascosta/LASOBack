@@ -67,25 +67,26 @@ namespace connectivity
             OView(  bool _bCase,
                     const OUString& _rName,
                     const css::uno::Reference< css::sdbc::XDatabaseMetaData >& _xMetaData,
+                    sal_Int32 _nCheckOption = 0,
                     const OUString& _rCommand = OUString(),
                     const OUString& _rSchemaName = OUString(),
                     const OUString& _rCatalogName = OUString());
-            virtual ~OView() override;
+            virtual ~OView();
 
             // ODescriptor
             virtual void construct() override;
 
             // XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL acquire() throw() override;
             virtual void SAL_CALL release() throw() override;
             //XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
             // XNamed
-            virtual OUString SAL_CALL getName(  ) override;
-            virtual void SAL_CALL setName( const OUString& ) override;
+            virtual OUString SAL_CALL getName(  ) throw(css::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL setName( const OUString& ) throw(css::uno::RuntimeException, std::exception) override;
         };
     }
 }

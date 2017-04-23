@@ -21,7 +21,7 @@
 class XmlWriter;
 enum class MetaActionType;
 
-class OOO_DLLPUBLIC_TEST MetafileXmlDump final
+class OOO_DLLPUBLIC_TEST MetafileXmlDump
 {
     o3tl::enumarray<MetaActionType, bool> maFilter;
 
@@ -29,7 +29,7 @@ class OOO_DLLPUBLIC_TEST MetafileXmlDump final
 
 public:
     MetafileXmlDump();
-    ~MetafileXmlDump();
+    virtual ~MetafileXmlDump();
 
     void filterActionType(const MetaActionType nActionType, bool bShouldFilter);
     void filterAllActionTypes();

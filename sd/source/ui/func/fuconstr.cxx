@@ -56,6 +56,11 @@ FuConstruct::FuConstruct (
 {
 }
 
+void FuConstruct::DoExecute( SfxRequest& rReq )
+{
+    FuDraw::DoExecute( rReq );
+}
+
 bool FuConstruct::MouseButtonDown(const MouseEvent& rMEvt)
 {
     bool bReturn = FuDraw::MouseButtonDown(rMEvt);
@@ -163,11 +168,11 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
 
         if ( !mpView->AreObjectsMarked() )
         {
+            SdrObject* pObj;
             SdrPageView* pPV;
             sal_uInt16 nHitLog = sal_uInt16 ( mpWindow->PixelToLogic(Size(HITPIX,0)).Width() );
 
-            SdrObject* pObj = mpView->PickObj(aPnt, mpView->getHitTolLog(), pPV);
-            if (!pObj)
+            if (!mpView->PickObj(aPnt, mpView->getHitTolLog(), pObj, pPV))
             {
                 mpView->MarkObj(aPnt, nHitLog);
             }
@@ -187,15 +192,15 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
                 pSingleObj = mpView->GetMarkedObjectList().GetMark(0)->GetMarkedSdrObj();
             }
 
-            if (mpView->GetDragMode() == SdrDragMode::Move && mpView->IsRotateAllowed() &&
+            if (mpView->GetDragMode() == SDRDRAG_MOVE && mpView->IsRotateAllowed() &&
                 (mpViewShell->GetFrameView()->IsClickChangeRotation() ||
-                 (pSingleObj && pSingleObj->GetObjInventor()==SdrInventor::E3d)))
+                 (pSingleObj && pSingleObj->GetObjInventor()==E3dInventor)))
             {
-                mpView->SetDragMode(SdrDragMode::Rotate);
+                mpView->SetDragMode(SDRDRAG_ROTATE);
             }
             else
             {
-                mpView->SetDragMode(SdrDragMode::Move);
+                mpView->SetDragMode(SDRDRAG_MOVE);
             }
         }
     }
@@ -212,16 +217,25 @@ bool FuConstruct::MouseButtonUp(const MouseEvent& rMEvt)
     return bReturn;
 }
 
+/**
+ * Process keyboard input
+ * @returns true if a KeyEvent is being processed, false otherwise
+ */
+bool FuConstruct::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuDraw::KeyInput(rKEvt);;
+}
+
 void FuConstruct::Activate()
 {
-    mpView->SetEditMode(SdrViewEditMode::Create);
+    mpView->SetEditMode(SDREDITMODE_CREATE);
     FuDraw::Activate();
 }
 
 void FuConstruct::Deactivate()
 {
     FuDraw::Deactivate();
-    mpView->SetEditMode(SdrViewEditMode::Edit);
+    mpView->SetEditMode(SDREDITMODE_EDIT);
 }
 
 /**
@@ -308,8 +322,8 @@ void FuConstruct::SetStyleSheet( SfxItemSet& rAttr, SdrObject* pObj,
         const bool bForceFillStyle, const bool bForceNoFillStyle )
 {
     SdPage* pPage = static_cast<SdPage*>(mpView->GetSdrPageView()->GetPage());
-    if ( pPage->IsMasterPage() && pPage->GetPageKind() == PageKind::Standard &&
-         mpDoc->GetDocumentType() == DocumentType::Impress )
+    if ( pPage->IsMasterPage() && pPage->GetPageKind() == PK_STANDARD &&
+         mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS )
     {
         /**********************************************
         * Objects was created on the slide master page

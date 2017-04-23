@@ -40,7 +40,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG(OPropertyBrowserView, OnPageActivation, LinkParamNone*, void)
+    IMPL_LINK_NOARG_TYPED(OPropertyBrowserView, OnPageActivation, LinkParamNone*, void)
     {
         m_nActivePage = m_pPropBox->GetCurPage();
         m_aPageActivationHandler.Call(nullptr);
@@ -81,7 +81,7 @@ namespace pcr
     }
 
 
-    bool OPropertyBrowserView::EventNotify( NotifyEvent& _rNEvt )
+    bool OPropertyBrowserView::Notify( NotifyEvent& _rNEvt )
     {
         if ( MouseNotifyEvent::KEYINPUT == _rNEvt.GetType() )
         {
@@ -93,7 +93,7 @@ namespace pcr
                 // #i63285#
                 return true;
         }
-        return Window::EventNotify(_rNEvt);
+        return Window::Notify( _rNEvt );
     }
 
 

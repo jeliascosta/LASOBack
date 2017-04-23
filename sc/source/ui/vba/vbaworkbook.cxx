@@ -34,7 +34,6 @@
 #include <ooo/vba/excel/XApplication.hpp>
 
 #include "scextopt.hxx"
-#include "service.hxx"
 #include "vbaworksheet.hxx"
 #include "vbaworksheets.hxx"
 #include "vbaworkbook.hxx"
@@ -66,7 +65,7 @@ void ScVbaWorkbook::initColorData( const uno::Sequence< sal_Int32 >& sColors )
 }
 
 void SAL_CALL
-ScVbaWorkbook::ResetColors(  )
+ScVbaWorkbook::ResetColors(  ) throw (::script::BasicErrorException, ::uno::RuntimeException, std::exception)
 {
         uno::Reference< container::XIndexAccess > xIndexAccess( ScVbaPalette::getDefaultPalette(), uno::UNO_QUERY_THROW );
         sal_Int32 nLen = xIndexAccess->getCount();
@@ -80,17 +79,17 @@ ScVbaWorkbook::ResetColors(  )
 }
 
 ::uno::Any SAL_CALL
-ScVbaWorkbook::Colors( const ::uno::Any& Index )
+ScVbaWorkbook::Colors( const ::uno::Any& Index ) throw (::script::BasicErrorException, ::uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
-    if ( Index.hasValue() )
+    if ( Index.getValue() )
     {
         sal_Int32 nIndex = 0;
         Index >>= nIndex;
-        aRet <<= XLRGBToOORGB( ColorData[ --nIndex ] );
+        aRet = uno::makeAny( XLRGBToOORGB( ColorData[ --nIndex ] ) );
     }
     else
-        aRet <<= ColorData;
+        aRet = uno::makeAny( ColorData );
     return aRet;
 }
 
@@ -104,29 +103,29 @@ bool ScVbaWorkbook::setFilterPropsFromFormat( sal_Int32 nFormat, uno::Sequence< 
             switch( nFormat )
             {
                 case excel::XlFileFormat::xlCSV:
-                    rProps[ index ].Value <<= OUString("Text - txt - csv (StarCalc)");
+                    rProps[ index ].Value = uno::Any( OUString("Text - txt - csv (StarCalc)") );
                     break;
                 case excel::XlFileFormat::xlDBF4:
-                    rProps[ index ].Value <<= OUString("DBF");
+                    rProps[ index ].Value = uno::Any( OUString("DBF") );
                     break;
                 case excel::XlFileFormat::xlDIF:
-                    rProps[ index ].Value <<= OUString("DIF");
+                    rProps[ index ].Value = uno::Any( OUString("DIF") );
                     break;
                 case excel::XlFileFormat::xlWK3:
-                    rProps[ index ].Value <<= OUString("Lotus");
+                    rProps[ index ].Value = uno::Any( OUString("Lotus") );
                     break;
                 case excel::XlFileFormat::xlExcel4Workbook:
-                    rProps[ index ].Value <<= OUString("MS Excel 4.0");
+                    rProps[ index ].Value = uno::Any( OUString("MS Excel 4.0") );
                     break;
                 case excel::XlFileFormat::xlExcel5:
-                    rProps[ index ].Value <<= OUString("MS Excel 5.0/95");
+                    rProps[ index ].Value = uno::Any( OUString("MS Excel 5.0/95") );
                     break;
                 case excel::XlFileFormat::xlHtml:
-                    rProps[ index ].Value <<= OUString("HTML (StarCalc)");
+                    rProps[ index ].Value = uno::Any( OUString("HTML (StarCalc)") );
                     break;
                 case excel::XlFileFormat::xlExcel9795:
                 default:
-                    rProps[ index ].Value <<= OUString("MS Excel 97");
+                    rProps[ index ].Value = uno::Any( OUString("MS Excel 97") );
                     break;
             }
             bRes = true;
@@ -137,7 +136,7 @@ bool ScVbaWorkbook::setFilterPropsFromFormat( sal_Int32 nFormat, uno::Sequence< 
 }
 
 ::sal_Int32 SAL_CALL
-ScVbaWorkbook::getFileFormat(  )
+ScVbaWorkbook::getFileFormat(  ) throw (::uno::RuntimeException, std::exception)
 {
         sal_Int32 aFileFormat = 0;
         OUString aFilterName;
@@ -204,7 +203,7 @@ ScVbaWorkbook::init()
         ResetColors();
 }
 
-ScVbaWorkbook::ScVbaWorkbook(   const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, css::uno::Reference< css::frame::XModel > const & xModel ) : ScVbaWorkbook_BASE( xParent, xContext, xModel )
+ScVbaWorkbook::ScVbaWorkbook(   const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, css::uno::Reference< css::frame::XModel > xModel ) : ScVbaWorkbook_BASE( xParent, xContext, xModel )
 {
     init();
 }
@@ -216,7 +215,7 @@ ScVbaWorkbook::ScVbaWorkbook( uno::Sequence< uno::Any> const & args,
 }
 
 uno::Reference< excel::XWorksheet >
-ScVbaWorkbook::getActiveSheet()
+ScVbaWorkbook::getActiveSheet() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getCurrentExcelDoc( mxContext ), uno::UNO_SET_THROW );
     uno::Reference< sheet::XSpreadsheetView > xView( xModel->getCurrentController(), uno::UNO_QUERY_THROW );
@@ -229,13 +228,13 @@ ScVbaWorkbook::getActiveSheet()
 }
 
 uno::Any SAL_CALL
-ScVbaWorkbook::Sheets( const uno::Any& aIndex )
+ScVbaWorkbook::Sheets( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
     return Worksheets( aIndex );
 }
 
 uno::Any SAL_CALL
-ScVbaWorkbook::Worksheets( const uno::Any& aIndex )
+ScVbaWorkbook::Worksheets( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getModel() );
     uno::Reference <sheet::XSpreadsheetDocument> xSpreadDoc( xModel, uno::UNO_QUERY_THROW );
@@ -249,7 +248,7 @@ ScVbaWorkbook::Worksheets( const uno::Any& aIndex )
     return uno::Any( xWorkSheets->Item( aIndex, uno::Any() ) );
 }
 uno::Any SAL_CALL
-ScVbaWorkbook::Windows( const uno::Any& aIndex )
+ScVbaWorkbook::Windows( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
 
     uno::Reference< excel::XWindows >  xWindows( new ScVbaWindows( getParent(), mxContext ) );
@@ -259,32 +258,32 @@ ScVbaWorkbook::Windows( const uno::Any& aIndex )
 }
 
 void SAL_CALL
-ScVbaWorkbook::Activate()
+ScVbaWorkbook::Activate() throw (uno::RuntimeException, std::exception)
 {
     VbaDocumentBase::Activate();
 }
 
 void
-ScVbaWorkbook::Protect( const uno::Any &aPassword )
+ScVbaWorkbook::Protect( const uno::Any &aPassword ) throw (uno::RuntimeException)
 {
     VbaDocumentBase::Protect( aPassword );
 }
 
 sal_Bool
-ScVbaWorkbook::getProtectStructure()
+ScVbaWorkbook::getProtectStructure() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< util::XProtectable > xProt( getModel(), uno::UNO_QUERY_THROW );
     return xProt->isProtected();
 }
 
-sal_Bool SAL_CALL ScVbaWorkbook::getPrecisionAsDisplayed()
+sal_Bool SAL_CALL ScVbaWorkbook::getPrecisionAsDisplayed() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getModel(), uno::UNO_QUERY_THROW );
     ScDocument& rDoc = excel::getDocShell( xModel )->GetDocument();
     return rDoc.GetDocOptions().IsCalcAsShown();
 }
 
-void SAL_CALL ScVbaWorkbook::setPrecisionAsDisplayed( sal_Bool _precisionAsDisplayed )
+void SAL_CALL ScVbaWorkbook::setPrecisionAsDisplayed( sal_Bool _precisionAsDisplayed ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getModel(), uno::UNO_QUERY_THROW );
     ScDocument& rDoc = excel::getDocShell( xModel )->GetDocument();
@@ -294,7 +293,7 @@ void SAL_CALL ScVbaWorkbook::setPrecisionAsDisplayed( sal_Bool _precisionAsDispl
 }
 
 void
-ScVbaWorkbook::SaveCopyAs( const OUString& sFileName )
+ScVbaWorkbook::SaveCopyAs( const OUString& sFileName ) throw ( uno::RuntimeException, std::exception)
 {
     OUString aURL;
     osl::FileBase::getFileURLFromSystemPath( sFileName, aURL );
@@ -306,16 +305,16 @@ ScVbaWorkbook::SaveCopyAs( const OUString& sFileName )
 }
 
 void SAL_CALL
-ScVbaWorkbook::SaveAs( const uno::Any& FileName, const uno::Any& FileFormat, const uno::Any& /*Password*/, const uno::Any& /*WriteResPassword*/, const uno::Any& /*ReadOnlyRecommended*/, const uno::Any& /*CreateBackup*/, const uno::Any& /*AccessMode*/, const uno::Any& /*ConflictResolution*/, const uno::Any& /*AddToMru*/, const uno::Any& /*TextCodepage*/, const uno::Any& /*TextVisualLayout*/, const uno::Any& /*Local*/ )
+ScVbaWorkbook::SaveAs( const uno::Any& FileName, const uno::Any& FileFormat, const uno::Any& /*Password*/, const uno::Any& /*WriteResPassword*/, const uno::Any& /*ReadOnlyRecommended*/, const uno::Any& /*CreateBackup*/, const uno::Any& /*AccessMode*/, const uno::Any& /*ConflictResolution*/, const uno::Any& /*AddToMru*/, const uno::Any& /*TextCodepage*/, const uno::Any& /*TextVisualLayout*/, const uno::Any& /*Local*/ ) throw (css::uno::RuntimeException, std::exception)
 {
     OUString sFileName;
     FileName >>= sFileName;
     OUString sURL;
     osl::FileBase::getFileURLFromSystemPath( sFileName, sURL );
-    // detect if there is no path then we need
-    // to use the current folder
+    // detect if there is no path if there is no path then we need
+    // to use the current current folder
     INetURLObject aURL( sURL );
-    sURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+    sURL = aURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
     if( sURL.isEmpty() )
     {
         // need to add cur dir ( of this workbook ) or else the 'Work' dir
@@ -336,7 +335,7 @@ ScVbaWorkbook::SaveAs( const uno::Any& FileName, const uno::Any& FileFormat, con
             aURL.SetURL( sURL );
             aURL.Append( sFileName );
         }
-        sURL = aURL.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+        sURL = aURL.GetMainURL( INetURLObject::DECODE_TO_IURI );
 
     }
 
@@ -355,7 +354,7 @@ ScVbaWorkbook::SaveAs( const uno::Any& FileName, const uno::Any& FileFormat, con
 }
 
 css::uno::Any SAL_CALL
-ScVbaWorkbook::Styles( const uno::Any& Item )
+ScVbaWorkbook::Styles( const uno::Any& Item ) throw (::script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     // quick look and Styles object doesn't seem to have a valid parent
     // or a least the object browser just shows an object that has no
@@ -367,7 +366,7 @@ ScVbaWorkbook::Styles( const uno::Any& Item )
 }
 
 uno::Any SAL_CALL
-ScVbaWorkbook::Names( const uno::Any& aIndex )
+ScVbaWorkbook::Names( const uno::Any& aIndex ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( getModel(), uno::UNO_SET_THROW );
     uno::Reference< beans::XPropertySet > xProps( xModel, uno::UNO_QUERY_THROW );
@@ -397,14 +396,14 @@ ScVbaWorkbook::getServiceNames()
 }
 
 OUString SAL_CALL
-ScVbaWorkbook::getCodeName()
+ScVbaWorkbook::getCodeName() throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< beans::XPropertySet > xModelProp( getModel(), uno::UNO_QUERY_THROW );
     return xModelProp->getPropertyValue("CodeName").get< OUString >();
 }
 
 sal_Int64
-ScVbaWorkbook::getSomething(const uno::Sequence<sal_Int8 >& rId )
+ScVbaWorkbook::getSomething(const uno::Sequence<sal_Int8 >& rId ) throw(css::uno::RuntimeException, std::exception)
 {
     if (rId.getLength() == 16 &&
         0 == memcmp( ScVbaWorksheet::getUnoTunnelId().getConstArray(), rId.getConstArray(), 16 ))
@@ -417,8 +416,8 @@ ScVbaWorkbook::getSomething(const uno::Sequence<sal_Int8 >& rId )
 namespace workbook
 {
 namespace sdecl = comphelper::service_decl;
-sdecl::vba_service_class_<ScVbaWorkbook, sdecl::with_args<true> > const serviceImpl;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::vba_service_class_<ScVbaWorkbook, sdecl::with_args<true> > serviceImpl;
+extern sdecl::ServiceDecl const serviceDecl(
     serviceImpl,
     "ScVbaWorkbook",
     "ooo.vba.excel.Workbook" );

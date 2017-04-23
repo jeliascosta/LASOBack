@@ -63,74 +63,74 @@ namespace connectivity
             WpADOProperties get_Properties() const;
 
              OUString GetConnectionString() const;
-             bool PutConnectionString(const OUString &aCon) const;
+             sal_Bool PutConnectionString(const OUString &aCon) const;
              sal_Int32 GetCommandTimeout() const;
              void PutCommandTimeout(sal_Int32 nRet);
              sal_Int32 GetConnectionTimeout() const ;
              void PutConnectionTimeout(sal_Int32 nRet);
 
-             bool Close( ) ;
-             bool Execute(const OUString& CommandText,OLEVariant& RecordsAffected,long Options, WpADORecordset** ppiRset);
-             bool BeginTrans();
-             bool CommitTrans( ) ;
-             bool RollbackTrans( );
-             bool Open(const OUString& ConnectionString, const OUString& UserID,const OUString& Password,long Options);
-             bool GetErrors(ADOErrors** pErrors);
+             sal_Bool Close( ) ;
+             sal_Bool Execute(const OUString& _CommandText,OLEVariant& RecordsAffected,long Options, WpADORecordset** ppiRset);
+             sal_Bool BeginTrans();
+             sal_Bool CommitTrans( ) ;
+             sal_Bool RollbackTrans( );
+             sal_Bool Open(const OUString& ConnectionString, const OUString& UserID,const OUString& Password,long Options);
+             sal_Bool GetErrors(ADOErrors** pErrors);
 
              OUString GetDefaultDatabase() const;
-             bool PutDefaultDatabase(const OUString& _bstr);
+             sal_Bool PutDefaultDatabase(const OUString& _bstr);
 
              IsolationLevelEnum get_IsolationLevel() const ;
-             bool put_IsolationLevel(const IsolationLevelEnum& eNum) ;
+             sal_Bool put_IsolationLevel(const IsolationLevelEnum& eNum) ;
 
              sal_Int32 get_Attributes() const;
-             bool put_Attributes(sal_Int32 nRet);
+             sal_Bool put_Attributes(sal_Int32 nRet);
 
              CursorLocationEnum get_CursorLocation() const;
-             bool put_CursorLocation(const CursorLocationEnum &eNum) ;
+             sal_Bool put_CursorLocation(const CursorLocationEnum &eNum) ;
 
              ConnectModeEnum get_Mode() const;
-             bool put_Mode(const ConnectModeEnum &eNum) ;
+             sal_Bool put_Mode(const ConnectModeEnum &eNum) ;
 
              OUString get_Provider() const;
-             bool put_Provider(const OUString& _bstr);
+             sal_Bool put_Provider(const OUString& _bstr);
 
              sal_Int32 get_State() const;
 
-             bool OpenSchema(SchemaEnum eNum,OLEVariant& Restrictions,OLEVariant& SchemaID,ADORecordset**pprset);
+             sal_Bool OpenSchema(SchemaEnum eNum,OLEVariant& Restrictions,OLEVariant& SchemaID,ADORecordset**pprset);
 
              OUString get_Version() const;
 
              // special methods
-             ADORecordset* getExportedKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table );
-             ADORecordset* getImportedKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table );
-             ADORecordset* getPrimaryKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table );
-             ADORecordset* getIndexInfo( const css::uno::Any& catalog, const OUString& schema, const OUString& table, bool unique, bool approximate );
-             ADORecordset* getTablePrivileges( const css::uno::Any& catalog,
+             ADORecordset* getExportedKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table );
+             ADORecordset* getImportedKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table );
+             ADORecordset* getPrimaryKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table );
+             ADORecordset* getIndexInfo( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table, sal_Bool unique, sal_Bool approximate );
+             ADORecordset* getTablePrivileges( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern );
-             ADORecordset* getCrossReference( const css::uno::Any& primaryCatalog,
+             ADORecordset* getCrossReference( const ::com::sun::star::uno::Any& primaryCatalog,
                                                   const OUString& primarySchema,
                                                   const OUString& primaryTable,
-                                                  const css::uno::Any& foreignCatalog,
+                                                  const ::com::sun::star::uno::Any& foreignCatalog,
                                                   const OUString& foreignSchema,
                                                   const OUString& foreignTable);
-             ADORecordset* getProcedures( const css::uno::Any& catalog,
+             ADORecordset* getProcedures( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& procedureNamePattern );
-             ADORecordset* getProcedureColumns( const css::uno::Any& catalog,
+             ADORecordset* getProcedureColumns( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& procedureNamePattern,
                                                   const OUString& columnNamePattern );
-             ADORecordset* getTables( const css::uno::Any& catalog,
+             ADORecordset* getTables( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern,
-                                                  const css::uno::Sequence< OUString >& types );
-             ADORecordset* getColumns( const css::uno::Any& catalog,
+                                                  const ::com::sun::star::uno::Sequence< OUString >& types );
+             ADORecordset* getColumns( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern,
                                                   const OUString& columnNamePattern );
-             ADORecordset* getColumnPrivileges( const css::uno::Any& catalog,
+             ADORecordset* getColumnPrivileges( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& table,
                                                   const OUString& columnNamePattern );
@@ -153,27 +153,27 @@ namespace connectivity
                 WpOLEBase<ADOCommand>::operator=(rhs); return *this;}
 
 
-            bool putref_ActiveConnection( WpADOConnection *pCon);
+            sal_Bool putref_ActiveConnection( WpADOConnection *pCon);
 
             void put_ActiveConnection(/* [in] */ const OLEVariant& vConn);
              void Create();
              sal_Int32 get_State() const;
              OUString get_CommandText() const;
-             bool put_CommandText(const OUString &aCon) ;
+             sal_Bool put_CommandText(const OUString &aCon) ;
              sal_Int32 get_CommandTimeout() const;
              void put_CommandTimeout(sal_Int32 nRet);
-             bool get_Prepared() const;
-             bool put_Prepared(VARIANT_BOOL bPrepared) const;
-             bool Execute(OLEVariant& RecordsAffected,OLEVariant& Parameters,long Options, ADORecordset** ppiRset);
+             sal_Bool get_Prepared() const;
+             sal_Bool put_Prepared(VARIANT_BOOL bPrepared) const;
+             sal_Bool Execute(OLEVariant& RecordsAffected,OLEVariant& Parameters,long Options, ADORecordset** ppiRset);
              ADOParameter* CreateParameter(const OUString &_bstr,DataTypeEnum Type,ParameterDirectionEnum Direction,long nSize,const OLEVariant &Value);
 
              ADOParameters* get_Parameters() const;
-             bool put_CommandType( /* [in] */ CommandTypeEnum lCmdType);
+             sal_Bool put_CommandType( /* [in] */ CommandTypeEnum lCmdType);
              CommandTypeEnum get_CommandType( ) const ;
              // Returns the field's name
              OUString GetName() const ;
-             bool put_Name(const OUString& Name);
-             bool Cancel();
+             sal_Bool put_Name(const OUString& _Name);
+             sal_Bool Cancel();
         };
 
         class WpADOError : public WpOLEBase<ADOError>
@@ -205,7 +205,7 @@ namespace connectivity
 
             // Ctors, operator=
             // They only call the superclass
-            WpADOField(ADOField* pInt=nullptr):WpOLEBase<ADOField>(pInt){}
+            WpADOField(ADOField* pInt=NULL):WpOLEBase<ADOField>(pInt){}
             WpADOField(const WpADOField& rhs) : WpOLEBase<ADOField>(rhs) {}
 
              WpADOField& operator=(const WpADOField& rhs)
@@ -222,10 +222,10 @@ namespace connectivity
              DataTypeEnum GetADOType() const  ;
              void get_Value(OLEVariant& aValVar) const ;
              OLEVariant get_Value() const;
-             bool PutValue(const OLEVariant& aVariant);
+             sal_Bool PutValue(const OLEVariant& aVariant);
              sal_Int32 GetPrecision() const ;
              sal_Int32 GetNumericScale() const ;
-             bool AppendChunk(const OLEVariant& Variant);
+             sal_Bool AppendChunk(const OLEVariant& _Variant);
              OLEVariant GetChunk(long Length) const;
              void GetChunk(long Length,OLEVariant &aValVar) const;
              OLEVariant GetOriginalValue() const;
@@ -234,15 +234,15 @@ namespace connectivity
 
              void GetUnderlyingValue(OLEVariant &aValVar) const;
 
-             bool PutPrecision(sal_Int8 _prec);
+             sal_Bool PutPrecision(sal_Int8 _prec);
 
-             bool PutNumericScale(sal_Int8 _prec);
+             sal_Bool PutNumericScale(sal_Int8 _prec);
 
              void PutADOType(DataTypeEnum eType) ;
 
-             bool PutDefinedSize(sal_Int32 _nDefSize);
+             sal_Bool PutDefinedSize(sal_Int32 _nDefSize);
 
-             bool PutAttributes(sal_Int32 _nDefSize);
+             sal_Bool PutAttributes(sal_Int32 _nDefSize);
         };
 
 
@@ -251,7 +251,7 @@ namespace connectivity
         public:
             // Ctors, operator=
             // They only call the superclass
-            WpADOProperty(ADOProperty* pInt=nullptr):WpOLEBase<ADOProperty>(pInt){}
+            WpADOProperty(ADOProperty* pInt=NULL):WpOLEBase<ADOProperty>(pInt){}
             WpADOProperty(const WpADOProperty& rhs) : WpOLEBase<ADOProperty>(rhs) {}
              WpADOProperty& operator=(const WpADOProperty& rhs)
                 {WpOLEBase<ADOProperty>::operator=(rhs); return *this;}
@@ -259,11 +259,11 @@ namespace connectivity
 
              OLEVariant GetValue() const;
              void GetValue(OLEVariant &aValVar) const;
-             bool PutValue(const OLEVariant &aValVar) ;
+             sal_Bool PutValue(const OLEVariant &aValVar) ;
              OUString GetName() const ;
              DataTypeEnum GetADOType() const ;
              sal_Int32 GetAttributes() const ;
-             bool PutAttributes(sal_Int32 _nDefSize);
+             sal_Bool PutAttributes(sal_Int32 _nDefSize);
         };
 
 
@@ -273,16 +273,21 @@ namespace connectivity
         public:
             // Ctors, operator=
             // They only call the superclass
-            WpADORecordset(ADORecordset* pInt=nullptr):WpOLEBase<ADORecordset>(pInt){}
+            WpADORecordset(ADORecordset* pInt=NULL):WpOLEBase<ADORecordset>(pInt){}
             WpADORecordset(const WpADORecordset& rhs) : WpOLEBase<ADORecordset>() {operator=(rhs);}
              WpADORecordset& operator=(const WpADORecordset& rhs)
             {
                 WpOLEBase<ADORecordset>::operator=(rhs);
                 return *this;
             }
+            ~WpADORecordset()
+            {
+                //  if(pInterface && get_State() == adStateOpen)
+                    //  Close();
+            }
 
              void Create();
-             bool Open(
+             sal_Bool Open(
                     /* [optional][in] */ VARIANT Source,
                     /* [optional][in] */ VARIANT ActiveConnection,
                     /* [defaultvalue][in] */ CursorTypeEnum CursorType,
@@ -290,41 +295,41 @@ namespace connectivity
                     /* [defaultvalue][in] */ sal_Int32 Options);
              LockTypeEnum GetLockType();
              void Close();
-             bool Cancel() const;
+             sal_Bool Cancel() const;
              sal_Int32 get_State( );
-             bool Supports( /* [in] */ CursorOptionEnum CursorOptions);
+             sal_Bool Supports( /* [in] */ CursorOptionEnum CursorOptions);
             PositionEnum_Param get_AbsolutePosition();
              void GetDataSource(IUnknown** pIUnknown) const ;
              void PutRefDataSource(IUnknown* pIUnknown);
              void GetBookmark(VARIANT& var);
              OLEVariant GetBookmark();
             CompareEnum CompareBookmarks(const OLEVariant& left,const OLEVariant& right);
-             bool SetBookmark(const OLEVariant &pSafeAr);
+             sal_Bool SetBookmark(const OLEVariant &pSafeAr);
              WpADOFields GetFields() const;
-             bool Move(sal_Int32 nRows, VARIANT aBmk);
-             bool MoveNext();
-             bool MovePrevious();
-             bool MoveFirst();
-             bool MoveLast();
+             sal_Bool Move(sal_Int32 nRows, VARIANT aBmk);
+             sal_Bool MoveNext();
+             sal_Bool MovePrevious();
+             sal_Bool MoveFirst();
+             sal_Bool MoveLast();
 
-             bool IsAtBOF() const;
-             bool IsAtEOF() const;
-             bool Delete(AffectEnum eNum);
-             bool AddNew(const OLEVariant &FieldList,const OLEVariant &Values);
-             bool Update(const OLEVariant &FieldList,const OLEVariant &Values);
-             bool CancelUpdate();
+             sal_Bool IsAtBOF() const;
+             sal_Bool IsAtEOF() const;
+             sal_Bool Delete(AffectEnum eNum);
+             sal_Bool AddNew(const OLEVariant &FieldList,const OLEVariant &Values);
+             sal_Bool Update(const OLEVariant &FieldList,const OLEVariant &Values);
+             sal_Bool CancelUpdate();
              WpADOProperties get_Properties() const;
-             bool NextRecordset(OLEVariant& RecordsAffected,ADORecordset** ppiRset);
-             bool get_RecordCount(ADO_LONGPTR &_nRet) const;
-             bool get_MaxRecords(ADO_LONGPTR &_nRet) const;
-             bool put_MaxRecords(ADO_LONGPTR _nRet);
-             bool get_CursorType(CursorTypeEnum &_nRet) const;
-             bool put_CursorType(CursorTypeEnum _nRet);
-             bool get_LockType(LockTypeEnum &_nRet) const;
-             bool put_LockType(LockTypeEnum _nRet);
-             bool get_CacheSize(sal_Int32 &_nRet) const;
-             bool put_CacheSize(sal_Int32 _nRet);
-             bool UpdateBatch(AffectEnum AffectRecords);
+             sal_Bool NextRecordset(OLEVariant& RecordsAffected,ADORecordset** ppiRset);
+             sal_Bool get_RecordCount(ADO_LONGPTR &_nRet) const;
+             sal_Bool get_MaxRecords(ADO_LONGPTR &_nRet) const;
+             sal_Bool put_MaxRecords(ADO_LONGPTR _nRet);
+             sal_Bool get_CursorType(CursorTypeEnum &_nRet) const;
+             sal_Bool put_CursorType(CursorTypeEnum _nRet);
+             sal_Bool get_LockType(LockTypeEnum &_nRet) const;
+             sal_Bool put_LockType(LockTypeEnum _nRet);
+             sal_Bool get_CacheSize(sal_Int32 &_nRet) const;
+             sal_Bool put_CacheSize(sal_Int32 _nRet);
+             sal_Bool UpdateBatch(AffectEnum AffectRecords);
         };
 
 
@@ -342,15 +347,15 @@ namespace connectivity
              OUString GetName() const ;
              DataTypeEnum GetADOType() const ;
              void put_Type(const DataTypeEnum& _eType);
-             bool put_Size(sal_Int32 _nSize);
+             sal_Bool put_Size(const sal_Int32& _nSize);
              sal_Int32 GetAttributes() const ;
              sal_Int32 GetPrecision() const ;
              sal_Int32 GetNumericScale() const ;
              ParameterDirectionEnum get_Direction() const;
              void GetValue(OLEVariant& aValVar) const ;
              OLEVariant GetValue() const;
-             bool PutValue(const OLEVariant& aVariant);
-             bool AppendChunk(const OLEVariant& aVariant);
+             sal_Bool PutValue(const OLEVariant& aVariant);
+             sal_Bool AppendChunk(const OLEVariant& aVariant);
         };
 
         class OTools

@@ -51,7 +51,7 @@ namespace drawinglayer
             /** the Graphic with all its content possibilities, here only
                 animated is allowed and gets checked by isValidData().
                 an instance of Graphic is used here since it's ref-counted
-                and thus a safe copy for now
+                and thus a safe cpoy for now
              */
             const Graphic                               maGraphic;
 
@@ -79,7 +79,7 @@ namespace drawinglayer
             /// helper methods
             bool isValidData() const
             {
-                return (GraphicType::Bitmap == maGraphic.GetType()
+                return (GRAPHIC_BITMAP == maGraphic.GetType()
                     && maGraphic.IsAnimated()
                     && maAnimation.Count());
             }
@@ -181,13 +181,9 @@ namespace drawinglayer
                             // check if buffering is complete
                             bool bBufferingComplete(true);
 
-                            for (auto const & a: maBufferedPrimitives)
+                            for (sal_uInt32 a(0); bBufferingComplete && a < maBufferedPrimitives.size(); a++)
                             {
-                                if (!a.is())
-                                {
-                                    bBufferingComplete = false;
-                                    break;
-                                }
+                                bBufferingComplete = maBufferedPrimitives[a].is();
                             }
 
                             if (bBufferingComplete)
@@ -237,7 +233,7 @@ namespace drawinglayer
                                 if (aMask.IsEmpty())
                                 {
                                     const Point aEmpty;
-                                    const tools::Rectangle aRect(aEmpty, maVirtualDeviceMask->GetOutputSizePixel());
+                                    const Rectangle aRect(aEmpty, maVirtualDeviceMask->GetOutputSizePixel());
                                     const Wallpaper aWallpaper(COL_BLACK);
                                     maVirtualDeviceMask->DrawWallpaper(aRect, aWallpaper);
                                 }
@@ -260,7 +256,7 @@ namespace drawinglayer
 
                                 if (aMask.IsEmpty())
                                 {
-                                    const tools::Rectangle aRect(rAnimBitmap.aPosPix, aContent.GetSizePixel());
+                                    const Rectangle aRect(rAnimBitmap.aPosPix, aContent.GetSizePixel());
                                     maVirtualDeviceMask->SetFillColor(COL_BLACK);
                                     maVirtualDeviceMask->SetLineColor();
                                     maVirtualDeviceMask->DrawRect(aRect);
@@ -327,7 +323,7 @@ namespace drawinglayer
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;
 
             /// override to deliver the correct expected frame dependent of timing
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
         };
 
         AnimatedGraphicPrimitive2D::AnimatedGraphicPrimitive2D(
@@ -396,11 +392,11 @@ namespace drawinglayer
                 && getGraphic() == pCompare->getGraphic());
         }
 
-        void AnimatedGraphicPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer AnimatedGraphicPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             if (isValidData())
             {
-                Primitive2DReference aRetval;
+                Primitive2DContainer aRetval(1);
                 const double fState(getAnimationEntry().getStateAtTime(rViewInformation.getViewTime()));
                 const sal_uInt32 nLen(maAnimation.Count());
                 sal_uInt32 nIndex(basegfx::fround(fState * (double)nLen));
@@ -413,12 +409,11 @@ namespace drawinglayer
                 }
 
                 // check buffering shortcuts, may already be created
-                aRetval = tryTogetFromBuffer(nIndex);
+                aRetval[0] = tryTogetFromBuffer(nIndex);
 
-                if (aRetval.is())
+                if (aRetval[0].is())
                 {
-                    rVisitor.append(aRetval);
-                    return;
+                    return aRetval;
                 }
 
                 // if huge size (and not the buffered 1st frame) simply
@@ -432,19 +427,20 @@ namespace drawinglayer
                 const_cast<AnimatedGraphicPrimitive2D*>(this)->createFrame(nIndex);
 
                 // try to get from buffer again, may have been added from createFrame
-                aRetval = tryTogetFromBuffer(nIndex);
+                aRetval[0] = tryTogetFromBuffer(nIndex);
 
-                if (aRetval.is())
+                if (aRetval[0].is())
                 {
-                    rVisitor.append(aRetval);
-                    return;
+                    return aRetval;
                 }
 
                 // did not work (not buffered and not 1st frame), create from buffer
-                aRetval = createFromBuffer();
+                aRetval[0] = createFromBuffer();
 
-                rVisitor.append(aRetval);
+                return aRetval;
             }
+
+            return Primitive2DContainer();
         }
 
     } // end of namespace primitive2d
@@ -454,8 +450,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void create2DDecompositionOfGraphic(
-            Primitive2DContainer& rContainer,
+        Primitive2DContainer create2DDecompositionOfGraphic(
             const Graphic& rGraphic,
             const basegfx::B2DHomMatrix& rTransform)
         {
@@ -463,7 +458,7 @@ namespace drawinglayer
 
             switch(rGraphic.GetType())
             {
-                case GraphicType::Bitmap :
+                case GRAPHIC_BITMAP :
                 {
                     if(rGraphic.IsAnimated())
                     {
@@ -511,7 +506,7 @@ namespace drawinglayer
                     break;
                 }
 
-                case GraphicType::GdiMetafile :
+                case GRAPHIC_GDIMETAFILE :
                 {
                     // create MetafilePrimitive2D
                     const GDIMetaFile& rMetafile = rGraphic.GetGDIMetaFile();
@@ -551,7 +546,7 @@ namespace drawinglayer
                 }
             }
 
-            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
+            return aRetval;
         }
 
         Primitive2DContainer create2DColorModifierEmbeddingsAsNeeded(
@@ -577,22 +572,22 @@ namespace drawinglayer
             // embeddings from here
             aRetval = rChildren;
 
-            if(GraphicDrawMode::Watermark == aGraphicDrawMode)
+            if(GRAPHICDRAWMODE_WATERMARK == aGraphicDrawMode)
             {
                 // this is solved by applying fixed values additionally to luminance
-                // and contrast, do it here and reset DrawMode to GraphicDrawMode::Standard
+                // and contrast, do it here and reset DrawMode to GRAPHICDRAWMODE_STANDARD
                 // original in svtools uses:
                 // #define WATERMARK_LUM_OFFSET        50
                 // #define WATERMARK_CON_OFFSET        -70
                 fLuminance = basegfx::clamp(fLuminance + 0.5, -1.0, 1.0);
                 fContrast = basegfx::clamp(fContrast - 0.7, -1.0, 1.0);
-                aGraphicDrawMode = GraphicDrawMode::Standard;
+                aGraphicDrawMode = GRAPHICDRAWMODE_STANDARD;
             }
 
-            // DrawMode (GraphicDrawMode::Watermark already handled)
+            // DrawMode (GRAPHICDRAWMODE_WATERMARK already handled)
             switch(aGraphicDrawMode)
             {
-                case GraphicDrawMode::Greys:
+                case GRAPHICDRAWMODE_GREYS:
                 {
                     // convert to grey
                     const Primitive2DReference aPrimitiveGrey(
@@ -604,7 +599,7 @@ namespace drawinglayer
                     aRetval = Primitive2DContainer { aPrimitiveGrey };
                     break;
                 }
-                case GraphicDrawMode::Mono:
+                case GRAPHICDRAWMODE_MONO:
                 {
                     // convert to mono (black/white with threshold 0.5)
                     const Primitive2DReference aPrimitiveBlackAndWhite(
@@ -616,11 +611,11 @@ namespace drawinglayer
                     aRetval = Primitive2DContainer { aPrimitiveBlackAndWhite };
                     break;
                 }
-                default: // case GraphicDrawMode::Standard:
+                default: // case GRAPHICDRAWMODE_STANDARD:
                 {
                     assert(
-                        aGraphicDrawMode != GraphicDrawMode::Watermark
-                        && "OOps, GraphicDrawMode::Watermark should already be handled (see above)");
+                        aGraphicDrawMode != GRAPHICDRAWMODE_WATERMARK
+                        && "OOps, GRAPHICDRAWMODE_WATERMARK should already be handled (see above)");
                     // nothing to do
                     break;
                 }

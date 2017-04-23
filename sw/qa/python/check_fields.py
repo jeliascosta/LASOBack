@@ -1,17 +1,10 @@
-#! /usr/bin/env python
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
-#
-# This file is part of the LibreOffice project.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
 import unittest
 from org.libreoffice.unotest import UnoInProcess
 
 
 class CheckFields(unittest.TestCase):
+    _uno = None
+    _xDoc = None
 
     @classmethod
     def setUpClass(cls):
@@ -33,9 +26,9 @@ class CheckFields(unittest.TestCase):
             xField = xFieldEnum.nextElement()
             if xField.supportsService("com.sun.star.text.TextField.JumpEdit"):
                 xAnchor = xField.getAnchor()
-                read_content = xAnchor.getString()
-                self.assertTrue(read_content in placeholders,
-                                "field %s is not contained: " % read_content)
+                readContent = xAnchor.getString()
+                self.assertTrue(readContent in placeholders,
+                                "field %s is not contained: " % readContent)
 
     def test_fdo42073(self):
         xDoc = self.__class__._xEmptyDoc
@@ -43,12 +36,12 @@ class CheckFields(unittest.TestCase):
         xCursor = xBodyText.createTextCursor()
         xTextField = xDoc.createInstance("com.sun.star.text.TextField.Input")
         xBodyText.insertTextContent(xCursor, xTextField, True)
-        read_content = xTextField.getPropertyValue("Content")
-        self.assertEqual("", read_content)
+        readContent = xTextField.getPropertyValue("Content")
+        self.assertEqual("", readContent)
         content = "this is not surprising"
         xTextField.setPropertyValue("Content", content)
-        read_content = xTextField.getPropertyValue("Content")
-        self.assertEqual(content, read_content)
+        readContent = xTextField.getPropertyValue("Content")
+        self.assertEqual(content, readContent)
 
 if __name__ == '__main__':
     unittest.main()

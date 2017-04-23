@@ -72,13 +72,14 @@ private:
 class TemplateDir
 {
 public:
-    TemplateDir()
-        :   maEntries(),
+    TemplateDir (const OUString& rsRegion )
+        :   msRegion(rsRegion), maEntries(),
             mbSortingEnabled(false), mpEntryCompare(nullptr) {}
 
+    OUString msRegion;
     ::std::vector<TemplateEntry*> maEntries;
 
-    void EnableSorting(bool bSortingEnabled);
+    void EnableSorting(bool bSortingEnabled = true);
     void InsertEntry(TemplateEntry* pNewEntry);
 
 private:
@@ -110,6 +111,19 @@ public:
     */
     virtual ~TemplateScanner();
 
+    /** Execute the actual scanning of templates.  When this method
+        terminates the result can be obtained by calling the
+        <member>GetTemplateList</member> method.
+    */
+    void Scan();
+
+    /** Return the list of template folders.  It lies in the responsibility
+        of the caller to take ownership of some or all entries and remove
+        them from the returned list.  All entries that remain until the
+        destructor is called will be destroyed.
+    */
+    std::vector<TemplateDir*>& GetFolderList() { return maFolderList;}
+
     /** Implementation of the AsynchronousTask interface method.
     */
     virtual void RunNextStep() override;
@@ -125,6 +139,11 @@ public:
             started or after it has ended.
     */
     const TemplateEntry* GetLastAddedEntry() const { return mpLastAddedEntry;}
+
+    /** Set whether to sort the template entries inside the regions.
+    */
+    void EnableEntrySorting ()
+        {mbEntrySortingEnabled = true;}
 
 private:
     /** The current state determines which step will be executed next by
@@ -148,7 +167,11 @@ private:
     /** The data structure that is to be filled with information about the
         template files.
     */
-    std::vector<TemplateDir*> maFolderList;
+     std::vector<TemplateDir*> maFolderList;
+
+    /** Whether the template entries have to be sorted.
+    */
+    bool mbEntrySortingEnabled;
 
     /** This member points into the maFolderList to the member that was most
         recently added.

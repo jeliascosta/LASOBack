@@ -48,21 +48,21 @@ protected:
     const bool bPlaceHolder : 1;
     bool m_bNoLength : 1;       // HACK for meta suffix (no CH_TXTATR)
 
-    void SetFont( SwFont *pNew ) { pFnt = pNew; }
-    bool IsNoLength() const  { return m_bNoLength; }
-    void SetNoLength()       { m_bNoLength = true; }
+    inline void SetFont( SwFont *pNew ) { pFnt = pNew; }
+    inline bool IsNoLength() const  { return m_bNoLength; }
+    inline void SetNoLength()       { m_bNoLength = true; }
 
 public:
     SwFieldPortion( const SwFieldPortion& rField );
     SwFieldPortion( const OUString &rExpand, SwFont *pFnt = nullptr, bool bPlaceHolder = false );
-    virtual ~SwFieldPortion() override;
+    virtual ~SwFieldPortion();
 
     sal_uInt16 m_nAttrFieldType;
     void TakeNextOffset( const SwFieldPortion* pField );
     void CheckScript( const SwTextSizeInfo &rInf );
-    bool HasFont() const { return nullptr != pFnt; }
+    inline bool HasFont() const { return nullptr != pFnt; }
     // #i89179# - made public
-    const SwFont *GetFont() const { return pFnt; }
+    inline const SwFont *GetFont() const { return pFnt; }
 
     const OUString& GetExp() const { return aExpand; }
     virtual bool GetExpText( const SwTextSizeInfo &rInf, OUString &rText ) const override;
@@ -74,23 +74,25 @@ public:
 
     virtual sal_uInt16 GetViewWidth( const SwTextSizeInfo &rInf ) const override;
 
-    bool IsFollow() const { return bFollow; }
-    void SetFollow( bool bNew ) { bFollow = bNew; }
+    inline bool IsFollow() const { return bFollow; }
+    inline void SetFollow( bool bNew ) { bFollow = bNew; }
 
-    bool IsLeft() const { return bLeft; }
-    void SetLeft( bool bNew ) { bLeft = bNew; }
+    inline bool IsLeft() const { return bLeft; }
+    inline void SetLeft( bool bNew ) { bLeft = bNew; }
 
-    bool IsHide() const { return bHide; }
-    void SetHide( bool bNew ) { bHide = bNew; }
+    inline bool IsHide() const { return bHide; }
+    inline void SetHide( bool bNew ) { bHide = bNew; }
 
-    bool IsCenter() const { return bCenter; }
-    void SetCenter( bool bNew ) { bCenter = bNew; }
+    inline bool IsCenter() const { return bCenter; }
+    inline void SetCenter( bool bNew ) { bCenter = bNew; }
 
-    bool HasFollow() const { return bHasFollow; }
-    void SetHasFollow( bool bNew ) { bHasFollow = bNew; }
+    inline bool HasFollow() const { return bHasFollow; }
+    inline void SetHasFollow( bool bNew ) { bHasFollow = bNew; }
 
-    sal_Int32 GetNextOffset() const { return nNextOffset; }
-    void SetNextOffset( sal_Int32 nNew ) { nNextOffset = nNew; }
+    inline sal_Int32 GetNextOffset() const { return nNextOffset; }
+    inline void SetNextOffset( sal_Int32 nNew ) { nNextOffset = nNew; }
+
+    inline sal_Int32 GetNextScriptChg() const { return nNextScriptChg; }
 
     // Field cloner for SplitGlue
     virtual SwFieldPortion *Clone( const OUString &rExpand ) const;
@@ -110,7 +112,7 @@ public:
 class SwHiddenPortion : public SwFieldPortion
 {
 public:
-    SwHiddenPortion( const OUString &rExpand, SwFont *pFntL = nullptr )
+    inline SwHiddenPortion( const OUString &rExpand, SwFont *pFntL = nullptr )
          : SwFieldPortion( rExpand, pFntL )
         { SetLen(1); SetWhichPor( POR_HIDDEN ); }
     virtual void Paint( const SwTextPaintInfo &rInf ) const override;
@@ -176,7 +178,7 @@ public:
                      const bool bCenter,
                      const sal_uInt16 nMinDst,
                      const bool bLabelAlignmentPosAndSpaceModeActive );
-    virtual ~SwGrfNumPortion() override;
+    virtual ~SwGrfNumPortion();
     virtual void Paint( const SwTextPaintInfo &rInf ) const override;
     virtual bool Format( SwTextFormatInfo &rInf ) override;
 
@@ -185,14 +187,16 @@ public:
 
     void StopAnimation( OutputDevice* pOut );
 
-    bool IsAnimated() const { return bAnimated; }
-    void SetAnimated( bool bNew ) { bAnimated = bNew; }
-    void SetRelPos( SwTwips nNew ) { nYPos = nNew; }
-    void SetId( long nNew ) const
+    inline bool IsAnimated() const { return bAnimated; }
+    inline void SetAnimated( bool bNew ) { bAnimated = bNew; }
+    inline bool DontPaint() const { return bNoPaint; }
+    inline void SetNoPaint( bool bNew ) { bNoPaint = bNew; }
+    inline void SetRelPos( SwTwips nNew ) { nYPos = nNew; }
+    inline void SetId( long nNew ) const
         { const_cast<SwGrfNumPortion*>(this)->nId = nNew; }
-    SwTwips GetRelPos() const { return nYPos; }
-    SwTwips GetGrfHeight() const { return nGrfHeight; }
-    sal_Int16 GetOrient() const { return eOrient; }
+    inline SwTwips GetRelPos() const { return nYPos; }
+    inline SwTwips GetGrfHeight() const { return nGrfHeight; }
+    inline sal_Int16 GetOrient() const { return eOrient; }
 
     OUTPUT_OPERATOR_OVERRIDE
 };

@@ -27,7 +27,6 @@
 #include <com/sun/star/drawing/XDrawView.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/task/XStatusIndicatorFactory.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
 
 #include <com/sun/star/drawing/XDrawPage.hpp>
@@ -72,12 +71,12 @@ public:
     }
 
     // css::io::XOutputStream
-    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) override;
-    virtual void SAL_CALL flush(  ) override;
-    virtual void SAL_CALL closeOutput(  ) override;
+    virtual void SAL_CALL writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL flush(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeOutput(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 };
 
-void SAL_CALL OslOutputStreamWrapper::writeBytes( const css::uno::Sequence< sal_Int8 >& aData )
+void SAL_CALL OslOutputStreamWrapper::writeBytes( const css::uno::Sequence< sal_Int8 >& aData ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     sal_uInt64 uBytesToWrite = aData.getLength();
     sal_uInt64 uBytesWritten = 0;
@@ -111,11 +110,11 @@ void SAL_CALL OslOutputStreamWrapper::writeBytes( const css::uno::Sequence< sal_
     }
 }
 
-void SAL_CALL OslOutputStreamWrapper::flush(  )
+void SAL_CALL OslOutputStreamWrapper::flush(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL OslOutputStreamWrapper::closeOutput(  )
+void SAL_CALL OslOutputStreamWrapper::closeOutput(  ) throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     osl::File::RC eRC = mrFile.close();
 
@@ -155,23 +154,23 @@ public:
     explicit FlashExportFilter( const Reference< XComponentContext > &rxContext);
 
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) override;
+    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) throw(RuntimeException, std::exception) override;
 
     bool ExportAsMultipleFiles( const Sequence< PropertyValue >& aDescriptor );
     bool ExportAsSingleFile( const Sequence< PropertyValue >& aDescriptor );
 
-    virtual void SAL_CALL cancel( ) override;
+    virtual void SAL_CALL cancel( ) throw (RuntimeException, std::exception) override;
 
     // XExporter
-    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) override;
+    virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()  throw(RuntimeException, std::exception) override;
 };
 
 FlashExportFilter::FlashExportFilter(const Reference< XComponentContext > &rxContext)
@@ -228,6 +227,7 @@ TYPE findPropertyValue(const Sequence< PropertyValue >& aPropertySequence, const
 }
 
 sal_Bool SAL_CALL FlashExportFilter::filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+    throw (RuntimeException, std::exception)
 {
     mxStatusIndicator = findPropertyValue<Reference<XStatusIndicator> >(aDescriptor, "StatusIndicator", mxStatusIndicator);
 
@@ -262,7 +262,12 @@ sal_Bool SAL_CALL FlashExportFilter::filter( const css::uno::Sequence< css::bean
 
                         if(xSelection.is())
                         {
-                            xSelection->getSelection() >>= mxSelectedShapes;
+                            Any aSelection;
+
+                            if(xSelection->getSelection() >>= aSelection)
+                            {
+                                aSelection >>= mxSelectedShapes;
+                            }
                         }
                     }
                 }
@@ -466,12 +471,14 @@ bool FlashExportFilter::ExportAsSingleFile(const Sequence< PropertyValue >& aDes
 
 
 void SAL_CALL FlashExportFilter::cancel(  )
+    throw (RuntimeException, std::exception)
 {
 }
 
 
 // XExporter
 void SAL_CALL FlashExportFilter::setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+    throw (css::lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     mxDoc = xDoc;
 }
@@ -479,37 +486,44 @@ void SAL_CALL FlashExportFilter::setSourceDocument( const css::uno::Reference< c
 
 // XInitialization
 void SAL_CALL FlashExportFilter::initialize( const css::uno::Sequence< css::uno::Any >& /* aArguments */ )
+    throw (Exception, RuntimeException, std::exception)
 {
 }
 
 OUString FlashExportFilter_getImplementationName ()
+    throw (RuntimeException)
 {
     return OUString ( "com.sun.star.comp.Impress.FlashExportFilter" );
 }
 
 Sequence< OUString > SAL_CALL FlashExportFilter_getSupportedServiceNames(  )
+    throw (RuntimeException)
 {
     Sequence<OUString> aRet { "com.sun.star.document.ExportFilter" };
     return aRet;
 }
 
 Reference< XInterface > SAL_CALL FlashExportFilter_createInstance( const Reference< XMultiServiceFactory > & rSMgr)
+    throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new FlashExportFilter( comphelper::getComponentContext(rSMgr) ));
 }
 
 // XServiceInfo
 OUString SAL_CALL FlashExportFilter::getImplementationName(  )
+    throw (RuntimeException, std::exception)
 {
     return FlashExportFilter_getImplementationName();
 }
 
 sal_Bool SAL_CALL FlashExportFilter::supportsService( const OUString& rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService( this, rServiceName );
 }
 
 css::uno::Sequence< OUString > SAL_CALL FlashExportFilter::getSupportedServiceNames(  )
+    throw (RuntimeException, std::exception)
 {
     return FlashExportFilter_getSupportedServiceNames();
 }

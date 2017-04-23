@@ -29,7 +29,7 @@ class EnhancedCustomShapeFontWork
 
     public:
 
-        static css::uno::Reference < css::i18n::XBreakIterator > const & GetBreakIterator();
+        static css::uno::Reference < css::i18n::XBreakIterator > GetBreakIterator();
         static SdrObject* CreateFontWork( const SdrObject* pShape2d, const SdrObject* pCustomShape );
 };
 

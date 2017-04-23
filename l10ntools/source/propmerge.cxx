@@ -166,10 +166,10 @@ void PropParser::Merge( const OString &rMergeSrc, const OString &rDestinationFil
         return;
     }
 
-    std::unique_ptr<MergeDataFile> pMergeDataFile;
+    MergeDataFile* pMergeDataFile = nullptr;
     if( m_sLang != "qtz" )
     {
-        pMergeDataFile.reset( new MergeDataFile( rMergeSrc, m_sSource, false, false ) );
+        pMergeDataFile = new MergeDataFile( rMergeSrc, m_sSource, false, false );
 
         const std::vector<OString> vLanguages = pMergeDataFile->GetLanguages();
         if( vLanguages.size()>=1 && vLanguages[0] != m_sLang )
@@ -179,6 +179,7 @@ void PropParser::Merge( const OString &rMergeSrc, const OString &rDestinationFil
                     " Mergedata file: ")
                 << m_sLang.getStr() << " - "
                 << vLanguages[0].getStr() << std::endl;
+            delete pMergeDataFile;
             return;
         }
     }
@@ -204,7 +205,7 @@ void PropParser::Merge( const OString &rMergeSrc, const OString &rDestinationFil
                 MergeEntrys* pEntrys = pMergeDataFile->GetMergeEntrys( &aResData );
                 if( pEntrys )
                 {
-                    pEntrys->GetText( sNewText, StringType::Text, m_sLang );
+                    pEntrys->GetText( sNewText, STRING_TYP_TEXT, m_sLang );
                 }
             }
             if( !sNewText.isEmpty() )
@@ -224,6 +225,7 @@ void PropParser::Merge( const OString &rMergeSrc, const OString &rDestinationFil
         }
     }
     aDestination.close();
+    delete pMergeDataFile;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

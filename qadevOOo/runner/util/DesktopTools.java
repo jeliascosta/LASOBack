@@ -58,34 +58,36 @@ public class DesktopTools
      */
     private static XComponentLoader getCLoader(XMultiServiceFactory xMSF)
     {
+        XDesktop oDesktop = UnoRuntime.queryInterface(
+                XDesktop.class, createDesktop(xMSF));
+
         XComponentLoader oCLoader = UnoRuntime.queryInterface(
-                XComponentLoader.class, createDesktop(xMSF));
+                XComponentLoader.class, oDesktop);
 
         return oCLoader;
-    }
+    } // finish getCLoader
 
     /**
      * Creates an Instance of the Desktop service
      *
      * @param xMSF the MultiServiceFactory
-     * @return the gained XDesktop object
+     * @return the gained Object
      */
-    public static XDesktop createDesktop(XMultiServiceFactory xMSF)
+    public static Object createDesktop(XMultiServiceFactory xMSF)
     {
-        XDesktop xDesktop;
+        Object oInterface;
 
         try
         {
-            xDesktop = UnoRuntime.queryInterface(
-                XDesktop.class, xMSF.createInstance("com.sun.star.comp.framework.Desktop"));
+            oInterface = xMSF.createInstance("com.sun.star.comp.framework.Desktop");
         }
         catch (com.sun.star.uno.Exception e)
         {
             throw new IllegalArgumentException("Desktop Service not available", e);
         }
 
-        return xDesktop;
-    }
+        return oInterface;
+    } //finish createDesktop
 
     /**
      * returns a XEnumeration containing all components containing on the desktop
@@ -94,7 +96,9 @@ public class DesktopTools
      */
     public static XEnumeration getAllComponents(XMultiServiceFactory xMSF)
     {
-        return createDesktop(xMSF).getComponents().createEnumeration();
+        XDesktop xDesktop = UnoRuntime.queryInterface(
+                XDesktop.class, createDesktop(xMSF));
+        return xDesktop.getComponents().createEnumeration();
     }
 
 
@@ -106,7 +110,9 @@ public class DesktopTools
      */
     public static XFrame getCurrentFrame(XMultiServiceFactory xMSF)
     {
-        return createDesktop(xMSF).getCurrentFrame();
+        XDesktop xDesktop = UnoRuntime.queryInterface(
+                XDesktop.class, createDesktop(xMSF));
+        return xDesktop.getCurrentFrame();
     }
 
     /**
@@ -114,9 +120,16 @@ public class DesktopTools
      * @param xMSF the MultiServiceFactory
      * @return returns an Array of document kinds like ["swriter"]
      */
+    /**
+     * returns an array of all open documents
+     * @param xMSF the XMultiSerivceFactory
+     * @return returns an array of all open documents
+     */
     public static Object[] getAllOpenDocuments(XMultiServiceFactory xMSF)
     {
         ArrayList<XComponent> components = new ArrayList<XComponent>();
+        UnoRuntime.queryInterface(
+                XDesktop.class, createDesktop(xMSF));
 
         XEnumeration allComp = getAllComponents(xMSF);
 
@@ -221,7 +234,7 @@ public class DesktopTools
         }
 
         return oDoc;
-    }
+    } //finish openNewDoc
 
     /**
      * loads a document of from a given url
@@ -250,7 +263,7 @@ public class DesktopTools
 
         bringWindowToFront(oDoc);
         return oDoc;
-    }
+    } //finish openNewDoc
 
     /**
      * closes a given document

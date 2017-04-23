@@ -26,11 +26,7 @@
 
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/configuration/theDefaultProvider.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
-#include <com/sun/star/frame/TerminationVetoException.hpp>
-#include <com/sun/star/ucb/CommandAbortedException.hpp>
-#include <com/sun/star/ucb/CommandFailedException.hpp>
 
 #include "dp_gui_dialog2.hxx"
 #include "dp_gui_extensioncmdqueue.hxx"
@@ -58,8 +54,7 @@ TheExtensionManager::TheExtensionManager( const uno::Reference< awt::XWindow > &
     m_xParent( xParent ),
     m_pExtMgrDialog( nullptr ),
     m_pUpdReqDialog( nullptr ),
-    m_pExecuteCmdQueue( nullptr ),
-    m_bModified(false)
+    m_pExecuteCmdQueue( nullptr )
 {
     m_xExtensionManager = deployment::ExtensionManager::get( xContext );
     m_xExtensionManager->addModifyListener( this );
@@ -67,7 +62,7 @@ TheExtensionManager::TheExtensionManager( const uno::Reference< awt::XWindow > &
     uno::Reference< lang::XMultiServiceFactory > xConfig(
         configuration::theDefaultProvider::get(xContext));
     uno::Any args[1];
-    beans::PropertyValue aValue( "nodepath", 0, uno::Any( OUString("/org.openoffice.Office.OptionsDialog/Nodes") ),
+    beans::PropertyValue aValue( OUString("nodepath"), 0, uno::Any( OUString("/org.openoffice.Office.OptionsDialog/Nodes") ),
                                  beans::PropertyState_DIRECT_VALUE );
     args[0] <<= aValue;
     m_xNameAccessNodes.set(
@@ -77,7 +72,7 @@ TheExtensionManager::TheExtensionManager( const uno::Reference< awt::XWindow > &
 
     // get the 'get more extensions here' url
     uno::Reference< container::XNameAccess > xNameAccessRepositories;
-    beans::PropertyValue aValue2( "nodepath", 0, uno::Any( OUString("/org.openoffice.Office.ExtensionManager/ExtensionRepositories") ),
+    beans::PropertyValue aValue2( OUString("nodepath"), 0, uno::Any( OUString("/org.openoffice.Office.ExtensionManager/ExtensionRepositories") ),
                                   beans::PropertyState_DIRECT_VALUE );
     args[0] <<= aValue2;
     xNameAccessRepositories.set(
@@ -416,6 +411,7 @@ bool TheExtensionManager::supportsOptions( const uno::Reference< deployment::XPa
 
 // XEventListener
 void TheExtensionManager::disposing( lang::EventObject const & rEvt )
+    throw ( uno::RuntimeException, std::exception )
 {
     bool shutDown = (rEvt.Source == m_xDesktop);
 
@@ -440,6 +436,7 @@ void TheExtensionManager::disposing( lang::EventObject const & rEvt )
 
 // XTerminateListener
 void TheExtensionManager::queryTermination( ::lang::EventObject const & )
+    throw ( frame::TerminationVetoException, uno::RuntimeException, std::exception )
 {
     DialogHelper *pDialogHelper = getDialogHelper();
 
@@ -461,6 +458,7 @@ void TheExtensionManager::queryTermination( ::lang::EventObject const & )
 
 
 void TheExtensionManager::notifyTermination( ::lang::EventObject const & rEvt )
+    throw ( uno::RuntimeException, std::exception )
 {
     disposing( rEvt );
 }
@@ -468,8 +466,8 @@ void TheExtensionManager::notifyTermination( ::lang::EventObject const & rEvt )
 
 // XModifyListener
 void TheExtensionManager::modified( ::lang::EventObject const & /*rEvt*/ )
+    throw ( uno::RuntimeException, std::exception )
 {
-    m_bModified = true;
     getDialogHelper()->prepareChecking();
     createPackageList();
     getDialogHelper()->checkEntries();

@@ -22,8 +22,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
-#include <com/sun/star/io/IOException.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/TempFile.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/io/XOutputStream.hpp>
@@ -60,20 +58,19 @@ public:
                             const Reference< XComponentContext >& rxContext,
                             const Reference< XNameContainer >& rxStorage,
                             const OUString& rElementName );
+    virtual             ~OleOutputStream();
 
-    virtual void SAL_CALL seek( sal_Int64 nPos ) override;
-    virtual sal_Int64 SAL_CALL getPosition() override;
-    virtual sal_Int64 SAL_CALL getLength() override;
+    virtual void SAL_CALL seek( sal_Int64 nPos ) throw( IllegalArgumentException, IOException, RuntimeException, std::exception ) override;
+    virtual sal_Int64 SAL_CALL getPosition() throw( IOException, RuntimeException, std::exception ) override;
+    virtual sal_Int64 SAL_CALL getLength() throw( IOException, RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL writeBytes( const Sequence< sal_Int8 >& rData ) override;
-    virtual void SAL_CALL flush() override;
-    virtual void SAL_CALL closeOutput() override;
+    virtual void SAL_CALL writeBytes( const Sequence< sal_Int8 >& rData ) throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception ) override;
+    virtual void SAL_CALL flush() throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception ) override;
+    virtual void SAL_CALL closeOutput() throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception ) override;
 
 private:
-    /// @throws IOException
-    void                ensureSeekable() const;
-    /// @throws NotConnectedException
-    void                ensureConnected() const;
+    void                ensureSeekable() const throw( IOException );
+    void                ensureConnected() const throw( NotConnectedException );
 
 private:
     Reference< XNameContainer > mxStorage;
@@ -99,37 +96,41 @@ OleOutputStream::OleOutputStream( const Reference< XComponentContext >& rxContex
     }
 }
 
-void SAL_CALL OleOutputStream::seek( sal_Int64 nPos )
+OleOutputStream::~OleOutputStream()
+{
+}
+
+void SAL_CALL OleOutputStream::seek( sal_Int64 nPos ) throw( IllegalArgumentException, IOException, RuntimeException, std::exception )
 {
     ensureSeekable();
     mxSeekable->seek( nPos );
 }
 
-sal_Int64 SAL_CALL OleOutputStream::getPosition()
+sal_Int64 SAL_CALL OleOutputStream::getPosition() throw( IOException, RuntimeException, std::exception )
 {
     ensureSeekable();
     return mxSeekable->getPosition();
 }
 
-sal_Int64 SAL_CALL OleOutputStream::getLength()
+sal_Int64 SAL_CALL OleOutputStream::getLength() throw( IOException, RuntimeException, std::exception )
 {
     ensureSeekable();
     return mxSeekable->getLength();
 }
 
-void SAL_CALL OleOutputStream::writeBytes( const Sequence< sal_Int8 >& rData )
+void SAL_CALL OleOutputStream::writeBytes( const Sequence< sal_Int8 >& rData ) throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception )
 {
     ensureConnected();
     mxOutStrm->writeBytes( rData );
 }
 
-void SAL_CALL OleOutputStream::flush()
+void SAL_CALL OleOutputStream::flush() throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception )
 {
     ensureConnected();
     mxOutStrm->flush();
 }
 
-void SAL_CALL OleOutputStream::closeOutput()
+void SAL_CALL OleOutputStream::closeOutput() throw( NotConnectedException, BufferSizeExceededException, IOException, RuntimeException, std::exception )
 {
     ensureConnected();
     ensureSeekable();
@@ -147,13 +148,13 @@ void SAL_CALL OleOutputStream::closeOutput()
         throw IOException();
 }
 
-void OleOutputStream::ensureSeekable() const
+void OleOutputStream::ensureSeekable() const throw( IOException )
 {
     if( !mxSeekable.is() )
         throw IOException();
 }
 
-void OleOutputStream::ensureConnected() const
+void OleOutputStream::ensureConnected() const throw( NotConnectedException )
 {
     if( !mxOutStrm.is() )
         throw NotConnectedException();

@@ -33,7 +33,7 @@
 ScMyCellInfo::ScMyCellInfo(
     const ScCellValue& rCell, const OUString& rFormulaAddress, const OUString& rFormula,
     const formula::FormulaGrammar::Grammar eTempGrammar, const OUString& rInputString,
-    const double& rValue, const sal_uInt16 nTempType, const ScMatrixMode nTempMatrixFlag, const sal_Int32 nTempMatrixCols,
+    const double& rValue, const sal_uInt16 nTempType, const sal_uInt8 nTempMatrixFlag, const sal_Int32 nTempMatrixCols,
     const sal_Int32 nTempMatrixRows ) :
     maCell(rCell),
     sFormulaAddress(rFormulaAddress),
@@ -86,6 +86,7 @@ ScMyDeleted::ScMyDeleted()
 
 ScMyDeleted::~ScMyDeleted()
 {
+    delete pCellInfo;
 }
 
 ScMyGenerated::ScMyGenerated(ScMyCellInfo* pTempCellInfo, const ScBigRange& aTempBigRange)
@@ -97,6 +98,7 @@ ScMyGenerated::ScMyGenerated(ScMyCellInfo* pTempCellInfo, const ScBigRange& aTem
 
 ScMyGenerated::~ScMyGenerated()
 {
+    delete pCellInfo;
 }
 
 ScMyBaseAction::ScMyBaseAction(const ScChangeActionType nTempActionType)
@@ -134,6 +136,7 @@ ScMyDelAction::ScMyDelAction(const ScChangeActionType nActionTypeP)
 
 ScMyDelAction::~ScMyDelAction()
 {
+    delete pInsCutOff;
 }
 
 ScMyMoveAction::ScMyMoveAction()
@@ -145,6 +148,7 @@ ScMyMoveAction::ScMyMoveAction()
 
 ScMyMoveAction::~ScMyMoveAction()
 {
+    delete pMoveRanges;
 }
 
 ScMyContentAction::ScMyContentAction()
@@ -155,6 +159,7 @@ ScMyContentAction::ScMyContentAction()
 
 ScMyContentAction::~ScMyContentAction()
 {
+    delete pCellInfo;
 }
 
 ScMyRejAction::ScMyRejAction()
@@ -258,7 +263,7 @@ void ScXMLChangeTrackingImportHelper::SetPreviousChange(const sal_uInt32 nPrevio
     OSL_ENSURE(pCurrentAction->nActionType == SC_CAT_CONTENT, "wrong action type");
     ScMyContentAction* pAction = static_cast<ScMyContentAction*>(pCurrentAction);
     pAction->nPreviousAction = nPreviousAction;
-    pAction->pCellInfo.reset( pCellInfo );
+    pAction->pCellInfo = pCellInfo;
 }
 
 void ScXMLChangeTrackingImportHelper::SetPosition(const sal_Int32 nPosition, const sal_Int32 nCount, const sal_Int32 nTable)
@@ -308,7 +313,7 @@ void ScXMLChangeTrackingImportHelper::AddDeleted(const sal_uInt32 nID, ScMyCellI
 {
     ScMyDeleted* pDeleted = new ScMyDeleted();
     pDeleted->nID = nID;
-    pDeleted->pCellInfo.reset(pCellInfo);
+    pDeleted->pCellInfo = pCellInfo;
     pCurrentAction->aDeletedList.push_front(pDeleted);
 }
 
@@ -328,7 +333,7 @@ void ScXMLChangeTrackingImportHelper::SetInsertionCutOff(const sal_uInt32 nID, c
     if ((pCurrentAction->nActionType == SC_CAT_DELETE_COLS) ||
         (pCurrentAction->nActionType == SC_CAT_DELETE_ROWS))
     {
-        static_cast<ScMyDelAction*>(pCurrentAction)->pInsCutOff.reset( new ScMyInsertionCutOff(nID, nPosition) );
+        static_cast<ScMyDelAction*>(pCurrentAction)->pInsCutOff = new ScMyInsertionCutOff(nID, nPosition);
     }
     else
     {
@@ -353,7 +358,7 @@ void ScXMLChangeTrackingImportHelper::SetMoveRanges(const ScBigRange& aSourceRan
 {
     if (pCurrentAction->nActionType == SC_CAT_MOVE)
     {
-         static_cast<ScMyMoveAction*>(pCurrentAction)->pMoveRanges.reset( new ScMyMoveRanges(aSourceRange, aTargetRange) );
+         static_cast<ScMyMoveAction*>(pCurrentAction)->pMoveRanges = new ScMyMoveRanges(aSourceRange, aTargetRange);
     }
     else
     {
@@ -744,7 +749,7 @@ void ScXMLChangeTrackingImportHelper::SetNewCell(ScMyContentAction* pAction)
                         }
                         else
                         {
-                            ScMatrixMode nMatrixFlag = aCell.mpFormula->GetMatrixFlag();
+                            sal_uInt8 nMatrixFlag = aCell.mpFormula->GetMatrixFlag();
                             OUString sFormula;
                             // With GRAM_ODFF reference detection is faster on compilation.
                             /* FIXME: new cell should be created with a clone
@@ -756,7 +761,7 @@ void ScXMLChangeTrackingImportHelper::SetNewCell(ScMyContentAction* pAction)
                             // FIXME: adjust ScFormulaCell::GetFormula(), so that the right formula string
                             //        is returned and no further string handling is necessary
                             OUString sFormula2;
-                            if ( nMatrixFlag != ScMatrixMode::NONE )
+                            if ( nMatrixFlag != MM_NONE )
                             {
                                 sFormula2 = sFormula.copy( 2, sFormula.getLength() - 3 );
                             }
@@ -767,7 +772,7 @@ void ScXMLChangeTrackingImportHelper::SetNewCell(ScMyContentAction* pAction)
 
                             aNewCell.meType = CELLTYPE_FORMULA;
                             aNewCell.mpFormula = new ScFormulaCell(pDoc, aAddress, sFormula2,formula::FormulaGrammar::GRAM_ODFF, nMatrixFlag);
-                            if (nMatrixFlag == ScMatrixMode::Formula)
+                            if (nMatrixFlag == MM_FORMULA)
                             {
                                 SCCOL nCols;
                                 SCROW nRows;

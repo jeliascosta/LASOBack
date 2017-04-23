@@ -120,16 +120,16 @@ public:
     void readDefaults( bool supportPrintable = true, bool supportVisible = true );
     void readStringAttr(
         OUString const & rPropName, OUString const & rAttrName );
-    void readDoubleAttr(
+    inline void readDoubleAttr(
         OUString const & rPropName, OUString const & rAttrName )
         { read<double>( rPropName, rAttrName ); }
-    void readLongAttr(
+    inline void readLongAttr(
         OUString const & rPropName, OUString const & rAttrName,
         bool forceAttribute = false )
         { read<sal_Int32>( rPropName, rAttrName, forceAttribute ); }
     void readHexLongAttr(
         OUString const & rPropName, OUString const & rAttrName );
-    void readShortAttr(
+    inline void readShortAttr(
         OUString const & rPropName, OUString const & rAttrName )
         { read<sal_Int32>( rPropName, rAttrName ); }
     inline void readBoolAttr(
@@ -165,7 +165,7 @@ public:
         OUString const & rPropName, OUString const & rAttrName );
     void readDataAwareAttr(
         OUString const & rAttrName );
-    void addBoolAttr(
+    inline void addBoolAttr(
         OUString const & rAttrName, bool bValue )
         { addAttribute( rAttrName, OUString::boolean(bValue) ); }
     void addNumberFormatAttr(

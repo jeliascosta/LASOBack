@@ -46,7 +46,7 @@ public:
                              const Depth inDepth,
                              std::vector< DAVResourceInfo > & ioResInfo );
 
-    virtual ~SerfPropFindReqProcImpl() override;
+    virtual ~SerfPropFindReqProcImpl();
 
     virtual
     serf_bucket_t * createSerfRequestBucket( serf_request_t * inSerfRequest ) override;
@@ -67,7 +67,7 @@ private:
     std::vector< DAVResourceInfo > * mpResInfo;
 
     const bool mbOnlyPropertyNames;
-    rtl::Reference< SerfInputStream > xInputStream;
+    css::uno::Reference< SerfInputStream > xInputStream;
 };
 
 } // namespace http_dav_ucp

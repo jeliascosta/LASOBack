@@ -27,7 +27,6 @@
 #include <com/sun/star/container/XContainer.hpp>
 #include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/Locale.hpp>
-#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <comphelper/uno3.hxx>
 #include <comphelper/interfacecontainer2.hxx>
 
@@ -36,7 +35,7 @@ namespace reportdesign
 {
     struct OFormatProperties
     {
-        css::style::ParagraphAdjust                         nAlign;
+        ::sal_Int16                                         nAlign;
         css::awt::FontDescriptor                            aFontDescriptor;
         css::awt::FontDescriptor                            aAsianFontDescriptor;
         css::awt::FontDescriptor                            aComplexFontDescriptor;
@@ -97,40 +96,22 @@ namespace reportdesign
         {}
 
         // XContainer
-        /// @throws css::uno::RuntimeException
-        void addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener );
-        /// @throws css::uno::RuntimeException
-        void removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener );
+        void addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException);
+        void removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException);
 
         // XElementAccess
-        /// @throws css::uno::RuntimeException
-        bool hasElements(  );
+        bool hasElements(  ) throw (css::uno::RuntimeException);
 
         // XIndexReplace
-        /// @throws css::lang::IllegalArgumentException
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::lang::WrappedTargetException
-        /// @throws css::uno::RuntimeException
-        void replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element );
+        void replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException);
 
         // XIndexContainer
-        /// @throws css::lang::IllegalArgumentException
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::lang::WrappedTargetException
-        /// @throws css::uno::RuntimeException
-        void insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element );
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::lang::WrappedTargetException
-        /// @throws css::uno::RuntimeException
-        void removeByIndex( ::sal_Int32 Index );
+        void insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException);
+        void removeByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException);
 
         // XIndexAccess
-        /// @throws css::uno::RuntimeException
-        ::sal_Int32 getCount(  );
-        /// @throws css::lang::IndexOutOfBoundsException
-        /// @throws css::lang::WrappedTargetException
-        /// @throws css::uno::RuntimeException
-        css::uno::Any getByIndex( ::sal_Int32 Index );
+        ::sal_Int32 getCount(  ) throw (css::uno::RuntimeException);
+        css::uno::Any getByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException);
 
         static bool isInterfaceForbidden(const css::uno::Type& _rType);
     };

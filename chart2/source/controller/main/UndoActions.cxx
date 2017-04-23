@@ -41,6 +41,7 @@ namespace impl
     using ::com::sun::star::uno::RuntimeException;
     using ::com::sun::star::frame::XModel;
     using ::com::sun::star::lang::DisposedException;
+    using ::com::sun::star::document::UndoFailedException;
 
 UndoElement::UndoElement( const OUString& i_actionString, const Reference< XModel >& i_documentModel, const std::shared_ptr< ChartModelClone >& i_modelClone )
     :UndoElement_MBase()
@@ -63,7 +64,7 @@ void SAL_CALL UndoElement::disposing()
     m_xDocumentModel.clear();
 }
 
-OUString SAL_CALL UndoElement::getTitle()
+OUString SAL_CALL UndoElement::getTitle() throw (RuntimeException, std::exception)
 {
     return m_sActionString;
 }
@@ -78,12 +79,12 @@ void UndoElement::impl_toggleModelState()
     m_pModelClone = pNewClone;
 }
 
-void SAL_CALL UndoElement::undo(  )
+void SAL_CALL UndoElement::undo(  ) throw (UndoFailedException, RuntimeException, std::exception)
 {
     impl_toggleModelState();
 }
 
-void SAL_CALL UndoElement::redo(  )
+void SAL_CALL UndoElement::redo(  ) throw (UndoFailedException, RuntimeException, std::exception)
 {
     impl_toggleModelState();
 }
@@ -101,21 +102,21 @@ ShapeUndoElement::~ShapeUndoElement()
 {
 }
 
-OUString SAL_CALL ShapeUndoElement::getTitle()
+OUString SAL_CALL ShapeUndoElement::getTitle() throw (RuntimeException, std::exception)
 {
     if ( !m_pAction )
         throw DisposedException( OUString(), *this );
     return m_pAction->GetComment();
 }
 
-void SAL_CALL ShapeUndoElement::undo(  )
+void SAL_CALL ShapeUndoElement::undo(  ) throw (UndoFailedException, RuntimeException, std::exception)
 {
     if ( !m_pAction )
         throw DisposedException( OUString(), *this );
     m_pAction->Undo();
 }
 
-void SAL_CALL ShapeUndoElement::redo(  )
+void SAL_CALL ShapeUndoElement::redo(  ) throw (UndoFailedException, RuntimeException, std::exception)
 {
     if ( !m_pAction )
         throw DisposedException( OUString(), *this );

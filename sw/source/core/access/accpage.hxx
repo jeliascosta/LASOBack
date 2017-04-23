@@ -46,28 +46,31 @@ protected:
     virtual void InvalidateCursorPos_() override;
     virtual void InvalidateFocus_() override;
 
-    virtual ~SwAccessiblePage() override;
+    virtual ~SwAccessiblePage();
 
 public:
     // convenience constructor to avoid typecast;
     // may only be called with SwPageFrame argument
-    SwAccessiblePage(std::shared_ptr<SwAccessibleMap> const& pInitMap,
-                     const SwFrame* pFrame);
+    SwAccessiblePage( SwAccessibleMap* pInitMap, const SwFrame* pFrame );
 
     // XAccessibleContext methods that need to be overridden
 
-    virtual OUString SAL_CALL getAccessibleDescription() override;
+    virtual OUString SAL_CALL getAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL supportsService (
-        const OUString& sServiceName) override;
+        const OUString& sServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     virtual bool HasCursor() override;   // required by map to remember that object
 };

@@ -55,7 +55,7 @@ namespace xmloff
             if (pEvents->ScriptType == EVENT_STARBASIC)
             {   // for StarBasic, the library name is part of the ScriptCode
                 sal_Int32 nPrefixLen = sLocalMacroName.indexOf( ':' );
-                SAL_WARN_IF( 0 > nPrefixLen, "xmloff", "OEventDescriptorMapper::OEventDescriptorMapper: invalid script code prefix!" );
+                DBG_ASSERT( 0 <= nPrefixLen, "OEventDescriptorMapper::OEventDescriptorMapper: invalid script code prefix!" );
                 if ( 0 <= nPrefixLen )
                 {
                     // the export handler for StarBasic expects "StarOffice", not "application" for application modules ...
@@ -88,13 +88,13 @@ namespace xmloff
         }
     }
 
-    void SAL_CALL OEventDescriptorMapper::replaceByName( const OUString&, const Any& )
+    void SAL_CALL OEventDescriptorMapper::replaceByName( const OUString&, const Any& ) throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
     {
         throw IllegalArgumentException(
             "replacing is not implemented for this wrapper class.", static_cast< ::cppu::OWeakObject* >(this), 1);
     }
 
-    Any SAL_CALL OEventDescriptorMapper::getByName( const OUString& _rName )
+    Any SAL_CALL OEventDescriptorMapper::getByName( const OUString& _rName ) throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
     {
         MapString2PropertyValueSequence::const_iterator aPos = m_aMappedEvents.find(_rName);
         if (m_aMappedEvents.end() == aPos)
@@ -105,23 +105,23 @@ namespace xmloff
         return makeAny(aPos->second);
     }
 
-    Sequence< OUString > SAL_CALL OEventDescriptorMapper::getElementNames(  )
+    Sequence< OUString > SAL_CALL OEventDescriptorMapper::getElementNames(  ) throw(RuntimeException, std::exception)
     {
         return comphelper::mapKeysToSequence(m_aMappedEvents);
     }
 
-    sal_Bool SAL_CALL OEventDescriptorMapper::hasByName( const OUString& _rName )
+    sal_Bool SAL_CALL OEventDescriptorMapper::hasByName( const OUString& _rName ) throw(RuntimeException, std::exception)
     {
         MapString2PropertyValueSequence::const_iterator aPos = m_aMappedEvents.find(_rName);
         return m_aMappedEvents.end() != aPos;
     }
 
-    Type SAL_CALL OEventDescriptorMapper::getElementType(  )
+    Type SAL_CALL OEventDescriptorMapper::getElementType(  ) throw(RuntimeException, std::exception)
     {
         return ::cppu::UnoType<PropertyValue>::get();
     }
 
-    sal_Bool SAL_CALL OEventDescriptorMapper::hasElements(  )
+    sal_Bool SAL_CALL OEventDescriptorMapper::hasElements(  ) throw(RuntimeException, std::exception)
     {
         return !m_aMappedEvents.empty();
     }

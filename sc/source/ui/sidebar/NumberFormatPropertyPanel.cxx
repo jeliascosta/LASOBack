@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include "NumberFormatPropertyPanel.hxx"
 #include "sc.hrc"
@@ -50,10 +51,7 @@ NumberFormatPropertyPanel::NumberFormatPropertyPanel(
 {
     get(mpLbCategory,     "category");
     get(mpTBCategory,     "numberformat");
-    get(mpFtDecimals,     "decimalplaceslabel");
     get(mpEdDecimals,     "decimalplaces");
-    get(mpFtDenominator,  "denominatorplaceslabel");
-    get(mpEdDenominator,  "denominatorplaces");
     get(mpEdLeadZeroes,   "leadingzeroes");
     get(mpBtnNegRed,      "negativenumbersred");
     get(mpBtnThousand,    "thousandseparator");
@@ -71,10 +69,7 @@ void NumberFormatPropertyPanel::dispose()
 {
     mpLbCategory.clear();
     mpTBCategory.clear();
-    mpFtDecimals.clear();
     mpEdDecimals.clear();
-    mpFtDenominator.clear();
-    mpEdDenominator.clear();
     mpEdLeadZeroes.clear();
     mpBtnNegRed.clear();
     mpBtnThousand.clear();
@@ -90,20 +85,24 @@ void NumberFormatPropertyPanel::Initialize()
 {
     mpLbCategory->SetSelectHdl ( LINK(this, NumberFormatPropertyPanel, NumFormatSelectHdl) );
     mpLbCategory->SelectEntryPos(0);
+    mpLbCategory->SetAccessibleName("Category");
     mpLbCategory->SetDropDownLineCount(mpLbCategory->GetEntryCount());
 
     Link<Edit&,void> aLink = LINK(this, NumberFormatPropertyPanel, NumFormatValueHdl);
 
     mpEdDecimals->SetModifyHdl( aLink );
-    mpEdDenominator->SetModifyHdl( aLink );
     mpEdLeadZeroes->SetModifyHdl( aLink );
+    mpEdDecimals->SetAccessibleName("Decimal Places");
+    mpEdLeadZeroes->SetAccessibleName("Leading Zeroes");
 
     mpBtnNegRed->SetClickHdl( LINK(this, NumberFormatPropertyPanel, NumFormatValueClickHdl) );
     mpBtnThousand->SetClickHdl( LINK(this, NumberFormatPropertyPanel, NumFormatValueClickHdl) );
     mpBtnEngineering->SetClickHdl( LINK(this, NumberFormatPropertyPanel, NumFormatValueClickHdl) );
+
+    mpTBCategory->SetAccessibleRelationLabeledBy(mpTBCategory);
 }
 
-IMPL_LINK( NumberFormatPropertyPanel, NumFormatSelectHdl, ListBox&, rBox, void )
+IMPL_LINK_TYPED( NumberFormatPropertyPanel, NumFormatSelectHdl, ListBox&, rBox, void )
 {
     const sal_Int32 nVal = rBox.GetSelectEntryPos();
     if( nVal != mnCategorySelected )
@@ -115,25 +114,23 @@ IMPL_LINK( NumberFormatPropertyPanel, NumFormatSelectHdl, ListBox&, rBox, void )
     }
 }
 
-IMPL_LINK_NOARG( NumberFormatPropertyPanel, NumFormatValueClickHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED( NumberFormatPropertyPanel, NumFormatValueClickHdl, Button*, void )
 {
     NumFormatValueHdl(*mpEdDecimals);
 }
-IMPL_LINK_NOARG( NumberFormatPropertyPanel, NumFormatValueHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( NumberFormatPropertyPanel, NumFormatValueHdl, Edit&, void )
 {
     OUString    aFormat;
     OUString    sBreak = ",";
     bool        bThousand   = ( mpBtnThousand->IsVisible() && mpBtnThousand->IsEnabled() && mpBtnThousand->IsChecked() )
                            || ( mpBtnEngineering->IsVisible() && mpBtnEngineering->IsEnabled() && mpBtnEngineering->IsChecked() );
     bool        bNegRed     =  mpBtnNegRed->IsEnabled() && mpBtnNegRed->IsChecked();
-    sal_uInt16  nPrecision  = (mpEdDecimals->IsEnabled() && mpEdDecimals->IsVisible())
-                            ? (sal_uInt16)mpEdDecimals->GetValue()
-                            : (mpEdDenominator->IsEnabled() && mpEdDenominator->IsVisible())
-                                ? (sal_uInt16)mpEdDenominator->GetValue()
-                                : (sal_uInt16)0;
+    sal_uInt16  nPrecision  = (mpEdDecimals->IsEnabled())
+        ? (sal_uInt16)mpEdDecimals->GetValue()
+        : (sal_uInt16)0;
     sal_uInt16  nLeadZeroes = (mpEdLeadZeroes->IsEnabled())
-                            ? (sal_uInt16)mpEdLeadZeroes->GetValue()
-                            : (sal_uInt16)0;
+        ? (sal_uInt16)mpEdLeadZeroes->GetValue()
+        : (sal_uInt16)0;
 
     OUString sThousand = OUString::number(static_cast<sal_Int32>(bThousand));
     OUString sNegRed = OUString::number(static_cast<sal_Int32>(bNegRed));
@@ -177,7 +174,7 @@ void NumberFormatPropertyPanel::DataChanged(
 }
 
 void NumberFormatPropertyPanel::HandleContextChange(
-    const vcl::EnumContext& rContext)
+    const ::sfx2::sidebar::EnumContext& rContext)
 {
     if(maContext == rContext)
     {
@@ -207,34 +204,44 @@ void NumberFormatPropertyPanel::NotifyItemUpdate(
                 mnCategorySelected = nVal;
                 mpLbCategory->SelectEntryPos(nVal);
                 if( nVal < 4 ||  // General, Number, Percent and Currency
-                    nVal == 6 || // scientific also
-                    nVal == 7 )  // fraction
+                    nVal == 6 )  // scientific also
                 {
-                    bool bIsScientific ( nVal == 6 );// For scientific, Thousand separator is replaced by Engineering notation
-                    bool bIsFraction ( nVal == 7 );  // For fraction, Decimal places is replaced by Denominator places
-                    mpBtnThousand->Show(!bIsScientific);
-                    mpBtnThousand->Enable(!bIsScientific);
-                    mpBtnEngineering->Show(bIsScientific);
-                    mpBtnEngineering->Enable(bIsScientific);
+                    if ( nVal == 6 ) // scientific
+                    {  // For scientific, Thousand separator is replaced by Engineering notation
+                        mpBtnThousand->Hide();
+                        mpBtnEngineering->Show();
+                        mpBtnEngineering->Enable();
+                    }
+                    else
+                    {
+                        mpBtnEngineering->Hide();
+                        mpBtnThousand->Show();
+                        mpBtnThousand->Enable();
+                    }
                     mpBtnNegRed->Enable();
-                    mpFtDenominator->Show(bIsFraction);
-                    mpEdDenominator->Show(bIsFraction);
-                    mpFtDenominator->Enable(bIsFraction);
-                    mpEdDenominator->Enable(bIsFraction);
-                    mpFtDecimals->Show(!bIsFraction);
-                    mpEdDecimals->Show(!bIsFraction);
-                    mpFtDecimals->Enable(!bIsFraction);
-                    mpEdDecimals->Enable(!bIsFraction);
+                    mpEdDecimals->Enable();
                     mpEdLeadZeroes->Enable();
                 }
                 else
-                    DisableControls();
+                {
+                    mpBtnEngineering->Hide();
+                    mpBtnThousand->Show();
+                    mpBtnThousand->Disable();
+                    mpBtnNegRed->Disable();
+                    mpEdDecimals->Disable();
+                    mpEdLeadZeroes->Disable();
+                }
             }
             else
             {
-                DisableControls();
+                mpBtnEngineering->Hide();
+                mpBtnThousand->Show();
                 mpLbCategory->SetNoSelection();
                 mnCategorySelected = 0;
+                mpBtnThousand->Disable();
+                mpBtnNegRed->Disable();
+                mpEdDecimals->Disable();
+                mpEdLeadZeroes->Disable();
             }
         }
         break;
@@ -275,31 +282,14 @@ void NumberFormatPropertyPanel::NotifyItemUpdate(
             mpBtnNegRed->Check(bNegRed);
             if ( mpLbCategory->GetSelectEntryPos() == 0 )
                 mpEdDecimals->SetText(""); // tdf#44399
-            else if ( mpEdDecimals->IsVisible() )
+            else
                 mpEdDecimals->SetValue(nPrecision);
-            else if ( mpEdDenominator->IsVisible() )
-                mpEdDenominator->SetValue(nPrecision);
             mpEdLeadZeroes->SetValue(nLeadZeroes);
         }
         break;
     default:
         break;
     }
-}
-
-void NumberFormatPropertyPanel::DisableControls()
-{
-    mpBtnEngineering->Hide();
-    mpBtnThousand->Show();
-    mpBtnThousand->Disable();
-    mpBtnNegRed->Disable();
-    mpFtDenominator->Hide();
-    mpEdDenominator->Hide();
-    mpFtDecimals->Show();
-    mpEdDecimals->Show();
-    mpFtDecimals->Disable();
-    mpEdDecimals->Disable();
-    mpEdLeadZeroes->Disable();
 }
 
 }} // end of namespace ::sc::sidebar

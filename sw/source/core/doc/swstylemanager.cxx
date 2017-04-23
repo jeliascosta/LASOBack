@@ -27,7 +27,7 @@
 #include <unordered_map>
 
 typedef std::unordered_map< OUString,
-                            std::shared_ptr<SfxItemSet>,
+                            StylePool::SfxItemSet_Pointer_t,
                             OUStringHash > SwStyleNameCache;
 
 class SwStyleCache
@@ -35,16 +35,16 @@ class SwStyleCache
     SwStyleNameCache mMap;
 public:
     SwStyleCache() {}
-    void addStyleName( const std::shared_ptr<SfxItemSet>& pStyle )
+    void addStyleName( const StylePool::SfxItemSet_Pointer_t& pStyle )
         { mMap[ StylePool::nameOf(pStyle) ] = pStyle; }
     void addCompletePool( StylePool& rPool );
-    std::shared_ptr<SfxItemSet> getByName( const OUString& rName ) { return mMap[rName]; }
+    StylePool::SfxItemSet_Pointer_t getByName( const OUString& rName ) { return mMap[rName]; }
 };
 
 void SwStyleCache::addCompletePool( StylePool& rPool )
 {
     IStylePoolIteratorAccess *pIter = rPool.createIterator();
-    std::shared_ptr<SfxItemSet> pStyle = pIter->getNext();
+    StylePool::SfxItemSet_Pointer_t pStyle = pIter->getNext();
     while( pStyle.get() )
     {
         OUString aName( StylePool::nameOf(pStyle) );
@@ -69,14 +69,14 @@ public:
           mpCharCache(nullptr),
           mpParaCache(nullptr)
     {}
-    virtual ~SwStyleManager() override;
-    virtual std::shared_ptr<SfxItemSet> getAutomaticStyle( const SfxItemSet& rSet,
+    virtual ~SwStyleManager();
+    virtual StylePool::SfxItemSet_Pointer_t getAutomaticStyle( const SfxItemSet& rSet,
                                                                IStyleAccess::SwAutoStyleFamily eFamily ) override;
-    virtual std::shared_ptr<SfxItemSet> getByName( const OUString& rName,
+    virtual StylePool::SfxItemSet_Pointer_t getByName( const OUString& rName,
                                                                IStyleAccess::SwAutoStyleFamily eFamily ) override;
-    virtual void getAllStyles( std::vector<std::shared_ptr<SfxItemSet>> &rStyles,
+    virtual void getAllStyles( std::vector<StylePool::SfxItemSet_Pointer_t> &rStyles,
                                                                IStyleAccess::SwAutoStyleFamily eFamily ) override;
-    virtual std::shared_ptr<SfxItemSet> cacheAutomaticStyle( const SfxItemSet& rSet,
+    virtual StylePool::SfxItemSet_Pointer_t cacheAutomaticStyle( const SfxItemSet& rSet,
                                                                SwAutoStyleFamily eFamily ) override;
     virtual void clearCaches() override;
 };
@@ -100,41 +100,34 @@ void SwStyleManager::clearCaches()
     mpParaCache = nullptr;
 }
 
-std::shared_ptr<SfxItemSet> SwStyleManager::getAutomaticStyle( const SfxItemSet& rSet,
+StylePool::SfxItemSet_Pointer_t SwStyleManager::getAutomaticStyle( const SfxItemSet& rSet,
                                                                    IStyleAccess::SwAutoStyleFamily eFamily )
 {
     StylePool& rAutoPool = eFamily == IStyleAccess::AUTO_STYLE_CHAR ? aAutoCharPool : aAutoParaPool;
     return rAutoPool.insertItemSet( rSet );
 }
 
-std::shared_ptr<SfxItemSet> SwStyleManager::cacheAutomaticStyle( const SfxItemSet& rSet,
+StylePool::SfxItemSet_Pointer_t SwStyleManager::cacheAutomaticStyle( const SfxItemSet& rSet,
                                                                    IStyleAccess::SwAutoStyleFamily eFamily )
 {
     StylePool& rAutoPool = eFamily == IStyleAccess::AUTO_STYLE_CHAR ? aAutoCharPool : aAutoParaPool;
-    std::shared_ptr<SfxItemSet> pStyle = rAutoPool.insertItemSet( rSet );
-    if (eFamily == IStyleAccess::AUTO_STYLE_CHAR)
-    {
-        if (!mpCharCache)
-            mpCharCache = new SwStyleCache();
-        mpCharCache->addStyleName( pStyle );
-    }
-    else
-    {
-        if (!mpParaCache)
-            mpParaCache = new SwStyleCache();
-        mpParaCache->addStyleName( pStyle );
-    }
+    StylePool::SfxItemSet_Pointer_t pStyle = rAutoPool.insertItemSet( rSet );
+    SwStyleCache* &rpCache = eFamily == IStyleAccess::AUTO_STYLE_CHAR ?
+                             mpCharCache : mpParaCache;
+    if( !rpCache )
+        rpCache = new SwStyleCache();
+    rpCache->addStyleName( pStyle );
     return pStyle;
 }
 
-std::shared_ptr<SfxItemSet> SwStyleManager::getByName( const OUString& rName,
+StylePool::SfxItemSet_Pointer_t SwStyleManager::getByName( const OUString& rName,
                                                            IStyleAccess::SwAutoStyleFamily eFamily )
 {
     StylePool& rAutoPool = eFamily == IStyleAccess::AUTO_STYLE_CHAR ? aAutoCharPool : aAutoParaPool;
     SwStyleCache* &rpCache = eFamily == IStyleAccess::AUTO_STYLE_CHAR ? mpCharCache : mpParaCache;
     if( !rpCache )
         rpCache = new SwStyleCache();
-    std::shared_ptr<SfxItemSet> pStyle = rpCache->getByName( rName );
+    StylePool::SfxItemSet_Pointer_t pStyle = rpCache->getByName( rName );
     if( !pStyle.get() )
     {
         // Ok, ok, it's allowed to ask for uncached styles (from UNO) but it should not be done
@@ -146,13 +139,13 @@ std::shared_ptr<SfxItemSet> SwStyleManager::getByName( const OUString& rName,
     return pStyle;
 }
 
-void SwStyleManager::getAllStyles( std::vector<std::shared_ptr<SfxItemSet>> &rStyles,
+void SwStyleManager::getAllStyles( std::vector<StylePool::SfxItemSet_Pointer_t> &rStyles,
                                    IStyleAccess::SwAutoStyleFamily eFamily )
 {
     StylePool& rAutoPool = eFamily == IStyleAccess::AUTO_STYLE_CHAR ? aAutoCharPool : aAutoParaPool;
     // setup <StylePool> iterator, which skips unused styles and ignorable items
     IStylePoolIteratorAccess *pIter = rAutoPool.createIterator( true, true );
-    std::shared_ptr<SfxItemSet> pStyle = pIter->getNext();
+    StylePool::SfxItemSet_Pointer_t pStyle = pIter->getNext();
     while( pStyle.get() )
     {
         rStyles.push_back( pStyle );

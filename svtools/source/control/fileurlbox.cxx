@@ -75,7 +75,7 @@ namespace svt
         return SvtURLBox::PreNotify(_rNEvt);
     }
 
-    bool FileURLBox::EventNotify( NotifyEvent& _rNEvt )
+    bool FileURLBox::Notify( NotifyEvent& _rNEvt )
     {
         if (_rNEvt.GetType() == MouseNotifyEvent::KEYINPUT)
         {
@@ -84,13 +84,13 @@ namespace svt
                 &&  ( IsInDropDown()                                             )
                 )
             {
-                bool bReturn = SvtURLBox::EventNotify(_rNEvt);
+                bool bReturn = SvtURLBox::Notify(_rNEvt);
                 DisplayURL( m_sPreservedText );
                 return bReturn;
             }
         }
 
-        return SvtURLBox::EventNotify(_rNEvt);
+        return SvtURLBox::Notify(_rNEvt);
     }
 
 }   // namespace svt

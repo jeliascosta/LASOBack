@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <com/sun/star/lang/XComponent.hpp>
+#include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/sheet/XFilterFormulaParser.hpp>
@@ -42,40 +43,45 @@ class OOXMLFormulaParser : public OOXMLFormulaParser_BASE
 {
 public:
     explicit            OOXMLFormulaParser();
-    virtual             ~OOXMLFormulaParser() override;
+    virtual             ~OOXMLFormulaParser();
 
     // com.sun.star.lang.XServiceInfo interface -------------------------------
 
     virtual ::rtl::OUString SAL_CALL
-                        getImplementationName() override;
+                        getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL
-                        supportsService( const ::rtl::OUString& rService ) override;
+                        supportsService( const ::rtl::OUString& rService )
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< ::rtl::OUString > SAL_CALL
-                        getSupportedServiceNames() override;
+                        getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.lang.XInitialization interface ----------------------------
 
     virtual void SAL_CALL initialize(
-                            const css::uno::Sequence< css::uno::Any >& rArgs ) override;
+                            const css::uno::Sequence< css::uno::Any >& rArgs )
+                            throw( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.sheet.XFilterFormulaParser interface ----------------------
 
     virtual ::rtl::OUString SAL_CALL
-                        getSupportedNamespace() override;
+                        getSupportedNamespace()
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     // com.sun.star.sheet.XFormulaParser interface ----------------------------
 
     virtual css::uno::Sequence< css::sheet::FormulaToken > SAL_CALL
                         parseFormula(
                             const ::rtl::OUString& rFormula,
-                            const css::table::CellAddress& rReferencePos ) override;
+                            const css::table::CellAddress& rReferencePos )
+                        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual ::rtl::OUString SAL_CALL
                         printFormula(
                             const css::uno::Sequence< css::sheet::FormulaToken >& rTokens,
-                            const css::table::CellAddress& rReferencePos ) override;
+                            const css::table::CellAddress& rReferencePos )
+                        throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     typedef std::shared_ptr< OOXMLFormulaParserImpl >   ParserImplRef;

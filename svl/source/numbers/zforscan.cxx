@@ -25,7 +25,8 @@
 #include <i18nlangtag/mslangid.hxx>
 #include <unotools/charclass.hxx>
 #include <unotools/localedatawrapper.hxx>
-#include <com/sun/star/i18n/NumberFormatCode.hpp>
+#include <unotools/numberformatcodewrapper.hxx>
+#include <rtl/instance.hxx>
 
 #include <svl/zforlist.hxx>
 #include <svl/zformat.hxx>
@@ -39,13 +40,40 @@ using namespace svt;
 const sal_Unicode cNoBreakSpace = 0xA0;
 const sal_Unicode cNarrowNoBreakSpace = 0x202F;
 
+namespace
+{
+    struct ImplEnglishColors
+    {
+        const OUString* operator()()
+        {
+            static const OUString aEnglishColors[NF_MAX_DEFAULT_COLORS] =
+            {
+                OUString( "BLACK" ),
+                OUString( "BLUE" ),
+                OUString( "GREEN" ),
+                OUString( "CYAN" ),
+                OUString( "RED" ),
+                OUString( "MAGENTA" ),
+                OUString( "BROWN" ),
+                OUString( "GREY" ),
+                OUString( "YELLOW" ),
+                OUString( "WHITE" )
+            };
+            return &aEnglishColors[0];
+        }
+    };
+
+    struct theEnglishColors
+            : public rtl::StaticAggregate< const OUString, ImplEnglishColors> {};
+
+}
+
 ImpSvNumberformatScan::ImpSvNumberformatScan( SvNumberFormatter* pFormatterP )
     : eNewLnge(LANGUAGE_DONTKNOW)
     , eTmpLnge(LANGUAGE_DONTKNOW)
     , nCurrPos(-1)
 {
     pFormatter = pFormatterP;
-    xNFC = css::i18n::NumberFormatMapper::create( pFormatter->GetComponentContext() );
     bConvertMode = false;
     bConvertSystemToSystem = false;
     //! All keywords MUST be UPPERCASE!
@@ -202,9 +230,11 @@ void ImpSvNumberformatScan::SetDependentKeywords()
     // requested Locale, otherwise number format codes might not match
     const LanguageTag& rLoadedLocale = pLocaleData->getLoadedLanguageTag();
     LanguageType eLang = rLoadedLocale.getLanguageType( false);
+    NumberFormatCodeWrapper aNumberFormatCode( pFormatter->GetComponentContext(),
+            rLoadedLocale.getLocale() );
 
-    i18n::NumberFormatCode aFormat = xNFC->getFormatCode( NF_NUMBER_STANDARD, rLoadedLocale.getLocale() );
-    sNameStandardFormat = lcl_extractStandardGeneralName( aFormat.Code );
+    i18n::NumberFormatCode aFormat = aNumberFormatCode.getFormatCode( NF_NUMBER_STANDARD );
+    sNameStandardFormat = lcl_extractStandardGeneralName( aFormat.Code);
     sKeyword[NF_KEY_GENERAL] = pCharClass->uppercase( sNameStandardFormat );
 
     // preset new calendar keywords
@@ -416,7 +446,7 @@ void ImpSvNumberformatScan::SetDependentKeywords()
     InitCompatCur();
 }
 
-void ImpSvNumberformatScan::ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear)
+void ImpSvNumberformatScan::ChangeNullDate(sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear)
 {
     if ( pNullDate )
         *pNullDate = Date(nDay, nMonth, nYear);
@@ -440,18 +470,7 @@ Color* ImpSvNumberformatScan::GetColor(OUString& sStr)
     }
     if ( i >= NF_MAX_DEFAULT_COLORS )
     {
-        static OUStringLiteral const pEnglishColors[NF_MAX_DEFAULT_COLORS] = {
-            "BLACK",
-            "BLUE",
-            "GREEN",
-            "CYAN",
-            "RED",
-            "MAGENTA",
-            "BROWN",
-            "GREY",
-            "YELLOW",
-            "WHITE"
-        };
+        const OUString* pEnglishColors = theEnglishColors::get();
         size_t j = 0;
         while ( j < NF_MAX_DEFAULT_COLORS && sString != pEnglishColors[j] )
         {
@@ -624,7 +643,10 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                                           sal_Int32& nPos,
                                           OUString& sSymbol )
 {
-    InitKeywords();
+    if ( bKeywordsNeedInit )
+    {
+        InitKeywords();
+    }
     const CharClass* pChrCls = pFormatter->GetCharClass();
     const LocaleDataWrapper* pLoc = pFormatter->GetLocaleData();
     short eType = 0;
@@ -672,28 +694,28 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
             case ':':
             case '-':
                 eType = NF_SYMBOLTYPE_DEL;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 eState = SsStop;
                 break;
             case '*':
                 eType = NF_SYMBOLTYPE_STAR;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 eState = SsGetStar;
                 break;
             case '_':
                 eType = NF_SYMBOLTYPE_BLANK;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 eState = SsGetBlank;
                 break;
             case '"':
                 eType = NF_SYMBOLTYPE_STRING;
                 eState = SsGetString;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 break;
             case '\\':
                 eType = NF_SYMBOLTYPE_STRING;
                 eState = SsGetChar;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 break;
             case '$':
             case '+':
@@ -701,7 +723,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
             case ')':
                 eType = NF_SYMBOLTYPE_STRING;
                 eState = SsStop;
-                sSymbol += OUStringLiteral1(cToken);
+                sSymbol += OUString(cToken);
                 break;
             default :
                 if (StringEqualsChar( pFormatter->GetNumDecimalSep(), cToken) ||
@@ -712,7 +734,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                 {
                     // Another separator than pre-known ASCII
                     eType = NF_SYMBOLTYPE_DEL;
-                    sSymbol += OUStringLiteral1(cToken);
+                    sSymbol += OUString(cToken);
                     eState = SsStop;
                 }
                 else if ( pChrCls->isLetter( rStr, nPos-1 ) )
@@ -736,7 +758,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                         if ( bCurrency )
                         {
                             eState = SsGetWord;
-                            sSymbol += OUStringLiteral1(cToken);
+                            sSymbol += OUString(cToken);
                         }
                         else
                         {
@@ -750,7 +772,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                                 {
                                 case '+' :
                                 case '-' :  // E+ E- combine to one symbol
-                                    sSymbol += OUStringLiteral1(cNext);
+                                    sSymbol += OUString(cNext);
                                     eType = NF_KEY_E;
                                     nPos++;
                                     break;
@@ -768,20 +790,20 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                     else
                     {
                         eState = SsGetWord;
-                        sSymbol += OUStringLiteral1(cToken);
+                        sSymbol += OUString(cToken);
                     }
                 }
                 else
                 {
                     eType = NF_SYMBOLTYPE_STRING;
                     eState = SsStop;
-                    sSymbol += OUStringLiteral1(cToken);
+                    sSymbol += OUString(cToken);
                 }
                 break;
             }
             break;
         case SsGetChar:
-            sSymbol += OUStringLiteral1(cToken);
+            sSymbol += OUString(cToken);
             eState = SsStop;
             break;
         case SsGetString:
@@ -789,7 +811,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
             {
                 eState = SsStop;
             }
-            sSymbol += OUStringLiteral1(cToken);
+            sSymbol += OUString(cToken);
             break;
         case SsGetWord:
             if ( pChrCls->isLetter( rStr, nPos-1 ) )
@@ -804,7 +826,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                 }
                 else
                 {
-                    sSymbol += OUStringLiteral1(cToken);
+                    sSymbol += OUString(cToken);
                 }
             }
             else
@@ -826,7 +848,7 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
                                      (nLen == 2 && (sSymbol[1] == 'M' || sSymbol[1] == 'm')
                                       && (rStr[nPos + 1] == 'M' || rStr[nPos + 1] == 'm'))))
                             {
-                                sSymbol += OUStringLiteral1(cToken);
+                                sSymbol += OUString(cToken);
                                 bDontStop = true;
                             }
                         }
@@ -844,11 +866,11 @@ short ImpSvNumberformatScan::Next_Symbol( const OUString& rStr,
             break;
         case SsGetStar:
             eState = SsStop;
-            sSymbol += OUStringLiteral1(cToken);
+            sSymbol += OUString(cToken);
             break;
         case SsGetBlank:
             eState = SsStop;
-            sSymbol += OUStringLiteral1(cToken);
+            sSymbol += OUString(cToken);
             break;
         default:
             break;
@@ -1046,9 +1068,8 @@ bool ImpSvNumberformatScan::IsLastBlankBeforeFrac(sal_uInt16 i)
             {
                 bStop = true;
             }
-            else if ( ( nTypeArray[i] == NF_SYMBOLTYPE_DEL  &&
-                        sStrArray[i][0] == ' ')             ||
-                        nTypeArray[i] == NF_SYMBOLTYPE_STRING ) // integer/fraction delimiter can also be a string
+            else if ( nTypeArray[i] == NF_SYMBOLTYPE_DEL &&
+                      sStrArray[i][0] == ' ')
             {
                 res = false;
             }
@@ -1564,7 +1585,6 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
     bDecSep = false;                       // reset in case already used in TypeCheck
     bool bThaiT = false;                   // Thai T NatNum modifier present
     bool bTimePart = false;
-    bool bDenomin = false;                 // Set when reading end of denominator
 
     switch (eScannedType)
     {
@@ -1651,7 +1671,7 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                     nTypeArray[i] = NF_SYMBOLTYPE_EXP;
                 }
                 else if (eScannedType == css::util::NumberFormat::FRACTION &&
-                    (sStrArray[i][0] == ' ' || ( nTypeArray[i] == NF_SYMBOLTYPE_STRING && (sStrArray[i][0] < '0' || sStrArray[i][0] > '9') ) ) )
+                         sStrArray[i][0] == ' ')
                 {
                     if (!bBlank && !bFrac) // Not double or after a /
                     {
@@ -1659,19 +1679,12 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                         {
                             return nPos; // Error
                         }
-                        if (sStrArray[i][0] == ' ' ||  nCounter > 0 )   // treat string as integer/fraction delimiter only if there is integer
-                        {
-                            bBlank = true;
-                            nBlankPos = i;
-                            nCntPre = nCounter;
-                            nCounter = 0;
-                            nTypeArray[i] = NF_SYMBOLTYPE_FRACBLANK;
-                        }
+                        bBlank = true;
+                        nBlankPos = i;
+                        nCntPre = nCounter;
+                        nCounter = 0;
                     }
-                    else if ( sStrArray[i][0] == ' ' )
-                        nTypeArray[i] = NF_SYMBOLTYPE_FRACBLANK;
-                    else if ( bFrac && ( nCounter > 0 ) )
-                        bDenomin = true; // following elements are no more part of denominator
+                    nTypeArray[i] = NF_SYMBOLTYPE_FRACBLANK;
                 }
                 else if (nTypeArray[i] == NF_KEY_THAI_T)
                 {
@@ -1679,11 +1692,11 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                     sStrArray[i] = sKeyword[nTypeArray[i]];
                 }
                 else if (sStrArray[i][0] >= '0' &&
-                         sStrArray[i][0] <= '9' && !bDenomin) // denominator was not yet found
+                         sStrArray[i][0] <= '9')
                 {
                     OUString sDiv;
                     sal_uInt16 j = i;
-                    while(j < nAnzStrings && sStrArray[j][0] >= '0' && sStrArray[j][0] <= '9')
+                    while(j < nAnzStrings)
                     {
                         sDiv += sStrArray[j++];
                     }
@@ -1708,14 +1721,10 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                         {
                             nCntPre++;
                         }
-                        if ( bFrac )
-                            bDenomin = true; // next content should be treated as outside denominator
                     }
                 }
                 else
                 {
-                    if ( bFrac && ( nCounter > 0 ) )
-                        bDenomin = true;    // next content should be treated as outside denominator
                     nTypeArray[i] = NF_SYMBOLTYPE_STRING;
                 }
                 nPos = nPos + sStrArray[i].getLength();
@@ -1751,27 +1760,23 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                     {
                         return nPos;                    // Error
                     }
-                    if ( !bDenomin )
+                    else if (bFrac && cHere == '0')
+                    {
+                        return nPos;                    // Denominator is 0
+                    }
+                    nTypeArray[i] = NF_SYMBOLTYPE_DIGIT;
+                    nPos = nPos + rStr.getLength();
+                    i++;
+                    nCounter++;
+                    while (i < nAnzStrings &&
+                           (sStrArray[i][0] == '#' ||
+                            sStrArray[i][0] == '0' ||
+                            sStrArray[i][0] == '?'))
                     {
                         nTypeArray[i] = NF_SYMBOLTYPE_DIGIT;
-                        nPos = nPos + rStr.getLength();
-                        i++;
-                        nCounter++;
-                        while (i < nAnzStrings &&
-                              (sStrArray[i][0] == '#' ||
-                               sStrArray[i][0] == '0' ||
-                               sStrArray[i][0] == '?'))
-                        {
-                            nTypeArray[i] = NF_SYMBOLTYPE_DIGIT;
-                            nPos = nPos + sStrArray[i].getLength();
-                            nCounter++;
-                            i++;
-                        }
-                    }
-                    else // after denominator, treat any character as text
-                    {
-                        nTypeArray[i] = NF_SYMBOLTYPE_STRING;
                         nPos = nPos + sStrArray[i].getLength();
+                        nCounter++;
+                        i++;
                     }
                     break;
                 case '-':
@@ -1834,8 +1839,6 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                             else
                             {
                                 nTypeArray[i] = NF_SYMBOLTYPE_STRING;
-                                if ( bFrac && (nCounter > 0) )
-                                    bDenomin = true; // end of denominator
                             }
                         }
                         else if (i > 0 && i < nAnzStrings-1   &&
@@ -2002,16 +2005,12 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                                 nCntPre = nCounter;
                                 nCounter = 0;
                             }
-                            if ( bFrac && (nCounter > 0) )
-                                bDenomin = true; // next content is not part of denominator
                             nTypeArray[i] = NF_SYMBOLTYPE_STRING;
                             nPos = nPos + sStrArray[i].getLength();
                         }
                         else
                         {
                             nTypeArray[i] = NF_SYMBOLTYPE_STRING;
-                            if ( bFrac && (nCounter > 0) )
-                                bDenomin = true; // next content is not part of denominator
                             nPos = nPos + rStr.getLength();
                             i++;
                             while (i < nAnzStrings && StringEqualsChar( sStrArray[i], cSaved ) )
@@ -2716,7 +2715,6 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
         switch ( nTypeArray[i] )
         {
         case NF_SYMBOLTYPE_STRING :
-        case NF_SYMBOLTYPE_FRACBLANK :
             nStringPos = rString.getLength();
             do
             {
@@ -2735,7 +2733,7 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                     {
                     case '+':
                     case '-':
-                        rString += OUStringLiteral1(c);
+                        rString += OUString(c);
                         break;
                     case ' ':
                     case '.':
@@ -2766,7 +2764,7 @@ sal_Int32 ImpSvNumberformatScan::FinalScan( OUString& rString )
                         }
                         else
                         {
-                            rString += OUStringLiteral1(c);
+                            rString += OUString(c);
                         }
                         break;
                     default:

@@ -12,7 +12,9 @@
 #define INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_THEMEPANEL_HXX
 
 #include <com/sun/star/frame/XFrame.hpp>
+#include <com/sun/star/document/XUndoManager.hpp>
 
+#include <svx/sidebar/Popup.hxx>
 #include <svx/sidebar/PanelLayout.hxx>
 
 #include <sfx2/sidebar/ControllerItem.hxx>
@@ -56,7 +58,7 @@ public:
 private:
     ThemePanel(vcl::Window* pParent,
                    const css::uno::Reference<css::frame::XFrame>& rxFrame);
-    virtual ~ThemePanel() override;
+    virtual ~ThemePanel();
 
     virtual void dispose() override;
 
@@ -66,9 +68,9 @@ private:
 
     svx::ColorSets maColorSets;
 
-    DECL_LINK(ClickHdl, Button*, void);
-    DECL_LINK(DoubleClickHdl, ListBox&, void);
-    DECL_LINK(DoubleClickValueSetHdl, ValueSet*, void);
+    DECL_LINK_TYPED(ClickHdl, Button*, void);
+    DECL_LINK_TYPED(DoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(DoubleClickValueSetHdl, ValueSet*, void);
     void DoubleClickHdl();
 
 };

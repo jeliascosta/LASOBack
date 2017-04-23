@@ -44,10 +44,10 @@ bool GraphicNativeTransform::canBeRotated()
         return false;
     }
 
-    if (   aLink.GetType() == GfxLinkType::NativeJpg
-        || aLink.GetType() == GfxLinkType::NativePng
-        || aLink.GetType() == GfxLinkType::NativeGif
-        || aLink.GetType() == GfxLinkType::NONE)
+    if (   aLink.GetType() == GFX_LINK_TYPE_NATIVE_JPG
+        || aLink.GetType() == GFX_LINK_TYPE_NATIVE_PNG
+        || aLink.GetType() == GFX_LINK_TYPE_NATIVE_GIF
+        || aLink.GetType() == GFX_LINK_TYPE_NONE)
     {
         return true;
     }
@@ -70,19 +70,19 @@ bool GraphicNativeTransform::rotate(sal_uInt16 aInputRotation)
     }
 
     GfxLink aLink = mrGraphic.GetLink();
-    if ( aLink.GetType() == GfxLinkType::NativeJpg )
+    if ( aLink.GetType() == GFX_LINK_TYPE_NATIVE_JPG )
     {
         return rotateJPEG(aRotation);
     }
-    else if ( aLink.GetType() == GfxLinkType::NativePng )
+    else if ( aLink.GetType() == GFX_LINK_TYPE_NATIVE_PNG )
     {
         return rotateGeneric(aRotation, "png");
     }
-    else if ( aLink.GetType() == GfxLinkType::NativeGif )
+    else if ( aLink.GetType() == GFX_LINK_TYPE_NATIVE_GIF )
     {
         return rotateGeneric(aRotation, "gif");
     }
-    else if ( aLink.GetType() == GfxLinkType::NONE )
+    else if ( aLink.GetType() == GFX_LINK_TYPE_NONE )
     {
         return rotateBitmapOnly(aRotation);
     }
@@ -152,7 +152,7 @@ bool GraphicNativeTransform::rotateJPEG(sal_uInt16 aRotation)
         GfxLink aLink = mrGraphic.GetLink();
 
         SvMemoryStream aSourceStream;
-        aSourceStream.WriteBytes(aLink.GetData(), aLink.GetDataSize());
+        aSourceStream.Write(aLink.GetData(), aLink.GetDataSize());
         aSourceStream.Seek( STREAM_SEEK_TO_BEGIN );
 
         Orientation aOrientation = TOP_LEFT;

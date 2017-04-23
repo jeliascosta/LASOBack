@@ -359,7 +359,7 @@ public abstract class ScriptProvider implements
                 throw e2;
             } catch (com.sun.star.lang.WrappedTargetException wta) {
                 // TODO specify the correct error Type
-                java.lang.Exception wrapped = (java.lang.Exception) wta.TargetException;
+                Exception wrapped = (Exception) wta.TargetException;
                 String message = wta.getMessage();
 
                 if (wrapped != null) {

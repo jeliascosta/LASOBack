@@ -35,8 +35,7 @@
  ************************************************************************/
 
 #include <rtl/ustrbuf.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
+
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/sdbcx/Privilege.hpp>
 
@@ -64,7 +63,7 @@ namespace pq_sdbc_driver
 {
 Users::Users(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings )
     : Container( refMutex, origin, pSettings,  getStatics().USER )
 {}
@@ -73,6 +72,7 @@ Users::~Users()
 {}
 
 void Users::refresh()
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -93,7 +93,7 @@ void Users::refresh()
         {
             User * pUser =
                 new User( m_refMutex, m_origin, m_pSettings );
-            Reference< css::beans::XPropertySet > prop = pUser;
+            Reference< com::sun::star::beans::XPropertySet > prop = pUser;
 
             OUString name = xRow->getString( 1);
             pUser->setPropertyValue_NoBroadcast_public(
@@ -107,7 +107,7 @@ void Users::refresh()
         }
         m_name2index.swap( map );
     }
-    catch ( css::sdbc::SQLException & e )
+    catch ( com::sun::star::sdbc::SQLException & e )
     {
         throw RuntimeException( e.Message , e.Context );
     }
@@ -117,7 +117,10 @@ void Users::refresh()
 
 
 void Users::appendByDescriptor(
-    const css::uno::Reference< css::beans::XPropertySet >& descriptor )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& descriptor )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::container::ElementExistException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard guard( m_refMutex->mutex );
 
@@ -133,29 +136,40 @@ void Users::appendByDescriptor(
 }
 
 void Users::dropByName( const OUString& elementName )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::container::NoSuchElementException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     String2IntMap::const_iterator ii = m_name2index.find( elementName );
     if( ii == m_name2index.end() )
     {
-        throw css::container::NoSuchElementException(
-            "User " + elementName + " is unknown, so it can't be dropped",
-            *this );
+        OUStringBuffer buf( 128 );
+        buf.append( "User " );
+        buf.append( elementName );
+        buf.append( " is unknown, so it can't be dropped" );
+        throw com::sun::star::container::NoSuchElementException(
+            buf.makeStringAndClear(), *this );
     }
     dropByIndex( ii->second );
 }
 
 void Users::dropByIndex( sal_Int32 index )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::lang::IndexOutOfBoundsException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
 
     osl::MutexGuard guard( m_refMutex->mutex );
     if( index < 0 ||  index >= (sal_Int32)m_values.size() )
     {
-        throw css::lang::IndexOutOfBoundsException(
-            "USERS: Index out of range (allowed 0 to "
-            + OUString::number( m_values.size() -1 )
-            +  ", got " + OUString::number( index )
-            + ")",
-            *this );
+        OUStringBuffer buf( 128 );
+        buf.append( "USERS: Index out of range (allowed 0 to " );
+        buf.append( (sal_Int32) (m_values.size() -1) );
+        buf.append( ", got " );
+        buf.append( index );
+        buf.append( ")" );
+        throw com::sun::star::lang::IndexOutOfBoundsException(
+            buf.makeStringAndClear(), *this );
     }
 
     Reference< XPropertySet > set;
@@ -173,18 +187,19 @@ void Users::dropByIndex( sal_Int32 index )
 }
 
 
-css::uno::Reference< css::beans::XPropertySet > Users::createDataDescriptor()
+::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > Users::createDataDescriptor()
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return new UserDescriptor( m_refMutex, m_origin, m_pSettings  );
 }
 
-Reference< css::container::XNameAccess > Users::create(
+Reference< com::sun::star::container::XNameAccess > Users::create(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const css::uno::Reference< css::sdbc::XConnection >  & origin,
+    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
     ConnectionSettings *pSettings )
 {
     Users *pUsers = new Users( refMutex, origin, pSettings );
-    Reference< css::container::XNameAccess > ret = pUsers;
+    Reference< com::sun::star::container::XNameAccess > ret = pUsers;
     pUsers->refresh();
 
     return ret;

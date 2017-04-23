@@ -99,8 +99,6 @@ $(eval $(foreach method,\
 	add_objcobjects \
 	add_objcxxobject \
 	add_objcxxobjects \
-	add_cxxclrobject \
-	add_cxxclrobjects \
 	add_grammar \
 	add_grammars \
 	add_scanner \
@@ -113,7 +111,6 @@ $(eval $(foreach method,\
 	add_cxxflags \
 	add_objcflags \
 	add_objcxxflags \
-	add_cxxclrflags \
 	add_defs \
 	set_include \
 	add_ldflags \

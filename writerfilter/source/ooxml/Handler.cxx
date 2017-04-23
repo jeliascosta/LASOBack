@@ -324,10 +324,6 @@ OOXMLHyperlinkHandler::OOXMLHyperlinkHandler(OOXMLFastContextHandler * pContext)
 
 OOXMLHyperlinkHandler::~OOXMLHyperlinkHandler()
 {
-}
-
-void OOXMLHyperlinkHandler::writetext()
-{
     OUString sReturn(" HYPERLINK \"");
 
     sReturn += mURL;
@@ -369,37 +365,6 @@ void OOXMLHyperlinkHandler::attribute(Id name, Value & val)
 }
 
 void OOXMLHyperlinkHandler::sprm(Sprm & /*rSprm*/)
-{
-}
-
-/**
-   class OOXMLHyperlinkURLHandler
- */
-
-OOXMLHyperlinkURLHandler::OOXMLHyperlinkURLHandler(OOXMLFastContextHandler * pContext)
-: mpFastContext(pContext)
-{
-}
-
-OOXMLHyperlinkURLHandler::~OOXMLHyperlinkURLHandler()
-{
-    mpFastContext->clearProps();
-    mpFastContext->newProperty(NS_ooxml::LN_CT_Hyperlink_URL, OOXMLValue::Pointer_t(new OOXMLStringValue(mURL)));
-}
-
-void OOXMLHyperlinkURLHandler::attribute(Id name, Value & val)
-{
-    switch (name)
-    {
-    case NS_ooxml::LN_CT_Hyperlink_URL:
-        mURL = mpFastContext->getTargetForId(val.getString());
-        break;
-    default:
-        break;
-    }
-}
-
-void OOXMLHyperlinkURLHandler::sprm(Sprm & /*rSprm*/)
 {
 }
 

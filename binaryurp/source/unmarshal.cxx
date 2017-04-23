@@ -145,7 +145,8 @@ css::uno::TypeDescription Unmarshal::readType() {
                 "binaryurp::Unmarshal: cache flag of simple type is set");
         }
         return css::uno::TypeDescription(
-            *typelib_static_type_getByTypeClass(tc));
+            *typelib_static_type_getByTypeClass(
+                static_cast< typelib_TypeClass >(tc)));
     case typelib_TypeClass_SEQUENCE:
     case typelib_TypeClass_ENUM:
     case typelib_TypeClass_STRUCT:
@@ -162,7 +163,9 @@ css::uno::TypeDescription Unmarshal::readType() {
             } else {
                 OUString const str(readString());
                 css::uno::TypeDescription t(str);
-                if (!t.is() || t.get()->eTypeClass != tc) {
+                if (!t.is() ||
+                    t.get()->eTypeClass != static_cast< typelib_TypeClass >(tc))
+                {
 
                     throw css::io::IOException(
                         "binaryurp::Unmarshal: type with unknown name: " + str);

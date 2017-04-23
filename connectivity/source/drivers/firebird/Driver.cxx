@@ -49,7 +49,7 @@ namespace connectivity
     namespace firebird
     {
         Reference< XInterface >  SAL_CALL FirebirdDriver_CreateInstance(
-            const Reference< XMultiServiceFactory >& _rxFactory)
+            const Reference< XMultiServiceFactory >& _rxFactory) throw( Exception, std::exception )
         {
             SAL_INFO("connectivity.firebird", "FirebirdDriver_CreateInstance()" );
             return *(new FirebirdDriver(comphelper::getComponentContext(_rxFactory)));
@@ -57,17 +57,12 @@ namespace connectivity
     }
 }
 
-// Static const variables
-namespace {
-const char our_sFirebirdTmpVar[] = "FIREBIRD_TMP";
-const char our_sFirebirdLockVar[] = "FIREBIRD_LOCK";
-const char our_sFirebirdMsgVar[] = "FIREBIRD_MSG";
-#ifdef MACOSX
-const char our_sFirebirdLibVar[] = "LIBREOFFICE_FIREBIRD_LIB";
-#endif
-};
+// Static const member variables
+const OUString FirebirdDriver::our_sFirebirdTmpVar("FIREBIRD_TMP");
+const OUString FirebirdDriver::our_sFirebirdLockVar("FIREBIRD_LOCK");
+const OUString FirebirdDriver::our_sFirebirdMsgVar("FIREBIRD_MSG");
 
-FirebirdDriver::FirebirdDriver(const css::uno::Reference< css::uno::XComponentContext >& _rxContext)
+FirebirdDriver::FirebirdDriver(const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext >& _rxContext)
     : ODriver_BASE(m_aMutex)
     , m_aContext(_rxContext)
     , m_firebirdTMPDirectory(nullptr, true)
@@ -84,10 +79,10 @@ FirebirdDriver::FirebirdDriver(const css::uno::Reference< css::uno::XComponentCo
     // we can create directories for firebird at will.
 
     // Overrides firebird's default of /tmp or c:\temp
-    osl_setEnvironment(OUString(our_sFirebirdTmpVar).pData, m_firebirdTMPDirectory.GetFileName().pData);
+    osl_setEnvironment(our_sFirebirdTmpVar.pData, m_firebirdTMPDirectory.GetFileName().pData);
 
     // Overrides firebird's default of /tmp/firebird or c:\temp\firebird
-    osl_setEnvironment(OUString(our_sFirebirdLockVar).pData, m_firebirdLockDirectory.GetFileName().pData);
+    osl_setEnvironment(our_sFirebirdLockVar.pData, m_firebirdLockDirectory.GetFileName().pData);
 
 #ifndef SYSTEM_FIREBIRD
     // Overrides firebird's hardcoded default of /usr/local/firebird on *nix,
@@ -96,17 +91,8 @@ FirebirdDriver::FirebirdDriver(const css::uno::Reference< css::uno::XComponentCo
     ::rtl::Bootstrap::expandMacros(sMsgURL);
     OUString sMsgPath;
     ::osl::FileBase::getSystemPathFromFileURL(sMsgURL, sMsgPath);
-    osl_setEnvironment(OUString(our_sFirebirdMsgVar).pData, sMsgPath.pData);
-#ifdef MACOSX
-    // Set an env. variable to specify library location
-    // for dlopen used in fbclient.
-    OUString sLibURL("$LO_LIB_DIR");
-    ::rtl::Bootstrap::expandMacros(sLibURL);
-    OUString sLibPath;
-    ::osl::FileBase::getSystemPathFromFileURL(sLibURL, sLibPath);
-    osl_setEnvironment(OUString(our_sFirebirdLibVar).pData, sLibPath.pData);
-#endif /*MACOSX*/
-#endif /*!SYSTEM_FIREBIRD*/
+    osl_setEnvironment(our_sFirebirdMsgVar.pData, sMsgPath.pData);
+#endif
 }
 
 FirebirdDriver::~FirebirdDriver()
@@ -127,15 +113,12 @@ void FirebirdDriver::disposing()
     }
     m_xConnections.clear();
 
-    osl_clearEnvironment(OUString(our_sFirebirdTmpVar).pData);
-    osl_clearEnvironment(OUString(our_sFirebirdLockVar).pData);
+    osl_clearEnvironment(our_sFirebirdTmpVar.pData);
+    osl_clearEnvironment(our_sFirebirdLockVar.pData);
 
 #ifndef SYSTEM_FIREBIRD
-    osl_clearEnvironment(OUString(our_sFirebirdMsgVar).pData);
-#ifdef MACOSX
-    osl_clearEnvironment(OUString(our_sFirebirdLibVar).pData);
-#endif /*MACOSX*/
-#endif /*!SYSTEM_FIREBIRD*/
+    osl_clearEnvironment(our_sFirebirdMsgVar.pData);
+#endif
 
     OSL_VERIFY(fb_shutdown(0, 1));
 
@@ -143,12 +126,12 @@ void FirebirdDriver::disposing()
 }
 
 //----- static ServiceInfo ---------------------------------------------------
-rtl::OUString FirebirdDriver::getImplementationName_Static()
+rtl::OUString FirebirdDriver::getImplementationName_Static() throw(RuntimeException)
 {
     return rtl::OUString("com.sun.star.comp.sdbc.firebird.Driver");
 }
 
-Sequence< OUString > FirebirdDriver::getSupportedServiceNames_Static()
+Sequence< OUString > FirebirdDriver::getSupportedServiceNames_Static() throw (RuntimeException)
 {
     Sequence< OUString > aSNS( 2 );
     aSNS[0] = "com.sun.star.sdbc.Driver";
@@ -156,17 +139,19 @@ Sequence< OUString > FirebirdDriver::getSupportedServiceNames_Static()
     return aSNS;
 }
 
-OUString SAL_CALL FirebirdDriver::getImplementationName()
+OUString SAL_CALL FirebirdDriver::getImplementationName() throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 sal_Bool SAL_CALL FirebirdDriver::supportsService(const OUString& _rServiceName)
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
 Sequence< OUString > SAL_CALL FirebirdDriver::getSupportedServiceNames()
+    throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -174,6 +159,7 @@ Sequence< OUString > SAL_CALL FirebirdDriver::getSupportedServiceNames()
 // ----  XDriver -------------------------------------------------------------
 Reference< XConnection > SAL_CALL FirebirdDriver::connect(
     const OUString& url, const Sequence< PropertyValue >& info )
+    throw(SQLException, RuntimeException, std::exception)
 {
     Reference< XConnection > xConnection;
 
@@ -189,16 +175,13 @@ Reference< XConnection > SAL_CALL FirebirdDriver::connect(
     Connection* pCon = new Connection(this);
     Reference< XConnection > xCon = pCon;
     pCon->construct(url, info);
-
-    if (url == "sdbc:embedded:firebird")
-        pCon->setAutoCommit(true);
-
     m_xConnections.push_back(WeakReferenceHelper(*pCon));
 
     return xCon;
 }
 
 sal_Bool SAL_CALL FirebirdDriver::acceptsURL( const OUString& url )
+    throw(SQLException, RuntimeException, std::exception)
 {
     SvtMiscOptions aMiscOptions;
 
@@ -208,6 +191,7 @@ sal_Bool SAL_CALL FirebirdDriver::acceptsURL( const OUString& url )
 
 Sequence< DriverPropertyInfo > SAL_CALL FirebirdDriver::getPropertyInfo(
     const OUString& url, const Sequence< PropertyValue >& info )
+    throw(SQLException, RuntimeException, std::exception)
 {
     (void) info;
     if ( ! acceptsURL(url) )
@@ -220,14 +204,14 @@ Sequence< DriverPropertyInfo > SAL_CALL FirebirdDriver::getPropertyInfo(
     return Sequence< DriverPropertyInfo >();
 }
 
-sal_Int32 SAL_CALL FirebirdDriver::getMajorVersion(  )
+sal_Int32 SAL_CALL FirebirdDriver::getMajorVersion(  ) throw(RuntimeException, std::exception)
 {
     // The major and minor version are sdbc driver specific. Must begin with 1.0
     // as per http://api.libreoffice.org/docs/common/ref/com/sun/star/sdbc/XDriver.html
     return 1;
 }
 
-sal_Int32 SAL_CALL FirebirdDriver::getMinorVersion(  )
+sal_Int32 SAL_CALL FirebirdDriver::getMinorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 0;
 }
@@ -235,6 +219,7 @@ sal_Int32 SAL_CALL FirebirdDriver::getMinorVersion(  )
 //----- XDataDefinitionSupplier
 uno::Reference< XTablesSupplier > SAL_CALL FirebirdDriver::getDataDefinitionByConnection(
                                     const uno::Reference< XConnection >& rConnection)
+    throw(SQLException, RuntimeException, std::exception)
 {
     Connection* pConnection = static_cast< Connection* >(rConnection.get());
     return uno::Reference< XTablesSupplier >(pConnection->createCatalog(), UNO_QUERY);
@@ -243,6 +228,7 @@ uno::Reference< XTablesSupplier > SAL_CALL FirebirdDriver::getDataDefinitionByCo
 uno::Reference< XTablesSupplier > SAL_CALL FirebirdDriver::getDataDefinitionByURL(
                     const OUString& rURL,
                     const uno::Sequence< PropertyValue >& rInfo)
+    throw(SQLException, RuntimeException, std::exception)
 {
     uno::Reference< XConnection > xConnection = connect(rURL, rInfo);
     return getDataDefinitionByConnection(xConnection);
@@ -288,7 +274,7 @@ namespace connectivity
                 osl_atomic_increment( &_refCount );
         }
 
-        void checkDisposed(bool _bThrow)
+        void checkDisposed(bool _bThrow) throw ( DisposedException )
         {
             if (_bThrow)
                 throw DisposedException();

@@ -30,7 +30,7 @@ using namespace com::sun::star;
 #define CFGPATH_ADDINS  "Office.CalcAddIns/AddInInfo"
 
 ScAddInCfg::ScAddInCfg() :
-    ConfigItem( CFGPATH_ADDINS )
+    ConfigItem( OUString( CFGPATH_ADDINS ) )
 {
     uno::Sequence<OUString> aNames(1);     // one entry: empty string
     EnableNotification( aNames );

@@ -43,7 +43,7 @@ namespace dbaui
         OJoinDesignView(vcl::Window* pParent,
                         OJoinController& _rController,
                         const css::uno::Reference< css::uno::XComponentContext >& );
-        virtual ~OJoinDesignView() override;
+        virtual ~OJoinDesignView();
         virtual void dispose() override;
 
         // set the view readonly or not
@@ -62,7 +62,7 @@ namespace dbaui
         OScrollWindowHelper* getScrollHelper() const { return m_pScrollWindow; }
     protected:
         // return the Rectangle where I can paint myself
-        virtual void resizeDocumentView(tools::Rectangle& rRect) override;
+        virtual void resizeDocumentView(Rectangle& rRect) override;
     };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_INC_JOINDESIGNVIEW_HXX

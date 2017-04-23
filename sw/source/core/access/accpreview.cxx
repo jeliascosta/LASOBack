@@ -29,8 +29,8 @@ const sal_Char sImplementationName[] = "com.sun.star.comp.Writer.SwAccessibleDoc
 using ::com::sun::star::uno::RuntimeException;
 using ::com::sun::star::uno::Sequence;
 
-SwAccessiblePreview::SwAccessiblePreview(std::shared_ptr<SwAccessibleMap> const& pMap)
-    : SwAccessibleDocumentBase(pMap)
+SwAccessiblePreview::SwAccessiblePreview( SwAccessibleMap *pMp ) :
+    SwAccessibleDocumentBase( pMp )
 {
     SetName( GetResource( STR_ACCESS_PREVIEW_DOC_NAME ) );
 }
@@ -40,34 +40,43 @@ SwAccessiblePreview::~SwAccessiblePreview()
 }
 
 OUString SwAccessiblePreview::getImplementationName( )
+    throw( RuntimeException, std::exception )
 {
     return OUString( sImplementationName );
 }
 
 sal_Bool SwAccessiblePreview::supportsService( const OUString& rServiceName )
+    throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence<OUString> SwAccessiblePreview::getSupportedServiceNames( )
+    throw( RuntimeException, std::exception )
 {
-    return {"com.sun.star.text.AccessibleTextDocumentPageView",
-            sAccessibleServiceName};
+    Sequence<OUString> aSeq( 2 );
+    aSeq[0] = "com.sun.star.text.AccessibleTextDocumentPageView";
+    aSeq[1] = sAccessibleServiceName;
+    return aSeq;
 }
 
 Sequence< sal_Int8 > SAL_CALL SwAccessiblePreview::getImplementationId()
+        throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-OUString SAL_CALL SwAccessiblePreview::getAccessibleDescription()
+OUString SAL_CALL SwAccessiblePreview::getAccessibleDescription() throw (css::uno::RuntimeException, std::exception)
 {
     return GetResource( STR_ACCESS_PREVIEW_DOC_NAME );
 }
 
-OUString SAL_CALL SwAccessiblePreview::getAccessibleName()
+OUString SAL_CALL SwAccessiblePreview::getAccessibleName() throw (css::uno::RuntimeException, std::exception)
 {
-    return SwAccessibleDocumentBase::getAccessibleName() + " " + GetResource( STR_ACCESS_PREVIEW_DOC_SUFFIX );
+    OUString sLclName = SwAccessibleDocumentBase::getAccessibleName();
+    sLclName += " ";
+    sLclName += GetResource( STR_ACCESS_PREVIEW_DOC_SUFFIX );
+    return sLclName;
 }
 
 void SwAccessiblePreview::InvalidateFocus_()

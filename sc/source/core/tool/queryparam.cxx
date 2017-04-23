@@ -64,7 +64,7 @@ ScQueryParamBase::const_iterator ScQueryParamBase::end() const
 }
 
 ScQueryParamBase::ScQueryParamBase() :
-    eSearchType(utl::SearchParam::SearchType::Normal),
+    eSearchType(utl::SearchParam::SRCH_NORMAL),
     bHasHeader(true),
     bByRow(true),
     bInplace(true),
@@ -194,12 +194,12 @@ void ScQueryParamBase::FillInExcelSyntax(
         // Operatoren herausfiltern
         if (rCellStr[0] == '<')
         {
-            if (rCellStr.getLength() > 1 && rCellStr[1] == '>')
+            if (rCellStr[1] == '>')
             {
                 rItem.maString = rPool.intern(rCellStr.copy(2));
                 rEntry.eOp   = SC_NOT_EQUAL;
             }
-            else if (rCellStr.getLength() > 1 && rCellStr[1] == '=')
+            else if (rCellStr[1] == '=')
             {
                 rItem.maString = rPool.intern(rCellStr.copy(2));
                 rEntry.eOp   = SC_LESS_EQUAL;
@@ -212,7 +212,7 @@ void ScQueryParamBase::FillInExcelSyntax(
         }
         else if (rCellStr[0]== '>')
         {
-            if (rCellStr.getLength() > 1 && rCellStr[1] == '=')
+            if (rCellStr[1] == '=')
             {
                 rItem.maString = rPool.intern(rCellStr.copy(2));
                 rEntry.eOp   = SC_GREATER_EQUAL;
@@ -243,11 +243,8 @@ void ScQueryParamBase::FillInExcelSyntax(
          * empty cells with an empty string is triggered from the interpreter.
          * This could be handled independently if all queries should support
          * it, needs to be evaluated if that actually is desired. */
-
-        // (empty = empty) is a match, and (empty <> not-empty) also is a match
         if (rItem.meType == ScQueryEntry::ByString)
-            rItem.mbMatchEmpty = ((rEntry.eOp == SC_EQUAL && rItem.maString.isEmpty())
-                || (rEntry.eOp == SC_NOT_EQUAL && !rItem.maString.isEmpty()));
+            rItem.mbMatchEmpty = (rEntry.eOp == SC_EQUAL && rItem.maString.isEmpty());
     }
 }
 
@@ -302,7 +299,7 @@ void ScQueryParam::Clear()
     nCol1=nCol2 = 0;
     nRow1=nRow2 = 0;
     nTab = SCTAB_MAX;
-    eSearchType = utl::SearchParam::SearchType::Normal;
+    eSearchType = utl::SearchParam::SRCH_NORMAL;
     bHasHeader = bCaseSens = false;
     bInplace = bByRow = bDuplicate = true;
 
@@ -353,7 +350,7 @@ bool ScQueryParam::operator==( const ScQueryParam& rOther ) const
 {
     bool bEqual = false;
 
-    // Are the number of queries equal?
+    // Anzahl der Queries gleich?
     SCSIZE nUsed      = 0;
     SCSIZE nOtherUsed = 0;
     SCSIZE nEntryCount = GetEntryCount();

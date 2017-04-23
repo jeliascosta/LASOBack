@@ -42,33 +42,36 @@ protected:
 
 public:
     explicit ONSSInitializer(const css::uno::Reference<css::uno::XComponentContext> &rxContext);
-    virtual ~ONSSInitializer() override;
+    virtual ~ONSSInitializer();
 
     static bool initNSS( const css::uno::Reference< css::uno::XComponentContext > &rxContext );
 
     /* XDigestContextSupplier */
-    virtual css::uno::Reference< css::xml::crypto::XDigestContext > SAL_CALL getDigestContext( ::sal_Int32 nDigestID, const css::uno::Sequence< css::beans::NamedValue >& aParams ) override;
+    virtual css::uno::Reference< css::xml::crypto::XDigestContext > SAL_CALL getDigestContext( ::sal_Int32 nDigestID, const css::uno::Sequence< css::beans::NamedValue >& aParams ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     /* XCipherContextSupplier */
-    virtual css::uno::Reference< css::xml::crypto::XCipherContext > SAL_CALL getCipherContext( ::sal_Int32 nCipherID, const css::uno::Sequence< ::sal_Int8 >& aKey, const css::uno::Sequence< ::sal_Int8 >& aInitializationVector, sal_Bool bEncryption, const css::uno::Sequence< css::beans::NamedValue >& aParams ) override;
+    virtual css::uno::Reference< css::xml::crypto::XCipherContext > SAL_CALL getCipherContext( ::sal_Int32 nCipherID, const css::uno::Sequence< ::sal_Int8 >& aKey, const css::uno::Sequence< ::sal_Int8 >& aInitializationVector, sal_Bool bEncryption, const css::uno::Sequence< css::beans::NamedValue >& aParams ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
-/// @throws css::uno::RuntimeException
-OUString ONSSInitializer_getImplementationName();
+OUString ONSSInitializer_getImplementationName()
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::RuntimeException
-css::uno::Sequence< OUString > SAL_CALL ONSSInitializer_getSupportedServiceNames();
+css::uno::Sequence< OUString > SAL_CALL ONSSInitializer_getSupportedServiceNames()
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::Exception
 css::uno::Reference< css::uno::XInterface >
-SAL_CALL ONSSInitializer_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr );
+SAL_CALL ONSSInitializer_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr )
+    throw ( css::uno::Exception );
 
 #endif
 

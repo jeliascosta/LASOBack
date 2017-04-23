@@ -40,7 +40,7 @@ namespace chelp {
     public:
         explicit XInputStream_impl( const OUString& aUncPath );
 
-        virtual ~XInputStream_impl() override;
+        virtual ~XInputStream_impl();
 
         /**
          *  Returns an error code as given by filerror.hxx
@@ -50,43 +50,77 @@ namespace chelp {
 
         virtual css::uno::Any SAL_CALL
         queryInterface(
-            const css::uno::Type& rType ) override;
+            const css::uno::Type& rType )
+            throw( css::uno::RuntimeException, std::exception) override;
 
         virtual void SAL_CALL
-        acquire()
+        acquire(
+            void )
             throw() override;
 
         virtual void SAL_CALL
-        release()
+        release(
+            void )
             throw() override;
 
         virtual sal_Int32 SAL_CALL
         readBytes(
             css::uno::Sequence< sal_Int8 >& aData,
-            sal_Int32 nBytesToRead ) override;
+            sal_Int32 nBytesToRead )
+            throw( css::io::NotConnectedException,
+                   css::io::BufferSizeExceededException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual sal_Int32 SAL_CALL
         readSomeBytes(
             css::uno::Sequence< sal_Int8 >& aData,
-            sal_Int32 nMaxBytesToRead ) override;
+            sal_Int32 nMaxBytesToRead )
+            throw( css::io::NotConnectedException,
+                   css::io::BufferSizeExceededException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual void SAL_CALL
-        skipBytes( sal_Int32 nBytesToSkip ) override;
+        skipBytes(
+            sal_Int32 nBytesToSkip )
+            throw( css::io::NotConnectedException,
+                   css::io::BufferSizeExceededException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Int32 SAL_CALL
-        available() override;
+        available(
+            void )
+            throw( css::io::NotConnectedException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
-        closeInput() override;
+        closeInput(
+            void )
+            throw( css::io::NotConnectedException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual void SAL_CALL
-        seek( sal_Int64 location ) override;
+        seek(
+            sal_Int64 location )
+            throw( css::lang::IllegalArgumentException,
+                   css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Int64 SAL_CALL
-        getPosition() override;
+        getPosition(
+            void )
+            throw( css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Int64 SAL_CALL
-        getLength() override;
+        getLength(
+            void )
+            throw( css::io::IOException,
+                   css::uno::RuntimeException, std::exception ) override;
 
     private:
         bool                                               m_bIsOpen;

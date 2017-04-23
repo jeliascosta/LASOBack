@@ -100,7 +100,7 @@ void SvxDistributePage::dispose()
 }
 
 
-void SvxDistributePage::PointChanged(vcl::Window* /*pWindow*/, RectPoint /*eRP*/)
+void SvxDistributePage::PointChanged(vcl::Window* /*pWindow*/, RECT_POINT /*eRP*/)
 {
 }
 
@@ -120,11 +120,11 @@ void SvxDistributePage::Reset(const SfxItemSet* )
 
     switch(m_eDistributeHor)
     {
-        case SvxDistributeHorizontal::NONE : m_pBtnHorNone->SetState(true); break;
-        case SvxDistributeHorizontal::Left : m_pBtnHorLeft->SetState(true); break;
-        case SvxDistributeHorizontal::Center : m_pBtnHorCenter->SetState(true); break;
-        case SvxDistributeHorizontal::Distance : m_pBtnHorDistance->SetState(true); break;
-        case SvxDistributeHorizontal::Right    : m_pBtnHorRight->SetState(true);    break;
+        case SvxDistributeHorizontalNone : m_pBtnHorNone->SetState(true); break;
+        case SvxDistributeHorizontalLeft : m_pBtnHorLeft->SetState(true); break;
+        case SvxDistributeHorizontalCenter : m_pBtnHorCenter->SetState(true); break;
+        case SvxDistributeHorizontalDistance : m_pBtnHorDistance->SetState(true); break;
+        case SvxDistributeHorizontalRight    : m_pBtnHorRight->SetState(true);    break;
     }
 
     m_pBtnVerNone->SetState(false);
@@ -135,11 +135,11 @@ void SvxDistributePage::Reset(const SfxItemSet* )
 
     switch(m_eDistributeVer)
     {
-        case SvxDistributeVertical::NONE : m_pBtnVerNone->SetState(true); break;
-        case SvxDistributeVertical::Top : m_pBtnVerTop->SetState(true); break;
-        case SvxDistributeVertical::Center : m_pBtnVerCenter->SetState(true); break;
-        case SvxDistributeVertical::Distance : m_pBtnVerDistance->SetState(true); break;
-        case SvxDistributeVertical::Bottom : m_pBtnVerBottom->SetState(true); break;
+        case SvxDistributeVerticalNone : m_pBtnVerNone->SetState(true); break;
+        case SvxDistributeVerticalTop : m_pBtnVerTop->SetState(true); break;
+        case SvxDistributeVerticalCenter : m_pBtnVerCenter->SetState(true); break;
+        case SvxDistributeVerticalDistance : m_pBtnVerDistance->SetState(true); break;
+        case SvxDistributeVerticalBottom : m_pBtnVerBottom->SetState(true); break;
     }
 }
 
@@ -151,26 +151,26 @@ void SvxDistributePage::Reset(const SfxItemSet* )
 
 bool SvxDistributePage::FillItemSet( SfxItemSet* )
 {
-    SvxDistributeHorizontal eDistributeHor(SvxDistributeHorizontal::NONE);
-    SvxDistributeVertical eDistributeVer(SvxDistributeVertical::NONE);
+    SvxDistributeHorizontal eDistributeHor(SvxDistributeHorizontalNone);
+    SvxDistributeVertical eDistributeVer(SvxDistributeVerticalNone);
 
     if(m_pBtnHorLeft->IsChecked())
-        eDistributeHor = SvxDistributeHorizontal::Left;
+        eDistributeHor = SvxDistributeHorizontalLeft;
     else if(m_pBtnHorCenter->IsChecked())
-        eDistributeHor = SvxDistributeHorizontal::Center;
+        eDistributeHor = SvxDistributeHorizontalCenter;
     else if(m_pBtnHorDistance->IsChecked())
-        eDistributeHor = SvxDistributeHorizontal::Distance;
+        eDistributeHor = SvxDistributeHorizontalDistance;
     else if(m_pBtnHorRight->IsChecked())
-        eDistributeHor = SvxDistributeHorizontal::Right;
+        eDistributeHor = SvxDistributeHorizontalRight;
 
     if(m_pBtnVerTop->IsChecked())
-        eDistributeVer = SvxDistributeVertical::Top;
+        eDistributeVer = SvxDistributeVerticalTop;
     else if(m_pBtnVerCenter->IsChecked())
-        eDistributeVer = SvxDistributeVertical::Center;
+        eDistributeVer = SvxDistributeVerticalCenter;
     else if(m_pBtnVerDistance->IsChecked())
-        eDistributeVer = SvxDistributeVertical::Distance;
+        eDistributeVer = SvxDistributeVerticalDistance;
     else if(m_pBtnVerBottom->IsChecked())
-        eDistributeVer = SvxDistributeVertical::Bottom;
+        eDistributeVer = SvxDistributeVerticalBottom;
 
     if(eDistributeHor != m_eDistributeHor || eDistributeVer != m_eDistributeVer)
     {

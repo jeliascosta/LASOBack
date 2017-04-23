@@ -23,6 +23,7 @@
 #include <tools/urlobj.hxx>
 #include <ucbhelper/content.hxx>
 #include <comphelper/processfactory.hxx>
+#include <cppuhelper/proptypehlp.hxx>
 #include <unotools/ucbstreamhelper.hxx>
 
 namespace ppt
@@ -38,7 +39,7 @@ ExSoundEntry::ExSoundEntry(const OUString& rString)
             css::uno::Reference< css::ucb::XCommandEnvironment >(),
             comphelper::getProcessComponentContext() );
         sal_Int64 nVal = 0;
-        aCnt.getPropertyValue("Size") >>= nVal;
+        ::cppu::convertPropertyValue( nVal, aCnt.getPropertyValue("Size") );
         nFileSize = (sal_uInt32)nVal;
     }
     catch( css::uno::Exception& )
@@ -129,15 +130,16 @@ void ExSoundEntry::Write( SvStream& rSt, sal_uInt32 nId ) const
         SvStream* pSourceFile = ::utl::UcbStreamHelper::CreateStream( aSoundURL, StreamMode::READ );
         if ( pSourceFile )
         {
-            std::unique_ptr<sal_uInt8[]> pBuf( new sal_uInt8[ 0x10000 ] );   // 64 kB  Buffer
+            sal_uInt8* pBuf = new sal_uInt8[ 0x10000 ];   // 64 kB  Buffer
             while ( nBytesLeft )
             {
                 sal_uInt32 nToDo = ( nBytesLeft > 0x10000 ) ? 0x10000 : nBytesLeft;
-                pSourceFile->ReadBytes(pBuf.get(), nToDo);
-                rSt.WriteBytes(pBuf.get(), nToDo);
+                pSourceFile->Read( pBuf, nToDo );
+                rSt.Write( pBuf, nToDo );
                 nBytesLeft -= nToDo;
             }
             delete pSourceFile;
+            delete[] pBuf;
         }
     }
     catch( css::uno::Exception& )

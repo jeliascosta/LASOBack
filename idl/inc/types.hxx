@@ -31,10 +31,12 @@ typedef SvRefMemberList< SvMetaSlot* > SvSlotElementList;
 class SvMetaAttribute : public SvMetaReference
 {
 public:
+    virtual void ReadAttributesSvIdl( SvIdlDataBase & rBase,
+                                      SvTokenStream & rInStm ) override;
     tools::SvRef<SvMetaType> aType;
     SvIdentifier             aSlotId;
                         SvMetaAttribute();
-    SvMetaAttribute( SvMetaType * );
+                        SvMetaAttribute( SvMetaType * );
 
     void                SetSlotId( const SvIdentifier & rId )
                         { aSlotId = rId; }
@@ -44,7 +46,8 @@ public:
     virtual bool        Test( SvTokenStream & rInStm ) override;
     virtual bool        ReadSvIdl( SvIdlDataBase &, SvTokenStream & rInStm ) override;
     sal_uLong           MakeSfx( OStringBuffer& rAtrrArray );
-    virtual void        Insert( SvSlotElementList& );
+    virtual void        Insert( SvSlotElementList&, const OString& rPrefix,
+                                SvIdlDataBase& );
 };
 
 enum MetaTypeType { Method, Struct, Base, Enum, Interface, Shell };
@@ -58,12 +61,14 @@ class SvMetaType : public SvMetaReference
     void                WriteSfxItem( const OString& rItemName, SvIdlDataBase & rBase,
                                       SvStream & rOutStm );
 protected:
+    bool                ReadNamesSvIdl( SvTokenStream & rInStm );
+
     bool                ReadHeaderSvIdl( SvIdlDataBase &, SvTokenStream & rInStm );
 public:
             SvMetaType();
             SvMetaType( const OString& rTypeName );
 
-    virtual ~SvMetaType() override;
+    virtual ~SvMetaType();
 
     virtual void        ReadContextSvIdl( SvIdlDataBase &, SvTokenStream & rInStm ) override;
 
@@ -104,6 +109,11 @@ public:
     SvRefMemberList<SvMetaEnumValue *> aEnumValueList;
     OString                            aPrefix;
             SvMetaTypeEnum();
+
+    sal_uLong           Count() const { return aEnumValueList.size(); }
+    const OString&      GetPrefix() const { return aPrefix; }
+    SvMetaEnumValue *   GetObject( sal_uLong n ) const
+                        { return aEnumValueList[n]; }
 };
 
 class SvMetaTypevoid : public SvMetaType

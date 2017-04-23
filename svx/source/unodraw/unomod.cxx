@@ -17,15 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/ServiceNotRegisteredException.hpp>
 #include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
-#include <svl/itempool.hxx>
 #include <svl/itemprop.hxx>
 #include <svtools/unoevent.hxx>
 #include <comphelper/sequence.hxx>
@@ -77,23 +73,24 @@ private:
 
 public:
     explicit SvxUnoDrawPagesAccess( SvxUnoDrawingModel& rMyModel ) throw();
+    virtual ~SvxUnoDrawPagesAccess() throw();
 
     // XDrawPages
-    virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL insertNewByIndex( sal_Int32 nIndex ) override;
-    virtual void SAL_CALL remove( const css::uno::Reference< css::drawing::XDrawPage >& xPage ) override;
+    virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL insertNewByIndex( sal_Int32 nIndex ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL remove( const css::uno::Reference< css::drawing::XDrawPage >& xPage ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override ;
-    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override ;
+    virtual css::uno::Any SAL_CALL getByIndex( sal_Int32 Index ) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 };
 //-
 
@@ -123,8 +120,8 @@ bool SvxUnoDrawMSFactory::createEvent( const SdrModel* pDoc, const SdrHint* pSdr
 
     switch( pSdrHint->GetKind() )
     {
-//              case SdrHintKind::LayerChange:             // layer definition changed
-//              case SdrHintKind::LayerOrderChange:        // layer order changed (Insert/Remove/ChangePos)
+//              case HINT_LAYERCHG:             // layer definition changed
+//              case HINT_LAYERORDERCHG:        // layer order changed (Insert/Remove/ChangePos)
 //              case HINT_LAYERSETCHG:          // layer set changed
 //              case HINT_LAYERSETORDERCHG:     // layer set order changed (Insert/Remove/ChangePos)
 
@@ -132,25 +129,25 @@ bool SvxUnoDrawMSFactory::createEvent( const SdrModel* pDoc, const SdrHint* pSdr
 //          aEvent.EventName = "PageModified";
 //          pPage = pSdrHint->GetPage();
 //          break;
-        case SdrHintKind::PageOrderChange:         // draw or master page order changed (Insert/Remove/ChangePos)
+        case HINT_PAGEORDERCHG:         // draw or master page order changed (Insert/Remove/ChangePos)
             aEvent.EventName = "PageOrderModified";
             pPage = pSdrHint->GetPage();
             break;
-        case SdrHintKind::ObjectChange:               // object changed
+        case HINT_OBJCHG:               // object changed
             aEvent.EventName = "ShapeModified";
             pObj = pSdrHint->GetObject();
             break;
-        case SdrHintKind::ObjectInserted:          // add new draw object
+        case HINT_OBJINSERTED:          // add new draw object
             aEvent.EventName = "ShapeInserted";
             pObj = pSdrHint->GetObject();
             break;
-        case SdrHintKind::ObjectRemoved:           // removed draw object from list
+        case HINT_OBJREMOVED:           // removed draw object from list
             aEvent.EventName = "ShapeRemoved";
             pObj = pSdrHint->GetObject();
             break;
-//                SdrHintKind::DefaultTabChange,   // default tab width changed
-//                SdrHintKind::DefaultFontHeightChange,   // default FontHeight changed
-//                SdrHintKind::SwitchToPage,    // #94278# UNDO/REDO at an object evtl. on another page
+//                HINT_DEFAULTTABCHG,   // default tab width changed
+//                HINT_DEFFONTHGTCHG,   // default FontHeight changed
+//                HINT_SWITCHTOPAGE,    // #94278# UNDO/REDO at an object evtl. on another page
 //                HINT_OBJLISTCLEAR     // Is called before an SdrObjList will be cleared
         default:
             return false;
@@ -177,14 +174,14 @@ css::uno::Reference<css::uno::XInterface> create(
         if( nType != UHASHMAP_NOTFOUND )
         {
             sal_uInt16 nT = (sal_uInt16)(nType & ~E3D_INVENTOR_FLAG);
-            SdrInventor nI = (nType & E3D_INVENTOR_FLAG) ? SdrInventor::E3d : SdrInventor::Default;
+            sal_uInt32 nI = (nType & E3D_INVENTOR_FLAG)?E3dInventor:SdrInventor;
 
             return uno::Reference< uno::XInterface >( static_cast<drawing::XShape*>(SvxDrawPage::CreateShapeByTypeAndInventor( nT, nI, nullptr, nullptr, referer )) );
         }
     }
     else if ( rServiceSpecifier == "com.sun.star.document.ImportGraphicObjectResolver" )
     {
-        SvXMLGraphicHelper* pGraphicHelper = SvXMLGraphicHelper::Create( SvXMLGraphicHelperMode::Read );
+        SvXMLGraphicHelper* pGraphicHelper = SvXMLGraphicHelper::Create( GRAPHICHELPER_MODE_READ );
         uno::Reference< uno::XInterface> xRet( static_cast< ::cppu::OWeakObject* >( pGraphicHelper ) );
         pGraphicHelper->release();
         return xRet;
@@ -200,16 +197,18 @@ css::uno::Reference<css::uno::XInterface> create(
 }
 
 uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawMSFactory::createInstance( const OUString& rServiceSpecifier )
+    throw( uno::Exception, uno::RuntimeException, std::exception )
 {
     return create(rServiceSpecifier, "");
 }
 
-uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawMSFactory::createTextField( const OUString& ServiceSpecifier )
+uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawMSFactory::createTextField( const OUString& ServiceSpecifier ) throw(css::uno::Exception, css::uno::RuntimeException)
 {
     return SvxUnoTextCreateTextField( ServiceSpecifier );
 }
 
 uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawMSFactory::createInstanceWithArguments( const OUString& ServiceSpecifier, const uno::Sequence< css::uno::Any >& Arguments )
+    throw( uno::Exception, uno::RuntimeException, std::exception )
 {
     OUString arg;
     if ((ServiceSpecifier == "com.sun.star.drawing.GraphicObjectShape"
@@ -222,6 +221,7 @@ uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawMSFactory::createInstanceWi
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoDrawMSFactory::getAvailableServiceNames()
+    throw( uno::RuntimeException, std::exception )
 {
     return UHashMap::getServiceNames();
 }
@@ -258,7 +258,7 @@ SvxUnoDrawingModel::~SvxUnoDrawingModel() throw()
 {
 }
 
-uno::Any SAL_CALL SvxUnoDrawingModel::queryInterface( const uno::Type & rType )
+uno::Any SAL_CALL SvxUnoDrawingModel::queryInterface( const uno::Type & rType ) throw(uno::RuntimeException, std::exception)
 {
     uno::Any aAny;
 
@@ -283,7 +283,7 @@ void SAL_CALL SvxUnoDrawingModel::release() throw ( )
 }
 
 // XTypeProvider
-uno::Sequence< uno::Type > SAL_CALL SvxUnoDrawingModel::getTypes(  )
+uno::Sequence< uno::Type > SAL_CALL SvxUnoDrawingModel::getTypes(  ) throw(uno::RuntimeException, std::exception)
 {
     if( maTypeSequence.getLength() == 0 )
     {
@@ -308,18 +308,20 @@ uno::Sequence< uno::Type > SAL_CALL SvxUnoDrawingModel::getTypes(  )
     return maTypeSequence;
 }
 
-uno::Sequence< sal_Int8 > SAL_CALL SvxUnoDrawingModel::getImplementationId(  )
+uno::Sequence< sal_Int8 > SAL_CALL SvxUnoDrawingModel::getImplementationId(  ) throw(uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 void SAL_CALL SvxUnoDrawingModel::lockControllers(  )
+    throw(uno::RuntimeException, std::exception)
 {
     if( mpDoc )
         mpDoc->setLock(true);
 }
 
 void SAL_CALL SvxUnoDrawingModel::unlockControllers(  )
+    throw(uno::RuntimeException, std::exception)
 {
     if( mpDoc && mpDoc->isLocked() )
     {
@@ -328,12 +330,14 @@ void SAL_CALL SvxUnoDrawingModel::unlockControllers(  )
 }
 
 sal_Bool SAL_CALL SvxUnoDrawingModel::hasControllersLocked(  )
+    throw(uno::RuntimeException, std::exception)
 {
     return mpDoc && mpDoc->isLocked();
 }
 
 // XDrawPagesSupplier
 uno::Reference< drawing::XDrawPages > SAL_CALL SvxUnoDrawingModel::getDrawPages()
+    throw(uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -347,6 +351,7 @@ uno::Reference< drawing::XDrawPages > SAL_CALL SvxUnoDrawingModel::getDrawPages(
 
 // XMultiServiceFactory ( SvxFmMSFactory )
 uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawingModel::createInstance( const OUString& aServiceSpecifier )
+    throw(uno::Exception, uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -487,7 +492,7 @@ uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawingModel::createInstance( c
         }
 
         // create the API wrapper
-        pShape = CreateSvxShapeByTypeAndInventor( nType, SdrInventor::Default, "" );
+        pShape = CreateSvxShapeByTypeAndInventor( nType, SdrInventor, "" );
 
         // set shape type
         if( pShape )
@@ -504,6 +509,7 @@ uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawingModel::createInstance( c
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoDrawingModel::getAvailableServiceNames()
+    throw(uno::RuntimeException, std::exception)
 {
     const uno::Sequence< OUString > aSNS_ORG( SvxFmMSFactory::getAvailableServiceNames() );
 
@@ -541,16 +547,18 @@ uno::Sequence< OUString > SAL_CALL SvxUnoDrawingModel::getAvailableServiceNames(
 
 // lang::XServiceInfo
 OUString SAL_CALL SvxUnoDrawingModel::getImplementationName()
+    throw(uno::RuntimeException, std::exception)
 {
     return OUString("SvxUnoDrawingModel");
 }
 
 sal_Bool SAL_CALL SvxUnoDrawingModel::supportsService( const OUString& ServiceName )
+    throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService( this, ServiceName );
 }
 
-uno::Sequence< OUString > SAL_CALL SvxUnoDrawingModel::getSupportedServiceNames()
+uno::Sequence< OUString > SAL_CALL SvxUnoDrawingModel::getSupportedServiceNames() throw(uno::RuntimeException, std::exception)
 {
     OUString aSN("com.sun.star.drawing.DrawingDocument");
     uno::Sequence< OUString > aSeq( &aSN, 1 );
@@ -559,6 +567,7 @@ uno::Sequence< OUString > SAL_CALL SvxUnoDrawingModel::getSupportedServiceNames(
 
 // XAnyCompareFactory
 uno::Reference< css::ucb::XAnyCompare > SAL_CALL SvxUnoDrawingModel::createAnyCompareByName( const OUString& )
+    throw(uno::RuntimeException, std::exception)
 {
     return SvxCreateNumRuleCompare();
 }
@@ -568,8 +577,13 @@ SvxUnoDrawPagesAccess::SvxUnoDrawPagesAccess( SvxUnoDrawingModel& rMyModel )  th
 {
 }
 
+SvxUnoDrawPagesAccess::~SvxUnoDrawPagesAccess() throw()
+{
+}
+
 // XIndexAccess
 sal_Int32 SAL_CALL SvxUnoDrawPagesAccess::getCount()
+    throw(uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -582,6 +596,7 @@ sal_Int32 SAL_CALL SvxUnoDrawPagesAccess::getCount()
 }
 
 uno::Any SAL_CALL SvxUnoDrawPagesAccess::getByIndex( sal_Int32 Index )
+    throw(lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -615,11 +630,13 @@ uno::Any SAL_CALL SvxUnoDrawPagesAccess::getByIndex( sal_Int32 Index )
 
 // XElementAccess
 uno::Type SAL_CALL SvxUnoDrawPagesAccess::getElementType()
+    throw(uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<drawing::XDrawPage>::get();
 }
 
 sal_Bool SAL_CALL SvxUnoDrawPagesAccess::hasElements()
+    throw(uno::RuntimeException, std::exception)
 {
     return getCount() > 0;
 }
@@ -629,6 +646,7 @@ sal_Bool SAL_CALL SvxUnoDrawPagesAccess::hasElements()
 // create a new page with model at given position
 // and return corresponding SdDrawPage
 uno::Reference< drawing::XDrawPage > SAL_CALL SvxUnoDrawPagesAccess::insertNewByIndex( sal_Int32 nIndex )
+    throw(uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -651,6 +669,7 @@ uno::Reference< drawing::XDrawPage > SAL_CALL SvxUnoDrawPagesAccess::insertNewBy
 }
 
 void SAL_CALL SvxUnoDrawPagesAccess::remove( const uno::Reference< drawing::XDrawPage >& xPage )
+        throw(uno::RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -672,20 +691,21 @@ void SAL_CALL SvxUnoDrawPagesAccess::remove( const uno::Reference< drawing::XDra
 }
 
 // XServiceInfo
+const char pSvxUnoDrawPagesAccessService[] = "com.sun.star.drawing.DrawPages";
 
-OUString SAL_CALL SvxUnoDrawPagesAccess::getImplementationName(  )
+OUString SAL_CALL SvxUnoDrawPagesAccess::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return OUString( "SvxUnoDrawPagesAccess" );
 }
 
-sal_Bool SAL_CALL SvxUnoDrawPagesAccess::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL SvxUnoDrawPagesAccess::supportsService( const OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-uno::Sequence< OUString > SAL_CALL SvxUnoDrawPagesAccess::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL SvxUnoDrawPagesAccess::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
-    OUString aService( "com.sun.star.drawing.DrawPages" );
+    OUString aService( pSvxUnoDrawPagesAccessService );
     uno::Sequence< OUString > aSeq( &aService, 1 );
     return aSeq;
 }

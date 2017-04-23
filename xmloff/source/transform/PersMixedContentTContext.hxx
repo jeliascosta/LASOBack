@@ -52,7 +52,7 @@ public:
 
     virtual void Characters( const OUString& rChars ) override;
 
-    virtual ~XMLPersMixedContentTContext() override;
+    virtual ~XMLPersMixedContentTContext();
 };
 
 #endif // INCLUDED_XMLOFF_SOURCE_TRANSFORM_PERSMIXEDCONTENTTCONTEXT_HXX

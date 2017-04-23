@@ -34,24 +34,24 @@ namespace cppu
 /** Helper class to implement css::lang::XTypeProvider.  Construct a static object
     of this class with your UNO object's supported types.
 */
-class SAL_WARN_UNUSED CPPUHELPER_DLLPUBLIC OTypeCollection
+class CPPUHELPER_DLLPUBLIC OTypeCollection
 {
     css::uno::Sequence< css::uno::Type > _aTypes;
 
 public:
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
     /// @endcond
 
-    OTypeCollection( const OTypeCollection & rCollection )
+    inline OTypeCollection( const OTypeCollection & rCollection )
         : _aTypes( rCollection._aTypes )
         {}
     OTypeCollection(
@@ -168,7 +168,7 @@ public:
 /** Helper class to implement IDs for XUnoTunnel.  Construct a static object
     of this class for your UNO object's implementation id.
 */
-class SAL_WARN_UNUSED CPPUHELPER_DLLPUBLIC OImplementationId
+class CPPUHELPER_DLLPUBLIC OImplementationId
 {
     mutable css::uno::Sequence< sal_Int8 > * _pSeq;
     sal_Bool _bUseEthernetAddress;
@@ -177,13 +177,13 @@ public:
     /// @cond INTERNAL
 
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     ~OImplementationId();
@@ -194,7 +194,7 @@ public:
 
         @param bUseEthernetAddress whether an ethernet mac address should be taken into account
     */
-    OImplementationId( bool bUseEthernetAddress = true )
+    inline OImplementationId( bool bUseEthernetAddress = true )
         : _pSeq( NULL )
         , _bUseEthernetAddress( bUseEthernetAddress )
         {}
@@ -202,11 +202,11 @@ public:
 
         @param rSeq implementation id
     */
-    OImplementationId( const css::uno::Sequence< sal_Int8 > & rSeq )
+    inline OImplementationId( const css::uno::Sequence< sal_Int8 > & rSeq )
         : _pSeq( new css::uno::Sequence< sal_Int8 >( rSeq ) )
         , _bUseEthernetAddress( false )
         {}
-    OImplementationId( const OImplementationId & rId )
+    inline OImplementationId( const OImplementationId & rId )
         : _pSeq( new css::uno::Sequence< sal_Int8 >( rId.getImplementationId() ) )
         , _bUseEthernetAddress( false )
         {}

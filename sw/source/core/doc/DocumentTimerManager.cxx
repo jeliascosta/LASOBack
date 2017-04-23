@@ -42,9 +42,8 @@ DocumentTimerManager::DocumentTimerManager( SwDoc& i_rSwdoc ) : m_rDoc( i_rSwdoc
                                                                 mIdleBlockCount( 0 ),
                                                                 maIdle("DocumentTimerManagerIdleTimer")
 {
-    maIdle.SetPriority( TaskPriority::LOWEST );
-    maIdle.SetInvokeHandler( LINK( this, DocumentTimerManager, DoIdleJobs) );
-    maIdle.SetDebugName( "sw::DocumentTimerManager maIdle" );
+    maIdle.SetPriority( SchedulerPriority::LOWEST );
+    maIdle.SetIdleHdl( LINK( this, DocumentTimerManager, DoIdleJobs) );
 }
 
 void DocumentTimerManager::StartIdling()
@@ -80,7 +79,7 @@ void DocumentTimerManager::StartBackgroundJobs()
         maIdle.Start();
 }
 
-IMPL_LINK( DocumentTimerManager, DoIdleJobs, Timer*, pIdle, void )
+IMPL_LINK_TYPED( DocumentTimerManager, DoIdleJobs, Idle*, pIdle, void )
 {
 #ifdef TIMELOG
     static ::rtl::Logfile* pModLogFile = 0;
@@ -150,10 +149,10 @@ IMPL_LINK( DocumentTimerManager, DoIdleJobs, Timer*, pIdle, void )
             const bool bOldLockView = pShell->IsViewLocked();
             pShell->LockView( true );
 
-            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Chapter )->ModifyNotification( nullptr, nullptr );    // ChapterField
+            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_CHAPTERFLD )->ModifyNotification( nullptr, nullptr );    // ChapterField
             m_rDoc.getIDocumentFieldsAccess().UpdateExpFields( nullptr, false );      // Updates ExpressionFields
             m_rDoc.getIDocumentFieldsAccess().UpdateTableFields(nullptr);                // Tables
-            m_rDoc.getIDocumentFieldsAccess().UpdateRefFields();                // References
+            m_rDoc.getIDocumentFieldsAccess().UpdateRefFields(nullptr);                // References
 
             pTmpRoot->EndAllAction();
 

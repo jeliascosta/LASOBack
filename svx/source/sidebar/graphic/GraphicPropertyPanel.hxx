@@ -38,7 +38,7 @@ class GraphicPropertyPanel
     public ::sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 public:
-    virtual ~GraphicPropertyPanel() override;
+    virtual ~GraphicPropertyPanel();
     virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create(
@@ -57,7 +57,7 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destructor
+    // constructor/destuctor
     GraphicPropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
@@ -85,14 +85,14 @@ private:
 
     SfxBindings*                                        mpBindings;
 
-    DECL_LINK( ModifyBrightnessHdl, Edit&, void );
-    DECL_LINK( ModifyContrastHdl, Edit&, void );
-    DECL_LINK( ModifyTransHdl, Edit&, void );
-    DECL_LINK( ClickColorModeHdl, ListBox&, void );
-    DECL_LINK( RedHdl, Edit&, void );
-    DECL_LINK( GreenHdl, Edit&, void );
-    DECL_LINK( BlueHdl, Edit&, void );
-    DECL_LINK( GammaHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyBrightnessHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyContrastHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyTransHdl, Edit&, void );
+    DECL_LINK_TYPED( ClickColorModeHdl, ListBox&, void );
+    DECL_LINK_TYPED( RedHdl, Edit&, void );
+    DECL_LINK_TYPED( GreenHdl, Edit&, void );
+    DECL_LINK_TYPED( BlueHdl, Edit&, void );
+    DECL_LINK_TYPED( GammaHdl, Edit&, void );
 
     void Initialize();
 };

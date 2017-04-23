@@ -28,46 +28,58 @@ class NetChartType_Base : public ChartType
 {
 public:
     explicit NetChartType_Base( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~NetChartType_Base() override;
+    virtual ~NetChartType_Base();
 
 protected:
     explicit NetChartType_Base( const NetChartType_Base & rOther );
 
     // ____ XChartType ____
     virtual css::uno::Reference< css::chart2::XCoordinateSystem > SAL_CALL
-        createCoordinateSystem( ::sal_Int32 DimensionCount ) override;
+        createCoordinateSystem( ::sal_Int32 DimensionCount )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw(css::beans::UnknownPropertyException) override;
 
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     // ____ XPropertySet ____
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 class NetChartType : public NetChartType_Base
 {
 public:
     explicit NetChartType( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~NetChartType() override;
+    virtual ~NetChartType();
 
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString >
+        getSupportedServiceNames_Static();
 
 protected:
     explicit NetChartType( const NetChartType & rOther );
 
     // ____ XChartType ____
-    virtual OUString SAL_CALL getChartType() override;
+    virtual OUString SAL_CALL getChartType()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } //  namespace chart

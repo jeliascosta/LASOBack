@@ -37,8 +37,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    SwGlosDocShell( bool bNewShow);
-    virtual ~SwGlosDocShell() override;
+    SwGlosDocShell( bool bNewShow = true);
+    virtual ~SwGlosDocShell();
 
     void            Execute( SfxRequest& );
     void            GetState( SfxItemSet& );
@@ -68,7 +68,7 @@ private:
 
 public:
     SwWebGlosDocShell();
-    virtual ~SwWebGlosDocShell() override;
+    virtual ~SwWebGlosDocShell();
 
     void            Execute( SfxRequest& );
     void            GetState( SfxItemSet& );

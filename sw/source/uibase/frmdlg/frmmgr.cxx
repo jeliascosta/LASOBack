@@ -38,6 +38,7 @@
 #include "format.hxx"
 #include "mdiexp.hxx"
 #include "poolfmt.hxx"
+#include <com/sun/star/text/TextContentAnchorType.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
 #include <com/sun/star/text/RelOrientation.hpp>
@@ -47,7 +48,7 @@ using namespace ::com::sun::star;
 static sal_uInt16 aFrameMgrRange[] = {
                             RES_FRMATR_BEGIN, RES_FRMATR_END-1,
 
-                            // FillAttribute support
+                            //UUUU FillAttribute support
                             XATTR_FILL_FIRST, XATTR_FILL_LAST,
 
                             SID_ATTR_BORDER_INNER, SID_ATTR_BORDER_INNER,
@@ -181,11 +182,11 @@ void SwFlyFrameAttrMgr::InsertFlyFrame(RndStdIds    eAnchorType,
                                    const Point  &rPos,
                                    const Size   &rSize )
 {
-    OSL_ENSURE( eAnchorType == RndStdIds::FLY_AT_PAGE ||
-            eAnchorType == RndStdIds::FLY_AT_PARA ||
-            eAnchorType == RndStdIds::FLY_AT_CHAR ||
-            eAnchorType == RndStdIds::FLY_AT_FLY  ||
-            eAnchorType == RndStdIds::FLY_AS_CHAR,     "invalid frame type" );
+    OSL_ENSURE( eAnchorType == FLY_AT_PAGE ||
+            eAnchorType == FLY_AT_PARA ||
+            eAnchorType == FLY_AT_CHAR ||
+            eAnchorType == FLY_AT_FLY  ||
+            eAnchorType == FLY_AS_CHAR,     "invalid frame type" );
 
     SetPos( rPos );
 
@@ -201,8 +202,8 @@ void SwFlyFrameAttrMgr::SetAnchor( RndStdIds eId )
     m_pOwnSh->GetPageNum( nPhyPageNum, nVirtPageNum );
 
     m_aSet.Put( SwFormatAnchor( eId, nPhyPageNum ) );
-    if ((RndStdIds::FLY_AT_PAGE == eId) || (RndStdIds::FLY_AT_PARA == eId) || (RndStdIds::FLY_AT_CHAR == eId)
-        || (RndStdIds::FLY_AT_FLY == eId))
+    if ((FLY_AT_PAGE == eId) || (FLY_AT_PARA == eId) || (FLY_AT_CHAR == eId)
+        || (FLY_AT_FLY == eId))
     {
         SwFormatVertOrient aVertOrient( GetVertOrient() );
         SwFormatHoriOrient aHoriOrient( GetHoriOrient() );
@@ -247,7 +248,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
 
     // OD 18.09.2003 #i18732# - adjustment for allowing vertical position
     //      aligned to page for fly frame anchored to paragraph or to character.
-    const RndStdIds eAnchorType = rVal.nAnchorType;
+    const RndStdIds eAnchorType = static_cast<RndStdIds >(rVal.nAnchorType);
     const SwFormatFrameSize& rSize = static_cast<const SwFormatFrameSize&>(m_aSet.Get(RES_FRM_SIZE));
     m_pOwnSh->CalcBoundRect( aBoundRect, eAnchorType,
                            rVal.nHRelOrient,
@@ -260,7 +261,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
     if (bOnlyPercentRefValue)
         return;
 
-    // #mongolianlayout#
+    // --> OD 2009-09-01 #mongolianlayout#
     if ( m_bIsInVertical || m_bIsInVerticalL2R )
     {
         Point aPos(aBoundRect.Pos());
@@ -277,7 +278,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
         rVal.nWidth = rVal.nHeight;
         rVal.nHeight = nTmp;
     }
-    if ((eAnchorType == RndStdIds::FLY_AT_PAGE) || (eAnchorType == RndStdIds::FLY_AT_FLY))
+    if ((eAnchorType == FLY_AT_PAGE) || (eAnchorType == FLY_AT_FLY))
     {
         // MinimalPosition
         rVal.nMinHPos = aBoundRect.Left();
@@ -327,8 +328,8 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
     }
     // OD 12.11.2003 #i22341# - handle to character anchored objects vertical
     // aligned at character or top of line in a special case
-    else if ((eAnchorType == RndStdIds::FLY_AT_PARA) ||
-                ((eAnchorType == RndStdIds::FLY_AT_CHAR) &&
+    else if ((eAnchorType == FLY_AT_PARA) ||
+                ((eAnchorType == FLY_AT_CHAR) &&
                 !(rVal.nVRelOrient == text::RelOrientation::CHAR) &&
                 !(rVal.nVRelOrient == text::RelOrientation::TEXT_LINE) ) )
     {
@@ -395,7 +396,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
     // vertical aligned at character or top of line.
     // Note: (1) positive vertical values are positions above the top of line
     //       (2) negative vertical values are positions below the top of line
-    else if ( (eAnchorType == RndStdIds::FLY_AT_CHAR) &&
+    else if ( (eAnchorType == FLY_AT_CHAR) &&
               ( rVal.nVRelOrient == text::RelOrientation::CHAR ||
                 rVal.nVRelOrient == text::RelOrientation::TEXT_LINE ) )
     {
@@ -442,7 +443,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
             rVal.nMaxHeight = aBoundRect.Height();
         }
     }
-    else if ( eAnchorType == RndStdIds::FLY_AS_CHAR )
+    else if ( eAnchorType == FLY_AS_CHAR )
     {
         rVal.nMinHPos = 0;
         rVal.nMaxHPos = 0;
@@ -458,7 +459,7 @@ void SwFlyFrameAttrMgr::ValidateMetrics( SvxSwFrameValidation& rVal,
             rVal.nMaxVPos = -aBoundRect.Height();
         }
     }
-    // #mongolianlayout#
+    // --> OD 2009-09-01 #mongolianlayout#
     if ( m_bIsInVertical || m_bIsInVerticalL2R )
     {
         //restore width/height exchange

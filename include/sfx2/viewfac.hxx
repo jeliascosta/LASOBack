@@ -22,7 +22,7 @@
 #include <rtl/ustring.hxx>
 #include <sal/config.h>
 #include <sfx2/dllapi.h>
-#include <sfx2/shell.hxx>
+#include <tools/resid.hxx>
 
 class SfxViewFrame;
 class SfxViewShell;
@@ -35,10 +35,10 @@ class SFX2_DLLPUBLIC SfxViewFactory
 {
 public:
     SfxViewFactory( SfxViewCtor fnC,
-                    SfxInterfaceId nOrdinal, const sal_Char* asciiViewName );
+                    sal_uInt16 nOrdinal, const sal_Char* asciiViewName );
 
-    SfxViewShell*  CreateInstance(SfxViewFrame *pViewFrame, SfxViewShell *pOldSh);
-    SfxInterfaceId GetOrdinal() const { return nOrd; }
+    SfxViewShell *CreateInstance(SfxViewFrame *pViewFrame, SfxViewShell *pOldSh);
+    sal_uInt16    GetOrdinal() const { return nOrd; }
 
     /// returns a legacy view name. This is "view" with an appended ordinal/ID.
     OUString      GetLegacyViewName() const;
@@ -52,7 +52,7 @@ public:
 
 private:
     SfxViewCtor     fnCreate;
-    SfxInterfaceId  nOrd;
+    sal_uInt16      nOrd;
     const OUString  m_sViewName;
 };
 

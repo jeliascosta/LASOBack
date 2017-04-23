@@ -52,15 +52,15 @@ private:
     VclPtr<CheckBox>            m_pCbxBack;
     VclPtr<CheckBox>            m_pCbxPaperbin;
 
-    DECL_LINK( ClickCheckboxHdl, Button*, void );
-    DECL_LINK( ClickBookletHdl, Button*, void );
+    DECL_LINK_TYPED( ClickCheckboxHdl, Button*, void );
+    DECL_LINK_TYPED( ClickBookletHdl, Button*, void );
 
     void updateControls();
 
     using OutputDevice::SetDrawMode;
 public:
             SdPrintOptions( vcl::Window* pParent, const SfxItemSet& rInAttrs);
-            virtual ~SdPrintOptions() override;
+            virtual ~SdPrintOptions();
     virtual void dispose() override;
 
     static  VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet* );

@@ -126,19 +126,12 @@ void ImageContainer::writeBase64EncodedStream( ImageId nId, EmitContext& rContex
             [] (beans::PropertyValue const& v) -> bool {
                 return v.Name == "InputSequence";
             }));
-
-    if (pValue == pAry + nLen )
-    {
-        SAL_WARN("sdext.pdfimport", "InputSequence not found");
-        return;
-    }
+    OSL_ENSURE( pValue != pAry+nLen,
+                "InputSequence not found" );
 
     uno::Sequence<sal_Int8> aData;
     if( !(pValue->Value >>= aData) )
-    {
-        SAL_WARN("sdext.pdfimport", "Wrong data type");
-        return;
-    }
+        OSL_FAIL("Wrong data type");
 
     rContext.rEmitter.write( encodeBase64( aData.getConstArray(), aData.getLength() ));
 }

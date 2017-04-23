@@ -21,7 +21,6 @@
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
 #include <comphelper/processfactory.hxx>
-#include <com/sun/star/datatransfer/UnsupportedFlavorException.hpp>
 #include <com/sun/star/datatransfer/XMimeContentType.hpp>
 #include <com/sun/star/datatransfer/MimeContentTypeFactory.hpp>
 
@@ -31,6 +30,7 @@ namespace basctl
 using namespace comphelper;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
+using namespace ::com::sun::star::io;
 using namespace ::com::sun::star::datatransfer;
 using namespace ::com::sun::star::datatransfer::clipboard;
 DlgEdTransferableImpl::DlgEdTransferableImpl( const Sequence< DataFlavor >& aSeqFlavors, const Sequence< Any >& aSeqData )
@@ -61,7 +61,7 @@ bool DlgEdTransferableImpl::compareDataFlavors( const DataFlavor& lFlavor, const
 }
 
 // XTransferable
-Any SAL_CALL DlgEdTransferableImpl::getTransferData( const DataFlavor& rFlavor )
+Any SAL_CALL DlgEdTransferableImpl::getTransferData( const DataFlavor& rFlavor ) throw(UnsupportedFlavorException, IOException, RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -81,13 +81,13 @@ Any SAL_CALL DlgEdTransferableImpl::getTransferData( const DataFlavor& rFlavor )
 
     return aData;
 }
-Sequence< DataFlavor > SAL_CALL DlgEdTransferableImpl::getTransferDataFlavors(  )
+Sequence< DataFlavor > SAL_CALL DlgEdTransferableImpl::getTransferDataFlavors(  ) throw(RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
     return m_SeqFlavors;
 }
-sal_Bool SAL_CALL DlgEdTransferableImpl::isDataFlavorSupported( const DataFlavor& rFlavor )
+sal_Bool SAL_CALL DlgEdTransferableImpl::isDataFlavorSupported( const DataFlavor& rFlavor ) throw(RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 
@@ -98,7 +98,7 @@ sal_Bool SAL_CALL DlgEdTransferableImpl::isDataFlavorSupported( const DataFlavor
 }
 
 // XClipboardOwner
-void SAL_CALL DlgEdTransferableImpl::lostOwnership( const Reference< XClipboard >&, const Reference< XTransferable >& )
+void SAL_CALL DlgEdTransferableImpl::lostOwnership( const Reference< XClipboard >&, const Reference< XTransferable >& ) throw(RuntimeException, std::exception)
 {
     const SolarMutexGuard aGuard;
 

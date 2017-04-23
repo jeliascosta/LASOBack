@@ -156,9 +156,28 @@ SvxZoomSliderControl::SvxZoomSliderControl( sal_uInt16 _nSlotId,  sal_uInt16 _nI
     SfxStatusBarControl( _nSlotId, _nId, rStatusBar ),
     mxImpl( new SvxZoomSliderControl_Impl )
 {
-    mxImpl->maSliderButton   = Image(BitmapEx(SVX_RES(RID_SVXBMP_SLIDERBUTTON)));
-    mxImpl->maIncreaseButton = Image(BitmapEx(SVX_RES(RID_SVXBMP_SLIDERINCREASE)));
-    mxImpl->maDecreaseButton = Image(BitmapEx(SVX_RES(RID_SVXBMP_SLIDERDECREASE)));
+    mxImpl->maSliderButton   = Image( SVX_RES( RID_SVXBMP_SLIDERBUTTON   ) );
+    mxImpl->maIncreaseButton = Image( SVX_RES( RID_SVXBMP_SLIDERINCREASE ) );
+    mxImpl->maDecreaseButton = Image( SVX_RES( RID_SVXBMP_SLIDERDECREASE ) );
+
+//#ifndef MACOSX
+    sal_Int32 nScaleFactor = rStatusBar.GetDPIScaleFactor();
+    if (nScaleFactor != 1)
+    {
+        Image arr[3] = {mxImpl->maSliderButton, mxImpl->maIncreaseButton, mxImpl->maDecreaseButton};
+
+        for (int i = 0; i < 3; i++)
+        {
+            BitmapEx aBitmap = arr[i].GetBitmapEx();
+            //Use Lanczos scaling for the slider button because it does a better job with circles
+            aBitmap.Scale(nScaleFactor, nScaleFactor, i == 0 ? BmpScaleFlag::Lanczos : BmpScaleFlag::Fast);
+            arr[i] = Image(aBitmap);
+        }
+        mxImpl->maSliderButton = arr[0];
+        mxImpl->maIncreaseButton = arr[1];
+        mxImpl->maDecreaseButton = arr[2];
+    }
+//#endif
 }
 
 SvxZoomSliderControl::~SvxZoomSliderControl()
@@ -229,10 +248,10 @@ void SvxZoomSliderControl::Paint( const UserDrawEvent& rUsrEvt )
     if ( !mxImpl->mbValuesSet )
         return;
 
-    const tools::Rectangle     aControlRect = getControlRect();
+    const Rectangle     aControlRect = getControlRect();
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
-    tools::Rectangle           aRect = rUsrEvt.GetRect();
-    tools::Rectangle           aSlider = aRect;
+    Rectangle           aRect = rUsrEvt.GetRect();
+    Rectangle           aSlider = aRect;
 
     long nSliderHeight  = 2 * pDev->GetDPIScaleFactor();
     long nSnappingHeight = 4 * pDev->GetDPIScaleFactor();
@@ -258,7 +277,7 @@ void SvxZoomSliderControl::Paint( const UserDrawEvent& rUsrEvt )
     {
         long nSnapPosX = aRect.Left() + *aSnappingPointIter;
 
-        pDev->DrawRect( tools::Rectangle( nSnapPosX - 1, aSlider.Top() - nSnappingHeight,
+        pDev->DrawRect( Rectangle( nSnapPosX - 1, aSlider.Top() - nSnappingHeight,
                     nSnapPosX, aSlider.Bottom() + nSnappingHeight ) );
     }
 
@@ -291,7 +310,7 @@ bool SvxZoomSliderControl::MouseButtonDown( const MouseEvent & rEvt )
     if ( !mxImpl->mbValuesSet )
         return true;
 
-    const tools::Rectangle aControlRect = getControlRect();
+    const Rectangle aControlRect = getControlRect();
     const Point aPoint = rEvt.GetPosPixel();
     const sal_Int32 nXDiff = aPoint.X() - aControlRect.Left();
 
@@ -341,7 +360,7 @@ bool SvxZoomSliderControl::MouseMove( const MouseEvent & rEvt )
         return true;
 
     const short nButtons = rEvt.GetButtons();
-    const tools::Rectangle aControlRect = getControlRect();
+    const Rectangle aControlRect = getControlRect();
     const Point aPoint = rEvt.GetPosPixel();
     const sal_Int32 nXDiff = aPoint.X() - aControlRect.Left();
 

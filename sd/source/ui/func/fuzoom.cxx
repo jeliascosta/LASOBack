@@ -34,7 +34,7 @@
 
 namespace sd {
 
-const sal_uInt16 SidArrayZoom[] = {
+sal_uInt16 SidArrayZoom[] = {
                     SID_ATTR_ZOOM,
                     SID_ZOOM_OUT,
                     SID_ZOOM_IN,
@@ -125,7 +125,7 @@ bool FuZoom::MouseMove(const MouseEvent& rMEvt)
         }
         else
         {
-            ::tools::Rectangle aRect(aBeginPos, aEndPos);
+            Rectangle aRect(aBeginPos, aEndPos);
             aZoomRect = aRect;
             aZoomRect.Justify();
             mpViewShell->DrawMarkRect(aZoomRect);
@@ -181,7 +181,7 @@ bool FuZoom::MouseButtonUp(const MouseEvent& rMEvt)
         mpViewShell->GetViewFrame()->GetBindings().Invalidate( SidArrayZoom );
     }
 
-    ::tools::Rectangle aVisAreaWin = mpWindow->PixelToLogic(::tools::Rectangle(Point(0,0),
+    Rectangle aVisAreaWin = mpWindow->PixelToLogic(Rectangle(Point(0,0),
                                            mpWindow->GetOutputSizePixel()));
     mpViewShell->GetZoomList()->InsertZoomRect(aVisAreaWin);
 

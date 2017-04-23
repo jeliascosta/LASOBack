@@ -23,8 +23,6 @@
 
 #include <com/sun/star/embed/EmbedUpdateModes.hpp>
 #include <com/sun/star/embed/EmbedStates.hpp>
-#include <com/sun/star/embed/WrongStateException.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 
@@ -69,6 +67,7 @@ OleEmbeddedObject::OleEmbeddedObject( const uno::Reference< lang::XMultiServiceF
 , m_bGotStatus( false )
 , m_nStatus( 0 )
 , m_nStatusAspect( 0 )
+, m_pOwnView( nullptr )
 , m_bFromClipboard( false )
 , m_bTriedConversion( false )
 {
@@ -100,6 +99,7 @@ OleEmbeddedObject::OleEmbeddedObject( const uno::Reference< lang::XMultiServiceF
 , m_bGotStatus( false )
 , m_nStatus( 0 )
 , m_nStatusAspect( 0 )
+, m_pOwnView( nullptr )
 , m_bFromClipboard( false )
 , m_bTriedConversion( false )
 {
@@ -108,30 +108,31 @@ OleEmbeddedObject::OleEmbeddedObject( const uno::Reference< lang::XMultiServiceF
 
 // this constructor let object be initialized from clipboard
 OleEmbeddedObject::OleEmbeddedObject( const uno::Reference< lang::XMultiServiceFactory >& xFactory )
-: m_pOleComponent( nullptr )
-, m_pInterfaceContainer( nullptr )
-, m_bReadOnly( false )
+: m_pOleComponent( NULL )
+, m_pInterfaceContainer( NULL )
+, m_bReadOnly( sal_False )
 , m_bDisposed( false )
 , m_nObjectState( -1 )
 , m_nTargetState( -1 )
 , m_nUpdateMode( embed::EmbedUpdateModes::ALWAYS_UPDATE )
 , m_xFactory( xFactory )
-, m_bWaitSaveCompleted( false )
-, m_bNewVisReplInStream( true )
-, m_bStoreLoaded( false )
-, m_bVisReplInitialized( false )
-, m_bVisReplInStream( false )
-, m_bStoreVisRepl( false )
-, m_bIsLink( false )
-, m_bHasCachedSize( false )
+, m_bWaitSaveCompleted( sal_False )
+, m_bNewVisReplInStream( sal_True )
+, m_bStoreLoaded( sal_False )
+, m_bVisReplInitialized( sal_False )
+, m_bVisReplInStream( sal_False )
+, m_bStoreVisRepl( sal_False )
+, m_bIsLink( sal_False )
+, m_bHasCachedSize( sal_False )
 , m_nCachedAspect( 0 )
-, m_bHasSizeToSet( false )
+, m_bHasSizeToSet( sal_False )
 , m_nAspectToSet( 0 )
-, m_bGotStatus( false )
+, m_bGotStatus( sal_False )
 , m_nStatus( 0 )
 , m_nStatusAspect( 0 )
-, m_bFromClipboard( true )
-, m_bTriedConversion( false )
+, m_pOwnView( NULL )
+, m_bFromClipboard( sal_True )
+, m_bTriedConversion( sal_False )
 {
 }
 #endif
@@ -184,13 +185,13 @@ void OleEmbeddedObject::MakeEventListenerNotification_Impl( const OUString& aEve
 }
 #ifdef _WIN32
 
-void OleEmbeddedObject::StateChangeNotification_Impl( bool bBeforeChange, sal_Int32 nOldState, sal_Int32 nNewState )
+void OleEmbeddedObject::StateChangeNotification_Impl( sal_Bool bBeforeChange, sal_Int32 nOldState, sal_Int32 nNewState )
 {
     if ( m_pInterfaceContainer )
     {
         ::cppu::OInterfaceContainerHelper* pContainer = m_pInterfaceContainer->getContainer(
                             cppu::UnoType<embed::XStateChangeListener>::get());
-        if ( pContainer != nullptr )
+        if ( pContainer != NULL )
         {
             lang::EventObject aSource( static_cast< ::cppu::OWeakObject* >( this ) );
             ::cppu::OInterfaceIteratorHelper pIterator(*pContainer);
@@ -201,7 +202,7 @@ void OleEmbeddedObject::StateChangeNotification_Impl( bool bBeforeChange, sal_In
                 {
                     try
                     {
-                        static_cast<embed::XStateChangeListener*>(pIterator.next())->changingState( aSource, nOldState, nNewState );
+                        ((embed::XStateChangeListener*)pIterator.next())->changingState( aSource, nOldState, nNewState );
                     }
                     catch( const uno::Exception& )
                     {
@@ -212,7 +213,7 @@ void OleEmbeddedObject::StateChangeNotification_Impl( bool bBeforeChange, sal_In
                 {
                        try
                     {
-                        static_cast<embed::XStateChangeListener*>(pIterator.next())->stateChanged( aSource, nOldState, nNewState );
+                        ((embed::XStateChangeListener*)pIterator.next())->stateChanged( aSource, nOldState, nNewState );
                     }
                     catch( const uno::Exception& )
                     {
@@ -236,7 +237,7 @@ void OleEmbeddedObject::GetRidOfComponent()
         m_pOleComponent->removeCloseListener( m_xClosePreventer );
         try
         {
-            m_pOleComponent->close( false );
+            m_pOleComponent->close( sal_False );
         }
         catch( const uno::Exception& )
         {
@@ -248,7 +249,7 @@ void OleEmbeddedObject::GetRidOfComponent()
 
         m_pOleComponent->disconnectEmbeddedObject();
         m_pOleComponent->release();
-        m_pOleComponent = nullptr;
+        m_pOleComponent = NULL;
     }
 #endif
 }
@@ -264,10 +265,11 @@ void OleEmbeddedObject::Dispose()
         m_pInterfaceContainer = nullptr;
     }
 
-    if ( m_xOwnView.is() )
+    if ( m_pOwnView )
     {
-        m_xOwnView->Close();
-        m_xOwnView.clear();
+        m_pOwnView->Close();
+        m_pOwnView->release();
+        m_pOwnView = nullptr;
     }
 
     if ( m_pOleComponent )
@@ -301,6 +303,7 @@ void OleEmbeddedObject::Dispose()
 
 
 uno::Sequence< sal_Int8 > SAL_CALL OleEmbeddedObject::getClassID()
+        throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -320,6 +323,7 @@ uno::Sequence< sal_Int8 > SAL_CALL OleEmbeddedObject::getClassID()
 
 
 OUString SAL_CALL OleEmbeddedObject::getClassName()
+        throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -340,6 +344,8 @@ OUString SAL_CALL OleEmbeddedObject::getClassName()
 
 void SAL_CALL OleEmbeddedObject::setClassInfo(
                 const uno::Sequence< sal_Int8 >& aClassID, const OUString& aClassName )
+        throw ( lang::NoSupportException,
+                uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -357,6 +363,7 @@ void SAL_CALL OleEmbeddedObject::setClassInfo(
 
 
 uno::Reference< util::XCloseable > SAL_CALL OleEmbeddedObject::getComponent()
+        throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -379,7 +386,7 @@ uno::Reference< util::XCloseable > SAL_CALL OleEmbeddedObject::getComponent()
     }
 
 #if defined(_WIN32)
-    if (m_pOleComponent != nullptr)
+    if (m_pOleComponent != 0)
     {
         return uno::Reference< util::XCloseable >( static_cast< ::cppu::OWeakObject* >( m_pOleComponent ), uno::UNO_QUERY );
     }
@@ -393,6 +400,7 @@ uno::Reference< util::XCloseable > SAL_CALL OleEmbeddedObject::getComponent()
 
 
 void SAL_CALL OleEmbeddedObject::addStateChangeListener( const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XStateChangeBroadcaster > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -418,6 +426,7 @@ void SAL_CALL OleEmbeddedObject::addStateChangeListener( const uno::Reference< e
 
 void SAL_CALL OleEmbeddedObject::removeStateChangeListener(
                     const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XStateChangeBroadcaster > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -437,6 +446,8 @@ void SAL_CALL OleEmbeddedObject::removeStateChangeListener(
 
 
 void SAL_CALL OleEmbeddedObject::close( sal_Bool bDeliverOwnership )
+    throw ( util::CloseVetoException,
+            uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -499,6 +510,7 @@ void SAL_CALL OleEmbeddedObject::close( sal_Bool bDeliverOwnership )
 
 
 void SAL_CALL OleEmbeddedObject::addCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -522,6 +534,7 @@ void SAL_CALL OleEmbeddedObject::addCloseListener( const uno::Reference< util::X
 
 
 void SAL_CALL OleEmbeddedObject::removeCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -544,6 +557,7 @@ void SAL_CALL OleEmbeddedObject::removeCloseListener( const uno::Reference< util
 
 
 void SAL_CALL OleEmbeddedObject::addEventListener( const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -568,6 +582,7 @@ void SAL_CALL OleEmbeddedObject::addEventListener( const uno::Reference< documen
 
 void SAL_CALL OleEmbeddedObject::removeEventListener(
                 const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XEmbeddedObject > xWrappedObject = m_xWrappedObject;
@@ -592,6 +607,9 @@ void SAL_CALL OleEmbeddedObject::removeEventListener(
 
 void SAL_CALL OleEmbeddedObject::setObjectRectangles( const awt::Rectangle& aPosRect,
                                                            const awt::Rectangle& aClipRect )
+        throw ( embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XInplaceObject > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -608,6 +626,9 @@ void SAL_CALL OleEmbeddedObject::setObjectRectangles( const awt::Rectangle& aPos
 
 
 void SAL_CALL OleEmbeddedObject::enableModeless( sal_Bool bEnable )
+        throw ( embed::WrongStateException,
+                uno::Exception,
+                uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XInplaceObject > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -625,6 +646,8 @@ void SAL_CALL OleEmbeddedObject::enableModeless( sal_Bool bEnable )
 
 void SAL_CALL OleEmbeddedObject::translateAccelerators(
                     const uno::Sequence< awt::KeyEvent >& aKeys )
+        throw ( embed::WrongStateException,
+                uno::RuntimeException, std::exception )
 {
     // begin wrapping related part ====================
     uno::Reference< embed::XInplaceObject > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -640,7 +663,7 @@ void SAL_CALL OleEmbeddedObject::translateAccelerators(
 
 // XChild
 
-css::uno::Reference< css::uno::XInterface > SAL_CALL OleEmbeddedObject::getParent()
+css::uno::Reference< css::uno::XInterface > SAL_CALL OleEmbeddedObject::getParent() throw (css::uno::RuntimeException, std::exception)
 {
     // begin wrapping related part ====================
     uno::Reference< container::XChild > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );
@@ -655,7 +678,7 @@ css::uno::Reference< css::uno::XInterface > SAL_CALL OleEmbeddedObject::getParen
 }
 
 
-void SAL_CALL OleEmbeddedObject::setParent( const css::uno::Reference< css::uno::XInterface >& xParent )
+void SAL_CALL OleEmbeddedObject::setParent( const css::uno::Reference< css::uno::XInterface >& xParent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception)
 {
     // begin wrapping related part ====================
     uno::Reference< container::XChild > xWrappedObject( m_xWrappedObject, uno::UNO_QUERY );

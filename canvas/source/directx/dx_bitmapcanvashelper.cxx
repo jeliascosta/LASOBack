@@ -122,7 +122,7 @@ namespace dxcanvas
                                mpTarget->hasAlpha() );
         }
 
-        return uno::Reference< rendering::XCachedPrimitive >(nullptr);
+        return uno::Reference< rendering::XCachedPrimitive >(NULL);
     }
 
     void BitmapCanvasHelper::copyRect( const rendering::XCanvas*                            /*pCanvas*/,

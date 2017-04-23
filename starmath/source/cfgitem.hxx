@@ -127,9 +127,10 @@ protected:
     void    SaveFontFormatList();
 
     void        SetOtherModified( bool bVal );
-    bool IsOtherModified() const     { return bIsOtherModified; }
+    inline bool IsOtherModified() const     { return bIsOtherModified; }
     void        SetFormatModified( bool bVal );
-    bool IsFormatModified() const    { return bIsFormatModified; }
+    inline bool IsFormatModified() const    { return bIsFormatModified; }
+    void        SetFontFormatListModified( bool bVal );
 
     SmFontFormatList &          GetFontFormatList();
     const SmFontFormatList &    GetFontFormatList() const
@@ -141,7 +142,7 @@ protected:
 
 public:
     SmMathConfig();
-    virtual ~SmMathConfig() override;
+    virtual ~SmMathConfig();
 
     // utl::ConfigItem
     virtual void    Notify( const css::uno::Sequence< OUString > &rPropertyNames ) override;

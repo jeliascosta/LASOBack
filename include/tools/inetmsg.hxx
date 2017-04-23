@@ -31,7 +31,7 @@
 
 class DateTime;
 
-class SAL_WARN_UNUSED INetMessageHeader
+class INetMessageHeader
 {
     OString m_aName;
     OString m_aValue;
@@ -70,7 +70,7 @@ enum class InetMessageMime
     NUMHDR                     = 4,
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC INetMIMEMessage
+class TOOLS_DLLPUBLIC INetMIMEMessage
 {
     ::std::vector< INetMessageHeader* >
                     m_aHeaderList;
@@ -137,7 +137,7 @@ public:
         }
     }
 
-    SvLockBytes* GetDocumentLB() const { return m_xDocLB.get(); }
+    SvLockBytes* GetDocumentLB() const { return m_xDocLB; }
     void         SetDocumentLB (SvLockBytes *pDocLB) { m_xDocLB = pDocLB; }
 
     static bool ParseDateField (

@@ -53,58 +53,60 @@ class AccFrameSelector :
                 css::accessibility::XAccessibleComponent,
                 css::accessibility::XAccessibleEventBroadcaster,
                 css::lang::XServiceInfo
-                >
+                >,
+    public Resource
 {
 public:
     explicit            AccFrameSelector( FrameSelector& rFrameSel, FrameBorderType eBorder );
 
-    virtual             ~AccFrameSelector() override;
+    virtual             ~AccFrameSelector();
 
     //XAccessible
-    virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     //XAccessibleContext
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) override;
-    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) override;
-    virtual sal_Int16 SAL_CALL getAccessibleRole(  ) override;
-    virtual OUString SAL_CALL getAccessibleDescription(  ) override;
-    virtual OUString SAL_CALL getAccessibleName(  ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) override;
-    virtual css::lang::Locale SAL_CALL getLocale(  ) override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleChild( sal_Int32 i ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getAccessibleDescription(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getAccessibleName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet > SAL_CALL getAccessibleRelationSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleStateSet > SAL_CALL getAccessibleStateSet(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getLocale(  ) throw (css::accessibility::IllegalAccessibleComponentStateException, css::uno::RuntimeException, std::exception) override;
 
     //XAccessibleComponent
-    virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) override;
-    virtual css::awt::Rectangle SAL_CALL getBounds(  ) override;
-    virtual css::awt::Point SAL_CALL getLocation(  ) override;
-    virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) override;
-    virtual css::awt::Size SAL_CALL getSize(  ) override;
-    virtual void SAL_CALL grabFocus(  ) override;
-    virtual sal_Int32 SAL_CALL getForeground(  ) override;
-    virtual sal_Int32 SAL_CALL getBackground(  ) override;
+    virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint( const css::awt::Point& aPoint ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL getBounds(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Point SAL_CALL getLocation(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Point SAL_CALL getLocationOnScreen(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Size SAL_CALL getSize(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL grabFocus(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getForeground(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getBackground(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleEventBroadcaster
-    virtual void SAL_CALL addAccessibleEventListener ( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
-    virtual void SAL_CALL removeAccessibleEventListener ( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
+    virtual void SAL_CALL addAccessibleEventListener ( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeAccessibleEventListener ( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) throw (css::uno::RuntimeException, std::exception) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     void    Invalidate();
     void    NotifyFocusListeners(bool bGetFocus);
     void    NotifyAccessibleEvent( const sal_Int16 _nEventId, const css::uno::Any& _rOldValue, const css::uno::Any& _rNewValue );
 
 protected:
-    DECL_LINK( WindowEventListener, VclWindowEvent&, void );
+    DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
+
+    void    ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent );
 
 private:
-    /// @throws css::uno::RuntimeException
-    void                IsValid();
+    void                IsValid() throw (css::uno::RuntimeException);
     void                RemoveFrameSelEventListener();
 
     VclPtr<FrameSelector>  mpFrameSel;

@@ -55,7 +55,7 @@ bool localesAreEqual( const Locale& rLocaleLeft, const Locale& rLocaleRight )
     return bRet;
 }
 
-ManageLanguageDialog::ManageLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> const & xLMgr)
+ManageLanguageDialog::ManageLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> xLMgr)
     : ModalDialog(pParent, "ManageLanguagesDialog", "modules/BasicIDE/ui/managelanguages.ui")
     , m_xLocalizationMgr(xLMgr)
     , m_sDefLangStr(IDE_RESSTR(RID_STR_DEF_LANG))
@@ -144,7 +144,7 @@ void ManageLanguageDialog::ClearLanguageBox()
     m_pLanguageLB->Clear();
 }
 
-IMPL_LINK_NOARG(ManageLanguageDialog, AddHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ManageLanguageDialog, AddHdl, Button*, void)
 {
     ScopedVclPtrInstance< SetDefaultLanguageDialog > aDlg( this, m_xLocalizationMgr );
     if ( RET_OK == aDlg->Execute() )
@@ -161,7 +161,7 @@ IMPL_LINK_NOARG(ManageLanguageDialog, AddHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(ManageLanguageDialog, DeleteHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ManageLanguageDialog, DeleteHdl, Button*, void)
 {
     ScopedVclPtrInstance< MessageDialog > aQBox(this, "DeleteLangDialog", "modules/BasicIDE/ui/deletelangdialog.ui");
     if ( aQBox->Execute() == RET_OK )
@@ -190,7 +190,7 @@ IMPL_LINK_NOARG(ManageLanguageDialog, DeleteHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(ManageLanguageDialog, MakeDefHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ManageLanguageDialog, MakeDefHdl, Button*, void)
 {
     const sal_Int32 nPos = m_pLanguageLB->GetSelectEntryPos();
     LanguageEntry* pSelectEntry = static_cast<LanguageEntry*>(m_pLanguageLB->GetEntryData( nPos ));
@@ -207,7 +207,7 @@ IMPL_LINK_NOARG(ManageLanguageDialog, MakeDefHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(ManageLanguageDialog, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ManageLanguageDialog, SelectHdl, ListBox&, void)
 {
     const sal_Int32 nCount = m_pLanguageLB->GetEntryCount();
     bool bEmpty = ( !nCount ||
@@ -221,7 +221,7 @@ IMPL_LINK_NOARG(ManageLanguageDialog, SelectHdl, ListBox&, void)
 
 // class SetDefaultLanguageDialog -----------------------------------------------
 
-SetDefaultLanguageDialog::SetDefaultLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> const & xLMgr)
+SetDefaultLanguageDialog::SetDefaultLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> xLMgr)
     : ModalDialog(pParent, "DefaultLanguageDialog", "modules/BasicIDE/ui/defaultlanguage.ui")
     , m_pCheckLangLB(nullptr)
     , m_xLocalizationMgr(xLMgr)

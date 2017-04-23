@@ -76,12 +76,12 @@ class SwFieldVarPage : public SwFieldPage
     sal_uLong           nOldFormat;
     bool                bInit;
 
-    DECL_LINK( TypeHdl, ListBox&, void );
-    DECL_LINK( SubTypeListBoxHdl, ListBox&, void );
-    DECL_LINK( ModifyHdl, Edit&, void );
-    DECL_LINK( TBClickHdl, ToolBox *, void );
-    DECL_LINK( ChapterHdl, ListBox&, void );
-    DECL_LINK( SeparatorHdl, Edit&, void );
+    DECL_LINK_TYPED( TypeHdl, ListBox&, void );
+    DECL_LINK_TYPED( SubTypeListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( TBClickHdl, ToolBox *, void );
+    DECL_LINK_TYPED( ChapterHdl, ListBox&, void );
+    DECL_LINK_TYPED( SeparatorHdl, Edit&, void );
     void SubTypeHdl(ListBox*);
 
     void                UpdateSubType();
@@ -93,7 +93,7 @@ protected:
 public:
                         SwFieldVarPage(vcl::Window* pParent, const SfxItemSet* pSet);
 
-                        virtual ~SwFieldVarPage() override;
+                        virtual ~SwFieldVarPage();
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create(vcl::Window* pParent, const SfxItemSet* rAttrSet);

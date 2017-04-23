@@ -38,7 +38,7 @@ $(eval $(call gb_Module_add_moduledirs,libreoffice,\
 	$(call gb_Helper_optional,DESKTOP,codemaker) \
 	comphelper \
 	configmgr \
-	connectivity \
+	$(call gb_Helper_optional,DBCONNECTIVITY,connectivity) \
 	cppcanvas \
 	cppu \
 	cppuhelper \
@@ -134,10 +134,10 @@ $(eval $(call gb_Module_add_moduledirs,libreoffice,\
 	testtools \
 	toolkit \
 	tools \
+	tubes \
 	ucb \
 	ucbhelper \
 	udkapi \
-	$(call gb_Helper_optional,PYUNO,uitest) \
 	UnoControls \
 	unodevtools \
 	unoil \
@@ -181,7 +181,7 @@ endef
 # otherwise cyclic dependencies ruin everything.
 # do not serialize on a partial build as that may fail due to missing deps.
 # the default goal is all (see Module.mk)
-ifeq (,$(filter-out all build check unitcheck slowcheck screenshot subsequentcheck uicheck,$(MAKECMDGOALS)))
+ifeq (,$(filter-out all build check unitcheck slowcheck subsequentcheck,$(MAKECMDGOALS)))
 $(eval $(call repositorymodule_serialize,\
 	scfilt \
 	$(call gb_Helper_optional,SCRIPTING,vbaobj) \

@@ -108,9 +108,9 @@ void SwWrtShell::SelPara(const Point *pPt )
     {
         SwMvContext aMvContext(this);
         ClearMark();
-        SwCursorShell::MovePara( GoCurrPara, fnParaStart );
+        SwCursorShell::MovePara( fnParaCurr, fnParaStart );
         SttSelect();
-        SwCursorShell::MovePara( GoCurrPara, fnParaEnd );
+        SwCursorShell::MovePara( fnParaCurr, fnParaEnd );
     }
     EndSelect();
     if(pPt)
@@ -147,9 +147,9 @@ long SwWrtShell::SelAll()
                 pEndPos.reset(new SwPosition( *pTmpCursor->GetMark() ));
             }
             Push();
-            bool bIsFullSel = !MoveSection( GoCurrSection, fnSectionStart);
+            bool bIsFullSel = !MoveSection( fnSectionCurr, fnSectionStart);
             SwapPam();
-            bIsFullSel &= !MoveSection( GoCurrSection, fnSectionEnd);
+            bIsFullSel &= !MoveSection( fnSectionCurr, fnSectionEnd);
             Pop(false);
             GoStart(true, &bMoveTable, false, !bIsFullSel);
         }
@@ -209,12 +209,12 @@ long SwWrtShell::SelAll()
 
 // Description: Text search
 
-sal_uLong SwWrtShell::SearchPattern( const i18nutil::SearchOptions2& rSearchOpt, bool bSearchInNotes,
+sal_uLong SwWrtShell::SearchPattern( const SearchOptions2& rSearchOpt, bool bSearchInNotes,
                                 SwDocPositions eStt, SwDocPositions eEnd,
                                 FindRanges eFlags, bool bReplace )
 {
         // no enhancement of existing selections
-    if(!(eFlags & FindRanges::InSel))
+    if(!(eFlags & FND_IN_SEL))
         ClearMark();
     bool bCancel = false;
     sal_uLong nRet = Find( rSearchOpt, bSearchInNotes, eStt, eEnd, bCancel, eFlags, bReplace );
@@ -233,7 +233,7 @@ sal_uLong SwWrtShell::SearchTempl( const OUString &rTempl,
                                FindRanges eFlags, const OUString* pReplTempl )
 {
         // no enhancement of existing selections
-    if(!(eFlags & FindRanges::InSel))
+    if(!(eFlags & FND_IN_SEL))
         ClearMark();
     SwTextFormatColl *pColl = GetParaStyle(rTempl, SwWrtShell::GETSTYLE_CREATESOME);
     SwTextFormatColl *pReplaceColl = nullptr;
@@ -255,11 +255,11 @@ sal_uLong SwWrtShell::SearchTempl( const OUString &rTempl,
 
 sal_uLong SwWrtShell::SearchAttr( const SfxItemSet& rFindSet, bool bNoColls,
                                 SwDocPositions eStart, SwDocPositions eEnd,
-                                FindRanges eFlags, const i18nutil::SearchOptions2* pSearchOpt,
+                                FindRanges eFlags, const SearchOptions2* pSearchOpt,
                                 const SfxItemSet* pReplaceSet )
 {
     // no enhancement of existing selections
-    if (!(eFlags & FindRanges::InSel))
+    if (!(eFlags & FND_IN_SEL))
         ClearMark();
 
     // Searching
@@ -438,7 +438,7 @@ long SwWrtShell::ExtSelWrd(const Point *pPt, bool )
     SwCursorShell::Push();                    // save the cursor
     SwCursorShell::SetCursor( *pPt );           // and check the direction
 
-    switch( SwCursorShell::CompareCursorStackMkCurrPt())
+    switch( SwCursorShell::CompareCursor( StackMkCurrPt ))
     {
     case -1:    bToTop = false;     break;
     case 1:     bToTop = true;      break;
@@ -649,9 +649,9 @@ void SwWrtShell::SetInsMode( bool bOn )
     Invalidate();
 }
 //Overwrite mode is incompatible with red-lining
-void SwWrtShell::SetRedlineFlagsAndCheckInsMode( RedlineFlags eMode )
+void SwWrtShell::SetRedlineModeAndCheckInsMode( sal_uInt16 eMode )
 {
-   SetRedlineFlags( eMode );
+   SetRedlineMode( eMode );
    if (IsRedlineOn())
        SetInsMode();
 }
@@ -702,7 +702,7 @@ void SwWrtShell::LeaveSelFrameMode()
 
 // Description: execute framebound macro
 
-IMPL_LINK( SwWrtShell, ExecFlyMac, const SwFlyFrameFormat*, pFlyFormat, void )
+IMPL_LINK_TYPED( SwWrtShell, ExecFlyMac, const SwFlyFrameFormat*, pFlyFormat, void )
 {
     const SwFrameFormat *pFormat = pFlyFormat ? static_cast<const SwFrameFormat*>(pFlyFormat) : GetFlyFrameFormat();
     OSL_ENSURE(pFormat, "no frame format");
@@ -844,12 +844,12 @@ void SwWrtShell::SelectTableCell()
 //              surrounding spaces are cut out.
 // Return:      Delivers the type of the word selection.
 
-int SwWrtShell::IntelligentCut(SelectionType nSelection, bool bCut)
+int SwWrtShell::IntelligentCut(int nSelection, bool bCut)
 {
         // On multiple selection no intelligent drag and drop
         // there are multiple cursors, since a second was placed
         // already at the target position.
-    if( IsAddMode() || !(nSelection & SelectionType::Text) )
+    if( IsAddMode() || !(nSelection & nsSelectionType::SEL_TXT) )
         return NO_WORD;
 
     OUString sText;

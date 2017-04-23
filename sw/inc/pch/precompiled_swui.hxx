@@ -516,6 +516,7 @@
 #include <svl/ondemand.hxx>
 #include <svl/poolitem.hxx>
 #include <svl/slstitm.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/stritem.hxx>
 #include <svl/style.hxx>
 #include <svl/svldllapi.h>
@@ -609,6 +610,7 @@
 #include <unotools/intlwrapper.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <unotools/nativenumberwrapper.hxx>
+#include <unotools/numberformatcodewrapper.hxx>
 #include <unotools/options.hxx>
 #include <unotools/pathoptions.hxx>
 #include <unotools/syslocale.hxx>

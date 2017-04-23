@@ -36,15 +36,16 @@ class SvxUnoHatchTable : public SvxUnoNameItemTable
 {
 public:
     explicit SvxUnoHatchTable( SdrModel* pModel ) throw();
+    virtual ~SvxUnoHatchTable() throw();
 
     virtual NameOrIndex* createItem() const throw() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual uno::Sequence<  OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence<  OUString > SAL_CALL getSupportedServiceNames(  ) throw( uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual uno::Type SAL_CALL getElementType(  ) override;
+    virtual uno::Type SAL_CALL getElementType(  ) throw( uno::RuntimeException, std::exception) override;
 };
 
 SvxUnoHatchTable::SvxUnoHatchTable( SdrModel* pModel ) throw()
@@ -52,12 +53,17 @@ SvxUnoHatchTable::SvxUnoHatchTable( SdrModel* pModel ) throw()
 {
 }
 
-OUString SAL_CALL SvxUnoHatchTable::getImplementationName()
+SvxUnoHatchTable::~SvxUnoHatchTable() throw()
+{
+}
+
+OUString SAL_CALL SvxUnoHatchTable::getImplementationName() throw( uno::RuntimeException, std::exception )
 {
     return OUString("SvxUnoHatchTable");
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoHatchTable::getSupportedServiceNames(  )
+    throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> aSNS { "com.sun.star.drawing.HatchTable" };
     return aSNS;
@@ -70,6 +76,7 @@ NameOrIndex* SvxUnoHatchTable::createItem() const throw()
 
 // XElementAccess
 uno::Type SAL_CALL SvxUnoHatchTable::getElementType(  )
+    throw( uno::RuntimeException, std::exception )
 {
     return cppu::UnoType<drawing::Hatch>::get();
 }

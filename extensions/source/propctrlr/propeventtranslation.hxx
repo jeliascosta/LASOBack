@@ -50,14 +50,14 @@ namespace pcr
             const css::uno::Reference< css::uno::XInterface >& _rxTranslatedEventSource
         );
 
-        const css::uno::Reference< css::beans::XPropertyChangeListener >&
+        inline const css::uno::Reference< css::beans::XPropertyChangeListener >&
             getDelegator() const { return m_xDelegator; }
 
     protected:
         // XPropertyChangeListener
-        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) override;
+        virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& evt ) throw (css::uno::RuntimeException, std::exception) override;
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         PropertyEventTranslation( const PropertyEventTranslation& ) = delete;

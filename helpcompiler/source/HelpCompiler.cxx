@@ -330,12 +330,14 @@ void myparser::traverse( xmlNodePtr parentNode )
             xmlFree (branchxml);
             xmlFree (idxml);
 
+            std::string hid;
+
             if (branch.compare(0, 3, "hid") == 0)
             {
                 size_t index = branch.find('/');
                 if (index != std::string::npos)
                 {
-                    auto hid = branch.substr(1 + index);
+                    hid = branch.substr(1 + index);
                     // one shall serve as a documentId
                     if (documentId.empty())
                         documentId = hid;
@@ -432,6 +434,7 @@ void myparser::traverse( xmlNodePtr parentNode )
 }
 
 bool HelpCompiler::compile()
+    throw (HelpProcessingException, BasicCodeTagger::TaggerException, std::exception)
 {
     // we now have the jaroutputstream, which will contain the document.
     // now determine the document as a dom tree in variable docResolved
@@ -449,7 +452,7 @@ bool HelpCompiler::compile()
         {
             std::stringstream aStrStream;
             aStrStream << "ERROR: file not existing: " << inputFile.native_file_string().c_str() << std::endl;
-            throw HelpProcessingException( HelpProcessingErrorClass::General, aStrStream.str() );
+            throw HelpProcessingException( HELPPROCESSING_GENERAL_ERROR, aStrStream.str() );
         }
     }
 
@@ -460,7 +463,7 @@ bool HelpCompiler::compile()
     std::string appl = module.substr(1);
     for (char & i : appl)
     {
-        i=rtl::toAsciiUpperCase(static_cast<unsigned char>(i));
+        i=rtl::toAsciiUpperCase(i);
     }
     xmlNodePtr docResolved = clone(xmlDocGetRootElement(docResolvedOrg), appl);
     myparser aparser(documentId, fileName, title);

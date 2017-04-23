@@ -20,7 +20,7 @@
 #include "PotentialRegressionCurveCalculator.hxx"
 #include "macros.hxx"
 #include "RegressionCalculationHelper.hxx"
-#include <SpecialCharacters.hxx>
+#include <SpecialUnicodes.hxx>
 
 #include <rtl/math.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -46,6 +46,7 @@ PotentialRegressionCurveCalculator::~PotentialRegressionCurveCalculator()
 void SAL_CALL PotentialRegressionCurveCalculator::recalculateRegression(
     const uno::Sequence< double >& aXValues,
     const uno::Sequence< double >& aYValues )
+    throw (uno::RuntimeException, std::exception)
 {
     RegressionCalculationHelper::tDoubleVectorPair aValues(
         RegressionCalculationHelper::cleanup(
@@ -101,6 +102,8 @@ void SAL_CALL PotentialRegressionCurveCalculator::recalculateRegression(
 }
 
 double SAL_CALL PotentialRegressionCurveCalculator::getCurveValue( double x )
+    throw (lang::IllegalArgumentException,
+           uno::RuntimeException, std::exception)
 {
     double fResult;
     ::rtl::math::setNan( & fResult );
@@ -119,6 +122,8 @@ uno::Sequence< geometry::RealPoint2D > SAL_CALL PotentialRegressionCurveCalculat
     const uno::Reference< chart2::XScaling >& xScalingX,
     const uno::Reference< chart2::XScaling >& xScalingY,
     sal_Bool bMaySkipPointsInCalculation )
+    throw (lang::IllegalArgumentException,
+           uno::RuntimeException, std::exception)
 {
     if( bMaySkipPointsInCalculation &&
         isLogarithmicScaling( xScalingX ) &&
@@ -141,12 +146,12 @@ OUString PotentialRegressionCurveCalculator::ImplGetRepresentation(
     sal_Int32 nNumberFormatKey, sal_Int32* pFormulaMaxWidth /* = nullptr */ ) const
 {
     bool bHasIntercept = !rtl::math::approxEqual( fabs(m_fIntercept), 1.0 );
-    OUStringBuffer aBuf( mYName + " = " );
+    OUStringBuffer aBuf( "f(x) = ");
     sal_Int32 nLineLength = aBuf.getLength();
     sal_Int32 nValueLength=0;
     if ( pFormulaMaxWidth && *pFormulaMaxWidth > 0 ) // count nValueLength
     {
-        sal_Int32 nCharMin = nLineLength + mXName.getLength() + 3;  // 3 = "^" + 2 extra characters
+        sal_Int32 nCharMin = nLineLength + 4;  // 4 = "x^" + 2 extra characters
         if ( m_fIntercept != 0.0 && m_fSlope != 0.0 )
         {
             if ( m_fIntercept < 0.0 )
@@ -171,7 +176,7 @@ OUString PotentialRegressionCurveCalculator::ImplGetRepresentation(
         // if nValueLength not calculated then nullptr
         sal_Int32* pValueLength = nValueLength ? &nValueLength : nullptr;
         if ( m_fIntercept < 0.0 )    // add intercept value
-             aTmpBuf.append( OUStringLiteral1(aMinusSign)+" " );
+            aTmpBuf.append( aMinusSign+" " );
         if( bHasIntercept )
         {
             OUString aValueString = getFormattedString( xNumFormatter, nNumberFormatKey, fabs(m_fIntercept), pValueLength );
@@ -182,7 +187,7 @@ OUString PotentialRegressionCurveCalculator::ImplGetRepresentation(
         }
         if( m_fSlope != 0.0 )  // add slope value
         {
-            aTmpBuf.append( mXName + "^" );
+            aTmpBuf.append( "x^" );
             aTmpBuf.append( getFormattedString( xNumFormatter, nNumberFormatKey, m_fSlope, pValueLength ));
         }
         addStringToEquation( aBuf, nLineLength, aTmpBuf, pFormulaMaxWidth );

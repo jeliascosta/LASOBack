@@ -26,11 +26,13 @@ ChartSidebarModifyListener::~ChartSidebarModifyListener()
 }
 
 void ChartSidebarModifyListener::modified(const css::lang::EventObject& /*rEvent*/)
+        throw (::css::uno::RuntimeException, ::std::exception)
 {
     mpParent->updateData();
 }
 
 void ChartSidebarModifyListener::disposing(const css::lang::EventObject& /*rEvent*/)
+        throw (::css::uno::RuntimeException, ::std::exception)
 {
     mpParent->modelInvalid();
 }

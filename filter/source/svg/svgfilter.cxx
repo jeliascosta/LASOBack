@@ -27,7 +27,6 @@
 #include <com/sun/star/drawing/XDrawView.hpp>
 #include <com/sun/star/frame/Desktop.hpp>
 #include <com/sun/star/frame/XController.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <com/sun/star/drawing/XDrawSubController.hpp>
 #include <com/sun/star/container/XNamed.hpp>
@@ -93,6 +92,7 @@ SVGFilter::~SVGFilter()
 }
 
 sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescriptor )
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     vcl::Window*     pFocusWindow = Application::GetFocusWindow();
@@ -103,6 +103,7 @@ sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescripto
 
     if( mxDstDoc.is() )
         bRet = implImport( rDescriptor );
+#ifndef DISABLE_EXPORT
     else if( mxSrcDoc.is() )
     {
         // #i124608# detect selection
@@ -234,8 +235,12 @@ sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescripto
 
             if (xSelection.is())
             {
-                bGotSelection
-                    = ( xSelection->getSelection() >>= maShapeSelection );
+                uno::Any aSelection;
+
+                if (xSelection->getSelection() >>= aSelection)
+                {
+                    bGotSelection = ( aSelection >>= maShapeSelection );
+                }
             }
         }
 
@@ -273,6 +278,7 @@ sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescripto
             bRet = implExport( rDescriptor );
         }
     }
+#endif
     else
         bRet = false;
 
@@ -282,16 +288,18 @@ sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescripto
     return bRet;
 }
 
-void SAL_CALL SVGFilter::cancel( )
+void SAL_CALL SVGFilter::cancel( ) throw (RuntimeException, std::exception)
 {
 }
 
 void SAL_CALL SVGFilter::setSourceDocument( const Reference< XComponent >& xDoc )
+    throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     mxSrcDoc = xDoc;
 }
 
 void SAL_CALL SVGFilter::setTargetDocument( const Reference< XComponent >& xDoc )
+    throw (css::lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     mxDstDoc = xDoc;
 }
@@ -339,7 +347,7 @@ bool SVGFilter::isStreamSvg(const uno::Reference<io::XInputStream>& xInput)
     return false;
 }
 
-OUString SAL_CALL SVGFilter::detect(Sequence<PropertyValue>& rDescriptor)
+OUString SAL_CALL SVGFilter::detect(Sequence<PropertyValue>& rDescriptor) throw (RuntimeException, std::exception)
 {
     utl::MediaDescriptor aMediaDescriptor(rDescriptor);
     uno::Reference<io::XInputStream> xInput(aMediaDescriptor[utl::MediaDescriptor::PROP_INPUTSTREAM()], UNO_QUERY);
@@ -385,7 +393,7 @@ OUString SAL_CALL SVGFilter::detect(Sequence<PropertyValue>& rDescriptor)
 #define SVG_WRITER_IMPL_NAME "com.sun.star.comp.Draw.SVGWriter"
 
 namespace sdecl = comphelper::service_decl;
- sdecl::class_<SVGFilter> const serviceFilterImpl;
+ sdecl::class_<SVGFilter> serviceFilterImpl;
  const sdecl::ServiceDecl svgFilter(
      serviceFilterImpl,
      SVG_FILTER_IMPL_NAME,
@@ -393,7 +401,7 @@ namespace sdecl = comphelper::service_decl;
      "com.sun.star.document.ExportFilter;"
      "com.sun.star.document.ExtendedTypeDetection" );
 
- sdecl::class_<SVGWriter, sdecl::with_args<true> > const serviceWriterImpl;
+ sdecl::class_<SVGWriter, sdecl::with_args<true> > serviceWriterImpl;
  const sdecl::ServiceDecl svgWriter(
      serviceWriterImpl,
      SVG_WRITER_IMPL_NAME,

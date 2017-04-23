@@ -108,6 +108,7 @@ SwDropPortion::SwDropPortion( const sal_uInt16 nLineCnt,
     nDropDescent(nDrpDescent),
     nDistance(nDist),
     nFix(0),
+    nX(0),
     nY(0)
 {
     SetWhichPor( POR_DROP );
@@ -302,7 +303,7 @@ void SwDropPortion::PaintDrop( const SwTextPaintInfo &rInf ) const
     const SwTwips nOldPosY  = rInf.Y();
     const SwTwips nOldPosX  = rInf.X();
     const SwParaPortion *pPara = rInf.GetParaPortion();
-    const Point aOutPos( nOldPosX, nOldPosY - pPara->GetAscent()
+    const Point aOutPos( nOldPosX + nX, nOldPosY - pPara->GetAscent()
                          - pPara->GetRealHeight() + pPara->Height() );
     // make good for retouching
 
@@ -311,6 +312,7 @@ void SwDropPortion::PaintDrop( const SwTextPaintInfo &rInf ) const
 
     // for background
     const_cast<SwDropPortion*>(this)->Height( nDropHeight + nDropDescent );
+    const_cast<SwDropPortion*>(this)->Width( Width() - nX );
     const_cast<SwDropPortion*>(this)->SetAscent( nDropHeight );
 
     // Always adapt Clipregion to us, never set it off using the existing ClipRect
@@ -472,7 +474,7 @@ void SwTextFormatter::CalcDropHeight( const sal_uInt16 nLines )
     SetDropDescent( nHeight - nAscent );
     SetDropHeight( nDropHght );
     SetDropLines( nDropLns );
-    // Find old position!
+    // Alte Stelle wiederfinden!
     while( pOldCurr != GetCurr() )
     {
         if( !Next() )
@@ -511,7 +513,7 @@ SwDropPortion *SwTextFormatter::NewDropPortion( SwTextFormatInfo &rInf )
     nPorLen = m_pFrame->GetTextNode()->GetDropLen( nPorLen );
     if( !nPorLen )
     {
-        ClearDropFormat();
+        static_cast<SwTextFormatter*>(this)->ClearDropFormat();
         return nullptr;
     }
 
@@ -541,7 +543,7 @@ SwDropPortion *SwTextFormatter::NewDropPortion( SwTextFormatInfo &rInf )
     // font is used.
     if ( GetDropLines() < 2 )
     {
-        SetPaintDrop( true );
+        static_cast<SwTextFormatter*>(this)->SetPaintDrop( true );
         return pDropPor;
     }
 
@@ -569,8 +571,8 @@ SwDropPortion *SwTextFormatter::NewDropPortion( SwTextFormatInfo &rInf )
 
         // find next attribute change / script change
         const sal_Int32 nTmpIdx = nNextChg;
-        sal_Int32 nNextAttr = std::min( GetNextAttr(), rInf.GetText().getLength() );
-        nNextChg = m_pScriptInfo->NextScriptChg( nTmpIdx );
+        sal_Int32 nNextAttr = std::min( static_cast<sal_Int32>(GetNextAttr()), rInf.GetText().getLength() );
+        nNextChg = pScriptInfo->NextScriptChg( nTmpIdx );
         if( nNextChg > nNextAttr )
             nNextChg = nNextAttr;
         if ( nNextChg > nPorLen )
@@ -587,7 +589,7 @@ SwDropPortion *SwTextFormatter::NewDropPortion( SwTextFormatInfo &rInf )
         pCurrPart = pPart;
     }
 
-    SetPaintDrop( true );
+    static_cast<SwTextFormatter*>(this)->SetPaintDrop( true );
     return pDropPor;
 }
 
@@ -611,7 +613,7 @@ void SwTextPainter::PaintDropPortion()
     while( !m_pCurr->GetLen() && Next() )
         ;
 
-    // MarginPortion and Adjustment!
+    // MarginPortion und Adjustment!
     const SwLinePortion *pPor = m_pCurr->GetFirstPortion();
     long nX = 0;
     while( pPor && !pPor->IsDropPortion() )
@@ -648,6 +650,7 @@ class SwDropCapCache
     sal_uInt16 nIndex;
 public:
     SwDropCapCache();
+    ~SwDropCapCache(){}
     void CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf );
 };
 
@@ -740,7 +743,7 @@ void SwDropCapCache::CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf 
 
         bool bWinUsed = false;
         vcl::Font aOldFnt;
-        MapMode aOldMap( MapUnit::MapTwip );
+        MapMode aOldMap( MAP_TWIP );
         OutputDevice* pOut = rInf.GetOut();
         OutputDevice* pWin;
         if( rInf.GetVsh() && rInf.GetVsh()->GetWin() )
@@ -753,7 +756,7 @@ void SwDropCapCache::CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf 
             // reset pCurrPart to first part
             pCurrPart = pDrop->GetPart();
             bool bFirstGlyphRect = true;
-            tools::Rectangle aCommonRect, aRect;
+            Rectangle aCommonRect, aRect;
 
             while ( pCurrPart )
             {
@@ -789,7 +792,7 @@ void SwDropCapCache::CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf 
                         {
                             bWinUsed = true;
                             aOldMap = pWin->GetMapMode( );
-                            pWin->SetMapMode( MapMode( MapUnit::MapTwip ) );
+                            pWin->SetMapMode( MapMode( MAP_TWIP ) );
                             aOldFnt = pWin->GetFont();
                         }
                         pWin->SetFont( rFnt.GetActualFont() );
@@ -802,7 +805,7 @@ void SwDropCapCache::CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf 
                     {
                         // We do not have a window or our window could not
                         // give us glyph boundaries.
-                        aRect = tools::Rectangle( Point( 0, 0 ), Size( 0, nAscent ) );
+                        aRect = Rectangle( Point( 0, 0 ), Size( 0, nAscent ) );
                     }
                 }
 
@@ -933,7 +936,7 @@ void SwDropCapCache::CalcFontSize( SwDropPortion* pDrop, SwTextFormatInfo &rInf 
 bool SwDropPortion::Format( SwTextFormatInfo &rInf )
 {
     bool bFull = false;
-    nFix = (sal_uInt16)rInf.X();
+    Fix( (sal_uInt16)rInf.X() );
 
     SwLayoutModeModifier aLayoutModeModifier( *rInf.GetOut() );
     aLayoutModeModifier.SetAuto();

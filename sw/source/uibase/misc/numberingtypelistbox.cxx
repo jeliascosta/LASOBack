@@ -26,9 +26,6 @@
 #include <comphelper/processfactory.hxx>
 #include <com/sun/star/text/XNumberingTypeInfo.hpp>
 #include <vcl/builderfactory.hxx>
-#include <editeng/numitem.hxx>
-#include <svx/dialmgr.hxx>
-#include <svx/dialogs.hrc>
 
 #include <unomid.h>
 
@@ -73,7 +70,7 @@ SwNumberingTypeListBox::~SwNumberingTypeListBox()
 
 void SwNumberingTypeListBox::dispose()
 {
-    pImpl.reset();
+    delete pImpl;
     ListBox::dispose();
 }
 
@@ -90,10 +87,11 @@ void SwNumberingTypeListBox::Reload(SwInsertNumTypes nTypeFlags)
             pTypes = aTypes.getConstArray();
         }
     }
-    ResStringArray aNames( SVX_RES( RID_SVXSTRARY_NUMBERINGTYPE ));
-    for(size_t i = 0; i < aNames.Count(); i++)
+    SwOLENames aNames(SW_RES(STRRES_NUMTYPES));
+    ResStringArray& rNames = aNames.GetNames();
+    for(size_t i = 0; i < rNames.Count(); i++)
     {
-        sal_IntPtr nValue = aNames.GetValue(i);
+        sal_IntPtr nValue = rNames.GetValue(i);
         bool bInsert = true;
         sal_Int32 nPos = LISTBOX_APPEND;
         switch(nValue)
@@ -113,10 +111,6 @@ void SwNumberingTypeListBox::Reload(SwInsertNumTypes nTypeFlags)
                 break;
             case  style::NumberingType::BITMAP:
                 bInsert = bool(nTypeFlags & SwInsertNumTypes::Bitmap );
-
-                break;
-            case  style::NumberingType::BITMAP | LINK_TOKEN:
-                bInsert = false;
 
                 break;
             default:
@@ -139,7 +133,7 @@ void SwNumberingTypeListBox::Reload(SwInsertNumTypes nTypeFlags)
         }
         if(bInsert)
         {
-            sal_Int32 nEntry = InsertEntry(aNames.GetString(i), nPos);
+            sal_Int32 nEntry = InsertEntry(rNames.GetString(i), nPos);
             SetEntryData( nEntry, reinterpret_cast<void*>(nValue) );
         }
     }
@@ -165,12 +159,12 @@ void SwNumberingTypeListBox::Reload(SwInsertNumTypes nTypeFlags)
     }
 }
 
-SvxNumType   SwNumberingTypeListBox::GetSelectedNumberingType()
+sal_Int16   SwNumberingTypeListBox::GetSelectedNumberingType()
 {
-    SvxNumType nRet = SVX_NUM_CHARS_UPPER_LETTER;
+    sal_Int16 nRet = 0;
     sal_Int32 nSelPos = GetSelectEntryPos();
     if(LISTBOX_ENTRY_NOTFOUND != nSelPos)
-        nRet = (SvxNumType)reinterpret_cast<sal_uLong>(GetEntryData(nSelPos));
+        nRet = (sal_Int16)reinterpret_cast<sal_uLong>(GetEntryData(nSelPos));
 #if OSL_DEBUG_LEVEL > 0
     else
         OSL_FAIL("SwNumberingTypeListBox not selected");
@@ -178,7 +172,7 @@ SvxNumType   SwNumberingTypeListBox::GetSelectedNumberingType()
     return nRet;
 }
 
-bool    SwNumberingTypeListBox::SelectNumberingType(SvxNumType nType)
+bool    SwNumberingTypeListBox::SelectNumberingType(sal_Int16 nType)
 {
     sal_Int32 nPos = GetEntryPos(reinterpret_cast<void*>((sal_uLong)nType));
     SelectEntryPos( nPos );

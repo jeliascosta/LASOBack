@@ -24,6 +24,7 @@
 #include <vcl/button.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/combobox.hxx>
+#include <svtools/stdctrl.hxx>
 #include <mailmergehelper.hxx>
 #include <svtools/svmedit.hxx>
 
@@ -67,8 +68,8 @@ protected:
 
     ~SwGreetingsHandler() {}
 
-    DECL_LINK(IndividualHdl_Impl, Button*, void);
-    DECL_LINK(GreetingHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(IndividualHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(GreetingHdl_Impl, Button*, void);
 
     void    Contains(bool bContainsGreeting);
     virtual void    UpdatePreview();
@@ -86,19 +87,19 @@ class SwMailMergeGreetingsPage : public svt::OWizardPage,
 
     OUString            m_sDocument;
 
-    DECL_LINK(ContainsHdl_Impl, Button*, void);
-    DECL_LINK(InsertDataHdl_Impl, Button*, void);
-    DECL_LINK(GreetingSelectHdl_Impl, Edit&, void);
-    DECL_LINK(GreetingSelectComboBoxHdl_Impl, ComboBox&, void);
-    DECL_LINK(GreetingSelectListBoxHdl_Impl, ListBox&, void);
-    DECL_LINK(AssignHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(ContainsHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(InsertDataHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(GreetingSelectHdl_Impl, Edit&, void);
+    DECL_LINK_TYPED(GreetingSelectComboBoxHdl_Impl, ComboBox&, void);
+    DECL_LINK_TYPED(GreetingSelectListBoxHdl_Impl, ListBox&, void);
+    DECL_LINK_TYPED(AssignHdl_Impl, Button*, void);
 
     virtual void        UpdatePreview() override;
     virtual void        ActivatePage() override;
     virtual bool        commitPage( ::svt::WizardTypes::CommitPageReason _eReason ) override;
 public:
         SwMailMergeGreetingsPage( SwMailMergeWizard* _pParent);
-        virtual ~SwMailMergeGreetingsPage() override;
+        virtual ~SwMailMergeGreetingsPage();
     virtual void dispose() override;
 
 };
@@ -110,11 +111,11 @@ class SwMailBodyDialog : public SfxModalDialog, public SwGreetingsHandler
 
     VclPtr<OKButton>            m_pOK;
 
-    DECL_LINK(ContainsHdl_Impl, Button*, void);
-    DECL_LINK(OKHdl, Button*, void);
+    DECL_LINK_TYPED(ContainsHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(OKHdl, Button*, void);
 public:
     SwMailBodyDialog(vcl::Window* pParent);
-    virtual ~SwMailBodyDialog() override;
+    virtual ~SwMailBodyDialog();
     virtual void dispose() override;
 
     void            SetBody(const OUString& rBody ) {m_pBodyMLE->SetText(rBody);}

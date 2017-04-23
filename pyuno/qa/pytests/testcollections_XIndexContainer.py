@@ -13,10 +13,6 @@ import uno
 from testcollections_base import CollectionsTestBase
 from com.sun.star.beans import PropertyValue
 
-# DataForm factory
-def getDataFormInstance(doc):
-    return doc.createInstance("com.sun.star.form.component.DataForm")
-
 
 # Tests behaviour of objects implementing XIndexContainer using the new-style
 # collection accessors
@@ -41,18 +37,18 @@ class TestXIndexContainer(CollectionsTestBase):
 
     def assignValuesTestFixture(self, count, key, values, expected):
         # Given
-        property_values = self.generateTestPropertyValues(count)
+        propertyValues = self.generateTestPropertyValues(count)
         if type(values) is list:
-            to_assign = self.generateTestTuple(values)
+            toAssign = self.generateTestTuple(values)
         else:
-            to_assign = values
+            toAssign = values
         if not (isinstance(expected, Exception)):
-            to_compare = self.generateTestTuple(expected)
+            toCompare = self.generateTestTuple(expected)
 
         # When
         captured = None
         try:
-            property_values[key] = to_assign
+            propertyValues[key] = toAssign
         except Exception as e:
             captured = e
 
@@ -64,20 +60,20 @@ class TestXIndexContainer(CollectionsTestBase):
         else:
             # expected is list
             self.assertEqual(None, captured)
-            self.assertEqual(len(expected), property_values.getCount())
-            for i in range(property_values.getCount()):
-                self.assertEqual(to_compare[i][0].Name, property_values.getByIndex(i)[0].Name)
+            self.assertEqual(len(expected), propertyValues.getCount())
+            for i in range(propertyValues.getCount()):
+                self.assertEqual(toCompare[i][0].Name, propertyValues.getByIndex(i)[0].Name)
 
     def deleteValuesTestFixture(self, count, key, expected):
         # Given
-        property_values = self.generateTestPropertyValues(count)
+        propertyValues = self.generateTestPropertyValues(count)
         if not (isinstance(expected, Exception)):
-            to_compare = self.generateTestTuple(expected)
+            toCompare = self.generateTestTuple(expected)
 
         # When
         captured = None
         try:
-            del property_values[key]
+            del propertyValues[key]
         except Exception as e:
             captured = e
 
@@ -89,9 +85,9 @@ class TestXIndexContainer(CollectionsTestBase):
         else:
             # expected is list
             self.assertEqual(None, captured)
-            self.assertEqual(len(expected), property_values.getCount())
-            for i in range(property_values.getCount()):
-                self.assertEqual(to_compare[i][0].Name, property_values.getByIndex(i)[0].Name)
+            self.assertEqual(len(expected), propertyValues.getCount())
+            for i in range(propertyValues.getCount()):
+                self.assertEqual(toCompare[i][0].Name, propertyValues.getByIndex(i)[0].Name)
 
     # Tests syntax:
     #    obj[2:4] = val1,val2        # Replace by slice
@@ -102,13 +98,13 @@ class TestXIndexContainer(CollectionsTestBase):
     # For:
     #    Cases requiring sequence type coercion
     def test_XIndexContainer_AssignSlice(self):
-        base_max = 5
-        assign_max = 5
-        for i in range(base_max):
-            for j in [x for x in range(-base_max-2, base_max+3)] + [None]:
-                for k in [x for x in range(-base_max-2, base_max+3)] + [None]:
+        baseMax = 5
+        assignMax = 5
+        for i in range(baseMax):
+            for j in [x for x in range(-baseMax-2, baseMax+3)] + [None]:
+                for k in [x for x in range(-baseMax-2, baseMax+3)] + [None]:
                     key = slice(j, k)
-                    for l in range(assign_max):
+                    for l in range(assignMax):
                         assign = [y+100 for y in range(l)]
                         expected = list(range(i))
                         expected[key] = assign
@@ -136,7 +132,7 @@ class TestXIndexContainer(CollectionsTestBase):
     def test_XIndexContainer_AssignSlice_NoCoercion(self):
         # Given
         doc = self.createBlankTextDocument()
-        form = getDataFormInstance(doc)
+        form = doc.createInstance("com.sun.star.form.component.DataForm")
         form.Name = 'foo'
 
         # When
@@ -150,14 +146,14 @@ class TestXIndexContainer(CollectionsTestBase):
     # For:
     #    Cases requiring sequence type coercion
     def test_XIndexContainer_AssignExtendedSlice(self):
-        base_max = 5
-        assign_max = 5
-        for i in range(base_max):
-            for j in [x for x in range(-base_max-2, base_max+3)] + [None]:
-                for k in [x for x in range(-base_max-2, base_max+3)] + [None]:
+        baseMax = 5
+        assignMax = 5
+        for i in range(baseMax):
+            for j in [x for x in range(-baseMax-2, baseMax+3)] + [None]:
+                for k in [x for x in range(-baseMax-2, baseMax+3)] + [None]:
                     for l in [-2, -1, 1, 2]:
                         key = slice(j, k, l)
-                        for m in range(assign_max):
+                        for m in range(assignMax):
                             assign = [y+100 for y in range(m)]
                             expected = list(range(i))
                             try:
@@ -170,9 +166,9 @@ class TestXIndexContainer(CollectionsTestBase):
     # Tests syntax:
     #    del obj[0]                  # Delete by index
     def test_XIndexContainer_DelIndex(self):
-        base_max = 5
-        for i in range(base_max):
-            for j in [x for x in range(-base_max-2, base_max+3)]:
+        baseMax = 5
+        for i in range(baseMax):
+            for j in [x for x in range(-baseMax-2, baseMax+3)]:
                 expected = list(range(i))
                 try:
                     del expected[j]

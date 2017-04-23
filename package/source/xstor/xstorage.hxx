@@ -42,6 +42,7 @@
 #include <com/sun/star/lang/XTypeProvider.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/packages/NoEncryptionException.hpp>
+#include <com/sun/star/logging/XSimpleLogRing.hpp>
 
 #include <cppuhelper/weak.hxx>
 #include <cppuhelper/weakref.hxx>
@@ -84,11 +85,12 @@ struct SotElement_Impl
     bool                    m_bIsInserted;
     bool                    m_bIsStorage;
 
-    std::unique_ptr<OStorage_Impl> m_xStorage;
-    std::unique_ptr<OWriteStream_Impl> m_xStream;
+    OStorage_Impl*              m_pStorage;
+    OWriteStream_Impl*          m_pStream;
 
 public:
-    SotElement_Impl(const OUString& rName, bool bStor, bool bNew);
+                                SotElement_Impl( const OUString& rName, bool bStor, bool bNew );
+                                ~SotElement_Impl();
 };
 
 typedef ::std::list< SotElement_Impl* > SotElementList_Impl;
@@ -141,6 +143,7 @@ struct OStorage_Impl
     SotElementList_Impl                         m_aDeletedList;
 
     css::uno::Reference< css::container::XNameContainer > m_xPackageFolder;
+    css::uno::Reference< css::logging::XSimpleLogRing >  m_xLogRing;
 
     css::uno::Reference< css::lang::XSingleServiceFactory > m_xPackage;
     css::uno::Reference< css::uno::XComponentContext >  m_xContext;
@@ -174,27 +177,29 @@ struct OStorage_Impl
     sal_Int16 m_nRelInfoStatus;
 
     // Constructors
-    OStorage_Impl(  css::uno::Reference< css::io::XInputStream > const & xInputStream,
+    OStorage_Impl(  css::uno::Reference< css::io::XInputStream > xInputStream,
                     sal_Int32 nMode,
                     const css::uno::Sequence< css::beans::PropertyValue >& xProperties,
-                    css::uno::Reference< css::uno::XComponentContext > const & xContext,
+                    css::uno::Reference< css::uno::XComponentContext > xContext,
                     sal_Int32 nStorageType );
 
-    OStorage_Impl(  css::uno::Reference< css::io::XStream > const & xStream,
+    OStorage_Impl(  css::uno::Reference< css::io::XStream > xStream,
                     sal_Int32 nMode,
                     const css::uno::Sequence< css::beans::PropertyValue >& xProperties,
-                    css::uno::Reference< css::uno::XComponentContext > const & xContext,
+                    css::uno::Reference< css::uno::XComponentContext > xContext,
                     sal_Int32 nStorageType );
 
     // constructor for a substorage
     OStorage_Impl(  OStorage_Impl* pParent,
                     sal_Int32 nMode,
-                    css::uno::Reference< css::container::XNameContainer > const & xPackageFolder,
-                    css::uno::Reference< css::lang::XSingleServiceFactory > const & xPackage,
-                    css::uno::Reference< css::uno::XComponentContext > const & xContext,
+                    css::uno::Reference< css::container::XNameContainer > xPackageFolder,
+                    css::uno::Reference< css::lang::XSingleServiceFactory > xPackage,
+                    css::uno::Reference< css::uno::XComponentContext > xContext,
                     sal_Int32 nStorageType );
 
     ~OStorage_Impl();
+
+    void AddLog( const OUString& aMessage );
 
     void SetReadOnlyWrap( OStorage& aStorage );
     void RemoveReadOnlyWrap( OStorage& aStorage );
@@ -216,8 +221,7 @@ struct OStorage_Impl
     void Commit();
     void Revert();
 
-    /// @throws css::packages::NoEncryptionException
-    ::comphelper::SequenceAsHashMap GetCommonRootEncryptionData();
+    ::comphelper::SequenceAsHashMap GetCommonRootEncryptionData() throw ( css::packages::NoEncryptionException );
 
     void CopyToStorage( const css::uno::Reference< css::embed::XStorage >& xDest,
                         bool bDirect );
@@ -243,19 +247,19 @@ struct OStorage_Impl
     void RemoveElement( SotElement_Impl* pElement );
     static void ClearElement( SotElement_Impl* pElement );
 
-    /// @throws css::embed::InvalidStorageException
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::packages::WrongPasswordException
-    /// @throws css::packages::NoEncryptionException
-    /// @throws css::container::NoSuchElementException
-    /// @throws css::io::IOException
-    /// @throws css::embed::StorageWrappedTargetException
-    /// @throws css::uno::RuntimeException
     void CloneStreamElement(
                     const OUString& aStreamName,
                     bool bPassProvided,
                     const ::comphelper::SequenceAsHashMap& aEncryptionData,
-                    css::uno::Reference< css::io::XStream >& xTargetStream );
+                    css::uno::Reference< css::io::XStream >& xTargetStream )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::WrongPasswordException,
+                css::packages::NoEncryptionException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException );
 
     void RemoveStreamRelInfo( const OUString& aOriginalName );
     void CreateRelStorage();
@@ -300,21 +304,21 @@ protected:
 
 public:
 
-    OStorage(   css::uno::Reference< css::io::XInputStream > const & xInputStream,
+    OStorage(   css::uno::Reference< css::io::XInputStream > xInputStream,
                 sal_Int32 nMode,
                 const css::uno::Sequence< css::beans::PropertyValue >& xProperties,
-                css::uno::Reference< css::uno::XComponentContext > const & xContext,
+                css::uno::Reference< css::uno::XComponentContext > xContext,
                 sal_Int32 nStorageType );
 
-    OStorage(   css::uno::Reference< css::io::XStream > const & xStream,
+    OStorage(   css::uno::Reference< css::io::XStream > xStream,
                 sal_Int32 nMode,
                 const css::uno::Sequence< css::beans::PropertyValue >& xProperties,
-                css::uno::Reference< css::uno::XComponentContext > const & xContext,
+                css::uno::Reference< css::uno::XComponentContext > xContext,
                 sal_Int32 nStorageType );
 
     OStorage(   OStorage_Impl* pImpl, bool bReadOnlyWrap );
 
-    virtual ~OStorage() override;
+    virtual ~OStorage();
 
     void SAL_CALL InternalDispose( bool bNotifyImpl );
 
@@ -324,7 +328,8 @@ public:
 
     //  XInterface
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL acquire() throw() override;
 
@@ -332,201 +337,466 @@ public:
 
     //  XTypeProvider
 
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     //  XStorage
 
-    virtual void SAL_CALL copyToStorage( const css::uno::Reference< css::embed::XStorage >& xDest ) override;
+    virtual void SAL_CALL copyToStorage( const css::uno::Reference< css::embed::XStorage >& xDest )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::io::XStream > SAL_CALL openStreamElement(
-            const OUString& aStreamName, sal_Int32 nOpenMode ) override;
+            const OUString& aStreamName, sal_Int32 nOpenMode )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::io::XStream > SAL_CALL openEncryptedStreamElement(
-            const OUString& aStreamName, sal_Int32 nOpenMode, const OUString& aPass ) override;
+            const OUString& aStreamName, sal_Int32 nOpenMode, const OUString& aPass )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::embed::XStorage > SAL_CALL openStorageElement(
-            const OUString& aStorName, sal_Int32 nStorageMode ) override;
+            const OUString& aStorName, sal_Int32 nStorageMode )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::io::XStream > SAL_CALL cloneStreamElement(
-            const OUString& aStreamName ) override;
+            const OUString& aStreamName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::io::XStream > SAL_CALL cloneEncryptedStreamElement(
-            const OUString& aStreamName, const OUString& aPass ) override;
+            const OUString& aStreamName, const OUString& aPass )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL copyLastCommitTo(
-            const css::uno::Reference< css::embed::XStorage >& xTargetStorage ) override;
+            const css::uno::Reference< css::embed::XStorage >& xTargetStorage )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL copyStorageElementLastCommitTo(
             const OUString& aStorName,
-            const css::uno::Reference< css::embed::XStorage >& xTargetStorage ) override;
+            const css::uno::Reference< css::embed::XStorage >& xTargetStorage )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL isStreamElement( const OUString& aElementName ) override;
+    virtual sal_Bool SAL_CALL isStreamElement( const OUString& aElementName )
+        throw ( css::container::NoSuchElementException,
+                css::lang::IllegalArgumentException,
+                css::embed::InvalidStorageException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL isStorageElement( const OUString& aElementName ) override;
+    virtual sal_Bool SAL_CALL isStorageElement( const OUString& aElementName )
+        throw ( css::container::NoSuchElementException,
+                css::lang::IllegalArgumentException,
+                css::embed::InvalidStorageException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL removeElement( const OUString& aElementName ) override;
+    virtual void SAL_CALL removeElement( const OUString& aElementName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL renameElement( const OUString& rEleName, const OUString& rNewName ) override;
+    virtual void SAL_CALL renameElement( const OUString& rEleName, const OUString& rNewName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL copyElementTo(    const OUString& aElementName,
                                         const css::uno::Reference< css::embed::XStorage >& xDest,
-                                        const OUString& aNewName ) override;
+                                        const OUString& aNewName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL moveElementTo(    const OUString& aElementName,
                                         const css::uno::Reference< css::embed::XStorage >& xDest,
-                                        const OUString& rNewName ) override;
+                                        const OUString& rNewName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     //  XStorage2
 
-    virtual css::uno::Reference< css::io::XStream > SAL_CALL openEncryptedStream( const OUString& sStreamName, ::sal_Int32 nOpenMode, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) override;
+    virtual css::uno::Reference< css::io::XStream > SAL_CALL openEncryptedStream( const OUString& sStreamName, ::sal_Int32 nOpenMode, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::io::XStream > SAL_CALL cloneEncryptedStream( const OUString& sStreamName, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) override;
+    virtual css::uno::Reference< css::io::XStream > SAL_CALL cloneEncryptedStream( const OUString& sStreamName, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     //  XStorageRawAccess
 
     virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getPlainRawStreamElement(
-            const OUString& sStreamName ) override;
+            const OUString& sStreamName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getRawEncrStreamElement(
-            const OUString& sStreamName ) override;
+            const OUString& sStreamName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL insertRawEncrStreamElement( const OUString& aStreamName,
-                                const css::uno::Reference< css::io::XInputStream >& xInStream ) override;
+                                const css::uno::Reference< css::io::XInputStream >& xInStream )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoRawFormatException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XTransactedObject
-    virtual void SAL_CALL commit() override;
+    virtual void SAL_CALL commit()
+        throw ( css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL revert() override;
+    virtual void SAL_CALL revert()
+        throw ( css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     // XTransactionBroadcaster
     virtual void SAL_CALL addTransactionListener(
-            const css::uno::Reference< css::embed::XTransactionListener >& aListener ) override;
+            const css::uno::Reference< css::embed::XTransactionListener >& aListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeTransactionListener(
-            const css::uno::Reference< css::embed::XTransactionListener >& aListener ) override;
+            const css::uno::Reference< css::embed::XTransactionListener >& aListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     //  XModifiable
 
-    virtual sal_Bool SAL_CALL isModified() override;
+    virtual sal_Bool SAL_CALL isModified()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setModified( sal_Bool bModified ) override;
+    virtual void SAL_CALL setModified( sal_Bool bModified )
+        throw ( css::beans::PropertyVetoException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addModifyListener(
-            const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+            const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeModifyListener(
-            const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+            const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     //  XNameAccess
 
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+        throw ( css::container::NoSuchElementException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Type SAL_CALL getElementType() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     //  XComponent
 
-    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL dispose()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addEventListener(
-            const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
+            const css::uno::Reference< css::lang::XEventListener >& xListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removeEventListener(
-            const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
+            const css::uno::Reference< css::lang::XEventListener >& xListener )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     //  XEncryptionProtectedSource
 
-    virtual void SAL_CALL setEncryptionPassword( const OUString& aPass ) override;
+    virtual void SAL_CALL setEncryptionPassword( const OUString& aPass )
+        throw ( css::uno::RuntimeException,
+                css::io::IOException, std::exception ) override;
 
-    virtual void SAL_CALL removeEncryption() override;
+    virtual void SAL_CALL removeEncryption()
+        throw ( css::uno::RuntimeException,
+                css::io::IOException, std::exception ) override;
 
     //  XEncryptionProtectedSource2
 
     virtual void SAL_CALL setEncryptionData(
-            const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) override;
+            const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData )
+        throw ( css::io::IOException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Bool SAL_CALL hasEncryptionData() override;
+    virtual sal_Bool SAL_CALL hasEncryptionData()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     //  XEncryptionProtectedStorage
 
-    virtual void SAL_CALL setEncryptionAlgorithms( const css::uno::Sequence< css::beans::NamedValue >& aAlgorithms ) override;
+    virtual void SAL_CALL setEncryptionAlgorithms( const css::uno::Sequence< css::beans::NamedValue >& aAlgorithms ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::beans::NamedValue > SAL_CALL getEncryptionAlgorithms() override;
+    virtual css::uno::Sequence< css::beans::NamedValue > SAL_CALL getEncryptionAlgorithms() throw (css::uno::RuntimeException, std::exception) override;
 
     //  XPropertySet
 
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue )
+        throw ( css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::lang::IllegalArgumentException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName )
+        throw ( css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addPropertyChangeListener(
             const OUString& aPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener )
+        throw ( css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL removePropertyChangeListener(
             const OUString& aPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener )
+        throw ( css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL addVetoableChangeListener(
             const OUString& PropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw ( css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener )
+        throw ( css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     //  XOptimizedStorage
-    virtual void SAL_CALL insertRawNonEncrStreamElementDirect( const OUString& sStreamName, const css::uno::Reference< css::io::XInputStream >& xInStream ) override;
+    virtual void SAL_CALL insertRawNonEncrStreamElementDirect( const OUString& sStreamName, const css::uno::Reference< css::io::XInputStream >& xInStream )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoRawFormatException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL insertStreamElementDirect( const OUString& sStreamName, const css::uno::Reference< css::io::XInputStream >& xInStream, const css::uno::Sequence< css::beans::PropertyValue >& aProps ) override;
+    virtual void SAL_CALL insertStreamElementDirect( const OUString& sStreamName, const css::uno::Reference< css::io::XInputStream >& xInStream, const css::uno::Sequence< css::beans::PropertyValue >& aProps )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL copyElementDirectlyTo( const OUString& sSourceName, const css::uno::Reference< css::embed::XOptimizedStorage >& xTargetStorage, const OUString& sTargetName ) override;
+    virtual void SAL_CALL copyElementDirectlyTo( const OUString& sSourceName, const css::uno::Reference< css::embed::XOptimizedStorage >& xTargetStorage, const OUString& sTargetName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::container::ElementExistException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL writeAndAttachToStream( const css::uno::Reference< css::io::XStream >& xStream ) override;
+    virtual void SAL_CALL writeAndAttachToStream( const css::uno::Reference< css::io::XStream >& xStream )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL attachToURL( const OUString& sURL, sal_Bool bReadOnly ) override;
+    virtual void SAL_CALL attachToURL( const OUString& sURL, sal_Bool bReadOnly )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Any SAL_CALL getElementPropertyValue( const OUString& sElementName, const OUString& sPropertyName ) override;
+    virtual css::uno::Any SAL_CALL getElementPropertyValue( const OUString& sElementName, const OUString& sPropertyName )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL copyStreamElementData( const OUString& sStreamName, const css::uno::Reference< css::io::XStream >& xTargetStream ) override;
+    virtual void SAL_CALL copyStreamElementData( const OUString& sStreamName, const css::uno::Reference< css::io::XStream >& xTargetStream )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 
     // XRelationshipAccess
-    virtual sal_Bool SAL_CALL hasByID( const OUString& sID ) override;
+    virtual sal_Bool SAL_CALL hasByID( const OUString& sID )
+        throw ( css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getTargetByID( const OUString& sID ) override;
+    virtual OUString SAL_CALL getTargetByID( const OUString& sID )
+        throw ( css::container::NoSuchElementException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getTypeByID( const OUString& sID ) override;
+    virtual OUString SAL_CALL getTypeByID( const OUString& sID )
+        throw ( css::container::NoSuchElementException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::beans::StringPair > SAL_CALL getRelationshipByID( const OUString& sID ) override;
+    virtual css::uno::Sequence< css::beans::StringPair > SAL_CALL getRelationshipByID( const OUString& sID )
+        throw ( css::container::NoSuchElementException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getRelationshipsByType( const OUString& sType ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getRelationshipsByType( const OUString& sType )
+        throw ( css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getAllRelationships(  ) override;
+    virtual css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > SAL_CALL getAllRelationships(  )
+        throw ( css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL insertRelationshipByID( const OUString& sID, const css::uno::Sequence< css::beans::StringPair >& aEntry, sal_Bool bReplace ) override;
+    virtual void SAL_CALL insertRelationshipByID( const OUString& sID, const css::uno::Sequence< css::beans::StringPair >& aEntry, sal_Bool bReplace )
+        throw ( css::container::ElementExistException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL removeRelationshipByID( const OUString& sID ) override;
+    virtual void SAL_CALL removeRelationshipByID( const OUString& sID )
+        throw ( css::container::NoSuchElementException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL insertRelationships( const css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > >& aEntries, sal_Bool bReplace ) override;
+    virtual void SAL_CALL insertRelationships( const css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > >& aEntries, sal_Bool bReplace )
+        throw ( css::container::ElementExistException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL clearRelationships(  ) override;
+    virtual void SAL_CALL clearRelationships(  )
+        throw ( css::io::IOException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XHierarchicalStorageAccess
-    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openStreamElementByHierarchicalName( const OUString& sStreamPath, ::sal_Int32 nOpenMode ) override;
+    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openStreamElementByHierarchicalName( const OUString& sStreamPath, ::sal_Int32 nOpenMode )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openEncryptedStreamElementByHierarchicalName( const OUString& sStreamName, ::sal_Int32 nOpenMode, const OUString& sPassword ) override;
+    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openEncryptedStreamElementByHierarchicalName( const OUString& sStreamName, ::sal_Int32 nOpenMode, const OUString& sPassword )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL removeStreamElementByHierarchicalName( const OUString& sElementPath ) override;
+    virtual void SAL_CALL removeStreamElementByHierarchicalName( const OUString& sElementPath )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XHierarchicalStorageAccess2
-    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openEncryptedStreamByHierarchicalName( const OUString& sStreamName, ::sal_Int32 nOpenMode, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData ) override;
+    virtual css::uno::Reference< css::embed::XExtendedStorageStream > SAL_CALL openEncryptedStreamByHierarchicalName( const OUString& sStreamName, ::sal_Int32 nOpenMode, const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData )
+        throw ( css::embed::InvalidStorageException,
+                css::lang::IllegalArgumentException,
+                css::packages::NoEncryptionException,
+                css::packages::WrongPasswordException,
+                css::container::NoSuchElementException,
+                css::io::IOException,
+                css::embed::StorageWrappedTargetException,
+                css::uno::RuntimeException, std::exception ) override;
 };
 
 StorageHolder_Impl::StorageHolder_Impl( OStorage* pStorage )

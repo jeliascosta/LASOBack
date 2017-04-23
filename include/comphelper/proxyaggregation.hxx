@@ -25,8 +25,8 @@
 #include <com/sun/star/lang/XComponent.hpp>
 #include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/uno3.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <cppuhelper/compbase_ex.hxx>
 #include <comphelper/comphelperdllapi.h>
 
@@ -88,7 +88,7 @@ namespace comphelper
         css::uno::Reference< css::uno::XComponentContext >        m_xContext;
 
     protected:
-        const css::uno::Reference< css::uno::XComponentContext >& getComponentContext()
+        inline const css::uno::Reference< css::uno::XComponentContext >& getComponentContext()
         {
             return m_xContext;
         }
@@ -105,10 +105,8 @@ namespace comphelper
         );
 
         // XInterface and XTypeProvider
-        /// @throws css::uno::RuntimeException
-        css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType );
-        /// @throws css::uno::RuntimeException
-        css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  );
+        css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw (css::uno::RuntimeException);
+        css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw (css::uno::RuntimeException);
 
     private:
         OProxyAggregation( const OProxyAggregation& ) = delete;
@@ -145,7 +143,7 @@ namespace comphelper
         using OProxyAggregation::getComponentContext;
 
         // XInterface
-        css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) override;
+        css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XTypeProvider
         DECLARE_XTYPEPROVIDER( )
@@ -165,11 +163,10 @@ namespace comphelper
         );
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent
-        /// @throws css::uno::RuntimeException
-        virtual void SAL_CALL dispose() = 0;
+        virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) = 0;
 
     private:
         OComponentProxyAggregationHelper( const OComponentProxyAggregationHelper& ) = delete;
@@ -179,7 +176,7 @@ namespace comphelper
 
     //= OComponentProxyAggregation
 
-    class COMPHELPER_DLLPUBLIC OComponentProxyAggregation : public cppu::BaseMutex
+    class COMPHELPER_DLLPUBLIC OComponentProxyAggregation   :public OBaseMutex
                                         ,public cppu::WeakComponentImplHelperBase
                                         ,public OComponentProxyAggregationHelper
     {
@@ -189,7 +186,7 @@ namespace comphelper
             const css::uno::Reference< css::lang::XComponent >& _rxComponent
         );
 
-        virtual ~OComponentProxyAggregation() override;
+        virtual ~OComponentProxyAggregation();
 
         // XInterface
         DECLARE_XINTERFACE()
@@ -197,13 +194,17 @@ namespace comphelper
         DECLARE_XTYPEPROVIDER()
 
         // OComponentHelper
-        virtual void SAL_CALL disposing() override;
+        virtual void SAL_CALL disposing()  throw (css::uno::RuntimeException) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& _rSource ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent/OComponentProxyAggregationHelper
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw( css::uno::RuntimeException, std::exception ) override;
+
+    protected:
+        // be called from within the dtor of derived classes
+        void implEnsureDisposeInDtor( );
 
     private:
         OComponentProxyAggregation( const OComponentProxyAggregation& ) = delete;

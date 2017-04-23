@@ -42,7 +42,7 @@ private:
     sal_uInt16          GetMaxId() const;
     SCTAB           GetPrivatDropPos(const Point& rPos );
 
-    DECL_LINK(ShowPageList, const CommandEvent&, void);
+    DECL_LINK_TYPED(ShowPageList, const CommandEvent&, void);
 
 protected:
     virtual void    Select() override;
@@ -64,8 +64,7 @@ protected:
 
 public:
                     ScTabControl( vcl::Window* pParent, ScViewData* pData );
-    virtual void    dispose() override;
-                    virtual ~ScTabControl() override;
+                    virtual ~ScTabControl();
 
     using TabBar::StartDrag;
 

@@ -36,7 +36,7 @@ class ObjectCatalog : public DockingWindow
 {
 public:
     explicit ObjectCatalog(vcl::Window* pParent);
-    virtual ~ObjectCatalog() override;
+    virtual ~ObjectCatalog();
     virtual void dispose() override;
 public:
     void UpdateEntries () { aTree->UpdateEntries(); }

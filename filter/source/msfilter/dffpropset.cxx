@@ -19,8 +19,6 @@
 
 #include <algorithm>
 #include <filter/msfilter/dffpropset.hxx>
-#include <filter/msfilter/dffrecordheader.hxx>
-#include <svx/msdffdef.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <tools/stream.hxx>
 
@@ -1107,6 +1105,7 @@ void DffPropSet::ReadPropSet( SvStream& rIn, bool bSetUninitializedOnly )
 
     sal_uInt32 nPropCount = aHd.nRecInstance;
 
+    // FilePos der ComplexData merken
     sal_uInt32 nComplexDataFilePos = rIn.Tell() + ( nPropCount * 6 );
 
     for( sal_uInt32 nPropNum = 0; nPropNum < nPropCount; nPropNum++ )
@@ -1159,7 +1158,7 @@ void DffPropSet::ReadPropSet( SvStream& rIn, bool bSetUninitializedOnly )
                 // normally nContent is the complete size of the complex property,
                 // but this is not always true for IMsoArrays ( what the hell is a IMsoArray ? )
 
-                // I love special treatments :-(
+                // I love special threatments :-(
                 if ( ( nRecType == DFF_Prop_pVertices ) || ( nRecType == DFF_Prop_pSegmentInfo )
                     || ( nRecType == DFF_Prop_fillShadeColors ) || ( nRecType == DFF_Prop_lineDashStyle )
                         || ( nRecType == DFF_Prop_pWrapPolygonVertices ) || ( nRecType == DFF_Prop_connectorPoints )
@@ -1296,7 +1295,7 @@ bool DffPropSet::GetPropertyBool( sal_uInt32 nId ) const
 
 OUString DffPropSet::GetPropertyString( sal_uInt32 nId, SvStream& rStrm ) const
 {
-    sal_uInt64 const nOldPos = rStrm.Tell();
+    sal_Size nOldPos = rStrm.Tell();
     OUStringBuffer aBuffer;
     sal_uInt32 nBufferSize = GetPropertyValue( nId, 0 );
     if( (nBufferSize > 0) && SeekToContent( nId, rStrm ) )

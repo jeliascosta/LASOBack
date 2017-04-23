@@ -31,6 +31,7 @@ CGMBitmap::CGMBitmap( CGM& rCGM ) :
 
 CGMBitmap::~CGMBitmap()
 {
+    delete pCGMBitmapDescriptor;
 }
 
 
@@ -323,8 +324,8 @@ void CGMBitmap::ImplInsert( CGMBitmapDescriptor& rSource, CGMBitmapDescriptor& r
         if ( mpCGM->mnVDCYmul == -1 )
             rDest.mnOrigin = rSource.mnOrigin;          // new origin
         rDest.mpBitmap->Expand( 0, rSource.mnY );
-        rDest.mpBitmap->CopyPixel( tools::Rectangle( Point( 0, rDest.mnY ), Size( rSource.mnX, rSource.mnY ) ),
-            tools::Rectangle( Point( 0, 0 ), Size( rSource.mnX, rSource.mnY ) ), rSource.mpBitmap );
+        rDest.mpBitmap->CopyPixel( Rectangle( Point( 0, rDest.mnY ), Size( rSource.mnX, rSource.mnY ) ),
+            Rectangle( Point( 0, 0 ), Size( rSource.mnX, rSource.mnY ) ), rSource.mpBitmap );
         FloatPoint aFloatPoint;
         aFloatPoint.X = rSource.mnQ.X - rSource.mnR.X;
         aFloatPoint.Y = rSource.mnQ.Y - rSource.mnR.Y;
@@ -338,8 +339,8 @@ void CGMBitmap::ImplInsert( CGMBitmapDescriptor& rSource, CGMBitmapDescriptor& r
         if ( mpCGM->mnVDCYmul == 1 )
             rDest.mnOrigin = rSource.mnOrigin;          // new origin
         rDest.mpBitmap->Expand( 0, rSource.mnY );
-        rDest.mpBitmap->CopyPixel( tools::Rectangle( Point( 0, rDest.mnY ), Size( rSource.mnX, rSource.mnY ) ),
-            tools::Rectangle( Point( 0, 0 ), Size( rSource.mnX, rSource.mnY ) ), rSource.mpBitmap );
+        rDest.mpBitmap->CopyPixel( Rectangle( Point( 0, rDest.mnY ), Size( rSource.mnX, rSource.mnY ) ),
+            Rectangle( Point( 0, 0 ), Size( rSource.mnX, rSource.mnY ) ), rSource.mpBitmap );
         rDest.mnP = rSource.mnP;
         rDest.mnR = rSource.mnR;
     }
@@ -363,7 +364,9 @@ CGMBitmap* CGMBitmap::GetNext()
             return nullptr;
         }
 
-        pCGMBitmapDescriptor.swap(pCGMTempBitmap->pCGMBitmapDescriptor);
+        CGMBitmapDescriptor* pTempBD = pCGMBitmapDescriptor;
+        pCGMBitmapDescriptor = pCGMTempBitmap->pCGMBitmapDescriptor;
+        pCGMTempBitmap->pCGMBitmapDescriptor = pTempBD;
         return pCGMTempBitmap;
     }
     else

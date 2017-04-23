@@ -38,11 +38,13 @@ public:
     explicit ChartSidebarSelectionListener(ChartSidebarSelectionListenerParent* pParent);
     // only liste to the changes of eType
     ChartSidebarSelectionListener(ChartSidebarSelectionListenerParent* pParent, ObjectType eType);
-    virtual ~ChartSidebarSelectionListener() override;
+    virtual ~ChartSidebarSelectionListener();
 
-    virtual void SAL_CALL selectionChanged(const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL selectionChanged(const css::lang::EventObject& rEvent)
+        throw (::css::uno::RuntimeException, ::std::exception) override;
 
-    virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent)
+        throw (::css::uno::RuntimeException, ::std::exception) override;
 
     void setAcceptedTypes(const std::vector<ObjectType>& aTypes);
 

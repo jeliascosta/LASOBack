@@ -72,6 +72,7 @@ class LwpMasterPage
 {
 public:
     LwpMasterPage(LwpPara* pPara, LwpPageLayout* pLayout);
+    ~LwpMasterPage(){}
 
 public:
     //for page layout register and parse
@@ -80,6 +81,8 @@ public:
     void ParseSection(LwpFrib* pFrib);
     XFSection* CreateXFSection();
 
+    const OUString& GetStyleName(){ return m_StyleName;}
+    const OUString& GetFillerPageStyleName(){ return m_FillerPageStyleName;}
     bool IsNextPageType();
 
 private:
@@ -105,7 +108,7 @@ class LwpFribSection: public LwpFrib
 {
 public:
     explicit LwpFribSection(LwpPara* pPara );
-    virtual ~LwpFribSection() override;
+    virtual ~LwpFribSection();
     void Read(LwpObjectStream* pObjStrm, sal_uInt16 len) override;
     LwpSection * GetSection();
     void RegisterSectionStyle();

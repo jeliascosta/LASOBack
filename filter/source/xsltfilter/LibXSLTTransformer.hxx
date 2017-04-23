@@ -64,7 +64,7 @@ namespace XSLT
         int SAL_CALL closeOutput();
 
     private:
-        virtual ~Reader() override;
+        virtual ~Reader();
 
         static const sal_Int32 OUTPUT_BUFFER_SIZE;
         static const sal_Int32 INPUT_BUFFER_SIZE;
@@ -118,7 +118,7 @@ namespace XSLT
         rtl::Reference<Reader> m_Reader;
 
     protected:
-        virtual ~LibXSLTTransformer() override {
+        virtual ~LibXSLTTransformer() {
             if (m_Reader.is()) {
                 m_Reader->terminate();
                 m_Reader->forceStateStopped();
@@ -133,25 +133,29 @@ namespace XSLT
 
         // XActiveDataSink
         virtual void SAL_CALL
-        setInputStream(const css::uno::Reference<XInputStream>& inputStream) override;
+        setInputStream(const css::uno::Reference<XInputStream>& inputStream)
+                throw (RuntimeException, std::exception) override;
         virtual css::uno::Reference<XInputStream> SAL_CALL
-        getInputStream() override;
+        getInputStream() throw (RuntimeException, std::exception) override;
         // XActiveDataSource
         virtual void SAL_CALL
-        setOutputStream(const css::uno::Reference<XOutputStream>& outputStream) override;
+        setOutputStream(const css::uno::Reference<XOutputStream>& outputStream)
+                throw (RuntimeException, std::exception) override;
         virtual css::uno::Reference<XOutputStream> SAL_CALL
-        getOutputStream() override;
+        getOutputStream() throw (RuntimeException, std::exception) override;
         // XActiveDataControl
         virtual void SAL_CALL
-        addListener(const css::uno::Reference<XStreamListener>& listener) override;
+        addListener(const css::uno::Reference<XStreamListener>& listener)
+                throw (RuntimeException, std::exception) override;
         virtual void SAL_CALL
-        removeListener(const css::uno::Reference<XStreamListener>& listener) override;
+        removeListener(const css::uno::Reference<XStreamListener>& listener)
+                throw (RuntimeException, std::exception) override;
         virtual void SAL_CALL
-        start() override;
+        start() throw (RuntimeException, std::exception) override;
         virtual void SAL_CALL
-        terminate() override;
+        terminate() throw (RuntimeException, std::exception) override;
         virtual void SAL_CALL
-        initialize(const Sequence<Any>& params) override;
+        initialize(const Sequence<Any>& params) throw (RuntimeException, std::exception) override;
 
         void SAL_CALL
         done();

@@ -62,7 +62,7 @@ class FileEmitContext : public EmitContext
 
     public:
     FileEmitContext( const char* pFileName, const char* pOrigName, const PDFContainer* pTop );
-    virtual ~FileEmitContext() override;
+    virtual ~FileEmitContext();
 
     virtual bool write( const void* pBuf, unsigned int nLen ) throw() override;
     virtual unsigned int getCurPos() throw() override;
@@ -393,7 +393,7 @@ int write_fonts( const char* i_pInFile, const char* i_pOutFile, PDFFile* i_pPDFF
     return nRet;
 }
 
-static std::vector< std::pair< sal_Int32, sal_Int32 > > s_aEmitObjects;
+std::vector< std::pair< sal_Int32, sal_Int32 > > s_aEmitObjects;
 
 int write_objects( const char* i_pInFile, const char* i_pOutFile, PDFFile* i_pPDFFile )
 {

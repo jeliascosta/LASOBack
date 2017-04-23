@@ -31,7 +31,7 @@ class ScMoveTableDlg : public ModalDialog
 {
 public:
     ScMoveTableDlg(vcl::Window* pParent, const OUString& rDefault);
-    virtual ~ScMoveTableDlg() override;
+    virtual ~ScMoveTableDlg();
     virtual void dispose() override;
 
     sal_uInt16  GetSelectedDocument     () const { return nDocument; }
@@ -40,12 +40,13 @@ public:
     bool    GetRenameTable          () const { return bRenameTable; }
     void    GetTabNameString( OUString& rString ) const;
     void    SetForceCopyTable       ();
-    void    EnableRenameTable       (bool bFlag);
+    void    EnableRenameTable       (bool bFlag=true);
 
 private:
     void ResetRenameInput();
     void CheckNewTabName();
     ScDocument* GetSelectedDoc();
+    bool IsCurrentDocSelected() const;
 
 private:
     VclPtr<RadioButton>     pBtnMove;
@@ -74,10 +75,10 @@ private:
 
     void    Init            ();
     void    InitDocListBox  ();
-    DECL_LINK( OkHdl, Button*, void );
-    DECL_LINK( SelHdl, ListBox&, void );
-    DECL_LINK( CheckBtnHdl, RadioButton&, void );
-    DECL_LINK( CheckNameHdl, Edit&, void );
+    DECL_LINK_TYPED( OkHdl, Button*, void );
+    DECL_LINK_TYPED( SelHdl, ListBox&, void );
+    DECL_LINK_TYPED( CheckBtnHdl, RadioButton&, void );
+    DECL_LINK_TYPED( CheckNameHdl, Edit&, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_MVTABDLG_HXX

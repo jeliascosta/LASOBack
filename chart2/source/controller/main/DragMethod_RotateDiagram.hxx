@@ -42,7 +42,7 @@ public:
         , const css::uno::Reference< css::frame::XModel >& xChartModel
         , RotationDirection eRotationDirection
         );
-    virtual ~DragMethod_RotateDiagram() override;
+    virtual ~DragMethod_RotateDiagram();
 
     virtual void TakeSdrDragComment(OUString& rStr) const override;
 
@@ -55,7 +55,7 @@ public:
 private:
     E3dScene*   m_pScene;
 
-    tools::Rectangle   m_aReferenceRect;
+    Rectangle   m_aReferenceRect;
     Point       m_aStartPos;
     basegfx::B3DPolyPolygon m_aWireframePolyPolygon;
 

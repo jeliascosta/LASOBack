@@ -28,23 +28,23 @@ FunctionSet::~FunctionSet()
 
 inline bool SelectionEngine::ShouldDeselect( bool bModifierKey1 ) const
 {
-    return eSelMode != SelectionMode::Multiple || !bModifierKey1;
+    return eSelMode != MULTIPLE_SELECTION || !bModifierKey1;
 }
 
 // TODO: throw out FunctionSet::SelectAtPoint
 
-SelectionEngine::SelectionEngine( vcl::Window* pWindow, FunctionSet* pFuncSet ) :
+SelectionEngine::SelectionEngine( vcl::Window* pWindow, FunctionSet* pFuncSet,
+                                  sal_uLong nAutoRepeatInterval ) :
     pWin( pWindow ),
-    nUpdateInterval( SELENG_AUTOREPEAT_INTERVAL )
+    nUpdateInterval( nAutoRepeatInterval )
 {
-    eSelMode = SelectionMode::Single;
+    eSelMode = SINGLE_SELECTION;
     pFunctionSet = pFuncSet;
     nFlags = SelectionEngineFlags::EXPANDONMOVE;
     nLockedMods = 0;
 
-    aWTimer.SetInvokeHandler( LINK( this, SelectionEngine, ImpWatchDog ) );
+    aWTimer.SetTimeoutHdl( LINK( this, SelectionEngine, ImpWatchDog ) );
     aWTimer.SetTimeout( nUpdateInterval );
-    aWTimer.SetDebugName( "vcl::SelectionEngine aWTimer" );
 }
 
 SelectionEngine::~SelectionEngine()
@@ -52,7 +52,7 @@ SelectionEngine::~SelectionEngine()
     aWTimer.Stop();
 }
 
-IMPL_LINK_NOARG(SelectionEngine, ImpWatchDog, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SelectionEngine, ImpWatchDog, Timer *, void)
 {
     if ( !aArea.IsInside( aLastMove.GetPosPixel() ) )
         SelMouseMove( aLastMove );
@@ -68,7 +68,7 @@ void SelectionEngine::CursorPosChanging( bool bShift, bool bMod1 )
     if ( !pFunctionSet )
         return;
 
-    if ( bShift && eSelMode != SelectionMode::Single )
+    if ( bShift && eSelMode != SINGLE_SELECTION )
     {
         if ( IsAddMode() )
         {
@@ -122,7 +122,7 @@ bool SelectionEngine::SelMouseButtonDown( const MouseEvent& rMEvt )
         return false;
     // in SingleSelection: filter Control-Key,
     // so that a D&D can be also started with a Ctrl-Click
-    if ( nModifier == KEY_MOD1 && eSelMode == SelectionMode::Single )
+    if ( nModifier == KEY_MOD1 && eSelMode == SINGLE_SELECTION )
         nModifier = 0;
 
     Point aPos = rMEvt.GetPosPixel();
@@ -151,7 +151,7 @@ bool SelectionEngine::SelMouseButtonDown( const MouseEvent& rMEvt )
                 pWin->ReleaseMouse();
                 return true;  // wait for STARTDRAG-Command-Event
             }
-            if ( eSelMode != SelectionMode::Single )
+            if ( eSelMode != SINGLE_SELECTION )
             {
                 if( !IsAddMode() )
                     pFunctionSet->DeselectAll();
@@ -161,13 +161,13 @@ bool SelectionEngine::SelMouseButtonDown( const MouseEvent& rMEvt )
             }
             pFunctionSet->SetCursorAtPoint( aPos );
             // special case Single-Selection, to enable simple Select+Drag
-            if (eSelMode == SelectionMode::Single && (nFlags & SelectionEngineFlags::DRG_ENAB))
+            if (eSelMode == SINGLE_SELECTION && (nFlags & SelectionEngineFlags::DRG_ENAB))
                 nFlags |= SelectionEngineFlags::WAIT_UPEVT;
             return true;
         }
 
         case KEY_SHIFT:
-            if ( eSelMode == SelectionMode::Single )
+            if ( eSelMode == SINGLE_SELECTION )
             {
                 pWin->ReleaseMouse();
                 nFlags &= (~SelectionEngineFlags::IN_SEL);
@@ -190,7 +190,7 @@ bool SelectionEngine::SelMouseButtonDown( const MouseEvent& rMEvt )
 
         case KEY_MOD1:
             // allow Control only for Multi-Select
-            if ( eSelMode != SelectionMode::Multiple )
+            if ( eSelMode != MULTIPLE_SELECTION )
             {
                 nFlags &= (~SelectionEngineFlags::IN_SEL);
                 pWin->ReleaseMouse();
@@ -214,7 +214,7 @@ bool SelectionEngine::SelMouseButtonDown( const MouseEvent& rMEvt )
             return true;
 
         case KEY_SHIFT + KEY_MOD1:
-            if ( eSelMode != SelectionMode::Multiple )
+            if ( eSelMode != MULTIPLE_SELECTION )
             {
                 pWin->ReleaseMouse();
                 nFlags &= (~SelectionEngineFlags::IN_SEL);
@@ -249,7 +249,7 @@ bool SelectionEngine::SelMouseButtonUp( const MouseEvent& rMEvt )
     }
 
     if( (nFlags & SelectionEngineFlags::WAIT_UPEVT) && !(nFlags & SelectionEngineFlags::CMDEVT) &&
-        eSelMode != SelectionMode::Single)
+        eSelMode != SINGLE_SELECTION)
     {
         // MouseButtonDown in Sel but no CommandEvent yet
         // ==> deselektieren
@@ -305,7 +305,7 @@ bool SelectionEngine::SelMouseMove( const MouseEvent& rMEvt )
     if (!comphelper::LibreOfficeKit::isActive())
         // Generating fake mouse moves does not work with LOK.
         aWTimer.Start();
-    if ( eSelMode != SelectionMode::Single )
+    if ( eSelMode != SINGLE_SELECTION )
     {
         if ( !(nFlags & SelectionEngineFlags::HAS_ANCH) )
         {
@@ -352,7 +352,7 @@ void SelectionEngine::Command( const CommandEvent& rCEvt )
     {
         if ( nFlags & SelectionEngineFlags::DRG_ENAB )
         {
-            SAL_WARN_IF( !rCEvt.IsMouseEvent(), "vcl", "STARTDRAG: Not a MouseEvent" );
+            DBG_ASSERT( rCEvt.IsMouseEvent(), "STARTDRAG: Not a MouseEvent" );
             if ( pFunctionSet->IsSelectionAtPoint( rCEvt.GetMousePosPixel() ) )
             {
                 aLastMove = MouseEvent( rCEvt.GetMousePosPixel(),

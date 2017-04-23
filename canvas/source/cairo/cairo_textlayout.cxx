@@ -51,19 +51,19 @@ namespace cairocanvas
                               sal_Int8      nTextDirection )
         {
             // TODO(P3): avoid if already correctly set
-            ComplexTextLayoutFlags nLayoutMode = ComplexTextLayoutFlags::Default;
+            ComplexTextLayoutMode nLayoutMode = TEXT_LAYOUT_DEFAULT;
             switch( nTextDirection )
             {
                 case rendering::TextDirection::WEAK_LEFT_TO_RIGHT:
                     break;
                 case rendering::TextDirection::STRONG_LEFT_TO_RIGHT:
-                    nLayoutMode = ComplexTextLayoutFlags::BiDiStrong;
+                    nLayoutMode = TEXT_LAYOUT_BIDI_STRONG;
                     break;
                 case rendering::TextDirection::WEAK_RIGHT_TO_LEFT:
-                    nLayoutMode = ComplexTextLayoutFlags::BiDiRtl;
+                    nLayoutMode = TEXT_LAYOUT_BIDI_RTL;
                     break;
                 case rendering::TextDirection::STRONG_RIGHT_TO_LEFT:
-                    nLayoutMode = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::BiDiStrong;
+                    nLayoutMode = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_BIDI_STRONG;
                     break;
                 default:
                     break;
@@ -71,7 +71,7 @@ namespace cairocanvas
 
             // set calculated layout mode. Origin is always the left edge,
             // as required at the API spec
-            rOutDev.SetLayoutMode( nLayoutMode | ComplexTextLayoutFlags::TextOriginLeft );
+            rOutDev.SetLayoutMode( nLayoutMode | TEXT_LAYOUT_TEXTORIGIN_LEFT );
         }
 
         bool compareFallbacks(const SystemGlyphData&rA, const SystemGlyphData &rB)
@@ -107,32 +107,38 @@ namespace cairocanvas
     }
 
     // XTextLayout
-    uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > > SAL_CALL TextLayout::queryTextShapes(  )
+    uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > > SAL_CALL TextLayout::queryTextShapes(  ) throw (uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< uno::Reference< rendering::XPolyPolygon2D > >();
     }
 
-    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryInkMeasures(  )
+    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryInkMeasures(  ) throw (uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< geometry::RealRectangle2D >();
     }
 
-    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryMeasures(  )
+    uno::Sequence< geometry::RealRectangle2D > SAL_CALL TextLayout::queryMeasures(  ) throw (uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Sequence< geometry::RealRectangle2D >();
     }
 
-    uno::Sequence< double > SAL_CALL TextLayout::queryLogicalAdvancements(  )
+    uno::Sequence< double > SAL_CALL TextLayout::queryLogicalAdvancements(  ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return maLogicalAdvancements;
     }
 
-    void SAL_CALL TextLayout::applyLogicalAdvancements( const uno::Sequence< double >& aAdvancements )
+    void SAL_CALL TextLayout::applyLogicalAdvancements( const uno::Sequence< double >& aAdvancements ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -145,7 +151,7 @@ namespace cairocanvas
         maLogicalAdvancements = aAdvancements;
     }
 
-    geometry::RealRectangle2D SAL_CALL TextLayout::queryTextBounds(  )
+    geometry::RealRectangle2D SAL_CALL TextLayout::queryTextBounds(  ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -182,75 +188,91 @@ namespace cairocanvas
         }
     }
 
-    double SAL_CALL TextLayout::justify( double /*nSize*/ )
+    double SAL_CALL TextLayout::justify( double /*nSize*/ ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
     double SAL_CALL TextLayout::combinedJustify( const uno::Sequence< uno::Reference< rendering::XTextLayout > >& /*aNextLayouts*/,
-                                                 double /*nSize*/ )
+                                                 double /*nSize*/ ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
-    rendering::TextHit SAL_CALL TextLayout::getTextHit( const geometry::RealPoint2D& /*aHitPoint*/ )
+    rendering::TextHit SAL_CALL TextLayout::getTextHit( const geometry::RealPoint2D& /*aHitPoint*/ ) throw (uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return rendering::TextHit();
     }
 
     rendering::Caret SAL_CALL TextLayout::getCaret( sal_Int32 /*nInsertionIndex*/,
-                                                    sal_Bool /*bExcludeLigatures*/ )
+                                                    sal_Bool /*bExcludeLigatures*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return rendering::Caret();
     }
 
     sal_Int32 SAL_CALL TextLayout::getNextInsertionIndex( sal_Int32 /*nStartIndex*/,
                                                           sal_Int32 /*nCaretAdvancement*/,
-                                                          sal_Bool /*bExcludeLigatures*/ )
+                                                          sal_Bool /*bExcludeLigatures*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0;
     }
 
     uno::Reference< rendering::XPolyPolygon2D > SAL_CALL TextLayout::queryVisualHighlighting( sal_Int32 /*nStartIndex*/,
-                                                                                              sal_Int32 /*nEndIndex*/ )
+                                                                                              sal_Int32 /*nEndIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Reference< rendering::XPolyPolygon2D >();
     }
 
     uno::Reference< rendering::XPolyPolygon2D > SAL_CALL TextLayout::queryLogicalHighlighting( sal_Int32 /*nStartIndex*/,
-                                                                                               sal_Int32 /*nEndIndex*/ )
+                                                                                               sal_Int32 /*nEndIndex*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return uno::Reference< rendering::XPolyPolygon2D >();
     }
 
-    double SAL_CALL TextLayout::getBaselineOffset(  )
+    double SAL_CALL TextLayout::getBaselineOffset(  ) throw (uno::RuntimeException, std::exception)
     {
+        ::osl::MutexGuard aGuard( m_aMutex );
+
         // TODO
         return 0.0;
     }
 
-    sal_Int8 SAL_CALL TextLayout::getMainTextDirection(  )
+    sal_Int8 SAL_CALL TextLayout::getMainTextDirection(  ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return mnTextDirection;
     }
 
-    uno::Reference< rendering::XCanvasFont > SAL_CALL TextLayout::getFont(  )
+    uno::Reference< rendering::XCanvasFont > SAL_CALL TextLayout::getFont(  ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return mpFont.get();
     }
 
-    rendering::StringContext SAL_CALL TextLayout::getText(  )
+    rendering::StringContext SAL_CALL TextLayout::getText(  ) throw (uno::RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -306,7 +328,7 @@ namespace cairocanvas
         setupLayoutMode( rOutDev, mnTextDirection );
 
         // TODO(P2): cache that
-        std::unique_ptr< long []> aOffsets(new long[maLogicalAdvancements.getLength()]);
+        ::std::unique_ptr< long []> aOffsets(new long[maLogicalAdvancements.getLength()]);
 
         if( maLogicalAdvancements.getLength() )
         {
@@ -458,7 +480,7 @@ namespace cairocanvas
 
             //faux italics
             if (rSysFontData.bFakeItalic)
-                m.xy = -m.xx * 0x6000 / 0x10000;
+                m.xy = -m.xx * 0x6000L / 0x10000L;
 
             cairo_set_font_matrix(pSCairo.get(), &m);
 
@@ -553,25 +575,27 @@ namespace cairocanvas
                                                      renderState);
 
         // fill integer offsets
-        std::transform( inputOffsets.getConstArray(),
+        ::std::transform( inputOffsets.getConstArray(),
                           inputOffsets.getConstArray()+inputOffsets.getLength(),
                           outputOffsets,
                           OffsetTransformer( aMatrix ) );
     }
 
-    OUString SAL_CALL TextLayout::getImplementationName()
+    OUString SAL_CALL TextLayout::getImplementationName() throw( uno::RuntimeException, std::exception )
     {
         return OUString( "CairoCanvas::TextLayout" );
     }
 
-    sal_Bool SAL_CALL TextLayout::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL TextLayout::supportsService( const OUString& ServiceName ) throw( uno::RuntimeException, std::exception )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL TextLayout::getSupportedServiceNames()
+    uno::Sequence< OUString > SAL_CALL TextLayout::getSupportedServiceNames()  throw( uno::RuntimeException, std::exception )
     {
-        return { "com.sun.star.rendering.TextLayout" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.TextLayout" };
+
+        return aRet;
     }
 }
 

@@ -41,7 +41,7 @@ public:
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent,
         ScPreviewShell* pViewShell );
 protected:
-    virtual ~ScAccessibleDocumentPagePreview() override;
+    virtual ~ScAccessibleDocumentPagePreview();
 
     using ScAccessibleDocumentBase::IsDefunc;
 
@@ -58,70 +58,85 @@ public:
 
     virtual css::uno::Reference< css::accessibility::XAccessible >
         SAL_CALL getAccessibleAtPoint(
-        const css::awt::Point& rPoint ) override;
+        const css::awt::Point& rPoint )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL grabFocus(  ) override;
+    virtual void SAL_CALL grabFocus(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     ///=====  XAccessibleContext  ==============================================
 
     /// Return the number of currently visible children.
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the specified child or NULL if index is invalid.
     virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild(sal_Int32 nIndex) override;
+        getAccessibleChild(sal_Int32 nIndex)
+        throw (css::uno::RuntimeException,
+               css::lang::IndexOutOfBoundsException,
+               std::exception) override;
 
     /// Return the set of current states.
     virtual css::uno::Reference<
             css::accessibility::XAccessibleStateSet> SAL_CALL
-        getAccessibleStateSet() override;
+        getAccessibleStateSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getAccessibleName() override;
+    virtual OUString SAL_CALL getAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
     ///=====  XServiceInfo  ====================================================
 
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Returns a list of all supported services.
     */
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     ///=====  XTypeProvider  ===================================================
 
     /** Returns a implementation id.
     */
     virtual css::uno::Sequence<sal_Int8> SAL_CALL
-        getImplementationId() override;
+        getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     ///=====  internal  ========================================================
 
 protected:
     /// Return this object's description.
     virtual OUString SAL_CALL
-        createAccessibleDescription() override;
+        createAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// Return the object's current name.
     virtual OUString SAL_CALL
-        createAccessibleName() override;
+        createAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 public: // needed in ScShapeChildren
     /// Return the object's current bounding box relative to the desktop.
-    virtual tools::Rectangle GetBoundingBoxOnScreen() const override;
+    virtual Rectangle GetBoundingBoxOnScreen() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     /// Return the object's current bounding box relative to the parent object.
-    virtual tools::Rectangle GetBoundingBox() const override;
+    virtual Rectangle GetBoundingBox() const
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     ScPreviewShell* mpViewShell;
     ScNotesChildren* mpNotesChildren;
     ScShapeChildren* mpShapeChildren;
     rtl::Reference<ScAccessiblePreviewTable> mpTable;
-    rtl::Reference<ScAccessiblePageHeader> mpHeader;
-    rtl::Reference<ScAccessiblePageHeader> mpFooter;
+    ScAccessiblePageHeader* mpHeader;
+    ScAccessiblePageHeader* mpFooter;
 
     bool IsDefunc(
         const css::uno::Reference<css::accessibility::XAccessibleStateSet>& rxParentStates);

@@ -47,22 +47,23 @@ private:
     struct Field;
     std::vector<std::shared_ptr<Field> > vFields;
     // "name" fields
+    unsigned nNameRow;
     unsigned nShortNameField;
 
-    DECL_LINK( ModifyHdl_Impl, Edit&, void );
+    DECL_LINK_TYPED( ModifyHdl_Impl, Edit&, void );
 
-    bool                GetData_Impl();
-    void                SetData_Impl();
+    bool                GetAddress_Impl();
+    void                SetAddress_Impl();
 
     void InitControls ();
     void SetLinks ();
 
 protected:
-    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     SvxGeneralTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxGeneralTabPage() override;
+    virtual ~SvxGeneralTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

@@ -41,7 +41,7 @@ protected:
 public:
     SwUndoRedline( SwUndoId nUserId, const SwPaM& rRange );
 
-    virtual ~SwUndoRedline() override;
+    virtual ~SwUndoRedline();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -59,7 +59,7 @@ class SwUndoRedlineDelete : public SwUndoRedline
     virtual void RedoRedlineImpl(SwDoc & rDoc, SwPaM & rPam) override;
 
 public:
-    SwUndoRedlineDelete( const SwPaM& rRange, SwUndoId nUserId );
+    SwUndoRedlineDelete( const SwPaM& rRange, SwUndoId nUserId = UNDO_EMPTY );
 
     bool CanGrouping( const SwUndoRedlineDelete& rPrev );
 
@@ -70,7 +70,7 @@ public:
 
 class SwUndoRedlineSort : public SwUndoRedline
 {
-    std::unique_ptr<SwSortOptions> pOpt;
+    SwSortOptions* pOpt;
     sal_uLong nSaveEndNode, nOffset;
     sal_Int32 nSaveEndContent;
 
@@ -80,7 +80,7 @@ class SwUndoRedlineSort : public SwUndoRedline
 public:
     SwUndoRedlineSort( const SwPaM& rRange, const SwSortOptions& rOpt );
 
-    virtual ~SwUndoRedlineSort() override;
+    virtual ~SwUndoRedlineSort();
 
     virtual void RepeatImpl( ::sw::RepeatContext & ) override;
 
@@ -121,7 +121,7 @@ public:
     SwUndoCompDoc( const SwPaM& rRg, bool bIns );
     SwUndoCompDoc( const SwRangeRedline& rRedl );
 
-    virtual ~SwUndoCompDoc() override;
+    virtual ~SwUndoCompDoc();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

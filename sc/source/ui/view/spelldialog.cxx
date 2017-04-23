@@ -146,7 +146,7 @@ void ScSpellDialogChildWindow::Reset()
     mxUndoDoc.reset();
     mxRedoDoc.reset();
     mxOldSel.reset();
-    mxOldRangeList.clear();
+    mxOldRangeList.reset();
     mpViewShell = nullptr;
     mpViewData = nullptr;
     mpDocShell = nullptr;
@@ -180,7 +180,7 @@ void ScSpellDialogChildWindow::Init()
 
     ScMarkData& rMarkData = mpViewData->GetMarkData();
 
-    mxOldRangeList = new ScRangeList;
+    mxOldRangeList.reset(new ScRangeList);
     rMarkData.FillRangeListWithMarks(mxOldRangeList.get(), true);
 
     rMarkData.MarkToMulti();
@@ -245,7 +245,7 @@ void ScSpellDialogChildWindow::Init()
     mpViewShell->MakeEditView( mxEngine.get(), nCol, nRow );
     EditView* pEditView = mpViewData->GetEditView( mpViewData->GetActivePart() );
     mpViewData->SetSpellingView( pEditView );
-    tools::Rectangle aRect( Point( 0, 0 ), Point( 0, 0 ) );
+    Rectangle aRect( Point( 0, 0 ), Point( 0, 0 ) );
     pEditView->SetOutputArea( aRect );
     mxEngine->SetControlWord( EEControlBits::USECHARATTRIBS );
     mxEngine->EnableUndo( false );

@@ -8,11 +8,27 @@
  */
 package org.libreoffice;
 
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
+
+import org.libreoffice.canvas.ImageUtils;
+import org.libreoffice.kit.Document;
+
+import java.sql.SQLOutput;
+import java.util.Arrays;
 
 /**
  * Controls the changes to the toolbar.
@@ -21,11 +37,13 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
     private static final String LOGTAG = ToolbarController.class.getSimpleName();
     private final Toolbar mToolbarTop;
 
-    private final LibreOfficeMainActivity mContext;
-    private final Menu mMainMenu;
+    private final ActionBar mActionBar;
+    private LibreOfficeMainActivity mContext;
+    private Menu mMainMenu;
 
-    public ToolbarController(LibreOfficeMainActivity context, Toolbar toolbarTop) {
+    public ToolbarController(LibreOfficeMainActivity context, ActionBar actionBar, Toolbar toolbarTop) {
         mToolbarTop = toolbarTop;
+        mActionBar = actionBar;
         mContext = context;
 
         mToolbarTop.inflateMenu(R.menu.main);
@@ -35,7 +53,7 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
         mMainMenu = mToolbarTop.getMenu();
     }
 
-    private void disableMenuItem(final int menuItemId, final boolean disabled) {
+    public void disableMenuItem(final int menuItemId, final boolean disabled) {
         LOKitShell.getMainHandler().post(new Runnable() {
             public void run() {
                 MenuItem menuItem = mMainMenu.findItem(menuItemId);
@@ -61,6 +79,7 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
             public void run() {
                 mMainMenu.setGroupVisible(R.id.group_edit_actions, true);
                 mToolbarTop.setNavigationIcon(R.drawable.ic_check);
+                mToolbarTop.setTitle(null);
                 mToolbarTop.setLogo(null);
 
             }
@@ -80,6 +99,7 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
             public void run() {
                 mMainMenu.setGroupVisible(R.id.group_edit_actions, false);
                 mToolbarTop.setNavigationIcon(R.drawable.lo_icon);
+                mToolbarTop.setTitle(null);
                 mToolbarTop.setLogo(null);
             }
         });
@@ -98,11 +118,7 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
                 mContext.showAbout();
                 return true;
             case R.id.action_save:
-                if (mContext.isNewDocument) {
-                    mContext.saveAs();
-                } else {
-                    mContext.saveDocument();
-                }
+                mContext.saveDocument();
                 return true;
             case R.id.action_parts:
                 mContext.openDrawer();
@@ -123,12 +139,13 @@ public class ToolbarController implements Toolbar.OnMenuItemClickListener {
         return false;
     }
 
-    void setupToolbars() {
-        if (mContext.usesTemporaryFile()) {
+    public void setupToolbars() {
+        LibreOfficeMainActivity activity = mContext;
+        if (activity.usesTemporaryFile()) {
             disableMenuItem(R.id.action_save, true);
-            Toast.makeText(mContext, mContext.getString(R.string.temp_file_saving_disabled), Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, activity.getString(R.string.temp_file_saving_disabled), Toast.LENGTH_LONG).show();
         }
-        mMainMenu.findItem(R.id.action_parts).setVisible(mContext.isDrawerEnabled());
+        mMainMenu.findItem(R.id.action_parts).setVisible(activity.isDrawerEnabled());
     }
 
 }

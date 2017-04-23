@@ -133,6 +133,7 @@ SwGlosDocShell::SwGlosDocShell(bool bNewShow)
     : SwDocShell( (bNewShow)
             ? SfxObjectCreateMode::STANDARD : SfxObjectCreateMode::INTERNAL )
 {
+    SetHelpId(SW_GLOSDOCSHELL);
 }
 
 SwGlosDocShell::~SwGlosDocShell(  )
@@ -166,8 +167,9 @@ bool SwGlosDocShell::Save()
 }
 
 SwWebGlosDocShell::SwWebGlosDocShell()
-    : SwWebDocShell()
+    : SwWebDocShell( SfxObjectCreateMode::STANDARD )
 {
+    SetHelpId(SW_WEBGLOSDOCSHELL);
 }
 
 SwWebGlosDocShell::~SwWebGlosDocShell(  )
@@ -204,10 +206,10 @@ SwDocShellRef SwGlossaries::EditGroupDoc( const OUString& rGroup, const OUString
     if (pGroup && pGroup->GetCount())
     {
         // query which view is registered. In WebWriter there is no normal view
-        SfxInterfaceId nViewId = nullptr != SwView::Factory() ? SFX_INTERFACE_SFXDOCSH : SfxInterfaceId(6);
+        sal_uInt16 nViewId = nullptr != SwView::Factory() ? 2 : 6;
         const OUString sLongName = pGroup->GetLongName(pGroup->GetIndex( rShortName ));
 
-        if( SfxInterfaceId(6) == nViewId )
+        if( 6 == nViewId )
         {
             SwWebGlosDocShell* pDocSh = new SwWebGlosDocShell();
             xDocSh = pDocSh;

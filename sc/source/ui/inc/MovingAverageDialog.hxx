@@ -31,7 +31,7 @@ public:
         SfxBindings* pB, SfxChildWindow* pCW,
         vcl::Window* pParent, ScViewData* pViewData );
 
-    virtual ~ScMovingAverageDialog() override;
+    virtual ~ScMovingAverageDialog();
     virtual void dispose() override;
 
     virtual bool Close() override;

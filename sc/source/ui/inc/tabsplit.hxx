@@ -36,10 +36,10 @@ protected:
 public:
                     ScTabSplitter( vcl::Window* pParent, WinBits nWinStyle,
                                     ScViewData* pData );
-                    virtual ~ScTabSplitter() override;
+                    virtual ~ScTabSplitter();
 
     void            SetFixed(bool bSet);
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rPaintRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rPaintRect ) override;
 };
 
 #endif

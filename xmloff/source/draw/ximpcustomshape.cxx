@@ -19,8 +19,6 @@
 
 #include "ximpcustomshape.hxx"
 #include "ximpshap.hxx"
-#include <o3tl/any.hxx>
-#include <o3tl/make_unique.hxx>
 #include <rtl/math.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <rtl/ustring.hxx>
@@ -48,7 +46,6 @@
 #include <com/sun/star/drawing/ProjectionMode.hpp>
 #include <sax/tools/converter.hxx>
 #include <comphelper/sequence.hxx>
-#include <memory>
 #include <unordered_map>
 
 using namespace ::com::sun::star;
@@ -67,7 +64,7 @@ XMLEnhancedCustomShapeContext::XMLEnhancedCustomShapeContext( SvXMLImport& rImpo
 {
 }
 
-const SvXMLEnumMapEntry<sal_uInt16> aXML_GluePointEnumMap[] =
+const SvXMLEnumMapEntry aXML_GluePointEnumMap[] =
 {
     { XML_NONE,         0 },
     { XML_SEGMENTS,     1 },
@@ -123,17 +120,17 @@ void GetString( std::vector< css::beans::PropertyValue >& rDest,
     rDest.push_back( aProp );
 }
 
-template<typename EnumT>
 void GetEnum( std::vector< css::beans::PropertyValue >& rDest,
                          const OUString& rValue, const EnhancedCustomShapeTokenEnum eDestProp,
-                        const SvXMLEnumMapEntry<EnumT>& rMap )
+                        const SvXMLEnumMapEntry& rMap )
 {
-    EnumT eKind;
+    sal_uInt16 eKind;
     if( SvXMLUnitConverter::convertEnum( eKind, rValue, &rMap ) )
     {
+        sal_Int16 nEnum = (sal_Int16)eKind;
         beans::PropertyValue aProp;
         aProp.Name = EASGet( eDestProp );
-        aProp.Value <<= static_cast<sal_Int16>(eKind);
+        aProp.Value <<= nEnum;
         rDest.push_back( aProp );
     }
 }
@@ -827,7 +824,7 @@ void GetAdjustmentValues( std::vector< css::beans::PropertyValue >& rDest,      
         css::drawing::EnhancedCustomShapeAdjustmentValue aAdj;
         if ( aParameter.Type == css::drawing::EnhancedCustomShapeParameterType::NORMAL )
         {
-            aAdj.Value = aParameter.Value;
+            aAdj.Value <<= aParameter.Value;
             aAdj.State = beans::PropertyState_DIRECT_VALUE;
         }
         else
@@ -1170,7 +1167,7 @@ void XMLEnhancedCustomShapeContext::EndElement()
     if ( !maEquations.empty() )
     {
         // creating hash map containing the name and index of each equation
-        std::unique_ptr<EquationHashMap> pH = o3tl::make_unique<EquationHashMap>();
+        EquationHashMap* pH = new EquationHashMap;
         std::vector< OUString >::iterator aEquationNameIter = maEquationNames.begin();
         std::vector< OUString >::iterator aEquationNameEnd  = maEquationNames.end();
         while( aEquationNameIter != aEquationNameEnd )
@@ -1222,26 +1219,26 @@ void XMLEnhancedCustomShapeContext::EndElement()
                 case EAS_GluePoints :
                 {
                     uno::Sequence< css::drawing::EnhancedCustomShapeParameterPair > const & rSeq =
-                        *o3tl::doAccess<uno::Sequence< css::drawing::EnhancedCustomShapeParameterPair > >(
-                            aPathIter->Value);
+                        *static_cast<uno::Sequence< css::drawing::EnhancedCustomShapeParameterPair > const *>(
+                            aPathIter->Value.getValue());
                     for ( i = 0; i < rSeq.getLength(); i++ )
                     {
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].First), pH.get() );
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].Second), pH.get() );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].First), pH );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].Second), pH );
                     }
                 }
                 break;
                 case EAS_TextFrames :
                 {
                     uno::Sequence< css::drawing::EnhancedCustomShapeTextFrame > const & rSeq =
-                        *o3tl::doAccess<uno::Sequence< css::drawing::EnhancedCustomShapeTextFrame > >(
-                            aPathIter->Value);
+                        *static_cast<uno::Sequence< css::drawing::EnhancedCustomShapeTextFrame > const *>(
+                            aPathIter->Value.getValue());
                     for ( i = 0; i < rSeq.getLength(); i++ )
                     {
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].TopLeft.First), pH.get() );
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].TopLeft.Second), pH.get() );
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].BottomRight.First), pH.get() );
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].BottomRight.Second), pH.get() );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].TopLeft.First), pH );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].TopLeft.Second), pH );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].BottomRight.First), pH );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(rSeq[ i ].BottomRight.Second), pH );
                     }
                 }
                 break;
@@ -1266,18 +1263,18 @@ void XMLEnhancedCustomShapeContext::EndElement()
                     case EAS_RadiusRangeMinimum :
                     case EAS_RadiusRangeMaximum :
                     {
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>(*o3tl::doAccess<css::drawing::EnhancedCustomShapeParameter>(
-                            pValues->Value)), pH.get() );
+                        CheckAndResolveEquationParameter( *const_cast<css::drawing::EnhancedCustomShapeParameter *>(static_cast<css::drawing::EnhancedCustomShapeParameter const *>(
+                            pValues->Value.getValue())), pH );
                     }
                     break;
 
                     case EAS_Position :
                     case EAS_Polar :
                     {
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>((*o3tl::doAccess<css::drawing::EnhancedCustomShapeParameterPair>(
-                            pValues->Value)).First), pH.get() );
-                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>((*o3tl::doAccess<css::drawing::EnhancedCustomShapeParameterPair>(
-                            pValues->Value)).Second), pH.get() );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>((*static_cast<css::drawing::EnhancedCustomShapeParameterPair const *>(
+                            pValues->Value.getValue())).First), pH );
+                        CheckAndResolveEquationParameter( const_cast<css::drawing::EnhancedCustomShapeParameter &>((*static_cast<css::drawing::EnhancedCustomShapeParameterPair const *>(
+                            pValues->Value.getValue())).Second), pH );
                     }
                     break;
                     default:
@@ -1287,6 +1284,7 @@ void XMLEnhancedCustomShapeContext::EndElement()
             }
             ++aHandleIter;
         }
+        delete pH;
     }
 
     SdXMLCustomShapePropertyMerge( mrCustomShapeGeometry, maExtrusion, EASGet( EAS_Extrusion ) );

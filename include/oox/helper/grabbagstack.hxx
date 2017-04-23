@@ -32,7 +32,7 @@ struct GrabBagStackElement
 };
 
 /// Tool that is useful for construction of a nested Sequence/PropertyValue hierarchy
-class OOX_DLLPUBLIC GrabBagStack final
+class OOX_DLLPUBLIC GrabBagStack
 {
 private:
     std::stack<GrabBagStackElement> mStack;
@@ -40,7 +40,8 @@ private:
 
 public:
     GrabBagStack(const OUString& aElementName);
-    ~GrabBagStack();
+
+    virtual ~GrabBagStack();
 
     const OUString& getCurrentName() { return mCurrentElement.maElementName;}
 

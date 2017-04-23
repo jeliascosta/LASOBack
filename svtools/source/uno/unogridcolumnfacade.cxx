@@ -98,13 +98,13 @@ namespace svt { namespace table
         void dispose();
 
     protected:
-        virtual ~ColumnChangeMultiplexer() override;
+        virtual ~ColumnChangeMultiplexer();
 
         // XGridColumnListener
-        virtual void SAL_CALL columnChanged( const GridColumnEvent& i_event ) override;
+        virtual void SAL_CALL columnChanged( const GridColumnEvent& i_event ) throw (RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const EventObject& i_event ) override;
+        virtual void SAL_CALL disposing( const EventObject& i_event ) throw (RuntimeException, std::exception) override;
 
     private:
         UnoGridColumnFacade* m_pColumnImplementation;
@@ -129,7 +129,7 @@ namespace svt { namespace table
     }
 
 
-    void SAL_CALL ColumnChangeMultiplexer::columnChanged( const GridColumnEvent& i_event )
+    void SAL_CALL ColumnChangeMultiplexer::columnChanged( const GridColumnEvent& i_event ) throw (RuntimeException, std::exception)
     {
         if ( i_event.AttributeName == "DataColumnIndex" )
         {
@@ -162,7 +162,7 @@ namespace svt { namespace table
     }
 
 
-    void SAL_CALL ColumnChangeMultiplexer::disposing( const EventObject& )
+    void SAL_CALL ColumnChangeMultiplexer::disposing( const EventObject& ) throw (RuntimeException, std::exception)
     {
     }
 

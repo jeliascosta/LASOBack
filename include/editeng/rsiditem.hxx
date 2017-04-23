@@ -19,6 +19,8 @@
 class EDITENG_DLLPUBLIC SvxRsidItem : public SfxUInt32Item
 {
 public:
+    static SfxPoolItem* CreateDefault();
+
     SvxRsidItem( sal_uInt32 nRsid, sal_uInt16 nId ) : SfxUInt32Item( nId, nRsid ) {}
     SvxRsidItem( SvStream& rIn, sal_uInt16 nId ) : SfxUInt32Item( nId, rIn ) {}
 

@@ -40,7 +40,7 @@ public:
                          const std::vector< OUString > & inHeaderNames,
                          DAVResource & ioResource );
 
-    virtual ~SerfHeadReqProcImpl() override;
+    virtual ~SerfHeadReqProcImpl();
 
     virtual
     serf_bucket_t * createSerfRequestBucket( serf_request_t * inSerfRequest ) override;

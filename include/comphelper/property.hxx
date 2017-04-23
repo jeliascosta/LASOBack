@@ -25,7 +25,6 @@
 #include <com/sun/star/beans/Property.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <functional>
-#include <type_traits>
 #include <comphelper/comphelperdllapi.h>
 #include <cppu/unotype.hxx>
 
@@ -96,9 +95,12 @@ bool tryPropertyValue(css::uno::Any& /*out*/_rConvertedValue, css::uno::Any& /*o
     @exception      InvalidArgumentException thrown if the value could not be converted to the requested type (which is the template argument)
 */
 template <class ENUMTYPE>
-typename std::enable_if<std::is_enum<ENUMTYPE>::value, bool>::type
-tryPropertyValueEnum(css::uno::Any& /*out*/_rConvertedValue, css::uno::Any& /*out*/_rOldValue, const css::uno::Any& _rValueToSet, const ENUMTYPE& _rCurrentValue)
+bool tryPropertyValueEnum(css::uno::Any& /*out*/_rConvertedValue, css::uno::Any& /*out*/_rOldValue, const css::uno::Any& _rValueToSet, const ENUMTYPE& _rCurrentValue)
 {
+    if (cppu::getTypeFavourUnsigned(&_rCurrentValue).getTypeClass()
+        != css::uno::TypeClass_ENUM)
+        return tryPropertyValue(_rConvertedValue, _rOldValue, _rValueToSet, _rCurrentValue);
+
     bool bModified(false);
     ENUMTYPE aNewValue;
     ::cppu::any2enum(aNewValue, _rValueToSet);
@@ -108,6 +110,29 @@ tryPropertyValueEnum(css::uno::Any& /*out*/_rConvertedValue, css::uno::Any& /*ou
     {
         _rConvertedValue <<= aNewValue;
         _rOldValue <<= _rCurrentValue;
+        bModified = true;
+    }
+    return bModified;
+}
+
+/** helper for implementing ::cppu::OPropertySetHelper::convertFastPropertyValue for boolean properties
+    @param          _rConvertedValue    the conversion result (if successful)
+    @param          _rOldValue          the old value of the property, calculated from _rCurrentValue
+    @param          _rValueToSet        the new value which is about to be set
+    @param          _rCurrentValue      the current value of the property
+    @return         sal_True, if the value could be converted and has changed
+                    sal_False, if the value could be converted and has not changed
+    @exception      InvalidArgumentException thrown if the value could not be converted to a boolean type
+*/
+inline bool tryPropertyValue(css::uno::Any& /*out*/_rConvertedValue, css::uno::Any& /*out*/_rOldValue, const css::uno::Any& _rValueToSet, bool _bCurrentValue)
+{
+    bool bModified(false);
+    sal_Bool bNewValue(false);
+    ::cppu::convertPropertyValue(bNewValue, _rValueToSet);
+    if (bool(bNewValue) != _bCurrentValue)
+    {
+        _rConvertedValue <<= bNewValue;
+        _rOldValue <<= _bCurrentValue;
         bModified = true;
     }
     return bModified;

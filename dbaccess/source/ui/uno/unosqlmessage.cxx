@@ -53,7 +53,7 @@ OSQLMessageDialog::OSQLMessageDialog(const Reference< XComponentContext >& _rxOR
         &m_sHelpURL, cppu::UnoType<decltype(m_sHelpURL)>::get() );
 }
 
-Sequence<sal_Int8> SAL_CALL OSQLMessageDialog::getImplementationId(  )
+Sequence<sal_Int8> SAL_CALL OSQLMessageDialog::getImplementationId(  ) throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -63,44 +63,45 @@ Reference< XInterface > SAL_CALL OSQLMessageDialog::Create(const Reference< XMul
     return *(new OSQLMessageDialog( comphelper::getComponentContext(_rxFactory) ));
 }
 
-OUString SAL_CALL OSQLMessageDialog::getImplementationName()
+OUString SAL_CALL OSQLMessageDialog::getImplementationName() throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-OUString OSQLMessageDialog::getImplementationName_Static()
+OUString OSQLMessageDialog::getImplementationName_Static() throw(RuntimeException)
 {
     return OUString("org.openoffice.comp.dbu.OSQLMessageDialog");
 }
 
-css::uno::Sequence<OUString> SAL_CALL OSQLMessageDialog::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OSQLMessageDialog::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
-css::uno::Sequence<OUString> OSQLMessageDialog::getSupportedServiceNames_Static()
+css::uno::Sequence<OUString> OSQLMessageDialog::getSupportedServiceNames_Static() throw(RuntimeException)
 {
     css::uno::Sequence<OUString> aSupported { "com.sun.star.sdb.ErrorMessageDialog" };
     return aSupported;
 }
 
-void OSQLMessageDialog::initialize(Sequence<Any> const & args)
+void OSQLMessageDialog::initialize(Sequence<Any> const & args) throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     OUString title;
     Reference< css::awt::XWindow > parentWindow;
+    css::uno::Any sqlException;
 
-    if ((args.getLength() == 3) && (args[0] >>= title) && (args[1] >>= parentWindow)) {
+    if ((args.getLength() == 3) && (args[0] >>= title) && (args[1] >>= parentWindow) && (args[2] >>= sqlException)) {
         Sequence<Any> s(3);
         s[0] <<= PropertyValue( "Title", -1, makeAny(title), PropertyState_DIRECT_VALUE);
         s[1] <<= PropertyValue( "ParentWindow", -1, makeAny(parentWindow), PropertyState_DIRECT_VALUE);
-        s[2] <<= PropertyValue( "SQLException", -1, args[2], PropertyState_DIRECT_VALUE);
+        s[2] <<= PropertyValue( "SQLException", -1, sqlException, PropertyState_DIRECT_VALUE);
         OGenericUnoDialog::initialize(s);
     } else {
         OGenericUnoDialog::initialize(args);
     }
 }
 
-sal_Bool SAL_CALL OSQLMessageDialog::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
+sal_Bool SAL_CALL OSQLMessageDialog::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue) throw(IllegalArgumentException)
 {
     switch (_nHandle)
     {
@@ -121,7 +122,7 @@ sal_Bool SAL_CALL OSQLMessageDialog::convertFastPropertyValue( Any& _rConvertedV
     }
 }
 
-Reference<XPropertySetInfo>  SAL_CALL OSQLMessageDialog::getPropertySetInfo()
+Reference<XPropertySetInfo>  SAL_CALL OSQLMessageDialog::getPropertySetInfo() throw(RuntimeException, std::exception)
 {
     Reference<XPropertySetInfo>  xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;

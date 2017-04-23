@@ -70,7 +70,7 @@ import com.sun.star.util.XURLTransformer;
  */
 public class AccessibleIconChoiceCtrlEntry extends TestCase {
 
-    static XDesktop xDesktop;
+    static XDesktop the_Desk;
     static XTextDocument xTextDoc;
     static XAccessibleAction accCloseButton = null;
 
@@ -79,7 +79,8 @@ public class AccessibleIconChoiceCtrlEntry extends TestCase {
      */
     @Override
     protected void initialize(TestParameters Param, PrintWriter log) throws Exception {
-        xDesktop = DesktopTools.createDesktop(Param.getMSF());
+        the_Desk = UnoRuntime.queryInterface(
+                    XDesktop.class, DesktopTools.createDesktop(Param.getMSF()));
     }
 
     /**

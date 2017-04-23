@@ -34,8 +34,6 @@
 #include "dragdata.hxx"
 #include "markdata.hxx"
 #include <gridwin.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
-#include <comphelper/lok.hxx>
 
 ScTabControl::ScTabControl( vcl::Window* pParent, ScViewData* pData )
     : TabBar(pParent, WB_3DLOOK | WB_MINSCROLL | WB_SCROLL | WB_RANGESELECT | WB_MULTISELECT | WB_DRAG)
@@ -84,9 +82,9 @@ ScTabControl::ScTabControl( vcl::Window* pParent, ScViewData* pData )
     SetScrollAreaContextHdl( LINK( this, ScTabControl, ShowPageList ) );
 }
 
-IMPL_LINK(ScTabControl, ShowPageList, const CommandEvent &, rEvent, void)
+IMPL_LINK_TYPED(ScTabControl, ShowPageList, const CommandEvent &, rEvent, void)
 {
-    ScopedVclPtrInstance<PopupMenu> aPopup;
+    PopupMenu aPopup;
 
     sal_uInt16 nCurPageId = GetCurPageId();
 
@@ -100,27 +98,19 @@ IMPL_LINK(ScTabControl, ShowPageList, const CommandEvent &, rEvent, void)
             if (pDoc->GetName(i, aString))
             {
                 sal_uInt16 nId = static_cast<sal_uInt16>(i)+1;
-                aPopup->InsertItem(nId, aString, MenuItemBits::CHECKABLE);
+                aPopup.InsertItem(nId, aString, MenuItemBits::CHECKABLE);
                 if (nId == nCurPageId)
-                    aPopup->CheckItem(nId);
+                    aPopup.CheckItem(nId);
             }
         }
     }
 
-    sal_uInt16 nItemId = aPopup->Execute( this, rEvent.GetMousePosPixel() );
+    sal_uInt16 nItemId = aPopup.Execute( this, rEvent.GetMousePosPixel() );
     SwitchToPageId(nItemId);
 }
 
 ScTabControl::~ScTabControl()
 {
-    disposeOnce();
-}
-
-void ScTabControl::dispose()
-{
-    DragSourceHelper::dispose();
-    DropTargetHelper::dispose();
-    TabBar::dispose();
 }
 
 sal_uInt16 ScTabControl::GetMaxId() const
@@ -301,7 +291,7 @@ void ScTabControl::Select()
     rBind.Invalidate( SID_TABLE_CELL );
 
         // SetReference onlw when the consolidate dialog is open
-        // (for references over multiple sheets)
+        // (for referenzes over multiple sheets)
         // for others this is only needed fidgeting
 
     if ( bRefMode && pViewData->GetRefType() == SC_REFTYPE_REF )
@@ -383,7 +373,7 @@ void ScTabControl::UpdateStatus()
     {
         bModified = false;                                          // selection
         for (i=0; i<nMaxCnt && !bModified; i++)
-            if ( rMark.GetTableSelect(i) != IsPageSelected(static_cast<sal_uInt16>(i)+1) )
+            if ( rMark.GetTableSelect(i) != (bool) IsPageSelected(static_cast<sal_uInt16>(i)+1) )
                 bModified = true;
 
         if ( bModified )
@@ -417,13 +407,6 @@ void ScTabControl::SwitchToPageId(sal_uInt16 nId)
             for (sal_uInt16 i=1; i<=nCount; i++)
                 SelectPage( i, i==nId );
             Select();
-
-            if (comphelper::LibreOfficeKit::isActive())
-            {
-                // notify LibreOfficeKit about changed page
-                OString aPayload = OString::number(nId - 1);
-                pViewData->GetViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
-            }
         }
     }
 }
@@ -461,7 +444,7 @@ void ScTabControl::StartDrag( sal_Int8 /* nAction */, const Point& rPosPixel )
 
     if (!bDisable)
     {
-        vcl::Region aRegion( tools::Rectangle(0,0,0,0) );
+        vcl::Region aRegion( Rectangle(0,0,0,0) );
         CommandEvent aCEvt( rPosPixel, CommandEventId::StartDrag, true );   // needed for StartDrag
         if (TabBar::StartDrag( aCEvt, aRegion ))
             DoDrag( aRegion );
@@ -491,7 +474,7 @@ void ScTabControl::DoDrag( const vcl::Region& /* rRegion */ )
     ScTransferObj* pTransferObj = new ScTransferObj( pClipDoc, aObjDesc );
     css::uno::Reference<css::datatransfer::XTransferable> xTransferable( pTransferObj );
 
-    pTransferObj->SetDragSourceFlags(ScDragSrc::Table);
+    pTransferObj->SetDragSourceFlags( SC_DROP_TABLE );
 
     pTransferObj->SetDragSource( pDocSh, aTabMark );
 
@@ -528,7 +511,7 @@ sal_Int8 ScTabControl::ExecuteDrop( const ExecuteDropEvent& rEvt )
 
     ScDocument* pDoc = pViewData->GetDocument();
     const ScDragData& rData = SC_MOD()->GetDragData();
-    if ( rData.pCellTransfer && (rData.pCellTransfer->GetDragSourceFlags() & ScDragSrc::Table) &&
+    if ( rData.pCellTransfer && ( rData.pCellTransfer->GetDragSourceFlags() & SC_DROP_TABLE ) &&
             rData.pCellTransfer->GetSourceDocument() == pDoc )
     {
         // moving of tables within the document
@@ -567,7 +550,7 @@ sal_Int8 ScTabControl::AcceptDrop( const AcceptDropEvent& rEvt )
 
     const ScDocument* pDoc = pViewData->GetDocument();
     const ScDragData& rData = SC_MOD()->GetDragData();
-    if ( rData.pCellTransfer && (rData.pCellTransfer->GetDragSourceFlags() & ScDragSrc::Table) &&
+    if ( rData.pCellTransfer && ( rData.pCellTransfer->GetDragSourceFlags() & SC_DROP_TABLE ) &&
             rData.pCellTransfer->GetSourceDocument() == pDoc )
     {
         // moving of tables within the document
@@ -644,7 +627,7 @@ void ScTabControl::Mirror()
     TabBar::Mirror();
     if( nSelPageIdByMouse != TabBar::PAGE_NOT_FOUND )
     {
-        tools::Rectangle aRect( GetPageRect( GetCurPageId() ) );
+        Rectangle aRect( GetPageRect( GetCurPageId() ) );
         if( !aRect.IsEmpty() )
             SetPointerPosPixel( aRect.Center() );
         nSelPageIdByMouse = TabBar::PAGE_NOT_FOUND;  // only once after a Select()

@@ -22,11 +22,9 @@ public:
 
     explicit CrashReportDialog(vcl::Window* pParent);
 
-    virtual ~CrashReportDialog() override;
+    virtual ~CrashReportDialog();
 
     virtual void dispose() override;
-
-    virtual bool Close() override;
 
 private:
 
@@ -36,11 +34,10 @@ private:
     VclPtr<FixedText> mpEditPreUpload;
     VclPtr<VclMultiLineEdit> mpEditPostUpload;
     VclPtr<VclMultiLineEdit> mpFtBugReport;
-    VclPtr<CheckBox> mpCBSafeMode;
 
     OUString maSuccessMsg;
 
-    DECL_LINK(BtnHdl, Button*, void);
+    DECL_LINK_TYPED(BtnHdl, Button*, void);
 };
 
 #endif

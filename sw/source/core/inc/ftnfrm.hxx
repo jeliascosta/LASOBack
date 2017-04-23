@@ -110,19 +110,19 @@ public:
     bool IsBackMoveLocked() { return bBackMoveLocked; }
 
     // prevents that the last content deletes the SwFootnoteFrame as well (Cut())
-    void ColLock()       { mbColLocked = true; }
-    void ColUnlock()     { mbColLocked = false; }
+    inline void ColLock()       { mbColLocked = true; }
+    inline void ColUnlock()     { mbColLocked = false; }
 
     // #i49383#
-    void UnlockPosOfLowerObjs()
+    inline void UnlockPosOfLowerObjs()
     {
         mbUnlockPosOfLowerObjs = true;
     }
-    void KeepLockPosOfLowerObjs()
+    inline void KeepLockPosOfLowerObjs()
     {
         mbUnlockPosOfLowerObjs = false;
     }
-    bool IsUnlockPosOfLowerObjs()
+    inline bool IsUnlockPosOfLowerObjs()
     {
         return mbUnlockPosOfLowerObjs;
     }

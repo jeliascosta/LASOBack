@@ -126,7 +126,7 @@ namespace drawinglayer
             }
 
             // build vector of PolyPolygons
-            std::vector< basegfx::B3DPolyPolygon > a3DPolyPolygonVector;
+            ::std::vector< basegfx::B3DPolyPolygon > a3DPolyPolygonVector;
 
             for(sal_uInt32 a(0L); a < aFill.count(); a++)
             {
@@ -181,6 +181,11 @@ namespace drawinglayer
             const attribute::Sdr3DObjectAttribute& rSdr3DObjectAttribute)
         :   SdrPrimitive3D(rTransform, rTextureSize, rSdrLFSAttribute, rSdr3DObjectAttribute)
         {
+        }
+
+        bool SdrCubePrimitive3D::operator==(const BasePrimitive3D& rPrimitive) const
+        {
+            return SdrPrimitive3D::operator==(rPrimitive);
         }
 
         basegfx::B3DRange SdrCubePrimitive3D::getB3DRange(const geometry::ViewInformation3D& /*rViewInformation*/) const

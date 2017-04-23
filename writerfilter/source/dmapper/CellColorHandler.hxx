@@ -51,7 +51,7 @@ private:
 
 public:
     CellColorHandler( );
-    virtual ~CellColorHandler() override;
+    virtual ~CellColorHandler();
 
     ::std::shared_ptr<TablePropertyMap>            getProperties();
 

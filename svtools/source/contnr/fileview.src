@@ -18,6 +18,7 @@
  */
 
 #include <svtools/svtools.hrc>
+#include "fileview.hrc"
 #include <svtools/helpid.hrc>
 
 // strings --------------------------------------------------------------------
@@ -42,6 +43,11 @@ String STR_SVT_FILEVIEW_COLUMN_TYPE
     Text [ en-US ] = "Type";
 };
 
+String STR_SVT_FILEVIEW_ERR_MAKEFOLDER
+{
+    Text [ en-US ] = "Could not create the folder %1.";
+};
+
 String STR_SVT_BYTES
 {
     Text [ en-US ] = "Bytes" ;
@@ -62,14 +68,39 @@ String STR_SVT_GB
     Text [ en-US ] = "GB" ;
 };
 
-Bitmap RID_BMP_FOLDER
+// Images ---------------------------------------------------------------------
+
+Image IMG_SVT_FOLDER
 {
-    File = "folder.png";
+    ImageBitmap = Bitmap { File = "folder.png" ; };
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
 };
 
-Bitmap RID_BMP_FOLDER_OPEN
+Image IMG_SVT_FOLDER_OPEN
 {
-    File = "folderop.png";
+    ImageBitmap = Bitmap { File = "folderop.png" ; };
+    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
+};
+
+// Menus -----------------------------------------------------------------
+
+Menu RID_FILEVIEW_CONTEXTMENU
+{
+    ItemList =
+    {
+        MenuItem
+        {
+            Identifier = MID_FILEVIEW_DELETE ;
+            HelpId = HID_FILEVIEW_MENU_DELETE ;
+            Text [ en-US ] = "~Delete";
+        };
+        MenuItem
+        {
+            Identifier = MID_FILEVIEW_RENAME ;
+            HelpId = HID_FILEVIEW_MENU_RENAME ;
+            Text [ en-US ] = "~Rename";
+        };
+    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

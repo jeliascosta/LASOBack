@@ -23,20 +23,21 @@ namespace oox {
 namespace core {
 
 using namespace css::io;
+using namespace css::lang;
 using namespace css::uno;
 
-DocumentEncryption::DocumentEncryption(Reference<XStream> const & xDocumentStream,
-                                       oox::ole::OleStorage& rOleStorage,
-                                       const OUString& rPassword)
-    : mxDocumentStream(xDocumentStream)
-    , mrOleStorage(rOleStorage)
-    , maPassword(rPassword)
+using namespace std;
+
+DocumentEncryption::DocumentEncryption(Reference< XStream > xDocumentStream, oox::ole::OleStorage& rOleStorage, const OUString& aPassword) :
+    mxDocumentStream(xDocumentStream),
+    mrOleStorage(rOleStorage),
+    maPassword(aPassword)
 {}
 
 bool DocumentEncryption::encrypt()
 {
-    Reference<XInputStream> xInputStream (mxDocumentStream->getInputStream(), UNO_SET_THROW);
-    Reference<XSeekable> xSeekable(xInputStream, UNO_QUERY);
+    Reference< XInputStream > xInputStream ( mxDocumentStream->getInputStream(), UNO_SET_THROW );
+    Reference< XSeekable > xSeekable( xInputStream, UNO_QUERY );
 
     if (!xSeekable.is())
         return false;
@@ -46,8 +47,8 @@ bool DocumentEncryption::encrypt()
     if (!mrOleStorage.isStorage())
         return false;
 
-    Reference<XOutputStream> xEncryptionInfo(mrOleStorage.openOutputStream("EncryptionInfo"), UNO_SET_THROW);
-    BinaryXOutputStream aEncryptionInfoBinaryOutputStream(xEncryptionInfo, false);
+    Reference< XOutputStream > xEncryptionInfo( mrOleStorage.openOutputStream( "EncryptionInfo" ), UNO_SET_THROW );
+    BinaryXOutputStream aEncryptionInfoBinaryOutputStream( xEncryptionInfo, false );
 
     mEngine.writeEncryptionInfo(maPassword, aEncryptionInfoBinaryOutputStream);
 
@@ -55,14 +56,14 @@ bool DocumentEncryption::encrypt()
     xEncryptionInfo->flush();
     xEncryptionInfo->closeOutput();
 
-    Reference<XOutputStream> xEncryptedPackage(mrOleStorage.openOutputStream("EncryptedPackage"), UNO_SET_THROW);
-    BinaryXOutputStream aEncryptedPackageStream(xEncryptedPackage, false);
+    Reference< XOutputStream > xEncryptedPackage( mrOleStorage.openOutputStream( "EncryptedPackage" ), UNO_SET_THROW );
+    BinaryXOutputStream aEncryptedPackageStream( xEncryptedPackage, false );
 
-    BinaryXInputStream aDocumentInputStream(xInputStream, false);
+    BinaryXInputStream aDocumentInputStream( xInputStream, false );
     aDocumentInputStream.seekToStart();
 
-    aEncryptedPackageStream.WriteUInt32(aLength); // size
-    aEncryptedPackageStream.WriteUInt32(0U);      // reserved
+    aEncryptedPackageStream.WriteUInt32( aLength ); // size
+    aEncryptedPackageStream.WriteUInt32( 0U );       // reserved
 
     mEngine.encrypt(aDocumentInputStream, aEncryptedPackageStream);
 

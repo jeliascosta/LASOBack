@@ -59,7 +59,7 @@ public:
 
     void setPrintData(/*[in]*/ const SwPrintData& rPrtData ) override;
 
-    virtual ~DocumentDeviceManager() override;
+    virtual ~DocumentDeviceManager();
 
 private:
 

@@ -19,36 +19,37 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGEORIENTATIONCONTROL_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGEORIENTATIONCONTROL_HXX
 
-#include <svx/tbxctl.hxx>
-#include <svx/pageitem.hxx>
-#include <svx/rulritem.hxx>
-#include <editeng/sizeitem.hxx>
+#include <svx/sidebar/PopupControl.hxx>
 
-class Button;
+namespace svx { namespace sidebar {
+    class ValueSetWithTextControl;
+} }
+class ValueSet;
+
 
 namespace sw { namespace sidebar {
 
-class PageOrientationControl : public SfxPopupWindow
+class PagePropertyPanel;
+
+class PageOrientationControl
+    : public svx::sidebar::PopupControl
 {
 public:
-    explicit PageOrientationControl(sal_uInt16 nId);
-    virtual ~PageOrientationControl() override;
+    PageOrientationControl(
+        vcl::Window* pParent,
+        PagePropertyPanel& rPanel,
+        const bool bLandscape );
+    virtual ~PageOrientationControl();
     virtual void dispose() override;
 
 private:
-    VclPtr<PushButton> m_pPortrait;
-    VclPtr<PushButton> m_pLandscape;
+    VclPtr< svx::sidebar::ValueSetWithTextControl> mpOrientationValueSet;
 
-    std::unique_ptr<SvxPageItem> mpPageItem;
-    std::unique_ptr<SvxSizeItem> mpPageSizeItem;
-    std::unique_ptr<SvxLongLRSpaceItem> mpPageLRMarginItem;
-    std::unique_ptr<SvxLongULSpaceItem> mpPageULMarginItem;
+    bool mbLandscape;
 
-    void ExecuteMarginULChange(const long nPageTopMargin, const long nPageBottomMargin);
-    void ExecuteMarginLRChange(const long nPageLeftMargin, const long nPageRightMargin);
-    void ExecuteOrientationChange(const bool bLandscape);
+    PagePropertyPanel& mrPagePropPanel;
 
-    DECL_LINK(ImplOrientationHdl, Button*, void);
+    DECL_LINK_TYPED(ImplOrientationHdl, ValueSet*, void);
 };
 
 } } // end of namespace sw::sidebar

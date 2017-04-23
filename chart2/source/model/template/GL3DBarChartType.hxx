@@ -22,33 +22,44 @@ class GL3DBarChartType : public ChartType
 {
 public:
     explicit GL3DBarChartType( const css::uno::Reference<css::uno::XComponentContext>& xContext );
-    virtual ~GL3DBarChartType() override;
+    virtual ~GL3DBarChartType();
 
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedPropertyRoles() override;
+        getSupportedPropertyRoles()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString >
+        getSupportedServiceNames_Static();
 
 protected:
     GL3DBarChartType( const GL3DBarChartType& rOther );
 
-    virtual OUString SAL_CALL getChartType() override;
+    virtual OUString SAL_CALL getChartType()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<css::util::XCloneable> SAL_CALL
-        createClone() override;
+        createClone()
+            throw (css::uno::RuntimeException, std::exception) override;
 
     // OPropertySet
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw (css::beans::UnknownPropertyException) override;
 
     virtual cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
     // XPropertySet
     virtual css::uno::Reference<css::beans::XPropertySetInfo> SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+            throw (css::uno::RuntimeException, std::exception) override;
 };
 
 }

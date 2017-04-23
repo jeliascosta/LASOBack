@@ -45,12 +45,9 @@ BreakDlg::BreakDlg(
     sal_uLong nSumActionCount,
     sal_uLong nObjCount )
     : SfxModalDialog(pWindow, "BreakDialog", "modules/sdraw/ui/breakdialog.ui")
+    , aIdle("sd BreakDlg Idle")
     , mpProgress( nullptr )
 {
-    m_aUpdateIdle.SetPriority( TaskPriority::REPAINT );
-    m_aUpdateIdle.SetInvokeHandler( LINK( this, BreakDlg, InitialUpdate ) );
-    m_aUpdateIdle.SetDebugName( "sd::BreakDlg m_aUpdateIdle" );
-
     get(m_pFiObjInfo, "metafiles");
     get(m_pFiActInfo, "metaobjects");
     get(m_pFiInsInfo, "drawingobjects");
@@ -87,7 +84,7 @@ void BreakDlg::dispose()
 }
 
 // Control-Handler for cancel button
-IMPL_LINK_NOARG(BreakDlg, CancelButtonHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(BreakDlg, CancelButtonHdl, Button*, void)
 {
     bCancel = true;
     m_pBtnCancel->Disable();
@@ -99,7 +96,7 @@ IMPL_LINK_NOARG(BreakDlg, CancelButtonHdl, Button*, void)
  * Every following call should contain the finished actions since the
  * last call of UpDate.
  */
-IMPL_LINK( BreakDlg, UpDate, void*, nInit, bool )
+IMPL_LINK_TYPED( BreakDlg, UpDate, void*, nInit, bool )
 {
     if(pProgrInfo == nullptr)
       return true;
@@ -148,13 +145,8 @@ IMPL_LINK( BreakDlg, UpDate, void*, nInit, bool )
         m_pFiInsInfo->SetText(info);
     }
 
-    // make sure dialog gets painted, it is intended to
-    // show the progress to the user. Also necessary to
-    // provide a clickable cancel button
-    ensureRepaint();
-
-    // return okay-value (-> !cancel)
-    return !bCancel;
+    Application::Reschedule();
+    return bCancel;
 }
 
 /**
@@ -163,7 +155,9 @@ IMPL_LINK( BreakDlg, UpDate, void*, nInit, bool )
  */
 short BreakDlg::Execute()
 {
-  m_aUpdateIdle.Start();
+  aIdle.SetPriority( SchedulerPriority::REPAINT );
+  aIdle.SetIdleHdl( LINK( this, BreakDlg, InitialUpdate ) );
+  aIdle.Start();
 
   return SfxModalDialog::Execute();
 }
@@ -171,7 +165,7 @@ short BreakDlg::Execute()
 /**
  * link-method which starts the working function
  */
-IMPL_LINK_NOARG(BreakDlg, InitialUpdate, Timer *, void)
+IMPL_LINK_NOARG_TYPED(BreakDlg, InitialUpdate, Idle *, void)
 {
     pDrView->DoImportMarkedMtf(pProgrInfo);
     EndDialog(RET_OK);

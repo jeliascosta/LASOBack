@@ -66,16 +66,17 @@ private:
 
 private:
     SVX_DLLPRIVATE void ImpGetCaptParams(ImpCaptParams& rPara) const;
-    SVX_DLLPRIVATE static void ImpCalcTail1(const ImpCaptParams& rPara, tools::Polygon& rPoly, tools::Rectangle& rRect);
-    SVX_DLLPRIVATE static void ImpCalcTail2(const ImpCaptParams& rPara, tools::Polygon& rPoly, tools::Rectangle& rRect);
-    SVX_DLLPRIVATE static void ImpCalcTail3(const ImpCaptParams& rPara, tools::Polygon& rPoly, tools::Rectangle& rRect);
-    SVX_DLLPRIVATE static void ImpCalcTail (const ImpCaptParams& rPara, tools::Polygon& rPoly, tools::Rectangle& rRect);
+    SVX_DLLPRIVATE void ImpCalcTail1(const ImpCaptParams& rPara, tools::Polygon& rPoly, Rectangle& rRect) const;
+    SVX_DLLPRIVATE void ImpCalcTail2(const ImpCaptParams& rPara, tools::Polygon& rPoly, Rectangle& rRect) const;
+    SVX_DLLPRIVATE void ImpCalcTail3(const ImpCaptParams& rPara, tools::Polygon& rPoly, Rectangle& rRect) const;
+    SVX_DLLPRIVATE void ImpCalcTail4(const ImpCaptParams& rPara, tools::Polygon& rPoly, Rectangle& rRect) const;
+    SVX_DLLPRIVATE void ImpCalcTail (const ImpCaptParams& rPara, tools::Polygon& rPoly, Rectangle& rRect) const;
     SVX_DLLPRIVATE void ImpRecalcTail();
 
 public:
     SdrCaptionObj();
-    SdrCaptionObj(const tools::Rectangle& rRect, const Point& rTail);
-    virtual ~SdrCaptionObj() override;
+    SdrCaptionObj(const Rectangle& rRect, const Point& rTail);
+    virtual ~SdrCaptionObj();
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
@@ -117,9 +118,14 @@ public:
 
     virtual void NbcSetRelativePos(const Point& rPnt) override;
     virtual Point GetRelativePos() const override;
+    virtual void NbcSetAnchorPos(const Point& rPnt) override;
+    virtual const Point& GetAnchorPos() const override;
 
-    virtual const tools::Rectangle& GetLogicRect() const override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void RecalcSnapRect() override;
+    virtual const Rectangle& GetSnapRect() const override;
+    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
+    virtual const Rectangle& GetLogicRect() const override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
 
     virtual sal_uInt32 GetSnapPointCount() const override;
     virtual Point GetSnapPoint(sal_uInt32 i) const override;
@@ -140,7 +146,7 @@ public:
     // Add own implementation for TRSetBaseGeometry to handle TailPos over changes
     virtual void TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, const basegfx::B2DPolyPolygon& rPolyPolygon) override;
 
-    const Point& GetFixedTailPos() const  {return maFixedTailPos;}
+    inline const Point& GetFixedTailPos() const  {return maFixedTailPos;}
 
     // geometry access
     ::basegfx::B2DPolygon getTailPolygon() const;

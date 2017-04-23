@@ -37,7 +37,7 @@ public:
         const css::uno::Reference<css::lang::XMultiServiceFactory>& xNamedPropertyContainerFactory,
         const css::awt::Size* pRefSize = nullptr );
 
-    virtual ~AllAxisItemConverter() override;
+    virtual ~AllAxisItemConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
@@ -51,7 +51,7 @@ public:
         SfxItemPool& rItemPool,
         SdrModel& rDrawModel,
         const css::uno::Reference<css::lang::XMultiServiceFactory> & xNamedPropertyContainerFactory );
-    virtual ~AllGridItemConverter() override;
+    virtual ~AllGridItemConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
@@ -64,9 +64,10 @@ public:
         const css::uno::Reference<css::frame::XModel>& xChartModel,
         SfxItemPool& rItemPool,
         SdrModel& rDrawModel,
-        const css::uno::Reference<css::lang::XMultiServiceFactory>& xNamedPropertyContainerFactory );
+        const css::uno::Reference<css::lang::XMultiServiceFactory>& xNamedPropertyContainerFactory,
+        const css::awt::Size* pRefSize = nullptr );
 
-    virtual ~AllDataLabelItemConverter() override;
+    virtual ~AllDataLabelItemConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
@@ -78,9 +79,10 @@ public:
     AllTitleItemConverter(
         const css::uno::Reference<css::frame::XModel>& xChartModel,
         SfxItemPool& rItemPool, SdrModel& rDrawModel,
-        const css::uno::Reference<css::lang::XMultiServiceFactory>& xNamedPropertyContainerFactory );
+        const css::uno::Reference<css::lang::XMultiServiceFactory>& xNamedPropertyContainerFactory,
+        const css::awt::Size* pRefSize = nullptr );
 
-    virtual ~AllTitleItemConverter() override;
+    virtual ~AllTitleItemConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;
@@ -91,7 +93,7 @@ class AllSeriesStatisticsConverter : public MultipleItemConverter
 public:
     AllSeriesStatisticsConverter(
         const css::uno::Reference<css::frame::XModel>& xChartModel, SfxItemPool& rItemPool );
-    virtual ~AllSeriesStatisticsConverter() override;
+    virtual ~AllSeriesStatisticsConverter();
 
 protected:
     virtual const sal_uInt16 * GetWhichPairs() const override;

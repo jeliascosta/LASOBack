@@ -23,16 +23,24 @@
 #include <comphelper/types.hxx>
 #include <rtl/ustrbuf.hxx>
 
+namespace connectivity
+{
+    namespace ado
+    {
+        sal_Int32 nAdoObjectCounter = 0;
+    }
+}
+
 using namespace connectivity::ado;
 
 void WpADOCatalog::Create()
 {
     _ADOCatalog* pCommand;
     HRESULT hr = CoCreateInstance(ADOS::CLSID_ADOCATALOG_25,
-                          nullptr,
+                          NULL,
                           CLSCTX_INPROC_SERVER,
                           ADOS::IID_ADOCATALOG_25,
-                          reinterpret_cast<void**>(&pCommand) );
+                          (void**)&pCommand );
 
 
     if( !FAILED( hr ) )
@@ -42,7 +50,7 @@ void WpADOCatalog::Create()
 
 WpADOProperties WpADOConnection::get_Properties() const
 {
-    ADOProperties* pProps=nullptr;
+    ADOProperties* pProps=NULL;
     pInterface->get_Properties(&pProps);
     WpADOProperties aProps;
     aProps.setWithOutAddRef(pProps);
@@ -53,15 +61,15 @@ OUString WpADOConnection::GetConnectionString() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_ConnectionString(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_ConnectionString(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOConnection::PutConnectionString(const OUString &aCon) const
+sal_Bool WpADOConnection::PutConnectionString(const OUString &aCon) const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(aCon);
-    bool bErg = SUCCEEDED(pInterface->put_ConnectionString(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_ConnectionString(bstr));
 
     return bErg;
 }
@@ -94,50 +102,50 @@ void WpADOConnection::PutConnectionTimeout(sal_Int32 nRet)
     pInterface->put_ConnectionTimeout(nRet);
 }
 
-bool WpADOConnection::Close( )
+sal_Bool WpADOConnection::Close( )
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->Close()));
 }
 
-bool WpADOConnection::Execute(const OUString& CommandText,OLEVariant& RecordsAffected,long Options, WpADORecordset** ppiRset)
+sal_Bool WpADOConnection::Execute(const OUString& _CommandText,OLEVariant& RecordsAffected,long Options, WpADORecordset** ppiRset)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    OLEString sStr1(CommandText);
-    bool bErg = SUCCEEDED(pInterface->Execute(sStr1.asBSTR(),&RecordsAffected,Options,reinterpret_cast<_ADORecordset**>(ppiRset)));
+    OLEString sStr1(_CommandText);
+    sal_Bool bErg = SUCCEEDED(pInterface->Execute(sStr1,&RecordsAffected,Options,(_ADORecordset**)ppiRset));
     return bErg;
 }
 
-bool WpADOConnection::BeginTrans()
+sal_Bool WpADOConnection::BeginTrans()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     sal_Int32 nIso=0;
     return SUCCEEDED(pInterface->BeginTrans(&nIso));
 }
 
-bool WpADOConnection::CommitTrans( )
+sal_Bool WpADOConnection::CommitTrans( )
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->CommitTrans());
 }
 
-bool WpADOConnection::RollbackTrans( )
+sal_Bool WpADOConnection::RollbackTrans( )
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->RollbackTrans());
 }
 
-bool WpADOConnection::Open(const OUString& ConnectionString, const OUString& UserID,const OUString& Password,long Options)
+sal_Bool WpADOConnection::Open(const OUString& ConnectionString, const OUString& UserID,const OUString& Password,long Options)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString sStr1(ConnectionString);
     OLEString sStr2(UserID);
     OLEString sStr3(Password);
-    bool bErg = SUCCEEDED(pInterface->Open(sStr1.asBSTR(),sStr2.asBSTR(),sStr3.asBSTR(),Options));
+    sal_Bool bErg = SUCCEEDED(pInterface->Open(sStr1,sStr2,sStr3,Options));
     return bErg;
 }
 
-bool WpADOConnection::GetErrors(ADOErrors** pErrors)
+sal_Bool WpADOConnection::GetErrors(ADOErrors** pErrors)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_Errors(pErrors));
@@ -146,15 +154,15 @@ bool WpADOConnection::GetErrors(ADOErrors** pErrors)
 OUString WpADOConnection::GetDefaultDatabase() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    OLEString aBSTR; pInterface->get_DefaultDatabase(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    OLEString aBSTR; pInterface->get_DefaultDatabase(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOConnection::PutDefaultDatabase(const OUString& _bstr)
+sal_Bool WpADOConnection::PutDefaultDatabase(const OUString& _bstr)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_bstr);
-    bool bErg = SUCCEEDED(pInterface->put_DefaultDatabase(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_DefaultDatabase(bstr));
 
     return bErg;
 }
@@ -167,7 +175,7 @@ IsolationLevelEnum WpADOConnection::get_IsolationLevel() const
     return eNum;
 }
 
-bool WpADOConnection::put_IsolationLevel(const IsolationLevelEnum& eNum)
+sal_Bool WpADOConnection::put_IsolationLevel(const IsolationLevelEnum& eNum)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_IsolationLevel(eNum));
@@ -181,7 +189,7 @@ sal_Int32 WpADOConnection::get_Attributes() const
     return nRet;
 }
 
-bool WpADOConnection::put_Attributes(sal_Int32 nRet)
+sal_Bool WpADOConnection::put_Attributes(sal_Int32 nRet)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_Attributes(nRet));
@@ -195,7 +203,7 @@ CursorLocationEnum WpADOConnection::get_CursorLocation() const
     return eNum;
 }
 
-bool WpADOConnection::put_CursorLocation(const CursorLocationEnum &eNum)
+sal_Bool WpADOConnection::put_CursorLocation(const CursorLocationEnum &eNum)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_CursorLocation(eNum));
@@ -209,7 +217,7 @@ ConnectModeEnum WpADOConnection::get_Mode() const
     return eNum;
 }
 
-bool WpADOConnection::put_Mode(const ConnectModeEnum &eNum)
+sal_Bool WpADOConnection::put_Mode(const ConnectModeEnum &eNum)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_Mode(eNum));
@@ -218,15 +226,15 @@ bool WpADOConnection::put_Mode(const ConnectModeEnum &eNum)
 OUString WpADOConnection::get_Provider() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    OLEString aBSTR; pInterface->get_Provider(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    OLEString aBSTR; pInterface->get_Provider(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOConnection::put_Provider(const OUString& _bstr)
+sal_Bool WpADOConnection::put_Provider(const OUString& _bstr)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_bstr);
-    return SUCCEEDED(pInterface->put_Provider(bstr.asBSTR()));
+    return SUCCEEDED(pInterface->put_Provider(bstr));
 }
 
 sal_Int32 WpADOConnection::get_State() const
@@ -237,7 +245,7 @@ sal_Int32 WpADOConnection::get_State() const
     return nRet;
 }
 
-bool WpADOConnection::OpenSchema(SchemaEnum eNum,OLEVariant& Restrictions,OLEVariant& SchemaID,ADORecordset**pprset)
+sal_Bool WpADOConnection::OpenSchema(SchemaEnum eNum,OLEVariant& Restrictions,OLEVariant& SchemaID,ADORecordset**pprset)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->OpenSchema(eNum,Restrictions,SchemaID,pprset));
@@ -247,17 +255,17 @@ OUString WpADOConnection::get_Version() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Version(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Version(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOCommand::putref_ActiveConnection( WpADOConnection *pCon)
+sal_Bool WpADOCommand::putref_ActiveConnection( WpADOConnection *pCon)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     if(pCon)
         return SUCCEEDED(pInterface->putref_ActiveConnection(pCon->pInterface));
     else
-        return SUCCEEDED(pInterface->putref_ActiveConnection(nullptr));
+        return SUCCEEDED(pInterface->putref_ActiveConnection(NULL));
 }
 
 void WpADOCommand::put_ActiveConnection(/* [in] */ const OLEVariant& vConn)
@@ -268,23 +276,23 @@ void WpADOCommand::put_ActiveConnection(/* [in] */ const OLEVariant& vConn)
 
 void WpADOCommand::Create()
 {
-    IClassFactory2* pInterface2 = nullptr;
+    IClassFactory2* pInterface2 = NULL;
     HRESULT hr = CoGetClassObject( ADOS::CLSID_ADOCOMMAND_21,
                           CLSCTX_INPROC_SERVER,
-                          nullptr,
+                          NULL,
                           IID_IClassFactory2,
-                          reinterpret_cast<void**>(&pInterface2) );
+                          (void**)&pInterface2 );
 
     if( !FAILED( hr ) )
     {
-        ADOCommand* pCommand=nullptr;
-        IUnknown* pOuter=nullptr;
+        ADOCommand* pCommand=NULL;
+        IUnknown* pOuter=NULL;
 
         hr = pInterface2->CreateInstanceLic(  pOuter,
-                                            nullptr,
+                                            NULL,
                                             ADOS::IID_ADOCOMMAND_21,
-                                            ADOS::GetKeyStr().asBSTR(),
-                                            reinterpret_cast<void**>(&pCommand));
+                                            ADOS::GetKeyStr(),
+                                            (void**) &pCommand);
 
         if( !FAILED( hr ) )
         {
@@ -308,15 +316,15 @@ OUString WpADOCommand::get_CommandText() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_CommandText(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_CommandText(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOCommand::put_CommandText(const OUString &aCon)
+sal_Bool WpADOCommand::put_CommandText(const OUString &aCon)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(aCon);
-    bool bErg = SUCCEEDED(pInterface->put_CommandText(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_CommandText(bstr));
 
     return bErg;
 }
@@ -335,7 +343,7 @@ void WpADOCommand::put_CommandTimeout(sal_Int32 nRet)
     pInterface->put_CommandTimeout(nRet);
 }
 
-bool WpADOCommand::get_Prepared() const
+sal_Bool WpADOCommand::get_Prepared() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL bPrepared = VARIANT_FALSE;
@@ -343,13 +351,13 @@ bool WpADOCommand::get_Prepared() const
     return bPrepared == VARIANT_TRUE;
 }
 
-bool WpADOCommand::put_Prepared(VARIANT_BOOL bPrepared) const
+sal_Bool WpADOCommand::put_Prepared(VARIANT_BOOL bPrepared) const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_Prepared(bPrepared));
 }
 
-bool WpADOCommand::Execute(OLEVariant& RecordsAffected,OLEVariant& Params,long Options, ADORecordset** ppiRset)
+sal_Bool WpADOCommand::Execute(OLEVariant& RecordsAffected,OLEVariant& Params,long Options, ADORecordset** ppiRset)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->Execute(&RecordsAffected,&Params,Options,ppiRset));
@@ -358,22 +366,22 @@ bool WpADOCommand::Execute(OLEVariant& RecordsAffected,OLEVariant& Params,long O
 ADOParameter* WpADOCommand::CreateParameter(const OUString &_bstr,DataTypeEnum Type,ParameterDirectionEnum Direction,long nSize,const OLEVariant &Value)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOParameter* pPara = nullptr;
+    ADOParameter* pPara = NULL;
     OLEString bstr(_bstr);
-    bool bErg = SUCCEEDED(pInterface->CreateParameter(bstr.asBSTR(),Type,Direction,nSize,Value,&pPara));
+    sal_Bool bErg = SUCCEEDED(pInterface->CreateParameter(bstr,Type,Direction,nSize,Value,&pPara));
 
-    return bErg ? pPara : nullptr;
+    return bErg ? pPara : NULL;
 }
 
 ADOParameters* WpADOCommand::get_Parameters() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOParameters* pPara=nullptr;
+    ADOParameters* pPara=NULL;
     pInterface->get_Parameters(&pPara);
     return pPara;
 }
 
-bool WpADOCommand::put_CommandType( /* [in] */ CommandTypeEnum lCmdType)
+sal_Bool WpADOCommand::put_CommandType( /* [in] */ CommandTypeEnum lCmdType)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_CommandType(lCmdType));
@@ -392,19 +400,19 @@ OUString WpADOCommand::GetName() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
-bool WpADOCommand::put_Name(const OUString& Name)
+sal_Bool WpADOCommand::put_Name(const OUString& _Name)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    OLEString bstr(Name);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    OLEString bstr(_Name);
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
 
     return bErg;
 }
-bool WpADOCommand::Cancel()
+sal_Bool WpADOCommand::Cancel()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->Cancel());
@@ -414,16 +422,16 @@ OUString WpADOError::GetDescription() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Description(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Description(&aBSTR);
+    return aBSTR;
 }
 
  OUString WpADOError::GetSource() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Source(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Source(&aBSTR);
+    return aBSTR;
 }
 
  sal_Int32 WpADOError::GetNumber() const
@@ -438,8 +446,8 @@ OUString WpADOError::GetDescription() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_SQLState(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_SQLState(&aBSTR);
+    return aBSTR;
 }
 
  sal_Int32 WpADOError::GetNativeError() const
@@ -452,7 +460,7 @@ OUString WpADOError::GetDescription() const
 WpADOProperties WpADOField::get_Properties()
 {
      OSL_ENSURE(pInterface,"Interface is null!");
-    ADOProperties* pProps = nullptr;
+    ADOProperties* pProps = NULL;
     pInterface->get_Properties(&pProps);
     WpADOProperties aProps;
 
@@ -497,8 +505,8 @@ OUString WpADOField::GetName() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
  DataTypeEnum WpADOField::GetADOType() const
@@ -513,7 +521,7 @@ OUString WpADOField::GetName() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     aValVar.setEmpty();
-    bool bOk = SUCCEEDED(pInterface->get_Value(&aValVar));
+    sal_Bool bOk = SUCCEEDED(pInterface->get_Value(&aValVar));
     (void)bOk;
 }
 
@@ -525,7 +533,7 @@ OUString WpADOField::GetName() const
     return aValVar;
 }
 
-bool WpADOField::PutValue(const OLEVariant& aVariant)
+ sal_Bool WpADOField::PutValue(const OLEVariant& aVariant)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Value(aVariant)));
@@ -547,10 +555,10 @@ sal_Int32 WpADOField::GetPrecision() const
     return eType;
 }
 
-bool WpADOField::AppendChunk(const OLEVariant& Variant)
+ sal_Bool WpADOField::AppendChunk(const OLEVariant& _Variant)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    return (SUCCEEDED(pInterface->AppendChunk(Variant)));
+    return (SUCCEEDED(pInterface->AppendChunk(_Variant)));
 }
 
 OLEVariant WpADOField::GetChunk(long Length) const
@@ -595,13 +603,13 @@ OLEVariant WpADOField::GetUnderlyingValue() const
     pInterface->get_UnderlyingValue(&aValVar);
 }
 
-bool WpADOField::PutPrecision(sal_Int8 _prec)
+ sal_Bool WpADOField::PutPrecision(sal_Int8 _prec)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Precision(_prec)));
 }
 
-bool WpADOField::PutNumericScale(sal_Int8 _prec)
+ sal_Bool WpADOField::PutNumericScale(sal_Int8 _prec)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_NumericScale(_prec)));
@@ -613,13 +621,13 @@ bool WpADOField::PutNumericScale(sal_Int8 _prec)
     pInterface->put_Type(eType);
 }
 
-bool WpADOField::PutDefinedSize(sal_Int32 _nDefSize)
+ sal_Bool WpADOField::PutDefinedSize(sal_Int32 _nDefSize)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_DefinedSize(_nDefSize)));
 }
 
-bool WpADOField::PutAttributes(sal_Int32 _nDefSize)
+ sal_Bool WpADOField::PutAttributes(sal_Int32 _nDefSize)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Attributes(_nDefSize)));
@@ -640,7 +648,7 @@ void WpADOProperty::GetValue(OLEVariant &aValVar) const
         pInterface->get_Value(&aValVar);
 }
 
-bool WpADOProperty::PutValue(const OLEVariant &aValVar)
+sal_Bool WpADOProperty::PutValue(const OLEVariant &aValVar)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Value(aValVar)));
@@ -650,8 +658,8 @@ bool WpADOProperty::PutValue(const OLEVariant &aValVar)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
  DataTypeEnum WpADOProperty::GetADOType() const
@@ -670,29 +678,29 @@ bool WpADOProperty::PutValue(const OLEVariant &aValVar)
     return eADOSFieldAttributes;
 }
 
-bool WpADOProperty::PutAttributes(sal_Int32 _nDefSize)
+ sal_Bool WpADOProperty::PutAttributes(sal_Int32 _nDefSize)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Attributes(_nDefSize)));
 }
  void WpADORecordset::Create()
 {
-    IClassFactory2* pInterface2 = nullptr;
+    IClassFactory2* pInterface2 = NULL;
     HRESULT hr = CoGetClassObject( ADOS::CLSID_ADORECORDSET_21,
                           CLSCTX_INPROC_SERVER,
-                          nullptr,
+                          NULL,
                           IID_IClassFactory2,
-                          reinterpret_cast<void**>(&pInterface2) );
+                          (void**)&pInterface2 );
 
     if( !FAILED( hr ) )
     {
-        ADORecordset *pRec = nullptr;
-        IUnknown *pOuter = nullptr;
+        ADORecordset *pRec = NULL;
+        IUnknown *pOuter = NULL;
         hr = pInterface2->CreateInstanceLic(  pOuter,
-                                            nullptr,
+                                            NULL,
                                             ADOS::IID_ADORECORDSET_21,
-                                            ADOS::GetKeyStr().asBSTR(),
-                                            reinterpret_cast<void**>(&pRec));
+                                            ADOS::GetKeyStr(),
+                                            (void**) &pRec);
 
         if( !FAILED( hr ) )
         {
@@ -704,7 +712,7 @@ bool WpADOProperty::PutAttributes(sal_Int32 _nDefSize)
     }
 }
 
-bool WpADORecordset::Open(
+ sal_Bool WpADORecordset::Open(
         /* [optional][in] */ VARIANT Source,
         /* [optional][in] */ VARIANT ActiveConnection,
         /* [defaultvalue][in] */ CursorTypeEnum CursorType,
@@ -731,7 +739,7 @@ void WpADORecordset::Close()
     pInterface->Close();
 }
 
-bool WpADORecordset::Cancel() const
+ sal_Bool WpADORecordset::Cancel() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->Cancel()));
@@ -745,7 +753,7 @@ bool WpADORecordset::Cancel() const
     return nState;
 }
 
-bool WpADORecordset::Supports( /* [in] */ CursorOptionEnum CursorOptions)
+ sal_Bool WpADORecordset::Supports( /* [in] */ CursorOptionEnum CursorOptions)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL bSupports=VARIANT_FALSE;
@@ -795,7 +803,7 @@ CompareEnum WpADORecordset::CompareBookmarks(const OLEVariant& left,const OLEVar
     return eNum;
 }
 
-bool WpADORecordset::SetBookmark(const OLEVariant &pSafeAr)
+ sal_Bool WpADORecordset::SetBookmark(const OLEVariant &pSafeAr)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_Bookmark(pSafeAr));
@@ -805,7 +813,7 @@ bool WpADORecordset::SetBookmark(const OLEVariant &pSafeAr)
 WpADOFields WpADORecordset::GetFields() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
-    ADOFields* pFields=nullptr;
+    ADOFields* pFields=NULL;
     pInterface->get_Fields(&pFields);
     WpADOFields aFields;
     aFields.setWithOutAddRef(pFields);
@@ -813,13 +821,13 @@ WpADOFields WpADORecordset::GetFields() const
 }
 
 
-bool WpADORecordset::Move(sal_Int32 nRows, VARIANT aBmk)   {return pInterface && SUCCEEDED(pInterface->Move(nRows, aBmk));}
-bool WpADORecordset::MoveNext() {return pInterface && SUCCEEDED(pInterface->MoveNext());}
-bool WpADORecordset::MovePrevious() {return pInterface && SUCCEEDED(pInterface->MovePrevious());}
-bool WpADORecordset::MoveFirst() {return pInterface && SUCCEEDED(pInterface->MoveFirst());}
-bool WpADORecordset::MoveLast()    {return pInterface && SUCCEEDED(pInterface->MoveLast());}
+ sal_Bool WpADORecordset::Move(sal_Int32 nRows, VARIANT aBmk)   {return pInterface && SUCCEEDED(pInterface->Move(nRows, aBmk));}
+ sal_Bool WpADORecordset::MoveNext() {return pInterface && SUCCEEDED(pInterface->MoveNext());}
+ sal_Bool WpADORecordset::MovePrevious() {return pInterface && SUCCEEDED(pInterface->MovePrevious());}
+ sal_Bool WpADORecordset::MoveFirst() {return pInterface && SUCCEEDED(pInterface->MoveFirst());}
+ sal_Bool WpADORecordset::MoveLast()    {return pInterface && SUCCEEDED(pInterface->MoveLast());}
 
-bool WpADORecordset::IsAtBOF() const
+ sal_Bool WpADORecordset::IsAtBOF() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL bIsAtBOF=VARIANT_FALSE;
@@ -827,7 +835,7 @@ bool WpADORecordset::IsAtBOF() const
     return bIsAtBOF == VARIANT_TRUE;
 }
 
-bool WpADORecordset::IsAtEOF() const
+ sal_Bool WpADORecordset::IsAtEOF() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL bIsAtEOF=VARIANT_FALSE;
@@ -835,25 +843,25 @@ bool WpADORecordset::IsAtEOF() const
     return bIsAtEOF == VARIANT_TRUE;
 }
 
-bool WpADORecordset::Delete(AffectEnum eNum)
+ sal_Bool WpADORecordset::Delete(AffectEnum eNum)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->Delete(eNum));
 }
 
-bool WpADORecordset::AddNew(const OLEVariant &FieldList,const OLEVariant &Values)
+ sal_Bool WpADORecordset::AddNew(const OLEVariant &FieldList,const OLEVariant &Values)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->AddNew(FieldList,Values));
 }
 
-bool WpADORecordset::Update(const OLEVariant &FieldList,const OLEVariant &Values)
+ sal_Bool WpADORecordset::Update(const OLEVariant &FieldList,const OLEVariant &Values)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->Update(FieldList,Values));
 }
 
-bool WpADORecordset::CancelUpdate()
+ sal_Bool WpADORecordset::CancelUpdate()
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->CancelUpdate());
@@ -862,74 +870,74 @@ bool WpADORecordset::CancelUpdate()
 WpADOProperties WpADORecordset::get_Properties() const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
-    ADOProperties* pProps=nullptr;
+    ADOProperties* pProps=NULL;
     pInterface->get_Properties(&pProps);
     WpADOProperties aProps;
     aProps.setWithOutAddRef(pProps);
     return aProps;
 }
 
-bool WpADORecordset::NextRecordset(OLEVariant& RecordsAffected,ADORecordset** ppiRset)
+ sal_Bool WpADORecordset::NextRecordset(OLEVariant& RecordsAffected,ADORecordset** ppiRset)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->NextRecordset(&RecordsAffected,ppiRset));
 }
 
-bool WpADORecordset::get_RecordCount(ADO_LONGPTR &_nRet) const
+ sal_Bool WpADORecordset::get_RecordCount(ADO_LONGPTR &_nRet) const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_RecordCount(&_nRet));
 }
 
-bool WpADORecordset::get_MaxRecords(ADO_LONGPTR &_nRet) const
+ sal_Bool WpADORecordset::get_MaxRecords(ADO_LONGPTR &_nRet) const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_MaxRecords(&_nRet));
 }
 
-bool WpADORecordset::put_MaxRecords(ADO_LONGPTR _nRet)
+ sal_Bool WpADORecordset::put_MaxRecords(ADO_LONGPTR _nRet)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_MaxRecords(_nRet));
 }
 
-bool WpADORecordset::get_CursorType(CursorTypeEnum &_nRet) const
+ sal_Bool WpADORecordset::get_CursorType(CursorTypeEnum &_nRet) const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_CursorType(&_nRet));
 }
 
-bool WpADORecordset::put_CursorType(CursorTypeEnum _nRet)
+ sal_Bool WpADORecordset::put_CursorType(CursorTypeEnum _nRet)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_CursorType(_nRet));
 }
 
-bool WpADORecordset::get_LockType(LockTypeEnum &_nRet) const
+ sal_Bool WpADORecordset::get_LockType(LockTypeEnum &_nRet) const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_LockType(&_nRet));
 }
 
-bool WpADORecordset::put_LockType(LockTypeEnum _nRet)
+ sal_Bool WpADORecordset::put_LockType(LockTypeEnum _nRet)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_LockType(_nRet));
 }
 
-bool WpADORecordset::get_CacheSize(sal_Int32 &_nRet) const
+ sal_Bool WpADORecordset::get_CacheSize(sal_Int32 &_nRet) const
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->get_CacheSize(&_nRet));
 }
 
-bool WpADORecordset::put_CacheSize(sal_Int32 _nRet)
+ sal_Bool WpADORecordset::put_CacheSize(sal_Int32 _nRet)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_CacheSize(_nRet));
 }
 
-bool WpADORecordset::UpdateBatch(AffectEnum AffectRecords)
+ sal_Bool WpADORecordset::UpdateBatch(AffectEnum AffectRecords)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->UpdateBatch(AffectRecords));
@@ -939,8 +947,8 @@ bool WpADORecordset::UpdateBatch(AffectEnum AffectRecords)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
  DataTypeEnum WpADOParameter::GetADOType() const
@@ -1003,17 +1011,17 @@ void WpADOParameter::put_Type(const DataTypeEnum& _eType)
     return aValVar;
 }
 
-bool WpADOParameter::PutValue(const OLEVariant& aVariant)
+sal_Bool WpADOParameter::PutValue(const OLEVariant& aVariant)
 {
      OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Value(aVariant)));
 }
-bool WpADOParameter::AppendChunk(const OLEVariant& aVariant)
+sal_Bool WpADOParameter::AppendChunk(const OLEVariant& aVariant)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->AppendChunk(aVariant)));
 }
-bool WpADOParameter::put_Size(sal_Int32 _nSize)
+sal_Bool WpADOParameter::put_Size(const sal_Int32& _nSize)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return (SUCCEEDED(pInterface->put_Size(_nSize)));
@@ -1023,30 +1031,30 @@ OUString WpADOColumn::get_Name() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 OUString WpADOColumn::get_RelatedColumn() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_RelatedColumn(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_RelatedColumn(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOColumn::put_Name(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 void WpADOColumn::put_RelatedColumn(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_RelatedColumn(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_RelatedColumn(bstr));
     (void)bErg;
 }
 
@@ -1121,7 +1129,7 @@ ColumnAttributesEnum WpADOColumn::get_Attributes() const
     return eNum;
 }
 
-bool WpADOColumn::put_Attributes(const ColumnAttributesEnum& _eNum)
+sal_Bool WpADOColumn::put_Attributes(const ColumnAttributesEnum& _eNum)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     return SUCCEEDED(pInterface->put_Attributes(_eNum));
@@ -1130,7 +1138,7 @@ bool WpADOColumn::put_Attributes(const ColumnAttributesEnum& _eNum)
 WpADOProperties WpADOColumn::get_Properties() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOProperties* pProps = nullptr;
+    ADOProperties* pProps = NULL;
     pInterface->get_Properties(&pProps);
     WpADOProperties aProps;
 
@@ -1142,15 +1150,15 @@ OUString WpADOKey::get_Name() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOKey::put_Name(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 
@@ -1172,15 +1180,15 @@ OUString WpADOKey::get_RelatedTable() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_RelatedTable(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_RelatedTable(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOKey::put_RelatedTable(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_RelatedTable(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_RelatedTable(bstr));
     (void)bErg;
 }
 
@@ -1215,7 +1223,7 @@ void WpADOKey::put_UpdateRule(const RuleEnum& _eNum)
 WpADOColumns WpADOKey::get_Columns() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOColumns* pCols = nullptr;
+    ADOColumns* pCols = NULL;
     pInterface->get_Columns(&pCols);
     WpADOColumns aCols;
     aCols.setWithOutAddRef(pCols);
@@ -1226,19 +1234,19 @@ OUString WpADOIndex::get_Name() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOIndex::put_Name(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 
-bool WpADOIndex::get_Clustered() const
+sal_Bool WpADOIndex::get_Clustered() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL eNum = VARIANT_FALSE;
@@ -1246,13 +1254,13 @@ bool WpADOIndex::get_Clustered() const
     return eNum == VARIANT_TRUE;
 }
 
-void WpADOIndex::put_Clustered(bool _b)
+void WpADOIndex::put_Clustered(sal_Bool _b)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     pInterface->put_Clustered(_b ? VARIANT_TRUE : VARIANT_FALSE);
 }
 
-bool WpADOIndex::get_Unique() const
+sal_Bool WpADOIndex::get_Unique() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL eNum = VARIANT_FALSE;
@@ -1260,13 +1268,13 @@ bool WpADOIndex::get_Unique() const
     return eNum == VARIANT_TRUE;
 }
 
-void WpADOIndex::put_Unique(bool _b)
+void WpADOIndex::put_Unique(sal_Bool _b)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     pInterface->put_Unique(_b ? VARIANT_TRUE : VARIANT_FALSE);
 }
 
-bool WpADOIndex::get_PrimaryKey() const
+sal_Bool WpADOIndex::get_PrimaryKey() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     VARIANT_BOOL eNum = VARIANT_FALSE;
@@ -1274,7 +1282,7 @@ bool WpADOIndex::get_PrimaryKey() const
     return eNum == VARIANT_TRUE;
 }
 
-void WpADOIndex::put_PrimaryKey(bool _b)
+void WpADOIndex::put_PrimaryKey(sal_Bool _b)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     pInterface->put_PrimaryKey(_b ? VARIANT_TRUE : VARIANT_FALSE);
@@ -1283,7 +1291,7 @@ void WpADOIndex::put_PrimaryKey(bool _b)
 WpADOColumns WpADOIndex::get_Columns() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOColumns* pCols = nullptr;
+    ADOColumns* pCols = NULL;
     pInterface->get_Columns(&pCols);
     WpADOColumns aCols;
     aCols.setWithOutAddRef(pCols);
@@ -1299,7 +1307,7 @@ void WpADOCatalog::putref_ActiveConnection(IDispatch* pCon)
 WpADOTables WpADOCatalog::get_Tables()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOTables* pRet = nullptr;
+    ADOTables* pRet = NULL;
     pInterface->get_Tables(&pRet);
     WpADOTables aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1309,7 +1317,7 @@ WpADOTables WpADOCatalog::get_Tables()
 WpADOViews WpADOCatalog::get_Views()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOViews* pRet = nullptr;
+    ADOViews* pRet = NULL;
     pInterface->get_Views(&pRet);
     WpADOViews aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1319,7 +1327,7 @@ WpADOViews WpADOCatalog::get_Views()
 WpADOGroups WpADOCatalog::get_Groups()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOGroups* pRet = nullptr;
+    ADOGroups* pRet = NULL;
     pInterface->get_Groups(&pRet);
     WpADOGroups aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1329,7 +1337,7 @@ WpADOGroups WpADOCatalog::get_Groups()
 WpADOUsers WpADOCatalog::get_Users()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOUsers* pRet = nullptr;
+    ADOUsers* pRet = NULL;
     pInterface->get_Users(&pRet);
     WpADOUsers aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1339,7 +1347,7 @@ WpADOUsers WpADOCatalog::get_Users()
 ADOProcedures* WpADOCatalog::get_Procedures()
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOProcedures* pRet = nullptr;
+    ADOProcedures* pRet = NULL;
     pInterface->get_Procedures(&pRet);
     return pRet;
 }
@@ -1348,15 +1356,15 @@ OUString WpADOTable::get_Name() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOTable::put_Name(const OUString& _rName)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 
@@ -1364,14 +1372,14 @@ OUString WpADOTable::get_Type() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Type(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Type(&aBSTR);
+    return aBSTR;
 }
 
 WpADOColumns WpADOTable::get_Columns() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOColumns* pCols = nullptr;
+    ADOColumns* pCols = NULL;
     pInterface->get_Columns(&pCols);
     WpADOColumns aCols;
     aCols.setWithOutAddRef(pCols);
@@ -1381,7 +1389,7 @@ WpADOColumns WpADOTable::get_Columns() const
 WpADOIndexes WpADOTable::get_Indexes() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOIndexes* pCols = nullptr;
+    ADOIndexes* pCols = NULL;
     pInterface->get_Indexes(&pCols);
     WpADOIndexes aRet;
     aRet.setWithOutAddRef(pCols);
@@ -1391,7 +1399,7 @@ WpADOIndexes WpADOTable::get_Indexes() const
 WpADOKeys WpADOTable::get_Keys() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOKeys* pCols = nullptr;
+    ADOKeys* pCols = NULL;
     pInterface->get_Keys(&pCols);
     WpADOKeys aRet;
     aRet.setWithOutAddRef(pCols);
@@ -1401,7 +1409,7 @@ WpADOKeys WpADOTable::get_Keys() const
 WpADOCatalog WpADOTable::get_ParentCatalog() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOCatalog* pCat = nullptr;
+    ADOCatalog* pCat = NULL;
     pInterface->get_ParentCatalog(&pCat);
     WpADOCatalog aRet;
     aRet.setWithOutAddRef(pCat);
@@ -1411,7 +1419,7 @@ WpADOCatalog WpADOTable::get_ParentCatalog() const
 WpADOProperties WpADOTable::get_Properties() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    ADOProperties* pProps = nullptr;
+    ADOProperties* pProps = NULL;
     pInterface->get_Properties(&pProps);
     WpADOProperties aProps;
     aProps.setWithOutAddRef(pProps);
@@ -1422,8 +1430,8 @@ OUString WpADOView::get_Name() const
 {
     OSL_ENSURE(pInterface,"Interface is null!");
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOView::get_Command(OLEVariant& _rVar) const
@@ -1440,14 +1448,14 @@ void WpADOView::put_Command(OLEVariant& _rVar)
 OUString WpADOGroup::get_Name() const
 {
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOGroup::put_Name(const OUString& _rName)
 {
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 
@@ -1462,7 +1470,7 @@ RightsEnum WpADOGroup::GetPermissions(
     return Rights;
 }
 
-bool WpADOGroup::SetPermissions(
+sal_Bool WpADOGroup::SetPermissions(
     /* [in] */ const OLEVariant& Name,
     /* [in] */ ObjectTypeEnum ObjectType,
     /* [in] */ ActionEnum Action,
@@ -1475,7 +1483,7 @@ bool WpADOGroup::SetPermissions(
 
 WpADOUsers WpADOGroup::get_Users( )
 {
-    ADOUsers* pRet = nullptr;
+    ADOUsers* pRet = NULL;
     pInterface->get_Users( &pRet);
     WpADOUsers aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1485,28 +1493,28 @@ WpADOUsers WpADOGroup::get_Users( )
 OUString WpADOUser::get_Name() const
 {
     OLEString aBSTR;
-    pInterface->get_Name(aBSTR.getAddress());
-    return aBSTR.asOUString();
+    pInterface->get_Name(&aBSTR);
+    return aBSTR;
 }
 
 void WpADOUser::put_Name(const OUString& _rName)
 {
     OLEString bstr(_rName);
-    bool bErg = SUCCEEDED(pInterface->put_Name(bstr.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->put_Name(bstr));
     (void)bErg;
 }
 
-bool WpADOUser::ChangePassword(const OUString& _rPwd,const OUString& _rNewPwd)
+sal_Bool WpADOUser::ChangePassword(const OUString& _rPwd,const OUString& _rNewPwd)
 {
     OLEString sStr1(_rPwd);
     OLEString sStr2(_rNewPwd);
-    bool bErg = SUCCEEDED(pInterface->ChangePassword(sStr1.asBSTR(),sStr2.asBSTR()));
+    sal_Bool bErg = SUCCEEDED(pInterface->ChangePassword(sStr1,sStr2));
     return bErg;
 }
 
 WpADOGroups WpADOUser::get_Groups()
 {
-    ADOGroups* pRet = nullptr;
+    ADOGroups* pRet = NULL;
     pInterface->get_Groups(&pRet);
     WpADOGroups aRet;
     aRet.setWithOutAddRef(pRet);
@@ -1524,7 +1532,7 @@ RightsEnum WpADOUser::GetPermissions(
     return Rights;
 }
 
-bool WpADOUser::SetPermissions(
+sal_Bool WpADOUser::SetPermissions(
     /* [in] */ const OLEVariant& Name,
     /* [in] */ ObjectTypeEnum ObjectType,
     /* [in] */ ActionEnum Action,
@@ -1535,7 +1543,7 @@ bool WpADOUser::SetPermissions(
     return SUCCEEDED(pInterface->SetPermissions(Name,ObjectType,Action,Rights,adInheritNone,ObjectTypeId));
 }
 
-WpBase::WpBase() : pIUnknown(nullptr)
+WpBase::WpBase() : pIUnknown(NULL)
 {
 }
 WpBase::WpBase(IDispatch* pInt)
@@ -1588,7 +1596,7 @@ WpBase::~WpBase()
     if (pIUnknown)
     {
         pIUnknown->Release();
-        pIUnknown = nullptr;
+        pIUnknown = NULL;
     }
 }
 
@@ -1597,25 +1605,25 @@ void WpBase::clear()
     if (pIUnknown)
     {
         pIUnknown->Release();
-        pIUnknown = nullptr;
+        pIUnknown = NULL;
     }
 }
 
 
-bool WpBase::IsValid() const
+sal_Bool WpBase::IsValid() const
 {
-    return pIUnknown != nullptr;
+    return pIUnknown != NULL;
 }
 WpBase::operator IDispatch*()
 {
     return pIUnknown;
 }
 
-ADORecordset* WpADOConnection::getExportedKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table )
+ADORecordset* WpADOConnection::getExportedKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[6];
 
     // Create SafeArray Bounds and initialize the array
@@ -1646,16 +1654,16 @@ ADORecordset* WpADOConnection::getExportedKeys( const css::uno::Any& catalog, co
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaForeignKeys,vsa,vtEmpty,&pRecordset);
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getImportedKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table )
+ADORecordset* WpADOConnection::getImportedKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[6];
 
     // Create SafeArray Bounds and initialize the array
@@ -1686,18 +1694,18 @@ ADORecordset* WpADOConnection::getImportedKeys( const css::uno::Any& catalog, co
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaForeignKeys,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 
 }
 
-ADORecordset* WpADOConnection::getPrimaryKeys( const css::uno::Any& catalog, const OUString& schema, const OUString& table )
+ADORecordset* WpADOConnection::getPrimaryKeys( const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[3];
 
     // Create SafeArray Bounds and initialize the array
@@ -1725,19 +1733,19 @@ ADORecordset* WpADOConnection::getPrimaryKeys( const css::uno::Any& catalog, con
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaPrimaryKeys,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
 ADORecordset* WpADOConnection::getIndexInfo(
-    const css::uno::Any& catalog, const OUString& schema, const OUString& table,
-    bool /*unique*/, bool /*approximate*/ )
+    const ::com::sun::star::uno::Any& catalog, const OUString& schema, const OUString& table,
+    sal_Bool /*unique*/, sal_Bool /*approximate*/ )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[5];
 
     // Create SafeArray Bounds and initialize the array
@@ -1768,18 +1776,18 @@ ADORecordset* WpADOConnection::getIndexInfo(
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaIndexes,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getTablePrivileges( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getTablePrivileges( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern )
 {
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[5];
 
     // Create SafeArray Bounds and initialize the array
@@ -1810,22 +1818,22 @@ ADORecordset* WpADOConnection::getTablePrivileges( const css::uno::Any& catalog,
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaTablePrivileges,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getCrossReference( const css::uno::Any& primaryCatalog,
+ADORecordset* WpADOConnection::getCrossReference( const ::com::sun::star::uno::Any& primaryCatalog,
                                                   const OUString& primarySchema,
                                                   const OUString& primaryTable,
-                                                  const css::uno::Any& foreignCatalog,
+                                                  const ::com::sun::star::uno::Any& foreignCatalog,
                                                   const OUString& foreignSchema,
                                                   const OUString& foreignTable)
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[6];
 
     // Create SafeArray Bounds and initialize the array
@@ -1863,18 +1871,18 @@ ADORecordset* WpADOConnection::getCrossReference( const css::uno::Any& primaryCa
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaForeignKeys,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getProcedures( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getProcedures( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& procedureNamePattern )
 {
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[3];
 
     // Create SafeArray Bounds and initialize the array
@@ -1902,20 +1910,20 @@ ADORecordset* WpADOConnection::getProcedures( const css::uno::Any& catalog,
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaProcedures,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getProcedureColumns( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getProcedureColumns( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& procedureNamePattern,
                                                   const OUString& columnNamePattern )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[4];
 
     // Create SafeArray Bounds and initialize the array
@@ -1947,16 +1955,16 @@ ADORecordset* WpADOConnection::getProcedureColumns( const css::uno::Any& catalog
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaProcedureParameters,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getTables( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getTables( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern,
-                                                  const css::uno::Sequence< OUString >& types )
+                                                  const ::com::sun::star::uno::Sequence< OUString >& types )
 {
     // Create elements used in the array
     HRESULT hr = S_OK;
@@ -2011,20 +2019,20 @@ ADORecordset* WpADOConnection::getTables( const css::uno::Any& catalog,
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaTables,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getColumns( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getColumns( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schemaPattern,
                                                   const OUString& tableNamePattern,
                                                   const OUString& columnNamePattern )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[4];
 
     // Create SafeArray Bounds and initialize the array
@@ -2055,20 +2063,20 @@ ADORecordset* WpADOConnection::getColumns( const css::uno::Any& catalog,
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaColumns,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
 }
 
-ADORecordset* WpADOConnection::getColumnPrivileges( const css::uno::Any& catalog,
+ADORecordset* WpADOConnection::getColumnPrivileges( const ::com::sun::star::uno::Any& catalog,
                                                   const OUString& schema,
                                                   const OUString& table,
                                                   const OUString& columnNamePattern )
 {
     // Create elements used in the array
     SAFEARRAYBOUND rgsabound[1];
-    SAFEARRAY *psa = nullptr;
+    SAFEARRAY *psa = NULL;
     OLEVariant varCriteria[4];
 
     // Create SafeArray Bounds and initialize the array
@@ -2098,7 +2106,7 @@ ADORecordset* WpADOConnection::getColumnPrivileges( const css::uno::Any& catalog
     OLEVariant vsa;
     vsa.setArray(psa,VT_VARIANT);
 
-    ADORecordset *pRecordset = nullptr;
+    ADORecordset *pRecordset = NULL;
     OpenSchema(adSchemaColumnPrivileges,vsa,vtEmpty,&pRecordset);
 
     return pRecordset;
@@ -2126,7 +2134,7 @@ ADORecordset* WpADOConnection::getTypeInfo(DataTypeEnum /*_eType*/)
     OLEVariant aEmpty;
     aEmpty.setNoArg();
 
-    ADORecordset *pRec=nullptr;
+    ADORecordset *pRec=NULL;
     OpenSchema(adSchemaProviderTypes,vsa,aEmpty,&pRec);
 
     return pRec;
@@ -2135,14 +2143,14 @@ ADORecordset* WpADOConnection::getTypeInfo(DataTypeEnum /*_eType*/)
 void WpADOColumn::put_ParentCatalog(/* [in] */ _ADOCatalog __RPC_FAR *ppvObject)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    bool bRet = SUCCEEDED(pInterface->put_ParentCatalog(ppvObject));
+    sal_Bool bRet = SUCCEEDED(pInterface->put_ParentCatalog(ppvObject));
     OSL_ENSURE(bRet,"Could not set ParentCatalog!");
 }
 
 void WpADOTable::putref_ParentCatalog(/* [in] */ _ADOCatalog __RPC_FAR *ppvObject)
 {
     OSL_ENSURE(pInterface,"Interface is null!");
-    bool bRet = SUCCEEDED(pInterface->putref_ParentCatalog(ppvObject));
+    sal_Bool bRet = SUCCEEDED(pInterface->putref_ParentCatalog(ppvObject));
     OSL_ENSURE(bRet,"Could not set ParentCatalog!");
 }
 
@@ -2157,7 +2165,7 @@ void OTools::putValue(const WpADOProperties& _rProps,const OLEVariant &_aPositio
     WpADOProperty aProp(_rProps.GetItem(_aPosition));
     if ( aProp.IsValid() )
     {
-        bool bRet = aProp.PutValue(_aValVar);
+        sal_Bool bRet = aProp.PutValue(_aValVar);
         OSL_ENSURE(bRet,"Could not put value!");
     }
 }

@@ -85,7 +85,6 @@ extern "C" void SAL_CALL uno_releaseIdFromCurrentThread()
 {
     IdContainer *p = getIdContainer();
     OSL_ASSERT( p );
-    OSL_ASSERT( p->bInit );
     OSL_ASSERT( p->nRefCountOfCurrentId );
 
     p->nRefCountOfCurrentId --;

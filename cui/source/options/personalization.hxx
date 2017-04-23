@@ -14,10 +14,8 @@
 #include <salhelper/thread.hxx>
 #include <rtl/ref.hxx>
 #include <vcl/prgsbar.hxx>
-#include <vector>
-#include <array>
 
-#define CATEGORYCOUNT 6    // Number of persona categories
+#include <vector>
 
 class FixedText;
 class SearchAndParseThread;
@@ -34,16 +32,16 @@ private:
     VclPtr<PushButton> m_vDefaultPersonaImages[3];     ///< Buttons to show the default persona images
     VclPtr<PushButton> m_pExtensionPersonaPreview;     ///< Buttons to show the last 3 personas installed via extensions
     VclPtr<ListBox> m_pPersonaList;                    ///< The ListBox to show the list of installed personas
-    OUString m_aPersonaSettings;                       ///< Header and footer images + color to be set in the settings.
+    OUString m_aPersonaSettings;                ///< Header and footer images + color to be set in the settings.
     VclPtr<FixedText> m_pExtensionLabel;               ///< The "select persona installed via extensions" label
-    VclPtr<FixedText> m_pAppliedThemeLabel;            ///< The label for showing applied custom theme
+    VclPtr<FixedText> m_pAppliedThemeLabel;        ///< The label for showing applied custom theme
 
     std::vector<OUString> m_vDefaultPersonaSettings;
     std::vector<OUString> m_vExtensionPersonaSettings;
 
 public:
     SvxPersonalizationTabPage( vcl::Window *pParent, const SfxItemSet &rSet );
-    virtual ~SvxPersonalizationTabPage() override;
+    virtual ~SvxPersonalizationTabPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window *pParent, const SfxItemSet *rSet );
@@ -63,29 +61,33 @@ public:
 
 private:
     /// Handle the Persona selection
-    DECL_LINK( SelectPersona, Button*, void );
+    DECL_LINK_TYPED( SelectPersona, Button*, void );
 
     /// When 'own' is chosen, but the Persona is not chosen yet.
-    DECL_LINK( ForceSelect, Button*, void );
+    DECL_LINK_TYPED( ForceSelect, Button*, void );
 
     /// Handle the default Persona selection
-    DECL_LINK( DefaultPersona, Button*, void );
+    DECL_LINK_TYPED( DefaultPersona, Button*, void );
 
     /// Handle the Personas installed through extensions selection
-    DECL_LINK( SelectInstalledPersona, ListBox&, void );
+    DECL_LINK_TYPED( SelectInstalledPersona, ListBox&, void );
 };
 
-/** Dialog that will allow the user to choose a Persona to use. */
+/** Dialog that will allow the user to choose a Persona to use.
+
+So far there is no better possibility than just to paste the URL from
+https://addons.mozilla.org/firefox/themes ...
+*/
 class SelectPersonaDialog : public ModalDialog
 {
 private:
-    VclPtr<Edit> m_pEdit;                                   ///< The input line for the search term
-    VclPtr<PushButton> m_pSearchButton;                     ///< The search button
-    VclPtr<FixedText> m_pProgressLabel;                     ///< The label for showing progress of search
-    VclPtr<PushButton> m_vResultList[9];                    ///< List of buttons to show search results
-    VclPtr<PushButton> m_vSearchSuggestions[CATEGORYCOUNT]; ///< List of buttons for the search suggestions
-    VclPtr<PushButton> m_pOkButton;                         ///< The OK button
-    VclPtr<PushButton> m_pCancelButton;                     ///< The Cancel button
+    VclPtr<Edit> m_pEdit;                          ///< The input line for the search term
+    VclPtr<PushButton> m_pSearchButton;            ///< The search button
+    VclPtr<FixedText> m_pProgressLabel;            ///< The label for showing progress of search
+    VclPtr<PushButton> m_vResultList[9];           ///< List of buttons to show search results
+    VclPtr<PushButton> m_vSearchSuggestions[6];    ///< List of buttons for the search suggestions
+    VclPtr<PushButton> m_pOkButton;                ///< The OK button
+    VclPtr<PushButton> m_pCancelButton;            ///< The Cancel button
 
     std::vector<OUString> m_vPersonaSettings;
     OUString m_aSelectedPersona;
@@ -93,9 +95,9 @@ private:
 
 public:
     explicit SelectPersonaDialog( vcl::Window *pParent );
-    virtual ~SelectPersonaDialog() override;
+    virtual ~SelectPersonaDialog();
     virtual void dispose() override;
-    ::rtl::Reference< SearchAndParseThread > m_pSearchThread;
+    ::rtl::Reference< SearchAndParseThread > m_rSearchThread;
 
     OUString GetSelectedPersona() const;
     void SetProgress( const OUString& );
@@ -107,10 +109,10 @@ public:
 
 private:
     /// Handle the Search button
-    DECL_LINK( SearchPersonas, Button*, void );
-    DECL_LINK( SelectPersona, Button*, void );
-    DECL_LINK( ActionOK, Button*, void );
-    DECL_LINK( ActionCancel, Button*, void );
+    DECL_LINK_TYPED( SearchPersonas, Button*, void );
+    DECL_LINK_TYPED( SelectPersona, Button*, void );
+    DECL_LINK_TYPED( ActionOK, Button*, void );
+    DECL_LINK_TYPED( ActionCancel, Button*, void );
 };
 
 class SearchAndParseThread: public salhelper::Thread
@@ -121,7 +123,7 @@ private:
     OUString m_aURL;
     bool m_bExecute, m_bDirectURL;
 
-    virtual ~SearchAndParseThread() override;
+    virtual ~SearchAndParseThread();
     virtual void execute() override;
 
 public:

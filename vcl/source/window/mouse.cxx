@@ -59,7 +59,7 @@ WindowHitTest Window::ImplHitTest( const Point& rFramePos )
         const OutputDevice *pOutDev = GetOutDev();
         pOutDev->ReMirror( aFramePos );
     }
-    tools::Rectangle aRect( Point( mnOutOffX, mnOutOffY ), Size( mnOutWidth, mnOutHeight ) );
+    Rectangle aRect( Point( mnOutOffX, mnOutOffY ), Size( mnOutWidth, mnOutHeight ) );
     if ( !aRect.IsInside( aFramePos ) )
         return WindowHitTest::NONE;
     if ( mpWindowImpl->mbWinRegion )
@@ -84,7 +84,7 @@ bool Window::ImplTestMousePointerSet()
         return true;
 
     // if the mouse is over the window, switch it
-    tools::Rectangle aClientRect( Point( 0, 0 ), GetOutputSizePixel() );
+    Rectangle aClientRect( Point( 0, 0 ), GetOutputSizePixel() );
     if ( aClientRect.IsInside( GetPointerPosPixel() ) )
         return true;
 
@@ -160,12 +160,11 @@ void Window::ImplCallMouseMove( sal_uInt16 nMouseCode, bool bModChanged )
 
 void Window::ImplGenerateMouseMove()
 {
-    if ( mpWindowImpl && mpWindowImpl->mpFrameData &&
-         !mpWindowImpl->mpFrameData->mnMouseMoveId )
+    if ( !mpWindowImpl->mpFrameData->mnMouseMoveId )
         mpWindowImpl->mpFrameData->mnMouseMoveId = Application::PostUserEvent( LINK( mpWindowImpl->mpFrameWindow, Window, ImplGenerateMouseMoveHdl ), nullptr, true );
 }
 
-IMPL_LINK_NOARG(Window, ImplGenerateMouseMoveHdl, void*, void)
+IMPL_LINK_NOARG_TYPED(Window, ImplGenerateMouseMoveHdl, void*, void)
 {
     mpWindowImpl->mpFrameData->mnMouseMoveId = nullptr;
     vcl::Window* pCaptureWin = ImplGetSVData()->maWinData.mpCaptureWin;
@@ -177,7 +176,7 @@ IMPL_LINK_NOARG(Window, ImplGenerateMouseMoveHdl, void*, void)
     }
 }
 
-void Window::ImplInvertFocus( const tools::Rectangle& rRect )
+void Window::ImplInvertFocus( const Rectangle& rRect )
 {
     InvertTracking( rRect, ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
 }
@@ -413,21 +412,21 @@ void Window::ImplGrabFocusToDocument( GetFocusFlags nFlags )
 void Window::MouseMove( const MouseEvent& rMEvt )
 {
     NotifyEvent aNEvt( MouseNotifyEvent::MOUSEMOVE, this, &rMEvt );
-    if (!EventNotify(aNEvt))
+    if ( !Notify( aNEvt ) )
         mpWindowImpl->mbMouseMove = true;
 }
 
 void Window::MouseButtonDown( const MouseEvent& rMEvt )
 {
     NotifyEvent aNEvt( MouseNotifyEvent::MOUSEBUTTONDOWN, this, &rMEvt );
-    if (!EventNotify(aNEvt))
+    if ( !Notify( aNEvt ) )
         mpWindowImpl->mbMouseButtonDown = true;
 }
 
 void Window::MouseButtonUp( const MouseEvent& rMEvt )
 {
     NotifyEvent aNEvt( MouseNotifyEvent::MOUSEBUTTONUP, this, &rMEvt );
-    if (!EventNotify(aNEvt))
+    if ( !Notify( aNEvt ) )
         mpWindowImpl->mbMouseButtonUp = true;
 }
 
@@ -735,23 +734,23 @@ Reference< css::datatransfer::dnd::XDragSource > Window::GetDragSource()
 #if defined(_WIN32)
                     aDragSourceSN = "com.sun.star.datatransfer.dnd.OleDragSource";
                     aDropTargetSN = "com.sun.star.datatransfer.dnd.OleDropTarget";
-                    aDragSourceAL[ 1 ] <<= static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->hWnd) );
-                    aDropTargetAL[ 0 ] <<= static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->hWnd) );
+                    aDragSourceAL[ 1 ] = makeAny( static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->hWnd) ) );
+                    aDropTargetAL[ 0 ] = makeAny( static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->hWnd) ) );
 #elif defined MACOSX
             /* FIXME: Mac OS X specific dnd interface does not exist! *
              * Using Windows based dnd as a temporary solution        */
                     aDragSourceSN = "com.sun.star.datatransfer.dnd.OleDragSource";
                     aDropTargetSN = "com.sun.star.datatransfer.dnd.OleDropTarget";
-                    aDragSourceAL[ 1 ] <<= static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->mpNSView) );
-                    aDropTargetAL[ 0 ] <<= static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->mpNSView) );
+                    aDragSourceAL[ 1 ] = makeAny( static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->mpNSView) ) );
+                    aDropTargetAL[ 0 ] = makeAny( static_cast<sal_uInt64>( reinterpret_cast<sal_IntPtr>(pEnvData->mpNSView) ) );
 #elif HAVE_FEATURE_X11
                     aDragSourceSN = "com.sun.star.datatransfer.dnd.X11DragSource";
                     aDropTargetSN = "com.sun.star.datatransfer.dnd.X11DropTarget";
 
-                    aDragSourceAL[ 0 ] <<= Application::GetDisplayConnection();
-                    aDragSourceAL[ 1 ] <<= static_cast<sal_IntPtr>(pEnvData->aShellWindow);
-                    aDropTargetAL[ 0 ] <<= Application::GetDisplayConnection();
-                    aDropTargetAL[ 1 ] <<= static_cast<sal_IntPtr>(pEnvData->aShellWindow);
+                    aDragSourceAL[ 0 ] = makeAny( Application::GetDisplayConnection() );
+                    aDragSourceAL[ 1 ] = makeAny( (sal_Size)(pEnvData->aShellWindow) );
+                    aDropTargetAL[ 0 ] = makeAny( Application::GetDisplayConnection() );
+                    aDropTargetAL[ 1 ] = makeAny( (sal_Size)(pEnvData->aShellWindow) );
 #endif
                     if( !aDragSourceSN.isEmpty() )
                         mpWindowImpl->mpFrameData->mxDragSource.set(

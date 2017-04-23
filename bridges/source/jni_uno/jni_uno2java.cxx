@@ -150,7 +150,11 @@ void Bridge::call_java(
     }
 
     // prepare java args, save param td
+#ifdef BROKEN_ALLOCA
+    jvalue * java_args = (jvalue *) malloc( sizeof (jvalue) * nParams );
+#else
     jvalue * java_args = static_cast<jvalue *>(alloca( sizeof (jvalue) * nParams ));
+#endif
 
     sal_Int32 nPos;
     for ( nPos = 0; nPos < nParams; ++nPos )
@@ -178,6 +182,9 @@ void Bridge::call_java(
                     jni->DeleteLocalRef( java_args[ n ].l );
                 }
             }
+#ifdef BROKEN_ALLOCA
+        free( java_args );
+#endif
             throw;
         }
     }
@@ -337,6 +344,9 @@ void Bridge::call_java(
                             jni->DeleteLocalRef( java_args[ nPos ].l );
                         }
                     }
+#ifdef BROKEN_ALLOCA
+            free( java_args );
+#endif
                     throw;
                 }
                 jni->DeleteLocalRef( java_args[ nPos ].l );
@@ -371,6 +381,9 @@ void Bridge::call_java(
                             uno_args[ i ], param.pTypeRef, nullptr );
                     }
                 }
+#ifdef BROKEN_ALLOCA
+        free( java_args );
+#endif
                 throw;
             }
         } // else: already set integral uno return value
@@ -378,6 +391,9 @@ void Bridge::call_java(
         // no exception occurred
         *uno_exc = nullptr;
     }
+#ifdef BROKEN_ALLOCA
+    free( java_args );
+#endif
 }
 
 // an UNO proxy wrapping a Java interface

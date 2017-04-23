@@ -51,7 +51,7 @@
       appropriate clipboard formats
     - if the transferable contains text data always text and unicodetext
       will be offered or vice versa
-    - text data will be automatically converted between text and unicode text
+    - text data will be automatically converted between text und unicode text
     - although the transferable may support text in different charsets
       (codepages) only text in one codepage can be offered by the clipboard
 
@@ -69,25 +69,31 @@ public:
     // ole interface implementation
 
     //IUnknown interface methods
-    STDMETHODIMP           QueryInterface(REFIID iid, LPVOID* ppvObject) override;
-    STDMETHODIMP_( ULONG ) AddRef( ) override;
-    STDMETHODIMP_( ULONG ) Release( ) override;
+    STDMETHODIMP           QueryInterface(REFIID iid, LPVOID* ppvObject);
+    STDMETHODIMP_( ULONG ) AddRef( );
+    STDMETHODIMP_( ULONG ) Release( );
 
     // IDataObject interface methods
-    STDMETHODIMP GetData( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium ) override;
-    STDMETHODIMP GetDataHere( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium ) override;
-    STDMETHODIMP QueryGetData( LPFORMATETC pFormatetc ) override;
-    STDMETHODIMP GetCanonicalFormatEtc( LPFORMATETC pFormatectIn, LPFORMATETC pFormatetcOut ) override;
-    STDMETHODIMP SetData( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium, BOOL fRelease ) override;
-    STDMETHODIMP EnumFormatEtc( DWORD dwDirection, IEnumFORMATETC** ppenumFormatetc ) override;
-    STDMETHODIMP DAdvise( LPFORMATETC pFormatetc, DWORD advf, LPADVISESINK pAdvSink, DWORD* pdwConnection ) override;
-    STDMETHODIMP DUnadvise( DWORD dwConnection ) override;
-    STDMETHODIMP EnumDAdvise( LPENUMSTATDATA* ppenumAdvise ) override;
+    STDMETHODIMP GetData( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium );
+    STDMETHODIMP GetDataHere( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium );
+    STDMETHODIMP QueryGetData( LPFORMATETC pFormatetc );
+    STDMETHODIMP GetCanonicalFormatEtc( LPFORMATETC pFormatectIn, LPFORMATETC pFormatetcOut );
+    STDMETHODIMP SetData( LPFORMATETC pFormatetc, LPSTGMEDIUM pmedium, BOOL fRelease );
+    STDMETHODIMP EnumFormatEtc( DWORD dwDirection, IEnumFORMATETC** ppenumFormatetc );
+    STDMETHODIMP DAdvise( LPFORMATETC pFormatetc, DWORD advf, LPADVISESINK pAdvSink, DWORD* pdwConnection );
+    STDMETHODIMP DUnadvise( DWORD dwConnection );
+    STDMETHODIMP EnumDAdvise( LPENUMSTATDATA* ppenumAdvise );
 
     operator IDataObject*( );
 
 private:
     css::datatransfer::DataFlavor SAL_CALL formatEtcToDataFlavor( const FORMATETC& aFormatEtc ) const;
+
+    void SAL_CALL renderDataAndSetupStgMedium( const sal_Int8* lpStorage,
+                                               const FORMATETC& fetc,
+                                               sal_uInt32 nInitStgSize,
+                                               sal_uInt32 nBytesToTransfer,
+                                               STGMEDIUM& stgmedium );
 
     void SAL_CALL renderLocaleAndSetupStgMedium( FORMATETC& fetc, STGMEDIUM& stgmedium );
     void SAL_CALL renderUnicodeAndSetupStgMedium( FORMATETC& fetc, STGMEDIUM& stgmedium );
@@ -98,6 +104,15 @@ private:
     void    SAL_CALL renderSynthesizedTextAndSetupStgMedium( FORMATETC& fetc, STGMEDIUM& stgmedium );
     void    SAL_CALL renderSynthesizedHtmlAndSetupStgMedium( FORMATETC& fetc, STGMEDIUM& stgmedium );
 
+    void SAL_CALL setupStgMedium( const FORMATETC& fetc,
+                                  CStgTransferHelper& stgTransHlp,
+                                  STGMEDIUM& stgmedium );
+
+    void validateFormatEtc( LPFORMATETC lpFormatEtc ) const;
+    void SAL_CALL invalidateStgMedium( STGMEDIUM& stgmedium ) const;
+
+    HRESULT SAL_CALL translateStgExceptionCode( HRESULT hr ) const;
+
     inline void SAL_CALL InitializeFormatEtcContainer( );
 
 private:
@@ -105,7 +120,7 @@ private:
     css::uno::Reference< css::datatransfer::XTransferable >      m_XTransferable;
     css::uno::Reference< css::uno::XComponentContext>            m_XComponentContext;
     CFormatEtcContainer                                          m_FormatEtcContainer;
-    bool                                                         m_bFormatEtcContainerInitialized;
+    sal_Bool                                                     m_bFormatEtcContainerInitialized;
     CDataFormatTranslator                                        m_DataFormatTranslator;
     CFormatRegistrar                                             m_FormatRegistrar;
 };
@@ -117,15 +132,15 @@ public:
     virtual ~CEnumFormatEtc() {}
 
     // IUnknown
-    STDMETHODIMP           QueryInterface( REFIID iid, LPVOID* ppvObject ) override;
-    STDMETHODIMP_( ULONG ) AddRef( ) override;
-    STDMETHODIMP_( ULONG ) Release( ) override;
+    STDMETHODIMP           QueryInterface( REFIID iid, LPVOID* ppvObject );
+    STDMETHODIMP_( ULONG ) AddRef( );
+    STDMETHODIMP_( ULONG ) Release( );
 
     //IEnumFORMATETC
-    STDMETHODIMP Next( ULONG nRequested, LPFORMATETC lpDest, ULONG* lpFetched ) override;
-    STDMETHODIMP Skip( ULONG celt ) override;
-    STDMETHODIMP Reset( ) override;
-    STDMETHODIMP Clone( IEnumFORMATETC** ppenum ) override;
+    STDMETHODIMP Next( ULONG nRequested, LPFORMATETC lpDest, ULONG* lpFetched );
+    STDMETHODIMP Skip( ULONG celt );
+    STDMETHODIMP Reset( );
+    STDMETHODIMP Clone( IEnumFORMATETC** ppenum );
 
 private:
     LONG                m_nRefCnt;

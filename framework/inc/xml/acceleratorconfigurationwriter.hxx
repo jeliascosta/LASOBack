@@ -28,7 +28,7 @@
 
 namespace framework{
 
-class AcceleratorConfigurationWriter final
+class AcceleratorConfigurationWriter
 {
 
     // member
@@ -60,7 +60,7 @@ class AcceleratorConfigurationWriter final
                                        const css::uno::Reference< css::xml::sax::XDocumentHandler >& xConfig   );
 
         /** @short  does nothing real ... */
-        ~AcceleratorConfigurationWriter();
+        virtual ~AcceleratorConfigurationWriter();
 
         /** @short  TODO */
         void flush();

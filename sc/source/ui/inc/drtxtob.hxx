@@ -35,10 +35,10 @@ class TransferableClipboardListener;
 class ScDrawTextObjectBar : public SfxShell
 {
     ScViewData*         pViewData;
-    rtl::Reference<TransferableClipboardListener> mxClipEvtLstnr;
+    TransferableClipboardListener* pClipEvtLstnr;
     bool                bPastePossible;
 
-    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
+    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
 
 public:
     SFX_DECL_INTERFACE(SCID_DRAW_TEXT_SHELL)
@@ -49,7 +49,7 @@ private:
 
 public:
     ScDrawTextObjectBar(ScViewData* pData);
-    virtual ~ScDrawTextObjectBar() override;
+    virtual ~ScDrawTextObjectBar();
 
     static void StateDisableItems( SfxItemSet &rSet );
 

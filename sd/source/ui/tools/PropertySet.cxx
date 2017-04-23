@@ -27,7 +27,7 @@ namespace sd { namespace tools {
 
 PropertySet::PropertySet()
     : PropertySetInterfaceBase(m_aMutex),
-      mpChangeListeners(new ChangeListenerContainer)
+      mpChangeListeners(new ChangeListenerContainer())
 {
 }
 
@@ -42,6 +42,7 @@ void SAL_CALL PropertySet::disposing()
 //----- XPropertySet ----------------------------------------------------------
 
 Reference<beans::XPropertySetInfo> SAL_CALL PropertySet::getPropertySetInfo()
+    throw(RuntimeException, std::exception)
 {
     return nullptr;
 }
@@ -49,6 +50,11 @@ Reference<beans::XPropertySetInfo> SAL_CALL PropertySet::getPropertySetInfo()
 void SAL_CALL PropertySet::setPropertyValue (
     const OUString& rsPropertyName,
     const css::uno::Any& rsPropertyValue)
+    throw(css::beans::UnknownPropertyException,
+        css::beans::PropertyVetoException,
+        css::lang::IllegalArgumentException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -70,6 +76,9 @@ void SAL_CALL PropertySet::setPropertyValue (
 }
 
 Any SAL_CALL PropertySet::getPropertyValue (const OUString& rsPropertyName)
+        throw(css::beans::UnknownPropertyException,
+            css::lang::WrappedTargetException,
+            css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -79,6 +88,9 @@ Any SAL_CALL PropertySet::getPropertyValue (const OUString& rsPropertyName)
 void SAL_CALL PropertySet::addPropertyChangeListener (
     const OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XPropertyChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     if ( ! rxListener.is())
         throw lang::IllegalArgumentException();
@@ -95,6 +107,9 @@ void SAL_CALL PropertySet::addPropertyChangeListener (
 void SAL_CALL PropertySet::removePropertyChangeListener (
     const OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XPropertyChangeListener>& rxListener)
+    throw(beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     ::std::pair<ChangeListenerContainer::iterator,ChangeListenerContainer::iterator>
         aRange (mpChangeListeners->equal_range(rsPropertyName));
@@ -120,6 +135,9 @@ void SAL_CALL PropertySet::removePropertyChangeListener (
 void SAL_CALL PropertySet::addVetoableChangeListener (
     const OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XVetoableChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     // Constraint properties are not supported and thus no vetoable
     // listeners.
@@ -130,6 +148,9 @@ void SAL_CALL PropertySet::addVetoableChangeListener (
 void SAL_CALL PropertySet::removeVetoableChangeListener (
     const OUString& rsPropertyName,
     const css::uno::Reference<css::beans::XVetoableChangeListener>& rxListener)
+    throw(css::beans::UnknownPropertyException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception)
 {
     // Constraint properties are not supported and thus no vetoable
     // listeners.
@@ -152,6 +173,7 @@ void PropertySet::CallListeners (
 }
 
 void PropertySet::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {

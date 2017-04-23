@@ -32,7 +32,7 @@ private:
 
 public:
             SwFrameShell(SwView &rView);
-    virtual ~SwFrameShell() override;
+    virtual ~SwFrameShell();
 
     void    Execute(SfxRequest &);
     void    GetState(SfxItemSet &);
@@ -40,9 +40,11 @@ public:
     void    GetLineStyleState(SfxItemSet &rSet);
     void    StateInsert(SfxItemSet &rSet);
 
+    //UUUU
     void GetDrawAttrStateTextFrame(SfxItemSet &rSet);
     void ExecDrawAttrArgsTextFrame(SfxRequest& rReq);
 
+    //UUUU
     void ExecDrawDlgTextFrame(SfxRequest& rReq);
     void DisableStateTextFrame(SfxItemSet &rSet);
 };

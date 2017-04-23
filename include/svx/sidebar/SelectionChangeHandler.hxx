@@ -20,12 +20,12 @@
 #define INCLUDED_SVX_SIDEBAR_SELECTIONCHANGEHANDLER_HXX
 
 #include <svx/svxdllapi.h>
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <com/sun/star/frame/XController.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <com/sun/star/view/XSelectionChangeListener.hpp>
 
-#include <cppuhelper/compbase.hxx>
+#include <cppuhelper/compbase1.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 #include <functional>
@@ -35,9 +35,12 @@ class SdrMarkView;
 
 namespace svx { namespace sidebar {
 
-typedef cppu::WeakComponentImplHelper<
-    css::view::XSelectionChangeListener
-    > SelectionChangeHandlerInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper1 <
+        css::view::XSelectionChangeListener
+        > SelectionChangeHandlerInterfaceBase;
+}
+
 
 class SVX_DLLPUBLIC SelectionChangeHandler
     : private ::cppu::BaseMutex,
@@ -47,14 +50,17 @@ public:
     SelectionChangeHandler (
         const std::function<rtl::OUString ()>& rSelectionChangeCallback,
         const css::uno::Reference<css::frame::XController>& rxController,
-        const vcl::EnumContext::Context eDefaultContext);
-    virtual ~SelectionChangeHandler() override;
+        const sfx2::sidebar::EnumContext::Context eDefaultContext);
+    virtual ~SelectionChangeHandler();
 
-    virtual void SAL_CALL selectionChanged (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL selectionChanged (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing()
+        throw (css::uno::RuntimeException) override;
 
     void Connect();
     void Disconnect();
@@ -65,7 +71,7 @@ private:
 
     const std::function<rtl::OUString ()> maSelectionChangeCallback;
     css::uno::Reference<css::frame::XController> mxController;
-    const vcl::EnumContext::Context meDefaultContext;
+    const sfx2::sidebar::EnumContext::Context meDefaultContext;
     bool mbIsConnected;
 };
 

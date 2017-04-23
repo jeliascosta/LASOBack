@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <extended/accessibleiconchoicectrlentry.hxx>
+#include <accessibility/extended/accessibleiconchoicectrlentry.hxx>
 #include <svtools/ivctrl.hxx>
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
@@ -25,7 +25,6 @@
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <vcl/svapp.hxx>
 #include <vcl/controllayout.hxx>
 #include <vcl/settings.hxx>
@@ -43,8 +42,7 @@
 
 namespace
 {
-    /// @throws css::lang::IndexOutOfBoundsException
-    void checkActionIndex_Impl( sal_Int32 _nIndex )
+    void checkActionIndex_Impl( sal_Int32 _nIndex ) throw (css::lang::IndexOutOfBoundsException)
     {
         if ( _nIndex < 0 || _nIndex >= ACCESSIBLE_ACTION_COUNT )
             // only three actions
@@ -88,6 +86,7 @@ namespace accessibility
     }
 
     void AccessibleIconChoiceCtrlEntry::disposing( const css::lang::EventObject& _rSource )
+throw(RuntimeException, std::exception)
     {
         if ( _rSource.Source == m_xParent )
         {
@@ -106,9 +105,9 @@ namespace accessibility
         }
     }
 
-    tools::Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBox_Impl() const
+    Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBox_Impl() const
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         SvxIconChoiceCtrlEntry* pEntry = m_pIconCtrl->GetEntry( m_nIndex );
         if ( pEntry )
             aRect = m_pIconCtrl->GetBoundingBox( pEntry );
@@ -116,16 +115,16 @@ namespace accessibility
         return aRect;
     }
 
-    tools::Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBoxOnScreen_Impl() const
+    Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBoxOnScreen_Impl() const
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         SvxIconChoiceCtrlEntry* pEntry = m_pIconCtrl->GetEntry( m_nIndex );
         if ( pEntry )
         {
             aRect = m_pIconCtrl->GetBoundingBox( pEntry );
             Point aTopLeft = aRect.TopLeft();
             aTopLeft += m_pIconCtrl->GetWindowExtentsRelative( nullptr ).TopLeft();
-            aRect = tools::Rectangle( aTopLeft, aRect.GetSize() );
+            aRect = Rectangle( aTopLeft, aRect.GetSize() );
         }
 
         return aRect;
@@ -151,7 +150,8 @@ namespace accessibility
         return bShowing;
     }
 
-    tools::Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBox()
+    Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBox()
+        throw (lang::DisposedException, uno::RuntimeException)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -160,7 +160,8 @@ namespace accessibility
         return GetBoundingBox_Impl();
     }
 
-    tools::Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBoxOnScreen()
+    Rectangle AccessibleIconChoiceCtrlEntry::GetBoundingBoxOnScreen()
+        throw (lang::DisposedException, uno::RuntimeException)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -169,7 +170,7 @@ namespace accessibility
         return GetBoundingBoxOnScreen_Impl();
     }
 
-    void AccessibleIconChoiceCtrlEntry::EnsureIsAlive() const
+    void AccessibleIconChoiceCtrlEntry::EnsureIsAlive() const throw ( lang::DisposedException )
     {
         if ( !IsAlive_Impl() )
             throw lang::DisposedException();
@@ -200,7 +201,7 @@ namespace accessibility
     // XTypeProvider
 
 
-    Sequence< sal_Int8 > AccessibleIconChoiceCtrlEntry::getImplementationId()
+    Sequence< sal_Int8 > AccessibleIconChoiceCtrlEntry::getImplementationId() throw (RuntimeException, std::exception)
     {
         return css::uno::Sequence<sal_Int8>();
     }
@@ -229,26 +230,40 @@ namespace accessibility
 
     // XServiceInfo
 
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getImplementationName()
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getImplementationName() throw(RuntimeException, std::exception)
     {
-        return OUString( "com.sun.star.comp.svtools.AccessibleIconChoiceControlEntry" );
+        return getImplementationName_Static();
     }
 
-    Sequence< OUString > SAL_CALL AccessibleIconChoiceCtrlEntry::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL AccessibleIconChoiceCtrlEntry::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
-        return {"com.sun.star.accessibility.AccessibleContext",
-                "com.sun.star.accessibility.AccessibleComponent",
-                "com.sun.star.awt.AccessibleIconChoiceControlEntry"};
+        return getSupportedServiceNames_Static();
     }
 
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::supportsService( const OUString& _rServiceName )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
+    // XServiceInfo - static methods
+
+    Sequence< OUString > AccessibleIconChoiceCtrlEntry::getSupportedServiceNames_Static() throw( RuntimeException )
+    {
+        Sequence< OUString > aSupported(3);
+        aSupported[0] = "com.sun.star.accessibility.AccessibleContext";
+        aSupported[1] = "com.sun.star.accessibility.AccessibleComponent";
+        aSupported[2] = "com.sun.star.awt.AccessibleIconChoiceControlEntry";
+        return aSupported;
+    }
+
+    OUString AccessibleIconChoiceCtrlEntry::getImplementationName_Static() throw( RuntimeException )
+    {
+        return OUString( "com.sun.star.comp.svtools.AccessibleIconChoiceControlEntry" );
+    }
+
     // XAccessible
 
-    Reference< XAccessibleContext > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleContext(  )
+    Reference< XAccessibleContext > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleContext(  ) throw (RuntimeException, std::exception)
     {
         EnsureIsAlive();
         return this;
@@ -256,17 +271,17 @@ namespace accessibility
 
     // XAccessibleContext
 
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleChildCount(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         return 0; // no children
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleChild( sal_Int32 )
+    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleChild( sal_Int32 ) throw (IndexOutOfBoundsException,RuntimeException, std::exception)
     {
         throw IndexOutOfBoundsException();
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleParent(  )
+    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleParent(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -274,26 +289,26 @@ namespace accessibility
         return m_xParent;
     }
 
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleIndexInParent(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
         return m_nIndex;
     }
 
-    sal_Int16 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleRole(  )
+    sal_Int16 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleRole(  ) throw (RuntimeException, std::exception)
     {
         //return AccessibleRole::LABEL;
         return AccessibleRole::LIST_ITEM;
     }
 
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleDescription(  )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleDescription(  ) throw (RuntimeException, std::exception)
     {
         // no description for every item
         return OUString();
     }
 
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleName(  )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleName(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -301,12 +316,12 @@ namespace accessibility
         return implGetText();
     }
 
-    Reference< XAccessibleRelationSet > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleRelationSet(  )
+    Reference< XAccessibleRelationSet > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
     {
         return new utl::AccessibleRelationSetHelper;
     }
 
-    Reference< XAccessibleStateSet > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleStateSet(  )
+    Reference< XAccessibleStateSet > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleStateSet(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -335,7 +350,7 @@ namespace accessibility
         return xStateSet;
     }
 
-    Locale SAL_CALL AccessibleIconChoiceCtrlEntry::getLocale(  )
+    Locale SAL_CALL AccessibleIconChoiceCtrlEntry::getLocale(  ) throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -345,42 +360,42 @@ namespace accessibility
 
     // XAccessibleComponent
 
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::containsPoint( const awt::Point& rPoint )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::containsPoint( const awt::Point& rPoint ) throw (RuntimeException, std::exception)
     {
-        return tools::Rectangle( Point(), GetBoundingBox().GetSize() ).IsInside( VCLPoint( rPoint ) );
+        return Rectangle( Point(), GetBoundingBox().GetSize() ).IsInside( VCLPoint( rPoint ) );
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleAtPoint( const awt::Point& )
+    Reference< XAccessible > SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleAtPoint( const awt::Point& ) throw (RuntimeException, std::exception)
     {
         return Reference< XAccessible >();
     }
 
-    awt::Rectangle SAL_CALL AccessibleIconChoiceCtrlEntry::getBounds(  )
+    awt::Rectangle SAL_CALL AccessibleIconChoiceCtrlEntry::getBounds(  ) throw (RuntimeException, std::exception)
     {
         return AWTRectangle( GetBoundingBox() );
     }
 
-    awt::Point SAL_CALL AccessibleIconChoiceCtrlEntry::getLocation(  )
+    awt::Point SAL_CALL AccessibleIconChoiceCtrlEntry::getLocation(  ) throw (RuntimeException, std::exception)
     {
         return AWTPoint( GetBoundingBox().TopLeft() );
     }
 
-    awt::Point SAL_CALL AccessibleIconChoiceCtrlEntry::getLocationOnScreen(  )
+    awt::Point SAL_CALL AccessibleIconChoiceCtrlEntry::getLocationOnScreen(  ) throw (RuntimeException, std::exception)
     {
         return AWTPoint( GetBoundingBoxOnScreen().TopLeft() );
     }
 
-    awt::Size SAL_CALL AccessibleIconChoiceCtrlEntry::getSize(  )
+    awt::Size SAL_CALL AccessibleIconChoiceCtrlEntry::getSize(  ) throw (RuntimeException, std::exception)
     {
         return AWTSize( GetBoundingBox().GetSize() );
     }
 
-    void SAL_CALL AccessibleIconChoiceCtrlEntry::grabFocus(  )
+    void SAL_CALL AccessibleIconChoiceCtrlEntry::grabFocus(  ) throw (RuntimeException, std::exception)
     {
         // do nothing, because no focus for each item
     }
 
-    sal_Int32 AccessibleIconChoiceCtrlEntry::getForeground( )
+    sal_Int32 AccessibleIconChoiceCtrlEntry::getForeground( ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -397,7 +412,7 @@ namespace accessibility
         return nColor;
     }
 
-    sal_Int32 AccessibleIconChoiceCtrlEntry::getBackground(  )
+    sal_Int32 AccessibleIconChoiceCtrlEntry::getBackground(  ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -417,7 +432,7 @@ namespace accessibility
     // XAccessibleText
 
 
-    awt::Rectangle SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterBounds( sal_Int32 _nIndex )
+    awt::Rectangle SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterBounds( sal_Int32 _nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -428,8 +443,8 @@ namespace accessibility
         awt::Rectangle aBounds( 0, 0, 0, 0 );
         if ( m_pIconCtrl )
         {
-            tools::Rectangle aItemRect = GetBoundingBox_Impl();
-            tools::Rectangle aCharRect = m_pIconCtrl->GetEntryCharacterBounds( m_nIndex, _nIndex );
+            Rectangle aItemRect = GetBoundingBox_Impl();
+            Rectangle aCharRect = m_pIconCtrl->GetEntryCharacterBounds( m_nIndex, _nIndex );
             aCharRect.Move( -aItemRect.Left(), -aItemRect.Top() );
             aBounds = AWTRectangle( aCharRect );
         }
@@ -437,7 +452,7 @@ namespace accessibility
         return aBounds;
     }
 
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getIndexAtPoint( const awt::Point& aPoint )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getIndexAtPoint( const awt::Point& aPoint ) throw (RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -446,7 +461,7 @@ namespace accessibility
         if ( m_pIconCtrl )
         {
             vcl::ControlLayoutData aLayoutData;
-            tools::Rectangle aItemRect = GetBoundingBox_Impl();
+            Rectangle aItemRect = GetBoundingBox_Impl();
             m_pIconCtrl->RecordLayoutData( &aLayoutData, aItemRect );
             Point aPnt( VCLPoint( aPoint ) );
             aPnt += aItemRect.TopLeft();
@@ -455,7 +470,7 @@ namespace accessibility
             long nLen = aLayoutData.m_aUnicodeBoundRects.size();
             for ( long i = 0; i < nLen; ++i )
             {
-                tools::Rectangle aRect = aLayoutData.GetCharacterBounds(i);
+                Rectangle aRect = aLayoutData.GetCharacterBounds(i);
                 bool bInside = aRect.IsInside( aPnt );
 
                 if ( bInside )
@@ -466,7 +481,7 @@ namespace accessibility
         return nIndex;
     }
 
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -484,7 +499,7 @@ namespace accessibility
 
     // XAccessibleEventBroadcaster
 
-    void SAL_CALL AccessibleIconChoiceCtrlEntry::addAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
+    void SAL_CALL AccessibleIconChoiceCtrlEntry::addAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener ) throw (RuntimeException, std::exception)
     {
         if (xListener.is())
         {
@@ -495,7 +510,7 @@ namespace accessibility
         }
     }
 
-    void SAL_CALL AccessibleIconChoiceCtrlEntry::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
+    void SAL_CALL AccessibleIconChoiceCtrlEntry::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener ) throw (RuntimeException, std::exception)
     {
         if (xListener.is())
         {
@@ -515,11 +530,11 @@ namespace accessibility
         }
     }
 
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getCaretPosition(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getCaretPosition(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return -1;
     }
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::setCaretPosition ( sal_Int32 nIndex )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::setCaretPosition ( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -530,14 +545,14 @@ namespace accessibility
 
         return false;
     }
-    sal_Unicode SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacter( sal_Int32 nIndex )
+    sal_Unicode SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacter( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getCharacter( nIndex );
     }
-    css::uno::Sequence< css::beans::PropertyValue > SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& )
+    css::uno::Sequence< css::beans::PropertyValue > SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -550,7 +565,7 @@ namespace accessibility
 
         return css::uno::Sequence< css::beans::PropertyValue >();
     }
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterCount(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getCharacterCount(  ) throw (css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -558,28 +573,28 @@ namespace accessibility
         return OCommonAccessibleText::getCharacterCount(  );
     }
 
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectedText(  )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectedText(  ) throw (css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getSelectedText(  );
     }
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectionStart(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectionStart(  ) throw (css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getSelectionStart(  );
     }
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectionEnd(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getSelectionEnd(  ) throw (css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getSelectionEnd(  );
     }
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -590,35 +605,35 @@ namespace accessibility
 
         return false;
     }
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getText(  )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getText(  ) throw (css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getText(  );
     }
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getTextRange( nStartIndex, nEndIndex );
     }
-    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getTextAtIndex( nIndex ,aTextType);
     }
-    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
         EnsureIsAlive();
         return OCommonAccessibleText::getTextBeforeIndex( nIndex ,aTextType);
     }
-    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleIconChoiceCtrlEntry::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -630,7 +645,7 @@ namespace accessibility
 
     // XAccessibleAction
 
-    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleActionCount(  )
+    sal_Int32 SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleActionCount(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -638,7 +653,7 @@ namespace accessibility
         return ACCESSIBLE_ACTION_COUNT;
     }
 
-    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::doAccessibleAction( sal_Int32 nIndex )
+    sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::doAccessibleAction( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -658,7 +673,7 @@ namespace accessibility
         return bRet;
     }
 
-    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleActionDescription( sal_Int32 nIndex )
+    OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getAccessibleActionDescription( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         SolarMutexGuard aSolarGuard;
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -669,7 +684,7 @@ namespace accessibility
         return OUString( "Select" );
     }
 
-    Reference< XAccessibleKeyBinding > AccessibleIconChoiceCtrlEntry::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+    Reference< XAccessibleKeyBinding > AccessibleIconChoiceCtrlEntry::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 

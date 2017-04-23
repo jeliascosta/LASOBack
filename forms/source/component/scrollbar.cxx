@@ -106,7 +106,7 @@ namespace frm
     {
     }
 
-    OUString SAL_CALL OScrollBarModel::getImplementationName()
+    OUString SAL_CALL OScrollBarModel::getImplementationName() throw ( RuntimeException, std::exception )
     {
         return OUString( "com.sun.star.comp.forms.OScrollBarModel" );
     }
@@ -115,7 +115,7 @@ namespace frm
         // OBoundControlModel, our real base class, claims to support the DataAwareControlModel
         // service, which isn't really true for us. We only derive from this class
         // to benefit from the functionality for binding to spreadsheet cells
-    Sequence< OUString > SAL_CALL OScrollBarModel::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL OScrollBarModel::getSupportedServiceNames() throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aOwnNames( 2 );
         aOwnNames[ 0 ] = FRM_SUN_COMPONENT_SCROLLBAR;
@@ -130,6 +130,12 @@ namespace frm
     }
 
     IMPLEMENT_DEFAULT_CLONING( OScrollBarModel )
+
+
+    void SAL_CALL OScrollBarModel::disposing()
+    {
+        OBoundControlModel::disposing();
+    }
 
 
     void OScrollBarModel::describeFixedProperties( Sequence< Property >& _rProps ) const
@@ -156,7 +162,7 @@ namespace frm
     }
 
 
-    void OScrollBarModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue )
+    void OScrollBarModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const Any& _rValue ) throw ( Exception, std::exception )
     {
         switch ( _nHandle )
         {
@@ -173,6 +179,7 @@ namespace frm
 
     sal_Bool OScrollBarModel::convertFastPropertyValue(
                 Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
+                throw ( IllegalArgumentException )
     {
         bool bModified( false );
         switch ( _nHandle )
@@ -228,13 +235,14 @@ namespace frm
     }
 
 
-    OUString SAL_CALL OScrollBarModel::getServiceName()
+    OUString SAL_CALL OScrollBarModel::getServiceName() throw( RuntimeException, std::exception )
     {
         return OUString(FRM_SUN_COMPONENT_SCROLLBAR);
     }
 
 
     void SAL_CALL OScrollBarModel::write( const Reference< XObjectOutputStream >& _rxOutStream )
+        throw( IOException, RuntimeException, std::exception )
     {
         OBoundControlModel::write( _rxOutStream );
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -250,7 +258,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OScrollBarModel::read( const Reference< XObjectInputStream>& _rxInStream )
+    void SAL_CALL OScrollBarModel::read( const Reference< XObjectInputStream>& _rxInStream ) throw( IOException, RuntimeException, std::exception )
     {
         OBoundControlModel::read( _rxInStream );
         ::osl::MutexGuard aGuard( m_aMutex );

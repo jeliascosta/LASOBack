@@ -39,9 +39,9 @@ namespace dbaui
     {
     private:
         OModuleClient                                   m_aModuleClient;
-        std::vector< std::shared_ptr<OTableRow> > m_vRowList;
+        ::std::vector< std::shared_ptr<OTableRow> > m_vRowList;
         OTypeInfoMap                                    m_aTypeInfo;
-        std::vector<OTypeInfoMap::iterator>           m_aTypeInfoIndex;
+        ::std::vector<OTypeInfoMap::iterator>           m_aTypeInfoIndex;
 
         css::uno::Reference< css::beans::XPropertySet >       m_xTable;
 
@@ -57,9 +57,9 @@ namespace dbaui
         void reSyncRows();
         void assignTable();                 // set the table if a name is given
         void loadData();
-        /// @throws css::sdbc::SQLException
-        /// @throws css::uno::RuntimeException
-        bool checkColumns(bool _bNew);      // check if we have double column names
+        bool checkColumns(bool _bNew)
+            throw (css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception);      // check if we have double column names
         void appendColumns(css::uno::Reference< css::sdbcx::XColumnsSupplier>& _rxColSup, bool _bNew, bool _bKeyColumns = false);
         void appendPrimaryKey(css::uno::Reference< css::sdbcx::XKeysSupplier>& _rxSup, bool _bNew);
         void alterColumns();
@@ -83,7 +83,7 @@ namespace dbaui
         void        doEditIndexes();
         bool        doSaveDoc(bool _bSaveAs);
 
-        virtual ~OTableController() override;
+        virtual ~OTableController();
     public:
         OTableController(const css::uno::Reference< css::uno::XComponentContext >& _rM);
 
@@ -94,41 +94,39 @@ namespace dbaui
         bool     isAlterAllowed()   const;
         bool     isAutoIncrementPrimaryKey() const;
 
-        bool             isAutoIncrementValueEnabled()   const { return m_bAllowAutoIncrementValue; }
-        const OUString&   getAutoIncrementValue()         const { return m_sAutoIncrementValue; }
+        inline bool             isAutoIncrementValueEnabled()   const { return m_bAllowAutoIncrementValue; }
+        inline const OUString&   getAutoIncrementValue()         const { return m_sAutoIncrementValue; }
 
         virtual void impl_onModifyChanged() override;
 
-        std::vector< std::shared_ptr<OTableRow> >& getRows() { return m_vRowList; }
+        inline ::std::vector< std::shared_ptr<OTableRow> >& getRows() { return m_vRowList; }
 
         /// returns the position of the first empty row
         sal_Int32                           getFirstEmptyRowPosition();
 
-        const OTypeInfoMap&          getTypeInfo() const { return m_aTypeInfo; }
+        inline const OTypeInfoMap&          getTypeInfo() const { return m_aTypeInfo; }
 
-        TOTypeInfoSP                 getTypeInfo(sal_Int32 _nPos) const { return m_aTypeInfoIndex[_nPos]->second; }
+        inline TOTypeInfoSP                 getTypeInfo(sal_Int32 _nPos) const { return m_aTypeInfoIndex[_nPos]->second; }
         TOTypeInfoSP                        getTypeInfoByType(sal_Int32 _nDataType) const;
 
         const TOTypeInfoSP&                 getTypeInfoFallBack() const { return m_pTypeInfo; }
 
         virtual bool                        Construct(vcl::Window* pParent) override;
         // XEventListener
-        virtual void SAL_CALL               disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL               disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
 
         // css::frame::XController
-        virtual sal_Bool SAL_CALL           suspend(sal_Bool bSuspend) override;
+        virtual sal_Bool SAL_CALL           suspend(sal_Bool bSuspend) throw( css::uno::RuntimeException, std::exception ) override;
 
         // css::lang::XComponent
         virtual void        SAL_CALL disposing() override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() override;
-        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() override;
+        virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
         // need by registration
-        /// @throws css::uno::RuntimeException
-        static OUString getImplementationName_Static();
-        /// @throws css::uno::RuntimeException
-        static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
+        static OUString getImplementationName_Static() throw( css::uno::RuntimeException );
+        static css::uno::Sequence< OUString > getSupportedServiceNames_Static() throw( css::uno::RuntimeException );
         static css::uno::Reference< css::uno::XInterface >
                 SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 

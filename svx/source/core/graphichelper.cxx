@@ -63,32 +63,29 @@ void GraphicHelper::GetPreferredExtension( OUString& rExtension, const Graphic& 
     OUString aExtension = "png";
     switch( rGraphic.GetLink().GetType() )
     {
-        case GfxLinkType::NativeGif:
+        case GFX_LINK_TYPE_NATIVE_GIF:
             aExtension = "gif";
             break;
-        case GfxLinkType::NativeTif:
+        case GFX_LINK_TYPE_NATIVE_TIF:
             aExtension = "tif";
             break;
-        case GfxLinkType::NativeWmf:
+        case GFX_LINK_TYPE_NATIVE_WMF:
             aExtension = "wmf";
             break;
-        case GfxLinkType::NativeMet:
+        case GFX_LINK_TYPE_NATIVE_MET:
             aExtension = "met";
             break;
-        case GfxLinkType::NativePct:
+        case GFX_LINK_TYPE_NATIVE_PCT:
             aExtension = "pct";
             break;
-        case GfxLinkType::NativeJpg:
+        case GFX_LINK_TYPE_NATIVE_JPG:
             aExtension = "jpg";
             break;
-        case GfxLinkType::NativeBmp:
+        case GFX_LINK_TYPE_NATIVE_BMP:
             aExtension = "bmp";
             break;
-        case GfxLinkType::NativeSvg:
+        case GFX_LINK_TYPE_NATIVE_SVG:
             aExtension = "svg";
-            break;
-        case GfxLinkType::NativePdf:
-            aExtension = "pdf";
             break;
         default:
             break;
@@ -110,7 +107,7 @@ OUString GraphicHelper::ExportGraphic( const Graphic& rGraphic, const OUString& 
     // fish out the graphic's name
 
     aDialogHelper.SetTitle( SVX_RESSTR(RID_SVXSTR_EXPORT_GRAPHIC_TITLE));
-    aDialogHelper.SetDisplayDirectory( aPath.GetMainURL(INetURLObject::DecodeMechanism::ToIUri) );
+    aDialogHelper.SetDisplayDirectory( aPath.GetMainURL(INetURLObject::DECODE_TO_IURI) );
     INetURLObject aURL;
     aURL.SetSmartURL( rGraphicName );
     aDialogHelper.SetFileName( aURL.GetName() );
@@ -221,7 +218,7 @@ void GraphicHelper::SaveShapeAsGraphic( const Reference< drawing::XShape >& xSha
 
         INetURLObject aPath;
         aPath.SetSmartURL( sGraphicPath );
-        xFilePicker->setDisplayDirectory( aPath.GetMainURL(INetURLObject::DecodeMechanism::ToIUri) );
+        xFilePicker->setDisplayDirectory( aPath.GetMainURL(INetURLObject::DECODE_TO_IURI) );
 
         // populate filter dialog filter list and select default filter to match graphic mime type
 

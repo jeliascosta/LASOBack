@@ -38,13 +38,13 @@ private:
 
 public:
     SwContentViewConfig(bool bWeb, SwMasterUsrPref& rParent);
-    virtual ~SwContentViewConfig() override;
+    virtual ~SwContentViewConfig();
 
     // utl::ConfigItem
     virtual void    Notify( const css::uno::Sequence< OUString > &rPropertyNames ) override;
 
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwLayoutViewConfig : public utl::ConfigItem
@@ -59,11 +59,11 @@ private:
 
 public:
     SwLayoutViewConfig(bool bWeb, SwMasterUsrPref& rParent);
-    virtual ~SwLayoutViewConfig() override;
+    virtual ~SwLayoutViewConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwGridConfig : public utl::ConfigItem
@@ -77,11 +77,11 @@ private:
 
 public:
     SwGridConfig(bool bWeb, SwMasterUsrPref& rParent);
-    virtual ~SwGridConfig() override;
+    virtual ~SwGridConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwCursorConfig : public utl::ConfigItem
@@ -95,11 +95,11 @@ private:
 
 public:
     SwCursorConfig(SwMasterUsrPref& rParent);
-    virtual ~SwCursorConfig() override;
+    virtual ~SwCursorConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwWebColorConfig : public utl::ConfigItem
@@ -112,11 +112,11 @@ private:
 
 public:
     SwWebColorConfig(SwMasterUsrPref& rParent);
-    virtual ~SwWebColorConfig() override;
+    virtual ~SwWebColorConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
     void                    Load();
-    using ConfigItem::SetModified;
+    void                    SetModified(){ConfigItem::SetModified();}
 };
 
 class SwMasterUsrPref : public SwViewOption
@@ -127,26 +127,26 @@ class SwMasterUsrPref : public SwViewOption
     friend class SwCursorConfig;
     friend class SwWebColorConfig;
 
-    SwFieldUpdateFlags m_eFieldUpdateFlags;    //update of fields and charts
-    sal_Int32   m_nLinkUpdateMode;
-    FieldUnit   m_eUserMetric;
-    FieldUnit   m_eHScrollMetric;
-    bool    m_bIsHScrollMetricSet;
-    FieldUnit   m_eVScrollMetric;
-    bool    m_bIsVScrollMetricSet;
+    SwFieldUpdateFlags eFieldUpdateFlags;    //update of fields and charts
+    sal_Int32   nLinkUpdateMode;
+    FieldUnit   eUserMetric;
+    FieldUnit   eHScrollMetric;
+    bool    bIsHScrollMetricSet;
+    FieldUnit   eVScrollMetric;
+    bool    bIsVScrollMetricSet;
 
-    sal_Int32   m_nDefTab;            //default tab stop distance
+    sal_Int32   nDefTab;            //default tab stop distance
 
-    bool    m_bIsSquaredPageMode; //default page mode for text grid
-    bool    m_bIsAlignMathObjectsToBaseline;
+    bool    bIsSquaredPageMode; //default page mode for text grid
+    bool    bIsAlignMathObjectsToBaseline;
 
-    SwContentViewConfig m_aContentConfig;
-    SwLayoutViewConfig  m_aLayoutConfig;
-    SwGridConfig        m_aGridConfig;
-    SwCursorConfig      m_aCursorConfig;
-    std::unique_ptr<SwWebColorConfig>   m_pWebColorConfig;
+    SwContentViewConfig aContentConfig;
+    SwLayoutViewConfig  aLayoutConfig;
+    SwGridConfig        aGridConfig;
+    SwCursorConfig      aCursorConfig;
+    SwWebColorConfig*   pWebColorConfig;
 
-    bool m_bApplyCharUnit; // apply_char_unit
+    bool bApplyCharUnit; // apply_char_unit
 public:
     SwMasterUsrPref(bool bWeb);
     ~SwMasterUsrPref();
@@ -155,111 +155,111 @@ public:
 
     void SetModified()
         {
-            m_aContentConfig.SetModified();
-            m_aLayoutConfig.SetModified();
-            m_aGridConfig.SetModified();
-            m_aCursorConfig.SetModified();
-            if(m_pWebColorConfig)
-                m_pWebColorConfig->SetModified();
+            aContentConfig.SetModified();
+            aLayoutConfig.SetModified();
+            aGridConfig.SetModified();
+            aCursorConfig.SetModified();
+            if(pWebColorConfig)
+                pWebColorConfig->SetModified();
         }
 
     void SetUpdateLinkMode(sal_Int32 nSet, bool bNoModify = false)
         {
-            m_nLinkUpdateMode = nSet;
+            nLinkUpdateMode = nSet;
             if(!bNoModify)
-                m_aContentConfig.SetModified();
+                aContentConfig.SetModified();
         }
-    sal_Int32 GetUpdateLinkMode() const {return m_nLinkUpdateMode; }
+    sal_Int32 GetUpdateLinkMode() const {return nLinkUpdateMode; }
 
     void SetUpdateFields(bool bSet)
         {
-            if(bSet && m_eFieldUpdateFlags == AUTOUPD_OFF)
+            if(bSet && eFieldUpdateFlags == AUTOUPD_OFF)
             {
-                m_eFieldUpdateFlags = AUTOUPD_FIELD_ONLY;
+                eFieldUpdateFlags = AUTOUPD_FIELD_ONLY;
              }
             else if(!bSet)
             {
-                m_eFieldUpdateFlags = AUTOUPD_OFF;
+                eFieldUpdateFlags = AUTOUPD_OFF;
             }
         };
-    bool IsUpdateFields()const {return m_eFieldUpdateFlags != AUTOUPD_OFF; }
+    bool IsUpdateFields()const {return eFieldUpdateFlags != AUTOUPD_OFF; }
 
-    SwFieldUpdateFlags   GetFieldUpdateFlags()const {return m_eFieldUpdateFlags;}
+    SwFieldUpdateFlags   GetFieldUpdateFlags()const {return eFieldUpdateFlags;}
     void        SetFieldUpdateFlags(SwFieldUpdateFlags eSet)
         {
-            m_eFieldUpdateFlags = eSet;
-            m_aContentConfig.SetModified();
+            eFieldUpdateFlags = eSet;
+            aContentConfig.SetModified();
         }
 
     void SetUpdateCharts(bool bSet)
         {
             if(bSet)
             {
-                m_eFieldUpdateFlags = AUTOUPD_FIELD_AND_CHARTS;
+                eFieldUpdateFlags = AUTOUPD_FIELD_AND_CHARTS;
              }
-             else if(m_eFieldUpdateFlags == AUTOUPD_FIELD_AND_CHARTS)
+             else if(eFieldUpdateFlags == AUTOUPD_FIELD_AND_CHARTS)
              {
-                m_eFieldUpdateFlags = AUTOUPD_FIELD_ONLY;
+                eFieldUpdateFlags = AUTOUPD_FIELD_ONLY;
              }
         };
-    bool IsUpdateCharts()const {return m_eFieldUpdateFlags == AUTOUPD_FIELD_AND_CHARTS; }
+    bool IsUpdateCharts()const {return eFieldUpdateFlags == AUTOUPD_FIELD_AND_CHARTS; }
 
-    FieldUnit   GetMetric() const { return m_eUserMetric;}
+    FieldUnit   GetMetric() const { return eUserMetric;}
     void        SetMetric(FieldUnit eSet, bool bNoModify = false)
                 {
-                    m_eUserMetric = eSet;
+                    eUserMetric = eSet;
                     if(!bNoModify)
-                        m_aLayoutConfig.SetModified();
+                        aLayoutConfig.SetModified();
                 }
 
-    bool        IsHScrollMetric()const {return m_bIsHScrollMetricSet;}
-    FieldUnit   GetHScrollMetric() const { return m_bIsHScrollMetricSet ? m_eHScrollMetric : m_eUserMetric;}
+    bool        IsHScrollMetric()const {return bIsHScrollMetricSet;}
+    FieldUnit   GetHScrollMetric() const { return bIsHScrollMetricSet ? eHScrollMetric : eUserMetric;}
     void        SetHScrollMetric(FieldUnit eSet)
                 {
-                    m_eHScrollMetric = eSet; m_bIsHScrollMetricSet = true;
-                    m_aLayoutConfig.SetModified();
+                    eHScrollMetric = eSet; bIsHScrollMetricSet = true;
+                    aLayoutConfig.SetModified();
                 }
 
-    bool        IsVScrollMetric()const {return m_bIsVScrollMetricSet;}
-    FieldUnit   GetVScrollMetric() const { return m_bIsVScrollMetricSet ? m_eVScrollMetric : m_eUserMetric;}
+    bool        IsVScrollMetric()const {return bIsVScrollMetricSet;}
+    FieldUnit   GetVScrollMetric() const { return bIsVScrollMetricSet ? eVScrollMetric : eUserMetric;}
     void        SetVScrollMetric(FieldUnit eSet)
                 {
-                    m_eVScrollMetric = eSet; m_bIsVScrollMetricSet = true;
-                    m_aLayoutConfig.SetModified();
+                    eVScrollMetric = eSet; bIsVScrollMetricSet = true;
+                    aLayoutConfig.SetModified();
                 }
 
     bool    IsApplyCharUnit() const
     {
-        return m_bApplyCharUnit;
+        return bApplyCharUnit;
     }
     void   SetApplyCharUnit(bool bSet)
     {
-        m_bApplyCharUnit = bSet;
-        m_aLayoutConfig.SetModified();
+        bApplyCharUnit = bSet;
+        aLayoutConfig.SetModified();
     }
 
-    sal_Int32   GetDefTab() const { return m_nDefTab;}
+    sal_Int32   GetDefTab() const { return nDefTab;}
     void        SetDefTab( sal_Int32  nSet, bool bNoModify = false )
                 {
-                    m_nDefTab = nSet;
+                    nDefTab = nSet;
                     if(!bNoModify)
-                        m_aLayoutConfig.SetModified();
+                        aLayoutConfig.SetModified();
                 }
 
     //default page mode for text grid
-    bool        IsSquaredPageMode() const {return m_bIsSquaredPageMode;}
+    bool        IsSquaredPageMode() const {return bIsSquaredPageMode;}
     void        SetDefaultPageMode( bool bVal, bool bNoModify = false )
                 {
-                    m_bIsSquaredPageMode = bVal;
+                    bIsSquaredPageMode = bVal;
                     if(!bNoModify)
-                        m_aLayoutConfig.SetModified();
+                        aLayoutConfig.SetModified();
                 }
 
-    bool        IsAlignMathObjectsToBaseline() const { return m_bIsAlignMathObjectsToBaseline; }
+    bool        IsAlignMathObjectsToBaseline() const { return bIsAlignMathObjectsToBaseline; }
     void        SetAlignMathObjectsToBaseline( bool bVal )
                 {
-                    m_bIsAlignMathObjectsToBaseline = bVal;
-                    m_aLayoutConfig.SetModified();
+                    bIsAlignMathObjectsToBaseline = bVal;
+                    aLayoutConfig.SetModified();
                 }
 };
 

@@ -20,20 +20,13 @@
 #ifndef INCLUDED_OOX_VML_VMLFORMATTING_HXX
 #define INCLUDED_OOX_VML_VMLFORMATTING_HXX
 
-#include <utility>
-#include <vector>
-
-#include <com/sun/star/drawing/PolygonFlags.hpp>
-#include <com/sun/star/uno/Reference.hxx>
-#include <oox/dllapi.h>
 #include <oox/helper/helper.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <oox/dllapi.h>
+#include <com/sun/star/awt/Point.hpp>
+#include <com/sun/star/drawing/PolyPolygonBezierCoords.hpp>
+#include <com/sun/star/drawing/XShape.hpp>
 
-namespace com { namespace sun { namespace star {
-    namespace awt { struct Point; }
-    namespace drawing { class XShape; }
-} } }
+#include <vector>
 
 namespace oox {
     class GraphicHelper;

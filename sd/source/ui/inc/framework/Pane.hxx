@@ -32,13 +32,18 @@
 
 namespace vcl { class Window; }
 
-namespace sd { namespace framework {
+
+namespace {
 
 typedef ::cppu::WeakComponentImplHelper <
       css::drawing::framework::XPane,
       css::drawing::framework::XPane2,
       css::lang::XUnoTunnel
     > PaneInterfaceBase;
+
+} // end of anonymous namespace.
+
+namespace sd { namespace framework {
 
 /** A pane is a wrapper for a window and possibly for a tab bar (for view
     switching).  Panes are unique resources.
@@ -70,7 +75,7 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxPaneId,
         vcl::Window* pWindow)
         throw ();
-    virtual ~Pane() override;
+    virtual ~Pane();
 
     virtual void SAL_CALL disposing() override;
 
@@ -88,35 +93,44 @@ public:
         in the window of the pane.
     */
     virtual css::uno::Reference<css::awt::XWindow>
-        SAL_CALL getWindow() override;
+        SAL_CALL getWindow()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<css::rendering::XCanvas>
-        SAL_CALL getCanvas() override;
+        SAL_CALL getCanvas()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XPane2 -------------------------------------------------------------
 
-    virtual sal_Bool SAL_CALL isVisible() override;
+    virtual sal_Bool SAL_CALL isVisible()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setVisible (sal_Bool bIsVisible) override;
+    virtual void SAL_CALL setVisible (sal_Bool bIsVisible)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL getAccessible() override;
+    virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL getAccessible()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setAccessible (
-        const css::uno::Reference<css::accessibility::XAccessible>& rxAccessible) override;
+        const css::uno::Reference<css::accessibility::XAccessible>& rxAccessible)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XResource ---------------------------------------------------------
 
     virtual css::uno::Reference<css::drawing::framework::XResourceId>
-        SAL_CALL getResourceId() override;
+        SAL_CALL getResourceId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** For the typical pane it makes no sense to be displayed without a
         view.  Therefore this default implementation returns always <TRUE/>.
     */
-    virtual sal_Bool SAL_CALL isAnchorOnly() override;
+    virtual sal_Bool SAL_CALL isAnchorOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XUnoTunnel --------------------------------------------------------
 
-    virtual sal_Int64 SAL_CALL getSomething (const css::uno::Sequence<sal_Int8>& rId) override;
+    virtual sal_Int64 SAL_CALL getSomething (const css::uno::Sequence<sal_Int8>& rId)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     css::uno::Reference<css::drawing::framework::XResourceId> mxPaneId;
@@ -126,19 +140,17 @@ protected:
 
     /** Override this method, not getCanvas(), when you want to provide a
         different canvas.
-
-        @throws css::uno::RuntimeException
     */
     virtual css::uno::Reference<css::rendering::XCanvas>
-        CreateCanvas();
+        CreateCanvas()
+        throw (css::uno::RuntimeException);
 
     /** Throw DisposedException when the object has already been disposed or
         is currently being disposed.  Otherwise this method returns
         normally.
-
-        @throws css::lang::DisposedException
     */
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const
+        throw (css::lang::DisposedException);
 };
 
 } } // end of namespace sd::framework

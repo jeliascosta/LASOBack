@@ -345,7 +345,7 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
                     if(pHdl)
                     {
                         Point aHdlPosition(pHdl->GetPos());
-                        tools::Rectangle aVisRect(aHdlPosition - Point(100, 100), Size(200, 200));
+                        Rectangle aVisRect(aHdlPosition - Point(100, 100), Size(200, 200));
                         pView->MakeVisible(aVisRect, *pWindow);
                     }
 
@@ -489,11 +489,11 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
                             if(pView->IsMoveAllowed())
                             {
                                 // restrict movement to WorkArea
-                                const tools::Rectangle& rWorkArea = pView->GetWorkArea();
+                                const Rectangle& rWorkArea = pView->GetWorkArea();
 
                                 if(!rWorkArea.IsEmpty())
                                 {
-                                    tools::Rectangle aMarkRect(pView->GetMarkedObjRect());
+                                    Rectangle aMarkRect(pView->GetMarkedObjRect());
                                     aMarkRect.Move(nX, nY);
 
                                     if(!aMarkRect.IsInside(rWorkArea))
@@ -564,7 +564,7 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
                                 }
 
                                 // make moved handle visible
-                                tools::Rectangle aVisRect(aEndPoint - Point(100, 100), Size(200, 200));
+                                Rectangle aVisRect(aEndPoint - Point(100, 100), Size(200, 200));
                                 pView->MakeVisible(aVisRect, *pWindow);
 
                                 bReturn = true;
@@ -586,7 +586,7 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
 
                 if(pHdl)
                 {
-                    if(pHdl->GetKind() == SdrHdlKind::Poly)
+                    if(pHdl->GetKind() == HDL_POLY)
                     {
                         // rescue ID of point with focus
                         sal_uInt32 nPol(pHdl->GetPolyNum());
@@ -619,7 +619,7 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
                                 SdrHdl* pAct = rHdlList.GetHdl(a);
 
                                 if(pAct
-                                    && pAct->GetKind() == SdrHdlKind::Poly
+                                    && pAct->GetKind() == HDL_POLY
                                     && pAct->GetPolyNum() == nPol
                                     && pAct->GetPointNum() == nPnt)
                                 {
@@ -666,6 +666,28 @@ bool FuDraw::KeyInput(const KeyEvent& rKEvt)
 
 /*************************************************************************
 |*
+|* enable function
+|*
+\************************************************************************/
+
+void FuDraw::Activate()
+{
+    FuPoor::Activate();
+}
+
+/*************************************************************************
+|*
+|* disable function
+|*
+\************************************************************************/
+
+void FuDraw::Deactivate()
+{
+    FuPoor::Deactivate();
+}
+
+/*************************************************************************
+|*
 |* toggle mouse-pointer
 |*
 \************************************************************************/
@@ -676,13 +698,13 @@ static bool lcl_UrlHit( SdrView* pView, const Point& rPosPixel, vcl::Window* pWi
     MouseEvent aMEvt( rPosPixel, 1, MouseEventModifiers::NONE, MOUSE_LEFT );
     SdrHitKind eHit = pView->PickAnything( aMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt );
 
-    if ( eHit != SdrHitKind::NONE && aVEvt.pObj != nullptr )
+    if ( eHit != SDRHIT_NONE && aVEvt.pObj != nullptr )
     {
         if ( ScDrawLayer::GetIMapInfo( aVEvt.pObj ) && ScDrawLayer::GetHitIMapObject(
                                 aVEvt.pObj, pWindow->PixelToLogic(rPosPixel), *pWindow ) )
             return true;
 
-        if ( aVEvt.eEvent == SdrEventKind::ExecuteUrl )
+        if ( aVEvt.eEvent == SDREVENT_EXECUTEURL )
             return true;
     }
 
@@ -697,16 +719,16 @@ void FuDraw::ForcePointer(const MouseEvent* pMEvt)
         bool bAlt       = pMEvt && pMEvt->IsMod2();
         Point aPnt      = pWindow->PixelToLogic( aPosPixel );
         SdrHdl* pHdl    = pView->PickHandle(aPnt);
+        SdrObject* pObj;
         SdrPageView* pPV;
 
         ScMacroInfo* pInfo = nullptr;
-        SdrObject* pObj = pView->PickObj(aPnt, pView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER);
-        if (pObj)
+        if ( pView->PickObj(aPnt, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER) )
         {
             if ( pObj->IsGroupObject() )
             {
-                SdrObject* pHit = pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::DEEP);
-                if (pHit)
+                SdrObject* pHit = nullptr;
+                if ( pView->PickObj(aMDPos, pView->getHitTolLog(), pHit, pPV, SdrSearchOptions::DEEP ) )
                     pObj = pHit;
             }
             pInfo = ScDrawLayer::GetMacroInfo( pObj );
@@ -731,7 +753,7 @@ void FuDraw::ForcePointer(const MouseEvent* pMEvt)
             //  could be suppressed with ALT
             pWindow->SetPointer( Pointer( PointerStyle::RefHand ) );          // Text-URL / ImageMap
         }
-        else if ( !bAlt && (pObj = pView->PickObj(aPnt, pView->getHitTolLog(), pPV, SdrSearchOptions::PICKMACRO)) )
+        else if ( !bAlt && pView->PickObj(aPnt, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKMACRO) )
         {
             //  could be suppressed with ALT
             SdrObjMacroHitRec aHitRec;  //! something missing ????

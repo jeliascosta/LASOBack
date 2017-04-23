@@ -27,7 +27,7 @@
 
 class GridWindow;
 
-enum class ResetType
+enum resetType
 {
     LINEAR_ASCENDING = 0,
     LINEAR_DESCENDING = 1,
@@ -44,12 +44,12 @@ class GridDialog : public ModalDialog
 
     VclPtr<GridWindow>     m_pGridWindow;
 
-    DECL_LINK( ClickButtonHdl, Button*, void );
+    DECL_LINK_TYPED( ClickButtonHdl, Button*, void );
 
 public:
     GridDialog(double* pXValues, double* pYValues, int nValues,
                 vcl::Window* pParent);
-    virtual ~GridDialog() override;
+    virtual ~GridDialog();
     virtual void dispose() override;
     void setBoundings(double fMinX, double fMinY, double fMaxX, double fMaxY);
     double* getNewYValues();

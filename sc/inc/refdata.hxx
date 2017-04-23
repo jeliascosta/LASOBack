@@ -51,7 +51,7 @@ private:
 
 public:
     /// No default ctor, because used in ScRawToken union, set InitFlags!
-    void InitFlags() { mnFlagValue = 0; }    ///< all FALSE
+    inline  void InitFlags() { mnFlagValue = 0; }    ///< all FALSE
     /// InitAddress: InitFlags and set address
     void InitAddress( const ScAddress& rAdr );
     void InitAddress( SCCOL nCol, SCROW nRow, SCTAB nTab );
@@ -121,19 +121,19 @@ struct ScComplexRefData
     ScSingleRefData Ref1;
     ScSingleRefData Ref2;
 
-    void InitFlags()
+    inline void InitFlags()
         { Ref1.InitFlags(); Ref2.InitFlags(); }
-    void InitRange( const ScRange& rRange )
+    inline void InitRange( const ScRange& rRange )
         {
             Ref1.InitAddress( rRange.aStart );
             Ref2.InitAddress( rRange.aEnd );
         }
-    void InitRangeRel( const ScRange& rRange, const ScAddress& rPos )
+    inline void InitRangeRel( const ScRange& rRange, const ScAddress& rPos )
         {
             Ref1.InitAddressRel( rRange.aStart, rPos );
             Ref2.InitAddressRel( rRange.aEnd, rPos );
         }
-    void InitRange( SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
+    inline void InitRange( SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
                             SCCOL nCol2, SCROW nRow2, SCTAB nTab2 )
         {
             Ref1.InitAddress( nCol1, nRow1, nTab1 );
@@ -150,14 +150,14 @@ struct ScComplexRefData
     bool ValidExternal() const;
 
     /** Whether this references entire columns, A:A */
-    bool IsEntireCol() const
+    inline bool IsEntireCol() const
     {
         // Both row anchors must be absolute.
         return Ref1.Row() == 0 && Ref2.Row() == MAXROW && !Ref1.IsRowRel() && !Ref2.IsRowRel();
     }
 
     /** Whether this references entire rows, 1:1 */
-    bool IsEntireRow() const
+    inline bool IsEntireRow() const
     {
         // Both column anchors must be absolute.
         return Ref1.Col() == 0 && Ref2.Col() == MAXCOL && !Ref1.IsColRel() && !Ref2.IsColRel();
@@ -172,7 +172,7 @@ struct ScComplexRefData
     /** Adjust ordering (front-top-left/rear-bottom-right) to a new position. */
     void PutInOrder( const ScAddress& rPos );
 
-    bool operator==( const ScComplexRefData& r ) const
+    inline bool operator==( const ScComplexRefData& r ) const
         { return Ref1 == r.Ref1 && Ref2 == r.Ref2; }
     /** Enlarge range if reference passed is not within existing range.
         ScAddress position is used to calculate absolute references from

@@ -19,8 +19,11 @@ $(call gb_ExternalProject_get_state_target,jfreereport_sac,build) :
 			-q \
 			-f build.xml \
 			-Dbuild.label="build-$(LIBO_VERSION_MAJOR).$(LIBO_VERSION_MINOR).$(LIBO_VERSION_MICRO).$(LIBO_VERSION_PATCH)" \
-			-Dant.build.javac.source=$(JAVA_SOURCE_VER) \
-			-Dant.build.javac.target=$(JAVA_TARGET_VER) \
+			$(if $(filter yes,$(JAVACISGCJ))\
+				,-Dbuild.compiler=gcj \
+				,-Dant.build.javac.source=$(JAVA_SOURCE_VER) \
+				 -Dant.build.javac.target=$(JAVA_TARGET_VER) \
+			) \
 			-Dantcontrib.available="true" \
 			$(if $(debug),-Dbuild.debug="on") all \
 	)

@@ -106,13 +106,13 @@ namespace sdr
             // safe to assume 100th mm as target.
             Size aPrefSize(GetGrafObject().GetGrafPrefSize());
 
-            if(MapUnit::MapPixel == GetGrafObject().GetGrafPrefMapMode().GetMapUnit())
+            if(MAP_PIXEL == GetGrafObject().GetGrafPrefMapMode().GetMapUnit())
             {
-                aPrefSize = Application::GetDefaultDevice()->PixelToLogic(aPrefSize, MapUnit::Map100thMM);
+                aPrefSize = Application::GetDefaultDevice()->PixelToLogic(aPrefSize, MAP_100TH_MM);
             }
             else
             {
-                aPrefSize = OutputDevice::LogicToLogic(aPrefSize, GetGrafObject().GetGrafPrefMapMode(), MapUnit::Map100thMM);
+                aPrefSize = OutputDevice::LogicToLogic(aPrefSize, GetGrafObject().GetGrafPrefMapMode(), MAP_100TH_MM);
             }
 
             // decompose object matrix to get single values
@@ -198,13 +198,13 @@ namespace sdr
             {
                 Size aPrefSize(aDraftBitmap.GetPrefSize());
 
-                if(MapUnit::MapPixel == aDraftBitmap.GetPrefMapMode().GetMapUnit())
+                if(MAP_PIXEL == aDraftBitmap.GetPrefMapMode().GetMapUnit())
                 {
-                    aPrefSize = Application::GetDefaultDevice()->PixelToLogic(aDraftBitmap.GetSizePixel(), MapUnit::Map100thMM);
+                    aPrefSize = Application::GetDefaultDevice()->PixelToLogic(aDraftBitmap.GetSizePixel(), MAP_100TH_MM);
                 }
                 else
                 {
-                    aPrefSize = OutputDevice::LogicToLogic(aPrefSize, aDraftBitmap.GetPrefMapMode(), MapUnit::Map100thMM);
+                    aPrefSize = OutputDevice::LogicToLogic(aPrefSize, aDraftBitmap.GetPrefMapMode(), MAP_100TH_MM);
                 }
 
                 const double fBitmapScaling(2.0);
@@ -268,7 +268,7 @@ namespace sdr
                         aScale, fShearX, fRotate, aTranslate));
 
                     // directly create temp SdrBlockTextPrimitive2D
-                    rtl::Reference< drawinglayer::primitive2d::SdrBlockTextPrimitive2D > xBlockTextPrimitive(new drawinglayer::primitive2d::SdrBlockTextPrimitive2D(
+                    css::uno::Reference< drawinglayer::primitive2d::SdrBlockTextPrimitive2D > xBlockTextPrimitive(new drawinglayer::primitive2d::SdrBlockTextPrimitive2D(
                         pSdrText,
                         *pOPO,
                         aTextRangeTransform,
@@ -283,7 +283,9 @@ namespace sdr
                     // decompose immediately with neutral ViewInformation. This will
                     // layout the text to more simple TextPrimitives from drawinglayer
                     const drawinglayer::geometry::ViewInformation2D aViewInformation2D;
-                    xBlockTextPrimitive->get2DDecomposition(xRetval, aViewInformation2D);
+
+                    drawinglayer::primitive2d::Primitive2DContainer aDecomposition(xBlockTextPrimitive->get2DDecomposition(aViewInformation2D));
+                    xRetval.insert(xRetval.end(), aDecomposition.begin(), aDecomposition.end());
                 }
             }
 
@@ -320,7 +322,7 @@ namespace sdr
 
             // take unrotated snap rect for position and size. Directly use model data, not getBoundRect() or getSnapRect()
             // which will use the primitive data we just create in the near future
-            tools::Rectangle rRectangle = GetGrafObject().GetGeoRect();
+            Rectangle rRectangle = GetGrafObject().GetGeoRect();
             // Hack for calc, transform position of object according
             // to current zoom so as objects relative position to grid
             // appears stable
@@ -424,7 +426,7 @@ namespace sdr
                 return true;
 
             // draft when no graphic
-            if(GraphicType::NONE == rGraphicObject.GetType() || GraphicType::Default == rGraphicObject.GetType())
+            if(GRAPHIC_NONE == rGraphicObject.GetType() || GRAPHIC_DEFAULT == rGraphicObject.GetType())
                return true;
 
             return false;

@@ -34,7 +34,7 @@ namespace oox { namespace ppt {
             const css::uno::Reference< css::xml::sax::XFastAttributeList >& xAttribs,
             TimeAnimationValueList & aTavList );
 
-        virtual ~TimeAnimValueListContext( ) override;
+        virtual ~TimeAnimValueListContext( );
 
         virtual void onEndElement() override;
 

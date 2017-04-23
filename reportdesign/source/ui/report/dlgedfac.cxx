@@ -43,26 +43,25 @@ DlgEdFactory::~DlgEdFactory()
 }
 
 
-IMPL_STATIC_LINK(
-    DlgEdFactory, MakeObject, SdrObjCreatorParams, aParams, SdrObject* )
+IMPL_STATIC_LINK_TYPED(
+    DlgEdFactory, MakeObject, SdrObjFactory *, pObjFactory, void )
 {
-    SdrObject* pNewObj = nullptr;
-    if ( aParams.nInventor == SdrInventor::ReportDesign )
+    if ( pObjFactory->nInventor == ReportInventor )
     {
-        switch( aParams.nObjIdentifier )
+        switch( pObjFactory->nIdentifier )
         {
             case OBJ_DLG_FIXEDTEXT:
-                    pNewObj = new OUnoObject( SERVICE_FIXEDTEXT
+                    pObjFactory->pNewObj = new OUnoObject( SERVICE_FIXEDTEXT
                                                         ,OUString("com.sun.star.form.component.FixedText")
                                                         ,OBJ_DLG_FIXEDTEXT);
                     break;
             case OBJ_DLG_IMAGECONTROL:
-                    pNewObj = new OUnoObject( SERVICE_IMAGECONTROL
+                    pObjFactory->pNewObj = new OUnoObject( SERVICE_IMAGECONTROL
                                                         ,OUString("com.sun.star.form.component.DatabaseImageControl")
                                                         ,OBJ_DLG_IMAGECONTROL);
                     break;
             case OBJ_DLG_FORMATTEDFIELD:
-                    pNewObj = new OUnoObject( SERVICE_FORMATTEDFIELD
+                    pObjFactory->pNewObj = new OUnoObject( SERVICE_FORMATTEDFIELD
                                                         ,OUString("com.sun.star.form.component.FormattedField")
                                                         ,OBJ_DLG_FORMATTEDFIELD);
                     break;
@@ -71,9 +70,9 @@ IMPL_STATIC_LINK(
                 {
                     OUnoObject* pObj = new OUnoObject( SERVICE_FIXEDLINE
                                                         ,OUString("com.sun.star.awt.UnoControlFixedLineModel")
-                                                        ,aParams.nObjIdentifier);
-                    pNewObj = pObj;
-                    if ( aParams.nObjIdentifier == OBJ_DLG_HFIXEDLINE )
+                                                        ,pObjFactory->nIdentifier);
+                    pObjFactory->pNewObj = pObj;
+                    if ( pObjFactory->nIdentifier == OBJ_DLG_HFIXEDLINE )
                     {
                         uno::Reference<beans::XPropertySet> xProp = pObj->getAwtComponent();
                         xProp->setPropertyValue( PROPERTY_ORIENTATION, uno::makeAny(sal_Int32(0)) );
@@ -81,20 +80,19 @@ IMPL_STATIC_LINK(
                 }
                 break;
             case OBJ_CUSTOMSHAPE:
-                pNewObj = new OCustomShape(SERVICE_SHAPE);
+                pObjFactory->pNewObj = new OCustomShape(SERVICE_SHAPE);
                 break;
             case OBJ_DLG_SUBREPORT:
-                pNewObj = new OOle2Obj(SERVICE_REPORTDEFINITION,OBJ_DLG_SUBREPORT);
+                pObjFactory->pNewObj = new OOle2Obj(SERVICE_REPORTDEFINITION,OBJ_DLG_SUBREPORT);
                 break;
             case OBJ_OLE2:
-                pNewObj = new OOle2Obj(OUString("com.sun.star.chart2.ChartDocument"),OBJ_OLE2);
+                pObjFactory->pNewObj = new OOle2Obj(OUString("com.sun.star.chart2.ChartDocument"),OBJ_OLE2);
                 break;
             default:
                 OSL_FAIL("Unknown object id");
                 break;
         }
     }
-    return pNewObj;
 }
 
 }

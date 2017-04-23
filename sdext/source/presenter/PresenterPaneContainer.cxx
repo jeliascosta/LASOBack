@@ -70,7 +70,7 @@ void PresenterPaneContainer::PreparePane (
     if (pPane.get() == nullptr)
     {
         // No entry found for the given pane id.  Create a new one.
-        SharedPaneDescriptor pDescriptor (new PaneDescriptor);
+        SharedPaneDescriptor pDescriptor (new PaneDescriptor());
         pDescriptor->mxPaneId = rxPaneId;
         pDescriptor->msViewURL = rsViewURL;
         pDescriptor->mxPane = nullptr;
@@ -95,6 +95,7 @@ void PresenterPaneContainer::PreparePane (
         pDescriptor->maSpriteProvider = PaneDescriptor::SpriteProvider();
         pDescriptor->mbIsSprite = false;
         pDescriptor->maCalloutAnchorLocation = awt::Point(-1,-1);
+        pDescriptor->mbHasCalloutAnchor = false;
 
         maPanes.push_back(pDescriptor);
     }
@@ -133,6 +134,11 @@ PresenterPaneContainer::SharedPaneDescriptor
             pDescriptor->mxPaneId = xPaneId;
             pDescriptor->mxPane = rxPane;
             pDescriptor->mxPane->SetTitle(pDescriptor->msTitle);
+
+            // When there is a call out anchor location set then tell the
+            // window about it.
+            if (pDescriptor->mbHasCalloutAnchor)
+                pDescriptor->mxPane->SetCalloutAnchor(pDescriptor->maCalloutAnchorLocation);
 
             if (xWindow.is())
                 xWindow->addEventListener(this);
@@ -355,6 +361,7 @@ void PresenterPaneContainer::ToTop (const SharedPaneDescriptor& rpDescriptor)
 
 void SAL_CALL PresenterPaneContainer::disposing (
     const css::lang::EventObject& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     SharedPaneDescriptor pDescriptor (
         FindContentWindow(Reference<awt::XWindow>(rEvent.Source, UNO_QUERY)));

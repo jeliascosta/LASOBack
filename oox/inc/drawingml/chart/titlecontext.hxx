@@ -35,7 +35,7 @@ class TextContext : public ContextBase< TextModel >
 {
 public:
     explicit            TextContext(  ::oox::core::ContextHandler2Helper& rParent, TextModel& rModel );
-    virtual             ~TextContext() override;
+    virtual             ~TextContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
     virtual void        onCharacters( const OUString& rChars ) override;
@@ -50,7 +50,7 @@ class TitleContext : public ContextBase< TitleModel >
 {
 public:
     explicit            TitleContext( ::oox::core::ContextHandler2Helper& rParent, TitleModel& rModel );
-    virtual             ~TitleContext() override;
+    virtual             ~TitleContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -64,7 +64,7 @@ class LegendContext : public ContextBase< LegendModel >
 {
 public:
     explicit            LegendContext( ::oox::core::ContextHandler2Helper& rParent, LegendModel& rModel );
-    virtual             ~LegendContext() override;
+    virtual             ~LegendContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };

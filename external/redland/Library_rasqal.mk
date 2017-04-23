@@ -18,7 +18,6 @@ $(eval $(call gb_Library_use_external,rasqal,raptor_headers))
 $(eval $(call gb_Library_use_libraries,rasqal,raptor2))
 
 $(eval $(call gb_Library_add_defs,rasqal,\
-	-DSV_CONFIG \
 	-DRASQAL_INTERNAL \
 	-DWIN32 \
 	-DNDEBUG \
@@ -30,15 +29,12 @@ $(eval $(call gb_Library_add_defs,rasqal,\
 
 $(eval $(call gb_Library_set_include,rasqal,\
 	-I$(WORKDIR)/UnpackedTarball/rasqal/libmtwist \
-	-I$(WORKDIR)/UnpackedTarball/rasqal/libsv \
-	-I$(WORKDIR)/UnpackedTarball/rasqal/src \
 	$$(INCLUDE) \
 ))
 
 $(eval $(call gb_Library_add_generated_cobjects,rasqal,\
 	UnpackedTarball/rasqal/libmtwist/mt \
 	UnpackedTarball/rasqal/libmtwist/seed \
-	UnpackedTarball/rasqal/libsv/sv \
 	UnpackedTarball/rasqal/src/rasqal_algebra \
 	UnpackedTarball/rasqal/src/rasqal_bindings \
 	UnpackedTarball/rasqal/src/rasqal_data_graph \
@@ -70,7 +66,6 @@ $(eval $(call gb_Library_add_generated_cobjects,rasqal,\
 	UnpackedTarball/rasqal/src/rasqal_iostream \
 	UnpackedTarball/rasqal/src/rasqal_literal \
 	UnpackedTarball/rasqal/src/rasqal_map \
-	UnpackedTarball/rasqal/src/rasqal_ntriples \
 	UnpackedTarball/rasqal/src/rasqal_prefix \
 	UnpackedTarball/rasqal/src/rasqal_projection \
 	UnpackedTarball/rasqal/src/rasqal_query \
@@ -81,13 +76,11 @@ $(eval $(call gb_Library_add_generated_cobjects,rasqal,\
 	UnpackedTarball/rasqal/src/rasqal_raptor \
 	UnpackedTarball/rasqal/src/rasqal_regex \
 	UnpackedTarball/rasqal/src/rasqal_result_formats \
-	UnpackedTarball/rasqal/src/rasqal_results_compare \
 	UnpackedTarball/rasqal/src/rasqal_row \
 	UnpackedTarball/rasqal/src/rasqal_row_compatible \
 	UnpackedTarball/rasqal/src/rasqal_rowsource \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_aggregation \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_assignment \
-	UnpackedTarball/rasqal/src/rasqal_rowsource_bindings \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_distinct \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_empty \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_filter \
@@ -97,14 +90,12 @@ $(eval $(call gb_Library_add_generated_cobjects,rasqal,\
 	UnpackedTarball/rasqal/src/rasqal_rowsource_join \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_project \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_rowsequence \
-	UnpackedTarball/rasqal/src/rasqal_rowsource_service \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_slice \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_sort \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_triples \
 	UnpackedTarball/rasqal/src/rasqal_rowsource_union \
 	UnpackedTarball/rasqal/src/rasqal_service \
 	UnpackedTarball/rasqal/src/rasqal_solution_modifier \
-	UnpackedTarball/rasqal/src/rasqal_sort \
 	UnpackedTarball/rasqal/src/rasqal_triple \
 	UnpackedTarball/rasqal/src/rasqal_triples_source \
 	UnpackedTarball/rasqal/src/rasqal_update \

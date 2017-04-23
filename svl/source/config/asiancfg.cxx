@@ -87,15 +87,15 @@ void SvxAsianConfig::SetKerningWesternTextOnly(bool value) {
         value, impl_->batch);
 }
 
-CharCompressType SvxAsianConfig::GetCharDistanceCompression() const {
-    return (CharCompressType)
+sal_Int16 SvxAsianConfig::GetCharDistanceCompression() const {
+    return
         officecfg::Office::Common::AsianLayout::CompressCharacterDistance::get(
             impl_->context);
 }
 
-void SvxAsianConfig::SetCharDistanceCompression(CharCompressType value) {
+void SvxAsianConfig::SetCharDistanceCompression(sal_Int16 value) {
     officecfg::Office::Common::AsianLayout::CompressCharacterDistance::set(
-        (sal_uInt16)value, impl_->batch);
+        value, impl_->batch);
 }
 
 css::uno::Sequence< css::lang::Locale > SvxAsianConfig::GetStartEndCharLocales()

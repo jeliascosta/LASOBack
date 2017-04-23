@@ -38,22 +38,30 @@ class DateScaling :
 {
 public:
     DateScaling( const Date& rNullDate, sal_Int32 nTimeUnit, bool bShifted );
-    virtual ~DateScaling() override;
+    virtual ~DateScaling();
 
     /// declare XServiceInfo methods
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XScaling ____
-    virtual double SAL_CALL doScaling( double value ) override;
+    virtual double SAL_CALL doScaling( double value )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<
         css::chart2::XScaling > SAL_CALL
-        getInverseScaling() override;
+        getInverseScaling() throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XServiceName ____
-    virtual OUString SAL_CALL getServiceName() override;
+    virtual OUString SAL_CALL getServiceName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     const Date m_aNullDate;
@@ -70,21 +78,29 @@ class InverseDateScaling :
 {
 public:
     InverseDateScaling( const Date& rNullDate, sal_Int32 nTimeUnit, bool bShifted );
-    virtual ~InverseDateScaling() override;
+    virtual ~InverseDateScaling();
 
     /// declare XServiceInfo methods
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XScaling ____
-    virtual double SAL_CALL doScaling( double value ) override;
+    virtual double SAL_CALL doScaling( double value )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::chart2::XScaling > SAL_CALL
-        getInverseScaling() override;
+        getInverseScaling() throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XServiceName ____
-    virtual OUString SAL_CALL getServiceName() override;
+    virtual OUString SAL_CALL getServiceName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     const Date m_aNullDate;

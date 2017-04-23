@@ -126,8 +126,8 @@ class SvxBoundArgs
         { if( nDiff ) NoteFarPoint_( nPx, nPyDiff, nDiff ); }
     long CalcMax( const Point& rPt1, const Point& rPt2, long nRange, long nFar );
     void CheckCut( const Point& rLst, const Point& rNxt );
-    long A( const Point& rP ) const { return bRotate ? rP.Y() : rP.X(); }
-    long B( const Point& rP ) const { return bRotate ? rP.X() : rP.Y(); }
+    inline long A( const Point& rP ) const { return bRotate ? rP.Y() : rP.X(); }
+    inline long B( const Point& rP ) const { return bRotate ? rP.X() : rP.Y(); }
 public:
     SvxBoundArgs( TextRanger* pRanger, LongDqPtr pLong, const Range& rRange );
     void NotePoint( const long nA ) { NoteMargin( nA - nStart, nA + nEnd ); }
@@ -139,6 +139,8 @@ public:
     void Concat( const tools::PolyPolygon* pPoly );
     // inlines
     void NoteLast() { if( bMultiple ) NoteRange( nAct == nFirst ); }
+    void SetClosed( const bool bNew ){ bClosed = bNew; }
+    bool IsClosed() const { return bClosed; }
     void SetConcat( const bool bNew ){ bConcat = bNew; }
     bool IsConcat() const { return bConcat; }
 };
@@ -309,7 +311,7 @@ void SvxBoundArgs::Calc( const tools::PolyPolygon& rPoly )
         if( nCount )
         {
             const Point& rNull = rPol[ 0 ];
-            bClosed = IsConcat() || ( rNull == rPol[ nCount - 1 ] );
+            SetClosed( IsConcat() || ( rNull == rPol[ nCount - 1 ] ) );
             nLast = Area( rNull );
             if( nLast & 12 )
             {
@@ -391,7 +393,7 @@ void SvxBoundArgs::Calc( const tools::PolyPolygon& rPoly )
                             NoteFarPoint( A(rNext), B(rNext)-nUpper, nUpDiff );
                     }
                     nLast = nNext;
-                    if( ++nIdx == nCount && !bClosed )
+                    if( ++nIdx == nCount && !IsClosed() )
                     {
                         if( !( nNext & 12 ) )
                             NoteLast();
@@ -491,17 +493,17 @@ void SvxBoundArgs::Concat( const tools::PolyPolygon* pPoly )
     SetConcat( true );
     DBG_ASSERT( pPoly, "Nothing to do?" );
     LongDqPtr pOld = pLongArr;
-    pLongArr = new std::deque<long>;
+    pLongArr = new std::deque<long>();
     aBoolArr.clear();
     bInner = false;
     Calc( *pPoly ); // Note that this updates pLongArr, which is why we swapped it out earlier.
-    std::deque<long>::size_type nCount = pLongArr->size();
-    std::deque<long>::size_type nIdx = 0;
-    std::deque<long>::size_type i = 0;
+    sal_uInt16 nCount = pLongArr->size();
+    sal_uInt16 nIdx = 0;
+    sal_uInt16 i = 0;
     bool bSubtract = pTextRanger->IsInner();
     while( i < nCount )
     {
-        std::deque<long>::size_type nOldCount = pOld->size();
+        sal_uLong nOldCount = pOld->size();
         if( nIdx == nOldCount )
         {   // Reached the end of the old Array...
             if( !bSubtract )
@@ -510,7 +512,7 @@ void SvxBoundArgs::Concat( const tools::PolyPolygon* pPoly )
         }
         long nLeft = (*pLongArr)[ i++ ];
         long nRight = (*pLongArr)[ i++ ];
-        std::deque<long>::size_type nLeftPos = nIdx + 1;
+        sal_uInt16 nLeftPos = nIdx + 1;
         while( nLeftPos < nOldCount && nLeft > (*pOld)[ nLeftPos ] )
             nLeftPos += 2;
         if( nLeftPos >= nOldCount )
@@ -519,7 +521,7 @@ void SvxBoundArgs::Concat( const tools::PolyPolygon* pPoly )
                 pOld->insert( pOld->begin() + nOldCount, pLongArr->begin() + i - 2, pLongArr->end() );
             break;
         }
-        std::deque<long>::size_type nRightPos = nLeftPos - 1;
+        sal_uInt16 nRightPos = nLeftPos - 1;
         while( nRightPos < nOldCount && nRight >= (*pOld)[ nRightPos ] )
             nRightPos += 2;
         if( nRightPos < nLeftPos )
@@ -654,10 +656,10 @@ LongDqPtr TextRanger::GetTextRanges( const Range& rRange )
     return &(mRangeCache.back().results);
 }
 
-const tools::Rectangle& TextRanger::GetBoundRect_()
+const Rectangle& TextRanger::GetBoundRect_()
 {
     DBG_ASSERT( nullptr == pBound, "Don't call twice." );
-    pBound = new tools::Rectangle( mpPolyPolygon->GetBoundRect() );
+    pBound = new Rectangle( mpPolyPolygon->GetBoundRect() );
     return *pBound;
 }
 

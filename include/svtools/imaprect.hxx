@@ -27,9 +27,9 @@ class Fraction;
 
 class SVT_DLLPUBLIC IMapRectangleObject : public IMapObject
 {
-    tools::Rectangle           aRect;
+    Rectangle           aRect;
 
-    SVT_DLLPRIVATE void             ImpConstruct( const tools::Rectangle& rRect, bool bPixel );
+    SVT_DLLPRIVATE void             ImpConstruct( const Rectangle& rRect, bool bPixel );
 
 protected:
 
@@ -40,7 +40,7 @@ protected:
 public:
 
                         IMapRectangleObject() {};
-                        IMapRectangleObject( const tools::Rectangle& rRect,
+                        IMapRectangleObject( const Rectangle& rRect,
                                              const OUString& rURL,
                                              const OUString& rAltText,
                                              const OUString& rDesc,
@@ -48,11 +48,12 @@ public:
                                              const OUString& rName,
                                              bool bActive = true,
                                              bool bPixelCoords = true );
+    virtual             ~IMapRectangleObject() {};
 
     virtual sal_uInt16  GetType() const override;
     virtual bool        IsHit( const Point& rPoint ) const override;
 
-    tools::Rectangle           GetRectangle( bool bPixelCoords = true ) const;
+    Rectangle           GetRectangle( bool bPixelCoords = true ) const;
 
     void                Scale( const Fraction& rFractX, const Fraction& rFracY );
 

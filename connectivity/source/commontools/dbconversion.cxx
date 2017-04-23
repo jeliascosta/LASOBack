@@ -24,12 +24,13 @@
 #include <com/sun/star/util/Date.hpp>
 #include <com/sun/star/util/Time.hpp>
 #include <com/sun/star/util/DateTime.hpp>
-#include <rtl/character.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <rtl/math.hxx>
 #include <unotools/datetime.hxx>
 #include <sstream>
 #include <iomanip>
+
+#define MAX_DAYS    3636532
 
 namespace
 {
@@ -57,7 +58,7 @@ namespace dbtools
     using namespace ::com::sun::star::beans;
 
 
-    css::util::Date const & DBTypeConversion::getStandardDate()
+    css::util::Date DBTypeConversion::getStandardDate()
     {
         static css::util::Date STANDARD_DB_DATE(1,1,1900);
         return STANDARD_DB_DATE;
@@ -269,8 +270,13 @@ namespace dbtools
         sal_Int32   nTempDays = implRelativeToAbsoluteNull( _rDate );
 
         nTempDays += nDays;
-        // TODO: can we remove that check? Would allow dates before 1900.
-        if ( nTempDays <= 0 )
+        if ( nTempDays > MAX_DAYS )
+        {
+            _rDate.Day      = 31;
+            _rDate.Month    = 12;
+            _rDate.Year     = 9999;
+        }
+        else if ( nTempDays <= 0 )
         {
             _rDate.Day      = 1;
             _rDate.Month    = 1;
@@ -285,8 +291,13 @@ namespace dbtools
         sal_Int32   nTempDays = implRelativeToAbsoluteNull( _rDate );
 
         nTempDays -= nDays;
-        // TODO: can we remove that check? Would allow dates before 1900.
-        if ( nTempDays <= 0 )
+        if ( nTempDays > MAX_DAYS )
+        {
+            _rDate.Day      = 31;
+            _rDate.Month    = 12;
+            _rDate.Year     = 9999;
+        }
+        else if ( nTempDays <= 0 )
         {
             _rDate.Day      = 1;
             _rDate.Month    = 1;
@@ -416,7 +427,7 @@ namespace dbtools
         {
             const sal_Unicode *p = _sSQLString.getStr() + nSeparation;
             const sal_Unicode *const begin = p;
-            while (rtl::isAsciiWhiteSpace(*p)) { ++p; }
+            while (isspace(*p)) { ++p; }
             nSeparation += p - begin;
             aTime = toTime( _sSQLString.copy( nSeparation ) );
         }

@@ -47,19 +47,23 @@ private:
     VclPtr<PushButton> maButton;
 
     OUString        maButtonText;
+    bool            mbOpenDlg;
 
     FileControlMode_Internal    mnInternalFlags;
+
+private:
+    SVT_DLLPRIVATE void     ImplBrowseFile( );
 
 protected:
     SVT_DLLPRIVATE void     Resize() override;
     SVT_DLLPRIVATE void     GetFocus() override;
     SVT_DLLPRIVATE void     StateChanged( StateChangedType nType ) override;
     SVT_DLLPRIVATE WinBits  ImplInitStyle( WinBits nStyle );
-    DECL_DLLPRIVATE_LINK( ButtonHdl, Button*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( ButtonHdl, Button*, void );
 
 public:
                     FileControl( vcl::Window* pParent, WinBits nStyle );
-    virtual         ~FileControl() override;
+    virtual         ~FileControl();
     virtual void    dispose() override;
 
     Edit&           GetEdit() { return *maEdit.get(); }

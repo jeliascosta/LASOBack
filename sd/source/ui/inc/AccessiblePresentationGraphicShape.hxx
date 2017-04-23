@@ -35,26 +35,29 @@ public:
     AccessiblePresentationGraphicShape (
         const AccessibleShapeInfo& rShapeInfo,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
-    virtual ~AccessiblePresentationGraphicShape() override;
+    virtual ~AccessiblePresentationGraphicShape();
 
     //=====  XServiceInfo  ====================================================
 
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  internal  ========================================================
 
     /// Create a name string that contains the accessible name.
     virtual OUString
-        CreateAccessibleBaseName () override;
+        CreateAccessibleBaseName ()
+        throw (css::uno::RuntimeException) override;
 
     /// Create a description string that contains the accessible description.
     virtual OUString
-        CreateAccessibleDescription () override;
+        CreateAccessibleDescription ()
+        throw (css::uno::RuntimeException, std::exception) override;
     /// Return this object's role.
-    virtual sal_Int16 SAL_CALL getAccessibleRole () override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole () throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } // end of namespace accessibility

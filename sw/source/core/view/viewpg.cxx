@@ -45,6 +45,7 @@
 
 using namespace ::com::sun::star;
 
+// OD 12.12.2002 #103492#
 SwPagePreviewLayout* SwViewShell::PagePreviewLayout()
 {
     return Imp()->PagePreviewLayout();
@@ -55,7 +56,10 @@ void SwViewShell::ShowPreviewSelection( sal_uInt16 nSelPage )
     Imp()->InvalidateAccessiblePreviewSelection( nSelPage );
 }
 
-// adjust view options for page preview
+/** adjust view options for page preview
+
+    OD 09.01.2003 #i6467#
+*/
 void SwViewShell::AdjustOptionsForPagePreview(SwPrintData const& rPrintOptions)
 {
     if ( !IsPreview() )
@@ -70,7 +74,7 @@ void SwViewShell::AdjustOptionsForPagePreview(SwPrintData const& rPrintOptions)
 }
 
 /// print brochure
-// consider empty pages on calculation of the scaling
+// OD 05.05.2003 #i14016# - consider empty pages on calculation of the scaling
 // for a page to be printed.
 void SwViewShell::PrintProspect(
     OutputDevice *pOutDev,
@@ -102,7 +106,7 @@ void SwViewShell::PrintProspect(
 
     //!! applying view options and formatting the document should now only be done in getRendererCount!
 
-    MapMode aMapMode( MapUnit::MapTwip );
+    MapMode aMapMode( MAP_TWIP );
     Size aPrtSize( pPrinter->PixelToLogic( pPrinter->GetPaperSizePixel(), aMapMode ) );
 
     SwTwips nMaxRowSz, nMaxColSz;
@@ -118,7 +122,7 @@ void SwViewShell::PrintProspect(
         pNxtPage = sw_getPage(*aShell.GetLayout(), rPagesToPrint.second);
     }
 
-    // i#14016 consider empty pages on calculation
+    // OD 05.05.2003 #i14016# - consider empty pages on calculation
     // of page size, used for calculation of scaling.
     Size aSttPageSize;
     if ( pStPage )

@@ -71,11 +71,11 @@ XMLTextListBlockContext::XMLTextListBlockContext(
     // Inherit style name from parent list, as well as the flags whether
     // numbering must be restarted and formats have to be created.
     OUString sParentListStyleName;
-    if( mxParentListBlock.is() )
+    if( mxParentListBlock.Is() )
     {
         XMLTextListBlockContext *pParent =
-                                static_cast<XMLTextListBlockContext *>(mxParentListBlock.get());
-        msListStyleName = pParent->msListStyleName;
+                                static_cast<XMLTextListBlockContext *>(&mxParentListBlock);
+        msListStyleName = pParent->GetListStyleName();
         sParentListStyleName = msListStyleName;
         mxNumRules = pParent->GetNumRules();
         mnLevel = pParent->GetLevel() + 1;
@@ -149,7 +149,7 @@ XMLTextListBlockContext::XMLTextListBlockContext(
                 {
                     xNumRuleProps->getPropertyValue(s_PropNameDefaultListId)
                         >>= sListStyleDefaultListId;
-                    SAL_WARN_IF( sListStyleDefaultListId.isEmpty(), "xmloff",
+                    DBG_ASSERT( !sListStyleDefaultListId.isEmpty(),
                                 "no default list id found at numbering rules instance. Serious defect." );
                 }
             }
@@ -239,7 +239,7 @@ void XMLTextListBlockContext::EndElement()
     // Numbering has not to be restarted if it has been restarted within
     // a child list.
     XMLTextListBlockContext *pParent =
-                                static_cast<XMLTextListBlockContext *>(mxParentListBlock.get());
+                                static_cast<XMLTextListBlockContext *>(&mxParentListBlock);
     if( pParent )
     {
         pParent->mbRestartNumbering = mbRestartNumbering;

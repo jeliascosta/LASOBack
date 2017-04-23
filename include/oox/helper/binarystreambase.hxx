@@ -100,7 +100,7 @@ public:
         @param nAnchorPos
             Position in the stream the data blocks are aligned to.
      */
-    void                alignToBlock( sal_Int32 nBlockSize, sal_Int64 nAnchorPos );
+    void                alignToBlock( sal_Int32 nBlockSize, sal_Int64 nAnchorPos = 0 );
 
 protected:
     explicit            BinaryStreamBase( bool bSeekable ) : mbEof( false ), mbSeekable( bSeekable ) {}
@@ -123,7 +123,7 @@ private:
 class OOX_DLLPUBLIC BinaryXSeekableStream : public virtual BinaryStreamBase
 {
 public:
-    virtual             ~BinaryXSeekableStream() override;
+    virtual             ~BinaryXSeekableStream();
 
     /** Returns the size of the stream, if wrapped stream is seekable, otherwise -1. */
     virtual sal_Int64   size() const override;

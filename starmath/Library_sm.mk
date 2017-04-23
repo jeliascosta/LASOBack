@@ -73,7 +73,6 @@ $(eval $(call gb_Library_add_exception_objects,sm,\
         starmath/source/document \
         starmath/source/edit \
         starmath/source/format \
-        starmath/source/mathmlattr \
         starmath/source/mathmlexport \
         starmath/source/mathmlimport \
         starmath/source/mathtype \
@@ -89,7 +88,6 @@ $(eval $(call gb_Library_add_exception_objects,sm,\
         starmath/source/symbol \
         starmath/source/tmpdevice \
         starmath/source/typemap \
-        starmath/source/uiobject \
         starmath/source/unodoc \
         starmath/source/unofilter \
         starmath/source/unomodel \

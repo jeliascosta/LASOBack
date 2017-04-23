@@ -40,16 +40,7 @@ PyRef ustring2PyUnicode( const OUString & str )
     PyRef ret;
 #if Py_UNICODE_SIZE == 2
     // YD force conversion since python/2 uses wchar_t
-#ifdef MACOSX
-    // on Sierra, python 2.7 (builtin)
-    // no known conversion from 'const sal_Unicode *' (aka 'const char16_t *') to
-    // 'const Py_UNICODE *' (aka 'const unsigned short *')
-    // An explicit cast to sal_Unicode does not work
-    // Hack to avoid that error
-    ret = PyRef( PyUnicode_FromUnicode( (const unsigned short *)str.getStr(), str.getLength() ), SAL_NO_ACQUIRE );
-#else
-    ret = PyRef( PyUnicode_FromUnicode( SAL_W(str.getStr()), str.getLength() ), SAL_NO_ACQUIRE );
-#endif
+    ret = PyRef( PyUnicode_FromUnicode( (const Py_UNICODE*)str.getStr(), str.getLength() ), SAL_NO_ACQUIRE );
 #else
     OString sUtf8(OUStringToOString(str, RTL_TEXTENCODING_UTF8));
     ret = PyRef( PyUnicode_DecodeUTF8( sUtf8.getStr(), sUtf8.getLength(), nullptr) , SAL_NO_ACQUIRE );
@@ -69,15 +60,7 @@ OUString pyString2ustring( PyObject *pystr )
     if( PyUnicode_Check( pystr ) )
     {
 #if Py_UNICODE_SIZE == 2
-#ifdef MACOSX
-    // on Sierra, python 2.7 (builtin)
-    // no known conversion from 'Py_UNICODE *' (aka 'unsigned short *') to
-    // 'sal_Unicode' (aka 'char16_t') for 1st argument
-    // Hack to avoid that error
-    ret = OUString( (sal_Unicode *)PyUnicode_AS_UNICODE( pystr ) );
-#else
-    ret = OUString( SAL_U(PyUnicode_AS_UNICODE( pystr )) );
-#endif
+    ret = OUString( (sal_Unicode * ) PyUnicode_AS_UNICODE( pystr ) );
 #else
 #if PY_MAJOR_VERSION >= 3
     Py_ssize_t size(0);
@@ -103,11 +86,15 @@ OUString pyString2ustring( PyObject *pystr )
 }
 
 PyRef getObjectFromUnoModule( const Runtime &runtime, const char * func )
+    throw ( RuntimeException )
 {
     PyRef object(PyDict_GetItemString( runtime.getImpl()->cargo->getUnoModule().get(), func ) );
     if( !object.is() )
     {
-        throw RuntimeException("couldn't find core function " + OUString::createFromAscii(func));
+        OUStringBuffer buf;
+        buf.append( "couldn't find core function " );
+        buf.appendAscii( func );
+        throw RuntimeException(buf.makeStringAndClear());
     }
     return object;
 }

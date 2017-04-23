@@ -20,7 +20,7 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_UNOXWRAPPER_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_UNOXWRAPPER_H
 
-#include "Resource.h"       // main symbols
+#include "resource.h"       // main symbols
 
 #include <com/sun/star/accessibility/XAccessible.hpp>
 
@@ -38,19 +38,19 @@
  */
 class ATL_NO_VTABLE CUNOXWrapper : public IUNOXWrapper
 {
-protected:
-    css::accessibility::XAccessible* pUNOInterface;
-
 public:
-    CUNOXWrapper() : pUNOInterface(nullptr)
+    CUNOXWrapper()
     {   }
 
+public:
     // IUNOXWrapper
-    STDMETHOD(put_XInterface)(hyper pXInterface) override;
-    STDMETHOD(put_XSubInterface)(hyper) override;
+    STDMETHOD(put_XInterface)(hyper pXInterface);
+    STDMETHOD(put_XSubInterface)(hyper);
 
 protected:
     ~CUNOXWrapper() {}
+
+    css::accessibility::XAccessible* pUNOInterface;
 };
 
 #endif // INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_UNOXWRAPPER_H

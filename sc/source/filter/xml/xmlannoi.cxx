@@ -46,7 +46,7 @@ ScXMLAnnotationContext::ScXMLAnnotationContext( ScXMLImport& rImport,
                                       const uno::Reference<xml::sax::XAttributeList>& xAttrList,
                                       ScXMLAnnotationData& rAnnotationData,
                                       ScXMLTableRowCellContext* pTempCellContext) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     mrAnnotationData( rAnnotationData ),
     pCellContext(pTempCellContext),
     pShapeContext(nullptr)

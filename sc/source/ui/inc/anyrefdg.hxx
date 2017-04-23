@@ -69,7 +69,7 @@ class ScFormulaReferenceHelper
     bool                bHighlightRef;
     bool                bAccInserted;
 
-    DECL_LINK( AccelSelectHdl, Accelerator&, void );
+    DECL_LINK_TYPED( AccelSelectHdl, Accelerator&, void );
 
 public:
     ScFormulaReferenceHelper(IAnyRefDialog* _pDlg,SfxBindings* _pBindings);
@@ -84,11 +84,11 @@ public:
     void                ShowReference(const OUString& rStr);
     void                ReleaseFocus( formula::RefEdit* pEdit );
     void                HideReference( bool bDoneRefMode = true );
-    void                RefInputStart( formula::RefEdit* pEdit, formula::RefButton* pButton );
-    void                RefInputDone( bool bForced );
-    void                ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton );
+    void                RefInputStart( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr );
+    void                RefInputDone( bool bForced = false );
+    void                ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr );
 
-    void         SetWindow(vcl::Window* _pWindow) { m_pWindow = _pWindow; }
+    inline void         SetWindow(vcl::Window* _pWindow) { m_pWindow = _pWindow; }
     void                DoClose( sal_uInt16 nId );
     static void         SetDispatcherLock( bool bLock );
     static void         EnableSpreadsheets( bool bFlag = true );
@@ -108,6 +108,7 @@ class SC_DLLPUBLIC ScRefHandler :
     bool                 m_bInRefMode;
 
 public:
+    operator vcl::Window *(){ return m_rWindow.get(); }
     friend class        formula::RefButton;
     friend class        formula::RefEdit;
 
@@ -120,7 +121,7 @@ private:
     Idle                aIdle;
     OUString            aDocName;               // document on which the dialog was opened
 
-    DECL_LINK( UpdateFocusHdl, Timer*, void );
+    DECL_LINK_TYPED( UpdateFocusHdl, Idle*, void );
 
 protected:
     void                disposeRefHandler();
@@ -135,7 +136,7 @@ protected:
 
 public:
                         ScRefHandler( vcl::Window &rWindow, SfxBindings* pB, bool bBindRef );
-    virtual             ~ScRefHandler() override;
+    virtual             ~ScRefHandler();
 
     virtual void        SetReference( const ScRange& rRef, ScDocument* pDoc ) override = 0;
     virtual void        AddRefEntry() override;
@@ -147,7 +148,7 @@ public:
     virtual void        ShowReference(const OUString& rStr) override;
     virtual void        HideReference( bool bDoneRefMode = true ) override;
 
-    virtual void        ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton ) override;
+    virtual void        ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr ) override;
     virtual void        ReleaseFocus( formula::RefEdit* pEdit ) override;
 
     virtual void        ViewShellChanged() override;
@@ -175,12 +176,12 @@ private:
         TParentWindow* pParent, const OUString& rID, const OUString& rUIXMLDescription );
 
     template<class TParentWindow, class TResId, class TArg>
-    ScRefHdlrImplBase( TParentWindow* pParent, TResId nResId, const TArg &rArg, SfxBindings *pB );
+    ScRefHdlrImplBase( TParentWindow* pParent, TResId nResId, const TArg &rArg, SfxBindings *pB = nullptr );
 
     template<class TParentWindow, class TArg>
-    ScRefHdlrImplBase( TParentWindow* pParent, const OUString& rID, const OUString& rUIXMLDescription, const TArg &rArg, SfxBindings *pB );
+    ScRefHdlrImplBase( TParentWindow* pParent, const OUString& rID, const OUString& rUIXMLDescription, const TArg &rArg, SfxBindings *pB = nullptr );
 
-    virtual ~ScRefHdlrImplBase() override;
+    virtual ~ScRefHdlrImplBase();
 
     template<class, class, bool> friend struct ScRefHdlrImpl;
 };

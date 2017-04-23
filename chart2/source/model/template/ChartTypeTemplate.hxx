@@ -76,49 +76,58 @@ class ChartTypeTemplate : public ::cppu::WeakImplHelper<
 public:
     explicit ChartTypeTemplate( css::uno::Reference< css::uno::XComponentContext > const & xContext,
         const OUString & rServiceName );
-    virtual ~ChartTypeTemplate() override;
+    virtual ~ChartTypeTemplate();
 
 protected:
     // ____ XChartTypeTemplate ____
     virtual css::uno::Reference< css::chart2::XDiagram > SAL_CALL createDiagramByDataSource(
         const css::uno::Reference< css::chart2::data::XDataSource >& xDataSource,
-        const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& aArguments )
+        throw (css::uno::RuntimeException, std::exception) override;
     /// denotes if the chart needs categories at the first scale
-    virtual sal_Bool SAL_CALL supportsCategories() override;
+    virtual sal_Bool SAL_CALL supportsCategories()
+        throw (css::uno::RuntimeException, ::std::exception) override;
 
     virtual void SAL_CALL changeDiagram(
-        const css::uno::Reference< css::chart2::XDiagram >& xDiagram ) override;
+        const css::uno::Reference< css::chart2::XDiagram >& xDiagram )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL changeDiagramData(
         const css::uno::Reference< css::chart2::XDiagram >& xDiagram,
         const css::uno::Reference< css::chart2::data::XDataSource >& xDataSource,
-        const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& aArguments )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL matchesTemplate(
         const css::uno::Reference<
         css::chart2::XDiagram >& xDiagram,
-        sal_Bool bAdaptProperties ) override;
+        sal_Bool bAdaptProperties )
+        throw (css::uno::RuntimeException, std::exception) override;
     // still abstract: getChartTypeForNewSeries()
-    virtual css::uno::Reference< css::chart2::XDataInterpreter > SAL_CALL getDataInterpreter() override;
+    virtual css::uno::Reference< css::chart2::XDataInterpreter > SAL_CALL getDataInterpreter()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL applyStyle(
         const css::uno::Reference< css::chart2::XDataSeries >& xSeries,
         ::sal_Int32 nChartTypeIndex,
         ::sal_Int32 nSeriesIndex,
-        ::sal_Int32 nSeriesCount ) override;
+        ::sal_Int32 nSeriesCount )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL resetStyles(
-        const css::uno::Reference< css::chart2::XDiagram >& xDiagram ) override;
+        const css::uno::Reference< css::chart2::XDiagram >& xDiagram )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    /// @throws css::uno::RuntimeException
     void SAL_CALL applyStyles(
-        const css::uno::Reference< css::chart2::XDiagram >& xDiagram );
+        const css::uno::Reference< css::chart2::XDiagram >& xDiagram )
+        throw (css::uno::RuntimeException);
 
     // ____ XServiceName ____
-    virtual OUString SAL_CALL getServiceName() override;
+    virtual OUString SAL_CALL getServiceName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Methods to override for automatic creation
 
     /// returns 2 by default.  Supported are 2 and 3
     virtual sal_Int32 getDimension() const;
 
-    /** returns StackMode::NONE by default.  This is a global flag used for all
+    /** returns StackMode_NONE by default.  This is a global flag used for all
         series of a specific chart type.  If percent stacking is supported, the
         percent stacking mode is retrieved from the first chart type (index 0)
 

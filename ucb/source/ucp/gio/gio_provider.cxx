@@ -20,7 +20,6 @@
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/contenthelper.hxx>
 #include <com/sun/star/ucb/ContentCreationException.hpp>
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include "gio_provider.hxx"
 #include "gio_content.hxx"
 
@@ -31,6 +30,8 @@ namespace gio
 uno::Reference< css::ucb::XContent > SAL_CALL
 ContentProvider::queryContent(
             const uno::Reference< css::ucb::XContentIdentifier >& Identifier )
+    throw( css::ucb::IllegalIdentifierException,
+           uno::RuntimeException, std::exception )
 {
     SAL_INFO("ucb.ucp.gio", "QueryContent: " << Identifier->getContentIdentifier());
     osl::MutexGuard aGuard( m_aMutex );
@@ -79,6 +80,7 @@ void SAL_CALL ContentProvider::release()
 }
 
 css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -93,23 +95,9 @@ XTYPEPROVIDER_IMPL_3( ContentProvider,
                       lang::XServiceInfo,
                       css::ucb::XContentProvider );
 
-XSERVICEINFO_COMMOM_IMPL( ContentProvider,
-                          OUString( "com.sun.star.comp.GIOContentProvider" ) )
-/// @throws css::uno::Exception
-static css::uno::Reference< css::uno::XInterface > SAL_CALL
-ContentProvider_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
-{
-    css::lang::XServiceInfo* pX =
-        static_cast<css::lang::XServiceInfo*>(new ContentProvider( ucbhelper::getComponentContext(rSMgr) ));
-    return css::uno::Reference< css::uno::XInterface >::query( pX );
-}
-
-css::uno::Sequence< OUString >
-ContentProvider::getSupportedServiceNames_Static()
-{
-    css::uno::Sequence< OUString > aSNS { "com.sun.star.ucb.GIOContentProvider" };
-    return aSNS;
-}
+XSERVICEINFO_IMPL_1_CTX( ContentProvider,
+                     OUString( "com.sun.star.comp.GIOContentProvider" ),
+                     "com.sun.star.ucb.GIOContentProvider" );
 
 ONE_INSTANCE_SERVICE_FACTORY_IMPL( ContentProvider );
 

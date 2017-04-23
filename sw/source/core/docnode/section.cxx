@@ -62,6 +62,7 @@
 #include <swerror.h>
 #include <unosection.hxx>
 #include <calbck.hxx>
+#include <svl/smplhint.hxx>
 #include <algorithm>
 #include <ndsect.hxx>
 
@@ -71,8 +72,8 @@ class SwIntrnlSectRefLink : public SwBaseLink
 {
     SwSectionFormat& rSectFormat;
 public:
-    SwIntrnlSectRefLink( SwSectionFormat& rFormat, SfxLinkUpdateMode nUpdateType )
-        : SwBaseLink( nUpdateType, SotClipboardFormatId::RTF ),
+    SwIntrnlSectRefLink( SwSectionFormat& rFormat, SfxLinkUpdateMode nUpdateType, SotClipboardFormatId nFormat )
+        : SwBaseLink( nUpdateType, nFormat ),
         rSectFormat( rFormat )
     {}
 
@@ -84,7 +85,7 @@ public:
     virtual bool IsInRange( sal_uLong nSttNd, sal_uLong nEndNd, sal_Int32 nStt = 0,
                             sal_Int32 nEnd = -1 ) const override;
 
-    SwSectionNode* GetSectNode()
+    inline SwSectionNode* GetSectNode()
     {
         const SwNode* pSectNd( GetAnchor() );
         return const_cast<SwSectionNode*>( dynamic_cast<const SwSectionNode*>( pSectNd ) );
@@ -243,12 +244,12 @@ SwSection::~SwSection()
 
         if (CONTENT_SECTION != m_Data.GetType())
         {
-            pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink.get() );
+            pDoc->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink );
         }
 
-        if (m_RefObj.is())
+        if (m_RefObj.Is())
         {
-            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer( m_RefObj.get() );
+            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer( &m_RefObj );
         }
 
         // If the Section is the last Client in the Format we can delete it
@@ -261,7 +262,7 @@ SwSection::~SwSection()
             pDoc->DelSectionFormat( pFormat );
         }
     }
-    if (m_RefObj.is())
+    if (m_RefObj.Is())
     {
         m_RefObj->Closed();
     }
@@ -544,7 +545,7 @@ void SwSection::SetCondHidden(bool const bFlag)
 // Set/remove the linked FileName
 OUString SwSection::GetLinkFileName() const
 {
-    if (m_RefLink.is())
+    if (m_RefLink.Is())
     {
         OUString sTmp;
         switch (m_Data.GetType())
@@ -559,10 +560,10 @@ OUString SwSection::GetLinkFileName() const
                 OUString sFilter;
                 if (m_RefLink->GetLinkManager() &&
                     sfx2::LinkManager::GetDisplayNames(
-                        m_RefLink.get(), nullptr, &sTmp, &sRange, &sFilter ))
+                        m_RefLink, nullptr, &sTmp, &sRange, &sFilter ))
                 {
-                    sTmp += OUStringLiteral1(sfx2::cTokenSeparator) + sFilter
-                        + OUStringLiteral1(sfx2::cTokenSeparator) + sRange;
+                    sTmp += OUString(sfx2::cTokenSeparator) + sFilter
+                         +  OUString(sfx2::cTokenSeparator) + sRange;
                 }
                 else if( GetFormat() && !GetFormat()->GetSectionNode() )
                 {
@@ -582,7 +583,7 @@ OUString SwSection::GetLinkFileName() const
 
 void SwSection::SetLinkFileName(const OUString& rNew)
 {
-    if (m_RefLink.is())
+    if (m_RefLink.Is())
     {
         m_RefLink->SetLinkSourceName( rNew );
     }
@@ -882,6 +883,12 @@ static bool lcl_SectionCmpPos( const SwSection *pFirst, const SwSection *pSecond
                   pSSectFormat->GetContent(false).GetContentIdx()->GetIndex();
 }
 
+static bool lcl_SectionCmpNm( const SwSection *pFSect, const SwSection *pSSect)
+{
+    OSL_ENSURE( pFSect && pSSect, "Invalid Sections" );
+    return pFSect->GetSectionName() < pSSect->GetSectionName();
+}
+
 // get all Sections that have been derived from this one
 void SwSectionFormat::GetChildSections( SwSections& rArr,
                                         SectionSort eSort,
@@ -906,10 +913,14 @@ void SwSectionFormat::GetChildSections( SwSections& rArr,
         if( 1 < rArr.size() )
             switch( eSort )
             {
-            case SectionSort::Pos:
+            case SORTSECT_NAME:
+                std::sort( rArr.begin(), rArr.end(), lcl_SectionCmpNm );
+                break;
+
+            case SORTSECT_POS:
                 std::sort( rArr.begin(), rArr.end(), lcl_SectionCmpPos );
                 break;
-            case SectionSort::Not: break;
+            case SORTSECT_NOT: break;
             }
     }
 }
@@ -1069,7 +1080,7 @@ SwSectionFormat::MakeUnoObject()
 
 void SwSectionFormat::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwSectionFormat"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swSectionFormat"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetName().toUtf8().getStr()));
     GetAttrSet().dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
@@ -1077,7 +1088,7 @@ void SwSectionFormat::dumpAsXml(xmlTextWriterPtr pWriter) const
 
 void SwSectionFormats::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SwSectionFormats"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("swSectionFormats"));
     for (size_t i = 0; i < size(); ++i)
         GetFormat(i)->dumpAsXml(pWriter);
     xmlTextWriterEndElement(pWriter);
@@ -1234,7 +1245,6 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
         pRead = ReadAscii;
         break;
 
-    case SotClipboardFormatId::RICHTEXT:
     case SotClipboardFormatId::RTF:
         pRead = SwReaderWriter::GetRtfReader();
         break;
@@ -1250,7 +1260,7 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
             sfx2::LinkManager::GetDisplayNames( this, nullptr, &sFileName,
                                                     &sRange, &sFilter );
 
-            RedlineFlags eOldRedlineFlags = RedlineFlags::NONE;
+            RedlineMode_t eOldRedlineMode = nsRedlineMode_t::REDLINE_NONE;
             SfxObjectShellRef xDocSh;
             SfxObjectShellLock xLockRef;
             int nRet;
@@ -1266,9 +1276,9 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
                                     sFilter, 0, pDoc->GetDocShell() );
                 if( nRet )
                 {
-                    SwDoc* pSrcDoc = static_cast<SwDocShell*>( xDocSh.get() )->GetDoc();
-                    eOldRedlineFlags = pSrcDoc->getIDocumentRedlineAccess().GetRedlineFlags();
-                    pSrcDoc->getIDocumentRedlineAccess().SetRedlineFlags( RedlineFlags::ShowInsert );
+                    SwDoc* pSrcDoc = static_cast<SwDocShell*>(&xDocSh)->GetDoc();
+                    eOldRedlineMode = pSrcDoc->getIDocumentRedlineAccess().GetRedlineMode();
+                    pSrcDoc->getIDocumentRedlineAccess().SetRedlineMode( nsRedlineMode_t::REDLINE_SHOW_INSERT );
                 }
             }
 
@@ -1289,7 +1299,7 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
                                 static_cast<const SfxStringItem*>(pItem)->GetValue() );
                 }
 
-                SwDoc* pSrcDoc = static_cast<SwDocShell*>( xDocSh.get() )->GetDoc();
+                SwDoc* pSrcDoc = static_cast<SwDocShell*>(&xDocSh)->GetDoc();
 
                 if( !sRange.isEmpty() )
                 {
@@ -1299,7 +1309,7 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
                     {
                         tools::SvRef<SwServerObject> refObj( static_cast<SwServerObject*>(
                                         pDoc->getIDocumentLinksAdministration().CreateLinkSource( sRange )));
-                        if( refObj.is() )
+                        if( refObj.Is() )
                         {
                             bRecursion = refObj->IsLinkInServer( this ) ||
                                         ChkNoDataFlag();
@@ -1361,7 +1371,7 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
                     if( 2 < pSectNd->EndOfSectionIndex() - pSectNd->GetIndex() )
                     {
                         aSave = rInsPos;
-                        pPam->Move( fnMoveBackward, GoInNode );
+                        pPam->Move( fnMoveBackward, fnGoNode );
                         pPam->SetMark(); // Rewire both SwPositions
 
                         pDoc->CorrAbs( aSave, *pPam->GetPoint(), 0, true );
@@ -1375,13 +1385,13 @@ static void lcl_UpdateLinksInSect( SwBaseLink& rUpdLnk, SwSectionNode& rSectNd )
                 // Update all Links in this Section
                 lcl_UpdateLinksInSect( *this, *pSectNd );
             }
-            if( xDocSh.is() )
+            if( xDocSh.Is() )
             {
                 if( 2 == nRet )
                     xDocSh->DoClose();
-                else if( static_cast<SwDocShell*>( xDocSh.get() )->GetDoc() )
-                    static_cast<SwDocShell*>( xDocSh.get() )->GetDoc()->getIDocumentRedlineAccess().SetRedlineFlags(
-                                eOldRedlineFlags );
+                else if( static_cast<SwDocShell*>(&xDocSh)->GetDoc() )
+                    static_cast<SwDocShell*>(&xDocSh)->GetDoc()->getIDocumentRedlineAccess().SetRedlineMode(
+                                eOldRedlineMode );
             }
         }
         break;
@@ -1493,18 +1503,18 @@ void SwSection::CreateLink( LinkCreateType eCreateType )
 
     SfxLinkUpdateMode nUpdateType = SfxLinkUpdateMode::ALWAYS;
 
-    if (!m_RefLink.is())
+    if (!m_RefLink.Is())
     {
         // create BaseLink
-        m_RefLink = new SwIntrnlSectRefLink( *pFormat, nUpdateType );
+        m_RefLink = new SwIntrnlSectRefLink( *pFormat, nUpdateType, SotClipboardFormatId::RTF );
     }
     else
     {
-        pFormat->GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink.get() );
+        pFormat->GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink );
     }
 
     SwIntrnlSectRefLink *const pLnk =
-        static_cast<SwIntrnlSectRefLink*>( m_RefLink.get() );
+        static_cast<SwIntrnlSectRefLink*>(& m_RefLink);
 
     const OUString sCmd(SwSectionData::CollapseWhiteSpaces(m_Data.GetLinkFileName()));
     pLnk->SetUpdateMode( nUpdateType );
@@ -1559,15 +1569,15 @@ void SwSection::BreakLink()
     }
 
     // Release link, if it exists
-    if (m_RefLink.is())
+    if (m_RefLink.Is())
     {
         SwSectionFormat *const pFormat( GetFormat() );
         OSL_ENSURE(pFormat, "SwSection::BreakLink: no format?");
         if (pFormat)
         {
-            pFormat->GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink.get() );
+            pFormat->GetDoc()->getIDocumentLinksAdministration().GetLinkManager().Remove( m_RefLink );
         }
-        m_RefLink.clear();
+        m_RefLink.Clear();
     }
     // change type
     SetType( CONTENT_SECTION );

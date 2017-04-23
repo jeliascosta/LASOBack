@@ -79,9 +79,9 @@ ThreeD_SceneGeometry_TabPage::ThreeD_SceneGeometry_TabPage( vcl::Window* pWindow
     double fXAngle, fYAngle, fZAngle;
     ThreeDHelper::getRotationAngleFromDiagram( m_xSceneProperties, fXAngle, fYAngle, fZAngle );
 
-    fXAngle = basegfx::rad2deg(fXAngle);
-    fYAngle = basegfx::rad2deg(fYAngle);
-    fZAngle = basegfx::rad2deg(fZAngle);
+    fXAngle = BaseGFXHelper::Rad2Deg( fXAngle );
+    fYAngle = BaseGFXHelper::Rad2Deg( fYAngle );
+    fZAngle = BaseGFXHelper::Rad2Deg( fZAngle );
 
     OSL_ENSURE( fZAngle>=-90 && fZAngle<=90, "z angle is out of valid range" );
 
@@ -143,6 +143,8 @@ ThreeD_SceneGeometry_TabPage::ThreeD_SceneGeometry_TabPage( vcl::Window* pWindow
     {
         m_pCbxRightAngledAxes->Enable(false);
     }
+    m_pMFPerspective->SetAccessibleName(m_pCbxPerspective->GetText());
+    m_pMFPerspective->SetAccessibleRelationLabeledBy(m_pCbxPerspective);
 }
 
 ThreeD_SceneGeometry_TabPage::~ThreeD_SceneGeometry_TabPage()
@@ -186,16 +188,16 @@ void ThreeD_SceneGeometry_TabPage::applyAnglesToModel()
     fYAngle = double(-1.0*m_nYRotation)/double(pow(10.0,m_pMFYRotation->GetDecimalDigits()));
     fZAngle = double(-1.0*m_nZRotation)/double(pow(10.0,m_pMFZRotation->GetDecimalDigits()));
 
-    fXAngle = basegfx::deg2rad(fXAngle);
-    fYAngle = basegfx::deg2rad(fYAngle);
-    fZAngle = basegfx::deg2rad(fZAngle);
+    fXAngle = BaseGFXHelper::Deg2Rad( fXAngle );
+    fYAngle = BaseGFXHelper::Deg2Rad( fYAngle );
+    fZAngle = BaseGFXHelper::Deg2Rad( fZAngle );
 
     ThreeDHelper::setRotationAngleToDiagram( m_xSceneProperties, fXAngle, fYAngle, fZAngle );
 
     m_bAngleChangePending = false;
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, AngleEdited, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, AngleEdited, Edit&, void)
 {
     m_nXRotation = m_pMFXRotation->GetValue();
     m_nYRotation = m_pMFYRotation->GetValue();
@@ -203,7 +205,7 @@ IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, AngleEdited, Edit&, void)
     m_bAngleChangePending = true;
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, AngleChanged, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, AngleChanged, Edit&, void)
 {
     applyAnglesToModel();
 }
@@ -218,8 +220,8 @@ void ThreeD_SceneGeometry_TabPage::applyPerspectiveToModel()
 
     try
     {
-        m_xSceneProperties->setPropertyValue( "D3DScenePerspective" , uno::Any( aMode ));
-        m_xSceneProperties->setPropertyValue( "Perspective" , uno::Any( (sal_Int32)m_pMFPerspective->GetValue() ));
+        m_xSceneProperties->setPropertyValue( "D3DScenePerspective" , uno::makeAny( aMode ));
+        m_xSceneProperties->setPropertyValue( "Perspective" , uno::makeAny( (sal_Int32)m_pMFPerspective->GetValue() ));
     }
     catch( const uno::Exception & ex )
     {
@@ -229,23 +231,23 @@ void ThreeD_SceneGeometry_TabPage::applyPerspectiveToModel()
     m_bPerspectiveChangePending = false;
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, PerspectiveEdited, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, PerspectiveEdited, Edit&, void)
 {
     m_bPerspectiveChangePending = true;
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, PerspectiveChanged, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, PerspectiveChanged, Edit&, void)
 {
     applyPerspectiveToModel();
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, PerspectiveToggled, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, PerspectiveToggled, CheckBox&, void)
 {
     m_pMFPerspective->Enable( m_pCbxPerspective->IsChecked() );
     applyPerspectiveToModel();
 }
 
-IMPL_LINK_NOARG(ThreeD_SceneGeometry_TabPage, RightAngledAxesToggled, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ThreeD_SceneGeometry_TabPage, RightAngledAxesToggled, CheckBox&, void)
 {
     ControllerLockHelperGuard aGuard( m_rControllerLockHelper );
 

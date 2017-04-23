@@ -88,7 +88,7 @@ protected:
     OUString     aName;
     SbxDataType eType;
     SbiSymPool* pIn;                // parent pool
-    std::unique_ptr<SbiSymPool> pPool; // pool for sub-elements
+    SbiSymPool* pPool;              // pool for sub-elements
     short      nLen;                // string length for STRING*n
     short      nDims;
     sal_uInt16     nId;
@@ -132,7 +132,7 @@ public:
     void       SetParamArray()  { bParamArray = true;       }
     void       SetWithEvents()  { bWithEvents = true;       }
     void       SetWithBrackets(){ bWithBrackets = true;     }
-    void       SetByVal( bool bByVal_ ) { bByVal = bByVal_; }
+    void       SetByVal( bool bByVal_ = true ) { bByVal = bByVal_; }
     void       SetStatic( bool bAsStatic = true )      { bStatic = bAsStatic;  }
     void       SetNew()         { bNew = true;      }
     void       SetDefinedAs()   { bAs = true;       }
@@ -173,7 +173,7 @@ class SbiProcDef : public SbiSymDef {   // procedure definition (from basic):
     bool   mbProcDecl : 1;          // true: instantiated by SbiParser::ProcDecl
 public:
     SbiProcDef( SbiParser*, const OUString&, bool bProcDecl=false );
-    virtual ~SbiProcDef() override;
+    virtual ~SbiProcDef();
     virtual SbiProcDef* GetProcDef() override;
     virtual void SetType( SbxDataType ) override;
     SbiSymPool& GetParams()         { return aParams;  }
@@ -183,7 +183,7 @@ public:
     OUString& GetAlias()            { return aAlias;   }
     void SetPublic( bool b )        { bPublic = b;     }
     bool IsPublic() const           { return bPublic;  }
-    void SetCdecl( bool b )         { bCdecl = b;      }
+    void SetCdecl( bool b = true)   { bCdecl = b;      }
     bool IsCdecl() const            { return bCdecl;   }
     bool IsUsedForProcDecl() const  { return mbProcDecl; }
     void SetLine1( sal_uInt16 n )   { nLine1 = n;      }
@@ -209,7 +209,7 @@ class SbiConstDef : public SbiSymDef
     OUString aVal;
 public:
     SbiConstDef( const OUString& );
-    virtual ~SbiConstDef() override;
+    virtual ~SbiConstDef();
     virtual SbiConstDef* GetConstDef() override;
     void Set( double, SbxDataType );
     void Set( const OUString& );

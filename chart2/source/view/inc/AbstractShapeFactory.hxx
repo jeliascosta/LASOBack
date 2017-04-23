@@ -58,11 +58,14 @@ class Stripe;
 class AbstractShapeFactory
 {
 protected:
-    css::uno::Reference< css::lang::XMultiServiceFactory>   m_xShapeFactory;
 
+    css::uno::Reference< css::lang::XMultiServiceFactory>
+        m_xShapeFactory;
 public:
 
     enum StackPosition { Top, Bottom };
+    void setShapeFactory(css::uno::Reference< css::lang::XMultiServiceFactory> xFactory)
+        { m_xShapeFactory = xFactory; }
 
     static AbstractShapeFactory* getOrCreateShapeFactory(const css::uno::Reference< css::lang::XMultiServiceFactory>& xFactory);
 
@@ -129,7 +132,7 @@ public:
                     , const Stripe& rStripe
                     , const css::uno::Reference< css::beans::XPropertySet >& xSourceProp
                     , const tPropertyNameMap& rPropertyNameMap
-                    , bool bDoubleSided
+                    , bool bDoubleSided = true
                     , short nRotatedTexture = 0 //0 to 7 are the different possibilities
                     , bool bFlatNormals=true ) = 0;
 
@@ -149,8 +152,8 @@ public:
                     , const css::drawing::Position3D& rPos
                     , const css::drawing::Direction3D& rSize
                     , sal_Int32 nStandardSymbol
-                    , sal_Int32 nBorderColor
-                    , sal_Int32 nFillColor ) = 0;
+                    , sal_Int32 nBorderColor=0
+                    , sal_Int32 nFillColor=0 ) = 0;
 
     virtual css::uno::Reference< css::drawing::XShape >
         createGraphic2D( const css::uno::Reference< css::drawing::XShapes >& xTarget
@@ -233,7 +236,7 @@ public:
     /**
      * Only necessary for stateless implementations
      */
-    virtual void render(css::uno::Reference< css::drawing::XShapes > xRootShape, bool bInitOpenGL) = 0;
+    virtual void render(css::uno::Reference< css::drawing::XShapes > xRootShape, bool bInitOpenGL = true) = 0;
 
     virtual bool preRender(css::uno::Reference< css::drawing::XShapes > xRootShape, OpenGLWindow* pWindow) = 0;
     virtual void postRender(OpenGLWindow* pWindow) = 0;
@@ -252,7 +255,7 @@ public:
 
     static css::uno::Any makeTransformation( const css::awt::Point& rScreenPosition2D, double fRotationAnglePi=0.0 );
 
-    static OUString getStackedString( const OUString& rString, bool bStacked );
+    static OUString getStackedString( const OUString& rString, bool bStacked=true );
 
     static bool hasPolygonAnyLines( css::drawing::PolyPolygonShape3D& rPoly );
     static bool isPolygonEmptyOrSinglePoint( css::drawing::PolyPolygonShape3D& rPoly );

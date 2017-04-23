@@ -30,7 +30,6 @@
 #include "osl/diagnose.h"
 #include <osl/mutex.hxx>
 #include "rtl/strbuf.hxx"
-#include "NeonSession.hxx"
 #include "NeonTypes.hxx"
 #include "DAVException.hxx"
 #include "DAVProperties.hxx"
@@ -236,6 +235,8 @@ extern "C" void NPFR_propnames_results( void* userdata,
         = static_cast< vector< DAVResourceInfo > * >( userdata );
     theResources->push_back( theResource );
 }
+
+extern osl::Mutex aGlobalNeonMutex;
 
 NeonPropFindRequest::NeonPropFindRequest( HttpSession* inSession,
                                           const char* inPath,

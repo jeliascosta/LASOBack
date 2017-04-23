@@ -67,11 +67,11 @@ public:
 
     PowerPointExport( const css::uno::Reference< css::uno::XComponentContext > & rxCtxt  );
 
-    virtual ~PowerPointExport() override;
+    virtual ~PowerPointExport();
 
     // from FilterBase
     virtual bool importDocument() throw() override;
-    virtual bool exportDocument() override;
+    virtual bool exportDocument() throw (css::uno::RuntimeException, std::exception) override;
 
     // only needed for import, leave them empty, refactor later XmlFilterBase to export and import base?
     virtual oox::vml::Drawing* getVmlDrawing() override { return nullptr; }
@@ -87,9 +87,9 @@ public:
 protected:
 
     virtual void ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_uInt16 nMode,
-                                 bool bHasBackground, css::uno::Reference< css::beans::XPropertySet > const & aXBackgroundPropSet ) override;
+                                 bool bHasBackground, css::uno::Reference< css::beans::XPropertySet > aXBackgroundPropSet ) override;
     virtual void ImplWriteNotes( sal_uInt32 nPageNum ) override;
-    virtual void ImplWriteSlideMaster( sal_uInt32 nPageNum, css::uno::Reference< css::beans::XPropertySet > const & aXBackgroundPropSet ) override;
+    virtual void ImplWriteSlideMaster( sal_uInt32 nPageNum, css::uno::Reference< css::beans::XPropertySet > aXBackgroundPropSet ) override;
     virtual void ImplWriteLayout( sal_Int32 nOffset, sal_uInt32 nMasterNum ) override;
     void ImplWritePPTXLayout( sal_Int32 nOffset, sal_uInt32 nMasterNum );
     void WriteTheme( sal_Int32 nThemeNum );
@@ -132,7 +132,7 @@ private:
 
     void AddLayoutIdAndRelation( const ::sax_fastparser::FSHelperPtr& pFS, sal_Int32 nLayoutFileId );
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
 
     ::sax_fastparser::FSHelperPtr mPresentationFS;
 

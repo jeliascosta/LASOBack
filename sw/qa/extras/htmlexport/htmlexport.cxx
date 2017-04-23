@@ -50,6 +50,7 @@ private:
 
         if (OString(filename) == "charborder.odt")
         {
+
             // FIXME if padding-top gets exported as inches, not cms, we get rounding errors.
             SwGlobals::ensure(); // make sure that SW_MOD() is not 0
             std::unique_ptr<Resetter> pResetter(new Resetter(
@@ -67,7 +68,7 @@ private:
 
 };
 
-#define DECLARE_HTMLEXPORT_ROUNDTRIP_TEST(TestName, filename) DECLARE_SW_ROUNDTRIP_TEST(TestName, filename, nullptr, HtmlExportTest)
+#define DECLARE_HTMLEXPORT_ROUNDTRIP_TEST(TestName, filename) DECLARE_SW_ROUNDTRIP_TEST(TestName, filename, HtmlExportTest)
 
 DECLARE_HTMLEXPORT_ROUNDTRIP_TEST(testFdo81276, "fdo81276.html")
 {
@@ -126,7 +127,7 @@ DECLARE_HTMLEXPORT_ROUNDTRIP_TEST(testCharacterBorder, "charborder.odt")
     // No shadow
 }
 
-#define DECLARE_HTMLEXPORT_TEST(TestName, filename) DECLARE_SW_EXPORT_TEST(TestName, filename, nullptr, HtmlExportTest)
+#define DECLARE_HTMLEXPORT_TEST(TestName, filename) DECLARE_SW_EXPORT_TEST(TestName, filename, HtmlExportTest)
 
 DECLARE_HTMLEXPORT_TEST(testExportOfImages, "textAndImage.docx")
 {

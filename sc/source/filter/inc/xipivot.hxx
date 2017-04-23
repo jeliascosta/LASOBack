@@ -68,7 +68,7 @@ public:
     /** Creates a pivot cache field by reading an SXFIELD record. */
     explicit            XclImpPCField( const XclImpRoot& rRoot,
                             XclImpPivotCache& rPCache, sal_uInt16 nFieldIdx );
-    virtual             ~XclImpPCField() override;
+    virtual             ~XclImpPCField();
 
     // general field/item access ----------------------------------------------
 
@@ -144,15 +144,17 @@ class XclImpPivotCache : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotCache( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotCache() override;
+    virtual             ~XclImpPivotCache();
 
     // data access ------------------------------------------------------------
 
     /** Returns the data source range read from the DCONREF record. */
-    const ScRange& GetSourceRange() const { return maSrcRange; }
+    inline const ScRange& GetSourceRange() const { return maSrcRange; }
 
     const OUString& GetSourceRangeName() const { return maSrcRangeName; }
 
+    /** Returns the number of pivot cache fields. */
+    sal_uInt16          GetFieldCount() const;
     /** Returns read-only access to a pivot cache field. */
     const XclImpPCField* GetField( sal_uInt16 nFieldIdx ) const;
 
@@ -172,6 +174,7 @@ public:
     /** Reads the entire pivot cache stream. Uses decrypter from passed stream. */
     void                ReadPivotCacheStream( XclImpStream& rStrm );
 
+    bool                HasCacheRecords() const;
     bool                IsRefreshOnLoad() const;
     bool                IsValid() const;
 
@@ -236,9 +239,9 @@ public:
     const OUString* GetItemName( sal_uInt16 nItemIdx ) const;
 
     /** Returns the flags of the axes this field is part of. */
-    sal_uInt16   GetAxes() const { return maFieldInfo.mnAxes; }
+    inline sal_uInt16   GetAxes() const { return maFieldInfo.mnAxes; }
     /** Sets the flags of the axes this field is part of. */
-    void         SetAxes( sal_uInt16 nAxes ) { maFieldInfo.mnAxes = nAxes; }
+    inline void         SetAxes( sal_uInt16 nAxes ) { maFieldInfo.mnAxes = nAxes; }
 
     // records ----------------------------------------------------------------
 
@@ -274,6 +277,7 @@ private:
 
     void                ConvertDataField( ScDPSaveDimension& rSaveDim, const XclPTDataFieldInfo& rDataInfo ) const;
     void                ConvertDataFieldInfo( ScDPSaveDimension& rSaveDim, const XclPTDataFieldInfo& rDataInfo ) const;
+    void                ConvertItems( ScDPSaveDimension& rSaveDim ) const;
 
 private:
     typedef ::std::list< XclPTDataFieldInfo >   XclPTDataFieldInfoList;
@@ -293,12 +297,12 @@ class XclImpPivotTable : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotTable( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotTable() override;
+    virtual             ~XclImpPivotTable();
 
     // cache/field access, misc. ----------------------------------------------
 
     const XclImpPivotCacheRef& GetPivotCache() const { return mxPCache; }
-    const ScfStringVec& GetVisFieldNames() const { return maVisFieldNames; }
+    inline const ScfStringVec& GetVisFieldNames() const { return maVisFieldNames; }
 
     sal_uInt16          GetFieldCount() const;
     const XclImpPTField* GetField( sal_uInt16 nFieldIdx ) const;
@@ -368,7 +372,7 @@ class XclImpPivotTableManager : protected XclImpRoot
 {
 public:
     explicit            XclImpPivotTableManager( const XclImpRoot& rRoot );
-    virtual             ~XclImpPivotTableManager() override;
+    virtual             ~XclImpPivotTableManager();
 
     // pivot cache records ----------------------------------------------------
 

@@ -32,7 +32,7 @@
 class CBaseReader : public i_xml_parser_event_handler
 {
 public:
-    virtual ~CBaseReader() override;
+    virtual ~CBaseReader();
 
 protected: // protected because its only an implementation relevant class
     CBaseReader( const std::string& DocumentName );
@@ -46,19 +46,19 @@ protected: // protected because its only an implementation relevant class
     virtual void start_element(
         const std::wstring& raw_name,
         const std::wstring& local_name,
-        const XmlTagAttributes_t& attributes) override = 0;
+        const XmlTagAttributes_t& attributes) = 0;
 
     virtual void end_element(
-        const std::wstring& raw_name, const std::wstring& local_name) override = 0;
+        const std::wstring& raw_name, const std::wstring& local_name) = 0;
 
-    virtual void characters(const std::wstring& character) override = 0;
+    virtual void characters(const std::wstring& character) = 0;
 
-    virtual void ignore_whitespace(const std::wstring& /*whitespaces*/) override {};
+    virtual void ignore_whitespace(const std::wstring& /*whitespaces*/){};
 
     virtual void processing_instruction(
         const std::wstring& /*target*/, const std::wstring& /*data*/){};
 
-    virtual void comment(const std::wstring& /*comment*/) override {};
+    virtual void comment(const std::wstring& /*comment*/){};
 
     void Initialize( const std::string& /*ContentName*/);
 

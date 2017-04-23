@@ -45,11 +45,13 @@ namespace sdext { namespace presenter {
 class PresenterController;
 class PresenterTextView;
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::accessibility::XAccessible,
-    css::lang::XInitialization,
-    css::awt::XFocusListener
-> PresenterAccessibleInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::accessibility::XAccessible,
+        css::lang::XInitialization,
+        css::awt::XFocusListener
+    > PresenterAccessibleInterfaceBase;
+}
 
 class PresenterAccessible
     : public ::cppu::BaseMutex,
@@ -60,7 +62,7 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const ::rtl::Reference<PresenterController>& rpPresenterController,
         const css::uno::Reference<css::drawing::framework::XPane>& rxMainPane);
-    virtual ~PresenterAccessible() override;
+    virtual ~PresenterAccessible();
 
     void UpdateAccessibilityHierarchy();
 
@@ -73,21 +75,26 @@ public:
     //----- XAccessible -------------------------------------------------------
 
     virtual css::uno::Reference<css::accessibility::XAccessibleContext> SAL_CALL
-        getAccessibleContext() override;
+        getAccessibleContext()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XFocusListener ----------------------------------------------------
 
-    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent) override;
+    virtual void SAL_CALL focusGained (const css::awt::FocusEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent) override;
+    virtual void SAL_CALL focusLost (const css::awt::FocusEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XEventListener ----------------------------------------------------
 
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //----- XInitialization ---------------------------------------------------
 
-    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments) override;
+    virtual void SAL_CALL initialize (const css::uno::Sequence<css::uno::Any>& rArguments)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     class AccessibleObject;
     class AccessibleParagraph;

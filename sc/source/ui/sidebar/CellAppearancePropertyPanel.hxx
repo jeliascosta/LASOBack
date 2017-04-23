@@ -22,18 +22,23 @@
 #include <sfx2/sidebar/ControllerItem.hxx>
 #include <sfx2/sidebar/IContextChangeReceiver.hxx>
 #include <svx/sidebar/PanelLayout.hxx>
-#include <vcl/floatwin.hxx>
 #include <memory>
 
+class FixedText;
+namespace svx { namespace sidebar {
+    class PopupControl;
+    class PopupContainer;
+}}
 namespace sc { namespace sidebar {
+    class CellLineStylePopup;
+    class CellBorderStylePopup;
+    class CellLineStyleControl;
     class CellBorderUpdater;
 }}
 class ToolBox;
+class CheckBox;
 
 namespace sc { namespace sidebar {
-
-class CellBorderStylePopup;
-class CellLineStylePopup;
 
 class CellAppearancePropertyPanel
 :   public PanelLayout,
@@ -41,8 +46,8 @@ class CellAppearancePropertyPanel
     public ::sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 private:
-    friend class CellLineStylePopup;
-    friend class CellBorderStylePopup;
+    friend class CellLineStyleControl;
+    friend class CellBorderStyleControl;
 
 public:
     static VclPtr<vcl::Window> Create(
@@ -54,7 +59,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -64,12 +69,12 @@ public:
 
     SfxBindings* GetBindings() { return mpBindings;}
 
-    // constructor/destructor
+    // constructor/destuctor
     CellAppearancePropertyPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         SfxBindings* pBindings);
-    virtual ~CellAppearancePropertyPanel() override;
+    virtual ~CellAppearancePropertyPanel();
     virtual void dispose() override;
 
 private:
@@ -110,6 +115,7 @@ private:
     sal_uInt16                              mnBLTROut;
     sal_uInt16                              mnBLTRDis;
 
+    /// bitfield
     bool                                    mbBorderStyleAvailable : 1;
 
     // CellBorder defines
@@ -127,14 +133,22 @@ private:
     bool                                    mbBLTR : 1;
 
     // popups
-    VclPtr<CellLineStylePopup>              mxCellLineStylePopup;
-    VclPtr<CellBorderStylePopup>            mxCellBorderStylePopup;
+    std::unique_ptr< CellLineStylePopup > mpCellLineStylePopup;
+    std::unique_ptr< CellBorderStylePopup > mpCellBorderStylePopup;
 
-    vcl::EnumContext                        maContext;
+    ::sfx2::sidebar::EnumContext            maContext;
     SfxBindings*                            mpBindings;
 
-    DECL_LINK(TbxCellBorderSelectHdl, ToolBox*, void);
-    DECL_LINK(TbxLineStyleSelectHdl, ToolBox*, void);
+    DECL_LINK_TYPED(TbxCellBorderSelectHdl, ToolBox*, void);
+    DECL_LINK_TYPED(TbxLineStyleSelectHdl, ToolBox*, void);
+
+    // for CellLineStyle popup
+    svx::sidebar::PopupControl* CreateCellLineStylePopupControl(svx::sidebar::PopupContainer* pParent);
+    void EndCellLineStylePopupMode();
+
+    // for CellBorderStyle popup
+    svx::sidebar::PopupControl* CreateCellBorderStylePopupControl(svx::sidebar::PopupContainer* pParent);
+    void EndCellBorderStylePopupMode();
 
     void Initialize();
     void SetStyleIcon();

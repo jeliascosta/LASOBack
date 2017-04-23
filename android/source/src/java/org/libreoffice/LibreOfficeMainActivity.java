@@ -10,29 +10,23 @@ import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.RectF;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.TabHost;
 import android.widget.Toast;
 
 import org.libreoffice.overlay.DocumentOverlay;
 import org.libreoffice.storage.DocumentProviderFactory;
 import org.libreoffice.storage.IFile;
-import org.libreoffice.ui.FileUtilities;
-import org.libreoffice.ui.LibreOfficeUIActivity;
 import org.mozilla.gecko.ZoomConstraints;
 import org.mozilla.gecko.gfx.GeckoLayerClient;
 import org.mozilla.gecko.gfx.LayerView;
@@ -59,36 +53,38 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
     private static final String ENABLE_EXPERIMENTAL_PREFS_KEY = "ENABLE_EXPERIMENTAL";
     private static final String ASSETS_EXTRACTED_PREFS_KEY = "ASSETS_EXTRACTED";
 
-    //TODO "public static" is a temporary workaround
-    public static LOKitThread loKitThread;
+    public static LibreOfficeMainActivity mAppContext;
 
-    private GeckoLayerClient mLayerClient;
+    private static GeckoLayerClient mLayerClient;
+    private static LOKitThread sLOKitThread;
 
     private static boolean mIsExperimentalMode;
 
     private int providerId;
     private URI documentUri;
 
+    public Handler mMainHandler;
+
     private DrawerLayout mDrawerLayout;
-    Toolbar toolbarTop;
+    private LOAbout mAbout;
 
     private ListView mDrawerList;
     private List<DocumentPartView> mDocumentPartView = new ArrayList<DocumentPartView>();
     private DocumentPartViewListAdapter mDocumentPartViewListAdapter;
-    private int partIndex=-1;
     private File mInputFile;
-    private String newFileName = "untitled";
-    private String newFilePath = "/storage/emulated/0/Documents/";
     private DocumentOverlay mDocumentOverlay;
     private File mTempFile = null;
-    private String newDocumentType = null;
+
     private FormattingController mFormattingController;
     private ToolbarController mToolbarController;
     private FontController mFontController;
     private SearchController mSearchController;
-    private static final int PICKFOLDER_RESULT_CODE = 1;
 
-    public GeckoLayerClient getLayerClient() {
+    public LibreOfficeMainActivity() {
+        mAbout = new LOAbout(this, false);
+    }
+
+    public static GeckoLayerClient getLayerClient() {
         return mLayerClient;
     }
 
@@ -100,14 +96,10 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         return mTempFile != null;
     }
 
-    private boolean isKeyboardOpen = false;
-    private boolean isFormattingToolbarOpen = false;
-    private boolean isSearchToolbarOpen = false;
-    private boolean isDocumentChanged = false;
-    public boolean isNewDocument = false;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.w(LOGTAG, "onCreate..");
+        mAppContext = this;
         super.onCreate(savedInstanceState);
 
         SharedPreferences sPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -118,13 +110,17 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
                 sPrefs.edit().putInt(ASSETS_EXTRACTED_PREFS_KEY, BuildConfig.VERSION_CODE).apply();
             }
         }
+        mMainHandler = new Handler();
+
         setContentView(R.layout.activity_main);
 
-        toolbarTop = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbarTop = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbarBottom = (Toolbar) findViewById(R.id.toolbar_bottom);
+
         hideBottomToolbar();
 
-        mToolbarController = new ToolbarController(this, toolbarTop);
-        mFormattingController = new FormattingController(this);
+        mToolbarController = new ToolbarController(this, getSupportActionBar(), toolbarTop);
+        mFormattingController = new FormattingController(this, toolbarBottom);
         toolbarTop.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -135,44 +131,25 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         mFontController = new FontController(this);
         mSearchController = new SearchController(this);
 
-        // New document type string is not null, it means we want to open a new document
-        if (getIntent().getStringExtra(LibreOfficeUIActivity.NEW_DOC_TYPE_KEY) != null) {
-            newDocumentType = getIntent().getStringExtra(LibreOfficeUIActivity.NEW_DOC_TYPE_KEY);
-            if (newDocumentType.matches(LibreOfficeUIActivity.NEW_WRITER_STRING_KEY))
-                newFileName = newFileName + ".odt";
-            else if (newDocumentType.matches(LibreOfficeUIActivity.NEW_IMPRESS_STRING_KEY))
-                newFileName = newFileName + ".odp";
-            else if (newDocumentType.matches(LibreOfficeUIActivity.NEW_CALC_STRING_KEY))
-                newFileName = newFileName + ".ods";
-            else
-                newFileName = newFileName + ".odg";
-            // We want to create a new Document, create an alert dialogue to name the new file.
-            openSelectPathIntent();
-            isNewDocument = true;
-        }
-
         if (getIntent().getData() != null) {
             if (getIntent().getData().getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
                 if (copyFileToTemp() && mTempFile != null) {
                     mInputFile = mTempFile;
-                    Log.e(LOGTAG, "SCHEME_CONTENT: getPath(): " + getIntent().getData().getPath());
-                    toolbarTop.setTitle(mInputFile.getName());
+                    Log.d(LOGTAG, "SCHEME_CONTENT: getPath(): " + getIntent().getData().getPath());
                 } else {
                     // TODO: can't open the file
                     Log.e(LOGTAG, "couldn't create temporary file from " + getIntent().getData());
                 }
             } else if (getIntent().getData().getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 mInputFile = new File(getIntent().getData().getPath());
-                Log.e(LOGTAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());
-                toolbarTop.setTitle(mInputFile.getName());
+                Log.d(LOGTAG, "SCHEME_FILE: getPath(): " + getIntent().getData().getPath());
+
                 // Gather data to rebuild IFile object later
                 providerId = getIntent().getIntExtra(
                         "org.libreoffice.document_provider_id", 0);
                 documentUri = (URI) getIntent().getSerializableExtra(
                         "org.libreoffice.document_uri");
             }
-        } else if (isNewDocument){
-            toolbarTop.setTitle(newFileName);
         } else {
             mInputFile = new File(DEFAULT_DOC_PATH);
         }
@@ -187,8 +164,12 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
             mDrawerList.setOnItemClickListener(new DocumentPartClickListener());
         }
 
-        loKitThread = new LOKitThread(this);
-        loKitThread.start();
+        if (sLOKitThread == null) {
+            sLOKitThread = new LOKitThread();
+            sLOKitThread.start();
+        } else {
+            sLOKitThread.clearQueue();
+        }
 
         mLayerClient = new GeckoLayerClient(this);
         mLayerClient.setZoomConstraints(new ZoomConstraints(true));
@@ -197,74 +178,10 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         layerView.setInputConnectionHandler(new LOKitInputConnectionHandler());
         mLayerClient.notifyReady();
 
-        layerView.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if(keyEvent.getKeyCode() != KeyEvent.KEYCODE_BACK){
-                    isDocumentChanged=true;
-                }
-                return false;
-            }
-        });
-
         // create TextCursorLayer
-        mDocumentOverlay = new DocumentOverlay(this, layerView);
+        mDocumentOverlay = new DocumentOverlay(mAppContext, layerView);
 
         mToolbarController.setupToolbars();
-
-        TabHost host = (TabHost) findViewById(R.id.toolbarTabHost);
-        host.setup();
-
-        TabHost.TabSpec spec = host.newTabSpec("Character");
-        spec.setContent(R.id.tab_character);
-        spec.setIndicator("Character");
-        host.addTab(spec);
-
-        spec = host.newTabSpec("Paragraph");
-        spec.setContent(R.id.tab_paragraph);
-        spec.setIndicator("Paragraph");
-        host.addTab(spec);
-
-        spec = host.newTabSpec("Insert");
-        spec.setContent(R.id.tab_insert);
-        spec.setIndicator("Insert");
-        host.addTab(spec);
-    }
-
-    private void openSelectPathIntent() {
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                           .addCategory(Intent.CATEGORY_OPENABLE)
-                           .setType("*/*")
-                           .putExtra(Intent.EXTRA_TITLE, newFileName);
-        startActivityForResult(intent, PICKFOLDER_RESULT_CODE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch(requestCode){
-            case PICKFOLDER_RESULT_CODE:
-                if(resultCode==RESULT_OK){
-                    Uri fileURI = data.getData();
-                    newFilePath = fileURI.getPath();
-                    if (newFilePath.contains("primary")) {
-                        /* When file is being saved in primary storage folder other than Documents home.
-                         *  newFilePath content is similar to this - /document/primary:Downloads/untitled1.odt */
-                        newFilePath = Environment.getExternalStorageDirectory().getPath() + "/" + newFilePath.split(":")[1];
-                    } else if (newFilePath.contains("home")) {
-                        /* When file is being saved in documents folder itself i.e. Document home.
-                         *  newFilePath content is similar to this - /document/home:untitled1.odt */
-                        newFilePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + newFilePath.split(":")[1];
-                    } else {
-                        newFilePath = Environment.getExternalStorageDirectory().getPath() + "/";
-                    }
-                    Log.d("newFilePath", newFilePath);
-                }
-                // Now set the input file variable to new file created
-                mInputFile = new File(newFilePath);
-                // and load the new document
-                LOKitShell.sendNewDocumentLoadEvent(newFilePath, newDocumentType);
-                break;
-        }
     }
 
     public RectF getCurrentCursorPosition() {
@@ -312,21 +229,10 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
     }
 
     /**
-     * Save a new document
-     * */
-    public void saveAs(){
-        LOKitShell.sendSaveAsEvent(mInputFile.getPath(), FileUtilities.getExtension(mInputFile.getPath()).substring(1));
-    }
-
-    /**
      * Save the document and invoke save on document provider to upload the file
      * to the cloud if necessary.
      */
     public void saveDocument() {
-        if (!mInputFile.exists()) {
-            // Needed for handling null in case new document is not created.
-            mInputFile = new File(DEFAULT_DOC_PATH);
-        }
         final long lastModified = mInputFile.lastModified();
         final Activity activity = LibreOfficeMainActivity.this;
         Toast.makeText(this, R.string.message_saving, Toast.LENGTH_SHORT).show();
@@ -360,7 +266,6 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
             protected void onPostExecute(Void param) {
                 Toast.makeText(activity, R.string.message_saved,
                         Toast.LENGTH_SHORT).show();
-                isDocumentChanged=false;
             }
         };
         // Delay the call to document provider save operation and check the
@@ -412,12 +317,7 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
     protected void onStart() {
         Log.i(LOGTAG, "onStart..");
         super.onStart();
-        if (!isNewDocument){
-            if (partIndex == -1)
-                LOKitShell.sendLoadEvent(mInputFile.getPath());
-            else
-                LOKitShell.sendResumeEvent(mInputFile.getPath(), partIndex);
-        }
+        LOKitShell.sendLoadEvent(mInputFile.getPath());
     }
 
     @Override
@@ -441,46 +341,9 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
             }
         }
     }
-    @Override
-    public void onBackPressed() {
-        if (!isDocumentChanged) {
-            super.onBackPressed();
-            return;
-        }
 
-
-        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which){
-                    case DialogInterface.BUTTON_POSITIVE:
-                        if (isNewDocument) {
-                            saveAs();
-                        } else {
-                            saveDocument();
-                        }
-                        isDocumentChanged=false;
-                        onBackPressed();
-                        break;
-                    case DialogInterface.BUTTON_NEGATIVE:
-                        //CANCEL
-                        break;
-                    case DialogInterface.BUTTON_NEUTRAL:
-                        //NO
-                        isDocumentChanged=false;
-                        onBackPressed();
-                        break;
-                }
-            }
-        };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.save_alert_dialog_title)
-                .setPositiveButton(R.string.save_document, dialogClickListener)
-                .setNegativeButton(R.string.cancel_save_document, dialogClickListener)
-                .setNeutralButton(R.string.no_save_document, dialogClickListener)
-                .show();
-
+    public LOKitThread getLOKitThread() {
+        return sLOKitThread;
     }
 
     public List<DocumentPartView> getDocumentPartView() {
@@ -505,18 +368,13 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
      * Show software keyboard.
      * Force the request on main thread.
      */
-
-
     public void showSoftKeyboard() {
-
         LOKitShell.getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                if(!isKeyboardOpen) showSoftKeyboardDirect();
-                else hideSoftKeyboardDirect();
+                showSoftKeyboardDirect();
             }
         });
-
     }
 
     private void showSoftKeyboardDirect() {
@@ -526,9 +384,7 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
             InputMethodManager inputMethodManager = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             inputMethodManager.showSoftInput(layerView, InputMethodManager.SHOW_FORCED);
         }
-        isKeyboardOpen=true;
-        isSearchToolbarOpen=false;
-        isFormattingToolbarOpen=false;
+
         hideBottomToolbar();
     }
 
@@ -536,7 +392,8 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         LOKitShell.getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                if (findViewById(R.id.toolbar_bottom).getVisibility() != View.VISIBLE) {
+                Toolbar toolbarBottom = (Toolbar) findViewById(R.id.toolbar_bottom);
+                if (toolbarBottom.getVisibility() != View.VISIBLE) {
                     showSoftKeyboardDirect();
                 }
             }
@@ -562,7 +419,6 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         if (getCurrentFocus() != null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
-            isKeyboardOpen=false;
         }
     }
 
@@ -582,8 +438,6 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
                 findViewById(R.id.toolbar_bottom).setVisibility(View.GONE);
                 findViewById(R.id.formatting_toolbar).setVisibility(View.GONE);
                 findViewById(R.id.search_toolbar).setVisibility(View.GONE);
-                isFormattingToolbarOpen=false;
-                isSearchToolbarOpen=false;
             }
         });
     }
@@ -592,17 +446,10 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         LOKitShell.getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                if(isFormattingToolbarOpen){
-                    hideBottomToolbar();
-                }else{
-                    showBottomToolbar();
-                    findViewById(R.id.formatting_toolbar).setVisibility(View.VISIBLE);
-                    findViewById(R.id.search_toolbar).setVisibility(View.GONE);
-                    hideSoftKeyboardDirect();
-                    isSearchToolbarOpen=false;
-                    isFormattingToolbarOpen=true;
-                }
-
+                showBottomToolbar();
+                findViewById(R.id.formatting_toolbar).setVisibility(View.VISIBLE);
+                findViewById(R.id.search_toolbar).setVisibility(View.GONE);
+                hideSoftKeyboardDirect();
             }
         });
     }
@@ -621,16 +468,10 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         LOKitShell.getMainHandler().post(new Runnable() {
             @Override
             public void run() {
-                if(isSearchToolbarOpen){
-                    hideBottomToolbar();
-                }else{
-                    showBottomToolbar();
-                    findViewById(R.id.formatting_toolbar).setVisibility(View.GONE);
-                    findViewById(R.id.search_toolbar).setVisibility(View.VISIBLE);
-                    hideSoftKeyboardDirect();
-                    isFormattingToolbarOpen=false;
-                    isSearchToolbarOpen=true;
-                }
+                showBottomToolbar();
+                findViewById(R.id.formatting_toolbar).setVisibility(View.GONE);
+                findViewById(R.id.search_toolbar).setVisibility(View.VISIBLE);
+                hideSoftKeyboardDirect();
             }
         });
     }
@@ -690,8 +531,7 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
     }
 
     public void showAbout() {
-        AboutDialogFragment aboutDialogFragment = new AboutDialogFragment();
-        aboutDialogFragment.show(getSupportFragmentManager(), "AboutDialogFragment");
+        mAbout.showAbout();
     }
 
     public void showSettings() {
@@ -708,14 +548,13 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             DocumentPartView partView = mDocumentPartViewListAdapter.getItem(position);
-            partIndex = partView.partIndex;
             LOKitShell.sendChangePartEvent(partView.partIndex);
             mDrawerLayout.closeDrawer(mDrawerList);
         }
     }
 
     private static boolean copyFromAssets(AssetManager assetManager,
-                                          String fromAssetPath, String targetDir) {
+                                           String fromAssetPath, String targetDir) {
         try {
             String[] files = assetManager.list(fromAssetPath);
 
@@ -769,14 +608,6 @@ public class LibreOfficeMainActivity extends AppCompatActivity {
             Log.e(LOGTAG, "failed to copy file " + fromAssetPath + " from assets to " + toPath + " - " + e.getMessage());
             return false;
         }
-    }
-
-    // This method is used in LOKitTileProvider.java to show status of new file creation.
-    public void showSaveStatusToast(boolean error) {
-        if (!error)
-            Toast.makeText(this, getString(R.string.save_as_success) + newFilePath, Toast.LENGTH_SHORT).show();
-        else
-            Toast.makeText(this, R.string.save_as_error, Toast.LENGTH_SHORT).show();
     }
 }
 

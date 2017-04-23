@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <extended/accessiblelistbox.hxx>
-#include <extended/accessiblelistboxentry.hxx>
+#include <accessibility/extended/accessiblelistbox.hxx>
+#include <accessibility/extended/accessiblelistboxentry.hxx>
 #include <svtools/treelistbox.hxx>
 #include <svtools/treelistentry.hxx>
 #include <com/sun/star/awt/Point.hpp>
@@ -27,7 +27,6 @@
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/supportsservice.hxx>
 #include <vcl/svapp.hxx>
 #include <toolkit/awt/vclxwindow.hxx>
@@ -74,7 +73,7 @@ namespace accessibility
         {
             switch ( rVclWindowEvent.GetId() )
             {
-            case  VclEventId::CheckboxToggle :
+            case  VCLEVENT_CHECKBOX_TOGGLE :
                 {
                     if ( !getListBox() || !getListBox()->HasFocus() )
                     {
@@ -99,13 +98,13 @@ namespace accessibility
                     break;
                 }
 
-            case VclEventId::ListboxSelect :
+            case VCLEVENT_LISTBOX_SELECT :
                 {
-                    OSL_FAIL("Debug: Treelist shouldn't use VclEventId::ListboxSelect");
+                    OSL_FAIL("Debug: Treelist shouldn't use VCLEVENT_LISTBOX_SELECT");
                     break;
                 }
 
-            case VclEventId::ListboxTreeSelect:
+            case VCLEVENT_LISTBOX_TREESELECT:
                 {
                     if ( getListBox() && getListBox()->HasFocus() )
                     {
@@ -117,14 +116,14 @@ namespace accessibility
                     }
                 }
                 break;
-            case VclEventId::ListboxTreeFocus:
+            case VCLEVENT_LISTBOX_TREEFOCUS:
                 {
-                    VclPtr<SvTreeListBox> pBox = getListBox();
+                    SvTreeListBox* pBox = getListBox();
                     bool bNeedFocus = false;
                     if (pBox)
                     {
                         vcl::Window* pParent = static_cast<vcl::Window*>(pBox)->GetParent();
-                        if (pParent && pParent->GetType() == WindowType::FLOATINGWINDOW)
+                        if (pParent && pParent->GetType() == WINDOW_FLOATINGWINDOW)
                         {
                             // MT: ImplGetAppSVData shouldn't be exported from VCL.
                             // In which scenario is this needed?
@@ -138,19 +137,19 @@ namespace accessibility
                     }
                     if( pBox && (pBox->HasFocus() || bNeedFocus) )
                     {
-                        uno::Any aNewValue;
+                        uno::Any aOldValue, aNewValue;
                         SvTreeListEntry* pEntry = static_cast< SvTreeListEntry* >( rVclWindowEvent.GetData() );
                         if ( pEntry )
                         {
                             AccessibleListBoxEntry* pEntryFocus =static_cast< AccessibleListBoxEntry* >(m_xFocusedChild.get());
                             if (pEntryFocus && pEntryFocus->GetSvLBoxEntry() == pEntry)
                             {
+                                aOldValue <<= uno::Any();
                                 aNewValue <<= m_xFocusedChild;
-                                NotifyAccessibleEvent( AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, uno::Any(), aNewValue );
+                                NotifyAccessibleEvent( AccessibleEventId::ACTIVE_DESCENDANT_CHANGED, aOldValue, aNewValue );
                                 return ;
                             }
 
-                            uno::Any aOldValue;
                             aOldValue <<= m_xFocusedChild;
 
                             MAP_ENTRY::iterator mi = m_mapEntry.find(pEntry);
@@ -171,13 +170,14 @@ namespace accessibility
                         }
                         else
                         {
+                            aOldValue <<= uno::Any();
                             aNewValue <<= AccessibleStateType::FOCUSED;
-                            NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), aNewValue );
+                            NotifyAccessibleEvent( AccessibleEventId::STATE_CHANGED, aOldValue, aNewValue );
                         }
                     }
                 }
                 break;
-            case VclEventId::ListboxItemRemoved:
+            case VCLEVENT_LISTBOX_ITEMREMOVED:
                 {
                     SvTreeListEntry* pEntry = static_cast< SvTreeListEntry* >( rVclWindowEvent.GetData() );
                     if ( pEntry )
@@ -201,8 +201,8 @@ namespace accessibility
                 break;
 
                 // #i92103#
-            case VclEventId::ItemExpanded :
-            case VclEventId::ItemCollapsed :
+            case VCLEVENT_ITEM_EXPANDED :
+            case VCLEVENT_ITEM_COLLAPSED :
                 {
                     SvTreeListEntry* pEntry = static_cast< SvTreeListEntry* >( rVclWindowEvent.GetData() );
                     if ( pEntry )
@@ -211,7 +211,7 @@ namespace accessibility
                             new AccessibleListBoxEntry( *getListBox(), pEntry, this );
                         Reference< XAccessible > xChild = pAccListBoxEntry;
                         const short nAccEvent =
-                                ( rVclWindowEvent.GetId() == VclEventId::ItemExpanded )
+                                ( rVclWindowEvent.GetId() == VCLEVENT_ITEM_EXPANDED )
                                 ? AccessibleEventId::LISTBOX_ENTRY_EXPANDED
                                 : AccessibleEventId::LISTBOX_ENTRY_COLLAPSED;
                         uno::Any aListBoxEntry;
@@ -277,7 +277,7 @@ namespace accessibility
             m_mapEntry.erase(mi);
         }
 
-        VclPtr<SvTreeListBox> pBox = getListBox();
+        SvTreeListBox* pBox = getListBox();
         SvTreeListEntry* pEntryChild = pBox->FirstChild(pEntry);
         while (pEntryChild)
         {
@@ -291,8 +291,8 @@ namespace accessibility
     {
         switch ( rVclWindowEvent.GetId() )
         {
-            case VclEventId::WindowShow:
-            case VclEventId::WindowHide:
+            case VCLEVENT_WINDOW_SHOW:
+            case VCLEVENT_WINDOW_HIDE:
             {
             }
             break;
@@ -318,26 +318,40 @@ namespace accessibility
 
     // XServiceInfo
 
-    OUString SAL_CALL AccessibleListBox::getImplementationName()
+    OUString SAL_CALL AccessibleListBox::getImplementationName() throw(RuntimeException, std::exception)
     {
-        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBox" );
+        return getImplementationName_Static();
     }
 
-    Sequence< OUString > SAL_CALL AccessibleListBox::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL AccessibleListBox::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
-        return {"com.sun.star.accessibility.AccessibleContext",
-                "com.sun.star.accessibility.AccessibleComponent",
-                "com.sun.star.awt.AccessibleTreeListBox"};
+        return getSupportedServiceNames_Static();
     }
 
-    sal_Bool SAL_CALL AccessibleListBox::supportsService( const OUString& _rServiceName )
+    sal_Bool SAL_CALL AccessibleListBox::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
     }
 
+    // XServiceInfo - static methods
+
+    Sequence< OUString > AccessibleListBox::getSupportedServiceNames_Static() throw( RuntimeException )
+    {
+        Sequence< OUString > aSupported(3);
+        aSupported[0] = "com.sun.star.accessibility.AccessibleContext";
+        aSupported[1] = "com.sun.star.accessibility.AccessibleComponent";
+        aSupported[2] = "com.sun.star.awt.AccessibleTreeListBox";
+        return aSupported;
+    }
+
+    OUString AccessibleListBox::getImplementationName_Static() throw( RuntimeException )
+    {
+        return OUString( "com.sun.star.comp.svtools.AccessibleTreeListBox" );
+    }
+
     // XAccessible
 
-    Reference< XAccessibleContext > SAL_CALL AccessibleListBox::getAccessibleContext(  )
+    Reference< XAccessibleContext > SAL_CALL AccessibleListBox::getAccessibleContext(  ) throw (RuntimeException, std::exception)
     {
         ensureAlive();
         return this;
@@ -345,21 +359,21 @@ namespace accessibility
 
     // XAccessibleContext
 
-    sal_Int32 SAL_CALL AccessibleListBox::getAccessibleChildCount(  )
+    sal_Int32 SAL_CALL AccessibleListBox::getAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
         ensureAlive();
 
         sal_Int32 nCount = 0;
-        VclPtr<SvTreeListBox> pSvTreeListBox = getListBox();
+        SvTreeListBox* pSvTreeListBox = getListBox();
         if ( pSvTreeListBox )
             nCount = pSvTreeListBox->GetLevelChildCount( nullptr );
 
         return nCount;
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleListBox::getAccessibleChild( sal_Int32 i )
+    Reference< XAccessible > SAL_CALL AccessibleListBox::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException,RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -373,7 +387,7 @@ namespace accessibility
         return new AccessibleListBoxEntry( *getListBox(), pEntry, nullptr );
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleListBox::getAccessibleParent(  )
+    Reference< XAccessible > SAL_CALL AccessibleListBox::getAccessibleParent(  ) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -411,6 +425,7 @@ namespace accessibility
     }
 
     sal_Int16 SAL_CALL AccessibleListBox::getAccessibleRole()
+        throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -418,7 +433,9 @@ namespace accessibility
         {
             SvTreeAccRoleType nType = getListBox()->GetAllEntriesAccessibleRoleType();
             if( nType == SvTreeAccRoleType::TREE)
-                return AccessibleRole::TREE;
+                    return AccessibleRole::TREE;
+            else if( nType == SvTreeAccRoleType::LIST)
+                    return AccessibleRole::LIST;
         }
 
         //o is: return AccessibleRole::TREE;
@@ -432,7 +449,7 @@ namespace accessibility
             return AccessibleRole::TREE;
     }
 
-    OUString SAL_CALL AccessibleListBox::getAccessibleDescription(  )
+    OUString SAL_CALL AccessibleListBox::getAccessibleDescription(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -440,7 +457,7 @@ namespace accessibility
         return getListBox()->GetAccessibleDescription();
     }
 
-    OUString SAL_CALL AccessibleListBox::getAccessibleName(  )
+    OUString SAL_CALL AccessibleListBox::getAccessibleName(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -450,7 +467,7 @@ namespace accessibility
 
     // XAccessibleSelection
 
-    void SAL_CALL AccessibleListBox::selectAccessibleChild( sal_Int32 nChildIndex )
+    void SAL_CALL AccessibleListBox::selectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -463,7 +480,7 @@ namespace accessibility
         getListBox()->Select( pEntry );
     }
 
-    sal_Bool SAL_CALL AccessibleListBox::isAccessibleChildSelected( sal_Int32 nChildIndex )
+    sal_Bool SAL_CALL AccessibleListBox::isAccessibleChildSelected( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -476,7 +493,7 @@ namespace accessibility
         return getListBox()->IsSelected( pEntry );
     }
 
-    void SAL_CALL AccessibleListBox::clearAccessibleSelection(  )
+    void SAL_CALL AccessibleListBox::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -491,7 +508,7 @@ namespace accessibility
         }
     }
 
-    void SAL_CALL AccessibleListBox::selectAllAccessibleChildren(  )
+    void SAL_CALL AccessibleListBox::selectAllAccessibleChildren(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -506,7 +523,7 @@ namespace accessibility
         }
     }
 
-    sal_Int32 SAL_CALL AccessibleListBox::getSelectedAccessibleChildCount(  )
+    sal_Int32 SAL_CALL AccessibleListBox::getSelectedAccessibleChildCount(  ) throw (RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -515,7 +532,7 @@ namespace accessibility
         return getListBox()->GetSelectionCount();
     }
 
-    Reference< XAccessible > SAL_CALL AccessibleListBox::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
+    Reference< XAccessible > SAL_CALL AccessibleListBox::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -545,7 +562,7 @@ namespace accessibility
         return xChild;
     }
 
-    void SAL_CALL AccessibleListBox::deselectAccessibleChild( sal_Int32 nSelectedChildIndex )
+    void SAL_CALL AccessibleListBox::deselectAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         ::comphelper::OExternalLockGuard aGuard( this );
 
@@ -565,7 +582,7 @@ namespace accessibility
         {
             rStateSet.AddState( AccessibleStateType::FOCUSABLE );
             rStateSet.AddState( AccessibleStateType::MANAGES_DESCENDANTS );
-            if ( getListBox()->GetSelectionMode() == SelectionMode::Multiple )
+            if ( getListBox()->GetSelectionMode() == MULTIPLE_SELECTION )
                 rStateSet.AddState( AccessibleStateType::MULTI_SELECTABLE );
         }
     }

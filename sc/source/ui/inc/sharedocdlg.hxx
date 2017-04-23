@@ -44,11 +44,11 @@ private:
     ScViewData*         mpViewData;
     ScDocShell*         mpDocShell;
 
-    DECL_LINK( ToggleHandle, CheckBox&, void );
+    DECL_LINK_TYPED( ToggleHandle, CheckBox&, void );
 
 public:
-           SC_DLLPUBLIC ScShareDocumentDlg( vcl::Window* pParent, ScViewData* pViewData );
-                        virtual ~ScShareDocumentDlg() override;
+                        ScShareDocumentDlg( vcl::Window* pParent, ScViewData* pViewData );
+                        virtual ~ScShareDocumentDlg();
     virtual void        dispose() override;
 
     bool                IsShareDocumentChecked() const;

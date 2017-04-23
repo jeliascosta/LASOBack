@@ -16,6 +16,8 @@
 #include <svtools/treelistentry.hxx>
 #include "scabstdlg.hxx"
 
+using namespace std;
+
 ScPivotLayoutTreeListBase::ScPivotLayoutTreeListBase(vcl::Window* pParent, WinBits nBits, SvPivotTreeListType eType)
     : SvTreeListBox(pParent, nBits)
     , meType(eType)
@@ -49,6 +51,11 @@ DragDropMode ScPivotLayoutTreeListBase::NotifyStartDrag(TransferDataContainer& /
 
 void ScPivotLayoutTreeListBase::DragFinished(sal_Int8 /*nDropAction*/)
 {}
+
+sal_Int8 ScPivotLayoutTreeListBase::AcceptDrop(const AcceptDropEvent& rEvent)
+{
+    return SvTreeListBox::AcceptDrop(rEvent);
+}
 
 bool ScPivotLayoutTreeListBase::NotifyAcceptDrop(SvTreeListEntry* /*pEntry*/)
 {

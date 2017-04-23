@@ -87,13 +87,13 @@ void TestBreakIterator::testLineBreaking()
         {
             //Here we want the line break to leave text here) on the next line
             i18n::LineBreakResults aResult = m_xBreak->getLineBreak(aTest, strlen("(some tex"), aLocale, 0, aHyphOptions, aUserOptions);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected a break at the start of the word", static_cast<sal_Int32>(6), aResult.breakIndex);
+            CPPUNIT_ASSERT_MESSAGE("Expected a break at the start of the word", aResult.breakIndex == 6);
         }
 
         {
             //Here we want the line break to leave "here)" on the next line
             i18n::LineBreakResults aResult = m_xBreak->getLineBreak(aTest, strlen("(some text here"), aLocale, 0, aHyphOptions, aUserOptions);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected a break at the start of the word", static_cast<sal_Int32>(11), aResult.breakIndex);
+            CPPUNIT_ASSERT_MESSAGE("Expected a break at the start of the word", aResult.breakIndex == 11);
         }
     }
 
@@ -109,7 +109,7 @@ void TestBreakIterator::testLineBreaking()
         {
             //Here we want the line break to happen at the whitespace
             i18n::LineBreakResults aResult = m_xBreak->getLineBreak(aTest, aTest.getLength()-1, aLocale, 0, aHyphOptions, aUserOptions);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected a break at the start of the word", aWord.getLength()+1, aResult.breakIndex);
+            CPPUNIT_ASSERT_MESSAGE("Expected a break at the start of the word", aResult.breakIndex == aWord.getLength()+1);
         }
     }
 
@@ -124,7 +124,7 @@ void TestBreakIterator::testLineBreaking()
             //Here we want the line break to leave /bar/ba clumped together on the next line
             i18n::LineBreakResults aResult = m_xBreak->getLineBreak(aTest, strlen("foo /bar/ba"), aLocale, 0,
                 aHyphOptions, aUserOptions);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected a break at the first slash", static_cast<sal_Int32>(4), aResult.breakIndex);
+            CPPUNIT_ASSERT_MESSAGE("Expected a break at the first slash", aResult.breakIndex == 4);
         }
     }
 
@@ -139,7 +139,7 @@ void TestBreakIterator::testLineBreaking()
             //Here we want the line break to move the whole lot to the next line
             i18n::LineBreakResults aResult = m_xBreak->getLineBreak(aTest, aTest.getLength()-2, aLocale, 0,
                 aHyphOptions, aUserOptions);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Expected a break at the start of the line, not at ]", static_cast<sal_Int32>(0), aResult.breakIndex);
+            CPPUNIT_ASSERT_MESSAGE("Expected a break at the start of the line, not at ]", aResult.breakIndex == 0);
         }
     }
 
@@ -267,7 +267,7 @@ void TestBreakIterator::testWordBoundaries()
             if (aBreakTests[i] == 0x200B)
                 continue;
 #endif
-            OUString aTest = "Word" + OUStringLiteral1(aBreakTests[i]) + "Word";
+            OUString aTest = "Word" + OUString(aBreakTests[i]) + "Word";
             aBounds = m_xBreak->getWordBoundary(aTest, 0, aLocale, mode, true);
             switch (mode)
             {
@@ -296,7 +296,7 @@ void TestBreakIterator::testWordBoundaries()
         //make sure that in all cases isBeginWord and isEndWord matches getWordBoundary
         for (size_t i = 0; i < SAL_N_ELEMENTS(aJoinTests); ++i)
         {
-            OUString aTest = "Word" + OUStringLiteral1(aJoinTests[i]) + "Word";
+            OUString aTest = "Word" + OUString(aJoinTests[i]) + "Word";
             aBounds = m_xBreak->getWordBoundary(aTest, 0, aLocale, mode, true);
             switch (mode)
             {
@@ -339,8 +339,7 @@ void TestBreakIterator::testWordBoundaries()
             {
                 CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aDoublePositions));
                 nPos = m_xBreak->nextWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                CPPUNIT_ASSERT_EQUAL(aDoublePositions[i], nPos);
-                ++i;
+                CPPUNIT_ASSERT(nPos == aDoublePositions[i++]);
             }
             while (nPos < aTest.getLength());
             nPos = aTest.getLength();
@@ -348,8 +347,7 @@ void TestBreakIterator::testWordBoundaries()
             do
             {
                 nPos = m_xBreak->previousWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                --i;
-                CPPUNIT_ASSERT_EQUAL(aDoublePositions[i], nPos);
+                CPPUNIT_ASSERT(nPos == aDoublePositions[--i]);
             }
             while (nPos > 0);
         }
@@ -357,15 +355,14 @@ void TestBreakIterator::testWordBoundaries()
         const sal_Int32 aSinglePositions[] = {0, 1, 3, 4, 6, 7, 9, 10};
         for (size_t j = 1; j < SAL_N_ELEMENTS(aTests); ++j)
         {
-            OUString aTest = aBase.replaceAll("xx", OUStringLiteral1(aTests[j]));
+            OUString aTest = aBase.replaceAll("xx", OUString(aTests[j]));
             sal_Int32 nPos = -1;
             size_t i = 0;
             do
             {
                 CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aSinglePositions));
                 nPos = m_xBreak->nextWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                CPPUNIT_ASSERT_EQUAL(aSinglePositions[i], nPos);
-                ++i;
+                CPPUNIT_ASSERT(nPos == aSinglePositions[i++]);
             }
             while (nPos < aTest.getLength());
             nPos = aTest.getLength();
@@ -373,24 +370,22 @@ void TestBreakIterator::testWordBoundaries()
             do
             {
                 nPos = m_xBreak->previousWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                --i;
-                CPPUNIT_ASSERT_EQUAL(aSinglePositions[i], nPos);
+                CPPUNIT_ASSERT(nPos == aSinglePositions[--i]);
             }
             while (nPos > 0);
         }
 
         const sal_Int32 aSingleQuotePositions[] = {0, 1, 9, 10};
-        CPPUNIT_ASSERT_EQUAL(static_cast<sal_Unicode>('\''), aTests[0]);
+        CPPUNIT_ASSERT(aTests[0] == '\'');
         {
-            OUString aTest = aBase.replaceAll("xx", OUStringLiteral1(aTests[0]));
+            OUString aTest = aBase.replaceAll("xx", OUString(aTests[0]));
             sal_Int32 nPos = -1;
             size_t i = 0;
             do
             {
                 CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aSingleQuotePositions));
                 nPos = m_xBreak->nextWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                CPPUNIT_ASSERT_EQUAL(aSingleQuotePositions[i], nPos);
-                ++i;
+                CPPUNIT_ASSERT(nPos == aSingleQuotePositions[i++]);
             }
             while (nPos < aTest.getLength());
             nPos = aTest.getLength();
@@ -398,8 +393,7 @@ void TestBreakIterator::testWordBoundaries()
             do
             {
                 nPos = m_xBreak->previousWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-                --i;
-                CPPUNIT_ASSERT_EQUAL(aSingleQuotePositions[i], nPos);
+                CPPUNIT_ASSERT(nPos == aSingleQuotePositions[--i]);
             }
             while (nPos > 0);
         }
@@ -420,11 +414,10 @@ void TestBreakIterator::testWordBoundaries()
             CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aExpected));
             nPos = m_xBreak->getWordBoundary(aTest, nPos, aLocale,
                 i18n::WordType::DICTIONARY_WORD, true).endPos;
-            CPPUNIT_ASSERT_EQUAL(aExpected[i], nPos);
-            ++i;
+            CPPUNIT_ASSERT(aExpected[i++] == nPos);
         }
         while (nPos++ < aTest.getLength());
-        CPPUNIT_ASSERT_EQUAL(SAL_N_ELEMENTS(aExpected), i);
+        CPPUNIT_ASSERT(i == SAL_N_ELEMENTS(aExpected));
     }
 
     //See https://bz.apache.org/ooo/show_bug.cgi?id=85411
@@ -463,11 +456,10 @@ void TestBreakIterator::testWordBoundaries()
             CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aExpected));
             nPos = m_xBreak->getWordBoundary(aTest, nPos, aLocale,
                 i18n::WordType::DICTIONARY_WORD, true).endPos;
-            CPPUNIT_ASSERT_EQUAL(aExpected[i], nPos);
-            ++i;
+            CPPUNIT_ASSERT(aExpected[i++] == nPos);
         }
         while (nPos++ < aTest.getLength());
-        CPPUNIT_ASSERT_EQUAL(SAL_N_ELEMENTS(aExpected), i);
+        CPPUNIT_ASSERT(i == SAL_N_ELEMENTS(aExpected));
     }
 
     //https://bz.apache.org/ooo/show_bug.cgi?id=21290
@@ -505,11 +497,10 @@ void TestBreakIterator::testWordBoundaries()
             CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aExpected));
             nPos = m_xBreak->getWordBoundary(aTest, nPos, aLocale,
                 i18n::WordType::DICTIONARY_WORD, true).endPos;
-            CPPUNIT_ASSERT_EQUAL(aExpected[i], nPos);
-            ++i;
+            CPPUNIT_ASSERT(aExpected[i++] == nPos);
         }
         while (nPos++ < aTest.getLength());
-        CPPUNIT_ASSERT_EQUAL(SAL_N_ELEMENTS(aExpected), i);
+        CPPUNIT_ASSERT(i == SAL_N_ELEMENTS(aExpected));
     }
 
     //See https://bz.apache.org/ooo/show_bug.cgi?id=58513
@@ -529,11 +520,10 @@ void TestBreakIterator::testWordBoundaries()
                 CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aExpected));
                 nPos = m_xBreak->getWordBoundary(aTest, nPos, aLocale,
                     i18n::WordType::WORD_COUNT, true).endPos;
-                CPPUNIT_ASSERT_EQUAL(aExpected[i], nPos);
-                ++i;
+                CPPUNIT_ASSERT(aExpected[i++] == nPos);
             }
             while (nPos++ < aTest.getLength());
-            CPPUNIT_ASSERT_EQUAL(SAL_N_ELEMENTS(aExpected), i);
+            CPPUNIT_ASSERT(i == SAL_N_ELEMENTS(aExpected));
         }
 
         {
@@ -546,14 +536,12 @@ void TestBreakIterator::testWordBoundaries()
                 CPPUNIT_ASSERT(i < SAL_N_ELEMENTS(aExpected));
                 aBounds = m_xBreak->getWordBoundary(aTest, nPos, aLocale,
                     i18n::WordType::DICTIONARY_WORD, true);
-                CPPUNIT_ASSERT_EQUAL(aExpected[i], aBounds.startPos);
-                ++i;
-                CPPUNIT_ASSERT_EQUAL(aExpected[i], aBounds.endPos);
-                ++i;
+                CPPUNIT_ASSERT(aExpected[i++] == aBounds.startPos);
+                CPPUNIT_ASSERT(aExpected[i++] == aBounds.endPos);
                 nPos = aBounds.endPos;
             }
             while (nPos++ < aTest.getLength());
-            CPPUNIT_ASSERT_EQUAL(SAL_N_ELEMENTS(aExpected), i);
+            CPPUNIT_ASSERT(i == SAL_N_ELEMENTS(aExpected));
         }
     }
 
@@ -615,10 +603,10 @@ void TestBreakIterator::testGraphemeIteration()
         sal_Int32 nPos;
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(BA_HALANT_LA)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(BA_HALANT_LA));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(BA_HALANT_LA), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 
     {
@@ -629,10 +617,10 @@ void TestBreakIterator::testGraphemeIteration()
         sal_Int32 nPos;
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(HA_HALANT_NA_VOWELSIGNI)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(HA_HALANT_NA_VOWELSIGNI));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(HA_HALANT_NA_VOWELSIGNI), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 
     {
@@ -643,10 +631,10 @@ void TestBreakIterator::testGraphemeIteration()
         sal_Int32 nPos;
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(TA_HALANT_MA_HALANT_YA)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(TA_HALANT_MA_HALANT_YA));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(TA_HALANT_MA_HALANT_YA), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 
     aLocale.Language = "ta";
@@ -661,10 +649,10 @@ void TestBreakIterator::testGraphemeIteration()
 
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(KA_VIRAMA_SSA)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(KA_VIRAMA_SSA));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(KA_VIRAMA_SSA), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 
     {
@@ -676,10 +664,10 @@ void TestBreakIterator::testGraphemeIteration()
 
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(KA_VOWELSIGNU)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(KA_VOWELSIGNU));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(KA_VOWELSIGNU), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 
     {
@@ -696,7 +684,7 @@ void TestBreakIterator::testGraphemeIteration()
             sal_Int32 nOldPos = nPos;
             nPos = m_xBreak->nextCharacters(aTest, nPos, aLocale,
                 i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip 2 units", nOldPos+2, nPos);
+            CPPUNIT_ASSERT_MESSAGE("Should skip 2 units", nPos == nOldPos+2);
         }
 
         for (sal_Int32 i = 0; i < 4; ++i)
@@ -704,7 +692,7 @@ void TestBreakIterator::testGraphemeIteration()
             sal_Int32 nOldPos = nPos;
             nPos = m_xBreak->previousCharacters(aTest, nPos, aLocale,
                 i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-            CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip 2 units", nOldPos-2, nPos);
+            CPPUNIT_ASSERT_MESSAGE("Should skip 2 units", nPos == nOldPos-2);
         }
     }
 
@@ -723,7 +711,7 @@ void TestBreakIterator::testGraphemeIteration()
             ++nGraphemeCount;
         }
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be considered 1 grapheme", static_cast<sal_Int32>(1), nGraphemeCount);
+        CPPUNIT_ASSERT_MESSAGE("Should be considered 1 grapheme", nGraphemeCount == 1);
     }
 
     aLocale.Language = "hi";
@@ -738,10 +726,10 @@ void TestBreakIterator::testGraphemeIteration()
 
         nPos = m_xBreak->nextCharacters(aTest, 0, aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(SAL_N_ELEMENTS(SHA_VOWELSIGNII)), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == SAL_N_ELEMENTS(SHA_VOWELSIGNII));
         nPos = m_xBreak->previousCharacters(aTest, SAL_N_ELEMENTS(SHA_VOWELSIGNII), aLocale,
             i18n::CharacterIteratorMode::SKIPCELL, 1, nDone);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should skip full grapheme", static_cast<sal_Int32>(0), nPos);
+        CPPUNIT_ASSERT_MESSAGE("Should skip full grapheme", nPos == 0);
     }
 }
 
@@ -759,10 +747,6 @@ void TestBreakIterator::testWeak()
         {
             0x0001, 0x0002,
             0x0020, 0x00A0,
-            0x0300, 0x036F, //Combining Diacritical Marks
-            0x1AB0, 0x1AFF, //Combining Diacritical Marks Extended
-            0x1DC0, 0x1DFF, //Combining Diacritical Marks Supplement
-            0x20D0, 0x20FF, //Combining Diacritical Marks for Symbols
             0x2150, 0x215F, //Number Forms, fractions
             0x2160, 0x2180, //Number Forms, roman numerals
             0x2200, 0x22FF, //Mathematical Operators
@@ -783,8 +767,8 @@ void TestBreakIterator::testWeak()
             aMsg.append("Char 0x");
             aMsg.append(static_cast<sal_Int32>(aWeaks[i]), 16);
             aMsg.append(" should have been weak");
-            CPPUNIT_ASSERT_EQUAL_MESSAGE(aMsg.getStr(),
-                i18n::ScriptType::WEAK, nScript);
+            CPPUNIT_ASSERT_MESSAGE(aMsg.getStr(),
+                nScript == i18n::ScriptType::WEAK);
         }
     }
 }
@@ -822,8 +806,8 @@ void TestBreakIterator::testAsian()
             aMsg.append("Char 0x");
             aMsg.append(static_cast<sal_Int32>(aAsians[i]), 16);
             aMsg.append(" should have been asian");
-            CPPUNIT_ASSERT_EQUAL_MESSAGE(aMsg.getStr(),
-                i18n::ScriptType::ASIAN, nScript);
+            CPPUNIT_ASSERT_MESSAGE(aMsg.getStr(),
+                nScript == i18n::ScriptType::ASIAN);
         }
     }
 }
@@ -898,7 +882,7 @@ void TestBreakIterator::testThai()
         {
             CPPUNIT_ASSERT(!aPositions.empty());
             nPos = m_xBreak->previousWord(aTest, nPos, aLocale, i18n::WordType::ANYWORD_IGNOREWHITESPACES).startPos;
-            CPPUNIT_ASSERT_EQUAL(aPositions.top(), nPos);
+            CPPUNIT_ASSERT(nPos == aPositions.top());
             aPositions.pop();
         }
         while (nPos > 0);

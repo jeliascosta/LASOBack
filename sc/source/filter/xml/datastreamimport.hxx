@@ -27,7 +27,7 @@ public:
         ScXMLImport& rImport, sal_uInt16 nPrefix, const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLDataStreamContext() override;
+    virtual ~ScXMLDataStreamContext();
 
     virtual void EndElement() override;
 };

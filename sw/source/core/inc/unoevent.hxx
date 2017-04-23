@@ -24,18 +24,21 @@
 #include <svl/macitem.hxx>
 
 class SvxMacroItem;
+class SvxMacro;
 class SwXFrame;
 class SwXTextFrame;
 class SwXTextGraphicObject;
 class SwXTextEmbeddedObject;
+class SwXFrameStyle;
 class SwFormatINetFormat;
 
 class SwHyperlinkEventDescriptor : public SvDetachedEventDescriptor
 {
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
 protected:
-    virtual ~SwHyperlinkEventDescriptor() override;
+    virtual ~SwHyperlinkEventDescriptor();
 public:
 
      SwHyperlinkEventDescriptor();
@@ -63,9 +66,10 @@ public:
     SwFrameEventDescriptor( SwXTextGraphicObject& rGraphicRef );
     SwFrameEventDescriptor( SwXTextEmbeddedObject& rObjectRef );
 
-    virtual ~SwFrameEventDescriptor() override;
+    virtual ~SwFrameEventDescriptor();
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 protected:
     virtual void setMacroItem(const SvxMacroItem& rItem) override;
@@ -82,9 +86,10 @@ class SwFrameStyleEventDescriptor : public SvEventDescriptor
 public:
     SwFrameStyleEventDescriptor( sw::ICoreFrameStyle& rStyle );
 
-    virtual ~SwFrameStyleEventDescriptor() override;
+    virtual ~SwFrameStyleEventDescriptor();
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 protected:
     virtual void setMacroItem(const SvxMacroItem& rItem) override;

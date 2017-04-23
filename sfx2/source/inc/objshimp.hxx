@@ -23,6 +23,7 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/ref.hxx>
+#include <com/sun/star/logging/XSimpleLogRing.hpp>
 #include <tools/datetime.hxx>
 
 #include <unotools/securityoptions.hxx>
@@ -36,6 +37,12 @@
 namespace svtools { class AsynchronLink; }
 
 class SfxViewFrame;
+struct MarkData_Impl
+{
+    OUString aMark;
+    OUString aUserData;
+    SfxViewFrame* pFrame;
+};
 
 class SfxBasicManagerHolder;
 
@@ -73,6 +80,7 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
                         bIsSaving:1,
                         bPasswd:1,
                         bIsNamedVisible:1,
+                        bIsTemplate:1,
                         bIsAbortingImport:1,  // Import operation should be canceled.
                         bImportDone : 1, // Import finished already? For auto reload of Docs.
                         bInPrepareClose : 1,
@@ -82,6 +90,7 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
                         bIsPrintJobCancelable :1, // Stampit disable/enable cancel button for print jobs ... default = true = enable!
                         bOwnsStorage:1,
                         bInitialized:1,
+                        bSignatureErrorIsShown:1,
                         bModelInitialized:1, // whether the related model is initialized
                         bPreserveVersions:1,
                         m_bMacroSignBroken:1, // whether the macro signature was explicitly broken
@@ -92,19 +101,21 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
                         bUseUserData:1,
                         bUseThumbnailSave:1,
                         bSaveVersionOnClose:1,
-                        m_bSharedXMLFlag:1, // whether the document should be edited in shared mode
+                        m_bSharedXMLFlag:1, // whether the flag should be stored in xml file
                         m_bAllowShareControlFileClean:1, // whether the flag should be stored in xml file
                         m_bConfigOptionsChecked:1; // whether or not the user options are checked after the Options dialog is closed.
 
     IndexBitSet         aBitSet;
     sal_uInt32          lErr;
-    SfxEventHintId      nEventId;           // If Open/Create as to be sent
+    sal_uInt16          nEventId;           // If Open/Create as to be sent
                                             // before Activate
     AutoReloadTimer_Impl *pReloadTimer;
+    MarkData_Impl*      pMarkData;
     SfxLoadedFlags      nLoadedFlags;
     SfxLoadedFlags      nFlagsInProgress;
     bool                bModalMode;
     bool                bRunningMacro;
+    bool                bReloadAvailable;
     sal_uInt16          nAutoLoadLocks;
     SfxObjectShellFlags eFlags;
     bool                bReadOnlyUI;
@@ -117,7 +128,7 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
     bool                m_bEnableSetModified;
     bool                m_bIsModified;
 
-    tools::Rectangle           m_aVisArea;
+    Rectangle           m_aVisArea;
     MapUnit             m_nMapUnit;
 
     bool                m_bCreateTempStor;
@@ -126,6 +137,8 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
     bool                m_bIsInit;
 
     OUString            m_aSharedFileURL;
+
+    css::uno::Reference< css::logging::XSimpleLogRing > m_xLogRing;
 
     bool                m_bIncomplEncrWarnShown;
 
@@ -148,6 +161,7 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
     virtual SignatureState getScriptingSignatureState() override;
 
     virtual bool hasTrustedScriptingSignature( bool bAllowUIToAddAuthor ) override;
+    virtual void showBrokenSignatureWarning( const css::uno::Reference< css::task::XInteractionHandler >& _rxInteraction ) const override;
 };
 
 #endif

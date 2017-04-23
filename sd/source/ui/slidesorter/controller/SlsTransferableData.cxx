@@ -70,9 +70,10 @@ TransferableData::~TransferableData()
 
 void TransferableData::Notify (SfxBroadcaster&, const SfxHint& rHint)
 {
-    if (mpViewShell)
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if (pSimpleHint && mpViewShell)
     {
-        if (rHint.GetId() == SfxHintId::Dying)
+        if (pSimpleHint->GetId() == SFX_HINT_DYING)
         {
             // This hint may come either from the ViewShell or from the
             // document (registered by SdTransferable).  We do not know

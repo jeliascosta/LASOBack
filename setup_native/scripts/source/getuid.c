@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#ifdef __sun
+#ifdef SOLARIS
 
 #include <sys/systeminfo.h>
 #include <strings.h>

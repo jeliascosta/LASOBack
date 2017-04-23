@@ -82,7 +82,7 @@ public:
     XFFrame();
     explicit XFFrame(bool isTextBox);
 
-    virtual ~XFFrame() override;
+    virtual ~XFFrame();
 
 public:
     using XFContentContainer::Add;
@@ -176,11 +176,12 @@ private:
 protected:
     enumXFAnchor    m_eAnchor;
     sal_Int32       m_nAnchorPage;
-    OUString        m_strName;
+    OUString   m_strName;
     sal_uInt32      m_nZIndex;
     XFRect          m_aRect;
     double          m_fMinHeight;
-    OUString        m_strNextLink;
+    double          m_fMaxHeight;
+    OUString   m_strNextLink;
     enumXFFrameType m_eType;
     sal_uInt32      m_nFlag;
     bool            m_isTextBox;

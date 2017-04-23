@@ -29,24 +29,25 @@
 // class XLineJointItem
 
 
-class SVX_DLLPUBLIC XLineJointItem : public SfxEnumItem<css::drawing::LineJoint>
+class SVX_DLLPUBLIC XLineJointItem : public SfxEnumItem
 {
 public:
                             static SfxPoolItem* CreateDefault();
                             XLineJointItem( css::drawing::LineJoint eLineJoint = css::drawing::LineJoint_ROUND );
                             XLineJointItem( SvStream& rIn );
 
-    virtual sal_uInt16      GetVersion( sal_uInt16 nFileFormatVersion ) const override;
+    virtual sal_uInt16           GetVersion( sal_uInt16 nFileFormatVersion ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create( SvStream& rIn, sal_uInt16 nVer ) const override;
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric, MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    virtual sal_uInt16       GetValueCount() const override;
+    virtual sal_uInt16                 GetValueCount() const override;
+    css::drawing::LineJoint GetValue() const { return (css::drawing::LineJoint) SfxEnumItem::GetValue(); }
 };
 
 #endif // INCLUDED_SVX_XLINJOIT_HXX

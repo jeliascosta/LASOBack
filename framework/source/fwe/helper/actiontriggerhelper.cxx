@@ -22,7 +22,6 @@
 #include <classes/rootactiontriggercontainer.hxx>
 #include <classes/imagewrapper.hxx>
 #include <framework/addonsoptions.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/awt/XBitmap.hpp>
@@ -190,7 +189,7 @@ void InsertSubMenuItems( Menu* pSubMenu, sal_uInt16& nItemId, const Reference< X
                                         Bitmap aMaskBitmap;
                                         SvMemoryStream aMem( const_cast<sal_Int8 *>(aDIBSeq.getConstArray()), aDIBSeq.getLength(), StreamMode::READ );
                                         ReadDIB(aMaskBitmap, aMem, true);
-                                        aImage = Image(BitmapEx(aBitmap, aMaskBitmap));
+                                        aImage = Image( aBitmap, aMaskBitmap );
                                     }
                                     else
                                         aImage = Image( aBitmap );
@@ -209,7 +208,7 @@ void InsertSubMenuItems( Menu* pSubMenu, sal_uInt16& nItemId, const Reference< X
 
                             if ( xSubContainer.is() )
                             {
-                                VclPtr<PopupMenu> pNewSubMenu = VclPtr<PopupMenu>::Create();
+                                PopupMenu* pNewSubMenu = new PopupMenu;
 
                                 // Sub menu (recursive call CreateSubMenu )
                                 InsertSubMenuItems( pNewSubMenu, nItemId, xSubContainer );
@@ -237,8 +236,7 @@ void InsertSubMenuItems( Menu* pSubMenu, sal_uInt16& nItemId, const Reference< X
 
 // implementation helper ( ActionTrigger => menu )
 
-/// @throws RuntimeException
-Reference< XPropertySet > CreateActionTrigger( sal_uInt16 nItemId, const Menu* pMenu, const Reference< XIndexContainer >& rActionTriggerContainer )
+Reference< XPropertySet > CreateActionTrigger( sal_uInt16 nItemId, const Menu* pMenu, const Reference< XIndexContainer >& rActionTriggerContainer ) throw ( RuntimeException )
 {
     Reference< XPropertySet > xPropSet;
 
@@ -284,8 +282,7 @@ Reference< XPropertySet > CreateActionTrigger( sal_uInt16 nItemId, const Menu* p
     return xPropSet;
 }
 
-/// @throws RuntimeException
-Reference< XPropertySet > CreateActionTriggerSeparator( const Reference< XIndexContainer >& rActionTriggerContainer )
+Reference< XPropertySet > CreateActionTriggerSeparator( const Reference< XIndexContainer >& rActionTriggerContainer ) throw ( RuntimeException )
 {
     Reference< XMultiServiceFactory > xMultiServiceFactory( rActionTriggerContainer, UNO_QUERY );
     if ( xMultiServiceFactory.is() )
@@ -298,8 +295,7 @@ Reference< XPropertySet > CreateActionTriggerSeparator( const Reference< XIndexC
     return Reference< XPropertySet >();
 }
 
-/// @throws RuntimeException
-Reference< XIndexContainer > CreateActionTriggerContainer( const Reference< XIndexContainer >& rActionTriggerContainer )
+Reference< XIndexContainer > CreateActionTriggerContainer( const Reference< XIndexContainer >& rActionTriggerContainer ) throw ( RuntimeException )
 {
     Reference< XMultiServiceFactory > xMultiServiceFactory( rActionTriggerContainer, UNO_QUERY );
     if ( xMultiServiceFactory.is() )

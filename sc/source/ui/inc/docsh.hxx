@@ -35,6 +35,7 @@
 #include "optutil.hxx"
 #include "docuno.hxx"
 
+#include <config_telepathy.h>
 #include <memory>
 #include <unordered_map>
 
@@ -63,6 +64,9 @@ class ScSheetSaveData;
 class ScFlatBoolRowSegments;
 class HelperModelObj;
 struct ScColWidthParam;
+#if ENABLE_TELEPATHY
+class ScCollaboration;
+#endif
 
 namespace sfx2 { class FileDialogHelper; }
 struct DocShell_Impl;
@@ -70,8 +74,6 @@ struct DocShell_Impl;
 typedef std::unordered_map< sal_uLong, sal_uLong > ScChangeActionMergeMap;
 
 //enum ScDBFormat { SC_FORMAT_SDF, SC_FORMAT_DBF };
-
-enum class LOKCommentNotificationType { Add, Modify, Remove };
 
                                     // Extra flags for Repaint
 #define SC_PF_LINES         1
@@ -95,7 +97,6 @@ class SC_DLLPUBLIC ScDocShell final: public SfxObjectShell, public SfxListener
     bool                bIsInUndo:1;
     bool                bDocumentModifiedPending:1;
     bool                bUpdateEnabled:1;
-    bool                mbUcalcTest:1; // avoid loading the styles in the ucalc test
     sal_uInt16          nDocumentLock;
     sal_Int16           nCanUpdate;  // stores the UpdateDocMode from loading a document till update links
 
@@ -105,9 +106,11 @@ class SC_DLLPUBLIC ScDocShell final: public SfxObjectShell, public SfxListener
     ScPaintLockData*    pPaintLockData;
     ScOptSolverSave*    pSolverSaveData;
     ScSheetSaveData*    pSheetSaveData;
-    ScFormatSaveData*   mpFormatSaveData;
 
     ScDocShellModificator* pModificator; // #109979#; is used to load XML (created in BeforeXMLLoading and destroyed in AfterXMLLoading)
+#if ENABLE_TELEPATHY
+    ScCollaboration*      mpCollaboration;
+#endif
 
     SAL_DLLPRIVATE void          InitItems();
     SAL_DLLPRIVATE void          DoEnterHandler();
@@ -129,7 +132,7 @@ class SC_DLLPUBLIC ScDocShell final: public SfxObjectShell, public SfxListener
     SAL_DLLPRIVATE bool          SaveXML( SfxMedium* pMedium, const css::uno::Reference< css::embed::XStorage >& );
     SAL_DLLPRIVATE SCTAB         GetSaveTab();
 
-    SAL_DLLPRIVATE static bool   SaveCurrentChart( SfxMedium& rMedium );
+    SAL_DLLPRIVATE bool          SaveCurrentChart( SfxMedium& rMedium );
 
     SAL_DLLPRIVATE sal_uLong     DBaseImport( const OUString& rFullFileName, rtl_TextEncoding eCharSet,
                                              ScColWidthParam aColWidthParam[MAXCOLCOUNT], ScFlatBoolRowSegments& rRowHeightsRecalc );
@@ -152,6 +155,8 @@ class SC_DLLPUBLIC ScDocShell final: public SfxObjectShell, public SfxListener
 
     SAL_DLLPRIVATE ScDocFunc    *CreateDocFunc();
 
+protected:
+
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
 public:
@@ -163,9 +168,13 @@ private:
     static void InitInterface_Impl();
 
 public:
-    explicit        ScDocShell( const ScDocShell& rDocShell );
-    explicit        ScDocShell( const SfxModelFlags i_nSfxCreationFlags = SfxModelFlags::EMBEDDED_OBJECT );
-                    virtual ~ScDocShell() override;
+                    ScDocShell( const ScDocShell& rDocShell );
+                    ScDocShell( const SfxModelFlags i_nSfxCreationFlags = SfxModelFlags::EMBEDDED_OBJECT );
+                    virtual ~ScDocShell();
+
+#if ENABLE_TELEPATHY
+    SAL_DLLPRIVATE ScCollaboration* GetCollaboration();
+#endif
 
     virtual ::svl::IUndoManager*
                     GetUndoManager() override;
@@ -190,24 +199,26 @@ public:
     virtual bool    ConvertTo( SfxMedium &rMedium ) override;
     virtual bool    PrepareClose( bool bUI = true ) override;
     virtual void    PrepareReload() override;
+    virtual bool    IsInformationLost() override;
     virtual void    LoadStyles( SfxObjectShell &rSource ) override;
 
-    virtual bool    DoSaveCompleted( SfxMedium * pNewStor=nullptr, bool bRegisterRecent=true ) override;     // SfxObjectShell
+    virtual bool    SaveCompleted( const css::uno::Reference< css::embed::XStorage >& ) override;      // SfxInPlaceObject
+    virtual bool    DoSaveCompleted( SfxMedium * pNewStor, bool bRegisterRecent ) override;     // SfxObjectShell
     virtual bool    QuerySlotExecutable( sal_uInt16 nSlotId ) override;
 
     virtual void    Draw( OutputDevice *, const JobSetup & rSetup,
                                 sal_uInt16 nAspect = ASPECT_CONTENT ) override;
 
-    virtual void    SetVisArea( const tools::Rectangle & rVisArea ) override;
+    virtual void    SetVisArea( const Rectangle & rVisArea ) override;
 
     using SfxObjectShell::GetVisArea;
-    virtual tools::Rectangle GetVisArea( sal_uInt16 nAspect ) const override;
+    virtual Rectangle GetVisArea( sal_uInt16 nAspect ) const override;
 
     virtual Printer* GetDocumentPrinter() override;
 
     virtual void    SetModified( bool = true ) override;
 
-    void            SetVisAreaOrSize( const tools::Rectangle& rVisArea );
+    void            SetVisAreaOrSize( const Rectangle& rVisArea );
 
     virtual VclPtr<SfxDocumentInfoDialog> CreateDocumentInfoDialog( const SfxItemSet &rSet ) override;
 
@@ -215,9 +226,10 @@ public:
 
     ScDocument&     GetDocument()   { return aDocument; }
     ScDocFunc&      GetDocFunc()    { return *pDocFunc; }
+    void            SetDocFunc( ScDocFunc *pDF ) { pDocFunc = pDF; }
 
     SfxPrinter*     GetPrinter( bool bCreateIfNotExist = true );
-    sal_uInt16      SetPrinter( VclPtr<SfxPrinter> const & pNewPrinter, SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL );
+    sal_uInt16      SetPrinter( SfxPrinter* pNewPrinter, SfxPrinterChangeFlags nDiffFlags = SFX_PRINTER_ALL );
 
     void            UpdateFontList();
 
@@ -245,7 +257,7 @@ public:
                     /// If bJustQueryIfProtected==sal_True protection is not
                     /// changed and <TRUE/> is returned if not protected or
                     /// password was entered correctly.
-    bool            ExecuteChangeProtectionDialog( bool bJustQueryIfProtected = false );
+    bool            ExecuteChangeProtectionDialog( vcl::Window* _pParent, bool bJustQueryIfProtected = false );
 
     void            SetPrintZoom( SCTAB nTab, sal_uInt16 nScale, sal_uInt16 nPages );
     bool            AdjustPrintZoom( const ScRange& rRange );
@@ -268,11 +280,11 @@ public:
     void            RefreshPivotTables( const ScRange& rSource );
     void            DoConsolidate( const ScConsolidateParam& rParam, bool bRecord = true );
     void            UseScenario( SCTAB nTab, const OUString& rName, bool bRecord = true );
-    SCTAB           MakeScenario(SCTAB nTab, const OUString& rName, const OUString& rComment,
-                                    const Color& rColor, ScScenarioFlags nFlags,
-                                    ScMarkData& rMark, bool bRecord = true);
-    void            ModifyScenario(SCTAB nTab, const OUString& rName, const OUString& rComment,
-                                    const Color& rColor, ScScenarioFlags nFlags);
+    SCTAB           MakeScenario( SCTAB nTab, const OUString& rName, const OUString& rComment,
+                                    const Color& rColor, sal_uInt16 nFlags,
+                                    ScMarkData& rMark, bool bRecord = true );
+    void            ModifyScenario( SCTAB nTab, const OUString& rName, const OUString& rComment,
+                                    const Color& rColor, sal_uInt16 nFlags );
     sal_uLong TransferTab( ScDocShell& rSrcDocShell, SCTAB nSrcPos,
                                 SCTAB nDestPos, bool bInsertNew,
                                 bool bNotifyAndPaint );
@@ -296,14 +308,15 @@ public:
     void            ReloadTabLinks();
 
     void            SetFormulaOptions( const ScFormulaOptions& rOpt, bool bForLoading = false );
+    void            SetCalcConfig( const ScCalcConfig& rConfig );
     virtual void    CheckConfigOptions() override;
 
     void            PostEditView( ScEditEngineDefaulter* pEditEngine, const ScAddress& rCursorPos );
 
     void            PostPaint( SCCOL nStartCol, SCROW nStartRow, SCTAB nStartTab,
-                            SCCOL nEndCol, SCROW nEndRow, SCTAB nEndTab, PaintPartFlags nPart,
+                            SCCOL nEndCol, SCROW nEndRow, SCTAB nEndTab, sal_uInt16 nPart,
                             sal_uInt16 nExtFlags = 0 );
-    void            PostPaint( const ScRangeList& rRanges, PaintPartFlags nPart, sal_uInt16 nExtFlags = 0 );
+    void            PostPaint( const ScRangeList& rRanges, sal_uInt16 nPart, sal_uInt16 nExtFlags = 0 );
 
     void            PostPaintCell( SCCOL nCol, SCROW nRow, SCTAB nTab );
     void            PostPaintCell( const ScAddress& rPos );
@@ -329,7 +342,7 @@ public:
     void            LockDocument();
     void            UnlockDocument();
 
-    DECL_LINK( DialogClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK_TYPED( DialogClosedHdl, sfx2::FileDialogHelper*, void );
 
     virtual SfxStyleSheetBasePool*  GetStyleSheetPool() override;
 
@@ -386,9 +399,8 @@ public:
     static OUString   GetDBaseFilterName();
     static OUString   GetDifFilterName();
     static bool       HasAutomaticTableName( const OUString& rFilter );
-    static void       LOKCommentNotify(LOKCommentNotificationType nType, const ScDocument* pDocument, const ScAddress& rPos, const ScPostIt* pNote);
 
-    DECL_LINK( RefreshDBDataHdl, Timer*, void );
+    DECL_LINK_TYPED( RefreshDBDataHdl, Timer*, void );
 
     void            BeforeXMLLoading();
     void            AfterXMLLoading(bool bRet);
@@ -398,7 +410,6 @@ public:
     const ScOptSolverSave* GetSolverSaveData() const    { return pSolverSaveData; }     // may be null
     void            SetSolverSaveData( const ScOptSolverSave& rData );
     ScSheetSaveData* GetSheetSaveData();
-    ScFormatSaveData* GetFormatSaveData();
 
     static void ResetKeyBindings( ScOptionsUtil::KeyBindingType eType );
 
@@ -410,9 +421,9 @@ public:
     virtual void    SetProtectionPassword( const OUString &rPassword ) override;
     virtual bool    GetProtectionHash( /*out*/ css::uno::Sequence< sal_Int8 > &rPasswordHash ) override;
 
-    void SnapVisArea( tools::Rectangle& rRect ) const;
+    void SnapVisArea( Rectangle& rRect ) const;
 
-    void SetIsInUcalc();
+    virtual void libreOfficeKitCallback(int nType, const char* pPayload) const override;
 };
 
 void UpdateAcceptChangesDialog();
@@ -437,18 +448,18 @@ typedef tools::SvRef<ScDocShell> ScDocShellRef;
  */
 class SC_DLLPUBLIC ScDocShellModificator
 {
-    ScDocShell&     rDocShell;
+            ScDocShell&     rDocShell;
     std::unique_ptr<ScRefreshTimerProtector> mpProtector;
-    bool            bAutoCalcShellDisabled;
-    bool            bIdleEnabled;
+            bool            bAutoCalcShellDisabled;
+            bool            bIdleEnabled;
 
-    ScDocShellModificator( const ScDocShellModificator& ) = delete;
+                            ScDocShellModificator( const ScDocShellModificator& ) = delete;
     ScDocShellModificator&  operator=( const ScDocShellModificator& ) = delete;
 
 public:
-    explicit ScDocShellModificator( ScDocShell& );
-    ~ScDocShellModificator();
-    void            SetDocumentModified();
+                            ScDocShellModificator( ScDocShell& );
+                            ~ScDocShellModificator();
+            void            SetDocumentModified();
 };
 
 //#i97876# Spreadsheet data changes are not notified

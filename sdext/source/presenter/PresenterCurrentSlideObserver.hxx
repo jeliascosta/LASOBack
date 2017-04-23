@@ -31,9 +31,11 @@
 
 namespace sdext { namespace presenter {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::presentation::XSlideShowListener
-> PresenterCurrentSlideObserverInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::presentation::XSlideShowListener
+    > PresenterCurrentSlideObserverInterfaceBase;
+}
 
 /** Check periodically the slide show controller and the
     frame::XController whether the current slide has changed.  If so,
@@ -50,27 +52,28 @@ public:
     PresenterCurrentSlideObserver (
         const ::rtl::Reference<PresenterController>& rxPresenterController,
         const css::uno::Reference<css::presentation::XSlideShowController>& rxSlideShowController);
-    virtual ~PresenterCurrentSlideObserver() override;
+    virtual ~PresenterCurrentSlideObserver();
 
     virtual void SAL_CALL disposing() override;
 
     // XSlideShowListener
-    virtual void SAL_CALL paused(  ) override;
-    virtual void SAL_CALL resumed(  ) override;
-    virtual void SAL_CALL slideTransitionStarted(  ) override;
-    virtual void SAL_CALL slideTransitionEnded(  ) override;
-    virtual void SAL_CALL slideAnimationsEnded(  ) override;
-    virtual void SAL_CALL slideEnded(sal_Bool bReverse) override;
-    virtual void SAL_CALL hyperLinkClicked( const OUString& hyperLink ) override;
+    virtual void SAL_CALL paused(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL resumed(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL slideTransitionStarted(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL slideTransitionEnded(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL slideAnimationsEnded(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL slideEnded(sal_Bool bReverse) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL hyperLinkClicked( const OUString& hyperLink ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XAnimationListener
-    virtual void SAL_CALL beginEvent( const css::uno::Reference< css::animations::XAnimationNode >& Node ) override;
-    virtual void SAL_CALL endEvent( const css::uno::Reference< css::animations::XAnimationNode >& Node ) override;
-    virtual void SAL_CALL repeat( const css::uno::Reference< css::animations::XAnimationNode >& Node, ::sal_Int32 Repeat ) override;
+    virtual void SAL_CALL beginEvent( const css::uno::Reference< css::animations::XAnimationNode >& Node ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL endEvent( const css::uno::Reference< css::animations::XAnimationNode >& Node ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL repeat( const css::uno::Reference< css::animations::XAnimationNode >& Node, ::sal_Int32 Repeat ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent) override;
+        const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     ::rtl::Reference<PresenterController> mpPresenterController;

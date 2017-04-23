@@ -83,26 +83,26 @@ LwpFrame::~LwpFrame()
 * @param:  pFrameStyle - Frame Style object
 *
 */
-void LwpFrame::RegisterStyle(std::unique_ptr<XFFrameStyle>& rFrameStyle)
+void  LwpFrame::RegisterStyle(XFFrameStyle* pFrameStyle)
 {
-    ApplyWrapType(rFrameStyle.get());
-    ApplyMargins(rFrameStyle.get());
-    ApplyPadding(rFrameStyle.get());
-    ApplyBorders(rFrameStyle.get());
-    ApplyColumns(rFrameStyle.get());
-    ApplyShadow(rFrameStyle.get());
-    ApplyBackGround(rFrameStyle.get());
-    ApplyWatermark(rFrameStyle.get());
-    ApplyProtect(rFrameStyle.get());
-    ApplyTextDir(rFrameStyle.get());
-    ApplyPosType(rFrameStyle.get());
+    ApplyWrapType(pFrameStyle);
+    ApplyMargins(pFrameStyle);
+    ApplyPadding(pFrameStyle);
+    ApplyBorders(pFrameStyle);
+    ApplyColumns(pFrameStyle);
+    ApplyShadow(pFrameStyle);
+    ApplyBackGround(pFrameStyle);
+    ApplyWatermark(pFrameStyle);
+//  ApplyBackColor(pFrameStyle);
+    ApplyProtect(pFrameStyle);
+    ApplyTextDir(pFrameStyle);
+    ApplyPosType(pFrameStyle);
 
-    rFrameStyle->SetStyleName(m_pLayout->GetName().str());
+    pFrameStyle->SetStyleName(m_pLayout->GetName().str());
     XFStyleManager* pXFStyleManager = LwpGlobalMgr::GetInstance()->GetXFStyleManager();
-    m_StyleName = pXFStyleManager->AddStyle(rFrameStyle.release()).m_pStyle->GetStyleName();
+    m_StyleName = pXFStyleManager->AddStyle(pFrameStyle).m_pStyle->GetStyleName();
     m_pLayout->SetStyleName(m_StyleName);
 }
-
 /**
 * @descr:  parse frame and set frame properties
 * @param:   pXFFrame - XFFrame object
@@ -767,6 +767,7 @@ LwpFrameLayout::LwpFrameLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
 
 LwpFrameLayout::~LwpFrameLayout()
 {
+    delete m_pFrame;
 }
 
 /**
@@ -780,7 +781,7 @@ void LwpFrameLayout::Read()
     {
         if(m_pObjStrm->QuickReaduInt16())
         {
-            m_Link.Read(m_pObjStrm.get());
+            m_Link.Read(m_pObjStrm);
         }
     }
     m_pObjStrm->SkipExtra();
@@ -856,9 +857,9 @@ void  LwpFrameLayout::RegisterStyle()
         return;
 
     //register frame style
-    std::unique_ptr<XFFrameStyle> xFrameStyle(new XFFrameStyle);
-    m_pFrame.reset(new LwpFrame(this));
-    m_pFrame->RegisterStyle(xFrameStyle);
+    XFFrameStyle* pFrameStyle = new XFFrameStyle();
+    m_pFrame = new LwpFrame(this);
+    m_pFrame->RegisterStyle(pFrameStyle);
 
     //register content style
     rtl::Reference<LwpObject> content = m_Content.obj();
@@ -1031,6 +1032,7 @@ LwpGroupLayout::LwpGroupLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm)
 
 LwpGroupLayout::~LwpGroupLayout()
 {
+    delete m_pFrame;
 }
 /**
  * @descr read group layout object
@@ -1051,9 +1053,9 @@ void LwpGroupLayout::RegisterStyle()
         return;
 
     //register frame style
-    std::unique_ptr<XFFrameStyle> xFrameStyle(new XFFrameStyle);
-    m_pFrame.reset(new LwpFrame(this));
-    m_pFrame->RegisterStyle(xFrameStyle);
+    XFFrameStyle* pFrameStyle = new XFFrameStyle();
+    m_pFrame = new LwpFrame(this);
+    m_pFrame->RegisterStyle(pFrameStyle);
 
     //register child frame style
     RegisterChildStyle();
@@ -1174,9 +1176,14 @@ void LwpDropcapLayout::XFConvert(XFContentContainer* pCont)
     }
 }
 
+LwpStory* LwpDropcapLayout::GetContentStory()
+{
+    return static_cast<LwpStory*>(m_Content.obj(VO_STORY).get());
+}
+
 void LwpDropcapLayout::RegisterStyle(LwpFoundry* pFoundry)
 {
-    LwpStory* pStory = static_cast<LwpStory*>(m_Content.obj(VO_STORY).get());
+    LwpStory* pStory = GetContentStory();
     if (pStory)
     {
         pStory->SetDropcapFlag(true);
@@ -1217,7 +1224,7 @@ void LwpRubyLayout::Read()
     m_nStateFlag = m_pObjStrm->QuickReaduInt16();
     m_nXOffset = m_pObjStrm->QuickReadInt32();
     m_nYOffset = m_pObjStrm->QuickReadInt32();
-    m_objRubyMarker.ReadIndexed(m_pObjStrm.get());
+    m_objRubyMarker.ReadIndexed(m_pObjStrm);
     m_pObjStrm->SkipExtra();
 }
 

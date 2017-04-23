@@ -37,7 +37,6 @@
 #include <vcl/graph.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/texteng.hxx>
-#include <vcl/textdata.hxx>
 
 using namespace basegfx;
 using namespace basegfx::tools;
@@ -78,7 +77,7 @@ void ThumbnailViewItem::setHighlight (bool state)
     mbHover = state;
 }
 
-::tools::Rectangle ThumbnailViewItem::updateHighlight(bool bVisible, const Point& rPoint)
+Rectangle ThumbnailViewItem::updateHighlight(bool bVisible, const Point& rPoint)
 {
     bool bNeedsPaint = false;
 
@@ -98,7 +97,7 @@ void ThumbnailViewItem::setHighlight (bool state)
     if (bNeedsPaint)
         return getDrawArea();
 
-    return ::tools::Rectangle();
+    return Rectangle();
 }
 
 void ThumbnailViewItem::setTitle (const OUString& rTitle)
@@ -107,7 +106,7 @@ void ThumbnailViewItem::setTitle (const OUString& rTitle)
         maTitle = rTitle;
 }
 
-uno::Reference< accessibility::XAccessible > const & ThumbnailViewItem::GetAccessible( bool bIsTransientChildrenDisabled )
+uno::Reference< accessibility::XAccessible > ThumbnailViewItem::GetAccessible( bool bIsTransientChildrenDisabled )
 {
     if( !mxAcc.is() )
         mxAcc = new ThumbnailViewItemAcc( this, bIsTransientChildrenDisabled );
@@ -115,7 +114,7 @@ uno::Reference< accessibility::XAccessible > const & ThumbnailViewItem::GetAcces
     return mxAcc;
 }
 
-void ThumbnailViewItem::setDrawArea (const ::tools::Rectangle &area)
+void ThumbnailViewItem::setDrawArea (const Rectangle &area)
 {
     maDrawArea = area;
 }

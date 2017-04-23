@@ -41,7 +41,7 @@ public:
         css::chart2::PieChartOffsetMode eMode,
         bool bRings = false,
         sal_Int32 nDim = 2 );
-    virtual ~PieChartTypeTemplate() override;
+    virtual ~PieChartTypeTemplate();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -50,27 +50,33 @@ public:
 
 protected:
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw(css::beans::UnknownPropertyException) override;
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     // ____ XPropertySet ____
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XChartTypeTemplate ____
     virtual sal_Bool SAL_CALL matchesTemplate(
         const css::uno::Reference< css::chart2::XDiagram >& xDiagram,
-        sal_Bool bAdaptProperties ) override;
+        sal_Bool bAdaptProperties )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::chart2::XChartType > SAL_CALL
         getChartTypeForNewSeries( const css::uno::Sequence<
-            css::uno::Reference< css::chart2::XChartType > >& aFormerlyUsedChartTypes ) override;
+            css::uno::Reference< css::chart2::XChartType > >& aFormerlyUsedChartTypes )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL applyStyle(
         const css::uno::Reference< css::chart2::XDataSeries >& xSeries,
         ::sal_Int32 nChartTypeGroupIndex,
         ::sal_Int32 nSeriesIndex,
-        ::sal_Int32 nSeriesCount ) override;
+        ::sal_Int32 nSeriesCount )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL resetStyles(
-        const css::uno::Reference< css::chart2::XDiagram >& xDiagram ) override;
+        const css::uno::Reference< css::chart2::XDiagram >& xDiagram )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ ChartTypeTemplate ____
     virtual sal_Int32 getDimension() const override;

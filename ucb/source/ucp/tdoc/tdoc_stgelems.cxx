@@ -27,7 +27,7 @@
  *************************************************************************/
 
 #include <osl/diagnose.h>
-#include "com/sun/star/io/IOException.hpp"
+
 #include "com/sun/star/lang/DisposedException.hpp"
 #include "com/sun/star/reflection/ProxyFactory.hpp"
 
@@ -119,7 +119,7 @@ Storage::~Storage()
         m_xAggProxy->setDelegator( uno::Reference< uno::XInterface >() );
 
     // Never dispose a document storage. Not owner!
-    if ( !m_bIsDocumentStorage )
+    if ( !isDocumentStorage() )
     {
         if ( m_xWrappedComponent.is() )
         {
@@ -146,6 +146,7 @@ Storage::~Storage()
 
 // virtual
 uno::Any SAL_CALL Storage::queryInterface( const uno::Type& aType )
+    throw ( uno::RuntimeException, std::exception )
 {
     // First, try to use interfaces implemented by myself and base class(es)
     uno::Any aRet = StorageUNOBase::queryInterface( aType );
@@ -186,6 +187,7 @@ void SAL_CALL Storage::release()
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL Storage::getTypes()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedTypeProv->getTypes();
 }
@@ -193,6 +195,7 @@ uno::Sequence< uno::Type > SAL_CALL Storage::getTypes()
 
 // virtual
 uno::Sequence< sal_Int8 > SAL_CALL Storage::getImplementationId()
+    throw ( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -203,6 +206,7 @@ uno::Sequence< sal_Int8 > SAL_CALL Storage::getImplementationId()
 
 // virtual
 void SAL_CALL Storage::dispose()
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->dispose();
 }
@@ -211,6 +215,7 @@ void SAL_CALL Storage::dispose()
 // virtual
 void SAL_CALL Storage::addEventListener(
         const uno::Reference< lang::XEventListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->addEventListener( xListener );
 }
@@ -218,6 +223,7 @@ void SAL_CALL Storage::addEventListener(
 // virtual
 void SAL_CALL Storage::removeEventListener(
         const uno::Reference< lang::XEventListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_xWrappedStorage->removeEventListener( aListener );
 }
@@ -228,6 +234,7 @@ void SAL_CALL Storage::removeEventListener(
 
 // virtual
 uno::Type SAL_CALL Storage::getElementType()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->getElementType();
 }
@@ -235,6 +242,7 @@ uno::Type SAL_CALL Storage::getElementType()
 
 // virtual
 sal_Bool SAL_CALL Storage::hasElements()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->hasElements();
 }
@@ -245,6 +253,9 @@ sal_Bool SAL_CALL Storage::hasElements()
 
 // virtual
 uno::Any SAL_CALL Storage::getByName( const OUString& aName )
+    throw ( container::NoSuchElementException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->getByName( aName );
 }
@@ -252,6 +263,7 @@ uno::Any SAL_CALL Storage::getByName( const OUString& aName )
 
 // virtual
 uno::Sequence< OUString > SAL_CALL Storage::getElementNames()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->getElementNames();
 }
@@ -259,6 +271,7 @@ uno::Sequence< OUString > SAL_CALL Storage::getElementNames()
 
 // virtual
 sal_Bool SAL_CALL Storage::hasByName( const OUString& aName )
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->hasByName( aName );
 }
@@ -270,6 +283,11 @@ sal_Bool SAL_CALL Storage::hasByName( const OUString& aName )
 // virtual
 void SAL_CALL Storage::copyToStorage(
         const uno::Reference< embed::XStorage >& xDest )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->copyToStorage( xDest );
 }
@@ -278,6 +296,12 @@ void SAL_CALL Storage::copyToStorage(
 // virtual
 uno::Reference< io::XStream > SAL_CALL Storage::openStreamElement(
         const OUString& aStreamName, sal_Int32 nOpenMode )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            packages::WrongPasswordException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->openStreamElement( aStreamName, nOpenMode );
 }
@@ -288,6 +312,13 @@ uno::Reference< io::XStream > SAL_CALL Storage::openEncryptedStreamElement(
         const OUString& aStreamName,
         sal_Int32 nOpenMode,
         const OUString& aPassword )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            packages::NoEncryptionException,
+            packages::WrongPasswordException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->openEncryptedStreamElement(
         aStreamName, nOpenMode, aPassword );
@@ -297,6 +328,11 @@ uno::Reference< io::XStream > SAL_CALL Storage::openEncryptedStreamElement(
 // virtual
 uno::Reference< embed::XStorage > SAL_CALL Storage::openStorageElement(
         const OUString& aStorName, sal_Int32 nOpenMode )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->openStorageElement( aStorName, nOpenMode );
 }
@@ -305,6 +341,12 @@ uno::Reference< embed::XStorage > SAL_CALL Storage::openStorageElement(
 // virtual
 uno::Reference< io::XStream > SAL_CALL Storage::cloneStreamElement(
         const OUString& aStreamName )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            packages::WrongPasswordException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->cloneStreamElement( aStreamName );
 }
@@ -314,6 +356,13 @@ uno::Reference< io::XStream > SAL_CALL Storage::cloneStreamElement(
 uno::Reference< io::XStream > SAL_CALL Storage::cloneEncryptedStreamElement(
         const OUString& aStreamName,
         const OUString& aPassword )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            packages::NoEncryptionException,
+            packages::WrongPasswordException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->cloneEncryptedStreamElement( aStreamName,
                                                            aPassword );
@@ -323,6 +372,11 @@ uno::Reference< io::XStream > SAL_CALL Storage::cloneEncryptedStreamElement(
 // virtual
 void SAL_CALL Storage::copyLastCommitTo(
         const uno::Reference< embed::XStorage >& xTargetStorage )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception)
 {
     m_xWrappedStorage->copyLastCommitTo( xTargetStorage );
 }
@@ -332,6 +386,11 @@ void SAL_CALL Storage::copyLastCommitTo(
 void SAL_CALL Storage::copyStorageElementLastCommitTo(
         const OUString& aStorName,
         const uno::Reference< embed::XStorage >& xTargetStorage )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception)
 {
     m_xWrappedStorage->copyStorageElementLastCommitTo( aStorName, xTargetStorage );
 }
@@ -340,6 +399,10 @@ void SAL_CALL Storage::copyStorageElementLastCommitTo(
 // virtual
 sal_Bool SAL_CALL Storage::isStreamElement(
         const OUString& aElementName )
+    throw ( container::NoSuchElementException,
+            lang::IllegalArgumentException,
+            embed::InvalidStorageException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->isStreamElement( aElementName );
 }
@@ -348,6 +411,10 @@ sal_Bool SAL_CALL Storage::isStreamElement(
 // virtual
 sal_Bool SAL_CALL Storage::isStorageElement(
         const OUString& aElementName )
+    throw ( container::NoSuchElementException,
+            lang::IllegalArgumentException,
+            embed::InvalidStorageException,
+            uno::RuntimeException, std::exception )
 {
     return m_xWrappedStorage->isStorageElement( aElementName );
 }
@@ -355,6 +422,12 @@ sal_Bool SAL_CALL Storage::isStorageElement(
 
 // virtual
 void SAL_CALL Storage::removeElement( const OUString& aElementName )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            container::NoSuchElementException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->removeElement( aElementName );
 }
@@ -363,6 +436,13 @@ void SAL_CALL Storage::removeElement( const OUString& aElementName )
 // virtual
 void SAL_CALL Storage::renameElement( const OUString& aEleName,
                                       const OUString& aNewName )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            container::NoSuchElementException,
+            container::ElementExistException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->renameElement( aEleName, aNewName );
 }
@@ -373,6 +453,13 @@ void SAL_CALL Storage::copyElementTo(
         const OUString& aElementName,
         const uno::Reference< embed::XStorage >& xDest,
         const OUString& aNewName )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            container::NoSuchElementException,
+            container::ElementExistException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->copyElementTo( aElementName, xDest, aNewName );
 }
@@ -383,6 +470,13 @@ void SAL_CALL Storage::moveElementTo(
         const OUString& aElementName,
         const uno::Reference< embed::XStorage >& xDest,
         const OUString& rNewName )
+    throw ( embed::InvalidStorageException,
+            lang::IllegalArgumentException,
+            container::NoSuchElementException,
+            container::ElementExistException,
+            io::IOException,
+            embed::StorageWrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStorage->moveElementTo( aElementName, xDest, rNewName );
 }
@@ -393,6 +487,9 @@ void SAL_CALL Storage::moveElementTo(
 
 // virtual
 void SAL_CALL Storage::commit()
+    throw ( io::IOException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     // Never commit a root storage (-> has no parent)!
     // Would lead in writing the whole document to disk.
@@ -422,6 +519,9 @@ void SAL_CALL Storage::commit()
 
 // virtual
 void SAL_CALL Storage::revert()
+    throw ( io::IOException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     uno::Reference< embed::XStorage > xParentStorage = getParentStorage();
     if ( xParentStorage.is() )
@@ -514,6 +614,7 @@ OutputStream::~OutputStream()
 
 // virtual
 uno::Any SAL_CALL OutputStream::queryInterface( const uno::Type& aType )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = OutputStreamUNOBase::queryInterface( aType );
 
@@ -532,6 +633,7 @@ uno::Any SAL_CALL OutputStream::queryInterface( const uno::Type& aType )
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL OutputStream::getTypes()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedTypeProv->getTypes();
 }
@@ -539,6 +641,7 @@ uno::Sequence< uno::Type > SAL_CALL OutputStream::getTypes()
 
 // virtual
 uno::Sequence< sal_Int8 > SAL_CALL OutputStream::getImplementationId()
+    throw ( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -550,6 +653,10 @@ uno::Sequence< sal_Int8 > SAL_CALL OutputStream::getImplementationId()
 // virtual
 void SAL_CALL
 OutputStream::writeBytes( const uno::Sequence< sal_Int8 >& aData )
+    throw ( io::NotConnectedException,
+            io::BufferSizeExceededException,
+            io::IOException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStream->writeBytes( aData );
 }
@@ -558,6 +665,10 @@ OutputStream::writeBytes( const uno::Sequence< sal_Int8 >& aData )
 // virtual
 void SAL_CALL
 OutputStream::flush()
+    throw ( io::NotConnectedException,
+            io::BufferSizeExceededException,
+            io::IOException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStream->flush();
 }
@@ -566,6 +677,10 @@ OutputStream::flush()
 // virtual
 void SAL_CALL
 OutputStream::closeOutput(  )
+    throw ( io::NotConnectedException,
+            io::BufferSizeExceededException,
+            io::IOException,
+            uno::RuntimeException, std::exception )
 {
     m_xWrappedStream->closeOutput();
 
@@ -581,6 +696,7 @@ OutputStream::closeOutput(  )
 // virtual
 void SAL_CALL
 OutputStream::dispose()
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->dispose();
 
@@ -594,6 +710,7 @@ OutputStream::dispose()
 void SAL_CALL
 OutputStream::addEventListener(
         const uno::Reference< lang::XEventListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->addEventListener( xListener );
 }
@@ -603,6 +720,7 @@ OutputStream::addEventListener(
 void SAL_CALL
 OutputStream::removeEventListener(
         const uno::Reference< lang::XEventListener >& aListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->removeEventListener( aListener );
 }
@@ -679,6 +797,7 @@ Stream::~Stream()
 
 // virtual
 uno::Any SAL_CALL Stream::queryInterface( const uno::Type& aType )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = StreamUNOBase::queryInterface( aType );
 
@@ -697,6 +816,7 @@ uno::Any SAL_CALL Stream::queryInterface( const uno::Type& aType )
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL Stream::getTypes()
+    throw ( uno::RuntimeException, std::exception )
 {
     return m_xWrappedTypeProv->getTypes();
 }
@@ -704,6 +824,7 @@ uno::Sequence< uno::Type > SAL_CALL Stream::getTypes()
 
 // virtual
 uno::Sequence< sal_Int8 > SAL_CALL Stream::getImplementationId()
+    throw ( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -714,6 +835,7 @@ uno::Sequence< sal_Int8 > SAL_CALL Stream::getImplementationId()
 
 // virtual
 uno::Reference< io::XInputStream > SAL_CALL Stream::getInputStream()
+    throw( uno::RuntimeException, std::exception )
 {
     return uno::Reference< io::XInputStream >( this );
 }
@@ -721,6 +843,7 @@ uno::Reference< io::XInputStream > SAL_CALL Stream::getInputStream()
 
 // virtual
 uno::Reference< io::XOutputStream > SAL_CALL Stream::getOutputStream()
+    throw( uno::RuntimeException, std::exception )
 {
     return uno::Reference< io::XOutputStream >( this );
 }
@@ -731,6 +854,10 @@ uno::Reference< io::XOutputStream > SAL_CALL Stream::getOutputStream()
 
 // virtual
 void SAL_CALL Stream::writeBytes( const uno::Sequence< sal_Int8 >& aData )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if ( m_xWrappedOutputStream.is() )
     {
@@ -742,6 +869,10 @@ void SAL_CALL Stream::writeBytes( const uno::Sequence< sal_Int8 >& aData )
 
 // virtual
 void SAL_CALL Stream::flush()
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if ( m_xWrappedOutputStream.is() )
     {
@@ -753,6 +884,9 @@ void SAL_CALL Stream::flush()
 
 // virtual
 void SAL_CALL Stream::closeOutput()
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if ( m_xWrappedOutputStream.is() )
     {
@@ -771,6 +905,8 @@ void SAL_CALL Stream::closeOutput()
 
 // virtual
 void SAL_CALL Stream::truncate()
+    throw( io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if ( m_xWrappedTruncate.is() )
     {
@@ -786,6 +922,10 @@ void SAL_CALL Stream::truncate()
 // virtual
 sal_Int32 SAL_CALL Stream::readBytes( uno::Sequence< sal_Int8 >& aData,
                                       sal_Int32 nBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     return m_xWrappedInputStream->readBytes( aData, nBytesToRead );
 }
@@ -794,6 +934,10 @@ sal_Int32 SAL_CALL Stream::readBytes( uno::Sequence< sal_Int8 >& aData,
 // virtual
 sal_Int32 SAL_CALL Stream::readSomeBytes( uno::Sequence< sal_Int8 >& aData,
                                           sal_Int32 nMaxBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     return m_xWrappedInputStream->readSomeBytes( aData, nMaxBytesToRead );
 }
@@ -801,6 +945,10 @@ sal_Int32 SAL_CALL Stream::readSomeBytes( uno::Sequence< sal_Int8 >& aData,
 
 // virtual
 void SAL_CALL Stream::skipBytes( sal_Int32 nBytesToSkip )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     m_xWrappedInputStream->skipBytes( nBytesToSkip );
 }
@@ -808,6 +956,9 @@ void SAL_CALL Stream::skipBytes( sal_Int32 nBytesToSkip )
 
 // virtual
 sal_Int32 SAL_CALL Stream::available()
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     return m_xWrappedInputStream->available();
 }
@@ -815,6 +966,9 @@ sal_Int32 SAL_CALL Stream::available()
 
 // virtual
 void SAL_CALL Stream::closeInput()
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     m_xWrappedInputStream->closeInput();
 }
@@ -825,6 +979,7 @@ void SAL_CALL Stream::closeInput()
 
 // virtual
 void SAL_CALL Stream::dispose()
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->dispose();
 
@@ -837,6 +992,7 @@ void SAL_CALL Stream::dispose()
 // virtual
 void SAL_CALL Stream::addEventListener(
         const uno::Reference< lang::XEventListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->addEventListener( xListener );
 }
@@ -845,6 +1001,7 @@ void SAL_CALL Stream::addEventListener(
 // virtual
 void SAL_CALL Stream::removeEventListener(
         const uno::Reference< lang::XEventListener >& aListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     m_xWrappedComponent->removeEventListener( aListener );
 }
@@ -854,6 +1011,7 @@ void SAL_CALL Stream::removeEventListener(
 
 
 void Stream::commitChanges()
+    throw( io::IOException )
 {
     uno::Reference< embed::XTransactedObject >
         xParentTA( getParentStorage(), uno::UNO_QUERY );

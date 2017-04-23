@@ -55,19 +55,19 @@
 
 using namespace css;
 
-static HTMLOptionEnum<SdrTextAniKind> aHTMLMarqBehaviorTable[] =
+static HTMLOptionEnum aHTMLMarqBehaviorTable[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_BEHAV_scroll,    SdrTextAniKind::Scroll       },
-    { OOO_STRING_SVTOOLS_HTML_BEHAV_alternate, SdrTextAniKind::Alternate    },
-    { OOO_STRING_SVTOOLS_HTML_BEHAV_slide,     SdrTextAniKind::Slide        },
-    { nullptr,                                 (SdrTextAniKind)0       }
+    { OOO_STRING_SVTOOLS_HTML_BEHAV_scroll,     SDRTEXTANI_SCROLL       },
+    { OOO_STRING_SVTOOLS_HTML_BEHAV_alternate,  SDRTEXTANI_ALTERNATE    },
+    { OOO_STRING_SVTOOLS_HTML_BEHAV_slide,      SDRTEXTANI_SLIDE        },
+    { nullptr,                                        0                       }
 };
 
-static HTMLOptionEnum<SdrTextAniDirection> aHTMLMarqDirectionTable[] =
+static HTMLOptionEnum aHTMLMarqDirectionTable[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_AL_left,  SdrTextAniDirection::Left   },
-    { OOO_STRING_SVTOOLS_HTML_AL_right, SdrTextAniDirection::Right  },
-    { nullptr,                          (SdrTextAniDirection)0      }
+    { OOO_STRING_SVTOOLS_HTML_AL_left,          SDRTEXTANI_LEFT         },
+    { OOO_STRING_SVTOOLS_HTML_AL_right,         SDRTEXTANI_RIGHT        },
+    { nullptr,                                        0                       }
 };
 
 void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
@@ -80,9 +80,9 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
     // always on top of text.
     // but in invisible layer. <ConnectToLayout> will move the object
     // to the visible layer.
-    pNewDrawObj->SetLayer( m_xDoc->getIDocumentDrawModelAccess().GetInvisibleHeavenId() );
+    pNewDrawObj->SetLayer( m_pDoc->getIDocumentDrawModelAccess().GetInvisibleHeavenId() );
 
-    SfxItemSet aFrameSet( m_xDoc->GetAttrPool(),
+    SfxItemSet aFrameSet( m_pDoc->GetAttrPool(),
                         RES_FRMATR_BEGIN, RES_FRMATR_END-1 );
     if( !IsNewDoc() )
         Reader::ResetFrameFormatAttrs( aFrameSet );
@@ -93,7 +93,7 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
         Size aTwipSpc( rPixSpace.Width(), rPixSpace.Height() );
         aTwipSpc =
             Application::GetDefaultDevice()->PixelToLogic( aTwipSpc,
-                                                MapMode(MapUnit::MapTwip) );
+                                                MapMode(MAP_TWIP) );
         nLeftSpace = nRightSpace = (sal_uInt16)aTwipSpc.Width();
         nUpperSpace = nLowerSpace = (sal_uInt16)aTwipSpc.Height();
     }
@@ -106,15 +106,15 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
         const SvxLRSpaceItem *pLRItem = static_cast<const SvxLRSpaceItem *>(pItem);
         SvxLRSpaceItem aLRItem( *pLRItem );
         aLRItem.SetTextFirstLineOfst( 0 );
-        if( rCSS1PropInfo.m_bLeftMargin )
+        if( rCSS1PropInfo.bLeftMargin )
         {
             nLeftSpace = static_cast< sal_uInt16 >(aLRItem.GetLeft());
-            rCSS1PropInfo.m_bLeftMargin = false;
+            rCSS1PropInfo.bLeftMargin = false;
         }
-        if( rCSS1PropInfo.m_bRightMargin )
+        if( rCSS1PropInfo.bRightMargin )
         {
             nRightSpace = static_cast< sal_uInt16 >(aLRItem.GetRight());
-            rCSS1PropInfo.m_bRightMargin = false;
+            rCSS1PropInfo.bRightMargin = false;
         }
         rCSS1ItemSet.ClearItem( RES_LR_SPACE );
     }
@@ -131,15 +131,15 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
     {
         // Ggf. den Erstzeilen-Einzug noch plaetten
         const SvxULSpaceItem *pULItem = static_cast<const SvxULSpaceItem *>(pItem);
-        if( rCSS1PropInfo.m_bTopMargin )
+        if( rCSS1PropInfo.bTopMargin )
         {
             nUpperSpace = pULItem->GetUpper();
-            rCSS1PropInfo.m_bTopMargin = false;
+            rCSS1PropInfo.bTopMargin = false;
         }
-        if( rCSS1PropInfo.m_bBottomMargin )
+        if( rCSS1PropInfo.bBottomMargin )
         {
             nLowerSpace = pULItem->GetLower();
-            rCSS1PropInfo.m_bBottomMargin = false;
+            rCSS1PropInfo.bBottomMargin = false;
         }
 
         rCSS1ItemSet.ClearItem( RES_UL_SPACE );
@@ -152,34 +152,34 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
         aFrameSet.Put( aULItem );
     }
 
-    SwFormatAnchor aAnchor( RndStdIds::FLY_AS_CHAR );
-    if( SVX_CSS1_POS_ABSOLUTE == rCSS1PropInfo.m_ePosition &&
-        SVX_CSS1_LTYPE_TWIP == rCSS1PropInfo.m_eLeftType &&
-        SVX_CSS1_LTYPE_TWIP == rCSS1PropInfo.m_eTopType )
+    SwFormatAnchor aAnchor( FLY_AS_CHAR );
+    if( SVX_CSS1_POS_ABSOLUTE == rCSS1PropInfo.ePosition &&
+        SVX_CSS1_LTYPE_TWIP == rCSS1PropInfo.eLeftType &&
+        SVX_CSS1_LTYPE_TWIP == rCSS1PropInfo.eTopType )
     {
         const SwStartNode *pFlySttNd =
             m_pPam->GetPoint()->nNode.GetNode().FindFlyStartNode();
 
         if( pFlySttNd )
         {
-            aAnchor.SetType( RndStdIds::FLY_AT_FLY );
+            aAnchor.SetType( FLY_AT_FLY );
             SwPosition aPos( *pFlySttNd );
             aAnchor.SetAnchor( &aPos );
         }
         else
         {
-            aAnchor.SetType( RndStdIds::FLY_AT_PAGE );
+            aAnchor.SetType( FLY_AT_PAGE );
         }
         // #i26791# - direct positioning for <SwDoc::Insert(..)>
-        pNewDrawObj->SetRelativePos( Point(rCSS1PropInfo.m_nLeft + nLeftSpace,
-                                           rCSS1PropInfo.m_nTop + nUpperSpace) );
-        aFrameSet.Put( SwFormatSurround(css::text::WrapTextMode_THROUGH) );
+        pNewDrawObj->SetRelativePos( Point(rCSS1PropInfo.nLeft + nLeftSpace,
+                                           rCSS1PropInfo.nTop + nUpperSpace) );
+        aFrameSet.Put( SwFormatSurround(SURROUND_THROUGHT) );
     }
-    else if( SvxAdjust::Left == rCSS1PropInfo.m_eFloat ||
+    else if( SVX_ADJUST_LEFT == rCSS1PropInfo.eFloat ||
              text::HoriOrientation::LEFT == eHoriOri )
     {
-        aAnchor.SetType( RndStdIds::FLY_AT_PARA );
-        aFrameSet.Put( SwFormatSurround(css::text::WrapTextMode_RIGHT) );
+        aAnchor.SetType( FLY_AT_PARA );
+        aFrameSet.Put( SwFormatSurround(SURROUND_RIGHT) );
         // #i26791# - direct positioning for <SwDoc::Insert(..)>
         pNewDrawObj->SetRelativePos( Point(nLeftSpace, nUpperSpace) );
     }
@@ -188,17 +188,17 @@ void SwHTMLParser::InsertDrawObject( SdrObject* pNewDrawObj,
         aFrameSet.Put( SwFormatVertOrient( 0, eVertOri ) );
     }
 
-    if (RndStdIds::FLY_AT_PAGE == aAnchor.GetAnchorId())
+    if (FLY_AT_PAGE == aAnchor.GetAnchorId())
     {
         aAnchor.SetPageNum( 1 );
     }
-    else if( RndStdIds::FLY_AT_FLY != aAnchor.GetAnchorId() )
+    else if( FLY_AT_FLY != aAnchor.GetAnchorId() )
     {
         aAnchor.SetAnchor( m_pPam->GetPoint() );
     }
     aFrameSet.Put( aAnchor );
 
-    m_xDoc->getIDocumentContentOperations().InsertDrawObj( *m_pPam, *pNewDrawObj, aFrameSet );
+    m_pDoc->getIDocumentContentOperations().InsertDrawObj( *m_pPam, *pNewDrawObj, aFrameSet );
 }
 
 static void PutEEPoolItem( SfxItemSet &rEEItemSet,
@@ -259,8 +259,8 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
     Size aSpace( 0, 0 );
     sal_Int16 eVertOri = text::VertOrientation::TOP;
     sal_Int16 eHoriOri = text::HoriOrientation::NONE;
-    SdrTextAniKind eAniKind = SdrTextAniKind::Scroll;
-    SdrTextAniDirection eAniDir = SdrTextAniDirection::Left;
+    SdrTextAniKind eAniKind = SDRTEXTANI_SCROLL;
+    SdrTextAniDirection eAniDir = SDRTEXTANI_LEFT;
     sal_uInt16 nCount = 0, nDelay = 60;
     sal_Int16 nAmount = -6;
     Color aBGColor;
@@ -281,7 +281,9 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
                 break;
 
             case HTML_O_BEHAVIOR:
-                eAniKind = rOption.GetEnum( aHTMLMarqBehaviorTable, eAniKind );
+                eAniKind =
+                    (SdrTextAniKind)rOption.GetEnum( aHTMLMarqBehaviorTable,
+                                                      static_cast< sal_uInt16 >(eAniKind) );
                 break;
 
             case HTML_O_BGCOLOR:
@@ -290,7 +292,9 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
                 break;
 
             case HTML_O_DIRECTION:
-                eAniDir = rOption.GetEnum( aHTMLMarqDirectionTable, eAniDir );
+                eAniDir =
+                    (SdrTextAniDirection)rOption.GetEnum( aHTMLMarqDirectionTable,
+                                                      static_cast< sal_uInt16 >(eAniDir) );
                 bDirection = true;
                 break;
 
@@ -352,9 +356,9 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
 
     // Ein DrawTextobj anlegen
     // #i52858# - method name changed
-    SwDrawModel* pModel = m_xDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel();
+    SwDrawModel* pModel = m_pDoc->getIDocumentDrawModelAccess().GetOrCreateDrawModel();
     SdrPage* pPg = pModel->GetPage( 0 );
-    m_pMarquee = SdrObjFactory::MakeNewObject( SdrInventor::Default,
+    m_pMarquee = SdrObjFactory::MakeNewObject( SdrInventor,
                                              OBJ_TEXT, pPg, pModel );
     if( !m_pMarquee )
         return;
@@ -365,8 +369,8 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
         InsertBookmark( aId );
 
     // (Nur) Alternate leueft per Default von links nach rechts
-    if( SdrTextAniKind::Alternate==eAniKind && !bDirection )
-        eAniDir = SdrTextAniDirection::Right;
+    if( SDRTEXTANI_ALTERNATE==eAniKind && !bDirection )
+        eAniDir = SDRTEXTANI_RIGHT;
 
     // die fuer das Scrollen benoetigten Attribute umsetzen
     sal_uInt16 aWhichMap[7] =   { XATTR_FILL_FIRST,   XATTR_FILL_LAST,
@@ -381,12 +385,12 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
     aItemSet.Put( SdrTextAniCountItem( nCount ) );
     aItemSet.Put( SdrTextAniDelayItem( nDelay ) );
     aItemSet.Put( SdrTextAniAmountItem( nAmount ) );
-    if( SdrTextAniKind::Alternate==eAniKind )
+    if( SDRTEXTANI_ALTERNATE==eAniKind )
     {
         // (Nur) Alternate startet und stoppt per default Inside
         aItemSet.Put( SdrTextAniStartInsideItem(true) );
         aItemSet.Put( SdrTextAniStopInsideItem(true) );
-        if( SdrTextAniDirection::Left==eAniDir )
+        if( SDRTEXTANI_LEFT==eAniDir )
             aItemSet.Put( SdrTextHorzAdjustItem(SDRTEXTHORZADJUST_RIGHT) );
     }
 
@@ -440,7 +444,7 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
 
     // Styles parsen (funktioniert hier nur fuer Attribute, die auch
     // am Zeichen-Objekt gesetzt werden koennen)
-    SfxItemSet aStyleItemSet( m_xDoc->GetAttrPool(),
+    SfxItemSet aStyleItemSet( m_pDoc->GetAttrPool(),
                               m_pCSS1Parser->GetWhichMap() );
     SvxCSS1PropertyInfo aPropInfo;
     if( HasStyleOptions( aStyle, aId, aClass )  &&
@@ -461,17 +465,17 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
     if( (aTwipSz.Width() || aTwipSz.Height()) && Application::GetDefaultDevice() )
     {
         aTwipSz = Application::GetDefaultDevice()
-                    ->PixelToLogic( aTwipSz, MapMode( MapUnit::MapTwip ) );
+                    ->PixelToLogic( aTwipSz, MapMode( MAP_TWIP ) );
     }
 
-    if( SVX_CSS1_LTYPE_TWIP== aPropInfo.m_eWidthType )
+    if( SVX_CSS1_LTYPE_TWIP== aPropInfo.eWidthType )
     {
-        aTwipSz.Width() = aPropInfo.m_nWidth;
+        aTwipSz.Width() = aPropInfo.nWidth;
         nWidth = 1; // != 0;
         bPrcWidth = false;
     }
-    if( SVX_CSS1_LTYPE_TWIP== aPropInfo.m_eHeightType )
-        aTwipSz.Height() = aPropInfo.m_nHeight;
+    if( SVX_CSS1_LTYPE_TWIP== aPropInfo.eHeightType )
+        aTwipSz.Height() = aPropInfo.nHeight;
 
     m_bFixMarqueeWidth = false;
     if( !nWidth || bPrcWidth )
@@ -513,7 +517,7 @@ void SwHTMLParser::NewMarquee( HTMLTable *pCurTable )
 
     if( aTwipSz.Width() < MINFLY )
         aTwipSz.Width() = MINFLY;
-    m_pMarquee->SetLogicRect( tools::Rectangle( 0, 0, aTwipSz.Width(), aTwipSz.Height() ) );
+    m_pMarquee->SetLogicRect( Rectangle( 0, 0, aTwipSz.Width(), aTwipSz.Height() ) );
 
     // und das Objekt in das Dok einfuegen
     InsertDrawObject( m_pMarquee, aSpace, eVertOri, eHoriOri, aStyleItemSet,
@@ -538,8 +542,8 @@ void SwHTMLParser::EndMarquee()
     {
         // Da es keine fixe Hoehe gibt, das Text-Objekt erstmal breiter
         // als den Text machen, damit nicht umgebrochen wird.
-        const tools::Rectangle& rOldRect = m_pMarquee->GetLogicRect();
-        m_pMarquee->SetLogicRect( tools::Rectangle( rOldRect.TopLeft(),
+        const Rectangle& rOldRect = m_pMarquee->GetLogicRect();
+        m_pMarquee->SetLogicRect( Rectangle( rOldRect.TopLeft(),
                                            Size( USHRT_MAX, 240 ) ) );
     }
 
@@ -575,9 +579,9 @@ void SwHTMLParser::ResizeDrawObject( SdrObject* pObj, SwTwips nWidth )
         return;
 
     // die alte Groesse
-    const tools::Rectangle& rOldRect = pObj->GetLogicRect();
+    const Rectangle& rOldRect = pObj->GetLogicRect();
     Size aNewSz( nWidth, rOldRect.GetSize().Height() );
-    pObj->SetLogicRect( tools::Rectangle( rOldRect.TopLeft(), aNewSz ) );
+    pObj->SetLogicRect( Rectangle( rOldRect.TopLeft(), aNewSz ) );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

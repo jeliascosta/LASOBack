@@ -19,17 +19,27 @@
 
 #include "sheetdatacontext.hxx"
 
+#include <com/sun/star/table/CellContentType.hpp>
+#include <com/sun/star/table/XCell.hpp>
+#include <com/sun/star/table/XCellRange.hpp>
+#include <com/sun/star/text/XText.hpp>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 #include "formulaparser.hxx"
 #include "richstringcontext.hxx"
 #include "unitconverter.hxx"
 
 namespace oox {
 namespace xls {
+
+using namespace ::com::sun::star::sheet;
+using namespace ::com::sun::star::table;
+using namespace ::com::sun::star::text;
+using namespace ::com::sun::star::uno;
 
 using ::oox::core::ContextHandlerRef;
 
@@ -164,9 +174,7 @@ void SheetDataContext::onEndElement()
             break;
             case XML_array:
                 if( mbValidRange && maFmlaData.isValidArrayRef( maCellData.maCellAddr ) )
-                {
                     setCellArrayFormula( maFmlaData.maFormulaRef, maCellData.maCellAddr, maFormulaStr );
-                }
                 // set cell formatting, but do not set result as cell value
                 mrSheetData.setBlankCell( maCellData );
             break;
@@ -425,7 +433,7 @@ bool SheetDataContext::readCellHeader( SequenceInputStream& rStrm, CellType eCel
 ApiTokenSequence SheetDataContext::readCellFormula( SequenceInputStream& rStrm )
 {
     rStrm.skip( 2 );
-    return mxFormulaParser->importFormula( maCellData.maCellAddr, FormulaType::Cell, rStrm );
+    return mxFormulaParser->importFormula( maCellData.maCellAddr, FORMULATYPE_CELL, rStrm );
 }
 
 bool SheetDataContext::readFormulaRef( SequenceInputStream& rStrm )
@@ -535,7 +543,7 @@ void SheetDataContext::importArray( SequenceInputStream& rStrm )
     if( readFormulaRef( rStrm ) && maFmlaData.isValidArrayRef( maCellData.maCellAddr ) )
     {
         rStrm.skip( 1 );
-        ApiTokenSequence aTokens = mxFormulaParser->importFormula( maCellData.maCellAddr, FormulaType::Array, rStrm );
+        ApiTokenSequence aTokens = mxFormulaParser->importFormula( maCellData.maCellAddr, FORMULATYPE_ARRAY, rStrm );
         mrSheetData.createArrayFormula( maFmlaData.maFormulaRef, aTokens );
     }
 }
@@ -562,7 +570,7 @@ void SheetDataContext::importSharedFmla( SequenceInputStream& rStrm )
 {
     if( readFormulaRef( rStrm ) && maFmlaData.isValidSharedRef( maCellData.maCellAddr ) )
     {
-        ApiTokenSequence aTokens = mxFormulaParser->importFormula( maCellData.maCellAddr, FormulaType::SharedFormula, rStrm );
+        ApiTokenSequence aTokens = mxFormulaParser->importFormula( maCellData.maCellAddr, FORMULATYPE_SHAREDFORMULA, rStrm );
         mrSheetData.createSharedFormula( maCellData.maCellAddr, aTokens );
     }
 }

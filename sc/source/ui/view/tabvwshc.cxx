@@ -23,8 +23,6 @@
 #include <vcl/msgbox.hxx>
 #include <sfx2/childwin.hxx>
 #include <sfx2/dispatch.hxx>
-#include <editeng/editview.hxx>
-#include <inputhdl.hxx>
 
 #include "tabvwsh.hxx"
 #include "sc.hrc"
@@ -76,6 +74,8 @@
 #include "ChiSquareTestDialog.hxx"
 
 #include "PivotLayoutDialog.hxx"
+
+#include <config_orcus.h>
 
 void ScTabViewShell::SetCurRefDlgId( sal_uInt16 nNew )
 {
@@ -254,7 +254,7 @@ VclPtr<SfxModelessDialog> ScTabViewShell::CreateRefDialog(
                                      SCITEM_QUERYDATA,
                                      SCITEM_QUERYDATA );
 
-            ScDBData* pDBData = GetDBData(false, SC_DB_MAKE, ScGetDBSelection::RowDown);
+            ScDBData* pDBData = GetDBData(false, SC_DB_MAKE, SC_DBSEL_ROW_DOWN);
             pDBData->ExtendDataArea(pDoc);
             pDBData->GetQueryParam( aQueryParam );
 
@@ -284,7 +284,7 @@ VclPtr<SfxModelessDialog> ScTabViewShell::CreateRefDialog(
                                      SCITEM_QUERYDATA,
                                      SCITEM_QUERYDATA );
 
-            ScDBData* pDBData = GetDBData(false, SC_DB_MAKE, ScGetDBSelection::RowDown);
+            ScDBData* pDBData = GetDBData(false, SC_DB_MAKE, SC_DBSEL_ROW_DOWN);
             pDBData->ExtendDataArea(pDoc);
             pDBData->GetQueryParam( aQueryParam );
 
@@ -308,7 +308,8 @@ VclPtr<SfxModelessDialog> ScTabViewShell::CreateRefDialog(
             ScViewData&   rViewData  = GetViewData();
             ScRefAddress  aCurPos   ( rViewData.GetCurX(),
                                       rViewData.GetCurY(),
-                                      rViewData.GetTabNo());
+                                      rViewData.GetTabNo(),
+                                      false, false, false );
 
             pResult = VclPtr<ScTabOpDlg>::Create( pB, pCW, pParent, rViewData.GetDocument(), aCurPos );
         }
@@ -441,7 +442,9 @@ VclPtr<SfxModelessDialog> ScTabViewShell::CreateRefDialog(
 
         case SID_MANAGE_XML_SOURCE:
         {
+#if ENABLE_ORCUS
             pResult = VclPtr<ScXMLSourceDlg>::Create(pB, pCW, pParent, pDoc);
+#endif
         }
         break;
 
@@ -504,163 +507,6 @@ VclPtr<SfxModelessDialog> ScTabViewShell::CreateRefDialog(
     }
 
     return pResult;
-}
-
-int ScTabViewShell::getPart() const
-{
-    return GetViewData().GetTabNo();
-}
-
-void ScTabViewShell::NotifyCursor(SfxViewShell* pOtherShell) const
-{
-    ScDrawView* pDrView = const_cast<ScTabViewShell*>(this)->GetScDrawView();
-    if (pDrView)
-    {
-        if (pDrView->GetTextEditObject())
-        {
-            // Blinking cursor.
-            EditView& rEditView = pDrView->GetTextEditOutlinerView()->GetEditView();
-            rEditView.RegisterOtherShell(pOtherShell);
-            rEditView.ShowCursor();
-            rEditView.RegisterOtherShell(nullptr);
-            // Text selection, if any.
-            rEditView.DrawSelection(pOtherShell);
-        }
-        else
-        {
-            // Graphic selection.
-            pDrView->AdjustMarkHdl(pOtherShell);
-        }
-    }
-
-    const ScGridWindow* pWin = GetViewData().GetActiveWin();
-    if (pWin)
-        pWin->updateLibreOfficeKitCellCursor(pOtherShell);
-}
-
-bool ScTabViewShell::UseSubTotal(ScRangeList* pRangeList)
-{
-    bool bSubTotal = false;
-    ScDocument* pDoc = GetViewData().GetDocument();
-    size_t nRangeCount (pRangeList->size());
-    size_t nRangeIndex (0);
-    while (!bSubTotal && nRangeIndex < nRangeCount)
-    {
-        const ScRange* pRange = (*pRangeList)[nRangeIndex];
-        if( pRange )
-        {
-            SCTAB nTabEnd(pRange->aEnd.Tab());
-            SCTAB nTab(pRange->aStart.Tab());
-            while (!bSubTotal && nTab <= nTabEnd)
-            {
-                SCROW nRowEnd(pRange->aEnd.Row());
-                SCROW nRow(pRange->aStart.Row());
-                while (!bSubTotal && nRow <= nRowEnd)
-                {
-                    if (pDoc->RowFiltered(nRow, nTab))
-                        bSubTotal = true;
-                    else
-                        ++nRow;
-                }
-                ++nTab;
-            }
-        }
-        ++nRangeIndex;
-    }
-
-    const ScDBCollection::NamedDBs& rDBs = pDoc->GetDBCollection()->getNamedDBs();
-    ScDBCollection::NamedDBs::const_iterator itr = rDBs.begin(), itrEnd = rDBs.end();
-    for (; !bSubTotal && itr != itrEnd; ++itr)
-    {
-        const ScDBData& rDB = **itr;
-        if (!rDB.HasAutoFilter())
-            continue;
-
-        nRangeIndex = 0;
-        while (!bSubTotal && nRangeIndex < nRangeCount)
-        {
-            const ScRange* pRange = (*pRangeList)[nRangeIndex];
-            if( pRange )
-            {
-                ScRange aDBArea;
-                rDB.GetArea(aDBArea);
-                if (aDBArea.Intersects(*pRange))
-                    bSubTotal = true;
-            }
-            ++nRangeIndex;
-        }
-    }
-    return bSubTotal;
-}
-
-const OUString ScTabViewShell::DoAutoSum(bool& rRangeFinder, bool& rSubTotal)
-{
-    OUString aFormula;
-    const ScMarkData& rMark = GetViewData().GetMarkData();
-    if ( rMark.IsMarked() || rMark.IsMultiMarked() )
-    {
-        ScRangeList aMarkRangeList;
-        rRangeFinder = rSubTotal = false;
-        rMark.FillRangeListWithMarks( &aMarkRangeList, false );
-        ScDocument* pDoc = GetViewData().GetDocument();
-
-        // check if one of the marked ranges is empty
-        bool bEmpty = false;
-        const size_t nCount = aMarkRangeList.size();
-        for ( size_t i = 0; i < nCount; ++i )
-        {
-            const ScRange aRange( *aMarkRangeList[i] );
-            if ( pDoc->IsBlockEmpty( aRange.aStart.Tab(),
-                 aRange.aStart.Col(), aRange.aStart.Row(),
-                 aRange.aEnd.Col(), aRange.aEnd.Row() ) )
-            {
-                bEmpty = true;
-                break;
-            }
-        }
-
-        if ( bEmpty )
-        {
-            ScRangeList aRangeList;
-            const bool bDataFound = GetAutoSumArea( aRangeList );
-            if ( bDataFound )
-            {
-                ScAddress aAddr = aRangeList.back()->aEnd;
-                aAddr.IncRow();
-                const bool bSubTotal( UseSubTotal( &aRangeList ) );
-                EnterAutoSum( aRangeList, bSubTotal, aAddr );
-            }
-        }
-        else
-        {
-            const bool bSubTotal( UseSubTotal( &aMarkRangeList ) );
-            for ( size_t i = 0; i < nCount; ++i )
-            {
-                const ScRange aRange( *aMarkRangeList[i] );
-                const bool bSetCursor = ( i == nCount - 1 );
-                const bool bContinue = ( i != 0 );
-                if ( !AutoSum( aRange, bSubTotal, bSetCursor, bContinue ) )
-                {
-                    MarkRange( aRange, false );
-                    SetCursor( aRange.aEnd.Col(), aRange.aEnd.Row() );
-                    const ScRangeList aRangeList;
-                    ScAddress aAddr = aRange.aEnd;
-                    aAddr.IncRow();
-                    aFormula = GetAutoSumFormula( aRangeList, bSubTotal, aAddr );
-                    break;
-                }
-            }
-        }
-    }
-    else // Only insert into input row
-    {
-        ScRangeList aRangeList;
-        rRangeFinder = GetAutoSumArea( aRangeList );
-        rSubTotal = UseSubTotal( &aRangeList );
-        ScAddress aAddr = GetViewData().GetCurPos();
-        aFormula = GetAutoSumFormula( aRangeList, rSubTotal, aAddr );
-    }
-    return aFormula;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

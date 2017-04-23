@@ -32,6 +32,7 @@
 #endif
 
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include <tools/stream.hxx>
@@ -58,13 +59,16 @@ using comphelper::string::getTokenCount;
 OString*  pStdParType  = nullptr;
 OString*  pStdPar1     = nullptr;
 OString*  pStdPar2     = nullptr;
+OString*  pWinParType  = nullptr;
+OString*  pWinPar1     = nullptr;
+OString*  pWinPar2     = nullptr;
 sal_uInt32      nRefDeep     = 10;
 AtomContainer*  pHS          = nullptr;
 
 
 void RscCmdLine::Init()
 {
-    nCommands       = CommandFlags::NONE;
+    nCommands       = 0;
     nByteOrder      = RSC_BIGENDIAN;
 
     aPath = OString(".");
@@ -113,24 +117,24 @@ RscCmdLine::RscCmdLine( int argc, char ** argv, RscError * pEH )
             if( !rsc_stricmp( (*ppStr) + 1, "h" )
               || !strcmp( (*ppStr) + 1, "?" ) )
             { // Write help to standard output
-                nCommands |= CommandFlags::Help;
+                nCommands |= HELP_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "p" ) )
             { // No preprocessor
-                nCommands |= CommandFlags::NoPrePro;
+                nCommands |= NOPREPRO_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "s" ) )
             { // Syntax analysis, creates .srs file
-                nCommands |= CommandFlags::NoLink;
+                nCommands |= NOLINK_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "l" ) )
             { // links, no syntax and no preprocessing
-                nCommands |= CommandFlags::NoPrePro;
-                nCommands |= CommandFlags::NoSyntax;
+                nCommands |= NOPREPRO_FLAG;
+                nCommands |= NOSYNTAX_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "r" ) )
             { // generate no .res file
-                nCommands |= CommandFlags::NoResFile;
+                nCommands |= NORESFILE_FLAG;
             }
             else if( !rsc_strnicmp( (*ppStr) + 1, "sub", 3 ) )
             {
@@ -145,7 +149,7 @@ RscCmdLine::RscCmdLine( int argc, char ** argv, RscError * pEH )
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "PreLoad" ) )
             { // all resources with Preload
-                nCommands |= CommandFlags::Preload;
+                nCommands |= PRELOAD_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "LITTLEENDIAN" ) )
             { // endianness when writing
@@ -157,11 +161,11 @@ RscCmdLine::RscCmdLine( int argc, char ** argv, RscError * pEH )
             }
             else if( !rsc_strnicmp( (*ppStr) + 1, "d", 1 ) )
             { // define symbols
-                nCommands |= CommandFlags::Define;
+                nCommands |= DEFINE_FLAG;
             }
             else if( !rsc_strnicmp( (*ppStr) + 1, "i", 1 ) )
             { // define include path
-                nCommands |= CommandFlags::Include;
+                nCommands |= INCLUDE_FLAG;
                 OStringBuffer aBuffer(aPath);
                 if (!aBuffer.isEmpty())
                     aBuffer.append(SAL_PATHSEPARATOR);
@@ -203,11 +207,11 @@ RscCmdLine::RscCmdLine( int argc, char ** argv, RscError * pEH )
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "NoSysResTest" ) )
             { // don't check Bitmap, Pointers, Icons
-                nCommands |= CommandFlags::NoSysResTest;
+                nCommands |= NOSYSRESTEST_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "SrsDefault" ) )
             { // Only write one language to srs file
-                nCommands |= CommandFlags::SrsDefault;
+                nCommands |= SRSDEFAULT_FLAG;
             }
             else if( !rsc_stricmp( (*ppStr) + 1, "lg" ) )
             {
@@ -231,7 +235,7 @@ RscCmdLine::RscCmdLine( int argc, char ** argv, RscError * pEH )
         i++;
     }
 
-    if( nCommands & CommandFlags::Help )
+    if( nCommands & HELP_FLAG )
         pEH->FatalError( ERR_USAGE, RscId() );
     // was an inputted file specified
     else if( !aInputList.empty() )
@@ -292,6 +296,7 @@ OString RscCmdLine::substitutePaths( const OString& rIn )
 
 RscCompiler::RscCompiler( RscCmdLine * pLine, RscTypCont * pTypCont )
 {
+    fListing      = nullptr;
     fExitFile     = nullptr;
 
     //Set Command Line, set Type Container
@@ -302,6 +307,9 @@ RscCompiler::RscCompiler( RscCmdLine * pLine, RscTypCont * pTypCont )
 RscCompiler::~RscCompiler()
 {
     pTC->pEH->SetListFile( nullptr );
+
+    if( fListing )
+        fclose( fListing );
 
     if( fExitFile )
         fclose( fExitFile );
@@ -318,9 +326,9 @@ ERRTYPE RscCompiler::Start()
     for( size_t i = 0, n = pCL->aInputList.size(); i < n; ++i )
         pTC->aFileTab.NewCodeFile( *pCL->aInputList[ i ] );
 
-    if( !(pCL->nCommands & CommandFlags::NoSyntax) )
+    if( !(pCL->nCommands & NOSYNTAX_FLAG) )
     {
-        if( pCL->nCommands & CommandFlags::NoPrePro )
+        if( pCL->nCommands & NOPREPRO_FLAG )
         {
 
             pTC->pEH->SetListFile( nullptr );
@@ -338,7 +346,7 @@ ERRTYPE RscCompiler::Start()
                 aIndex = pTC->aFileTab.NextIndex( aIndex );
             }
 
-            pTC->pEH->SetListFile( nullptr );
+            pTC->pEH->SetListFile( fListing );
         }
     }
 
@@ -370,7 +378,7 @@ ERRTYPE RscCompiler::Start()
 
 void RscCompiler::EndCompile()
 {
-    if( !pCL->aOutputSrs.isEmpty() && (pCL->nCommands & CommandFlags::NoLink) )
+    if( !pCL->aOutputSrs.isEmpty() && (pCL->nCommands & NOLINK_FLAG) )
     {
         pTC->pEH->StdOut( "Writing file ", RscVerbosityVerbose );
         pTC->pEH->StdOut( pCL->aOutputSrs.getStr(), RscVerbosityVerbose );
@@ -378,7 +386,7 @@ void RscCompiler::EndCompile()
 
         // copy from TMP to real names
         unlink( pCL->aOutputSrs.getStr() );   // delete target file
-        if( !(pCL->nCommands & CommandFlags::NoSyntax) )
+        if( !(pCL->nCommands & NOSYNTAX_FLAG) )
         {
             FILE        * foutput;
 
@@ -404,7 +412,7 @@ void RscCompiler::EndCompile()
     }
 }
 
-ERRTYPE RscCompiler::IncludeParser( RscFileTab::Index lFileKey )
+ERRTYPE RscCompiler::IncludeParser( sal_uLong lFileKey )
 {
     FILE            * finput;
     RscFile         * pFName;
@@ -447,7 +455,7 @@ ERRTYPE RscCompiler::IncludeParser( RscFileTab::Index lFileKey )
     return aError;
 }
 
-ERRTYPE RscCompiler::ParseOneFile( RscFileTab::Index lFileKey,
+ERRTYPE RscCompiler::ParseOneFile( sal_uLong lFileKey,
                                      const RscCmdLine::OutputFile* pOutputFile,
                                      const WriteRcContext* pContext )
 {
@@ -536,6 +544,7 @@ namespace
         OUString sSys;
         if(FileBase::getSystemPathFromFileURL(i_sUrl, sSys) != FileBase::E_None)
             throw RscIoError();
+        OSL_TRACE("temporary file: %s", OUStringToOString(sSys, RTL_TEXTENCODING_UTF8).getStr());
         return OUStringToOString(sSys, RTL_TEXTENCODING_MS_1252);
     };
 
@@ -545,6 +554,7 @@ namespace
         OUString sTempUrl;
         if(FileBase::createTempFile(&sTempDirUrl, nullptr, &sTempUrl) != FileBase::E_None)
             throw RscIoError();
+        OSL_TRACE("temporary url: %s", OUStringToOString(sTempUrl, RTL_TEXTENCODING_UTF8).getStr());
         return lcl_getSystemPath(sTempUrl);
     };
 }
@@ -555,7 +565,7 @@ ERRTYPE RscCompiler::Link()
     ERRTYPE     aError;
     RscFile*    pFName;
 
-    if( !(pCL->nCommands & CommandFlags::NoLink) )
+    if( !(pCL->nCommands & NOLINK_FLAG) )
     {
         ::std::list<RscCmdLine::OutputFile>::const_iterator it;
 
@@ -585,16 +595,20 @@ ERRTYPE RscCompiler::Link()
                 OUString sRcUrl = lcl_getAbsoluteUrl(sPwdUrl, it->aOutputRc);
                 // TempDir is either the directory where the rc file is located or pwd
                 OUString sTempDirUrl = sRcUrl.copy(0,sRcUrl.lastIndexOf('/'));
+                OSL_TRACE("rc directory URL: %s", OUStringToOString(sTempDirUrl, RTL_TEXTENCODING_UTF8).getStr());
 
                 aRcTmp = lcl_getTempFile(sTempDirUrl);
+                OSL_TRACE("temporary rc file: %s", aRcTmp.getStr());
 
                 OUString sOilDirUrl;
                 if(!pCL->aILDir.isEmpty())
                     sOilDirUrl = lcl_getAbsoluteUrl(sPwdUrl, pCL->aILDir);
                 else
                     sOilDirUrl = sTempDirUrl;
+                OSL_TRACE("ilst directory URL: %s", OUStringToOString(sOilDirUrl, RTL_TEXTENCODING_UTF8).getStr());
 
                 aSysListTmp = lcl_getTempFile(sOilDirUrl);
+                OSL_TRACE("temporary ilst file: %s", aSysListTmp.getStr());
 
                 OUString sIlstUrl;
                 sIlstUrl = sRcUrl.copy(sRcUrl.lastIndexOf('/')+1);
@@ -603,13 +617,14 @@ ERRTYPE RscCompiler::Link()
                 sIlstUrl = lcl_getAbsoluteUrl(sOilDirUrl, OUStringToOString(sIlstUrl, RTL_TEXTENCODING_UTF8));
 
                 aSysList = lcl_getSystemPath(sIlstUrl);
+                OSL_TRACE("ilst file: %s", aSysList.getStr());
             }
             catch (RscIoError&)
             {
-                OString sMsg = "Error with paths:\n"
-                        "temporary rc file: " + aRcTmp + "\n"
-                        "temporary ilst file: " + aSysListTmp + "\n"
-                        "ilst file: " + aSysList + "\n";
+                OString sMsg("Error with paths:\n");
+                sMsg += "temporary rc file: " + aRcTmp + "\n";
+                sMsg += "temporary ilst file: " + aSysListTmp + "\n";
+                sMsg += "ilst file: " + aSysList + "\n";
                 pTC->pEH->FatalError(ERR_OPENFILE, RscId(), sMsg.getStr());
             }
             if ( nullptr == (fExitFile = foutput = fopen( aRcTmp.getStr(), "wb" )) )
@@ -636,6 +651,7 @@ ERRTYPE RscCompiler::Link()
                 aSysSearchPath.append(aToken);
             }
             while ( nIndex >= 0 );
+            OSL_TRACE( "setting search path for language %s: %s", it->aLangName.getStr(), aSysSearchPath.getStr() );
             pTC->SetSysSearchPath(aSysSearchPath.makeStringAndClear());
 
             WriteRcContext  aContext;
@@ -842,6 +858,94 @@ void RscCompiler::PreprocessSrsFile( const RscCmdLine::OutputFile& rOutputFile,
                     aMissingImages.push_back( aBaseFileName );
 
                 aOStm.WriteLine(aLine);
+            }
+            else if (aLine.indexOf("ImageList") != -1)
+            {
+                ::std::vector< ::std::pair< OString, sal_Int32 > > aEntryVector;
+
+                aOStm.WriteLine(aLine);
+
+                if (aLine.indexOf(';') == -1)
+                {
+                    const sal_Size nImgListStartPos = aIStm.Tell();
+
+                    do
+                    {
+                        if( !aIStm.ReadLine(aLine) )
+                            break;
+                    }
+                    while (aLine.indexOf("Prefix") == -1);
+
+                    const OString aPrefix( aLine.getToken(1, '"') );
+                    aIStm.Seek( nImgListStartPos );
+
+                    do
+                    {
+                        if (!aIStm.ReadLine(aLine) )
+                            break;
+                    }
+                    while (aLine.indexOf("IdList") == -1);
+
+                    // scan all ids and collect images
+                    while (aLine.indexOf('}') == -1)
+                    {
+                        if( !aIStm.ReadLine(aLine) )
+                            break;
+
+                        aLine = comphelper::string::stripStart(aLine, ' ');
+                        aLine = comphelper::string::stripStart(aLine, '\t');
+                        aLine = comphelper::string::remove(aLine, ';');
+
+                        if (comphelper::string::isdigitAsciiString(aLine))
+                        {
+                            sal_Int32 nNumber = atoi(aLine.getStr());
+
+                            OStringBuffer aBuf(aPrefix);
+                            if( nNumber < 10000 )
+                                aBuf.append('0');
+                            aBuf.append(aLine);
+                            OString aBaseFileName = aBuf.makeStringAndClear();
+
+                            if( GetImageFilePath( rOutputFile, rContext, aBaseFileName, aFilePath, pSysListFile ) )
+                                aEntryVector.push_back( ::std::pair< OString, sal_Int32 >( aFilePath, nNumber ) );
+                            else
+                                aMissingImages.push_back( aBaseFileName );
+                        }
+                    }
+
+                    const sal_Size nImgListEndPos = aIStm.Tell();
+                    aIStm.Seek( nImgListStartPos );
+                    while( aIStm.Tell() < nImgListEndPos )
+                    {
+                        aIStm.ReadLine( aLine );
+
+                        if (aLine.indexOf("IdList") != -1)
+                        {
+                            while (aLine.indexOf('}') == -1)
+                                aIStm.ReadLine(aLine);
+                        }
+                        else
+                            aOStm.WriteLine(aLine);
+                    }
+
+                    aOStm.WriteLine(OString("FileList = {"));
+
+                    for( size_t i = 0; i < aEntryVector.size(); ++i )
+                    {
+                        OStringBuffer aEntryString("< \"");
+
+                        aEntryString.append(aEntryVector[i].first);
+                        aEntryString.append("\"; ");
+                        aEntryString.append(static_cast<sal_Int32>(aEntryVector[ i ].second));
+                        aEntryString.append("; >;");
+
+                        aOStm.WriteLine(aEntryString.makeStringAndClear());
+                    }
+
+                    aOStm.WriteLine(OString("};"));
+                }
+                else
+                    aOStm.WriteLine(aLine);
             }
             else
                 aOStm.WriteLine(aLine);

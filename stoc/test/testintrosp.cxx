@@ -332,7 +332,7 @@ public:
     virtual OUString SAL_CALL getFirstName()
         throw(RuntimeException);
     virtual OUString SAL_CALL getLastName() throw(RuntimeException)
-        { return OUString("Meyer"); }
+        { return OUString( OUString("Meyer") ); }
     virtual sal_Int16 SAL_CALL getAge() throw(RuntimeException)
         { return m_nMarkusAge; }
     virtual sal_Int16 SAL_CALL getChildrenCount() throw(RuntimeException)
@@ -521,7 +521,7 @@ Any ImplIntroTest::getPropertyValue( const OUString& PropertyName )
 OUString ImplIntroTest::getFirstName()
     throw(RuntimeException)
 {
-    return OUString("Markus");
+    return OUString( OUString("Markus") );
 }
 
 void ImplIntroTest::writeln( const OUString& Text )
@@ -745,21 +745,21 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
         "Meyer",
         "33",
         "3",
-        "Value has not been modified",
-        "Value has not been modified",
+        "Wert wurde nicht modifiziert",
+        "Wert wurde nicht modifiziert",
         "315",
-        "Value has not been modified",
+        "Wert wurde nicht modifiziert",
         "42",
         "112",
         "99",
-        "Value has not been modified",
-        "Value has not been modified",
-        "Value has not been modified",
-        "Value has not been modified",
-        "Value has not been modified",
+        "Wert wurde nicht modifiziert",
+        "Wert wurde nicht modifiziert",
+        "Wert wurde nicht modifiziert",
+        "Wert wurde nicht modifiziert",
+        "Wert wurde nicht modifiziert",
         "10",
-        "Value has not been modified",
-        "Value has not been modified",
+        "Wert wurde nicht modifiziert"
+        "Wert wurde nicht modifiziert"
     };
 
     char const * pDemandedPropTypes[] =
@@ -1061,12 +1061,12 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
     // loop over all concept combinations
     for( sal_Int32 nConcepts = 0 ; nConcepts < 128 ; nConcepts++ )
     {
-        // The 2^6th bit stands for "the rest"
+        // Das 2^6-Bit steht fuer "den Rest"
         sal_Int32 nRealConcepts = nConcepts;
         if( nConcepts & 0x40 )
             nRealConcepts |= (0xFFFFFFFF - 0x3F);
 
-        // Count the number of methods there should be
+        // Wieviele Methoden sollten es sein
         sal_Int32 nDemandedMethCount = 0;
         sal_Int32 iList = 0;
         while( pMethodDefs[ iList ].pName )
@@ -1076,7 +1076,7 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
             iList++;
         }
 
-        // Output the method array.
+        // Methoden-Array ausgeben
         Sequence< Reference< XIdlMethod > > aMethodSeq = xAccess->getMethods( nRealConcepts );
         sal_Int32 nLen = aMethodSeq.getLength();
 
@@ -1092,12 +1092,14 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
 
         for( i = 0 ; i < nLen ; i++ )
         {
+            // Methode ansprechen
             const Reference< XIdlMethod >& rxMethod = pMethods[i];
 
+            // Methode ausgeben
             OUString aMethName = rxMethod->getName();
             OString aNameStr = OUStringToOString(aMethName, RTL_TEXTENCODING_ASCII_US );
 
-            // locate the next matching method in the list.
+            // Naechste Passende Methode in der Liste suchen
             while( pMethodDefs[ iList ].pName )
             {
                 if( pMethodDefs[ iList ].nConcept & nRealConcepts )
@@ -1114,7 +1116,7 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
             aErrorStr += "\"";
             OSL_ENSURE( aNameStr == aDemandedName, aErrorStr.getStr() );
 
-            // Check that the method is really there with hasMethod.
+            // Checken, ob alle Methoden auch einzeln gefunden werden
             aErrorStr  = "method \"";
             aErrorStr += aDemandedName;
             aErrorStr += "\" not found with hasMethod()";
@@ -1147,7 +1149,10 @@ static sal_Bool test_introsp( Reference< XMultiServiceFactory > xMgr,
     const Type* pListeners = aClassSeq.getConstArray();
     for( sal_Int32 i = 0 ; i < nLen ; i++ )
     {
+        // Methode ansprechen
         const Type& aListenerType = pListeners[i];
+
+        // get name
         OUString aListenerClassName = aListenerType.getTypeName();
     }
 
@@ -1190,7 +1195,11 @@ SAL_IMPLEMENT_MAIN()
     }
     catch (const Exception & rExc)
     {
-        SAL_WARN("stoc", "### exception occurred: " << rExc.Message );
+        OSL_FAIL( "### exception occurred!" );
+        OString aMsg( OUStringToOString( rExc.Message, RTL_TEXTENCODING_ASCII_US ) );
+        OSL_TRACE( "### exception occurred: " );
+        OSL_TRACE( "%s", aMsg.getStr() );
+        OSL_TRACE( "\n" );
     }
 
     Reference< XComponent >( xMgr, UNO_QUERY )->dispose();

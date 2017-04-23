@@ -33,8 +33,6 @@ using namespace com::sun::star;
 namespace comphelper {
 namespace service_decl {
 
-const char cDelim = ';';
-
 class ServiceDecl::Factory :
         public cppu::WeakImplHelper<lang::XSingleComponentFactory,
                                      lang::XServiceInfo>
@@ -47,19 +45,24 @@ public:
     const Factory& operator=(const Factory&) = delete;
 
     // XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( OUString const& name ) override;
-    virtual uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( OUString const& name )
+        throw (uno::RuntimeException, std::exception) override;
+    virtual uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (uno::RuntimeException, std::exception) override;
     // XSingleComponentFactory:
     virtual uno::Reference<uno::XInterface> SAL_CALL createInstanceWithContext(
-        uno::Reference<uno::XComponentContext> const& xContext ) override;
+        uno::Reference<uno::XComponentContext> const& xContext )
+        throw (uno::Exception, std::exception) override;
     virtual uno::Reference<uno::XInterface> SAL_CALL
     createInstanceWithArgumentsAndContext(
     uno::Sequence<uno::Any> const& args,
-    uno::Reference<uno::XComponentContext> const& xContext ) override;
+    uno::Reference<uno::XComponentContext> const& xContext )
+        throw (uno::Exception, std::exception) override;
 
 private:
-    virtual ~Factory() override;
+    virtual ~Factory();
 
     ServiceDecl const& m_rServiceDecl;
 };
@@ -70,16 +73,19 @@ ServiceDecl::Factory::~Factory()
 
 // XServiceInfo:
 OUString ServiceDecl::Factory::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return m_rServiceDecl.getImplementationName();
 }
 
 sal_Bool ServiceDecl::Factory::supportsService( OUString const& name )
+    throw (uno::RuntimeException, std::exception)
 {
     return m_rServiceDecl.supportsService(name);
 }
 
 uno::Sequence<OUString> ServiceDecl::Factory::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     return m_rServiceDecl.getSupportedServiceNames();
 }
@@ -87,6 +93,7 @@ uno::Sequence<OUString> ServiceDecl::Factory::getSupportedServiceNames()
 // XSingleComponentFactory:
 uno::Reference<uno::XInterface> ServiceDecl::Factory::createInstanceWithContext(
     uno::Reference<uno::XComponentContext> const& xContext )
+    throw (uno::Exception, std::exception)
 {
     return m_rServiceDecl.m_createFunc(
         m_rServiceDecl, uno::Sequence<uno::Any>(), xContext );
@@ -96,6 +103,7 @@ uno::Reference<uno::XInterface>
 ServiceDecl::Factory::createInstanceWithArgumentsAndContext(
     uno::Sequence<uno::Any > const& args,
     uno::Reference<uno::XComponentContext> const& xContext )
+    throw (uno::Exception, std::exception)
 {
     return m_rServiceDecl.m_createFunc(
         m_rServiceDecl, args, xContext );
@@ -118,7 +126,7 @@ uno::Sequence<OUString> ServiceDecl::getSupportedServiceNames() const
     OString const str(m_pServiceNames);
     sal_Int32 nIndex = 0;
     do {
-        OString const token( str.getToken( 0, cDelim, nIndex ) );
+        OString const token( str.getToken( 0, m_cDelim, nIndex ) );
         vec.push_back( OUString( token.getStr(), token.getLength(),
                                       RTL_TEXTENCODING_ASCII_US ) );
     }
@@ -132,7 +140,7 @@ bool ServiceDecl::supportsService( OUString const& name ) const
     OString const str(m_pServiceNames);
     sal_Int32 nIndex = 0;
     do {
-        OString const token( str.getToken( 0, cDelim, nIndex ) );
+        OString const token( str.getToken( 0, m_cDelim, nIndex ) );
         if (name.equalsAsciiL( token.getStr(), token.getLength() ))
             return true;
     }

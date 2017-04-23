@@ -63,7 +63,7 @@ public:
             GetSizePixel().Width() - nAccessedWidth);
         long aStaticTabs[]= { 2, 0, 0 };
         aStaticTabs[2] = nWebSiteWidth;
-        SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
+        SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
     }
 };
 
@@ -101,7 +101,7 @@ ScShareDocumentDlg::ScShareDocumentDlg( vcl::Window* pParent, ScViewData* pViewD
     aHeader += "\t";
     aHeader += get<FixedText>("accessed")->GetText();
     m_pLbUsers->InsertHeaderEntry( aHeader, HEADERBAR_APPEND, HeaderBarItemBits::LEFT | HeaderBarItemBits::LEFTIMAGE | HeaderBarItemBits::VCENTER );
-    m_pLbUsers->SetSelectionMode( SelectionMode::NONE );
+    m_pLbUsers->SetSelectionMode( NO_SELECTION );
 
     UpdateView();
 }
@@ -119,7 +119,7 @@ void ScShareDocumentDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG(ScShareDocumentDlg, ToggleHandle, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ScShareDocumentDlg, ToggleHandle, CheckBox&, void)
 {
     m_pFtWarning->Enable( m_pCbShare->IsChecked() );
 }

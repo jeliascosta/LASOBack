@@ -34,7 +34,7 @@
 class BASIC_DLLPUBLIC SbObjModule : public SbModule
 {
 protected:
-    virtual ~SbObjModule() override;
+    virtual ~SbObjModule();
 
 public:
     SbObjModule( const OUString& rName, const css::script::ModuleInfo& mInfo, bool bIsVbaCompatible );
@@ -44,8 +44,7 @@ public:
 
     using SbxValue::GetObject;
     SbxVariable* GetObject();
-    /// @throws css::uno::RuntimeException
-    void SetUnoObject( const css::uno::Any& aObj ) ;
+    void SetUnoObject( const css::uno::Any& aObj )throw ( css::uno::RuntimeException, std::exception ) ;
 };
 
 class FormObjEventListenerImpl;
@@ -62,7 +61,7 @@ class BASIC_DLLPUBLIC SbUserFormModule : public SbObjModule
     void InitObject();
 public:
     SbUserFormModule( const OUString& rName, const css::script::ModuleInfo& mInfo, bool bIsVBACompat );
-    virtual ~SbUserFormModule() override;
+    virtual ~SbUserFormModule();
     virtual SbxVariable* Find( const OUString& rName, SbxClassType t ) override;
     void ResetApiObj( bool bTriggerTerminateEvent = true );
     void Unload();

@@ -52,6 +52,7 @@ void SAL_CALL SlideRenderer::disposing()
 //----- XInitialization -------------------------------------------------------
 
 void SAL_CALL SlideRenderer::initialize (const Sequence<Any>& rArguments)
+    throw (Exception, RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -63,16 +64,19 @@ void SAL_CALL SlideRenderer::initialize (const Sequence<Any>& rArguments)
 }
 
 OUString SlideRenderer::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Draw.SlideRenderer");
 }
 
 sal_Bool SlideRenderer::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> SlideRenderer::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{"com.sun.star.drawing.SlideRenderer"};
 }
@@ -83,6 +87,7 @@ Reference<awt::XBitmap> SlideRenderer::createPreview (
     const Reference<drawing::XDrawPage>& rxSlide,
     const awt::Size& rMaximalSize,
     sal_Int16 nSuperSampleFactor)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -96,6 +101,7 @@ Reference<rendering::XBitmap> SlideRenderer::createPreviewForCanvas (
     const awt::Size& rMaximalSize,
     sal_Int16 nSuperSampleFactor,
     const Reference<rendering::XCanvas>& rxCanvas)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     SolarMutexGuard aGuard;
@@ -113,6 +119,7 @@ Reference<rendering::XBitmap> SlideRenderer::createPreviewForCanvas (
 awt::Size SAL_CALL SlideRenderer::calculatePreviewSize (
     double nSlideAspectRatio,
     const awt::Size& rMaximalSize)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (rMaximalSize.Width <= 0
         || rMaximalSize.Height <= 0
@@ -136,6 +143,8 @@ BitmapEx SlideRenderer::CreatePreview (
     const Reference<drawing::XDrawPage>& rxSlide,
     const awt::Size& rMaximalSize,
     sal_Int16 nSuperSampleFactor)
+    throw (css::uno::RuntimeException,
+           std::exception)
 {
     const SdPage* pPage = SdPage::getImplementation(rxSlide);
     if (pPage == nullptr)
@@ -175,7 +184,7 @@ BitmapEx SlideRenderer::CreatePreview (
     const Image aPreview = maPreviewRenderer.RenderPage (
         pPage,
         Size(aPreviewSize.Width*nFactor, aPreviewSize.Height*nFactor),
-        OUString(), true);
+        OUString());
     if (nFactor == 1)
         return aPreview.GetBitmapEx();
     else
@@ -189,6 +198,7 @@ BitmapEx SlideRenderer::CreatePreview (
 }
 
 void SlideRenderer::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
 {
     if (SlideRendererInterfaceBase::rBHelper.bDisposed || SlideRendererInterfaceBase::rBHelper.bInDispose)
     {

@@ -41,21 +41,23 @@ namespace svt { namespace table
 
     public:
         explicit TableDataWindow( TableControl_Impl& _rTableControl );
-        virtual ~TableDataWindow() override;
+        virtual ~TableDataWindow();
         virtual void dispose() override;
 
-        void SetSelectHdl(const Link<LinkParamNone*,void>& rLink)
+        inline void SetSelectHdl(const Link<LinkParamNone*,void>& rLink)
         {
             m_aSelectHdl = rLink;
         }
 
         // Window overridables
-        virtual void        Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+        virtual void        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
         virtual void        MouseMove( const MouseEvent& rMEvt) override;
         virtual void        MouseButtonDown( const MouseEvent& rMEvt) override;
         virtual void        MouseButtonUp( const MouseEvent& rMEvt) override;
-        virtual bool        EventNotify(NotifyEvent& rNEvt) override;
+        virtual bool        Notify(NotifyEvent& rNEvt) override;
         virtual void        RequestHelp( const HelpEvent& rHEvt ) override;
+
+        void                SetBackground(const Wallpaper& rColor);
 
     private:
         static void impl_hideTipWindow();

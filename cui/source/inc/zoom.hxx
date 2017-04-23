@@ -48,16 +48,16 @@ private:
     std::unique_ptr<SfxItemSet> mpOutSet;
     bool                        mbModified;
 
-    DECL_LINK(UserHdl, Button*, void);
-    DECL_LINK(SpinHdl, Edit&, void);
-    DECL_LINK(ViewLayoutUserHdl, Button*, void);
-    DECL_LINK(ViewLayoutSpinHdl, Edit&, void);
-    DECL_LINK(ViewLayoutCheckHdl, Button*, void);
-    DECL_LINK(OKHdl, Button*, void);
+    DECL_LINK_TYPED(UserHdl, Button*, void);
+    DECL_LINK_TYPED(SpinHdl, Edit&, void);
+    DECL_LINK_TYPED(ViewLayoutUserHdl, Button*, void);
+    DECL_LINK_TYPED(ViewLayoutSpinHdl, Edit&, void);
+    DECL_LINK_TYPED(ViewLayoutCheckHdl, Button*, void);
+    DECL_LINK_TYPED(OKHdl, Button*, void);
 
 public:
     SvxZoomDialog(vcl::Window* pParent, const SfxItemSet& rCoreSet);
-    virtual ~SvxZoomDialog() override;
+    virtual ~SvxZoomDialog();
     virtual void dispose() override;
 
     const SfxItemSet* GetOutputItemSet() const;

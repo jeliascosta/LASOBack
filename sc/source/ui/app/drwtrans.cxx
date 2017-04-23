@@ -83,7 +83,7 @@ ScDrawTransferObj::ScDrawTransferObj( SdrModel* pClipModel, ScDocShell* pContain
     bGrIsBit( false ),
     bOleObj( false ),
     pDragSourceView( nullptr ),
-    nDragSourceFlags( ScDragSrc::Undefined ),
+    nDragSourceFlags( 0 ),
     bDragWasInternal( false ),
     nSourceDocID( 0 ),
     maShellID(SfxObjectShell::CreateShellID(pContainerShell))
@@ -94,7 +94,7 @@ ScDrawTransferObj::ScDrawTransferObj( SdrModel* pClipModel, ScDocShell* pContain
     SdrPage* pPage = pModel->GetPage(0);
     if (pPage)
     {
-        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         if (pObject && !aIter.Next())               // exactly one object?
         {
@@ -121,14 +121,14 @@ ScDrawTransferObj::ScDrawTransferObj( SdrModel* pClipModel, ScDocShell* pContain
             if (nSdrObjKind == OBJ_GRAF)
             {
                 bGraphic = true;
-                if ( static_cast<SdrGrafObj*>(pObject)->GetGraphic().GetType() == GraphicType::Bitmap )
+                if ( static_cast<SdrGrafObj*>(pObject)->GetGraphic().GetType() == GRAPHIC_BITMAP )
                     bGrIsBit = true;
             }
 
             //  URL button
 
             SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObject );
-            if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
+            if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
             {
                 uno::Reference<awt::XControlModel> xControlModel = pUnoCtrl->GetUnoControlModel();
                 OSL_ENSURE( xControlModel.is(), "uno control without model" );
@@ -161,7 +161,7 @@ ScDrawTransferObj::ScDrawTransferObj( SdrModel* pClipModel, ScDocShell* pContain
                                     {
                                         bool bWasAbs = true;
                                         aAbs = pMedium->GetURLObject().smartRel2Abs( aUrl, bWasAbs ).
-                                                    GetMainURL(INetURLObject::DecodeMechanism::NONE);
+                                                    GetMainURL(INetURLObject::NO_DECODE);
                                         // full path as stored INetBookmark must be encoded
                                     }
                                     else
@@ -236,10 +236,10 @@ ScDrawTransferObj::~ScDrawTransferObj()
     }
 
     aOleData = TransferableDataHelper();        // clear before releasing the mutex
-    aDocShellRef.clear();
+    aDocShellRef.Clear();
 
     delete pModel;
-    aDrawPersistRef.clear();                    // after the model
+    aDrawPersistRef.Clear();                    // after the model
 
     delete pBookmark;
     delete pDragSourceView;
@@ -260,7 +260,7 @@ static bool lcl_HasOnlyControls( SdrModel* pModel )
         SdrPage* pPage = pModel->GetPage(0);
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
             SdrObject* pObj = aIter.Next();
             if ( pObj )
             {
@@ -411,7 +411,7 @@ bool ScDrawTransferObj::GetData( const css::datatransfer::DataFlavor& rFlavor, c
             SdrPage* pPage = pModel->GetPage(0);
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+                SdrObjListIter aIter( *pPage, IM_FLAT );
                 SdrObject* pObject = aIter.Next();
                 if (pObject && pObject->GetObjIdentifier() == OBJ_GRAF)
                 {
@@ -435,7 +435,7 @@ bool ScDrawTransferObj::GetData( const css::datatransfer::DataFlavor& rFlavor, c
                 //TODO/LATER: needs new Format, because now single OLE and "this" are different
                 InitDocShell();         // set aDocShellRef
 
-                SfxObjectShell* pEmbObj = aDocShellRef.get();
+                SfxObjectShell* pEmbObj = aDocShellRef;
                 bOK = SetObject( pEmbObj, SCDRAWTRANS_TYPE_DOCUMENT, rFlavor );
             }
         }
@@ -471,7 +471,7 @@ bool ScDrawTransferObj::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, voi
                 for(sal_uInt16 a(0); a < pModel->GetPageCount(); a++)
                 {
                     const SdrPage* pPage = pModel->GetPage(a);
-                    SdrObjListIter aIter(*pPage, SdrIterMode::DeepNoGroups);
+                    SdrObjListIter aIter(*pPage, IM_DEEPNOGROUPS);
 
                     while(aIter.IsMore())
                     {
@@ -599,7 +599,7 @@ void ScDrawTransferObj::ObjectReleased()
 
 void ScDrawTransferObj::DragFinished( sal_Int8 nDropAction )
 {
-    if ( nDropAction == DND_ACTION_MOVE && !bDragWasInternal && !(nDragSourceFlags & ScDragSrc::Navigator) )
+    if ( nDropAction == DND_ACTION_MOVE && !bDragWasInternal && !(nDragSourceFlags & SC_DROP_NAVIGATOR) )
     {
         //  move: delete source objects
 
@@ -658,7 +658,7 @@ void ScDrawTransferObj::SetDragSourceObj( SdrObject* pObj, SCTAB nTab )
     //! add as listener with document, delete pDragSourceView if document gone
 }
 
-void ScDrawTransferObj::SetDragSourceFlags(ScDragSrc nFlags)
+void ScDrawTransferObj::SetDragSourceFlags( sal_uInt16 nFlags )
 {
     nDragSourceFlags = nFlags;
 }
@@ -680,7 +680,7 @@ SdrOle2Obj* ScDrawTransferObj::GetSingleObject()
     SdrPage* pPage = pModel->GetPage(0);
     if (pPage)
     {
-        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
+        SdrObjListIter aIter( *pPage, IM_FLAT );
         SdrObject* pObject = aIter.Next();
         if (pObject && pObject->GetObjIdentifier() == OBJ_OLE2)
         {
@@ -715,7 +715,7 @@ void ScDrawTransferObj::CreateOLEData()
 
 void ScDrawTransferObj::InitDocShell()
 {
-    if ( !aDocShellRef.is() )
+    if ( !aDocShellRef.Is() )
     {
         ScDocShell* pDocSh = new ScDocShell;
         aDocShellRef = pDocSh;      // ref must be there before InitNew
@@ -740,7 +740,7 @@ void ScDrawTransferObj::InitDocShell()
         SdrPage* pPage = pDestModel->GetPage(0);
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -753,7 +753,7 @@ void ScDrawTransferObj::InitDocShell()
         }
 
         Point aTmpPoint;
-        tools::Rectangle aDestArea( aTmpPoint, aSrcSize );
+        Rectangle aDestArea( aTmpPoint, aSrcSize );
         pDocSh->SetVisArea( aDestArea );
 
         ScViewOptions aViewOpt( rDestDoc.GetViewOptions() );
@@ -779,7 +779,7 @@ const css::uno::Sequence< sal_Int8 >& ScDrawTransferObj::getUnoTunnelId()
     return theScDrawTransferObjUnoTunnelId::get().getSeq();
 }
 
-sal_Int64 SAL_CALL ScDrawTransferObj::getSomething( const css::uno::Sequence< sal_Int8 >& rId )
+sal_Int64 SAL_CALL ScDrawTransferObj::getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw( css::uno::RuntimeException, std::exception )
 {
     sal_Int64 nRet;
     if( ( rId.getLength() == 16 ) &&

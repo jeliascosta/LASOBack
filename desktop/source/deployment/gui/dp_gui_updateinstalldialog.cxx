@@ -40,7 +40,6 @@
 #include <com/sun/star/ucb/InteractiveAugmentedIOException.hpp>
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/ucb/XProgressHandler.hpp>
-#include <com/sun/star/deployment/DeploymentException.hpp>
 #include <com/sun/star/deployment/XExtensionManager.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
 #include <com/sun/star/deployment/XUpdateInformationProvider.hpp>
@@ -82,13 +81,13 @@ namespace dp_gui {
 class UpdateInstallDialog::Thread: public salhelper::Thread {
     friend class UpdateCommandEnv;
 public:
-    Thread(cssu::Reference< cssu::XComponentContext > const & ctx,
+    Thread(cssu::Reference< cssu::XComponentContext > ctx,
         UpdateInstallDialog & dialog, std::vector< dp_gui::UpdateData > & aVecUpdateData);
 
     void stop();
 
 private:
-    virtual ~Thread() override;
+    virtual ~Thread();
 
     virtual void execute() override;
     void downloadExtensions();
@@ -122,28 +121,32 @@ class UpdateCommandEnv
     cssu::Reference< cssu::XComponentContext > m_xContext;
 
 public:
+    virtual ~UpdateCommandEnv();
     UpdateCommandEnv( cssu::Reference< cssu::XComponentContext > const & xCtx,
         ::rtl::Reference<UpdateInstallDialog::Thread>const & thread);
 
     // XCommandEnvironment
     virtual cssu::Reference<css::task::XInteractionHandler > SAL_CALL
-    getInteractionHandler() override;
+    getInteractionHandler() throw (cssu::RuntimeException, std::exception) override;
     virtual cssu::Reference<css::ucb::XProgressHandler >
-    SAL_CALL getProgressHandler() override;
+    SAL_CALL getProgressHandler() throw (cssu::RuntimeException, std::exception) override;
 
     // XInteractionHandler
     virtual void SAL_CALL handle(
-        cssu::Reference<css::task::XInteractionRequest > const & xRequest ) override;
+        cssu::Reference<css::task::XInteractionRequest > const & xRequest )
+        throw (cssu::RuntimeException, std::exception) override;
 
     // XProgressHandler
-    virtual void SAL_CALL push( cssu::Any const & Status ) override;
-    virtual void SAL_CALL update( cssu::Any const & Status ) override;
-    virtual void SAL_CALL pop() override;
+    virtual void SAL_CALL push( cssu::Any const & Status )
+        throw (cssu::RuntimeException, std::exception) override;
+    virtual void SAL_CALL update( cssu::Any const & Status )
+        throw (cssu::RuntimeException, std::exception) override;
+    virtual void SAL_CALL pop() throw (cssu::RuntimeException, std::exception) override;
 };
 
 
 UpdateInstallDialog::Thread::Thread(
-    cssu::Reference< cssu::XComponentContext> const & xCtx,
+    cssu::Reference< cssu::XComponentContext> xCtx,
     UpdateInstallDialog & dialog,
     std::vector< dp_gui::UpdateData > & aVecUpdateData):
     salhelper::Thread("dp_gui_updateinstalldialog"),
@@ -317,7 +320,7 @@ void UpdateInstallDialog::setError(OUString const & exceptionMessage)
     m_pMle_info->SetText(m_pMle_info->GetText() + exceptionMessage + "\n");
 }
 
-IMPL_LINK_NOARG(UpdateInstallDialog, cancelHandler, Button*, void)
+IMPL_LINK_NOARG_TYPED(UpdateInstallDialog, cancelHandler, Button*, void)
 {
     m_thread->stop();
     EndDialog();
@@ -377,7 +380,7 @@ void UpdateInstallDialog::Thread::downloadExtensions()
             }
             dp_misc::DescriptionInfoset info(m_xComponentContext, curData.aUpdateInfo);
             //remember occurring exceptions in case we need to print out error information
-            std::vector< std::pair<OUString, cssu::Exception> > vecExceptions;
+            ::std::vector< ::std::pair<OUString, cssu::Exception> > vecExceptions;
             cssu::Sequence<OUString> seqDownloadURLs = info.getUpdateDownloadUrls();
             OSL_ENSURE(seqDownloadURLs.getLength() > 0, "No download URL provided!");
             for (sal_Int32 j = 0; j < seqDownloadURLs.getLength(); j++)
@@ -391,7 +394,7 @@ void UpdateInstallDialog::Thread::downloadExtensions()
                 }
                 catch ( cssu::Exception & e )
                 {
-                    vecExceptions.push_back( std::make_pair(seqDownloadURLs[j], e));
+                    vecExceptions.push_back( ::std::make_pair(seqDownloadURLs[j], e));
                     //There can be several different errors, for example, the URL is wrong, webserver cannot be reached,
                     //name cannot be resolved. The UCB helper API does not specify different special exceptions for these
                     //cases. Therefore ignore and continue.
@@ -408,7 +411,7 @@ void UpdateInstallDialog::Thread::downloadExtensions()
                 {
                     //Construct a string of all messages contained in the exceptions plus the respective download URLs
                     OUStringBuffer buf(256);
-                    typedef std::vector< std::pair<OUString, cssu::Exception > >::const_iterator CIT;
+                    typedef ::std::vector< ::std::pair<OUString, cssu::Exception > >::const_iterator CIT;
                     for (CIT j = vecExceptions.begin(); j != vecExceptions.end(); ++j)
                     {
                         if (j != vecExceptions.begin())
@@ -604,7 +607,7 @@ bool UpdateInstallDialog::Thread::download(OUString const & sDownloadURL, Update
     const OUString sTitle( StrTitle::getTitle( sourceContent ) );
 
     if (destFolderContent.transferContent(
-            sourceContent, ::ucbhelper::InsertOperation::Copy,
+            sourceContent, ::ucbhelper::InsertOperation_COPY,
             sTitle, css::ucb::NameClash::OVERWRITE ))
     {
         //the user may have cancelled the dialog because downloading took to long
@@ -628,13 +631,19 @@ UpdateCommandEnv::UpdateCommandEnv( cssu::Reference< cssu::XComponentContext > c
 {
 }
 
+UpdateCommandEnv::~UpdateCommandEnv()
+{
+}
+
 // XCommandEnvironment
 cssu::Reference<css::task::XInteractionHandler> UpdateCommandEnv::getInteractionHandler()
+throw (cssu::RuntimeException, std::exception)
 {
     return this;
 }
 
 cssu::Reference<css::ucb::XProgressHandler> UpdateCommandEnv::getProgressHandler()
+throw (cssu::RuntimeException, std::exception)
 {
     return this;
 }
@@ -642,6 +651,7 @@ cssu::Reference<css::ucb::XProgressHandler> UpdateCommandEnv::getProgressHandler
 // XInteractionHandler
 void UpdateCommandEnv::handle(
     cssu::Reference< css::task::XInteractionRequest> const & xRequest )
+    throw (cssu::RuntimeException, std::exception)
 {
     cssu::Any request( xRequest->getRequest() );
     OSL_ASSERT( request.getValueTypeClass() == cssu::TypeClass_EXCEPTION );
@@ -690,14 +700,16 @@ void UpdateCommandEnv::handle(
 
 // XProgressHandler
 void UpdateCommandEnv::push( cssu::Any const & /*Status*/ )
+throw (cssu::RuntimeException, std::exception)
 {
 }
 
 void UpdateCommandEnv::update( cssu::Any const & /*Status */)
+throw (cssu::RuntimeException, std::exception)
 {
 }
 
-void UpdateCommandEnv::pop()
+void UpdateCommandEnv::pop() throw (cssu::RuntimeException, std::exception)
 {
 }
 

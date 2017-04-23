@@ -149,15 +149,15 @@ bool ScTabPageProtection::FillItemSet( SfxItemSet* rCoreAttrs )
     return bAttrsChanged;
 }
 
-DeactivateRC ScTabPageProtection::DeactivatePage( SfxItemSet* pSetP )
+SfxTabPage::sfxpg ScTabPageProtection::DeactivatePage( SfxItemSet* pSetP )
 {
     if ( pSetP )
         FillItemSet( pSetP );
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
-IMPL_LINK( ScTabPageProtection, ButtonClickHdl, Button*, pBox, void )
+IMPL_LINK_TYPED( ScTabPageProtection, ButtonClickHdl, Button*, pBox, void )
 {
     TriState eState = static_cast<TriStateBox*>(pBox)->GetState();
     if ( eState == TRISTATE_INDET )

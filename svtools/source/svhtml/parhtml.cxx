@@ -17,6 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+
+#include <ctype.h>
 #include <comphelper/string.hxx>
 #include <tools/stream.hxx>
 #include <tools/debug.hxx>
@@ -49,49 +51,81 @@ const sal_Int32 MAX_ENTITY_LEN( 8L );
 // Tables to convert option values into strings
 
 // <INPUT TYPE=xxx>
-static HTMLOptionEnum<HTMLInputType> const aInputTypeOptEnums[] =
+static HTMLOptionEnum const aInputTypeOptEnums[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_IT_text,      HTMLInputType::Text        },
-    { OOO_STRING_SVTOOLS_HTML_IT_password,  HTMLInputType::Password    },
-    { OOO_STRING_SVTOOLS_HTML_IT_checkbox,  HTMLInputType::Checkbox    },
-    { OOO_STRING_SVTOOLS_HTML_IT_radio,     HTMLInputType::Radio       },
-    { OOO_STRING_SVTOOLS_HTML_IT_range,     HTMLInputType::Range       },
-    { OOO_STRING_SVTOOLS_HTML_IT_scribble,  HTMLInputType::Scribble    },
-    { OOO_STRING_SVTOOLS_HTML_IT_file,      HTMLInputType::File        },
-    { OOO_STRING_SVTOOLS_HTML_IT_hidden,    HTMLInputType::Hidden      },
-    { OOO_STRING_SVTOOLS_HTML_IT_submit,    HTMLInputType::Submit      },
-    { OOO_STRING_SVTOOLS_HTML_IT_image,     HTMLInputType::Image       },
-    { OOO_STRING_SVTOOLS_HTML_IT_reset,     HTMLInputType::Reset       },
-    { OOO_STRING_SVTOOLS_HTML_IT_button,    HTMLInputType::Button      },
-    { nullptr,                              (HTMLInputType)0    }
+    { OOO_STRING_SVTOOLS_HTML_IT_text,      HTML_IT_TEXT        },
+    { OOO_STRING_SVTOOLS_HTML_IT_password,  HTML_IT_PASSWORD    },
+    { OOO_STRING_SVTOOLS_HTML_IT_checkbox,  HTML_IT_CHECKBOX    },
+    { OOO_STRING_SVTOOLS_HTML_IT_radio,     HTML_IT_RADIO       },
+    { OOO_STRING_SVTOOLS_HTML_IT_range,     HTML_IT_RANGE       },
+    { OOO_STRING_SVTOOLS_HTML_IT_scribble,  HTML_IT_SCRIBBLE    },
+    { OOO_STRING_SVTOOLS_HTML_IT_file,      HTML_IT_FILE        },
+    { OOO_STRING_SVTOOLS_HTML_IT_hidden,    HTML_IT_HIDDEN      },
+    { OOO_STRING_SVTOOLS_HTML_IT_submit,    HTML_IT_SUBMIT      },
+    { OOO_STRING_SVTOOLS_HTML_IT_image,     HTML_IT_IMAGE       },
+    { OOO_STRING_SVTOOLS_HTML_IT_reset,     HTML_IT_RESET       },
+    { OOO_STRING_SVTOOLS_HTML_IT_button,    HTML_IT_BUTTON      },
+    { nullptr,                    0                   }
 };
 
 // <TABLE FRAME=xxx>
-static HTMLOptionEnum<HTMLTableFrame> const aTableFrameOptEnums[] =
+static HTMLOptionEnum const aTableFrameOptEnums[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_TF_void,    HTMLTableFrame::Void    },
-    { OOO_STRING_SVTOOLS_HTML_TF_above,   HTMLTableFrame::Above   },
-    { OOO_STRING_SVTOOLS_HTML_TF_below,   HTMLTableFrame::Below   },
-    { OOO_STRING_SVTOOLS_HTML_TF_hsides,  HTMLTableFrame::HSides  },
-    { OOO_STRING_SVTOOLS_HTML_TF_lhs,     HTMLTableFrame::LHS     },
-    { OOO_STRING_SVTOOLS_HTML_TF_rhs,     HTMLTableFrame::RHS     },
-    { OOO_STRING_SVTOOLS_HTML_TF_vsides,  HTMLTableFrame::VSides  },
-    { OOO_STRING_SVTOOLS_HTML_TF_box,     HTMLTableFrame::Box     },
-    { OOO_STRING_SVTOOLS_HTML_TF_border,  HTMLTableFrame::Box     },
-    { nullptr,                            (HTMLTableFrame)0 }
+    { OOO_STRING_SVTOOLS_HTML_TF_void,  HTML_TF_VOID    },
+    { OOO_STRING_SVTOOLS_HTML_TF_above, HTML_TF_ABOVE   },
+    { OOO_STRING_SVTOOLS_HTML_TF_below, HTML_TF_BELOW   },
+    { OOO_STRING_SVTOOLS_HTML_TF_hsides,    HTML_TF_HSIDES  },
+    { OOO_STRING_SVTOOLS_HTML_TF_lhs,       HTML_TF_LHS     },
+    { OOO_STRING_SVTOOLS_HTML_TF_rhs,       HTML_TF_RHS     },
+    { OOO_STRING_SVTOOLS_HTML_TF_vsides,    HTML_TF_VSIDES  },
+    { OOO_STRING_SVTOOLS_HTML_TF_box,       HTML_TF_BOX     },
+    { OOO_STRING_SVTOOLS_HTML_TF_border,    HTML_TF_BOX     },
+    { nullptr,                0               }
 };
 
 // <TABLE RULES=xxx>
-static HTMLOptionEnum<HTMLTableRules> const aTableRulesOptEnums[] =
+static HTMLOptionEnum const aTableRulesOptEnums[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_TR_none,   HTMLTableRules::NONE      },
-    { OOO_STRING_SVTOOLS_HTML_TR_groups, HTMLTableRules::Groups    },
-    { OOO_STRING_SVTOOLS_HTML_TR_rows,   HTMLTableRules::Rows      },
-    { OOO_STRING_SVTOOLS_HTML_TR_cols,   HTMLTableRules::Cols      },
-    { OOO_STRING_SVTOOLS_HTML_TR_all,    HTMLTableRules::All       },
-    { nullptr,                           (HTMLTableRules)0 }
+    { OOO_STRING_SVTOOLS_HTML_TR_none,  HTML_TR_NONE    },
+    { OOO_STRING_SVTOOLS_HTML_TR_groups,    HTML_TR_GROUPS  },
+    { OOO_STRING_SVTOOLS_HTML_TR_rows,  HTML_TR_ROWS    },
+    { OOO_STRING_SVTOOLS_HTML_TR_cols,  HTML_TR_COLS    },
+    { OOO_STRING_SVTOOLS_HTML_TR_all,       HTML_TR_ALL     },
+    { nullptr,                0               }
 };
 
+sal_uInt16 HTMLOption::GetEnum( const HTMLOptionEnum *pOptEnums, sal_uInt16 nDflt ) const
+{
+    sal_uInt16 nValue = nDflt;
+
+    while( pOptEnums->pName )
+        if( aValue.equalsIgnoreAsciiCaseAscii( pOptEnums->pName ) )
+            break;
+        else
+            pOptEnums++;
+
+    if( pOptEnums->pName )
+        nValue = pOptEnums->nValue;
+
+    return nValue;
+}
+
+bool HTMLOption::GetEnum( sal_uInt16 &rEnum, const HTMLOptionEnum *pOptEnums ) const
+{
+    while( pOptEnums->pName )
+    {
+        if( aValue.equalsIgnoreAsciiCaseAscii( pOptEnums->pName ) )
+            break;
+        else
+            pOptEnums++;
+    }
+
+    const sal_Char *pName = pOptEnums->pName;
+    if( pName )
+        rEnum = pOptEnums->nValue;
+
+    return (pName != nullptr);
+}
 
 HTMLOption::HTMLOption( sal_uInt16 nTok, const OUString& rToken,
                         const OUString& rValue )
@@ -196,7 +230,7 @@ void HTMLOption::GetColor( Color& rColor ) const
 HTMLInputType HTMLOption::GetInputType() const
 {
     DBG_ASSERT( nToken==HTML_O_TYPE, "GetInputType: Option not TYPE" );
-    return (HTMLInputType)GetEnum( aInputTypeOptEnums, HTMLInputType::Text );
+    return (HTMLInputType)GetEnum( aInputTypeOptEnums, HTML_IT_TEXT );
 }
 
 HTMLTableFrame HTMLOption::GetTableFrame() const
@@ -239,7 +273,7 @@ HTMLParser::~HTMLParser()
 
 SvParserState HTMLParser::CallParser()
 {
-    eState = SvParserState::Working;
+    eState = SVPAR_WORKING;
     nNextCh = GetNextChar();
     SaveState( 0 );
 
@@ -248,7 +282,7 @@ SvParserState HTMLParser::CallParser()
 
     AddFirstRef();
     Continue( 0 );
-    if( SvParserState::Pending != eState )
+    if( SVPAR_PENDING != eState )
         ReleaseRef();       // Parser not needed anymore
 
     return eState;
@@ -573,7 +607,7 @@ int HTMLParser::ScanText( const sal_Unicode cBreak )
                     if( cChar )
                         sTmpBuffer.appendUtf32( cChar );
                 }
-                else if( SvParserState::Pending==eState && '>'!=cBreak )
+                else if( SVPAR_PENDING==eState && '>'!=cBreak )
                 {
                     // Restart with '&', the remainder is returned as
                     // text token.
@@ -1046,7 +1080,7 @@ int HTMLParser::GetNextToken_()
 
                     if( !IsParserWorking() )
                     {
-                        if( SvParserState::Pending == eState )
+                        if( SVPAR_PENDING == eState )
                             bReadNextChar = bReadNextCharSave;
                         break;
                     }
@@ -1154,14 +1188,14 @@ int HTMLParser::GetNextToken_()
                             break;
                         }
                     }
-                    if( SvParserState::Pending == eState )
+                    if( SVPAR_PENDING == eState )
                         bReadNextChar = bReadNextCharSave;
                 }
                 else
                 {
                     if( bOffState )
                     {
-                        // simply throw away everything
+                        // einfach alles wegschmeissen
                         ScanText( '>' );
                         if( sal_Unicode(EOF) == nNextCh && rInput.IsEof() )
                         {
@@ -1178,7 +1212,7 @@ int HTMLParser::GetNextToken_()
                             bNextCh = false;
                             break;
                         }
-                        if( SvParserState::Pending == eState )
+                        if( SVPAR_PENDING == eState )
                             bReadNextChar = bReadNextCharSave;
                         aToken.clear();
                     }
@@ -1265,7 +1299,7 @@ int HTMLParser::GetNextToken_()
         case sal_Unicode(EOF):
             if( rInput.IsEof() )
             {
-                eState = SvParserState::Accepted;
+                eState = SVPAR_ACCEPTED;
                 nRet = nNextCh;
             }
             else
@@ -1312,28 +1346,28 @@ scan_text:
             bNextCh = 0 == aToken.getLength();
 
             // the text should be processed
-            if( !bNextCh && eState == SvParserState::Pending )
+            if( !bNextCh && eState == SVPAR_PENDING )
             {
-                eState = SvParserState::Working;
+                eState = SVPAR_WORKING;
                 bReadNextChar = true;
             }
 
             break;
         }
 
-        if( bNextCh && SvParserState::Working == eState )
+        if( bNextCh && SVPAR_WORKING == eState )
         {
             nNextCh = GetNextChar();
-            if( SvParserState::Pending == eState && nRet && HTML_TEXTTOKEN != nRet )
+            if( SVPAR_PENDING == eState && nRet && HTML_TEXTTOKEN != nRet )
             {
                 bReadNextChar = true;
-                eState = SvParserState::Working;
+                eState = SVPAR_WORKING;
             }
         }
 
-    } while( !nRet && SvParserState::Working == eState );
+    } while( !nRet && SVPAR_WORKING == eState );
 
-    if( SvParserState::Pending == eState )
+    if( SVPAR_PENDING == eState )
         nRet = -1;      // s.th. invalid
 
     return nRet;
@@ -1390,7 +1424,7 @@ const HTMLOptions& HTMLParser::GetOptions( sal_uInt16 *pNoConvertToken )
             // PlugIns require original token name. Convert to lower case only for searching.
             nToken = GetHTMLOption( sName.toAsciiLowerCase() ); // Name is ready
             SAL_WARN_IF( nToken==HTML_O_UNKNOWN, "svtools",
-                        "GetOption: unknown HTML option '" << sName << "'" );
+                        "GetOption: unknown HTML option" );
             bool bStripCRLF = (nToken < HTML_OPTION_SCRIPT_START ||
                                nToken >= HTML_OPTION_SCRIPT_END) &&
                               (!pNoConvertToken || nToken != *pNoConvertToken);
@@ -1825,38 +1859,38 @@ bool HTMLParser::InternalImgToPrivateURL( OUString& rURL )
     return bFound;
 }
 
-enum class HtmlMeta {
-    NONE = 0,
-    Author,
-    Description,
-    Keywords,
-    Refresh,
-    Classification,
-    Created,
-    ChangedBy,
-    Changed,
-    Generator,
-    SDFootnote,
-    SDEndnote,
-    ContentType
+enum eHtmlMetas {
+    HTML_META_NONE = 0,
+    HTML_META_AUTHOR,
+    HTML_META_DESCRIPTION,
+    HTML_META_KEYWORDS,
+    HTML_META_REFRESH,
+    HTML_META_CLASSIFICATION,
+    HTML_META_CREATED,
+    HTML_META_CHANGEDBY,
+    HTML_META_CHANGED,
+    HTML_META_GENERATOR,
+    HTML_META_SDFOOTNOTE,
+    HTML_META_SDENDNOTE,
+    HTML_META_CONTENT_TYPE
 };
 
 // <META NAME=xxx>
-static HTMLOptionEnum<HtmlMeta> const aHTMLMetaNameTable[] =
+static HTMLOptionEnum const aHTMLMetaNameTable[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_META_author,        HtmlMeta::Author        },
-    { OOO_STRING_SVTOOLS_HTML_META_changed,       HtmlMeta::Changed       },
-    { OOO_STRING_SVTOOLS_HTML_META_changedby,     HtmlMeta::ChangedBy     },
-    { OOO_STRING_SVTOOLS_HTML_META_classification,HtmlMeta::Classification},
-    { OOO_STRING_SVTOOLS_HTML_META_content_type,  HtmlMeta::ContentType   },
-    { OOO_STRING_SVTOOLS_HTML_META_created,       HtmlMeta::Created       },
-    { OOO_STRING_SVTOOLS_HTML_META_description,   HtmlMeta::Description   },
-    { OOO_STRING_SVTOOLS_HTML_META_keywords,      HtmlMeta::Keywords      },
-    { OOO_STRING_SVTOOLS_HTML_META_generator,     HtmlMeta::Generator     },
-    { OOO_STRING_SVTOOLS_HTML_META_refresh,       HtmlMeta::Refresh       },
-    { OOO_STRING_SVTOOLS_HTML_META_sdendnote,     HtmlMeta::SDEndnote     },
-    { OOO_STRING_SVTOOLS_HTML_META_sdfootnote,    HtmlMeta::SDFootnote    },
-    { nullptr,                                    (HtmlMeta)0             }
+    { OOO_STRING_SVTOOLS_HTML_META_author,        HTML_META_AUTHOR        },
+    { OOO_STRING_SVTOOLS_HTML_META_changed,       HTML_META_CHANGED       },
+    { OOO_STRING_SVTOOLS_HTML_META_changedby,     HTML_META_CHANGEDBY     },
+    { OOO_STRING_SVTOOLS_HTML_META_classification,HTML_META_CLASSIFICATION},
+    { OOO_STRING_SVTOOLS_HTML_META_content_type,  HTML_META_CONTENT_TYPE  },
+    { OOO_STRING_SVTOOLS_HTML_META_created,       HTML_META_CREATED       },
+    { OOO_STRING_SVTOOLS_HTML_META_description,   HTML_META_DESCRIPTION   },
+    { OOO_STRING_SVTOOLS_HTML_META_keywords,      HTML_META_KEYWORDS      },
+    { OOO_STRING_SVTOOLS_HTML_META_generator,     HTML_META_GENERATOR     },
+    { OOO_STRING_SVTOOLS_HTML_META_refresh,       HTML_META_REFRESH       },
+    { OOO_STRING_SVTOOLS_HTML_META_sdendnote,     HTML_META_SDENDNOTE     },
+    { OOO_STRING_SVTOOLS_HTML_META_sdfootnote,    HTML_META_SDFOOTNOTE    },
+    { nullptr,                                          0                       }
 };
 
 
@@ -1871,7 +1905,7 @@ bool HTMLParser::ParseMetaOptionsImpl(
         rtl_TextEncoding& o_rEnc )
 {
     OUString aName, aContent;
-    HtmlMeta nAction = HtmlMeta::NONE;
+    sal_uInt16 nAction = HTML_META_NONE;
     bool bHTTPEquiv = false, bChanged = false;
 
     for ( size_t i = aOptions.size(); i; )
@@ -1881,7 +1915,7 @@ bool HTMLParser::ParseMetaOptionsImpl(
         {
             case HTML_O_NAME:
                 aName = aOption.GetString();
-                if ( HtmlMeta::NONE==nAction )
+                if ( HTML_META_NONE==nAction )
                 {
                     aOption.GetEnum( nAction, aHTMLMetaNameTable );
                 }
@@ -1894,23 +1928,21 @@ bool HTMLParser::ParseMetaOptionsImpl(
             case HTML_O_CONTENT:
                 aContent = aOption.GetString();
                 break;
-            case HTML_O_CHARSET:
-                OString sValue(OUStringToOString(aOption.GetString(), RTL_TEXTENCODING_ASCII_US));
-                o_rEnc = GetExtendedCompatibilityTextEncoding(rtl_getTextEncodingFromMimeCharset(sValue.getStr()));
-                break;
         }
     }
 
-    if ( bHTTPEquiv || HtmlMeta::Description != nAction )
+    if ( bHTTPEquiv || HTML_META_DESCRIPTION != nAction )
     {
         // if it is not a Description, remove CRs and LFs from CONTENT
-        aContent = aContent.replaceAll("\r", "").replaceAll("\n", "");
+        aContent = comphelper::string::remove(aContent, '\r');
+        aContent = comphelper::string::remove(aContent, '\n');
     }
     else
     {
         // convert line endings for Description
         aContent = convertLineEnd(aContent, GetSystemLineEnd());
     }
+
 
     if ( bHTTPEquiv && i_pHTTPHeader )
     {
@@ -1925,40 +1957,40 @@ bool HTMLParser::ParseMetaOptionsImpl(
 
     switch ( nAction )
     {
-        case HtmlMeta::Author:
+        case HTML_META_AUTHOR:
             if (i_xDocProps.is()) {
                 i_xDocProps->setAuthor( aContent );
                 bChanged = true;
             }
             break;
-        case HtmlMeta::Description:
+        case HTML_META_DESCRIPTION:
             if (i_xDocProps.is()) {
                 i_xDocProps->setDescription( aContent );
                 bChanged = true;
             }
             break;
-        case HtmlMeta::Keywords:
+        case HTML_META_KEYWORDS:
             if (i_xDocProps.is()) {
                 i_xDocProps->setKeywords(
                     ::comphelper::string::convertCommaSeparated(aContent));
                 bChanged = true;
             }
             break;
-        case HtmlMeta::Classification:
+        case HTML_META_CLASSIFICATION:
             if (i_xDocProps.is()) {
                 i_xDocProps->setSubject( aContent );
                 bChanged = true;
             }
             break;
 
-        case HtmlMeta::ChangedBy:
+        case HTML_META_CHANGEDBY:
             if (i_xDocProps.is()) {
                 i_xDocProps->setModifiedBy( aContent );
             }
             break;
 
-        case HtmlMeta::Created:
-        case HtmlMeta::Changed:
+        case HTML_META_CREATED:
+        case HTML_META_CHANGED:
             if ( i_xDocProps.is() && !aContent.isEmpty() &&
                  comphelper::string::getTokenCount(aContent, ';') == 2 )
             {
@@ -1966,7 +1998,7 @@ bool HTMLParser::ParseMetaOptionsImpl(
                 tools::Time aTime( (sal_uLong)aContent.getToken(1, ';').toInt32() );
                 DateTime aDateTime( aDate, aTime );
                 ::util::DateTime uDT = aDateTime.GetUNODateTime();
-                if ( HtmlMeta::Created==nAction )
+                if ( HTML_META_CREATED==nAction )
                     i_xDocProps->setCreationDate( uDT );
                 else
                     i_xDocProps->setModificationDate( uDT );
@@ -1974,19 +2006,19 @@ bool HTMLParser::ParseMetaOptionsImpl(
             }
             break;
 
-        case HtmlMeta::Refresh:
+        case HTML_META_REFRESH:
             DBG_ASSERT( !bHTTPEquiv || i_pHTTPHeader,
         "Reload-URL aufgrund unterlassener MUSS-Aenderung verlorengegangen" );
             break;
 
-        case HtmlMeta::ContentType:
+        case HTML_META_CONTENT_TYPE:
             if ( !aContent.isEmpty() )
             {
                 o_rEnc = GetEncodingByMIME( aContent );
             }
             break;
 
-        case HtmlMeta::NONE:
+        case HTML_META_NONE:
             if ( !bHTTPEquiv )
             {
                 if (i_xDocProps.is())

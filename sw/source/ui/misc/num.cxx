@@ -20,6 +20,7 @@
 #include <hintids.hxx>
 #include <vcl/msgbox.hxx>
 #include <sfx2/app.hxx>
+#include <sfx2/imgmgr.hxx>
 #include <svx/gallery.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/lrspitem.hxx>
@@ -101,6 +102,8 @@ SwNumPositionTabPage::SwNumPositionTabPage(vcl::Window* pParent,
 
     SetExchangeSupport();
     m_pPreviewWIN->SetBackground(Wallpaper(Color(COL_TRANSPARENT)));
+
+    m_pStandardPB->SetAccessibleRelationMemberOf(m_pPositionFrame->get_label_widget());
 
     m_pRelativeCB->Check();
     m_pAlignLB->SetSelectHdl(LINK(this, SwNumPositionTabPage, EditModifyHdl));
@@ -311,9 +314,9 @@ void SwNumPositionTabPage::InitControls()
     if(bSameAdjust)
     {
         sal_Int32 nPos = 1; // centered
-        if(aNumFormatArr[nLvl]->GetNumAdjust() == SvxAdjust::Left)
+        if(aNumFormatArr[nLvl]->GetNumAdjust() == SVX_ADJUST_LEFT)
             nPos = 0;
-        else if(aNumFormatArr[nLvl]->GetNumAdjust() == SvxAdjust::Right)
+        else if(aNumFormatArr[nLvl]->GetNumAdjust() == SVX_ADJUST_RIGHT)
             nPos = 2;
         m_pAlignLB->SelectEntryPos(nPos);
         m_pAlign2LB->SelectEntryPos( nPos );
@@ -428,12 +431,12 @@ void SwNumPositionTabPage::ActivatePage(const SfxItemSet& )
     m_pPreviewWIN->Invalidate();
 }
 
-DeactivateRC SwNumPositionTabPage::DeactivatePage(SfxItemSet *_pSet)
+SfxTabPage::sfxpg SwNumPositionTabPage::DeactivatePage(SfxItemSet *_pSet)
 {
     SwOutlineTabDialog::SetActNumLevel(nActNumLvl);
     if(_pSet)
         FillItemSet(_pSet);
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 
 }
 
@@ -552,7 +555,7 @@ void SwNumPositionTabPage::SetWrtShell(SwWrtShell* pSh)
 {
     pWrtSh = pSh;
 
-    const SwTwips nWidth = pWrtSh->GetAnyCurRect(CurRectType::Frame).Width();
+    const SwTwips nWidth = pWrtSh->GetAnyCurRect(RECT_FRM).Width();
 
     m_pDistBorderMF->SetMax(m_pDistBorderMF->Normalize( nWidth ), FUNIT_TWIP );
     m_pDistNumMF->SetMax(m_pDistNumMF->Normalize( nWidth ), FUNIT_TWIP);
@@ -568,7 +571,7 @@ void SwNumPositionTabPage::SetWrtShell(SwWrtShell* pSh)
     m_pAlignedAtMF->SetLast(m_pAlignedAtMF->Normalize( nLast2 ), FUNIT_TWIP );
     m_pIndentAtMF->SetLast(m_pIndentAtMF->Normalize( nLast2 ), FUNIT_TWIP );
 
-    const SwRect& rPrtRect = pWrtSh->GetAnyCurRect(CurRectType::Page);
+    const SwRect& rPrtRect = pWrtSh->GetAnyCurRect(RECT_PAGE);
     m_pPreviewWIN->SetPageWidth(rPrtRect.Width());
     FieldUnit eMetric = ::GetDfltMetric( dynamic_cast<SwWebView*>( &pWrtSh->GetView()) != nullptr  );
     if(eMetric == FUNIT_MM)
@@ -588,7 +591,7 @@ void SwNumPositionTabPage::SetWrtShell(SwWrtShell* pSh)
     m_pIndentAtMF->SetUnit( eMetric );
 }
 
-IMPL_LINK_NOARG(SwNumPositionTabPage, EditModifyHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwNumPositionTabPage, EditModifyHdl, ListBox&, void)
 {
     sal_uInt16 nMask = 1;
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
@@ -600,11 +603,11 @@ IMPL_LINK_NOARG(SwNumPositionTabPage, EditModifyHdl, ListBox&, void)
             const sal_Int32 nPos = m_pAlignLB->IsVisible()
                                 ? m_pAlignLB->GetSelectEntryPos()
                                 : m_pAlign2LB->GetSelectEntryPos();
-            SvxAdjust eAdjust = SvxAdjust::Center;
+            SvxAdjust eAdjust = SVX_ADJUST_CENTER;
             if(nPos == 0)
-                eAdjust = SvxAdjust::Left;
+                eAdjust = SVX_ADJUST_LEFT;
             else if(nPos == 2)
-                eAdjust = SvxAdjust::Right;
+                eAdjust = SVX_ADJUST_RIGHT;
             aNumFormat.SetNumAdjust( eAdjust );
             pActNum->Set(i, aNumFormat);
         }
@@ -613,7 +616,7 @@ IMPL_LINK_NOARG(SwNumPositionTabPage, EditModifyHdl, ListBox&, void)
     SetModified();
 }
 
-IMPL_LINK( SwNumPositionTabPage, LevelHdl, ListBox&, rBox, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, LevelHdl, ListBox&, rBox, void )
 {
     sal_uInt16 nSaveNumLvl = nActNumLvl;
     nActNumLvl = 0;
@@ -658,11 +661,11 @@ IMPL_LINK( SwNumPositionTabPage, LevelHdl, ListBox&, rBox, void )
     InitControls();
 }
 
-IMPL_LINK( SwNumPositionTabPage, DistanceLoseFocusHdl, Control&, rControl, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, DistanceLoseFocusHdl, Control&, rControl, void )
 {
     DistanceHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK( SwNumPositionTabPage, DistanceHdl, SpinField&, rSpin, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, DistanceHdl, SpinField&, rSpin, void )
 {
     if(bInInintControl)
         return;
@@ -721,7 +724,7 @@ IMPL_LINK( SwNumPositionTabPage, DistanceHdl, SpinField&, rSpin, void )
         m_pDistBorderMF->SetText(aEmptyOUStr);
 }
 
-IMPL_LINK( SwNumPositionTabPage, RelativeHdl, Button *, pBox, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, RelativeHdl, Button *, pBox, void )
 {
     bool bOn = static_cast<CheckBox*>(pBox)->IsChecked();
     bool bSingleSelection = m_pLevelLB->GetSelectEntryCount() == 1 && USHRT_MAX != nActNumLvl;
@@ -759,7 +762,7 @@ IMPL_LINK( SwNumPositionTabPage, RelativeHdl, Button *, pBox, void )
     bLastRelative = bOn;
 }
 
-IMPL_LINK_NOARG(SwNumPositionTabPage, LabelFollowedByHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwNumPositionTabPage, LabelFollowedByHdl_Impl, ListBox&, void)
 {
     // determine value to be set at the chosen list levels
     SvxNumberFormat::LabelFollowedBy eLabelFollowedBy = SvxNumberFormat::LISTTAB;
@@ -818,11 +821,11 @@ IMPL_LINK_NOARG(SwNumPositionTabPage, LabelFollowedByHdl_Impl, ListBox&, void)
     SetModified();
 }
 
-IMPL_LINK( SwNumPositionTabPage, ListtabPosFocusHdl_Impl, Control&, rControl, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, ListtabPosFocusHdl_Impl, Control&, rControl, void )
 {
     ListtabPosHdl_Impl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK( SwNumPositionTabPage, ListtabPosHdl_Impl, SpinField&, rSpin, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, ListtabPosHdl_Impl, SpinField&, rSpin, void )
 {
     MetricField& rField = static_cast<MetricField&>(rSpin);
     // determine value to be set at the chosen list levels
@@ -844,11 +847,11 @@ IMPL_LINK( SwNumPositionTabPage, ListtabPosHdl_Impl, SpinField&, rSpin, void )
     SetModified();
 }
 
-IMPL_LINK( SwNumPositionTabPage, AlignAtFocusHdl_Impl, Control&, rControl, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, AlignAtFocusHdl_Impl, Control&, rControl, void )
 {
     AlignAtHdl_Impl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK( SwNumPositionTabPage, AlignAtHdl_Impl, SpinField&, rSpin, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, AlignAtHdl_Impl, SpinField&, rSpin, void )
 {
     MetricField& rField = static_cast<MetricField&>(rSpin);
     // determine value to be set at the chosen list levels
@@ -871,11 +874,11 @@ IMPL_LINK( SwNumPositionTabPage, AlignAtHdl_Impl, SpinField&, rSpin, void )
     SetModified();
 }
 
-IMPL_LINK( SwNumPositionTabPage, IndentAtFocusHdl_Impl, Control&, rControl, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, IndentAtFocusHdl_Impl, Control&, rControl, void )
 {
     IndentAtHdl_Impl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK( SwNumPositionTabPage, IndentAtHdl_Impl, SpinField&, rSpin, void )
+IMPL_LINK_TYPED( SwNumPositionTabPage, IndentAtHdl_Impl, SpinField&, rSpin, void )
 {
     MetricField& rField = static_cast<MetricField&>(rSpin);
     // determine value to be set at the chosen list levels
@@ -901,7 +904,7 @@ IMPL_LINK( SwNumPositionTabPage, IndentAtHdl_Impl, SpinField&, rSpin, void )
     SetModified();
 }
 
-IMPL_LINK_NOARG(SwNumPositionTabPage, StandardHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwNumPositionTabPage, StandardHdl, Button*, void)
 {
     sal_uInt16 nMask = 1;
     for(sal_uInt16 i = 0; i < MAXLEVEL; i++)
@@ -959,7 +962,7 @@ SwSvxNumBulletTabDialog::SwSvxNumBulletTabDialog(vcl::Window* pParent,
     m_nBulletPageId = AddTabPage("bullets", RID_SVXPAGE_PICK_BULLET );
     AddTabPage("outlinenum", RID_SVXPAGE_PICK_NUM );
     AddTabPage("graphics", RID_SVXPAGE_PICK_BMP );
-    m_nOptionsPageId = AddTabPage("customize", RID_SVXPAGE_NUM_OPTIONS );
+    m_nOptionsPageId = AddTabPage("options", RID_SVXPAGE_NUM_OPTIONS );
     m_nPositionPageId = AddTabPage("position", RID_SVXPAGE_NUM_POSITION );
 }
 
@@ -1026,7 +1029,7 @@ short  SwSvxNumBulletTabDialog::Ok()
     return nRet;
 }
 
-IMPL_LINK_NOARG(SwSvxNumBulletTabDialog, RemoveNumberingHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwSvxNumBulletTabDialog, RemoveNumberingHdl, Button*, void)
 {
     EndDialog(RET_USER);
 }

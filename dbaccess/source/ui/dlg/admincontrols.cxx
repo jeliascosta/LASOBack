@@ -40,9 +40,9 @@ namespace dbaui
         // IWindowEventFilter
         virtual bool payAttentionTo( const VclWindowEvent& _rEvent ) const override
         {
-            return  ( _rEvent.GetId() == VclEventId::WindowEnabled )
-                ||  ( _rEvent.GetId() == VclEventId::WindowDisabled )
-                ||  ( _rEvent.GetId() == VclEventId::EditModify );
+            return  ( _rEvent.GetId() == VCLEVENT_WINDOW_ENABLED )
+                ||  ( _rEvent.GetId() == VCLEVENT_WINDOW_DISABLED )
+                ||  ( _rEvent.GetId() == VCLEVENT_EDIT_MODIFY );
         }
     };
 
@@ -69,21 +69,21 @@ namespace dbaui
 
         switch ( _rTrigger.GetId() )
         {
-        case VclEventId::NONE:
+        case 0:
             // initial call
             const_cast< TextResetOperator* >( this )->m_sUserText = _rTrigger.GetWindow()->GetText();
             break;
 
-        case VclEventId::EditModify:
+        case VCLEVENT_EDIT_MODIFY:
             if ( _rTrigger.GetWindow()->IsEnabled() )
                 const_cast< TextResetOperator* >( this )->m_sUserText = _rTrigger.GetWindow()->GetText();
             break;
 
-        case VclEventId::WindowEnabled:
+        case VCLEVENT_WINDOW_ENABLED:
             _rOperateOn.SetText( m_sUserText );
             break;
 
-        case VclEventId::WindowDisabled:
+        case VCLEVENT_WINDOW_DISABLED:
             _rOperateOn.SetText( m_sDisabledText );
             break;
 
@@ -155,8 +155,8 @@ namespace dbaui
         m_aControlDependencies.enableOnRadioCheck( *m_pSocketRadio, *m_pSocket );
         m_aControlDependencies.enableOnRadioCheck( *m_pNamedPipeRadio, *m_pNamedPipe );
 
-        m_aControlDependencies.addController( std::shared_ptr<svt::DialogController>(
-            new TextResetOperatorController( *m_pHostName, "localhost" )
+        m_aControlDependencies.addController( ::svt::PDialogController(
+            new TextResetOperatorController( *m_pHostName, OUString("localhost") )
         ) );
 
         // sockets are available on Unix systems only, named pipes only on Windows
@@ -169,12 +169,12 @@ namespace dbaui
 #endif
     }
 
-    IMPL_LINK(MySQLNativeSettings, RadioToggleHdl, RadioButton&, rRadioButton, void)
+    IMPL_LINK_TYPED(MySQLNativeSettings, RadioToggleHdl, RadioButton&, rRadioButton, void)
     {
         m_aControlModificationLink.Call(&rRadioButton);
     }
 
-    IMPL_LINK(MySQLNativeSettings, EditModifyHdl, Edit&, rEdit, void)
+    IMPL_LINK_TYPED(MySQLNativeSettings, EditModifyHdl, Edit&, rEdit, void)
     {
         m_aControlModificationLink.Call(&rEdit);
     }
@@ -201,7 +201,7 @@ namespace dbaui
         TabPage::dispose();
     }
 
-    void MySQLNativeSettings::fillControls( std::vector< ISaveValueWrapper* >& _rControlList )
+    void MySQLNativeSettings::fillControls( ::std::vector< ISaveValueWrapper* >& _rControlList )
     {
         _rControlList.push_back( new OSaveValueWrapper< Edit >( m_pDatabaseName ) );
         _rControlList.push_back( new OSaveValueWrapper< Edit >( m_pHostName ) );
@@ -210,7 +210,7 @@ namespace dbaui
         _rControlList.push_back( new OSaveValueWrapper< Edit >( m_pNamedPipe ) );
     }
 
-    void MySQLNativeSettings::fillWindows( std::vector< ISaveValueWrapper* >& _rControlList )
+    void MySQLNativeSettings::fillWindows( ::std::vector< ISaveValueWrapper* >& _rControlList )
     {
         _rControlList.push_back( new ODisableWrapper< FixedText >( m_pDatabaseNameLabel ) );
         _rControlList.push_back( new ODisableWrapper< FixedText >( m_pHostNameLabel ) );

@@ -27,7 +27,6 @@
 #include <osl/diagnose.h>
 
 #include <osl/time.h>
-#include <osl/thread.hxx>
 
 #include <PackageConstants.hxx>
 #include <ZipEntry.hxx>
@@ -43,9 +42,9 @@ using namespace com::sun::star::packages::zip::ZipConstants;
  */
 ZipOutputStream::ZipOutputStream( const uno::Reference < io::XOutputStream > &xOStream )
 : m_xStream(xOStream)
-, mpThreadTaskTag( comphelper::ThreadPool::createThreadTaskTag() )
 , m_aChucker(xOStream)
 , m_pCurrentEntry(nullptr)
+, m_rSharedThreadPool(comphelper::ThreadPool::getSharedOptimalPool())
 {
 }
 
@@ -71,16 +70,18 @@ void ZipOutputStream::setEntry( ZipEntry *pEntry )
 
 void ZipOutputStream::addDeflatingThread( ZipOutputEntry *pEntry, comphelper::ThreadTask *pThread )
 {
-    comphelper::ThreadPool::getSharedOptimalPool().pushTask(pThread);
+    m_rSharedThreadPool.pushTask(pThread);
     m_aEntries.push_back(pEntry);
 }
 
 void ZipOutputStream::rawWrite( const Sequence< sal_Int8 >& rBuffer )
+    throw(IOException, RuntimeException)
 {
     m_aChucker.WriteBytes( rBuffer );
 }
 
 void ZipOutputStream::rawCloseEntry( bool bEncrypt )
+    throw(IOException, RuntimeException)
 {
     assert(m_pCurrentEntry && "Forgot to call writeLOC()?");
     if ( m_pCurrentEntry->nMethod == DEFLATED && ( m_pCurrentEntry->nFlag & 8 ) )
@@ -147,7 +148,17 @@ void ZipOutputStream::consumeFinishedScheduledThreadEntries()
     m_aEntries = aNonFinishedEntries;
 }
 
-void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThreads)
+void ZipOutputStream::consumeAllScheduledThreadEntries()
+{
+    while(!m_aEntries.empty())
+    {
+        ZipOutputEntry* pCandidate = m_aEntries.back();
+        m_aEntries.pop_back();
+        consumeScheduledThreadEntry(pCandidate);
+    }
+}
+
+void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThreads, sal_Int32 nWaitTimeInTenthSeconds)
 {
     while(static_cast< sal_Int32 >(m_aEntries.size()) > nThreads)
     {
@@ -155,26 +166,22 @@ void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThrea
 
         if(static_cast< sal_Int32 >(m_aEntries.size()) > nThreads)
         {
-            const TimeValue aTimeValue(0, 100000);
+            const TimeValue aTimeValue(0, 100000 * nWaitTimeInTenthSeconds);
             osl_waitThread(&aTimeValue);
         }
     }
 }
 
 void ZipOutputStream::finish()
+    throw(IOException, RuntimeException)
 {
     assert(!m_aZipList.empty() && "Zip file must have at least one entry!");
 
     // Wait for all threads to finish & write
-    comphelper::ThreadPool::getSharedOptimalPool().waitUntilDone(mpThreadTaskTag);
+    m_rSharedThreadPool.waitUntilEmpty();
 
     // consume all processed entries
-    while(!m_aEntries.empty())
-    {
-        ZipOutputEntry* pCandidate = m_aEntries.back();
-        m_aEntries.pop_back();
-        consumeScheduledThreadEntry(pCandidate);
-    }
+    consumeAllScheduledThreadEntries();
 
     sal_Int32 nOffset= static_cast < sal_Int32 > (m_aChucker.GetPosition());
     for (ZipEntry* p : m_aZipList)
@@ -198,6 +205,7 @@ const css::uno::Reference< css::io::XOutputStream >& ZipOutputStream::getStream(
 }
 
 void ZipOutputStream::writeEND(sal_uInt32 nOffset, sal_uInt32 nLength)
+    throw(IOException, RuntimeException)
 {
     m_aChucker.WriteInt32( ENDSIG );
     m_aChucker.WriteInt16( 0 );
@@ -221,6 +229,7 @@ static sal_uInt32 getTruncated( sal_Int64 nNum, bool *pIsTruncated )
 }
 
 void ZipOutputStream::writeCEN( const ZipEntry &rEntry )
+    throw(IOException, RuntimeException)
 {
     if ( !::comphelper::OStorageHelper::IsValidZipEntryFileName( rEntry.sPath, true ) )
         throw IOException("Unexpected character is used in file name." );
@@ -260,6 +269,7 @@ void ZipOutputStream::writeCEN( const ZipEntry &rEntry )
 }
 
 void ZipOutputStream::writeEXT( const ZipEntry &rEntry )
+    throw(IOException, RuntimeException)
 {
     bool bWrite64Header = false;
 
@@ -278,6 +288,7 @@ void ZipOutputStream::writeEXT( const ZipEntry &rEntry )
 }
 
 void ZipOutputStream::writeLOC( ZipEntry *pEntry, bool bEncrypt )
+    throw(IOException, RuntimeException)
 {
     assert(!m_pCurrentEntry && "Forgot to close an entry with rawCloseEntry()?");
     m_pCurrentEntry = pEntry;

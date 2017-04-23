@@ -473,7 +473,7 @@ namespace basegfx
                             if( rtl::math::approxEqual(nX, nLastX) && rtl::math::approxEqual(nY, nLastY) )
                                 continue; // start==end -> skip according to SVG spec
 
-                            if( fRX == 0.0 || fRY == 0.0 )
+                            if( rtl::math::approxEqual(fRX, 0.0) || rtl::math::approxEqual(fRY, 0.0) )
                             {
                                 // straight line segment according to SVG spec
                                 aCurrPoly.append(B2DPoint(nX, nY));
@@ -620,9 +620,8 @@ namespace basegfx
 
                     default:
                     {
-                        SAL_WARN("basegfx", "importFromSvgD(): skipping tags in svg:d element (unknown: \""
-                                << aCurrChar
-                                << "\")!");
+                        OSL_FAIL("importFromSvgD(): skipping tags in svg:d element (unknown)!");
+                        OSL_TRACE("importFromSvgD(): skipping tags in svg:d element (unknown: \"%c\")!", aCurrChar);
                         ++nPos;
                         break;
                     }
@@ -666,7 +665,7 @@ namespace basegfx
 
         OUString exportToSvgPoints( const B2DPolygon& rPoly )
         {
-            SAL_WARN_IF(rPoly.areControlPointsUsed(), "basegfx", "exportToSvgPoints: Only non-bezier polygons allowed (!)");
+            OSL_ENSURE(!rPoly.areControlPointsUsed(), "exportToSvgPoints: Only non-bezier polygons allowed (!)");
             const sal_uInt32 nPointCount(rPoly.count());
             OUStringBuffer aResult;
 

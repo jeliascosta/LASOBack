@@ -24,7 +24,11 @@
 #include <stdlib.h>
 #include <malloc.h>
 
+#ifdef __MINGW32__
+extern "C" int APIENTRY WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
+#else
 extern "C" int APIENTRY _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
+#endif
 {
     // Retrieve startup info
 
@@ -39,7 +43,7 @@ extern "C" int APIENTRY _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     LPTSTR  lpCommandLine = GetCommandLine();
 
     {
-        lpCommandLine = static_cast<LPTSTR>(_alloca( sizeof(_TCHAR) * (_tcslen(lpCommandLine) + _tcslen(APPLICATION_SWITCH) + 2) ));
+        lpCommandLine = (LPTSTR)_alloca( sizeof(_TCHAR) * (_tcslen(lpCommandLine) + _tcslen(APPLICATION_SWITCH) + 2) );
 
         _tcscpy( lpCommandLine, GetCommandLine() );
         _tcscat( lpCommandLine, _T(" ") );
@@ -55,7 +59,7 @@ extern "C" int APIENTRY _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     TCHAR   szFileName[MAX_PATH];
     TCHAR   szExt[MAX_PATH];
 
-    GetModuleFileName( nullptr, szApplicationName, MAX_PATH );
+    GetModuleFileName( NULL, szApplicationName, MAX_PATH );
     _tsplitpath( szApplicationName, szDrive, szDir, szFileName, szExt );
     _tmakepath( szApplicationName, szDrive, szDir, _T("soffice"), _T(".exe") );
 
@@ -65,12 +69,12 @@ extern "C" int APIENTRY _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     BOOL    fSuccess = CreateProcess(
         szApplicationName,
         lpCommandLine,
-        nullptr,
-        nullptr,
+        NULL,
+        NULL,
         TRUE,
         0,
-        nullptr,
-        nullptr,
+        NULL,
+        NULL,
         &aStartupInfo,
         &aProcessInfo );
 
@@ -94,16 +98,16 @@ extern "C" int APIENTRY _tWinMain( HINSTANCE, HINSTANCE, LPTSTR, int )
     FormatMessage(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM,
-        nullptr,
+        NULL,
         dwError,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-        reinterpret_cast<LPTSTR>(&lpMsgBuf),
+        (LPTSTR)&lpMsgBuf,
         0,
-        nullptr
+        NULL
     );
 
     // Display the string.
-    MessageBox( nullptr, static_cast<LPCTSTR>(lpMsgBuf), nullptr, MB_OK | MB_ICONERROR );
+    MessageBox( NULL, (LPCTSTR)lpMsgBuf, NULL, MB_OK | MB_ICONERROR );
 
     // Free the buffer.
     LocalFree( lpMsgBuf );

@@ -71,14 +71,12 @@
 #include "framework/FrameworkHelper.hxx"
 #include "optsitem.hxx"
 #include "sdresid.hxx"
-#include "undo/undomanager.hxx"
 
 #include <svx/svxids.hrc>
 #include <sfx2/request.hxx>
 #include <sfx2/templdlg.hxx>
 #include <svl/aeitem.hxx>
 #include <basic/sbstar.hxx>
-#include <xmloff/autolayout.hxx>
 
 using namespace ::com::sun::star;
 
@@ -130,15 +128,10 @@ void  ViewShell::GetMenuState( SfxItemSet &rSet )
 
         if(pUndoManager)
         {
-            auto pSdUndoManager = dynamic_cast<sd::UndoManager*>(pUndoManager);
-            if (pSdUndoManager)
-                pSdUndoManager->SetViewShell(&GetViewShellBase());
             if(pUndoManager->GetUndoActionCount() != 0)
             {
                 bActivate = true;
             }
-            if (pSdUndoManager)
-                pSdUndoManager->SetViewShell(nullptr);
         }
 
         if(bActivate)
@@ -162,15 +155,10 @@ void  ViewShell::GetMenuState( SfxItemSet &rSet )
 
         if(pUndoManager)
         {
-            auto pSdUndoManager = dynamic_cast<sd::UndoManager*>(pUndoManager);
-            if (pSdUndoManager)
-                pSdUndoManager->SetViewShell(&GetViewShellBase());
             if(pUndoManager->GetRedoActionCount() != 0)
             {
                 bActivate = true;
             }
-            if (pSdUndoManager)
-                pSdUndoManager->SetViewShell(nullptr);
         }
 
         if(bActivate)
@@ -235,7 +223,7 @@ SdPage* ViewShell::CreateOrDuplicatePage (
         {
             eStandardLayout = pTemplatePage->GetAutoLayout();
             if( eStandardLayout == AUTOLAYOUT_TITLE )
-                eStandardLayout = AUTOLAYOUT_TITLE_CONTENT;
+                eStandardLayout = AUTOLAYOUT_ENUM;
 
             SdPage* pNotesTemplatePage = static_cast<SdPage*>(pDocument->GetPage(pTemplatePage->GetPageNum()+1));
             if (pNotesTemplatePage != nullptr)
@@ -248,7 +236,7 @@ SdPage* ViewShell::CreateOrDuplicatePage (
         const SfxUInt32Item* pLayout = rRequest.GetArg<SfxUInt32Item>(ID_VAL_WHATLAYOUT);
         if( pLayout )
         {
-            if (ePageKind == PageKind::Notes)
+            if (ePageKind == PK_NOTES)
             {
                 eNotesLayout   = (AutoLayout) pLayout->GetValue ();
             }
@@ -270,7 +258,7 @@ SdPage* ViewShell::CreateOrDuplicatePage (
 
         if (CHECK_RANGE (AUTOLAYOUT_START, (AutoLayout) pLayout->GetValue (), AUTOLAYOUT_END))
         {
-            if (ePageKind == PageKind::Notes)
+            if (ePageKind == PK_NOTES)
             {
                 aNotesPageName = pPageName->GetValue ();
                 eNotesLayout   = (AutoLayout) pLayout->GetValue ();
@@ -353,9 +341,9 @@ SdPage* ViewShell::CreateOrDuplicatePage (
                     sal_uInt16 nPageCount (pDocument->GetSdPageCount(ePageKind));
                     for (sal_uInt16 i=0; i<nPageCount; i++)
                     {
-                        pDocument->GetSdPage(i, PageKind::Standard)->SetSelected(
+                        pDocument->GetSdPage(i, PK_STANDARD)->SetSelected(
                             i == nNewPageIndex);
-                        pDocument->GetSdPage(i, PageKind::Notes)->SetSelected(
+                        pDocument->GetSdPage(i, PK_NOTES)->SetSelected(
                             i == nNewPageIndex);
                     }
                     // Move the selected page to the head of the document
@@ -394,14 +382,14 @@ SdPage* ViewShell::CreateOrDuplicatePage (
     }
     SdPage* pNewPage = nullptr;
     if(nNewPageIndex != 0xffff)
-        pNewPage = pDocument->GetSdPage(nNewPageIndex, PageKind::Standard);
+        pNewPage = pDocument->GetSdPage(nNewPageIndex, PK_STANDARD);
 
     if( bUndo )
     {
         if( pNewPage )
         {
             pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pNewPage));
-            pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pDocument->GetSdPage (nNewPageIndex, PageKind::Notes)));
+            pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pDocument->GetSdPage (nNewPageIndex, PK_NOTES)));
         }
 
         pDrView->EndUndo();

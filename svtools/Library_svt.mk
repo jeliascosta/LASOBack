@@ -122,11 +122,11 @@ $(eval $(call gb_Library_add_exception_objects,svt,\
     svtools/source/control/hyperlabel \
     svtools/source/control/indexentryres \
     svtools/source/control/inettbc \
-    svtools/source/control/managedmenubutton \
     svtools/source/control/roadmap \
     svtools/source/control/ruler \
     svtools/source/control/scriptedtext \
     svtools/source/control/scrwin \
+    svtools/source/control/stdctrl \
     svtools/source/control/tabbar \
     svtools/source/control/toolbarmenu \
     svtools/source/control/toolbarmenuacc \
@@ -195,6 +195,7 @@ $(eval $(call gb_Library_add_exception_objects,svt,\
     svtools/source/misc/transfer \
     svtools/source/misc/transfer2 \
     svtools/source/misc/unitconv \
+    svtools/source/misc/xwindowitem \
     svtools/source/svhtml/htmlkywd \
     svtools/source/svhtml/htmlout \
     svtools/source/svhtml/htmlsupp \
@@ -212,8 +213,8 @@ $(eval $(call gb_Library_add_exception_objects,svt,\
     svtools/source/table/mousefunction \
     svtools/source/table/cellvalueconversion \
     svtools/source/table/tablegeometry \
-    svtools/source/uitest/uiobject \
     svtools/source/uno/addrtempuno \
+    svtools/source/uno/contextmenuhelper \
     svtools/source/uno/fpicker \
     svtools/source/uno/framestatuslistener \
     svtools/source/uno/generictoolboxcontroller \

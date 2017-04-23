@@ -45,7 +45,11 @@ public:
     {
     }
 
-    virtual void Invalidate (const ::tools::Rectangle& rInvalidationBox) override
+    virtual ~LayerInvalidator ( )
+    {
+    }
+
+    virtual void Invalidate (const Rectangle& rInvalidationBox) override
     {
         mpLayeredDevice->Invalidate(rInvalidationBox, mnLayer);
         mpTargetWindow->Invalidate(rInvalidationBox);
@@ -60,7 +64,7 @@ private:
 void DeviceCopy (
     vcl::RenderContext& rTargetDevice,
     vcl::RenderContext& rSourceDevice,
-    const ::tools::Rectangle& rBox)
+    const Rectangle& rBox)
 {
     rTargetDevice.DrawOutDev(
         rBox.TopLeft(),
@@ -70,7 +74,7 @@ void DeviceCopy (
         rSourceDevice);
 }
 
-void ForAllRectangles (const vcl::Region& rRegion, const std::function<void (const ::tools::Rectangle&)>& aFunction)
+void ForAllRectangles (const vcl::Region& rRegion, const std::function<void (const Rectangle&)>& aFunction)
 {
     OSL_ASSERT(aFunction);
     RectangleVector aRectangles;
@@ -78,7 +82,7 @@ void ForAllRectangles (const vcl::Region& rRegion, const std::function<void (con
 
     if(0 == aRectangles.size())
     {
-        aFunction(::tools::Rectangle());
+        aFunction(Rectangle());
     }
     else
     {
@@ -100,16 +104,17 @@ class Layer
 {
 public:
     Layer();
+    ~Layer();
     Layer(const Layer&) = delete;
     Layer& operator=(const Layer&) = delete;
 
     void Initialize (sd::Window *pTargetWindow);
-    void InvalidateRectangle (const ::tools::Rectangle& rInvalidationBox);
+    void InvalidateRectangle (const Rectangle& rInvalidationBox);
     void InvalidateRegion (const vcl::Region& rInvalidationRegion);
     void Validate (const MapMode& rMapMode);
     void Repaint (
         OutputDevice& rTargetDevice,
-        const ::tools::Rectangle& rRepaintRectangle);
+        const Rectangle& rRepaintRectangle);
     void Resize (const Size& rSize);
     void AddPainter (const SharedILayerPainter& rpPainter);
     void RemovePainter (const SharedILayerPainter& rpPainter);
@@ -121,7 +126,7 @@ private:
     ::std::vector<SharedILayerPainter> maPainters;
     vcl::Region maInvalidationRegion;
 
-    void ValidateRectangle (const ::tools::Rectangle& rBox);
+    void ValidateRectangle (const Rectangle& rBox);
 };
 typedef std::shared_ptr<Layer> SharedLayer;
 
@@ -169,7 +174,7 @@ LayeredDevice::~LayeredDevice()
 }
 
 void LayeredDevice::Invalidate (
-    const ::tools::Rectangle& rInvalidationArea,
+    const Rectangle& rInvalidationArea,
     const sal_Int32 nLayer)
 {
     if (nLayer<0 || size_t(nLayer)>=mpLayers->size())
@@ -181,7 +186,7 @@ void LayeredDevice::Invalidate (
     (*mpLayers)[nLayer]->InvalidateRectangle(rInvalidationArea);
 }
 
-void LayeredDevice::InvalidateAllLayers (const ::tools::Rectangle& rInvalidationArea)
+void LayeredDevice::InvalidateAllLayers (const Rectangle& rInvalidationArea)
 {
     for (size_t nLayer=0; nLayer<mpLayers->size(); ++nLayer)
         (*mpLayers)[nLayer]->InvalidateRectangle(rInvalidationArea);
@@ -260,10 +265,10 @@ void LayeredDevice::Repaint (const vcl::Region& rRepaintRegion)
     }
 
     ForAllRectangles(rRepaintRegion,
-            [this] (::tools::Rectangle const& r) { this->RepaintRectangle(r); });
+            [this] (Rectangle const& r) { this->RepaintRectangle(r); });
 }
 
-void LayeredDevice::RepaintRectangle (const ::tools::Rectangle& rRepaintRectangle)
+void LayeredDevice::RepaintRectangle (const Rectangle& rRepaintRectangle)
 {
     if (mpLayers->empty())
         return;
@@ -311,8 +316,8 @@ bool LayeredDevice::HandleMapModeChange()
     if (maSavedMapMode == rMapMode)
         return false;
 
-    const ::tools::Rectangle aLogicWindowBox (
-        mpTargetWindow->PixelToLogic(::tools::Rectangle(Point(0,0), mpTargetWindow->GetSizePixel())));
+    const Rectangle aLogicWindowBox (
+        mpTargetWindow->PixelToLogic(Rectangle(Point(0,0), mpTargetWindow->GetSizePixel())));
     if (maSavedMapMode.GetScaleX() != rMapMode.GetScaleX()
         || maSavedMapMode.GetScaleY() != rMapMode.GetScaleY()
         || maSavedMapMode.GetMapUnit() != rMapMode.GetMapUnit())
@@ -331,27 +336,27 @@ bool LayeredDevice::HandleMapModeChange()
             aLogicWindowBox.GetSize());
 
         // Invalidate the area(s) that have been exposed.
-        const ::tools::Rectangle aWindowBox (Point(0,0), mpTargetWindow->GetSizePixel());
+        const Rectangle aWindowBox (Point(0,0), mpTargetWindow->GetSizePixel());
         if (aDelta.Y() < 0)
-            InvalidateAllLayers(mpTargetWindow->PixelToLogic(::tools::Rectangle(
+            InvalidateAllLayers(mpTargetWindow->PixelToLogic(Rectangle(
                 aWindowBox.Left(),
                 aWindowBox.Bottom()+aDelta.Y(),
                 aWindowBox.Right(),
                 aWindowBox.Bottom())));
         else if (aDelta.Y() > 0)
-            InvalidateAllLayers(mpTargetWindow->PixelToLogic(::tools::Rectangle(
+            InvalidateAllLayers(mpTargetWindow->PixelToLogic(Rectangle(
                 aWindowBox.Left(),
                 aWindowBox.Top(),
                 aWindowBox.Right(),
                 aWindowBox.Top()+aDelta.Y())));
         if (aDelta.X() < 0)
-            InvalidateAllLayers(mpTargetWindow->PixelToLogic(::tools::Rectangle(
+            InvalidateAllLayers(mpTargetWindow->PixelToLogic(Rectangle(
                 aWindowBox.Right()+aDelta.X(),
                 aWindowBox.Top(),
                 aWindowBox.Right(),
                 aWindowBox.Bottom())));
         else if (aDelta.X() > 0)
-            InvalidateAllLayers(mpTargetWindow->PixelToLogic(::tools::Rectangle(
+            InvalidateAllLayers(mpTargetWindow->PixelToLogic(Rectangle(
                 aWindowBox.Left(),
                 aWindowBox.Top(),
                 aWindowBox.Left()+aDelta.X(),
@@ -377,6 +382,10 @@ Layer::Layer()
 {
 }
 
+Layer::~Layer()
+{
+}
+
 void Layer::Initialize (sd::Window *pTargetWindow)
 {
 #if 0
@@ -390,7 +399,7 @@ void Layer::Initialize (sd::Window *pTargetWindow)
 #endif
 }
 
-void Layer::InvalidateRectangle (const ::tools::Rectangle& rInvalidationBox)
+void Layer::InvalidateRectangle (const Rectangle& rInvalidationBox)
 {
     maInvalidationRegion.Union(rInvalidationBox);
 }
@@ -410,11 +419,11 @@ void Layer::Validate (const MapMode& rMapMode)
         mpLayerDevice->SetMapMode(rMapMode);
         ForAllRectangles(
             aRegion,
-            [this] (::tools::Rectangle const& r) { return this->ValidateRectangle(r); });
+            [this] (Rectangle const& r) { return this->ValidateRectangle(r); });
     }
 }
 
-void Layer::ValidateRectangle (const ::tools::Rectangle& rBox)
+void Layer::ValidateRectangle (const Rectangle& rBox)
 {
     if ( ! mpLayerDevice)
         return;
@@ -435,7 +444,7 @@ void Layer::ValidateRectangle (const ::tools::Rectangle& rBox)
 
 void Layer::Repaint (
     OutputDevice& rTargetDevice,
-    const ::tools::Rectangle& rRepaintRectangle)
+    const Rectangle& rRepaintRectangle)
 {
     if (mpLayerDevice)
     {
@@ -455,7 +464,7 @@ void Layer::Resize (const Size& rSize)
     if (mpLayerDevice)
     {
         mpLayerDevice->SetOutputSizePixel(rSize);
-        maInvalidationRegion = ::tools::Rectangle(Point(0,0), rSize);
+        maInvalidationRegion = Rectangle(Point(0,0), rSize);
     }
 }
 
@@ -476,7 +485,7 @@ void Layer::RemovePainter (const SharedILayerPainter& rpPainter)
     }
     else
     {
-        SAL_WARN("sd", "LayeredDevice::RemovePainter called for painter that is not registered");
+        DBG_ASSERT(false,"LayeredDevice::RemovePainter called for painter that is not registered");
     }
 }
 

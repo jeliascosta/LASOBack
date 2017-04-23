@@ -134,7 +134,7 @@ bool SwAutoCorrDoc::Insert( sal_Int32 nPos, const OUString& rText )
         bUndoIdInitialized = true;
         if( 1 == rText.getLength() )
         {
-            rEditSh.StartUndo( SwUndoId::AUTOCORRECT );
+            rEditSh.StartUndo( UNDO_AUTOCORRECT );
             ++m_nEndUndoCounter;
         }
     }
@@ -164,7 +164,7 @@ bool SwAutoCorrDoc::ReplaceRange( sal_Int32 nPos, sal_Int32 nSourceLength, const
     // text attributes with dummy characters must not be replaced!
     bool bDoReplace = true;
     sal_Int32 const nLen = rText.getLength();
-    for ( sal_Int32 n = 0; n < nLen && n + nPos < pNd->GetText().getLength(); ++n )
+    for ( sal_Int32 n = 0; n < nLen; ++n )
     {
         sal_Unicode const Char = pNd->GetText()[n + nPos];
         if ( ( CH_TXTATR_BREAKWORD == Char || CH_TXTATR_INWORD == Char )
@@ -217,7 +217,7 @@ bool SwAutoCorrDoc::ReplaceRange( sal_Int32 nPos, sal_Int32 nSourceLength, const
             bUndoIdInitialized = true;
             if( 1 == rText.getLength() )
             {
-                rEditSh.StartUndo( SwUndoId::AUTOCORRECT );
+                rEditSh.StartUndo( UNDO_AUTOCORRECT );
                 ++m_nEndUndoCounter;
             }
         }
@@ -455,6 +455,7 @@ bool SwAutoCorrExceptWord::CheckDelChar( const SwPosition& rPos )
 
 SwDontExpandItem::~SwDontExpandItem()
 {
+    delete pDontExpItems;
 }
 
 void SwDontExpandItem::SaveDontExpandItems( const SwPosition& rPos )
@@ -462,13 +463,14 @@ void SwDontExpandItem::SaveDontExpandItems( const SwPosition& rPos )
     const SwTextNode* pTextNd = rPos.nNode.GetNode().GetTextNode();
     if( pTextNd )
     {
-        pDontExpItems.reset( new SfxItemSet( const_cast<SwDoc*>(pTextNd->GetDoc())->GetAttrPool(),
-                                            aCharFormatSetRange ) );
+        pDontExpItems = new SfxItemSet( const_cast<SwDoc*>(pTextNd->GetDoc())->GetAttrPool(),
+                                            aCharFormatSetRange );
         const sal_Int32 n = rPos.nContent.GetIndex();
         if( !pTextNd->GetAttr( *pDontExpItems, n, n,
                                 n != pTextNd->GetText().getLength() ))
         {
-            pDontExpItems.reset();
+            delete pDontExpItems;
+            pDontExpItems = nullptr;
         }
     }
 }

@@ -40,7 +40,7 @@ protected:
                        const SfxItemSet& rArgSet );
 
 public:
-    virtual ~ScTpSubTotalGroup() override;
+    virtual ~ScTpSubTotalGroup();
     virtual void dispose() override;
 
     bool            DoReset         ( sal_uInt16            nGroupNo,
@@ -70,9 +70,9 @@ private:
     sal_uInt16          GetFieldSelPos  ( SCCOL nField );
 
     // Handler ------------------------
-    DECL_LINK( SelectListBoxHdl, ListBox&, void );
-    DECL_LINK( SelectTreeListBoxHdl, SvTreeListBox*, void );
-    DECL_LINK( CheckHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( SelectListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( SelectTreeListBoxHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( CheckHdl, SvTreeListBox*, void );
     void SelectHdl(void *);
 };
 
@@ -84,7 +84,7 @@ protected:
                         const SfxItemSet&    rArgSet );
 
 public:
-    virtual ~ScTpSubTotalGroup1() override;
+    virtual ~ScTpSubTotalGroup1();
 
     static  VclPtr<SfxTabPage> Create      ( vcl::Window*               pParent,
             const SfxItemSet*     rArgSet );
@@ -100,7 +100,7 @@ protected:
                         const SfxItemSet&    rArgSet );
 
 public:
-    virtual ~ScTpSubTotalGroup2() override;
+    virtual ~ScTpSubTotalGroup2();
 
     static  VclPtr<SfxTabPage> Create      ( vcl::Window*               pParent,
             const SfxItemSet*     rArgSet );
@@ -116,7 +116,7 @@ protected:
                         const SfxItemSet&    rArgSet );
 
 public:
-    virtual ~ScTpSubTotalGroup3() override;
+    virtual ~ScTpSubTotalGroup3();
 
     static  VclPtr<SfxTabPage> Create      ( vcl::Window*               pParent,
             const SfxItemSet*     rArgSet );
@@ -132,7 +132,7 @@ protected:
                          const SfxItemSet&  rArgSet );
 
 public:
-    virtual ~ScTpSubTotalOptions() override;
+    virtual ~ScTpSubTotalOptions();
     virtual void        dispose() override;
     static VclPtr<SfxTabPage>  Create      ( vcl::Window*               pParent,
             const SfxItemSet*     rArgSet );
@@ -160,7 +160,7 @@ private:
     void FillUserSortListBox    ();
 
     // Handler ------------------------
-    DECL_LINK( CheckHdl, Button*, void );
+    DECL_LINK_TYPED( CheckHdl, Button*, void );
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_TPSUBT_HXX

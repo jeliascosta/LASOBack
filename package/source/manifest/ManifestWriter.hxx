@@ -40,15 +40,19 @@ private:
     css::uno::Reference< css::uno::XComponentContext > m_xContext;
 public:
     ManifestWriter( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~ManifestWriter() override;
+    virtual ~ManifestWriter();
 
     // XManifestWriter
-    virtual void SAL_CALL writeManifestSequence( const css::uno::Reference< css::io::XOutputStream >& rStream, const css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > >& rSequence ) override;
+    virtual void SAL_CALL writeManifestSequence( const css::uno::Reference< css::io::XOutputStream >& rStream, const css::uno::Sequence< css::uno::Sequence< css::beans::PropertyValue > >& rSequence )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Component constructor
     static OUString static_getImplementationName();

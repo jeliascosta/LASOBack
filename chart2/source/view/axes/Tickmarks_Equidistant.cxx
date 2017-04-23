@@ -77,7 +77,7 @@ EquidistantTickFactory::EquidistantTickFactory(
 {
     //@todo: make sure that the scale is valid for the scaling
 
-    m_pfCurrentValues.reset( new double[getTickDepth()] );
+    m_pfCurrentValues = new double[getTickDepth()];
 
     if( m_rScale.Scaling.is() )
     {
@@ -128,6 +128,7 @@ EquidistantTickFactory::EquidistantTickFactory(
 
 EquidistantTickFactory::~EquidistantTickFactory()
 {
+    delete[] m_pfCurrentValues;
 }
 
 sal_Int32 EquidistantTickFactory::getTickDepth() const
@@ -310,14 +311,16 @@ bool EquidistantTickFactory::isVisible( double fScaledValue ) const
 
 void EquidistantTickFactory::getAllTicks( TickInfoArraysType& rAllTickInfos ) const
 {
+    uno::Sequence< uno::Sequence< double > > aAllTicks;
+
     //create point sequences for each tick depth
     sal_Int32 nDepthCount = this->getTickDepth();
-    sal_Int32 nMaxMajorTickCount = this->getMaxTickCount(0);
+    sal_Int32 nMaxMajorTickCount = this->getMaxTickCount();
 
     if (nDepthCount <= 0 || nMaxMajorTickCount <= 0)
         return;
 
-    uno::Sequence< uno::Sequence< double > > aAllTicks(nDepthCount);
+    aAllTicks.realloc(nDepthCount);
     aAllTicks[0].realloc(nMaxMajorTickCount);
 
     sal_Int32 nRealMajorTickCount = 0;

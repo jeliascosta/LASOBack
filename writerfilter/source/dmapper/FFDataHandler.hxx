@@ -33,7 +33,7 @@ public:
     // constructor
     FFDataHandler();
     // destructor
-    virtual ~FFDataHandler() override;
+    virtual ~FFDataHandler();
 
     // member: name
     const OUString & getName() const { return m_sName;}

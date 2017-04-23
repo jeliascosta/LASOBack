@@ -32,15 +32,13 @@
 #include "uistrings.hrc"
 #include "reportformula.hxx"
 
-#include <i18nutil/searchopt.hxx>
 #include <unotools/textsearch.hxx>
 #include <unotools/configmgr.hxx>
 
 #include <toolkit/helper/vclunohelper.hxx>
 #include <unotools/syslocale.hxx>
 #include <tools/diagnose_ex.h>
-#include <tools/resary.hxx>
-#include <com/sun/star/lang/NullPointerException.hpp>
+#include <tools/StringListResource.hxx>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/form/inspection/FormComponentPropertyHandler.hpp>
 #include <com/sun/star/inspection/StringRepresentation.hpp>
@@ -59,6 +57,7 @@
 #include <com/sun/star/sdb/FilterDialog.hpp>
 #include <com/sun/star/sdb/SQLContext.hpp>
 #include <com/sun/star/sdbc/XConnection.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/MeasureUnit.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
@@ -214,7 +213,8 @@ OUString GeometryHandler::impl_convertToFormula( const uno::Any& _rControlValue 
     if ( aParser.isValid() )
         return sName;
 
-    return ReportFormula(impl_isDataField(sName) ? ReportFormula::Field : ReportFormula::Expression, sName).getCompleteFormula();
+    aParser = ReportFormula( impl_isDataField(sName) ? ReportFormula::Field : ReportFormula::Expression, sName );
+    return aParser.getCompleteFormula();
 }
 
 GeometryHandler::GeometryHandler(uno::Reference< uno::XComponentContext > const & context)
@@ -240,27 +240,27 @@ GeometryHandler::~GeometryHandler()
 {
 }
 
-OUString SAL_CALL GeometryHandler::getImplementationName(  )
+OUString SAL_CALL GeometryHandler::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL GeometryHandler::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL GeometryHandler::supportsService( const OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-uno::Sequence< OUString > SAL_CALL GeometryHandler::getSupportedServiceNames(  )
+uno::Sequence< OUString > SAL_CALL GeometryHandler::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
     return getSupportedServiceNames_static();
 }
 
-OUString GeometryHandler::getImplementationName_Static(  )
+OUString GeometryHandler::getImplementationName_Static(  ) throw(uno::RuntimeException)
 {
     return OUString("com.sun.star.comp.report.GeometryHandler");
 }
 
-uno::Sequence< OUString > GeometryHandler::getSupportedServiceNames_static(  )
+uno::Sequence< OUString > GeometryHandler::getSupportedServiceNames_static(  ) throw(uno::RuntimeException)
 {
     uno::Sequence< OUString > aSupported { "com.sun.star.report.inspection.GeometryHandler" };
     return aSupported;
@@ -290,12 +290,12 @@ void SAL_CALL GeometryHandler::disposing()
     catch(uno::Exception&)
     {}
 }
-void SAL_CALL GeometryHandler::addEventListener(const uno::Reference< lang::XEventListener > & xListener)
+void SAL_CALL GeometryHandler::addEventListener(const uno::Reference< lang::XEventListener > & xListener) throw (uno::RuntimeException, std::exception)
 {
     m_xFormComponentHandler->addEventListener(xListener);
 }
 
-void SAL_CALL GeometryHandler::removeEventListener(const uno::Reference< lang::XEventListener > & aListener)
+void SAL_CALL GeometryHandler::removeEventListener(const uno::Reference< lang::XEventListener > & aListener) throw (uno::RuntimeException, std::exception)
 {
     m_xFormComponentHandler->removeEventListener(aListener);
 }
@@ -303,7 +303,7 @@ void SAL_CALL GeometryHandler::removeEventListener(const uno::Reference< lang::X
 // inspection::XPropertyHandler:
 
 /********************************************************************************/
-void SAL_CALL GeometryHandler::inspect( const uno::Reference< uno::XInterface > & _rxInspectee )
+void SAL_CALL GeometryHandler::inspect( const uno::Reference< uno::XInterface > & _rxInspectee ) throw (uno::RuntimeException, lang::NullPointerException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     m_sScope.clear();
@@ -349,7 +349,7 @@ void SAL_CALL GeometryHandler::inspect( const uno::Reference< uno::XInterface > 
     m_xFormComponentHandler->inspect(m_xReportComponent);
 }
 
-uno::Any SAL_CALL GeometryHandler::getPropertyValue(const OUString & PropertyName)
+uno::Any SAL_CALL GeometryHandler::getPropertyValue(const OUString & PropertyName) throw (uno::RuntimeException, beans::UnknownPropertyException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     uno::Any aPropertyValue;
@@ -443,7 +443,7 @@ uno::Any SAL_CALL GeometryHandler::getPropertyValue(const OUString & PropertyNam
     return aPropertyValue;
 }
 
-void SAL_CALL GeometryHandler::setPropertyValue(const OUString & PropertyName, const uno::Any & Value)
+void SAL_CALL GeometryHandler::setPropertyValue(const OUString & PropertyName, const uno::Any & Value) throw (uno::RuntimeException, beans::UnknownPropertyException, beans::PropertyVetoException, std::exception)
 {
     ::osl::ResettableMutexGuard aGuard( m_aMutex );
     uno::Any aNewValue = Value;
@@ -663,7 +663,7 @@ void SAL_CALL GeometryHandler::setPropertyValue(const OUString & PropertyName, c
 }
 
 
-beans::PropertyState SAL_CALL GeometryHandler::getPropertyState(const OUString & PropertyName)
+beans::PropertyState SAL_CALL GeometryHandler::getPropertyState(const OUString & PropertyName) throw (uno::RuntimeException, beans::UnknownPropertyException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     return m_xFormComponentHandler->getPropertyState(PropertyName);
@@ -677,12 +677,10 @@ void GeometryHandler::implCreateListLikeControl(
         ,bool _bTrueIfListBoxFalseIfComboBox
     )
 {
-    ModuleRes aRes(_nResId);
-    ResStringArray aResList(aRes);
-    std::vector<OUString> aList;
-    for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
-        aList.push_back(aResList.GetString(i));
-    implCreateListLikeControl(_rxControlFactory, out_Descriptor, aList, _bReadOnlyControl, _bTrueIfListBoxFalseIfComboBox);
+    ::std::vector< OUString > aList;
+    tools::StringListResource aRes(ModuleRes(_nResId),aList);
+
+    implCreateListLikeControl(_rxControlFactory,out_Descriptor,aList,_bReadOnlyControl,_bTrueIfListBoxFalseIfComboBox);
 }
 
 void GeometryHandler::implCreateListLikeControl(
@@ -708,7 +706,7 @@ void GeometryHandler::implCreateListLikeControl(
 }
 
 
-inspection::LineDescriptor SAL_CALL GeometryHandler::describePropertyLine(const OUString & PropertyName, const uno::Reference< inspection::XPropertyControlFactory > & _xControlFactory)
+inspection::LineDescriptor SAL_CALL GeometryHandler::describePropertyLine(const OUString & PropertyName, const uno::Reference< inspection::XPropertyControlFactory > & _xControlFactory) throw (beans::UnknownPropertyException, lang::NullPointerException,uno::RuntimeException, std::exception)
 {
     inspection::LineDescriptor aOut;
     const sal_Int32 nId = OPropertyInfoService::getPropertyId(PropertyName);
@@ -934,11 +932,9 @@ beans::Property GeometryHandler::getProperty(const OUString & PropertyName)
 }
 uno::Any GeometryHandler::getConstantValue(bool _bToControlValue,sal_uInt16 _nResId,const uno::Any& _aValue,const OUString& _sConstantName,const OUString & PropertyName )
 {
-    ModuleRes aRes(_nResId);
-    ResStringArray aResList(aRes);
-    uno::Sequence< OUString > aSeq(aResList.Count());
-    for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
-        aSeq[i] = aResList.GetString(i);
+    ::std::vector< OUString > aList;
+    tools::StringListResource aRes(ModuleRes(_nResId),aList);
+    uno::Sequence< OUString > aSeq(comphelper::containerToSequence(aList));
 
     uno::Reference< inspection::XStringRepresentation > xConversionHelper = inspection::StringRepresentation::createConstant( m_xContext,m_xTypeConverter,_sConstantName,aSeq);
     if ( _bToControlValue )
@@ -954,7 +950,7 @@ uno::Any GeometryHandler::getConstantValue(bool _bToControlValue,sal_uInt16 _nRe
     }
 }
 
-uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & PropertyName, const uno::Any & _rControlValue)
+uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & PropertyName, const uno::Any & _rControlValue) throw (uno::RuntimeException, beans::UnknownPropertyException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     uno::Any aPropertyValue( _rControlValue );
@@ -1073,19 +1069,11 @@ uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & Prope
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ModuleRes aRes(RID_STR_TYPE_CONST);
-                ResStringArray aResList(aRes);
-                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
-                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
-                {
-                    if (aResList.GetString(i) == sValue)
-                    {
-                        nFound = i;
-                        break;
-                    }
-                }
-                if (nFound != RESARRAY_INDEX_NOTFOUND)
-                    aPropertyValue <<= nFound;
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_TYPE_CONST),aList);
+                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
+                if ( aFind != aList.end() )
+                    aPropertyValue <<= static_cast<sal_uInt32>(aFind - aList.begin());
             }
             break;
         case PROPERTY_ID_MIMETYPE:
@@ -1095,38 +1083,22 @@ uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & Prope
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ModuleRes aRes(RID_STR_VERTICAL_ALIGN_CONST);
-                ResStringArray aResList(aRes);
-                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
-                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
-                {
-                    if (aResList.GetString(i) == sValue)
-                    {
-                        nFound = i;
-                        break;
-                    }
-                }
-                if (nFound != RESARRAY_INDEX_NOTFOUND)
-                    aPropertyValue <<= static_cast<style::VerticalAlignment>(nFound);
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_VERTICAL_ALIGN_CONST),aList);
+                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
+                if ( aFind != aList.end() )
+                    aPropertyValue <<= static_cast<style::VerticalAlignment>(aFind - aList.begin());
             }
             break;
         case PROPERTY_ID_PARAADJUST:
             {
                 OUString sValue;
                 _rControlValue >>= sValue;
-                ModuleRes aRes(RID_STR_PARAADJUST_CONST);
-                ResStringArray aResList(aRes);
-                sal_uInt32 nFound(RESARRAY_INDEX_NOTFOUND);
-                for (sal_uInt32 i = 0; i < aResList.Count(); ++i)
-                {
-                    if (aResList.GetString(i) == sValue)
-                    {
-                        nFound = i;
-                        break;
-                    }
-                }
-                if (nFound != RESARRAY_INDEX_NOTFOUND)
-                    aPropertyValue <<= static_cast<sal_Int16>(nFound);
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_PARAADJUST_CONST),aList);
+                ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),sValue);
+                if ( aFind != aList.end() )
+                    aPropertyValue <<= static_cast<sal_Int16>(aFind - aList.begin());
             }
             break;
         default:
@@ -1135,7 +1107,7 @@ uno::Any SAL_CALL GeometryHandler::convertToPropertyValue(const OUString & Prope
     return aPropertyValue;
 }
 
-uno::Any SAL_CALL GeometryHandler::convertToControlValue(const OUString & PropertyName, const uno::Any & _rPropertyValue, const uno::Type & _rControlValueType)
+uno::Any SAL_CALL GeometryHandler::convertToControlValue(const OUString & PropertyName, const uno::Any & _rPropertyValue, const uno::Type & _rControlValueType) throw (uno::RuntimeException, beans::UnknownPropertyException, std::exception)
 {
     uno::Any aControlValue( _rPropertyValue );
     if ( !aControlValue.hasValue() )
@@ -1240,30 +1212,30 @@ uno::Any SAL_CALL GeometryHandler::convertToControlValue(const OUString & Proper
             break;
         case PROPERTY_ID_TYPE:
             {
-                ModuleRes aRes(RID_STR_TYPE_CONST);
-                ResStringArray aResList(aRes);
-                if (m_nDataFieldType < aResList.Count())
-                    aControlValue <<= aResList.GetString(m_nDataFieldType);
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_TYPE_CONST),aList);
+                if ( m_nDataFieldType < aList.size() )
+                    aControlValue <<= aList[m_nDataFieldType];
             }
             break;
         case PROPERTY_ID_VERTICALALIGN:
             {
                 style::VerticalAlignment nParagraphVertAlign = style::VerticalAlignment_TOP;
                 aPropertyValue >>= nParagraphVertAlign;
-                ModuleRes aRes(RID_STR_VERTICAL_ALIGN_CONST);
-                ResStringArray aResList(aRes);
-                if (sal_uInt32(nParagraphVertAlign) < aResList.Count())
-                    aControlValue <<= aResList.GetString((sal_uInt32)nParagraphVertAlign);
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_VERTICAL_ALIGN_CONST),aList);
+                if ( static_cast<sal_Int16>(nParagraphVertAlign) < static_cast<sal_Int16>(aList.size()) )
+                    aControlValue <<= aList[nParagraphVertAlign];
             }
             break;
         case PROPERTY_ID_PARAADJUST:
             {
-                sal_Int16 nParagraphAdjust = (sal_Int16)style::ParagraphAdjust_LEFT;
+                sal_Int16 nParagraphAdjust = style::ParagraphAdjust_LEFT;
                 aPropertyValue >>= nParagraphAdjust;
-                ModuleRes aRes(RID_STR_PARAADJUST_CONST);
-                ResStringArray aResList(aRes);
-                if (static_cast<sal_uInt32>(nParagraphAdjust) < aResList.Count())
-                    aControlValue <<= aResList.GetString(nParagraphAdjust);
+                ::std::vector< OUString > aList;
+                tools::StringListResource aRes(ModuleRes(RID_STR_PARAADJUST_CONST),aList);
+                if ( nParagraphAdjust < static_cast<sal_Int16>(aList.size()) )
+                    aControlValue <<= aList[nParagraphAdjust];
             }
             break;
         case PROPERTY_ID_BACKCOLOR:
@@ -1279,14 +1251,14 @@ uno::Any SAL_CALL GeometryHandler::convertToControlValue(const OUString & Proper
     }
     return aControlValue;
 }
-void SAL_CALL GeometryHandler::addPropertyChangeListener(const uno::Reference< beans::XPropertyChangeListener > & _rxListener)
+void SAL_CALL GeometryHandler::addPropertyChangeListener(const uno::Reference< beans::XPropertyChangeListener > & _rxListener) throw (uno::RuntimeException, lang::NullPointerException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     m_aPropertyListeners.addListener( _rxListener );
     m_xFormComponentHandler->addPropertyChangeListener(_rxListener);
 }
 
-void SAL_CALL GeometryHandler::removePropertyChangeListener(const uno::Reference< beans::XPropertyChangeListener > & _rxListener)
+void SAL_CALL GeometryHandler::removePropertyChangeListener(const uno::Reference< beans::XPropertyChangeListener > & _rxListener) throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     m_aPropertyListeners.removeListener( _rxListener );
@@ -1294,7 +1266,7 @@ void SAL_CALL GeometryHandler::removePropertyChangeListener(const uno::Reference
 }
 
 
-uno::Sequence< beans::Property > SAL_CALL GeometryHandler::getSupportedProperties()
+uno::Sequence< beans::Property > SAL_CALL GeometryHandler::getSupportedProperties() throw (uno::RuntimeException, std::exception)
 {
     ::std::vector< beans::Property > aNewProps;
     aNewProps.reserve(20); // only a guess
@@ -1375,7 +1347,7 @@ uno::Sequence< beans::Property > SAL_CALL GeometryHandler::getSupportedPropertie
     return uno::Sequence< beans::Property > (&(*aNewProps.begin()),aNewProps.size());
 }
 
-uno::Sequence< OUString > SAL_CALL GeometryHandler::getSupersededProperties()
+uno::Sequence< OUString > SAL_CALL GeometryHandler::getSupersededProperties() throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aRet;
     const uno::Reference<report::XReportDefinition> xReport(m_xReportComponent,uno::UNO_QUERY);
@@ -1392,7 +1364,7 @@ uno::Sequence< OUString > SAL_CALL GeometryHandler::getSupersededProperties()
     return aRet;
 }
 
-uno::Sequence< OUString > SAL_CALL GeometryHandler::getActuatingProperties()
+uno::Sequence< OUString > SAL_CALL GeometryHandler::getActuatingProperties() throw (uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -1406,12 +1378,12 @@ uno::Sequence< OUString > SAL_CALL GeometryHandler::getActuatingProperties()
     return ::comphelper::concatSequences(m_xFormComponentHandler->getActuatingProperties(),aSeq);
 }
 
-sal_Bool SAL_CALL GeometryHandler::isComposable(const OUString & _rPropertyName)
+sal_Bool SAL_CALL GeometryHandler::isComposable(const OUString & _rPropertyName) throw (uno::RuntimeException, beans::UnknownPropertyException, std::exception)
 {
     return OPropertyInfoService::isComposable( _rPropertyName, m_xFormComponentHandler );
 }
 
-inspection::InteractiveSelectionResult SAL_CALL GeometryHandler::onInteractivePropertySelection(const OUString & PropertyName, sal_Bool Primary, uno::Any & _rData, const uno::Reference< inspection::XObjectInspectorUI > & _rxInspectorUI)
+inspection::InteractiveSelectionResult SAL_CALL GeometryHandler::onInteractivePropertySelection(const OUString & PropertyName, sal_Bool Primary, uno::Any & _rData, const uno::Reference< inspection::XObjectInspectorUI > & _rxInspectorUI) throw (uno::RuntimeException, beans::UnknownPropertyException, lang::NullPointerException, std::exception)
 {
     if ( !_rxInspectorUI.is() )
         throw lang::NullPointerException();
@@ -1482,7 +1454,7 @@ inspection::InteractiveSelectionResult SAL_CALL GeometryHandler::onInteractivePr
             eResult = inspection::InteractiveSelectionResult_ObtainedValue;
             beans::PropertyChangeEvent aScopeEvent;
             aScopeEvent.PropertyName = PROPERTY_FILLCOLOR;
-            aScopeEvent.NewValue = xShape->getPropertyValue(PROPERTY_FILLCOLOR);
+            aScopeEvent.NewValue <<= xShape->getPropertyValue(PROPERTY_FILLCOLOR);
             m_aPropertyListeners.notify( aScopeEvent, &beans::XPropertyChangeListener::propertyChange );
         }
         return eResult;
@@ -1492,7 +1464,7 @@ inspection::InteractiveSelectionResult SAL_CALL GeometryHandler::onInteractivePr
     return m_xFormComponentHandler->onInteractivePropertySelection(PropertyName, Primary, _rData, _rxInspectorUI);
 }
 
-void SAL_CALL GeometryHandler::actuatingPropertyChanged(const OUString & ActuatingPropertyName, const uno::Any & NewValue, const uno::Any & OldValue, const uno::Reference< inspection::XObjectInspectorUI > & _rxInspectorUI, sal_Bool _bFirstTimeInit)
+void SAL_CALL GeometryHandler::actuatingPropertyChanged(const OUString & ActuatingPropertyName, const uno::Any & NewValue, const uno::Any & OldValue, const uno::Reference< inspection::XObjectInspectorUI > & _rxInspectorUI, sal_Bool _bFirstTimeInit) throw (uno::RuntimeException, lang::NullPointerException, std::exception)
 {
     if ( !_rxInspectorUI.is() )
         throw lang::NullPointerException();
@@ -1575,7 +1547,7 @@ void SAL_CALL GeometryHandler::actuatingPropertyChanged(const OUString & Actuati
     }
 }
 
-sal_Bool SAL_CALL GeometryHandler::suspend(sal_Bool Suspend)
+sal_Bool SAL_CALL GeometryHandler::suspend(sal_Bool Suspend) throw (uno::RuntimeException, std::exception)
 {
     return m_xFormComponentHandler->suspend(Suspend);
 }
@@ -1646,9 +1618,9 @@ void GeometryHandler::checkPosAndSize(  const awt::Point& _aNewPos,
 
     ::Point aPos(VCLPoint(_aNewPos));
     if ( aPos.X() < 0 || aPos.Y() < 0 ) // TODO: have to check size with pos aka || (aPos.X() + aAwtSize.Width) > m_xSection->getReportDefinition()->
-        throw beans::PropertyVetoException(ModuleRes(RID_STR_ILLEGAL_POSITION),xSourceReportComponent);
+        throw beans::PropertyVetoException(OUString(ModuleRes(RID_STR_ILLEGAL_POSITION)),xSourceReportComponent);
 
-    ::tools::Rectangle aSourceRect(aPos,VCLSize(_aSize));
+    ::Rectangle aSourceRect(aPos,VCLSize(_aSize));
 
     const sal_Int32 nCount = xSection->getCount();
     for (sal_Int32 i = 0; i < nCount ; ++i)
@@ -1656,10 +1628,10 @@ void GeometryHandler::checkPosAndSize(  const awt::Point& _aNewPos,
         const uno::Reference< report::XReportComponent> xReportComponent(xSection->getByIndex(i),uno::UNO_QUERY);
         if ( xReportComponent.is() && xReportComponent != xSourceReportComponent )
         {
-            const ::tools::Rectangle aBoundRect(VCLPoint(xReportComponent->getPosition()),VCLSize(xReportComponent->getSize()));
-            const ::tools::Rectangle aRect = aSourceRect.GetIntersection(aBoundRect);
+            const ::Rectangle aBoundRect(VCLPoint(xReportComponent->getPosition()),VCLSize(xReportComponent->getSize()));
+            const ::Rectangle aRect = aSourceRect.GetIntersection(aBoundRect);
             if ( !aRect.IsEmpty() && (aRect.Left() != aRect.Right() && aRect.Top() != aRect.Bottom() ) )
-                throw beans::PropertyVetoException(ModuleRes( RID_STR_OVERLAP_OTHER_CONTROL),xSourceReportComponent);
+                throw beans::PropertyVetoException(OUString(ModuleRes( RID_STR_OVERLAP_OTHER_CONTROL)),xSourceReportComponent);
         }
     }
 }
@@ -1688,7 +1660,7 @@ OUString GeometryHandler::impl_ConvertUIToMimeType_nothrow(const OUString& _sUIN
     ::std::vector< OUString >::const_iterator aFind = ::std::find(aList.begin(),aList.end(),_sUIName);
     if ( aFind != aList.end() )
     {
-        const std::size_t nPos = aFind - aList.begin();
+        const sal_Size nPos = aFind - aList.begin();
         const uno::Reference< report::XReportDefinition> xReportDefinition(m_xReportComponent,uno::UNO_QUERY);
         if ( xReportDefinition.is() )
         {
@@ -1889,7 +1861,7 @@ bool GeometryHandler::impl_isDefaultFunction_nothrow( const uno::Reference< repo
     try
     {
         const OUString sFormula( _xFunction->getFormula() );
-        i18nutil::SearchOptions2 aSearchOptions;
+        util::SearchOptions2 aSearchOptions;
         aSearchOptions.AlgorithmType2 = util::SearchAlgorithms2::REGEXP;
         aSearchOptions.searchFlag = 0x00000100;
         ::std::vector< DefaultFunction >::const_iterator aIter = m_aDefaultFunctions.begin();
@@ -1926,6 +1898,7 @@ void GeometryHandler::loadDefaultFunctions()
     if ( m_aDefaultFunctions.empty() )
     {
         m_aCounterFunction.m_bPreEvaluated = false;
+        m_aCounterFunction.m_bDeepTraversing = false;
         m_aCounterFunction.m_sName = ModuleRes(RID_STR_F_COUNTER);
         m_aCounterFunction.m_sFormula = "rpt:[%FunctionName] + 1";
         m_aCounterFunction.m_sSearchString = "rpt:\\[[:alpha:]+([:space:]*[:alnum:]*)*\\][:space:]*\\+[:space:]*[:digit:]*";
@@ -1933,6 +1906,7 @@ void GeometryHandler::loadDefaultFunctions()
         m_aCounterFunction.m_sInitialFormula.Value = "rpt:1";
 
         DefaultFunction aDefault;
+        aDefault.m_bDeepTraversing = false;
 
         aDefault.m_bPreEvaluated = true;
 
@@ -2071,7 +2045,7 @@ void GeometryHandler::impl_initFieldList_nothrow( uno::Sequence< OUString >& _rF
     try
     {
         uno::Reference< awt::XWindow> xInspectorWindow(m_xContext->getValueByName("DialogParentWindow") ,uno::UNO_QUERY);
-        VclPtr<vcl::Window> pInspectorWindow = VCLUnoHelper::GetWindow( xInspectorWindow );
+        vcl::Window* pInspectorWindow = VCLUnoHelper::GetWindow( xInspectorWindow );
         WaitObject aWaitCursor( pInspectorWindow );
 
         uno::Reference< sdbc::XPreparedStatement >  xStatement;
@@ -2108,7 +2082,7 @@ bool GeometryHandler::impl_isCounterFunction_throw(const OUString& _sQuotedFunct
         if ( aInitalFormula.IsPresent )
         {
             const OUString sFormula( aFind.first->second.first->getFormula() );
-            i18nutil::SearchOptions2 aSearchOptions;
+            util::SearchOptions2 aSearchOptions;
             aSearchOptions.AlgorithmType2 = util::SearchAlgorithms2::REGEXP;
             aSearchOptions.searchFlag = 0x00000100;
             aSearchOptions.searchString = m_aCounterFunction.m_sSearchString;
@@ -2150,7 +2124,7 @@ void GeometryHandler::impl_createFunction(const OUString& _sFunctionName,const O
 
     m_xFunction->setFormula(sFormula);
     m_xFunction->setPreEvaluated(_aFunction.m_bPreEvaluated);
-    m_xFunction->setDeepTraversing(false);
+    m_xFunction->setDeepTraversing(_aFunction.m_bDeepTraversing);
     if ( _aFunction.m_sInitialFormula.IsPresent )
     {
         beans::Optional< OUString> aInitialFormula = _aFunction.m_sInitialFormula;
@@ -2216,11 +2190,11 @@ sal_uInt32 GeometryHandler::impl_getDataFieldType_throw(const OUString& _sDataFi
 }
 
 // XEventListener
-void SAL_CALL GeometryHandler::disposing(const lang::EventObject& )
+void SAL_CALL GeometryHandler::disposing(const lang::EventObject& ) throw( uno::RuntimeException, std::exception )
 {
 }
 // XPropertyChangeListener
-void SAL_CALL GeometryHandler::propertyChange(const beans::PropertyChangeEvent& /*evt*/)
+void SAL_CALL GeometryHandler::propertyChange(const beans::PropertyChangeEvent& /*evt*/) throw(uno::RuntimeException, std::exception)
 {
     ::osl::ResettableMutexGuard aGuard( m_aMutex );
     if ( !m_bIn )

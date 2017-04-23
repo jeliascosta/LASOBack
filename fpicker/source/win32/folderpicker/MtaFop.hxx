@@ -29,6 +29,9 @@
 #include <osl/mutex.hxx>
 
 #include <utility>
+#ifdef __MINGW32__
+#include <windows.h>
+#endif
 #if defined _MSC_VER
 #pragma warning(push, 1)
 #pragma warning(disable: 4917)
@@ -39,6 +42,48 @@
 #pragma warning(pop)
 #endif
 #include "../misc/WinImplHelper.hxx"
+
+
+// a simple helper class used to provide a buffer for different
+// Win32 file and directory functions
+
+
+class CAutoPathBuff
+{
+public:
+    explicit CAutoPathBuff( size_t size = 0 )
+    {
+        if (0 == size)
+            size = 32000; // max path length under Win2000
+
+        pBuff = new sal_Unicode[size];
+
+        SAL_WARN_IF(!pBuff, "fpicker", "Could not allocate path buffer");
+    }
+
+    ~CAutoPathBuff( )
+    {
+        delete [] pBuff;
+    }
+
+    operator sal_Unicode*( )
+    {
+        OSL_PRECOND( pBuff, \
+            "No path buffer allocated" );
+        return pBuff;
+    }
+
+    sal_Unicode* get( )
+    {
+        OSL_PRECOND( pBuff, \
+            "No path buffer allocated" );
+        return pBuff;
+    }
+
+private:
+    sal_Unicode* pBuff;
+};
+
 
 // the Mta-Ole clipboard class is for internal use only!
 // only one instance of this class should be created, the
@@ -55,7 +100,7 @@ public:
     virtual ~CMtaFolderPicker( );
 
     // shell functions
-    bool SAL_CALL browseForFolder( );
+    sal_Bool SAL_CALL browseForFolder( );
 
     virtual void  SAL_CALL setDisplayDirectory( const OUString& aDirectory );
     virtual OUString  SAL_CALL getDisplayDirectory( );
@@ -73,7 +118,7 @@ public:
     virtual void SAL_CALL cancel( );
 
 protected:
-    void SAL_CALL enableOk( bool bEnable );
+    void SAL_CALL enableOk( sal_Bool bEnable );
     void SAL_CALL setSelection( const OUString& aDirectory );
     void SAL_CALL setStatusText( const OUString& aStatusText );
 
@@ -81,25 +126,25 @@ protected:
     virtual void SAL_CALL onSelChanged( const OUString& aNewPath ) = 0;
 
 private:
-    static sal_uInt32 onValidateFailed();
+    sal_uInt32 onValidateFailed();
 
     // helper functions
-    static LPITEMIDLIST  SAL_CALL getItemIdListFromPath( const OUString& aDirectory );
+    LPITEMIDLIST  SAL_CALL getItemIdListFromPath( const OUString& aDirectory );
     OUString SAL_CALL getPathFromItemIdList( LPCITEMIDLIST lpItemIdList );
-    static void SAL_CALL releaseItemIdList( LPITEMIDLIST lpItemIdList );
+    void SAL_CALL releaseItemIdList( LPITEMIDLIST lpItemIdList );
 
     unsigned int run( );
 
     // create a hidden windows which serves as an request
     // target; so we guarantee synchronization
-    bool SAL_CALL createStaRequestWindow( );
+    sal_Bool SAL_CALL createStaRequestWindow( );
 
 
     // message handler functions; remember these functions are called
     // from a different thread context!
 
 
-    bool SAL_CALL onBrowseForFolder( );
+    sal_Bool SAL_CALL onBrowseForFolder( );
 
     static LRESULT CALLBACK StaWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
     static unsigned int WINAPI StaThreadProc( LPVOID pParam );
@@ -123,7 +168,7 @@ private:
     OUString               m_displayDir;
     OUString               m_SelectedDir;
     BROWSEINFOW                 m_bi;
-    sal_Unicode                 m_pathBuff[32000]; // max path length under Win2000
+    CAutoPathBuff               m_pathBuff;
     HINSTANCE                   m_hInstance;
 
     // the request window class has to be registered only

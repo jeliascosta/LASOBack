@@ -31,8 +31,10 @@ namespace drawinglayer
     {
         static double fDiscreteSize(1.1);
 
-        void TextEffectPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer TextEffectPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
+            Primitive2DContainer aRetval;
+
             // get the distance of one discrete units from target display. Use between 1.0 and sqrt(2) to
             // have good results on rotated objects, too
             const basegfx::B2DVector aDistance(rViewInformation.getInverseObjectToViewTransformation() *
@@ -41,10 +43,10 @@ namespace drawinglayer
 
             switch(getTextEffectStyle2D())
             {
-                case TextEffectStyle2D::ReliefEmbossed:
-                case TextEffectStyle2D::ReliefEngraved:
-                case TextEffectStyle2D::ReliefEmbossedDefault:
-                case TextEffectStyle2D::ReliefEngravedDefault:
+                case TEXTEFFECTSTYLE2D_RELIEF_EMBOSSED:
+                case TEXTEFFECTSTYLE2D_RELIEF_ENGRAVED:
+                case TEXTEFFECTSTYLE2D_RELIEF_EMBOSSED_DEFAULT:
+                case TEXTEFFECTSTYLE2D_RELIEF_ENGRAVED_DEFAULT:
                 {
                     // prepare transform of sub-group back to (0,0) and align to X-Axis
                     basegfx::B2DHomMatrix aBackTransform(basegfx::tools::createTranslateB2DHomMatrix(
@@ -57,12 +59,13 @@ namespace drawinglayer
 
                     // create transformation for one discrete unit
                     const bool bEmbossed(
-                        TextEffectStyle2D::ReliefEmbossed  == getTextEffectStyle2D()
-                        || TextEffectStyle2D::ReliefEmbossedDefault == getTextEffectStyle2D());
+                        TEXTEFFECTSTYLE2D_RELIEF_EMBOSSED  == getTextEffectStyle2D()
+                        || TEXTEFFECTSTYLE2D_RELIEF_EMBOSSED_DEFAULT == getTextEffectStyle2D());
                     const bool bDefaultTextColor(
-                        TextEffectStyle2D::ReliefEmbossedDefault == getTextEffectStyle2D()
-                        || TextEffectStyle2D::ReliefEngravedDefault == getTextEffectStyle2D());
+                        TEXTEFFECTSTYLE2D_RELIEF_EMBOSSED_DEFAULT == getTextEffectStyle2D()
+                        || TEXTEFFECTSTYLE2D_RELIEF_ENGRAVED_DEFAULT == getTextEffectStyle2D());
                     basegfx::B2DHomMatrix aTransform(aBackTransform);
+                    aRetval.resize(2);
 
                     if(bEmbossed)
                     {
@@ -88,7 +91,7 @@ namespace drawinglayer
                                 getTextContent(),
                                 aBColorModifierToGray));
 
-                        rContainer.push_back(
+                        aRetval[0] = Primitive2DReference(
                             new TransformPrimitive2D(
                                 aTransform,
                                 Primitive2DContainer { xModifiedColor }));
@@ -98,7 +101,7 @@ namespace drawinglayer
                             new basegfx::BColorModifier_replace(
                                 basegfx::BColor(1.0)));
 
-                        rContainer.push_back(
+                        aRetval[1] = Primitive2DReference(
                             new ModifiedColorPrimitive2D(
                                 getTextContent(),
                                 aBColorModifierToWhite));
@@ -114,59 +117,60 @@ namespace drawinglayer
                                 getTextContent(),
                                 aBColorModifierToGray));
 
-                        rContainer.push_back(
+                        aRetval[0] = Primitive2DReference(
                             new TransformPrimitive2D(
                                 aTransform,
                                 Primitive2DContainer { xModifiedColor }));
 
                         // add original, too
-                        rContainer.push_back(new GroupPrimitive2D(getTextContent()));
+                        aRetval[1] = Primitive2DReference(new GroupPrimitive2D(getTextContent()));
                     }
 
                     break;
                 }
-                case TextEffectStyle2D::Outline:
+                case TEXTEFFECTSTYLE2D_OUTLINE:
                 {
                     // create transform primitives in all directions
                     basegfx::B2DHomMatrix aTransform;
+                    aRetval.resize(9);
 
                     aTransform.set(0, 2, aDistance.getX());
                     aTransform.set(1, 2, 0.0);
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[0] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, aDiagonalDistance.getX());
                     aTransform.set(1, 2, aDiagonalDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[1] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, 0.0);
                     aTransform.set(1, 2, aDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[2] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, -aDiagonalDistance.getX());
                     aTransform.set(1, 2, aDiagonalDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[3] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, -aDistance.getX());
                     aTransform.set(1, 2, 0.0);
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[4] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, -aDiagonalDistance.getX());
                     aTransform.set(1, 2, -aDiagonalDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[5] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, 0.0);
                     aTransform.set(1, 2, -aDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[6] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     aTransform.set(0, 2, aDiagonalDistance.getX());
                     aTransform.set(1, 2, -aDiagonalDistance.getY());
-                    rContainer.push_back(new TransformPrimitive2D(aTransform, getTextContent()));
+                    aRetval[7] = Primitive2DReference(new TransformPrimitive2D(aTransform, getTextContent()));
 
                     // at last, place original over it, but force to white
                     const basegfx::BColorModifierSharedPtr aBColorModifierToWhite(
                         new basegfx::BColorModifier_replace(
                             basegfx::BColor(1.0, 1.0, 1.0)));
-                    rContainer.push_back(
+                    aRetval[8] = Primitive2DReference(
                         new ModifiedColorPrimitive2D(
                             getTextContent(),
                             aBColorModifierToWhite));
@@ -174,6 +178,8 @@ namespace drawinglayer
                     break;
                 }
             }
+
+            return aRetval;
         }
 
         TextEffectPrimitive2D::TextEffectPrimitive2D(
@@ -217,7 +223,7 @@ namespace drawinglayer
             return aRetval;
         }
 
-        void TextEffectPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer TextEffectPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             ::osl::MutexGuard aGuard( m_aMutex );
 
@@ -237,7 +243,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
         }
 
         // provide unique ID

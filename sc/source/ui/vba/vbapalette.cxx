@@ -23,7 +23,6 @@
 #include <cppuhelper/implbase.hxx>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include "excelvbahelper.hxx"
 
 using namespace ::com::sun::star;
@@ -55,24 +54,24 @@ public:
    DefaultPalette(){}
 
     // Methods XIndexAccess
-    virtual ::sal_Int32 SAL_CALL getCount() override
+    virtual ::sal_Int32 SAL_CALL getCount() throw (uno::RuntimeException, std::exception) override
     {
         return SAL_N_ELEMENTS(spnDefColorTable8);
     }
 
-    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override
+    virtual uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         if ( Index < 0 || Index >= getCount() )
             throw lang::IndexOutOfBoundsException();
         return uno::makeAny( sal_Int32( spnDefColorTable8[ Index ] ) );
     }
 
-    // Methods XElementAccess
-    virtual uno::Type SAL_CALL getElementType() override
+    // Methods XElementAcess
+    virtual uno::Type SAL_CALL getElementType() throw (uno::RuntimeException, std::exception) override
     {
         return ::cppu::UnoType<sal_Int32>::get();
     }
-    virtual sal_Bool SAL_CALL hasElements() override
+    virtual sal_Bool SAL_CALL hasElements() throw (uno::RuntimeException, std::exception) override
     {
         return true;
     }

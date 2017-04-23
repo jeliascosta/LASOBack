@@ -27,8 +27,8 @@ namespace dbaxml
     class ODBFilter;
     class OXMLTableFilterList : public SvXMLImportContext
     {
-        std::vector< OUString> m_aPatterns;
-        std::vector< OUString> m_aTypes;
+        ::std::vector< OUString> m_aPatterns;
+        ::std::vector< OUString> m_aTypes;
 
         ODBFilter& GetOwnImport();
     public:
@@ -36,7 +36,7 @@ namespace dbaxml
         OXMLTableFilterList( SvXMLImport& rImport, sal_uInt16 nPrfx,
                     const OUString& rLName);
 
-        virtual ~OXMLTableFilterList() override;
+        virtual ~OXMLTableFilterList();
 
         virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                     const OUString& rLocalName,
@@ -48,7 +48,7 @@ namespace dbaxml
             @param  _sTableFilterPattern
                 The new filter pattern.
         */
-        void pushTableFilterPattern(const OUString& _sTableFilterPattern)
+        inline void pushTableFilterPattern(const OUString& _sTableFilterPattern)
         {
             m_aPatterns.push_back(_sTableFilterPattern);
         }
@@ -57,7 +57,7 @@ namespace dbaxml
             @param  _sTypeFilter
                 The new type filter.
         */
-        void pushTableTypeFilter(const OUString& _sTypeFilter)
+        inline void pushTableTypeFilter(const OUString& _sTypeFilter)
         {
             m_aTypes.push_back(_sTypeFilter);
         }

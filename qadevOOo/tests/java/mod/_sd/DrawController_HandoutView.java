@@ -77,7 +77,7 @@ import com.sun.star.util.XModifiable;
 * @see ifc.drawing._XDrawView
 */
 public class DrawController_HandoutView extends TestCase {
-    static XDesktop xDesktop;
+    static XDesktop the_Desk;
     static XComponent xDrawDoc;
     static XComponent xSecondDrawDoc;
 
@@ -88,7 +88,9 @@ public class DrawController_HandoutView extends TestCase {
     */
     @Override
     protected void initialize(TestParameters Param, PrintWriter log) throws Exception {
-        xDesktop = DesktopTools.createDesktop(Param.getMSF());
+        the_Desk = UnoRuntime.queryInterface(
+            XDesktop.class, DesktopTools.createDesktop(
+                                Param.getMSF()) );
     }
 
     /**
@@ -242,7 +244,7 @@ public class DrawController_HandoutView extends TestCase {
 
         tEnv.addObjRelation("XUserInputInterception.XModel", aModel);
 
-        XFrame the_frame = xDesktop.getCurrentFrame();
+        XFrame the_frame = the_Desk.getCurrentFrame();
         tEnv.addObjRelation("Frame", the_frame);
 
          aModel = UnoRuntime.queryInterface(XModel.class, xSecondDrawDoc);

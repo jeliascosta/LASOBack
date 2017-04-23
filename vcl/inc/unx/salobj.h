@@ -61,10 +61,10 @@ public:
     bool            mbVisible;
 
     static VCL_DLLPUBLIC bool Dispatch( XEvent* pEvent );
-    static VCL_DLLPUBLIC X11SalObject* CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow );
+    static VCL_DLLPUBLIC X11SalObject* CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true );
 
     X11SalObject();
-    virtual ~X11SalObject() override;
+    virtual ~X11SalObject();
 
     // override all pure virtual methods
     virtual void                    ResetClipRegion() override;

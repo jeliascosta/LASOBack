@@ -309,7 +309,7 @@ oslProcessError SAL_CALL osl_setEnvironment(rtl_uString* pustrEnvVar, rtl_uStrin
 
     if (pstr_env_var != nullptr && pstr_val != nullptr)
     {
-#if defined (__sun)
+#if defined (SOLARIS)
         rtl_String * pBuffer = NULL;
 
         sal_Int32 nCapacity = rtl_stringbuffer_newFromStringBuffer( &pBuffer,
@@ -358,7 +358,7 @@ oslProcessError SAL_CALL osl_clearEnvironment(rtl_uString* pustrEnvVar)
 
     if (pstr_env_var)
     {
-#if defined (__sun)
+#if defined (SOLARIS)
         rtl_String * pBuffer = NULL;
 
         sal_Int32 nCapacity = rtl_stringbuffer_newFromStringBuffer( &pBuffer,
@@ -460,13 +460,19 @@ oslProcessError SAL_CALL osl_getProcessLocale( rtl_Locale ** ppLocale )
  *********************************************/
 oslProcessError SAL_CALL osl_setProcessLocale( rtl_Locale * pLocale )
 {
+    oslProcessError result = osl_Process_E_Unknown;
+
     OSL_PRECOND(pLocale, "osl_setProcessLocale(): Invalid parameter.");
 
     pthread_mutex_lock(&(g_process_locale.m_mutex));
-    g_process_locale.m_pLocale = pLocale;
+    if (imp_setProcessLocale (pLocale) == 0)
+    {
+        g_process_locale.m_pLocale = pLocale;
+        result = osl_Process_E_None;
+    }
     pthread_mutex_unlock (&(g_process_locale.m_mutex));
 
-    return osl_Process_E_None;
+    return result;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

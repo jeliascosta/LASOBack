@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/io/BufferSizeExceededException.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <comphelper/oslfile2streamwrap.hxx>
 
 #include <algorithm>
@@ -42,6 +38,7 @@ OSLInputStreamWrapper::~OSLInputStreamWrapper()
 
 
 sal_Int32 SAL_CALL OSLInputStreamWrapper::readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+                throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
     if (!m_pFile)
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
@@ -66,7 +63,7 @@ sal_Int32 SAL_CALL OSLInputStreamWrapper::readBytes(css::uno::Sequence< sal_Int8
 }
 
 
-sal_Int32 SAL_CALL OSLInputStreamWrapper::readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead)
+sal_Int32 SAL_CALL OSLInputStreamWrapper::readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
     if (!m_pFile)
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
@@ -78,7 +75,7 @@ sal_Int32 SAL_CALL OSLInputStreamWrapper::readSomeBytes(css::uno::Sequence< sal_
 }
 
 
-void SAL_CALL OSLInputStreamWrapper::skipBytes(sal_Int32 nBytesToSkip)
+void SAL_CALL OSLInputStreamWrapper::skipBytes(sal_Int32 nBytesToSkip) throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (!m_pFile)
@@ -96,7 +93,7 @@ void SAL_CALL OSLInputStreamWrapper::skipBytes(sal_Int32 nBytesToSkip)
 }
 
 
-sal_Int32 SAL_CALL OSLInputStreamWrapper::available()
+sal_Int32 SAL_CALL OSLInputStreamWrapper::available() throw( css::io::NotConnectedException, css::uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (!m_pFile)
@@ -126,7 +123,7 @@ sal_Int32 SAL_CALL OSLInputStreamWrapper::available()
 }
 
 
-void SAL_CALL OSLInputStreamWrapper::closeInput()
+void SAL_CALL OSLInputStreamWrapper::closeInput() throw( css::io::NotConnectedException, css::uno::RuntimeException, std::exception )
 {
     if (!m_pFile)
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
@@ -146,7 +143,7 @@ OSLOutputStreamWrapper::OSLOutputStreamWrapper(osl::File & _rFile):
 
 OSLOutputStreamWrapper::~OSLOutputStreamWrapper() {}
 
-void SAL_CALL OSLOutputStreamWrapper::writeBytes(const css::uno::Sequence< sal_Int8 >& aData)
+void SAL_CALL OSLOutputStreamWrapper::writeBytes(const css::uno::Sequence< sal_Int8 >& aData) throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
     sal_uInt64 nWritten;
     FileBase::RC eError = rFile.write(aData.getConstArray(),aData.getLength(), nWritten);
@@ -158,12 +155,12 @@ void SAL_CALL OSLOutputStreamWrapper::writeBytes(const css::uno::Sequence< sal_I
 }
 
 
-void SAL_CALL OSLOutputStreamWrapper::flush()
+void SAL_CALL OSLOutputStreamWrapper::flush() throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
 }
 
 
-void SAL_CALL OSLOutputStreamWrapper::closeOutput()
+void SAL_CALL OSLOutputStreamWrapper::closeOutput() throw( css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception )
 {
     rFile.close();
 }

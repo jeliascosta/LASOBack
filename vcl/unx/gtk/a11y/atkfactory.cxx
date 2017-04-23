@@ -109,11 +109,7 @@ wrapper_factory_create_accessible( GObject *obj )
     if (!pEventBox)
         return atk_noop_object_wrapper_new();
 
-    GtkWidget* pTopLevelGrid = gtk_widget_get_parent(pEventBox);
-    if (!pTopLevelGrid)
-        return atk_noop_object_wrapper_new();
-
-    GtkWidget* pTopLevel = gtk_widget_get_parent(pTopLevelGrid);
+    GtkWidget* pTopLevel = gtk_widget_get_parent(pEventBox);
     if (!pTopLevel)
         return atk_noop_object_wrapper_new();
 #else
@@ -134,7 +130,7 @@ wrapper_factory_create_accessible( GObject *obj )
         vcl::Window* pWindow = pFrameWindow;
 
         // skip accessible objects already exposed by the frame objects
-        if( WindowType::BORDERWINDOW == pWindow->GetType() )
+        if( WINDOW_BORDERWINDOW == pWindow->GetType() )
             pWindow = pFrameWindow->GetAccessibleChildWindow(0);
 
         if( pWindow )

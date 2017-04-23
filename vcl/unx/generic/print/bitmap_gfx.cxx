@@ -67,7 +67,7 @@ private:
 public:
 
     explicit        HexEncoder (osl::File* pFile);
-    virtual         ~HexEncoder () override;
+    virtual         ~HexEncoder ();
     void            WriteAscii (sal_uInt8 nByte);
     virtual void    EncodeByte (sal_uInt8 nByte) override;
     void            FlushLine ();
@@ -141,7 +141,7 @@ private:
 public:
 
     explicit        Ascii85Encoder (osl::File* pFile);
-    virtual         ~Ascii85Encoder () override;
+    virtual         ~Ascii85Encoder ();
     virtual void    EncodeByte (sal_uInt8 nByte) override;
     void            WriteAscii (sal_uInt8 nByte);
 };
@@ -287,7 +287,7 @@ private:
 public:
 
     explicit LZWEncoder (osl::File* pOutputFile);
-    virtual ~LZWEncoder () override;
+    virtual ~LZWEncoder ();
 
     virtual void    EncodeByte (sal_uInt8 nByte) override;
 };
@@ -407,7 +407,7 @@ LZWEncoder::EncodeByte (sal_uInt8 nByte )
  */
 
 void
-PrinterGfx::DrawBitmap (const tools::Rectangle& rDest, const tools::Rectangle& rSrc,
+PrinterGfx::DrawBitmap (const Rectangle& rDest, const Rectangle& rSrc,
                         const PrinterBmp& rBitmap)
 {
     double fScaleX = (double)rDest.GetWidth();
@@ -468,7 +468,7 @@ PrinterGfx::DrawBitmap (const tools::Rectangle& rDest, const tools::Rectangle& r
  */
 
 void
-PrinterGfx::DrawPS1GrayImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea)
+PrinterGfx::DrawPS1GrayImage (const PrinterBmp& rBitmap, const Rectangle& rArea)
 {
     sal_uInt32 nWidth  = rArea.GetWidth();
     sal_uInt32 nHeight = rArea.GetHeight();
@@ -515,7 +515,7 @@ PrinterGfx::DrawPS1GrayImage (const PrinterBmp& rBitmap, const tools::Rectangle&
  */
 
 void
-PrinterGfx::writePS2ImageHeader (const tools::Rectangle& rArea, psp::ImageType nType)
+PrinterGfx::writePS2ImageHeader (const Rectangle& rArea, psp::ImageType nType)
 {
     sal_Int32 nChar = 0;
     sal_Char  pImage [512];
@@ -529,7 +529,7 @@ PrinterGfx::writePS2ImageHeader (const tools::Rectangle& rArea, psp::ImageType n
         case psp::ImageType::MonochromeImage: nDictType = 3; break;
         default: break;
     }
-    sal_Int32 nCompressType = 1;
+    sal_Int32 nCompressType = mbCompressBmp ? 1 : 0;
 
     nChar += psp::getValueOf (rArea.GetWidth(),  pImage + nChar);
     nChar += psp::appendStr  (" ",               pImage + nChar);
@@ -569,10 +569,14 @@ PrinterGfx::writePS2Colorspace(const PrinterBmp& rBitmap, psp::ImageType nType)
 
             nChar += psp::appendStr ("[/Indexed /DeviceRGB ", pImage + nChar);
             nChar += psp::getValueOf (nSize - 1, pImage + nChar);
-            nChar += psp::appendStr ("\npsp_lzwstring\n", pImage + nChar);
+            if (mbCompressBmp)
+                nChar += psp::appendStr ("\npsp_lzwstring\n", pImage + nChar);
+            else
+                nChar += psp::appendStr ("\npsp_ascii85string\n", pImage + nChar);
             WritePS (mpPageBody, pImage, nChar);
 
-            std::unique_ptr<ByteEncoder> xEncoder(new LZWEncoder(mpPageBody));
+            std::unique_ptr<ByteEncoder> xEncoder(mbCompressBmp ? new LZWEncoder(mpPageBody)
+                                                    : new Ascii85Encoder(mpPageBody));
             for (sal_uInt32 i = 0; i < nSize; i++)
             {
                 PrinterColor aColor = rBitmap.GetPaletteColor(i);
@@ -591,12 +595,13 @@ PrinterGfx::writePS2Colorspace(const PrinterBmp& rBitmap, psp::ImageType nType)
 }
 
 void
-PrinterGfx::DrawPS2GrayImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea)
+PrinterGfx::DrawPS2GrayImage (const PrinterBmp& rBitmap, const Rectangle& rArea)
 {
     writePS2Colorspace(rBitmap, psp::ImageType::GrayScaleImage);
     writePS2ImageHeader(rArea, psp::ImageType::GrayScaleImage);
 
-    std::unique_ptr<ByteEncoder> xEncoder(new LZWEncoder(mpPageBody));
+    std::unique_ptr<ByteEncoder> xEncoder(mbCompressBmp ? new LZWEncoder(mpPageBody)
+                                            : new Ascii85Encoder(mpPageBody));
 
     for (long nRow = rArea.Top(); nRow <= rArea.Bottom(); nRow++)
     {
@@ -609,12 +614,13 @@ PrinterGfx::DrawPS2GrayImage (const PrinterBmp& rBitmap, const tools::Rectangle&
 }
 
 void
-PrinterGfx::DrawPS2MonoImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea)
+PrinterGfx::DrawPS2MonoImage (const PrinterBmp& rBitmap, const Rectangle& rArea)
 {
     writePS2Colorspace(rBitmap, psp::ImageType::MonochromeImage);
     writePS2ImageHeader(rArea, psp::ImageType::MonochromeImage);
 
-    std::unique_ptr<ByteEncoder> xEncoder(new LZWEncoder(mpPageBody));
+    std::unique_ptr<ByteEncoder> xEncoder(mbCompressBmp ? new LZWEncoder(mpPageBody)
+                                            : new Ascii85Encoder(mpPageBody));
 
     for (long nRow = rArea.Top(); nRow <= rArea.Bottom(); nRow++)
     {
@@ -640,12 +646,13 @@ PrinterGfx::DrawPS2MonoImage (const PrinterBmp& rBitmap, const tools::Rectangle&
 }
 
 void
-PrinterGfx::DrawPS2PaletteImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea)
+PrinterGfx::DrawPS2PaletteImage (const PrinterBmp& rBitmap, const Rectangle& rArea)
 {
     writePS2Colorspace(rBitmap, psp::ImageType::PaletteImage);
     writePS2ImageHeader(rArea, psp::ImageType::PaletteImage);
 
-    std::unique_ptr<ByteEncoder> xEncoder(new LZWEncoder(mpPageBody));
+    std::unique_ptr<ByteEncoder> xEncoder(mbCompressBmp ? new LZWEncoder(mpPageBody)
+                                            : new Ascii85Encoder(mpPageBody));
 
     for (long nRow = rArea.Top(); nRow <= rArea.Bottom(); nRow++)
     {
@@ -658,12 +665,13 @@ PrinterGfx::DrawPS2PaletteImage (const PrinterBmp& rBitmap, const tools::Rectang
 }
 
 void
-PrinterGfx::DrawPS2TrueColorImage (const PrinterBmp& rBitmap, const tools::Rectangle& rArea)
+PrinterGfx::DrawPS2TrueColorImage (const PrinterBmp& rBitmap, const Rectangle& rArea)
 {
     writePS2Colorspace(rBitmap, psp::ImageType::TrueColorImage);
     writePS2ImageHeader(rArea, psp::ImageType::TrueColorImage);
 
-    std::unique_ptr<ByteEncoder> xEncoder(new LZWEncoder(mpPageBody));
+    std::unique_ptr<ByteEncoder> xEncoder(mbCompressBmp ? new LZWEncoder(mpPageBody)
+                                            : new Ascii85Encoder(mpPageBody));
 
     for (long nRow = rArea.Top(); nRow <= rArea.Bottom(); nRow++)
     {

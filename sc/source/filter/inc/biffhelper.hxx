@@ -27,6 +27,8 @@ namespace oox { class SequenceInputStream; }
 namespace oox {
 namespace xls {
 
+class BiffInputStream;
+
 // BIFF12 record identifiers ==================================================
 
 const sal_Int32 BIFF12_ID_ARRAY             = 0x01AA;
@@ -244,15 +246,18 @@ const sal_Int32 BIFF12_ID_XF                = 0x002F;
 
 // BIFF2-BIFF8 record identifiers =============================================
 
-/** all binary Excel file format types (BIFF types).
-    BIFF2                      /// MS Excel 2.1.
-    BIFF3                      /// MS Excel 3.0.
-    BIFF4                      /// MS Excel 4.0.
-    BIFF5                      /// MS Excel 5.0, MS Excel 7.0 (95).
-    BIFF8                      /// MS Excel 8.0 (97), 9.0 (2000), 10.0 (XP), 11.0 (2003).
-    BIFF_UNKNOWN               /// Unknown BIFF version.
-*/
+/** An enumeration for all binary Excel file format types (BIFF types). */
+enum BiffType
+{
+    BIFF2 = 0,                  /// MS Excel 2.1.
+    BIFF3,                      /// MS Excel 3.0.
+    BIFF4,                      /// MS Excel 4.0.
+    BIFF5,                      /// MS Excel 5.0, MS Excel 7.0 (95).
+    BIFF8,                      /// MS Excel 8.0 (97), 9.0 (2000), 10.0 (XP), 11.0 (2003).
+    BIFF_UNKNOWN                /// Unknown BIFF version.
+};
 
+/** unused -- keep for documentation */
 //const sal_uInt16 BIFF2_MAXRECSIZE           = 2080;
 //const sal_uInt16 BIFF8_MAXRECSIZE           = 8224;
 
@@ -281,10 +286,7 @@ const sal_uInt16 BIFF_ID_PCITEM_STRING      = 0x00CD;
 
 const sal_uInt16 BIFF_ID_UNKNOWN            = SAL_MAX_UINT16;
 
-/* Many of these constants might be unused, but please keep for documentation. If you notice
- * hardcoded numbers in the code that actually correspond in meaning in the context (not just value)
- * to one of the named constants, feel free to change it to use the constant instead, of course.
- */
+/** unused -- keep for documentation
 const sal_uInt16 BIFF2_ID_ARRAY             = 0x0021;
 const sal_uInt16 BIFF3_ID_ARRAY             = 0x0221;
 const sal_uInt16 BIFF_ID_AUTOFILTER         = 0x009D;
@@ -534,8 +536,10 @@ const sal_uInt16 BIFF4_ID_XF                = 0x0443;
 const sal_uInt16 BIFF5_ID_XF                = 0x00E0;
 const sal_uInt16 BIFF_ID_XFCRC              = 0x087C;
 const sal_uInt16 BIFF_ID_XFEXT              = 0x087D;
+*/
 
 // OBJ subrecord identifiers --------------------------------------------------
+/**  unused -- keep for documentation
 const sal_uInt16 BIFF_ID_OBJEND             = 0x0000;   /// End of OBJ.
 const sal_uInt16 BIFF_ID_OBJMACRO           = 0x0004;   /// Macro link.
 const sal_uInt16 BIFF_ID_OBJBUTTON          = 0x0005;   /// Button data.
@@ -555,7 +559,7 @@ const sal_uInt16 BIFF_ID_OBJCBLSDATA        = 0x0012;   /// Check box/radio butt
 const sal_uInt16 BIFF_ID_OBJLBSDATA         = 0x0013;   /// List box/combo box data.
 const sal_uInt16 BIFF_ID_OBJCBLSFMLA        = 0x0014;   /// Check box/radio button cell link.
 const sal_uInt16 BIFF_ID_OBJCMO             = 0x0015;   /// Common object settings.
-
+*/
 // record constants -----------------------------------------------------------
 
 const sal_uInt8 BIFF_ERR_NULL               = 0x00;
@@ -566,6 +570,7 @@ const sal_uInt8 BIFF_ERR_NAME               = 0x1D;
 const sal_uInt8 BIFF_ERR_NUM                = 0x24;
 const sal_uInt8 BIFF_ERR_NA                 = 0x2A;
 
+/**  unused -- keep for documentation
 const sal_uInt16 BIFF_BOF_BIFF2             = 0x0200;
 const sal_uInt16 BIFF_BOF_BIFF3             = 0x0300;
 const sal_uInt16 BIFF_BOF_BIFF4             = 0x0400;
@@ -580,6 +585,7 @@ const sal_uInt8 BIFF_DATATYPE_ERROR         = 16;
 
 const sal_uInt8 BIFF_BOOLERR_BOOL           = 0;
 const sal_uInt8 BIFF_BOOLERR_ERROR          = 1;
+*/
 
 // BIFF8 unicode strings ------------------------------------------------------
 
@@ -604,6 +610,27 @@ public:
 
     /** Reads a BIFF12 string with leading 16-bit or 32-bit length field. */
     static OUString readString( SequenceInputStream& rStrm, bool b32BitLen = true, bool bAllowNulChars = false );
+
+    // BIFF2-BIFF8 import -----------------------------------------------------
+
+    /** Returns true, if the current record of the stream is a BOF record. */
+    static bool         isBofRecord( BiffInputStream& rStrm );
+
+    /** Skips a block of records up to the specified end record.
+
+        Skips all records until next end record. When this function returns,
+        the stream points to the end record, and the next call of the function
+        startNextRecord() at the stream will start the record following the end
+        record.
+
+        The identifier of the record that is active while this function is
+        called is used as start record identifier. This identifier is used to
+        correctly skip embedded record blocks with the same start and end
+        record identifier.
+
+        @return  True = stream points to the end record.
+     */
+    static bool         skipRecordBlock( BiffInputStream& rStrm, sal_uInt16 nEndRecId );
 
 private:
                         BiffHelper() = delete;

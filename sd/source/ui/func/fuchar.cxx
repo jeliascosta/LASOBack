@@ -96,7 +96,7 @@ void FuChar::DoExecute( SfxRequest& rReq )
         }
 
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdTabCharDialog(mpViewShell->GetActiveWindow(), &aNewAttr, mpDoc->GetDocSh() ) : nullptr);
+        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact ? pFact->CreateSdTabCharDialog(mpViewShell->GetActiveWindow(), &aNewAttr, mpDoc->GetDocSh() ) : nullptr);
         sal_uInt16 nResult = RET_CANCEL;
         if( pDlg )
         {
@@ -113,7 +113,7 @@ void FuChar::DoExecute( SfxRequest& rReq )
                 SfxItemSet aOtherSet( *pOutputSet );
 
                 // and now the reverse process
-                const SvxBrushItem* pBrushItem = aOtherSet.GetItem<SvxBrushItem>( SID_ATTR_BRUSH_CHAR );
+                const SvxBrushItem* pBrushItem= static_cast<const SvxBrushItem*>(aOtherSet.GetItem( SID_ATTR_BRUSH_CHAR ));
 
                 if ( pBrushItem )
                 {
@@ -134,7 +134,7 @@ void FuChar::DoExecute( SfxRequest& rReq )
     mpView->SetAttributes(*pArgs);
 
     // invalidate the Slots which are in DrTxtObjBar
-    static const sal_uInt16 SidArray[] = {
+    static sal_uInt16 SidArray[] = {
                     SID_ATTR_CHAR_FONT,
                     SID_ATTR_CHAR_POSTURE,
                     SID_ATTR_CHAR_WEIGHT,

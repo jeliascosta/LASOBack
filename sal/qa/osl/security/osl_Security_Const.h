@@ -51,7 +51,7 @@ const char pTestString[17] = "Sun Microsystems";
 ::rtl::OUString strUserName, strComputerName, strHomeDirectory;
 ::rtl::OUString strConfigDirectory, strUserID;
 
-bool isAdmin = false;
+bool isAdmin = sal_False;
 
 #endif // INCLUDED_SAL_QA_OSL_SECURITY_OSL_SECURITY_CONST_H
 

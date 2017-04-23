@@ -40,7 +40,7 @@ XMLNamespaces::~XMLNamespaces()
 {
 }
 
-void XMLNamespaces::addNamespace( const OUString& aName, const OUString& aValue )
+void XMLNamespaces::addNamespace( const OUString& aName, const OUString& aValue ) throw( SAXException )
 {
     NamespaceMap::iterator p;
     OUString aNamespaceName( aName );
@@ -93,7 +93,7 @@ void XMLNamespaces::addNamespace( const OUString& aName, const OUString& aValue 
     }
 }
 
-OUString XMLNamespaces::applyNSToAttributeName( const OUString& aName ) const
+OUString XMLNamespaces::applyNSToAttributeName( const OUString& aName ) const throw( SAXException, std::exception )
 {
     // xml draft: there is no default namespace for attributes!
 
@@ -102,7 +102,9 @@ OUString XMLNamespaces::applyNSToAttributeName( const OUString& aName ) const
     {
         if ( aName.getLength() > index+1 )
         {
-            OUString aAttributeName = getNamespaceValue( aName.copy( 0, index )) + "^" + aName.copy( index+1);
+            OUString aAttributeName = getNamespaceValue( aName.copy( 0, index ) );
+            aAttributeName += "^";
+            aAttributeName += aName.copy( index+1 );
             return aAttributeName;
         }
         else
@@ -116,7 +118,7 @@ OUString XMLNamespaces::applyNSToAttributeName( const OUString& aName ) const
     return aName;
 }
 
-OUString XMLNamespaces::applyNSToElementName( const OUString& aName ) const
+OUString XMLNamespaces::applyNSToElementName( const OUString& aName ) const   throw( SAXException, std::exception )
 {
     // xml draft: element names can have a default namespace
 
@@ -131,7 +133,8 @@ OUString XMLNamespaces::applyNSToElementName( const OUString& aName ) const
 
     if ( !aNamespace.isEmpty() )
     {
-        aElementName = aNamespace + "^";
+        aElementName = aNamespace;
+        aElementName += "^";
     }
     else
         return aName;
@@ -153,7 +156,7 @@ OUString XMLNamespaces::applyNSToElementName( const OUString& aName ) const
     return aElementName;
 }
 
-OUString XMLNamespaces::getNamespaceValue( const OUString& aNamespace ) const
+OUString XMLNamespaces::getNamespaceValue( const OUString& aNamespace ) const throw( SAXException )
 {
     if ( aNamespace.isEmpty() )
         return m_aDefaultNamespace;

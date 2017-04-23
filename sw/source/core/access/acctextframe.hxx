@@ -39,70 +39,86 @@ private:
     OUString msDesc;
 
 protected:
-    virtual ~SwAccessibleTextFrame() override;
+    virtual ~SwAccessibleTextFrame();
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
 public:
-    SwAccessibleTextFrame(std::shared_ptr<SwAccessibleMap> const& pInitMap,
-                          const SwFlyFrame& rFlyFrame);
+    SwAccessibleTextFrame( SwAccessibleMap* pInitMap, const SwFlyFrame& rFlyFrame );
 
     virtual css::uno::Any SAL_CALL queryInterface(
-        css::uno::Type const & rType ) override;
+        css::uno::Type const & rType )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
     // XAccessibleSelection
     virtual void SAL_CALL selectAccessibleChild(
-        sal_Int32 nChildIndex ) override;
+        sal_Int32 nChildIndex )
+        throw ( css::lang::IndexOutOfBoundsException,
+        css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Bool SAL_CALL isAccessibleChildSelected(
-        sal_Int32 nChildIndex ) override;
+        sal_Int32 nChildIndex )
+        throw ( css::lang::IndexOutOfBoundsException,
+        css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL clearAccessibleSelection(  ) override;
+    virtual void SAL_CALL clearAccessibleSelection(  )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL selectAllAccessibleChildren(  ) override;
+    virtual void SAL_CALL selectAllAccessibleChildren(  )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int32 SAL_CALL getSelectedAccessibleChildCount(  ) override;
+    virtual sal_Int32 SAL_CALL getSelectedAccessibleChildCount(  )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getSelectedAccessibleChild(
-        sal_Int32 nSelectedChildIndex ) override;
+        sal_Int32 nSelectedChildIndex )
+        throw ( css::lang::IndexOutOfBoundsException,
+        css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL deselectAccessibleChild(
-        sal_Int32 nSelectedChildIndex ) override;
+        sal_Int32 nSelectedChildIndex )
+        throw ( css::lang::IndexOutOfBoundsException,
+        css::uno::RuntimeException, std::exception ) override;
 
     // XAccessibleContext
 
     // #i73249# - Return the object's current name.
     virtual OUString SAL_CALL
-        getAccessibleName() override;
+        getAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
     /// Return this object's description.
     virtual OUString SAL_CALL
-        getAccessibleDescription() override;
+        getAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
 
     /** Returns an identifier for the implementation of this object.
     */
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Return whether the specified service is supported by this class.
     */
     virtual sal_Bool SAL_CALL
-        supportsService (const OUString& sServiceName) override;
+        supportsService (const OUString& sServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** Returns a list of all supported services.  In this case that is just
         the AccessibleContext service.
     */
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleContext::getAccessibleRelationSet
 
     // text frame may have accessible relations to their
-    // predecessor/successor frames
+    // predocesor/successor frames
 
 private:
     // helper methods for getAccessibleRelationSet:
@@ -112,7 +128,8 @@ private:
         sal_Int16 nType, const SwFlyFrame* pFrame );
 
 public:
-    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet> SAL_CALL getAccessibleRelationSet() override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleRelationSet> SAL_CALL getAccessibleRelationSet()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

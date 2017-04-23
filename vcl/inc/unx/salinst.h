@@ -34,7 +34,6 @@ namespace com { namespace sun { namespace star { namespace datatransfer {
 
 class SalXLib;
 class X11SalGraphics;
-class SalX11Display;
 
 class VCLPLUG_GEN_PUBLIC X11SalInstance : public SalGenericInstance
 {
@@ -44,17 +43,15 @@ private:
 protected:
     SalXLib *mpXLib;
 
-    virtual SalX11Display* CreateDisplay() const;
-
 public:
     explicit X11SalInstance(SalYieldMutex* pMutex);
-    virtual ~X11SalInstance() override;
+    virtual ~X11SalInstance();
 
     virtual SalFrame*           CreateChildFrame( SystemParentData* pParent, SalFrameStyleFlags nStyle ) override;
     virtual SalFrame*           CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
     virtual void                DestroyFrame( SalFrame* pFrame ) override;
 
-    virtual SalObject*          CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow ) override;
+    virtual SalObject*          CreateObject( SalFrame* pParent, SystemWindowData* pWindowData, bool bShow = true ) override;
     virtual void                DestroyObject( SalObject* pObject ) override;
 
     /// Gtk vclplug needs to pass GtkSalGraphics to X11SalVirtualDevice, so create it, and pass as pNewGraphics.
@@ -63,7 +60,7 @@ public:
 
     virtual SalVirtualDevice*   CreateVirtualDevice( SalGraphics* pGraphics,
                                                      long &nDX, long &nDY,
-                                                     DeviceFormat eFormat, const SystemGraphicsData *pData = nullptr ) override;
+                                                     DeviceFormat eFormat, const SystemGraphicsData *pData = NULL ) override;
     virtual void                PostPrintersChanged() override;
     virtual GenPspGraphics     *CreatePrintGraphics() override;
 
@@ -77,10 +74,8 @@ public:
     virtual SalYieldResult      DoYield(bool bWait, bool bHandleAllCurrentEvents, sal_uLong nReleased) override;
     virtual bool                AnyInput( VclInputFlags nType ) override;
 
-    virtual OUString            GetConnectionIdentifier() override;
+    virtual void*               GetConnectionIdentifier( ConnectionIdentifierType& rReturnedType, int& rReturnedBytes ) override;
     void                        SetLib( SalXLib *pXLib ) { mpXLib = pXLib; }
-
-    virtual void                AfterAppInit() override;
 
     // dtrans implementation
     virtual css::uno::Reference< css::uno::XInterface >

@@ -49,8 +49,8 @@ public:
 
     virtual void setTransformationSceneToScreen( const css::drawing::HomogenMatrix& rMatrix);
 
-    virtual void setScales( const std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis );
-    const std::vector< ExplicitScaleData >& getScales() const { return m_aScales;}
+    virtual void setScales( const ::std::vector< ExplicitScaleData >& rScales, bool bSwapXAndYAxis );
+    const ::std::vector< ExplicitScaleData >& getScales() const { return m_aScales;}
 
     //better performance for big data
     inline void   setCoordinateSystemResolution( const css::uno::Sequence< sal_Int32 >& rCoordinateSystemResolution );
@@ -111,7 +111,7 @@ public:
     void AllowShiftZAxisPos( bool bAllowShift );
 
 protected: //member
-    std::vector< ExplicitScaleData >  m_aScales;
+    ::std::vector< ExplicitScaleData >  m_aScales;
     ::basegfx::B3DHomMatrix             m_aMatrixScreenToScene;
 
     //this is calculated based on m_aScales and m_aMatrixScreenToScene
@@ -134,12 +134,20 @@ protected: //member
     bool   m_bAllowShiftZAxisPos;
 };
 
+//describes which axis of the drawinglayer scene or screen axis are the normal axis
+enum NormalAxis
+{
+      NormalAxis_X
+    , NormalAxis_Y
+    , NormalAxis_Z
+};
+
 class PolarPlottingPositionHelper : public PlottingPositionHelper
 {
 public:
-    PolarPlottingPositionHelper();
+    PolarPlottingPositionHelper( NormalAxis eNormalAxis=NormalAxis_Z );
     PolarPlottingPositionHelper( const PolarPlottingPositionHelper& rSource );
-    virtual ~PolarPlottingPositionHelper() override;
+    virtual ~PolarPlottingPositionHelper();
 
     virtual PlottingPositionHelper* clone() const override;
 
@@ -209,6 +217,7 @@ public:
 
 private:
     ::basegfx::B3DHomMatrix m_aUnitCartesianToScene;
+    NormalAxis  m_eNormalAxis;
 
     ::basegfx::B3DHomMatrix impl_calculateMatrixUnitCartesianToScene( const ::basegfx::B3DHomMatrix& rMatrixScreenToScene ) const;
 };

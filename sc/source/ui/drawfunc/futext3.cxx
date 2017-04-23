@@ -43,9 +43,9 @@
 #include "drawview.hxx"
 #include "undocell.hxx"
 
-//  Editing of Note-Key-Objects has to be stopped always via StopEditMode,
-//  so that changes are taken over into the document!
-//  (Fontwork-Execute in drawsh and drtxtob does not happen for Key-Objects)
+//  Editieren von Notiz-Legendenobjekten muss immer ueber StopEditMode beendet werden,
+//  damit die Aenderungen ins Dokument uebernommen werden!
+//  (Fontwork-Execute in drawsh und drtxtob passiert nicht fuer Legendenobjekte)
 
 void FuText::StopEditMode()
 {
@@ -82,7 +82,7 @@ void FuText::StopEditMode()
         if(pCalcUndo)
         {
             const OUString aUndoStr = ScGlobal::GetRscString( STR_UNDO_EDITNOTE );
-            pUndoMgr->EnterListAction( aUndoStr, aUndoStr, 0, pViewShell->GetViewShellId() );
+            pUndoMgr->EnterListAction( aUndoStr, aUndoStr );
 
             /*  Note has been created before editing, if first undo action is
                 an insert action. Needed below to decide whether to drop the
@@ -106,7 +106,7 @@ void FuText::StopEditMode()
         below together with the cell note if the text is empty (independent of
         border and area formatting). It is possible to prevent automatic
         deletion by passing sal_True to this function. The return value changes
-        from SdrEndTextEditKind::Deleted to SdrEndTextEditKind::ShouldBeDeleted in this
+        from SDRENDTEXTEDIT_DELETED to SDRENDTEXTEDIT_SHOULDBEDELETED in this
         case. */
     /*SdrEndTextEditKind eResult =*/ pView->SdrEndTextEdit( pNote != nullptr );
 
@@ -119,8 +119,6 @@ void FuText::StopEditMode()
 
     if( pNote )
     {
-        ScTabView::OnLOKNoteStateChanged( pNote );
-
         // hide the caption object if it is in hidden state
         pNote->ShowCaptionTemp( aNotePos, false );
 
@@ -162,7 +160,7 @@ void FuText::StopEditMode()
                 to deleted text. If the note has been created *and* is deleted,
                 the last undo action can be removed completely. Note: The
                 function LeaveListAction() removes the last action by itself,
-                if it is empty (when result is SdrEndTextEditKind::Unchanged). */
+                if it is empty (when result is SDRENDTEXTEDIT_UNCHANGED). */
             if( bNewNote && bDeleteNote )
             {
                 pUndoMgr->RemoveLastUndoAction();

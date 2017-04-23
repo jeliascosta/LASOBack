@@ -32,15 +32,13 @@ private:
     SwVbaListHelperRef pListHelper;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaListTemplate( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nGalleryType, sal_Int32 nTemplateType );
-    virtual ~SwVbaListTemplate() override;
+    SwVbaListTemplate( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextDocument >& xTextDoc, sal_Int32 nGalleryType, sal_Int32 nTemplateType ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaListTemplate();
 
-    /// @throws css::uno::RuntimeException
-    void applyListTemplate( css::uno::Reference< css::beans::XPropertySet >& xProps );
+    void applyListTemplate( css::uno::Reference< css::beans::XPropertySet >& xProps ) throw ( css::uno::RuntimeException );
 
     // Methods
-    virtual css::uno::Any SAL_CALL ListLevels( const css::uno::Any& index ) override;
+    virtual css::uno::Any SAL_CALL ListLevels( const css::uno::Any& index ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

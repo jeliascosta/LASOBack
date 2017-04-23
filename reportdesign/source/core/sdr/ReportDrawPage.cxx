@@ -47,6 +47,7 @@ OReportDrawPage::OReportDrawPage(SdrPage* _pPage
 }
 
 SdrObject* OReportDrawPage::CreateSdrObject_(const uno::Reference< drawing::XShape > & xDescr)
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< report::XReportComponent> xReportComponent(xDescr,uno::UNO_QUERY);
     if ( xReportComponent.is() )
@@ -55,6 +56,7 @@ SdrObject* OReportDrawPage::CreateSdrObject_(const uno::Reference< drawing::XSha
 }
 
 uno::Reference< drawing::XShape >  OReportDrawPage::CreateShape( SdrObject *pObj ) const
+    throw (uno::RuntimeException, std::exception)
 {
     OObjectBase* pBaseObj = dynamic_cast<OObjectBase*>(pObj);
     if ( !pBaseObj )
@@ -108,7 +110,7 @@ uno::Reference< drawing::XShape >  OReportDrawPage::CreateShape( SdrObject *pObj
                 OSL_ENSURE(xObj.is(),"Embedded Object could not be created!");
 
                 /**************************************************
-                * The empty OLE object gets a new IPObj
+                * Das leere OLE-Objekt bekommt ein neues IPObj
                 **************************************************/
                 pObj->SetEmptyPresObj(false);
                 rOle2Obj.SetOutlinerParaObject(nullptr);
@@ -116,7 +118,7 @@ uno::Reference< drawing::XShape >  OReportDrawPage::CreateShape( SdrObject *pObj
                 rOle2Obj.SetPersistName(sName);
                 rOle2Obj.SetName(sName);
                 rOle2Obj.SetAspect(nAspect);
-                tools::Rectangle aRect = rOle2Obj.GetLogicRect();
+                Rectangle aRect = rOle2Obj.GetLogicRect();
 
                 Size aTmp = aRect.GetSize();
                 awt::Size aSz( aTmp.Width(), aTmp.Height() );

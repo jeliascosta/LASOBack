@@ -19,12 +19,12 @@
 
 #include <sfx2/sidebar/SidebarToolBox.hxx>
 #include <sfx2/sidebar/ControllerFactory.hxx>
-#include <sfx2/viewfrm.hxx>
+#include <sfx2/sidebar/Theme.hxx>
+#include <sfx2/sidebar/Tools.hxx>
 
 #include <vcl/builderfactory.hxx>
-#include <vcl/commandinfoprovider.hxx>
+#include <vcl/gradient.hxx>
 #include <vcl/settings.hxx>
-#include <vcl/svapp.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <svtools/miscopt.hxx>
 #include <com/sun/star/frame/XSubToolbarController.hpp>
@@ -54,19 +54,19 @@ namespace sfx2 { namespace sidebar {
 
 SidebarToolBox::SidebarToolBox (vcl::Window* pParentWindow)
     : ToolBox(pParentWindow, 0),
-      mbAreHandlersRegistered(false),
-      mbUseDefaultButtonSize(true)
+      maControllers(),
+      mbAreHandlersRegistered(false)
 {
     SetBackground(Wallpaper());
     SetPaintTransparent(true);
-    SetToolboxButtonSize(GetDefaultButtonSize());
-
-    SvtMiscOptions().AddListenerLink(LINK(this, SidebarToolBox, ChangedIconSizeHandler));
+    SetToolboxButtonSize( TOOLBOX_BUTTONSIZE_SMALL );
 
 #ifdef DEBUG
     SetText(OUString("SidebarToolBox"));
 #endif
 }
+
+VCL_BUILDER_FACTORY(SidebarToolBox)
 
 SidebarToolBox::~SidebarToolBox()
 {
@@ -75,8 +75,6 @@ SidebarToolBox::~SidebarToolBox()
 
 void SidebarToolBox::dispose()
 {
-    SvtMiscOptions().RemoveListenerLink(LINK(this, SidebarToolBox, ChangedIconSizeHandler));
-
     ControllerContainer aControllers;
     aControllers.swap(maControllers);
     for (ControllerContainer::iterator iController(aControllers.begin()), iEnd(aControllers.end());
@@ -102,14 +100,9 @@ void SidebarToolBox::dispose()
     ToolBox::dispose();
 }
 
-ToolBoxButtonSize SidebarToolBox::GetDefaultButtonSize() const
-{
-    return SvtMiscOptions().GetSidebarIconSize();
-}
-
 void SidebarToolBox::InsertItem(const OUString& rCommand,
         const css::uno::Reference<css::frame::XFrame>& rFrame,
-        ToolBoxItemBits nBits, const Size& rRequestedSize, ImplToolItems::size_type nPos)
+        ToolBoxItemBits nBits, const Size& rRequestedSize, sal_uInt16 nPos)
 {
     OUString aCommand( rCommand );
 
@@ -124,7 +117,7 @@ void SidebarToolBox::InsertItem(const OUString& rCommand,
     RegisterHandlers();
 }
 
-bool SidebarToolBox::EventNotify (NotifyEvent& rEvent)
+bool SidebarToolBox::Notify (NotifyEvent& rEvent)
 {
     if (rEvent.GetType() == MouseNotifyEvent::KEYINPUT)
     {
@@ -133,10 +126,10 @@ bool SidebarToolBox::EventNotify (NotifyEvent& rEvent)
             // Special handling for transferring handling of KEY_TAB
             // that becomes necessary because of our parent that is
             // not the dialog but a background control.
-            return DockingWindow::EventNotify(rEvent);
+            return DockingWindow::Notify(rEvent);
         }
     }
-    return ToolBox::EventNotify(rEvent);
+    return ToolBox::Notify(rEvent);
 }
 
 void SidebarToolBox::CreateController (
@@ -204,7 +197,7 @@ void SidebarToolBox::RegisterHandlers()
     }
 }
 
-IMPL_LINK(SidebarToolBox, DropDownClickHandler, ToolBox*, pToolBox, void)
+IMPL_LINK_TYPED(SidebarToolBox, DropDownClickHandler, ToolBox*, pToolBox, void)
 {
     if (pToolBox != nullptr)
     {
@@ -218,7 +211,7 @@ IMPL_LINK(SidebarToolBox, DropDownClickHandler, ToolBox*, pToolBox, void)
     }
 }
 
-IMPL_LINK(SidebarToolBox, ClickHandler, ToolBox*, pToolBox, void)
+IMPL_LINK_TYPED(SidebarToolBox, ClickHandler, ToolBox*, pToolBox, void)
 {
     if (pToolBox == nullptr)
         return;
@@ -228,7 +221,7 @@ IMPL_LINK(SidebarToolBox, ClickHandler, ToolBox*, pToolBox, void)
         xController->click();
 }
 
-IMPL_LINK(SidebarToolBox, DoubleClickHandler, ToolBox*, pToolBox, void)
+IMPL_LINK_TYPED(SidebarToolBox, DoubleClickHandler, ToolBox*, pToolBox, void)
 {
     if (pToolBox == nullptr)
         return;
@@ -238,7 +231,7 @@ IMPL_LINK(SidebarToolBox, DoubleClickHandler, ToolBox*, pToolBox, void)
         xController->doubleClick();
 }
 
-IMPL_LINK(SidebarToolBox, SelectHandler, ToolBox*, pToolBox, void)
+IMPL_LINK_TYPED(SidebarToolBox, SelectHandler, ToolBox*, pToolBox, void)
 {
     if (pToolBox == nullptr)
         return;
@@ -246,102 +239,6 @@ IMPL_LINK(SidebarToolBox, SelectHandler, ToolBox*, pToolBox, void)
     Reference<frame::XToolbarController> xController (GetControllerForItemId(pToolBox->GetCurItemId()));
     if (xController.is())
         xController->execute((sal_Int16)pToolBox->GetModifier());
-}
-
-IMPL_LINK_NOARG(SidebarToolBox, ChangedIconSizeHandler, LinkParamNone*, void)
-{
-    SolarMutexGuard g;
-
-    if (mbUseDefaultButtonSize)
-        SetToolboxButtonSize(GetDefaultButtonSize());
-
-    vcl::ImageType eImageType = vcl::ImageType::Size16;
-    ToolBoxButtonSize eSize = GetToolboxButtonSize();
-    if (eSize == ToolBoxButtonSize::Large)
-        eImageType = vcl::ImageType::Size26;
-    else if (eSize == ToolBoxButtonSize::Size32)
-        eImageType = vcl::ImageType::Size32;
-
-    for (auto const& it : maControllers)
-    {
-        Reference<frame::XSubToolbarController> xController(it.second, UNO_QUERY);
-        if (xController.is() && xController->opensSubToolbar())
-        {
-            // The button should show the last function that was selected from the
-            // dropdown. The controller should know better than us what it was.
-            xController->updateImage();
-        }
-        else if (SfxViewFrame::Current())
-        {
-            OUString aCommandURL = GetItemCommand(it.first);
-            css::uno::Reference<frame::XFrame> xFrame = SfxViewFrame::Current()->GetFrame().GetFrameInterface();
-            Image aImage = vcl::CommandInfoProvider::GetImageForCommand(aCommandURL, xFrame, eImageType);
-            SetItemImage(it.first, aImage);
-        }
-    }
-
-    Resize();
-    queue_resize();
-}
-
-void SidebarToolBox::InitToolBox(VclBuilder::stringmap& rMap)
-{
-    for (const auto& it : rMap)
-    {
-        if (it.first == "toolbar-style")
-        {
-            if (it.second == "text")
-                SetButtonType(ButtonType::TEXT);
-            else if (it.second == "both-horiz")
-                SetButtonType(ButtonType::SYMBOLTEXT);
-            else if (it.second == "both")
-            {
-                SetButtonType(ButtonType::SYMBOLTEXT);
-                SetToolBoxTextPosition(ToolBoxTextPosition::Bottom);
-            }
-        }
-        else if (it.first == "icon-size")
-        {
-            mbUseDefaultButtonSize = false;
-            if (it.second == "1" || it.second == "2" || it.second == "4")
-                SetToolboxButtonSize(ToolBoxButtonSize::Small);
-            else if (it.second == "3")
-                SetToolboxButtonSize(ToolBoxButtonSize::Large);
-            else if (it.second == "5")
-                SetToolboxButtonSize(ToolBoxButtonSize::Size32);
-        }
-        else if (it.first == "orientation" && it.second == "vertical")
-            SetAlign(WindowAlign::Left);
-    }
-}
-
-class NotebookbarToolBox : public SidebarToolBox
-{
-public:
-    explicit NotebookbarToolBox(vcl::Window* pParentWindow)
-    : SidebarToolBox(pParentWindow)
-    {
-        SetToolboxButtonSize(GetDefaultButtonSize());
-    }
-
-    virtual ToolBoxButtonSize GetDefaultButtonSize() const override
-    {
-        return SvtMiscOptions().GetNotebookbarIconSize();
-    }
-};
-
-VCL_BUILDER_DECL_FACTORY(SidebarToolBox)
-{
-    VclPtrInstance<SidebarToolBox> pBox(pParent);
-    pBox->InitToolBox(rMap);
-    rRet = pBox;
-}
-
-VCL_BUILDER_DECL_FACTORY(NotebookbarToolBox)
-{
-    VclPtrInstance<NotebookbarToolBox> pBox(pParent);
-    pBox->InitToolBox(rMap);
-    rRet = pBox;
 }
 
 } } // end of namespace sfx2::sidebar

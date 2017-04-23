@@ -43,7 +43,7 @@ using ::rtl::OWStringToOString;
 
 
 // Needed to switch on solaris threads
-#ifdef __sun
+#ifdef SOLARIS
 extern "C" void ChangeGlobalInit();
 #endif
 
@@ -54,7 +54,7 @@ int SAL_CALL main (int argc, char **argv)
         printf( "usage : testcomponent service dll [additional dlls]\n" );
         exit( 0 );
     }
-#ifdef __sun
+#ifdef SOLARIS
     // switch on threads in solaris
     ChangeGlobalInit();
 #endif

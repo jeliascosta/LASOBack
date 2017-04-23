@@ -10,7 +10,7 @@
 #include <rtflistener.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
-#include <cstring>
+#include <string.h>
 
 namespace writerfilter
 {
@@ -1850,7 +1850,7 @@ int nRTFControlWords = SAL_N_ELEMENTS(aRTFControlWords);
 
 bool RTFSymbol::operator<(const RTFSymbol& rOther) const
 {
-    return std::strcmp(sKeyword, rOther.sKeyword) < 0;
+    return strcmp(sKeyword, rOther.sKeyword) < 0;
 }
 
 RTFMathSymbol aRTFMathControlWords[] =

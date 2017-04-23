@@ -207,7 +207,7 @@ void SdTransformOOo2xDocument::transformTextShape( SdrTextObj& rTextShape )
                 if( (nDepth != -1) && (!getBulletState( aParaSet, mrOutliner.GetStyleSheet( nPara ), bState ) || !bState) )
                 {
                     // disable bullet if text::enable-bullet="false" is found
-                    if( (nDepth > 0 ) && (rTextShape.GetObjInventor()  == SdrInventor::Default) && (rTextShape.GetObjIdentifier() == OBJ_OUTLINETEXT) )
+                    if( (nDepth > 0 ) && (rTextShape.GetObjInventor()  == SdrInventor) && (rTextShape.GetObjIdentifier() == OBJ_OUTLINETEXT) )
                     {
                         // for outline object and level > 0 burn in the style sheet because it will be changed to "outline 1"
                         SfxStyleSheet* pStyleSheet = mrOutliner.GetStyleSheet( nPara );
@@ -276,7 +276,7 @@ bool SdTransformOOo2xDocument::getBulletState( const SfxItemSet& rSet, sal_uInt1
 {
     if( (rSet.GetItemState( nWhich ) == SfxItemState::SET) )
     {
-        const SvXMLAttrContainerItem& rAttr = *rSet.GetItem<SvXMLAttrContainerItem>( nWhich );
+        const SvXMLAttrContainerItem& rAttr = *static_cast< const SvXMLAttrContainerItem* >( rSet.GetItem( nWhich ) );
 
         const sal_uInt16 nCount = rAttr.GetAttrCount();
         for( sal_uInt16 nItem = 0; nItem < nCount; nItem++ )
@@ -298,7 +298,7 @@ bool SdTransformOOo2xDocument::transformItemSet( SfxItemSet& rSet, bool bNumberi
     bool bRet = false;
     if( bNumbering )
     {
-        SvxLRSpaceItem aItem( *rSet.GetItem<SvxLRSpaceItem>( EE_PARA_LRSPACE ) );
+        SvxLRSpaceItem aItem( *static_cast<const SvxLRSpaceItem*>(rSet.GetItem( EE_PARA_LRSPACE )) );
         if( (aItem.GetLeft() != 0) || (aItem.GetTextFirstLineOfst() != 0) )
         {
             aItem.SetLeftValue( 0 );
@@ -322,7 +322,7 @@ bool SdTransformOOo2xDocument::removeAlienAttributes( SfxItemSet& rSet, sal_uInt
 {
     if( (rSet.GetItemState( nWhich ) == SfxItemState::SET) )
     {
-        const SvXMLAttrContainerItem& rAttr = *rSet.GetItem<SvXMLAttrContainerItem>( nWhich );
+        const SvXMLAttrContainerItem& rAttr = *static_cast< const SvXMLAttrContainerItem* >( rSet.GetItem( nWhich ) );
 
         const sal_uInt16 nCount = rAttr.GetAttrCount();
         for( sal_uInt16 nItem = 0; nItem < nCount; nItem++ )

@@ -191,11 +191,11 @@ void SwFrame::SetRightLeftMargins( long nRight, long nLeft)
 /// checks the layout direction and invalidates the lower frames recursively, if necessary.
 void SwFrame::CheckDirChange()
 {
-    bool bOldVert = mbVertical;
+    bool bOldVert = GetVerticalFlag();
     bool bOldRev = IsReverse();
-    bool bOldR2L = mbRightToLeft;
+    bool bOldR2L = GetRightToLeftFlag();
     SetInvalidVert( true );
-    mbInvalidR2L = true;
+    SetInvalidR2L( true );
     bool bChg = bOldR2L != IsRightToLeft();
     bool bOldVertL2R = IsVertLR();
     if( ( IsVertical() != bOldVert ) || bChg || IsReverse() != bOldRev || bOldVertL2R != IsVertLR() )
@@ -374,7 +374,7 @@ void SwFrame::DestroyImpl()
 SwFrame::~SwFrame()
 {
     assert(m_isInDestroy); // check that only DestroySwFrame does "delete"
-    assert(!IsDeleteForbidden()); // check that it's not deleted while deletes are forbidden
+    assert(!IsDeleteForbidden()); // check that its not deleted while deletes are forbidden
 #if OSL_DEBUG_LEVEL > 0
     // JP 15.10.2001: for detection of access to deleted frames
     mpDrawObjs = reinterpret_cast<SwSortedObjs*>(0x33333333);
@@ -677,7 +677,7 @@ const SwRect SwFrame::UnionFrame( bool bBorder ) const
             nAdd += rBox.CalcLineSpace( SvxBoxItemLine::RIGHT );
         else if ( rAttrs.IsBorderDist() )
             nAdd += rBox.GetDistance( SvxBoxItemLine::RIGHT ) + 1;
-        if( rAttrs.GetShadow().GetLocation() != SvxShadowLocation::NONE )
+        if( rAttrs.GetShadow().GetLocation() != SVX_SHADOW_NONE )
         {
             const SvxShadowItem &rShadow = rAttrs.GetShadow();
             nLeft -= rShadow.CalcShadowSpace( SvxShadowItemSide::LEFT );

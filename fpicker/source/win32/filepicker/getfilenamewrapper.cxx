@@ -17,9 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
 #include <stdio.h>
 #include <osl/diagnose.h>
 #include <osl/thread.h>
@@ -44,17 +41,17 @@ namespace /* private */
 
     class CurDirGuard
     {
-        bool m_bValid;
+        sal_Bool m_bValid;
         wchar_t* m_pBuffer;
         DWORD m_nBufLen;
 
     public:
         CurDirGuard()
-        : m_bValid( false )
-        , m_pBuffer( nullptr )
+        : m_bValid( sal_False )
+        , m_pBuffer( NULL )
         , m_nBufLen( 0 )
         {
-            m_nBufLen = GetCurrentDirectoryW( 0, nullptr );
+            m_nBufLen = GetCurrentDirectoryW( 0, NULL );
             if ( m_nBufLen )
             {
                 m_pBuffer = new wchar_t[m_nBufLen];
@@ -73,24 +70,26 @@ namespace /* private */
                     if ( m_nBufLen - 1 > MAX_PATH )
                     {
                         DWORD nNewLen = m_nBufLen + 8;
-                        auto pNewBuffer = std::unique_ptr<wchar_t>(new wchar_t[nNewLen]);
+                        wchar_t* pNewBuffer = new wchar_t[nNewLen];
                         if ( m_nBufLen > 3 && m_pBuffer[0] == (wchar_t)'\\' && m_pBuffer[1] == (wchar_t)'\\' )
                         {
                             if ( m_pBuffer[2] == (wchar_t)'?' )
-                                _snwprintf( pNewBuffer.get(), nNewLen, L"%s", m_pBuffer );
+                                _snwprintf( pNewBuffer, nNewLen, L"%s", m_pBuffer );
                             else
-                                _snwprintf( pNewBuffer.get(), nNewLen, L"\\\\?\\UNC\\%s", m_pBuffer+2 );
+                                _snwprintf( pNewBuffer, nNewLen, L"\\\\?\\UNC\\%s", m_pBuffer+2 );
                         }
                         else
-                            _snwprintf( pNewBuffer.get(), nNewLen, L"\\\\?\\%s", m_pBuffer );
-                        bDirSet = SetCurrentDirectoryW( pNewBuffer.get() );
+                            _snwprintf( pNewBuffer, nNewLen, L"\\\\?\\%s", m_pBuffer );
+                        bDirSet = SetCurrentDirectoryW( pNewBuffer );
+
+                        delete [] pNewBuffer;
                     }
                     else
                         bDirSet = SetCurrentDirectoryW( m_pBuffer );
                 }
 
                 delete [] m_pBuffer;
-                m_pBuffer = nullptr;
+                m_pBuffer = NULL;
             }
 
             if ( !bDirSet )
@@ -133,9 +132,9 @@ namespace /* private */
         CurDirGuard aGuard;
 
         GetFileNameParam* lpgfnp =
-            static_cast<GetFileNameParam*>(pParam);
+            reinterpret_cast<GetFileNameParam*>(pParam);
 
-        HRESULT hr = OleInitialize( nullptr );
+        HRESULT hr = OleInitialize( NULL );
 
         if (lpgfnp->m_bOpen)
             lpgfnp->m_bRet = GetOpenFileName(lpgfnp->m_lpofn);
@@ -161,7 +160,7 @@ namespace /* private */
         unsigned         id;
 
         HANDLE hThread = reinterpret_cast<HANDLE>(
-            _beginthreadex(nullptr, 0, ThreadProc, &gfnp, 0, &id));
+            _beginthreadex(0, 0, ThreadProc, &gfnp, 0, &id));
 
         SAL_WARN_IF( !hThread, "fpicker", "could not create STA thread");
 
@@ -181,7 +180,7 @@ namespace /* private */
 
     bool IsMTA()
     {
-        HRESULT hr = CoInitialize(nullptr);
+        HRESULT hr = CoInitialize(NULL);
 
         if (RPC_E_CHANGED_MODE == hr)
             return true;
@@ -216,7 +215,7 @@ bool CGetFileNameWrapper::getOpenFileName(LPOPENFILENAME lpofn)
     {
         CurDirGuard aGuard;
 
-        HRESULT hr = OleInitialize( nullptr );
+        HRESULT hr = OleInitialize( NULL );
 
         bRet = GetOpenFileName(lpofn);
         m_ExtendedDialogError = CommDlgExtendedError();

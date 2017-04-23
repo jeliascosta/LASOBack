@@ -35,18 +35,15 @@ protected:
     virtual bool PreNotify( NotifyEvent& rNEvt ) override;
 
 public:
-    SvSimpleTableContainer( vcl::Window* pParent, WinBits nBits );
-    virtual ~SvSimpleTableContainer() override;
+    SvSimpleTableContainer( vcl::Window* pParent, WinBits nBits = WB_BORDER );
+    virtual ~SvSimpleTableContainer();
     virtual void dispose() override;
 
     void SetTable(SvSimpleTable* pTable);
-    SvSimpleTable* GetTable();
 
     virtual void Resize() override;
 
     virtual void GetFocus() override;
-
-    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 class SVT_DLLPUBLIC SvSimpleTable : public SvHeaderTabListBox
@@ -66,20 +63,21 @@ private:
 
     const CollatorWrapper aCollator;
 
-    DECL_LINK( StartDragHdl, HeaderBar*, void );
-    DECL_LINK( DragHdl, HeaderBar*, void );
-    DECL_LINK( EndDragHdl, HeaderBar*, void );
-    DECL_LINK( HeaderBarClick, HeaderBar*, void );
-    DECL_LINK( CompareHdl, const SvSortData&, sal_Int32 );
+    DECL_LINK_TYPED( StartDragHdl, HeaderBar*, void );
+    DECL_LINK_TYPED( DragHdl, HeaderBar*, void );
+    DECL_LINK_TYPED( EndDragHdl, HeaderBar*, void );
+    DECL_LINK_TYPED( HeaderBarClick, HeaderBar*, void );
+    DECL_LINK_TYPED( CompareHdl, const SvSortData&, sal_Int32 );
 
 protected:
 
     virtual void            NotifyScrolled() override;
 
     virtual void            SetTabs() override;
-    virtual void            Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void            Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
     virtual void            HBarClick();
+    void                    HBarStartDrag();
     void                    HBarDrag();
     void                    HBarEndDrag();
 
@@ -89,7 +87,7 @@ protected:
 public:
 
     SvSimpleTable(SvSimpleTableContainer& rParent, WinBits nBits = WB_BORDER);
-    virtual ~SvSimpleTable() override;
+    virtual ~SvSimpleTable();
     virtual void dispose() override;
 
     void UpdateViewSize();
@@ -98,7 +96,7 @@ public:
                             sal_uInt16 nCol=HEADERBAR_APPEND,
                             HeaderBarItemBits nBits = HeaderBarItemBits::STDSTYLE);
 
-    using SvHeaderTabListBox::SetTabs;
+    void            SetTabs(const long* pTabs, MapUnit = MAP_APPFONT);
 
     void            ClearHeader();
 
@@ -117,7 +115,7 @@ public:
     SvLBoxItem*     GetEntryAtPos( SvTreeListEntry* pEntry, sal_uInt16 nPos ) const;
 
     const CommandEvent& GetCommandEvent() const { return aCEvt; }
-    bool     IsFocusOnCellEnabled() const { return IsCellFocusEnabled(); }
+    inline bool     IsFocusOnCellEnabled() const { return IsCellFocusEnabled(); }
     void            SetCommandHdl( const Link<SvSimpleTable*,void>& rLink ) { aCommandLink = rLink; }
 
     void            SetHeaderBarClickHdl( const Link<SvSimpleTable*,void>& rLink ) { aHeaderBarClickLink = rLink; }

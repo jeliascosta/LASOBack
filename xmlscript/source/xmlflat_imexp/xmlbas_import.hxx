@@ -29,7 +29,6 @@
 #include <cppuhelper/implbase.hxx>
 #include <osl/mutex.hxx>
 #include <rtl/ustrbuf.hxx>
-#include <rtl/ref.hxx>
 
 namespace xmlscript
 {
@@ -44,13 +43,11 @@ namespace xmlscript
     class BasicElementBase : public BasicElementBase_BASE
     {
     protected:
-        rtl::Reference<BasicImport> m_xImport;
-    private:
-        rtl::Reference<BasicElementBase> m_xParent;
+        BasicImport* m_pImport;
+        BasicElementBase* m_pParent;
         OUString m_aLocalName;
         css::uno::Reference< css::xml::input::XAttributes > m_xAttributes;
 
-    protected:
         static bool getBoolAttr( bool* pRet, const OUString& rAttrName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
             sal_Int32 nUid );
@@ -59,22 +56,31 @@ namespace xmlscript
         BasicElementBase( const OUString& rLocalName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
             BasicElementBase* pParent, BasicImport* pImport );
-        virtual ~BasicElementBase() override;
+        virtual ~BasicElementBase();
 
         // XElement
-        virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL getParent() override;
-        virtual OUString SAL_CALL getLocalName() override;
-        virtual sal_Int32 SAL_CALL getUid() override;
-        virtual css::uno::Reference< css::xml::input::XAttributes > SAL_CALL getAttributes() override;
+        virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL getParent()
+            throw (css::uno::RuntimeException, std::exception) override;
+        virtual OUString SAL_CALL getLocalName()
+            throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Int32 SAL_CALL getUid()
+            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Reference< css::xml::input::XAttributes > SAL_CALL getAttributes()
+            throw (css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL startChildElement(
             sal_Int32 nUid, const OUString& rLocalName,
-            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes ) override;
-        virtual void SAL_CALL characters( const OUString& rChars ) override;
+            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL characters( const OUString& rChars )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL ignorableWhitespace(
-            const OUString& rWhitespaces ) override;
+            const OUString& rWhitespaces )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL processingInstruction(
-            const OUString& rTarget, const OUString& rData ) override;
-        virtual void SAL_CALL endElement() override;
+            const OUString& rTarget, const OUString& rData )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class BasicLibrariesElement
@@ -87,14 +93,16 @@ namespace xmlscript
     public:
         BasicLibrariesElement( const OUString& rLocalName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
-            BasicImport* pImport,
+            BasicElementBase* pParent, BasicImport* pImport,
             const css::uno::Reference< css::script::XLibraryContainer2 >& rxLibContainer );
 
         // XElement
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL startChildElement(
             sal_Int32 nUid, const OUString& rLocalName,
-            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes ) override;
-        virtual void SAL_CALL endElement() override;
+            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class BasicEmbeddedLibraryElement
@@ -117,8 +125,10 @@ namespace xmlscript
         // XElement
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL startChildElement(
             sal_Int32 nUid, const OUString& rLocalName,
-            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes ) override;
-        virtual void SAL_CALL endElement() override;
+            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class BasicModuleElement
@@ -139,8 +149,10 @@ namespace xmlscript
         // XElement
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL startChildElement(
             sal_Int32 nUid, const OUString& rLocalName,
-            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes ) override;
-        virtual void SAL_CALL endElement() override;
+            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class BasicSourceCodeElement
@@ -160,8 +172,10 @@ namespace xmlscript
             const OUString& rName );
 
         // XElement
-        virtual void SAL_CALL characters( const OUString& rChars ) override;
-        virtual void SAL_CALL endElement() override;
+        virtual void SAL_CALL characters( const OUString& rChars )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class BasicImport
@@ -184,19 +198,24 @@ namespace xmlscript
 
     public:
         BasicImport( const css::uno::Reference< css::frame::XModel >& rxModel, bool bOasis );
-        virtual ~BasicImport() override;
+        virtual ~BasicImport();
 
         // XRoot
         virtual void SAL_CALL startDocument(
-            const css::uno::Reference< css::xml::input::XNamespaceMapping >& xNamespaceMapping ) override;
-        virtual void SAL_CALL endDocument() override;
+            const css::uno::Reference< css::xml::input::XNamespaceMapping >& xNamespaceMapping )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endDocument()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL processingInstruction(
-            const OUString& rTarget, const OUString& rData ) override;
+            const OUString& rTarget, const OUString& rData )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL setDocumentLocator(
-            const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) override;
+            const css::uno::Reference< css::xml::sax::XLocator >& xLocator )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL startRootElement(
             sal_Int32 nUid, const OUString& rLocalName,
-            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes ) override;
+            const css::uno::Reference< css::xml::input::XAttributes >& xAttributes )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class XMLBasicImporterBase
@@ -217,24 +236,34 @@ namespace xmlscript
     public:
         XMLBasicImporterBase(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext, bool bOasis );
-        virtual ~XMLBasicImporterBase() override;
+        virtual ~XMLBasicImporterBase();
 
         // XServiceInfo
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw (css::uno::RuntimeException, std::exception) override;
 
         // XImporter
-        virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& rxDoc ) override;
+        virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& rxDoc )
+            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
         // XDocumentHandler
-        virtual void SAL_CALL startDocument() override;
-        virtual void SAL_CALL endDocument() override;
+        virtual void SAL_CALL startDocument()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endDocument()
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL startElement( const OUString& aName,
-            const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs ) override;
-        virtual void SAL_CALL endElement( const OUString& aName ) override;
-        virtual void SAL_CALL characters( const OUString& aChars ) override;
-        virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) override;
-        virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) override;
-        virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) override;
+            const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL endElement( const OUString& aName )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL characters( const OUString& aChars )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator )
+            throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
     };
 
     // class XMLBasicImporter
@@ -244,11 +273,13 @@ namespace xmlscript
     public:
         explicit XMLBasicImporter(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~XMLBasicImporter() override;
+        virtual ~XMLBasicImporter();
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  )
+            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+            throw (css::uno::RuntimeException, std::exception) override;
     };
 
     // class XMLOasisBasicImporter
@@ -258,11 +289,13 @@ namespace xmlscript
     public:
         explicit XMLOasisBasicImporter(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~XMLOasisBasicImporter() override;
+        virtual ~XMLOasisBasicImporter();
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  )
+            throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+            throw (css::uno::RuntimeException, std::exception) override;
     };
 
 }   // namespace xmlscript

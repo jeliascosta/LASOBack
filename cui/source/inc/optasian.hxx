@@ -46,15 +46,15 @@ class SvxAsianLayoutPage : public SfxTabPage
     VclPtr<Edit>        m_pEndED;
     VclPtr<FixedText>   m_pHintFT;
 
-    std::unique_ptr<SvxAsianLayoutPage_Impl> pImpl;
+    SvxAsianLayoutPage_Impl* pImpl;
 
-    DECL_LINK(LanguageHdl, ListBox&, void);
-    DECL_LINK(ChangeStandardHdl, Button*, void);
-    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(LanguageHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangeStandardHdl, Button*, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
 
 public:
     SvxAsianLayoutPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxAsianLayoutPage() override;
+    virtual ~SvxAsianLayoutPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

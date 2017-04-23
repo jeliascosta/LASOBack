@@ -143,18 +143,18 @@ SwParaDlg::SwParaDlg(vcl::Window *pParent,
 
         if(!bHtmlMode || (nHtmlMode & (HTMLMODE_SOME_STYLES|HTMLMODE_FULL_STYLES)))
         {
-            // remove?
+            //UUUU remove?
             //OSL_ENSURE(pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), "GetTabPageCreatorFunc fail!");
             //OSL_ENSURE(pFact->GetTabPageRangesFunc( RID_SVXPAGE_BACKGROUND ), "GetTabPageRangesFunc fail!");
             //m_nParaBckGrnd = AddTabPage("labelTP_BACKGROUND", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_BACKGROUND ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_BACKGROUND ) );
             //
-            // add Area and Transparence TabPages
+            //UUUU add Area and Transparence TabPages
             m_nAreaId = AddTabPage("area", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_AREA ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_AREA ));
             m_nTransparenceId = AddTabPage("transparence", pFact->GetTabPageCreatorFunc( RID_SVXPAGE_TRANSPARENCE ), pFact->GetTabPageRangesFunc( RID_SVXPAGE_TRANSPARENCE ) );
         }
         else
         {
-            // RemoveTabPage("labelTP_BACKGROUND");
+            //UUUU RemoveTabPage("labelTP_BACKGROUND");
             RemoveTabPage("area");
             RemoveTabPage("transparence");
         }
@@ -186,7 +186,7 @@ void SwParaDlg::PageCreated(sal_uInt16 nId, SfxTabPage& rPage)
     else if( nId == m_nParaStd )
     {
         aSet.Put(SfxUInt16Item(SID_SVXSTDPARAGRAPHTABPAGE_PAGEWIDTH,
-                            static_cast< sal_uInt16 >(rSh.GetAnyCurRect(CurRectType::PagePrt).Width()) ));
+                            static_cast< sal_uInt16 >(rSh.GetAnyCurRect(RECT_PAGE_PRT).Width()) ));
 
         if (!bDrawParaDlg)
         {
@@ -210,7 +210,7 @@ void SwParaDlg::PageCreated(sal_uInt16 nId, SfxTabPage& rPage)
         // pagebreak only when the cursor is in the body-area and not in a table
         const FrameTypeFlags eType = rSh.GetFrameType(nullptr,true);
         if( !(FrameTypeFlags::BODY & eType) ||
-            rSh.GetSelectionType() & SelectionType::Table )
+            rSh.GetSelectionType() & nsSelectionType::SEL_TBL )
         {
             aSet.Put(SfxBoolItem(SID_DISABLE_SVXEXTPARAGRAPHTABPAGE_PAGEBREAK,true));
             rPage.PageCreated(aSet);
@@ -228,7 +228,7 @@ void SwParaDlg::PageCreated(sal_uInt16 nId, SfxTabPage& rPage)
             // pagebreak only when the cursor is in the body-area and not in a table
             const FrameTypeFlags eType = rSh.GetFrameType(nullptr,true);
             if(!(FrameTypeFlags::BODY & eType) ||
-                rSh.GetSelectionType() & SelectionType::Table)
+                rSh.GetSelectionType() & nsSelectionType::SEL_TBL)
             {
                 aSet.Put(SfxBoolItem(SID_DISABLE_SVXEXTPARAGRAPHTABPAGE_PAGEBREAK,true));
                 rPage.PageCreated(aSet);
@@ -257,7 +257,7 @@ void SwParaDlg::PageCreated(sal_uInt16 nId, SfxTabPage& rPage)
         for(std::set<OUString>::const_iterator it = aNames.begin(); it != aNames.end(); ++it)
             rBox.InsertEntry(*it);
     }
-    // inits for Area and Transparency TabPages
+    //UUUU inits for Area and Transparency TabPages
     // The selection attribute lists (XPropertyList derivates, e.g. XColorList for
     // the color table) need to be added as items (e.g. SvxColorTableItem) to make
     // these pages find the needed attributes for fill style suggestions.
@@ -266,7 +266,7 @@ void SwParaDlg::PageCreated(sal_uInt16 nId, SfxTabPage& rPage)
     else if (m_nAreaId == nId)
     {
         SfxItemSet aNew(*aSet.GetPool(),
-            SID_COLOR_TABLE, SID_PATTERN_LIST,
+            SID_COLOR_TABLE, SID_BITMAP_LIST,
             SID_OFFER_IMPORT, SID_OFFER_IMPORT, 0, 0);
 
         aNew.Put(*GetInputSetImpl());

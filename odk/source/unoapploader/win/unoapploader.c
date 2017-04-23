@@ -35,11 +35,11 @@
 
 #define MY_LENGTH(s) (sizeof (s) / sizeof *(s) - 1)
 
-char const* getPath(void);
+char const* getPath();
 char* createCommandLine( char* lpCmdLine );
 FILE* getErrorFile( int create );
 void writeError( const char* errstr );
-void closeErrorFile(void);
+void closeErrorFile();
 
 /*
  * The main function implements a loader for applications which use UNO.

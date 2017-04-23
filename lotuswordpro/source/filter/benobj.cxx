@@ -59,17 +59,17 @@
 namespace OpenStormBento
 {
 
-CBenProperty *
+pCBenProperty
 CBenObject::UseProperty(BenObjectID PropertyID)
 {
-    CUtListElmt * pPrev;
-    return static_cast<CBenProperty *>( FindID(&cProperties, PropertyID, &pPrev) );
+    pCUtListElmt pPrev;
+    return static_cast<pCBenProperty>( FindID(&cProperties, PropertyID, &pPrev) );
 }
 
-CBenValue *
+pCBenValue
 CBenObject::UseValue(BenObjectID PropertyID)
 {
-    CBenProperty * pProperty = UseProperty(PropertyID);
+    pCBenProperty pProperty = UseProperty(PropertyID);
     if (pProperty == nullptr)
         return nullptr;
     return &pProperty->UseValue();

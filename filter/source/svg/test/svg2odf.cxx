@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "svgreader.hxx"
+#include "../svgreader.hxx"
 #include "odfserializer.hxx"
 
 #include <sal/main.h>
@@ -46,18 +46,18 @@ namespace
             maFile.open( osl_File_OpenFlag_Create|osl_File_OpenFlag_Write );
         }
 
-        virtual void SAL_CALL writeBytes( const css::uno::Sequence< ::sal_Int8 >& aData ) override
+        virtual void SAL_CALL writeBytes( const css::uno::Sequence< ::sal_Int8 >& aData ) throw (css::io::NotConnectedException,css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override
 
         {
             sal_uInt64 nBytesWritten(0);
             maFile.write(aData.getConstArray(),aData.getLength(),nBytesWritten);
         }
 
-        virtual void SAL_CALL flush() override
+        virtual void SAL_CALL flush() throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override
         {
         }
 
-        virtual void SAL_CALL closeOutput() override
+        virtual void SAL_CALL closeOutput() throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception) override
         {
             maFile.close();
         }
@@ -68,7 +68,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
 {
     if( argc != 4 )
     {
-        SAL_WARN("filter.svg", "Invocation: svg2odf <base_url> <dst_url> <ini_file>. Exiting" );
+        OSL_TRACE( "Invocation: svg2odf <base_url> <dst_url> <ini_file>. Exiting" );
         return 1;
     }
 
@@ -98,7 +98,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
         xFactory.set(xCtx->getServiceManager(), uno::UNO_QUERY);
         if (!xFactory.is())
         {
-            SAL_WARN("filter.svg", "Could not bootstrap UNO, installation must be in disorder. Exiting." );
+            OSL_TRACE( "Could not bootstrap UNO, installation must be in disorder. Exiting." );
             return 1;
         }
 
@@ -107,7 +107,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
         osl::File aInputFile(aSrcURL);
         if( osl::FileBase::E_None!=aInputFile.open(osl_File_OpenFlag_Read) )
         {
-            SAL_WARN("filter.svg", "Cannot open input file" );
+            OSL_TRACE( "Cannot open input file" );
             return 1;
         }
 
@@ -120,12 +120,12 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
     }
     catch (const uno::Exception& e)
     {
-        SAL_WARN("filter.svg", "Fatal exception: " << e.Message);
+        SAL_WARN("vcl.app", "Fatal exception: " << e.Message);
         return 1;
     }
     catch (const std::exception &e)
     {
-        SAL_WARN("filter.svg", "Fatal exception: " << e.what());
+        SAL_WARN("vcl.app", "Fatal exception: " << e.what());
         return 1;
     }
     return nRet;

@@ -29,7 +29,7 @@ class MovingAverageRegressionCurveCalculator : public RegressionCurveCalculator
 {
 public:
     MovingAverageRegressionCurveCalculator();
-    virtual ~MovingAverageRegressionCurveCalculator() override;
+    virtual ~MovingAverageRegressionCurveCalculator();
 
 protected:
     virtual OUString ImplGetRepresentation(
@@ -40,9 +40,12 @@ private:
     // ____ XRegressionCurveCalculator ____
     virtual void SAL_CALL recalculateRegression(
         const css::uno::Sequence<double>& aXValues,
-        const css::uno::Sequence<double>& aYValues ) override;
+        const css::uno::Sequence<double>& aYValues )
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual double SAL_CALL getCurveValue( double x ) override;
+    virtual double SAL_CALL getCurveValue( double x )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<css::geometry::RealPoint2D> SAL_CALL getCurveValues(
         double min,
@@ -50,7 +53,9 @@ private:
         sal_Int32 nPointCount,
         const css::uno::Reference<css::chart2::XScaling>& xScalingX,
         const css::uno::Reference<css::chart2::XScaling>& xScalingY,
-        sal_Bool bMaySkipPointsInCalculation ) override;
+        sal_Bool bMaySkipPointsInCalculation )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
 
     std::vector<double> aYList;
     std::vector<double> aXList;

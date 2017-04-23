@@ -26,7 +26,6 @@
 #include "address.hxx"
 #include "csvsplits.hxx"
 #include <com/sun/star/uno/Reference.hxx>
-#include <o3tl/typed_flags_set.hxx>
 
 class ScAccessibleCsvControl;
 namespace com { namespace sun { namespace star { namespace accessibility {
@@ -69,8 +68,8 @@ struct ScCsvExpData
     sal_Int32                   mnIndex;        /// Index of a column.
     sal_uInt8                   mnType;         /// External type of the column.
 
-    ScCsvExpData() : mnIndex( 0 ), mnType( SC_COL_STANDARD ) {}
-    ScCsvExpData( sal_Int32 nIndex, sal_uInt8 nType ) :
+    inline                      ScCsvExpData() : mnIndex( 0 ), mnType( SC_COL_STANDARD ) {}
+    inline                      ScCsvExpData( sal_Int32 nIndex, sal_uInt8 nType ) :
                                     mnIndex( nIndex ), mnType( nType ) {}
 };
 
@@ -89,26 +88,23 @@ enum ScMoveMode
 };
 
 /** Flags for comparison of old and new control layout data. */
-enum class ScCsvDiff : sal_uInt32 {
-    Equal          = 0x0000,
-    PosCount       = 0x0001,
-    PosOffset      = 0x0002,
-    HeaderWidth    = 0x0004,
-    CharWidth      = 0x0008,
-    LineCount      = 0x0010,
-    LineOffset     = 0x0020,
-    HeaderHeight   = 0x0040,
-    LineHeight     = 0x0080,
-    RulerCursor    = 0x0100,
-    GridCursor     = 0x0200,
+typedef sal_uInt32 ScCsvDiff;
 
-    HorizontalMask = PosCount | PosOffset | HeaderWidth | CharWidth,
-    VerticalMask   = LineCount | LineOffset | HeaderHeight | LineHeight
-};
-namespace o3tl {
-    template<> struct typed_flags<ScCsvDiff> : is_typed_flags<ScCsvDiff, 0x03ff> {};
-}
+const ScCsvDiff CSV_DIFF_EQUAL          = 0x00000000;
+const ScCsvDiff CSV_DIFF_POSCOUNT       = 0x00000001;
+const ScCsvDiff CSV_DIFF_POSOFFSET      = 0x00000002;
+const ScCsvDiff CSV_DIFF_HDRWIDTH       = 0x00000004;
+const ScCsvDiff CSV_DIFF_CHARWIDTH      = 0x00000008;
+const ScCsvDiff CSV_DIFF_LINECOUNT      = 0x00000010;
+const ScCsvDiff CSV_DIFF_LINEOFFSET     = 0x00000020;
+const ScCsvDiff CSV_DIFF_HDRHEIGHT      = 0x00000040;
+const ScCsvDiff CSV_DIFF_LINEHEIGHT     = 0x00000080;
+const ScCsvDiff CSV_DIFF_RULERCURSOR    = 0x00000100;
+const ScCsvDiff CSV_DIFF_GRIDCURSOR     = 0x00000200;
 
+const ScCsvDiff CSV_DIFF_HORIZONTAL     = CSV_DIFF_POSCOUNT | CSV_DIFF_POSOFFSET | CSV_DIFF_HDRWIDTH | CSV_DIFF_CHARWIDTH;
+const ScCsvDiff CSV_DIFF_VERTICAL       = CSV_DIFF_LINECOUNT | CSV_DIFF_LINEOFFSET | CSV_DIFF_HDRHEIGHT | CSV_DIFF_LINEHEIGHT;
+const ScCsvDiff CSV_DIFF_CURSOR         = CSV_DIFF_RULERCURSOR | CSV_DIFF_GRIDCURSOR;
 
 /** A structure containing all layout data valid for both ruler and data grid
     (i.e. scroll position or column width). */
@@ -146,7 +142,7 @@ struct ScCsvLayoutData
 
 inline bool operator==( const ScCsvLayoutData& rData1, const ScCsvLayoutData& rData2 )
 {
-    return rData1.GetDiff( rData2 ) == ScCsvDiff::Equal;
+    return rData1.GetDiff( rData2 ) == CSV_DIFF_EQUAL;
 }
 
 inline bool operator!=( const ScCsvLayoutData& rData1, const ScCsvLayoutData& rData2 )
@@ -207,14 +203,14 @@ private:
     sal_Int32                   mnParam2;       /// Second parameter.
 
 public:
-    explicit             ScCsvCmd() : meType( CSVCMD_NONE ),
+    inline explicit             ScCsvCmd() : meType( CSVCMD_NONE ),
                                     mnParam1( CSV_POS_INVALID ), mnParam2( CSV_POS_INVALID ) {}
 
     inline void                 Set( ScCsvCmdType eType, sal_Int32 nParam1, sal_Int32 nParam2 );
 
-    ScCsvCmdType         GetType() const     { return meType; }
-    sal_Int32            GetParam1() const   { return mnParam1; }
-    sal_Int32            GetParam2() const   { return mnParam2; }
+    inline ScCsvCmdType         GetType() const     { return meType; }
+    inline sal_Int32            GetParam1() const   { return mnParam1; }
+    inline sal_Int32            GetParam2() const   { return mnParam2; }
 };
 
 inline void ScCsvCmd::Set( ScCsvCmdType eType, sal_Int32 nParam1, sal_Int32 nParam2 )
@@ -236,7 +232,7 @@ private:
 public:
     explicit                    ScCsvControl( ScCsvControl& rParent );
     explicit                    ScCsvControl( vcl::Window* pParent, const ScCsvLayoutData& rData, WinBits nBits );
-    virtual                     ~ScCsvControl() override;
+    virtual                     ~ScCsvControl();
     virtual void                dispose() override;
 
     // event handling ---------------------------------------------------------
@@ -262,11 +258,11 @@ public:
     // repaint helpers --------------------------------------------------------
 
     /** Sets the graphic invalid (next Redraw() will not use cached graphic). */
-    void                 InvalidateGfx() { mbValidGfx = false; }
+    inline void                 InvalidateGfx() { mbValidGfx = false; }
     /** Sets the graphic valid (next Redraw() will use cached graphic). */
-    void                 ValidateGfx() { mbValidGfx = true; }
+    inline void                 ValidateGfx() { mbValidGfx = true; }
     /** Returns true, if cached graphic is valid. */
-    bool                 IsValidGfx() const { return mbValidGfx; }
+    inline bool                 IsValidGfx() const { return mbValidGfx; }
 
     /** Repaints all controls.
         @param bInvalidate  true = invalidates graphics of this control (not all). */
@@ -276,14 +272,14 @@ public:
     /** Decreases no-repaint counter and repaints if counter reaches 0. */
     void                        EnableRepaint();
     /** Returns true, if controls will not repaint. */
-    bool                 IsNoRepaint() const { return mrData.mnNoRepaint > 0; }
+    inline bool                 IsNoRepaint() const { return mrData.mnNoRepaint > 0; }
 
     // command handling -------------------------------------------------------
 
     /** Sets a new command handler. */
-    void                 SetCmdHdl( const Link<ScCsvControl&,void>& rHdl ) { maCmdHdl = rHdl; }
+    inline void                 SetCmdHdl( const Link<ScCsvControl&,void>& rHdl ) { maCmdHdl = rHdl; }
     /** Returns data of the last command. */
-    const ScCsvCmd&      GetCmd() const { return maCmd; }
+    inline const ScCsvCmd&      GetCmd() const { return maCmd; }
 
     /** Executes a command by calling command handler. */
     void                        Execute(
@@ -294,18 +290,18 @@ public:
     // layout helpers ---------------------------------------------------------
 
     /** Returns a reference to the current layout data. */
-    const ScCsvLayoutData& GetLayoutData() const { return mrData; }
+    inline const ScCsvLayoutData& GetLayoutData() const { return mrData; }
     /** Returns true, if the Right-to-Left layout mode is active. */
-    bool                 IsRTL() const { return mrData.mbAppRTL; }
+    inline bool                 IsRTL() const { return mrData.mbAppRTL; }
 
     /** Returns the number of available positions. */
-    sal_Int32            GetPosCount() const { return mrData.mnPosCount; }
+    inline sal_Int32            GetPosCount() const { return mrData.mnPosCount; }
     /** Returns the number of visible positions. */
     sal_Int32                   GetVisPosCount() const;
     /** Returns the first visible position. */
-    sal_Int32            GetFirstVisPos() const { return mrData.mnPosOffset; }
+    inline sal_Int32            GetFirstVisPos() const { return mrData.mnPosOffset; }
     /** Returns the last visible position. */
-    sal_Int32            GetLastVisPos() const { return GetFirstVisPos() + GetVisPosCount(); }
+    inline sal_Int32            GetLastVisPos() const { return GetFirstVisPos() + GetVisPosCount(); }
     /** Returns highest possible position for first visible character. */
     sal_Int32                   GetMaxPosOffset() const;
 
@@ -315,9 +311,9 @@ public:
     bool                        IsVisibleSplitPos( sal_Int32 nPos ) const;
 
     /** Returns the width of the header column. */
-    sal_Int32            GetHdrWidth() const { return mrData.mnHdrWidth; }
+    inline sal_Int32            GetHdrWidth() const { return mrData.mnHdrWidth; }
     /** Returns the width of one character column. */
-    sal_Int32            GetCharWidth() const { return mrData.mnCharWidth; }
+    inline sal_Int32            GetCharWidth() const { return mrData.mnCharWidth; }
     /** Returns the start position of the header column. */
     sal_Int32                   GetHdrX() const;
     /** Returns the X position of the first pixel of the data area. */
@@ -330,11 +326,11 @@ public:
     sal_Int32                   GetPosFromX( sal_Int32 nX ) const;
 
     /** Returns the number of data lines. */
-    sal_Int32            GetLineCount() const { return mrData.mnLineCount; }
+    inline sal_Int32            GetLineCount() const { return mrData.mnLineCount; }
     /** Returns the number of visible lines (including partly visible bottom line). */
     sal_Int32                   GetVisLineCount() const;
     /** Returns index of first visible line. */
-    sal_Int32            GetFirstVisLine() const { return mrData.mnLineOffset; }
+    inline sal_Int32            GetFirstVisLine() const { return mrData.mnLineOffset; }
     /** Returns index of last visible line. */
     sal_Int32                   GetLastVisLine() const;
     /** Returns highest possible index for first line. */
@@ -346,23 +342,23 @@ public:
     bool                        IsVisibleLine( sal_Int32 nLine ) const;
 
     /** Returns the height of the header line. */
-    sal_Int32            GetHdrHeight() const { return mrData.mnHdrHeight; }
+    inline sal_Int32            GetHdrHeight() const { return mrData.mnHdrHeight; }
     /** Returns the height of one line. */
-    sal_Int32            GetLineHeight() const { return mrData.mnLineHeight; }
+    inline sal_Int32            GetLineHeight() const { return mrData.mnLineHeight; }
     /** Returns output Y coordinate of the specified line. */
     sal_Int32                   GetY( sal_Int32 nLine ) const;
     /** Returns line index from output coordinate. */
     sal_Int32                   GetLineFromY( sal_Int32 nY ) const;
 
     /** Returns the ruler cursor position. */
-    sal_Int32            GetRulerCursorPos() const { return mrData.mnPosCursor; }
+    inline sal_Int32            GetRulerCursorPos() const { return mrData.mnPosCursor; }
     /** Returns the data grid cursor position (not column index!). */
-    sal_Int32            GetGridCursorPos() const { return mrData.mnColCursor; }
+    inline sal_Int32            GetGridCursorPos() const { return mrData.mnColCursor; }
 
     // static helpers ---------------------------------------------------------
 
     /** Inverts a rectangle in the specified output device. */
-    static void                 ImplInvertRect( OutputDevice& rOutDev, const tools::Rectangle& rRect );
+    static void                 ImplInvertRect( OutputDevice& rOutDev, const Rectangle& rRect );
 
     /** Returns direction code for the keys LEFT, RIGHT, HOME, END.
         @param bHomeEnd  false = ignore HOME and END key. */

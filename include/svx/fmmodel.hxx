@@ -22,7 +22,6 @@
 
 #include <svx/svdmodel.hxx>
 #include <svx/svxdllapi.h>
-#include <memory>
 
 class SfxObjectShell;
 class SfxItemPool;
@@ -37,7 +36,7 @@ class SVX_DLLPUBLIC FmFormModel :
     public SdrModel
 {
 private:
-    std::unique_ptr<FmFormModelImplData>    m_pImpl;
+    FmFormModelImplData*    m_pImpl;
     SfxObjectShell*         m_pObjShell;
 
     bool            m_bOpenInDesignMode : 1;
@@ -54,7 +53,7 @@ public:
     FmFormModel(const OUString& rPath, SfxItemPool* pPool, SfxObjectShell* pPers,
                 bool bUseExtColorTable);
 
-    virtual ~FmFormModel() override;
+    virtual ~FmFormModel();
 
     virtual SdrPage* AllocPage(bool bMasterPage) override;
     virtual void     InsertPage(SdrPage* pPage, sal_uInt16 nPos=0xFFFF) override;

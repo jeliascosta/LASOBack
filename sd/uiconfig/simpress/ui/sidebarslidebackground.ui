@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.20.0 -->
+<!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
   <requires lib="LibreOffice" version="1.0"/>
   <object class="GtkGrid" id="SlideBackgroundPanel">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="hexpand">True</property>
     <child>
       <object class="GtkGrid" id="grid1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="halign">center</property>
         <property name="valign">start</property>
         <property name="margin_left">9</property>
         <property name="margin_right">15</property>
-        <property name="hexpand">True</property>
         <property name="border_width">6</property>
         <property name="row_spacing">6</property>
         <property name="column_spacing">6</property>
@@ -47,7 +46,6 @@
           <object class="GtkComboBoxText" id="orientation">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
             <items>
               <item translatable="yes">Landscape</item>
               <item translatable="yes">Portrait</item>
@@ -62,7 +60,6 @@
           <object class="svxlo-SvxFillTypeBox" id="fillstyle">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -70,15 +67,25 @@
           </packing>
         </child>
         <child>
-          <object class="svxcorelo-SvxColorListBox" id="fillattr">
-            <property name="width_request">150</property>
+          <object class="svxlo-ColorLB" id="fillattr">
             <property name="can_focus">False</property>
             <property name="has_tooltip">True</property>
-            <property name="hexpand">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
             <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button1">
+            <property name="label" translatable="yes">Edit Master Slide</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">.uno:SlideMasterPage</property>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">10</property>
           </packing>
         </child>
         <child>
@@ -88,7 +95,6 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">False</property>
-            <property name="hexpand">True</property>
             <property name="xalign">0</property>
             <property name="draw_indicator">True</property>
           </object>
@@ -101,7 +107,6 @@
           <object class="GtkComboBoxText" id="masterslide">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -109,10 +114,12 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="masterlabel">
+          <object class="GtkLabel" id="label1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">end</property>
+            <property name="hexpand">True</property>
+            <property name="label" translatable="yes">Master Slide:</property>
             <property name="ellipsize">end</property>
           </object>
           <packing>
@@ -126,7 +133,6 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <property name="hexpand">True</property>
             <property name="action_name">.uno:SelectBackground</property>
           </object>
           <packing>
@@ -136,10 +142,8 @@
         </child>
         <child>
           <object class="svxlo-SvxFillAttrBox" id="fillattr1">
-            <property name="width_request">150</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -147,11 +151,9 @@
           </packing>
         </child>
         <child>
-          <object class="svxcorelo-SvxColorListBox" id="fillattr2">
-            <property name="width_request">150</property>
+          <object class="svxlo-ColorLB" id="fillattr2">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -164,7 +166,6 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">False</property>
-            <property name="hexpand">True</property>
             <property name="xalign">0</property>
             <property name="draw_indicator">True</property>
           </object>
@@ -174,10 +175,42 @@
           </packing>
         </child>
         <child>
-          <object class="svxcorelo-PaperSizeListBox" id="paperformat">
+          <object class="GtkComboBoxText" id="paperformat">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
+            <items>
+              <item translatable="yes">A6</item>
+              <item translatable="yes">A5</item>
+              <item translatable="yes">A4</item>
+              <item translatable="yes">A3</item>
+              <item translatable="yes">A2</item>
+              <item translatable="yes">A1</item>
+              <item translatable="yes">A0</item>
+              <item translatable="yes">B6 (ISO)</item>
+              <item translatable="yes">B5 (ISO)</item>
+              <item translatable="yes">B4 (ISO)</item>
+              <item translatable="yes">Letter</item>
+              <item translatable="yes">Legal</item>
+              <item translatable="yes">Long Bond</item>
+              <item translatable="yes">Tabloid</item>
+              <item translatable="yes">B6 (JIS)</item>
+              <item translatable="yes">B5 (JIS)</item>
+              <item translatable="yes">B4 (JIS)</item>
+              <item translatable="yes">16 Kai</item>
+              <item translatable="yes">32 Kai</item>
+              <item translatable="yes">Big 32 Kai</item>
+              <item translatable="yes">User</item>
+              <item translatable="yes">DL Envelope</item>
+              <item translatable="yes">C6 Envelope</item>
+              <item translatable="yes">C6/5 Envelope</item>
+              <item translatable="yes">C5 Envelope</item>
+              <item translatable="yes">C4 Envelope</item>
+              <item translatable="yes">Dia Slide</item>
+              <item translatable="yes">Screen 4:3</item>
+              <item translatable="yes">Screen 16:9</item>
+              <item translatable="yes">Screen 16:10</item>
+              <item translatable="yes">Japanese Postcard</item>
+            </items>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -194,45 +227,6 @@
           <packing>
             <property name="left_attach">0</property>
             <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox" id="box1">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="hexpand">True</property>
-            <property name="homogeneous">True</property>
-            <child>
-              <object class="GtkButton" id="masterslidebutton">
-                <property name="label" translatable="yes">Master Slide</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="action_name">.uno:SlideMasterPage</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="closemasterslide">
-                <property name="label" translatable="yes">Close Master View</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">10</property>
           </packing>
         </child>
         <child>

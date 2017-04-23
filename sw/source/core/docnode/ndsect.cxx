@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <svl/smplhint.hxx>
 #include <hintids.hxx>
 #include <sfx2/linkmgr.hxx>
 #include <svl/itemiter.hxx>
@@ -197,8 +198,8 @@ SwDoc::InsertSwSection(SwPaM const& rRange, SwSectionData & rNewData,
 
     SwSectionNode* pNewSectNode = nullptr;
 
-    RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
-    getIDocumentRedlineAccess().SetRedlineFlags_intern( (eOld & ~RedlineFlags::ShowMask) | RedlineFlags::Ignore );
+    RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
+    getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)((eOld & ~nsRedlineMode_t::REDLINE_SHOW_MASK) | nsRedlineMode_t::REDLINE_IGNORE));
 
     if( rRange.HasMark() )
     {
@@ -319,7 +320,7 @@ SwDoc::InsertSwSection(SwPaM const& rRange, SwSectionData & rNewData,
     pNewSectNode->CheckSectionCondColl();
 //FEATURE::CONDCOLL
 
-    getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
+    getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
 
     // To-Do - add 'SwExtraRedlineTable' also ?
     if( getIDocumentRedlineAccess().IsRedlineOn() || (!getIDocumentRedlineAccess().IsIgnoreRedline() && !getIDocumentRedlineAccess().GetRedlineTable().empty() ))
@@ -516,7 +517,7 @@ void SwDoc::DelSectionFormat( SwSectionFormat *pFormat, bool bDelNodes )
 {
     SwSectionFormats::iterator itFormatPos = std::find( mpSectionFormatTable->begin(), mpSectionFormatTable->end(), pFormat );
 
-    GetIDocumentUndoRedo().StartUndo(SwUndoId::DELSECTION, nullptr);
+    GetIDocumentUndoRedo().StartUndo(UNDO_DELSECTION, nullptr);
 
     if( mpSectionFormatTable->end() != itFormatPos )
     {
@@ -542,7 +543,7 @@ void SwDoc::DelSectionFormat( SwSectionFormat *pFormat, bool bDelNodes )
                     GetFootnoteIdxs().UpdateFootnote( aUpdIdx );
                 getIDocumentState().SetModified();
                 //#126178# start/end undo have to be pairs!
-                GetIDocumentUndoRedo().EndUndo(SwUndoId::DELSECTION, nullptr);
+                GetIDocumentUndoRedo().EndUndo(UNDO_DELSECTION, nullptr);
                 return ;
             }
             GetIDocumentUndoRedo().AppendUndo( MakeUndoDelSection( *pFormat ) );
@@ -556,7 +557,7 @@ void SwDoc::DelSectionFormat( SwSectionFormat *pFormat, bool bDelNodes )
                 GetFootnoteIdxs().UpdateFootnote( aUpdIdx );
             getIDocumentState().SetModified();
             //#126178# start/end undo have to be pairs!
-            GetIDocumentUndoRedo().EndUndo(SwUndoId::DELSECTION, nullptr);
+            GetIDocumentUndoRedo().EndUndo(UNDO_DELSECTION, nullptr);
             return ;
         }
 
@@ -599,7 +600,7 @@ void SwDoc::DelSectionFormat( SwSectionFormat *pFormat, bool bDelNodes )
 //FEATURE::CONDCOLL
     }
 
-    GetIDocumentUndoRedo().EndUndo(SwUndoId::DELSECTION, nullptr);
+    GetIDocumentUndoRedo().EndUndo(UNDO_DELSECTION, nullptr);
 
     getIDocumentState().SetModified();
 }
@@ -681,7 +682,7 @@ void SwDoc::UpdateSection( size_t const nPos, SwSectionData & rNewData,
     ::sw::UndoGuard const undoGuard(GetIDocumentUndoRedo());
 
     // The LinkFileName could only consist of separators
-    OUString sCompareString = OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
+    OUString sCompareString = OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
     const bool bUpdate =
            (!pSection->IsLinkType() && rNewData.IsLinkType())
             ||  (!rNewData.GetLinkFileName().isEmpty()
@@ -985,7 +986,7 @@ lcl_initParent(SwSectionNode & rThis, SwSectionFormat & rFormat)
 
 SwSectionNode::SwSectionNode(SwNodeIndex const& rIdx,
         SwSectionFormat & rFormat, SwTOXBase const*const pTOXBase)
-    : SwStartNode( rIdx, SwNodeType::Section )
+    : SwStartNode( rIdx, ND_SECTIONNODE )
     , m_pSection( (pTOXBase)
         ? new SwTOXBaseSection(*pTOXBase, lcl_initParent(*this, rFormat))
         : new SwSection( CONTENT_SECTION, rFormat.GetName(),

@@ -117,11 +117,11 @@ void SdCustomShowDlg::CheckState()
         pCustomShowList->Seek( nPos );
 }
 
-IMPL_LINK( SdCustomShowDlg, ClickButtonHdl, Button *, p, void )
+IMPL_LINK_TYPED( SdCustomShowDlg, ClickButtonHdl, Button *, p, void )
 {
     SelectHdl(p);
 }
-IMPL_LINK( SdCustomShowDlg, SelectListBoxHdl, ListBox&, rListBox, void )
+IMPL_LINK_TYPED( SdCustomShowDlg, SelectListBoxHdl, ListBox&, rListBox, void )
 {
     SelectHdl(&rListBox);
 }
@@ -266,7 +266,7 @@ void SdCustomShowDlg::SelectHdl(void *p)
 }
 
 // StartShow-Hdl
-IMPL_LINK_NOARG(SdCustomShowDlg, StartShowHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdCustomShowDlg, StartShowHdl, Button*, void)
 {
     EndDialog( RET_YES );
 }
@@ -314,10 +314,10 @@ SdDefineCustomShowDlg::SdDefineCustomShowDlg( vcl::Window* pWindow,
 
     // fill Listbox with page names of Docs
     for( long nPage = 0L;
-         nPage < rDoc.GetSdPageCount( PageKind::Standard );
+         nPage < rDoc.GetSdPageCount( PK_STANDARD );
          nPage++ )
     {
-        SdPage* pPage = rDoc.GetSdPage( (sal_uInt16) nPage, PageKind::Standard );
+        SdPage* pPage = rDoc.GetSdPage( (sal_uInt16) nPage, PK_STANDARD );
         OUString aStr( pPage->GetName() );
         m_pLbPages->InsertEntry( aStr );
     }
@@ -338,7 +338,7 @@ SdDefineCustomShowDlg::SdDefineCustomShowDlg( vcl::Window* pWindow,
     }
     else
     {
-        rpCustomShow = new SdCustomShow;
+        rpCustomShow = new SdCustomShow( &rDoc );
         m_pEdtName->SetText( OUString( SdResId( STR_NEW_CUSTOMSHOW ) ) );
         m_pEdtName->SetSelection( Selection( SELECTION_MIN, SELECTION_MAX ) );
         rpCustomShow->SetName( m_pEdtName->GetText() );
@@ -382,19 +382,19 @@ void SdDefineCustomShowDlg::CheckState()
     m_pBtnRemove->Enable( bCSPages );
 }
 
-IMPL_LINK( SdDefineCustomShowDlg, ClickButtonHdl, Button*, p, void )
+IMPL_LINK_TYPED( SdDefineCustomShowDlg, ClickButtonHdl, Button*, p, void )
 {
     ClickButtonHdl2(p);
 }
-IMPL_LINK( SdDefineCustomShowDlg, ClickButtonHdl3, SvTreeListBox*, p, void )
+IMPL_LINK_TYPED( SdDefineCustomShowDlg, ClickButtonHdl3, SvTreeListBox*, p, void )
 {
     ClickButtonHdl2(p);
 }
-IMPL_LINK( SdDefineCustomShowDlg, ClickButtonHdl4, ListBox&, rListBox, void )
+IMPL_LINK_TYPED( SdDefineCustomShowDlg, ClickButtonHdl4, ListBox&, rListBox, void )
 {
     ClickButtonHdl2(&rListBox);
 }
-IMPL_LINK( SdDefineCustomShowDlg, ClickButtonEditHdl, Edit&, rEdit, void )
+IMPL_LINK_TYPED( SdDefineCustomShowDlg, ClickButtonEditHdl, Edit&, rEdit, void )
 {
     ClickButtonHdl2(&rEdit);
 }
@@ -419,7 +419,7 @@ void SdDefineCustomShowDlg::ClickButtonHdl2(void* p)
 
                 m_pLbCustomPages->Select( pEntry );
                 SdPage* pPage = rDoc.GetSdPage( (sal_uInt16) m_pLbPages->
-                                    GetSelectEntryPos( i ), PageKind::Standard );
+                                    GetSelectEntryPos( i ), PK_STANDARD );
                 pEntry->SetUserData( pPage );
 
                 if( nPosCP != TREELIST_APPEND )
@@ -502,7 +502,7 @@ void SdDefineCustomShowDlg::CheckCustomShow()
 }
 
 // OK-Hdl
-IMPL_LINK_NOARG(SdDefineCustomShowDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SdDefineCustomShowDlg, OKHdl, Button*, void)
 {
     // check name...
     bool bDifferent = true;

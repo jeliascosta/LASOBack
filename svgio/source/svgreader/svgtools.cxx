@@ -17,12 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgtools.hxx>
+#include <svgio/svgreader/svgtools.hxx>
 #include <osl/thread.h>
 #include <tools/color.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
-#include <svgtoken.hxx>
+#include <svgio/svgreader/svgtoken.hxx>
 #include <unordered_map>
 
 namespace svgio
@@ -1482,13 +1482,15 @@ namespace svgio
 
                     if(!rMimeType.isEmpty() && nPos < nLen)
                     {
-                        if(rMimeType.startsWith("image"))
+                        static const char aStrImage[] = "image";
+
+                        if(rMimeType.match(aStrImage, 0))
                         {
                             // image data
                             OUString aData(rCandidate.copy(nPos));
                             static const char aStrBase64[] = "base64";
 
-                            if(aData.startsWith(aStrBase64))
+                            if(aData.match(aStrBase64, 0))
                             {
                                 // base64 encoded
                                 nPos = strlen(aStrBase64);

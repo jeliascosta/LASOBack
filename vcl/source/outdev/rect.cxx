@@ -30,7 +30,7 @@
 
 #include "salgdi.hxx"
 
-void OutputDevice::DrawRect( const tools::Rectangle& rRect )
+void OutputDevice::DrawRect( const Rectangle& rRect )
 {
     assert(!is_double_buffered_window());
 
@@ -40,7 +40,7 @@ void OutputDevice::DrawRect( const tools::Rectangle& rRect )
     if ( !IsDeviceOutputNecessary() || (!mbLineColor && !mbFillColor) || ImplIsRecordLayout() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
 
     if ( aRect.IsEmpty() )
         return;
@@ -68,7 +68,7 @@ void OutputDevice::DrawRect( const tools::Rectangle& rRect )
         mpAlphaVDev->DrawRect( rRect );
 }
 
-void OutputDevice::DrawRect( const tools::Rectangle& rRect,
+void OutputDevice::DrawRect( const Rectangle& rRect,
                              sal_uLong nHorzRound, sal_uLong nVertRound )
 {
     assert(!is_double_buffered_window());
@@ -79,7 +79,7 @@ void OutputDevice::DrawRect( const tools::Rectangle& rRect,
     if ( !IsDeviceOutputNecessary() || (!mbLineColor && !mbFillColor) || ImplIsRecordLayout() )
         return;
 
-    const tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    const Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
 
     if ( aRect.IsEmpty() )
         return;
@@ -129,13 +129,13 @@ void OutputDevice::DrawRect( const tools::Rectangle& rRect,
         mpAlphaVDev->DrawRect( rRect, nHorzRound, nVertRound );
 }
 
-void OutputDevice::Invert( const tools::Rectangle& rRect, InvertFlags nFlags )
+void OutputDevice::Invert( const Rectangle& rRect, InvertFlags nFlags )
 {
     assert(!is_double_buffered_window());
     if ( !IsDeviceOutputNecessary() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
 
     if ( aRect.IsEmpty() )
         return;
@@ -217,19 +217,19 @@ void OutputDevice::DrawCheckered(const Point& rPos, const Size& rSize, sal_uInt3
         {
             const sal_uInt32 nBottom(std::min(nMaxY, nY + nLen));
 
-            SetFillColor(((x & 0x0001) ^ (y & 0x0001)) ? aStart : aEnd);
-            DrawRect(tools::Rectangle(nX, nY, nRight, nBottom));
+            SetFillColor((x & 0x0001) ^ (y & 0x0001) ? aStart : aEnd);
+            DrawRect(Rectangle(nX, nY, nRight, nBottom));
         }
     }
 
     Pop();
 }
 
-void OutputDevice::DrawGrid( const tools::Rectangle& rRect, const Size& rDist, DrawGridFlags nFlags )
+void OutputDevice::DrawGrid( const Rectangle& rRect, const Size& rDist, DrawGridFlags nFlags )
 {
     assert(!is_double_buffered_window());
 
-    tools::Rectangle aDstRect( PixelToLogic( Point() ), GetOutputSize() );
+    Rectangle aDstRect( PixelToLogic( Point() ), GetOutputSize() );
     aDstRect.Intersection( rRect );
 
     if( aDstRect.IsEmpty() || ImplIsRecordLayout() )
@@ -351,11 +351,11 @@ BmpMirrorFlags AdjustTwoRect( SalTwoRect& rTwoRect, const Size& rSizePix )
         ( ( rTwoRect.mnSrcX + rTwoRect.mnSrcWidth ) > rSizePix.Width() ) ||
         ( ( rTwoRect.mnSrcY + rTwoRect.mnSrcHeight ) > rSizePix.Height() ) )
     {
-        const tools::Rectangle aSourceRect( Point( rTwoRect.mnSrcX, rTwoRect.mnSrcY ),
+        const Rectangle aSourceRect( Point( rTwoRect.mnSrcX, rTwoRect.mnSrcY ),
                                      Size( rTwoRect.mnSrcWidth, rTwoRect.mnSrcHeight ) );
-        tools::Rectangle aCropRect( aSourceRect );
+        Rectangle aCropRect( aSourceRect );
 
-        aCropRect.Intersection( tools::Rectangle( Point(), rSizePix ) );
+        aCropRect.Intersection( Rectangle( Point(), rSizePix ) );
 
         if( aCropRect.IsEmpty() )
         {
@@ -385,16 +385,16 @@ BmpMirrorFlags AdjustTwoRect( SalTwoRect& rTwoRect, const Size& rSizePix )
     return nMirrFlags;
 }
 
-void AdjustTwoRect( SalTwoRect& rTwoRect, const tools::Rectangle& rValidSrcRect )
+void AdjustTwoRect( SalTwoRect& rTwoRect, const Rectangle& rValidSrcRect )
 {
     if( ( rTwoRect.mnSrcX < rValidSrcRect.Left() ) || ( rTwoRect.mnSrcX >= rValidSrcRect.Right() ) ||
         ( rTwoRect.mnSrcY < rValidSrcRect.Top() ) || ( rTwoRect.mnSrcY >= rValidSrcRect.Bottom() ) ||
         ( ( rTwoRect.mnSrcX + rTwoRect.mnSrcWidth ) > rValidSrcRect.Right() ) ||
         ( ( rTwoRect.mnSrcY + rTwoRect.mnSrcHeight ) > rValidSrcRect.Bottom() ) )
     {
-        const tools::Rectangle aSourceRect( Point( rTwoRect.mnSrcX, rTwoRect.mnSrcY ),
+        const Rectangle aSourceRect( Point( rTwoRect.mnSrcX, rTwoRect.mnSrcY ),
                                      Size( rTwoRect.mnSrcWidth, rTwoRect.mnSrcHeight ) );
-        tools::Rectangle aCropRect( aSourceRect );
+        Rectangle aCropRect( aSourceRect );
 
         aCropRect.Intersection( rValidSrcRect );
 

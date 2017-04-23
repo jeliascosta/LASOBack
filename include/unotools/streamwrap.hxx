@@ -27,7 +27,7 @@
 #include <com/sun/star/io/XSeekable.hpp>
 #include <com/sun/star/io/XTruncate.hpp>
 #include <com/sun/star/io/XStream.hpp>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase3.hxx>
 #include <cppuhelper/implbase1.hxx>
 
 class SvStream;
@@ -37,9 +37,11 @@ namespace utl
 
 //= OInputStreamWrapper
 
+typedef ::cppu::WeakImplHelper1 <   css::io::XInputStream
+                                > InputStreamWrapper_Base;
+// needed for some compilers
 /// helper class for wrapping an SvStream into an com.sun.star.io::XInputStream
-class UNOTOOLS_DLLPUBLIC OInputStreamWrapper
-        : public cppu::WeakImplHelper<css::io::XInputStream>
+class UNOTOOLS_DLLPUBLIC OInputStreamWrapper : public InputStreamWrapper_Base
 {
 protected:
     ::osl::Mutex    m_aMutex;
@@ -53,14 +55,14 @@ protected:
 public:
     OInputStreamWrapper(SvStream& _rStream);
     OInputStreamWrapper(SvStream* pStream, bool bOwner=false);
-    virtual ~OInputStreamWrapper() override;
+    virtual ~OInputStreamWrapper();
 
 // css::io::XInputStream
-    virtual sal_Int32   SAL_CALL    readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) override;
-    virtual sal_Int32   SAL_CALL    readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) override;
-    virtual void        SAL_CALL    skipBytes(sal_Int32 nBytesToSkip) override;
-    virtual sal_Int32   SAL_CALL    available() override;
-    virtual void        SAL_CALL    closeInput() override;
+    virtual sal_Int32   SAL_CALL    readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32   SAL_CALL    readSomeBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nMaxBytesToRead) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void        SAL_CALL    skipBytes(sal_Int32 nBytesToSkip) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32   SAL_CALL    available() throw(css::io::NotConnectedException, css::uno::RuntimeException, std::exception) override;
+    virtual void        SAL_CALL    closeInput() throw(css::io::NotConnectedException, css::uno::RuntimeException, std::exception) override;
 
 protected:
     /// throws a NotConnectedException if the object is not connected anymore
@@ -71,40 +73,41 @@ protected:
 
 //= OSeekableInputStreamWrapper
 
+typedef ::cppu::ImplHelper1 <   css::io::XSeekable
+                            >   OSeekableInputStreamWrapper_Base;
 /** helper class for wrapping an SvStream into an com.sun.star.io::XInputStream
     which is seekable (i.e. supports the com.sun.star.io::XSeekable interface).
 */
-class UNOTOOLS_DLLPUBLIC OSeekableInputStreamWrapper
-        : public cppu::ImplInheritanceHelper< OInputStreamWrapper, css::io::XSeekable >
+class UNOTOOLS_DLLPUBLIC OSeekableInputStreamWrapper : public ::cppu::ImplInheritanceHelper1 < OInputStreamWrapper, css::io::XSeekable >
 {
 protected:
     OSeekableInputStreamWrapper() {}
-    ~OSeekableInputStreamWrapper() override;
-
 public:
     OSeekableInputStreamWrapper(SvStream& _rStream);
     OSeekableInputStreamWrapper(SvStream* _pStream, bool _bOwner = false);
 
     // XSeekable
-    virtual void SAL_CALL seek( sal_Int64 _nLocation ) override;
-    virtual sal_Int64 SAL_CALL getPosition(  ) override;
-    virtual sal_Int64 SAL_CALL getLength(  ) override;
+    virtual void SAL_CALL seek( sal_Int64 _nLocation ) throw (css::lang::IllegalArgumentException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getPosition(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getLength(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 };
 
 //= OOutputStreamWrapper
 
-class OOutputStreamWrapper : public cppu::WeakImplHelper<css::io::XOutputStream>
+typedef ::cppu::WeakImplHelper1<css::io::XOutputStream> OutputStreamWrapper_Base;
+    // needed for some compilers
+class OOutputStreamWrapper : public OutputStreamWrapper_Base
 {
 public:
     UNOTOOLS_DLLPUBLIC OOutputStreamWrapper(SvStream& _rStream);
 
 protected:
-    virtual ~OOutputStreamWrapper() override;
+    virtual ~OOutputStreamWrapper();
 
 // css::io::XOutputStream
-    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) override;
-    virtual void SAL_CALL flush() override;
-    virtual void SAL_CALL closeOutput() override;
+    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL flush() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeOutput() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
 
     /// throws an exception according to the error flag of m_pSvStream
     void checkError() const;
@@ -128,40 +131,33 @@ public:
     OSeekableOutputStreamWrapper(SvStream& _rStream);
 
 private:
-    virtual ~OSeekableOutputStreamWrapper() override;
+    virtual ~OSeekableOutputStreamWrapper();
 
     // disambiguate XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& _rType ) throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire(  ) throw () override;
     virtual void SAL_CALL release(  ) throw () override;
 
     // XSeekable
-    virtual void SAL_CALL seek( sal_Int64 _nLocation ) override;
-    virtual sal_Int64 SAL_CALL getPosition(  ) override;
-    virtual sal_Int64 SAL_CALL getLength(  ) override;
+    virtual void SAL_CALL seek( sal_Int64 _nLocation ) throw (css::lang::IllegalArgumentException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getPosition(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int64 SAL_CALL getLength(  ) throw (css::io::IOException, css::uno::RuntimeException, std::exception) override;
 };
 
-class UNOTOOLS_DLLPUBLIC OStreamWrapper
-        : public cppu::ImplInheritanceHelper<OSeekableInputStreamWrapper,
-                                             css::io::XStream,
-                                             css::io::XOutputStream,
-                                             css::io::XTruncate>
+class UNOTOOLS_DLLPUBLIC OStreamWrapper : public ::cppu::ImplInheritanceHelper3 < OSeekableInputStreamWrapper, css::io::XStream, css::io::XOutputStream, css::io::XTruncate >
 {
-protected:
-    ~OStreamWrapper() override;
-
 public:
     OStreamWrapper(SvStream& _rStream);
 
 // css::io::XStream
-    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  ) override;
-    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL getOutputStream(  ) override;
+    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::io::XOutputStream > SAL_CALL getOutputStream(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 // css::io::XOutputStream
-    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) override;
-    virtual void SAL_CALL flush() override;
-    virtual void SAL_CALL closeOutput() override;
-    virtual void SAL_CALL truncate() override;
+    virtual void SAL_CALL writeBytes(const css::uno::Sequence< sal_Int8 >& aData) throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL flush() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL closeOutput() throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL truncate() throw(css::io::IOException, css::uno::RuntimeException, std::exception) override;
 };
 
 }

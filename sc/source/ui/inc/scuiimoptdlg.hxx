@@ -28,20 +28,18 @@ class ScDelimiterTable;
 class ScImportOptionsDlg : public ModalDialog
 {
 public:
-    ScImportOptionsDlg( vcl::Window*            pParent,
-                        bool                    bAscii,
-                        const ScImportOptions*  pOptions,
-                        const OUString*         pStrTitle,
-                        bool                    bMultiByte,
-                        bool                    bOnlyDbtoolsEncodings,
-                        bool                    bImport );
+    ScImportOptionsDlg( vcl::Window*                 pParent,
+                        bool                    bAscii = true,
+                        const ScImportOptions*  pOptions = nullptr,
+                        const OUString*         pStrTitle = nullptr,
+                        bool                    bMultiByte = false,
+                        bool                    bOnlyDbtoolsEncodings = false,
+                        bool                    bImport = true );
 
-    virtual ~ScImportOptionsDlg() override;
+    virtual ~ScImportOptionsDlg();
     virtual void dispose() override;
 
-    virtual void GetImportOptions( ScImportOptions& rOptions ) const;
-    virtual void SaveImportOptions() const;
-    virtual OString GetScreenshotId() const override;
+    void GetImportOptions( ScImportOptions& rOptions ) const;
 
 private:
     VclPtr<VclFrame>           m_pFieldFrame;
@@ -62,13 +60,11 @@ private:
     ScDelimiterTable*   pFieldSepTab;
     ScDelimiterTable*   pTextSepTab;
 
-    bool m_bIsAsciiImport;
-
 private:
     sal_uInt16 GetCodeFromCombo( const ComboBox& rEd ) const;
 
-    DECL_LINK( FixedWidthHdl, Button*, void );
-    DECL_LINK( DoubleClickHdl, ListBox&, void );
+    DECL_LINK_TYPED( FixedWidthHdl, Button*, void );
+    DECL_LINK_TYPED( DoubleClickHdl, ListBox&, void );
 };
 
 #endif

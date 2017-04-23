@@ -19,7 +19,6 @@
 #ifndef INCLUDED_SFX2_SOURCE_SIDEBAR_TABBAR_HXX
 #define INCLUDED_SFX2_SOURCE_SIDEBAR_TABBAR_HXX
 
-#include <sfx2//dllapi.h>
 #include "DeckDescriptor.hxx"
 #include <sfx2/sidebar/ResourceManager.hxx>
 
@@ -63,7 +62,7 @@ public:
         bool mbIsEnabled;
     };
     typedef ::std::function<void (
-            const tools::Rectangle&,
+            const Rectangle&,
             const ::std::vector<DeckMenuData>& rMenuData)> PopupMenuProvider;
     TabBar (
         vcl::Window* pParentWindow,
@@ -72,12 +71,12 @@ public:
         const PopupMenuProvider& rPopupMenuProvider,
         SidebarController* rParentSidebarController);
 
-    virtual ~TabBar() override;
+    virtual ~TabBar();
     virtual void dispose() override;
 
-    virtual void Paint (vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& rUpdateArea) override;
+    virtual void Paint (vcl::RenderContext& /*rRenderContext*/, const Rectangle& rUpdateArea) override;
     virtual void DataChanged (const DataChangedEvent& rDataChangedEvent) override;
-    virtual bool EventNotify (NotifyEvent& rEvent) override;
+    virtual bool Notify (NotifyEvent& rEvent) override;
 
     static sal_Int32 GetDefaultWidth();
 
@@ -97,7 +96,7 @@ private:
     class Item
     {
     public:
-        DECL_LINK(HandleClick, Button*, void);
+        DECL_LINK_TYPED(HandleClick, Button*, void);
         VclPtr<RadioButton> mpButton;
         OUString msDeckId;
         ::std::function<void (const OUString& rsDeckId)> maDeckActivationFunctor;
@@ -115,7 +114,7 @@ private:
     void Layout();
     void UpdateButtonIcons();
 
-    DECL_LINK(OnToolboxClicked, Button*, void);
+    DECL_LINK_TYPED(OnToolboxClicked, Button*, void);
 
     SidebarController* pParentSidebarController;
 

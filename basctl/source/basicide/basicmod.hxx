@@ -28,10 +28,13 @@ namespace basctl
 
 class Module : public SfxModule
 {
+    static Module* mpModule;
 public:
     Module ( ResMgr *pMgr, SfxObjectFactory *pObjFact) :
-        SfxModule( pMgr, {pObjFact} )
+        SfxModule( pMgr, false, pObjFact, nullptr )
     { }
+public:
+    static Module*& Get () { return mpModule; }
 };
 
 } // namespace basctl

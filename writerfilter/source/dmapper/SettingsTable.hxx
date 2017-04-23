@@ -45,8 +45,8 @@ class SettingsTable : public LoggedProperties, public LoggedTable
     std::unique_ptr<SettingsTable_Impl> m_pImpl;
 
  public:
-    SettingsTable(const DomainMapper& rDomainMapper);
-    virtual ~SettingsTable() override;
+    SettingsTable();
+    virtual ~SettingsTable();
 
     //returns default TabStop in 1/100th mm
     int GetDefaultTabStop() const;
@@ -70,7 +70,6 @@ class SettingsTable : public LoggedProperties, public LoggedTable
     bool GetDoNotUseHTMLParagraphAutoSpacing() const;
     bool GetSplitPgBreakAndParaMark() const;
     bool GetMirrorMarginSettings() const;
-    bool GetDisplayBackgroundShape() const;
     bool GetNoColumnBalance() const;
     bool GetProtectForm() const;
 

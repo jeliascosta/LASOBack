@@ -23,7 +23,6 @@
 
 #include "printopt.hxx"
 #include "miscuno.hxx"
-#include "sc.hrc"
 
 using namespace utl;
 using namespace com::sun::star::uno;
@@ -67,8 +66,8 @@ bool ScPrintOptions::operator==( const ScPrintOptions& rOpt ) const
         && bForceBreaks == rOpt.bForceBreaks;
 }
 
-ScTpPrintItem::ScTpPrintItem( const ScPrintOptions& rOpt ) :
-    SfxPoolItem ( SID_SCPRINTOPTIONS ),
+ScTpPrintItem::ScTpPrintItem( sal_uInt16 nWhichP, const ScPrintOptions& rOpt ) :
+    SfxPoolItem ( nWhichP ),
     theOptions  ( rOpt )
 {
 }
@@ -101,16 +100,26 @@ SfxPoolItem* ScTpPrintItem::Clone( SfxItemPool * ) const
 #define SCPRINTOPT_EMPTYPAGES       0
 #define SCPRINTOPT_ALLSHEETS        1
 #define SCPRINTOPT_FORCEBREAKS      2
+#define SCPRINTOPT_COUNT            3
 
 Sequence<OUString> ScPrintCfg::GetPropertyNames()
 {
-    return {"Page/EmptyPages",          // SCPRINTOPT_EMPTYPAGES
-            "Other/AllSheets",          // SCPRINTOPT_ALLSHEETS
-            "Page/ForceBreaks"};        // SCPRINTOPT_FORCEBREAKS;
+    static const char* aPropNames[] =
+    {
+        "Page/EmptyPages",          // SCPRINTOPT_EMPTYPAGES
+        "Other/AllSheets",          // SCPRINTOPT_ALLSHEETS
+        "Page/ForceBreaks"          // SCPRINTOPT_FORCEBREAKS
+    };
+    Sequence<OUString> aNames(SCPRINTOPT_COUNT);
+    OUString* pNames = aNames.getArray();
+    for(int i = 0; i < SCPRINTOPT_COUNT; i++)
+        pNames[i] = OUString::createFromAscii(aPropNames[i]);
+
+    return aNames;
 }
 
 ScPrintCfg::ScPrintCfg() :
-    ConfigItem( CFGPATH_PRINT )
+    ConfigItem( OUString( CFGPATH_PRINT ) )
 {
     Sequence<OUString> aNames = GetPropertyNames();
     Sequence<Any> aValues = GetProperties(aNames);

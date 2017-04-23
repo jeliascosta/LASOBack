@@ -163,23 +163,23 @@ private:
 
     css::uno::Reference< css::sdbc::XRow >
     getPropertyValues( const css::uno::Sequence< css::beans::Property >& rProperties );
-    /// @throws css::uno::Exception
     css::uno::Sequence< css::uno::Any >
     setPropertyValues(
             const css::uno::Sequence< css::beans::PropertyValue >& rValues,
-            const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+            const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+        throw( css::uno::Exception, std::exception );
 
-    /// @throws css::uno::Exception
     void insert( sal_Int32 nNameClashResolve,
-                 const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+                 const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+        throw( css::uno::Exception, std::exception );
 
-    /// @throws css::uno::Exception
     void destroy( bool bDeletePhysical,
-                  const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+                  const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+        throw( css::uno::Exception, std::exception );
 
-    /// @throws css::uno::Exception
     void transfer( const css::ucb::TransferInfo& rInfo,
-                   const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv );
+                   const css::uno::Reference< css::ucb::XCommandEnvironment > & xEnv )
+        throw( css::uno::Exception, std::exception );
 
 public:
     // Create existing content. Fail, if not already exists.
@@ -196,38 +196,49 @@ public:
             const css::uno::Reference< css::ucb::XContentIdentifier >& Identifier,
             const css::ucb::ContentInfo& Info );
 
-    virtual ~HierarchyContent() override;
+    virtual ~HierarchyContent();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
     virtual OUString SAL_CALL
-    getImplementationName() override;
+    getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XContent
     virtual OUString SAL_CALL
-    getContentType() override;
+    getContentType()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::ucb::XContentIdentifier > SAL_CALL
-    getIdentifier() override;
+    getIdentifier()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XCommandProcessor
     virtual css::uno::Any SAL_CALL
     execute( const css::ucb::Command& aCommand,
              sal_Int32 CommandId,
-             const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment ) override;
+             const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment )
+        throw( css::uno::Exception,
+               css::ucb::CommandAbortedException,
+               css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    abort( sal_Int32 CommandId ) override;
+    abort( sal_Int32 CommandId )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // Additional interfaces
@@ -235,9 +246,11 @@ public:
 
     // XContentCreator
     virtual css::uno::Sequence< css::ucb::ContentInfo > SAL_CALL
-    queryCreatableContentsInfo() override;
+    queryCreatableContentsInfo()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Reference< css::ucb::XContent > SAL_CALL
-    createNewContent( const css::ucb::ContentInfo& Info ) override;
+    createNewContent( const css::ucb::ContentInfo& Info )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // Non-interface methods.

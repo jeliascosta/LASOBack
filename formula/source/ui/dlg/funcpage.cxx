@@ -28,8 +28,6 @@
 #include "formdlgs.hrc"
 #include "ForResId.hrc"
 #include "ModuleHelper.hxx"
-#include <unotools/syslocale.hxx>
-#include <unotools/charclass.hxx>
 
 namespace formula
 {
@@ -66,14 +64,13 @@ FuncPage::FuncPage(vcl::Window* pParent,const IFunctionManager* _pFunctionManage
 {
     get(m_pLbCategory, "category");
     get(m_pLbFunction, "function");
-    get(m_plbFunctionSearchString, "search");
     m_pLbFunction->SetStyle(m_pLbFunction->GetStyle() | WB_SORT);
-    Size aSize(LogicToPixel(Size(86 , 162), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(86 , 162), MAP_APPFONT));
     m_pLbFunction->set_height_request(aSize.Height());
     m_pLbFunction->set_width_request(aSize.Width());
     m_aHelpId = m_pLbFunction->GetHelpId();
 
-    m_pFunctionManager->fillLastRecentlyUsedFunctions(aLRUList);
+    InitLRUList();
 
     const sal_uInt32 nCategoryCount = m_pFunctionManager->getCount();
     for(sal_uInt32 j= 0; j < nCategoryCount; ++j)
@@ -84,12 +81,10 @@ FuncPage::FuncPage(vcl::Window* pParent,const IFunctionManager* _pFunctionManage
 
     m_pLbCategory->SetDropDownLineCount(m_pLbCategory->GetEntryCount());
     m_pLbCategory->SelectEntryPos(1);
-    OUString searchStr = m_plbFunctionSearchString->GetText();
-    UpdateFunctionList(searchStr);
+    UpdateFunctionList();
     m_pLbCategory->SetSelectHdl( LINK( this, FuncPage, SelHdl ) );
     m_pLbFunction->SetSelectHdl( LINK( this, FuncPage, SelHdl ) );
     m_pLbFunction->SetDoubleClickHdl( LINK( this, FuncPage, DblClkHdl ) );
-    m_plbFunctionSearchString->SetModifyHdl( LINK( this, FuncPage, ModifyHdl ) );
 }
 
 FuncPage::~FuncPage()
@@ -101,7 +96,6 @@ void FuncPage::dispose()
 {
     m_pLbCategory.clear();
     m_pLbFunction.clear();
-    m_plbFunctionSearchString.clear();
     TabPage::dispose();
 }
 
@@ -117,92 +111,46 @@ void FuncPage::impl_addFunctions(const IFunctionCategory* _pCategory)
     }
 }
 
-//aStr is non-empty when user types in the search box to search some function
-void FuncPage::UpdateFunctionList(const OUString& aStr)
+void FuncPage::UpdateFunctionList()
 {
+    sal_Int32  nSelPos   = m_pLbCategory->GetSelectEntryPos();
+    const IFunctionCategory* pCategory = static_cast<const IFunctionCategory*>(m_pLbCategory->GetEntryData(nSelPos));
 
     m_pLbFunction->Clear();
     m_pLbFunction->SetUpdateMode( false );
 
-    const sal_Int32 nSelPos = m_pLbCategory->GetSelectEntryPos();
 
-    if (aStr.isEmpty() || nSelPos == 0)
+    if ( nSelPos > 0 )
     {
-        const IFunctionCategory* pCategory = static_cast<const IFunctionCategory*>(m_pLbCategory->GetEntryData(nSelPos));
-
-        if ( nSelPos > 0 )
+        if ( pCategory == nullptr )
         {
-            if ( pCategory == nullptr )
+            const sal_uInt32 nCount = m_pFunctionManager->getCount();
+            for(sal_uInt32 i = 0 ; i < nCount; ++i)
             {
-                const sal_uInt32 nCount = m_pFunctionManager->getCount();
-                for(sal_uInt32 i = 0 ; i < nCount; ++i)
-                {
-                    impl_addFunctions(m_pFunctionManager->getCategory(i));
-                }
+                impl_addFunctions(m_pFunctionManager->getCategory(i));
             }
-            else
-            {
-                impl_addFunctions(pCategory);
-            }
-        }
-        else // LRU-List
-        {
-            ::std::vector< TFunctionDesc >::iterator aIter = aLRUList.begin();
-            ::std::vector< TFunctionDesc >::iterator aEnd = aLRUList.end();
-
-            for ( ; aIter != aEnd; ++aIter )
-            {
-                const IFunctionDescription* pDesc = *aIter;
-                if (pDesc)  // may be null if a function is no longer available
-                {
-                    m_pLbFunction->SetEntryData(
-                        m_pLbFunction->InsertEntry( pDesc->getFunctionName() ), const_cast<IFunctionDescription *>(pDesc) );
-                }
-            }
-        }
-    }
-    else
-    {
-        SvtSysLocale aSysLocale;
-        const CharClass* pCharClass = aSysLocale.GetCharClassPtr();
-        const OUString aSearchStr( pCharClass->uppercase(aStr));
-
-        const sal_uInt32 nCategoryCount = m_pFunctionManager->getCount();
-        // Category listbox holds additional entries for Last Used and All, so
-        // the offset should be two but hard coded numbers are ugly..
-        const sal_Int32 nCategoryOffset = m_pLbCategory->GetEntryCount() - nCategoryCount;
-        // If a real category (not Last Used or All) is selected, list only
-        // functions of that category. Else list all, LRU is handled above.
-        sal_Int32 nCatBeg = (nSelPos == LISTBOX_ENTRY_NOTFOUND ? -1 : nSelPos - nCategoryOffset);
-        sal_uInt32 nCatEnd;
-        if (nCatBeg < 0)
-        {
-            nCatBeg = 0;
-            nCatEnd = nCategoryCount;
         }
         else
         {
-            nCatEnd = nCatBeg + 1;
+            impl_addFunctions(pCategory);
         }
-        for (sal_uInt32 i = nCatBeg; i < nCatEnd; ++i)
+    }
+    else // LRU-List
+    {
+        ::std::vector< TFunctionDesc >::iterator aIter = aLRUList.begin();
+        ::std::vector< TFunctionDesc >::iterator aEnd = aLRUList.end();
+
+        for ( ; aIter != aEnd; ++aIter )
         {
-            const IFunctionCategory* pCategory = m_pFunctionManager->getCategory(i);
-            const sal_uInt32 nFunctionCount = pCategory->getCount();
-            for (sal_uInt32 j = 0; j < nFunctionCount; ++j)
+            const IFunctionDescription* pDesc = *aIter;
+            if (pDesc)  // may be null if a function is no longer available
             {
-                TFunctionDesc pDesc(pCategory->getFunction(j));
-                if (pCharClass->uppercase(pDesc->getFunctionName()).indexOf(aSearchStr) >= 0)
-                {
-                    if (!pDesc->isHidden())
-                    {
-                        m_pLbFunction->SetEntryData(
-                                m_pLbFunction->InsertEntry( pDesc->getFunctionName()),
-                                const_cast<IFunctionDescription *>(pDesc));
-                    }
-                }
+                m_pLbFunction->SetEntryData(
+                    m_pLbFunction->InsertEntry( pDesc->getFunctionName() ), const_cast<IFunctionDescription *>(pDesc) );
             }
         }
     }
+
 
     m_pLbFunction->SetUpdateMode( true );
     // Ensure no function is selected so the Next button doesn't overwrite a
@@ -212,7 +160,7 @@ void FuncPage::UpdateFunctionList(const OUString& aStr)
     if(IsVisible()) SelHdl(*m_pLbFunction);
 }
 
-IMPL_LINK( FuncPage, SelHdl, ListBox&, rLb, void )
+IMPL_LINK_TYPED( FuncPage, SelHdl, ListBox&, rLb, void )
 {
     if(&rLb==m_pLbFunction)
     {
@@ -227,29 +175,20 @@ IMPL_LINK( FuncPage, SelHdl, ListBox&, rLb, void )
     }
     else
     {
-        OUString searchStr = m_plbFunctionSearchString->GetText();
         m_pLbFunction->SetHelpId(m_aHelpId);
-        UpdateFunctionList(searchStr);
+        UpdateFunctionList();
     }
 }
 
-IMPL_LINK_NOARG(FuncPage, DblClkHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(FuncPage, DblClkHdl, ListBox&, void)
 {
     aDoubleClickLink.Call(*this);
-}
-
-IMPL_LINK_NOARG(FuncPage, ModifyHdl, Edit&, void)
-{
-    // While typing select All category.
-    m_pLbCategory->SelectEntryPos(1);
-    OUString searchStr = m_plbFunctionSearchString->GetText();
-    UpdateFunctionList(searchStr);
 }
 
 void FuncPage::SetCategory(sal_Int32 nCat)
 {
     m_pLbCategory->SelectEntryPos(nCat);
-    UpdateFunctionList(OUString());
+    UpdateFunctionList();
 }
 
 sal_Int32 FuncPage::GetFuncPos(const IFunctionDescription* _pDesc)
@@ -295,6 +234,12 @@ const IFunctionDescription* FuncPage::GetFuncDesc( sal_Int32 nPos ) const
     // not pretty, but hopefully rare
     return static_cast<const IFunctionDescription*>(m_pLbFunction->GetEntryData(nPos));
 }
+
+void FuncPage::InitLRUList()
+{
+    m_pFunctionManager->fillLastRecentlyUsedFunctions(aLRUList);
+}
+
 
 } // formula
 

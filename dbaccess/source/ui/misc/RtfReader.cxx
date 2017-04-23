@@ -61,9 +61,11 @@ using namespace ::com::sun::star::awt;
 ORTFReader::ORTFReader( SvStream& rIn,
                         const SharedConnection& _rxConnection,
                         const Reference< css::util::XNumberFormatter >& _rxNumberF,
-                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext)
+                        const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
+                        const TColumnVector* pList,
+                        const OTypeInfoMap* _pInfoMap)
     :SvRTFParser(rIn)
-    ,ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, rIn )
+    ,ODatabaseExport( _rxConnection, _rxNumberF, _rxContext, pList, _pInfoMap, rIn )
 {
     m_bAppendFirstLine = false;
 }
@@ -92,7 +94,7 @@ SvParserState ORTFReader::CallParser()
     rInput.ResetError();
     SvParserState  eParseState = SvRTFParser::CallParser();
     SetColumnTypes(m_pColumnList,m_pInfoMap);
-    return m_bFoundTable ? eParseState : SvParserState::Error;
+    return m_bFoundTable ? eParseState : SVPAR_ERROR;
 }
 
 void ORTFReader::NextToken( int nToken )
@@ -122,11 +124,11 @@ void ORTFReader::NextToken( int nToken )
                             }
                             nTmpToken2 = GetNextToken();
                         }
-                        while(aToken[0] != ';' && eState != SvParserState::Error && eState != SvParserState::Accepted);
+                        while(aToken[0] != ';' && eState != SVPAR_ERROR && eState != SVPAR_ACCEPTED);
                         m_vecColor.push_back(aColor.GetRGBColor());
                         nTmpToken2 = GetNextToken();
                     }
-                    while(nTmpToken2 == RTF_RED && eState != SvParserState::Error && eState != SvParserState::Accepted);
+                    while(nTmpToken2 == RTF_RED && eState != SVPAR_ERROR && eState != SVPAR_ACCEPTED);
                     SkipToken();
                 }
                 break;
@@ -140,7 +142,7 @@ void ORTFReader::NextToken( int nToken )
                     bool bInsertRow = true;
                     if ( !m_xTable.is() ) // use first line as header
                     {
-                        sal_uInt64 const nTell = rInput.Tell(); // perhaps alters position of the stream
+                        sal_Size nTell = rInput.Tell(); // perhaps alters position of the stream
 
                         m_bError = !CreateTable(nToken);
                         bInsertRow = m_bAppendFirstLine;
@@ -221,7 +223,7 @@ void ORTFReader::NextToken( int nToken )
                 {
                     do
                     {}
-                    while(GetNextToken() != RTF_ROW && eState != SvParserState::Error && eState != SvParserState::Accepted);
+                    while(GetNextToken() != RTF_ROW && eState != SVPAR_ERROR && eState != SVPAR_ACCEPTED);
                     m_bHead = false;
                 }
                 break;
@@ -302,7 +304,7 @@ bool ORTFReader::CreateTable(int nToken)
         }
         nToken = GetNextToken();
     }
-    while(nToken != RTF_TROWD && eState != SvParserState::Error && eState != SvParserState::Accepted);
+    while(nToken != RTF_TROWD && eState != SVPAR_ERROR && eState != SVPAR_ACCEPTED);
 
     bool bOk = !m_vDestVector.empty();
     if(bOk)

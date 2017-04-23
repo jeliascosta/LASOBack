@@ -22,7 +22,6 @@
 #include <cstddef>
 #include <fstream>
 #include <iterator>
-#include <memory>
 #include <string>
 
 #include "po.hxx"
@@ -53,7 +52,7 @@ LngParser::LngParser(const OString &rLngFile)
     , pLines( nullptr )
     , sSource( rLngFile )
 {
-    pLines = new LngLineList;
+    pLines = new LngLineList();
     std::ifstream aStream(sSource.getStr());
     if (aStream.is_open())
     {
@@ -197,9 +196,9 @@ bool LngParser::Merge(
         OString sID( sGroup );
         std::size_t nLastLangPos = 0;
 
-        std::unique_ptr<ResData> pResData( new ResData( sID, sSource ) );
+        ResData  *pResData = new ResData( sID, sSource );
         pResData->sResTyp = "LngText";
-        MergeEntrys *pEntrys = aMergeDataFile.GetMergeEntrys( pResData.get() );
+        MergeEntrys *pEntrys = aMergeDataFile.GetMergeEntrys( pResData );
         // read languages
         bGroup = false;
 
@@ -242,7 +241,7 @@ bool LngParser::Merge(
                         if( !sLang.isEmpty() )
                         {
                             OString sNewText;
-                            pEntrys->GetText( sNewText, StringType::Text, sLang, true );
+                            pEntrys->GetText( sNewText, STRING_TYP_TEXT, sLang, true );
                             if( sLang == "qtz" )
                                 continue;
 
@@ -280,7 +279,7 @@ bool LngParser::Merge(
                 {
 
                     OString sNewText;
-                    pEntrys->GetText( sNewText, StringType::Text, sCur, true );
+                    pEntrys->GetText( sNewText, STRING_TYP_TEXT, sCur, true );
                     if( sCur == "qtz" )
                         continue;
                     if ( !sNewText.isEmpty() && sCur != "x-comment")
@@ -306,6 +305,8 @@ bool LngParser::Merge(
                 }
             }
         }
+
+        delete pResData;
     }
 
     for ( size_t i = 0; i < pLines->size(); ++i )

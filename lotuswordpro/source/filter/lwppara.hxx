@@ -119,7 +119,9 @@ struct ParaNumbering
     LwpFribParaNumber* pParaNumber;
     LwpFribText* pSuffix;
 
+    sal_uInt16 nPrefixLevel;//hidelevels of prefix text frib
     sal_uInt16 nNumLevel;//hidelevels of paranumber frib
+    sal_uInt16 nSuffixLevel;//hidelevels of suffix text frib
 
     ParaNumbering()
     {
@@ -131,7 +133,9 @@ struct ParaNumbering
         pPrefix = nullptr;
         pParaNumber = nullptr;
         pSuffix = nullptr;
+        nPrefixLevel = 0;
         nNumLevel = 0;
+        nSuffixLevel = 0;
     }
 };
 
@@ -172,9 +176,11 @@ public:
     void SetBulletFlag(bool bFlag);
     void SetIndent(LwpIndentOverride* pIndentOverride);
     void SetFirstFrib(const OUString& Content,sal_uInt32 FontID);
-    OUString const & GetContentText(bool bAllText = false);
+    OUString GetContentText(bool bAllText = false);
 
     void SetParaDropcap(bool bFlag);
+    void SetDropcapLines(sal_uInt16 number);
+    void SetDropcapChars(sal_uInt32 chars);
     void SetDropcapLayout(LwpDropcapLayout* pLayout);
 
     XFContentContainer* GetXFContainer();
@@ -184,6 +190,7 @@ public:
     void RegisterTabStyle(XFParaStyle* pXFParaStyle);
 
     LwpBulletStyleMgr* GetBulletStyleMgr();
+    sal_uInt32 GetOrdinal(){ return m_nOrdinal;}
     bool operator <(LwpPara& Other);
     bool ComparePagePosition(LwpVirtualLayout* pPreLayout, LwpVirtualLayout* pNextLayout);
 
@@ -257,7 +264,7 @@ protected:
         MAX_INDENT_LEVELS   = 10
     };
 private:
-    virtual ~LwpPara() override;
+    virtual ~LwpPara();
 
     static void OverrideAlignment(LwpAlignmentOverride* base,LwpAlignmentOverride* over,XFParaStyle* pOverStyle);
     void OverrideIndent(LwpIndentOverride* base,LwpIndentOverride* over,XFParaStyle* pOverStyle);
@@ -276,8 +283,6 @@ private:
     void AddBreakAfter(XFContentContainer* pCont);
     void AddBreakBefore(XFContentContainer* pCont);
     XFSection* CreateXFSection();
-
-    void ReadPropertyList(LwpObjectStream* pFile);
 };
 
 inline LwpSilverBullet* LwpPara::GetSilverBullet()
@@ -349,6 +354,14 @@ inline LwpStory* LwpPara::GetStory()
 inline void LwpPara::SetParaDropcap(bool bFlag)
 {
     m_bHasDropcap = bFlag;
+}
+inline void LwpPara::SetDropcapLines(sal_uInt16 number)
+{
+    m_nLines = number;
+}
+inline void LwpPara::SetDropcapChars(sal_uInt32 chars)
+{
+    m_nChars = chars;
 }
 inline void LwpPara::SetDropcapLayout(LwpDropcapLayout* pLayout)
 {

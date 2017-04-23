@@ -28,7 +28,7 @@
 class XMLCharLanguageHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharLanguageHdl() override;
+    virtual ~XMLCharLanguageHdl();
 
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
 
@@ -39,7 +39,7 @@ public:
 class XMLCharScriptHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharScriptHdl() override;
+    virtual ~XMLCharScriptHdl();
 
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
 
@@ -50,7 +50,7 @@ public:
 class XMLCharCountryHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharCountryHdl() override;
+    virtual ~XMLCharCountryHdl();
 
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
 
@@ -61,7 +61,7 @@ public:
 class XMLCharRfcLanguageTagHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharRfcLanguageTagHdl() override;
+    virtual ~XMLCharRfcLanguageTagHdl();
 
     virtual bool equals( const css::uno::Any& r1, const css::uno::Any& r2 ) const override;
 

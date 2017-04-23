@@ -49,7 +49,7 @@ SfxViewShell* PresentationViewShellBase::CreateInstance (
     pBase->LateInit(framework::FrameworkHelper::msPresentationViewURL);
     return pBase;
 }
-void PresentationViewShellBase::RegisterFactory( SfxInterfaceId nPrio )
+void PresentationViewShellBase::RegisterFactory( sal_uInt16 nPrio )
 {
     pFactory = new SfxViewFactory(
         &CreateInstance,nPrio,"FullScreenPresentation");

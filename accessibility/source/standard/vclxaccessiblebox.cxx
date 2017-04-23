@@ -17,22 +17,21 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblebox.hxx>
-#include <standard/vclxaccessibletextfield.hxx>
-#include <standard/vclxaccessibleedit.hxx>
-#include <standard/vclxaccessiblelist.hxx>
-#include <helper/listboxhelper.hxx>
+#include <accessibility/standard/vclxaccessiblebox.hxx>
+#include <accessibility/standard/vclxaccessibletextfield.hxx>
+#include <accessibility/standard/vclxaccessibleedit.hxx>
+#include <accessibility/standard/vclxaccessiblelist.hxx>
+#include <accessibility/helper/listboxhelper.hxx>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <vcl/svapp.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/lstbox.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -67,8 +66,8 @@ void VCLXAccessibleBox::ProcessWindowChildEvent( const VclWindowEvent& rVclWindo
 
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::WindowShow:
-        case VclEventId::WindowHide:
+        case VCLEVENT_WINDOW_SHOW:
+        case VCLEVENT_WINDOW_HIDE:
         {
             vcl::Window* pChildWindow = static_cast<vcl::Window *>(rVclWindowEvent.GetData());
             // Just compare to the combo box text field.  All other children
@@ -80,7 +79,7 @@ void VCLXAccessibleBox::ProcessWindowChildEvent( const VclWindowEvent& rVclWindo
                 if ( ( pComboBox != nullptr ) && ( pChildWindow != nullptr ) )
                     if (pChildWindow == pComboBox->GetSubEdit())
                     {
-                        if (rVclWindowEvent.GetId() == VclEventId::WindowShow)
+                        if (rVclWindowEvent.GetId() == VCLEVENT_WINDOW_SHOW)
                         {
                             // Instantiate text field.
                             getAccessibleChild (0);
@@ -111,8 +110,9 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::DropdownSelect:
-        case VclEventId::ListboxSelect:
+        case VCLEVENT_DROPDOWN_SELECT:
+        case VCLEVENT_LISTBOX_SELECT:
+        case VCLEVENT_LISTBOX_FOCUSITEMCHANGED:
         {
             // Forward the call to the list child.
             VCLXAccessibleList* pList = static_cast<VCLXAccessibleList*>(m_xList.get());
@@ -133,7 +133,7 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             }
             break;
         }
-        case VclEventId::DropdownOpen:
+        case VCLEVENT_DROPDOWN_OPEN:
         {
             VCLXAccessibleList* pList = static_cast<VCLXAccessibleList*>(m_xList.get());
             if ( pList == nullptr )
@@ -148,7 +148,7 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             }
             break;
         }
-        case VclEventId::DropdownClose:
+        case VCLEVENT_DROPDOWN_CLOSE:
         {
             VCLXAccessibleList* pList = static_cast<VCLXAccessibleList*>(m_xList.get());
             if ( pList == nullptr )
@@ -160,7 +160,7 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             {
                 pList->ProcessWindowEvent (rVclWindowEvent);
             }
-            VclPtr<vcl::Window> pWindow = GetWindow();
+            vcl::Window* pWindow = GetWindow();
             if( pWindow && (pWindow->HasFocus() || pWindow->HasChildPathFocus()) )
             {
                 Any aOldValue, aNewValue;
@@ -169,7 +169,7 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             }
             break;
         }
-        case VclEventId::ComboboxSelect:
+        case VCLEVENT_COMBOBOX_SELECT:
         {
             VCLXAccessibleList* pList = static_cast<VCLXAccessibleList*>(m_xList.get());
             if (pList != nullptr && m_xText.is())
@@ -189,15 +189,16 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             }
             break;
         }
-        //case VclEventId::DropdownOpen:
-        //case VclEventId::DropdownClose:
-        case VclEventId::ListboxDoubleClick:
-        case VclEventId::ListboxScrolled:
-        //case VclEventId::ListboxSelect:
-        case VclEventId::ListboxItemAdded:
-        case VclEventId::ListboxItemRemoved:
-        case VclEventId::ComboboxItemAdded:
-        case VclEventId::ComboboxItemRemoved:
+        //case VCLEVENT_DROPDOWN_OPEN:
+        //case VCLEVENT_DROPDOWN_CLOSE:
+        case VCLEVENT_LISTBOX_DOUBLECLICK:
+        case VCLEVENT_LISTBOX_SCROLLED:
+        //case VCLEVENT_LISTBOX_SELECT:
+        case VCLEVENT_LISTBOX_ITEMADDED:
+        case VCLEVENT_LISTBOX_ITEMREMOVED:
+        case VCLEVENT_COMBOBOX_ITEMADDED:
+        case VCLEVENT_COMBOBOX_ITEMREMOVED:
+        case VCLEVENT_COMBOBOX_SCROLLED:
         {
             // Forward the call to the list child.
             VCLXAccessibleList* pList = static_cast<VCLXAccessibleList*>(m_xList.get());
@@ -211,8 +212,8 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             break;
         }
 
-        //case VclEventId::ComboboxSelect:
-        case VclEventId::ComboboxDeselect:
+        //case VCLEVENT_COMBOBOX_SELECT:
+        case VCLEVENT_COMBOBOX_DESELECT:
         {
             // Selection is handled by VCLXAccessibleList which operates on
             // the same VCL object as this box does.  In case of the
@@ -233,9 +234,9 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             break;
         }
 
-        case VclEventId::EditModify:
-        case VclEventId::EditSelectionChanged:
-        case VclEventId::EditCaretChanged:
+        case VCLEVENT_EDIT_MODIFY:
+        case VCLEVENT_EDIT_SELECTIONCHANGED:
+        case VCLEVENT_EDIT_CARETCHANGED:
             // Modify/Selection events are handled by the combo box instead of
             // directly by the edit field (Why?).  Therefore, delegate this
             // call to the edit field.
@@ -261,6 +262,7 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2(VCLXAccessibleBox, VCLXAccessibleComponent, VCL
 //=====  XAccessible  =========================================================
 
 Reference< XAccessibleContext > SAL_CALL VCLXAccessibleBox::getAccessibleContext(  )
+    throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -270,6 +272,7 @@ Reference< XAccessibleContext > SAL_CALL VCLXAccessibleBox::getAccessibleContext
 //=====  XAccessibleContext  ==================================================
 
 sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleChildCount()
+    throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -293,6 +296,7 @@ sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleChildCount()
 }
 
 Reference<XAccessible> SAL_CALL VCLXAccessibleBox::getAccessibleChild (sal_Int32 i)
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -341,7 +345,7 @@ Reference<XAccessible> SAL_CALL VCLXAccessibleBox::getAccessibleChild (sal_Int32
     return xChild;
 }
 
-sal_Int16 SAL_CALL VCLXAccessibleBox::getAccessibleRole()
+sal_Int16 SAL_CALL VCLXAccessibleBox::getAccessibleRole() throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -349,13 +353,14 @@ sal_Int16 SAL_CALL VCLXAccessibleBox::getAccessibleRole()
     // VCL list boxes in DropDown-Mode else <const>PANEL</const>.
     // This way the Java bridge has not to handle both independently.
     //return m_bIsDropDownBox ? AccessibleRole::COMBO_BOX : AccessibleRole::PANEL;
-    if (m_bIsDropDownBox || (m_aBoxType == COMBOBOX))
+    if (m_bIsDropDownBox || (!m_bIsDropDownBox && m_aBoxType == COMBOBOX ))
         return AccessibleRole::COMBO_BOX;
     else
         return AccessibleRole::PANEL;
 }
 
 sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleIndexInParent()
+    throw (css::uno::RuntimeException, std::exception)
 {
     if (m_nIndexInParent != DEFAULT_INDEX_IN_PARENT)
         return m_nIndexInParent;
@@ -366,6 +371,7 @@ sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleIndexInParent()
 //=====  XAccessibleAction  ===================================================
 
 sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleActionCount()
+    throw (RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex> aGuard (GetMutex());
 
@@ -375,6 +381,7 @@ sal_Int32 SAL_CALL VCLXAccessibleBox::getAccessibleActionCount()
 }
 
 sal_Bool SAL_CALL VCLXAccessibleBox::doAccessibleAction (sal_Int32 nIndex)
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     bool bNotify = false;
 
@@ -416,6 +423,7 @@ sal_Bool SAL_CALL VCLXAccessibleBox::doAccessibleAction (sal_Int32 nIndex)
 }
 
 OUString SAL_CALL VCLXAccessibleBox::getAccessibleActionDescription (sal_Int32 nIndex)
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
     if (nIndex<0 || nIndex>=getAccessibleActionCount())
@@ -428,6 +436,7 @@ OUString SAL_CALL VCLXAccessibleBox::getAccessibleActionDescription (sal_Int32 n
 }
 
 Reference< XAccessibleKeyBinding > VCLXAccessibleBox::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+    throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -440,8 +449,16 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleBox::getAccessibleActionKeyBind
     return xRet;
 }
 
+//=====  XComponent  ==========================================================
+
+void SAL_CALL VCLXAccessibleBox::disposing()
+{
+    VCLXAccessibleComponent::disposing();
+}
+
 // =====  XAccessibleValue  ===============================================
 Any VCLXAccessibleBox::getCurrentValue( )
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -478,6 +495,7 @@ Any VCLXAccessibleBox::getCurrentValue( )
 }
 
 sal_Bool VCLXAccessibleBox::setCurrentValue( const Any& aNumber )
+    throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
@@ -493,12 +511,14 @@ sal_Bool VCLXAccessibleBox::setCurrentValue( const Any& aNumber )
 }
 
 Any VCLXAccessibleBox::getMaximumValue( )
+    throw( RuntimeException, std::exception )
 {
     Any aAny;
     return aAny;
 }
 
 Any VCLXAccessibleBox::getMinimumValue(  )
+    throw( RuntimeException, std::exception )
 {
     Any aAny;
     return aAny;

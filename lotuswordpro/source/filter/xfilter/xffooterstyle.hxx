@@ -70,7 +70,7 @@ public:
     {
     }
 
-    void    SetMargins(double left, double right, double top)
+    void    SetMargins(double left = -1, double right = -1, double top = -1)
     {
         if( left != -1 )
             m_aMargin.SetLeft(left);

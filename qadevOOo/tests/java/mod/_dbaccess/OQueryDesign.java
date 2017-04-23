@@ -58,7 +58,8 @@ public class OQueryDesign extends TestCase {
      */
     @Override
     protected void initialize(TestParameters Param, PrintWriter log) throws Exception {
-        xDesk = DesktopTools.createDesktop(Param.getMSF());
+        xDesk = UnoRuntime.queryInterface(
+                    XDesktop.class, DesktopTools.createDesktop(Param.getMSF()) );
     }
 
     @Override

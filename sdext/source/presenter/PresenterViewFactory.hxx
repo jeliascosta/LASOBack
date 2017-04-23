@@ -34,9 +34,11 @@
 
 namespace sdext { namespace presenter {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::framework::XResourceFactory
-> PresenterViewFactoryInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::drawing::framework::XResourceFactory
+    > PresenterViewFactoryInterfaceBase;
+}
 
 /** Base class for presenter views that allows the view factory to store
     them in a cache and reuse deactivated views.
@@ -94,19 +96,22 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxContext,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterViewFactory() override;
+    virtual ~PresenterViewFactory();
 
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing()
+        throw (css::uno::RuntimeException) override;
 
     // XResourceFactory
 
     virtual css::uno::Reference<css::drawing::framework::XResource>
         SAL_CALL createResource (
-            const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId) override;
+            const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
         releaseResource (
-            const css::uno::Reference<css::drawing::framework::XResource>& rxPane) override;
+            const css::uno::Reference<css::drawing::framework::XResource>& rxPane)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
@@ -153,8 +158,7 @@ private:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::drawing::framework::XPane>& rxAnchorPane);
 
-    /// @throws css::lang::DisposedException
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const throw (css::lang::DisposedException);
 };
 
 } }

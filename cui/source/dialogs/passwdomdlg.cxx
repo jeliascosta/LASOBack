@@ -49,7 +49,7 @@ struct PasswordToOpenModifyDialog_Impl
     bool                        m_bIsPasswordToModify;
 
 
-    DECL_LINK( OkBtnClickHdl, Button*, void );
+    DECL_LINK_TYPED( OkBtnClickHdl, Button*, void );
 
     PasswordToOpenModifyDialog_Impl( PasswordToOpenModifyDialog * pParent,
             sal_uInt16 nMinPasswdLen, sal_uInt16 nMaxPasswdLen, bool bIsPasswordToModify );
@@ -94,7 +94,7 @@ PasswordToOpenModifyDialog_Impl::PasswordToOpenModifyDialog_Impl(
         m_pOptionsExpander->Hide();
 }
 
-IMPL_LINK_NOARG( PasswordToOpenModifyDialog_Impl, OkBtnClickHdl, Button *, void )
+IMPL_LINK_NOARG_TYPED( PasswordToOpenModifyDialog_Impl, OkBtnClickHdl, Button *, void )
 {
     bool bInvalidState = !m_pOpenReadonlyCB->IsChecked() &&
             m_pPasswdToOpenED->GetText().isEmpty() &&
@@ -115,8 +115,8 @@ IMPL_LINK_NOARG( PasswordToOpenModifyDialog_Impl, OkBtnClickHdl, Button *, void 
             ScopedVclPtrInstance< MessageDialog > aErrorBox(m_pParent, nMismatch == 1 ? m_aOneMismatch : m_aTwoMismatch);
             aErrorBox->Execute();
 
-            Edit* pEdit = !bToOpenMatch ? m_pPasswdToOpenED.get() : m_pPasswdToModifyED.get();
-            Edit* pRepeatEdit = !bToOpenMatch? m_pReenterPasswdToOpenED.get() : m_pReenterPasswdToModifyED.get();
+            Edit* pEdit = !bToOpenMatch ? m_pPasswdToOpenED : m_pPasswdToModifyED;
+            Edit* pRepeatEdit = !bToOpenMatch? m_pReenterPasswdToOpenED : m_pReenterPasswdToModifyED;
             if (nMismatch == 1)
             {
                 pEdit->SetText( "" );
@@ -152,6 +152,12 @@ PasswordToOpenModifyDialog::~PasswordToOpenModifyDialog()
 {
     disposeOnce();
 }
+
+void PasswordToOpenModifyDialog::dispose()
+{
+    SfxModalDialog::dispose();
+}
+
 
 OUString PasswordToOpenModifyDialog::GetPasswordToOpen() const
 {

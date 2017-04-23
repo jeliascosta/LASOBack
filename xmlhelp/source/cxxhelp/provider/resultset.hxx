@@ -31,7 +31,7 @@ namespace chelp {
 
     class DynamicResultSet : public ::ucbhelper::ResultSetImplHelper
     {
-        std::unique_ptr<ResultSetFactory>   m_pFactory;
+        ResultSetFactory*                    m_pFactory;
 
     private:
         virtual void initStatic() override;
@@ -43,7 +43,7 @@ namespace chelp {
             const css::ucb::OpenCommandArgument2& rCommand,
             ResultSetFactory* pFactory );
 
-        virtual ~DynamicResultSet() override;
+        virtual ~DynamicResultSet();
     };
 
 }

@@ -23,14 +23,14 @@
 #include <svx/svdsob.hxx>
 #include <vcl/region.hxx>
 #include <svx/svxdllapi.h>
-#include <basegfx/range/b2irectangle.hxx>
 
 namespace sdr
 {
     namespace contact
     {
-        class SVX_DLLPUBLIC DisplayInfo final
+        class SVX_DLLPUBLIC DisplayInfo
         {
+        protected:
             // The Layers which shall be processed (visible)
             SetOfByte                                       maProcessLayers;
 
@@ -38,8 +38,7 @@ namespace sdr
             // is empty, everything needs to be redrawn
             vcl::Region                                          maRedrawArea;
 
-            /// only for Writer: current page being painted
-            basegfx::B2IRectangle m_WriterPageFrame;
+            // bitfield
 
             // Internal flag to know when the control layer is painted. Default is
             // false. If set to true, painting of the page, page borders and
@@ -71,7 +70,7 @@ namespace sdr
             DisplayInfo();
 
             // destructor
-            ~DisplayInfo();
+            virtual ~DisplayInfo();
 
             // access to ProcessLayers
             void SetProcessLayers(const SetOfByte& rSet);
@@ -80,9 +79,6 @@ namespace sdr
             // access to RedrawArea
             void SetRedrawArea(const vcl::Region& rRegion);
             const vcl::Region& GetRedrawArea() const { return maRedrawArea; }
-
-            void SetWriterPageFrame(basegfx::B2IRectangle const& rPageFrame);
-            basegfx::B2IRectangle const& GetWriterPageFrame() const { return m_WriterPageFrame; }
 
             // Access to ControlLayerProcessingActive flag
             void SetControlLayerProcessingActive(bool bDoPaint);

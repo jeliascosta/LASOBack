@@ -41,6 +41,33 @@ using namespace ::com::sun::star::document;
 using namespace ::com::sun::star::xml::sax;
 using namespace ::xmloff::token;
 
+namespace {
+
+struct XMLServiceMapEntry_Impl
+{
+    enum XMLTokenEnum eClass;
+    const sal_Char *sFilterService;
+    sal_Int32      nFilterServiceLen;
+};
+
+}
+
+#define SERVICE_MAP_ENTRY( cls, app ) \
+    { XML_##cls, \
+      XML_IMPORT_FILTER_##app, sizeof(XML_IMPORT_FILTER_##app)-1}
+
+const XMLServiceMapEntry_Impl aServiceMap[] =
+{
+    SERVICE_MAP_ENTRY( TEXT, WRITER ),
+    SERVICE_MAP_ENTRY( ONLINE_TEXT, WRITER ),
+    SERVICE_MAP_ENTRY( SPREADSHEET, CALC ),
+    SERVICE_MAP_ENTRY( DRAWING, DRAW ),
+    SERVICE_MAP_ENTRY( GRAPHICS, DRAW ),
+    SERVICE_MAP_ENTRY( PRESENTATION, IMPRESS ),
+    SERVICE_MAP_ENTRY( CHART, CHART ),
+    { XML_TOKEN_INVALID, nullptr, 0 }
+};
+
 class XMLEmbeddedObjectImportContext_Impl : public SvXMLImportContext
 {
     css::uno::Reference< css::xml::sax::XDocumentHandler > xHandler;
@@ -50,6 +77,8 @@ public:
     XMLEmbeddedObjectImportContext_Impl( SvXMLImport& rImport, sal_uInt16 nPrfx,
                                     const OUString& rLName,
     const css::uno::Reference< css::xml::sax::XDocumentHandler >& rHandler );
+
+    virtual ~XMLEmbeddedObjectImportContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,
@@ -69,6 +98,10 @@ XMLEmbeddedObjectImportContext_Impl::XMLEmbeddedObjectImportContext_Impl(
         const Reference< XDocumentHandler >& rHandler ) :
     SvXMLImportContext( rImport, nPrfx, rLName ),
     xHandler( rHandler )
+{
+}
+
+XMLEmbeddedObjectImportContext_Impl::~XMLEmbeddedObjectImportContext_Impl()
 {
 }
 
@@ -167,37 +200,36 @@ XMLEmbeddedObjectImportContext::XMLEmbeddedObjectImportContext(
         }
 
         OUString sClass;
-        static OUStringLiteral const prefixes[] = {
+        static const char * aTmp[] =
+        {
             "application/vnd.oasis.openoffice.",
             "application/x-vnd.oasis.openoffice.",
             "application/vnd.oasis.opendocument.",
-            "application/x-vnd.oasis.opendocument."};
-        for (auto const & p: prefixes)
+            "application/x-vnd.oasis.opendocument.",
+            nullptr
+        };
+        for (int k=0; aTmp[k]; k++)
         {
-            if (sMime.startsWith(p, &sClass))
+            OUString sTmpString = OUString::createFromAscii(aTmp[k]);
+            if( sMime.matchAsciiL( aTmp[k], sTmpString.getLength() ) )
             {
+                sClass = sMime.copy( sTmpString.getLength() );
                 break;
             }
         }
 
         if( !sClass.isEmpty() )
         {
-            static struct { XMLTokenEnum eClass; OUStringLiteral sFilterService;
-            } const aServiceMap[] = {
-                { XML_TEXT,         OUStringLiteral(XML_IMPORT_FILTER_WRITER) },
-                { XML_ONLINE_TEXT,  OUStringLiteral(XML_IMPORT_FILTER_WRITER) },
-                { XML_SPREADSHEET,  OUStringLiteral(XML_IMPORT_FILTER_CALC) },
-                { XML_DRAWING,      OUStringLiteral(XML_IMPORT_FILTER_DRAW) },
-                { XML_GRAPHICS,     OUStringLiteral(XML_IMPORT_FILTER_DRAW) },
-                { XML_PRESENTATION, OUStringLiteral(XML_IMPORT_FILTER_IMPRESS) },
-                { XML_CHART,        OUStringLiteral(XML_IMPORT_FILTER_CHART) }};
-            for (auto const & entry: aServiceMap)
+            const XMLServiceMapEntry_Impl *pEntry = aServiceMap;
+            while( pEntry->eClass != XML_TOKEN_INVALID )
             {
-                if( IsXMLToken( sClass, entry.eClass ) )
+                if( IsXMLToken( sClass, pEntry->eClass ) )
                 {
-                    sFilterService = entry.sFilterService;
+                    sFilterService = OUString( pEntry->sFilterService,
+                                               pEntry->nFilterServiceLen,
+                                               RTL_TEXTENCODING_ASCII_US );
 
-                    switch( entry.eClass )
+                    switch( pEntry->eClass )
                     {
                     case XML_TEXT:          aName = SvGlobalName(SO3_SW_CLASSID); break;
                     case XML_ONLINE_TEXT:   aName = SvGlobalName(SO3_SWWEB_CLASSID); break;
@@ -213,6 +245,7 @@ XMLEmbeddedObjectImportContext::XMLEmbeddedObjectImportContext(
 
                     break;
                 }
+                pEntry++;
             }
         }
     }

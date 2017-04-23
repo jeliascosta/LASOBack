@@ -68,6 +68,8 @@
 
 #define D_MAX_LONG_  (double) 0x7fffffff
 
+extern sal_uInt16 nScFillModeMouseModifier;     // global.cxx
+
 namespace {
 
 short lcl_DecompValueString( OUString& rValue, sal_Int32& nVal, sal_uInt16* pMinDigits = nullptr )
@@ -168,7 +170,7 @@ void setSuffixCell(
     aEngine.SetEditTextObjectPool(rDoc.GetEditPool());
 
     SfxItemSet aAttr = aEngine.GetEmptyItemSet();
-    aAttr.Put( SvxEscapementItem( SvxEscapement::Superscript, EE_CHAR_ESCAPEMENT));
+    aAttr.Put( SvxEscapementItem( SVX_ESCAPEMENT_SUPERSCRIPT, EE_CHAR_ESCAPEMENT));
     aEngine.SetText( aValue );
     aEngine.QuickInsertText(
         aOrdinalSuffix,
@@ -257,11 +259,8 @@ void ScTable::FillAnalyse( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
 
     if (eCellType == CELLTYPE_VALUE)
     {
-        double fVal;
         sal_uInt32 nFormat = static_cast<const SfxUInt32Item*>(GetAttr(nCol,nRow,ATTR_VALUE_FORMAT))->GetValue();
-        const sal_Int16 nFormatType = pDocument->GetFormatTable()->GetType(nFormat);
-        bool bDate = (nFormatType  == css::util::NumberFormat::DATE );
-        bool bBooleanCell = (!bDate && nFormatType == css::util::NumberFormat::LOGICAL);
+        bool bDate = ( pDocument->GetFormatTable()->GetType(nFormat) == css::util::NumberFormat::DATE );
         if (bDate)
         {
             if (nCount > 1)
@@ -342,10 +341,6 @@ void ScTable::FillAnalyse( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                 rInc = 1.0;
             }
         }
-        else if (bBooleanCell && ((fVal = aFirstCell.mfValue) == 0.0 || fVal == 1.0))
-        {
-            // Nothing, rInc stays 0.0, no specific fill mode.
-        }
         else
         {
             if (nCount > 1)
@@ -364,10 +359,6 @@ void ScTable::FillAnalyse( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                         nVal2 = aCell.mfValue;
                         double nDiff = approxDiff( nVal2, nVal1);
                         if ( !::rtl::math::approxEqual( nDiff, rInc, 13 ) )
-                            bVal = false;
-                        else if ((nVal2 == 0.0 || nVal2 == 1.0) &&
-                                (pDocument->GetFormatTable()->GetType(GetNumberFormat(nCol,nRow)) ==
-                                 css::util::NumberFormat::LOGICAL))
                             bVal = false;
                         nVal1 = nVal2;
                     }
@@ -410,7 +401,7 @@ void ScTable::FillAnalyse( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
             nRow = sal::static_int_cast<SCROW>( nRow + nAddY );
             for (SCSIZE i=1; i<nCount && rListData; i++)
             {
-                GetString(nCol, nRow, aStr);
+                (void)GetString(nCol, nRow, aStr);
                 if (!rListData->GetSubIndex(aStr, rListIndex, bMatchCase))
                     rListData = nullptr;
                 nCol = sal::static_int_cast<SCCOL>( nCol + nAddX );
@@ -481,7 +472,7 @@ void ScTable::FillFormula(
     ScFormulaCell* pDestCell = new ScFormulaCell( *pSrcCell, *pDocument, aAddr );
     aCol[nDestCol].SetFormulaCell(nDestRow, pDestCell);
 
-    if ( bLast && pDestCell->GetMatrixFlag() != ScMatrixMode::NONE )
+    if ( bLast && pDestCell->GetMatrixFlag() )
     {
         ScAddress aOrg;
         if ( pDestCell->GetMatrixOrigin( aOrg ) )
@@ -489,7 +480,7 @@ void ScTable::FillFormula(
             if ( nDestCol >= aOrg.Col() && nDestRow >= aOrg.Row() )
             {
                 ScFormulaCell* pOrgCell = pDocument->GetFormulaCell(aOrg);
-                if (pOrgCell && pOrgCell->GetMatrixFlag() == ScMatrixMode::Formula)
+                if (pOrgCell && pOrgCell->GetMatrixFlag() == MM_FORMULA)
                 {
                     pOrgCell->SetMatColsRows(
                         nDestCol - aOrg.Col() + 1,
@@ -497,7 +488,7 @@ void ScTable::FillFormula(
                 }
                 else
                 {
-                    OSL_FAIL( "FillFormula: MatrixOrigin no formula cell with ScMatrixMode::Formula" );
+                    OSL_FAIL( "FillFormula: MatrixOrigin no formula cell with MM_FORMULA" );
                 }
             }
             else
@@ -682,7 +673,7 @@ void ScTable::FillAuto( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                     // Transfer template too
                     //TODO: Merge ApplyPattern to AttrArray ??
                     if ( pStyleSheet )
-                        aCol[nCol].ApplyStyle( static_cast<SCROW>(nRow), pStyleSheet );
+                        aCol[nCol].ApplyStyle( static_cast<SCROW>(nRow), *pStyleSheet );
 
                     //  Use ApplyPattern instead of SetPattern to keep old MergeFlags
                     if ( pNewPattern )
@@ -948,25 +939,13 @@ OUString ScTable::GetAutoFillPreview( const ScRange& rSource, SCCOL nEndX, SCROW
                     break;
                     case CELLTYPE_VALUE:
                     {
-                        sal_uLong nNumFmt = GetNumberFormat( nSrcX, nSrcY );
                         //  overflow is possible...
                         double nVal = aCell.mfValue;
                         if ( !(nScFillModeMouseModifier & KEY_MOD1) )
-                        {
-                            if (nVal == 0.0 || nVal == 1.0)
-                            {
-                                bool bBooleanCell = (pDocument->GetFormatTable()->GetType( nNumFmt) ==
-                                        css::util::NumberFormat::LOGICAL);
-                                if (!bBooleanCell)
-                                    nVal += (double) nDelta;
-                            }
-                            else
-                            {
-                                nVal += (double) nDelta;
-                            }
-                        }
+                            nVal += (double) nDelta;
 
                         Color* pColor;
+                        sal_uLong nNumFmt = GetNumberFormat( nSrcX, nSrcY );
                         pDocument->GetFormatTable()->GetOutputString( nVal, nNumFmt, aValue, &pColor );
                     }
                     break;
@@ -1231,7 +1210,7 @@ void ScTable::FillFormulaVertical(
         return;
 
     aCol[nCol].DeleteRanges(aSpans, InsertDeleteFlags::VALUE | InsertDeleteFlags::DATETIME | InsertDeleteFlags::STRING | InsertDeleteFlags::FORMULA | InsertDeleteFlags::OUTLINE);
-    aCol[nCol].CloneFormulaCell(rSrcCell, sc::CellTextAttr(), aSpans);
+    aCol[nCol].CloneFormulaCell(rSrcCell, sc::CellTextAttr(), aSpans, nullptr);
 
     std::shared_ptr<sc::ColumnBlockPositionSet> pSet(new sc::ColumnBlockPositionSet(*pDocument));
     sc::StartListeningContext aStartCxt(*pDocument, pSet);
@@ -1347,7 +1326,6 @@ void ScTable::FillAutoSimple(
         nDelta = -1.0;
     sal_uLong nFormulaCounter = nActFormCnt;
     bool bGetCell = true;
-    bool bBooleanCell = false;
     sal_uInt16 nCellDigits = 0;
     short nHeadNoneTail = 0;
     sal_Int32 nStringValue = 0;
@@ -1379,16 +1357,9 @@ void ScTable::FillAutoSimple(
                         FillFormulaVertical(*aSrcCell.mpFormula, rInner, rCol, nIStart, nIEnd, pProgress, rProgress);
                         return;
                     }
-                    bBooleanCell = (pDocument->GetFormatTable()->GetType(
-                                aCol[rCol].GetNumberFormat( nSource)) == css::util::NumberFormat::LOGICAL);
-
                 }
                 else                // rInner&:=nCol, rOuter&:=nRow
-                {
                     aSrcCell = aCol[nSource].GetCellValue(rRow);
-                    bBooleanCell = (pDocument->GetFormatTable()->GetType(
-                                aCol[nSource].GetNumberFormat( rRow)) == css::util::NumberFormat::LOGICAL);
-                }
 
                 bGetCell = false;
                 if (!aSrcCell.isEmpty())
@@ -1422,13 +1393,7 @@ void ScTable::FillAutoSimple(
             switch (aSrcCell.meType)
             {
                 case CELLTYPE_VALUE:
-                    {
-                        double fVal;
-                        if (bBooleanCell && ((fVal = aSrcCell.mfValue) == 0.0 || fVal == 1.0))
-                            aCol[rCol].SetValue(rRow, aSrcCell.mfValue);
-                        else
-                            aCol[rCol].SetValue(rRow, aSrcCell.mfValue + nDelta);
-                    }
+                    aCol[rCol].SetValue(rRow, aSrcCell.mfValue + nDelta);
                     break;
                 case CELLTYPE_STRING:
                 case CELLTYPE_EDIT:
@@ -1653,8 +1618,8 @@ void ScTable::FillSeries( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                     {
                         if(!RowHidden(nAtRow))
                         {
-                            aCol[nCol].SetPatternArea( nAtRow,
-                                    nAtRow, *pSrcPattern);
+                            aCol[nCol].SetPatternArea( static_cast<SCROW>(nAtRow),
+                                    static_cast<SCROW>(nAtRow), *pSrcPattern);
                             for(std::vector<sal_uInt32>::const_iterator itr = rCondFormatIndex.begin(), itrEnd = rCondFormatIndex.end();
                                     itr != itrEnd; ++itr)
                             {
@@ -1767,9 +1732,9 @@ void ScTable::FillSeries( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                         }
 
                         if (bError)
-                            aCol[nCol].SetError(static_cast<SCROW>(nRow), FormulaError::NoValue);
+                            aCol[nCol].SetError(static_cast<SCROW>(nRow), formula::errNoValue);
                         else if (bOverflow)
-                            aCol[nCol].SetError(static_cast<SCROW>(nRow), FormulaError::IllegalFPOperation);
+                            aCol[nCol].SetError(static_cast<SCROW>(nRow), formula::errIllegalFPOperation);
                         else
                             aCol[nCol].SetValue(static_cast<SCROW>(nRow), nVal);
                     }
@@ -1869,9 +1834,9 @@ void ScTable::FillSeries( SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow2,
                             }
 
                             if (bError)
-                                aCol[nCol].SetError(static_cast<SCROW>(nRow), FormulaError::NoValue);
+                                aCol[nCol].SetError(static_cast<SCROW>(nRow), formula::errNoValue);
                             else if (bOverflow)
-                                aCol[nCol].SetError(static_cast<SCROW>(nRow), FormulaError::IllegalFPOperation);
+                                aCol[nCol].SetError(static_cast<SCROW>(nRow), formula::errIllegalFPOperation);
                             else
                             {
                                 nStringValue = (sal_Int32)nVal;
@@ -2218,7 +2183,7 @@ void ScTable::GetAutoFormatData(SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol,
     }
 }
 
-void ScTable::SetError( SCCOL nCol, SCROW nRow, FormulaError nError)
+void ScTable::SetError( SCCOL nCol, SCROW nRow, sal_uInt16 nError)
 {
     if (ValidColRow(nCol, nRow))
         aCol[nCol].SetError( nRow, nError );
@@ -2226,7 +2191,7 @@ void ScTable::SetError( SCCOL nCol, SCROW nRow, FormulaError nError)
 
 void ScTable::UpdateInsertTabAbs(SCTAB nTable)
 {
-    for (SCCOL i=0; i < aCol.size(); i++)
+    for (SCCOL i=0; i <= MAXCOL; i++)
         aCol[i].UpdateInsertTabAbs(nTable);
 }
 
@@ -2274,20 +2239,20 @@ bool ScTable::GetNextSpellingCell(SCCOL& rCol, SCROW& rRow, bool bInSel,
 
 void ScTable::TestTabRefAbs(SCTAB nTable) const
 {
-    for (SCCOL i=0; i < aCol.size(); i++)
+    for (SCCOL i=0; i <= MAXCOL; i++)
         if (aCol[i].TestTabRefAbs(nTable))
             return;
 }
 
 void ScTable::CompileDBFormula( sc::CompileFormulaContext& rCxt )
 {
-    for (SCCOL i = 0; i < aCol.size(); ++i)
+    for (SCCOL i = 0; i <= MAXCOL; ++i)
         aCol[i].CompileDBFormula(rCxt);
 }
 
 void ScTable::CompileColRowNameFormula( sc::CompileFormulaContext& rCxt )
 {
-    for (SCCOL i = 0; i < aCol.size(); ++i)
+    for (SCCOL i = 0; i <= MAXCOL; ++i)
         aCol[i].CompileColRowNameFormula(rCxt);
 }
 

@@ -56,52 +56,53 @@ namespace XPath
     /**
         get object type
     */
-    virtual css::xml::xpath::XPathObjectType SAL_CALL getObjectType() override;
+    virtual css::xml::xpath::XPathObjectType SAL_CALL getObjectType() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get the nodes from a nodelist type object
     */
-    virtual css::uno::Reference< css::xml::dom::XNodeList > SAL_CALL getNodeList() override;
+    virtual css::uno::Reference< css::xml::dom::XNodeList > SAL_CALL getNodeList()
+        throw (css::uno::RuntimeException, std::exception) override;
 
      /**
         get value of a boolean object
      */
-     virtual sal_Bool SAL_CALL getBoolean() override;
+     virtual sal_Bool SAL_CALL getBoolean() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as byte
     */
-    virtual sal_Int8 SAL_CALL getByte() override;
+    virtual sal_Int8 SAL_CALL getByte() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as short
     */
-    virtual sal_Int16 SAL_CALL getShort() override;
+    virtual sal_Int16 SAL_CALL getShort() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as long
     */
-    virtual sal_Int32 SAL_CALL getLong() override;
+    virtual sal_Int32 SAL_CALL getLong() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as hyper
     */
-    virtual sal_Int64 SAL_CALL getHyper() override;
+    virtual sal_Int64 SAL_CALL getHyper() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as float
     */
-    virtual float SAL_CALL getFloat() override;
+    virtual float SAL_CALL getFloat() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get number as double
     */
-    virtual double SAL_CALL getDouble() override;
+    virtual double SAL_CALL getDouble() throw (css::uno::RuntimeException, std::exception) override;
 
     /**
         get string value
     */
-    virtual OUString SAL_CALL getString() override;
+    virtual OUString SAL_CALL getString() throw (css::uno::RuntimeException, std::exception) override;
 
     };
 }

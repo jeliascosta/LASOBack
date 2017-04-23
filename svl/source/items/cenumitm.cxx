@@ -22,23 +22,23 @@
 #include <tools/stream.hxx>
 #include <svl/cenumitm.hxx>
 #include <svl/eitem.hxx>
+#include "whassert.hxx"
 
 #include <comphelper/extract.hxx>
-#include <libxml/xmlwriter.h>
 
 
 // virtual
 bool SfxEnumItemInterface::operator ==(const SfxPoolItem & rItem) const
 {
-    SAL_WARN_IF(!SfxPoolItem::operator ==(rItem), "svl.items", "unequal type, with ID/pos " << Which() );
+    SFX_ASSERT(SfxPoolItem::operator ==(rItem), Which(), "unequal type");
     return GetEnumValue()
                == static_cast< const SfxEnumItemInterface * >(&rItem)->
                       GetEnumValue();
 }
 
 // virtual
-bool SfxEnumItemInterface::GetPresentation(SfxItemPresentation, MapUnit,
-                                      MapUnit, OUString & rText,
+bool SfxEnumItemInterface::GetPresentation(SfxItemPresentation, SfxMapUnit,
+                                      SfxMapUnit, OUString & rText,
                                       const IntlWrapper *) const
 {
     rText = OUString::number( GetEnumValue() );
@@ -64,13 +64,13 @@ bool SfxEnumItemInterface::PutValue(const css::uno::Any& rVal,
         SetEnumValue(sal_uInt16(nTheValue));
         return true;
     }
-    SAL_WARN("svl.items", "SfxEnumItemInterface::PutValue(): Wrong type");
+    OSL_FAIL("SfxEnumItemInterface::PutValue(): Wrong type");
     return false;
 }
 
 OUString SfxEnumItemInterface::GetValueTextByPos(sal_uInt16) const
 {
-    SAL_INFO("svl.items", "SfxEnumItemInterface::GetValueTextByPos(): Pure virtual");
+    SAL_INFO("svl", "SfxEnumItemInterface::GetValueTextByPos(): Pure virtual");
     return OUString();
 }
 
@@ -78,6 +78,21 @@ OUString SfxEnumItemInterface::GetValueTextByPos(sal_uInt16) const
 sal_uInt16 SfxEnumItemInterface::GetValueByPos(sal_uInt16 nPos) const
 {
     return nPos;
+}
+
+// virtual
+sal_uInt16 SfxEnumItemInterface::GetPosByValue(sal_uInt16 nValue) const
+{
+    sal_uInt16 nCount = GetValueCount();
+    for (sal_uInt16 i = 0; i < nCount; ++i)
+        if (GetValueByPos(i) == nValue)
+            return i;
+    return USHRT_MAX;
+}
+
+bool SfxEnumItemInterface::IsEnabled(sal_uInt16) const
+{
+    return true;
 }
 
 // virtual
@@ -96,6 +111,39 @@ bool SfxEnumItemInterface::GetBoolValue() const
 void SfxEnumItemInterface::SetBoolValue(bool)
 {}
 
+SfxEnumItem::SfxEnumItem(sal_uInt16 const nWhich, SvStream & rStream)
+    : SfxEnumItemInterface(nWhich)
+{
+    m_nValue = 0;
+    rStream.ReadUInt16( m_nValue );
+}
+
+
+// virtual
+SvStream & SfxEnumItem::Store(SvStream & rStream, sal_uInt16) const
+{
+    rStream.WriteUInt16( m_nValue );
+    return rStream;
+}
+
+// virtual
+sal_uInt16 SfxEnumItem::GetEnumValue() const
+{
+    return GetValue();
+}
+
+// virtual
+void SfxEnumItem::SetEnumValue(sal_uInt16 const nTheValue)
+{
+    SetValue(nTheValue);
+}
+
+void SfxEnumItem::SetValue(sal_uInt16 const nTheValue)
+{
+    DBG_ASSERT(GetRefCount() == 0, "SfxEnumItem::SetValue(): Pooled item");
+    m_nValue = nTheValue;
+}
+
 SfxPoolItem* SfxBoolItem::CreateDefault()
 {
     return new SfxBoolItem();
@@ -112,26 +160,19 @@ SfxBoolItem::SfxBoolItem(sal_uInt16 const nWhich, SvStream & rStream)
 // virtual
 bool SfxBoolItem::operator ==(const SfxPoolItem & rItem) const
 {
-    assert(dynamic_cast<const SfxBoolItem*>(&rItem) != nullptr);
+    DBG_ASSERT(dynamic_cast<const SfxBoolItem*>( &rItem ) !=  nullptr,
+               "SfxBoolItem::operator ==(): Bad type");
     return m_bValue == static_cast< SfxBoolItem const * >(&rItem)->m_bValue;
 }
 
 // virtual
 bool SfxBoolItem::GetPresentation(SfxItemPresentation,
-                                                 MapUnit, MapUnit,
+                                                 SfxMapUnit, SfxMapUnit,
                                                  OUString & rText,
                                                  const IntlWrapper *) const
 {
     rText = GetValueTextByVal(m_bValue);
     return true;
-}
-
-void SfxBoolItem::dumpAsXml(struct _xmlTextWriter* pWriter) const
-{
-    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxBoolItem"));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(GetValueTextByVal(m_bValue).toUtf8().getStr()));
-    xmlTextWriterEndElement(pWriter);
 }
 
 // virtual
@@ -150,7 +191,7 @@ bool SfxBoolItem::PutValue(const css::uno::Any& rVal, sal_uInt8)
         m_bValue = bTheValue;
         return true;
     }
-    SAL_WARN("svl.items", "SfxBoolItem::PutValue(): Wrong type");
+    OSL_FAIL("SfxBoolItem::PutValue(): Wrong type");
     return false;
 }
 

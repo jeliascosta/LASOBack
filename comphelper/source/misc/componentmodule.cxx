@@ -24,8 +24,10 @@
 
 #include <vector>
 
+
 namespace comphelper
 {
+
 
     using namespace ::cppu;
     using ::com::sun::star::uno::Sequence;
@@ -33,7 +35,7 @@ namespace comphelper
     using ::com::sun::star::uno::Reference;
     using ::com::sun::star::uno::XInterface;
 
-    typedef std::vector< ComponentDescription >   ComponentDescriptions;
+    typedef ::std::vector< ComponentDescription >   ComponentDescriptions;
 
     /** implementation for <type>OModule</type>. not threadsafe, has to be guarded by its owner
     */
@@ -43,9 +45,16 @@ namespace comphelper
         ComponentDescriptions                           m_aRegisteredComponents;
 
         OModuleImpl();
+        ~OModuleImpl();
     };
 
+
     OModuleImpl::OModuleImpl()
+    {
+    }
+
+
+    OModuleImpl::~OModuleImpl()
     {
     }
 
@@ -57,12 +66,15 @@ namespace comphelper
 
     OModule::~OModule()
     {
+        delete m_pImpl;
     }
+
 
     void OModule::registerClient( OModule::ClientAccess )
     {
         osl_atomic_increment( &m_nClients );
     }
+
 
     void OModule::revokeClient( OModule::ClientAccess )
     {
@@ -73,9 +85,11 @@ namespace comphelper
         }
     }
 
+
     void OModule::onLastClient()
     {
     }
+
 
     void OModule::registerImplementation( const ComponentDescription& _rComp )
     {
@@ -86,6 +100,7 @@ namespace comphelper
         m_pImpl->m_aRegisteredComponents.push_back( _rComp );
     }
 
+
     void OModule::registerImplementation( const OUString& _rImplementationName, const css::uno::Sequence< OUString >& _rServiceNames,
         ::cppu::ComponentFactoryFunc _pCreateFunction )
     {
@@ -93,12 +108,14 @@ namespace comphelper
         registerImplementation( aComponent );
     }
 
+
     void* OModule::getComponentFactory( const sal_Char* _pImplementationName )
     {
         Reference< XInterface > xFactory( getComponentFactory(
             OUString::createFromAscii( _pImplementationName ) ) );
         return xFactory.get();
     }
+
 
     Reference< XInterface > OModule::getComponentFactory( const OUString& _rImplementationName )
     {
@@ -128,6 +145,8 @@ namespace comphelper
         return nullptr;
     }
 
+
 } // namespace comphelper
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

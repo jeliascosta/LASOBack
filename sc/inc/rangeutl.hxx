@@ -42,19 +42,20 @@ class SC_DLLPUBLIC ScRangeUtil
 {
 public:
                 ScRangeUtil()  {}
+                ~ScRangeUtil() {}
 
     static bool MakeArea        ( const OUString&     rAreaStr,
                                   ScArea&           rArea,
                                   ScDocument*       pDoc,
                                   SCTAB         nTab,
-                                  ScAddress::Details const & rDetails );
+                                  ScAddress::Details const & rDetails = ScAddress::detailsOOOa1 );
 
     static void CutPosString    ( const OUString&     theAreaStr,
                                   OUString&           thePosStr );
 
     static bool IsAbsTabArea    ( const OUString&   rAreaStr,
                                   ScDocument*       pDoc,
-                                  ScArea***         pppAreas,
+                                  ScArea***         pppAreas    = nullptr,
                                   sal_uInt16*       pAreaCount  = nullptr,
                                   bool              bAcceptCellRef = false,
                                   ScAddress::Details const & rDetails = ScAddress::detailsOOOa1 );
@@ -62,7 +63,7 @@ public:
     static bool IsAbsArea       ( const OUString& rAreaStr,
                                   ScDocument*   pDoc,
                                   SCTAB     nTab,
-                                  OUString*     pCompleteStr,
+                                  OUString*     pCompleteStr = nullptr,
                                   ScRefAddress* pStartPos    = nullptr,
                                   ScRefAddress* pEndPos      = nullptr,
                                   ScAddress::Details const & rDetails = ScAddress::detailsOOOa1 );
@@ -70,7 +71,7 @@ public:
     static bool IsAbsPos        ( const OUString& rPosStr,
                                   ScDocument*   pDoc,
                                   SCTAB     nTab,
-                                  OUString*       pCompleteStr,
+                                  OUString*       pCompleteStr = nullptr,
                                   ScRefAddress* pPosTripel   = nullptr,
                                   ScAddress::Details const & rDetails = ScAddress::detailsOOOa1 );
 
@@ -153,6 +154,13 @@ public:
                             sal_Unicode cSeparator = ' ');
 
 /// String to Range API
+    static bool     GetAddressFromString(
+                            css::table::CellAddress& rAddress,
+                            const OUString& rAddressStr,
+                            const ScDocument* pDocument,
+                            formula::FormulaGrammar::AddressConvention eConv,
+                            sal_Int32& nOffset,
+                            sal_Unicode cSeparator = ' ');
     static bool     GetRangeFromString(
                             css::table::CellRangeAddress& rRange,
                             const OUString& rRangeStr,
@@ -190,7 +198,7 @@ public:
                             const ScArea& rArea,
                             const ScDocument* pDocument,
                             formula::FormulaGrammar::AddressConvention eConv,
-                            sal_Unicode cSeparator,
+                            sal_Unicode cSeparator = ' ',
                             bool bAppendStr = false,
                             ScRefFlags nFormatFlags = (ScRefFlags::VALID | ScRefFlags::TAB_3D) );
 
@@ -264,6 +272,7 @@ private:
 
 public:
             ScAreaNameIterator( ScDocument* pDoc );
+            ~ScAreaNameIterator() {}
 
     bool Next( OUString& rName, ScRange& rRange );
     bool WasDBName() const { return !bFirstPass; }

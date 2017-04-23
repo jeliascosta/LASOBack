@@ -16,7 +16,7 @@ class RecentDocsViewItem : public ThumbnailViewItem
 {
 public:
     RecentDocsViewItem(ThumbnailView &rView, const OUString &rURL,
-        const OUString &rTitle, const BitmapEx& rThumbnail, sal_uInt16 nId, long nThumbnailSize);
+        const OUString &rTitle, const BitmapEx& rThumbnail, sal_uInt16 nId, long nThumbnailSize = 256);
 
     /** Updates own highlight status based on the aPoint position.
 
@@ -24,7 +24,7 @@ public:
 
         Returns rectangle that needs to be invalidated.
     */
-    virtual tools::Rectangle updateHighlight(bool bVisible, const Point& rPoint) override;
+    virtual Rectangle updateHighlight(bool bVisible, const Point& rPoint) override;
 
     /// Text to be used for the tooltip.
     virtual OUString getHelpText() const override;
@@ -39,7 +39,7 @@ public:
 
 protected:
     /// Return area where is the icon to remove document from the recent documents.
-    tools::Rectangle getRemoveIconArea() const;
+    Rectangle getRemoveIconArea() const;
 
 private:
     OUString maURL;

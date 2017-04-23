@@ -23,7 +23,6 @@
 #include <basic/sbxdef.hxx>
 #include <rtl/ustring.hxx>
 #include <basic/basicdllapi.h>
-#include <o3tl/typed_flags_set.hxx>
 
 // Returns type name for Basic type, array flag is ignored
 // implementation: basic/source/runtime/methods.cxx
@@ -40,17 +39,11 @@ BASIC_DLLPUBLIC OUString getBasicObjectTypeName( SbxObject* pObj );
 BASIC_DLLPUBLIC void setBasicWatchMode( bool bOn );
 
 // Debug Flags:
-enum class BasicDebugFlags {
-    NONE        = 0x0000,
-    Break       = 0x0001,        // Break-Callback
-    StepInto    = 0x0002,        // Single Step-Callback
-    StepOver    = 0x0004,        // Additional flag Step Over
-    Continue    = 0x0008,        // Do not change flags
-    StepOut     = 0x0010,        // Leave Sub
-};
-namespace o3tl {
-    template<> struct typed_flags<BasicDebugFlags> : is_typed_flags<BasicDebugFlags, 0x001f> {};
-}
+#define SbDEBUG_BREAK       0x0001          // Break-Callback
+#define SbDEBUG_STEPINTO    0x0002          // Single Step-Callback
+#define SbDEBUG_STEPOVER    0x0004          // Additional flag Step Over
+#define SbDEBUG_CONTINUE    0x0008          // Do not change flags
+#define SbDEBUG_STEPOUT     0x0010          // Leave Sub
 
 #define SBXID_BASIC         0x6273          // sb: StarBASIC
 #define SBXID_BASICMOD      0x6d62          // bm: StarBASIC Module
@@ -58,6 +51,9 @@ namespace o3tl {
 #define SBXID_BASICMETHOD   0x6d65          // me: StarBASIC Method
 #define SBXID_JSCRIPTMOD    0x6a62          // jm: JavaScript Module
 #define SBXID_JSCRIPTMETH   0x6a64          // jm: JavaScript Module
+
+#define SBX_HINT_BASICSTART SFX_HINT_USER04
+#define SBX_HINT_BASICSTOP  SFX_HINT_USER05
 
 enum class PropertyMode
 {

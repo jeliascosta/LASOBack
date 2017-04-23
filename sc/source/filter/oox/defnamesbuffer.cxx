@@ -24,14 +24,15 @@
 #include <com/sun/star/sheet/NamedRangeFlag.hpp>
 #include <com/sun/star/sheet/ReferenceFlags.hpp>
 #include <com/sun/star/sheet/SingleReference.hpp>
+#include <com/sun/star/sheet/XFormulaTokens.hpp>
 #include <com/sun/star/sheet/XPrintAreas.hpp>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertyset.hxx>
 #include <oox/token/tokens.hxx>
 #include "addressconverter.hxx"
+#include "biffinputstream.hxx"
 #include "externallinkbuffer.hxx"
 #include "formulaparser.hxx"
 #include "worksheetbuffer.hxx"
@@ -59,7 +60,7 @@ const sal_uInt16 BIFF_REFFLAG_ROW1REL       = 0x0002;
 const sal_uInt16 BIFF_REFFLAG_COL2REL       = 0x0004;
 const sal_uInt16 BIFF_REFFLAG_ROW2REL       = 0x0008;
 
-const OUStringLiteral spcOoxPrefix("_xlnm.");
+const sal_Char* const spcOoxPrefix = "_xlnm.";
 
 const sal_Char* const sppcBaseNames[] =
 {
@@ -92,19 +93,21 @@ OUString lclGetBaseName( sal_Unicode cBuiltinId )
 
 OUString lclGetPrefixedName( sal_Unicode cBuiltinId )
 {
-    return OUStringBuffer( spcOoxPrefix ).append( lclGetBaseName( cBuiltinId ) ).makeStringAndClear();
+    return OUStringBuffer().appendAscii( spcOoxPrefix ).append( lclGetBaseName( cBuiltinId ) ).makeStringAndClear();
 }
 
 /** returns the built-in name identifier from a prefixed built-in name, e.g. '_xlnm.Print_Area'. */
 sal_Unicode lclGetBuiltinIdFromPrefixedName( const OUString& rModelName )
 {
-    if( rModelName.matchIgnoreAsciiCase( spcOoxPrefix ) )
+    OUString aPrefix = OUString::createFromAscii( spcOoxPrefix );
+    sal_Int32 nPrefixLen = aPrefix.getLength();
+    if( rModelName.matchIgnoreAsciiCase( aPrefix ) )
     {
         for( sal_Unicode cBuiltinId = 0; cBuiltinId < SAL_N_ELEMENTS( sppcBaseNames ); ++cBuiltinId )
         {
             OUString aBaseName = lclGetBaseName( cBuiltinId );
             sal_Int32 nBaseNameLen = aBaseName.getLength();
-            if( (rModelName.getLength() == spcOoxPrefix.size + nBaseNameLen) && rModelName.matchIgnoreAsciiCase( aBaseName, spcOoxPrefix.size ) )
+            if( (rModelName.getLength() == nPrefixLen + nBaseNameLen) && rModelName.matchIgnoreAsciiCase( aBaseName, nPrefixLen ) )
                 return cBuiltinId;
         }
     }
@@ -212,7 +215,7 @@ Any DefinedNameBase::getReference( const ScAddress& rBaseAddr ) const
                 Any aRefAny = lclConvertReference( aApiExtRef.Reference, rBaseAddr, nRelFlags );
                 if( aRefAny.hasValue() )
                 {
-                    aApiExtRef.Reference = aRefAny;
+                    aApiExtRef.Reference <<= aRefAny;
                     return Any( aApiExtRef );
                 }
             }
@@ -296,6 +299,10 @@ void DefinedName::createNameObject( sal_Int32 nIndex )
     if( /*maModel.mbHidden ||*/ maModel.mbFunction || maModel.mbVBName )
         return;
 
+    // skip BIFF names without stream position (e.g. BIFF3-BIFF4 internal 3D references)
+    if( (getFilterType() == FILTER_BIFF) && !mxBiffStrm.get() )
+        return;
+
     // convert original name to final Calc name (TODO: filter invalid characters from model name)
     maCalcName = isBuiltinName() ? lclGetPrefixedName( mcBuiltinId ) : maModel.maName;
 
@@ -330,7 +337,7 @@ std::unique_ptr<ScTokenArray> DefinedName::getScTokens(
     // Compile the tokens into RPN once to populate information into tokens
     // where necessary, e.g. for TableRef inner reference. RPN can be discarded
     // after, a resulting error must be reset.
-    FormulaError nErr = pArray->GetCodeError();
+    sal_uInt16 nErr = pArray->GetCodeError();
     aCompiler.CompileTokenArray();
     pArray->DelRPN();
     pArray->SetCodeError(nErr);
@@ -345,6 +352,7 @@ void DefinedName::convertFormula( const css::uno::Sequence<css::sheet::ExternalL
         return;
 
     // convert and set formula of the defined name
+    if ( getFilterType() == FILTER_OOXML )
     {
         std::unique_ptr<ScTokenArray> pTokenArray = getScTokens( rExternalLinks);
         mpScRangeData->SetCode( *pTokenArray );
@@ -359,40 +367,35 @@ void DefinedName::convertFormula( const css::uno::Sequence<css::sheet::ExternalL
         case BIFF_DEFNAME_PRINTAREA:
         {
             Reference< XPrintAreas > xPrintAreas( getSheetFromDoc( mnCalcSheet ), UNO_QUERY );
-            ScRangeList aPrintRanges;
-            getFormulaParser().extractCellRangeList( aPrintRanges, aFTokenSeq, mnCalcSheet );
+            ApiCellRangeList aPrintRanges;
+            getFormulaParser().extractCellRangeList( aPrintRanges, aFTokenSeq, false, mnCalcSheet );
             if( xPrintAreas.is() && !aPrintRanges.empty() )
-                xPrintAreas->setPrintAreas( AddressConverter::toApiSequence(aPrintRanges) );
+                xPrintAreas->setPrintAreas( aPrintRanges.toSequence() );
         }
         break;
         case BIFF_DEFNAME_PRINTTITLES:
         {
             Reference< XPrintAreas > xPrintAreas( getSheetFromDoc( mnCalcSheet ), UNO_QUERY );
-            ScRangeList aTitleRanges;
-            getFormulaParser().extractCellRangeList( aTitleRanges, aFTokenSeq, mnCalcSheet );
+            ApiCellRangeList aTitleRanges;
+            getFormulaParser().extractCellRangeList( aTitleRanges, aFTokenSeq, false, mnCalcSheet );
             if( xPrintAreas.is() && !aTitleRanges.empty() )
             {
                 bool bHasRowTitles = false;
                 bool bHasColTitles = false;
                 const ScAddress& rMaxPos = getAddressConverter().getMaxAddress();
-                for (size_t i = 0, nSize = aTitleRanges.size(); i < nSize; ++i)
+                for( ::std::vector< CellRangeAddress >::const_iterator aIt = aTitleRanges.begin(), aEnd = aTitleRanges.end(); (aIt != aEnd) && (!bHasRowTitles || !bHasColTitles); ++aIt )
                 {
-                    const ScRange& rRange = *aTitleRanges[i];
-                    bool bFullRow = (rRange.aStart.Col() == 0) && ( rRange.aEnd.Col() >= rMaxPos.Col() );
-                    bool bFullCol = (rRange.aStart.Row() == 0) && ( rRange.aEnd.Row() >= rMaxPos.Row() );
+                    bool bFullRow = (aIt->StartColumn == 0) && ( aIt->EndColumn >= rMaxPos.Col() );
+                    bool bFullCol = (aIt->StartRow == 0) && ( aIt->EndRow >= rMaxPos.Row() );
                     if( !bHasRowTitles && bFullRow && !bFullCol )
                     {
-                        xPrintAreas->setTitleRows( CellRangeAddress(rRange.aStart.Tab(),
-                                                                    rRange.aStart.Col(), rRange.aStart.Row(),
-                                                                    rRange.aEnd.Col(), rRange.aEnd.Row()) );
+                        xPrintAreas->setTitleRows( *aIt );
                         xPrintAreas->setPrintTitleRows( true );
                         bHasRowTitles = true;
                     }
                     else if( !bHasColTitles && bFullCol && !bFullRow )
                     {
-                        xPrintAreas->setTitleColumns( CellRangeAddress(rRange.aStart.Tab(),
-                                                                       rRange.aStart.Col(), rRange.aStart.Row(),
-                                                                       rRange.aEnd.Col(), rRange.aEnd.Row()) );
+                        xPrintAreas->setTitleColumns( *aIt );
                         xPrintAreas->setPrintTitleColumns( true );
                         bHasColTitles = true;
                     }
@@ -403,14 +406,13 @@ void DefinedName::convertFormula( const css::uno::Sequence<css::sheet::ExternalL
     }
 }
 
-bool DefinedName::getAbsoluteRange( ScRange& orRange ) const
+bool DefinedName::getAbsoluteRange( CellRangeAddress& orRange ) const
 {
     ScTokenArray* pTokenArray = mpScRangeData->GetCode();
     Sequence< FormulaToken > aFTokenSeq;
     ScTokenConversion::ConvertToTokenSequence(getScDocument(), aFTokenSeq, *pTokenArray);
-    return getFormulaParser().extractCellRange( orRange, aFTokenSeq );
+    return getFormulaParser().extractCellRange( orRange, aFTokenSeq, false );
 }
-
 
 DefinedNamesBuffer::DefinedNamesBuffer( const WorkbookHelper& rHelper ) :
     WorkbookHelper( rHelper )

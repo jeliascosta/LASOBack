@@ -19,10 +19,10 @@
 
 #ifndef INCLUDED_HWPFILTER_SOURCE_HWPREADER_HXX
 #define INCLUDED_HWPFILTER_SOURCE_HWPREADER_HXX
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <rtl/ref.hxx>
 #include <sal/alloca.h>
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -41,7 +41,6 @@
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <cppuhelper/weak.hxx>
-#include <memory>
 
 using namespace ::cppu;
 using namespace ::com::sun::star::lang;
@@ -78,15 +77,15 @@ class HwpReader : public WeakImplHelper<XFilter>
 
 public:
     HwpReader();
-    virtual ~HwpReader() override;
+    virtual ~HwpReader();
 
 public:
     /**
      * parseStream does Parser-startup initializations
      */
-    virtual sal_Bool SAL_CALL filter(const Sequence< PropertyValue >& aDescriptor) override;
-    virtual void SAL_CALL cancel() override {}
-    void SAL_CALL setDocumentHandler(Reference< XDocumentHandler > const & xHandler)
+    virtual sal_Bool SAL_CALL filter(const Sequence< PropertyValue >& aDescriptor) throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL cancel() throw(RuntimeException, std::exception) override {}
+    void SAL_CALL setDocumentHandler(Reference< XDocumentHandler > xHandler)
     {
         m_rxDocumentHandler = xHandler;
     }
@@ -94,7 +93,7 @@ private:
     Reference< XDocumentHandler > m_rxDocumentHandler;
     rtl::Reference<AttributeListImpl> mxList;
     HWPFile hwpfile;
-    std::unique_ptr<HwpReaderPrivate> d;
+    HwpReaderPrivate *d;
 private:
     /* -------- Document Parsing --------- */
     void makeMeta();
@@ -108,9 +107,9 @@ private:
 
     /* -------- Paragraph Parsing --------- */
     void parsePara(HWPPara *para);
-    void make_text_p0(HWPPara *para, bool bParaStart);
-    void make_text_p1(HWPPara *para, bool bParaStart);
-    void make_text_p3(HWPPara *para, bool bParaStart);
+    void make_text_p0(HWPPara *para, bool bParaStart = false);
+    void make_text_p1(HWPPara *para, bool bParaStart = false);
+    void make_text_p3(HWPPara *para, bool bParaStart = false);
 
     /* -------- rDocument->characters(x) --------- */
     void makeChars(hchar_string & rStr);
@@ -154,7 +153,7 @@ class HwpImportFilter : public WeakImplHelper< XFilter, XImporter, XServiceInfo,
 {
 public:
     explicit HwpImportFilter(const Reference< XMultiServiceFactory >& rFact);
-    virtual ~HwpImportFilter() override;
+    virtual ~HwpImportFilter();
 
 public:
     static Sequence< OUString > getSupportedServiceNames_Static() throw();
@@ -162,28 +161,29 @@ public:
 
 public:
     // XFilter
-    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) override;
-    virtual void SAL_CALL cancel() override;
+    virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor )
+        throw( RuntimeException, std::exception ) override;
+    virtual void SAL_CALL cancel() throw(RuntimeException, std::exception) override;
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const Reference< XComponent >& xDoc) override;
+    virtual void SAL_CALL setTargetDocument( const Reference< XComponent >& xDoc)
+        throw( IllegalArgumentException, RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName() override;
-    Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
-    sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
+    OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
+    Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
+    sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw (css::uno::RuntimeException, std::exception) override;
 
     //XExtendedFilterDetection
-    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& rDescriptor ) override;
+    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& rDescriptor ) throw (css::uno::RuntimeException, std::exception) override;
 
 public:
     Reference< XFilter > rFilter;
     Reference< XImporter > rImporter;
 };
 
-/// @throws Exception
 Reference< XInterface > HwpImportFilter_CreateInstance(
-    const Reference< XMultiServiceFactory >& rSMgr )
+    const Reference< XMultiServiceFactory >& rSMgr ) throw( Exception )
 {
     HwpImportFilter *p = new HwpImportFilter( rSMgr );
 
@@ -222,17 +222,19 @@ HwpImportFilter::~HwpImportFilter()
 }
 
 sal_Bool HwpImportFilter::filter( const Sequence< PropertyValue >& aDescriptor )
+    throw( RuntimeException, std::exception )
 {
     // delegate to IchitaroImpoter
     return rFilter->filter( aDescriptor );
 }
 
-void HwpImportFilter::cancel()
+void HwpImportFilter::cancel() throw(css::uno::RuntimeException, std::exception)
 {
     rFilter->cancel();
 }
 
 void HwpImportFilter::setTargetDocument( const Reference< XComponent >& xDoc )
+    throw( IllegalArgumentException, RuntimeException, std::exception )
 {
         // delegate
     rImporter->setTargetDocument( xDoc );
@@ -243,18 +245,18 @@ OUString HwpImportFilter::getImplementationName_Static() throw()
     return OUString( IMPLEMENTATION_NAME );
 }
 
-OUString HwpImportFilter::getImplementationName()
+OUString HwpImportFilter::getImplementationName() throw(css::uno::RuntimeException, std::exception)
 {
     return OUString( IMPLEMENTATION_NAME );
 }
 
-sal_Bool HwpImportFilter::supportsService( const OUString& ServiceName )
+sal_Bool HwpImportFilter::supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 //XExtendedFilterDetection
-OUString HwpImportFilter::detect( css::uno::Sequence< css::beans::PropertyValue >& rDescriptor )
+OUString HwpImportFilter::detect( css::uno::Sequence< css::beans::PropertyValue >& rDescriptor ) throw (css::uno::RuntimeException, std::exception)
 {
     OUString sTypeName;
 
@@ -280,7 +282,7 @@ OUString HwpImportFilter::detect( css::uno::Sequence< css::beans::PropertyValue 
     return sTypeName;
 }
 
-Sequence< OUString> HwpImportFilter::getSupportedServiceNames()
+Sequence< OUString> HwpImportFilter::getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception)
 {
     Sequence < OUString > aRet(2);
     OUString* pArray = aRet.getArray();

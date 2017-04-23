@@ -33,9 +33,11 @@ public:
 
     BubbleChart( const css::uno::Reference< css::chart2::XChartType >& xChartTypeModel
              , sal_Int32 nDimensionCount );
-    virtual ~BubbleChart() override;
+    virtual ~BubbleChart();
 
     virtual void createShapes() override;
+
+    virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
 
     virtual css::drawing::Direction3D  getPreferredDiagramAspectRatio() const override;
 
@@ -54,6 +56,7 @@ private: //methods
 private: //member
 
     bool   m_bShowNegativeValues;//input parameter
+    bool   m_bBubbleSizeAsArea;//input parameter
     double m_fBubbleSizeScaling;//input parameter
 
     double m_fMaxLogicBubbleSize;//calculated values

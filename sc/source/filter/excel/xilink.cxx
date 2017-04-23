@@ -64,8 +64,9 @@ public:
     /** Stores the sheet name and marks the sheet index as invalid.
         The sheet index is set while creating the Calc sheet with CreateTable(). */
     explicit            XclImpSupbookTab( const OUString& rTabName );
+                        ~XclImpSupbookTab();
 
-    const OUString& GetTabName() const { return maTabName; }
+    inline const OUString& GetTabName() const { return maTabName; }
 
     /** Reads a CRN record (external referenced cell) at the specified address. */
     void                ReadCrn( XclImpStream& rStrm, const XclAddress& rXclPos );
@@ -96,13 +97,13 @@ public:
     /** Reads a CRN record (external referenced cell). */
     void                ReadCrn( XclImpStream& rStrm );
     /** Reads an EXTERNNAME record. */
-    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv );
+    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv = nullptr );
 
     /** Returns the SUPBOOK record type. */
-    XclSupbookType GetType() const { return meType; }
+    inline XclSupbookType GetType() const { return meType; }
 
     /** Returns the URL of the external document. */
-    const OUString& GetXclUrl() const { return maXclUrl; }
+    inline const OUString& GetXclUrl() const { return maXclUrl; }
 
     /** Returns the external name specified by an index from the Excel document (one-based). */
     const XclImpExtName* GetExternName( sal_uInt16 nXclIndex ) const;
@@ -143,7 +144,7 @@ struct XclImpXti
     sal_uInt16          mnSupbook;      /// Index to SUPBOOK record.
     sal_uInt16          mnSBTabFirst;   /// Index to the first sheet of the range in the SUPBOOK.
     sal_uInt16          mnSBTabLast;    /// Index to the last sheet of the range in the SUPBOOK.
-    explicit     XclImpXti() : mnSupbook( SAL_MAX_UINT16 ), mnSBTabFirst( SAL_MAX_UINT16 ), mnSBTabLast( SAL_MAX_UINT16 ) {}
+    inline explicit     XclImpXti() : mnSupbook( SAL_MAX_UINT16 ), mnSBTabFirst( SAL_MAX_UINT16 ), mnSBTabLast( SAL_MAX_UINT16 ) {}
 };
 
 inline XclImpStream& operator>>( XclImpStream& rStrm, XclImpXti& rXti )
@@ -169,7 +170,7 @@ public:
     /** Reads a CRN record and appends it to the current SUPBOOK. */
     void                ReadCrn( XclImpStream& rStrm );
     /** Reads an EXTERNNAME record and appends it to the current SUPBOOK. */
-    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv );
+    void                ReadExternname( XclImpStream& rStrm, ExcelToSc* pFormulaConv = nullptr );
 
     /** Returns true, if the specified XTI entry contains an internal reference. */
     bool                IsSelfRef( sal_uInt16 nXtiIndex ) const;
@@ -243,11 +244,11 @@ void XclImpTabInfo::ReadTabid( XclImpStream& rStrm )
     if( rStrm.GetRoot().GetBiff() == EXC_BIFF8 )
     {
         rStrm.EnableDecryption();
-        std::size_t nReadCount = rStrm.GetRecLeft() / 2;
+        sal_Size nReadCount = rStrm.GetRecLeft() / 2;
         OSL_ENSURE( nReadCount <= 0xFFFF, "XclImpTabInfo::ReadTabid - record too long" );
         maTabIdVec.clear();
         maTabIdVec.reserve( nReadCount );
-        for( std::size_t nIndex = 0; rStrm.IsValid() && (nIndex < nReadCount); ++nIndex )
+        for( sal_Size nIndex = 0; rStrm.IsValid() && (nIndex < nReadCount); ++nIndex )
             // zero index is not allowed in BIFF8, but it seems that it occurs in real life
             maTabIdVec.push_back( rStrm.ReaduInt16() );
     }
@@ -319,8 +320,8 @@ XclImpExtName::MOper::MOper(svl::SharedStringPool& rPool, XclImpStream& rStrm) :
                 case 0x10:
                 {
                     sal_uInt8 nErr = rStrm.ReaduInt8();
-                    // Map the error code from xls to calc.
-                    mxCached->PutError(XclTools::GetScErrorCode(nErr), nCol, nRow);
+                    // TODO: Map the error code from xls to calc.
+                    mxCached->PutError(nErr, nCol, nRow);
                     rStrm.Ignore(7);
                 }
                 break;
@@ -349,12 +350,12 @@ XclImpExtName::XclImpExtName( XclImpSupbook& rSupbook, XclImpStream& rStrm, XclS
     maName = rStrm.ReadUniString( nLen );
     if( ::get_flag( nFlags, EXC_EXTN_BUILTIN ) || !::get_flag( nFlags, EXC_EXTN_OLE_OR_DDE ) )
     {
-        if( eSubType == XclSupbookType::Addin )
+        if( eSubType == EXC_SBTYPE_ADDIN )
         {
             meType = xlExtAddIn;
             maName = XclImpRoot::GetScAddInName( maName );
         }
-        else if ( (eSubType == XclSupbookType::Eurotool) &&
+        else if ( (eSubType == EXC_SBTYPE_EUROTOOL) &&
                 maName.equalsIgnoreAsciiCase( "EUROCONVERT" ) )
             meType = xlExtEuroConvert;
         else
@@ -397,7 +398,7 @@ XclImpExtName::XclImpExtName( XclImpSupbook& rSupbook, XclImpStream& rStrm, XclS
             }
         break;
         case xlExtOLE:
-            mpMOper.reset( new MOper(rSupbook.GetSharedStringPool(), rStrm) );
+            mpMOper = new MOper(rSupbook.GetSharedStringPool(), rStrm);
         break;
         default:
             ;
@@ -406,6 +407,7 @@ XclImpExtName::XclImpExtName( XclImpSupbook& rSupbook, XclImpStream& rStrm, XclS
 
 XclImpExtName::~XclImpExtName()
 {
+    delete mpMOper;
 }
 
 void XclImpExtName::CreateDdeData( ScDocument& rDoc, const OUString& rApplic, const OUString& rTopic ) const
@@ -511,20 +513,20 @@ bool XclImpExtName::CreateOleData(ScDocument& rDoc, const OUString& rUrl,
             ScMatrixValue aVal = rCache.Get(j, i);
             switch (aVal.nType)
             {
-                case ScMatValType::Boolean:
+                case SC_MATVAL_BOOLEAN:
                 {
                     bool b = aVal.GetBoolean();
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaDoubleToken(b ? 1.0 : 0.0));
                     xTab->setCell(nCol, nRow, pToken, 0, false);
                 }
                 break;
-                case ScMatValType::Value:
+                case SC_MATVAL_VALUE:
                 {
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaDoubleToken(aVal.fVal));
                     xTab->setCell(nCol, nRow, pToken, 0, false);
                 }
                 break;
-                case ScMatValType::String:
+                case SC_MATVAL_STRING:
                 {
                     const svl::SharedString aStr( aVal.GetString());
                     ScExternalRefCache::TokenRef pToken(new formula::FormulaStringToken(aStr));
@@ -560,6 +562,10 @@ XclImpCrn::XclImpCrn( XclImpStream& rStrm, const XclAddress& rXclPos ) :
 
 XclImpSupbookTab::XclImpSupbookTab( const OUString& rTabName ) :
     maTabName( rTabName )
+{
+}
+
+XclImpSupbookTab::~XclImpSupbookTab()
 {
 }
 
@@ -619,7 +625,7 @@ void XclImpSupbookTab::LoadCachedValues( const ScExternalRefCache::TableTypeRef&
 
 XclImpSupbook::XclImpSupbook( XclImpStream& rStrm ) :
     XclImpRoot( rStrm.GetRoot() ),
-    meType( XclSupbookType::Unknown ),
+    meType( EXC_SBTYPE_UNKNOWN ),
     mnSBTab( EXC_TAB_DELETED )
 {
     sal_uInt16 nSBTabCnt;
@@ -629,8 +635,8 @@ XclImpSupbook::XclImpSupbook( XclImpStream& rStrm ) :
     {
         switch( rStrm.ReaduInt16() )
         {
-            case EXC_SUPB_SELF:     meType = XclSupbookType::Self;   break;
-            case EXC_SUPB_ADDIN:    meType = XclSupbookType::Addin;  break;
+            case EXC_SUPB_SELF:     meType = EXC_SBTYPE_SELF;   break;
+            case EXC_SUPB_ADDIN:    meType = EXC_SBTYPE_ADDIN;  break;
             default:    OSL_FAIL( "XclImpSupbook::XclImpSupbook - unknown special SUPBOOK type" );
         }
         return;
@@ -642,12 +648,12 @@ XclImpSupbook::XclImpSupbook( XclImpStream& rStrm ) :
 
     if( maXclUrl.equalsIgnoreAsciiCase( "\010EUROTOOL.XLA" ) )
     {
-        meType = XclSupbookType::Eurotool;
+        meType = EXC_SBTYPE_EUROTOOL;
         maSupbTabList.push_back( o3tl::make_unique<XclImpSupbookTab>( maXclUrl ) );
     }
     else if( nSBTabCnt )
     {
-        meType = XclSupbookType::Extern;
+        meType = EXC_SBTYPE_EXTERN;
 
         //assuming all empty strings with just len header of 0
         const size_t nMinRecordSize = sizeof(sal_Int16);
@@ -667,7 +673,7 @@ XclImpSupbook::XclImpSupbook( XclImpStream& rStrm ) :
     }
     else
     {
-        meType = XclSupbookType::Special;
+        meType = EXC_SBTYPE_SPECIAL;
         // create dummy list entry
         maSupbTabList.push_back( o3tl::make_unique<XclImpSupbookTab>( maXclUrl ) );
     }
@@ -706,20 +712,20 @@ const XclImpExtName* XclImpSupbook::GetExternName( sal_uInt16 nXclIndex ) const
         SAL_WARN("sc", "XclImpSupbook::GetExternName - index must be >0");
         return nullptr;
     }
-    if (meType == XclSupbookType::Self || nXclIndex > maExtNameList.size())
+    if (meType == EXC_SBTYPE_SELF || nXclIndex > maExtNameList.size())
         return nullptr;
     return maExtNameList[nXclIndex-1].get();
 }
 
 bool XclImpSupbook::GetLinkData( OUString& rApplic, OUString& rTopic ) const
 {
-    return (meType == XclSupbookType::Special) && XclImpUrlHelper::DecodeLink( rApplic, rTopic, maXclUrl );
+    return (meType == EXC_SBTYPE_SPECIAL) && XclImpUrlHelper::DecodeLink( rApplic, rTopic, maXclUrl );
 }
 
 const OUString& XclImpSupbook::GetMacroName( sal_uInt16 nXclNameIdx ) const
 {
     OSL_ENSURE( nXclNameIdx > 0, "XclImpSupbook::GetMacroName - index must be >0" );
-    const XclImpName* pName = (meType == XclSupbookType::Self) ? GetNameManager().GetName( nXclNameIdx ) : nullptr;
+    const XclImpName* pName = (meType == EXC_SBTYPE_SELF) ? GetNameManager().GetName( nXclNameIdx ) : nullptr;
     return (pName && pName->IsVBName()) ? pName->GetScName() : EMPTY_OUSTRING;
 }
 
@@ -737,7 +743,7 @@ sal_uInt16 XclImpSupbook::GetTabCount() const
 
 void XclImpSupbook::LoadCachedValues()
 {
-    if (meType != XclSupbookType::Extern || GetExtDocOptions().GetDocSettings().mnLinkCnt > 0 || !GetDocShell())
+    if (meType != EXC_SBTYPE_EXTERN || GetExtDocOptions().GetDocSettings().mnLinkCnt > 0 || !GetDocShell())
         return;
 
     OUString aAbsUrl( ScGlobal::GetAbsDocName(maXclUrl, GetDocShell()) );
@@ -770,8 +776,8 @@ void XclImpLinkManagerImpl::ReadExternsheet( XclImpStream& rStrm )
 {
     sal_uInt16 nXtiCount;
     nXtiCount = rStrm.ReaduInt16();
-    OSL_ENSURE( static_cast< std::size_t >( nXtiCount * 6 ) == rStrm.GetRecLeft(), "XclImpLinkManagerImpl::ReadExternsheet - invalid count" );
-    nXtiCount = static_cast< sal_uInt16 >( ::std::min< std::size_t >( nXtiCount, rStrm.GetRecLeft() / 6 ) );
+    OSL_ENSURE( static_cast< sal_Size >( nXtiCount * 6 ) == rStrm.GetRecLeft(), "XclImpLinkManagerImpl::ReadExternsheet - invalid count" );
+    nXtiCount = static_cast< sal_uInt16 >( ::std::min< sal_Size >( nXtiCount, rStrm.GetRecLeft() / 6 ) );
 
     /*  #i104057# A weird external XLS generator writes multiple EXTERNSHEET
         records instead of only one as expected. Surprisingly, Excel seems to
@@ -811,7 +817,7 @@ void XclImpLinkManagerImpl::ReadExternname( XclImpStream& rStrm, ExcelToSc* pFor
 bool XclImpLinkManagerImpl::IsSelfRef( sal_uInt16 nXtiIndex ) const
 {
     const XclImpSupbook* pSupbook = GetSupbook( nXtiIndex );
-    return pSupbook && (pSupbook->GetType() == XclSupbookType::Self);
+    return pSupbook && (pSupbook->GetType() == EXC_SBTYPE_SELF);
 }
 
 bool XclImpLinkManagerImpl::GetScTabRange(

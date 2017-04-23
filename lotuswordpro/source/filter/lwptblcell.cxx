@@ -77,17 +77,17 @@ void LwpCellList::Read()
     LwpDLVList::Read();
 
     LwpDLVListHeadTail cChild;
-    cChild.Read(m_pObjStrm.get());
+    cChild.Read(m_pObjStrm);
 
-    cParent.ReadIndexed(m_pObjStrm.get());
+    cParent.ReadIndexed(m_pObjStrm);
 
     if (LwpFileHeader::m_nFileRevision < 0x0006)
         m_pObjStrm->SkipExtra();
 
-    cValue.ReadIndexed(m_pObjStrm.get());
+    cValue.ReadIndexed(m_pObjStrm);
 
     LwpObjectID cDependent;
-    cDependent.ReadIndexed(m_pObjStrm.get());
+    cDependent.ReadIndexed(m_pObjStrm);
 
     cColumn = (sal_uInt8) m_pObjStrm->QuickReaduInt16();        // written as a sal_uInt16
 //  sal_uInt8 cCellFlags = (sal_uInt8) m_pObjStrm->QuickReaduInt16();   // written as a sal_uInt16
@@ -102,7 +102,7 @@ void  LwpCellList::Parse(IXFStream* /*pOutputStream*/)
 
 void LwpCellList::Convert(XFCell * pCell, LwpTableLayout* /*pCellsMap*/)
 {
-    LwpObjectID aValueID = cValue;
+    LwpObjectID aValueID = GetValueID();
     LwpNumericValue* pValue = dynamic_cast<LwpNumericValue*>(aValueID.obj().get());
     if (pValue)
     {
@@ -142,8 +142,8 @@ void LwpRowList::Read()
     // CDLFVList read construction
     LwpDLVList::Read();
 
-    cChild.Read(m_pObjStrm.get());
-    cParent.ReadIndexed(m_pObjStrm.get());
+    cChild.Read(m_pObjStrm);
+    cParent.ReadIndexed(m_pObjStrm);
 
     if (LwpFileHeader::m_nFileRevision < 0x0006)
         m_pObjStrm->SkipExtra();
@@ -167,8 +167,8 @@ void LwpTableRange::Read()
 {
     LwpDLVList::Read();
 
-    cqTable.ReadIndexed(m_pObjStrm.get());
-    cpCellRange.ReadIndexed(m_pObjStrm.get());
+    cqTable.ReadIndexed(m_pObjStrm);
+    cpCellRange.ReadIndexed(m_pObjStrm);
     m_pObjStrm->SkipExtra();
 }
 
@@ -184,7 +184,7 @@ LwpCellRange::~LwpCellRange()
 
 void LwpCellRange::Read()
 {
-    cpFolder.ReadIndexed(m_pObjStrm.get());
+    cpFolder.ReadIndexed(m_pObjStrm);
     m_pObjStrm->SkipExtra();
 }
 
@@ -203,13 +203,13 @@ void LwpFolder::Read()
     // CDLFVList read construction
     LwpDLVList::Read();
 
-    cChild.Read(m_pObjStrm.get());
-    cParent.ReadIndexed(m_pObjStrm.get());
+    cChild.Read(m_pObjStrm);
+    cParent.ReadIndexed(m_pObjStrm);
 
     if (LwpFileHeader::m_nFileRevision < 0x0006)
         m_pObjStrm->SkipExtra();
 
-    cqTable.ReadIndexed(m_pObjStrm.get());
+    cqTable.ReadIndexed(m_pObjStrm);
     m_pObjStrm->SkipExtra();
 }
 
@@ -230,7 +230,7 @@ void LwpDependent::Read()
 {
     LwpDLVList::Read();
 
-    cFormulaInfo.ReadIndexed(m_pObjStrm.get());
+    cFormulaInfo.ReadIndexed(m_pObjStrm);
     cReferenceOffset = m_pObjStrm->QuickReaduInt16();
     cFlags = (sal_uInt8)m_pObjStrm->QuickReaduInt16();  // Written as lushort.
 

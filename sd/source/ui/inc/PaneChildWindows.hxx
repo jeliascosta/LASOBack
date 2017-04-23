@@ -33,8 +33,9 @@ public:
         sal_uInt16 nId,
         SfxBindings* pBindings,
         SfxChildWinInfo* pInfo,
-        const sal_uInt16 nTitleBarResId);
-    virtual ~PaneChildWindow() override;
+        const sal_uInt16 nTitleBarResId,
+        SfxChildAlignment eAlignment);
+    virtual ~PaneChildWindow();
 };
 
 class LeftPaneImpressChildWindow

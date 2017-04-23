@@ -23,6 +23,7 @@
 #include <vcl/fixed.hxx>
 #include <vcl/button.hxx>
 #include <vcl/menu.hxx>
+#include <svl/itempool.hxx>
 #include <svtools/imapobj.hxx>
 #include <svtools/transfer.hxx>
 #include <svtools/imap.hxx>
@@ -30,8 +31,6 @@
 #include <svx/graphctl.hxx>
 
 #include <com/sun/star/frame/XFrame.hpp>
-
-struct SfxItemInfo;
 
 struct NotifyInfo
 {
@@ -46,6 +45,12 @@ struct NotifyInfo
 
 #define SVD_IMAP_USERDATA   0x0001
 
+const sal_uInt32 IMapInventor = sal_uInt32('I') * 0x00000001+
+                            sal_uInt32('M') * 0x00000100+
+                            sal_uInt32('A') * 0x00010000+
+                            sal_uInt32('P') * 0x01000000;
+
+
 typedef std::shared_ptr< IMapObject > IMapObjectPtr;
 
 class IMapUserData : public SdrObjUserData
@@ -56,12 +61,14 @@ class IMapUserData : public SdrObjUserData
 public:
 
                    explicit IMapUserData( const IMapObjectPtr& rIMapObj ) :
-                                SdrObjUserData  ( SdrInventor::IMap, SVD_IMAP_USERDATA ),
+                                SdrObjUserData  ( IMapInventor, SVD_IMAP_USERDATA ),
                                 mpObj           ( rIMapObj ) {}
 
                             IMapUserData( const IMapUserData& rIMapUserData ) :
-                                SdrObjUserData  ( SdrInventor::IMap, SVD_IMAP_USERDATA ),
+                                SdrObjUserData  ( IMapInventor, SVD_IMAP_USERDATA ),
                                 mpObj           ( rIMapUserData.mpObj ) {}
+
+                            virtual ~IMapUserData() { }
 
     virtual SdrObjUserData* Clone( SdrObject * ) const override { return new IMapUserData( *this ); }
 
@@ -80,7 +87,7 @@ class IMapWindow : public GraphCtrl, public DropTargetHelper
     css::uno::Reference< css::frame::XFrame >
                         mxDocumentFrame;
 
-                        DECL_LINK( MenuSelectHdl, Menu*, bool );
+                        DECL_LINK_TYPED( MenuSelectHdl, Menu*, bool );
 
 protected:
 
@@ -109,7 +116,7 @@ protected:
 public:
 
                         IMapWindow( vcl::Window* pParent, WinBits nBits, const css::uno::Reference< css::frame::XFrame >& rxDocumentFrame );
-                        virtual ~IMapWindow() override;
+                        virtual ~IMapWindow();
     virtual void        dispose() override;
 
     void                ReplaceActualIMapInfo( const NotifyInfo& rNewInfo );
@@ -130,6 +137,8 @@ public:
     void                CreateDefaultObject();
     void                SelectFirstObject();
     void                StartPolyEdit();
+
+    virtual void        KeyInput( const KeyEvent& rKEvt ) override;
 };
 
 

@@ -73,12 +73,12 @@ void OfaMSFilterTabPage::dispose()
 }
 
 
-IMPL_LINK_NOARG(OfaMSFilterTabPage, LoadWordBasicCheckHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(OfaMSFilterTabPage, LoadWordBasicCheckHdl_Impl, Button*, void)
 {
     aWBasicWbctblCB->Enable( aWBasicCodeCB->IsChecked() );
 }
 
-IMPL_LINK_NOARG(OfaMSFilterTabPage, LoadExcelBasicCheckHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(OfaMSFilterTabPage, LoadExcelBasicCheckHdl_Impl, Button*, void)
 {
     aEBasicExectblCB->Enable( aEBasicCodeCB->IsChecked() );
 }
@@ -158,7 +158,7 @@ OfaMSFilterTabPage2::OfaMSFilterTabPage2( vcl::Window* pParent, const SfxItemSet
     get( aShadingRB,      "shading"     );
 
     Size aControlSize(248, 55);
-    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
     m_pCheckLBContainer->set_width_request(aControlSize.Width());
     m_pCheckLBContainer->set_height_request(aControlSize.Height());
 
@@ -236,7 +236,7 @@ bool OfaMSFilterTabPage2::FillItemSet( SfxItemSet* )
         if( pEntry )
         {
             SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem( nCol ));
-            if (rItem.GetType() == SvLBoxItemType::Button)
+            if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
             {
                 SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
                 bCheck = SvButtonState::Checked ==
@@ -304,7 +304,7 @@ void OfaMSFilterTabPage2::Reset( const SfxItemSet* )
         if( pEntry )
         {
             SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem( nCol ));
-            if (rItem.GetType() == SvLBoxItemType::Button)
+            if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
             {
                 if( (rOpt.*pArr->FnIs)() )
                     rItem.SetStateChecked();
@@ -393,7 +393,7 @@ void OfaMSFilterTabPage2::MSFltrSimpleTable::SetCheckButtonState(
 {
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SvLBoxItemType::Button)
+    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         switch( eState )
         {
@@ -419,7 +419,7 @@ SvButtonState OfaMSFilterTabPage2::MSFltrSimpleTable::GetCheckButtonState(
     SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>(pEntry->GetItem(nCol + 1));
 
-    if (rItem.GetType() == SvLBoxItemType::Button)
+    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
         eState = SvLBoxButtonData::ConvertToButtonState( nButtonFlags );
@@ -449,7 +449,7 @@ void OfaMSFilterTabPage2::MSFltrSimpleTable::KeyInput( const KeyEvent& rKEvt )
             SvTreeListEntry* pEntry = GetEntry( nSelPos );
             bool bIsChecked = ( GetCheckButtonState( pEntry, nCol ) == SvButtonState::Checked );
             CheckEntryPos( nSelPos, nCol, !bIsChecked );
-            CallImplEventListeners( VclEventId::CheckboxToggle, static_cast<void*>(pEntry) );
+            CallImplEventListeners( VCLEVENT_CHECKBOX_TOGGLE, static_cast<void*>(pEntry) );
         }
         else
         {

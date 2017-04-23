@@ -75,7 +75,7 @@ public:
 protected:
     /** Destruction.
      */
-    virtual ~OStoreDirectory_Impl() override;
+    virtual ~OStoreDirectory_Impl();
 
 private:
     /** IStoreHandle TypeId.

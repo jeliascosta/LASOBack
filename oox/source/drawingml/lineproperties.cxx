@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "drawingml/lineproperties.hxx"
+#include "oox/drawingml/lineproperties.hxx"
 #include <vector>
 #include <rtl/ustrbuf.hxx>
 #include <osl/diagnose.h>
@@ -320,15 +320,15 @@ void lclPushMarkerProperties( ShapePropertyMap& rPropMap,
     {
         if( bLineEnd )
         {
-            rPropMap.setProperty( ShapeProperty::LineEnd, aNamedMarker );
-            rPropMap.setProperty( ShapeProperty::LineEndWidth, nMarkerWidth );
-            rPropMap.setProperty( ShapeProperty::LineEndCenter, bMarkerCenter );
+            rPropMap.setProperty( SHAPEPROP_LineEnd, aNamedMarker );
+            rPropMap.setProperty( SHAPEPROP_LineEndWidth, nMarkerWidth );
+            rPropMap.setProperty( SHAPEPROP_LineEndCenter, bMarkerCenter );
         }
         else
         {
-            rPropMap.setProperty( ShapeProperty::LineStart, aNamedMarker );
-            rPropMap.setProperty( ShapeProperty::LineStartWidth, nMarkerWidth );
-            rPropMap.setProperty( ShapeProperty::LineStartCenter, bMarkerCenter );
+            rPropMap.setProperty( SHAPEPROP_LineStart, aNamedMarker );
+            rPropMap.setProperty( SHAPEPROP_LineStartWidth, nMarkerWidth );
+            rPropMap.setProperty( SHAPEPROP_LineStartCenter, bMarkerCenter );
         }
     }
 }
@@ -386,27 +386,27 @@ void LineProperties::pushToPropMap( ShapePropertyMap& rPropMap,
             aLineDash.DashLen *= nBaseLineWidth;
             aLineDash.Distance *= nBaseLineWidth;
 
-            if( rPropMap.setProperty( ShapeProperty::LineDash, aLineDash ) )
+            if( rPropMap.setProperty( SHAPEPROP_LineDash, aLineDash ) )
                 eLineStyle = drawing::LineStyle_DASH;
         }
 
         // set final line style property
-        rPropMap.setProperty( ShapeProperty::LineStyle, eLineStyle );
+        rPropMap.setProperty( SHAPEPROP_LineStyle, eLineStyle );
 
         // line joint type
         if( moLineJoint.has() )
-            rPropMap.setProperty( ShapeProperty::LineJoint, lclGetLineJoint( moLineJoint.get() ) );
+            rPropMap.setProperty( SHAPEPROP_LineJoint, lclGetLineJoint( moLineJoint.get() ) );
 
         // line width in 1/100mm
-        rPropMap.setProperty( ShapeProperty::LineWidth, nLineWidth );
+        rPropMap.setProperty( SHAPEPROP_LineWidth, nLineWidth );
 
         // line color and transparence
         Color aLineColor = maLineFill.getBestSolidColor();
         if( aLineColor.isUsed() )
         {
-            rPropMap.setProperty( ShapeProperty::LineColor, aLineColor.getColor( rGraphicHelper, nPhClr ) );
+            rPropMap.setProperty( SHAPEPROP_LineColor, aLineColor.getColor( rGraphicHelper, nPhClr ) );
             if( aLineColor.hasTransparency() )
-                rPropMap.setProperty( ShapeProperty::LineTransparency, aLineColor.getTransparency() );
+                rPropMap.setProperty( SHAPEPROP_LineTransparency, aLineColor.getTransparency() );
         }
 
         // line markers

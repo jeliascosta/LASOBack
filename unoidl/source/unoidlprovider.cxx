@@ -61,7 +61,7 @@ public:
     void * address;
 
 private:
-    virtual ~MappedFile() override;
+    virtual ~MappedFile();
 
     sal_uInt8 get8(sal_uInt32 offset) const;
 
@@ -531,10 +531,6 @@ sal_uInt32 findInMap(
     return off;
 }
 
-#if defined(__COVERITY__)
-extern "C" void __coverity_tainted_data_sanitize__(void *);
-#endif
-
 std::vector< OUString > readAnnotations(
     bool annotated, rtl::Reference< MappedFile > const & file,
     sal_uInt32 offset, sal_uInt32 * newOffset = nullptr)
@@ -542,9 +538,6 @@ std::vector< OUString > readAnnotations(
     std::vector< OUString > ans;
     if (annotated) {
         sal_uInt32 n = file->read32(offset);
-#if defined(__COVERITY__)
-        __coverity_tainted_data_sanitize__(&n);
-#endif
         offset += 4;
         for (sal_uInt32 i = 0; i != n; ++i) {
             ans.push_back(file->readIdxString(&offset));
@@ -558,7 +551,7 @@ std::vector< OUString > readAnnotations(
 
 ConstantValue readConstant(
     rtl::Reference< MappedFile > const & file, sal_uInt32 offset,
-    sal_uInt32 * newOffset, bool * annotated)
+    sal_uInt32 * newOffset = nullptr, bool * annotated = nullptr)
 {
     assert(file.is());
     int v = file->read8(offset);
@@ -655,7 +648,7 @@ class UnoidlModuleEntity;
 class UnoidlCursor: public MapCursor {
 public:
     UnoidlCursor(
-        rtl::Reference< MappedFile > const & file,
+        rtl::Reference< MappedFile > file,
         rtl::Reference<UnoidlProvider> const & reference1,
         rtl::Reference<UnoidlModuleEntity> const & reference2,
         NestedMap const & map):
@@ -664,7 +657,7 @@ public:
     {}
 
 private:
-    virtual ~UnoidlCursor() throw () override {}
+    virtual ~UnoidlCursor() throw () {}
 
     virtual rtl::Reference< Entity > getNext(OUString * name) override;
 
@@ -706,7 +699,7 @@ public:
     }
 
 private:
-    virtual ~UnoidlModuleEntity() throw () override {}
+    virtual ~UnoidlModuleEntity() throw () {}
 
     virtual std::vector< OUString > getMemberNames() const override;
 

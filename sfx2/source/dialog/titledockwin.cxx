@@ -31,8 +31,9 @@
 namespace sfx2
 {
     //= TitledDockingWindow
-    TitledDockingWindow::TitledDockingWindow( SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow, vcl::Window* i_pParent )
-        :SfxDockingWindow( i_pBindings, i_pChildWindow, i_pParent, WB_MOVEABLE|WB_CLOSEABLE|WB_DOCKABLE|WB_HIDE|WB_3DLOOK )
+    TitledDockingWindow::TitledDockingWindow( SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow, vcl::Window* i_pParent,
+            WinBits i_nStyle )
+        :SfxDockingWindow( i_pBindings, i_pChildWindow, i_pParent, i_nStyle )
         ,m_sTitle()
         ,m_aToolbox( VclPtr<ToolBox>::Create(this) )
         ,m_aContentWindow( VclPtr<vcl::Window>::Create(this, WB_DIALOGCONTROL) )
@@ -143,7 +144,7 @@ namespace sfx2
         rRenderContext.SetTextFillColor();
     }
 
-    void TitledDockingWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& i_rArea)
+    void TitledDockingWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& i_rArea)
     {
         const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
 
@@ -173,15 +174,15 @@ namespace sfx2
         int nInnerBottom = nOuterBottom - m_aBorder.Bottom() + 1;
 
         // Paint title bar background.
-        tools::Rectangle aTitleBarBox(tools::Rectangle(nOuterLeft, 0, nOuterRight, nInnerTop - 1));
+        Rectangle aTitleBarBox(Rectangle(nOuterLeft, 0, nOuterRight, nInnerTop - 1));
         rRenderContext.DrawRect(aTitleBarBox);
 
         if (nInnerLeft > nOuterLeft)
-            rRenderContext.DrawRect(tools::Rectangle(nOuterLeft, nInnerTop, nInnerLeft, nInnerBottom));
+            rRenderContext.DrawRect(Rectangle(nOuterLeft, nInnerTop, nInnerLeft, nInnerBottom));
         if (nOuterRight > nInnerRight)
-            rRenderContext.DrawRect(tools::Rectangle(nInnerRight, nInnerTop, nOuterRight, nInnerBottom));
+            rRenderContext.DrawRect(Rectangle(nInnerRight, nInnerTop, nOuterRight, nInnerBottom));
         if (nInnerBottom < nOuterBottom)
-            rRenderContext.DrawRect(tools::Rectangle(nOuterLeft, nInnerBottom, nOuterRight, nOuterBottom));
+            rRenderContext.DrawRect(Rectangle(nOuterLeft, nInnerBottom, nOuterRight, nOuterBottom));
 
         // Paint bevel border.
         rRenderContext.SetFillColor();
@@ -200,12 +201,17 @@ namespace sfx2
         // Paint title bar text.
         rRenderContext.SetLineColor(rStyleSettings.GetActiveTextColor());
         aTitleBarBox.Left() += 3;
-        rRenderContext.DrawText(aTitleBarBox,
-                                !m_sTitle.isEmpty() ? m_sTitle : GetText(),
-                                DrawTextFlags::Left | DrawTextFlags::VCenter | DrawTextFlags::MultiLine | DrawTextFlags::WordBreak);
+        rRenderContext.DrawText(aTitleBarBox, impl_getTitle(),
+                               DrawTextFlags::Left | DrawTextFlags::VCenter | DrawTextFlags::MultiLine | DrawTextFlags::WordBreak);
 
         // Restore original values of the output device.
         rRenderContext.Pop();
+    }
+
+
+    OUString TitledDockingWindow::impl_getTitle() const
+    {
+        return !m_sTitle.isEmpty() ? m_sTitle : GetText();
     }
 
 
@@ -214,13 +220,13 @@ namespace sfx2
         m_aToolbox->Clear();
 
         // Get the closer bitmap and set it as right most button.
-        BitmapEx aBitmapEx(SfxResId(SFX_BMP_CLOSE_DOC));
-        m_aToolbox->InsertItem(1, Image(aBitmapEx));
+        Image aImage( SfxResId( SFX_IMG_CLOSE_DOC ) );
+        m_aToolbox->InsertItem( 1, aImage );
         m_aToolbox->ShowItem( 1 );
     }
 
 
-    IMPL_LINK( TitledDockingWindow, OnToolboxItemSelected, ToolBox*, pToolBox, void )
+    IMPL_LINK_TYPED( TitledDockingWindow, OnToolboxItemSelected, ToolBox*, pToolBox, void )
     {
         const sal_uInt16 nId = pToolBox->GetCurItemId();
 
@@ -251,7 +257,7 @@ namespace sfx2
         SfxDockingWindow::StateChanged( i_nType );
     }
 
-    void TitledDockingWindow::EndDocking( const tools::Rectangle& i_rRect, bool i_bFloatMode )
+    void TitledDockingWindow::EndDocking( const Rectangle& i_rRect, bool i_bFloatMode )
     {
         SfxDockingWindow::EndDocking( i_rRect, i_bFloatMode );
 

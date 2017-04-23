@@ -33,25 +33,26 @@ namespace dbaui
     typedef ::cppu::ImplHelper1< css::lang::XUnoTunnel > OJoinExchObj_Base;
     class OJoinExchObj : public TransferableHelper, public OJoinExchObj_Base
     {
+        static OUString         m_sJoinFormat;
         bool                m_bFirstEntry;
 
     protected:
         OJoinExchangeData           m_jxdSourceDescription;
         IDragTransferableListener*  m_pDragListener;
 
-        virtual ~OJoinExchObj() override;
+        virtual ~OJoinExchObj();
 
     public:
         OJoinExchObj(const OJoinExchangeData& jxdSource,bool _bFirstEntry=false);
 
 
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw(css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL acquire(  ) throw() override;
         virtual void SAL_CALL release(  ) throw() override;
 
         // XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& _rIdentifier ) override;
+        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& _rIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 
         void StartDrag( vcl::Window* pWindow, sal_Int8 nDragSourceActions, IDragTransferableListener* _pListener );
 

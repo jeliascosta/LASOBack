@@ -9,12 +9,12 @@
 
 #include "templatesearchview.hxx"
 #include "templatesearchviewitem.hxx"
-#include <sfx2/templatelocalview.hxx>
+#include <sfx2/templateabstractview.hxx>
 #include <sfx2/sfxresid.hxx>
 #include <tools/urlobj.hxx>
 #include <vcl/layout.hxx>
 
-#include <doc.hrc>
+#include "../doc/doc.hrc"
 
 #include <vcl/builderfactory.hxx>
 
@@ -23,8 +23,8 @@
 #define MNI_DEFAULT_TEMPLATE   3
 #define MNI_DELETE             4
 
-TemplateSearchView::TemplateSearchView (vcl::Window *pParent)
-    : ThumbnailView(pParent,WB_TABSTOP | WB_VSCROLL | WB_BORDER),
+TemplateSearchView::TemplateSearchView (vcl::Window *pParent, WinBits nWinStyle)
+    : ThumbnailView(pParent,nWinStyle),
     maSelectedItem(nullptr),
     maPosition(0,0)
 {
@@ -59,7 +59,7 @@ void TemplateSearchView::KeyInput( const KeyEvent& rKEvt )
     }
     else if( aKeyCode == KEY_DELETE && !mFilteredItemList.empty())
     {
-        ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, SfxResId(STR_QMSG_SEL_TEMPLATE_DELETE), VclMessageType::Question, VclButtonsType::YesNo);
+        ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, SfxResId(STR_QMSG_SEL_TEMPLATE_DELETE), VclMessageType::VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
 
         if ( aQueryDlg->Execute() != RET_YES )
             return;
@@ -111,7 +111,7 @@ void TemplateSearchView::Command( const CommandEvent& rCEvt )
                     deselectItems();
                     pItem->setSelection(true);
                     maItemStateHdl.Call(pItem);
-                    tools::Rectangle aRect = pItem->getDrawArea();
+                    Rectangle aRect = pItem->getDrawArea();
                     maPosition = aRect.Center();
                     maSelectedItem = dynamic_cast<TemplateViewItem*>(pItem);
                     maCreateContextMenuHdl.Call(pItem);
@@ -126,7 +126,7 @@ void TemplateSearchView::Command( const CommandEvent& rCEvt )
 
 void TemplateSearchView::createContextMenu( const bool bIsDefault)
 {
-    ScopedVclPtrInstance<PopupMenu> pItemMenu;
+    std::unique_ptr<PopupMenu> pItemMenu(new PopupMenu);
     pItemMenu->InsertItem(MNI_OPEN,SfxResId(STR_OPEN).toString());
     pItemMenu->InsertItem(MNI_EDIT,SfxResId(STR_EDIT_TEMPLATE).toString());
 
@@ -140,11 +140,11 @@ void TemplateSearchView::createContextMenu( const bool bIsDefault)
     maSelectedItem->setSelection(true);
     maItemStateHdl.Call(maSelectedItem);
     pItemMenu->SetSelectHdl(LINK(this, TemplateSearchView, ContextMenuSelectHdl));
-    pItemMenu->Execute(this, tools::Rectangle(maPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
+    pItemMenu->Execute(this, Rectangle(maPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
     Invalidate();
 }
 
-IMPL_LINK(TemplateSearchView, ContextMenuSelectHdl, Menu*, pMenu, bool)
+IMPL_LINK_TYPED(TemplateSearchView, ContextMenuSelectHdl, Menu*, pMenu, bool)
 {
     sal_uInt16 nMenuId = pMenu->GetCurItemId();
 
@@ -158,7 +158,7 @@ IMPL_LINK(TemplateSearchView, ContextMenuSelectHdl, Menu*, pMenu, bool)
         break;
     case MNI_DELETE:
     {
-        ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, SfxResId(STR_QMSG_SEL_TEMPLATE_DELETE), VclMessageType::Question, VclButtonsType::YesNo);
+        ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, SfxResId(STR_QMSG_SEL_TEMPLATE_DELETE), VclMessageType::VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
         if ( aQueryDlg->Execute() != RET_YES )
             break;
 
@@ -227,7 +227,7 @@ void TemplateSearchView::AppendItem(sal_uInt16 nAssocItemId, sal_uInt16 nRegionI
     pItem->setHelpText(rSubtitle);
     pItem->setPath(rPath);
 
-    if(TemplateLocalView::IsDefaultTemplate(rPath))
+    if(TemplateAbstractView::IsDefaultTemplate(rPath))
         pItem->showDefaultIcon(true);
 
     ThumbnailView::AppendItem(pItem);

@@ -24,6 +24,7 @@
 #include <math.h>
 
 using namespace ::swf;
+using namespace ::std;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::io;
 
@@ -108,8 +109,8 @@ void BitStream::writeTo( SvStream& out )
 {
     pad();
 
-    std::vector< sal_uInt8 >::iterator aIter( maData.begin() );
-    const std::vector< sal_uInt8>::iterator aEnd( maData.end() );
+    vector< sal_uInt8 >::iterator aIter( maData.begin() );
+    const vector< sal_uInt8>::iterator aEnd( maData.end() );
     while(aIter != aEnd)
     {
         out.WriteUChar( *aIter++ );
@@ -158,7 +159,7 @@ void Tag::write( SvStream &out )
         }
     }
 
-    out.WriteBytes( GetData(), nSz );
+    out.Write( GetData(), nSz );
 }
 #if 0
 
@@ -220,13 +221,13 @@ void Tag::addRGB( const Color& rColor )
 }
 
 
-void Tag::addRect( const tools::Rectangle& rRect )
+void Tag::addRect( const Rectangle& rRect )
 {
     writeRect( *this, rRect );
 }
 
 
-void Tag::writeRect( SvStream& rOut, const tools::Rectangle& rRect )
+void Tag::writeRect( SvStream& rOut, const Rectangle& rRect )
 {
     BitStream aBits;
 
@@ -255,15 +256,15 @@ void Tag::writeRect( SvStream& rOut, const tools::Rectangle& rRect )
         minY = rRect.Bottom();
     }
 
-    // AS: Figure out the maximum number of bits required to represent any of the
+    // AS: Figure out the maximum nubmer of bits required to represent any of the
     //  rectangle coordinates.  Since minX or minY could be negative, they could
     //  actually require more bits than maxX or maxY.
     // AS: Christian, can they be negative, or is that a wasted check?
     // CL: I think so, f.e. for shapes that have the top and/or left edge outside
     //         the page origin
-    sal_uInt8 nBits1 = sal::static_int_cast<sal_uInt8>( std::max( getMaxBitsSigned( minX ), getMaxBitsSigned( minY ) ) );
-    sal_uInt8 nBits2 = sal::static_int_cast<sal_uInt8>( std::max( getMaxBitsSigned( maxX ), getMaxBitsSigned( maxY ) ) );
-    sal_uInt8 nBitsMax = std::max( nBits1, nBits2 );
+    sal_uInt8 nBits1 = sal::static_int_cast<sal_uInt8>( max( getMaxBitsSigned( minX ), getMaxBitsSigned( minY ) ) );
+    sal_uInt8 nBits2 = sal::static_int_cast<sal_uInt8>( max( getMaxBitsSigned( maxX ), getMaxBitsSigned( maxY ) ) );
+    sal_uInt8 nBitsMax = max( nBits1, nBits2 );
 
     aBits.writeUB( nBitsMax, 5 );
     aBits.writeSB( minX, nBitsMax );
@@ -336,7 +337,7 @@ Sprite::Sprite( sal_uInt16 nId )
 
 Sprite::~Sprite()
 {
-    for(std::vector< Tag* >::iterator i = maTags.begin(); i != maTags.end(); ++i)
+    for(vector< Tag* >::iterator i = maTags.begin(); i != maTags.end(); ++i)
         delete *i;
 }
 
@@ -344,7 +345,7 @@ Sprite::~Sprite()
 void Sprite::write( SvStream& out )
 {
     SvMemoryStream aTmp;
-    for(std::vector< Tag* >::iterator i = maTags.begin(); i != maTags.end(); ++i)
+    for(vector< Tag* >::iterator i = maTags.begin(); i != maTags.end(); ++i)
         (*i)->write( aTmp );
 
     if( !mnFrames )
@@ -400,7 +401,7 @@ FlashFont::~FlashFont()
 sal_uInt16 FlashFont::getGlyph( sal_uInt16 nChar, VirtualDevice* pVDev )
 {
     // see if we already created a glyph for this character
-    std::map<sal_uInt16, sal_uInt16>::iterator aIter( maGlyphIndex.find(nChar) );
+    std::map<sal_uInt16, sal_uInt16, ltuint16>::iterator aIter( maGlyphIndex.find(nChar) );
     if( aIter != maGlyphIndex.end() )
     {
         return aIter->second;
@@ -464,7 +465,7 @@ void FlashFont::write( SvStream& out )
     sal_uInt16 nGlyphs = uInt16_( maGlyphOffsets.size() );
     sal_uInt16 nOffset = nGlyphs * sizeof( sal_uInt16 );
 
-    for(std::vector< sal_uInt16 >::iterator i = maGlyphOffsets.begin(); i != maGlyphOffsets.end(); ++i)
+    for(vector< sal_uInt16 >::iterator i = maGlyphOffsets.begin(); i != maGlyphOffsets.end(); ++i)
         aTag.addUI16( nOffset + (*i) );
 
     aTag.addBits( maGlyphData );
@@ -495,13 +496,13 @@ FillStyle::FillStyleType Impl_getFillStyleType( const Gradient& rGradient )
 {
     switch( rGradient.GetStyle() )
     {
-    case GradientStyle::Elliptical:
-    case GradientStyle::Radial:
+    case GradientStyle_ELLIPTICAL:
+    case GradientStyle_RADIAL:
         return FillStyle::radial_gradient;
-//  case GradientStyle::Axial:
-//  case GradientStyle::Square:
-//  case GradientStyle::Rect:
-//  case GradientStyle::Linear:
+//  case GradientStyle_AXIAL:
+//  case GradientStyle_SQUARE:
+//  case GradientStyle_RECT:
+//  case GradientStyle_LINEAR:
     default:
         return FillStyle::linear_gradient;
     }
@@ -509,7 +510,7 @@ FillStyle::FillStyleType Impl_getFillStyleType( const Gradient& rGradient )
 
 
 /** this c'tor creates a linear or radial gradient fill style */
-FillStyle::FillStyle( const tools::Rectangle& rBoundRect, const Gradient& rGradient )
+FillStyle::FillStyle( const Rectangle& rBoundRect, const Gradient& rGradient )
     : meType(Impl_getFillStyleType(rGradient))
     , mnBitmapId(0)
     , maGradient(rGradient)
@@ -550,13 +551,13 @@ struct GradRecord
 // TODO: better emulation of our gradients
 void FillStyle::Impl_addGradient( Tag* pTag ) const
 {
-    std::vector< struct GradRecord > aGradientRecords;
+    vector< struct GradRecord > aGradientRecords;
     basegfx::B2DHomMatrix m(basegfx::tools::createRotateB2DHomMatrix((maGradient.GetAngle() - 900) * F_PI1800));
 
     switch( maGradient.GetStyle() )
     {
-    case GradientStyle::Elliptical:
-    case GradientStyle::Radial:
+    case GradientStyle_ELLIPTICAL:
+    case GradientStyle_RADIAL:
         {
             aGradientRecords.push_back( GradRecord( 0x00, maGradient.GetEndColor() ) );
             aGradientRecords.push_back( GradRecord( 0xff, maGradient.GetStartColor() ) );
@@ -589,7 +590,7 @@ void FillStyle::Impl_addGradient( Tag* pTag ) const
 
         }
         break;
-    case GradientStyle::Axial:
+    case GradientStyle_AXIAL:
         {
             aGradientRecords.push_back( GradRecord( 0x00, maGradient.GetEndColor() ) );
             aGradientRecords.push_back( GradRecord( 0x80, maGradient.GetStartColor() ) );
@@ -603,9 +604,9 @@ void FillStyle::Impl_addGradient( Tag* pTag ) const
             m.scale( scalex, scaley );
         }
         break;
-    case GradientStyle::Square:
-    case GradientStyle::Rect:
-    case GradientStyle::Linear:
+    case GradientStyle_SQUARE:
+    case GradientStyle_RECT:
+    case GradientStyle_LINEAR:
         {
             aGradientRecords.push_back( GradRecord( 0x00, maGradient.GetStartColor() ) );
             aGradientRecords.push_back( GradRecord( 0xff, maGradient.GetEndColor() ) );
@@ -617,7 +618,7 @@ void FillStyle::Impl_addGradient( Tag* pTag ) const
             m.translate( maBoundRect.GetWidth() / 2.0, maBoundRect.GetHeight() / 2.0 );
         }
         break;
-    case  GradientStyle::FORCE_EQUAL_SIZE: break;
+    case  GradientStyle_FORCE_EQUAL_SIZE: break;
     }
 
     m.translate( maBoundRect.Left(), maBoundRect.Top() );

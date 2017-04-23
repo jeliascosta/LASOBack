@@ -57,7 +57,6 @@ namespace vcl { class Window; }
 class OutputDevice;
 class SdrUnoObj;
 struct ImplSVEvent;
-enum class SdrInventor : sal_uInt32;
 
 namespace com { namespace sun { namespace star {
     namespace awt {
@@ -97,7 +96,7 @@ class FormViewPageWindowAdapter : public FormViewPageWindowAdapter_Base
     VclPtr<vcl::Window>         m_pWindow;
 
 protected:
-    virtual ~FormViewPageWindowAdapter() override;
+    virtual ~FormViewPageWindowAdapter();
 
 public:
     FormViewPageWindowAdapter(  const css::uno::Reference<css::uno::XComponentContext>& _rContext,
@@ -105,15 +104,15 @@ public:
         //const SdrPageViewWinRec*, FmXFormView* pView);
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 Index) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 Index) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XFormControllerContext
-    virtual void SAL_CALL makeVisible( const css::uno::Reference< css::awt::XControl >& Control ) override;
+    virtual void SAL_CALL makeVisible( const css::uno::Reference< css::awt::XControl >& Control ) throw (css::uno::RuntimeException, std::exception) override;
 
     const ::std::vector< css::uno::Reference< css::form::runtime::XFormController > >& GetList() {return m_aControllerList;}
 
@@ -178,9 +177,11 @@ class FmXFormView : public ::cppu::WeakImplHelper<
 
     FmFormShell* GetFormShell() const;
 
+    void removeGridWindowListening();
+
 protected:
     FmXFormView( FmFormView* _pView );
-    virtual ~FmXFormView() override;
+    virtual ~FmXFormView();
 
     void    saveMarkList();
     void    restoreMarkList( SdrMarkList& _rRestoredMarkList );
@@ -194,20 +195,20 @@ public:
     // UNO Anbindung
 
 // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XContainerListener
-    virtual void SAL_CALL elementInserted(const  css::container::ContainerEvent& rEvent) override;
-    virtual void SAL_CALL elementReplaced(const  css::container::ContainerEvent& rEvent) override;
-    virtual void SAL_CALL elementRemoved(const  css::container::ContainerEvent& rEvent) override;
+    virtual void SAL_CALL elementInserted(const  css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementReplaced(const  css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL elementRemoved(const  css::container::ContainerEvent& rEvent) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::form::XFormControllerListener
-    virtual void SAL_CALL formActivated(const css::lang::EventObject& rEvent) override;
-    virtual void SAL_CALL formDeactivated(const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL formActivated(const css::lang::EventObject& rEvent) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL formDeactivated(const css::lang::EventObject& rEvent) throw(css::uno::RuntimeException, std::exception) override;
 
     // XFocusListener
-    virtual void SAL_CALL focusGained( const css::awt::FocusEvent& e ) override;
-    virtual void SAL_CALL focusLost( const css::awt::FocusEvent& e ) override;
+    virtual void SAL_CALL focusGained( const css::awt::FocusEvent& e ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL focusLost( const css::awt::FocusEvent& e ) throw (css::uno::RuntimeException, std::exception) override;
 
     FmFormView* getView() const {return m_pView;}
     PFormViewPageWindowAdapter  findWindow( const css::uno::Reference< css::awt::XControlContainer >& _rxCC ) const;
@@ -216,8 +217,8 @@ public:
             getFormController( const css::uno::Reference< css::form::XForm >& _rxForm, const OutputDevice& _rDevice ) const;
 
     // activation handling
-    bool        hasEverBeenActivated( ) const { return !m_bFirstActivation; }
-    void        setHasBeenActivated( ) { m_bFirstActivation = false; }
+    inline  bool        hasEverBeenActivated( ) const { return !m_bFirstActivation; }
+    inline  void        setHasBeenActivated( ) { m_bFirstActivation = false; }
 
             void        onFirstViewActivation( const FmFormModel* _pDocModel );
 
@@ -257,7 +258,7 @@ private:
         const css::uno::Reference< css::util::XNumberFormats >& _rxNumberFormats,
         sal_uInt16 _nControlObjectID,
         const OUString& _rFieldPostfix,
-        SdrInventor _nInventor,
+        sal_uInt32 _nInventor,
         sal_uInt16 _nLabelObjectID,
         SdrPage* _pLabelPage,
         SdrPage* _pControlPage,
@@ -276,10 +277,10 @@ private:
         const OUString& _rFieldPostfix,
         SdrUnoObj*& _rpLabel,
         SdrUnoObj*& _rpControl,
-        const css::uno::Reference< css::sdbc::XDataSource >& _rxDataSource,
-        const OUString& _rDataSourceName,
-        const OUString& _rCommand,
-        const sal_Int32 _nCommandType
+        const css::uno::Reference< css::sdbc::XDataSource >& _rxDataSource = nullptr,
+        const OUString& _rDataSourceName = OUString(),
+        const OUString& _rCommand = OUString(),
+        const sal_Int32 _nCommandType = -1
     );
 
     void ObjectRemovedInAliveMode(const SdrObject* pObject);
@@ -292,10 +293,10 @@ private:
 
     /// the auto focus to the first (in terms of the tab order) control
     void AutoFocus();
-    DECL_LINK( OnActivate, void*, void );
-    DECL_LINK( OnAutoFocus, void*, void );
-    DECL_LINK( OnDelayedErrorMessage, void*, void );
-    DECL_LINK( OnStartControlWizard, void*, void );
+    DECL_LINK_TYPED( OnActivate, void*, void );
+    DECL_LINK_TYPED( OnAutoFocus, void*, void );
+    DECL_LINK_TYPED( OnDelayedErrorMessage, void*, void );
+    DECL_LINK_TYPED( OnStartControlWizard, void*, void );
 
 private:
     ::svxform::DocumentType impl_getDocumentType() const;

@@ -33,8 +33,11 @@ class FuConstructBezierPolygon
 public:
 
     static rtl::Reference<FuPoor> Create( ViewShell* pViewSh, ::sd::Window* pWin, ::sd::View* pView, SdDrawDocument* pDoc, SfxRequest& rReq, bool bPermanent );
+    virtual void DoExecute( SfxRequest& rReq ) override;
 
     // Mouse- & Key-Events
+    virtual bool KeyInput(const KeyEvent& rKEvt) override;
+    virtual bool MouseMove(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
@@ -46,7 +49,7 @@ public:
     void    SetEditMode(sal_uInt16 nMode);
     sal_uInt16  GetEditMode() { return nEditMode; }
 
-    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const ::tools::Rectangle& rRectangle) override;
+    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle) override;
 
 protected:
     FuConstructBezierPolygon (

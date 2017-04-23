@@ -52,11 +52,12 @@ public:
 
     ProgressBar( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-    virtual ~ProgressBar() override;
+    virtual ~ProgressBar();
 
     //  XInterface
 
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     /**_______________________________________________________________________________________________________
         @short      increment refcount
@@ -78,26 +79,30 @@ public:
 
     //  XTypeProvider
 
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     //  XAggregation
 
-    css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& aType ) override;
+    css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& aType )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     //  XProgressBar
 
-    virtual void SAL_CALL setForegroundColor( sal_Int32 nColor ) override;
+    virtual void SAL_CALL setForegroundColor( sal_Int32 nColor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setBackgroundColor( sal_Int32 nColor ) override;
+    virtual void SAL_CALL setBackgroundColor( sal_Int32 nColor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL setValue( sal_Int32 nValue ) override;
+    virtual void SAL_CALL setValue( sal_Int32 nValue ) throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL setRange(
         sal_Int32   nMin    ,
         sal_Int32   nMax
-    ) override;
+    ) throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int32 SAL_CALL getValue() override;
+    virtual sal_Int32 SAL_CALL getValue() throw( css::uno::RuntimeException, std::exception ) override;
 
     //  XWindow
 
@@ -107,15 +112,16 @@ public:
         sal_Int32   nWidth  ,
         sal_Int32   nHeight ,
         sal_Int16   nFlags
-    ) override;
+    ) throw( css::uno::RuntimeException, std::exception ) override;
 
     //  XControl
 
     virtual sal_Bool SAL_CALL setModel(
         const css::uno::Reference< css::awt::XControlModel >& xModel
-    ) override;
+    ) throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Reference< css::awt::XControlModel > SAL_CALL getModel() override;
+    virtual css::uno::Reference< css::awt::XControlModel > SAL_CALL getModel()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     //  BaseControl
 

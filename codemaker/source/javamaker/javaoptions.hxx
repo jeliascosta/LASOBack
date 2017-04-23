@@ -28,7 +28,10 @@ public:
     JavaOptions()
         : Options() {}
 
-    bool initOptions(int ac, char* av[], bool bCmdFile=false) override;
+    virtual ~JavaOptions() {}
+
+    bool initOptions(int ac, char* av[], bool bCmdFile=false)
+            throw( IllegalArgument ) override;
 
     OString  prepareHelp() override;
 

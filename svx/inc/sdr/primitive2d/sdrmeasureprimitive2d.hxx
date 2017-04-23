@@ -59,6 +59,7 @@ namespace drawinglayer
             double                                      mfLeftDelta;
             double                                      mfRightDelta;
 
+            // bitfield
             bool                                        mbBelow : 1;
             bool                                        mbTextRotation : 1;
             bool                                        mbTextAutoAngle : 1;
@@ -74,7 +75,7 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrMeasurePrimitive2D(

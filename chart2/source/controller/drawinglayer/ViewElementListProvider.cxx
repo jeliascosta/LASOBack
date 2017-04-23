@@ -52,14 +52,9 @@ ViewElementListProvider::ViewElementListProvider( DrawModelWrapper* pDrawModelWr
 {
 }
 
-ViewElementListProvider::ViewElementListProvider( ViewElementListProvider&& rOther )
-{
-    m_pDrawModelWrapper = rOther.m_pDrawModelWrapper;
-    m_pFontList = std::move(rOther.m_pFontList);
-}
-
 ViewElementListProvider::~ViewElementListProvider()
 {
+    delete m_pFontList;
 }
 
 XColorListRef   ViewElementListProvider::GetColorTable() const
@@ -101,13 +96,6 @@ XBitmapListRef   ViewElementListProvider::GetBitmapList() const
     if(m_pDrawModelWrapper)
         return m_pDrawModelWrapper->GetBitmapList();
     return XBitmapListRef();
-}
-
-XPatternListRef   ViewElementListProvider::GetPatternList() const
-{
-    if(m_pDrawModelWrapper)
-        return m_pDrawModelWrapper->GetPatternList();
-    return XPatternListRef();
 }
 
 //create chartspecific symbols for linecharts
@@ -155,13 +143,13 @@ Graphic ViewElementListProvider::GetSymbolGraphic( sal_Int32 nStandardSymbol, co
     SdrObject* pObj = pSymbolList->GetObj(nStandardSymbol);
 
     ScopedVclPtrInstance< VirtualDevice > pVDev;
-    pVDev->SetMapMode(MapMode(MapUnit::Map100thMM));
-    std::unique_ptr<SdrModel> pModel( new SdrModel );
+    pVDev->SetMapMode(MapMode(MAP_100TH_MM));
+    SdrModel* pModel = new SdrModel();
     pModel->GetItemPool().FreezeIdRanges();
     SdrPage* pPage = new SdrPage( *pModel, false );
     pPage->SetSize(Size(1000,1000));
     pModel->InsertPage( pPage, 0 );
-    std::unique_ptr<SdrView> pView( new SdrView( pModel.get(), pVDev ) );
+    SdrView* pView = new SdrView( pModel, pVDev );
     pView->hideMarkHandles();
     SdrPageView* pPageView = pView->ShowSdrPage(pPage);
 
@@ -176,11 +164,13 @@ Graphic ViewElementListProvider::GetSymbolGraphic( sal_Int32 nStandardSymbol, co
     Graphic aGraph(aMeta);
     Size aSize = pObj->GetSnapRect().GetSize();
     aGraph.SetPrefSize(aSize);
-    aGraph.SetPrefMapMode(MapUnit::Map100thMM);
+    aGraph.SetPrefMapMode(MAP_100TH_MM);
 
     pView->UnmarkAll();
     pObj=pPage->RemoveObject(0);
     SdrObject::Free( pObj );
+    delete pView;
+    delete pModel;
 
     return aGraph;
 }
@@ -194,10 +184,11 @@ FontList* ViewElementListProvider::getFontList() const
     {
         OutputDevice* pRefDev    = m_pDrawModelWrapper ? m_pDrawModelWrapper->getReferenceDevice() : nullptr;
         OutputDevice* pDefaultOut = Application::GetDefaultDevice();
-        m_pFontList.reset( new FontList( pRefDev ? pRefDev    : pDefaultOut
-                                       , pRefDev ? pDefaultOut : nullptr) );
+        m_pFontList = new FontList( pRefDev ? pRefDev    : pDefaultOut
+                                , pRefDev ? pDefaultOut : nullptr
+                                , false );
     }
-    return m_pFontList.get();
+    return m_pFontList;
 }
 } //namespace chart
 

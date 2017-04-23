@@ -79,11 +79,11 @@ class MediaWindowImpl : public Control, public DropTargetHelper, public DragSour
 {
 public:
     MediaWindowImpl(vcl::Window* parent, MediaWindow* pMediaWindow, bool bInternalMediaControl);
-    virtual ~MediaWindowImpl() override;
+    virtual ~MediaWindowImpl();
 
     virtual void dispose() override;
 
-    static css::uno::Reference<css::media::XPlayer> createPlayer(const OUString& rURL, const OUString& rReferer, const OUString* pMimeType);
+    static css::uno::Reference<css::media::XPlayer> createPlayer(const OUString& rURL, const OUString& rReferer, const OUString* pMimeType = nullptr);
 
     void setURL(const OUString& rURL, OUString const& rTempURL, OUString const& rReferer);
 
@@ -98,7 +98,7 @@ public:
     void updateMediaItem( MediaItem& rItem ) const;
     void executeMediaItem( const MediaItem& rItem );
 
-    void setPosSize( const tools::Rectangle& rRect );
+    void setPosSize( const Rectangle& rRect );
 
     void setPointer( const Pointer& rPointer );
 
@@ -113,7 +113,7 @@ private:
     virtual void Command( const CommandEvent& rCEvt ) override;
     virtual void Resize() override;
     virtual void StateChanged( StateChangedType ) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override; // const
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override; // const
     virtual void GetFocus() override;
 
     // DropTargetHelper
@@ -123,6 +123,9 @@ private:
     // DragSourceHelper
     virtual void    StartDrag( sal_Int8 nAction, const Point& rPosPixel ) override;
 
+    bool setZoom(css::media::ZoomLevel eLevel);
+    css::media::ZoomLevel getZoom() const;
+
     void stop();
 
     bool isPlaying() const;
@@ -131,6 +134,15 @@ private:
 
     void setMediaTime( double fTime );
     double getMediaTime() const;
+
+    void setPlaybackLoop( bool bSet );
+    bool isPlaybackLoop() const;
+
+    void setMute( bool bSet );
+    bool isMute() const;
+
+    void setVolumeDB( sal_Int16 nVolumeDB );
+    sal_Int16 getVolumeDB() const;
 
     void stopPlayingInternal( bool );
 
@@ -147,7 +159,8 @@ private:
     css::uno::Reference<css::media::XPlayerWindow> mxPlayerWindow;
     MediaWindow* mpMediaWindow;
 
-    rtl::Reference<MediaEventListenersImpl> mxEvents;
+    css::uno::Reference<css::uno::XInterface> mxEventsIf;
+    MediaEventListenersImpl* mpEvents;
     bool mbEventTransparent;
     VclPtr<MediaChildWindow> mpChildWindow;
     VclPtr<MediaWindowControl> mpMediaWindowControl;

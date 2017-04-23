@@ -32,8 +32,8 @@ class DragMethod_Base : public SdrDragMethod
 public:
     DragMethod_Base( DrawViewWrapper& rDrawViewWrapper, const OUString& rObjectCID
         , const css::uno::Reference< css::frame::XModel >& xChartModel
-        , ActionDescriptionProvider::ActionType eActionType = ActionDescriptionProvider::ActionType::Move );
-    virtual ~DragMethod_Base() override;
+        , ActionDescriptionProvider::ActionType eActionType = ActionDescriptionProvider::MOVE );
+    virtual ~DragMethod_Base();
 
     OUString getUndoDescription() const;
 

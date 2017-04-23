@@ -116,7 +116,7 @@ void SfxApplication::InitInterface_Impl()
 */
 SfxProgress* SfxApplication::GetProgress() const
 {
-    return pImpl->pProgress;
+    return pAppData_Impl->pProgress;
 }
 
 SfxModule* SfxApplication::GetModule_Impl()
@@ -133,15 +133,19 @@ SfxModule* SfxApplication::GetModule_Impl()
     }
 }
 
-bool  SfxApplication::IsDowning() const { return pImpl->bDowning; }
-SfxDispatcher* SfxApplication::GetAppDispatcher_Impl() { return pImpl->pAppDispat; }
-SfxSlotPool& SfxApplication::GetAppSlotPool_Impl() const { return *pImpl->pSlotPool; }
+bool  SfxApplication::IsDowning() const { return pAppData_Impl->bDowning; }
+SfxDispatcher* SfxApplication::GetAppDispatcher_Impl() { return pAppData_Impl->pAppDispat; }
+SfxSlotPool& SfxApplication::GetAppSlotPool_Impl() const { return *pAppData_Impl->pSlotPool; }
 
 bool SfxApplication::loadBrandSvg(const char *pName, BitmapEx &rBitmap, int nWidth)
 {
     // Load from disk
 
     OUString aBaseName = "/" + OUString::createFromAscii( pName );
+
+    rtl_Locale *pLoc = nullptr;
+    osl_getProcessLocale (&pLoc);
+    LanguageTag aLanguageTag( *pLoc);
 
     OUString uri = "$BRAND_BASE_DIR/" LIBO_ETC_FOLDER + aBaseName + ".svg";
     rtl::Bootstrap::expandMacros( uri );
@@ -214,7 +218,7 @@ BitmapEx SfxApplication::GetApplicationLogo(long nWidth)
 {
     BitmapEx aBitmap;
     SfxApplication::loadBrandSvg("flat_logo", aBitmap, nWidth);
-    (void)Application::LoadBrandBitmap ("about", aBitmap);
+    Application::LoadBrandBitmap ("about", aBitmap);
     return aBitmap;
 }
 

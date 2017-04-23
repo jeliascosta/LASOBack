@@ -23,7 +23,7 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaReplacement::SwVbaReplacement( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< util::XPropertyReplace >& xPropertyReplace ) :
+SwVbaReplacement::SwVbaReplacement( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< util::XPropertyReplace >& xPropertyReplace ) throw ( uno::RuntimeException ) :
     SwVbaReplacement_BASE( rParent, rContext ), mxPropertyReplace( xPropertyReplace )
 {
 }
@@ -32,17 +32,17 @@ SwVbaReplacement::~SwVbaReplacement()
 {
 }
 
-OUString SAL_CALL SwVbaReplacement::getText()
+OUString SAL_CALL SwVbaReplacement::getText() throw (uno::RuntimeException, std::exception)
 {
     return mxPropertyReplace->getReplaceString();
 }
 
-void SAL_CALL SwVbaReplacement::setText( const OUString& _text )
+void SAL_CALL SwVbaReplacement::setText( const OUString& _text ) throw (uno::RuntimeException, std::exception)
 {
     mxPropertyReplace->setReplaceString( _text );
 }
 
-void SAL_CALL SwVbaReplacement::ClearFormatting( )
+void SAL_CALL SwVbaReplacement::ClearFormatting( ) throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< beans::PropertyValue > aPropValues;
     mxPropertyReplace->setReplaceAttributes( aPropValues );

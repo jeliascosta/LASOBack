@@ -58,20 +58,16 @@ private:
     ExtensionCmdQueue           *m_pExecuteCmdQueue;
 
     OUString                     m_sGetExtensionsURL;
-    bool                         m_bModified;
 
 public:
     static ::rtl::Reference<TheExtensionManager> s_ExtMgr;
 
          TheExtensionManager( const css::uno::Reference< css::awt::XWindow > &xParent,
                               const css::uno::Reference< css::uno::XComponentContext > &xContext );
-        virtual ~TheExtensionManager() override;
+        virtual ~TheExtensionManager();
 
     void createDialog( const bool bCreateUpdDlg );
     sal_Int16 execute();
-
-    bool isModified() const { return m_bModified; }
-    void clearModified() { m_bModified = false; }
 
     Dialog* getDialog()
     {
@@ -115,14 +111,18 @@ public:
         OUString const & view = OUString() );
 
     // XEventListener
-    virtual void SAL_CALL disposing( css::lang::EventObject const & evt ) override;
+    virtual void SAL_CALL disposing( css::lang::EventObject const & evt )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTerminateListener
-    virtual void SAL_CALL queryTermination( css::lang::EventObject const & evt ) override;
-    virtual void SAL_CALL notifyTermination( css::lang::EventObject const & evt ) override;
+    virtual void SAL_CALL queryTermination( css::lang::EventObject const & evt )
+        throw (css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( css::lang::EventObject const & evt )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifyListener
-    virtual void SAL_CALL modified( css::lang::EventObject const & evt ) override;
+    virtual void SAL_CALL modified( css::lang::EventObject const & evt )
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } // namespace dp_gui

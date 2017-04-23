@@ -111,30 +111,33 @@ enum lcl_MarkType { TypeReference, TypeReferenceStart, TypeReferenceEnd,
                     TypeFieldmark, TypeFieldmarkStart, TypeFieldmarkEnd
                   };
 
-static SvXMLEnumMapEntry<lcl_MarkType> const lcl_aMarkTypeMap[] =
+static SvXMLEnumMapEntry const lcl_aMarkTypeMap[] =
 {
-    { XML_REFERENCE_MARK,         TypeReference },
-    { XML_REFERENCE_MARK_START,   TypeReferenceStart },
-    { XML_REFERENCE_MARK_END,     TypeReferenceEnd },
-    { XML_BOOKMARK,               TypeBookmark },
-    { XML_BOOKMARK_START,         TypeBookmarkStart },
-    { XML_BOOKMARK_END,           TypeBookmarkEnd },
-    { XML_FIELDMARK,              TypeFieldmark },
-    { XML_FIELDMARK_START,        TypeFieldmarkStart },
-    { XML_FIELDMARK_END,          TypeFieldmarkEnd },
-    { XML_TOKEN_INVALID,          (lcl_MarkType)0 },
+    { XML_REFERENCE_MARK,           TypeReference },
+    { XML_REFERENCE_MARK_START,     TypeReferenceStart },
+    { XML_REFERENCE_MARK_END,       TypeReferenceEnd },
+    { XML_BOOKMARK,                 TypeBookmark },
+    { XML_BOOKMARK_START,           TypeBookmarkStart },
+    { XML_BOOKMARK_END,             TypeBookmarkEnd },
+    { XML_FIELDMARK,                TypeFieldmark },
+    { XML_FIELDMARK_START,          TypeFieldmarkStart },
+    { XML_FIELDMARK_END,            TypeFieldmarkEnd },
+    { XML_TOKEN_INVALID,            0 },
 };
 
 
 static const char *lcl_getFormFieldmarkName(OUString &name)
 {
-    if (name == ODF_FORMCHECKBOX ||
-        name == "msoffice.field.FORMCHECKBOX" ||
+    static const char sCheckbox[]=ODF_FORMCHECKBOX;
+    static const char sFormDropDown[]=ODF_FORMDROPDOWN;
+    if (name == "msoffice.field.FORMCHECKBOX" ||
         name == "ecma.office-open-xml.field.FORMCHECKBOX")
-        return ODF_FORMCHECKBOX;
-    else if (name == ODF_FORMDROPDOWN ||
-             name == "ecma.office-open-xml.field.FORMDROPDOWN")
-        return ODF_FORMDROPDOWN;
+        return sCheckbox;
+    else if (name == ODF_FORMCHECKBOX)
+        return sCheckbox;
+    if (name == ODF_FORMDROPDOWN ||
+        name == "ecma.office-open-xml.field.FORMDROPDOWN")
+        return sFormDropDown;
     else
         return nullptr;
 }
@@ -176,20 +179,23 @@ void XMLTextMarkImportContext::EndElement()
 {
     SvXMLImportContext::EndElement();
 
+    static const char sAPI_reference_mark[] = "com.sun.star.text.ReferenceMark";
     static const char sAPI_bookmark[] = "com.sun.star.text.Bookmark";
+    static const char sAPI_fieldmark[] = "com.sun.star.text.Fieldmark";
+    static const char sAPI_formfieldmark[] = "com.sun.star.text.FormFieldmark";
 
     if (!m_sBookmarkName.isEmpty())
     {
-        lcl_MarkType nTmp{};
+        sal_uInt16 nTmp;
         if (SvXMLUnitConverter::convertEnum(nTmp, GetLocalName(),
                                             lcl_aMarkTypeMap))
         {
-            switch (nTmp)
+            switch ((lcl_MarkType)nTmp)
             {
                 case TypeReference:
                     // export point reference mark
                     CreateAndInsertMark(GetImport(),
-                        "com.sun.star.text.ReferenceMark",
+                        sAPI_reference_mark,
                         m_sBookmarkName,
                         m_rHelper.GetCursorAsRange()->getStart());
                     break;
@@ -213,15 +219,15 @@ void XMLTextMarkImportContext::EndElement()
                 case TypeFieldmark:
                     {
                         const char *formFieldmarkName=lcl_getFormFieldmarkName(m_sFieldName);
-                        bool bImportAsField = (nTmp==TypeFieldmark && formFieldmarkName!=nullptr); //@TODO handle abbreviation cases..
+                        bool bImportAsField=((lcl_MarkType)nTmp==TypeFieldmark && formFieldmarkName!=nullptr); //@TODO handle abbreviation cases..
                         // export point bookmark
                         const Reference<XInterface> xContent(
                             CreateAndInsertMark(GetImport(),
-                                        (bImportAsField ? OUString("com.sun.star.text.FormFieldmark") : OUString(sAPI_bookmark)),
+                                        (bImportAsField ? OUString(sAPI_formfieldmark) : OUString(sAPI_bookmark)),
                                 m_sBookmarkName,
                                 m_rHelper.GetCursorAsRange()->getStart(),
                                 m_sXmlId) );
-                        if (nTmp==TypeFieldmark) {
+                        if ((lcl_MarkType)nTmp==TypeFieldmark) {
                             if (xContent.is() && bImportAsField) {
                                 // setup fieldmark...
                                 Reference< css::text::XFormField> xFormField(xContent, UNO_QUERY);
@@ -247,7 +253,8 @@ void XMLTextMarkImportContext::EndElement()
                     {
                         std::shared_ptr< ::xmloff::ParsedRDFaAttributes >
                             xRDFaAttributes;
-                        if (m_bHaveAbout && TypeBookmarkStart == nTmp)
+                        if (m_bHaveAbout && (TypeBookmarkStart
+                                == static_cast<lcl_MarkType>(nTmp)))
                         {
                             xRDFaAttributes =
                                 GetImport().GetRDFaImportHelper().ParseRDFa(
@@ -310,7 +317,7 @@ void XMLTextMarkImportContext::EndElement()
                             // create a file with subsequence
                             // start/end elements
 
-                            bool bImportAsField = (nTmp==TypeFieldmarkEnd && m_rHelper.hasCurrentFieldCtx());
+                            bool bImportAsField=((lcl_MarkType)nTmp==TypeFieldmarkEnd && m_rHelper.hasCurrentFieldCtx());
 
                             // fdo#86795 check if it's actually a checkbox first
                             bool isInvalid(false);
@@ -334,7 +341,7 @@ void XMLTextMarkImportContext::EndElement()
                                 // insert reference
                                 xContent = CreateAndInsertMark(GetImport(),
                                         (bImportAsField
-                                            ? OUString("com.sun.star.text.Fieldmark")
+                                            ? OUString(sAPI_fieldmark)
                                             : OUString(sAPI_bookmark)),
                                         m_sBookmarkName,
                                         xInsertionCursor,
@@ -348,7 +355,7 @@ void XMLTextMarkImportContext::EndElement()
                                 }
                             }
 
-                            if (nTmp==TypeFieldmarkEnd) {
+                            if ((lcl_MarkType)nTmp==TypeFieldmarkEnd) {
                                 if (xContent.is() && bImportAsField) {
                                     // setup fieldmark...
                                     Reference< css::text::XFormField> xFormField(xContent, UNO_QUERY);

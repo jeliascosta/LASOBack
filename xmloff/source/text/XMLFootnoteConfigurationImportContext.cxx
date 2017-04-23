@@ -159,6 +159,7 @@ XMLFootnoteConfigurationImportContext::XMLFootnoteConfigurationImportContext(
 }
 XMLFootnoteConfigurationImportContext::~XMLFootnoteConfigurationImportContext()
 {
+    delete pAttrTokenMap;
 }
 
 enum XMLFtnConfigToken
@@ -200,15 +201,15 @@ static const SvXMLTokenMapEntry aTextFieldAttrTokenMap[] =
 const SvXMLTokenMap&
     XMLFootnoteConfigurationImportContext::GetFtnConfigAttrTokenMap()
 {
-    if (!pAttrTokenMap)
+    if (nullptr == pAttrTokenMap)
     {
-        pAttrTokenMap.reset( new SvXMLTokenMap(aTextFieldAttrTokenMap) );
+        pAttrTokenMap = new SvXMLTokenMap(aTextFieldAttrTokenMap);
     }
 
     return *pAttrTokenMap;
 }
 
-static SvXMLEnumMapEntry<sal_Int16> const aFootnoteNumberingMap[] =
+static SvXMLEnumMapEntry const aFootnoteNumberingMap[] =
 {
     { XML_PAGE,             FootnoteNumbering::PER_PAGE },
     { XML_CHAPTER,          FootnoteNumbering::PER_CHAPTER },
@@ -264,8 +265,12 @@ void XMLFootnoteConfigurationImportContext::StartElement(
                 break;
             case XML_TOK_FTNCONFIG_START_AT:
             {
-                (void)SvXMLUnitConverter::convertEnum(nNumbering, sValue,
-                                                      aFootnoteNumberingMap);
+                sal_uInt16 nTmp;
+                if (SvXMLUnitConverter::convertEnum(nTmp, sValue,
+                                                    aFootnoteNumberingMap))
+                {
+                    nNumbering = nTmp;
+                }
                 break;
             }
             case XML_TOK_FTNCONFIG_POSITION:

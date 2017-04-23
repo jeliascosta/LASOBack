@@ -29,14 +29,14 @@ SvxParaPrevWindow::SvxParaPrevWindow( vcl::Window* pParent,  WinBits nBits) :
     nFirstLineOfst  ( 0 ),
     nUpper          ( 0 ),
     nLower          ( 0 ),
-    eAdjust         ( SvxAdjust::Left ),
-    eLastLine       ( SvxAdjust::Left ),
-    eLine           ( SvxPrevLineSpace::N1 ),
+    eAdjust         ( SVX_ADJUST_LEFT ),
+    eLastLine       ( SVX_ADJUST_LEFT ),
+    eLine           ( SVX_PREV_LINESPACE_1 ),
     nLineVal        ( 0 )
 
 {
     // Count in Twips by default
-    SetMapMode(MapMode(MapUnit::MapTwip));
+    SetMapMode(MapMode(MAP_TWIP));
 
     aSize = Size(11905, 16837);
 
@@ -50,7 +50,7 @@ Size SvxParaPrevWindow::GetOptimalSize() const
     return getParagraphPreviewOptimalSize(this);
 }
 
-void SvxParaPrevWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void SvxParaPrevWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     DrawParagraph(rRenderContext);
 }
@@ -71,7 +71,7 @@ void SvxParaPrevWindow::DrawParagraph(vcl::RenderContext& rRenderContext)
     Color aGrayColor(COL_LIGHTGRAY);
 
     rRenderContext.SetFillColor(Color(rWinColor));
-    rRenderContext.DrawRect(tools::Rectangle(Point(), aWinSize));
+    rRenderContext.DrawRect(Rectangle(Point(), aWinSize));
 
     rRenderContext.SetLineColor();
 
@@ -118,17 +118,17 @@ void SvxParaPrevWindow::DrawParagraph(vcl::RenderContext& rRenderContext)
         {
             switch (eLine)
             {
-                case SvxPrevLineSpace::N1:
+                case SVX_PREV_LINESPACE_1:
                     break;
-                case SvxPrevLineSpace::N15:
+                case SVX_PREV_LINESPACE_15:
                     aPnt.Y() += nH / 2;
                     break;
-                case SvxPrevLineSpace::N2:
+                case SVX_PREV_LINESPACE_2:
                     aPnt.Y() += nH;
                     break;
-                case SvxPrevLineSpace::Prop:
-                case SvxPrevLineSpace::Min:
-                case SvxPrevLineSpace::Leading:
+                case SVX_PREV_LINESPACE_PROP:
+                case SVX_PREV_LINESPACE_MIN:
+                case SVX_PREV_LINESPACE_DURCH:
                     break;
             }
         }
@@ -156,31 +156,31 @@ void SvxParaPrevWindow::DrawParagraph(vcl::RenderContext& rRenderContext)
 
             switch (eAdjust)
             {
-                case SvxAdjust::Left:
+                case SVX_ADJUST_LEFT:
                     break;
-                case SvxAdjust::Right:
+                case SVX_ADJUST_RIGHT:
                     aPnt.X() += ( aSiz.Width() - nLW );
                     break;
-                case SvxAdjust::Center:
+                case SVX_ADJUST_CENTER:
                     aPnt.X() += ( aSiz.Width() - nLW ) / 2;
                     break;
                 default: ; //prevent warning
             }
-            if (SvxAdjust::Block == eAdjust)
+            if (SVX_ADJUST_BLOCK == eAdjust)
             {
                 if(5 == i)
                 {
                     switch( eLastLine )
                     {
-                        case SvxAdjust::Left:
+                        case SVX_ADJUST_LEFT:
                             break;
-                        case SvxAdjust::Right:
+                        case SVX_ADJUST_RIGHT:
                             aPnt.X() += ( aSiz.Width() - nLW );
                             break;
-                        case SvxAdjust::Center:
+                        case SVX_ADJUST_CENTER:
                             aPnt.X() += ( aSiz.Width() - nLW ) / 2;
                             break;
-                        case SvxAdjust::Block:
+                        case SVX_ADJUST_BLOCK:
                             nLW = aSiz.Width();
                             break;
                         default: ; //prevent warning
@@ -192,7 +192,7 @@ void SvxParaPrevWindow::DrawParagraph(vcl::RenderContext& rRenderContext)
             aSiz.Width() = nLW;
         }
 
-        tools::Rectangle aRect(aPnt, aSiz);
+        Rectangle aRect(aPnt, aSiz);
 
         rRenderContext.DrawRect( aRect );
         Lines[i] = aRect;

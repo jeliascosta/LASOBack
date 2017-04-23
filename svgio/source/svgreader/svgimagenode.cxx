@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgimagenode.hxx>
-#include <svgdocument.hxx>
+#include <svgio/svgreader/svgimagenode.hxx>
+#include <svgio/svgreader/svgdocument.hxx>
 #include <sax/tools/converter.hxx>
 #include <tools/stream.hxx>
 #include <vcl/bitmapex.hxx>
@@ -57,6 +57,7 @@ namespace svgio
 
         SvgImageNode::~SvgImageNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgImageNode::getSvgStyleAttributes() const
@@ -82,7 +83,7 @@ namespace svgio
                 }
                 case SVGTokenPreserveAspectRatio:
                 {
-                    maSvgAspectRatio = readSvgAspectRatio(aContent);
+                    setSvgAspectRatio(readSvgAspectRatio(aContent));
                     break;
                 }
                 case SVGTokenTransform:
@@ -101,7 +102,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX = aNum;
+                        setX(aNum);
                     }
                     break;
                 }
@@ -111,7 +112,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY = aNum;
+                        setY(aNum);
                     }
                     break;
                 }
@@ -123,7 +124,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maWidth = aNum;
+                            setWidth(aNum);
                         }
                     }
                     break;
@@ -136,7 +137,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maHeight = aNum;
+                            setHeight(aNum);
                         }
                     }
                     break;
@@ -164,7 +165,7 @@ namespace svgio
             basegfx::B2DRange& rViewBox,
             BitmapEx& rBitmapEx)
         {
-            if(GraphicType::Bitmap == rGraphic.GetType())
+            if(GRAPHIC_BITMAP == rGraphic.GetType())
             {
                 if(rGraphic.getSvgData().get())
                 {
@@ -243,7 +244,7 @@ namespace svgio
 
                         if (!aAbsUrl.isEmpty() && !rPath.equals(aAbsUrl))
                         {
-                            SvFileStream aStream(aAbsUrl, StreamMode::STD_READ);
+                            SvFileStream aStream(aAbsUrl, STREAM_STD_READ);
                             Graphic aGraphic;
 
                             if(GRFILTER_OK == GraphicFilter::GetGraphicFilter().ImportGraphic(
@@ -321,7 +322,7 @@ namespace svgio
                         else
                         {
                             // create mapping
-                            const SvgAspectRatio& rRatio = maSvgAspectRatio;
+                            const SvgAspectRatio& rRatio = getSvgAspectRatio();
 
                             // even when ratio is not set, use the defaults
                             // let mapping be created from SvgAspectRatio

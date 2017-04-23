@@ -26,6 +26,7 @@
 #include "moduledbu.hxx"
 
 #include <svl/undo.hxx>
+#include <osl/diagnose.h>
 
 namespace dbaui
 {
@@ -41,7 +42,7 @@ namespace dbaui
     // OSingleDocumentController_Data
     struct OSingleDocumentController_Data
     {
-        rtl::Reference< UndoManager >  m_xUndoManager;
+        Reference< UndoManager >  m_xUndoManager;
 
         OSingleDocumentController_Data( ::cppu::OWeakObject& i_parent, ::osl::Mutex& i_mutex )
             :m_xUndoManager( new UndoManager( i_parent, i_mutex ) )
@@ -67,6 +68,12 @@ namespace dbaui
         m_pData->m_xUndoManager->disposing();
     }
 
+    void SAL_CALL OSingleDocumentController::disposing( const EventObject& i_event ) throw( RuntimeException, std::exception )
+    {
+        // simply disambiguate
+        OSingleDocumentController_Base::disposing( i_event );
+    }
+
     void OSingleDocumentController::ClearUndoManager()
     {
         GetUndoManager().Clear();
@@ -90,7 +97,7 @@ namespace dbaui
         InvalidateFeature( ID_BROWSER_REDO );
     }
 
-    Reference< XUndoManager > SAL_CALL OSingleDocumentController::getUndoManager(  )
+    Reference< XUndoManager > SAL_CALL OSingleDocumentController::getUndoManager(  ) throw (RuntimeException, std::exception)
     {
         return m_pData->m_xUndoManager.get();
     }

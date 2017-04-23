@@ -28,7 +28,7 @@
 
 // MOVE
 SwUndoMove::SwUndoMove( const SwPaM& rRange, const SwPosition& rMvPos )
-    : SwUndo( SwUndoId::MOVE, rRange.GetDoc() )
+    : SwUndo( UNDO_MOVE )
     , SwUndRng( rRange )
     , nDestSttNode(0)
     , nDestEndNode(0)
@@ -48,11 +48,11 @@ SwUndoMove::SwUndoMove( const SwPaM& rRange, const SwPosition& rMvPos )
     SwTextNode* pTextNd = pDoc->GetNodes()[ nSttNode ]->GetTextNode();
     SwTextNode* pEndTextNd = pDoc->GetNodes()[ nEndNode ]->GetTextNode();
 
-    pHistory.reset( new SwHistory );
+    pHistory = new SwHistory;
 
     if( pTextNd )
     {
-        pHistory->Add( pTextNd->GetTextColl(), nSttNode, SwNodeType::Text );
+        pHistory->Add( pTextNd->GetTextColl(), nSttNode, ND_TEXTNODE );
         if ( pTextNd->GetpSwpHints() )
         {
             pHistory->CopyAttr( pTextNd->GetpSwpHints(), nSttNode,
@@ -63,7 +63,7 @@ SwUndoMove::SwUndoMove( const SwPaM& rRange, const SwPosition& rMvPos )
     }
     if( pEndTextNd && pEndTextNd != pTextNd )
     {
-        pHistory->Add( pEndTextNd->GetTextColl(), nEndNode, SwNodeType::Text );
+        pHistory->Add( pEndTextNd->GetTextColl(), nEndNode, ND_TEXTNODE );
         if ( pEndTextNd->GetpSwpHints() )
         {
             pHistory->CopyAttr( pEndTextNd->GetpSwpHints(), nEndNode,
@@ -76,7 +76,7 @@ SwUndoMove::SwUndoMove( const SwPaM& rRange, const SwPosition& rMvPos )
     pTextNd = rMvPos.nNode.GetNode().GetTextNode();
     if (nullptr != pTextNd)
     {
-        pHistory->Add( pTextNd->GetTextColl(), nMvDestNode, SwNodeType::Text );
+        pHistory->Add( pTextNd->GetTextColl(), nMvDestNode, ND_TEXTNODE );
         if ( pTextNd->GetpSwpHints() )
         {
             pHistory->CopyAttr( pTextNd->GetpSwpHints(), nMvDestNode,
@@ -90,12 +90,12 @@ SwUndoMove::SwUndoMove( const SwPaM& rRange, const SwPosition& rMvPos )
     DelFootnote( rRange );
 
     if( pHistory && !pHistory->Count() )
-        pHistory.reset();
+        DELETEZ( pHistory );
 }
 
 SwUndoMove::SwUndoMove( SwDoc* pDoc, const SwNodeRange& rRg,
                         const SwNodeIndex& rMvPos )
-    : SwUndo(SwUndoId::MOVE, pDoc)
+    : SwUndo(UNDO_MOVE)
     , nDestSttNode(0)
     , nDestEndNode(0)
     , nInsPosNode(0)
@@ -129,10 +129,10 @@ SwUndoMove::SwUndoMove( SwDoc* pDoc, const SwNodeRange& rRg,
         if( nullptr != ( pCNd = aMkPos.nNode.GetNode().GetContentNode() ))
             aMkPos.nContent.Assign( pCNd, 0 );
 
-        DelContentIndex( aMkPos, aPtPos, DelContentType::Ftn );
+        DelContentIndex( aMkPos, aPtPos, nsDelContentType::DELCNT_FTN );
 
         if( pHistory && !pHistory->Count() )
-            pHistory.reset();
+            DELETEZ( pHistory );
     }
 
     nFootnoteStt = 0;
@@ -338,11 +338,12 @@ void SwUndoMove::DelFootnote( const SwPaM& rRange )
     {
         // delete all footnotes since they are undesired there
         DelContentIndex( *rRange.GetMark(), *rRange.GetPoint(),
-                            DelContentType::Ftn );
+                            nsDelContentType::DELCNT_FTN );
 
         if( pHistory && !pHistory->Count() )
         {
-            pHistory.reset();
+            delete pHistory;
+            pHistory = nullptr;
         }
     }
 }

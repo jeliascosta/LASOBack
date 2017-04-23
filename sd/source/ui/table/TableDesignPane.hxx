@@ -63,11 +63,11 @@ public:
     void setModal(bool bModal) { m_bModal = bModal; }
 };
 
-class TableDesignWidget final
+class TableDesignWidget
 {
 public:
     TableDesignWidget( VclBuilderContainer* pParent, ViewShellBase& rBase, bool bModal );
-    ~TableDesignWidget();
+    virtual ~TableDesignWidget();
 
     // callbacks
     void onSelectionChanged();
@@ -85,9 +85,9 @@ private:
 
     void FillDesignPreviewControl();
 
-    DECL_LINK(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
-    DECL_LINK(implValueSetHdl, ValueSet*, void);
-    DECL_LINK(implCheckBoxHdl, Button*, void);
+    DECL_LINK_TYPED(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
+    DECL_LINK_TYPED(implValueSetHdl, ValueSet*, void);
+    DECL_LINK_TYPED(implCheckBoxHdl, Button*, void);
 
 private:
     ViewShellBase& mrBase;
@@ -112,12 +112,6 @@ public:
     TableDesignPane( vcl::Window* pParent, ViewShellBase& rBase )
         : PanelLayout(pParent, "TableDesignPanel",
         "modules/simpress/ui/tabledesignpanel.ui", css::uno::Reference<css::frame::XFrame>())
-        , aImpl(this, rBase, false)
-    {
-    }
-    TableDesignPane( vcl::Window* pParent, ViewShellBase& rBase, bool )
-        : PanelLayout(pParent, "TableDesignPanel",
-        "modules/simpress/ui/tabledesignpanelhorizontal.ui", css::uno::Reference<css::frame::XFrame>())
         , aImpl(this, rBase, false)
     {
     }

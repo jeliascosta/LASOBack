@@ -31,7 +31,6 @@
 #include <tools/urlobj.hxx>
 #include <formula/formulahelper.hxx>
 #include <formula/IFunctionDescription.hxx>
-#include <formula/errorcodes.hxx>
 
 #include "tokenuno.hxx"
 #include "formula.hxx"
@@ -129,7 +128,7 @@ ScFormulaDlg::ScFormulaDlg( SfxBindings* pB, SfxChildWindow* pCW,
         pData->SetInputHandler(pScMod->GetInputHdl());
         pData->SetDocShell(pViewData->GetDocShell());
 
-        OSL_ENSURE(pData,"FormEditData not available");
+        OSL_ENSURE(pData,"FormEditData ist nicht da");
 
         formula::FormulaDlgMode eMode = FORMULA_FORMDLG_FORMULA;            // default...
 
@@ -332,8 +331,8 @@ bool ScFormulaDlg::calculateValue( const OUString& rStrExp, OUString& rStrResult
             bColRowName = false;
     }
 
-    FormulaError nErrCode = pFCell->GetErrCode();
-    if ( nErrCode == FormulaError::NONE || pFCell->IsMatrix() )
+    sal_uInt16 nErrCode = pFCell->GetErrCode();
+    if ( nErrCode == 0 || pFCell->IsMatrix() )
     {
         SvNumberFormatter& aFormatter = *(m_pDoc->GetFormatTable());
         Color* pColor;
@@ -406,9 +405,12 @@ void ScFormulaDlg::SetReference( const ScRange& rRef, ScDocument* pRefDoc )
 
             // #i75893# convert escaped URL of the document to something user friendly
 //           OUString aFileName = pObjSh->GetMedium()->GetName();
-            OUString aFileName = pObjSh->GetMedium()->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
+            OUString aFileName = pObjSh->GetMedium()->GetURLObject().GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
 
-            aRefStr = "'" + aFileName + "'#" + aTmp;
+            aRefStr = "'";
+            aRefStr += aFileName;
+            aRefStr += "'#";
+            aRefStr += aTmp;
         }
         else
         {
@@ -536,6 +538,12 @@ void ScFormulaDlg::dispatch(bool _bOK, bool _bMatrixChecked)
 void ScFormulaDlg::setDispatcherLock( bool bLock )
 {
     ScFormulaReferenceHelper::SetDispatcherLock( bLock );
+}
+void ScFormulaDlg::setReferenceInput(const formula::FormEditData* _pData)
+{
+    ScModule* pScMod = SC_MOD();
+    ScFormEditData& rData = const_cast<ScFormEditData&>(dynamic_cast<const ScFormEditData&>(*_pData));
+    pScMod->SetRefInputHdl(rData.GetInputHandler());
 }
 void ScFormulaDlg::deleteFormData()
 {

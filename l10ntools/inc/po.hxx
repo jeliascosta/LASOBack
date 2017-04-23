@@ -46,20 +46,19 @@ public:
                     PoEntry();
                     PoEntry( const OString& rSourceFile, const OString& rResType, const OString& rGroupId,
                              const OString& rLocalId, const OString& rHelpText, const OString& rText,
-                             const TYPE eType );
+                             const TYPE eType = TTEXT );
                     ~PoEntry();
 
                     PoEntry( const PoEntry& rPo );
     PoEntry&        operator=( const PoEntry& rPo );
-    PoEntry&        operator=( PoEntry&& rPo );
 
-    OString const &  getSourceFile() const;      ///< Get name of file from which entry is extracted
+    OString         getSourceFile() const;      ///< Get name of file from which entry is extracted
     OString         getGroupId() const;
     OString         getLocalId() const;
     OString         getResourceType() const;    ///< Get the type of component from which entry is extracted
     TYPE            getType() const;            ///< Get the type of entry
-    OString const & getMsgId() const;
-    OString const & getMsgStr() const;
+    OString         getMsgId() const;
+    OString         getMsgStr() const;
     bool            isFuzzy() const;
 
     /// Check whether po-s belong to the same localization component
@@ -78,7 +77,7 @@ class PoHeader
 {
 private:
 
-    std::unique_ptr<GenPoEntry> m_pGenPo;
+    GenPoEntry* m_pGenPo;
     bool m_bIsInitialized;
 
 public:
@@ -105,7 +104,7 @@ public:
     enum OpenMode { TRUNC, APP };
 
             PoOfstream();
-            PoOfstream(const OString& rFileName, OpenMode aMode );
+            PoOfstream(const OString& rFileName, OpenMode aMode = TRUNC );
             ~PoOfstream();
             PoOfstream(const PoOfstream&) = delete;
     PoOfstream& operator=(const PoOfstream&) = delete;

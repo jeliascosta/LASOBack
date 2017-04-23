@@ -19,7 +19,6 @@
 
 
 #include "dp_script.hrc"
-#include "dp_services.hxx"
 #include "dp_lib_container.h"
 #include "dp_backend.h"
 #include "dp_ucb.h"
@@ -100,12 +99,14 @@ public:
                  Reference<XComponentContext> const & xComponentContext );
 
     // XUpdatable
-    virtual void SAL_CALL update() override;
+    virtual void SAL_CALL update() throw (RuntimeException, std::exception) override;
 
     // XPackageRegistry
     virtual Sequence< Reference<deployment::XPackageTypeInfo> > SAL_CALL
-    getSupportedPackageTypes() override;
-    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType) override;
+    getSupportedPackageTypes() throw (RuntimeException, std::exception) override;
+    virtual void SAL_CALL packageRemoved(OUString const & url, OUString const & mediaType)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception) override;
 
 };
 
@@ -145,13 +146,13 @@ BackendImpl::BackendImpl(
       m_xBasicLibTypeInfo( new Package::TypeInfo(
                                "application/vnd.sun.star.basic-library",
                                OUString() /* no file filter */,
-                               getResourceString(RID_STR_BASIC_LIB)
-                               ) ),
+                               getResourceString(RID_STR_BASIC_LIB),
+                               RID_IMG_SCRIPTLIB) ),
       m_xDialogLibTypeInfo( new Package::TypeInfo(
                                 "application/vnd.sun.star.dialog-library",
                                 OUString() /* no file filter */,
-                                getResourceString(RID_STR_DIALOG_LIB)
-                                ) ),
+                                getResourceString(RID_STR_DIALOG_LIB),
+                                RID_IMG_DIALOGLIB) ),
       m_typeInfos( 2 )
 {
     m_typeInfos[ 0 ] = m_xBasicLibTypeInfo;
@@ -182,7 +183,7 @@ bool BackendImpl::hasActiveEntry(OUString const & url)
 
 // XUpdatable
 
-void BackendImpl::update()
+void BackendImpl::update() throw (RuntimeException, std::exception)
 {
     // Nothing to do here after fixing i70283!?
 }
@@ -190,7 +191,7 @@ void BackendImpl::update()
 // XPackageRegistry
 
 Sequence< Reference<deployment::XPackageTypeInfo> >
-BackendImpl::getSupportedPackageTypes()
+BackendImpl::getSupportedPackageTypes() throw (RuntimeException, std::exception)
 {
     return m_typeInfos;
 }
@@ -201,6 +202,8 @@ void BackendImpl::revokeEntryFromDb(OUString const & url)
 }
 
 void BackendImpl::packageRemoved(OUString const & url, OUString const & /*mediaType*/)
+        throw (deployment::DeploymentException,
+               uno::RuntimeException, std::exception)
 {
     if (m_backendDb.get())
         m_backendDb->removeEntry(url);
@@ -435,7 +438,7 @@ void BackendImpl::PackageImpl::processPackage_(
     bool bDialogSuccess = false;
     if (!startup)
     {
-        //If there is a bundled extension, and the user installs the same extension
+        //If there is a bundled extension, and the user installes the same extension
         //then the script from the bundled extension must be removed. If this does not work
         //then live deployment does not work for scripts.
         bScriptSuccess = lcl_maybeAddScript(bScript, m_name, m_scriptURL, xScriptLibs);
@@ -454,7 +457,7 @@ void BackendImpl::PackageImpl::processPackage_(
 
 namespace sdecl = comphelper::service_decl;
 sdecl::class_<BackendImpl, sdecl::with_args<true> > serviceBI;
-sdecl::ServiceDecl const serviceDecl(
+extern sdecl::ServiceDecl const serviceDecl(
     serviceBI,
     "com.sun.star.comp.deployment.script.PackageRegistryBackend",
     BACKEND_SERVICE_NAME );

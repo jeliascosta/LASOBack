@@ -91,7 +91,6 @@
 #include <vcl/dllapi.h>
 #include <vcl/dockwin.hxx>
 #include <vcl/edit.hxx>
-#include <vcl/EnumContext.hxx>
 #include <vcl/field.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/floatwin.hxx>
@@ -332,6 +331,7 @@
 #include <sfx2/sfxuno.hxx>
 #include <sfx2/shell.hxx>
 #include <sfx2/sidebar/ControlFactory.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <sfx2/sidebar/ResourceManager.hxx>
 #include <sfx2/sidebar/TabBar.hxx>
 #include <sfx2/sidebar/Theme.hxx>
@@ -354,6 +354,7 @@
 #include <svl/nfkeytab.hxx>
 #include <svl/ondemand.hxx>
 #include <svl/poolitem.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/srchitem.hxx>
 #include <svl/stritem.hxx>
 #include <svl/svldllapi.h>
@@ -404,6 +405,7 @@
 #include <unotools/fontcvt.hxx>
 #include <unotools/fontdefs.hxx>
 #include <unotools/localedatawrapper.hxx>
+#include <unotools/numberformatcodewrapper.hxx>
 #include <unotools/options.hxx>
 #include <unotools/pathoptions.hxx>
 #include <unotools/unotoolsdllapi.h>
@@ -432,10 +434,14 @@
 #include <svx/msdffdef.hxx>
 #include <svx/obj3d.hxx>
 #include <svx/pageitem.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/rulritem.hxx>
 #include <svx/sdasitm.hxx>
 #include <svx/sdrpaintwindow.hxx>
 #include <svx/sidebar/LinePropertyPanelBase.hxx>
+#include <svx/sidebar/Popup.hxx>
+#include <svx/sidebar/PopupContainer.hxx>
+#include <svx/sidebar/PopupControl.hxx>
 #include <svx/srchdlg.hxx>
 #include <svx/svddef.hxx>
 #include <svx/svdetc.hxx>

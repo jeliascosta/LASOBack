@@ -26,7 +26,7 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaAutoTextEntry::SwVbaAutoTextEntry( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XAutoTextEntry >& xEntry ) :
+SwVbaAutoTextEntry::SwVbaAutoTextEntry( const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XAutoTextEntry >& xEntry ) throw ( uno::RuntimeException ) :
     SwVbaAutoTextEntry_BASE( rParent, rContext ), mxEntry( xEntry )
 {
 }
@@ -35,7 +35,7 @@ SwVbaAutoTextEntry::~SwVbaAutoTextEntry()
 {
 }
 
-uno::Reference< word::XRange > SAL_CALL SwVbaAutoTextEntry::Insert( const uno::Reference< word::XRange >& _where, const uno::Any& _richtext )
+uno::Reference< word::XRange > SAL_CALL SwVbaAutoTextEntry::Insert( const uno::Reference< word::XRange >& _where, const uno::Any& _richtext ) throw ( uno::RuntimeException, std::exception )
 {
     SwVbaRange* pWhere = dynamic_cast<SwVbaRange*>( _where.get() );
     if( pWhere )
@@ -93,18 +93,18 @@ SwVbaAutoTextEntry::getServiceNames()
     return aServiceNames;
 }
 
-SwVbaAutoTextEntries::SwVbaAutoTextEntries( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< css::uno::XComponentContext > & xContext, const uno::Reference< container::XIndexAccess >& xIndexAccess ) : SwVbaAutoTextEntries_BASE( xParent, xContext, xIndexAccess )
+SwVbaAutoTextEntries::SwVbaAutoTextEntries( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< css::uno::XComponentContext > & xContext, const uno::Reference< container::XIndexAccess >& xIndexAccess ) throw (uno::RuntimeException) : SwVbaAutoTextEntries_BASE( xParent, xContext, xIndexAccess )
 {
 }
 
 // XEnumerationAccess
 uno::Type
-SwVbaAutoTextEntries::getElementType()
+SwVbaAutoTextEntries::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<word::XAutoTextEntry>::get();
 }
 uno::Reference< container::XEnumeration >
-SwVbaAutoTextEntries::createEnumeration()
+SwVbaAutoTextEntries::createEnumeration() throw (uno::RuntimeException)
 {
     throw uno::RuntimeException("Not implemented" );
 }

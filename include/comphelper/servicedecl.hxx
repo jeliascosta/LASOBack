@@ -109,10 +109,11 @@ public:
     template <typename ImplClassT>
     ServiceDecl( ImplClassT const& implClass,
                  char const* pImplName,
-                 char const* pSupportedServiceNames )
+                 char const* pSupportedServiceNames, char cDelim = ';' )
         : m_createFunc(implClass.m_createFunc),
           m_pImplName(pImplName),
-          m_pServiceNames(pSupportedServiceNames) {}
+          m_pServiceNames(pSupportedServiceNames),
+          m_cDelim(cDelim) {}
 
     /// @internal gets called by component_getFactoryHelper()
     void * getFactory( sal_Char const* pImplName ) const;
@@ -133,6 +134,7 @@ private:
     detail::CreateFuncF const m_createFunc;
     char const* const m_pImplName;
     char const* const m_pServiceNames;
+    char const m_cDelim;
 };
 
 /** To specify whether the implementation class expects arguments
@@ -162,14 +164,16 @@ public:
         : BaseT(xContext), m_rServiceDecl(rServiceDecl) {}
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override {
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException) override {
         return m_rServiceDecl.getImplementationName();
     }
-    virtual sal_Bool SAL_CALL supportsService( OUString const& name ) override {
+    virtual sal_Bool SAL_CALL supportsService( OUString const& name )
+        throw (css::uno::RuntimeException) override {
         return m_rServiceDecl.supportsService(name);
     }
     virtual css::uno::Sequence< OUString>
-    SAL_CALL getSupportedServiceNames() override {
+    SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException) override {
         return m_rServiceDecl.getSupportedServiceNames();
     }
 

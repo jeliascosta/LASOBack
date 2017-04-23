@@ -47,13 +47,18 @@ private:
 
 public:
     CalcConfigItem();
+    virtual ~CalcConfigItem();
 
     FieldUnit getFieldUnit();
     virtual void                    Notify( const uno::Sequence<OUString>& aPropertyNames) override;
 };
 
 CalcConfigItem::CalcConfigItem()
-    : ConfigItem( "Office.Calc/Layout" )
+    : ConfigItem( OUString( "Office.Calc/Layout" ))
+{
+}
+
+CalcConfigItem::~CalcConfigItem()
 {
 }
 

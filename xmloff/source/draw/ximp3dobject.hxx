@@ -46,9 +46,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DObjectContext() override;
+    virtual ~SdXML3DObjectContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 // dr3d:3dcube context
@@ -66,9 +67,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DCubeObjectShapeContext() override;
+    virtual ~SdXML3DCubeObjectShapeContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 // dr3d:3dsphere context
@@ -76,7 +78,7 @@ public:
 class SdXML3DSphereObjectShapeContext : public SdXML3DObjectContext
 {
     ::basegfx::B3DVector    maCenter;
-    ::basegfx::B3DVector    maSphereSize;
+    ::basegfx::B3DVector    maSize;
     bool                    mbCenterUsed;
     bool                    mbSizeUsed;
 
@@ -86,9 +88,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DSphereObjectShapeContext() override;
+    virtual ~SdXML3DSphereObjectShapeContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 // polygonbased context
@@ -104,9 +107,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DPolygonBasedShapeContext() override;
+    virtual ~SdXML3DPolygonBasedShapeContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 // dr3d:3dlathe context
@@ -119,9 +123,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DLatheObjectShapeContext() override;
+    virtual ~SdXML3DLatheObjectShapeContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 // dr3d:3dextrude context
@@ -134,9 +139,10 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXML3DExtrudeObjectShapeContext() override;
+    virtual ~SdXML3DExtrudeObjectShapeContext();
 
     virtual void StartElement(const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList) override;
+    virtual void EndElement() override;
 };
 
 #endif // INCLUDED_XMLOFF_SOURCE_DRAW_XIMP3DOBJECT_HXX

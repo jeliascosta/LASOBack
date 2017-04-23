@@ -24,12 +24,11 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/storagehelper.hxx>
 #include <comphelper/string.hxx>
-#include <comphelper/simplefileaccessinteraction.hxx>
 #include <sot/storinfo.hxx>
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/embed/XTransactedObject.hpp>
-#include <com/sun/star/task/InteractionHandler.hpp>
+#include <com/sun/star/io/XStream.hpp>
 
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <svl/urihelper.hxx>
@@ -38,7 +37,6 @@
 #include <sfx2/linkmgr.hxx>
 
 #include <ucbhelper/content.hxx>
-#include <ucbhelper/commandenvironment.hxx>
 
 #include <com/sun/star/i18n/ScriptType.hpp>
 #include <hintids.hxx>
@@ -361,10 +359,10 @@ OUString FindPara( const OUString& rStr, sal_Unicode cToken, sal_Unicode cToken2
     return rStr.copy( n, n2-n );
 }
 
-static SvxNumType GetNumTypeFromName(const OUString& rStr,
+static SvxExtNumType GetNumTypeFromName(const OUString& rStr,
     bool bAllowPageDesc = false)
 {
-    SvxNumType eTyp = bAllowPageDesc ? SVX_NUM_PAGEDESC : SVX_NUM_ARABIC;
+    SvxExtNumType eTyp = bAllowPageDesc ? SVX_NUM_PAGEDESC : SVX_NUM_ARABIC;
     if( rStr.startsWithIgnoreAsciiCase( "Arabi" ) )  // Arabisch, Arabic
         eTyp = SVX_NUM_ARABIC;
     else if( rStr.startsWith( "misch" ) )    // r"omisch
@@ -382,10 +380,10 @@ static SvxNumType GetNumTypeFromName(const OUString& rStr,
     return eTyp;
 }
 
-static SvxNumType GetNumberPara(const OUString& rStr, bool bAllowPageDesc = false)
+static SvxExtNumType GetNumberPara(const OUString& rStr, bool bAllowPageDesc = false)
 {
     OUString s( FindPara( rStr, '*', '*' ) );     // Ziffernart
-    SvxNumType aType = GetNumTypeFromName( s, bAllowPageDesc );
+    SvxExtNumType aType = GetNumTypeFromName( s, bAllowPageDesc );
     return aType;
 }
 
@@ -437,8 +435,8 @@ short SwWW8ImplReader::GetTimeDatePara(OUString& rStr, sal_uInt32& rFormat,
     bool bRTL = false;
     if (m_pPlcxMan && !m_bVer67)
     {
-        SprmResult aResult = m_pPlcxMan->HasCharSprm(0x85A);
-        if (aResult.pSprm && aResult.nRemainingData >= 1 && *aResult.pSprm)
+        const sal_uInt8 *pResult = m_pPlcxMan->HasCharSprm(0x85A);
+        if (pResult && *pResult)
             bRTL = true;
     }
     RES_CHRATR eLang = bRTL ? RES_CHRATR_CTL_LANGUAGE : RES_CHRATR_LANGUAGE;
@@ -486,7 +484,7 @@ short SwWW8ImplReader::GetTimeDatePara(OUString& rStr, sal_uInt32& rFormat,
 
     sal_uLong nFormatIdx =
         sw::ms::MSDateTimeFormatToSwFormat(sParams, pFormatter, rLang, bHijri,
-                GetFib().m_lid);
+                GetFib().lid);
     short nNumFormatType = css::util::NumberFormat::UNDEFINED;
     if (nFormatIdx)
         nNumFormatType = pFormatter->GetType(nFormatIdx);
@@ -609,9 +607,6 @@ sal_uInt16 SwWW8ImplReader::End_Field()
                                 ODF_UNHANDLED );
                     if ( pFieldmark )
                     {
-                        // adapt redline positions to inserted field mark start
-                        // dummy char (assume not necessary for end dummy char)
-                        m_pRedlineStack->MoveAttrs(*aFieldPam.Start());
                         const IFieldmark::parameter_map_t& rParametersToAdd = m_aFieldStack.back().getParameters();
                         pFieldmark->GetParameters()->insert(rParametersToAdd.begin(), rParametersToAdd.end());
                         OUString sFieldId = OUString::number( m_aFieldStack.back().mnFieldId );
@@ -630,7 +625,7 @@ sal_uInt16 SwWW8ImplReader::End_Field()
                             OUString sOleId('_');
                             sOleId += OUString::number( m_aFieldStack.back().mnObjLocFc );
 
-                            tools::SvRef<SotStorage> xSrc0 = m_pStg->OpenSotStorage(SL::aObjectPool);
+                            tools::SvRef<SotStorage> xSrc0 = m_pStg->OpenSotStorage(OUString(SL::aObjectPool));
                             tools::SvRef<SotStorage> xSrc1 = xSrc0->OpenSotStorage( sOleId, StreamMode::READ );
 
                             // Store it now!
@@ -641,9 +636,9 @@ sal_uInt16 SwWW8ImplReader::End_Field()
                                         "OLELinks", embed::ElementModes::WRITE );
                                 tools::SvRef<SotStorage> xObjDst = SotStorage::OpenOLEStorage( xOleStg, sOleId );
 
-                                if ( xObjDst.is() )
+                                if ( xObjDst.Is() )
                                 {
-                                    xSrc1->CopyTo( xObjDst.get() );
+                                    xSrc1->CopyTo( xObjDst );
 
                                     if ( !xObjDst->GetError() )
                                         xObjDst->Commit();
@@ -914,14 +909,6 @@ long SwWW8ImplReader::Read_Field(WW8PLCFManResult* pRes)
         if (nRet == -2 && !aReadParam.GetResult().isEmpty())
             // Single numeric argument: this can be handled by SwChapterField.
             bHasHandler = rtl::isAsciiDigit(aReadParam.GetResult()[0]);
-
-        if (bHasHandler)
-        {
-            nRet = aReadParam.SkipToNextToken();
-            // Handle using SwChapterField only in case there is no \[a-z]
-            // switch after the field argument.
-            bHasHandler = nRet < 0 || nRet == '*';
-        }
     }
 
     // keine Routine vorhanden
@@ -991,9 +978,13 @@ long SwWW8ImplReader::Read_Field(WW8PLCFManResult* pRes)
 
         switch ( eRes )
         {
-            case eF_ResT::OK:
+            case FLD_OK:
                 return aF.nLen;                     // alles OK
-            case eF_ResT::TEXT:
+            case FLD_TAGTXT:
+                if ((m_nFieldTagBad[nI] & nMask)) // Flag: Tag bad
+                    return Read_F_Tag(&aF);       // Taggen
+                SAL_FALLTHROUGH;
+            case FLD_TEXT:
                 // so viele ueberlesen, das Resultfeld wird wie Haupttext
                 // eingelesen
                 // attributes can start at char 0x14 so skip one
@@ -1002,11 +993,11 @@ long SwWW8ImplReader::Read_Field(WW8PLCFManResult* pRes)
                     return aF.nLen - aF.nLRes - 2;
                 else
                     return aF.nLen;
-            case eF_ResT::TAGIGN:
+            case FLD_TAGIGN:
                 if(  ( m_nFieldTagBad[nI] & nMask ) ) // Flag: Tag bad
                     return Read_F_Tag( &aF );       // Taggen
                 return aF.nLen;                 // oder ignorieren
-            case eF_ResT::READ_FSPA:
+            case FLD_READ_FSPA:
                 return aF.nLen - aF.nLRes - 2; // auf Char 1 positionieren
             default:
                 return aF.nLen;                     // ignorieren
@@ -1163,12 +1154,12 @@ eF_ResT SwWW8ImplReader::Read_F_Input( WW8FieldDesc* pF, OUString& rStr )
 
     if ( pF->nId != 0x01 ) // 0x01 fields have no result
     {
-        SwInputField aField( static_cast<SwInputFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Input )),
+        SwInputField aField( static_cast<SwInputFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_INPUTFLD )),
                             aDef, aQ, INP_TXT, 0, false );
         m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
     }
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // GetFieldResult alloziert einen String und liest das Feld-Resultat ein
@@ -1278,19 +1269,20 @@ SwFltStackEntry *SwWW8FltRefStack::RefToVar(const SwField* pField,
     SwFltStackEntry &rEntry)
 {
     SwFltStackEntry *pRet=nullptr;
-    if (pField && SwFieldIds::GetRef == pField->Which())
+    if (pField && RES_GETREFFLD == pField->Which())
     {
         //Get the name of the ref field, and see if actually a variable
         const OUString sName = pField->GetPar1();
-        std::map<OUString, OUString, SwWW8::ltstr>::const_iterator
+        ::std::map<OUString, OUString, SwWW8::ltstr>::const_iterator
             aResult = aFieldVarNames.find(sName);
 
         if (aResult != aFieldVarNames.end())
         {
             SwGetExpField aField( static_cast<SwGetExpFieldType*>(
-                pDoc->getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::GetExp)), sName, nsSwGetSetExpType::GSE_STRING, 0);
+                pDoc->getIDocumentFieldsAccess().GetSysFieldType(RES_GETEXPFLD)), sName, nsSwGetSetExpType::GSE_STRING, 0);
+            delete rEntry.pAttr;
             SwFormatField aTmp(aField);
-            rEntry.pAttr.reset( aTmp.Clone() );
+            rEntry.pAttr = aTmp.Clone();
             pRet = &rEntry;
         }
     }
@@ -1305,7 +1297,7 @@ OUString SwWW8ImplReader::GetMappedBookmark(const OUString &rOrigName)
 
     //See if there has been a variable set with this name, if so get
     //the pseudo bookmark name that was set with it.
-    std::map<OUString, OUString, SwWW8::ltstr>::const_iterator aResult =
+    ::std::map<OUString, OUString, SwWW8::ltstr>::const_iterator aResult =
             m_pReffingStck->aFieldVarNames.find(sName);
 
     return (aResult == m_pReffingStck->aFieldVarNames.end())
@@ -1340,7 +1332,7 @@ eF_ResT SwWW8ImplReader::Read_F_InputVar( WW8FieldDesc* pF, OUString& rStr )
     }
 
     if (sOrigName.isEmpty())
-        return eF_ResT::TAGIGN;  // macht ohne Textmarke keinen Sinn
+        return FLD_TAGIGN;  // macht ohne Textmarke keinen Sinn
 
     const OUString aResult(GetFieldResult(pF));
 
@@ -1365,21 +1357,21 @@ eF_ResT SwWW8ImplReader::Read_F_InputVar( WW8FieldDesc* pF, OUString& rStr )
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
 
     m_pReffedStck->SetAttr(*m_pPaM->GetPoint(), RES_FLTR_BOOKMARK, true, nNo);
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "AUTONR"
 eF_ResT SwWW8ImplReader::Read_F_ANumber( WW8FieldDesc*, OUString& rStr )
 {
     if( !m_pNumFieldType ){     // 1. Mal
-        SwSetExpFieldType aT( &m_rDoc, "AutoNr", nsSwGetSetExpType::GSE_SEQ );
+        SwSetExpFieldType aT( &m_rDoc, OUString("AutoNr"), nsSwGetSetExpType::GSE_SEQ );
         m_pNumFieldType = m_rDoc.getIDocumentFieldsAccess().InsertFieldType( aT );
     }
     SwSetExpField aField( static_cast<SwSetExpFieldType*>(m_pNumFieldType), OUString(),
                         GetNumberPara( rStr ) );
     aField.SetValue( ++m_nFieldNum );
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "SEQ"
@@ -1391,7 +1383,7 @@ eF_ResT SwWW8ImplReader::Read_F_Seq( WW8FieldDesc*, OUString& rStr )
     bool bFormat    = false;
     bool bCountOn   = true;
     OUString sStart;
-    SvxNumType eNumFormat = SVX_NUM_ARABIC;
+    SvxExtNumType eNumFormat = SVX_NUM_ARABIC;
     WW8ReadFieldParams aReadParam( rStr );
     for (;;)
     {
@@ -1440,7 +1432,7 @@ eF_ResT SwWW8ImplReader::Read_F_Seq( WW8FieldDesc*, OUString& rStr )
         }
     }
     if (aSequenceName.isEmpty() && aBook.isEmpty())
-        return eF_ResT::TAGIGN;
+        return FLD_TAGIGN;
 
     SwSetExpFieldType* pFT = static_cast<SwSetExpFieldType*>(m_rDoc.getIDocumentFieldsAccess().InsertFieldType(
                         SwSetExpFieldType( &m_rDoc, aSequenceName, nsSwGetSetExpType::GSE_SEQ ) ) );
@@ -1456,7 +1448,7 @@ eF_ResT SwWW8ImplReader::Read_F_Seq( WW8FieldDesc*, OUString& rStr )
         aField.SetFormula(aSequenceName);
 
     m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_Styleref(WW8FieldDesc*, OUString& rString)
@@ -1465,19 +1457,19 @@ eF_ResT SwWW8ImplReader::Read_F_Styleref(WW8FieldDesc*, OUString& rString)
     sal_Int32 nRet = aReadParam.SkipToNextToken();
     if (nRet != -2)
         // \param was found, not normal text.
-        return eF_ResT::TAGIGN;
+        return FLD_TAGIGN;
 
     OUString aResult = aReadParam.GetResult();
     sal_Int32 nResult = aResult.toInt32();
     if (nResult < 1)
-        return eF_ResT::TAGIGN;
+        return FLD_TAGIGN;
 
-    SwFieldType* pFieldType = m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::Chapter);
+    SwFieldType* pFieldType = m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_CHAPTERFLD);
     SwChapterField aField(static_cast<SwChapterFieldType*>(pFieldType), CF_TITLE);
     aField.SetLevel(nResult - 1);
     m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
@@ -1509,7 +1501,7 @@ eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
             }
         }
 
-        aDocProperty = aDocProperty.replaceAll("\"", "");
+        aDocProperty = comphelper::string::remove(aDocProperty, '"');
 
         /*
         There are up to 26 fields that may be meant by 'DocumentProperty'.
@@ -1596,10 +1588,10 @@ eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
         if( !bFieldFound )
         {
             SwDocInfoField aField( static_cast<SwDocInfoFieldType*>(
-                m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::DocInfo )), DI_CUSTOM|nReg, aDocProperty, GetFieldResult( pF ) );
+                m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_DOCINFOFLD )), DI_CUSTOM|nReg, aDocProperty, GetFieldResult( pF ) );
             m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
 
-            return eF_ResT::OK;
+            return FLD_OK;
         }
     }
 
@@ -1699,16 +1691,16 @@ eF_ResT SwWW8ImplReader::Read_F_DocInfo( WW8FieldDesc* pF, OUString& rStr )
             }
         }
 
-        aData = aData.replaceAll("\"", "");
+        aData = comphelper::string::remove(aData, '"');
     }
 
     SwDocInfoField aField( static_cast<SwDocInfoFieldType*>(
-        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::DocInfo )), nSub|nReg, aData, nFormat );
+        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_DOCINFOFLD )), nSub|nReg, aData, nFormat );
     if (bDateTime)
         ForceFieldLanguage(aField, nLang);
     m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_Author( WW8FieldDesc*, OUString& )
@@ -1716,18 +1708,18 @@ eF_ResT SwWW8ImplReader::Read_F_Author( WW8FieldDesc*, OUString& )
         // SH: Das SwAuthorField bezeichnet nicht den urspruenglichen
         // Autor, sondern den aktuellen Benutzer, also besser ueber DocInfo
     SwDocInfoField aField( static_cast<SwDocInfoFieldType*>(
-                     m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::DocInfo )),
+                     m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_DOCINFOFLD )),
                      DI_CREATE|DI_SUB_AUTHOR, OUString() );
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_TemplName( WW8FieldDesc*, OUString& )
 {
     SwTemplNameField aField( static_cast<SwTemplNameFieldType*>(
-                     m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::TemplateName )), FF_NAME );
+                     m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_TEMPLNAMEFLD )), FF_NAME );
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // Sowohl das Datum- wie auch das Uhrzeit-Feld kann fuer Datum, fuer Uhrzeit
@@ -1780,19 +1772,19 @@ eF_ResT SwWW8ImplReader::Read_F_DateTime( WW8FieldDesc*pF, OUString& rStr )
     if (nDT & css::util::NumberFormat::DATE)
     {
         SwDateTimeField aField(static_cast<SwDateTimeFieldType*>(
-            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::DateTime )), DATEFLD, nFormat);
+            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_DATETIMEFLD )), DATEFLD, nFormat);
         ForceFieldLanguage(aField, nLang);
         m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
     }
     else if (nDT == css::util::NumberFormat::TIME)
     {
         SwDateTimeField aField(static_cast<SwDateTimeFieldType*>(
-            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::DateTime)), TIMEFLD, nFormat);
+            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_DATETIMEFLD)), TIMEFLD, nFormat);
         ForceFieldLanguage(aField, nLang);
         m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
     }
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_FileName(WW8FieldDesc*, OUString &rStr)
@@ -1820,9 +1812,9 @@ eF_ResT SwWW8ImplReader::Read_F_FileName(WW8FieldDesc*, OUString &rStr)
     }
 
     SwFileNameField aField(
-        static_cast<SwFileNameFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::Filename)), eType);
+        static_cast<SwFileNameFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_FILENAMEFLD)), eType);
     m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_Num( WW8FieldDesc* pF, OUString& rStr )
@@ -1833,21 +1825,21 @@ eF_ResT SwWW8ImplReader::Read_F_Num( WW8FieldDesc* pF, OUString& rStr )
         case 28: nSub = DS_CHAR; break;         // number of characters
     }
     SwDocStatField aField( static_cast<SwDocStatFieldType*>(
-                         m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::DocStat )), nSub,
+                         m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_DOCSTATFLD )), nSub,
                          GetNumberPara( rStr ) );
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_CurPage( WW8FieldDesc*, OUString& rStr )
 {
     // page number
     SwPageNumberField aField( static_cast<SwPageNumberFieldType*>(
-        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::PageNumber )), PG_RANDOM,
+        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_PAGENUMBERFLD )), PG_RANDOM,
         GetNumberPara(rStr, true));
 
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_Symbol( WW8FieldDesc*, OUString& rStr )
@@ -1885,7 +1877,7 @@ eF_ResT SwWW8ImplReader::Read_F_Symbol( WW8FieldDesc*, OUString& rStr )
         }
     }
     if( aQ.isEmpty() )
-        return eF_ResT::TAGIGN;                      // -> no 0-char in text
+        return FLD_TAGIGN;                      // -> no 0-char in text
 
     if (sal_Unicode cChar = static_cast<sal_Unicode>(aQ.toInt32()))
     {
@@ -1914,7 +1906,7 @@ eF_ResT SwWW8ImplReader::Read_F_Symbol( WW8FieldDesc*, OUString& rStr )
         m_rDoc.getIDocumentContentOperations().InsertString(*m_pPaM, "###");
     }
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "EINBETTEN"
@@ -1943,7 +1935,7 @@ eF_ResT SwWW8ImplReader::Read_F_Embedd( WW8FieldDesc*, OUString& rStr )
     if( m_bObj && m_nPicLocFc )
         m_nObjLocFc = m_nPicLocFc;
     m_bEmbeddObj = true;
-    return eF_ResT::TEXT;
+    return FLD_TEXT;
 }
 
 // "SET"
@@ -1979,7 +1971,7 @@ eF_ResT SwWW8ImplReader::Read_F_Set( WW8FieldDesc* pF, OUString& rStr )
 
     m_pReffedStck->SetAttr(*m_pPaM->GetPoint(), RES_FLTR_BOOKMARK, true, nNo);
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "REF"
@@ -2044,7 +2036,7 @@ eF_ResT SwWW8ImplReader::Read_F_Ref( WW8FieldDesc*, OUString& rStr )
     }
 
     SwGetRefField aField(
-        static_cast<SwGetRefFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::GetRef )),
+        static_cast<SwGetRefFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_GETREFFLD )),
         sBkmName,REF_BOOKMARK,0,eFormat);
 
     if (eFormat == REF_CONTENT)
@@ -2062,7 +2054,7 @@ eF_ResT SwWW8ImplReader::Read_F_Ref( WW8FieldDesc*, OUString& rStr )
     {
         m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
     }
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // Note Reference - Field
@@ -2100,19 +2092,19 @@ eF_ResT SwWW8ImplReader::Read_F_NoteReference( WW8FieldDesc*, OUString& rStr )
     // set Sequence No of corresponding Foot-/Endnote to Zero
     // (will be corrected in
     SwGetRefField aField( static_cast<SwGetRefFieldType*>(
-        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::GetRef )), aBkmName, REF_FOOTNOTE, 0,
+        m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_GETREFFLD )), aBkmName, REF_FOOTNOTE, 0,
         REF_ONLYNUMBER );
     m_pReffingStck->NewAttr(*m_pPaM->GetPoint(), SwFormatField(aField));
     m_pReffingStck->SetAttr(*m_pPaM->GetPoint(), RES_TXTATR_FIELD);
     if (bAboveBelow)
     {
         SwGetRefField aField2( static_cast<SwGetRefFieldType*>(
-            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::GetRef )),aBkmName, REF_FOOTNOTE, 0,
+            m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_GETREFFLD )),aBkmName, REF_FOOTNOTE, 0,
             REF_UPDOWN );
         m_pReffingStck->NewAttr(*m_pPaM->GetPoint(), SwFormatField(aField2));
         m_pReffingStck->SetAttr(*m_pPaM->GetPoint(), RES_TXTATR_FIELD);
     }
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "SEITENREF"
@@ -2159,12 +2151,12 @@ eF_ResT SwWW8ImplReader::Read_F_PgRef( WW8FieldDesc*, OUString& rStr )
             SwFormatINetFormat aURL( sURL, sTarget );
             const OUString sLinkStyle("Index Link");
             const sal_uInt16 nPoolId =
-                SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, SwGetPoolIdFromName::ChrFmt );
+                SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
             aURL.SetVisitedFormatAndId( sLinkStyle, nPoolId);
             aURL.SetINetFormatAndId( sLinkStyle, nPoolId );
             m_pCtrlStck->NewAttr( *m_pPaM->GetPoint(), aURL );
         }
-        return eF_ResT::TEXT;
+        return FLD_TEXT;
     }
 
     // #i120879# add cross reference bookmark name prefix, if it matches
@@ -2180,11 +2172,11 @@ eF_ResT SwWW8ImplReader::Read_F_PgRef( WW8FieldDesc*, OUString& rStr )
     {
         sPageRefBookmarkName = sName;
     }
-    SwGetRefField aField( static_cast<SwGetRefFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::GetRef )),
+    SwGetRefField aField( static_cast<SwGetRefFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_GETREFFLD )),
                         sPageRefBookmarkName, REF_BOOKMARK, 0, REF_PAGE );
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 //helper function
@@ -2253,14 +2245,14 @@ eF_ResT SwWW8ImplReader::Read_F_Macro( WW8FieldDesc*, OUString& rStr)
         }
     }
     if( aName.isEmpty() )
-        return eF_ResT::TAGIGN;  // makes no sense without Macro-Name
+        return FLD_TAGIGN;  // makes no sense without Makro-Name
 
     //try converting macro symbol according to macro name
     bool bApplyWingdings = ConvertMacroSymbol( aName, aVText );
     aName = "StarOffice.Standard.Modul1." + aName;
 
     SwMacroField aField( static_cast<SwMacroFieldType*>(
-                    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Macro )), aName, aVText );
+                    m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_MACROFLD )), aName, aVText );
 
     if( !bApplyWingdings )
     {
@@ -2303,7 +2295,7 @@ eF_ResT SwWW8ImplReader::Read_F_Macro( WW8FieldDesc*, OUString& rStr)
         }
     }
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 WW8PostProcessAttrsInfo::WW8PostProcessAttrsInfo(WW8_CP nCpStart, WW8_CP nCpEnd,
@@ -2321,33 +2313,13 @@ bool CanUseRemoteLink(const OUString &rGrfName)
     bool bUseRemote = false;
     try
     {
-        // Related: tdf#102499, add a default css::ucb::XCommandEnvironment
-        // in order to have https protocol manage certificates correctly
-        uno::Reference< task::XInteractionHandler > xIH(
-            task::InteractionHandler::createWithParent(comphelper::getProcessComponentContext(), nullptr));
-
-        uno::Reference< ucb::XProgressHandler > xProgress;
-        ::ucbhelper::CommandEnvironment* pCommandEnv =
-              new ::ucbhelper::CommandEnvironment(new comphelper::SimpleFileAccessInteraction( xIH ), xProgress);
-
         ::ucbhelper::Content aCnt(rGrfName,
-                                  static_cast< ucb::XCommandEnvironment* >(pCommandEnv),
-                                  comphelper::getProcessComponentContext());
+            uno::Reference< ucb::XCommandEnvironment >(),
+            comphelper::getProcessComponentContext() );
+        OUString   aTitle;
 
-        if ( !INetURLObject( rGrfName ).isAnyKnownWebDAVScheme() )
-        {
-            OUString   aTitle;
-            aCnt.getPropertyValue("Title") >>= aTitle;
-            bUseRemote = !aTitle.isEmpty();
-        }
-        else
-        {
-            // is a link to a WebDAV resource
-            // need to use MediaType to check for link usability
-            OUString   aMediaType;
-            aCnt.getPropertyValue("MediaType") >>= aMediaType;
-            bUseRemote = !aMediaType.isEmpty();
-        }
+        aCnt.getPropertyValue("Title") >>= aTitle;
+        bUseRemote = !aTitle.isEmpty();
     }
     catch ( ... )
     {
@@ -2404,7 +2376,7 @@ eF_ResT SwWW8ImplReader::Read_F_IncludePicture( WW8FieldDesc*, OUString& rStr )
         */
         SfxItemSet aFlySet( m_rDoc.GetAttrPool(), RES_FRMATR_BEGIN,
             RES_FRMATR_END-1 );
-        aFlySet.Put( SwFormatAnchor( RndStdIds::FLY_AS_CHAR ) );
+        aFlySet.Put( SwFormatAnchor( FLY_AS_CHAR ) );
         aFlySet.Put( SwFormatVertOrient( 0, text::VertOrientation::TOP, text::RelOrientation::FRAME ));
         m_pFlyFormatOfJustInsertedGraphic = m_rDoc.getIDocumentContentOperations().Insert( *m_pPaM,
                                                     aGrfName,
@@ -2415,7 +2387,7 @@ eF_ResT SwWW8ImplReader::Read_F_IncludePicture( WW8FieldDesc*, OUString& rStr )
         m_aGrfNameGenerator.SetUniqueGraphName(m_pFlyFormatOfJustInsertedGraphic,
             INetURLObject(aGrfName).GetBase());
     }
-    return eF_ResT::READ_FSPA;
+    return FLD_READ_FSPA;
 }
 
 OUString wwSectionNamer::UniqueName()
@@ -2455,8 +2427,9 @@ eF_ResT SwWW8ImplReader::Read_F_IncludeText( WW8FieldDesc* /*pF*/, OUString& rSt
     {
         // Bereich aus Quelle ( kein Switch ) ?
         ConvertUFName(aBook);
-        aPara += OUStringLiteral1(sfx2::cTokenSeparator)
-            + OUStringLiteral1(sfx2::cTokenSeparator) + aBook;
+        aPara += OUString(sfx2::cTokenSeparator);
+        aPara += OUString(sfx2::cTokenSeparator);
+        aPara += aBook;
     }
 
     /*
@@ -2476,11 +2449,11 @@ eF_ResT SwWW8ImplReader::Read_F_IncludeText( WW8FieldDesc* /*pF*/, OUString& rSt
         m_rDoc.InsertSwSection(*m_pPaM, aSection, nullptr, nullptr, false);
     OSL_ENSURE(pSection, "no section inserted");
     if (!pSection)
-        return eF_ResT::TEXT;
+        return FLD_TEXT;
     const SwSectionNode* pSectionNode = pSection->GetFormat()->GetSectionNode();
     OSL_ENSURE(pSectionNode, "no section node!");
     if (!pSectionNode)
-        return eF_ResT::TEXT;
+        return FLD_TEXT;
 
     m_pPaM->GetPoint()->nNode = pSectionNode->GetIndex()+1;
     m_pPaM->GetPoint()->nContent.Assign(m_pPaM->GetContentNode(), 0 );
@@ -2489,7 +2462,7 @@ eF_ResT SwWW8ImplReader::Read_F_IncludeText( WW8FieldDesc* /*pF*/, OUString& rSt
     //for future page/section segment insertion
     m_aSectionManager.PrependedInlineNode(aTmpPos, m_pPaM->GetNode());
 
-    return eF_ResT::TEXT;
+    return FLD_TEXT;
 }
 
 // "SERIENDRUCKFELD"
@@ -2530,7 +2503,7 @@ eF_ResT SwWW8ImplReader::Read_F_DBField( WW8FieldDesc* pF, OUString& rStr )
 
     m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField( aField ));
 #endif
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "N"ACHSTER"
@@ -2543,7 +2516,7 @@ eF_ResT SwWW8ImplReader::Read_F_DBNext( WW8FieldDesc*, OUString& )
                             SwDBData() );       // Datenbank: Nichts
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
 #endif
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 // "DATENSATZ"
@@ -2556,7 +2529,7 @@ eF_ResT SwWW8ImplReader::Read_F_DBNum( WW8FieldDesc*, OUString& )
                            SwDBData() );            // Datenbank: Nichts
     m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) );
 #endif
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 /*
@@ -2578,21 +2551,21 @@ eF_ResT SwWW8ImplReader::Read_F_Equation( WW8FieldDesc*, OUString& rStr )
 
         if (aResult.sType == "Input")
         {
-            SwInputField aField( static_cast<SwInputFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Input )),
+            SwInputField aField( static_cast<SwInputFieldType*>(m_rDoc.getIDocumentFieldsAccess().GetSysFieldType( RES_INPUTFLD )),
                 aResult.sResult, aResult.sResult, INP_TXT, 0 );
             m_rDoc.getIDocumentContentOperations().InsertPoolItem( *m_pPaM, SwFormatField( aField ) ); // insert input field
         }
         else if (aResult.sType == "CombinedCharacters")
         {
             SwCombinedCharField aField(static_cast<SwCombinedCharFieldType*>(
-                m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::CombinedChars)), aResult.sType);
+                m_rDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_COMBINED_CHARS)), aResult.sType);
             m_rDoc.getIDocumentContentOperations().InsertPoolItem(*m_pPaM, SwFormatField(aField));
         }
     }
     else if ('*' == cChar)
         Read_SubF_Ruby(aReadParam);
 
-    return eF_ResT::OK;
+    return FLD_OK;
 }
 
 void SwWW8ImplReader::Read_SubF_Ruby( WW8ReadFieldParams& rReadParam)
@@ -2680,24 +2653,23 @@ void SwWW8ImplReader::Read_SubF_Ruby( WW8ReadFieldParams& rReadParam)
     //Translate and apply
     if (!sRuby.isEmpty() && !sText.isEmpty() && !sFontName.isEmpty() && nFontSize)
     {
-        css::text::RubyAdjust eRubyAdjust;
         switch (nJustificationCode)
         {
             case 0:
-                eRubyAdjust = css::text::RubyAdjust_CENTER;
+                nJustificationCode=1;
                 break;
             case 1:
-                eRubyAdjust = css::text::RubyAdjust_BLOCK;
+                nJustificationCode=3;
                 break;
             case 2:
-                eRubyAdjust = css::text::RubyAdjust_INDENT_BLOCK;
+                nJustificationCode=4;
                 break;
             default:
             case 3:
-                eRubyAdjust = css::text::RubyAdjust_LEFT;
+                nJustificationCode=0;
                 break;
             case 4:
-                eRubyAdjust = css::text::RubyAdjust_RIGHT;
+                nJustificationCode=2;
                 break;
         }
 
@@ -2754,7 +2726,7 @@ void SwWW8ImplReader::Read_SubF_Ruby( WW8ReadFieldParams& rReadParam)
         //Set the charstyle and justification
         aRuby.SetCharFormatName(pCharFormat->GetName());
         aRuby.SetCharFormatId(pCharFormat->GetPoolFormatId());
-        aRuby.SetAdjustment(eRubyAdjust);
+        aRuby.SetAdjustment(nJustificationCode);
 
         NewAttr(aRuby);
         m_rDoc.getIDocumentContentOperations().InsertString( *m_pPaM, sText );
@@ -2790,7 +2762,7 @@ static void EnsureMaxLevelForTemplates(SwTOXBase& rBase)
     //all styles above that level, while word just cuts off the "standard"
     //outline styles, we have no option but to expand to the highest level
     //Word included.
-    if ((rBase.GetLevel() != MAXLEVEL) && (SwTOXElement::Template & rBase.GetCreateType()))
+    if ((rBase.GetLevel() != MAXLEVEL) && (nsSwTOXElement::TOX_TEMPLATE & rBase.GetCreateType()))
     {
         for (sal_uInt16 nI = MAXLEVEL; nI > 0; --nI)
         {
@@ -2853,7 +2825,7 @@ static void lcl_toxMatchTSwitch(SwWW8ImplReader& rReader, SwTOXBase& rBase,
 
                     OUString sStyles( rBase.GetStyleNames( nLevel ) );
                     if( !sStyles.isEmpty() )
-                        sStyles += OUStringLiteral1(TOX_STYLE_DELIMITER);
+                        sStyles += OUStringLiteral1<TOX_STYLE_DELIMITER>();
                     sStyles += sTemplate;
                     rBase.SetStyleNames( sStyles, nLevel );
                 }
@@ -2918,11 +2890,11 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
         // Embedded TOX --> continue reading its content, but no further TOX
         // field
         ++m_nEmbeddedTOXLevel;
-        return eF_ResT::TEXT;
+        return FLD_TEXT;
     }
 
     if (pF->nLRes < 3)
-        return eF_ResT::TEXT;      // ignore (#i25440#)
+        return FLD_TEXT;      // ignore (#i25440#)
 
     TOXTypes eTox;            // create a ToxBase
     switch( pF->nId )
@@ -2938,7 +2910,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
             break;
     }
 
-    SwTOXElement nCreateOf = (eTox == TOX_CONTENT) ? SwTOXElement::OutlineLevel : SwTOXElement::Mark;
+    sal_uInt16 nCreateOf = (eTox == TOX_CONTENT) ? nsSwTOXElement::TOX_OUTLINELEVEL : nsSwTOXElement::TOX_MARK;
 
     sal_uInt16 nIndexCols = 1;
 
@@ -2949,9 +2921,9 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
     switch( eTox ){
     case TOX_INDEX:
         {
-            SwTOIOptions eOptions = SwTOIOptions::SameEntry | SwTOIOptions::CaseSensitive;
+            sal_uInt16 eOptions = nsSwTOIOptions::TOI_SAME_ENTRY | nsSwTOIOptions::TOI_CASE_SENSITIVE;
 
-            // SwTOXElement::OutlineLevel setzen wir genau dann, wenn
+            // TOX_OUTLINELEVEL setzen wir genau dann, wenn
             // die Parameter \o in 1 bis 9 liegen
             // oder der Parameter \f existiert
             // oder GARKEINE Switches Parameter angegeben sind.
@@ -3011,7 +2983,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                                             --aIt;
 
                                             if(0x09 == sDelimiter[0])
-                                                aIt->eTabAlign = SvxTabAdjust::End;
+                                                aIt->eTabAlign = SVX_TAB_ADJUST_END;
                                             else
                                             {
                                                 SwFormToken aToken(TOKEN_TEXT);
@@ -3035,7 +3007,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                     break;
                 case 'h':
                     {
-                        eOptions |= SwTOIOptions::AlphaDelimiter;
+                        eOptions |= nsSwTOIOptions::TOI_ALPHA_DELIMITTER;
                     }
                     break;
                 }
@@ -3048,11 +3020,11 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
         {
             bool bIsHyperlink = false;
             bool bShowPage = true;
-            // SwTOXElement::OutlineLevel setzen wir genau dann, wenn
+            // TOX_OUTLINELEVEL setzen wir genau dann, wenn
             // die Parameter \o in 1 bis 9 liegen
             // oder der Parameter \f existiert
             // oder GARKEINE Switches Parameter angegeben sind.
-            SwTOXElement eCreateFrom = SwTOXElement::NONE;
+            sal_uInt16 eCreateFrom = 0;
             sal_Int32 nMaxLevel = 0;
             WW8ReadFieldParams aReadParam( rStr );
             for (;;)
@@ -3079,11 +3051,11 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                             nVal = lcl_GetMaxValidWordTOCLevel(aOrigForm);
                         if( nMaxLevel < nVal )
                             nMaxLevel = nVal;
-                        eCreateFrom |= SwTOXElement::OutlineLevel;
+                        eCreateFrom |= nsSwTOXElement::TOX_OUTLINELEVEL;
                     }
                     break;
                 case 'f':
-                    eCreateFrom |= SwTOXElement::Mark;
+                    eCreateFrom |= nsSwTOXElement::TOX_MARK;
                     break;
                 case 'l':
                     {
@@ -3092,14 +3064,14 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                         {
                             if( nMaxLevel < nVal )
                                 nMaxLevel = nVal;
-                            eCreateFrom |= SwTOXElement::Mark;
+                            eCreateFrom |= nsSwTOXElement::TOX_MARK;
                         }
                     }
                     break;
                 case 't': // paragraphs using special styles shall
                           // provide the TOX's content
                     lcl_toxMatchTSwitch(*this, *pBase, aReadParam);
-                    eCreateFrom |= SwTOXElement::Template;
+                    eCreateFrom |= nsSwTOXElement::TOX_TEMPLATE;
                     break;
                 case 'p':
                     {
@@ -3261,8 +3233,8 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                     {
                         //If we would be created from outlines, either explicitly or by default
                         //then see if we need extra styles added to the outlines
-                        SwTOXElement eEffectivelyFrom = eCreateFrom != SwTOXElement::NONE ? eCreateFrom : SwTOXElement::OutlineLevel;
-                        if (eEffectivelyFrom & SwTOXElement::OutlineLevel)
+                        sal_uInt16 eEffectivelyFrom = eCreateFrom ? eCreateFrom : nsSwTOXElement::TOX_OUTLINELEVEL;
+                        if (eEffectivelyFrom & nsSwTOXElement::TOX_OUTLINELEVEL)
                         {
                             // #i19683# Insert a text token " " between the number and entry token.
                             // In an ideal world we could handle the tab stop between the number and
@@ -3304,15 +3276,15 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
                             }
                         }
 
-                        if (eCreateFrom != SwTOXElement::NONE)
+                        if (eCreateFrom)
                             pBase->SetCreate(eCreateFrom);
                         EnsureMaxLevelForTemplates(*pBase);
                     }
                     break;
                 case TOX_ILLUSTRATIONS:
                     {
-                        if( eCreateFrom == SwTOXElement::NONE )
-                            eCreateFrom = SwTOXElement::Sequence;
+                        if( !eCreateFrom )
+                            eCreateFrom = nsSwTOXElement::TOX_SEQUENCE;
                         pBase->SetCreate( eCreateFrom );
 
                         /*
@@ -3358,7 +3330,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
     // #i21237# - propagate tab stops from paragraph styles used in TOX to patterns of the TOX
     pBase->AdjustTabStops( m_rDoc );
 
-    //#i10028# inserting a toc implicitly acts like a parabreak in word and writer
+    //#i10028# inserting a toc implicltly acts like a parabreak in word and writer
     if ( m_pPaM->End() &&
          m_pPaM->End()->nNode.GetNode().GetTextNode() &&
          m_pPaM->End()->nNode.GetNode().GetTextNode()->Len() != 0 )
@@ -3435,7 +3407,7 @@ eF_ResT SwWW8ImplReader::Read_F_Tox( WW8FieldDesc* pF, OUString& rStr )
     //Return FLD_TEXT, instead of FLD_OK
     //FLD_TEXT means the following content, commonly indicate the field representation content should be parsed
     //FLD_OK means the current field loading is finished. The rest part should be ignored.
-    return eF_ResT::TEXT;
+    return FLD_TEXT;
 }
 
 eF_ResT SwWW8ImplReader::Read_F_Shape(WW8FieldDesc* /*pF*/, OUString& /*rStr*/)
@@ -3445,7 +3417,7 @@ eF_ResT SwWW8ImplReader::Read_F_Shape(WW8FieldDesc* /*pF*/, OUString& /*rStr*/)
     to be ignored followed by a 0x1 with an empty drawing. Detect in inserting
     the drawing that we are in the Shape field and respond accordingly
     */
-    return eF_ResT::TEXT;
+    return FLD_TEXT;
  }
 
 eF_ResT SwWW8ImplReader::Read_F_Hyperlink( WW8FieldDesc* /*pF*/, OUString& rStr )
@@ -3524,7 +3496,7 @@ eF_ResT SwWW8ImplReader::Read_F_Hyperlink( WW8FieldDesc* /*pF*/, OUString& rStr 
     {
         OUString sLinkStyle("Index Link");
         sal_uInt16 nPoolId =
-            SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, SwGetPoolIdFromName::ChrFmt );
+            SwStyleNameMapper::GetPoolIdFromUIName( sLinkStyle, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
         aURL.SetVisitedFormatAndId( sLinkStyle, nPoolId );
         aURL.SetINetFormatAndId( sLinkStyle, nPoolId );
     }
@@ -3534,7 +3506,7 @@ eF_ResT SwWW8ImplReader::Read_F_Hyperlink( WW8FieldDesc* /*pF*/, OUString& rStr 
     //between the start and begin, their hyperlinks will be set at that time
     //as well.
     m_pCtrlStck->NewAttr( *m_pPaM->GetPoint(), aURL );
-    return eF_ResT::TEXT;
+    return FLD_TEXT;
 }
 
 static void lcl_ImportTox(SwDoc &rDoc, SwPaM &rPaM, const OUString &rStr, bool bIdx)

@@ -51,13 +51,13 @@ class Thread
     Thread& operator= ( const Thread& ) SAL_DELETED_FUNCTION;
 public:
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     Thread(): m_hThread(NULL){}
@@ -148,7 +148,7 @@ public:
         osl_yieldThread();
     }
 
-    static void setName(char const * name) throw () {
+    static inline void setName(char const * name) throw () {
         osl_setThreadName(name);
     }
 

@@ -37,7 +37,7 @@ namespace rptxml
                     const OUString& rLName,
                     const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList
                     ,const css::uno::Reference< css::report::XReportControlModel >& _xComponent);
-        virtual ~OXMLReportElement() override;
+        virtual ~OXMLReportElement();
 
         virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                     const OUString& rLocalName,

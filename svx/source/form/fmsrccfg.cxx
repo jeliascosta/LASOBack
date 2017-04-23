@@ -20,17 +20,18 @@
 #include "svx/fmsrccfg.hxx"
 
 #include <osl/diagnose.h>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <comphelper/processfactory.hxx>
-#include <i18nutil/transliteration.hxx>
 
 using namespace ::com::sun::star::uno;
+using namespace ::com::sun::star::i18n;
 
 namespace svxform
 {
     // search parameters
 
     FmSearchParams::FmSearchParams()
-        :nTransliterationFlags( TransliterationFlags::NONE )
+        :nTransliterationFlags( 0 )
         ,nSearchForType     ( 0 )
         ,nPosition          ( MATCHING_ANYWHERE )
         ,nLevOther          ( 2 )
@@ -46,29 +47,29 @@ namespace svxform
         ,bSoundsLikeCJK     ( false )
     {
         nTransliterationFlags =
-                TransliterationFlags::ignoreSpace_ja_JP
-            |   TransliterationFlags::ignoreMiddleDot_ja_JP
-            |   TransliterationFlags::ignoreProlongedSoundMark_ja_JP
-            |   TransliterationFlags::ignoreSeparator_ja_JP
-            |   TransliterationFlags::IGNORE_CASE;
+                TransliterationModules_ignoreSpace_ja_JP
+            |   TransliterationModules_ignoreMiddleDot_ja_JP
+            |   TransliterationModules_ignoreProlongedSoundMark_ja_JP
+            |   TransliterationModules_ignoreSeparator_ja_JP
+            |   TransliterationModules_IGNORE_CASE;
     }
 
     bool FmSearchParams::isIgnoreWidthCJK( ) const
     {
-        return bool(nTransliterationFlags & TransliterationFlags::IGNORE_WIDTH);
+        return 0 != (nTransliterationFlags & TransliterationModules_IGNORE_WIDTH);
     }
 
     bool FmSearchParams::isCaseSensitive( ) const
     {
-        return !(nTransliterationFlags & TransliterationFlags::IGNORE_CASE);
+        return 0 == (nTransliterationFlags & TransliterationModules_IGNORE_CASE);
     }
 
     void FmSearchParams::setCaseSensitive( bool _bCase )
     {
         if ( _bCase )
-            nTransliterationFlags &= ~TransliterationFlags::IGNORE_CASE;
+            nTransliterationFlags &= ~TransliterationModules_IGNORE_CASE;
         else
-            nTransliterationFlags |= TransliterationFlags::IGNORE_CASE;
+            nTransliterationFlags |= TransliterationModules_IGNORE_CASE;
     }
 
     // maps from ascii values to int values
@@ -137,7 +138,7 @@ namespace svxform
             OString(
                 "lcl_implMapIntValue: could not convert the integer value "
                 + OString::number(_nValue) + " !").getStr());
-        static const sal_Char* const s_pDummy = "";
+        static const sal_Char* s_pDummy = "";
             // just as a fallback ....
         return s_pDummy;
     }
@@ -205,28 +206,28 @@ namespace svxform
         nPosition = lcl_implMapAsciiValue( m_sSearchPosition, lcl_getSearchPositionValueMap() );
 
         // the transliteration flags
-        nTransliterationFlags = TransliterationFlags::NONE;
+        nTransliterationFlags = 0;
 
-        if ( !m_bIsMatchCase                )   nTransliterationFlags |= TransliterationFlags::IGNORE_CASE;
-        if ( m_bIsMatchFullHalfWidthForms   )   nTransliterationFlags |= TransliterationFlags::IGNORE_WIDTH;
-        if ( m_bIsMatchHiraganaKatakana     )   nTransliterationFlags |= TransliterationFlags::IGNORE_KANA;
-        if ( m_bIsMatchContractions         )   nTransliterationFlags |= TransliterationFlags::ignoreSize_ja_JP;
-        if ( m_bIsMatchMinusDashCho_on      )   nTransliterationFlags |= TransliterationFlags::ignoreMinusSign_ja_JP;
-        if ( m_bIsMatchRepeatCharMarks      )   nTransliterationFlags |= TransliterationFlags::ignoreIterationMark_ja_JP;
-        if ( m_bIsMatchVariantFormKanji     )   nTransliterationFlags |= TransliterationFlags::ignoreTraditionalKanji_ja_JP;
-        if ( m_bIsMatchOldKanaForms         )   nTransliterationFlags |= TransliterationFlags::ignoreTraditionalKana_ja_JP;
-        if ( m_bIsMatch_DiZi_DuZu           )   nTransliterationFlags |= TransliterationFlags::ignoreZiZu_ja_JP;
-        if ( m_bIsMatch_BaVa_HaFa           )   nTransliterationFlags |= TransliterationFlags::ignoreBaFa_ja_JP;
-        if ( m_bIsMatch_TsiThiChi_DhiZi     )   nTransliterationFlags |= TransliterationFlags::ignoreTiJi_ja_JP;
-        if ( m_bIsMatch_HyuIyu_ByuVyu       )   nTransliterationFlags |= TransliterationFlags::ignoreHyuByu_ja_JP;
-        if ( m_bIsMatch_SeShe_ZeJe          )   nTransliterationFlags |= TransliterationFlags::ignoreSeZe_ja_JP;
-        if ( m_bIsMatch_IaIya               )   nTransliterationFlags |= TransliterationFlags::ignoreIandEfollowedByYa_ja_JP;
-        if ( m_bIsMatch_KiKu                )   nTransliterationFlags |= TransliterationFlags::ignoreKiKuFollowedBySa_ja_JP;
+        if ( !m_bIsMatchCase                )   nTransliterationFlags |= TransliterationModules_IGNORE_CASE;
+        if ( m_bIsMatchFullHalfWidthForms   )   nTransliterationFlags |= TransliterationModules_IGNORE_WIDTH;
+        if ( m_bIsMatchHiraganaKatakana     )   nTransliterationFlags |= TransliterationModules_IGNORE_KANA;
+        if ( m_bIsMatchContractions         )   nTransliterationFlags |= TransliterationModules_ignoreSize_ja_JP;
+        if ( m_bIsMatchMinusDashCho_on      )   nTransliterationFlags |= TransliterationModules_ignoreMinusSign_ja_JP;
+        if ( m_bIsMatchRepeatCharMarks      )   nTransliterationFlags |= TransliterationModules_ignoreIterationMark_ja_JP;
+        if ( m_bIsMatchVariantFormKanji     )   nTransliterationFlags |= TransliterationModules_ignoreTraditionalKanji_ja_JP;
+        if ( m_bIsMatchOldKanaForms         )   nTransliterationFlags |= TransliterationModules_ignoreTraditionalKana_ja_JP;
+        if ( m_bIsMatch_DiZi_DuZu           )   nTransliterationFlags |= TransliterationModules_ignoreZiZu_ja_JP;
+        if ( m_bIsMatch_BaVa_HaFa           )   nTransliterationFlags |= TransliterationModules_ignoreBaFa_ja_JP;
+        if ( m_bIsMatch_TsiThiChi_DhiZi     )   nTransliterationFlags |= TransliterationModules_ignoreTiJi_ja_JP;
+        if ( m_bIsMatch_HyuIyu_ByuVyu       )   nTransliterationFlags |= TransliterationModules_ignoreHyuByu_ja_JP;
+        if ( m_bIsMatch_SeShe_ZeJe          )   nTransliterationFlags |= TransliterationModules_ignoreSeZe_ja_JP;
+        if ( m_bIsMatch_IaIya               )   nTransliterationFlags |= TransliterationModules_ignoreIandEfollowedByYa_ja_JP;
+        if ( m_bIsMatch_KiKu                )   nTransliterationFlags |= TransliterationModules_ignoreKiKuFollowedBySa_ja_JP;
 
-        if ( m_bIsIgnorePunctuation         )   nTransliterationFlags |= TransliterationFlags::ignoreSeparator_ja_JP;
-        if ( m_bIsIgnoreWhitespace          )   nTransliterationFlags |= TransliterationFlags::ignoreSpace_ja_JP;
-        if ( m_bIsIgnoreProlongedSoundMark  )   nTransliterationFlags |= TransliterationFlags::ignoreProlongedSoundMark_ja_JP;
-        if ( m_bIsIgnoreMiddleDot           )   nTransliterationFlags |= TransliterationFlags::ignoreMiddleDot_ja_JP;
+        if ( m_bIsIgnorePunctuation         )   nTransliterationFlags |= TransliterationModules_ignoreSeparator_ja_JP;
+        if ( m_bIsIgnoreWhitespace          )   nTransliterationFlags |= TransliterationModules_ignoreSpace_ja_JP;
+        if ( m_bIsIgnoreProlongedSoundMark  )   nTransliterationFlags |= TransliterationModules_ignoreProlongedSoundMark_ja_JP;
+        if ( m_bIsIgnoreMiddleDot           )   nTransliterationFlags |= TransliterationModules_ignoreMiddleDot_ja_JP;
     }
 
     void FmSearchConfigItem::implTranslateToConfig( )
@@ -239,26 +240,26 @@ namespace svxform
 
         // the transliteration flags
 
-        m_bIsMatchCase                  = !( nTransliterationFlags & TransliterationFlags::IGNORE_CASE );
-        m_bIsMatchFullHalfWidthForms    = bool( nTransliterationFlags & TransliterationFlags::IGNORE_WIDTH );
-        m_bIsMatchHiraganaKatakana      = bool( nTransliterationFlags & TransliterationFlags::IGNORE_KANA );
-        m_bIsMatchContractions          = bool( nTransliterationFlags & TransliterationFlags::ignoreSize_ja_JP );
-        m_bIsMatchMinusDashCho_on       = bool( nTransliterationFlags & TransliterationFlags::ignoreMinusSign_ja_JP );
-        m_bIsMatchRepeatCharMarks       = bool( nTransliterationFlags & TransliterationFlags::ignoreIterationMark_ja_JP );
-        m_bIsMatchVariantFormKanji      = bool( nTransliterationFlags & TransliterationFlags::ignoreTraditionalKanji_ja_JP );
-        m_bIsMatchOldKanaForms          = bool( nTransliterationFlags & TransliterationFlags::ignoreTraditionalKana_ja_JP );
-        m_bIsMatch_DiZi_DuZu            = bool( nTransliterationFlags & TransliterationFlags::ignoreZiZu_ja_JP );
-        m_bIsMatch_BaVa_HaFa            = bool( nTransliterationFlags & TransliterationFlags::ignoreBaFa_ja_JP );
-        m_bIsMatch_TsiThiChi_DhiZi      = bool( nTransliterationFlags & TransliterationFlags::ignoreTiJi_ja_JP );
-        m_bIsMatch_HyuIyu_ByuVyu        = bool( nTransliterationFlags & TransliterationFlags::ignoreHyuByu_ja_JP );
-        m_bIsMatch_SeShe_ZeJe           = bool( nTransliterationFlags & TransliterationFlags::ignoreSeZe_ja_JP );
-        m_bIsMatch_IaIya                = bool( nTransliterationFlags & TransliterationFlags::ignoreIandEfollowedByYa_ja_JP );
-        m_bIsMatch_KiKu                 = bool( nTransliterationFlags & TransliterationFlags::ignoreKiKuFollowedBySa_ja_JP );
+        m_bIsMatchCase                  = ( 0 == ( nTransliterationFlags & TransliterationModules_IGNORE_CASE ) );
+        m_bIsMatchFullHalfWidthForms    = ( 0 != ( nTransliterationFlags & TransliterationModules_IGNORE_WIDTH ) );
+        m_bIsMatchHiraganaKatakana      = ( 0 != ( nTransliterationFlags & TransliterationModules_IGNORE_KANA ) );
+        m_bIsMatchContractions          = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreSize_ja_JP ) );
+        m_bIsMatchMinusDashCho_on       = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreMinusSign_ja_JP ) );
+        m_bIsMatchRepeatCharMarks       = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreIterationMark_ja_JP ) );
+        m_bIsMatchVariantFormKanji      = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreTraditionalKanji_ja_JP ) );
+        m_bIsMatchOldKanaForms          = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreTraditionalKana_ja_JP ) );
+        m_bIsMatch_DiZi_DuZu            = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreZiZu_ja_JP ) );
+        m_bIsMatch_BaVa_HaFa            = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreBaFa_ja_JP ) );
+        m_bIsMatch_TsiThiChi_DhiZi      = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreTiJi_ja_JP ) );
+        m_bIsMatch_HyuIyu_ByuVyu        = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreHyuByu_ja_JP ) );
+        m_bIsMatch_SeShe_ZeJe           = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreSeZe_ja_JP ) );
+        m_bIsMatch_IaIya                = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreIandEfollowedByYa_ja_JP ) );
+        m_bIsMatch_KiKu                 = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreKiKuFollowedBySa_ja_JP ) );
 
-        m_bIsIgnorePunctuation          = bool( nTransliterationFlags & TransliterationFlags::ignoreSeparator_ja_JP );
-        m_bIsIgnoreWhitespace           = bool( nTransliterationFlags & TransliterationFlags::ignoreSpace_ja_JP );
-        m_bIsIgnoreProlongedSoundMark   = bool( nTransliterationFlags & TransliterationFlags::ignoreProlongedSoundMark_ja_JP );
-        m_bIsIgnoreMiddleDot            = bool( nTransliterationFlags & TransliterationFlags::ignoreMiddleDot_ja_JP );
+        m_bIsIgnorePunctuation          = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreSeparator_ja_JP ) );
+        m_bIsIgnoreWhitespace           = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreSpace_ja_JP ) );
+        m_bIsIgnoreProlongedSoundMark   = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreProlongedSoundMark_ja_JP ) );
+        m_bIsIgnoreMiddleDot            = ( 0 != ( nTransliterationFlags & TransliterationModules_ignoreMiddleDot_ja_JP ) );
     }
 
     const FmSearchParams& FmSearchConfigItem::getParams() const

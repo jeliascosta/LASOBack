@@ -58,11 +58,6 @@ namespace drawinglayer
             return aRetval;
         }
 
-        sal_Int64 SAL_CALL BitmapPrimitive2D::estimateUsage()
-        {
-            return getBitmapEx().GetSizeBytes();
-        }
-
         // provide unique ID
         ImplPrimitive2DIDBlock(BitmapPrimitive2D, PRIMITIVE2D_ID_BITMAPPRIMITIVE2D)
 

@@ -19,7 +19,9 @@
 
 #include "numberformatsbuffer.hxx"
 
+#include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/i18n/NumberFormatIndex.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
 #include <com/sun/star/util/XNumberFormats.hpp>
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
@@ -32,11 +34,11 @@
 #include <rtl/ustrbuf.hxx>
 #include <svl/intitem.hxx>
 #include <oox/core/filterbase.hxx>
-#include <oox/helper/binaryinputstream.hxx>
 #include <oox/helper/attributelist.hxx>
 #include <oox/helper/propertymap.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
+#include "biffinputstream.hxx"
 #include "scitems.hxx"
 #include "document.hxx"
 #include "ftools.hxx"
@@ -44,6 +46,7 @@
 namespace oox {
 namespace xls {
 
+using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::util;
@@ -1850,7 +1853,7 @@ class NumberFormatFinalizer
 public:
     explicit            NumberFormatFinalizer( const WorkbookHelper& rHelper );
 
-    void         operator()( NumberFormat& rNumFmt ) const
+    inline void         operator()( NumberFormat& rNumFmt ) const
                             { rNumFmt.finalizeImport( mxNumFmts, maEnUsLocale ); }
 
 private:
@@ -1872,30 +1875,6 @@ NumberFormatFinalizer::NumberFormatFinalizer( const WorkbookHelper& rHelper ) :
     OSL_ENSURE( mxNumFmts.is(), "NumberFormatFinalizer::NumberFormatFinalizer - cannot get number formats" );
 }
 
-sal_Int32 lclPosToken ( const OUString& sFormat, const OUString& sSearch, sal_Int32 nStartPos )
-{
-    sal_Int32 nLength = sFormat.getLength();
-    for ( sal_Int32 i = nStartPos; i < nLength && i >= 0 ; i++ )
-    {
-        switch(sFormat[i])
-        {
-            case '\"' : // skip text
-                i = sFormat.indexOf('\"',i+1);
-                break;
-            case '['  : // skip condition
-                i = sFormat.indexOf(']',i+1);
-                break;
-            default :
-                if ( sFormat.match(sSearch, i) )
-                    return i;
-                break;
-        }
-        if ( i < 0 )
-            i--;
-    }
-    return -2;
-}
-
 } // namespace
 
 NumberFormat::NumberFormat( const WorkbookHelper& rHelper ) :
@@ -1905,27 +1884,11 @@ NumberFormat::NumberFormat( const WorkbookHelper& rHelper ) :
 
 void NumberFormat::setFormatCode( const OUString& rFmtCode )
 {
-    // Special case for fraction code '\ ?/?', it is passed to us in xml, the '\' is not
+    // especiall for a fraction code '\ ?/?' is passed to us in xml, the '\' is not
     // an escape character but merely should be telling the formatter to display the next
     // char in the format ( afaics it does that anyhow )
-    sal_Int32 nPosEscape = 0;
-    sal_Int32 nErase = 0;
-    sal_Int32 nLastIndex = rFmtCode.getLength() - 1;
-    OUStringBuffer sFormat = rFmtCode;
 
-    while ( ( nPosEscape = lclPosToken( rFmtCode, "\\ ", nPosEscape ) ) > 0 )
-    {
-        sal_Int32 nPos = nPosEscape + 2;
-        while ( nPos < nLastIndex && ( rFmtCode[nPos] == '?' || rFmtCode[nPos] == '#' || rFmtCode[nPos] == '0' ) )
-            nPos++;
-        if ( nPos < nLastIndex && rFmtCode[nPos] == '/' )
-        {
-            sFormat.remove(nPosEscape - nErase, 1);
-            nErase ++;
-        }  // tdf#81939 preserve other escape characters
-        nPosEscape = lclPosToken( rFmtCode, ";", nPosEscape ); // skip to next format
-    }
-    maModel.maFmtCode = sFormat.makeStringAndClear();
+    maModel.maFmtCode = rFmtCode.replaceAll("\\", "");
 }
 
 void NumberFormat::setFormatCode( const Locale& rLocale, const sal_Char* pcFmtCode )
@@ -1953,7 +1916,7 @@ void NumberFormat::finalizeImport( const Reference< XNumberFormats >& rxNumFmts,
 sal_uLong NumberFormat::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
 {
     const ScDocument& rDoc = getScDocument();
-    static sal_uLong  nDflt = rDoc.GetFormatTable()->GetStandardIndex( ScGlobal::eLnge );
+    static sal_uLong  nDflt = rDoc.GetFormatTable()->GetStandardFormat( ScGlobal::eLnge );
     sal_uLong nScNumFmt = nDflt;
     if ( maApiData.mnIndex )
         nScNumFmt = maApiData.mnIndex;
@@ -1965,6 +1928,11 @@ sal_uLong NumberFormat::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs 
         nScNumFmt = 0;
 
     return nScNumFmt;
+}
+
+void NumberFormat::writeToPropertyMap( PropertyMap& rPropMap ) const
+{
+    rPropMap.setProperty( PROP_NumberFormat, maApiData.mnIndex);
 }
 
 NumberFormatsBuffer::NumberFormatsBuffer( const WorkbookHelper& rHelper )
@@ -2022,6 +1990,12 @@ sal_uLong NumberFormatsBuffer::fillToItemSet( SfxItemSet& rItemSet, sal_Int32 nN
         return 0;
 
     return pNumFmt->fillToItemSet( rItemSet, bSkipPoolDefs);
+}
+
+void NumberFormatsBuffer::writeToPropertyMap( PropertyMap& rPropMap, sal_Int32 nNumFmtId ) const
+{
+    if( const NumberFormat* pNumFmt = maNumFmts.get( nNumFmtId ).get() )
+        pNumFmt->writeToPropertyMap( rPropMap );
 }
 
 void NumberFormatsBuffer::insertBuiltinFormats()

@@ -29,9 +29,6 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 
-#include <deque>
-#include <utility>
-
 class NumberFormatCodeMapper : public cppu::WeakImplHelper
 <
     css::i18n::XNumberFormatCode,
@@ -41,29 +38,36 @@ class NumberFormatCodeMapper : public cppu::WeakImplHelper
 public:
     NumberFormatCodeMapper( const css::uno::Reference <
                     css::uno::XComponentContext >& rxContext );
-    virtual ~NumberFormatCodeMapper() override;
+    virtual ~NumberFormatCodeMapper();
 
-    virtual css::i18n::NumberFormatCode SAL_CALL getDefault( sal_Int16 nFormatType, sal_Int16 nFormatUsage, const css::lang::Locale& rLocale ) override;
-    virtual css::i18n::NumberFormatCode SAL_CALL getFormatCode( sal_Int16 nFormatIndex, const css::lang::Locale& rLocale ) override;
-    virtual css::uno::Sequence< css::i18n::NumberFormatCode > SAL_CALL getAllFormatCode( sal_Int16 nFormatUsage, const css::lang::Locale& rLocale ) override;
-    virtual css::uno::Sequence< css::i18n::NumberFormatCode > SAL_CALL getAllFormatCodes( const css::lang::Locale& rLocale ) override;
+    virtual css::i18n::NumberFormatCode SAL_CALL getDefault( sal_Int16 nFormatType, sal_Int16 nFormatUsage, const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::i18n::NumberFormatCode SAL_CALL getFormatCode( sal_Int16 nFormatIndex, const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::i18n::NumberFormatCode > SAL_CALL getAllFormatCode( sal_Int16 nFormatUsage, const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::i18n::NumberFormatCode > SAL_CALL getAllFormatCodes( const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+                throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     osl::Mutex maMutex;
-    css::uno::Reference < css::i18n::XLocaleData4 > m_xLocaleData;
-    typedef std::pair< css::lang::Locale, css::uno::Sequence< css::i18n::FormatElement > > FormatElementCacheItem;
-    std::deque < FormatElementCacheItem > m_aFormatElementCache;
+    css::lang::Locale aLocale;
+    css::uno::Reference < css::uno::XComponentContext > mxContext;
+    css::uno::Sequence< css::i18n::FormatElement > aFormatSeq;
+    css::uno::Reference < css::i18n::XLocaleData4 > mxLocaleData;
+    bool bFormatsValid;
 
-    const css::uno::Sequence< css::i18n::FormatElement >& getFormats( const css::lang::Locale& rLocale );
+    void setupLocale( const css::lang::Locale& rLocale );
+    void getFormats( const css::lang::Locale& rLocale );
     static OUString mapElementTypeShortToString(sal_Int16 formatType);
     static sal_Int16 mapElementTypeStringToShort(const OUString& formatType);
     static OUString mapElementUsageShortToString(sal_Int16 formatUsage);
     static sal_Int16 mapElementUsageStringToShort(const OUString& formatUsage);
+    void createLocaleDataObject();
 };
 
 

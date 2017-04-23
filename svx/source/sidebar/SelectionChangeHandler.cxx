@@ -21,19 +21,21 @@
 #include "svx/sidebar/ContextChangeEventMultiplexer.hxx"
 #include "svx/svdmrkv.hxx"
 
-#include <vcl/EnumContext.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <sfx2/shell.hxx>
 
 
 using namespace css;
 using namespace css::uno;
 
+using namespace sfx2::sidebar;
+
 namespace svx { namespace sidebar {
 
 SelectionChangeHandler::SelectionChangeHandler (
     const std::function<rtl::OUString()>& rSelectionChangeCallback,
     const Reference<css::frame::XController>& rxController,
-    const vcl::EnumContext::Context eDefaultContext)
+    const EnumContext::Context eDefaultContext)
     : SelectionChangeHandlerInterfaceBase(m_aMutex),
       maSelectionChangeCallback(rSelectionChangeCallback),
       mxController(rxController),
@@ -49,14 +51,15 @@ SelectionChangeHandler::~SelectionChangeHandler()
 
 
 void SAL_CALL SelectionChangeHandler::selectionChanged (const lang::EventObject&)
+    throw (uno::RuntimeException, std::exception)
 {
     if (maSelectionChangeCallback)
     {
-        const vcl::EnumContext::Context eContext (
-            vcl::EnumContext::GetContextEnum(maSelectionChangeCallback()));
+        const EnumContext::Context eContext (
+            EnumContext::GetContextEnum(maSelectionChangeCallback()));
         ContextChangeEventMultiplexer::NotifyContextChange(
             mxController,
-            eContext==vcl::EnumContext::Context::Unknown
+            eContext==EnumContext::Context_Unknown
                 ? meDefaultContext
                 : eContext);
     }
@@ -64,11 +67,13 @@ void SAL_CALL SelectionChangeHandler::selectionChanged (const lang::EventObject&
 
 
 void SAL_CALL SelectionChangeHandler::disposing (const lang::EventObject&)
+    throw (uno::RuntimeException, std::exception)
 {
 }
 
 
 void SAL_CALL SelectionChangeHandler::disposing()
+    throw (uno::RuntimeException)
 {
     if (mbIsConnected)
         Disconnect();

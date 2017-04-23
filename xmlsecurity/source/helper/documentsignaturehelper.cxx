@@ -18,12 +18,11 @@
  */
 
 
-#include <documentsignaturehelper.hxx>
+#include <xmlsecurity/documentsignaturehelper.hxx>
 
 #include <algorithm>
 
 #include <com/sun/star/container/XNameAccess.hpp>
-#include <com/sun/star/io/IOException.hpp>
 #include <com/sun/star/lang/XComponent.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/embed/XStorage.hpp>
@@ -35,12 +34,9 @@
 #include <comphelper/documentconstants.hxx>
 #include <comphelper/ofopxmlhelper.hxx>
 #include <comphelper/processfactory.hxx>
+#include <tools/debug.hxx>
 #include <osl/diagnose.h>
-#include <rtl/ref.hxx>
 #include <rtl/uri.hxx>
-#include <xmloff/attrlist.hxx>
-
-#include "xsecctl.hxx"
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -101,7 +97,7 @@ void ImplFillElementList(
             // OOXML
             continue;
 
-        if (mode != DocumentSignatureAlgorithm::OOo3_2
+        if (mode != OOo3_2Document
             && (pNames[n] == "META-INF" || pNames[n] == "mimetype"))
         {
             continue;
@@ -166,13 +162,13 @@ DocumentSignatureHelper::getDocumentAlgorithm(
     const OUString & sODFVersion, const SignatureInformation & sigInfo)
 {
     OSL_ASSERT(!sODFVersion.isEmpty());
-    DocumentSignatureAlgorithm mode = DocumentSignatureAlgorithm::OOo3_2;
+    DocumentSignatureAlgorithm mode = OOo3_2Document;
     if (!isOOo3_2_Signature(sigInfo))
     {
         if (isODFPre_1_2(sODFVersion))
-            mode = DocumentSignatureAlgorithm::OOo2;
+            mode = OOo2Document;
         else
-            mode = DocumentSignatureAlgorithm::OOo3_0;
+            mode = OOo3_0Document;
     }
     return mode;
 }
@@ -203,9 +199,9 @@ DocumentSignatureHelper::CreateElementList(
 
     switch ( eMode )
     {
-        case DocumentSignatureMode::Content:
+        case SignatureModeDocumentContent:
         {
-            if (mode == DocumentSignatureAlgorithm::OOo2) //that is, ODF 1.0, 1.1
+            if (mode == OOo2Document) //that is, ODF 1.0, 1.1
             {
                 // 1) Main content
                 ImplFillElementList(aElements, rxStore, OUString(), false, mode);
@@ -256,7 +252,7 @@ DocumentSignatureHelper::CreateElementList(
             }
         }
         break;
-        case DocumentSignatureMode::Macros:
+        case SignatureModeMacros:
         {
             // 1) Macros
             OUString aSubStorageName( "Basic" );
@@ -294,7 +290,7 @@ DocumentSignatureHelper::CreateElementList(
             }
         }
         break;
-        case DocumentSignatureMode::Package:
+        case SignatureModePackage:
         {
             // Everything except META-INF
             ImplFillElementList(aElements, rxStore, OUString(), true, mode);
@@ -374,9 +370,9 @@ SignatureStreamHelper DocumentSignatureHelper::OpenSignatureStream(
             if ( aHelper.xSignatureStorage.is() )
             {
                 OUString aSIGStreamName;
-                if ( eDocSigMode == DocumentSignatureMode::Content )
+                if ( eDocSigMode == SignatureModeDocumentContent )
                     aSIGStreamName = DocumentSignatureHelper::GetDocumentContentSignatureDefaultStreamName();
-                else if ( eDocSigMode == DocumentSignatureMode::Macros )
+                else if ( eDocSigMode == SignatureModeMacros )
                     aSIGStreamName = DocumentSignatureHelper::GetScriptingContentSignatureDefaultStreamName();
                 else
                     aSIGStreamName = DocumentSignatureHelper::GetPackageSignatureDefaultStreamName();
@@ -387,7 +383,7 @@ SignatureStreamHelper DocumentSignatureHelper::OpenSignatureStream(
         catch(css::io::IOException& )
         {
             // Doesn't have to exist...
-            SAL_WARN_IF( nOpenMode != css::embed::ElementModes::READ, "xmlsecurity.helper", "Error creating signature stream..." );
+            DBG_ASSERT( nOpenMode == css::embed::ElementModes::READ, "Error creating signature stream..." );
         }
     }
     else if(xNameAccess->hasByName("[Content_Types].xml"))
@@ -429,7 +425,7 @@ bool DocumentSignatureHelper::checkIfAllFilesAreSigned(
         if ( ( rInf.nType == SignatureReferenceType::BINARYSTREAM ) || ( rInf.nType == SignatureReferenceType::XMLSTREAM ) )
         {
             OUString sReferenceURI = rInf.ouURI;
-            if (alg == DocumentSignatureAlgorithm::OOo2)
+            if (alg == OOo2Document)
             {
                 //Comparing URIs is a difficult. Therefore we kind of normalize
                 //it before comparing. We assume that our URI do not have a leading "./"
@@ -444,7 +440,7 @@ bool DocumentSignatureHelper::checkIfAllFilesAreSigned(
             for (CIT aIter = sElementList.begin(); aIter != sElementList.end(); ++aIter)
             {
                 OUString sElementListURI = *aIter;
-                if (alg == DocumentSignatureAlgorithm::OOo2)
+                if (alg == OOo2Document)
                 {
                     sElementListURI =
                         ::rtl::Uri::encode(
@@ -524,60 +520,6 @@ OUString DocumentSignatureHelper::GetScriptingContentSignatureDefaultStreamName(
 OUString DocumentSignatureHelper::GetPackageSignatureDefaultStreamName()
 {
     return OUString(  "packagesignatures.xml"  );
-}
-
-void DocumentSignatureHelper::writeDigestMethod(
-    const uno::Reference<xml::sax::XDocumentHandler>& xDocumentHandler)
-{
-    rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-    pAttributeList->AddAttribute("Algorithm", ALGO_XMLDSIGSHA256);
-    xDocumentHandler->startElement("DigestMethod", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    xDocumentHandler->endElement("DigestMethod");
-}
-
-void DocumentSignatureHelper::writeSignedProperties(
-    const uno::Reference<xml::sax::XDocumentHandler>& xDocumentHandler,
-    const SignatureInformation& signatureInfo,
-    const OUString& sDate)
-{
-    {
-        rtl::Reference<SvXMLAttributeList> pAttributeList(new SvXMLAttributeList());
-        pAttributeList->AddAttribute("Id", "idSignedProperties");
-        xDocumentHandler->startElement("xd:SignedProperties", uno::Reference<xml::sax::XAttributeList>(pAttributeList.get()));
-    }
-
-    xDocumentHandler->startElement("xd:SignedSignatureProperties", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement("xd:SigningTime", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(sDate);
-    xDocumentHandler->endElement("xd:SigningTime");
-    xDocumentHandler->startElement("xd:SigningCertificate", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement("xd:Cert", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement("xd:CertDigest", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    writeDigestMethod(xDocumentHandler);
-
-    xDocumentHandler->startElement("DigestValue", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    assert(!signatureInfo.ouCertDigest.isEmpty());
-    xDocumentHandler->characters(signatureInfo.ouCertDigest);
-    xDocumentHandler->endElement("DigestValue");
-
-    xDocumentHandler->endElement("xd:CertDigest");
-    xDocumentHandler->startElement("xd:IssuerSerial", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement("X509IssuerName", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(signatureInfo.ouX509IssuerName);
-    xDocumentHandler->endElement("X509IssuerName");
-    xDocumentHandler->startElement("X509SerialNumber", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->characters(signatureInfo.ouX509SerialNumber);
-    xDocumentHandler->endElement("X509SerialNumber");
-    xDocumentHandler->endElement("xd:IssuerSerial");
-    xDocumentHandler->endElement("xd:Cert");
-    xDocumentHandler->endElement("xd:SigningCertificate");
-    xDocumentHandler->startElement("xd:SignaturePolicyIdentifier", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->startElement("xd:SignaturePolicyImplied", uno::Reference<xml::sax::XAttributeList>(new SvXMLAttributeList()));
-    xDocumentHandler->endElement("xd:SignaturePolicyImplied");
-    xDocumentHandler->endElement("xd:SignaturePolicyIdentifier");
-    xDocumentHandler->endElement("xd:SignedSignatureProperties");
-
-    xDocumentHandler->endElement("xd:SignedProperties");
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

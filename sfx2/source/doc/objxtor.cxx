@@ -97,7 +97,6 @@
 #include "appbaslib.hxx"
 #include <sfx2/sfxbasemodel.hxx>
 #include <shellimpl.hxx>
-#include <sfx2/notebookbar/SfxNotebookBar.hxx>
 
 #include <basic/basicmanagerrepository.hxx>
 
@@ -153,23 +152,25 @@ class SfxModelListener_Impl : public ::cppu::WeakImplHelper< css::util::XCloseLi
     SfxObjectShell* mpDoc;
 public:
     explicit SfxModelListener_Impl( SfxObjectShell* pDoc ) : mpDoc(pDoc) {};
-    virtual void SAL_CALL queryClosing( const css::lang::EventObject& aEvent, sal_Bool bDeliverOwnership ) override ;
-    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& aEvent ) override ;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override ;
+    virtual void SAL_CALL queryClosing( const css::lang::EventObject& aEvent, sal_Bool bDeliverOwnership )
+        throw ( css::uno::RuntimeException, css::util::CloseVetoException, std::exception) override ;
+    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& aEvent ) throw ( css::uno::RuntimeException, std::exception ) override ;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw ( css::uno::RuntimeException, std::exception ) override ;
 
 };
 
 void SAL_CALL SfxModelListener_Impl::queryClosing( const css::lang::EventObject& , sal_Bool )
+    throw ( css::uno::RuntimeException, css::util::CloseVetoException, std::exception)
 {
 }
 
-void SAL_CALL SfxModelListener_Impl::notifyClosing( const css::lang::EventObject& )
+void SAL_CALL SfxModelListener_Impl::notifyClosing( const css::lang::EventObject& ) throw ( css::uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
-    mpDoc->Broadcast( SfxHint(SfxHintId::Deinitializing) );
+    mpDoc->Broadcast( SfxSimpleHint(SFX_HINT_DEINITIALIZING) );
 }
 
-void SAL_CALL SfxModelListener_Impl::disposing( const css::lang::EventObject& _rEvent )
+void SAL_CALL SfxModelListener_Impl::disposing( const css::lang::EventObject& _rEvent ) throw ( css::uno::RuntimeException, std::exception )
 {
     // am I ThisComponent in AppBasic?
     SolarMutexGuard aSolarGuard;
@@ -215,6 +216,7 @@ SfxObjectShell_Impl::SfxObjectShell_Impl( SfxObjectShell& _rDocShell )
     ,bIsSaving( false)
     ,bPasswd( false)
     ,bIsNamedVisible( false)
+    ,bIsTemplate(false)
     ,bIsAbortingImport ( false)
     ,bImportDone ( false)
     ,bInPrepareClose( false )
@@ -224,6 +226,7 @@ SfxObjectShell_Impl::SfxObjectShell_Impl( SfxObjectShell& _rDocShell )
     ,bIsPrintJobCancelable( true )
     ,bOwnsStorage( true )
     ,bInitialized( false )
+    ,bSignatureErrorIsShown( false )
     ,bModelInitialized( false )
     ,bPreserveVersions( true )
     ,m_bMacroSignBroken( false )
@@ -238,12 +241,14 @@ SfxObjectShell_Impl::SfxObjectShell_Impl( SfxObjectShell& _rDocShell )
     ,m_bAllowShareControlFileClean( true )
     ,m_bConfigOptionsChecked( false )
     ,lErr(ERRCODE_NONE)
-    ,nEventId ( SfxEventHintId::NONE )
+    ,nEventId ( 0)
     ,pReloadTimer ( nullptr)
+    ,pMarkData( nullptr )
     ,nLoadedFlags ( SfxLoadedFlags::ALL )
     ,nFlagsInProgress( SfxLoadedFlags::NONE )
     ,bModalMode( false )
     ,bRunningMacro( false )
+    ,bReloadAvailable( false )
     ,nAutoLoadLocks( 0 )
     ,eFlags( SfxObjectShellFlags::UNDEFINED )
     ,bReadOnlyUI( false )
@@ -251,7 +256,7 @@ SfxObjectShell_Impl::SfxObjectShell_Impl( SfxObjectShell& _rDocShell )
     ,bDisposing( false )
     ,m_bEnableSetModified( true )
     ,m_bIsModified( false )
-    ,m_nMapUnit( MapUnit::Map100thMM )
+    ,m_nMapUnit( MAP_100TH_MM )
     ,m_bCreateTempStor( false )
     ,m_bIsInit( false )
     ,m_bIncomplEncrWarnShown( false )
@@ -272,7 +277,7 @@ SfxObjectShell_Impl::~SfxObjectShell_Impl()
 
 
 SfxObjectShell::SfxObjectShell( const SfxModelFlags i_nCreationFlags )
-    : pImpl(new SfxObjectShell_Impl(*this))
+    : pImp(new SfxObjectShell_Impl(*this))
     , pMedium(nullptr)
     , eCreateMode(SfxObjectCreateMode::STANDARD)
     , bHasName(false)
@@ -286,11 +291,11 @@ SfxObjectShell::SfxObjectShell( const SfxModelFlags i_nCreationFlags )
 
     const bool bScriptSupport = ( i_nCreationFlags & SfxModelFlags::DISABLE_EMBEDDED_SCRIPTS ) == SfxModelFlags::NONE;
     if ( !bScriptSupport )
-        pImpl->m_bNoBasicCapabilities = true;
+        SetHasNoBasic();
 
     const bool bDocRecovery = ( i_nCreationFlags & SfxModelFlags::DISABLE_DOCUMENT_RECOVERY ) == SfxModelFlags::NONE;
     if ( !bDocRecovery )
-        pImpl->m_bDocRecoverySupport = false;
+        pImp->m_bDocRecoverySupport = false;
 }
 
 /** Constructor of the class SfxObjectShell.
@@ -298,10 +303,11 @@ SfxObjectShell::SfxObjectShell( const SfxModelFlags i_nCreationFlags )
     @param eMode Purpose, to which the SfxObjectShell is created:
                  SfxObjectCreateMode::EMBEDDED (default) as SO-Server from within another Document
                  SfxObjectCreateMode::STANDARD, as a normal Document open stand-alone
+                 SfxObjectCreateMode::PREVIEW to enable a Preview, if possible are only little information is needed
                  SfxObjectCreateMode::ORGANIZER to be displayed in the Organizer, here nothing of the contents is used
 */
 SfxObjectShell::SfxObjectShell(SfxObjectCreateMode eMode)
-    : pImpl(new SfxObjectShell_Impl(*this))
+    : pImp(new SfxObjectShell_Impl(*this))
     , pMedium(nullptr)
     , eCreateMode(eMode)
     , bHasName(false)
@@ -319,65 +325,67 @@ SfxObjectShell::~SfxObjectShell()
     // Never call GetInPlaceObject(), the access to the derivative branch
     // SfxInternObject is not allowed because of a compiler bug
     SfxObjectShell::CloseInternal();
-    pImpl->pBaseModel.set( nullptr );
+    pImp->pBaseModel.set( nullptr );
 
-    DELETEX(AutoReloadTimer_Impl, pImpl->pReloadTimer );
+    DELETEX(AutoReloadTimer_Impl, pImp->pReloadTimer );
 
     SfxApplication *pSfxApp = SfxGetpApp();
-    if ( USHRT_MAX != pImpl->nVisualDocumentNumber )
-        pSfxApp->ReleaseIndex(pImpl->nVisualDocumentNumber);
+    if ( USHRT_MAX != pImp->nVisualDocumentNumber )
+        pSfxApp->ReleaseIndex(pImp->nVisualDocumentNumber);
 
     // Destroy Basic-Manager
-    pImpl->aBasicManager.reset( nullptr );
+    pImp->aBasicManager.reset( nullptr );
 
     if ( pSfxApp->GetDdeService() )
         pSfxApp->RemoveDdeTopic( this );
 
-    pImpl->pBaseModel.set( nullptr );
+    pImp->pBaseModel.set( nullptr );
 
     // don't call GetStorage() here, in case of Load Failure it's possible that a storage was never assigned!
-    if ( pMedium && pMedium->HasStorage_Impl() && pMedium->GetStorage( false ) == pImpl->m_xDocStorage )
+    if ( pMedium && pMedium->HasStorage_Impl() && pMedium->GetStorage( false ) == pImp->m_xDocStorage )
         pMedium->CanDisposeStorage_Impl( false );
 
-    if ( pImpl->mpObjectContainer )
+    if ( pImp->mpObjectContainer )
     {
-        pImpl->mpObjectContainer->CloseEmbeddedObjects();
-        delete pImpl->mpObjectContainer;
+        pImp->mpObjectContainer->CloseEmbeddedObjects();
+        delete pImp->mpObjectContainer;
     }
 
-    if ( pImpl->bOwnsStorage && pImpl->m_xDocStorage.is() )
-        pImpl->m_xDocStorage->dispose();
+    if ( pImp->bOwnsStorage && pImp->m_xDocStorage.is() )
+        pImp->m_xDocStorage->dispose();
 
     if ( pMedium )
     {
         pMedium->CloseAndReleaseStreams_Impl();
 
 #if HAVE_FEATURE_MULTIUSER_ENVIRONMENT
-        if ( IsDocShared() && pMedium )
-            FreeSharedFile( pMedium->GetURLObject().GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+        if ( IsDocShared() )
+            FreeSharedFile();
 #endif
         DELETEX( SfxMedium, pMedium );
     }
 
     // The removing of the temporary file must be done as the latest step in the document destruction
-    if ( !pImpl->aTempName.isEmpty() )
+    if ( !pImp->aTempName.isEmpty() )
     {
         OUString aTmp;
-        osl::FileBase::getFileURLFromSystemPath( pImpl->aTempName, aTmp );
+        osl::FileBase::getFileURLFromSystemPath( pImp->aTempName, aTmp );
         ::utl::UCBContentHelper::Kill( aTmp );
     }
+
+    delete pImp;
 }
 
 
 void SfxObjectShell::Stamp_SetPrintCancelState(bool bState)
 {
-    pImpl->bIsPrintJobCancelable = bState;
+    pImp->bIsPrintJobCancelable = bState;
 }
 
 
 bool SfxObjectShell::Stamp_GetPrintCancelState() const
 {
-    return pImpl->bIsPrintJobCancelable;
+    return pImp->bIsPrintJobCancelable;
 }
 
 
@@ -392,13 +400,13 @@ bool SfxObjectShell::Close()
 // variant that does not take a reference to itself, so we can call it during object destruction
 bool SfxObjectShell::CloseInternal()
 {
-    if ( !pImpl->bClosing )
+    if ( !pImp->bClosing )
     {
         // Do not close if a progress is still running
-        if ( !pImpl->bDisposing && GetProgress() )
+        if ( !pImp->bDisposing && GetProgress() )
             return false;
 
-        pImpl->bClosing = true;
+        pImp->bClosing = true;
         Reference< util::XCloseable > xCloseable( GetBaseModel(), UNO_QUERY );
 
         if ( xCloseable.is() )
@@ -409,11 +417,11 @@ bool SfxObjectShell::CloseInternal()
             }
             catch (const Exception&)
             {
-                pImpl->bClosing = false;
+                pImp->bClosing = false;
             }
         }
 
-        if ( pImpl->bClosing )
+        if ( pImp->bClosing )
         {
             // remove from Document list
             // If there is no App, there is no document to remove
@@ -425,7 +433,7 @@ bool SfxObjectShell::CloseInternal()
                 SfxObjectShellArr_Impl::iterator it = std::find( rDocs.begin(), rDocs.end(), this );
                 if ( it != rDocs.end() )
                     rDocs.erase( it );
-                pImpl->bInList = false;
+                pImp->bInList = false;
             }
         }
     }
@@ -489,7 +497,7 @@ SfxObjectShell* SfxObjectShell::GetNext
     SfxObjectShellArr_Impl &rDocs = SfxGetpApp()->GetObjectShells_Impl();
 
     // refind the specified predecessor
-    size_t nPos;
+    sal_uInt16 nPos;
     for ( nPos = 0; nPos < rDocs.size(); ++nPos )
         if ( rDocs[nPos] == &rPrev )
             break;
@@ -518,16 +526,16 @@ SfxObjectShell* SfxObjectShell::Current()
 
 bool SfxObjectShell::IsInPrepareClose() const
 {
-    return pImpl->bInPrepareClose;
+    return pImp->bInPrepareClose;
 }
 
 
 struct BoolEnv_Impl
 {
-    SfxObjectShell_Impl* pImpl;
-    explicit BoolEnv_Impl( SfxObjectShell_Impl* pImplP) : pImpl( pImplP )
-    { pImplP->bInPrepareClose = true; }
-    ~BoolEnv_Impl() { pImpl->bInPrepareClose = false; }
+    SfxObjectShell_Impl* pImp;
+    explicit BoolEnv_Impl( SfxObjectShell_Impl* pImpP) : pImp( pImpP )
+    { pImpP->bInPrepareClose = true; }
+    ~BoolEnv_Impl() { pImp->bInPrepareClose = false; }
 };
 
 
@@ -537,9 +545,9 @@ bool SfxObjectShell::PrepareClose
                // false: silent-mode
 )
 {
-    if( pImpl->bInPrepareClose || pImpl->bPreparedForClose )
+    if( pImp->bInPrepareClose || pImp->bPreparedForClose )
         return true;
-    BoolEnv_Impl aBoolEnv( pImpl.get() );
+    BoolEnv_Impl aBoolEnv( pImp );
 
     // DocModalDialog?
     if ( IsInModalMode() )
@@ -563,11 +571,11 @@ bool SfxObjectShell::PrepareClose
     }
 
     SfxApplication *pSfxApp = SfxGetpApp();
-    pSfxApp->NotifyEvent( SfxEventHint(SfxEventHintId::PrepareCloseDoc, GlobalEventConfig::GetEventName(GlobalEventId::PREPARECLOSEDOC), this) );
+    pSfxApp->NotifyEvent( SfxEventHint(SFX_EVENT_PREPARECLOSEDOC, GlobalEventConfig::GetEventName(GlobalEventId::PREPARECLOSEDOC), this) );
 
     if( GetCreateMode() == SfxObjectCreateMode::EMBEDDED )
     {
-        pImpl->bPreparedForClose = true;
+        pImp->bPreparedForClose = true;
         return true;
     }
 
@@ -579,14 +587,14 @@ bool SfxObjectShell::PrepareClose
     if ( bUI && IsModified() && pFrame )
     {
         // restore minimized
-        SfxFrame& rTop = pFrame->GetFrame();
+        SfxFrame& rTop = pFrame->GetTopFrame();
         SfxViewFrame::SetViewFrame( rTop.GetCurrentViewFrame() );
         pFrame->GetFrame().Appear();
 
         // Ask if to save
         short nRet = RET_YES;
         {
-            const Reference< XTitle > xTitle( *pImpl->pBaseModel.get(), UNO_QUERY_THROW );
+            const Reference< XTitle > xTitle( *pImp->pBaseModel.get(), UNO_QUERY_THROW );
             const OUString     sTitle = xTitle->getTitle ();
             nRet = ExecuteQuerySaveDocument(&pFrame->GetWindow(),sTitle);
         }
@@ -607,7 +615,7 @@ bool SfxObjectShell::PrepareClose
             {
                 SfxBoolItem aWarnItem( SID_FAIL_ON_WARNING, bUI );
                 const SfxPoolItem* ppArgs[] = { &aWarnItem, nullptr };
-                pPoolItem = pFrame->GetBindings().ExecuteSynchron( SID_SAVEDOC, ppArgs );
+                pPoolItem = pFrame->GetBindings().ExecuteSynchron( IsReadOnlyMedium() ? SID_SAVEASDOC : SID_SAVEDOC, ppArgs );
             }
 
             if ( !pPoolItem || dynamic_cast< const SfxVoidItem *>( pPoolItem ) != nullptr || ( dynamic_cast< const SfxBoolItem *>( pPoolItem ) != nullptr && !static_cast<const SfxBoolItem*>( pPoolItem )->GetValue() ) )
@@ -618,9 +626,7 @@ bool SfxObjectShell::PrepareClose
             return false;
     }
 
-    if ( pFrame )
-        sfx2::SfxNotebookBar::CloseMethod(pFrame->GetBindings());
-    pImpl->bPreparedForClose = true;
+    pImp->bPreparedForClose = true;
     return true;
 }
 
@@ -679,18 +685,23 @@ BasicManager* SfxObjectShell::GetBasicManager() const
     return pBasMgr;
 }
 
+void SfxObjectShell::SetHasNoBasic()
+{
+    pImp->m_bNoBasicCapabilities = true;
+}
+
 bool SfxObjectShell::HasBasic() const
 {
 #if !HAVE_FEATURE_SCRIPTING
     return false;
 #else
-    if ( pImpl->m_bNoBasicCapabilities )
+    if ( pImp->m_bNoBasicCapabilities )
         return false;
 
-    if ( !pImpl->bBasicInitialized )
+    if ( !pImp->bBasicInitialized )
         const_cast< SfxObjectShell* >( this )->InitBasicManager_Impl();
 
-    return pImpl->aBasicManager.isValid();
+    return pImp->aBasicManager.isValid();
 #endif
 }
 
@@ -731,8 +742,8 @@ Reference< XLibraryContainer > SfxObjectShell::GetDialogContainer()
 #if HAVE_FEATURE_SCRIPTING
     try
     {
-        if ( !pImpl->m_bNoBasicCapabilities )
-            return lcl_getOrCreateLibraryContainer( false, pImpl->xDialogLibraries, GetModel() );
+        if ( !pImp->m_bNoBasicCapabilities )
+            return lcl_getOrCreateLibraryContainer( false, pImp->xDialogLibraries, GetModel() );
 
         BasicManager* pBasMgr = lcl_getBasicManagerForDocument( *this );
         if ( pBasMgr )
@@ -755,8 +766,8 @@ Reference< XLibraryContainer > SfxObjectShell::GetBasicContainer()
     {
         try
         {
-            if ( !pImpl->m_bNoBasicCapabilities )
-                return lcl_getOrCreateLibraryContainer( true, pImpl->xBasicLibraries, GetModel() );
+            if ( !pImp->m_bNoBasicCapabilities )
+                return lcl_getOrCreateLibraryContainer( true, pImp->xBasicLibraries, GetModel() );
 
             BasicManager* pBasMgr = lcl_getBasicManagerForDocument( *this );
             if ( pBasMgr )
@@ -811,7 +822,7 @@ void SfxObjectShell::InitBasicManager_Impl()
         changed to return the Basic manager currently under construction, when
         called repeatedly.
 
-        The variable pImpl->bBasicInitialized will be set to sal_True after
+        The variable pImp->bBasicInitialized will be set to sal_True after
         construction now, to ensure that the recursive call of the function
         lcl_getBasicManagerForDocument() will be routed into this function too.
 
@@ -820,17 +831,17 @@ void SfxObjectShell::InitBasicManager_Impl()
         Basic managers is the global BasicManagerRepository instance.
      */
 #if HAVE_FEATURE_SCRIPTING
-    DBG_ASSERT( !pImpl->bBasicInitialized && !pImpl->aBasicManager.isValid(), "Lokaler BasicManager bereits vorhanden");
+    DBG_ASSERT( !pImp->bBasicInitialized && !pImp->aBasicManager.isValid(), "Lokaler BasicManager bereits vorhanden");
     try
     {
-        pImpl->aBasicManager.reset( BasicManagerRepository::getDocumentBasicManager( GetModel() ) );
+        pImp->aBasicManager.reset( BasicManagerRepository::getDocumentBasicManager( GetModel() ) );
     }
     catch (const css::ucb::ContentCreationException& e)
     {
         SAL_WARN("sfx.doc", "caught exception " << e.Message);
     }
-    DBG_ASSERT( pImpl->aBasicManager.isValid(), "SfxObjectShell::InitBasicManager_Impl: did not get a BasicManager!" );
-    pImpl->bBasicInitialized = true;
+    DBG_ASSERT( pImp->aBasicManager.isValid(), "SfxObjectShell::InitBasicManager_Impl: did not get a BasicManager!" );
+    pImp->bBasicInitialized = true;
 #endif
 }
 
@@ -856,7 +867,7 @@ uno::Sequence< OUString > SfxObjectShell::GetEventNames()
         SolarMutexGuard aGuard;
         if ( !pEventNameContainer )
         {
-            static uno::Sequence< OUString > aEventNameContainer = rtl::Reference<GlobalEventConfig>(new GlobalEventConfig)->getElementNames();
+            static uno::Sequence< OUString > aEventNameContainer = GlobalEventConfig().getElementNames();
             pEventNameContainer = &aEventNameContainer;
         }
     }
@@ -872,28 +883,28 @@ css::uno::Reference< css::frame::XModel > SfxObjectShell::GetModel() const
 
 void SfxObjectShell::SetBaseModel( SfxBaseModel* pModel )
 {
-    OSL_ENSURE( !pImpl->pBaseModel.is() || pModel == nullptr, "Model already set!" );
-    pImpl->pBaseModel.set( pModel );
-    if ( pImpl->pBaseModel.is() )
+    OSL_ENSURE( !pImp->pBaseModel.is() || pModel == nullptr, "Model already set!" );
+    pImp->pBaseModel.set( pModel );
+    if ( pImp->pBaseModel.is() )
     {
-        pImpl->pBaseModel->addCloseListener( new SfxModelListener_Impl(this) );
+        pImp->pBaseModel->addCloseListener( new SfxModelListener_Impl(this) );
     }
 }
 
 
 css::uno::Reference< css::frame::XModel > SfxObjectShell::GetBaseModel() const
 {
-    return pImpl->pBaseModel.get();
+    return pImp->pBaseModel.get();
 }
 
 void SfxObjectShell::SetAutoStyleFilterIndex(sal_uInt16 nSet)
 {
-    pImpl->nStyleFilter = nSet;
+    pImp->nStyleFilter = nSet;
 }
 
 sal_uInt16 SfxObjectShell::GetAutoStyleFilterIndex()
 {
-    return pImpl->nStyleFilter;
+    return pImp->nStyleFilter;
 }
 
 
@@ -963,7 +974,7 @@ OUString SfxObjectShell::GetServiceNameFromFactory( const OUString& rFact )
         aFact = aFact.copy( 0, nPos );
         aParam = aParam.copy(1);
     }
-    aFact = aFact.replaceAll("4", "");
+    aFact = comphelper::string::remove(aFact, '4');
     aFact = aFact.toAsciiLowerCase();
 
     // HACK: sometimes a real document service name is given here instead of
@@ -1097,17 +1108,17 @@ SfxObjectShell* SfxObjectShell::GetShellFromComponent( const Reference<lang::XCo
 
 void SfxObjectShell::SetInitialized_Impl( const bool i_fromInitNew )
 {
-    pImpl->bInitialized = true;
+    pImp->bInitialized = true;
     if (utl::ConfigManager::IsAvoidConfig())
         return;
     if ( i_fromInitNew )
     {
-        SetActivateEvent_Impl( SfxEventHintId::CreateDoc );
-        SfxGetpApp()->NotifyEvent( SfxEventHint( SfxEventHintId::DocCreated, GlobalEventConfig::GetEventName(GlobalEventId::DOCCREATED), this ) );
+        SetActivateEvent_Impl( SFX_EVENT_CREATEDOC );
+        SfxGetpApp()->NotifyEvent( SfxEventHint( SFX_EVENT_DOCCREATED, GlobalEventConfig::GetEventName(GlobalEventId::DOCCREATED), this ) );
     }
     else
     {
-        SfxGetpApp()->NotifyEvent( SfxEventHint( SfxEventHintId::LoadFinished, GlobalEventConfig::GetEventName(GlobalEventId::LOADFINISHED), this ) );
+        SfxGetpApp()->NotifyEvent( SfxEventHint( SFX_EVENT_LOADFINISHED, GlobalEventConfig::GetEventName(GlobalEventId::LOADFINISHED), this ) );
     }
 }
 
@@ -1115,7 +1126,7 @@ void SfxObjectShell::SetInitialized_Impl( const bool i_fromInitNew )
 bool SfxObjectShell::IsChangeRecording() const
 {
     // currently this function needs to be overwritten by Writer and Calc only
-    SAL_WARN( "sfx.doc", "function not implemented" );
+    DBG_ASSERT( false, "function not implemented" );
     return false;
 }
 
@@ -1123,7 +1134,7 @@ bool SfxObjectShell::IsChangeRecording() const
 bool SfxObjectShell::HasChangeRecordProtection() const
 {
     // currently this function needs to be overwritten by Writer and Calc only
-    SAL_WARN( "sfx.doc", "function not implemented" );
+    DBG_ASSERT( false, "function not implemented" );
     return false;
 }
 
@@ -1131,21 +1142,21 @@ bool SfxObjectShell::HasChangeRecordProtection() const
 void SfxObjectShell::SetChangeRecording( bool /*bActivate*/ )
 {
     // currently this function needs to be overwritten by Writer and Calc only
-    SAL_WARN( "sfx.doc", "function not implemented" );
+    DBG_ASSERT( false, "function not implemented" );
 }
 
 
 void SfxObjectShell::SetProtectionPassword( const OUString & /*rPassword*/ )
 {
     // currently this function needs to be overwritten by Writer and Calc only
-    SAL_WARN( "sfx.doc", "function not implemented" );
+    DBG_ASSERT( false, "function not implemented" );
 }
 
 
 bool SfxObjectShell::GetProtectionHash( /*out*/ css::uno::Sequence< sal_Int8 > & /*rPasswordHash*/ )
 {
     // currently this function needs to be overwritten by Writer and Calc only
-    SAL_WARN( "sfx.doc", "function not implemented" );
+    DBG_ASSERT( false, "function not implemented" );
     return false;
 }
 

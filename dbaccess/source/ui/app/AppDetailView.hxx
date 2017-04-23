@@ -61,18 +61,18 @@ namespace dbaui
         virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
         virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
         virtual void KeyInput( const KeyEvent& rKEvt ) override;
-        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
         virtual void StartDrag( sal_Int8 _nAction, const Point& _rPosPixel ) override;
         virtual void GetFocus() override;
         virtual void LoseFocus() override;
 
-        void resetLastActive() { m_pLastActiveEntry = nullptr;}
+        inline void resetLastActive() { m_pLastActiveEntry = nullptr;}
 
         void    updateHelpText();
 
     protected:
         virtual void        PreparePaint(vcl::RenderContext& rRenderContext, SvTreeListEntry& rEntry) override;
-        virtual tools::Rectangle   GetFocusRect( SvTreeListEntry* _pEntry, long _nLine ) override;
+        virtual Rectangle   GetFocusRect( SvTreeListEntry* _pEntry, long _nLine ) override;
         virtual void        ModelHasCleared() override;
 
         // IMnemonicEntryList
@@ -99,7 +99,7 @@ namespace dbaui
 
         TaskEntry( const sal_Char* _pAsciiUNOCommand, sal_uInt16 _nHelpID, sal_uInt16 _nTitleResourceID, bool _bHideWhenDisabled = false );
     };
-    typedef std::vector< TaskEntry >  TaskEntryList;
+    typedef ::std::vector< TaskEntry >  TaskEntryList;
 
     struct TaskPaneData
     {
@@ -117,13 +117,13 @@ namespace dbaui
         VclPtr<FixedLine>                   m_aFL;
         VclPtr<OApplicationDetailView>      m_pDetailView;
 
-        DECL_LINK( OnEntrySelectHdl, SvTreeListBox*, void );
+        DECL_LINK_TYPED( OnEntrySelectHdl, SvTreeListBox*, void );
         void ImplInitSettings();
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OTasksWindow(vcl::Window* _pParent,OApplicationDetailView* _pDetailView);
-        virtual ~OTasksWindow() override;
+        virtual ~OTasksWindow();
         virtual void dispose() override;
 
         // Window overrides
@@ -134,7 +134,7 @@ namespace dbaui
         /// fills the Creation listbox with the necessary strings and images
         void fillTaskEntryList( const TaskEntryList& _rList );
 
-        bool HandleKeyInput( const KeyEvent& _rKEvt )
+        inline bool HandleKeyInput( const KeyEvent& _rKEvt )
         {
             return m_aCreation->HandleKeyInput( _rKEvt );
         }
@@ -150,7 +150,7 @@ namespace dbaui
         VclPtr<OTitleWindow>                m_aContainer;
         OAppBorderWindow&                   m_rBorderWin;       // my parent
         VclPtr<OAppDetailPageHelper>        m_pControlHelper;
-        std::vector< TaskPaneData >       m_aTaskPaneData;
+        ::std::vector< TaskPaneData >       m_aTaskPaneData;
         MnemonicGenerator                   m_aExternalMnemonics;
 
         void ImplInitSettings();
@@ -160,9 +160,10 @@ namespace dbaui
 
     public:
         OApplicationDetailView(OAppBorderWindow& _rParent,PreviewMode _ePreviewMode);
-        virtual ~OApplicationDetailView() override;
+        virtual ~OApplicationDetailView();
         // Window overrides
         virtual void dispose() override;
+        virtual void GetFocus() override;
 
         /** creates the tables page
             @param  _xConnection
@@ -188,8 +189,8 @@ namespace dbaui
         */
         bool    interceptKeyInput( const KeyEvent& _rEvent );
 
-        OAppBorderWindow& getBorderWin() const { return m_rBorderWin; }
-        OTasksWindow& getTasksWindow() const { return *static_cast< OTasksWindow* >( m_aTasks->getChildWindow() ); }
+        inline OAppBorderWindow& getBorderWin() const { return m_rBorderWin; }
+        inline OTasksWindow& getTasksWindow() const { return *static_cast< OTasksWindow* >( m_aTasks->getChildWindow() ); }
 
         bool isCutAllowed() override ;
         bool isCopyAllowed() override    ;
@@ -256,7 +257,7 @@ namespace dbaui
             @param  _rNames
                 The list will be filled.
         */
-        void getSelectionElementNames(std::vector< OUString>& _rNames ) const;
+        void getSelectionElementNames(::std::vector< OUString>& _rNames ) const;
 
         /** describes the current selection for the given control
         */

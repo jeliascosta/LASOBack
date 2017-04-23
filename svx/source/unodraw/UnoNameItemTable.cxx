@@ -69,11 +69,11 @@ void SvxUnoNameItemTable::Notify( SfxBroadcaster&, const SfxHint& rHint ) throw(
 {
     const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
 
-    if( pSdrHint && SdrHintKind::ModelCleared == pSdrHint->GetKind() )
+    if( pSdrHint && HINT_MODELCLEARED == pSdrHint->GetKind() )
         dispose();
 }
 
-sal_Bool SAL_CALL SvxUnoNameItemTable::supportsService( const  OUString& ServiceName )
+sal_Bool SAL_CALL SvxUnoNameItemTable::supportsService( const  OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -85,12 +85,12 @@ void SAL_CALL SvxUnoNameItemTable::ImplInsertByName( const OUString& aName, cons
     std::unique_ptr<NameOrIndex> pNewItem(createItem());
     pNewItem->SetName( aName );
     pNewItem->PutValue( aElement, mnMemberId );
-    pNewItem->SetWhich(mnWhich);
-    maItemSetVector.back()->Put( *pNewItem );
+    maItemSetVector.back()->Put( *pNewItem, mnWhich );
 }
 
 // XNameContainer
 void SAL_CALL SvxUnoNameItemTable::insertByName( const OUString& aApiName, const uno::Any& aElement )
+    throw( lang::IllegalArgumentException, container::ElementExistException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -104,6 +104,7 @@ void SAL_CALL SvxUnoNameItemTable::insertByName( const OUString& aApiName, const
 
 
 void SAL_CALL SvxUnoNameItemTable::removeByName( const OUString& aApiName )
+    throw( container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -138,6 +139,7 @@ void SAL_CALL SvxUnoNameItemTable::removeByName( const OUString& aApiName )
 
 // XNameReplace
 void SAL_CALL SvxUnoNameItemTable::replaceByName( const OUString& aApiName, const uno::Any& aElement )
+    throw( lang::IllegalArgumentException, container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -189,6 +191,7 @@ void SAL_CALL SvxUnoNameItemTable::replaceByName( const OUString& aApiName, cons
 
 // XNameAccess
 uno::Any SAL_CALL SvxUnoNameItemTable::getByName( const OUString& aApiName )
+    throw( container::NoSuchElementException,  lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -217,6 +220,7 @@ uno::Any SAL_CALL SvxUnoNameItemTable::getByName( const OUString& aApiName )
 }
 
 uno::Sequence< OUString > SAL_CALL SvxUnoNameItemTable::getElementNames(  )
+    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -236,10 +240,11 @@ uno::Sequence< OUString > SAL_CALL SvxUnoNameItemTable::getElementNames(  )
         aNameSet.insert(aApiName);
     }
 
-    return comphelper::containerToSequence(aNameSet);
+    return comphelper::containerToSequence<OUString>(aNameSet);
 }
 
 sal_Bool SAL_CALL SvxUnoNameItemTable::hasByName( const OUString& aApiName )
+    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -263,6 +268,7 @@ sal_Bool SAL_CALL SvxUnoNameItemTable::hasByName( const OUString& aApiName )
 }
 
 sal_Bool SAL_CALL SvxUnoNameItemTable::hasElements(  )
+    throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 

@@ -40,13 +40,13 @@ class SvRTLInputBox : public ModalDialog
     void InitButtons( const Size& rDlgSize );
     void PositionEdit( const Size& rDlgSize );
     void PositionPrompt( const OUString& rPrompt, const Size& rDlgSize );
-    DECL_LINK( OkHdl, Button *, void );
-    DECL_LINK( CancelHdl, Button *, void );
+    DECL_LINK_TYPED( OkHdl, Button *, void );
+    DECL_LINK_TYPED( CancelHdl, Button *, void );
 
 public:
     SvRTLInputBox( vcl::Window* pParent, const OUString& rPrompt, const OUString& rTitle,
         const OUString& rDefault, long nXTwips = -1, long nYTwips = -1 );
-    virtual ~SvRTLInputBox() override { disposeOnce(); }
+    virtual ~SvRTLInputBox() { disposeOnce(); }
     virtual void dispose() override;
     OUString GetText() const override { return aText; }
 };
@@ -58,7 +58,7 @@ SvRTLInputBox::SvRTLInputBox( vcl::Window* pParent, const OUString& rPrompt,
     aEdit( VclPtr<Edit>::Create(this,  WB_LEFT | WB_BORDER) ),
     aOk( VclPtr<OKButton>::Create(this) ), aCancel( VclPtr<CancelButton>::Create(this) ), aPromptText( VclPtr<FixedText>::Create(this, WB_WORDBREAK) )
 {
-    SetMapMode( MapMode( MapUnit::MapAppFont ) );
+    SetMapMode( MapMode( MAP_APPFONT ) );
     Size aDlgSizeApp( 280, 80 );
     PositionDialog( nXTwips, nYTwips, aDlgSizeApp );
     InitButtons( aDlgSizeApp );
@@ -104,7 +104,7 @@ void SvRTLInputBox::PositionDialog(long nXTwips, long nYTwips, const Size& rDlgS
     if( nXTwips != -1 && nYTwips != -1 )
     {
         Point aDlgPosApp( nXTwips, nYTwips );
-        SetPosPixel( LogicToPixel( aDlgPosApp, MapUnit::MapTwip ) );
+        SetPosPixel( LogicToPixel( aDlgPosApp, MAP_TWIP ) );
     }
 }
 
@@ -129,13 +129,13 @@ void SvRTLInputBox::PositionPrompt(const OUString& rPrompt,const Size& rDlgSize)
 }
 
 
-IMPL_LINK_NOARG( SvRTLInputBox, OkHdl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SvRTLInputBox, OkHdl, Button *, void )
 {
     aText = aEdit->GetText();
     EndDialog( 1 );
 }
 
-IMPL_LINK_NOARG( SvRTLInputBox, CancelHdl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SvRTLInputBox, CancelHdl, Button *, void )
 {
     aText.clear();
     EndDialog();

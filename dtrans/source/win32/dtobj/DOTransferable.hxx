@@ -45,15 +45,19 @@ public:
 
     // XTransferable
 
-    virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor ) override;
+    virtual css::uno::Any SAL_CALL getTransferData( const css::datatransfer::DataFlavor& aFlavor )
+        throw( css::datatransfer::UnsupportedFlavorException, css::io::IOException, css::uno::RuntimeException );
 
-    virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  ) override;
+    virtual css::uno::Sequence< css::datatransfer::DataFlavor > SAL_CALL getTransferDataFlavors(  )
+        throw( css::uno::RuntimeException );
 
-    virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor ) override;
+    virtual sal_Bool SAL_CALL isDataFlavorSupported( const css::datatransfer::DataFlavor& aFlavor )
+        throw( css::uno::RuntimeException );
 
     // XSystemTransferable
 
-    virtual css::uno::Any SAL_CALL getData( const css::uno::Sequence<sal_Int8>& aProcessId  ) override;
+    virtual css::uno::Any SAL_CALL getData( const css::uno::Sequence<sal_Int8>& aProcessId  ) throw
+    (css::uno::RuntimeException);
 
 private:
     explicit CDOTransferable(
@@ -70,10 +74,21 @@ private:
     ByteSequence_t SAL_CALL getClipboardData( CFormatEtc& aFormatEtc );
     OUString  SAL_CALL synthesizeUnicodeText( );
 
+    void SAL_CALL clipDataToByteStream( CLIPFORMAT cf, STGMEDIUM stgmedium, ByteSequence_t& aByteSequence );
+
+    css::uno::Any SAL_CALL byteStreamToAny( ByteSequence_t& aByteStream, const css::uno::Type& aRequestedDataType );
+    OUString              SAL_CALL byteStreamToOUString( ByteSequence_t& aByteStream );
+
     LCID SAL_CALL getLocaleFromClipboard( );
 
-    bool SAL_CALL compareDataFlavors( const css::datatransfer::DataFlavor& lhs,
+    sal_Bool SAL_CALL compareDataFlavors( const css::datatransfer::DataFlavor& lhs,
                                           const css::datatransfer::DataFlavor& rhs );
+
+    sal_Bool SAL_CALL cmpFullMediaType( const css::uno::Reference< css::datatransfer::XMimeContentType >& xLhs,
+                                        const css::uno::Reference< css::datatransfer::XMimeContentType >& xRhs ) const;
+
+    sal_Bool SAL_CALL cmpAllContentTypeParameter( const css::uno::Reference< css::datatransfer::XMimeContentType >& xLhs,
+                                        const css::uno::Reference< css::datatransfer::XMimeContentType >& xRhs ) const;
 
 private:
     IDataObjectPtr                                                                          m_rDataObject;
@@ -82,7 +97,7 @@ private:
     CDataFormatTranslator                                             m_DataFormatTranslator;
     css::uno::Reference< css::datatransfer::XMimeContentTypeFactory > m_rXMimeCntFactory;
     ::osl::Mutex                                                      m_aMutex;
-    bool                                                              m_bUnicodeRegistered;
+    sal_Bool                                                          m_bUnicodeRegistered;
     CLIPFORMAT                                                        m_TxtFormatOnClipboard;
 
 // non supported operations

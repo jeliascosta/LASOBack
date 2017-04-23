@@ -51,8 +51,8 @@ XMLIndexChapterInfoEntryContext::XMLIndexChapterInfoEntryContext(
     const OUString& rLocalName,
     bool bT ) :
         XMLIndexSimpleEntryContext(rImport,
-                                   (bT ? OUString("TokenEntryNumber")
-                                       : OUString("TokenChapterInfo")),
+                                   (bT ? rTemplate.sTokenEntryNumber
+                                          : rTemplate.sTokenChapterInfo),
                                    rTemplate, nPrfx, rLocalName),
         nChapterInfo(ChapterFormat::NAME_NUMBER),
         bChapterInfoOK(false),
@@ -66,7 +66,7 @@ XMLIndexChapterInfoEntryContext::~XMLIndexChapterInfoEntryContext()
 {
 }
 
-static const SvXMLEnumMapEntry<sal_uInt16> aChapterDisplayMap[] =
+static const SvXMLEnumMapEntry aChapterDisplayMap[] =
 {
     { XML_NAME,                     ChapterFormat::NAME },
     { XML_NUMBER,                   ChapterFormat::NUMBER },
@@ -176,14 +176,14 @@ void XMLIndexChapterInfoEntryContext::FillPropertyValues(
     if( bChapterInfoOK )
     {
         // chapter info field
-        rValues[nIndex].Name = "ChapterFormat";
-        rValues[nIndex].Value <<= nChapterInfo;
+        rValues[nIndex].Name = rTemplateContext.sChapterFormat;
+        rValues[nIndex].Value = css::uno::Any(nChapterInfo);
         nIndex++;
     }
     if( bOutlineLevelOK )
     {
-        rValues[nIndex].Name = "ChapterLevel";
-        rValues[nIndex].Value <<= nOutlineLevel;
+        rValues[nIndex].Name = rTemplateContext.sChapterLevel;
+        rValues[nIndex].Value = css::uno::Any(nOutlineLevel);
     }
 }
 

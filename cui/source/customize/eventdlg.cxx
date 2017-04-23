@@ -65,7 +65,7 @@ SvxEventConfigPage::SvxEventConfigPage(vcl::Window *pParent, const SfxItemSet& r
     mpImpl->sStrEvent = get<FixedText>("eventft")->GetText();
     mpImpl->sAssignedMacro = get<FixedText>("actionft")->GetText();
     get(mpImpl->pEventLB, "events");
-    Size aSize(LogicToPixel(Size(205, 229), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(205, 229), MAP_APPFONT));
     mpImpl->pEventLB->set_width_request(aSize.Width());
     mpImpl->pEventLB->set_height_request(aSize.Height());
     get(mpImpl->pAssignPB, "macro");
@@ -167,7 +167,7 @@ void SvxEventConfigPage::ImplInitDocument()
     }
 }
 
-IMPL_LINK_NOARG( SvxEventConfigPage, SelectHdl_Impl, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( SvxEventConfigPage, SelectHdl_Impl, ListBox&, void )
 {
     bool* bApp = static_cast<bool*>(m_pSaveInListBox->GetEntryData(
             m_pSaveInListBox->GetSelectEntryPos()));
@@ -207,6 +207,11 @@ IMPL_LINK_NOARG( SvxEventConfigPage, SelectHdl_Impl, ListBox&, void )
     }
 
     mpImpl->pEventLB->SetUpdateMode( true );
+}
+
+bool SvxEventConfigPage::FillItemSet( SfxItemSet* rSet )
+{
+    return SvxMacroTabPage_::FillItemSet( rSet );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

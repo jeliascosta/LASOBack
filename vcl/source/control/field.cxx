@@ -184,7 +184,7 @@ bool ImplNumericGetValue( const OUString& rStr, sal_Int64& rValue,
             bNegative = true;
     }
 
-    // remove all unwanted characters
+    // remove all unwanted charaters
     // For whole number
     for (sal_Int32 i=0; i < aStr1.getLength(); )
     {
@@ -271,7 +271,7 @@ bool ImplNumericGetValue( const OUString& rStr, sal_Int64& rValue,
     if( nValue == 0 )
     {
         // check if string is equivalent to zero
-        sal_Int32 nIndex = bNegative ? 1 : 0;
+        sal_Int16 nIndex = bNegative ? 1 : 0;
         while (nIndex < aStr.getLength() && aStr[nIndex] == '0')
             ++nIndex;
         if( nIndex < aStr.getLength() )
@@ -366,9 +366,9 @@ void ImplUpdateSeparators( const OUString& rOldDecSep, const OUString& rNewDecSe
 
 } // namespace
 
-FormatterBase::FormatterBase()
+FormatterBase::FormatterBase( Edit* pField )
 {
-    mpField                     = nullptr;
+    mpField                     = pField;
     mpLocaleDataWrapper         = nullptr;
     mbReformat                  = false;
     mbStrictFormat              = false;
@@ -379,13 +379,14 @@ FormatterBase::FormatterBase()
 
 FormatterBase::~FormatterBase()
 {
+    delete mpLocaleDataWrapper;
 }
 
 LocaleDataWrapper& FormatterBase::ImplGetLocaleDataWrapper() const
 {
     if ( !mpLocaleDataWrapper )
     {
-        const_cast<FormatterBase*>(this)->mpLocaleDataWrapper.reset( new LocaleDataWrapper( GetLanguageTag() ) );
+        const_cast<FormatterBase*>(this)->mpLocaleDataWrapper = new LocaleDataWrapper( GetLanguageTag() );
     }
     return *mpLocaleDataWrapper;
 }
@@ -503,9 +504,8 @@ void NumericFormatter::ImplInit()
     mnFieldValue        = 0;
     mnLastValue         = 0;
     mnMin               = 0;
-    mnMax               = SAL_MAX_INT32;
-        // a "large" value substantially smaller than SAL_MAX_INT64, to avoid
-        // overflow in computations using this "dummy" value
+    mnMax               = SAL_MAX_INT64;
+    mnCorrectedValue    = 0;
     mnDecimalDigits     = 2;
     mnType              = FORMAT_NUMERIC;
     mbThousandSep       = true;
@@ -523,6 +523,34 @@ void NumericFormatter::ImplInit()
 NumericFormatter::NumericFormatter()
 {
     ImplInit();
+}
+
+void NumericFormatter::ImplLoadRes( const ResId& rResId )
+{
+    ResMgr*     pMgr = rResId.GetResMgr();
+
+    if( pMgr )
+    {
+        RscNumFormatterFlags nMask = (RscNumFormatterFlags)pMgr->ReadLong();
+
+        if ( RscNumFormatterFlags::Min & nMask )
+            mnMin = pMgr->ReadLong();
+
+        if ( RscNumFormatterFlags::Max & nMask )
+            mnMax = pMgr->ReadLong();
+
+        if ( RscNumFormatterFlags::StrictFormat & nMask )
+            SetStrictFormat( pMgr->ReadShort() != 0 );
+
+        if ( RscNumFormatterFlags::DecimalDigits & nMask )
+            SetDecimalDigits( pMgr->ReadShort() );
+
+        if ( RscNumFormatterFlags::Value & nMask )
+        {
+            mnFieldValue = ClipAgainstMinMax(pMgr->ReadLong());
+            mnLastValue = mnFieldValue;
+        }
+    }
 }
 
 NumericFormatter::~NumericFormatter()
@@ -754,6 +782,20 @@ NumericField::NumericField( vcl::Window* pParent, WinBits nWinStyle ) :
     Reformat();
 }
 
+NumericField::NumericField( vcl::Window* pParent, const ResId& rResId ) :
+    SpinField( WINDOW_NUMERICFIELD )
+{
+    rResId.SetRT( RSC_NUMERICFIELD );
+    WinBits nStyle = ImplInitRes( rResId ) ;
+    SpinField::ImplInit( pParent, nStyle );
+    SetField( this );
+    ImplLoadRes( rResId );
+    Reformat();
+
+    if ( !(nStyle & WB_HIDE ) )
+        Show();
+}
+
 void NumericField::dispose()
 {
     NumericFormatter::SetField( nullptr );
@@ -773,6 +815,23 @@ bool NumericField::set_property(const OString &rKey, const OString &rValue)
     return true;
 }
 
+void NumericField::ImplLoadRes( const ResId& rResId )
+{
+    SpinField::ImplLoadRes( rResId );
+    NumericFormatter::ImplLoadRes( ResId( static_cast<RSHEADER_TYPE *>(GetClassRes()), *rResId.GetResMgr() ) );
+
+    sal_uLong      nMask = ReadLongRes();
+
+    if ( NUMERICFIELD_FIRST & nMask )
+        mnFirst = ReadLongRes();
+
+    if ( NUMERICFIELD_LAST & nMask )
+        mnLast = ReadLongRes();
+
+    if ( NUMERICFIELD_SPINSIZE & nMask )
+        mnSpinSize = ReadLongRes();
+}
+
 bool NumericField::PreNotify( NotifyEvent& rNEvt )
 {
         if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && !rNEvt.GetKeyEvent()->GetKeyCode().IsMod2() )
@@ -784,7 +843,7 @@ bool NumericField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool NumericField::EventNotify( NotifyEvent& rNEvt )
+bool NumericField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -794,7 +853,7 @@ bool NumericField::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void NumericField::DataChanged( const DataChangedEvent& rDCEvt )
@@ -923,7 +982,7 @@ bool NumericBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-bool NumericBox::EventNotify( NotifyEvent& rNEvt )
+bool NumericBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -933,7 +992,7 @@ bool NumericBox::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void NumericBox::DataChanged( const DataChangedEvent& rDCEvt )
@@ -1023,13 +1082,14 @@ static const OUString ImplMetricToString( FieldUnit rUnit )
     return OUString();
 }
 
-FieldUnit MetricFormatter::StringToMetric(const OUString &rMetricString)
+static FieldUnit ImplStringToMetric(const OUString &rMetricString)
 {
     FieldUnitStringList* pList = ImplGetCleanedFieldUnits();
     if( pList )
     {
         // return FieldUnit
-        OUString aStr = rMetricString.toAsciiLowerCase().replaceAll(" ", "");
+        OUString aStr(rMetricString.toAsciiLowerCase());
+        aStr = string::remove(aStr, ' ');
         for( FieldUnitStringList::const_iterator it = pList->begin(); it != pList->end(); ++it )
         {
             if ( it->first == aStr )
@@ -1042,8 +1102,8 @@ FieldUnit MetricFormatter::StringToMetric(const OUString &rMetricString)
 
 static FieldUnit ImplMetricGetUnit(const OUString& rStr)
 {
-    OUString aStr = ImplMetricGetUnitText(rStr);
-    return MetricFormatter::StringToMetric(aStr);
+    OUString aStr = ImplMetricGetUnitText( rStr );
+    return ImplStringToMetric( aStr );
 }
 
 #define K *1000L
@@ -1083,30 +1143,30 @@ static FieldUnit ImplMap2FieldUnit( MapUnit meUnit, long& nDecDigits )
 {
     switch( meUnit )
     {
-        case MapUnit::Map100thMM :
+        case MAP_100TH_MM :
             nDecDigits -= 2;
             return FUNIT_MM;
-        case MapUnit::Map10thMM :
+        case MAP_10TH_MM :
             nDecDigits -= 1;
             return FUNIT_MM;
-        case MapUnit::MapMM :
+        case MAP_MM :
             return FUNIT_MM;
-        case MapUnit::MapCM :
+        case MAP_CM :
             return FUNIT_CM;
-        case MapUnit::Map1000thInch :
+        case MAP_1000TH_INCH :
             nDecDigits -= 3;
             return FUNIT_INCH;
-        case MapUnit::Map100thInch :
+        case MAP_100TH_INCH :
             nDecDigits -= 2;
             return FUNIT_INCH;
-        case MapUnit::Map10thInch :
+        case MAP_10TH_INCH :
             nDecDigits -= 1;
             return FUNIT_INCH;
-        case MapUnit::MapInch :
+        case MAP_INCH :
             return FUNIT_INCH;
-        case MapUnit::MapPoint :
+        case MAP_POINT :
             return FUNIT_POINT;
-        case MapUnit::MapTwip :
+        case MAP_TWIP :
             return FUNIT_TWIP;
         default:
             OSL_FAIL( "default eInUnit" );
@@ -1184,8 +1244,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_Int64 mnBaseValue, sa
             nDiv  = aImplFactor[eInUnit][eOutUnit];
             nMult = aImplFactor[eOutUnit][eInUnit];
 
-            SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
-            SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
+            DBG_ASSERT( nMult > 0, "illegal *" );
+            DBG_ASSERT( nDiv  > 0, "illegal /" );
         }
 
         if ( nMult != 1 && nMult > 0 )
@@ -1206,10 +1266,10 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
     if ( eOutUnit == FUNIT_PERCENT ||
          eOutUnit == FUNIT_CUSTOM ||
          eOutUnit == FUNIT_NONE ||
-         eInUnit == MapUnit::MapPixel ||
-         eInUnit == MapUnit::MapSysFont ||
-         eInUnit == MapUnit::MapAppFont ||
-         eInUnit == MapUnit::MapRelative )
+         eInUnit == MAP_PIXEL ||
+         eInUnit == MAP_SYSFONT ||
+         eInUnit == MAP_APPFONT ||
+         eInUnit == MAP_RELATIVE )
     {
         OSL_FAIL( "invalid parameters" );
         return nValue;
@@ -1237,8 +1297,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
         sal_Int64 nDiv  = aImplFactor[eFieldUnit][eOutUnit];
         sal_Int64 nMult = aImplFactor[eOutUnit][eFieldUnit];
 
-        SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
-        SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
+        DBG_ASSERT( nMult > 0, "illegal *" );
+        DBG_ASSERT( nDiv  > 0, "illegal /" );
 
         if ( nMult != 1 && nMult > 0)
             nValue *= nMult;
@@ -1261,10 +1321,10 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
          eInUnit == FUNIT_SECOND ||
          eInUnit == FUNIT_MILLISECOND ||
          eInUnit == FUNIT_PIXEL ||
-         eOutUnit == MapUnit::MapPixel ||
-         eOutUnit == MapUnit::MapSysFont ||
-         eOutUnit == MapUnit::MapAppFont ||
-         eOutUnit == MapUnit::MapRelative )
+         eOutUnit == MAP_PIXEL ||
+         eOutUnit == MAP_SYSFONT ||
+         eOutUnit == MAP_APPFONT ||
+         eOutUnit == MAP_RELATIVE )
     {
         OSL_FAIL( "invalid parameters" );
         return nValue;
@@ -1287,8 +1347,8 @@ double MetricField::ConvertDoubleValue( double nValue, sal_uInt16 nDigits,
         sal_Int64 nDiv  = aImplFactor[eInUnit][eFieldUnit];
         sal_Int64 nMult = aImplFactor[eFieldUnit][eInUnit];
 
-        SAL_WARN_IF( nMult <= 0, "vcl", "illegal *" );
-        SAL_WARN_IF( nDiv  <= 0, "vcl", "illegal /" );
+        DBG_ASSERT( nMult > 0, "illegal *" );
+        DBG_ASSERT( nDiv  > 0, "illegal /" );
 
         if( nMult != 1 && nMult > 0 )
             nValue *= nMult;
@@ -1347,6 +1407,28 @@ inline void MetricFormatter::ImplInit()
 MetricFormatter::MetricFormatter()
 {
     ImplInit();
+}
+
+void MetricFormatter::ImplLoadRes( const ResId& rResId )
+{
+    NumericFormatter::ImplLoadRes( rResId );
+
+    ResMgr*     pMgr = rResId.GetResMgr();
+    if( pMgr )
+    {
+        sal_uLong       nMask = pMgr->ReadLong();
+
+        if ( METRICFORMATTER_UNIT & nMask )
+        {
+            sal_uLong nUnit = pMgr->ReadLong();
+            assert(nUnit <= FUNIT_MILLISECOND && "out of FieldUnit bounds");
+            if (nUnit <= FUNIT_MILLISECOND)
+                meUnit = (FieldUnit)nUnit;
+        }
+
+        if ( METRICFORMATTER_CUSTOMUNITTEXT & nMask )
+            maCustomUnitText = pMgr->ReadString();
+    }
 }
 
 MetricFormatter::~MetricFormatter()
@@ -1514,7 +1596,7 @@ void MetricFormatter::Reformat()
 sal_Int64 MetricFormatter::GetCorrectedValue( FieldUnit eOutUnit ) const
 {
     // convert to requested units
-    return MetricField::ConvertValue( 0/*nCorrectedValue*/, mnBaseValue, GetDecimalDigits(),
+    return MetricField::ConvertValue( mnCorrectedValue, mnBaseValue, GetDecimalDigits(),
                                       meUnit, eOutUnit );
 }
 
@@ -1523,6 +1605,19 @@ MetricField::MetricField( vcl::Window* pParent, WinBits nWinStyle ) :
 {
     SetField( this );
     Reformat();
+}
+
+MetricField::MetricField( vcl::Window* pParent, const ResId& rResId ) :
+    SpinField( WINDOW_METRICFIELD )
+{
+    rResId.SetRT( RSC_METRICFIELD );
+    WinBits nStyle = ImplInitRes( rResId ) ;
+    SpinField::ImplInit( pParent, nStyle );
+    SetField( this );
+    ImplLoadRes( rResId );
+
+    if ( !(nStyle & WB_HIDE ) )
+        Show();
 }
 
 void MetricField::dispose()
@@ -1545,6 +1640,25 @@ bool MetricField::set_property(const OString &rKey, const OString &rValue)
     else
         return SpinField::set_property(rKey, rValue);
     return true;
+}
+
+void MetricField::ImplLoadRes( const ResId& rResId )
+{
+    SpinField::ImplLoadRes( rResId );
+    MetricFormatter::ImplLoadRes( ResId( static_cast<RSHEADER_TYPE *>(GetClassRes()), *rResId.GetResMgr() ) );
+
+    sal_uLong      nMask = ReadLongRes();
+
+    if ( METRICFIELD_FIRST & nMask )
+        mnFirst = ReadLongRes();
+
+    if ( METRICFIELD_LAST & nMask )
+        mnLast = ReadLongRes();
+
+    if ( METRICFIELD_SPINSIZE & nMask )
+        mnSpinSize = ReadLongRes();
+
+    Reformat();
 }
 
 void MetricField::SetUnit( FieldUnit nNewUnit )
@@ -1604,7 +1718,7 @@ bool MetricField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool MetricField::EventNotify( NotifyEvent& rNEvt )
+bool MetricField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -1614,7 +1728,7 @@ bool MetricField::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void MetricField::DataChanged( const DataChangedEvent& rDCEvt )
@@ -1707,7 +1821,7 @@ bool MetricBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-bool MetricBox::EventNotify( NotifyEvent& rNEvt )
+bool MetricBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -1717,7 +1831,7 @@ bool MetricBox::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void MetricBox::DataChanged( const DataChangedEvent& rDCEvt )
@@ -1837,13 +1951,23 @@ bool CurrencyFormatter::ImplCurrencyReformat( const OUString& rStr, OUString& rO
     }
 }
 
-CurrencyFormatter::CurrencyFormatter()
+inline void CurrencyFormatter::ImplInit()
 {
     mnType = FORMAT_CURRENCY;
 }
 
+CurrencyFormatter::CurrencyFormatter()
+{
+    ImplInit();
+}
+
 CurrencyFormatter::~CurrencyFormatter()
 {
+}
+
+OUString CurrencyFormatter::GetCurrencySymbol() const
+{
+    return ImplGetLocaleDataWrapper().getCurrSymbol();
 }
 
 void CurrencyFormatter::SetValue( sal_Int64 nNewValue )
@@ -1855,9 +1979,7 @@ void CurrencyFormatter::SetValue( sal_Int64 nNewValue )
 
 OUString CurrencyFormatter::CreateFieldText( sal_Int64 nValue ) const
 {
-    return ImplGetLocaleDataWrapper().getCurr( nValue, GetDecimalDigits(),
-                                               ImplGetLocaleDataWrapper().getCurrSymbol(),
-                                               IsUseThousandSep() );
+    return ImplGetLocaleDataWrapper().getCurr( nValue, GetDecimalDigits(), GetCurrencySymbol(), IsUseThousandSep() );
 }
 
 sal_Int64 CurrencyFormatter::GetValue() const
@@ -1919,7 +2041,7 @@ bool CurrencyField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool CurrencyField::EventNotify( NotifyEvent& rNEvt )
+bool CurrencyField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -1929,7 +2051,7 @@ bool CurrencyField::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void CurrencyField::DataChanged( const DataChangedEvent& rDCEvt )
@@ -2003,7 +2125,7 @@ bool CurrencyBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-bool CurrencyBox::EventNotify( NotifyEvent& rNEvt )
+bool CurrencyBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -2013,7 +2135,7 @@ bool CurrencyBox::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void CurrencyBox::DataChanged( const DataChangedEvent& rDCEvt )

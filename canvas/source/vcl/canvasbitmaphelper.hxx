@@ -82,6 +82,8 @@ namespace vclcanvas
 
         css::geometry::IntegerSize2D getSize();
 
+        void queryBitmapCanvas();
+
         css::uno::Reference< css::rendering::XBitmap >
             getScaledBitmap( const css::geometry::RealSize2D&  newSize,
                              bool                                           beFast );

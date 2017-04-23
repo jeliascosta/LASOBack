@@ -83,7 +83,7 @@ protected:
 
 public:
                        SvtFilePicker();
-    virtual           ~SvtFilePicker() override;
+    virtual           ~SvtFilePicker();
 
 
     // disambiguate XInterface
@@ -98,95 +98,97 @@ public:
 
     // XExecutableDialog functions
 
-    virtual void SAL_CALL setTitle( const OUString& _rTitle ) override;
-    virtual sal_Int16 SAL_CALL execute(  ) override;
+    virtual void SAL_CALL setTitle( const OUString& _rTitle ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL execute(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 
     // XAsynchronousExecutableDialog functions
 
-    virtual void SAL_CALL setDialogTitle( const OUString& _rTitle ) override;
-    virtual void SAL_CALL startExecuteModal( const css::uno::Reference< css::ui::dialogs::XDialogClosedListener >& xListener ) override;
+    virtual void SAL_CALL setDialogTitle( const OUString& _rTitle ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL startExecuteModal( const css::uno::Reference< css::ui::dialogs::XDialogClosedListener >& xListener )
+        throw (css::uno::RuntimeException,
+               std::exception) override;
 
 
     // XFilePicker functions
 
 
-    virtual void SAL_CALL           setMultiSelectionMode( sal_Bool bMode ) override;
-    virtual void SAL_CALL           setDefaultName( const OUString& aName ) override;
-    virtual void SAL_CALL           setDisplayDirectory( const OUString& aDirectory ) override;
-    virtual OUString SAL_CALL    getDisplayDirectory() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getFiles() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSelectedFiles() override;
+    virtual void SAL_CALL           setMultiSelectionMode( sal_Bool bMode ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setDefaultName( const OUString& aName ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setDisplayDirectory( const OUString& aDirectory ) throw( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL    getDisplayDirectory() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getFiles() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSelectedFiles() throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XFilePickerControlAccess functions
 
 
-    virtual void SAL_CALL           setValue( sal_Int16 ElementID, sal_Int16 ControlAction, const css::uno::Any& value ) override;
-    virtual css::uno::Any SAL_CALL           getValue( sal_Int16 ElementID, sal_Int16 ControlAction ) override;
-    virtual void SAL_CALL           setLabel( sal_Int16 ElementID, const OUString& aValue ) override;
-    virtual OUString SAL_CALL    getLabel( sal_Int16 ElementID ) override;
-    virtual void SAL_CALL           enableControl( sal_Int16 ElementID, sal_Bool bEnable ) override;
+    virtual void SAL_CALL           setValue( sal_Int16 ElementID, sal_Int16 ControlAction, const css::uno::Any& value ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Any SAL_CALL           getValue( sal_Int16 ElementID, sal_Int16 ControlAction ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setLabel( sal_Int16 ElementID, const OUString& aValue ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL    getLabel( sal_Int16 ElementID ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           enableControl( sal_Int16 ElementID, sal_Bool bEnable ) throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XFilePickerNotifier functions
 
 
-    virtual void SAL_CALL           addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener ) override;
-    virtual void SAL_CALL           removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener ) override;
+    virtual void SAL_CALL           addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener ) throw ( css::uno::RuntimeException, std::exception ) override;
 
 
     // XFilePreview functions
 
 
-    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedImageFormats() override;
-    virtual sal_Int32 SAL_CALL      getTargetColorDepth() override;
-    virtual sal_Int32 SAL_CALL      getAvailableWidth() override;
-    virtual sal_Int32 SAL_CALL      getAvailableHeight() override;
-    virtual void SAL_CALL           setImage( sal_Int16 aImageFormat, const css::uno::Any& aImage ) override;
-    virtual sal_Bool SAL_CALL       setShowState( sal_Bool bShowState ) override;
-    virtual sal_Bool SAL_CALL       getShowState() override;
+    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedImageFormats() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL      getTargetColorDepth() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL      getAvailableWidth() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Int32 SAL_CALL      getAvailableHeight() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setImage( sal_Int16 aImageFormat, const css::uno::Any& aImage ) throw ( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL       setShowState( sal_Bool bShowState ) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL       getShowState() throw ( css::uno::RuntimeException, std::exception ) override;
 
 
     // XFilterManager functions
 
 
-    virtual void SAL_CALL           appendFilter( const OUString& aTitle, const OUString& aFilter ) override;
-    virtual void SAL_CALL           setCurrentFilter( const OUString& aTitle ) override;
-    virtual OUString SAL_CALL       getCurrentFilter() override;
+    virtual void SAL_CALL           appendFilter( const OUString& aTitle, const OUString& aFilter ) throw( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL           setCurrentFilter( const OUString& aTitle ) throw( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
+    virtual OUString SAL_CALL       getCurrentFilter() throw( css::uno::RuntimeException, std::exception ) override;
 
 
     // XFilterGroupManager functions
 
-    virtual void SAL_CALL           appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters ) override;
+    virtual void SAL_CALL           appendFilterGroup( const OUString& sGroupTitle, const css::uno::Sequence< css::beans::StringPair >& aFilters ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 
     // these methods are here because they're ambiguous
 
-    virtual void SAL_CALL           cancel() override
+    virtual void SAL_CALL           cancel() throw( css::uno::RuntimeException, std::exception ) override
      { ::svt::OCommonPicker::cancel(); }
-    virtual void SAL_CALL           dispose() override
+    virtual void SAL_CALL           dispose() throw( css::uno::RuntimeException, std::exception ) override
      { ::svt::OCommonPicker::dispose(); }
-    virtual void SAL_CALL           addEventListener(const css::uno::Reference<css::lang::XEventListener>& l) override
+    virtual void SAL_CALL           addEventListener(const css::uno::Reference<css::lang::XEventListener>& l) throw( css::uno::RuntimeException, std::exception ) override
      { ::svt::OCommonPicker::addEventListener(l); }
-    virtual void SAL_CALL           removeEventListener(const css::uno::Reference<css::lang::XEventListener>& l) override
+    virtual void SAL_CALL           removeEventListener(const css::uno::Reference<css::lang::XEventListener>& l) throw( css::uno::RuntimeException, std::exception ) override
      { ::svt::OCommonPicker::removeEventListener(l); }
 
 
     // XInitialization functions
 
 
-    virtual void SAL_CALL           initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL           initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
 
 
     // XServiceInfo functions
 
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL       getImplementationName() override;
-    virtual sal_Bool SAL_CALL       supportsService( const OUString& sServiceName ) override;
+    virtual OUString SAL_CALL       getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL       supportsService( const OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-                                    getSupportedServiceNames() override;
+                                    getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     /* Helper for XServiceInfo */
     static css::uno::Sequence< OUString >
@@ -194,9 +196,9 @@ public:
     static OUString                 impl_getStaticImplementationName();
 
     /* Helper for registry */
-    /// @throws css::uno::Exception
     static css::uno::Reference< css::uno::XInterface > SAL_CALL impl_createInstance (
-        const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+        const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+        throw( css::uno::Exception );
 
 protected:
 
@@ -220,7 +222,7 @@ protected:
 
     void                prepareExecute( );
 
-    DECL_LINK(    DialogClosedHdl, Dialog&, void );
+    DECL_LINK_TYPED(    DialogClosedHdl, Dialog&, void );
 };
 
 // SvtRemoteFilePicker
@@ -241,19 +243,19 @@ public:
     DECLARE_XTYPEPROVIDER( )
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-                                    getSupportedServiceNames() override;
+                                    getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     /* Helper for XServiceInfo */
     static css::uno::Sequence< OUString > impl_getStaticSupportedServiceNames();
     static OUString impl_getStaticImplementationName();
 
     /* Helper for registry */
-    /// @throws css::uno::Exception
     static css::uno::Reference< css::uno::XInterface > SAL_CALL impl_createInstance (
-        const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+        const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+        throw( css::uno::Exception );
 };
 
 #endif // INCLUDED_FPICKER_SOURCE_OFFICE_OFFICEFILEPICKER_HXX

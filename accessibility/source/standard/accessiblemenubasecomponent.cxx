@@ -17,10 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/accessiblemenubasecomponent.hxx>
-#include <standard/vclxaccessiblemenu.hxx>
-#include <standard/vclxaccessiblemenuitem.hxx>
-#include <standard/vclxaccessiblemenuseparator.hxx>
+#include <accessibility/standard/accessiblemenubasecomponent.hxx>
+#include <accessibility/standard/vclxaccessiblemenu.hxx>
+#include <accessibility/standard/vclxaccessiblemenuitem.hxx>
+#include <accessibility/standard/vclxaccessiblemenuseparator.hxx>
 #include <toolkit/helper/externallock.hxx>
 #include <toolkit/helper/convert.hxx>
 
@@ -44,7 +44,7 @@ using namespace ::comphelper;
 
 
 OAccessibleMenuBaseComponent::OAccessibleMenuBaseComponent( Menu* pMenu )
-    :OAccessibleExtendedComponentHelper( new VCLExternalSolarLock )
+    :OAccessibleExtendedComponentHelper( new VCLExternalSolarLock() )
     ,m_pMenu( pMenu )
     ,m_bEnabled( false )
     ,m_bFocused( false )
@@ -365,7 +365,7 @@ Reference< XAccessible > OAccessibleMenuBaseComponent::GetChildAt( const awt::Po
             Reference< XAccessibleComponent > xComp( xAcc->getAccessibleContext(), UNO_QUERY );
             if ( xComp.is() )
             {
-                tools::Rectangle aRect = VCLRectangle( xComp->getBounds() );
+                Rectangle aRect = VCLRectangle( xComp->getBounds() );
                 Point aPos = VCLPoint( rPoint );
                 if ( aRect.IsInside( aPos ) )
                 {
@@ -529,7 +529,7 @@ bool OAccessibleMenuBaseComponent::IsPopupMenuOpen()
 }
 
 
-IMPL_LINK( OAccessibleMenuBaseComponent, MenuEventListener, VclMenuEvent&, rEvent, void )
+IMPL_LINK_TYPED( OAccessibleMenuBaseComponent, MenuEventListener, VclMenuEvent&, rEvent, void )
 {
     OSL_ENSURE( rEvent.GetMenu(), "OAccessibleMenuBaseComponent - Menu?" );
     ProcessMenuEvent( rEvent );
@@ -542,77 +542,82 @@ void OAccessibleMenuBaseComponent::ProcessMenuEvent( const VclMenuEvent& rVclMen
 
     switch ( rVclMenuEvent.GetId() )
     {
-        case VclEventId::MenuShow:
-        case VclEventId::MenuHide:
+        case VCLEVENT_MENU_SHOW:
+        case VCLEVENT_MENU_HIDE:
         {
             UpdateVisible();
         }
         break;
-        case VclEventId::MenuHighlight:
+        case VCLEVENT_MENU_HIGHLIGHT:
         {
             SetFocused( false );
             UpdateFocused( nItemPos, true );
             UpdateSelected( nItemPos, true );
         }
         break;
-        case VclEventId::MenuDehighlight:
+        case VCLEVENT_MENU_DEHIGHLIGHT:
         {
             UpdateFocused( nItemPos, false );
             UpdateSelected( nItemPos, false );
         }
         break;
-        case VclEventId::MenuSubmenuActivate:
+        case VCLEVENT_MENU_SUBMENUACTIVATE:
         {
         }
         break;
-        case VclEventId::MenuSubmenuDeactivate:
+        case VCLEVENT_MENU_SUBMENUDEACTIVATE:
         {
             UpdateFocused( nItemPos, true );
         }
         break;
-        case VclEventId::MenuEnable:
+        case VCLEVENT_MENU_ENABLE:
         {
             UpdateEnabled( nItemPos, true );
         }
         break;
-        case VclEventId::MenuDisable:
+        case VCLEVENT_MENU_DISABLE:
         {
             UpdateEnabled( nItemPos, false );
         }
         break;
-        case VclEventId::MenuSubmenuChanged:
+        case VCLEVENT_MENU_SUBMENUCHANGED:
         {
             RemoveChild( nItemPos );
             InsertChild( nItemPos );
         }
         break;
-        case VclEventId::MenuInsertItem:
+        case VCLEVENT_MENU_INSERTITEM:
         {
             InsertChild( nItemPos );
         }
         break;
-        case VclEventId::MenuRemoveItem:
+        case VCLEVENT_MENU_REMOVEITEM:
         {
             RemoveChild( nItemPos );
         }
         break;
-        case VclEventId::MenuItemTextChanged:
+        case VCLEVENT_MENU_ACCESSIBLENAMECHANGED:
+        {
+            UpdateAccessibleName( nItemPos );
+        }
+        break;
+        case VCLEVENT_MENU_ITEMTEXTCHANGED:
         {
             UpdateAccessibleName( nItemPos );
             UpdateItemText( nItemPos );
         }
         break;
-        case VclEventId::MenuItemChecked:
+        case VCLEVENT_MENU_ITEMCHECKED:
         {
             UpdateChecked( nItemPos, true );
         }
         break;
-        case VclEventId::MenuItemUnchecked:
+        case VCLEVENT_MENU_ITEMUNCHECKED:
         {
             UpdateChecked( nItemPos, false );
         }
         break;
-        case VclEventId::ObjectDying:
+        case VCLEVENT_OBJECT_DYING:
         {
             if ( m_pMenu )
             {
@@ -679,7 +684,7 @@ void OAccessibleMenuBaseComponent::disposing()
 // XServiceInfo
 
 
-sal_Bool OAccessibleMenuBaseComponent::supportsService( const OUString& rServiceName )
+sal_Bool OAccessibleMenuBaseComponent::supportsService( const OUString& rServiceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
@@ -688,7 +693,7 @@ sal_Bool OAccessibleMenuBaseComponent::supportsService( const OUString& rService
 // XAccessible
 
 
-Reference< XAccessibleContext > OAccessibleMenuBaseComponent::getAccessibleContext(  )
+Reference< XAccessibleContext > OAccessibleMenuBaseComponent::getAccessibleContext(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -699,7 +704,7 @@ Reference< XAccessibleContext > OAccessibleMenuBaseComponent::getAccessibleConte
 // XAccessibleContext
 
 
-Reference< XAccessibleStateSet > OAccessibleMenuBaseComponent::getAccessibleStateSet(  )
+Reference< XAccessibleStateSet > OAccessibleMenuBaseComponent::getAccessibleStateSet(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

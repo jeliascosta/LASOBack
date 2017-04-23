@@ -10,6 +10,7 @@
 $(eval $(call gb_Module_Module,msc-externals))
 
 $(eval $(call gb_Module_add_targets,msc-externals,\
+	$(if $(ENABLE_CRASHDUMP),Package_dbghelp) \
 	Package_msvc_dlls \
 ))
 

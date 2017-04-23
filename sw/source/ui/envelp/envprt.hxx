@@ -26,6 +26,7 @@
 #include <vcl/fixed.hxx>
 #include <vcl/group.hxx>
 #include <vcl/button.hxx>
+#include <svtools/stdctrl.hxx>
 
 #include "envimg.hxx"
 #include "envlop.hxx"
@@ -46,9 +47,9 @@ class SwEnvPrtPage : public SfxTabPage
 
     VclPtr<Printer>     pPrt;
 
-    DECL_LINK(ClickHdl, Button*, void);
-    DECL_LINK(AlignHdl, ToolBox *, void);
-    DECL_LINK(ButtonHdl, Button *, void );
+    DECL_LINK_TYPED(ClickHdl, Button*, void);
+    DECL_LINK_TYPED(AlignHdl, ToolBox *, void);
+    DECL_LINK_TYPED(ButtonHdl, Button *, void );
 
     SwEnvDlg* GetParentSwEnvDlg() {return static_cast<SwEnvDlg*>( GetParentDialog());}
 
@@ -57,18 +58,18 @@ class SwEnvPrtPage : public SfxTabPage
 
 public:
     SwEnvPrtPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwEnvPrtPage() override;
+    virtual ~SwEnvPrtPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
+    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
             void FillItem(SwEnvItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 
-    void SetPrt(Printer* pPrinter) { pPrt = pPrinter; }
+    inline void SetPrt(Printer* pPrinter) { pPrt = pPrinter; }
 };
 
 #endif

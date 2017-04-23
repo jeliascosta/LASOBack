@@ -28,8 +28,6 @@
 #include <com/sun/star/awt/FontUnderline.hpp>
 #include <com/sun/star/awt/FontWeight.hpp>
 #include <com/sun/star/awt/FontStrikeout.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/text/TextMarkupType.hpp>
 #include <com/sun/star/style/ParagraphAdjust.hpp>
 
@@ -141,7 +139,7 @@ using namespace ::com::sun::star::uno;
 
 +(int)convertItalicStyle:(PropertyValue)property {
     int italicStyle = NSUnitalicFontMask;
-    ::css_awt::FontSlant value = property.Value.get< ::css_awt::FontSlant>();
+    sal_Int16 value = property.Value.get< ::css_awt::FontSlant>();
     if ( value == ::css_awt::FontSlant_ITALIC ) {
         italicStyle = NSItalicFontMask;
     }
@@ -274,19 +272,13 @@ using namespace ::com::sun::star::uno;
                 sal_Int32 alignment;
                 property.Value >>= alignment;
                 NSNumber *textAlignment = nil;
-SAL_WNODEPRECATED_DECLARATIONS_PUSH
-    // 'NSCenterTextAlignment' is deprecated: first deprecated in macOS 10.12
-    // 'NSJustifiedTextAlignment' is deprecated: first deprecated in macOS 10.12
-    // 'NSLeftTextAlignment' is deprecated: first deprecated in macOS 10.12
-    // 'NSRightTextAlignment' is deprecated: first deprecated in macOS 10.12
-                switch((css::style::ParagraphAdjust)alignment) {
+                switch(alignment) {
                     case css::style::ParagraphAdjust_RIGHT : textAlignment = [NSNumber numberWithInteger:NSRightTextAlignment]    ; break;
                     case css::style::ParagraphAdjust_CENTER: textAlignment = [NSNumber numberWithInteger:NSCenterTextAlignment]   ; break;
                     case css::style::ParagraphAdjust_BLOCK : textAlignment = [NSNumber numberWithInteger:NSJustifiedTextAlignment]; break;
                     case css::style::ParagraphAdjust_LEFT  :
                     default                                             : textAlignment = [NSNumber numberWithInteger:NSLeftTextAlignment]     ; break;
                 }
-SAL_WNODEPRECATED_DECLARATIONS_POP
                 NSDictionary *paragraphStyle = [NSDictionary dictionaryWithObjectsAndKeys:textAlignment, @"AXTextAlignment", textAlignment, @"AXVisualTextAlignment", nil];
                 [string addAttribute:@"AXParagraphStyle" value:paragraphStyle range:range];
             }

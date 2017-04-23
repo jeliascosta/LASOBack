@@ -487,9 +487,12 @@ namespace slideshow
                 mrMultiplexer.removeViewHandler( mpHandler );
                 mpHandler->dispose();
             }
-            catch (const uno::Exception&)
+            catch (uno::Exception &)
             {
-                SAL_WARN( "slideshow", "" << comphelper::anyToString(cppu::getCaughtException() ) );
+                OSL_FAIL( OUStringToOString(
+                                comphelper::anyToString(
+                                    cppu::getCaughtException() ),
+                                RTL_TEXTENCODING_UTF8 ).getStr() );
             }
         }
     }

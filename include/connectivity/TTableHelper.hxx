@@ -72,7 +72,7 @@ namespace connectivity
     };
     typedef connectivity::sdbcx::OTable OTable_TYPEDEF;
 
-    typedef std::map<OUString, std::shared_ptr<sdbcx::KeyProperties>> TKeyMap;
+    typedef std::map<OUString, sdbcx::TKeyProperties> TKeyMap;
 
     struct OTableHelperImpl;
 
@@ -112,7 +112,7 @@ namespace connectivity
         */
         virtual OUString getRenameStart() const;
 
-        virtual ~OTableHelper() override;
+        virtual ~OTableHelper();
 
     public:
         virtual void refreshColumns() override;
@@ -138,17 +138,20 @@ namespace connectivity
         virtual css::uno::Reference< css::sdbc::XDatabaseMetaData> getMetaData() const override;
         css::uno::Reference< css::sdbc::XConnection> getConnection() const;
 
+        virtual void SAL_CALL acquire() throw() override;
+        virtual void SAL_CALL release() throw() override;
+
         // XRename
-        virtual void SAL_CALL rename( const OUString& newName ) override;
+        virtual void SAL_CALL rename( const OUString& newName ) throw(css::sdbc::SQLException, css::container::ElementExistException, css::uno::RuntimeException, std::exception) override;
 
         // XAlterTable
-        virtual void SAL_CALL alterColumnByIndex( sal_Int32 index, const css::uno::Reference< css::beans::XPropertySet >& descriptor ) override;
+        virtual void SAL_CALL alterColumnByIndex( sal_Int32 index, const css::uno::Reference< css::beans::XPropertySet >& descriptor ) throw(css::sdbc::SQLException, css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
         // XNamed
-        virtual OUString SAL_CALL getName() override;
+        virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
 
         // helper method to get key properties
-        std::shared_ptr<sdbcx::KeyProperties> getKeyProperties(const OUString& _sName) const;
-        void addKey(const OUString& _sName,const std::shared_ptr<sdbcx::KeyProperties>& _aKeyProperties);
+        sdbcx::TKeyProperties getKeyProperties(const OUString& _sName) const;
+        void addKey(const OUString& _sName,const sdbcx::TKeyProperties& _aKeyProperties);
 
         virtual OUString getTypeCreatePattern() const;
 

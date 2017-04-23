@@ -49,12 +49,12 @@ private:
     bool                        mbPosMTMoved;       /// Tracking: Anytime moved to another position?
 
     Size                        maWinSize;          /// Size of the control.
-    tools::Rectangle                   maActiveRect;       /// The active area of the ruler.
+    Rectangle                   maActiveRect;       /// The active area of the ruler.
     sal_Int32                   mnSplitSize;        /// Size of a split circle.
 
 public:
     explicit                    ScCsvRuler( ScCsvControl& rParent );
-                                virtual ~ScCsvRuler() override;
+                                virtual ~ScCsvRuler();
     virtual void                dispose() override;
 
     // common ruler handling --------------------------------------------------
@@ -87,18 +87,18 @@ private:
     // split handling ---------------------------------------------------------
 public:
     /** Returns the split array. */
-    const ScCsvSplits&   GetSplits() const { return maSplits; }
+    inline const ScCsvSplits&   GetSplits() const { return maSplits; }
     /** Returns the number of splits. */
-    sal_uInt32           GetSplitCount() const
+    inline sal_uInt32           GetSplitCount() const
                                     { return maSplits.Count(); }
     /** Returns the position of the specified split. */
-    sal_Int32            GetSplitPos( sal_uInt32 nIndex ) const
+    inline sal_Int32            GetSplitPos( sal_uInt32 nIndex ) const
                                     { return maSplits[ nIndex ]; }
     /** Finds a position nearest to nPos which does not cause scrolling the visible area. */
     sal_Int32                   GetNoScrollPos( sal_Int32 nPos ) const;
 
     /** Returns true if at position nPos is a split. */
-    bool                 HasSplit( sal_Int32 nPos ) const { return maSplits.HasSplit( nPos ); }
+    inline bool                 HasSplit( sal_Int32 nPos ) const { return maSplits.HasSplit( nPos ); }
     /** Inserts a split. */
     void                        InsertSplit( sal_Int32 nPos );
     /** Removes a split. */
@@ -141,7 +141,7 @@ private:
 
     // painting ---------------------------------------------------------------
 protected:
-    virtual void                Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void                Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
 
 public:
     /** Redraws the entire ruler. */
@@ -149,9 +149,9 @@ public:
 
 private:
     /** Returns the width of the control. */
-    sal_Int32            GetWidth() const { return maWinSize.Width(); }
+    inline sal_Int32            GetWidth() const { return maWinSize.Width(); }
     /** Returns the height of the control. */
-    sal_Int32            GetHeight() const { return maWinSize.Height(); }
+    inline sal_Int32            GetHeight() const { return maWinSize.Height(); }
 
     /** Draws the background and active area to maBackgrDev (only the given X range). */
     SAL_DLLPRIVATE void                        ImplDrawArea( sal_Int32 nPosX, sal_Int32 nWidth );
@@ -167,6 +167,8 @@ private:
 
     /** Inverts the cursor bar at the specified position in maRulerDev. */
     SAL_DLLPRIVATE void                        ImplInvertCursor( sal_Int32 nPos );
+    /** Draws directly tracking rectangle to the column with the specified index. */
+    SAL_DLLPRIVATE void                        ImplDrawTrackingRect();
 
     /** Sets arrow or horizontal split pointer. */
     SAL_DLLPRIVATE void                        ImplSetMousePointer( sal_Int32 nPos );

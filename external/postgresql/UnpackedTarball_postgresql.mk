@@ -19,10 +19,4 @@ $(eval $(call gb_UnpackedTarball_add_patches,postgresql, \
 	external/postgresql/postgresql-9.2.1-libreoffice.patch \
 ))
 
-ifeq ($(SYSTEM_ZLIB),)
-$(eval $(call gb_UnpackedTarball_add_patches,postgresql, \
-	external/postgresql/internal-zlib.patch.1 \
-))
-endif
-
 # vim: set noet sw=4 ts=4:

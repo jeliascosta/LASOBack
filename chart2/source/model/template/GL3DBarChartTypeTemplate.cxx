@@ -128,6 +128,7 @@ uno::Reference<chart2::XChartType> GL3DBarChartTypeTemplate::getChartTypeForInde
 sal_Bool SAL_CALL GL3DBarChartTypeTemplate::matchesTemplate(
     const css::uno::Reference<css::chart2::XDiagram>& xDiagram,
     sal_Bool bAdaptProperties )
+    throw (css::uno::RuntimeException, std::exception)
 {
     bool bResult = ChartTypeTemplate::matchesTemplate(xDiagram, bAdaptProperties);
 
@@ -147,6 +148,7 @@ sal_Bool SAL_CALL GL3DBarChartTypeTemplate::matchesTemplate(
 
 uno::Reference<chart2::XChartType>
 GL3DBarChartTypeTemplate::getChartTypeForNewSeries( const uno::Sequence<uno::Reference<chart2::XChartType> >& /*xOldChartTypes*/ )
+    throw (css::uno::RuntimeException, ::std::exception)
 {
     uno::Reference<chart2::XChartType> xResult;
 
@@ -156,7 +158,7 @@ GL3DBarChartTypeTemplate::getChartTypeForNewSeries( const uno::Sequence<uno::Ref
             new GL3DBarChartType(GetComponentContext()));
         bool bVal = false;
         getFastPropertyValue(PROP_GL3DCHARTTYPE_ROUNDED_EDGE) >>= bVal;
-        chart->setPropertyValue(CHART_UNONAME_ROUNDED_EDGE, uno::Any(bVal));
+        chart->setPropertyValue(CHART_UNONAME_ROUNDED_EDGE, uno::makeAny(bVal));
         xResult = chart.get();
     }
     catch (const uno::Exception & ex)
@@ -168,11 +170,13 @@ GL3DBarChartTypeTemplate::getChartTypeForNewSeries( const uno::Sequence<uno::Ref
 }
 
 sal_Bool GL3DBarChartTypeTemplate::supportsCategories()
+    throw (css::uno::RuntimeException, ::std::exception)
 {
     return false;
 }
 
 css::uno::Any GL3DBarChartTypeTemplate::GetDefaultValue( sal_Int32 nHandle ) const
+    throw (css::beans::UnknownPropertyException)
 {
     const tPropertyValueMap& rDefaults = *Defaults::get();
     tPropertyValueMap::const_iterator it = rDefaults.find(nHandle);
@@ -185,6 +189,7 @@ cppu::IPropertyArrayHelper& GL3DBarChartTypeTemplate::getInfoHelper()
 }
 
 css::uno::Reference<css::beans::XPropertySetInfo> GL3DBarChartTypeTemplate::getPropertySetInfo()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return *ChartTypeInfo::get();
 }

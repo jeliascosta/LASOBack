@@ -29,7 +29,7 @@ class XMLEventOASISTransformerContext : public XMLRenameElemTransformerContext
 public:
     XMLEventOASISTransformerContext( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
-    virtual ~XMLEventOASISTransformerContext() override;
+    virtual ~XMLEventOASISTransformerContext();
 
     static XMLTransformerOASISEventMap_Impl *CreateFormEventMap();
     static XMLTransformerOASISEventMap_Impl *CreateEventMap();

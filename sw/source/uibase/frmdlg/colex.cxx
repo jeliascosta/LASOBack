@@ -37,6 +37,8 @@
 #include <viewopt.hxx>
 #include "colex.hxx"
 #include "colmgr.hxx"
+
+//UUUU
 #include <svx/unobrushitemhelper.hxx>
 
 // Taking the updated values from the set
@@ -46,8 +48,8 @@ void SwPageExample::UpdateExample( const SfxItemSet& rSet )
     {
         const SvxFrameDirectionItem& rDirItem =
                     static_cast<const SvxFrameDirectionItem&>(rSet.Get(RES_FRAMEDIR));
-        m_bVertical = rDirItem.GetValue() == SvxFrameDirection::Vertical_RL_TB||
-                    rDirItem.GetValue() == SvxFrameDirection::Vertical_LR_TB;
+        m_bVertical = rDirItem.GetValue() == FRMDIR_VERT_TOP_RIGHT||
+                    rDirItem.GetValue() == FRMDIR_VERT_TOP_LEFT;
     }
 
     SfxItemPool* pPool = rSet.GetPool();
@@ -127,7 +129,7 @@ void SwPageExample::UpdateExample( const SfxItemSet& rSet )
 
             if(SfxItemState::SET == rHeaderSet.GetItemState(RES_BACKGROUND))
             {
-                // create FillAttributes from SvxBrushItem //SetHdColor(rItem.GetColor());
+                //UUUU create FillAttributes from SvxBrushItem //SetHdColor(rItem.GetColor());
                 const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(rHeaderSet.Get(RES_BACKGROUND));
                 SfxItemSet aTempSet(*rHeaderSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -173,7 +175,7 @@ void SwPageExample::UpdateExample( const SfxItemSet& rSet )
 
             if( rFooterSet.GetItemState( RES_BACKGROUND ) == SfxItemState::SET )
             {
-                // create FillAttributes from SvxBrushItem //SetFtColor(rItem.GetColor());
+                //UUUU create FillAttributes from SvxBrushItem //SetFtColor(rItem.GetColor());
                 const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(rFooterSet.Get(RES_BACKGROUND));
                 SfxItemSet aTempSet(*rFooterSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -196,7 +198,7 @@ void SwPageExample::UpdateExample( const SfxItemSet& rSet )
 
     if(SfxItemState::SET == rSet.GetItemState(RES_BACKGROUND, false, &pItem))
     {
-        // create FillAttributes from SvxBrushItem
+        //UUUU create FillAttributes from SvxBrushItem
         const SvxBrushItem& rItem = static_cast< const SvxBrushItem& >(*pItem);
         SfxItemSet aTempSet(*rSet.GetPool(), XATTR_FILL_FIRST, XATTR_FILL_LAST);
 
@@ -222,7 +224,7 @@ void SwColExample::DrawPage(vcl::RenderContext& rRenderContext, const Point& rOr
     long nL = GetLeft();
     long nR = GetRight();
 
-    if (GetUsage() == SvxPageUsage::Mirror && !bSecond)
+    if (GetUsage() == SVX_PAGE_MIRROR && !bSecond)
     {
         // swap for mirrored
         nL = GetRight();
@@ -230,19 +232,22 @@ void SwColExample::DrawPage(vcl::RenderContext& rRenderContext, const Point& rOr
     }
 
     rRenderContext.SetFillColor(Color(COL_LIGHTGRAY));
-    tools::Rectangle aRect;
+    Rectangle aRect;
     aRect.Right() = rOrg.X() + GetSize().Width() - nR;
     aRect.Left()  = rOrg.X() + nL;
     aRect.Top()   = rOrg.Y() + GetTop() + GetHdHeight() + GetHdDist();
     aRect.Bottom()= rOrg.Y() + GetSize().Height() - GetBottom() - GetFtHeight() - GetFtDist();
     rRenderContext.DrawRect(aRect);
 
-    const tools::Rectangle aDefineRect(aRect);
+    //UUUU
+    const Rectangle aDefineRect(aRect);
+
+    //UUUU
     const drawinglayer::attribute::SdrAllFillAttributesHelperPtr& rFillAttributes = getPageFillAttributes();
 
     if (!rFillAttributes.get() || !rFillAttributes->isUsed())
     {
-        // If there is no fill, use fallback color
+        //UUUU If there is no fill, use fallback color
         const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
         const Color& rFieldColor = rStyleSettings.GetFieldColor();
 
@@ -272,7 +277,7 @@ void SwColExample::DrawPage(vcl::RenderContext& rRenderContext, const Point& rOr
         else
             aRect.Bottom() = aRect.Top() + nAutoColWidth;
 
-        // use primitive draw command
+        //UUUU use primitive draw command
         drawFillAttributes(rRenderContext, getPageFillAttributes(), aRect, aDefineRect);
 
         if (i < nColumnCount - 1)
@@ -351,7 +356,7 @@ SwColumnOnlyExample::SwColumnOnlyExample(vcl::Window* pParent)
     : Window(pParent)
     , m_aFrameSize(1,1)
 {
-    SetMapMode( MapMode( MapUnit::MapTwip ) );
+    SetMapMode( MapMode( MAP_TWIP ) );
     m_aWinSize = GetOptimalSize();
     m_aWinSize.Height() -= 4;
     m_aWinSize.Width() -= 4;
@@ -373,7 +378,7 @@ SwColumnOnlyExample::SwColumnOnlyExample(vcl::Window* pParent)
 
 VCL_BUILDER_FACTORY(SwColumnOnlyExample)
 
-void SwColumnOnlyExample::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
+void SwColumnOnlyExample::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
 {
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
     const Color& rFieldColor = rStyleSettings.GetFieldColor();
@@ -384,7 +389,7 @@ void SwColumnOnlyExample::Paint(vcl::RenderContext& rRenderContext, const tools:
         aGrayColor.Invert();
 
     Size aLogSize(rRenderContext.PixelToLogic(GetOutputSizePixel()));
-    tools::Rectangle aCompleteRect(Point(0,0), aLogSize);
+    Rectangle aCompleteRect(Point(0,0), aLogSize);
     rRenderContext.SetLineColor(rDlgColor);
     rRenderContext.SetFillColor(rDlgColor);
     rRenderContext.DrawRect(aCompleteRect);
@@ -392,11 +397,11 @@ void SwColumnOnlyExample::Paint(vcl::RenderContext& rRenderContext, const tools:
     rRenderContext.SetLineColor(rFieldTextColor);
     Point aTL((aLogSize.Width() - m_aFrameSize.Width()) / 2,
               (aLogSize.Height() - m_aFrameSize.Height()) / 2);
-    tools::Rectangle aRect(aTL, m_aFrameSize);
+    Rectangle aRect(aTL, m_aFrameSize);
 
     //draw a shadow rectangle
     rRenderContext.SetFillColor(Color(COL_GRAY));
-    tools::Rectangle aShadowRect(aRect);
+    Rectangle aShadowRect(aRect);
     aShadowRect.Move(aTL.Y(), aTL.Y());
     rRenderContext.DrawRect(aShadowRect);
 
@@ -438,7 +443,7 @@ void SwColumnOnlyExample::Paint(vcl::RenderContext& rRenderContext, const tools:
     {
         rRenderContext.DrawRect(aRect);
         rRenderContext.SetFillColor(rFieldColor);
-        tools::Rectangle aFrameRect(aTL, m_aFrameSize);
+        Rectangle aFrameRect(aTL, m_aFrameSize);
         long nSum = aTL.X();
         for (sal_uInt16 i = 0; i < nColCount; i++)
         {
@@ -508,7 +513,7 @@ void  SwColumnOnlyExample::SetColumns(const SwFormatCol& rCol)
 
 Size SwColumnOnlyExample::GetOptimalSize() const
 {
-    return LogicToPixel(Size(75, 46), MapMode(MapUnit::MapAppFont));
+    return LogicToPixel(Size(75, 46), MapMode(MAP_APPFONT));
 }
 
 SwPageGridExample::~SwPageGridExample()
@@ -540,14 +545,14 @@ void SwPageGridExample::DrawPage(vcl::RenderContext& rRenderContext, const Point
         long nL = GetLeft();
         long nR = GetRight();
 
-        if (GetUsage() == SvxPageUsage::Mirror && !bSecond)
+        if (GetUsage() == SVX_PAGE_MIRROR && !bSecond)
         {
             // rotate for mirrored
             nL = GetRight();
             nR = GetLeft();
         }
 
-        tools::Rectangle aRect;
+        Rectangle aRect;
         aRect.Right() = rOrg.X() + GetSize().Width() - nR;
         aRect.Left()  = rOrg.X() + nL;
         aRect.Top()   = rOrg.Y() + GetTop() + GetHdHeight() + GetHdDist();
@@ -558,11 +563,11 @@ void SwPageGridExample::DrawPage(vcl::RenderContext& rRenderContext, const Point
         sal_Int32 nRubyHeight = pGridItem->GetRubyHeight() * 3;
 
         //detect height of rectangles
-        tools::Rectangle aRubyRect(aRect.TopLeft(),
+        Rectangle aRubyRect(aRect.TopLeft(),
                     m_bVertical ?
                     Size(nRubyHeight, aRect.GetHeight()) :
                     Size(aRect.GetWidth(), nRubyHeight));
-        tools::Rectangle aCharRect(aRect.TopLeft(),
+        Rectangle aCharRect(aRect.TopLeft(),
                     m_bVertical ?
                     Size(nBaseHeight, aRect.GetHeight()) :
                     Size(aRect.GetWidth(), nBaseHeight));

@@ -49,6 +49,7 @@ public:
                  sal_Int32 nColumn,
                  const OUString& rPublicId,
                  const OUString& rSystemId);
+    ~ErrorRecord();
 
     sal_Int32 nId;  /// error ID
 
@@ -77,6 +78,11 @@ ErrorRecord::ErrorRecord( sal_Int32 nID, const Sequence<OUString>& rParams,
         aParams(rParams)
 {
 }
+
+ErrorRecord::~ErrorRecord()
+{
+}
+
 
 XMLErrors::XMLErrors()
 {
@@ -193,6 +199,7 @@ void XMLErrors::AddRecord(
 }
 
 void XMLErrors::ThrowErrorAsSAXException(sal_Int32 nIdMask)
+    throw( SAXParseException )
 {
     // search first error/warning that matches the nIdMask
     for( ErrorList::iterator aIter = aErrors.begin();

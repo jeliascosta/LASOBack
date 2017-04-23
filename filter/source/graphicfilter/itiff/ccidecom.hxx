@@ -45,16 +45,6 @@ struct CCILookUpTableEntry {
 
 class SvStream;
 
-struct DecompressStatus
-{
-    bool m_bSuccess;
-    bool m_bBufferUnchanged;
-    DecompressStatus(bool bSuccess, bool bBufferUnchanged)
-        : m_bSuccess(bSuccess), m_bBufferUnchanged(bBufferUnchanged)
-    {
-    }
-};
-
 class CCIDecompressor {
 
 public:
@@ -64,7 +54,7 @@ public:
 
     void StartDecompression( SvStream & rIStream );
 
-    DecompressStatus DecompressScanline(sal_uInt8 * pTarget, sal_uLong nTargetBits, bool bLastLine);
+    bool DecompressScanline(sal_uInt8 * pTarget, sal_uLong nTargetBits, bool bLastLine );
 
 private:
 
@@ -90,9 +80,9 @@ private:
     static sal_uInt16 CountBits(const sal_uInt8 * pData, sal_uInt16 nDataSizeBits,
                      sal_uInt16 nBitPos, sal_uInt8 nBlackOrWhite);
 
-    //returns true if pTarget was unmodified
-    bool Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits);
-    bool Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits);
+    void Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits);
+
+    void Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits);
 
     bool bTableBad;
 

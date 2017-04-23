@@ -18,9 +18,9 @@
  */
 
 
-#include "extended/AccessibleBrowseBoxHeaderCell.hxx"
+#include "accessibility/extended/AccessibleBrowseBoxHeaderCell.hxx"
 #include <svtools/accessibletableprovider.hxx>
-#include "extended/AccessibleBrowseBox.hxx"
+#include "accessibility/extended/AccessibleBrowseBox.hxx"
 
 namespace accessibility
 {
@@ -50,8 +50,7 @@ AccessibleBrowseBoxHeaderCell::AccessibleBrowseBoxHeaderCell(sal_Int32 _nColumnR
 */
 ::utl::AccessibleStateSetHelper* AccessibleBrowseBoxHeaderCell::implCreateStateSetHelper()
 {
-    SolarMethodGuard aGuard( getMutex() );
-
+    ::osl::MutexGuard aGuard( getOslMutex() );
     ::utl::AccessibleStateSetHelper*
         pStateSetHelper = new ::utl::AccessibleStateSetHelper;
 
@@ -61,6 +60,7 @@ AccessibleBrowseBoxHeaderCell::AccessibleBrowseBoxHeaderCell(sal_Int32 _nColumnR
         if( implIsShowing() )
             pStateSetHelper->AddState( AccessibleStateType::SHOWING );
 
+        SolarMutexGuard aSolarGuard;
         mpBrowseBox->FillAccessibleStateSet( *pStateSetHelper, getType() );
         pStateSetHelper->AddState( AccessibleStateType::VISIBLE );
         pStateSetHelper->AddState( AccessibleStateType::FOCUSABLE );
@@ -81,6 +81,7 @@ AccessibleBrowseBoxHeaderCell::AccessibleBrowseBoxHeaderCell(sal_Int32 _nColumnR
         The count of visible children.
 */
 sal_Int32 SAL_CALL AccessibleBrowseBoxHeaderCell::getAccessibleChildCount()
+    throw ( RuntimeException, std::exception )
 {
     return 0;
 }
@@ -90,6 +91,7 @@ sal_Int32 SAL_CALL AccessibleBrowseBoxHeaderCell::getAccessibleChildCount()
         The XAccessible interface of the specified child.
 */
 Reference<XAccessible > SAL_CALL AccessibleBrowseBoxHeaderCell::getAccessibleChild( sal_Int32 )
+    throw ( IndexOutOfBoundsException,RuntimeException, std::exception )
 {
     throw IndexOutOfBoundsException();
 }
@@ -97,10 +99,11 @@ Reference<XAccessible > SAL_CALL AccessibleBrowseBoxHeaderCell::getAccessibleChi
 
 /** Grabs the focus to the column header. */
 void SAL_CALL AccessibleBrowseBoxHeaderCell::grabFocus()
+    throw ( css::uno::RuntimeException, std::exception )
 {
-    SolarMethodGuard aGuard(getMutex());
+    SolarMutexGuard aSolarGuard;
+    ::osl::MutexGuard aGuard( getOslMutex() );
     ensureIsAlive();
-
     if ( isRowBarCell() )
         mpBrowseBox->SelectRow(m_nColumnRowId);
     else
@@ -111,13 +114,14 @@ void SAL_CALL AccessibleBrowseBoxHeaderCell::grabFocus()
         The name of this class.
 */
 OUString SAL_CALL AccessibleBrowseBoxHeaderCell::getImplementationName()
+    throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.svtools.AccessibleBrowseBoxHeaderCell" );
 }
 
 namespace
 {
-    tools::Rectangle getRectangle(IAccessibleTableProvider* _pBrowseBox,sal_Int32 _nRowColIndex, bool _bOnScreen,bool _bRowBar)
+    Rectangle getRectangle(IAccessibleTableProvider* _pBrowseBox,sal_Int32 _nRowColIndex, bool _bOnScreen,bool _bRowBar)
     {
         sal_Int32 nRow  = 0;
         sal_uInt16 nCol =  (sal_uInt16)_nRowColIndex;
@@ -127,25 +131,26 @@ namespace
             nCol = 0;
         }
 
-        tools::Rectangle aRet(_pBrowseBox->GetFieldRectPixelAbs( nRow , nCol, true, _bOnScreen));
-        return tools::Rectangle(aRet.TopLeft() - Point(0,aRet.GetHeight()),aRet.GetSize());
+        Rectangle aRet(_pBrowseBox->GetFieldRectPixelAbs( nRow , nCol, true, _bOnScreen));
+        return Rectangle(aRet.TopLeft() - Point(0,aRet.GetHeight()),aRet.GetSize());
     }
 }
 
-tools::Rectangle AccessibleBrowseBoxHeaderCell::implGetBoundingBox()
+Rectangle AccessibleBrowseBoxHeaderCell::implGetBoundingBox()
 {
     return getRectangle(mpBrowseBox,m_nColumnRowId,false,isRowBarCell());
 }
 
 
-tools::Rectangle AccessibleBrowseBoxHeaderCell::implGetBoundingBoxOnScreen()
+Rectangle AccessibleBrowseBoxHeaderCell::implGetBoundingBoxOnScreen()
 {
     return getRectangle(mpBrowseBox,m_nColumnRowId,true,isRowBarCell());
 }
 
 sal_Int32 SAL_CALL AccessibleBrowseBoxHeaderCell::getAccessibleIndexInParent()
+    throw ( RuntimeException, std::exception )
 {
-    ::osl::MutexGuard aGuard( getMutex() );
+    ::osl::MutexGuard aGuard( getOslMutex() );
     ensureIsAlive();
     sal_Int32 nIndex = m_nColumnRowId;
     if ( mpBrowseBox->HasRowHeader() )

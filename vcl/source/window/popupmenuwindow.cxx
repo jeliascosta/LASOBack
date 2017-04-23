@@ -26,6 +26,7 @@ struct PopupMenuFloatingWindow::ImplData
     sal_uInt16      mnMenuStackLevel;  // Store the stack level of a popup menu.  0 = top-level menu.
 
     ImplData();
+    ~ImplData();
 };
 
 PopupMenuFloatingWindow::ImplData::ImplData() :
@@ -33,8 +34,12 @@ PopupMenuFloatingWindow::ImplData::ImplData() :
 {
 }
 
-PopupMenuFloatingWindow::PopupMenuFloatingWindow( vcl::Window* pParent ) :
-    FloatingWindow(pParent, WB_SYSTEMFLOATWIN | WB_SYSTEMWINDOW | WB_NOBORDER ),
+PopupMenuFloatingWindow::ImplData::~ImplData()
+{
+}
+
+PopupMenuFloatingWindow::PopupMenuFloatingWindow( vcl::Window* pParent, WinBits nStyle ) :
+    FloatingWindow(pParent, nStyle),
     mpImplData(new ImplData)
 {
 }

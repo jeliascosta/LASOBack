@@ -30,7 +30,7 @@
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 #include <cppuhelper/factory.hxx>
 
-#include <sfx2/sfxuno.hxx>
+class SfxMedium;
 
 namespace com
 {
@@ -46,23 +46,23 @@ namespace com
     }
 }
 
+#include <sfx2/sfxuno.hxx>
 class SfxMedium;
 class SfxFilter;
-class SfxMedium;
 
 class SwFilterDetect : public ::cppu::WeakImplHelper< css::document::XExtendedFilterDetection, css::lang::XServiceInfo >
 {
 public:
                             SwFilterDetect();
-    virtual                 ~SwFilterDetect() override;
+    virtual                 ~SwFilterDetect();
 
     /* XServiceInfo */
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
     // XExtendedFilterDetect
-    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& lDescriptor ) override;
+    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& lDescriptor ) throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 #endif

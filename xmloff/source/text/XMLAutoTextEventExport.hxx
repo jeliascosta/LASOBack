@@ -54,11 +54,14 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext, OUString const & implementationName, SvXMLExportFlags nFlags
         );
 
-    virtual ~XMLAutoTextEventExport() override;
+    virtual ~XMLAutoTextEventExport();
 
     // XInitialization
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any> & rArguments ) override;
+        const css::uno::Sequence<css::uno::Any> & rArguments )
+        throw(
+            css::uno::Exception,
+            css::uno::RuntimeException, std::exception) override;
 
 protected:
 

@@ -40,22 +40,32 @@ private:
     GSeekable *mpStream;
 public:
     explicit Seekable( GSeekable *pStream );
-    virtual ~Seekable() override;
+    virtual ~Seekable();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type & type ) override;
+    virtual css::uno::Any SAL_CALL queryInterface(const css::uno::Type & type )
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire() throw () override { OWeakObject::acquire(); }
     virtual void SAL_CALL release() throw() override { OWeakObject::release(); }
 
     // XSeekable
-    virtual void SAL_CALL seek( sal_Int64 location ) override;
+    virtual void SAL_CALL seek( sal_Int64 location )
+            throw( css::lang::IllegalArgumentException,
+                css::io::IOException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int64 SAL_CALL getPosition() override;
+    virtual sal_Int64 SAL_CALL getPosition()
+            throw( css::io::IOException,
+                css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int64 SAL_CALL getLength() override;
+    virtual sal_Int64 SAL_CALL getLength()
+            throw( css::io::IOException,
+                css::uno::RuntimeException, std::exception ) override;
 
     // XTruncate
-    virtual void SAL_CALL truncate() override;
+    virtual void SAL_CALL truncate()
+            throw( css::io::IOException,
+                css::uno::RuntimeException, std::exception ) override;
 };
 
 } // namespace gio

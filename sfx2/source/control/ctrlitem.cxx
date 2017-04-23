@@ -223,6 +223,9 @@ void SfxControllerItem::StateChanged
     switched or when the slot was invalidated explicitly with
     <SfxBindings::Invalidate()>.
 
+    Achtung! Die Methode wird nicht gerufen, wenn der Slot ung"ultig wurde,
+    danach jedoch wieder denselben Wert angenommen hat.
+
     Beware! The method is not called when the slot is invalid, however
     has again assumed the same value.
 
@@ -299,7 +302,7 @@ SfxItemState SfxControllerItem::GetItemState
 }
 
 
-MapUnit SfxControllerItem::GetCoreMetric() const
+SfxMapUnit SfxControllerItem::GetCoreMetric() const
 
 /*  [Description]
 
@@ -338,7 +341,7 @@ MapUnit SfxControllerItem::GetCoreMetric() const
     }
 
     SAL_INFO( "sfx.control", "W1: Can not find ItemPool!" );
-    return MapUnit::Map100thMM;
+    return SFX_MAPUNIT_100TH_MM;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

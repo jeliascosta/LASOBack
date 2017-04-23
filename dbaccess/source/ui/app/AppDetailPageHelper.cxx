@@ -31,7 +31,6 @@
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/container/XContainer.hpp>
 #include <com/sun/star/form/XLoadable.hpp>
-#include <com/sun/star/frame/thePopupMenuControllerFactory.hpp>
 #include <com/sun/star/frame/XLayoutManager.hpp>
 #include <com/sun/star/frame/Frame.hpp>
 #include <com/sun/star/frame/FrameSearchFlag.hpp>
@@ -49,8 +48,6 @@
 #include <com/sun/star/ucb/XCommandProcessor.hpp>
 #include <com/sun/star/ucb/Command.hpp>
 #include <com/sun/star/util/XCloseable.hpp>
-#include <comphelper/propertyvalue.hxx>
-#include <comphelper/string.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include "AppView.hxx"
 #include "dbaccess_helpid.hrc"
@@ -61,10 +58,8 @@
 #include "dbaccess_slotid.hrc"
 #include "databaseobjectview.hxx"
 #include "imageprovider.hxx"
-#include <vcl/commandinfoprovider.hxx>
 #include <vcl/waitobj.hxx>
 #include <vcl/settings.hxx>
-#include <toolkit/awt/vclxmenu.hxx>
 #include <tools/stream.hxx>
 #include <rtl/ustrbuf.hxx>
 #include "svtools/treelistentry.hxx"
@@ -132,26 +127,26 @@ namespace
     // class OPreviewWindow
     class OTablePreviewWindow : public vcl::Window
     {
-        DECL_LINK(OnDisableInput, void*, void);
+        DECL_LINK_TYPED(OnDisableInput, void*, void);
         void ImplInitSettings();
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OTablePreviewWindow( vcl::Window* pParent, WinBits nStyle = 0 );
-        virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+        virtual bool Notify( NotifyEvent& rNEvt ) override;
     };
     OTablePreviewWindow::OTablePreviewWindow(vcl::Window* pParent, WinBits nStyle) : Window( pParent, nStyle)
     {
         ImplInitSettings();
     }
-    bool OTablePreviewWindow::EventNotify( NotifyEvent& rNEvt )
+    bool OTablePreviewWindow::Notify( NotifyEvent& rNEvt )
     {
-        bool bRet = Window::EventNotify(rNEvt);
+        bool bRet = Window::Notify( rNEvt );
         if ( rNEvt.GetType() == MouseNotifyEvent::INPUTENABLE && IsInputEnabled() )
             PostUserEvent( LINK( this, OTablePreviewWindow, OnDisableInput), nullptr, true );
         return bRet;
     }
-    IMPL_LINK_NOARG(OTablePreviewWindow, OnDisableInput, void*, void)
+    IMPL_LINK_NOARG_TYPED(OTablePreviewWindow, OnDisableInput, void*, void)
     {
         EnableInput(false);
     }
@@ -193,14 +188,16 @@ OAppDetailPageHelper::OAppDetailPageHelper(vcl::Window* _pParent,OAppBorderWindo
     ,m_aDocumentInfo(VclPtr< ::svtools::ODocumentInfoPreview>::Create(m_aBorder.get(), WB_LEFT | WB_VSCROLL | WB_READONLY) )
     ,m_ePreviewMode(_ePreviewMode)
 {
+
     m_aBorder->SetBorderStyle(WindowBorderStyle::MONO);
 
+    m_aMenu.reset(new PopupMenu( ModuleRes( RID_MENU_APP_PREVIEW ) ));
+
     m_aTBPreview->SetOutStyle(TOOLBOX_STYLE_FLAT);
-    m_aTBPreview->InsertItem(SID_DB_APP_DISABLE_PREVIEW,
-                             vcl::CommandInfoProvider::GetLabelForCommand(".uno:DBDisablePreview", "com.sun.star.sdb.OfficeDatabaseDocument"),
-                             ToolBoxItemBits::LEFT|ToolBoxItemBits::DROPDOWN|ToolBoxItemBits::AUTOSIZE|ToolBoxItemBits::RADIOCHECK);
+    m_aTBPreview->InsertItem(SID_DB_APP_DISABLE_PREVIEW,m_aMenu->GetItemText(SID_DB_APP_DISABLE_PREVIEW),ToolBoxItemBits::LEFT|ToolBoxItemBits::DROPDOWN|ToolBoxItemBits::AUTOSIZE|ToolBoxItemBits::RADIOCHECK);
     m_aTBPreview->SetHelpId(HID_APP_VIEW_PREVIEW_CB);
     m_aTBPreview->SetDropdownClickHdl( LINK( this, OAppDetailPageHelper, OnDropdownClickHdl ) );
+    m_aTBPreview->EnableMenuStrings();
     m_aTBPreview->Enable();
 
     m_aPreview->SetHelpId(HID_APP_VIEW_PREVIEW_1);
@@ -245,6 +242,7 @@ void OAppDetailPageHelper::dispose()
             rpBox.disposeAndClear();
         }
     }
+    m_aMenu.reset();
     m_pTablePreview.disposeAndClear();
     m_aDocumentInfo.disposeAndClear();
     m_aPreview.disposeAndClear();
@@ -311,7 +309,7 @@ void OAppDetailPageHelper::sortUp()
         sort(nPos,SortAscending);
 }
 
-void OAppDetailPageHelper::getSelectionElementNames( std::vector< OUString>& _rNames ) const
+void OAppDetailPageHelper::getSelectionElementNames( ::std::vector< OUString>& _rNames ) const
 {
     int nPos = getVisibleControlIndex();
     if ( nPos < E_ELEMENT_TYPE_COUNT )
@@ -366,7 +364,7 @@ void OAppDetailPageHelper::describeCurrentSelectionForType( const ElementType _e
     if ( !pList )
         return;
 
-    std::vector< NamedDatabaseObject > aSelected;
+    ::std::vector< NamedDatabaseObject > aSelected;
 
     SvTreeListEntry* pEntry = pList->FirstSelected();
     while( pEntry )
@@ -691,7 +689,7 @@ void OAppDetailPageHelper::fillNames( const Reference< XNameAccess >& _xContaine
     OSL_ENSURE(_xContainer.is(),"Data source is NULL! -> GPF");
     OSL_ENSURE( ( _eType >= E_TABLE ) && ( _eType < E_ELEMENT_TYPE_COUNT ), "OAppDetailPageHelper::fillNames: invalid type!" );
 
-    DBTreeListBox* pList = m_pLists[ _eType ].get();
+    DBTreeListBox* pList = m_pLists[ _eType ];
     OSL_ENSURE( pList, "OAppDetailPageHelper::fillNames: you really should create the list before calling this!" );
     if ( !pList )
         return;
@@ -717,9 +715,9 @@ void OAppDetailPageHelper::fillNames( const Reference< XNameAccess >& _xContaine
             {
                 pEntry = pList->InsertEntry( *pIter, _pParent );
 
-                Image aImage{BitmapEx(ModuleRes(_nImageId))};
-                pList->SetExpandedEntryBmp(pEntry, aImage);
-                pList->SetCollapsedEntryBmp(pEntry, aImage);
+                Image aImage{ ModuleRes( _nImageId ) };
+                pList->SetExpandedEntryBmp(  pEntry, aImage );
+                pList->SetCollapsedEntryBmp( pEntry, aImage );
             }
         }
     }
@@ -740,7 +738,7 @@ DBTreeListBox* OAppDetailPageHelper::createTree( DBTreeListBox* _pTreeView, cons
     _pTreeView->SetStyle(_pTreeView->GetStyle() | WB_HASLINES | WB_SORT | WB_HASBUTTONS | WB_HSCROLL |WB_HASBUTTONSATROOT | WB_TABSTOP);
     _pTreeView->GetModel()->SetSortMode(SortAscending);
     _pTreeView->EnableCheckButton( nullptr ); // do not show any buttons
-    _pTreeView->SetSelectionMode(SelectionMode::Multiple);
+    _pTreeView->SetSelectionMode(MULTIPLE_SELECTION);
 
     _pTreeView->SetDefaultCollapsedEntryBmp( _rImage );
     _pTreeView->SetDefaultExpandedEntryBmp( _rImage );
@@ -813,7 +811,7 @@ void OAppDetailPageHelper::elementReplaced(ElementType _eType
 SvTreeListEntry* OAppDetailPageHelper::elementAdded(ElementType _eType,const OUString& _rName, const Any& _rObject )
 {
     SvTreeListEntry* pRet = nullptr;
-    DBTreeListBox* pTreeView = m_pLists[_eType].get();
+    DBTreeListBox* pTreeView = m_pLists[_eType];
     if( _eType == E_TABLE && pTreeView )
     {
         pRet = static_cast<OTableTreeListBox*>(pTreeView)->addedTable( _rName );
@@ -846,7 +844,7 @@ SvTreeListEntry* OAppDetailPageHelper::elementAdded(ElementType _eType,const OUS
         {
             pRet = pTreeView->InsertEntry( _rName, pEntry );
 
-            Image aImage{BitmapEx(ModuleRes(nImageId))};
+            Image aImage{ ModuleRes( nImageId ) };
             pTreeView->SetExpandedEntryBmp(  pRet, aImage );
             pTreeView->SetCollapsedEntryBmp( pRet, aImage );
         }
@@ -892,33 +890,33 @@ void OAppDetailPageHelper::elementRemoved( ElementType _eType,const OUString& _r
     }
 }
 
-IMPL_LINK(OAppDetailPageHelper, OnEntryEnterKey, DBTreeListBox*, _pTree, void )
+IMPL_LINK_TYPED(OAppDetailPageHelper, OnEntryEnterKey, DBTreeListBox*, _pTree, void )
 {
     OnEntryDoubleClick(_pTree);
 }
-IMPL_LINK(OAppDetailPageHelper, OnEntryDoubleClick, SvTreeListBox*, _pTree, bool)
+IMPL_LINK_TYPED(OAppDetailPageHelper, OnEntryDoubleClick, SvTreeListBox*, _pTree, bool)
 {
     OSL_ENSURE( _pTree, "OAppDetailPageHelper, OnEntryDoubleClick: invalid callback!" );
     bool bHandled = ( _pTree != nullptr ) && getBorderWin().getView()->getAppController().onEntryDoubleClick( *_pTree );
     return bHandled;
 }
 
-IMPL_LINK_NOARG(OAppDetailPageHelper, OnEntrySelChange, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnEntrySelChange, LinkParamNone*, void)
 {
     getBorderWin().getView()->getAppController().onSelectionChanged();
 }
 
-IMPL_LINK_NOARG( OAppDetailPageHelper, OnCopyEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnCopyEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onCopyEntry();
 }
 
-IMPL_LINK_NOARG( OAppDetailPageHelper, OnPasteEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnPasteEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onPasteEntry();
 }
 
-IMPL_LINK_NOARG( OAppDetailPageHelper, OnDeleteEntry, LinkParamNone*, void )
+IMPL_LINK_NOARG_TYPED( OAppDetailPageHelper, OnDeleteEntry, LinkParamNone*, void )
 {
     getBorderWin().getView()->getAppController().onDeleteEntry();
 }
@@ -933,7 +931,7 @@ void OAppDetailPageHelper::Resize()
     vcl::Window* pWindow = getCurrentView();
     if ( pWindow )
     {
-        Size aFLSize = LogicToPixel( Size( 2, 6 ), MapUnit::MapAppFont );
+        Size aFLSize = LogicToPixel( Size( 2, 6 ), MAP_APPFONT );
         sal_Int32 n6PPT = aFLSize.Height();
         long nHalfOutputWidth = static_cast<long>(nOutputWidth * 0.5);
 
@@ -959,14 +957,6 @@ bool OAppDetailPageHelper::isPreviewEnabled()
     return m_ePreviewMode != E_PREVIEWNONE;
 }
 
-namespace
-{
-    OUString stripTrailingDots(const OUString& rStr)
-    {
-        return comphelper::string::stripEnd(rStr, '.');
-    }
-}
-
 void OAppDetailPageHelper::switchPreview(PreviewMode _eMode,bool _bForce)
 {
     if ( m_ePreviewMode != _eMode || _bForce )
@@ -975,28 +965,25 @@ void OAppDetailPageHelper::switchPreview(PreviewMode _eMode,bool _bForce)
 
         getBorderWin().getView()->getAppController().previewChanged(static_cast<sal_Int32>(m_ePreviewMode));
 
-        OUString aCommand;
+        sal_uInt16 nSelectedAction = SID_DB_APP_DISABLE_PREVIEW;
         switch ( m_ePreviewMode )
         {
             case E_PREVIEWNONE:
-                aCommand = ".uno:DBDisablePreview";
+                nSelectedAction = SID_DB_APP_DISABLE_PREVIEW;
                 break;
             case E_DOCUMENT:
-                aCommand = ".uno:DBShowDocPreview";
+                nSelectedAction = SID_DB_APP_VIEW_DOC_PREVIEW;
                 break;
             case E_DOCUMENTINFO:
                 if ( getBorderWin().getView()->getAppController().isCommandEnabled(SID_DB_APP_VIEW_DOCINFO_PREVIEW) )
-                    aCommand = ".uno:DBShowDocInfoPreview";
+                    nSelectedAction = SID_DB_APP_VIEW_DOCINFO_PREVIEW;
                 else
-                {
                     m_ePreviewMode = E_PREVIEWNONE;
-                    aCommand = ".uno:DBDisablePreview";
-                }
                 break;
         }
 
-        OUString aCommandLabel = vcl::CommandInfoProvider::GetLabelForCommand(aCommand, "com.sun.star.sdb.OfficeDatabaseDocument");
-        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, stripTrailingDots(aCommandLabel));
+        m_aMenu->CheckItem(nSelectedAction);
+        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, m_aMenu->GetItemText(nSelectedAction));
         Resize();
 
         // simulate a selectionChanged event at the controller, to force the preview to be updated
@@ -1143,7 +1130,7 @@ void OAppDetailPageHelper::showPreview( const OUString& _sDataSourceName,
     }
 }
 
-IMPL_LINK_NOARG(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
+IMPL_LINK_NOARG_TYPED(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
 {
     m_aTBPreview->EndSelection();
 
@@ -1158,25 +1145,21 @@ IMPL_LINK_NOARG(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
     m_aTBPreview->Update();
 
     // execute the menu
-    css::uno::Reference<css::uno::XComponentContext> xContext(getBorderWin().getView()->getORB());
-    css::uno::Reference<css::frame::XUIControllerFactory> xPopupMenuFactory(css::frame::thePopupMenuControllerFactory::get(xContext));
-    if (!xPopupMenuFactory.is())
-        return;
+    std::unique_ptr<PopupMenu> aMenu(new PopupMenu( ModuleRes( RID_MENU_APP_PREVIEW ) ));
 
-    css::uno::Sequence<css::uno::Any> aArgs {
-        css::uno::makeAny(comphelper::makePropertyValue("InToolbar", true)),
-        css::uno::makeAny(comphelper::makePropertyValue("ModuleIdentifier", OUString("com.sun.star.sdb.OfficeDatabaseDocument"))),
-        css::uno::makeAny(comphelper::makePropertyValue("Frame", getBorderWin().getView()->getAppController().getFrame())) };
+    const sal_uInt16 pActions[] = { SID_DB_APP_DISABLE_PREVIEW
+                            , SID_DB_APP_VIEW_DOC_PREVIEW
+                            , SID_DB_APP_VIEW_DOCINFO_PREVIEW
+    };
 
-    css::uno::Reference<css::frame::XPopupMenuController> xPopupController(
-        xPopupMenuFactory->createInstanceWithArgumentsAndContext(".uno:DBPreview", aArgs, xContext), css::uno::UNO_QUERY);
+    for(unsigned short nAction : pActions)
+    {
+        aMenu->CheckItem(nAction,m_aMenu->IsItemChecked(nAction));
+    }
+    aMenu->EnableItem( SID_DB_APP_VIEW_DOCINFO_PREVIEW, getBorderWin().getView()->getAppController().isCommandEnabled(SID_DB_APP_VIEW_DOCINFO_PREVIEW) );
 
-    if (!xPopupController.is())
-        return;
-
-    rtl::Reference<VCLXPopupMenu> xPopupMenu(new VCLXPopupMenu);
-    xPopupController->setPopupMenu(xPopupMenu.get());
-    VclPtr<PopupMenu> aMenu(static_cast<PopupMenu*>(xPopupMenu->GetMenu()));
+    // no disabled entries
+    aMenu->RemoveDisabledEntries();
 
     sal_uInt16 nSelectedAction = aMenu->Execute(m_aTBPreview.get(), m_aTBPreview->GetItemRect( SID_DB_APP_DISABLE_PREVIEW ));
     // "cleanup" the toolbox state
@@ -1185,13 +1168,10 @@ IMPL_LINK_NOARG(OAppDetailPageHelper, OnDropdownClickHdl, ToolBox*, void)
     m_aTBPreview->SetItemDown( SID_DB_APP_DISABLE_PREVIEW, false);
     if ( nSelectedAction )
     {
-        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, stripTrailingDots(aMenu->GetItemText(nSelectedAction)));
+        m_aTBPreview->SetItemText(SID_DB_APP_DISABLE_PREVIEW, aMenu->GetItemText(nSelectedAction));
         Resize();
+        getBorderWin().getView()->getAppController().executeChecked(nSelectedAction,Sequence<PropertyValue>());
     }
-
-    css::uno::Reference<css::lang::XComponent> xComponent(xPopupController, css::uno::UNO_QUERY);
-    if (xComponent.is())
-        xComponent->dispose();
 }
 
 void OAppDetailPageHelper::KeyInput( const KeyEvent& rKEvt )
@@ -1262,7 +1242,7 @@ OPreviewWindow::OPreviewWindow(vcl::Window* _pParent)
     ImplInitSettings();
 }
 
-bool OPreviewWindow::ImplGetGraphicCenterRect( const Graphic& rGraphic, tools::Rectangle& rResultRect ) const
+bool OPreviewWindow::ImplGetGraphicCenterRect( const Graphic& rGraphic, Rectangle& rResultRect ) const
 {
     const Size aWinSize( GetOutputSizePixel() );
     Size       aNewSize( LogicToPixel( rGraphic.GetPrefSize(), rGraphic.GetPrefMapMode() ) );
@@ -1288,14 +1268,14 @@ bool OPreviewWindow::ImplGetGraphicCenterRect( const Graphic& rGraphic, tools::R
         const Point aNewPos( ( aWinSize.Width()  - aNewSize.Width() ) >> 1,
                              ( aWinSize.Height() - aNewSize.Height() ) >> 1 );
 
-        rResultRect = tools::Rectangle( aNewPos, aNewSize );
+        rResultRect = Rectangle( aNewPos, aNewSize );
         bRet = true;
     }
 
     return bRet;
 }
 
-void OPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void OPreviewWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     Window::Paint(rRenderContext, rRect);
 

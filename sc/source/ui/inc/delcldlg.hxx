@@ -35,8 +35,8 @@ private:
     VclPtr<RadioButton> m_pBtnDelCols;
 
 public:
-    ScDeleteCellDlg(vcl::Window* pParent, bool bDisallowCellMove);
-    virtual ~ScDeleteCellDlg() override;
+    ScDeleteCellDlg(vcl::Window* pParent, bool bDisallowCellMove = false);
+    virtual ~ScDeleteCellDlg();
     virtual void dispose() override;
 
     DelCellCmd GetDelCellCmd() const;

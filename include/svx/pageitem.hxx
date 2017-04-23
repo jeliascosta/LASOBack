@@ -21,19 +21,34 @@
 
 #include <svl/poolitem.hxx>
 #include <svx/svxdllapi.h>
-#include <editeng/svxenum.hxx>
+
+
+enum SvxNumType
+{
+    SVX_CHARS_UPPER_LETTER,
+    SVX_CHARS_LOWER_LETTER,
+    SVX_ROMAN_UPPER,
+    SVX_ROMAN_LOWER,
+    SVX_ARABIC,
+    SVX_NUMBER_NONE,
+    SVX_CHAR_SPECIAL,
+    SVX_PAGEDESC,
+    SVX_BITMAP,
+    SVX_CHARS_UPPER_LETTER_N
+};
 
 /*--------------------------------------------------------------------
   usage of the page
  --------------------------------------------------------------------*/
 
-enum class SvxPageUsage
+enum SvxPageUsage
 {
-    NONE           = 0,
-    Left           = 1,
-    Right          = 2,
-    All            = 3,
-    Mirror         = 7
+    SVX_PAGE_LEFT           = 0x0001,
+    SVX_PAGE_RIGHT          = 0x0002,
+    SVX_PAGE_ALL            = 0x0003,
+    SVX_PAGE_MIRROR         = 0x0007,
+    SVX_PAGE_HEADERSHARE    = 0x0040,
+    SVX_PAGE_FOOTERSHARE    = 0x0080
 };
 
 /*--------------------------------------------------------------------
@@ -49,9 +64,9 @@ class SVX_DLLPUBLIC SvxPageItem: public SfxPoolItem
 {
 private:
     OUString            aDescName;          // name of the template
-    SvxNumType          eNumType;
+    SvxNumType          eNumType;           // enumeration
     bool                bLandscape;         // Portrait / Landscape
-    SvxPageUsage        eUse;               // Layout
+    sal_uInt16          eUse;               // Layout
 
 public:
 
@@ -59,15 +74,15 @@ public:
     SvxPageItem( const sal_uInt16 nId );
     SvxPageItem( const SvxPageItem& rItem );
 
-    virtual ~SvxPageItem() override;
+    virtual ~SvxPageItem();
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool             operator==( const SfxPoolItem& ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
@@ -75,8 +90,8 @@ public:
     virtual SvStream&        Store( SvStream& , sal_uInt16 nItemVersion ) const override;
 
     // orientation
-    SvxPageUsage    GetPageUsage() const                { return eUse;       }
-    void            SetPageUsage(SvxPageUsage eU)       { eUse= eU;          }
+    sal_uInt16          GetPageUsage() const                { return eUse;       }
+    void            SetPageUsage(sal_uInt16 eU)             { eUse= eU;          }
 
     bool            IsLandscape() const                 { return bLandscape; }
     void            SetLandscape(bool bL)               { bLandscape = bL;   }
@@ -86,7 +101,7 @@ public:
     void            SetNumType(SvxNumType eNum)         { eNumType = eNum;   }
 
     // name of the descriptor
-    void            SetDescName(const OUString& rStr)   { aDescName = rStr;  }
+    void            SetDescName(const OUString& rStr)     { aDescName = rStr;  }
 };
 
 
@@ -104,9 +119,9 @@ public:
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Create( SvStream&, sal_uInt16 nVersion ) const override;
     virtual SvStream&       Store( SvStream&, sal_uInt16 nItemVersion ) const override;

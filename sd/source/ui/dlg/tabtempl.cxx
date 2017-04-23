@@ -24,10 +24,8 @@
 #include <svx/drawitem.hxx>
 #include <svl/intitem.hxx>
 #include <svx/ofaitem.hxx>
-#include <svx/svdmark.hxx>
-#include <svx/svdmodel.hxx>
-#include <svx/svdview.hxx>
 #include <svx/svxgrahicitem.hxx>
+#include <svx/svdmodel.hxx>
 #include <svl/cjkoptions.hxx>
 
 #include <svx/dialogs.hrc>
@@ -61,7 +59,6 @@ SdTabTemplateDlg::SdTabTemplateDlg( vcl::Window* pParent,
     , pGradientList(pModel->GetGradientList())
     , pHatchingList(pModel->GetHatchList())
     , pBitmapList(pModel->GetBitmapList())
-    , pPatternList(pModel->GetPatternList())
     , pDashList(pModel->GetDashList())
     , pLineEndList(pModel->GetLineEndList())
     , m_nLineId(0)
@@ -99,6 +96,15 @@ SdTabTemplateDlg::SdTabTemplateDlg( vcl::Window* pParent,
         m_nAsianTypoId = AddTabPage("asiantypo", RID_SVXPAGE_PARA_ASIAN);
     else
         RemoveTabPage("asiantypo");
+
+    nDlgType = 1;
+    nPageType = 0;
+    nPos = 0;
+
+    nColorTableState = ChangeType::NONE;
+    nBitmapListState = ChangeType::NONE;
+    nGradientListState = ChangeType::NONE;
+    nHatchingListState = ChangeType::NONE;
 }
 
 void SdTabTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
@@ -109,7 +115,7 @@ void SdTabTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
         aSet.Put (SvxColorListItem(pColorList,SID_COLOR_TABLE));
         aSet.Put (SvxDashListItem(pDashList,SID_DASH_LIST));
         aSet.Put (SvxLineEndListItem(pLineEndList,SID_LINEEND_LIST));
-        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
         rPage.PageCreated(aSet);
     }
     else if (nId == m_nAreaId)
@@ -118,23 +124,22 @@ void SdTabTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
         aSet.Put (SvxGradientListItem(pGradientList,SID_GRADIENT_LIST));
         aSet.Put (SvxHatchListItem(pHatchingList,SID_HATCH_LIST));
         aSet.Put (SvxBitmapListItem(pBitmapList,SID_BITMAP_LIST));
-        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
-        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
-        aSet.Put (SfxUInt16Item(SID_TABPAGE_POS,0));
-        aSet.Put (SvxPatternListItem(pPatternList,SID_PATTERN_LIST));
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
+        aSet.Put (SfxUInt16Item(SID_TABPAGE_POS,nPos));
         rPage.PageCreated(aSet);
     }
     else if (nId == m_nShadowId)
     {
         aSet.Put (SvxColorListItem(pColorList,SID_COLOR_TABLE));
-        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
-        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
         rPage.PageCreated(aSet);
     }
     else if (nId == m_nTransparencyId)
     {
-        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,0));
-        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,1));
+        aSet.Put (SfxUInt16Item(SID_PAGE_TYPE,nPageType));
+        aSet.Put (SfxUInt16Item(SID_DLG_TYPE,nDlgType));
         rPage.PageCreated(aSet);
     }
     else if (nId == m_nFontId)
@@ -151,6 +156,7 @@ void SdTabTemplateDlg::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
     }
     else if (nId == m_nTextId)
     {
+        aSet.Put(OfaPtrItem(SID_SVXTEXTATTRPAGE_VIEW,pSdrView));
         rPage.PageCreated(aSet);
     }
     else if (nId == m_nDimensionId)

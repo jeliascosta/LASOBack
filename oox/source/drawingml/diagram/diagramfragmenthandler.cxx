@@ -47,6 +47,7 @@ DiagramDataFragmentHandler::~DiagramDataFragmentHandler( ) throw ()
 }
 
 void SAL_CALL DiagramDataFragmentHandler::endDocument()
+    throw (SAXException, RuntimeException, std::exception)
 {
 
 }
@@ -81,6 +82,7 @@ DiagramLayoutFragmentHandler::~DiagramLayoutFragmentHandler( ) throw ()
 }
 
 void SAL_CALL DiagramLayoutFragmentHandler::endDocument()
+    throw (SAXException, RuntimeException, std::exception)
 {
 
 }

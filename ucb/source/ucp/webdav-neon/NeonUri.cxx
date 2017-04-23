@@ -73,6 +73,7 @@ const ne_uri g_sUriDefaultsFTP   = { const_cast<char *>("ftp"),
 } // namespace
 
 NeonUri::NeonUri( const ne_uri * inUri )
+    throw ( DAVException )
 {
     if ( inUri == nullptr )
         throw DAVException( DAVException::DAV_INVALID_ARG );
@@ -89,6 +90,7 @@ NeonUri::NeonUri( const ne_uri * inUri )
 }
 
 NeonUri::NeonUri( const OUString & inUri )
+    throw ( DAVException )
 {
     if ( inUri.isEmpty() )
         throw DAVException( DAVException::DAV_INVALID_ARG );

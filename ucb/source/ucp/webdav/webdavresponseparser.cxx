@@ -307,6 +307,7 @@ namespace
         ucb::Lock                                   maLock;
         WebDAVResponseParserMode                    meWebDAVResponseParserMode;
 
+        // bitfield
         bool                                        mbResourceTypeCollection : 1;
         bool                                        mbLockScopeSet : 1;
         bool                                        mbLockTypeSet : 1;
@@ -352,17 +353,17 @@ namespace
 
     public:
         explicit WebDAVResponseParser(WebDAVResponseParserMode eWebDAVResponseParserMode);
-        virtual ~WebDAVResponseParser() override;
+        virtual ~WebDAVResponseParser();
 
         // Methods XDocumentHandler
-        virtual void SAL_CALL startDocument(  ) override;
-        virtual void SAL_CALL endDocument(  ) override;
-        virtual void SAL_CALL startElement( const OUString& aName, const uno::Reference< xml::sax::XAttributeList >& xAttribs ) override;
-        virtual void SAL_CALL endElement( const OUString& aName ) override;
-        virtual void SAL_CALL characters( const OUString& aChars ) override;
-        virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) override;
-        virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) override;
-        virtual void SAL_CALL setDocumentLocator( const uno::Reference< xml::sax::XLocator >& xLocator ) override;
+        virtual void SAL_CALL startDocument(  ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL endDocument(  ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL startElement( const OUString& aName, const uno::Reference< xml::sax::XAttributeList >& xAttribs ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL endElement( const OUString& aName ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL characters( const OUString& aChars ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) throw (xml::sax::SAXException, uno::RuntimeException) override;
+        virtual void SAL_CALL setDocumentLocator( const uno::Reference< xml::sax::XLocator >& xLocator ) throw (xml::sax::SAXException, uno::RuntimeException) override;
 
         const std::vector< ucb::Lock >& getResult_Lock() const { return maResult_Lock; }
         const std::vector< http_dav_ucp::DAVResource >& getResult_PropFind() const { return maResult_PropFind; }
@@ -372,7 +373,7 @@ namespace
     WebDAVResponseParser::WebDAVResponseParser(WebDAVResponseParserMode eWebDAVResponseParserMode)
     :   maResult_PropFind(),
         maResult_PropName(),
-        mpContext(nullptr),
+        mpContext(0),
         maHref(),
         maStatus(),
         maResponseProperties(),
@@ -398,17 +399,17 @@ namespace
         }
     }
 
-    void SAL_CALL WebDAVResponseParser::startDocument(  )
+    void SAL_CALL WebDAVResponseParser::startDocument(  ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
         SAL_WARN_IF(mpContext, "ucb.ucp.webdav", "Parser start with existing content (!)");
     }
 
-    void SAL_CALL WebDAVResponseParser::endDocument(  )
+    void SAL_CALL WebDAVResponseParser::endDocument(  ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
         SAL_WARN_IF(mpContext, "ucb.ucp.webdav", "Parser end with existing content (!)");
     }
 
-    void SAL_CALL WebDAVResponseParser::startElement( const OUString& aName, const uno::Reference< xml::sax::XAttributeList >& xAttribs )
+    void SAL_CALL WebDAVResponseParser::startElement( const OUString& aName, const uno::Reference< xml::sax::XAttributeList >& xAttribs ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
         const sal_Int32 nLen(aName.getLength());
 
@@ -507,7 +508,7 @@ namespace
         }
     }
 
-    void SAL_CALL WebDAVResponseParser::endElement( const OUString& aName )
+    void SAL_CALL WebDAVResponseParser::endElement( const OUString& aName ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
         const sal_Int32 nLen(aName.getLength());
         SAL_WARN_IF(!mpContext, "ucb.ucp.webdav", "Parser EndElement without content (!)");
@@ -716,7 +717,6 @@ namespace
                                 maLock.Scope = maLockScope;
                                 maResult_Lock.push_back(maLock);
                             }
-                            SAL_FALLTHROUGH; // I hope intentional?
                             case WebDAVName_propstat:
                             {
                                 // propstat end, check status
@@ -790,7 +790,7 @@ namespace
         }
     }
 
-    void SAL_CALL WebDAVResponseParser::characters( const OUString& aChars )
+    void SAL_CALL WebDAVResponseParser::characters( const OUString& aChars ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
         // collect whitespace over evtl. several calls in mpContext
         SAL_WARN_IF(!mpContext, "ucb.ucp.webdav", "Parser characters without content (!)");
@@ -817,15 +817,15 @@ namespace
         }
     }
 
-    void SAL_CALL WebDAVResponseParser::ignorableWhitespace( const OUString& /*aWhitespaces*/ )
+    void SAL_CALL WebDAVResponseParser::ignorableWhitespace( const OUString& /*aWhitespaces*/ ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
     }
 
-    void SAL_CALL WebDAVResponseParser::processingInstruction( const OUString& /*aTarget*/, const OUString& /*aData*/ )
+    void SAL_CALL WebDAVResponseParser::processingInstruction( const OUString& /*aTarget*/, const OUString& /*aData*/ ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
     }
 
-    void SAL_CALL WebDAVResponseParser::setDocumentLocator( const uno::Reference< xml::sax::XLocator >& /*xLocator*/ )
+    void SAL_CALL WebDAVResponseParser::setDocumentLocator( const uno::Reference< xml::sax::XLocator >& /*xLocator*/ ) throw (xml::sax::SAXException, uno::RuntimeException)
     {
     }
 } // end of anonymous namespace

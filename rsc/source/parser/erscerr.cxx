@@ -72,7 +72,7 @@ void RscError::StdLstErr( const char * pStr ){
 
 void RscError::WriteError( const ERRTYPE& rError, const char * pMessage )
 {
-    switch( rError.GetError() )
+    switch( rError )
     {
         case ERR_ERROR: {
             StdLstErr( "!! " );
@@ -330,15 +330,15 @@ void RscError::ErrorFormat( const ERRTYPE& rError, RscTop * pClass,
         StdErr( "\n" );
         StdErr( pFI->GetLine() );
         StdErr( "\n" );
-        // Show location of error
+        // Fehlerposition anzeigen
         for( i = 0; (i +1) < pFI->GetScanPos(); i++ )
             StdLstErr( " " );
-        LstOut( "     ^" ); // for the linenumber
+        LstOut( "     ^" ); //Zeilennummern beachten
         StdErr( "^" );
         StdLstErr( "\n" );
     }
     StdLstErr( "f" );
-    sprintf( buf, "%u", (unsigned int)rError.GetError() );
+    sprintf( buf, "%u", (unsigned int)rError );
     StdLstErr( buf );
 
     if( pFI && pTC ){
@@ -375,7 +375,7 @@ void RscError::ErrorFormat( const ERRTYPE& rError, RscTop * pClass,
 void RscError::Error( const ERRTYPE& rError, RscTop * pClass,
                       const RscId & aId, const char * pMessage )
 {
-    if( WRN_LOCALID == rError.GetError() ) // ignore warnings
+    if( WRN_LOCALID == rError ) // Keine Warning erzeugen
         return;
     if( rError.IsError() )
         nErrors++;
@@ -389,7 +389,7 @@ void RscError::Error( const ERRTYPE& rError, RscTop * pClass,
 void RscError::FatalError( const ERRTYPE& rError, const RscId &aId,
                            const char * pMessage )
 {
-    if( ERR_USAGE != rError.GetError() ){
+    if( ERR_USAGE != rError ){
         nErrors++;
         ErrorFormat( rError, nullptr, aId );
         WriteError( rError, pMessage );

@@ -35,7 +35,7 @@
 
 #include <sal/types.h>
 
-// notification names that are being used to signal that an application wants to
+// notifaction names that are being used to signal that an application wants to
 // have access to the remote control device or if the application has finished
 // using the remote control device
 extern NSString* REQUEST_FOR_REMOTE_CONTROL_NOTIFCATION;

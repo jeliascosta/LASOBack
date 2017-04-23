@@ -30,7 +30,7 @@ class SVL_DLLPUBLIC SfxVisibilityItem: public SfxPoolItem
 
 public:
 
-    explicit SfxVisibilityItem(sal_uInt16 which, bool bVisible = true):
+    explicit SfxVisibilityItem(sal_uInt16 which = 0, bool bVisible = true):
         SfxPoolItem(which)
     {
         m_nValue.bVisible = bVisible;
@@ -42,11 +42,14 @@ public:
         SfxPoolItem(rItem), m_nValue(rItem.m_nValue)
     {}
 
+    virtual ~SfxVisibilityItem() {}
+
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
-    virtual bool GetPresentation(SfxItemPresentation, MapUnit, MapUnit,
-                                 OUString & rText,
-                                 const IntlWrapper * = nullptr)
+    virtual bool GetPresentation(SfxItemPresentation,
+                                                SfxMapUnit, SfxMapUnit,
+                                                OUString & rText,
+                                                const IntlWrapper * = nullptr)
         const override;
 
     virtual bool QueryValue( css::uno::Any& rVal,
@@ -60,6 +63,8 @@ public:
     virtual SvStream & Store(SvStream & rStream, sal_uInt16) const override;
 
     virtual SfxPoolItem * Clone(SfxItemPool * = nullptr) const override;
+
+    OUString GetValueTextByVal(bool bTheValue) const;
 
     bool GetValue() const { return m_nValue.bVisible; }
 };

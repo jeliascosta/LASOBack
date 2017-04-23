@@ -163,7 +163,7 @@ bool AquaSalGraphics::CheckContext()
         }
     }
 
-    SAL_WARN_IF( !mrContext && !mbPrinter, "vcl", "<<<WARNING>>> AquaSalGraphics::CheckContext() FAILED!!!!\n" );
+    DBG_ASSERT( mrContext || mbPrinter, "<<<WARNING>>> AquaSalGraphics::CheckContext() FAILED!!!!\n" );
     return (mrContext != nullptr);
 }
 
@@ -216,7 +216,7 @@ void AquaSalGraphics::UpdateWindow( NSRect& )
     }
     else
     {
-        SAL_WARN_IF( !mpFrame->mbInitShow, "vcl", "UpdateWindow called on uneligible graphics" );
+        DBG_ASSERT( mpFrame->mbInitShow, "UpdateWindow called on uneligible graphics" );
     }
 }
 

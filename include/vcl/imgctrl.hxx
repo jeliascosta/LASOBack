@@ -32,7 +32,7 @@ private:
     ::sal_Int16     mnScaleMode;
 
 public:
-                    ImageControl( vcl::Window* pParent, WinBits nStyle );
+                    ImageControl( vcl::Window* pParent, WinBits nStyle = 0 );
 
     // set/get the scale mode. This is one of the css.awt.ImageScaleMode constants
     void            SetScaleMode( const ::sal_Int16 _nMode );
@@ -40,7 +40,7 @@ public:
 
     virtual void    Resize() override;
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
 

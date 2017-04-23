@@ -29,7 +29,7 @@ struct StyleNameKey_Impl
     sal_uInt16 m_nFamily;
     OUString m_aName;
 
-    StyleNameKey_Impl( sal_uInt16 nFamily,
+    inline StyleNameKey_Impl( sal_uInt16 nFamily,
                                const OUString& rName ) :
         m_nFamily( nFamily ),
         m_aName( rName )
@@ -66,7 +66,7 @@ class StyleMap :
 public:
 
     StyleMap();
-    virtual ~StyleMap() override;
+    virtual ~StyleMap();
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
     static StyleMap* getImplementation(
@@ -74,7 +74,7 @@ public:
 
     // XUnoTunnel
     virtual sal_Int64 SAL_CALL getSomething(
-                const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+                const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif // INCLUDED_XMLOFF_INC_STYLEMAP_HXX

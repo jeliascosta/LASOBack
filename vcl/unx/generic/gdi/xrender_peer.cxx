@@ -19,6 +19,7 @@
 
 #include <rtl/ustring.hxx>
 #include <unx/salunx.h>
+#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 
 #include <xrender_peer.hxx>
@@ -44,7 +45,7 @@ void XRenderPeer::InitRenderLib()
 
     // the 8bit alpha mask format must be there
     XRenderPictFormat aPictFormat={0,0,8,{0,0,0,0,0,0,0,0xFF},0};
-    mpStandardFormatA8 = XRenderFindFormat( mpDisplay, PictFormatAlphaMask|PictFormatDepth, &aPictFormat, 0 );
+    mpStandardFormatA8 = FindPictureFormat( PictFormatAlphaMask|PictFormatDepth, aPictFormat );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

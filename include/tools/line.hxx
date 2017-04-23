@@ -25,13 +25,14 @@
 namespace tools
 {
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC Line
+class TOOLS_DLLPUBLIC Line
 {
 private:
     Point           maStart;
     Point           maEnd;
 
 public:
+                    Line() {};
                     Line( const Point& rStartPt, const Point& rEndPt ) : maStart( rStartPt ), maEnd( rEndPt ) {}
 
     void            SetStart( const Point& rStartPt ) { maStart = rStartPt; }

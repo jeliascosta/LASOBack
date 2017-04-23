@@ -46,7 +46,7 @@ using namespace com::sun::star::sdbc;
 using namespace com::sun::star::container;
 
 
-OAdoTable::OAdoTable(sdbcx::OCollection* _pTables,bool _bCase,OCatalog* _pCatalog,_ADOTable* _pTable)
+OAdoTable::OAdoTable(sdbcx::OCollection* _pTables,sal_Bool _bCase,OCatalog* _pCatalog,_ADOTable* _pTable)
     : OTable_TYPEDEF(_pTables,_bCase)
     ,m_pCatalog(_pCatalog)
 {
@@ -57,7 +57,7 @@ OAdoTable::OAdoTable(sdbcx::OCollection* _pTables,bool _bCase,OCatalog* _pCatalo
 
 }
 
-OAdoTable::OAdoTable(sdbcx::OCollection* _pTables,bool _bCase,OCatalog* _pCatalog)
+OAdoTable::OAdoTable(sdbcx::OCollection* _pTables,sal_Bool _bCase,OCatalog* _pCatalog)
     : OTable_TYPEDEF(_pTables,_bCase)
     ,m_pCatalog(_pCatalog)
 {
@@ -126,7 +126,7 @@ void OAdoTable::refreshIndexes()
 
 Sequence< sal_Int8 > OAdoTable::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = nullptr;
+    static ::cppu::OImplementationId * pId = 0;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -139,9 +139,9 @@ Sequence< sal_Int8 > OAdoTable::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// css::lang::XUnoTunnel
+// com::sun::star::lang::XUnoTunnel
 
-sal_Int64 OAdoTable::getSomething( const Sequence< sal_Int8 > & rId )
+sal_Int64 OAdoTable::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
     return (rId.getLength() == 16 && 0 == memcmp(getUnoTunnelImplementationId().getConstArray(),  rId.getConstArray(), 16 ) )
                 ? reinterpret_cast< sal_Int64 >( this )
@@ -149,7 +149,7 @@ sal_Int64 OAdoTable::getSomething( const Sequence< sal_Int8 > & rId )
 }
 
 // XRename
-void SAL_CALL OAdoTable::rename( const OUString& newName )
+void SAL_CALL OAdoTable::rename( const OUString& newName ) throw(SQLException, ElementExistException, RuntimeException)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE_TYPEDEF::rBHelper.bDisposed);
@@ -166,14 +166,14 @@ Reference< XDatabaseMetaData> OAdoTable::getMetaData() const
 }
 
 // XAlterTable
-void SAL_CALL OAdoTable::alterColumnByName( const OUString& colName, const Reference< XPropertySet >& descriptor )
+void SAL_CALL OAdoTable::alterColumnByName( const OUString& colName, const Reference< XPropertySet >& descriptor ) throw(SQLException, NoSuchElementException, RuntimeException)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE_TYPEDEF::rBHelper.bDisposed);
 
-    bool bError = true;
-    OAdoColumn* pColumn = nullptr;
-    if(::comphelper::getImplementation(pColumn,descriptor) && pColumn != nullptr)
+    sal_Bool bError = sal_True;
+    OAdoColumn* pColumn = NULL;
+    if(::comphelper::getImplementation(pColumn,descriptor) && pColumn != NULL)
     {
         WpADOColumns aColumns = m_aTable.get_Columns();
         bError = !aColumns.Delete(colName);
@@ -186,7 +186,7 @@ void SAL_CALL OAdoTable::alterColumnByName( const OUString& colName, const Refer
     refreshColumns();
 }
 
-void SAL_CALL OAdoTable::alterColumnByIndex( sal_Int32 index, const Reference< XPropertySet >& descriptor )
+void SAL_CALL OAdoTable::alterColumnByIndex( sal_Int32 index, const Reference< XPropertySet >& descriptor ) throw(SQLException, ::com::sun::star::lang::IndexOutOfBoundsException, RuntimeException)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(OTableDescriptor_BASE_TYPEDEF::rBHelper.bDisposed);
@@ -197,7 +197,7 @@ void SAL_CALL OAdoTable::alterColumnByIndex( sal_Int32 index, const Reference< X
         alterColumnByName(getString(xOld->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_NAME))),descriptor);
 }
 
-void OAdoTable::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)
+void OAdoTable::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rValue)throw (Exception)
 {
     if(m_aTable.IsValid())
     {
@@ -229,7 +229,17 @@ void OAdoTable::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const Any& rV
     OTable_TYPEDEF::setFastPropertyValue_NoBroadcast(nHandle,rValue);
 }
 
-OUString SAL_CALL OAdoTable::getName()
+void SAL_CALL OAdoTable::acquire() throw()
+{
+    OTable_TYPEDEF::acquire();
+}
+
+void SAL_CALL OAdoTable::release() throw()
+{
+    OTable_TYPEDEF::release();
+}
+
+OUString SAL_CALL OAdoTable::getName() throw(::com::sun::star::uno::RuntimeException)
 {
       return m_aTable.get_Name();
 }

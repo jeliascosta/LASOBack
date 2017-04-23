@@ -42,18 +42,20 @@ protected:
 
 public:
     Oasis2OOoTransformer () throw();
-    virtual ~Oasis2OOoTransformer() throw() override;
+    virtual ~Oasis2OOoTransformer() throw();
+
+    static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 
     virtual OUString GetEventName( const OUString& rName,
-                                             bool bForm = false ) override;
+                                             bool bForm ) override;
 };
 
 #endif // INCLUDED_XMLOFF_SOURCE_TRANSFORM_OASIS2OOO_HXX

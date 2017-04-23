@@ -18,6 +18,9 @@
  */
 
 #pragma once
+#ifndef __cplusplus
+#error Need C++ to compile
+#endif
 
 #include <windows.h>
 #include <winbase.h>

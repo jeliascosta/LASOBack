@@ -33,6 +33,7 @@
 namespace oox {
 namespace xls {
 
+using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::sheet;
 using namespace ::com::sun::star::uno;
 
@@ -89,12 +90,9 @@ void Table::finalizeImport()
     if( (maModel.mnId > 0) && !maModel.maDisplayName.isEmpty() ) try
     {
         maDBRangeName = maModel.maDisplayName;
-
         Reference< XDatabaseRange > xDatabaseRange(
             createDatabaseRangeObject( maDBRangeName, maModel.maRange ), UNO_SET_THROW);
-        ::css::table::CellRangeAddress aAddressRange = xDatabaseRange->getDataArea();
-        maDestRange = ScRange( aAddressRange.StartColumn, aAddressRange.StartRow, aAddressRange.Sheet,
-                               aAddressRange.EndColumn, aAddressRange.EndRow, aAddressRange.Sheet );
+        maDestRange = xDatabaseRange->getDataArea();
 
         PropertySet aPropSet( xDatabaseRange );
 

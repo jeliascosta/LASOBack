@@ -24,6 +24,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XEventListener.hpp>
 #include <com/sun/star/sdbc/XConnection.hpp>
+#include <cppuhelper/implbase1.hxx>
 #include <svx/dbaexchange.hxx>
 #include <comphelper/uno3.hxx>
 #include <vector>
@@ -72,7 +73,7 @@ namespace dbaui
         );
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
         virtual void        AddSupportedFormats() override;

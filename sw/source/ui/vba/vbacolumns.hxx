@@ -36,25 +36,23 @@ private:
     sal_Int32 mnEndColumnIndex;
 
 private:
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference< ooo::vba::word::XColumn > getColumnAtIndex( sal_Int32 index );
+    css::uno::Reference< ooo::vba::word::XColumn > getColumnAtIndex( sal_Int32 index ) throw (css::uno::RuntimeException);
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaColumns( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, const css::uno::Reference< css::table::XTableColumns >& xTableColumns );
-    /// @throws css::uno::RuntimeException
-    SwVbaColumns( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, const css::uno::Reference< css::table::XTableColumns >& xTableColumns, sal_Int32 nStartCol, sal_Int32 nEndCol );
+    SwVbaColumns( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, const css::uno::Reference< css::table::XTableColumns >& xTableColumns ) throw ( css::uno::RuntimeException );
+    SwVbaColumns( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext > & xContext, const css::uno::Reference< css::text::XTextTable >& xTextTable, const css::uno::Reference< css::table::XTableColumns >& xTableColumns, sal_Int32 nStartCol, sal_Int32 nEndCol ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaColumns() {}
 
-    virtual sal_Int32 SAL_CALL getWidth(  ) override;
-    virtual void SAL_CALL setWidth( sal_Int32 _width ) override;
-    virtual void SAL_CALL Select(  ) override;
+    virtual sal_Int32 SAL_CALL getWidth(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setWidth( sal_Int32 _width ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL Select(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     //XCollection
-    virtual ::sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index1, const css::uno::Any& /*not processed in this base class*/ ) override;
+    virtual ::sal_Int32 SAL_CALL getCount() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Any SAL_CALL Item( const css::uno::Any& Index1, const css::uno::Any& /*not processed in this base class*/ ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException ) override;
     // XEnumerationAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override;
+    virtual css::uno::Reference< css::container::XEnumeration > SAL_CALL createEnumeration() throw (css::uno::RuntimeException) override;
 
     // SwVbaColumns_BASE
     virtual css::uno::Any createCollectionObject( const css::uno::Any& aSource ) override;

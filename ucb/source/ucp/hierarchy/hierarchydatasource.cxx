@@ -89,83 +89,123 @@ public:
     HierarchyDataAccess( const uno::Reference<
                                         uno::XInterface > & xConfigAccess,
                          bool bReadOnly );
+    virtual ~HierarchyDataAccess();
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
         throw() override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XTypeProvider
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XComponent
     virtual void SAL_CALL
-    dispose() override;
+    dispose()
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    addEventListener( const uno::Reference< lang::XEventListener > & xListener ) override;
+    addEventListener( const uno::Reference< lang::XEventListener > & xListener )
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
     removeEventListener( const uno::Reference<
-                            lang::XEventListener > & aListener ) override;
+                            lang::XEventListener > & aListener )
+        throw ( uno::RuntimeException, std::exception ) override;
 
     // XSingleServiceFactory
     virtual uno::Reference< uno::XInterface > SAL_CALL
-    createInstance() override;
+    createInstance()
+        throw ( uno::Exception, uno::RuntimeException, std::exception ) override;
     virtual uno::Reference< uno::XInterface > SAL_CALL
-    createInstanceWithArguments( const uno::Sequence< uno::Any > & aArguments ) override;
+    createInstanceWithArguments( const uno::Sequence< uno::Any > & aArguments )
+        throw ( uno::Exception, uno::RuntimeException, std::exception ) override;
 
     // XHierarchicalNameAccess
     virtual uno::Any SAL_CALL
-    getByHierarchicalName( const OUString & aName ) override;
+    getByHierarchicalName( const OUString & aName )
+        throw ( container::NoSuchElementException, uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    hasByHierarchicalName( const OUString & aName ) override;
+    hasByHierarchicalName( const OUString & aName )
+        throw ( uno::RuntimeException, std::exception ) override;
 
     // XNameContainer
     virtual void SAL_CALL
-    insertByName( const OUString & aName, const uno::Any & aElement ) override;
+    insertByName( const OUString & aName, const uno::Any & aElement )
+        throw ( lang::IllegalArgumentException,
+                container::ElementExistException,
+                lang::WrappedTargetException,
+                uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
-    removeByName( const OUString & Name ) override;
+    removeByName( const OUString & Name )
+        throw ( container::NoSuchElementException,
+                lang::WrappedTargetException,
+                uno::RuntimeException, std::exception ) override;
 
     // XNameReplace ( base of XNameContainer )
     virtual void SAL_CALL
-    replaceByName( const OUString & aName, const uno::Any & aElement ) override;
+    replaceByName( const OUString & aName, const uno::Any & aElement )
+        throw ( lang::IllegalArgumentException,
+                container::NoSuchElementException,
+                lang::WrappedTargetException,
+                uno::RuntimeException, std::exception ) override;
 
     // XNameAccess ( base of XNameReplace )
     virtual uno::Any SAL_CALL
-    getByName( const OUString & aName ) override;
+    getByName( const OUString & aName )
+        throw ( container::NoSuchElementException,
+                lang::WrappedTargetException,
+                uno::RuntimeException, std::exception ) override;
     virtual uno::Sequence< OUString > SAL_CALL
-    getElementNames() override;
+    getElementNames()
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    hasByName( const OUString & aName ) override;
+    hasByName( const OUString & aName )
+        throw ( uno::RuntimeException, std::exception ) override;
 
     // XElementAccess ( base of XNameAccess )
     virtual uno::Type SAL_CALL
-    getElementType() override;
+    getElementType()
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    hasElements() override;
+    hasElements()
+        throw ( uno::RuntimeException, std::exception ) override;
 
     // XChangesNotifier
     virtual void SAL_CALL
     addChangesListener( const uno::Reference<
-                            util::XChangesListener > & aListener ) override;
+                            util::XChangesListener > & aListener )
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL
     removeChangesListener( const uno::Reference<
-                            util::XChangesListener > & aListener ) override;
+                            util::XChangesListener > & aListener )
+        throw ( uno::RuntimeException, std::exception ) override;
 
     // XChangesBatch
     virtual void SAL_CALL
-    commitChanges() override;
+    commitChanges()
+        throw ( lang::WrappedTargetException, uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-    hasPendingChanges() override;
+    hasPendingChanges()
+        throw ( uno::RuntimeException, std::exception ) override;
     virtual uno::Sequence< util::ElementChange > SAL_CALL
-    getPendingChanges() override;
+    getPendingChanges()
+        throw ( uno::RuntimeException, std::exception ) override;
 };
 
 } // namespace hcp_impl
@@ -187,6 +227,7 @@ HierarchyDataSource::HierarchyDataSource(
 // virtual
 HierarchyDataSource::~HierarchyDataSource()
 {
+    delete m_pDisposeEventListeners;
 }
 
 
@@ -204,6 +245,7 @@ void SAL_CALL HierarchyDataSource::release()
 }
 
 css::uno::Any SAL_CALL HierarchyDataSource::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -226,19 +268,9 @@ XTYPEPROVIDER_IMPL_4( HierarchyDataSource,
 
 // XServiceInfo methods.
 
-XSERVICEINFO_COMMOM_IMPL( HierarchyDataSource,
-                          OUString( "com.sun.star.comp.ucb.HierarchyDataSource" ) )
-/// @throws css::uno::Exception
-static css::uno::Reference< css::uno::XInterface > SAL_CALL
-HierarchyDataSource_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
-{
-    css::lang::XServiceInfo* pX =
-        static_cast<css::lang::XServiceInfo*>(new HierarchyDataSource( ucbhelper::getComponentContext(rSMgr) ));
-    return css::uno::Reference< css::uno::XInterface >::query( pX );
-}
 
-css::uno::Sequence< OUString >
-HierarchyDataSource::getSupportedServiceNames_Static()
+XSERVICEINFO_IMPL_0_CTX( HierarchyDataSource,
+                     OUString( "com.sun.star.comp.ucb.HierarchyDataSource" ) )
 {
     uno::Sequence< OUString > aSNS( 2 );
     aSNS[ 0 ] = "com.sun.star.ucb.DefaultHierarchyDataSource";
@@ -254,6 +286,7 @@ ONE_INSTANCE_SERVICE_FACTORY_IMPL( HierarchyDataSource );
 
 // virtual
 void SAL_CALL HierarchyDataSource::dispose()
+    throw( uno::RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -269,12 +302,13 @@ void SAL_CALL HierarchyDataSource::dispose()
 // virtual
 void SAL_CALL HierarchyDataSource::addEventListener(
                     const uno::Reference< lang::XEventListener > & Listener )
+    throw( uno::RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
     if ( !m_pDisposeEventListeners )
-        m_pDisposeEventListeners.reset(
-            new comphelper::OInterfaceContainerHelper2( m_aMutex ) );
+        m_pDisposeEventListeners
+            = new comphelper::OInterfaceContainerHelper2( m_aMutex );
 
     m_pDisposeEventListeners->addInterface( Listener );
 }
@@ -283,6 +317,7 @@ void SAL_CALL HierarchyDataSource::addEventListener(
 // virtual
 void SAL_CALL HierarchyDataSource::removeEventListener(
                     const uno::Reference< lang::XEventListener > & Listener )
+    throw( uno::RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -297,6 +332,7 @@ void SAL_CALL HierarchyDataSource::removeEventListener(
 // virtual
 uno::Reference< uno::XInterface > SAL_CALL
 HierarchyDataSource::createInstance( const OUString & aServiceSpecifier )
+    throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
     // Create view to root node.
 
@@ -316,6 +352,7 @@ uno::Reference< uno::XInterface > SAL_CALL
 HierarchyDataSource::createInstanceWithArguments(
                                 const OUString & ServiceSpecifier,
                                 const uno::Sequence< uno::Any > & Arguments )
+    throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
     return createInstanceWithArguments( ServiceSpecifier, Arguments, true );
 }
@@ -324,6 +361,7 @@ HierarchyDataSource::createInstanceWithArguments(
 // virtual
 uno::Sequence< OUString > SAL_CALL
 HierarchyDataSource::getAvailableServiceNames()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Sequence< OUString > aNames( 2 );
     aNames[ 0 ] = READ_SERVICE_NAME;
@@ -340,6 +378,7 @@ HierarchyDataSource::createInstanceWithArguments(
                                 const OUString & ServiceSpecifier,
                                 const uno::Sequence< uno::Any > & Arguments,
                                 bool bCheckArgs )
+    throw ( uno::Exception, uno::RuntimeException )
 {
     osl::Guard< osl::Mutex > aGuard( m_aMutex );
 
@@ -558,6 +597,13 @@ HierarchyDataAccess::HierarchyDataAccess( const uno::Reference<
 {
 }
 
+
+// virtual
+HierarchyDataAccess::~HierarchyDataAccess()
+{
+}
+
+
 // XInterface methods.
 void SAL_CALL HierarchyDataAccess::acquire()
     throw()
@@ -573,6 +619,7 @@ void SAL_CALL HierarchyDataAccess::release()
 
 // virtual
 uno::Any SAL_CALL HierarchyDataAccess::queryInterface( const uno::Type & aType )
+    throw ( uno::RuntimeException, std::exception )
 {
     // Interfaces supported in read-only and read-write mode.
     uno::Any aRet = cppu::queryInterface( aType,
@@ -606,6 +653,7 @@ XTYPEPROVIDER_COMMON_IMPL( HierarchyDataAccess );
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL HierarchyDataAccess::getTypes()
+    throw( uno::RuntimeException, std::exception )
 {
     cppu::OTypeCollection * pCollection = nullptr;
 
@@ -674,19 +722,15 @@ uno::Sequence< uno::Type > SAL_CALL HierarchyDataAccess::getTypes()
 
 // XServiceInfo methods.
 
-OUString SAL_CALL HierarchyDataAccess::getImplementationName()
-{
-    return OUString("com.sun.star.comp.ucb.HierarchyDataAccess");
-}
 
-sal_Bool SAL_CALL HierarchyDataAccess::supportsService( const OUString& ServiceName )
+XSERVICEINFO_NOFACTORY_IMPL_0(
+        HierarchyDataAccess,
+        OUString( "com.sun.star.comp.ucb.HierarchyDataAccess"  ) )
 {
-    return cppu::supportsService( this, ServiceName );
-}
-
-css::uno::Sequence< OUString > SAL_CALL HierarchyDataAccess::getSupportedServiceNames()
-{
-    return { READ_SERVICE_NAME, READWRITE_SERVICE_NAME };
+    uno::Sequence< OUString > aSNS( 2 );
+    aSNS[ 0 ] = READ_SERVICE_NAME;
+    aSNS[ 1 ] = READWRITE_SERVICE_NAME;
+    return aSNS;
 }
 
 
@@ -695,6 +739,7 @@ css::uno::Sequence< OUString > SAL_CALL HierarchyDataAccess::getSupportedService
 
 // virtual
 void SAL_CALL HierarchyDataAccess::dispose()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< lang::XComponent > xOrig
         = ENSURE_ORIG_INTERFACE( lang::XComponent, C );
@@ -708,6 +753,7 @@ void SAL_CALL HierarchyDataAccess::dispose()
 // virtual
 void SAL_CALL HierarchyDataAccess::addEventListener(
                     const uno::Reference< lang::XEventListener > & xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< lang::XComponent > xOrig
         = ENSURE_ORIG_INTERFACE( lang::XComponent, C );
@@ -721,6 +767,7 @@ void SAL_CALL HierarchyDataAccess::addEventListener(
 // virtual
 void SAL_CALL HierarchyDataAccess::removeEventListener(
                     const uno::Reference< lang::XEventListener > & aListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< lang::XComponent > xOrig
         = ENSURE_ORIG_INTERFACE( lang::XComponent, C );
@@ -737,6 +784,7 @@ void SAL_CALL HierarchyDataAccess::removeEventListener(
 // virtual
 uno::Any SAL_CALL HierarchyDataAccess::getByHierarchicalName(
                                                 const OUString & aName )
+    throw ( container::NoSuchElementException, uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XHierarchicalNameAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XHierarchicalNameAccess, HNA );
@@ -751,6 +799,7 @@ uno::Any SAL_CALL HierarchyDataAccess::getByHierarchicalName(
 // virtual
 sal_Bool SAL_CALL HierarchyDataAccess::hasByHierarchicalName(
                                                 const OUString & aName )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XHierarchicalNameAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XHierarchicalNameAccess, HNA );
@@ -767,6 +816,9 @@ sal_Bool SAL_CALL HierarchyDataAccess::hasByHierarchicalName(
 
 // virtual
 uno::Any SAL_CALL HierarchyDataAccess::getByName( const OUString & aName )
+    throw ( container::NoSuchElementException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameAccess, NA );
@@ -779,6 +831,7 @@ uno::Any SAL_CALL HierarchyDataAccess::getByName( const OUString & aName )
 
 // virtual
 uno::Sequence< OUString > SAL_CALL HierarchyDataAccess::getElementNames()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameAccess, NA );
@@ -791,6 +844,7 @@ uno::Sequence< OUString > SAL_CALL HierarchyDataAccess::getElementNames()
 
 // virtual
 sal_Bool SAL_CALL HierarchyDataAccess::hasByName( const OUString & aName )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameAccess, NA );
@@ -806,6 +860,7 @@ sal_Bool SAL_CALL HierarchyDataAccess::hasByName( const OUString & aName )
 
 // virtual
 uno::Type SAL_CALL HierarchyDataAccess::getElementType()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XElementAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XElementAccess, EA );
@@ -818,6 +873,7 @@ uno::Type SAL_CALL HierarchyDataAccess::getElementType()
 
 // virtual
 sal_Bool SAL_CALL HierarchyDataAccess::hasElements()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XElementAccess > xOrig
         = ENSURE_ORIG_INTERFACE( container::XElementAccess, EA );
@@ -834,6 +890,7 @@ sal_Bool SAL_CALL HierarchyDataAccess::hasElements()
 // virtual
 void SAL_CALL HierarchyDataAccess::addChangesListener(
                 const uno::Reference< util::XChangesListener > & aListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XChangesNotifier > xOrig
         = ENSURE_ORIG_INTERFACE( util::XChangesNotifier, CN );
@@ -847,6 +904,7 @@ void SAL_CALL HierarchyDataAccess::addChangesListener(
 // virtual
 void SAL_CALL HierarchyDataAccess::removeChangesListener(
                 const uno::Reference< util::XChangesListener > & aListener )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XChangesNotifier > xOrig
         = ENSURE_ORIG_INTERFACE( util::XChangesNotifier, CN );
@@ -862,6 +920,7 @@ void SAL_CALL HierarchyDataAccess::removeChangesListener(
 
 // virtual
 uno::Reference< uno::XInterface > SAL_CALL HierarchyDataAccess::createInstance()
+    throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
     uno::Reference< lang::XSingleServiceFactory > xOrig
         = ENSURE_ORIG_INTERFACE( lang::XSingleServiceFactory, SSF );
@@ -876,6 +935,7 @@ uno::Reference< uno::XInterface > SAL_CALL HierarchyDataAccess::createInstance()
 uno::Reference< uno::XInterface > SAL_CALL
 HierarchyDataAccess::createInstanceWithArguments(
                             const uno::Sequence< uno::Any > & aArguments )
+    throw ( uno::Exception, uno::RuntimeException, std::exception )
 {
     uno::Reference< lang::XSingleServiceFactory > xOrig
         = ENSURE_ORIG_INTERFACE( lang::XSingleServiceFactory, SSF );
@@ -893,6 +953,10 @@ HierarchyDataAccess::createInstanceWithArguments(
 void SAL_CALL
 HierarchyDataAccess::insertByName( const OUString & aName,
                                    const uno::Any & aElement )
+    throw ( lang::IllegalArgumentException,
+            container::ElementExistException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameContainer > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameContainer, NC );
@@ -906,6 +970,9 @@ HierarchyDataAccess::insertByName( const OUString & aName,
 // virtual
 void SAL_CALL
 HierarchyDataAccess::removeByName( const OUString & Name )
+    throw ( container::NoSuchElementException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameContainer > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameContainer, NC );
@@ -922,6 +989,10 @@ HierarchyDataAccess::removeByName( const OUString & Name )
 // virtual
 void SAL_CALL HierarchyDataAccess::replaceByName( const OUString & aName,
                                                   const uno::Any & aElement )
+    throw ( lang::IllegalArgumentException,
+            container::NoSuchElementException,
+            lang::WrappedTargetException,
+            uno::RuntimeException, std::exception )
 {
     uno::Reference< container::XNameReplace > xOrig
         = ENSURE_ORIG_INTERFACE( container::XNameReplace, NR );
@@ -937,6 +1008,7 @@ void SAL_CALL HierarchyDataAccess::replaceByName( const OUString & aName,
 
 // virtual
 void SAL_CALL HierarchyDataAccess::commitChanges()
+    throw ( lang::WrappedTargetException, uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XChangesBatch > xOrig
         = ENSURE_ORIG_INTERFACE( util::XChangesBatch, CB );
@@ -949,6 +1021,7 @@ void SAL_CALL HierarchyDataAccess::commitChanges()
 
 // virtual
 sal_Bool SAL_CALL HierarchyDataAccess::hasPendingChanges()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XChangesBatch > xOrig
         = ENSURE_ORIG_INTERFACE( util::XChangesBatch, CB );
@@ -962,6 +1035,7 @@ sal_Bool SAL_CALL HierarchyDataAccess::hasPendingChanges()
 // virtual
 uno::Sequence< util::ElementChange > SAL_CALL
 HierarchyDataAccess::getPendingChanges()
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Reference< util::XChangesBatch > xOrig
         = ENSURE_ORIG_INTERFACE( util::XChangesBatch, CB );

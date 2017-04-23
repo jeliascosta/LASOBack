@@ -30,7 +30,6 @@
 #include <comphelper/proparrhlp.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/implbase2.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/uno3.hxx>
 #include <connectivity/CommonTools.hxx>
 #include "file/FConnection.hxx"
@@ -39,6 +38,7 @@
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <comphelper/propertycontainer.hxx>
 #include "file/fanalyzer.hxx"
+#include <comphelper/broadcasthelper.hxx>
 #include "TSortIndex.hxx"
 
 namespace connectivity
@@ -47,47 +47,47 @@ namespace connectivity
     {
         class OResultSet;
         class OFileTable;
-        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XWarningsSupplier,
-                                                   css::util::XCancellable,
-                                                   css::sdbc::XCloseable> OStatement_BASE;
+        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XWarningsSupplier,
+                                                   ::com::sun::star::util::XCancellable,
+                                                   ::com::sun::star::sdbc::XCloseable> OStatement_BASE;
 
 
         //************ Class: java.sql.Statement
 
         class OOO_DLLPUBLIC_FILE OStatement_Base :
-                                        public  cppu::BaseMutex,
+                                        public  comphelper::OBaseMutex,
                                         public  OStatement_BASE,
                                         public  ::comphelper::OPropertyContainer,
                                         public  ::comphelper::OPropertyArrayUsageHelper<OStatement_Base>
 
         {
         protected:
-            std::vector<sal_Int32>                    m_aColMapping; // pos 0 is unused so we don't have to decrement 1 every time
-            std::vector<sal_Int32>                    m_aParameterIndexes; // maps the parameter index to column index
-            std::vector<sal_Int32>                    m_aOrderbyColumnNumber;
-            std::vector<TAscendingOrder>              m_aOrderbyAscending;
+            ::std::vector<sal_Int32>                    m_aColMapping; // pos 0 is unused so we don't have to decrement 1 every time
+            ::std::vector<sal_Int32>                    m_aParameterIndexes; // maps the parameter index to column index
+            ::std::vector<sal_Int32>                    m_aOrderbyColumnNumber;
+            ::std::vector<TAscendingOrder>              m_aOrderbyAscending;
 
-            css::sdbc::SQLWarning                              m_aLastWarning;
-            css::uno::WeakReference< css::sdbc::XResultSet>    m_xResultSet;   // The last ResultSet created
-            css::uno::Reference< css::sdbc::XDatabaseMetaData> m_xDBMetaData;
-            css::uno::Reference< css::container::XNameAccess>  m_xColNames; // table columns                                                          //  for this Statement
+            ::com::sun::star::sdbc::SQLWarning                                           m_aLastWarning;
+            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XResultSet>    m_xResultSet;   // The last ResultSet created
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData> m_xDBMetaData;
+            ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess>  m_xColNames; // table columns                                                          //  for this Statement
 
 
             connectivity::OSQLParser                    m_aParser;
             connectivity::OSQLParseTreeIterator         m_aSQLIterator;
 
-            rtl::Reference<OConnection>                 m_pConnection;// The owning Connection object
+            OConnection*                                m_pConnection;// The owning Connection object
             connectivity::OSQLParseNode*                m_pParseTree;
             OSQLAnalyzer*                               m_pSQLAnalyzer; //the sql analyzer used by the resultset
 
-            rtl::Reference<OFileTable>                  m_pTable;       // the current table
+            OFileTable*                                 m_pTable;       // the current table
             OValueRefRow                                m_aSelectRow;
             OValueRefRow                                m_aRow;
             OValueRefRow                                m_aEvaluateRow; // contains all values of a row
             ORefAssignValues                            m_aAssignValues; // needed for insert,update and parameters
                                                                     // to compare with the restrictions
 
-            OUString                                    m_aCursorName;
+            OUString                             m_aCursorName;
             sal_Int32                                   m_nMaxFieldSize;
             sal_Int32                                   m_nMaxRows;
             sal_Int32                                   m_nQueryTimeOut;
@@ -95,7 +95,7 @@ namespace connectivity
             sal_Int32                                   m_nResultSetType;
             sal_Int32                                   m_nFetchDirection;
             sal_Int32                                   m_nResultSetConcurrency;
-            bool                                        m_bEscapeProcessing;
+            bool                                    m_bEscapeProcessing;
 
         protected:
             // initialize the column index map (mapping select columns to table columns)
@@ -106,10 +106,10 @@ namespace connectivity
                                      connectivity::OSQLParseNode* pAscendingDescending);
 
             virtual void initializeResultSet(OResultSet* _pResult);
+            // create the analyzer
+            OSQLAnalyzer* createAnalyzer();
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            void closeResultSet();
+            void closeResultSet() throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception);
 
             void disposeResultSet();
             void GetAssignValues();
@@ -117,7 +117,7 @@ namespace connectivity
                                    const OUString& aValue,
                                    bool bSetNull = false,
                                    sal_uInt32 nParameter=SQL_NO_PARAMETER);
-            void ParseAssignValues( const std::vector< OUString>& aColumnNameList,
+            void ParseAssignValues( const ::std::vector< OUString>& aColumnNameList,
                                     connectivity::OSQLParseNode* pRow_Value_Constructor_Elem, sal_Int32 nIndex);
 
             virtual void parseParamterElem(const OUString& _sColumnName,OSQLParseNode* pRow_Value_Constructor_Elem);
@@ -127,39 +127,37 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
             // OPropertySetHelper
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
-            virtual ~OStatement_Base() override;
+            virtual ~OStatement_Base();
         public:
             connectivity::OSQLParseNode* getParseTree() const { return m_pParseTree;}
 
             OStatement_Base(OConnection* _pConnection );
 
-            OConnection* getOwnConnection() const { return m_pConnection.get(); }
+            OConnection* getOwnConnection() const { return m_pConnection;}
 
-            using OStatement_BASE::operator css::uno::Reference< css::uno::XInterface >;
+            using OStatement_BASE::operator ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >;
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            virtual void construct(const OUString& sql);
+            virtual void construct(const OUString& sql)  throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
             // XInterface
-            //      virtual void SAL_CALL release() throw(css::uno::RuntimeException) = 0;
+            //      virtual void SAL_CALL release() throw(::com::sun::star::uno::RuntimeException) = 0;
             virtual void SAL_CALL acquire() throw() override;
             // XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             //XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             // XWarningsSupplier
-            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
-            virtual void SAL_CALL clearWarnings(  ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
             // XCancellable
-            virtual void SAL_CALL cancel(  ) override;
+            virtual void SAL_CALL cancel(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             // XCloseable
-            virtual void SAL_CALL close(  ) override;
+            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         };
 
         class OOO_DLLPUBLIC_FILE OStatement_BASE2 :
@@ -177,7 +175,7 @@ namespace connectivity
             virtual void SAL_CALL release() throw() override;
         };
 
-        typedef ::cppu::ImplHelper2< css::sdbc::XStatement,css::lang::XServiceInfo > OStatement_XStatement;
+        typedef ::cppu::ImplHelper2< ::com::sun::star::sdbc::XStatement,::com::sun::star::lang::XServiceInfo > OStatement_XStatement;
         class OOO_DLLPUBLIC_FILE OStatement :
                             public OStatement_BASE2,
                             public OStatement_XStatement
@@ -190,15 +188,15 @@ namespace connectivity
             OStatement( OConnection* _pConnection) : OStatement_BASE2( _pConnection){}
             DECLARE_SERVICE_INFO();
 
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL acquire() throw() override;
             virtual void SAL_CALL release() throw() override;
 
             // XStatement
-            virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) override ;
-            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) override ;
-            virtual sal_Bool SAL_CALL execute( const OUString& sql ) override ;
-            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL getConnection(  ) override ;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual sal_Bool SAL_CALL execute( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL getConnection(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
         };
     }
 }

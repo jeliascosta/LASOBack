@@ -9,7 +9,6 @@
 #include "xltoolbar.hxx"
 #include <rtl/ustrbuf.hxx>
 #include <stdarg.h>
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/IndexedPropertyValues.hpp>
 #include <com/sun/star/ui/XUIConfigurationPersistence.hpp>
 #include <com/sun/star/ui/theModuleUIConfigurationManagerSupplier.hpp>
@@ -148,6 +147,7 @@ bool ScCTB::ImportMenuTB( ScCTBWrapper& rWrapper, const css::uno::Reference< css
 bool ScCTB::ImportCustomToolBar( ScCTBWrapper& rWrapper, CustomToolBarImportHelper& helper )
 {
 
+    static const char sToolbarPrefix[] = "private:resource/toolbar/custom_";
     bool bRes = false;
     try
     {
@@ -162,12 +162,14 @@ bool ScCTB::ImportCustomToolBar( ScCTBWrapper& rWrapper, CustomToolBarImportHelp
         // set UI name for toolbar
         xProps->setPropertyValue("UIName", uno::makeAny( name.getString() ) );
 
-        OUString sToolBarName = "private:resource/toolbar/custom_" + name.getString();
+        OUString sToolBarName = sToolbarPrefix + name.getString();
         for ( std::vector< ScTBC >::iterator it =  rTBC.begin(); it != rTBC.end(); ++it )
         {
             if ( !it->ImportToolBarControl( rWrapper, xIndexContainer, helper, IsMenuToolbar() ) )
                 return false;
         }
+
+        OSL_TRACE("Name of toolbar :-/ %s", OUStringToOString( sToolBarName, RTL_TEXTENCODING_UTF8 ).getStr() );
 
         helper.getCfgManager()->insertSettings( sToolBarName, xIndexAccess );
         helper.applyIcons();
@@ -280,7 +282,7 @@ bool ScTBC::ImportToolBarControl( ScCTBWrapper& rWrapper, const css::uno::Refere
                      return false;
                  if ( !bIsMenuToolbar )
                  {
-                     if ( !helper.createMenu( pMenu->Name(), uno::Reference< container::XIndexAccess >( xMenuDesc, uno::UNO_QUERY ) ) )
+                     if ( !helper.createMenu( pMenu->Name(), uno::Reference< container::XIndexAccess >( xMenuDesc, uno::UNO_QUERY ), true ) )
                          return false;
                  }
                  else
@@ -298,7 +300,7 @@ bool ScTBC::ImportToolBarControl( ScCTBWrapper& rWrapper, const css::uno::Refere
             // insert spacer
             uno::Sequence< beans::PropertyValue > sProps( 1 );
             sProps[ 0 ].Name = "Type";
-            sProps[ 0 ].Value <<= ui::ItemType::SEPARATOR_LINE;
+            sProps[ 0 ].Value = uno::makeAny( ui::ItemType::SEPARATOR_LINE );
             toolbarcontainer->insertByIndex( toolbarcontainer->getCount(), uno::makeAny( sProps ) );
         }
         toolbarcontainer->insertByIndex( toolbarcontainer->getCount(), uno::makeAny( comphelper::containerToSequence(props) ) );
@@ -328,6 +330,7 @@ bool TBCCmd::Read( SvStream &rS )
     rS.ReadUInt16( cmdID );
     sal_uInt16 temp;
     rS.ReadUInt16( temp );
+    OSL_TRACE("TBCmd temp = 0x%x", temp );
     A = (temp & 0x8000 ) == 0x8000;
     B = (temp & 0x4000) == 0x4000;
     cmdType = ( temp & 0x3E00 ) >> 9;

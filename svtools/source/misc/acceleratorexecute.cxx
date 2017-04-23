@@ -42,7 +42,7 @@
 namespace svt
 {
 
-class AsyncAccelExec : public cppu::WeakImplHelper<css::lang::XEventListener>
+class SVT_DLLPRIVATE AsyncAccelExec : public cppu::WeakImplHelper<css::lang::XEventListener>
 {
     private:
         css::uno::Reference<css::lang::XComponent> m_xFrame;
@@ -64,7 +64,7 @@ class AsyncAccelExec : public cppu::WeakImplHelper<css::lang::XEventListener>
         void execAsync();
     private:
 
-        virtual void SAL_CALL disposing(const css::lang::EventObject&) override
+        virtual void SAL_CALL disposing(const css::lang::EventObject&) throw (css::uno::RuntimeException, std::exception) override
         {
             m_xFrame->removeEventListener(this);
             m_xFrame.clear();
@@ -74,11 +74,11 @@ class AsyncAccelExec : public cppu::WeakImplHelper<css::lang::XEventListener>
         /** @short  allow creation of instances of this class
                     by using our factory only!
          */
-        AsyncAccelExec(const css::uno::Reference<css::lang::XComponent>& xFrame,
+        SVT_DLLPRIVATE AsyncAccelExec(const css::uno::Reference<css::lang::XComponent>& xFrame,
                                       const css::uno::Reference< css::frame::XDispatch >& xDispatch,
                                       const css::util::URL& rURL);
 
-        DECL_LINK(impl_ts_asyncCallback, LinkParamNone*, void);
+        DECL_DLLPRIVATE_LINK_TYPED(impl_ts_asyncCallback, LinkParamNone*, void);
 };
 
 
@@ -456,7 +456,7 @@ void AsyncAccelExec::execAsync()
     m_aAsyncCallback.Post();
 }
 
-IMPL_LINK_NOARG(AsyncAccelExec, impl_ts_asyncCallback, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(AsyncAccelExec, impl_ts_asyncCallback, LinkParamNone*, void)
 {
     if (m_xDispatch.is())
     {

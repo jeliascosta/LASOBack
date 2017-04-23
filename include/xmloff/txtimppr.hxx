@@ -58,7 +58,7 @@ public:
     XMLTextImportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper,
             SvXMLImport& rImport );
-    virtual ~XMLTextImportPropertyMapper() override;
+    virtual ~XMLTextImportPropertyMapper();
 
     /** This method is called when all attributes have benn processed. It may be used to remove items that are incomplete */
     virtual void finished(

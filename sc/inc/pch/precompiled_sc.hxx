@@ -56,6 +56,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <boost/checked_delete.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/math/special_functions/log1p.hpp>
 #include <boost/optional/optional.hpp>
@@ -440,6 +441,7 @@
 #include <stlpool.hxx>
 #include <stlsheet.hxx>
 #include <stringutil.hxx>
+#include <strload.hxx>
 #include <svl/SfxBroadcaster.hxx>
 #include <svl/cenumitm.hxx>
 #include <svl/eitem.hxx>
@@ -452,6 +454,7 @@
 #include <svl/poolitem.hxx>
 #include <svl/sharedstring.hxx>
 #include <svl/sharedstringpool.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/srchitem.hxx>
 #include <svl/stritem.hxx>
 #include <svl/stylesheetuser.hxx>

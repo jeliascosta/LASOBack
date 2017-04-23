@@ -20,20 +20,33 @@
 #define INCLUDED_SW_SOURCE_UIBASE_INC_CPTION_HXX
 
 #include <svx/stddlg.hxx>
+
 #include <vcl/fixed.hxx>
+
 #include <vcl/lstbox.hxx>
+
 #include <vcl/edit.hxx>
+
 #include <vcl/group.hxx>
+
 #include <vcl/button.hxx>
 #include <actctrl.hxx>
 
+#include <com/sun/star/container/XEnumerationAccess.hpp>
+#include <com/sun/star/container/XHierarchicalNameAccess.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
-
-#include <wrtsh.hxx>
-#include "optload.hxx"
+#include <com/sun/star/container/XContentEnumerationAccess.hpp>
+#include <com/sun/star/container/XEnumeration.hpp>
+#include <com/sun/star/container/XElementAccess.hpp>
+#include <com/sun/star/container/XIndexAccess.hpp>
+#include <com/sun/star/container/XNamed.hpp>
 
 class SwFieldMgr;
 class SwView;
+
+#include <wrtsh.hxx>
+#include "optload.hxx"
+#include "swlbox.hxx"
 
 class TextFilterAutoConvert : public TextFilter
 {
@@ -80,11 +93,11 @@ class SwCaptionDialog : public SvxStandardDialog
 
     css::uno::Reference< css::container::XNameAccess >    xNameAccess;
 
-    DECL_LINK(SelectHdl, ComboBox&, void);
-    DECL_LINK(SelectListBoxHdl, ListBox&, void);
-    DECL_LINK(ModifyHdl, Edit&, void);
-    DECL_LINK(OptionHdl, Button *, void);
-    DECL_LINK(CaptionHdl, Button *, void);
+    DECL_LINK_TYPED(SelectHdl, ComboBox&, void);
+    DECL_LINK_TYPED(SelectListBoxHdl, ListBox&, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(OptionHdl, Button *, void);
+    DECL_LINK_TYPED(CaptionHdl, Button *, void);
 
     virtual void Apply() override;
 
@@ -94,7 +107,7 @@ class SwCaptionDialog : public SvxStandardDialog
     static OUString our_aSepTextSave; // Save caption separator text
 public:
      SwCaptionDialog( vcl::Window *pParent, SwView &rV );
-    virtual ~SwCaptionDialog() override;
+    virtual ~SwCaptionDialog();
     virtual void dispose() override;
 };
 

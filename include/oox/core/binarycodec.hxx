@@ -45,11 +45,19 @@ namespace CodecHelper
 
 /** Encodes and decodes data from/to protected MS Office documents.
 
-    Implements a simple XOR encoding/decoding algorithm used in MS Excel Office
+    Implements a simple XOR encoding/decoding algorithm used in MS Office
     versions up to MSO 95.
  */
 class OOX_DLLPUBLIC BinaryCodec_XOR
 {
+public:
+    /** Enumerates codec types supported by this XOR codec implementation. */
+    enum CodecType
+    {
+        CODEC_WORD,     ///< MS Word XOR codec.
+        CODEC_EXCEL     ///< MS Excel XOR codec.
+    };
+
 public:
     /** Default constructor.
 
@@ -57,7 +65,7 @@ public:
         functions allows to try to initialize with different passwords (e.g.
         built-in default password used for Excel workbook protection).
      */
-    explicit            BinaryCodec_XOR();
+    explicit            BinaryCodec_XOR( CodecType eCodecType );
 
                         ~BinaryCodec_XOR();
 
@@ -101,6 +109,35 @@ public:
      */
     bool                verifyKey( sal_uInt16 nKey, sal_uInt16 nHash ) const;
 
+    /** Reinitializes the codec to start a new memory block.
+
+        Resets the internal key offset to 0.
+
+        @precond
+            The codec must be initialized with the initKey() function before
+            this function can be used.
+     */
+    void                startBlock();
+
+    /** Decodes a block of memory.
+
+        @precond
+            The codec must be initialized with the initKey() function before
+            this function can be used.
+
+        @param pnDestData
+            Destination buffer. Will contain the decrypted data afterwards.
+        @param pnSrcData
+            Encrypted data block.
+        @param nBytes
+            Size of the passed data blocks. pnDestData and pnSrcData must be of
+            this size.
+    */
+    void                decode(
+                            sal_uInt8* pnDestData,
+                            const sal_uInt8* pnSrcData,
+                            sal_Int32 nBytes );
+
     /** Lets the cipher skip a specific amount of bytes.
 
         This function sets the cipher to the same state as if the specified
@@ -119,6 +156,7 @@ public:
     bool                skip( sal_Int32 nBytes );
 
 private:
+    CodecType           meCodecType;        ///< Codec type.
     sal_uInt8           mpnKey[ 16 ];       ///< Encryption key.
     sal_Int32           mnOffset;           ///< Key offset.
     sal_uInt16          mnBaseKey;          ///< Base key from password.
@@ -231,6 +269,20 @@ public:
                             sal_uInt8* pnDestData,
                             const sal_uInt8* pnSrcData,
                             sal_Int32 nBytes );
+
+    /** Lets the cipher skip a specific amount of bytes.
+
+        This function sets the cipher to the same state as if the specified
+        amount of data has been decoded with one or more calls of decode().
+
+        @precond
+            The codec must be initialized with the initKey() function before
+            this function can be used.
+
+        @param nBytes
+            Number of bytes to be skipped (cipher "seeks" forward).
+     */
+    void                skip( sal_Int32 nBytes );
 
 private:
     rtlCipher           mhCipher;

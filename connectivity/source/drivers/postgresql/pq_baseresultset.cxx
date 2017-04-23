@@ -50,8 +50,7 @@
 #include "pq_resultsetmetadata.hxx"
 
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/script/CannotConvertException.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
+
 #include <connectivity/dbconversion.hxx>
 
 using osl::Mutex;
@@ -96,28 +95,28 @@ static ::cppu::IPropertyArrayHelper & getResultSetPropertyArrayHelper()
                     // Should really share!
                     // At least use for the handles the #define'd values in .hxx file...
                     Property(
-                        "CursorName", 0,
+                        OUString("CursorName"), 0,
                         ::cppu::UnoType<OUString>::get() , 0 ),
                     Property(
-                        "EscapeProcessing", 1,
+                        OUString("EscapeProcessing"), 1,
                         cppu::UnoType<bool>::get() , 0 ),
                     Property(
-                        "FetchDirection", 2,
+                        OUString("FetchDirection"), 2,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        "FetchSize", 3,
+                        OUString("FetchSize"), 3,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        "IsBookmarkable", 4,
+                        OUString("IsBookmarkable"), 4,
                         cppu::UnoType<bool>::get() , 0 ),
                     Property(
-                        "ResultSetConcurrency", 5,
+                        OUString("ResultSetConcurrency"), 5,
                         ::cppu::UnoType<sal_Int32>::get() , 0 ),
                     Property(
-                        "ResultSetType", 6,
+                        OUString("ResultSetType"), 6,
                         ::cppu::UnoType<sal_Int32>::get() , 0 )
                 };
-            static_assert( SAL_N_ELEMENTS(aTable) == BASERESULTSET_SIZE, "wrong number of elements" );
+            OSL_ASSERT( sizeof(aTable) / sizeof(Property) == BASERESULTSET_SIZE );
             static ::cppu::OPropertyArrayHelper arrayHelper( aTable, BASERESULTSET_SIZE, true );
             pArrayHelper = &arrayHelper;
         }
@@ -130,7 +129,7 @@ BaseResultSet::BaseResultSet(
     const Reference< XInterface > & owner,
     sal_Int32 rowCount,
     sal_Int32 colCount,
-    const Reference< css::script::XTypeConverter > & tc )
+    const Reference< com::sun::star::script::XTypeConverter > & tc )
     : BaseResultSet_BASE( refMutex->mutex )
     , OPropertySetHelper( BaseResultSet_BASE::rBHelper )
     , m_owner( owner )
@@ -152,7 +151,7 @@ BaseResultSet::~BaseResultSet()
     POSTGRE_TRACE( "dtor BaseResultSet" );
 }
 
-Any BaseResultSet::queryInterface( const Type & rType )
+Any BaseResultSet::queryInterface( const Type & rType ) throw (RuntimeException, std::exception)
 {
     Any aRet = BaseResultSet_BASE::queryInterface(rType);
     return aRet.hasValue() ? aRet : OPropertySetHelper::queryInterface(rType);
@@ -174,7 +173,7 @@ Any BaseResultSet::queryInterface( const Type & rType )
 //     }
 // }
 
-Sequence<Type > BaseResultSet::getTypes()
+Sequence<Type > BaseResultSet::getTypes() throw( RuntimeException, std::exception )
 {
     static Sequence< Type > *pCollection;
     if( ! pCollection )
@@ -192,7 +191,7 @@ Sequence<Type > BaseResultSet::getTypes()
     return *pCollection;
 }
 
-Sequence< sal_Int8> BaseResultSet::getImplementationId()
+Sequence< sal_Int8> BaseResultSet::getImplementationId() throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -204,7 +203,7 @@ Sequence< sal_Int8> BaseResultSet::getImplementationId()
 //     return new ResultSetMetaData( m_refMutex, this, &m_result );
 // }
 
-sal_Bool BaseResultSet::next(  )
+sal_Bool BaseResultSet::next(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -212,49 +211,49 @@ sal_Bool BaseResultSet::next(  )
     return m_row < m_rowCount;
 }
 
-sal_Bool BaseResultSet::isBeforeFirst(  )
+sal_Bool BaseResultSet::isBeforeFirst(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     return m_row == -1;
 }
 
-sal_Bool BaseResultSet::isAfterLast(  )
+sal_Bool BaseResultSet::isAfterLast(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     return m_row >= m_rowCount;
 }
 
-sal_Bool BaseResultSet::isFirst(  )
+sal_Bool BaseResultSet::isFirst(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     return m_row == 0 && m_rowCount;
 }
 
-sal_Bool BaseResultSet::isLast(  )
+sal_Bool BaseResultSet::isLast(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     return m_row >= 0 && m_row + 1 == m_rowCount;
 }
 
-void BaseResultSet::beforeFirst(  )
+void BaseResultSet::beforeFirst(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     m_row = -1;
 }
 
-void BaseResultSet::afterLast(  )
+void BaseResultSet::afterLast(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     m_row = m_rowCount;
 }
 
-sal_Bool BaseResultSet::first(  )
+sal_Bool BaseResultSet::first(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -264,7 +263,7 @@ sal_Bool BaseResultSet::first(  )
     return bRet;
 }
 
-sal_Bool BaseResultSet::last(  )
+sal_Bool BaseResultSet::last(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -274,14 +273,14 @@ sal_Bool BaseResultSet::last(  )
     return bRet;
 }
 
-sal_Int32 BaseResultSet::getRow(  )
+sal_Int32 BaseResultSet::getRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     return m_row +1;
 }
 
-sal_Bool BaseResultSet::absolute( sal_Int32 row )
+sal_Bool BaseResultSet::absolute( sal_Int32 row ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -300,7 +299,7 @@ sal_Bool BaseResultSet::absolute( sal_Int32 row )
     return true;
 }
 
-sal_Bool BaseResultSet::relative( sal_Int32 rows )
+sal_Bool BaseResultSet::relative( sal_Int32 rows ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -313,7 +312,7 @@ sal_Bool BaseResultSet::relative( sal_Int32 rows )
     return true;
 }
 
-sal_Bool BaseResultSet::previous(  )
+sal_Bool BaseResultSet::previous(  ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -323,27 +322,27 @@ sal_Bool BaseResultSet::previous(  )
     return bRet;
 }
 
-void BaseResultSet::refreshRow(  )
+void BaseResultSet::refreshRow(  ) throw (SQLException, RuntimeException, std::exception)
 {
     // TODO: not supported for now
 }
 
-sal_Bool BaseResultSet::rowUpdated(  )
+sal_Bool BaseResultSet::rowUpdated(  ) throw (SQLException, RuntimeException, std::exception)
 {
     return false;
 }
 
-sal_Bool BaseResultSet::rowInserted(  )
+sal_Bool BaseResultSet::rowInserted(  ) throw (SQLException, RuntimeException, std::exception)
 {
     return false;
 }
 
-sal_Bool BaseResultSet::rowDeleted(  )
+sal_Bool BaseResultSet::rowDeleted(  ) throw (SQLException, RuntimeException, std::exception)
 {
     return false;
 }
 
-Reference< XInterface > BaseResultSet::getStatement()
+Reference< XInterface > BaseResultSet::getStatement() throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -353,7 +352,7 @@ Reference< XInterface > BaseResultSet::getStatement()
 
 //----------------- XRow interface ----------------------------------------------------
 
-sal_Bool BaseResultSet::wasNull(  )
+sal_Bool BaseResultSet::wasNull(  ) throw (SQLException, RuntimeException, std::exception)
 {
     return m_wasNull;
 }
@@ -365,14 +364,14 @@ Any BaseResultSet::convertTo( const Any & val , const Type & type )
     {
         aRet = m_tc->convertTo( val , type );
     }
-    catch( css::lang::IllegalArgumentException & )
+    catch( com::sun::star::lang::IllegalArgumentException & )
     {}
-    catch( css::script::CannotConvertException & )
+    catch( com::sun::star::script::CannotConvertException & )
     {}
     return aRet;
 }
 
-sal_Bool BaseResultSet::getBoolean( sal_Int32 columnIndex )
+sal_Bool BaseResultSet::getBoolean( sal_Int32 columnIndex ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -398,6 +397,7 @@ sal_Bool BaseResultSet::getBoolean( sal_Int32 columnIndex )
 }
 
 sal_Int8 BaseResultSet::getByte( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -409,6 +409,7 @@ sal_Int8 BaseResultSet::getByte( sal_Int32 columnIndex )
 }
 
 sal_Int16 BaseResultSet::getShort( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -419,7 +420,7 @@ sal_Int16 BaseResultSet::getShort( sal_Int32 columnIndex )
     return i;
 }
 
-OUString BaseResultSet::getString( sal_Int32 columnIndex )
+OUString BaseResultSet::getString( sal_Int32 columnIndex ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard(m_refMutex->mutex);
     checkClosed();
@@ -432,6 +433,7 @@ OUString BaseResultSet::getString( sal_Int32 columnIndex )
 }
 
 sal_Int32 BaseResultSet::getInt( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -443,6 +445,7 @@ sal_Int32 BaseResultSet::getInt( sal_Int32 columnIndex )
 }
 
 sal_Int64 BaseResultSet::getLong( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -454,6 +457,7 @@ sal_Int64 BaseResultSet::getLong( sal_Int32 columnIndex )
 }
 
 float BaseResultSet::getFloat( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -465,6 +469,7 @@ float BaseResultSet::getFloat( sal_Int32 columnIndex )
 }
 
 double BaseResultSet::getDouble( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -475,6 +480,7 @@ double BaseResultSet::getDouble( sal_Int32 columnIndex )
 }
 
 Sequence< sal_Int8 > BaseResultSet::getBytes( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
@@ -500,55 +506,65 @@ Sequence< sal_Int8 > BaseResultSet::getBytes( sal_Int32 columnIndex )
 }
 
 
-css::util::Date BaseResultSet::getDate( sal_Int32 columnIndex )
+::com::sun::star::util::Date BaseResultSet::getDate( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return DBTypeConversion::toDate( getString( columnIndex ) );
 }
 
-css::util::Time BaseResultSet::getTime( sal_Int32 columnIndex )
+::com::sun::star::util::Time BaseResultSet::getTime( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return DBTypeConversion::toTime( getString( columnIndex ) );
 }
 
-css::util::DateTime BaseResultSet::getTimestamp( sal_Int32 columnIndex )
+::com::sun::star::util::DateTime BaseResultSet::getTimestamp( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return DBTypeConversion::toDateTime( getString( columnIndex ) );
 }
 
   // LEM TODO: these look like they are missing an actual implementation
-Reference< css::io::XInputStream > BaseResultSet::getBinaryStream( sal_Int32 /* columnIndex */ )
+Reference< ::com::sun::star::io::XInputStream > BaseResultSet::getBinaryStream( sal_Int32 /* columnIndex */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return nullptr;
 }
 
-Reference< css::io::XInputStream > BaseResultSet::getCharacterStream( sal_Int32 /* columnIndex */ )
+Reference< ::com::sun::star::io::XInputStream > BaseResultSet::getCharacterStream( sal_Int32 /* columnIndex */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return nullptr;
 }
 
 Any BaseResultSet::getObject(
         sal_Int32 /* columnIndex */,
-        const Reference< css::container::XNameAccess >& /* typeMap */ )
+        const Reference< ::com::sun::star::container::XNameAccess >& /* typeMap */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return Any();
 }
 
-Reference< css::sdbc::XRef > BaseResultSet::getRef( sal_Int32 /* columnIndex */ )
+Reference< ::com::sun::star::sdbc::XRef > BaseResultSet::getRef( sal_Int32 /* columnIndex */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
-    return Reference< css::sdbc::XRef > ();
+    return Reference< com::sun::star::sdbc::XRef > ();
 }
 
-Reference< css::sdbc::XBlob > BaseResultSet::getBlob( sal_Int32 /* columnIndex */ )
+Reference< ::com::sun::star::sdbc::XBlob > BaseResultSet::getBlob( sal_Int32 /* columnIndex */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
-    return Reference< css::sdbc::XBlob > ();
+    return Reference< com::sun::star::sdbc::XBlob > ();
 }
 
-Reference< css::sdbc::XClob > BaseResultSet::getClob( sal_Int32 /* columnIndex */ )
+Reference< ::com::sun::star::sdbc::XClob > BaseResultSet::getClob( sal_Int32 /* columnIndex */ )
+        throw (SQLException, RuntimeException, std::exception)
 {
-    return Reference< css::sdbc::XClob > ();
+    return Reference< com::sun::star::sdbc::XClob > ();
 }
 
-Reference< css::sdbc::XArray > BaseResultSet::getArray( sal_Int32 columnIndex )
+Reference< ::com::sun::star::sdbc::XArray > BaseResultSet::getArray( sal_Int32 columnIndex )
+        throw (SQLException, RuntimeException, std::exception)
 {
     return new Array( m_refMutex, parseArray( getString( columnIndex ) ), *this, m_tc );
 }
@@ -560,6 +576,7 @@ Reference< css::sdbc::XArray > BaseResultSet::getArray( sal_Int32 columnIndex )
 
 sal_Bool BaseResultSet::convertFastPropertyValue(
         Any & /* rConvertedValue */, Any & /* rOldValue */, sal_Int32 nHandle, const Any& rValue )
+        throw (IllegalArgumentException)
 {
     bool bRet;
     switch( nHandle )
@@ -568,7 +585,7 @@ sal_Bool BaseResultSet::convertFastPropertyValue(
     {
         OUString val;
         bRet = ( rValue >>= val );
-        m_props[nHandle] <<= val;
+        m_props[nHandle] = makeAny( val );
         break;
     }
     case BASERESULTSET_ESCAPE_PROCESSING:
@@ -576,7 +593,7 @@ sal_Bool BaseResultSet::convertFastPropertyValue(
     {
         bool val(false);
         bRet = ( rValue >>= val );
-        m_props[nHandle] <<= val;
+        m_props[nHandle] = makeAny( val );
         break;
     }
     case BASERESULTSET_FETCH_DIRECTION:
@@ -586,14 +603,16 @@ sal_Bool BaseResultSet::convertFastPropertyValue(
     {
         sal_Int32 val;
         bRet = ( rValue >>= val );
-        m_props[nHandle] <<= val;
+        m_props[nHandle] = makeAny( val );
         break;
     }
     default:
     {
-        throw IllegalArgumentException(
-            "pq_resultset: Invalid property handle (" + OUString::number( nHandle ) + ")",
-            *this, 2 );
+        OUStringBuffer buf(128);
+        buf.append( "pq_resultset: Invalid property handle (" );
+        buf.append( nHandle );
+        buf.append( ")" );
+        throw IllegalArgumentException( buf.makeStringAndClear(), *this, 2 );
     }
     }
     return bRet;
@@ -601,7 +620,7 @@ sal_Bool BaseResultSet::convertFastPropertyValue(
 
 
 void BaseResultSet::setFastPropertyValue_NoBroadcast(
-    sal_Int32 nHandle,const Any& rValue )
+    sal_Int32 nHandle,const Any& rValue ) throw (Exception, std::exception)
 {
     m_props[nHandle] = rValue;
 }
@@ -612,6 +631,7 @@ void BaseResultSet::getFastPropertyValue( Any& rValue, sal_Int32 nHandle ) const
 }
 
 Reference < XPropertySetInfo >  BaseResultSet::getPropertySetInfo()
+        throw(RuntimeException, std::exception)
 {
     return OPropertySetHelper::createPropertySetInfo( getResultSetPropertyArrayHelper() );
 }
@@ -621,16 +641,17 @@ void BaseResultSet::disposing()
     close();
 }
 
-void BaseResultSet::checkColumnIndex(sal_Int32 index )
+void BaseResultSet::checkColumnIndex(sal_Int32 index ) throw ( SQLException, RuntimeException )
 {
     if( index < 1 || index > m_fieldCount )
     {
-        throw SQLException(
-            "pq_resultset: index out of range ("
-            + OUString::number( index )
-            + ", allowed range is 1 to " + OUString::number( m_fieldCount )
-            + ")",
-            *this, OUString(), 1, Any() );
+        OUStringBuffer buf(128);
+        buf.append( "pq_resultset: index out of range (" );
+        buf.append( index );
+        buf.append( ", allowed range is 1 to " );
+        buf.append( m_fieldCount );
+        buf.append( ")" );
+        throw SQLException( buf.makeStringAndClear(), *this, OUString(), 1, Any() );
     }
 
 }
@@ -639,10 +660,13 @@ void BaseResultSet::checkRowIndex()
 {
     if( m_row < 0 || m_row >= m_rowCount )
     {
-        throw SQLException(
-            "pq_baseresultset: row index out of range, allowed is 0 to " + OUString::number( m_rowCount -1 )
-            + ", got " + OUString::number( m_row ),
-            *this, OUString(),1, Any() );
+        OUStringBuffer buf( 128 );
+        buf.append( "pq_baseresultset: row index out of range, allowed is " );
+        buf.append( "0 to " );
+        buf.append( ((sal_Int32)(m_rowCount -1)) );
+        buf.append( ", got " );
+        buf.append( m_row );
+        throw SQLException( buf.makeStringAndClear(), *this, OUString(),1, Any() );
     }
 }
 

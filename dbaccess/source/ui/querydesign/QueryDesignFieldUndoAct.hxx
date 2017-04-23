@@ -31,20 +31,20 @@ namespace dbaui
     {
     protected:
         VclPtr<OSelectionBrowseBox>    pOwner;
-        sal_uInt16                  m_nColumnPosition;
+        sal_uInt16                  m_nColumnPostion;
 
         virtual void    Undo() override = 0;
         virtual void    Redo() override = 0;
 
     public:
         OQueryDesignFieldUndoAct(OSelectionBrowseBox* pSelBrwBox, sal_uInt16 nCommentID);
-        virtual ~OQueryDesignFieldUndoAct() override;
+        virtual ~OQueryDesignFieldUndoAct();
 
-        void SetColumnPosition(sal_uInt16 _nColumnPosition)
+        inline void SetColumnPosition(sal_uInt16 _nColumnPostion)
         {
-            m_nColumnPosition = _nColumnPosition;
-            OSL_ENSURE(m_nColumnPosition != BROWSER_INVALIDID,"Column position was not set add the undo action!");
-            OSL_ENSURE(m_nColumnPosition < pOwner->GetColumnCount(),"Position outside the column count!");
+            m_nColumnPostion = _nColumnPostion;
+            OSL_ENSURE(m_nColumnPostion != BROWSER_INVALIDID,"Column position was not set add the undo action!");
+            OSL_ENSURE(m_nColumnPostion < pOwner->GetColumnCount(),"Position outside the column count!");
         }
     };
 
@@ -78,7 +78,7 @@ namespace dbaui
     public:
         explicit OTabFieldSizedUndoAct(OSelectionBrowseBox* pSelBrwBox) : OQueryDesignFieldUndoAct(pSelBrwBox, STR_QUERY_UNDO_SIZE_COLUMN), m_nNextWidth(0) { }
 
-        void SetOriginalWidth(long nWidth) { m_nNextWidth = nWidth; }
+        inline void SetOriginalWidth(long nWidth) { m_nNextWidth = nWidth; }
 
         virtual void Undo() override;
         virtual void Redo() override { Undo(); }
@@ -94,7 +94,7 @@ namespace dbaui
     public:
         OTabFieldUndoAct(OSelectionBrowseBox* pSelBrwBox, sal_uInt16 nCommentID) : OQueryDesignFieldUndoAct(pSelBrwBox, nCommentID) { }
 
-        void SetTabFieldDescr(OTableFieldDescRef const & pDescription) { pDescr = pDescription; }
+        void SetTabFieldDescr(OTableFieldDescRef pDescription) { pDescr = pDescription; }
     };
 
     // OTabFieldDelUndoAct - undo class to delete a field
@@ -102,7 +102,7 @@ namespace dbaui
     class OTabFieldDelUndoAct : public OTabFieldUndoAct
     {
     protected:
-        virtual void Undo() override { pOwner->EnterUndoMode();pOwner->InsertColumn(pDescr, m_nColumnPosition);pOwner->LeaveUndoMode(); }
+        virtual void Undo() override { pOwner->EnterUndoMode();pOwner->InsertColumn(pDescr, m_nColumnPostion);pOwner->LeaveUndoMode(); }
         virtual void Redo() override { pOwner->EnterUndoMode();pOwner->RemoveColumn(pDescr->GetColumnId());pOwner->LeaveUndoMode(); }
 
     public:
@@ -116,7 +116,7 @@ namespace dbaui
     {
     protected:
         virtual void Undo() override { pOwner->EnterUndoMode();pOwner->RemoveColumn(pDescr->GetColumnId());pOwner->LeaveUndoMode();}
-        virtual void Redo() override { pOwner->EnterUndoMode();pOwner->InsertColumn(pDescr, m_nColumnPosition);pOwner->LeaveUndoMode();}
+        virtual void Redo() override { pOwner->EnterUndoMode();pOwner->InsertColumn(pDescr, m_nColumnPostion);pOwner->LeaveUndoMode();}
 
     public:
         explicit OTabFieldCreateUndoAct(OSelectionBrowseBox* pSelBrwBox) : OTabFieldUndoAct(pSelBrwBox, STR_QUERY_UNDO_TABFIELDCREATE) { }

@@ -129,7 +129,7 @@ public:
        @param nDepth   depth in which to add the child
      */
     void AddChild( SwNumberTreeNode* pChild,
-                   const int nDepth );
+                   const int nDepth = 0 );
 
     /**
        Remove a child.
@@ -148,7 +148,7 @@ public:
 
        @return the parent
     */
-    SwNumberTreeNode* GetParent() const
+    inline SwNumberTreeNode* GetParent() const
     {
         return mpParent;
     }
@@ -172,7 +172,7 @@ public:
     SwNumberTree::tNumberVector GetNumberVector() const;
 
     /**
-       Return if numbering is restarted at this node.
+       Return if numbering is restartet at this node.
      */
     virtual bool IsRestart() const = 0;
 
@@ -309,7 +309,7 @@ public:
         Usage: on <IsCounted()> state change its needed to invalidate the
                complete numbering tree due to wide influence of this change.
     */
-    void InvalidateAndNotifyTree()
+    inline void InvalidateAndNotifyTree()
     {
         if ( GetRoot() )
         {
@@ -462,7 +462,7 @@ protected:
 
         Usage: on <IsCounted()> state change the children have to be invalidated
     */
-    void InvalidateChildren()
+    inline void InvalidateChildren()
     {
         SetLastValid( mChildren.end() );
     }
@@ -478,6 +478,13 @@ protected:
      */
     void SetLastValid(const tSwNumberTreeChildren::const_iterator& aItLastValid,
                       bool bValidating = false) const;
+
+    /**
+       Set this node as last valid child of its parent.
+
+       @param bValidation    see above
+     */
+    void SetLastValid(bool bValidating) const;
 
     /**
        Return if this node is notifiable.
@@ -569,6 +576,11 @@ protected:
        @return the created phantom
      */
     SwNumberTreeNode * CreatePhantom();
+
+    /**
+       Set if this node is a phantom.
+     */
+    void SetPhantom();
 
     /**
        Return if phantoms are counted.

@@ -49,6 +49,8 @@
 #include "dragdata.hxx"
 #include <gridwin.hxx>
 
+extern Point aDragStartDiff;
+
 bool bPasteIsMove = false;
 
 using namespace com::sun::star;
@@ -86,7 +88,7 @@ void ScViewFunc::PasteDraw( const Point& rLogicPos, SdrModel* pModel,
     if (pRef)
     {
         aOldMapMode = pRef->GetMapMode();
-        pRef->SetMapMode( MapMode(MapUnit::Map100thMM) );
+        pRef->SetMapMode( MapMode(MAP_100TH_MM) );
     }
 
     bool bNegativePage = GetViewData().GetDocument()->IsNegativePage( GetViewData().GetTabNo() );
@@ -230,7 +232,7 @@ void ScViewFunc::PasteDraw( const Point& rLogicPos, SdrModel* pModel,
         // controls must be on SC_LAYER_CONTROLS
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+            SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -299,14 +301,14 @@ bool ScViewFunc::PasteObject( const Point& rPos, const uno::Reference < embed::X
         Size aSize;
         if ( nAspect == embed::Aspects::MSOLE_ICON )
         {
-            MapMode aMapMode( MapUnit::Map100thMM );
+            MapMode aMapMode( MAP_100TH_MM );
             aSize = aObjRef.GetSize( &aMapMode );
         }
         else
         {
             // working with visual area can switch object to running state
             MapUnit aMapObj = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) );
-            MapUnit aMap100 = MapUnit::Map100thMM;
+            MapUnit aMap100 = MAP_100TH_MM;
 
             if ( pDescSize && pDescSize->Width() && pDescSize->Height() )
             {
@@ -347,7 +349,7 @@ bool ScViewFunc::PasteObject( const Point& rPos, const uno::Reference < embed::X
         Point aInsPos = rPos;
         if ( GetViewData().GetDocument()->IsNegativePage( GetViewData().GetTabNo() ) )
             aInsPos.X() -= aSize.Width();
-        tools::Rectangle aRect( aInsPos, aSize );
+        Rectangle aRect( aInsPos, aSize );
 
         ScDrawView* pDrView = GetScDrawView();
         SdrOle2Obj* pSdrObj = new SdrOle2Obj( aObjRef, aName, aRect );
@@ -388,8 +390,8 @@ bool ScViewFunc::PasteGraphic( const Point& rPos, const Graphic& rGraphic,
     SdrPageView* pPageView = pScDrawView->GetSdrPageView();
     if (pPageView)
     {
-        SdrObject* pPickObj = pScDrawView->PickObj(rPos, pScDrawView->getHitTolLog(), pPageView);
-        if (pPickObj)
+        SdrObject* pPickObj = nullptr;
+        if (pScDrawView->PickObj(rPos, pScDrawView->getHitTolLog(), pPickObj, pPageView))
         {
             const OUString aBeginUndo(ScGlobal::GetRscString(STR_UNDO_DRAGDROP));
             SdrObject* pResult = pScDrawView->ApplyGraphicToObject(
@@ -411,9 +413,9 @@ bool ScViewFunc::PasteGraphic( const Point& rPos, const Graphic& rGraphic,
     Point aPos( rPos );
     vcl::Window* pWin = GetActiveWin();
     MapMode aSourceMap = rGraphic.GetPrefMapMode();
-    MapMode aDestMap( MapUnit::Map100thMM );
+    MapMode aDestMap( MAP_100TH_MM );
 
-    if (aSourceMap.GetMapUnit() == MapUnit::MapPixel)
+    if (aSourceMap.GetMapUnit() == MAP_PIXEL)
     {
         // consider pixel correction, so bitmap fits to screen
         Fraction aScaleX, aScaleY;
@@ -428,7 +430,7 @@ bool ScViewFunc::PasteGraphic( const Point& rPos, const Graphic& rGraphic,
         aPos.X() -= aSize.Width();
 
     GetViewData().GetViewShell()->SetDrawShell( true );
-    tools::Rectangle aRect(aPos, aSize);
+    Rectangle aRect(aPos, aSize);
     SdrGrafObj* pGrafObj = new SdrGrafObj(rGraphic, aRect);
 
     // path was the name of the graphic in history

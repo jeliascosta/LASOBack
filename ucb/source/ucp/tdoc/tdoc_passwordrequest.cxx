@@ -44,22 +44,28 @@ namespace tdoc_ucp
             : InteractionContinuation( pRequest ) {}
 
         // XInterface
-        virtual uno::Any SAL_CALL queryInterface( const uno::Type & rType ) override;
+        virtual uno::Any SAL_CALL queryInterface( const uno::Type & rType )
+            throw ( uno::RuntimeException, std::exception ) override;
         virtual void SAL_CALL acquire()
             throw () override;
         virtual void SAL_CALL release()
             throw () override;
 
         // XTypeProvider
-        virtual uno::Sequence< uno::Type > SAL_CALL getTypes() override;
-        virtual uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
+        virtual uno::Sequence< uno::Type > SAL_CALL getTypes()
+            throw ( uno::RuntimeException, std::exception ) override;
+        virtual uno::Sequence< sal_Int8 > SAL_CALL getImplementationId()
+            throw ( uno::RuntimeException, std::exception ) override;
 
         // XInteractionContinuation
-        virtual void SAL_CALL select() override;
+        virtual void SAL_CALL select()
+            throw ( uno::RuntimeException, std::exception ) override;
 
         // XInteractionPassword
-        virtual void SAL_CALL setPassword( const OUString & aPasswd ) override;
-        virtual OUString SAL_CALL getPassword() override;
+        virtual void SAL_CALL setPassword( const OUString & aPasswd )
+            throw ( uno::RuntimeException, std::exception ) override;
+        virtual OUString SAL_CALL getPassword()
+            throw ( uno::RuntimeException, std::exception ) override;
 
     private:
         osl::Mutex m_aMutex;
@@ -93,6 +99,7 @@ void SAL_CALL InteractionSupplyPassword::release()
 // virtual
 uno::Any SAL_CALL
 InteractionSupplyPassword::queryInterface( const uno::Type & rType )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = cppu::queryInterface( rType,
                 static_cast< lang::XTypeProvider * >( this ),
@@ -110,6 +117,7 @@ InteractionSupplyPassword::queryInterface( const uno::Type & rType )
 // virtual
 uno::Sequence< sal_Int8 > SAL_CALL
 InteractionSupplyPassword::getImplementationId()
+    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -117,6 +125,7 @@ InteractionSupplyPassword::getImplementationId()
 
 // virtual
 uno::Sequence< uno::Type > SAL_CALL InteractionSupplyPassword::getTypes()
+    throw( uno::RuntimeException, std::exception )
 {
     static cppu::OTypeCollection * pCollection = nullptr;
     if ( !pCollection )
@@ -139,6 +148,7 @@ uno::Sequence< uno::Type > SAL_CALL InteractionSupplyPassword::getTypes()
 
 // virtual
 void SAL_CALL InteractionSupplyPassword::select()
+    throw( uno::RuntimeException, std::exception )
 {
     recordSelection();
 }
@@ -150,6 +160,7 @@ void SAL_CALL InteractionSupplyPassword::select()
 // virtual
 void SAL_CALL
 InteractionSupplyPassword::setPassword( const OUString& aPasswd )
+    throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
     m_aPassword = aPasswd;
@@ -157,6 +168,7 @@ InteractionSupplyPassword::setPassword( const OUString& aPasswd )
 
 // virtual
 OUString SAL_CALL InteractionSupplyPassword::getPassword()
+    throw ( uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
     return m_aPassword;

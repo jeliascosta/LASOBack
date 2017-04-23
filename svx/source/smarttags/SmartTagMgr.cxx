@@ -74,6 +74,14 @@ void SmartTagMgr::Init( const OUString& rConfigurationGroupName )
     RegisterListener();
     LoadLibraries();
 }
+void SmartTagMgr::CreateBreakIterator() const
+{
+    if ( !mxBreakIter.is() )
+    {
+        // get the break iterator
+        mxBreakIter.set( BreakIterator::create(mxContext) );
+    }
+}
 
 /** Dispatches the recognize call to all installed smart tag recognizers
 */
@@ -100,11 +108,7 @@ void SmartTagMgr::RecognizeString( const OUString& rText,
 
         if ( bCallRecognizer )
         {
-            // get the break iterator
-            if ( !mxBreakIter.is() )
-            {
-                mxBreakIter.set( BreakIterator::create(mxContext) );
-            }
+            CreateBreakIterator();
             i->recognize( rText, nStart, nLen,
                                             smarttags::SmartTagRecognizerMode_PARAGRAPH,
                                             rLocale, xMarkup, maApplicationName, xController,
@@ -267,7 +271,7 @@ void SmartTagMgr::WriteConfiguration( const bool* pIsLabelTextWithSmartTags,
 }
 
 // css::util::XModifyListener
-void SmartTagMgr::modified( const lang::EventObject& )
+void SmartTagMgr::modified( const lang::EventObject& )  throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -279,7 +283,7 @@ void SmartTagMgr::modified( const lang::EventObject& )
 }
 
 // css::lang::XEventListener
-void SmartTagMgr::disposing( const lang::EventObject& rEvent )
+void SmartTagMgr::disposing( const lang::EventObject& rEvent ) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -306,7 +310,7 @@ void SmartTagMgr::disposing( const lang::EventObject& rEvent )
 }
 
 // css::util::XChangesListener
-void SmartTagMgr::changesOccurred( const util::ChangesEvent& rEvent )
+void SmartTagMgr::changesOccurred( const util::ChangesEvent& rEvent ) throw( RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 

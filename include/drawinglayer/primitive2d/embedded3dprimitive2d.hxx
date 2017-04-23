@@ -72,6 +72,7 @@ namespace drawinglayer
             /// #i96669# add simple range buffering for this primitive
             basegfx::B2DRange                                   maB2DRange;
 
+            /// bitfield
             /** flag if given 3D geometry is already cheched for shadow definitions and 2d shadows
                 are created in maShadowPrimitives
              */
@@ -82,7 +83,7 @@ namespace drawinglayer
 
         protected:
             /// local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor

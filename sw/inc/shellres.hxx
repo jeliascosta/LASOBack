@@ -24,7 +24,7 @@
 #include <tools/rc.hxx>
 #include <vcl/bitmap.hxx>
 
-struct SW_DLLPUBLIC ShellResource
+struct SW_DLLPUBLIC ShellResource : public Resource
 {
     OUString        aPostItAuthor;
     OUString        aPostItPage;
@@ -35,7 +35,9 @@ struct SW_DLLPUBLIC ShellResource
     OUString        aCalc_ZeroDiv;
     OUString        aCalc_Brack;
     OUString        aCalc_Pow;
+    OUString        aCalc_VarNFnd;
     OUString        aCalc_Overflow;
+    OUString        aCalc_WrongTime;
     OUString        aCalc_Default;
     OUString        aCalc_Error;
 
@@ -78,10 +80,11 @@ struct SW_DLLPUBLIC ShellResource
     OUString GetPageDescName(sal_uInt16 nNo, PageNameMode eMode);
 
     ShellResource();
+    ~ShellResource();
 
 private:
     void GetAutoFormatNameLst_() const;
-    mutable std::unique_ptr<std::vector<OUString>> pAutoFormatNameLst;
+    mutable std::vector<OUString> *pAutoFormatNameLst;
     OUString        sPageDescFirstName;
     OUString        sPageDescFollowName;
     OUString        sPageDescName;

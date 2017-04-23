@@ -49,6 +49,7 @@ void WeakComponentImplHelperBase::disposing()
 }
 
 Any WeakComponentImplHelperBase::queryInterface( Type const & rType )
+    throw (RuntimeException, std::exception)
 {
     if (rType == cppu::UnoType<lang::XComponent>::get())
     {
@@ -89,6 +90,7 @@ void WeakComponentImplHelperBase::release()
 }
 
 void WeakComponentImplHelperBase::dispose()
+    throw (RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( rBHelper.rMutex );
     if (!rBHelper.bDisposed && !rBHelper.bInDispose)
@@ -131,6 +133,7 @@ void WeakComponentImplHelperBase::dispose()
 
 void WeakComponentImplHelperBase::addEventListener(
     Reference< lang::XEventListener > const & xListener )
+    throw (RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( rBHelper.rMutex );
     if (rBHelper.bDisposed || rBHelper.bInDispose)
@@ -147,6 +150,7 @@ void WeakComponentImplHelperBase::addEventListener(
 
 void WeakComponentImplHelperBase::removeEventListener(
     Reference< lang::XEventListener > const & xListener )
+    throw (RuntimeException, std::exception)
 {
     rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
@@ -167,11 +171,13 @@ void WeakAggComponentImplHelperBase::disposing()
 }
 
 Any WeakAggComponentImplHelperBase::queryInterface( Type const & rType )
+    throw (RuntimeException, std::exception)
 {
     return OWeakAggObject::queryInterface( rType );
 }
 
 Any WeakAggComponentImplHelperBase::queryAggregation( Type const & rType )
+    throw (RuntimeException, std::exception)
 {
     if (rType == cppu::UnoType<lang::XComponent>::get())
     {
@@ -216,6 +222,7 @@ void WeakAggComponentImplHelperBase::release()
 }
 
 void WeakAggComponentImplHelperBase::dispose()
+    throw (RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( rBHelper.rMutex );
     if (!rBHelper.bDisposed && !rBHelper.bInDispose)
@@ -258,6 +265,7 @@ void WeakAggComponentImplHelperBase::dispose()
 
 void WeakAggComponentImplHelperBase::addEventListener(
     Reference< lang::XEventListener > const & xListener )
+    throw (RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( rBHelper.rMutex );
     if (rBHelper.bDisposed || rBHelper.bInDispose)
@@ -274,11 +282,9 @@ void WeakAggComponentImplHelperBase::addEventListener(
 
 void WeakAggComponentImplHelperBase::removeEventListener(
     Reference< lang::XEventListener > const & xListener )
+    throw (RuntimeException, std::exception)
 {
-    // if we have disposed, then we have cleared the list already
-    MutexGuard aGuard( rBHelper.rMutex );
-    if (!rBHelper.bDisposed)
-        rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
+    rBHelper.removeListener( cppu::UnoType<decltype(xListener)>::get(), xListener );
 }
 
 }

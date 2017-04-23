@@ -23,6 +23,7 @@
 #include "DataSeriesHelper.hxx"
 #include "macros.hxx"
 #include "CommonConverters.hxx"
+#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <cppuhelper/supportsservice.hxx>
@@ -34,6 +35,7 @@
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::chart2;
 using namespace ::std;
+using namespace ::chart::ContainerHelper;
 
 using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Sequence;
@@ -48,7 +50,9 @@ void lcl_ShowDataSource( const Reference< data::XDataSource > & xSource );
 namespace chart
 {
 
-DataInterpreter::DataInterpreter()
+DataInterpreter::DataInterpreter(
+    const Reference< uno::XComponentContext > & xContext ) :
+        m_xContext( xContext )
 {}
 
 DataInterpreter::~DataInterpreter()
@@ -59,6 +63,7 @@ InterpretedData SAL_CALL DataInterpreter::interpretDataSource(
     const Reference< data::XDataSource >& xSource,
     const Sequence< beans::PropertyValue >& aArguments,
     const Sequence< Reference< XDataSeries > >& aSeriesToReUse )
+    throw (uno::RuntimeException, std::exception)
 {
     if( ! xSource.is())
         return InterpretedData();
@@ -117,7 +122,7 @@ InterpretedData SAL_CALL DataInterpreter::interpretDataSource(
         if( nSeriesIndex < aSeriesToReUse.getLength())
             xSeries.set( aSeriesToReUse[nSeriesIndex] );
         else
-            xSeries.set( new DataSeries );
+            xSeries.set( new DataSeries( GetComponentContext() ));
         OSL_ASSERT( xSeries.is() );
         Reference< data::XDataSink > xSink( xSeries, uno::UNO_QUERY );
         OSL_ASSERT( xSink.is() );
@@ -133,6 +138,7 @@ InterpretedData SAL_CALL DataInterpreter::interpretDataSource(
 
 InterpretedData SAL_CALL DataInterpreter::reinterpretDataSeries(
     const InterpretedData& aInterpretedData )
+    throw (uno::RuntimeException, std::exception)
 {
     InterpretedData aResult( aInterpretedData );
 
@@ -189,6 +195,7 @@ InterpretedData SAL_CALL DataInterpreter::reinterpretDataSeries(
 // criterion: all series must have exactly one data::XLabeledDataSequence
 sal_Bool SAL_CALL DataInterpreter::isDataCompatible(
     const chart2::InterpretedData& aInterpretedData )
+    throw (uno::RuntimeException, std::exception)
 {
     Sequence< Reference< XDataSeries > > aSeries( FlattenSequence( aInterpretedData.Series ));
     for( sal_Int32 i=0; i<aSeries.getLength(); ++i )
@@ -264,6 +271,7 @@ private:
 
 Reference< data::XDataSource > SAL_CALL DataInterpreter::mergeInterpretedData(
     const InterpretedData& aInterpretedData )
+    throw (uno::RuntimeException, std::exception)
 {
     vector< Reference< data::XLabeledDataSequence > > aResultVec;
     aResultVec.reserve( aInterpretedData.Series.getLength() +
@@ -330,7 +338,7 @@ void DataInterpreter::SetRole( const Reference< data::XDataSequence > & xSeq, co
     try
     {
         Reference< beans::XPropertySet > xProp( xSeq, uno::UNO_QUERY_THROW );
-        xProp->setPropertyValue( "Role", uno::Any( rRole ));
+        xProp->setPropertyValue( "Role", uno::makeAny( rRole ));
     }
     catch( const uno::Exception & ex )
     {
@@ -373,19 +381,34 @@ bool DataInterpreter::UseCategoriesAsX( const Sequence< beans::PropertyValue > &
     return bUseCategoriesAsX;
 }
 
+Sequence< OUString > DataInterpreter::getSupportedServiceNames_Static()
+{
+    Sequence<OUString> aServices { "com.sun.star.chart2.DataInterpreter" };
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DataInterpreter::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString DataInterpreter::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart2.DataInterpreter");
 }
 
 sal_Bool SAL_CALL DataInterpreter::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL DataInterpreter::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.chart2.DataInterpreter" };
+    return getSupportedServiceNames_Static();
 }
 
 } // namespace chart

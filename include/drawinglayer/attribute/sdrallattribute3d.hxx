@@ -61,6 +61,7 @@ namespace drawinglayer
             // data read access
             const SdrLineAttribute& getLine() const { return maLine; }
             const SdrFillAttribute& getFill() const { return maFill; }
+            const SdrLineStartEndAttribute& getLineStartEnd() const { return maLineStartEnd; }
             const SdrShadowAttribute& getShadow() const { return maShadow; }
             const FillGradientAttribute& getFillFloatTransGradient() const { return maFillFloatTransGradient; }
         };

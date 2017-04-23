@@ -38,6 +38,7 @@
 #include "svx/dlgutil.hxx"
 #include <svl/intitem.hxx>
 #include <sfx2/request.hxx>
+#include "paragrph.hrc"
 
 #include "sfx2/opengrf.hxx"
 #include <vcl/layout.hxx>
@@ -61,7 +62,7 @@ const sal_uInt16 SvxTransparenceTabPage::pTransparenceRanges[] =
 |*
 \************************************************************************/
 
-IMPL_LINK_NOARG(SvxTransparenceTabPage, ClickTransOffHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxTransparenceTabPage, ClickTransOffHdl_Impl, Button*, void)
 {
     // disable all other controls
     ActivateLinear(false);
@@ -76,7 +77,7 @@ IMPL_LINK_NOARG(SvxTransparenceTabPage, ClickTransOffHdl_Impl, Button*, void)
     InvalidatePreview( false );
 }
 
-IMPL_LINK_NOARG(SvxTransparenceTabPage, ClickTransLinearHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxTransparenceTabPage, ClickTransLinearHdl_Impl, Button*, void)
 {
     // enable linear, disable other
     ActivateLinear(true);
@@ -87,7 +88,7 @@ IMPL_LINK_NOARG(SvxTransparenceTabPage, ClickTransLinearHdl_Impl, Button*, void)
     ModifyTransparentHdl_Impl (*m_pMtrTransparent);
 }
 
-IMPL_LINK_NOARG(SvxTransparenceTabPage, ClickTransGradientHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxTransparenceTabPage, ClickTransGradientHdl_Impl, Button*, void)
 {
     // enable gradient, disable other
     ActivateLinear(false);
@@ -130,7 +131,7 @@ void SvxTransparenceTabPage::ActivateLinear(bool bActivate)
     m_pMtrTransparent->Enable(bActivate);
 }
 
-IMPL_LINK_NOARG(SvxTransparenceTabPage, ModifyTransparentHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxTransparenceTabPage, ModifyTransparentHdl_Impl, Edit&, void)
 {
     sal_uInt16 nPos = (sal_uInt16)m_pMtrTransparent->GetValue();
     XFillTransparenceItem aItem(nPos);
@@ -140,12 +141,12 @@ IMPL_LINK_NOARG(SvxTransparenceTabPage, ModifyTransparentHdl_Impl, Edit&, void)
     InvalidatePreview();
 }
 
-IMPL_LINK(SvxTransparenceTabPage, ModifiedTrgrListBoxHdl_Impl, ListBox&, rListBox, void)
+IMPL_LINK_TYPED(SvxTransparenceTabPage, ModifiedTrgrListBoxHdl_Impl, ListBox&, rListBox, void)
 {
     ModifiedTrgrHdl_Impl(&rListBox);
 }
 
-IMPL_LINK(SvxTransparenceTabPage, ModifiedTrgrEditHdl_Impl, Edit&, rBox, void)
+IMPL_LINK_TYPED(SvxTransparenceTabPage, ModifiedTrgrEditHdl_Impl, Edit&, rBox, void)
 {
     ModifiedTrgrHdl_Impl(&rBox);
 }
@@ -240,8 +241,8 @@ SvxTransparenceTabPage::SvxTransparenceTabPage(vcl::Window* pParent, const SfxIt
                           "cui/ui/transparencytabpage.ui",
                           rInAttrs),
     rOutAttrs           ( rInAttrs ),
-    eRP                 ( RectPoint::LT ),
-    nPageType           ( PageType::Area ),
+    eRP                 ( RP_LT ),
+    nPageType           (0),
     nDlgType            (0),
     bBitmap             ( false ),
     aXFillAttr          ( rInAttrs.GetPool() ),
@@ -396,7 +397,7 @@ bool SvxTransparenceTabPage::FillItemSet(SfxItemSet* rAttrs)
         rAttrs->Put(aShadowItem);
         bModified = true;
     }
-    rAttrs->Put(CntUInt16Item(SID_PAGE_TYPE, (sal_uInt16)nPageType));
+    rAttrs->Put (CntUInt16Item(SID_PAGE_TYPE,nPageType));
     return bModified;
 }
 
@@ -473,22 +474,22 @@ void SvxTransparenceTabPage::ActivatePage(const SfxItemSet& rSet)
 {
     const CntUInt16Item* pPageTypeItem = rSet.GetItem<CntUInt16Item>(SID_PAGE_TYPE, false);
     if (pPageTypeItem)
-        SetPageType((PageType) pPageTypeItem->GetValue());
+        SetPageType(pPageTypeItem->GetValue());
 
     if(nDlgType == 0) // area dialog
-        nPageType = PageType::Transparence;
+        nPageType = PT_TRANSPARENCE;
 
     InitPreview ( rSet );
 }
 
-DeactivateRC SvxTransparenceTabPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SvxTransparenceTabPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if( _pSet )
         FillItemSet( _pSet );
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
-void SvxTransparenceTabPage::PointChanged(vcl::Window* , RectPoint eRcPt)
+void SvxTransparenceTabPage::PointChanged(vcl::Window* , RECT_POINT eRcPt)
 {
     eRP = eRcPt;
 }
@@ -498,7 +499,7 @@ void SvxTransparenceTabPage::PointChanged(vcl::Window* , RectPoint eRcPt)
 
 bool SvxTransparenceTabPage::InitPreview ( const SfxItemSet& rSet )
 {
-    // set transparencetype for preview
+    // set transparencetyp for preview
     if ( m_pRbtTransOff->IsChecked() )
     {
         ClickTransOffHdl_Impl(nullptr);
@@ -570,7 +571,7 @@ void SvxTransparenceTabPage::PageCreated(const SfxAllItemSet& aSet)
     const SfxUInt16Item* pDlgTypeItem = aSet.GetItem<SfxUInt16Item>(SID_DLG_TYPE, false);
 
     if (pPageTypeItem)
-        SetPageType((PageType) pPageTypeItem->GetValue());
+        SetPageType(pPageTypeItem->GetValue());
     if (pDlgTypeItem)
         SetDlgType(pDlgTypeItem->GetValue());
 }

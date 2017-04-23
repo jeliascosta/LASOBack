@@ -49,16 +49,19 @@ public:
     Foo(const Foo&) = delete;
     const Foo& operator=(const Foo&) = delete;
 
-    virtual Any SAL_CALL queryInterface(const Type & _type) override
+    virtual Any SAL_CALL queryInterface(const Type & _type)
+        throw (RuntimeException, std::exception) override
     {
+        Any aInterface;
         if (_type == cppu::UnoType<XInterface>::get())
         {
-            return css::uno::makeAny<css::uno::Reference<css::uno::XInterface>>(
-                this);
+            Reference< XInterface > ref( static_cast< XInterface * >( this ) );
+            aInterface.setValue( &ref, _type );
         }
-        if (_type == cppu::UnoType<Interface1>::get())
+        else if (_type == cppu::UnoType<Interface1>::get())
         {
-            return css::uno::makeAny<css::uno::Reference<Interface1>>(this);
+            Reference< Interface1 > ref( this );
+            aInterface.setValue( &ref, _type );
         }
 
         return Any();
@@ -89,24 +92,17 @@ private:
 
 struct Base1: public css::uno::XInterface {
     virtual ~Base1() = delete;
-    static ::css::uno::Type const & SAL_CALL static_type(void * = nullptr) // loplugin:refcounting
-    { return ::cppu::UnoType<Base1>::get(); }
 };
-struct Base2: public Base1 {
-    virtual ~Base2() override = delete;
-};
-struct Base3: public Base1 { virtual ~Base3() override = delete; };
+struct Base2: public Base1 { virtual ~Base2() = delete; };
+struct Base3: public Base1 { virtual ~Base3() = delete; };
 struct Derived: public Base2, public Base3 {
-    virtual ~Derived() override = delete;
+    virtual ~Derived() = delete;
 };
 
 // The special case using the conversion operator instead:
 css::uno::Reference< css::uno::XInterface > testUpcast1(
     css::uno::Reference< Derived > const & ref)
-{
-    Base1::static_type(); // prevent loplugin:unreffun firing
-    return ref;
-}
+{ return ref; }
 
 // The normal up-cast case:
 css::uno::Reference< Base1 > testUpcast2(

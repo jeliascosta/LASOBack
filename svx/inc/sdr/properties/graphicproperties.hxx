@@ -44,7 +44,7 @@ namespace sdr
             GraphicProperties(const GraphicProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~GraphicProperties() override;
+            virtual ~GraphicProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

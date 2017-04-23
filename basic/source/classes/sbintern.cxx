@@ -49,7 +49,7 @@ SbiGlobals::SbiGlobals()
     nCode = 0;
     nLine = 0;
     nCol1 = nCol2 = 0;
-    bCompilerError = false;
+    bCompiler = false;
     bGlobalInitErr = false;
     bRunInit = false;
     pTransliterationWrapper = nullptr;

@@ -49,15 +49,14 @@ class SalGtkPicker
         osl::Mutex m_rbHelperMtx;
         GtkWidget  *m_pDialog;
     protected:
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL implsetTitle( const OUString& aTitle );
+        void SAL_CALL implsetTitle( const OUString& aTitle )
+            throw( css::uno::RuntimeException );
 
-        /// @throws css::lang::IllegalArgumentException
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL implsetDisplayDirectory( const OUString& rDirectory );
+        void SAL_CALL implsetDisplayDirectory( const OUString& rDirectory )
+            throw( css::lang::IllegalArgumentException, css::uno::RuntimeException );
 
-        /// @throws css::uno::RuntimeException
-        OUString SAL_CALL implgetDisplayDirectory(  );
+        OUString SAL_CALL implgetDisplayDirectory(  )
+            throw( css::uno::RuntimeException );
         OUString uritounicode(const gchar *pIn);
         OString unicodetouri(const OUString &rURL);
 
@@ -85,23 +84,33 @@ public:
 
     // XTopWindowListener
     using cppu::WeakComponentImplHelperBase::disposing;
-    virtual void SAL_CALL disposing( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowOpened( const css::lang::EventObject& e ) override;
-    virtual void SAL_CALL windowClosing( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowClosed( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowMinimized( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowNormalized( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowActivated( const css::lang::EventObject& ) override {}
-    virtual void SAL_CALL windowDeactivated( const css::lang::EventObject& ) override {}
+    virtual void SAL_CALL disposing( const css::lang::EventObject& )
+        throw(css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowOpened( const css::lang::EventObject& e )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL windowClosing( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowClosed( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowMinimized( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowNormalized( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowActivated( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
+    virtual void SAL_CALL windowDeactivated( const css::lang::EventObject& )
+        throw (css::uno::RuntimeException, std::exception) override {}
 
     // XTerminateListener
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& aEvent ) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& aEvent )
+        throw(css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent )
+        throw(css::uno::RuntimeException, std::exception) override;
 public:
     RunDialog(GtkWidget *pDialog,
         css::uno::Reference< css::awt::XExtendedToolkit > &rToolkit
         );
-    virtual ~RunDialog() override;
+    virtual ~RunDialog();
     gint run();
     void cancel();
     static GtkWindow* GetTransientFor();

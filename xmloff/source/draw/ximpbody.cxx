@@ -178,7 +178,7 @@ SdXMLDrawPageContext::SdXMLDrawPageContext( SdXMLImport& rImport,
                 }
             }
 
-            SAL_WARN_IF( !bDone, "xmloff", "xmloff::SdXMLDrawPageContext::SdXMLDrawPageContext(), could not find a slide master!" );
+            DBG_ASSERT( bDone, "xmloff::SdXMLDrawPageContext::SdXMLDrawPageContext(), could not find a slide master!" );
         }
     }
 
@@ -189,7 +189,7 @@ SdXMLDrawPageContext::SdXMLDrawPageContext( SdXMLImport& rImport,
         uno::Reference< beans::XPropertySet > xProps( xShapeDrawPage, uno::UNO_QUERY );
         if( xProps.is() )
         {
-            sal_Int32 nIndex = maHREF.lastIndexOf( '#' );
+            sal_Int32 nIndex = maHREF.lastIndexOf( (sal_Unicode)'#' );
             if( nIndex != -1 )
             {
                 OUString aFileName( maHREF.copy( 0, nIndex ) );

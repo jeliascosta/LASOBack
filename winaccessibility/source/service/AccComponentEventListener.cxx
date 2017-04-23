@@ -47,6 +47,7 @@ AccComponentEventListener::~AccComponentEventListener()
  * @param   AccessibleEventObject   the event object which contains information about event
  */
 void  AccComponentEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
+throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 

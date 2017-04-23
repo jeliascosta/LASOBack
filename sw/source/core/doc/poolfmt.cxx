@@ -65,9 +65,9 @@
 #include <poolfmt.hrc>
 #include <GetMetricVal.hxx>
 #include <numrule.hxx>
-#include <swtable.hxx>
-#include <tblafmt.hxx>
 #include <svx/xdef.hxx>
+
+//UUUU
 #include <svx/xfillit0.hxx>
 
 using namespace ::editeng;
@@ -102,15 +102,9 @@ void SetAllScriptItem( SfxItemSet& rSet, const SfxPoolItem& rItem )
     }
 
     if( nWhCJK )
-    {
-        std::unique_ptr<SfxPoolItem> pNewItem(rItem.CloneSetWhich(nWhCJK));
-        rSet.Put( *pNewItem );
-    }
+        rSet.Put( rItem, nWhCJK );
     if( nWhCTL )
-    {
-        std::unique_ptr<SfxPoolItem> pNewItem(rItem.CloneSetWhich(nWhCTL));
-        rSet.Put( *pNewItem );
-    }
+        rSet.Put( rItem, nWhCTL );
 }
 
 /// Return the AutoCollection by its Id. If it doesn't
@@ -120,7 +114,7 @@ void SetAllScriptItem( SfxItemSet& rSet, const SfxPoolItem& rItem )
 SvxFrameDirection GetDefaultFrameDirection(sal_uLong nLanguage)
 {
     SvxFrameDirection eResult = (MsLangId::isRightToLeft( static_cast<LanguageType>(nLanguage)) ?
-            SvxFrameDirection::Horizontal_RL_TB : SvxFrameDirection::Horizontal_LR_TB);
+            FRMDIR_HORI_RIGHT_TOP : FRMDIR_HORI_LEFT_TOP);
     return eResult;
 }
 
@@ -131,20 +125,6 @@ bool SwDoc::IsUsed( const SwModify& rModify ) const
     // (also indirect ones for derived Formats)
     SwAutoFormatGetDocNode aGetHt( &GetNodes() );
     return !rModify.GetInfo( aGetHt );
-}
-
-// See if Table style is in use
-bool SwDoc::IsUsed( const SwTableAutoFormat& rTableAutoFormat) const
-{
-    size_t nTableCount = GetTableFrameFormatCount(true);
-    for (size_t i=0; i < nTableCount; ++i)
-    {
-        SwFrameFormat* pFrameFormat = &GetTableFrameFormat(i, true);
-        SwTable* pTable = SwTable::FindTable(pFrameFormat);
-        if (pTable->GetTableStyleName() == rTableAutoFormat.GetName())
-            return true;
-    }
-    return false;
 }
 
 // See if the NumRule is used
@@ -319,7 +299,7 @@ void SwDoc::RemoveAllFormatLanguageDependencies()
     /* koreans do not like SvxScriptItem(TRUE) */
     pTextFormatColl->ResetFormatAttr( RES_PARATR_SCRIPTSPACE );
 
-    SvxFrameDirectionItem aFrameDir( SvxFrameDirection::Horizontal_LR_TB, RES_FRAMEDIR );
+    SvxFrameDirectionItem aFrameDir( FRMDIR_HORI_LEFT_TOP, RES_FRAMEDIR );
 
     size_t nCount = GetPageDescCnt();
     for( size_t i=0; i<nCount; ++i )

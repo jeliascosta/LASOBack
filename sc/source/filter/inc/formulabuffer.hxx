@@ -16,10 +16,16 @@
 #include <salhelper/thread.hxx>
 #include <osl/mutex.hxx>
 #include "workbookhelper.hxx"
+#include <com/sun/star/table/CellAddress.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
+#include <com/sun/star/table/XCellRange.hpp>
+#include <com/sun/star/table/XCell.hpp>
+#include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <map>
 #include <vector>
 #include "worksheethelper.hxx"
 #include "sheetdatabuffer.hxx"
+#include <com/sun/star/sheet/XFormulaTokens.hpp>
 
 namespace oox { namespace xls {
 
@@ -36,6 +42,9 @@ public:
         sal_Int32 mnSharedId;
 
         SharedFormulaEntry(
+            const css::table::CellAddress& rAddress,
+            const OUString& rTokenStr, sal_Int32 nSharedId );
+        SharedFormulaEntry(
             const ScAddress& rAddress,
             const OUString& rTokenStr, sal_Int32 nSharedId );
     };
@@ -51,6 +60,9 @@ public:
         sal_Int32 mnValueType;
 
         SharedFormulaDesc(
+            const css::table::CellAddress& rAddr, sal_Int32 nSharedId,
+            const OUString& rCellValue, sal_Int32 nValueType );
+        SharedFormulaDesc(
             const ScAddress& rAddr, sal_Int32 nSharedId,
             const OUString& rCellValue, sal_Int32 nValueType );
     };
@@ -58,20 +70,21 @@ public:
     struct TokenAddressItem
     {
         OUString maTokenStr;
-        ScAddress maAddress;
-        TokenAddressItem( const OUString& rTokenStr, const ScAddress& rAddress ) : maTokenStr( rTokenStr ), maAddress( rAddress ) {}
+        ScAddress maCellAddress;
+        TokenAddressItem( const OUString& rTokenStr, const ScAddress& rCellAddress ) : maTokenStr( rTokenStr ), maCellAddress( rCellAddress ) {}
+        TokenAddressItem( const OUString& rTokenStr, const css::table::CellAddress& rCellAddress ) : maTokenStr( rTokenStr ), maCellAddress( rCellAddress.Column, rCellAddress.Row, rCellAddress.Sheet ) {}
     };
 
     struct TokenRangeAddressItem
     {
         TokenAddressItem maTokenAndAddress;
-        ScRange maRange;
-        TokenRangeAddressItem( const TokenAddressItem& rTokenAndAddress, const ScRange& rRange ) : maTokenAndAddress( rTokenAndAddress ), maRange( rRange ) {}
+        css::table::CellRangeAddress maCellRangeAddress;
+        TokenRangeAddressItem( const TokenAddressItem& rTokenAndAddress, const css::table::CellRangeAddress& rCellRangeAddress ) : maTokenAndAddress( rTokenAndAddress ), maCellRangeAddress( rCellRangeAddress ) {}
     };
 
     struct FormulaValue
     {
-        ScAddress maAddress;
+        ScAddress maCellAddress;
         OUString maValueStr;
         sal_Int32 mnCellType;
     };
@@ -110,19 +123,30 @@ private:
 public:
     explicit            FormulaBuffer( const WorkbookHelper& rHelper );
     void                finalizeImport();
+    void                setCellFormula( const css::table::CellAddress& rAddress, const OUString&  );
     void                setCellFormula( const ScAddress& rAddress, const OUString&  );
 
+    void setCellFormula(
+        const css::table::CellAddress& rAddress, sal_Int32 nSharedId,
+        const OUString& rCellValue, sal_Int32 nValueType );
     void setCellFormula(
         const ScAddress& rAddress, sal_Int32 nSharedId,
         const OUString& rCellValue, sal_Int32 nValueType );
 
     void setCellFormulaValue(
+        const css::table::CellAddress& rAddress, const OUString& rValueStr, sal_Int32 nCellType );
+    void setCellFormulaValue(
         const ScAddress& rAddress, const OUString& rValueStr, sal_Int32 nCellType );
 
-    void                setCellArrayFormula( const ScRange& rRangeAddress,
+    void                setCellArrayFormula( const css::table::CellRangeAddress& rRangeAddress,
+                                             const css::table::CellAddress& rTokenAddress,
+                                             const OUString& );
+    void                setCellArrayFormula( const css::table::CellRangeAddress& rRangeAddress,
                                              const ScAddress& rTokenAddress,
                                              const OUString& );
 
+    void                createSharedFormulaMapEntry( const css::table::CellAddress& rAddress,
+                                                     sal_Int32 nSharedId, const OUString& rTokens );
     void                createSharedFormulaMapEntry( const ScAddress& rAddress,
                                                      sal_Int32 nSharedId, const OUString& rTokens );
 

@@ -25,10 +25,32 @@
 #pragma warning(pop)
 #endif
 
+#define JAWT_GetAWT hidden_JAWT_GetAWT
+#include "jawt.h"
+#undef JAWT_GetAWT
+
 #if defined _MSC_VER
 #pragma warning(push, 1)
 #endif
-#include "jawt_md.h"
+/* When cross-compiling to Windows we don't have any Windows JDK
+ * available. Copying this short snippet from win32/jawt_md.h can
+ * surely not be against its license. The intent is to enable
+ * interoperation with real Oracle Java after all. We leave out the
+ * informative comments that might have "artistic merit" and be more
+ * copyrightable. Use this also for native Windows compilation for
+ * simplicity.
+ */
+typedef struct jawt_Win32DrawingSurfaceInfo {
+    union {
+        HWND hwnd;
+        HBITMAP hbitmap;
+        void* pbits;
+    };
+    HDC hdc;
+    HPALETTE hpalette;
+} JAWT_Win32DrawingSurfaceInfo;
+
+JNIIMPORT unsigned char JNICALL JAWT_GetAWT(JNIEnv *, JAWT *);
 #if defined _MSC_VER
 #pragma warning(pop)
 #endif
@@ -128,7 +150,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_star_comp_beans_LocalOfficeWindow_getNative
        and calls on such construct produce
        a stack overflow.
      */
-    if (GetProp( hWnd, OLD_PROC_KEY )==NULL)
+    if (GetProp( hWnd, OLD_PROC_KEY )==0)
     {
         hFuncPtr = SetWindowLongPtr( hWnd, GWLP_WNDPROC, (LONG_PTR)OpenOfficeWndProc );
         SetProp( hWnd, OLD_PROC_KEY, (HANDLE)hFuncPtr );

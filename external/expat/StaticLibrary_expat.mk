@@ -14,7 +14,7 @@ $(eval $(call gb_StaticLibrary_set_warnings_not_errors,expat))
 $(eval $(call gb_StaticLibrary_use_unpacked,expat,expat))
 
 # no configure step on windows, no dependency
-ifneq ($(OS),WNT)
+ifneq ($(OS)$(COM),WNTMSC)
 $(eval $(call gb_StaticLibrary_use_external_project,expat,expat,full))
 endif
 

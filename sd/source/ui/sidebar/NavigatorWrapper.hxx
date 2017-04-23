@@ -44,7 +44,7 @@ public:
         vcl::Window* pParent,
         sd::ViewShellBase& rViewShellBase,
         SfxBindings* pBindings);
-    virtual ~NavigatorWrapper() override;
+    virtual ~NavigatorWrapper();
     virtual void dispose() override;
 
     // Control

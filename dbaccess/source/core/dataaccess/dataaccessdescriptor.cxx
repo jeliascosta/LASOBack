@@ -34,7 +34,6 @@
 #include <comphelper/uno3.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/supportsservice.hxx>
-#include <rtl/ref.hxx>
 
 namespace
 {
@@ -75,16 +74,16 @@ namespace
         DECLARE_XTYPEPROVIDER()
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception) override;
+        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
     protected:
-        virtual ~DataAccessDescriptor() override;
+        virtual ~DataAccessDescriptor();
 
     protected:
         // XPropertySet
-        virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+        virtual Reference< XPropertySetInfo > SAL_CALL getPropertySetInfo() throw(RuntimeException, std::exception) override;
         virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
         // OPropertyArrayUsageHelper
@@ -164,23 +163,23 @@ namespace
 
     IMPLEMENT_FORWARD_XTYPEPROVIDER2( DataAccessDescriptor, DataAccessDescriptor_TypeBase, DataAccessDescriptor_PropertyBase );
 
-    OUString SAL_CALL DataAccessDescriptor::getImplementationName()
+    OUString SAL_CALL DataAccessDescriptor::getImplementationName() throw (RuntimeException, std::exception)
     {
         return OUString( "com.sun.star.comp.dba.DataAccessDescriptor" );
     }
 
-    sal_Bool SAL_CALL DataAccessDescriptor::supportsService( const OUString& rServiceName )
+    sal_Bool SAL_CALL DataAccessDescriptor::supportsService( const OUString& rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL DataAccessDescriptor::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL DataAccessDescriptor::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aServices { "com.sun.star.sdb.DataAccessDescriptor" };
         return aServices;
     }
 
-    Reference< XPropertySetInfo > SAL_CALL DataAccessDescriptor::getPropertySetInfo()
+    Reference< XPropertySetInfo > SAL_CALL DataAccessDescriptor::getPropertySetInfo() throw(RuntimeException, std::exception)
     {
         Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
         return xInfo;
@@ -203,37 +202,42 @@ namespace
     {
     public:
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception) override;
+        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException, std::exception) override;
 
         // XDataAccessDescriptorFactory
-        virtual Reference< XPropertySet > SAL_CALL createDataAccessDescriptor(  ) override;
+        virtual Reference< XPropertySet > SAL_CALL createDataAccessDescriptor(  ) throw (RuntimeException, std::exception) override;
 
         DataAccessDescriptorFactory();
+        virtual ~DataAccessDescriptorFactory();
     };
 
     DataAccessDescriptorFactory::DataAccessDescriptorFactory()
     {
     }
 
-    OUString SAL_CALL DataAccessDescriptorFactory::getImplementationName()
+    DataAccessDescriptorFactory::~DataAccessDescriptorFactory()
+    {
+    }
+
+    OUString SAL_CALL DataAccessDescriptorFactory::getImplementationName() throw (RuntimeException, std::exception)
     {
         return OUString( "com.sun.star.comp.dba.DataAccessDescriptorFactory" );
     }
 
-    sal_Bool SAL_CALL DataAccessDescriptorFactory::supportsService( const OUString& rServiceName )
+    sal_Bool SAL_CALL DataAccessDescriptorFactory::supportsService( const OUString& rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, rServiceName);
     }
 
-    Sequence< OUString > SAL_CALL DataAccessDescriptorFactory::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL DataAccessDescriptorFactory::getSupportedServiceNames() throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aServices { "com.sun.star.sdb.DataAccessDescriptorFactory" };
         return aServices;
     }
 
-    Reference< XPropertySet > SAL_CALL DataAccessDescriptorFactory::createDataAccessDescriptor(  )
+    Reference< XPropertySet > SAL_CALL DataAccessDescriptorFactory::createDataAccessDescriptor(  ) throw (RuntimeException, std::exception)
     {
         return new DataAccessDescriptor();
     }
@@ -243,7 +247,7 @@ struct Instance {
         instance(new DataAccessDescriptorFactory())
     {}
 
-    rtl::Reference<cppu::OWeakObject> instance;
+    css::uno::Reference<cppu::OWeakObject> instance;
 };
 
 struct Singleton:

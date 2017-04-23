@@ -78,7 +78,7 @@ namespace sdr
 
         void OverlayObject::allowAntiAliase(bool bNew)
         {
-            if(bNew != mbAllowsAntiAliase)
+            if(bNew != (bool)mbAllowsAntiAliase)
             {
                 // remember new value
                 mbAllowsAntiAliase = bNew;
@@ -136,7 +136,7 @@ namespace sdr
 
         void OverlayObject::setVisible(bool bNew)
         {
-            if(bNew != mbIsVisible)
+            if(bNew != (bool)mbIsVisible)
             {
                 // remember new value
                 mbIsVisible = bNew;
@@ -148,7 +148,7 @@ namespace sdr
 
         void OverlayObject::setHittable(bool bNew)
         {
-            if(bNew != mbIsHittable)
+            if(bNew != (bool)mbIsHittable)
             {
                 // remember new value
                 mbIsHittable = bNew;

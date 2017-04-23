@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#undef ENABLE_PANE_RESIZING
+//#define ENABLE_PANE_RESIZING
+
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 #include "PresenterWindowManager.hxx"
@@ -25,6 +28,7 @@
 #include "PresenterHelper.hxx"
 #include "PresenterPaintManager.hxx"
 #include "PresenterPaneBase.hxx"
+#include "PresenterPaneBorderManager.hxx"
 #include "PresenterPaneBorderPainter.hxx"
 #include "PresenterPaneContainer.hxx"
 #include "PresenterPaneFactory.hxx"
@@ -82,7 +86,7 @@ PresenterWindowManager::PresenterWindowManager (
       maLayoutListeners(),
       mbIsMouseClickPending(false)
 {
-
+    UpdateWindowList();
 }
 
 PresenterWindowManager::~PresenterWindowManager()
@@ -108,7 +112,9 @@ void SAL_CALL PresenterWindowManager::disposing()
         {
             (*iPane)->mxBorderWindow->removeWindowListener(this);
             (*iPane)->mxBorderWindow->removeFocusListener(this);
+#ifndef ENABLE_PANE_RESIZING
             (*iPane)->mxBorderWindow->removeMouseListener(this);
+#endif
         }
     }
 }
@@ -216,6 +222,7 @@ void PresenterWindowManager::SetPaneBorderPainter (
 //----- XWindowListener -------------------------------------------------------
 
 void SAL_CALL PresenterWindowManager::windowResized (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     if (rEvent.Source == mxParentWindow)
@@ -236,6 +243,7 @@ void SAL_CALL PresenterWindowManager::windowResized (const awt::WindowEvent& rEv
 }
 
 void SAL_CALL PresenterWindowManager::windowMoved (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     if (rEvent.Source != mxParentWindow)
@@ -249,11 +257,13 @@ void SAL_CALL PresenterWindowManager::windowMoved (const awt::WindowEvent& rEven
 }
 
 void SAL_CALL PresenterWindowManager::windowShown (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
 }
 
 void SAL_CALL PresenterWindowManager::windowHidden (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
 }
@@ -261,6 +271,7 @@ void SAL_CALL PresenterWindowManager::windowHidden (const lang::EventObject& rEv
 //----- XPaintListener --------------------------------------------------------
 
 void SAL_CALL PresenterWindowManager::windowPaint (const awt::PaintEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -293,27 +304,35 @@ void SAL_CALL PresenterWindowManager::windowPaint (const awt::PaintEvent& rEvent
 //----- XMouseListener --------------------------------------------------------
 
 void SAL_CALL PresenterWindowManager::mousePressed (const css::awt::MouseEvent& rEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     mbIsMouseClickPending = true;
 }
 
 void SAL_CALL PresenterWindowManager::mouseReleased (const css::awt::MouseEvent& rEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
+#ifndef ENABLE_PANE_RESIZING
     if (mbIsMouseClickPending)
     {
         mbIsMouseClickPending = false;
         mpPresenterController->HandleMouseClick(rEvent);
     }
+#else
+    (void)rEvent;
+#endif
 }
 
 void SAL_CALL PresenterWindowManager::mouseEntered (const css::awt::MouseEvent& rEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     mbIsMouseClickPending = false;
 }
 
 void SAL_CALL PresenterWindowManager::mouseExited (const css::awt::MouseEvent& rEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
     (void)rEvent;
     mbIsMouseClickPending = false;
@@ -321,12 +340,17 @@ void SAL_CALL PresenterWindowManager::mouseExited (const css::awt::MouseEvent& r
 
 //----- XFocusListener --------------------------------------------------------
 
-void SAL_CALL PresenterWindowManager::focusGained (const css::awt::FocusEvent& /*rEvent*/)
+void SAL_CALL PresenterWindowManager::focusGained (const css::awt::FocusEvent& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
+    (void)rEvent;
+    OSL_TRACE("PresenterWindowManager::focusGained window %p\n",
+        rEvent.Source.get());
 }
 
 void SAL_CALL PresenterWindowManager::focusLost (const css::awt::FocusEvent& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     (void)rEvent;
@@ -335,6 +359,7 @@ void SAL_CALL PresenterWindowManager::focusLost (const css::awt::FocusEvent& rEv
 //----- XEventListener --------------------------------------------------------
 
 void SAL_CALL PresenterWindowManager::disposing (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     if (rEvent.Source == mxParentWindow)
         mxParentWindow = nullptr;
@@ -505,7 +530,7 @@ void PresenterWindowManager::RestoreViewMode()
     sal_Int32 nMode (0);
     PresenterConfigurationAccess aConfiguration (
         mxComponentContext,
-        "/org.openoffice.Office.PresenterScreen/",
+        OUString("/org.openoffice.Office.PresenterScreen/"),
         PresenterConfigurationAccess::READ_ONLY);
     aConfiguration.GetConfigurationNode("Presenter/InitialViewMode") >>= nMode;
     switch (nMode)
@@ -531,7 +556,7 @@ void PresenterWindowManager::StoreViewMode (const ViewMode eViewMode)
     {
         PresenterConfigurationAccess aConfiguration (
             mxComponentContext,
-            "/org.openoffice.Office.PresenterScreen/",
+            OUString("/org.openoffice.Office.PresenterScreen/"),
             PresenterConfigurationAccess::READ_WRITE);
         aConfiguration.GoToChild(OUString("Presenter"));
         Any aValue;
@@ -539,15 +564,15 @@ void PresenterWindowManager::StoreViewMode (const ViewMode eViewMode)
         {
             default:
             case VM_Standard:
-                aValue <<= sal_Int32(0);
+                aValue = Any(sal_Int32(0));
                 break;
 
             case VM_Notes:
-                aValue <<= sal_Int32(1);
+                aValue = Any(sal_Int32(1));
                 break;
 
             case VM_SlideOverview:
-                aValue <<= sal_Int32(2);
+                aValue = Any(sal_Int32(2));
                 break;
         }
 
@@ -1096,15 +1121,72 @@ Reference<rendering::XPolyPolygon2D> PresenterWindowManager::CreateClipPolyPolyg
     return xPolyPolygon;
 }
 
+void PresenterWindowManager::UpdateWindowList()
+{
+#ifdef ENABLE_PANE_RESIZING
+    try
+    {
+        OSL_ASSERT(mxComponentContext.is());
+
+        Reference<lang::XComponent> xComponent (mxPaneBorderManager, UNO_QUERY);
+        if (xComponent.is())
+            xComponent->dispose();
+
+        Reference<lang::XMultiComponentFactory> xFactory (mxComponentContext->getServiceManager());
+        if (xFactory.is())
+        {
+            Sequence<Any> aArguments (1 + mpPaneContainer->maPanes.size()*2);
+            sal_Int32 nIndex (0);
+            aArguments[nIndex++] = Any(mxParentWindow);
+            for (sal_uInt32 nPaneIndex=0; nPaneIndex<mpPaneContainer->maPanes.size(); ++nPaneIndex)
+            {
+                if ( ! mpPaneContainer->maPanes[nPaneIndex]->mbIsActive)
+                    continue;
+
+                const Reference<awt::XWindow> xBorderWindow (
+                    mpPaneContainer->maPanes[nPaneIndex]->mxBorderWindow);
+                const Reference<awt::XWindow> xContentWindow (
+                    mpPaneContainer->maPanes[nPaneIndex]->mxContentWindow);
+                const Reference<awt::XWindow2> xBorderWindow2(xBorderWindow, UNO_QUERY);
+                if (xBorderWindow.is()
+                    && xContentWindow.is()
+                    && ( ! xBorderWindow2.is() || xBorderWindow2->isVisible()))
+                {
+                    aArguments[nIndex++] = Any(xBorderWindow);
+                    aArguments[nIndex++] = Any(xContentWindow);
+                }
+            }
+
+            aArguments.realloc(nIndex);
+            rtl::Reference<PresenterPaneBorderManager> pManager (
+                new PresenterPaneBorderManager (
+                    mxComponentContext,
+                    mpPresenterController));
+            pManager->initialize(aArguments);
+            mxPaneBorderManager.set(static_cast<XWeak*>(pManager.get()));
+        }
+    }
+    catch (RuntimeException&)
+    {
+    }
+#endif
+}
+
+void PresenterWindowManager::Invalidate()
+{
+    mpPresenterController->GetPaintManager()->Invalidate(mxParentWindow);
+}
 void PresenterWindowManager::Update()
 {
     mxClipPolygon = nullptr;
     mbIsLayoutPending = true;
 
-    mpPresenterController->GetPaintManager()->Invalidate(mxParentWindow);
+    UpdateWindowList();
+    Invalidate();
 }
 
 void PresenterWindowManager::ThrowIfDisposed() const
+    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {

@@ -52,7 +52,7 @@ public:
                               ::xmloff::token::XMLTokenEnum eToken,
                               sal_uInt16 nActionMap );
 
-    virtual ~XMLPersElemContentTContext() override;
+    virtual ~XMLPersElemContentTContext();
 
     virtual rtl::Reference<XMLTransformerContext> CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,

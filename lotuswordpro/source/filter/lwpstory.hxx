@@ -70,7 +70,7 @@ class LwpStory: public LwpContent
 {
 public:
     LwpStory(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpStory() override;
+    virtual ~LwpStory();
 private:
     //File format members:
     LwpDLVListHeadTail m_ParaList;
@@ -87,10 +87,10 @@ private:
     LwpLayout* m_pTabLayout;    //for register tab style
 
     bool m_bDropcap;
-    std::unique_ptr<LwpHyperlinkMgr> m_pHyperlinkMgr;
+    LwpHyperlinkMgr* m_pHyperlinkMgr;
     OUString m_CurrSectionName;
 
-    rtl::Reference<XFContentContainer> m_xXFContainer;
+    XFContentContainer* m_pXFContainer;
 
 protected:
     void Read() override;
@@ -112,9 +112,9 @@ public:
     LwpPageLayout* GetCurrentLayout() { return m_pCurrentLayout; }
     inline LwpMiddleLayout* GetTabLayout();//for register tab style
     const OUString& GetSectionName() { return m_CurrSectionName; }
-    LwpHyperlinkMgr* GetHyperlinkMgr() { return m_pHyperlinkMgr.get(); }
+    LwpHyperlinkMgr* GetHyperlinkMgr() { return m_pHyperlinkMgr; }
 
-    bool IsPMModified() { return m_bPMModified; }
+    inline bool IsPMModified() { return m_bPMModified; }
     inline void SetPMModified(bool bPMModified);
     inline void SetDropcapFlag(bool bFlag);
     inline void SetTabLayout(LwpLayout* pLayout);

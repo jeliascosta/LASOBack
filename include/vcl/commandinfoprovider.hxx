@@ -20,31 +20,52 @@
 #define INCLUDED_VCL_COMMANDINFOPROVIDER_HXX
 
 #include <vcl/dllapi.h>
+#include <vcl/keycod.hxx>
 #include <vcl/image.hxx>
 
 #include <com/sun/star/frame/XFrame.hpp>
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include <com/sun/star/ui/XAcceleratorConfiguration.hpp>
 
-namespace vcl { namespace CommandInfoProvider {
+
+namespace vcl {
+
+/** Provides information about UNO commands like tooltip text with
+    keyboard accelerator.
+*/
+class VCL_DLLPUBLIC CommandInfoProvider
+{
+public:
+    /** Return the singleton instance.
+
+        It caches some objects for the last XFrame object given to
+        GetLabelForCommand.  These objects are release and created new
+        when that method is called with a different XFrame from the
+        last call.
+
+        Lifetime control should work but could be more elegant.
+    */
+    static CommandInfoProvider& Instance();
 
     /** Return a label for the given command.
         @param rsCommandName
             The command name is expected to start with .uno:
-        @param rsModuleName
-            The current application module.
+        @param rxFrame
+            The frame is used to identify the module and document.
         @return
-            The command label.
+            The command labe.
     */
-    VCL_DLLPUBLIC OUString GetLabelForCommand (
+    OUString GetLabelForCommand (
         const OUString& rsCommandName,
-        const OUString& rsModuleName);
+        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC OUString GetMenuLabelForCommand (
+    OUString GetMenuLabelForCommand (
         const OUString& rsCommandName,
-        const OUString& rsModuleName);
+        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC OUString GetPopupLabelForCommand (
+    OUString GetPopupLabelForCommand (
         const OUString& rsCommandName,
-        const OUString& rsModuleName);
+        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
     /** Return a tooltip for the given command. Falls back to label if command has no tooltip.
         @param rsCommandName
@@ -55,36 +76,64 @@ namespace vcl { namespace CommandInfoProvider {
             The returned label contains the keyboard accelerator, if
             one is defined and bIncludeShortcut is true.
     */
-    VCL_DLLPUBLIC OUString GetTooltipForCommand (
+    OUString GetTooltipForCommand (
         const OUString& rsCommandName,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
     /** Returns the shortcut for a command in human-readable form */
-    VCL_DLLPUBLIC OUString GetCommandShortcut (const OUString& rCommandName,
-                                               const css::uno::Reference<css::frame::XFrame>& rxFrame);
+    OUString GetCommandShortcut (const OUString& rCommandName,
+                                 const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC OUString GetRealCommandForCommand( const OUString& rCommandName,
-                                                     const OUString& rsModuleName );
+    OUString GetRealCommandForCommand( const OUString& rCommandName,
+                                       const css::uno::Reference<css::frame::XFrame>& rxFrame );
 
-    VCL_DLLPUBLIC Image GetImageForCommand(
+    OUString GetCommandPropertyFromModule( const OUString& rCommandName, const OUString& rModuleName );
+
+    Image GetImageForCommand(
         const OUString& rsCommandName,
-        const css::uno::Reference<css::frame::XFrame>& rxFrame,
-        vcl::ImageType eImageType = vcl::ImageType::Small);
+        bool bLarge,
+        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC sal_Int32 GetPropertiesForCommand(
+    sal_Int32 GetPropertiesForCommand(
         const OUString& rsCommandName,
-        const OUString& rsModuleName);
+        const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC bool IsRotated(const OUString& rsCommandName, const OUString& rsModuleName);
-    VCL_DLLPUBLIC bool IsMirrored(const OUString& rsCommandName, const OUString& rsModuleName);
+    bool IsRotated(const OUString& rsCommandName);
+    bool IsMirrored(const OUString& rsCommandName);
 
-    /** Returns whether the command is experimental. */
-    VCL_DLLPUBLIC bool IsExperimental(
-        const OUString& rsCommandName,
-        const OUString& rModuleName);
+    /** Do not call.  Should be part of a local and hidden interface.
+    */
+    void SetFrame (const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    VCL_DLLPUBLIC OUString const GetModuleIdentifier(const css::uno::Reference<css::frame::XFrame>& rxFrame);
-} }
+    void dispose();
+
+  private:
+    css::uno::Reference<css::uno::XComponentContext> mxContext;
+    css::uno::Reference<css::frame::XFrame> mxCachedDataFrame;
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> mxCachedDocumentAcceleratorConfiguration;
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> mxCachedModuleAcceleratorConfiguration;
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> mxCachedGlobalAcceleratorConfiguration;
+    OUString msCachedModuleIdentifier;
+    css::uno::Reference<css::lang::XComponent> mxFrameListener;
+
+    CommandInfoProvider();
+    ~CommandInfoProvider();
+
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetDocumentAcceleratorConfiguration();
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetModuleAcceleratorConfiguration();
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetGlobalAcceleratorConfiguration();
+    OUString GetModuleIdentifier();
+    css::uno::Sequence<css::beans::PropertyValue> GetCommandProperties (
+        const OUString& rsCommandName);
+    OUString GetCommandProperty(const OUString& rsProperty, const OUString& rsCommandName);
+    bool ResourceHasKey(const OUString& rsResourceName, const OUString& rsCommandName);
+    static OUString RetrieveShortcutsFromConfiguration(
+        const css::uno::Reference<css::ui::XAcceleratorConfiguration>& rxConfiguration,
+        const OUString& rsCommandName);
+    static vcl::KeyCode AWTKey2VCLKey(const css::awt::KeyEvent& aAWTKey);
+};
+
+} // end of namespace vcl
 
 #endif // INCLUDED_VCL_COMMANDINFOPROVIDER_HXX
 

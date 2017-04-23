@@ -20,7 +20,6 @@
 #include <svtools/fontsubstconfig.hxx>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <vcl/outdev.hxx>
 
@@ -48,7 +47,7 @@ struct SvtFontSubstConfig_Impl
 };
 
 SvtFontSubstConfig::SvtFontSubstConfig() :
-    ConfigItem("Office.Common/Font/Substitution"),
+    ConfigItem(OUString("Office.Common/Font/Substitution")),
     bIsEnabled(false),
     pImpl(new SvtFontSubstConfig_Impl)
 {
@@ -56,10 +55,10 @@ SvtFontSubstConfig::SvtFontSubstConfig() :
     Sequence<Any> aValues = GetProperties(aNames);
     DBG_ASSERT(aValues.getConstArray()[0].hasValue(), "no value available");
     if(aValues.getConstArray()[0].hasValue())
-        bIsEnabled = *o3tl::doAccess<bool>(aValues.getConstArray()[0]);
+        bIsEnabled = *static_cast<sal_Bool const *>(aValues.getConstArray()[0].getValue());
 
     OUString sPropPrefix(cFontPairs);
-    Sequence<OUString> aNodeNames = GetNodeNames(sPropPrefix, ConfigNameFormat::LocalPath);
+    Sequence<OUString> aNodeNames = GetNodeNames(sPropPrefix, CONFIG_NAME_LOCAL_PATH);
     const OUString* pNodeNames = aNodeNames.getConstArray();
     Sequence<OUString> aPropNames(aNodeNames.getLength() * 4);
     OUString* pNames = aPropNames.getArray();
@@ -82,8 +81,8 @@ SvtFontSubstConfig::SvtFontSubstConfig() :
         SubstitutionStruct aInsert;
         pNodeValues[nName++] >>= aInsert.sFont;
         pNodeValues[nName++] >>= aInsert.sReplaceBy;
-        aInsert.bReplaceAlways = *o3tl::doAccess<bool>(pNodeValues[nName++]);
-        aInsert.bReplaceOnScreenOnly = *o3tl::doAccess<bool>(pNodeValues[nName++]);
+        aInsert.bReplaceAlways = *static_cast<sal_Bool const *>(pNodeValues[nName++].getValue());
+        aInsert.bReplaceOnScreenOnly = *static_cast<sal_Bool const *>(pNodeValues[nName++].getValue());
         pImpl->aSubstArr.push_back(aInsert);
     }
 }

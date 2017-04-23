@@ -61,7 +61,6 @@
 #define INCLUDED_LOTUSWORDPRO_SOURCE_FILTER_XFILTER_XFSAXATTRLIST_HXX
 
 #include "ixfattrlist.hxx"
-#include <rtl/ref.hxx>
 #include <xmloff/attrlist.hxx>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 
@@ -70,7 +69,7 @@ class   XFSaxAttrList : public IXFAttrList
 public:
     XFSaxAttrList();
 
-    virtual ~XFSaxAttrList() override;
+    virtual ~XFSaxAttrList();
 
 public:
     //Interface ISaxAttributeList:
@@ -78,13 +77,19 @@ public:
 
     virtual void    Clear() override;
 
-    css::uno::Reference<css::xml::sax::XAttributeList> GetAttributeList() const;
+    const css::uno::Reference<css::xml::sax::XAttributeList>& GetAttributeList() const;
 
     friend class XFSaxStream;
 private:
-    rtl::Reference<SvXMLAttributeList>  m_xSvAttrList;
+    SvXMLAttributeList  *m_pSvAttrList;
+    css::uno::Reference<css::xml::sax::XAttributeList>   m_xAttrList;
 
 };
+
+inline const css::uno::Reference<css::xml::sax::XAttributeList>&  XFSaxAttrList::GetAttributeList() const
+{
+    return m_xAttrList;
+}
 
 #endif //XFSAXATTRLIST_INC
 

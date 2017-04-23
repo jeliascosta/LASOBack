@@ -44,7 +44,7 @@ ScRangeManagerTable::ScRangeManagerTable(SvSimpleTableContainer& rParent,
     , mpInitListener(nullptr)
 {
     static long aStaticTabs[] = {3, 0, 0, 0 };
-    SetTabs( &aStaticTabs[0], MapUnit::MapPixel );
+    SetTabs( &aStaticTabs[0], MAP_PIXEL );
 
     OUString aNameStr(ScGlobal::GetRscString(STR_HEADER_NAME));
     OUString aRangeStr(ScGlobal::GetRscString(STR_HEADER_RANGE_OR_EXPR));
@@ -60,7 +60,7 @@ ScRangeManagerTable::ScRangeManagerTable(SvSimpleTableContainer& rParent,
     UpdateViewSize();
     Init();
     ShowTable();
-    SetSelectionMode(SelectionMode::Multiple);
+    SetSelectionMode(MULTIPLE_SELECTION);
     SetScrolledHdl( LINK( this, ScRangeManagerTable, ScrollHdl ) );
     HeaderEndDragHdl(nullptr);
 }
@@ -99,7 +99,7 @@ void ScRangeManagerTable::setColWidths()
     rHeaderBar.SetItemSize( ITEMID_RANGE, nTabSize);
     rHeaderBar.SetItemSize( ITEMID_SCOPE, nTabSize);
     static long aStaticTabs[] = {3, 0, nTabSize, 2*nTabSize };
-    SetTabs( &aStaticTabs[0], MapUnit::MapPixel );
+    SetTabs( &aStaticTabs[0], MAP_PIXEL );
     HeaderEndDragHdl(nullptr);
 }
 
@@ -238,7 +238,7 @@ void ScRangeManagerTable::SetEntry(const ScRangeNameLine& rLine)
 namespace {
 
 //ensure that the minimum column size is respected
-void CalculateItemSize(long rTableSize, long& rItemNameSize, long& rItemRangeSize)
+void CalculateItemSize(const long& rTableSize, long& rItemNameSize, long& rItemRangeSize)
 {
     long aItemScopeSize = rTableSize - rItemNameSize - rItemRangeSize;
 
@@ -277,7 +277,7 @@ void CalculateItemSize(long rTableSize, long& rItemNameSize, long& rItemRangeSiz
 
 }
 
-IMPL_LINK_NOARG(ScRangeManagerTable, HeaderEndDragHdl, HeaderBar*, void)
+IMPL_LINK_NOARG_TYPED(ScRangeManagerTable, HeaderEndDragHdl, HeaderBar*, void)
 {
     HeaderBar& rHeaderBar = GetTheHeaderBar();
 
@@ -295,12 +295,12 @@ IMPL_LINK_NOARG(ScRangeManagerTable, HeaderEndDragHdl, HeaderBar*, void)
     rHeaderBar.SetItemSize(ITEMID_SCOPE, nItemScopeSize);
 
     SetTab(0, 0);
-    SetTab(1, PixelToLogic( aSz, MapMode(MapUnit::MapAppFont) ).Width() );
+    SetTab(1, PixelToLogic( aSz, MapMode(MAP_APPFONT) ).Width() );
     aSz.Width() += nItemRangeSize;
-    SetTab(2, PixelToLogic( aSz, MapMode(MapUnit::MapAppFont) ).Width() );
+    SetTab(2, PixelToLogic( aSz, MapMode(MAP_APPFONT) ).Width() );
 }
 
-IMPL_LINK_NOARG(ScRangeManagerTable, ScrollHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(ScRangeManagerTable, ScrollHdl, SvTreeListBox*, void)
 {
     CheckForFormulaString();
 }

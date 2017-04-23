@@ -49,12 +49,12 @@ public:
     ,m_nDefaultColor(_nDefaultColor)
     {}
 
-    const OUString& getName()         const { return m_sName; }
-    const OUString& getDisplayName()  const { return m_sDisplayName; }
-    sal_Int32       getColor()        const { return m_nColor; }
-    sal_Int32       getDefaultColor() const { return m_nDefaultColor; }
+    inline const OUString& getName()         const { return m_sName; }
+    inline const OUString& getDisplayName()  const { return m_sDisplayName; }
+    inline sal_Int32       getColor()        const { return m_nColor; }
+    inline sal_Int32       getDefaultColor() const { return m_nDefaultColor; }
 
-    void            setColor(sal_Int32 _nColor) { m_nColor = _nColor; }
+    inline void            setColor(sal_Int32 _nColor) { m_nColor = _nColor; }
 };
 
 class SVT_DLLPUBLIC ExtendedColorConfig : public SfxBroadcaster, public SfxListener
@@ -64,7 +64,7 @@ private:
     static ExtendedColorConfig_Impl* m_pImpl;
 public:
     ExtendedColorConfig();
-    virtual ~ExtendedColorConfig() override;
+    virtual ~ExtendedColorConfig();
 
     virtual void                    Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 

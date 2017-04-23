@@ -74,15 +74,18 @@ public:
     explicit Listener(Result * result): result_(result) { OSL_ASSERT(result != nullptr); }
 
 private:
-    virtual void SAL_CALL disposing(css::lang::EventObject const &) override {}
+    virtual void SAL_CALL disposing(css::lang::EventObject const &)
+        throw (css::uno::RuntimeException, std::exception) override {}
 
     virtual void SAL_CALL dispatchFinished(
-        css::frame::DispatchResultEvent const & Result) override;
+        css::frame::DispatchResultEvent const & Result)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     Result * result_;
 };
 
 void Listener::dispatchFinished(css::frame::DispatchResultEvent const & Result)
+    throw (css::uno::RuntimeException, std::exception)
 {
     result_->success =
         (Result.State == css::frame::DispatchResultState::SUCCESS) &&
@@ -103,7 +106,8 @@ public:
     { OSL_ASSERT(dispatch.is()); }
 
 private:
-    virtual void SAL_CALL notify(css::uno::Any const &) override
+    virtual void SAL_CALL notify(css::uno::Any const &)
+        throw (css::uno::RuntimeException, std::exception) override
     { dispatch_->dispatchWithNotification(url_, arguments_, listener_); }
 
     css::uno::Reference< css::frame::XNotifyingDispatch > dispatch_;

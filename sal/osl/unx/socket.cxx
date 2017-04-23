@@ -25,6 +25,7 @@
 
 #include <rtl/alloc.h>
 #include <assert.h>
+#include <ctype.h>
 #include <sal/types.h>
 #include <sal/log.hxx>
 
@@ -41,10 +42,10 @@
 #define HAVE_POLL_H
 #endif /* HAVE_POLL_H */
 
-#if defined(__sun)
+#if defined(SOLARIS)
 #include <poll.h>
 #define HAVE_POLL_H
-#endif /* __sun */
+#endif /* SOLARIS */
 
 #ifndef HAVE_POLL_H
 #define POLLIN  0x0001
@@ -708,7 +709,7 @@ static struct hostent* osl_gethostbyname_r (
     const char *name, struct hostent *result,
     char *buffer, int buflen, int *h_errnop)
 {
-#if defined(LINUX) || defined(ANDROID) || defined(FREEBSD) || defined(DRAGONFLY)
+#if defined(LINUX) || defined(ANDROID) || defined(FREEBSD) || defined(DRAGONFLY) || defined(EMSCRIPTEN)
     struct hostent *result_; /* will be the same as result */
     int e;
     e = gethostbyname_r (name, result, buffer, buflen,
@@ -959,7 +960,8 @@ oslHostAddr SAL_CALL osl_copyHostAddr (const oslHostAddr pAddr)
 
     if (pAddr)
         return osl_psz_createHostAddr (pAddr->pHostName, pAddr->pSockAddr);
-    return nullptr;
+    else
+        return nullptr;
 }
 
 void SAL_CALL osl_getHostnameOfHostAddr (
@@ -979,7 +981,8 @@ const sal_Char* SAL_CALL osl_psz_getHostnameOfHostAddr (const oslHostAddr pAddr)
 {
     if (pAddr)
         return pAddr->pHostName;
-    return nullptr;
+    else
+        return nullptr;
 }
 
 oslSocketAddr SAL_CALL osl_getSocketAddrOfHostAddr (const oslHostAddr pAddr)
@@ -988,7 +991,8 @@ oslSocketAddr SAL_CALL osl_getSocketAddrOfHostAddr (const oslHostAddr pAddr)
 
     if (pAddr)
         return pAddr->pSockAddr;
-    return nullptr;
+    else
+        return nullptr;
 }
 
 void SAL_CALL osl_destroyHostAddr (oslHostAddr pAddr)
@@ -1179,7 +1183,8 @@ oslAddrFamily SAL_CALL osl_getFamilyOfSocketAddr(oslSocketAddr pAddr)
 
     if (pAddr)
         return FAMILY_FROM_NATIVE(pAddr->m_sockaddr.sa_family);
-    return osl_Socket_FamilyInvalid;
+    else
+        return osl_Socket_FamilyInvalid;
 }
 
 sal_Int32 SAL_CALL osl_getInetPortOfSocketAddr(oslSocketAddr pAddr)
@@ -1222,10 +1227,8 @@ oslSocketResult SAL_CALL osl_getHostnameOfSocketAddr(oslSocketAddr Addr, rtl_uSt
     pszHostname[0] = '\0';
 
     Result = osl_psz_getHostnameOfSocketAddr(Addr,pszHostname,sizeof(pszHostname));
-    if (Result == osl_Socket_Ok)
-    {
-        rtl_uString_newFromAscii(ustrHostname,pszHostname);
-    }
+
+    rtl_uString_newFromAscii(ustrHostname,pszHostname);
 
     return Result;
 }
@@ -1550,12 +1553,12 @@ oslSocketResult SAL_CALL osl_connectSocketTo(oslSocket pSocket,
                     &(pAddr->m_sockaddr),
                     sizeof(struct sockaddr)) != OSL_SOCKET_ERROR)
             return osl_Socket_Ok;
-
-        if (errno == EWOULDBLOCK || errno == EINPROGRESS)
-        {
-            pSocket->m_nLastError=EINPROGRESS;
-            return osl_Socket_InProgress;
-        }
+        else
+            if (errno == EWOULDBLOCK || errno == EINPROGRESS)
+            {
+                pSocket->m_nLastError=EINPROGRESS;
+                return osl_Socket_InProgress;
+            }
 
         pSocket->m_nLastError=errno;
         int nErrno = errno;
@@ -1577,16 +1580,18 @@ oslSocketResult SAL_CALL osl_connectSocketTo(oslSocket pSocket,
 
         return osl_Socket_Ok;
     }
-
-    /* really an error or just delayed? */
-    if (errno != EINPROGRESS)
+    else
     {
-        pSocket->m_nLastError=errno;
-        int nErrno = errno;
-        SAL_WARN( "sal.osl", "connection failed: (" << nErrno << ") " << strerror(nErrno) );
+        /* really an error or just delayed? */
+        if (errno != EINPROGRESS)
+        {
+            pSocket->m_nLastError=errno;
+            int nErrno = errno;
+            SAL_WARN( "sal.osl", "connection failed: (" << nErrno << ") " << strerror(nErrno) );
 
-        osl_enableNonBlockingMode(pSocket, false);
-        return osl_Socket_Error;
+            osl_enableNonBlockingMode(pSocket, false);
+            return osl_Socket_Error;
+        }
     }
 
     /* prepare select set for socket  */
@@ -1639,8 +1644,11 @@ oslSocketResult SAL_CALL osl_connectSocketTo(oslSocket pSocket,
             /* already destroyed */
             return osl_Socket_Interrupted;
         }
-        pSocket->m_nLastError=errno;
-        Result= osl_Socket_Error;
+        else
+        {
+            pSocket->m_nLastError=errno;
+            Result= osl_Socket_Error;
+        }
     }
     else    /* timeout */
     {
@@ -2153,7 +2161,7 @@ sal_Int32 SAL_CALL osl_getSocketOption(oslSocket pSocket,
         return -1;
     }
 
-    return nOptLen;
+    return BufferLen;
 }
 
 sal_Bool SAL_CALL osl_setSocketOption(oslSocket pSocket,
@@ -2235,8 +2243,8 @@ sal_Bool SAL_CALL osl_isNonBlockingMode(oslSocket pSocket)
 
     if (flags == -1 || !(flags & O_NONBLOCK))
         return false;
-
-    return true;
+    else
+        return true;
 }
 
 oslSocketType SAL_CALL osl_getSocketType(oslSocket pSocket)

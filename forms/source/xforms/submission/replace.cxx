@@ -64,12 +64,12 @@ CSubmission::SubmissionResult CSubmission::replace(const OUString& aReplace, con
             // open the stream from the result...
             // build media descriptor
             Sequence< PropertyValue > descriptor(2);
-            descriptor[0] = PropertyValue("InputStream",
+            descriptor[0] = PropertyValue(OUString("InputStream"),
                 -1, makeAny(m_aResultStream), PropertyState_DIRECT_VALUE);
-            descriptor[1] = PropertyValue("ReadOnly",
+            descriptor[1] = PropertyValue(OUString("ReadOnly"),
                 -1, makeAny(true), PropertyState_DIRECT_VALUE);
 
-            OUString aURL = m_aURLObj.GetMainURL(INetURLObject::DecodeMechanism::NONE);
+            OUString aURL = m_aURLObj.GetMainURL(INetURLObject::NO_DECODE);
             OUString aTarget = "_default";
             xLoader->loadComponentFromURL(aURL, aTarget, FrameSearchFlag::ALL, descriptor);
 
@@ -101,8 +101,8 @@ CSubmission::SubmissionResult CSubmission::replace(const OUString& aReplace, con
             return CSubmission::SUCCESS;
         }
     } catch (const Exception& e) {
-            OString aMsg = "Exception during replace:\n"
-                         + OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8);
+        OString aMsg("Exception during replace:\n");
+        aMsg += OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8);
         OSL_FAIL(aMsg.getStr());
     }
     return CSubmission::UNKNOWN_ERROR;

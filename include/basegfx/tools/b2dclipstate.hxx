@@ -31,7 +31,6 @@ namespace basegfx
     class B2DPolyRange;
     class B2DPolygon;
     class B2DPolyPolygon;
-    class B2DHomMatrix;
 
     namespace tools
     {
@@ -60,10 +59,8 @@ namespace basegfx
             B2DClipState();
             ~B2DClipState();
             B2DClipState( const B2DClipState& );
-            B2DClipState( B2DClipState&& );
             explicit B2DClipState( const B2DPolyPolygon& );
             B2DClipState& operator=( const B2DClipState& );
-            B2DClipState& operator=( B2DClipState&& );
 
             /// Set clip to 'null' - nothing is visible
             void makeNull();
@@ -85,8 +82,6 @@ namespace basegfx
 
             void xorRange(const B2DRange& );
             void xorPolyPolygon(const B2DPolyPolygon& );
-
-            void transform(const B2DHomMatrix& );
 
             B2DPolyPolygon getClipPoly() const;
         };

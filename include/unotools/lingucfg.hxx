@@ -112,7 +112,7 @@ struct UNOTOOLS_DLLPUBLIC SvtLinguOptions
     bool    bROIsTranslateCommonTerms;
     bool    bROIsReverseMapping;
 
-    // check value need to determine if the configuration needs to be updated
+    // check value need to determine if the configuration needs to updatet
     // or not (used for a quick check if data files have been changed/added
     // or deleted
     sal_Int32   nDataFilesChangedCheckValue;
@@ -140,12 +140,14 @@ struct UNOTOOLS_DLLPUBLIC SvtLinguConfigDictionaryEntry
 class UNOTOOLS_DLLPUBLIC SvtLinguConfig: public utl::detail::Options
 {
     // returns static object
-    UNOTOOLS_DLLPRIVATE static SvtLinguConfigItem & GetConfigItem();
+    UNOTOOLS_DLLPRIVATE SvtLinguConfigItem &   GetConfigItem();
+
+    SvtLinguConfigItem &   GetConfigItem() const    { return const_cast< SvtLinguConfig * >( this )->GetConfigItem(); }
 
     // configuration update access for the 'Linguistic' main node
     mutable css::uno::Reference< css::util::XChangesBatch > m_xMainUpdateAccess;
 
-    css::uno::Reference< css::util::XChangesBatch > const & GetMainUpdateAccess() const;
+    css::uno::Reference< css::util::XChangesBatch > GetMainUpdateAccess() const;
 
     OUString GetVendorImageUrl_Impl( const OUString &rServiceImplName, const OUString &rImageName ) const;
 
@@ -154,7 +156,7 @@ class UNOTOOLS_DLLPUBLIC SvtLinguConfig: public utl::detail::Options
 
 public:
     SvtLinguConfig();
-    virtual ~SvtLinguConfig() override;
+    virtual ~SvtLinguConfig();
 
     // borrowed from utl::ConfigItem
 

@@ -72,21 +72,17 @@ namespace connectivity
             static const CLSID  CLSID_ADOVIEW_25;
             static const IID    IID_ADOVIEW_25;
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            static void ThrowException(ADOConnection* _pAdoCon,const css::uno::Reference< css::uno::XInterface >& _xInterface);
+            static void ThrowException(ADOConnection* _pAdoCon,const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
             static sal_Int32 MapADOType2Jdbc(DataTypeEnum eType);
             static DataTypeEnum MapJdbc2ADOType(sal_Int32 _nType,sal_Int32 _nJetEngine);
-            static bool isJetEngine(sal_Int32 _nEngineType);
+            static sal_Bool isJetEngine(sal_Int32 _nEngineType);
 
             static ObjectTypeEnum   mapObjectType2Ado(sal_Int32 objType);
             static sal_Int32        mapAdoType2Object(ObjectTypeEnum objType);
             static sal_Int32        mapAdoRights2Sdbc(RightsEnum eRights);
             static sal_Int32        mapRights2Ado(sal_Int32 nRights);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            static WpADOField       getField(ADORecordset* _pRecordSet,sal_Int32 _nColumnIndex);
+            static WpADOField       getField(ADORecordset* _pRecordSet,sal_Int32 _nColumnIndex) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
         };
 
 

@@ -44,6 +44,7 @@ AccParagraphEventListener::~AccParagraphEventListener()
  *  @param AccessibleEventObject    the event object which contains information about event
  */
 void  AccParagraphEventListener::notifyEvent( const css::accessibility::AccessibleEventObject& aEvent )
+throw (css::uno::RuntimeException)
 {
     SolarMutexGuard g;
 
@@ -94,7 +95,7 @@ void  AccParagraphEventListener::notifyEvent( const css::accessibility::Accessib
  */
 void AccParagraphEventListener::HandleCaretChangedEvent(Any, Any)
 {
-    AccObjectManagerAgent::UpdateLocation(m_xAccessible.get());
+    pAgent->UpdateLocation(m_xAccessible.get());
     pAgent->NotifyAccEvent(UM_EVENT_OBJECT_CARETCHANGE, m_xAccessible.get());
 }
 

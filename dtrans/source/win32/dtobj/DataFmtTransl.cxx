@@ -39,6 +39,8 @@
 #pragma warning(pop)
 #endif
 
+// namespace directives
+
 using namespace std;
 using namespace com::sun::star::uno;
 using namespace com::sun::star::datatransfer;
@@ -154,7 +156,7 @@ DataFlavor CDataFormatTranslator::getDataFlavorFromFormatEtc( const FORMATETC& a
     return aFlavor;
 }
 
-CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformatName( const OUString& aClipFmtName )
+CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformatName( const OUString& aClipFmtName ) const
 {
     // check parameter
     if ( !aClipFmtName.getLength( ) )
@@ -164,7 +166,7 @@ CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformatName( const 
     return getFormatEtcForClipformat( cf );
 }
 
-OUString CDataFormatTranslator::getClipboardFormatName( CLIPFORMAT aClipformat )
+OUString CDataFormatTranslator::getClipboardFormatName( CLIPFORMAT aClipformat ) const
 {
     OSL_PRECOND( CF_INVALID != aClipformat, "Invalid clipboard format" );
 
@@ -174,9 +176,9 @@ OUString CDataFormatTranslator::getClipboardFormatName( CLIPFORMAT aClipformat )
     return OUString( wBuff, nLen );
 }
 
-CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformat( CLIPFORMAT cf )
+CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformat( CLIPFORMAT cf ) const
 {
-    CFormatEtc fetc( cf, TYMED_NULL, nullptr, DVASPECT_CONTENT );
+    CFormatEtc fetc( cf, TYMED_NULL, NULL, DVASPECT_CONTENT );
 
     switch( cf )
     {
@@ -207,34 +209,34 @@ CFormatEtc SAL_CALL CDataFormatTranslator::getFormatEtcForClipformat( CLIPFORMAT
     return fetc;
 }
 
-bool SAL_CALL CDataFormatTranslator::isOemOrAnsiTextFormat( CLIPFORMAT cf )
+sal_Bool SAL_CALL CDataFormatTranslator::isOemOrAnsiTextFormat( CLIPFORMAT cf ) const
 {
     return ( (cf == CF_TEXT) || (cf == CF_OEMTEXT) );
 }
 
-bool SAL_CALL CDataFormatTranslator::isUnicodeTextFormat( CLIPFORMAT cf )
+sal_Bool SAL_CALL CDataFormatTranslator::isUnicodeTextFormat( CLIPFORMAT cf ) const
 {
     return ( cf == CF_UNICODETEXT );
 }
 
-bool SAL_CALL CDataFormatTranslator::isTextFormat( CLIPFORMAT cf )
+sal_Bool SAL_CALL CDataFormatTranslator::isTextFormat( CLIPFORMAT cf ) const
 {
     return ( isOemOrAnsiTextFormat( cf ) || isUnicodeTextFormat( cf ) );
 }
 
-bool SAL_CALL CDataFormatTranslator::isHTMLFormat( CLIPFORMAT cf )
+sal_Bool SAL_CALL CDataFormatTranslator::isHTMLFormat( CLIPFORMAT cf ) const
 {
     OUString clipFormatName = getClipboardFormatName( cf );
     return ( clipFormatName == HTML_FORMAT_NAME_WINDOWS );
 }
 
-bool SAL_CALL CDataFormatTranslator::isTextHtmlFormat( CLIPFORMAT cf )
+sal_Bool SAL_CALL CDataFormatTranslator::isTextHtmlFormat( CLIPFORMAT cf ) const
 {
     OUString clipFormatName = getClipboardFormatName( cf );
     return ( clipFormatName.equalsIgnoreAsciiCase( HTML_FORMAT_NAME_SOFFICE ) );
 }
 
-OUString SAL_CALL CDataFormatTranslator::getTextCharsetFromLCID( LCID lcid, CLIPFORMAT aClipformat )
+OUString SAL_CALL CDataFormatTranslator::getTextCharsetFromLCID( LCID lcid, CLIPFORMAT aClipformat ) const
 {
     OSL_ASSERT( isOemOrAnsiTextFormat( aClipformat ) );
 
@@ -254,7 +256,7 @@ OUString SAL_CALL CDataFormatTranslator::getTextCharsetFromLCID( LCID lcid, CLIP
                     PRE_OEM_CODEPAGE );
     }
     else // CF_UNICODE
-        OSL_ASSERT( false );
+        OSL_ASSERT( sal_False );
 
     return charset;
 }

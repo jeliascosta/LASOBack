@@ -20,10 +20,6 @@
 #ifndef INCLUDED_STORE_SOURCE_LOCKBYTE_HXX
 #define INCLUDED_STORE_SOURCE_LOCKBYTE_HXX
 
-#include <sal/config.h>
-
-#include <memory>
-
 #include "sal/types.h"
 
 #include "rtl/ref.hxx"
@@ -57,7 +53,7 @@ public:
         @param  nOffset [in]
      */
     storeError readPageAt (
-        std::shared_ptr<PageData> & rPage,
+        PageHolder & rPage,
         sal_uInt32   nOffset);
 
     /**
@@ -65,7 +61,7 @@ public:
         @param  nOffset [in]
      */
     storeError writePageAt (
-        std::shared_ptr<PageData> const & rPage,
+        PageHolder const & rPage,
         sal_uInt32         nOffset);
 
     /**
@@ -108,7 +104,7 @@ public:
     storeError flush();
 
 protected:
-    virtual ~ILockBytes() override {}
+    virtual ~ILockBytes() {}
 
 private:
     /** Implementation (abstract).
@@ -118,11 +114,11 @@ private:
         sal_uInt16                              nPageSize) = 0;
 
     virtual storeError readPageAt_Impl (
-        std::shared_ptr<PageData> & rPage,
+        PageHolder & rPage,
         sal_uInt32   nOffset) = 0;
 
     virtual storeError writePageAt_Impl (
-        std::shared_ptr<PageData> const & rPage,
+        PageHolder const & rPage,
         sal_uInt32         nOffset) = 0;
 
     virtual storeError readAt_Impl (

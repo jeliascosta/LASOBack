@@ -46,7 +46,7 @@ public:
 protected:
     Parser() {}
 
-    virtual ~Parser() override {}
+    virtual ~Parser() {}
 };
 
 }

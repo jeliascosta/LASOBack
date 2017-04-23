@@ -65,9 +65,9 @@ namespace frm
 
     public:
         struct GrantAccess { friend class RichTextControl; private: GrantAccess() { } };
-        EditView*        getView( const GrantAccess& ) const     { return m_pView; }
-        RichTextEngine*  getEngine( const GrantAccess& ) const   { return m_pEngine; }
-        vcl::Window*          getViewport( const GrantAccess& ) const { return m_pViewport; }
+        inline EditView*        getView( const GrantAccess& ) const     { return m_pView; }
+        inline RichTextEngine*  getEngine( const GrantAccess& ) const   { return m_pEngine; }
+        inline vcl::Window*          getViewport( const GrantAccess& ) const { return m_pViewport; }
 
     public:
         RichTextControlImpl( Control* _pAntiImpl, RichTextEngine* _pEngine,
@@ -85,7 +85,7 @@ namespace frm
         void    updateAttribute( AttributeId _nAttribute );
 
         /// enables the callback for a particular attribute
-        void    enableAttributeNotification( AttributeId _nAttributeId, ITextAttributeListener* _pListener );
+        void    enableAttributeNotification( AttributeId _nAttributeId, ITextAttributeListener* _pListener = nullptr );
 
         /// disables the change notifications for a particular attribute
         void    disableAttributeNotification( AttributeId _nAttributeId );
@@ -166,16 +166,16 @@ namespace frm
         /// ensures that our "automatic line break" setting matches the current WinBits of the window
         void    ensureLineBreakSetting();
 
-        bool    hasVScrollBar( ) const { return m_pVScroll != nullptr; }
-        bool    hasHScrollBar( ) const { return m_pHScroll != nullptr; }
+        inline  bool    hasVScrollBar( ) const { return m_pVScroll != nullptr; }
+        inline  bool    hasHScrollBar( ) const { return m_pHScroll != nullptr; }
 
         // IEngineStatusListener overridables
         virtual void EditEngineStatusChanged( const EditStatus& _rStatus ) override;
 
     private:
-        DECL_LINK( OnInvalidateAllAttributes, LinkParamNone*, void );
-        DECL_LINK( OnHScroll, ScrollBar*, void );
-        DECL_LINK( OnVScroll, ScrollBar*, void );
+        DECL_LINK_TYPED( OnInvalidateAllAttributes, LinkParamNone*, void );
+        DECL_LINK_TYPED( OnHScroll, ScrollBar*, void );
+        DECL_LINK_TYPED( OnVScroll, ScrollBar*, void );
     };
 
 

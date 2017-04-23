@@ -21,7 +21,6 @@
 #include <textconversion.hxx>
 #include <com/sun/star/i18n/TextConversionType.hpp>
 #include <com/sun/star/i18n/TextConversionOption.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/linguistic2/ConversionDirection.hpp>
 #include <com/sun/star/linguistic2/ConversionDictionaryType.hpp>
 #include <com/sun/star/linguistic2/ConversionDictionaryList.hpp>
@@ -58,7 +57,9 @@ TextConversion_ko::TextConversion_ko( const Reference < XComponentContext >& xCo
 
     // get maximum length of word in dictionary
     if (xCDL.is()) {
-        Locale loc("ko", "KR", OUString());
+        Locale loc(OUString("ko"),
+                    OUString("KR"),
+                    OUString());
         maxLeftLength = xCDL->queryMaxCharCount(loc,
                         ConversionDictionaryType::HANGUL_HANJA,
                         ConversionDirection_FROM_LEFT);
@@ -217,6 +218,7 @@ static Sequence< OUString >& operator += (Sequence< OUString > &rSeq1, Sequence<
 TextConversionResult SAL_CALL
 TextConversion_ko::getConversions( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& aLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     TextConversionResult result;
     Sequence <OUString> candidates;
@@ -306,6 +308,7 @@ TextConversion_ko::getConversions( const OUString& aText, sal_Int32 nStartPos, s
 OUString SAL_CALL
 TextConversion_ko::getConversion( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& aLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     sal_Int32 length = aText.getLength() - nStartPos;
 
@@ -339,6 +342,7 @@ TextConversion_ko::getConversion( const OUString& aText, sal_Int32 nStartPos, sa
 OUString SAL_CALL
 TextConversion_ko::getConversionWithOffset( const OUString& aText, sal_Int32 nStartPos, sal_Int32 nLength,
     const Locale& rLocale, sal_Int16 nConversionType, sal_Int32 nConversionOptions, Sequence<sal_Int32>& offset)
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     offset.realloc(0);
     return getConversion(aText, nStartPos, nLength, rLocale, nConversionType, nConversionOptions);
@@ -346,6 +350,7 @@ TextConversion_ko::getConversionWithOffset( const OUString& aText, sal_Int32 nSt
 
 sal_Bool SAL_CALL
 TextConversion_ko::interactiveConversion( const Locale& /*rLocale*/, sal_Int16 /*nTextConversionType*/, sal_Int32 /*nTextConversionOptions*/ )
+    throw(  RuntimeException, IllegalArgumentException, NoSupportException, std::exception )
 {
     return true;
 }

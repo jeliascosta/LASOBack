@@ -19,6 +19,7 @@
 #ifndef INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYTEXTVIEW_HXX
 #define INCLUDED_DBACCESS_SOURCE_UI_INC_QUERYTEXTVIEW_HXX
 
+#include "queryview.hxx"
 #include "querycontainerwindow.hxx"
 
 namespace dbaui
@@ -30,7 +31,7 @@ namespace dbaui
         VclPtr<OSqlEdit>   m_pEdit;
     public:
         OQueryTextView( OQueryContainerWindow* pParent );
-        virtual ~OQueryTextView() override;
+        virtual ~OQueryTextView();
         virtual void dispose() override;
 
         virtual void GetFocus() override;

@@ -46,14 +46,13 @@ namespace com { namespace sun { namespace star {
     }
 
     namespace sheet {
-        class XMembersAccess;
         struct DataPilotTablePositionData;
         struct DataPilotTableHeaderData;
         struct DataPilotFieldFilter;
     }
 }}}
 
-namespace tools { class Rectangle; }
+class Rectangle;
 class ScDPSaveData;
 class ScDPOutput;
 struct ScPivotParam;
@@ -94,6 +93,7 @@ private:
                                             // cached data
     css::uno::Reference<css::sheet::XDimensionsSupplier> xSource;
     ScDPOutput*             pOutput;
+    sal_uInt16              mnAutoFormatIndex;
     long                    nHeaderRows;    // page fields plus filter button
     bool                    mbHeaderLayout:1;  // true : grid, false : standard
     bool                    bAllowMove:1;
@@ -150,7 +150,7 @@ public:
     const ScImportSourceDesc* GetImportSourceDesc() const   { return pImpDesc; }
     const ScDPServiceDesc* GetDPServiceDesc() const { return pServDesc; }
 
-    css::uno::Reference<css::sheet::XDimensionsSupplier> const & GetSource();
+    css::uno::Reference<css::sheet::XDimensionsSupplier> GetSource();
 
     bool                IsSheetData() const;
     bool                IsImportData() const { return(pImpDesc != nullptr); }
@@ -173,10 +173,10 @@ public:
     bool                IsDuplicated( long nDim );
     long                GetDimCount();
     void                GetHeaderPositionData(const ScAddress& rPos, css::sheet::DataPilotTableHeaderData& rData);
-    long                GetHeaderDim( const ScAddress& rPos, css::sheet::DataPilotFieldOrientation& rOrient );
+    long                GetHeaderDim( const ScAddress& rPos, sal_uInt16& rOrient );
     bool                GetHeaderDrag( const ScAddress& rPos, bool bMouseLeft, bool bMouseTop,
                                        long nDragDim,
-                                       tools::Rectangle& rPosRect, css::sheet::DataPilotFieldOrientation& rOrient, long& rDimPos );
+                                       Rectangle& rPosRect, sal_uInt16& rOrient, long& rDimPos );
     bool                IsFilterButton( const ScAddress& rPos );
 
     double GetPivotData(
@@ -186,7 +186,7 @@ public:
     bool ParseFilters(
         OUString& rDataFieldName,
         std::vector<css::sheet::DataPilotFieldFilter>& rFilters,
-        std::vector<sal_Int16>& rFilterFuncs,
+        std::vector<css::sheet::GeneralFunction>& rFilterFuncs,
         const OUString& rFilterList );
 
     void GetMemberResultNames(ScDPUniqueStringSet& rNames, long nDimension);
@@ -202,8 +202,8 @@ public:
 
     sal_Int32           GetUsedHierarchy( sal_Int32 nDim );
 
-    bool                GetMembersNA( sal_Int32 nDim, css::uno::Reference< css::sheet::XMembersAccess >& xMembers );
-    bool                GetMembersNA( sal_Int32 nDim, sal_Int32 nHier, css::uno::Reference< css::sheet::XMembersAccess >& xMembers );
+    bool                GetMembersNA( sal_Int32 nDim, css::uno::Reference< css::container::XNameAccess >& xMembers );
+    bool                GetMembersNA( sal_Int32 nDim, sal_Int32 nHier, css::uno::Reference< css::container::XNameAccess >& xMembers );
 
     bool                GetMemberNames( sal_Int32 nDim, css::uno::Sequence< OUString >& rNames );
     bool                GetMembers( sal_Int32 nDim, sal_Int32 nHier, ::std::vector<ScDPLabelData::Member>& rMembers );
@@ -241,17 +241,16 @@ public:
 
     static void ConvertOrientation(
         ScDPSaveData& rSaveData,
-        const ScPivotFieldVector& rFields, css::sheet::DataPilotFieldOrientation nOrient,
+        const ScPivotFieldVector& rFields, sal_uInt16 nOrient,
         const css::uno::Reference< css::sheet::XDimensionsSupplier>& xSource,
         const ScDPLabelDataVector& rLabels,
         const ScPivotFieldVector* pRefColFields = nullptr,
         const ScPivotFieldVector* pRefRowFields = nullptr,
         const ScPivotFieldVector* pRefPageFields = nullptr );
 
-    static bool         IsOrientationAllowed( css::sheet::DataPilotFieldOrientation nOrient, sal_Int32 nDimFlags );
+    static bool         IsOrientationAllowed( sal_uInt16 nOrient, sal_Int32 nDimFlags );
 
-#if DUMP_PIVOT_TABLE
-    void Dump() const;
+#if DEBUG_PIVOT_TABLE
     void DumpCache() const;
 #endif
 };
@@ -371,7 +370,7 @@ public:
     SC_DLLPUBLIC ScDPObject& operator[](size_t nIndex);
     SC_DLLPUBLIC const ScDPObject& operator[](size_t nIndex) const;
 
-    ScDPObject* GetByName(const OUString& rName) const;
+    const ScDPObject* GetByName(const OUString& rName) const;
 
     void DeleteOnTab( SCTAB nTab );
     void UpdateReference( UpdateRefMode eUpdateRefMode,

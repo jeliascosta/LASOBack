@@ -36,7 +36,7 @@ SwInputFieldList::SwInputFieldList( SwEditShell* pShell, bool bBuildTmpLst )
     : pSh(pShell)
 {
     // create sorted list of all  input fields
-    pSrtLst.reset( new SetGetExpFields );
+    pSrtLst = new SetGetExpFields();
 
     const SwFieldTypes& rFieldTypes = *pSh->GetDoc()->getIDocumentFieldsAccess().GetFieldTypes();
     const size_t nSize = rFieldTypes.size();
@@ -45,9 +45,9 @@ SwInputFieldList::SwInputFieldList( SwEditShell* pShell, bool bBuildTmpLst )
     for(size_t i=0; i < nSize; ++i)
     {
         SwFieldType* pFieldType = rFieldTypes[ i ];
-        const SwFieldIds nType = pFieldType->Which();
+        const sal_uInt16 nType = pFieldType->Which();
 
-        if( SwFieldIds::SetExp == nType || SwFieldIds::Input == nType || SwFieldIds::Dropdown == nType )
+        if( RES_SETEXPFLD == nType || RES_INPUTFLD == nType || RES_DROPDOWN == nType )
         {
             SwIterator<SwFormatField,SwFieldType> aIter( *pFieldType );
             for( SwFormatField* pFormatField = aIter.First(); pFormatField; pFormatField = aIter.Next() )
@@ -55,7 +55,7 @@ SwInputFieldList::SwInputFieldList( SwEditShell* pShell, bool bBuildTmpLst )
                 const SwTextField* pTextField = pFormatField->GetTextField();
 
                 // only process InputFields, interactive SetExpFields and DropDown fields
-                if( !pTextField || ( SwFieldIds::SetExp == nType &&
+                if( !pTextField || ( RES_SETEXPFLD == nType &&
                     !static_cast<SwSetExpField*>(pFormatField->GetField())->GetInputFlag()))
                     continue;
 
@@ -80,6 +80,7 @@ SwInputFieldList::SwInputFieldList( SwEditShell* pShell, bool bBuildTmpLst )
 
 SwInputFieldList::~SwInputFieldList()
 {
+    delete pSrtLst;
 }
 
 size_t SwInputFieldList::Count() const
@@ -132,9 +133,9 @@ bool SwInputFieldList::BuildSortLst()
     for( size_t i = 0; i < nSize; ++i )
     {
         SwFieldType* pFieldType = rFieldTypes[ i ];
-        const SwFieldIds nType = pFieldType->Which();
+        const sal_uInt16 nType = pFieldType->Which();
 
-        if( SwFieldIds::SetExp == nType || SwFieldIds::Input == nType )
+        if( RES_SETEXPFLD == nType || RES_INPUTFLD == nType )
         {
             SwIterator<SwFormatField,SwFieldType> aIter( *pFieldType );
             for( SwFormatField* pFormatField = aIter.First(); pFormatField; pFormatField = aIter.Next() )
@@ -142,7 +143,7 @@ bool SwInputFieldList::BuildSortLst()
                 const SwTextField* pTextField = pFormatField->GetTextField();
 
                 //  process only InputFields and interactive SetExpFields
-                if( !pTextField || ( SwFieldIds::SetExp == nType &&
+                if( !pTextField || ( RES_SETEXPFLD == nType &&
                     !static_cast<SwSetExpField*>(pFormatField->GetField())->GetInputFlag()))
                     continue;
 

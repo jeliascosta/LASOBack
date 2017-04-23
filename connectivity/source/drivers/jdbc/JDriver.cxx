@@ -40,7 +40,7 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::lang;
 
 
-java_sql_Driver::java_sql_Driver(const Reference< css::uno::XComponentContext >& _rxContext)
+java_sql_Driver::java_sql_Driver(const Reference< ::com::sun::star::uno::XComponentContext >& _rxContext)
     :m_aContext( _rxContext )
     ,m_aLogger( _rxContext, "sdbcl", "org.openoffice.sdbc.jdbcBridge" )
 {
@@ -52,42 +52,42 @@ java_sql_Driver::~java_sql_Driver()
 
 // static ServiceInfo
 
-OUString java_sql_Driver::getImplementationName_Static(  )
+OUString java_sql_Driver::getImplementationName_Static(  ) throw(RuntimeException)
 {
     return OUString("com.sun.star.comp.sdbc.JDBCDriver");
         // this name is referenced in the configuration and in the jdbc.xml
         // Please take care when changing it.
 }
 
-Sequence< OUString > java_sql_Driver::getSupportedServiceNames_Static(  )
+Sequence< OUString > java_sql_Driver::getSupportedServiceNames_Static(  ) throw (RuntimeException)
 {
     Sequence<OUString> aSNS { "com.sun.star.sdbc.Driver" };
     return aSNS;
 }
 
-css::uno::Reference< css::uno::XInterface > SAL_CALL connectivity::java_sql_Driver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory)
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL connectivity::java_sql_Driver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
 {
     return *(new java_sql_Driver( comphelper::getComponentContext(_rxFactory)));
 }
 
-OUString SAL_CALL java_sql_Driver::getImplementationName(  )
+OUString SAL_CALL java_sql_Driver::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-sal_Bool SAL_CALL java_sql_Driver::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL java_sql_Driver::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
 
-Sequence< OUString > SAL_CALL java_sql_Driver::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL java_sql_Driver::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
 Reference< XConnection > SAL_CALL java_sql_Driver::connect( const OUString& url, const
-                                                         Sequence< PropertyValue >& info )
+                                                         Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     m_aLogger.log( LogLevel::INFO, STR_LOG_DRIVER_CONNECTING_URL, url );
 
@@ -104,11 +104,11 @@ Reference< XConnection > SAL_CALL java_sql_Driver::connect( const OUString& url,
     return xOut;
 }
 
-sal_Bool SAL_CALL java_sql_Driver::acceptsURL( const OUString& url )
+sal_Bool SAL_CALL java_sql_Driver::acceptsURL( const OUString& url ) throw(SQLException, RuntimeException, std::exception)
 {
     // don't ask the real driver for the url
     // I feel responsible for all jdbc url's
-    bool bEnabled = false;
+    sal_Bool bEnabled = false;
     javaFrameworkError e = jfw_getEnabled(&bEnabled);
     switch (e) {
     case JFW_E_NONE:
@@ -127,103 +127,103 @@ sal_Bool SAL_CALL java_sql_Driver::acceptsURL( const OUString& url )
 }
 
 Sequence< DriverPropertyInfo > SAL_CALL java_sql_Driver::getPropertyInfo( const OUString& url,
-                                                                         const Sequence< PropertyValue >& /*info*/ )
+                                                                         const Sequence< PropertyValue >& /*info*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( acceptsURL(url) )
     {
-        std::vector< DriverPropertyInfo > aDriverInfo;
+        ::std::vector< DriverPropertyInfo > aDriverInfo;
 
         Sequence< OUString > aBooleanValues(2);
         aBooleanValues[0] = "false";
         aBooleanValues[1] = "true";
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                "JavaDriverClass"
-                ,"The JDBC driver class name."
+                OUString("JavaDriverClass")
+                ,OUString("The JDBC driver class name.")
                 ,true
                 ,OUString()
                 ,Sequence< OUString >())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "JavaDriverClassPath"
-                ,"The class path where to look for the JDBC driver."
+                OUString("JavaDriverClassPath")
+                ,OUString("The class path where to look for the JDBC driver.")
                 ,true
-                , ""
+                ,OUString(  ""  )
                 ,Sequence< OUString >())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "SystemProperties"
-                ,"Additional properties to set at java.lang.System before loading the driver."
+                OUString("SystemProperties")
+                ,OUString("Additional properties to set at java.lang.System before loading the driver.")
                 ,true
-                , ""
+                ,OUString(  ""  )
                 ,Sequence< OUString >())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "ParameterNameSubstitution"
-                ,"Change named parameters with '?'."
+                OUString("ParameterNameSubstitution")
+                ,OUString("Change named parameters with '?'.")
                 ,false
-                ,"false"
+                ,OUString(  "false"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "IgnoreDriverPrivileges"
-                ,"Ignore the privileges from the database driver."
+                OUString("IgnoreDriverPrivileges")
+                ,OUString("Ignore the privileges from the database driver.")
                 ,false
-                , "false"
+                ,OUString(  "false"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "IsAutoRetrievingEnabled"
-                ,"Retrieve generated values."
+                OUString("IsAutoRetrievingEnabled")
+                ,OUString("Retrieve generated values.")
                 ,false
-                ,"false"
+                ,OUString(  "false"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "AutoRetrievingStatement"
-                ,"Auto-increment statement."
+                OUString("AutoRetrievingStatement")
+                ,OUString("Auto-increment statement.")
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "GenerateASBeforeCorrelationName"
-                ,"Generate AS before table correlation names."
+                OUString("GenerateASBeforeCorrelationName")
+                ,OUString("Generate AS before table correlation names.")
                 ,false
-                ,"false"
+                ,OUString(  "false"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "IgnoreCurrency"
-                ,"Ignore the currency field from the ResultsetMetaData."
+                OUString("IgnoreCurrency")
+                ,OUString("Ignore the currency field from the ResultsetMetaData.")
                 ,false
-                ,"false"
+                ,OUString(  "false"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "EscapeDateTime"
-                ,"Escape date time format."
+                OUString("EscapeDateTime")
+                ,OUString("Escape date time format.")
                 ,false
-                ,"true"
+                ,OUString(  "true"  )
                 ,aBooleanValues)
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "TypeInfoSettings"
-                ,"Defines how the type info of the database metadata should be manipulated."
+                OUString("TypeInfoSettings")
+                ,OUString("Defines how the type info of the database metadata should be manipulated.")
                 ,false
                 ,OUString( )
                 ,Sequence< OUString > ())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "ImplicitCatalogRestriction"
-                ,"The catalog which should be used in getTables calls, when the caller passed NULL."
+                OUString("ImplicitCatalogRestriction")
+                ,OUString("The catalog which should be used in getTables calls, when the caller passed NULL.")
                 ,false
                 ,OUString( )
                 ,Sequence< OUString > ())
         );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "ImplicitSchemaRestriction"
-                ,"The schema which should be used in getTables calls, when the caller passed NULL."
+                OUString("ImplicitSchemaRestriction")
+                ,OUString("The schema which should be used in getTables calls, when the caller passed NULL.")
                 ,false
                 ,OUString( )
                 ,Sequence< OUString > ())
@@ -236,12 +236,12 @@ Sequence< DriverPropertyInfo > SAL_CALL java_sql_Driver::getPropertyInfo( const 
     return Sequence< DriverPropertyInfo >();
 }
 
-sal_Int32 SAL_CALL java_sql_Driver::getMajorVersion(  )
+sal_Int32 SAL_CALL java_sql_Driver::getMajorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 1;
 }
 
-sal_Int32 SAL_CALL java_sql_Driver::getMinorVersion(  )
+sal_Int32 SAL_CALL java_sql_Driver::getMinorVersion(  ) throw(RuntimeException, std::exception)
 {
     return 0;
 }

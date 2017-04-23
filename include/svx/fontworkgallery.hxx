@@ -53,7 +53,7 @@ class SAL_WARN_UNUSED FontworkCharacterSpacingDialog : public ModalDialog
 
 public:
     FontworkCharacterSpacingDialog( vcl::Window* pParent, sal_Int32 nScale );
-    virtual ~FontworkCharacterSpacingDialog() override;
+    virtual ~FontworkCharacterSpacingDialog();
     virtual void dispose() override;
 
     sal_Int32 getScale() const;
@@ -68,8 +68,8 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FontWorkGalleryDialog : public ModalDialog
 
     SdrView*            mpSdrView;
 
-    DECL_LINK( DoubleClickFavoriteHdl, ValueSet*, void );
-    DECL_LINK( ClickOKHdl, Button*, void );
+    DECL_LINK_TYPED( DoubleClickFavoriteHdl, ValueSet*, void );
+    DECL_LINK_TYPED( ClickOKHdl, Button*, void );
 
     SdrObject**         mppSdrObject;
     SdrModel*           mpDestModel;
@@ -82,7 +82,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FontWorkGalleryDialog : public ModalDialog
 
 public:
     FontWorkGalleryDialog( SdrView* pView, vcl::Window* pParent, sal_uInt16 nSID );
-    virtual ~FontWorkGalleryDialog() override;
+    virtual ~FontWorkGalleryDialog();
     virtual void dispose() override;
 
     // SJ: if the SdrObject** is set, the SdrObject is not inserted into the page when executing the dialog

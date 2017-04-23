@@ -68,6 +68,7 @@ struct Writer_Impl
     SwBookmarkNodeTable aBkmkNodePos;
 
     Writer_Impl();
+    ~Writer_Impl();
 
     void RemoveFontList( SwDoc& rDoc );
     void InsertBkmk( const ::sw::mark::IMark& rBkmk );
@@ -75,6 +76,10 @@ struct Writer_Impl
 
 Writer_Impl::Writer_Impl()
     : m_pStream(nullptr)
+{
+}
+
+Writer_Impl::~Writer_Impl()
 {
 }
 
@@ -166,7 +171,7 @@ bool Writer::CopyNextPam( SwPaM ** ppPam )
     }
 
     // otherwise copy the next value from the next Pam
-    *ppPam = (*ppPam)->GetNext();
+    *ppPam = static_cast<SwPaM*>((*ppPam)->GetNext() );
 
     *pCurPam->GetPoint() = *(*ppPam)->Start();
     *pCurPam->GetMark() = *(*ppPam)->End();
@@ -179,7 +184,7 @@ bool Writer::CopyNextPam( SwPaM ** ppPam )
 sal_Int32 Writer::FindPos_Bkmk(const SwPosition& rPos) const
 {
     const IDocumentMarkAccess* const pMarkAccess = pDoc->getIDocumentMarkAccess();
-    const IDocumentMarkAccess::const_iterator_t ppBkmk = std::lower_bound(
+    const IDocumentMarkAccess::const_iterator_t ppBkmk = ::std::lower_bound(
         pMarkAccess->getAllMarksBegin(),
         pMarkAccess->getAllMarksEnd(),
         rPos,
@@ -324,7 +329,7 @@ bool Writer::CopyLocalFileToINet( OUString& rFileNm )
     }
     else
     {
-        m_pImpl->pFileNameMap.reset( new std::map<OUString, OUString> );
+        m_pImpl->pFileNameMap.reset( new std::map<OUString, OUString>() );
     }
 
     OUString aSrc  = rFileNm;
@@ -386,14 +391,17 @@ void Writer::PutNumFormatFontsInAttrPool()
                 }
 }
 
-void Writer::PutEditEngFontsInAttrPool()
+void Writer::PutEditEngFontsInAttrPool( bool bIncl_CJK_CTL )
 {
     SfxItemPool& rPool = pDoc->GetAttrPool();
     if( rPool.GetSecondaryPool() )
     {
         AddFontItems_( rPool, EE_CHAR_FONTINFO );
-        AddFontItems_( rPool, EE_CHAR_FONTINFO_CJK );
-        AddFontItems_( rPool, EE_CHAR_FONTINFO_CTL );
+        if( bIncl_CJK_CTL )
+        {
+            AddFontItems_( rPool, EE_CHAR_FONTINFO_CJK );
+            AddFontItems_( rPool, EE_CHAR_FONTINFO_CTL );
+        }
     }
 }
 

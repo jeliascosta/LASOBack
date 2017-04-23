@@ -20,19 +20,19 @@
 #define INCLUDED_SVL_ISETHINT_HXX
 
 #include <svl/svldllapi.h>
+
 #include <svl/hint.hxx>
-#include <memory>
 
 class SfxItemSet;
 
 
 class SVL_DLLPUBLIC SfxItemSetHint: public SfxHint
 {
-    std::unique_ptr<SfxItemSet> _pItemSet;
+    SfxItemSet*         _pItemSet;
 
 public:
                         SfxItemSetHint( const SfxItemSet &rItemSet );
-    virtual             ~SfxItemSetHint() override;
+    virtual             ~SfxItemSetHint();
 
     const SfxItemSet&   GetItemSet() const { return *_pItemSet; }
 };

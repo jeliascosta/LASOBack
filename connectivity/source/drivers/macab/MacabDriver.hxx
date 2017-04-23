@@ -42,7 +42,7 @@ namespace connectivity
 
         typedef void*   (SAL_CALL * ConnectionFactoryFunction)( void* _pDriver );
 
-        typedef std::vector< css::uno::WeakReferenceHelper > OWeakRefArray;
+        typedef std::vector< ::com::sun::star::uno::WeakReferenceHelper > OWeakRefArray;
 
 
         // = MacabImplModule
@@ -64,9 +64,9 @@ namespace connectivity
 
             /** initializes the implementation module.
 
-                @throws css::uno::RuntimeException
+                @raises ::com::sun::star::uno::RuntimeException
                     if the module could be loaded, but required symbols are missing
-                @throws css::sdbc::SQLException
+                @raises ::com::sun::star::sdbc::SQLException
                     if no Mac OS was found at all
             */
             void init();
@@ -78,7 +78,7 @@ namespace connectivity
             /** creates a new connection
                 @precond
                     <member>init</member> has been called before
-                @throws css::uno::RuntimeException
+                @raises ::com::sun::star::uno::RuntimeException
                     if no connection object could be created (which is a severe error, normally impossible)
             */
             MacabConnection*  createConnection( MacabDriver* _pDriver ) const;
@@ -90,7 +90,7 @@ namespace connectivity
 
                 @return <TRUE/> if the module could be loaded successfully.
 
-                @throws css::uno::RuntimeException
+                @raises ::com::sun::star::uno::RuntimeException
                     if the module could be loaded, but required symbols are missing
             */
             bool    impl_loadModule();
@@ -104,30 +104,27 @@ namespace connectivity
 
         // = MacabDriver
 
-        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XDriver,
-                                                   css::lang::XServiceInfo,
-                                                   css::frame::XTerminateListener > MacabDriver_BASE;
+        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XDriver,
+                                                   ::com::sun::star::lang::XServiceInfo,
+                                                   ::com::sun::star::frame::XTerminateListener > MacabDriver_BASE;
         class MacabDriver : public MacabDriver_BASE
         {
         protected:
             ::osl::Mutex                m_aMutex;           // mutex is need to control member access
             OWeakRefArray               m_xConnections;     // vector containing a list of all the
                                                             //  MacabConnection objects for this Driver
-            css::uno::Reference< css::uno::XComponentContext >
+            ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext >
                                         m_xContext;       // the multi-service factory
             MacabImplModule             m_aImplModule;
 
         public:
-            /// @throws css::uno::Exception
-            static css::uno::Reference< css::uno::XInterface > SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory);
+            static ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface > SAL_CALL Create(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception );
 
             // XServiceInfo - static versions
-            /// @throws css::uno::RuntimeException
-            static OUString getImplementationName_Static(  );
-            /// @throws css::uno::RuntimeException
-            static css::uno::Sequence< OUString > getSupportedServiceNames_Static(  );
+            static OUString getImplementationName_Static(  ) throw(::com::sun::star::uno::RuntimeException);
+            static ::com::sun::star::uno::Sequence< OUString > getSupportedServiceNames_Static(  ) throw (::com::sun::star::uno::RuntimeException);
 
-            css::uno::Reference< css::uno::XComponentContext > const &
+            ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext > const &
             getComponentContext() const { return m_xContext; }
 
             /** returns the path of our configuration settings
@@ -135,29 +132,29 @@ namespace connectivity
             static OUString  impl_getConfigurationSettingsPath();
 
         protected:
-            explicit MacabDriver(const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
+            explicit MacabDriver(const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext >& _rxContext);
 
             // OComponentHelper
             virtual void SAL_CALL disposing() override;
 
             // XServiceInfo
-            virtual OUString SAL_CALL getImplementationName(  ) override;
-            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+            virtual OUString SAL_CALL getImplementationName(  ) throw(::com::sun::star::uno::RuntimeException) override;
+            virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(::com::sun::star::uno::RuntimeException) override;
+            virtual ::com::sun::star::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(::com::sun::star::uno::RuntimeException) override;
 
             // XDriver
-            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL connect( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
-            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) override;
-            virtual css::uno::Sequence< css::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const css::uno::Sequence< css::beans::PropertyValue >& info ) override;
-            virtual sal_Int32 SAL_CALL getMajorVersion() override;
-            virtual sal_Int32 SAL_CALL getMinorVersion() override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL connect( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual sal_Bool SAL_CALL acceptsURL( const OUString& url ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::sdbc::DriverPropertyInfo > SAL_CALL getPropertyInfo( const OUString& url, const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& info ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException) override;
+            virtual sal_Int32 SAL_CALL getMajorVersion() throw(::com::sun::star::uno::RuntimeException) override;
+            virtual sal_Int32 SAL_CALL getMinorVersion() throw(::com::sun::star::uno::RuntimeException) override;
 
             // XTerminateListener
-            virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) override;
-            virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) override;
+            virtual void SAL_CALL queryTermination( const ::com::sun::star::lang::EventObject& Event ) throw (::com::sun::star::frame::TerminationVetoException, ::com::sun::star::uno::RuntimeException) override;
+            virtual void SAL_CALL notifyTermination( const ::com::sun::star::lang::EventObject& Event ) throw (::com::sun::star::uno::RuntimeException) override;
 
             // XEventListener
-            virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+            virtual void SAL_CALL disposing( const ::com::sun::star::lang::EventObject& Source ) throw (::com::sun::star::uno::RuntimeException) override;
 
         private:
             /** shuts down the library which contains the real implementations

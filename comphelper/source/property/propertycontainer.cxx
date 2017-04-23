@@ -48,7 +48,7 @@ OPropertyContainer::~OPropertyContainer()
 }
 
 
-Sequence< Type > OPropertyContainer::getBaseTypes()
+Sequence< Type > OPropertyContainer::getBaseTypes() throw (RuntimeException, std::exception)
 {
     // just the types from our one and only base class
     ::cppu::OTypeCollection aTypes(
@@ -60,20 +60,21 @@ Sequence< Type > OPropertyContainer::getBaseTypes()
 }
 
 
-void SAL_CALL OPropertyContainer::setFastPropertyValue( sal_Int32 nHandle, const Any& rValue )
+void SAL_CALL OPropertyContainer::setFastPropertyValue( sal_Int32 nHandle, const Any& rValue ) throw ( UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     OPropertySetHelper::setFastPropertyValue( nHandle, rValue );
 }
 
 
 sal_Bool OPropertyContainer::convertFastPropertyValue(
-    Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
+    Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw (IllegalArgumentException)
 {
     return OPropertyContainerHelper::convertFastPropertyValue( _rConvertedValue, _rOldValue, _nHandle, _rValue );
 }
 
 
 void OPropertyContainer::setFastPropertyValue_NoBroadcast(sal_Int32 _nHandle, const Any& _rValue)
+    throw (Exception, std::exception)
 {
     OPropertyContainerHelper::setFastPropertyValue( _nHandle, _rValue );
 }

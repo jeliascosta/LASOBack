@@ -46,43 +46,50 @@ class KeyColumns : public Container
 {
     OUString m_schemaName;
     OUString m_tableName;
-    css::uno::Sequence< OUString > m_columnNames;
-    css::uno::Sequence< OUString > m_foreignColumnNames;
+    com::sun::star::uno::Sequence< OUString > m_columnNames;
+    com::sun::star::uno::Sequence< OUString > m_foreignColumnNames;
 
 public: // instances KeyColumns 'exception safe'
-    static css::uno::Reference< css::container::XNameAccess > create(
+    static com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > create(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings,
         const OUString &schemaName,
         const OUString &tableName,
-        const css::uno::Sequence< OUString > &keyColumns,
-        const css::uno::Sequence< OUString > &foreignColumnNames );
+        const com::sun::star::uno::Sequence< OUString > &keyColumns,
+        const com::sun::star::uno::Sequence< OUString > &foreignColumnNames );
 
 protected:
     KeyColumns(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings,
         const OUString &schemaName,
         const OUString &tableName,
-        const css::uno::Sequence< OUString > &keyColumns,
-        const css::uno::Sequence< OUString > &foreignColumnNames);
+        const com::sun::star::uno::Sequence< OUString > &keyColumns,
+        const com::sun::star::uno::Sequence< OUString > &foreignColumnNames);
 
-    virtual ~KeyColumns() override;
+    virtual ~KeyColumns();
 
 public: // XAppend
     virtual void SAL_CALL appendByDescriptor(
-        const css::uno::Reference< css::beans::XPropertySet >& descriptor ) override;
+        const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& descriptor )
+        throw (::com::sun::star::sdbc::SQLException,
+               ::com::sun::star::container::ElementExistException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XDrop
-    virtual void SAL_CALL dropByIndex( sal_Int32 index ) override;
+    virtual void SAL_CALL dropByIndex( sal_Int32 index )
+        throw (::com::sun::star::sdbc::SQLException,
+               ::com::sun::star::lang::IndexOutOfBoundsException,
+               ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XRefreshable
-    virtual void SAL_CALL refresh(  ) override;
+    virtual void SAL_CALL refresh(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL createDataDescriptor(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL createDataDescriptor(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 };
 
 
@@ -91,11 +98,12 @@ class KeyColumnDescriptors : public Container
 public:
     KeyColumnDescriptors(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings);
 
 public: // XDataDescriptorFactory
-    virtual css::uno::Reference< css::beans::XPropertySet > SAL_CALL createDataDescriptor(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet > SAL_CALL createDataDescriptor(  )
+        throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 };
 }
 #endif

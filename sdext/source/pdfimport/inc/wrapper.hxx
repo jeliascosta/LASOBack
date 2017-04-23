@@ -41,7 +41,7 @@ namespace pdfi
                               const OUString&                               rPwd,
                               const css::uno::Reference<
                                     css::uno::XComponentContext >&    xContext,
-                              const OUString&        rFilterOptions);
+                              const OUString&        rFilterOptions = OUString());
     bool xpdf_ImportFromStream( const css::uno::Reference<
                                       css::io::XInputStream >&          xInput,
                                 const ContentSinkSharedPtr&                        rSink,
@@ -50,7 +50,7 @@ namespace pdfi
                                 const OUString&                               rPwd,
                                 const css::uno::Reference<
                                       css::uno::XComponentContext >&    xContext,
-                                const OUString&        rFilterOptions );
+                                const OUString&        rFilterOptions = OUString() );
 }
 
 #endif // INCLUDED_SDEXT_SOURCE_PDFIMPORT_INC_WRAPPER_HXX

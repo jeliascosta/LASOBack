@@ -350,6 +350,7 @@ void SAL_CALL DropTarget::disposing()
 }
 
 void SAL_CALL DropTarget::initialize(const Sequence< Any >& aArguments)
+    throw(Exception, std::exception)
 {
     if (aArguments.getLength() < 2)
     {
@@ -370,12 +371,7 @@ void SAL_CALL DropTarget::initialize(const Sequence< Any >& aArguments)
 
     id wnd = [mView window];
     NSWindow* parentWnd = [wnd parentWindow];
-SAL_WNODEPRECATED_DECLARATIONS_PUSH
-        // 'NSClosableWindowMask' is deprecated: first deprecated in macOS 10.12
-        // 'NSResizableWindowMask' is deprecated: first deprecated in macOS 10.12
-        // 'NSTitleWindowMask' is deprecated: first deprecated in macOS 10.12
     unsigned int topWndStyle = (NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask);
-SAL_WNODEPRECATED_DECLARATIONS_POP
     unsigned int wndStyles = [wnd styleMask] & topWndStyle;
 
     if (parentWnd == nil && (wndStyles == topWndStyle))
@@ -386,57 +382,59 @@ SAL_WNODEPRECATED_DECLARATIONS_POP
 }
 
 void SAL_CALL DropTarget::addDropTargetListener(const uno::Reference<XDropTargetListener>& dtl)
+    throw(RuntimeException, std::exception)
 {
     rBHelper.addListener(cppu::UnoType<decltype(dtl)>::get(), dtl);
 }
 
 void SAL_CALL DropTarget::removeDropTargetListener(const uno::Reference<XDropTargetListener>& dtl)
+    throw(RuntimeException, std::exception)
 {
     rBHelper.removeListener(cppu::UnoType<decltype(dtl)>::get(), dtl);
 }
 
-sal_Bool SAL_CALL DropTarget::isActive(  )
+sal_Bool SAL_CALL DropTarget::isActive(  ) throw(RuntimeException, std::exception)
 {
     return mbActive;
 }
 
-void SAL_CALL DropTarget::setActive(sal_Bool active)
+void SAL_CALL DropTarget::setActive(sal_Bool active) throw(RuntimeException, std::exception)
 {
     mbActive = active;
 }
 
-sal_Int8 SAL_CALL DropTarget::getDefaultActions()
+sal_Int8 SAL_CALL DropTarget::getDefaultActions() throw(RuntimeException, std::exception)
 {
     return mDefaultActions;
 }
 
-void SAL_CALL DropTarget::setDefaultActions(sal_Int8 actions)
+void SAL_CALL DropTarget::setDefaultActions(sal_Int8 actions) throw(RuntimeException, std::exception)
 {
     OSL_ENSURE( actions < 8, "No valid default actions");
     mDefaultActions= actions;
 }
 
-void SAL_CALL DropTarget::acceptDrag(sal_Int8 dragOperation)
+void SAL_CALL DropTarget::acceptDrag(sal_Int8 dragOperation) throw (RuntimeException, std::exception)
 {
     mSelectedDropAction = dragOperation;
 }
 
-void SAL_CALL DropTarget::rejectDrag()
+void SAL_CALL DropTarget::rejectDrag() throw (RuntimeException, std::exception)
 {
     mSelectedDropAction = DNDConstants::ACTION_NONE;
 }
 
-void SAL_CALL DropTarget::acceptDrop(sal_Int8 dropOperation)
+void SAL_CALL DropTarget::acceptDrop(sal_Int8 dropOperation) throw( RuntimeException, std::exception)
 {
     mSelectedDropAction = dropOperation;
 }
 
-void SAL_CALL DropTarget::rejectDrop()
+void SAL_CALL DropTarget::rejectDrop() throw (RuntimeException, std::exception)
 {
     mSelectedDropAction = DNDConstants::ACTION_NONE;
 }
 
-void SAL_CALL DropTarget::dropComplete(sal_Bool success)
+void SAL_CALL DropTarget::dropComplete(sal_Bool success) throw (RuntimeException, std::exception)
 {
     // Reset the internal transferable used as shortcut in case this is
     // an internal D&D operation
@@ -526,17 +524,17 @@ void DropTarget::fire_dropActionChanged(const DropTargetDragEvent& dtde)
     }
 }
 
-OUString SAL_CALL DropTarget::getImplementationName()
+OUString SAL_CALL DropTarget::getImplementationName() throw (RuntimeException, std::exception)
 {
     return dropTarget_getImplementationName();
 }
 
-sal_Bool SAL_CALL DropTarget::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL DropTarget::supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
-Sequence< OUString > SAL_CALL DropTarget::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL DropTarget::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
 {
     return dropTarget_getSupportedServiceNames();
 }

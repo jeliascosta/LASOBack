@@ -25,6 +25,7 @@
 #include "document.hxx"
 #include "dpobject.hxx"
 
+#include <com/sun/star/sheet/DataImportMode.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
 
 using namespace com::sun::star;
@@ -157,14 +158,5 @@ void ScDatabaseDPData::ReloadCacheTable()
     aCacheTable.clear();
     CreateCacheTable();
 }
-
-#if DUMP_PIVOT_TABLE
-
-void ScDatabaseDPData::Dump() const
-{
-    // TODO : Implement this.
-}
-
-#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

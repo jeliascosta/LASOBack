@@ -62,7 +62,7 @@ struct SvSortData
     const SvTreeListEntry* pRight;
 };
 
-class SVT_DLLPUBLIC SvTreeList final
+class SVT_DLLPUBLIC SvTreeList
 {
     typedef std::vector<SvListView*> ListViewsType;
 
@@ -99,7 +99,7 @@ class SVT_DLLPUBLIC SvTreeList final
     SvTreeListEntry*        PrevSelected( const SvListView*,SvTreeListEntry* pEntry ) const;
     SvTreeListEntry*        LastSelected( const SvListView*) const;
 
-    static bool         Select( SvListView*,SvTreeListEntry* pEntry, bool bSelect );
+    static bool         Select( SvListView*,SvTreeListEntry* pEntry, bool bSelect=true );
     void                SelectAll( SvListView*, bool bSelect ); // Does not call Select Handler
     sal_uLong           GetChildSelectionCount( const SvListView*,SvTreeListEntry* pParent ) const;
 
@@ -115,7 +115,7 @@ class SVT_DLLPUBLIC SvTreeList final
      * Invalidate the cached position data to have them re-generated before
      * the next access.
      */
-    SVT_DLLPRIVATE static void SetListPositions( SvTreeListEntries& rEntries );
+    SVT_DLLPRIVATE void SetListPositions( SvTreeListEntries& rEntries );
 
     // rPos is not changed for SortModeNone
     SVT_DLLPRIVATE void GetInsertionPos(
@@ -130,15 +130,19 @@ class SVT_DLLPUBLIC SvTreeList final
     SvTreeList(const SvTreeList&) = delete;
     SvTreeList& operator= (const SvTreeList&) = delete;
 
+protected:
     SvTreeListEntry*        pRootItem;
 
 public:
 
                         SvTreeList();
-                        ~SvTreeList();
+    virtual             ~SvTreeList();
 
     void                InsertView( SvListView* );
     void                RemoveView( SvListView* );
+
+    SvListView*         GetView( sal_uLong nPos ) const
+    { return ( nPos < aViewList.size() ) ? aViewList[ nPos ] : nullptr; }
 
     void                Broadcast(
                             SvListAction nActionId,
@@ -215,6 +219,7 @@ public:
     { return aCloneLink; }
 
     SvTreeListEntry*    CloneEntry( SvTreeListEntry* pSource ) const; // Calls the Clone Link
+    static SvTreeListEntry* CreateEntry(); // To create Entries
 
     sal_uInt16          GetRefCount() const { return nRefCount; }
     void                SetRefCount( sal_uInt16 nRef ) { nRefCount = nRef; }
@@ -311,7 +316,7 @@ public:
     { return pModel->GetChildSelectionCount(this,pParent); }
 
     // Does not call the Select Handler
-    virtual void        SelectAll( bool bSelect, bool /*bPaint*/ = true )
+    virtual void        SelectAll( bool bSelect, bool )
     { pModel->SelectAll(this, bSelect); }
 
     bool               IsEntryVisible( SvTreeListEntry* pEntry ) const

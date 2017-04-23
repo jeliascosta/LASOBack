@@ -16,22 +16,33 @@
 namespace oox {
 namespace core {
 
+using namespace std;
+
 namespace {
 
-const sal_uInt32 constSegmentLength = 4096;
+const sal_uInt8 constBlock1[] = { 0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e, 0x79 };
+const sal_uInt8 constBlock2[] = { 0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e };
+const sal_uInt8 constBlock3[] = { 0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6 };
 
-bool hashCalc(std::vector<sal_uInt8>& output,
-              std::vector<sal_uInt8>& input,
-              const OUString& sAlgorithm )
+bool hashCalc( std::vector<sal_uInt8>& output,
+               std::vector<sal_uInt8>& input,
+               const OUString& algorithm )
 {
-    if (sAlgorithm == "SHA1")
+    if (algorithm == "SHA1")
         return Digest::sha1(output, input);
-    else if (sAlgorithm == "SHA512")
+    else if (algorithm == "SHA512")
         return Digest::sha512(output, input);
     return false;
 }
 
 } // namespace
+
+AgileEngine::AgileEngine() :
+    CryptoEngine()
+{}
+
+AgileEngine::~AgileEngine()
+{}
 
 Crypto::CryptoType AgileEngine::cryptoType(const AgileEncryptionInfo& rInfo)
 {
@@ -43,35 +54,39 @@ Crypto::CryptoType AgileEngine::cryptoType(const AgileEncryptionInfo& rInfo)
 }
 
 void AgileEngine::calculateBlock(
-    std::vector<sal_uInt8> const & rBlock,
-    std::vector<sal_uInt8>& rHashFinal,
-    std::vector<sal_uInt8>& rInput,
-    std::vector<sal_uInt8>& rOutput)
+    const sal_uInt8* rBlock,
+    sal_uInt32 aBlockSize,
+    vector<sal_uInt8>& rHashFinal,
+    vector<sal_uInt8>& rInput,
+    vector<sal_uInt8>& rOutput)
 {
-    std::vector<sal_uInt8> hash(mInfo.hashSize, 0);
-    std::vector<sal_uInt8> dataFinal(mInfo.hashSize + rBlock.size(), 0);
+    vector<sal_uInt8> hash(mInfo.hashSize, 0);
+    vector<sal_uInt8> salt = mInfo.saltValue;
+    vector<sal_uInt8> dataFinal(mInfo.hashSize + aBlockSize, 0);
     std::copy(rHashFinal.begin(), rHashFinal.end(), dataFinal.begin());
-    std::copy(rBlock.begin(), rBlock.end(), dataFinal.begin() + mInfo.hashSize);
+    std::copy(
+            rBlock,
+            rBlock + aBlockSize,
+            dataFinal.begin() + mInfo.hashSize);
 
     hashCalc(hash, dataFinal, mInfo.hashAlgorithm);
 
     sal_Int32 keySize = mInfo.keyBits / 8;
-    std::vector<sal_uInt8> key(keySize, 0);
+    vector<sal_uInt8> key(keySize, 0);
 
     std::copy(hash.begin(), hash.begin() + keySize, key.begin());
 
-    Decrypt aDecryptor(key, mInfo.saltValue, cryptoType(mInfo));
+    Decrypt aDecryptor(key, salt, cryptoType(mInfo));
     aDecryptor.update(rOutput, rInput);
 }
 
-void AgileEngine::calculateHashFinal(const OUString& rPassword, std::vector<sal_uInt8>& aHashFinal)
+void AgileEngine::calculateHashFinal(const OUString& rPassword, vector<sal_uInt8>& aHashFinal)
 {
     sal_Int32 saltSize = mInfo.saltSize;
-    std::vector<sal_uInt8>& salt = mInfo.saltValue;
-
+    vector<sal_uInt8> salt = mInfo.saltValue;
     sal_uInt32 passwordByteLength = rPassword.getLength() * 2;
 
-    std::vector<sal_uInt8> initialData(saltSize + passwordByteLength);
+    vector<sal_uInt8> initialData(saltSize + passwordByteLength);
     std::copy(salt.begin(), salt.end(), initialData.begin());
 
     const sal_uInt8* passwordByteArray = reinterpret_cast<const sal_uInt8*>(rPassword.getStr());
@@ -81,15 +96,15 @@ void AgileEngine::calculateHashFinal(const OUString& rPassword, std::vector<sal_
         passwordByteArray + passwordByteLength,
         initialData.begin() + saltSize);
 
-    std::vector<sal_uInt8> hash(mInfo.hashSize, 0);
+    vector<sal_uInt8> hash(mInfo.hashSize, 0);
 
     hashCalc(hash, initialData, mInfo.hashAlgorithm);
 
-    std::vector<sal_uInt8> data(mInfo.hashSize + 4, 0);
+    vector<sal_uInt8> data(mInfo.hashSize + 4, 0);
 
     for (sal_Int32 i = 0; i < mInfo.spinCount; i++)
     {
-        ByteOrderConverter::writeLittleEndian(data.data(), i);
+        ByteOrderConverter::writeLittleEndian( &data[0], i );
         std::copy(hash.begin(), hash.end(), data.begin() + 4);
         hashCalc(hash, data, mInfo.hashAlgorithm);
     }
@@ -99,63 +114,60 @@ void AgileEngine::calculateHashFinal(const OUString& rPassword, std::vector<sal_
 
 bool AgileEngine::generateEncryptionKey(const OUString& rPassword)
 {
-    static const std::vector<sal_uInt8> constBlock1{ 0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e, 0x79 };
-    static const std::vector<sal_uInt8> constBlock2{ 0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e };
-    static const std::vector<sal_uInt8> constBlock3{ 0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6 };
-
     mKey.clear();
     mKey.resize(mInfo.keyBits / 8, 0);
 
-    std::vector<sal_uInt8> hashFinal(mInfo.hashSize, 0);
+    vector<sal_uInt8> hashFinal(mInfo.hashSize, 0);
     calculateHashFinal(rPassword, hashFinal);
 
-    std::vector<sal_uInt8>& encryptedHashInput = mInfo.encryptedVerifierHashInput;
-    std::vector<sal_uInt8> hashInput(mInfo.saltSize, 0);
-    calculateBlock(constBlock1, hashFinal, encryptedHashInput, hashInput);
+    vector<sal_uInt8> encryptedHashInput = mInfo.encryptedVerifierHashInput;
+    vector<sal_uInt8> hashInput(mInfo.saltSize, 0);
+    calculateBlock(constBlock1, sizeof(constBlock1), hashFinal, encryptedHashInput, hashInput);
 
-    std::vector<sal_uInt8>& encryptedHashValue = mInfo.encryptedVerifierHashValue;
-    std::vector<sal_uInt8> hashValue(encryptedHashValue.size(), 0);
-    calculateBlock(constBlock2, hashFinal, encryptedHashValue, hashValue);
+    vector<sal_uInt8> encryptedHashValue = mInfo.encryptedVerifierHashValue;
+    vector<sal_uInt8> hashValue(encryptedHashValue.size(), 0);
+    calculateBlock(constBlock2, sizeof(constBlock2), hashFinal, encryptedHashValue, hashValue);
 
-    std::vector<sal_uInt8> hash(mInfo.hashSize, 0);
+    vector<sal_uInt8> hash(mInfo.hashSize, 0);
     hashCalc(hash, hashInput, mInfo.hashAlgorithm);
 
     if (std::equal (hash.begin(), hash.end(), hashValue.begin()) )
     {
-        std::vector<sal_uInt8>& encryptedKeyValue = mInfo.encryptedKeyValue;
-        calculateBlock(constBlock3, hashFinal, encryptedKeyValue, mKey);
+        vector<sal_uInt8> encryptedKeyValue = mInfo.encryptedKeyValue;
+        calculateBlock(constBlock3, sizeof(constBlock3), hashFinal, encryptedKeyValue, mKey);
         return true;
     }
 
     return false;
 }
 
-bool AgileEngine::decrypt(BinaryXInputStream& aInputStream,
-                          BinaryXOutputStream& aOutputStream)
+bool AgileEngine::decrypt(
+                    BinaryXInputStream& aInputStream,
+                    BinaryXOutputStream& aOutputStream)
 {
     sal_uInt32 totalSize = aInputStream.readuInt32(); // Document unencrypted size - 4 bytes
-    aInputStream.skip(4);  // Reserved 4 Bytes
+    aInputStream.skip( 4 );    // Reserved 4 Bytes
 
-    std::vector<sal_uInt8>& keyDataSalt = mInfo.keyDataSalt;
+    vector<sal_uInt8> keyDataSalt = mInfo.keyDataSalt;
 
     sal_uInt32 saltSize = mInfo.saltSize;
     sal_uInt32 keySize = mInfo.keyBits / 8;
 
     sal_uInt32 segment = 0;
 
-    std::vector<sal_uInt8> saltWithBlockKey(saltSize + sizeof(segment), 0);
+    vector<sal_uInt8> saltWithBlockKey(saltSize + sizeof(segment), 0);
     std::copy(keyDataSalt.begin(), keyDataSalt.end(), saltWithBlockKey.begin());
 
-    std::vector<sal_uInt8> hash(mInfo.hashSize, 0);
-    std::vector<sal_uInt8> iv(keySize, 0);
+    vector<sal_uInt8> hash(mInfo.hashSize, 0);
+    vector<sal_uInt8> iv(keySize, 0);
 
-    std::vector<sal_uInt8> inputBuffer(constSegmentLength);
-    std::vector<sal_uInt8> outputBuffer(constSegmentLength);
+    vector<sal_uInt8> inputBuffer (SEGMENT_LENGTH);
+    vector<sal_uInt8> outputBuffer(SEGMENT_LENGTH);
     sal_uInt32 inputLength;
     sal_uInt32 outputLength;
     sal_uInt32 remaining = totalSize;
 
-    while ((inputLength = aInputStream.readMemory(inputBuffer.data(), constSegmentLength)) > 0)
+    while( (inputLength = aInputStream.readMemory( &inputBuffer[0], SEGMENT_LENGTH )) > 0 )
     {
         sal_uInt8* segmentBegin = reinterpret_cast<sal_uInt8*>(&segment);
         sal_uInt8* segmentEnd   = segmentBegin + sizeof(segment);
@@ -170,7 +182,7 @@ bool AgileEngine::decrypt(BinaryXInputStream& aInputStream,
         outputLength = aDecryptor.update(outputBuffer, inputBuffer, inputLength);
 
         sal_uInt32 writeLength = outputLength > remaining ? remaining : outputLength;
-        aOutputStream.writeMemory(outputBuffer.data(), writeLength);
+        aOutputStream.writeMemory( &outputBuffer[0], writeLength );
 
         remaining -= outputLength;
         segment++;

@@ -24,7 +24,7 @@
 
 #include <tools/fract.hxx>
 #include <vcl/idle.hxx>
-#include <o3tl/typed_flags_set.hxx>
+#include <vcl/rendersettings.hxx>
 
 #include <list>
 #include <vector>
@@ -85,13 +85,13 @@ struct ImplWinData
 {
     OUString*           mpExtOldText;
     ExtTextInputAttr*   mpExtOldAttrAry;
-    tools::Rectangle*          mpCursorRect;
+    Rectangle*          mpCursorRect;
     long                mnCursorExtWidth;
     bool                mbVertical;
-    tools::Rectangle*          mpCompositionCharRects;
+    Rectangle*          mpCompositionCharRects;
     long                mnCompositionCharRects;
-    tools::Rectangle*          mpFocusRect;
-    tools::Rectangle*          mpTrackRect;
+    Rectangle*          mpFocusRect;
+    Rectangle*          mpTrackRect;
     ShowTrackFlags      mnTrackFlags;
     sal_uInt16          mnIsTopWindow;
     bool                mbMouseOver;            //< tracks mouse over for native widget paint effect
@@ -118,6 +118,7 @@ struct ImplFrameData
     ImplFontCache*      mpFontCache;            //< Font-Cache for this frame
     sal_Int32           mnDPIX;                 //< Original Screen Resolution
     sal_Int32           mnDPIY;                 //< Original Screen Resolution
+    ImplMapRes          maMapUnitRes;           //< for LogicUnitToPixel
     ImplSVEvent *       mnFocusId;              //< FocusId for PostUserLink
     ImplSVEvent *       mnMouseMoveId;          //< MoveId for PostUserLink
     long                mnLastMouseX;           //< last x mouse position
@@ -134,6 +135,7 @@ struct ImplFrameData
     sal_uInt16          mnFirstMouseCode;       //< mouse code by mousebuttondown
     sal_uInt16          mnMouseCode;            //< mouse code
     MouseEventModifiers mnMouseMode;            //< mouse mode
+    MapUnit             meMapUnit;              //< last MapUnit for LogicUnitToPixel
     bool                mbHasFocus;             //< focus
     bool                mbInMouseMove;          //< is MouseMove on stack
     bool                mbMouseIn;              //> is Mouse inside the frame
@@ -154,9 +156,7 @@ struct ImplFrameData
     bool                mbInternalDragGestureRecognizer;
     VclPtr<VirtualDevice> mpBuffer; ///< Buffer for the double-buffering
     bool mbInBufferedPaint; ///< PaintHelper is in the process of painting into this buffer.
-    tools::Rectangle maBufferedRect; ///< Rectangle in the buffer that has to be painted to the screen.
-
-    ImplFrameData( vcl::Window *pWindow );
+    Rectangle maBufferedRect; ///< Rectangle in the buffer that has to be painted to the screen.
 };
 
 struct ImplAccessibleInfos
@@ -173,20 +173,6 @@ struct ImplAccessibleInfos
 };
 
 enum AlwaysInputMode { AlwaysInputNone = 0, AlwaysInputEnabled = 1, AlwaysInputDisabled =2 };
-
-enum class ImplPaintFlags {
-    NONE             = 0x0000,
-    Paint            = 0x0001,
-    PaintAll         = 0x0002,
-    PaintAllChildren = 0x0004,
-    PaintChildren    = 0x0008,
-    Erase            = 0x0010,
-    CheckRtl         = 0x0020,
-};
-namespace o3tl {
-    template<> struct typed_flags<ImplPaintFlags> : is_typed_flags<ImplPaintFlags, 0x003f> {};
-}
-
 
 class WindowImpl
 {
@@ -248,7 +234,6 @@ public:
     OString             maHelpId;
     OUString            maHelpText;
     OUString            maQuickHelpText;
-    OUString            maID;
     InputContext        maInputContext;
     css::uno::Reference< css::awt::XWindowPeer > mxWindowPeer;
     css::uno::Reference< css::accessibility::XAccessible > mxAccessible;
@@ -268,7 +253,7 @@ public:
     WindowType          mnType;
     ControlPart         mnNativeBackground;
     sal_uInt16          mnWaitCount;
-    ImplPaintFlags      mnPaintFlags;
+    sal_uInt16          mnPaintFlags;
     GetFocusFlags       mnGetFocusFlags;
     ParentClipMode      mnParentClipMode;
     ActivateModeFlags   mnActivateMode;
@@ -299,12 +284,15 @@ public:
                         mbVisible:1,
                         mbDisabled:1,
                         mbInputDisabled:1,
+                        mbDropDisabled:1,
                         mbNoUpdate:1,
                         mbNoParentUpdate:1,
                         mbActive:1,
+                        mbParentActive:1,
                         mbReallyVisible:1,
                         mbReallyShown:1,
                         mbInInitShow:1,
+                        mbChildNotify:1,
                         mbChildPtrOverwrite:1,
                         mbNoPtrVisible:1,
                         mbPaintFrame:1,
@@ -378,12 +366,12 @@ class PaintBufferGuard
     AllSettings maSettings;
     long mnOutOffX;
     long mnOutOffY;
-    tools::Rectangle m_aPaintRect;
+    Rectangle m_aPaintRect;
 public:
     PaintBufferGuard(ImplFrameData* pFrameData, vcl::Window* pWindow);
     ~PaintBufferGuard();
     /// If this is called, then the dtor will also copy rRectangle to the window from the buffer, before restoring the state.
-    void SetPaintRect(const tools::Rectangle& rRectangle);
+    void SetPaintRect(const Rectangle& rRectangle);
     /// Returns either the frame's buffer or the window, in case of no buffering.
     vcl::RenderContext* GetRenderContext();
 };

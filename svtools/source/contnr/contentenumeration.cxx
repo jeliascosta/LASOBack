@@ -135,7 +135,7 @@ namespace svt
 
     EnumerationResult FileViewContentEnumerator::enumerateFolderContent()
     {
-        EnumerationResult eResult = EnumerationResult::ERROR;
+        EnumerationResult eResult = ERROR;
         try
         {
 
@@ -298,7 +298,7 @@ namespace svt
                             bCancelled = m_bCancelled;
                         }
                     }
-                    eResult = EnumerationResult::SUCCESS;
+                    eResult = SUCCESS;
                 }
                 catch( CommandAbortedException& )
                 {
@@ -324,12 +324,12 @@ namespace svt
             ::osl::MutexGuard aGuard( m_aMutex );
             pHandler = m_pResultHandler;
             if ( m_bCancelled )
-                return EnumerationResult::ERROR;
+                return ERROR;
         }
 
         {
             ::osl::MutexGuard aGuard( m_rContentMutex );
-            if ( eResult != EnumerationResult::SUCCESS )
+            if ( eResult != SUCCESS )
                 // clear any "intermediate" and unfinished result
                 m_rContent.clear();
         }

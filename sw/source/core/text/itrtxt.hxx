@@ -81,23 +81,23 @@ public:
     {
         CtorInitTextIter(pTextFrame, pTextInf);
     }
-    const SwLineLayout *GetCurr() const { return m_pCurr; } // NEVER 0!
-    const SwLineLayout *GetNext() const { return m_pCurr->GetNext(); }
+    inline const SwLineLayout *GetCurr() const { return m_pCurr; } // NEVER 0!
+    inline const SwLineLayout *GetNext() const { return m_pCurr->GetNext(); }
            const SwLineLayout *GetPrev();
-    sal_Int32 GetLength() const { return m_pCurr->GetLen(); }
-    sal_uInt16 GetLineNr() const { return m_nLineNr; }
-    sal_Int32 GetStart() const { return m_nStart; }
-    sal_Int32 GetEnd() const { return GetStart() + GetLength(); }
-    SwTwips Y() const { return m_nY; }
+    inline sal_Int32 GetLength() const { return m_pCurr->GetLen(); }
+    inline sal_uInt16 GetLineNr() const { return m_nLineNr; }
+    inline sal_Int32 GetStart() const { return m_nStart; }
+    inline sal_Int32 GetEnd() const { return GetStart() + GetLength(); }
+    inline SwTwips Y() const { return m_nY; }
 
-    SwTwips RegStart() const { return m_nRegStart; }
-    sal_uInt16 RegDiff() const { return m_nRegDiff; }
-    bool IsRegisterOn() const { return m_bRegisterOn; }
+    inline SwTwips RegStart() const { return m_nRegStart; }
+    inline sal_uInt16 RegDiff() const { return m_nRegDiff; }
+    inline bool IsRegisterOn() const { return m_bRegisterOn; }
 
-    SwTextInfo &GetInfo() { return *m_pInf; }
-    const SwTextInfo &GetInfo() const { return *m_pInf; }
+    inline SwTextInfo &GetInfo() { return *m_pInf; }
+    inline const SwTextInfo &GetInfo() const { return *m_pInf; }
 
-    void Top() { Init(); }
+    inline void Top() { Init(); }
     void Bottom();
     const SwLineLayout *Next();
     const SwLineLayout *Prev();
@@ -114,26 +114,26 @@ public:
     // Truncates all after pCurr
     void TruncLines( bool bNoteFollow = false );
 
-    sal_uInt16 GetLineHeight() const { return m_pCurr->GetRealHeight(); }
+    inline sal_uInt16 GetLineHeight() const { return m_pCurr->GetRealHeight(); }
     void CalcAscentAndHeight( sal_uInt16 &rAscent, sal_uInt16 &rHeight ) const;
 
     // Lots of trouble for querying pCurr == pPara
-    bool IsFirstTextLine() const
+    inline bool IsFirstTextLine() const
     { return m_nStart == GetInfo().GetTextStart() &&
         !( m_pCurr->IsDummy() && GetNextLine() ); }
 
     // Replacement for the old IsFirstLine()
-    bool IsParaLine() const
+    inline bool IsParaLine() const
         { return m_pCurr == m_pInf->GetParaPortion(); }
 
     const SwLineInfo &GetLineInfo() const { return m_aLineInf; }
-    SwTwips GetFirstPos() const { return m_nFrameStart; }
+    inline SwTwips GetFirstPos() const { return m_nFrameStart; }
     inline bool SeekAndChg( SwTextSizeInfo &rInf );
     inline bool SeekAndChgBefore( SwTextSizeInfo &rInf );
     inline bool SeekStartAndChg( SwTextSizeInfo &rInf, const bool bPara=false );
 
-    SwTextFrame *GetTextFrame() { return m_pFrame; }
-    const SwTextFrame *GetTextFrame() const { return m_pFrame; }
+    inline SwTextFrame *GetTextFrame() { return m_pFrame; }
+    inline const SwTextFrame *GetTextFrame() const { return m_pFrame; }
 
     // Counts consecutive hyphens in order to be within the boundary given by MaxHyphens
     void CntHyphens( sal_uInt8 &nEndCnt, sal_uInt8 &nMidCnt) const;
@@ -149,13 +149,13 @@ private:
           sal_uInt16  nDropHeight;
           sal_uInt16  nDropDescent;
           sal_uInt16  nDropLines;
-          SvxAdjust  nAdjust;
+          sal_uInt16  nAdjust;
           // #i91133#
           SwTwips mnTabLeft;
 
 protected:
     // For FormatQuoVadis
-    void Right( const SwTwips nNew ) { nRight = nNew; }
+    inline void Right( const SwTwips nNew ) { nRight = nNew; }
 
     void CtorInitTextMargin( SwTextFrame *pFrame, SwTextSizeInfo *pInf );
     explicit SwTextMargin(SwTextNode* pTextNode)
@@ -167,7 +167,7 @@ protected:
         , nDropHeight(0)
         , nDropDescent(0)
         , nDropLines(0)
-        , nAdjust(SvxAdjust::Left)
+        , nAdjust(0)
         , mnTabLeft(0)
     {
     }
@@ -179,34 +179,34 @@ public:
     }
     inline SwTwips GetLeftMargin() const;
     inline SwTwips Left() const;
-    SwTwips Right() const { return nRight; }
-    SwTwips FirstLeft() const { return nFirst; }
-    SwTwips CurrWidth() const { return m_pCurr->PrtWidth(); }
+    inline SwTwips Right() const { return nRight; }
+    inline SwTwips FirstLeft() const { return nFirst; }
+    inline SwTwips CurrWidth() const { return m_pCurr->PrtWidth(); }
            SwTwips GetLineStart() const;
-    SwTwips GetLineEnd() const { return GetLineStart() + CurrWidth(); }
-    Point GetTopLeft() const { return Point( GetLineStart(), Y() ); }
-    bool IsOneBlock() const { return m_bOneBlock; }
-    bool IsLastBlock() const { return m_bLastBlock; }
-    bool IsLastCenter() const { return m_bLastCenter; }
-    SvxAdjust GetAdjust() const { return nAdjust; }
-    sal_uInt16 GetLineWidth() const
+    inline SwTwips GetLineEnd() const { return GetLineStart() + CurrWidth(); }
+    inline Point GetTopLeft() const { return Point( GetLineStart(), Y() ); }
+    inline bool IsOneBlock() const { return m_bOneBlock; }
+    inline bool IsLastBlock() const { return m_bLastBlock; }
+    inline bool IsLastCenter() const { return m_bLastCenter; }
+    inline sal_uInt16 GetAdjust() const { return nAdjust; }
+    inline sal_uInt16 GetLineWidth() const
            { return sal_uInt16( Right() - GetLeftMargin() + 1 ); }
-    SwTwips GetLeftMin() const { return nFirst < nLeft ? nFirst : nLeft; }
-    bool HasNegFirst() const { return nFirst < nLeft; }
+    inline SwTwips GetLeftMin() const { return nFirst < nLeft ? nFirst : nLeft; }
+    inline bool HasNegFirst() const { return nFirst < nLeft; }
 
     // #i91133#
-    SwTwips GetTabLeft() const
+    inline SwTwips GetTabLeft() const
     {
         return mnTabLeft;
     }
     // DropCaps
-    sal_uInt16 GetDropLines() const { return nDropLines; }
-    void SetDropLines( const sal_uInt16 nNew ) { nDropLines = nNew; }
-    sal_uInt16 GetDropLeft() const { return nDropLeft; }
-    sal_uInt16 GetDropHeight() const { return nDropHeight; }
-    void SetDropHeight( const sal_uInt16 nNew ) { nDropHeight = nNew; }
-    sal_uInt16 GetDropDescent() const { return nDropDescent; }
-    void SetDropDescent( const sal_uInt16 nNew ) { nDropDescent = nNew; }
+    inline sal_uInt16 GetDropLines() const { return nDropLines; }
+    inline void SetDropLines( const sal_uInt16 nNew ) { nDropLines = nNew; }
+    inline sal_uInt16 GetDropLeft() const { return nDropLeft; }
+    inline sal_uInt16 GetDropHeight() const { return nDropHeight; }
+    inline void SetDropHeight( const sal_uInt16 nNew ) { nDropHeight = nNew; }
+    inline sal_uInt16 GetDropDescent() const { return nDropDescent; }
+    inline void SetDropDescent( const sal_uInt16 nNew ) { nDropDescent = nNew; }
     void DropInit();
 
     // Returns the TextPos for start and end of the current line without whitespace
@@ -214,9 +214,9 @@ public:
     sal_Int32 GetTextStart() const;
     sal_Int32 GetTextEnd() const;
 
-    SwTextSizeInfo &GetInfo()
+    inline SwTextSizeInfo &GetInfo()
         { return static_cast<SwTextSizeInfo&>(SwTextIter::GetInfo()); }
-    const SwTextSizeInfo &GetInfo() const
+    inline const SwTextSizeInfo &GetInfo() const
         { return static_cast<const SwTextSizeInfo&>(SwTextIter::GetInfo()); }
 
 };
@@ -248,7 +248,7 @@ public:
     void CalcAdjLine( SwLineLayout *pCurr );
 
     // For adjusting afterwards
-    void GetAdjusted() const
+    inline void GetAdjusted() const
     {
         if( m_pCurr->IsFormatAdj() )
             const_cast<SwTextAdjuster*>(this)->CalcAdjLine( m_pCurr );
@@ -292,8 +292,8 @@ public:
                            sal_uInt16 nPorHeight = 0, sal_uInt16 nAscent = 0,
                            const bool bAutoToCentered = false ) const;
 
-    static void SetRightMargin( const bool bNew ){ bRightMargin = bNew; }
-    static bool IsRightMargin() { return bRightMargin; }
+    static inline void SetRightMargin( const bool bNew ){ bRightMargin = bNew; }
+    static inline bool IsRightMargin() { return bRightMargin; }
 };
 
 // Change current output device to printer, this has to be done before

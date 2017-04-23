@@ -32,14 +32,13 @@ class SvxTabStopItem;
 class SwFormat;
 class SwFootnoteInfo;
 class SwEndNoteInfo;
-class SwDoc;
 
 class SwUndoAttr : public SwUndo, private SwUndRng
 {
     SfxItemSet m_AttrSet;                           // attributes for Redo
-    const std::unique_ptr<SwHistory> m_pHistory;      // History for Undo
-    std::unique_ptr<SwRedlineData> m_pRedlineData;    // Redlining
-    std::unique_ptr<SwRedlineSaveDatas> m_pRedlineSaveData;
+    const ::std::unique_ptr<SwHistory> m_pHistory;    // History for Undo
+    ::std::unique_ptr<SwRedlineData> m_pRedlineData;  // Redlining
+    ::std::unique_ptr<SwRedlineSaveDatas> m_pRedlineSaveData;
     sal_uLong m_nNodeIndex;                         // Offset: for Redlining
     const SetAttrMode m_nInsertFlags;               // insert flags
 
@@ -49,7 +48,7 @@ public:
     SwUndoAttr( const SwPaM&, const SfxItemSet &, const SetAttrMode nFlags );
     SwUndoAttr( const SwPaM&, const SfxPoolItem&, const SetAttrMode nFlags );
 
-    virtual ~SwUndoAttr() override;
+    virtual ~SwUndoAttr();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -62,7 +61,7 @@ public:
 
 class SwUndoResetAttr : public SwUndo, private SwUndRng
 {
-    const std::unique_ptr<SwHistory> m_pHistory;
+    const ::std::unique_ptr<SwHistory> m_pHistory;
     std::set<sal_uInt16> m_Ids;
     const sal_uInt16 m_nFormatId;             // Format-Id for Redo
 
@@ -70,7 +69,7 @@ public:
     SwUndoResetAttr( const SwPaM&, sal_uInt16 nFormatId );
     SwUndoResetAttr( const SwPosition&, sal_uInt16 nFormatId );
 
-    virtual ~SwUndoResetAttr() override;
+    virtual ~SwUndoResetAttr();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -85,7 +84,7 @@ class SwUndoFormatAttr : public SwUndo
 {
     friend class SwUndoDefaultAttr;
     SwFormat * m_pFormat;
-    std::unique_ptr<SfxItemSet> m_pOldSet;      // old attributes
+    ::std::unique_ptr<SfxItemSet> m_pOldSet;    // old attributes
     sal_uLong m_nNodeIndex;
     const sal_uInt16 m_nFormatWhich;
     const bool m_bSaveDrawPt;
@@ -114,7 +113,7 @@ public:
                    SwFormat& rFormat,
                    bool bSaveDrawPt = true );
 
-    virtual ~SwUndoFormatAttr() override;
+    virtual ~SwUndoFormatAttr();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -132,7 +131,7 @@ class SwUndoFormatResetAttr : public SwUndo
     public:
         SwUndoFormatResetAttr( SwFormat& rChangedFormat,
                             const sal_uInt16 nWhichId );
-        virtual ~SwUndoFormatResetAttr() override;
+        virtual ~SwUndoFormatResetAttr();
 
         virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
         virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -143,7 +142,7 @@ class SwUndoFormatResetAttr : public SwUndo
         // which ID of the reset attribute
         const sal_uInt16 m_nWhichId;
         // old attribute which has been reset - needed for undo.
-        std::unique_ptr<SfxPoolItem> m_pOldItem;
+        ::std::unique_ptr<SfxPoolItem> m_pOldItem;
 };
 
 class SwUndoDontExpandFormat : public SwUndo
@@ -162,7 +161,7 @@ public:
 // helper class to receive changed attribute sets
 class SwUndoFormatAttrHelper : public SwClient
 {
-    std::unique_ptr<SwUndoFormatAttr> m_pUndo;
+    ::std::unique_ptr<SwUndoFormatAttr> m_pUndo;
     const bool m_bSaveDrawPt;
 
 public:
@@ -177,13 +176,13 @@ public:
 
 class SwUndoMoveLeftMargin : public SwUndo, private SwUndRng
 {
-    const std::unique_ptr<SwHistory> m_pHistory;
+    const ::std::unique_ptr<SwHistory> m_pHistory;
     const bool m_bModulus;
 
 public:
     SwUndoMoveLeftMargin( const SwPaM&, bool bRight, bool bModulus );
 
-    virtual ~SwUndoMoveLeftMargin() override;
+    virtual ~SwUndoMoveLeftMargin();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -195,14 +194,14 @@ public:
 
 class SwUndoDefaultAttr : public SwUndo
 {
-    std::unique_ptr<SfxItemSet> m_pOldSet;          // the old attributes
-    std::unique_ptr<SvxTabStopItem> m_pTabStop;
+    ::std::unique_ptr<SfxItemSet> m_pOldSet;        // the old attributes
+    ::std::unique_ptr<SvxTabStopItem> m_pTabStop;
 
 public:
     // registers at the format and saves old attributes
-    SwUndoDefaultAttr( const SfxItemSet& rOldSet, const SwDoc* pDoc );
+    SwUndoDefaultAttr( const SfxItemSet& rOldSet );
 
-    virtual ~SwUndoDefaultAttr() override;
+    virtual ~SwUndoDefaultAttr();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -210,7 +209,7 @@ public:
 
 class SwUndoChangeFootNote : public SwUndo, private SwUndRng
 {
-    const std::unique_ptr<SwHistory> m_pHistory;
+    const ::std::unique_ptr<SwHistory> m_pHistory;
     const OUString m_Text;
     const sal_uInt16 m_nNumber;
     const bool m_bEndNote;
@@ -218,7 +217,7 @@ class SwUndoChangeFootNote : public SwUndo, private SwUndRng
 public:
     SwUndoChangeFootNote( const SwPaM& rRange, const OUString& rText,
                           sal_uInt16 nNum, bool bIsEndNote );
-    virtual ~SwUndoChangeFootNote() override;
+    virtual ~SwUndoChangeFootNote();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -229,12 +228,12 @@ public:
 
 class SwUndoFootNoteInfo : public SwUndo
 {
-    std::unique_ptr<SwFootnoteInfo> m_pFootNoteInfo;
+    ::std::unique_ptr<SwFootnoteInfo> m_pFootNoteInfo;
 
 public:
-    SwUndoFootNoteInfo( const SwFootnoteInfo &rInfo, const SwDoc* pDoc );
+    SwUndoFootNoteInfo( const SwFootnoteInfo &rInfo );
 
-    virtual ~SwUndoFootNoteInfo() override;
+    virtual ~SwUndoFootNoteInfo();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -242,12 +241,12 @@ public:
 
 class SwUndoEndNoteInfo : public SwUndo
 {
-    std::unique_ptr<SwEndNoteInfo> m_pEndNoteInfo;
+    ::std::unique_ptr<SwEndNoteInfo> m_pEndNoteInfo;
 
 public:
-    SwUndoEndNoteInfo( const SwEndNoteInfo &rInfo, const SwDoc* pDoc );
+    SwUndoEndNoteInfo( const SwEndNoteInfo &rInfo );
 
-    virtual ~SwUndoEndNoteInfo() override;
+    virtual ~SwUndoEndNoteInfo();
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

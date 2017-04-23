@@ -16,6 +16,25 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+interface TextInTable
+{
+    import Text;
+        import TextTable;
+}
+
+interface ListInTable
+{
+    import Text;
+        import TextList;
+        import TextTable;
+}
+
+interface ListInText
+{
+    import TextList;
+    import Text;
+}
+
 interface TextEditView : BaseTextEditView
 {
      // Slots, which are not needed in the WebDocShell
@@ -28,31 +47,31 @@ interface TextEditView : BaseTextEditView
     [
         StateMethod = GetState ;
         Export = FALSE ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     FN_INSERT_CAPTION // status()
     [
         ExecMethod = ExecDlgExt ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     FN_EDIT_FOOTNOTE // status(final|play)
     [
         ExecMethod = ExecDlgExt ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     FN_HYPHENATE_OPT_DLG // status(final|play)
     [
         ExecMethod = ExecLingu ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     FN_CHANGE_PAGENUM // status(final)
     [
         ExecMethod = ExecDlg ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     SID_INSERT_DRAW // status()
     [
@@ -61,55 +80,6 @@ interface TextEditView : BaseTextEditView
     SID_DRAW_LINE
     [
         ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_DRAW_XLINE
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_ARROW_END
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_ARROW_CIRCLE
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_ARROW_SQUARE
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_ARROW_START
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_CIRCLE_ARROW
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_SQUARE_ARROW
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_LINE_ARROWS
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_DRAW_MEASURELINE
-    [
-        ExecMethod = ExecDraw ;
-        StateMethod = GetDrawState ;
-    ]
-    SID_DRAWTBX_ARROWS
-    [
         StateMethod = GetDrawState ;
     ]
     SID_DRAW_RECT
@@ -245,12 +215,12 @@ interface TextEditView : BaseTextEditView
     SID_FM_CREATE_CONTROL // status()
     [
         ExecMethod = ExecDraw ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
     SID_FM_CREATE_FIELDCONTROL
     [
         ExecMethod = ExecDraw ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 }
 

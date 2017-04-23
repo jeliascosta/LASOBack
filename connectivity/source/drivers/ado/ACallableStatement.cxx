@@ -31,123 +31,123 @@ using namespace com::sun::star::container;
 IMPLEMENT_SERVICE_INFO(OCallableStatement,"com.sun.star.sdbcx.ACallableStatement","com.sun.star.sdbc.CallableStatement");
 
 #define GET_PARAM()                                                 \
-    ADOParameter* pParam = nullptr;                                 \
+    ADOParameter* pParam = NULL;                                    \
     m_pParameters->get_Item(OLEVariant(sal_Int32(columnIndex-1)),&pParam);      \
     if(pParam)                                                      \
         pParam->get_Value(&m_aValue);
 
 //************ Class: java.sql.CallableStatement
 
-OCallableStatement::OCallableStatement( OConnection* _pConnection, const OUString& sql )
-                : OPreparedStatement( _pConnection, sql )
+OCallableStatement::OCallableStatement( OConnection* _pConnection,const OTypeInfoMap& _TypeInfo,const OUString& sql )
+                : OPreparedStatement( _pConnection, _TypeInfo, sql )
 {
     m_Command.put_CommandType(adCmdStoredProc);
 }
 
 
-Any SAL_CALL OCallableStatement::queryInterface( const Type & rType )
+Any SAL_CALL OCallableStatement::queryInterface( const Type & rType ) throw(RuntimeException)
 {
     Any aRet = OPreparedStatement::queryInterface(rType);
     return aRet.hasValue() ? aRet : ::cppu::queryInterface(rType,static_cast< XRow*>(this));
 }
 
 
-sal_Bool SAL_CALL OCallableStatement::wasNull(  )
+sal_Bool SAL_CALL OCallableStatement::wasNull(  ) throw(SQLException, RuntimeException)
 {
     return m_aValue.isNull();
 }
 
 
-sal_Bool SAL_CALL OCallableStatement::getBoolean( sal_Int32 columnIndex )
+sal_Bool SAL_CALL OCallableStatement::getBoolean( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getBool();
+    return m_aValue;
 }
 
-sal_Int8 SAL_CALL OCallableStatement::getByte( sal_Int32 columnIndex )
+sal_Int8 SAL_CALL OCallableStatement::getByte( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getInt8();
+    return m_aValue;
 }
 
-Sequence< sal_Int8 > SAL_CALL OCallableStatement::getBytes( sal_Int32 columnIndex )
+Sequence< sal_Int8 > SAL_CALL OCallableStatement::getBytes( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getByteSequence();
+    return m_aValue;
 }
 
-css::util::Date SAL_CALL OCallableStatement::getDate( sal_Int32 columnIndex )
+::com::sun::star::util::Date SAL_CALL OCallableStatement::getDate( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getDate();
+    return m_aValue;
 }
 
-double SAL_CALL OCallableStatement::getDouble( sal_Int32 columnIndex )
+double SAL_CALL OCallableStatement::getDouble( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getDouble();
-}
-
-
-float SAL_CALL OCallableStatement::getFloat( sal_Int32 columnIndex )
-{
-    GET_PARAM()
-    return m_aValue.getFloat();
+    return m_aValue;
 }
 
 
-sal_Int32 SAL_CALL OCallableStatement::getInt( sal_Int32 columnIndex )
+float SAL_CALL OCallableStatement::getFloat( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getInt32();
+    return m_aValue;
 }
 
 
-sal_Int64 SAL_CALL OCallableStatement::getLong( sal_Int32 columnIndex )
+sal_Int32 SAL_CALL OCallableStatement::getInt( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
+{
+    GET_PARAM()
+    return m_aValue;
+}
+
+
+sal_Int64 SAL_CALL OCallableStatement::getLong( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
     return (sal_Int64)m_aValue.getCurrency().int64;
 }
 
 
-Any SAL_CALL OCallableStatement::getObject( sal_Int32 /*columnIndex*/, const Reference< css::container::XNameAccess >& /*typeMap*/ )
+Any SAL_CALL OCallableStatement::getObject( sal_Int32 /*columnIndex*/, const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getObject", *this );
     return Any();
 }
 
 
-sal_Int16 SAL_CALL OCallableStatement::getShort( sal_Int32 columnIndex )
+sal_Int16 SAL_CALL OCallableStatement::getShort( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getInt16();
+    return m_aValue;
 }
 
 
-OUString SAL_CALL OCallableStatement::getString( sal_Int32 columnIndex )
+OUString SAL_CALL OCallableStatement::getString( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getString();
+    return m_aValue;
 }
 
 
- css::util::Time SAL_CALL OCallableStatement::getTime( sal_Int32 columnIndex )
+ ::com::sun::star::util::Time SAL_CALL OCallableStatement::getTime( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getTime();
+    return m_aValue;
 }
 
 
- css::util::DateTime SAL_CALL OCallableStatement::getTimestamp( sal_Int32 columnIndex )
+ ::com::sun::star::util::DateTime SAL_CALL OCallableStatement::getTimestamp( sal_Int32 columnIndex ) throw(SQLException, RuntimeException)
 {
     GET_PARAM()
-    return m_aValue.getDateTime();
+    return m_aValue;
 }
 
 
-void SAL_CALL OCallableStatement::registerOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& /*typeName*/ )
+void SAL_CALL OCallableStatement::registerOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, const OUString& /*typeName*/ ) throw(SQLException, RuntimeException)
 {
-    ADOParameter* pParam = nullptr;
+    ADOParameter* pParam = NULL;
     m_pParameters->get_Item(OLEVariant(sal_Int32(parameterIndex-1)),&pParam);
     if(pParam)
     {
@@ -156,9 +156,9 @@ void SAL_CALL OCallableStatement::registerOutParameter( sal_Int32 parameterIndex
     }
 }
 
-void SAL_CALL OCallableStatement::registerNumericOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, sal_Int32 scale )
+void SAL_CALL OCallableStatement::registerNumericOutParameter( sal_Int32 parameterIndex, sal_Int32 sqlType, sal_Int32 scale ) throw(SQLException, RuntimeException)
 {
-    ADOParameter* pParam = nullptr;
+    ADOParameter* pParam = NULL;
     m_pParameters->get_Item(OLEVariant(sal_Int32(parameterIndex-1)),&pParam);
     if(pParam)
     {
@@ -169,43 +169,43 @@ void SAL_CALL OCallableStatement::registerNumericOutParameter( sal_Int32 paramet
 }
 
 
-Reference< css::io::XInputStream > SAL_CALL OCallableStatement::getBinaryStream( sal_Int32 /*columnIndex*/ )
+Reference< ::com::sun::star::io::XInputStream > SAL_CALL OCallableStatement::getBinaryStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getBinaryStream", *this );
-    return nullptr;
+    return NULL;
 }
 
-Reference< css::io::XInputStream > SAL_CALL OCallableStatement::getCharacterStream( sal_Int32 /*columnIndex*/ )
+Reference< ::com::sun::star::io::XInputStream > SAL_CALL OCallableStatement::getCharacterStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getCharacterStream", *this );
-    return nullptr;
+    return NULL;
 }
 
 
-Reference< XArray > SAL_CALL OCallableStatement::getArray( sal_Int32 /*columnIndex*/ )
+Reference< XArray > SAL_CALL OCallableStatement::getArray( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getArray", *this );
-    return nullptr;
+    return NULL;
 }
 
 
-Reference< XClob > SAL_CALL OCallableStatement::getClob( sal_Int32 /*columnIndex*/ )
+Reference< XClob > SAL_CALL OCallableStatement::getClob( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getClob", *this );
-    return nullptr;
+    return NULL;
 }
 
-Reference< XBlob > SAL_CALL OCallableStatement::getBlob( sal_Int32 /*columnIndex*/ )
+Reference< XBlob > SAL_CALL OCallableStatement::getBlob( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getBlob", *this );
-    return nullptr;
+    return NULL;
 }
 
 
-Reference< XRef > SAL_CALL OCallableStatement::getRef( sal_Int32 /*columnIndex*/)
+Reference< XRef > SAL_CALL OCallableStatement::getRef( sal_Int32 /*columnIndex*/) throw(SQLException, RuntimeException)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XRow::getRef", *this );
-    return nullptr;
+    return NULL;
 }
 
 

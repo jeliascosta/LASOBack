@@ -47,11 +47,11 @@ namespace dbaui
             :public SvTreeListBox
             ,public IDragTransferableListener
     {
-        DECL_LINK( OnDoubleClick, SvTreeListBox*, bool );
-        DECL_LINK( ScrollUpHdl, Timer*, void );
-        DECL_LINK( ScrollDownHdl, Timer*, void );
-        DECL_LINK( DropHdl, void*, void );
-        DECL_LINK( LookForUiHdl, void*, void );
+        DECL_LINK_TYPED( OnDoubleClick, SvTreeListBox*, bool );
+        DECL_LINK_TYPED( ScrollUpHdl, Timer*, void );
+        DECL_LINK_TYPED( ScrollDownHdl, Timer*, void );
+        DECL_LINK_TYPED( DropHdl, void*, void );
+        DECL_LINK_TYPED( LookForUiHdl, void*, void );
 
         Timer                       m_aScrollTimer;
         Point                       m_aMousePos;
@@ -76,7 +76,7 @@ namespace dbaui
 
     public:
         OTableWindowListBox(OTableWindow* pParent);
-        virtual ~OTableWindowListBox() override;
+        virtual ~OTableWindowListBox();
         virtual void dispose() override;
 
         // DnD stuff

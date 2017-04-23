@@ -19,7 +19,6 @@
 
 #include "resultcolumn.hxx"
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XResultSetMetaDataSupplier.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <com/sun/star/sdbc/ColumnValue.hpp>
@@ -102,18 +101,18 @@ OResultColumn::~OResultColumn()
 }
 
 // css::lang::XTypeProvider
-Sequence< sal_Int8 > OResultColumn::getImplementationId()
+Sequence< sal_Int8 > OResultColumn::getImplementationId() throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 // XServiceInfo
-OUString OResultColumn::getImplementationName(  )
+OUString OResultColumn::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return OUString("com.sun.star.sdb.OResultColumn");
 }
 
-Sequence< OUString > OResultColumn::getSupportedServiceNames(  )
+Sequence< OUString > OResultColumn::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aSNS( 2 );
     aSNS[0] = SERVICE_SDBCX_COLUMN;

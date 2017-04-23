@@ -128,7 +128,7 @@ public class GraphicSelectionHandle extends CommonCanvasElement {
     }
 
     /**
-     * All possible handle positions. The selection rectangle has 8 possible
+     * All posible handle positions. The selection rectangle has 8 possible
      * handles.
      */
     public enum HandlePosition {

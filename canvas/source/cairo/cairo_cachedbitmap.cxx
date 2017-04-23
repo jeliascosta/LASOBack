@@ -38,7 +38,7 @@ namespace cairocanvas
                                 const rendering::ViewState&                 rUsedViewState,
                                 const rendering::RenderState&               rUsedRenderState,
                                 const uno::Reference< rendering::XCanvas >& rTarget ) :
-        CachedPrimitiveBase( rUsedViewState, rTarget ),
+        CachedPrimitiveBase( rUsedViewState, rTarget, true ),
         mpSurface( pSurface ),
         maRenderState( rUsedRenderState )
     {}

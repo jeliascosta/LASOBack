@@ -64,7 +64,7 @@ public :
 
      PlaceEditDialog( vcl::Window* pParent);
      PlaceEditDialog(vcl::Window* pParent, const std::shared_ptr<Place> &rPlace );
-     virtual ~PlaceEditDialog() override;
+     virtual ~PlaceEditDialog();
      virtual void dispose() override;
 
      // Returns a place instance with given information
@@ -81,14 +81,15 @@ public :
 private:
 
     void InitDetails( );
+    void UpdateLabel( );
 
-    DECL_LINK ( OKHdl, Button *, void );
-    DECL_LINK ( DelHdl, Button *, void );
-    DECL_LINK ( EditHdl, DetailsContainer*, void );
-    DECL_LINK ( ModifyHdl, Edit&, void );
-    DECL_LINK ( SelectTypeHdl, ListBox&, void );
-    DECL_LINK ( EditLabelHdl, Edit&, void );
-    DECL_LINK ( EditUsernameHdl, Edit&, void );
+    DECL_LINK_TYPED ( OKHdl, Button *, void );
+    DECL_LINK_TYPED ( DelHdl, Button *, void );
+    DECL_LINK_TYPED ( EditHdl, DetailsContainer*, void );
+    DECL_LINK_TYPED ( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED ( SelectTypeHdl, ListBox&, void );
+    DECL_LINK_TYPED ( EditLabelHdl, Edit&, void );
+    DECL_LINK_TYPED ( EditUsernameHdl, Edit&, void );
 
 };
 

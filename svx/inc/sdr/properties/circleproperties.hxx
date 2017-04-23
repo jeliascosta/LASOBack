@@ -44,7 +44,7 @@ namespace sdr
             CircleProperties(const CircleProperties& rProps, SdrObject& rObj);
 
             // destructor
-            virtual ~CircleProperties() override;
+            virtual ~CircleProperties();
 
             // Clone() operator, normally just calls the local copy constructor
             virtual BaseProperties& Clone(SdrObject& rObj) const override;

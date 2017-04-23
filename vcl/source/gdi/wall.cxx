@@ -27,32 +27,57 @@
 #include <wall2.hxx>
 #include <vcl/dibtools.hxx>
 #include <vcl/settings.hxx>
-#include <o3tl/make_unique.hxx>
 
 ImplWallpaper::ImplWallpaper() :
-    maColor( COL_TRANSPARENT ), meStyle( WallpaperStyle::NONE )
+    maColor( COL_TRANSPARENT )
 {
+    mpBitmap        = nullptr;
+    mpCache         = nullptr;
+    mpGradient      = nullptr;
+    mpRect          = nullptr;
+    meStyle         = WallpaperStyle::NONE;
 }
 
 ImplWallpaper::ImplWallpaper( const ImplWallpaper& rImplWallpaper ) :
-    maColor( rImplWallpaper.maColor ), meStyle(rImplWallpaper.meStyle)
+    maColor( rImplWallpaper.maColor )
 {
+    meStyle = rImplWallpaper.meStyle;
+
     if ( rImplWallpaper.mpBitmap )
-        mpBitmap = o3tl::make_unique<BitmapEx>( *rImplWallpaper.mpBitmap );
-
+        mpBitmap = new BitmapEx( *rImplWallpaper.mpBitmap );
+    else
+        mpBitmap = nullptr;
     if( rImplWallpaper.mpCache )
-        mpCache = o3tl::make_unique<BitmapEx>( *rImplWallpaper.mpCache );
-
+        mpCache = new BitmapEx( *rImplWallpaper.mpCache );
+    else
+        mpCache = nullptr;
     if ( rImplWallpaper.mpGradient )
-        mpGradient = o3tl::make_unique<Gradient>( *rImplWallpaper.mpGradient );
-
+        mpGradient = new Gradient( *rImplWallpaper.mpGradient );
+    else
+        mpGradient = nullptr;
     if ( rImplWallpaper.mpRect )
-        mpRect = o3tl::make_unique<tools::Rectangle>( *rImplWallpaper.mpRect );
-
+        mpRect = new Rectangle( *rImplWallpaper.mpRect );
+    else
+        mpRect = nullptr;
 }
 
 ImplWallpaper::~ImplWallpaper()
 {
+    delete mpBitmap;
+    delete mpCache;
+    delete mpGradient;
+    delete mpRect;
+}
+
+bool ImplWallpaper::operator==( const ImplWallpaper& rImplWallpaper ) const
+{
+    if ( meStyle == rImplWallpaper.meStyle &&
+         maColor == rImplWallpaper.maColor &&
+         mpRect == rImplWallpaper.mpRect &&
+         mpBitmap == rImplWallpaper.mpBitmap &&
+         mpGradient == rImplWallpaper.mpGradient )
+        return true;
+    return false;
 }
 
 SvStream& ReadImplWallpaper( SvStream& rIStm, ImplWallpaper& rImplWallpaper )
@@ -60,9 +85,14 @@ SvStream& ReadImplWallpaper( SvStream& rIStm, ImplWallpaper& rImplWallpaper )
     VersionCompat   aCompat( rIStm, StreamMode::READ );
     sal_uInt16          nTmp16;
 
-    rImplWallpaper.mpRect.reset();
-    rImplWallpaper.mpGradient.reset();
-    rImplWallpaper.mpBitmap.reset();
+    delete rImplWallpaper.mpRect;
+    rImplWallpaper.mpRect = nullptr;
+
+    delete rImplWallpaper.mpGradient;
+    rImplWallpaper.mpGradient = nullptr;
+
+    delete rImplWallpaper.mpBitmap;
+    rImplWallpaper.mpBitmap = nullptr;
 
     // version 1
     ReadColor( rIStm, rImplWallpaper.maColor );
@@ -77,19 +107,19 @@ SvStream& ReadImplWallpaper( SvStream& rIStm, ImplWallpaper& rImplWallpaper )
 
         if( bRect )
         {
-            rImplWallpaper.mpRect = o3tl::make_unique<tools::Rectangle>();
+            rImplWallpaper.mpRect = new Rectangle;
             ReadRectangle( rIStm, *rImplWallpaper.mpRect );
         }
 
         if( bGrad )
         {
-            rImplWallpaper.mpGradient = o3tl::make_unique<Gradient>();
+            rImplWallpaper.mpGradient = new Gradient;
             ReadGradient( rIStm, *rImplWallpaper.mpGradient );
         }
 
         if( bBmp )
         {
-            rImplWallpaper.mpBitmap = o3tl::make_unique<BitmapEx>();
+            rImplWallpaper.mpBitmap = new BitmapEx;
             ReadDIBBitmapEx(*rImplWallpaper.mpBitmap, rIStm);
         }
 
@@ -106,9 +136,9 @@ SvStream& ReadImplWallpaper( SvStream& rIStm, ImplWallpaper& rImplWallpaper )
 SvStream& WriteImplWallpaper( SvStream& rOStm, const ImplWallpaper& rImplWallpaper )
 {
     VersionCompat   aCompat( rOStm, StreamMode::WRITE, 3 );
-    bool            bRect = bool(rImplWallpaper.mpRect);
-    bool            bGrad = bool(rImplWallpaper.mpGradient);
-    bool            bBmp = bool(rImplWallpaper.mpBitmap);
+    bool            bRect = ( rImplWallpaper.mpRect != nullptr );
+    bool            bGrad = ( rImplWallpaper.mpGradient != nullptr );
+    bool            bBmp = ( rImplWallpaper.mpBitmap != nullptr );
     bool            bDummy = false;
 
     // version 1
@@ -148,11 +178,6 @@ Wallpaper::Wallpaper( const Wallpaper& rWallpaper )
 {
 }
 
-Wallpaper::Wallpaper( Wallpaper&& rWallpaper )
-    : mpImplWallpaper( std::move(rWallpaper.mpImplWallpaper) )
-{
-}
-
 Wallpaper::Wallpaper( const Color& rColor ) : mpImplWallpaper()
 {
     mpImplWallpaper->maColor    = rColor;
@@ -161,13 +186,13 @@ Wallpaper::Wallpaper( const Color& rColor ) : mpImplWallpaper()
 
 Wallpaper::Wallpaper( const BitmapEx& rBmpEx ) : mpImplWallpaper()
 {
-    mpImplWallpaper->mpBitmap   = o3tl::make_unique<BitmapEx>( rBmpEx );
+    mpImplWallpaper->mpBitmap   = new BitmapEx( rBmpEx );
     mpImplWallpaper->meStyle    = WallpaperStyle::Tile;
 }
 
 Wallpaper::Wallpaper( const Gradient& rGradient ) : mpImplWallpaper()
 {
-    mpImplWallpaper->mpGradient = o3tl::make_unique<Gradient>( rGradient );
+    mpImplWallpaper->mpGradient = new Gradient( rGradient );
     mpImplWallpaper->meStyle    = WallpaperStyle::Tile;
 }
 
@@ -178,20 +203,22 @@ Wallpaper::~Wallpaper()
 void Wallpaper::ImplSetCachedBitmap( BitmapEx& rBmp ) const
 {
    if( !mpImplWallpaper->mpCache )
-      const_cast< ImplWallpaper* >(mpImplWallpaper.get())->mpCache = o3tl::make_unique<BitmapEx>( rBmp );
+      const_cast< ImplWallpaper* >(mpImplWallpaper.get())->mpCache = new BitmapEx( rBmp );
    else
       *const_cast< ImplWallpaper* >(mpImplWallpaper.get())->mpCache = rBmp;
 }
 
 const BitmapEx* Wallpaper::ImplGetCachedBitmap() const
 {
-    return mpImplWallpaper->mpCache.get();
+    return mpImplWallpaper->mpCache;
 }
 
 void Wallpaper::ImplReleaseCachedBitmap() const
 {
-    const_cast< ImplWallpaper* >(mpImplWallpaper.get())->mpCache.reset();
+    delete mpImplWallpaper->mpCache;
+    const_cast< ImplWallpaper* >(mpImplWallpaper.get())->mpCache = nullptr;
 }
+
 
 void Wallpaper::SetColor( const Color& rColor )
 {
@@ -229,7 +256,8 @@ void Wallpaper::SetBitmap( const BitmapEx& rBitmap )
         if ( mpImplWallpaper->mpBitmap )
         {
             ImplReleaseCachedBitmap();
-            mpImplWallpaper->mpBitmap.reset();
+            delete mpImplWallpaper->mpBitmap;
+            mpImplWallpaper->mpBitmap = nullptr;
         }
     }
     else
@@ -238,7 +266,7 @@ void Wallpaper::SetBitmap( const BitmapEx& rBitmap )
         if ( mpImplWallpaper->mpBitmap )
             *(mpImplWallpaper->mpBitmap) = rBitmap;
         else
-            mpImplWallpaper->mpBitmap = o3tl::make_unique<BitmapEx>( rBitmap );
+            mpImplWallpaper->mpBitmap = new BitmapEx( rBitmap );
     }
 
     if( WallpaperStyle::NONE == mpImplWallpaper->meStyle || WallpaperStyle::ApplicationGradient == mpImplWallpaper->meStyle)
@@ -250,12 +278,15 @@ BitmapEx Wallpaper::GetBitmap() const
     if ( mpImplWallpaper->mpBitmap )
         return *(mpImplWallpaper->mpBitmap);
     else
-        return BitmapEx();
+    {
+        BitmapEx aBmp;
+        return aBmp;
+    }
 }
 
 bool Wallpaper::IsBitmap() const
 {
-    return bool(mpImplWallpaper->mpBitmap);
+    return (mpImplWallpaper->mpBitmap != nullptr);
 }
 
 void Wallpaper::SetGradient( const Gradient& rGradient )
@@ -265,7 +296,7 @@ void Wallpaper::SetGradient( const Gradient& rGradient )
     if ( mpImplWallpaper->mpGradient )
         *(mpImplWallpaper->mpGradient) = rGradient;
     else
-        mpImplWallpaper->mpGradient = o3tl::make_unique<Gradient>( rGradient );
+        mpImplWallpaper->mpGradient = new Gradient( rGradient );
 
     if( WallpaperStyle::NONE == mpImplWallpaper->meStyle || WallpaperStyle::ApplicationGradient == mpImplWallpaper->meStyle )
         mpImplWallpaper->meStyle = WallpaperStyle::Tile;
@@ -278,19 +309,22 @@ Gradient Wallpaper::GetGradient() const
     else if ( mpImplWallpaper->mpGradient )
         return *(mpImplWallpaper->mpGradient);
     else
-        return Gradient();
+    {
+        Gradient aGradient;
+        return aGradient;
+    }
 }
 
 bool Wallpaper::IsGradient() const
 {
-    return bool(mpImplWallpaper->mpGradient);
+    return (mpImplWallpaper->mpGradient != nullptr);
 }
 
-Gradient Wallpaper::ImplGetApplicationGradient()
+Gradient Wallpaper::ImplGetApplicationGradient() const
 {
     Gradient g;
     g.SetAngle( 900 );
-    g.SetStyle( GradientStyle::Linear );
+    g.SetStyle( GradientStyle_LINEAR );
     g.SetStartColor( Application::GetSettings().GetStyleSettings().GetFaceColor() );
     // no 'extreme' gradient when high contrast
     if( Application::GetSettings().GetStyleSettings().GetHighContrastMode() )
@@ -300,32 +334,40 @@ Gradient Wallpaper::ImplGetApplicationGradient()
     return g;
 }
 
-void Wallpaper::SetRect( const tools::Rectangle& rRect )
+void Wallpaper::SetRect( const Rectangle& rRect )
 {
     if ( rRect.IsEmpty() )
     {
-        mpImplWallpaper->mpRect.reset();
+        if ( mpImplWallpaper->mpRect )
+        {
+            delete mpImplWallpaper->mpRect;
+            mpImplWallpaper->mpRect = nullptr;
+        }
     }
     else
     {
         if ( mpImplWallpaper->mpRect )
             *(mpImplWallpaper->mpRect) = rRect;
         else
-            mpImplWallpaper->mpRect = o3tl::make_unique<tools::Rectangle>( rRect );
+            mpImplWallpaper->mpRect = new Rectangle( rRect );
     }
 }
 
-tools::Rectangle Wallpaper::GetRect() const
+Rectangle Wallpaper::GetRect() const
 {
     if ( mpImplWallpaper->mpRect )
         return *(mpImplWallpaper->mpRect);
     else
-        return tools::Rectangle();
+    {
+        Rectangle aRect;
+        return aRect;
+    }
 }
 
 bool Wallpaper::IsRect() const
 {
-    return bool(mpImplWallpaper->mpRect);
+
+    return (mpImplWallpaper->mpRect != nullptr);
 }
 
 bool Wallpaper::IsFixed() const
@@ -354,15 +396,9 @@ Wallpaper& Wallpaper::operator=( const Wallpaper& rWallpaper )
     return *this;
 }
 
-Wallpaper& Wallpaper::operator=( Wallpaper&& rWallpaper )
-{
-    mpImplWallpaper = std::move(rWallpaper.mpImplWallpaper);
-    return *this;
-}
-
 bool Wallpaper::operator==( const Wallpaper& rWallpaper ) const
 {
-    return mpImplWallpaper.same_object(rWallpaper.mpImplWallpaper);
+    return mpImplWallpaper == rWallpaper.mpImplWallpaper;
 }
 
 SvStream& ReadWallpaper( SvStream& rIStm, Wallpaper& rWallpaper )

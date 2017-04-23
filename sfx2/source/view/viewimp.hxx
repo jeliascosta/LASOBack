@@ -45,6 +45,8 @@ struct SfxViewShell_Impl
     bool                        m_bControllerSet;
     SfxShellArr_Impl            aArr;
     Size                        aMargin;
+    sal_uInt16                  m_nPrinterLocks;
+    bool                        m_bCanPrint;
     bool                        m_bHasPrintOptions;
     bool                        m_bIsShowView;
     bool                        m_bGotOwnership;
@@ -59,10 +61,6 @@ struct SfxViewShell_Impl
 
     LibreOfficeKitCallback m_pLibreOfficeKitViewCallback;
     void* m_pLibreOfficeKitViewData;
-    /// Set if we are in the middle of a tiled search.
-    bool m_bTiledSearching;
-    static sal_uInt32 m_nLastViewShellId;
-    const ViewShellId m_nViewShellId;
 
     explicit SfxViewShell_Impl(SfxViewShellFlags const nFlags);
     ~SfxViewShell_Impl();

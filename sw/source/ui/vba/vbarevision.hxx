@@ -31,17 +31,15 @@ private:
     css::uno::Reference< css::beans::XPropertySet > mxRedlineProps;
 
 private:
-    /// @throws css::uno::RuntimeException
-    sal_Int32 GetPosition();
+    sal_Int32 GetPosition() throw (css::uno::RuntimeException);
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaRevision( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::beans::XPropertySet >& xRedlineProps );
-    virtual ~SwVbaRevision() override;
+    SwVbaRevision( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::frame::XModel >& xModel, const css::uno::Reference< css::beans::XPropertySet >& xRedlineProps ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaRevision();
 
     // Methods
-    virtual void SAL_CALL Accept(  ) override;
-    virtual void SAL_CALL Reject(  ) override;
+    virtual void SAL_CALL Accept(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL Reject(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

@@ -90,7 +90,7 @@ namespace connectivity
 
         public:
             OCatalog(const css::uno::Reference< css::sdbc::XConnection> &_xConnection);
-            virtual ~OCatalog() override;
+            virtual ~OCatalog();
 
             DECLARE_SERVICE_INFO();
 
@@ -105,15 +105,16 @@ namespace connectivity
             // ::cppu::OComponentHelper
             virtual void SAL_CALL disposing() override;
             // XInterface
+            void SAL_CALL acquire() throw() override;
             void SAL_CALL release() throw() override;
             // XTablesSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTables(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTables(  ) throw(css::uno::RuntimeException, std::exception) override;
             // XViewsSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getViews(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getViews(  ) throw(css::uno::RuntimeException, std::exception) override;
             // XUsersSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getUsers(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getUsers(  ) throw(css::uno::RuntimeException, std::exception) override;
             // XGroupsSupplier
-            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getGroups(  ) override;
+            virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getGroups(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         };
     }

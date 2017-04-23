@@ -68,28 +68,37 @@ public:
     SfxAppDispatchProvider() {}
 
     virtual void SAL_CALL initialize(
-        css::uno::Sequence<css::uno::Any> const & aArguments) override;
+        css::uno::Sequence<css::uno::Any> const & aArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference < css::frame::XDispatch > SAL_CALL queryDispatch(
             const css::util::URL& aURL, const OUString& sTargetFrameName,
-            FrameSearchFlags eSearchFlags ) override;
+            FrameSearchFlags eSearchFlags )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual css::uno::Sequence< css::uno::Reference < css::frame::XDispatch > > SAL_CALL queryDispatches(
-            const css::uno::Sequence < css::frame::DispatchDescriptor >& seqDescriptor ) override;
+            const css::uno::Sequence < css::frame::DispatchDescriptor >& seqDescriptor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedCommandGroups() override;
+    virtual css::uno::Sequence< sal_Int16 > SAL_CALL getSupportedCommandGroups()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( sal_Int16 ) override;
+    virtual css::uno::Sequence< css::frame::DispatchInformation > SAL_CALL getConfigurableDispatchInformation( sal_Int16 )
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 void SfxAppDispatchProvider::initialize(
     css::uno::Sequence<css::uno::Any> const & aArguments)
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     css::uno::Reference<css::frame::XFrame> f;
     if (aArguments.getLength() != 1 || !(aArguments[0] >>= f)) {
@@ -100,17 +109,17 @@ void SfxAppDispatchProvider::initialize(
     m_xFrame = f;
 }
 
-OUString SAL_CALL SfxAppDispatchProvider::getImplementationName()
+OUString SAL_CALL SfxAppDispatchProvider::getImplementationName() throw( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.sfx2.AppDispatchProvider" );
 }
 
-sal_Bool SAL_CALL SfxAppDispatchProvider::supportsService( const OUString& sServiceName )
+sal_Bool SAL_CALL SfxAppDispatchProvider::supportsService( const OUString& sServiceName ) throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, sServiceName);
 }
 
-css::uno::Sequence< OUString > SAL_CALL SfxAppDispatchProvider::getSupportedServiceNames()
+css::uno::Sequence< OUString > SAL_CALL SfxAppDispatchProvider::getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Sequence< OUString > seqServiceNames( 2 );
     seqServiceNames.getArray()[0] = "com.sun.star.frame.ProtocolHandler";
@@ -121,10 +130,8 @@ css::uno::Sequence< OUString > SAL_CALL SfxAppDispatchProvider::getSupportedServ
 Reference < XDispatch > SAL_CALL SfxAppDispatchProvider::queryDispatch(
     const util::URL& aURL,
     const OUString& /*sTargetFrameName*/,
-    FrameSearchFlags /*eSearchFlags*/ )
+    FrameSearchFlags /*eSearchFlags*/ ) throw( RuntimeException, std::exception )
 {
-    SolarMutexGuard guard;
-
     sal_uInt16                  nId( 0 );
     bool                bMasterCommand( false );
     Reference < XDispatch > xDisp;
@@ -158,6 +165,7 @@ Reference < XDispatch > SAL_CALL SfxAppDispatchProvider::queryDispatch(
 }
 
 Sequence< Reference < XDispatch > > SAL_CALL SfxAppDispatchProvider::queryDispatches( const Sequence < DispatchDescriptor >& seqDescriptor )
+throw( RuntimeException, std::exception )
 {
     sal_Int32 nCount = seqDescriptor.getLength();
     uno::Sequence< uno::Reference < frame::XDispatch > > lDispatcher(nCount);
@@ -169,19 +177,20 @@ Sequence< Reference < XDispatch > > SAL_CALL SfxAppDispatchProvider::queryDispat
 }
 
 Sequence< sal_Int16 > SAL_CALL SfxAppDispatchProvider::getSupportedCommandGroups()
+throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    std::vector< sal_Int16 > aGroupList;
-    SfxSlotPool& rAppSlotPool = SfxGetpApp()->GetAppSlotPool_Impl();
+    std::list< sal_Int16 > aGroupList;
+    SfxSlotPool* pAppSlotPool = &SfxGetpApp()->GetAppSlotPool_Impl();
 
     const SfxSlotMode nMode( SfxSlotMode::TOOLBOXCONFIG|SfxSlotMode::ACCELCONFIG|SfxSlotMode::MENUCONFIG );
 
-    // Select group ( group 0 is internal )
-    for (sal_uInt16 i=0; i< rAppSlotPool.GetGroupCount(); ++i)
+    // Gruppe anw"ahlen ( Gruppe 0 ist intern )
+    for ( sal_uInt16 i=0; i<pAppSlotPool->GetGroupCount(); i++ )
     {
-        rAppSlotPool.SeekGroup(i);
-        const SfxSlot* pSfxSlot = rAppSlotPool.FirstSlot();
+        pAppSlotPool->SeekGroup( i );
+        const SfxSlot* pSfxSlot = pAppSlotPool->FirstSlot();
         while ( pSfxSlot )
         {
             if ( pSfxSlot->GetMode() & nMode )
@@ -190,51 +199,61 @@ Sequence< sal_Int16 > SAL_CALL SfxAppDispatchProvider::getSupportedCommandGroups
                 aGroupList.push_back( nCommandGroup );
                 break;
             }
-            pSfxSlot = rAppSlotPool.NextSlot();
+            pSfxSlot = pAppSlotPool->NextSlot();
         }
     }
 
-    return comphelper::containerToSequence( aGroupList );
+    uno::Sequence< sal_Int16 > aSeq =
+        comphelper::containerToSequence< sal_Int16, std::list< sal_Int16 > >( aGroupList );
+
+    return aSeq;
 }
 
 Sequence< frame::DispatchInformation > SAL_CALL SfxAppDispatchProvider::getConfigurableDispatchInformation( sal_Int16 nCmdGroup )
+throw (uno::RuntimeException, std::exception)
 {
     std::list< frame::DispatchInformation > aCmdList;
 
     SolarMutexGuard aGuard;
-    SfxSlotPool& rAppSlotPool = SfxGetpApp()->GetAppSlotPool_Impl();
+    SfxSlotPool* pAppSlotPool = &SfxGetpApp()->GetAppSlotPool_Impl();
 
-    const SfxSlotMode nMode( SfxSlotMode::TOOLBOXCONFIG|SfxSlotMode::ACCELCONFIG|SfxSlotMode::MENUCONFIG );
-    OUString aCmdPrefix( ".uno:" );
-
-    // Select group ( group 0 is internal )
-    for (sal_uInt16 i=0; i< rAppSlotPool.GetGroupCount(); ++i)
+    if ( pAppSlotPool )
     {
-        rAppSlotPool.SeekGroup(i);
-        const SfxSlot* pSfxSlot = rAppSlotPool.FirstSlot();
-        if ( pSfxSlot )
+        const SfxSlotMode nMode( SfxSlotMode::TOOLBOXCONFIG|SfxSlotMode::ACCELCONFIG|SfxSlotMode::MENUCONFIG );
+        OUString aCmdPrefix( ".uno:" );
+
+        // Gruppe anw"ahlen ( Gruppe 0 ist intern )
+        for ( sal_uInt16 i=0; i<pAppSlotPool->GetGroupCount(); i++ )
         {
-            sal_Int16 nCommandGroup = MapGroupIDToCommandGroup( pSfxSlot->GetGroupId() );
-            if ( nCommandGroup == nCmdGroup )
+            pAppSlotPool->SeekGroup( i );
+            const SfxSlot* pSfxSlot = pAppSlotPool->FirstSlot();
+            if ( pSfxSlot )
             {
-                while ( pSfxSlot )
+                sal_Int16 nCommandGroup = MapGroupIDToCommandGroup( pSfxSlot->GetGroupId() );
+                if ( nCommandGroup == nCmdGroup )
                 {
-                    if ( pSfxSlot->GetMode() & nMode )
+                    while ( pSfxSlot )
                     {
-                        frame::DispatchInformation aCmdInfo;
-                        OUStringBuffer aBuf( aCmdPrefix );
-                        aBuf.appendAscii( pSfxSlot->GetUnoName() );
-                        aCmdInfo.Command = aBuf.makeStringAndClear();
-                        aCmdInfo.GroupId = nCommandGroup;
-                        aCmdList.push_back( aCmdInfo );
+                        if ( pSfxSlot->GetMode() & nMode )
+                        {
+                            frame::DispatchInformation aCmdInfo;
+                            OUStringBuffer aBuf( aCmdPrefix );
+                            aBuf.appendAscii( pSfxSlot->GetUnoName() );
+                            aCmdInfo.Command = aBuf.makeStringAndClear();
+                            aCmdInfo.GroupId = nCommandGroup;
+                            aCmdList.push_back( aCmdInfo );
+                        }
+                        pSfxSlot = pAppSlotPool->NextSlot();
                     }
-                    pSfxSlot = rAppSlotPool.NextSlot();
                 }
             }
         }
     }
 
-    return comphelper::containerToSequence( aCmdList );
+    uno::Sequence< frame::DispatchInformation > aSeq =
+        comphelper::containerToSequence< frame::DispatchInformation, std::list< frame::DispatchInformation > >( aCmdList );
+
+    return aSeq;
 }
 
 }

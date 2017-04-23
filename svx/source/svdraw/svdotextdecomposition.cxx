@@ -95,13 +95,13 @@ namespace
         // BlockText (see there)
         basegfx::B2DRange                                           maClipRange;
 
-        DECL_LINK(decomposeContourTextPrimitive, DrawPortionInfo*, void);
-        DECL_LINK(decomposeBlockTextPrimitive, DrawPortionInfo*, void);
-        DECL_LINK(decomposeStretchTextPrimitive, DrawPortionInfo*, void);
+        DECL_LINK_TYPED(decomposeContourTextPrimitive, DrawPortionInfo*, void);
+        DECL_LINK_TYPED(decomposeBlockTextPrimitive, DrawPortionInfo*, void);
+        DECL_LINK_TYPED(decomposeStretchTextPrimitive, DrawPortionInfo*, void);
 
-        DECL_LINK(decomposeContourBulletPrimitive, DrawBulletInfo*, void);
-        DECL_LINK(decomposeBlockBulletPrimitive, DrawBulletInfo*, void);
-        DECL_LINK(decomposeStretchBulletPrimitive, DrawBulletInfo*, void);
+        DECL_LINK_TYPED(decomposeContourBulletPrimitive, DrawBulletInfo*, void);
+        DECL_LINK_TYPED(decomposeBlockBulletPrimitive, DrawBulletInfo*, void);
+        DECL_LINK_TYPED(decomposeStretchBulletPrimitive, DrawBulletInfo*, void);
 
         static bool impIsUnderlineAbove(const vcl::Font& rFont);
         void impCreateTextPortionPrimitive(const DrawPortionInfo& rInfo);
@@ -280,7 +280,7 @@ namespace
                 || LINESTYLE_NONE != rInfo.mrFont.GetUnderline()
                 || STRIKEOUT_NONE != rInfo.mrFont.GetStrikeout()
                 || FontEmphasisMark::NONE != (rInfo.mrFont.GetEmphasisMark() & FontEmphasisMark::Style)
-                || FontRelief::NONE != rInfo.mrFont.GetRelief()
+                || RELIEF_NONE != rInfo.mrFont.GetRelief()
                 || rInfo.mrFont.IsShadow()
                 || bWordLineMode);
 
@@ -327,8 +327,8 @@ namespace
 
                 switch(rInfo.mrFont.GetRelief())
                 {
-                    case FontRelief::Embossed : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
-                    case FontRelief::Engraved : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
+                    case RELIEF_EMBOSSED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_EMBOSSED; break;
+                    case RELIEF_ENGRAVED : eTextRelief = drawinglayer::primitive2d::TEXT_RELIEF_ENGRAVED; break;
                     default : break; // RELIEF_NONE, FontRelief_FORCE_EQUAL_SIZE
                 }
 
@@ -564,7 +564,7 @@ namespace
         maTextPortionPrimitives.push_back(pNewPrimitive);
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeContourTextPrimitive, DrawPortionInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeContourTextPrimitive, DrawPortionInfo*, pInfo, void)
     {
         // for contour text, ignore (clip away) all portions which are below
         // the visible area given by maScale
@@ -574,7 +574,7 @@ namespace
         }
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeBlockTextPrimitive, DrawPortionInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeBlockTextPrimitive, DrawPortionInfo*, pInfo, void)
     {
         if(pInfo)
         {
@@ -619,7 +619,7 @@ namespace
         }
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeStretchTextPrimitive, DrawPortionInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeStretchTextPrimitive, DrawPortionInfo*, pInfo, void)
     {
         if(pInfo)
         {
@@ -627,7 +627,7 @@ namespace
         }
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeContourBulletPrimitive, DrawBulletInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeContourBulletPrimitive, DrawBulletInfo*, pInfo, void)
     {
         if(pInfo)
         {
@@ -635,7 +635,7 @@ namespace
         }
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeBlockBulletPrimitive, DrawBulletInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeBlockBulletPrimitive, DrawBulletInfo*, pInfo, void)
     {
         if(pInfo)
         {
@@ -643,7 +643,7 @@ namespace
         }
     }
 
-    IMPL_LINK(impTextBreakupHandler, decomposeStretchBulletPrimitive, DrawBulletInfo*, pInfo, void)
+    IMPL_LINK_TYPED(impTextBreakupHandler, decomposeStretchBulletPrimitive, DrawBulletInfo*, pInfo, void)
     {
         if(pInfo)
         {
@@ -687,7 +687,6 @@ void SdrTextObj::impDecomposeContourTextPrimitive(
     aPolyPolygon.transform(basegfx::tools::createScaleB2DHomMatrix(fabs(aScale.getX()), fabs(aScale.getY())));
 
     // prepare outliner
-    SolarMutexGuard aSolarGuard;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
     const Size aNullSize;
     rOutliner.SetPaperSize(aNullSize);
@@ -739,7 +738,6 @@ void SdrTextObj::impDecomposeAutoFitTextPrimitive(
 
     // prepare outliner
     const SfxItemSet& rTextItemSet = rSdrAutofitTextPrimitive.getSdrText()->GetItemSet();
-    SolarMutexGuard aSolarGuard;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
     SdrTextVertAdjust eVAdj = GetTextVerticalAdjust(rTextItemSet);
     SdrTextHorzAdjust eHAdj = GetTextHorizontalAdjust(rTextItemSet);
@@ -758,7 +756,7 @@ void SdrTextObj::impDecomposeAutoFitTextPrimitive(
     const sal_uInt32 nAnchorTextHeight(FRound(aAnchorTextRange.getHeight() + 1L));
     const OutlinerParaObject* pOutlinerParaObject = rSdrAutofitTextPrimitive.getSdrText()->GetOutlinerParaObject();
     OSL_ENSURE(pOutlinerParaObject, "impDecomposeBlockTextPrimitive used with no OutlinerParaObject (!)");
-    const bool bVerticalWriting(pOutlinerParaObject->IsVertical());
+    const bool bVerticalWritintg(pOutlinerParaObject->IsVertical());
     const Size aAnchorTextSize(Size(nAnchorTextWidth, nAnchorTextHeight));
 
     if((rSdrAutofitTextPrimitive.getWordWrap() || IsTextFrame()))
@@ -766,12 +764,12 @@ void SdrTextObj::impDecomposeAutoFitTextPrimitive(
         rOutliner.SetMaxAutoPaperSize(aAnchorTextSize);
     }
 
-    if(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWriting)
+    if(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWritintg)
     {
         rOutliner.SetMinAutoPaperSize(Size(nAnchorTextWidth, 0));
     }
 
-    if(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWriting)
+    if(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWritintg)
     {
         rOutliner.SetMinAutoPaperSize(Size(0, nAnchorTextHeight));
     }
@@ -779,7 +777,7 @@ void SdrTextObj::impDecomposeAutoFitTextPrimitive(
     rOutliner.SetPaperSize(aNullSize);
     rOutliner.SetUpdateMode(true);
     rOutliner.SetText(*pOutlinerParaObject);
-    ImpAutoFitText(rOutliner,aAnchorTextSize,bVerticalWriting);
+    ImpAutoFitText(rOutliner,aAnchorTextSize,bVerticalWritintg);
 
     // set visualizing page at Outliner; needed e.g. for PageNumberField decomposition
     rOutliner.setVisualizedPage(GetSdrPageFromXDrawPage(aViewInformation.getVisualizedPage()));
@@ -829,7 +827,7 @@ void SdrTextObj::impDecomposeAutoFitTextPrimitive(
     // translate relative to given primitive to get same rotation and shear
     // as the master shape we are working on. For vertical, use the top-right
     // corner
-    const double fStartInX(bVerticalWriting ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
+    const double fStartInX(bVerticalWritintg ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
     aNewTransformA.translate(fStartInX, aAdjustTranslate.getY());
 
     // mirroring. We are now in aAnchorTextRange sizes. When mirroring in X and Y,
@@ -874,7 +872,6 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
 
     // prepare outliner
     const bool bIsCell(rSdrBlockTextPrimitive.getCellText());
-    SolarMutexGuard aSolarGuard;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
     SdrTextHorzAdjust eHAdj = rSdrBlockTextPrimitive.getSdrTextHorzAdjust();
     SdrTextVertAdjust eVAdj = rSdrBlockTextPrimitive.getSdrTextVertAdjust();
@@ -921,7 +918,7 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
     // add one to rage sizes to get back to the old Rectangle and outliner measurements
     const sal_uInt32 nAnchorTextWidth(FRound(aAnchorTextRange.getWidth() + 1L));
     const sal_uInt32 nAnchorTextHeight(FRound(aAnchorTextRange.getHeight() + 1L));
-    const bool bVerticalWriting(rSdrBlockTextPrimitive.getOutlinerParaObject().IsVertical());
+    const bool bVerticalWritintg(rSdrBlockTextPrimitive.getOutlinerParaObject().IsVertical());
     const Size aAnchorTextSize(Size(nAnchorTextWidth, nAnchorTextHeight));
 
     if(bIsCell)
@@ -935,7 +932,7 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
         // #i106214# This was not completely correct; to still measure the real
         // text height to allow vertical adjust (and vice versa for VerticalWritintg)
         // only one aspect has to be set, but the other one to zero
-        if(bVerticalWriting)
+        if(bVerticalWritintg)
         {
             // measure the horizontal text size
             rOutliner.SetMinAutoPaperSize(Size(0, aAnchorTextSize.Height()));
@@ -953,8 +950,8 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
     else
     {
         // check if block text is used (only one of them can be true)
-        const bool bHorizontalIsBlock(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWriting);
-        const bool bVerticalIsBlock(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWriting);
+        const bool bHorizontalIsBlock(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWritintg);
+        const bool bVerticalIsBlock(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWritintg);
 
         // set minimal paper size horizontally/vertically if needed
         if(bHorizontalIsBlock)
@@ -976,24 +973,14 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
             // 'measurement' of the real size of block text would not work
             Size aMaxAutoPaperSize(aAnchorTextSize);
 
-            // Usual processing - always grow in one of directions
-            bool bAllowGrowVertical = !bVerticalWriting;
-            bool bAllowGrowHorizontal = bVerticalWriting;
-            // Compatibility mode for tdf#99729
-            if (this->pModel->IsAnchoredTextOverflowLegacy())
+            if(bHorizontalIsBlock)
             {
-                bAllowGrowVertical = bHorizontalIsBlock;
-                bAllowGrowHorizontal = bVerticalIsBlock;
-            }
-
-            if (bAllowGrowVertical)
-            {
-                // allow to grow vertical for horizontal texts
+                // allow to grow vertical for horizontal blocks
                 aMaxAutoPaperSize.setHeight(1000000);
             }
-            else if (bAllowGrowHorizontal)
+            else if(bVerticalIsBlock)
             {
-                // allow to grow horizontal for vertical texts
+                // allow to grow horizontal for vertical blocks
                 aMaxAutoPaperSize.setWidth(1000000);
             }
 
@@ -1017,7 +1004,7 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
     // formatted to the left edge (or top edge when vertical) of the draw object.
     if(!IsTextFrame() && !bIsCell)
     {
-        if(aAnchorTextRange.getWidth() < aOutlinerScale.getX() && !bVerticalWriting)
+        if(aAnchorTextRange.getWidth() < aOutlinerScale.getX() && !bVerticalWritintg)
         {
             // Horizontal case here. Correct only if eHAdj == SDRTEXTHORZADJUST_BLOCK,
             // else the alignment is wanted.
@@ -1026,15 +1013,15 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
                 SvxAdjust eAdjust = static_cast<const SvxAdjustItem&>(GetObjectItemSet().Get(EE_PARA_JUST)).GetAdjust();
                 switch(eAdjust)
                 {
-                    case SvxAdjust::Left:   eHAdj = SDRTEXTHORZADJUST_LEFT; break;
-                    case SvxAdjust::Right:  eHAdj = SDRTEXTHORZADJUST_RIGHT; break;
-                    case SvxAdjust::Center: eHAdj = SDRTEXTHORZADJUST_CENTER; break;
+                    case SVX_ADJUST_LEFT:   eHAdj = SDRTEXTHORZADJUST_LEFT; break;
+                    case SVX_ADJUST_RIGHT:  eHAdj = SDRTEXTHORZADJUST_RIGHT; break;
+                    case SVX_ADJUST_CENTER: eHAdj = SDRTEXTHORZADJUST_CENTER; break;
                     default: break;
                 }
             }
         }
 
-        if(aAnchorTextRange.getHeight() < aOutlinerScale.getY() && bVerticalWriting)
+        if(aAnchorTextRange.getHeight() < aOutlinerScale.getY() && bVerticalWritintg)
         {
             // Vertical case here. Correct only if eHAdj == SDRTEXTVERTADJUST_BLOCK,
             // else the alignment is wanted.
@@ -1082,7 +1069,7 @@ void SdrTextObj::impDecomposeBlockTextPrimitive(
     // Translate relative to given primitive to get same rotation and shear
     // as the master shape we are working on. For vertical, use the top-right
     // corner
-    const double fStartInX(bVerticalWriting ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
+    const double fStartInX(bVerticalWritintg ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
     const basegfx::B2DTuple aAdjOffset(fStartInX, aAdjustTranslate.getY());
     basegfx::B2DHomMatrix aNewTransformA(basegfx::tools::createTranslateB2DHomMatrix(aAdjOffset.getX(), aAdjOffset.getY()));
 
@@ -1133,7 +1120,6 @@ void SdrTextObj::impDecomposeStretchTextPrimitive(
     aAnchorTextRange.expand(aTranslate + aScale);
 
     // prepare outliner
-    SolarMutexGuard aSolarGuard;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
     const EEControlBits nOriginalControlWord(rOutliner.GetControlWord());
     const Size aNullSize;
@@ -1205,7 +1191,7 @@ void SdrTextObj::impDecomposeStretchTextPrimitive(
 
 void SdrTextObj::impGetBlinkTextTiming(drawinglayer::animation::AnimationEntryList& rAnimList) const
 {
-    if(SdrTextAniKind::Blink == GetTextAniKind())
+    if(SDRTEXTANI_BLINK == GetTextAniKind())
     {
         // get values
         const SfxItemSet& rSet = GetObjectItemSet();
@@ -1368,7 +1354,7 @@ void SdrTextObj::impGetScrollTextTiming(drawinglayer::animation::AnimationEntryL
 {
     const SdrTextAniKind eAniKind(GetTextAniKind());
 
-    if(SdrTextAniKind::Scroll == eAniKind || SdrTextAniKind::Alternate == eAniKind || SdrTextAniKind::Slide == eAniKind)
+    if(SDRTEXTANI_SCROLL == eAniKind || SDRTEXTANI_ALTERNATE == eAniKind || SDRTEXTANI_SLIDE == eAniKind)
     {
         // get data. Goal is to calculate fTimeFullPath which is the time needed to
         // move animation from (0.0) to (1.0) state
@@ -1376,7 +1362,7 @@ void SdrTextObj::impGetScrollTextTiming(drawinglayer::animation::AnimationEntryL
         double fAnimationDelay((double)static_cast<const SdrTextAniDelayItem&>(rSet.Get(SDRATTR_TEXT_ANIDELAY)).GetValue());
         double fSingleStepWidth((double)static_cast<const SdrTextAniAmountItem&>(rSet.Get(SDRATTR_TEXT_ANIAMOUNT)).GetValue());
         const SdrTextAniDirection eDirection(GetTextAniDirection());
-        const bool bForward(SdrTextAniDirection::Right == eDirection || SdrTextAniDirection::Down == eDirection);
+        const bool bForward(SDRTEXTANI_RIGHT == eDirection || SDRTEXTANI_DOWN == eDirection);
 
         if(basegfx::fTools::equalZero(fAnimationDelay))
         {
@@ -1411,23 +1397,23 @@ void SdrTextObj::impGetScrollTextTiming(drawinglayer::animation::AnimationEntryL
 
         switch(eAniKind)
         {
-            case SdrTextAniKind::Scroll :
+            case SDRTEXTANI_SCROLL :
             {
                 impCreateScrollTiming(rSet, rAnimList, bForward, fTimeFullPath, fAnimationDelay);
                 break;
             }
-            case SdrTextAniKind::Alternate :
+            case SDRTEXTANI_ALTERNATE :
             {
                 double fRelativeTextLength(fTextLength / (fFrameLength + fTextLength));
                 impCreateAlternateTiming(rSet, rAnimList, fRelativeTextLength, bForward, fTimeFullPath, fAnimationDelay);
                 break;
             }
-            case SdrTextAniKind::Slide :
+            case SDRTEXTANI_SLIDE :
             {
                 impCreateSlideTiming(rSet, rAnimList, bForward, fTimeFullPath, fAnimationDelay);
                 break;
             }
-            default : break; // SdrTextAniKind::NONE, SdrTextAniKind::Blink
+            default : break; // SDRTEXTANI_NONE, SDRTEXTANI_BLINK
         }
     }
 }
@@ -1493,7 +1479,6 @@ void SdrTextObj::impDecomposeChainedTextPrimitive(
 
     // prepare outliner
     const SfxItemSet& rTextItemSet = rSdrChainedTextPrimitive.getSdrText()->GetItemSet();
-    SolarMutexGuard aSolarGuard;
     SdrOutliner& rOutliner = ImpGetDrawOutliner();
 
     SdrTextVertAdjust eVAdj = GetTextVerticalAdjust(rTextItemSet);
@@ -1516,7 +1501,7 @@ void SdrTextObj::impDecomposeChainedTextPrimitive(
     const OutlinerParaObject* pOutlinerParaObject = rSdrChainedTextPrimitive.getSdrText()->GetOutlinerParaObject();
     OSL_ENSURE(pOutlinerParaObject, "impDecomposeBlockTextPrimitive used with no OutlinerParaObject (!)");
 
-    const bool bVerticalWriting(pOutlinerParaObject->IsVertical());
+    const bool bVerticalWritintg(pOutlinerParaObject->IsVertical());
     const Size aAnchorTextSize(Size(nAnchorTextWidth, nAnchorTextHeight));
 
     if(IsTextFrame())
@@ -1524,12 +1509,12 @@ void SdrTextObj::impDecomposeChainedTextPrimitive(
         rOutliner.SetMaxAutoPaperSize(aAnchorTextSize);
     }
 
-    if(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWriting)
+    if(SDRTEXTHORZADJUST_BLOCK == eHAdj && !bVerticalWritintg)
     {
         rOutliner.SetMinAutoPaperSize(Size(nAnchorTextWidth, 0));
     }
 
-    if(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWriting)
+    if(SDRTEXTVERTADJUST_BLOCK == eVAdj && bVerticalWritintg)
     {
         rOutliner.SetMinAutoPaperSize(Size(0, nAnchorTextHeight));
     }
@@ -1593,7 +1578,7 @@ void SdrTextObj::impDecomposeChainedTextPrimitive(
     // translate relative to given primitive to get same rotation and shear
     // as the master shape we are working on. For vertical, use the top-right
     // corner
-    const double fStartInX(bVerticalWriting ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
+    const double fStartInX(bVerticalWritintg ? aAdjustTranslate.getX() + aOutlinerScale.getX() : aAdjustTranslate.getX());
     aNewTransformA.translate(fStartInX, aAdjustTranslate.getY());
 
     // mirroring. We are now in aAnchorTextRange sizes. When mirroring in X and Y,

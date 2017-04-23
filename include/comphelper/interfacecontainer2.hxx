@@ -126,13 +126,13 @@ class COMPHELPER_DLLPUBLIC OInterfaceContainerHelper2
 {
 public:
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     /**

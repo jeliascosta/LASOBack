@@ -20,7 +20,7 @@
 #define INCLUDED_STARMATH_INC_FORMAT_HXX
 
 
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/SfxBroadcaster.hxx>
 #include "utility.hxx"
 #include <types.hxx>
@@ -82,6 +82,9 @@
 #define DIS_END                 23
 
 
+// to be broadcastet on format changes:
+#define HINT_FORMATCHANGED  10003
+
 enum SmHorAlign { AlignLeft, AlignCenter, AlignRight };
 
 OUString GetDefaultFontName( LanguageType nLang, sal_uInt16 nIdent );
@@ -137,7 +140,7 @@ public:
 
     void RequestApplyChanges()
     {
-        Broadcast(SfxHint(SfxHintId::MathFormatChanged));
+        Broadcast(SfxSimpleHint(HINT_FORMATCHANGED));
     }
 
 };

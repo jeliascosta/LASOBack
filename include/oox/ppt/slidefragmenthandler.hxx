@@ -20,17 +20,14 @@
 #ifndef INCLUDED_OOX_PPT_SLIDEFRAGMENTHANDLER_HXX
 #define INCLUDED_OOX_PPT_SLIDEFRAGMENTHANDLER_HXX
 
-#include <vector>
-
-#include <oox/core/contexthandler.hxx>
-#include <oox/core/fragmenthandler2.hxx>
+#include <com/sun/star/drawing/XDrawPage.hpp>
 #include <oox/helper/propertymap.hxx>
+#include <oox/core/fragmenthandler2.hxx>
 #include <oox/ppt/slidepersist.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 
-namespace oox { class AttributeList; }
-namespace oox { namespace core { class XmlFilterBase; } }
+#include <stack>
+#include <vector>
+#include <map>
 
 namespace oox { namespace ppt {
 
@@ -38,7 +35,7 @@ class SlideFragmentHandler : public ::oox::core::FragmentHandler2
 {
 public:
     SlideFragmentHandler( ::oox::core::XmlFilterBase& rFilter, const OUString& rFragmentPath, SlidePersistPtr pPersistPtr, const ShapeLocation eShapeLocation );
-    virtual ~SlideFragmentHandler() override;
+    virtual ~SlideFragmentHandler();
 
     virtual void finalizeImport() override;
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;

@@ -28,6 +28,7 @@
 #include <vcl/group.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/timer.hxx>
+#include <svtools/stdctrl.hxx>
 
 class Printer;
 class QueueInfo;
@@ -49,20 +50,20 @@ private:
 
     SVT_DLLPRIVATE void         ImplSetInfo();
 
-                    DECL_DLLPRIVATE_LINK( ImplPropertiesHdl, Button*, void );
-                    DECL_DLLPRIVATE_LINK( ImplChangePrinterHdl, ListBox&, void );
-                    DECL_DLLPRIVATE_LINK( ImplStatusHdl, Timer*, void );
+                    DECL_DLLPRIVATE_LINK_TYPED( ImplPropertiesHdl, Button*, void );
+                    DECL_DLLPRIVATE_LINK_TYPED( ImplChangePrinterHdl, ListBox&, void );
+                    DECL_DLLPRIVATE_LINK_TYPED( ImplStatusHdl, Timer*, void );
 
 public:
                     PrinterSetupDialog( vcl::Window* pWindow );
-    virtual         ~PrinterSetupDialog() override;
+    virtual         ~PrinterSetupDialog();
     virtual void    dispose() override;
 
     void            SetPrinter( Printer* pNewPrinter ) { mpPrinter = pNewPrinter; }
     Printer*        GetPrinter() const { return mpPrinter; }
 
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
 
     virtual short   Execute() override;
 

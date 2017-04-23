@@ -37,29 +37,23 @@ namespace connectivity
     {
 
         class OOperand;
-        typedef std::stack<OOperand*> OCodeStack;
+        typedef ::std::stack<OOperand*> OCodeStack;
+        class OBoolOperator;
+        typedef ::std::map<sal_Int32,sal_Int32> OEvaluateSet;
 
         class OOO_DLLPUBLIC_FILE OCode
         {
         public:
-            //virtual dtor to allow this to be the root of the class hierarchy
+            OCode();
             virtual ~OCode();
-            //but that disables the default move ctor
-            OCode(OCode&&) = default;
-            //but that disables the rest of default ctors
-            OCode(const OCode&) = default;
-            OCode() = default;
-            //and same issue for the assignment operators
-            OCode& operator=(const OCode&) = default;
-            OCode& operator=(OCode&&) = default;
 
-            static void * SAL_CALL operator new( size_t nSize )
+            inline static void * SAL_CALL operator new( size_t nSize )
                 { return ::rtl_allocateMemory( nSize ); }
-            static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
+            inline static void * SAL_CALL operator new( size_t /*nSize*/,void* _pHint )
                 { return _pHint; }
-            static void SAL_CALL operator delete( void * pMem )
+            inline static void SAL_CALL operator delete( void * pMem )
                 { ::rtl_freeMemory( pMem ); }
-            static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
+            inline static void SAL_CALL operator delete( void * /*pMem*/,void* /*_pHint*/ )
                 {  }
 
         };
@@ -71,8 +65,8 @@ namespace connectivity
         protected:
             sal_Int32 m_eDBType;
 
-            OOperand(sal_Int32 _rType) : m_eDBType(_rType){}
-            OOperand() : m_eDBType(css::sdbc::DataType::OTHER){}
+            OOperand(const sal_Int32& _rType) : m_eDBType(_rType){}
+            OOperand() : m_eDBType(::com::sun::star::sdbc::DataType::OTHER){}
 
         public:
             virtual const ORowSetValue& getValue() const = 0;
@@ -102,7 +96,7 @@ namespace connectivity
         {
         public:
             OOperandAttr(sal_uInt16 _nPos,
-                         const css::uno::Reference< css::beans::XPropertySet>& _xColumn);
+                         const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet>& _xColumn);
 
         };
 
@@ -158,7 +152,7 @@ namespace connectivity
         class OOperandResultBOOL : public OOperandResult
         {
         public:
-            OOperandResultBOOL(bool bResult) : OOperandResult(css::sdbc::DataType::BIT)
+            OOperandResultBOOL(bool bResult) : OOperandResult(::com::sun::star::sdbc::DataType::BIT)
             {
                 m_aValue = bResult ? 1.0 : 0.0;
                 m_aValue.setBound(true);
@@ -168,7 +162,7 @@ namespace connectivity
         class OOperandResultNUM : public OOperandResult
         {
         public:
-            OOperandResultNUM(double fNum) : OOperandResult(css::sdbc::DataType::DOUBLE)
+            OOperandResultNUM(double fNum) : OOperandResult(::com::sun::star::sdbc::DataType::DOUBLE)
             {
                 m_aValue = fNum;
                 m_aValue.setBound(true);
@@ -206,7 +200,7 @@ namespace connectivity
 
         protected:
             virtual void Exec(OCodeStack&) override;
-            virtual bool operate(const OOperand*, const OOperand*) const override;
+            virtual bool operate(const OOperand*, const OOperand* = nullptr) const override;
         };
 
         class OOp_AND : public OBoolOperator
@@ -229,13 +223,13 @@ namespace connectivity
         public:
         public:
             virtual void Exec(OCodeStack&) override;
-            virtual bool operate(const OOperand*, const OOperand*) const override;
+            virtual bool operate(const OOperand*, const OOperand* = nullptr) const override;
         };
 
         class OOO_DLLPUBLIC_FILE OOp_ISNOTNULL : public OOp_ISNULL
         {
         public:
-            virtual bool operate(const OOperand*, const OOperand*) const override;
+            virtual bool operate(const OOperand*, const OOperand* = nullptr) const override;
         };
 
         class OOO_DLLPUBLIC_FILE OOp_LIKE : public OBoolOperator
@@ -267,7 +261,7 @@ namespace connectivity
             OOp_COMPARE(sal_Int32 aPType)
                          :aPredicateType(aPType) {}
 
-            sal_Int32 getPredicateType() const { return aPredicateType; }
+            inline sal_Int32 getPredicateType() const { return aPredicateType; }
             virtual bool operate(const OOperand*, const OOperand*) const override;
         };
 
@@ -319,7 +313,7 @@ namespace connectivity
 
 
         protected:
-            virtual ORowSetValue operate(const std::vector<ORowSetValue>& lhs) const = 0;
+            virtual ORowSetValue operate(const ::std::vector<ORowSetValue>& lhs) const = 0;
         };
 
         class OBinaryOperator : public OOperator

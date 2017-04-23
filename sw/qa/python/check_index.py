@@ -1,14 +1,6 @@
-#! /usr/bin/env python
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
-#
-# This file is part of the LibreOffice project.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
 import unittest
 import unohelper
+import os
 from org.libreoffice.unotest import UnoInProcess
 from com.sun.star.text.ControlCharacter import PARAGRAPH_BREAK
 from com.sun.star.util import XRefreshListener
@@ -101,7 +93,5 @@ class CheckIndex(unittest.TestCase):
 
     # close the document
         xDoc.dispose()
-
-
 if __name__ == "__main__":
     unittest.main()

@@ -50,7 +50,10 @@ $(eval $(call gb_CppunitTest_set_include,sw_uiwriter,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sw_uiwriter))
+$(eval $(call gb_CppunitTest_use_api,sw_uiwriter,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_uiwriter))
 $(eval $(call gb_CppunitTest_use_vcl,sw_uiwriter))

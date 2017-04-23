@@ -29,28 +29,39 @@ class CandleStickChartType : public ChartType
 public:
     explicit CandleStickChartType(
         css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~CandleStickChartType() override;
+    virtual ~CandleStickChartType();
 
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString >
+        getSupportedServiceNames_Static();
 
 protected:
     explicit CandleStickChartType( const CandleStickChartType & rOther );
 
     // ____ XChartType ____
-    virtual OUString SAL_CALL getChartType() override;
+    virtual OUString SAL_CALL getChartType()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedMandatoryRoles() override;
+        getSupportedMandatoryRoles()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedOptionalRoles() override;
-    virtual OUString SAL_CALL getRoleOfSequenceForSeriesLabel() override;
+        getSupportedOptionalRoles()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getRoleOfSequenceForSeriesLabel()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw(css::beans::UnknownPropertyException) override;
 
     // ____ OPropertySet ____
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
@@ -58,14 +69,17 @@ protected:
     // ____ OPropertySet ____
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast
         ( sal_Int32 nHandle,
-          const css::uno::Any& rValue ) override;
+          const css::uno::Any& rValue )
+        throw (css::uno::Exception, std::exception) override;
 
     // ____ XPropertySet ____
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } //  namespace chart

@@ -46,7 +46,7 @@ sdbcx::ObjectType ODbaseColumns::createObject(const OUString& _rName)
 }
 
 
-void ODbaseColumns::impl_refresh()
+void ODbaseColumns::impl_refresh() throw(RuntimeException)
 {
     m_pTable->refreshColumns();
 }

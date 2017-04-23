@@ -17,13 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessibletabcontrol.hxx>
-#include <standard/vclxaccessibletabpage.hxx>
+#include <accessibility/standard/vclxaccessibletabcontrol.hxx>
+#include <accessibility/standard/vclxaccessibletabpage.hxx>
 
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <vcl/tabctrl.hxx>
 #include <vcl/tabpage.hxx>
@@ -167,19 +166,19 @@ void VCLXAccessibleTabControl::ProcessWindowEvent( const VclWindowEvent& rVclWin
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::TabpageActivate:
-        case VclEventId::TabpageDeactivate:
+        case VCLEVENT_TABPAGE_ACTIVATE:
+        case VCLEVENT_TABPAGE_DEACTIVATE:
         {
             if ( m_pTabControl )
             {
                 sal_uInt16 nPageId = (sal_uInt16)reinterpret_cast<sal_IntPtr>(rVclWindowEvent.GetData());
                 sal_uInt16 nPagePos = m_pTabControl->GetPagePos( nPageId );
                 UpdateFocused();
-                UpdateSelected( nPagePos, rVclWindowEvent.GetId() == VclEventId::TabpageActivate );
+                UpdateSelected( nPagePos, rVclWindowEvent.GetId() == VCLEVENT_TABPAGE_ACTIVATE );
             }
         }
         break;
-        case VclEventId::TabpagePageTextChanged:
+        case VCLEVENT_TABPAGE_PAGETEXTCHANGED:
         {
             if ( m_pTabControl )
             {
@@ -189,7 +188,7 @@ void VCLXAccessibleTabControl::ProcessWindowEvent( const VclWindowEvent& rVclWin
             }
         }
         break;
-        case VclEventId::TabpageInserted:
+        case VCLEVENT_TABPAGE_INSERTED:
         {
             if ( m_pTabControl )
             {
@@ -199,7 +198,7 @@ void VCLXAccessibleTabControl::ProcessWindowEvent( const VclWindowEvent& rVclWin
             }
         }
         break;
-        case VclEventId::TabpageRemoved:
+        case VCLEVENT_TABPAGE_REMOVED:
         {
             if ( m_pTabControl )
             {
@@ -220,19 +219,19 @@ void VCLXAccessibleTabControl::ProcessWindowEvent( const VclWindowEvent& rVclWin
             }
         }
         break;
-        case VclEventId::TabpageRemovedAll:
+        case VCLEVENT_TABPAGE_REMOVEDALL:
         {
             for ( sal_Int32 i = m_aAccessibleChildren.size() - 1; i >= 0; --i )
                 RemoveChild( i );
         }
         break;
-        case VclEventId::WindowGetFocus:
-        case VclEventId::WindowLoseFocus:
+        case VCLEVENT_WINDOW_GETFOCUS:
+        case VCLEVENT_WINDOW_LOSEFOCUS:
         {
             UpdateFocused();
         }
         break;
-        case VclEventId::ObjectDying:
+        case VCLEVENT_OBJECT_DYING:
         {
             if ( m_pTabControl )
             {
@@ -261,20 +260,20 @@ void VCLXAccessibleTabControl::ProcessWindowChildEvent( const VclWindowEvent& rV
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::WindowShow:
-        case VclEventId::WindowHide:
+        case VCLEVENT_WINDOW_SHOW:
+        case VCLEVENT_WINDOW_HIDE:
         {
             if ( m_pTabControl )
             {
                 vcl::Window* pChild = static_cast< vcl::Window* >( rVclWindowEvent.GetData() );
-                if ( pChild && pChild->GetType() == WindowType::TABPAGE )
+                if ( pChild && pChild->GetType() == WINDOW_TABPAGE )
                 {
                     for ( sal_Int32 i = 0, nCount = m_pTabControl->GetPageCount(); i < nCount; ++i )
                     {
                         sal_uInt16 nPageId = m_pTabControl->GetPageId( (sal_uInt16)i );
                         TabPage* pTabPage = m_pTabControl->GetTabPage( nPageId );
                         if ( pTabPage == static_cast<TabPage*>(pChild) )
-                            UpdateTabPage( i, rVclWindowEvent.GetId() == VclEventId::WindowShow );
+                            UpdateTabPage( i, rVclWindowEvent.GetId() == VCLEVENT_WINDOW_SHOW );
                     }
                 }
             }
@@ -333,22 +332,23 @@ void VCLXAccessibleTabControl::disposing()
 // XServiceInfo
 
 
-OUString VCLXAccessibleTabControl::getImplementationName()
+OUString VCLXAccessibleTabControl::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleTabControl" );
 }
 
 
-Sequence< OUString > VCLXAccessibleTabControl::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleTabControl::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleTabControl" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleTabControl" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int32 VCLXAccessibleTabControl::getAccessibleChildCount()
+sal_Int32 VCLXAccessibleTabControl::getAccessibleChildCount() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -356,7 +356,7 @@ sal_Int32 VCLXAccessibleTabControl::getAccessibleChildCount()
 }
 
 
-Reference< XAccessible > VCLXAccessibleTabControl::getAccessibleChild( sal_Int32 i )
+Reference< XAccessible > VCLXAccessibleTabControl::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -380,7 +380,7 @@ Reference< XAccessible > VCLXAccessibleTabControl::getAccessibleChild( sal_Int32
 }
 
 
-sal_Int16 VCLXAccessibleTabControl::getAccessibleRole(  )
+sal_Int16 VCLXAccessibleTabControl::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -388,7 +388,7 @@ sal_Int16 VCLXAccessibleTabControl::getAccessibleRole(  )
 }
 
 
-OUString VCLXAccessibleTabControl::getAccessibleName(  )
+OUString VCLXAccessibleTabControl::getAccessibleName(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -399,7 +399,7 @@ OUString VCLXAccessibleTabControl::getAccessibleName(  )
 // XAccessibleSelection
 
 
-void VCLXAccessibleTabControl::selectAccessibleChild( sal_Int32 nChildIndex )
+void VCLXAccessibleTabControl::selectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -411,7 +411,7 @@ void VCLXAccessibleTabControl::selectAccessibleChild( sal_Int32 nChildIndex )
 }
 
 
-sal_Bool VCLXAccessibleTabControl::isAccessibleChildSelected( sal_Int32 nChildIndex )
+sal_Bool VCLXAccessibleTabControl::isAccessibleChildSelected( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -426,13 +426,13 @@ sal_Bool VCLXAccessibleTabControl::isAccessibleChildSelected( sal_Int32 nChildIn
 }
 
 
-void VCLXAccessibleTabControl::clearAccessibleSelection(  )
+void VCLXAccessibleTabControl::clearAccessibleSelection(  ) throw (RuntimeException, std::exception)
 {
     // This method makes no sense in a tab control, and so does nothing.
 }
 
 
-void VCLXAccessibleTabControl::selectAllAccessibleChildren(  )
+void VCLXAccessibleTabControl::selectAllAccessibleChildren(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -440,7 +440,7 @@ void VCLXAccessibleTabControl::selectAllAccessibleChildren(  )
 }
 
 
-sal_Int32 VCLXAccessibleTabControl::getSelectedAccessibleChildCount(  )
+sal_Int32 VCLXAccessibleTabControl::getSelectedAccessibleChildCount(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -448,7 +448,7 @@ sal_Int32 VCLXAccessibleTabControl::getSelectedAccessibleChildCount(  )
 }
 
 
-Reference< XAccessible > VCLXAccessibleTabControl::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex )
+Reference< XAccessible > VCLXAccessibleTabControl::getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -470,7 +470,7 @@ Reference< XAccessible > VCLXAccessibleTabControl::getSelectedAccessibleChild( s
 }
 
 
-void VCLXAccessibleTabControl::deselectAccessibleChild( sal_Int32 nChildIndex )
+void VCLXAccessibleTabControl::deselectAccessibleChild( sal_Int32 nChildIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

@@ -58,7 +58,7 @@ struct ConnectedComponents
     {}
 
     ComponentList   aComponentList;
-    tools::Rectangle       aBounds;
+    Rectangle       aBounds;
     Color           aBgColor;
     bool            bIsSpecial;
     bool            bIsFullyTransparent;
@@ -125,9 +125,9 @@ bool DoesActionHandleTransparency( const MetaAction& rAct )
 /** Check whether rCurrRect rectangle fully covers io_rPrevRect - if
     yes, return true and update o_rBgColor
  */
-bool checkRect( tools::Rectangle&       io_rPrevRect,
+bool checkRect( Rectangle&       io_rPrevRect,
                        Color&           o_rBgColor,
-                       const tools::Rectangle& rCurrRect,
+                       const Rectangle& rCurrRect,
                        OutputDevice&    rMapModeVDev )
 {
     // shape needs to fully cover previous content, and have uniform
@@ -169,15 +169,15 @@ void ImplConvertTransparentAction( GDIMetaFile&        o_rMtf,
 
             // assume white background for alpha blending
             Color aLineColor( rStateOutDev.GetLineColor() );
-            aLineColor.SetRed( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetRed()) / 100 ) );
-            aLineColor.SetGreen( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetGreen()) / 100 ) );
-            aLineColor.SetBlue( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aLineColor.GetBlue()) / 100 ) );
+            aLineColor.SetRed( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetRed()) / 100L ) );
+            aLineColor.SetGreen( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetGreen()) / 100L ) );
+            aLineColor.SetBlue( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aLineColor.GetBlue()) / 100L ) );
             o_rMtf.AddAction( new MetaLineColorAction(aLineColor, true) );
 
             Color aFillColor( rStateOutDev.GetFillColor() );
-            aFillColor.SetRed( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetRed()) / 100 ) );
-            aFillColor.SetGreen( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetGreen()) / 100 ) );
-            aFillColor.SetBlue( static_cast<sal_uInt8>( (255*nTransparency + (100 - nTransparency)*aFillColor.GetBlue()) / 100 ) );
+            aFillColor.SetRed( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetRed()) / 100L ) );
+            aFillColor.SetGreen( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetGreen()) / 100L ) );
+            aFillColor.SetBlue( static_cast<sal_uInt8>( (255L*nTransparency + (100L - nTransparency)*aFillColor.GetBlue()) / 100L ) );
             o_rMtf.AddAction( new MetaFillColorAction(aFillColor, true) );
         }
 
@@ -215,7 +215,7 @@ void ImplConvertTransparentAction( GDIMetaFile&        o_rMtf,
         if( !aBmpEx.IsAlpha() )
         {
             // blend with mask
-            Bitmap::ScopedReadAccess pRA(aBmp);
+            BitmapReadAccess* pRA = aBmp.AcquireReadAccess();
 
             if( !pRA )
                 return; // what else should I do?
@@ -225,13 +225,13 @@ void ImplConvertTransparentAction( GDIMetaFile&        o_rMtf,
             if( pRA->HasPalette() )
                 aActualColor = pRA->GetBestPaletteColor( aBgColor ).operator Color();
 
-            pRA.reset();
+            Bitmap::ReleaseAccess(pRA);
 
             // did we get true white?
             if( aActualColor.GetColorError( aBgColor ) )
             {
                 // no, create truecolor bitmap, then
-                aBmp.Convert( BmpConversion::N24Bit );
+                aBmp.Convert( BMP_CONVERSION_24BIT );
 
                 // fill masked out areas white
                 aBmp.Replace( aBmpEx.GetMask(), aBgColor );
@@ -245,7 +245,7 @@ void ImplConvertTransparentAction( GDIMetaFile&        o_rMtf,
         else
         {
             // blend with alpha channel
-            aBmp.Convert( BmpConversion::N24Bit );
+            aBmp.Convert( BMP_CONVERSION_24BIT );
             aBmp.Blend(aBmpEx.GetAlpha(),aBgColor);
         }
 
@@ -393,24 +393,24 @@ bool ImplIsNotTransparent( const MetaAction& rAct, const OutputDevice& rOut )
 }
 
 // #i10613# Extracted from ImplCheckRect::ImplCreate
-tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevice& rOut )
+Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevice& rOut )
 {
-    tools::Rectangle aActionBounds;
+    Rectangle aActionBounds;
 
     switch( rAct.GetType() )
     {
         case MetaActionType::PIXEL:
-            aActionBounds = tools::Rectangle( static_cast<const MetaPixelAction&>(rAct).GetPoint(), Size( 1, 1 ) );
+            aActionBounds = Rectangle( static_cast<const MetaPixelAction&>(rAct).GetPoint(), Size( 1, 1 ) );
             break;
 
         case MetaActionType::POINT:
-            aActionBounds = tools::Rectangle( static_cast<const MetaPointAction&>(rAct).GetPoint(), Size( 1, 1 ) );
+            aActionBounds = Rectangle( static_cast<const MetaPointAction&>(rAct).GetPoint(), Size( 1, 1 ) );
             break;
 
         case MetaActionType::LINE:
         {
             const MetaLineAction& rMetaLineAction = static_cast<const MetaLineAction&>(rAct);
-            aActionBounds = tools::Rectangle( rMetaLineAction.GetStartPoint(),  rMetaLineAction.GetEndPoint() );
+            aActionBounds = Rectangle( rMetaLineAction.GetStartPoint(),  rMetaLineAction.GetEndPoint() );
             aActionBounds.Justify();
             const long nLineWidth(rMetaLineAction.GetLineInfo().GetWidth());
             if(nLineWidth)
@@ -436,7 +436,7 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
 
         case MetaActionType::ELLIPSE:
         {
-            const tools::Rectangle& rRect = static_cast<const MetaEllipseAction&>(rAct).GetRect();
+            const Rectangle& rRect = static_cast<const MetaEllipseAction&>(rAct).GetRect();
             aActionBounds = tools::Polygon( rRect.Center(),
                                             rRect.GetWidth() >> 1,
                                             rRect.GetHeight() >> 1 ).GetBoundRect();
@@ -446,19 +446,19 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
         case MetaActionType::ARC:
             aActionBounds = tools::Polygon( static_cast<const MetaArcAction&>(rAct).GetRect(),
                                             static_cast<const MetaArcAction&>(rAct).GetStartPoint(),
-                                            static_cast<const MetaArcAction&>(rAct).GetEndPoint(), PolyStyle::Arc ).GetBoundRect();
+                                            static_cast<const MetaArcAction&>(rAct).GetEndPoint(), POLY_ARC ).GetBoundRect();
             break;
 
         case MetaActionType::PIE:
             aActionBounds = tools::Polygon( static_cast<const MetaPieAction&>(rAct).GetRect(),
                                             static_cast<const MetaPieAction&>(rAct).GetStartPoint(),
-                                            static_cast<const MetaPieAction&>(rAct).GetEndPoint(), PolyStyle::Pie ).GetBoundRect();
+                                            static_cast<const MetaPieAction&>(rAct).GetEndPoint(), POLY_PIE ).GetBoundRect();
             break;
 
         case MetaActionType::CHORD:
             aActionBounds = tools::Polygon( static_cast<const MetaChordAction&>(rAct).GetRect(),
                                             static_cast<const MetaChordAction&>(rAct).GetStartPoint(),
-                                            static_cast<const MetaChordAction&>(rAct).GetEndPoint(), PolyStyle::Chord ).GetBoundRect();
+                                            static_cast<const MetaChordAction&>(rAct).GetEndPoint(), POLY_CHORD ).GetBoundRect();
             break;
 
         case MetaActionType::POLYLINE:
@@ -486,47 +486,47 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
             break;
 
         case MetaActionType::BMP:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpAction&>(rAct).GetPoint(),
                                        rOut.PixelToLogic( static_cast<const MetaBmpAction&>(rAct).GetBitmap().GetSizePixel() ) );
             break;
 
         case MetaActionType::BMPSCALE:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpScaleAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpScaleAction&>(rAct).GetPoint(),
                                        static_cast<const MetaBmpScaleAction&>(rAct).GetSize() );
             break;
 
         case MetaActionType::BMPSCALEPART:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpScalePartAction&>(rAct).GetDestPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpScalePartAction&>(rAct).GetDestPoint(),
                                        static_cast<const MetaBmpScalePartAction&>(rAct).GetDestSize() );
             break;
 
         case MetaActionType::BMPEX:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpExAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpExAction&>(rAct).GetPoint(),
                                        rOut.PixelToLogic( static_cast<const MetaBmpExAction&>(rAct).GetBitmapEx().GetSizePixel() ) );
             break;
 
         case MetaActionType::BMPEXSCALE:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpExScaleAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpExScaleAction&>(rAct).GetPoint(),
                                        static_cast<const MetaBmpExScaleAction&>(rAct).GetSize() );
             break;
 
         case MetaActionType::BMPEXSCALEPART:
-            aActionBounds = tools::Rectangle( static_cast<const MetaBmpExScalePartAction&>(rAct).GetDestPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaBmpExScalePartAction&>(rAct).GetDestPoint(),
                                        static_cast<const MetaBmpExScalePartAction&>(rAct).GetDestSize() );
             break;
 
         case MetaActionType::MASK:
-            aActionBounds = tools::Rectangle( static_cast<const MetaMaskAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaMaskAction&>(rAct).GetPoint(),
                                        rOut.PixelToLogic( static_cast<const MetaMaskAction&>(rAct).GetBitmap().GetSizePixel() ) );
             break;
 
         case MetaActionType::MASKSCALE:
-            aActionBounds = tools::Rectangle( static_cast<const MetaMaskScaleAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaMaskScaleAction&>(rAct).GetPoint(),
                                        static_cast<const MetaMaskScaleAction&>(rAct).GetSize() );
             break;
 
         case MetaActionType::MASKSCALEPART:
-            aActionBounds = tools::Rectangle( static_cast<const MetaMaskScalePartAction&>(rAct).GetDestPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaMaskScalePartAction&>(rAct).GetDestPoint(),
                                        static_cast<const MetaMaskScalePartAction&>(rAct).GetDestSize() );
             break;
 
@@ -551,12 +551,12 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
             break;
 
         case MetaActionType::FLOATTRANSPARENT:
-            aActionBounds = tools::Rectangle( static_cast<const MetaFloatTransparentAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaFloatTransparentAction&>(rAct).GetPoint(),
                                        static_cast<const MetaFloatTransparentAction&>(rAct).GetSize() );
             break;
 
         case MetaActionType::EPS:
-            aActionBounds = tools::Rectangle( static_cast<const MetaEPSAction&>(rAct).GetPoint(),
+            aActionBounds = Rectangle( static_cast<const MetaEPSAction&>(rAct).GetPoint(),
                                        static_cast<const MetaEPSAction&>(rAct).GetSize() );
             break;
 
@@ -591,7 +591,7 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
                                                          0, rTextAct.GetDXArray() );
                 if( pSalLayout )
                 {
-                    tools::Rectangle aBoundRect( const_cast<OutputDevice&>(rOut).ImplGetTextBoundRect( *pSalLayout ) );
+                    Rectangle aBoundRect( const_cast<OutputDevice&>(rOut).ImplGetTextBoundRect( *pSalLayout ) );
                     aActionBounds = rOut.PixelToLogic( aBoundRect );
                     pSalLayout->Release();
                 }
@@ -621,7 +621,7 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
                                                          rTextAct.GetWidth() );
                 if( pSalLayout )
                 {
-                    tools::Rectangle aBoundRect( const_cast<OutputDevice&>(rOut).ImplGetTextBoundRect( *pSalLayout ) );
+                    Rectangle aBoundRect( const_cast<OutputDevice&>(rOut).ImplGetTextBoundRect( *pSalLayout ) );
                     aActionBounds = rOut.PixelToLogic( aBoundRect );
                     pSalLayout->Release();
                 }
@@ -647,7 +647,7 @@ tools::Rectangle ImplCalcActionBounds( const MetaAction& rAct, const OutputDevic
             return rOut.LogicToPixel( aActionBounds );
     }
     else
-        return tools::Rectangle();
+        return Rectangle();
 }
 
 } // end anon namespace
@@ -667,9 +667,9 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
     if( ! bReduceTransparency || bTransparencyAutoMode )
     {
         // watch for transparent drawing actions
-        for( pCurrAct = const_cast<GDIMetaFile&>(rInMtf).FirstAction();
+        for( pCurrAct = ( (GDIMetaFile&) rInMtf ).FirstAction();
              pCurrAct && !bTransparent;
-             pCurrAct = const_cast<GDIMetaFile&>(rInMtf).NextAction() )
+             pCurrAct = ( (GDIMetaFile&) rInMtf ).NextAction() )
         {
             // #i10613# determine if the action is transparency capable
 
@@ -751,10 +751,10 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
                 Point aPageOffset = pThis->GetPageOffsetPixel();
                 aPageOffset = Point( 0, 0 ) - aPageOffset;
                 Size aSize  = pThis->GetPaperSizePixel();
-                aBackgroundComponent.aBounds = tools::Rectangle( aPageOffset, aSize );
+                aBackgroundComponent.aBounds = Rectangle( aPageOffset, aSize );
             }
             else
-                aBackgroundComponent.aBounds = tools::Rectangle( Point( 0, 0 ), GetOutputSizePixel() );
+                aBackgroundComponent.aBounds = Rectangle( Point( 0, 0 ), GetOutputSizePixel() );
         }
         while( pCurrAct && bStillBackground )
         {
@@ -876,10 +876,10 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
             pCurrAct->Execute( aMapModeVDev.get() );
 
             // cache bounds of current action
-            const tools::Rectangle aBBCurrAct( ImplCalcActionBounds(*pCurrAct, *aMapModeVDev.get()) );
+            const Rectangle aBBCurrAct( ImplCalcActionBounds(*pCurrAct, *aMapModeVDev.get()) );
 
             // accumulate collected bounds here, initialize with current action
-            tools::Rectangle                               aTotalBounds( aBBCurrAct ); // thus,
+            Rectangle                               aTotalBounds( aBBCurrAct ); // thus,
                                                                                 // aTotalComponents.aBounds
                                                                                 // is
                                                                                 // empty
@@ -1059,11 +1059,11 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
             // add aTotalComponents as a new entry to aCCList
             aCCList.push_back( aTotalComponents );
 
-            SAL_WARN_IF( aTotalComponents.aComponentList.empty(), "vcl",
+            DBG_ASSERT( !aTotalComponents.aComponentList.empty(),
                         "Printer::GetPreparedMetaFile empty component" );
-            SAL_WARN_IF( aTotalComponents.aBounds.IsEmpty() && (aTotalComponents.aComponentList.size() != 1), "vcl",
+            DBG_ASSERT( !aTotalComponents.aBounds.IsEmpty() || (aTotalComponents.aComponentList.size() == 1),
                         "Printer::GetPreparedMetaFile non-output generating actions must be solitary");
-            SAL_WARN_IF( aTotalComponents.bIsFullyTransparent && (aTotalComponents.aComponentList.size() != 1), "vcl",
+            DBG_ASSERT( !aTotalComponents.bIsFullyTransparent || (aTotalComponents.aComponentList.size() == 1),
                         "Printer::GetPreparedMetaFile fully transparent actions must be solitary");
         }
 
@@ -1111,7 +1111,7 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
         if( mpPDFWriter )
         {
             aTmpSize = mpPDFWriter->getCurPageSize();
-            aTmpSize = LogicToPixel( aTmpSize, MapMode( MapUnit::MapPoint ) );
+            aTmpSize = LogicToPixel( aTmpSize, MapMode( MAP_POINT ) );
 
             // also add error code to PDFWriter
             mpPDFWriter->insertError( vcl::PDFWriter::Warning_Transparency_Converted );
@@ -1123,7 +1123,7 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
             aPageOffset = Point( 0, 0 ) - aPageOffset;
             aTmpSize  = pThis->GetPaperSizePixel();
         }
-        const tools::Rectangle aOutputRect( aPageOffset, aTmpSize );
+        const Rectangle aOutputRect( aPageOffset, aTmpSize );
         bool bTiling = dynamic_cast<Printer*>(this) != nullptr;
 
         // iterate over all aCCList members and generate bitmaps for the special ones
@@ -1131,7 +1131,7 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
         {
             if( aCurr->bIsSpecial )
             {
-                tools::Rectangle aBoundRect( aCurr->aBounds );
+                Rectangle aBoundRect( aCurr->aBounds );
                 aBoundRect.Intersection( aOutputRect );
 
                 const double fBmpArea( (double) aBoundRect.GetWidth() * aBoundRect.GetHeight() );
@@ -1169,15 +1169,15 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
                             aDstPtPix.X() = aBoundRect.Left();
                             aDstSzPix = bTiling ? Size( MAX_TILE_WIDTH, MAX_TILE_HEIGHT ) : aBoundRect.GetSize();
 
-                            if( ( aDstPtPix.Y() + aDstSzPix.Height() - 1 ) > aBoundRect.Bottom() )
-                                aDstSzPix.Height() = aBoundRect.Bottom() - aDstPtPix.Y() + 1;
+                            if( ( aDstPtPix.Y() + aDstSzPix.Height() - 1L ) > aBoundRect.Bottom() )
+                                aDstSzPix.Height() = aBoundRect.Bottom() - aDstPtPix.Y() + 1L;
 
                             while( aDstPtPix.X() <= aBoundRect.Right() )
                             {
-                                if( ( aDstPtPix.X() + aDstSzPix.Width() - 1 ) > aBoundRect.Right() )
-                                    aDstSzPix.Width() = aBoundRect.Right() - aDstPtPix.X() + 1;
+                                if( ( aDstPtPix.X() + aDstSzPix.Width() - 1L ) > aBoundRect.Right() )
+                                    aDstSzPix.Width() = aBoundRect.Right() - aDstPtPix.X() + 1L;
 
-                                if( !tools::Rectangle( aDstPtPix, aDstSzPix ).Intersection( aBoundRect ).IsEmpty() &&
+                                if( !Rectangle( aDstPtPix, aDstSzPix ).Intersection( aBoundRect ).IsEmpty() &&
                                     aPaintVDev->SetOutputSizePixel( aDstSzPix ) )
                                 {
                                     aPaintVDev->Push();
@@ -1340,13 +1340,13 @@ bool OutputDevice::RemoveTransparenciesFromMetaFile( const GDIMetaFile& rInMtf, 
     return bTransparent;
 }
 
-void Printer::DrawGradientEx( OutputDevice* pOut, const tools::Rectangle& rRect, const Gradient& rGradient )
+void Printer::DrawGradientEx( OutputDevice* pOut, const Rectangle& rRect, const Gradient& rGradient )
 {
     const PrinterOptions& rPrinterOptions = GetPrinterOptions();
 
     if( rPrinterOptions.IsReduceGradients() )
     {
-        if( PrinterGradientMode::Stripes == rPrinterOptions.GetReducedGradientMode() )
+        if( PRINTER_GRADIENT_STRIPES == rPrinterOptions.GetReducedGradientMode() )
         {
             if( !rGradient.GetSteps() || ( rGradient.GetSteps() > rPrinterOptions.GetReducedGradientStepCount() ) )
             {
@@ -1362,12 +1362,12 @@ void Printer::DrawGradientEx( OutputDevice* pOut, const tools::Rectangle& rRect,
         {
             const Color&    rStartColor = rGradient.GetStartColor();
             const Color&    rEndColor = rGradient.GetEndColor();
-            const long      nR = ( ( (long) rStartColor.GetRed() * rGradient.GetStartIntensity() ) / 100 +
-                                   ( (long) rEndColor.GetRed() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
-            const long      nG = ( ( (long) rStartColor.GetGreen() * rGradient.GetStartIntensity() ) / 100 +
-                                   ( (long) rEndColor.GetGreen() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
-            const long      nB = ( ( (long) rStartColor.GetBlue() * rGradient.GetStartIntensity() ) / 100 +
-                                   ( (long) rEndColor.GetBlue() * rGradient.GetEndIntensity() ) / 100 ) >> 1;
+            const long      nR = ( ( (long) rStartColor.GetRed() * rGradient.GetStartIntensity() ) / 100L +
+                                   ( (long) rEndColor.GetRed() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
+            const long      nG = ( ( (long) rStartColor.GetGreen() * rGradient.GetStartIntensity() ) / 100L +
+                                   ( (long) rEndColor.GetGreen() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
+            const long      nB = ( ( (long) rStartColor.GetBlue() * rGradient.GetStartIntensity() ) / 100L +
+                                   ( (long) rEndColor.GetBlue() * rGradient.GetEndIntensity() ) / 100L ) >> 1;
             const Color     aColor( (sal_uInt8) nR, (sal_uInt8) nG, (sal_uInt8) nB );
 
             pOut->Push( PushFlags::LINECOLOR | PushFlags::FILLCOLOR );

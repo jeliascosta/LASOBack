@@ -55,7 +55,7 @@ public:
 
     virtual ~TargetObject() {
         --s_obj;
-        SAL_INFO("stoc", "~TargetObject()" );
+        OSL_TRACE( "~TargetObject()" );
     }
     TargetObject()
         { ++s_obj; }
@@ -113,7 +113,7 @@ public:
 
     virtual ~TestMaster() {
         --s_obj;
-        SAL_INFO("stoc", "~TestMaster()" );
+        OSL_TRACE( "~TestMaster()" );
     }
 
     virtual Any SAL_CALL queryInterface( const Type & rType )

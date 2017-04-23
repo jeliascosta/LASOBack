@@ -87,8 +87,12 @@ class LwpParaProperty : public LwpDLList
 {
 public:
     LwpParaProperty(){}
+    virtual ~LwpParaProperty(){}
     virtual sal_uInt32  GetType() = 0;
     inline  LwpParaProperty* GetNext();
+
+    static LwpParaProperty* ReadPropertyList(LwpObjectStream* pFile,rtl::Reference<LwpObject> const & Whole);
+
 };
 
 inline LwpParaProperty* LwpParaProperty::GetNext()
@@ -103,7 +107,7 @@ class LwpParaAlignProperty : public LwpParaProperty
 {
 public:
         explicit LwpParaAlignProperty(LwpObjectStream* pFile);
-        virtual ~LwpParaAlignProperty() override;
+        virtual ~LwpParaAlignProperty();
         LwpAlignmentOverride* GetAlignment();
         sal_uInt32  GetType() override;
 
@@ -120,7 +124,7 @@ class LwpParaIndentProperty : public LwpParaProperty
 {
 public:
         explicit LwpParaIndentProperty(LwpObjectStream* pFile);
-        virtual ~LwpParaIndentProperty() override;
+        virtual ~LwpParaIndentProperty();
         LwpIndentOverride* GetIndent();
         sal_uInt32 GetType() override;
         inline const LwpObjectID& GetIndentID();
@@ -142,7 +146,7 @@ class LwpParaSpacingProperty : public LwpParaProperty
 {
 public:
         explicit LwpParaSpacingProperty(LwpObjectStream* pFile);
-        virtual ~LwpParaSpacingProperty() override;
+        virtual ~LwpParaSpacingProperty();
         LwpSpacingOverride* GetSpacing();
         sal_uInt32 GetType() override;
 private:
@@ -198,19 +202,19 @@ class LwpParaBulletProperty : public LwpParaProperty
 public:
     explicit LwpParaBulletProperty(LwpObjectStream* pStrm);
 
-    virtual ~LwpParaBulletProperty() override;
+    virtual ~LwpParaBulletProperty();
 
     sal_uInt32 GetType() override { return PP_LOCAL_BULLET; }
 
     inline LwpBulletOverride* GetLocalParaBullet();
 
 private:
-    std::unique_ptr<LwpBulletOverride> m_pBullet;
+    LwpBulletOverride* m_pBullet;
 };
 
 inline LwpBulletOverride* LwpParaBulletProperty::GetLocalParaBullet()
 {
-    return m_pBullet.get();
+    return m_pBullet;
 }
 
 class LwpParaNumberingProperty : public LwpParaProperty
@@ -234,7 +238,7 @@ class LwpParaTabRackProperty : public LwpParaProperty
 {
 public:
     explicit LwpParaTabRackProperty(LwpObjectStream* pStrm);
-    virtual ~LwpParaTabRackProperty() override;
+    virtual ~LwpParaTabRackProperty();
     sal_uInt32 GetType() override { return PP_LOCAL_TABRACK; }
 
     inline LwpTabOverride* GetTab();
@@ -252,7 +256,7 @@ class LwpParaBackGroundProperty : public LwpParaProperty
 {
 public:
     explicit LwpParaBackGroundProperty(LwpObjectStream* pFile);
-    virtual ~LwpParaBackGroundProperty() override;
+    virtual ~LwpParaBackGroundProperty();
     LwpBackgroundOverride* GetBackground();
     sal_uInt32 GetType() override;
 private:

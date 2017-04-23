@@ -39,7 +39,7 @@ namespace DOM
     /**
     The number of nodes in this map.
     */
-    sal_Int32 SAL_CALL CAttributesMap::getLength()
+    sal_Int32 SAL_CALL CAttributesMap::getLength() throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -61,7 +61,7 @@ namespace DOM
     Retrieves a node specified by local name
     */
     Reference< XNode > SAL_CALL
-    CAttributesMap::getNamedItem(OUString const& name)
+    CAttributesMap::getNamedItem(OUString const& name) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -92,6 +92,7 @@ namespace DOM
     Reference< XNode > SAL_CALL
     CAttributesMap::getNamedItemNS(
             OUString const& namespaceURI, OUString const& localName)
+    throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -125,7 +126,7 @@ namespace DOM
     Returns the indexth item in the map.
     */
     Reference< XNode > SAL_CALL
-    CAttributesMap::item(sal_Int32 index)
+    CAttributesMap::item(sal_Int32 index) throw (RuntimeException, std::exception)
     {
         ::osl::MutexGuard const g(m_rMutex);
 
@@ -155,6 +156,7 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL
     CAttributesMap::removeNamedItem(OUString const& name)
+    throw (DOMException, RuntimeException, std::exception)
     {
         // no MutexGuard needed: m_pElement is const
         Reference< XAttr > const xAttr(m_pElement->getAttributeNode(name));
@@ -175,6 +177,7 @@ namespace DOM
     Reference< XNode > SAL_CALL
     CAttributesMap::removeNamedItemNS(
             OUString const& namespaceURI, OUString const& localName)
+    throw (DOMException, RuntimeException, std::exception)
     {
         // no MutexGuard needed: m_pElement is const
         Reference< XAttr > const xAttr(
@@ -195,6 +198,7 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL
     CAttributesMap::setNamedItem(Reference< XNode > const& xNode)
+    throw (DOMException, RuntimeException, std::exception)
     {
         Reference< XAttr > const xAttr(xNode, UNO_QUERY);
         if (!xNode.is()) {
@@ -214,6 +218,7 @@ namespace DOM
     */
     Reference< XNode > SAL_CALL
     CAttributesMap::setNamedItemNS(Reference< XNode > const& xNode)
+    throw (DOMException, RuntimeException, std::exception)
     {
         Reference< XAttr > const xAttr(xNode, UNO_QUERY);
         if (!xNode.is()) {

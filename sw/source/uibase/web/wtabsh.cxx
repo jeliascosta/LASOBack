@@ -27,6 +27,7 @@
 #include "globals.hrc"
 #include "uitool.hxx"
 #include "helpid.h"
+#include "popup.hrc"
 #include "shells.hrc"
 #include "table.hrc"
 #include "wrtsh.hxx"
@@ -45,7 +46,7 @@ SFX_IMPL_INTERFACE(SwWebTableShell, SwTableShell)
 void SwWebTableShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("table");
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_TABLE_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_TABLE_TOOLBOX);
 }
 
 
@@ -54,6 +55,7 @@ SwWebTableShell::SwWebTableShell(SwView &_rView) :
 {
     GetShell().UpdateTable();
     SetName("Table");
+    SetHelpId(SW_TABSHELL);
 }
 
 SwWebTableShell::~SwWebTableShell()

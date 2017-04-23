@@ -35,7 +35,7 @@ class UpDownBarsContext : public ContextBase< UpDownBarsModel >
 {
 public:
     explicit            UpDownBarsContext( ::oox::core::ContextHandler2Helper& rParent, UpDownBarsModel& rModel );
-    virtual             ~UpDownBarsContext() override;
+    virtual             ~UpDownBarsContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -51,7 +51,7 @@ class AreaTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            AreaTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~AreaTypeGroupContext() override;
+    virtual             ~AreaTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -63,7 +63,7 @@ class BarTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            BarTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~BarTypeGroupContext() override;
+    virtual             ~BarTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -75,7 +75,7 @@ class BubbleTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            BubbleTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~BubbleTypeGroupContext() override;
+    virtual             ~BubbleTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -88,7 +88,7 @@ class LineTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            LineTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~LineTypeGroupContext() override;
+    virtual             ~LineTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -101,7 +101,7 @@ class PieTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            PieTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~PieTypeGroupContext() override;
+    virtual             ~PieTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -113,7 +113,7 @@ class RadarTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            RadarTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~RadarTypeGroupContext() override;
+    virtual             ~RadarTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -125,7 +125,7 @@ class ScatterTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            ScatterTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~ScatterTypeGroupContext() override;
+    virtual             ~ScatterTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };
@@ -138,7 +138,7 @@ class SurfaceTypeGroupContext : public TypeGroupContextBase
 {
 public:
     explicit            SurfaceTypeGroupContext( ::oox::core::ContextHandler2Helper& rParent, TypeGroupModel& rModel );
-    virtual             ~SurfaceTypeGroupContext() override;
+    virtual             ~SurfaceTypeGroupContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs ) override;
 };

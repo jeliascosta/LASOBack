@@ -39,7 +39,7 @@ private:
 
 public:
     ScChartShell(ScViewData* pData);
-    virtual ~ScChartShell() override;
+    virtual ~ScChartShell();
 
     void ExecuteExportAsGraphic(SfxRequest& rReq);
     void GetExportAsGraphicState(SfxItemSet &rSet);

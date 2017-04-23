@@ -39,7 +39,7 @@ public:
         sal_Int32 const nStart,
         bool const bInClipboard );
 
-    virtual ~SwTextField() override;
+    virtual ~SwTextField();
 
     void CopyTextField( SwTextField *pDest ) const;
 
@@ -85,7 +85,7 @@ public:
         sal_Int32 const nEnd,
         bool const bInClipboard );
 
-    virtual ~SwTextInputField() override;
+    virtual ~SwTextInputField();
 
     void LockNotifyContentChange();
     void UnlockNotifyContentChange();

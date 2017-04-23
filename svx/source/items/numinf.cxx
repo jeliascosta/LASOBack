@@ -32,7 +32,7 @@
 
 SvxNumberInfoItem::SvxNumberInfoItem( const sal_uInt16 nId ) :
 
-    INIT( nullptr, SvxNumberValueType::Undefined, 0, "" )
+    INIT( nullptr, SVX_VALUE_TYPE_UNDEFINED, 0, "" )
 
 {
 }
@@ -41,7 +41,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( const sal_uInt16 nId ) :
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SvxNumberValueType::Undefined, 0, "" )
+    INIT( pNumFormatter, SVX_VALUE_TYPE_UNDEFINED, 0, "" )
 
 {
 }
@@ -50,7 +50,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const OUString& rVal, const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SvxNumberValueType::String, 0, rVal )
+    INIT( pNumFormatter, SVX_VALUE_TYPE_STRING, 0, rVal )
 
 {
 }
@@ -59,7 +59,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
 SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const double& rVal, const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SvxNumberValueType::Number, rVal, "" )
+    INIT( pNumFormatter, SVX_VALUE_TYPE_NUMBER, rVal, "" )
 
 {
 }
@@ -69,7 +69,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( SvNumberFormatter* pNumFormatter,
                                       const double& rVal, const OUString& rValueStr,
                                       const sal_uInt16 nId ) :
 
-    INIT( pNumFormatter, SvxNumberValueType::Number, rVal, rValueStr )
+    INIT( pNumFormatter, SVX_VALUE_TYPE_NUMBER, rVal, rValueStr )
 
 {
 }
@@ -91,7 +91,7 @@ SvxNumberInfoItem::SvxNumberInfoItem( const SvxNumberInfoItem& rItem ) :
 {
     if ( rItem.nDelCount > 0 )
     {
-        pDelFormatArr.reset( new sal_uInt32[ rItem.nDelCount ] );
+        pDelFormatArr = new sal_uInt32[ rItem.nDelCount ];
 
         for ( sal_uInt32 i = 0; i < rItem.nDelCount; ++i )
             pDelFormatArr[i] = rItem.pDelFormatArr[i];
@@ -101,14 +101,15 @@ SvxNumberInfoItem::SvxNumberInfoItem( const SvxNumberInfoItem& rItem ) :
 
 SvxNumberInfoItem::~SvxNumberInfoItem()
 {
+    delete [] pDelFormatArr;
 }
 
 
 bool SvxNumberInfoItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -119,7 +120,7 @@ bool SvxNumberInfoItem::GetPresentation
 
 bool SvxNumberInfoItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal which or type" );
 
     const SvxNumberInfoItem& rOther = static_cast<const SvxNumberInfoItem&>(rItem);
 
@@ -133,7 +134,7 @@ bool SvxNumberInfoItem::operator==( const SfxPoolItem& rItem ) const
             {
                 bEqual = true;
 
-                for ( sal_uInt32 i = 0; i < nDelCount && bEqual; ++i )
+                for ( sal_uInt16 i = 0; i < nDelCount && bEqual; ++i )
                     bEqual = ( pDelFormatArr[i] == rOther.pDelFormatArr[i] );
             }
         }
@@ -173,13 +174,17 @@ SvStream& SvxNumberInfoItem::Store( SvStream &rStream, sal_uInt16 /*nItemVersion
 void SvxNumberInfoItem::SetDelFormatArray( const sal_uInt32* pData,
                                            const sal_uInt32 nCount )
 {
-    pDelFormatArr.reset();
+    if ( pDelFormatArr )
+    {
+        delete []pDelFormatArr;
+        pDelFormatArr = nullptr;
+    }
 
     nDelCount = nCount;
 
     if ( nCount > 0 )
     {
-        pDelFormatArr.reset( new sal_uInt32[ nCount ] );
+        pDelFormatArr = new sal_uInt32[ nCount ];
 
         if ( pData != nullptr )
         {

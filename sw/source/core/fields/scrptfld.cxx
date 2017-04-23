@@ -20,13 +20,12 @@
 #include <docufld.hxx>
 #include <unofldmid.h>
 #include <comcore.hrc>
-#include <o3tl/any.hxx>
 #include <tools/resid.hxx>
 
 using namespace ::com::sun::star;
 
 SwScriptFieldType::SwScriptFieldType( SwDoc* pD )
-    : SwFieldType( SwFieldIds::Script ), pDoc( pD )
+    : SwFieldType( RES_SCRIPTFLD ), pDoc( pD )
 {}
 
 SwFieldType* SwScriptFieldType::Copy() const
@@ -92,7 +91,7 @@ bool SwScriptField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= bCodeURL;
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -108,10 +107,10 @@ bool SwScriptField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= sCode;
         break;
     case FIELD_PROP_BOOL1:
-        bCodeURL = *o3tl::doAccess<bool>(rAny);
+        bCodeURL = *static_cast<sal_Bool const *>(rAny.getValue());
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }

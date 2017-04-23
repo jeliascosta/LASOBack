@@ -28,7 +28,7 @@ class WRITERPERFECT_DLLPUBLIC WPFTEncodingDialog : public ModalDialog
 public:
     WPFTEncodingDialog(const OUString &title, const OUString &defEncoding);
 
-    virtual ~WPFTEncodingDialog() override;
+    virtual ~WPFTEncodingDialog();
 
     OUString GetEncoding() const;
     bool hasUserCalledCancel() const
@@ -42,8 +42,8 @@ private:
 
     bool m_userHasCancelled;
 private:
-    DECL_LINK(DoubleClickHdl, ListBox &, void);
-    DECL_LINK(CancelHdl, Button *, void);
+    DECL_LINK_TYPED(DoubleClickHdl, ListBox &, void);
+    DECL_LINK_TYPED(CancelHdl, Button *, void);
 
     void dispose() override;
 

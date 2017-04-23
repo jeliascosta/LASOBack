@@ -108,7 +108,12 @@ void FuThesaurus::DoExecute( SfxRequest& )
             }
 
             EESpellState eState = const_cast<OutlinerView*>(pOutlView)->StartThesaurus();
-            DBG_ASSERT(eState != EESpellState::NoSpeller, "No SpellChecker");
+            DBG_ASSERT(eState != EE_SPELL_NOSPELLER, "No SpellChecker");
+
+            if (eState == EE_SPELL_NOLANGUAGE)
+            {
+                ScopedVclPtrInstance<MessageDialog>(mpWindow, SD_RESSTR(STR_NOLANGUAGE))->Execute();
+            }
         }
     }
     else if (mpViewShell && dynamic_cast< OutlineViewShell *>( mpViewShell ) !=  nullptr)
@@ -130,7 +135,12 @@ void FuThesaurus::DoExecute( SfxRequest& )
         }
 
         EESpellState eState = pOutlView->StartThesaurus();
-        DBG_ASSERT(eState != EESpellState::NoSpeller, "No SpellChecker");
+        DBG_ASSERT(eState != EE_SPELL_NOSPELLER, "No SpellChecker");
+
+        if (eState == EE_SPELL_NOLANGUAGE)
+        {
+            ScopedVclPtrInstance<MessageDialog>(mpWindow, SD_RESSTR(STR_NOLANGUAGE))->Execute();
+        }
     }
 }
 

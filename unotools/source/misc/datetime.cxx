@@ -97,7 +97,7 @@ namespace
                 return true;
             if (c < c0 || c > c9)
                 return false;
-            resInt += OUStringLiteral1(c);
+            resInt += OUString(c);
         }
         if (nPos == i_str.getLength() || i_str[nPos] == sep)
             return true;
@@ -118,7 +118,7 @@ namespace
                     return false;
                 if (c < c0 || c > c9)
                     return false;
-                resFrac += OUStringLiteral1(c);
+                resFrac += OUString(c);
             }
             OSL_ENSURE(nPos == i_str.getLength(), "impl_getISO8601TimeToken internal error; expected to be at end of string");
             return true;
@@ -168,7 +168,7 @@ namespace
                 const sal_Unicode c = i_str[io_index];
                 if ((c < c0 || c > c9) && c != sep)
                     return false;
-                o_strInt += OUStringLiteral1(c);
+                o_strInt += OUString(c);
             }
             return true;
         }
@@ -342,6 +342,8 @@ bool ISO8601parseDate(const OUString &aDateStr, css::util::Date& rDate)
 /** convert ISO8601 Time String to util::Time */
 bool ISO8601parseTime(const OUString &aTimeStr, css::util::Time& rTime)
 {
+    bool bSuccess = true;
+
     sal_Int32 nHour    = 0;
     sal_Int32 nMin     = 0;
     sal_Int32 nSec     = 0;
@@ -353,8 +355,7 @@ bool ISO8601parseTime(const OUString &aTimeStr, css::util::Time& rTime)
     OUString tokTz;
     bool bFrac = false;
     // hours
-    bool bSuccess = getISO8601TimeToken(aTimeStr, n, tokInt, bFrac, tokFrac);
-    if (bSuccess)
+    if (bSuccess && (bSuccess = getISO8601TimeToken(aTimeStr, n, tokInt, bFrac, tokFrac)))
     {
         if ( bFrac && n < aTimeStr.getLength())
             // is it junk or the timezone?

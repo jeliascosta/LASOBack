@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
-
 #include "config.hxx"
 #include "utilities.hxx"
 
@@ -32,14 +28,14 @@
 
 
 const size_t MAX_RES_STRING = 1024;
-const wchar_t SPACE_CHAR = L' ';
+const wchar_t SPACE_CHAR = _T(' ');
 
 static std::wstring StringToWString(const std::string& String, int codepage)
 {
     int len = MultiByteToWideChar(
-        codepage, 0, String.c_str(), -1, nullptr, 0);
+        codepage, 0, String.c_str(), -1, 0, 0);
 
-    wchar_t* buff = static_cast<wchar_t*>(
+    wchar_t* buff = reinterpret_cast<wchar_t*>(
         _alloca(len * sizeof(wchar_t)));
 
     MultiByteToWideChar(
@@ -51,13 +47,13 @@ static std::wstring StringToWString(const std::string& String, int codepage)
 static std::string WStringToString(const std::wstring& String, int codepage)
 {
     int len = WideCharToMultiByte(
-        codepage, 0, String.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        codepage, 0, String.c_str(), -1, 0, 0, 0, 0);
 
-    char* buff = static_cast<char*>(
+    char* buff = reinterpret_cast<char*>(
         _alloca(len * sizeof(char)));
 
     WideCharToMultiByte(
-        codepage, 0, String.c_str(), -1, buff, len, nullptr, nullptr);
+        codepage, 0, String.c_str(), -1, buff, len, 0, 0);
 
     return std::string(buff);
 }
@@ -95,7 +91,7 @@ std::wstring GetResString(int ResId)
 
     int rc = LoadStringW( GetModuleHandleW(MODULE_NAME), ResId, szResStr, sizeof(szResStr) );
 
-    OutputDebugStringFormatA( "GetResString: read %d chars\n", rc );
+    OutputDebugStringFormat( "GetResString: read %d chars\n", rc );
     // OSL_ENSURE(rc, "String resource not found");
 
     return std::wstring(szResStr);
@@ -108,7 +104,7 @@ bool is_windows_xp_or_above()
 {
 // the Win32 SDK 8.1 deprecates GetVersionEx()
 #ifdef _WIN32_WINNT_WINBLUE
-    return IsWindowsXPOrGreater();
+    return IsWindowsXPOrGreater() ? true : false;
 #else
     OSVERSIONINFO osvi;
     ZeroMemory(&osvi, sizeof(osvi));
@@ -157,14 +153,15 @@ bool HasOnlySpaces(const std::wstring& String)
 std::wstring getShortPathName( const std::wstring& aLongName )
 {
     std::wstring shortName = aLongName;
-    long         length    = GetShortPathNameW( aLongName.c_str(), nullptr, 0 );
+    long         length    = GetShortPathName( aLongName.c_str(), NULL, 0 );
 
     if ( length != 0 )
     {
-        auto buffer = std::unique_ptr<WCHAR[]>(new WCHAR[ length+1 ]);
-        length = GetShortPathNameW( aLongName.c_str(), buffer.get(), length );
+        TCHAR* buffer = new TCHAR[ length+1 ];
+        length = GetShortPathName( aLongName.c_str(), buffer, length );
         if ( length != 0 )
-            shortName = std::wstring( buffer.get() );
+            shortName = std::wstring( buffer );
+        delete [] buffer;
     }
     return shortName;
 }

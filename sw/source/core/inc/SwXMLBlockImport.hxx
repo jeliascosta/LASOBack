@@ -53,7 +53,7 @@ public:
         return rBlockList;
     }
     virtual ~SwXMLBlockListImport()
-        throw() override;
+        throw();
 };
 
 class SwXMLTextBlockImport : public SvXMLImport
@@ -72,8 +72,9 @@ public:
         OUString &rNewText, bool bNewTextOnly );
 
     virtual ~SwXMLTextBlockImport()
-        throw() override;
-    virtual void SAL_CALL endDocument() override;
+        throw();
+    virtual void SAL_CALL endDocument()
+        throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
 };
 
 enum SwXMLTextBlockToken : sal_Int32
@@ -91,11 +92,13 @@ class SwXMLTextBlockTokenHandler : public
 {
 public:
     SwXMLTextBlockTokenHandler();
-    virtual ~SwXMLTextBlockTokenHandler() override;
+    virtual ~SwXMLTextBlockTokenHandler();
 
     //XFastTokenHandler
-    sal_Int32 SAL_CALL getTokenFromUTF8( const css::uno::Sequence< sal_Int8 >& Identifier ) override;
-    css::uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 Token ) override;
+    sal_Int32 SAL_CALL getTokenFromUTF8( const css::uno::Sequence< sal_Int8 >& Identifier )
+        throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 Token )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //Much fast direct C++ shortcut to the method that matters
     virtual sal_Int32 getTokenDirect( const char *pTag, sal_Int32 nLength ) const override;
@@ -118,11 +121,13 @@ class SwXMLBlockListTokenHandler : public
 {
 public:
     SwXMLBlockListTokenHandler();
-    virtual ~SwXMLBlockListTokenHandler() override;
+    virtual ~SwXMLBlockListTokenHandler();
 
     //XFastTokenHandler
-    sal_Int32 SAL_CALL getTokenFromUTF8( const css::uno::Sequence< sal_Int8 >& Identifier ) override;
-    css::uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 Token ) override;
+    sal_Int32 SAL_CALL getTokenFromUTF8( const css::uno::Sequence< sal_Int8 >& Identifier )
+        throw (css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< sal_Int8 > SAL_CALL getUTF8Identifier( sal_Int32 Token )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //Much fast direct C++ shortcut to the method that matters
     virtual sal_Int32 getTokenDirect( const char *pTag, sal_Int32 nLength ) const override;

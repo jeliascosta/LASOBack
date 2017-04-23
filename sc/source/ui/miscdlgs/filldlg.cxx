@@ -26,7 +26,7 @@
 #include "scresid.hxx"
 #include "document.hxx"
 #include "globstr.hrc"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 #include "filldlg.hxx"
 
 // class ScFillSeriesDlg
@@ -251,7 +251,7 @@ bool ScFillSeriesDlg::CheckEndVal()
 
 // Handler:
 
-IMPL_LINK( ScFillSeriesDlg, DisableHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( ScFillSeriesDlg, DisableHdl, Button *, pBtn, void )
 {
     if ( pBtn == m_pBtnDate )
     {
@@ -286,7 +286,7 @@ IMPL_LINK( ScFillSeriesDlg, DisableHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG(ScFillSeriesDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScFillSeriesDlg, OKHdl, Button*, void)
 {
     if ( m_pBtnLeft->IsChecked() )             theFillDir = FILL_TO_LEFT;
     else if ( m_pBtnRight->IsChecked() )       theFillDir = FILL_TO_RIGHT;

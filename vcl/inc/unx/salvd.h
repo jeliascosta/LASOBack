@@ -47,7 +47,7 @@ public:
     X11SalVirtualDevice(SalGraphics *pGraphics, long &nDX, long &nDY,
             DeviceFormat eFormat, const SystemGraphicsData *pData, X11SalGraphics* pNewGraphics);
 
-    virtual ~X11SalVirtualDevice() override;
+    virtual ~X11SalVirtualDevice();
 
     Display *GetXDisplay() const
     {

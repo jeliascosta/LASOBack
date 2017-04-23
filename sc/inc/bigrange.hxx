@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SC_INC_BIGRANGE_HXX
 #define INCLUDED_SC_INC_BIGRANGE_HXX
 
-#include "address.hxx"
+#include "global.hxx"
 #include <algorithm>
 
 static const sal_Int32 nInt32Min = 0x80000000;
@@ -59,6 +59,7 @@ public:
     void    GetVars( sal_Int32& nColP, sal_Int32& nRowP, sal_Int32& nTabP ) const
                 { nColP = nCol; nRowP = nRow; nTabP = nTab; }
 
+    inline void     PutInOrder( ScBigAddress& r );
     bool IsValid( const ScDocument* pDoc ) const;
     inline ScAddress    MakeAddress() const;
 
@@ -71,6 +72,29 @@ public:
     bool            operator!=( const ScBigAddress& r ) const
                     { return !operator==( r ); }
 };
+
+inline void ScBigAddress::PutInOrder( ScBigAddress& r )
+{
+    sal_Int32 nTmp;
+    if ( r.nCol < nCol )
+    {
+        nTmp = r.nCol;
+        r.nCol = nCol;
+        nCol = nTmp;
+    }
+    if ( r.nRow < nRow )
+    {
+        nTmp = r.nRow;
+        r.nRow = nRow;
+        nRow = nTmp;
+    }
+    if ( r.nTab < nTab )
+    {
+        nTmp = r.nTab;
+        r.nTab = nTab;
+        nTab = nTmp;
+    }
+}
 
 inline ScAddress ScBigAddress::MakeAddress() const
 {
@@ -131,7 +155,7 @@ public:
 
     bool    IsValid( const ScDocument* pDoc ) const
                 { return aStart.IsValid( pDoc ) && aEnd.IsValid( pDoc ); }
-    ScRange  MakeRange() const
+    inline ScRange  MakeRange() const
                     { return ScRange( aStart.MakeAddress(),
                         aEnd.MakeAddress() ); }
 

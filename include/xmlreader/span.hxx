@@ -31,36 +31,36 @@ namespace rtl { class OUString; }
 
 namespace xmlreader {
 
-struct SAL_WARN_UNUSED OOO_DLLPUBLIC_XMLREADER Span {
+struct OOO_DLLPUBLIC_XMLREADER Span {
     char const * begin;
     sal_Int32 length;
 
-    Span(): begin(nullptr), length(0) {}
+    inline Span(): begin(nullptr), length(0) {}
         // init length to avoid compiler warnings
 
-    Span(char const * theBegin, sal_Int32 theLength):
+    inline Span(char const * theBegin, sal_Int32 theLength):
         begin(theBegin), length(theLength) {}
 
-    template< std::size_t N > explicit Span(char const (& literal)[N]):
+    template< std::size_t N > explicit inline Span(char const (& literal)[N]):
         begin(literal), length(N - 1)
     {}
 
-    void clear() throw() { begin = nullptr; }
+    inline void clear() throw() { begin = nullptr; }
 
-    bool is() const { return begin != nullptr; }
+    inline bool is() const { return begin != nullptr; }
 
-    bool equals(Span const & text) const {
+    inline bool equals(Span const & text) const {
         return length == text.length
             && (rtl_str_compare_WithLength(
                     begin, length, text.begin, text.length)
                 == 0);
     }
 
-    bool equals(char const * textBegin, sal_Int32 textLength) const {
+    inline bool equals(char const * textBegin, sal_Int32 textLength) const {
         return equals(Span(textBegin, textLength));
     }
 
-    template< std::size_t N > bool equals(char const (& literal)[N])
+    template< std::size_t N > inline bool equals(char const (& literal)[N])
         const
     {
         return equals(Span(literal, N - 1));

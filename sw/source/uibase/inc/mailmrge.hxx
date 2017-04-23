@@ -27,6 +27,7 @@
 
 #include <vcl/fixed.hxx>
 #include <vcl/edit.hxx>
+#include <svtools/stdctrl.hxx>
 
 #include <vcl/lstbox.hxx>
 #include <com/sun/star/uno/Sequence.h>
@@ -91,7 +92,7 @@ class SwMailMergeDlg : public SvxStandardDialog
 
     VclPtr<OKButton>        m_pOkBTN;
 
-    std::unique_ptr<SwMailMergeDlg_Impl> pImpl;
+    SwMailMergeDlg_Impl* pImpl;
 
     SwWrtShell&     rSh;
     SwModuleOptions* pModOpt;
@@ -104,12 +105,12 @@ class SwMailMergeDlg : public SvxStandardDialog
     OUString m_sSaveFilter;
     OUString m_sFilename;
 
-    DECL_LINK( ButtonHdl, Button*, void );
-    DECL_LINK( InsertPathHdl, Button*, void );
-    DECL_LINK( OutputTypeHdl, Button*, void );
-    DECL_LINK( FilenameHdl, Button*, void );
-    DECL_LINK( ModifyHdl, Edit&, void );
-    DECL_LINK( SaveTypeHdl, Button*, void );
+    DECL_LINK_TYPED( ButtonHdl, Button*, void );
+    DECL_LINK_TYPED( InsertPathHdl, Button*, void );
+    DECL_LINK_TYPED( OutputTypeHdl, Button*, void );
+    DECL_LINK_TYPED( FilenameHdl, Button*, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( SaveTypeHdl, Button*, void );
 
     virtual void    Apply() override;
     bool            ExecQryShell();
@@ -122,11 +123,11 @@ public:
         const OUString& rTableName,
         sal_Int32 nCommandType,
         const css::uno::Reference< css::sdbc::XConnection>& xConnection,
-        css::uno::Sequence< css::uno::Any >* pSelection);
-    virtual ~SwMailMergeDlg() override;
+        css::uno::Sequence< css::uno::Any >* pSelection = nullptr);
+    virtual ~SwMailMergeDlg();
     virtual void dispose() override;
 
-    DBManagerOptions GetMergeType() { return nMergeType; }
+    inline DBManagerOptions GetMergeType() { return nMergeType; }
 
     bool IsSaveSingleDoc() const { return m_pSaveSingleDocRB->IsChecked(); }
     bool IsGenerateFromDataBase() const { return m_pGenerateFromDataBaseCB->IsChecked(); }
@@ -144,7 +145,7 @@ class SwMailMergeCreateFromDlg : public ModalDialog
     VclPtr<RadioButton> m_pThisDocRB;
 public:
     SwMailMergeCreateFromDlg(vcl::Window* pParent);
-    virtual ~SwMailMergeCreateFromDlg() override;
+    virtual ~SwMailMergeCreateFromDlg();
     virtual void dispose() override;
     bool IsThisDocument() const
     {
@@ -157,7 +158,7 @@ class SwMailMergeFieldConnectionsDlg : public ModalDialog
     VclPtr<RadioButton> m_pUseExistingRB;
 public:
     SwMailMergeFieldConnectionsDlg(vcl::Window* pParent);
-    virtual ~SwMailMergeFieldConnectionsDlg() override;
+    virtual ~SwMailMergeFieldConnectionsDlg();
     virtual void dispose() override;
 
     bool IsUseExistingConnections() const

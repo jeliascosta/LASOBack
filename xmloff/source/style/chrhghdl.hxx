@@ -28,7 +28,7 @@
 class XMLCharHeightHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharHeightHdl() override;
+    virtual ~XMLCharHeightHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -37,7 +37,7 @@ public:
 class XMLCharHeightPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharHeightPropHdl() override;
+    virtual ~XMLCharHeightPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -46,7 +46,7 @@ public:
 class XMLCharHeightDiffHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLCharHeightDiffHdl() override;
+    virtual ~XMLCharHeightDiffHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

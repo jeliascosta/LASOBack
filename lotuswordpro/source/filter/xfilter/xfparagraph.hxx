@@ -76,7 +76,7 @@ class XFParagraph : public XFContentContainer
 public:
     XFParagraph();
 
-    virtual ~XFParagraph() override;
+    virtual ~XFParagraph();
 
 public:
     bool    HasContents();

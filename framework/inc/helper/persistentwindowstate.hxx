@@ -76,16 +76,20 @@ class PersistentWindowState :   public  ::cppu::WeakImplHelper<
 
         // ctor/dtor
                  PersistentWindowState(const css::uno::Reference< css::uno::XComponentContext >& xContext);
-        virtual ~PersistentWindowState(                                                                   ) override;
+        virtual ~PersistentWindowState(                                                                   );
 
         // XInitialization
-        virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any >& lArguments) override;
+        virtual void SAL_CALL initialize(const css::uno::Sequence< css::uno::Any >& lArguments)
+            throw(css::uno::Exception       ,
+                  css::uno::RuntimeException, std::exception) override;
 
         // XFrameActionListener
-        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent) override;
+        virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent)
+            throw(css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
+            throw(css::uno::RuntimeException, std::exception) override;
 
     // helper
 
@@ -140,7 +144,7 @@ class PersistentWindowState :   public  ::cppu::WeakImplHelper<
 
             @param  sModuleName
                     identifies the application module, where the
-                    information should be set on.
+                    information should be setted on.
 
             @param  sWindowState
                     contains the information about position and size.

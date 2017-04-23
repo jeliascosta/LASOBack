@@ -37,6 +37,7 @@ class XMLAxisOOoContext : public XMLPersElemContentTContext
 public:
     XMLAxisOOoContext( XMLTransformerBase& rTransformer,
                        const OUString& rQName );
+    virtual ~XMLAxisOOoContext();
 
     virtual void StartElement( const Reference< xml::sax::XAttributeList >& rAttrList ) override;
 
@@ -51,6 +52,9 @@ XMLAxisOOoContext::XMLAxisOOoContext(
     const OUString& rQName ) :
         XMLPersElemContentTContext( rTransformer, rQName ),
         m_bIsCategoryAxis( false )
+{}
+
+XMLAxisOOoContext::~XMLAxisOOoContext()
 {}
 
 void XMLAxisOOoContext::StartElement(
@@ -111,11 +115,15 @@ void XMLAxisOOoContext::StartElement(
     XMLPersElemContentTContext::StartElement( xAttrList );
 }
 
+
 XMLChartPlotAreaOOoTContext::XMLChartPlotAreaOOoTContext(
     XMLTransformerBase & rTransformer, const OUString & rQName ) :
         XMLProcAttrTransformerContext( rTransformer, rQName, OOO_SHAPE_ACTIONS )
 {
 }
+
+XMLChartPlotAreaOOoTContext::~XMLChartPlotAreaOOoTContext()
+{}
 
 rtl::Reference<XMLTransformerContext> XMLChartPlotAreaOOoTContext::CreateChildContext(
     sal_uInt16 nPrefix,

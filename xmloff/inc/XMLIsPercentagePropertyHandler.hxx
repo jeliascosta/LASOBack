@@ -29,7 +29,7 @@
 class XMLIsPercentagePropertyHandler : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLIsPercentagePropertyHandler () override;
+    virtual ~XMLIsPercentagePropertyHandler ();
 
     virtual bool importXML(
             const OUString& rStrImpValue,

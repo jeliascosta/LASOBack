@@ -20,8 +20,6 @@
 #ifndef INCLUDED_XMLOFF_SOURCE_TEXT_XMLTEXTFRAMECONTEXT_HXX
 #define INCLUDED_XMLOFF_SOURCE_TEXT_XMLTEXTFRAMECONTEXT_HXX
 
-#include <memory>
-
 #include <com/sun/star/text/TextContentAnchorType.hpp>
 #include <xmloff/xmlictxt.hxx>
 #include <xmloff/xmlmultiimagehelper.hxx>
@@ -39,7 +37,7 @@ class XMLTextFrameContext : public SvXMLImportContext, public MultiImageImportHe
     SvXMLImportContextRef m_xImplContext;
     SvXMLImportContextRef m_xReplImplContext;
 
-    std::unique_ptr<XMLTextFrameContextHyperlink_Impl> m_pHyperlink;
+    XMLTextFrameContextHyperlink_Impl   *m_pHyperlink;
     // Implement Title/Description Elements UI (#i73249#)
     OUString m_sTitle;
     OUString m_sDesc;
@@ -71,6 +69,7 @@ public:
             const css::uno::Reference<
                 css::xml::sax::XAttributeList > & xAttrList,
             css::text::TextContentAnchorType eDfltAnchorType );
+    virtual ~XMLTextFrameContext();
 
     virtual void EndElement() override;
 

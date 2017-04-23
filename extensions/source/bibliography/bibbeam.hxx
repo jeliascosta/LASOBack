@@ -51,7 +51,7 @@ namespace bib
             VclPtr<BibToolBar>      pToolBar;
             VclPtr<BibGridwin>      pGridWin;
 
-            DECL_LINK( RecalcLayout_Impl, void*, void );
+            DECL_LINK_TYPED( RecalcLayout_Impl, void*, void );
 
         protected:
 
@@ -65,8 +65,8 @@ namespace bib
             css::uno::Reference< css::frame::XDispatchProviderInterception >
                     getDispatchProviderInterception();
 
-            BibBeamer(vcl::Window* pParent,BibDataManager* pDatMan );
-            virtual ~BibBeamer() override;
+            BibBeamer(vcl::Window* pParent,BibDataManager* pDatMan, WinBits nStyle = WB_3DLOOK );
+            virtual ~BibBeamer();
             virtual void dispose() override;
 
             void    SetXController(const css::uno::Reference< css::frame::XController > &);

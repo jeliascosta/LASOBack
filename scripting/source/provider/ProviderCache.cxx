@@ -31,7 +31,8 @@ using namespace com::sun::star::script;
 namespace func_provider
 {
 
-ProviderCache::ProviderCache( const Reference< XComponentContext >& xContext, const Sequence< Any >& scriptContext ) : m_Sctx( scriptContext ), m_xContext( xContext )
+ProviderCache::ProviderCache( const Reference< XComponentContext >& xContext, const Sequence< Any >& scriptContext )
+    throw ( RuntimeException ) : m_Sctx( scriptContext ), m_xContext( xContext )
 {
     // initialise m_hProviderDetailsCache with details of ScriptProviders
     // will use createContentEnumeration
@@ -42,7 +43,8 @@ ProviderCache::ProviderCache( const Reference< XComponentContext >& xContext, co
 }
 
 
-ProviderCache::ProviderCache( const Reference< XComponentContext >& xContext, const Sequence< Any >& scriptContext, const Sequence< OUString >& blackList ) : m_sBlackList( blackList ), m_Sctx( scriptContext ), m_xContext( xContext )
+ProviderCache::ProviderCache( const Reference< XComponentContext >& xContext, const Sequence< Any >& scriptContext, const Sequence< OUString >& blackList )
+    throw ( RuntimeException ) : m_sBlackList( blackList ), m_Sctx( scriptContext ), m_xContext( xContext )
 
 {
     // initialise m_hProviderDetailsCache with details of ScriptProviders
@@ -79,7 +81,7 @@ ProviderCache::getProvider( const OUString& providerName )
 }
 
 Sequence < Reference< provider::XScriptProvider > >
-ProviderCache::getAllProviders()
+ProviderCache::getAllProviders() throw ( RuntimeException )
 {
     // need to create providers that haven't been created already
     // so check what providers exist and what ones don't
@@ -123,13 +125,13 @@ ProviderCache::getAllProviders()
     }
     else
     {
-        SAL_WARN("scripting", "no available providers, something very wrong!!!");
+        OSL_TRACE("no available providers, something very wrong!!!");
     }
     return providers;
 }
 
 void
-ProviderCache::populateCache()
+ProviderCache::populateCache() throw ( RuntimeException )
 {
     // wrong name in services.rdb
     OUString serviceName;
@@ -177,7 +179,7 @@ ProviderCache::populateCache()
 }
 
 Reference< provider::XScriptProvider >
-ProviderCache::createProvider( ProviderDetails& details )
+ProviderCache::createProvider( ProviderDetails& details ) throw ( RuntimeException )
 {
     try
     {

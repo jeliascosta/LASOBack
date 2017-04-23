@@ -52,16 +52,17 @@ namespace rptui
         void operator =(OStartMarker&) = delete;
     public:
         OStartMarker(OSectionWindow* _pParent,const OUString& _sColorEntry);
-        virtual ~OStartMarker() override;
+        virtual ~OStartMarker();
         virtual void dispose() override;
 
         // SfxListener
         virtual void Notify(SfxBroadcaster & rBc, SfxHint const & rHint) override;
         // Window overrides
-        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
         virtual void MouseButtonUp(const MouseEvent& rMEvt) override;
         virtual void Resize() override;
         virtual void RequestHelp(const HelpEvent& rHEvt) override;
+        using Window::Notify;
 
         void setTitle(const OUString& _sTitle);
         sal_Int32 getMinHeight() const;

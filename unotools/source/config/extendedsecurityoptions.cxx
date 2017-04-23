@@ -39,7 +39,7 @@ using namespace ::utl;
 using namespace ::osl;
 using namespace ::com::sun::star::uno;
 
-#define ROOTNODE_SECURITY               "Office.Security"
+#define ROOTNODE_SECURITY               OUString("Office.Security")
 
 #define SECURE_EXTENSIONS_SET           OUString("SecureExtensions")
 #define EXTENSION_PROPNAME              OUString("/Extension")
@@ -57,12 +57,12 @@ class SvtExtendedSecurityOptions_Impl : public ConfigItem
 {
     public:
          SvtExtendedSecurityOptions_Impl();
-        virtual ~SvtExtendedSecurityOptions_Impl() override;
+        virtual ~SvtExtendedSecurityOptions_Impl();
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
-            @descr      This method is called from the ConfigManager before the application ends or from the
-                        PropertyChangeListener if the sub tree broadcasts changes. You must update your
+            @descr      These method is called from the ConfigManager before application ends or from the
+                         PropertyChangeListener if the sub tree broadcasts changes. You must update your
                         internal values.
 
             @seealso    baseclass ConfigItem
@@ -78,8 +78,8 @@ class SvtExtendedSecurityOptions_Impl : public ConfigItem
         virtual void ImplCommit() override;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent our module tree
-            @descr      This method returns a static const list of key names. We need it to get needed values from our
+            @short      return list of key names of our configuration management which represent oue module tree
+            @descr      These methods return a static const list of key names. We need it to get needed values from our
                         configuration management.
             @return     A list of needed configuration keys is returned.
         *//*-*****************************************************************************************************/
@@ -88,7 +88,7 @@ class SvtExtendedSecurityOptions_Impl : public ConfigItem
 
         /*-****************************************************************************************************
             @short      Fills the hash map with all extensions known to be secure
-            @descr      This method fills the given hash map object with all extensions known to be secure.
+            @descr      These methods fills the given hash map object with all extensions known to be secure.
             @param      aHashMap
                         A hash map to be filled with secure extension strings.
         *//*-*****************************************************************************************************/
@@ -239,32 +239,45 @@ Sequence< OUString > SvtExtendedSecurityOptions_Impl::GetPropertyNames()
     return seqPropertyNames;
 }
 
-namespace {
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
 
-std::weak_ptr<SvtExtendedSecurityOptions_Impl> g_pExtendedSecurityOptions;
+SvtExtendedSecurityOptions_Impl*    SvtExtendedSecurityOptions::m_pDataContainer    = nullptr;
+sal_Int32                           SvtExtendedSecurityOptions::m_nRefCount         = 0;
 
-}
+//  constructor
 
 SvtExtendedSecurityOptions::SvtExtendedSecurityOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl = g_pExtendedSecurityOptions.lock();
-    if( !m_pImpl )
+    // Increase our refcount ...
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<SvtExtendedSecurityOptions_Impl>();
-        g_pExtendedSecurityOptions = m_pImpl;
-        ItemHolder1::holdConfigItem(EItem::ExtendedSecurityOptions);
+       m_pDataContainer = new SvtExtendedSecurityOptions_Impl;
+
+        ItemHolder1::holdConfigItem(E_EXTENDEDSECURITYOPTIONS);
     }
 }
+
+//  destructor
 
 SvtExtendedSecurityOptions::~SvtExtendedSecurityOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl.reset();
+    // Decrease our refcount.
+    --m_nRefCount;
+    // If last instance was deleted ...
+    // we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 //  public method
@@ -272,7 +285,7 @@ SvtExtendedSecurityOptions::~SvtExtendedSecurityOptions()
 SvtExtendedSecurityOptions::OpenHyperlinkMode SvtExtendedSecurityOptions::GetOpenHyperlinkMode()
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pImpl->GetOpenHyperlinkMode();
+    return m_pDataContainer->GetOpenHyperlinkMode();
 }
 
 namespace

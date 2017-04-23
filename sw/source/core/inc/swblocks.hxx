@@ -63,14 +63,16 @@ protected:
     SwDoc* pDoc;                        // Document to be switched
     sal_uInt16 nCur;                    // Current Index
     bool bReadOnly : 1;
-    bool bInPutMuchBlocks : 1;          // Put several block entries
+    bool bInPutMuchBlocks : 1;          // Put serveral block entries
     bool bInfoChanged : 1;              // Whether any info of TextBlock changed
 
-    explicit SwImpBlocks( const OUString& );
+    SwImpBlocks( const OUString&, bool = false );
+    virtual ~SwImpBlocks();
 
     enum class FileType {
         NoFile,  // Not present
         None,    // No TB file
+        SW2,     // SW2 file
         SW3,     // SW3 file
         XML      // XML Block List
     };
@@ -84,8 +86,6 @@ protected:
     void   Touch();
 
 public:
-    virtual ~SwImpBlocks();
-
     static sal_uInt16 Hash( const OUString& );        /// Hashcode for Block names
     sal_uInt16 GetCount() const;                      /// Get count of Text Blocks
     sal_uInt16 GetIndex( const OUString& ) const;     /// Index for shortnames

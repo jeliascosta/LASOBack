@@ -23,6 +23,7 @@
 #include <X11/XKBlib.h>
 
 #include "unx/saldisp.hxx"
+#include "unx/saldata.hxx"
 #include "unx/i18n_xkb.hxx"
 
 SalI18N_KeyboardExtension::SalI18N_KeyboardExtension( Display* pDisplay )

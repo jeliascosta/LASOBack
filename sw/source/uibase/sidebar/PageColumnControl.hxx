@@ -19,34 +19,45 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGECOLUMNCONTROL_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_SIDEBAR_PAGECOLUMNCONTROL_HXX
 
-#include <svx/tbxctl.hxx>
+#include <svx/sidebar/PopupControl.hxx>
+
+#include <vcl/image.hxx>
 #include <vcl/button.hxx>
-#include <svx/pageitem.hxx>
-#include <editeng/sizeitem.hxx>
-#include <svl/intitem.hxx>
+
+#include <vector>
+
+namespace svx { namespace sidebar {
+    class ValueSetWithTextControl;
+} }
+class ValueSet;
 
 namespace sw { namespace sidebar {
 
-class PageColumnControl : public SfxPopupWindow
+class PagePropertyPanel;
+
+class PageColumnControl
+    : public svx::sidebar::PopupControl
 {
 public:
-    explicit PageColumnControl(sal_uInt16 nId);
+    PageColumnControl(
+        vcl::Window* pParent,
+        PagePropertyPanel& rPanel,
+        const sal_uInt16 nColumnType,
+        const bool bLandscape );
 
-    virtual ~PageColumnControl() override;
+    virtual ~PageColumnControl();
     virtual void dispose() override;
 
 private:
-    VclPtr<PushButton> m_pOneColumn;
-    VclPtr<PushButton> m_pTwoColumns;
-    VclPtr<PushButton> m_pThreeColumns;
-    VclPtr<PushButton> m_pLeft;
-    VclPtr<PushButton> m_pRight;
-    VclPtr<PushButton> m_pMoreButton;
+    VclPtr< svx::sidebar::ValueSetWithTextControl> mpColumnValueSet;
+    VclPtr<PushButton> maMoreButton;
 
-    static void ExecuteColumnChange( const sal_uInt16 nColumnType );
+    sal_uInt16 mnColumnType;
 
-    DECL_LINK( ColumnButtonClickHdl_Impl, Button*, void );
-    DECL_LINK( MoreButtonClickHdl_Impl, Button*, void );
+    PagePropertyPanel& mrPagePropPanel;
+
+    DECL_LINK_TYPED(ImplColumnHdl, ValueSet*, void);
+    DECL_LINK_TYPED(MoreButtonClickHdl_Impl, Button*, void);
 };
 
 } } // end of namespace sw::sidebar

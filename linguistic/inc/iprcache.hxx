@@ -30,7 +30,6 @@
 #include <com/sun/star/linguistic2/XSearchableDictionaryList.hpp>
 #include <com/sun/star/linguistic2/XLinguProperties.hpp>
 
-#include <rtl/ref.hxx>
 #include <rtl/string.hxx>
 #include <i18nlangtag/lang.h>
 
@@ -58,27 +57,30 @@ class FlushListener :
 
 public:
     FlushListener( SpellCache& rFO ) : mrSpellCache(rFO) {}
+    virtual ~FlushListener() {}
 
     void        SetDicList( css::uno::Reference< css::linguistic2::XSearchableDictionaryList > &rDL );
     void        SetPropSet( css::uno::Reference< css::linguistic2::XLinguProperties > &rPS );
 
     //XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& rSource ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& rSource ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XDictionaryListEventListener
-    virtual void SAL_CALL processDictionaryListEvent( const css::linguistic2::DictionaryListEvent& rDicListEvent ) override;
+    virtual void SAL_CALL processDictionaryListEvent( const css::linguistic2::DictionaryListEvent& rDicListEvent ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XPropertyChangeListener
-    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& rEvt ) override;
+    virtual void SAL_CALL propertyChange( const css::beans::PropertyChangeEvent& rEvt ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 
-class SpellCache final
+class SpellCache
 {
-    rtl::Reference<FlushListener>  mxFlushLstnr;
+    css::uno::Reference< css::linguistic2::XDictionaryListEventListener >
+                        xFlushLstnr;
+    FlushListener      *pFlushLstnr;
 
-    typedef std::set< OUString >                  WordList_t;
-    typedef std::map< LanguageType, WordList_t >  LangWordList_t;
+    typedef std::set< OUString >             WordList_t;
+    typedef std::map< LanguageType, WordList_t >    LangWordList_t;
     LangWordList_t  aWordLists;
 
     SpellCache(const SpellCache &) = delete;
@@ -86,7 +88,7 @@ class SpellCache final
 
 public:
     SpellCache();
-    ~SpellCache();
+    virtual ~SpellCache();
 
     // called from FlushListener
     void    Flush();

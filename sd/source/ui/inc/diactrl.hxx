@@ -41,8 +41,9 @@ protected:
 
 public:
                     SdPagesField( vcl::Window* pParent,
-                                  const css::uno::Reference< css::frame::XFrame >& rFrame );
-                    virtual ~SdPagesField() override;
+                                  const css::uno::Reference< css::frame::XFrame >& rFrame,
+                                  WinBits nBits = WB_BORDER | WB_SPIN | WB_REPEAT );
+                    virtual ~SdPagesField();
 
     void            UpdatePagesField( const SfxUInt16Item* pItem );
 };
@@ -59,7 +60,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SdTbxCtlDiaPages( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SdTbxCtlDiaPages() override;
+    virtual ~SdTbxCtlDiaPages();
 };
 
 #endif // INCLUDED_SD_SOURCE_UI_INC_DIACTRL_HXX

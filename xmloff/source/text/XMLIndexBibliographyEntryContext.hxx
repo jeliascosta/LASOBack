@@ -30,9 +30,9 @@ namespace com { namespace sun { namespace star {
     namespace xml { namespace sax { class XAttributeList; } }
 } } }
 class XMLIndexTemplateContext;
-template<typename EnumT> struct SvXMLEnumMapEntry;
+struct SvXMLEnumMapEntry;
 
-extern const SvXMLEnumMapEntry<sal_uInt16> aBibliographyDataFieldMap[];
+extern const SvXMLEnumMapEntry aBibliographyDataFieldMap[];
 
 /**
  * Import bibliography index entry templates
@@ -52,7 +52,7 @@ public:
         sal_uInt16 nPrfx,
         const OUString& rLocalName );
 
-    virtual ~XMLIndexBibliographyEntryContext() override;
+    virtual ~XMLIndexBibliographyEntryContext();
 
 protected:
 

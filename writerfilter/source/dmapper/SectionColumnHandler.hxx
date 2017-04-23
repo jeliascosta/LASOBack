@@ -49,7 +49,7 @@ class SectionColumnHandler : public LoggedProperties
 
 public:
     SectionColumnHandler();
-    virtual ~SectionColumnHandler() override;
+    virtual ~SectionColumnHandler();
 
     bool        IsEqualWidth() const { return m_bEqualWidth; }
     sal_Int32   GetSpace() const { return m_nSpace; }

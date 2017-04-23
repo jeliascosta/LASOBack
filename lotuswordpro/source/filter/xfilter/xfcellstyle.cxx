@@ -73,6 +73,7 @@ XFCellStyle::XFCellStyle()
 
 XFCellStyle::~XFCellStyle()
 {
+    delete m_pBorders;
 }
 
 void XFCellStyle::SetPadding(double left, double right,double top, double bottom)
@@ -100,7 +101,8 @@ void    XFCellStyle::SetBackImage(XFBGImage *pImage)
 
 void    XFCellStyle::SetBorders(XFBorders *pBorders)
 {
-    m_pBorders.reset( pBorders );
+    delete m_pBorders;
+    m_pBorders = pBorders;
 }
 
 enumXFStyle XFCellStyle::GetStyleFamily()

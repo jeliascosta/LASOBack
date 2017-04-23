@@ -120,7 +120,7 @@ storeError SAL_CALL store_createMemoryFile (
         return store_E_OutOfMemory;
 
     eErrCode = xManager->initialize (
-        &*xLockBytes, storeAccessMode::Create, nPageSize);
+        &*xLockBytes, store_AccessCreate, nPageSize);
     if (eErrCode != store_E_None)
         return eErrCode;
 

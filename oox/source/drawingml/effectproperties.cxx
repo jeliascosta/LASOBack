@@ -88,7 +88,7 @@ css::beans::PropertyValue Effect::getEffect()
     }
 
     aRet.Name = msName;
-    aRet.Value <<= aSeq;
+    aRet.Value = css::uno::Any( aSeq );
 
     return aRet;
 }

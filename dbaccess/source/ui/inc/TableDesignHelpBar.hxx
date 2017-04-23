@@ -39,7 +39,7 @@ namespace dbaui
 
     public:
         OTableDesignHelpBar( vcl::Window* pParent );
-        virtual ~OTableDesignHelpBar() override;
+        virtual ~OTableDesignHelpBar();
         virtual void dispose() override;
 
         void SetHelpText( const OUString& rText );

@@ -27,6 +27,7 @@
 #include <vcl/fixed.hxx>
 #include <vcl/lstbox.hxx>
 #include <sfx2/objsh.hxx>
+#include <svtools/stdctrl.hxx>
 #include <svtools/inettbc.hxx>
 
 namespace sfx2 { class DocumentInserter; }
@@ -50,11 +51,11 @@ private:
 
     SfxObjectShellRef   aSourceRef;
 
-    DECL_LINK(FileHdl, ComboBox&, void);
-    DECL_LINK(BrowseHdl, Button*, void);
-    DECL_LINK(RangeHdl, ListBox&, void);
-    DECL_LINK(ReloadHdl, Button*, void);
-    DECL_LINK( DialogClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK_TYPED(FileHdl, ComboBox&, void);
+    DECL_LINK_TYPED(BrowseHdl, Button*, void);
+    DECL_LINK_TYPED(RangeHdl, ListBox&, void);
+    DECL_LINK_TYPED(ReloadHdl, Button*, void);
+    DECL_LINK_TYPED( DialogClosedHdl, sfx2::FileDialogHelper*, void );
 
     void                UpdateSourceRanges();
     void                UpdateEnable();
@@ -63,12 +64,14 @@ private:
 
 public:
             ScLinkedAreaDlg( vcl::Window* pParent );
-            virtual ~ScLinkedAreaDlg() override;
+            virtual ~ScLinkedAreaDlg();
     virtual void dispose() override;
 
     void            InitFromOldLink( const OUString& rFile, const OUString& rFilter,
                                         const OUString& rOptions, const OUString& rSource,
                                         sal_uLong nRefresh );
+
+    virtual short   Execute() override;          // overwritten to set dialog parent
 
     OUString       GetURL();
     OUString       GetFilter();        // may be empty

@@ -37,6 +37,11 @@ class SwGlossaryHdl;
 class FEdit : public Edit
 {
 public:
+    FEdit(vcl::Window* pParent, const ResId& rResId)
+        : Edit(pParent, rResId)
+    {
+    }
+
     FEdit(vcl::Window* pParent)
         : Edit(pParent, WB_LEFT|WB_VCENTER|WB_BORDER|WB_3DLOOK)
     {
@@ -86,18 +91,18 @@ class SwGlossaryGroupDlg : public SvxStandardDialog
 
 protected:
     virtual void Apply() override;
-    DECL_LINK( SelectHdl, SvTreeListBox*, void );
-    DECL_LINK( NewHdl, Button *, void );
-    DECL_LINK( DeleteHdl, Button*, void  );
-    DECL_LINK( ModifyHdl, Edit&, void );
-    DECL_LINK( ModifyListBoxHdl, ListBox&, void );
-    DECL_LINK( RenameHdl, Button *, void );
+    DECL_LINK_TYPED( SelectHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( NewHdl, Button *, void );
+    DECL_LINK_TYPED( DeleteHdl, Button*, void  );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( RenameHdl, Button *, void );
 
 public:
     SwGlossaryGroupDlg(vcl::Window * pParent,
                         std::vector<OUString> const& rPathArr,
                         SwGlossaryHdl *pGlosHdl);
-    virtual ~SwGlossaryGroupDlg() override;
+    virtual ~SwGlossaryGroupDlg();
     virtual void dispose() override;
 
     const OUString&     GetCreatedGroupName() const {return sCreatedGroup;}

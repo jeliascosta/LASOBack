@@ -25,8 +25,6 @@
 
 #include <cppuhelper/implbase.hxx>
 #include <sal/log.hxx>
-#include <osl/mutex.hxx>
-#include <vcl/svapp.hxx>
 
 class SfxPoolItem;
 class SwClient;
@@ -39,20 +37,21 @@ typedef ::cppu::WeakImplHelper
 >
 SwSimpleEnumeration_Base;
 
-enum class CursorType
+enum CursorType
 {
-    Body,
-    Frame,
-    TableText,
-    Footnote,
-    Header,
-    Footer,
-    Redline,
-    All,         // for Search&Replace
-    Selection,   // create a paragraph enumeration from
+    CURSOR_INVALID,
+    CURSOR_BODY,
+    CURSOR_FRAME,
+    CURSOR_TBLTEXT,
+    CURSOR_FOOTNOTE,
+    CURSOR_HEADER,
+    CURSOR_FOOTER,
+    CURSOR_REDLINE,
+    CURSOR_ALL,         // for Search&Replace
+    CURSOR_SELECTION,   // create a paragraph enumeration from
                         // a text range or cursor
-    SelectionInTable,
-    Meta,         // meta/meta-field
+    CURSOR_SELECTION_IN_TABLE,
+    CURSOR_META,         // meta/meta-field
 };
 
 /*
@@ -87,6 +86,9 @@ public:
 /// helper function for implementing SwClient::Modify
 void ClientModify(SwClient* pClient, const SfxPoolItem *pOld, const SfxPoolItem *pNew);
 
+#include <osl/mutex.hxx>
+#include <vcl/svapp.hxx>
+
 namespace sw {
     template<typename T>
     struct UnoImplPtrDeleter
@@ -99,7 +101,7 @@ namespace sw {
     };
     /// Smart pointer class ensuring that the pointed object is deleted with a locked SolarMutex.
     template<typename T>
-    using UnoImplPtr = std::unique_ptr<T, UnoImplPtrDeleter<T> >;
+    using UnoImplPtr = ::std::unique_ptr<T, UnoImplPtrDeleter<T> >;
 
     template< class C > C *
     UnoTunnelGetImplementation( css::uno::Reference< css::lang::XUnoTunnel > const & xUnoTunnel)

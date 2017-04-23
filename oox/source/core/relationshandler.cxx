@@ -58,7 +58,7 @@ RelationsFragment::RelationsFragment( XmlFilterBase& rFilter, RelationsRef xRela
 }
 
 Reference< XFastContextHandler > RelationsFragment::createFastChildContext(
-        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs )
+        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs ) throw (SAXException, RuntimeException, std::exception)
 {
     Reference< XFastContextHandler > xRet;
     AttributeList aAttribs( rxAttribs );
@@ -73,11 +73,11 @@ Reference< XFastContextHandler > RelationsFragment::createFastChildContext(
             if( !aRelation.maId.isEmpty() && !aRelation.maType.isEmpty() && !aRelation.maTarget.isEmpty() )
             {
                 sal_Int32 nTargetMode = aAttribs.getToken( XML_TargetMode, XML_Internal );
-                SAL_WARN_IF( (nTargetMode != XML_Internal) && (nTargetMode != XML_External), "oox",
+                OSL_ENSURE( (nTargetMode == XML_Internal) || (nTargetMode == XML_External),
                     "RelationsFragment::createFastChildContext - unexpected target mode, assuming external" );
                 aRelation.mbExternal = nTargetMode != XML_Internal;
 
-                SAL_WARN_IF( mxRelations->count( aRelation.maId ) != 0, "oox",
+                OSL_ENSURE( mxRelations->count( aRelation.maId ) == 0,
                     "RelationsFragment::createFastChildContext - relation identifier exists already" );
                 mxRelations->insert( ::std::map< OUString, Relation >::value_type( aRelation.maId, aRelation ) );
             }

@@ -10,6 +10,7 @@
 $(eval $(call gb_InstallScript_InstallScript,setup_osl))
 
 $(eval $(call gb_InstallScript_use_modules,setup_osl,\
+	scp2/accessories \
 	scp2/base \
 	scp2/calc \
 	scp2/draw \
@@ -22,7 +23,7 @@ $(eval $(call gb_InstallScript_use_modules,setup_osl,\
 	scp2/writer \
 	scp2/xsltfilter \
 	$(if $(filter WNT,$(OS)),\
-		scp2/activex \
+		$(if $(DISABLE_ACTIVEX),,scp2/activex) \
 		scp2/quickstart \
 		scp2/windows \
 		$(if $(filter MSC,$(COM)),\

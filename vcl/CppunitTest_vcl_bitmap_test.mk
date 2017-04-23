@@ -17,9 +17,9 @@ $(eval $(call gb_CppunitTest_use_externals,vcl_bitmap_test,\
 	boost_headers \
 	glm_headers \
 ))
-ifeq ($(ENABLE_HEADLESS),)
+ifeq ($(ENABLE_OPENGL),TRUE)
 $(eval $(call gb_CppunitTest_use_externals,vcl_bitmap_test,\
-     epoxy \
+     glew \
  ))
 endif
 
@@ -42,7 +42,10 @@ $(eval $(call gb_CppunitTest_use_libraries,vcl_bitmap_test, \
 	$(gb_UWINAPI) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,vcl_bitmap_test))
+$(eval $(call gb_CppunitTest_use_api,vcl_bitmap_test,\
+    udkapi \
+    offapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,vcl_bitmap_test))
 $(eval $(call gb_CppunitTest_use_vcl,vcl_bitmap_test))

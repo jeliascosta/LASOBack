@@ -28,7 +28,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void WrongSpellPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
+        Primitive2DContainer WrongSpellPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             // ATM this decompose is view-independent, what the original VCL-Display is not. To mimic
             // the old behaviour here if wanted it is necessary to add get2DDecomposition and implement
@@ -52,7 +52,7 @@ namespace drawinglayer
             const double fUnderlineDistance(fFontHeight * fDefaultDistance);
             const double fWaveWidth(2.0 * fUnderlineDistance);
 
-            // the Y-distance needs to be relative to FontHeight since the points get
+            // the Y-distance needs to be relativated to FontHeight since the points get
             // transformed with the transformation containing that scale already.
             const double fRelativeUnderlineDistance(basegfx::fTools::equalZero(aScale.getY()) ? 0.0 : fUnderlineDistance / aScale.getY());
             basegfx::B2DPoint aStart(getStart(), fRelativeUnderlineDistance);
@@ -66,7 +66,10 @@ namespace drawinglayer
             const attribute::LineAttribute aLineAttribute(getColor());
 
             // create the waveline primitive
-            rContainer.push_back(new PolygonWavePrimitive2D(aPolygon, aLineAttribute, fWaveWidth, 0.5 * fWaveWidth));
+            Primitive2DReference xPrimitive(new PolygonWavePrimitive2D(aPolygon, aLineAttribute, fWaveWidth, 0.5 * fWaveWidth));
+            Primitive2DContainer xRetval { xPrimitive };
+
+            return xRetval;
         }
 
         WrongSpellPrimitive2D::WrongSpellPrimitive2D(

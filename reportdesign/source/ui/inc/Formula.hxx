@@ -58,7 +58,7 @@ class FormulaDialog : public formula::FormulaModalDialog,
 
     svl::SharedStringPool&             mrStringPool;
 
-    DECL_LINK( OnClickHdl, OAddFieldWindow&, void );
+    DECL_LINK_TYPED( OnClickHdl, OAddFieldWindow&, void );
 public:
     FormulaDialog( vcl::Window* pParent
         , const css::uno::Reference< css::lang::XMultiServiceFactory>& _xServiceFactory
@@ -67,7 +67,7 @@ public:
         , const css::uno::Reference < css::beans::XPropertySet >& _xRowSet
         , svl::SharedStringPool& rStrPool );
 
-    virtual ~FormulaDialog() override;
+    virtual ~FormulaDialog();
     virtual void dispose() override;
 
     // IFormulaEditorHelper
@@ -79,6 +79,7 @@ public:
     virtual void showReference(const OUString& _sFormula) override;
     virtual void dispatch(bool _bOK, bool _bMatrixChecked) override;
     virtual void setDispatcherLock( bool bLock ) override;
+    virtual void setReferenceInput(const formula::FormEditData* _pData) override;
     virtual void deleteFormData() override;
     virtual void clear() override;
     virtual void switchBack() override;
@@ -99,7 +100,7 @@ public:
     virtual void ShowReference(const OUString& _sRef) override;
     virtual void HideReference( bool bDoneRefMode = true ) override;
     virtual void ReleaseFocus( formula::RefEdit* pEdit ) override;
-    virtual void ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton ) override;
+    virtual void ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton* pButton = nullptr ) override;
 };
 
 

@@ -28,27 +28,29 @@ class SmartTagMenuController : public svt::PopupMenuControllerBase
 {
 public:
     explicit SmartTagMenuController( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
+    virtual ~SmartTagMenuController();
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw ( css::uno::RuntimeException, std::exception ) override;
 
 private:
     void FillMenu();
-    DECL_LINK( MenuSelect, Menu*, bool );
+    DECL_LINK_TYPED( MenuSelect, Menu*, bool );
     struct InvokeAction
     {
         css::uno::Reference< css::smarttags::XSmartTagAction > m_xAction;
         css::uno::Reference< css::container::XStringKeyMap > m_xSmartTagProperties;
         sal_uInt32 m_nActionID;
-        InvokeAction( css::uno::Reference< css::smarttags::XSmartTagAction > const & xAction,
-                      css::uno::Reference< css::container::XStringKeyMap > const & xSmartTagProperties,
+        InvokeAction( css::uno::Reference< css::smarttags::XSmartTagAction > xAction,
+                      css::uno::Reference< css::container::XStringKeyMap > xSmartTagProperties,
                       sal_uInt32 nActionID ) : m_xAction( xAction ), m_xSmartTagProperties( xSmartTagProperties ), m_nActionID( nActionID ) {}
     };
     std::vector< InvokeAction > m_aInvokeActions;
+    std::vector< std::unique_ptr< PopupMenu > > m_aSubMenus;
     std::unique_ptr< const SvxSmartTagItem > m_pSmartTagItem;
 };
 
@@ -57,9 +59,15 @@ SmartTagMenuController::SmartTagMenuController( const css::uno::Reference< css::
 {
 }
 
+SmartTagMenuController::~SmartTagMenuController()
+{
+}
+
 void SmartTagMenuController::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     resetPopupMenu( m_xPopupMenu );
+    m_aSubMenus.clear();
 
     css::uno::Sequence< css::beans::PropertyValue > aProperties;
     if ( rEvent.IsEnabled && ( rEvent.State >>= aProperties ) )
@@ -143,8 +151,8 @@ void SmartTagMenuController::FillMenu()
         if ( 1 < rActionComponentsSequence.getLength() )
         {
             pVCLMenu->InsertItem( nMenuId, aSmartTagCaption );
-            VclPtrInstance<PopupMenu> pMenu;
-            pSubMenu = pMenu;
+            pSubMenu = new PopupMenu;
+            m_aSubMenus.push_back( std::unique_ptr< PopupMenu >( pSubMenu ) );
             pVCLMenu->SetPopupMenu( nMenuId++, pSubMenu );
         }
         pSubMenu->SetSelectHdl( LINK( this, SmartTagMenuController, MenuSelect ) );
@@ -180,12 +188,12 @@ void SmartTagMenuController::FillMenu()
     {
         const OUString aCommand = ".uno:AutoCorrectDlg?OpenSmartTag:bool=true";
         pVCLMenu->InsertSeparator();
-        pVCLMenu->InsertItem( nMenuId, vcl::CommandInfoProvider::GetPopupLabelForCommand( aCommand, m_aModuleName ) );
+        pVCLMenu->InsertItem( nMenuId, vcl::CommandInfoProvider::Instance().GetPopupLabelForCommand( aCommand, m_xFrame ) );
         pVCLMenu->SetItemCommand( nMenuId, aCommand );
     }
 }
 
-IMPL_LINK( SmartTagMenuController, MenuSelect, Menu*, pMenu, bool )
+IMPL_LINK_TYPED( SmartTagMenuController, MenuSelect, Menu*, pMenu, bool )
 {
     if ( !m_pSmartTagItem )
         return false;
@@ -215,13 +223,16 @@ IMPL_LINK( SmartTagMenuController, MenuSelect, Menu*, pMenu, bool )
 }
 
 OUString SmartTagMenuController::getImplementationName()
+    throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.svx.SmartTagMenuController" );
 }
 
 css::uno::Sequence< OUString > SmartTagMenuController::getSupportedServiceNames()
+    throw ( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.frame.PopupMenuController" };
+    css::uno::Sequence< OUString > aRet { "com.sun.star.frame.PopupMenuController" };
+    return aRet;
 }
 
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL

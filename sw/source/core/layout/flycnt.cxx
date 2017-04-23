@@ -70,7 +70,7 @@ SwFlyAtContentFrame::SwFlyAtContentFrame( SwFlyFrameFormat *pFormat, SwFrame* pS
     SwFlyFreeFrame( pFormat, pSib, pAnch )
 {
     m_bAtCnt = true;
-    m_bAutoPosition = (RndStdIds::FLY_AT_CHAR == pFormat->GetAnchor().GetAnchorId());
+    m_bAutoPosition = (FLY_AT_CHAR == pFormat->GetAnchor().GetAnchorId());
 }
 
 // #i28701#
@@ -161,7 +161,7 @@ void SwFlyAtContentFrame::Modify( const SfxPoolItem* pOld, const SfxPoolItem *pN
         {
             SwContentNode *pNode = aNewIdx.GetNode().GetContentNode();
             pContent = pNode->getLayoutFrame( getRootFrame(), &pOldAnchor->Frame().Pos(), nullptr, false );
-            OSL_ENSURE( pContent, "New anchor not found" );
+            OSL_ENSURE( pContent, "Neuen Anker nicht gefunden" );
         }
         //Flys are never attached to a follow, but always on the master which
         //we are going to search now.
@@ -200,6 +200,8 @@ class SwOszControl
     static const SwFlyFrame *pStack5;
 
     const SwFlyFrame *pFly;
+    // #i3317#
+    sal_uInt8 mnPosStackSize;
     std::vector<Point*> maObjPositions;
 
 public:
@@ -216,7 +218,9 @@ const SwFlyFrame *SwOszControl::pStack4 = nullptr;
 const SwFlyFrame *SwOszControl::pStack5 = nullptr;
 
 SwOszControl::SwOszControl( const SwFlyFrame *pFrame )
-    : pFly( pFrame )
+    : pFly( pFrame ),
+      // #i3317#
+      mnPosStackSize( 20 )
 {
     if ( !SwOszControl::pStack1 )
         SwOszControl::pStack1 = pFly;
@@ -271,9 +275,9 @@ bool SwOszControl::ChkOsz()
 {
     bool bOscillationDetected = false;
 
-    if ( maObjPositions.size() == 20 )
+    if ( maObjPositions.size() == mnPosStackSize )
     {
-        // #i3317# position stack is full -> oscillation
+        // position stack is full -> oscillation
         bOscillationDetected = true;
     }
     else
@@ -345,9 +349,9 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                 {
                     pFormat->LockModify();
                     SwFormatSurround aMain( pFormat->GetSurround() );
-                    if ( aMain.GetSurround() == css::text::WrapTextMode_NONE )
+                    if ( aMain.GetSurround() == SURROUND_NONE )
                     {
-                        aMain.SetSurround( css::text::WrapTextMode_THROUGH );
+                        aMain.SetSurround( SURROUND_THROUGHT );
                         pFormat->SetFormatAttr( aMain );
                     }
                     pFormat->UnlockModify();
@@ -370,25 +374,25 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                 pFooter = nullptr;
             bool bOsz = false;
             bool bExtra = Lower() && Lower()->IsColumnFrame();
-            // #i3317# - boolean, to apply temporarily the
+            // #i3317# - boolean, to apply temporarly the
             // 'straightforward positioning process' for the frame due to its
             // overlapping with a previous column.
             bool bConsiderWrapInfluenceDueToOverlapPrevCol( false );
-            //  #i35911# - boolean, to apply temporarily the
+            //  #i35911# - boolean, to apply temporarly the
             // 'straightforward positioning process' for the frame due to fact
             // that it causes the complete content of its layout environment
             // to move forward.
             // #i40444# - extend usage of this boolean:
-            // apply temporarily the 'straightforward positioning process' for
+            // apply temporarly the 'straightforward positioning process' for
             // the frame due to the fact that the frame clears the area for
             // the anchor frame, thus it has to move forward.
             bool bConsiderWrapInfluenceDueToMovedFwdAnchor( false );
             do {
-                SwRectFnSet aRectFnSet(this);
-                Point aOldPos( aRectFnSet.GetPos(Frame()) );
+                SWRECTFN( this )
+                Point aOldPos( (Frame().*fnRect->fnGetPos)() );
                 SwFlyFreeFrame::MakeAll(pRenderContext);
                 const bool bPosChgDueToOwnFormat =
-                                        aOldPos != aRectFnSet.GetPos(Frame());
+                                        aOldPos != (Frame().*fnRect->fnGetPos)();
                 // #i3317#
                 if ( !ConsiderObjWrapInfluenceOnObjPos() &&
                      OverlapsPrevColumn() )
@@ -446,7 +450,7 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                     }
                 }
 
-                if ( aOldPos != aRectFnSet.GetPos(Frame()) ||
+                if ( aOldPos != (Frame().*fnRect->fnGetPos)() ||
                      ( !GetValidPosFlag() &&
                        ( pFooter || bPosChgDueToOwnFormat ) ) )
                 {
@@ -463,10 +467,10 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                              rFrameSz.GetHeightPercent() == SwFormatFrameSize::SYNCED )
                         {
                             SwFormatSurround aSurround( pFormat->GetSurround() );
-                            if ( aSurround.GetSurround() == css::text::WrapTextMode_NONE )
+                            if ( aSurround.GetSurround() == SURROUND_NONE )
                             {
                                 pFormat->LockModify();
-                                aSurround.SetSurround( css::text::WrapTextMode_THROUGH );
+                                aSurround.SetSurround( SURROUND_THROUGHT );
                                 pFormat->SetFormatAttr( aSurround );
                                 pFormat->UnlockModify();
                                 bOsz = false;
@@ -492,7 +496,7 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                       GetFormat()->GetDoc()->getIDocumentDrawModelAccess().IsVisibleLayerId( GetVirtDrawObj()->GetLayer() ) );
 
             // #i3317# - instead of attribute change apply
-            // temporarily the 'straightforward positioning process'.
+            // temporarly the 'straightforward positioning process'.
             // #i80924#
             // handle special case during splitting of table rows
             if ( bConsiderWrapInfluenceDueToMovedFwdAnchor &&
@@ -506,9 +510,9 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                 }
                 if ( pCellFrame )
                 {
-                    SwRectFnSet aRectFnSet(pCellFrame);
-                    if ( aRectFnSet.GetTop(pCellFrame->Frame()) == 0 &&
-                         aRectFnSet.GetHeight(pCellFrame->Frame()) == 0 )
+                    SWRECTFN( pCellFrame )
+                    if ( (pCellFrame->Frame().*fnRect->fnGetTop)() == 0 &&
+                         (pCellFrame->Frame().*fnRect->fnGetHeight)() == 0 )
                     {
                         bConsiderWrapInfluenceDueToMovedFwdAnchor = false;
                     }
@@ -1315,7 +1319,7 @@ void SwFlyAtContentFrame::SetAbsPos( const Point &rNew )
                 nX = rNew.X() - pFrame->Frame().Left();
         }
     }
-    GetFormat()->GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+    GetFormat()->GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
 
     if( pCnt != GetAnchorFrame() || ( IsAutoPos() && pCnt->IsTextFrame() &&
                                   GetFormat()->getIDocumentSettingAccess().get(DocumentSettingId::HTML_MODE)) )
@@ -1374,7 +1378,7 @@ void SwFlyAtContentFrame::SetAbsPos( const Point &rNew )
 
     ChgRelPos( aRelPos );
 
-    GetFormat()->GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+    GetFormat()->GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
 
     if ( pOldPage != FindPageFrame() )
         ::Notify_Background( GetVirtDrawObj(), pOldPage, aOld, PREP_FLY_LEAVE, false );

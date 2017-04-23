@@ -30,7 +30,7 @@
 #include "NavigatorWrapper.hxx"
 #include "SlideTransitionPanel.hxx"
 #include "TableDesignPanel.hxx"
-#include "SlideBackground.hxx"
+#include <SlideBackground.hxx>
 
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/sidebar/SidebarPanelBase.hxx>
@@ -45,7 +45,7 @@ using ::rtl::OUString;
 
 namespace sd { namespace sidebar {
 
-static Reference<lang::XEventListener> mxControllerDisposeListener;
+Reference<lang::XEventListener> mxControllerDisposeListener;
 
 //----- PanelFactory --------------------------------------------------------
 
@@ -68,6 +68,10 @@ void SAL_CALL PanelFactory::disposing()
 Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     const ::rtl::OUString& rsUIElementResourceURL,
     const css::uno::Sequence<css::beans::PropertyValue>& rArguments)
+    throw(
+        css::container::NoSuchElementException,
+        css::lang::IllegalArgumentException,
+        css::uno::RuntimeException, std::exception)
 {
     // Process arguments.
     const ::comphelper::NamedValueCollection aArguments (rArguments);
@@ -76,8 +80,8 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     Reference<ui::XSidebar> xSidebar (aArguments.getOrDefault("Sidebar", Reference<ui::XSidebar>()));
 
     // Throw exceptions when the arguments are not as expected.
-    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
-    if ( ! xParentWindow.is() || !pParentWindow)
+    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+    if ( ! xParentWindow.is() || pParentWindow==nullptr)
         throw RuntimeException(
             "PanelFactory::createUIElement called without ParentWindow");
     if ( ! xFrame.is())
@@ -109,24 +113,26 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
         the entries in officecfg/registry/data/org/openoffice/Office/Impress.xcu
         for the TaskPanelFactory.
     */
-    if (rsUIElementResourceURL.endsWith("/CustomAnimations"))
+#define EndsWith(s,t) s.endsWithAsciiL(t,strlen(t))
+    if (EndsWith(rsUIElementResourceURL, "/CustomAnimations"))
         pControl = VclPtr<CustomAnimationPanel>::Create(pParentWindow, *pBase, xFrame);
-    else if (rsUIElementResourceURL.endsWith("/Layouts"))
+    else if (EndsWith(rsUIElementResourceURL, "/Layouts"))
         pControl = VclPtr<LayoutMenu>::Create(pParentWindow, *pBase, xSidebar);
-    else if (rsUIElementResourceURL.endsWith("/AllMasterPages"))
+    else if (EndsWith(rsUIElementResourceURL, "/AllMasterPages"))
         pControl = AllMasterPagesSelector::Create(pParentWindow, *pBase, xSidebar);
-    else if (rsUIElementResourceURL.endsWith("/RecentMasterPages"))
+    else if (EndsWith(rsUIElementResourceURL, "/RecentMasterPages"))
         pControl = RecentMasterPagesSelector::Create(pParentWindow, *pBase, xSidebar);
-    else if (rsUIElementResourceURL.endsWith("/UsedMasterPages"))
+    else if (EndsWith(rsUIElementResourceURL, "/UsedMasterPages"))
         pControl = CurrentMasterPagesSelector::Create(pParentWindow, *pBase, xSidebar);
-    else if (rsUIElementResourceURL.endsWith("/SlideTransitions"))
+    else if (EndsWith(rsUIElementResourceURL, "/SlideTransitions"))
         pControl = VclPtr<SlideTransitionPanel>::Create(pParentWindow, *pBase, xFrame);
-    else if (rsUIElementResourceURL.endsWith("/TableDesign"))
+    else if (EndsWith(rsUIElementResourceURL, "/TableDesign"))
         pControl = VclPtr<TableDesignPanel>::Create(pParentWindow, *pBase);
-    else if (rsUIElementResourceURL.endsWith("/NavigatorPanel"))
+    else if (EndsWith(rsUIElementResourceURL, "/NavigatorPanel"))
         pControl = VclPtr<NavigatorWrapper>::Create(pParentWindow, *pBase, pBindings);
-    else if (rsUIElementResourceURL.endsWith("/SlideBackgroundPanel"))
+    else if (EndsWith(rsUIElementResourceURL, "/SlideBackgroundPanel"))
         pControl = VclPtr<SlideBackground>::Create(pParentWindow, *pBase, xFrame, pBindings);
+#undef EndsWith
 
     if (!pControl)
         throw lang::IllegalArgumentException();

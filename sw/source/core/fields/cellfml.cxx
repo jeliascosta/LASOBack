@@ -78,7 +78,7 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
     if( rCalcPara.rCalc.IsCalcError() )
         return nRet;            // stop if there is already an error set
 
-    rCalcPara.rCalc.SetCalcError( SwCalcError::Syntax );    // default: error
+    rCalcPara.rCalc.SetCalcError( CALC_SYNTAX );    // default: error
 
     // no content box?
     if( !m_pStartNode  )
@@ -106,7 +106,7 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
         if( SfxItemState::SET == GetFrameFormat()->GetItemState(
                                 RES_BOXATR_FORMULA, false, &pItem ) )
         {
-            rCalcPara.rCalc.SetCalcError( SwCalcError::NONE ); // reset status
+            rCalcPara.rCalc.SetCalcError( CALC_NOERR ); // reset status
             if( !static_cast<const SwTableBoxFormula*>(pItem)->IsValid() )
             {
                 // calculate
@@ -133,7 +133,7 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
         else if( SfxItemState::SET == pBox->GetFrameFormat()->GetItemState(
                                 RES_BOXATR_VALUE, false, &pItem ) )
         {
-            rCalcPara.rCalc.SetCalcError( SwCalcError::NONE ); // reset status
+            rCalcPara.rCalc.SetCalcError( CALC_NOERR ); // reset status
             nRet = static_cast<const SwTableBoxValue*>(pItem)->GetValue();
             break;
         }
@@ -150,25 +150,25 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
         // if there is a calculation field at position 1, get the value of it
         const bool bOK = nSttPos<sText.getLength();
         const sal_Unicode Char = bOK ? sText[nSttPos] : 0;
-        SwTextField * pTextField = nullptr;
         if ( bOK && (Char==CH_TXTATR_BREAKWORD || Char==CH_TXTATR_INWORD) )
         {
-            pTextField = static_txtattr_cast<SwTextField*>(pTextNd->GetTextAttrForCharAt(nSttPos, RES_TXTATR_FIELD));
-        }
-        if ( pTextField != nullptr )
-        {
-            rCalcPara.rCalc.SetCalcError( SwCalcError::NONE ); // reset status
+            SwTextField * const pTextField =
+                static_txtattr_cast<SwTextField*>(pTextNd->GetTextAttrForCharAt(nSttPos, RES_TXTATR_FIELD));
+            if ( pTextField == nullptr )
+                break;
+
+            rCalcPara.rCalc.SetCalcError( CALC_NOERR ); // reset status
 
             const SwField* pField = pTextField->GetFormatField().GetField();
             switch ( pField->GetTyp()->Which() )
             {
-            case SwFieldIds::SetExp:
+            case RES_SETEXPFLD:
                 nRet = static_cast<const SwSetExpField*>(pField)->GetValue();
                 break;
-            case SwFieldIds::User:
+            case RES_USERFLD:
                 nRet = static_cast<const SwUserField*>(pField)->GetValue();
                 break;
-            case SwFieldIds::Table:
+            case RES_TABLEFLD:
                 {
                     SwTableField* pTableField = const_cast<SwTableField*>(static_cast<const SwTableField*>(pField));
                     if( !pTableField->IsValid() )
@@ -183,11 +183,11 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
                 }
                 break;
 
-            case SwFieldIds::DateTime:
+            case RES_DATETIMEFLD:
                 nRet = static_cast<const SwDateTimeField*>( pField )->GetValue();
                 break;
 
-            case SwFieldIds::JumpEdit:
+            case RES_JUMPEDITFLD:
                 //JP 14.09.98: Bug 56112 - placeholder never have the right content!
                 nRet = 0;
                 break;
@@ -206,10 +206,10 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
                 break;
             nRet = rCalcPara.rCalc.Calculate( pTextInputField->GetFieldContent() ).GetDouble();
         }
-        else if ( Char != CH_TXTATR_BREAKWORD )
+        else
         {
             // result is 0 but no error!
-            rCalcPara.rCalc.SetCalcError( SwCalcError::NONE ); // reset status
+            rCalcPara.rCalc.SetCalcError( CALC_NOERR ); // reset status
 
             double aNum = 0.0;
             sText = bOK ? sText.copy( nSttPos ) : OUString();
@@ -243,7 +243,7 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
 
     //JP 12.01.99: error detection, Bug 60794
     if( DBL_MAX == nRet )
-        rCalcPara.rCalc.SetCalcError( SwCalcError::Syntax ); // set error
+        rCalcPara.rCalc.SetCalcError( CALC_SYNTAX ); // set error
 
     return nRet;
 }
@@ -252,13 +252,14 @@ double SwTableBox::GetValue( SwTableCalcPara& rCalcPara ) const
 
 SwTableCalcPara::SwTableCalcPara( SwCalc& rCalculator, const SwTable& rTable )
     : pLastTableBox( nullptr ), nStackCnt( 0 ), nMaxSize( cMAXSTACKSIZE ),
-    pBoxStack( new SwTableSortBoxes ),
     rCalc( rCalculator ), pTable( &rTable )
 {
+    pBoxStack = new SwTableSortBoxes;
 }
 
 SwTableCalcPara::~SwTableCalcPara()
 {
+    delete pBoxStack;
 }
 
 bool SwTableCalcPara::CalcWithStackOverflow()
@@ -272,7 +273,7 @@ bool SwTableCalcPara::CalcWithStackOverflow()
     do {
         SwTableBox* pBox = const_cast<SwTableBox*>(pLastTableBox);
         nStackCnt = 0;
-        rCalc.SetCalcError( SwCalcError::NONE );
+        rCalc.SetCalcError( CALC_NOERR );
         aStackOverflows.insert( aStackOverflows.begin() + nCnt++, pBox );
 
         pBoxStack->erase( pBox );
@@ -283,7 +284,7 @@ bool SwTableCalcPara::CalcWithStackOverflow()
 
     // if recursion was detected
     nStackCnt = 0;
-    rCalc.SetCalcError( SwCalcError::NONE );
+    rCalc.SetCalcError( CALC_NOERR );
     pBoxStack->clear();
 
     while( !rCalc.IsCalcError() && nCnt )
@@ -351,7 +352,7 @@ void SwTableFormula::MakeFormula_( const SwTable& rTable, OUString& rNewStr,
             if ( pTableBox->getRowSpan() >= 1 )
             {
                 if( bDelim )
-                    rNewStr += OUStringLiteral1(cListDelim);
+                    rNewStr += OUStringLiteral1<cListDelim>();
                 bDelim = true;
                 rNewStr += pCalcPara->rCalc.GetStrResult(
                             pTableBox->GetValue( *pCalcPara ), false );
@@ -372,7 +373,7 @@ void SwTableFormula::MakeFormula_( const SwTable& rTable, OUString& rNewStr,
         }
     }
     else
-        pCalcPara->rCalc.SetCalcError( SwCalcError::Syntax );   // set error
+        pCalcPara->rCalc.SetCalcError( CALC_SYNTAX );   // set error
     rNewStr += " ";
 }
 
@@ -385,7 +386,7 @@ void SwTableFormula::RelNmsToBoxNms( const SwTable& rTable, OUString& rNewStr,
     const SwTableBox *pBox = rTable.GetTableBox(
                     pNd->FindTableBoxStartNode()->GetIndex() );
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
+    rNewStr += OUString(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -406,7 +407,7 @@ void SwTableFormula::RelNmsToBoxNms( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "A1";
 
     // get label for the box
-    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
@@ -418,7 +419,7 @@ void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
     const SwTableBox *pBox = rTable.GetTableBox(
                     pNd->FindTableBoxStartNode()->GetIndex() );
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
+    rNewStr += OUString(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -438,7 +439,7 @@ void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "0";
 
     // get label for the box
-    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
@@ -458,7 +459,7 @@ void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
         sRefBoxNm = pBox->GetName();
     }
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
+    rNewStr += OUString(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -472,7 +473,7 @@ void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
                             m_eNmType == EXTRNL_NAME );
 
     // get label for the box
-    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
@@ -481,7 +482,7 @@ void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
     // area in these parentheses?
     SwTableBox* pBox;
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
+    rNewStr += OUString(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -504,7 +505,7 @@ void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "?";
 
     // get label for the box
-    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
@@ -513,7 +514,7 @@ void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
     // area in these parentheses?
     const SwTableBox* pBox;
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
+    rNewStr += OUString(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -525,7 +526,7 @@ void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
 
     pBox = rTable.GetTableBox( rFirstBox );
     rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pBox))
-            +  OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]); // get label for the box
+            +  OUString(rFirstBox[ rFirstBox.getLength()-1 ]); // get label for the box
 }
 
 /// create external formula (for UI)
@@ -857,12 +858,12 @@ static OUString lcl_BoxNmToRel( const SwTable& rTable, const SwTableNode& rTable
 
         const OUString sCpy = sTmp;        //JP 01.11.95: add rest from box name
 
-        sTmp = OUStringLiteral1(cRelIdentifier) + OUString::number( nBox )
-             + OUStringLiteral1(cRelSeparator) + OUString::number( nLine );
+        sTmp = OUStringLiteral1<cRelIdentifier>() + OUString::number( nBox )
+             + OUStringLiteral1<cRelSeparator>() + OUString::number( nLine );
 
         if (!sCpy.isEmpty())
         {
-            sTmp += OUStringLiteral1(cRelSeparator) + sCpy;
+            sTmp += OUStringLiteral1<cRelSeparator>() + sCpy;
         }
     }
 
@@ -1047,7 +1048,7 @@ void SwTableFormula::SplitMergeBoxNm_( const SwTable& rTable, OUString& rNewStr,
 {
     SwTableFormulaUpdate& rTableUpd = *static_cast<SwTableFormulaUpdate*>(pPara);
 
-    rNewStr += OUStringLiteral1(rFirstBox[0]);     // get label for the box
+    rNewStr += OUString(rFirstBox[0]);     // get label for the box
     rFirstBox = rFirstBox.copy(1);
 
     OUString sTableNm;
@@ -1184,7 +1185,7 @@ void SwTableFormula::SplitMergeBoxNm_( const SwTable& rTable, OUString& rNewStr,
         rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pEndBox)) + ":";
 
     rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pSttBox))
-            +  OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1] );
+            +  OUString(rFirstBox[ rFirstBox.getLength()-1] );
 }
 
 /// Create external formula but remember that the formula is placed in a split/merged table

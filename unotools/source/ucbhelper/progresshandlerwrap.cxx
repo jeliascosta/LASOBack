@@ -26,7 +26,7 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::task;
 using namespace ::com::sun::star::ucb;
 
-ProgressHandlerWrap::ProgressHandlerWrap( css::uno::Reference< css::task::XStatusIndicator > const & xSI )
+ProgressHandlerWrap::ProgressHandlerWrap( css::uno::Reference< css::task::XStatusIndicator > xSI )
 : m_xStatusIndicator( xSI )
 {
 }
@@ -49,6 +49,7 @@ bool getStatusFromAny_Impl( const Any& aAny, OUString& aText, sal_Int32& nNum )
 }
 
 void SAL_CALL ProgressHandlerWrap::push( const Any& Status )
+    throw( RuntimeException, std::exception )
 {
     if( !m_xStatusIndicator.is() )
         return;
@@ -61,6 +62,7 @@ void SAL_CALL ProgressHandlerWrap::push( const Any& Status )
 }
 
 void SAL_CALL ProgressHandlerWrap::update( const Any& Status )
+    throw( RuntimeException, std::exception )
 {
     if( !m_xStatusIndicator.is() )
         return;
@@ -76,6 +78,7 @@ void SAL_CALL ProgressHandlerWrap::update( const Any& Status )
 }
 
 void SAL_CALL ProgressHandlerWrap::pop()
+        throw( RuntimeException, std::exception )
 {
     if( m_xStatusIndicator.is() )
         m_xStatusIndicator->end();

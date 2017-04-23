@@ -53,7 +53,7 @@ using namespace com::sun::star::uno;
 // <!--StartFragment--> and <!--EndFragment--> (no space between !-- and the
 // text
 
-namespace
+namespace // private
 {
 std::string GetHtmlFormatHeader(size_t startHtml, size_t endHtml, size_t startFragment, size_t endFragment)
 {
@@ -66,7 +66,7 @@ std::string GetHtmlFormatHeader(size_t startHtml, size_t endHtml, size_t startFr
     return htmlHeader.str();
 }
 
-}
+} // namespace private
 
 // the office always writes the start and end html tag in upper cases and
 // without spaces both tags don't allow parameters
@@ -115,7 +115,7 @@ Sequence<sal_Int8> SAL_CALL TextHtmlToHTMLFormat(Sequence<sal_Int8>& aTextHtml)
     return byteSequence;
 }
 
-const char* const HtmlStartTag = "<html";
+const char* HtmlStartTag = "<html";
 
 Sequence<sal_Int8> HTMLFormatToTextHtml(const Sequence<sal_Int8>& aHTMLFormat)
 {
@@ -149,7 +149,7 @@ Sequence<sal_Int8> HTMLFormatToTextHtml(const Sequence<sal_Int8>& aHTMLFormat)
    can improve this
 */
 const char HtmlFormatStart[] = "Version:";
-int const HtmlFormatStartLen = (sizeof(HtmlFormatStart) - 1);
+int HtmlFormatStartLen = (sizeof(HtmlFormatStart) - 1);
 
 bool isHTMLFormat(const Sequence<sal_Int8>& aHtmlSequence)
 {

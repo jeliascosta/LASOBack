@@ -157,7 +157,7 @@ bool SwEditShell::InsertGlobalDocContent( const SwGlblDocContent& rInsPos,
     else
     {
         bEndUndo = true;
-        pMyDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        pMyDoc->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         --rPos.nNode;
         pMyDoc->getIDocumentContentOperations().AppendTextNode( rPos );
         pCursor->SetMark();
@@ -167,7 +167,7 @@ bool SwEditShell::InsertGlobalDocContent( const SwGlblDocContent& rInsPos,
 
     if( bEndUndo )
     {
-        pMyDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        pMyDoc->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     EndAllAction();
 
@@ -199,7 +199,7 @@ bool SwEditShell::InsertGlobalDocContent( const SwGlblDocContent& rInsPos,
     else
     {
         bEndUndo = true;
-        pMyDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        pMyDoc->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         --rPos.nNode;
         pMyDoc->getIDocumentContentOperations().AppendTextNode( rPos );
     }
@@ -208,7 +208,7 @@ bool SwEditShell::InsertGlobalDocContent( const SwGlblDocContent& rInsPos,
 
     if( bEndUndo )
     {
-        pMyDoc->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        pMyDoc->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     EndAllAction();
 
@@ -245,7 +245,7 @@ bool SwEditShell::DeleteGlobalDocContent( const SwGlblDocContents& rArr ,
 
     SET_CURR_SHELL( this );
     StartAllAction();
-    StartUndo( SwUndoId::START );
+    StartUndo( UNDO_START );
 
     SwPaM* pCursor = GetCursor();
     if( pCursor->GetNext() != pCursor || IsTableMode() )
@@ -297,7 +297,7 @@ bool SwEditShell::DeleteGlobalDocContent( const SwGlblDocContents& rArr ,
         break;
     }
 
-    EndUndo( SwUndoId::END );
+    EndUndo( UNDO_END );
     EndAllAction();
     return true;
 }

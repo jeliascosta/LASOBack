@@ -28,11 +28,8 @@
 #include <osl/diagnose.h>
 
 #include "com/sun/star/container/XNameAccess.hpp"
-#include "com/sun/star/embed/InvalidStorageException.hpp"
-#include "com/sun/star/embed/StorageWrappedTargetException.hpp"
 #include "com/sun/star/embed/XStorage.hpp"
-#include "com/sun/star/io/IOException.hpp"
-#include "com/sun/star/ucb/IllegalIdentifierException.hpp"
+
 #include "comphelper/processfactory.hxx"
 #include "ucbhelper/contentidentifier.hxx"
 
@@ -80,6 +77,7 @@ void SAL_CALL ContentProvider::release()
 }
 
 css::uno::Any SAL_CALL ContentProvider::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< lang::XTypeProvider* >(this)),
@@ -102,23 +100,12 @@ XTYPEPROVIDER_IMPL_4( ContentProvider,
 
 // XServiceInfo methods.
 
-XSERVICEINFO_COMMOM_IMPL( ContentProvider,
-                          OUString( "com.sun.star.comp.ucb.TransientDocumentsContentProvider" ) )
-/// @throws css::uno::Exception
-static css::uno::Reference< css::uno::XInterface > SAL_CALL
-ContentProvider_CreateInstance( const css::uno::Reference< css::lang::XMultiServiceFactory> & rSMgr )
-{
-    css::lang::XServiceInfo* pX =
-        static_cast<css::lang::XServiceInfo*>(new ContentProvider( ucbhelper::getComponentContext(rSMgr) ));
-    return css::uno::Reference< css::uno::XInterface >::query( pX );
-}
 
-css::uno::Sequence< OUString >
-ContentProvider::getSupportedServiceNames_Static()
-{
-    css::uno::Sequence< OUString > aSNS { "com.sun.star.ucb.TransientDocumentsContentProvider" };
-    return aSNS;
-}
+XSERVICEINFO_IMPL_1_CTX(
+    ContentProvider,
+    OUString( "com.sun.star.comp.ucb.TransientDocumentsContentProvider" ),
+    "com.sun.star.ucb.TransientDocumentsContentProvider" );
+
 
 // Service factory implementation.
 
@@ -133,11 +120,12 @@ ONE_INSTANCE_SERVICE_FACTORY_IMPL( ContentProvider );
 uno::Reference< ucb::XContent > SAL_CALL
 ContentProvider::queryContent(
         const uno::Reference< ucb::XContentIdentifier >& Identifier )
+    throw( ucb::IllegalIdentifierException, uno::RuntimeException, std::exception )
 {
     Uri aUri( Identifier->getContentIdentifier() );
     if ( !aUri.isValid() )
         throw ucb::IllegalIdentifierException(
-            "Invalid URL!",
+            OUString( "Invalid URL!" ),
             Identifier );
 
     // Normalize URI.
@@ -168,6 +156,7 @@ ContentProvider::queryContent(
 uno::Reference< ucb::XContent > SAL_CALL
 ContentProvider::createDocumentContent(
         const uno::Reference< frame::XModel >& Model )
+    throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception )
 {
     // model -> id -> content identifier -> queryContent
     if ( m_xDocsMgr.is() )
@@ -199,14 +188,16 @@ ContentProvider::createDocumentContent(
 
             // no content.
             throw lang::IllegalArgumentException(
-                "Illegal Content Identifier!",
+                OUString(
+                    "Illegal Content Identifier!" ),
                 static_cast< cppu::OWeakObject * >( this ),
                 1 );
         }
         else
         {
             throw lang::IllegalArgumentException(
-                "Unable to obtain document id from model!",
+                OUString(
+                    "Unable to obtain document id from model!" ),
                 static_cast< cppu::OWeakObject * >( this ),
                 1 );
         }
@@ -214,7 +205,8 @@ ContentProvider::createDocumentContent(
      else
      {
         throw lang::IllegalArgumentException(
-            "No Document Manager!",
+            OUString(
+                "No Document Manager!" ),
             static_cast< cppu::OWeakObject * >( this ),
             1 );
      }
@@ -399,6 +391,7 @@ ContentProvider::queryStorageClone( const OUString & rUri ) const
 uno::Reference< io::XInputStream >
 ContentProvider::queryInputStream( const OUString & rUri,
                                    const OUString & rPassword ) const
+    throw ( packages::WrongPasswordException, css::uno::RuntimeException )
 {
     if ( m_xStgElemFac.is() )
     {
@@ -436,6 +429,8 @@ uno::Reference< io::XOutputStream >
 ContentProvider::queryOutputStream( const OUString & rUri,
                                     const OUString & rPassword,
                                     bool bTruncate ) const
+    throw ( packages::WrongPasswordException,
+            uno::RuntimeException )
 {
     if ( m_xStgElemFac.is() )
     {
@@ -475,6 +470,7 @@ uno::Reference< io::XStream >
 ContentProvider::queryStream( const OUString & rUri,
                               const OUString & rPassword,
                               bool bTruncate ) const
+    throw ( packages::WrongPasswordException, uno::RuntimeException )
 {
     if ( m_xStgElemFac.is() )
     {
@@ -583,7 +579,7 @@ ContentProvider::queryStorageTitle( const OUString & rUri ) const
     else if ( aUri.isDocument() )
     {
         // for documents, title shall not be derived from URL. It shall
-        // be something more 'speaking' than just the document UID.
+        // be somethimg more 'speaking' than just the document UID.
         if ( m_xDocsMgr.is() )
             aTitle = m_xDocsMgr->queryStorageTitle( aUri.getDocumentId() );
     }

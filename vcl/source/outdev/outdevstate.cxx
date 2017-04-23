@@ -39,8 +39,8 @@ OutDevState::OutDevState()
     , mpOverlineColor(nullptr)
     , mpRefPoint(nullptr)
     , meTextAlign(ALIGN_TOP)
-    , meRasterOp(RasterOp::OverPaint)
-    , mnTextLayoutMode(ComplexTextLayoutFlags::Default)
+    , meRasterOp(ROP_OVERPAINT)
+    , mnTextLayoutMode(TEXT_LAYOUT_DEFAULT)
     , meTextLanguage(0)
     , mnFlags(PushFlags::NONE)
 {
@@ -263,7 +263,7 @@ void OutputDevice::SetDrawMode( DrawModeFlags nDrawMode )
         mpAlphaVDev->SetDrawMode( nDrawMode );
 }
 
-void OutputDevice::SetLayoutMode( ComplexTextLayoutFlags nTextLayoutMode )
+void OutputDevice::SetLayoutMode( ComplexTextLayoutMode nTextLayoutMode )
 {
     if( mpMetaFile )
         mpMetaFile->AddAction( new MetaLayoutModeAction( nTextLayoutMode ) );
@@ -297,7 +297,7 @@ void OutputDevice::SetRasterOp( RasterOp eRasterOp )
         mbInitLineColor = mbInitFillColor = true;
 
         if( mpGraphics || AcquireGraphics() )
-            mpGraphics->SetXORMode( (RasterOp::Invert == meRasterOp) || (RasterOp::Xor == meRasterOp) );
+            mpGraphics->SetXORMode( (ROP_INVERT == meRasterOp) || (ROP_XOR == meRasterOp), ROP_INVERT == meRasterOp );
     }
 
     if( mpAlphaVDev )
@@ -466,6 +466,7 @@ void OutputDevice::SetFont( const vcl::Font& rNewFont )
 {
 
     vcl::Font aFont( rNewFont );
+    aFont.SetLanguage(rNewFont.GetLanguage());
     if ( mnDrawMode & (DrawModeFlags::BlackText | DrawModeFlags::WhiteText | DrawModeFlags::GrayText | DrawModeFlags::GhostedText | DrawModeFlags::SettingsText |
                        DrawModeFlags::BlackFill | DrawModeFlags::WhiteFill | DrawModeFlags::GrayFill | DrawModeFlags::NoFill |
                        DrawModeFlags::GhostedFill | DrawModeFlags::SettingsFill ) )
@@ -575,11 +576,11 @@ void OutputDevice::InitLineColor()
 
     if( mbLineColor )
     {
-        if( RasterOp::N0 == meRasterOp )
+        if( ROP_0 == meRasterOp )
             mpGraphics->SetROPLineColor( SalROPColor::N0 );
-        else if( RasterOp::N1 == meRasterOp )
+        else if( ROP_1 == meRasterOp )
             mpGraphics->SetROPLineColor( SalROPColor::N1 );
-        else if( RasterOp::Invert == meRasterOp )
+        else if( ROP_INVERT == meRasterOp )
             mpGraphics->SetROPLineColor( SalROPColor::Invert );
         else
             mpGraphics->SetLineColor( ImplColorToSal( maLineColor ) );
@@ -597,11 +598,11 @@ void OutputDevice::InitFillColor()
 
     if( mbFillColor )
     {
-        if( RasterOp::N0 == meRasterOp )
+        if( ROP_0 == meRasterOp )
             mpGraphics->SetROPFillColor( SalROPColor::N0 );
-        else if( RasterOp::N1 == meRasterOp )
+        else if( ROP_1 == meRasterOp )
             mpGraphics->SetROPFillColor( SalROPColor::N1 );
-        else if( RasterOp::Invert == meRasterOp )
+        else if( ROP_INVERT == meRasterOp )
             mpGraphics->SetROPFillColor( SalROPColor::Invert );
         else
             mpGraphics->SetFillColor( ImplColorToSal( maFillColor ) );

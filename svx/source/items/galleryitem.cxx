@@ -123,7 +123,7 @@ bool SvxGalleryItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /* nMemberId
 
 bool SvxGalleryItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
+    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
 
     const SvxGalleryItem& rItem = static_cast<const SvxGalleryItem&>(rAttr);
 

@@ -25,7 +25,7 @@
 
 namespace sd {
 
-extern const sal_uInt16 SidArrayZoom[];
+extern sal_uInt16 SidArrayZoom[];
 
 class FuZoom
     : public FuPoor
@@ -43,12 +43,12 @@ public:
     virtual void Deactivate() override;      ///< deactivates the function
 
 protected:
-    virtual ~FuZoom() override;
+    virtual ~FuZoom();
 
     Point       aBeginPosPix;
     Point       aBeginPos;
     Point       aEndPos;
-    ::tools::Rectangle   aZoomRect;
+    Rectangle   aZoomRect;
     bool        bVisible;
     bool        bStartDrag;
     Pointer     aPtr;

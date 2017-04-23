@@ -24,7 +24,7 @@ using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
 uno::Any
-ScVbaDialogs::Item( const uno::Any &aItem )
+ScVbaDialogs::Item( const uno::Any &aItem ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nIndex = 0;
     aItem >>= nIndex;

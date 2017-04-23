@@ -44,6 +44,7 @@ DynamicResultSet::DynamicResultSet(
 
 DynamicResultSet::~DynamicResultSet()
 {
+    delete m_pFactory;
 }
 
 

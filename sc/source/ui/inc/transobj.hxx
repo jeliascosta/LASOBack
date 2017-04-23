@@ -23,19 +23,18 @@
 #include <svtools/transfer.hxx>
 #include "global.hxx"
 #include "address.hxx"
-#include <sfx2/objsh.hxx>
-
 
 class ScDocShell;
 class ScMarkData;
 class SfxObjectShell;
-enum class ScDragSrc;
 
 namespace com { namespace sun { namespace star {
     namespace sheet {
         class XSheetCellRanges;
     }
 }}}
+
+#include <sfx2/objsh.hxx>
 
 class ScTransferObj : public TransferableHelper
 {
@@ -52,7 +51,7 @@ private:
     SCCOL                           nSourceCursorX;
     SCROW                           nSourceCursorY;
     SCTAB                           nVisibleTab;
-    ScDragSrc                       nDragSourceFlags;
+    sal_uInt16                      nDragSourceFlags;
     bool                            bDragWasInternal;
     bool                            bUsedForLink;
     bool                            bHasFiltered;       // if has filtered rows
@@ -63,15 +62,15 @@ private:
     void        InitDocShell(bool bLimitToPageSize);
     static void StripRefs( ScDocument* pDoc, SCCOL nStartX, SCROW nStartY,
                             SCCOL nEndX, SCROW nEndY,
-                            ScDocument* pDestDoc,
+                            ScDocument* pDestDoc=nullptr,
                             SCCOL nSubX=0, SCROW nSubY=0 );
     static void PaintToDev( OutputDevice* pDev, ScDocument* pDoc, double nPrintFactor,
-                            const ScRange& rBlock );
+                            const ScRange& rBlock, bool bMetaFile );
     static void GetAreaSize( ScDocument* pDoc, SCTAB nTab1, SCTAB nTab2, SCROW& nRow, SCCOL& nCol );
 
 public:
             ScTransferObj( ScDocument* pClipDoc, const TransferableObjectDescriptor& rDesc );
-    virtual ~ScTransferObj() override;
+    virtual ~ScTransferObj();
 
     virtual void        AddSupportedFormats() override;
     virtual bool GetData( const css::datatransfer::DataFlavor& rFlavor, const OUString& rDestDoc ) override;
@@ -89,7 +88,7 @@ public:
     SCCOL               GetSourceCursorX() const  { return nSourceCursorX; }
     SCROW               GetSourceCursorY() const  { return nSourceCursorY; }
     SCTAB               GetVisibleTab() const   { return nVisibleTab; }
-    ScDragSrc           GetDragSourceFlags() const  { return nDragSourceFlags; }
+    sal_uInt16          GetDragSourceFlags() const  { return nDragSourceFlags; }
     bool                HasFilteredRows() const { return bHasFiltered; }
     bool                GetUseInApi() const     { return bUseInApi; }
     ScDocShell*         GetSourceDocShell();
@@ -101,14 +100,14 @@ public:
     void                SetSourceCursorPos( SCCOL nX, SCROW nY );
     void                SetVisibleTab( SCTAB nNew );
     void                SetDragSource( ScDocShell* pSourceShell, const ScMarkData& rMark );
-    void                SetDragSourceFlags( ScDragSrc nFlags );
+    void                SetDragSourceFlags( sal_uInt16 nFlags );
     void                SetDragWasInternal();
     SC_DLLPUBLIC void   SetUseInApi( bool bSet );
 
     static SC_DLLPUBLIC ScTransferObj* GetOwnClipboard( vcl::Window* pUIWin );
 
     static SfxObjectShell*  SetDrawClipDoc( bool bAnyOle );     // update ScGlobal::xDrawClipDocShellRef
-    virtual sal_Int64 SAL_CALL getSomething( const com::sun::star::uno::Sequence< sal_Int8 >& rId ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const com::sun::star::uno::Sequence< sal_Int8 >& rId ) throw( com::sun::star::uno::RuntimeException, std::exception ) override;
     static const com::sun::star::uno::Sequence< sal_Int8 >& getUnoTunnelId();
 };
 

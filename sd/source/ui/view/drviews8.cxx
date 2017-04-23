@@ -65,12 +65,12 @@ void DrawViewShell::ScannerEvent( const css::lang::EventObject& )
                     const SolarMutexGuard aGuard;
                     SdrPage*            pPage = mpDrawView->GetSdrPageView()->GetPage();
                     Size                aBmpSize( aScanBmp.GetPrefSize() ), aPageSize( pPage->GetSize() );
-                    const MapMode       aMap100( MapUnit::Map100thMM );
+                    const MapMode       aMap100( MAP_100TH_MM );
 
                     if( !aBmpSize.Width() || !aBmpSize.Height() )
                         aBmpSize = aScanBmp.GetSizePixel();
 
-                    if( aScanBmp.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
+                    if( aScanBmp.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
                         aBmpSize = GetActiveWindow()->PixelToLogic( aBmpSize, aMap100 );
                     else
                         aBmpSize = OutputDevice::LogicToLogic( aBmpSize, aScanBmp.GetPrefMapMode(), aMap100 );
@@ -97,7 +97,7 @@ void DrawViewShell::ScannerEvent( const css::lang::EventObject& )
 
                     Point aPnt ( ( aPageSize.Width() - aBmpSize.Width() ) >> 1, ( aPageSize.Height() - aBmpSize.Height() ) >> 1 );
                     aPnt += Point( pPage->GetLftBorder(), pPage->GetUppBorder() );
-                    ::tools::Rectangle   aRect( aPnt, aBmpSize );
+                    Rectangle   aRect( aPnt, aBmpSize );
                     SdrGrafObj* pGrafObj = nullptr;
                     bool        bInsertNewObject = true;
 

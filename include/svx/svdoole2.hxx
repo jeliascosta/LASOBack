@@ -45,7 +45,7 @@ class SdrOle2ObjImpl;
 class SVX_DLLPUBLIC SdrOle2Obj : public SdrRectObj
 {
 private:
-    std::unique_ptr<SdrOle2ObjImpl> mpImpl;
+    SdrOle2ObjImpl* mpImpl;
 
 private:
     SVX_DLLPRIVATE void Connect_Impl();
@@ -68,8 +68,8 @@ public:
     OUString GetStyleString();
 
     SdrOle2Obj( bool bFrame_ = false );
-    SdrOle2Obj( const svt::EmbeddedObjectRef& rNewObjRef, const OUString& rNewObjName, const tools::Rectangle& rNewRect );
-    virtual ~SdrOle2Obj() override;
+    SdrOle2Obj( const svt::EmbeddedObjectRef& rNewObjRef, const OUString& rNewObjName, const Rectangle& rNewRect );
+    virtual ~SdrOle2Obj();
 
     const svt::EmbeddedObjectRef& getEmbeddedObjectRef() const;
 
@@ -135,8 +135,8 @@ public:
 
     virtual void NbcMove(const Size& rSize) override;
     virtual void NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact) override;
-    virtual void NbcSetSnapRect(const tools::Rectangle& rRect) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual void SetGeoData(const SdrObjGeoData& rGeo) override;
 
     static bool CanUnloadRunningObj( const css::uno::Reference< css::embed::XEmbeddedObject >& xObj,
@@ -182,7 +182,7 @@ class SVX_DLLPUBLIC SdrEmbedObjectLink : public sfx2::SvBaseLink
 
 public:
     explicit            SdrEmbedObjectLink(SdrOle2Obj* pObj);
-    virtual             ~SdrEmbedObjectLink() override;
+    virtual             ~SdrEmbedObjectLink();
 
     virtual void        Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(

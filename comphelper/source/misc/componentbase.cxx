@@ -33,14 +33,14 @@ namespace comphelper
     using ::com::sun::star::uno::Reference;
     using ::com::sun::star::uno::XInterface;
 
-    void ComponentBase::checkDisposed( GuardAccess ) const
+    void ComponentBase::impl_checkDisposed_throw() const
     {
         if ( m_rBHelper.bDisposed )
             throw DisposedException( OUString(), getComponent() );
     }
 
 
-    void ComponentBase::checkInitialized( GuardAccess ) const
+    void ComponentBase::impl_checkInitialized_throw() const
     {
         if ( !m_bInitialized )
             throw NotInitializedException( OUString(), getComponent() );

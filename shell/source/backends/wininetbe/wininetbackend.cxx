@@ -57,7 +57,10 @@ typedef struct
 } ProxyEntry;
 
 
-namespace
+// helper functions
+
+
+namespace // private
 {
     ProxyEntry ReadProxyEntry(const OUString& aProxy, sal_Int32& i)
     {
@@ -95,7 +98,8 @@ namespace
         return ProxyEntry();
     }
 
-} // unnamed namespace
+} // end private namespace
+
 
 WinInetBackend::WinInetBackend()
 {
@@ -119,9 +123,9 @@ WinInetBackend::WinInetBackend()
             LPINTERNET_PROXY_INFO lpi = &pi;
             DWORD dwLength = sizeof (INTERNET_PROXY_INFO);
             BOOL ok = lpfnInternetQueryOption(
-                nullptr,
+                NULL,
                 INTERNET_OPTION_PROXY,
-                lpi,
+                (LPVOID)lpi,
                 &dwLength );
             if (!ok)
             {
@@ -136,12 +140,12 @@ WinInetBackend::WinInetBackend()
                     // alloca is nice because it is fast and we don't
                     // have to free the allocated memory, it will be
                     // automatically done
-                    lpi = static_cast< LPINTERNET_PROXY_INFO >(
+                    lpi = reinterpret_cast< LPINTERNET_PROXY_INFO >(
                         alloca( dwLength ) );
                     ok = lpfnInternetQueryOption(
-                        nullptr,
+                        NULL,
                         INTERNET_OPTION_PROXY,
-                        lpi,
+                        (LPVOID)lpi,
                         &dwLength );
                     if (!ok)
                     {
@@ -218,10 +222,13 @@ WinInetBackend::WinInetBackend()
 
 
                 ProxyEntry aTypeIndepProxy = FindProxyEntry( aProxyList, OUString());
-                ProxyEntry aHttpProxy = FindProxyEntry( aProxyList, "http" );
-                ProxyEntry aHttpsProxy  = FindProxyEntry( aProxyList, "https" );
+                ProxyEntry aHttpProxy = FindProxyEntry( aProxyList, OUString(
+                    "http"  ) );
+                ProxyEntry aHttpsProxy  = FindProxyEntry( aProxyList, OUString(
+                    "https"  ) );
 
-                ProxyEntry aFtpProxy  = FindProxyEntry( aProxyList, "ftp" );
+                ProxyEntry aFtpProxy  = FindProxyEntry( aProxyList, OUString(
+                    "ftp"  ) );
 
                 if( aTypeIndepProxy.Server.getLength() )
                 {
@@ -288,25 +295,36 @@ WinInetBackend::WinInetBackend()
     }
 }
 
+
 WinInetBackend::~WinInetBackend()
 {
 }
+
 
 WinInetBackend* WinInetBackend::createInstance()
 {
     return new WinInetBackend;
 }
 
+
 void WinInetBackend::setPropertyValue(
     OUString const &, css::uno::Any const &)
+    throw (
+        css::beans::UnknownPropertyException, css::beans::PropertyVetoException,
+        css::lang::IllegalArgumentException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException)
 {
     throw css::lang::IllegalArgumentException(
-        "setPropertyValue not supported",
+        OUString(
+            "setPropertyValue not supported"),
         static_cast< cppu::OWeakObject * >(this), -1);
 }
 
 css::uno::Any WinInetBackend::getPropertyValue(
     OUString const & PropertyName)
+    throw (
+        css::beans::UnknownPropertyException, css::lang::WrappedTargetException,
+        css::uno::RuntimeException)
 {
     if ( PropertyName == "ooInetFTPProxyName" )
     {
@@ -338,11 +356,14 @@ css::uno::Any WinInetBackend::getPropertyValue(
     }
 }
 
+
 OUString SAL_CALL WinInetBackend::getBackendName() {
     return OUString("com.sun.star.comp.configuration.backend.WinInetBackend") ;
 }
 
+
 OUString SAL_CALL WinInetBackend::getImplementationName()
+    throw (uno::RuntimeException)
 {
     return getBackendName() ;
 }
@@ -355,11 +376,13 @@ uno::Sequence<OUString> SAL_CALL WinInetBackend::getBackendServiceNames()
 }
 
 sal_Bool SAL_CALL WinInetBackend::supportsService(const OUString& aServiceName)
+    throw (uno::RuntimeException)
 {
     return cppu::supportsService(this, aServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL WinInetBackend::getSupportedServiceNames()
+    throw (uno::RuntimeException)
 {
     return getBackendServiceNames() ;
 }

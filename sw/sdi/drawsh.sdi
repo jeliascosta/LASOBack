@@ -44,14 +44,14 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_LINE_DASH
     [
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_LINE_TRANSPARENCE
@@ -59,7 +59,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_LINE_JOINT
@@ -67,7 +67,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_LINE_CAP
@@ -75,7 +75,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_DASH_LIST
@@ -108,17 +108,12 @@ interface TextDraw : TextDrawBase
         StateMethod = GetDrawAttrState ;
     ]
 
-    SID_PATTERN_LIST
-    [
-        StateMethod = GetDrawAttrState ;
-    ]
-
     SID_ATTR_LINE_WIDTH
     [
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
         Export = FALSE;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_LINE_COLOR
@@ -126,7 +121,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_STYLE
@@ -134,7 +129,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_COLOR
@@ -142,7 +137,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_GRADIENT
@@ -150,7 +145,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_HATCH
@@ -158,7 +153,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_BITMAP
@@ -166,7 +161,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_TRANSPARENCE
@@ -174,7 +169,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTR_FILL_FLOATTRANSPARENCE
@@ -182,7 +177,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = ExecDrawAttrArgs ;
         StateMethod = GetDrawAttrState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_ATTRIBUTES_LINE
@@ -207,14 +202,14 @@ interface TextDraw : TextDrawBase
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FLIP_HORIZONTAL
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_OBJECT_ROTATE
@@ -222,7 +217,7 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_BEZIER_EDIT
@@ -230,35 +225,35 @@ interface TextDraw : TextDrawBase
         Export = FALSE;
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FONTWORK
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_OBJECT_HELL
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_OBJECT_HEAVEN
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_TOOL_HIERARCHIE
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_EXTRUSION_TOOGLE
@@ -418,77 +413,77 @@ shell SwDrawShell : SwDrawBaseShell
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_ADJUST
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_DISTANCE
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_START
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_MIRROR
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_HIDEFORM
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_OUTLINE
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_SHDWXVAL
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_SHADOW
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_SHDWCOLOR
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     SID_FORMTEXT_SHDWYVAL
     [
         ExecMethod = ExecFormText ;
         StateMethod = GetFormTextState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_FORMAT_FOOTNOTE_DLG // status()
@@ -515,14 +510,14 @@ shell SwDrawShell : SwDrawBaseShell
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 
     FN_REMOVE_TEXT_BOX
     [
         ExecMethod = Execute ;
         StateMethod = GetState ;
-        DisableFlags="SfxDisableFlags::SwOnProtectedCursor";
+        DisableFlags="SW_DISABLE_ON_PROTECTED_CURSOR";
     ]
 }
 

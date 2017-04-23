@@ -37,6 +37,11 @@ public:
     CPPUNIT_TEST_SUITE_END();
 };
 
+std::ostream& operator<<(std::ostream& rStrm, const TokenType& tt)
+{
+    return rStrm << (int)tt;
+}
+
 void SyntaxHighlightTest::testBasicString() {
     OUString s("\"foo\"");
     std::vector<HighlightPortion> ps;

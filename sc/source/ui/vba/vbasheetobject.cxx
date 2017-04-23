@@ -42,7 +42,7 @@ ScVbaButtonCharacters::ScVbaButtonCharacters(
         const uno::Reference< beans::XPropertySet >& rxPropSet,
         const ScVbaPalette& rPalette,
         const uno::Any& rStart,
-        const uno::Any& rLength ) :
+        const uno::Any& rLength ) throw (uno::RuntimeException) :
     ScVbaButtonCharacters_BASE( rxParent, rxContext ),
     maPalette( rPalette ),
     mxPropSet( rxPropSet, uno::UNO_SET_THROW )
@@ -63,7 +63,7 @@ ScVbaButtonCharacters::~ScVbaButtonCharacters()
 
 // XCharacters attributes
 
-OUString SAL_CALL ScVbaButtonCharacters::getCaption()
+OUString SAL_CALL ScVbaButtonCharacters::getCaption() throw (uno::RuntimeException, std::exception)
 {
     // ignore invalid mnStart and/or mnLength members
     OUString aString = getFullString();
@@ -72,7 +72,7 @@ OUString SAL_CALL ScVbaButtonCharacters::getCaption()
     return aString.copy( nStart, nLength );
 }
 
-void SAL_CALL ScVbaButtonCharacters::setCaption( const OUString& rCaption )
+void SAL_CALL ScVbaButtonCharacters::setCaption( const OUString& rCaption ) throw (uno::RuntimeException, std::exception)
 {
     /*  Replace the covered text with the passed text, ignore invalid mnStart
         and/or mnLength members. This operation does not affect the mnLength
@@ -87,37 +87,37 @@ void SAL_CALL ScVbaButtonCharacters::setCaption( const OUString& rCaption )
     setFullString( aString.replaceAt( nStart, nLength, rCaption ) );
 }
 
-sal_Int32 SAL_CALL ScVbaButtonCharacters::getCount()
+sal_Int32 SAL_CALL ScVbaButtonCharacters::getCount() throw (uno::RuntimeException, std::exception)
 {
     // always return the total length of the caption
     return getFullString().getLength();
 }
 
-OUString SAL_CALL ScVbaButtonCharacters::getText()
+OUString SAL_CALL ScVbaButtonCharacters::getText() throw (uno::RuntimeException, std::exception)
 {
     // Text attribute same as Caption attribute?
     return getCaption();
 }
 
-void SAL_CALL ScVbaButtonCharacters::setText( const OUString& rText )
+void SAL_CALL ScVbaButtonCharacters::setText( const OUString& rText ) throw (uno::RuntimeException, std::exception)
 {
     // Text attribute same as Caption attribute?
     setCaption( rText );
 }
 
-uno::Reference< excel::XFont > SAL_CALL ScVbaButtonCharacters::getFont()
+uno::Reference< excel::XFont > SAL_CALL ScVbaButtonCharacters::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new ScVbaFont( this, mxContext, maPalette, mxPropSet, nullptr, true );
 }
 
-void SAL_CALL ScVbaButtonCharacters::setFont( const uno::Reference< excel::XFont >& /*rxFont*/ )
+void SAL_CALL ScVbaButtonCharacters::setFont( const uno::Reference< excel::XFont >& /*rxFont*/ ) throw (uno::RuntimeException, std::exception)
 {
     // TODO
 }
 
 // XCharacters methods
 
-void SAL_CALL ScVbaButtonCharacters::Insert( const OUString& rString )
+void SAL_CALL ScVbaButtonCharacters::Insert( const OUString& rString ) throw (uno::RuntimeException, std::exception)
 {
     /*  The Insert() operation is in fact "replace covered characters", at
         least for buttons... It seems there is no easy way to really insert a
@@ -125,7 +125,7 @@ void SAL_CALL ScVbaButtonCharacters::Insert( const OUString& rString )
     setCaption( rString );
 }
 
-void SAL_CALL ScVbaButtonCharacters::Delete()
+void SAL_CALL ScVbaButtonCharacters::Delete() throw (uno::RuntimeException, std::exception)
 {
     /*  The Delete() operation is nothing else than "replace with empty string".
         This does not affect the mnLength parameter, multiple calls of Delete()
@@ -140,12 +140,12 @@ VBAHELPER_IMPL_XHELPERINTERFACE( ScVbaButtonCharacters, "ooo.vba.excel.Character
 
 // private
 
-OUString ScVbaButtonCharacters::getFullString() const
+OUString ScVbaButtonCharacters::getFullString() const throw (uno::RuntimeException)
 {
     return mxPropSet->getPropertyValue( "Label" ).get< OUString >();
 }
 
-void ScVbaButtonCharacters::setFullString( const OUString& rString )
+void ScVbaButtonCharacters::setFullString( const OUString& rString ) throw (uno::RuntimeException)
 {
     mxPropSet->setPropertyValue( "Label", uno::Any( rString ) );
 }
@@ -154,7 +154,7 @@ ScVbaSheetObjectBase::ScVbaSheetObjectBase(
         const uno::Reference< XHelperInterface >& rxParent,
         const uno::Reference< uno::XComponentContext >& rxContext,
         const uno::Reference< frame::XModel >& rxModel,
-        const uno::Reference< drawing::XShape >& rxShape ) :
+        const uno::Reference< drawing::XShape >& rxShape ) throw (uno::RuntimeException) :
     ScVbaSheetObject_BASE( rxParent, rxContext ),
     maPalette( rxModel ),
     mxModel( rxModel, uno::UNO_SET_THROW ),
@@ -165,65 +165,65 @@ ScVbaSheetObjectBase::ScVbaSheetObjectBase(
 
 // XSheetObject attributes
 
-double SAL_CALL ScVbaSheetObjectBase::getLeft()
+double SAL_CALL ScVbaSheetObjectBase::getLeft() throw (uno::RuntimeException, std::exception)
 {
     return HmmToPoints( mxShape->getPosition().X );
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setLeft( double fLeft )
+void SAL_CALL ScVbaSheetObjectBase::setLeft( double fLeft ) throw (uno::RuntimeException, std::exception)
 {
     if( fLeft < 0.0 )
         throw uno::RuntimeException();
     mxShape->setPosition( awt::Point( PointsToHmm( fLeft ), mxShape->getPosition().Y ) );
 }
 
-double SAL_CALL ScVbaSheetObjectBase::getTop()
+double SAL_CALL ScVbaSheetObjectBase::getTop() throw (uno::RuntimeException, std::exception)
 {
     return HmmToPoints( mxShape->getPosition().Y );
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setTop( double fTop )
+void SAL_CALL ScVbaSheetObjectBase::setTop( double fTop ) throw (uno::RuntimeException, std::exception)
 {
     if( fTop < 0.0 )
         throw uno::RuntimeException();
     mxShape->setPosition( awt::Point( mxShape->getPosition().X, PointsToHmm( fTop ) ) );
 }
 
-double SAL_CALL ScVbaSheetObjectBase::getWidth()
+double SAL_CALL ScVbaSheetObjectBase::getWidth() throw (uno::RuntimeException, std::exception)
 {
     return HmmToPoints( mxShape->getSize().Width );
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setWidth( double fWidth )
+void SAL_CALL ScVbaSheetObjectBase::setWidth( double fWidth ) throw (uno::RuntimeException, std::exception)
 {
     if( fWidth <= 0.0 )
         throw uno::RuntimeException();
     mxShape->setSize( awt::Size( PointsToHmm( fWidth ), mxShape->getSize().Height ) );
 }
 
-double SAL_CALL ScVbaSheetObjectBase::getHeight()
+double SAL_CALL ScVbaSheetObjectBase::getHeight() throw (uno::RuntimeException, std::exception)
 {
     return HmmToPoints( mxShape->getSize().Height );
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setHeight( double fHeight )
+void SAL_CALL ScVbaSheetObjectBase::setHeight( double fHeight ) throw (uno::RuntimeException, std::exception)
 {
     if( fHeight <= 0.0 )
         throw uno::RuntimeException();
     mxShape->setSize( awt::Size( mxShape->getSize().Width, PointsToHmm( fHeight ) ) );
 }
 
-OUString SAL_CALL ScVbaSheetObjectBase::getName()
+OUString SAL_CALL ScVbaSheetObjectBase::getName() throw (uno::RuntimeException, std::exception)
 {
     return mxShapeProps->getPropertyValue( "Name" ).get< OUString >();
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setName( const OUString& rName )
+void SAL_CALL ScVbaSheetObjectBase::setName( const OUString& rName ) throw (uno::RuntimeException, std::exception)
 {
     mxShapeProps->setPropertyValue( "Name", uno::Any( rName ) );
 }
 
-sal_Int32 SAL_CALL ScVbaSheetObjectBase::getPlacement()
+sal_Int32 SAL_CALL ScVbaSheetObjectBase::getPlacement() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nRet = excel::XlPlacement::xlMoveAndSize;
 #if 0 // TODO: not working at the moment.
@@ -242,7 +242,7 @@ sal_Int32 SAL_CALL ScVbaSheetObjectBase::getPlacement()
     return nRet;
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setPlacement( sal_Int32 /*nPlacement*/ )
+void SAL_CALL ScVbaSheetObjectBase::setPlacement( sal_Int32 /*nPlacement*/ ) throw (uno::RuntimeException, std::exception)
 {
 #if 0 // TODO: not working at the moment.
     SvxShape* pShape = SvxShape::getImplementation( mxShape );
@@ -263,27 +263,27 @@ void SAL_CALL ScVbaSheetObjectBase::setPlacement( sal_Int32 /*nPlacement*/ )
 #endif
 }
 
-sal_Bool SAL_CALL ScVbaSheetObjectBase::getPrintObject()
+sal_Bool SAL_CALL ScVbaSheetObjectBase::getPrintObject() throw (uno::RuntimeException, std::exception)
 {
     // not supported
     return true;
 }
 
-void SAL_CALL ScVbaSheetObjectBase::setPrintObject( sal_Bool /*bPrintObject*/ )
+void SAL_CALL ScVbaSheetObjectBase::setPrintObject( sal_Bool /*bPrintObject*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not supported
 }
 
 // private
 
-void ScVbaSheetObjectBase::setDefaultProperties( sal_Int32 nIndex )
+void ScVbaSheetObjectBase::setDefaultProperties( sal_Int32 nIndex ) throw (uno::RuntimeException)
 {
     OUString aName = OUStringBuffer( implGetBaseName() ).append( ' ' ).append( nIndex + 1 ).makeStringAndClear();
     setName( aName );
     implSetDefaultProperties();
 }
 
-void ScVbaSheetObjectBase::implSetDefaultProperties()
+void ScVbaSheetObjectBase::implSetDefaultProperties() throw (uno::RuntimeException)
 {
 }
 
@@ -293,7 +293,7 @@ ScVbaControlObjectBase::ScVbaControlObjectBase(
         const uno::Reference< frame::XModel >& rxModel,
         const uno::Reference< container::XIndexContainer >& rxFormIC,
         const uno::Reference< drawing::XControlShape >& rxControlShape,
-        ListenerType eListenerType ) :
+        ListenerType eListenerType ) throw (uno::RuntimeException) :
     ScVbaControlObject_BASE( rxParent, rxContext, rxModel, uno::Reference< drawing::XShape >( rxControlShape, uno::UNO_QUERY_THROW ) ),
     mxFormIC( rxFormIC, uno::UNO_SET_THROW ),
     mxControlProps( rxControlShape->getControl(), uno::UNO_QUERY_THROW )
@@ -327,17 +327,17 @@ ScVbaControlObjectBase::ScVbaControlObjectBase(
 
 // XSheetObject attributes
 
-OUString SAL_CALL ScVbaControlObjectBase::getName()
+OUString SAL_CALL ScVbaControlObjectBase::getName() throw (uno::RuntimeException, std::exception)
 {
     return mxControlProps->getPropertyValue( "Name" ).get< OUString >();
 }
 
-void SAL_CALL ScVbaControlObjectBase::setName( const OUString& rName )
+void SAL_CALL ScVbaControlObjectBase::setName( const OUString& rName ) throw (uno::RuntimeException, std::exception)
 {
     mxControlProps->setPropertyValue( "Name", uno::Any( rName ) );
 }
 
-OUString SAL_CALL ScVbaControlObjectBase::getOnAction()
+OUString SAL_CALL ScVbaControlObjectBase::getOnAction() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< script::XEventAttacherManager > xEventMgr( mxFormIC, uno::UNO_QUERY_THROW );
     sal_Int32 nIndex = getModelIndexInForm();
@@ -354,7 +354,7 @@ OUString SAL_CALL ScVbaControlObjectBase::getOnAction()
     return OUString();
 }
 
-void SAL_CALL ScVbaControlObjectBase::setOnAction( const OUString& rMacroName )
+void SAL_CALL ScVbaControlObjectBase::setOnAction( const OUString& rMacroName ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< script::XEventAttacherManager > xEventMgr( mxFormIC, uno::UNO_QUERY_THROW );
     sal_Int32 nIndex = getModelIndexInForm();
@@ -377,32 +377,32 @@ void SAL_CALL ScVbaControlObjectBase::setOnAction( const OUString& rMacroName )
     }
 }
 
-sal_Bool SAL_CALL ScVbaControlObjectBase::getPrintObject()
+sal_Bool SAL_CALL ScVbaControlObjectBase::getPrintObject() throw (uno::RuntimeException, std::exception)
 {
     return mxControlProps->getPropertyValue( "Printable" ).get<bool>();
 }
 
-void SAL_CALL ScVbaControlObjectBase::setPrintObject( sal_Bool bPrintObject )
+void SAL_CALL ScVbaControlObjectBase::setPrintObject( sal_Bool bPrintObject ) throw (uno::RuntimeException, std::exception)
 {
     mxControlProps->setPropertyValue( "Printable", uno::Any( bPrintObject ) );
 }
 
 // XControlObject attributes
 
-sal_Bool SAL_CALL ScVbaControlObjectBase::getAutoSize()
+sal_Bool SAL_CALL ScVbaControlObjectBase::getAutoSize() throw (uno::RuntimeException, std::exception)
 {
     // not supported
     return false;
 }
 
-void SAL_CALL ScVbaControlObjectBase::setAutoSize( sal_Bool /*bAutoSize*/ )
+void SAL_CALL ScVbaControlObjectBase::setAutoSize( sal_Bool /*bAutoSize*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not supported
 }
 
 // private
 
-sal_Int32 ScVbaControlObjectBase::getModelIndexInForm() const
+sal_Int32 ScVbaControlObjectBase::getModelIndexInForm() const throw (uno::RuntimeException)
 {
     for( sal_Int32 nIndex = 0, nCount = mxFormIC->getCount(); nIndex < nCount; ++nIndex )
     {
@@ -418,34 +418,34 @@ ScVbaButton::ScVbaButton(
         const uno::Reference< uno::XComponentContext >& rxContext,
         const uno::Reference< frame::XModel >& rxModel,
         const uno::Reference< container::XIndexContainer >& rxFormIC,
-        const uno::Reference< drawing::XControlShape >& rxControlShape ) :
+        const uno::Reference< drawing::XControlShape >& rxControlShape ) throw (uno::RuntimeException) :
     ScVbaButton_BASE( rxParent, rxContext, rxModel, rxFormIC, rxControlShape, LISTENER_ACTION )
 {
 }
 
 // XButton attributes
 
-OUString SAL_CALL ScVbaButton::getCaption()
+OUString SAL_CALL ScVbaButton::getCaption() throw (uno::RuntimeException, std::exception)
 {
     return mxControlProps->getPropertyValue( "Label" ).get< OUString >();
 }
 
-void SAL_CALL ScVbaButton::setCaption( const OUString& rCaption )
+void SAL_CALL ScVbaButton::setCaption( const OUString& rCaption ) throw (uno::RuntimeException, std::exception)
 {
     mxControlProps->setPropertyValue( "Label", uno::Any( rCaption ) );
 }
 
-uno::Reference< excel::XFont > SAL_CALL ScVbaButton::getFont()
+uno::Reference< excel::XFont > SAL_CALL ScVbaButton::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new ScVbaFont( this, mxContext, maPalette, mxControlProps, nullptr, true );
 }
 
-void SAL_CALL ScVbaButton::setFont( const uno::Reference< excel::XFont >& /*rxFont*/ )
+void SAL_CALL ScVbaButton::setFont( const uno::Reference< excel::XFont >& /*rxFont*/ ) throw (uno::RuntimeException, std::exception)
 {
     // TODO
 }
 
-sal_Int32 SAL_CALL ScVbaButton::getHorizontalAlignment()
+sal_Int32 SAL_CALL ScVbaButton::getHorizontalAlignment() throw (uno::RuntimeException, std::exception)
 {
     switch( mxControlProps->getPropertyValue( "Align" ).get< sal_Int16 >() )
     {
@@ -456,7 +456,7 @@ sal_Int32 SAL_CALL ScVbaButton::getHorizontalAlignment()
     return excel::Constants::xlCenter;
 }
 
-void SAL_CALL ScVbaButton::setHorizontalAlignment( sal_Int32 nAlign )
+void SAL_CALL ScVbaButton::setHorizontalAlignment( sal_Int32 nAlign ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nAwtAlign = awt::TextAlign::CENTER;
     switch( nAlign )
@@ -469,7 +469,7 @@ void SAL_CALL ScVbaButton::setHorizontalAlignment( sal_Int32 nAlign )
     mxControlProps->setPropertyValue( "Align", uno::Any( static_cast< sal_Int16 >( nAwtAlign ) ) );
 }
 
-sal_Int32 SAL_CALL ScVbaButton::getVerticalAlignment()
+sal_Int32 SAL_CALL ScVbaButton::getVerticalAlignment() throw (uno::RuntimeException, std::exception)
 {
     switch( mxControlProps->getPropertyValue( "VerticalAlign" ).get< style::VerticalAlignment >() )
     {
@@ -481,7 +481,7 @@ sal_Int32 SAL_CALL ScVbaButton::getVerticalAlignment()
     return excel::Constants::xlCenter;
 }
 
-void SAL_CALL ScVbaButton::setVerticalAlignment( sal_Int32 nAlign )
+void SAL_CALL ScVbaButton::setVerticalAlignment( sal_Int32 nAlign ) throw (uno::RuntimeException, std::exception)
 {
     style::VerticalAlignment eAwtAlign = style::VerticalAlignment_MIDDLE;
     switch( nAlign )
@@ -493,20 +493,20 @@ void SAL_CALL ScVbaButton::setVerticalAlignment( sal_Int32 nAlign )
     mxControlProps->setPropertyValue( "VerticalAlign", uno::Any( eAwtAlign ) );
 }
 
-sal_Int32 SAL_CALL ScVbaButton::getOrientation()
+sal_Int32 SAL_CALL ScVbaButton::getOrientation() throw (uno::RuntimeException, std::exception)
 {
     // not supported
     return excel::XlOrientation::xlHorizontal;
 }
 
-void SAL_CALL ScVbaButton::setOrientation( sal_Int32 /*nOrientation*/ )
+void SAL_CALL ScVbaButton::setOrientation( sal_Int32 /*nOrientation*/ ) throw (uno::RuntimeException, std::exception)
 {
     // not supported
 }
 
 // XButton methods
 
-uno::Reference< excel::XCharacters > SAL_CALL ScVbaButton::Characters( const uno::Any& rStart, const uno::Any& rLength )
+uno::Reference< excel::XCharacters > SAL_CALL ScVbaButton::Characters( const uno::Any& rStart, const uno::Any& rLength ) throw (uno::RuntimeException, std::exception)
 {
     return new ScVbaButtonCharacters( this, mxContext, mxControlProps, maPalette, rStart, rLength );
 }
@@ -522,7 +522,7 @@ OUString ScVbaButton::implGetBaseName() const
     return OUString( "Button" );
 }
 
-void ScVbaButton::implSetDefaultProperties()
+void ScVbaButton::implSetDefaultProperties() throw (uno::RuntimeException)
 {
     setCaption( getName() );
 }

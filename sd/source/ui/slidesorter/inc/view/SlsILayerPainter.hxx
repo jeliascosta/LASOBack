@@ -24,7 +24,7 @@
 #include <memory>
 
 class OutputDevice;
-namespace tools { class Rectangle; }
+class Rectangle;
 
 namespace sd { namespace slidesorter { namespace view {
 
@@ -33,7 +33,7 @@ class ILayerInvalidator
 public:
     virtual ~ILayerInvalidator() {}
 
-    virtual void Invalidate (const ::tools::Rectangle& rInvalidationBox) = 0;
+    virtual void Invalidate (const Rectangle& rInvalidationBox) = 0;
 };
 typedef std::shared_ptr<ILayerInvalidator> SharedILayerInvalidator;
 
@@ -46,7 +46,7 @@ public:
         const SharedILayerInvalidator& rpInvalidator) = 0;
     virtual void Paint (
         OutputDevice& rDevice,
-        const ::tools::Rectangle& rRepaintArea) = 0;
+        const Rectangle& rRepaintArea) = 0;
 };
 typedef std::shared_ptr<ILayerPainter> SharedILayerPainter;
 

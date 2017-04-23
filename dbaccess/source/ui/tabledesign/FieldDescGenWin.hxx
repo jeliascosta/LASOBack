@@ -38,7 +38,7 @@ namespace dbaui
 
     public:
         OFieldDescGenWin( vcl::Window* pParent, OTableDesignHelpBar* pHelpBar );
-        virtual ~OFieldDescGenWin() override;
+        virtual ~OFieldDescGenWin();
         virtual void dispose() override;
 
         virtual void GetFocus() override;
@@ -66,7 +66,7 @@ namespace dbaui
         virtual void cut() override;
         virtual void paste() override;
 
-        OTableFieldControl*  getFieldControl() const { return m_pFieldControl; }
+        inline OTableFieldControl*  getFieldControl() const { return m_pFieldControl; }
     };
 }
 #endif // INCLUDED_DBACCESS_SOURCE_UI_TABLEDESIGN_FIELDDESCGENWIN_HXX

@@ -68,7 +68,7 @@ SvxFieldData* SvxFieldData::Create(const uno::Reference<text::XTextContent>& xTe
                         bool bIsFixed = false;
                         xPropSet->getPropertyValue(UNO_TC_PROP_IS_FIXED) >>= bIsFixed;
 
-                        SvxDateField* pData = new SvxDateField(aDate, bIsFixed ? SvxDateType::Fix : SvxDateType::Var);
+                        SvxDateField* pData = new SvxDateField(aDate, bIsFixed ? SVXDATETYPE_FIX : SVXDATETYPE_VAR);
                         sal_Int32 nNumFmt = -1;
                         xPropSet->getPropertyValue(UNO_TC_PROP_NUMFORMAT) >>= nNumFmt;
                         if (nNumFmt >= SVXDATEFORMAT_APPDEFAULT && nNumFmt <= SVXDATEFORMAT_F)
@@ -181,16 +181,13 @@ SvxFieldData* SvxFieldData::Create(const uno::Reference<text::XTextContent>& xTe
                     SvxAuthorField* pData = new SvxAuthorField(
                             aFirstName, aLastName, OUString(), bIsFixed ? SVXAUTHORTYPE_FIX : SVXAUTHORTYPE_VAR);
 
-                    if (!bIsFixed)
+                    if (!bFullName)
                     {
-                        if (!bFullName)
-                        {
-                            pData->SetFormat(SVXAUTHORFORMAT_SHORTNAME);
-                        }
-                        else if (nFmt >= SVXAUTHORFORMAT_FULLNAME && nFmt <= SVXAUTHORFORMAT_SHORTNAME)
-                        {
-                            pData->SetFormat(static_cast<SvxAuthorFormat>(nFmt));
-                        }
+                        pData->SetFormat(SVXAUTHORFORMAT_SHORTNAME);
+                    }
+                    else if (nFmt >= SVXAUTHORFORMAT_FULLNAME && nFmt <= SVXAUTHORFORMAT_SHORTNAME)
+                    {
+                        pData->SetFormat(static_cast<SvxAuthorFormat>(nFmt));
                     }
 
                     return pData;
@@ -274,27 +271,28 @@ MetaAction* SvxFieldData::createEndComment()
 
 SvxFieldItem::SvxFieldItem( SvxFieldData* pFld, const sal_uInt16 nId ) :
     SfxPoolItem( nId )
-    , mxField( pFld )  // belongs directly to the item
 {
+    pField = pFld;  // belongs directly to the item
 }
 
 
 SvxFieldItem::SvxFieldItem( const SvxFieldData& rField, const sal_uInt16 nId ) :
     SfxPoolItem( nId )
-    , mxField( rField.Clone() )
 {
+    pField = rField.Clone();
 }
 
 
 SvxFieldItem::SvxFieldItem( const SvxFieldItem& rItem ) :
     SfxPoolItem ( rItem )
-    , mxField( rItem.GetField() ? rItem.GetField()->Clone() : nullptr )
 {
+    pField = rItem.GetField() ? rItem.GetField()->Clone() : nullptr;
 }
 
 
 SvxFieldItem::~SvxFieldItem()
 {
+    delete pField;
 }
 
 
@@ -322,19 +320,19 @@ SfxPoolItem* SvxFieldItem::Create( SvStream& rStrm, sal_uInt16 ) const
 
 SvStream& SvxFieldItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) const
 {
-    DBG_ASSERT( mxField.get(), "SvxFieldItem::Store: Field?!" );
+    DBG_ASSERT( pField, "SvxFieldItem::Store: Field?!" );
     SvPersistStream aPStrm( GetClassManager(), &rStrm );
     // The reset error in the above Create method did not exist in 3.1,
     // therefore newer items can not be saved for 3.x-exports!
-    if ( ( rStrm.GetVersion() <= SOFFICE_FILEFORMAT_31 ) && mxField.get() &&
-            mxField->GetClassId() == 50 /* SdrMeasureField */ )
+    if ( ( rStrm.GetVersion() <= SOFFICE_FILEFORMAT_31 ) && pField &&
+            pField->GetClassId() == 50 /* SdrMeasureField */ )
     {
         // SvxFieldData not enough, because not registered on ClassMgr.
         SvxURLField aDummyData;
         WriteSvPersistBase( aPStrm , &aDummyData );
     }
     else
-        WriteSvPersistBase( aPStrm, mxField.get() );
+        WriteSvPersistBase( aPStrm, pField );
 
     return rStrm;
 }
@@ -342,15 +340,15 @@ SvStream& SvxFieldItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) co
 
 bool SvxFieldItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal which or type" );
 
     const SvxFieldData* pOtherFld = static_cast<const SvxFieldItem&>(rItem).GetField();
-    if( mxField.get() == pOtherFld )
+    if( pField == pOtherFld )
         return true;
-    if( mxField == nullptr || pOtherFld == nullptr )
+    if( pField == nullptr || pOtherFld == nullptr )
         return false;
-    return ( typeid(*mxField) == typeid(*pOtherFld) )
-            && ( *mxField == *pOtherFld );
+    return ( typeid(*pField) == typeid(*pOtherFld) )
+            && ( *pField == *pOtherFld );
 }
 
 
@@ -363,7 +361,7 @@ SV_IMPL_PERSIST1( SvxDateField, SvxFieldData );
 SvxDateField::SvxDateField()
 {
     nFixDate = Date( Date::SYSTEM ).GetDate();
-    eType = SvxDateType::Var;
+    eType = SVXDATETYPE_VAR;
     eFormat = SVXDATEFORMAT_STDSMALL;
 }
 
@@ -398,7 +396,7 @@ void SvxDateField::Load( SvPersistStream & rStm )
 {
     sal_uInt16 nType, nFormat;
 
-    rStm.ReadInt32( nFixDate );
+    rStm.ReadUInt32( nFixDate );
     rStm.ReadUInt16( nType );
     rStm.ReadUInt16( nFormat );
 
@@ -409,8 +407,8 @@ void SvxDateField::Load( SvPersistStream & rStm )
 
 void SvxDateField::Save( SvPersistStream & rStm )
 {
-    rStm.WriteInt32( nFixDate );
-    rStm.WriteUInt16( (sal_uInt16)eType );
+    rStm.WriteUInt32( nFixDate );
+    rStm.WriteUInt16( eType );
     rStm.WriteUInt16( eFormat );
 }
 
@@ -418,7 +416,7 @@ void SvxDateField::Save( SvPersistStream & rStm )
 OUString SvxDateField::GetFormatted( SvNumberFormatter& rFormatter, LanguageType eLang ) const
 {
     Date aDate( Date::EMPTY );
-    if ( eType == SvxDateType::Fix )
+    if ( eType == SVXDATETYPE_FIX )
         aDate.SetDate( nFixDate );
     else
         aDate = Date( Date::SYSTEM ); // current date
@@ -531,7 +529,7 @@ static void write_unicode( SvPersistStream & rStm, const OUString& rString )
     sal_uInt16 nL =  sal::static_int_cast<sal_uInt16>(rString.getLength());
     rStm.WriteUInt16( nL );
     //endian specific?, yipes!
-    rStm.WriteBytes( rString.getStr(), nL*sizeof(sal_Unicode) );
+    rStm.Write( rString.getStr(), nL*sizeof(sal_Unicode) );
 }
 
 static OUString read_unicode( SvPersistStream & rStm )
@@ -550,7 +548,7 @@ static OUString read_unicode( SvPersistStream & rStm )
     {
         pStr = rtl_uString_alloc(nL);
         //endian specific?, yipes!
-        rStm.ReadBytes(pStr->buffer, nL*sizeof(sal_Unicode));
+        rStm.Read(pStr->buffer, nL*sizeof(sal_Unicode));
     }
     //take ownership of buffer and return, otherwise return empty string
     return pStr ? OUString(pStr, SAL_NO_ACQUIRE) : OUString();
@@ -987,22 +985,22 @@ OUString SvxExtFileField::GetFormatted() const
         switch( eFormat )
         {
             case SVXFILEFORMAT_FULLPATH:
-                aString = aURLObj.getFSysPath(FSysStyle::Detect);
+                aString = aURLObj.getFSysPath(INetURLObject::FSYS_DETECT);
             break;
 
             case SVXFILEFORMAT_PATH:
                 aURLObj.removeSegment(INetURLObject::LAST_SEGMENT, false);
                 // #101742# Leave trailing slash at the pathname
                 aURLObj.setFinalSlash();
-                aString = aURLObj.getFSysPath(FSysStyle::Detect);
+                aString = aURLObj.getFSysPath(INetURLObject::FSYS_DETECT);
             break;
 
             case SVXFILEFORMAT_NAME:
-                aString = aURLObj.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DecodeMechanism::Unambiguous);
+                aString = aURLObj.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DECODE_UNAMBIGUOUS);
             break;
 
             case SVXFILEFORMAT_NAME_EXT:
-                aString = aURLObj.getName(INetURLObject::LAST_SEGMENT,true,INetURLObject::DecodeMechanism::Unambiguous);
+                aString = aURLObj.getName(INetURLObject::LAST_SEGMENT,true,INetURLObject::DECODE_UNAMBIGUOUS);
             break;
         }
     }
@@ -1011,14 +1009,14 @@ OUString SvxExtFileField::GetFormatted() const
         switch( eFormat )
         {
             case SVXFILEFORMAT_FULLPATH:
-                aString = aURLObj.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+                aString = aURLObj.GetMainURL( INetURLObject::DECODE_TO_IURI );
             break;
 
             case SVXFILEFORMAT_PATH:
                 aURLObj.removeSegment(INetURLObject::LAST_SEGMENT, false);
                 // #101742# Leave trailing slash at the pathname
                 aURLObj.setFinalSlash();
-                aString = aURLObj.GetMainURL( INetURLObject::DecodeMechanism::ToIUri );
+                aString = aURLObj.GetMainURL( INetURLObject::DECODE_TO_IURI );
             break;
 
             case SVXFILEFORMAT_NAME:

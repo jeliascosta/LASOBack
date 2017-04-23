@@ -138,7 +138,6 @@ static const TokenTable aTokTable_Basic [] = {
     { PRINT,    "Print" },
     { PRIVATE,  "Private" },
     { PROPERTY, "Property" },
-    { PTRSAFE,  "PtrSafe" },
     { PUBLIC,   "Public" },
     { RANDOM,   "Random" },
     { READ,     "Read" },
@@ -186,7 +185,7 @@ static const TokenTable aTokTable_Basic [] = {
 // #i109076
 TokenLabelInfo::TokenLabelInfo()
 {
-    m_pTokenCanBeLabelTab.reset( new bool[VBASUPPORT+1] );
+    m_pTokenCanBeLabelTab = new bool[VBASUPPORT+1];
     for( int i = 0 ; i <= VBASUPPORT ; ++i )
     {
         m_pTokenCanBeLabelTab[i] = false;
@@ -204,6 +203,7 @@ TokenLabelInfo::TokenLabelInfo()
 
 TokenLabelInfo::~TokenLabelInfo()
 {
+    delete[] m_pTokenCanBeLabelTab;
 }
 
 
@@ -241,6 +241,12 @@ void SbiTokenizer::Push( SbiToken t )
     if( ePush != NIL )
         Error( ERRCODE_BASIC_INTERNAL_ERROR, "PUSH" );
     else ePush = t;
+}
+
+void SbiTokenizer::Error( SbError code, const char* pMsg )
+{
+    aError = OUString::createFromAscii( pMsg );
+    Error( code );
 }
 
 void SbiTokenizer::Error( SbError code, const OUString &aMsg )

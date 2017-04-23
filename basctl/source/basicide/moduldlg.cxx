@@ -53,7 +53,14 @@ ExtTreeListBox::ExtTreeListBox(vcl::Window* pParent, WinBits nStyle)
 {
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(ExtTreeListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(ExtTreeListBox)
+{
+    WinBits nWinBits = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nWinBits |= WB_BORDER;
+    rRet = VclPtr<ExtTreeListBox>::Create(pParent, nWinBits);
+}
 
 bool ExtTreeListBox::EditingEntry( SvTreeListEntry* pEntry, Selection& )
 {
@@ -309,10 +316,10 @@ TriState ExtTreeListBox::NotifyCopyingMoving( SvTreeListEntry* pTarget, SvTreeLi
                         SvTreeListEntry*& rpNewParent, sal_uLong& rNewChildPos, bool bMove )
 {
     (void)pEntry;
-    DBG_ASSERT( pEntry, "No entry?" );   // ASS is ok here, should not be reached
-    DBG_ASSERT( pTarget, "No target?" ); // with NULL (right at the beginning)
+    DBG_ASSERT( pEntry, "Kein Eintrag?" );  // ASS is ok here, should not be reached
+    DBG_ASSERT( pTarget, "Kein Ziel?" );    // with NULL (right at the beginning)
     sal_uInt16 nDepth = GetModel()->GetDepth( pTarget );
-    DBG_ASSERT( nDepth, "Depth?" );
+    DBG_ASSERT( nDepth, "Tiefe?" );
     if ( nDepth == 1 )
     {
         // Target = Basic => put module/dialog under the Basic
@@ -496,7 +503,12 @@ void OrganizeDialog::dispose()
     TabDialog::dispose();
 };
 
-IMPL_LINK( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
+short OrganizeDialog::Execute()
+{
+    return TabDialog::Execute();
+}
+
+IMPL_LINK_TYPED( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 {
     sal_uInt16 nId = pTabCtrl->GetCurPageId();
 
@@ -506,14 +518,14 @@ IMPL_LINK( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
         VclPtr<TabPage> pNewTabPage;
         if (sPageName == "modules")
         {
-            VclPtrInstance<ObjectPage> pObjectPage(pTabCtrl, "ModulePage", BrowseMode::Modules);
+            VclPtrInstance<ObjectPage> pObjectPage(pTabCtrl, "ModulePage", BROWSEMODE_MODULES);
             pNewTabPage.reset(pObjectPage);
             pObjectPage->SetTabDlg(this);
             pObjectPage->SetCurrentEntry(m_aCurEntry);
         }
         else if (sPageName == "dialogs")
         {
-            VclPtrInstance<ObjectPage> pObjectPage( pTabCtrl, "DialogPage", BrowseMode::Dialogs );
+            VclPtrInstance<ObjectPage> pObjectPage( pTabCtrl, "DialogPage", BROWSEMODE_DIALOGS );
             pNewTabPage.reset(pObjectPage);
             pObjectPage->SetTabDlg(this);
             pObjectPage->SetCurrentEntry(m_aCurEntry);
@@ -526,9 +538,9 @@ IMPL_LINK( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
         }
         else
         {
-            OSL_FAIL( "PageHdl: Unknown ID" );
+            OSL_FAIL( "PageHdl: Unbekannte ID!" );
         }
-        DBG_ASSERT( pNewTabPage, "No page" );
+        DBG_ASSERT( pNewTabPage, "Keine Page!" );
         pTabCtrl->SetTabPage( nId, pNewTabPage );
     }
 }
@@ -537,13 +549,13 @@ IMPL_LINK( OrganizeDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 // ObjectPage
 
 
-ObjectPage::ObjectPage(vcl::Window *pParent, const OString &rName, BrowseMode nMode)
+ObjectPage::ObjectPage(vcl::Window *pParent, const OString &rName, sal_uInt16 nMode)
     : TabPage(pParent, rName, "modules/BasicIDE/ui/" +
         OStringToOUString(rName, RTL_TEXTENCODING_UTF8).toAsciiLowerCase() +
         ".ui")
 {
     get(m_pBasicBox, "library");
-    Size aSize(m_pBasicBox->LogicToPixel(Size(130, 117), MapUnit::MapAppFont));
+    Size aSize(m_pBasicBox->LogicToPixel(Size(130, 117), MAP_APPFONT));
     m_pBasicBox->set_height_request(aSize.Height());
     m_pBasicBox->set_width_request(aSize.Width());
     get(m_pEditButton, "edit");
@@ -557,12 +569,12 @@ ObjectPage::ObjectPage(vcl::Window *pParent, const OString &rName, BrowseMode nM
     m_pDelButton->SetClickHdl( LINK( this, ObjectPage, ButtonHdl ) );
     m_pBasicBox->SetSelectHdl( LINK( this, ObjectPage, BasicBoxHighlightHdl ) );
 
-    if( nMode & BrowseMode::Modules )
+    if( nMode & BROWSEMODE_MODULES )
     {
         m_pNewModButton->SetClickHdl( LINK( this, ObjectPage, ButtonHdl ) );
         m_pNewDlgButton->Hide();
     }
-    else if ( nMode & BrowseMode::Dialogs )
+    else if ( nMode & BROWSEMODE_DIALOGS )
     {
         m_pNewDlgButton->SetClickHdl( LINK( this, ObjectPage, ButtonHdl ) );
         m_pNewModButton->Hide();
@@ -620,12 +632,12 @@ void ObjectPage::CheckButtons()
     OUString aLibName( aDesc.GetLibName() );
     OUString aLibSubName( aDesc.GetLibSubName() );
     bool bVBAEnabled = aDocument.isInVBAMode();
-    BrowseMode nMode = m_pBasicBox->GetMode();
+    sal_uInt16 nMode = m_pBasicBox->GetMode();
 
     sal_uInt16 nDepth = pCurEntry ? m_pBasicBox->GetModel()->GetDepth( pCurEntry ) : 0;
     if ( nDepth >= 2 )
     {
-        if( bVBAEnabled && ( nMode & BrowseMode::Modules ) && ( nDepth == 2 ) )
+        if( bVBAEnabled && ( nMode & BROWSEMODE_MODULES ) && ( nDepth == 2 ) )
             m_pEditButton->Disable();
         else
         m_pEditButton->Enable();
@@ -660,7 +672,7 @@ void ObjectPage::CheckButtons()
     // enable/disable delete button
     if ( nDepth >= 2 && !bReadOnly && eLocation != LIBRARY_LOCATION_SHARE )
     {
-        if( bVBAEnabled && ( nMode & BrowseMode::Modules ) && ( ( nDepth == 2 ) || aLibSubName == IDE_RESSTR(RID_STR_DOCUMENT_OBJECTS) ) )
+        if( bVBAEnabled && ( nMode & BROWSEMODE_MODULES ) && ( ( nDepth == 2 ) || aLibSubName == IDE_RESSTR(RID_STR_DOCUMENT_OBJECTS) ) )
             m_pDelButton->Disable();
         else
         m_pDelButton->Enable();
@@ -669,7 +681,7 @@ void ObjectPage::CheckButtons()
         m_pDelButton->Disable();
 }
 
-IMPL_LINK( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
+IMPL_LINK_TYPED( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
 {
     if ( !pBox->IsSelected( pBox->GetHdlEntry() ) )
         return;
@@ -677,7 +689,7 @@ IMPL_LINK( ObjectPage, BasicBoxHighlightHdl, SvTreeListBox*, pBox, void )
     CheckButtons();
 }
 
-IMPL_LINK( ObjectPage, ButtonHdl, Button *, pButton, void )
+IMPL_LINK_TYPED( ObjectPage, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == m_pEditButton)
     {
@@ -706,9 +718,9 @@ IMPL_LINK( ObjectPage, ButtonHdl, Button *, pButton, void )
                         SfxCallMode::SYNCHRON, { &aSbxItem });
             }
         }
-        else    // only Lib selected
+        else    // Nur Lib selektiert
         {
-            DBG_ASSERT( m_pBasicBox->GetModel()->GetDepth( pCurEntry ) == 1, "No LibEntry?!" );
+            DBG_ASSERT( m_pBasicBox->GetModel()->GetDepth( pCurEntry ) == 1, "Kein LibEntry?!" );
             ScriptDocument aDocument( ScriptDocument::getApplicationScriptDocument() );
             SvTreeListEntry* pParentEntry = m_pBasicBox->GetParent( pCurEntry );
             if ( pParentEntry )
@@ -717,7 +729,7 @@ IMPL_LINK( ObjectPage, ButtonHdl, Button *, pButton, void )
                 if (pDocumentEntry)
                     aDocument = pDocumentEntry->GetDocument();
             }
-            SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, Any( aDocument.getDocumentOrNull() ) );
+            SfxUsrAnyItem aDocItem( SID_BASICIDE_ARG_DOCUMENT_MODEL, makeAny( aDocument.getDocumentOrNull() ) );
             OUString aLibName( m_pBasicBox->GetEntryText( pCurEntry ) );
             SfxStringItem aLibNameItem( SID_BASICIDE_ARG_LIBNAME, aLibName );
             if ( pDispatcher )
@@ -839,7 +851,7 @@ void ObjectPage::NewDialog()
                     if ( !m_pBasicBox->IsExpanded( pRootEntry ) )
                         m_pBasicBox->Expand( pRootEntry );
                     SvTreeListEntry* pLibEntry = m_pBasicBox->FindEntry( pRootEntry, aLibName, OBJ_TYPE_LIBRARY );
-                    DBG_ASSERT( pLibEntry, "LibEntry not found!" );
+                    DBG_ASSERT( pLibEntry, "Libeintrag nicht gefunden!" );
                     if ( pLibEntry )
                     {
                         if ( !m_pBasicBox->IsExpanded( pLibEntry ) )
@@ -849,10 +861,10 @@ void ObjectPage::NewDialog()
                         {
                             pEntry = m_pBasicBox->AddEntry(
                                 aDlgName,
-                                Image(BitmapEx(IDEResId(RID_BMP_DIALOG))),
+                                Image( IDEResId( RID_IMG_DIALOG ) ),
                                 pLibEntry, false,
                                 o3tl::make_unique<Entry>(OBJ_TYPE_DIALOG));
-                            DBG_ASSERT( pEntry, "Insert entry failed!" );
+                            DBG_ASSERT( pEntry, "InsertEntry fehlgeschlagen!" );
                         }
                         m_pBasicBox->SetCurEntry( pEntry );
                         m_pBasicBox->Select( m_pBasicBox->GetCurEntry() );        // OV-Bug?!
@@ -866,7 +878,7 @@ void ObjectPage::NewDialog()
 void ObjectPage::DeleteCurrent()
 {
     SvTreeListEntry* pCurEntry = m_pBasicBox->GetCurEntry();
-    DBG_ASSERT( pCurEntry, "No current entry!" );
+    DBG_ASSERT( pCurEntry, "Kein aktueller Eintrag!" );
     EntryDescriptor aDesc( m_pBasicBox->GetEntryDescriptor( pCurEntry ) );
     ScriptDocument aDocument( aDesc.GetDocument() );
     DBG_ASSERT( aDocument.isAlive(), "ObjectPage::DeleteCurrent: no document!" );
@@ -910,7 +922,7 @@ void ObjectPage::DeleteCurrent()
 
 void ObjectPage::EndTabDialog()
 {
-    DBG_ASSERT( pTabDlg, "TabDlg not set!" );
+    DBG_ASSERT( pTabDlg, "TabDlg nicht gesetzt!" );
     if ( pTabDlg )
         pTabDlg->EndDialog( 1 );
 }
@@ -943,7 +955,8 @@ void LibDialog::dispose()
 
 void LibDialog::SetStorageName( const OUString& rName )
 {
-    OUString aName = IDE_RESSTR(RID_STR_FILENAME) + rName;
+    OUString aName( IDE_RESSTR(RID_STR_FILENAME) );
+    aName += rName;
     m_pStorageFrame->set_label(aName);
 }
 
@@ -997,7 +1010,7 @@ SbModule* createModImpl( vcl::Window* pWin, const ScriptDocument& rDocument,
                 if ( !rBasicBox.IsExpanded( pRootEntry ) )
                     rBasicBox.Expand( pRootEntry );
                 SvTreeListEntry* pLibEntry = rBasicBox.FindEntry( pRootEntry, aLibName, OBJ_TYPE_LIBRARY );
-                DBG_ASSERT( pLibEntry, "LibEntry not found!" );
+                DBG_ASSERT( pLibEntry, "Libeintrag nicht gefunden!" );
                 if ( pLibEntry )
                 {
                     if ( !rBasicBox.IsExpanded( pLibEntry ) )
@@ -1020,10 +1033,10 @@ SbModule* createModImpl( vcl::Window* pWin, const ScriptDocument& rDocument,
                     {
                         pEntry = rBasicBox.AddEntry(
                             aModName,
-                            Image(BitmapEx(IDEResId(RID_BMP_MODULE))),
+                            Image( IDEResId( RID_IMG_MODULE ) ),
                             pSubRootEntry, false,
                             o3tl::make_unique<Entry>(OBJ_TYPE_MODULE));
-                        DBG_ASSERT( pEntry, "Insert entry failed!" );
+                        DBG_ASSERT( pEntry, "InsertEntry fehlgeschlagen!" );
                     }
                     rBasicBox.SetCurEntry( pEntry );
                     rBasicBox.Select( rBasicBox.GetCurEntry() );        // OV-Bug?!

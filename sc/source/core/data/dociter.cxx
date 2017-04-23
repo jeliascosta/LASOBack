@@ -82,8 +82,8 @@ void ScAttrArray_IterGetNumberFormat( sal_uLong& nFormat, const ScAttrArray*& rp
     {
         SCROW nRowStart = 0;
         SCROW nRowEnd = MAXROW;
-        const ScPatternAttr* pPattern = pNewArr->GetPatternRange( nRowStart, nRowEnd, nRow );
-        if( !pPattern )
+        const ScPatternAttr* pPattern;
+        if( !(pPattern = pNewArr->GetPatternRange( nRowStart, nRowEnd, nRow ) ) )
         {
             pPattern = pDoc->GetDefPattern();
             nRowEnd = MAXROW;
@@ -96,7 +96,7 @@ void ScAttrArray_IterGetNumberFormat( sal_uLong& nFormat, const ScAttrArray*& rp
 }
 
 ScValueIterator::ScValueIterator( ScDocument* pDocument, const ScRange& rRange,
-            SubtotalFlags nSubTotalFlags, bool bTextZero )
+            sal_uInt16 nSubTotalFlags, bool bTextZero )
     : pDoc(pDocument)
     , pAttrArray(nullptr)
     , nNumFormat(0) // Initialized in GetNumberFormat
@@ -146,7 +146,12 @@ void ScValueIterator::IncPos()
         IncBlock();
 }
 
-bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
+void ScValueIterator::SetPos(size_t nPos)
+{
+    maCurPos = mpCells->position(maCurPos.first, nPos);
+}
+
+bool ScValueIterator::GetThis(double& rValue, sal_uInt16& rErr)
 {
     while (true)
     {
@@ -170,7 +175,7 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
                     ++mnTab;
                     if (mnTab > maEndPos.Tab())
                     {
-                        rErr = FormulaError::NONE;
+                        rErr = 0;
                         return false; // Over and out
                     }
                 }
@@ -185,12 +190,12 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
         SCROW nCurRow = GetRow();
         SCROW nLastRow;
         // Skip all filtered or hidden rows, depending on mnSubTotalFlags
-        if ( ( ( mnSubTotalFlags & SubtotalFlags::IgnoreFiltered ) &&
+        if ( ( ( mnSubTotalFlags & SUBTOTAL_IGN_FILTERED ) &&
                pDoc->RowFiltered( nCurRow, mnTab, nullptr, &nLastRow ) ) ||
-             ( ( mnSubTotalFlags & SubtotalFlags::IgnoreHidden ) &&
+             ( ( mnSubTotalFlags & SUBTOTAL_IGN_HIDDEN ) &&
                pDoc->RowHidden( nCurRow, mnTab, nullptr, &nLastRow ) ) )
         {
-            maCurPos = mpCells->position(maCurPos.first, nLastRow+1);
+            SetPos(nLastRow+1);
             continue;
         }
 
@@ -200,7 +205,7 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
             {
                 bNumValid = false;
                 rValue = sc::numeric_block::at(*maCurPos.first->data, maCurPos.second);
-                rErr = FormulaError::NONE;
+                rErr = 0;
                 if (bCalcAsShown)
                 {
                     ScAttrArray_IterGetNumberFormat(nNumFormat, pAttrArray,
@@ -213,7 +218,7 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
             case sc::element_type_formula:
             {
                 ScFormulaCell& rCell = *sc::formula_block::at(*maCurPos.first->data, maCurPos.second);
-                if ( ( mnSubTotalFlags & SubtotalFlags::IgnoreNestedStAg ) && rCell.IsSubTotal() )
+                if ( ( mnSubTotalFlags & SUBTOTAL_IGN_NESTED_ST_AG ) && rCell.IsSubTotal() )
                 {
                     // Skip subtotal formula cells.
                     IncPos();
@@ -222,7 +227,7 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
 
                 if (rCell.GetErrorOrValue(rErr, rValue))
                 {
-                    if ( rErr != FormulaError::NONE && ( mnSubTotalFlags & SubtotalFlags::IgnoreErrVal ) )
+                    if ( rErr && ( mnSubTotalFlags & SUBTOTAL_IGN_ERR_VAL ) )
                     {
                         IncPos();
                         break;
@@ -244,7 +249,7 @@ bool ScValueIterator::GetThis(double& rValue, FormulaError& rErr)
             {
                 if (bTextAsZero)
                 {
-                    rErr = FormulaError::NONE;
+                    rErr = 0;
                     rValue = 0.0;
                     nNumFmtType = css::util::NumberFormat::NUMBER;
                     nNumFmtIndex = 0;
@@ -277,7 +282,7 @@ void ScValueIterator::GetCurNumFmtInfo( short& nType, sal_uLong& nIndex )
     nIndex = nNumFmtIndex;
 }
 
-bool ScValueIterator::GetFirst(double& rValue, FormulaError& rErr)
+bool ScValueIterator::GetFirst(double& rValue, sal_uInt16& rErr)
 {
     mnCol = maStartPos.Col();
     mnTab = maStartPos.Tab();
@@ -295,7 +300,7 @@ bool ScValueIterator::GetFirst(double& rValue, FormulaError& rErr)
     return GetThis(rValue, rErr);
 }
 
-bool ScValueIterator::GetNext(double& rValue, FormulaError& rErr)
+bool ScValueIterator::GetNext(double& rValue, sal_uInt16& rErr)
 {
     IncPos();
     return GetThis(rValue, rErr);
@@ -383,7 +388,7 @@ bool ScDBQueryDataIterator::DataAccessInternal::getCurrent(Value& rValue)
         if (maCurPos.first == mpCells->end() || nRow > mpParam->nRow2)
         {
             // Bottom of the range reached. Bail out.
-            rValue.mnError = FormulaError::NONE;
+            rValue.mnError = 0;
             return false;
         }
 
@@ -421,7 +426,7 @@ bool ScDBQueryDataIterator::DataAccessInternal::getCurrent(Value& rValue)
                     }
                     nNumFmtType = css::util::NumberFormat::NUMBER;
                     nNumFmtIndex = 0;
-                    rValue.mnError = FormulaError::NONE;
+                    rValue.mnError = 0;
                     return true; // Found it!
                 }
 
@@ -456,7 +461,7 @@ bool ScDBQueryDataIterator::DataAccessInternal::getCurrent(Value& rValue)
                     {
                         rValue.maString = aCell.getString(mpDoc);
                         rValue.mfValue = 0.0;
-                        rValue.mnError = FormulaError::NONE;
+                        rValue.mnError = 0;
                         rValue.mbIsNumber = false;
                         return true;
                     }
@@ -549,7 +554,7 @@ bool ScDBQueryDataIterator::DataAccessMatrix::getCurrent(Value& rValue)
             rValue.maString = rMat.GetString(mpParam->mnField, mnCurRow).getString();
             rValue.mfValue = rMat.GetDouble(mpParam->mnField, mnCurRow);
             rValue.mbIsNumber = !bIsStrVal;
-            rValue.mnError = FormulaError::NONE;
+            rValue.mnError = 0;
             return true;
         }
     }
@@ -743,7 +748,7 @@ bool ScDBQueryDataIterator::DataAccessMatrix::isValidQuery(SCROW nRow, const ScM
 }
 
 ScDBQueryDataIterator::Value::Value() :
-    mnError(FormulaError::NONE), mbIsNumber(true)
+    mnError(0), mbIsNumber(true)
 {
     ::rtl::math::setNan(&mfValue);
 }
@@ -829,7 +834,7 @@ sc::FormulaGroupEntry* ScFormulaGroupIterator::next()
     return &maEntries[mnIndex++];
 }
 
-ScCellIterator::ScCellIterator( ScDocument* pDoc, const ScRange& rRange, SubtotalFlags nSubTotalFlags ) :
+ScCellIterator::ScCellIterator( ScDocument* pDoc, const ScRange& rRange, sal_uInt16 nSubTotalFlags ) :
     mpDoc(pDoc),
     maStartPos(rRange.aStart),
     maEndPos(rRange.aEnd),
@@ -944,9 +949,9 @@ bool ScCellIterator::getCurrent()
 
         SCROW nLastRow;
         // Skip all filtered or hidden rows, depending on mSubTotalFlags
-        if ( ( ( mnSubTotalFlags & SubtotalFlags::IgnoreFiltered ) &&
+        if ( ( ( mnSubTotalFlags & SUBTOTAL_IGN_FILTERED ) &&
                pCol->GetDoc().RowFiltered(maCurPos.Row(), maCurPos.Tab(), nullptr, &nLastRow) ) ||
-             ( ( mnSubTotalFlags & SubtotalFlags::IgnoreHidden ) &&
+             ( ( mnSubTotalFlags & SUBTOTAL_IGN_HIDDEN ) &&
                pCol->GetDoc().RowHidden(maCurPos.Row(), maCurPos.Tab(), nullptr, &nLastRow) ) )
         {
             setPos(nLastRow+1);
@@ -955,12 +960,12 @@ bool ScCellIterator::getCurrent()
 
         if (maCurColPos.first->type == sc::element_type_formula)
         {
-            if ( mnSubTotalFlags != SubtotalFlags::NONE )
+            if ( mnSubTotalFlags )
             {
                 ScFormulaCell* pCell = sc::formula_block::at(*maCurColPos.first->data, maCurColPos.second);
                 // Skip formula cells with Subtotal formulae or errors, depending on mnSubTotalFlags
-                if ( ( ( mnSubTotalFlags & SubtotalFlags::IgnoreNestedStAg ) && pCell->IsSubTotal() ) ||
-                     ( ( mnSubTotalFlags & SubtotalFlags::IgnoreErrVal ) && pCell->GetErrCode() != FormulaError::NONE ) )
+                if ( ( ( mnSubTotalFlags & SUBTOTAL_IGN_NESTED_ST_AG ) && pCell->IsSubTotal() ) ||
+                     ( ( mnSubTotalFlags & SUBTOTAL_IGN_ERR_VAL ) && pCell->GetErrCode() ) )
                 {
                     incPos();
                     continue;
@@ -1076,6 +1081,9 @@ ScQueryCellIterator::ScQueryCellIterator(ScDocument* pDocument, SCTAB nTable,
             rItem.meType = bNumber ? ScQueryEntry::ByValue : ScQueryEntry::ByString;
         }
     }
+    nNumFormat = 0; // Initialized in GetNumberFormat
+    pAttrArray = nullptr;
+    nAttrEndRow = 0;
 }
 
 void ScQueryCellIterator::InitPos()
@@ -1287,7 +1295,7 @@ bool ScQueryCellIterator::FindEqualOrSortedLastInRange( SCCOL& nFoundCol,
     SetStopOnMismatch( true ); // assume sorted keys
     SetTestEqualCondition( true );
     bIgnoreMismatchOnLeadingStrings = true;
-    bool bLiteral = mpParam->eSearchType == utl::SearchParam::SearchType::Normal &&
+    bool bLiteral = mpParam->eSearchType == utl::SearchParam::SRCH_NORMAL &&
         mpParam->GetEntry(0).GetQueryItem().meType == ScQueryEntry::ByString;
     bool bBinary = bLiteral && mpParam->bByRow && (mpParam->GetEntry(0).eOp ==
             SC_LESS_EQUAL || mpParam->GetEntry(0).eOp == SC_GREATER_EQUAL);
@@ -1404,7 +1412,7 @@ bool ScQueryCellIterator::FindEqualOrSortedLastInRange( SCCOL& nFoundCol,
         maCurPos = aPosSave;
         return true;
     }
-    if ( (mpParam->eSearchType != utl::SearchParam::SearchType::Normal) &&
+    if ( (mpParam->eSearchType != utl::SearchParam::SRCH_NORMAL) &&
             StoppedOnMismatch() )
     {
         // Assume found entry to be the last value less than respectively
@@ -2076,7 +2084,7 @@ bool ScHorizontalCellIterator::SkipInvalidInRow()
                 }
                 else
                 {
-                    debugiter("advanced column %d to block starting row %d, retrying\n",
+                    debugiter("advanced column %d to block starting row %d, retying\n",
                               (int)maColPos->mnCol, r.maPos->position);
                 }
             }
@@ -2163,8 +2171,12 @@ void ScHorizontalCellIterator::SkipInvalid()
 ScHorizontalValueIterator::ScHorizontalValueIterator( ScDocument* pDocument,
         const ScRange& rRange ) :
     pDoc( pDocument ),
+    nNumFmtIndex(0),
     nEndTab( rRange.aEnd.Tab() ),
-    bCalcAsShown( pDocument->GetDocOptions().IsCalcAsShown() )
+    nNumFmtType( css::util::NumberFormat::UNDEFINED ),
+    bNumValid( false ),
+    bCalcAsShown( pDocument->GetDocOptions().IsCalcAsShown() ),
+    bTextAsZero( false )
 {
     SCCOL nStartCol = rRange.aStart.Col();
     SCROW nStartRow = rRange.aStart.Row();
@@ -2190,15 +2202,16 @@ ScHorizontalValueIterator::ScHorizontalValueIterator( ScDocument* pDocument,
     pAttrArray = nullptr;
     nAttrEndRow = 0;
 
-    pCellIter.reset( new ScHorizontalCellIterator( pDoc, nStartTab, nStartCol,
-            nStartRow, nEndCol, nEndRow ) );
+    pCellIter = new ScHorizontalCellIterator( pDoc, nStartTab, nStartCol,
+            nStartRow, nEndCol, nEndRow );
 }
 
 ScHorizontalValueIterator::~ScHorizontalValueIterator()
 {
+    delete pCellIter;
 }
 
-bool ScHorizontalValueIterator::GetNext( double& rValue, FormulaError& rErr )
+bool ScHorizontalValueIterator::GetNext( double& rValue, sal_uInt16& rErr )
 {
     bool bFound = false;
     while ( !bFound )
@@ -2218,8 +2231,9 @@ bool ScHorizontalValueIterator::GetNext( double& rValue, FormulaError& rErr )
         {
             case CELLTYPE_VALUE:
                 {
+                    bNumValid = false;
                     rValue = pCell->mfValue;
-                    rErr = FormulaError::NONE;
+                    rErr = 0;
                     if ( bCalcAsShown )
                     {
                         ScColumn* pCol = &pDoc->maTabs[nCurTab]->aCol[nCurCol];
@@ -2233,15 +2247,33 @@ bool ScHorizontalValueIterator::GetNext( double& rValue, FormulaError& rErr )
             case CELLTYPE_FORMULA:
                 {
                     rErr = pCell->mpFormula->GetErrCode();
-                    if (rErr != FormulaError::NONE || pCell->mpFormula->IsValue())
+                    if (rErr || pCell->mpFormula->IsValue())
                     {
                         rValue = pCell->mpFormula->GetValue();
+                        bNumValid = false;
+                        bFound = true;
+                    }
+                    else if ( bTextAsZero )
+                    {
+                        rValue = 0.0;
+                        bNumValid = false;
                         bFound = true;
                     }
                 }
                 break;
             case CELLTYPE_STRING :
             case CELLTYPE_EDIT :
+                {
+                    if ( bTextAsZero )
+                    {
+                        rErr = 0;
+                        rValue = 0.0;
+                        nNumFmtType = css::util::NumberFormat::NUMBER;
+                        nNumFmtIndex = 0;
+                        bNumValid = true;
+                        bFound = true;
+                    }
+                }
                 break;
             default: ;   // nothing
         }
@@ -2265,6 +2297,7 @@ ScHorizontalAttrIterator::ScHorizontalAttrIterator( ScDocument* pDocument, SCTAB
     nRow = nStartRow;
     nCol = nStartCol;
     bRowEmpty = false;
+    bRepeatedRow = false;
 
     pIndices    = new SCSIZE[nEndCol-nStartCol+1];
     pNextEnd    = new SCROW[nEndCol-nStartCol+1];
@@ -2299,24 +2332,14 @@ void ScHorizontalAttrIterator::InitForNextRow(bool bInitialization)
             SCSIZE nIndex;
             if (bInitialization)
             {
-                if ( pArray->nCount )
-                    pArray->Search( nStartRow, nIndex );
-                else
-                    nIndex = 0;
+                pArray->Search( nStartRow, nIndex );
                 pIndices[nPos] = nIndex;
                 pHorizEnd[nPos] = MAXCOL+1; // only for OSL_ENSURE
             }
             else
                 nIndex = ++pIndices[nPos];
 
-            if ( !nIndex && !pArray->nCount )
-            {
-                SCROW nThisEnd = MAXROW;
-                pNextEnd[nPos] = nThisEnd;
-                OSL_ENSURE( pNextEnd[nPos] >= nRow, "Sequence out of order" );
-                ppPatterns[nPos] = nullptr;
-            }
-            else if ( nIndex < pArray->nCount )
+            if ( nIndex < pArray->nCount )
             {
                 const ScPatternAttr* pPattern = pArray->pData[nIndex].pPattern;
                 SCROW nThisEnd = pArray->pData[nIndex].nRow;
@@ -2517,11 +2540,14 @@ ScDocAttrIterator::ScDocAttrIterator(ScDocument* pDocument, SCTAB nTable,
     nCol( nCol1 )
 {
     if ( ValidTab(nTab) && nTab < pDoc->GetTableCount() && pDoc->maTabs[nTab] )
-        pColIter.reset( pDoc->maTabs[nTab]->aCol[nCol].CreateAttrIterator( nStartRow, nEndRow ) );
+        pColIter = pDoc->maTabs[nTab]->aCol[nCol].CreateAttrIterator( nStartRow, nEndRow );
+    else
+        pColIter = nullptr;
 }
 
 ScDocAttrIterator::~ScDocAttrIterator()
 {
+    delete pColIter;
 }
 
 const ScPatternAttr* ScDocAttrIterator::GetNext( SCCOL& rCol, SCROW& rRow1, SCROW& rRow2 )
@@ -2535,11 +2561,12 @@ const ScPatternAttr* ScDocAttrIterator::GetNext( SCCOL& rCol, SCROW& rRow1, SCRO
             return pPattern;
         }
 
+        delete pColIter;
         ++nCol;
         if ( nCol <= nEndCol )
-            pColIter.reset( pDoc->maTabs[nTab]->aCol[nCol].CreateAttrIterator( nStartRow, nEndRow ) );
+            pColIter = pDoc->maTabs[nTab]->aCol[nCol].CreateAttrIterator( nStartRow, nEndRow );
         else
-            pColIter.reset();
+            pColIter = nullptr;
     }
     return nullptr;  // Nothing anymore
 }
@@ -2644,7 +2671,7 @@ ScAttrRectIterator::ScAttrRectIterator(ScDocument* pDocument, SCTAB nTable,
 {
     if ( ValidTab(nTab) && nTab < pDoc->GetTableCount() && pDoc->maTabs[nTab] )
     {
-        pColIter.reset( pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nStartRow, nEndRow ) );
+        pColIter = pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nStartRow, nEndRow );
         while ( nIterEndCol < nEndCol &&
                 pDoc->maTabs[nTab]->aCol[nIterEndCol].IsAllAttrEqual(
                     pDoc->maTabs[nTab]->aCol[nIterEndCol+1], nStartRow, nEndRow ) )
@@ -2656,6 +2683,7 @@ ScAttrRectIterator::ScAttrRectIterator(ScDocument* pDocument, SCTAB nTable,
 
 ScAttrRectIterator::~ScAttrRectIterator()
 {
+    delete pColIter;
 }
 
 void ScAttrRectIterator::DataChanged()
@@ -2663,7 +2691,8 @@ void ScAttrRectIterator::DataChanged()
     if (pColIter)
     {
         SCROW nNextRow = pColIter->GetNextRow();
-        pColIter.reset( pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nNextRow, nEndRow ) );
+        delete pColIter;
+        pColIter = pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nNextRow, nEndRow );
     }
 }
 
@@ -2680,18 +2709,19 @@ const ScPatternAttr* ScAttrRectIterator::GetNext( SCCOL& rCol1, SCCOL& rCol2,
             return pPattern;
         }
 
+        delete pColIter;
         nIterStartCol = nIterEndCol+1;
         if ( nIterStartCol <= nEndCol )
         {
             nIterEndCol = nIterStartCol;
-            pColIter.reset( pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nStartRow, nEndRow ) );
+            pColIter = pDoc->maTabs[nTab]->aCol[nIterStartCol].CreateAttrIterator( nStartRow, nEndRow );
             while ( nIterEndCol < nEndCol &&
                     pDoc->maTabs[nTab]->aCol[nIterEndCol].IsAllAttrEqual(
                         pDoc->maTabs[nTab]->aCol[nIterEndCol+1], nStartRow, nEndRow ) )
                 ++nIterEndCol;
         }
         else
-            pColIter.reset();
+            pColIter = nullptr;
     }
     return nullptr; // Nothing anymore
 }

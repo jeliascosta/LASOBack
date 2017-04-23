@@ -43,6 +43,7 @@ namespace pcr
         VclPtr<SvTreeListBox>   m_pControlTree;
         VclPtr<CheckBox>        m_pNoAssignment;
 
+        ImageList               m_aModelImages;
         css::uno::Reference< css::beans::XPropertySet >   m_xControlModel;
         OUString m_sRequiredService;
         Image                   m_aRequiredControlImage;
@@ -54,8 +55,8 @@ namespace pcr
         bool                    m_bHaveAssignableControl;
 
     public:
-        OSelectLabelDialog(vcl::Window* pParent, css::uno::Reference< css::beans::XPropertySet > const & _xControlModel);
-        virtual ~OSelectLabelDialog() override;
+        OSelectLabelDialog(vcl::Window* pParent, css::uno::Reference< css::beans::XPropertySet >  _xControlModel);
+        virtual ~OSelectLabelDialog();
         virtual void dispose() override;
 
         css::uno::Reference< css::beans::XPropertySet >  GetSelected() const { return m_pNoAssignment->IsChecked() ? css::uno::Reference< css::beans::XPropertySet > () : m_xSelectedControl; }
@@ -63,8 +64,8 @@ namespace pcr
     protected:
         sal_Int32 InsertEntries(const css::uno::Reference< css::uno::XInterface >& _xContainer, SvTreeListEntry* pContainerEntry);
 
-        DECL_LINK(OnEntrySelected, SvTreeListBox*, void);
-        DECL_LINK(OnNoAssignmentClicked, Button*, void);
+        DECL_LINK_TYPED(OnEntrySelected, SvTreeListBox*, void);
+        DECL_LINK_TYPED(OnNoAssignmentClicked, Button*, void);
     };
 
 

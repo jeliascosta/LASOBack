@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/accessiblemenuitemcomponent.hxx>
+#include <accessibility/standard/accessiblemenuitemcomponent.hxx>
 
 
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 #include <toolkit/awt/vclxwindows.hxx>
 #include <toolkit/helper/externallock.hxx>
 #include <toolkit/helper/convert.hxx>
@@ -31,7 +31,7 @@
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/datatransfer/clipboard/XFlushableClipboard.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
+
 #include <unotools/accessiblestatesethelper.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <cppuhelper/typeprovider.hxx>
@@ -245,7 +245,7 @@ void OAccessibleMenuItemComponent::FillAccessibleStateSet( utl::AccessibleStateS
 // OCommonAccessibleComponent
 
 
-awt::Rectangle OAccessibleMenuItemComponent::implGetBounds()
+awt::Rectangle OAccessibleMenuItemComponent::implGetBounds() throw (RuntimeException)
 {
     awt::Rectangle aBounds( 0, 0, 0, 0 );
 
@@ -258,7 +258,7 @@ awt::Rectangle OAccessibleMenuItemComponent::implGetBounds()
         vcl::Window* pWindow = m_pParent->GetWindow();
         if ( pWindow )
         {
-            tools::Rectangle aRect = pWindow->GetWindowExtentsRelative( nullptr );
+            Rectangle aRect = pWindow->GetWindowExtentsRelative( nullptr );
             awt::Point aWindowScreenLoc = AWTPoint( aRect.TopLeft() );
 
             // get position of accessible parent in screen coordinates
@@ -298,7 +298,7 @@ void SAL_CALL OAccessibleMenuItemComponent::disposing()
 // XAccessibleContext
 
 
-sal_Int32 OAccessibleMenuItemComponent::getAccessibleChildCount()
+sal_Int32 OAccessibleMenuItemComponent::getAccessibleChildCount() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -306,7 +306,7 @@ sal_Int32 OAccessibleMenuItemComponent::getAccessibleChildCount()
 }
 
 
-Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleChild( sal_Int32 i )
+Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -317,7 +317,7 @@ Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleChild( sal_I
 }
 
 
-Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleParent(  )
+Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleParent(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -325,7 +325,7 @@ Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleParent(  )
 }
 
 
-sal_Int32 OAccessibleMenuItemComponent::getAccessibleIndexInParent(  )
+sal_Int32 OAccessibleMenuItemComponent::getAccessibleIndexInParent(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -333,7 +333,7 @@ sal_Int32 OAccessibleMenuItemComponent::getAccessibleIndexInParent(  )
 }
 
 
-sal_Int16 OAccessibleMenuItemComponent::getAccessibleRole(  )
+sal_Int16 OAccessibleMenuItemComponent::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -341,7 +341,7 @@ sal_Int16 OAccessibleMenuItemComponent::getAccessibleRole(  )
 }
 
 
-OUString OAccessibleMenuItemComponent::getAccessibleDescription( )
+OUString OAccessibleMenuItemComponent::getAccessibleDescription( ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -353,7 +353,7 @@ OUString OAccessibleMenuItemComponent::getAccessibleDescription( )
 }
 
 
-OUString OAccessibleMenuItemComponent::getAccessibleName(  )
+OUString OAccessibleMenuItemComponent::getAccessibleName(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -361,7 +361,7 @@ OUString OAccessibleMenuItemComponent::getAccessibleName(  )
 }
 
 
-Reference< XAccessibleRelationSet > OAccessibleMenuItemComponent::getAccessibleRelationSet(  )
+Reference< XAccessibleRelationSet > OAccessibleMenuItemComponent::getAccessibleRelationSet(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -371,7 +371,7 @@ Reference< XAccessibleRelationSet > OAccessibleMenuItemComponent::getAccessibleR
 }
 
 
-Locale OAccessibleMenuItemComponent::getLocale(  )
+Locale OAccessibleMenuItemComponent::getLocale(  ) throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -382,7 +382,7 @@ Locale OAccessibleMenuItemComponent::getLocale(  )
 // XAccessibleComponent
 
 
-Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleAtPoint( const awt::Point& )
+Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleAtPoint( const awt::Point& ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -390,13 +390,13 @@ Reference< XAccessible > OAccessibleMenuItemComponent::getAccessibleAtPoint( con
 }
 
 
-void OAccessibleMenuItemComponent::grabFocus(  )
+void OAccessibleMenuItemComponent::grabFocus(  ) throw (RuntimeException, std::exception)
 {
     // no focus for items
 }
 
 
-sal_Int32 OAccessibleMenuItemComponent::getForeground(  )
+sal_Int32 OAccessibleMenuItemComponent::getForeground(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -413,7 +413,7 @@ sal_Int32 OAccessibleMenuItemComponent::getForeground(  )
 }
 
 
-sal_Int32 OAccessibleMenuItemComponent::getBackground(  )
+sal_Int32 OAccessibleMenuItemComponent::getBackground(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -433,7 +433,7 @@ sal_Int32 OAccessibleMenuItemComponent::getBackground(  )
 // XAccessibleExtendedComponent
 
 
-Reference< awt::XFont > OAccessibleMenuItemComponent::getFont(  )
+Reference< awt::XFont > OAccessibleMenuItemComponent::getFont(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -450,7 +450,7 @@ Reference< awt::XFont > OAccessibleMenuItemComponent::getFont(  )
 }
 
 
-OUString OAccessibleMenuItemComponent::getTitledBorderText(  )
+OUString OAccessibleMenuItemComponent::getTitledBorderText(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -458,7 +458,7 @@ OUString OAccessibleMenuItemComponent::getTitledBorderText(  )
 }
 
 
-OUString OAccessibleMenuItemComponent::getToolTipText(  )
+OUString OAccessibleMenuItemComponent::getToolTipText(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

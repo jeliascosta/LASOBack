@@ -39,6 +39,7 @@ inline sal_uInt8 hex2int( char val )
 void setFourBitColor( double& rChannel, char nChar )
 {
     const sal_uInt8 nVal(hex2int(nChar));
+    OSL_TRACE( "setFourBitCOlor %d color", nVal );
     rChannel = (nVal*16+nVal)/255.0;
 }
 
@@ -46,17 +47,20 @@ void setEightBitColor( double& rChannel, const char* pStart, const char* )
 {
     const sal_uInt8 nVal0(hex2int(pStart[0]));
     const sal_uInt8 nVal1(hex2int(pStart[1]));
+    OSL_TRACE( "setEightbitCOlor %d, %d color", nVal0, nVal1 );
     rChannel = (nVal0*16+nVal1)/255.0;
 }
 
 void setIntColor( double& rChannel, sal_uInt8 nVal )
 {
+    OSL_TRACE( "setIntColor %d color", nVal );
     rChannel = nVal/255.0;
 }
 
 void setPercentColor( double& rChannel, double nVal )
 {
     rChannel = nVal/100.0;
+    SAL_INFO("svg", "setPercentColor " << nVal << " " << rChannel);
 }
 
 void calcRotation(std::vector<geometry::AffineMatrix2D>& rTransforms,
@@ -68,6 +72,7 @@ void calcRotation(std::vector<geometry::AffineMatrix2D>& rTransforms,
     aCurr.rotate(fRotationAngle*M_PI/180);
     aCurr.translate(rCurrTransform.m02,rCurrTransform.m12);
 
+    OSL_TRACE("calcRotation - fRotationAngle - %f", fRotationAngle);
     rTransforms.push_back(
         basegfx::unotools::affineMatrixFromHomMatrix(
             rCurrTransform,
@@ -125,39 +130,36 @@ namespace
             {
                 using namespace ::boost::spirit::classic;
 
-                auto lambdaSetEightBitColorR = [&self](const char* pStart, const char* nChar){ setEightBitColor(self.m_rColor.r, pStart, nChar); };
-                auto lambdaSetEightBitColorG = [&self](const char* pStart, const char* nChar){ setEightBitColor(self.m_rColor.g, pStart, nChar); };
-                auto lambdaSetEightBitColorB = [&self](const char* pStart, const char* nChar){ setEightBitColor(self.m_rColor.b, pStart, nChar); };
-                auto lambdaSetFourBitColorR = [&self](char nChar){ setFourBitColor(self.m_rColor.r, nChar); };
-                auto lambdaSetFourBitColorG = [&self](char nChar){ setFourBitColor(self.m_rColor.g, nChar); };
-                auto lambdaSetFourBitColorB = [&self](char nChar){ setFourBitColor(self.m_rColor.b, nChar); };
-                auto lambdaSetIntColorR = [&self](sal_uInt8 nVal){ setIntColor(self.m_rColor.r, nVal); };
-                auto lambdaSetIntColorG = [&self](sal_uInt8 nVal){ setIntColor(self.m_rColor.g, nVal); };
-                auto lambdaSetIntColorB = [&self](sal_uInt8 nVal){ setIntColor(self.m_rColor.b, nVal); };
-                auto lambdaSetPercentColorR = [&self](double nVal){ setPercentColor(self.m_rColor.r, nVal); };
-                auto lambdaSetPercentColorG = [&self](double nVal){ setPercentColor(self.m_rColor.g, nVal); };
-                auto lambdaSetPercentColorB = [&self](double nVal){ setPercentColor(self.m_rColor.b, nVal); };
                 int_parser<sal_uInt8,10,1,3> byte_p;
                 colorExpression =
                     (
                         // the #rrggbb form
-                        ('#' >> (xdigit_p >> xdigit_p)[ lambdaSetEightBitColorR ]
-                             >> (xdigit_p >> xdigit_p)[ lambdaSetEightBitColorG ]
-                             >> (xdigit_p >> xdigit_p)[ lambdaSetEightBitColorB ]   )
+                        ('#' >> (xdigit_p >> xdigit_p)[boost::bind(&setEightBitColor,
+                                                                   boost::ref(self.m_rColor.r),_1,_2)]
+                             >> (xdigit_p >> xdigit_p)[boost::bind(&setEightBitColor,
+                                                                   boost::ref(self.m_rColor.g),_1,_2)]
+                             >> (xdigit_p >> xdigit_p)[boost::bind(&setEightBitColor,
+                                                                   boost::ref(self.m_rColor.b),_1,_2)])
                         |
                         // the #rgb form
-                        ('#' >> xdigit_p[ lambdaSetFourBitColorR ]
-                             >> xdigit_p[ lambdaSetFourBitColorG ]
-                             >> xdigit_p[ lambdaSetFourBitColorB ]   )
+                        ('#' >> xdigit_p[boost::bind(&setFourBitColor,
+                                                     boost::ref(self.m_rColor.r),_1)]
+                             >> xdigit_p[boost::bind(&setFourBitColor,
+                                                     boost::ref(self.m_rColor.g),_1)]
+                             >> xdigit_p[boost::bind(&setFourBitColor,
+                                                     boost::ref(self.m_rColor.b),_1)])
                         |
                         // rgb() form
                         (str_p("rgb")
                             >> '(' >>
                             (
                                 // rgb(int,int,int)
-                                (byte_p[ lambdaSetIntColorR ] >> ',' >>
-                                 byte_p[ lambdaSetIntColorG ] >> ',' >>
-                                 byte_p[ lambdaSetIntColorB ] )
+                                (byte_p[boost::bind(&setIntColor,
+                                                    boost::ref(self.m_rColor.r),_1)] >> ',' >>
+                                 byte_p[boost::bind(&setIntColor,
+                                                    boost::ref(self.m_rColor.g),_1)] >> ',' >>
+                                 byte_p[boost::bind(&setIntColor,
+                                                    boost::ref(self.m_rColor.b),_1)])
                              |
                                 // rgb(double,double,double)
                                 (real_p[assign_a(self.m_rColor.r)] >> ',' >>
@@ -165,9 +167,12 @@ namespace
                                  real_p[assign_a(self.m_rColor.b)])
                              |
                                 // rgb(percent,percent,percent)
-                                (real_p[ lambdaSetPercentColorR ] >> "%," >>
-                                 real_p[ lambdaSetPercentColorG ] >> "%," >>
-                                 real_p[ lambdaSetPercentColorB ] >> "%")
+                                (real_p[boost::bind(&setPercentColor,
+                                                    boost::ref(self.m_rColor.r),_1)] >> "%," >>
+                                 real_p[boost::bind(&setPercentColor,
+                                                    boost::ref(self.m_rColor.g),_1)] >> "%," >>
+                                 real_p[boost::bind(&setPercentColor,
+                                                    boost::ref(self.m_rColor.b),_1)] >> "%")
                              )
                          >> ')')
                      );

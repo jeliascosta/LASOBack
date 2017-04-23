@@ -94,29 +94,29 @@ namespace pcr
         /// type converter, needed on various occasions
         css::uno::Reference< css::script::XTypeConverter >    m_xTypeConverter;
         /// access to property meta data
-        std::unique_ptr< OPropertyInfoService >             m_pInfoService;
+        ::std::unique_ptr< OPropertyInfoService >             m_pInfoService;
 
     protected:
         explicit PropertyHandler(
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext
         );
-        virtual ~PropertyHandler() override;
+        virtual ~PropertyHandler();
 
         // default implementations for XPropertyHandler
-        virtual void SAL_CALL inspect( const css::uno::Reference< css::uno::XInterface >& _rxIntrospectee ) override;
-        virtual css::uno::Sequence< css::beans::Property > SAL_CALL getSupportedProperties() override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupersededProperties( ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getActuatingProperties( ) override;
-        virtual css::uno::Any SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) override;
-        virtual css::uno::Any SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) override;
-        virtual css::beans::PropertyState  SAL_CALL getPropertyState( const OUString& _rPropertyName ) override;
-        virtual css::inspection::LineDescriptor SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) override;
-        virtual sal_Bool SAL_CALL isComposable( const OUString& _rPropertyName ) override;
-        virtual css::inspection::InteractiveSelectionResult SAL_CALL onInteractivePropertySelection( const OUString& _rPropertyName, sal_Bool _bPrimary, css::uno::Any& _rData, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI ) override;
-        virtual void SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) override;
-        virtual void SAL_CALL addPropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) override;
-        virtual void SAL_CALL removePropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) override;
-        virtual sal_Bool SAL_CALL suspend( sal_Bool _bSuspend ) override;
+        virtual void SAL_CALL inspect( const css::uno::Reference< css::uno::XInterface >& _rxIntrospectee ) throw (css::uno::RuntimeException, css::lang::NullPointerException, std::exception) override;
+        virtual css::uno::Sequence< css::beans::Property > SAL_CALL getSupportedProperties() throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupersededProperties( ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getActuatingProperties( ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL convertToPropertyValue( const OUString& _rPropertyName, const css::uno::Any& _rControlValue ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL convertToControlValue( const OUString& _rPropertyName, const css::uno::Any& _rPropertyValue, const css::uno::Type& _rControlValueType ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual css::beans::PropertyState  SAL_CALL getPropertyState( const OUString& _rPropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual css::inspection::LineDescriptor SAL_CALL describePropertyLine( const OUString& _rPropertyName, const css::uno::Reference< css::inspection::XPropertyControlFactory >& _rxControlFactory ) throw (css::beans::UnknownPropertyException, css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL isComposable( const OUString& _rPropertyName ) throw (css::beans::UnknownPropertyException, css::uno::RuntimeException, std::exception) override;
+        virtual css::inspection::InteractiveSelectionResult SAL_CALL onInteractivePropertySelection( const OUString& _rPropertyName, sal_Bool _bPrimary, css::uno::Any& _rData, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI ) throw (css::beans::UnknownPropertyException, css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL actuatingPropertyChanged( const OUString& _rActuatingPropertyName, const css::uno::Any& _rNewValue, const css::uno::Any& _rOldValue, const css::uno::Reference< css::inspection::XObjectInspectorUI >& _rxInspectorUI, sal_Bool _bFirstTimeInit ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addPropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) throw (css::lang::NullPointerException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removePropertyChangeListener( const css::uno::Reference< css::beans::XPropertyChangeListener >& _rxListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL suspend( sal_Bool _bSuspend ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent
         DECLARE_XCOMPONENT()
@@ -164,14 +164,14 @@ namespace pcr
             Most probably to be called from within getSupportedProperties
         */
         inline void addStringPropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName
                 ) const;
 
         /** adds a description for the given int32 property to the given property vector
         */
         inline void addInt32PropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
                     sal_Int16 _nAttribs = 0
                 ) const;
@@ -179,7 +179,7 @@ namespace pcr
         /** adds a description for the given int16 property to the given property vector
         */
         inline void addInt16PropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
                     sal_Int16 _nAttribs = 0
                 ) const;
@@ -187,38 +187,38 @@ namespace pcr
         /** adds a description for the given double property to the given property vector
         */
         inline void addDoublePropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
-                    sal_Int16 _nAttribs
+                    sal_Int16 _nAttribs = 0
                 ) const;
 
         /** adds a description for the given date property to the given property vector
         */
         inline void addDatePropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
-                    sal_Int16 _nAttribs
+                    sal_Int16 _nAttribs = 0
                 ) const;
 
         /** adds a description for the given time property to the given property vector
         */
         inline void addTimePropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
-                    sal_Int16 _nAttribs
+                    sal_Int16 _nAttribs = 0
                 ) const;
 
         /** adds a description for the given DateTime property to the given property vector
         */
         inline void addDateTimePropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
-                    sal_Int16 _nAttribs
+                    sal_Int16 _nAttribs = 0
                 ) const;
 
         /// adds a Property, given by name only, to a given vector of Properties
         void implAddPropertyDescription(
-                    std::vector< css::beans::Property >& _rProperties,
+                    ::std::vector< css::beans::Property >& _rProperties,
                     const OUString& _rPropertyName,
                     const css::uno::Type& _rType,
                     sal_Int16 _nAttribs = 0
@@ -254,7 +254,7 @@ namespace pcr
             @see getSupportedProperties
             @see doDescribeSupportedProperties
         */
-        bool impl_isSupportedProperty_nothrow( PropertyId _nPropId ) const
+        inline bool impl_isSupportedProperty_nothrow( PropertyId _nPropId ) const
         {
             return impl_getPropertyFromId_nothrow( _nPropId ) != nullptr;
         }
@@ -277,7 +277,7 @@ namespace pcr
         /** returns the value of the ContextDocument property in the ComponentContext which was used to create
             this handler.
         */
-        css::uno::Reference< css::frame::XModel >
+        inline css::uno::Reference< css::frame::XModel >
                     impl_getContextDocument_nothrow() const
         {
             return css::uno::Reference< css::frame::XModel >(
@@ -303,37 +303,37 @@ namespace pcr
     };
 
 
-    inline void PropertyHandler::addStringPropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName ) const
+    inline void PropertyHandler::addStringPropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<OUString>::get() );
     }
 
-    inline void PropertyHandler::addInt32PropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addInt32PropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<sal_Int32>::get(), _nAttribs );
     }
 
-    inline void PropertyHandler::addInt16PropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addInt16PropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<sal_Int16>::get(), _nAttribs );
     }
 
-    inline void PropertyHandler::addDoublePropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addDoublePropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<double>::get(), _nAttribs );
     }
 
-    inline void PropertyHandler::addDatePropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addDatePropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<css::util::Date>::get(), _nAttribs );
     }
 
-    inline void PropertyHandler::addTimePropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addTimePropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<css::util::Time>::get(), _nAttribs );
     }
 
-    inline void PropertyHandler::addDateTimePropertyDescription( std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
+    inline void PropertyHandler::addDateTimePropertyDescription( ::std::vector< css::beans::Property >& _rProperties, const OUString& _rPropertyName, sal_Int16 _nAttribs ) const
     {
         implAddPropertyDescription( _rProperties, _rPropertyName, ::cppu::UnoType<css::util::DateTime>::get(), _nAttribs );
     }
@@ -363,9 +363,9 @@ namespace pcr
         DECLARE_XTYPEPROVIDER()
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override = 0;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override = 0;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override = 0;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override = 0;
     };
 
 
@@ -404,8 +404,8 @@ namespace pcr
 
     protected:
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
         static css::uno::Reference< css::uno::XInterface > SAL_CALL Create( const css::uno::Reference< css::uno::XComponentContext >& _rxContext );
 
     public:
@@ -416,14 +416,14 @@ namespace pcr
 
 
     template < class HANDLER >
-    OUString SAL_CALL HandlerComponentBase< HANDLER >::getImplementationName(  )
+    OUString SAL_CALL HandlerComponentBase< HANDLER >::getImplementationName(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return HANDLER::getImplementationName_static();
     }
 
 
     template < class HANDLER >
-    css::uno::Sequence< OUString > SAL_CALL HandlerComponentBase< HANDLER >::getSupportedServiceNames(  )
+    css::uno::Sequence< OUString > SAL_CALL HandlerComponentBase< HANDLER >::getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return HANDLER::getSupportedServiceNames_static();
     }

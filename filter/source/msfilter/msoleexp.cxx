@@ -171,7 +171,7 @@ void SvxMSExportOLEObjects::ExportOLEObject( svt::EmbeddedObjectRef& rObj, SotSt
                     aOwnGlobalName = aGlbNm;
 
                     // flags for checking if conversion is wanted at all (SaveOptions?!)
-                    if( nConvertFlags & pArr->nFlag )
+                    if( GetFlags() & pArr->nFlag )
                     {
                         pExpFilter = SfxFilterMatcher().GetFilter4FilterName(OUString::createFromAscii(pArr->pFilterNm));
                         break;
@@ -272,7 +272,7 @@ void SvxMSExportOLEObjects::ExportOLEObject( svt::EmbeddedObjectRef& rObj, SotSt
                         }
                     }
 
-                    bExtentSuccess = (xExtStm->WriteBytes(aWriteSet, 16) == 16);
+                    bExtentSuccess = ( xExtStm->Write( aWriteSet, 16 ) == 16 );
                 }
             }
 
@@ -326,7 +326,7 @@ void SvxMSExportOLEObjects::ExportOLEObject( svt::EmbeddedObjectRef& rObj, SotSt
             catch ( const uno::Exception& )
             {}
 
-            tools::SvRef<SotStorage> xOLEStor = SotStorage::OpenOLEStorage( xStor, aTempName, StreamMode::STD_READ );
+            tools::SvRef<SotStorage> xOLEStor = SotStorage::OpenOLEStorage( xStor, aTempName, STREAM_STD_READ );
             xOLEStor->CopyTo( &rDestStg );
             rDestStg.Commit();
         }

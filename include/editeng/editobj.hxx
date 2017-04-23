@@ -21,6 +21,7 @@
 #define INCLUDED_EDITENG_EDITOBJ_HXX
 
 #include <rsc/rscsfx.hxx>
+#include <svl/itemset.hxx>
 #include <svl/itempool.hxx>
 #include <editeng/eeitem.hxx>
 #include <editeng/editdata.hxx>
@@ -33,7 +34,7 @@
 #include <vector>
 #include <memory>
 
-class SfxItemSet;
+class SfxItemPool;
 class SfxStyleSheetPool;
 class SvxFieldItem;
 class SvxFieldData;
@@ -66,6 +67,9 @@ class EDITENG_DLLPUBLIC EditTextObject : public SfxItemPoolUser
     std::unique_ptr<EditTextObjectImpl> mpImpl;
 
     EditTextObject( SfxItemPool* pPool );
+
+    void StoreData( SvStream& rStrm ) const;
+    void CreateData( SvStream& rStrm );
 
 public:
     EditTextObject( const EditTextObject& r );
@@ -106,7 +110,7 @@ public:
 
     void GetCharAttribs( sal_Int32 nPara, std::vector<EECharAttrib>& rLst ) const;
 
-    bool RemoveCharAttribs( sal_uInt16 nWhich );
+    bool RemoveCharAttribs( sal_uInt16 nWhich = 0 );
 
     /**
      * Get all text sections in this content.  Sections are non-overlapping

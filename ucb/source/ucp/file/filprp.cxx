@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "filtask.hxx"
+#include "shell.hxx"
 #include "prov.hxx"
 #include "filprp.hxx"
 
@@ -34,17 +34,17 @@ using namespace com::sun::star::ucb;
 #define THROW_WHERE ""
 #endif
 
-XPropertySetInfo_impl::XPropertySetInfo_impl( TaskManager* pMyShell,const OUString& aUnqPath )
+XPropertySetInfo_impl::XPropertySetInfo_impl( shell* pMyShell,const OUString& aUnqPath )
     : m_pMyShell( pMyShell ),
       m_count( 0 ),
       m_seq( 0 )
 {
     m_pMyShell->m_pProvider->acquire();
 
-    TaskManager::ContentMap::iterator it = m_pMyShell->m_aContent.find( aUnqPath );
+    shell::ContentMap::iterator it = m_pMyShell->m_aContent.find( aUnqPath );
 
-    TaskManager::PropertySet& properties = *(it->second.properties);
-    TaskManager::PropertySet::iterator it1 = properties.begin();
+    shell::PropertySet& properties = *(it->second.properties);
+    shell::PropertySet::iterator it1 = properties.begin();
 
     m_seq.realloc( properties.size() );
 
@@ -59,7 +59,7 @@ XPropertySetInfo_impl::XPropertySetInfo_impl( TaskManager* pMyShell,const OUStri
 }
 
 
-XPropertySetInfo_impl::XPropertySetInfo_impl( TaskManager* pMyShell,const Sequence< beans::Property >& seq )
+XPropertySetInfo_impl::XPropertySetInfo_impl( shell* pMyShell,const Sequence< beans::Property >& seq )
     : m_pMyShell( pMyShell ),
       m_count( seq.getLength() ),
       m_seq( seq )
@@ -75,7 +75,10 @@ XPropertySetInfo_impl::~XPropertySetInfo_impl()
 
 
 beans::Property SAL_CALL
-XPropertySetInfo_impl::getPropertyByName( const OUString& aName )
+XPropertySetInfo_impl::getPropertyByName(
+                     const OUString& aName )
+  throw( beans::UnknownPropertyException,
+     RuntimeException, std::exception)
 {
   for( sal_Int32 i = 0; i < m_seq.getLength(); ++i )
     if( m_seq[i].Name == aName ) return m_seq[i];
@@ -85,14 +88,18 @@ XPropertySetInfo_impl::getPropertyByName( const OUString& aName )
 
 
 Sequence< beans::Property > SAL_CALL
-XPropertySetInfo_impl::getProperties()
+XPropertySetInfo_impl::getProperties(
+                    void )
+  throw( RuntimeException, std::exception )
 {
   return m_seq;
 }
 
 
 sal_Bool SAL_CALL
-XPropertySetInfo_impl::hasPropertyByName( const OUString& aName )
+XPropertySetInfo_impl::hasPropertyByName(
+                     const OUString& aName )
+  throw( RuntimeException, std::exception )
 {
   for( sal_Int32 i = 0; i < m_seq.getLength(); ++i )
     if( m_seq[i].Name == aName ) return true;

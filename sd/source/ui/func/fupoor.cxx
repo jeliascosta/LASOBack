@@ -84,13 +84,13 @@ FuPoor::FuPoor (
 {
     ReceiveRequest(rReq);
 
-    aScrollTimer.SetInvokeHandler( LINK(this, FuPoor, ScrollHdl) );
+    aScrollTimer.SetTimeoutHdl( LINK(this, FuPoor, ScrollHdl) );
     aScrollTimer.SetTimeout(SELENG_AUTOREPEAT_INTERVAL);
 
-    aDragTimer.SetInvokeHandler( LINK(this, FuPoor, DragHdl) );
+    aDragTimer.SetTimeoutHdl( LINK(this, FuPoor, DragHdl) );
     aDragTimer.SetTimeout(SELENG_DRAGDROP_TIMEOUT);
 
-    aDelayToScrollTimer.SetInvokeHandler( LINK(this, FuPoor, DelayHdl) );
+    aDelayToScrollTimer.SetTimeoutHdl( LINK(this, FuPoor, DelayHdl) );
     aDelayToScrollTimer.SetTimeout(2000);
 }
 
@@ -142,7 +142,7 @@ void FuPoor::ForceScroll(const Point& aPixPos)
             !SlideShow::IsRunning( mpViewShell->GetViewShellBase() ) )
     {
         Point aPos = mpWindow->OutputToScreenPixel(aPixPos);
-        const ::tools::Rectangle& rRect = mpViewShell->GetAllWindowRect();
+        const Rectangle& rRect = mpViewShell->GetAllWindowRect();
 
         if ( bNoScrollUntilInside )
         {
@@ -175,7 +175,7 @@ void FuPoor::ForceScroll(const Point& aPixPos)
 /**
  * timer handler for window scrolling
  */
-IMPL_LINK_NOARG(FuPoor, ScrollHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(FuPoor, ScrollHdl, Timer *, void)
 {
     Point aPnt(mpWindow->GetPointerPosPixel());
 
@@ -209,7 +209,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
 
                     if(pActualPage)
                     {
-                        SdrObjListIter aIter(*pActualPage, SdrIterMode::DeepNoGroups);
+                        SdrObjListIter aIter(*pActualPage, IM_DEEPNOGROUPS);
 
                         while(aIter.IsMore() && !pCandidate)
                         {
@@ -217,10 +217,10 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
 
                             if(pObj && dynamic_cast< const SdrTextObj *>( pObj ) !=  nullptr)
                             {
-                                SdrInventor nInv(pObj->GetObjInventor());
+                                sal_uInt32 nInv(pObj->GetObjInventor());
                                 sal_uInt16 nKnd(pObj->GetObjIdentifier());
 
-                                if(SdrInventor::Default == nInv &&
+                                if(SdrInventor == nInv &&
                                     (OBJ_TITLETEXT == nKnd || OBJ_OUTLINETEXT == nKnd || OBJ_TEXT == nKnd))
                                 {
                                     pCandidate = static_cast<SdrTextObj*>(pObj);
@@ -296,7 +296,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
                 if(pHdl)
                 {
                     Point aHdlPosition(pHdl->GetPos());
-                    ::tools::Rectangle aVisRect(aHdlPosition - Point(100, 100), Size(200, 200));
+                    Rectangle aVisRect(aHdlPosition - Point(100, 100), Size(200, 200));
                     mpView->MakeVisible(aVisRect, *mpWindow);
                 }
 
@@ -526,7 +526,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
 
             if(pHdl)
             {
-                if(pHdl->GetKind() == SdrHdlKind::Poly)
+                if(pHdl->GetKind() == HDL_POLY)
                 {
                     // rescue ID of point with focus
                     sal_uInt32 nPol(pHdl->GetPolyNum());
@@ -559,7 +559,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
                             SdrHdl* pAct = rHdlList.GetHdl(a);
 
                             if(pAct
-                                && pAct->GetKind() == SdrHdlKind::Poly
+                                && pAct->GetKind() == HDL_POLY
                                 && pAct->GetPolyNum() == nPol
                                 && pAct->GetPointNum() == nPnt)
                             {
@@ -692,11 +692,11 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
                         if(mpView->IsMoveAllowed())
                         {
                             // restrict movement to WorkArea
-                            const ::tools::Rectangle& rWorkArea = mpView->GetWorkArea();
+                            const Rectangle& rWorkArea = mpView->GetWorkArea();
 
                             if(!rWorkArea.IsEmpty())
                             {
-                                ::tools::Rectangle aMarkRect(mpView->GetMarkedObjRect());
+                                Rectangle aMarkRect(mpView->GetMarkedObjRect());
                                 aMarkRect.Move(nX, nY);
 
                                 if(!aMarkRect.IsInside(rWorkArea))
@@ -767,7 +767,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
                             }
 
                             // make moved handle visible
-                            ::tools::Rectangle aVisRect(aEndPoint - Point(100, 100), Size(200, 200));
+                            Rectangle aVisRect(aEndPoint - Point(100, 100), Size(200, 200));
                             mpView->MakeVisible(aVisRect, *mpWindow);
                         }
                     }
@@ -841,7 +841,7 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
 
                     if(pActualPage)
                     {
-                        SdrObjListIter aIter(*pActualPage, SdrIterMode::DeepNoGroups);
+                        SdrObjListIter aIter(*pActualPage, IM_DEEPNOGROUPS);
 
                         while(aIter.IsMore() && !pCandidate)
                         {
@@ -849,10 +849,10 @@ bool FuPoor::KeyInput(const KeyEvent& rKEvt)
 
                             if(pObj && dynamic_cast< const SdrTextObj *>( pObj ) !=  nullptr)
                             {
-                                SdrInventor nInv(pObj->GetObjInventor());
+                                sal_uInt32 nInv(pObj->GetObjInventor());
                                 sal_uInt16 nKnd(pObj->GetObjIdentifier());
 
-                                if(SdrInventor::Default == nInv && OBJ_TITLETEXT == nKnd)
+                                if(SdrInventor == nInv && OBJ_TITLETEXT == nKnd)
                                 {
                                     pCandidate = static_cast<SdrTextObj*>(pObj);
                                 }
@@ -939,7 +939,7 @@ void FuPoor::DoPasteUnformatted()
         if (aDataHelper.GetTransferable().is())
         {
             mpView->InsertData( aDataHelper,
-                                mpWindow->PixelToLogic( ::tools::Rectangle( Point(), mpWindow->GetOutputSizePixel() ).Center() ),
+                                mpWindow->PixelToLogic( Rectangle( Point(), mpWindow->GetOutputSizePixel() ).Center() ),
                                 nAction, false, SotClipboardFormatId::STRING);
         }
     }
@@ -948,7 +948,7 @@ void FuPoor::DoPasteUnformatted()
 /**
  * Timer handler for Drag&Drop
  */
-IMPL_LINK_NOARG(FuPoor, DragHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(FuPoor, DragHdl, Timer *, void)
 {
     if( mpView )
     {
@@ -973,7 +973,7 @@ bool FuPoor::Command(const CommandEvent& rCEvt)
 /**
  * Timer handler for window scrolling
  */
-IMPL_LINK_NOARG(FuPoor, DelayHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(FuPoor, DelayHdl, Timer *, void)
 {
     aDelayToScrollTimer.Stop ();
     bScrollable = true;
@@ -1046,23 +1046,23 @@ void FuPoor::ReceiveRequest(SfxRequest& rReq)
     }
 }
 
-SdrObject* FuPoor::CreateDefaultObject(const sal_uInt16, const ::tools::Rectangle& )
+SdrObject* FuPoor::CreateDefaultObject(const sal_uInt16, const Rectangle& )
 {
     // empty base implementation
     return nullptr;
 }
 
-void FuPoor::ImpForceQuadratic(::tools::Rectangle& rRect)
+void FuPoor::ImpForceQuadratic(Rectangle& rRect)
 {
     if(rRect.GetWidth() > rRect.GetHeight())
     {
-        rRect = ::tools::Rectangle(
+        rRect = Rectangle(
             Point(rRect.Left() + ((rRect.GetWidth() - rRect.GetHeight()) / 2), rRect.Top()),
             Size(rRect.GetHeight(), rRect.GetHeight()));
     }
     else
     {
-        rRect = ::tools::Rectangle(
+        rRect = Rectangle(
             Point(rRect.Left(), rRect.Top() + ((rRect.GetHeight() - rRect.GetWidth()) / 2)),
             Size(rRect.GetWidth(), rRect.GetWidth()));
     }
@@ -1123,7 +1123,7 @@ bool FuPoor::doConstructOrthogonal() const
     // Check whether a media object is selected
     bool bResizeKeepRatio = false;
     // tdf#89758 Avoid interactive crop preview from being proportionally scaled by default.
-    if (mpView->AreObjectsMarked() && mpView->GetDragMode() != SdrDragMode::Crop)
+    if (mpView->AreObjectsMarked() && mpView->GetDragMode() != SDRDRAG_CROP)
     {
         const SdrMarkList& rMarkList = mpView->GetMarkedObjectList();
         if (rMarkList.GetMarkCount() == 1)

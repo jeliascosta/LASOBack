@@ -30,7 +30,8 @@ namespace svt
 
 JavaContext::JavaContext( const Reference< XCurrentContext > & ctx)
     : m_aRefCount(0),
-      m_xNextContext( ctx )
+      m_xNextContext( ctx ),
+      m_bShowErrorsOnce(true)
 {
 }
 
@@ -39,6 +40,7 @@ JavaContext::~JavaContext()
 }
 
 Any SAL_CALL JavaContext::queryInterface(const Type& aType )
+    throw (RuntimeException, std::exception)
 {
     if (aType == cppu::UnoType<XInterface>::get())
         return Any(Reference<XInterface>(static_cast<XInterface*>(this)));
@@ -58,7 +60,7 @@ void SAL_CALL JavaContext::release(  ) throw ()
         delete this;
 }
 
-Any SAL_CALL JavaContext::getValueByName( const OUString& Name)
+Any SAL_CALL JavaContext::getValueByName( const OUString& Name) throw (RuntimeException, std::exception)
 {
     Any retVal;
 
@@ -67,9 +69,9 @@ Any SAL_CALL JavaContext::getValueByName( const OUString& Name)
         {
             osl::MutexGuard aGuard(osl::Mutex::getGlobalMutex());
             if (!m_xHandler.is())
-                m_xHandler.set( new JavaInteractionHandler );
+                m_xHandler.set( new JavaInteractionHandler(m_bShowErrorsOnce));
         }
-        retVal <<= m_xHandler;
+        retVal = makeAny(m_xHandler);
 
     }
     else if( m_xNextContext.is() )

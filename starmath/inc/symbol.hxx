@@ -75,16 +75,18 @@ typedef std::map< OUString, SmSym >    SymbolMap_t;
 typedef std::vector< const SmSym * >            SymbolPtrVec_t;
 
 
-class SmSymbolManager
+class SmSymbolManager : public SfxListener
 {
 private:
     SymbolMap_t         m_aSymbols;
     bool                m_bModified;
 
+    virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
+
 public:
     SmSymbolManager();
     SmSymbolManager(const SmSymbolManager& rSymbolSetManager);
-    ~SmSymbolManager();
+    virtual ~SmSymbolManager();
 
     SmSymbolManager &   operator = (const SmSymbolManager& rSymbolSetManager);
 

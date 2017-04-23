@@ -34,12 +34,12 @@
 #include <basegfx/vector/b2dsize.hxx>
 
 
-enum class GraphicType
+enum GraphicType
 {
-    NONE,
-    Bitmap,
-    GdiMetafile,
-    Default
+    GRAPHIC_NONE,
+    GRAPHIC_BITMAP,
+    GRAPHIC_GDIMETAFILE,
+    GRAPHIC_DEFAULT
 };
 
 namespace com { namespace sun { namespace star { namespace graphic { class XGraphic;} } } }
@@ -52,7 +52,16 @@ class ReaderData;
 
 class VCL_DLLPUBLIC GraphicReader
 {
+protected:
+
+    OUString        maUpperName;
+    ReaderData*     mpReaderData;
+
+                    GraphicReader() :
+                        mpReaderData( nullptr ) {}
+
 public:
+
     virtual         ~GraphicReader();
 
     const OUString& GetUpperFilterName() const { return maUpperName; }
@@ -62,13 +71,6 @@ public:
     void            DisablePreviewMode();
     void            SetPreviewSize( const Size& );
     Size            GetPreviewSize() const;
-
-protected:
-    OUString        maUpperName;
-
-                    GraphicReader();
-private:
-    std::unique_ptr<ReaderData>   mpReaderData;
 };
 
 class VCL_DLLPUBLIC GraphicConversionParameters
@@ -76,9 +78,11 @@ class VCL_DLLPUBLIC GraphicConversionParameters
 private:
     Size            maSizePixel;            // default is (0,0)
 
+    // bitfield
     bool            mbUnlimitedSize : 1;    // default is false
     bool            mbAntiAliase : 1;       // default is false
     bool            mbSnapHorVerLines : 1;  // default is false
+    bool            mbScaleHighQuality : 1; // default is false
 
 public:
     GraphicConversionParameters(
@@ -89,7 +93,8 @@ public:
     :   maSizePixel(rSizePixel),
         mbUnlimitedSize(bUnlimitedSize),
         mbAntiAliase(bAntiAliase),
-        mbSnapHorVerLines(bSnapHorVerLines)
+        mbSnapHorVerLines(bSnapHorVerLines),
+        mbScaleHighQuality(false)
     {
     }
 
@@ -98,32 +103,32 @@ public:
     bool            getUnlimitedSize() const { return mbUnlimitedSize; }
     bool            getAntiAliase() const { return mbAntiAliase; }
     bool            getSnapHorVerLines() const { return mbSnapHorVerLines; }
+    bool            getScaleHighQuality() const { return mbScaleHighQuality; }
 };
 
-class VCL_DLLPUBLIC Graphic
+class VCL_DLLPUBLIC Graphic : public SvDataCopyStream
 {
 private:
 
-    std::shared_ptr<ImpGraphic> mxImpGraphic;
+    ImpGraphic*    mpImpGraphic;
 
 public:
 
     SAL_DLLPRIVATE void ImplTestRefCount();
-    SAL_DLLPRIVATE ImpGraphic* ImplGetImpGraphic() const { return mxImpGraphic.get(); }
+    SAL_DLLPRIVATE ImpGraphic* ImplGetImpGraphic() const { return mpImpGraphic; }
 
 public:
                     Graphic();
                     Graphic( const Graphic& rGraphic );
-                    Graphic( Graphic&& rGraphic );
                     Graphic( const Bitmap& rBmp );
                     Graphic( const BitmapEx& rBmpEx );
                     Graphic( const SvgDataPtr& rSvgDataPtr );
                     Graphic( const Animation& rAnimation );
                     Graphic( const GDIMetaFile& rMtf );
                     Graphic( const css::uno::Reference< css::graphic::XGraphic >& rxGraphic );
+    virtual         ~Graphic();
 
     Graphic&        operator=( const Graphic& rGraphic );
-    Graphic&        operator=( Graphic&& rGraphic );
     bool            operator==( const Graphic& rGraphic ) const;
     bool            operator!=( const Graphic& rGraphic ) const;
     bool            operator!() const;
@@ -178,8 +183,8 @@ public:
                           const Size& rDestSize,
                           long nExtraData = 0L,
                           OutputDevice* pFirstFrameOutDev = nullptr );
-    void            StopAnimation( OutputDevice* pOutputDevice,
-                          long nExtraData );
+    void            StopAnimation( OutputDevice* pOutputDevice = nullptr,
+                          long nExtraData = 0L );
 
     void            SetAnimationNotifyHdl( const Link<Animation*,void>& rLink );
     Link<Animation*,void> GetAnimationNotifyHdl() const;
@@ -190,10 +195,10 @@ public:
 
 public:
 
-    std::shared_ptr<GraphicReader>& GetContext();
-    void                            SetContext( const std::shared_ptr<GraphicReader> &pReader );
-    void                            SetDummyContext(bool value);
-    bool                            IsDummyContext();
+    GraphicReader*  GetContext();
+    void            SetContext( GraphicReader* pReader );
+    void            SetDummyContext(bool value);
+    bool            IsDummyContext();
 private:
     friend class GraphicObject;
 
@@ -211,15 +216,12 @@ public:
 
     bool            ExportNative( SvStream& rOStream ) const;
 
-    friend VCL_DLLPUBLIC void WriteGraphic(SvStream& rOStream, const Graphic& rGraphic);
-    friend VCL_DLLPUBLIC void ReadGraphic(SvStream& rIStream, Graphic& rGraphic);
+    friend VCL_DLLPUBLIC SvStream& WriteGraphic( SvStream& rOStream, const Graphic& rGraphic );
+    friend VCL_DLLPUBLIC SvStream& ReadGraphic( SvStream& rIStream, Graphic& rGraphic );
 
 public:
 
     const SvgDataPtr& getSvgData() const;
-
-    void setPdfData(const css::uno::Sequence<sal_Int8>& rPdfData);
-    const css::uno::Sequence<sal_Int8>& getPdfData() const;
 
     static css::uno::Sequence<sal_Int8> getUnoTunnelId();
 };

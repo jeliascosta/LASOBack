@@ -28,9 +28,10 @@
 #include "sddll.hxx"
 #include <sfx2/request.hxx>
 #include <sfx2/dispatch.hxx>
+
 #include <sfx2/objface.hxx>
+
 #include <svx/svxids.hrc>
-#include <svx/ruler.hxx>
 #include "FrameView.hxx"
 #include "sdresid.hxx"
 #include "DrawDocShell.hxx"
@@ -63,19 +64,19 @@ SFX_IMPL_INTERFACE(PresentationViewShell, DrawViewShell)
 
 void PresentationViewShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS, SfxVisibilityFlags::Standard | SfxVisibilityFlags::FullScreen | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_FULLSCREEN | SFX_VISIBILITY_SERVER,
                                             RID_DRAW_TOOLBOX);
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_APPLICATION, SfxVisibilityFlags::Standard | SfxVisibilityFlags::Client | SfxVisibilityFlags::Viewer | SfxVisibilityFlags::ReadonlyDoc,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_APPLICATION | SFX_VISIBILITY_DESKTOP | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_CLIENT | SFX_VISIBILITY_VIEWER | SFX_VISIBILITY_READONLYDOC,
                                             RID_DRAW_VIEWER_TOOLBOX);
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OPTIONS, SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OPTIONS | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_SERVER,
                                             RID_DRAW_OPTIONS_TOOLBOX);
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_COMMONTASK, SfxVisibilityFlags::Standard | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_COMMONTASK | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_SERVER,
                                             RID_DRAW_COMMONTASK_TOOLBOX);
 }
 
 
 PresentationViewShell::PresentationViewShell( SfxViewFrame* pFrame, ViewShellBase& rViewShellBase, vcl::Window* pParentWindow, FrameView* pFrameView)
-: DrawViewShell( pFrame, rViewShellBase, pParentWindow, PageKind::Standard, pFrameView)
+: DrawViewShell( pFrame, rViewShellBase, pParentWindow, PK_STANDARD, pFrameView)
 {
     if( GetDocSh() && GetDocSh()->GetCreateMode() == SfxObjectCreateMode::EMBEDDED )
         maOldVisArea = GetDocSh()->GetVisArea( ASPECT_CONTENT );
@@ -106,12 +107,12 @@ void PresentationViewShell::FinishInitialization( FrameView* pFrameView )
     GetActiveWindow()->GrabFocus();
 }
 
-VclPtr<SvxRuler> PresentationViewShell::CreateHRuler(::sd::Window*)
+SvxRuler* PresentationViewShell::CreateHRuler(::sd::Window*)
 {
     return nullptr;
 }
 
-VclPtr<SvxRuler> PresentationViewShell::CreateVRuler(::sd::Window*)
+SvxRuler* PresentationViewShell::CreateVRuler(::sd::Window*)
 {
     return nullptr;
 }
@@ -140,7 +141,7 @@ void PresentationViewShell::Activate( bool bIsMDIActivate )
     GetDocSh()->Connect( this );
 }
 
-void PresentationViewShell::Paint( const ::tools::Rectangle& rRect, ::sd::Window* )
+void PresentationViewShell::Paint( const Rectangle& rRect, ::sd::Window* )
 {
     rtl::Reference< SlideShow > xSlideShow( SlideShow::GetSlideShow( GetViewShellBase() ) );
     if( xSlideShow.is() )

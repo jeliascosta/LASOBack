@@ -103,6 +103,7 @@ using namespace ::com::sun::star::xml::sax;
 using namespace ::com::sun::star::io;
 using namespace ::xmloff::token;
 
+sal_Char const sXML_1_1[] = "1.1";
 sal_Char const sXML_1_2[] = "1.2";
 
 #define XML_MODEL_SERVICE_WRITER    "com.sun.star.text.TextDocument"
@@ -212,9 +213,10 @@ private:
 
 public:
     explicit SvXMLExportEventListener(SvXMLExport* pExport);
+    virtual                 ~SvXMLExportEventListener();
 
                             // XEventListener
-    virtual void SAL_CALL disposing(const lang::EventObject& rEventObject) override;
+    virtual void SAL_CALL disposing(const lang::EventObject& rEventObject) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 SvXMLExportEventListener::SvXMLExportEventListener(SvXMLExport* pTempExport)
@@ -222,8 +224,13 @@ SvXMLExportEventListener::SvXMLExportEventListener(SvXMLExport* pTempExport)
 {
 }
 
+SvXMLExportEventListener::~SvXMLExportEventListener()
+{
+}
+
 // XEventListener
 void SAL_CALL SvXMLExportEventListener::disposing( const lang::EventObject& )
+    throw(uno::RuntimeException, std::exception)
 {
     if (pExport)
     {
@@ -392,6 +399,8 @@ void SvXMLExport::InitCtor_()
             GetXMLToken(XML_NP_CSS3TEXT), GetXMLToken(XML_N_CSS3TEXT), XML_NAMESPACE_CSS3TEXT );
     }
 
+    mxAttrList = static_cast<xml::sax::XAttributeList*>(mpAttrList);
+
     msGraphicObjectProtocol = "vnd.sun.star.GraphicObject:";
     msEmbeddedObjectProtocol = "vnd.sun.star.EmbeddedObject:";
 
@@ -431,9 +440,10 @@ SvXMLExport::SvXMLExport(
     const enum XMLTokenEnum eClass, SvXMLExportFlags nExportFlags )
 :   mpImpl( new SvXMLExport_Impl ),
     m_xContext(xContext), m_implementationName(implementationName),
-    mxAttrList( new SvXMLAttributeList ),
+    mpAttrList( new SvXMLAttributeList ),
     mpNamespaceMap( new SvXMLNamespaceMap ),
-    maUnitConv( xContext, util::MeasureUnit::MM_100TH, eDefaultMeasureUnit ),
+    mpUnitConv( new SvXMLUnitConverter( xContext,
+                util::MeasureUnit::MM_100TH, eDefaultMeasureUnit) ),
     mpNumExport(nullptr),
     mpProgressBarHelper( nullptr ),
     mpEventExport( nullptr ),
@@ -459,10 +469,11 @@ SvXMLExport::SvXMLExport(
     m_xContext(xContext), m_implementationName(implementationName),
     mxHandler( rHandler ),
     mxExtHandler( rHandler, uno::UNO_QUERY ),
-    mxAttrList( new SvXMLAttributeList ),
+    mpAttrList( new SvXMLAttributeList ),
     msOrigFileName( rFileName ),
     mpNamespaceMap( new SvXMLNamespaceMap ),
-    maUnitConv( xContext, util::MeasureUnit::MM_100TH, eDefaultMeasureUnit ),
+    mpUnitConv( new SvXMLUnitConverter( xContext,
+                util::MeasureUnit::MM_100TH, eDefaultMeasureUnit) ),
     mpNumExport(nullptr),
     mpProgressBarHelper( nullptr ),
     mpEventExport( nullptr ),
@@ -495,12 +506,12 @@ SvXMLExport::SvXMLExport(
     mxHandler( rHandler ),
     mxExtHandler( rHandler, uno::UNO_QUERY ),
     mxNumberFormatsSupplier (rModel, uno::UNO_QUERY),
-    mxAttrList( new SvXMLAttributeList ),
+    mpAttrList( new SvXMLAttributeList ),
     msOrigFileName( rFileName ),
     mpNamespaceMap( new SvXMLNamespaceMap ),
-    maUnitConv( xContext,
-                util::MeasureUnit::MM_100TH,
-                SvXMLUnitConverter::GetMeasureUnit(eDefaultFieldUnit) ),
+    mpUnitConv( new SvXMLUnitConverter( xContext,
+                    util::MeasureUnit::MM_100TH,
+                    SvXMLUnitConverter::GetMeasureUnit(eDefaultFieldUnit)) ),
     mpNumExport(nullptr),
     mpProgressBarHelper( nullptr ),
     mpEventExport( nullptr ),
@@ -526,6 +537,7 @@ SvXMLExport::~SvXMLExport()
     delete mpImageMapExport;
     delete mpEventExport;
     delete mpNamespaceMap;
+    delete mpUnitConv;
     if (mpProgressBarHelper || mpNumExport)
     {
         if (mxExportInfo.is())
@@ -554,7 +566,9 @@ SvXMLExport::~SvXMLExport()
                     OUString sWrittenNumberFormats(XML_WRITTENNUMBERSTYLES);
                     if (xPropertySetInfo->hasPropertyByName(sWrittenNumberFormats))
                     {
-                        mxExportInfo->setPropertyValue(sWrittenNumberFormats, Any(mpNumExport->GetWasUsed()));
+                        uno::Sequence<sal_Int32> aWasUsed;
+                        mpNumExport->GetWasUsed(aWasUsed);
+                        mxExportInfo->setPropertyValue(sWrittenNumberFormats, Any(aWasUsed));
                     }
                 }
             }
@@ -569,6 +583,7 @@ SvXMLExport::~SvXMLExport()
 
 // XExporter
 void SAL_CALL SvXMLExport::setSourceDocument( const uno::Reference< lang::XComponent >& xDoc )
+    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     mxModel.set( xDoc, UNO_QUERY );
     if( !mxModel.is() )
@@ -658,6 +673,7 @@ void SAL_CALL SvXMLExport::setSourceDocument( const uno::Reference< lang::XCompo
 
 // XInitialize
 void SAL_CALL SvXMLExport::initialize( const uno::Sequence< uno::Any >& aArguments )
+    throw(css::uno::Exception, css::uno::RuntimeException, std::exception)
 {
     // #93186# we need to queryInterface every single Any with any expected outcome. This variable hold the queryInterface results.
 
@@ -738,7 +754,7 @@ void SAL_CALL SvXMLExport::initialize( const uno::Sequence< uno::Any >& aArgumen
             if( !sRelPath.isEmpty() )
                 aBaseURL.insertName( sRelPath );
             aBaseURL.insertName( sName );
-            msOrigFileName = aBaseURL.GetMainURL(INetURLObject::DecodeMechanism::ToIUri);
+            msOrigFileName = aBaseURL.GetMainURL(INetURLObject::DECODE_TO_IURI);
         }
         mpImpl->mStreamName = sName; // Note: may be empty (XSLT)
 
@@ -767,7 +783,7 @@ void SAL_CALL SvXMLExport::initialize( const uno::Sequence< uno::Any >& aArgumen
 }
 
 // XFilter
-sal_Bool SAL_CALL SvXMLExport::filter( const uno::Sequence< beans::PropertyValue >& aDescriptor )
+sal_Bool SAL_CALL SvXMLExport::filter( const uno::Sequence< beans::PropertyValue >& aDescriptor ) throw(uno::RuntimeException, std::exception)
 {
     // check for xHandler first... should have been supplied in initialize
     if( !mxHandler.is() )
@@ -829,21 +845,16 @@ sal_Bool SAL_CALL SvXMLExport::filter( const uno::Sequence< beans::PropertyValue
         // We must catch exceptions, because according to the
         // API definition export must not throw one!
         css::uno::Any ex(cppu::getCaughtException());
-        OUString sMessage( ex.getValueTypeName() + ": \"" + e.Message + "\"");
-        if (e.Context.is())
-        {
-            const char* pContext = typeid(*e.Context.get()).name();
-            sMessage += " (context: " + OUString::createFromAscii(pContext) + " )";
-        }
         SetError( XMLERROR_FLAG_ERROR | XMLERROR_FLAG_SEVERE | XMLERROR_API,
-                  Sequence<OUString>(), sMessage, nullptr );
+                  Sequence<OUString>(),
+                  ex.getValueTypeName() + ": \"" + e.Message + "\"", nullptr );
     }
 
     // return true only if no error occurred
-    return (mnErrorFlags & (SvXMLErrorFlags::DO_NOTHING|SvXMLErrorFlags::ERROR_OCCURRED)) == SvXMLErrorFlags::NO;
+    return (GetErrorFlags() & (SvXMLErrorFlags::DO_NOTHING|SvXMLErrorFlags::ERROR_OCCURRED)) == SvXMLErrorFlags::NO;
 }
 
-void SAL_CALL SvXMLExport::cancel()
+void SAL_CALL SvXMLExport::cancel() throw(uno::RuntimeException, std::exception)
 {
     // stop export
     Sequence<OUString> aEmptySeq;
@@ -851,27 +862,30 @@ void SAL_CALL SvXMLExport::cancel()
 }
 
 OUString SAL_CALL SvXMLExport::getName(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     return msFilterName;
 }
 
 void SAL_CALL SvXMLExport::setName( const OUString& )
+    throw (css::uno::RuntimeException, std::exception)
 {
     // do nothing, because it is not possible to set the FilterName
 }
 
 // XServiceInfo
-OUString SAL_CALL SvXMLExport::getImplementationName(  )
+OUString SAL_CALL SvXMLExport::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return m_implementationName;
 }
 
-sal_Bool SAL_CALL SvXMLExport::supportsService( const OUString& rServiceName )
+sal_Bool SAL_CALL SvXMLExport::supportsService( const OUString& rServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence< OUString > SAL_CALL SvXMLExport::getSupportedServiceNames(  )
+    throw(uno::RuntimeException, std::exception)
 {
     uno::Sequence<OUString> aSeq(2);
     aSeq[0] = "com.sun.star.document.ExportFilter";
@@ -932,7 +946,7 @@ void SvXMLExport::AddAttributeASCII( sal_uInt16 nPrefixKey,
     OUString sName( OUString::createFromAscii( pName ) );
     OUString sValue( OUString::createFromAscii( pValue ) );
 
-    mxAttrList->AddAttribute(
+    mpAttrList->AddAttribute(
         GetNamespaceMap_().GetQNameByKey( nPrefixKey, sName ), sValue );
 }
 
@@ -941,14 +955,14 @@ void SvXMLExport::AddAttribute( sal_uInt16 nPrefixKey, const sal_Char *pName,
 {
     OUString sName( OUString::createFromAscii( pName ) );
 
-    mxAttrList->AddAttribute(
+    mpAttrList->AddAttribute(
         GetNamespaceMap_().GetQNameByKey( nPrefixKey, sName ), rValue );
 }
 
 void SvXMLExport::AddAttribute( sal_uInt16 nPrefixKey, const OUString& rName,
                               const OUString& rValue )
 {
-    mxAttrList->AddAttribute(
+    mpAttrList->AddAttribute(
         GetNamespaceMap_().GetQNameByKey( nPrefixKey, rName ), rValue );
 }
 
@@ -956,7 +970,7 @@ void SvXMLExport::AddAttribute( sal_uInt16 nPrefixKey,
                                 enum XMLTokenEnum eName,
                                 const OUString& rValue )
 {
-    mxAttrList->AddAttribute(
+    mpAttrList->AddAttribute(
         GetNamespaceMap_().GetQNameByKey( nPrefixKey, GetXMLToken(eName) ),
         rValue );
 }
@@ -965,7 +979,7 @@ void SvXMLExport::AddAttribute( sal_uInt16 nPrefixKey,
                                 enum XMLTokenEnum eName,
                                 enum XMLTokenEnum eValue)
 {
-    mxAttrList->AddAttribute(
+    mpAttrList->AddAttribute(
         GetNamespaceMap_().GetQNameByKey( nPrefixKey, GetXMLToken(eName) ),
         GetXMLToken(eValue) );
 }
@@ -973,7 +987,7 @@ void SvXMLExport::AddAttribute( sal_uInt16 nPrefixKey,
 void SvXMLExport::AddAttribute( const OUString& rQName,
                                 const OUString& rValue )
 {
-      mxAttrList->AddAttribute(
+      mpAttrList->AddAttribute(
         rQName,
         rValue );
 }
@@ -981,7 +995,7 @@ void SvXMLExport::AddAttribute( const OUString& rQName,
 void SvXMLExport::AddAttribute( const OUString& rQName,
                                 enum ::xmloff::token::XMLTokenEnum eValue )
 {
-      mxAttrList->AddAttribute(
+      mpAttrList->AddAttribute(
         rQName,
         GetXMLToken(eValue) );
 }
@@ -1048,18 +1062,18 @@ void SvXMLExport::AddLanguageTagAttributes( sal_uInt16 nPrefix, sal_uInt16 nPref
 void SvXMLExport::AddAttributeList( const uno::Reference< xml::sax::XAttributeList >& xAttrList )
 {
     if( xAttrList.is())
-        mxAttrList->AppendAttributeList( xAttrList );
+        mpAttrList->AppendAttributeList( xAttrList );
 }
 
 void SvXMLExport::ClearAttrList()
 {
-    mxAttrList->Clear();
+    mpAttrList->Clear();
 }
 
 #ifdef DBG_UTIL
 void SvXMLExport::CheckAttrList()
 {
-    SAL_WARN_IF( mxAttrList->getLength(), "xmloff.core", "XMLExport::CheckAttrList: list is not empty" );
+    SAL_WARN_IF( mpAttrList->getLength(), "xmloff.core", "XMLExport::CheckAttrList: list is not empty" );
 }
 #endif
 
@@ -1337,7 +1351,7 @@ sal_uInt32 SvXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     sal_uInt16 nPos = mpNamespaceMap->GetFirstKey();
     while( USHRT_MAX != nPos )
     {
-        mxAttrList->AddAttribute( mpNamespaceMap->GetAttrNameByKey( nPos ),
+        mpAttrList->AddAttribute( mpNamespaceMap->GetAttrNameByKey( nPos ),
                                   mpNamespaceMap->GetNameByKey( nPos ) );
         nPos = mpNamespaceMap->GetNextKey( nPos );
     }
@@ -1349,7 +1363,7 @@ sal_uInt32 SvXMLExport::exportDoc( enum ::xmloff::token::XMLTokenEnum eClass )
     case SvtSaveOptions::ODFVER_LATEST: pVersion = sXML_1_2; break;
     case SvtSaveOptions::ODFVER_012_EXT_COMPAT: pVersion = sXML_1_2; break;
     case SvtSaveOptions::ODFVER_012: pVersion = sXML_1_2; break;
-    case SvtSaveOptions::ODFVER_011: pVersion = "1.1"; break;
+    case SvtSaveOptions::ODFVER_011: pVersion = sXML_1_1; break;
     case SvtSaveOptions::ODFVER_010: break;
 
     default:
@@ -1627,7 +1641,7 @@ void SvXMLExport::ExportStyles_( bool )
                         {
                             uno::Any aValue = xBitmap->getByName( rStrName );
 
-                            XMLImageStyle::exportXML( rStrName, aValue, *this );
+                            aImageStyle.exportXML( rStrName, aValue, *this );
                         }
                         catch(const container::NoSuchElementException&)
                         {
@@ -2012,7 +2026,7 @@ XMLEventExport& SvXMLExport::GetEventExport()
     if( nullptr == mpEventExport)
     {
         // create EventExport on demand
-        mpEventExport = new XMLEventExport(*this);
+        mpEventExport = new XMLEventExport(*this, nullptr);
 
         // and register standard handlers + names
         OUString sStarBasic("StarBasic");
@@ -2063,6 +2077,7 @@ SvXMLExport* SvXMLExport::getImplementation( const uno::Reference< uno::XInterfa
 
 // XUnoTunnel
 sal_Int64 SAL_CALL SvXMLExport::getSomething( const uno::Sequence< sal_Int8 >& rId )
+    throw( uno::RuntimeException, std::exception )
 {
     if( rId.getLength() == 16 && 0 == memcmp( getUnoTunnelId().getConstArray(),
                                                          rId.getConstArray(), 16 ) )
@@ -2138,7 +2153,7 @@ OUString SvXMLExport::GetRelativeReference(const OUString& rValue)
                 //#i61943# relative URLs need special handling
                 INetURLObject aTemp( mpImpl->msPackageURI );
                 bool bWasAbsolute = false;
-                sValue = aTemp.smartRel2Abs(sValue, bWasAbsolute ).GetMainURL(INetURLObject::DecodeMechanism::ToIUri);
+                sValue = aTemp.smartRel2Abs(sValue, bWasAbsolute ).GetMainURL(INetURLObject::DECODE_TO_IURI);
             }
         }
         catch(const uno::Exception&)
@@ -2350,6 +2365,11 @@ SvtSaveOptions::ODFSaneDefaultVersion SvXMLExport::getSaneDefaultVersion() const
     return SvtSaveOptions::ODFSVER_LATEST;
 }
 
+OUString SvXMLExport::GetStreamName() const
+{
+    return mpImpl->mStreamName;
+}
+
 void
 SvXMLExport::AddAttributeIdLegacy(
         sal_uInt16 const nLegacyPrefix, OUString const& rValue)
@@ -2383,7 +2403,7 @@ SvXMLExport::AddAttributeXmlId(uno::Reference<uno::XInterface> const & i_xIfc)
         const beans::StringPair mdref( xMeta->getMetadataReference() );
         if ( !mdref.Second.isEmpty() )
         {
-            const OUString streamName = mpImpl->mStreamName;
+            const OUString streamName( GetStreamName() );
             if ( !streamName.isEmpty() )
             {
                 if ( streamName.equals(mdref.First) )

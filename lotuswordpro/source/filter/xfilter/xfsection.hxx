@@ -74,7 +74,9 @@ class XFSection : public XFContentContainer
 public:
     XFSection();
 
-    virtual ~XFSection() override;
+    virtual ~XFSection();
+
+public:
 
     /**
      * @descr   Output section object.
@@ -83,6 +85,8 @@ public:
 
 private:
     OUString   m_strSectionName;
+    bool    m_bProtected;
+    bool    m_bHiden;
     OUString   m_strSourceLink;
 };
 

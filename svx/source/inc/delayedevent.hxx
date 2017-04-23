@@ -65,7 +65,7 @@ namespace svxform
         ImplSVEvent * m_nEventId;
 
     private:
-        DECL_LINK( OnCall, void*, void );
+        DECL_LINK_TYPED( OnCall, void*, void );
 
     private:
         DelayedEvent( const DelayedEvent& ) = delete;

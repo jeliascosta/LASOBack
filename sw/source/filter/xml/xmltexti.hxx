@@ -39,10 +39,10 @@ public:
             const css::uno::Reference<css::frame::XModel>& rModel,
             SvXMLImport& rImport,
             const css::uno::Reference<css::beans::XPropertySet>& rInfoSet,
-            bool bInsertM, bool bStylesOnlyM,
+            bool bInsertM, bool bStylesOnlyM, bool bProgress,
             bool bBlockM, bool bOrganizerM,
-            bool bPreserveRedlineFlags );
-    virtual ~SwXMLTextImportHelper() override;
+            bool bPreserveRedlineMode );
+    virtual ~SwXMLTextImportHelper();
 
     virtual css::uno::Reference<css::beans::XPropertySet>
             createAndInsertOLEObject( SvXMLImport& rImport,
@@ -79,7 +79,7 @@ public:
 
     virtual void endAppletOrPlugin(
         const css::uno::Reference < css::beans::XPropertySet > &rPropSet,
-        std::map < const OUString, OUString > &rParamMap) override;
+        ::std::map < const OUString, OUString > &rParamMap) override;
 
     virtual bool IsInHeaderFooter() const override;
 

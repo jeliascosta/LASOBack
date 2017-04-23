@@ -629,6 +629,7 @@ const SwAttrSet* SwFrame::GetAttrSet() const
         return &static_cast<const SwLayoutFrame*>(this)->GetFormat()->GetAttrSet();
 }
 
+//UUUU
 drawinglayer::attribute::SdrAllFillAttributesHelperPtr SwFrame::getSdrAllFillAttributesHelper() const
 {
     if(IsContentFrame())

@@ -17,11 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <boost/property_tree/json_parser.hpp>
-
 #include "PostItMgr.hxx"
 #include <postithelper.hxx>
 
+#include <SidebarWin.hxx>
 #include <AnnotationWin.hxx>
 #include <frmsidebarwincontainer.hxx>
 #include <accmap.hxx>
@@ -54,11 +53,9 @@
 #include <docary.hxx>
 #include <SwRewriter.hxx>
 #include <tools/color.hxx>
-#include <unotools/datetime.hxx>
 
 #include <swmodule.hxx>
 #include <annotation.hrc>
-#include <utlui.hrc>
 #include "cmdid.h"
 
 #include <sfx2/request.hxx>
@@ -67,7 +64,7 @@
 
 #include <svl/languageoptions.hxx>
 #include <svtools/langtab.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 
 #include <svx/svdview.hxx>
 #include <editeng/eeitem.hxx>
@@ -78,8 +75,6 @@
 #include <i18nlangtag/mslangid.hxx>
 #include <i18nlangtag/lang.h>
 #include <comphelper/lok.hxx>
-#include <comphelper/string.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 #include "annotsh.hxx"
 #include "swabstdlg.hxx"
@@ -98,95 +93,38 @@
 #define MAX_LOOP_COUNT                      50
 
 using namespace sw::sidebarwindows;
-using namespace sw::annotation;
 
-namespace {
+bool comp_pos(const SwSidebarItem* a, const SwSidebarItem* b)
+{
+    // sort by anchor position
+    SwPosition aPosAnchorA = a->GetAnchorPosition();
+    SwPosition aPosAnchorB = b->GetAnchorPosition();
 
-    enum class CommentNotificationType { Add, Remove, Modify };
+    bool aAnchorAInFooter = false;
+    bool aAnchorBInFooter = false;
 
-    bool comp_pos(const SwSidebarItem* a, const SwSidebarItem* b)
-    {
-        // sort by anchor position
-        SwPosition aPosAnchorA = a->GetAnchorPosition();
-        SwPosition aPosAnchorB = b->GetAnchorPosition();
+    // is the anchor placed in Footnote or the Footer?
+    if( aPosAnchorA.nNode.GetNode().FindFootnoteStartNode() || aPosAnchorA.nNode.GetNode().FindFooterStartNode() )
+        aAnchorAInFooter = true;
+    if( aPosAnchorB.nNode.GetNode().FindFootnoteStartNode() || aPosAnchorB.nNode.GetNode().FindFooterStartNode() )
+        aAnchorBInFooter = true;
 
-        bool aAnchorAInFooter = false;
-        bool aAnchorBInFooter = false;
-
-        // is the anchor placed in Footnote or the Footer?
-        if( aPosAnchorA.nNode.GetNode().FindFootnoteStartNode() || aPosAnchorA.nNode.GetNode().FindFooterStartNode() )
-            aAnchorAInFooter = true;
-        if( aPosAnchorB.nNode.GetNode().FindFootnoteStartNode() || aPosAnchorB.nNode.GetNode().FindFooterStartNode() )
-            aAnchorBInFooter = true;
-
-        // fdo#34800
-        // if AnchorA is in footnote, and AnchorB isn't
-        // we do not want to change over the position
-        if( aAnchorAInFooter && !aAnchorBInFooter )
-            return false;
-        // if aAnchorA is not placed in a footnote, and aAnchorB is
-        // force a change over
-        else if( !aAnchorAInFooter && aAnchorBInFooter )
-            return true;
-        // If neither or both are in the footer, compare the positions.
-        // Since footnotes are in Inserts section of nodes array and footers
-        // in Autotext section, all footnotes precede any footers so no need
-        // to check that.
-        else
-            return aPosAnchorA < aPosAnchorB;
-    }
-
-    /// Emits LOK notification about one addition/removal/change of a comment
-    void lcl_CommentNotification(const SwView* pView, const CommentNotificationType nType, const SwSidebarItem* pItem, const sal_uInt32 nPostItId)
-    {
-        if (!comphelper::LibreOfficeKit::isActive())
-            return;
-
-        boost::property_tree::ptree aAnnotation;
-        aAnnotation.put("action", (nType == CommentNotificationType::Add ? "Add" :
-                                   (nType == CommentNotificationType::Remove ? "Remove" :
-                                    (nType == CommentNotificationType::Modify ? "Modify" : "???"))));
-        aAnnotation.put("id", nPostItId);
-        if (nType != CommentNotificationType::Remove && pItem != nullptr)
-        {
-            sw::annotation::SwAnnotationWin* pWin = pItem->pPostIt.get();
-
-            const SwPostItField* pField = pWin->GetPostItField();
-            const SwRect& aRect = pWin->GetAnchorRect();
-            const tools::Rectangle aSVRect(aRect.Pos().getX(),
-                                    aRect.Pos().getY(),
-                                    aRect.Pos().getX() + aRect.SSize().Width(),
-                                    aRect.Pos().getY() + aRect.SSize().Height());
-            std::vector<OString> aRects;
-            for (const basegfx::B2DRange& aRange : pWin->GetAnnotationTextRanges())
-            {
-                const SwRect rect(aRange.getMinX(), aRange.getMinY(), aRange.getWidth(), aRange.getHeight());
-                aRects.push_back(rect.SVRect().toString());
-            }
-            const OString sRects = comphelper::string::join("; ", aRects);
-
-            aAnnotation.put("id", pField->GetPostItId());
-            aAnnotation.put("parent", pWin->CalcParent());
-            aAnnotation.put("author", pField->GetPar1().toUtf8().getStr());
-            aAnnotation.put("text", pField->GetPar2().toUtf8().getStr());
-            aAnnotation.put("dateTime", utl::toISO8601(pField->GetDateTime().GetUNODateTime()));
-            aAnnotation.put("anchorPos", aSVRect.toString());
-            aAnnotation.put("textRange", sRects.getStr());
-        }
-
-        boost::property_tree::ptree aTree;
-        aTree.add_child("comment", aAnnotation);
-        std::stringstream aStream;
-        boost::property_tree::write_json(aStream, aTree);
-        std::string aPayload = aStream.str();
-
-        if (pView)
-        {
-            pView->libreOfficeKitViewCallback(LOK_CALLBACK_COMMENT, aPayload.c_str());
-        }
-    }
-
-} // anonymous namespace
+    // fdo#34800
+    // if AnchorA is in footnote, and AnchorB isn't
+    // we do not want to change over the position
+    if( aAnchorAInFooter && !aAnchorBInFooter )
+        return false;
+    // if aAnchorA is not placed in a footnote, and aAnchorB is
+    // force a change over
+    else if( !aAnchorAInFooter && aAnchorBInFooter )
+        return true;
+    // If neither or both are in the footer, compare the positions.
+    // Since footnotes are in Inserts section of nodes array and footers
+    // in Autotext section, all footnotes precede any footers so no need
+    // to check that.
+    else
+        return aPosAnchorA < aPosAnchorB;
+}
 
 SwPostItMgr::SwPostItMgr(SwView* pView)
     : mpView(pView)
@@ -219,7 +157,7 @@ SwPostItMgr::SwPostItMgr(SwView* pView)
     /*  this code can be used once we want redline comments in the Sidebar
     AddRedlineComments(false,false);
     */
-    // we want to receive stuff like SfxHintId::DocChanged
+    // we want to receive stuff like SFX_HINT_DOCCHANGED
     StartListening(*mpView->GetDocShell());
     if (!mvPostItFields.empty())
     {
@@ -278,27 +216,21 @@ void SwPostItMgr::CheckForRemovedPostIts()
     }
 }
 
-SwSidebarItem* SwPostItMgr::InsertItem(SfxBroadcaster* pItem, bool bCheckExistance, bool bFocus)
+void SwPostItMgr::InsertItem(SfxBroadcaster* pItem, bool bCheckExistance, bool bFocus)
 {
-    SwSidebarItem* pAnnotationItem = nullptr;
     if (bCheckExistance)
     {
         for(std::list<SwSidebarItem*>::iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
         {
             if ( (*i)->GetBroadCaster() == pItem )
-                return pAnnotationItem;
+                return;
         }
     }
     mbLayout = bFocus;
-
     if (dynamic_cast< const SwFormatField *>( pItem ) !=  nullptr)
-    {
-        pAnnotationItem = new SwAnnotationItem(static_cast<SwFormatField&>(*pItem), bFocus);
-        mvPostItFields.push_back(pAnnotationItem);
-    }
+        mvPostItFields.push_back(new SwAnnotationItem(static_cast<SwFormatField&>(*pItem), bFocus) );
     OSL_ENSURE(dynamic_cast< const SwFormatField *>( pItem ) !=  nullptr,"Mgr::InsertItem: seems like new stuff was added");
     StartListening(*pItem);
-    return pAnnotationItem;
 }
 
 void SwPostItMgr::RemoveItem( SfxBroadcaster* pBroadcast )
@@ -323,9 +255,10 @@ void SwPostItMgr::RemoveItem( SfxBroadcaster* pBroadcast )
 
 void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    if ( const SfxEventHint* pSfxEventHint = dynamic_cast<const SfxEventHint*>(&rHint) )
+    if ( dynamic_cast<const SfxEventHint*>(&rHint) )
     {
-        if ( pSfxEventHint->GetEventId() == SfxEventHintId::SwEventLayoutFinished )
+        sal_uInt32 nId = static_cast<const SfxEventHint&>(rHint).GetEventId();
+        if ( nId == SW_EVENT_LAYOUT_FINISHED )
         {
             if ( !mbWaitingForCalcRects && !mvPostItFields.empty())
             {
@@ -334,10 +267,56 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
             }
         }
     }
-    else if ( const SwFormatFieldHint * pFormatHint = dynamic_cast<const SwFormatFieldHint*>(&rHint) )
+    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) )
     {
-        SwFormatField* pField = const_cast <SwFormatField*>( pFormatHint->GetField() );
-        switch ( pFormatHint->Which() )
+        sal_uInt32 nId = static_cast<const SfxSimpleHint&>(rHint).GetId();
+        switch ( nId )
+        {
+            case SFX_HINT_MODECHANGED:
+            {
+                if ( mbReadOnly != !!(mpView->GetDocShell()->IsReadOnly()) )
+                {
+                    mbReadOnly = !mbReadOnly;
+                    SetReadOnlyState();
+                    mbLayout = true;
+                }
+                break;
+            }
+            case SFX_HINT_DOCCHANGED:
+            {
+                if ( mpView->GetDocShell() == &rBC )
+                {
+                    if ( !mbWaitingForCalcRects && !mvPostItFields.empty())
+                    {
+                        mbWaitingForCalcRects = true;
+                        mnEventId = Application::PostUserEvent( LINK( this, SwPostItMgr, CalcHdl) );
+                    }
+                }
+                break;
+            }
+            case SFX_HINT_USER04:
+            {
+                // if we are in a SplitNode/Cut operation, do not delete note and then add again, as this will flicker
+                mbDeleteNote = !mbDeleteNote;
+                break;
+            }
+            case SFX_HINT_DYING:
+            {
+                if ( mpView->GetDocShell() != &rBC )
+                {
+                    // field to be removed is the broadcaster
+                    OSL_FAIL("Notification for removed SwFormatField was not sent!");
+                    RemoveItem(&rBC);
+                }
+                break;
+            }
+        }
+    }
+    else if ( dynamic_cast<const SwFormatFieldHint*>(&rHint) )
+    {
+        const SwFormatFieldHint& rFormatHint = static_cast<const SwFormatFieldHint&>(rHint);
+        SwFormatField* pField = const_cast <SwFormatField*>( rFormatHint.GetField() );
+        switch ( rFormatHint.Which() )
         {
             case SwFormatFieldHintWhich::INSERTED :
             {
@@ -350,14 +329,9 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                 if ( pField->IsFieldInDoc() )
                 {
                     bool bEmpty = !HasNotes();
-                    SwSidebarItem* pItem = InsertItem( pField, true, false );
-
+                    InsertItem( pField, true, false );
                     if (bEmpty && !mvPostItFields.empty())
                         PrepareView(true);
-
-                    // True until the layout of this post it finishes
-                    if (pItem)
-                        pItem->bPendingLayout = true;
                 }
                 else
                 {
@@ -375,25 +349,18 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                         break;
                     }
                     RemoveItem(pField);
-
-                    // If LOK has disabled tiled annotations, emit annotation callbacks
-                    if (comphelper::LibreOfficeKit::isActive() && !comphelper::LibreOfficeKit::isTiledAnnotations())
-                    {
-                        SwPostItField* pPostItField = static_cast<SwPostItField*>(pField->GetField());
-                        lcl_CommentNotification(mpView, CommentNotificationType::Remove, nullptr, pPostItField->GetPostItId());
-                    }
                 }
                 break;
             }
             case SwFormatFieldHintWhich::FOCUS:
             {
-                if (pFormatHint->GetView()== mpView)
+                if (rFormatHint.GetView()== mpView)
                     Focus(rBC);
                 break;
             }
             case SwFormatFieldHintWhich::CHANGED:
             {
-                SwFormatField* pFormatField = dynamic_cast<SwFormatField*>(&rBC);
+                        SwFormatField* pFormatField = dynamic_cast<SwFormatField*>(&rBC);
                 for(std::list<SwSidebarItem*>::iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
                 {
                     if ( pFormatField == (*i)->GetBroadCaster() )
@@ -402,12 +369,6 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                         {
                             (*i)->pPostIt->SetPostItText();
                             mbLayout = true;
-                        }
-
-                        // If LOK has disabled tiled annotations, emit annotation callbacks
-                        if (comphelper::LibreOfficeKit::isActive() && !comphelper::LibreOfficeKit::isTiledAnnotations())
-                        {
-                            lcl_CommentNotification(mpView, CommentNotificationType::Modify, *i, 0);
                         }
                         break;
                     }
@@ -443,52 +404,6 @@ void SwPostItMgr::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                 }
                 break;
             }
-        }
-    }
-    else
-    {
-        SfxHintId nId = rHint.GetId();
-        switch ( nId )
-        {
-            case SfxHintId::ModeChanged:
-            {
-                if ( mbReadOnly != !!(mpView->GetDocShell()->IsReadOnly()) )
-                {
-                    mbReadOnly = !mbReadOnly;
-                    SetReadOnlyState();
-                    mbLayout = true;
-                }
-                break;
-            }
-            case SfxHintId::DocChanged:
-            {
-                if ( mpView->GetDocShell() == &rBC )
-                {
-                    if ( !mbWaitingForCalcRects && !mvPostItFields.empty())
-                    {
-                        mbWaitingForCalcRects = true;
-                        mnEventId = Application::PostUserEvent( LINK( this, SwPostItMgr, CalcHdl) );
-                    }
-                }
-                break;
-            }
-            case SfxHintId::SwSplitNodeOperation:
-            {
-                // if we are in a SplitNode/Cut operation, do not delete note and then add again, as this will flicker
-                mbDeleteNote = !mbDeleteNote;
-                break;
-            }
-            case SfxHintId::Dying:
-            {
-                if ( mpView->GetDocShell() != &rBC )
-                {
-                    // field to be removed is the broadcaster
-                    OSL_FAIL("Notification for removed SwFormatField was not sent!");
-                    RemoveItem(&rBC);
-                }
-                break;
-            }
-            default: break;
         }
     }
 }
@@ -544,6 +459,7 @@ bool SwPostItMgr::CalcRects()
                 bRepair = true;
                 continue;
             }
+
             const SwRect aOldAnchorRect( pItem->maLayoutInfo.mPosition );
             const SwPostItHelper::SwLayoutStatus eOldLayoutStatus = pItem->mLayoutStatus;
             const sal_uLong nOldStartNodeIdx( pItem->maLayoutInfo.mnStartNodeIdx );
@@ -577,8 +493,7 @@ bool SwPostItMgr::CalcRects()
 
         // show notes in right order in navigator
         //prevent Anchors during layout to overlap, e.g. when moving a frame
-        if (mvPostItFields.size()>1 )
-            mvPostItFields.sort(comp_pos);
+        Sort();
 
         // sort the items into the right page vector, so layout can be done by page
         for(std::list<SwSidebarItem*>::iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
@@ -696,7 +611,7 @@ void SwPostItMgr::LayoutPostIts()
             // only layout if there are notes on this page
             if (pPage->mList->size()>0)
             {
-                std::list<SwAnnotationWin*> aVisiblePostItList;
+                std::list<SwSidebarWin*>    aVisiblePostItList;
                 unsigned long           lNeededHeight = 0;
                 long                    mlPageBorder = 0;
                 long                    mlPageEnd = 0;
@@ -704,7 +619,7 @@ void SwPostItMgr::LayoutPostIts()
                 for(SwSidebarItem_iterator i = pPage->mList->begin(); i != pPage->mList->end(); ++i)
                 {
                     SwSidebarItem* pItem = (*i);
-                    VclPtr<SwAnnotationWin> pPostIt = pItem->pPostIt;
+                    SwSidebarWin* pPostIt = pItem->pPostIt;
 
                     if (pPage->eSidebarPosition == sw::sidebarwindows::SidebarPosition::LEFT )
                     {
@@ -734,14 +649,15 @@ void SwPostItMgr::LayoutPostIts()
                         if (!pPostIt)
                         {
                             pPostIt = (*i)->GetSidebarWindow( mpView->GetEditWin(),
+                                                              WB_DIALOGCONTROL,
                                                               *this );
                             pPostIt->InitControls();
                             pPostIt->SetReadonly(mbReadOnly);
                             pItem->pPostIt = pPostIt;
                             if (mpAnswer)
                             {
-                                if (static_cast<bool>(pPostIt->CalcParent())) //do we really have another note in front of this one
-                                    pPostIt.get()->InitAnswer(mpAnswer);
+                                if (pPostIt->CalcFollow()) //do we really have another note in front of this one
+                                    static_cast<sw::annotation::SwAnnotationWin*>(pPostIt)->InitAnswer(mpAnswer);
                                 delete mpAnswer;
                                 mpAnswer = nullptr;
                             }
@@ -751,14 +667,14 @@ void SwPostItMgr::LayoutPostIts()
                             pItem->mLayoutStatus,
                             GetColorAnchor(pItem->maLayoutInfo.mRedlineAuthor));
                         pPostIt->SetSidebarPosition(pPage->eSidebarPosition);
-                        pPostIt->SetFollow(static_cast<bool>(pPostIt->CalcParent()));
+                        pPostIt->SetFollow(pPostIt->CalcFollow());
                         aPostItHeight = ( pPostIt->GetPostItTextHeight() < pPostIt->GetMinimumSizeWithoutMeta()
                                           ? pPostIt->GetMinimumSizeWithoutMeta()
                                           : pPostIt->GetPostItTextHeight() )
                                         + pPostIt->GetMetaHeight();
                         pPostIt->SetPosSizePixelRect( mlPageBorder ,
                                                       Y - GetInitialAnchorDistance(),
-                                                      GetSidebarWidth(true),
+                                                      GetNoteWidth() ,
                                                       aPostItHeight,
                                                       pItem->maLayoutInfo.mPosition,
                                                       mlPageEnd );
@@ -807,7 +723,7 @@ void SwPostItMgr::LayoutPostIts()
                                        - enlarge all notes till GetNextBorder(), as we resized to average value before
                                        */
                     //lets hide the ones which overlap the page
-                    for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
+                    for(SwSidebarWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
                     {
                         if (pPage->lOffset != 0)
                             (*i)->TranslateTopPosition(pPage->lOffset);
@@ -816,20 +732,7 @@ void SwPostItMgr::LayoutPostIts()
                         bool bTop = mpEditWin->PixelToLogic(Point(0,(*i)->VirtualPos().Y())).Y() >= (pPage->mPageRect.Top()+aSidebarheight);
                         if ( bBottom && bTop )
                         {
-                            // When tiled rendering, make sure that only the
-                            // view that has the comment focus emits callbacks,
-                            // so the editing view jumps to the comment, but
-                            // not the others.
-                            bool bTiledPainting = comphelper::LibreOfficeKit::isTiledPainting();
-                            if (!bTiledPainting)
-                                // No focus -> disable callbacks.
-                                comphelper::LibreOfficeKit::setTiledPainting(!(*i)->HasChildPathFocus());
                             (*i)->ShowNote();
-                            if (!bTiledPainting)
-                            {
-                                comphelper::LibreOfficeKit::setTiledPainting(bTiledPainting);
-                                (*i)->InvalidateControl();
-                            }
                         }
                         else
                         {
@@ -857,33 +760,13 @@ void SwPostItMgr::LayoutPostIts()
                 }
                 else
                 {
-                    for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
-                    {
-                        (*i)->SetPosAndSize();
-                    }
+                    for(SwSidebarWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
+                                                            (*i)->SetPosAndSize();
 
-                    bool bOldScrollbar = pPage->bScrollbar;
-                    pPage->bScrollbar = false;
-                    bUpdate = (bOldScrollbar != pPage->bScrollbar) || bUpdate;
+                                                    bool bOldScrollbar = pPage->bScrollbar;
+                                                    pPage->bScrollbar = false;
+                                                    bUpdate = (bOldScrollbar != pPage->bScrollbar) || bUpdate;
                 }
-
-                for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
-                {
-                    if (comphelper::LibreOfficeKit::isActive() && !comphelper::LibreOfficeKit::isTiledAnnotations())
-                    {
-                        if ((*i)->GetSidebarItem().bPendingLayout)
-                            lcl_CommentNotification(mpView, CommentNotificationType::Add, &(*i)->GetSidebarItem(), 0);
-                        else if ((*i)->IsAnchorRectChanged())
-                        {
-                            lcl_CommentNotification(mpView, CommentNotificationType::Modify, &(*i)->GetSidebarItem(), 0);
-                            (*i)->ResetAnchorRectChanged();
-                        }
-                    }
-
-                    // Layout for this post it finished now
-                    (*i)->GetSidebarItem().bPendingLayout = false;
-                }
-
                 aVisiblePostItList.clear();
             }
             else
@@ -962,7 +845,7 @@ void SwPostItMgr::DrawNotesForPage(OutputDevice *pOutDev, sal_uInt32 nPage)
         return;
     for(SwSidebarItem_iterator i = mPages[nPage]->mList->begin(); i != mPages[nPage]->mList->end(); ++i)
     {
-        SwAnnotationWin* pPostIt = (*i)->pPostIt;
+        SwSidebarWin* pPostIt = (*i)->pPostIt;
         if (!pPostIt)
             continue;
         Point aPoint(mpEditWin->PixelToLogic(pPostIt->GetPosPixel()));
@@ -971,11 +854,11 @@ void SwPostItMgr::DrawNotesForPage(OutputDevice *pOutDev, sal_uInt32 nPage)
     }
 }
 
-void SwPostItMgr::PaintTile(OutputDevice& rRenderContext, const tools::Rectangle& /*rRect*/)
+void SwPostItMgr::PaintTile(OutputDevice& rRenderContext, const Rectangle& /*rRect*/)
 {
     for (SwSidebarItem* pItem : mvPostItFields)
     {
-        SwAnnotationWin* pPostIt = pItem->pPostIt;
+        SwSidebarWin* pPostIt = pItem->pPostIt;
         if (!pPostIt)
             continue;
 
@@ -987,13 +870,25 @@ void SwPostItMgr::PaintTile(OutputDevice& rRenderContext, const tools::Rectangle
         aMapMode.SetOrigin(aMapMode.GetOrigin() + aOffset);
         rRenderContext.SetMapMode(aMapMode);
         Size aSize(rRenderContext.PixelToLogic(pPostIt->GetSizePixel()));
-        tools::Rectangle aRectangle(Point(0, 0), aSize);
+        Rectangle aRectangle(Point(0, 0), aSize);
 
         pPostIt->PaintTile(rRenderContext, aRectangle);
 
         rRenderContext.Pop();
         if (bEnableMapMode)
             mpEditWin->EnableMapMode(false);
+    }
+}
+
+void SwPostItMgr::registerLibreOfficeKitCallback(OutlinerSearchable* pSearchable)
+{
+    for (SwSidebarItem* pItem : mvPostItFields)
+    {
+        SwSidebarWin* pPostIt = pItem->pPostIt;
+        if (!pPostIt)
+            continue;
+
+        pPostIt->GetOutlinerView()->registerLibreOfficeKitCallback(pSearchable);
     }
 }
 
@@ -1009,7 +904,7 @@ void SwPostItMgr::Scroll(const long lScroll,const unsigned long aPage)
     const long aSidebarheight = mpEditWin->PixelToLogic(Size(0,GetSidebarScrollerHeight())).Height();
     for(SwSidebarItem_iterator i = mPages[aPage-1]->mList->begin(); i != mPages[aPage-1]->mList->end(); ++i)
     {
-        SwAnnotationWin* pPostIt = (*i)->pPostIt;
+        SwSidebarWin* pPostIt = (*i)->pPostIt;
         // if this is an answer, we should take the normal position and not the real, slightly moved position
         pPostIt->SetVirtualPosSize(pPostIt->GetPosPixel(),pPostIt->GetSizePixel());
         pPostIt->TranslateTopPosition(lScroll);
@@ -1049,7 +944,7 @@ void SwPostItMgr::Scroll(const long lScroll,const unsigned long aPage)
     }
 }
 
-void SwPostItMgr::AutoScroll(const SwAnnotationWin* pPostIt,const unsigned long aPage )
+void SwPostItMgr::AutoScroll(const SwSidebarWin* pPostIt,const unsigned long aPage )
 {
     // otherwise all notes are visible
     if (mPages[aPage-1]->bScrollbar)
@@ -1069,11 +964,11 @@ void SwPostItMgr::AutoScroll(const SwAnnotationWin* pPostIt,const unsigned long 
     }
 }
 
-void SwPostItMgr::MakeVisible(const SwAnnotationWin* pPostIt )
+void SwPostItMgr::MakeVisible(const SwSidebarWin* pPostIt )
 {
     long aPage = -1;
     // we don't know the page yet, lets find it ourselves
-    for (std::vector<SwPostItPageItem*>::size_type n=0;n<mPages.size();n++)
+    for (unsigned long n=0;n<mPages.size();n++)
     {
         if (mPages[n]->mList->size()>0)
         {
@@ -1089,7 +984,7 @@ void SwPostItMgr::MakeVisible(const SwAnnotationWin* pPostIt )
     }
     if (aPage!=-1)
         AutoScroll(pPostIt,aPage);
-    tools::Rectangle aNoteRect (Point(pPostIt->GetPosPixel().X(),pPostIt->GetPosPixel().Y()-5),pPostIt->GetSizePixel());
+    Rectangle aNoteRect (Point(pPostIt->GetPosPixel().X(),pPostIt->GetPosPixel().Y()-5),pPostIt->GetSizePixel());
     if (!aNoteRect.IsEmpty())
         mpWrtShell->MakeVisible(SwRect(mpEditWin->PixelToLogic(aNoteRect)));
 }
@@ -1125,7 +1020,7 @@ Color SwPostItMgr::GetArrowColor(sal_uInt16 aDirection,unsigned long aPage) cons
     }
 }
 
-bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, const tools::Rectangle& rBorder, long lNeededHeight)
+bool SwPostItMgr::LayoutByPage(std::list<SwSidebarWin*> &aVisiblePostItList, const Rectangle& rBorder, long lNeededHeight)
 {
     /*** General layout idea:***/
     //  - if we have space left, we always move the current one up,
@@ -1134,7 +1029,7 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
     //  - then the real layout starts
 
     //rBorder is the page rect
-    const tools::Rectangle aBorder         = mpEditWin->LogicToPixel(rBorder);
+    const Rectangle aBorder         = mpEditWin->LogicToPixel(rBorder);
     long            lTopBorder      = aBorder.Top() + 5;
     long            lBottomBorder   = aBorder.Bottom() - 5;
     const long      lVisibleHeight  = lBottomBorder - lTopBorder; //aBorder.GetHeight() ;
@@ -1152,12 +1047,12 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
             bScrollbars = true;
             lTopBorder += GetSidebarScrollerHeight() + 10;
             lBottomBorder -= (GetSidebarScrollerHeight() + 10);
-                for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
+                for(SwSidebarWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
                     (*i)->SetSize(Size((*i)->VirtualSize().getWidth(),(*i)->GetMinimumSizeWithMeta()));
         }
         else
         {
-            for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
+            for(SwSidebarWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
             {
                 if ( (*i)->VirtualSize().getHeight() > lAverageHeight)
                     (*i)->SetSize(Size((*i)->VirtualSize().getWidth(),lAverageHeight));
@@ -1176,9 +1071,9 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
             loop++;
             bDone = true;
             long lSpaceUsed = lTopBorder + GetSpaceBetween();
-            for(SwAnnotationWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
+            for(SwSidebarWin_iterator i = aVisiblePostItList.begin(); i != aVisiblePostItList.end() ; ++i)
             {
-                SwAnnotationWin_iterator aNextPostIt = i;
+                SwSidebarWin_iterator aNextPostIt = i;
                 ++aNextPostIt;
 
                 if (aNextPostIt != aVisiblePostItList.end())
@@ -1241,7 +1136,7 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
                 else
                 {
                     //(*i) is the last visible item
-                    SwAnnotationWin_iterator aPrevPostIt = i;
+                    SwSidebarWin_iterator aPrevPostIt = i;
                     --aPrevPostIt;
                     lTranslatePos = ( (*aPrevPostIt)->VirtualPos().Y() + (*aPrevPostIt)->VirtualSize().Height() ) - (*i)->VirtualPos().Y();
                     if (lTranslatePos > 0)
@@ -1282,7 +1177,7 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
     else
     {
         // only one left, make sure it is not hidden at the top or bottom
-        SwAnnotationWin_iterator i = aVisiblePostItList.begin();
+        SwSidebarWin_iterator i = aVisiblePostItList.begin();
         lTranslatePos = lTopBorder - (*i)->VirtualPos().Y();
         if (lTranslatePos>0)
         {
@@ -1300,7 +1195,7 @@ bool SwPostItMgr::LayoutByPage(std::list<SwAnnotationWin*> &aVisiblePostItList, 
 void SwPostItMgr::AddPostIts(bool bCheckExistance, bool bFocus)
 {
     bool bEmpty = mvPostItFields.empty();
-    SwFieldType* pType = mpView->GetDocShell()->GetDoc()->getIDocumentFieldsAccess().GetFieldType(SwFieldIds::Postit, OUString(),false);
+    SwFieldType* pType = mpView->GetDocShell()->GetDoc()->getIDocumentFieldsAccess().GetFieldType(RES_POSTITFLD, OUString(),false);
     SwIterator<SwFormatField,SwFieldType> aIter( *pType );
     SwFormatField* pSwFormatField = aIter.First();
     while(pSwFormatField)
@@ -1347,7 +1242,7 @@ class IsPostitField : public FilterFunctor
 public:
     bool operator()(const SwFormatField* pField) const override
     {
-        return pField->GetField()->GetTyp()->Which() == SwFieldIds::Postit;
+        return pField->GetField()->GetTyp()->Which() == RES_POSTITFLD;
     }
 };
 
@@ -1361,25 +1256,9 @@ public:
     }
     bool operator()(const SwFormatField* pField) const override
     {
-        if (pField->GetField()->GetTyp()->Which() != SwFieldIds::Postit)
+        if (pField->GetField()->GetTyp()->Which() != RES_POSTITFLD)
             return false;
         return static_cast<const SwPostItField*>(pField->GetField())->GetPar1() == m_sAuthor;
-    }
-};
-
-class IsPostitFieldWithPostitId : public FilterFunctor
-{
-    sal_uInt32 m_nPostItId;
-public:
-    explicit IsPostitFieldWithPostitId(sal_uInt32 nPostItId)
-        : m_nPostItId(nPostItId)
-        {}
-
-    bool operator()(const SwFormatField* pField) const override
-    {
-        if (pField->GetField()->GetTyp()->Which() != SwFieldIds::Postit)
-            return false;
-        return static_cast<const SwPostItField*>(pField->GetField())->GetPostItId() == m_nPostItId;
     }
 };
 
@@ -1464,7 +1343,7 @@ public:
             EndListening(const_cast<SwFormatField&>(*pField));
         }
     }
-    virtual ~FieldDocWatchingStack() override
+    virtual ~FieldDocWatchingStack()
     {
         EndListeningToAllFields();
         EndListening(m_rDocShell);
@@ -1492,7 +1371,7 @@ void SwPostItMgr::Delete(const OUString& rAuthor)
     }
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, SW_RESSTR(STR_DELETE_AUTHOR_NOTES) + rAuthor);
-    mpWrtShell->StartUndo( SwUndoId::DELETE, &aRewriter );
+    mpWrtShell->StartUndo( UNDO_DELETE, &aRewriter );
 
     IsPostitFieldWithAuthorOf aFilter(rAuthor);
     FieldDocWatchingStack aStack(mvPostItFields, *mpView->GetDocShell(), aFilter);
@@ -1509,38 +1388,13 @@ void SwPostItMgr::Delete(const OUString& rAuthor)
     LayoutPostIts();
 }
 
-void SwPostItMgr::Delete(sal_uInt32 nPostItId)
-{
-    mpWrtShell->StartAllAction();
-    if (HasActiveSidebarWin() &&
-        mpActivePostIt.get()->GetPostItField()->GetPostItId() == nPostItId)
-    {
-        SetActiveSidebarWin(nullptr);
-    }
-    SwRewriter aRewriter;
-    aRewriter.AddRule(UndoArg1, SW_RESSTR(STR_CONTENT_TYPE_SINGLE_POSTIT));
-    mpWrtShell->StartUndo( SwUndoId::DELETE, &aRewriter );
-
-    IsPostitFieldWithPostitId aFilter(nPostItId);
-    FieldDocWatchingStack aStack(mvPostItFields, *mpView->GetDocShell(), aFilter);
-    const SwFormatField* pField = aStack.pop();
-    if (pField && mpWrtShell->GotoField(*pField))
-        mpWrtShell->DelRight();
-    mpWrtShell->EndUndo();
-    PrepareView();
-    mpWrtShell->EndAllAction();
-    mbLayout = true;
-    CalcRects();
-    LayoutPostIts();
-}
-
 void SwPostItMgr::Delete()
 {
     mpWrtShell->StartAllAction();
     SetActiveSidebarWin(nullptr);
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, SW_RES(STR_DELETE_ALL_NOTES) );
-    mpWrtShell->StartUndo( SwUndoId::DELETE, &aRewriter );
+    mpWrtShell->StartUndo( UNDO_DELETE, &aRewriter );
 
     IsPostitField aFilter;
     FieldDocWatchingStack aStack(mvPostItFields, *mpView->GetDocShell(),
@@ -1563,8 +1417,8 @@ void SwPostItMgr::ExecuteFormatAllDialog(SwView& rView)
 {
     if (mvPostItFields.empty())
         return;
-    sw::annotation::SwAnnotationWin *pOrigActiveWin = GetActiveSidebarWin();
-    sw::annotation::SwAnnotationWin *pWin = pOrigActiveWin;
+    sw::sidebarwindows::SwSidebarWin *pOrigActiveWin = GetActiveSidebarWin();
+    sw::sidebarwindows::SwSidebarWin *pWin = pOrigActiveWin;
     if (!pWin)
     {
         for (SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end(); ++i)
@@ -1583,14 +1437,14 @@ void SwPostItMgr::ExecuteFormatAllDialog(SwView& rView)
     SfxItemSet aDlgAttr(*pPool, EE_ITEMS_START, EE_ITEMS_END);
     aDlgAttr.Put(aEditAttr);
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
-    ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
+    std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(rView.GetWindow(), rView, aDlgAttr, SwCharDlgMode::Ann));
     sal_uInt16 nRet = pDlg->Execute();
     if (RET_OK == nRet)
     {
         aDlgAttr.Put(*pDlg->GetOutputItemSet());
         FormatAll(aDlgAttr);
     }
-    pDlg.disposeAndClear();
+    pDlg.reset();
     SetActiveSidebarWin(pOrigActiveWin);
 }
 
@@ -1599,7 +1453,7 @@ void SwPostItMgr::FormatAll(const SfxItemSet &rNewAttr)
     mpWrtShell->StartAllAction();
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, SW_RES(STR_FORMAT_ALL_NOTES) );
-    mpWrtShell->StartUndo( SwUndoId::INSATTR, &aRewriter );
+    mpWrtShell->StartUndo( UNDO_INSATTR, &aRewriter );
 
     for(SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
     {
@@ -1664,7 +1518,15 @@ void SwPostItMgr::Show()
     LayoutPostIts();
 }
 
-SwAnnotationWin* SwPostItMgr::GetSidebarWin( const SfxBroadcaster* pBroadcaster) const
+void SwPostItMgr::Sort()
+{
+    if (mvPostItFields.size()>1 )
+    {
+        mvPostItFields.sort(comp_pos);
+    }
+}
+
+SwSidebarWin* SwPostItMgr::GetSidebarWin( const SfxBroadcaster* pBroadcaster) const
 {
     for(const_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
     {
@@ -1684,18 +1546,8 @@ sw::annotation::SwAnnotationWin* SwPostItMgr::GetAnnotationWin(const SwPostItFie
     return nullptr;
 }
 
-sw::annotation::SwAnnotationWin* SwPostItMgr::GetAnnotationWin(const sal_uInt32 nPostItId) const
-{
-    for(const_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
-    {
-        if ( static_cast<const SwPostItField*>((*i)->GetFormatField().GetField())->GetPostItId() == nPostItId )
-            return dynamic_cast<sw::annotation::SwAnnotationWin*>((*i)->pPostIt.get());
-    }
-    return nullptr;
-}
-
-SwAnnotationWin* SwPostItMgr::GetNextPostIt( sal_uInt16 aDirection,
-                                          SwAnnotationWin* aPostIt )
+SwSidebarWin* SwPostItMgr::GetNextPostIt( sal_uInt16 aDirection,
+                                          SwSidebarWin* aPostIt )
 {
     if (mvPostItFields.size()>1)
     {
@@ -1847,11 +1699,11 @@ bool SwPostItMgr::IsHit(const Point &aPointPixel)
         const unsigned long nPageNum = SwPostItHelper::getPageInfo( aPageFrame, pLayout, aPoint );
         if( nPageNum )
         {
-            tools::Rectangle aRect;
+            Rectangle aRect;
             OSL_ENSURE(mPages.size()>nPageNum-1,"SwPostitMgr:: page container size wrong");
             aRect = mPages[nPageNum-1]->eSidebarPosition == sw::sidebarwindows::SidebarPosition::LEFT
-                    ? tools::Rectangle(Point(aPageFrame.Left()-GetSidebarWidth()-GetSidebarBorderWidth(),aPageFrame.Top()),Size(GetSidebarWidth(),aPageFrame.Height()))
-                    : tools::Rectangle( Point(aPageFrame.Right()+GetSidebarBorderWidth(),aPageFrame.Top()) , Size(GetSidebarWidth(),aPageFrame.Height()));
+                    ? Rectangle(Point(aPageFrame.Left()-GetSidebarWidth()-GetSidebarBorderWidth(),aPageFrame.Top()),Size(GetSidebarWidth(),aPageFrame.Height()))
+                    : Rectangle( Point(aPageFrame.Right()+GetSidebarBorderWidth(),aPageFrame.Top()) , Size(GetSidebarWidth(),aPageFrame.Height()));
             if (aRect.IsInside(aPoint))
             {
                 // we hit the note's sidebar
@@ -1878,7 +1730,7 @@ vcl::Window* SwPostItMgr::IsHitSidebarWindow(const Point& rPointLogic)
 
         for (SwSidebarItem* pItem : mvPostItFields)
         {
-            SwAnnotationWin* pPostIt = pItem->pPostIt;
+            SwSidebarWin* pPostIt = pItem->pPostIt;
             if (!pPostIt)
                 continue;
 
@@ -1896,24 +1748,24 @@ vcl::Window* SwPostItMgr::IsHitSidebarWindow(const Point& rPointLogic)
     return pRet;
 }
 
-tools::Rectangle SwPostItMgr::GetBottomScrollRect(const unsigned long aPage) const
+Rectangle SwPostItMgr::GetBottomScrollRect(const unsigned long aPage) const
 {
     SwRect aPageRect = mPages[aPage-1]->mPageRect;
     Point aPointBottom = mPages[aPage-1]->eSidebarPosition == sw::sidebarwindows::SidebarPosition::LEFT
                          ? Point(aPageRect.Left() - GetSidebarWidth() - GetSidebarBorderWidth() + mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Bottom()- mpEditWin->PixelToLogic(Size(0,2+GetSidebarScrollerHeight())).Height())
                          : Point(aPageRect.Right() + GetSidebarBorderWidth() + mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Bottom()- mpEditWin->PixelToLogic(Size(0,2+GetSidebarScrollerHeight())).Height());
     Size aSize(GetSidebarWidth() - mpEditWin->PixelToLogic(Size(4,0)).Width(), mpEditWin->PixelToLogic(Size(0,GetSidebarScrollerHeight())).Height()) ;
-    return tools::Rectangle(aPointBottom,aSize);
+    return Rectangle(aPointBottom,aSize);
 }
 
-tools::Rectangle SwPostItMgr::GetTopScrollRect(const unsigned long aPage) const
+Rectangle SwPostItMgr::GetTopScrollRect(const unsigned long aPage) const
 {
     SwRect aPageRect = mPages[aPage-1]->mPageRect;
     Point aPointTop = mPages[aPage-1]->eSidebarPosition == sw::sidebarwindows::SidebarPosition::LEFT
                       ? Point(aPageRect.Left() - GetSidebarWidth() -GetSidebarBorderWidth()+ mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Top() + mpEditWin->PixelToLogic(Size(0,2)).Height())
                       : Point(aPageRect.Right() + GetSidebarBorderWidth() + mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Top() + mpEditWin->PixelToLogic(Size(0,2)).Height());
     Size aSize(GetSidebarWidth() - mpEditWin->PixelToLogic(Size(4,0)).Width(), mpEditWin->PixelToLogic(Size(0,GetSidebarScrollerHeight())).Height()) ;
-    return tools::Rectangle(aPointTop,aSize);
+    return Rectangle(aPointTop,aSize);
 }
 
 //IMPORTANT: if you change the rects here, also change SwPageFrame::PaintNotesSidebar()
@@ -1928,8 +1780,8 @@ bool SwPostItMgr::ScrollbarHit(const unsigned long aPage,const Point &aPoint)
                       ? Point(aPageRect.Left() - GetSidebarWidth()-GetSidebarBorderWidth()+ mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Top() + mpEditWin->PixelToLogic(Size(0,2)).Height())
                       : Point(aPageRect.Right()+GetSidebarBorderWidth()+ mpEditWin->PixelToLogic(Size(2,0)).Width(),aPageRect.Top() + mpEditWin->PixelToLogic(Size(0,2)).Height());
 
-    tools::Rectangle aRectBottom(GetBottomScrollRect(aPage));
-    tools::Rectangle aRectTop(GetTopScrollRect(aPage));
+    Rectangle aRectBottom(GetBottomScrollRect(aPage));
+    Rectangle aRectTop(GetTopScrollRect(aPage));
 
     if (aRectBottom.IsInside(aPoint))
     {
@@ -1952,21 +1804,21 @@ bool SwPostItMgr::ScrollbarHit(const unsigned long aPage,const Point &aPoint)
 
 void SwPostItMgr::CorrectPositions()
 {
-    if ( mbWaitingForCalcRects || mbLayouting || mvPostItFields.empty() )
-        return;
+   if ( mbWaitingForCalcRects || mbLayouting || mvPostItFields.empty() )
+       return;
 
-    // find first valid note
-    SwAnnotationWin *pFirstPostIt = nullptr;
-    for(SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
-    {
-        pFirstPostIt = (*i)->pPostIt;
-        if (pFirstPostIt)
-            break;
-    }
+   // find first valid note
+   SwSidebarWin *pFirstPostIt = nullptr;
+   for(SwSidebarItem_iterator i = mvPostItFields.begin(); i != mvPostItFields.end() ; ++i)
+   {
+       pFirstPostIt = (*i)->pPostIt;
+       if (pFirstPostIt)
+           break;
+   }
 
-    //if we have not found a valid note, forget about it and leave
-    if (!pFirstPostIt)
-        return;
+   //if we have not found a valid note, forget about it and leave
+   if (!pFirstPostIt)
+       return;
 
     // yeah, I know,    if this is a left page it could be wrong, but finding the page and the note is probably not even faster than just doing it
     // check, if anchor overlay object exists.
@@ -2043,7 +1895,12 @@ unsigned long SwPostItMgr::GetSidebarBorderWidth(bool bPx) const
         return mpWrtShell->GetOut()->PixelToLogic(Size(2,0)).Width();
 }
 
-Color SwPostItMgr::GetColorDark(std::size_t aAuthorIndex)
+unsigned long SwPostItMgr::GetNoteWidth()
+{
+    return GetSidebarWidth(true);
+}
+
+Color SwPostItMgr::GetColorDark(sal_uInt16 aAuthorIndex)
 {
     if (!Application::GetSettings().GetStyleSettings().GetHighContrastMode())
     {
@@ -2058,7 +1915,7 @@ Color SwPostItMgr::GetColorDark(std::size_t aAuthorIndex)
         return Color(COL_WHITE);
 }
 
-Color SwPostItMgr::GetColorLight(std::size_t aAuthorIndex)
+Color SwPostItMgr::GetColorLight(sal_uInt16 aAuthorIndex)
 {
     if (!Application::GetSettings().GetStyleSettings().GetHighContrastMode())
     {
@@ -2073,7 +1930,7 @@ Color SwPostItMgr::GetColorLight(std::size_t aAuthorIndex)
         return Color(COL_WHITE);
 }
 
-Color SwPostItMgr::GetColorAnchor(std::size_t aAuthorIndex)
+Color SwPostItMgr::GetColorAnchor(sal_uInt16 aAuthorIndex)
 {
     if (!Application::GetSettings().GetStyleSettings().GetHighContrastMode())
     {
@@ -2088,14 +1945,14 @@ Color SwPostItMgr::GetColorAnchor(std::size_t aAuthorIndex)
         return Color(COL_WHITE);
 }
 
-void SwPostItMgr::SetActiveSidebarWin( SwAnnotationWin* p)
+void SwPostItMgr::SetActiveSidebarWin( SwSidebarWin* p)
 {
     if ( p != mpActivePostIt )
     {
         // we need the temp variable so we can set mpActivePostIt before we call DeactivatePostIt
         // therefore we get a new layout in DOCCHANGED when switching from postit to document,
         // otherwise, GetActivePostIt() would still hold our old postit
-        SwAnnotationWin* pActive = mpActivePostIt;
+        SwSidebarWin* pActive = mpActivePostIt;
         mpActivePostIt = p;
         if (pActive)
         {
@@ -2113,7 +1970,7 @@ void SwPostItMgr::SetActiveSidebarWin( SwAnnotationWin* p)
     }
 }
 
-IMPL_LINK_NOARG( SwPostItMgr, CalcHdl, void*, void )
+IMPL_LINK_NOARG_TYPED( SwPostItMgr, CalcHdl, void*, void )
 {
     mnEventId = nullptr;
     if ( mbLayouting )
@@ -2192,16 +2049,16 @@ void SwPostItMgr::CheckMetaText()
 
 sal_uInt16 SwPostItMgr::Replace(SvxSearchItem* pItem)
 {
-    SwAnnotationWin* pWin = GetActiveSidebarWin();
+    SwSidebarWin* pWin = GetActiveSidebarWin();
     sal_uInt16 aResult = pWin->GetOutlinerView()->StartSearchAndReplace( *pItem );
     if (!aResult)
         SetActiveSidebarWin(nullptr);
     return aResult;
 }
 
-sal_uInt16 SwPostItMgr::FinishSearchReplace(const i18nutil::SearchOptions2& rSearchOptions, bool bSrchForward)
+sal_uInt16 SwPostItMgr::FinishSearchReplace(const css::util::SearchOptions2& rSearchOptions, bool bSrchForward)
 {
-    SwAnnotationWin* pWin = GetActiveSidebarWin();
+    SwSidebarWin* pWin = GetActiveSidebarWin();
     SvxSearchItem aItem(SID_SEARCH_ITEM );
     aItem.SetSearchOptions(rSearchOptions);
     aItem.SetBackward(!bSrchForward);
@@ -2211,10 +2068,10 @@ sal_uInt16 SwPostItMgr::FinishSearchReplace(const i18nutil::SearchOptions2& rSea
     return aResult;
 }
 
-sal_uInt16 SwPostItMgr::SearchReplace(const SwFormatField &pField, const i18nutil::SearchOptions2& rSearchOptions, bool bSrchForward)
+sal_uInt16 SwPostItMgr::SearchReplace(const SwFormatField &pField, const css::util::SearchOptions2& rSearchOptions, bool bSrchForward)
 {
     sal_uInt16 aResult = 0;
-    SwAnnotationWin* pWin = GetSidebarWin(&pField);
+    SwSidebarWin* pWin = GetSidebarWin(&pField);
     if (pWin)
     {
         ESelection aOldSelection = pWin->GetOutlinerView()->GetSelection();
@@ -2315,7 +2172,7 @@ void SwPostItMgr::ToggleInsModeOnActiveSidebarWin()
 
 void SwPostItMgr::ConnectSidebarWinToFrame( const SwFrame& rFrame,
                                           const SwFormatField& rFormatField,
-                                          SwAnnotationWin& rSidebarWin )
+                                          SwSidebarWin& rSidebarWin )
 {
     if ( mpFrameSidebarWinContainer == nullptr )
     {
@@ -2331,7 +2188,7 @@ void SwPostItMgr::ConnectSidebarWinToFrame( const SwFrame& rFrame,
 }
 
 void SwPostItMgr::DisconnectSidebarWinFromFrame( const SwFrame& rFrame,
-                                               SwAnnotationWin& rSidebarWin )
+                                               SwSidebarWin& rSidebarWin )
 {
     if ( mpFrameSidebarWinContainer != nullptr )
     {
@@ -2339,7 +2196,7 @@ void SwPostItMgr::DisconnectSidebarWinFromFrame( const SwFrame& rFrame,
         if ( bRemoved &&
              mpWrtShell->GetAccessibleMap() )
         {
-            mpWrtShell->GetAccessibleMap()->A11yDispose( nullptr, nullptr, &rSidebarWin );
+            mpWrtShell->GetAccessibleMap()->Dispose( nullptr, nullptr, &rSidebarWin );
         }
     }
 }

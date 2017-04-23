@@ -124,8 +124,7 @@ class ScDPGroupTableData : public ScDPTableData
     std::shared_ptr<ScDPTableData> pSourceData;
     long                    nSourceCount;
     ScDPGroupDimensionVec   aGroups;
-    std::unique_ptr<ScDPNumGroupDimension[]>
-                            pNumGroups;     // array[nSourceCount]
+    ScDPNumGroupDimension*  pNumGroups;     // array[nSourceCount]
     ScDocument*             pDoc;
     StringHashSet           aGroupNames;
 
@@ -140,7 +139,7 @@ class ScDPGroupTableData : public ScDPTableData
 public:
                 // takes ownership of pSource
                 ScDPGroupTableData( const std::shared_ptr<ScDPTableData>& pSource, ScDocument* pDocument );
-    virtual     ~ScDPGroupTableData() override;
+    virtual     ~ScDPGroupTableData();
 
     const std::shared_ptr<ScDPTableData>& GetSourceTableData() const { return pSourceData;}
 
@@ -180,8 +179,8 @@ public:
     virtual bool                    HasCommonElement( const ScDPItemData& rFirstData, long nFirstIndex,
                                                       const ScDPItemData& rSecondData, long nSecondIndex ) const override;
 
-#if DUMP_PIVOT_TABLE
-    virtual void Dump() const override;
+#if DEBUG_PIVOT_TABLE
+    virtual void Dump() const;
 #endif
 };
 

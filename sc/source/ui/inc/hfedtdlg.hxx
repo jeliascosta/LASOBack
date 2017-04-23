@@ -23,7 +23,7 @@
 #include <sfx2/tabdlg.hxx>
 #include <svx/pageitem.hxx>
 
-#include "scres.hrc"
+#include "sc.hrc"
 
 class ScHFEditDlg : public SfxTabDialog
 {

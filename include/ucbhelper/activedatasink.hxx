@@ -22,7 +22,7 @@
 
 #include <com/sun/star/io/XActiveDataSink.hpp>
 #include <ucbhelper/ucbhelperdllapi.h>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 
 namespace ucbhelper
 {
@@ -34,15 +34,17 @@ namespace ucbhelper
   */
 
 class UCBHELPER_DLLPUBLIC ActiveDataSink :
-        public cppu::WeakImplHelper< css::io::XActiveDataSink >
+        public cppu::WeakImplHelper1< css::io::XActiveDataSink >
 {
     css::uno::Reference< css::io::XInputStream > m_xStream;
 
 public:
     // XActiveDataSink methods.
-    virtual void SAL_CALL setInputStream( const css::uno::Reference< css::io::XInputStream >& aStream ) override;
+    virtual void SAL_CALL setInputStream( const css::uno::Reference< css::io::XInputStream >& aStream )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
-    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream() override;
+    virtual css::uno::Reference< css::io::XInputStream > SAL_CALL getInputStream()
+        throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 } /* namespace ucbhelper */

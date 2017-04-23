@@ -40,7 +40,7 @@ namespace slideshow
             double                                  nPrio,
             const OUString&                         rServiceName,
             const char**                            pPropCopyTable,
-            std::size_t                             nNumPropEntries,
+            sal_Size                                nNumPropEntries,
             const SlideShowContext&                 rContext );
     }
 }

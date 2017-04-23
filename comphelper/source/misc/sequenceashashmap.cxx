@@ -51,6 +51,10 @@ SequenceAsHashMap::SequenceAsHashMap(const css::uno::Sequence< css::beans::Named
     (*this) << lSource;
 }
 
+SequenceAsHashMap::~SequenceAsHashMap()
+{
+}
+
 void SequenceAsHashMap::operator<<(const css::uno::Any& aSource)
 {
     // An empty Any reset this instance!
@@ -183,9 +187,9 @@ const css::uno::Any SequenceAsHashMap::getAsConstAny(bool bAsPropertyValueList) 
 {
     css::uno::Any aDestination;
     if (bAsPropertyValueList)
-        aDestination <<= getAsConstPropertyValueList();
+        aDestination = css::uno::makeAny(getAsConstPropertyValueList());
     else
-        aDestination <<= getAsConstNamedValueList();
+        aDestination = css::uno::makeAny(getAsConstNamedValueList());
     return aDestination;
 }
 

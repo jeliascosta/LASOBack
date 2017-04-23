@@ -46,9 +46,9 @@ static OString impl_getHostname()
        prevent windows from connecting to the net to get its own
        hostname by using the netbios name
        */
-    DWORD sz = MAX_COMPUTERNAME_LENGTH + 1;
+    sal_Int32 sz = MAX_COMPUTERNAME_LENGTH + 1;
     char* szHost = new char[sz];
-    if (GetComputerName(szHost, &sz))
+    if (GetComputerName(szHost, (LPDWORD)&sz))
         aHost = OString(szHost);
     else
         aHost = OString("UNKNOWN");

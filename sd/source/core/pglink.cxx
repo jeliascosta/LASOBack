@@ -84,7 +84,7 @@ SdPageLink::~SdPageLink()
             if (aBookmarkName.isEmpty())
             {
                 // no page name specified: we assume it is the first page
-                aBookmarkName = pBookmarkDoc->GetSdPage(0, PageKind::Standard)->GetName();
+                aBookmarkName = pBookmarkDoc->GetSdPage(0, PK_STANDARD)->GetName();
                 pPage->SetBookmarkName(aBookmarkName);
             }
 
@@ -96,7 +96,7 @@ SdPageLink::~SdPageLink()
             bool bNoDialogs = false;
             bool bCopy = false;
 
-            if (SdDrawDocument::s_pDocLockedInsertingLinks)
+            if (pDoc->s_pDocLockedInsertingLinks)
             {
                 // resolving links while loading pDoc
                 bNoDialogs = true;
@@ -106,7 +106,7 @@ SdPageLink::~SdPageLink()
             pDoc->InsertBookmarkAsPage(aBookmarkList, nullptr, bLink, bReplace,
                                        nInsertPos, bNoDialogs, nullptr, bCopy, true, true);
 
-            if (!SdDrawDocument::s_pDocLockedInsertingLinks)
+            if (!pDoc->s_pDocLockedInsertingLinks)
                 pDoc->CloseBookmarkDoc();
         }
     }

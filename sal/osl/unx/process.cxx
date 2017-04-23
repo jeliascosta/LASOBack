@@ -29,7 +29,7 @@
  *      - cleanup of resource transfer
  */
 
-#if defined(__sun)
+#if defined(SOLARIS)
   // The procfs may only be used without LFS in 32bits.
 # ifdef _FILE_OFFSET_BITS
 #   undef   _FILE_OFFSET_BITS
@@ -41,7 +41,7 @@
 #endif
 
 #include "system.hxx"
-#if defined(__sun)
+#if defined(SOLARIS)
 # include <sys/procfs.h>
 #endif
 #include <osl/diagnose.h>
@@ -181,7 +181,7 @@ static void ChildStatusProc(void *pData)
             OSL_ASSERT(geteuid() == 0);     /* must be root */
 
             if (! INIT_GROUPS(data.m_name, data.m_gid) || (setuid(data.m_uid) != 0))
-                SAL_WARN("sal.osl", "Failed to change uid and guid, errno=" << errno << " (" << strerror(errno) << ")" );
+                OSL_TRACE("Failed to change uid and guid, errno=%d (%s)", errno, strerror(errno));
 
             const rtl::OUString envVar("HOME");
             osl_clearEnvironment(envVar.pData);
@@ -204,6 +204,8 @@ static void ChildStatusProc(void *pData)
                     putenv(data.m_pszEnv[i]); /*TODO: check error return*/
                 }
             }
+
+            OSL_TRACE("ChildStatusProc : starting '%s'",data.m_pszArgs[0]);
 
             /* Connect std IO to pipe ends */
 
@@ -241,14 +243,14 @@ static void ChildStatusProc(void *pData)
             execv(data.m_pszArgs[0], const_cast<char **>(data.m_pszArgs));
         }
 
-        SAL_WARN("sal.osl", "Failed to exec, errno=" << errno << " (" << strerror(errno) << ")");
+        OSL_TRACE("Failed to exec, errno=%d (%s)", errno, strerror(errno));
 
-        SAL_WARN("sal.osl", "ChildStatusProc : starting '" << data.m_pszArgs[0] << "' failed");
+        OSL_TRACE("ChildStatusProc : starting '%s' failed",data.m_pszArgs[0]);
 
         /* if we reach here, something went wrong */
         errno_copy = errno;
         if ( !safeWrite(channel[1], &errno_copy, sizeof(errno_copy)) )
-            SAL_WARN("sal.osl", "sendFdPipe : sending failed (" << strerror(errno) << ")");
+            OSL_TRACE("sendFdPipe : sending failed (%s)",strerror(errno));
 
         if ( channel[1] != -1 )
             close(channel[1]);
@@ -307,7 +309,7 @@ static void ChildStatusProc(void *pData)
 
             if ( child_pid < 0)
             {
-                SAL_WARN("sal.osl", "Failed to wait for child process, errno=" << errno << " (" << strerror(errno) << ")");
+                OSL_TRACE("Failed to wait for child process, errno=%d (%s)", errno, strerror(errno));
 
                 /*
                 We got an other error than EINTR. Anyway we have to wake up the
@@ -347,8 +349,8 @@ static void ChildStatusProc(void *pData)
         }
         else
         {
-            SAL_WARN("sal.osl", "ChildStatusProc : starting '" << data.m_pszArgs[0] << "' failed");
-            SAL_WARN("sal.osl", "Failed to launch child process, child reports errno=" << status << " (" << strerror(status) << ")");
+            OSL_TRACE("ChildStatusProc : starting '%s' failed",data.m_pszArgs[0]);
+            OSL_TRACE("Failed to launch child process, child reports errno=%d (%s)", status, strerror(status));
 
             /* Close pipe ends */
             if ( pdata->m_pInputWrite )
@@ -1016,7 +1018,7 @@ oslProcessError SAL_CALL osl_getProcessInfo(oslProcess Process, oslProcessData F
     if (Fields & (osl_Process_HEAPUSAGE | osl_Process_CPUTIMES))
     {
 
-#if defined(__sun)
+#if defined(SOLARIS)
 
         int  fd;
         sal_Char name[PATH_MAX + 1];
@@ -1134,7 +1136,7 @@ static bool is_timeout(const struct timeval* tend)
 
 static bool is_process_dead(pid_t pid)
 {
-    return ((kill(pid, 0) == -1) && (ESRCH == errno));
+    return ((-1 == kill(pid, 0)) && (ESRCH == errno));
 }
 
 /**********************************************
@@ -1169,9 +1171,9 @@ oslProcessError SAL_CALL osl_joinProcessWithTimeout(oslProcess Process, const Ti
     {
         oslConditionResult cond_res = osl_waitCondition(pChild->m_terminated, pTimeout);
 
-        if (cond_res == osl_cond_result_timeout)
+        if (osl_cond_result_timeout == cond_res)
             osl_error = osl_Process_E_TimedOut;
-        else if (cond_res != osl_cond_result_ok)
+        else if (osl_cond_result_ok != cond_res)
             osl_error = osl_Process_E_Unknown;
     }
     else /* alien process; StatusThread will not be able

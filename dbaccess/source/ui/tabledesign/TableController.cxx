@@ -108,23 +108,23 @@ namespace
     }
 }
 
-OUString SAL_CALL OTableController::getImplementationName()
+OUString SAL_CALL OTableController::getImplementationName() throw( RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
 
-OUString OTableController::getImplementationName_Static()
+OUString OTableController::getImplementationName_Static() throw( RuntimeException )
 {
     return OUString("org.openoffice.comp.dbu.OTableDesign");
 }
 
-Sequence< OUString> OTableController::getSupportedServiceNames_Static()
+Sequence< OUString> OTableController::getSupportedServiceNames_Static() throw( RuntimeException )
 {
     Sequence<OUString> aSupported { "com.sun.star.sdb.TableDesign" };
     return aSupported;
 }
 
-Sequence< OUString> SAL_CALL OTableController::getSupportedServiceNames()
+Sequence< OUString> SAL_CALL OTableController::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -190,14 +190,14 @@ FeatureState OTableController::GetState(sal_uInt16 _nId) const
             aReturn.bEnabled = true;
             break;
         case ID_BROWSER_SAVEDOC:
-            aReturn.bEnabled = isEditable() && std::any_of(m_vRowList.begin(),m_vRowList.end(),std::mem_fn(&OTableRow::isValid));
+            aReturn.bEnabled = isEditable() && ::std::any_of(m_vRowList.begin(),m_vRowList.end(),::std::mem_fn(&OTableRow::isValid));
             break;
         case ID_BROWSER_SAVEASDOC:
             aReturn.bEnabled = isConnected() && isEditable();
             if ( aReturn.bEnabled )
             {
-                aReturn.bEnabled = std::any_of(m_vRowList.begin(),m_vRowList.end(),
-                                                 std::mem_fn(&OTableRow::isValid));
+                aReturn.bEnabled = ::std::any_of(m_vRowList.begin(),m_vRowList.end(),
+                                                 ::std::mem_fn(&OTableRow::isValid));
             }
             break;
 
@@ -219,8 +219,8 @@ FeatureState OTableController::GetState(sal_uInt16 _nId) const
                 );
             if ( aReturn.bEnabled )
             {
-                aReturn.bEnabled = std::any_of(m_vRowList.begin(),m_vRowList.end(),
-                                                 std::mem_fn(&OTableRow::isValid));
+                aReturn.bEnabled = ::std::any_of(m_vRowList.begin(),m_vRowList.end(),
+                                                 ::std::mem_fn(&OTableRow::isValid));
             }
             break;
         default:
@@ -436,7 +436,7 @@ void OTableController::doEditIndexes()
     // table needs to be saved before editing indexes
     if (m_bNew || isModified())
     {
-        ScopedVclPtrInstance< MessageDialog > aAsk(getView(), ModuleRes(STR_QUERY_SAVE_TABLE_EDIT_INDEXES), VclMessageType::Question, VclButtonsType::YesNo);
+        ScopedVclPtrInstance< MessageDialog > aAsk(getView(), ModuleRes(STR_QUERY_SAVE_TABLE_EDIT_INDEXES), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
         if (RET_YES != aAsk->Execute())
             return;
 
@@ -534,7 +534,7 @@ bool OTableController::Construct(vcl::Window* pParent)
     return true;
 }
 
-sal_Bool SAL_CALL OTableController::suspend(sal_Bool /*_bSuspend*/)
+sal_Bool SAL_CALL OTableController::suspend(sal_Bool /*_bSuspend*/) throw( RuntimeException, std::exception )
 {
     if ( getBroadcastHelper().bInDispose || getBroadcastHelper().bDisposed )
         return true;
@@ -548,8 +548,8 @@ sal_Bool SAL_CALL OTableController::suspend(sal_Bool /*_bSuspend*/)
     bool bCheck = true;
     if ( isModified() )
     {
-        if ( std::any_of(m_vRowList.begin(),m_vRowList.end(),
-                           std::mem_fn(&OTableRow::isValid)) )
+        if ( ::std::any_of(m_vRowList.begin(),m_vRowList.end(),
+                           ::std::mem_fn(&OTableRow::isValid)) )
         {
             ScopedVclPtrInstance<MessageDialog> aQry(getView(), "TableDesignSaveModifiedDialog",
                                                      "dbaccess/ui/tabledesignsavemodifieddialog.ui");
@@ -620,7 +620,7 @@ void OTableController::impl_onModifyChanged()
     InvalidateFeature( SID_INDEXDESIGN );
 }
 
-void SAL_CALL OTableController::disposing( const EventObject& _rSource )
+void SAL_CALL OTableController::disposing( const EventObject& _rSource ) throw(RuntimeException, std::exception)
 {
     if ( _rSource.Source == m_xTable )
     {   // some deleted our table so we have a new one
@@ -676,8 +676,8 @@ void OTableController::appendColumns(Reference<XColumnsSupplier>& _rxColSup, boo
         Reference<XAppend> xAppend(xColumns,UNO_QUERY);
         OSL_ENSURE(xAppend.is(),"No XAppend Interface!");
 
-        std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-        std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+        ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+        ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
         for(;aIter != aEnd;++aIter)
         {
             OSL_ENSURE(*aIter,"OTableRow is null!");
@@ -863,8 +863,8 @@ void OTableController::loadData()
 
             for(;pKeyBegin != pKeyEnd;++pKeyBegin)
             {
-                std::vector< std::shared_ptr<OTableRow> >::const_iterator rowIter = m_vRowList.begin();
-                std::vector< std::shared_ptr<OTableRow> >::const_iterator rowEnd = m_vRowList.end();
+                ::std::vector< std::shared_ptr<OTableRow> >::const_iterator rowIter = m_vRowList.begin();
+                ::std::vector< std::shared_ptr<OTableRow> >::const_iterator rowEnd = m_vRowList.end();
                 for(;rowIter != rowEnd;++rowIter)
                 {
                     if((*rowIter)->GetActFieldDescr()->GetName() == *pKeyBegin)
@@ -900,6 +900,8 @@ Reference<XNameAccess> OTableController::getKeyColumns() const
 }
 
 bool OTableController::checkColumns(bool _bNew)
+    throw(css::sdbc::SQLException,
+          css::uno::RuntimeException, std::exception)
 {
     bool bOk = true;
     bool bFoundPKey = false;
@@ -907,8 +909,8 @@ bool OTableController::checkColumns(bool _bNew)
     DatabaseMetaData aMetaData( getConnection() );
 
     ::comphelper::UStringMixEqual bCase(!xMetaData.is() || xMetaData->supportsMixedCaseQuotedIdentifiers());
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
     for(;aIter != aEnd;++aIter)
     {
         OFieldDescription* pFieldDesc = (*aIter)->GetActFieldDescr();
@@ -916,7 +918,7 @@ bool OTableController::checkColumns(bool _bNew)
         {
             bFoundPKey |=  (*aIter)->IsPrimaryKey();
             // first check for duplicate names
-            std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter2 = aIter+1;
+            ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter2 = aIter+1;
             for(;aIter2 != aEnd;++aIter2)
             {
                 OFieldDescription* pCompareDesc = (*aIter2)->GetActFieldDescr();
@@ -993,8 +995,8 @@ void OTableController::alterColumns()
         comphelper::UStringMixLess(
             !xMetaData.is()
             || xMetaData->supportsMixedCaseQuotedIdentifiers()));
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
     // first look for columns where something other than the name changed
     sal_Int32 nPos = 0;
     for(;aIter != aEnd;++aIter,++nPos)
@@ -1436,8 +1438,8 @@ void OTableController::reSyncRows()
 {
     bool bAlterAllowed  = isAlterAllowed();
     bool bAddAllowed    = isAddAllowed();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
     for(;aIter != aEnd;++aIter)
     {
         OSL_ENSURE(*aIter,"OTableRow is null!");
@@ -1461,8 +1463,8 @@ OUString OTableController::createUniqueName(const OUString& _rName)
 
     ::comphelper::UStringMixEqual bCase(!xMetaData.is() || xMetaData->supportsMixedCaseQuotedIdentifiers());
 
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
     for(sal_Int32 i=0;aIter != aEnd;++aIter)
     {
         OFieldDescription* pFieldDesc = (*aIter)->GetActFieldDescr();
@@ -1491,7 +1493,8 @@ OUString OTableController::getPrivateTitle() const
         if ( sTitle.isEmpty() )
         {
             OUString aName = ModuleRes(STR_TBL_TITLE);
-            sTitle = aName.getToken(0,' ') + OUString::number(getCurrentStartNumber());
+            sTitle = aName.getToken(0,' ');
+            sTitle += OUString::number(getCurrentStartNumber());
         }
     }
     catch( const Exception& )
@@ -1513,8 +1516,8 @@ void OTableController::reload()
 sal_Int32 OTableController::getFirstEmptyRowPosition()
 {
     sal_Int32 nRet = -1;
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
-    std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aIter = m_vRowList.begin();
+    ::std::vector< std::shared_ptr<OTableRow> >::const_iterator aEnd = m_vRowList.end();
     for(;aIter != aEnd;++aIter)
     {
         if ( !*aIter || !(*aIter)->GetActFieldDescr() || (*aIter)->GetActFieldDescr()->GetName().isEmpty() )

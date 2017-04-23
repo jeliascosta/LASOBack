@@ -83,13 +83,13 @@ protected:
     css::uno::Reference< css::uno::XInterface> CreateComponentPair(
              const css::uno::Reference< css::uno::XInterface>& _xFormComponent
             ,const css::uno::Reference< css::uno::XInterface>& _xReportComponent);
-    DECL_LINK( OnAsyncGetFocus, void*, void );
+    DECL_LINK_TYPED( OnAsyncGetFocus, void*, void );
 
 public:
     PropBrw(const css::uno::Reference< css::uno::XComponentContext >& _xORB
             ,Window* pParent
             ,ODesignView*  _pDesignView);
-    virtual ~PropBrw() override;
+    virtual ~PropBrw();
     virtual void dispose() override;
 
     virtual void LoseFocus() override;

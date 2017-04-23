@@ -38,7 +38,6 @@
 #include "root.hxx"
 #include "imp_op.hxx"
 #include "excimp8.hxx"
-#include "namebuff.hxx"
 #include "otlnbuff.hxx"
 #include "xcl97rec.hxx"
 #include "formel.hxx"
@@ -230,10 +229,7 @@ void ExcScenario::Apply( const XclImpRoot& rRoot, const bool bLast )
 
     r.SetScenario( nNewTab, true );
     // do not show scenario frames
-    const ScScenarioFlags nFlags = ScScenarioFlags::CopyAll
-                                 | (nProtected ? ScScenarioFlags::Protected : ScScenarioFlags::NONE);
-                              /* | ScScenarioFlags::ShowFrame*/
-    r.SetScenarioData( nNewTab, aComment, COL_LIGHTGRAY, nFlags);
+    r.SetScenarioData( nNewTab, aComment, COL_LIGHTGRAY, /*SC_SCENARIO_SHOWFRAME|*/SC_SCENARIO_COPYALL|(nProtected ? SC_SCENARIO_PROTECT : 0) );
 
     std::vector<ExcScenarioCell>::const_iterator iter;
     for (iter = aEntries.begin(); iter != aEntries.end(); ++iter)

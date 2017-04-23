@@ -31,16 +31,16 @@ void o2u_attachCurrentThread()
 {
     static osl::ThreadData oleThreadData;
 
-    if (!bool(reinterpret_cast<sal_IntPtr>(oleThreadData.getData())))
+    if ((sal_Bool)(sal_IntPtr)oleThreadData.getData() != sal_True)
     {
-        HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
         if (!SUCCEEDED(hr))
         {   // FIXME: is it a problem that this ends up in STA currently?
             assert(RPC_E_CHANGED_MODE == hr);
             SAL_INFO("extensions.olebridge",
                     "CoInitializeEx fail: probably thread is in STA already?");
         }
-        oleThreadData.setData(reinterpret_cast<void*>(true));
+        oleThreadData.setData((void*)sal_True);
     }
 }
 

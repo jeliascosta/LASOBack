@@ -20,8 +20,8 @@
 #include <svx/sdrundomanager.hxx>
 
 
-SdrUndoManager::SdrUndoManager()
-    : EditUndoManager(20/*nMaxUndoActionCount*/)
+SdrUndoManager::SdrUndoManager(sal_uInt16 nMaxUndoActionCount)
+    : EditUndoManager(nMaxUndoActionCount)
     , maEndTextEditHdl()
     , mpLastUndoActionBeforeTextEdit(nullptr)
     , mbEndTextEditTriggeredFromUndo(false)

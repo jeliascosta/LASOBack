@@ -23,6 +23,7 @@
 #include <vcl/edit.hxx>
 #include <vcl/group.hxx>
 #include <vcl/layout.hxx>
+#include <svtools/stdctrl.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <svtools/svmedit.hxx>
 
@@ -44,7 +45,7 @@ class SvxPostItDialog : public SfxModalDialog
 public:
     SvxPostItDialog(vcl::Window* pParent, const SfxItemSet& rCoreSet,
                      bool bPrevNext = false);
-    virtual ~SvxPostItDialog() override;
+    virtual ~SvxPostItDialog();
     virtual void dispose() override;
 
     static const sal_uInt16*      GetRanges();
@@ -93,10 +94,10 @@ private:
     Link<SvxPostItDialog&,void>  aPrevHdlLink;
     Link<SvxPostItDialog&,void>  aNextHdlLink;
 
-    DECL_LINK(Stamp, Button*, void);
-    DECL_LINK(OKHdl, Button*, void);
-    DECL_LINK(PrevHdl, Button*, void);
-    DECL_LINK(NextHdl, Button*, void);
+    DECL_LINK_TYPED(Stamp, Button*, void);
+    DECL_LINK_TYPED(OKHdl, Button*, void);
+    DECL_LINK_TYPED(PrevHdl, Button*, void);
+    DECL_LINK_TYPED(NextHdl, Button*, void);
 };
 
 #endif

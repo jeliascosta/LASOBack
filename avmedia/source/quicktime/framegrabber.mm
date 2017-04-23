@@ -83,6 +83,7 @@ bool FrameGrabber::create( const ::rtl::OUString& rURL )
 
 
 uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMediaTime )
+    throw (uno::RuntimeException)
 {
     uno::Reference< graphic::XGraphic > xRet;
 
@@ -102,20 +103,25 @@ uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMe
 
 
 ::rtl::OUString SAL_CALL FrameGrabber::getImplementationName(  )
+    throw (uno::RuntimeException)
 {
     return ::rtl::OUString( AVMEDIA_QUICKTIME_FRAMEGRABBER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL FrameGrabber::supportsService( const ::rtl::OUString& ServiceName )
+    throw (uno::RuntimeException)
 {
     return ( ServiceName == AVMEDIA_QUICKTIME_FRAMEGRABBER_SERVICENAME );
 }
 
 
 uno::Sequence< ::rtl::OUString > SAL_CALL FrameGrabber::getSupportedServiceNames(  )
+    throw (uno::RuntimeException)
 {
-    return { AVMEDIA_QUICKTIME_FRAMEGRABBER_SERVICENAME };
+    uno::Sequence<OUString> aRet { AVMEDIA_QUICKTIME_FRAMEGRABBER_SERVICENAME };
+
+    return aRet;
 }
 
 } // namespace quicktime

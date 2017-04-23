@@ -142,9 +142,11 @@ namespace dbaui
             }
 
             // set the properties
+            static const char s_sUniquePropertyName[] = "IsUnique";
+            static const char s_sSortPropertyName[] = "IsAscending";
             static const char s_sNamePropertyName[] = "Name";
             // the index' own props
-            xIndexDescriptor->setPropertyValue("IsUnique", css::uno::makeAny(_rPos->bUnique));
+            xIndexDescriptor->setPropertyValue(s_sUniquePropertyName, css::uno::makeAny(_rPos->bUnique));
             xIndexDescriptor->setPropertyValue(s_sNamePropertyName, makeAny(_rPos->sName));
 
             // the fields
@@ -159,7 +161,7 @@ namespace dbaui
                 OSL_ENSURE(xColDescriptor.is(), "OIndexCollection::commitNewIndex: invalid column descriptor!");
                 if (xColDescriptor.is())
                 {
-                    xColDescriptor->setPropertyValue("IsAscending", css::uno::makeAny(aFieldLoop->bSortAscending));
+                    xColDescriptor->setPropertyValue(s_sSortPropertyName, css::uno::makeAny(aFieldLoop->bSortAscending));
                     xColDescriptor->setPropertyValue(s_sNamePropertyName, makeAny(OUString(aFieldLoop->sFieldName)));
                     xAppendCols->appendByDescriptor(xColDescriptor);
                 }
@@ -242,9 +244,14 @@ namespace dbaui
 
     void OIndexCollection::implFillIndexInfo(OIndex& _rIndex, const Reference< XPropertySet >& _rxDescriptor)
     {
-        _rIndex.bPrimaryKey = ::cppu::any2bool(_rxDescriptor->getPropertyValue("IsPrimaryKeyIndex"));
-        _rIndex.bUnique = ::cppu::any2bool(_rxDescriptor->getPropertyValue("IsUnique"));
-        _rxDescriptor->getPropertyValue("Catalog") >>= _rIndex.sDescription;
+        static const char s_sPrimaryIndexPropertyName[] = "IsPrimaryKeyIndex";
+        static const char s_sUniquePropertyName[] = "IsUnique";
+        static const char s_sSortPropertyName[] = "IsAscending";
+        static const char s_sCatalogPropertyName[] = "Catalog";
+
+        _rIndex.bPrimaryKey = ::cppu::any2bool(_rxDescriptor->getPropertyValue(s_sPrimaryIndexPropertyName));
+        _rIndex.bUnique = ::cppu::any2bool(_rxDescriptor->getPropertyValue(s_sUniquePropertyName));
+        _rxDescriptor->getPropertyValue(s_sCatalogPropertyName) >>= _rIndex.sDescription;
 
         // the columns
         Reference< XColumnsSupplier > xSuppCols(_rxDescriptor, UNO_QUERY);
@@ -276,7 +283,7 @@ namespace dbaui
 
                 // get the relevant properties
                 aCopyTo->sFieldName = *pFieldNames;
-                aCopyTo->bSortAscending = ::cppu::any2bool(xIndexColumn->getPropertyValue("IsAscending"));
+                aCopyTo->bSortAscending = ::cppu::any2bool(xIndexColumn->getPropertyValue(s_sSortPropertyName));
             }
 
             _rIndex.aFields.resize(aCopyTo - _rIndex.aFields.begin());

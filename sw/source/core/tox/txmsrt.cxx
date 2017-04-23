@@ -48,9 +48,9 @@ using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
 // Initialize strings
-SwTOIOptions SwTOXSortTabBase::nOpt = SwTOIOptions::NONE;
+sal_uInt16 SwTOXSortTabBase::nOpt = 0;
 
-SwTOXInternational::SwTOXInternational( LanguageType nLang, SwTOIOptions nOpt,
+SwTOXInternational::SwTOXInternational( LanguageType nLang, sal_uInt16 nOpt,
                                         const OUString& rSortAlgorithm ) :
     eLang( nLang ),
     sSortAlgorithm(rSortAlgorithm),
@@ -81,7 +81,7 @@ void SwTOXInternational::Init()
             sSortAlgorithm = aSeq.getConstArray()[0];
     }
 
-    if ( nOptions & SwTOIOptions::CaseSensitive )
+    if ( nOptions & nsSwTOIOptions::TOI_CASE_SENSITIVE )
         pIndexWrapper->LoadAlgorithm( aLcl, sSortAlgorithm, 0 );
     else
         pIndexWrapper->LoadAlgorithm( aLcl, sSortAlgorithm, SW_COLLATOR_IGNORES );
@@ -265,7 +265,7 @@ bool SwTOXSortTabBase::operator<( const SwTOXSortTabBase& rCmp )
 
 // Sorted keyword entry
 SwTOXIndex::SwTOXIndex( const SwTextNode& rNd,
-                        const SwTextTOXMark* pMark, SwTOIOptions nOptions,
+                        const SwTextTOXMark* pMark, sal_uInt16 nOptions,
                         sal_uInt8 nKyLevel,
                         const SwTOXInternational& rIntl,
                         const lang::Locale& rLocale )
@@ -292,7 +292,7 @@ bool SwTOXIndex::operator==( const SwTOXSortTabBase& rCmpBase )
                                    rCmp.GetText(), rCmp.GetLocale() );
 
     // If we don't summarize we need to evaluate the Pos
-    if(bRet && !(GetOptions() & SwTOIOptions::SameEntry))
+    if(bRet && !(GetOptions() & nsSwTOIOptions::TOI_SAME_ENTRY))
         bRet = nPos == rCmp.nPos;
 
     return bRet;
@@ -314,7 +314,7 @@ bool SwTOXIndex::operator<( const SwTOXSortTabBase& rCmpBase )
                                   aOtherTaR, rCmp.GetLocale() );
 
     // If we don't summarize we need to evaluate the Pos
-    if( !bRet && !(GetOptions() & SwTOIOptions::SameEntry) )
+    if( !bRet && !(GetOptions() & nsSwTOIOptions::TOI_SAME_ENTRY) )
     {
         bRet = pTOXIntl->IsEqual( aMyTaR, GetLocale(),
                                   aOtherTaR, rCmp.GetLocale() ) &&
@@ -353,8 +353,8 @@ TextAndReading SwTOXIndex::GetText_Impl() const
         }
         break;
     }
-    // if SwTOIOptions::InitialCaps is set, first character is to be capitalized
-    if( SwTOIOptions::InitialCaps & nOpt && pTOXIntl && !aRet.sText.isEmpty())
+    // if TOI_INITIAL_CAPS is set, first character is to be capitalized
+    if( nsSwTOIOptions::TOI_INITIAL_CAPS & nOpt && pTOXIntl && !aRet.sText.isEmpty())
     {
         aRet.sText = pTOXIntl->ToUpper( aRet.sText, 0 ) + aRet.sText.copy(1);
     }
@@ -368,12 +368,12 @@ void SwTOXIndex::FillText( SwTextNode& rNd, const SwIndex& rInsPos, sal_uInt16 )
 
     TextAndReading aRet;
     if( pEnd && !pTextMark->GetTOXMark().IsAlternativeText() &&
-            !(GetOptions() & SwTOIOptions::KeyAsEntry))
+            0 == (GetOptions() & nsSwTOIOptions::TOI_KEY_AS_ENTRY))
     {
         aRet.sText = static_cast<const SwTextNode*>(aTOXSources[0].pNd)->GetExpandText(
                             pTextMark->GetStart(),
                             *pEnd - pTextMark->GetStart());
-        if(SwTOIOptions::InitialCaps & nOpt && pTOXIntl && !aRet.sText.isEmpty())
+        if(nsSwTOIOptions::TOI_INITIAL_CAPS & nOpt && pTOXIntl && !aRet.sText.isEmpty())
         {
             aRet.sText = pTOXIntl->ToUpper( aRet.sText, 0 ) + aRet.sText.copy(1);
         }
@@ -390,7 +390,7 @@ sal_uInt16 SwTOXIndex::GetLevel() const
 
     sal_uInt16 nForm = FORM_PRIMARY_KEY;
 
-    if( !(GetOptions() & SwTOIOptions::KeyAsEntry)&&
+    if( 0 == (GetOptions() & nsSwTOIOptions::TOI_KEY_AS_ENTRY)&&
         !pTextMark->GetTOXMark().GetPrimaryKey().isEmpty() )
     {
         nForm = FORM_SECONDARY_KEY;
@@ -496,9 +496,9 @@ TextAndReading SwTOXPara::GetText_Impl() const
     const SwContentNode* pNd = aTOXSources[0].pNd;
     switch( eType )
     {
-    case SwTOXElement::Sequence:
-    case SwTOXElement::Template:
-    case SwTOXElement::OutlineLevel:
+    case nsSwTOXElement::TOX_SEQUENCE:
+    case nsSwTOXElement::TOX_TEMPLATE:
+    case nsSwTOXElement::TOX_OUTLINELEVEL:
         {
             return TextAndReading(static_cast<const SwTextNode*>(pNd)->GetExpandText(
                     nStartIndex,
@@ -508,9 +508,9 @@ TextAndReading SwTOXPara::GetText_Impl() const
         }
         break;
 
-    case SwTOXElement::Ole:
-    case SwTOXElement::Graphic:
-    case SwTOXElement::Frame:
+    case nsSwTOXElement::TOX_OLE:
+    case nsSwTOXElement::TOX_GRAPHIC:
+    case nsSwTOXElement::TOX_FRAME:
         {
             // Find the FlyFormat; the object/graphic name is there
             SwFrameFormat* pFly = pNd->GetFlyFormat();
@@ -518,9 +518,9 @@ TextAndReading SwTOXPara::GetText_Impl() const
                 return TextAndReading(pFly->GetName(), OUString());
 
             OSL_ENSURE( false, "Graphic/object without name" );
-            sal_uInt16 nId = SwTOXElement::Ole == eType
+            sal_uInt16 nId = nsSwTOXElement::TOX_OLE == eType
                             ? STR_OBJECT_DEFNAME
-                            : SwTOXElement::Graphic == eType
+                            : nsSwTOXElement::TOX_GRAPHIC == eType
                                 ? STR_GRAPHIC_DEFNAME
                                 : STR_FRAME_DEFNAME;
             return TextAndReading(SW_RESSTR( nId ), OUString());
@@ -533,7 +533,7 @@ TextAndReading SwTOXPara::GetText_Impl() const
 
 void SwTOXPara::FillText( SwTextNode& rNd, const SwIndex& rInsPos, sal_uInt16 ) const
 {
-    if( SwTOXElement::Template == eType || SwTOXElement::Sequence == eType  || SwTOXElement::OutlineLevel == eType)
+    if( nsSwTOXElement::TOX_TEMPLATE == eType || nsSwTOXElement::TOX_SEQUENCE == eType  || nsSwTOXElement::TOX_OUTLINELEVEL == eType)
     {
         const SwTextNode* pSrc = static_cast<const SwTextNode*>(aTOXSources[0].pNd);
         pSrc->GetExpandText( rNd, &rInsPos, nStartIndex,
@@ -551,7 +551,7 @@ sal_uInt16 SwTOXPara::GetLevel() const
     sal_uInt16 nRet = m_nLevel;
     const SwContentNode*  pNd = aTOXSources[0].pNd;
 
-    if( SwTOXElement::OutlineLevel == eType && pNd->GetTextNode() )
+    if( nsSwTOXElement::TOX_OUTLINELEVEL == eType && pNd->GetTextNode() )
     {
         const int nTmp = static_cast<const SwTextNode*>(pNd)->GetAttrOutlineLevel();
         if(nTmp != 0 )
@@ -566,8 +566,8 @@ OUString SwTOXPara::GetURL() const
     const SwContentNode* pNd = aTOXSources[0].pNd;
     switch( eType )
     {
-    case SwTOXElement::Template:
-    case SwTOXElement::OutlineLevel:
+    case nsSwTOXElement::TOX_TEMPLATE:
+    case nsSwTOXElement::TOX_OUTLINELEVEL:
         {
             const SwTextNode * pTextNd = pNd->GetTextNode();
 
@@ -579,21 +579,21 @@ OUString SwTOXPara::GetURL() const
         }
         break;
 
-    case SwTOXElement::Ole:
-    case SwTOXElement::Graphic:
-    case SwTOXElement::Frame:
+    case nsSwTOXElement::TOX_OLE:
+    case nsSwTOXElement::TOX_GRAPHIC:
+    case nsSwTOXElement::TOX_FRAME:
         {
             // Find the FlyFormat; the object/graphic name is there
             SwFrameFormat* pFly = pNd->GetFlyFormat();
             if( pFly )
             {
-                aText = "#" + pFly->GetName() + OUStringLiteral1(cMarkSeparator);
+                aText = "#" + pFly->GetName() + OUStringLiteral1<cMarkSeparator>();
                 const sal_Char* pStr;
                 switch( eType )
                 {
-                case SwTOXElement::Ole:       pStr = "ole"; break;
-                case SwTOXElement::Graphic:   pStr = "graphic"; break;
-                case SwTOXElement::Frame:     pStr = "frame"; break;
+                case nsSwTOXElement::TOX_OLE:       pStr = "ole"; break;
+                case nsSwTOXElement::TOX_GRAPHIC:   pStr = "graphic"; break;
+                case nsSwTOXElement::TOX_FRAME:     pStr = "frame"; break;
                 default:            pStr = nullptr;
                 }
                 if( pStr )
@@ -601,9 +601,9 @@ OUString SwTOXPara::GetURL() const
             }
         }
         break;
-    case SwTOXElement::Sequence:
+    case nsSwTOXElement::TOX_SEQUENCE:
         {
-            aText = "#" + m_sSequenceName + OUStringLiteral1(cMarkSeparator)
+            aText = "#" + m_sSequenceName + OUStringLiteral1<cMarkSeparator>()
                  + "sequence";
         }
         break;
@@ -655,7 +655,7 @@ OUString SwTOXTable::GetURL() const
     if ( sName.isEmpty() )
         return OUString();
 
-    return "#" + sName + OUStringLiteral1(cMarkSeparator) + "table";
+    return "#" + sName + OUStringLiteral1<cMarkSeparator>() + "table";
 }
 
 SwTOXAuthority::SwTOXAuthority( const SwContentNode& rNd,

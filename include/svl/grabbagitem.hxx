@@ -24,8 +24,9 @@ private:
 public:
 
     SfxGrabBagItem();
-    SfxGrabBagItem(sal_uInt16 nWhich);
-    virtual ~SfxGrabBagItem() override;
+    SfxGrabBagItem(sal_uInt16 nWhich, const std::map<OUString, css::uno::Any>* pMap = nullptr);
+    SfxGrabBagItem(const SfxGrabBagItem& rItem);
+    virtual ~SfxGrabBagItem();
 
     const std::map<OUString, css::uno::Any>& GetGrabBag() const
     {

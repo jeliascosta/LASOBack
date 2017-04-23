@@ -11,7 +11,7 @@ $(eval $(call gb_ExternalPackage_ExternalPackage,python3,python3))
 
 $(eval $(call gb_ExternalPackage_use_external_project,python3,python3))
 
-ifeq ($(OS),WNT)
+ifeq ($(OS)-$(COM),WNT-MSC)
 ifeq ($(CPUNAME),X86_64)
 python_arch_subdir=amd64/
 else
@@ -38,11 +38,16 @@ $(eval $(call gb_ExternalPackage_add_files,python3,$(LIBO_BIN_FOLDER)/python-cor
 	PCbuild/$(python_arch_subdir)unicodedata$(if $(MSVC_USE_DEBUG_RUNTIME),_d).pyd \
 	PCbuild/$(python_arch_subdir)winsound$(if $(MSVC_USE_DEBUG_RUNTIME),_d).pyd \
 ))
+else ifeq ($(OS),WNT) # MinGW
+# TODO how are C modules called on this platform?
+$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/python-core-$(PYTHON_VERSION)/bin/python.exe,python.exe))
+$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/python$(PYTHON_VERSION_MAJOR).dll,python$(PYTHON_VERSION_MAJOR).dll))
 else
 $(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/python.bin,python))
 $(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/libpython$(PYTHON_VERSION_MAJOR).so,libpython$(PYTHON_VERSION_MAJOR).so))
-$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so.1.0,libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so))
-$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so.1.0-gdb.py,Tools/gdb/libpython.py))
+$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so,libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so))
+$(eval $(call gb_ExternalPackage_add_file,python3,$(LIBO_BIN_FOLDER)/libpython$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so-gdb.py,Tools/gdb/libpython.py))
+# versioned lib/libpython3.3m.so.1.0 appears to be unnecessary?
 
 # Unfortunately the python build system does not allow to explicitly enable or
 # disable these, it just tries to build them and then prints which did not
@@ -108,7 +113,6 @@ $(eval $(call gb_ExternalPackage_add_files,python3,$(LIBO_BIN_FOLDER)/python-cor
 	LO_lib/_testcapi.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
 	LO_lib/_testimportmultiple.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
 	LO_lib/_testmultiphase.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
-	LO_lib/unicodedata.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
 	LO_lib/xxlimited.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
 	LO_lib/zlib.cpython-$(PYTHON_VERSION_MAJOR).$(PYTHON_VERSION_MINOR)m.so \
 ))
@@ -119,7 +123,7 @@ endif
 # (+ toplevel for pyconfig.h)
 
 # that one is generated...
-ifneq ($(OS),WNT)
+ifneq ($(OS)-$(COM),WNT-MSC)
 $(eval $(call gb_ExternalPackage_add_files,python3,$(LIBO_BIN_FOLDER)/python-core-$(PYTHON_VERSION)/lib,\
 	LO_lib/_sysconfigdata.py \
 ))
@@ -319,17 +323,6 @@ $(eval $(call gb_ExternalPackage_add_unpacked_files,python3,$(LIBO_BIN_FOLDER)/p
 	Lib/turtle.py \
 	Lib/types.py \
 	Lib/typing.py \
-	Lib/unittest/case.py \
-	Lib/unittest/__init__.py \
-	Lib/unittest/loader.py \
-	Lib/unittest/__main__.py \
-	Lib/unittest/main.py \
-	Lib/unittest/mock.py \
-	Lib/unittest/result.py \
-	Lib/unittest/runner.py \
-	Lib/unittest/signals.py \
-	Lib/unittest/suite.py \
-	Lib/unittest/util.py \
 	Lib/uu.py \
 	Lib/uuid.py \
 	Lib/warnings.py \
@@ -657,6 +650,7 @@ $(eval $(call gb_ExternalPackage_add_unpacked_files,python3,$(LIBO_BIN_FOLDER)/p
 	Lib/lib2to3/fixes/fix_asserts.py \
 	Lib/lib2to3/fixes/fix_basestring.py \
 	Lib/lib2to3/fixes/fix_buffer.py \
+	Lib/lib2to3/fixes/fix_callable.py \
 	Lib/lib2to3/fixes/fix_dict.py \
 	Lib/lib2to3/fixes/fix_except.py \
 	Lib/lib2to3/fixes/fix_execfile.py \

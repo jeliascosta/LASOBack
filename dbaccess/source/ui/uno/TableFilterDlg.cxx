@@ -42,7 +42,7 @@ OTableFilterDialog::OTableFilterDialog(const Reference< XComponentContext >& _rx
 {
 }
 
-Sequence<sal_Int8> SAL_CALL OTableFilterDialog::getImplementationId(  )
+Sequence<sal_Int8> SAL_CALL OTableFilterDialog::getImplementationId(  ) throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -52,28 +52,28 @@ Reference< XInterface > SAL_CALL OTableFilterDialog::Create(const Reference< XMu
     return *(new OTableFilterDialog( comphelper::getComponentContext(_rxFactory) ));
 }
 
-OUString SAL_CALL OTableFilterDialog::getImplementationName()
+OUString SAL_CALL OTableFilterDialog::getImplementationName() throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-OUString OTableFilterDialog::getImplementationName_Static()
+OUString OTableFilterDialog::getImplementationName_Static() throw(RuntimeException)
 {
     return OUString("org.openoffice.comp.dbu.OTableFilterDialog");
 }
 
-css::uno::Sequence<OUString> SAL_CALL OTableFilterDialog::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL OTableFilterDialog::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
-css::uno::Sequence<OUString> OTableFilterDialog::getSupportedServiceNames_Static()
+css::uno::Sequence<OUString> OTableFilterDialog::getSupportedServiceNames_Static() throw(RuntimeException)
 {
     css::uno::Sequence<OUString> aSupported { "com.sun.star.sdb.TableFilterDialog" };
     return aSupported;
 }
 
-Reference<XPropertySetInfo>  SAL_CALL OTableFilterDialog::getPropertySetInfo()
+Reference<XPropertySetInfo>  SAL_CALL OTableFilterDialog::getPropertySetInfo() throw(RuntimeException, std::exception)
 {
     Reference<XPropertySetInfo>  xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;

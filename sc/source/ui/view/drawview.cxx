@@ -35,9 +35,6 @@
 #include <sfx2/viewfrm.hxx>
 #include <svx/sdrundomanager.hxx>
 #include <svx/xbtmpit.hxx>
-#include <comphelper/lok.hxx>
-#include <sfx2/lokhelper.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 #include "drawview.hxx"
 #include "global.hxx"
@@ -267,7 +264,7 @@ void ScDrawView::UpdateWorkArea()
     {
         Point aPos;
         Size aPageSize( pPage->GetSize() );
-        tools::Rectangle aNewArea( aPos, aPageSize );
+        Rectangle aNewArea( aPos, aPageSize );
         if ( aPageSize.Width() < 0 )
         {
             //  RTL: from max.negative (left) to zero (right)
@@ -313,7 +310,7 @@ void ScDrawView::RecalcScale()
     }
     else
     {
-        Point aLogic = pDev->LogicToPixel( Point(1000,1000), MapUnit::MapTwip );
+        Point aLogic = pDev->LogicToPixel( Point(1000,1000), MAP_TWIP );
         nPPTX = aLogic.X() / 1000.0;
         nPPTY = aLogic.Y() / 1000.0;
                                             //! Zoom, handed over ???
@@ -390,7 +387,7 @@ void ScDrawView::MarkListHasChanged()
     if ( nMarkCount == 0 && !pViewData->GetViewShell()->IsDrawSelMode() && !bInConstruct )
     {
         //  relock layers that may have been unlocked before
-        LockBackgroundLayer(true);
+        LockBackgroundLayer();
         LockInternalLayer();
     }
 
@@ -553,19 +550,6 @@ bool ScDrawView::SdrBeginTextEdit(
         bOnlyOneView, bGrabFocus );
 
     ScTabViewShell* pViewSh = pViewData->GetViewShell();
-
-    if (comphelper::LibreOfficeKit::isActive())
-    {
-        if (OutlinerView* pView = GetTextEditOutlinerView())
-        {
-            tools::Rectangle aRectangle = pView->GetOutputArea();
-            if (pWinL && pWinL->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
-                aRectangle = OutputDevice::LogicToLogic(aRectangle, MapUnit::Map100thMM, MapUnit::MapTwip);
-            OString sRectangle = aRectangle.toString();
-            SfxLokHelper::notifyOtherViews(pViewSh, LOK_CALLBACK_VIEW_LOCK, "rectangle", sRectangle);
-        }
-    }
-
     if ( pViewSh->GetViewFrame() )
     {
         SfxFrame& rFrame = pViewSh->GetViewFrame()->GetFrame();
@@ -586,10 +570,6 @@ SdrEndTextEditKind ScDrawView::SdrEndTextEdit( bool bDontDeleteReally )
     const SdrEndTextEditKind eRet = FmFormView::SdrEndTextEdit( bDontDeleteReally );
 
     ScTabViewShell* pViewSh = pViewData->GetViewShell();
-
-    if (comphelper::LibreOfficeKit::isActive())
-        SfxLokHelper::notifyOtherViews(pViewSh, LOK_CALLBACK_VIEW_LOCK, "rectangle", "EMPTY");
-
     if ( pViewSh->GetViewFrame() )
     {
         SfxFrame& rFrame = pViewSh->GetViewFrame()->GetFrame();
@@ -656,7 +636,7 @@ SdrObject* ScDrawView::GetObjectByName(const OUString& rName)
             DBG_ASSERT(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+                SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -690,7 +670,7 @@ void ScDrawView::SelectCurrentViewObject( const OUString& rName )
             DBG_ASSERT(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+                SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
                 SdrObject* pObject = aIter.Next();
                 while (pObject && !pFound)
                 {
@@ -744,7 +724,7 @@ bool ScDrawView::SelectObject( const OUString& rName )
             OSL_ENSURE(pPage,"Page ?");
             if (pPage)
             {
-                SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
+                SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
                 SdrObject* pObject = aIter.Next();
                 while (pObject && !pFound)
                 {
@@ -777,7 +757,7 @@ bool ScDrawView::SelectObject( const OUString& rName )
                 !pDoc->IsTabProtected( nTab ) &&
                 !pViewData->GetSfxDocShell()->IsReadOnly() )
         {
-            LockBackgroundLayer(false);
+            UnlockBackgroundLayer();
         }
 
         SdrPageView* pPV = GetSdrPageView();
@@ -836,18 +816,13 @@ void ScDrawView::LockCalcLayer( SdrLayerID nLayer, bool bLock )
         SetLayerLocked( pLockLayer->GetName(), bLock );
 }
 
-void ScDrawView::MakeVisible( const tools::Rectangle& rRect, vcl::Window& rWin )
+void ScDrawView::MakeVisible( const Rectangle& rRect, vcl::Window& rWin )
 {
     //! Evaluate rWin properly
     //! change zoom if necessary
 
     if ( pViewData && pViewData->GetActiveWin() == &rWin )
         pViewData->GetView()->MakeVisible( rRect );
-}
-
-SfxViewShell* ScDrawView::GetSfxViewShell() const
-{
-    return pViewData->GetViewShell();
 }
 
 void ScDrawView::DeleteMarked()
@@ -869,7 +844,7 @@ void ScDrawView::DeleteMarked()
         {
             // rescue note data for undo (with pointer to caption object)
             ScNoteData aNoteData = pNote->GetNoteData();
-            OSL_ENSURE( aNoteData.mxCaption.get() == pCaptObj, "ScDrawView::DeleteMarked - caption object does not match" );
+            OSL_ENSURE( aNoteData.mpCaption == pCaptObj, "ScDrawView::DeleteMarked - caption object does not match" );
             // collect the drawing undo action created while deleting the note
             if( bUndo )
                 pDrawLayer->BeginCalcUndo(false);
@@ -915,7 +890,7 @@ void ScDrawView::MarkDropObj( SdrObject* pObj )
 }
 
 // In order to counteract the effects of rounding due to the nature of how the
-// grid positions are calculated and drawn we calculate the offset needed at the
+// grid positions are calcuated and drawn we calculate the offset needed at the
 // current zoom to be applied to an SrdObject when it is drawn in order to make
 // sure that it's position relative to the nearest cell anchor doesn't change.
 // Of course not all shape(s)/control(s) are cell anchored, if the

@@ -3,11 +3,9 @@ package org.libreoffice;
 import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.util.Log;
 import android.view.KeyEvent;
 
 import org.libreoffice.canvas.SelectionHandle;
-import org.libreoffice.ui.LibreOfficeUIActivity;
 import org.mozilla.gecko.gfx.CairoImage;
 import org.mozilla.gecko.gfx.ComposedTileLayer;
 import org.mozilla.gecko.gfx.GeckoLayerClient;
@@ -22,19 +20,18 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Thread that communicates with LibreOffice through LibreOfficeKit JNI interface. The thread
  * consumes events from other threads (mainly the UI thread) and acts accordingly.
  */
-class LOKitThread extends Thread {
+public class LOKitThread extends Thread {
     private static final String LOGTAG = LOKitThread.class.getSimpleName();
 
     private LinkedBlockingQueue<LOEvent> mEventQueue = new LinkedBlockingQueue<LOEvent>();
 
+    private LibreOfficeMainActivity mApplication;
     private TileProvider mTileProvider;
     private InvalidationHandler mInvalidationHandler;
     private ImmutableViewportMetrics mViewportMetrics;
     private GeckoLayerClient mLayerClient;
-    private LibreOfficeMainActivity mContext;
 
-    LOKitThread(LibreOfficeMainActivity context) {
-        mContext = context;
+    public LOKitThread() {
         mInvalidationHandler = null;
         TileProviderFactory.initialize();
     }
@@ -156,101 +153,45 @@ class LOKitThread extends Thread {
         redraw();
     }
 
-
-    /**
-     * Resume the document with the current part
-     */
-
-    private void resumeDocument(String filename, int partIndex){
-
-        mLayerClient = mContext.getLayerClient();
-
-        mInvalidationHandler = new InvalidationHandler(mContext);
-        mTileProvider = TileProviderFactory.create(mContext, mInvalidationHandler, filename);
-
-        if (mTileProvider.isReady()) {
-            changePart(partIndex);
-        } else {
-            closeDocument();
-        }
-    }
-
     /**
      * Change part of the document.
      */
     private void changePart(int partIndex) {
-        LOKitShell.showProgressSpinner(mContext);
+        LOKitShell.showProgressSpinner();
         mTileProvider.changePart(partIndex);
         mViewportMetrics = mLayerClient.getViewportMetrics();
         mLayerClient.setViewportMetrics(mViewportMetrics.scaleTo(0.9f, new PointF()));
         refresh();
-        LOKitShell.hideProgressSpinner(mContext);
+        LOKitShell.hideProgressSpinner();
     }
 
     /**
      * Handle load document event.
-     * @param filePath - filePath to where the document is located
+     * @param filename - filename where the document is located
      */
-    private void loadDocument(String filePath) {
-        mLayerClient = mContext.getLayerClient();
+    private void loadDocument(String filename) {
+        if (mApplication == null) {
+            mApplication = LibreOfficeMainActivity.mAppContext;
+        }
 
-        mInvalidationHandler = new InvalidationHandler(mContext);
-        mTileProvider = TileProviderFactory.create(mContext, mInvalidationHandler, filePath);
+        mLayerClient = LibreOfficeMainActivity.getLayerClient();
+
+        mInvalidationHandler = new InvalidationHandler(LibreOfficeMainActivity.mAppContext);
+        mTileProvider = TileProviderFactory.create(mLayerClient, mInvalidationHandler, filename);
 
         if (mTileProvider.isReady()) {
-            LOKitShell.showProgressSpinner(mContext);
+            LOKitShell.showProgressSpinner();
             refresh();
-            LOKitShell.hideProgressSpinner(mContext);
+            LOKitShell.hideProgressSpinner();
         } else {
             closeDocument();
         }
-    }
-
-    /**
-     * Handle load new document event.
-     * @param filePath - filePath to where new document is to be created
-     * @param fileType - fileType what type of new document is to be loaded
-     */
-    private void loadNewDocument(String filePath, String fileType) {
-        mLayerClient = mContext.getLayerClient();
-
-        mInvalidationHandler = new InvalidationHandler(mContext);
-        mTileProvider = TileProviderFactory.create(mContext, mInvalidationHandler, fileType);
-
-        if (mTileProvider.isReady()) {
-            LOKitShell.showProgressSpinner(mContext);
-            refresh();
-            LOKitShell.hideProgressSpinner(mContext);
-
-            if (fileType.matches(LibreOfficeUIActivity.NEW_WRITER_STRING_KEY))
-                mTileProvider.saveDocumentAs(filePath, "odt");
-            else if (fileType.matches(LibreOfficeUIActivity.NEW_CALC_STRING_KEY))
-                mTileProvider.saveDocumentAs(filePath, "ods");
-            else if (fileType.matches(LibreOfficeUIActivity.NEW_IMPRESS_STRING_KEY))
-                mTileProvider.saveDocumentAs(filePath, "odp");
-            else
-                mTileProvider.saveDocumentAs(filePath, "odg");
-
-        } else {
-            closeDocument();
-        }
-    }
-
-    /**
-     * Save the currently loaded document.
-     */
-    private void saveDocumentAs(String filePath, String fileType) {
-       if (mTileProvider == null) {
-           Log.e(LOGTAG, "Error in saving, Tile Provider instance is null");
-       } else {
-           mTileProvider.saveDocumentAs(filePath, fileType);
-       }
     }
 
     /**
      * Close the currently loaded document.
      */
-    private void closeDocument() {
+    public void closeDocument() {
         if (mTileProvider != null) {
             mTileProvider.close();
             mTileProvider = null;
@@ -263,16 +204,7 @@ class LOKitThread extends Thread {
     private void processEvent(LOEvent event) {
         switch (event.mType) {
             case LOEvent.LOAD:
-                loadDocument(event.filePath);
-                break;
-            case LOEvent.LOAD_NEW:
-                loadNewDocument(event.filePath, event.fileType);
-                break;
-            case LOEvent.SAVE_AS:
-                saveDocumentAs(event.filePath, event.fileType);
-                break;
-            case LOEvent.RESUME:
-                resumeDocument(event.mString, event.mPartIndex);
+                loadDocument(event.mString);
                 break;
             case LOEvent.CLOSE:
                 closeDocument();

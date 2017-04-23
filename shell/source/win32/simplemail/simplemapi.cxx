@@ -23,12 +23,12 @@
 #include <stdexcept>
 
 CSimpleMapi::CSimpleMapi() :
-    m_lpfnMapiLogon(nullptr),
-    m_lpfnMapiLogoff(nullptr),
-    m_lpfnMapiSendMail(nullptr)
+    m_lpfnMapiLogon(NULL),
+    m_lpfnMapiLogoff(NULL),
+    m_lpfnMapiSendMail(NULL)
 {
     m_hMapiDll = LoadLibrary("mapi32.dll");
-    if ((m_hMapiDll == INVALID_HANDLE_VALUE) || (m_hMapiDll == nullptr))
+    if ((m_hMapiDll == INVALID_HANDLE_VALUE) || (m_hMapiDll == NULL))
         throw std::runtime_error("Couldn't load MAPI library");
 
     m_lpfnMapiLogon = reinterpret_cast<LPMAPILOGON>(GetProcAddress(m_hMapiDll, "MAPILogon"));
@@ -51,8 +51,8 @@ CSimpleMapi::~CSimpleMapi()
 
 ULONG CSimpleMapi::MAPILogon(
     ULONG ulUIParam,
-    LPSTR lpszProfileName,
-    LPSTR lpszPassword,
+    LPTSTR lpszProfileName,
+    LPTSTR lpszPassword,
     FLAGS flFlags,
     ULONG ulReserved,
     LPLHANDLE lplhSession )

@@ -23,6 +23,7 @@
 #include <oox/helper/attributelist.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
+#include "biffinputstream.hxx"
 #include "defnamesbuffer.hxx"
 #include "sheetdatacontext.hxx"
 #include "unitconverter.hxx"
@@ -31,6 +32,7 @@ namespace oox {
 namespace xls {
 
 using namespace ::com::sun::star::sheet;
+using namespace ::com::sun::star::table;
 using namespace ::com::sun::star::uno;
 using namespace ::oox::core;
 
@@ -195,7 +197,7 @@ ContextHandlerRef ExternalLinkFragment::onCreateContext( sal_Int32 nElement, con
             if( nElement == XLS_TOKEN( definedName ) ) mrExtLink.importDefinedName( rAttribs );
         break;
         case XLS_TOKEN( sheetDataSet ):
-            if( (nElement == XLS_TOKEN( sheetData )) && (mrExtLink.getLinkType() == ExternalLinkType::External) )
+            if( (nElement == XLS_TOKEN( sheetData )) && (mrExtLink.getLinkType() == LINKTYPE_EXTERNAL) )
                 return createSheetDataContext( rAttribs.getInteger( XML_sheetId, -1 ) );
         break;
 
@@ -280,7 +282,7 @@ ContextHandlerRef ExternalLinkFragment::onCreateRecordContext( sal_Int32 nRecId,
             switch( nRecId )
             {
                 case BIFF12_ID_EXTSHEETDATA:
-                    if( mrExtLink.getLinkType() == ExternalLinkType::External )
+                    if( mrExtLink.getLinkType() == LINKTYPE_EXTERNAL )
                         return createSheetDataContext( rStrm.readInt32() );
                 break;
 

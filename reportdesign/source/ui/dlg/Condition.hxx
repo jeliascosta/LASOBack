@@ -26,7 +26,6 @@
 
 #include <dbaccess/ToolBoxHelper.hxx>
 
-#include <svx/colorwindow.hxx>
 #include <svx/fntctrl.hxx>
 
 #include <vcl/fixed.hxx>
@@ -54,25 +53,13 @@ namespace rptui
         VclPtr<Edit>       m_pSubEdit;
         VclPtr<PushButton> m_pFormula;
 
-        DECL_LINK( OnFormula,   Button*, void );
+        DECL_LINK_TYPED( OnFormula,   Button*, void );
     public:
         ConditionField(Condition* pParent, Edit* pSubEdit, PushButton *pFormula);
         void GrabFocus() { m_pSubEdit->GrabFocus(); }
         void Show(bool bShow) { m_pSubEdit->Show(bShow); m_pFormula->Show(bShow); }
         void SetText(const OUString& rText) { m_pSubEdit->SetText(rText); }
         OUString GetText() const { return m_pSubEdit->GetText(); }
-    };
-
-    class ConditionColorWrapper
-    {
-    public:
-        ConditionColorWrapper(Condition* pControl);
-        void SetSlotId(sal_uInt16 nSlotId) { mnSlotId = nSlotId; }
-        void operator()(const OUString& rCommand, const NamedColor& rColor);
-        void dispose();
-    private:
-        VclPtr<Condition> mxControl;
-        sal_uInt16 mnSlotId;
     };
 
     //= Condition
@@ -87,9 +74,6 @@ namespace rptui
         sal_uInt16                  m_nBackgroundColorId;
         sal_uInt16                  m_nFontColorId;
         sal_uInt16                  m_nFontDialogId;
-        PaletteManager              m_aPaletteManager;
-        BorderColorStatus           m_aBorderColorStatus;
-        ConditionColorWrapper       m_aColorWrapper;
 
         ::rptui::OReportController& m_rController;
         IConditionalFormatAction&   m_rAction;
@@ -105,7 +89,7 @@ namespace rptui
         VclPtr<PushButton>                 m_pMoveDown;
         VclPtr<PushButton>                 m_pAddCondition;
         VclPtr<PushButton>                 m_pRemoveCondition;
-        VclPtr<SvxColorWindow>             m_pColorFloat;
+        VclPtr<OColorPopup>                m_pColorFloat;
 
         svx::ToolboxButtonColorUpdater*   m_pBtnUpdaterFontColor; // updates the color below the toolbar icon
         svx::ToolboxButtonColorUpdater*   m_pBtnUpdaterBackgroundColor;
@@ -116,13 +100,13 @@ namespace rptui
 
         ConditionalExpressions          m_aConditionalExpressions;
 
-        DECL_LINK( OnFormatAction, ToolBox*, void );
-        DECL_LINK( DropdownClick, ToolBox*, void );
-        DECL_LINK( OnConditionAction, Button*, void );
+        DECL_LINK_TYPED( OnFormatAction, ToolBox*, void );
+        DECL_LINK_TYPED( DropdownClick, ToolBox*, void );
+        DECL_LINK_TYPED( OnConditionAction, Button*, void );
 
     public:
         Condition( vcl::Window* _pParent, IConditionalFormatAction& _rAction, ::rptui::OReportController& _rController );
-        virtual ~Condition() override;
+        virtual ~Condition();
         virtual void dispose() override;
 
         /** will be called when the id of the image list needs to change.
@@ -164,7 +148,7 @@ namespace rptui
         */
         void    ApplyCommand(sal_uInt16 _nCommandId, const ::Color& _aColor );
 
-        ::rptui::OReportController& getController() const { return m_rController; }
+        inline ::rptui::OReportController& getController() const { return m_rController; }
 
         sal_uInt16 mapToolbarItemToSlotId(sal_uInt16 nItemId) const;
 
@@ -183,8 +167,8 @@ namespace rptui
         void    impl_setCondition( const OUString& _rConditionFormula );
 
     private:
-        DECL_LINK( OnTypeSelected, ListBox&, void );
-        DECL_LINK( OnOperationSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnTypeSelected, ListBox&, void );
+        DECL_LINK_TYPED( OnOperationSelected, ListBox&, void );
     };
 
 

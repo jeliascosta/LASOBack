@@ -26,12 +26,12 @@ using namespace ::ooo::vba;
 
 #define UNO_TABLE_COLUMN_SUM    10000
 
-SwVbaTableHelper::SwVbaTableHelper( const uno::Reference< text::XTextTable >& xTextTable ) : mxTextTable( xTextTable )
+SwVbaTableHelper::SwVbaTableHelper( const uno::Reference< text::XTextTable >& xTextTable ) throw (uno::RuntimeException) : mxTextTable( xTextTable )
 {
     pTable = GetSwTable( mxTextTable );
 }
 
-SwTable* SwVbaTableHelper::GetSwTable( const uno::Reference< text::XTextTable >& xTextTable )
+SwTable* SwVbaTableHelper::GetSwTable( const uno::Reference< text::XTextTable >& xTextTable ) throw (uno::RuntimeException)
 {
     uno::Reference< lang::XUnoTunnel > xTunnel( xTextTable, uno::UNO_QUERY_THROW );
     SwXTextTable* pXTextTable = reinterpret_cast< SwXTextTable * >( sal::static_int_cast< sal_IntPtr >(xTunnel->getSomething(SwXTextTable::getUnoTunnelId())));
@@ -46,7 +46,7 @@ SwTable* SwVbaTableHelper::GetSwTable( const uno::Reference< text::XTextTable >&
     return pTable;
 }
 
-sal_Int32 SwVbaTableHelper::getTabColumnsCount( sal_Int32 nRowIndex )
+sal_Int32 SwVbaTableHelper::getTabColumnsCount( sal_Int32 nRowIndex ) throw (uno::RuntimeException)
 {
     sal_Int32 nRet = 0;
     if(!pTable->IsTableComplex())
@@ -58,7 +58,7 @@ sal_Int32 SwVbaTableHelper::getTabColumnsCount( sal_Int32 nRowIndex )
     return nRet;
 }
 
-sal_Int32 SwVbaTableHelper::getTabColumnsMaxCount( )
+sal_Int32 SwVbaTableHelper::getTabColumnsMaxCount( ) throw (uno::RuntimeException)
 {
     sal_Int32 nRet = 0;
     sal_Int32 nRowCount = pTable->GetTabLines().size();
@@ -71,7 +71,7 @@ sal_Int32 SwVbaTableHelper::getTabColumnsMaxCount( )
     return nRet;
 }
 
-sal_Int32 SwVbaTableHelper::getTabRowIndex( const OUString& rCellName )
+sal_Int32 SwVbaTableHelper::getTabRowIndex( const OUString& rCellName ) throw (uno::RuntimeException)
 {
     sal_Int32 nRet = 0;
     SwTableBox* pBox = const_cast<SwTableBox*>(pTable->GetTableBox( rCellName ));
@@ -85,7 +85,7 @@ sal_Int32 SwVbaTableHelper::getTabRowIndex( const OUString& rCellName )
     return nRet;
 }
 
-sal_Int32 SwVbaTableHelper::getTabColIndex( const OUString& rCellName )
+sal_Int32 SwVbaTableHelper::getTabColIndex( const OUString& rCellName ) throw (uno::RuntimeException)
 {
     const SwTableBox* pBox = pTable->GetTableBox( rCellName );
     if( !pBox )
@@ -102,9 +102,9 @@ OUString SwVbaTableHelper::getColumnStr( sal_Int32 nCol )
     do{
         nCalc = nCol % coDiff;
         if( nCalc >= 26 )
-            sRet = OUStringLiteral1( 'a' - 26 + nCalc ) + sRet;
+            sRet = OUString( sal_Unicode('a' - 26 + nCalc ) ) + sRet;
         else
-            sRet = OUStringLiteral1( 'A' + nCalc ) + sRet;
+            sRet = OUString( sal_Unicode('A' + nCalc ) ) + sRet;
 
         if( 0 == ( nCol = nCol - nCalc ) )
             break;
@@ -114,7 +114,7 @@ OUString SwVbaTableHelper::getColumnStr( sal_Int32 nCol )
     return sRet;
 }
 
-sal_Int32 SwVbaTableHelper::getTableWidth( )
+sal_Int32 SwVbaTableHelper::getTableWidth( ) throw (uno::RuntimeException)
 {
     sal_Int32 nWidth = 0;
     bool isWidthRelatvie = false;
@@ -131,7 +131,7 @@ sal_Int32 SwVbaTableHelper::getTableWidth( )
     return nWidth;
 }
 
-SwTableBox* SwVbaTableHelper::GetTabBox( sal_Int32 nCol, sal_Int32 nRow )
+SwTableBox* SwVbaTableHelper::GetTabBox( sal_Int32 nCol, sal_Int32 nRow ) throw (css::uno::RuntimeException)
 {
     SwTableLines& rLines = pTable->GetTabLines();
     sal_Int32 nRowCount = rLines.size();
@@ -182,7 +182,7 @@ sal_Int32 SwVbaTableHelper::GetRightSeparator( SwTabCols& rCols, sal_Int32 nNum)
     return i - 1;
 }
 
-sal_Int32 SwVbaTableHelper::GetColWidth( sal_Int32 nCol, sal_Int32 nRow, bool bCurRowOnly )
+sal_Int32 SwVbaTableHelper::GetColWidth( sal_Int32 nCol, sal_Int32 nRow, bool bCurRowOnly ) throw (uno::RuntimeException)
 {
     SwTableBox* pStart = GetTabBox( nCol, nRow );
     SwTabCols aCols;
@@ -194,7 +194,7 @@ sal_Int32 SwVbaTableHelper::GetColWidth( sal_Int32 nCol, sal_Int32 nRow, bool bC
     return ( sal_Int32 )Millimeter::getInPoints( static_cast<int>(dAbsWidth) );
 }
 
-sal_Int32 SwVbaTableHelper::GetColWidth( SwTabCols& rCols, sal_Int32 nNum )
+sal_Int32 SwVbaTableHelper::GetColWidth( SwTabCols& rCols, sal_Int32 nNum ) throw (uno::RuntimeException)
 {
     SwTwips nWidth = 0;
 
@@ -230,7 +230,7 @@ sal_Int32 SwVbaTableHelper::GetColWidth( SwTabCols& rCols, sal_Int32 nNum )
     return nWidth;
 }
 
-void SwVbaTableHelper::SetColWidth( sal_Int32 _width, sal_Int32 nCol, sal_Int32 nRow, bool bCurRowOnly )
+void SwVbaTableHelper::SetColWidth( sal_Int32 _width, sal_Int32 nCol, sal_Int32 nRow, bool bCurRowOnly ) throw (css::uno::RuntimeException, std::exception)
 {
     double dAbsWidth = Millimeter::getInHundredthsOfOneMillimeter( _width );
     sal_Int32 nTableWidth = getTableWidth( );

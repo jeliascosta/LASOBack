@@ -27,10 +27,10 @@ namespace vcl
     struct ImplOldStyleAdaptorData;
     class VCL_DLLPUBLIC OldStylePrintAdaptor : public PrinterController
     {
-        std::unique_ptr<ImplOldStyleAdaptorData>  mpData;
+        ImplOldStyleAdaptorData*    mpData;
     public:
         OldStylePrintAdaptor( const VclPtr< Printer >& );
-        virtual ~OldStylePrintAdaptor() override;
+        virtual ~OldStylePrintAdaptor();
 
         void StartPage();
         void EndPage();

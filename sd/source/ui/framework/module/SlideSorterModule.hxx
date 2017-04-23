@@ -37,13 +37,14 @@ public:
     SlideSorterModule (
         const css::uno::Reference<css::frame::XController>& rxController,
         const OUString& rsLeftPaneURL);
-    virtual ~SlideSorterModule() override;
+    virtual ~SlideSorterModule();
 
     virtual void SaveResourceState() override;
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XResourceId> mxViewTabBarId;

@@ -75,7 +75,7 @@ namespace xmloff
         // get and convert the value
         OUString sAttributeValue = _rxAttributes->getValueByName(sCompleteAttributeName);
         bool bValue = _bDefault;
-        (void)::sax::Converter::convertBool(bValue, sAttributeValue);
+        ::sax::Converter::convertBool(bValue, sAttributeValue);
 
         // set the property
         if (_rxPropInfo->hasPropertyByName(_rPropName))
@@ -121,11 +121,12 @@ namespace xmloff
     {
         addModelAttributes(_rExp);
 
-        m_pImplElement.reset( new SvXMLElementExport(_rExp, XML_NAMESPACE_OFFICE, XML_FORMS, true, true) );
+        m_pImplElement = new SvXMLElementExport(_rExp, XML_NAMESPACE_OFFICE, XML_FORMS, true, true);
     }
 
     OFormsRootExport::~OFormsRootExport( )
     {
+        delete m_pImplElement;
     }
 
     void OFormsRootExport::implExportBool(SvXMLExport& _rExp, OfficeFormsAttributes _eAttribute,

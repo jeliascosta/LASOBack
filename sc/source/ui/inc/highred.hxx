@@ -58,9 +58,9 @@ private:
 
     void                    Init();
 
-    DECL_LINK( RefHandle, SvxTPFilter*, void );
-    DECL_LINK( HighlightHandle, Button*, void );
-    DECL_LINK( OKBtnHdl, Button*, void );
+    DECL_LINK_TYPED( RefHandle, SvxTPFilter*, void );
+    DECL_LINK_TYPED( HighlightHandle, Button*, void );
+    DECL_LINK_TYPED( OKBtnHdl, Button*, void );
 
 protected:
 
@@ -70,7 +70,7 @@ public:
                     ScHighlightChgDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                ScViewData*      ptrViewData);
 
-                    virtual ~ScHighlightChgDlg() override;
+                    virtual ~ScHighlightChgDlg();
     virtual void    dispose() override;
 
     virtual void    SetActive() override;

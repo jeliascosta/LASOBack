@@ -161,12 +161,19 @@ static bool is_option(
     if (len == 2 && arg[ 1 ] == option_info->m_short_option)
     {
         ++(*pIndex);
+#if OSL_DEBUG_LEVEL > 1
+        OSL_TRACE(
+            __FILE__": identified option \'%c\'", option_info->m_short_option );
+#endif
         return true;
     }
     if (arg[ 1 ] == '-' && rtl_ustr_ascii_compare(
             arg.pData->buffer + 2, option_info->m_name ) == 0)
     {
         ++(*pIndex);
+#if OSL_DEBUG_LEVEL > 1
+        OSL_TRACE( __FILE__": identified option \'%s\'", option_info->m_name );
+#endif
         return true;
     }
     return false;
@@ -192,6 +199,11 @@ static bool read_argument(
         {
             osl_getCommandArg( *pIndex, &pValue->pData );
             ++(*pIndex);
+#if OSL_DEBUG_LEVEL > 1
+            OString cstr_val(
+                OUStringToOString( *pValue, osl_getThreadTextEncoding() ) );
+            OSL_TRACE( __FILE__": argument value: %s\n", cstr_val.getStr() );
+#endif
             return true;
         }
         --(*pIndex);
@@ -471,8 +483,7 @@ SAL_IMPLEMENT_MAIN()
         // setup assembly info: xxx todo set more? e.g. avoid strong versioning
         AssemblyName ^ assembly_name = gcnew AssemblyName();
         assembly_name->CodeBase = output_dir;
-        assembly_name->Name = gcnew ::System::String(
-            reinterpret_cast<wchar_t const *>(name.getStr()));
+        assembly_name->Name = gcnew ::System::String(name.getStr());
         if (kp != nullptr)
             assembly_name->KeyPair= kp;
 

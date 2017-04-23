@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     globalParams = new GlobalParams();
     globalParams->setErrQuiet(gTrue);
 #if defined(_MSC_VER)
-    globalParams->setupBaseFonts(nullptr);
+    globalParams->setupBaseFonts(NULL);
 #endif
 
     // try to read a possible open password form stdin

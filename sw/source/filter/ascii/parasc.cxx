@@ -61,9 +61,6 @@ class SwASCIIParser
     sal_uLong ReadChars();
     void InsertText( const OUString& rStr );
 
-    SwASCIIParser(const SwASCIIParser&) = delete;
-    SwASCIIParser& operator=(const SwASCIIParser&) = delete;
-
 public:
     SwASCIIParser( SwDoc* pD, const SwPaM& rCursor, SvStream& rIn,
                             bool bReadNewDoc, const SwAsciiOptions& rOpts );
@@ -111,10 +108,8 @@ SwASCIIParser::SwASCIIParser(SwDoc* pD, const SwPaM& rCursor, SvStream& rIn,
         SvxLanguageItem aLang( (LanguageType)rOpt.GetLanguage(),
                                  RES_CHRATR_LANGUAGE );
         pItemSet->Put( aLang );
-        aLang.SetWhich(RES_CHRATR_CJK_LANGUAGE);
-        pItemSet->Put( aLang );
-        aLang.SetWhich(RES_CHRATR_CTL_LANGUAGE);
-        pItemSet->Put( aLang );
+        pItemSet->Put( aLang, RES_CHRATR_CJK_LANGUAGE );
+        pItemSet->Put( aLang, RES_CHRATR_CTL_LANGUAGE );
     }
     if( !rOpt.GetFontName().isEmpty() )
     {
@@ -124,10 +119,8 @@ SwASCIIParser::SwASCIIParser(SwDoc* pD, const SwPaM& rCursor, SvStream& rIn,
         SvxFontItem aFont( aTextFont.GetFamilyType(), aTextFont.GetFamilyName(),
                            OUString(), aTextFont.GetPitch(), aTextFont.GetCharSet(), RES_CHRATR_FONT );
         pItemSet->Put( aFont );
-        aFont.SetWhich(RES_CHRATR_CJK_FONT);
-        pItemSet->Put( aFont );
-        aFont.SetWhich(RES_CHRATR_CTL_FONT);
-        pItemSet->Put( aFont );
+        pItemSet->Put( aFont, RES_CHRATR_CJK_FONT );
+        pItemSet->Put( aFont, RES_CHRATR_CTL_FONT );
     }
 }
 
@@ -267,15 +260,13 @@ sal_uLong SwASCIIParser::ReadChars()
         aEmpty.GetParaFlags() == rOpt.GetParaFlags())
     {
         sal_uLong nLen, nOrig;
-        nOrig = nLen = rInput.ReadBytes(pArr, ASC_BUFFLEN);
+        nOrig = nLen = rInput.Read(pArr, ASC_BUFFLEN);
         rtl_TextEncoding eCharSet;
-        LineEnd eLineEnd;
-        bool bRet = SwIoSystem::IsDetectableText(pArr, nLen, &eCharSet, &bSwapUnicode, &eLineEnd);
+        bool bRet = SwIoSystem::IsDetectableText(pArr, nLen, &eCharSet, &bSwapUnicode);
         OSL_ENSURE(bRet, "Autodetect of text import without nag dialog must have failed");
         if (bRet && eCharSet != RTL_TEXTENCODING_DONTKNOW)
         {
             aEmpty.SetCharSet(eCharSet);
-            aEmpty.SetParaFlags(eLineEnd);
             rInput.SeekRel(-(long(nLen)));
         }
         else
@@ -315,7 +306,7 @@ sal_uLong SwASCIIParser::ReadChars()
             // Read a new block
             sal_uLong lGCount;
             if( SVSTREAM_OK != rInput.GetError() || 0 == (lGCount =
-                        rInput.ReadBytes( pArr + nArrOffset,
+                        rInput.Read( pArr + nArrOffset,
                                      ASC_BUFFLEN - nArrOffset )))
                 break;      // break from the while loop
 
@@ -438,7 +429,7 @@ sal_uLong SwASCIIParser::ReadChars()
                         }
                         pDoc->getIDocumentContentOperations().SplitNode( *pPam->GetPoint(), false );
                         pDoc->getIDocumentContentOperations().InsertPoolItem(
-                            *pPam, SvxFormatBreakItem( SvxBreak::PageBefore, RES_BREAK ) );
+                            *pPam, SvxFormatBreakItem( SVX_BREAK_PAGE_BEFORE, RES_BREAK ) );
                         pLastStt = pStt;
                         nLineLen = 0;
                         bIns = false;

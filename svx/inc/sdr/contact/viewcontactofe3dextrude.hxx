@@ -33,7 +33,7 @@ namespace sdr
         public:
             // basic constructor, used from SdrObject.
             explicit ViewContactOfE3dExtrude(E3dExtrudeObj& rExtrude);
-            virtual ~ViewContactOfE3dExtrude() override;
+            virtual ~ViewContactOfE3dExtrude();
 
             // access to SdrObject
             const E3dExtrudeObj& GetE3dExtrudeObj() const

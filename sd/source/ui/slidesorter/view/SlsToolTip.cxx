@@ -37,10 +37,10 @@ ToolTip::ToolTip (SlideSorter& rSlideSorter)
       maShowTimer(),
       maHiddenTimer()
 {
-    sd::Window *window = rSlideSorter.GetContentWindow().get();
+    sd::Window *window = rSlideSorter.GetContentWindow();
     const HelpSettings& rHelpSettings = window->GetSettings().GetHelpSettings();
     maShowTimer.SetTimeout(rHelpSettings.GetTipDelay());
-    maShowTimer.SetInvokeHandler(LINK(this, ToolTip, DelayTrigger));
+    maShowTimer.SetTimeoutHdl(LINK(this, ToolTip, DelayTrigger));
     maHiddenTimer.SetTimeout(rHelpSettings.GetTipDelay());
 }
 
@@ -83,16 +83,21 @@ void ToolTip::SetPage (const model::SharedPageDescriptor& rpDescriptor)
 
             msCurrentHelpText = sHelpText;
             // show new tooltip immediately, if last one was recently hidden
-            if(maHiddenTimer.IsActive())
-                DoShow();
-            else
-                maShowTimer.Start();
+            Show(maHiddenTimer.IsActive());
         }
         else
         {
             msCurrentHelpText.clear();
         }
     }
+}
+
+void ToolTip::Show (const bool bNoDelay)
+{
+    if (bNoDelay)
+        DoShow();
+    else
+        maShowTimer.Start();
 }
 
 void ToolTip::DoShow()
@@ -104,13 +109,13 @@ void ToolTip::DoShow()
         return;
     }
 
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     if (!msCurrentHelpText.isEmpty() && pWindow)
     {
-        ::tools::Rectangle aBox (
+        Rectangle aBox (
             mrSlideSorter.GetView().GetLayouter().GetPageObjectLayouter()->GetBoundingBox(
                 mpDescriptor,
-                PageObjectLayouter::Part::Preview,
+                PageObjectLayouter::Preview,
                 PageObjectLayouter::WindowCoordinateSystem));
 
         // Do not show the help text when the (lower edge of the ) preview
@@ -141,7 +146,7 @@ bool ToolTip::Hide()
 {
     if (mnHelpWindowHandle>0)
     {
-        sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+        sd::Window *pWindow (mrSlideSorter.GetContentWindow());
         Help::HidePopover(pWindow, mnHelpWindowHandle);
         mnHelpWindowHandle = 0;
         return true;
@@ -150,7 +155,7 @@ bool ToolTip::Hide()
         return false;
 }
 
-IMPL_LINK_NOARG(ToolTip, DelayTrigger, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ToolTip, DelayTrigger, Timer *, void)
 {
     DoShow();
 }

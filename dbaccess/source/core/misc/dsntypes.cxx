@@ -292,16 +292,17 @@ bool ODsnTypeCollection::isEmbeddedDatabase( const OUString& _sURL )
 OUString ODsnTypeCollection::getEmbeddedDatabase() const
 {
     OUString sEmbeddedDatabaseURL;
-    const ::utl::OConfigurationTreeRoot aInstalled = ::utl::OConfigurationTreeRoot::createWithComponentContext(m_xContext, "org.openoffice.Office.DataAccess", -1, ::utl::OConfigurationTreeRoot::CM_READONLY);
+    static const char s_sNodeName[] = "org.openoffice.Office.DataAccess"; ///Installed
+    const ::utl::OConfigurationTreeRoot aInstalled = ::utl::OConfigurationTreeRoot::createWithComponentContext(m_xContext, s_sNodeName, -1, ::utl::OConfigurationTreeRoot::CM_READONLY);
     if ( aInstalled.isValid() )
     {
         if ( aInstalled.hasByName("EmbeddedDatabases/DefaultEmbeddedDatabase/Value") )
         {
-            static const OUStringLiteral s_sValue = "EmbeddedDatabases/DefaultEmbeddedDatabase/Value";
+            static const char s_sValue[] = "EmbeddedDatabases/DefaultEmbeddedDatabase/Value";
 
             aInstalled.getNodeValue(s_sValue) >>= sEmbeddedDatabaseURL;
             if ( !sEmbeddedDatabaseURL.isEmpty() )
-                aInstalled.getNodeValue(s_sValue + "/" + sEmbeddedDatabaseURL + "/URL") >>= sEmbeddedDatabaseURL;
+                aInstalled.getNodeValue(OUStringLiteral(s_sValue) + "/" + sEmbeddedDatabaseURL + "/URL") >>= sEmbeddedDatabaseURL;
         }
     }
     if ( sEmbeddedDatabaseURL.isEmpty() )
@@ -421,7 +422,7 @@ DATASOURCE_TYPE ODsnTypeCollection::determineType(const OUString& _rDsn) const
     return DST_UNKNOWN;
 }
 
-void ODsnTypeCollection::fillPageIds(const OUString& _sURL,std::vector<sal_Int16>& _rOutPathIds) const
+void ODsnTypeCollection::fillPageIds(const OUString& _sURL,::std::vector<sal_Int16>& _rOutPathIds) const
 {
     DATASOURCE_TYPE eType = determineType(_sURL);
     switch(eType)

@@ -121,7 +121,7 @@ const Sequence<sal_Int8>& OGridColumn::getUnoTunnelImplementationId()
 }
 
 
-sal_Int64 SAL_CALL OGridColumn::getSomething( const Sequence<sal_Int8>& _rIdentifier)
+sal_Int64 SAL_CALL OGridColumn::getSomething( const Sequence<sal_Int8>& _rIdentifier) throw(RuntimeException, std::exception)
 {
     sal_Int64 nReturn(0);
 
@@ -141,13 +141,13 @@ sal_Int64 SAL_CALL OGridColumn::getSomething( const Sequence<sal_Int8>& _rIdenti
 }
 
 
-Sequence<sal_Int8> SAL_CALL OGridColumn::getImplementationId()
+Sequence<sal_Int8> SAL_CALL OGridColumn::getImplementationId() throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 
-Sequence<Type> SAL_CALL OGridColumn::getTypes()
+Sequence<Type> SAL_CALL OGridColumn::getTypes() throw(RuntimeException, std::exception)
 {
     TypeBag aTypes( OGridColumn_BASE::getTypes() );
     // erase the types which we do not support
@@ -171,7 +171,7 @@ Sequence<Type> SAL_CALL OGridColumn::getTypes()
 }
 
 
-Any SAL_CALL OGridColumn::queryAggregation( const Type& _rType )
+Any SAL_CALL OGridColumn::queryAggregation( const Type& _rType ) throw (RuntimeException, std::exception)
 {
     Any aReturn;
     // some functionality at our aggregate cannot be reasonably fulfilled here.
@@ -269,7 +269,7 @@ OGridColumn::~OGridColumn()
 
 // XEventListener
 
-void SAL_CALL OGridColumn::disposing(const EventObject& _rSource)
+void SAL_CALL OGridColumn::disposing(const EventObject& _rSource) throw(RuntimeException, std::exception)
 {
     OPropertySetAggregationHelper::disposing(_rSource);
 
@@ -390,7 +390,7 @@ void OGridColumn::getFastPropertyValue(Any& rValue, sal_Int32 nHandle ) const
 
 
 sal_Bool OGridColumn::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue,
-                                            sal_Int32 nHandle, const Any& rValue )
+                                            sal_Int32 nHandle, const Any& rValue )throw( IllegalArgumentException )
 {
     bool bModified(false);
     switch (nHandle)
@@ -420,7 +420,7 @@ sal_Bool OGridColumn::convertFastPropertyValue( Any& rConvertedValue, Any& rOldV
 }
 
 
-void OGridColumn::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue )
+void OGridColumn::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw (css::uno::Exception, std::exception)
 {
     switch (nHandle)
     {
@@ -459,7 +459,7 @@ Any OGridColumn::getPropertyDefaultByHandle( sal_Int32 nHandle ) const
 
 // XCloneable
 
-Reference< XCloneable > SAL_CALL OGridColumn::createClone(  )
+Reference< XCloneable > SAL_CALL OGridColumn::createClone(  ) throw (RuntimeException, std::exception)
 {
     OGridColumn* pNewColumn = createCloneColumn();
     return pNewColumn;
@@ -539,7 +539,7 @@ void SAL_CALL OGridColumn::read(const Reference<XObjectInputStream>& _rxInStream
     if (nAnyMask & WIDTH)
     {
         sal_Int32 nValue = _rxInStream->readLong();
-        m_aWidth <<= nValue;
+        m_aWidth <<= (sal_Int32)nValue;
     }
 
     if (nAnyMask & ALIGN)

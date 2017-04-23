@@ -38,11 +38,14 @@ namespace chart
 namespace RegressionCurveHelper
 {
     /// returns a model mean-value line
-    css::uno::Reference<css::chart2::XRegressionCurve> createMeanValueLine();
+    css::uno::Reference<css::chart2::XRegressionCurve>
+        createMeanValueLine(const css::uno::Reference<css::uno::XComponentContext> & xContext );
 
     /// returns a model regression curve
     css::uno::Reference<css::chart2::XRegressionCurve>
-        createRegressionCurveByServiceName( const OUString& aServiceName );
+        createRegressionCurveByServiceName(
+            const css::uno::Reference<css::uno::XComponentContext> & xContext,
+            const OUString& aServiceName );
 
     OOO_DLLPUBLIC_CHARTTOOLS bool hasMeanValueLine(
         const css::uno::Reference<css::chart2::XRegressionCurveContainer> & xRegCnt );
@@ -61,6 +64,7 @@ namespace RegressionCurveHelper
      */
     OOO_DLLPUBLIC_CHARTTOOLS void addMeanValueLine(
         css::uno::Reference<css::chart2::XRegressionCurveContainer>& xRegCnt,
+        const css::uno::Reference<css::uno::XComponentContext>& xContext,
         const css::uno::Reference<css::beans::XPropertySet>& xSeriesProp );
 
     OOO_DLLPUBLIC_CHARTTOOLS void removeMeanValueLine(
@@ -139,7 +143,7 @@ namespace RegressionCurveHelper
     void initializeCurveCalculator(
         const css::uno::Reference<css::chart2::XRegressionCurveCalculator>& xOutCurveCalculator,
         const css::uno::Reference<css::chart2::data::XDataSource>& xSource,
-        bool bUseXValuesIfAvailable );
+        bool bUseXValuesIfAvailable = true );
 
     /** Same method as above, but uses the given XModel to determine the
         parameter bUseXValuesIfAvailable in the above function.  It is also

@@ -38,7 +38,7 @@ ScXMLSortContext::ScXMLSortContext( ScXMLImport& rImport,
                                       const css::uno::Reference<
                                       css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLDatabaseRangeContext* pTempDatabaseRangeContext) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     pDatabaseRangeContext(pTempDatabaseRangeContext),
     sAlgorithm(),
     nUserListIndex(0),
@@ -136,13 +136,13 @@ void ScXMLSortContext::EndElement()
         ++i;
     uno::Sequence <beans::PropertyValue> aSortDescriptor(7 + i);
     aSortDescriptor[0].Name = SC_UNONAME_BINDFMT;
-    aSortDescriptor[0].Value <<= bBindFormatsToContent;
+    aSortDescriptor[0].Value = css::uno::makeAny(bBindFormatsToContent);
     aSortDescriptor[1].Name = SC_UNONAME_COPYOUT;
-    aSortDescriptor[1].Value <<= bCopyOutputData;
+    aSortDescriptor[1].Value = css::uno::makeAny(bCopyOutputData);
     aSortDescriptor[2].Name = SC_UNONAME_ISCASE;
-    aSortDescriptor[2].Value <<= bIsCaseSensitive;
+    aSortDescriptor[2].Value = css::uno::makeAny(bIsCaseSensitive);
     aSortDescriptor[3].Name = SC_UNONAME_ISULIST;
-    aSortDescriptor[3].Value <<= bEnabledUserList;
+    aSortDescriptor[3].Value = css::uno::makeAny(bEnabledUserList);
     aSortDescriptor[4].Name = SC_UNONAME_OUTPOS;
     aSortDescriptor[4].Value <<= aOutputPosition;
     aSortDescriptor[5].Name = SC_UNONAME_UINDEX;
@@ -201,7 +201,7 @@ ScXMLSortByContext::ScXMLSortByContext( ScXMLImport& rImport,
                                       const OUString& rLName,
                                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       ScXMLSortContext* pTempSortContext) :
-    ScXMLImportContext( rImport, nPrfx, rLName ),
+    SvXMLImportContext( rImport, nPrfx, rLName ),
     pSortContext(pTempSortContext),
     sDataType(GetXMLToken(XML_AUTOMATIC)),
     sOrder(GetXMLToken(XML_ASCENDING))

@@ -20,33 +20,14 @@
 #ifndef INCLUDED_OOX_PPT_PPTIMPORT_HXX
 #define INCLUDED_OOX_PPT_PPTIMPORT_HXX
 
-#include <exception>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <com/sun/star/uno/Sequence.hxx>
-#include <oox/core/filterbase.hxx>
 #include <oox/core/xmlfilterbase.hxx>
-#include <oox/drawingml/drawingmltypes.hxx>
+
+#include <com/sun/star/animations/XAnimationNode.hpp>
 #include <oox/drawingml/theme.hxx>
+#include <oox/ppt/presentationfragmenthandler.hxx>
 #include <oox/ppt/slidepersist.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-
-namespace com { namespace sun { namespace star {
-    namespace beans { struct PropertyValue; }
-    namespace uno { class XComponentContext; }
-} } }
-
-namespace oox {
-    class GraphicHelper;
-    namespace drawingml { namespace chart { class ChartConverter; } }
-    namespace ole { class VbaProject; }
-    namespace vml { class Drawing; }
-}
+#include <vector>
+#include <map>
 
 namespace oox { namespace ppt {
 
@@ -54,9 +35,10 @@ namespace oox { namespace ppt {
 class PowerPointImport : public oox::core::XmlFilterBase
 {
 public:
-    /// @throws css::uno::RuntimeException
-    PowerPointImport( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~PowerPointImport() override;
+
+    PowerPointImport( const css::uno::Reference< css::uno::XComponentContext >& rxContext )
+        throw( css::uno::RuntimeException );
+    virtual ~PowerPointImport();
 
     // from FilterBase
     virtual bool importDocument() override;
@@ -74,7 +56,8 @@ public:
     std::vector< SlidePersistPtr >&                         getMasterPages(){ return maMasterPages; };
     std::vector< SlidePersistPtr >&                         getNotesPages(){ return maNotesPages; };
 
-    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence<   css::beans::PropertyValue >& rDescriptor ) override;
+    virtual sal_Bool SAL_CALL filter( const css::uno::Sequence<   css::beans::PropertyValue >& rDescriptor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     sal_Int32 getSchemeColor( sal_Int32 nToken ) const;
 
@@ -85,7 +68,7 @@ public:
 private:
     virtual GraphicHelper* implCreateGraphicHelper() const override;
     virtual ::oox::ole::VbaProject* implCreateVbaProject() const override;
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     OUString                                       maTableStyleListPath;

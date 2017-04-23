@@ -46,10 +46,10 @@ protected:
     virtual sdr::contact::ViewContact* CreateObjectSpecificViewContact() override;
     virtual sdr::properties::BaseProperties* CreateObjectSpecificProperties() override;
 
-    std::unique_ptr<XPolygon> mpXPoly;
+    XPolygon* mpXPoly;
 
 protected:
-    XPolygon ImpCalcXPoly(const tools::Rectangle& rRect1, long nRad1) const;
+    XPolygon ImpCalcXPoly(const Rectangle& rRect1, long nRad1) const;
     void SetXPolyDirty();
 
     /// Subclasses should override RecalcXPoly() by creating an XPolygon
@@ -66,26 +66,26 @@ public:
      * Constructor of a rectangular drawing object
      */
     SdrRectObj();
-    SdrRectObj(const tools::Rectangle& rRect);
+    SdrRectObj(const Rectangle& rRect);
 
     SdrRectObj& operator=(const SdrRectObj& rCopy);
 
     // Constructor of a text frame
     SdrRectObj(SdrObjKind eNewTextKind);
-    SdrRectObj(SdrObjKind eNewTextKind, const tools::Rectangle& rRect);
-    virtual ~SdrRectObj() override;
+    SdrRectObj(SdrObjKind eNewTextKind, const Rectangle& rRect);
+    virtual ~SdrRectObj();
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
-    virtual void TakeUnrotatedSnapRect(tools::Rectangle& rRect) const override;
+    virtual void TakeUnrotatedSnapRect(Rectangle& rRect) const override;
 
     virtual OUString TakeObjNameSingul() const override;
     virtual OUString TakeObjNamePlural() const override;
 
     virtual SdrRectObj* Clone() const override;
     virtual void RecalcSnapRect() override;
-    virtual void NbcSetSnapRect(const tools::Rectangle& rRect) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
+    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual basegfx::B2DPolyPolygon TakeXorPoly() const override;
 
     virtual sal_uInt32 GetHdlCount() const override;
@@ -105,6 +105,9 @@ public:
     virtual void NbcRotate(const Point& rRef, long nAngle, double sn, double cs) override;
     virtual void NbcMirror(const Point& rRef1, const Point& rRef2) override;
     virtual void NbcShear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
+
+    virtual bool DoMacro(const SdrObjMacroHitRec& rRec) override;
+    virtual OUString GetMacroPopupComment(const SdrObjMacroHitRec& rRec) const override;
 
     virtual SdrGluePoint GetVertexGluePoint(sal_uInt16 nNum) const override;
     virtual SdrGluePoint GetCornerGluePoint(sal_uInt16 nNum) const override;

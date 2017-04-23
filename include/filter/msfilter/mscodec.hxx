@@ -21,9 +21,11 @@
 #define INCLUDED_FILTER_MSFILTER_MSCODEC_HXX
 
 #include <com/sun/star/uno/Sequence.hxx>
-#include <filter/msfilter/msfilterdllapi.h>
+#include <com/sun/star/beans/NamedValue.hpp>
+
 #include <rtl/cipher.h>
 #include <rtl/digest.h>
+#include <filter/msfilter/msfilterdllapi.h>
 #include <sal/types.h>
 #include <vector>
 
@@ -104,7 +106,7 @@ public:
         @param nBytes
             Size of the passed data block.
     */
-    virtual void                Decode( sal_uInt8* pnData, std::size_t nBytes )=0;
+    virtual void                Decode( sal_uInt8* pnData, sal_Size nBytes )=0;
 
     /** Lets the cipher skip a specific amount of bytes.
 
@@ -118,11 +120,11 @@ public:
         @param nBytes
             Number of bytes to be skipped (cipher "seeks" forward).
      */
-    void                Skip( std::size_t nBytes );
+    void                Skip( sal_Size nBytes );
 
 protected:
     sal_uInt8           mpnKey[ 16 ];   /// Encryption key.
-    std::size_t         mnOffset;       /// Key offset.
+    sal_Size            mnOffset;       /// Key offset.
 
 private:
                         MSCodec_Xor95( const MSCodec_Xor95& ) = delete;
@@ -151,7 +153,7 @@ public:
         @param nBytes
             Size of the passed data block.
     */
-    virtual void                Decode( sal_uInt8* pnData, std::size_t nBytes ) override;
+    virtual void                Decode( sal_uInt8* pnData, sal_Size nBytes ) override;
 };
 
 /** Encodes and decodes data from protected MSO Word 95- documents.
@@ -172,7 +174,7 @@ public:
         @param nBytes
             Size of the passed data block.
     */
-    virtual void                Decode( sal_uInt8* pnData, std::size_t nBytes ) override;
+    virtual void                Decode( sal_uInt8* pnData, sal_Size nBytes ) override;
 };
 
 class MSFILTER_DLLPUBLIC MSCodec97
@@ -319,7 +321,7 @@ private:
 protected:
     size_t              m_nHashLen;
     rtlCipher           m_hCipher;
-    std::vector<sal_uInt8> m_aDocId;
+    sal_uInt8           m_pDocId[16];
     std::vector<sal_uInt8> m_aDigestValue;
 };
 

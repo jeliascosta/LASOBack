@@ -21,22 +21,20 @@
 
 #include <sal/types.h>
 #include <tools/toolsdllapi.h>
-#include <o3tl/strong_int.hxx>
 #include <map>
 
 class SAL_WARN_UNUSED TOOLS_DLLPUBLIC UniqueIndexImpl
 {
 public:
-    struct IndexTagType {};
-    typedef o3tl::strong_int<sal_uInt32, IndexTagType> Index;
-    static Index const IndexNotFound;// = Index(SAL_MAX_UINT32);
+    typedef sal_uInt32 Index;
+    static Index const IndexNotFound = SAL_MAX_UINT32;
 
 private:
     std::map<Index, void*> maMap;
     Index nUniqIndex;
 
 public:
-    UniqueIndexImpl( Index nStartIndex = Index(0) )
+    UniqueIndexImpl( Index nStartIndex = 0 )
         : maMap(), nUniqIndex(nStartIndex) {}
 
     Index Insert( void* p );
@@ -44,20 +42,20 @@ public:
     void* Remove( Index aIndex );
     void* Get( Index aIndex ) const;
 
-    Index GetIndexOf( void const* p ) const;
+    Index GetIndexOf( void* p ) const;
     Index FirstIndex() const;
     Index LastIndex() const;
     Index NextIndex( Index aCurrIndex ) const;
 };
 
 template<typename T>
-class SAL_WARN_UNUSED UniqueIndex : private UniqueIndexImpl
+class UniqueIndex : private UniqueIndexImpl
 {
 public:
     using UniqueIndexImpl::Index;
     using UniqueIndexImpl::IndexNotFound;
 
-    UniqueIndex<T>( Index _nStartIndex = Index(0) ) : UniqueIndexImpl(_nStartIndex) {}
+    UniqueIndex<T>( Index _nStartIndex = 0 ) : UniqueIndexImpl(_nStartIndex) {}
 
     Index Insert(T* p) { return UniqueIndexImpl::Insert(p); }
     T*    Get(Index idx) const { return static_cast<T*>( UniqueIndexImpl::Get(idx) ); }

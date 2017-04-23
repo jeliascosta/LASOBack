@@ -51,15 +51,14 @@ public:
 class ExportBiff5 : public ExportTyp, protected XclExpRoot
 {
 private:
-    std::unique_ptr<ExcDocument>
-                        pExcDoc;
+    ExcDocument*        pExcDoc;
 
 protected:
     RootData*           pExcRoot;
 
 public:
                         ExportBiff5( XclExpRootData& rExpData, SvStream& rStrm );
-    virtual             ~ExportBiff5() override;
+    virtual             ~ExportBiff5();
     FltError            Write() override;
 };
 
@@ -67,7 +66,7 @@ class ExportBiff8 : public ExportBiff5
 {
 public:
                         ExportBiff8( XclExpRootData& rExpData, SvStream& rStrm );
-    virtual             ~ExportBiff8() override;
+    virtual             ~ExportBiff8();
 };
 
 #endif

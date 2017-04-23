@@ -165,8 +165,8 @@ void ConfigurationControllerBroadcaster::DisposeAndClear()
         }
         else
         {
-            Reference<XConfigurationChangeListener> xListener (
-                iMap->second.front().mxListener );
+            Reference<lang::XEventListener> xListener (
+                iMap->second.front().mxListener, UNO_QUERY);
             if (xListener.is())
             {
                 // Tell the listener that the configuration controller is
@@ -174,7 +174,7 @@ void ConfigurationControllerBroadcaster::DisposeAndClear()
                 // types).
                 try
                 {
-                    RemoveListener(xListener);
+                    RemoveListener(iMap->second.front().mxListener);
                     xListener->disposing(aEvent);
                 }
                 catch (const RuntimeException&)

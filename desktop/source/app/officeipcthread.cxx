@@ -27,7 +27,6 @@
 #include "cmdlineargs.hxx"
 #include "dispatchwatcher.hxx"
 #include <stdio.h>
-#include <com/sun/star/frame/TerminationVetoException.hpp>
 #include <osl/process.h>
 #include <sal/log.hxx>
 #include <unotools/bootstrap.hxx>
@@ -76,7 +75,6 @@ OString readStringFromPipe(osl::StreamPipe & pipe) {
         char buf[1024];
         sal_Int32 n = pipe.recv(buf, SAL_N_ELEMENTS(buf));
         if (n <= 0) {
-            SAL_INFO("desktop.app", "read empty string");
             return "";
         }
         bool end = false;
@@ -87,9 +85,7 @@ OString readStringFromPipe(osl::StreamPipe & pipe) {
         str.append(buf, n);
             //TODO: how does OStringBuffer.append handle overflow?
         if (end) {
-            auto s = str.makeStringAndClear();
-            SAL_INFO("desktop.app", "read <" << s << ">");
-            return s;
+            return str.makeStringAndClear();
         }
     }
 }
@@ -140,6 +136,8 @@ public:
             throw CommandLineArgs::Supplier::Exception();
         }
     }
+
+    virtual ~Parser() {}
 
     virtual boost::optional< OUString > getCwdUrl() override { return m_cwdUrl; }
 
@@ -271,18 +269,18 @@ OUString CreateMD5FromString( const OUString& aMsg )
 class ProcessEventsClass_Impl
 {
 public:
-    DECL_STATIC_LINK( ProcessEventsClass_Impl, CallEvent, void*, void );
-    DECL_STATIC_LINK( ProcessEventsClass_Impl, ProcessDocumentsEvent, void*, void );
+    DECL_STATIC_LINK_TYPED( ProcessEventsClass_Impl, CallEvent, void*, void );
+    DECL_STATIC_LINK_TYPED( ProcessEventsClass_Impl, ProcessDocumentsEvent, void*, void );
 };
 
-IMPL_STATIC_LINK( ProcessEventsClass_Impl, CallEvent, void*, pEvent, void )
+IMPL_STATIC_LINK_TYPED( ProcessEventsClass_Impl, CallEvent, void*, pEvent, void )
 {
     // Application events are processed by the Desktop::HandleAppEvent implementation.
     Desktop::HandleAppEvent( *static_cast<ApplicationEvent*>(pEvent) );
     delete static_cast<ApplicationEvent*>(pEvent);
 }
 
-IMPL_STATIC_LINK( ProcessEventsClass_Impl, ProcessDocumentsEvent, void*, pEvent, void )
+IMPL_STATIC_LINK_TYPED( ProcessEventsClass_Impl, ProcessDocumentsEvent, void*, pEvent, void )
 {
     // Documents requests are processed by the RequestHandler implementation
     ProcessDocumentsRequest* pDocsRequest = static_cast<ProcessDocumentsRequest*>(pEvent);
@@ -319,17 +317,19 @@ oslSignalAction SAL_CALL SalMainPipeExchangeSignal_impl(void* /*pData*/, oslSign
 
 // XServiceInfo
 OUString SAL_CALL RequestHandlerController::getImplementationName()
+throw ( RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.RequestHandlerController" );
 }
 
 sal_Bool RequestHandlerController::supportsService(
-    OUString const & ServiceName)
+    OUString const & ServiceName) throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL RequestHandlerController::getSupportedServiceNames()
+throw ( RuntimeException, std::exception )
 {
     Sequence< OUString > aSeq( 0 );
     return aSeq;
@@ -337,11 +337,13 @@ Sequence< OUString > SAL_CALL RequestHandlerController::getSupportedServiceNames
 
 // XEventListener
 void SAL_CALL RequestHandlerController::disposing( const EventObject& )
+throw( RuntimeException, std::exception )
 {
 }
 
 // XTerminateListener
 void SAL_CALL RequestHandlerController::queryTermination( const EventObject& )
+throw( TerminationVetoException, RuntimeException, std::exception )
 {
     // Desktop ask about pending request through our office ipc pipe. We have to
     // be sure that no pending request is waiting because framework is not able to
@@ -354,26 +356,27 @@ void SAL_CALL RequestHandlerController::queryTermination( const EventObject& )
 }
 
 void SAL_CALL RequestHandlerController::notifyTermination( const EventObject& )
+throw( RuntimeException, std::exception )
 {
 }
 
 class IpcThread: public salhelper::Thread {
 public:
     void start(RequestHandler * handler) {
-        m_handler = handler;
+        handler_ = handler;
         launch();
     }
 
     virtual void close() = 0;
 
 protected:
-    explicit IpcThread(char const * name): Thread(name), m_handler(nullptr) {}
+    explicit IpcThread(char const * name): Thread(name), handler_(nullptr) {}
 
-    virtual ~IpcThread() override {}
+    virtual ~IpcThread() {}
 
     bool process(OString const & arguments, bool * waitProcessed);
 
-    RequestHandler * m_handler;
+    RequestHandler * handler_;
 };
 
 class PipeIpcThread: public IpcThread {
@@ -385,7 +388,7 @@ private:
         IpcThread("PipeIPC"), pipe_(pipe)
     {}
 
-    virtual ~PipeIpcThread() override {}
+    virtual ~PipeIpcThread() {}
 
     void execute() override;
 
@@ -446,7 +449,7 @@ private:
         IpcThread("DbusIPC"), connection_(std::move(connection))
     {}
 
-    virtual ~DbusIpcThread() override {}
+    virtual ~DbusIpcThread() {}
 
     void execute() override;
 
@@ -555,12 +558,12 @@ RequestHandler::Status DbusIpcThread::enable(rtl::Reference<IpcThread> * thread)
 
 void DbusIpcThread::execute()
 {
-    assert(m_handler != nullptr);
-    m_handler->cReady.wait();
+    assert(handler_ != nullptr);
+    handler_->cReady.wait();
     for (;;) {
         {
             osl::MutexGuard g(RequestHandler::GetMutex());
-            if (m_handler->mState == RequestHandler::State::Downing) {
+            if (handler_->mState == RequestHandler::State::Downing) {
                 break;
             }
         }
@@ -601,7 +604,7 @@ void DbusIpcThread::execute()
             }
         }
         if (waitProcessed) {
-            m_handler->cProcessed.wait();
+            handler_->cProcessed.wait();
         }
         DbusMessageHolder repl(dbus_message_new_method_return(msg.message));
         if (repl.message == nullptr) {
@@ -890,7 +893,6 @@ RequestHandler::Status PipeIpcThread::enable(rtl::Reference<IpcThread> * thread)
         }
         aArguments.append('\0');
         // finally, write the string onto the pipe
-        SAL_INFO("desktop.app", "writing <" << aArguments.getStr() << ">");
         sal_Int32 n = aStreamPipe.write(
             aArguments.getStr(), aArguments.getLength());
         if (n != aArguments.getLength()) {
@@ -990,13 +992,13 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
     if ( !aUnknown.isEmpty() || aCmdLineArgs->IsHelp() )
     {
         ApplicationEvent* pAppEvent =
-            new ApplicationEvent(ApplicationEvent::Type::Help, aUnknown);
+            new ApplicationEvent(ApplicationEvent::TYPE_HELP, aUnknown);
         ImplPostForeignAppEvent( pAppEvent );
     }
     else if ( aCmdLineArgs->IsVersion() )
     {
         ApplicationEvent* pAppEvent =
-            new ApplicationEvent(ApplicationEvent::Type::Version);
+            new ApplicationEvent(ApplicationEvent::TYPE_VERSION);
         ImplPostForeignAppEvent( pAppEvent );
     }
     else
@@ -1007,7 +1009,7 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
         {
             // we have to use application event, because we have to start quickstart service in main thread!!
             ApplicationEvent* pAppEvent =
-                new ApplicationEvent(ApplicationEvent::Type::QuickStart);
+                new ApplicationEvent(ApplicationEvent::TYPE_QUICKSTART);
             ImplPostForeignAppEvent( pAppEvent );
         }
 
@@ -1017,7 +1019,7 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
              i != accept.end(); ++i)
         {
             ApplicationEvent* pAppEvent = new ApplicationEvent(
-                ApplicationEvent::Type::Accept, *i);
+                ApplicationEvent::TYPE_ACCEPT, *i);
             ImplPostForeignAppEvent( pAppEvent );
         }
         // handle acceptor removal
@@ -1026,14 +1028,14 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
              i != unaccept.end(); ++i)
         {
             ApplicationEvent* pAppEvent = new ApplicationEvent(
-                ApplicationEvent::Type::Unaccept, *i);
+                ApplicationEvent::TYPE_UNACCEPT, *i);
             ImplPostForeignAppEvent( pAppEvent );
         }
 
         ProcessDocumentsRequest* pRequest = new ProcessDocumentsRequest(
             aCmdLineArgs->getCwdUrl());
-        m_handler->cProcessed.reset();
-        pRequest->pcProcessed = &m_handler->cProcessed;
+        handler_->cProcessed.reset();
+        pRequest->pcProcessed = &handler_->cProcessed;
 
         // Print requests are not dependent on the --invisible cmdline argument as they are
         // loaded with the "hidden" flag! So they are always checked.
@@ -1042,12 +1044,6 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
         pRequest->aPrintToList = aCmdLineArgs->GetPrintToList();
         pRequest->aPrinterName = aCmdLineArgs->GetPrinterName();
         bDocRequestSent |= !( pRequest->aPrintToList.empty() || pRequest->aPrinterName.isEmpty() );
-        pRequest->aConversionList = aCmdLineArgs->GetConversionList();
-        pRequest->aConversionParams = aCmdLineArgs->GetConversionParams();
-        pRequest->aConversionOut = aCmdLineArgs->GetConversionOut();
-        pRequest->aInFilter = aCmdLineArgs->GetInFilter();
-        pRequest->bTextCat = aCmdLineArgs->IsTextCat();
-        bDocRequestSent |= !pRequest->aConversionList.empty();
 
         if ( !rCurrentCmdLineArgs.IsInvisible() )
         {
@@ -1130,10 +1126,10 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
 #if defined UNX
                 aHelpURLBuffer.append("&System=UNX");
 #elif defined WNT
-                aHelpURLBuffer.append("&System=WIN");
+                aHelpURLBuffer.appendAscii("&System=WIN");
 #endif
                 ApplicationEvent* pAppEvent = new ApplicationEvent(
-                    ApplicationEvent::Type::OpenHelpUrl,
+                    ApplicationEvent::TYPE_OPENHELPURL,
                     aHelpURLBuffer.makeStringAndClear());
                 ImplPostForeignAppEvent( pAppEvent );
             }
@@ -1170,7 +1166,7 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
         {
             // no document was sent, just bring Office to front
             ApplicationEvent* pAppEvent =
-                new ApplicationEvent(ApplicationEvent::Type::Appear);
+                new ApplicationEvent(ApplicationEvent::TYPE_APPEAR);
             ImplPostForeignAppEvent( pAppEvent );
         }
     }
@@ -1180,7 +1176,7 @@ bool IpcThread::process(OString const & arguments, bool * waitProcessed) {
 
 void PipeIpcThread::execute()
 {
-    assert(m_handler != nullptr);
+    assert(handler_ != nullptr);
     do
     {
         osl::StreamPipe aStreamPipe;
@@ -1193,22 +1189,21 @@ void PipeIpcThread::execute()
             // bootstrap, that dialogs event loop might get events that are dispatched by this thread
             // we have to wait for cReady to be set by the real main loop.
             // only requests that don't dispatch events may be processed before cReady is set.
-            m_handler->cReady.wait();
+            handler_->cReady.wait();
 
             // we might have decided to shutdown while we were sleeping
-            if (!RequestHandler::pGlobal.is()) return;
+            if (!handler_->pGlobal.is()) return;
 
-            // only lock the mutex when processing starts, otherwise we deadlock when the office goes
+            // only lock the mutex when processing starts, othewise we deadlock when the office goes
             // down during wait
             osl::ClearableMutexGuard aGuard( RequestHandler::GetMutex() );
 
-            if (m_handler->mState == RequestHandler::State::Downing)
+            if ( handler_->mState == RequestHandler::State::Downing )
             {
                 break;
             }
 
             // notify client we're ready to process its args:
-            SAL_INFO("desktop.app", "writing <" << SEND_ARGUMENTS << ">");
             sal_Int32 n = aStreamPipe.write(
                 SEND_ARGUMENTS, SAL_N_ELEMENTS(SEND_ARGUMENTS));
                 // incl. terminating NUL
@@ -1232,9 +1227,8 @@ void PipeIpcThread::execute()
             aGuard.clear();
             // wait for processing to finish
             if (waitProcessed)
-                m_handler->cProcessed.wait();
+                handler_->cProcessed.wait();
             // processing finished, inform the requesting end:
-            SAL_INFO("desktop.app", "writing <" << PROCESSING_DONE << ">");
             n = aStreamPipe.write(
                 PROCESSING_DONE, SAL_N_ELEMENTS(PROCESSING_DONE));
                 // incl. terminating NUL
@@ -1247,7 +1241,7 @@ void PipeIpcThread::execute()
         {
             {
                 osl::MutexGuard aGuard( RequestHandler::GetMutex() );
-                if (m_handler->mState == RequestHandler::State::Downing)
+                if ( handler_->mState == RequestHandler::State::Downing )
                 {
                     break;
                 }
@@ -1303,14 +1297,7 @@ static void AddConversionsToDispatchList(
 
     OUString aOutDir( rParamOut.trim() );
     OUString aPWD;
-    if (cwdUrl)
-    {
-        aPWD = *cwdUrl;
-    }
-    else
-    {
-        ::tools::getProcessWorkingDir( aPWD );
-    }
+    ::tools::getProcessWorkingDir( aPWD );
 
     if( !::osl::FileBase::getAbsoluteFileURL( aPWD, rParamOut, aOutDir ) )
         ::osl::FileBase::getSystemPathFromFileURL( aOutDir, aOutDir );

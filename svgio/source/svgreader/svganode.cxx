@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svganode.hxx>
+#include <svgio/svgreader/svganode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/unifiedtransparenceprimitive2d.hxx>
 
@@ -36,6 +36,7 @@ namespace svgio
 
         SvgANode::~SvgANode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgANode::getSvgStyleAttributes() const

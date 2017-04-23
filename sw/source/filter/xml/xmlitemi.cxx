@@ -52,12 +52,18 @@
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
+extern SvXMLItemMapEntry aXMLTableItemMap[];
+extern SvXMLItemMapEntry aXMLTableColItemMap[];
+extern SvXMLItemMapEntry aXMLTableRowItemMap[];
+extern SvXMLItemMapEntry aXMLTableCellItemMap[];
+
 class SwXMLImportTableItemMapper_Impl: public SvXMLImportItemMapper
 {
 
 public:
 
     explicit SwXMLImportTableItemMapper_Impl(SvXMLItemMapEntriesRef rMapEntries);
+    virtual ~SwXMLImportTableItemMapper_Impl();
 
     virtual bool handleSpecialItem( const SvXMLItemMapEntry& rEntry,
                                 SfxPoolItem& rItem,
@@ -88,9 +94,13 @@ private:
 
 SwXMLImportTableItemMapper_Impl::SwXMLImportTableItemMapper_Impl(
                                         SvXMLItemMapEntriesRef rMapEntries ) :
-    SvXMLImportItemMapper( rMapEntries )
+    SvXMLImportItemMapper( rMapEntries, RES_UNKNOWNATR_CONTAINER)
 {
     Reset();
+}
+
+SwXMLImportTableItemMapper_Impl::~SwXMLImportTableItemMapper_Impl()
+{
 }
 
 void SwXMLImportTableItemMapper_Impl::Reset()
@@ -207,7 +217,7 @@ void SwXMLImportTableItemMapper_Impl::finished(
                 rSet.GetItemState(Ids[i][0], true, &pItem);
 
             // if not set, try the pool
-            if ((SfxItemState::SET != eState) && SfxItemPool::IsWhich(Ids[i][0]))
+            if ((SfxItemState::SET != eState) && (SFX_WHICH_MAX > Ids[i][0]))
             {
                 pItem = &rSet.GetPool()->GetDefaultItem(Ids[i][0]);
             }
@@ -244,7 +254,7 @@ public:
                   SfxItemSet&  rItemSet,
                   SvXMLImportItemMapper & rIMapper,
                   const SvXMLUnitConverter& rUnitConv );
-    virtual ~SwXMLItemSetContext_Impl() override;
+    virtual ~SwXMLItemSetContext_Impl();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                    const OUString& rLocalName,
@@ -268,10 +278,10 @@ SwXMLItemSetContext_Impl::SwXMLItemSetContext_Impl(
 
 SwXMLItemSetContext_Impl::~SwXMLItemSetContext_Impl()
 {
-    if( xBackground.is() )
+    if( xBackground.Is() )
     {
         const SvxBrushItem& rItem =
-            static_cast<SwXMLBrushItemImportContext*>(xBackground.get())->GetItem();
+            static_cast<SwXMLBrushItemImportContext*>(&xBackground)->GetItem();
         rItemSet.Put( rItem );
     }
 }
@@ -366,7 +376,7 @@ SvXMLImportContext *SwXMLImport::CreateTableItemImportContext(
     return new SwXMLItemSetContext_Impl( *this, nPrefix, rLocalName,
                                             xAttrList, rItemSet,
                                             GetTableItemMapper(),
-                                            *m_pTwipUnitConv );
+                                            GetTwipUnitConverter() );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

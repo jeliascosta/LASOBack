@@ -20,7 +20,6 @@
 #include <ooo/vba/excel/XRange.hpp>
 #include <com/sun/star/sheet/XCellRangeAddressable.hpp>
 #include <com/sun/star/sheet/XSheetConditionalEntry.hpp>
-#include <basic/sberrors.hxx>
 #include <comphelper/sequence.hxx>
 #include <cppuhelper/exc_hlp.hxx>
 #include <vector>
@@ -34,8 +33,14 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
+static const char OPERATOR[] = "Operator";
+static const char FORMULA1[] = "Formula1";
+static const char FORMULA2[] = "Formula2";
+static const char STYLENAME[] = "StyleName";
+static const char sStyleNamePrefix[] = "Excel_CondFormat";
+
 void SAL_CALL
-ScVbaFormatConditions::Delete(  )
+ScVbaFormatConditions::Delete(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     try
     {
@@ -58,7 +63,7 @@ ScVbaFormatConditions::Delete(  )
 }
 
 uno::Type SAL_CALL
-ScVbaFormatConditions::getElementType()
+ScVbaFormatConditions::getElementType() throw (css::uno::RuntimeException)
 {
     return cppu::UnoType<excel::XFormatCondition>::get();
 }
@@ -93,12 +98,12 @@ class EnumWrapper : public EnumerationHelper_BASE
         sal_Int32 nIndex;
 public:
         EnumWrapper( const uno::Reference< container::XIndexAccess >& xIndexAccess, const uno::Reference<excel::XRange >& xRange, const uno::Reference<uno::XComponentContext >& xContext, const uno::Reference<excel::XStyles >& xStyles, const uno::Reference< excel::XFormatConditions >& xCollection, const uno::Reference<beans::XPropertySet >& xProps  ) : m_xIndexAccess( xIndexAccess ), m_xParentRange( xRange ), m_xContext( xContext ), m_xStyles( xStyles ), m_xParentCollection( xCollection ), m_xProps( xProps ), nIndex( 0 ) {}
-        virtual sal_Bool SAL_CALL hasMoreElements(  ) override
+        virtual sal_Bool SAL_CALL hasMoreElements(  ) throw (uno::RuntimeException, std::exception) override
         {
                 return ( nIndex < m_xIndexAccess->getCount() );
         }
 
-        virtual uno::Any SAL_CALL nextElement(  ) override
+        virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
         {
             try
             {
@@ -131,13 +136,13 @@ public:
 }
 
 uno::Reference< excel::XFormatCondition > SAL_CALL
-ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, const uno::Any& _aFormula1, const uno::Any& _aFormula2 )
+ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, const uno::Any& _aFormula1, const uno::Any& _aFormula2 ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     return Add( _nType, _aOperator, _aFormula1, _aFormula2, uno::Reference< excel::XStyle >() );
 }
 
 uno::Reference< excel::XFormatCondition >
-ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, const uno::Any& _aFormula1, const uno::Any& _aFormula2, const css::uno::Reference< excel::XStyle >& _xStyle  )
+ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, const uno::Any& _aFormula1, const uno::Any& _aFormula2, const css::uno::Reference< excel::XStyle >& _xStyle  ) throw (script::BasicErrorException, uno::RuntimeException)
 {
     // #TODO
     // #FIXME
@@ -166,25 +171,25 @@ ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, cons
         uno::Any aValue;
 
         if ( aType == sheet::ConditionOperator_FORMULA)
-            aValue <<= sheet::ConditionOperator_FORMULA;
+            aValue = uno::makeAny( sheet::ConditionOperator_FORMULA );
         else
-            aValue <<= ScVbaFormatCondition::retrieveAPIOperator(_aOperator);
+            aValue = uno::makeAny( ScVbaFormatCondition::retrieveAPIOperator(_aOperator) );
 
-        beans::PropertyValue aProperty( "Operator", 0, aValue, beans::PropertyState_DIRECT_VALUE );
+        beans::PropertyValue aProperty( OPERATOR, 0, aValue, beans::PropertyState_DIRECT_VALUE );
         aPropertyValueVector.push_back( aProperty );
 
         if ( _aFormula1.hasValue() )
         {
-            beans::PropertyValue aProp( "Formula1", 0, uno::makeAny( getA1Formula( _aFormula1 ) ), beans::PropertyState_DIRECT_VALUE );
+            beans::PropertyValue aProp( FORMULA1, 0, uno::makeAny( getA1Formula( _aFormula1 ) ), beans::PropertyState_DIRECT_VALUE );
             aPropertyValueVector.push_back( aProp );
         }
         if ( _aFormula2.hasValue() )
         {
-            beans::PropertyValue aProp( "Formula2", 0, uno::makeAny( getA1Formula( _aFormula2 ) ), beans::PropertyState_DIRECT_VALUE );
+            beans::PropertyValue aProp( FORMULA2, 0, uno::makeAny( getA1Formula( _aFormula2 ) ), beans::PropertyState_DIRECT_VALUE );
             aPropertyValueVector.push_back( aProp );
         }
-        aProperty.Name = "StyleName";
-        aProperty.Value <<= sStyleName;
+        aProperty.Name = STYLENAME;
+        aProperty.Value = uno::makeAny( sStyleName );
 
         mxSheetConditionalEntries->addNew(comphelper::containerToSequence(aPropertyValueVector));
         for (sal_Int32 i = mxSheetConditionalEntries->getCount()-1; i >= 0; i--)
@@ -206,13 +211,13 @@ ScVbaFormatConditions::Add( ::sal_Int32 _nType, const uno::Any& _aOperator, cons
 }
 
 uno::Reference< container::XEnumeration > SAL_CALL
-ScVbaFormatConditions::createEnumeration()
+ScVbaFormatConditions::createEnumeration() throw (uno::RuntimeException)
 {
     return new EnumWrapper( m_xIndexAccess, mxRangeParent, mxContext, mxStyles, this, mxParentRangePropertySet  );
 }
 
 void
-ScVbaFormatConditions::notifyRange()
+ScVbaFormatConditions::notifyRange() throw ( script::BasicErrorException )
 {
     try
     {
@@ -225,7 +230,7 @@ ScVbaFormatConditions::notifyRange()
 }
 
 OUString
-ScVbaFormatConditions::getA1Formula(const css::uno::Any& _aFormula)
+ScVbaFormatConditions::getA1Formula(const css::uno::Any& _aFormula) throw ( script::BasicErrorException )
 {
     // #TODO, #FIXME hook-in proper formula conversion detection & logic
     OUString sFormula;
@@ -241,11 +246,11 @@ ScVbaFormatConditions::getStyleName()
     if ( !pStyles )
         DebugHelper::basicexception(ERRCODE_BASIC_METHOD_FAILED, OUString() );
     uno::Sequence< OUString > sCellStyleNames = pStyles->getStyleNames();
-    return ContainerUtilities::getUniqueName(sCellStyleNames, "Excel_CondFormat", "_");
+    return ContainerUtilities::getUniqueName(sCellStyleNames, sStyleNamePrefix, "_");
 }
 
 void
-ScVbaFormatConditions::removeFormatCondition( const OUString& _sStyleName, bool _bRemoveStyle)
+ScVbaFormatConditions::removeFormatCondition( const OUString& _sStyleName, bool _bRemoveStyle) throw ( script::BasicErrorException )
 {
     try
     {

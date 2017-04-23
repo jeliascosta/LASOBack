@@ -17,13 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "impanmvw.hxx"
-
+#include <window.h>
 #include <vcl/virdev.hxx>
 #include <vcl/window.hxx>
 #include <tools/helpers.hxx>
 
-#include "window.h"
+#include "impanmvw.hxx"
 
 ImplAnimView::ImplAnimView( Animation* pParent, OutputDevice* pOut,
                             const Point& rPt, const Size& rSz,
@@ -41,15 +40,15 @@ ImplAnimView::ImplAnimView( Animation* pParent, OutputDevice* pOut,
         meLastDisposal  ( Disposal::Back ),
         mbPause         ( false ),
         mbMarked        ( false ),
-        mbHMirr         ( maSz.Width() < 0 ),
-        mbVMirr         ( maSz.Height() < 0 )
+        mbHMirr         ( maSz.Width() < 0L ),
+        mbVMirr         ( maSz.Height() < 0L )
 {
     Animation::ImplIncAnimCount();
 
     // Mirrored horizontally?
     if( mbHMirr )
     {
-        maDispPt.X() = maPt.X() + maSz.Width() + 1;
+        maDispPt.X() = maPt.X() + maSz.Width() + 1L;
         maDispSz.Width() = -maSz.Width();
         maSzPix.Width() = -maSzPix.Width();
     }
@@ -62,7 +61,7 @@ ImplAnimView::ImplAnimView( Animation* pParent, OutputDevice* pOut,
     // Mirrored vertically?
     if( mbVMirr )
     {
-        maDispPt.Y() = maPt.Y() + maSz.Height() + 1;
+        maDispPt.Y() = maPt.Y() + maSz.Height() + 1L;
         maDispSz.Height() = -maSz.Height();
         maSzPix.Height() = -maSzPix.Height();
     }
@@ -120,19 +119,19 @@ bool ImplAnimView::matches( OutputDevice* pOut, long nExtraData ) const
 void ImplAnimView::getPosSize( const AnimationBitmap& rAnm, Point& rPosPix, Size& rSizePix )
 {
     const Size& rAnmSize = mpParent->GetDisplaySizePixel();
-    Point       aPt2( rAnm.aPosPix.X() + rAnm.aSizePix.Width() - 1,
-                      rAnm.aPosPix.Y() + rAnm.aSizePix.Height() - 1 );
+    Point       aPt2( rAnm.aPosPix.X() + rAnm.aSizePix.Width() - 1L,
+                      rAnm.aPosPix.Y() + rAnm.aSizePix.Height() - 1L );
     double      fFactX, fFactY;
 
     // calculate x scaling
-    if( rAnmSize.Width() > 1 )
-        fFactX = (double) ( maSzPix.Width() - 1 ) / ( rAnmSize.Width() - 1 );
+    if( rAnmSize.Width() > 1L )
+        fFactX = (double) ( maSzPix.Width() - 1L ) / ( rAnmSize.Width() - 1L );
     else
         fFactX = 1.0;
 
     // calculate y scaling
-    if( rAnmSize.Height() > 1 )
-        fFactY = (double) ( maSzPix.Height() - 1 ) / ( rAnmSize.Height() - 1 );
+    if( rAnmSize.Height() > 1L )
+        fFactY = (double) ( maSzPix.Height() - 1L ) / ( rAnmSize.Height() - 1L );
     else
         fFactY = 1.0;
 
@@ -142,16 +141,16 @@ void ImplAnimView::getPosSize( const AnimationBitmap& rAnm, Point& rPosPix, Size
     aPt2.X() = FRound( aPt2.X() * fFactX );
     aPt2.Y() = FRound( aPt2.Y() * fFactY );
 
-    rSizePix.Width() = aPt2.X() - rPosPix.X() + 1;
-    rSizePix.Height() = aPt2.Y() - rPosPix.Y() + 1;
+    rSizePix.Width() = aPt2.X() - rPosPix.X() + 1L;
+    rSizePix.Height() = aPt2.Y() - rPosPix.Y() + 1L;
 
     // Mirrored horizontally?
     if( mbHMirr )
-        rPosPix.X() = maSzPix.Width() - 1 - aPt2.X();
+        rPosPix.X() = maSzPix.Width() - 1L - aPt2.X();
 
     // Mirrored vertically?
     if( mbVMirr )
-        rPosPix.Y() = maSzPix.Height() - 1 - aPt2.Y();
+        rPosPix.Y() = maSzPix.Height() - 1L - aPt2.Y();
 }
 
 void ImplAnimView::drawToPos( sal_uLong nPos )
@@ -180,7 +179,7 @@ void ImplAnimView::drawToPos( sal_uLong nPos )
 
     pRenderContext->DrawOutDev( maDispPt, maDispSz, Point(), maSzPix, *aVDev.get() );
     if (pGuard)
-        pGuard->SetPaintRect(tools::Rectangle(maDispPt, maDispSz));
+        pGuard->SetPaintRect(Rectangle(maDispPt, maDispSz));
 
     if (xOldClip)
         pRenderContext->SetClipRegion(*xOldClip);
@@ -198,10 +197,10 @@ void ImplAnimView::draw( sal_uLong nPos, VirtualDevice* pVDev )
         pRenderContext = pGuard->GetRenderContext();
     }
 
-    tools::Rectangle aOutRect( pRenderContext->PixelToLogic( Point() ), pRenderContext->GetOutputSize() );
+    Rectangle aOutRect( pRenderContext->PixelToLogic( Point() ), pRenderContext->GetOutputSize() );
 
     // check, if output lies out of display
-    if( aOutRect.Intersection( tools::Rectangle( maDispPt, maDispSz ) ).IsEmpty() )
+    if( aOutRect.Intersection( Rectangle( maDispPt, maDispSz ) ).IsEmpty() )
         setMarked( true );
     else if( !mbPause )
     {
@@ -218,7 +217,7 @@ void ImplAnimView::draw( sal_uLong nPos, VirtualDevice* pVDev )
         // Mirrored horizontally?
         if( mbHMirr )
         {
-            aBmpPosPix.X() = aPosPix.X() + aSizePix.Width() - 1;
+            aBmpPosPix.X() = aPosPix.X() + aSizePix.Width() - 1L;
             aBmpSizePix.Width() = -aSizePix.Width();
         }
         else
@@ -230,7 +229,7 @@ void ImplAnimView::draw( sal_uLong nPos, VirtualDevice* pVDev )
         // Mirrored vertically?
         if( mbVMirr )
         {
-            aBmpPosPix.Y() = aPosPix.Y() + aSizePix.Height() - 1;
+            aBmpPosPix.Y() = aPosPix.Y() + aSizePix.Height() - 1L;
             aBmpSizePix.Height() = -aSizePix.Height();
         }
         else
@@ -292,7 +291,7 @@ void ImplAnimView::draw( sal_uLong nPos, VirtualDevice* pVDev )
 
             pRenderContext->DrawOutDev( maDispPt, maDispSz, Point(), maSzPix, *pDev );
             if (pGuard)
-                pGuard->SetPaintRect(tools::Rectangle(maDispPt, maDispSz));
+                pGuard->SetPaintRect(Rectangle(maDispPt, maDispSz));
 
             if( xOldClip)
             {

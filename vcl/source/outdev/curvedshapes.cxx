@@ -25,7 +25,7 @@
 
 #include <salgdi.hxx>
 
-void OutputDevice::DrawEllipse( const tools::Rectangle& rRect )
+void OutputDevice::DrawEllipse( const Rectangle& rRect )
 {
     assert(!is_double_buffered_window());
 
@@ -35,7 +35,7 @@ void OutputDevice::DrawEllipse( const tools::Rectangle& rRect )
     if  ( !IsDeviceOutputNecessary() || (!mbLineColor && !mbFillColor) || ImplIsRecordLayout() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
     if ( aRect.IsEmpty() )
         return;
 
@@ -72,7 +72,7 @@ void OutputDevice::DrawEllipse( const tools::Rectangle& rRect )
         mpAlphaVDev->DrawEllipse( rRect );
 }
 
-void OutputDevice::DrawArc( const tools::Rectangle& rRect,
+void OutputDevice::DrawArc( const Rectangle& rRect,
                             const Point& rStartPt, const Point& rEndPt )
 {
     assert(!is_double_buffered_window());
@@ -83,7 +83,7 @@ void OutputDevice::DrawArc( const tools::Rectangle& rRect,
     if ( !IsDeviceOutputNecessary() || !mbLineColor || ImplIsRecordLayout() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
     if ( aRect.IsEmpty() )
         return;
 
@@ -104,7 +104,7 @@ void OutputDevice::DrawArc( const tools::Rectangle& rRect,
 
     const Point     aStart( ImplLogicToDevicePixel( rStartPt ) );
     const Point     aEnd( ImplLogicToDevicePixel( rEndPt ) );
-    tools::Polygon aArcPoly( aRect, aStart, aEnd, PolyStyle::Arc );
+    tools::Polygon aArcPoly( aRect, aStart, aEnd, POLY_ARC );
 
     if ( aArcPoly.GetSize() >= 2 )
     {
@@ -116,7 +116,7 @@ void OutputDevice::DrawArc( const tools::Rectangle& rRect,
         mpAlphaVDev->DrawArc( rRect, rStartPt, rEndPt );
 }
 
-void OutputDevice::DrawPie( const tools::Rectangle& rRect,
+void OutputDevice::DrawPie( const Rectangle& rRect,
                             const Point& rStartPt, const Point& rEndPt )
 {
     assert(!is_double_buffered_window());
@@ -127,7 +127,7 @@ void OutputDevice::DrawPie( const tools::Rectangle& rRect,
     if ( !IsDeviceOutputNecessary() || (!mbLineColor && !mbFillColor) || ImplIsRecordLayout() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
     if ( aRect.IsEmpty() )
         return;
 
@@ -148,7 +148,7 @@ void OutputDevice::DrawPie( const tools::Rectangle& rRect,
 
     const Point     aStart( ImplLogicToDevicePixel( rStartPt ) );
     const Point     aEnd( ImplLogicToDevicePixel( rEndPt ) );
-    tools::Polygon aPiePoly( aRect, aStart, aEnd, PolyStyle::Pie );
+    tools::Polygon aPiePoly( aRect, aStart, aEnd, POLY_PIE );
 
     if ( aPiePoly.GetSize() >= 2 )
     {
@@ -167,7 +167,7 @@ void OutputDevice::DrawPie( const tools::Rectangle& rRect,
         mpAlphaVDev->DrawPie( rRect, rStartPt, rEndPt );
 }
 
-void OutputDevice::DrawChord( const tools::Rectangle& rRect,
+void OutputDevice::DrawChord( const Rectangle& rRect,
                               const Point& rStartPt, const Point& rEndPt )
 {
     assert(!is_double_buffered_window());
@@ -178,7 +178,7 @@ void OutputDevice::DrawChord( const tools::Rectangle& rRect,
     if ( !IsDeviceOutputNecessary() || (!mbLineColor && !mbFillColor) || ImplIsRecordLayout() )
         return;
 
-    tools::Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
+    Rectangle aRect( ImplLogicToDevicePixel( rRect ) );
     if ( aRect.IsEmpty() )
         return;
 
@@ -199,7 +199,7 @@ void OutputDevice::DrawChord( const tools::Rectangle& rRect,
 
     const Point     aStart( ImplLogicToDevicePixel( rStartPt ) );
     const Point     aEnd( ImplLogicToDevicePixel( rEndPt ) );
-    tools::Polygon aChordPoly( aRect, aStart, aEnd, PolyStyle::Chord );
+    tools::Polygon aChordPoly( aRect, aStart, aEnd, POLY_CHORD );
 
     if ( aChordPoly.GetSize() >= 2 )
     {

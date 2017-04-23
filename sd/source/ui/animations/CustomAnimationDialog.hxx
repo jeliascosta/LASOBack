@@ -122,7 +122,7 @@ class PropertyControl : public ListBox
 {
 public:
     explicit PropertyControl( vcl::Window* pParent );
-    virtual ~PropertyControl() override;
+    virtual ~PropertyControl();
     virtual void dispose() override;
 
     void setSubControl( PropertySubControl* pSubControl );
@@ -142,8 +142,8 @@ class STLPropertySet;
 class CustomAnimationDialog : public TabDialog
 {
 public:
-    CustomAnimationDialog(vcl::Window* pParent, STLPropertySet* pSet, const OString& Page);
-    virtual ~CustomAnimationDialog() override;
+    CustomAnimationDialog(vcl::Window* pParent, STLPropertySet* pSet, const OString& Page = OString());
+    virtual ~CustomAnimationDialog();
     virtual void dispose() override;
 
     STLPropertySet* getResultSet();

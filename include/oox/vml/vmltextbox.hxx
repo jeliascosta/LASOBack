@@ -20,14 +20,11 @@
 #ifndef INCLUDED_OOX_VML_VMLTEXTBOX_HXX
 #define INCLUDED_OOX_VML_VMLTEXTBOX_HXX
 
-#include <cstddef>
 #include <vector>
-
-#include <com/sun/star/uno/Reference.hxx>
-#include <oox/dllapi.h>
-#include <oox/helper/helper.hxx>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <oox/helper/helper.hxx>
+#include <oox/dllapi.h>
+#include <com/sun/star/uno/Reference.h>
 
 namespace com { namespace sun { namespace star {
     namespace drawing { class XShape; }

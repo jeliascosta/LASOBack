@@ -44,12 +44,12 @@ SerfRequestProcessor::SerfRequestProcessor( SerfSession& rSerfSession,
                                             const OUString & inPath,
                                             const bool bUseChunkedEncoding )
     : mrSerfSession( rSerfSession )
-    , mPathStr( nullptr )
+    , mPathStr( 0 )
     , mbUseChunkedEncoding( bUseChunkedEncoding )
-    , mDestPathStr( nullptr )
-    , mContentType( nullptr )
-    , mReferer( nullptr )
-    , mpProcImpl( nullptr )
+    , mDestPathStr( 0 )
+    , mContentType( 0 )
+    , mReferer( 0 )
+    , mpProcImpl( 0 )
     , mbProcessingDone( false )
     , mpDAVException()
     , mnHTTPStatusCode( SC_NONE )
@@ -74,7 +74,7 @@ SerfRequestProcessor::~SerfRequestProcessor()
 void SerfRequestProcessor::prepareProcessor()
 {
     delete mpDAVException;
-    mpDAVException = nullptr;
+    mpDAVException = 0;
     mnHTTPStatusCode = SC_NONE;
     mHTTPStatusCodeText.clear();
     mRedirectLocation.clear();
@@ -129,7 +129,7 @@ bool SerfRequestProcessor::processPropPatch( const std::vector< ProppatchValue >
 }
 
 // GET
-bool SerfRequestProcessor::processGet( const rtl::Reference< SerfInputStream >& xioInStrm,
+bool SerfRequestProcessor::processGet( const css::uno::Reference< SerfInputStream >& xioInStrm,
                                        apr_status_t& outSerfStatus )
 {
     mpProcImpl = new SerfGetReqProcImpl( mPathStr,
@@ -141,7 +141,7 @@ bool SerfRequestProcessor::processGet( const rtl::Reference< SerfInputStream >& 
 }
 
 // GET inclusive header fields
-bool SerfRequestProcessor::processGet( const rtl::Reference< SerfInputStream >& xioInStrm,
+bool SerfRequestProcessor::processGet( const css::uno::Reference< SerfInputStream >& xioInStrm,
                                        const std::vector< OUString > & inHeaderNames,
                                        DAVResource & ioResource,
                                        apr_status_t& outSerfStatus )
@@ -223,7 +223,7 @@ bool SerfRequestProcessor::processPost( const char* inData,
                                         apr_size_t inDataLen,
                                         const OUString & inContentType,
                                         const OUString & inReferer,
-                                        const rtl::Reference< SerfInputStream >& xioInStrm,
+                                        const css::uno::Reference< SerfInputStream >& xioInStrm,
                                         apr_status_t& outSerfStatus )
 {
     mContentType = apr_pstrdup( SerfSession::getAprPool(),

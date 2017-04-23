@@ -33,10 +33,9 @@ uno::Any DataPilotToPivotTable( const uno::Any& aSource, uno::Reference< uno::XC
 class PivotTableEnumeration : public EnumerationHelperImpl
 {
 public:
-    /// @throws uno::RuntimeException
-    PivotTableEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ) {}
+    PivotTableEnumeration( const uno::Reference< XHelperInterface >& xParent, const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration ) throw ( uno::RuntimeException ) : EnumerationHelperImpl( xParent, xContext, xEnumeration ) {}
 
-    virtual uno::Any SAL_CALL nextElement(  ) override
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         return DataPilotToPivotTable( m_xEnumeration->nextElement(),  m_xContext );
     }
@@ -48,7 +47,7 @@ ScVbaPivotTables::ScVbaPivotTables( const uno::Reference< XHelperInterface >& xP
 }
 
 uno::Reference< container::XEnumeration >
-ScVbaPivotTables::createEnumeration()
+ScVbaPivotTables::createEnumeration() throw (uno::RuntimeException)
 {
     uno::Reference< container::XEnumerationAccess > xEnumAccess( m_xIndexAccess, uno::UNO_QUERY_THROW );
     return new PivotTableEnumeration( mxParent, mxContext, xEnumAccess->createEnumeration() );
@@ -61,7 +60,7 @@ ScVbaPivotTables::createCollectionObject( const css::uno::Any& aSource )
 }
 
 uno::Type
-ScVbaPivotTables::getElementType()
+ScVbaPivotTables::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<excel::XPivotTable>::get();
 }

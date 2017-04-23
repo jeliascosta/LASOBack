@@ -51,11 +51,11 @@ public:
     // surrounding SwBidiPortion
     void PaintMultiPortion( const SwRect &rPaint, SwMultiPortion& rMulti,
                             const SwMultiPortion* pEnvPor = nullptr );
-    void SetPaintDrop( const bool bNew ) { bPaintDrop = bNew; }
-    bool IsPaintDrop() const { return bPaintDrop; }
-    SwTextPaintInfo &GetInfo()
+    inline void SetPaintDrop( const bool bNew ) { bPaintDrop = bNew; }
+    inline bool IsPaintDrop() const { return bPaintDrop; }
+    inline SwTextPaintInfo &GetInfo()
         { return static_cast<SwTextPaintInfo&>(SwTextIter::GetInfo()); }
-    const SwTextPaintInfo &GetInfo() const
+    inline const SwTextPaintInfo &GetInfo() const
         { return static_cast<const SwTextPaintInfo&>(SwTextIter::GetInfo()); }
 };
 

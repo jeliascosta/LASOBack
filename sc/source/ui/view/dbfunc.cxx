@@ -36,7 +36,6 @@
 #include "editable.hxx"
 #include "queryentry.hxx"
 #include "markdata.hxx"
-#include "tabvwsh.hxx"
 
 ScDBFunc::ScDBFunc( vcl::Window* pParent, ScDocShell& rDocSh, ScTabViewShell* pViewShell ) :
     ScViewFunc( pParent, rDocSh, pViewShell )
@@ -85,7 +84,7 @@ ScDBData* ScDBFunc::GetDBData( bool bMark, ScGetDBMode eMode, ScGetDBSelection e
     if ( eMarkType == SC_MARK_SIMPLE || eMarkType == SC_MARK_SIMPLE_FILTERED )
     {
         bool bShrinkColumnsOnly = false;
-        if (eSel == ScGetDBSelection::RowDown)
+        if (eSel == SC_DBSEL_ROW_DOWN)
         {
             // Don't alter row range, additional rows may have been selected on
             // purpose to append data, or to have a fake header row.
@@ -96,7 +95,7 @@ ScDBData* ScDBFunc::GetDBData( bool bMark, ScGetDBMode eMode, ScGetDBSelection e
             {
                 // If an area is selected shrink that to the actual used
                 // columns, don't draw filter buttons for empty columns.
-                eSel = ScGetDBSelection::ShrinkToUsedData;
+                eSel = SC_DBSEL_SHRINK_TO_USED_DATA;
             }
             else if (aRange.aStart.Col() == aRange.aEnd.Col())
             {
@@ -104,13 +103,28 @@ ScDBData* ScDBFunc::GetDBData( bool bMark, ScGetDBMode eMode, ScGetDBSelection e
                 // area.
                 const ScMarkData& rMarkData = GetViewData().GetMarkData();
                 if (!(rMarkData.IsMarked() || rMarkData.IsMultiMarked()))
-                    eSel = ScGetDBSelection::Keep;
+                    eSel = SC_DBSEL_KEEP;
             }
         }
         switch (eSel)
         {
-            case ScGetDBSelection::ShrinkToUsedData:
-            case ScGetDBSelection::RowDown:
+            case SC_DBSEL_SHRINK_TO_SHEET_DATA:
+                {
+                    // Shrink the selection to sheet data area.
+                    ScDocument& rDoc = pDocSh->GetDocument();
+                    SCCOL nCol1 = aRange.aStart.Col(), nCol2 = aRange.aEnd.Col();
+                    SCROW nRow1 = aRange.aStart.Row(), nRow2 = aRange.aEnd.Row();
+                    if (rDoc.ShrinkToDataArea( aRange.aStart.Tab(), nCol1, nRow1, nCol2, nRow2))
+                    {
+                        aRange.aStart.SetCol(nCol1);
+                        aRange.aEnd.SetCol(nCol2);
+                        aRange.aStart.SetRow(nRow1);
+                        aRange.aEnd.SetRow(nRow2);
+                    }
+                }
+                break;
+            case SC_DBSEL_SHRINK_TO_USED_DATA:
+            case SC_DBSEL_ROW_DOWN:
                 {
                     // Shrink the selection to actual used area.
                     ScDocument& rDoc = pDocSh->GetDocument();
@@ -137,7 +151,7 @@ ScDBData* ScDBFunc::GetDBData( bool bMark, ScGetDBMode eMode, ScGetDBSelection e
         pData = pDocSh->GetDBData(
                     ScRange( GetViewData().GetCurX(), GetViewData().GetCurY(),
                              GetViewData().GetTabNo() ),
-                    eMode, ScGetDBSelection::Keep );
+                    eMode, SC_DBSEL_KEEP );
 
     if (!pData)
         return nullptr;
@@ -273,7 +287,7 @@ void ScDBFunc::ToggleAutoFilter()
 
     ScQueryParam    aParam;
     ScDocument*     pDoc    = GetViewData().GetDocument();
-    ScDBData*       pDBData = GetDBData(false, SC_DB_AUTOFILTER, ScGetDBSelection::RowDown);
+    ScDBData*       pDBData = GetDBData(false, SC_DB_AUTOFILTER, SC_DBSEL_ROW_DOWN);
 
     pDBData->SetByRow( true );              //! undo, retrieve beforehand ??
     pDBData->GetQueryParam( aParam );
@@ -311,7 +325,7 @@ void ScDBFunc::ToggleAutoFilter()
         // use a list action for the AutoFilter buttons (ScUndoAutoFilter) and the filter operation
 
         OUString aUndo = ScGlobal::GetRscString( STR_UNDO_QUERY );
-        pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, GetViewData().GetViewShell()->GetViewShellId() );
+        pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
 
         ScRange aRange;
         pDBData->GetArea( aRange );
@@ -363,7 +377,7 @@ void ScDBFunc::ToggleAutoFilter()
                 pDoc->ApplyAttr( nCol, nRow, nTab, ScMergeFlagAttr( nFlag | ScMF::Auto ) );
             }
             pDocSh->PostPaint(ScRange(aParam.nCol1, nRow, nTab, aParam.nCol2, nRow, nTab),
-                              PaintPartFlags::Grid);
+                              PAINT_GRID);
             bPaint = true;
         }
         else
@@ -415,7 +429,7 @@ void ScDBFunc::HideAutoFilter()
 
     pDBData->SetAutoFilter(false);
 
-    pDocSh->PostPaint(ScRange(nCol1, nRow1, nTab, nCol2, nRow1, nTab), PaintPartFlags::Grid );
+    pDocSh->PostPaint(ScRange(nCol1, nRow1, nTab, nCol2, nRow1, nTab), PAINT_GRID );
     aModificator.SetDocumentModified();
 
     SfxBindings& rBindings = GetViewData().GetBindings();

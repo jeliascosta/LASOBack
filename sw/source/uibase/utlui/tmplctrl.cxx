@@ -74,14 +74,13 @@ SwTemplateControl::~SwTemplateControl()
 void SwTemplateControl::StateChanged(
     sal_uInt16 /*nSID*/, SfxItemState eState, const SfxPoolItem* pState )
 {
-    const SfxStringItem* pItem = nullptr;
-    if (SfxItemState::DEFAULT == eState && (pItem = dynamic_cast<const SfxStringItem*>(pState)))
+    if( eState != SfxItemState::DEFAULT || dynamic_cast< const SfxVoidItem *>( pState ) !=  nullptr )
+        GetStatusBar().SetItemText( GetId(), OUString() );
+    else if ( dynamic_cast< const SfxStringItem *>( pState ) !=  nullptr )
     {
-        sTemplate = pItem->GetValue();
-        GetStatusBar().SetItemText(GetId(), sTemplate);
+        sTemplate = static_cast<const SfxStringItem*>(pState)->GetValue();
+        GetStatusBar().SetItemText( GetId(), sTemplate );
     }
-    else
-        GetStatusBar().SetItemText(GetId(), OUString());
 }
 
 void SwTemplateControl::Paint( const UserDrawEvent&  )
@@ -94,11 +93,11 @@ void SwTemplateControl::Command( const CommandEvent& rCEvt )
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu &&
             !GetStatusBar().GetItemText( GetId() ).isEmpty() )
     {
-        ScopedVclPtrInstance<SwTemplatePopup_Impl> aPop;
+        SwTemplatePopup_Impl aPop;
         {
             SwView* pView = ::GetActiveView();
-            SwWrtShell *const pWrtShell(pView ? pView->GetWrtShellPtr() : nullptr);
-            if (nullptr != pWrtShell &&
+            SwWrtShell* pWrtShell;
+            if( pView && nullptr != (pWrtShell = pView->GetWrtShellPtr()) &&
                 !pWrtShell->SwCursorShell::HasSelection()&&
                 !pWrtShell->IsSelFrameMode() &&
                 !pWrtShell->IsObjSelected())
@@ -112,12 +111,12 @@ void SwTemplateControl::Command( const CommandEvent& rCEvt )
                     SfxStyleSheetBase* pStyle = pPool->First();
                     while( pStyle )
                     {
-                        aPop->InsertItem( ++nCount, pStyle->GetName() );
+                        aPop.InsertItem( ++nCount, pStyle->GetName() );
                         pStyle = pPool->Next();
                     }
 
-                    aPop->Execute( &GetStatusBar(), rCEvt.GetMousePosPixel());
-                    const sal_uInt16 nCurrId = aPop->GetCurId();
+                    aPop.Execute( &GetStatusBar(), rCEvt.GetMousePosPixel());
+                    const sal_uInt16 nCurrId = aPop.GetCurId();
                     if( nCurrId != USHRT_MAX)
                     {
                         // looks a bit awkward, but another way is not possible

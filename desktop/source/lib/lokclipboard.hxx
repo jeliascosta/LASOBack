@@ -21,12 +21,14 @@ class LOKClipboard : public cppu::WeakImplHelper<css::datatransfer::clipboard::X
     css::uno::Reference<css::datatransfer::XTransferable> m_xTransferable;
 
 public:
-    css::uno::Reference<css::datatransfer::XTransferable> SAL_CALL getContents() override;
+    virtual css::uno::Reference<css::datatransfer::XTransferable> SAL_CALL getContents()
+    throw(css::uno::RuntimeException, std::exception) override;
 
-    void SAL_CALL setContents(const css::uno::Reference<css::datatransfer::XTransferable>& xTransferable,
-                              const css::uno::Reference<css::datatransfer::clipboard::XClipboardOwner>& xClipboardOwner) override;
+    virtual void SAL_CALL setContents(const css::uno::Reference<css::datatransfer::XTransferable>& xTransferable,
+                                      const css::uno::Reference<css::datatransfer::clipboard::XClipboardOwner>& xClipboardOwner)
+    throw(css::uno::RuntimeException, std::exception) override;
 
-    OUString SAL_CALL getName() override;
+    virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
 };
 
 /// Represents the contents of LOKClipboard.
@@ -41,11 +43,14 @@ class LOKTransferable : public cppu::WeakImplHelper<css::datatransfer::XTransfer
 public:
     LOKTransferable(const char* pMimeType, const char* pData, std::size_t nSize);
 
-    css::uno::Any SAL_CALL getTransferData(const css::datatransfer::DataFlavor& rFlavor) override;
+    virtual css::uno::Any SAL_CALL getTransferData(const css::datatransfer::DataFlavor& rFlavor)
+    throw(css::datatransfer::UnsupportedFlavorException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<css::datatransfer::DataFlavor> SAL_CALL getTransferDataFlavors() override;
+    virtual css::uno::Sequence<css::datatransfer::DataFlavor> SAL_CALL getTransferDataFlavors()
+    throw(css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL isDataFlavorSupported(const css::datatransfer::DataFlavor& rFlavor) override;
+    virtual sal_Bool SAL_CALL isDataFlavorSupported(const css::datatransfer::DataFlavor& rFlavor)
+    throw(css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

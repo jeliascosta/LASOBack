@@ -96,8 +96,7 @@ ImplRegionBand::ImplRegionBand(
         ImplRegionBandPoint* pPrevPointCopy = nullptr;
         while (pPoint != nullptr)
         {
-            ImplRegionBandPoint* pPointCopy = new ImplRegionBandPoint;
-            pPointCopy->mpNextBandPoint = nullptr;
+            ImplRegionBandPoint* pPointCopy = new ImplRegionBandPoint();
             pPointCopy->mnX = pPoint->mnX;
             pPointCopy->mnLineId = pPoint->mnLineId;
             pPointCopy->mbEndPoint = pPoint->mbEndPoint;
@@ -116,7 +115,7 @@ ImplRegionBand::ImplRegionBand(
 
 ImplRegionBand::~ImplRegionBand()
 {
-    SAL_WARN_IF( mpFirstBandPoint != nullptr, "vcl", "ImplRegionBand::~ImplRegionBand -> pointlist not empty" );
+    DBG_ASSERT( mpFirstBandPoint == nullptr, "ImplRegionBand::~ImplRegionBand -> pointlist not empty" );
 
     // delete elements of the list
     ImplRegionBandSep* pSep = mpFirstSep;
@@ -365,7 +364,7 @@ void ImplRegionBand::OptimizeBand()
 
 void ImplRegionBand::Union( long nXLeft, long nXRight )
 {
-    SAL_WARN_IF( nXLeft > nXRight, "vcl", "ImplRegionBand::Union(): nxLeft > nXRight" );
+    DBG_ASSERT( nXLeft <= nXRight, "ImplRegionBand::Union(): nxLeft > nXRight" );
 
     // band empty? -> add element
     if ( !mpFirstSep )
@@ -437,7 +436,7 @@ void ImplRegionBand::Union( long nXLeft, long nXRight )
 
 void ImplRegionBand::Intersect( long nXLeft, long nXRight )
 {
-    SAL_WARN_IF( nXLeft > nXRight, "vcl", "ImplRegionBand::Intersect(): nxLeft > nXRight" );
+    DBG_ASSERT( nXLeft <= nXRight, "ImplRegionBand::Intersect(): nxLeft > nXRight" );
 
     // band has been touched
     mbTouched = true;
@@ -482,7 +481,7 @@ void ImplRegionBand::Intersect( long nXLeft, long nXRight )
 
 void ImplRegionBand::Exclude( long nXLeft, long nXRight )
 {
-    SAL_WARN_IF( nXLeft > nXRight, "vcl", "ImplRegionBand::Exclude(): nxLeft > nXRight" );
+    DBG_ASSERT( nXLeft <= nXRight, "ImplRegionBand::Exclude(): nxLeft > nXRight" );
 
     // band has been touched
     mbTouched = true;
@@ -560,7 +559,7 @@ void ImplRegionBand::Exclude( long nXLeft, long nXRight )
 
 void ImplRegionBand::XOr( long nXLeft, long nXRight )
 {
-    SAL_WARN_IF( nXLeft > nXRight, "vcl", "ImplRegionBand::XOr(): nxLeft > nXRight" );
+    DBG_ASSERT( nXLeft <= nXRight, "ImplRegionBand::XOr(): nxLeft > nXRight" );
 
     // #i46602# Reworked rectangle Xor
 
@@ -703,7 +702,7 @@ void ImplRegionBand::XOr( long nXLeft, long nXRight )
             else // if( nXLeft != nOldLeft && nXRight != nOldRight ) follows automatically
             {
                 // #4,5,6,7
-                SAL_WARN_IF( nXLeft == nOldLeft || nXRight == nOldRight, "vcl",
+                DBG_ASSERT( nXLeft != nOldLeft && nXRight != nOldRight,
                             "ImplRegionBand::XOr(): Case 4,5,6,7 expected all coordinates to be not equal!" );
 
                 // The plain-jane check would look like this:
@@ -753,7 +752,7 @@ void ImplRegionBand::XOr( long nXLeft, long nXRight )
                 // holds. Note that we need the nXLeft<=nOldRight here, as
                 // the intersection part might be only one pixel (original
                 // nXLeft==nXRight)
-                SAL_WARN_IF( nOldLeft==nXLeft || nXLeft>nOldRight || nOldRight>=nXRight, "vcl",
+                DBG_ASSERT( nOldLeft<nXLeft && nXLeft<=nOldRight && nOldRight<nXRight,
                             "ImplRegionBand::XOr(): Case 4,5,6,7 expected coordinates to be ordered now!" );
 
                 pSep->mnXLeft = nOldLeft;
@@ -824,7 +823,7 @@ long ImplRegionBand::GetXLeftBoundary() const
 
 long ImplRegionBand::GetXRightBoundary() const
 {
-    SAL_WARN_IF( mpFirstSep == nullptr, "vcl", "ImplRegionBand::XRightBoundary -> no separation in band!" );
+    DBG_ASSERT( mpFirstSep != nullptr, "ImplRegionBand::XRightBoundary -> no separation in band!" );
 
     // search last separation
     ImplRegionBandSep* pSep = mpFirstSep;

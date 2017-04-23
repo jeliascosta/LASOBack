@@ -17,7 +17,6 @@ import unohelper
 import uno
 import re
 import os
-import encodings.idna
 
 #to implement com::sun::star::mail::XMailServiceProvider
 #and

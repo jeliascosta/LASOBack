@@ -28,11 +28,19 @@
 
 class OptimizationStats
 {
-    std::map < PPPOptimizerTokenEnum, css::uno::Any > maStats;
+    struct Compare
+    {
+        bool operator()( const PPPOptimizerTokenEnum s1, const PPPOptimizerTokenEnum s2 ) const
+        {
+            return s1 < s2;
+        }
+    };
+    std::map < PPPOptimizerTokenEnum, css::uno::Any, Compare > maStats;
 
     public:
 
         OptimizationStats();
+        ~OptimizationStats(){};
 
         void SetStatusValue( const PPPOptimizerTokenEnum eStat, const css::uno::Any& rStatValue );
         const css::uno::Any* GetStatusValue( const PPPOptimizerTokenEnum eStat ) const;

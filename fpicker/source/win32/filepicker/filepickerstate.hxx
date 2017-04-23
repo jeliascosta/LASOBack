@@ -52,7 +52,7 @@ public:
 
     virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction ) = 0;
 
-    virtual void SAL_CALL enableControl( sal_Int16 aControlId, bool bEnable ) = 0;
+    virtual void SAL_CALL enableControl( sal_Int16 aControlId, sal_Bool bEnable ) = 0;
 
     virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel ) = 0;
 
@@ -72,21 +72,21 @@ class CNonExecuteFilePickerState : public CFilePickerState
 public:
     CNonExecuteFilePickerState( );
 
-    virtual ~CNonExecuteFilePickerState( ) override;
+    virtual ~CNonExecuteFilePickerState( );
 
-    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue );
 
-    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction ) override;
+    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction );
 
-    virtual void SAL_CALL enableControl( sal_Int16 aControlId, bool bEnable ) override;
+    virtual void SAL_CALL enableControl( sal_Int16 aControlId, sal_Bool bEnable );
 
-    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel ) override;
+    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel );
 
-    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId ) override;
+    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId );
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getFiles( CFileOpenDialog* aFileOpenDialog ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getFiles( CFileOpenDialog* aFileOpenDialog );
 
-    virtual OUString SAL_CALL getDisplayDirectory( CFileOpenDialog* aFileOpenDialog ) override;
+    virtual OUString SAL_CALL getDisplayDirectory( CFileOpenDialog* aFileOpenDialog );
 
     void SAL_CALL reset( );
 
@@ -106,21 +106,21 @@ private:
 class CExecuteFilePickerState : public CFilePickerState
 {
 public:
-    explicit CExecuteFilePickerState( HWND hwndDlg = nullptr );
+    explicit CExecuteFilePickerState( HWND hwndDlg = NULL );
 
-    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue ) override;
+    virtual void SAL_CALL setValue( sal_Int16 aControlId, sal_Int16 aControlAction, const css::uno::Any& aValue );
 
-    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction ) override;
+    virtual css::uno::Any SAL_CALL getValue( sal_Int16 aControlId, sal_Int16 aControlAction );
 
-    virtual void SAL_CALL enableControl( sal_Int16 aControlId, bool bEnable ) override;
+    virtual void SAL_CALL enableControl( sal_Int16 aControlId, sal_Bool bEnable );
 
-    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel ) override;
+    virtual void SAL_CALL setLabel( sal_Int16 aControlId, const OUString& aLabel );
 
-    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId ) override;
+    virtual OUString SAL_CALL getLabel( sal_Int16 aControlId );
 
-    virtual css::uno::Sequence< OUString > SAL_CALL getFiles( CFileOpenDialog* aFileOpenDialog ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getFiles( CFileOpenDialog* aFileOpenDialog );
 
-    virtual OUString SAL_CALL getDisplayDirectory( CFileOpenDialog* aFileOpenDialog ) override;
+    virtual OUString SAL_CALL getDisplayDirectory( CFileOpenDialog* aFileOpenDialog );
 
     void SAL_CALL initFilePickerControls( CControlCommand* firstControlCommand );
 
@@ -130,9 +130,9 @@ public:
 
 private:
 
-    static inline bool SAL_CALL IsListboxControl( HWND hwndControl );
+    inline sal_Bool SAL_CALL IsListboxControl( HWND hwndControl ) const;
 
-    static inline sal_Int16 SAL_CALL ListboxIdToListboxLabelId( sal_Int16 aListboxId );
+    inline sal_Int16 SAL_CALL ListboxIdToListboxLabelId( sal_Int16 aListboxId ) const;
 
     inline HWND SAL_CALL GetListboxLabelItem( sal_Int16 aControlId ) const;
 
@@ -140,7 +140,7 @@ private:
     // if bIncludeStdCtrls is false, the standard file dialog
     // controls like OK button, etc. will not be considered
     // the function return 0 on failure
-    HWND SAL_CALL GetHwndDlgItem( sal_Int16 aControlId, bool bIncludeStdCtrls = true ) const;
+    HWND SAL_CALL GetHwndDlgItem( sal_Int16 aControlId, sal_Bool bIncludeStdCtrls = sal_True ) const;
 
     HWND m_hwndDlg;
 };

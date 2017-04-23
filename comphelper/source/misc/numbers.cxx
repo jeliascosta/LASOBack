@@ -41,7 +41,7 @@ sal_Int16 getNumberFormatType(const css::uno::Reference<css::util::XNumberFormat
         }
         catch(...)
         {
-            SAL_WARN("comphelper", "getNumberFormatType : invalid key! (maybe created with another formatter ?)");
+            OSL_TRACE("getNumberFormatType : invalid key! (maybe created with another formatter ?)");
         }
     }
     return nReturn;
@@ -72,10 +72,10 @@ css::uno::Any getNumberFormatDecimals(const css::uno::Reference<css::util::XNumb
         }
         catch(...)
         {
-            SAL_WARN("comphelper", "getNumberFormatDecimals : invalid key! (may be created with another formatter ?)");
+            OSL_TRACE("getNumberFormatDecimals : invalid key! (may be created with another formatter ?)");
         }
     }
-    return css::uno::Any((sal_Int16)0);
+    return css::uno::makeAny((sal_Int16)0);
 }
 
 

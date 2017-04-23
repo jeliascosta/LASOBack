@@ -91,7 +91,7 @@ MenuBarWrapper::~MenuBarWrapper()
 {
 }
 
-void SAL_CALL MenuBarWrapper::dispose()
+void SAL_CALL MenuBarWrapper::dispose() throw (css::uno::RuntimeException, std::exception)
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -110,7 +110,7 @@ void SAL_CALL MenuBarWrapper::dispose()
 }
 
 // XInitialization
-void SAL_CALL MenuBarWrapper::initialize( const Sequence< Any >& aArguments )
+void SAL_CALL MenuBarWrapper::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -126,11 +126,11 @@ void SAL_CALL MenuBarWrapper::initialize( const Sequence< Any >& aArguments )
         if ( xFrame.is() && m_xConfigSource.is() )
         {
             // Create VCL menubar which will be filled with settings data
-            VclPtr<MenuBar> pVCLMenuBar;
+            MenuBar*        pVCLMenuBar = nullptr;
             VCLXMenuBar*    pAwtMenuBar = nullptr;
             {
                 SolarMutexGuard aSolarMutexGuard;
-                pVCLMenuBar = VclPtr<MenuBar>::Create();
+                pVCLMenuBar = new MenuBar();
             }
 
             Reference< XModuleManager2 > xModuleManager = ModuleManager::create( m_xContext );
@@ -184,7 +184,8 @@ void SAL_CALL MenuBarWrapper::initialize( const Sequence< Any >& aArguments )
                                                                       xDispatchProvider,
                                                                       aModuleIdentifier,
                                                                       pVCLMenuBar,
-                                                                      false );
+                                                                      false,
+                                                                      true );
 
                 m_xMenuBarManager.set( static_cast< OWeakObject *>( pMenuBarManager ), UNO_QUERY );
             }
@@ -198,7 +199,7 @@ void SAL_CALL MenuBarWrapper::initialize( const Sequence< Any >& aArguments )
 }
 
 // XUIElementSettings
-void SAL_CALL MenuBarWrapper::updateSettings()
+void SAL_CALL MenuBarWrapper::updateSettings() throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -250,11 +251,13 @@ void MenuBarWrapper::fillPopupControllerCache()
 
 // XElementAccess
 Type SAL_CALL MenuBarWrapper::getElementType()
+throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<XDispatchProvider>::get();
 }
 
 sal_Bool SAL_CALL MenuBarWrapper::hasElements()
+throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -268,6 +271,9 @@ sal_Bool SAL_CALL MenuBarWrapper::hasElements()
 // XNameAccess
 Any SAL_CALL MenuBarWrapper::getByName(
     const OUString& aName )
+throw ( container::NoSuchElementException,
+        lang::WrappedTargetException,
+        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -288,6 +294,7 @@ Any SAL_CALL MenuBarWrapper::getByName(
 }
 
 Sequence< OUString > SAL_CALL MenuBarWrapper::getElementNames()
+throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -301,6 +308,7 @@ Sequence< OUString > SAL_CALL MenuBarWrapper::getElementNames()
 
 sal_Bool SAL_CALL MenuBarWrapper::hasByName(
     const OUString& aName )
+throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -317,7 +325,7 @@ sal_Bool SAL_CALL MenuBarWrapper::hasByName(
 }
 
 // XUIElement
-Reference< XInterface > SAL_CALL MenuBarWrapper::getRealInterface()
+Reference< XInterface > SAL_CALL MenuBarWrapper::getRealInterface() throw ( RuntimeException, std::exception )
 {
     if ( m_bDisposed )
         throw DisposedException();

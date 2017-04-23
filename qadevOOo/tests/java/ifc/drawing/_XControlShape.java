@@ -68,9 +68,7 @@ public class _XControlShape extends MultiMethodTest {
     *  <li> <code> getControl() </code>  </li>
     * </ul>
     */
-    public void _setControl()
-        throws com.sun.star.uno.Exception
-    {
+    public void _setControl() {
         requiredMethod("getControl()") ;
 
         XInterface oNewControl = FormTools.createControl

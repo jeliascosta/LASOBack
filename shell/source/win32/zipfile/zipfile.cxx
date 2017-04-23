@@ -50,6 +50,7 @@ struct LocalFileHeader
         : min_version(0), general_flag(0), compression(0), lastmod_time(0), lastmod_date(0),
           crc32(0), compressed_size(0), uncompressed_size(0), filename_size(0), extra_field_size(0),
           filename(), extra_field() {}
+    ~LocalFileHeader() {}
 };
 
 struct CentralDirectoryEntry
@@ -78,6 +79,7 @@ struct CentralDirectoryEntry
           lastmod_date(0), crc32(0), compressed_size(0), uncompressed_size(0), filename_size(0),
           extra_field_size(0), file_comment_size(0), disk_num(0), internal_attr(0),
           external_attr(0), offset(0), filename(), extra_field(), file_comment() {}
+    ~CentralDirectoryEntry() {}
 };
 
 struct CentralDirectoryEnd
@@ -93,6 +95,7 @@ struct CentralDirectoryEnd
     CentralDirectoryEnd()
         : disk_num(0), cdir_disk(0), disk_entries(0), cdir_entries(0),
           cdir_size(0), cdir_offset(0), comment_size(0), comment() {}
+    ~CentralDirectoryEnd() {}
 };
 
 #define CDIR_ENTRY_SIG 0x02014b50
@@ -102,7 +105,7 @@ struct CentralDirectoryEnd
 // This little lot performs in a truly appalling way without
 // buffering eg. on an IStream.
 
-unsigned short readShort(StreamInterface *stream)
+static unsigned short readShort(StreamInterface *stream)
 {
     if (!stream || stream->stell() == -1)
         throw IOException(-1);
@@ -114,7 +117,7 @@ unsigned short readShort(StreamInterface *stream)
     return tmpBuf;
 }
 
-unsigned readInt(StreamInterface *stream)
+static unsigned readInt(StreamInterface *stream)
 {
     if (!stream || stream->stell() == -1)
         throw IOException(-1);
@@ -126,7 +129,7 @@ unsigned readInt(StreamInterface *stream)
     return tmpBuf;
 }
 
-std::string readString(StreamInterface *stream, unsigned long size)
+static std::string readString(StreamInterface *stream, unsigned long size)
 {
     if (!stream || stream->stell() == -1)
         throw IOException(-1);
@@ -138,12 +141,12 @@ std::string readString(StreamInterface *stream, unsigned long size)
         throw IOException(-1);
     }
 
-    std::string aStr(reinterpret_cast<char *>(tmp), size);
+    std::string aStr((char *)tmp, size);
     delete [] tmp;
     return aStr;
 }
 
-bool readCentralDirectoryEnd(StreamInterface *stream, CentralDirectoryEnd &end)
+static bool readCentralDirectoryEnd(StreamInterface *stream, CentralDirectoryEnd &end)
 {
     try
     {
@@ -167,7 +170,7 @@ bool readCentralDirectoryEnd(StreamInterface *stream, CentralDirectoryEnd &end)
     return true;
 }
 
-bool readCentralDirectoryEntry(StreamInterface *stream, CentralDirectoryEntry &entry)
+static bool readCentralDirectoryEntry(StreamInterface *stream, CentralDirectoryEntry &entry)
 {
     try
     {
@@ -202,7 +205,7 @@ bool readCentralDirectoryEntry(StreamInterface *stream, CentralDirectoryEntry &e
     return true;
 }
 
-bool readLocalFileHeader(StreamInterface *stream, LocalFileHeader &header)
+static bool readLocalFileHeader(StreamInterface *stream, LocalFileHeader &header)
 {
     try
     {
@@ -230,7 +233,7 @@ bool readLocalFileHeader(StreamInterface *stream, LocalFileHeader &header)
     return true;
 }
 
-bool areHeadersConsistent(const LocalFileHeader &header, const CentralDirectoryEntry &entry)
+static bool areHeadersConsistent(const LocalFileHeader &header, const CentralDirectoryEntry &entry)
 {
     if (header.min_version != entry.min_version)
         return false;
@@ -252,7 +255,7 @@ bool areHeadersConsistent(const LocalFileHeader &header, const CentralDirectoryE
 
 #define BLOCK_SIZE 0x800
 
-bool findSignatureAtOffset(StreamInterface *stream, unsigned long nOffset)
+static bool findSignatureAtOffset(StreamInterface *stream, unsigned long nOffset)
 {
     // read in reasonably sized chunk, and read more, to get overlapping sigs
     unsigned char aBuffer[ BLOCK_SIZE + 4 ];
@@ -274,7 +277,7 @@ bool findSignatureAtOffset(StreamInterface *stream, unsigned long nOffset)
     return false;
 }
 
-bool findCentralDirectoryEnd(StreamInterface *stream)
+static bool findCentralDirectoryEnd(StreamInterface *stream)
 {
     if (!stream)
         return false;
@@ -301,7 +304,7 @@ bool findCentralDirectoryEnd(StreamInterface *stream)
     }
 }
 
-bool isZipStream(StreamInterface *stream)
+static bool isZipStream(StreamInterface *stream)
 {
     if (!findCentralDirectoryEnd(stream))
         return false;
@@ -403,14 +406,14 @@ bool ZipFile::IsValidZipFileVersionNumber(void* /* stream*/)
             with the used zlib version
 */
 ZipFile::ZipFile(const std::string &FileName) :
-    m_pStream(nullptr),
+    m_pStream(0),
     m_bShouldFree(true)
 {
     m_pStream = new FileStream(FileName.c_str());
     if (m_pStream && !isZipStream(m_pStream))
     {
         delete m_pStream;
-        m_pStream = nullptr;
+        m_pStream = 0;
     }
 }
 
@@ -419,7 +422,7 @@ ZipFile::ZipFile(StreamInterface *stream) :
     m_bShouldFree(false)
 {
     if (!isZipStream(stream))
-        m_pStream = nullptr;
+        m_pStream = 0;
 }
 
 
@@ -466,7 +469,7 @@ void ZipFile::GetUncompressedContent(
     ContentBuffer.clear();
     ContentBuffer = ZipContentBuffer_t(entry.uncompressed_size);
     if (!entry.compression)
-        m_pStream->sread(reinterpret_cast<unsigned char *>(&ContentBuffer[0]), entry.uncompressed_size);
+        m_pStream->sread((unsigned char *)&ContentBuffer[0], entry.uncompressed_size);
     else
     {
         int ret;

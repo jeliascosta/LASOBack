@@ -35,7 +35,7 @@ class EmptyPanel
 {
 public:
     explicit EmptyPanel (vcl::Window* pParent);
-    virtual ~EmptyPanel() override;
+    virtual ~EmptyPanel();
     virtual void dispose() override;
 
     virtual void Resize() override;

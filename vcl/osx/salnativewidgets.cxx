@@ -47,9 +47,9 @@
 class AquaBlinker : public Timer
 {
     AquaSalFrame*       mpFrame;
-    tools::Rectangle           maInvalidateRect;
+    Rectangle           maInvalidateRect;
 
-    AquaBlinker( AquaSalFrame* pFrame, const tools::Rectangle& rRect )
+    AquaBlinker( AquaSalFrame* pFrame, const Rectangle& rRect )
     : mpFrame( pFrame ), maInvalidateRect( rRect )
     {
         mpFrame->maBlinkers.push_back( this );
@@ -57,7 +57,7 @@ class AquaBlinker : public Timer
 
     public:
 
-    static void Blink( AquaSalFrame*, const tools::Rectangle&, int nTimeout = 80 );
+    static void Blink( AquaSalFrame*, const Rectangle&, int nTimeout = 80 );
 
     virtual void Invoke() override
     {
@@ -71,7 +71,7 @@ class AquaBlinker : public Timer
     }
 };
 
-void AquaBlinker::Blink( AquaSalFrame* pFrame, const tools::Rectangle& rRect, int nTimeout )
+void AquaBlinker::Blink( AquaSalFrame* pFrame, const Rectangle& rRect, int nTimeout )
 {
     // prevent repeated paints from triggering themselves all the time
     for( std::list< AquaBlinker* >::const_iterator it = pFrame->maBlinkers.begin();
@@ -87,7 +87,7 @@ void AquaBlinker::Blink( AquaSalFrame* pFrame, const tools::Rectangle& rRect, in
 
 // Helper returns an HIRect
 
-static HIRect ImplGetHIRectFromRectangle(tools::Rectangle aRect)
+static HIRect ImplGetHIRectFromRectangle(Rectangle aRect)
 {
     HIRect aHIRect;
     aHIRect.origin.x = static_cast<float>(aRect.Left());
@@ -118,7 +118,7 @@ static ThemeButtonValue ImplGetButtonValue( ButtonValue aButtonValue )
 }
 
 static bool AquaGetScrollRect( /* TODO: int nScreen, */  ControlPart nPart,
-    const tools::Rectangle& rControlRect, tools::Rectangle& rResultRect )
+    const Rectangle& rControlRect, Rectangle& rResultRect )
 {
     bool bRetVal = true;
     rResultRect = rControlRect;
@@ -157,6 +157,13 @@ static bool AquaGetScrollRect( /* TODO: int nScreen, */  ControlPart nPart,
     return bRetVal;
 }
 
+/*
+ * IsNativeControlSupported()
+ * --------------------------
+ * Returns true if the platform supports native
+ * drawing of the control defined by nPart.
+ *
+ */
 bool AquaSalGraphics::IsNativeControlSupported( ControlType nType, ControlPart nPart )
 {
     bool bOk = false;
@@ -285,12 +292,19 @@ bool AquaSalGraphics::IsNativeControlSupported( ControlType nType, ControlPart n
     return bOk;
 }
 
-bool AquaSalGraphics::hitTestNativeControl( ControlType nType, ControlPart nPart, const tools::Rectangle& rControlRegion,
+/*
+ * HitTestNativeControl()
+ *
+ *  If the return value is true, bIsInside contains information whether
+ *  aPos was or was not inside the native widget specified by the
+ *  nType/nPart combination.
+ */
+bool AquaSalGraphics::hitTestNativeControl( ControlType nType, ControlPart nPart, const Rectangle& rControlRegion,
                         const Point& rPos, bool& rIsInside )
 {
     if ( nType == ControlType::Scrollbar )
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         bool bValid = AquaGetScrollRect( /* TODO: m_nScreen */ nPart, rControlRegion, aRect );
         rIsInside = bValid && aRect.IsInside( rPos );
         return bValid;
@@ -314,8 +328,14 @@ UInt32 AquaSalGraphics::getState( ControlState nState )
     const bool bDrawActive = mpFrame == nullptr || [mpFrame->getNSWindow() isKeyWindow];
     if( !(nState & ControlState::ENABLED) || ! bDrawActive )
     {
-        return kThemeStateInactive;
+        if( ! (nState & ControlState::HIDDEN) )
+            return kThemeStateInactive;
+        else
+            return kThemeStateUnavailableInactive;
     }
+
+    if( nState & ControlState::HIDDEN )
+        return kThemeStateUnavailable;
 
     if( nState & ControlState::PRESSED )
         return kThemeStatePressed;
@@ -332,9 +352,18 @@ UInt32 AquaSalGraphics::getTrackState( ControlState nState )
     return kThemeTrackActive;
 }
 
+/*
+ * DrawNativeControl()
+ *
+ *  Draws the requested control described by nPart/nState.
+ *
+ *  rControlRegion: The bounding region of the complete control in VCL frame coordinates.
+ *  aValue:     An optional value (tristate/numerical/string)
+ *  aCaption:   A caption or title string (like button text etc)
+ */
 bool AquaSalGraphics::drawNativeControl(ControlType nType,
                     ControlPart nPart,
-                    const tools::Rectangle& rControlRegion,
+                    const Rectangle& rControlRegion,
                     ControlState nState,
                     const ImplControlValue& aValue,
                     const OUString& )
@@ -346,7 +375,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
 
     CGContextSaveGState( mrContext );
 
-    tools::Rectangle buttonRect = rControlRegion;
+    Rectangle buttonRect = rControlRegion;
     HIRect rc = ImplGetHIRectFromRectangle(buttonRect);
 
     switch( nType )
@@ -510,7 +539,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
                 aPushInfo.kind = kThemePushButtonMini;
                 nPaintHeight = PB_Mini_Height;
             }
-            else if( (pPBVal && pPBVal->mbSingleLine) || rc.size.height < (PB_Norm_Height + PB_Norm_Height/2) )
+            else if( pPBVal->mbSingleLine || rc.size.height < (PB_Norm_Height + PB_Norm_Height/2) )
             {
                 aPushInfo.kind = kThemePushButtonNormal;
                 nPaintHeight = PB_Norm_Height;
@@ -659,7 +688,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
             if( nType == ControlType::IntroProgress )
                 aTrackInfo.enableState          = kThemeTrackActive;
             aTrackInfo.filler1              = 0;
-            aTrackInfo.trackInfo.progress.phase   = static_cast<long long>(CFAbsoluteTimeGetCurrent()*10.0);
+            aTrackInfo.trackInfo.progress.phase   = static_cast<UInt8>(CFAbsoluteTimeGetCurrent()*10.0);
 
             HIThemeDrawTrack( &aTrackInfo, nullptr, mrContext, kHIThemeOrientationNormal );
             bOK = true;
@@ -938,7 +967,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
                     else if((nUpperState & ControlState::ROLLOVER)||(nLowerState & ControlState::ROLLOVER))
                         aSpinInfo.state = kThemeStateRollover;
 
-                    tools::Rectangle aSpinRect( pSpinButtonVal->maUpperRect );
+                    Rectangle aSpinRect( pSpinButtonVal->maUpperRect );
                     aSpinRect.Union( pSpinButtonVal->maLowerRect );
                     HIRect buttonRc = ImplGetHIRectFromRectangle(aSpinRect);
 
@@ -1034,7 +1063,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
         if( mxClipPath )
             aRect = CGPathGetBoundingBox( mxClipPath );
         if( aRect.size.width != 0 && aRect.size.height != 0 )
-            buttonRect.Intersection( tools::Rectangle( Point( static_cast<long int>(aRect.origin.x),
+            buttonRect.Intersection( Rectangle( Point( static_cast<long int>(aRect.origin.x),
                             static_cast<long int>(aRect.origin.y) ),
                                                 Size(   static_cast<long int>(aRect.size.width),
                             static_cast<long int>(aRect.size.height) ) ) );
@@ -1045,14 +1074,27 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
     return bOK;
 }
 
-bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPart, const tools::Rectangle& rControlRegion, ControlState /*nState*/,
+/*
+ * GetNativeControlRegion()
+ *
+ *  If the return value is true, rNativeBoundingRegion
+ *  contains the true bounding region covered by the control
+ *  including any adornment, while rNativeContentRegion contains the area
+ *  within the control that can be safely drawn into without drawing over
+ *  the borders of the control.
+ *
+ *  rControlRegion: The bounding region of the control in VCL frame coordinates.
+ *  aValue:     An optional value (tristate/numerical/string)
+ *  aCaption:       A caption or title string (like button text etc)
+ */
+bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPart, const Rectangle& rControlRegion, ControlState /*nState*/,
                                                const ImplControlValue& aValue, const OUString&,
-                                                tools::Rectangle &rNativeBoundingRegion, tools::Rectangle &rNativeContentRegion )
+                                                Rectangle &rNativeBoundingRegion, Rectangle &rNativeContentRegion )
 
 {
     bool toReturn = false;
 
-    tools::Rectangle aCtrlBoundRect( rControlRegion );
+    Rectangle aCtrlBoundRect( rControlRegion );
     short x = aCtrlBoundRect.Left();
     short y = aCtrlBoundRect.Top();
     short w, h;
@@ -1067,14 +1109,14 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                 {
                     w = 19; // taken from HIG
                     h = aCtrlBoundRect.GetHeight();
-                    rNativeBoundingRegion = rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
                     toReturn = true;
                 }
                 else if( nPart == ControlPart::ThumbVert )
                 {
                     w = aCtrlBoundRect.GetWidth();
                     h = 18; // taken from HIG
-                    rNativeBoundingRegion = rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
                     toReturn = true;
                 }
             }
@@ -1082,7 +1124,7 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
 
         case ControlType::Scrollbar:
             {
-                tools::Rectangle aRect;
+                Rectangle aRect;
                 if( AquaGetScrollRect( /* m_nScreen */ nPart, aCtrlBoundRect, aRect ) )
                 {
                     toReturn = true;
@@ -1112,15 +1154,15 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
 
                 }
 
-                rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h + nBorderCleanup) );
-                rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h + nBorderCleanup) );
+                rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
                 toReturn = true;
             }
             break;
         case ControlType::Progress:
             {
-                tools::Rectangle aRect( aCtrlBoundRect );
+                Rectangle aRect( aCtrlBoundRect );
                 if( aRect.GetHeight() < 16 )
                     aRect.Bottom() = aRect.Top() + 9; // values taken from HIG for medium progress
                 else
@@ -1133,7 +1175,7 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
 
         case ControlType::IntroProgress:
             {
-                tools::Rectangle aRect( aCtrlBoundRect );
+                Rectangle aRect( aCtrlBoundRect );
                 aRect.Bottom() = aRect.Top() + INTRO_PROGRESS_HEIGHT; // values taken from HIG for medium progress
                 rNativeBoundingRegion = aRect;
                 rNativeContentRegion = aRect;
@@ -1146,8 +1188,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
             w = aCtrlBoundRect.GetWidth() + 2*TAB_TEXT_OFFSET - 2*VCL_TAB_TEXT_OFFSET;
             h = TAB_HEIGHT_NORMAL+2;
 
-            rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-            rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+            rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+            rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
             toReturn = true;
 
@@ -1162,8 +1204,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                 if( h < aCtrlBoundRect.GetHeight() )
                     h = aCtrlBoundRect.GetHeight();
 
-                rNativeContentRegion = tools::Rectangle( Point( x+FOCUS_RING_WIDTH, y+FOCUS_RING_WIDTH ), Size( w-2*(FOCUS_RING_WIDTH+1), h-2*(FOCUS_RING_WIDTH+1) ) );
-                rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                rNativeContentRegion = Rectangle( Point( x+FOCUS_RING_WIDTH, y+FOCUS_RING_WIDTH ), Size( w-2*(FOCUS_RING_WIDTH+1), h-2*(FOCUS_RING_WIDTH+1) ) );
+                rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
                 toReturn = true;
             }
@@ -1176,8 +1218,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     w = aCtrlBoundRect.GetWidth();
                     h = COMBOBOX_HEIGHT_NORMAL;//listboxes and comboxes have the same height
 
-                    rNativeContentRegion = tools::Rectangle( Point( x+FOCUS_RING_WIDTH, y+FOCUS_RING_WIDTH ), Size( w-2*FOCUS_RING_WIDTH, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
+                    rNativeContentRegion = Rectangle( Point( x+FOCUS_RING_WIDTH, y+FOCUS_RING_WIDTH ), Size( w-2*FOCUS_RING_WIDTH, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
 
                     toReturn = true;
                 }
@@ -1192,8 +1234,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     y += FOCUS_RING_WIDTH;
                     w = DROPDOWN_BUTTON_WIDTH;
 
-                    rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w+FOCUS_RING_WIDTH, h+2*FOCUS_RING_WIDTH ) );
+                    rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w+FOCUS_RING_WIDTH, h+2*FOCUS_RING_WIDTH ) );
 
                     toReturn = true;
                 }
@@ -1211,8 +1253,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                         w -= 9; // HIG specifies 9 units distance between dropdown button area and content
                     h -= 4; // don't draw into lower border
 
-                    rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w+FOCUS_RING_WIDTH, h+2*FOCUS_RING_WIDTH ) );
+                    rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w+FOCUS_RING_WIDTH, h+2*FOCUS_RING_WIDTH ) );
 
                     toReturn = true;
                 }
@@ -1225,8 +1267,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                         w = 3+2*FOCUS_RING_WIDTH+SPIN_BUTTON_SPACE+SPIN_BUTTON_WIDTH;
                     h = TEXT_EDIT_HEIGHT_NORMAL;
 
-                    rNativeContentRegion = tools::Rectangle( Point( x+FOCUS_RING_WIDTH, y ), Size( w-2*FOCUS_RING_WIDTH, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
+                    rNativeContentRegion = Rectangle( Point( x+FOCUS_RING_WIDTH, y ), Size( w-2*FOCUS_RING_WIDTH, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
 
                     toReturn = true;
                 }
@@ -1238,8 +1280,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     w -= 8; // offset for left and right rounded border
                     h -= 4; // don't draw into upper or lower border
 
-                    rNativeContentRegion = tools::Rectangle( Point( x + FOCUS_RING_WIDTH, y + FOCUS_RING_WIDTH ), Size( w - 2* FOCUS_RING_WIDTH, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
+                    rNativeContentRegion = Rectangle( Point( x + FOCUS_RING_WIDTH, y + FOCUS_RING_WIDTH ), Size( w - 2* FOCUS_RING_WIDTH, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h+2*FOCUS_RING_WIDTH ) );
 
                     toReturn = true;
                 }
@@ -1252,8 +1294,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     w = SPIN_BUTTON_WIDTH + 2*CLIP_FUZZ;
                     h = SPIN_UPPER_BUTTON_HEIGHT + 2*CLIP_FUZZ;
 
-                    rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
                     toReturn = true;
                 }
@@ -1263,8 +1305,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     w = SPIN_BUTTON_WIDTH + 2*CLIP_FUZZ;
                     h = SPIN_LOWER_BUTTON_HEIGHT + 2*CLIP_FUZZ;
 
-                    rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
                     toReturn = true;
                 }
@@ -1276,7 +1318,7 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                 if(  ( nPart == ControlPart::Border ) &&
                     !( nFlags & (DrawFrameFlags::Menu | DrawFrameFlags::WindowBorder | DrawFrameFlags::BorderWindowBorder) ) )
                 {
-                    tools::Rectangle aRect(aCtrlBoundRect);
+                    Rectangle aRect(aCtrlBoundRect);
                     if( nStyle == DrawFrameStyle::DoubleIn )
                     {
                         aRect.Left()    += 1;
@@ -1308,8 +1350,8 @@ bool AquaSalGraphics::getNativeControlRegion( ControlType nType, ControlPart nPa
                     w=10;
                     h=10;//dimensions of the mark (10px font)
 
-                    rNativeContentRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
-                    rNativeBoundingRegion = tools::Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeContentRegion = Rectangle( Point( x, y ), Size( w, h ) );
+                    rNativeBoundingRegion = Rectangle( Point( x, y ), Size( w, h ) );
 
                     toReturn = true;
                 }

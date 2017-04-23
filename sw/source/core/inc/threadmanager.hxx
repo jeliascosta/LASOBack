@@ -26,6 +26,7 @@
 #include <rtl/ref.hxx>
 
 #include <deque>
+#include <list>
 #include <cppuhelper/weak.hxx>
 #include <com/sun/star/util/XJobManager.hpp>
 #include <observablethread.hxx>
@@ -43,12 +44,12 @@
     It assures that not more than <mnStartedSize> threads
     are started.
 */
-class ThreadManager final
+class ThreadManager
 {
     public:
 
         explicit ThreadManager( css::uno::Reference< css::util::XJobManager >& rThreadJoiner );
-        ~ThreadManager();
+        virtual ~ThreadManager();
 
         std::weak_ptr< IFinishedThreadListener > GetThreadListenerWeakRef();
         void NotifyAboutFinishedThread( const oslInterlockedCount nThreadID );
@@ -69,14 +70,14 @@ class ThreadManager final
         void RemoveThread( const oslInterlockedCount nThreadID,
                            const bool bThreadFinished = false );
 
-        DECL_LINK( TryToStartNewThread, Timer*, void );
+        DECL_LINK_TYPED( TryToStartNewThread, Idle*, void );
 
         /** suspend the starting of threads
 
             Suspending the starting of further threads is sensible during the
             destruction of a Writer document.
         */
-        void SuspendStartingOfThreads()
+        inline void SuspendStartingOfThreads()
         {
             osl::MutexGuard aGuard(maMutex);
 
@@ -87,7 +88,7 @@ class ThreadManager final
         */
         void ResumeStartingOfThreads();
 
-        bool StartingOfThreadsSuspended()
+        inline bool StartingOfThreadsSuspended()
         {
             osl::MutexGuard aGuard(maMutex);
 
@@ -138,6 +139,11 @@ class ThreadManager final
                 return rThreadData.nThreadID == mnThreadID;
             }
         };
+
+        inline oslInterlockedCount RetrieveNewThreadID()
+        {
+            return osl_atomic_increment( &mnThreadIDCounter );
+        }
 
         bool StartWaitingThread();
 

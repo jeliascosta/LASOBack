@@ -47,58 +47,57 @@
 struct DebugData
 {
     DbgTestSolarMutexProc   pDbgTestSolarMutex;
-    bool                    bTestSolarMutexWasSet;
 
     DebugData()
-        :pDbgTestSolarMutex( nullptr ), bTestSolarMutexWasSet(false)
+        :pDbgTestSolarMutex( nullptr )
     {
     }
 };
 
 static DebugData aDebugData;
 
-void DbgSetTestSolarMutex( DbgTestSolarMutexProc pParam )
+void* DbgFunc( sal_uInt16 nAction, void* pParam )
 {
-    aDebugData.pDbgTestSolarMutex = pParam;
-    if (pParam)
-        aDebugData.bTestSolarMutexWasSet = true;
-}
+    DebugData* pDebugData = &aDebugData;
 
-void DbgTestSolarMutex()
-{
-    // don't warn if it was set at least once, because then we're probably just post-DeInitVCL()
-    SAL_WARN_IF(
-        !aDebugData.bTestSolarMutexWasSet && aDebugData.pDbgTestSolarMutex == nullptr, "tools.debug",
-        "no DbgTestSolarMutex function set");
-    if ( aDebugData.pDbgTestSolarMutex )
-        aDebugData.pDbgTestSolarMutex();
+    switch ( nAction )
+    {
+    case DBG_FUNC_SETTESTSOLARMUTEX:
+        pDebugData->pDbgTestSolarMutex = reinterpret_cast<DbgTestSolarMutexProc>(reinterpret_cast<sal_uIntPtr>(pParam));
+        break;
+
+    case DBG_FUNC_TESTSOLARMUTEX:
+        SAL_WARN_IF(
+            pDebugData->pDbgTestSolarMutex == nullptr, "tools.debug",
+            "no DbgTestSolarMutex function set");
+        if ( pDebugData->pDbgTestSolarMutex )
+            pDebugData->pDbgTestSolarMutex();
+        break;
+    }
+
+    return nullptr;
 }
 
 #endif
 
-void DbgUnhandledException(const css::uno::Any & caught, const char* currentFunction, const char* fileAndLineNo,
-        const char* explanatory)
+void DbgUnhandledException(const css::uno::Any & caught, const char* currentFunction, const char* fileAndLineNo)
 {
-        OString sMessage( "DBG_UNHANDLED_EXCEPTION in " );
+        OString sMessage( "caught an exception!" );
+        sMessage += "\nin function:";
         sMessage += currentFunction;
-        if (explanatory)
-        {
-            sMessage += "\n    when: ";
-            sMessage += explanatory;
-        }
-        sMessage += "\n    type: ";
+        sMessage += "\ntype: ";
         sMessage += OUStringToOString( caught.getValueTypeName(), osl_getThreadTextEncoding() );
         css::uno::Exception exception;
         caught >>= exception;
         if ( !exception.Message.isEmpty() )
         {
-            sMessage += "\n    message: ";
+            sMessage += "\nmessage: ";
             sMessage += OUStringToOString( exception.Message, osl_getThreadTextEncoding() );
         }
         if ( exception.Context.is() )
         {
             const char* pContext = typeid( *exception.Context.get() ).name();
-            sMessage += "\n    context: ";
+            sMessage += "\ncontext: ";
             sMessage += pContext;
         }
         {
@@ -106,7 +105,7 @@ void DbgUnhandledException(const css::uno::Any & caught, const char* currentFunc
                 specialized;
             if ( caught >>= specialized )
             {
-                sMessage += "\n    details: ";
+                sMessage += "\ndetails: ";
                 sMessage += OUStringToOString(
                     specialized.Details, osl_getThreadTextEncoding() );
             }
@@ -115,7 +114,7 @@ void DbgUnhandledException(const css::uno::Any & caught, const char* currentFunc
             css::task::ErrorCodeIOException specialized;
             if ( caught >>= specialized )
             {
-                sMessage += "\n    details: ";
+                sMessage += "\ndetails: ";
                 sMessage += OString::number( specialized.ErrCode );
             }
         }

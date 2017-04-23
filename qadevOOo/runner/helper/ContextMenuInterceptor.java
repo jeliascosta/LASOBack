@@ -62,14 +62,14 @@ public class ContextMenuInterceptor implements XContextMenuInterceptor {
                 XIndexContainer.class,
                 xMenuElementFactory.createInstance("com.sun.star.ui.ActionTriggerContainer" ));
 
-                // initialize root menu entry "Help"
+                // intialize root menu entry "Help"
                 xRootMenuEntry.setPropertyValue( "Text", "Help" );
                 xRootMenuEntry.setPropertyValue( "CommandURL", "slot:5410" );
                 xRootMenuEntry.setPropertyValue( "HelpURL", "5410" );
                 xRootMenuEntry.setPropertyValue( "SubContainer", xSubMenuContainer );
 
                 // create menu entries for the new sub menu
-                // initialize help/content menu entry
+                // intialize help/content menu entry
                 // entry "Content"
                 XPropertySet xMenuEntry = UnoRuntime.queryInterface(
                         XPropertySet.class, xMenuElementFactory.createInstance(
@@ -81,18 +81,18 @@ public class ContextMenuInterceptor implements XContextMenuInterceptor {
                 // insert menu entry to sub menu
                 xSubMenuContainer.insertByIndex( 0, xMenuEntry );
 
-                // initialize help/help on help
-                // entry "Help on Help"
+                // intialize help/help agent
+                // entry "Help Agent"
                 xMenuEntry = UnoRuntime.queryInterface(
                         XPropertySet.class,
                         xMenuElementFactory.createInstance("com.sun.star.ui.ActionTrigger" ));
-                xMenuEntry.setPropertyValue("Text", "Help on Help");
-                xMenuEntry.setPropertyValue("CommandURL", "slot:5400");
-                xMenuEntry.setPropertyValue("HelpURL", "5400");
+                xMenuEntry.setPropertyValue( "Text", "Help Agent" );
+                xMenuEntry.setPropertyValue( "CommandURL", "slot:5962" );
+                xMenuEntry.setPropertyValue( "HelpURL", "5962" );
 
                 // insert menu entry to sub menu
                 xSubMenuContainer.insertByIndex( 1, xMenuEntry );
-                // initialize help/tips
+                // intialize help/tips
                 // entry "Tips"
                 xMenuEntry = UnoRuntime.queryInterface(
                         XPropertySet.class,

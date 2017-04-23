@@ -716,11 +716,9 @@ OUString mapCliString(System::String ^ data)
 
     if (data != nullptr)
     {
-        static_assert(sizeof(wchar_t) == sizeof(sal_Unicode), "char mismatch");
+        OSL_ASSERT(sizeof(wchar_t) == sizeof(sal_Unicode));
         pin_ptr<wchar_t const> pdata= PtrToStringChars(data);
-        return OUString(
-            reinterpret_cast<sal_Unicode const *>(pdata),
-            const_cast<System::String^>(data)->Length);
+        return OUString(pdata, const_cast<System::String^>(data)->Length);
     }
     else
     {
@@ -820,9 +818,8 @@ void Bridge::map_to_uno(void * uno_data, System::Object^ cli_data,
             {
                 System::String ^s= safe_cast<System::String^>(cli_data);
                 pin_ptr<const wchar_t> pdata= PtrToStringChars(s);
-                rtl_uString_newFromStr_WithLength(
-                    reinterpret_cast<rtl_uString **>(uno_data),
-                    reinterpret_cast<sal_Unicode const *>(pdata), s->Length);
+                rtl_uString_newFromStr_WithLength( (rtl_uString**) uno_data,
+                                                  pdata, s->Length );
             }
             break;
         }
@@ -1297,10 +1294,8 @@ void Bridge::map_to_uno(void * uno_data, System::Object^ cli_data,
                             rtl_uString** pStr=  & ((rtl_uString**) &
                                                     ((uno_Sequence*) seq.get())->elements)[i];
                             *pStr= NULL;
-                            rtl_uString_newFromStr_WithLength(
-                                pStr,
-                                reinterpret_cast<sal_Unicode const *>(pdata),
-                                arStr[i]->Length);
+                            rtl_uString_newFromStr_WithLength( pStr, pdata,
+                                                               arStr[i]->Length);
                         }
                         break;
                     }

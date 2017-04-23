@@ -15,10 +15,8 @@ $(eval $(call gb_Executable_set_include,regview, \
 ))
 
 $(eval $(call gb_Executable_use_libraries,regview,\
-    reg \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),store) \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),salhelper) \
     sal \
+    reg \
 ))
 
 $(eval $(call gb_Executable_use_static_libraries,regview,\

@@ -54,7 +54,7 @@ public:
 
     bool MoveNodeRange(SwNodeRange&, SwNodeIndex&, SwMoveFlags) override;
 
-    bool MoveAndJoin(SwPaM&, SwPosition&) override;
+    bool MoveAndJoin(SwPaM&, SwPosition&, SwMoveFlags) override;
 
     bool Overwrite(const SwPaM &rRg, const OUString& rStr) override;
 
@@ -73,10 +73,11 @@ public:
 
     SwDrawFrameFormat* InsertDrawObj( const SwPaM &rRg, SdrObject& rDrawObj, const SfxItemSet& rFlyAttrSet ) override;
 
-    SwFlyFrameFormat* Insert(const SwPaM &rRg, const svt::EmbeddedObjectRef& xObj, const SfxItemSet* pFlyAttrSet) override;
+    SwFlyFrameFormat* Insert(const SwPaM &rRg, const svt::EmbeddedObjectRef& xObj, const SfxItemSet* pFlyAttrSet,
+        const SfxItemSet* pGrfAttrSet, SwFrameFormat*) override;
 
     SwFlyFrameFormat* InsertOLE(const SwPaM &rRg, const OUString& rObjName, sal_Int64 nAspect, const SfxItemSet* pFlyAttrSet,
-                           const SfxItemSet* pGrfAttrSet) override;
+                           const SfxItemSet* pGrfAttrSet, SwFrameFormat*) override;
 
     bool SplitNode(const SwPosition &rPos, bool bChkTableStart) override;
 
@@ -144,7 +145,7 @@ public:
     static bool lcl_RstTextAttr( const SwNodePtr& rpNd, void* pArgs ); //originally from docfmt.cxx
 
 
-    virtual ~DocumentContentOperationsManager() override;
+    virtual ~DocumentContentOperationsManager();
 
 private:
     SwDoc& m_rDoc;
@@ -157,7 +158,7 @@ private:
     SwFlyFrameFormat* InsNoTextNode( const SwPosition&rPos, SwNoTextNode*,
                                 const SfxItemSet* pFlyAttrSet,
                                 const SfxItemSet* pGrfAttrSet,
-                                SwFrameFormat* );
+                                SwFrameFormat* = nullptr );
     /* Copy a range within the same or to another document.
      Position may not lie within range! */
     bool CopyImpl( SwPaM&, SwPosition&, const bool MakeNewFrames /*= true */,

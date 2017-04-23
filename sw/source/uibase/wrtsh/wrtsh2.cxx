@@ -77,13 +77,13 @@ void SwWrtShell::Insert(SwField &rField)
     SwRewriter aRewriter;
     aRewriter.AddRule(UndoArg1, rField.GetDescription());
 
-    StartUndo(SwUndoId::INSERT, &aRewriter);
+    StartUndo(UNDO_INSERT, &aRewriter);
 
     bool bDeleted = false;
     std::unique_ptr<SwPaM> pAnnotationTextRange;
     if ( HasSelection() )
     {
-        if ( rField.GetTyp()->Which() == SwFieldIds::Postit )
+        if ( rField.GetTyp()->Which() == RES_POSTITFLD )
         {
             // for annotation fields:
             // - keep the current selection in order to create a corresponding annotation mark
@@ -150,7 +150,7 @@ void SwWrtShell::UpdateInputFields( SwInputFieldList* pLst )
         {
             pTmp->GotoFieldPos( i );
             SwField* pField = pTmp->GetField( i );
-            if(pField->GetTyp()->Which() == SwFieldIds::Dropdown)
+            if(pField->GetTyp()->Which() == RES_DROPDOWN)
                 bCancel = StartDropDownFieldDlg( pField, true, &aDlgPos );
             else
                 bCancel = StartInputFieldDlg( pField, true, nullptr, &aDlgPos);
@@ -197,7 +197,7 @@ class FieldDeletionModify : public SwModify
                 mpFormatField->Add(this);
         }
 
-        virtual ~FieldDeletionModify() override
+        virtual ~FieldDeletionModify()
         {
             if (mpFormatField)
             {
@@ -222,7 +222,7 @@ class FieldDeletionModify : public SwModify
             }
         }
     private:
-        VclPtr<AbstractFieldInputDlg> mpInputFieldDlg;
+        AbstractFieldInputDlg* mpInputFieldDlg;
         SwFormatField* mpFormatField;
 };
 
@@ -233,7 +233,7 @@ bool SwWrtShell::StartInputFieldDlg( SwField* pField, bool bNextButton,
 
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "Dialog creation failed!");
-    ScopedVclPtr<AbstractFieldInputDlg> pDlg(pFact->CreateFieldInputDlg(pParentWin, *this, pField, bNextButton));
+    std::unique_ptr<AbstractFieldInputDlg> pDlg(pFact->CreateFieldInputDlg(pParentWin, *this, pField, bNextButton));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     if(pWindowState && !pWindowState->isEmpty())
         pDlg->SetWindowState(*pWindowState);
@@ -248,7 +248,7 @@ bool SwWrtShell::StartInputFieldDlg( SwField* pField, bool bNextButton,
     if(pWindowState)
         *pWindowState = pDlg->GetWindowState();
 
-    pDlg.disposeAndClear();
+    pDlg.reset();
     GetWin()->Update();
     return bRet;
 }
@@ -258,14 +258,14 @@ bool SwWrtShell::StartDropDownFieldDlg(SwField* pField, bool bNextButton, OStrin
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    ScopedVclPtr<AbstractDropDownFieldDialog> pDlg(pFact->CreateDropDownFieldDialog(*this, pField, bNextButton));
+    std::unique_ptr<AbstractDropDownFieldDialog> pDlg(pFact->CreateDropDownFieldDialog(*this, pField, bNextButton));
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     if(pWindowState && !pWindowState->isEmpty())
         pDlg->SetWindowState(*pWindowState);
     const short nRet = pDlg->Execute();
     if(pWindowState)
         *pWindowState = pDlg->GetWindowState();
-    pDlg.disposeAndClear();
+    pDlg.reset();
     bool bRet = RET_CANCEL == nRet;
     GetWin()->Update();
     if(RET_YES == nRet)
@@ -317,7 +317,7 @@ bool SwWrtShell::UpdateTableOf(const SwTOXBase& rTOX, const SfxItemSet* pSet)
 void SwWrtShell::ClickToField( const SwField& rField )
 {
     // cross reference field must not be selected because it moves the cursor
-    if (SwFieldIds::GetRef != rField.GetTyp()->Which())
+    if (RES_GETREFFLD != rField.GetTyp()->Which())
     {
         StartAllAction();
         Right( CRSR_SKIP_CHARS, true, 1, false ); // Select the field.
@@ -328,7 +328,7 @@ void SwWrtShell::ClickToField( const SwField& rField )
     m_bIsInClickToEdit = true;
     switch( rField.GetTyp()->Which() )
     {
-    case SwFieldIds::JumpEdit:
+    case RES_JUMPEDITFLD:
         {
             sal_uInt16 nSlotId = 0;
             switch( rField.GetFormat() )
@@ -348,17 +348,17 @@ void SwWrtShell::ClickToField( const SwField& rField )
 
             if( nSlotId )
             {
-                StartUndo( SwUndoId::START );
+                StartUndo( UNDO_START );
                 //#97295# immediately select the right shell
                 GetView().StopShellTimer();
                 GetView().GetViewFrame()->GetDispatcher()->Execute( nSlotId,
                             SfxCallMode::SYNCHRON|SfxCallMode::RECORD );
-                EndUndo( SwUndoId::END );
+                EndUndo( UNDO_END );
             }
         }
         break;
 
-    case SwFieldIds::Macro:
+    case RES_MACROFLD:
         {
             const SwMacroField *pField = static_cast<const SwMacroField*>(&rField);
             const OUString sText( rField.GetPar2() );
@@ -376,7 +376,7 @@ void SwWrtShell::ClickToField( const SwField& rField )
         }
         break;
 
-    case SwFieldIds::GetRef:
+    case RES_GETREFFLD:
         StartAllAction();
         SwCursorShell::GotoRefMark( static_cast<const SwGetRefField&>(rField).GetSetRefName(),
                                     static_cast<const SwGetRefField&>(rField).GetSubType(),
@@ -384,7 +384,7 @@ void SwWrtShell::ClickToField( const SwField& rField )
         EndAllAction();
         break;
 
-    case SwFieldIds::Input:
+    case RES_INPUTFLD:
         {
             const SwInputField* pInputField = dynamic_cast<const SwInputField*>(&rField);
             if ( pInputField == nullptr )
@@ -394,11 +394,11 @@ void SwWrtShell::ClickToField( const SwField& rField )
         }
         break;
 
-    case SwFieldIds::SetExp:
+    case RES_SETEXPFLD:
         if( static_cast<const SwSetExpField&>(rField).GetInputFlag() )
             StartInputFieldDlg( const_cast<SwField*>(&rField), false );
         break;
-    case SwFieldIds::Dropdown :
+    case RES_DROPDOWN :
         StartDropDownFieldDlg( const_cast<SwField*>(&rField), false );
     break;
     default:
@@ -408,7 +408,7 @@ void SwWrtShell::ClickToField( const SwField& rField )
     m_bIsInClickToEdit = false;
 }
 
-void SwWrtShell::ClickToINetAttr( const SwFormatINetFormat& rItem, LoadUrlFlags nFilter )
+void SwWrtShell::ClickToINetAttr( const SwFormatINetFormat& rItem, sal_uInt16 nFilter )
 {
     if( rItem.GetValue().isEmpty() )
         return ;
@@ -436,7 +436,7 @@ void SwWrtShell::ClickToINetAttr( const SwFormatINetFormat& rItem, LoadUrlFlags 
     m_bIsInClickToEdit = false;
 }
 
-bool SwWrtShell::ClickToINetGrf( const Point& rDocPt, LoadUrlFlags nFilter )
+bool SwWrtShell::ClickToINetGrf( const Point& rDocPt, sal_uInt16 nFilter )
 {
     bool bRet = false;
     OUString sURL;
@@ -459,7 +459,7 @@ bool SwWrtShell::ClickToINetGrf( const Point& rDocPt, LoadUrlFlags nFilter )
     return bRet;
 }
 
-void LoadURL( SwViewShell& rVSh, const OUString& rURL, LoadUrlFlags nFilter,
+void LoadURL( SwViewShell& rVSh, const OUString& rURL, sal_uInt16 nFilter,
               const OUString& rTargetFrameName )
 {
     OSL_ENSURE( !rURL.isEmpty(), "what should be loaded here?" );
@@ -473,7 +473,7 @@ void LoadURL( SwViewShell& rVSh, const OUString& rURL, LoadUrlFlags nFilter,
     // We are doing tiledRendering, let the client handles the URL loading.
     if (comphelper::LibreOfficeKit::isActive())
     {
-        rVSh.GetSfxViewShell()->libreOfficeKitViewCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
+        rVSh.libreOfficeKitCallback(LOK_CALLBACK_HYPERLINK_CLICKED, rURL.toUtf8().getStr());
         return;
     }
 
@@ -506,7 +506,7 @@ void LoadURL( SwViewShell& rVSh, const OUString& rURL, LoadUrlFlags nFilter,
     //#39076# Silent can be removed accordingly to SFX.
     SfxBoolItem aBrowse( SID_BROWSE, true );
 
-    if( nFilter & LoadUrlFlags::NewView )
+    if( nFilter & URLLOAD_NEWVIEW )
         aTargetFrameName.SetValue( "_blank" );
 
     const SfxPoolItem* aArr[] = {
@@ -553,10 +553,10 @@ void SwWrtShell::NavigatorPaste( const NaviContentBookmark& rBkmk,
     else
     {
         SwSectionData aSection( FILE_LINK_SECTION, GetUniqueSectionName() );
-        OUString aLinkFile = rBkmk.GetURL().getToken(0, '#')
-            + OUStringLiteral1(sfx2::cTokenSeparator)
-            + OUStringLiteral1(sfx2::cTokenSeparator)
-            + rBkmk.GetURL().getToken(1, '#');
+        OUString aLinkFile( rBkmk.GetURL().getToken(0, '#') );
+        aLinkFile += OUString(sfx2::cTokenSeparator);
+        aLinkFile += OUString(sfx2::cTokenSeparator);
+        aLinkFile += rBkmk.GetURL().getToken(1, '#');
         aSection.SetLinkFileName( aLinkFile );
         aSection.SetProtectFlag( true );
         const SwSection* pIns = InsertSection( aSection );
@@ -571,10 +571,10 @@ void SwWrtShell::NavigatorPaste( const NaviContentBookmark& rBkmk,
             // the undostack. Then the change of the section don't create
             // any undoobject. -  BUG 69145
             bool bDoesUndo = DoesUndo();
-            SwUndoId nLastUndoId(SwUndoId::EMPTY);
+            SwUndoId nLastUndoId(UNDO_EMPTY);
             if (GetLastUndoInfo(nullptr, & nLastUndoId))
             {
-                if (SwUndoId::INSSECTION != nLastUndoId)
+                if (UNDO_INSSECTION != nLastUndoId)
                 {
                     DoUndo(false);
                 }

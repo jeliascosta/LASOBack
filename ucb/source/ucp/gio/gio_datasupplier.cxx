@@ -21,7 +21,7 @@
 
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/providerhelper.hxx>
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
+
 #include <com/sun/star/ucb/OpenMode.hpp>
 
 #include "gio_datasupplier.hxx"
@@ -37,7 +37,7 @@ namespace gio
 
 typedef std::vector< ResultListEntry* > ResultList;
 
-DataSupplier::DataSupplier( const rtl::Reference< ::gio::Content >& rContent, sal_Int32 nOpenMode )
+DataSupplier::DataSupplier( const uno::Reference< ::gio::Content >& rContent, sal_Int32 nOpenMode )
     : mxContent(rContent), mnOpenMode(nOpenMode), mbCountFinal(false)
 {
 }
@@ -262,7 +262,7 @@ void DataSupplier::close()
 {
 }
 
-void DataSupplier::validate()
+void DataSupplier::validate() throw( ucb::ResultSetException )
 {
 }
 

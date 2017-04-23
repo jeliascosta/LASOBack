@@ -213,7 +213,7 @@ css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > > ImplReadCon
 
 
 // css::uno::XInterface
-css::uno::Any StdTabControllerModel::queryAggregation( const css::uno::Type & rType )
+css::uno::Any StdTabControllerModel::queryAggregation( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
 {
     css::uno::Any aRet = ::cppu::queryInterface( rType,
                                         (static_cast< css::awt::XTabControllerModel* >(this)),
@@ -230,21 +230,21 @@ IMPL_XTYPEPROVIDER_START( StdTabControllerModel )
     cppu::UnoType<css::io::XPersistObject>::get()
 IMPL_XTYPEPROVIDER_END
 
-sal_Bool StdTabControllerModel::getGroupControl(  )
+sal_Bool StdTabControllerModel::getGroupControl(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
     return mbGroupControl;
 }
 
-void StdTabControllerModel::setGroupControl( sal_Bool GroupControl )
+void StdTabControllerModel::setGroupControl( sal_Bool GroupControl ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
     mbGroupControl = GroupControl;
 }
 
-void StdTabControllerModel::setControlModels( const css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& Controls )
+void StdTabControllerModel::setControlModels( const css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& Controls ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -252,7 +252,7 @@ void StdTabControllerModel::setControlModels( const css::uno::Sequence< css::uno
     ImplSetControlModels( maControls, Controls );
 }
 
-css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > > StdTabControllerModel::getControlModels(  )
+css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > > StdTabControllerModel::getControlModels(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -262,7 +262,7 @@ css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > > StdTabContr
     return aSeq;
 }
 
-void StdTabControllerModel::setGroup( const css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& Group, const OUString& GroupName )
+void StdTabControllerModel::setGroup( const css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& Group, const OUString& GroupName ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -300,7 +300,7 @@ void StdTabControllerModel::setGroup( const css::uno::Sequence< css::uno::Refere
         maControls.push_back( pNewEntry );
 }
 
-sal_Int32 StdTabControllerModel::getGroupCount(  )
+sal_Int32 StdTabControllerModel::getGroupCount(  ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -318,7 +318,7 @@ sal_Int32 StdTabControllerModel::getGroupCount(  )
     return nGroups;
 }
 
-void StdTabControllerModel::getGroup( sal_Int32 nGroup, css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& rGroup, OUString& rName )
+void StdTabControllerModel::getGroup( sal_Int32 nGroup, css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& rGroup, OUString& rName ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -345,7 +345,7 @@ void StdTabControllerModel::getGroup( sal_Int32 nGroup, css::uno::Sequence< css:
     rGroup = aSeq;
 }
 
-void StdTabControllerModel::getGroupByName( const OUString& rName, css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& rGroup )
+void StdTabControllerModel::getGroupByName( const OUString& rName, css::uno::Sequence< css::uno::Reference< css::awt::XControlModel > >& rGroup ) throw(css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -369,12 +369,12 @@ void StdTabControllerModel::getGroupByName( const OUString& rName, css::uno::Seq
 
 
 // css::io::XPersistObject
-OUString StdTabControllerModel::getServiceName(  )
+OUString StdTabControllerModel::getServiceName(  ) throw(css::uno::RuntimeException, std::exception)
 {
     return OUString::createFromAscii( szServiceName_TabControllerModel );
 }
 
-void StdTabControllerModel::write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream )
+void StdTabControllerModel::write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -398,7 +398,7 @@ void StdTabControllerModel::write( const css::uno::Reference< css::io::XObjectOu
     }
 }
 
-void StdTabControllerModel::read( const css::uno::Reference< css::io::XObjectInputStream >& InStream )
+void StdTabControllerModel::read( const css::uno::Reference< css::io::XObjectInputStream >& InStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::Guard< ::osl::Mutex > aGuard( GetMutex() );
 
@@ -415,16 +415,19 @@ void StdTabControllerModel::read( const css::uno::Reference< css::io::XObjectInp
 }
 
 OUString StdTabControllerModel::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("stardiv.Toolkit.StdTabControllerModel");
 }
 
 sal_Bool StdTabControllerModel::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> StdTabControllerModel::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<OUString>{
         OUString::createFromAscii(szServiceName2_TabControllerModel),

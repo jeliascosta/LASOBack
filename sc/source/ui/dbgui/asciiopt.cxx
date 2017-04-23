@@ -155,7 +155,7 @@ static OUString lcl_decodeSepString( const OUString & rSepNums, bool & o_bMergeF
         {
             sal_Int32 nVal = aCode.toInt32();
             if ( nVal )
-                aFieldSeps += OUStringLiteral1(nVal);
+                aFieldSeps += OUString((sal_Unicode) nVal);
         }
     }
     while ( nPos >= 0 );

@@ -40,6 +40,7 @@ class BitmapCache::CacheEntry
 public:
     CacheEntry(const Bitmap& rBitmap, sal_Int32 nLastAccessTime, bool bIsPrecious);
     CacheEntry(sal_Int32 nLastAccessTime, bool bIsPrecious);
+    ~CacheEntry() {};
     inline void Recycle (const CacheEntry& rEntry);
     inline sal_Int32 GetMemorySize() const;
     void Compress (const std::shared_ptr<BitmapCompressor>& rpCompressor);
@@ -394,7 +395,7 @@ void BitmapCache::Recycle (const BitmapCache& rCache)
     ::std::sort(aSortedContainer.begin(), aSortedContainer.end(), AccessTimeComparator());
 
     // Return a list with the keys of the sorted entries.
-    ::std::unique_ptr<CacheIndex> pIndex(new CacheIndex);
+    ::std::unique_ptr<CacheIndex> pIndex(new CacheIndex());
     SortableBitmapContainer::iterator iIndexEntry;
     pIndex->reserve(aSortedContainer.size());
     for (iIndexEntry=aSortedContainer.begin(); iIndexEntry!=aSortedContainer.end(); ++iIndexEntry)

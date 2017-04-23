@@ -57,6 +57,7 @@ static Window fwsCommWindow;
 Bool
 WMSupportsFWS (Display *display, int screen)
 {
+    unsigned int    i;
     Atom            protocol;
     Atom            propType;
     int             propFormat;
@@ -126,7 +127,7 @@ WMSupportsFWS (Display *display, int screen)
         return False;
     }
 
-    for (unsigned long i = 0; i < propItems; ++i)
+    for (i = 0; i < propItems; ++i)
     {
         protocol = reinterpret_cast<Atom *>(propData)[i];
         if (protocol == FWS_STACK_UNDER)

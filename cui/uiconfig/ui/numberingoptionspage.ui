@@ -2,6 +2,7 @@
 <!-- Generated with glade 3.18.3 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
+  <requires lib="LibreOffice" version="1.0"/>
   <object class="GtkAdjustment" id="adjustment1">
     <property name="upper">19.989999999999998</property>
     <property name="step_increment">0.050000000000000003</property>
@@ -26,6 +27,140 @@
     <property name="value">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
+  </object>
+  <object class="GtkMenu" id="bitmapmenu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkMenuItem" id="fromfile">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">From file...</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="gallery">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Gallery</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkListStore" id="liststore1">
+    <columns>
+      <!-- column-name gchararray1 -->
+      <column type="gchararray"/>
+      <!-- column-name gint1 -->
+      <column type="gint"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">None</col>
+        <col id="1">5</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Bullet</col>
+        <col id="1">6</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Graphics</col>
+        <col id="1">8</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Linked graphics</col>
+        <col id="1">136</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">1, 2, 3, ...</col>
+        <col id="1">4</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">A, B, C, ...</col>
+        <col id="1">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">a, b, c, ...</col>
+        <col id="1">1</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">I, II, III, ...</col>
+        <col id="1">2</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">i, ii, iii, ...</col>
+        <col id="1">3</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">A, .., AA, .., AAA, ...</col>
+        <col id="1">9</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">a, .., aa, .., aaa, ...</col>
+        <col id="1">10</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Native Numbering</col>
+        <col id="1">12</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Аб, ... (Bulgarian)</col>
+        <col id="1">38</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, аб, ... (Bulgarian)</col>
+        <col id="1">39</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Бб, ... (Bulgarian)</col>
+        <col id="1">40</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, бб, ... (Bulgarian)</col>
+        <col id="1">41</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Аб, ... (Russian)</col>
+        <col id="1">42</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, аб, ... (Russian)</col>
+        <col id="1">43</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Бб, ... (Russian)</col>
+        <col id="1">44</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, бб, ... (Russian)</col>
+        <col id="1">45</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Аб, ... (Serbian)</col>
+        <col id="1">48</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, аб, ... (Serbian)</col>
+        <col id="1">49</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">А, Б, .., Аа, Бб, ... (Serbian)</col>
+        <col id="1">50</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">а, б, .., аа, бб, ... (Serbian)</col>
+        <col id="1">51</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Α, Β, Γ, ... (Greek Upper Letter)</col>
+        <col id="1">52</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">α, β, γ, ... (Greek Lower Letter)</col>
+        <col id="1">53</col>
+      </row>
+    </data>
   </object>
   <object class="GtkBox" id="NumberingOptionsPage">
     <property name="visible">True</property>
@@ -107,14 +242,42 @@
                           <object class="GtkLabel" id="label4">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Number:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">numfmtlb</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
                             <property name="top_attach">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="charstyleft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Character style:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">charstyle</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="sublevelsft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Show sublevels:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">sublevels</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">6</property>
                           </packing>
                         </child>
                         <child>
@@ -124,7 +287,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -137,7 +300,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">7</property>
+                            <property name="top_attach">6</property>
                           </packing>
                         </child>
                         <child>
@@ -149,27 +312,28 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
+                            <property name="top_attach">10</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel" id="startatft">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Start at:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">startat</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="top_attach">10</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBox" id="numfmtlb">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="model">liststore1</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -180,10 +344,10 @@
                           <object class="GtkLabel" id="bitmapft">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Graphics:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">bitmap:bitmapmenu</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -194,10 +358,10 @@
                           <object class="GtkLabel" id="widthft">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Width:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">widthmf:0.00cm</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -221,11 +385,10 @@
                           <object class="GtkLabel" id="heightft">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Height:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">heightmf:0.00cm</property>
-                            <property name="ellipsize">end</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -255,18 +418,19 @@
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
+                            <property name="left_attach">0</property>
                             <property name="top_attach">14</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel" id="orientft">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Alignment:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">orientlb</property>
-                            <property name="xalign">1</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -307,12 +471,40 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="svxcorelo-SvxColorListBox" id="color">
+                          <object class="GtkLabel" id="colorft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Color:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">color</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="svtlo-ColorListBox" id="color">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="relsizeft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">_Relative size:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">relsize:0%</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
                             <property name="top_attach">4</property>
                           </packing>
                         </child>
@@ -325,7 +517,21 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">5</property>
+                            <property name="top_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="numalignft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">_Alignment:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">numalign</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -340,7 +546,21 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="bulletft">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Character:</property>
+                            <property name="use_underline">True</property>
+                            <property name="mnemonic_widget">bullet</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">5</property>
                           </packing>
                         </child>
                         <child>
@@ -352,7 +572,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">6</property>
+                            <property name="top_attach">5</property>
                           </packing>
                         </child>
                         <child>
@@ -361,13 +581,13 @@
                             <property name="can_focus">False</property>
                             <property name="left_padding">20</property>
                             <child>
-                              <object class="GtkLabel" id="prefixft">
+                              <object class="GtkLabel" id="suffixft">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Before:</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">After:</property>
                                 <property name="use_underline">True</property>
-                                <property name="mnemonic_widget">prefix</property>
-                                <property name="xalign">1</property>
+                                <property name="mnemonic_widget">suffix</property>
                               </object>
                             </child>
                           </object>
@@ -382,17 +602,32 @@
                             <property name="can_focus">False</property>
                             <property name="left_padding">20</property>
                             <child>
-                              <object class="GtkLabel" id="separator">
+                              <object class="GtkLabel" id="prefixft">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Separator</property>
-                                <property name="xalign">1</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Before:</property>
+                                <property name="use_underline">True</property>
+                                <property name="mnemonic_widget">prefix</property>
                               </object>
                             </child>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
                             <property name="top_attach">8</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="separator">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Separator</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">7</property>
+                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
@@ -403,7 +638,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">10</property>
+                            <property name="top_attach">9</property>
                           </packing>
                         </child>
                         <child>
@@ -414,113 +649,8 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">9</property>
+                            <property name="top_attach">8</property>
                           </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="suffixft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">After:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">suffix</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">10</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="sublevelsft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Show sublevels:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">sublevels</property>
-                            <property name="ellipsize">end</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">7</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="bulletft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Character:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">bullet</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="relsizeft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">_Relative size:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">relsize:0%</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="colorft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Color:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">color</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="charstyleft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Character style:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">charstyle</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="numalignft">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">_Alignment:</property>
-                            <property name="use_underline">True</property>
-                            <property name="mnemonic_widget">numalign</property>
-                            <property name="xalign">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
                         </child>
                       </object>
                       <packing>
@@ -614,24 +744,24 @@
       </packing>
     </child>
   </object>
-  <object class="GtkMenu" id="bitmapmenu">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkMenuItem" id="fromfile">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">From file...</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkMenuItem" id="gallery">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Gallery</property>
-        <property name="use_underline">True</property>
-      </object>
-    </child>
+  <object class="GtkSizeGroup">
+    <widgets>
+      <widget name="label4"/>
+      <widget name="charstyleft"/>
+      <widget name="sublevelsft"/>
+      <widget name="startatft"/>
+      <widget name="bitmapft"/>
+      <widget name="widthft"/>
+      <widget name="heightft"/>
+      <widget name="orientft"/>
+      <widget name="colorft"/>
+      <widget name="relsizeft"/>
+      <widget name="numalignft"/>
+      <widget name="bulletft"/>
+      <widget name="alignment4"/>
+      <widget name="alignment3"/>
+      <widget name="separator"/>
+      <widget name="label2"/>
+    </widgets>
   </object>
 </interface>

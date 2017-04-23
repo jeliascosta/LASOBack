@@ -81,7 +81,7 @@ enum class SalFrameStyleFlags
     TOOLWINDOW          = 0x40000000,
 };
 namespace o3tl {
-    template<> struct typed_flags<SalFrameStyleFlags> : is_typed_flags<SalFrameStyleFlags, 0x788001ff> {};
+    template<> struct typed_flags<SalFrameStyleFlags> : is_typed_flags<SalFrameStyleFlags, 0x7c8001ff> {};
 };
 
 // - extended frame style                 -
@@ -111,7 +111,7 @@ private:
 
 public:
                             SalFrame();
-    virtual                 ~SalFrame() override;
+    virtual                 ~SalFrame();
 
     SalFrameGeometry        maGeometry;
 
@@ -147,7 +147,7 @@ public:
     virtual void            SetMaxClientSize( long nWidth, long nHeight ) = 0;
     virtual void            SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_uInt16 nFlags ) = 0;
     virtual void            GetClientSize( long& rWidth, long& rHeight ) = 0;
-    virtual void            GetWorkArea( tools::Rectangle& rRect ) = 0;
+    virtual void            GetWorkArea( Rectangle& rRect ) = 0;
     virtual SalFrame*       GetParent() const = 0;
     // Note: x will be mirrored at parent if UI mirroring is active
     SalFrameGeometry        GetGeometry();
@@ -175,7 +175,7 @@ public:
 
     // flush output buffer
     virtual void            Flush() = 0;
-    virtual void            Flush( const tools::Rectangle& );
+    virtual void            Flush( const Rectangle& );
 
     virtual void            SetInputContext( SalInputContext* pContext ) = 0;
     virtual void            EndExtTextInput( EndExtTextInputFlags nFlags ) = 0;
@@ -239,19 +239,19 @@ public:
     }
 
     // return true to indicate tooltips are shown natively, false otherwise
-    virtual bool            ShowTooltip(const OUString& /*rHelpText*/, const tools::Rectangle& /*rHelpArea*/)
+    virtual bool            ShowTooltip(const OUString& /*rHelpText*/, const Rectangle& /*rHelpArea*/)
     {
         return false;
     }
 
     // return !0 to indicate popovers are shown natively, 0 otherwise
-    virtual sal_uIntPtr     ShowPopover(const OUString& /*rHelpText*/, const tools::Rectangle& /*rHelpArea*/, QuickHelpFlags /*nFlags*/)
+    virtual sal_uIntPtr     ShowPopover(const OUString& /*rHelpText*/, const Rectangle& /*rHelpArea*/, QuickHelpFlags /*nFlags*/)
     {
         return 0;
     }
 
     // return true to indicate popovers are shown natively, false otherwise
-    virtual bool            UpdatePopover(sal_uIntPtr /*nId*/, const OUString& /*rHelpText*/, const tools::Rectangle& /*rHelpArea*/)
+    virtual bool            UpdatePopover(sal_uIntPtr /*nId*/, const OUString& /*rHelpText*/, const Rectangle& /*rHelpArea*/)
     {
         return false;
     }
@@ -260,6 +260,10 @@ public:
     virtual bool            HidePopover(sal_uIntPtr /*nId*/)
     {
         return false;
+    }
+
+    virtual void            StartToolKitMoveBy()
+    {
     }
 
     // Callbacks (indepent part in vcl/source/window/winproc.cxx)
@@ -275,10 +279,6 @@ public:
     long                    CallCallback( SalEvent nEvent, const void* pEvent ) const
         { return m_pProc ? long(m_pProc( m_pWindow, nEvent, pEvent )) : 0; }
 };
-
-#ifdef _WIN32
-bool HasAtHook();
-#endif
 
 #endif // INCLUDED_VCL_INC_SALFRAME_HXX
 

@@ -53,7 +53,8 @@ namespace svxform
 
     Sequence< OUString > SAL_CALL OAddConditionDialog_GetSupportedServiceNames()
     {
-        return { "com.sun.star.xforms.ui.dialogs.AddCondition" };
+        css::uno::Sequence<OUString> aSupported { "com.sun.star.xforms.ui.dialogs.AddCondition" };
+        return aSupported;
     }
 
 
@@ -99,7 +100,7 @@ namespace svxform
     }
 
 
-    Sequence<sal_Int8> SAL_CALL OAddConditionDialog::getImplementationId(  )
+    Sequence<sal_Int8> SAL_CALL OAddConditionDialog::getImplementationId(  ) throw(RuntimeException, std::exception)
     {
         return css::uno::Sequence<sal_Int8>();
     }
@@ -111,19 +112,19 @@ namespace svxform
     }
 
 
-    OUString SAL_CALL OAddConditionDialog::getImplementationName()
+    OUString SAL_CALL OAddConditionDialog::getImplementationName() throw(RuntimeException, std::exception)
     {
         return OAddConditionDialog_GetImplementationName();
     }
 
 
-    Sequence< OUString > SAL_CALL OAddConditionDialog::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL OAddConditionDialog::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
         return OAddConditionDialog_GetSupportedServiceNames();
     }
 
 
-    Reference<XPropertySetInfo>  SAL_CALL OAddConditionDialog::getPropertySetInfo()
+    Reference<XPropertySetInfo>  SAL_CALL OAddConditionDialog::getPropertySetInfo() throw(RuntimeException, std::exception)
     {
         return createPropertySetInfo( getInfoHelper() );
     }

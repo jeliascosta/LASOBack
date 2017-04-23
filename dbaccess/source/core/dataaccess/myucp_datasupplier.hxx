@@ -31,11 +31,11 @@ struct DataSupplier_Impl;
 
 class DataSupplier : public ucbhelper::ResultSetDataSupplier
 {
-    std::unique_ptr<DataSupplier_Impl> m_pImpl;
+    ::std::unique_ptr<DataSupplier_Impl> m_pImpl;
 
 public:
     explicit DataSupplier( const rtl::Reference< ODocumentContainer >& rxContent );
-    virtual ~DataSupplier() override;
+    virtual ~DataSupplier();
 
     virtual OUString queryContentIdentifierString( sal_uInt32 nIndex ) override;
     virtual css::uno::Reference< css::ucb::XContentIdentifier >
@@ -55,7 +55,8 @@ public:
 
     virtual void close() override;
 
-    virtual void validate() override;
+    virtual void validate()
+        throw( css::ucb::ResultSetException ) override;
 };
 
 }

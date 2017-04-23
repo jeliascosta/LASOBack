@@ -56,9 +56,9 @@ namespace accessibility
         maEventQueue.push_back( new TextHint( rHint ) );
     }
 
-    void AccessibleTextEventQueue::Append( const SvxViewChangedHint& rHint )
+    void AccessibleTextEventQueue::Append( const SvxViewHint& rHint )
     {
-        maEventQueue.push_back( new SvxViewChangedHint( rHint ) );
+        maEventQueue.push_back( new SvxViewHint( rHint ) );
     }
 
     void AccessibleTextEventQueue::Append( const SvxEditSourceHint& rHint )

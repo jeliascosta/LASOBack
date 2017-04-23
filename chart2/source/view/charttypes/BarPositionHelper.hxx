@@ -34,7 +34,7 @@ class BarPositionHelper : public CategoryPositionHelper, public PlottingPosition
 public:
     explicit BarPositionHelper( bool bSwapXAndY=true );
     BarPositionHelper( const BarPositionHelper& rSource );
-    virtual ~BarPositionHelper() override;
+    virtual ~BarPositionHelper();
 
     virtual PlottingPositionHelper* clone() const override;
 

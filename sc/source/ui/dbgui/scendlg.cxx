@@ -21,7 +21,6 @@
 
 #include "scitems.hxx"
 #include <comphelper/string.hxx>
-#include <svx/colorbox.hxx>
 #include <svx/drawitem.hxx>
 #include <svx/xtable.hxx>
 #include <sfx2/objsh.hxx>
@@ -46,7 +45,7 @@ ScNewScenarioDlg::ScNewScenarioDlg( vcl::Window* pParent, const OUString& rName,
 {
     get(m_pEdName, "name");
     get(m_pEdComment, "comment");
-    Size aSize(m_pEdComment->LogicToPixel(Size(183, 46), MapUnit::MapAppFont));
+    Size aSize(m_pEdComment->LogicToPixel(Size(183, 46), MAP_APPFONT));
     m_pEdComment->set_width_request(aSize.Width());
     m_pEdComment->set_height_request(aSize.Height());
     get(m_pCbShowFrame, "showframe");
@@ -58,6 +57,27 @@ ScNewScenarioDlg::ScNewScenarioDlg( vcl::Window* pParent, const OUString& rName,
 
     if (bIsEdit)
         SetText(get<FixedText>("alttitle")->GetText());
+
+    SfxObjectShell* pDocSh = SfxObjectShell::Current();
+    if ( pDocSh )
+    {
+        const SfxPoolItem* pItem = pDocSh->GetItem( SID_COLOR_TABLE );
+        if ( pItem )
+        {
+            XColorListRef pColorList = static_cast<const SvxColorListItem*>(pItem)->GetColorList();
+            if (pColorList.is())
+            {
+                m_pLbColor->SetUpdateMode( false );
+                long nCount = pColorList->Count();
+                for ( long n=0; n<nCount; n++ )
+                {
+                    XColorEntry* pEntry = pColorList->GetColor(n);
+                    m_pLbColor->InsertEntry( pEntry->GetColor(), pEntry->GetName() );
+                }
+                m_pLbColor->SetUpdateMode( true );
+            }
+        }
+    }
 
     SvtUserOptions aUserOpt;
 
@@ -107,7 +127,7 @@ void ScNewScenarioDlg::dispose()
 }
 
 void ScNewScenarioDlg::GetScenarioData( OUString& rName, OUString& rComment,
-                                        Color& rColor, ScScenarioFlags& rFlags ) const
+                                        Color& rColor, sal_uInt16& rFlags ) const
 {
     rComment = m_pEdComment->GetText();
     rName    = m_pEdName->GetText();
@@ -116,33 +136,33 @@ void ScNewScenarioDlg::GetScenarioData( OUString& rName, OUString& rComment,
         rName = aDefScenarioName;
 
     rColor = m_pLbColor->GetSelectEntryColor();
-    ScScenarioFlags nBits = ScScenarioFlags::NONE;
+    sal_uInt16 nBits = 0;
     if (m_pCbShowFrame->IsChecked())
-        nBits |= ScScenarioFlags::ShowFrame;
+        nBits |= SC_SCENARIO_SHOWFRAME;
     if (m_pCbTwoWay->IsChecked())
-        nBits |= ScScenarioFlags::TwoWay;
+        nBits |= SC_SCENARIO_TWOWAY;
     if (m_pCbCopyAll->IsChecked())
-        nBits |= ScScenarioFlags::CopyAll;
+        nBits |= SC_SCENARIO_COPYALL;
     if (m_pCbProtect->IsChecked())
-        nBits |= ScScenarioFlags::Protected;
+        nBits |= SC_SCENARIO_PROTECT;
     rFlags = nBits;
 }
 
-void ScNewScenarioDlg::SetScenarioData(const OUString& rName, const OUString& rComment,
-                                        const Color& rColor, ScScenarioFlags nFlags)
+void ScNewScenarioDlg::SetScenarioData( const OUString& rName, const OUString& rComment,
+                                        const Color& rColor, sal_uInt16 nFlags )
 {
     m_pEdComment->SetText(rComment);
     m_pEdName->SetText(rName);
     m_pLbColor->SelectEntry(rColor);
 
-    m_pCbShowFrame->Check ( (nFlags & ScScenarioFlags::ShowFrame) != ScScenarioFlags::NONE );
+    m_pCbShowFrame->Check ( (nFlags & SC_SCENARIO_SHOWFRAME)  != 0 );
     EnableHdl(m_pCbShowFrame);
-    m_pCbTwoWay->Check    ( (nFlags & ScScenarioFlags::TwoWay)    != ScScenarioFlags::NONE );
-    //  not CopyAll
-    m_pCbProtect->Check   ( (nFlags & ScScenarioFlags::Protected) != ScScenarioFlags::NONE );
+    m_pCbTwoWay->Check    ( (nFlags & SC_SCENARIO_TWOWAY)     != 0 );
+    //  CopyAll nicht
+    m_pCbProtect->Check    ( (nFlags & SC_SCENARIO_PROTECT)     != 0 );
 }
 
-IMPL_LINK_NOARG(ScNewScenarioDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScNewScenarioDlg, OkHdl, Button*, void)
 {
     OUString      aName = comphelper::string::strip(m_pEdName->GetText(), ' ');
     ScDocument* pDoc    = static_cast<ScTabViewShell*>(SfxViewShell::Current())->GetViewData().GetDocument();
@@ -162,10 +182,10 @@ IMPL_LINK_NOARG(ScNewScenarioDlg, OkHdl, Button*, void)
     else
         EndDialog( RET_OK );
 
-    //! when editing, test whether another table has the name!
+    //! beim Editieren testen, ob eine andere Tabelle den Namen hat!
 }
 
-IMPL_LINK( ScNewScenarioDlg, EnableHdl, Button*, pBox, void )
+IMPL_LINK_TYPED( ScNewScenarioDlg, EnableHdl, Button*, pBox, void )
 {
     if (pBox == m_pCbShowFrame)
         m_pLbColor->Enable( m_pCbShowFrame->IsChecked() );

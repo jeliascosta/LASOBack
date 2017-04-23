@@ -26,8 +26,6 @@
 
 #include <com/sun/star/accessibility/AccessibleTextType.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 
 using namespace ::com::sun::star::accessibility;
 using namespace ::com::sun::star::awt;
@@ -274,7 +272,7 @@ using namespace ::com::sun::star::uno;
         @try {
             rtfData = [ attrString RTFFromRange: [ range rangeValue ] documentAttributes: @{NSDocumentTypeDocumentAttribute : NSRTFTextDocumentType} ];
         } @catch ( NSException * e) {
-            // empty
+            // emtpy
         }
     }
     return rtfData;

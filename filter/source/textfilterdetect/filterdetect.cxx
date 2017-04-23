@@ -46,7 +46,7 @@ bool IsHTMLStream( const uno::Reference<io::XInputStream>& xInStream )
 
     // Read the stream header
     pInStream->StartReadingUnicodeText( RTL_TEXTENCODING_DONTKNOW );
-    const sal_uInt64 nUniPos = pInStream->Tell();
+    const sal_Size nUniPos = pInStream->Tell();
     const sal_uInt16 nSize = 4096;
 
     OString sHeader;
@@ -120,7 +120,7 @@ PlainTextFilterDetect::PlainTextFilterDetect() {}
 
 PlainTextFilterDetect::~PlainTextFilterDetect() {}
 
-OUString SAL_CALL PlainTextFilterDetect::detect(uno::Sequence<beans::PropertyValue>& lDescriptor)
+OUString SAL_CALL PlainTextFilterDetect::detect(uno::Sequence<beans::PropertyValue>& lDescriptor) throw (uno::RuntimeException, std::exception)
 {
     MediaDescriptor aMediaDesc(lDescriptor);
 
@@ -168,7 +168,7 @@ OUString SAL_CALL PlainTextFilterDetect::detect(uno::Sequence<beans::PropertyVal
         }
         // Get the file name extension.
         INetURLObject aParser(aMediaDesc.getUnpackedValueOrDefault(MediaDescriptor::PROP_URL(), OUString() ) );
-        OUString aExt = aParser.getExtension(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset);
+        OUString aExt = aParser.getExtension(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET);
         aExt = aExt.toAsciiLowerCase();
         OUString aName = aParser.getName().toAsciiLowerCase();
 
@@ -195,6 +195,7 @@ OUString SAL_CALL PlainTextFilterDetect::detect(uno::Sequence<beans::PropertyVal
 // XInitialization
 
 void SAL_CALL PlainTextFilterDetect::initialize(const uno::Sequence<uno::Any>& /*aArguments*/)
+    throw (uno::Exception, uno::RuntimeException, std::exception)
 {
 }
 
@@ -214,16 +215,19 @@ uno::Sequence<OUString> PlainTextFilterDetect_getSupportedServiceNames()
 
 // XServiceInfo
 OUString SAL_CALL PlainTextFilterDetect::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return PlainTextFilterDetect_getImplementationName();
 }
 
 sal_Bool SAL_CALL PlainTextFilterDetect::supportsService(const OUString& rServiceName)
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL PlainTextFilterDetect::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     return PlainTextFilterDetect_getSupportedServiceNames();
 }

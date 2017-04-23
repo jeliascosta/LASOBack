@@ -511,6 +511,7 @@ $(eval $(call gb_Jar_add_sourcefiles,OOoRunner,\
     qadevOOo/tests/java/ifc/presentation/_XCustomPresentationSupplier \
     qadevOOo/tests/java/ifc/presentation/_XPresentation \
     qadevOOo/tests/java/ifc/presentation/_XPresentationSupplier \
+    qadevOOo/tests/java/ifc/qadevooo/_SelfTest \
     qadevOOo/tests/java/ifc/reflection/_XIdlReflection \
     qadevOOo/tests/java/ifc/reflection/_XProxyFactory \
     qadevOOo/tests/java/ifc/reflection/_XTypeDescriptionEnumerationAccess \
@@ -1008,6 +1009,7 @@ $(eval $(call gb_Jar_add_sourcefiles,OOoRunner,\
     qadevOOo/tests/java/mod/_pcr/ObjectInspectorModel \
     qadevOOo/tests/java/mod/_proxyfac/ProxyFactory \
     qadevOOo/tests/java/mod/_proxyfac/uno/ProxyFactory \
+    qadevOOo/tests/java/mod/_qadevOOo/SelfTest \
     qadevOOo/tests/java/mod/_rdbtdp/RegistryTypeDescriptionProvider \
     qadevOOo/tests/java/mod/_regtypeprov/uno/RegistryTypeDescriptionProvider \
     qadevOOo/tests/java/mod/_remotebridge/uno/various \
@@ -1024,6 +1026,7 @@ $(eval $(call gb_Jar_add_sourcefiles,OOoRunner,\
     qadevOOo/tests/java/mod/_sch/AccGrid \
     qadevOOo/tests/java/mod/_sch/AccLegend \
     qadevOOo/tests/java/mod/_sch/AccLegendEntry \
+    qadevOOo/tests/java/mod/_sch/AccStatisticsObject \
     qadevOOo/tests/java/mod/_sch/AccTitle \
     qadevOOo/tests/java/mod/_sch/AccWall \
     qadevOOo/tests/java/mod/_sch/ChartArea \

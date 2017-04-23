@@ -36,7 +36,7 @@ SfxRectangleItem::SfxRectangleItem()
 }
 
 
-SfxRectangleItem::SfxRectangleItem( sal_uInt16 nW, const tools::Rectangle& rVal ) :
+SfxRectangleItem::SfxRectangleItem( sal_uInt16 nW, const Rectangle& rVal ) :
     SfxPoolItem( nW ),
     aVal( rVal )
 {
@@ -53,8 +53,8 @@ SfxRectangleItem::SfxRectangleItem( const SfxRectangleItem& rItem ) :
 bool SfxRectangleItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    MapUnit                 /*eCoreMetric*/,
-    MapUnit                 /*ePresentationMetric*/,
+    SfxMapUnit              /*eCoreMetric*/,
+    SfxMapUnit              /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -69,7 +69,7 @@ bool SfxRectangleItem::GetPresentation
 
 bool SfxRectangleItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
     return static_cast<const SfxRectangleItem&>(rItem).aVal == aVal;
 }
 
@@ -82,7 +82,7 @@ SfxPoolItem* SfxRectangleItem::Clone(SfxItemPool *) const
 
 SfxPoolItem* SfxRectangleItem::Create(SvStream &rStream, sal_uInt16 ) const
 {
-    tools::Rectangle aStr;
+    Rectangle aStr;
     ReadRectangle( rStream, aStr );
     return new SfxRectangleItem(Which(), aStr);
 }

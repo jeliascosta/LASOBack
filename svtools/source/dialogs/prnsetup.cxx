@@ -38,7 +38,7 @@ void ImplFillPrnDlgListBox( const Printer* pPrinter,
     }
 
     pBox->Enable( nCount != 0 );
-    pPropBtn->Show( pPrinter->HasSupport( PrinterSupport::SetupDialog ) );
+    pPropBtn->Show( pPrinter->HasSupport( SUPPORT_SETUPDIALOG ) );
 }
 
 
@@ -76,7 +76,7 @@ Printer* ImplPrnDlgListBoxSelect( ListBox* pBox, PushButton* pPropBtn,
                 }
             }
 
-            pPropBtn->Enable( pTempPrinter->HasSupport( PrinterSupport::SetupDialog ) );
+            pPropBtn->Enable( pTempPrinter->HasSupport( SUPPORT_SETUPDIALOG ) );
         }
         else
             pPropBtn->Disable();
@@ -228,7 +228,7 @@ PrinterSetupDialog::PrinterSetupDialog(vcl::Window* pParent)
     mpTempPrinter   = nullptr;
 
     maStatusTimer.SetTimeout( IMPL_PRINTDLG_STATUS_UPDATE );
-    maStatusTimer.SetInvokeHandler( LINK( this, PrinterSetupDialog, ImplStatusHdl ) );
+    maStatusTimer.SetTimeoutHdl( LINK( this, PrinterSetupDialog, ImplStatusHdl ) );
     m_pBtnProperties->SetClickHdl( LINK( this, PrinterSetupDialog, ImplPropertiesHdl ) );
     m_pLbName->SetSelectHdl( LINK( this, PrinterSetupDialog, ImplChangePrinterHdl ) );
 }
@@ -281,7 +281,7 @@ void PrinterSetupDialog::ImplSetInfo()
 }
 
 
-IMPL_LINK_NOARG(PrinterSetupDialog, ImplStatusHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(PrinterSetupDialog, ImplStatusHdl, Timer *, void)
 {
     QueueInfo aInfo;
     ImplPrnDlgUpdateQueueInfo(m_pLbName, aInfo);
@@ -289,7 +289,7 @@ IMPL_LINK_NOARG(PrinterSetupDialog, ImplStatusHdl, Timer *, void)
 }
 
 
-IMPL_LINK_NOARG(PrinterSetupDialog, ImplPropertiesHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(PrinterSetupDialog, ImplPropertiesHdl, Button*, void)
 {
     if ( !mpTempPrinter )
         mpTempPrinter = VclPtr<Printer>::Create( mpPrinter->GetJobSetup() );
@@ -297,7 +297,7 @@ IMPL_LINK_NOARG(PrinterSetupDialog, ImplPropertiesHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG(PrinterSetupDialog, ImplChangePrinterHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(PrinterSetupDialog, ImplChangePrinterHdl, ListBox&, void)
 {
     mpTempPrinter = ImplPrnDlgListBoxSelect(m_pLbName, m_pBtnProperties,
                                              mpPrinter, mpTempPrinter );
@@ -305,12 +305,12 @@ IMPL_LINK_NOARG(PrinterSetupDialog, ImplChangePrinterHdl, ListBox&, void)
 }
 
 
-bool PrinterSetupDialog::EventNotify( NotifyEvent& rNEvt )
+bool PrinterSetupDialog::Notify( NotifyEvent& rNEvt )
 {
     if ( (rNEvt.GetType() == MouseNotifyEvent::GETFOCUS) && IsReallyVisible() )
         ImplStatusHdl( &maStatusTimer );
 
-    return ModalDialog::EventNotify( rNEvt );
+    return ModalDialog::Notify( rNEvt );
 }
 
 

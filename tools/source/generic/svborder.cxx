@@ -19,7 +19,7 @@
 #include <tools/svborder.hxx>
 #include <osl/diagnose.h>
 
-tools::Rectangle & operator += ( tools::Rectangle & rRect, const SvBorder & rBorder )
+Rectangle & operator += ( Rectangle & rRect, const SvBorder & rBorder )
 {
     // call GetSize first due to Empty-Rect
     Size aS( rRect.GetSize() );

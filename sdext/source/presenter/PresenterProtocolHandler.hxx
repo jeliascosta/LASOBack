@@ -31,11 +31,13 @@
 
 namespace sdext { namespace presenter {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::lang::XInitialization,
-    css::lang::XServiceInfo,
-    css::frame::XDispatchProvider
-> PresenterProtocolHandlerInterfaceBase;
+namespace {
+    typedef ::cppu::WeakComponentImplHelper <
+        css::lang::XInitialization,
+        css::lang::XServiceInfo,
+        css::frame::XDispatchProvider
+    > PresenterProtocolHandlerInterfaceBase;
+}
 
 class PresenterController;
 
@@ -45,7 +47,7 @@ class PresenterProtocolHandler
 {
 public:
     explicit PresenterProtocolHandler (const css::uno::Reference<css::uno::XComponentContext>& rxContext);
-    virtual ~PresenterProtocolHandler() override;
+    virtual ~PresenterProtocolHandler();
 
     void SAL_CALL disposing() override;
 
@@ -57,13 +59,17 @@ public:
     // XInitialization
 
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence<css::uno::Any>& aArguments) override;
+        const css::uno::Sequence<css::uno::Any>& aArguments)
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XDispatchProvider
 
@@ -71,18 +77,19 @@ public:
         queryDispatch (
             const css::util::URL& aURL,
             const OUString& aTargetFrameName,
-            sal_Int32 nSearchFlags ) override;
+            sal_Int32 nSearchFlags )
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<css::uno::Reference<css::frame::XDispatch> > SAL_CALL
         queryDispatches(
-            const css::uno::Sequence< css::frame::DispatchDescriptor>& rDescriptors) override;
+            const css::uno::Sequence< css::frame::DispatchDescriptor>& rDescriptors)
+        throw(css::uno::RuntimeException, std::exception) override;
 
 private:
     class Dispatch;
     ::rtl::Reference<PresenterController> mpPresenterController;
 
-    /// @throws css::lang::DisposedException
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const throw (css::lang::DisposedException);
 };
 
 } }

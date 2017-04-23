@@ -25,7 +25,7 @@
 #include "oox/drawingml/shapegroupcontext.hxx"
 #include "oox/drawingml/connectorshapecontext.hxx"
 #include "oox/drawingml/graphicshapecontext.hxx"
-#include "drawingml/lineproperties.hxx"
+#include "oox/drawingml/lineproperties.hxx"
 #include "oox/drawingml/drawingmltypes.hxx"
 #include "drawingml/customshapegeometry.hxx"
 #include <drawingml/shapepropertiescontext.hxx>
@@ -43,7 +43,7 @@ using namespace ::com::sun::star::xml::sax;
 
 namespace oox { namespace drawingml {
 
-ShapeGroupContext::ShapeGroupContext( ContextHandler2Helper& rParent, ShapePtr const & pMasterShapePtr, ShapePtr const & pGroupShapePtr )
+ShapeGroupContext::ShapeGroupContext( ContextHandler2Helper& rParent, ShapePtr pMasterShapePtr, ShapePtr pGroupShapePtr )
 : ContextHandler2( rParent )
 , mpGroupShapePtr( pGroupShapePtr )
 , mpMasterShapePtr( pMasterShapePtr )

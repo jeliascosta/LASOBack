@@ -36,8 +36,11 @@ namespace comphelper
         SharedMutex();
         SharedMutex( const SharedMutex& );
         SharedMutex& operator=( const SharedMutex& );
+        ~SharedMutex()
+        {
+        }
 
-        operator ::osl::Mutex& () { return *m_pMutexImpl; }
+        inline operator ::osl::Mutex& () { return *m_pMutexImpl; }
 
     private:
         std::shared_ptr< ::osl::Mutex >  m_pMutexImpl;

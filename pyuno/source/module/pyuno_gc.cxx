@@ -27,7 +27,7 @@
 namespace pyuno
 {
 
-static bool g_destructorsOfStaticObjectsHaveBeenCalled;
+bool g_destructorsOfStaticObjectsHaveBeenCalled;
 class StaticDestructorGuard
 {
 public:
@@ -36,7 +36,7 @@ public:
         g_destructorsOfStaticObjectsHaveBeenCalled = true;
     }
 };
-static StaticDestructorGuard guard;
+StaticDestructorGuard guard;
 
 static bool isAfterUnloadOrPy_Finalize()
 {
@@ -49,7 +49,7 @@ public:
     GCThread( PyInterpreterState *interpreter, PyObject * object );
 
 private:
-    virtual ~GCThread() override {}
+    virtual ~GCThread() {}
 
     virtual void execute() override;
 

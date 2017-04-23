@@ -52,13 +52,14 @@ class NeonInputStream : public css::io::XInputStream,
 
     public:
                  NeonInputStream();
-        virtual ~NeonInputStream() override;
+        virtual ~NeonInputStream();
 
         // Add some data to the end of the stream
         void AddToStream( const char * inBuf, sal_Int32 inLen );
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & type ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & type )
+                            throw( css::uno::RuntimeException, std::exception ) override;
 
     virtual void SAL_CALL acquire()
                             throw () override
@@ -72,24 +73,49 @@ class NeonInputStream : public css::io::XInputStream,
     // XInputStream
     virtual sal_Int32 SAL_CALL readBytes(
               css::uno::Sequence< sal_Int8 > & aData,
-            sal_Int32 nBytesToRead ) override;
+            sal_Int32 nBytesToRead )
+                throw( css::io::NotConnectedException,
+                          css::io::BufferSizeExceededException,
+                          css::io::IOException,
+                          css::uno::RuntimeException, std::exception ) override;
 
     virtual sal_Int32 SAL_CALL readSomeBytes(
             css::uno::Sequence< sal_Int8 > & aData,
-            sal_Int32 nMaxBytesToRead ) override;
+            sal_Int32 nMaxBytesToRead )
+                throw( css::io::NotConnectedException,
+                          css::io::BufferSizeExceededException,
+                          css::io::IOException,
+                          css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip ) override;
+    virtual void SAL_CALL skipBytes( sal_Int32 nBytesToSkip )
+                throw( css::io::NotConnectedException,
+                          css::io::BufferSizeExceededException,
+                          css::io::IOException,
+                          css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int32 SAL_CALL available() override;
+    virtual sal_Int32 SAL_CALL available()
+                throw( css::io::NotConnectedException,
+                          css::io::IOException,
+                          css::uno::RuntimeException, std::exception ) override;
 
-    virtual void SAL_CALL closeInput() override;
+    virtual void SAL_CALL closeInput()
+                throw( css::io::NotConnectedException,
+                          css::io::IOException,
+                          css::uno::RuntimeException, std::exception ) override;
 
     // XSeekable
-    virtual void SAL_CALL seek( sal_Int64 location ) override;
+    virtual void SAL_CALL seek( sal_Int64 location )
+        throw( css::lang::IllegalArgumentException,
+               css::io::IOException,
+               css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int64 SAL_CALL getPosition() override;
+    virtual sal_Int64 SAL_CALL getPosition()
+        throw( css::io::IOException,
+               css::uno::RuntimeException, std::exception ) override;
 
-    virtual sal_Int64 SAL_CALL getLength() override;
+    virtual sal_Int64 SAL_CALL getLength()
+        throw( css::io::IOException,
+               css::uno::RuntimeException, std::exception ) override;
 };
 
 } // namespace webdav_ucp

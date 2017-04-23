@@ -138,7 +138,7 @@ void UnoDataBrowserView::dispose()
     ODataView::dispose();
 }
 
-IMPL_LINK_NOARG( UnoDataBrowserView, SplitHdl, Splitter*, void )
+IMPL_LINK_NOARG_TYPED( UnoDataBrowserView, SplitHdl, Splitter*, void )
 {
     long nYPos = m_pSplitter->GetPosPixel().Y();
     m_pSplitter->SetPosPixel( Point( m_pSplitter->GetSplitPosPixel(), nYPos ) );
@@ -186,7 +186,7 @@ void UnoDataBrowserView::hideStatus()
     Update();
 }
 
-void UnoDataBrowserView::resizeDocumentView(tools::Rectangle& _rPlayground)
+void UnoDataBrowserView::resizeDocumentView(Rectangle& _rPlayground)
 {
     Point   aSplitPos;
     Size    aSplitSize;
@@ -215,7 +215,7 @@ void UnoDataBrowserView::resizeDocumentView(tools::Rectangle& _rPlayground)
         if (m_pStatus && m_pStatus->IsVisible())
         {
             Size aStatusSize(aPlaygroundPos.X(), GetTextHeight() + 2);
-            aStatusSize = LogicToPixel(aStatusSize, MapUnit::MapAppFont);
+            aStatusSize = LogicToPixel(aStatusSize, MAP_APPFONT);
             aStatusSize.Width() = aTreeViewSize.Width() - 2 - 2;
 
             Point aStatusPos( aPlaygroundPos.X() + 2, aTreeViewPos.Y() + aTreeViewSize.Height() - aStatusSize.Height() );

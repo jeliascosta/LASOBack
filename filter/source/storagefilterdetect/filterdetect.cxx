@@ -82,6 +82,7 @@ StorageFilterDetect::StorageFilterDetect(const uno::Reference<uno::XComponentCon
 StorageFilterDetect::~StorageFilterDetect() {}
 
 OUString SAL_CALL StorageFilterDetect::detect(uno::Sequence<beans::PropertyValue>& rDescriptor)
+    throw (uno::RuntimeException, std::exception)
 {
     MediaDescriptor aMediaDesc( rDescriptor );
     OUString aTypeName;
@@ -120,7 +121,7 @@ OUString SAL_CALL StorageFilterDetect::detect(uno::Sequence<beans::PropertyValue
             if ( xInteraction.is() )
             {
                 INetURLObject aParser( aMediaDesc.getUnpackedValueOrDefault( MediaDescriptor::PROP_URL(), OUString() ) );
-                OUString aDocumentTitle = aParser.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset );
+                OUString aDocumentTitle = aParser.getName( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET );
                 bool bRepairPackage = aMediaDesc.getUnpackedValueOrDefault( "RepairPackage", false );
                 // fdo#46310 Don't try to repair if the user rejected it once.
                 bool bRepairAllowed = aMediaDesc.getUnpackedValueOrDefault( "RepairAllowed", true );
@@ -163,7 +164,8 @@ OUString SAL_CALL StorageFilterDetect::detect(uno::Sequence<beans::PropertyValue
 }
 
 // XInitialization
-void SAL_CALL StorageFilterDetect::initialize(const uno::Sequence<uno::Any>& /*aArguments*/) {}
+void SAL_CALL StorageFilterDetect::initialize(const uno::Sequence<uno::Any>& /*aArguments*/)
+    throw (uno::Exception, uno::RuntimeException, std::exception) {}
 
 OUString StorageFilterDetect_getImplementationName()
 {
@@ -187,16 +189,19 @@ uno::Reference<uno::XInterface> StorageFilterDetect_createInstance(
 
 // XServiceInfo
 OUString SAL_CALL StorageFilterDetect::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return StorageFilterDetect_getImplementationName();
 }
 
 sal_Bool SAL_CALL StorageFilterDetect::supportsService(const OUString& rServiceName)
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 uno::Sequence<OUString> SAL_CALL StorageFilterDetect::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     return StorageFilterDetect_getSupportedServiceNames();
 }

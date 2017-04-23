@@ -48,7 +48,7 @@ class PNGWriterImpl
 public:
 
     PNGWriterImpl(const BitmapEx& BmpEx,
-                  const css::uno::Sequence<css::beans::PropertyValue>* pFilterData);
+                  const css::uno::Sequence<css::beans::PropertyValue>* pFilterData = nullptr);
 
     bool Write(SvStream& rOutStream);
 
@@ -66,7 +66,7 @@ private:
     sal_uInt32 mnMaxChunkSize;
     bool mbStatus;
 
-    Bitmap::ScopedReadAccess mpAccess;
+    BitmapReadAccess* mpAccess;
     BitmapReadAccess* mpMaskAccess;
     ZCodec mpZCodec;
 
@@ -78,7 +78,7 @@ private:
     sal_uLong mnWidth;
     sal_uLong mnHeight;
     sal_uInt8 mnBitsPerPixel;
-    sal_uInt8 mnFilterType;  // 0 or 4;
+    sal_uInt8 mnFilterType;  // 0 oder 4;
     sal_uLong mnBBP;         // bytes per pixel ( needed for filtering )
     bool mbTrueAlpha;
     sal_uLong mnCRC;
@@ -102,6 +102,7 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
     , mnInterlaced(0)
     , mnMaxChunkSize(0)
     , mbStatus(true)
+    , mpAccess(nullptr)
     , mpMaskAccess(nullptr)
     , mpDeflateInBuf(nullptr)
     , mpPreviousScan(nullptr)
@@ -147,16 +148,16 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
         {
             if (mnBitsPerPixel <= 8 && rBmpEx.IsAlpha())
             {
-                aBmp.Convert( BmpConversion::N24Bit );
+                aBmp.Convert( BMP_CONVERSION_24BIT );
                 mnBitsPerPixel = 24;
             }
 
             if (mnBitsPerPixel <= 8) // transparent palette
             {
-                aBmp.Convert(BmpConversion::N8BitTrans);
+                aBmp.Convert(BMP_CONVERSION_8BIT_TRANS);
                 aBmp.Replace(rBmpEx.GetMask(), BMP_COL_TRANS);
                 mnBitsPerPixel = 8;
-                mpAccess = Bitmap::ScopedReadAccess(aBmp);
+                mpAccess = aBmp.AcquireReadAccess();
                 if (mpAccess)
                 {
                     if (ImplWriteHeader())
@@ -166,7 +167,8 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
                         ImplWriteTransparent();
                         ImplWriteIDAT();
                     }
-                    mpAccess.reset();
+                    Bitmap::ReleaseAccess(mpAccess);
+                    mpAccess = nullptr;
                 }
                 else
                 {
@@ -175,11 +177,10 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
             }
             else
             {
-                mpAccess = Bitmap::ScopedReadAccess(aBmp); // true RGB with alphachannel
+                mpAccess = aBmp.AcquireReadAccess(); // true RGB with alphachannel
                 if (mpAccess)
                 {
-                    mbTrueAlpha = rBmpEx.IsAlpha();
-                    if (mbTrueAlpha)
+                    if ((mbTrueAlpha = rBmpEx.IsAlpha()))
                     {
                         AlphaMask aMask(rBmpEx.GetAlpha());
                         mpMaskAccess = aMask.AcquireReadAccess();
@@ -217,7 +218,8 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
                             mbStatus = false;
                         }
                     }
-                    mpAccess.reset();
+                    Bitmap::ReleaseAccess(mpAccess);
+                    mpAccess = nullptr;
                 }
                 else
                 {
@@ -227,7 +229,7 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
         }
         else
         {
-            mpAccess = Bitmap::ScopedReadAccess(aBmp); // palette + RGB without alphachannel
+            mpAccess = aBmp.AcquireReadAccess(); // palette + RGB without alphachannel
             if (mpAccess)
             {
                 if (ImplWriteHeader())
@@ -238,7 +240,8 @@ PNGWriterImpl::PNGWriterImpl( const BitmapEx& rBmpEx,
 
                     ImplWriteIDAT();
                 }
-                mpAccess.reset();
+                Bitmap::ReleaseAccess(mpAccess);
+                mpAccess = nullptr;
             }
             else
             {
@@ -276,7 +279,7 @@ bool PNGWriterImpl::Write(SvStream& rOStm)
         rOStm.WriteUInt32(nDataSize);
         rOStm.WriteUInt32(aBeg->nType);
         if (nDataSize)
-            rOStm.WriteBytes(&aBeg->aData[0], nDataSize);
+            rOStm.Write(&aBeg->aData[0], nDataSize);
         rOStm.WriteUInt32(nCRC);
         ++aBeg;
     }
@@ -355,7 +358,7 @@ void PNGWriterImpl::ImplWriteTransparent()
 
 void PNGWriterImpl::ImplWritepHYs(const BitmapEx& rBmpEx)
 {
-    if (rBmpEx.GetPrefMapMode() == MapUnit::Map100thMM)
+    if (rBmpEx.GetPrefMapMode() == MAP_100TH_MM)
     {
         Size aPrefSize(rBmpEx.GetPrefSize());
 

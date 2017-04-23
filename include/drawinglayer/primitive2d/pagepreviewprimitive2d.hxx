@@ -58,9 +58,13 @@ namespace drawinglayer
             double                                      mfContentWidth;
             double                                      mfContentHeight;
 
+            /// bitfield
+            /// flag to allow keeping the aspect ratio
+            bool                                        mbKeepAspectRatio : 1;
+
         protected:
             /// local decomposition. Implementation will just return children
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -69,7 +73,8 @@ namespace drawinglayer
                 const basegfx::B2DHomMatrix& rTransform,
                 double fContentWidth,
                 double fContentHeight,
-                const Primitive2DContainer& rPageContent);
+                const Primitive2DContainer& rPageContent,
+                bool bKeepAspectRatio);
 
             /// data read access
             const css::uno::Reference< css::drawing::XDrawPage >& getXDrawPage() const { return mxDrawPage; }
@@ -77,6 +82,7 @@ namespace drawinglayer
             const basegfx::B2DHomMatrix& getTransform() const { return maTransform; }
             double getContentWidth() const { return mfContentWidth; }
             double getContentHeight() const { return mfContentHeight; }
+            bool getKeepAspectRatio() const { return mbKeepAspectRatio; }
 
             /// compare operator
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;

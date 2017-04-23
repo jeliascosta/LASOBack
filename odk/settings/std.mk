@@ -61,7 +61,7 @@ OFFICE_TYPE_LIBRARY="$(OFFICE_TYPES)"
 
 JAVA_OPTIONS=
 ifneq "$(OO_SDK_JAVA_HOME)" ""
-JAVA_BITS := $(shell $(OO_SDK_JAVA_HOME)/bin/java -version 2>&1 | tail -1 | cut -d " " -f3)
+JAVA_BITS := $(shell $(OO_SDK_JAVA_HOME)/$(JAVABIN)/java -version 2>&1 | tail -1 | cut -d " " -f3)
 ifeq "$(JAVA_BITS)" "64-Bit"
 ifneq "$(PROCTYPE)" "x86_64"
 JAVA_OPTIONS=-d32
@@ -70,29 +70,25 @@ endif
 endif
 
 DEPLOYTOOL="$(OFFICE_PROGRAM_PATH)$(PS)unopkg" add -f
-SDK_JAVA="$(OO_SDK_JAVA_HOME)/bin/java" $(JAVA_OPTIONS)
-SDK_JAVAC="$(OO_SDK_JAVA_HOME)/bin/javac"
-SDK_JAR="$(OO_SDK_JAVA_HOME)/bin/jar"
-ifneq "$(OO_SDK_ZIP_HOME)" ""
+SDK_JAVA="$(OO_SDK_JAVA_HOME)/$(JAVABIN)/java" $(JAVA_OPTIONS)
+SDK_JAVAC="$(OO_SDK_JAVA_HOME)/$(JAVABIN)/javac"
+SDK_JAR="$(OO_SDK_JAVA_HOME)/$(JAVABIN)/jar"
 SDK_ZIP="$(OO_SDK_ZIP_HOME)/zip"
-else
-SDK_ZIP=zip
-endif
-ifneq "$(OO_SDK_CAT_HOME)" ""
 SDK_CAT="$(OO_SDK_CAT_HOME)/cat"
-else
-SDK_CAT=cat
-endif
-ifneq "$(OO_SDK_SED_HOME)" ""
 SDK_SED="$(OO_SDK_SED_HOME)/sed"
-else
-SDK_SED=sed
-endif
 IDLC="$(OO_SDK_HOME)/bin/idlc"
 CPPUMAKER="$(OO_SDK_HOME)/bin/cppumaker"
 JAVAMAKER="$(OO_SDK_HOME)/bin/javamaker"
 REGMERGE="$(OO_SDK_URE_BIN_DIR)/regmerge"
 
 SDK_JAVA_UNO_BOOTSTRAP_FILES=\
-    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/Loader.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/Loader$$1.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/Loader$$Drain.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/Loader$$CustomURLClassLoader.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/Loader$$Drain.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/InstallationFinder.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/InstallationFinder$$StreamGobbler.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/WinRegKey.class$(SQM) \
+    -C $(CLASSES_DIR) $(SQM)com/sun/star/lib/loader/WinRegKeyException.class$(SQM) \
     -C $(CLASSES_DIR) $(SQM)win/unowinreg.dll$(SQM)

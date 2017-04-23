@@ -31,10 +31,10 @@ class SwSelGlossaryDlg : public ModalDialog
 protected:
     VclPtr<ListBox>  m_pGlosBox;
 
-    DECL_LINK(DoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(DoubleClickHdl, ListBox&, void);
 public:
     SwSelGlossaryDlg(vcl::Window * pParent, const OUString &rShortName);
-    virtual ~SwSelGlossaryDlg() override;
+    virtual ~SwSelGlossaryDlg();
     virtual void dispose() override;
 
     void InsertGlos(const OUString &rRegion, const OUString &rGlosName)

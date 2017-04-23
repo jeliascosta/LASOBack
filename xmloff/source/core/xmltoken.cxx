@@ -247,7 +247,6 @@ namespace xmloff { namespace token {
         TOKEN( "application-data",                XML_APPLICATION_DATA ),
         TOKEN( "application-xml",                 XML_APPLICATION_XML ),
         TOKEN( "apply",                           XML_APPLY ),
-        TOKEN( "apply-design-mode",               XML_APPLY_DESIGN_MODE ),
         TOKEN( "apply-style-name",                XML_APPLY_STYLE_NAME ),
         TOKEN( "aqua",                            XML_AQUA ),
         TOKEN( "arc",                             XML_ARC ),
@@ -278,7 +277,6 @@ namespace xmloff { namespace token {
         TOKEN( "auto-update",                     XML_AUTO_UPDATE ),
         TOKEN( "automatic",                       XML_AUTOMATIC ),
         TOKEN( "automatic-find-labels",           XML_AUTOMATIC_FIND_LABELS ),
-        TOKEN( "automatic-focus",                 XML_AUTOMATIC_FOCUS ),
         TOKEN( "automatic-order",                 XML_AUTOMATIC_ORDER ),
         TOKEN( "automatic-styles",                XML_AUTOMATIC_STYLES ),
         TOKEN( "automatic-update",                XML_AUTOMATIC_UPDATE ),
@@ -549,7 +547,6 @@ namespace xmloff { namespace token {
         TOKEN( "data-label-number",               XML_DATA_LABEL_NUMBER ),
         TOKEN( "data-label-symbol",               XML_DATA_LABEL_SYMBOL ),
         TOKEN( "data-label-text",                 XML_DATA_LABEL_TEXT ),
-        TOKEN( "data-pilot-source",               XML_DATA_PILOT_SOURCE ),
         TOKEN( "data-pilot-field",                XML_DATA_PILOT_FIELD ),
         TOKEN( "data-pilot-grand-total",          XML_DATA_PILOT_GRAND_TOTAL ),
         TOKEN( "data-pilot-level",                XML_DATA_PILOT_LEVEL ),
@@ -580,8 +577,6 @@ namespace xmloff { namespace token {
         TOKEN( "date-adjust",                     XML_DATE_ADJUST ),
         TOKEN( "date-style",                      XML_DATE_STYLE ),
         TOKEN( "date-time",                       XML_DATE_TIME ),
-        TOKEN( "date-time-update",                XML_DATE_TIME_UPDATE ),
-        TOKEN( "date-time-visible",               XML_DATE_TIME_VISIBLE ),
         TOKEN( "date-value",                      XML_DATE_VALUE ),
         TOKEN( "datetime",                        XML_DATETIME ),
         TOKEN( "day",                             XML_DAY ),
@@ -853,7 +848,6 @@ namespace xmloff { namespace token {
         TOKEN( "footer-first",                    XML_FOOTER_FIRST ),
         TOKEN( "footer-left",                     XML_FOOTER_LEFT ),
         TOKEN( "footer-style",                    XML_FOOTER_STYLE ),
-        TOKEN( "footer-visible",                  XML_FOOTER_VISIBLE ),
         TOKEN( "footnote",                        XML_FOOTNOTE ),
         TOKEN( "footnote-body",                   XML_FOOTNOTE_BODY ),
         TOKEN( "footnote-citation",               XML_FOOTNOTE_CITATION ),
@@ -1387,7 +1381,6 @@ namespace xmloff { namespace token {
         TOKEN( "page-master-name",                XML_PAGE_MASTER_NAME ),
         TOKEN( "page-name",                       XML_PAGE_NAME ),
         TOKEN( "page-number",                     XML_PAGE_NUMBER ),
-        TOKEN( "page-number-visible",             XML_PAGE_NUMBER_VISIBLE ),
         TOKEN( "page-start-margin",               XML_PAGE_START_MARGIN ),
         TOKEN( "page-style-name",                 XML_PAGE_STYLE_NAME ),
         TOKEN( "page-thumbnail",                  XML_PAGE_THUMBNAIL ),
@@ -2208,8 +2201,6 @@ namespace xmloff { namespace token {
         TOKEN( "regression-period",               XML_REGRESSION_PERIOD ),
         TOKEN( "regression-force-intercept",      XML_REGRESSION_FORCE_INTERCEPT ),
         TOKEN( "regression-intercept-value",      XML_REGRESSION_INTERCEPT_VALUE ),
-        TOKEN( "regression-x-name",               XML_REGRESSION_X_NAME ),
-        TOKEN( "regression-y-name",               XML_REGRESSION_Y_NAME ),
 
         TOKEN( "error-indicator",                 XML_ERROR_INDICATOR ),
 
@@ -3074,14 +3065,6 @@ namespace xmloff { namespace token {
         TOKEN( "odd-rows",              XML_ODD_ROWS        ),
         TOKEN( "even-columns",          XML_EVEN_COLUMNS    ),
         TOKEN( "odd-columns",           XML_ODD_COLUMNS     ),
-        // table styles
-        TOKEN( "first-row-even-column",  XML_FIRST_ROW_EVEN_COLUMN    ),
-        TOKEN( "last-row-even-column",   XML_LAST_ROW_EVEN_COLUMN     ),
-        TOKEN( "first-row-end-column",   XML_FIRST_ROW_END_COLUMN     ),
-        TOKEN( "first-row-start-column", XML_FIRST_ROW_START_COLUMN   ),
-        TOKEN( "last-row-end-column",    XML_LAST_ROW_END_COLUMN      ),
-        TOKEN( "last-row-start-column",  XML_LAST_ROW_START_COLUMN    ),
-
         TOKEN( "horizontal-on-odd",         XML_HORIZONTAL_ON_ODD ),
         // Password error from 1.4 to 2.0 Beta (#i45874#)
         TOKEN( "restart-numbering",               XML_RESTART_NUMBERING),
@@ -3272,11 +3255,6 @@ namespace xmloff { namespace token {
         TOKEN( "exponent-interval",               XML_EXPONENT_INTERVAL ),
         TOKEN( "forced-exponent-sign",            XML_FORCED_EXPONENT_SIGN ),
         TOKEN( "min-decimal-places",              XML_MIN_DECIMAL_PLACES ),
-        TOKEN( "max-denominator-value",           XML_MAX_DENOMINATOR_VALUE ),
-        TOKEN( "max-numerator-digits",            XML_MAX_NUMERATOR_DIGITS ),
-        TOKEN( "zeros-numerator-digits",          XML_ZEROS_NUMERATOR_DIGITS ),
-        TOKEN( "zeros-denominator-digits",        XML_ZEROS_DENOMINATOR_DIGITS ),
-        TOKEN( "integer-fraction-delimiter",      XML_INTEGER_FRACTION_DELIMITER ),
 
 #if OSL_DEBUG_LEVEL > 0
         { 0, nullptr, nullptr,                       XML_TOKEN_END }
@@ -3330,17 +3308,6 @@ namespace xmloff { namespace token {
 
         const XMLTokenEntry* pToken = &aTokenList[(sal_uInt16)eToken];
         return rString.equalsAsciiL( pToken->pChar, pToken->nLength );
-    }
-
-    bool IsXMLToken(
-        const char* pCString,
-        enum XMLTokenEnum eToken )
-    {
-        assert(XML_TOKEN_INVALID < eToken);
-        assert(eToken < XML_TOKEN_END);
-
-        const XMLTokenEntry* pToken = &aTokenList[(sal_uInt16)eToken];
-        return !strcmp( pCString, pToken->pChar );
     }
 }
 }

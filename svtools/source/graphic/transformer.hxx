@@ -35,20 +35,23 @@ class GraphicTransformer : public GraphicTransformer_UnoImplHelper1
     public:
 
     GraphicTransformer();
-    virtual ~GraphicTransformer() override;
+    virtual ~GraphicTransformer();
 
     // XGraphicTransformer
     virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL colorChange(
         const css::uno::Reference< css::graphic::XGraphic >& rGraphic,
-        sal_Int32 nColorFrom, sal_Int8 nTolerance, sal_Int32 nColorTo, sal_Int8 nAlphaTo ) override;
+        sal_Int32 nColorFrom, sal_Int8 nTolerance, sal_Int32 nColorTo, sal_Int8 nAlphaTo )
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL applyDuotone(
         const css::uno::Reference< css::graphic::XGraphic >& rGraphic,
-        sal_Int32 nColorOne, sal_Int32 nColorTwo ) override;
+        sal_Int32 nColorOne, sal_Int32 nColorTwo )
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference< css::graphic::XGraphic > SAL_CALL applyBrightnessContrast(
         const css::uno::Reference< css::graphic::XGraphic >& rxGraphic,
-        sal_Int32 nBrightness, sal_Int32 nContrast, sal_Bool mso ) override;
+        sal_Int32 nBrightness, sal_Int32 nContrast, sal_Bool mso )
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 };
 

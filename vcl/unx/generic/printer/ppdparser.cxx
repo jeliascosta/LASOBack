@@ -22,10 +22,10 @@
 #include <comphelper/string.hxx>
 #include <vcl/ppdparser.hxx>
 #include <vcl/strhelper.hxx>
+#include <vcl/helper.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
 
-#include <unx/helper.hxx>
 #include "unx/cupsmgr.hxx"
 
 #include "tools/urlobj.hxx"
@@ -77,19 +77,20 @@ namespace psp
         key_translation_map     m_aTranslations;
         public:
         PPDTranslator() {}
+        ~PPDTranslator() {}
 
         void insertValue(
             const OUString& i_rKey,
             const OUString& i_rOption,
             const OUString& i_rValue,
             const OUString& i_rTranslation,
-            const css::lang::Locale& i_rLocale
+            const css::lang::Locale& i_rLocale = css::lang::Locale()
             );
 
         void insertOption( const OUString& i_rKey,
                            const OUString& i_rOption,
                            const OUString& i_rTranslation,
-                           const css::lang::Locale& i_rLocale )
+                           const css::lang::Locale& i_rLocale = css::lang::Locale() )
         {
             insertValue( i_rKey, i_rOption, OUString(), i_rTranslation, i_rLocale );
         }
@@ -121,7 +122,7 @@ namespace psp
 
     static css::lang::Locale normalizeInputLocale(
         const css::lang::Locale& i_rLocale,
-        bool bInsertDefault
+        bool bInsertDefault = false
         )
     {
         css::lang::Locale aLoc( i_rLocale );
@@ -450,15 +451,15 @@ void PPDParser::initPPDFiles(PPDCache &rPPDCache)
     if( rPPDCache.pAllPPDFiles )
         return;
 
-    rPPDCache.pAllPPDFiles = new std::unordered_map< OUString, OUString, OUStringHash >;
+    rPPDCache.pAllPPDFiles = new std::unordered_map< OUString, OUString, OUStringHash >();
 
     // check installation directories
     std::list< OUString > aPathList;
     psp::getPrinterPathList( aPathList, PRINTER_PPDDIR );
     for( std::list< OUString >::const_iterator ppd_it = aPathList.begin(); ppd_it != aPathList.end(); ++ppd_it )
     {
-        INetURLObject aPPDDir( *ppd_it, INetProtocol::File, INetURLObject::EncodeMechanism::All );
-        scanPPDDir( aPPDDir.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+        INetURLObject aPPDDir( *ppd_it, INetProtocol::File, INetURLObject::ENCODE_ALL );
+        scanPPDDir( aPPDDir.GetMainURL( INetURLObject::NO_DECODE ) );
     }
     if( rPPDCache.pAllPPDFiles->find( OUString( "SGENPRT" ) ) == rPPDCache.pAllPPDFiles->end() )
     {
@@ -469,8 +470,8 @@ void PPDParser::initPPDFiles(PPDCache &rPPDCache)
             INetURLObject aDir( aExe );
             aDir.removeSegment();
             SAL_INFO("vcl.unx.print", "scanning last chance dir: "
-                    << aDir.GetMainURL(INetURLObject::DecodeMechanism::NONE));
-            scanPPDDir( aDir.GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+                    << aDir.GetMainURL(INetURLObject::NO_DECODE));
+            scanPPDDir( aDir.GetMainURL( INetURLObject::NO_DECODE ) );
             SAL_INFO("vcl.unx.print", "SGENPRT "
                     << (rPPDCache.pAllPPDFiles->find("SGENPRT") ==
                         rPPDCache.pAllPPDFiles->end() ? "not found" : "found"));
@@ -480,7 +481,7 @@ void PPDParser::initPPDFiles(PPDCache &rPPDCache)
 
 OUString PPDParser::getPPDFile( const OUString& rFile )
 {
-    INetURLObject aPPD( rFile, INetProtocol::File, INetURLObject::EncodeMechanism::All );
+    INetURLObject aPPD( rFile, INetProtocol::File, INetURLObject::ENCODE_ALL );
     // someone might enter a full qualified name here
     PPDDecompressStream aStream( aPPD.PathToFileName() );
     if( ! aStream.IsOpen() )
@@ -567,7 +568,7 @@ const PPDParser* PPDParser::getParser( const OUString& rFile )
     else
     {
         PrinterInfoManager& rMgr = PrinterInfoManager::get();
-        if( rMgr.getType() == PrinterInfoManager::Type::CUPS )
+        if( rMgr.getType() == PrinterInfoManager::CUPS )
         {
 #ifdef ENABLE_CUPS
             pNewParser = const_cast<PPDParser*>(static_cast<CUPSManager&>(rMgr).createCUPSParser( aFile ));
@@ -577,7 +578,7 @@ const PPDParser* PPDParser::getParser( const OUString& rFile )
     if( pNewParser )
     {
         // this may actually be the SGENPRT parser,
-        // so ensure uniqueness here
+        // so ensure uniquness here
         rPPDCache.aAllParsers.remove( pNewParser );
         // insert new parser to list
         rPPDCache.aAllParsers.push_front( pNewParser );
@@ -587,9 +588,7 @@ const PPDParser* PPDParser::getParser( const OUString& rFile )
 
 PPDParser::PPDParser( const OUString& rFile ) :
         m_aFile( rFile ),
-        m_bColorDevice( false ),
         m_bType42Capable( false ),
-        m_nLanguageLevel( 0 ),
         m_aFileEncoding( RTL_TEXTENCODING_MS_1252 ),
         m_pDefaultImageableArea( nullptr ),
         m_pImageableAreas( nullptr ),
@@ -716,35 +715,57 @@ PPDParser::PPDParser( const OUString& rFile ) :
     if( m_pImageableAreas )
         m_pDefaultImageableArea = m_pImageableAreas->getDefaultValue();
     if (m_pImageableAreas == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no ImageableArea in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no ImageableArea in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
     if (m_pDefaultImageableArea == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no DefaultImageableArea in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no DefaultImageableArea in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
 
     m_pPaperDimensions = getKey( OUString( "PaperDimension" ) );
     if( m_pPaperDimensions )
         m_pDefaultPaperDimension = m_pPaperDimensions->getDefaultValue();
     if (m_pPaperDimensions == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no PaperDimensions in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no PaperDimensions in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
     if (m_pDefaultPaperDimension == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no DefaultPaperDimensions in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no DefaultPaperDimensions in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
 
     m_pResolutions = getKey( OUString( "Resolution" ) );
     if( m_pResolutions )
         m_pDefaultResolution = m_pResolutions->getDefaultValue();
     if (m_pResolutions == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no Resolution in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no Resolution in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
-    SAL_INFO_IF(!m_pDefaultResolution, "vcl.unx.print", "no DefaultResolution in " + m_aFile);
+    if (m_pDefaultResolution == nullptr) {
+        OSL_TRACE(
+            "Warning: no DefaultResolution in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
+    }
 
     m_pInputSlots = getKey( OUString( "InputSlot" ) );
     if( m_pInputSlots )
         m_pDefaultInputSlot = m_pInputSlots->getDefaultValue();
-    SAL_INFO_IF(!m_pInputSlots, "vcl.unx.print", "no InputSlot in " << m_aFile);
-    SAL_INFO_IF(!m_pDefaultInputSlot, "vcl.unx.print", "no DefaultInputSlot in " << m_aFile);
+    if (m_pInputSlots == nullptr) {
+        OSL_TRACE(
+            "Warning: no InputSlot in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
+    }
+    if (m_pDefaultInputSlot == nullptr) {
+        OSL_TRACE(
+            "Warning: no DefaultInputSlot in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
+    }
 
     m_pDuplexTypes = getKey( OUString( "Duplex" ) );
     if( m_pDuplexTypes )
@@ -752,7 +773,9 @@ PPDParser::PPDParser( const OUString& rFile ) :
 
     m_pFontList = getKey( OUString( "Font" ) );
     if (m_pFontList == nullptr) {
-        SAL_WARN( "vcl.unx.print", "no Font in " << m_aFile);
+        OSL_TRACE(
+            "Warning: no Font in %s\n",
+            OUStringToOString(m_aFile, RTL_TEXTENCODING_UTF8).getStr());
     }
 
     // fill in direct values
@@ -1236,17 +1259,17 @@ void PPDParser::parseOrderDependency(const OString& rLine)
 
     pKey->m_nOrderDependency = nOrder;
     if( aSetup == "ExitServer" )
-        pKey->m_eSetupType = PPDKey::SetupType::ExitServer;
+        pKey->m_eSetupType = PPDKey::ExitServer;
     else if( aSetup == "Prolog" )
-        pKey->m_eSetupType = PPDKey::SetupType::Prolog;
+        pKey->m_eSetupType = PPDKey::Prolog;
     else if( aSetup == "DocumentSetup" )
-        pKey->m_eSetupType = PPDKey::SetupType::DocumentSetup;
+        pKey->m_eSetupType = PPDKey::DocumentSetup;
     else if( aSetup == "PageSetup" )
-        pKey->m_eSetupType = PPDKey::SetupType::PageSetup;
+        pKey->m_eSetupType = PPDKey::PageSetup;
     else if( aSetup == "JCLSetup" )
-        pKey->m_eSetupType = PPDKey::SetupType::JCLSetup;
+        pKey->m_eSetupType = PPDKey::JCLSetup;
     else
-        pKey->m_eSetupType = PPDKey::SetupType::AnySetup;
+        pKey->m_eSetupType = PPDKey::AnySetup;
 }
 
 void PPDParser::parseConstraint( const OString& rLine )
@@ -1479,7 +1502,7 @@ PPDKey::PPDKey( const OUString& rKey ) :
         m_bUIOption( false ),
         m_eUIType( PickOne ),
         m_nOrderDependency( 100 ),
-        m_eSetupType( SetupType::AnySetup )
+        m_eSetupType( AnySetup )
 {
 }
 
@@ -1547,8 +1570,8 @@ PPDValue* PPDKey::insertValue(const OUString& rOption, PPDValueType eType, bool 
  * PPDContext
  */
 
-PPDContext::PPDContext() :
-        m_pParser( nullptr )
+PPDContext::PPDContext( const PPDParser* pParser ) :
+        m_pParser( pParser )
 {
 }
 
@@ -1556,13 +1579,6 @@ PPDContext& PPDContext::operator=( const PPDContext& rCopy )
 {
     m_pParser           = rCopy.m_pParser;
     m_aCurrentValues    = rCopy.m_aCurrentValues;
-    return *this;
-}
-
-PPDContext& PPDContext::operator=( PPDContext&& rCopy )
-{
-    std::swap(m_pParser, rCopy.m_pParser);
-    std::swap(m_aCurrentValues, rCopy.m_aCurrentValues);
     return *this;
 }
 

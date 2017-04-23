@@ -26,6 +26,8 @@
 class EDITENG_DLLPUBLIC SvxNoHyphenItem : public SfxBoolItem
 {
 public:
+    static SfxPoolItem* CreateDefault();
+
     SvxNoHyphenItem( const bool bHyphen /*= true*/,
                      const sal_uInt16 nId  );
 
@@ -35,11 +37,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxNoHyphenItem& operator=(const SvxNoHyphenItem& rNHH)
+    inline SvxNoHyphenItem& operator=(const SvxNoHyphenItem& rNHH)
         {
             SetValue( rNHH.GetValue() );
             return *this;

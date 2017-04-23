@@ -53,10 +53,10 @@ HRESULT STDMETHODCALLTYPE CEnumVariant::Next(ULONG cElements,VARIANT __RPC_FAR *
     long l1;
     ULONG l2;
 
-    if (pvar == nullptr)
+    if (pvar == NULL)
         return E_INVALIDARG;
 
-    if (pcElementFetched != nullptr)
+    if (pcElementFetched != NULL)
         *pcElementFetched = 0;
 
     // Retrieve the next cElements.
@@ -64,13 +64,13 @@ HRESULT STDMETHODCALLTYPE CEnumVariant::Next(ULONG cElements,VARIANT __RPC_FAR *
             l2<cElements; l1++, l2++)
     {
         Reference< XAccessible > pRXAcc = m_pXAccessibleSelection->getSelectedAccessibleChild(l1);
-        IAccessible* pChild = nullptr;
+        IAccessible* pChild = NULL;
         BOOL isGet = CMAccessible::get_IAccessibleFromXAccessible(pRXAcc.get(),
                         &pChild);
         if(isGet)
         {
             pvar[l2].vt = VT_I4;
-            static_cast<IMAccessible*>(pChild)->Get_XAccChildID(&pvar[l2].lVal);
+            ((IMAccessible*)pChild)->Get_XAccChildID(&pvar[l2].lVal);
         }
         else if(pRXAcc.is())
         {
@@ -81,12 +81,12 @@ HRESULT STDMETHODCALLTYPE CEnumVariant::Next(ULONG cElements,VARIANT __RPC_FAR *
             if(isGet)
             {
                 pvar[l2].vt = VT_I4;
-                static_cast<IMAccessible*>(pChild)->Get_XAccChildID(&pvar[l2].lVal);
+                ((IMAccessible*)pChild)->Get_XAccChildID(&pvar[l2].lVal);
             }
         }
     }
     // Set count of elements retrieved.
-    if (pcElementFetched != nullptr)
+    if (pcElementFetched != NULL)
         *pcElementFetched = l2;
     m_lCurrent = l1;
 
@@ -139,12 +139,12 @@ HRESULT STDMETHODCALLTYPE CEnumVariant::Clone(IEnumVARIANT __RPC_FAR *__RPC_FAR 
 {
     SolarMutexGuard g;
 
-    CEnumVariant * penum = nullptr;
+    CEnumVariant * penum = NULL;
     HRESULT hr;
-    if (ppenum == nullptr)
+    if (ppenum == NULL)
         return E_INVALIDARG;
 
-    *ppenum = nullptr;
+    *ppenum = NULL;
 
     hr = Create(&penum);
     if( hr == S_OK )
@@ -199,8 +199,8 @@ STDMETHODIMP CEnumVariant::ClearEnumeration()
 {
     // internal IEnumVariant - no mutex meeded
 
-    pUNOInterface = nullptr;
-    m_pXAccessibleSelection = nullptr;
+    pUNOInterface = NULL;
+    m_pXAccessibleSelection = NULL;
     m_lCurrent = m_lLBound;
     return S_OK;
 }
@@ -212,16 +212,16 @@ STDMETHODIMP CEnumVariant::ClearEnumeration()
    */
 static Reference<XAccessibleSelection> GetXAccessibleSelection(XAccessible* pXAcc)
 {
-    if( pXAcc == nullptr)
-        return nullptr;
+    if( pXAcc == NULL)
+        return NULL;
 
     Reference< XAccessibleContext > pRContext = pXAcc->getAccessibleContext();
     if( !pRContext.is() )
-        return nullptr;
+        return NULL;
 
     Reference< XAccessibleSelection > pRSelection(pRContext,UNO_QUERY);
     if( !pRSelection.is() )
-        return nullptr;
+        return NULL;
 
     return pRSelection;
 }

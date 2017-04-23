@@ -60,9 +60,9 @@ private:
 
 public:
     PageBordersHandler( );
-    virtual ~PageBordersHandler( ) override;
+    virtual ~PageBordersHandler( );
 
-    sal_Int32 GetDisplayOffset( )
+    inline sal_Int32 GetDisplayOffset( )
     {
         return ( m_nOffset << 5 ) + m_nDisplay;
     };

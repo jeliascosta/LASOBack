@@ -22,36 +22,21 @@
 
 #include <memory>
 #include <vector>
-
-#include <com/sun/star/awt/Point.hpp>
-#include <com/sun/star/beans/PropertyState.hpp>
-#include <com/sun/star/drawing/BitmapMode.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/Reference.hxx>
-#include <filter/msfilter/msfilterdllapi.h>
-#include <rtl/string.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-#include <svtools/grfmgr.hxx>
-#include <svx/msdffdef.hxx>
-#include <tools/color.hxx>
-#include <tools/gen.hxx>
 #include <tools/solar.h>
-#include <tools/stream.hxx>
-#include <vcl/mapmod.hxx>
-#include <o3tl/typed_flags_set.hxx>
-
-namespace com { namespace sun { namespace star {
-    namespace awt { struct Rectangle; }
-    namespace beans { class XPropertySet; }
-    namespace drawing { struct EnhancedCustomShapeParameter; }
-    namespace drawing { struct Hatch; }
-} } }
-
-namespace tools {
-    class Polygon;
-    class PolyPolygon;
-}
+#include <tools/gen.hxx>
+#include <com/sun/star/uno/Reference.h>
+#include <svtools/grfmgr.hxx>
+#include <com/sun/star/awt/Size.hpp>
+#include <com/sun/star/awt/Point.hpp>
+#include <com/sun/star/awt/Rectangle.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/beans/PropertyState.hpp>
+#include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/drawing/BitmapMode.hpp>
+#include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
+#include <com/sun/star/drawing/Hatch.hpp>
+#include <svx/msdffdef.hxx>
+#include <filter/msfilter/msfilterdllapi.h>
 
         /*Record Name       FBT-Value   Instance                  Contents                                                          Wrd Exl PPt Ver*/
 // In the Microsoft documentation the naming scheme is msofbt... instead of ESCHER_...
@@ -201,6 +186,14 @@ enum ESCHER_AnchorText
     ESCHER_AnchorBottomCenteredBaseline
 };
 
+enum ESCHER_cDir
+{
+    ESCHER_cDir0,       // Right
+    ESCHER_cDir90,      // Down
+    ESCHER_cDir180,     // Left
+    ESCHER_cDir270      // Up
+};
+
 //  connector style
 enum ESCHER_cxSTYLE
 {
@@ -221,6 +214,54 @@ enum ESCHER_txfl
     ESCHER_txflVertN            // Vertical, non-@
 };
 
+//  text direction (needed for Bi-Di support)
+enum ESCHER_txDir
+{
+    ESCHER_txdirLTR,            // left-to-right text direction
+    ESCHER_txdirRTL,            // right-to-left text direction
+    ESCHER_txdirContext         // context text direction
+};
+
+// Callout Type
+enum ESCHER_spcot
+{
+    ESCHER_spcotRightAngle  = 1,
+    ESCHER_spcotOneSegment  = 2,
+    ESCHER_spcotTwoSegment  = 3,
+    ESCHER_spcotThreeSegment= 4
+};
+
+// Callout Angle
+enum ESCHER_spcoa
+{
+    ESCHER_spcoaAny,
+    ESCHER_spcoa30,
+    ESCHER_spcoa45,
+    ESCHER_spcoa60,
+    ESCHER_spcoa90,
+    ESCHER_spcoa0
+};
+
+//  Callout Drop
+enum ESCHER_spcod
+{
+    ESCHER_spcodTop,
+    ESCHER_spcodCenter,
+    ESCHER_spcodBottom,
+    ESCHER_spcodSpecified
+};
+
+// FontWork alignment
+enum ESCHER_GeoTextAlign
+{
+    ESCHER_AlignTextStretch,        // Stretch each line of text to fit width.
+    ESCHER_AlignTextCenter,         // Center text on width.
+    ESCHER_AlignTextLeft,           // Left justify.
+    ESCHER_AlignTextRight,          // Right justify.
+    ESCHER_AlignTextLetterJust,     // Spread letters out to fit width.
+    ESCHER_AlignTextWordJust,       // Spread words out to fit width.
+    ESCHER_AlignTextInvalid         // Invalid
+};
 
 //  flags for pictures
 enum ESCHER_BlipFlags
@@ -233,6 +274,71 @@ enum ESCHER_BlipFlags
    /* Or the following flags with any of the above. */
     ESCHER_BlipFlagDoNotSave = 4,
     ESCHER_BlipFlagLinkToFile = 8
+};
+
+
+enum ESCHER_3DRenderMode
+{
+    ESCHER_FullRender,      // Generate a full rendering
+    ESCHER_Wireframe,       // Generate a wireframe
+    ESCHER_BoundingCube     // Generate a bounding cube
+};
+
+
+enum ESCHER_xFormType
+{
+    ESCHER_xFormAbsolute,   // Apply transform in absolute space centered on shape
+    ESCHER_xFormShape,      // Apply transform to shape geometry
+    ESCHER_xFormDrawing     // Apply transform in drawing space
+};
+
+
+enum ESCHER_ShadowType
+{
+    ESCHER_ShadowOffset,    // N pixel offset shadow
+    ESCHER_ShadowDouble,    // Use second offset too
+    ESCHER_ShadowRich,      // Rich perspective shadow (cast relative to shape)
+    ESCHER_ShadowShape,     // Rich perspective shadow (cast in shape space)
+    ESCHER_ShadowDrawing,   // Perspective shadow cast in drawing space
+    ESCHER_ShadowEmbossOrEngrave
+};
+
+//  - the type of a (length) measurement
+enum ESCHER_dzType
+   {
+   ESCHER_dzTypeMin         = 0,
+   ESCHER_dzTypeDefault     = 0,        // Default size, ignore the values
+   ESCHER_dzTypeA           = 1,        // Values are in EMUs
+   ESCHER_dzTypeV           = 2,        // Values are in pixels
+   ESCHER_dzTypeShape       = 3,        // Values are 16.16 fractions of shape size
+   ESCHER_dzTypeFixedAspect = 4,        // Aspect ratio is fixed
+   ESCHER_dzTypeAFixed      = 5,        // EMUs, fixed aspect ratio
+   ESCHER_dzTypeVFixed      = 6,        // Pixels, fixed aspect ratio
+   ESCHER_dzTypeShapeFixed  = 7,        // Proportion of shape, fixed aspect ratio
+   ESCHER_dzTypeFixedAspectEnlarge= 8,  // Aspect ratio is fixed, favor larger size
+   ESCHER_dzTypeAFixedBig    = 9,       // EMUs, fixed aspect ratio
+   ESCHER_dzTypeVFixedBig    = 10,      // Pixels, fixed aspect ratio
+   ESCHER_dzTypeShapeFixedBig= 11,      // Proportion of shape, fixed aspect ratio
+   ESCHER_dzTypeMax          = 11
+};
+
+// compound line style
+enum ESCHER_LineStyle
+{
+    ESCHER_LineSimple,          // Single line (of width lineWidth)
+    ESCHER_LineDouble,          // Double lines of equal width
+    ESCHER_LineThickThin,       // Double lines, one thick, one thin
+    ESCHER_LineThinThick,       // Double lines, reverse order
+    ESCHER_LineTriple           // Three lines, thin, thick, thin
+};
+
+//  how to "fill" the line contour
+enum ESCHER_LineType
+{
+   ESCHER_lineSolidType,        // Fill with a solid color
+   ESCHER_linePattern,          // Fill with a pattern (bitmap)
+   ESCHER_lineTexture,          // A texture (pattern with its own color map)
+   ESCHER_linePicture           // Center a picture in the shape
 };
 
 // dashed line style
@@ -426,6 +532,9 @@ enum MSOPATHTYPE
 
 const sal_uInt32 DFF_DGG_CLUSTER_SIZE       = 0x00000400;   /// Shape IDs per cluster in DGG atom.
 
+class SvStream;
+class SvMemoryStream;
+
 namespace com { namespace sun { namespace star {
     namespace awt {
         struct Gradient;
@@ -534,7 +643,7 @@ public:
                         sal_uInt32 nPictureOffset,
                         const GraphicObject& rObj,
                         const OString& rId,
-                        const GraphicAttr* pAttr
+                        const GraphicAttr* pAttr = nullptr
                     );
 
                     ~EscherBlibEntry();
@@ -546,18 +655,13 @@ public:
 };
 
 
-enum class EscherGraphicProviderFlags {
-    NONE                    = 0,
-    UseInstances            = 1,
-};
-namespace o3tl {
-    template<> struct typed_flags<EscherGraphicProviderFlags> : is_typed_flags<EscherGraphicProviderFlags, 0x01> {};
-}
+#define E_GRAPH_PROV_USE_INSTANCES             1
+#define E_GRAPH_PROV_DO_NOT_ROTATE_METAFILES   2
 
 class MSFILTER_DLLPUBLIC EscherGraphicProvider
 {
-    EscherGraphicProviderFlags
-                            mnFlags;
+    sal_uInt32              mnFlags;
+
     EscherBlibEntry**       mpBlibEntrys;
     sal_uInt32              mnBlibBufSize;
     sal_uInt32              mnBlibEntrys;
@@ -572,11 +676,12 @@ public:
 
     sal_uInt32  GetBlibStoreContainerSize( SvStream* pMergePicStreamBSE = nullptr ) const;
     void        WriteBlibStoreContainer( SvStream& rStrm, SvStream* pMergePicStreamBSE = nullptr  );
-    void        WriteBlibStoreEntry(SvStream& rStrm, sal_uInt32 nBlipId, sal_uInt32 nResize);
+    void        WriteBlibStoreEntry(SvStream& rStrm, sal_uInt32 nBlipId,
+                    bool bWritePictureOffset, sal_uInt32 nResize = 0);
     sal_uInt32  GetBlibID(
                     SvStream& rPicOutStream,
                     const OString& rGraphicId,
-                    const tools::Rectangle& rBoundRect,
+                    const Rectangle& rBoundRect,
                     const css::awt::Rectangle* pVisArea = nullptr,
                     const GraphicAttr* pGrafikAttr = nullptr,
                     const bool ooxmlExport = false
@@ -590,7 +695,7 @@ public:
     void        SetBaseURI( const OUString& rBaseURI ) { maBaseURI = rBaseURI; };
     const OUString& GetBaseURI() { return maBaseURI; };
 
-    EscherGraphicProvider( EscherGraphicProviderFlags nFlags  = EscherGraphicProviderFlags::NONE );
+    EscherGraphicProvider( sal_uInt32 nFlags = E_GRAPH_PROV_DO_NOT_ROTATE_METAFILES );
     virtual ~EscherGraphicProvider();
 };
 
@@ -631,6 +736,7 @@ public:
 #define ESCHER_CREATEPOLYGON_POLYLINE       2
 #define ESCHER_CREATEPOLYGON_POLYPOLYGON    4
 
+class GraphicAttr;
 class SdrObjCustomShape;
 
 struct EscherPropSortStruct
@@ -647,7 +753,7 @@ class MSFILTER_DLLPUBLIC EscherPropertyContainer
 {
     EscherGraphicProvider*  pGraphicProvider;
     SvStream*               pPicOutStrm;
-    tools::Rectangle*              pShapeBoundRect;
+    Rectangle*              pShapeBoundRect;
 
     sal_uInt32              nSortCount;
     sal_uInt32              nSortBufSize;
@@ -669,7 +775,7 @@ class MSFILTER_DLLPUBLIC EscherPropertyContainer
 
     SAL_DLLPRIVATE explicit EscherPropertyContainer(
         EscherGraphicProvider * pGraphProv, SvStream * pPiOutStrm,
-        tools::Rectangle * pBoundRect);
+        Rectangle * pBoundRect);
 
 public:
 
@@ -677,7 +783,7 @@ public:
     EscherPropertyContainer(
         EscherGraphicProvider& rGraphicProvider,    // the PropertyContainer needs to know
         SvStream* pPicOutStrm,                      // the GraphicProvider to be able to write
-        tools::Rectangle& rShapeBoundRect                  // FillBitmaps or GraphicObjects.
+        Rectangle& rShapeBoundRect                  // FillBitmaps or GraphicObjects.
     );                                              // under some circumstances the ShapeBoundRect
                                                     // is adjusted this will happen when rotated
                                                     // GraphicObjects are saved to PowerPoint
@@ -882,18 +988,20 @@ public:
                                 /// using rEx.AddAtom(...) followed by
                                 /// record data written to rEx.GetStream()
     virtual void                WriteData( EscherEx& rEx,
-                                    const tools::Rectangle& rRect ) = 0;
+                                    const Rectangle& rRect ) = 0;
 };
 
 class InteractionInfo
 {
+    bool mbHasInteraction;
     std::unique_ptr<SvMemoryStream>       mpHyperlinkRecord;
 
 public:
-    InteractionInfo( SvMemoryStream* pStream )
+    InteractionInfo( SvMemoryStream* pStream, bool bInteraction ) : mbHasInteraction( bInteraction )
     {
         mpHyperlinkRecord.reset( pStream );
     }
+    bool    hasInteraction() { return mbHasInteraction; }
     const std::unique_ptr< SvMemoryStream >&  getHyperlinkRecord() { return mpHyperlinkRecord; }
 };
 
@@ -929,7 +1037,7 @@ public:
         EscherExClientRecord_Base* GetClientTextbox() const
             { return pClientTextbox; }
 
-        void WriteClientAnchor( EscherEx& rEx, const tools::Rectangle& rRect )
+        void WriteClientAnchor( EscherEx& rEx, const Rectangle& rRect )
             { if( pClientAnchor )  pClientAnchor->WriteData( rEx, rRect ); }
         void WriteClientData( EscherEx& rEx )
             { if( pClientData ) pClientData->WriteData( rEx ); }
@@ -944,8 +1052,8 @@ public:
 class MSFILTER_DLLPUBLIC EscherExGlobal : public EscherGraphicProvider
 {
 public:
-    explicit            EscherExGlobal();
-    virtual             ~EscherExGlobal() override;
+    explicit            EscherExGlobal( sal_uInt32 nGraphicProvFlags = E_GRAPH_PROV_DO_NOT_ROTATE_METAFILES );
+    virtual             ~EscherExGlobal();
 
     /** Returns a new drawing ID for a new drawing container (DGCONTAINER). */
     sal_uInt32          GenerateDrawingId();
@@ -962,25 +1070,25 @@ public:
     sal_uInt32          GetLastShapeId( sal_uInt32 nDrawingId ) const;
 
     /** Sets the flag indicating that the DGGCONTAINER exists. */
-    void         SetDggContainer() { mbHasDggCont = true; }
+    inline void         SetDggContainer() { mbHasDggCont = true; }
     /** Sets the flag indicating that the DGGCONTAINER exists. */
-    bool         HasDggContainer() const { return mbHasDggCont; }
+    inline bool         HasDggContainer() const { return mbHasDggCont; }
     /** Returns the total size of the DGG atom (including header). */
     sal_uInt32          GetDggAtomSize() const;
     /** Writes the complete DGG atom to the passed stream (overwrites existing data!). */
     void                WriteDggAtom( SvStream& rStrm ) const;
 
     /** Called if a picture shall be written and no picture stream is set at
-        class ImplEESdrWriter.
+        class ImplEscherExSdr.
 
-        On first invocation, this function calls the virtual member function
+        On first invokation, this function calls the virtual member function
         ImplQueryPictureStream(). The return value will be cached internally
         for subsequent calls and for the GetPictureStream() function.
      */
     SvStream*           QueryPictureStream();
 
     /** Returns the picture stream if existing (queried), otherwise null. */
-    SvStream*    GetPictureStream() { return mpPicStrm; }
+    inline SvStream*    GetPictureStream() { return mpPicStrm; }
 
 private:
     /** Derived classes may implement to create a new stream used to store the
@@ -998,7 +1106,7 @@ private:
     {
         sal_uInt32          mnDrawingId;        /// Identifier of drawing this cluster belongs to (one-based index into maDrawingInfos).
         sal_uInt32          mnNextShapeId;      /// Next free shape identifier in this cluster.
-        explicit     ClusterEntry( sal_uInt32 nDrawingId ) : mnDrawingId( nDrawingId ), mnNextShapeId( 0 ) {}
+        inline explicit     ClusterEntry( sal_uInt32 nDrawingId ) : mnDrawingId( nDrawingId ), mnNextShapeId( 0 ) {}
     };
     typedef ::std::vector< ClusterEntry > ClusterTable;
 
@@ -1007,7 +1115,7 @@ private:
         sal_uInt32          mnClusterId;        /// Currently used cluster (one-based index into maClusterTable).
         sal_uInt32          mnShapeCount;       /// Current number of shapes in this drawing.
         sal_uInt32          mnLastShapeId;      /// Last shape identifier generated for this drawing.
-        explicit     DrawingInfo( sal_uInt32 nClusterId ) : mnClusterId( nClusterId ), mnShapeCount( 0 ), mnLastShapeId( 0 ) {}
+        inline explicit     DrawingInfo( sal_uInt32 nClusterId ) : mnClusterId( nClusterId ), mnShapeCount( 0 ), mnLastShapeId( 0 ) {}
     };
     typedef ::std::vector< DrawingInfo > DrawingInfoVector;
 
@@ -1018,15 +1126,17 @@ private:
     bool                mbPicStrmQueried;   /// True = ImplQueryPictureStream() has been called.
 };
 
+typedef std::shared_ptr< EscherExGlobal > EscherExGlobalRef;
+
 class SdrObject;
 class SdrPage;
-class ImplEESdrWriter;
+class ImplEscherExSdr;
 
 class MSFILTER_DLLPUBLIC EscherEx : public EscherPersistTable
 {
     protected:
-        std::shared_ptr<EscherExGlobal>           mxGlobal;
-        ::std::unique_ptr< ImplEESdrWriter > mpImplEESdrWriter;
+        EscherExGlobalRef           mxGlobal;
+        ::std::unique_ptr< ImplEscherExSdr > mpImplEscherExSdr;
         SvStream*                   mpOutStrm;
         bool                        mbOwnsStrm;
         sal_uInt32                  mnStrmStartOfs;
@@ -1048,12 +1158,12 @@ class MSFILTER_DLLPUBLIC EscherEx : public EscherPersistTable
         bool DoSeek( sal_uInt32 nKey );
 
 public:
-    explicit            EscherEx( const std::shared_ptr<EscherExGlobal>& rxGlobal, SvStream* pOutStrm, bool bOOXML = false );
-    virtual             ~EscherEx() override;
+    explicit            EscherEx( const EscherExGlobalRef& rxGlobal, SvStream* pOutStrm, bool bOOXML = false );
+    virtual             ~EscherEx();
 
     /** Creates and returns a new shape identifier, updates the internal shape
         counters and registers the identifier in the DGG cluster table. */
-    sal_uInt32   GenerateShapeId() { return mxGlobal->GenerateShapeId( mnCurrentDg, mbEscherSpgr ); }
+    inline sal_uInt32   GenerateShapeId() { return mxGlobal->GenerateShapeId( mnCurrentDg, mbEscherSpgr ); }
 
     /** Returns the graphic provider from the global object that has been
         passed to the constructor.
@@ -1061,9 +1171,9 @@ public:
     EscherGraphicProvider& GetGraphicProvider() { return *mxGlobal; }
 
     /** Called if a picture shall be written and no picture stream is set at
-        class ImplEESdrWriter.
+        class ImplEscherExSdr.
      */
-    SvStream*    QueryPictureStream() { return mxGlobal->QueryPictureStream(); }
+    inline SvStream*    QueryPictureStream() { return mxGlobal->QueryPictureStream(); }
 
                 /// Inserts internal data into the EscherStream, this process
                 /// may and has to be executed only once
@@ -1081,14 +1191,16 @@ public:
 
         @param nBytes  The number of bytes to be inserted into the stream.
 
-        An atom that currently ends
-        exactly at the current stream position will not be expanded to
-        include the inserted data (used to insert e.g. a new atom after an
-        existing atom). Note that containers that end exactly at the
-        current stream position are always expanded to include the inserted
-        data.
+        @param bExpandEndOfAtom  If set to true, an atom that currently ends
+            exactly at the current stream position will be expanded to include
+            the inserted data. If set to false, an atom that currently ends
+            exactly at the current stream position will not be expanded to
+            include the inserted data (used to insert e.g. a new atom after an
+            existing atom). Note that containers that end exactly at the
+            current stream position are always expanded to include the inserted
+            data.
      */
-    void            InsertAtCurrentPos( sal_uInt32 nBytes );
+    void            InsertAtCurrentPos( sal_uInt32 nBytes, bool bExpandEndOfAtom );
 
     void            InsertPersistOffset( sal_uInt32 nKey, sal_uInt32 nOffset ); // It is not being checked if this key is already in the PersistantTable
     void            ReplacePersistOffset( sal_uInt32 nKey, sal_uInt32 nOffset );
@@ -1114,23 +1226,23 @@ public:
     void BeginAtom();
     void EndAtom( sal_uInt16 nRecType, int nRecVersion = 0, int nRecInstance = 0 );
     void AddAtom( sal_uInt32 nAtomSitze, sal_uInt16 nRecType, int nRecVersion = 0, int nRecInstance = 0 );
-    void AddChildAnchor( const tools::Rectangle& rRectangle );
-    void AddClientAnchor( const tools::Rectangle& rRectangle );
+    void AddChildAnchor( const Rectangle& rRectangle );
+    void AddClientAnchor( const Rectangle& rRectangle );
 
-    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const tools::Rectangle* pBoundRect );
-    sal_uInt32  EnterGroup( const tools::Rectangle* pBoundRect = nullptr );
+    virtual sal_uInt32 EnterGroup( const OUString& rShapeName, const Rectangle* pBoundRect = nullptr );
+    sal_uInt32  EnterGroup( const Rectangle* pBoundRect = nullptr );
     sal_uInt32  GetGroupLevel() const { return mnGroupLevel; };
-    void SetGroupSnapRect( sal_uInt32 nGroupLevel, const tools::Rectangle& rRect );
-    void SetGroupLogicRect( sal_uInt32 nGroupLevel, const tools::Rectangle& rRect );
+    void SetGroupSnapRect( sal_uInt32 nGroupLevel, const Rectangle& rRect );
+    void SetGroupLogicRect( sal_uInt32 nGroupLevel, const Rectangle& rRect );
     virtual void LeaveGroup();
 
                 // a ESCHER_Sp is being written ( a ESCHER_DgContainer has to be opened for this purpose!)
     virtual void AddShape( sal_uInt32 nShpInstance, sal_uInt32 nFlagIds, sal_uInt32 nShapeID = 0 );
 
-    virtual void Commit( EscherPropertyContainer& rProps, const tools::Rectangle& rRect);
+    virtual void Commit( EscherPropertyContainer& rProps, const Rectangle& rRect);
 
     static sal_uInt32  GetColor( const sal_uInt32 nColor );
-    static sal_uInt32  GetColor( const Color& rColor, bool bSwap );
+    static sal_uInt32  GetColor( const Color& rColor, bool bSwap = true );
 
                 // ...Sdr... implemented in eschesdo.cxx
 
@@ -1154,7 +1266,7 @@ public:
                 /// shape is ignored.
     virtual EscherExHostAppData* StartShape(
                             const css::uno::Reference< css::drawing::XShape >& rShape,
-                            const tools::Rectangle* pChildAnchor );
+                            const Rectangle* pChildAnchor );
 
                 /// Called after a shape is written to inform the application
                 /// of the resulted shape type and ID.

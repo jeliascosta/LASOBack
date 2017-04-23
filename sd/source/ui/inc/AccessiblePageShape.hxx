@@ -59,13 +59,19 @@ public:
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
 
-    virtual ~AccessiblePageShape() override;
+    virtual ~AccessiblePageShape();
+
+    /** Initialize a new shape.  See the documentation of the constructor
+        for the reason of this method's existence.
+    */
+    virtual void Init() override;
 
     //=====  XAccessibleContext  ==============================================
 
     /// Returns always 0 because there can be no children.
     virtual sal_Int32 SAL_CALL
-        getAccessibleChildCount() override;
+        getAccessibleChildCount()
+        throw (std::exception) override;
 
     /** Return the specified child.
         @param nIndex
@@ -73,37 +79,45 @@ public:
         @return
             Reference of the requested child which is the accessible object
             of a visible shape.
-        @throws IndexOutOfBoundsException
+        @raises IndexOutOfBoundsException
             Throws always an exception because there are no children.
     */
     virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL
-        getAccessibleChild (sal_Int32 nIndex) override;
+        getAccessibleChild (sal_Int32 nIndex)
+        throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     //=====  XAccessibleComponent  ============================================
 
-    virtual css::awt::Rectangle SAL_CALL getBounds() override;
+    virtual css::awt::Rectangle SAL_CALL getBounds()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getForeground() override;
+    virtual sal_Int32 SAL_CALL getForeground()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL getBackground() override;
+    virtual sal_Int32 SAL_CALL getBackground()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XComponent  ======================================================
 
     virtual void SAL_CALL
-        dispose() override;
+        dispose()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  XServiceInfo  ====================================================
 
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString> SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  lang::XEventListener  ============================================
 
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& Source) override;
+        disposing (const css::lang::EventObject& Source)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     using AccessibleShape::disposing;
 
@@ -111,14 +125,17 @@ protected:
     /** Create a base name string that contains the accessible name.
     */
     virtual OUString
-        CreateAccessibleBaseName() override;
+        CreateAccessibleBaseName()
+        throw (css::uno::RuntimeException) override;
 
     virtual OUString
-        CreateAccessibleName() override;
+        CreateAccessibleName()
+        throw (css::uno::RuntimeException) override;
 
     /// Create a description string that contains the accessible description.
     virtual OUString
-        CreateAccessibleDescription() override;
+        CreateAccessibleDescription()
+        throw (css::uno::RuntimeException) override;
 
 private:
     css::uno::Reference<css::drawing::XDrawPage> mxPage;

@@ -27,36 +27,28 @@
 #include <com/sun/star/uno/Exception.hpp>
 #include <com/sun/star/uno/SecurityException.hpp>
 #include <com/sun/star/security/XCertificateExtension.hpp>
-#include "certificateextension_certextn.hxx"
 
 class CertificateExtension_XmlSecImpl : public ::cppu::WeakImplHelper<
     css::security::XCertificateExtension >
 {
     private:
-        CertificateExtension_CertExtn m_Extn;
+        bool m_critical ;
+        css::uno::Sequence< sal_Int8 > m_xExtnId ;
+        css::uno::Sequence< sal_Int8 > m_xExtnValue ;
 
     public:
+        CertificateExtension_XmlSecImpl() ;
+        virtual ~CertificateExtension_XmlSecImpl() ;
+
         //Methods from XCertificateExtension
-        virtual sal_Bool SAL_CALL isCritical() override
-        {
-            return m_Extn.m_critical;
-        }
+        virtual sal_Bool SAL_CALL isCritical() throw( css::uno::RuntimeException, std::exception ) override ;
 
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getExtensionId() override
-        {
-            return m_Extn.m_xExtnId;
-        }
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getExtensionId() throw( css::uno::RuntimeException, std::exception ) override ;
 
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getExtensionValue() override
-        {
-            return m_Extn.m_xExtnValue;
-        }
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getExtensionValue() throw( css::uno::RuntimeException, std::exception ) override ;
 
-        void setCertExtn(unsigned char* value, unsigned int vlen, unsigned char* id, unsigned int idlen, bool critical)
-        {
-            m_Extn.setCertExtn(value, vlen, id, idlen, critical);
-        }
-};
+        void setCertExtn( unsigned char* value, unsigned int vlen, unsigned char* id, unsigned int idlen, bool critical ) ;
+} ;
 
 #endif // INCLUDED_XMLSECURITY_SOURCE_XMLSEC_CERTIFICATEEXTENSION_XMLSECIMPL_HXX
 

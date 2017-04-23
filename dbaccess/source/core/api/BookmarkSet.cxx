@@ -47,32 +47,32 @@ void OBookmarkSet::reset(const Reference< XResultSet>& _xDriverSet)
     construct(_xDriverSet, m_sRowSetFilter);
 }
 
-Any SAL_CALL OBookmarkSet::getBookmark()
+Any SAL_CALL OBookmarkSet::getBookmark() throw(SQLException, RuntimeException)
 {
     return m_xRowLocate->getBookmark();
 }
 
-bool SAL_CALL OBookmarkSet::moveToBookmark( const Any& bookmark )
+bool SAL_CALL OBookmarkSet::moveToBookmark( const Any& bookmark ) throw(SQLException, RuntimeException)
 {
     return m_xRowLocate->moveToBookmark(bookmark);
 }
 
-sal_Int32 SAL_CALL OBookmarkSet::compareBookmarks( const Any& _first, const Any& _second )
+sal_Int32 SAL_CALL OBookmarkSet::compareBookmarks( const Any& _first, const Any& _second ) throw(SQLException, RuntimeException)
 {
     return m_xRowLocate->compareBookmarks(_first,_second);
 }
 
-bool SAL_CALL OBookmarkSet::hasOrderedBookmarks(  )
+bool SAL_CALL OBookmarkSet::hasOrderedBookmarks(  ) throw(SQLException, RuntimeException)
 {
     return m_xRowLocate->hasOrderedBookmarks();
 }
 
-sal_Int32 SAL_CALL OBookmarkSet::hashBookmark( const Any& bookmark )
+sal_Int32 SAL_CALL OBookmarkSet::hashBookmark( const Any& bookmark ) throw(SQLException, RuntimeException)
 {
     return m_xRowLocate->hashBookmark(bookmark);
 }
 
-void SAL_CALL OBookmarkSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ )
+void SAL_CALL OBookmarkSet::insertRow( const ORowSetRow& _rInsertRow,const connectivity::OSQLTable& /*_xTable*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     Reference<XRowUpdate> xUpdRow(m_xRowLocate,UNO_QUERY);
     if(!xUpdRow.is())
@@ -96,7 +96,7 @@ void SAL_CALL OBookmarkSet::insertRow( const ORowSetRow& _rInsertRow,const conne
         ::dbtools::throwSQLException( DBACORE_RESSTRING( RID_STR_NO_XRESULTSETUPDATE ), StandardSQLState::GENERAL_ERROR, *this );
 }
 
-void SAL_CALL OBookmarkSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  )
+void SAL_CALL OBookmarkSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException, std::exception)
 {
     Reference<XRowUpdate> xUpdRow(m_xRowLocate,UNO_QUERY);
     if(!xUpdRow.is())
@@ -119,11 +119,16 @@ void SAL_CALL OBookmarkSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowS
         ::dbtools::throwSQLException( DBACORE_RESSTRING( RID_STR_NO_XRESULTSETUPDATE ), StandardSQLState::GENERAL_ERROR, *this );
 }
 
-void SAL_CALL OBookmarkSet::deleteRow(const ORowSetRow& /*_rDeleteRow*/ ,const connectivity::OSQLTable& /*_xTable*/  )
+void SAL_CALL OBookmarkSet::deleteRow(const ORowSetRow& /*_rDeleteRow*/ ,const connectivity::OSQLTable& /*_xTable*/  ) throw(SQLException, RuntimeException)
 {
     Reference<XResultSetUpdate> xUpd(m_xRowLocate,UNO_QUERY);
 
     xUpd->deleteRow();
+}
+
+void OBookmarkSet::fillValueRow(ORowSetRow& _rRow,sal_Int32 _nPosition)
+{
+    OCacheSet::fillValueRow(_rRow,_nPosition);
 }
 
 void OBookmarkSet::updateColumn(sal_Int32 nPos, const Reference< XRowUpdate >& _xParameter, const ORowSetValue& _rValue)
@@ -153,7 +158,7 @@ void OBookmarkSet::updateColumn(sal_Int32 nPos, const Reference< XRowUpdate >& _
                     break;
                 case DataType::BIT:
                 case DataType::BOOLEAN:
-                    _xParameter->updateBoolean(nPos,bool(_rValue));
+                    _xParameter->updateBoolean(nPos,_rValue);
                     break;
                 case DataType::TINYINT:
                     if ( _rValue.isSigned() )

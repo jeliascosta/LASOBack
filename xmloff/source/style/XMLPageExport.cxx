@@ -18,7 +18,6 @@
  */
 
 #include <xmloff/XMLPageExport.hxx>
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <xmloff/xmlnmspe.hxx>
 #include <xmloff/xmltoken.hxx>
@@ -60,7 +59,7 @@ void XMLPageExport::collectPageMasterAutoStyle(
         const Reference < XPropertySet > & rPropSet,
         OUString& rPageMasterName )
 {
-    SAL_WARN_IF( !xPageMasterPropSetMapper.is(), "xmloff", "page master family/XMLPageMasterPropSetMapper not found" );
+    DBG_ASSERT( xPageMasterPropSetMapper.is(), "page master family/XMLPageMasterPropSetMapper not found" );
     if( xPageMasterPropSetMapper.is() )
     {
         ::std::vector<XMLPropertyState> aPropStates = xPageMasterExportPropMapper->Filter( rPropSet );
@@ -93,7 +92,7 @@ bool XMLPageExport::exportStyle(
     if( xPropSetInfo->hasPropertyByName( sIsPhysical ) )
     {
         Any aAny = xPropSet->getPropertyValue( sIsPhysical );
-        if( !*o3tl::doAccess<bool>(aAny) )
+        if( !*static_cast<sal_Bool const *>(aAny.getValue()) )
             return false;
     }
 
@@ -168,12 +167,12 @@ XMLPageExport::XMLPageExport( SvXMLExport& rExp ) :
 
     Reference< XStyleFamiliesSupplier > xFamiliesSupp( GetExport().GetModel(),
                                                        UNO_QUERY );
-    SAL_WARN_IF( !xFamiliesSupp.is(), "xmloff",
+    DBG_ASSERT( xFamiliesSupp.is(),
                 "No XStyleFamiliesSupplier from XModel for export!" );
     if( xFamiliesSupp.is() )
     {
         Reference< XNameAccess > xFamilies( xFamiliesSupp->getStyleFamilies() );
-        SAL_WARN_IF( !xFamiliesSupp.is(), "xmloff",
+        DBG_ASSERT( xFamiliesSupp.is(),
                     "getStyleFamilies() from XModel failed for export!" );
         if( xFamilies.is() )
         {
@@ -183,7 +182,7 @@ XMLPageExport::XMLPageExport( SvXMLExport& rExp ) :
             {
                 xPageStyles.set(xFamilies->getByName( aPageStyleName ),uno::UNO_QUERY);
 
-                SAL_WARN_IF( !xPageStyles.is(), "xmloff",
+                DBG_ASSERT( xPageStyles.is(),
                             "Page Styles not found for export!" );
             }
         }

@@ -50,6 +50,7 @@ class SwLayoutFrame;
 class SwNode;
 class SwNodes;
 class Point;
+struct SwPosition;
 
 class SwNode2Layout
 {
@@ -66,7 +67,7 @@ public:
     SwLayoutFrame* UpperFrame( SwFrame* &rpFrame, const SwNode& rNode );
     void RestoreUpperFrames( SwNodes& rNds, sal_uLong nStt, sal_uLong nEnd );
 
-    SwFrame *GetFrame( const Point* pDocPos ) const;
+    SwFrame *GetFrame( const Point* pDocPos, const SwPosition *pPos ) const;
 };
 
 #endif

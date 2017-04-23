@@ -47,7 +47,7 @@ namespace vcl
         virtual void ImplCommit() override;
 
     public:
-        virtual ~SettingsConfigItem() override;
+        virtual ~SettingsConfigItem();
 
         static SettingsConfigItem* get();
 

@@ -58,7 +58,7 @@ SdTpOptionsSnap::~SdTpOptionsSnap()
 bool SdTpOptionsSnap::FillItemSet( SfxItemSet* rAttrs )
 {
     SvxGridTabPage::FillItemSet(rAttrs);
-    SdOptionsSnapItem aOptsItem;
+    SdOptionsSnapItem aOptsItem( ATTR_OPTIONS_SNAP );
 
     aOptsItem.GetOptionsSnap().SetSnapHelplines( pCbxSnapHelplines->IsChecked() );
     aOptsItem.GetOptionsSnap().SetSnapBorder( pCbxSnapBorder->IsChecked() );
@@ -143,7 +143,7 @@ bool SdTpOptionsContents::FillItemSet( SfxItemSet* rAttrs )
         m_pCbxDragStripes->IsValueChangedFromSaved() ||
         m_pCbxHandlesBezier->IsValueChangedFromSaved() )
     {
-        SdOptionsLayoutItem aOptsItem;
+        SdOptionsLayoutItem aOptsItem( ATTR_OPTIONS_LAYOUT );
 
         aOptsItem.GetOptionsLayout().SetRulerVisible( m_pCbxRuler->IsChecked() );
         aOptsItem.GetOptionsLayout().SetMoveOutline( m_pCbxMoveOutline->IsChecked() );
@@ -158,6 +158,9 @@ bool SdTpOptionsContents::FillItemSet( SfxItemSet* rAttrs )
 
 void SdTpOptionsContents::Reset( const SfxItemSet* rAttrs )
 {
+    SdOptionsContentsItem aOptsItem( static_cast<const SdOptionsContentsItem&>( rAttrs->
+                        Get( ATTR_OPTIONS_CONTENTS ) ) );
+
     SdOptionsLayoutItem aLayoutItem( static_cast<const SdOptionsLayoutItem&>( rAttrs->
                         Get( ATTR_OPTIONS_LAYOUT ) ) );
 
@@ -240,8 +243,9 @@ SdTpOptionsMisc::SdTpOptionsMisc(vcl::Window* pParent, const SfxItemSet& rInAttr
 
     // fill ListBox with metrics
     SvxStringArray aMetricArr( RID_SVXSTR_FIELDUNIT_TABLE );
+    sal_uInt16 i;
 
-    for ( sal_uInt32 i = 0; i < aMetricArr.Count(); ++i )
+    for ( i = 0; i < aMetricArr.Count(); ++i )
     {
         OUString sMetric = aMetricArr.GetStringByPos( i );
         sal_IntPtr nFieldUnit = aMetricArr.GetValue( i );
@@ -270,13 +274,13 @@ SdTpOptionsMisc::SdTpOptionsMisc(vcl::Window* pParent, const SfxItemSet& rInAttr
     DBG_ASSERT( pPool, "Where is the Pool?" );
     ePoolUnit = pPool->GetMetric( SID_ATTR_FILL_HATCH );
 
-    // Fill the CB
+    // Fuellen der CB
     sal_uInt16 aTable[ TABLE_COUNT ] =
         { 1, 2, 4, 5, 8, 10, 16, 20, 30, 40, 50, 100 };
 
-    for( sal_uInt16 i = 0; i < TABLE_COUNT; i++ )
+    for( i = 0; i < TABLE_COUNT; i++ )
         m_pCbScale->InsertEntry( GetScale( 1, aTable[i] ) );
-    for( sal_uInt16 i = 1; i < TABLE_COUNT; i++ )
+    for( i = 1; i < TABLE_COUNT; i++ )
         m_pCbScale->InsertEntry( GetScale(  aTable[i], 1 ) );
 }
 
@@ -359,7 +363,7 @@ void SdTpOptionsMisc::ActivatePage( const SfxItemSet& rSet )
     }
 }
 
-DeactivateRC SdTpOptionsMisc::DeactivatePage( SfxItemSet* pActiveSet )
+SfxTabPage::sfxpg SdTpOptionsMisc::DeactivatePage( SfxItemSet* pActiveSet )
 {
     // check parser
     sal_Int32 nX, nY;
@@ -367,17 +371,17 @@ DeactivateRC SdTpOptionsMisc::DeactivatePage( SfxItemSet* pActiveSet )
     {
         if( pActiveSet )
             FillItemSet( pActiveSet );
-        return DeactivateRC::LeavePage;
+        return LEAVE_PAGE;
     }
     ScopedVclPtrInstance< WarningBox > aWarnBox( GetParent(), WB_YES_NO, SD_RESSTR( STR_WARN_SCALE_FAIL ) );
 
     if( aWarnBox->Execute() == RET_YES )
-        return DeactivateRC::KeepPage;
+        return KEEP_PAGE;
 
     if( pActiveSet )
         FillItemSet( pActiveSet );
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 bool SdTpOptionsMisc::FillItemSet( SfxItemSet* rAttrs )
@@ -395,7 +399,7 @@ bool SdTpOptionsMisc::FillItemSet( SfxItemSet* rAttrs )
         m_pCbxCompatibility->IsValueChangedFromSaved()         ||
         m_pCbxUsePrinterMetrics->IsValueChangedFromSaved() )
     {
-        SdOptionsMiscItem aOptsItem;
+        SdOptionsMiscItem aOptsItem( ATTR_OPTIONS_MISC );
 
         aOptsItem.GetOptionsMisc().SetStartWithTemplate( m_pCbxStartWithTemplate->IsChecked() );
         aOptsItem.GetOptionsMisc().SetMarkedHitMovesAlways( m_pCbxMarkedHitMovesAlways->IsChecked() );
@@ -420,7 +424,8 @@ bool SdTpOptionsMisc::FillItemSet( SfxItemSet* rAttrs )
     if ( m_pLbMetric->IsValueChangedFromSaved() )
     {
         sal_uInt16 nFieldUnit = (sal_uInt16)reinterpret_cast<sal_IntPtr>(m_pLbMetric->GetEntryData( nMPos ));
-        rAttrs->Put( SfxUInt16Item( GetWhich( SID_ATTR_METRIC ), nFieldUnit ) );
+        rAttrs->Put( SfxUInt16Item( GetWhich( SID_ATTR_METRIC ),
+                                     (sal_uInt16)nFieldUnit ) );
         bModified = true;
     }
 
@@ -428,7 +433,7 @@ bool SdTpOptionsMisc::FillItemSet( SfxItemSet* rAttrs )
     if( m_pMtrFldTabstop->IsValueChangedFromSaved() )
     {
         sal_uInt16 nWh = GetWhich( SID_ATTR_DEFTABSTOP );
-        MapUnit eUnit = rAttrs->GetPool()->GetMetric( nWh );
+        SfxMapUnit eUnit = rAttrs->GetPool()->GetMetric( nWh );
         SfxUInt16Item aDef( nWh,(sal_uInt16)GetCoreValue( *m_pMtrFldTabstop, eUnit ) );
         rAttrs->Put( aDef );
         bModified = true;
@@ -496,7 +501,7 @@ void SdTpOptionsMisc::Reset( const SfxItemSet* rAttrs )
     nWhich = GetWhich( SID_ATTR_DEFTABSTOP );
     if( rAttrs->GetItemState( nWhich ) >= SfxItemState::DEFAULT )
     {
-        MapUnit eUnit = rAttrs->GetPool()->GetMetric( nWhich );
+        SfxMapUnit eUnit = rAttrs->GetPool()->GetMetric( nWhich );
         const SfxUInt16Item& rItem = static_cast<const SfxUInt16Item&>(rAttrs->Get( nWhich ));
         SetMetricValue( *m_pMtrFldTabstop, rItem.GetValue(), eUnit );
     }
@@ -530,7 +535,7 @@ VclPtr<SfxTabPage> SdTpOptionsMisc::Create( vcl::Window* pWindow,
     return VclPtr<SdTpOptionsMisc>::Create( pWindow, *rAttrs );
 }
 
-IMPL_LINK_NOARG(SdTpOptionsMisc, SelectMetricHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SdTpOptionsMisc, SelectMetricHdl_Impl, ListBox&, void)
 {
     sal_Int32 nPos = m_pLbMetric->GetSelectEntryPos();
 
@@ -580,7 +585,7 @@ void    SdTpOptionsMisc::SetDrawMode()
 
 OUString SdTpOptionsMisc::GetScale( sal_Int32 nX, sal_Int32 nY )
 {
-    return OUString::number(nX) + OUStringLiteral1(TOKEN) + OUString::number(nY);
+    return OUString::number(nX) + OUStringLiteral1<TOKEN>() + OUString::number(nY);
 }
 
 bool SdTpOptionsMisc::SetScale( const OUString& aScale, sal_Int32& rX, sal_Int32& rY )

@@ -58,18 +58,18 @@ namespace sdr
             return aRetval;
         }
 
-        // check if wanted type OverlayType::Transparent or OverlayType::Solid
+        // check if wanted type OVERLAY_TRANSPARENT or OVERLAY_SOLID
         // is possible. If not, fallback to invert mode (classic mode)
         OverlayType impCheckPossibleOverlayType(OverlayType aOverlayType)
         {
-            if(OverlayType::Invert != aOverlayType)
+            if(OVERLAY_INVERT != aOverlayType)
             {
                 const SvtOptionsDrawinglayer aSvtOptionsDrawinglayer;
 
                 if(!aSvtOptionsDrawinglayer.IsTransparentSelection())
                 {
                     // not possible when switched off by user
-                    return OverlayType::Invert;
+                    return OVERLAY_INVERT;
                 }
                 else if (const OutputDevice* pOut = Application::GetDefaultDevice())
                 {
@@ -77,13 +77,13 @@ namespace sdr
                     if(pOut->GetSettings().GetStyleSettings().GetHighContrastMode())
                     {
                         // not possible when in high contrast mode
-                        return  OverlayType::Invert;
+                        return  OVERLAY_INVERT;
                     }
 
-                    if(!pOut->SupportsOperation(OutDevSupportType::TransparentRect))
+                    if(!pOut->SupportsOperation(OutDevSupport_TransparentRect))
                     {
                         // not possible when no fast transparence paint is supported on the system
-                        return OverlayType::Invert;
+                        return OVERLAY_INVERT;
                     }
                 }
             }
@@ -99,7 +99,7 @@ namespace sdr
             if(nCount)
             {
                 // create range primitives
-                const bool bInvert(OverlayType::Invert == maLastOverlayType);
+                const bool bInvert(OVERLAY_INVERT == maLastOverlayType);
                 basegfx::BColor aRGBColor(getBaseColor().getBColor());
                 aRetval.resize(nCount);
 
@@ -126,7 +126,7 @@ namespace sdr
                             aRetval));
                     aRetval = drawinglayer::primitive2d::Primitive2DContainer { aInvert };
                 }
-                else if(OverlayType::Transparent == maLastOverlayType)
+                else if(OVERLAY_TRANSPARENT == maLastOverlayType)
                 {
                     // embed all rectangles in transparent paint
                     const double fTransparence(mnLastTransparence / 100.0);
@@ -135,7 +135,7 @@ namespace sdr
                             aRetval,
                             fTransparence));
 
-                    if(mbBorder)
+                    if(getBorder())
                     {
                         const basegfx::B2DPolyPolygon aPolyPolygon(impCombineRangesToPolyPolygon(getRanges()));
                         const drawinglayer::primitive2d::Primitive2DReference aSelectionOutline(

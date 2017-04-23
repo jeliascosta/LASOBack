@@ -17,19 +17,25 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <com/sun/star/io/BufferSizeExceededException.hpp>
-#include <com/sun/star/io/IOException.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <unotools/streamhelper.hxx>
 
 namespace utl
 {
 
-sal_Int32 SAL_CALL OInputStreamHelper::readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+void SAL_CALL OInputStreamHelper::acquire() throw ()
 {
-    if (!m_xLockBytes.is())
+    InputStreamHelper_Base::acquire();
+}
+
+void SAL_CALL OInputStreamHelper::release() throw ()
+{
+    InputStreamHelper_Base::release();
+}
+
+sal_Int32 SAL_CALL OInputStreamHelper::readBytes(css::uno::Sequence< sal_Int8 >& aData, sal_Int32 nBytesToRead)
+    throw(css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
+{
+    if (!m_xLockBytes.Is())
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
 
     if (nBytesToRead < 0)
@@ -39,7 +45,7 @@ sal_Int32 SAL_CALL OInputStreamHelper::readBytes(css::uno::Sequence< sal_Int8 >&
     if (aData.getLength() < nBytesToRead)
         aData.realloc(nBytesToRead);
 
-    std::size_t nRead(0);
+    sal_Size nRead(0);
     ErrCode nError = m_xLockBytes->ReadAt(m_nActPos, static_cast<void*>(aData.getArray()), nBytesToRead, &nRead);
     m_nActPos += nRead;
 
@@ -47,26 +53,26 @@ sal_Int32 SAL_CALL OInputStreamHelper::readBytes(css::uno::Sequence< sal_Int8 >&
         throw css::io::IOException(OUString(), static_cast<css::uno::XWeak*>(this));
 
     // adjust sequence if data read is lower than the desired data
-    if (nRead < (std::size_t)aData.getLength())
+    if (nRead < (sal_Size)aData.getLength())
         aData.realloc( nRead );
 
     return nRead;
 }
 
-void SAL_CALL OInputStreamHelper::seek( sal_Int64 location )
+void SAL_CALL OInputStreamHelper::seek( sal_Int64 location ) throw(css::lang::IllegalArgumentException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     m_nActPos = location;
 }
 
-sal_Int64 SAL_CALL OInputStreamHelper::getPosition(  )
+sal_Int64 SAL_CALL OInputStreamHelper::getPosition(  ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     return m_nActPos;
 }
 
-sal_Int64 SAL_CALL OInputStreamHelper::getLength(  )
+sal_Int64 SAL_CALL OInputStreamHelper::getLength(  ) throw(css::io::IOException, css::uno::RuntimeException, std::exception)
 {
-    if (!m_xLockBytes.is())
+    if (!m_xLockBytes.Is())
         return 0;
 
     ::osl::MutexGuard aGuard( m_aMutex );
@@ -77,15 +83,17 @@ sal_Int64 SAL_CALL OInputStreamHelper::getLength(  )
 
 sal_Int32 SAL_CALL OInputStreamHelper::readSomeBytes(css::uno::Sequence< sal_Int8 >& aData,
                                                      sal_Int32 nMaxBytesToRead)
+    throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     // read all data desired
     return readBytes(aData, nMaxBytesToRead);
 }
 
 void SAL_CALL OInputStreamHelper::skipBytes(sal_Int32 nBytesToSkip)
+    throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    if (!m_xLockBytes.is())
+    if (!m_xLockBytes.Is())
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
 
     if (nBytesToSkip < 0)
@@ -95,18 +103,20 @@ void SAL_CALL OInputStreamHelper::skipBytes(sal_Int32 nBytesToSkip)
 }
 
 sal_Int32 SAL_CALL OInputStreamHelper::available()
+    throw (css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    if (!m_xLockBytes.is())
+    if (!m_xLockBytes.Is())
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
 
     return m_nAvailable;
 }
 
 void SAL_CALL OInputStreamHelper::closeInput()
+    throw (css::io::NotConnectedException, css::io::IOException, css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    if (!m_xLockBytes.is())
+    if (!m_xLockBytes.Is())
         throw css::io::NotConnectedException(OUString(), static_cast<css::uno::XWeak*>(this));
 
     m_xLockBytes = nullptr;

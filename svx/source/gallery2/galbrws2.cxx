@@ -74,7 +74,7 @@ struct DispatchInfo
     css::uno::Reference< css::frame::XDispatch >    Dispatch;
 };
 
-IMPL_STATIC_LINK( GalleryBrowser2, AsyncDispatch_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( GalleryBrowser2, AsyncDispatch_Impl, void*, p, void )
 {
     DispatchInfo* pDispatchInfo = static_cast<DispatchInfo*>(p);
     if ( pDispatchInfo && pDispatchInfo->Dispatch.is() )
@@ -112,9 +112,8 @@ private:
     const GalleryTheme* mpTheme;
     sal_uIntPtr         mnObjectPos;
     bool                mbPreview;
-    VclBuilder          maBuilder;
-    VclPtr<PopupMenu> mpPopupMenu;
-    VclPtr<PopupMenu> mpBackgroundPopup;
+    PopupMenu           maPopupMenu;
+    PopupMenu           maBackgroundPopup;
     VclPtr<GalleryBrowser2> mpBrowser;
 
     typedef std::map< int, CommandInfo > CommandInfoMap;
@@ -123,18 +122,19 @@ private:
     static void Execute( const CommandInfo &rCmdInfo,
                   const css::uno::Sequence< css::beans::PropertyValue > &rArguments );
 
-    DECL_LINK( MenuSelectHdl, Menu*, bool );
-    DECL_LINK( BackgroundMenuSelectHdl, Menu*, bool );
+    DECL_LINK_TYPED( MenuSelectHdl, Menu*, bool );
+    DECL_LINK_TYPED( BackgroundMenuSelectHdl, Menu*, bool );
 public:
     GalleryThemePopup( const GalleryTheme* pTheme,
                        sal_uIntPtr nObjectPos,
                        bool bPreview,
                        GalleryBrowser2* pBrowser );
+    virtual ~GalleryThemePopup();
 
     void ExecutePopup( vcl::Window *pParent, const ::Point &aPos );
 
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent &rEvent) override;
-    virtual void SAL_CALL disposing( const css::lang::EventObject &rSource) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent &rEvent) throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject &rSource) throw ( css::uno::RuntimeException, std::exception ) override;
 };
 
 
@@ -146,52 +146,55 @@ GalleryThemePopup::GalleryThemePopup(
     : mpTheme( pTheme )
     , mnObjectPos( nObjectPos )
     , mbPreview( bPreview )
-    , maBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/gallerymenu2.ui", "")
-    , mpPopupMenu(maBuilder.get_menu("menu"))
-    , mpBackgroundPopup( VclPtr<PopupMenu>::Create() )
+    , maPopupMenu( GAL_RES( RID_SVXMN_GALLERY2 ) )
+    , maBackgroundPopup()
     , mpBrowser( pBrowser )
 {
-    mpPopupMenu->SetPopupMenu(mpPopupMenu->GetItemId("background"), mpBackgroundPopup);
 
     // SID_GALLERY_ENABLE_ADDCOPY
     m_aCommandInfo.insert(
         CommandInfoMap::value_type(
             SID_GALLERY_ENABLE_ADDCOPY,
-            CommandInfo( CMD_SID_GALLERY_ENABLE_ADDCOPY )));
+            CommandInfo( OUString(CMD_SID_GALLERY_ENABLE_ADDCOPY ))));
     // SID_GALLERY_BG_BRUSH
     m_aCommandInfo.insert(
         CommandInfoMap::value_type(
             SID_GALLERY_BG_BRUSH,
-            CommandInfo( CMD_SID_GALLERY_BG_BRUSH )));
+            CommandInfo(OUString(CMD_SID_GALLERY_BG_BRUSH ))));
     // SID_GALLERY_FORMATS
     m_aCommandInfo.insert(
         CommandInfoMap::value_type(
             SID_GALLERY_FORMATS,
-            CommandInfo( CMD_SID_GALLERY_FORMATS )));
+            CommandInfo(OUString(CMD_SID_GALLERY_FORMATS ))));
 
+}
+
+GalleryThemePopup::~GalleryThemePopup()
+{
 }
 
 void SAL_CALL GalleryThemePopup::statusChanged(
     const css::frame::FeatureStateEvent &rEvent )
+throw ( css::uno::RuntimeException, std::exception )
 {
     const OUString &rURL = rEvent.FeatureURL.Complete;
     if ( rURL == CMD_SID_GALLERY_ENABLE_ADDCOPY )
     {
         if ( !rEvent.IsEnabled )
         {
-            mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("add"), false);
+            maPopupMenu.EnableItem( MN_ADD, false );
         }
     }
     else if ( rURL == CMD_SID_GALLERY_BG_BRUSH )
     {
-        mpBackgroundPopup->Clear();
+        maBackgroundPopup.Clear();
         if ( rEvent.IsEnabled )
         {
             OUString sItem;
             css::uno::Sequence< OUString > sItems;
             if ( ( rEvent.State >>= sItem ) && sItem.getLength() )
             {
-                mpBackgroundPopup->InsertItem( 1, sItem );
+                maBackgroundPopup.InsertItem( 1, sItem );
             }
             else if ( ( rEvent.State >>= sItems ) && sItems.getLength() )
             {
@@ -199,7 +202,7 @@ void SAL_CALL GalleryThemePopup::statusChanged(
                 const OUString *pEnd = pStr + sItems.getLength();
                 for ( sal_uInt16 nId = 1; pStr != pEnd; pStr++, nId++ )
                 {
-                    mpBackgroundPopup->InsertItem( nId, *pStr );
+                    maBackgroundPopup.InsertItem( nId, *pStr );
                 }
             }
         }
@@ -208,6 +211,7 @@ void SAL_CALL GalleryThemePopup::statusChanged(
 
 void SAL_CALL GalleryThemePopup::disposing(
     const css::lang::EventObject &/*rSource*/)
+throw ( css::uno::RuntimeException, std::exception )
 {
 }
 
@@ -238,21 +242,57 @@ void GalleryThemePopup::ExecutePopup( vcl::Window *pWindow, const ::Point &aPos 
     const_cast< GalleryTheme* >( mpTheme )->GetURL( mnObjectPos, aURL );
     const bool bValidURL = ( aURL.GetProtocol() != INetProtocol::NotValid );
 
-    mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("add"), bValidURL && SgaObjKind::Sound != eObjKind);
+    maPopupMenu.EnableItem( MN_ADD, bValidURL && SGA_OBJ_SOUND != eObjKind );
 
-    mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("preview"), bValidURL);
-    mpPopupMenu->CheckItem(mpPopupMenu->GetItemId("preview"), mbPreview);
+    maPopupMenu.EnableItem( MN_PREVIEW, bValidURL );
+
+    maPopupMenu.CheckItem( MN_PREVIEW, mbPreview );
 
     if( mpTheme->IsReadOnly() || !mpTheme->GetObjectCount() )
     {
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("delete"), false);
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("title"), false);
+        maPopupMenu.EnableItem( MN_DELETE, false );
+        maPopupMenu.EnableItem( MN_TITLE, false );
+
+        if( mpTheme->IsReadOnly() )
+            maPopupMenu.EnableItem( MN_PASTECLIPBOARD, false );
+
+        if( !mpTheme->GetObjectCount() )
+            maPopupMenu.EnableItem( MN_COPYCLIPBOARD, false );
     }
     else
     {
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("delete"), !mbPreview);
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("title"));
+        maPopupMenu.EnableItem( MN_DELETE, !mbPreview );
+        maPopupMenu.EnableItem( MN_TITLE );
+        maPopupMenu.EnableItem( MN_COPYCLIPBOARD );
+        maPopupMenu.EnableItem( MN_PASTECLIPBOARD );
     }
+
+#ifdef GALLERY_USE_CLIPBOARD
+    if( maPopupMenu.IsItemEnabled( MN_PASTECLIPBOARD ) )
+    {
+        TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( this ) );
+        sal_Bool               bEnable = sal_False;
+
+        if( aDataHelper.GetFormatCount() )
+        {
+            if( aDataHelper.HasFormat( SotClipboardFormatId::DRAWING ) ||
+                aDataHelper.HasFormat( SotClipboardFormatId::FILE_LIST ) ||
+                aDataHelper.HasFormat( SotClipboardFormatId::SIMPLE_FILE ) ||
+                aDataHelper.HasFormat( SotClipboardFormatId::SVXB ) ||
+                aDataHelper.HasFormat( SotClipboardFormatId::GDIMETAFILE ) ||
+                aDataHelper.HasFormat( SotClipboardFormatId::BITMAP ) )
+            {
+                bEnable = sal_True;
+            }
+        }
+
+        if( !bEnable )
+            maPopupMenu.EnableItem( MN_PASTECLIPBOARD, sal_False );
+    }
+#else
+    maPopupMenu.EnableItem( MN_COPYCLIPBOARD, false );
+    maPopupMenu.EnableItem( MN_PASTECLIPBOARD, false );
+#endif
 
     // update status
     css::uno::Reference< css::frame::XDispatchProvider> xDispatchProvider(
@@ -287,45 +327,53 @@ void GalleryThemePopup::ExecutePopup( vcl::Window *pWindow, const ::Point &aPos 
         {}
     }
 
-    if( !mpBackgroundPopup->GetItemCount() || ( eObjKind == SgaObjKind::SvDraw ) || ( eObjKind == SgaObjKind::Sound ) )
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("background"), false);
+    if( !maBackgroundPopup.GetItemCount() || ( eObjKind == SGA_OBJ_SVDRAW ) || ( eObjKind == SGA_OBJ_SOUND ) )
+        maPopupMenu.EnableItem( MN_BACKGROUND, false );
     else
     {
-        mpPopupMenu->EnableItem(mpPopupMenu->GetItemId("background"));
-        mpBackgroundPopup->SetSelectHdl( LINK( this, GalleryThemePopup, BackgroundMenuSelectHdl ) );
+        maPopupMenu.EnableItem( MN_BACKGROUND );
+        maPopupMenu.SetPopupMenu( MN_BACKGROUND, &maBackgroundPopup );
+        maBackgroundPopup.SetSelectHdl( LINK( this, GalleryThemePopup, BackgroundMenuSelectHdl ) );
     }
 
-    mpPopupMenu->RemoveDisabledEntries();
+    maPopupMenu.RemoveDisabledEntries();
 
-    mpPopupMenu->SetSelectHdl( LINK( this, GalleryThemePopup, MenuSelectHdl ) );
-    mpPopupMenu->Execute( pWindow, aPos );
+    maPopupMenu.SetSelectHdl( LINK( this, GalleryThemePopup, MenuSelectHdl ) );
+    maPopupMenu.Execute( pWindow, aPos );
 }
 
-IMPL_LINK( GalleryThemePopup, MenuSelectHdl, Menu*, pMenu, bool )
+IMPL_LINK_TYPED( GalleryThemePopup, MenuSelectHdl, Menu*, pMenu, bool )
 {
     if( !pMenu )
         return false;
 
-    OString sIdent(pMenu->GetCurItemIdent());
-    if (sIdent == "add")
+    sal_uInt16 nId( pMenu->GetCurItemId() );
+    switch ( nId )
     {
-        const CommandInfoMap::const_iterator it = m_aCommandInfo.find( SID_GALLERY_FORMATS );
-        if (it != m_aCommandInfo.end())
-            mpBrowser->DispatchAdd(it->second.Dispatch, it->second.URL);
+        case MN_ADD:
+        {
+            const CommandInfoMap::const_iterator it = m_aCommandInfo.find( SID_GALLERY_FORMATS );
+            if ( it != m_aCommandInfo.end() )
+                mpBrowser->Dispatch( nId,
+                                     it->second.Dispatch,
+                                     it->second.URL );
+        }
+        break;
+
+        default:
+            mpBrowser->Execute( nId );
     }
-    else
-        mpBrowser->Execute(sIdent);
 
     return false;
 }
 
-IMPL_LINK( GalleryThemePopup, BackgroundMenuSelectHdl, Menu*, pMenu, bool )
+IMPL_LINK_TYPED( GalleryThemePopup, BackgroundMenuSelectHdl, Menu*, pMenu, bool )
 {
     if( !pMenu )
         return false;
 
     sal_uInt16 nPos( pMenu->GetCurItemId() - 1 );
-    OUString aURL( mpBrowser->GetURL().GetMainURL( INetURLObject::DecodeMechanism::NONE ) );
+    OUString aURL( mpBrowser->GetURL().GetMainURL( INetURLObject::NO_DECODE ) );
     OUString aFilterName( mpBrowser->GetFilterName() );
 
     css::uno::Sequence< css::beans::PropertyValue > aArgs( 6 );
@@ -422,6 +470,7 @@ GalleryBrowser2::GalleryBrowser2( vcl::Window* pParent, Gallery* pGallery ) :
         mpIconView->SetAccessibleRelationLabeledBy(mpIconView);
     else
         mpIconView->SetAccessibleRelationLabeledBy(maInfoBar.get());
+    mpIconView->SetAccessibleRelationMemberOf(mpIconView);
 }
 
 GalleryBrowser2::~GalleryBrowser2()
@@ -619,7 +668,7 @@ bool GalleryBrowser2::KeyInput( const KeyEvent& rKEvt, vcl::Window* pWindow )
 
     if( !bRet && !maViewBox->HasFocus() && nItemId && mpCurTheme )
     {
-        OString sExecuteIdent;
+        sal_uInt16          nExecuteId = 0;
         INetURLObject       aURL;
 
         mpCurTheme->GetURL( nItemId - 1, aURL );
@@ -655,7 +704,7 @@ bool GalleryBrowser2::KeyInput( const KeyEvent& rKEvt, vcl::Window* pWindow )
                 // Inserting a gallery item in the document must be dispatched
                 if( bValidURL )
                 {
-                    DispatchAdd(css::uno::Reference<css::frame::XDispatch>(), css::util::URL());
+                    Dispatch( MN_ADD );
                     return true;
                 }
             }
@@ -665,14 +714,14 @@ bool GalleryBrowser2::KeyInput( const KeyEvent& rKEvt, vcl::Window* pWindow )
             case KEY_D:
             {
                 if( bDelete )
-                    sExecuteIdent = "delete";
+                    nExecuteId = MN_DELETE;
             }
             break;
 
             case KEY_T:
             {
                 if( bTitle )
-                    sExecuteIdent = "title";
+                    nExecuteId = MN_TITLE;
             }
             break;
 
@@ -680,9 +729,9 @@ bool GalleryBrowser2::KeyInput( const KeyEvent& rKEvt, vcl::Window* pWindow )
             break;
         }
 
-        if (!sExecuteIdent.isEmpty())
+        if( nExecuteId )
         {
-            Execute(sExecuteIdent);
+            Execute( nExecuteId );
             bRet = true;
         }
     }
@@ -726,6 +775,7 @@ void GalleryBrowser2::SelectTheme( const OUString& rThemeName )
         mpIconView->SetAccessibleRelationLabeledBy(mpIconView);
     else
         mpIconView->SetAccessibleRelationLabeledBy(maInfoBar.get());
+    mpIconView->SetAccessibleRelationMemberOf(mpIconView);
 }
 
 void GalleryBrowser2::SetMode( GalleryBrowserMode eMode )
@@ -791,7 +841,7 @@ void GalleryBrowser2::SetMode( GalleryBrowserMode eMode )
                     mpPreview->SetGraphic( aGraphic );
                      mpPreview->Show();
 
-                    if( mpCurTheme && mpCurTheme->GetObjectKind( nPos ) == SgaObjKind::Sound )
+                    if( mpCurTheme && mpCurTheme->GetObjectKind( nPos ) == SGA_OBJ_SOUND )
                         GalleryPreview::PreviewMedia( mpCurTheme->GetObjectURL( nPos ) );
 
                     maViewBox->EnableItem( TBX_ID_ICON, false );
@@ -838,10 +888,10 @@ void GalleryBrowser2::Travel( GalleryBrowserTravel eTravel )
 
             switch( eTravel )
             {
-                case GalleryBrowserTravel::First:     nNewItemId = 1; break;
-                case GalleryBrowserTravel::Last:      nNewItemId = mpCurTheme->GetObjectCount(); break;
-                case GalleryBrowserTravel::Previous:  nNewItemId--; break;
-                case GalleryBrowserTravel::Next:      nNewItemId++; break;
+                case GALLERYBROWSERTRAVEL_FIRST:     nNewItemId = 1; break;
+                case GALLERYBROWSERTRAVEL_LAST:      nNewItemId = mpCurTheme->GetObjectCount(); break;
+                case GALLERYBROWSERTRAVEL_PREVIOUS:  nNewItemId--; break;
+                case GALLERYBROWSERTRAVEL_NEXT:      nNewItemId++; break;
                 default:
                     break;
             }
@@ -864,7 +914,7 @@ void GalleryBrowser2::Travel( GalleryBrowserTravel eTravel )
                     mpCurTheme->GetGraphic( nPos, aGraphic );
                     mpPreview->SetGraphic( aGraphic );
 
-                    if( SgaObjKind::Sound == mpCurTheme->GetObjectKind( nPos ) )
+                    if( SGA_OBJ_SOUND == mpCurTheme->GetObjectKind( nPos ) )
                         GalleryPreview::PreviewMedia( mpCurTheme->GetObjectURL( nPos ) );
 
                     mpPreview->Invalidate();
@@ -989,9 +1039,10 @@ GalleryBrowser2::GetFrame()
     return xFrame;
 }
 
-void GalleryBrowser2::DispatchAdd(
+void GalleryBrowser2::Dispatch(
+     sal_uInt16 nId,
     const css::uno::Reference< css::frame::XDispatch > &rxDispatch,
-    const css::util::URL &rURL)
+    const css::util::URL &rURL )
 {
     Point aSelPos;
     const sal_uIntPtr nItemId = ImplGetSelectedItemId( nullptr, aSelPos );
@@ -1001,87 +1052,97 @@ void GalleryBrowser2::DispatchAdd(
 
     mnCurActionPos = nItemId - 1;
 
-    css::uno::Reference< css::frame::XDispatch > xDispatch( rxDispatch );
-    css::util::URL aURL = rURL;
-
-    if ( !xDispatch.is() )
+    switch( nId )
     {
-        css::uno::Reference< css::frame::XDispatchProvider > xDispatchProvider(
-            GetFrame(), css::uno::UNO_QUERY );
-        if ( !xDispatchProvider.is() || !m_xTransformer.is() )
-            return;
+        case MN_ADD:
+        {
+            css::uno::Reference< css::frame::XDispatch > xDispatch( rxDispatch );
+            css::util::URL aURL = rURL;
 
-        aURL.Complete = CMD_SID_GALLERY_FORMATS;
-        m_xTransformer->parseStrict( aURL );
-        xDispatch = xDispatchProvider->queryDispatch(
-            aURL,
-            "_self",
-            css::frame::FrameSearchFlag::SELF );
-    }
+            if ( !xDispatch.is() )
+            {
+                css::uno::Reference< css::frame::XDispatchProvider > xDispatchProvider(
+                    GetFrame(), css::uno::UNO_QUERY );
+                if ( !xDispatchProvider.is() || !m_xTransformer.is() )
+                    return;
 
-    if ( !xDispatch.is() )
-        return;
+                aURL.Complete = CMD_SID_GALLERY_FORMATS;
+                m_xTransformer->parseStrict( aURL );
+                xDispatch = xDispatchProvider->queryDispatch(
+                    aURL,
+                    "_self",
+                    css::frame::FrameSearchFlag::SELF );
+            }
 
-    sal_Int8 nType = 0;
-    OUString aFileURL, aFilterName;
-    css::uno::Reference< css::lang::XComponent > xDrawing;
-    css::uno::Reference< css::graphic::XGraphic > xGraphic;
+            if ( !xDispatch.is() )
+                return;
 
-    aFilterName = GetFilterName();
+            sal_Int8 nType = 0;
+            OUString aFileURL, aFilterName;
+            css::uno::Reference< css::lang::XComponent > xDrawing;
+            css::uno::Reference< css::graphic::XGraphic > xGraphic;
 
-    switch( mpCurTheme->GetObjectKind( mnCurActionPos ) )
-    {
-        case SgaObjKind::Bitmap:
-        case SgaObjKind::Animation:
-        case SgaObjKind::Inet:
-        // TODO drawing objects are inserted as drawings only via drag&drop
-        case SgaObjKind::SvDraw:
-            nType = css::gallery::GalleryItemType::GRAPHIC;
-        break;
+            aFilterName = GetFilterName();
 
-        case SgaObjKind::Sound :
-            nType = css::gallery::GalleryItemType::MEDIA;
+            switch( mpCurTheme->GetObjectKind( mnCurActionPos ) )
+            {
+                case SGA_OBJ_BMP:
+                case SGA_OBJ_ANIM:
+                case SGA_OBJ_INET:
+                // TODO drawing objects are inserted as drawings only via drag&drop
+                case SGA_OBJ_SVDRAW:
+                    nType = css::gallery::GalleryItemType::GRAPHIC;
+                break;
+
+                case SGA_OBJ_SOUND :
+                    nType = css::gallery::GalleryItemType::MEDIA;
+                break;
+
+                default:
+                    nType = css::gallery::GalleryItemType::EMPTY;
+                break;
+            }
+
+            Graphic aGraphic;
+            bool bGraphic = mpCurTheme->GetGraphic( mnCurActionPos, aGraphic );
+            if ( bGraphic && !!aGraphic )
+                xGraphic.set( aGraphic.GetXGraphic() );
+            OSL_ENSURE( xGraphic.is(), "gallery item is graphic, but the reference is invalid!" );
+
+            css::uno::Sequence< css::beans::PropertyValue > aSeq( SVXGALLERYITEM_PARAMS );
+
+            aSeq[0].Name = SVXGALLERYITEM_TYPE;
+            aSeq[0].Value <<= nType;
+            aSeq[1].Name = SVXGALLERYITEM_URL;
+            aSeq[1].Value <<= aFileURL;
+            aSeq[2].Name = SVXGALLERYITEM_FILTER;
+            aSeq[2].Value <<= aFilterName;
+            aSeq[3].Name = SVXGALLERYITEM_DRAWING;
+            aSeq[3].Value <<= xDrawing;
+            aSeq[4].Name = SVXGALLERYITEM_GRAPHIC;
+            aSeq[4].Value <<= xGraphic;
+
+            css::uno::Sequence< css::beans::PropertyValue > aArgs( 1 );
+            aArgs[0].Name = SVXGALLERYITEM_ARGNAME;
+            aArgs[0].Value <<= aSeq;
+
+            DispatchInfo *pInfo = new DispatchInfo;
+            pInfo->TargetURL = aURL;
+            pInfo->Arguments = aArgs;
+            pInfo->Dispatch = xDispatch;
+
+            if ( !Application::PostUserEvent(
+                    LINK( nullptr, GalleryBrowser2, AsyncDispatch_Impl), pInfo ) )
+                delete pInfo;
+        }
         break;
 
         default:
-            nType = css::gallery::GalleryItemType::EMPTY;
         break;
     }
-
-    Graphic aGraphic;
-    bool bGraphic = mpCurTheme->GetGraphic( mnCurActionPos, aGraphic );
-    if ( bGraphic && !!aGraphic )
-        xGraphic.set( aGraphic.GetXGraphic() );
-    OSL_ENSURE( xGraphic.is(), "gallery item is graphic, but the reference is invalid!" );
-
-    css::uno::Sequence< css::beans::PropertyValue > aSeq( SVXGALLERYITEM_PARAMS );
-
-    aSeq[0].Name = SVXGALLERYITEM_TYPE;
-    aSeq[0].Value <<= nType;
-    aSeq[1].Name = SVXGALLERYITEM_URL;
-    aSeq[1].Value <<= aFileURL;
-    aSeq[2].Name = SVXGALLERYITEM_FILTER;
-    aSeq[2].Value <<= aFilterName;
-    aSeq[3].Name = SVXGALLERYITEM_DRAWING;
-    aSeq[3].Value <<= xDrawing;
-    aSeq[4].Name = SVXGALLERYITEM_GRAPHIC;
-    aSeq[4].Value <<= xGraphic;
-
-    css::uno::Sequence< css::beans::PropertyValue > aArgs( 1 );
-    aArgs[0].Name = SVXGALLERYITEM_ARGNAME;
-    aArgs[0].Value <<= aSeq;
-
-    DispatchInfo *pInfo = new DispatchInfo;
-    pInfo->TargetURL = aURL;
-    pInfo->Arguments = aArgs;
-    pInfo->Dispatch = xDispatch;
-
-    if ( !Application::PostUserEvent(
-            LINK( nullptr, GalleryBrowser2, AsyncDispatch_Impl), pInfo ) )
-        delete pInfo;
 }
 
-void GalleryBrowser2::Execute(const OString &rIdent)
+void GalleryBrowser2::Execute( sal_uInt16 nId )
 {
     Point       aSelPos;
     const sal_uIntPtr nItemId = ImplGetSelectedItemId( nullptr, aSelPos );
@@ -1090,46 +1151,86 @@ void GalleryBrowser2::Execute(const OString &rIdent)
     {
         mnCurActionPos = nItemId - 1;
 
-        if (rIdent == "preview")
-            SetMode( ( GALLERYBROWSERMODE_PREVIEW != GetMode() ) ? GALLERYBROWSERMODE_PREVIEW : meLastMode );
-        else if (rIdent == "delete")
+        switch( nId )
         {
-            if( !mpCurTheme->IsReadOnly() &&
-                ScopedVclPtrInstance<MessageDialog>(nullptr, "QueryDeleteObjectDialog","svx/ui/querydeleteobjectdialog.ui")->Execute() == RET_YES )
-            {
-                mpCurTheme->RemoveObject( mnCurActionPos );
-            }
-        }
-        else if (rIdent == "title")
-        {
-            SgaObject* pObj = mpCurTheme->AcquireObject( mnCurActionPos );
+            case MN_PREVIEW:
+                SetMode( ( GALLERYBROWSERMODE_PREVIEW != GetMode() ) ? GALLERYBROWSERMODE_PREVIEW : meLastMode );
+            break;
 
-            if( pObj )
+            case MN_DELETE:
             {
-                const OUString  aOldTitle( GetItemText( *mpCurTheme, *pObj, GalleryItemFlags::Title ) );
-
-                SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                if(pFact)
+                if( !mpCurTheme->IsReadOnly() &&
+                    ScopedVclPtrInstance<MessageDialog>(nullptr, "QueryDeleteObjectDialog","svx/ui/querydeleteobjectdialog.ui")->Execute() == RET_YES )
                 {
-                    ScopedVclPtr<AbstractTitleDialog> aDlg(pFact->CreateTitleDialog( this, aOldTitle ));
-                    DBG_ASSERT(aDlg, "Dialog creation failed!");
-                    if( aDlg->Execute() == RET_OK )
-                    {
-                        OUString aNewTitle( aDlg->GetTitle() );
-
-                        if( ( aNewTitle.isEmpty() && !pObj->GetTitle().isEmpty() ) || ( aNewTitle != aOldTitle ) )
-                        {
-                            if( aNewTitle.isEmpty() )
-                                aNewTitle = "__<empty>__";
-
-                            pObj->SetTitle( aNewTitle );
-                            mpCurTheme->InsertObject( *pObj );
-                        }
-                    }
-
-                    GalleryTheme::ReleaseObject( pObj );
+                    mpCurTheme->RemoveObject( mnCurActionPos );
                 }
             }
+            break;
+
+            case MN_TITLE:
+            {
+                SgaObject* pObj = mpCurTheme->AcquireObject( mnCurActionPos );
+
+                if( pObj )
+                {
+                    const OUString  aOldTitle( GetItemText( *mpCurTheme, *pObj, GalleryItemFlags::Title ) );
+
+                    SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
+                    if(pFact)
+                    {
+                        std::unique_ptr<AbstractTitleDialog> aDlg(pFact->CreateTitleDialog( this, aOldTitle ));
+                        DBG_ASSERT(aDlg, "Dialog creation failed!");
+                        if( aDlg->Execute() == RET_OK )
+                        {
+                            OUString aNewTitle( aDlg->GetTitle() );
+
+                            if( ( aNewTitle.isEmpty() && !pObj->GetTitle().isEmpty() ) || ( aNewTitle != aOldTitle ) )
+                            {
+                                if( aNewTitle.isEmpty() )
+                                    aNewTitle = "__<empty>__";
+
+                                pObj->SetTitle( aNewTitle );
+                                mpCurTheme->InsertObject( *pObj );
+                            }
+                        }
+
+                        GalleryTheme::ReleaseObject( pObj );
+                    }
+                }
+            }
+            break;
+
+            case MN_COPYCLIPBOARD:
+            {
+                vcl::Window* pWindow;
+
+                switch( GetMode() )
+                {
+                    case GALLERYBROWSERMODE_ICON: pWindow = static_cast<vcl::Window*>(mpIconView); break;
+                    case GALLERYBROWSERMODE_LIST: pWindow = static_cast<vcl::Window*>(mpListView); break;
+                    case GALLERYBROWSERMODE_PREVIEW: pWindow = static_cast<vcl::Window*>(mpPreview); break;
+
+                    default:
+                        pWindow = nullptr;
+                    break;
+                }
+
+                mpCurTheme->CopyToClipboard( pWindow, mnCurActionPos );
+            }
+            break;
+
+            case MN_PASTECLIPBOARD:
+            {
+                if( !mpCurTheme->IsReadOnly() )
+                {
+                    TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( this ) );
+                    mpCurTheme->InsertTransferable( aDataHelper.GetTransferable(), mnCurActionPos );
+                }
+            }
+            break;
+
+            default:
+            break;
         }
     }
 }
@@ -1151,11 +1252,11 @@ OUString GalleryBrowser2::GetItemText( const GalleryTheme& rTheme, const SgaObje
         OUString aTitle( rObj.GetTitle() );
 
         if( aTitle.isEmpty() )
-            aTitle = aURL.getBase( INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::Unambiguous );
+            aTitle = aURL.getBase( INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_UNAMBIGUOUS );
 
         if( aTitle.isEmpty() )
         {
-            aTitle = aURL.GetMainURL( INetURLObject::DecodeMechanism::Unambiguous );
+            aTitle = aURL.GetMainURL( INetURLObject::DECODE_UNAMBIGUOUS );
             aTitle = aTitle.getToken( comphelper::string::getTokenCount(aTitle, '/') - 1, '/' );
         }
 
@@ -1164,12 +1265,12 @@ OUString GalleryBrowser2::GetItemText( const GalleryTheme& rTheme, const SgaObje
 
     if( nItemTextFlags & GalleryItemFlags::Path )
     {
-        const OUString aPath( aURL.getFSysPath( FSysStyle::Detect ) );
+        const OUString aPath( aURL.getFSysPath( INetURLObject::FSYS_DETECT ) );
 
         if( !aPath.isEmpty() && ( nItemTextFlags & GalleryItemFlags::Title ) )
             aRet += " (";
 
-        aRet += aURL.getFSysPath( FSysStyle::Detect );
+        aRet += aURL.getFSysPath( INetURLObject::FSYS_DETECT );
 
         if( !aPath.isEmpty() && ( nItemTextFlags & GalleryItemFlags::Title ) )
             aRet += ")";
@@ -1196,7 +1297,7 @@ OUString GalleryBrowser2::GetFilterName() const
     {
         const SgaObjKind eObjKind = mpCurTheme->GetObjectKind( mnCurActionPos );
 
-        if( ( SgaObjKind::Bitmap == eObjKind ) || ( SgaObjKind::Animation == eObjKind ) )
+        if( ( SGA_OBJ_BMP == eObjKind ) || ( SGA_OBJ_ANIM == eObjKind ) )
         {
             GraphicFilter& rFilter = GraphicFilter::GetGraphicFilter();
             INetURLObject       aURL;
@@ -1212,17 +1313,17 @@ OUString GalleryBrowser2::GetFilterName() const
 }
 
 
-IMPL_LINK_NOARG(GalleryBrowser2, SelectObjectValueSetHdl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(GalleryBrowser2, SelectObjectValueSetHdl, ValueSet*, void)
 {
     ImplUpdateInfoBar();
 }
 
-IMPL_LINK_NOARG(GalleryBrowser2, SelectObjectHdl, GalleryListView*, void)
+IMPL_LINK_NOARG_TYPED(GalleryBrowser2, SelectObjectHdl, GalleryListView*, void)
 {
     ImplUpdateInfoBar();
 }
 
-IMPL_LINK( GalleryBrowser2, SelectTbxHdl, ToolBox*, pBox, void )
+IMPL_LINK_TYPED( GalleryBrowser2, SelectTbxHdl, ToolBox*, pBox, void )
 {
     if( pBox->GetCurItemId() == TBX_ID_ICON )
         SetMode( GALLERYBROWSERMODE_ICON );
@@ -1230,12 +1331,12 @@ IMPL_LINK( GalleryBrowser2, SelectTbxHdl, ToolBox*, pBox, void )
         SetMode( GALLERYBROWSERMODE_LIST );
 }
 
-IMPL_LINK_NOARG(GalleryBrowser2, MiscHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(GalleryBrowser2, MiscHdl, LinkParamNone*, void)
 {
     maViewBox->SetOutStyle( maMiscOptions.GetToolboxStyle() );
 
-    BitmapEx aIconBmpEx(GAL_RES(RID_SVXBMP_GALLERY_VIEW_ICON));
-    BitmapEx aListBmpEx(GAL_RES(RID_SVXBMP_GALLERY_VIEW_LIST));
+    BitmapEx aIconBmpEx = BitmapEx( Image( GAL_RES( RID_SVXIMG_GALLERY_VIEW_ICON ) ).GetBitmapEx() );
+    BitmapEx aListBmpEx = BitmapEx( Image( GAL_RES( RID_SVXIMG_GALLERY_VIEW_LIST ) ).GetBitmapEx() );
 
     if( maMiscOptions.AreCurrentSymbolsLarge() )
     {

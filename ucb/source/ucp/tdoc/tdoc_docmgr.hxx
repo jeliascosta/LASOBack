@@ -36,7 +36,16 @@
 
 namespace tdoc_ucp {
 
-    class ContentProvider;
+    class OfficeDocumentsEventListener
+    {
+    public:
+        virtual void notifyDocumentOpened( const OUString & rDocId ) = 0;
+        virtual void notifyDocumentClosed( const OUString & rDocId ) = 0;
+
+    protected:
+        ~OfficeDocumentsEventListener() {}
+    };
+
 
     struct StorageInfo
     {
@@ -54,7 +63,16 @@ namespace tdoc_ucp {
     };
 
 
-    typedef std::map< OUString, StorageInfo > DocumentList;
+    struct ltref
+    {
+        bool operator()(
+            const OUString & r1, const OUString & r2 ) const
+        {
+            return r1 < r2;
+        }
+    };
+
+    typedef std::map< OUString, StorageInfo, ltref > DocumentList;
 
 
     class OfficeDocumentsManager :
@@ -71,14 +89,18 @@ namespace tdoc_ucp {
             // util::XCloseListener
             virtual void SAL_CALL queryClosing(
                     const css::lang::EventObject& Source,
-                    sal_Bool GetsOwnership ) override;
+                    sal_Bool GetsOwnership )
+                throw (css::util::CloseVetoException,
+                       css::uno::RuntimeException, std::exception) override;
 
             virtual void SAL_CALL notifyClosing(
-                    const css::lang::EventObject& Source ) override;
+                    const css::lang::EventObject& Source )
+                throw (css::uno::RuntimeException, std::exception) override;
 
             // lang::XEventListener (base of util::XCloseListener)
             virtual void SAL_CALL disposing(
-                    const css::lang::EventObject & Source ) override;
+                    const css::lang::EventObject & Source )
+                throw ( css::uno::RuntimeException, std::exception ) override;
 
             void Dispose() { m_pManager = nullptr; }
 
@@ -89,18 +111,20 @@ namespace tdoc_ucp {
     public:
         OfficeDocumentsManager(
             const css::uno::Reference< css::uno::XComponentContext > & rxContext,
-            ContentProvider * pDocEventListener );
-        virtual ~OfficeDocumentsManager() override;
+            OfficeDocumentsEventListener * pDocEventListener );
+        virtual ~OfficeDocumentsManager();
 
         void destroy();
 
         // document::XDocumentEventListener
         virtual void SAL_CALL documentEventOccured(
-                const css::document::DocumentEvent & Event ) override;
+                const css::document::DocumentEvent & Event )
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
         // lang::XEventListener (base of document::XDocumentEventListener)
         virtual void SAL_CALL disposing(
-                const css::lang::EventObject & Source ) override;
+                const css::lang::EventObject & Source )
+            throw ( css::uno::RuntimeException, std::exception ) override;
 
         // Non-interface
         css::uno::Reference< css::embed::XStorage >
@@ -142,8 +166,8 @@ namespace tdoc_ucp {
         css::uno::Reference< css::frame::XGlobalEventBroadcaster > m_xDocEvtNotifier;
         css::uno::Reference< css::frame::XModuleManager2 >         m_xModuleMgr;
         DocumentList                                        m_aDocs;
-        ContentProvider * const                             m_pDocEventListener;
-        ::rtl::Reference<OfficeDocumentsCloseListener> const m_xDocCloseListener;
+        OfficeDocumentsEventListener *                      m_pDocEventListener;
+        ::rtl::Reference<OfficeDocumentsCloseListener> m_xDocCloseListener;
     };
 
 } // namespace tdoc_ucp

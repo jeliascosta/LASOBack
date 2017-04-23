@@ -50,16 +50,6 @@ ResourceFactoryManager::ResourceFactoryManager (const Reference<XControllerManag
 
 ResourceFactoryManager::~ResourceFactoryManager()
 {
-    for (auto iXInterfaceResource = maFactoryMap.begin();
-         iXInterfaceResource != maFactoryMap.end();
-         ++iXInterfaceResource)
-    {
-        Reference<lang::XComponent> xComponent (iXInterfaceResource->second, UNO_QUERY);
-        iXInterfaceResource->second = nullptr;
-        if (xComponent.is())
-            xComponent->dispose();
-    }
-
     Reference<lang::XComponent> xComponent (mxURLTransformer, UNO_QUERY);
     if (xComponent.is())
         xComponent->dispose();
@@ -68,6 +58,7 @@ ResourceFactoryManager::~ResourceFactoryManager()
 void ResourceFactoryManager::AddFactory (
     const OUString& rsURL,
     const Reference<XResourceFactory>& rxFactory)
+        throw (RuntimeException)
 {
     if ( ! rxFactory.is())
         throw lang::IllegalArgumentException();
@@ -82,7 +73,7 @@ void ResourceFactoryManager::AddFactory (
         maFactoryPatternList.push_back(FactoryPatternList::value_type(rsURL, rxFactory));
 
 #if defined VERBOSE && VERBOSE>=1
-        SAL_INFO("sd",("ResourceFactoryManager::AddFactory pattern %s %x\n",
+        OSL_TRACE("ResourceFactoryManager::AddFactory pattern %s %x\n",
             OUStringToOString(rsURL, RTL_TEXTENCODING_UTF8).getStr(),
             rxFactory.get());
 #endif
@@ -92,13 +83,16 @@ void ResourceFactoryManager::AddFactory (
         maFactoryMap[rsURL] = rxFactory;
 
 #if defined VERBOSE && VERBOSE>=1
-        SAL_INFO("sd", "ResourceFactoryManager::AddFactory fixed " << rsURL << " 0x" << std::hex << rxFactory.get());
+        OSL_TRACE("ResourceFactoryManager::AddFactory fixed %s %x\n",
+            OUStringToOString(rsURL, RTL_TEXTENCODING_UTF8).getStr(),
+            rxFactory.get());
 #endif
     }
 }
 
 void ResourceFactoryManager::RemoveFactoryForURL (
     const OUString& rsURL)
+    throw (RuntimeException)
 {
     if (rsURL.isEmpty())
         throw lang::IllegalArgumentException();
@@ -130,6 +124,7 @@ void ResourceFactoryManager::RemoveFactoryForURL (
 
 void ResourceFactoryManager::RemoveFactoryForReference(
     const Reference<XResourceFactory>& rxFactory)
+    throw (RuntimeException)
 {
     ::osl::MutexGuard aGuard (maMutex);
 
@@ -158,6 +153,7 @@ void ResourceFactoryManager::RemoveFactoryForReference(
 
 Reference<XResourceFactory> ResourceFactoryManager::GetFactory (
     const OUString& rsCompleteURL)
+    throw (RuntimeException)
 {
     OUString sURLBase (rsCompleteURL);
     if (mxURLTransformer.is())
@@ -188,6 +184,7 @@ Reference<XResourceFactory> ResourceFactoryManager::GetFactory (
 }
 
 Reference<XResourceFactory> ResourceFactoryManager::FindFactory (const OUString& rsURLBase)
+    throw (RuntimeException)
 {
     ::osl::MutexGuard aGuard (maMutex);
     FactoryMap::const_iterator iFactory (maFactoryMap.find(rsURLBase));

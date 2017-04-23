@@ -50,7 +50,7 @@ public:
         const OUString& rLocalName,
         css::uno::Reference< css::beans::XPropertySet> & rPropertySet);
 
-    virtual ~XMLImageMapContext() override;
+    virtual ~XMLImageMapContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix,

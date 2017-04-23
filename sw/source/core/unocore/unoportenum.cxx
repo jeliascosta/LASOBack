@@ -73,8 +73,8 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::text;
 using namespace ::std;
 
-typedef std::pair< TextRangeList_t * const, SwTextAttr const * const > PortionList_t;
-typedef std::stack< PortionList_t > PortionStack_t;
+typedef ::std::pair< TextRangeList_t * const, SwTextAttr const * const > PortionList_t;
+typedef ::std::stack< PortionList_t > PortionStack_t;
 
 static void lcl_CreatePortions(
     TextRangeList_t & i_rPortions,
@@ -85,18 +85,18 @@ static void lcl_CreatePortions(
 
 namespace
 {
-    enum class BkmType {
-        Start, End, StartEnd
-    };
+    static const sal_uInt8 BKM_TYPE_START = 0;
+    static const sal_uInt8 BKM_TYPE_END = 1;
+    static const sal_uInt8 BKM_TYPE_START_END = 2;
 
     struct SwXBookmarkPortion_Impl
     {
         Reference<XTextContent>     xBookmark;
-        BkmType                     nBkmType;
+        sal_uInt8                       nBkmType;
         const SwPosition            aPosition;
 
         SwXBookmarkPortion_Impl(uno::Reference<text::XTextContent> const& xMark,
-                const BkmType nType, SwPosition const& rPosition)
+                const sal_uInt8 nType, SwPosition const& rPosition)
         : xBookmark ( xMark )
         , nBkmType  ( nType )
         , aPosition ( rPosition )
@@ -120,10 +120,10 @@ namespace
             //   ? ( r1->nBkmType <  r2->nBkmType )
             //   : ( r1->nIndex   <  r2->nIndex );
 
-            // Note that the above code does not correctly handle
+            // MTG: 25/11/05: Note that the above code does not correctly handle
             // the case when one bookmark ends, and another begins in the same
             // position. When this occurs, the above code will return the
-            // start of the 2nd bookmark BEFORE the end of the first bookmark
+            // the start of the 2nd bookmark BEFORE the end of the first bookmark
             // See bug #i58438# for more details. The below code is correct and
             // fixes both #i58438 and #i16896#
             return r1->aPosition < r2->aPosition;
@@ -141,8 +141,8 @@ namespace
         {
             // #i109272#: cross reference marks: need special handling!
             ::sw::mark::CrossRefBookmark *const pCrossRefMark(dynamic_cast< ::sw::mark::CrossRefBookmark*>(pBkmk));
-            BkmType const nType = (hasOther || pCrossRefMark)
-                ? BkmType::Start : BkmType::StartEnd;
+            sal_uInt8 const nType = (hasOther || pCrossRefMark)
+                ? BKM_TYPE_START : BKM_TYPE_START_END;
             rBkmArr.insert(std::make_shared<SwXBookmarkPortion_Impl>(
                         SwXBookmark::CreateXBookmark(rDoc, pBkmk),
                         nType, rStartPos));
@@ -169,7 +169,7 @@ namespace
             {
                 rBkmArr.insert(std::make_shared<SwXBookmarkPortion_Impl>(
                             SwXBookmark::CreateXBookmark(rDoc, pBkmk),
-                            BkmType::End, *pEndPos));
+                            BKM_TYPE_END, *pEndPos));
             }
         }
     }
@@ -253,7 +253,6 @@ namespace
     {
         bool operator () ( const SwAnnotationStartPortion_ImplSharedPtr &r1,
                            const SwAnnotationStartPortion_ImplSharedPtr &r2 )
-            const
         {
             return r1->maPosition < r2->maPosition;
         }
@@ -321,6 +320,7 @@ const uno::Sequence< sal_Int8 > & SwXTextPortionEnumeration::getUnoTunnelId()
 
 sal_Int64 SAL_CALL SwXTextPortionEnumeration::getSomething(
         const uno::Sequence< sal_Int8 >& rId )
+throw(uno::RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
         && 0 == memcmp( getUnoTunnelId().getConstArray(),
@@ -332,17 +332,20 @@ sal_Int64 SAL_CALL SwXTextPortionEnumeration::getSomething(
 }
 
 OUString SwXTextPortionEnumeration::getImplementationName()
+throw( RuntimeException, std::exception )
 {
     return OUString("SwXTextPortionEnumeration");
 }
 
 sal_Bool
 SwXTextPortionEnumeration::supportsService(const OUString& rServiceName)
+throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SwXTextPortionEnumeration::getSupportedServiceNames()
+throw( RuntimeException, std::exception )
 {
     Sequence<OUString> aRet { "com.sun.star.text.TextPortionEnumeration" };
     return aRet;
@@ -364,7 +367,7 @@ SwXTextPortionEnumeration::SwXTextPortionEnumeration(
     // find all frames, graphics and OLEs that are bound AT character in para
     FrameClientSortList_t frames;
     ::CollectFrameAtNode(m_pUnoCursor->GetPoint()->nNode, frames, true);
-    lcl_CreatePortions(m_Portions, xParentText, &*m_pUnoCursor, frames, nStart, nEnd);
+    lcl_CreatePortions(m_Portions, xParentText, &GetCursor(), frames, nStart, nEnd);
 }
 
 SwXTextPortionEnumeration::SwXTextPortionEnumeration(
@@ -382,6 +385,7 @@ SwXTextPortionEnumeration::~SwXTextPortionEnumeration()
 }
 
 sal_Bool SwXTextPortionEnumeration::hasMoreElements()
+throw( uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -389,6 +393,8 @@ sal_Bool SwXTextPortionEnumeration::hasMoreElements()
 }
 
 uno::Any SwXTextPortionEnumeration::nextElement()
+throw( container::NoSuchElementException, lang::WrappedTargetException,
+       uno::RuntimeException, std::exception )
 {
     SolarMutexGuard aGuard;
 
@@ -401,7 +407,7 @@ uno::Any SwXTextPortionEnumeration::nextElement()
     return any;
 }
 
-typedef std::deque< sal_Int32 > FieldMarks_t;
+typedef ::std::deque< sal_Int32 > FieldMarks_t;
 
 static void
 lcl_FillFieldMarkArray(FieldMarks_t & rFieldMarks, SwUnoCursor const & rUnoCursor,
@@ -413,7 +419,7 @@ lcl_FillFieldMarkArray(FieldMarks_t & rFieldMarks, SwUnoCursor const & rUnoCurso
 
     const sal_Unicode fld[] = {
         CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FIELDEND, CH_TXT_ATR_FORMELEMENT, 0 };
-    sal_Int32 pos = std::max(static_cast<const sal_Int32>(0), i_nStartPos);
+    sal_Int32 pos = ::std::max(static_cast<const sal_Int32>(0), i_nStartPos);
     while ((pos = ::comphelper::string::indexOfAny(pTextNode->GetText(), fld, pos)) != -1)
     {
         rFieldMarks.push_back(pos);
@@ -429,7 +435,7 @@ lcl_ExportFieldMark(
 {
     uno::Reference<text::XTextRange> xRef;
     SwDoc* pDoc = pUnoCursor->GetDoc();
-    // maybe it's a good idea to add a special hint to the hints array and rely on the hint segmentation....
+    //flr: maybe it's a good idea to add a special hint to the hints array and rely on the hint segmentation....
     const sal_Int32 start = pUnoCursor->Start()->nContent.GetIndex();
     OSL_ENSURE(pUnoCursor->End()->nContent.GetIndex() == start,
                "hmm --- why is this different");
@@ -574,7 +580,7 @@ static uno::Reference<text::XTextRange>
 lcl_CreateMetaPortion(
     uno::Reference<text::XText> const& xParent,
     const SwUnoCursor * const pUnoCursor,
-    SwTextAttr & rAttr, std::unique_ptr<TextRangeList_t const> && pPortions)
+    SwTextAttr & rAttr, ::std::unique_ptr<TextRangeList_t const> && pPortions)
 {
     const uno::Reference<rdf::XMetadatable> xMeta( SwXMeta::CreateXMeta(
             *static_cast<SwFormatMeta &>(rAttr.GetAttr()).GetMeta(),
@@ -615,17 +621,17 @@ static void lcl_ExportBookmark(
             break;
 
         SwXTextPortion* pPortion = nullptr;
-        if ((BkmType::Start     == pPtr->nBkmType) ||
-            (BkmType::StartEnd == pPtr->nBkmType))
+        if ((BKM_TYPE_START     == pPtr->nBkmType) ||
+            (BKM_TYPE_START_END == pPtr->nBkmType))
         {
             pPortion =
                 new SwXTextPortion(pUnoCursor, xParent, PORTION_BOOKMARK_START);
             rPortions.push_back(pPortion);
             pPortion->SetBookmark(pPtr->xBookmark);
-            pPortion->SetCollapsed( BkmType::StartEnd == pPtr->nBkmType );
+            pPortion->SetCollapsed( BKM_TYPE_START_END == pPtr->nBkmType );
 
         }
-        if (BkmType::End == pPtr->nBkmType)
+        if (BKM_TYPE_END == pPtr->nBkmType)
         {
             pPortion =
                 new SwXTextPortion(pUnoCursor, xParent, PORTION_BOOKMARK_END);
@@ -690,7 +696,7 @@ struct RedlineCompareStruct
     }
 
     bool operator () ( const SwXRedlinePortion_ImplSharedPtr &r1,
-                       const SwXRedlinePortion_ImplSharedPtr &r2 ) const
+                       const SwXRedlinePortion_ImplSharedPtr &r2 )
     {
         return getPosition ( r1 ) < getPosition ( r2 );
     }
@@ -710,7 +716,8 @@ lcl_ExportHints(
     const sal_Int32 nCurrentIndex,
     const bool bRightMoveForbidden,
     bool & o_rbCursorMoved,
-    sal_Int32 & o_rNextAttrPosition)
+    sal_Int32 & o_rNextAttrPosition,
+    std::set<const SwFrameFormat*>& rTextBoxes)
 {
     // if the attribute has a dummy character, then xRef is set (except META)
     // otherwise, the portion for the attribute is inserted into rPortions!
@@ -781,7 +788,7 @@ lcl_ExportHints(
                         }
                         else
                         {
-                            std::unique_ptr<const TextRangeList_t>
+                            ::std::unique_ptr<const TextRangeList_t>
                                 pCurrentPortions(Top.first);
                             rPortionStack.pop();
                             const uno::Reference<text::XTextRange> xPortion(
@@ -877,10 +884,10 @@ lcl_ExportHints(
                     {
                         pUnoCursor->Right(1);
                         if( *pUnoCursor->GetMark() == *pUnoCursor->GetPoint() )
-                            break; // Robust #i81708# content in covered cells
+                            break; // Robust #i81708 content in covered cells
 
                         // Do not expose inline anchored textboxes.
-                        if (SwTextBoxHelper::isTextBox(pAttr->GetFlyCnt().GetFrameFormat(), RES_FLYFRMFMT))
+                        if (rTextBoxes.find(pAttr->GetFlyCnt().GetFrameFormat()) != rTextBoxes.end())
                             break;
 
                         pUnoCursor->Exchange();
@@ -954,7 +961,7 @@ lcl_ExportHints(
                             if ((i_nEndPos < 0) ||
                                 (*pAttr->GetEnd() <= i_nEndPos))
                             {
-                                rPortionStack.push( std::make_pair(
+                                rPortionStack.push( ::std::make_pair(
                                         new TextRangeList_t, pAttr ));
                             }
                         }
@@ -1091,24 +1098,24 @@ static void lcl_ExportRedline(
     const sal_Int32 nIndex)
 {
 
-    // We want this loop to iterate over all red lines in this
+    // MTG: 23/11/05: We want this loop to iterate over all red lines in this
     // array. We will only insert the ones with index matches
     for ( SwXRedlinePortion_ImplList::iterator aIter = rRedlineArr.begin(), aEnd = rRedlineArr.end();
           aIter != aEnd; )
     {
         SwXRedlinePortion_ImplSharedPtr pPtr = (*aIter );
         sal_Int32 nRealIndex = pPtr->getRealIndex();
-        // If there are elements before nIndex, remove them
+        // MTG: 23/11/05: If there are elements before nIndex, remove them
         if ( nIndex > nRealIndex )
             aIter = rRedlineArr.erase(aIter);
-        // If the elements match, and them to the list
+        // MTG: 23/11/05: If the elements match, and them to the list
         else if ( nIndex == nRealIndex )
         {
             rPortions.push_back( new SwXRedlinePortion(
                         *pPtr->m_pRedline, pUnoCursor, xParent, pPtr->m_bStart));
             aIter = rRedlineArr.erase(aIter);
         }
-        // If we've iterated past nIndex, exit the loop
+        // MTG: 23/11/05: If we've iterated past nIndex, exit the loop
         else
             break;
     }
@@ -1265,6 +1272,8 @@ static void lcl_CreatePortions(
     PortionStack_t PortionStack;
     PortionStack.push( PortionList_t(&i_rPortions, nullptr) );
 
+    std::set<const SwFrameFormat*> aTextBoxes = SwTextBoxHelper::findTextBoxes(pUnoCursor->GetNode());
+
     bool bAtEnd( false );
     while (!bAtEnd) // every iteration consumes at least current character!
     {
@@ -1315,7 +1324,7 @@ static void lcl_CreatePortions(
             // N.B.: side-effects nNextAttrIndex, bCursorMoved; may move cursor
             xRef = lcl_ExportHints(PortionStack, i_xParentText, pUnoCursor,
                         pHints, i_nStartPos, i_nEndPos, nCurrentIndex, bAtEnd,
-                        bCursorMoved, nNextAttrIndex);
+                        bCursorMoved, nNextAttrIndex, aTextBoxes);
             if (PortionStack.empty())
             {
                 OSL_FAIL("CreatePortions: stack underflow");

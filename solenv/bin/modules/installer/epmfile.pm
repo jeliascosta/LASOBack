@@ -65,7 +65,7 @@ sub read_packagemap
     {
         my $packagemapref = installer::scriptitems::get_sourcepath_from_filename_and_includepath(\$onepackagemapname, $includepatharrayref, 0);
 
-        if ( $$packagemapref eq "" ) { installer::exiter::exit_program("ERROR: Could not find package map file \"$onepackagemapname\" (property PACKAGEMAP)!", "read_packagemap"); }
+        if ( $$packagemapref eq "" ) { installer::exiter::exit_program("ERROR: Could not find package map file \"$onepackagemapname\" (propery PACKAGEMAP)!", "read_packagemap"); }
 
         my $packagemapcontent = installer::files::read_file($$packagemapref);
 
@@ -1504,7 +1504,7 @@ sub contains_extension_dir
 
     my $contains_extension_dir = 0;
 
-    # d none opt/libreoffice/share/extensions/
+    # d none opt/openoffice.org3/share/extensions/
 
     for ( my $i = 0; $i <= $#{$prototypefile}; $i++ )
     {
@@ -2478,7 +2478,7 @@ sub analyze_rootpath
     if ( $installer::globals::isdebbuild )
     {
         $$relocatablepathref = "";
-        # $$staticpathref is already "/opt/libreoffice", no additional $rootpath required.
+        # $$staticpathref is already "/opt/openoffice.org3", no additional $rootpath required.
     }
 
 }

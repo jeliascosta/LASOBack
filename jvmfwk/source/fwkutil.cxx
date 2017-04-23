@@ -63,7 +63,7 @@ bool isAccessibilitySupportDesired()
 
 #ifdef _WIN32
     bool retVal = false;
-    HKEY    hKey = nullptr;
+    HKEY    hKey = 0;
     if (RegOpenKeyEx(HKEY_CURRENT_USER,
                      "Software\\LibreOffice\\Accessibility\\AtToolSupport",
                      0, KEY_READ, &hKey) == ERROR_SUCCESS)
@@ -71,16 +71,16 @@ bool isAccessibilitySupportDesired()
         DWORD   dwType = 0;
         DWORD   dwLen = 16;
         unsigned char arData[16];
-        if( RegQueryValueEx(hKey, "SupportAssistiveTechnology", nullptr, &dwType, arData,
+        if( RegQueryValueEx(hKey, "SupportAssistiveTechnology", NULL, &dwType, arData,
                             & dwLen)== ERROR_SUCCESS)
         {
             if (dwType == REG_SZ)
             {
-                if (strcmp(reinterpret_cast<char*>(arData), "true") == 0
-                    || strcmp(reinterpret_cast<char*>(arData), "1") == 0)
+                if (strcmp((char*) arData, "true") == 0
+                    || strcmp((char*) arData, "1") == 0)
                     retVal = true;
-                else if (strcmp(reinterpret_cast<char*>(arData), "false") == 0
-                         || strcmp(reinterpret_cast<char*>(arData), "0") == 0)
+                else if (strcmp((char*) arData, "false") == 0
+                         || strcmp((char*) arData, "0") == 0)
                     retVal = false;
                 else
                     SAL_WARN("jfw", "bad registry value " << arData);

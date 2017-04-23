@@ -47,6 +47,7 @@ DoubleSequenceContext::DoubleSequenceContext( ContextHandler2Helper& rParent, Da
 
 DoubleSequenceContext::~DoubleSequenceContext()
 {
+    delete mpNumberFormatter;
 }
 
 ContextHandlerRef DoubleSequenceContext::onCreateContext( sal_Int32 nElement, const AttributeList& rAttribs )
@@ -156,10 +157,10 @@ SvNumberFormatter* DoubleSequenceContext::getNumberFormatter()
     {
         uno::Reference<uno::XComponentContext> rContext =
                                 this->getFilter().getComponentContext();
-        mpNumberFormatter.reset(
-                new SvNumberFormatter(rContext, LANGUAGE_DONTKNOW) );
+        mpNumberFormatter =
+                new SvNumberFormatter(rContext, LANGUAGE_DONTKNOW);
     }
-    return mpNumberFormatter.get();
+    return mpNumberFormatter;
 }
 
 

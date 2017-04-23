@@ -62,12 +62,6 @@ public:
     ScDocument& getDoc();
     const ScDocument& getDoc() const;
 
-    /**
-     * Initialize the storage for all sheets after all the sheet instances
-     * have been created in the document.
-     */
-    void initForSheets();
-
     void setDefaultNumericScript(SvtScriptType nScript);
 
     /**

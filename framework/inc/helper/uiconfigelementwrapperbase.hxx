@@ -59,48 +59,48 @@ class UIConfigElementWrapperBase : private cppu::BaseMutex,
 
     public:
         UIConfigElementWrapperBase( sal_Int16 nType );
-        virtual  ~UIConfigElementWrapperBase() override;
+        virtual  ~UIConfigElementWrapperBase();
 
         //  XInterface
         virtual void SAL_CALL acquire() throw () override
             { OWeakObject::acquire(); }
         virtual void SAL_CALL release() throw () override
             { OWeakObject::release(); }
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& type) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& type) throw ( css::uno::RuntimeException, std::exception ) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         // XComponent
-        virtual  void SAL_CALL dispose() override = 0;
-        virtual  void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-        virtual  void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+        virtual  void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override = 0;
+        virtual  void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual  void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XInitialization
-        virtual  void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual  void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
         // XUIElementSettings
-        virtual  void SAL_CALL updateSettings() override = 0;
-        virtual  css::uno::Reference< css::container::XIndexAccess > SAL_CALL getSettings( sal_Bool bWriteable ) override;
-        virtual  void SAL_CALL setSettings( const css::uno::Reference< css::container::XIndexAccess >& UISettings ) override;
+        virtual  void SAL_CALL updateSettings() throw (css::uno::RuntimeException, std::exception) override = 0;
+        virtual  css::uno::Reference< css::container::XIndexAccess > SAL_CALL getSettings( sal_Bool bWriteable ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual  void SAL_CALL setSettings( const css::uno::Reference< css::container::XIndexAccess >& UISettings ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XUIElement
-        virtual  css::uno::Reference< css::frame::XFrame > SAL_CALL getFrame() override;
-        virtual  OUString SAL_CALL getResourceURL() override;
-        virtual  ::sal_Int16 SAL_CALL getType() override;
-        virtual  css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() override = 0;
+        virtual  css::uno::Reference< css::frame::XFrame > SAL_CALL getFrame() throw (css::uno::RuntimeException, std::exception) override;
+        virtual  OUString SAL_CALL getResourceURL() throw (css::uno::RuntimeException, std::exception) override;
+        virtual  ::sal_Int16 SAL_CALL getType() throw (css::uno::RuntimeException, std::exception) override;
+        virtual  css::uno::Reference< css::uno::XInterface > SAL_CALL getRealInterface() throw (css::uno::RuntimeException, std::exception) override = 0;
 
         // XUpdatable
-        virtual  void SAL_CALL update() override;
+        virtual  void SAL_CALL update() throw (css::uno::RuntimeException, std::exception) override;
 
         //  XUIConfigurationListener
-        virtual  void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& Event ) override;
-        virtual  void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& Event ) override;
-        virtual  void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& Event ) override;
+        virtual  void SAL_CALL elementInserted( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual  void SAL_CALL elementRemoved( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual  void SAL_CALL elementReplaced( const css::ui::ConfigurationEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
         using cppu::OPropertySetHelper::disposing;
-        virtual  void SAL_CALL disposing( const css::lang::EventObject& aEvent ) override;
+        virtual  void SAL_CALL disposing( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception) override;
 
     //  protected methods
 
@@ -110,14 +110,14 @@ class UIConfigElementWrapperBase : private cppu::BaseMutex,
         virtual  sal_Bool                                            SAL_CALL convertFastPropertyValue        ( css::uno::Any&        aConvertedValue ,
                                                                                                                css::uno::Any&        aOldValue       ,
                                                                                                                sal_Int32                        nHandle         ,
-                                                                                                               const css::uno::Any&  aValue          ) override;
+                                                                                                               const css::uno::Any&  aValue          ) throw( css::lang::IllegalArgumentException ) override;
         virtual  void                                                SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32                        nHandle         ,
-                                                                                                               const css::uno::Any&  aValue          ) override;
+                                                                                                               const css::uno::Any&  aValue          ) throw( css::uno::Exception, std::exception                 ) override;
         using cppu::OPropertySetHelper::getFastPropertyValue;
         virtual  void                                                SAL_CALL getFastPropertyValue( css::uno::Any&    aValue          ,
                                                                                                    sal_Int32                    nHandle         ) const override;
         virtual  ::cppu::IPropertyArrayHelper&                       SAL_CALL getInfoHelper() override;
-        virtual  css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() override;
+        virtual  css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo() throw (css::uno::RuntimeException, std::exception) override;
 
         virtual  void impl_fillNewData();
 

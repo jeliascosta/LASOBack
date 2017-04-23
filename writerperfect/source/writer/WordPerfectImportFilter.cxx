@@ -86,6 +86,7 @@ static bool handleEmbeddedWPGImage(const librevenge::RVNGBinaryData &input, libr
 }
 
 bool SAL_CALL WordPerfectImportFilter::importImpl(const Sequence< css::beans::PropertyValue > &aDescriptor)
+throw (RuntimeException, std::exception)
 {
     sal_Int32 nLength = aDescriptor.getLength();
     const PropertyValue *pValue = aDescriptor.getConstArray();
@@ -122,18 +123,18 @@ bool SAL_CALL WordPerfectImportFilter::importImpl(const Sequence< css::beans::Pr
                 break;
             else
                 unsuccessfulAttempts++;
-            if (unsuccessfulAttempts == 3) // timeout after 3 password attempts
+            if (unsuccessfulAttempts == 3) // timeout after 3 password atempts
                 return false;
         }
     }
 
-    // An XML import service: what we push sax messages to.
+    // An XML import service: what we push sax messages to..
     Reference < XDocumentHandler > xInternalHandler(
         mxContext->getServiceManager()->createInstanceWithContext(
             "com.sun.star.comp.Writer.XMLOasisImporter", mxContext),
         css::uno::UNO_QUERY_THROW);
 
-    // The XImporter sets up an empty target document for XDocumentHandler to write to.
+    // The XImporter sets up an empty target document for XDocumentHandler to write to..
     Reference < XImporter > xImporter(xInternalHandler, UNO_QUERY);
     xImporter->setTargetDocument(mxDoc);
 
@@ -151,21 +152,25 @@ bool SAL_CALL WordPerfectImportFilter::importImpl(const Sequence< css::beans::Pr
 }
 
 sal_Bool SAL_CALL WordPerfectImportFilter::filter(const Sequence< css::beans::PropertyValue > &aDescriptor)
+throw (RuntimeException, std::exception)
 {
     return importImpl(aDescriptor);
 }
 void SAL_CALL WordPerfectImportFilter::cancel()
+throw (RuntimeException, std::exception)
 {
 }
 
 // XImporter
 void SAL_CALL WordPerfectImportFilter::setTargetDocument(const Reference< css::lang::XComponent > &xDoc)
+throw (css::lang::IllegalArgumentException, RuntimeException, std::exception)
 {
     mxDoc = xDoc;
 }
 
 // XExtendedFilterDetection
 OUString SAL_CALL WordPerfectImportFilter::detect(Sequence< PropertyValue > &Descriptor)
+throw(RuntimeException, std::exception)
 {
     libwpd::WPDConfidence confidence = libwpd::WPD_CONFIDENCE_NONE;
     OUString sTypeName;
@@ -208,6 +213,7 @@ OUString SAL_CALL WordPerfectImportFilter::detect(Sequence< PropertyValue > &Des
 
 // XInitialization
 void SAL_CALL WordPerfectImportFilter::initialize(const Sequence< Any > &aArguments)
+throw (Exception, RuntimeException, std::exception)
 {
     Sequence < PropertyValue > aAnySeq;
     sal_Int32 nLength = aArguments.getLength();
@@ -228,16 +234,19 @@ void SAL_CALL WordPerfectImportFilter::initialize(const Sequence< Any > &aArgume
 
 // XServiceInfo
 OUString SAL_CALL WordPerfectImportFilter::getImplementationName()
+throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.Writer.WordPerfectImportFilter");
 }
 
 sal_Bool SAL_CALL WordPerfectImportFilter::supportsService(const OUString &rServiceName)
+throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL WordPerfectImportFilter::getSupportedServiceNames()
+throw (RuntimeException, std::exception)
 {
     Sequence < OUString > aRet(2);
     OUString *pArray = aRet.getArray();

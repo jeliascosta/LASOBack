@@ -26,7 +26,6 @@
 #include <sfx2/printer.hxx>
 #include <editeng/outlobj.hxx>
 #include <svx/svdetc.hxx>
-#include <xmloff/autolayout.hxx>
 
 #include "app.hrc"
 #include "strings.hrc"
@@ -74,13 +73,13 @@ void FuExpandPage::DoExecute( SfxRequest& )
     // find selected page (only standard pages)
     SdPage* pActualPage = nullptr;
     sal_uInt16 i = 0;
-    sal_uInt16 nCount = mpDoc->GetSdPageCount(PageKind::Standard);
+    sal_uInt16 nCount = mpDoc->GetSdPageCount(PK_STANDARD);
 
     while (!pActualPage && i < nCount)
     {
-        if (mpDoc->GetSdPage(i, PageKind::Standard)->IsSelected())
+        if (mpDoc->GetSdPage(i, PK_STANDARD)->IsSelected())
         {
-            pActualPage = mpDoc->GetSdPage(i, PageKind::Standard);
+            pActualPage = mpDoc->GetSdPage(i, PK_STANDARD);
         }
 
         i++;
@@ -88,8 +87,8 @@ void FuExpandPage::DoExecute( SfxRequest& )
 
     if (pActualPage)
     {
-        SdOutliner* pOutl =
-              new SdOutliner( mpDoc, OutlinerMode::OutlineObject );
+        ::sd::Outliner* pOutl =
+              new ::sd::Outliner( mpDoc, OutlinerMode::OutlineObject );
         pOutl->SetUpdateMode(false);
         pOutl->EnableUndo(false);
 
@@ -153,7 +152,7 @@ void FuExpandPage::DoExecute( SfxRequest& )
                     // use MasterPage of the current page
                     pPage->TRG_SetMasterPage(pActualPage->TRG_GetMasterPage());
                     pPage->SetLayoutName(pActualPage->GetLayoutName());
-                    pPage->SetAutoLayout(AUTOLAYOUT_TITLE_CONTENT, true);
+                    pPage->SetAutoLayout(AUTOLAYOUT_ENUM, true);
                     pPage->TRG_SetMasterPageVisibleLayers(aVisibleLayers);
 
                     // notes-page
@@ -163,7 +162,7 @@ void FuExpandPage::DoExecute( SfxRequest& )
                                           pActualNotesPage->GetUppBorder(),
                                           pActualNotesPage->GetRgtBorder(),
                                           pActualNotesPage->GetLwrBorder() );
-                    pNotesPage->SetPageKind(PageKind::Notes);
+                    pNotesPage->SetPageKind(PK_NOTES);
                     pNotesPage->SetName(OUString());
 
                     // insert page after current page

@@ -80,7 +80,8 @@ ScFormulaParserObj::~ScFormulaParserObj()
 
 void ScFormulaParserObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
         mpDocShell = nullptr;
 }
 
@@ -123,6 +124,7 @@ void ScFormulaParserObj::SetCompilerFlags( ScCompiler& rCompiler ) const
 
 uno::Sequence<sheet::FormulaToken> SAL_CALL ScFormulaParserObj::parseFormula(
     const OUString& aFormula, const table::CellAddress& rReferencePos )
+        throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Sequence<sheet::FormulaToken> aRet;
@@ -148,6 +150,7 @@ uno::Sequence<sheet::FormulaToken> SAL_CALL ScFormulaParserObj::parseFormula(
 
 OUString SAL_CALL ScFormulaParserObj::printFormula(
         const uno::Sequence<sheet::FormulaToken>& aTokens, const table::CellAddress& rReferencePos )
+                                throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     OUString aRet;
@@ -174,6 +177,7 @@ OUString SAL_CALL ScFormulaParserObj::printFormula(
 // XPropertySet
 
 uno::Reference<beans::XPropertySetInfo> SAL_CALL ScFormulaParserObj::getPropertySetInfo()
+                                                        throw(uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     static uno::Reference< beans::XPropertySetInfo > aRef(new SfxItemPropertySetInfo( lcl_GetFormulaParserMap() ));
@@ -182,6 +186,9 @@ uno::Reference<beans::XPropertySetInfo> SAL_CALL ScFormulaParserObj::getProperty
 
 void SAL_CALL ScFormulaParserObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
+                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+                        lang::IllegalArgumentException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     if ( aPropertyName == SC_UNO_COMPILEFAP )
@@ -237,6 +244,8 @@ void SAL_CALL ScFormulaParserObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScFormulaParserObj::getPropertyValue( const OUString& aPropertyName )
+                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     uno::Any aRet;
@@ -466,12 +475,11 @@ bool ScTokenConversion::ConvertToTokenSequence( const ScDocument& rDoc,
                     }
                     break;
                 default:
-                    SAL_WARN("sc",  "ScTokenConversion::ConvertToTokenSequence: unhandled token type " << StackVarEnumToString(rToken.GetType()));
+                    OSL_TRACE( "ScTokenConversion::ConvertToTokenSequence: unhandled token type SvStackVar %d", rToken.GetType());
                     SAL_FALLTHROUGH;
-                case svJump:    // occurs with ocIf, ocChoose
-                case svError:   // seems to be fairly common, and probably not exceptional and not worth a warning?
-                case svMissing: // occurs with ocMissing
                 case svSep:     // occurs with ocSep, ocOpen, ocClose, ocArray*
+                case svJump:    // occurs with ocIf, ocChoose
+                case svMissing: // occurs with ocMissing
                     rAPI.Data.clear();      // no data
             }
             rAPI.OpCode = static_cast<sal_Int32>(eOpCode);      //! assuming equal values for the moment

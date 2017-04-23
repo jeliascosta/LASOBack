@@ -92,6 +92,8 @@ void OQueryViewSwitch::setStatement(const OUString& _rsStatement)
 {
     if(m_pTextView->IsVisible())
         m_pTextView->setStatement(_rsStatement);
+    else
+        m_pDesignView->setStatement(_rsStatement);
 }
 
 void OQueryViewSwitch::copy()
@@ -277,13 +279,13 @@ Reference< XComponentContext > OQueryViewSwitch::getORB() const
     return m_pDesignView->getORB();
 }
 
-bool OQueryViewSwitch::reset()
+bool OQueryViewSwitch::reset( ::dbtools::SQLExceptionInfo* _pErrorInfo )
 {
     m_pDesignView->reset();
-    if ( !m_pDesignView->initByParseIterator( nullptr ) )
+    if ( !m_pDesignView->initByParseIterator( _pErrorInfo ) )
         return false;
 
-    if ( switchView( nullptr ) )
+    if ( switchView( _pErrorInfo ) )
         return false;
 
     return true;

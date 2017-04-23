@@ -98,7 +98,7 @@ class VCL_DLLPUBLIC PDFExtOutDevData : public ExtOutDevData
 public:
 
     PDFExtOutDevData( const OutputDevice& rOutDev );
-    virtual ~PDFExtOutDevData() override;
+    virtual ~PDFExtOutDevData();
 
     bool PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAction );
     void ResetSyncData();
@@ -183,13 +183,13 @@ public:
      */
     void        EndGroup( const Graphic&    rGraphic,
                           sal_uInt8         nTransparency,
-                          const tools::Rectangle&  rOutputRect,
-                          const tools::Rectangle&  rVisibleOutputRect );
+                          const Rectangle&  rOutputRect,
+                          const Rectangle&  rVisibleOutputRect );
 
     /// Detect if stream is compressed enough to avoid de-compress / scale & re-compress
     bool        HasAdequateCompression( const Graphic &rGraphic,
-                                        const tools::Rectangle &rOutputRect,
-                                        const tools::Rectangle &rVisibleOutputRect ) const;
+                                        const Rectangle &rOutputRect,
+                                        const Rectangle &rVisibleOutputRect ) const;
 
 //--->i56629
     /** Create a new named destination to be used in a link to this document from another PDF document
@@ -209,9 +209,9 @@ public:
     the destination id (to be used in SetLinkDest) or
     -1 if page id does not exist
     */
-    sal_Int32 CreateNamedDest( const OUString& sDestName,  const tools::Rectangle& rRect, sal_Int32 nPageNr = -1 );
+    sal_Int32 CreateNamedDest( const OUString& sDestName,  const Rectangle& rRect, sal_Int32 nPageNr = -1 );
 
-    /** registers a destination for which a destination ID needs to be known immediately, instead of later on setting it via
+    /** registers a destination for which a destinatin ID needs to be known immediately, instead of later on setting it via
         SetLinkDest.
 
         This is used in contexts where a destination is referenced by means other than a link.
@@ -226,7 +226,7 @@ public:
 
     /** provides detailed information about a destination range which previously has been registered using RegisterDest.
     */
-    void        DescribeRegisteredDest( sal_Int32 nDestId, const tools::Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType = PDFWriter::DestAreaType::XYZ );
+    void        DescribeRegisteredDest( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
 
 //<---i56629
 
@@ -246,7 +246,7 @@ public:
     the destination id (to be used in SetLinkDest) or
     -1 if page id does not exist
     */
-    sal_Int32 CreateDest( const tools::Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::DestAreaType::XYZ );
+    sal_Int32 CreateDest( const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
     /** Create a new link on a page
 
     @param rRect
@@ -261,11 +261,7 @@ public:
     the link id (to be used in SetLinkDest, SetLinkURL) or
     -1 if page id does not exist
     */
-    sal_Int32 CreateLink( const tools::Rectangle& rRect, sal_Int32 nPageNr = -1 );
-
-    /// Create a Screen annotation.
-    sal_Int32 CreateScreen(const tools::Rectangle& rRect, sal_Int32 nPageNr);
-
+    sal_Int32 CreateLink( const Rectangle& rRect, sal_Int32 nPageNr = -1 );
     /** Set the destination for a link
         <p>will change a URL type link to a dest link if necessary</p>
 
@@ -297,12 +293,6 @@ public:
         -1 in case the link id does not exist
     */
     sal_Int32 SetLinkURL( sal_Int32 nLinkId, const OUString& rURL );
-
-    /// Set URL for a linked Screen annotation.
-    void SetScreenURL(sal_Int32 nScreenId, const OUString& rURL);
-    /// Set URL for an embedded Screen annotation.
-    void SetScreenStream(sal_Int32 nScreenId, const OUString& rURL);
-
     /** Create a new outline item
 
         @param nParent
@@ -319,7 +309,7 @@ public:
         @returns
         the outline item id of the new item
     */
-    sal_Int32 CreateOutlineItem( sal_Int32 nParent, const OUString& rText, sal_Int32 nDestID );
+    sal_Int32 CreateOutlineItem( sal_Int32 nParent = 0, const OUString& rText = OUString(), sal_Int32 nDestID = -1 );
 
     /** Create a new note on a page
 
@@ -334,7 +324,7 @@ public:
     number of page the note is on (as returned by NewPage)
     or -1 in which case the current page is used
     */
-    void CreateNote( const tools::Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr = -1 );
+    void CreateNote( const Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr = -1 );
 
     /** begin a new logical structure element
 
@@ -450,7 +440,7 @@ public:
     @param rRect
     the new bounding box for the structural element
      */
-    void SetStructureBoundingBox( const tools::Rectangle& rRect );
+    void SetStructureBoundingBox( const Rectangle& rRect );
 
     /** set the ActualText attribute of a structural element
 

@@ -36,6 +36,7 @@
 #include <docsh.hxx>
 #include <shellio.hxx>
 #include <hintids.hxx>
+#include <com/sun/star/embed/ElementModes.hpp>
 #include <DocumentSettingManager.hxx>
 #include <IDocumentDrawModelAccess.hxx>
 
@@ -56,7 +57,7 @@ SwDrawModel::SwDrawModel(SwDoc *const pDoc)
                      pDoc->GetDocShell(), true )
     , m_pDoc( pDoc )
 {
-    SetScaleUnit( MapUnit::MapTwip );
+    SetScaleUnit( MAP_TWIP );
     SetSwapGraphics();
 
     // use common InitDrawModelAndDocShell which will set the associations as needed,
@@ -96,14 +97,15 @@ SwDrawModel::SwDrawModel(SwDoc *const pDoc)
 
     SetForbiddenCharsTable(m_pDoc->GetDocumentSettingManager().getForbiddenCharacterTable());
     // Implementation for asian compression
-    SetCharCompressType( m_pDoc->GetDocumentSettingManager().getCharacterCompressionType() );
+    SetCharCompressType( static_cast<sal_uInt16>(
+            m_pDoc->GetDocumentSettingManager().getCharacterCompressionType()));
 }
 
 // Destructor
 
 SwDrawModel::~SwDrawModel()
 {
-    Broadcast(SdrHint(SdrHintKind::ModelCleared));
+    Broadcast(SdrHint(HINT_MODELCLEARED));
 
     ClearModel(true);
 }
@@ -152,7 +154,6 @@ void SwDrawModel::PutAreaListItems(SfxItemSet& rSet) const
     rSet.Put(SvxGradientListItem(GetGradientList(), SID_GRADIENT_LIST));
     rSet.Put(SvxHatchListItem(GetHatchList(), SID_HATCH_LIST));
     rSet.Put(SvxBitmapListItem(GetBitmapList(), SID_BITMAP_LIST));
-    rSet.Put(SvxPatternListItem(GetPatternList(), SID_PATTERN_LIST));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

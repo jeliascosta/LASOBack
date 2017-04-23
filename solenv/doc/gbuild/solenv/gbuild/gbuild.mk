@@ -23,7 +23,7 @@ using namespace gb::types;
 static const Command SHELL;
 
 
-// gbuild root directories
+// gbuild root directorys
 static Path SRCDIR;
 static Path WORKDIR;
 
@@ -70,11 +70,11 @@ namespace gb
     static const List<String> CPUDEFS;
     /// default c++ compilation compiler flags
     static const List<String> CXXFLAGS;
-    /// platform- and compiler independent default defines
+    /// platform- and compilerin dependent default defines
     static const List<String> GLOBALDEFS;
     /// default objective c++ compilation compiler flags
     static const List<String> OBJCXXFLAGS;
-    /// platformspecific default defines
+    /// platfomspecific default defines
     static const List<String> OSDEFS;
     /// ?
     static const Path SDKDIR;

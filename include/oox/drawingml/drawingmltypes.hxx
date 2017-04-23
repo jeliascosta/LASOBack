@@ -26,7 +26,6 @@
 #include <com/sun/star/awt/Size.hpp>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
 #include <com/sun/star/geometry/IntegerRectangle2D.hpp>
-#include <com/sun/star/style/ParagraphAdjust.hpp>
 #include <com/sun/star/style/TabAlign.hpp>
 #include <com/sun/star/uno/Reference.hxx>
 #include <oox/dllapi.h>
@@ -130,7 +129,7 @@ sal_Int16 GetFontStrikeout( sal_Int32 nToken );
 sal_Int16 GetCaseMap( sal_Int32 nToken );
 
 /** converts a paragraph align to a ParaAdjust */
-css::style::ParagraphAdjust GetParaAdjust( sal_Int32 nAlign );
+sal_Int16 GetParaAdjust( sal_Int32 nAlign );
 
 // Converts vertical adjust tokens to a TextVerticalAdjust item
 css::drawing::TextVerticalAdjust GetTextVerticalAdjust( sal_Int32 nToken );

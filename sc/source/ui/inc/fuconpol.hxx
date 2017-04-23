@@ -29,8 +29,9 @@ class FuConstPolygon : public FuConstruct
     FuConstPolygon(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pView,
                    SdrModel* pDoc, SfxRequest& rReq);
 
-    virtual ~FuConstPolygon() override;
+    virtual ~FuConstPolygon();
                                        // Mouse- & Key-Events
+    virtual bool KeyInput(const KeyEvent& rKEvt) override;
     virtual bool MouseMove(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
@@ -39,7 +40,7 @@ class FuConstPolygon : public FuConstruct
     virtual void Deactivate() override;
 
     // Create default drawing objects via keyboard
-    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const tools::Rectangle& rRectangle) override;
+    virtual SdrObject* CreateDefaultObject(const sal_uInt16 nID, const Rectangle& rRectangle) override;
 };
 
 #endif      // _FUCONPOL_HXX

@@ -28,25 +28,34 @@ class BarChartType : public ChartType
 {
 public:
     explicit BarChartType( css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~BarChartType() override;
+    virtual ~BarChartType();
 
     virtual OUString SAL_CALL
-        getImplementationName() override;
+        getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual sal_Bool SAL_CALL
-        supportsService( const OUString& ServiceName ) override;
+        supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString >
+        getSupportedServiceNames_Static();
 
 protected:
     explicit BarChartType( const BarChartType & rOther );
 
     // ____ XChartType ____
-    virtual OUString SAL_CALL getChartType() override;
+    virtual OUString SAL_CALL getChartType()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedPropertyRoles() override;
+        getSupportedPropertyRoles()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } //  namespace chart

@@ -1,4 +1,4 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4; fill-column: 100 -*- */
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
  * This file is part of the LibreOffice project.
  *
@@ -30,19 +30,15 @@
 #include "op_spreadsheet.hxx"
 #include "op_addin.hxx"
 
-// FIXME: The idea that somebody would bother to (now and then? once a year? once a month?) manually
-// edit a source file and change the value of some #defined constant and run some ill-defined
-// "correctness test" is of course ludicrous. Either things are checked in normal unit tests, in
-// every 'make check', or not at all. The below comments are ridiculous.
-
+/// CONFIGURATIONS
 #define REDUCE_THRESHOLD 201  // set to 4 for correctness testing. priority 1
 #define UNROLLING_FACTOR 16  // set to 4 for correctness testing (if no reduce)
 
-static const char* const publicFunc =
+static const char* publicFunc =
  "\n"
- "#define IllegalFPOperation 503 // #NUM!\n"
- "#define NoValue 519 // #VALUE!\n"
- "#define DivisionByZero 532 // #DIV/0!\n"
+ "#define errIllegalFPOperation 503 // #NUM!\n"
+ "#define errNoValue 519 // #VALUE!\n"
+ "#define errDivisionByZero 532 // #DIV/0!\n"
  "#define NOTAVAILABLE 0x7fff // #N/A\n"
  "\n"
  "double CreateDoubleError(ulong nErr)\n"
@@ -55,9 +51,9 @@ static const char* const publicFunc =
  "    if (isfinite(fVal))\n"
  "        return 0;\n"
  "    if (isinf(fVal))\n"
- "        return IllegalFPOperation; // normal INF\n"
+ "        return errIllegalFPOperation; // normal INF\n"
  "    if (as_ulong(fVal) & 0XFFFF0000u)\n"
- "        return NoValue;            // just a normal NAN\n"
+ "        return errNoValue;            // just a normal NAN\n"
  "    return (as_ulong(fVal) & 0XFFFF); // any other error\n"
  "}\n"
  "\n"
@@ -85,6 +81,17 @@ static const char* const publicFunc =
  "double strequal(unsigned a, unsigned b) { return (a==b)?1.0:0; }\n"
  ;
 
+#ifdef _WIN32
+#ifndef NAN
+namespace {
+
+const unsigned long __nan[2] = {0xffffffff, 0x7fffffff};
+
+}
+#define NAN (*(const double*) __nan)
+#endif
+#endif
+
 #include <list>
 #include <map>
 #include <iostream>
@@ -100,6 +107,40 @@ using namespace formula;
 namespace sc { namespace opencl {
 
 namespace {
+
+std::string StackVarEnumToString(StackVar const e)
+{
+    switch (e)
+    {
+        case svByte:              return "Byte";
+        case svDouble:            return "Double";
+        case svString:            return "String";
+        case svSingleRef:         return "SingleRef";
+        case svDoubleRef:         return "DoubleRef";
+        case svMatrix:            return "Matrix";
+        case svIndex:             return "Index";
+        case svJump:              return "Jump";
+        case svExternal:          return "External";
+        case svFAP:               return "FAP";
+        case svJumpMatrix:        return "JumpMatrix";
+        case svRefList:           return "RefList";
+        case svEmptyCell:         return "EmptyCell";
+        case svMatrixCell:        return "MatrixCell";
+        case svHybridCell:        return "HybridCell";
+        case svHybridValueCell:   return "HybridValueCell";
+        case svExternalSingleRef: return "ExternalSingleRef";
+        case svExternalDoubleRef: return "ExternalDoubleRef";
+        case svExternalName:      return "ExternalName";
+        case svSingleVectorRef:   return "SingleVectorRef";
+        case svDoubleVectorRef:   return "DoubleVectorRef";
+        case svSubroutine:        return "Subroutine";
+        case svError:             return "Error";
+        case svMissing:           return "Missing";
+        case svSep:               return "Sep";
+        case svUnknown:           return "Unknown";
+    }
+    return std::to_string(static_cast<int>(e));
+}
 
 std::string linenumberify(const std::string& s)
 {
@@ -161,7 +202,7 @@ size_t VectorRef::Marshal( cl_kernel k, int argno, int, cl_program )
     }
     else
     {
-        throw Unhandled(__FILE__, __LINE__);
+        throw Unhandled();
     }
     // Obtain cl context
     ::opencl::KernelEnv kEnv;
@@ -196,7 +237,7 @@ size_t VectorRef::Marshal( cl_kernel k, int argno, int, cl_program )
             throw OpenCLError("clEnqueueMapBuffer", err, __FILE__, __LINE__);
 
         for (size_t i = 0; i < szHostBuffer / sizeof(double); i++)
-            rtl::math::setNan(&pNanBuffer[i]);
+            pNanBuffer[i] = NAN;
         err = clEnqueueUnmapMemObject(kEnv.mpkCmdQueue, mpClmem,
             pNanBuffer, 0, nullptr, nullptr);
         // FIXME: Is it intentional to not throw an OpenCLError even if the clEnqueueUnmapMemObject() fails?
@@ -215,17 +256,11 @@ size_t VectorRef::Marshal( cl_kernel k, int argno, int, cl_program )
 /// Currently, only the hash is passed.
 /// TBD(IJSUNG): pass also length and the actual string if there is a
 /// hash function collision
-
-/// FIXME: This idea of passing of hashes of uppercased strings into OpenCL code is fairly potent
-/// crack. It is hopefully not used at all any more, but noticing that there are string arguments
-/// automatically disables use of OpenCL for a formula group. If at some point there are resources
-/// to drain the OpenCL swamp, this should go away.
-
 class ConstStringArgument : public DynamicKernelArgument
 {
 public:
     ConstStringArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft ) :
+        FormulaTreeNodeRef ft ) :
         DynamicKernelArgument(config, s, ft) { }
     /// Generate declaration
     virtual void GenDecl( std::stringstream& ss ) const override
@@ -244,7 +279,7 @@ public:
     {
         std::stringstream ss;
         if (GetFormulaToken()->GetType() != formula::svString)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         FormulaToken* Tok = GetFormulaToken();
         ss << Tok->GetString().getString().toAsciiUpperCase().hashCode() << "U";
         return ss.str();
@@ -265,7 +300,7 @@ public:
         }
         else
         {
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         }
 
         // Pass the scalar result back to the rest of the formula kernel
@@ -282,7 +317,7 @@ class DynamicKernelConstantArgument : public DynamicKernelArgument
 {
 public:
     DynamicKernelConstantArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft ) :
+        FormulaTreeNodeRef ft ) :
         DynamicKernelArgument(config, s, ft) { }
     /// Generate declaration
     virtual void GenDecl( std::stringstream& ss ) const override
@@ -300,7 +335,7 @@ public:
     virtual std::string GenSlidingWindowDeclRef( bool = false ) const override
     {
         if (GetFormulaToken()->GetType() != formula::svDouble)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         return mSymName;
     }
     virtual size_t GetWindowSize() const override
@@ -311,7 +346,7 @@ public:
     {
         FormulaToken* Tok = GetFormulaToken();
         if (Tok->GetType() != formula::svDouble)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         return Tok->GetDouble();
     }
     /// Create buffer and pass the buffer to a given kernel
@@ -331,7 +366,7 @@ class DynamicKernelPiArgument : public DynamicKernelArgument
 {
 public:
     DynamicKernelPiArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft ) :
+        FormulaTreeNodeRef ft ) :
         DynamicKernelArgument(config, s, ft) { }
     /// Generate declaration
     virtual void GenDecl( std::stringstream& ss ) const override
@@ -371,7 +406,7 @@ class DynamicKernelRandomArgument : public DynamicKernelArgument
 {
 public:
     DynamicKernelRandomArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft ) :
+        FormulaTreeNodeRef ft ) :
         DynamicKernelArgument(config, s, ft) { }
     /// Generate declaration
     virtual void GenDecl( std::stringstream& ss ) const override
@@ -737,7 +772,7 @@ class DynamicKernelStringArgument : public VectorRef
 {
 public:
     DynamicKernelStringArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft, int index = 0 ) :
+        FormulaTreeNodeRef ft, int index = 0 ) :
         VectorRef(config, s, ft, index) { }
 
     virtual void GenSlidingWindowFunction( std::stringstream& ) override { }
@@ -847,7 +882,7 @@ class DynamicKernelMixedArgument : public VectorRef
 {
 public:
     DynamicKernelMixedArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft ) :
+        FormulaTreeNodeRef ft ) :
         VectorRef(config, s, ft), mStringArgument(config, s + "s", ft) { }
     virtual void GenSlidingWindowDecl( std::stringstream& ss ) const override
     {
@@ -923,11 +958,11 @@ public:
     DynamicKernelSlidingArgument( const ScCalcConfig& config, const std::string& s,
         FormulaTreeNodeRef ft, std::shared_ptr<SlidingFunctionBase>& CodeGen,
         int index = 0 ) :
-        Base(config, s, ft, index), mpCodeGen(CodeGen)
+        Base(config, s, ft, index), mpCodeGen(CodeGen), mpClmem2(nullptr)
     {
         FormulaToken* t = ft->GetFormulaToken();
         if (t->GetType() != formula::svDoubleVectorRef)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         mpDVR = static_cast<const formula::DoubleVectorRefToken*>(t);
         bIsStartFixed = mpDVR->IsStartFixed();
         bIsEndFixed = mpDVR->IsEndFixed();
@@ -1074,6 +1109,16 @@ public:
             }
         }
     }
+    ~DynamicKernelSlidingArgument()
+    {
+        if (mpClmem2)
+        {
+            cl_int err;
+            err = clReleaseMemObject(mpClmem2);
+            SAL_WARN_IF(err != CL_SUCCESS, "sc.opencl", "clReleaseMemObject failed: " << ::opencl::errorString(err));
+            mpClmem2 = nullptr;
+        }
+    }
 
     size_t GetArrayLength() const { return mpDVR->GetArrayLength(); }
 
@@ -1088,6 +1133,8 @@ protected:
     const formula::DoubleVectorRefToken* mpDVR;
     // from parent nodes
     std::shared_ptr<SlidingFunctionBase> mpCodeGen;
+    // controls whether to invoke the reduction kernel during marshaling or not
+    cl_mem mpClmem2;
 };
 
 /// A mixed string/numberic vector
@@ -1095,7 +1142,7 @@ class DynamicKernelMixedSlidingArgument : public VectorRef
 {
 public:
     DynamicKernelMixedSlidingArgument( const ScCalcConfig& config, const std::string& s,
-        const FormulaTreeNodeRef& ft, std::shared_ptr<SlidingFunctionBase>& CodeGen,
+        FormulaTreeNodeRef ft, std::shared_ptr<SlidingFunctionBase>& CodeGen,
         int index = 0 ) :
         VectorRef(config, s, ft),
         mDoubleArgument(mCalcConfig, s, ft, CodeGen, index),
@@ -1215,7 +1262,7 @@ public:
     {
         FormulaToken* t = ft->GetFormulaToken();
         if (t->GetType() != formula::svDoubleVectorRef)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         mpDVR = static_cast<const formula::DoubleVectorRefToken*>(t);
         bIsStartFixed = mpDVR->IsStartFixed();
         bIsEndFixed = mpDVR->IsEndFixed();
@@ -1445,7 +1492,7 @@ public:
         size_t nCurWindowSize = mpDVR->GetRefRowSize();
         // create clmem buffer
         if (mpDVR->GetArrays()[Base::mnIndex].mpNumericArray == nullptr)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         double* pHostBuffer = const_cast<double*>(
             mpDVR->GetArrays()[Base::mnIndex].mpNumericArray);
         size_t szHostBuffer = nInput * sizeof(double);
@@ -1735,7 +1782,7 @@ public:
         if (isAverage())
             ss <<
                 "if (nCount==0)\n"
-                "    return CreateDoubleError(DivisionByZero);\n";
+                "    return CreateDoubleError(errDivisionByZero);\n";
         else if (isMinOrMax())
             ss <<
                 "if (nCount==0)\n"
@@ -1806,7 +1853,7 @@ public:
                     ((!pCurDVR->IsStartFixed() && !pCurDVR->IsEndFixed())
                         || (pCurDVR->IsStartFixed() && pCurDVR->IsEndFixed()))
                     )
-                    throw Unhandled(__FILE__, __LINE__);
+                    throw Unhandled();
             }
         }
         ss << ") {\n";
@@ -2129,7 +2176,7 @@ public:
     virtual std::string GetBottom() override { return "1.0"; }
     virtual std::string Gen2( const std::string& lhs, const std::string& rhs ) const override
     {
-        return "(" + rhs + "==0 ? CreateDoubleError(DivisionByZero) : (" + lhs + "/" + rhs + ") )";
+        return "(" + rhs + "==0 ? CreateDoubleError(errDivisionByZero) : (" + lhs + "/" + rhs + ") )";
     }
     virtual std::string BinFuncName() const override { return "fdiv"; }
 
@@ -2139,7 +2186,7 @@ public:
         {
             ss <<
                 "if (isnan(" << vSubArguments[argno]->GenSlidingWindowDeclRef() << ")) {\n"
-                "    return CreateDoubleError(DivisionByZero);\n"
+                "    return CreateDoubleError(errDivisionByZero);\n"
                 "}\n";
             return true;
         }
@@ -2223,7 +2270,7 @@ public:
         {
             i += (*it)->Marshal(k, argno + i, nVectorWidth, pProgram);
         }
-        if (dynamic_cast<OpGeoMean*>(mpCodeGen.get()))
+        if (OpGeoMean* OpSumCodeGen = dynamic_cast<OpGeoMean*>(mpCodeGen.get()))
         {
             // Obtain cl context
             ::opencl::KernelEnv kEnv;
@@ -2231,59 +2278,62 @@ public:
             cl_int err;
             cl_mem pClmem2;
 
-            std::vector<cl_mem> vclmem;
-            for (SubArgumentsType::iterator it = mvSubArguments.begin(),
-                e = mvSubArguments.end(); it != e; ++it)
+            if (OpSumCodeGen->NeedReductionKernel())
             {
-                if (VectorRef* VR = dynamic_cast<VectorRef*>(it->get()))
-                    vclmem.push_back(VR->GetCLBuffer());
-                else
-                    vclmem.push_back(nullptr);
-            }
-            pClmem2 = clCreateBuffer(kEnv.mpkContext, CL_MEM_READ_WRITE,
-                sizeof(double) * nVectorWidth, nullptr, &err);
-            if (CL_SUCCESS != err)
-                throw OpenCLError("clCreateBuffer", err, __FILE__, __LINE__);
-            SAL_INFO("sc.opencl", "Created buffer " << pClmem2 << " size " << sizeof(double) << "*" << nVectorWidth << "=" << (sizeof(double)*nVectorWidth));
+                std::vector<cl_mem> vclmem;
+                for (SubArgumentsType::iterator it = mvSubArguments.begin(),
+                    e = mvSubArguments.end(); it != e; ++it)
+                {
+                    if (VectorRef* VR = dynamic_cast<VectorRef*>(it->get()))
+                        vclmem.push_back(VR->GetCLBuffer());
+                    else
+                        vclmem.push_back(nullptr);
+                }
+                pClmem2 = clCreateBuffer(kEnv.mpkContext, CL_MEM_READ_WRITE,
+                    sizeof(double) * nVectorWidth, nullptr, &err);
+                if (CL_SUCCESS != err)
+                    throw OpenCLError("clCreateBuffer", err, __FILE__, __LINE__);
+                SAL_INFO("sc.opencl", "Created buffer " << pClmem2 << " size " << sizeof(double) << "*" << nVectorWidth << "=" << (sizeof(double)*nVectorWidth));
 
-            std::string kernelName = "GeoMean_reduction";
-            cl_kernel redKernel = clCreateKernel(pProgram, kernelName.c_str(), &err);
-            if (err != CL_SUCCESS)
-                throw OpenCLError("clCreateKernel", err, __FILE__, __LINE__);
-            SAL_INFO("sc.opencl", "Created kernel " << redKernel << " with name " << kernelName << " in program " << pProgram);
+                std::string kernelName = "GeoMean_reduction";
+                cl_kernel redKernel = clCreateKernel(pProgram, kernelName.c_str(), &err);
+                if (err != CL_SUCCESS)
+                    throw OpenCLError("clCreateKernel", err, __FILE__, __LINE__);
+                SAL_INFO("sc.opencl", "Created kernel " << redKernel << " with name " << kernelName << " in program " << pProgram);
 
-            // set kernel arg of reduction kernel
-            for (size_t j = 0; j < vclmem.size(); j++)
-            {
-                SAL_INFO("sc.opencl", "Kernel " << redKernel << " arg " << j << ": " << (vclmem[j] ? "cl_mem" : "double") << ": " << vclmem[j]);
-                err = clSetKernelArg(redKernel, j,
-                    vclmem[j] ? sizeof(cl_mem) : sizeof(double),
-                    static_cast<void*>(&vclmem[j]));
+                // set kernel arg of reduction kernel
+                for (size_t j = 0; j < vclmem.size(); j++)
+                {
+                    SAL_INFO("sc.opencl", "Kernel " << redKernel << " arg " << j << ": " << (vclmem[j] ? "cl_mem" : "double") << ": " << vclmem[j]);
+                    err = clSetKernelArg(redKernel, j,
+                        vclmem[j] ? sizeof(cl_mem) : sizeof(double),
+                        static_cast<void*>(&vclmem[j]));
+                    if (CL_SUCCESS != err)
+                        throw OpenCLError("clSetKernelArg", err, __FILE__, __LINE__);
+                }
+                SAL_INFO("sc.opencl", "Kernel " << redKernel << " arg " << vclmem.size() << ": cl_mem: " << pClmem2);
+                err = clSetKernelArg(redKernel, vclmem.size(), sizeof(cl_mem), static_cast<void*>(&pClmem2));
+                if (CL_SUCCESS != err)
+                    throw OpenCLError("clSetKernelArg", err, __FILE__, __LINE__);
+
+                // set work group size and execute
+                size_t global_work_size[] = { 256, (size_t)nVectorWidth };
+                size_t local_work_size[] = { 256, 1 };
+                SAL_INFO("sc.opencl", "Enqueing kernel " << redKernel);
+                err = clEnqueueNDRangeKernel(kEnv.mpkCmdQueue, redKernel, 2, nullptr,
+                    global_work_size, local_work_size, 0, nullptr, nullptr);
+                if (CL_SUCCESS != err)
+                    throw OpenCLError("clEnqueueNDRangeKernel", err, __FILE__, __LINE__);
+                err = clFinish(kEnv.mpkCmdQueue);
+                if (CL_SUCCESS != err)
+                    throw OpenCLError("clFinish", err, __FILE__, __LINE__);
+
+                // Pass pClmem2 to the "real" kernel
+                SAL_INFO("sc.opencl", "Kernel " << k << " arg " << argno << ": cl_mem: " << pClmem2);
+                err = clSetKernelArg(k, argno, sizeof(cl_mem), static_cast<void*>(&pClmem2));
                 if (CL_SUCCESS != err)
                     throw OpenCLError("clSetKernelArg", err, __FILE__, __LINE__);
             }
-            SAL_INFO("sc.opencl", "Kernel " << redKernel << " arg " << vclmem.size() << ": cl_mem: " << pClmem2);
-            err = clSetKernelArg(redKernel, vclmem.size(), sizeof(cl_mem), static_cast<void*>(&pClmem2));
-            if (CL_SUCCESS != err)
-                throw OpenCLError("clSetKernelArg", err, __FILE__, __LINE__);
-
-            // set work group size and execute
-            size_t global_work_size[] = { 256, (size_t)nVectorWidth };
-            size_t local_work_size[] = { 256, 1 };
-            SAL_INFO("sc.opencl", "Enqueing kernel " << redKernel);
-            err = clEnqueueNDRangeKernel(kEnv.mpkCmdQueue, redKernel, 2, nullptr,
-                global_work_size, local_work_size, 0, nullptr, nullptr);
-            if (CL_SUCCESS != err)
-                throw OpenCLError("clEnqueueNDRangeKernel", err, __FILE__, __LINE__);
-            err = clFinish(kEnv.mpkCmdQueue);
-            if (CL_SUCCESS != err)
-                throw OpenCLError("clFinish", err, __FILE__, __LINE__);
-
-            // Pass pClmem2 to the "real" kernel
-            SAL_INFO("sc.opencl", "Kernel " << k << " arg " << argno << ": cl_mem: " << pClmem2);
-            err = clSetKernelArg(k, argno, sizeof(cl_mem), static_cast<void*>(&pClmem2));
-            if (CL_SUCCESS != err)
-                throw OpenCLError("clSetKernelArg", err, __FILE__, __LINE__);
         }
         if (OpSumIfs* OpSumCodeGen = dynamic_cast<OpSumIfs*>(mpCodeGen.get()))
         {
@@ -2447,7 +2497,7 @@ public:
         else
         {
             if (mvSubArguments.size() != 2)
-                throw Unhandled(__FILE__, __LINE__);
+                throw Unhandled();
             bool bArgument1_NeedNested =
                 mvSubArguments[0]->GetFormulaToken()->GetType()
                 != formula::svSingleVectorRef;
@@ -2478,7 +2528,7 @@ public:
         for (const auto & rSubArgument : mvSubArguments)
             rSubArgument->DumpInlineFun(decls, funs);
     }
-    virtual ~DynamicKernelSoPArguments() override
+    virtual ~DynamicKernelSoPArguments()
     {
         if (mpClmem2)
         {
@@ -2561,10 +2611,10 @@ DynamicKernelSoPArguments::DynamicKernelSoPArguments(const ScCalcConfig& config,
     {
         FormulaTreeNodeRef rChild = ft->Children[i];
         if (!rChild)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         FormulaToken* pChild = rChild->GetFormulaToken();
         if (!pChild)
-            throw Unhandled(__FILE__, __LINE__);
+            throw Unhandled();
         OpCode opc = pChild->GetOpCode();
         std::stringstream tmpname;
         tmpname << s << "_" << i;
@@ -2620,7 +2670,7 @@ DynamicKernelSoPArguments::DynamicKernelSoPArguments(const ScCalcConfig& config,
                             {
                                 // Can't handle
                                 SAL_INFO("sc.opencl", "Strings but can't do that.");
-                                throw UnhandledToken(("unhandled operand " + StackVarEnumToString(pChild->GetType()) + " for ocPush").c_str(), __FILE__, __LINE__);
+                                throw UnhandledToken(("unhandled operand " + StackVarEnumToString(pChild->GetType()) + " for ocPush").c_str());
                             }
                             else
                             {
@@ -2732,7 +2782,7 @@ DynamicKernelSoPArguments::DynamicKernelSoPArguments(const ScCalcConfig& config,
                 else
                 {
                     SAL_INFO("sc.opencl", "Fallback case, rejecting for OpenCL");
-                    throw UnhandledToken(("unhandled operand " + StackVarEnumToString(pChild->GetType()) + " for ocPush").c_str(), __FILE__, __LINE__);
+                    throw UnhandledToken(("unhandled operand " + StackVarEnumToString(pChild->GetType()) + " for ocPush").c_str());
                 }
                 break;
             case ocDiv:
@@ -2841,9 +2891,9 @@ DynamicKernelSoPArguments::DynamicKernelSoPArguments(const ScCalcConfig& config,
             case ocISPMT:
                 mvSubArguments.push_back(SoPHelper(mCalcConfig, ts, ft->Children[i], new OpISPMT, nResultSize));
                 break;
-            case ocPDuration:
+            case ocDuration:
                 mvSubArguments.push_back(SoPHelper(mCalcConfig, ts,
-                        ft->Children[i], new OpPDuration, nResultSize));
+                        ft->Children[i], new OpDuration, nResultSize));
                 break;
             case ocSinHyp:
                 mvSubArguments.push_back(SoPHelper(mCalcConfig, ts,
@@ -3622,11 +3672,11 @@ DynamicKernelSoPArguments::DynamicKernelSoPArguments(const ScCalcConfig& config,
                             new OpGestep, nResultSize));
                 }
                 else
-                    throw UnhandledToken("unhandled opcode", __FILE__, __LINE__);
+                    throw UnhandledToken("unhandled opcode");
                 break;
 
             default:
-                throw UnhandledToken("unhandled opcode", __FILE__, __LINE__);
+                throw UnhandledToken("unhandled opcode");
         }
     }
 }
@@ -3635,7 +3685,7 @@ class DynamicKernel : public CompiledFormula
 {
 public:
     DynamicKernel( const ScCalcConfig& config, const FormulaTreeNodeRef& r, int nResultSize );
-    virtual ~DynamicKernel() override;
+    virtual ~DynamicKernel();
 
     static DynamicKernel* create( const ScCalcConfig& config, ScTokenArray& rCode, int nResultSize );
 
@@ -3643,7 +3693,7 @@ public:
     void CodeGen();
 
     /// Produce kernel hash
-    std::string const & GetMD5();
+    std::string GetMD5();
 
     /// Create program, build, and create kernel
     /// TODO cache results based on kernel body hash
@@ -3741,7 +3791,7 @@ void DynamicKernel::CodeGen()
         << " program to be compiled:\n" << linenumberify(mFullProgramSrc));
 }
 
-std::string const & DynamicKernel::GetMD5()
+std::string DynamicKernel::GetMD5()
 {
     if (mKernelHash.empty())
     {
@@ -3995,37 +4045,13 @@ DynamicKernel* DynamicKernel::create( const ScCalcConfig& rConfig, ScTokenArray&
     }
     catch (const UnhandledToken& ut)
     {
-        SAL_INFO("sc.opencl", "Dynamic formula compiler: UnhandledToken: " << ut.mMessage << " at " << ut.mFile << ":" << ut.mLineNumber);
+        SAL_WARN("sc.opencl", "Dynamic formula compiler: unhandled token: " << ut.mMessage << " at " << ut.mFile << ":" << ut.mLineNumber);
         delete pDynamicKernel;
-        return nullptr;
-    }
-    catch (const OpenCLError& oce)
-    {
-        // I think OpenCLError exceptions are actually exceptional (unexpected), so do use SAL_WARN
-        // here.
-        SAL_WARN("sc.opencl", "Dynamic formula compiler: OpenCLError from " << oce.mFunction << ": " << ::opencl::errorString(oce.mError) << " at " << oce.mFile << ":" << oce.mLineNumber);
-
-        // OpenCLError used to go to the catch-all below, and not delete pDynamicKernel. Was that
-        // intentional, should we not do it here then either?
-        delete pDynamicKernel;
-        ::opencl::kernelFailures++;
-        return nullptr;
-    }
-    catch (const Unhandled& uh)
-    {
-        SAL_INFO("sc.opencl", "Dynamic formula compiler: Unhandled at " << uh.mFile << ":" << uh.mLineNumber);
-
-        // Unhandled used to go to the catch-all below, and not delete pDynamicKernel. Was that
-        // intentional, should we not do it here then either?
-        delete pDynamicKernel;
-        ::opencl::kernelFailures++;
         return nullptr;
     }
     catch (...)
     {
-        // FIXME: Do we really want to catch random exceptions here?
-        SAL_WARN("sc.opencl", "Dynamic formula compiler: unexpected exception");
-        // FIXME: Not deleting pDynamicKernel here!?, is that intentional?
+        SAL_WARN("sc.opencl", "Dynamic formula compiler: unhandled compiler error");
         ::opencl::kernelFailures++;
         return nullptr;
     }
@@ -4136,25 +4162,25 @@ public:
         }
         catch (const UnhandledToken& ut)
         {
-            SAL_INFO("sc.opencl", "Dynamic formula compiler: UnhandledToken: " << ut.mMessage << " at " << ut.mFile << ":" << ut.mLineNumber);
+            SAL_WARN("sc.opencl", "Dynamic formula compiler: unhandled token: " << ut.mMessage << " at " << ut.mFile << ":" << ut.mLineNumber);
             ::opencl::kernelFailures++;
             return CLInterpreterResult();
         }
         catch (const OpenCLError& oce)
         {
-            SAL_WARN("sc.opencl", "Dynamic formula compiler: OpenCLError from " << oce.mFunction << ": " << ::opencl::errorString(oce.mError) << " at " << oce.mFile << ":" << oce.mLineNumber);
+            SAL_WARN("sc.opencl", "Dynamic formula compiler: OpenCL error from " << oce.mFunction << ": " << ::opencl::errorString(oce.mError) << " at " << oce.mFile << ":" << oce.mLineNumber);
             ::opencl::kernelFailures++;
             return CLInterpreterResult();
         }
         catch (const Unhandled& uh)
         {
-            SAL_INFO("sc.opencl", "Dynamic formula compiler: Unhandled at " << uh.mFile << ":" << uh.mLineNumber);
+            SAL_WARN("sc.opencl", "Dynamic formula compiler: unhandled case at " << uh.mFile << ":" << uh.mLineNumber);
             ::opencl::kernelFailures++;
             return CLInterpreterResult();
         }
         catch (...)
         {
-            SAL_WARN("sc.opencl", "Dynamic formula compiler: unexpected exception");
+            SAL_WARN("sc.opencl", "Dynamic formula compiler: unhandled compiler error");
             ::opencl::kernelFailures++;
             return CLInterpreterResult();
         }
@@ -4169,7 +4195,7 @@ CLInterpreterContext createCLInterpreterContext( const ScCalcConfig& rConfig,
 {
     CLInterpreterContext aCxt(xGroup->mnLength);
 
-    aCxt.setManagedKernel(DynamicKernel::create(rConfig, rCode, xGroup->mnLength));
+    aCxt.setManagedKernel(static_cast<DynamicKernel*>(DynamicKernel::create(rConfig, rCode, xGroup->mnLength)));
 
     return aCxt;
 }

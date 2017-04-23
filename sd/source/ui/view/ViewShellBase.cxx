@@ -55,6 +55,7 @@
 #include "PresentationViewShell.hxx"
 #include "FormShellManager.hxx"
 #include "ToolBarManager.hxx"
+#include "SidebarPanelId.hxx"
 #include "Window.hxx"
 #include "framework/ConfigurationController.hxx"
 #include "DocumentRenderer.hxx"
@@ -79,19 +80,12 @@
 #include <sfx2/objface.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <svl/whiter.hxx>
-#include <vcl/commandinfoprovider.hxx>
 #include <vcl/msgbox.hxx>
 #include <vcl/settings.hxx>
 
-#include <sfx2/notebookbar/SfxNotebookBar.hxx>
-
 #include <tools/diagnose_ex.h>
-#include <sfx2/lokhelper.hxx>
-#include <LibreOfficeKit/LibreOfficeKitEnums.h>
-#include <editeng/editview.hxx>
 
 #include "fubullet.hxx"
-#include "drawview.hxx"
 
 using namespace sd;
 #define ViewShellBase
@@ -138,7 +132,7 @@ public:
     ::rtl::Reference<ViewTabBar> mpViewTabBar;
 
     // contains the complete area of the current view relative to the frame window
-    ::tools::Rectangle maClientArea;
+    Rectangle maClientArea;
 
     // This is set to true when PrepareClose() is called.
     bool mbIsClosing;
@@ -166,7 +160,7 @@ public:
     void ShowViewTabBar (bool bShow);
 
     void SetUserWantsTabBar(bool inValue);
-    bool GetUserWantsTabBar() { return mbUserWantsTabBar; }
+    inline bool GetUserWantsTabBar() { return mbUserWantsTabBar; }
 
     /** Common code of ViewShellBase::OuterResizePixel() and
         ViewShellBase::InnerResizePixel().
@@ -216,7 +210,7 @@ class FocusForwardingWindow : public vcl::Window
 {
 public:
     FocusForwardingWindow (vcl::Window& rParentWindow, ViewShellBase& rBase);
-    virtual ~FocusForwardingWindow() override;
+    virtual ~FocusForwardingWindow();
     virtual void dispose() override;
     virtual void KeyInput (const KeyEvent& rEvent) override;
     virtual void Command (const CommandEvent& rEvent) override;
@@ -241,7 +235,9 @@ void ViewShellBase::InitInterface_Impl()
 ViewShellBase::ViewShellBase (
     SfxViewFrame* _pFrame,
     SfxViewShell*)
-    : SfxViewShell (_pFrame, SfxViewShellFlags::HAS_PRINTOPTIONS),
+    : SfxViewShell (_pFrame,
+          SfxViewShellFlags::CAN_PRINT
+        | SfxViewShellFlags::HAS_PRINTOPTIONS),
       mpImpl(),
       mpDocShell (nullptr),
       mpDocument (nullptr)
@@ -272,13 +268,6 @@ ViewShellBase::ViewShellBase (
 */
 ViewShellBase::~ViewShellBase()
 {
-    // Notify other LOK views that we are going away.
-    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_VIEW_CURSOR_VISIBLE, "visible", "false");
-    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", "");
-    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", "EMPTY");
-
-    sfx2::SfxNotebookBar::CloseMethod(GetFrame()->GetBindings());
-
     rtl::Reference<SlideShow> xSlideShow(SlideShow::GetSlideShow(*this));
     if (xSlideShow.is() && xSlideShow->dependsOn(this))
         SlideShow::Stop(*this);
@@ -427,7 +416,7 @@ void ViewShellBase::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     {
         switch (pEventHint->GetEventId())
         {
-            case SfxEventHintId::OpenDoc:
+            case SFX_EVENT_OPENDOC:
                 if( GetDocument() && GetDocument()->IsStartWithPresentation() )
                 {
                     if( GetViewFrame() )
@@ -468,7 +457,7 @@ bool ViewShellBase::HasSelection(bool bText) const
         :   SfxViewShell::HasSelection(bText);
 }
 
-void ViewShellBase::InnerResizePixel (const Point& rOrigin, const Size &rSize, bool)
+void ViewShellBase::InnerResizePixel (const Point& rOrigin, const Size &rSize)
 {
     Size aObjSize = GetObjectShell()->GetVisArea().GetSize();
     if ( aObjSize.Width() > 0 && aObjSize.Height() > 0 )
@@ -477,7 +466,7 @@ void ViewShellBase::InnerResizePixel (const Point& rOrigin, const Size &rSize, b
         Size aSize( rSize );
         aSize.Width() -= (aBorder.Left() + aBorder.Right());
         aSize.Height() -= (aBorder.Top() + aBorder.Bottom());
-        Size aObjSizePixel = mpImpl->mpViewWindow->LogicToPixel( aObjSize, MapUnit::Map100thMM );
+        Size aObjSizePixel = mpImpl->mpViewWindow->LogicToPixel( aObjSize, MAP_100TH_MM );
         SfxViewShell::SetZoomFactor(
             Fraction( aSize.Width(), std::max( aObjSizePixel.Width(), (long int)1 ) ),
             Fraction( aSize.Height(), std::max( aObjSizePixel.Height(), (long int)1) ) );
@@ -506,7 +495,7 @@ void ViewShellBase::Rearrange()
     }
     else
     {
-        SAL_WARN("sd.view", "Rearrange: window missing");
+        OSL_TRACE("Rearrange: window missing");
     }
 
     GetViewFrame()->Resize(true);
@@ -549,7 +538,7 @@ sal_uInt16 ViewShellBase::SetPrinter (
           nDiffFlags & SfxPrinterChangeFlags::CHG_SIZE) && pNewPrinter  )
     {
         MapMode aMap = pNewPrinter->GetMapMode();
-        aMap.SetMapUnit(MapUnit::Map100thMM);
+        aMap.SetMapUnit(MAP_100TH_MM);
         MapMode aOldMap = pNewPrinter->GetMapMode();
         pNewPrinter->SetMapMode(aMap);
         Size aNewSize = pNewPrinter->GetOutputSize();
@@ -561,7 +550,7 @@ sal_uInt16 ViewShellBase::SetPrinter (
         if (pDrawViewShell)
         {
             SdPage* pPage = GetDocument()->GetSdPage(
-                0, PageKind::Standard );
+                0, PK_STANDARD );
             pDrawViewShell->SetPageSizeAndBorder (
                 pDrawViewShell->GetPageKind(),
                 aNewSize,
@@ -694,7 +683,7 @@ void ViewShellBase::WriteUserDataSequence (
     // Forward call to main sub shell.
     ViewShell* pShell = GetMainViewShell().get();
     if (pShell != nullptr)
-        pShell->WriteUserDataSequence (rSequence, false);
+        pShell->WriteUserDataSequence (rSequence);
 }
 
 void ViewShellBase::ReadUserDataSequence (
@@ -719,13 +708,13 @@ void ViewShellBase::ReadUserDataSequence (
                 switch (dynamic_cast<DrawViewShell&>(*pShell).GetPageKind())
                 {
                     default:
-                    case PageKind::Standard:
+                    case PK_STANDARD:
                         sViewURL = framework::FrameworkHelper::msImpressViewURL;
                         break;
-                    case PageKind::Notes:
+                    case PK_NOTES:
                         sViewURL = framework::FrameworkHelper::msNotesViewURL;
                         break;
-                    case PageKind::Handout:
+                    case PK_HANDOUT:
                         sViewURL = framework::FrameworkHelper::msHandoutViewURL;
                         break;
                 }
@@ -755,6 +744,11 @@ void ViewShellBase::Activate (bool bIsMDIActivate)
             xConfigurationController->update();
     }
     GetToolBarManager()->RequestUpdate();
+}
+
+void ViewShellBase::Deactivate (bool bIsMDIActivate)
+{
+    SfxViewShell::Deactivate(bIsMDIActivate);
 }
 
 void ViewShellBase::SetZoomFactor (
@@ -813,6 +807,11 @@ SdrView* ViewShellBase::GetDrawView() const
         return pShell->GetDrawView ();
     else
         return SfxViewShell::GetDrawView();
+}
+
+void ViewShellBase::AdjustPosSizePixel (const Point &rOfs, const Size &rSize)
+{
+    SfxViewShell::AdjustPosSizePixel (rOfs, rSize);
 }
 
 void ViewShellBase::SetBusyState (bool bBusy)
@@ -892,15 +891,15 @@ OUString ViewShellBase::GetInitialViewShellType()
                 rProperty.Value >>= nPageKind;
                 switch ((PageKind)nPageKind)
                 {
-                    case PageKind::Standard:
+                    case PK_STANDARD:
                         sRequestedView = FrameworkHelper::msImpressViewURL;
                         break;
 
-                    case PageKind::Handout:
+                    case PK_HANDOUT:
                         sRequestedView = FrameworkHelper::msHandoutViewURL;
                         break;
 
-                    case PageKind::Notes:
+                    case PK_NOTES:
                         sRequestedView = FrameworkHelper::msNotesViewURL;
                         break;
 
@@ -908,7 +907,7 @@ OUString ViewShellBase::GetInitialViewShellType()
                         // The page kind is invalid.  This is probably an
                         // error by the caller.  We use the standard type to
                         // keep things going.
-                        SAL_WARN( "sd.view", "ViewShellBase::GetInitialViewShellType: invalid page kind");
+                        DBG_ASSERT(false, "ViewShellBase::GetInitialViewShellType: invalid page kind");
                         sRequestedView = FrameworkHelper::msImpressViewURL;
                         break;
                 }
@@ -929,7 +928,7 @@ std::shared_ptr<tools::EventMultiplexer> ViewShellBase::GetEventMultiplexer()
     return mpImpl->mpEventMultiplexer;
 }
 
-const ::tools::Rectangle& ViewShellBase::getClientRectangle() const
+const Rectangle& ViewShellBase::getClientRectangle() const
 {
     return mpImpl->maClientArea;
 }
@@ -971,66 +970,48 @@ vcl::Window* ViewShellBase::GetViewWindow()
     return mpImpl->mpViewWindow.get();
 }
 
-OUString ViewShellBase::RetrieveLabelFromCommand( const OUString& aCmdURL ) const
+OUString ImplRetrieveLabelFromCommand( const Reference< XFrame >& xFrame, const OUString& aCmdURL )
 {
-    OUString aModuleName(vcl::CommandInfoProvider::GetModuleIdentifier(GetMainViewShell()->GetViewFrame()->GetFrame().GetFrameInterface()));
-    return vcl::CommandInfoProvider::GetLabelForCommand( aCmdURL, aModuleName );
-}
+    OUString aLabel;
 
-int ViewShellBase::getPart() const
-{
-    ViewShell* pViewShell = framework::FrameworkHelper::Instance(*const_cast<ViewShellBase*>(this))->GetViewShell(FrameworkHelper::msCenterPaneURL).get();
-
-    if (DrawViewShell* pDrawViewShell = dynamic_cast<DrawViewShell*>(pViewShell))
+    if ( !aCmdURL.isEmpty() ) try
     {
-        // curPageId seems to start at 1
-        return pDrawViewShell->GetCurPageId() - 1;
-    }
+        Reference< XComponentContext > xContext( ::comphelper::getProcessComponentContext(), UNO_QUERY_THROW );
 
-    return 0;
-}
+        Reference< XModuleManager2 > xModuleManager( ModuleManager::create(xContext) );
 
-void ViewShellBase::NotifyCursor(SfxViewShell* pOtherShell) const
-{
-    ViewShell* pThisShell = framework::FrameworkHelper::Instance(*const_cast<ViewShellBase*>(this))->GetViewShell(FrameworkHelper::msCenterPaneURL).get();
+        OUString aModuleIdentifier( xModuleManager->identify( Reference<XInterface>( xFrame, UNO_QUERY_THROW ) ) );
 
-    DrawViewShell* pDrawViewShell = dynamic_cast<DrawViewShell*>(pThisShell);
-    if (!pDrawViewShell)
-        return;
-
-    if (this == pOtherShell)
-        return;
-
-    DrawView* pDrawView = pDrawViewShell->GetDrawView();
-    if (!pDrawView)
-        return;
-
-    if (pDrawView->GetTextEditObject())
-    {
-        // Blinking cursor.
-        EditView& rEditView = pDrawView->GetTextEditOutlinerView()->GetEditView();
-        rEditView.RegisterOtherShell(pOtherShell);
-        rEditView.ShowCursor();
-        rEditView.RegisterOtherShell(nullptr);
-        // Text selection, if any.
-        rEditView.DrawSelection(pOtherShell);
-
-        // Shape text lock.
-        if (OutlinerView* pOutlinerView = pDrawView->GetTextEditOutlinerView())
+        if( !aModuleIdentifier.isEmpty() )
         {
-            ::tools::Rectangle aRectangle = pOutlinerView->GetOutputArea();
-            vcl::Window* pWin = pThisShell->GetActiveWindow();
-            if (pWin && pWin->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
-                aRectangle = OutputDevice::LogicToLogic(aRectangle, MapUnit::Map100thMM, MapUnit::MapTwip);
-            OString sRectangle = aRectangle.toString();
-            SfxLokHelper::notifyOtherView(&pDrawViewShell->GetViewShellBase(), pOtherShell, LOK_CALLBACK_VIEW_LOCK, "rectangle", sRectangle);
+            Reference< XNameAccess > const xNameAccess(
+                    frame::theUICommandDescription::get(xContext) );
+            Reference< css::container::XNameAccess > xUICommandLabels( xNameAccess->getByName( aModuleIdentifier ), UNO_QUERY_THROW );
+            Sequence< PropertyValue > aPropSeq;
+            if( xUICommandLabels->getByName( aCmdURL ) >>= aPropSeq )
+            {
+                for( sal_Int32 i = 0; i < aPropSeq.getLength(); i++ )
+                {
+                    if ( aPropSeq[i].Name == "Name" )
+                    {
+                        aPropSeq[i].Value >>= aLabel;
+                        break;
+                    }
+                }
+            }
         }
     }
-    else
+    catch (const Exception&)
     {
-        // Graphic selection.
-        pDrawView->AdjustMarkHdl(pOtherShell);
     }
+
+    return aLabel;
+}
+
+OUString ViewShellBase::RetrieveLabelFromCommand( const OUString& aCmdURL ) const
+{
+    Reference< XFrame > xFrame( GetMainViewShell()->GetViewFrame()->GetFrame().GetFrameInterface(), UNO_QUERY );
+    return ImplRetrieveLabelFromCommand( xFrame, aCmdURL );
 }
 
 //===== ViewShellBase::Implementation =========================================
@@ -1155,7 +1136,7 @@ void ViewShellBase::Implementation::ResizePixel (
         rSize.Height() - aBaseBorder.Top() - aBaseBorder.Bottom());
     mpViewWindow->SetPosSizePixel(aViewWindowPosition, aViewWindowSize);
 
-    maClientArea = ::tools::Rectangle(Point(0,0), aViewWindowSize);
+    maClientArea = Rectangle(Point(0,0), aViewWindowSize);
 }
 
 void ViewShellBase::Implementation::SetPaneVisibility (
@@ -1329,11 +1310,11 @@ void ViewShellBase::Implementation::GetSlotState (SfxItemSet& rSet)
                         case SID_DRAWINGMODE:
                         case SID_NORMAL_MULTI_PANE_GUI:
                         case SID_NOTES_MODE:
-                            bState = pShell->GetEditMode() == EditMode::Page;
+                            bState = pShell->GetEditMode() == EM_PAGE;
                             break;
                         case SID_SLIDE_MASTER_MODE:
                         case SID_NOTES_MASTER_MODE:
-                            bState = pShell->GetEditMode() == EditMode::MasterPage;
+                            bState = pShell->GetEditMode() == EM_MASTERPAGE;
                             break;
                     }
                 }
@@ -1379,7 +1360,7 @@ void CurrentPageSetter::operator() (bool)
             // Get the current page either from the DrawPagesSupplier or the
             // MasterPagesSupplier.
             Any aPage;
-            if (pFrameView->GetViewShEditModeOnLoad() == EditMode::Page)
+            if (pFrameView->GetViewShEditModeOnLoad() == EM_PAGE)
             {
                 Reference<drawing::XDrawPagesSupplier> xPagesSupplier (
                     mrBase.GetController()->getModel(), UNO_QUERY_THROW);
@@ -1408,7 +1389,7 @@ void CurrentPageSetter::operator() (bool)
         }
         catch (const beans::UnknownPropertyException&)
         {
-            SAL_WARN("sd.view", "CurrentPage property unknown");
+            DBG_ASSERT(false,"CurrentPage property unknown");
         }
     }
 }

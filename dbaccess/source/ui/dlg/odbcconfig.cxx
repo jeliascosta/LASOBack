@@ -38,9 +38,8 @@
 #ifdef MACOSX
 #define ODBC_LIBRARY        "libiodbc.dylib"
 #else
-#define ODBC_LIBRARY_PLAIN  "libodbc.so"
 #define ODBC_LIBRARY_1      "libodbc.so.1"
-#define ODBC_LIBRARY        "libodbc.so.2"
+#define ODBC_LIBRARY        "libodbc.so"
 #endif
 #endif
 
@@ -125,10 +124,6 @@ OOdbcEnumeration::OOdbcEnumeration()
     if ( !bLoaded )
         bLoaded = load(ODBC_LIBRARY_1);
 #endif
-#ifdef ODBC_LIBRARY_PLAIN
-    if ( !bLoaded )
-        bLoaded = load(ODBC_LIBRARY_PLAIN);
-#endif
 
     if ( bLoaded )
     {
@@ -152,6 +147,7 @@ OOdbcEnumeration::OOdbcEnumeration()
 OOdbcEnumeration::~OOdbcEnumeration()
 {
     freeEnv();
+    delete m_pImpl;
     unload();
 }
 
@@ -243,7 +239,7 @@ public:
     }
 
 protected:
-    virtual void SAL_CALL run() override
+    virtual void SAL_CALL run()
     {
         osl_setThreadName("dbaui::ProcessTerminationWait");
 
@@ -276,8 +272,8 @@ bool OOdbcManagement::manageDataSources_async()
     // (and note this whole functionality is supported on Windows only, ATM)
     OUString sExecutableName( "$BRAND_BASE_DIR/" LIBO_LIBEXEC_FOLDER "/odbcconfig.exe" );
     ::rtl::Bootstrap::expandMacros( sExecutableName ); //TODO: detect failure
-    oslProcess hProcessHandle(nullptr);
-    oslProcessError eError = osl_executeProcess( sExecutableName.pData, nullptr, 0, 0, nullptr, nullptr, nullptr, 0, &hProcessHandle );
+    oslProcess hProcessHandle(0);
+    oslProcessError eError = osl_executeProcess( sExecutableName.pData, NULL, 0, 0, NULL, NULL, NULL, 0, &hProcessHandle );
     if ( eError != osl_Process_E_None )
         return false;
 

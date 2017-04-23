@@ -190,7 +190,7 @@ void SVGFontExport::implEmbedFont( const vcl::Font& rFont )
                 aFont.SetFontSize( Size( 0, nFontEM ) );
                 aFont.SetAlignment( ALIGN_BASELINE );
 
-                pVDev->SetMapMode( MapUnit::Map100thMM );
+                pVDev->SetMapMode( MAP_100TH_MM );
                 pVDev->SetFont( aFont );
 
                 mrExport.AddAttribute( XML_NAMESPACE_NONE, "id", aCurIdStr += OUString::number( ++mnCurFontId ) );
@@ -229,7 +229,7 @@ void SVGFontExport::implEmbedFont( const vcl::Font& rFont )
 
                     {
                         const Point         aPos;
-                        const tools::PolyPolygon   aMissingGlyphPolyPoly( tools::Rectangle( aPos, aSize ) );
+                        const tools::PolyPolygon   aMissingGlyphPolyPoly( Rectangle( aPos, aSize ) );
 
                         mrExport.AddAttribute( XML_NAMESPACE_NONE, "d", SVGActionWriter::GetPathString( aMissingGlyphPolyPoly, false ) );
 
@@ -257,17 +257,17 @@ void SVGFontExport::implEmbedGlyph( OutputDevice& rOut, const OUString& rCellStr
 
     if( rOut.GetTextOutline( aPolyPoly, rCellStr ) )
     {
-        tools::Rectangle aBoundRect;
+        Rectangle aBoundRect;
 
         aPolyPoly.Scale( 1.0, -1.0 );
 
         if( !rOut.GetTextBoundRect( aBoundRect, rCellStr ) )
-            aBoundRect = tools::Rectangle( Point( 0, 0 ), Size( rOut.GetTextWidth( rCellStr ), 0 ) );
+            aBoundRect = Rectangle( Point( 0, 0 ), Size( rOut.GetTextWidth( rCellStr ), 0 ) );
 
         mrExport.AddAttribute( XML_NAMESPACE_NONE, "unicode", rCellStr );
 
         if( rCellStr[ 0 ] == nSpace && rCellStr.getLength() == 1 )
-            aBoundRect = tools::Rectangle( Point( 0, 0 ), Size( rOut.GetTextWidth( OUString(' ') ), 0 ) );
+            aBoundRect = Rectangle( Point( 0, 0 ), Size( rOut.GetTextWidth( OUString(' ') ), 0 ) );
 
         mrExport.AddAttribute( XML_NAMESPACE_NONE, "horiz-adv-x", OUString::number( aBoundRect.GetWidth() ) );
 

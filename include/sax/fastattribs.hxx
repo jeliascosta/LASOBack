@@ -25,7 +25,7 @@
 #include <com/sun/star/xml/Attribute.hpp>
 #include <com/sun/star/xml/FastAttribute.hpp>
 
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <sax/saxdllapi.h>
 
 #include <map>
@@ -65,17 +65,18 @@ class SAX_DLLPUBLIC FastTokenHandlerBase
      * @return Tokenized form of pStr
      */
     static sal_Int32 getTokenFromChars(
-                         const css::uno::Reference<css::xml::sax::XFastTokenHandler > &xTokenHandler,
+                         const css::uno::Reference<
+                             css::xml::sax::XFastTokenHandler > &xTokenHandler,
                          FastTokenHandlerBase *pTokenHandler /* can be NULL */,
-                         const char *pStr, size_t nLength );
+                         const char *pStr, size_t nLength = 0 );
 };
 
-class SAX_DLLPUBLIC FastAttributeList : public cppu::WeakImplHelper< css::xml::sax::XFastAttributeList >
+class SAX_DLLPUBLIC FastAttributeList : public ::cppu::WeakImplHelper1< css::xml::sax::XFastAttributeList >
 {
 public:
     FastAttributeList( const css::uno::Reference< css::xml::sax::XFastTokenHandler >& xTokenHandler,
                        FastTokenHandlerBase *pOptHandlerBase = nullptr );
-    virtual ~FastAttributeList() override;
+    virtual ~FastAttributeList();
 
     void clear();
     void add( sal_Int32 nToken, const sal_Char* pValue );
@@ -94,71 +95,13 @@ public:
     bool getAsChar( sal_Int32 nToken, const char*& rPos ) const;
 
     // XFastAttributeList
-    virtual sal_Bool SAL_CALL hasAttribute( ::sal_Int32 Token ) override;
-    virtual ::sal_Int32 SAL_CALL getValueToken( ::sal_Int32 Token ) override;
-    virtual ::sal_Int32 SAL_CALL getOptionalValueToken( ::sal_Int32 Token, ::sal_Int32 Default ) override;
-    virtual OUString SAL_CALL getValue( ::sal_Int32 Token ) override;
-    virtual OUString SAL_CALL getOptionalValue( ::sal_Int32 Token ) override;
-    virtual css::uno::Sequence< css::xml::Attribute > SAL_CALL getUnknownAttributes(  ) override;
-    virtual css::uno::Sequence< css::xml::FastAttribute > SAL_CALL getFastAttributes() override;
-
-    /// Use for fast iteration and conversion of attributes
-    class FastAttributeIter {
-        const FastAttributeList &mrList;
-        size_t mnIdx;
-
-    public:
-        FastAttributeIter(const FastAttributeList &rList, size_t nIdx)
-            : mrList(rList), mnIdx(nIdx)
-        {
-        }
-
-        FastAttributeIter& operator++ ()
-        {
-            mnIdx++;
-            return *this;
-        }
-        bool operator!=( const FastAttributeIter& rhs ) const
-        {
-            return mnIdx != rhs.mnIdx;
-        }
-
-        sal_Int32 getToken()
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return mrList.maAttributeTokens[mnIdx];
-        }
-        bool isEmpty()
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return mrList.AttributeValueLength(mnIdx) < 1;
-        }
-        sal_Int32 toInt32()
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return rtl_str_toInt32(mrList.getFastAttributeValue(mnIdx), 10);
-        }
-        OUString toString()
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return OUString(mrList.getFastAttributeValue(mnIdx),
-                            mrList.AttributeValueLength(mnIdx),
-                            RTL_TEXTENCODING_UTF8);
-        }
-
-        const char* toCString()
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return mrList.getFastAttributeValue(mnIdx);
-        }
-        bool isString(const char *str)
-        {
-            assert(mnIdx < mrList.maAttributeTokens.size());
-            return !strcmp(str, mrList.getFastAttributeValue(mnIdx));
-        }
-    };
-    const FastAttributeIter begin() const { return FastAttributeIter(*this, 0); }
-    const FastAttributeIter end() const { return FastAttributeIter(*this, maAttributeTokens.size()); }
+    virtual sal_Bool SAL_CALL hasAttribute( ::sal_Int32 Token ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getValueToken( ::sal_Int32 Token ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getOptionalValueToken( ::sal_Int32 Token, ::sal_Int32 Default ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getValue( ::sal_Int32 Token ) throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getOptionalValue( ::sal_Int32 Token ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::xml::Attribute > SAL_CALL getUnknownAttributes(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::xml::FastAttribute > SAL_CALL getFastAttributes() throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     sal_Char *mpChunk; ///< buffer to store all attribute values - null terminated strings

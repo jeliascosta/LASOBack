@@ -19,18 +19,14 @@
 
 #include "sal/config.h"
 
-#include <cassert>
 #include <list>
 #include <vector>
 
 #include "com/sun/star/bridge/XInstanceProvider.hpp"
-#include "com/sun/star/container/NoSuchElementException.hpp"
 #include "cppuhelper/exc_hlp.hxx"
-#include "o3tl/runtimetooustring.hxx"
 #include "rtl/byteseq.hxx"
 #include "rtl/ref.hxx"
 #include "rtl/ustring.hxx"
-#include "sal/log.hxx"
 #include "sal/types.h"
 #include "typelib/typedescription.hxx"
 #include "uno/dispatcher.hxx"
@@ -55,9 +51,7 @@ IncomingRequest::IncomingRequest(
     setter_(setter), inArguments_(inArguments),
     currentContextMode_(currentContextMode), currentContext_(currentContext)
 {
-    assert(bridge.is());
-    assert(member.is());
-    assert(member.get()->bComplete);
+    OSL_ASSERT(bridge.is() && member.is() && member.get()->bComplete);
 }
 
 IncomingRequest::~IncomingRequest() {}
@@ -79,8 +73,10 @@ void IncomingRequest::execute() const {
                 isExc = !execute_throw(&ret, &outArgs);
             } catch (const std::exception & e) {
                 throw css::uno::RuntimeException(
-                    "caught C++ exception: "
-                    + o3tl::runtimeToOUString(e.what()));
+                    "caught C++ exception: " +
+                    OStringToOUString(
+                         OString(e.what()), RTL_TEXTENCODING_ASCII_US));
+                    // best-effort string conversion
             }
         } catch (const css::uno::RuntimeException &) {
             css::uno::Any exc(cppu::getCaughtException());
@@ -102,14 +98,17 @@ void IncomingRequest::execute() const {
                 tid_, member_, setter_, isExc, ret, outArgs, false);
             return;
         } catch (const css::uno::RuntimeException & e) {
-            SAL_INFO("binaryurp", "caught UNO runtime exception " << e.Message);
+            OSL_TRACE(
+                "caught UNO runtime exception '%s'",
+                (OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8).
+                 getStr()));
         } catch (const std::exception & e) {
-            SAL_INFO("binaryurp", "caught C++ exception " << e.what());
+            OSL_TRACE("caught C++ exception '%s'", e.what());
         }
         bridge_->terminate(false);
     } else {
         if (isExc) {
-            SAL_INFO("binaryurp", "oneway method raised exception");
+            OSL_TRACE("oneway method raised exception");
         }
         bridge_->decrementCalls();
     }
@@ -123,16 +122,15 @@ static size_t size_t_round(size_t val)
 bool IncomingRequest::execute_throw(
     BinaryAny * returnValue, std::vector< BinaryAny > * outArguments) const
 {
-    assert(returnValue != nullptr);
-    assert(
+    OSL_ASSERT(
+        returnValue != nullptr &&
         returnValue->getType().equals(
-            css::uno::TypeDescription(cppu::UnoType<void>::get())));
-    assert(outArguments != nullptr);
-    assert(outArguments->empty());
+            css::uno::TypeDescription(cppu::UnoType<void>::get())) &&
+        outArguments != nullptr && outArguments->empty());
     bool isExc = false;
     switch (functionId_) {
     case SPECIAL_FUNCTION_ID_RESERVED:
-        assert(false); // this cannot happen
+        OSL_ASSERT(false); // this cannot happen
         break;
     case SPECIAL_FUNCTION_ID_RELEASE:
         bridge_->releaseStub(oid_, type_);
@@ -146,10 +144,11 @@ bool IncomingRequest::execute_throw(
                 try {
                     ifc = prov->getInstance(oid_);
                 } catch (const css::container::NoSuchElementException & e) {
-                    SAL_INFO(
-                        "binaryurp",
-                        "initial element " << oid_
-                            << ": NoSuchElementException " << e.Message);
+                    OSL_TRACE(
+                        "initial element '%s': NoSuchElementException '%s'",
+                        OUStringToOString(oid_, RTL_TEXTENCODING_UTF8).getStr(),
+                        (OUStringToOString(e.Message, RTL_TEXTENCODING_UTF8).
+                         getStr()));
                 }
             }
             if (ifc.is()) {
@@ -175,7 +174,7 @@ bool IncomingRequest::execute_throw(
         SAL_FALLTHROUGH;
     default:
         {
-            assert(object_.is());
+            OSL_ASSERT(object_.is());
             css::uno::TypeDescription retType;
             std::list< std::vector< char > > outBufs;
             std::vector< void * > args;
@@ -188,10 +187,10 @@ bool IncomingRequest::execute_throw(
                                 member_.get())->
                         pAttributeTypeRef);
                     if (setter_) {
-                        assert(inArguments_.size() == 1);
+                        OSL_ASSERT(inArguments_.size() == 1);
                         args.push_back(inArguments_[0].getValue(t));
                     } else {
-                        assert(inArguments_.empty());
+                        OSL_ASSERT(inArguments_.empty());
                         retType = t;
                     }
                     break;
@@ -224,11 +223,11 @@ bool IncomingRequest::execute_throw(
                             outArguments->push_back(BinaryAny());
                         }
                     }
-                    assert(i == inArguments_.end());
+                    OSL_ASSERT(i == inArguments_.end());
                     break;
                 }
             default:
-                assert(false); // this cannot happen
+                OSL_ASSERT(false); // this cannot happen
                 break;
             }
             size_t nSize = 0;
@@ -253,7 +252,7 @@ bool IncomingRequest::execute_throw(
                     uno_destructData(&retBuf[0], retType.get(), nullptr);
                 }
                 if (!outArguments->empty()) {
-                    assert(
+                    OSL_ASSERT(
                         member_.get()->eTypeClass ==
                         typelib_TypeClass_INTERFACE_METHOD);
                     typelib_InterfaceMethodTypeDescription * mtd =
@@ -275,8 +274,8 @@ bool IncomingRequest::execute_throw(
                                 &(*j++)[0], mtd->pParams[k].pTypeRef, nullptr);
                         }
                     }
-                    assert(i == outArguments->end());
-                    assert(j == outBufs.end());
+                    OSL_ASSERT(i == outArguments->end());
+                    OSL_ASSERT(j == outBufs.end());
                 }
             }
             break;

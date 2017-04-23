@@ -19,11 +19,8 @@
 
 #include <sal/config.h>
 
-#include <limits>
-
 #include <UndoTable.hxx>
 #include <hintids.hxx>
-#include <o3tl/any.hxx>
 #include <unotools/collatorwrapper.hxx>
 #include <unotools/charclass.hxx>
 #include <editeng/unolingu.hxx>
@@ -179,20 +176,20 @@ const SwTextNode* GetBodyTextNode( const SwDoc& rDoc, SwPosition& rPos,
 
             const SwFormatAnchor &rAnchor = pFlyFormat->GetAnchor();
 
-            if( RndStdIds::FLY_AT_FLY == rAnchor.GetAnchorId() )
+            if( FLY_AT_FLY == rAnchor.GetAnchorId() )
             {
                 // the fly needs to be attached somewhere, so ask it
                 pLayout = static_cast<const SwLayoutFrame*>(static_cast<const SwFlyFrame*>(pLayout)->GetAnchorFrame());
                 continue;
             }
-            else if ((RndStdIds::FLY_AT_PARA == rAnchor.GetAnchorId()) ||
-                     (RndStdIds::FLY_AT_CHAR == rAnchor.GetAnchorId()) ||
-                     (RndStdIds::FLY_AS_CHAR == rAnchor.GetAnchorId()))
+            else if ((FLY_AT_PARA == rAnchor.GetAnchorId()) ||
+                     (FLY_AT_CHAR == rAnchor.GetAnchorId()) ||
+                     (FLY_AS_CHAR == rAnchor.GetAnchorId()))
             {
                 OSL_ENSURE( rAnchor.GetContentAnchor(), "no valid position" );
                 rPos = *rAnchor.GetContentAnchor();
                 pTextNode = rPos.nNode.GetNode().GetTextNode();
-                if ( RndStdIds::FLY_AT_PARA == rAnchor.GetAnchorId() )
+                if ( FLY_AT_PARA == rAnchor.GetAnchorId() )
                 {
                     const_cast<SwTextNode*>(pTextNode)->MakeStartIndex(
                             &rPos.nContent );
@@ -263,7 +260,7 @@ const SwTextNode* GetBodyTextNode( const SwDoc& rDoc, SwPosition& rPos,
 }
 
 SwGetExpFieldType::SwGetExpFieldType(SwDoc* pDc)
-    : SwValueFieldType( pDc, SwFieldIds::GetExp )
+    : SwValueFieldType( pDc, RES_GETEXPFLD )
 {
 }
 
@@ -344,7 +341,7 @@ void SwGetExpField::ChangeExpansion( const SwFrame& rFrame, const SwTextField& r
     // #i82544#
     if( bLateInitialization )
     {
-        SwFieldType* pSetExpField = rDoc.getIDocumentFieldsAccess().GetFieldType(SwFieldIds::SetExp, GetFormula(), false);
+        SwFieldType* pSetExpField = rDoc.getIDocumentFieldsAccess().GetFieldType(RES_SETEXPFLD, GetFormula(), false);
         if( pSetExpField )
         {
             bLateInitialization = false;
@@ -432,7 +429,7 @@ bool SwGetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= 0 != (nSubType & nsSwExtendedSubType::SUB_CMD);
         break;
     case FIELD_PROP_PAR4:
-        rAny <<= sExpand;
+        rAny <<= GetExpStr();
         break;
     default:
         return SwField::QueryValue(rAny, nWhichId);
@@ -446,7 +443,7 @@ bool SwGetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_DOUBLE:
-        SwValueField::SetValue(*o3tl::doAccess<double>(rAny));
+        SwValueField::SetValue(*static_cast<double const *>(rAny.getValue()));
         break;
     case FIELD_PROP_FORMAT:
         rAny >>= nTmp;
@@ -469,7 +466,7 @@ bool SwGetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
             SetSubType( static_cast<sal_uInt16>((GetSubType() & 0xff00) | nTmp));
         break;
     case FIELD_PROP_BOOL2:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
             nSubType |= nsSwExtendedSubType::SUB_CMD;
         else
             nSubType &= (~nsSwExtendedSubType::SUB_CMD);
@@ -488,7 +485,7 @@ bool SwGetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
 }
 
 SwSetExpFieldType::SwSetExpFieldType( SwDoc* pDc, const OUString& rName, sal_uInt16 nTyp )
-    : SwValueFieldType( pDc, SwFieldIds::SetExp ),
+    : SwValueFieldType( pDc, RES_SETEXPFLD ),
     sName( rName ),
     pOutlChgNd( nullptr ),
     sDelim( "." ),
@@ -570,8 +567,8 @@ void SwSetExpFieldType::SetSeqRefNo( SwSetExpField& rField )
     }
 
     // flagged all numbers, so determine the right number
-    std::vector<sal_uInt16>::size_type n = aArr.size();
-    OSL_ENSURE( n <= std::numeric_limits<sal_uInt16>::max(), "Array is too big for using a sal_uInt16 index" );
+    sal_uInt16 n = aArr.size();
+    OSL_ENSURE( n == aArr.size(), "Array is too big for using a sal_uInt16 index" );
 
     if ( n > 0 && aArr[ n-1 ] != n-1 )
     {
@@ -653,7 +650,7 @@ bool SwSetExpFieldType::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         }
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -690,7 +687,7 @@ bool SwSetExpFieldType::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -854,7 +851,7 @@ void SwSetExpField::SetSubType(sal_uInt16 nSub)
     static_cast<SwSetExpFieldType*>(GetTyp())->SetType(nSub & 0xff);
     nSubType = nSub & 0xff00;
 
-    OSL_ENSURE( (nSub & 0xff) != 3, "SubType is illegal!" );
+    OSL_ENSURE( (nSub & 0xff) != 3, "SubType ist illegal!" );
 }
 
 sal_uInt16 SwSetExpField::GetSubType() const
@@ -867,7 +864,7 @@ void SwSetExpField::SetValue( const double& rAny )
     SwValueField::SetValue(rAny);
 
     if( IsSequenceField() )
-        sExpand = FormatNumber( GetValue(), (SvxNumType)GetFormat() );
+        sExpand = FormatNumber( GetValue(), GetFormat() );
     else
         sExpand = static_cast<SwValueFieldType*>(GetTyp())->ExpandValue( rAny,
                                                 GetFormat(), GetLanguage());
@@ -976,7 +973,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL2:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
             nSubType &= ~nsSwExtendedSubType::SUB_INVISIBLE;
         else
             nSubType |= nsSwExtendedSubType::SUB_INVISIBLE;
@@ -988,7 +985,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     case FIELD_PROP_USHORT2:
         {
             rAny >>= nTmp16;
-            if(nTmp16 <= css::style::NumberingType::NUMBER_NONE )
+            if(nTmp16 <= SVX_NUMBER_NONE )
                 SetFormat(nTmp16);
             else {
                 //exception(wrong_value)
@@ -1004,7 +1001,7 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         {
             OUString sTmp;
             rAny >>= sTmp;
-            SetPar1( SwStyleNameMapper::GetUIName( sTmp, SwGetPoolIdFromName::TxtColl ) );
+            SetPar1( SwStyleNameMapper::GetUIName( sTmp, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL ) );
         }
         break;
     case FIELD_PROP_PAR2:
@@ -1034,13 +1031,13 @@ bool SwSetExpField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aPText;
         break;
     case FIELD_PROP_BOOL3:
-        if(*o3tl::doAccess<bool>(rAny))
+        if(*static_cast<sal_Bool const *>(rAny.getValue()))
             nSubType |= nsSwExtendedSubType::SUB_CMD;
         else
             nSubType &= (~nsSwExtendedSubType::SUB_CMD);
         break;
     case FIELD_PROP_BOOL1:
-        SetInputFlag(*o3tl::doAccess<bool>(rAny));
+        SetInputFlag(*static_cast<sal_Bool const *>(rAny.getValue()));
         break;
     case FIELD_PROP_PAR4:
         {
@@ -1072,7 +1069,7 @@ bool SwSetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= (sal_Int16)nSeqNo;
         break;
     case FIELD_PROP_PAR1:
-        rAny <<= OUString ( SwStyleNameMapper::GetProgName(GetPar1(), SwGetPoolIdFromName::TxtColl ) );
+        rAny <<= OUString ( SwStyleNameMapper::GetProgName(GetPar1(), nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL ) );
         break;
     case FIELD_PROP_PAR2:
         {
@@ -1084,7 +1081,7 @@ bool SwSetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         }
         break;
     case FIELD_PROP_DOUBLE:
-        rAny <<= GetValue();
+        rAny <<= (double)GetValue();
         break;
     case FIELD_PROP_SUBTYPE:
         {
@@ -1103,7 +1100,7 @@ bool SwSetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= GetInputFlag();
         break;
     case FIELD_PROP_PAR4:
-        rAny <<= GetExpStr();
+        rAny <<= OUString(GetExpStr());
         break;
     default:
         return SwField::QueryValue(rAny, nWhichId);
@@ -1112,7 +1109,7 @@ bool SwSetExpField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
 }
 
 SwInputFieldType::SwInputFieldType( SwDoc* pD )
-    : SwFieldType( SwFieldIds::Input )
+    : SwFieldType( RES_INPUTFLD )
     , pDoc( pD )
 {
 }
@@ -1148,6 +1145,30 @@ void SwInputField::SetFormatField( SwFormatField& rFormatField )
 }
 
 
+void SwInputField::LockNotifyContentChange()
+{
+    if ( GetFormatField() != nullptr )
+    {
+        SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
+        if ( pTextInputField != nullptr )
+        {
+            pTextInputField->LockNotifyContentChange();
+        }
+    }
+}
+
+void SwInputField::UnlockNotifyContentChange()
+{
+    if ( GetFormatField() != nullptr )
+    {
+        SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
+        if ( pTextInputField != nullptr )
+        {
+            pTextInputField->UnlockNotifyContentChange();
+        }
+    }
+}
+
 void SwInputField::applyFieldContent( const OUString& rNewFieldContent )
 {
     if ( (nSubType & 0x00ff) == INP_TXT )
@@ -1157,28 +1178,16 @@ void SwInputField::applyFieldContent( const OUString& rNewFieldContent )
     else if( (nSubType & 0x00ff) == INP_USR )
     {
         SwUserFieldType* pUserTyp = static_cast<SwUserFieldType*>(
-            static_cast<SwInputFieldType*>(GetTyp())->GetDoc()->getIDocumentFieldsAccess().GetFieldType( SwFieldIds::User, getContent(), false ) );
+            static_cast<SwInputFieldType*>(GetTyp())->GetDoc()->getIDocumentFieldsAccess().GetFieldType( RES_USERFLD, getContent(), false ) );
         if( pUserTyp )
         {
             pUserTyp->SetContent( rNewFieldContent );
 
             // trigger update of the corresponding User Fields and other related Input Fields
-            if ( GetFormatField() != nullptr )
             {
-                SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
-                if ( pTextInputField != nullptr )
-                {
-                    pTextInputField->LockNotifyContentChange();
-                }
-            }
-            pUserTyp->UpdateFields();
-            if ( GetFormatField() != nullptr )
-            {
-                SwTextInputField* pTextInputField = dynamic_cast< SwTextInputField* >(GetFormatField()->GetTextField());
-                if ( pTextInputField != nullptr )
-                {
-                    pTextInputField->UnlockNotifyContentChange();
-                }
+                LockNotifyContentChange();
+                pUserTyp->UpdateFields();
+                UnlockNotifyContentChange();
             }
         }
     }
@@ -1222,7 +1231,7 @@ OUString SwInputField::Expand() const
     if( (nSubType & 0x00ff) == INP_USR )
     {
         SwUserFieldType* pUserTyp = static_cast<SwUserFieldType*>(
-            static_cast<SwInputFieldType*>(GetTyp())->GetDoc()->getIDocumentFieldsAccess().GetFieldType( SwFieldIds::User, getContent(), false ) );
+            static_cast<SwInputFieldType*>(GetTyp())->GetDoc()->getIDocumentFieldsAccess().GetFieldType( RES_USERFLD, getContent(), false ) );
         if( pUserTyp )
             return pUserTyp->GetContent();
     }
@@ -1254,7 +1263,7 @@ bool SwInputField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= aToolTip;
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -1276,7 +1285,7 @@ bool SwInputField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aToolTip;
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }

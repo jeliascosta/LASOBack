@@ -71,7 +71,7 @@ class TestWindow : public Dialog
             Show();
         }
 
-        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
 };
 
 typedef std::function<void (OutputDevice*)>   functor_type;
@@ -95,15 +95,15 @@ void setupMethodStubs( functor_vector_type& res )
     const Point aPt3(0,0);
     const Point aPt4(450,450);
 
-    const tools::Rectangle aRect(aPt1,aPt2);
-    const tools::Rectangle   aRect2(aPt3,aPt4);
+    const Rectangle aRect(aPt1,aPt2);
+    const Rectangle   aRect2(aPt3,aPt4);
     const tools::Polygon aPoly(aRect);
     const tools::Polygon aPoly2(aRect2);
     tools::PolyPolygon aPolyPoly(aPoly);
     aPolyPoly.Insert( aPoly2 );
     tools::Polygon aPoly3(aPoly2);
     aPoly3.Rotate( aPoly3.GetBoundRect().Center(), 900 );
-    const LineInfo    aLineInfo(LineStyle::Solid,5);
+    const LineInfo    aLineInfo(LINE_SOLID,5);
 
 #ifdef FIXME_VDEV
     const OUString    aString("This is a test");
@@ -127,7 +127,7 @@ void setupMethodStubs( functor_vector_type& res )
 
     const Bitmap      aBitmap( aIntro.GetBitmap() );
     Bitmap            aBitmapBW( aBitmap );
-    aBitmapBW.Filter( BmpFilter::EmbossGrey );
+    aBitmapBW.Filter( BMP_FILTER_EMBOSS_GREY );
     Bitmap      aBitmapAlien( Size( 100, 100 ), 8 );
     aBitmapAlien.Erase( COL_RED );
 #endif
@@ -138,11 +138,9 @@ void setupMethodStubs( functor_vector_type& res )
     const BitmapEx    aBitmapExAlpha( aBitmap, aBitmapAlien );
     const BitmapEx    aBitmapExAlphaAlien( aBitmapAlien, aBitmapAlien );
 
-#ifdef NEEDS_QUALITY_PARAMETER
     const Image       aImage( aBitmapEx );
-#endif
-    const Gradient    aGradient(GradientStyle::Elliptical,aBlackColor,aWhiteColor);
-    const Hatch       aHatch(HatchStyle::Triple,aBlackColor,4,450);
+    const Gradient    aGradient(GradientStyle_ELLIPTICAL,aBlackColor,aWhiteColor);
+    const Hatch       aHatch(HatchStyle_TRIPLE,aBlackColor,4,450);
     const Wallpaper   aWallpaper( aWhiteColor );
 
     GDIMetaFile       aMtf;
@@ -274,7 +272,7 @@ void setupMethodStubs( functor_vector_type& res )
         "CopyArea",
         [&] (OutputDevice * pDev) { return pDev->CopyArea(aPt1, aPt3, aRect2.GetSize()); } );
 
-#ifdef NEEDS_QUALITY_PARAMETER
+#ifdef NEEDS_QUALIY_PARAMTER
     /* void DrawBitmap( const Point& rDestPt,
                                     const Bitmap& rBitmap );
     */
@@ -509,7 +507,7 @@ void setupMethodStubs( functor_vector_type& res )
             return pDev->DrawImage(aPt1, aRect.GetSize(), aImage, static_cast<sal_uInt16>(0)));
         });
 
-#endif // NEEDS_QUALITY_PARAMETER
+#endif // NEEDS_QUALITY_PARAMATER
 
     /* void DrawGradient( const Rectangle& rRect, const Gradient& rGradient ); */
     add(res,
@@ -582,7 +580,7 @@ void setupMethodStubs( functor_vector_type& res )
 }
 
 void grindFunc( OutputDevice&                       rTarget,
-                functor_vector_type::const_iterator const & iter,
+                functor_vector_type::const_iterator iter,
                 sal_Int32                           nTurns,
                 const char*                         pMsg )
 {
@@ -614,7 +612,7 @@ void outDevGrind(vcl::RenderContext& rTarget)
     functor_vector_type aMethods;
     setupMethodStubs( aMethods );
 
-    const tools::Rectangle aClipRect(10,10,1000,1000);
+    const Rectangle aClipRect(10,10,1000,1000);
     const tools::Polygon aPoly1( aClipRect );
     tools::Polygon aPoly2( aClipRect );
     aPoly2.Rotate(aClipRect.Center(),450);
@@ -627,37 +625,37 @@ void outDevGrind(vcl::RenderContext& rTarget)
     {
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::OverPaint );
+        rTarget.SetRasterOp( ROP_OVERPAINT );
         rTarget.SetClipRegion();
         grindFunc( rTarget, iter, nTurns, "w/o clip, w/o xor" );
 
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::OverPaint );
+        rTarget.SetRasterOp( ROP_OVERPAINT );
         rTarget.SetClipRegion( vcl::Region( aClipRect ) );
         grindFunc( rTarget, iter, nTurns, "with rect clip, w/o xor" );
 
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::OverPaint );
+        rTarget.SetRasterOp( ROP_OVERPAINT );
         rTarget.SetClipRegion( vcl::Region( aClipPoly ) );
         grindFunc( rTarget, iter, nTurns, "with complex clip, w/o xor" );
 
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::Xor );
+        rTarget.SetRasterOp( ROP_XOR );
         rTarget.SetClipRegion();
         grindFunc( rTarget, iter, nTurns, "w/o clip, with xor" );
 
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::Xor );
+        rTarget.SetRasterOp( ROP_XOR );
         rTarget.SetClipRegion( vcl::Region( aClipRect ) );
         grindFunc( rTarget, iter, nTurns, "with rect clip, with xor" );
 
         rTarget.SetLineColor( Color(COL_BLACK) );
         rTarget.SetFillColor( Color(COL_GREEN) );
-        rTarget.SetRasterOp( RasterOp::Xor );
+        rTarget.SetRasterOp( ROP_XOR );
         rTarget.SetClipRegion( vcl::Region( aClipPoly ) );
         grindFunc( rTarget, iter, nTurns, "with complex clip, with xor" );
 
@@ -665,7 +663,7 @@ void outDevGrind(vcl::RenderContext& rTarget)
     }
 }
 
-void TestWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void TestWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     outDevGrind(rRenderContext);
     fflush(stdout);

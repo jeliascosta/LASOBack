@@ -33,7 +33,7 @@ public:
     explicit            XclImpPageSettings( const XclImpRoot& rRoot );
 
     /** Returns read-only access to the page data. */
-    const XclPageData& GetPageData() const { return maData; }
+    inline const XclPageData& GetPageData() const { return maData; }
 
     /** Initializes the object to be used for a new sheet. */
     void                Initialize();
@@ -58,7 +58,7 @@ public:
     /** Overrides paper size and orientation (used in sheet-charts). */
     void                SetPaperSize( sal_uInt16 nXclPaperSize, bool bPortrait );
     /** Sets or clears the fit-to-pages setting (contained in WSBOOL record). */
-    void         SetFitToPages( bool bFitToPages ) { maData.mbFitToPages = bFitToPages; }
+    inline void         SetFitToPages( bool bFitToPages ) { maData.mbFitToPages = bFitToPages; }
 
     /** Creates a page stylesheet from current settings and sets it at current sheet. */
     void                Finalize();

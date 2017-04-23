@@ -8,7 +8,7 @@ REM ============================================================================
 Option Explicit
 
 REM Access2Base -----------------------------------------------------
-Global Const Access2Base_Version = &quot;1.7.0&quot;
+Global Const Access2Base_Version = &quot;1.5.0&quot;
 
 REM AcCloseSave
 REM -----------------------------------------------------------------
@@ -87,7 +87,6 @@ Global Const vbUShort = 18
 Global Const vbULong = 19
 Global Const vbBigint = 35
 Global Const vbDecimal = 37
-Global Const vbArray = 8192
 
 REM MsgBox constants
 REM -----------------------------------------------------------------
@@ -277,7 +276,6 @@ REM -----------------------------------------------------------------
 Global Const acOutputTable = 0
 Global Const acOutputQuery = 1
 Global Const acOutputForm = 2
-Global Const acOutputArray = -1
 
 REM AcEncoding
 REM -----------------------------------------------------------------
@@ -385,26 +383,11 @@ Global Const msoBarTypeFloater = 12		&apos;	Floating window
 Global Const msoControlButton = 1		&apos;	Command button
 Global Const msoControlPopup = 10		&apos;	Popup, submenu
 
-REM New Lines
+REM New Line
 REM -----------------------------------------------------------------
-Public Function vbCr() As String	:	vbCr = Chr(13)	:	End Function
-Public Function vbLf() As String	:	vbLf = Chr(10)	:	End Function
 Public Function vbNewLine() As String
 Const cstWindows = 1
-	If GetGuiType() = cstWindows Then vbNewLine = vbCR &amp; vbLF Else vbNewLine = vbLF
+	If GetGuiType() = cstWindows Then vbNewLine = Chr(13) &amp; Chr(10) Else vbNewLine = Chr(10)
 End Function	&apos;	vbNewLine V1.4.0
-Public Function vbTab() As String	:	vbTab = Chr(9)	:	End Function
-
-REM Module types
-REM -----------------------------------------------------------------
-Global Const acClassModule = 1
-Global Const acStandardModule = 0
-
-REM (Module) procedure types
-REM -----------------------------------------------------------------
-Global Const vbext_pk_Get = 1			&apos;	A Property Get procedure
-Global Const vbext_pk_Let = 2			&apos;	A Property Let procedure
-Global Const vbext_pk_Proc = 0			&apos;	A Sub or Function procedure
-Global Const vbext_pk_Set = 3			&apos;	A Property Set procedure
 
 </script:module>

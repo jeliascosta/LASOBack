@@ -223,9 +223,9 @@ void SbiExprNode::FoldConstants(SbiParser* pParser)
 {
     if( IsOperand() || eTok == LIKE ) return;
 
-    if (pLeft && !pRight)
+    if (IsUnary())
         FoldConstantsUnaryNode(pParser);
-    else if (pLeft && pRight)
+    else if (IsBinary())
         FoldConstantsBinaryNode(pParser);
 
     if( eNodeType == SbxNUMVAL )

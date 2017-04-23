@@ -57,7 +57,7 @@ ODataColumn::~ODataColumn()
 }
 
 // css::lang::XTypeProvider
-Sequence< Type > ODataColumn::getTypes()
+Sequence< Type > ODataColumn::getTypes() throw (RuntimeException, std::exception)
 {
     OTypeCollection aTypes(cppu::UnoType<XColumn>::get(),
                            cppu::UnoType<XColumnUpdate>::get(),
@@ -65,12 +65,12 @@ Sequence< Type > ODataColumn::getTypes()
     return aTypes.getTypes();
 }
 
-Sequence< sal_Int8 > ODataColumn::getImplementationId()
+Sequence< sal_Int8 > ODataColumn::getImplementationId() throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
-Any SAL_CALL ODataColumn::queryInterface( const Type & _rType )
+Any SAL_CALL ODataColumn::queryInterface( const Type & _rType ) throw (RuntimeException, std::exception)
 {
     Any aReturn = OResultColumn::queryInterface(_rType);
     if (!aReturn.hasValue())
@@ -82,12 +82,12 @@ Any SAL_CALL ODataColumn::queryInterface( const Type & _rType )
 }
 
 // XServiceInfo
-OUString ODataColumn::getImplementationName(  )
+OUString ODataColumn::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return OUString("com.sun.star.sdb.ODataColumn");
 }
 
-Sequence< OUString > ODataColumn::getSupportedServiceNames(  )
+Sequence< OUString > ODataColumn::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aSNS( 3 );
     aSNS[0] = SERVICE_SDBCX_COLUMN;
@@ -106,7 +106,7 @@ void ODataColumn::disposing()
 }
 
 // css::sdb::XColumn
-sal_Bool ODataColumn::wasNull()
+sal_Bool ODataColumn::wasNull() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -114,7 +114,7 @@ sal_Bool ODataColumn::wasNull()
     return m_xRow->wasNull();
 }
 
-OUString ODataColumn::getString()
+OUString ODataColumn::getString() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -122,7 +122,7 @@ OUString ODataColumn::getString()
     return m_xRow->getString(m_nPos);
 }
 
-sal_Bool ODataColumn::getBoolean()
+sal_Bool ODataColumn::getBoolean() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -130,7 +130,7 @@ sal_Bool ODataColumn::getBoolean()
     return m_xRow->getBoolean(m_nPos);
 }
 
-sal_Int8 ODataColumn::getByte()
+sal_Int8 ODataColumn::getByte() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -138,7 +138,7 @@ sal_Int8 ODataColumn::getByte()
     return m_xRow->getByte(m_nPos);
 }
 
-sal_Int16 ODataColumn::getShort()
+sal_Int16 ODataColumn::getShort() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -146,7 +146,7 @@ sal_Int16 ODataColumn::getShort()
     return m_xRow->getShort(m_nPos);
 }
 
-sal_Int32 ODataColumn::getInt()
+sal_Int32 ODataColumn::getInt() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -154,7 +154,7 @@ sal_Int32 ODataColumn::getInt()
     return m_xRow->getInt(m_nPos);
 }
 
-sal_Int64 ODataColumn::getLong()
+sal_Int64 ODataColumn::getLong() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -162,7 +162,7 @@ sal_Int64 ODataColumn::getLong()
     return m_xRow->getLong(m_nPos);
 }
 
-float ODataColumn::getFloat()
+float ODataColumn::getFloat() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -170,7 +170,7 @@ float ODataColumn::getFloat()
     return m_xRow->getFloat(m_nPos);
 }
 
-double ODataColumn::getDouble()
+double ODataColumn::getDouble() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -178,7 +178,7 @@ double ODataColumn::getDouble()
     return m_xRow->getDouble(m_nPos);
 }
 
-Sequence< sal_Int8 > ODataColumn::getBytes()
+Sequence< sal_Int8 > ODataColumn::getBytes() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -186,7 +186,7 @@ Sequence< sal_Int8 > ODataColumn::getBytes()
     return m_xRow->getBytes(m_nPos);
 }
 
-css::util::Date ODataColumn::getDate()
+css::util::Date ODataColumn::getDate() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -194,7 +194,7 @@ css::util::Date ODataColumn::getDate()
     return m_xRow->getDate(m_nPos);
 }
 
-css::util::Time ODataColumn::getTime()
+css::util::Time ODataColumn::getTime() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -202,7 +202,7 @@ css::util::Time ODataColumn::getTime()
     return m_xRow->getTime(m_nPos);
 }
 
-css::util::DateTime ODataColumn::getTimestamp()
+css::util::DateTime ODataColumn::getTimestamp() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -210,7 +210,7 @@ css::util::DateTime ODataColumn::getTimestamp()
     return m_xRow->getTimestamp(m_nPos);
 }
 
-Reference< css::io::XInputStream >  ODataColumn::getBinaryStream()
+Reference< css::io::XInputStream >  ODataColumn::getBinaryStream() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -218,7 +218,7 @@ Reference< css::io::XInputStream >  ODataColumn::getBinaryStream()
     return m_xRow->getBinaryStream(m_nPos);
 }
 
-Reference< css::io::XInputStream >  ODataColumn::getCharacterStream()
+Reference< css::io::XInputStream >  ODataColumn::getCharacterStream() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -226,7 +226,7 @@ Reference< css::io::XInputStream >  ODataColumn::getCharacterStream()
     return m_xRow->getCharacterStream(m_nPos);
 }
 
-Any ODataColumn::getObject(const Reference< css::container::XNameAccess > & typeMap)
+Any ODataColumn::getObject(const Reference< css::container::XNameAccess > & typeMap) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -234,7 +234,7 @@ Any ODataColumn::getObject(const Reference< css::container::XNameAccess > & type
     return m_xRow->getObject(m_nPos, typeMap);
 }
 
-Reference< XRef >  ODataColumn::getRef()
+Reference< XRef >  ODataColumn::getRef() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -242,7 +242,7 @@ Reference< XRef >  ODataColumn::getRef()
     return m_xRow->getRef(m_nPos);
 }
 
-Reference< XBlob >  ODataColumn::getBlob()
+Reference< XBlob >  ODataColumn::getBlob() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -250,7 +250,7 @@ Reference< XBlob >  ODataColumn::getBlob()
     return m_xRow->getBlob(m_nPos);
 }
 
-Reference< XClob >  ODataColumn::getClob()
+Reference< XClob >  ODataColumn::getClob() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -258,7 +258,7 @@ Reference< XClob >  ODataColumn::getClob()
     return m_xRow->getClob(m_nPos);
 }
 
-Reference< XArray >  ODataColumn::getArray()
+Reference< XArray >  ODataColumn::getArray() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard(m_aMutex);
     ::connectivity::checkDisposed(!m_xRow.is());
@@ -267,7 +267,7 @@ Reference< XArray >  ODataColumn::getArray()
 }
 
 // css::sdb::XColumnUpdate
-void ODataColumn::updateNull()
+void ODataColumn::updateNull() throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -275,7 +275,7 @@ void ODataColumn::updateNull()
     m_xRowUpdate->updateNull(m_nPos);
 }
 
-void ODataColumn::updateBoolean(sal_Bool x)
+void ODataColumn::updateBoolean(sal_Bool x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -283,7 +283,7 @@ void ODataColumn::updateBoolean(sal_Bool x)
     m_xRowUpdate->updateBoolean(m_nPos, x);
 }
 
-void ODataColumn::updateByte(sal_Int8 x)
+void ODataColumn::updateByte(sal_Int8 x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -291,7 +291,7 @@ void ODataColumn::updateByte(sal_Int8 x)
     m_xRowUpdate->updateByte(m_nPos, x);
 }
 
-void ODataColumn::updateShort(sal_Int16 x)
+void ODataColumn::updateShort(sal_Int16 x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -299,7 +299,7 @@ void ODataColumn::updateShort(sal_Int16 x)
     m_xRowUpdate->updateShort(m_nPos, x);
 }
 
-void ODataColumn::updateInt(sal_Int32 x)
+void ODataColumn::updateInt(sal_Int32 x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -307,7 +307,7 @@ void ODataColumn::updateInt(sal_Int32 x)
     m_xRowUpdate->updateInt(m_nPos, x);
 }
 
-void ODataColumn::updateLong(sal_Int64 x)
+void ODataColumn::updateLong(sal_Int64 x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -315,7 +315,7 @@ void ODataColumn::updateLong(sal_Int64 x)
     m_xRowUpdate->updateLong(m_nPos, x);
 }
 
-void ODataColumn::updateFloat(float x)
+void ODataColumn::updateFloat(float x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -323,7 +323,7 @@ void ODataColumn::updateFloat(float x)
     m_xRowUpdate->updateFloat(m_nPos, x);
 }
 
-void ODataColumn::updateDouble(double x)
+void ODataColumn::updateDouble(double x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -331,7 +331,7 @@ void ODataColumn::updateDouble(double x)
     m_xRowUpdate->updateDouble(m_nPos, x);
 }
 
-void ODataColumn::updateString(const OUString& x)
+void ODataColumn::updateString(const OUString& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -339,7 +339,7 @@ void ODataColumn::updateString(const OUString& x)
     m_xRowUpdate->updateString(m_nPos, x);
 }
 
-void ODataColumn::updateBytes(const Sequence< sal_Int8 >& x)
+void ODataColumn::updateBytes(const Sequence< sal_Int8 >& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -347,7 +347,7 @@ void ODataColumn::updateBytes(const Sequence< sal_Int8 >& x)
     m_xRowUpdate->updateBytes(m_nPos, x);
 }
 
-void ODataColumn::updateDate(const css::util::Date& x)
+void ODataColumn::updateDate(const css::util::Date& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -355,7 +355,7 @@ void ODataColumn::updateDate(const css::util::Date& x)
     m_xRowUpdate->updateDate(m_nPos, x);
 }
 
-void ODataColumn::updateTime(const css::util::Time& x)
+void ODataColumn::updateTime(const css::util::Time& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -363,7 +363,7 @@ void ODataColumn::updateTime(const css::util::Time& x)
     m_xRowUpdate->updateTime(m_nPos, x);
 }
 
-void ODataColumn::updateTimestamp(const css::util::DateTime& x)
+void ODataColumn::updateTimestamp(const css::util::DateTime& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -371,7 +371,7 @@ void ODataColumn::updateTimestamp(const css::util::DateTime& x)
     m_xRowUpdate->updateTimestamp(m_nPos, x);
 }
 
-void ODataColumn::updateCharacterStream(const Reference< css::io::XInputStream > & x, sal_Int32 length)
+void ODataColumn::updateCharacterStream(const Reference< css::io::XInputStream > & x, sal_Int32 length) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -379,7 +379,7 @@ void ODataColumn::updateCharacterStream(const Reference< css::io::XInputStream >
     m_xRowUpdate->updateCharacterStream(m_nPos, x, length);
 }
 
-void ODataColumn::updateBinaryStream(const Reference< css::io::XInputStream > & x, sal_Int32 length)
+void ODataColumn::updateBinaryStream(const Reference< css::io::XInputStream > & x, sal_Int32 length) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -387,7 +387,7 @@ void ODataColumn::updateBinaryStream(const Reference< css::io::XInputStream > & 
     m_xRowUpdate->updateBinaryStream(m_nPos, x, length);
 }
 
-void ODataColumn::updateNumericObject(const Any& x, sal_Int32 scale)
+void ODataColumn::updateNumericObject(const Any& x, sal_Int32 scale) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());
@@ -395,7 +395,7 @@ void ODataColumn::updateNumericObject(const Any& x, sal_Int32 scale)
     m_xRowUpdate->updateNumericObject(m_nPos, x, scale);
 }
 
-void ODataColumn::updateObject(const Any& x)
+void ODataColumn::updateObject(const Any& x) throw( SQLException, RuntimeException, std::exception )
 {
     MutexGuard aGuard( m_aMutex );
     ::connectivity::checkDisposed(!m_xRowUpdate.is());

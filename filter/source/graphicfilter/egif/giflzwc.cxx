@@ -94,7 +94,7 @@ void GIFImageDataOutputStream::FlushBlockBuf()
     if( nBlockBufSize )
     {
         rStream.WriteUChar( nBlockBufSize );
-        rStream.WriteBytes(pBlockBuf, nBlockBufSize);
+        rStream.Write( pBlockBuf,nBlockBufSize );
         nBlockBufSize = 0;
     }
 }

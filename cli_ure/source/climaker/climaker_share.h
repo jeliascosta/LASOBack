@@ -82,8 +82,7 @@ ref struct Constants
 
 inline ::System::String ^ ustring_to_String( OUString const & ustr )
 {
-    return gcnew ::System::String(
-        reinterpret_cast<wchar_t const *>(ustr.getStr()), 0, ustr.getLength());
+    return gcnew ::System::String( ustr.getStr(), 0, ustr.getLength() );
 }
 
 
@@ -91,7 +90,7 @@ inline OUString String_to_ustring( ::System::String ^ str )
 {
     OSL_ASSERT( sizeof (wchar_t) == sizeof (sal_Unicode) );
     pin_ptr<const wchar_t> chars = PtrToStringChars( str );
-    return OUString(reinterpret_cast<sal_Unicode const *>(chars), str->Length);
+    return OUString( chars, str->Length );
 }
 
 /* If the argument type is a typedef for an interface then the interface

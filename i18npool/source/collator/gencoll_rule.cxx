@@ -27,7 +27,6 @@
 #include <sal/main.h>
 #include <sal/types.h>
 #include <rtl/ustrbuf.hxx>
-#include <o3tl/make_unique.hxx>
 
 #include <unicode/tblcoll.h>
 
@@ -113,7 +112,7 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
     //UCollator *coll = ucol_openRules(Obuf.getStr(), Obuf.getLength(), UCOL_OFF,
     //        UCOL_DEFAULT_STRENGTH, &parseError, &status);
 
-    auto coll = o3tl::make_unique<RuleBasedCollator>(reinterpret_cast<const UChar *>(Obuf.getStr()), status);
+    RuleBasedCollator *coll = new RuleBasedCollator(reinterpret_cast<const UChar *>(Obuf.getStr()), status);    // UChar != sal_Unicode in MinGW
 
     if (U_SUCCESS(status)) {
         std::vector<uint8_t> data;
@@ -129,8 +128,10 @@ SAL_IMPLEMENT_MAIN_WITH_ARGS(argc, argv)
             printf("Could not get rule data from collator\n");
         }
     } else {
-        printf("\nRule parsing error\n");
+        printf("\nRule parsering error\n");
     }
+
+    delete coll;
 
     return U_SUCCESS(status) ? 0 : 1;
 }   // End of main

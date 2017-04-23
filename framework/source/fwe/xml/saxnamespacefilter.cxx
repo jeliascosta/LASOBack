@@ -49,15 +49,18 @@ SaxNamespaceFilter::~SaxNamespaceFilter()
 
 // XDocumentHandler
 void SAL_CALL SaxNamespaceFilter::startDocument()
+    throw ( SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL SaxNamespaceFilter::endDocument()
+    throw(  SAXException, RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL SaxNamespaceFilter::startElement(
     const OUString& rName, const Reference< XAttributeList > &xAttribs )
+    throw(  SAXException, RuntimeException, std::exception )
 {
     XMLNamespaces aXMLNamespaces;
     if ( !m_aNamespaceStack.empty() )
@@ -116,6 +119,7 @@ void SAL_CALL SaxNamespaceFilter::startElement(
 }
 
 void SAL_CALL SaxNamespaceFilter::endElement(const OUString& aName)
+    throw(  SAXException, RuntimeException, std::exception )
 {
     XMLNamespaces& aXMLNamespaces = m_aNamespaceStack.top();
     OUString aNamespaceElementName;
@@ -135,23 +139,27 @@ void SAL_CALL SaxNamespaceFilter::endElement(const OUString& aName)
 }
 
 void SAL_CALL SaxNamespaceFilter::characters(const OUString& aChars)
+    throw(  SAXException, RuntimeException, std::exception )
 {
     xDocumentHandler->characters( aChars );
 }
 
 void SAL_CALL SaxNamespaceFilter::ignorableWhitespace(const OUString& aWhitespaces)
+    throw(  SAXException, RuntimeException, std::exception )
 {
     xDocumentHandler->ignorableWhitespace( aWhitespaces );
 }
 
 void SAL_CALL SaxNamespaceFilter::processingInstruction(
     const OUString& aTarget, const OUString& aData)
+    throw(  SAXException, RuntimeException, std::exception )
 {
     xDocumentHandler->processingInstruction( aTarget, aData );
 }
 
 void SAL_CALL SaxNamespaceFilter::setDocumentLocator(
     const Reference< XLocator > &xLocator)
+    throw(  SAXException, RuntimeException, std::exception )
 {
     m_xLocator = xLocator;
     xDocumentHandler->setDocumentLocator( xLocator );

@@ -94,7 +94,7 @@ void Test::setUp()
 
 void Test::tearDown()
 {
-    xDocShRef.clear();
+    xDocShRef.Clear();
     BootstrapFixture::tearDown();
 }
 
@@ -228,9 +228,8 @@ void Test::SimpleOperators()
     parseandparseagain("coprod{a}", "Coproduct");
     parseandparseagain("int from {r_0} to {r_t} a", "Upper and lower bounds shown with integral (from & to)");
     ParseAndCheck("int csup {r_0} csub {r_t} a", "int csup { r _ 0 } csub { r _ t } a ", "Upper and lower bounds shown with integral (csub & csup)");
-    ParseAndCheck("sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "Sum with sized upper and lower bounds");
+//FIXME    ParseAndCheck("sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "Sum with sized upper and lower bounds");
     parseandparseagain("int{a}", "Integral");
-    parseandparseagain("intd_{1}^{2}{x dx}", "Dynamically-sized integral");
     parseandparseagain("iint{a}", "Double integral");
     parseandparseagain("iiint{a}", "Triple integral");
     parseandparseagain("sum from{3}b", "Lower bound shown with summation symbol");
@@ -521,7 +520,7 @@ void Test::testBinomInBinHor()
     pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef.get());
+    SmCursor aCursor(pTree, xDocShRef);
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end
@@ -549,7 +548,7 @@ void Test::testBinVerInUnary()
     pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef.get());
+    SmCursor aCursor(pTree, xDocShRef);
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end
@@ -578,7 +577,7 @@ void Test::testBinHorInSubSup()
     SmNode* pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef.get());
+    SmCursor aCursor(pTree, xDocShRef);
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // Insert an RSup expression with a BinHor for the exponent
@@ -606,7 +605,7 @@ void Test::testUnaryInMixedNumberAsNumerator()
     SmNode* pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef.get());
+    SmCursor aCursor(pTree, xDocShRef);
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end
@@ -669,8 +668,8 @@ void Test::testMiscEquivalent()
 
 void Test::testParser()
 {
-    char const* const formula = "{ \xf0\x9d\x91\x8e }"; // non-BMP Unicode
-    char const* const expected = "\xf0\x9d\x91\x8e";
+    char const* formula = "{ \xf0\x9d\x91\x8e }"; // non-BMP Unicode
+    char const* expected = "\xf0\x9d\x91\x8e";
 
     OUString sOutput;
     OUString sInput = OUString(formula, strlen(formula), RTL_TEXTENCODING_UTF8);

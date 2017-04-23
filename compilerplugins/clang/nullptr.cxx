@@ -9,10 +9,9 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <limits>
 #include <set>
 
-#include "check.hxx"
+#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -40,16 +39,6 @@ bool isAnyKindOfPointerType(QualType type) {
         || type->isMemberPointerType();
 }
 
-bool isNullPointerCast(CastExpr const * expr) {
-    switch (expr->getCastKind()) {
-    case CK_NullToPointer:
-    case CK_NullToMemberPointer:
-        return true;
-    default:
-        return false;
-    }
-}
-
 class Nullptr:
     public RecursiveASTVisitor<Nullptr>, public loplugin::RewritePlugin
 {
@@ -71,8 +60,6 @@ public:
 
     bool TraverseConstructorInitializer(CXXCtorInitializer * init);
 
-    bool TraverseLinkageSpecDecl(LinkageSpecDecl * decl);
-
     // bool shouldVisitTemplateInstantiations() const { return true; }
 
 private:
@@ -80,7 +67,7 @@ private:
 
     bool isFromCIncludeFile(SourceLocation spellingLocation) const;
 
-    bool isSharedCAndCppCode(SourceLocation location) const;
+    bool isMacroBodyExpansion(SourceLocation location) const;
 
     void visitCXXCtorInitializer(CXXCtorInitializer const * init);
 
@@ -96,14 +83,17 @@ private:
         char const * replacement);
 
     std::set<Expr const *> gnuNulls_;
-    unsigned int externCContexts_ = 0;
 };
 
 bool Nullptr::VisitImplicitCastExpr(CastExpr const * expr) {
     if (ignoreLocation(expr)) {
         return true;
     }
-    if (!isNullPointerCast(expr)) {
+    switch (expr->getCastKind()) {
+    case CK_NullToPointer:
+    case CK_NullToMemberPointer:
+        break;
+    default:
         return true;
     }
     Expr::NullPointerConstantKind k = expr->isNullPointerConstant(
@@ -129,11 +119,6 @@ bool Nullptr::VisitImplicitCastExpr(CastExpr const * expr) {
     case Expr::NPCK_CXX11_nullptr:
         break;
     default:
-        if (loplugin::TypeCheck(expr->getType()).Typedef("locale_t")
-            .GlobalNamespace())
-        {
-            break; // POSIX locale_t is left unspecified
-        }
         handleNull(expr->getSubExpr(), expr->getCastKindName(), k);
         break;
     }
@@ -220,36 +205,26 @@ bool Nullptr::TraverseConstructorInitializer(CXXCtorInitializer * init) {
     return RecursiveASTVisitor::TraverseConstructorInitializer(init);
 }
 
-bool Nullptr::TraverseLinkageSpecDecl(LinkageSpecDecl * decl) {
-    assert(externCContexts_ != std::numeric_limits<unsigned int>::max()); //TODO
-    ++externCContexts_;
-    bool ret = RecursiveASTVisitor::TraverseLinkageSpecDecl(decl);
-    assert(externCContexts_ != 0);
-    --externCContexts_;
-    return ret;
-}
-
 bool Nullptr::isInLokIncludeFile(SourceLocation spellingLocation) const {
     return compiler.getSourceManager().getFilename(spellingLocation)
         .startswith(SRCDIR "/include/LibreOfficeKit/");
 }
 
 bool Nullptr::isFromCIncludeFile(SourceLocation spellingLocation) const {
-    return !compiler.getSourceManager().isInMainFile(spellingLocation)
+    return !compat::isInMainFile(compiler.getSourceManager(), spellingLocation)
         && (StringRef(
                 compiler.getSourceManager().getPresumedLoc(spellingLocation)
                 .getFilename())
             .endswith(".h"));
 }
 
-bool Nullptr::isSharedCAndCppCode(SourceLocation location) const {
-    // Assume that code is intended to be shared between C and C++ if it comes
-    // from an include file ending in .h, and is either in an extern "C" context
-    // or the body of a macro definition:
-    return
-        isFromCIncludeFile(compiler.getSourceManager().getSpellingLoc(location))
-        && (externCContexts_ != 0
-            || compiler.getSourceManager().isMacroBodyExpansion(location));
+bool Nullptr::isMacroBodyExpansion(SourceLocation location) const {
+#if CLANG_VERSION >= 30300
+    return compiler.getSourceManager().isMacroBodyExpansion(location);
+#else
+    return location.isMacroID()
+        && !compiler.getSourceManager().isMacroArgExpansion(location);
+#endif
 }
 
 void Nullptr::visitCXXCtorInitializer(CXXCtorInitializer const * init) {
@@ -280,13 +255,6 @@ void Nullptr::visitCXXCtorInitializer(CXXCtorInitializer const * init) {
 
 void Nullptr::handleZero(Expr const * expr) {
     //TODO: detect NPCK_ZeroExpression where appropriate
-    // Filter out ImplicitCastExpr that will be handled by
-    // VisitImplicitCastExpr:
-    if (auto ice = dyn_cast<ImplicitCastExpr>(expr)) {
-        if (isNullPointerCast(ice)) {
-            return;
-        }
-    }
     auto const lit = dyn_cast<IntegerLiteral>(expr->IgnoreParenImpCasts());
     if (lit != nullptr && !lit->getValue().getBoolValue()) {
         handleNull(expr, nullptr, Expr::NPCK_ZeroLiteral);
@@ -305,7 +273,7 @@ void Nullptr::handleNull(
         while (compiler.getSourceManager().isMacroArgExpansion(loc)) {
             loc = compiler.getSourceManager().getImmediateMacroCallerLoc(loc);
         }
-        if (compiler.getSourceManager().isMacroBodyExpansion(loc)) {
+        if (isMacroBodyExpansion(loc)) {
             if (Lexer::getImmediateMacroName(
                     loc, compiler.getSourceManager(), compiler.getLangOpts())
                 == "NULL")
@@ -317,16 +285,12 @@ void Nullptr::handleNull(
                 }
                 loc = compiler.getSourceManager()
                     .getImmediateExpansionRange(loc).first;
-                if (ignoreLocation(
-                        compiler.getSourceManager().getSpellingLoc(loc)))
-                {
-                    return;
-                }
                 if (isInUnoIncludeFile(
                         compiler.getSourceManager().getSpellingLoc(loc))
                     || isInLokIncludeFile(
                         compiler.getSourceManager().getSpellingLoc(loc))
-                    || isSharedCAndCppCode(loc))
+                    || isFromCIncludeFile(
+                        compiler.getSourceManager().getSpellingLoc(loc)))
                 {
                     //TODO: if !castKind, warn if NULL is passed into fn call
                     // ellipsis, cast to void*
@@ -357,7 +321,7 @@ void Nullptr::handleNull(
     auto const asMacro = !compiler.getLangOpts().CPlusPlus
         || isInUnoIncludeFile(compiler.getSourceManager().getSpellingLoc(loc))
         || isInLokIncludeFile(compiler.getSourceManager().getSpellingLoc(loc))
-        || isSharedCAndCppCode(loc);
+        || isFromCIncludeFile(compiler.getSourceManager().getSpellingLoc(loc));
     assert(!asMacro || nullPointerKind != Expr::NPCK_GNUNull);
     rewriteOrWarn(e, castKind, nullPointerKind, asMacro ? "NULL" : "nullptr");
 }
@@ -372,8 +336,7 @@ void Nullptr::rewriteOrWarn(
             locStart = compiler.getSourceManager()
                 .getImmediateMacroCallerLoc(locStart);
         }
-        if (compiler.getLangOpts().CPlusPlus
-            && compiler.getSourceManager().isMacroBodyExpansion(locStart)
+        if (compiler.getLangOpts().CPlusPlus && isMacroBodyExpansion(locStart)
             && (Lexer::getImmediateMacroName(
                     locStart, compiler.getSourceManager(),
                     compiler.getLangOpts())
@@ -387,8 +350,7 @@ void Nullptr::rewriteOrWarn(
             locEnd = compiler.getSourceManager()
                 .getImmediateMacroCallerLoc(locEnd);
         }
-        if (compiler.getLangOpts().CPlusPlus
-            && compiler.getSourceManager().isMacroBodyExpansion(locEnd)
+        if (compiler.getLangOpts().CPlusPlus && isMacroBodyExpansion(locEnd)
             && (Lexer::getImmediateMacroName(
                     locEnd, compiler.getSourceManager(),
                     compiler.getLangOpts())

@@ -32,6 +32,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "sbxres.hxx"
 #include "sbxbase.hxx"
@@ -44,11 +45,8 @@
 #include "runtime.hxx"
 
 #include <rtl/strbuf.hxx>
-#include <rtl/character.hxx>
 #include <svl/zforlist.hxx>
 #include <comphelper/processfactory.hxx>
-
-#include <o3tl/make_unique.hxx>
 
 
 void ImpGetIntntlSep( sal_Unicode& rcDecimalSep, sal_Unicode& rcThousandSep )
@@ -59,6 +57,10 @@ void ImpGetIntntlSep( sal_Unicode& rcDecimalSep, sal_Unicode& rcThousandSep )
     rcThousandSep = rData.getNumThousandSep()[0];
 }
 
+inline bool ImpIsDigit( sal_Unicode c )
+{
+    return '0' <= c && c <= '9';
+}
 
 /** NOTE: slightly differs from strchr() in that it does not consider the
     terminating NULL character to be part of the string and returns bool
@@ -76,6 +78,10 @@ bool ImpStrChr( const sal_Unicode* p, sal_Unicode c )
     return false;
 }
 
+bool ImpIsAlNum( sal_Unicode c )
+{
+    return c < 128 && isalnum( static_cast<char>(c) );
+}
 
 // scanning a string according to BASIC-conventions
 // but exponent may also be a D, so data type is SbxDOUBLE
@@ -112,8 +118,8 @@ SbxError ImpScan( const OUString& rWSrc, double& nVal, SbxDataType& rType,
         p++;
         bMinus = true;
     }
-    if( rtl::isAsciiDigit( *p ) || ((*p == cNonIntntlDecSep || *p == cIntntlDecSep ||
-                    (cIntntlDecSep && *p == cIntntlGrpSep)) && rtl::isAsciiDigit( *(p+1) )))
+    if( ImpIsDigit( *p ) || ((*p == cNonIntntlDecSep || *p == cIntntlDecSep ||
+                    (cIntntlDecSep && *p == cIntntlGrpSep)) && ImpIsDigit( *(p+1) )))
     {
         short exp = 0;
         short decsep = 0;
@@ -223,7 +229,7 @@ SbxError ImpScan( const OUString& rWSrc, double& nVal, SbxDataType& rType,
                 bRes = false;
         }
         const sal_Unicode* const pCmp = aCmp.getStr();
-        while( rtl::isAsciiAlphanumeric( *p ) )    /* XXX: really munge all alnum also when error? */
+        while( ImpIsAlNum( *p ) )    /* XXX: really munge all alnum also when error? */
         {
             sal_Unicode ch = *p;
             if( ImpStrChr( pCmp, ch ) )
@@ -256,7 +262,7 @@ SbxError ImpScan( const OUString& rWSrc, double& nVal, SbxDataType& rType,
 #if HAVE_FEATURE_SCRIPTING
     else if ( SbiRuntime::isVBAEnabled() )
     {
-        SAL_WARN("basic", "Reporting error converting");
+        OSL_TRACE("Reporting error converting");
         return ERRCODE_SBX_CONVERSION;
     }
 #endif
@@ -310,7 +316,7 @@ static const double roundArray[] = {
 ***************************************************************************/
 
 static void myftoa( double nNum, char * pBuf, short nPrec, short nExpWidth,
-                    bool bPt, bool bFix, sal_Unicode cForceThousandSep )
+                    bool bPt, bool bFix, sal_Unicode cForceThousandSep = 0 )
 {
 
     short nExp = 0;
@@ -472,13 +478,13 @@ bool ImpConvStringExt( OUString& rSrc, SbxDataType eTargetType )
             ImpGetIntntlSep( cDecimalSep, cThousandSep );
             aNewString = rSrc;
 
-            if( cDecimalSep != '.' )
+            if( cDecimalSep != (sal_Unicode)'.' )
             {
                 sal_Int32 nPos = aNewString.indexOf( cDecimalSep );
                 if( nPos != -1 )
                 {
                     sal_Unicode* pStr = const_cast<sal_Unicode*>(aNewString.getStr());
-                    pStr[nPos] = '.';
+                    pStr[nPos] = (sal_Unicode)'.';
                     bChanged = true;
                 }
             }
@@ -580,68 +586,73 @@ bool SbxValue::Scan( const OUString& rSrc, sal_uInt16* pLen )
 }
 
 
-namespace
+ResMgr* implGetResMgr()
 {
-
-ResMgr& implGetResMgr()
-{
-    static ResMgr* const pResMgr( ResMgr::CreateResMgr(
-                               "sb", Application::GetSettings().GetUILanguageTag() ));
-
-    return *pResMgr;
+    static ResMgr* pResMgr = nullptr;
+    if( !pResMgr )
+    {
+        pResMgr = ResMgr::CreateResMgr("sb", Application::GetSettings().GetUILanguageTag() );
+    }
+    return pResMgr;
 }
 
 class SbxValueFormatResId : public ResId
 {
 public:
-    explicit SbxValueFormatResId( sal_uInt32 nId )
-        : ResId( nId, implGetResMgr() )
+    explicit SbxValueFormatResId( sal_uInt16 nId )
+        : ResId( nId, *implGetResMgr() )
     {}
 };
 
-enum class VbaFormatType
+
+enum VbaFormatType
 {
-    Offset,      // standard number format
-    UserDefined, // user defined number format
-    Null
+    VBA_FORMAT_TYPE_OFFSET, // standard number format
+    VBA_FORMAT_TYPE_USERDEFINED, // user defined number format
+    VBA_FORMAT_TYPE_NULL
 };
 
 struct VbaFormatInfo
 {
     VbaFormatType meType;
-    OUStringLiteral mpVbaFormat; // Format string in vba
-    NfIndexTableOffset meOffset; // SvNumberFormatter format index, if meType = VbaFormatType::Offset
-    const char* mpOOoFormat;     // if meType = VbaFormatType::UserDefined
+    OUString mpVbaFormat; // Format string in vba
+    NfIndexTableOffset meOffset; // SvNumberFormatter format index, if meType = VBA_FORMAT_TYPE_OFFSET
+    const char* mpOOoFormat; // if meType = VBA_FORMAT_TYPE_USERDEFINED
 };
 
-const VbaFormatInfo pFormatInfoTable[] =
+#define VBA_FORMAT_OFFSET( pcUtf8, eOffset ) \
+    { VBA_FORMAT_TYPE_OFFSET, OUString(pcUtf8), eOffset, nullptr }
+
+#define VBA_FORMAT_USERDEFINED( pcUtf8, pcDefinedUtf8 ) \
+    { VBA_FORMAT_TYPE_USERDEFINED, OUString(pcUtf8), NF_NUMBER_STANDARD, pcDefinedUtf8 }
+
+static VbaFormatInfo pFormatInfoTable[] =
 {
-    { VbaFormatType::Offset,      OUStringLiteral("Long Date"),   NF_DATE_SYSTEM_LONG,    nullptr },
-    { VbaFormatType::UserDefined, OUStringLiteral("Medium Date"), NF_NUMBER_STANDARD,     "DD-MMM-YY" },
-    { VbaFormatType::Offset,      OUStringLiteral("Short Date"),  NF_DATE_SYSTEM_SHORT,   nullptr },
-    { VbaFormatType::UserDefined, OUStringLiteral("Long Time"),   NF_NUMBER_STANDARD,     "H:MM:SS AM/PM" },
-    { VbaFormatType::Offset,      OUStringLiteral("Medium Time"), NF_TIME_HHMMAMPM,       nullptr },
-    { VbaFormatType::Offset,      OUStringLiteral("Short Time"),  NF_TIME_HHMM,           nullptr },
-    { VbaFormatType::Offset,      OUStringLiteral("ddddd"),       NF_DATE_SYSTEM_SHORT,   nullptr },
-    { VbaFormatType::Offset,      OUStringLiteral("dddddd"),      NF_DATE_SYSTEM_LONG,    nullptr },
-    { VbaFormatType::UserDefined, OUStringLiteral("ttttt"),       NF_NUMBER_STANDARD,     "H:MM:SS AM/PM" },
-    { VbaFormatType::Offset,      OUStringLiteral("ww"),          NF_DATE_WW,             nullptr },
-    { VbaFormatType::Null,        OUStringLiteral(""),            NF_INDEX_TABLE_ENTRIES, nullptr }
+    VBA_FORMAT_OFFSET( "Long Date", NF_DATE_SYSTEM_LONG ),
+    VBA_FORMAT_USERDEFINED( "Medium Date", "DD-MMM-YY" ),
+    VBA_FORMAT_OFFSET( "Short Date", NF_DATE_SYSTEM_SHORT ),
+    VBA_FORMAT_USERDEFINED( "Long Time", "H:MM:SS AM/PM" ),
+    VBA_FORMAT_OFFSET( "Medium Time", NF_TIME_HHMMAMPM ),
+    VBA_FORMAT_OFFSET( "Short Time", NF_TIME_HHMM ),
+    VBA_FORMAT_OFFSET( "ddddd", NF_DATE_SYSTEM_SHORT ),
+    VBA_FORMAT_OFFSET( "dddddd", NF_DATE_SYSTEM_LONG ),
+    VBA_FORMAT_USERDEFINED( "ttttt", "H:MM:SS AM/PM" ),
+    VBA_FORMAT_OFFSET( "ww", NF_DATE_WW ),
+    { VBA_FORMAT_TYPE_NULL, OUString(""), NF_INDEX_TABLE_ENTRIES, nullptr }
 };
 
-const VbaFormatInfo* getFormatInfo( const OUString& rFmt )
+VbaFormatInfo* getFormatInfo( const OUString& rFmt )
 {
-    const VbaFormatInfo* pInfo = pFormatInfoTable;
-    while( pInfo->meType != VbaFormatType::Null )
+    VbaFormatInfo* pInfo = nullptr;
+    sal_Int16 i = 0;
+    while( (pInfo = pFormatInfoTable + i )->meType != VBA_FORMAT_TYPE_NULL )
     {
         if( rFmt.equalsIgnoreAsciiCase( pInfo->mpVbaFormat ) )
             break;
-        ++pInfo;
+        i++;
     }
     return pInfo;
 }
-
-} // namespace
 
 #define VBAFORMAT_GENERALDATE       "General Date"
 #define VBAFORMAT_C                 "c"
@@ -693,10 +704,10 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
             sal_Int32 nCheckPos = 0;
             short nType;
             OUString aFmtStr = *pFmt;
-            const VbaFormatInfo* pInfo = getFormatInfo( aFmtStr );
-            if( pInfo->meType != VbaFormatType::Null )
+            VbaFormatInfo* pInfo = getFormatInfo( aFmtStr );
+            if( pInfo && pInfo->meType != VBA_FORMAT_TYPE_NULL )
             {
-                if( pInfo->meType == VbaFormatType::Offset )
+                if( pInfo->meType == VBA_FORMAT_TYPE_OFFSET )
                 {
                     nIndex = aFormatter.GetFormatIndex( pInfo->meOffset, eLangType );
                 }
@@ -808,7 +819,8 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
             {
                 if( rAppData.eBasicFormaterLangType != eLangType )
                 {
-                    rAppData.pBasicFormater.reset();
+                    delete rAppData.pBasicFormater;
+                    rAppData.pBasicFormater = nullptr;
                 }
             }
             rAppData.eBasicFormaterLangType = eLangType;
@@ -833,8 +845,7 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
                 OUString aFalseStrg = SbxValueFormatResId(STR_BASICKEY_FORMAT_FALSE).toString();
                 OUString aCurrencyFormatStrg = SbxValueFormatResId(STR_BASICKEY_FORMAT_CURRENCY).toString();
 
-                rAppData.pBasicFormater = o3tl::make_unique<SbxBasicFormater>(
-                                                                cComma,c1000,aOnStrg,aOffStrg,
+                rAppData.pBasicFormater = new SbxBasicFormater( cComma,c1000,aOnStrg,aOffStrg,
                                                                 aYesStrg,aNoStrg,aTrueStrg,aFalseStrg,
                                                                 aCurrencyStrg,aCurrencyFormatStrg );
             }
@@ -854,7 +865,7 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
             }
             else
             {
-                rRes = SbxBasicFormater::BasicFormatNull( *pFmt );
+                rRes = rAppData.pBasicFormater->BasicFormatNull( *pFmt );
             }
 
         }

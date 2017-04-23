@@ -145,7 +145,7 @@ long SdwRectangle::GetHeight() const
  * @short:  Calculate coordinate of the original rectangle.
  * @return: a prz rectangle
 **************************************************************************/
-tools::Rectangle SdwRectangle::GetOriginalRect() const
+Rectangle SdwRectangle::GetOriginalRect() const
 {
     if (m_bRotated)
     {
@@ -157,11 +157,11 @@ tools::Rectangle SdwRectangle::GetOriginalRect() const
             aCenter.Y()-(long)((double)nHeight/2+0.5));
         Point aRB(aLT.X()+nWidth, aLT.Y()+nHeight);
 
-        return tools::Rectangle(aLT, aRB);
+        return Rectangle(aLT, aRB);
     }
     else
     {
-        return tools::Rectangle(m_nRectCorner[3], m_nRectCorner[1]);
+        return Rectangle(m_nRectCorner[3], m_nRectCorner[1]);
     }
 }
 /**************************************************************************

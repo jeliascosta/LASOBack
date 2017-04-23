@@ -18,7 +18,6 @@
  */
 
 #include "XMLIndexMarkExport.hxx"
-#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
@@ -92,7 +91,7 @@ void XMLIndexMarkExport::ExportIndexMark(
 
         // collapsed/alternative text entry?
         aAny = rPropSet->getPropertyValue(sIsCollapsed);
-        if (*o3tl::doAccess<bool>(aAny))
+        if (*static_cast<sal_Bool const *>(aAny.getValue()))
         {
             // collapsed entry: needs alternative text
             nElementNo = 0;
@@ -108,7 +107,7 @@ void XMLIndexMarkExport::ExportIndexMark(
         {
             // start and end entries: has ID
             aAny = rPropSet->getPropertyValue(sIsStart);
-            nElementNo = *o3tl::doAccess<bool>(aAny) ? 1 : 2;
+            nElementNo = *static_cast<sal_Bool const *>(aAny.getValue()) ? 1 : 2;
 
             // generate ID
             OUStringBuffer sBuf;
@@ -173,8 +172,10 @@ void XMLIndexMarkExport::ExportTOCMarkAttributes(
     sal_Int16 nLevel = 0;
     Any aAny = rPropSet->getPropertyValue(sLevel);
     aAny >>= nLevel;
+    OUStringBuffer sBuf;
+    ::sax::Converter::convertNumber(sBuf, static_cast<sal_Int32>(nLevel + 1));
     rExport.AddAttribute(XML_NAMESPACE_TEXT, XML_OUTLINE_LEVEL,
-                             OUString::number(nLevel + 1));
+                             sBuf.makeStringAndClear());
 }
 
 static void lcl_ExportPropertyString( SvXMLExport& rExport,
@@ -242,9 +243,11 @@ void XMLIndexMarkExport::GetID(
     OUStringBuffer& sBuf,
     const Reference<XPropertySet> & rPropSet)
 {
+    static const sal_Char sPrefix[] = "IMark";
+
     // HACK: use address of object to form identifier
     sal_Int64 nId = sal::static_int_cast<sal_Int64>(reinterpret_cast<sal_uIntPtr>(rPropSet.get()));
-    sBuf.append("IMark");
+    sBuf.append(sPrefix);
     sBuf.append(nId);
 }
 

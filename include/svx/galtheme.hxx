@@ -104,19 +104,18 @@ private:
                                             return i;
                                     return size_t(-1);
                                 }
-    SAL_DLLPRIVATE static INetURLObject ImplGetURL( const GalleryObject* pObject );
+    SAL_DLLPRIVATE INetURLObject ImplGetURL( const GalleryObject* pObject ) const;
     SAL_DLLPRIVATE INetURLObject ImplCreateUniqueURL( SgaObjKind eObjKind, ConvertDataFormat nFormat = ConvertDataFormat::Unknown );
     SAL_DLLPRIVATE void         ImplSetModified( bool bModified );
     SAL_DLLPRIVATE void         ImplBroadcast( sal_uIntPtr nUpdatePos );
 
     SAL_DLLPRIVATE              GalleryTheme( Gallery* pGallery, GalleryThemeEntry* pThemeEntry );
+    SAL_DLLPRIVATE              virtual ~GalleryTheme();
 
     GalleryTheme(GalleryTheme const &) = delete;
     void operator =(GalleryTheme const &) = delete;
 
 public:
-
-    SAL_DLLPRIVATE              virtual ~GalleryTheme() override;
 
     SAL_DLLPRIVATE static GalleryThemeEntry* CreateThemeEntry( const INetURLObject& rURL, bool bReadOnly );
 
@@ -130,9 +129,10 @@ public:
     SAL_DLLPRIVATE bool         ChangeObjectPos( size_t nOldPos, size_t nNewPos );
 
     const OUString&             GetName() const;
+    SAL_DLLPRIVATE const OUString& GetRealName() const;
 
     // used for building gallery themes during compilation:
-    SAL_DLLPRIVATE void         SetDestDir(const OUString& rDestDir, bool bRelative)
+    SAL_DLLPRIVATE void         SetDestDir(const OUString& rDestDir, bool bRelative = true)
                                 { m_aDestDir = rDestDir; m_bDestDirRelative = bRelative; }
 
     SAL_DLLPRIVATE const INetURLObject& GetThmURL() const;
@@ -159,6 +159,7 @@ public:
 
     bool                        IsReadOnly() const;
     bool                        IsDefault() const;
+    SAL_DLLPRIVATE bool         IsModified() const;
 
     void                        Actualize( const Link<const INetURLObject&, void>& rActualizeLink, GalleryProgress* pProgress = nullptr );
     SAL_DLLPRIVATE void         AbortActualize() { bAbortActualize = true; }
@@ -184,17 +185,17 @@ public:
     SAL_DLLPRIVATE bool         GetThumb( sal_uIntPtr nPos, BitmapEx& rBmp, bool bProgress = false );
 
     bool                        GetGraphic( sal_uIntPtr nPos, Graphic& rGraphic, bool bProgress = false );
-    bool                        InsertGraphic( const Graphic& rGraphic, sal_uIntPtr nInsertPos );
+    bool                        InsertGraphic( const Graphic& rGraphic, sal_uIntPtr nInsertPos = CONTAINER_APPEND );
 
     bool                        GetModel( sal_uIntPtr nPos, SdrModel& rModel, bool bProgress = false );
-    bool                        InsertModel( const FmFormModel& rModel, sal_uIntPtr nInsertPos );
+    bool                        InsertModel( const FmFormModel& rModel, sal_uIntPtr nInsertPos = CONTAINER_APPEND );
 
     SAL_DLLPRIVATE bool         GetModelStream( sal_uIntPtr nPos, tools::SvRef<SotStorageStream>& rModelStreamRef );
-    SAL_DLLPRIVATE bool         InsertModelStream( const tools::SvRef<SotStorageStream>& rModelStream, sal_uIntPtr nInsertPos );
+    SAL_DLLPRIVATE bool         InsertModelStream( const tools::SvRef<SotStorageStream>& rModelStream, sal_uIntPtr nInsertPos = CONTAINER_APPEND );
 
     SAL_DLLPRIVATE bool         GetURL( sal_uIntPtr nPos, INetURLObject& rURL );
     bool                        InsertURL( const INetURLObject& rURL, sal_uIntPtr nInsertPos = CONTAINER_APPEND );
-    SAL_DLLPRIVATE bool         InsertFileOrDirURL( const INetURLObject& rFileOrDirURL, sal_uIntPtr nInsertPos );
+    SAL_DLLPRIVATE bool         InsertFileOrDirURL( const INetURLObject& rFileOrDirURL, sal_uIntPtr nInsertPos = CONTAINER_APPEND );
 
     SAL_DLLPRIVATE bool         InsertTransferable( const css::uno::Reference< css::datatransfer::XTransferable >& rxTransferable, sal_uIntPtr nInsertPos );
 

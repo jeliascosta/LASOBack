@@ -10,6 +10,7 @@
 #include <memory>
 #include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
+#include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/io/XInputStream.hpp>
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/ucb/XContent.hpp>
@@ -23,7 +24,6 @@
 #include <osl/diagnose.h>
 #include <rtl/tencinfo.h>
 #include <ucbhelper/content.hxx>
-#include <unotools/ucbhelper.hxx>
 
 #include <DirectoryStream.hxx>
 #include <DocumentHandler.hxx>
@@ -47,6 +47,7 @@ using writerperfect::DocumentHandler;
 using writerperfect::WPXSvInputStream;
 
 namespace beans = com::sun::star::beans;
+namespace container = com::sun::star::container;
 namespace ucb = com::sun::star::ucb;
 
 bool KeynoteImportFilter::doImportDocument(librevenge::RVNGInputStream &rInput, OdpGenerator &rGenerator, utl::MediaDescriptor &)
@@ -67,6 +68,7 @@ bool KeynoteImportFilter::doDetectFormat(librevenge::RVNGInputStream &rInput, OU
 
 // XExtendedFilterDetection
 OUString SAL_CALL KeynoteImportFilter::detect(css::uno::Sequence< css::beans::PropertyValue > &Descriptor)
+throw(css::uno::RuntimeException, std::exception)
 {
     sal_Int32 nLength = Descriptor.getLength();
     sal_Int32 nNewLength = nLength + 2;
@@ -130,9 +132,7 @@ OUString SAL_CALL KeynoteImportFilter::detect(css::uno::Sequence< css::beans::Pr
      */
     if (xContent.is())
     {
-        ucbhelper::Content aContent(xContent,
-                                    utl::UCBContentHelper::getDefaultCommandEnvironment(),
-                                    comphelper::getProcessComponentContext());
+        ucbhelper::Content aContent(xContent, Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext());
         try
         {
             if (aContent.isFolder())
@@ -157,21 +157,25 @@ OUString SAL_CALL KeynoteImportFilter::detect(css::uno::Sequence< css::beans::Pr
         if (bIsPackage)   // we passed a directory stream, but the filter claims it's APXL file?
             return OUString();
 
-        const std::shared_ptr<writerperfect::DirectoryStream> pDir = writerperfect::DirectoryStream::createForParent(xContent);
-        input = pDir;
-        if (bool(input))
+        const Reference < container::XChild > xChild(xContent, UNO_QUERY);
+        if (xChild.is())
         {
-            if (libetonyek::EtonyekDocument::CONFIDENCE_EXCELLENT == libetonyek::EtonyekDocument::isSupported(input.get()))
+            const Reference < ucb::XContent > xPackageContent(xChild->getParent(), UNO_QUERY);
+            if (xPackageContent.is())
             {
-                xContent = pDir->getContent();
-                bUCBContentChanged = true;
-                bIsPackage = true;
-            }
-            else
-            {
-                // The passed stream has been detected as APXL file, but its parent dir is not a valid Keynote
-                // package? Something is wrong here...
-                return OUString();
+                input.reset(new writerperfect::DirectoryStream(xPackageContent));
+                if (libetonyek::EtonyekDocument::CONFIDENCE_EXCELLENT == libetonyek::EtonyekDocument::isSupported(input.get()))
+                {
+                    xContent = xPackageContent;
+                    bUCBContentChanged = true;
+                    bIsPackage = true;
+                }
+                else
+                {
+                    // The passed stream has been detected as APXL file, but its parent dir is not a valid Keynote
+                    // package? Something is wrong here...
+                    return OUString();
+                }
             }
         }
     }
@@ -234,16 +238,19 @@ OUString SAL_CALL KeynoteImportFilter::detect(css::uno::Sequence< css::beans::Pr
 
 // XServiceInfo
 OUString SAL_CALL KeynoteImportFilter::getImplementationName()
+throw (RuntimeException, std::exception)
 {
     return OUString("org.libreoffice.comp.Impress.KeynoteImportFilter");
 }
 
 sal_Bool SAL_CALL KeynoteImportFilter::supportsService(const OUString &rServiceName)
+throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL KeynoteImportFilter::getSupportedServiceNames()
+throw (RuntimeException, std::exception)
 {
     Sequence < OUString > aRet(2);
     OUString *pArray = aRet.getArray();

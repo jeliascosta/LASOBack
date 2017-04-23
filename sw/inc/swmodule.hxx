@@ -18,21 +18,18 @@
  */
 #ifndef INCLUDED_SW_INC_SWMODULE_HXX
 #define INCLUDED_SW_INC_SWMODULE_HXX
-
-#include <sal/config.h>
-
-#include <cstddef>
-
 #include <tools/fldunit.hxx>
 #include <svl/lstner.hxx>
 #include <unotools/options.hxx>
 #include <sfx2/module.hxx>
 
+#include <tools/shl.hxx>
 #include "swdllapi.h"
 #include "shellid.hxx"
 #include <fldupde.hxx>
 #include <com/sun/star/linguistic2/XLinguServiceEventListener.hpp>
 #include <com/sun/star/linguistic2/XLanguageGuessing.hpp>
+#include <editeng/svxenum.hxx>
 
 class Color;
 class SfxItemSet;
@@ -55,7 +52,7 @@ namespace svtools{ class ColorConfig;}
 class SvtAccessibilityOptions;
 class SvtCTLOptions;
 class SvtUserOptions;
-enum class SwCompareMode;
+
 struct SwDBData;
 
 enum class SvViewOpt {
@@ -100,7 +97,7 @@ class SW_DLLPUBLIC SwModule: public SfxModule, public SfxListener, public utl::C
     SwView*             m_pView;
 
     // List of all Redline-authors.
-    std::vector<OUString> m_pAuthorNames;
+    std::vector<OUString>* m_pAuthorNames;
 
     // DictionaryList listener to trigger spellchecking or hyphenation
     css::uno::Reference< css::linguistic2::XLinguServiceEventListener > m_xLinguServiceEventListener;
@@ -113,7 +110,7 @@ class SW_DLLPUBLIC SwModule: public SfxModule, public SfxListener, public utl::C
     // Catch hint for DocInfo.
     virtual void        Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-    virtual void        ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+    virtual void        ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
 protected:
     // Envelopes, labels.
@@ -136,11 +133,11 @@ public:
                 SfxObjectFactory* pWebFact,
                     SfxObjectFactory* pGlobalFact );
 
-    virtual ~SwModule() override;
+    virtual ~SwModule();
 
     // Set view for internal use only. It is public only for technical reasons.
-    void        SetView(SwView* pVw) { m_pView = pVw; }
-    SwView*     GetView() { return m_pView; }
+    inline  void        SetView(SwView* pVw) { m_pView = pVw; }
+    inline  SwView*     GetView() { return m_pView; }
 
     // Handler for slots.
     void                StateOther(SfxItemSet &);
@@ -191,21 +188,19 @@ public:
     bool            IsInsTableAlignNum(bool bHTML) const;
 
     // Redlining.
-    std::size_t         GetRedlineAuthor();
-    OUString            GetRedlineAuthor(std::size_t nPos);
-    /// See SwXTextDocument::getTrackedChangeAuthors().
-    OUString GetRedlineAuthorInfo();
-    std::size_t         InsertRedlineAuthor(const OUString& rAuthor);
+    sal_uInt16          GetRedlineAuthor();
+    OUString            GetRedlineAuthor(sal_uInt16 nPos);
+    sal_uInt16          InsertRedlineAuthor(const OUString& rAuthor);
     void                SetRedlineAuthor(const OUString& rAuthor); // for unit tests
 
-    void                GetInsertAuthorAttr(std::size_t nAuthor, SfxItemSet &rSet);
-    void                GetDeletedAuthorAttr(std::size_t nAuthor, SfxItemSet &rSet);
-    void                GetFormatAuthorAttr(std::size_t nAuthor, SfxItemSet &rSet);
+    void                GetInsertAuthorAttr(sal_uInt16 nAuthor, SfxItemSet &rSet);
+    void                GetDeletedAuthorAttr(sal_uInt16 nAuthor, SfxItemSet &rSet);
+    void                GetFormatAuthorAttr(sal_uInt16 nAuthor, SfxItemSet &rSet);
 
     sal_uInt16              GetRedlineMarkPos();
     const Color&            GetRedlineMarkColor();
 
-    SwCompareMode      GetCompareMode() const;
+    SvxCompareMode      GetCompareMode() const;
     bool            IsUseRsid() const;
     bool            IsIgnorePieces() const;
     sal_uInt16          GetPieceLen() const;
@@ -224,7 +219,6 @@ public:
     virtual SfxItemSet*  CreateItemSet( sal_uInt16 nId ) override;
     virtual void         ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet ) override;
     virtual VclPtr<SfxTabPage> CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet ) override;
-    virtual SfxStyleFamilies* CreateStyleFamilies() override;
 
     // Pool is created here and set at SfxShell.
     void    InitAttrPool();
@@ -239,10 +233,10 @@ public:
             GetLngSvcEvtListener();
     void    CreateLngSvcEvtListener();
 
-    css::uno::Reference< css::scanner::XScannerManager2 > const &
+    css::uno::Reference< css::scanner::XScannerManager2 >
             GetScannerManager();
 
-    css::uno::Reference< css::linguistic2::XLanguageGuessing > const &
+    css::uno::Reference< css::linguistic2::XLanguageGuessing >
             GetLanguageGuesser();
 };
 
@@ -254,7 +248,7 @@ inline const css::uno::Reference< css::linguistic2::XLinguServiceEventListener >
 
 //    Access to SwModule, the View and the shell.
 
-#define SW_MOD() ( static_cast<SwModule*>(SfxApplication::GetModule(SfxToolsModule::Writer)))
+#define SW_MOD() ( *reinterpret_cast<SwModule**>(GetAppData(SHL_WRITER)))
 
 SW_DLLPUBLIC SwView*    GetActiveView();
 SW_DLLPUBLIC SwWrtShell* GetActiveWrtShell();
@@ -263,8 +257,6 @@ namespace sw
 {
 SW_DLLPUBLIC Color* GetActiveRetoucheColor();
 }
-
-extern bool g_bNoInterrupt;
 
 #endif
 

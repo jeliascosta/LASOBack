@@ -69,6 +69,8 @@ namespace canvas
                              const ::basegfx::B2IRange& rSourceRect,
                              IColorBuffer&              rSource ) = 0;
     };
+
+    typedef std::shared_ptr< ISurface > ISurfaceSharedPtr;
 }
 
 #endif // INCLUDED_CANVAS_RENDERING_ISURFACE_HXX

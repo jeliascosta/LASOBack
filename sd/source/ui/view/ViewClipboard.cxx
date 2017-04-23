@@ -160,14 +160,14 @@ sal_uInt16 ViewClipboard::DetermineInsertPosition  (
     const SdTransferable& )
 {
     SdDrawDocument& rDoc = mrView.GetDoc();
-    sal_uInt16 nPgCnt = rDoc.GetSdPageCount( PageKind::Standard );
+    sal_uInt16 nPgCnt = rDoc.GetSdPageCount( PK_STANDARD );
 
     // Insert position is the behind the last selected page or behind the
     // last page when the selection is empty.
-    sal_uInt16 nInsertPos = rDoc.GetSdPageCount( PageKind::Standard ) * 2 + 1;
+    sal_uInt16 nInsertPos = rDoc.GetSdPageCount( PK_STANDARD ) * 2 + 1;
     for( sal_uInt16 nPage = 0; nPage < nPgCnt; nPage++ )
     {
-        SdPage* pPage = rDoc.GetSdPage( nPage, PageKind::Standard );
+        SdPage* pPage = rDoc.GetSdPage( nPage, PK_STANDARD );
 
         if( pPage->IsSelected() )
             nInsertPos = nPage * 2 + 3;
@@ -200,12 +200,12 @@ sal_uInt16 ViewClipboard::InsertSlides (
     {
         // Otherwise all pages of the document of the transferable are
         // inserted.
-        SfxObjectShell* pShell = rTransferable.GetDocShell().get();
+        SfxObjectShell* pShell = rTransferable.GetDocShell();
         pDataDocSh = static_cast<DrawDocShell*>(pShell);
         SdDrawDocument* pDataDoc = pDataDocSh->GetDoc();
 
-        if (pDataDoc!=nullptr && pDataDoc->GetSdPageCount(PageKind::Standard))
-            nInsertPgCnt = pDataDoc->GetSdPageCount(PageKind::Standard);
+        if (pDataDoc!=nullptr && pDataDoc->GetSdPageCount(PK_STANDARD))
+            nInsertPgCnt = pDataDoc->GetSdPageCount(PK_STANDARD);
     }
     if (nInsertPgCnt > 0)
     {

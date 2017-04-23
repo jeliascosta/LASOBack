@@ -295,10 +295,10 @@ void SvXMLMetaExport::MExport_()
     }
 }
 
-static const char s_xmlns[] = "xmlns";
-static const char s_xmlns2[] = "xmlns:";
-static const char s_meta[] = "meta:";
-static const char s_href[] = "xlink:href";
+static const char *s_xmlns  = "xmlns";
+static const char *s_xmlns2 = "xmlns:";
+static const char *s_meta   = "meta:";
+static const char *s_href   = "xlink:href";
 
 SvXMLMetaExport::SvXMLMetaExport(
         SvXMLExport& i_rExp,
@@ -326,9 +326,11 @@ void SvXMLMetaExport::Export()
              key != USHRT_MAX; key = rNsMap.GetNextKey(key)) {
             beans::StringPair ns;
             const OUString attrname = rNsMap.GetAttrNameByKey(key);
-            if (!attrname.startsWith(s_xmlns2, &ns.First)
-                || attrname == s_xmlns) // default initialized empty string
-            {
+            if (attrname.matchAsciiL(s_xmlns2, strlen(s_xmlns2))) {
+                ns.First  = attrname.copy(strlen(s_xmlns2));
+            } else if (attrname.equalsAsciiL(s_xmlns, strlen(s_xmlns))) {
+                // default initialized empty string
+            } else {
                 assert(!"namespace attribute not starting with xmlns unexpected");
             }
             ns.Second = rNsMap.GetNameByKey(key);
@@ -347,6 +349,7 @@ void SvXMLMetaExport::Export()
 // css::xml::sax::XDocumentHandler:
 void SAL_CALL
 SvXMLMetaExport::startDocument()
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     // ignore: has already been done by SvXMLExport::exportDoc
     assert(m_level == 0 && "SvXMLMetaExport: level error");
@@ -354,6 +357,7 @@ SvXMLMetaExport::startDocument()
 
 void SAL_CALL
 SvXMLMetaExport::endDocument()
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     // ignore: will be done by SvXMLExport::exportDoc
     assert(m_level == 0 && "SvXMLMetaExport: level error");
@@ -363,6 +367,7 @@ SvXMLMetaExport::endDocument()
 void SAL_CALL
 SvXMLMetaExport::startElement(const OUString & i_rName,
     const uno::Reference< xml::sax::XAttributeList > & i_xAttribs)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
 
     if (m_level == 0) {
@@ -371,7 +376,7 @@ SvXMLMetaExport::startElement(const OUString & i_rName,
         const sal_Int16 nCount = i_xAttribs->getLength();
         for (sal_Int16 i = 0; i < nCount; ++i) {
             const OUString name(i_xAttribs->getNameByIndex(i));
-            if (name.startsWith(s_xmlns)) {
+            if (name.matchAsciiL(s_xmlns, strlen(s_xmlns))) {
                 bool found(false);
                 const SvXMLNamespaceMap & rNsMap(mrExport.GetNamespaceMap());
                 for (sal_uInt16 key = rNsMap.GetFirstKey();
@@ -414,14 +419,14 @@ SvXMLMetaExport::startElement(const OUString & i_rName,
     }
 
     // attach the attributes
-    if (i_rName.startsWith(s_meta)) {
+    if (i_rName.matchAsciiL(s_meta, strlen(s_meta))) {
         // special handling for all elements that may have
         // xlink:href attributes; these must be made relative
         const sal_Int16 nLength = i_xAttribs->getLength();
         for (sal_Int16 i = 0; i < nLength; ++i) {
             const OUString name (i_xAttribs->getNameByIndex (i));
             OUString value(i_xAttribs->getValueByIndex(i));
-            if (name.startsWith(s_href)) {
+            if (name.matchAsciiL(s_href, strlen(s_href))) {
                 value = mrExport.GetRelativeReference(value);
             }
             mrExport.AddAttribute(name, value);
@@ -444,6 +449,7 @@ SvXMLMetaExport::startElement(const OUString & i_rName,
 
 void SAL_CALL
 SvXMLMetaExport::endElement(const OUString & i_rName)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     --m_level;
     if (m_level == 0) {
@@ -456,12 +462,14 @@ SvXMLMetaExport::endElement(const OUString & i_rName)
 
 void SAL_CALL
 SvXMLMetaExport::characters(const OUString & i_rChars)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     mrExport.Characters(i_rChars);
 }
 
 void SAL_CALL
 SvXMLMetaExport::ignorableWhitespace(const OUString & /*i_rWhitespaces*/)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     mrExport.IgnorableWhitespace(/*i_rWhitespaces*/);
 }
@@ -469,6 +477,7 @@ SvXMLMetaExport::ignorableWhitespace(const OUString & /*i_rWhitespaces*/)
 void SAL_CALL
 SvXMLMetaExport::processingInstruction(const OUString & i_rTarget,
     const OUString & i_rData)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     // ignore; the exporter cannot handle these
     (void) i_rTarget;
@@ -477,6 +486,7 @@ SvXMLMetaExport::processingInstruction(const OUString & i_rTarget,
 
 void SAL_CALL
 SvXMLMetaExport::setDocumentLocator(const uno::Reference<xml::sax::XLocator>&)
+    throw (uno::RuntimeException, xml::sax::SAXException, std::exception)
 {
     // nothing to do here, move along...
 }

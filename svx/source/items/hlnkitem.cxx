@@ -200,7 +200,9 @@ SvxHyperlinkItem::SvxHyperlinkItem( const SvxHyperlinkItem& rHyperlinkItem ):
     nMacroEvents = rHyperlinkItem.nMacroEvents;
 
     if( rHyperlinkItem.GetMacroTable() )
-        pMacroTable.reset( new SvxMacroTableDtor( *rHyperlinkItem.GetMacroTable() ) );
+        pMacroTable = new SvxMacroTableDtor( *rHyperlinkItem.GetMacroTable() );
+    else
+        pMacroTable=nullptr;
 
 };
 
@@ -216,7 +218,9 @@ SvxHyperlinkItem::SvxHyperlinkItem( sal_uInt16 _nWhich, const OUString& rName, c
     nMacroEvents (nEvents)
 {
     if (pMacroTbl)
-        pMacroTable.reset( new SvxMacroTableDtor ( *pMacroTbl ) );
+        pMacroTable = new SvxMacroTableDtor ( *pMacroTbl );
+    else
+        pMacroTable=nullptr;
 }
 
 SfxPoolItem* SvxHyperlinkItem::Clone( SfxItemPool* ) const
@@ -226,7 +230,7 @@ SfxPoolItem* SvxHyperlinkItem::Clone( SfxItemPool* ) const
 
 bool SvxHyperlinkItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    assert(SfxPoolItem::operator==(rAttr));
+    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unterschiedliche Typen" );
 
     const SvxHyperlinkItem& rItem = static_cast<const SvxHyperlinkItem&>(rAttr);
 
@@ -239,7 +243,7 @@ bool SvxHyperlinkItem::operator==( const SfxPoolItem& rAttr ) const
     if (!bRet)
         return false;
 
-    const SvxMacroTableDtor* pOther = static_cast<const SvxHyperlinkItem&>(rAttr).pMacroTable.get();
+    const SvxMacroTableDtor* pOther = static_cast<const SvxHyperlinkItem&>(rAttr).pMacroTable;
     if( !pMacroTable )
         return ( !pOther || pOther->empty() );
     if( !pOther )
@@ -269,14 +273,16 @@ void SvxHyperlinkItem::SetMacro( HyperDialogEvent nEvent, const SvxMacro& rMacro
     }
 
     if( !pMacroTable )
-        pMacroTable.reset( new SvxMacroTableDtor );
+        pMacroTable = new SvxMacroTableDtor;
 
     pMacroTable->Insert( nSfxEvent, rMacro);
 }
 
 void SvxHyperlinkItem::SetMacroTable( const SvxMacroTableDtor& rTbl )
 {
-    pMacroTable.reset( new SvxMacroTableDtor ( rTbl ) );
+    delete pMacroTable;
+
+    pMacroTable = new SvxMacroTableDtor ( rTbl );
 }
 
 bool SvxHyperlinkItem::QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId ) const

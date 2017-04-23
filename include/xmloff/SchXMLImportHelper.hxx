@@ -19,8 +19,6 @@
 #ifndef INCLUDED_XMLOFF_SCHXMLIMPORTHELPER_HXX
 #define INCLUDED_XMLOFF_SCHXMLIMPORTHELPER_HXX
 
-#include <memory>
-
 #include <salhelper/simplereferenceobject.hxx>
 #include <xmloff/families.hxx>
 #include <com/sun/star/util/XStringMapping.hpp>
@@ -68,22 +66,23 @@ private:
     css::uno::Reference< css::chart::XChartDocument > mxChartDoc;
     SvXMLStylesContext* mpAutoStyles;
 
-    std::unique_ptr<SvXMLTokenMap> mpChartDocElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpTableElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpChartElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpPlotAreaElemTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpSeriesElemTokenMap;
+    SvXMLTokenMap* mpChartDocElemTokenMap;
+    SvXMLTokenMap* mpTableElemTokenMap;
+    SvXMLTokenMap* mpChartElemTokenMap;
+    SvXMLTokenMap* mpPlotAreaElemTokenMap;
+    SvXMLTokenMap* mpSeriesElemTokenMap;
 
-    std::unique_ptr<SvXMLTokenMap> mpChartAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpPlotAreaAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpCellAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpSeriesAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpPropMappingAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> mpRegEquationAttrTokenMap;
+    SvXMLTokenMap* mpChartAttrTokenMap;
+    SvXMLTokenMap* mpPlotAreaAttrTokenMap;
+    SvXMLTokenMap* mpCellAttrTokenMap;
+    SvXMLTokenMap* mpSeriesAttrTokenMap;
+    SvXMLTokenMap* mpPropMappingAttrTokenMap;
+    SvXMLTokenMap* mpRegEquationAttrTokenMap;
 
 public:
 
     SchXMLImportHelper();
+    virtual ~SchXMLImportHelper();
 
     /** get the context for reading the <chart:chart> element with subelements.
         The result is stored in the XModel given if it also implements
@@ -100,9 +99,6 @@ public:
      */
     void SetAutoStylesContext( SvXMLStylesContext* pAutoStyles ) { mpAutoStyles = pAutoStyles; }
     SvXMLStylesContext* GetAutoStylesContext() const { return mpAutoStyles; }
-
-    /// Fill in the autostyle.
-    void FillAutoStyle(const OUString& rAutoStyleName, const css::uno::Reference<css::beans::XPropertySet>& rProp);
 
     const css::uno::Reference< css::chart::XChartDocument >& GetChartDocument()
         { return mxChartDoc; }
@@ -138,7 +134,7 @@ public:
                     const css::uno::Reference< css::chart2::XChartDocument > & xDoc,
                     sal_Int32 nCoordinateSystemIndex,
                     const OUString & rChartTypeName,
-                    bool bPushLastChartType );
+                    bool bPushLastChartType = false );
 
     static void DeleteDataSeries(
                     const css::uno::Reference< css::chart2::XDataSeries >& xSeries,

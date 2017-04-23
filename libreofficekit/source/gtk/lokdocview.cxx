@@ -15,7 +15,6 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <mutex>
 #include <boost/property_tree/json_parser.hpp>
 
 #include <com/sun/star/awt/Key.hpp>
@@ -45,35 +44,6 @@
 // Minimum Zoom allowed
 #define MIN_ZOOM 0.25f
 
-/// This is expected to be locked during setView(), doSomethingElse() LOK calls.
-static std::mutex g_aLOKMutex;
-
-/// Same as a GdkRectangle, but also tracks in which part the rectangle is.
-struct ViewRectangle
-{
-    int m_nPart;
-    GdkRectangle m_aRectangle;
-
-    ViewRectangle(int nPart = 0, const GdkRectangle& rRectangle = GdkRectangle())
-        : m_nPart(nPart),
-        m_aRectangle(rRectangle)
-    {
-    }
-};
-
-/// Same as a list of GdkRectangles, but also tracks in which part the rectangle is.
-struct ViewRectangles
-{
-    int m_nPart;
-    std::vector<GdkRectangle> m_aRectangles;
-
-    ViewRectangles(int nPart = 0, const std::vector<GdkRectangle>& rRectangles = std::vector<GdkRectangle>())
-        : m_nPart(nPart),
-        m_aRectangles(rRectangles)
-    {
-    }
-};
-
 /// Private struct used by this GObject type
 struct LOKDocViewPrivateImpl
 {
@@ -102,16 +72,10 @@ struct LOKDocViewPrivateImpl
     gint m_nParts;
     /// Position and size of the visible cursor.
     GdkRectangle m_aVisibleCursor;
-    /// Position and size of the view cursors. The current view can only see
-    /// them, can't modify them. Key is the view id.
-    std::map<int, ViewRectangle> m_aViewCursors;
     /// Cursor overlay is visible or hidden (for blinking).
     gboolean m_bCursorOverlayVisible;
     /// Cursor is visible or hidden (e.g. for graphic selection).
     gboolean m_bCursorVisible;
-    /// Visibility of view selections. The current view can only see / them,
-    /// can't modify them. Key is the view id.
-    std::map<int, bool> m_aViewCursorVisibilities;
     /// Time of the last button press.
     guint32 m_nLastButtonPressTime;
     /// Time of the last button release.
@@ -122,21 +86,12 @@ struct LOKDocViewPrivateImpl
     guint32 m_nKeyModifier;
     /// Rectangles of the current text selection.
     std::vector<GdkRectangle> m_aTextSelectionRectangles;
-    /// Rectangles of view selections. The current view can only see
-    /// them, can't modify them. Key is the view id.
-    std::map<int, ViewRectangles> m_aTextViewSelectionRectangles;
     /// Position and size of the selection start (as if there would be a cursor caret there).
     GdkRectangle m_aTextSelectionStart;
     /// Position and size of the selection end.
     GdkRectangle m_aTextSelectionEnd;
     GdkRectangle m_aGraphicSelection;
-    /// Position and size of the graphic view selections. The current view can only
-    /// see them, can't modify them. Key is the view id.
-    std::map<int, ViewRectangle> m_aGraphicViewSelections;
     GdkRectangle m_aCellCursor;
-    /// Position and size of the cell view cursors. The current view can only
-    /// see them, can't modify them. Key is the view id.
-    std::map<int, ViewRectangle> m_aCellViewCursors;
     gboolean m_bInDragGraphicSelection;
 
     /// @name Start/middle/end handle.
@@ -163,6 +118,8 @@ struct LOKDocViewPrivateImpl
 
     /// @name Graphic handles.
     ///@{
+    /// Bitmap of a graphic selection handle.
+    cairo_surface_t* m_pGraphicHandle;
     /// Rectangle of a graphic selection handle, to know if the user clicked on it or not.
     GdkRectangle m_aGraphicHandleRects[8];
     /// If we are in the middle of a drag of a graphic selection handle.
@@ -172,12 +129,6 @@ struct LOKDocViewPrivateImpl
     /// View ID, returned by createView() or 0 by default.
     int m_nViewId;
 
-    /// Cached part ID, returned by getPart().
-    int m_nPartId;
-
-    /// Cached document type, returned by getDocumentType().
-    LibreOfficeKitDocumentType m_eDocumentType;
-
     /**
      * Contains a freshly set zoom level: logic size of a tile.
      * It gets reset back to 0 when LOK was informed about this zoom change.
@@ -186,13 +137,6 @@ struct LOKDocViewPrivateImpl
 
     GdkRectangle m_aVisibleArea;
     bool m_bVisibleAreaSet;
-
-    /// Event source ID for handleTimeout() of this widget.
-    guint m_nTimeoutId;
-
-    /// Rectangles of view locks. The current view can only see
-    /// them, can't modify them. Key is the view id.
-    std::map<int, ViewRectangle> m_aViewLockRectangles;
 
     LOKDocViewPrivateImpl()
         : m_aLOPath(nullptr),
@@ -232,21 +176,14 @@ struct LOKDocViewPrivateImpl
         m_pHandleEnd(nullptr),
         m_aHandleEndRect({0, 0, 0, 0}),
         m_bInDragEndHandle(false),
+        m_pGraphicHandle(nullptr),
         m_nViewId(0),
-        m_nPartId(0),
-        m_eDocumentType(LOK_DOCTYPE_OTHER),
         m_nTileSizeTwips(0),
         m_aVisibleArea({0, 0, 0, 0}),
-        m_bVisibleAreaSet(false),
-        m_nTimeoutId(0)
+        m_bVisibleAreaSet(false)
     {
         memset(&m_aGraphicHandleRects, 0, sizeof(m_aGraphicHandleRects));
         memset(&m_bInDragGraphicHandles, 0, sizeof(m_bInDragGraphicHandles));
-    }
-
-    ~LOKDocViewPrivateImpl()
-    {
-        g_source_remove(m_nTimeoutId);
     }
 };
 
@@ -276,7 +213,6 @@ enum
     FORMULA_CHANGED,
     TEXT_SELECTION,
     PASSWORD_REQUIRED,
-    COMMENT,
 
     LAST_SIGNAL
 };
@@ -300,7 +236,6 @@ enum
     PROP_CAN_ZOOM_OUT,
     PROP_DOC_PASSWORD,
     PROP_DOC_PASSWORD_TO_MODIFY,
-    PROP_TILED_ANNOTATIONS,
 
     PROP_LAST
 };
@@ -376,12 +311,8 @@ callbackTypeToString (int nType)
         return "LOK_CALLBACK_TEXT_SELECTION_END";
     case LOK_CALLBACK_CURSOR_VISIBLE:
         return "LOK_CALLBACK_CURSOR_VISIBLE";
-    case LOK_CALLBACK_VIEW_CURSOR_VISIBLE:
-        return "LOK_CALLBACK_VIEW_CURSOR_VISIBLE";
     case LOK_CALLBACK_GRAPHIC_SELECTION:
         return "LOK_CALLBACK_GRAPHIC_SELECTION";
-    case LOK_CALLBACK_GRAPHIC_VIEW_SELECTION:
-        return "LOK_CALLBACK_GRAPHIC_VIEW_SELECTION";
     case LOK_CALLBACK_CELL_CURSOR:
         return "LOK_CALLBACK_CELL_CURSOR";
     case LOK_CALLBACK_HYPERLINK_CLICKED:
@@ -410,28 +341,7 @@ callbackTypeToString (int nType)
         return "LOK_CALLBACK_DOCUMENT_PASSWORD_TO_MODIFY";
     case LOK_CALLBACK_CONTEXT_MENU:
         return "LOK_CALLBACK_CONTEXT_MENU";
-    case LOK_CALLBACK_INVALIDATE_VIEW_CURSOR:
-        return "LOK_CALLBACK_INVALIDATE_VIEW_CURSOR";
-    case LOK_CALLBACK_TEXT_VIEW_SELECTION:
-        return "LOK_CALLBACK_TEXT_VIEW_SELECTION";
-    case LOK_CALLBACK_CELL_VIEW_CURSOR:
-        return "LOK_CALLBACK_CELL_VIEW_CURSOR";
-    case LOK_CALLBACK_CELL_FORMULA:
-        return "LOK_CALLBACK_CELL_FORMULA";
-    case LOK_CALLBACK_UNO_COMMAND_RESULT:
-        return "LOK_CALLBACK_UNO_COMMAND_RESULT";
-    case LOK_CALLBACK_ERROR:
-        return "LOK_CALLBACK_ERROR";
-    case LOK_CALLBACK_VIEW_LOCK:
-        return "LOK_CALLBACK_VIEW_LOCK";
-    case LOK_CALLBACK_REDLINE_TABLE_SIZE_CHANGED:
-        return "LOK_CALLBACK_REDLINE_TABLE_SIZE_CHANGED";
-    case LOK_CALLBACK_REDLINE_TABLE_ENTRY_MODIFIED:
-        return "LOK_CALLBACK_REDLINE_TABLE_ENTRY_MODIFIED";
-    case LOK_CALLBACK_COMMENT:
-        return "LOK_CALLBACK_COMMENT";
     }
-    g_assert(false);
     return nullptr;
 }
 
@@ -445,7 +355,7 @@ LOKPostCommand (LOKDocView* pDocView,
     GTask* task = g_task_new(pDocView, nullptr, nullptr, nullptr);
     LOEvent* pLOEvent = new LOEvent(LOK_POST_COMMAND);
     GError* error = nullptr;
-    pLOEvent->m_pCommand = g_strdup(pCommand);
+    pLOEvent->m_pCommand = pCommand;
     pLOEvent->m_pArguments  = g_strdup(pArguments);
     pLOEvent->m_bNotifyWhenFinished = bNotifyWhenFinished;
 
@@ -661,15 +571,11 @@ postKeyEventInThread(gpointer data)
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
 
     if (priv->m_nTileSizeTwips)
     {
-        ss.str(std::string());
+        std::stringstream ss;
         ss << "lok::Document::setClientZoom(" << nTileSizePixels << ", " << nTileSizePixels << ", " << priv->m_nTileSizeTwips << ", " << priv->m_nTileSizeTwips << ")";
         g_info("%s", ss.str().c_str());
         priv->m_pDocument->pClass->setClientZoom(priv->m_pDocument,
@@ -681,7 +587,7 @@ postKeyEventInThread(gpointer data)
     }
     if (priv->m_bVisibleAreaSet)
     {
-        ss.str(std::string());
+        std::stringstream ss;
         ss << "lok::Document::setClientVisibleArea(" << priv->m_aVisibleArea.x << ", " << priv->m_aVisibleArea.y << ", ";
         ss << priv->m_aVisibleArea.width << ", " << priv->m_aVisibleArea.height << ")";
         g_info("%s", ss.str().c_str());
@@ -693,7 +599,7 @@ postKeyEventInThread(gpointer data)
         priv->m_bVisibleAreaSet = false;
     }
 
-    ss.str(std::string());
+    std::stringstream ss;
     ss << "lok::Document::postKeyEvent(" << pLOEvent->m_nKeyEvent << ", " << pLOEvent->m_nCharCode << ", " << pLOEvent->m_nKeyCode << ")";
     g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->postKeyEvent(priv->m_pDocument,
@@ -727,7 +633,6 @@ signalKey (GtkWidget* pWidget, GdkEventKey* pEvent)
         nKeyCode = com::sun::star::awt::Key::DELETE;
         break;
     case GDK_KEY_Return:
-    case GDK_KEY_KP_Enter:
         nKeyCode = com::sun::star::awt::Key::RETURN;
         break;
     case GDK_KEY_Escape:
@@ -753,9 +658,6 @@ signalKey (GtkWidget* pWidget, GdkEventKey* pEvent)
         break;
     case GDK_KEY_Page_Up:
         nKeyCode = com::sun::star::awt::Key::PAGEUP;
-        break;
-    case GDK_KEY_Insert:
-        nKeyCode = com::sun::star::awt::Key::INSERT;
         break;
     case GDK_KEY_Shift_L:
     case GDK_KEY_Shift_R:
@@ -902,9 +804,7 @@ static void reportError(LOKDocView* /*pDocView*/, const std::string& rString)
 static void
 setPart(LOKDocView* pDocView, const std::string& rString)
 {
-    LOKDocViewPrivate& priv = getPrivate(pDocView);
-    priv->m_nPartId = std::stoi(rString);
-    g_signal_emit(pDocView, doc_view_signals[PART_CHANGED], 0, priv->m_nPartId);
+    g_signal_emit(pDocView, doc_view_signals[PART_CHANGED], 0, std::stoi(rString));
 }
 
 static void
@@ -923,43 +823,18 @@ static gboolean queueDraw(gpointer pData)
     return G_SOURCE_REMOVE;
 }
 
-/// Looks up the author string from initializeForRendering()'s rendering arguments.
-static std::string getAuthorRenderingArgument(LOKDocViewPrivate& priv)
-{
-    std::stringstream aStream;
-    aStream << priv->m_aRenderingArguments;
-    boost::property_tree::ptree aTree;
-    boost::property_tree::read_json(aStream, aTree);
-    std::string aRet;
-    for (const std::pair<std::string, boost::property_tree::ptree>& rPair : aTree)
-    {
-        if (rPair.first == ".uno:Author")
-        {
-            aRet = rPair.second.get<std::string>("value");
-            break;
-        }
-    }
-    return aRet;
-}
-
-/// Author string <-> View ID map
-static std::map<std::string, int> g_aAuthorViews;
-
 /// Set up LOKDocView after the document is loaded, invoked on the main thread by openDocumentInThread() running in a thread.
 static gboolean postDocumentLoad(gpointer pData)
 {
     LOKDocView* pLOKDocView = static_cast<LOKDocView*>(pData);
     LOKDocViewPrivate& priv = getPrivate(pLOKDocView);
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
+    priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     priv->m_pDocument->pClass->initializeForRendering(priv->m_pDocument, priv->m_aRenderingArguments.c_str());
-    priv->m_nViewId = priv->m_pDocument->pClass->getView(priv->m_pDocument);
-    g_aAuthorViews[getAuthorRenderingArgument(priv)] = priv->m_nViewId;
     priv->m_pDocument->pClass->registerCallback(priv->m_pDocument, callbackWorker, pLOKDocView);
     priv->m_pDocument->pClass->getDocumentSize(priv->m_pDocument, &priv->m_nDocumentWidthTwips, &priv->m_nDocumentHeightTwips);
     priv->m_nParts = priv->m_pDocument->pClass->getParts(priv->m_pDocument);
-    aGuard.unlock();
-    priv->m_nTimeoutId = g_timeout_add(600, handleTimeout, pLOKDocView);
+    g_timeout_add(600, handleTimeout, pLOKDocView);
 
     float zoom = priv->m_fZoom;
     long nDocumentWidthTwips = priv->m_nDocumentWidthTwips;
@@ -969,7 +844,8 @@ static gboolean postDocumentLoad(gpointer pData)
     // Total number of columns in this document.
     guint nColumns = ceil((double)nDocumentWidthPixels / nTileSizePixels);
 
-    priv->m_pTileBuffer = std::unique_ptr<TileBuffer>(new TileBuffer(nColumns));
+    priv->m_pTileBuffer = std::unique_ptr<TileBuffer>(new TileBuffer(priv->m_pDocument,
+                                                                     nColumns));
     gtk_widget_set_size_request(GTK_WIDGET(pLOKDocView),
                                 nDocumentWidthPixels,
                                 nDocumentHeightPixels);
@@ -1017,11 +893,6 @@ globalCallback (gpointer pData)
         g_signal_emit (pCallback->m_pDocView, doc_view_signals[PASSWORD_REQUIRED], 0, pURL, bModify);
     }
     break;
-    case LOK_CALLBACK_ERROR:
-    {
-        reportError(pCallback->m_pDocView, pCallback->m_aPayload);
-    }
-    break;
     default:
         g_assert(false);
         break;
@@ -1046,8 +917,7 @@ payloadToRectangle (LOKDocView* pDocView, const char* pPayload)
 {
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     GdkRectangle aRet;
-    // x, y, width, height, part number.
-    gchar** ppCoordinates = g_strsplit(pPayload, ", ", 5);
+    gchar** ppCoordinates = g_strsplit(pPayload, ", ", 4);
     gchar** ppCoordinate = ppCoordinates;
 
     aRet.width = aRet.height = aRet.x = aRet.y = 0;
@@ -1066,21 +936,13 @@ payloadToRectangle (LOKDocView* pDocView, const char* pPayload)
     ++ppCoordinate;
     if (!*ppCoordinate)
         return aRet;
-    long l = atol(*ppCoordinate);
-    if (l > std::numeric_limits<int>::max())
-        aRet.width = std::numeric_limits<int>::max();
-    else
-        aRet.width = l;
+    aRet.width = atoi(*ppCoordinate);
     if (aRet.x + aRet.width > priv->m_nDocumentWidthTwips)
         aRet.width = priv->m_nDocumentWidthTwips - aRet.x;
     ++ppCoordinate;
     if (!*ppCoordinate)
         return aRet;
-    l = atol(*ppCoordinate);
-    if (l > std::numeric_limits<int>::max())
-        aRet.height = std::numeric_limits<int>::max();
-    else
-        aRet.height = l;
+    aRet.height = atoi(*ppCoordinate);
     if (aRet.y + aRet.height > priv->m_nDocumentHeightTwips)
         aRet.height = priv->m_nDocumentHeightTwips - aRet.y;
     g_strfreev(ppCoordinates);
@@ -1092,9 +954,6 @@ static const std::vector<GdkRectangle>
 payloadToRectangles(LOKDocView* pDocView, const char* pPayload)
 {
     std::vector<GdkRectangle> aRet;
-
-    if (g_strcmp0(pPayload, "EMPTY") == 0)
-       return aRet;
 
     gchar** ppRectangles = g_strsplit(pPayload, "; ", 0);
     for (gchar** ppRectangle = ppRectangles; *ppRectangle; ++ppRectangle)
@@ -1143,7 +1002,7 @@ callback (gpointer pData)
     {
     case LOK_CALLBACK_INVALIDATE_TILES:
     {
-        if (pCallback->m_aPayload.compare(0, 5, "EMPTY") != 0) // payload doesn't start with "EMPTY"
+        if (pCallback->m_aPayload != "EMPTY")
         {
             GdkRectangle aRectangle = payloadToRectangle(pDocView, pCallback->m_aPayload.c_str());
             setTilesInvalid(pDocView, aRectangle);
@@ -1224,26 +1083,6 @@ callback (gpointer pData)
         gtk_widget_queue_draw(GTK_WIDGET(pDocView));
     }
     break;
-    case LOK_CALLBACK_GRAPHIC_VIEW_SELECTION:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        int nPart = aTree.get<int>("part");
-        const std::string& rRectangle = aTree.get<std::string>("selection");
-        if (rRectangle != "EMPTY")
-            priv->m_aGraphicViewSelections[nViewId] = ViewRectangle(nPart, payloadToRectangle(pDocView, rRectangle.c_str()));
-        else
-        {
-            auto it = priv->m_aGraphicViewSelections.find(nViewId);
-            if (it != priv->m_aGraphicViewSelections.end())
-                priv->m_aGraphicViewSelections.erase(it);
-        }
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    break;
     case LOK_CALLBACK_CELL_CURSOR:
     {
         if (pCallback->m_aPayload != "EMPTY")
@@ -1270,11 +1109,7 @@ callback (gpointer pData)
     break;
     case LOK_CALLBACK_DOCUMENT_SIZE_CHANGED:
     {
-        if (!pCallback->m_aPayload.empty())
-            payloadToSize(pCallback->m_aPayload.c_str(), priv->m_nDocumentWidthTwips, priv->m_nDocumentHeightTwips);
-        else
-            priv->m_pDocument->pClass->getDocumentSize(priv->m_pDocument, &priv->m_nDocumentWidthTwips, &priv->m_nDocumentHeightTwips);
-
+        payloadToSize(pCallback->m_aPayload.c_str(), priv->m_nDocumentWidthTwips, priv->m_nDocumentHeightTwips);
         gtk_widget_set_size_request(GTK_WIDGET(pDocView),
                                     twipToPixel(priv->m_nDocumentWidthTwips, priv->m_fZoom),
                                     twipToPixel(priv->m_nDocumentHeightTwips, priv->m_fZoom));
@@ -1316,91 +1151,6 @@ callback (gpointer pData)
         // TODO: Implement me
         break;
     }
-    case LOK_CALLBACK_INVALIDATE_VIEW_CURSOR:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        int nPart = aTree.get<int>("part");
-        const std::string& rRectangle = aTree.get<std::string>("rectangle");
-        priv->m_aViewCursors[nViewId] = ViewRectangle(nPart, payloadToRectangle(pDocView, rRectangle.c_str()));
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    case LOK_CALLBACK_TEXT_VIEW_SELECTION:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        int nPart = aTree.get<int>("part");
-        const std::string& rSelection = aTree.get<std::string>("selection");
-        priv->m_aTextViewSelectionRectangles[nViewId] = ViewRectangles(nPart, payloadToRectangles(pDocView, rSelection.c_str()));
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    case LOK_CALLBACK_VIEW_CURSOR_VISIBLE:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        const std::string& rVisible = aTree.get<std::string>("visible");
-        priv->m_aViewCursorVisibilities[nViewId] = rVisible == "true";
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    break;
-    case LOK_CALLBACK_CELL_VIEW_CURSOR:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        int nPart = aTree.get<int>("part");
-        const std::string& rRectangle = aTree.get<std::string>("rectangle");
-        if (rRectangle != "EMPTY")
-            priv->m_aCellViewCursors[nViewId] = ViewRectangle(nPart, payloadToRectangle(pDocView, rRectangle.c_str()));
-        else
-        {
-            auto it = priv->m_aCellViewCursors.find(nViewId);
-            if (it != priv->m_aCellViewCursors.end())
-                priv->m_aCellViewCursors.erase(it);
-        }
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    case LOK_CALLBACK_VIEW_LOCK:
-    {
-        std::stringstream aStream(pCallback->m_aPayload);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        int nViewId = aTree.get<int>("viewId");
-        int nPart = aTree.get<int>("part");
-        const std::string& rRectangle = aTree.get<std::string>("rectangle");
-        if (rRectangle != "EMPTY")
-            priv->m_aViewLockRectangles[nViewId] = ViewRectangle(nPart, payloadToRectangle(pDocView, rRectangle.c_str()));
-        else
-        {
-            auto it = priv->m_aViewLockRectangles.find(nViewId);
-            if (it != priv->m_aViewLockRectangles.end())
-                priv->m_aViewLockRectangles.erase(it);
-        }
-        gtk_widget_queue_draw(GTK_WIDGET(pDocView));
-        break;
-    }
-    case LOK_CALLBACK_REDLINE_TABLE_SIZE_CHANGED:
-    {
-        break;
-    }
-    case LOK_CALLBACK_REDLINE_TABLE_ENTRY_MODIFIED:
-    {
-        break;
-    }
-    case LOK_CALLBACK_COMMENT:
-        g_signal_emit(pCallback->m_pDocView, doc_view_signals[COMMENT], 0, pCallback->m_aPayload.c_str());
-        break;
     default:
         g_assert(false);
         break;
@@ -1415,10 +1165,7 @@ static void callbackWorker (int nType, const char* pPayload, void* pData)
     LOKDocView* pDocView = LOK_DOC_VIEW (pData);
 
     CallbackData* pCallback = new CallbackData(nType, pPayload ? pPayload : "(nil)", pDocView);
-    LOKDocViewPrivate& priv = getPrivate(pDocView);
-    std::stringstream ss;
-    ss << "callbackWorker, view #" << priv->m_nViewId << ": " << callbackTypeToString(nType) << ", '" << (pPayload ? pPayload : "(nil)") << "'";
-    g_info("%s", ss.str().c_str());
+    g_info("callbackWorker: %s, '%s'", callbackTypeToString(nType), pPayload);
     gdk_threads_add_idle(callback, pCallback);
 }
 
@@ -1455,16 +1202,19 @@ renderHandle(LOKDocView* pDocView,
     rRectangle.height = nHandleHeight * fHandleScale;
 }
 
-/// Renders handles around an rSelection rectangle on pCairo.
+/// Renders pHandle around an rSelection rectangle on pCairo.
 static void
 renderGraphicHandle(LOKDocView* pDocView,
                     cairo_t* pCairo,
                     const GdkRectangle& rSelection,
-                    const GdkRGBA& rColor)
+                    cairo_surface_t* pHandle)
 {
     LOKDocViewPrivate& priv = getPrivate(pDocView);
-    int nHandleWidth = 9, nHandleHeight = 9;
+    int nHandleWidth, nHandleHeight;
     GdkRectangle aSelection;
+
+    nHandleWidth = cairo_image_surface_get_width(pHandle);
+    nHandleHeight = cairo_image_surface_get_height(pHandle);
 
     aSelection.x = twipToPixel(rSelection.x, priv->m_fZoom);
     aSelection.y = twipToPixel(rSelection.y, priv->m_fZoom);
@@ -1514,9 +1264,11 @@ renderGraphicHandle(LOKDocView* pDocView,
         priv->m_aGraphicHandleRects[i].width = nHandleWidth;
         priv->m_aGraphicHandleRects[i].height = nHandleHeight;
 
-        cairo_set_source_rgb(pCairo, rColor.red, rColor.green, rColor.blue);
-        cairo_rectangle(pCairo, x, y, nHandleWidth, nHandleHeight);
-        cairo_fill(pCairo);
+        cairo_save (pCairo);
+        cairo_translate(pCairo, x, y);
+        cairo_set_source_surface(pCairo, pHandle, 0, 0);
+        cairo_paint(pCairo);
+        cairo_restore (pCairo);
     }
 }
 
@@ -1636,56 +1388,6 @@ renderDocument(LOKDocView* pDocView, cairo_t* pCairo)
     return FALSE;
 }
 
-static const GdkRGBA& getDarkColor(int nViewId, LOKDocViewPrivate& priv)
-{
-    static std::map<int, GdkRGBA> aColorMap;
-    auto it = aColorMap.find(nViewId);
-    if (it != aColorMap.end())
-        return it->second;
-
-    if (priv->m_eDocumentType == LOK_DOCTYPE_TEXT)
-    {
-        char* pValues = priv->m_pDocument->pClass->getCommandValues(priv->m_pDocument, ".uno:TrackedChangeAuthors");
-        std::stringstream aInfo;
-        aInfo << "lok::Document::getCommandValues('.uno:TrackedChangeAuthors') returned '" << pValues << "'" << std::endl;
-        g_info("%s", aInfo.str().c_str());
-
-        std::stringstream aStream(pValues);
-        boost::property_tree::ptree aTree;
-        boost::property_tree::read_json(aStream, aTree);
-        for (const auto& rValue : aTree.get_child("authors"))
-        {
-            const std::string& rName = rValue.second.get<std::string>("name");
-            guint32 nColor = rValue.second.get<guint32>("color");
-            GdkRGBA aColor{((double)((guint8)((nColor)>>16)))/255, ((double)((guint8)(((guint16)(nColor)) >> 8)))/255, ((double)((guint8)(nColor)))/255, 0};
-            auto itAuthorViews = g_aAuthorViews.find(rName);
-            if (itAuthorViews != g_aAuthorViews.end())
-                aColorMap[itAuthorViews->second] = aColor;
-        }
-    }
-    else
-    {
-        // Based on tools/colordata.hxx, COL_AUTHOR1_DARK..COL_AUTHOR9_DARK.
-        static std::vector<GdkRGBA> aColors =
-        {
-            {((double)198)/255, ((double)146)/255, ((double)0)/255, 0},
-            {((double)6)/255, ((double)70)/255, ((double)162)/255, 0},
-            {((double)87)/255, ((double)157)/255, ((double)28)/255, 0},
-            {((double)105)/255, ((double)43)/255, ((double)157)/255, 0},
-            {((double)197)/255, ((double)0)/255, ((double)11)/255, 0},
-            {((double)0)/255, ((double)128)/255, ((double)128)/255, 0},
-            {((double)140)/255, ((double)132)/255, ((double)0)/255, 0},
-            {((double)43)/255, ((double)85)/255, ((double)107)/255, 0},
-            {((double)209)/255, ((double)118)/255, ((double)0)/255, 0},
-        };
-        static int nColorCounter = 0;
-        GdkRGBA aColor = aColors[nColorCounter++ % aColors.size()];
-        aColorMap[nViewId] = aColor;
-    }
-    assert(aColorMap.find(nViewId) != aColorMap.end());
-    return aColorMap[nViewId];
-}
-
 static gboolean
 renderOverlay(LOKDocView* pDocView, cairo_t* pCairo)
 {
@@ -1704,35 +1406,6 @@ renderOverlay(LOKDocView* pDocView, cairo_t* pCairo)
                         twipToPixel(priv->m_aVisibleCursor.width, priv->m_fZoom),
                         twipToPixel(priv->m_aVisibleCursor.height, priv->m_fZoom));
         cairo_fill(pCairo);
-    }
-
-    // View cursors: they do not blink and are colored.
-    if (priv->m_bEdit && !priv->m_aViewCursors.empty())
-    {
-        for (auto& rPair : priv->m_aViewCursors)
-        {
-            auto itVisibility = priv->m_aViewCursorVisibilities.find(rPair.first);
-            if (itVisibility != priv->m_aViewCursorVisibilities.end() && !itVisibility->second)
-                continue;
-
-            // Show view cursors when in Writer or when the part matches.
-            if (rPair.second.m_nPart != priv->m_nPartId && priv->m_eDocumentType != LOK_DOCTYPE_TEXT)
-                continue;
-
-            GdkRectangle& rCursor = rPair.second.m_aRectangle;
-            if (rCursor.width < 30)
-                // Set a minimal width if it would be 0.
-                rCursor.width = 30;
-
-            const GdkRGBA& rDark = getDarkColor(rPair.first, priv);
-            cairo_set_source_rgb(pCairo, rDark.red, rDark.green, rDark.blue);
-            cairo_rectangle(pCairo,
-                            twipToPixel(rCursor.x, priv->m_fZoom),
-                            twipToPixel(rCursor.y, priv->m_fZoom),
-                            twipToPixel(rCursor.width, priv->m_fZoom),
-                            twipToPixel(rCursor.height, priv->m_fZoom));
-            cairo_fill(pCairo);
-        }
     }
 
     if (priv->m_bEdit && priv->m_bCursorVisible && !isEmptyRectangle(priv->m_aVisibleCursor) && priv->m_aTextSelectionRectangles.empty())
@@ -1789,44 +1462,18 @@ renderOverlay(LOKDocView* pDocView, cairo_t* pCairo)
         }
     }
 
-    // Selections of other views.
-    for (auto& rPair : priv->m_aTextViewSelectionRectangles)
-    {
-        if (rPair.second.m_nPart != priv->m_nPartId && priv->m_eDocumentType != LOK_DOCTYPE_TEXT)
-            continue;
-
-        for (GdkRectangle& rRectangle : rPair.second.m_aRectangles)
-        {
-            const GdkRGBA& rDark = getDarkColor(rPair.first, priv);
-            // 75% transparency.
-            cairo_set_source_rgba(pCairo, rDark.red, rDark.green, rDark.blue, 0.25);
-            cairo_rectangle(pCairo,
-                            twipToPixel(rRectangle.x, priv->m_fZoom),
-                            twipToPixel(rRectangle.y, priv->m_fZoom),
-                            twipToPixel(rRectangle.width, priv->m_fZoom),
-                            twipToPixel(rRectangle.height, priv->m_fZoom));
-            cairo_fill(pCairo);
-        }
-    }
-
     if (!isEmptyRectangle(priv->m_aGraphicSelection))
     {
-        GdkRGBA aBlack{0, 0, 0, 0};
-        renderGraphicHandle(pDocView, pCairo, priv->m_aGraphicSelection, aBlack);
+        gchar* handleGraphicPath = g_strconcat (priv->m_aLOPath, CURSOR_HANDLE_DIR, "handle_graphic.png", nullptr);
+        if (!priv->m_pGraphicHandle)
+        {
+            priv->m_pGraphicHandle = cairo_image_surface_create_from_png(handleGraphicPath);
+            assert(cairo_surface_status(priv->m_pGraphicHandle) == CAIRO_STATUS_SUCCESS);
+        }
+        renderGraphicHandle(pDocView, pCairo, priv->m_aGraphicSelection, priv->m_pGraphicHandle);
+        g_free (handleGraphicPath);
     }
 
-    // Graphic selections of other views.
-    for (auto& rPair : priv->m_aGraphicViewSelections)
-    {
-        const ViewRectangle& rRectangle = rPair.second;
-        if (rRectangle.m_nPart != priv->m_nPartId && priv->m_eDocumentType != LOK_DOCTYPE_TEXT)
-            continue;
-
-        const GdkRGBA& rDark = getDarkColor(rPair.first, priv);
-        renderGraphicHandle(pDocView, pCairo, rRectangle.m_aRectangle, rDark);
-    }
-
-    // Draw the cell cursor.
     if (!isEmptyRectangle(priv->m_aCellCursor))
     {
         cairo_set_source_rgb(pCairo, 0, 0, 0);
@@ -1835,59 +1482,11 @@ renderOverlay(LOKDocView* pDocView, cairo_t* pCairo)
                         twipToPixel(priv->m_aCellCursor.y, priv->m_fZoom),
                         twipToPixel(priv->m_aCellCursor.width, priv->m_fZoom),
                         twipToPixel(priv->m_aCellCursor.height, priv->m_fZoom));
+                        // priv->m_aCellCursor.x - 1,
+                        // priv->m_aCellCursor.y - 1,
+                        // priv->m_aCellCursor.width + 2,
+                        // priv->m_aCellCursor.height + 2);
         cairo_set_line_width(pCairo, 2.0);
-        cairo_stroke(pCairo);
-    }
-
-    // Cell view cursors: they are colored.
-    for (auto& rPair : priv->m_aCellViewCursors)
-    {
-        const ViewRectangle& rCursor = rPair.second;
-        if (rCursor.m_nPart != priv->m_nPartId)
-            continue;
-
-        const GdkRGBA& rDark = getDarkColor(rPair.first, priv);
-        cairo_set_source_rgb(pCairo, rDark.red, rDark.green, rDark.blue);
-        cairo_rectangle(pCairo,
-                        twipToPixel(rCursor.m_aRectangle.x, priv->m_fZoom),
-                        twipToPixel(rCursor.m_aRectangle.y, priv->m_fZoom),
-                        twipToPixel(rCursor.m_aRectangle.width, priv->m_fZoom),
-                        twipToPixel(rCursor.m_aRectangle.height, priv->m_fZoom));
-        cairo_set_line_width(pCairo, 2.0);
-        cairo_stroke(pCairo);
-    }
-
-    // View locks: they are colored.
-    for (auto& rPair : priv->m_aViewLockRectangles)
-    {
-        const ViewRectangle& rRectangle = rPair.second;
-        if (rRectangle.m_nPart != priv->m_nPartId)
-            continue;
-
-        // Draw a rectangle.
-        const GdkRGBA& rDark = getDarkColor(rPair.first, priv);
-        cairo_set_source_rgb(pCairo, rDark.red, rDark.green, rDark.blue);
-        cairo_rectangle(pCairo,
-                        twipToPixel(rRectangle.m_aRectangle.x, priv->m_fZoom),
-                        twipToPixel(rRectangle.m_aRectangle.y, priv->m_fZoom),
-                        twipToPixel(rRectangle.m_aRectangle.width, priv->m_fZoom),
-                        twipToPixel(rRectangle.m_aRectangle.height, priv->m_fZoom));
-        cairo_set_line_width(pCairo, 2.0);
-        cairo_stroke(pCairo);
-
-        // And a lock.
-        cairo_rectangle(pCairo,
-                        twipToPixel(rRectangle.m_aRectangle.x + rRectangle.m_aRectangle.width, priv->m_fZoom) - 25,
-                        twipToPixel(rRectangle.m_aRectangle.y + rRectangle.m_aRectangle.height, priv->m_fZoom) - 15,
-                        20,
-                        10);
-        cairo_fill(pCairo);
-        cairo_arc(pCairo,
-                  twipToPixel(rRectangle.m_aRectangle.x + rRectangle.m_aRectangle.width, priv->m_fZoom) - 15,
-                  twipToPixel(rRectangle.m_aRectangle.y + rRectangle.m_aRectangle.height, priv->m_fZoom) - 15,
-                  5,
-                  180.0 * (M_PI/180.0),
-                  360.0 * (M_PI/180.0));
         cairo_stroke(pCairo);
     }
 
@@ -2031,10 +1630,6 @@ lok_doc_view_signal_motion (GtkWidget* pWidget, GdkEventMotion* pEvent)
     GdkPoint aPoint;
     GError* error = nullptr;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     if (priv->m_bInDragMiddleHandle)
     {
@@ -2057,7 +1652,6 @@ lok_doc_view_signal_motion (GtkWidget* pWidget, GdkEventMotion* pEvent)
         priv->m_pDocument->pClass->setTextSelection(priv->m_pDocument, LOK_SETTEXTSELECTION_END, pixelToTwip(aPoint.x, priv->m_fZoom), pixelToTwip(aPoint.y, priv->m_fZoom));
         return FALSE;
     }
-    aGuard.unlock();
     for (int i = 0; i < GRAPHIC_HANDLE_COUNT; ++i)
     {
         if (priv->m_bInDragGraphicHandles[i])
@@ -2132,12 +1726,8 @@ setGraphicSelectionInThread(gpointer data)
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
-    ss.str(std::string());
+    std::stringstream ss;
     ss << "lok::Document::setGraphicSelection(" << pLOEvent->m_nSetGraphicSelectionType;
     ss << ", " << pLOEvent->m_nSetGraphicSelectionX;
     ss << ", " << pLOEvent->m_nSetGraphicSelectionY << ")";
@@ -2156,7 +1746,6 @@ setClientZoomInThread(gpointer data)
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
     priv->m_pDocument->pClass->setClientZoom(priv->m_pDocument,
                                              pLOEvent->m_nTilePixelWidth,
                                              pLOEvent->m_nTilePixelHeight,
@@ -2172,12 +1761,8 @@ postMouseEventInThread(gpointer data)
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
-    ss.str(std::string());
+    std::stringstream ss;
     ss << "lok::Document::postMouseEvent(" << pLOEvent->m_nPostMouseEventType;
     ss << ", " << pLOEvent->m_nPostMouseEventX;
     ss << ", " << pLOEvent->m_nPostMouseEventY;
@@ -2201,7 +1786,6 @@ openDocumentInThread (gpointer data)
     LOKDocView* pDocView = LOK_DOC_VIEW(g_task_get_source_object(task));
     LOKDocViewPrivate& priv = getPrivate(pDocView);
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
     if ( priv->m_pDocument )
     {
         priv->m_pDocument->pClass->destroy( priv->m_pDocument );
@@ -2210,7 +1794,6 @@ openDocumentInThread (gpointer data)
 
     priv->m_pOffice->pClass->registerCallback(priv->m_pOffice, globalCallbackWorker, pDocView);
     priv->m_pDocument = priv->m_pOffice->pClass->documentLoad( priv->m_pOffice, priv->m_aDocPath );
-    priv->m_eDocumentType = static_cast<LibreOfficeKitDocumentType>(priv->m_pDocument->pClass->getDocumentType(priv->m_pDocument));
     if ( !priv->m_pDocument )
     {
         char *pError = priv->m_pOffice->pClass->getError( priv->m_pOffice );
@@ -2232,13 +1815,8 @@ setPartInThread(gpointer data)
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
     int nPart = pLOEvent->m_nPart;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     priv->m_pDocument->pClass->setPart( priv->m_pDocument, nPart );
-    aGuard.unlock();
 
     lok_doc_view_reset_view(pDocView);
 }
@@ -2252,10 +1830,6 @@ setPartmodeInThread(gpointer data)
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
     int nPartMode = pLOEvent->m_nPartMode;
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     priv->m_pDocument->pClass->setPartMode( priv->m_pDocument, nPartMode );
 }
@@ -2275,10 +1849,6 @@ setEditInThread(gpointer data)
     else if (priv->m_bEdit && !bEdit)
     {
         g_info("lok_doc_view_set_edit: leaving edit mode");
-        std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
-        std::stringstream ss;
-        ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-        g_info("%s", ss.str().c_str());
         priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
         priv->m_pDocument->pClass->resetSelection(priv->m_pDocument);
     }
@@ -2295,12 +1865,8 @@ postCommandInThread (gpointer data)
     LOEvent* pLOEvent = static_cast<LOEvent*>(g_task_get_task_data(task));
     LOKDocViewPrivate& priv = getPrivate(pDocView);
 
-    std::lock_guard<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
-    ss.str(std::string());
+    std::stringstream ss;
     ss << "lok::Document::postUnoCommand(" << pLOEvent->m_pCommand << ", " << pLOEvent->m_pArguments << ")";
     g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->postUnoCommand(priv->m_pDocument, pLOEvent->m_pCommand, pLOEvent->m_pArguments, pLOEvent->m_bNotifyWhenFinished);
@@ -2346,12 +1912,8 @@ paintTileInThread (gpointer data)
     aTileRectangle.x = pixelToTwip(nTileSizePixels, pLOEvent->m_fPaintTileZoom) * pLOEvent->m_nPaintTileY;
     aTileRectangle.y = pixelToTwip(nTileSizePixels, pLOEvent->m_fPaintTileZoom) * pLOEvent->m_nPaintTileX;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
-    ss.str(std::string());
+    std::stringstream ss;
     GTimer* aTimer = g_timer_new();
     gulong nElapsedMs;
     ss << "lok::Document::paintTile(" << static_cast<void*>(pBuffer) << ", "
@@ -2366,7 +1928,6 @@ paintTileInThread (gpointer data)
                                          aTileRectangle.x, aTileRectangle.y,
                                          pixelToTwip(nTileSizePixels, pLOEvent->m_fPaintTileZoom),
                                          pixelToTwip(nTileSizePixels, pLOEvent->m_fPaintTileZoom));
-    aGuard.unlock();
 
     g_timer_elapsed(aTimer, &nElapsedMs);
     ss << " rendered in " << (nElapsedMs / 1000.) << " milliseconds";
@@ -2467,7 +2028,6 @@ static void lok_doc_view_set_property (GObject* object, guint propId, const GVal
     LOKDocViewPrivate& priv = getPrivate(pDocView);
     gboolean bDocPasswordEnabled = priv->m_nLOKFeatures & LOK_FEATURE_DOCUMENT_PASSWORD;
     gboolean bDocPasswordToModifyEnabled = priv->m_nLOKFeatures & LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY;
-    gboolean bTiledAnnotationsEnabled = !(priv->m_nLOKFeatures & LOK_FEATURE_NO_TILED_ANNOTATIONS);
 
     switch (propId)
     {
@@ -2485,7 +2045,6 @@ static void lok_doc_view_set_property (GObject* object, guint propId, const GVal
         break;
     case PROP_DOC_POINTER:
         priv->m_pDocument = static_cast<LibreOfficeKitDocument*>(g_value_get_pointer(value));
-        priv->m_eDocumentType = static_cast<LibreOfficeKitDocumentType>(priv->m_pDocument->pClass->getDocumentType(priv->m_pDocument));
         break;
     case PROP_EDITABLE:
         lok_doc_view_set_edit (pDocView, g_value_get_boolean (value));
@@ -2510,13 +2069,6 @@ static void lok_doc_view_set_property (GObject* object, guint propId, const GVal
         if ( g_value_get_boolean (value) != bDocPasswordToModifyEnabled)
         {
             priv->m_nLOKFeatures = priv->m_nLOKFeatures ^ LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY;
-            priv->m_pOffice->pClass->setOptionalFeatures(priv->m_pOffice, priv->m_nLOKFeatures);
-        }
-        break;
-    case PROP_TILED_ANNOTATIONS:
-        if ( g_value_get_boolean (value) != bTiledAnnotationsEnabled)
-        {
-            priv->m_nLOKFeatures = priv->m_nLOKFeatures ^ LOK_FEATURE_NO_TILED_ANNOTATIONS;
             priv->m_pOffice->pClass->setOptionalFeatures(priv->m_pOffice, priv->m_nLOKFeatures);
         }
         break;
@@ -2577,9 +2129,6 @@ static void lok_doc_view_get_property (GObject* object, guint propId, GValue *va
     case PROP_DOC_PASSWORD_TO_MODIFY:
         g_value_set_boolean (value, priv->m_nLOKFeatures & LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY);
         break;
-    case PROP_TILED_ANNOTATIONS:
-        g_value_set_boolean (value, !(priv->m_nLOKFeatures & LOK_FEATURE_NO_TILED_ANNOTATIONS));
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, propId, pspec);
     }
@@ -2600,26 +2149,10 @@ static void lok_doc_view_finalize (GObject* object)
     LOKDocView* pDocView = LOK_DOC_VIEW (object);
     LOKDocViewPrivate& priv = getPrivate(pDocView);
 
-    // Ignore notifications sent to this view on shutdown.
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
-    priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
-    priv->m_pDocument->pClass->registerCallback(priv->m_pDocument, nullptr, nullptr);
-    aGuard.unlock();
-
-    if (priv->m_pDocument && priv->m_pDocument->pClass->getViewsCount(priv->m_pDocument) > 1)
-    {
-        priv->m_pDocument->pClass->destroyView(priv->m_pDocument, priv->m_nViewId);
-    }
-    else
-    {
-        if (priv->m_pDocument)
-            priv->m_pDocument->pClass->destroy (priv->m_pDocument);
-        if (priv->m_pOffice)
-            priv->m_pOffice->pClass->destroy (priv->m_pOffice);
-    }
+    if (priv->m_pDocument)
+        priv->m_pDocument->pClass->destroy (priv->m_pDocument);
+    if (priv->m_pOffice)
+        priv->m_pOffice->pClass->destroy (priv->m_pOffice);
     delete priv.m_pImpl;
     priv.m_pImpl = nullptr;
 
@@ -2644,8 +2177,6 @@ static gboolean lok_doc_view_initable_init (GInitable *initable, GCancellable* /
                      priv->m_aLOPath);
         return FALSE;
     }
-    priv->m_nLOKFeatures |= LOK_FEATURE_PART_IN_INVALIDATION_CALLBACK;
-    priv->m_pOffice->pClass->setOptionalFeatures(priv->m_pOffice, priv->m_nLOKFeatures);
 
     return TRUE;
 }
@@ -2875,20 +2406,6 @@ static void lok_doc_view_class_init (LOKDocViewClass* pClass)
                              static_cast<GParamFlags>(G_PARAM_READWRITE
                                                       | G_PARAM_STATIC_STRINGS));
 
-    /**
-     * LOKDocView:tiled-annotations-rendering:
-     *
-     * Set it to false if client does not want LO to render comments in tiles and
-     * instead interested in using comments API to access comments
-     */
-    properties[PROP_TILED_ANNOTATIONS] =
-        g_param_spec_boolean("tiled-annotations",
-                             "Render comments in tiles",
-                             "Whether the client wants in tile comment rendering",
-                             TRUE,
-                             static_cast<GParamFlags>(G_PARAM_READWRITE
-                                                      | G_PARAM_STATIC_STRINGS));
-
     g_object_class_install_properties(pGObjectClass, PROP_LAST, properties);
 
     /**
@@ -3106,40 +2623,6 @@ static void lok_doc_view_class_init (LOKDocViewClass* pClass)
                      G_TYPE_NONE, 2,
                      G_TYPE_STRING,
                      G_TYPE_BOOLEAN);
-
-    /**
-     * LOKDocView::comment:
-     * @pDocView: the #LOKDocView on which the signal is emitted
-     * @pComment: the JSON string containing comment notification
-     * The has following structure containing the information telling whether
-     * the comment has been added, deleted or modified.
-     * The example:
-     * {
-     *     "comment": {
-     *         "action": "Add",
-     *         "id": "11",
-     *         "parent": "4",
-     *         "author": "Unknown Author",
-     *         "text": "This is a comment",
-     *         "dateTime": "2016-08-18T13:13:00",
-     *         "anchorPos": "4529, 3906",
-     *         "textRange": "1418, 3906, 3111, 919"
-     *     }
-     * }
-     * 'action' can be 'Add', 'Remove' or 'Modify' depending on whether
-     *  comment has been added, removed or modified.
-     * 'parent' is a non-zero comment id if this comment is a reply comment,
-     *  otherwise its a root comment.
-     */
-    doc_view_signals[COMMENT] =
-        g_signal_new("comment",
-                     G_TYPE_FROM_CLASS(pGObjectClass),
-                     G_SIGNAL_RUN_FIRST,
-                     0,
-                     nullptr, nullptr,
-                     g_cclosure_marshal_generic,
-                     G_TYPE_NONE, 1,
-                     G_TYPE_STRING);
 }
 
 SAL_DLLPUBLIC_EXPORT GtkWidget*
@@ -3163,8 +2646,7 @@ lok_doc_view_new_from_user_profile (const gchar* pPath, const gchar* pUserProfil
                                      nullptr));
 }
 
-SAL_DLLPUBLIC_EXPORT GtkWidget* lok_doc_view_new_from_widget(LOKDocView* pOldLOKDocView,
-                                                             const gchar* pRenderingArguments)
+SAL_DLLPUBLIC_EXPORT GtkWidget* lok_doc_view_new_from_widget(LOKDocView* pOldLOKDocView)
 {
     LOKDocViewPrivate& pOldPriv = getPrivate(pOldLOKDocView);
     GtkWidget* pNewDocView = GTK_WIDGET(g_initable_new(LOK_TYPE_DOC_VIEW, /*cancellable=*/nullptr, /*error=*/nullptr,
@@ -3179,10 +2661,8 @@ SAL_DLLPUBLIC_EXPORT GtkWidget* lok_doc_view_new_from_widget(LOKDocView* pOldLOK
     // No documentLoad(), just a createView().
     LibreOfficeKitDocument* pDocument = lok_doc_view_get_document(LOK_DOC_VIEW(pNewDocView));
     LOKDocViewPrivate& pNewPriv = getPrivate(LOK_DOC_VIEW(pNewDocView));
-    // Store the view id only later in postDocumentLoad(), as
-    // initializeForRendering() changes the id in Impress.
-    pDocument->pClass->createView(pDocument);
-    pNewPriv->m_aRenderingArguments = pRenderingArguments;
+    pNewPriv->m_nViewId = pDocument->pClass->createView(pDocument);
+    pNewPriv->m_aRenderingArguments = pOldPriv->m_aRenderingArguments;
 
     postDocumentLoad(pNewDocView);
     return pNewDocView;
@@ -3248,24 +2728,6 @@ lok_doc_view_set_visible_area (LOKDocView* pDocView, GdkRectangle* pVisibleArea)
     priv->m_bVisibleAreaSet = true;
 }
 
-namespace {
-// This used to be rtl::math::approxEqual() but since that isn't inline anymore
-// in rtl/math.hxx and was moved into libuno_sal as rtl_math_approxEqual() to
-// cater for representable integer cases and we don't want to link against
-// libuno_sal, we'll have to have an own implementation. The special large
-// integer cases seems not be needed here.
-inline bool lok_approxEqual(double a, double b)
-{
-    static const double e48 = 1.0 / (16777216.0 * 16777216.0);
-    if (a == b)
-        return true;
-    if (a == 0.0 || b == 0.0)
-        return false;
-    const double d = fabs(a - b);
-    return (d < fabs(a) * e48 && d < fabs(b) * e48);
-}
-}
-
 SAL_DLLPUBLIC_EXPORT void
 lok_doc_view_set_zoom (LOKDocView* pDocView, float fZoom)
 {
@@ -3279,7 +2741,7 @@ lok_doc_view_set_zoom (LOKDocView* pDocView, float fZoom)
     fZoom = fZoom < MIN_ZOOM ? MIN_ZOOM : fZoom;
     fZoom = fZoom > MAX_ZOOM ? MAX_ZOOM : fZoom;
 
-    if (lok_approxEqual(fZoom, priv->m_fZoom))
+    if (rtl::math::approxEqual(fZoom, priv->m_fZoom))
         return;
 
     priv->m_fZoom = fZoom;
@@ -3288,7 +2750,8 @@ lok_doc_view_set_zoom (LOKDocView* pDocView, float fZoom)
     // Total number of columns in this document.
     guint nColumns = ceil((double)nDocumentWidthPixels / nTileSizePixels);
 
-    priv->m_pTileBuffer = std::unique_ptr<TileBuffer>(new TileBuffer(nColumns));
+    priv->m_pTileBuffer = std::unique_ptr<TileBuffer>(new TileBuffer(priv->m_pDocument,
+                                                                     nColumns));
     gtk_widget_set_size_request(GTK_WIDGET(pDocView),
                                 nDocumentWidthPixels,
                                 nDocumentHeightPixels);
@@ -3343,10 +2806,6 @@ lok_doc_view_get_parts (LOKDocView* pDocView)
     if (!priv->m_pDocument)
         return -1;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     return priv->m_pDocument->pClass->getParts( priv->m_pDocument );
 }
@@ -3358,10 +2817,6 @@ lok_doc_view_get_part (LOKDocView* pDocView)
     if (!priv->m_pDocument)
         return -1;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     return priv->m_pDocument->pClass->getPart( priv->m_pDocument );
 }
@@ -3393,7 +2848,6 @@ lok_doc_view_set_part (LOKDocView* pDocView, int nPart)
         g_clear_error(&error);
     }
     g_object_unref(task);
-    priv->m_nPartId = nPart;
 }
 
 SAL_DLLPUBLIC_EXPORT gchar*
@@ -3403,10 +2857,6 @@ lok_doc_view_get_part_name (LOKDocView* pDocView, int nPart)
     if (!priv->m_pDocument)
         return nullptr;
 
-    std::unique_lock<std::mutex> aGuard(g_aLOKMutex);
-    std::stringstream ss;
-    ss << "lok::Document::setView(" << priv->m_nViewId << ")";
-    g_info("%s", ss.str().c_str());
     priv->m_pDocument->pClass->setView(priv->m_pDocument, priv->m_nViewId);
     return priv->m_pDocument->pClass->getPartName( priv->m_pDocument, nPart );
 }
@@ -3473,8 +2923,12 @@ lok_doc_view_reset_view(LOKDocView* pDocView)
     memset(&priv->m_aHandleEndRect, 0, sizeof(priv->m_aHandleEndRect));
     priv->m_bInDragEndHandle = false;
 
+    cairo_surface_destroy(priv->m_pGraphicHandle);
+    priv->m_pGraphicHandle = nullptr;
     memset(&priv->m_aGraphicHandleRects, 0, sizeof(priv->m_aGraphicHandleRects));
     memset(&priv->m_bInDragGraphicHandles, 0, sizeof(priv->m_bInDragGraphicHandles));
+
+    priv->m_nViewId = 0;
 
     gtk_widget_queue_draw(GTK_WIDGET(pDocView));
 }
@@ -3603,15 +3057,6 @@ lok_doc_view_set_document_password (LOKDocView* pDocView,
 
     priv->m_pOffice->pClass->setDocumentPassword(priv->m_pOffice, pURL, pPassword);
 }
-
-SAL_DLLPUBLIC_EXPORT gchar*
-lok_doc_view_get_version_info (LOKDocView* pDocView)
-{
-    LOKDocViewPrivate& priv = getPrivate(pDocView);
-
-    return priv->m_pOffice->pClass->getVersionInfo(priv->m_pOffice);
-}
-
 
 SAL_DLLPUBLIC_EXPORT gfloat
 lok_doc_view_pixel_to_twip (LOKDocView* pDocView, float fInput)

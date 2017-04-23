@@ -33,12 +33,12 @@ struct FormulaResultValue
 
     double mfValue;
     svl::SharedString maString;
-    FormulaError mnError;
+    sal_uInt16 mnError;
 
     FormulaResultValue();
     FormulaResultValue( double fValue );
-    FormulaResultValue( const svl::SharedString& rStr );
-    FormulaResultValue( FormulaError nErr );
+    FormulaResultValue(const svl::SharedString& rStr );
+    FormulaResultValue( sal_uInt16 nErr );
 };
 
 }
@@ -71,7 +71,7 @@ class ScFormulaResult
         double          mfValue;    // double result direct for performance and memory consumption
         const formula::FormulaToken*  mpToken;    // if not, result token obtained from interpreter
     };
-    FormulaError        mnError;    // error code
+    sal_uInt16              mnError;    // error code
     bool                mbToken :1; // whether content of union is a token
     bool                mbEmpty :1; // empty cell result
     bool                mbEmptyDisplayedAsString :1;    // only if mbEmpty
@@ -154,15 +154,15 @@ public:
         one paragraph */
     bool IsMultiline() const;
 
-    bool GetErrorOrDouble( FormulaError& rErr, double& rVal ) const;
+    bool GetErrorOrDouble( sal_uInt16& rErr, double& rVal ) const;
     sc::FormulaResultValue GetResult() const;
 
     /** Get error code if set or GetCellResultType() is formula::svError or svUnknown,
         else 0. */
-    FormulaError GetResultError() const;
+    sal_uInt16 GetResultError() const;
 
     /** Set error code, don't touch token or double. */
-    void SetResultError( FormulaError nErr );
+    void SetResultError( sal_uInt16 nErr );
 
     /** Set direct double. Shouldn't be used externally except in
         ScFormulaCell for rounded CalcAsShown or SetErrCode() or
@@ -188,7 +188,7 @@ public:
     const OUString& GetHybridFormula() const;
 
     /** Should only be used by import filters, best in the order
-        SetHybridDouble(), SetHybridString(), or only SetHybridFormula() for
+        SetHybridDouble(), SetHybridString(), or only SetHybridString() for
         formula string to be compiled later. */
     SC_DLLPUBLIC void SetHybridDouble( double f );
 
@@ -196,11 +196,6 @@ public:
         SetHybridDouble(), SetHybridString()/SetHybridFormula(), or only
         SetHybridFormula() for formula string to be compiled later. */
     SC_DLLPUBLIC void SetHybridString( const svl::SharedString & rStr );
-
-    /** Should only be used by import filters, best in the order
-        SetHybridDouble(), SetHybridFormula(),
-        SetHybridEmptyDisplayedAsString() must be last. */
-    SC_DLLPUBLIC void SetHybridEmptyDisplayedAsString();
 
     /** Should only be used by import filters, best in the order
         SetHybridDouble(), SetHybridString()/SetHybridFormula(), or only

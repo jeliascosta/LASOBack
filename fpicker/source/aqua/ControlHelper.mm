@@ -72,7 +72,7 @@ uno::Any HandleGetListValue(const NSControl* pControl, const sal_Int16 nControlA
                 NSString* sCFItem = [pButton itemTitleAtIndex:i];
                 if (nil != sCFItem) {
                     aItemList[i] = [sCFItem OUString];
-                    SAL_INFO("fpicker.aqua","Return value[" << (i - 1) << "]: " << aItemList[i - 1]);
+                    SAL_INFO("fpicker.aqua","Return value[" << (i - 1) << "]: " << OUStringToOString(aItemList[i - 1], RTL_TEXTENCODING_UTF8).getStr());
                 }
             }
 
@@ -85,7 +85,7 @@ uno::Any HandleGetListValue(const NSControl* pControl, const sal_Int16 nControlA
             NSString* sCFItem = [pButton titleOfSelectedItem];
             if (nil != sCFItem) {
                 OUString sString = [sCFItem OUString];
-                SAL_INFO("fpicker.aqua","Return value: " << sString);
+                SAL_INFO("fpicker.aqua","Return value: " << OUStringToOString(sString, RTL_TEXTENCODING_UTF8).getStr());
                 aAny <<= sString;
             }
         }
@@ -216,11 +216,6 @@ void ControlHelper::initialize( sal_Int16 nTemplateId )
         case FILESAVE_AUTOEXTENSION:
             m_bToggleVisibility[AUTOEXTENSION] = true;
             break;
-        case FILEOPEN_PREVIEW:
-            m_bToggleVisibility[PREVIEW] = true;
-            break;
-        case FILEOPEN_LINK_PLAY:
-            m_bToggleVisibility[LINK] = true;
     }
 
     createControls();
@@ -643,7 +638,7 @@ void ControlHelper::HandleSetListValue(const NSControl* pControl, const sal_Int1
             rValue >>= sItem;
 
             NSString* sCFItem = [NSString stringWithOUString:sItem];
-            SAL_INFO("fpicker.aqua","Adding menu item: " << sItem);
+            SAL_INFO("fpicker.aqua","Adding menu item: " << OUStringToOString(sItem, RTL_TEXTENCODING_UTF8).getStr());
             [pButton addItemWithTitle:sCFItem];
         }
             break;
@@ -656,7 +651,7 @@ void ControlHelper::HandleSetListValue(const NSControl* pControl, const sal_Int1
             for (sal_Int32 i = 0; i < nItemCount; ++i)
             {
                 NSString* sCFItem = [NSString stringWithOUString:aStringList[i]];
-                SAL_INFO("fpicker.aqua","Adding menu item: " << aStringList[i]);
+                SAL_INFO("fpicker.aqua","Adding menu item: " << OUStringToOString(aStringList[i], RTL_TEXTENCODING_UTF8).getStr());
                 [pButton addItemWithTitle:sCFItem];
             }
         }

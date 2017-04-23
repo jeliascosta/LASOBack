@@ -27,10 +27,10 @@
 #include <com/sun/star/sdbc/SQLWarning.hpp>
 #include <comphelper/proparrhlp.hxx>
 #include <cppuhelper/implbase2.hxx>
-#include <cppuhelper/basemutex.hxx>
 #include <comphelper/uno3.hxx>
 #include <connectivity/CommonTools.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
+#include <comphelper/broadcasthelper.hxx>
 #include <connectivity/sqliterator.hxx>
 #include <connectivity/sqlparse.hxx>
 #include <connectivity/FValue.hxx>
@@ -48,8 +48,8 @@ namespace connectivity
 {
     namespace evoab
     {
-        typedef ::cppu::WeakComponentImplHelper<   css::sdbc::XWarningsSupplier
-                                               ,   css::sdbc::XCloseable
+        typedef ::cppu::WeakComponentImplHelper<   ::com::sun::star::sdbc::XWarningsSupplier
+                                               ,   ::com::sun::star::sdbc::XCloseable
                                                >   OCommonStatement_IBase;
 
         struct FieldSort
@@ -60,7 +60,7 @@ namespace connectivity
             FieldSort() : nField(0), bAscending( true ) { }
             FieldSort( const sal_Int32 _nField, const bool _bAscending ) : nField( _nField ), bAscending( _bAscending ) { }
         };
-        typedef std::vector< FieldSort >  SortDescriptor;
+        typedef ::std::vector< FieldSort >  SortDescriptor;
 
         enum QueryFilterType
         {
@@ -69,81 +69,67 @@ namespace connectivity
             eFilterOther
         };
 
-        class EBookQueryWrapper
-        {
-        private:
-            EBookQuery* mpQuery;
-        public:
-            EBookQueryWrapper()
-                : mpQuery(nullptr)
-            {
-            }
-            EBookQueryWrapper(const EBookQueryWrapper& rhs)
-                : mpQuery(rhs.mpQuery)
-            {
-                if (mpQuery)
-                    e_book_query_ref(mpQuery);
-            }
-            EBookQueryWrapper(EBookQueryWrapper&& rhs)
-                : mpQuery(rhs.mpQuery)
-            {
-                rhs.mpQuery = nullptr;
-            }
-            void reset(EBookQuery* pQuery)
-            {
-                if (mpQuery)
-                    e_book_query_unref(mpQuery);
-                mpQuery = pQuery;
-                if (mpQuery)
-                    e_book_query_ref(mpQuery);
-            }
-            EBookQueryWrapper& operator=(const EBookQueryWrapper& rhs)
-            {
-                if (this != &rhs)
-                    reset(rhs.mpQuery);
-                return *this;
-            }
-            EBookQueryWrapper& operator=(EBookQueryWrapper&& rhs)
-            {
-                if (mpQuery)
-                    e_book_query_unref(mpQuery);
-                mpQuery = rhs.mpQuery;
-                rhs.mpQuery = nullptr;
-                return *this;
-            }
-            ~EBookQueryWrapper()
-            {
-                if (mpQuery)
-                    e_book_query_unref(mpQuery);
-            }
-            EBookQuery* getQuery() const
-            {
-                return mpQuery;
-            }
-        };
-
         struct QueryData
         {
         private:
-            EBookQueryWrapper aQuery;
+            EBookQuery*     pQuery;
 
         public:
-            OUString sTable;
-            QueryFilterType eFilterType;
-            rtl::Reference<connectivity::OSQLColumns>  xSelectColumns;
-            SortDescriptor aSortOrder;
+            OUString                             sTable;
+            QueryFilterType                             eFilterType;
+            ::rtl::Reference< ::connectivity::OSQLColumns >  xSelectColumns;
+            SortDescriptor                              aSortOrder;
 
             QueryData()
-                : sTable()
-                , eFilterType( eFilterOther )
-                , xSelectColumns()
-                , aSortOrder()
+                :pQuery( nullptr )
+                ,sTable()
+                ,eFilterType( eFilterOther )
+                ,xSelectColumns()
+                ,aSortOrder()
             {
             }
 
-            EBookQuery* getQuery() const { return aQuery.getQuery(); }
-            void setQuery(EBookQuery* pQuery) { aQuery.reset(pQuery); }
+            QueryData( const QueryData& _rhs )
+                :pQuery( nullptr )
+                ,sTable()
+                ,eFilterType( eFilterOther )
+                ,xSelectColumns()
+                ,aSortOrder()
+            {
+                *this = _rhs;
+            }
+
+            QueryData& operator=( const QueryData& _rhs )
+            {
+                if ( this == &_rhs )
+                    return *this;
+
+                setQuery( _rhs.pQuery );
+                sTable = _rhs.sTable;
+                eFilterType = _rhs.eFilterType;
+                xSelectColumns = _rhs.xSelectColumns;
+                aSortOrder = _rhs.aSortOrder;
+
+                return *this;
+            }
+
+            ~QueryData()
+            {
+                setQuery( nullptr );
+            }
+
+            EBookQuery* getQuery() const { return pQuery; }
+
+            void setQuery( EBookQuery* _pQuery )
+            {
+                if ( pQuery )
+                    e_book_query_unref( pQuery );
+                pQuery = _pQuery;
+                if ( pQuery )
+                    e_book_query_ref( pQuery );
+            }
         };
+
 
         //************ Class: OCommonStatement
         // is a base class for the normal statement and for the prepared statement
@@ -151,7 +137,7 @@ namespace connectivity
         class OCommonStatement;
         typedef OSubComponent< OCommonStatement, OCommonStatement_IBase >   OStatement_CBase;
 
-        class OCommonStatement  :public cppu::BaseMutex
+        class OCommonStatement  :public comphelper::OBaseMutex
                                 ,public OCommonStatement_IBase
                                 ,public ::comphelper::OPropertyContainer
                                 ,public ::comphelper::OPropertyArrayUsageHelper< OCommonStatement >
@@ -160,7 +146,7 @@ namespace connectivity
             friend class OSubComponent< OCommonStatement, OCommonStatement_IBase >;
 
         private:
-            css::uno::WeakReference< css::sdbc::XResultSet>    m_xResultSet;   // The last ResultSet created
+            ::com::sun::star::uno::WeakReference< ::com::sun::star::sdbc::XResultSet>    m_xResultSet;   // The last ResultSet created
             OEvoabConnection                     *m_pConnection;
             connectivity::OSQLParser              m_aParser;
             connectivity::OSQLParseTreeIterator   m_aSQLIterator;
@@ -187,7 +173,7 @@ namespace connectivity
             // OPropertySetHelper
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
-            virtual ~OCommonStatement() override;
+            virtual ~OCommonStatement();
 
         protected:
             void         parseSql( const OUString& sql, QueryData& _out_rQueryData );
@@ -200,7 +186,7 @@ namespace connectivity
             // other methods
             OEvoabConnection* getOwnConnection() const { return m_pConnection;}
 
-            using OCommonStatement_IBase::operator css::uno::Reference< css::uno::XInterface >;
+            using OCommonStatement_IBase::operator ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >;
 
         protected:
             explicit OCommonStatement( OEvoabConnection* _pConnection );
@@ -211,19 +197,19 @@ namespace connectivity
             virtual void SAL_CALL release() throw() override;
             virtual void SAL_CALL acquire() throw() override;
             // XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             //XTypeProvider
-            virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+            virtual ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XPropertySet
-            virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XWarningsSupplier
-            virtual css::uno::Any SAL_CALL getWarnings(  ) override;
-            virtual void SAL_CALL clearWarnings(  ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual void SAL_CALL clearWarnings(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
             // XCloseable
-            virtual void SAL_CALL close(  ) override;
+            virtual void SAL_CALL close(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
         protected:
             /** will return the EBookQuery representing the statement WHERE condition, or throw
@@ -233,27 +219,27 @@ namespace connectivity
             QueryData
                 impl_getEBookQuery_throw( const OUString& _rSql );
 
-            css::uno::Reference< css::sdbc::XResultSet >
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet >
                 impl_executeQuery_throw( const OUString& _rSql );
 
-            css::uno::Reference< css::sdbc::XResultSet >
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet >
                 impl_executeQuery_throw( const QueryData& _rData );
 
-            css::uno::Reference< css::sdbc::XConnection >
-                impl_getConnection() { return css::uno::Reference< css::sdbc::XConnection >( m_pConnection ); }
+            ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >
+                impl_getConnection() { return ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >( m_pConnection ); }
 
             OUString
                 impl_getColumnRefColumnName_throw( const ::connectivity::OSQLParseNode& _rColumnRef );
         };
 
-        typedef ::cppu::ImplHelper2 <   css::lang::XServiceInfo
-                                    ,   css::sdbc::XStatement
+        typedef ::cppu::ImplHelper2 <   ::com::sun::star::lang::XServiceInfo
+                                    ,   ::com::sun::star::sdbc::XStatement
                                     >   OStatement_IBase;
         class OStatement    :public OCommonStatement
                             ,public OStatement_IBase
         {
         protected:
-            virtual ~OStatement() override {}
+            virtual ~OStatement(){}
 
         public:
             explicit OStatement( OEvoabConnection* _pConnection)
@@ -262,7 +248,7 @@ namespace connectivity
             }
 
             // XInterface
-            virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType ) override;
+            virtual ::com::sun::star::uno::Any SAL_CALL queryInterface( const ::com::sun::star::uno::Type & rType ) throw(::com::sun::star::uno::RuntimeException, std::exception) override;
             virtual void SAL_CALL acquire() throw() override;
             virtual void SAL_CALL release() throw() override;
 
@@ -273,10 +259,10 @@ namespace connectivity
             DECLARE_SERVICE_INFO();
 
             // XStatement
-            virtual css::uno::Reference< css::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) override ;
-            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) override ;
-            virtual sal_Bool SAL_CALL execute( const OUString& sql ) override ;
-            virtual css::uno::Reference< css::sdbc::XConnection > SAL_CALL getConnection(  ) override ;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL executeQuery( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual sal_Int32 SAL_CALL executeUpdate( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual sal_Bool SAL_CALL execute( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > SAL_CALL getConnection(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
         };
     }
 }

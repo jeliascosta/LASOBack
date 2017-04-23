@@ -33,8 +33,6 @@
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 
-#include <o3tl/any.hxx>
-
 #include <rtl/ustrbuf.hxx>
 
 #include <tools/debug.hxx>
@@ -131,7 +129,7 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
             rProp.Value >>= sValue;
             if( !sValue.isEmpty() )
             {
-                cBullet = sValue[0];
+                cBullet = (sal_Unicode)sValue[0];
             }
         }
         else if( rProp.Name == "BulletRelSize" )
@@ -239,7 +237,7 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
     if( bOutline && (NumberingType::CHAR_SPECIAL == eType ||
                      NumberingType::BITMAP == eType) )
     {
-        SAL_WARN_IF( bOutline, "xmloff",
+        DBG_ASSERT( !bOutline,
            "SvxXMLNumRuleExport::exportLevelStyle: invalid style for outline" );
         return;
     }
@@ -315,7 +313,7 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
         }
         else
         {
-            SAL_WARN_IF( xBitmap.is(), "xmloff",
+            DBG_ASSERT( !xBitmap.is(),
                         "embedded images are not supported by now" );
         }
     }
@@ -408,7 +406,7 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
             enum XMLTokenEnum eValue = XML_TOKEN_INVALID;
             switch( eImageVertOrient )
             {
-            case VertOrientation::BOTTOM:   // yes, it's OK: BOTTOM means that the baseline
+            case VertOrientation::BOTTOM:   // yes, its OK: BOTTOM means that the baseline
                                     // hits the frame at its topmost position
             case VertOrientation::LINE_TOP:
             case VertOrientation::CHAR_TOP:
@@ -419,7 +417,7 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
             case VertOrientation::CHAR_CENTER:
                 eValue = XML_MIDDLE;
                 break;
-            case VertOrientation::TOP:      // yes, it's OK: TOP means that the baseline
+            case VertOrientation::TOP:      // yes, its OK: TOP means that the baseline
                                     // hits the frame at its bottommost position
             case VertOrientation::LINE_BOTTOM:
             case VertOrientation::CHAR_BOTTOM:
@@ -612,6 +610,11 @@ void SvxXMLNumRuleExport::exportLevelStyle( sal_Int32 nLevel,
 }
 
 
+void SvxXMLNumRuleExport::AddListStyleAttributes()
+{
+}
+
+
 SvxXMLNumRuleExport::SvxXMLNumRuleExport( SvXMLExport& rExp ) :
     rExport( rExp ),
     sNumberingRules( "NumberingRules" ),
@@ -671,11 +674,14 @@ void SvxXMLNumRuleExport::exportNumberingRule(
         xPropSetInfo->hasPropertyByName( sIsContinuousNumbering ) )
     {
         Any aAny( xPropSet->getPropertyValue( sIsContinuousNumbering ) );
-        bContNumbering = *o3tl::doAccess<bool>(aAny);
+        bContNumbering = *static_cast<sal_Bool const *>(aAny.getValue());
     }
     if( bContNumbering )
         GetExport().AddAttribute( XML_NAMESPACE_TEXT,
                                   XML_CONSECUTIVE_NUMBERING, XML_TRUE );
+
+    // other application specific attributes
+    AddListStyleAttributes();
 
     {
         SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_TEXT, XML_LIST_STYLE ,
@@ -696,7 +702,7 @@ void SvxXMLNumRuleExport::exportStyle( const Reference< XStyle >& rStyle )
     if( xPropSetInfo->hasPropertyByName( sIsPhysical ) )
     {
         aAny = xPropSet->getPropertyValue( sIsPhysical );
-        if( !*o3tl::doAccess<bool>(aAny) )
+        if( !*static_cast<sal_Bool const *>(aAny.getValue()) )
             return;
     }
 
@@ -720,12 +726,12 @@ void SvxXMLNumRuleExport::exportOutline()
 {
     Reference< XChapterNumberingSupplier > xCNSupplier( GetExport().GetModel(),
                                                         UNO_QUERY );
-    SAL_WARN_IF( !xCNSupplier.is(), "xmloff", "no chapter numbering supplier" );
+    DBG_ASSERT( xCNSupplier.is(), "no chapter numbering supplier" );
 
     if( xCNSupplier.is() )
     {
         Reference< XIndexReplace > xNumRule( xCNSupplier->getChapterNumberingRules() );
-        SAL_WARN_IF( !xNumRule.is(), "xmloff", "no chapter numbering rules" );
+        DBG_ASSERT( xNumRule.is(), "no chapter numbering rules" );
 
         if( xNumRule.is() )
         {
@@ -785,11 +791,11 @@ void SvxXMLNumRuleExport::exportStyles( bool bUsed,
         exportOutline();
 
     Reference< XStyleFamiliesSupplier > xFamiliesSupp( GetExport().GetModel(), UNO_QUERY );
-    SAL_WARN_IF( !xFamiliesSupp.is(), "xmloff", "No XStyleFamiliesSupplier from XModel for export!" );
+    DBG_ASSERT( xFamiliesSupp.is(), "No XStyleFamiliesSupplier from XModel for export!" );
     if( xFamiliesSupp.is() )
     {
         Reference< XNameAccess > xFamilies( xFamiliesSupp->getStyleFamilies() );
-        SAL_WARN_IF( !xFamiliesSupp.is(), "xmloff", "getStyleFamilies() from XModel failed for export!" );
+        DBG_ASSERT( xFamiliesSupp.is(), "getStyleFamilies() from XModel failed for export!" );
 
         if( xFamilies.is() )
         {
@@ -800,7 +806,7 @@ void SvxXMLNumRuleExport::exportStyles( bool bUsed,
             {
                 xFamilies->getByName( aNumberStyleName ) >>= xStyles;
 
-                SAL_WARN_IF( !xStyles.is(), "xmloff", "Style not found for export!" );
+                DBG_ASSERT( xStyles.is(), "Style not found for export!" );
 
                 if( xStyles.is() )
                 {

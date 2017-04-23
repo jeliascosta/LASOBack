@@ -98,7 +98,7 @@ void LwpSdwGroupLoaderV0102::BeginDrawObjects(std::vector< rtl::Reference<XFFram
 
     //flag
     unsigned char BinSignature[2];
-    m_pStream->ReadBytes(BinSignature, 2);
+    m_pStream->Read(BinSignature,2);
     if (BinSignature[0] != 'S' || BinSignature[1] != 'M')
     {
         assert(false);
@@ -115,12 +115,12 @@ void LwpSdwGroupLoaderV0102::BeginDrawObjects(std::vector< rtl::Reference<XFFram
     // topObj, botObj
     m_pStream->SeekRel(4);
     //record count
-    unsigned short nRecCount(0);
+    unsigned short nRecCount;
     m_pStream->ReadUInt16(nRecCount);
     // selCount
     m_pStream->SeekRel(2);
     //boundrect
-    unsigned short left(0),top(0),right(0),bottom(0);
+    unsigned short left,top,right,bottom;
     m_pStream->ReadUInt16(left);
     m_pStream->ReadUInt16(top);
     m_pStream->ReadUInt16(right);
@@ -197,7 +197,7 @@ void LwpSdwGroupLoaderV0102::BeginDrawObjects(std::vector< rtl::Reference<XFFram
             // placement: centered
             if (xMyFrameLayout->GetScaleCenter())
             {
-                tools::Rectangle aBoundRect(static_cast<long>(left*m_aTransformData.fScaleX + fLeftMargin),
+                Rectangle aBoundRect(static_cast<long>(left*m_aTransformData.fScaleX + fLeftMargin),
                     static_cast<long>(top    * m_aTransformData.fScaleY + fTopMargin),
                     static_cast<long>(right  * m_aTransformData.fScaleX),
                     static_cast<long>(bottom * m_aTransformData.fScaleY));
@@ -222,12 +222,6 @@ void LwpSdwGroupLoaderV0102::BeginDrawObjects(std::vector< rtl::Reference<XFFram
         }
     }
 
-    if (nRecCount > m_pStream->remainingSize())
-    {
-        SAL_WARN("lwp", "stream too short for claimed no of records");
-        nRecCount = m_pStream->remainingSize();
-    }
-
     //load draw object
     for (unsigned short i = 0; i < nRecCount; i++)
     {
@@ -249,7 +243,7 @@ XFDrawGroup* LwpSdwGroupLoaderV0102::CreateDrawGroupObject()
 {
     //flag
     unsigned char BinSignature[2];
-    m_pStream->ReadBytes(BinSignature, 2);
+    m_pStream->Read(BinSignature,2);
     if (BinSignature[0] != 'S' || BinSignature[1] != 'M')
     {
         assert(false);
@@ -266,12 +260,12 @@ XFDrawGroup* LwpSdwGroupLoaderV0102::CreateDrawGroupObject()
     // topObj, botObj
     m_pStream->SeekRel(4);
     //record count
-    unsigned short nRecCount(0);
+    unsigned short nRecCount;
     m_pStream->ReadUInt16(nRecCount);
     // selCount
     m_pStream->SeekRel(2);
     //boundrect
-    unsigned short left(0),top(0),right(0),bottom(0);
+    unsigned short left,top,right,bottom;
     m_pStream->ReadUInt16(left);
     m_pStream->ReadUInt16(top);
     m_pStream->ReadUInt16(right);
@@ -280,12 +274,6 @@ XFDrawGroup* LwpSdwGroupLoaderV0102::CreateDrawGroupObject()
     m_pStream->SeekRel(2);
 
     XFDrawGroup* pXFDrawGroup = new XFDrawGroup();
-
-    if (nRecCount > m_pStream->remainingSize())
-    {
-        SAL_WARN("lwp", "stream too short for claimed no of records");
-        nRecCount = m_pStream->remainingSize();
-    }
 
     //load draw object
     for (unsigned short i = 0; i < nRecCount; i++)
@@ -315,7 +303,7 @@ XFDrawGroup* LwpSdwGroupLoaderV0102::CreateDrawGroupObject()
 XFFrame* LwpSdwGroupLoaderV0102::CreateDrawObject()
 {
     //record type
-    unsigned char recType(0);
+    unsigned char recType;
     m_pStream->ReadUChar(recType);
 
     LwpDrawObj* pDrawObj = nullptr;

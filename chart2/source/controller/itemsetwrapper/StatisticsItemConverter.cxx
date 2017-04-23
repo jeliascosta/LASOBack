@@ -70,7 +70,9 @@ uno::Reference< beans::XPropertySet > lcl_GetErrorBar(
 
 uno::Reference< beans::XPropertySet > lcl_GetDefaultErrorBar()
 {
-    return uno::Reference< beans::XPropertySet >( new ::chart::ErrorBar );
+    // todo: use a valid context
+    return uno::Reference< beans::XPropertySet >(
+        ::chart::createErrorBar( uno::Reference< uno::XComponentContext >()));
 }
 
 void lcl_getErrorValues( const uno::Reference< beans::XPropertySet > & xErrorBarProp,
@@ -116,12 +118,12 @@ uno::Reference< beans::XPropertySet > lcl_getEquationProperties(
     // ensure that a trendline is on
     if( pItemSet )
     {
-        SvxChartRegress eRegress = SvxChartRegress::NONE;
+        SvxChartRegress eRegress = CHREGRESS_NONE;
         const SfxPoolItem *pPoolItem = nullptr;
         if( pItemSet->GetItemState( SCHATTR_REGRESSION_TYPE, true, &pPoolItem ) == SfxItemState::SET )
         {
             eRegress = static_cast< const SvxChartRegressItem * >( pPoolItem )->GetValue();
-            bEquationExists = ( eRegress != SvxChartRegress::NONE );
+            bEquationExists = ( eRegress != CHREGRESS_NONE );
         }
     }
 
@@ -147,12 +149,12 @@ uno::Reference< beans::XPropertySet > lcl_getCurveProperties(
     // ensure that a trendline is on
     if( pItemSet )
     {
-        SvxChartRegress eRegress = SvxChartRegress::NONE;
+        SvxChartRegress eRegress = CHREGRESS_NONE;
         const SfxPoolItem *pPoolItem = nullptr;
         if( pItemSet->GetItemState( SCHATTR_REGRESSION_TYPE, true, &pPoolItem ) == SfxItemState::SET )
         {
             eRegress = static_cast< const SvxChartRegressItem * >( pPoolItem )->GetValue();
-            bExists = ( eRegress != SvxChartRegress::NONE );
+            bExists = ( eRegress != CHREGRESS_NONE );
         }
     }
 
@@ -182,7 +184,7 @@ bool lclConvertToPropertySet(const SfxItemSet& rItemSet, sal_uInt16 nWhichId, co
         bool aSuccess = xProperties->getPropertyValue( aPropertyID ) >>= aOldValue;
         if (!aSuccess || aOldValue != aValue)
         {
-            xProperties->setPropertyValue( aPropertyID , uno::Any( aValue ));
+            xProperties->setPropertyValue( aPropertyID , uno::makeAny( aValue ));
             return true;
         }
     }
@@ -208,7 +210,7 @@ void lclConvertToItemSetDouble(SfxItemSet& rItemSet, sal_uInt16 nWhichId, const 
     OSL_ASSERT(xProperties.is());
     if( xProperties.is() )
     {
-        double aValue = static_cast<const SvxDoubleItem&>(rItemSet.Get( nWhichId )).GetValue();
+        double aValue = static_cast<double>(static_cast<const SvxDoubleItem&>(rItemSet.Get( nWhichId )).GetValue());
         if(xProperties->getPropertyValue( aPropertyID ) >>= aValue)
         {
             rItemSet.Put(SvxDoubleItem( aValue, nWhichId ));
@@ -251,6 +253,7 @@ bool StatisticsItemConverter::GetItemProperty(
 
 bool StatisticsItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -270,7 +273,8 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 if( ! bNewHasMeanValueLine )
                     RegressionCurveHelper::removeMeanValueLine( xRegCnt );
                 else
-                    RegressionCurveHelper::addMeanValueLine( xRegCnt, GetPropertySet() );
+                    RegressionCurveHelper::addMeanValueLine(
+                        xRegCnt, uno::Reference< uno::XComponentContext >(), GetPropertySet() );
                 bChanged = true;
             }
         }
@@ -291,7 +295,7 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 static_cast< const SvxChartKindErrorItem & >(
                     rItemSet.Get( nWhichId )).GetValue();
 
-            if( !xErrorBarProp.is() && eErrorKind == SvxChartKindError::NONE)
+            if( !xErrorBarProp.is() && eErrorKind == CHERROR_NONE)
             {
                 //nothing to do
             }
@@ -301,21 +305,21 @@ bool StatisticsItemConverter::ApplySpecialItem(
 
                 switch( eErrorKind )
                 {
-                    case SvxChartKindError::NONE:
+                    case CHERROR_NONE:
                         nStyle = css::chart::ErrorBarStyle::NONE; break;
-                    case SvxChartKindError::Variant:
+                    case CHERROR_VARIANT:
                         nStyle = css::chart::ErrorBarStyle::VARIANCE; break;
-                    case SvxChartKindError::Sigma:
+                    case CHERROR_SIGMA:
                         nStyle = css::chart::ErrorBarStyle::STANDARD_DEVIATION; break;
-                    case SvxChartKindError::Percent:
+                    case CHERROR_PERCENT:
                         nStyle = css::chart::ErrorBarStyle::RELATIVE; break;
-                    case SvxChartKindError::BigError:
+                    case CHERROR_BIGERROR:
                         nStyle = css::chart::ErrorBarStyle::ERROR_MARGIN; break;
-                    case SvxChartKindError::Const:
+                    case CHERROR_CONST:
                         nStyle = css::chart::ErrorBarStyle::ABSOLUTE; break;
-                    case SvxChartKindError::StdError:
+                    case CHERROR_STDERROR:
                         nStyle = css::chart::ErrorBarStyle::STANDARD_ERROR; break;
-                    case SvxChartKindError::Range:
+                    case CHERROR_RANGE:
                         nStyle = css::chart::ErrorBarStyle::FROM_DATA; break;
                 }
 
@@ -323,10 +327,10 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 {
                     xErrorBarProp = lcl_GetDefaultErrorBar();
                     GetPropertySet()->setPropertyValue( bYError ? OUString(CHART_UNONAME_ERRORBAR_Y) : OUString(CHART_UNONAME_ERRORBAR_X),
-                                                        uno::Any( xErrorBarProp ));
+                                                        uno::makeAny( xErrorBarProp ));
                 }
 
-                xErrorBarProp->setPropertyValue( "ErrorBarStyle" , uno::Any( nStyle ));
+                xErrorBarProp->setPropertyValue( "ErrorBarStyle" , uno::makeAny( nStyle ));
                 bChanged = true;
             }
         }
@@ -353,8 +357,8 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 ! ( ::rtl::math::approxEqual( fPos, fValue ) &&
                     ::rtl::math::approxEqual( fNeg, fValue )))
             {
-                xErrorBarProp->setPropertyValue( "PositiveError" , uno::Any( fValue ));
-                xErrorBarProp->setPropertyValue( "NegativeError" , uno::Any( fValue ));
+                xErrorBarProp->setPropertyValue( "PositiveError" , uno::makeAny( fValue ));
+                xErrorBarProp->setPropertyValue( "NegativeError" , uno::makeAny( fValue ));
                 bChanged = true;
             }
         }
@@ -378,7 +382,7 @@ bool StatisticsItemConverter::ApplySpecialItem(
             if( bOldHasErrorBar &&
                 ! ::rtl::math::approxEqual( fPos, fValue ))
             {
-                xErrorBarProp->setPropertyValue( "PositiveError" , uno::Any( fValue ));
+                xErrorBarProp->setPropertyValue( "PositiveError" , uno::makeAny( fValue ));
                 bChanged = true;
             }
         }
@@ -401,7 +405,7 @@ bool StatisticsItemConverter::ApplySpecialItem(
             if( bOldHasErrorBar &&
                 ! ::rtl::math::approxEqual( fNeg, fValue ))
             {
-                xErrorBarProp->setPropertyValue( "NegativeError" , uno::Any( fValue ));
+                xErrorBarProp->setPropertyValue( "NegativeError" , uno::makeAny( fValue ));
                 bChanged = true;
             }
         }
@@ -416,7 +420,7 @@ bool StatisticsItemConverter::ApplySpecialItem(
             uno::Reference< chart2::XRegressionCurve > xCurve( GetPropertySet(), uno::UNO_QUERY );
             uno::Reference< chart2::XRegressionCurveContainer > xContainer( GetPropertySet(), uno::UNO_QUERY );
 
-            if( eRegress == SvxChartRegress::NONE )
+            if( eRegress == CHREGRESS_NONE )
             {
                 if ( xContainer.is() )
                 {
@@ -503,20 +507,6 @@ bool StatisticsItemConverter::ApplySpecialItem(
         }
         break;
 
-        case SCHATTR_REGRESSION_XNAME:
-        {
-            uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), &rItemSet ));
-            bChanged = lclConvertToPropertySet<OUString, SfxStringItem>(rItemSet, nWhichId, xEqProp, "XName");
-        }
-        break;
-
-        case SCHATTR_REGRESSION_YNAME:
-        {
-            uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), &rItemSet ));
-            bChanged = lclConvertToPropertySet<OUString, SfxStringItem>(rItemSet, nWhichId, xEqProp, "YName");
-        }
-        break;
-
         case SCHATTR_REGRESSION_SHOW_COEFF:
         {
             uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), &rItemSet ));
@@ -536,8 +526,8 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 static_cast< const SvxChartIndicateItem & >(
                     rItemSet.Get( nWhichId )).GetValue();
 
-            bool bNewIndPos = (eIndicate == SvxChartIndicate::Both || eIndicate == SvxChartIndicate::Up );
-            bool bNewIndNeg = (eIndicate == SvxChartIndicate::Both || eIndicate == SvxChartIndicate::Down );
+            bool bNewIndPos = (eIndicate == CHINDICATE_BOTH || eIndicate == CHINDICATE_UP );
+            bool bNewIndNeg = (eIndicate == CHINDICATE_BOTH || eIndicate == CHINDICATE_DOWN );
 
             bool bShowPos(false), bShowNeg(false);
             lcl_getErrorIndicatorValues( xErrorBarProp, bShowPos, bShowNeg );
@@ -546,8 +536,8 @@ bool StatisticsItemConverter::ApplySpecialItem(
                 ( bShowPos != bNewIndPos ||
                   bShowNeg != bNewIndNeg ))
             {
-                xErrorBarProp->setPropertyValue( "ShowPositiveError" , uno::Any( bNewIndPos ));
-                xErrorBarProp->setPropertyValue( "ShowNegativeError" , uno::Any( bNewIndNeg ));
+                xErrorBarProp->setPropertyValue( "ShowPositiveError" , uno::makeAny( bNewIndPos ));
+                xErrorBarProp->setPropertyValue( "ShowNegativeError" , uno::makeAny( bNewIndNeg ));
                 bChanged = true;
             }
         }
@@ -614,6 +604,7 @@ bool StatisticsItemConverter::ApplySpecialItem(
 
 void StatisticsItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+    throw( uno::Exception )
 {
     switch( nWhichId )
     {
@@ -629,7 +620,7 @@ void StatisticsItemConverter::FillSpecialItem(
         {
             bool bYError =
                 static_cast<const SfxBoolItem&>(rOutItemSet.Get(SCHATTR_STAT_ERRORBAR_TYPE)).GetValue();
-            SvxChartKindError eErrorKind = SvxChartKindError::NONE;
+            SvxChartKindError eErrorKind = CHERROR_NONE;
             uno::Reference< beans::XPropertySet > xErrorBarProp(
                 lcl_GetErrorBar( GetPropertySet(), bYError));
             if( xErrorBarProp.is() )
@@ -642,19 +633,19 @@ void StatisticsItemConverter::FillSpecialItem(
                         case css::chart::ErrorBarStyle::NONE:
                             break;
                         case css::chart::ErrorBarStyle::VARIANCE:
-                            eErrorKind = SvxChartKindError::Variant; break;
+                            eErrorKind = CHERROR_VARIANT; break;
                         case css::chart::ErrorBarStyle::STANDARD_DEVIATION:
-                            eErrorKind = SvxChartKindError::Sigma; break;
+                            eErrorKind = CHERROR_SIGMA; break;
                         case css::chart::ErrorBarStyle::ABSOLUTE:
-                            eErrorKind = SvxChartKindError::Const; break;
+                            eErrorKind = CHERROR_CONST; break;
                         case css::chart::ErrorBarStyle::RELATIVE:
-                            eErrorKind = SvxChartKindError::Percent; break;
+                            eErrorKind = CHERROR_PERCENT; break;
                         case css::chart::ErrorBarStyle::ERROR_MARGIN:
-                            eErrorKind = SvxChartKindError::BigError; break;
+                            eErrorKind = CHERROR_BIGERROR; break;
                         case css::chart::ErrorBarStyle::STANDARD_ERROR:
-                            eErrorKind = SvxChartKindError::StdError; break;
+                            eErrorKind = CHERROR_STDERROR; break;
                         case css::chart::ErrorBarStyle::FROM_DATA:
-                            eErrorKind = SvxChartKindError::Range; break;
+                            eErrorKind = CHERROR_RANGE; break;
                     }
                 }
             }
@@ -785,20 +776,6 @@ void StatisticsItemConverter::FillSpecialItem(
         }
         break;
 
-        case SCHATTR_REGRESSION_XNAME:
-        {
-            uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), nullptr ));
-            lclConvertToItemSet<OUString, SfxStringItem>(rOutItemSet, nWhichId, xEqProp, "XName");
-        }
-        break;
-
-        case SCHATTR_REGRESSION_YNAME:
-        {
-            uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), nullptr ));
-            lclConvertToItemSet<OUString, SfxStringItem>(rOutItemSet, nWhichId, xEqProp, "YName");
-        }
-        break;
-
         case SCHATTR_REGRESSION_SHOW_COEFF:
         {
             uno::Reference< beans::XPropertySet > xEqProp( lcl_getEquationProperties( GetPropertySet(), nullptr ));
@@ -811,7 +788,7 @@ void StatisticsItemConverter::FillSpecialItem(
             bool bYError =
                 static_cast<const SfxBoolItem&>(rOutItemSet.Get(SCHATTR_STAT_ERRORBAR_TYPE)).GetValue();
             uno::Reference< beans::XPropertySet > xErrorBarProp( lcl_GetErrorBar( GetPropertySet(),bYError));
-            SvxChartIndicate eIndicate = SvxChartIndicate::Both;
+            SvxChartIndicate eIndicate = CHINDICATE_BOTH;
             if( xErrorBarProp.is())
             {
                 bool bShowPos(false), bShowNeg(false);
@@ -820,16 +797,16 @@ void StatisticsItemConverter::FillSpecialItem(
                 if( bShowPos )
                 {
                     if( bShowNeg )
-                        eIndicate = SvxChartIndicate::Both;
+                        eIndicate = CHINDICATE_BOTH;
                     else
-                        eIndicate = SvxChartIndicate::Up;
+                        eIndicate = CHINDICATE_UP;
                 }
                 else
                 {
                     if( bShowNeg )
-                        eIndicate = SvxChartIndicate::Down;
+                        eIndicate = CHINDICATE_DOWN;
                     else
-                        eIndicate = SvxChartIndicate::NONE;
+                        eIndicate = CHINDICATE_NONE;
                 }
             }
             rOutItemSet.Put( SvxChartIndicateItem( eIndicate, SCHATTR_STAT_INDICATE ));

@@ -38,7 +38,7 @@ struct SdXMLDataStyleNumber
     bool    mbDecimal02;
     const char* mpText;
 }
-const aSdXMLDataStyleNumbers[] =
+    aSdXMLDataStyleNumbers[] =
 {
     { XML_DAY,          false,      false,      false,      nullptr },
     { XML_DAY,          true,       false,      false,      nullptr },
@@ -286,7 +286,7 @@ const SdXMLFixedDataStyle aSdXML_TimeStyle_7 =
     }
 };
 
-const SdXMLFixedDataStyle* const aSdXMLFixedDateFormats[SdXMLDateFormatCount] =
+const SdXMLFixedDataStyle* aSdXMLFixedDateFormats[SdXMLDateFormatCount] =
 {
     &aSdXML_Standard_Short,
     &aSdXML_Standard_Long,
@@ -298,7 +298,7 @@ const SdXMLFixedDataStyle* const aSdXMLFixedDateFormats[SdXMLDateFormatCount] =
     &aSdXML_DateStyle_6,
 };
 
-const SdXMLFixedDataStyle* const aSdXMLFixedTimeFormats[SdXMLTimeFormatCount] =
+const SdXMLFixedDataStyle* aSdXMLFixedTimeFormats[SdXMLTimeFormatCount] =
 {
     &aSdXML_TimeStyle_1,
     &aSdXML_TimeStyle_2,
@@ -311,7 +311,7 @@ const SdXMLFixedDataStyle* const aSdXMLFixedTimeFormats[SdXMLTimeFormatCount] =
 
 // export
 
-static void SdXMLExportDataStyleNumber( SdXMLExport& rExport, SdXMLDataStyleNumber const & rElement )
+static void SdXMLExportDataStyleNumber( SdXMLExport& rExport, SdXMLDataStyleNumber& rElement )
 {
     if( rElement.mbDecimal02 )
     {
@@ -361,13 +361,13 @@ static void SdXMLExportStyle( SdXMLExport& rExport, const SdXMLFixedDataStyle* p
 
         while( *pElements )
         {
-            SdXMLDataStyleNumber const & rElement = aSdXMLDataStyleNumbers[ (*pElements++) - 1 ];
+            SdXMLDataStyleNumber& rElement = aSdXMLDataStyleNumbers[ (*pElements++) - 1 ];
             SdXMLExportDataStyleNumber( rExport, rElement );
         }
 
         if( pStyle2 )
         {
-            SdXMLDataStyleNumber const & rElement = aSdXMLDataStyleNumbers[ DATA_STYLE_NUMBER_TEXT_SPACE - 1 ];
+            SdXMLDataStyleNumber& rElement = aSdXMLDataStyleNumbers[ DATA_STYLE_NUMBER_TEXT_SPACE - 1 ];
             SdXMLExportDataStyleNumber( rExport, rElement );
         }
 
@@ -379,7 +379,7 @@ static void SdXMLExportStyle( SdXMLExport& rExport, const SdXMLFixedDataStyle* p
 
 void SdXMLNumberStylesExporter::exportTimeStyle( SdXMLExport& rExport, sal_Int32 nStyle )
 {
-    SAL_WARN_IF( (nStyle < 0) || (nStyle >= SdXMLTimeFormatCount), "xmloff", "Unknown time style!" );
+    DBG_ASSERT( (nStyle >= 0) && (nStyle < SdXMLTimeFormatCount), "Unknown time style!" );
     if( (nStyle >= 0) && (nStyle < SdXMLTimeFormatCount) )
         SdXMLExportStyle( rExport, aSdXMLFixedTimeFormats[ nStyle ] );
 }
@@ -394,7 +394,7 @@ void SdXMLNumberStylesExporter::exportDateStyle( SdXMLExport& rExport, sal_Int32
         if( nDateStyle > 1 )
             nDateStyle -= 2;
 
-        SAL_WARN_IF( (nDateStyle < 0) || (nDateStyle >= SdXMLDateFormatCount), "xmloff", "unknown date style!" );
+        DBG_ASSERT( (nDateStyle >= 0) && (nDateStyle < SdXMLDateFormatCount), "unknown date style!" );
 
         int nTimeStyle = (nStyle >> 4) & 0x0f;
         bool bHasTime = nTimeStyle != 0;
@@ -402,7 +402,7 @@ void SdXMLNumberStylesExporter::exportDateStyle( SdXMLExport& rExport, sal_Int32
         if( nTimeStyle > 1 )
             nTimeStyle -= 2;
 
-        SAL_WARN_IF( (nTimeStyle < 0) || (nTimeStyle >= SdXMLTimeFormatCount), "xmloff", "Unknown time style!" );
+        DBG_ASSERT( (nTimeStyle >= 0) && (nTimeStyle < SdXMLTimeFormatCount), "Unknown time style!" );
 
         if( (nDateStyle >= 0) && (nDateStyle < SdXMLDateFormatCount) && (nTimeStyle >= 0) && (nTimeStyle < SdXMLTimeFormatCount) )
         {
@@ -425,7 +425,7 @@ void SdXMLNumberStylesExporter::exportDateStyle( SdXMLExport& rExport, sal_Int32
     }
     else
     {
-        SAL_WARN_IF( (nStyle < 0) || (nStyle >= SdXMLDateFormatCount), "xmloff", "unknown date style!" );
+        DBG_ASSERT( (nStyle >= 0) && (nStyle < SdXMLDateFormatCount), "unknown date style!" );
         if( (nStyle >= 0) && (nStyle < SdXMLDateFormatCount) )
             SdXMLExportStyle( rExport, aSdXMLFixedDateFormats[ nStyle ] );
     }
@@ -495,6 +495,7 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         SdXMLNumberFormatImportContext* pParent,
         SvXMLImportContext* pSlaveContext );
+    virtual ~SdXMLNumberFormatMemberImportContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                    const OUString& rLocalName,
@@ -543,6 +544,10 @@ SdXMLNumberFormatMemberImportContext::SdXMLNumberFormatMemberImportContext( SvXM
         }
     }
 
+}
+
+SdXMLNumberFormatMemberImportContext::~SdXMLNumberFormatMemberImportContext()
+{
 }
 
 SvXMLImportContext *SdXMLNumberFormatMemberImportContext::CreateChildContext( sal_uInt16 nPrefix,
@@ -689,7 +694,7 @@ void SdXMLNumberFormatImportContext::EndElement()
             }
         }
 
-        // no date style found? maybe it's an extended time style
+        // no date style found? maybe its an extended time style
         if( mnKey == -1 )
         {
             // compare import with all time styles

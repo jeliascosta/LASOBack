@@ -234,7 +234,7 @@ namespace chart
             {
                 xDestMod->setModified( false );
             }
-            // \-- locked controllers of destination
+            // \-- loccked controllers of destination
         }
         catch( const Exception& )
         {

@@ -147,8 +147,6 @@ extern const sal_Char* sCSS1_P_text_indent;
 
 extern const sal_Char* sCSS1_P_line_height;
 
-extern const sal_Char* sCSS1_P_list_style_type;
-
 // Strings for box properties
 
 extern const sal_Char* sCSS1_P_margin_left;

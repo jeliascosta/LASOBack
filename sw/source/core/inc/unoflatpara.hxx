@@ -55,55 +55,77 @@ class SwXFlatParagraph
 {
 public:
     SwXFlatParagraph( SwTextNode& rTextNode, const OUString& aExpandText, const ModelToViewHelper& rConversionMap );
-    virtual ~SwXFlatParagraph() override;
+    virtual ~SwXFlatParagraph();
 
     // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setPropertyValue(
             const OUString& rPropertyName,
-            const css::uno::Any& rValue) override;
+            const css::uno::Any& rValue)
+        throw (css::beans::UnknownPropertyException,
+                css::beans::PropertyVetoException,
+                css::lang::IllegalArgumentException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL getPropertyValue(
-            const OUString& rPropertyName) override;
+            const OUString& rPropertyName)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addPropertyChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removePropertyChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL addVetoableChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeVetoableChangeListener(
             const OUString& rPropertyName,
-            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener) override;
+            const css::uno::Reference< css::beans::XVetoableChangeListener >& xListener)
+        throw (css::beans::UnknownPropertyException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     // text::XTextMarkup:
-    virtual css::uno::Reference< css::container::XStringKeyMap > SAL_CALL getMarkupInfoContainer() override;
+    virtual css::uno::Reference< css::container::XStringKeyMap > SAL_CALL getMarkupInfoContainer() throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL commitStringMarkup(::sal_Int32 nType, const OUString & aIdentifier, ::sal_Int32 nStart, ::sal_Int32 nLength,
-                                   const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) override;
+                                   const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL commitTextRangeMarkup(::sal_Int32 nType, const OUString & aIdentifier, const css::uno::Reference< css::text::XTextRange> & xRange,
-                                                const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) override;
+                                                const css::uno::Reference< css::container::XStringKeyMap > & xMarkupInfoContainer) throw (css::uno::RuntimeException, std::exception) override;
 
     // text::XFlatParagraph:
-    virtual OUString SAL_CALL getText() override;
-    virtual sal_Bool SAL_CALL isModified() override;
-    virtual void SAL_CALL setChecked(::sal_Int32 nType, sal_Bool bVal) override;
-    virtual sal_Bool SAL_CALL isChecked(::sal_Int32 nType) override;
-    virtual css::lang::Locale SAL_CALL getLanguageOfText(::sal_Int32 nPos, ::sal_Int32 nLen) override;
-    virtual css::lang::Locale SAL_CALL getPrimaryLanguageOfText(::sal_Int32 nPos, ::sal_Int32 nLen) override;
-    virtual void SAL_CALL changeText(::sal_Int32 nPos, ::sal_Int32 nLen, const OUString & aNewText, const css::uno::Sequence< css::beans::PropertyValue > & aAttributes) override;
-    virtual void SAL_CALL changeAttributes(::sal_Int32 nPos, ::sal_Int32 nLen, const css::uno::Sequence< css::beans::PropertyValue > & aAttributes) override;
-    virtual css::uno::Sequence< ::sal_Int32 > SAL_CALL getLanguagePortions() override;
+    virtual OUString SAL_CALL getText() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isModified() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setChecked(::sal_Int32 nType, sal_Bool bVal) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isChecked(::sal_Int32 nType) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getLanguageOfText(::sal_Int32 nPos, ::sal_Int32 nLen) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getPrimaryLanguageOfText(::sal_Int32 nPos, ::sal_Int32 nLen) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
+    virtual void SAL_CALL changeText(::sal_Int32 nPos, ::sal_Int32 nLen, const OUString & aNewText, const css::uno::Sequence< css::beans::PropertyValue > & aAttributes) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
+    virtual void SAL_CALL changeAttributes(::sal_Int32 nPos, ::sal_Int32 nLen, const css::uno::Sequence< css::beans::PropertyValue > & aAttributes) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int32 > SAL_CALL getLanguagePortions() throw (css::uno::RuntimeException, std::exception) override;
 
     using SwXTextMarkup::GetTextNode;
 
     static const css::uno::Sequence< sal_Int8 >& getUnoTunnelId();
 
     // XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething(const css::uno::Sequence< sal_Int8 >& rId) override;
+    virtual sal_Int64 SAL_CALL getSomething(const css::uno::Sequence< sal_Int8 >& rId)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     SwXFlatParagraph( const SwXFlatParagraph & ) = delete;
@@ -121,14 +143,14 @@ class SwXFlatParagraphIterator:
 {
 public:
     SwXFlatParagraphIterator( SwDoc& rDoc, sal_Int32 nType, bool bAutomatic );
-    virtual ~SwXFlatParagraphIterator() override;
+    virtual ~SwXFlatParagraphIterator();
 
     // text::XFlatParagraphIterator:
-    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getFirstPara() override;
-    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getNextPara() override;
-    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getLastPara() override;
-    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getParaBefore(const css::uno::Reference< css::text::XFlatParagraph > & xPara) override;
-    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getParaAfter(const css::uno::Reference< css::text::XFlatParagraph > & xPara) override;
+    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getFirstPara() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getNextPara() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getLastPara() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getParaBefore(const css::uno::Reference< css::text::XFlatParagraph > & xPara) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
+    virtual css::uno::Reference< css::text::XFlatParagraph > SAL_CALL getParaAfter(const css::uno::Reference< css::text::XFlatParagraph > & xPara) throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception) override;
 
 protected:
     // SwClient
@@ -146,7 +168,9 @@ private:
     const bool mbAutomatic;
 
     sal_uLong mnCurrentNode;    // used for non-automatic mode
+    sal_uLong mnStartNode;      // used for non-automatic mode
     sal_uLong mnEndNode;        // used for non-automatic mode
+    bool mbWrapped;     // used for non-automatic mode
 };
 
 #endif

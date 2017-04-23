@@ -41,6 +41,7 @@
 #include "FrameView.hxx"
 #include "DrawViewShell.hxx"
 #include "ViewShellHint.hxx"
+#include "SidebarPanelId.hxx"
 
 #include <sfx2/bindings.hxx>
 #include <sfx2/dispatch.hxx>
@@ -50,8 +51,6 @@
 #include <svx/imapdlg.hxx>
 #include <vcl/msgbox.hxx>
 #include <basic/sbstar.hxx>
-#include <xmloff/autolayout.hxx>
-
 #include "undo/undoobjects.hxx"
 
 #include <com/sun/star/drawing/framework/XControllerManager.hpp>
@@ -148,10 +147,10 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
                 rRequest.Ignore ();
                 break;
             }
-            if (ePageKind == PageKind::Handout)
+            if (ePageKind == PK_HANDOUT)
             {
                 bHandoutMode = true;
-                pHandoutMPage = pDocument->GetMasterSdPage(0, PageKind::Handout);
+                pHandoutMPage = pDocument->GetMasterSdPage(0, PK_HANDOUT);
             }
         }
         else
@@ -172,7 +171,7 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
         if( pUndoManager )
         {
             OUString aComment( SdResId(STR_UNDO_MODIFY_PAGE) );
-            pUndoManager->EnterListAction(aComment, aComment, 0, mrViewShell.GetViewShellBase().GetViewShellId());
+            pUndoManager->EnterListAction(aComment, aComment);
             ModifyPageUndoAction* pAction = new ModifyPageUndoAction(
                 pDocument, pUndoPage, aNewName, aNewAutoLayout, bBVisible, bBObjsVisible);
             pUndoManager->AddUndoAction(pAction);
@@ -187,10 +186,10 @@ void ViewShell::Implementation::ProcessModifyPageSlot (
                 {
                     pCurrentPage->SetName(aNewName);
 
-                    if (ePageKind == PageKind::Standard)
+                    if (ePageKind == PK_STANDARD)
                     {
                         sal_uInt16 nPage = (pCurrentPage->GetPageNum()-1) / 2;
-                        SdPage* pNotesPage = pDocument->GetSdPage(nPage, PageKind::Notes);
+                        SdPage* pNotesPage = pDocument->GetSdPage(nPage, PK_NOTES);
                         if (pNotesPage != nullptr)
                             pNotesPage->SetName(aNewName);
                     }
@@ -264,7 +263,7 @@ void ViewShell::Implementation::AssignLayout ( SfxRequest& rRequest, PageKind eP
 
         SetOfByte aVisibleLayers;
 
-        if( pPage->GetPageKind() == PageKind::Handout )
+        if( pPage->GetPageKind() == PK_HANDOUT )
             aVisibleLayers.SetAll();
         else
             aVisibleLayers = pPage->TRG_GetMasterPageVisibleLayers();
@@ -280,7 +279,7 @@ void ViewShell::Implementation::AssignLayout ( SfxRequest& rRequest, PageKind eP
     }
 }
 
-SfxInterfaceId ViewShell::Implementation::GetViewId()
+sal_uInt16 ViewShell::Implementation::GetViewId()
 {
     switch (mrViewShell.GetShellType())
     {
@@ -345,12 +344,12 @@ ViewShell::Implementation::ToolBarManagerLock::ToolBarManagerLock (
 {
     // Start a timer that will unlock the ToolBarManager update lock when
     // that is not done explicitly by calling Release().
-    maTimer.SetInvokeHandler(LINK(this,ToolBarManagerLock,TimeoutCallback));
+    maTimer.SetTimeoutHdl(LINK(this,ToolBarManagerLock,TimeoutCallback));
     maTimer.SetTimeout(100);
     maTimer.Start();
 }
 
-IMPL_LINK_NOARG(ViewShell::Implementation::ToolBarManagerLock, TimeoutCallback, Timer *, void)
+IMPL_LINK_NOARG_TYPED(ViewShell::Implementation::ToolBarManagerLock, TimeoutCallback, Timer *, void)
 {
     // If possible then release the lock now.  Otherwise start the timer
     // and try again later.

@@ -71,7 +71,7 @@ friend class SfxHelpWindow_Impl;
 
 public:
     HelpInterceptor_Impl();
-    virtual ~HelpInterceptor_Impl() override;
+    virtual ~HelpInterceptor_Impl();
 
     void                    setInterception( const css::uno::Reference< css::frame::XFrame >& xFrame );
     const OUString&         GetCurrentURL() const { return m_aCurrentURL; }
@@ -84,26 +84,26 @@ public:
 
     // XDispatchProvider
     virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL
-                            queryDispatch( const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags ) override;
+                            queryDispatch( const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags ) throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< css::uno::Reference< css::frame::XDispatch > > SAL_CALL
-                            queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts ) override;
+                            queryDispatches( const css::uno::Sequence< css::frame::DispatchDescriptor >& aDescripts ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XDispatchProviderInterceptor
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-                            getSlaveDispatchProvider(  ) override;
-    virtual void SAL_CALL   setSlaveDispatchProvider( const css::uno::Reference< css::frame::XDispatchProvider >& xNewSlave ) override;
+                            getSlaveDispatchProvider(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setSlaveDispatchProvider( const css::uno::Reference< css::frame::XDispatchProvider >& xNewSlave ) throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::frame::XDispatchProvider > SAL_CALL
-                            getMasterDispatchProvider(  ) override;
-    virtual void SAL_CALL   setMasterDispatchProvider( const css::uno::Reference< css::frame::XDispatchProvider >& xNewMaster ) override;
+                            getMasterDispatchProvider(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   setMasterDispatchProvider( const css::uno::Reference< css::frame::XDispatchProvider >& xNewMaster ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XInterceptorInfo
     virtual css::uno::Sequence< OUString > SAL_CALL
-                            getInterceptedURLs(  ) override;
+                            getInterceptedURLs(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XDispatch
-    virtual void SAL_CALL   dispatch( const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue >& aArgs ) override;
-    virtual void SAL_CALL   addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xControl, const css::util::URL& aURL ) override;
-    virtual void SAL_CALL   removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xControl, const css::util::URL& aURL ) override;
+    virtual void SAL_CALL   dispatch( const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue >& aArgs ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xControl, const css::util::URL& aURL ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL   removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& xControl, const css::util::URL& aURL ) throw(css::uno::RuntimeException, std::exception) override;
 
     // extras
     void                    InitWaiter( SfxHelpWindow_Impl* pWindow )
@@ -123,8 +123,10 @@ private:
 public:
     explicit HelpListener_Impl( HelpInterceptor_Impl* pInter );
 
-    virtual void SAL_CALL   statusChanged( const css::frame::FeatureStateEvent& Event ) override;
-    virtual void SAL_CALL   disposing( const css::lang::EventObject& obj ) override;
+    virtual void SAL_CALL   statusChanged( const css::frame::FeatureStateEvent& Event )
+                                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL   disposing( const css::lang::EventObject& obj )
+                                throw( css::uno::RuntimeException, std::exception ) override;
 
     void                    SetChangeHdl( const Link<HelpListener_Impl&,void>& rLink ) { aChangeLink = rLink; }
     const OUString&         GetFactory() const { return aFactory; }
@@ -139,12 +141,14 @@ private:
 
 public:
     HelpStatusListener_Impl(
-        css::uno::Reference < css::frame::XDispatch > const & xDispatch,
+        css::uno::Reference < css::frame::XDispatch > xDispatch,
         css::util::URL& rURL);
-    virtual ~HelpStatusListener_Impl() override;
+    virtual ~HelpStatusListener_Impl();
 
-    virtual void SAL_CALL   statusChanged( const css::frame::FeatureStateEvent& Event ) override;
-    virtual void SAL_CALL   disposing( const css::lang::EventObject& obj ) override;
+    virtual void SAL_CALL   statusChanged( const css::frame::FeatureStateEvent& Event )
+                                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL   disposing( const css::lang::EventObject& obj )
+                                throw( css::uno::RuntimeException, std::exception ) override;
     const css::frame::FeatureStateEvent&
                             GetStateEvent() const {return aStateEvent;}
 };

@@ -130,6 +130,7 @@ public:
     XMLConfigBaseContext(SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLName,
                                     css::uno::Any& rAny,
                                     XMLConfigBaseContext* pBaseContext);
+    virtual ~XMLConfigBaseContext();
 
     void AddPropertyValue() { maProps.push_back(maProp); }
 };
@@ -149,6 +150,7 @@ public:
                                     css::uno::Any& rAny,
                                     const OUString& rItemName,
                                     XMLConfigBaseContext* pBaseContext);
+    virtual ~XMLConfigItemContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                                     const OUString& rLocalName,
@@ -167,6 +169,7 @@ public:
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                                     css::uno::Any& rAny,
                                     XMLConfigBaseContext* pBaseContext);
+    virtual ~XMLConfigItemSetContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                                     const OUString& rLocalName,
@@ -182,6 +185,7 @@ public:
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
                                     css::uno::Any& rAny,
                                     XMLConfigBaseContext* pBaseContext);
+    virtual ~XMLConfigItemMapNamedContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                                     const OUString& rLocalName,
@@ -202,6 +206,7 @@ public:
                                     css::uno::Any& rAny,
                                     const OUString& rConfigItemName,
                                     XMLConfigBaseContext* pBaseContext);
+    virtual ~XMLConfigItemMapIndexedContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                                     const OUString& rLocalName,
@@ -391,13 +396,13 @@ void XMLDocumentSettingsContext::EndElement()
 
                 if ( sProp == "PrinterName" )
                 {
-                    aSeqConfigProps[i].Value <<= OUString();
+                    aSeqConfigProps[i].Value = uno::makeAny( OUString() );
                     nFound++;
                 }
                 else if ( sProp == "PrinterSetup" )
                 {
                     uno::Sequence< sal_Int8 > aEmpty;
-                    aSeqConfigProps[i].Value <<= aEmpty;
+                    aSeqConfigProps[i].Value = uno::makeAny( aEmpty );
                     nFound++;
                 }
 
@@ -430,6 +435,10 @@ XMLConfigBaseContext::XMLConfigBaseContext(SvXMLImport& rImport, sal_uInt16 nPrf
 {
 }
 
+XMLConfigBaseContext::~XMLConfigBaseContext()
+{
+}
+
 XMLConfigItemSetContext::XMLConfigItemSetContext(SvXMLImport& rImport, sal_uInt16 nPrfx,
                                     const OUString& rLName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>&,
@@ -438,6 +447,10 @@ XMLConfigItemSetContext::XMLConfigItemSetContext(SvXMLImport& rImport, sal_uInt1
     : XMLConfigBaseContext( rImport, nPrfx, rLName, rAny, pBaseContext )
 {
     // here are no attributes
+}
+
+XMLConfigItemSetContext::~XMLConfigItemSetContext()
+{
 }
 
 SvXMLImportContext *XMLConfigItemSetContext::CreateChildContext( sal_uInt16 nPrefix,
@@ -479,6 +492,10 @@ XMLConfigItemContext::XMLConfigItemContext(SvXMLImport& rImport, sal_uInt16 nPrf
                 msType = sValue;
         }
     }
+}
+
+XMLConfigItemContext::~XMLConfigItemContext()
+{
 }
 
 SvXMLImportContext *XMLConfigItemContext::CreateChildContext( sal_uInt16 nPrefix,
@@ -644,6 +661,10 @@ XMLConfigItemMapNamedContext::XMLConfigItemMapNamedContext(SvXMLImport& rImport,
 {
 }
 
+XMLConfigItemMapNamedContext::~XMLConfigItemMapNamedContext()
+{
+}
+
 SvXMLImportContext *XMLConfigItemMapNamedContext::CreateChildContext( sal_uInt16 nPrefix,
                                                     const OUString& rLocalName,
                                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList )
@@ -671,6 +692,10 @@ XMLConfigItemMapIndexedContext::XMLConfigItemMapIndexedContext(SvXMLImport& rImp
                                     XMLConfigBaseContext* pBaseContext)
     : XMLConfigBaseContext(rImport, nPrfx, rLName, rAny, pBaseContext),
       maConfigItemName( rConfigItemName )
+{
+}
+
+XMLConfigItemMapIndexedContext::~XMLConfigItemMapIndexedContext()
 {
 }
 

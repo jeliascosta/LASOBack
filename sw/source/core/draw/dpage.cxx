@@ -58,11 +58,12 @@ SwDPage::SwDPage(SwDrawModel& rNewModel, bool bMasterPage) :
 
 SwDPage::SwDPage(const SwDPage& rSrcPage) :
     FmFormPage( rSrcPage ),
+    pGridLst( nullptr ),
     pDoc( nullptr )
 {
     if ( rSrcPage.pGridLst )
     {
-        pGridLst.reset( new SdrPageGridFrameList );
+        pGridLst = new SdrPageGridFrameList;
         for ( sal_uInt16 i = 0; i != rSrcPage.pGridLst->GetCount(); ++i )
             pGridLst->Insert( ( *rSrcPage.pGridLst )[ i ] );
     }
@@ -70,6 +71,7 @@ SwDPage::SwDPage(const SwDPage& rSrcPage) :
 
 SwDPage::~SwDPage()
 {
+    delete pGridLst;
 }
 
 void SwDPage::lateInit(const SwDPage& rPage, SwDrawModel* const pNewModel)
@@ -118,13 +120,13 @@ void InsertGridFrame( SdrPageGridFrameList *pLst, const SwFrame *pPg )
 {
     SwRect aPrt( pPg->Prt() );
     aPrt += pPg->Frame().Pos();
-    const tools::Rectangle aUser( aPrt.SVRect() );
-    const tools::Rectangle aPaper( pPg->Frame().SVRect() );
+    const Rectangle aUser( aPrt.SVRect() );
+    const Rectangle aPaper( pPg->Frame().SVRect() );
     pLst->Insert( SdrPageGridFrame( aPaper, aUser ) );
 }
 
 const SdrPageGridFrameList*  SwDPage::GetGridFrameList(
-                        const SdrPageView* pPV, const tools::Rectangle *pRect ) const
+                        const SdrPageView* pPV, const Rectangle *pRect ) const
 {
     SwViewShell* pSh = static_cast< SwDrawModel* >(GetModel())->GetDoc().getIDocumentLayoutAccess().GetCurrentViewShell();
     if(pSh)
@@ -140,7 +142,7 @@ const SdrPageGridFrameList*  SwDPage::GetGridFrameList(
         if ( pGridLst )
             const_cast<SwDPage*>(this)->pGridLst->Clear();
         else
-            const_cast<SwDPage*>(this)->pGridLst.reset( new SdrPageGridFrameList );
+            const_cast<SwDPage*>(this)->pGridLst = new SdrPageGridFrameList;
 
         if ( pRect )
         {
@@ -149,7 +151,7 @@ const SdrPageGridFrameList*  SwDPage::GetGridFrameList(
             const SwFrame *pPg = pSh->GetLayout()->Lower();
             do
             {   if ( pPg->Frame().IsOver( aRect ) )
-                    ::InsertGridFrame( const_cast<SwDPage*>(this)->pGridLst.get(), pPg );
+                    ::InsertGridFrame( const_cast<SwDPage*>(this)->pGridLst, pPg );
                 pPg = pPg->GetNext();
             } while ( pPg );
         }
@@ -159,12 +161,12 @@ const SdrPageGridFrameList*  SwDPage::GetGridFrameList(
             const SwFrame *pPg = pSh->Imp()->GetFirstVisPage(pSh->GetOut());
             if ( pPg )
                 do
-                {   ::InsertGridFrame( const_cast<SwDPage*>(this)->pGridLst.get(), pPg );
+                {   ::InsertGridFrame( const_cast<SwDPage*>(this)->pGridLst, pPg );
                     pPg = pPg->GetNext();
                 } while ( pPg && pPg->Frame().IsOver( pSh->VisArea() ) );
         }
     }
-    return pGridLst.get();
+    return pGridLst;
 }
 
 bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
@@ -181,11 +183,11 @@ bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
         aPos = pWindow->PixelToLogic( aPos );
 
         SdrPageView* pPV;
-        SdrObject* pObj = pView->PickObj(aPos, 0, pPV, SdrSearchOptions::PICKMACRO);
-        SwVirtFlyDrawObj* pDrawObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
-        if (pDrawObj)
+        SdrObject* pObj;
+        if( pView->PickObj( aPos, 0, pObj, pPV, SdrSearchOptions::PICKMACRO ) &&
+             dynamic_cast<const SwVirtFlyDrawObj*>( pObj) !=  nullptr )
         {
-            SwFlyFrame *pFly = pDrawObj->GetFlyFrame();
+            SwFlyFrame *pFly = static_cast<SwVirtFlyDrawObj*>(pObj)->GetFlyFrame();
             const SwFormatURL &rURL = pFly->GetFormat()->GetURL();
             OUString sText;
             if( rURL.GetMap() )
@@ -196,15 +198,15 @@ bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
                     sText = pTmpObj->GetAltText();
                     if ( sText.isEmpty() )
                         sText = URIHelper::removePassword( pTmpObj->GetURL(),
-                                        INetURLObject::EncodeMechanism::WasEncoded,
-                                           INetURLObject::DecodeMechanism::Unambiguous);
+                                        INetURLObject::WAS_ENCODED,
+                                           INetURLObject::DECODE_UNAMBIGUOUS);
                 }
             }
             else if ( !rURL.GetURL().isEmpty() )
             {
                 sText = URIHelper::removePassword( rURL.GetURL(),
-                                        INetURLObject::EncodeMechanism::WasEncoded,
-                                           INetURLObject::DecodeMechanism::Unambiguous);
+                                        INetURLObject::WAS_ENCODED,
+                                           INetURLObject::DECODE_UNAMBIGUOUS);
 
                 if( rURL.IsServerMap() )
                 {
@@ -214,7 +216,7 @@ bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
                     // without MapMode-Offset !!!!!
                     // without MapMode-Offset, without Offset, w ... !!!!!
                     aPt = pWindow->LogicToPixel(
-                            aPt, MapMode( MapUnit::MapTwip ) );
+                            aPt, MapMode( MAP_TWIP ) );
                     sText += "?" + OUString::number( aPt.getX() )
                           + "," + OUString::number( aPt.getY() );
                 }
@@ -227,7 +229,7 @@ bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
                 if ( !bExecHyperlinks )
                 {
                     SvtSecurityOptions aSecOpts;
-                    bExecHyperlinks = !aSecOpts.IsOptionSet( SvtSecurityOptions::EOption::CtrlClickHyperlink );
+                    bExecHyperlinks = !aSecOpts.IsOptionSet( SvtSecurityOptions::E_CTRLCLICK_HYPERLINK );
 
                     if ( !bExecHyperlinks )
                         sText = SwViewShell::GetShellRes()->aLinkCtrlClick + ": " + sText;
@@ -236,7 +238,7 @@ bool SwDPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
                 }
 
                 // then display the help:
-                tools::Rectangle aRect( rEvt.GetMousePosPixel(), Size(1,1) );
+                Rectangle aRect( rEvt.GetMousePosPixel(), Size(1,1) );
                 if( rEvt.GetMode() & HelpEventMode::BALLOON )
                 {
                     Help::ShowBalloon( pWindow, rEvt.GetMousePosPixel(), aRect, sText );

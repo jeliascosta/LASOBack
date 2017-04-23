@@ -56,10 +56,10 @@ namespace vcl
 
         public:
             PrintPreviewWindow( vcl::Window* pParent );
-            virtual ~PrintPreviewWindow() override;
+            virtual ~PrintPreviewWindow();
             virtual void dispose() override;
 
-            virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+            virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
             virtual void Command( const CommandEvent& ) override;
             virtual void Resize() override;
             virtual void DataChanged( const DataChangedEvent& ) override;
@@ -74,17 +74,18 @@ namespace vcl
 
         class ShowNupOrderWindow : public vcl::Window
         {
-            NupOrderType mnOrderMode;
+            int mnOrderMode;
             int mnRows;
             int mnColumns;
+            void ImplInitSettings();
         public:
             ShowNupOrderWindow( vcl::Window* pParent );
 
             virtual Size GetOptimalSize() const override;
 
-            virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+            virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
 
-            void setValues( NupOrderType i_nOrderMode, int i_nColumns, int i_nRows )
+            void setValues( int i_nOrderMode, int i_nColumns, int i_nRows )
             {
                 mnOrderMode = i_nOrderMode;
                 mnRows = i_nRows;
@@ -147,8 +148,8 @@ namespace vcl
             VclPtr<FixedImage>                      mpCollateImage;
             VclPtr<CheckBox>                        mpReverseOrderBox;
 
-            BitmapEx                                maCollateBmp;
-            BitmapEx                                maNoCollateBmp;
+            Image                                   maCollateImg;
+            Image                                   maNoCollateImg;
 
             long                                    mnCollateUIMode;
 
@@ -211,7 +212,7 @@ namespace vcl
 
         bool                                mbShowLayoutPage;
 
-        Size const & getJobPageSize();
+        Size getJobPageSize();
         void updateNup();
         void updateNupFromPages();
         void preparePreview( bool i_bPrintChanged = true, bool i_bMayUseCache = false );
@@ -230,20 +231,20 @@ namespace vcl
         virtual void Command( const CommandEvent& ) override;
         virtual void DataChanged( const DataChangedEvent& ) override;
 
-        DECL_LINK( SelectHdl, ListBox&, void );
-        DECL_LINK( ClickHdl, Button*, void );
-        DECL_LINK( ToggleHdl, CheckBox&, void );
-        DECL_LINK( ToggleRadioHdl, RadioButton&, void );
-        DECL_LINK( ModifyHdl, Edit&, void );
+        DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+        DECL_LINK_TYPED( ClickHdl, Button*, void );
+        DECL_LINK_TYPED( ToggleHdl, CheckBox&, void );
+        DECL_LINK_TYPED( ToggleRadioHdl, RadioButton&, void );
+        DECL_LINK_TYPED( ModifyHdl, Edit&, void );
 
-        DECL_LINK( UIOption_CheckHdl, CheckBox&, void );
-        DECL_LINK( UIOption_RadioHdl, RadioButton&, void );
-        DECL_LINK( UIOption_SelectHdl, ListBox&, void );
-        DECL_LINK( UIOption_ModifyHdl, Edit&, void );
+        DECL_LINK_TYPED( UIOption_CheckHdl, CheckBox&, void );
+        DECL_LINK_TYPED( UIOption_RadioHdl, RadioButton&, void );
+        DECL_LINK_TYPED( UIOption_SelectHdl, ListBox&, void );
+        DECL_LINK_TYPED( UIOption_ModifyHdl, Edit&, void );
 
     public:
         PrintDialog( vcl::Window*, const std::shared_ptr< PrinterController >& );
-        virtual ~PrintDialog() override;
+        virtual ~PrintDialog();
         virtual void dispose() override;
 
         bool isPrintToFile();
@@ -265,11 +266,11 @@ namespace vcl
         sal_Int32           mnCur;
         sal_Int32           mnMax;
 
-        DECL_LINK( ClickHdl, Button*, void );
+        DECL_LINK_TYPED( ClickHdl, Button*, void );
 
     public:
         PrintProgressDialog(vcl::Window* i_pParent, int i_nMax);
-        virtual ~PrintProgressDialog() override;
+        virtual ~PrintProgressDialog();
         virtual void dispose() override;
         bool isCanceled() const { return mbCanceled; }
         void setProgress( int i_nCurrent );

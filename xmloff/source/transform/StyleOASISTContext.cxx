@@ -66,6 +66,7 @@ class XMLPropertiesTContext_Impl : public XMLPersElemContentTContext
 
     XMLPropType m_ePropType;
     bool        m_bControlStyle;
+    OUString m_aStyleFamily;
 
 public:
 
@@ -79,7 +80,10 @@ public:
     XMLPropertiesTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName,
                            XMLPropType eP,
-                           bool _bControlStyle );
+                           const OUString& rStyleFamily,
+                           bool _bControlStyle = false );
+
+    virtual ~XMLPropertiesTContext_Impl();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
@@ -96,11 +100,16 @@ public:
 
 XMLPropertiesTContext_Impl::XMLPropertiesTContext_Impl(
     XMLTransformerBase& rImp, const OUString& rQName, XMLPropType eP,
-    bool _bControlStyle ) :
+        const OUString& rStyleFamily, bool _bControlStyle ) :
     XMLPersElemContentTContext( rImp, rQName, XML_NAMESPACE_STYLE,
                                 XML_PROPERTIES),
     m_ePropType( eP ),
-    m_bControlStyle( _bControlStyle )
+    m_bControlStyle( _bControlStyle ),
+    m_aStyleFamily( rStyleFamily )
+{
+}
+
+XMLPropertiesTContext_Impl::~XMLPropertiesTContext_Impl()
 {
 }
 
@@ -427,6 +436,17 @@ void XMLPropertiesTContext_Impl::StartElement(
                     }
                     break;
 
+                case XML_OPTACTION_DRAW_WRITING_MODE:
+                    if( IsXMLToken( m_aStyleFamily, XML_GRAPHICS ) )
+                    {
+                        pAttrList->AddAttribute(
+                            GetTransformer().GetNamespaceMap().GetQNameByKey(
+                                    XML_NAMESPACE_DRAW,
+                                    GetXMLToken( XML_WRITING_MODE ) ), rAttrValue );
+                    }
+                    pAttrList->AddAttribute( rAttrName, rAttrValue );
+                    break;
+
                 case XML_ATACTION_CAPTION_ESCAPE_OASIS:
                     {
                         OUString aAttrValue( rAttrValue );
@@ -595,7 +615,8 @@ void XMLPropertiesTContext_Impl::StartElement(
 
 void XMLPropertiesTContext_Impl::Export()
 {
-    GetTransformer().GetDocHandler()->startElement( GetExportQName(), m_xAttrList );
+    GetTransformer().GetDocHandler()->startElement( GetExportQName(),
+                                                    m_xAttrList );
     ExportContent();
     GetTransformer().GetDocHandler()->endElement( GetExportQName() );
 }
@@ -755,7 +776,7 @@ rtl::Reference<XMLTransformerContext> XMLStyleOASISTContext::CreateChildContext(
             // if no properties context exist start a new one.
             if( !m_xPropContext.is() )
                 m_xPropContext = new XMLPropertiesTContext_Impl(
-                    GetTransformer(), rQName, ePropType, m_bControlStyle );
+                    GetTransformer(), rQName, ePropType, m_aStyleFamily, m_bControlStyle );
             else
                 m_xPropContext->SetQNameAndPropType( rQName, ePropType );
             pContext.set(m_xPropContext.get());
@@ -817,11 +838,13 @@ void XMLStyleOASISTContext::StartElement(
             case XML_ATACTION_STYLE_FAMILY:
                 if( IsXMLToken( rAttrValue, XML_GRAPHIC ) )
                 {
-                    pMutableAttrList->SetValueByIndex(
-                        i, GetXMLToken(XML_GRAPHICS) );
+                    m_aStyleFamily = GetXMLToken( XML_GRAPHICS ) ;
+                    pMutableAttrList->SetValueByIndex( i, m_aStyleFamily );
                 }
                 else
                 {
+                    m_aStyleFamily = rAttrValue;
+
                     if( IsXMLToken( rAttrValue, XML_PARAGRAPH ) )
                         nFamilyAttr = i;
                 }
@@ -879,7 +902,8 @@ void XMLStyleOASISTContext::StartElement(
     if( m_bPersistent )
         XMLPersElemContentTContext::StartElement( xAttrList );
     else
-        GetTransformer().GetDocHandler()->startElement( GetExportQName(), xAttrList );
+        GetTransformer().GetDocHandler()->startElement( GetExportQName(),
+                                                        xAttrList );
 }
 
 void XMLStyleOASISTContext::EndElement()

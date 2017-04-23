@@ -71,7 +71,7 @@ void IMapObject::Write( SvStream& rOStm, const OUString& rBaseURL ) const
     const rtl_TextEncoding  eEncoding = osl_getThreadTextEncoding();
 
     rOStm.WriteUInt16( GetType() );
-    rOStm.WriteUInt16( IMAP_OBJ_VERSION );
+    rOStm.WriteUInt16( GetVersion() );
     rOStm.WriteUInt16( eEncoding  );
 
     const OString aRelURL = OUStringToOString(
@@ -109,7 +109,7 @@ void IMapObject::Read( SvStream& rIStm, const OUString& rBaseURL )
     aTarget = read_uInt16_lenPrefixed_uInt8s_ToOUString(rIStm, nTextEncoding);
 
     // make URL absolute
-    aURL = URIHelper::SmartRel2Abs( INetURLObject(rBaseURL), aURL, URIHelper::GetMaybeFileHdl(), true, false, INetURLObject::EncodeMechanism::WasEncoded, INetURLObject::DecodeMechanism::Unambiguous );
+    aURL = URIHelper::SmartRel2Abs( INetURLObject(rBaseURL), aURL, URIHelper::GetMaybeFileHdl(), true, false, INetURLObject::WAS_ENCODED, INetURLObject::DECODE_UNAMBIGUOUS );
     std::unique_ptr<IMapCompat> pCompat(new IMapCompat( rIStm, StreamMode::READ ));
 
     ReadIMapObject( rIStm );
@@ -135,7 +135,7 @@ bool IMapObject::IsEqual( const IMapObject& rEqObj )
              ( bActive == rEqObj.bActive ) );
 }
 
-IMapRectangleObject::IMapRectangleObject( const tools::Rectangle& rRect,
+IMapRectangleObject::IMapRectangleObject( const Rectangle& rRect,
                                           const OUString& rURL,
                                           const OUString& rAltText,
                                           const OUString& rDesc,
@@ -148,10 +148,10 @@ IMapRectangleObject::IMapRectangleObject( const tools::Rectangle& rRect,
     ImpConstruct( rRect, bPixelCoords );
 }
 
-void IMapRectangleObject::ImpConstruct( const tools::Rectangle& rRect, bool bPixel )
+void IMapRectangleObject::ImpConstruct( const Rectangle& rRect, bool bPixel )
 {
     if ( bPixel )
-        aRect = Application::GetDefaultDevice()->PixelToLogic( rRect, MapMode( MapUnit::Map100thMM ) );
+        aRect = Application::GetDefaultDevice()->PixelToLogic( rRect, MapMode( MAP_100TH_MM ) );
     else
         aRect = rRect;
 }
@@ -204,12 +204,12 @@ bool IMapRectangleObject::IsHit( const Point& rPoint ) const
     return aRect.IsInside( rPoint );
 }
 
-tools::Rectangle IMapRectangleObject::GetRectangle( bool bPixelCoords ) const
+Rectangle IMapRectangleObject::GetRectangle( bool bPixelCoords ) const
 {
-    tools::Rectangle   aNewRect;
+    Rectangle   aNewRect;
 
     if ( bPixelCoords )
-        aNewRect = Application::GetDefaultDevice()->LogicToPixel( aRect, MapMode( MapUnit::Map100thMM ) );
+        aNewRect = Application::GetDefaultDevice()->LogicToPixel( aRect, MapMode( MAP_100TH_MM ) );
     else
         aNewRect = aRect;
 
@@ -227,7 +227,7 @@ void IMapRectangleObject::Scale( const Fraction& rFracX, const Fraction& rFracY 
         SCALEPOINT( aBR, rFracX, rFracY );
     }
 
-    aRect = tools::Rectangle( aTL, aBR );
+    aRect = Rectangle( aTL, aBR );
 }
 
 bool IMapRectangleObject::IsEqual( const IMapRectangleObject& rEqObj )
@@ -252,7 +252,7 @@ void IMapCircleObject::ImpConstruct( const Point& rCenter, sal_uLong nRad, bool 
 {
     if ( bPixel )
     {
-        MapMode aMap100( MapUnit::Map100thMM );
+        MapMode aMap100( MAP_100TH_MM );
 
         aCenter = Application::GetDefaultDevice()->PixelToLogic( rCenter, aMap100 );
         nRadius = Application::GetDefaultDevice()->PixelToLogic( Size( nRad, 0 ), aMap100 ).Width();
@@ -334,7 +334,7 @@ Point IMapCircleObject::GetCenter( bool bPixelCoords ) const
     Point aNewPoint;
 
     if ( bPixelCoords )
-        aNewPoint = Application::GetDefaultDevice()->LogicToPixel( aCenter, MapMode( MapUnit::Map100thMM ) );
+        aNewPoint = Application::GetDefaultDevice()->LogicToPixel( aCenter, MapMode( MAP_100TH_MM ) );
     else
         aNewPoint = aCenter;
 
@@ -346,7 +346,7 @@ sal_uLong IMapCircleObject::GetRadius( bool bPixelCoords ) const
     sal_uLong nNewRadius;
 
     if ( bPixelCoords )
-        nNewRadius = Application::GetDefaultDevice()->LogicToPixel( Size( nRadius, 0 ), MapMode( MapUnit::Map100thMM ) ).Width();
+        nNewRadius = Application::GetDefaultDevice()->LogicToPixel( Size( nRadius, 0 ), MapMode( MAP_100TH_MM ) ).Width();
     else
         nNewRadius = nRadius;
 
@@ -395,7 +395,7 @@ IMapPolygonObject::IMapPolygonObject( const tools::Polygon& rPoly,
 void IMapPolygonObject::ImpConstruct( const tools::Polygon& rPoly, bool bPixel )
 {
     if ( bPixel )
-        aPoly = Application::GetDefaultDevice()->PixelToLogic( rPoly, MapMode( MapUnit::Map100thMM ) );
+        aPoly = Application::GetDefaultDevice()->PixelToLogic( rPoly, MapMode( MAP_100TH_MM ) );
     else
         aPoly = rPoly;
 }
@@ -462,14 +462,14 @@ tools::Polygon IMapPolygonObject::GetPolygon( bool bPixelCoords ) const
     tools::Polygon aNewPoly;
 
     if ( bPixelCoords )
-        aNewPoly = Application::GetDefaultDevice()->LogicToPixel( aPoly, MapMode( MapUnit::Map100thMM ) );
+        aNewPoly = Application::GetDefaultDevice()->LogicToPixel( aPoly, MapMode( MAP_100TH_MM ) );
     else
         aNewPoly = aPoly;
 
     return aNewPoly;
 }
 
-void IMapPolygonObject::SetExtraEllipse( const tools::Rectangle& rEllipse )
+void IMapPolygonObject::SetExtraEllipse( const Rectangle& rEllipse )
 {
     if ( aPoly.GetSize() )
     {
@@ -505,7 +505,7 @@ void IMapPolygonObject::Scale( const Fraction& rFracX, const Fraction& rFracY )
             SCALEPOINT( aBR, rFracX, rFracY );
         }
 
-        aEllipse = tools::Rectangle( aTL, aBR );
+        aEllipse = Rectangle( aTL, aBR );
     }
 }
 
@@ -922,7 +922,7 @@ void ImageMap::Write( SvStream& rOStm, const OUString& rBaseURL ) const
 
     // write MagicCode
     rOStm.WriteCharPtr( IMAPMAGIC );
-    rOStm.WriteUInt16( IMAGE_MAP_VERSION );
+    rOStm.WriteUInt16( GetVersion() );
     write_uInt16_lenPrefixed_uInt8s_FromOUString(rOStm, aImageName, eEncoding);
     write_uInt16_lenPrefixed_uInt8s_FromOString(rOStm, OString()); //dummy
     rOStm.WriteUInt16( nCount );
@@ -953,7 +953,7 @@ void ImageMap::Read( SvStream& rIStm, const OUString& rBaseURL )
     sal_uInt16      nCount;
 
     rIStm.SetEndian( SvStreamEndian::LITTLE );
-    rIStm.ReadBytes(cMagic, sizeof(cMagic));
+    rIStm.Read( cMagic, sizeof( cMagic ) );
 
     if ( !memcmp( cMagic, IMAPMAGIC, sizeof( cMagic ) ) )
     {

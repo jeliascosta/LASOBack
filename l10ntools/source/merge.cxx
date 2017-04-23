@@ -92,25 +92,25 @@ ResData::ResData( const OString &rGId, const OString &rFilename)
 
 
 bool MergeEntrys::GetText( OString &rReturn,
-    StringType nTyp, const OString &nLangIndex, bool bDel )
+    sal_uInt16 nTyp, const OString &nLangIndex, bool bDel )
 {
     bool bReturn = true;
     switch ( nTyp ) {
-        case StringType::Text :
+        case STRING_TYP_TEXT :
             rReturn = sText[ nLangIndex ];
             if ( bDel )
                 sText[ nLangIndex ] = "";
             bReturn = bTextFirst[ nLangIndex ];
             bTextFirst[ nLangIndex ] = false;
             break;
-        case StringType::QuickHelpText :
+        case STRING_TYP_QUICKHELPTEXT :
             rReturn = sQuickHelpText[ nLangIndex ];
             if ( bDel )
                 sQuickHelpText[ nLangIndex ] = "";
             bReturn = bQuickHelpTextFirst[ nLangIndex ];
             bQuickHelpTextFirst[ nLangIndex ] = false;
             break;
-        case StringType::Title :
+        case STRING_TYP_TITLE :
             rReturn = sTitle[ nLangIndex ];
             if ( bDel )
                 sTitle[ nLangIndex ] = "";
@@ -160,7 +160,7 @@ std::pair<MergeDataHashMap::iterator,bool> MergeDataHashMap::insert(const OStrin
     return aTemp;
 }
 
-MergeDataHashMap::iterator const & MergeDataHashMap::find(const OString& rKey)
+MergeDataHashMap::iterator MergeDataHashMap::find(const OString& rKey)
 {
     iterator aHint = m_aHashMap.end();
 
@@ -207,6 +207,7 @@ MergeData::MergeData(const OString &rGID,
 
 MergeData::~MergeData()
 {
+    delete pMergeEntrys;
 }
 
 
@@ -440,6 +441,7 @@ OString MergeDataFile::CreateKey(const OString& rTYP, const OString& rGID,
     sKey += rLID;
     sKey += sStroke;
     sKey += lcl_NormalizeFilename(rFilename);
+    OSL_TRACE("created key: %s", sKey.getStr());
     if(bCaseSensitive)
         return sKey;         // officecfg case sensitive identifier
     return sKey.toAsciiUpperCase();

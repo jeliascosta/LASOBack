@@ -40,22 +40,19 @@ export SAL_ENABLE_FILE_LOCKING
 #@JITC_PROCESSOR_TYPE_EXPORT@
 
 # resolve installation directory
-sd_cwd=$(pwd)
+sd_cwd=`pwd`
 sd_res="$0"
 while [ -h "$sd_res" ] ; do
-    sd_dirname=$(dirname "$sd_res")
-    cd "$sd_dirname" || exit $?
-    sd_basename=$(basename "$sd_res")
-    sd_res=$(ls -l "$sd_basename" | sed "s/.*$sd_basename -> //g")
+    cd "`dirname "$sd_res"`"
+    sd_basename=`basename "$sd_res"`
+    sd_res=`ls -l "$sd_basename" | sed "s/.*$sd_basename -> //g"`
 done
-sd_dirname=$(dirname "$sd_res")
-cd "$sd_dirname" || exit $?
-sd_prog=$(pwd)
-cd "$sd_cwd" || exit $?
+cd "`dirname "$sd_res"`"
+sd_prog=`pwd`
+cd "$sd_cwd"
 
 # linked build needs additional settings
 if [ -e "${sd_prog}/ooenv" ] ; then
-    # shellcheck source=../../instsetoo_native/ooenv
     . "${sd_prog}/ooenv"
 fi
 
@@ -74,7 +71,7 @@ test -n "$VALGRIND" && EXTRAOPT="--valgrind"
 # force the --record option if the RR variable is set
 test -n "$RR" && EXTRAOPT="--record"
 
-for arg in "$@" $EXTRAOPT ; do
+for arg in $@ $EXTRAOPT ; do
     case "$arg" in
         --record)
             if which rr >/dev/null 2>&1 ; then
@@ -109,11 +106,11 @@ for arg in "$@" $EXTRAOPT ; do
                 # another valgrind tool might be forced via the environment variable
                 test -z "$VALGRIND" && VALGRIND="memcheck"
                 # --trace-children-skip is pretty useful but supported only with valgrind >= 3.6.0
-                valgrind_ver=$(valgrind --version | sed -e "s/valgrind-//")
-                valgrind_ver_maj=$(echo "$valgrind_ver" | awk -F. '{ print $1 }')
-                valgrind_ver_min=$(echo "$valgrind_ver" | awk -F. '{ print $2 }')
+                valgrind_ver=`valgrind --version | sed -e "s/valgrind-//"`
+                valgrind_ver_maj=`echo $valgrind_ver | awk -F. '{ print \$1 }'`
+                valgrind_ver_min=`echo $valgrind_ver | awk -F. '{ print \$2 }'`
                 valgrind_skip=
-                if [ "$valgrind_ver_maj" -gt 3 ] || ( [ "$valgrind_ver_maj" -eq 3 ] && [ "$valgrind_ver_min" -ge 6 ] ) ; then
+                if [ "$valgrind_ver_maj" -gt 3 -o \( "$valgrind_ver_maj" -eq 3 -a "$valgrind_ver_min" -ge 6 \) ] ; then
                     valgrind_skip='--trace-children-skip=*/java,*/gij'
                 fi
                 # finally set the valgrind check
@@ -121,7 +118,7 @@ for arg in "$@" $EXTRAOPT ; do
                 echo "use kill -SIGUSR2 pid to dump traces of active allocations"
                 checks="c$checks"
                 case "$VALGRIND" in
-                helgrind|memcheck|massif|exp-dhat)
+                helgrind|memcheck)
                     export G_SLICE=always-malloc
                     export GLIBCXX_FORCE_NEW=1
                     ;;
@@ -140,7 +137,7 @@ if echo "$checks" | grep -q "cc" ; then
     exit 1;
 fi
 
-case "$(uname -s)" in
+case "`uname -s`" in
 NetBSD|OpenBSD|DragonFly)
 # this is a temporary hack until we can live with the default search paths
     LD_LIBRARY_PATH="$sd_prog${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -165,7 +162,7 @@ if [ -n "$GDBTRACECHECK" ] ; then
 fi
 
 # valgrind --log-file=valgrind.log does not work well with --trace-children=yes
-if [ -n "$VALGRINDCHECK" ] && [ -z "$VALGRIND" ] ; then
+if [ -n "$VALGRINDCHECK" -a -z "$VALGRIND" ] ; then
     echo "redirecting the standard and the error output to valgrind.log"
     exec > valgrind.log 2>&1
 fi

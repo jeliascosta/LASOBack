@@ -20,9 +20,6 @@
 
 #include <txtlists.hxx>
 #include <comphelper/random.hxx>
-
-#include <o3tl/make_unique.hxx>
-
 #include <tools/date.hxx>
 #include <tools/time.hxx>
 
@@ -41,10 +38,39 @@ using namespace ::com::sun::star;
 
 
 XMLTextListsHelper::XMLTextListsHelper()
-   :  msLastProcessedListId(),
-      msListStyleOfLastProcessedList()
+   :  mpProcessedLists( nullptr ),
+      msLastProcessedListId(),
+      msListStyleOfLastProcessedList(),
       // Inconsistent behavior regarding lists (#i92811#)
+      mpMapListIdToListStyleDefaultListId( nullptr ),
+      mpContinuingLists( nullptr ),
+      mpListStack( nullptr )
 {
+}
+
+XMLTextListsHelper::~XMLTextListsHelper()
+{
+    if ( mpProcessedLists )
+    {
+        mpProcessedLists->clear();
+        delete mpProcessedLists;
+    }
+    // Inconsistent behavior regarding lists (#i92811#)#
+    if ( mpMapListIdToListStyleDefaultListId )
+    {
+        mpMapListIdToListStyleDefaultListId->clear();
+        delete mpMapListIdToListStyleDefaultListId;
+    }
+    if ( mpContinuingLists )
+    {
+        mpContinuingLists->clear();
+        delete mpContinuingLists;
+    }
+    if ( mpListStack )
+    {
+        mpListStack->clear();
+        delete mpListStack;
+    }
 }
 
 void XMLTextListsHelper::PushListContext(
@@ -77,11 +103,11 @@ void XMLTextListsHelper::ListContextTop(
 {
     if ( !mListStack.empty() ) {
         o_pListBlockContext =
-            static_cast<XMLTextListBlockContext*>(std::get<0>(mListStack.top()).get());
+            static_cast<XMLTextListBlockContext*>(&std::get<0>(mListStack.top()));
         o_pListItemContext  =
-            static_cast<XMLTextListItemContext *>(std::get<1>(mListStack.top()).get());
+            static_cast<XMLTextListItemContext *>(&std::get<1>(mListStack.top()));
         o_pNumberedParagraphContext =
-            static_cast<XMLNumberedParaContext *>(std::get<2>(mListStack.top()).get());
+            static_cast<XMLNumberedParaContext *>(&std::get<2>(mListStack.top()));
     }
 }
 
@@ -90,9 +116,9 @@ void XMLTextListsHelper::SetListItem( XMLTextListItemContext *i_pListItem )
     // may be cleared by ListBlockContext for upper list...
     if (i_pListItem) {
         assert(mListStack.size());
-        assert(std::get<0>(mListStack.top()).is() &&
+        assert(std::get<0>(mListStack.top()) &&
             "internal error: SetListItem: mListStack has no ListBlock");
-        assert(!std::get<1>(mListStack.top()).is() &&
+        assert(!std::get<1>(mListStack.top()) &&
             "error: SetListItem: list item already exists");
     }
     if ( !mListStack.empty() ) {
@@ -113,9 +139,9 @@ void XMLTextListsHelper::KeepListAsProcessed( const OUString& sListId,
         return;
     }
 
-    if ( !mpProcessedLists )
+    if ( mpProcessedLists == nullptr )
     {
-        mpProcessedLists = o3tl::make_unique<tMapForLists>();
+        mpProcessedLists = new tMapForLists();
     }
 
     ::std::pair< OUString, OUString >
@@ -128,9 +154,9 @@ void XMLTextListsHelper::KeepListAsProcessed( const OUString& sListId,
     // Inconsistent behavior regarding lists (#i92811#)
     if ( !sListStyleDefaultListId.isEmpty())
     {
-        if ( !mpMapListIdToListStyleDefaultListId )
+        if ( mpMapListIdToListStyleDefaultListId == nullptr )
         {
-            mpMapListIdToListStyleDefaultListId = o3tl::make_unique<tMapForLists>();
+            mpMapListIdToListStyleDefaultListId = new tMapForLists();
         }
 
         if ( mpMapListIdToListStyleDefaultListId->find( sListStyleName ) ==
@@ -146,7 +172,7 @@ void XMLTextListsHelper::KeepListAsProcessed( const OUString& sListId,
 
 bool XMLTextListsHelper::IsListProcessed( const OUString& sListId ) const
 {
-    if ( !mpProcessedLists )
+    if ( mpProcessedLists == nullptr )
     {
         return false;
     }
@@ -157,7 +183,7 @@ bool XMLTextListsHelper::IsListProcessed( const OUString& sListId ) const
 OUString XMLTextListsHelper::GetListStyleOfProcessedList(
                                             const OUString& sListId ) const
 {
-    if ( mpProcessedLists )
+    if ( mpProcessedLists != nullptr )
     {
         tMapForLists::const_iterator aIter = mpProcessedLists->find( sListId );
         if ( aIter != mpProcessedLists->end() )
@@ -172,7 +198,7 @@ OUString XMLTextListsHelper::GetListStyleOfProcessedList(
 OUString XMLTextListsHelper::GetContinueListIdOfProcessedList(
                                             const OUString& sListId ) const
 {
-    if ( mpProcessedLists )
+    if ( mpProcessedLists != nullptr )
     {
         tMapForLists::const_iterator aIter = mpProcessedLists->find( sListId );
         if ( aIter != mpProcessedLists->end() )
@@ -199,14 +225,14 @@ OUString XMLTextListsHelper::GenerateNewListId() const
     {
         // Value of xml:id in element <text:list> has to be a valid ID type (#i92478#)
         sal_Int64 n = ::tools::Time( ::tools::Time::SYSTEM ).GetTime();
-        n += Date( Date::SYSTEM ).GetDateUnsigned();
+        n += Date( Date::SYSTEM ).GetDate();
         n += comphelper::rng::uniform_int_distribution(0, std::numeric_limits<int>::max());
         // Value of xml:id in element <text:list> has to be a valid ID type (#i92478#)
         sTmpStr += OUString::number( n );
     }
 
     OUString sNewListId( sTmpStr );
-    if ( mpProcessedLists )
+    if ( mpProcessedLists != nullptr )
     {
         long nHitCount = 0;
         while ( mpProcessedLists->find( sNewListId ) != mpProcessedLists->end() )
@@ -229,7 +255,7 @@ OUString XMLTextListsHelper::GetListIdForListBlock( XMLTextListBlockContext& rLi
         sListBlockListId = rListBlock.GetListId();
     }
 
-    if ( mpMapListIdToListStyleDefaultListId )
+    if ( mpMapListIdToListStyleDefaultListId != nullptr )
     {
         if ( !sListBlockListId.isEmpty() )
         {
@@ -254,9 +280,9 @@ OUString XMLTextListsHelper::GetListIdForListBlock( XMLTextListBlockContext& rLi
 void XMLTextListsHelper::StoreLastContinuingList( const OUString& sListId,
                                                   const OUString& sContinuingListId )
 {
-    if ( !mpContinuingLists )
+    if ( mpContinuingLists == nullptr )
     {
-        mpContinuingLists = o3tl::make_unique<tMapForContinuingLists>();
+        mpContinuingLists = new tMapForContinuingLists();
     }
 
     (*mpContinuingLists)[ sListId ] = sContinuingListId;
@@ -265,7 +291,7 @@ void XMLTextListsHelper::StoreLastContinuingList( const OUString& sListId,
 OUString XMLTextListsHelper::GetLastContinuingListId(
                                                 const OUString& sListId ) const
 {
-    if ( mpContinuingLists )
+    if ( mpContinuingLists != nullptr)
     {
         tMapForContinuingLists::const_iterator aIter =
                                                 mpContinuingLists->find( sListId );
@@ -281,9 +307,9 @@ OUString XMLTextListsHelper::GetLastContinuingListId(
 void XMLTextListsHelper::PushListOnStack( const OUString& sListId,
                                           const OUString& sListStyleName )
 {
-    if ( !mpListStack )
+    if ( mpListStack == nullptr )
     {
-        mpListStack = o3tl::make_unique<tStackForLists>();
+        mpListStack = new tStackForLists();
     }
     ::std::pair< OUString, OUString >
                                 aListData( sListId, sListStyleName );
@@ -291,7 +317,7 @@ void XMLTextListsHelper::PushListOnStack( const OUString& sListId,
 }
 void XMLTextListsHelper::PopListFromStack()
 {
-    if ( mpListStack &&
+    if ( mpListStack != nullptr &&
          mpListStack->size() > 0 )
     {
         mpListStack->pop_back();
@@ -300,7 +326,7 @@ void XMLTextListsHelper::PopListFromStack()
 
 bool XMLTextListsHelper::EqualsToTopListStyleOnStack( const OUString& sListId ) const
 {
-    return mpListStack && sListId == mpListStack->back().second;
+    return mpListStack != nullptr && sListId == mpListStack->back().second;
 }
 
 OUString
@@ -407,6 +433,7 @@ XMLTextListsHelper::MakeNumRule(
     bool* o_pRestartNumbering,
     bool* io_pSetDefaults)
 {
+    static const char s_NumberingRules[] = "NumberingRules";
     uno::Reference<container::XIndexReplace> xNumRules(i_rNumRule);
     if ( !i_StyleName.isEmpty() && i_StyleName != i_ParentStyleName )
     {
@@ -423,7 +450,7 @@ XMLTextListsHelper::MakeNumRule(
 
             uno::Reference< beans::XPropertySet > xPropSet( xStyle,
                 uno::UNO_QUERY );
-            any = xPropSet->getPropertyValue("NumberingRules");
+            any = xPropSet->getPropertyValue(s_NumberingRules);
             any >>= xNumRules;
         }
         else

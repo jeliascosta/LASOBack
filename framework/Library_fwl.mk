@@ -24,7 +24,6 @@ $(eval $(call gb_Library_set_componentfile,fwl,framework/util/fwl))
 $(eval $(call gb_Library_set_include,fwl,\
     -I$(SRCDIR)/framework/inc \
     -I$(SRCDIR)/framework/source/inc \
-    -I$(WORKDIR)/CustomTarget/officecfg/registry \
     $$(INCLUDE) \
 ))
 
@@ -61,6 +60,7 @@ $(eval $(call gb_Library_add_exception_objects,fwl,\
     framework/source/recording/dispatchrecordersupplier \
     framework/source/register/registertemp \
     framework/source/dispatch/dispatchdisabler \
+    framework/source/services/dispatchhelper \
     framework/source/services/mediatypedetectionhelper \
     framework/source/services/uriabbreviation \
     framework/source/uielement/fontmenucontroller \
@@ -70,9 +70,7 @@ $(eval $(call gb_Library_add_exception_objects,fwl,\
     framework/source/uielement/langselectionmenucontroller \
     framework/source/uielement/macrosmenucontroller \
     framework/source/uielement/newmenucontroller \
-    framework/source/uielement/toolbarmodemenucontroller \
     framework/source/uielement/toolbarsmenucontroller \
-    framework/source/uielement/notebookbarmenucontroller \
 ))
 
 # vim: set noet sw=4 ts=4:

@@ -41,7 +41,7 @@ namespace dbaui
     class OTableFieldDesc : public ::salhelper::SimpleReferenceObject
     {
     private:
-       std::vector< OUString >
+       ::std::vector< OUString >
                                     m_aCriteria;
 
         OUString             m_aTableName;
@@ -68,7 +68,7 @@ namespace dbaui
         OTableFieldDesc();
         OTableFieldDesc(const OUString& rTable, const OUString& rField );
         OTableFieldDesc(const OTableFieldDesc& rRS);
-        virtual ~OTableFieldDesc() override;
+        virtual ~OTableFieldDesc();
 
         inline bool IsEmpty() const;
 
@@ -109,24 +109,24 @@ namespace dbaui
         sal_Int32 GetFunctionType() const { return m_eFunctionType; }
         sal_uInt16 GetColumnId() const { return m_nColumnId;}
 
-        bool isAggreateFunction() const { return (m_eFunctionType & FKT_AGGREGATE) == FKT_AGGREGATE; }
-        bool isOtherFunction() const { return (m_eFunctionType & FKT_OTHER) == FKT_OTHER; }
-        bool isNumeric() const { return (m_eFunctionType & FKT_NUMERIC) == FKT_NUMERIC; }
-        bool isNoneFunction() const { return m_eFunctionType == FKT_NONE; }
-        bool isCondition() const { return (m_eFunctionType & FKT_CONDITION) == FKT_CONDITION;  }
-        bool isNumericOrAggreateFunction() const { return isNumeric() || isAggreateFunction(); }
+        inline bool isAggreateFunction() const { return (m_eFunctionType & FKT_AGGREGATE) == FKT_AGGREGATE; }
+        inline bool isOtherFunction() const { return (m_eFunctionType & FKT_OTHER) == FKT_OTHER; }
+        inline bool isNumeric() const { return (m_eFunctionType & FKT_NUMERIC) == FKT_NUMERIC; }
+        inline bool isNoneFunction() const { return m_eFunctionType == FKT_NONE; }
+        inline bool isCondition() const { return (m_eFunctionType & FKT_CONDITION) == FKT_CONDITION;  }
+        inline bool isNumericOrAggreateFunction() const { return isNumeric() || isAggreateFunction(); }
 
         bool HasCriteria() const
         {
-            std::vector< OUString>::const_iterator aIter = m_aCriteria.begin();
-            std::vector< OUString>::const_iterator aEnd = m_aCriteria.end();
+            ::std::vector< OUString>::const_iterator aIter = m_aCriteria.begin();
+            ::std::vector< OUString>::const_iterator aEnd = m_aCriteria.end();
             for(;aIter != aEnd;++aIter)
                 if(!aIter->isEmpty())
                     break;
             return aIter != aEnd;
         }
 
-        const std::vector< OUString>&  GetCriteria() const { return m_aCriteria; }
+        const ::std::vector< OUString>&  GetCriteria() const { return m_aCriteria; }
 
         void Load( const css::beans::PropertyValue& i_rSettings, const bool i_bIncludingCriteria );
         void Save( ::comphelper::NamedValueCollection& o_rSettings, const bool i_bIncludingCriteria );
@@ -144,7 +144,7 @@ namespace dbaui
     }
 
     typedef ::rtl::Reference< OTableFieldDesc> OTableFieldDescRef;
-    typedef std::vector<OTableFieldDescRef> OTableFields;
+    typedef ::std::vector<OTableFieldDescRef> OTableFields;
 }
 #endif
 

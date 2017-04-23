@@ -40,9 +40,9 @@ class ChartObjectEnumerationImpl : public EnumerationHelperImpl
     uno::Reference< drawing::XDrawPageSupplier > xDrawPageSupplier;
 
 public:
-    /// @throws uno::RuntimeException
-    ChartObjectEnumerationImpl( const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration, const uno::Reference< drawing::XDrawPageSupplier >& _xDrawPageSupplier, const uno::Reference< XHelperInterface >& _xParent ) : EnumerationHelperImpl( _xParent, xContext, xEnumeration ), xDrawPageSupplier( _xDrawPageSupplier ) {}
-    virtual uno::Any SAL_CALL nextElement(  ) override
+
+    ChartObjectEnumerationImpl( const uno::Reference< uno::XComponentContext >& xContext, const uno::Reference< container::XEnumeration >& xEnumeration, const uno::Reference< drawing::XDrawPageSupplier >& _xDrawPageSupplier, const uno::Reference< XHelperInterface >& _xParent ) throw ( uno::RuntimeException ) : EnumerationHelperImpl( _xParent, xContext, xEnumeration ), xDrawPageSupplier( _xDrawPageSupplier ) {}
+    virtual uno::Any SAL_CALL nextElement(  ) throw (container::NoSuchElementException, lang::WrappedTargetException, uno::RuntimeException, std::exception) override
     {
         uno::Any ret;
 
@@ -50,7 +50,7 @@ public:
         {
             uno::Reference< table::XTableChart > xTableChart( m_xEnumeration->nextElement(), uno::UNO_QUERY_THROW );
             // parent Object is sheet
-            ret <<= uno::Reference< excel::XChartObject > ( new ScVbaChartObject(  m_xParent, m_xContext, xTableChart, xDrawPageSupplier ) );
+            ret = uno::makeAny(  uno::Reference< excel::XChartObject > ( new ScVbaChartObject(  m_xParent, m_xContext, xTableChart, xDrawPageSupplier ) ) );
         }
         catch (const lang::WrappedTargetException&)
         {
@@ -87,7 +87,7 @@ ScVbaChartObjects::removeByName(const OUString& _sChartName)
 }
 
 uno::Sequence< OUString >
-ScVbaChartObjects::getChartObjectNames()
+ScVbaChartObjects::getChartObjectNames() throw( css::script::BasicErrorException )
 {
     uno::Sequence< OUString > sChartNames;
     try
@@ -127,7 +127,7 @@ ScVbaChartObjects::getChartObjectNames()
 
 // XChartObjects
 uno::Any SAL_CALL
-ScVbaChartObjects::Add( double _nX, double _nY, double _nWidth, double _nHeight )
+ScVbaChartObjects::Add( double _nX, double _nY, double _nWidth, double _nHeight ) throw (script::BasicErrorException, std::exception)
 {
     try
     {
@@ -146,11 +146,11 @@ ScVbaChartObjects::Add( double _nX, double _nY, double _nWidth, double _nHeight 
     }
     catch (const uno::Exception& ex)
     {
-        SAL_WARN("sc", "AddItem caught exception " << ex.Message );
+        OSL_TRACE("AddItem caught exception ->%s", OUStringToOString( ex.Message, RTL_TEXTENCODING_UTF8 ).getStr() );
     }
     return aNULL();
 }
-void SAL_CALL ScVbaChartObjects::Delete(  )
+void SAL_CALL ScVbaChartObjects::Delete(  ) throw (script::BasicErrorException, std::exception)
 {
     uno::Sequence< OUString > sChartNames = xTableCharts->getElementNames();
     sal_Int32 ncount = sChartNames.getLength();
@@ -161,7 +161,7 @@ void SAL_CALL ScVbaChartObjects::Delete(  )
 // XEnumerationAccess
 
 uno::Reference< container::XEnumeration >
-ScVbaChartObjects::createEnumeration()
+ScVbaChartObjects::createEnumeration() throw (uno::RuntimeException)
 {
     css::uno::Reference< container::XEnumerationAccess > xEnumAccess( xTableCharts, uno::UNO_QUERY_THROW );
     return new ChartObjectEnumerationImpl( mxContext, xEnumAccess->createEnumeration(), xDrawPageSupplier, getParent() /* sheet */);
@@ -170,7 +170,7 @@ ScVbaChartObjects::createEnumeration()
 // XElementAccess
 
 uno::Type
-ScVbaChartObjects::getElementType()
+ScVbaChartObjects::getElementType() throw (uno::RuntimeException)
 {
     return cppu::UnoType<excel::XChartObject>::get();
 }

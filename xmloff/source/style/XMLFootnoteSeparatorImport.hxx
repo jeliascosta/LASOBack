@@ -54,7 +54,7 @@ public:
         const rtl::Reference<XMLPropertySetMapper> & rMapperRef,
         sal_Int32 nIndex);
 
-    virtual ~XMLFootnoteSeparatorImport() override;
+    virtual ~XMLFootnoteSeparatorImport();
 
     virtual void StartElement(
         const css::uno::Reference< css::xml::sax::XAttributeList> & xAttrList ) override;

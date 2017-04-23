@@ -57,7 +57,7 @@ public interface PropertyName {
      */
     String DEBUG_IS_ACTIVE = "DebugIsActive";
     /**
-     * parameter name: "OutProducer"
+     * parameter name: "OutProduceer"
      * This parameter contains the class used<br>
      * for Logging
      */
@@ -93,9 +93,9 @@ public interface PropertyName {
      */
     String THREAD_TIME_OUT = "ThreadTimeOut";
     /**
-     * parameter name: "UnoRcName"
+     * parameter name: "OperatingSystem"
      */
-    String UNORC_NAME = "UnoRcName";
+    String OPERATING_SYSTEM = "OperatingSystem";
     /**
      * parameter name: "AutoRestart"
      * If this parameter is <CODE>true</CODE> the <CODE>OfficeProvider</CODE> tries
@@ -114,4 +114,26 @@ public interface PropertyName {
      * path to the source root of OpenOffice.org
      */
     String SRC_ROOT = "SRC_ROOT";
+
+    /**
+     * internal only, no parameter
+     */
+    String WNTMSCI = "wntmsci";
+    /**
+     * internal only, no parameter
+     */
+    String UNXLNGI = "unxlngi";
+    /**
+     * internal only, no parameter
+     */
+    String UNXSOLS = "unxsols";
+    /**
+     * internal only, no parameter
+     */
+    String UNXSOLI = "unxsoli";
+    /**
+     * internal only, no parameter
+     */
+    String UNXMACXI = "unxmacxi";
+
 }

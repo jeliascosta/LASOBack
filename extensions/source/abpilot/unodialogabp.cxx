@@ -41,7 +41,7 @@ namespace abp
             &m_sDataSourceName, cppu::UnoType<decltype(m_sDataSourceName)>::get() );
     }
 
-    Any SAL_CALL OABSPilotUno::queryInterface( const Type& aType )
+    Any SAL_CALL OABSPilotUno::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
     {
         Any aReturn = svt::OGenericUnoDialog::queryInterface( aType );
         return aReturn.hasValue() ? aReturn : OABSPilotUno_JBase::queryInterface( aType );
@@ -57,7 +57,7 @@ namespace abp
         svt::OGenericUnoDialog::release();
     }
 
-    Sequence< Type > SAL_CALL OABSPilotUno::getTypes(  )
+    Sequence< Type > SAL_CALL OABSPilotUno::getTypes(  ) throw (RuntimeException, std::exception)
     {
         return ::comphelper::concatSequences(
             svt::OGenericUnoDialog::getTypes(),
@@ -65,22 +65,22 @@ namespace abp
         );
     }
 
-    Sequence<sal_Int8> SAL_CALL OABSPilotUno::getImplementationId(  )
+    Sequence<sal_Int8> SAL_CALL OABSPilotUno::getImplementationId(  ) throw(RuntimeException, std::exception)
     {
         return css::uno::Sequence<sal_Int8>();
     }
 
-    OUString SAL_CALL OABSPilotUno::getImplementationName()
+    OUString SAL_CALL OABSPilotUno::getImplementationName() throw(RuntimeException, std::exception)
     {
         return OUString("org.openoffice.comp.abp.OAddressBookSourcePilot");
     }
 
-    css::uno::Sequence<OUString> SAL_CALL OABSPilotUno::getSupportedServiceNames()
+    css::uno::Sequence<OUString> SAL_CALL OABSPilotUno::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
         return { "com.sun.star.ui.dialogs.AddressBookSourcePilot" };
     }
 
-    Reference<XPropertySetInfo>  SAL_CALL OABSPilotUno::getPropertySetInfo()
+    Reference<XPropertySetInfo>  SAL_CALL OABSPilotUno::getPropertySetInfo() throw(RuntimeException, std::exception)
     {
         Reference<XPropertySetInfo>  xInfo( createPropertySetInfo( getInfoHelper() ) );
         return xInfo;
@@ -100,12 +100,12 @@ namespace abp
         return new ::cppu::OPropertyArrayHelper(aProps);
     }
 
-    void SAL_CALL OABSPilotUno::initialize( const Sequence< Any >& aArguments )
+    void SAL_CALL OABSPilotUno::initialize( const Sequence< Any >& aArguments ) throw(Exception, RuntimeException, std::exception)
     {
         Reference<awt::XWindow> xParentWindow;
         if (aArguments.getLength() == 1 && (aArguments[0] >>= xParentWindow) ) {
             Sequence< Any > aNewArgs(1);
-            aNewArgs[0] <<= PropertyValue( "ParentWindow", 0, makeAny(xParentWindow), PropertyState_DIRECT_VALUE );
+            aNewArgs[0] <<= PropertyValue( OUString("ParentWindow"), 0, makeAny(xParentWindow), PropertyState_DIRECT_VALUE );
             OGenericUnoDialog::initialize(aNewArgs);
         } else {
             OGenericUnoDialog::initialize(aArguments);
@@ -118,7 +118,7 @@ namespace abp
     }
 
 
-    Any SAL_CALL OABSPilotUno::execute( const Sequence< NamedValue >& /*lArgs*/ )
+    Any SAL_CALL OABSPilotUno::execute( const Sequence< NamedValue >& /*lArgs*/ ) throw (IllegalArgumentException, Exception, RuntimeException, std::exception)
     {
         // not interested in the context, not interested in the args
         // -> call the execute method of the XExecutableDialog

@@ -32,12 +32,12 @@ namespace connectivity
         class WpADOColumn : public WpOLEBase<_ADOColumn>
         {
         public:
-            WpADOColumn(_ADOColumn* pInt=nullptr)  :   WpOLEBase<_ADOColumn>(pInt){}
+            WpADOColumn(_ADOColumn* pInt=NULL)  :   WpOLEBase<_ADOColumn>(pInt){}
             WpADOColumn(const WpADOColumn& rhs) : WpOLEBase<_ADOColumn>(rhs) {}
 
             void Create();
 
-            WpADOColumn& operator=(const WpADOColumn& rhs)
+            inline WpADOColumn& operator=(const WpADOColumn& rhs)
                 {WpOLEBase<_ADOColumn>::operator=(rhs); return *this;}
 
             OUString get_Name() const;
@@ -54,7 +54,7 @@ namespace connectivity
             void put_SortOrder(SortOrderEnum _nScale);
             sal_Int32 get_DefinedSize() const;
             ColumnAttributesEnum get_Attributes() const;
-            bool put_Attributes(const ColumnAttributesEnum& _eNum);
+            sal_Bool put_Attributes(const ColumnAttributesEnum& _eNum);
             WpADOProperties get_Properties() const;
             void put_ParentCatalog(/* [in] */ _ADOCatalog __RPC_FAR *ppvObject);
         };

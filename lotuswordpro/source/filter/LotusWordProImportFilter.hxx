@@ -49,32 +49,41 @@ protected:
     css::uno::Reference< css::lang::XComponent > mxDoc;
     OUString msFilterName;
 
-    /// @throws css::uno::RuntimeException
-    bool SAL_CALL importImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor );
+    bool SAL_CALL importImpl( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException, std::exception);
 
 public:
     explicit LotusWordProImportFilter( const css::uno::Reference< css::uno::XComponentContext > &rxContext)
         : mxContext( rxContext )
     {
     }
+    virtual ~LotusWordProImportFilter() {}
 
     // XFilter
-        virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor ) override;
-        virtual void SAL_CALL cancel(  ) override;
+        virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )
+        throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL cancel(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XImporter
-        virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+        virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     //XExtendedFilterDetection
-    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& Descriptor ) override;
+    virtual OUString SAL_CALL detect( css::uno::Sequence< css::beans::PropertyValue >& Descriptor )
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XInitialization
-        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 

@@ -21,15 +21,11 @@
 #include <vcl/settings.hxx>
 
 
-ScrollableWindow::ScrollableWindow( vcl::Window* pParent ) :
-    Window( pParent, WB_CLIPCHILDREN ),
-    aVScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_VSCROLL | WB_DRAG)) ),
-    aHScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_HSCROLL | WB_DRAG)) ),
-    aCornerWin( VclPtr<ScrollBarBox>::Create(this) )
+void ScrollableWindow::ImpInitialize( ScrollableWindowFlags nFlags )
 {
-    bHandleDragging = true;
-    bVCenter = true;
-    bHCenter = true;
+    bHandleDragging = bool( nFlags & ScrollableWindowFlags::THUMBDRAGGING );
+    bVCenter = bool(nFlags & ScrollableWindowFlags::VCENTER);
+    bHCenter = bool(nFlags & ScrollableWindowFlags::HCENTER);
     bScrolling = false;
 
     // set the handlers for the scrollbars
@@ -39,6 +35,17 @@ ScrollableWindow::ScrollableWindow( vcl::Window* pParent ) :
     aHScroll->SetEndScrollHdl( LINK(this, ScrollableWindow, EndScrollHdl) );
 
     nColumnPixW = nLinePixH = GetSettings().GetStyleSettings().GetScrollBarSize();
+}
+
+
+ScrollableWindow::ScrollableWindow( vcl::Window* pParent,
+                                    ScrollableWindowFlags nFlags ) :
+    Window( pParent, WB_CLIPCHILDREN ),
+    aVScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_VSCROLL | WB_DRAG)) ),
+    aHScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_HSCROLL | WB_DRAG)) ),
+    aCornerWin( VclPtr<ScrollBarBox>::Create(this) )
+{
+    ImpInitialize( nFlags );
 }
 
 
@@ -106,7 +113,7 @@ Size ScrollableWindow::GetOutputSizePixel() const
 }
 
 
-IMPL_LINK( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
+IMPL_LINK_TYPED( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
 {
     // notify the start of scrolling, if not already scrolling
     if ( !bScrolling )
@@ -129,7 +136,7 @@ IMPL_LINK( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
 }
 
 
-IMPL_LINK( ScrollableWindow, ScrollHdl, ScrollBar *, pScroll, void )
+IMPL_LINK_TYPED( ScrollableWindow, ScrollHdl, ScrollBar *, pScroll, void )
 {
     // notify the start of scrolling, if not already scrolling
     if ( !bScrolling )
@@ -224,7 +231,7 @@ void ScrollableWindow::Resize()
     // select the shifted map-mode
     if ( aPixOffset != aOldPixOffset )
     {
-        Window::SetMapMode( MapMode( MapUnit::MapPixel ) );
+        Window::SetMapMode( MapMode( MAP_PIXEL ) );
         Window::Scroll(
             aPixOffset.X() - aOldPixOffset.X(),
             aPixOffset.Y() - aOldPixOffset.Y() );
@@ -344,7 +351,7 @@ void ScrollableWindow::Scroll( long nDeltaX, long nDeltaY, ScrollFlags )
 
             // never scroll the scrollbars itself!
             Window::Scroll(-nDeltaX, -nDeltaY,
-                PixelToLogic( tools::Rectangle( Point(0, 0), aOutPixSz ) ) );
+                PixelToLogic( Rectangle( Point(0, 0), aOutPixSz ) ) );
         }
         else
         {

@@ -20,6 +20,7 @@
 #include <com/sun/star/text/ReferenceFieldPart.hpp>
 #include <com/sun/star/text/ReferenceFieldSource.hpp>
 #include <unotools/localedatawrapper.hxx>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
 #include <editeng/unolingu.hxx>
@@ -59,7 +60,6 @@
 
 #include <sfx2/childwin.hxx>
 
-#include <cstddef>
 #include <memory>
 #include <vector>
 #include <set>
@@ -199,11 +199,11 @@ bool IsFrameBehind( const SwTextNode& rMyNd, sal_Int32 nMySttPos,
 /// get references
 SwGetRefField::SwGetRefField( SwGetRefFieldType* pFieldType,
                               const OUString& rSetRef, sal_uInt16 nSubTyp,
-                              sal_uInt16 nSequenceNo, sal_uLong nFormat )
+                              sal_uInt16 nSeqenceNo, sal_uLong nFormat )
     : SwField( pFieldType, nFormat ),
       sSetRefName( rSetRef ),
       nSubType( nSubTyp ),
-      nSeqNo( nSequenceNo )
+      nSeqNo( nSeqenceNo )
 {
 }
 
@@ -398,7 +398,7 @@ void SwGetRefField::UpdateField( const SwTextField* pFieldTextAttr )
                 // remove all special characters (replace them with blanks)
                 if( !sText.isEmpty() )
                 {
-                    sText = sText.replaceAll(OUStringLiteral1(0xad), "");
+                    sText = comphelper::string::remove(sText, 0xad);
                     OUStringBuffer aBuf(sText);
                     const sal_Int32 l = aBuf.getLength();
                     for (sal_Int32 i=0; i<l; ++i)
@@ -510,7 +510,7 @@ OUString SwGetRefField::MakeRefNumStr( const SwTextNode& rTextNodeOfField,
 
         // Determine, up to which level the superior list labels have to be
         // included - default is to include all superior list labels.
-        int nRestrictInclToThisLevel( 0 );
+        sal_uInt8 nRestrictInclToThisLevel( 0 );
         // Determine for format REF_NUMBER the level, up to which the superior
         // list labels have to be restricted, if the text node of the reference
         // field and the text node of the referenced item are in the same
@@ -540,7 +540,7 @@ OUString SwGetRefField::MakeRefNumStr( const SwTextNode& rTextNodeOfField,
             {
                 const SwNumberTree::tNumberVector rFieldNumVec = pNodeNumForTextNodeOfField->GetNumberVector();
                 const SwNumberTree::tNumberVector rRefItemNumVec = rTextNodeOfReferencedItem.GetNum()->GetNumberVector();
-                std::size_t nLevel( 0 );
+                sal_uInt8 nLevel( 0 );
                 while ( nLevel < rFieldNumVec.size() && nLevel < rRefItemNumVec.size() )
                 {
                     if ( rRefItemNumVec[nLevel] == rFieldNumVec[nLevel] )
@@ -643,7 +643,7 @@ bool SwGetRefField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         OUString sTmp(GetPar1());
         if(REF_SEQUENCEFLD == nSubType)
         {
-            sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( sTmp, SwGetPoolIdFromName::TxtColl );
+            sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( sTmp, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
             switch( nPoolId )
             {
                 case RES_POOLCOLL_LABEL_ABB:
@@ -664,7 +664,7 @@ bool SwGetRefField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= (sal_Int16)nSeqNo;
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -741,7 +741,7 @@ bool SwGetRefField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         }
         break;
     default:
-        assert(false);
+        OSL_FAIL("illegal property");
     }
     return true;
 }
@@ -753,9 +753,9 @@ void SwGetRefField::ConvertProgrammaticToUIName()
         SwDoc* pDoc = static_cast<SwGetRefFieldType*>(GetTyp())->GetDoc();
         const OUString rPar1 = GetPar1();
         // don't convert when the name points to an existing field type
-        if(!pDoc->getIDocumentFieldsAccess().GetFieldType(SwFieldIds::SetExp, rPar1, false))
+        if(!pDoc->getIDocumentFieldsAccess().GetFieldType(RES_SETEXPFLD, rPar1, false))
         {
-            sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromProgName( rPar1, SwGetPoolIdFromName::TxtColl );
+            sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromProgName( rPar1, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
             sal_uInt16 nResId = USHRT_MAX;
             switch( nPoolId )
             {
@@ -779,7 +779,7 @@ void SwGetRefField::ConvertProgrammaticToUIName()
 }
 
 SwGetRefFieldType::SwGetRefFieldType( SwDoc* pDc )
-    : SwFieldType( SwFieldIds::GetRef ), pDoc( pDc )
+    : SwFieldType( RES_GETREFFLD ), pDoc( pDc )
 {}
 
 SwFieldType* SwGetRefFieldType::Copy() const
@@ -839,7 +839,7 @@ SwTextNode* SwGetRefFieldType::FindAnchor( SwDoc* pDoc, const OUString& rRefMark
 
     case REF_SEQUENCEFLD:
         {
-            SwFieldType* pFieldType = pDoc->getIDocumentFieldsAccess().GetFieldType( SwFieldIds::SetExp, rRefMark, false );
+            SwFieldType* pFieldType = pDoc->getIDocumentFieldsAccess().GetFieldType( RES_SETEXPFLD, rRefMark, false );
             if( pFieldType && pFieldType->HasWriterListeners() &&
                 nsSwGetSetExpType::GSE_SEQ & static_cast<SwSetExpFieldType*>(pFieldType)->GetType() )
             {
@@ -949,7 +949,7 @@ public:
 /// @param[in,out] rIds The list of IDs found in the document.
 void RefIdsMap::GetFieldIdsFromDoc( SwDoc& rDoc, std::set<sal_uInt16> &rIds)
 {
-    SwFieldType *const pType = rDoc.getIDocumentFieldsAccess().GetFieldType(SwFieldIds::SetExp, aName, false);
+    SwFieldType *const pType = rDoc.getIDocumentFieldsAccess().GetFieldType(RES_SETEXPFLD, aName, false);
 
     if (!pType)
         return;
@@ -997,7 +997,7 @@ void RefIdsMap::Init( SwDoc& rDoc, SwDoc& rDestDoc, bool bField )
             AddId( GetFirstUnusedId(aIds), *pIt );
 
         // Change the Sequence number of all SetExp fields in the source document
-        SwFieldType* pType = rDoc.getIDocumentFieldsAccess().GetFieldType( SwFieldIds::SetExp, aName, false );
+        SwFieldType* pType = rDoc.getIDocumentFieldsAccess().GetFieldType( RES_SETEXPFLD, aName, false );
         if( pType )
         {
             SwIterator<SwFormatField,SwFieldType> aIter( *pType );
@@ -1090,7 +1090,7 @@ void SwGetRefFieldType::MergeWithOtherDoc( SwDoc& rDestDoc )
         {
             // when copying _to_ clipboard, expectation is that no fields exist
             // so no re-mapping is required to avoid collisions
-            assert(!rDestDoc.getIDocumentFieldsAccess().GetSysFieldType(SwFieldIds::GetRef)->HasWriterListeners());
+            assert(!rDestDoc.getIDocumentFieldsAccess().GetSysFieldType(RES_GETREFFLD)->HasWriterListeners());
             return; // don't modify the fields in the source doc
         }
 

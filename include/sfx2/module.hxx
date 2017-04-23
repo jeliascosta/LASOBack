@@ -23,17 +23,19 @@
 #include <sfx2/app.hxx>
 #include <sfx2/dllapi.h>
 #include <sfx2/shell.hxx>
-#include <sfx2/styfitem.hxx>
 #include <svtools/imgdef.hxx>
 #include <sal/types.h>
 #include <tools/fldunit.hxx>
 #include <com/sun/star/uno/Reference.hxx>
+
+class ImageList;
 
 class SfxBindings;
 class SfxObjectFactory;
 class ModalDialog;
 class SfxObjectFactory;
 class SfxModule;
+class SfxModuleArr_Impl;
 class SfxModule_Impl;
 class SfxSlotPool;
 struct SfxChildWinContextFactory;
@@ -52,9 +54,7 @@ class SFX2_DLLPUBLIC SfxModule : public SfxShell
 {
 private:
     ResMgr*                     pResMgr;
-
-    // Warning this cannot be turned into a unique_ptr.
-    // SfxInterface destruction in the SfxSlotPool refers again to pImpl after deletion of pImpl has commenced. See tdf#100270
+    bool                        bDummy : 1;
     SfxModule_Impl*             pImpl;
 
     SAL_DLLPRIVATE void Construct_Impl();
@@ -68,8 +68,9 @@ private:
 
 public:
 
-                                SfxModule( ResMgr* pMgrP, std::initializer_list<SfxObjectFactory*> pFactoryList);
-                                virtual ~SfxModule() override;
+                                SfxModule( ResMgr* pMgrP, bool bDummy,
+                                    SfxObjectFactory* pFactoryP, ... );
+                                virtual ~SfxModule();
 
     ResMgr*                     GetResMgr();
     SfxSlotPool*                GetSlotPool() const;
@@ -83,8 +84,6 @@ public:
                                                const SfxItemSet& rSet );
     virtual void                Invalidate(sal_uInt16 nId = 0) override;
 
-    virtual SfxStyleFamilies*   CreateStyleFamilies() { return nullptr; }
-
     static SfxModule*           GetActiveModule( SfxViewFrame* pFrame=nullptr );
     static FieldUnit            GetCurrentFieldUnit();
     /** retrieves the field unit of the module belonging to the document displayed in the given frame
@@ -97,9 +96,12 @@ public:
     static FieldUnit            GetModuleFieldUnit( css::uno::Reference< css::frame::XFrame > const & i_frame );
     FieldUnit                   GetFieldUnit() const;
 
+    SAL_DLLPRIVATE static SfxModuleArr_Impl& GetModules_Impl();
+    SAL_DLLPRIVATE static void DestroyModules_Impl();
     SAL_DLLPRIVATE SfxTbxCtrlFactArr_Impl* GetTbxCtrlFactories_Impl() const;
     SAL_DLLPRIVATE SfxStbCtrlFactArr_Impl* GetStbCtrlFactories_Impl() const;
     SAL_DLLPRIVATE SfxChildWinFactArr_Impl* GetChildWinFactories_Impl() const;
+    SAL_DLLPRIVATE ImageList* GetImageList_Impl( bool bBig );
 };
 
 #endif

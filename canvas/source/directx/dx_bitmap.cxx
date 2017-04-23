@@ -139,10 +139,7 @@ namespace dxcanvas
         aBmpData.Height      = rect.Y2-rect.Y1;
         aBmpData.Stride      = 4*aBmpData.Width;
         aBmpData.PixelFormat = PixelFormat32bppARGB;
-        aBmpData.Scan0       = const_cast<sal_Int8 *>(data.getConstArray());
-            // const_cast is safe, "Gdiplus::ImageLockModeWrite
-            // | Gdiplus::ImageLockModeUserInputBuf makes the data go from
-            // BitmapData into Bitmap", says Thorsten
+        aBmpData.Scan0       = (void*)data.getConstArray();
 
         // TODO(F1): Support more pixel formats natively
 

@@ -34,16 +34,18 @@ namespace utl
 
     //= NodeValueAccessor
 
-    enum class LocationType
+    enum LocationType
     {
-        SimplyObjectInstance,
-        Unbound
+        ltSimplyObjectInstance,
+        ltAnyInstance,
+
+        ltUnbound
     };
 
     struct NodeValueAccessor
     {
     private:
-        OUString            sRelativePath;      // the relative path of the node
+        OUString     sRelativePath;      // the relative path of the node
         LocationType        eLocationType;      // the type of location where the value is stored
         void*               pLocation;          // the pointer to the location
         Type                aDataType;          // the type object pointed to by pLocation
@@ -53,7 +55,7 @@ namespace utl
 
         void bind( void* _pLocation, const Type& _rType );
 
-        bool                    isBound( ) const        { return ( LocationType::Unbound != eLocationType ) && ( nullptr != pLocation ); }
+        bool                    isBound( ) const        { return ( ltUnbound != eLocationType ) && ( nullptr != pLocation ); }
         const OUString&  getPath( ) const        { return sRelativePath; }
         LocationType            getLocType( ) const     { return eLocationType; }
         void*                   getLocation( ) const    { return pLocation; }
@@ -64,7 +66,7 @@ namespace utl
 
     NodeValueAccessor::NodeValueAccessor( const OUString& _rNodePath )
         :sRelativePath( _rNodePath )
-        ,eLocationType( LocationType::Unbound )
+        ,eLocationType( ltUnbound )
         ,pLocation( nullptr )
     {
     }
@@ -80,7 +82,7 @@ namespace utl
     {
         SAL_WARN_IF(isBound(), "unotools.config", "NodeValueAccessor::bind: already bound!");
 
-        eLocationType = LocationType::SimplyObjectInstance;
+        eLocationType = ltSimplyObjectInstance;
         pLocation = _pLocation;
         aDataType = _rType;
     }
@@ -95,7 +97,7 @@ namespace utl
         SAL_WARN_IF(!_rAccessor.isBound(), "unotools.config", "::utl::lcl_copyData: invalid accessor!");
         switch ( _rAccessor.getLocType() )
         {
-            case LocationType::SimplyObjectInstance:
+            case ltSimplyObjectInstance:
             {
                 if ( _rData.hasValue() )
                 {
@@ -113,6 +115,10 @@ namespace utl
                 }
             }
             break;
+            case ltAnyInstance:
+                // a simple assignment of an Any ...
+                *static_cast< Any* >( _rAccessor.getLocation() ) = _rData;
+                break;
             default:
                 break;
         }
@@ -128,11 +134,15 @@ namespace utl
         SAL_WARN_IF(!_rAccessor.isBound(), "unotools.config", "::utl::lcl_copyData: invalid accessor!" );
         switch ( _rAccessor.getLocType() )
         {
-            case LocationType::SimplyObjectInstance:
+            case ltSimplyObjectInstance:
                 // a simple setValue ....
                 _rData.setValue( _rAccessor.getLocation(), _rAccessor.getDataType() );
                 break;
 
+            case ltAnyInstance:
+                // a simple assignment of an Any ...
+                _rData = *static_cast< Any* >( _rAccessor.getLocation() );
+                break;
             default:
                 break;
         }
@@ -210,6 +220,7 @@ namespace utl
 
     OConfigurationValueContainer::~OConfigurationValueContainer()
     {
+        delete m_pImpl;
     }
 
     void OConfigurationValueContainer::implConstruct( const OUString& _rConfigLocation,
@@ -261,14 +272,21 @@ namespace utl
         );
     }
 
-    void OConfigurationValueContainer::commit()
+    void OConfigurationValueContainer::write()
     {
-        // write the current values in the exchange locations
+        // collect the current values in the exchange locations
         std::for_each(
             m_pImpl->aAccessors.begin(),
             m_pImpl->aAccessors.end(),
             UpdateToConfig( m_pImpl->aConfigRoot, m_pImpl->rMutex )
         );
+    }
+
+    void OConfigurationValueContainer::commit( bool _bWrite )
+    {
+        // write the current values in the exchange locations (if requested)
+        if ( _bWrite )
+            write();
 
         // commit the changes done
         m_pImpl->aConfigRoot.commit( );

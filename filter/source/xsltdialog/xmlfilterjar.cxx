@@ -79,8 +79,7 @@ static OUString encodeZipUri( const OUString& rURI )
     return Uri::encode( rURI, rtl_UriCharClassUric, rtl_UriEncodeCheckEscapes, RTL_TEXTENCODING_UTF8 );
 }
 
-/// @throws Exception
-static Reference< XInterface > addFolder( Reference< XInterface >& xRootFolder, Reference< XSingleServiceFactory >& xFactory, const OUString& rName )
+static Reference< XInterface > addFolder( Reference< XInterface >& xRootFolder, Reference< XSingleServiceFactory >& xFactory, const OUString& rName ) throw( Exception )
 {
     if ( rName == ".." || rName == "." )
         throw lang::IllegalArgumentException();
@@ -102,8 +101,7 @@ static Reference< XInterface > addFolder( Reference< XInterface >& xRootFolder, 
     return xFolder;
 }
 
-/// @throws Exception
-static void addFile_( Reference< XInterface > const & xRootFolder, Reference< XSingleServiceFactory > const & xFactory, Reference< XInputStream > const & xInput, const OUString& aName )
+static void addFile_( Reference< XInterface >& xRootFolder, Reference< XSingleServiceFactory >& xFactory, Reference< XInputStream >& xInput, const OUString& aName ) throw( Exception )
 {
     Reference< XActiveDataSink > xSink( xFactory->createInstance(), UNO_QUERY );
     Reference< XUnoTunnel > xTunnel( xSink, UNO_QUERY );
@@ -115,7 +113,7 @@ static void addFile_( Reference< XInterface > const & xRootFolder, Reference< XS
     }
 }
 
-void XMLFilterJarHelper::addFile( Reference< XInterface > const & xRootFolder, Reference< XSingleServiceFactory > const & xFactory, const OUString& rSourceFile )
+void XMLFilterJarHelper::addFile( Reference< XInterface > xRootFolder, Reference< XSingleServiceFactory > xFactory, const OUString& rSourceFile ) throw( Exception, std::exception )
 {
     if( !rSourceFile.isEmpty() &&
         !rSourceFile.startsWith("http:") &&

@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <rscall.h>
 #include <rsctools.hxx>
@@ -58,7 +59,7 @@ void RscNameTable::SetSort( bool bSorted )
     bSort = bSorted;
     if( bSort && pTable)
     {
-        // sort keyword field
+        // Schluesselwort Feld sortieren
         qsort( static_cast<void *>(pTable), nEntries,
                sizeof( KEY_STRUCT ), KeyCompare );
     }
@@ -111,7 +112,7 @@ bool RscNameTable::Get( Atom nName, KEY_STRUCT * pEle )
 
     if( bSort )
     {
-        // search for the keyword
+        // Suche nach dem Schluesselwort
         aSearchName.nName = nName;
         pKey = static_cast<KEY_STRUCT *>(bsearch(
                 &aSearchName, pTable,
@@ -130,6 +131,7 @@ bool RscNameTable::Get( Atom nName, KEY_STRUCT * pEle )
 
     if( pKey )
     {
+        // Schluesselwort gefunden
         *pEle = *pKey;
         return true;
     }

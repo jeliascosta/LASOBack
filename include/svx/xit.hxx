@@ -45,9 +45,11 @@ protected:
 public:
             NameOrIndex() { nPalIndex = -1; }
             NameOrIndex(sal_uInt16 nWhich, sal_Int32 nIndex);
-            NameOrIndex(sal_uInt16 nWhich, const OUString& rName);
+            NameOrIndex(sal_uInt16 nWhich,
+                        const OUString& rName = OUString());
             NameOrIndex(sal_uInt16 nWhich, SvStream& rIn);
             NameOrIndex(const NameOrIndex& rNameOrIndex);
+           virtual ~NameOrIndex() {};
 
     virtual bool         operator==(const SfxPoolItem& rItem) const override;
     virtual SfxPoolItem* Clone(SfxItemPool* pPool = nullptr) const override;
@@ -56,6 +58,7 @@ public:
 
             OUString     GetName() const              { return GetValue();   }
             void         SetName(const OUString& rName) { SetValue(rName);     }
+            sal_Int32    GetIndex() const             { return nPalIndex;    }
             bool         IsIndex() const          { return (nPalIndex >= 0); }
 
     /** this static checks if the given NameOrIndex item has a unique name for its value.

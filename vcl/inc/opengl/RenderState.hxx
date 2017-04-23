@@ -19,11 +19,6 @@ class GenericCapabilityState
 protected:
     bool mbTest;
 
-    GenericCapabilityState()
-        : mbTest(false)
-    {
-    }
-
     static bool readState()
     {
         return glIsEnabled(ENUM_TYPE);
@@ -153,13 +148,13 @@ class RenderState
     StencilState maStencil;
     BlendState   maBlend;
 
-    tools::Rectangle maCurrentViewport;
+    Rectangle maCurrentViewport;
 
 public:
     RenderState()
     {}
 
-    void viewport(tools::Rectangle aViewPort)
+    void viewport(Rectangle aViewPort)
     {
         if (aViewPort != maCurrentViewport)
         {

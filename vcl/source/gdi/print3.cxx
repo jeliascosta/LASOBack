@@ -40,7 +40,6 @@
 #include <com/sun/star/ui/dialogs/TemplateDescription.hpp>
 #include <com/sun/star/ui/dialogs/ExecutableDialogResults.hpp>
 #include <com/sun/star/view/DuplexMode.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/awt/Size.hpp>
 
@@ -267,10 +266,10 @@ struct PrintJobAsync
     : mxController( i_xController ), maInitSetup( i_rInitSetup )
     {}
 
-    DECL_LINK( ExecJob, void*, void );
+    DECL_LINK_TYPED( ExecJob, void*, void );
 };
 
-IMPL_LINK_NOARG(PrintJobAsync, ExecJob, void*, void)
+IMPL_LINK_NOARG_TYPED(PrintJobAsync, ExecJob, void*, void)
 {
     Printer::ImplPrintJob(mxController, maInitSetup);
 
@@ -354,7 +353,7 @@ bool Printer::PreparePrintJob(std::shared_ptr<PrinterController> xController,
             // Argh ! That sure needs cleaning up
             if( pContentVal )
             {
-                pContentVal->Value <<= sal_Int32( 1 );
+                pContentVal->Value = css::uno::makeAny( sal_Int32( 1 ) );
                 xController->setValue("PageRange", pPagesVal->Value);
             }
         }
@@ -434,8 +433,8 @@ bool Printer::PreparePrintJob(std::shared_ptr<PrinterController> xController,
         if( nValue >= 0 )
             aMPS.nVerticalSpacing = nValue;
         aMPS.bDrawBorder = xController->getBoolProperty( "NUpDrawBorder", aMPS.bDrawBorder );
-        aMPS.nOrder = static_cast<NupOrderType>(xController->getIntProperty( "NUpSubPageOrder", (sal_Int32)aMPS.nOrder ));
-        aMPS.aPaperSize = xController->getPrinter()->PixelToLogic( xController->getPrinter()->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) );
+        aMPS.nOrder = static_cast<PrinterController::NupOrderType>(xController->getIntProperty( "NUpSubPageOrder", aMPS.nOrder ));
+        aMPS.aPaperSize = xController->getPrinter()->PixelToLogic( xController->getPrinter()->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) );
         css::beans::PropertyValue* pPgSizeVal = xController->getValue( OUString( "NUpPaperSize" ) );
         css::awt::Size aSizeVal;
         if( pPgSizeVal && (pPgSizeVal->Value >>= aSizeVal) )
@@ -604,7 +603,7 @@ bool Printer::StartJob( const OUString& i_rJobName, std::shared_ptr<vcl::Printer
         if( mpPrinter->StartJob( pPrintFile,
                                  i_rJobName,
                                  Application::GetDisplayName(),
-                                 &maJobSetup.ImplGetData(),
+                                 maJobSetup.ImplGetConstData(),
                                  *i_xController) )
         {
             EndJob();
@@ -661,7 +660,7 @@ bool Printer::StartJob( const OUString& i_rJobName, std::shared_ptr<vcl::Printer
                                      nCopies,
                                      bCollateCopy,
                                      i_xController->isDirectPrint(),
-                                     &maJobSetup.ImplGetData() ) )
+                                     maJobSetup.ImplGetConstData() ) )
             {
                 bool bAborted = false;
                 mbJobActive             = true;
@@ -758,6 +757,7 @@ bool Printer::StartJob( const OUString& i_rJobName, std::shared_ptr<vcl::Printer
 
 PrinterController::~PrinterController()
 {
+    delete mpImplData;
 }
 
 css::view::PrintableState PrinterController::getJobState() const
@@ -782,7 +782,7 @@ void PrinterController::setPrinter( const VclPtr<Printer>& i_rPrinter )
               css::uno::makeAny( OUString( i_rPrinter->GetName() ) ) );
     mpImplData->mnDefaultPaperBin = mpImplData->mxPrinter->GetPaperBin();
     mpImplData->mxPrinter->Push();
-    mpImplData->mxPrinter->SetMapMode(MapMode(MapUnit::Map100thMM));
+    mpImplData->mxPrinter->SetMapMode(MapMode(MAP_100TH_MM));
     mpImplData->maDefaultPageSize = mpImplData->mxPrinter->GetPaperSize();
     mpImplData->mxPrinter->Pop();
     mpImplData->mnFixedPaperBin = -1;
@@ -798,18 +798,14 @@ void PrinterController::resetPrinterOptions( bool i_bFileOutput )
 bool PrinterController::setupPrinter( vcl::Window* i_pParent )
 {
     bool bRet = false;
-
-    // Important to hold printer alive while doing setup etc.
-    VclPtr< Printer > xPrinter = mpImplData->mxPrinter;
-
-    if( xPrinter.get() )
+    if( mpImplData->mxPrinter.get() )
     {
-        xPrinter->Push();
-        xPrinter->SetMapMode(MapMode(MapUnit::Map100thMM));
+        mpImplData->mxPrinter->Push();
+        mpImplData->mxPrinter->SetMapMode(MapMode(MAP_100TH_MM));
 
         // get current data
-        Size aPaperSize(xPrinter->GetPaperSize());
-        sal_uInt16 nPaperBin = xPrinter->GetPaperBin();
+        Size aPaperSize(mpImplData->mxPrinter->GetPaperSize());
+        sal_uInt16 nPaperBin = mpImplData->mxPrinter->GetPaperBin();
 
         // reset paper size back to last configured size, not
         // whatever happens to be the current page
@@ -821,12 +817,8 @@ bool PrinterController::setupPrinter( vcl::Window* i_pParent )
         }
 
         // call driver setup
-        bRet = xPrinter->Setup( i_pParent, getPapersizeFromSetup() );
-        SAL_WARN_IF(xPrinter != mpImplData->mxPrinter, "vcl.gdi",
-                    "Printer changed underneath us during setup");
-        xPrinter = mpImplData->mxPrinter;
-
-        Size aNewPaperSize(xPrinter->GetPaperSize());
+        bRet = mpImplData->mxPrinter->Setup( i_pParent, getPapersizeFromSetup() );
+        Size aNewPaperSize(mpImplData->mxPrinter->GetPaperSize());
         if (bRet)
         {
             bool bInvalidateCache = false;
@@ -840,7 +832,7 @@ bool PrinterController::setupPrinter( vcl::Window* i_pParent )
             }
 
             // was bin overridden ? if so we need to take action
-            sal_uInt16 nNewPaperBin = xPrinter->GetPaperBin();
+            sal_uInt16 nNewPaperBin = mpImplData->mxPrinter->GetPaperBin();
             if (nNewPaperBin != nPaperBin)
             {
                 mpImplData->mnFixedPaperBin = nNewPaperBin;
@@ -856,9 +848,9 @@ bool PrinterController::setupPrinter( vcl::Window* i_pParent )
         {
             //restore to whatever it was before we entered this method
             if (aPaperSize != aNewPaperSize)
-                xPrinter->SetPaperSizeUser(aPaperSize, !mpImplData->isFixedPageSize());
+                mpImplData->mxPrinter->SetPaperSizeUser(aPaperSize, !mpImplData->isFixedPageSize());
         }
-        xPrinter->Pop();
+        mpImplData->mxPrinter->Pop();
     }
     return bRet;
 }
@@ -889,7 +881,7 @@ PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( cons
         {
             sal_Int32 nBin = -1;
             i_rProps[ nProperty ].Value >>= nBin;
-            if( nBin >= 0 && nBin < static_cast<sal_Int32>(mxPrinter->GetPaperBinCount()) )
+            if( nBin >= 0 && nBin < mxPrinter->GetPaperBinCount() )
                 nPaperBin = nBin;
         }
     }
@@ -936,7 +928,7 @@ PrinterController::PageSize vcl::ImplPrinterControllerData::modifyJobSetup( cons
 void vcl::ImplPrinterControllerData::resetPaperToLastConfigured()
 {
     mxPrinter->Push();
-    mxPrinter->SetMapMode(MapMode(MapUnit::Map100thMM));
+    mxPrinter->SetMapMode(MapMode(MAP_100TH_MM));
     Size aCurSize(mxPrinter->GetPaperSize());
     if (aCurSize != maDefaultPageSize)
         mxPrinter->SetPaperSizeUser(maDefaultPageSize, !isFixedPageSize());
@@ -945,7 +937,7 @@ void vcl::ImplPrinterControllerData::resetPaperToLastConfigured()
 
 int PrinterController::getPageCountProtected() const
 {
-    const MapMode aMapMode( MapUnit::Map100thMM );
+    const MapMode aMapMode( MAP_100TH_MM );
 
     mpImplData->mxPrinter->Push();
     mpImplData->mxPrinter->SetMapMode( aMapMode );
@@ -956,7 +948,7 @@ int PrinterController::getPageCountProtected() const
 
 css::uno::Sequence< css::beans::PropertyValue > PrinterController::getPageParametersProtected( int i_nPage ) const
 {
-    const MapMode aMapMode( MapUnit::Map100thMM );
+    const MapMode aMapMode( MAP_100TH_MM );
 
     mpImplData->mxPrinter->Push();
     mpImplData->mxPrinter->SetMapMode( aMapMode );
@@ -992,7 +984,7 @@ PrinterController::PageSize PrinterController::getPageFile( int i_nUnfilteredPag
 
     // get page parameters
     css::uno::Sequence< css::beans::PropertyValue > aPageParm( getPageParametersProtected( i_nUnfilteredPage ) );
-    const MapMode aMapMode( MapUnit::Map100thMM );
+    const MapMode aMapMode( MAP_100TH_MM );
 
     mpImplData->mxPrinter->Push();
     mpImplData->mxPrinter->SetMapMode( aMapMode );
@@ -1022,7 +1014,7 @@ PrinterController::PageSize PrinterController::getPageFile( int i_nUnfilteredPag
     return aPageSize;
 }
 
-static void appendSubPage( GDIMetaFile& o_rMtf, const tools::Rectangle& i_rClipRect, GDIMetaFile& io_rSubPage, bool i_bDrawBorder )
+static void appendSubPage( GDIMetaFile& o_rMtf, const Rectangle& i_rClipRect, GDIMetaFile& io_rSubPage, bool i_bDrawBorder )
 {
     // intersect all clipregion actions with our clip rect
     io_rSubPage.WindStart();
@@ -1046,9 +1038,9 @@ static void appendSubPage( GDIMetaFile& o_rMtf, const tools::Rectangle& i_rClipR
     {
         // save gstate
         o_rMtf.AddAction( new MetaPushAction( PushFlags::LINECOLOR | PushFlags::FILLCOLOR | PushFlags::CLIPREGION | PushFlags::MAPMODE ) );
-        o_rMtf.AddAction( new MetaMapModeAction( MapMode( MapUnit::Map100thMM ) ) );
+        o_rMtf.AddAction( new MetaMapModeAction( MapMode( MAP_100TH_MM ) ) );
 
-        tools::Rectangle aBorderRect( i_rClipRect );
+        Rectangle aBorderRect( i_rClipRect );
         o_rMtf.AddAction( new MetaLineColorAction( Color( COL_BLACK ), true ) );
         o_rMtf.AddAction( new MetaFillColorAction( Color( COL_TRANSPARENT ), false ) );
         o_rMtf.AddAction( new MetaRectAction( aBorderRect ) );
@@ -1085,7 +1077,7 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
             return PrinterController::PageSize();
         }
         Size aPaperSize = mpImplData->getRealPaperSize( aPageSize.aSize, true );
-        mpImplData->mxPrinter->SetMapMode( MapMode( MapUnit::Map100thMM ) );
+        mpImplData->mxPrinter->SetMapMode( MapMode( MAP_100TH_MM ) );
         mpImplData->mxPrinter->SetPaperSizeUser( aPaperSize, ! mpImplData->isFixedPageSize() );
         if( aPaperSize != aPageSize.aSize )
         {
@@ -1125,8 +1117,8 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
 
     o_rMtf.Clear();
     o_rMtf.SetPrefSize( aPaperSize );
-    o_rMtf.SetPrefMapMode( MapMode( MapUnit::Map100thMM ) );
-    o_rMtf.AddAction( new MetaMapModeAction( MapMode( MapUnit::Map100thMM ) ) );
+    o_rMtf.SetPrefMapMode( MapMode( MAP_100TH_MM ) );
+    o_rMtf.AddAction( new MetaMapModeAction( MapMode( MAP_100TH_MM ) ) );
 
     int nDocPages = getPageCountProtected();
     if (mpImplData->meJobState != css::view::PrintableState_JOB_STARTED)
@@ -1136,7 +1128,7 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
     for( int nSubPage = 0; nSubPage < nSubPages; nSubPage++ )
     {
         // map current sub page to real page
-        int nPage = i_nFilteredPage * nSubPages + nSubPage;
+        int nPage = (i_nFilteredPage * nSubPages + nSubPage) / rMPS.nRepeat;
         if( nSubPage == nSubPages-1 ||
             nPage == nDocPages-1 )
         {
@@ -1151,19 +1143,19 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
                 long nCellX = 0, nCellY = 0;
                 switch( rMPS.nOrder )
                 {
-                case NupOrderType::LRTB:
+                case PrinterController::LRTB:
                     nCellX = (nSubPage % rMPS.nColumns);
                     nCellY = (nSubPage / rMPS.nColumns);
                     break;
-                case NupOrderType::TBLR:
+                case PrinterController::TBLR:
                     nCellX = (nSubPage / rMPS.nRows);
                     nCellY = (nSubPage % rMPS.nRows);
                     break;
-                case NupOrderType::RLTB:
+                case PrinterController::RLTB:
                     nCellX = rMPS.nColumns - 1 - (nSubPage % rMPS.nColumns);
                     nCellY = (nSubPage / rMPS.nColumns);
                     break;
-                case NupOrderType::TBRL:
+                case PrinterController::TBRL:
                     nCellX = rMPS.nColumns - 1 - (nSubPage / rMPS.nRows);
                     nCellY = (nSubPage % rMPS.nRows);
                     break;
@@ -1183,7 +1175,7 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
                 aPageFile.Move( nX, nY, mpImplData->mxPrinter->GetDPIX(), mpImplData->mxPrinter->GetDPIY() );
                 aPageFile.WindStart();
                 // calculate border rectangle
-                tools::Rectangle aSubPageRect( Point( nX, nY ),
+                Rectangle aSubPageRect( Point( nX, nY ),
                                         Size( long(double(aPageSize.aSize.Width())*fScale),
                                               long(double(aPageSize.aSize.Height())*fScale) ) );
 
@@ -1195,7 +1187,7 @@ PrinterController::PageSize PrinterController::getFilteredPageFile( int i_nFilte
     o_rMtf.WindStart();
 
     // subsequent getPageFile calls have changed the paper, reset it to current value
-    mpImplData->mxPrinter->SetMapMode( MapMode( MapUnit::Map100thMM ) );
+    mpImplData->mxPrinter->SetMapMode( MapMode( MAP_100TH_MM ) );
     mpImplData->mxPrinter->SetPaperSizeUser( aPaperSize, ! mpImplData->isFixedPageSize() );
 
     return PrinterController::PageSize( aPaperSize, true );
@@ -1206,7 +1198,7 @@ int PrinterController::getFilteredPageCount()
     int nDiv = mpImplData->maMultiPage.nRows * mpImplData->maMultiPage.nColumns;
     if( nDiv < 1 )
         nDiv = 1;
-    return (getPageCountProtected() + (nDiv-1)) / nDiv;
+    return (getPageCountProtected() * mpImplData->maMultiPage.nRepeat + (nDiv-1)) / nDiv;
 }
 
 DrawModeFlags PrinterController::removeTransparencies( GDIMetaFile& i_rIn, GDIMetaFile& o_rOut )
@@ -1223,12 +1215,12 @@ DrawModeFlags PrinterController::removeTransparencies( GDIMetaFile& i_rIn, GDIMe
     if( rPrinterOptions.IsReduceBitmaps() )
     {
         // calculate maximum resolution for bitmap graphics
-        if( PrinterBitmapMode::Optimal == rPrinterOptions.GetReducedBitmapMode() )
+        if( PRINTER_BITMAP_OPTIMAL == rPrinterOptions.GetReducedBitmapMode() )
         {
             nMaxBmpDPIX = std::min( sal_Int32(OPTIMAL_BMP_RESOLUTION), nMaxBmpDPIX );
             nMaxBmpDPIY = std::min( sal_Int32(OPTIMAL_BMP_RESOLUTION), nMaxBmpDPIY );
         }
-        else if( PrinterBitmapMode::Normal == rPrinterOptions.GetReducedBitmapMode() )
+        else if( PRINTER_BITMAP_NORMAL == rPrinterOptions.GetReducedBitmapMode() )
         {
             nMaxBmpDPIX = std::min( sal_Int32(NORMAL_BMP_RESOLUTION), nMaxBmpDPIX );
             nMaxBmpDPIY = std::min( sal_Int32(NORMAL_BMP_RESOLUTION), nMaxBmpDPIY );
@@ -1249,7 +1241,7 @@ DrawModeFlags PrinterController::removeTransparencies( GDIMetaFile& i_rIn, GDIMe
     }
 
     // disable transparency output
-    if( rPrinterOptions.IsReduceTransparency() && ( PrinterTransparencyMode::NONE == rPrinterOptions.GetReducedTransparencyMode() ) )
+    if( rPrinterOptions.IsReduceTransparency() && ( PRINTER_TRANSPARENCY_NONE == rPrinterOptions.GetReducedTransparencyMode() ) )
     {
         mpImplData->mxPrinter->SetDrawMode( mpImplData->mxPrinter->GetDrawMode() | DrawModeFlags::NoTransparency );
     }
@@ -1264,7 +1256,7 @@ DrawModeFlags PrinterController::removeTransparencies( GDIMetaFile& i_rIn, GDIMe
     }
     mpImplData->mxPrinter->RemoveTransparenciesFromMetaFile( i_rIn, o_rOut, nMaxBmpDPIX, nMaxBmpDPIY,
                                                              rPrinterOptions.IsReduceTransparency(),
-                                                             rPrinterOptions.GetReducedTransparencyMode() == PrinterTransparencyMode::Auto,
+                                                             rPrinterOptions.GetReducedTransparencyMode() == PRINTER_TRANSPARENCY_AUTO,
                                                              rPrinterOptions.IsReduceBitmaps() && rPrinterOptions.IsReducedBitmapIncludesTransparency(),
                                                              aBg
                                                              );
@@ -1295,7 +1287,7 @@ void PrinterController::printFilteredPage( int i_nPage )
     }
 
     // in N-Up printing set the correct page size
-    mpImplData->mxPrinter->SetMapMode( MapUnit::Map100thMM );
+    mpImplData->mxPrinter->SetMapMode( MAP_100TH_MM );
     // aPageSize was filtered through mpImplData->getRealPaperSize already by getFilteredPageFile()
     mpImplData->mxPrinter->SetPaperSizeUser( aPageSize.aSize, ! mpImplData->isFixedPageSize() );
     if( mpImplData->mnFixedPaperBin != -1 &&
@@ -1473,7 +1465,7 @@ void PrinterController::setValue( const css::beans::PropertyValue& i_rPropertyVa
 
 void PrinterController::setUIOptions( const css::uno::Sequence< css::beans::PropertyValue >& i_rOptions )
 {
-    SAL_WARN_IF( mpImplData->maUIOptions.getLength() != 0, "vcl.gdi", "setUIOptions called twice !" );
+    DBG_ASSERT( mpImplData->maUIOptions.getLength() == 0, "setUIOptions called twice !" );
 
     mpImplData->maUIOptions = i_rOptions;
 
@@ -1725,9 +1717,9 @@ void PrinterController::pushPropertiesToPrinter()
         pVal->Value >>= nDuplex;
         switch( nDuplex )
         {
-            case css::view::DuplexMode::OFF: mpImplData->mxPrinter->SetDuplexMode( DuplexMode::Off ); break;
-            case css::view::DuplexMode::LONGEDGE: mpImplData->mxPrinter->SetDuplexMode( DuplexMode::LongEdge ); break;
-            case css::view::DuplexMode::SHORTEDGE: mpImplData->mxPrinter->SetDuplexMode( DuplexMode::ShortEdge ); break;
+            case css::view::DuplexMode::OFF: mpImplData->mxPrinter->SetDuplexMode( DUPLEX_OFF ); break;
+            case css::view::DuplexMode::LONGEDGE: mpImplData->mxPrinter->SetDuplexMode( DUPLEX_LONGEDGE ); break;
+            case css::view::DuplexMode::SHORTEDGE: mpImplData->mxPrinter->SetDuplexMode( DUPLEX_SHORTEDGE ); break;
         }
     }
 }
@@ -1832,7 +1824,7 @@ void PrinterOptionsHelper::appendPrintUIOptions( css::uno::Sequence< css::beans:
         io_rProps.realloc( nIndex+1 );
         css::beans::PropertyValue aVal;
         aVal.Name = "ExtraPrintUIOptions";
-        aVal.Value <<= comphelper::containerToSequence(m_aUIProperties);
+        aVal.Value = css::uno::makeAny( comphelper::containerToSequence(m_aUIProperties) );
         io_rProps[ nIndex ] = aVal;
     }
 }
@@ -1868,35 +1860,35 @@ css::uno::Any PrinterOptionsHelper::setUIControlOpt(const css::uno::Sequence< OU
     if( !i_rTitle.isEmpty() )
     {
         aCtrl[nUsed  ].Name  = "Text";
-        aCtrl[nUsed++].Value <<= i_rTitle;
+        aCtrl[nUsed++].Value = css::uno::makeAny( i_rTitle );
     }
     if( i_rHelpIds.getLength() )
     {
         aCtrl[nUsed  ].Name = "HelpId";
-        aCtrl[nUsed++].Value <<= i_rHelpIds;
+        aCtrl[nUsed++].Value = css::uno::makeAny( i_rHelpIds );
     }
     aCtrl[nUsed  ].Name  = "ControlType";
-    aCtrl[nUsed++].Value <<= i_rType;
+    aCtrl[nUsed++].Value = css::uno::makeAny( i_rType );
     aCtrl[nUsed  ].Name  = "ID";
-    aCtrl[nUsed++].Value <<= i_rIDs;
+    aCtrl[nUsed++].Value = css::uno::makeAny( i_rIDs );
     if( i_pVal )
     {
         aCtrl[nUsed  ].Name  = "Property";
-        aCtrl[nUsed++].Value <<= *i_pVal;
+        aCtrl[nUsed++].Value = css::uno::makeAny( *i_pVal );
     }
     if( !i_rControlOptions.maDependsOnName.isEmpty() )
     {
         aCtrl[nUsed  ].Name  = "DependsOnName";
-        aCtrl[nUsed++].Value <<= i_rControlOptions.maDependsOnName;
+        aCtrl[nUsed++].Value = css::uno::makeAny( i_rControlOptions.maDependsOnName );
         if( i_rControlOptions.mnDependsOnEntry != -1 )
         {
             aCtrl[nUsed  ].Name  = "DependsOnEntry";
-            aCtrl[nUsed++].Value <<= i_rControlOptions.mnDependsOnEntry;
+            aCtrl[nUsed++].Value = css::uno::makeAny( i_rControlOptions.mnDependsOnEntry );
         }
         if( i_rControlOptions.mbAttachToDependency )
         {
             aCtrl[nUsed  ].Name  = "AttachToDependency";
-            aCtrl[nUsed++].Value <<= i_rControlOptions.mbAttachToDependency;
+            aCtrl[nUsed++].Value = css::uno::makeAny( i_rControlOptions.mbAttachToDependency );
         }
     }
     if( !i_rControlOptions.maGroupHint.isEmpty() )
@@ -1919,7 +1911,7 @@ css::uno::Any PrinterOptionsHelper::setUIControlOpt(const css::uno::Sequence< OU
     for( sal_Int32 i = 0; i < nAddProps; i++ )
         aCtrl[ nUsed++ ] = i_rControlOptions.maAddProps[i];
 
-    SAL_WARN_IF( nUsed != nElements, "vcl.gdi", "nUsed != nElements, probable heap corruption" );
+    DBG_ASSERT( nUsed == nElements, "nUsed != nElements, probable heap corruption" );
 
     return css::uno::makeAny( aCtrl );
 }
@@ -1968,7 +1960,7 @@ css::uno::Any PrinterOptionsHelper::setBoolControlOpt(const OUString& i_rID,
     }
     css::beans::PropertyValue aVal;
     aVal.Name = i_rProperty;
-    aVal.Value <<= i_bValue;
+    aVal.Value = css::uno::makeAny( i_bValue );
     css::uno::Sequence< OUString > aIds { i_rID };
     return setUIControlOpt(aIds, i_rTitle, aHelpId, "Bool", &aVal, i_rControlOptions);
 }
@@ -1986,16 +1978,16 @@ css::uno::Any PrinterOptionsHelper::setChoiceRadiosControlOpt(const css::uno::Se
     sal_Int32 nUsed = aOpt.maAddProps.size();
     aOpt.maAddProps.resize( nUsed + 1 + (i_rDisabledChoices.getLength() ? 1 : 0) );
     aOpt.maAddProps[nUsed].Name = "Choices";
-    aOpt.maAddProps[nUsed].Value <<= i_rChoices;
+    aOpt.maAddProps[nUsed].Value = css::uno::makeAny( i_rChoices );
     if( i_rDisabledChoices.getLength() )
     {
         aOpt.maAddProps[nUsed+1].Name = "ChoicesDisabled";
-        aOpt.maAddProps[nUsed+1].Value <<= i_rDisabledChoices;
+        aOpt.maAddProps[nUsed+1].Value = css::uno::makeAny( i_rDisabledChoices );
     }
 
     css::beans::PropertyValue aVal;
     aVal.Name = i_rProperty;
-    aVal.Value <<= i_nValue;
+    aVal.Value = css::uno::makeAny( i_nValue );
     return setUIControlOpt(i_rIDs, i_rTitle, i_rHelpId, "Radio", &aVal, aOpt);
 }
 
@@ -2012,16 +2004,16 @@ css::uno::Any PrinterOptionsHelper::setChoiceListControlOpt(const OUString& i_rI
     sal_Int32 nUsed = aOpt.maAddProps.size();
     aOpt.maAddProps.resize( nUsed + 1 + (i_rDisabledChoices.getLength() ? 1 : 0) );
     aOpt.maAddProps[nUsed].Name = "Choices";
-    aOpt.maAddProps[nUsed].Value <<= i_rChoices;
+    aOpt.maAddProps[nUsed].Value = css::uno::makeAny( i_rChoices );
     if( i_rDisabledChoices.getLength() )
     {
         aOpt.maAddProps[nUsed+1].Name = "ChoicesDisabled";
-        aOpt.maAddProps[nUsed+1].Value <<= i_rDisabledChoices;
+        aOpt.maAddProps[nUsed+1].Value = css::uno::makeAny( i_rDisabledChoices );
     }
 
     css::beans::PropertyValue aVal;
     aVal.Name = i_rProperty;
-    aVal.Value <<= i_nValue;
+    aVal.Value = css::uno::makeAny( i_nValue );
     css::uno::Sequence< OUString > aIds { i_rID };
     return setUIControlOpt(aIds, i_rTitle, i_rHelpId, "List", &aVal, aOpt);
 }
@@ -2041,9 +2033,9 @@ css::uno::Any PrinterOptionsHelper::setRangeControlOpt(const OUString& i_rID,
         sal_Int32 nUsed = aOpt.maAddProps.size();
         aOpt.maAddProps.resize( nUsed + 2 );
         aOpt.maAddProps[nUsed  ].Name  = "MinValue";
-        aOpt.maAddProps[nUsed++].Value <<= i_nMinValue;
+        aOpt.maAddProps[nUsed++].Value = css::uno::makeAny( i_nMinValue );
         aOpt.maAddProps[nUsed  ].Name  = "MaxValue";
-        aOpt.maAddProps[nUsed++].Value <<= i_nMaxValue;
+        aOpt.maAddProps[nUsed++].Value = css::uno::makeAny( i_nMaxValue );
     }
 
     css::uno::Sequence< OUString > aHelpId;
@@ -2054,7 +2046,7 @@ css::uno::Any PrinterOptionsHelper::setRangeControlOpt(const OUString& i_rID,
     }
     css::beans::PropertyValue aVal;
     aVal.Name = i_rProperty;
-    aVal.Value <<= i_nValue;
+    aVal.Value = css::uno::makeAny( i_nValue );
     css::uno::Sequence< OUString > aIds { i_rID };
     return setUIControlOpt(aIds, i_rTitle, aHelpId, "Range", &aVal, aOpt);
 }
@@ -2074,7 +2066,7 @@ css::uno::Any PrinterOptionsHelper::setEditControlOpt(const OUString& i_rID,
     }
     css::beans::PropertyValue aVal;
     aVal.Name = i_rProperty;
-    aVal.Value <<= i_rValue;
+    aVal.Value = css::uno::makeAny( i_rValue );
     css::uno::Sequence< OUString > aIds { i_rID };
     return setUIControlOpt(aIds, i_rTitle, aHelpId, "Edit", &aVal, i_rControlOptions);
 }

@@ -180,10 +180,11 @@ class FilterPropertiesInfo_Impl
     FilterPropertyInfoList_Impl             aPropInfos;
     FilterPropertyInfoList_Impl::iterator   aLastItr;
 
-    std::unique_ptr<Sequence<OUString>>     pApiNames;
+    Sequence <OUString>                     *pApiNames;
 
 public:
     FilterPropertiesInfo_Impl();
+    ~FilterPropertiesInfo_Impl();
 
     void AddProperty(const OUString& rApiName, const sal_uInt32 nIndex);
     const uno::Sequence<OUString>& GetApiNames();
@@ -191,7 +192,7 @@ public:
             vector< XMLPropertyState >& rPropStates,
             const Reference< XPropertySet >& xPropSet,
             const rtl::Reference< XMLPropertySetMapper >& maPropMapper,
-            const bool bDefault);
+            const bool bDefault = false);
     sal_uInt32 GetPropertyCount() const { return nCount; }
 };
 
@@ -203,6 +204,11 @@ FilterPropertiesInfo_Impl::FilterPropertiesInfo_Impl() :
     aLastItr = aPropInfos.begin();
 }
 
+FilterPropertiesInfo_Impl::~FilterPropertiesInfo_Impl()
+{
+    delete pApiNames;
+}
+
 void FilterPropertiesInfo_Impl::AddProperty(
         const OUString& rApiName, const sal_uInt32 nIndex)
 {
@@ -210,7 +216,11 @@ void FilterPropertiesInfo_Impl::AddProperty(
     nCount++;
 
     OSL_ENSURE( !pApiNames, "performance warning: API names already retrieved" );
-    pApiNames.reset();
+    if( pApiNames )
+    {
+        delete pApiNames;
+        pApiNames = nullptr;
+    }
 }
 
 const uno::Sequence<OUString>& FilterPropertiesInfo_Impl::GetApiNames()
@@ -255,7 +265,7 @@ const uno::Sequence<OUString>& FilterPropertiesInfo_Impl::GetApiNames()
         }
 
         // construct sequence
-        pApiNames.reset( new Sequence < OUString >( nCount ) );
+        pApiNames = new Sequence < OUString >( nCount );
         OUString *pNames = pApiNames->getArray();
         FilterPropertyInfoList_Impl::iterator aItr = aPropInfos.begin();
         FilterPropertyInfoList_Impl::iterator aEnd = aPropInfos.end();
@@ -777,7 +787,7 @@ void SvXMLExportPropertyMapper::exportXML(
                         nFlags, &aIndexArray,
                         nPropMapStartIdx, nPropMapEndIdx );
 
-            if( rExport.GetAttrList().getLength() > 0 ||
+            if( rExport.GetAttrList().getLength() > 0L ||
                 (nFlags & SvXmlExportFlags::EMPTY) ||
                 !aIndexArray.empty() )
             {

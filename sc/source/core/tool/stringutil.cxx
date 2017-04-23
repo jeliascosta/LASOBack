@@ -477,7 +477,7 @@ bool ScStringUtil::isMultiline( const OUString& rStr )
     if (rStr.indexOf('\n') != -1)
         return true;
 
-    if (rStr.indexOf('\r') != -1)
+    if (rStr.indexOf(CHAR_CR) != -1)
         return true;
 
     return false;
@@ -503,7 +503,7 @@ ScInputStringType ScStringUtil::parseInputString(
         aRet.maText = rStr.copy(1);
         aRet.meType = ScInputStringType::Text;
     }
-    else        // test for English number format (only)
+    else        // (nur) auf englisches Zahlformat testen
     {
         sal_uInt32 nNumFormat = rFormatter.GetStandardIndex(eLang);
 

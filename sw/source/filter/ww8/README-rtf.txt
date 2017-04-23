@@ -135,7 +135,7 @@ OOo KO)
 
 --------------
 
-The following are now supported:
+The followings are now supported:
 
   * blinking (MSO OK, OOo KO)
   * expanded spacing (MSO OK, OOo OK)

@@ -211,26 +211,13 @@ namespace xmloff
                 the default of the attribute. If the current property value equals this default, no
                 attribute is added.
         */
-        template<typename EnumT>
         void exportEnumPropertyAttribute(
             const sal_uInt16 _nNamespaceKey,
             const sal_Char* _pAttributeName,
             const OUString& _rPropertyName,
-            const SvXMLEnumMapEntry<EnumT>* _pValueMap,
-            const EnumT _nDefault,
-            const bool _bVoidDefault = false)
-        {
-            exportEnumPropertyAttributeImpl(_nNamespaceKey, _pAttributeName, _rPropertyName,
-                            reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(_pValueMap),
-                            static_cast<sal_Int16>(_nDefault), _bVoidDefault);
-        }
-        void exportEnumPropertyAttributeImpl(
-            const sal_uInt16 _nNamespaceKey,
-            const sal_Char* _pAttributeName,
-            const OUString& _rPropertyName,
-            const SvXMLEnumMapEntry<sal_uInt16>* _pValueMap,
-            const sal_uInt16 _nDefault,
-            const bool _bVoidDefault);
+            const SvXMLEnumMapEntry* _pValueMap,
+            const sal_Int32 _nDefault,
+            const bool _bVoidDefault = false);
 
         // some very special methods for some very special attribute/property pairs
 
@@ -251,7 +238,7 @@ namespace xmloff
 
             <p>If _bAddType is set, an additional xlink:type="simple" attribute is also added.</p>
         */
-        void exportTargetLocationAttribute(bool _bAddType) { exportRelativeTargetLocation(PROPERTY_TARGETURL,CCAFlags::TargetLocation,_bAddType); }
+        inline void exportTargetLocationAttribute(bool _bAddType) { exportRelativeTargetLocation(PROPERTY_TARGETURL,CCAFlags::TargetLocation,_bAddType); }
 
         /** add the form:image attribute to the export context.
 
@@ -259,7 +246,7 @@ namespace xmloff
 
             <p>The property needs a special handling because the URL's need to be made relative</p>
         */
-        void exportImageDataAttribute() { exportRelativeTargetLocation(PROPERTY_IMAGEURL,CCAFlags::ImageData,false); }
+        inline void exportImageDataAttribute() { exportRelativeTargetLocation(PROPERTY_IMAGEURL,CCAFlags::ImageData,false); }
 
         /** flag the style properties as 'already exported'
 
@@ -358,6 +345,7 @@ namespace xmloff
 #ifdef DBG_UTIL
                 void AddAttribute(sal_uInt16 _nPrefix, const sal_Char* _pName, const OUString& _rValue);
                 void AddAttribute( sal_uInt16 _nPrefix, const OUString& _rName, const OUString& _rValue );
+                void AddAttributeASCII( sal_uInt16 nPrefix, const sal_Char *pName, const sal_Char *pValue );
                 void AddAttribute(sal_uInt16 _nPrefix, ::xmloff::token::XMLTokenEnum _eName, const OUString& _rValue);
                 void AddAttribute(sal_uInt16 _nPrefix, ::xmloff::token::XMLTokenEnum _eName, ::xmloff::token::XMLTokenEnum _eValue );
 #else
@@ -366,6 +354,8 @@ namespace xmloff
             { m_rContext.getGlobalContext().AddAttribute(_nPrefix, _pName, _rValue); }
         inline void AddAttribute( sal_uInt16 _nPrefix, const OUString& _rName, const OUString& _rValue )
             { m_rContext.getGlobalContext().AddAttribute( _nPrefix, _rName, _rValue ); }
+        inline  void AddAttributeASCII( sal_uInt16 _nPrefix, const sal_Char* _pName, const sal_Char *pValue )
+            { m_rContext.getGlobalContext().AddAttributeASCII(_nPrefix, _pName, pValue); }
         inline void AddAttribute(sal_uInt16 _nPrefix, ::xmloff::token::XMLTokenEnum _eName, const OUString& _rValue)
             { m_rContext.getGlobalContext().AddAttribute(_nPrefix, _eName, _rValue); }
         inline void AddAttribute(sal_uInt16 _nPrefix, ::xmloff::token::XMLTokenEnum _eName, ::xmloff::token::XMLTokenEnum _eValue )

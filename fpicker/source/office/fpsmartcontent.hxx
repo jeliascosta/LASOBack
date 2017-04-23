@@ -25,8 +25,6 @@
 #include <com/sun/star/ucb/XCommandEnvironment.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
 #include <ucbhelper/content.hxx>
-#include <rtl/ref.hxx>
-#include <memory>
 
 
 namespace svt
@@ -51,10 +49,11 @@ namespace svt
 
     private:
         OUString                                               m_sURL;
-        std::unique_ptr<::ucbhelper::Content>                  m_pContent;
+        ::ucbhelper::Content*                                  m_pContent;
         State                                                  m_eState;
         css::uno::Reference < css::ucb::XCommandEnvironment >  m_xCmdEnv;
-        rtl::Reference<::svt::OFilePickerInteractionHandler>   m_xOwnInteraction;
+        css::uno::Reference < css::task::XInteractionHandler > m_xOwnInteraction;
+        ::svt::OFilePickerInteractionHandler*                  m_pOwnInteraction;
 
     private:
         enum Type { Folder, Document };
@@ -113,25 +112,25 @@ namespace svt
 
             @seealso State
         */
-        State       getState( ) const { return m_eState; }
+        inline  State       getState( ) const { return m_eState; }
 
         /** checks if the content is valid
             <p>Note that "not (is valid)" is not the same as "is invalid"</p>
         */
-        bool    isValid( ) const { return VALID == getState(); }
+        inline  bool    isValid( ) const { return VALID == getState(); }
 
         /** checks if the content is valid
             <p>Note that "not (is invalid)" is not the same as "is valid"</p>
         */
-        bool    isInvalid( ) const { return INVALID == getState(); }
+        inline  bool    isInvalid( ) const { return INVALID == getState(); }
 
         /** checks if the content is bound
         */
-        bool    isBound( ) const { return NOT_BOUND != getState(); }
+        inline  bool    isBound( ) const { return NOT_BOUND != getState(); }
 
         /** returns the URL of the content
         */
-        OUString  getURL() const { return m_pContent ? m_pContent->getURL() : m_sURL; }
+        inline OUString  getURL() const { return m_pContent ? m_pContent->getURL() : m_sURL; }
 
         /** (re)creates the content for the given URL
 
@@ -175,19 +174,19 @@ namespace svt
             @postcond
                 the content is not in the state UNKNOWN
         */
-        bool    isFolder( const OUString& _rURL )
+        inline  bool    isFolder( const OUString& _rURL )
         {
             return implIs( _rURL, Folder );
         }
 
         /** checks if the content is existent (it is if and only if it is a document or a folder)
         */
-        bool    is( const OUString& _rURL )
+        inline  bool    is( const OUString& _rURL )
         {
             return  implIs( _rURL, Folder ) || implIs( _rURL, Document );
         }
 
-        bool    isFolder( )     { return isFolder( getURL() ); }
+        inline  bool    isFolder( )     { return isFolder( getURL() ); }
     };
 
 

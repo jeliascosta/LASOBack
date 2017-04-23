@@ -19,6 +19,7 @@
 
 #include "optbasic.hxx"
 #include <basic/codecompletecache.hxx>
+#include <svtools/miscopt.hxx>
 #include <iostream>
 #include <officecfg/Office/BasicIDE.hxx>
 #include <cuires.hrc>
@@ -26,6 +27,12 @@
 SvxBasicIDEOptionsPage::SvxBasicIDEOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet )
 : SfxTabPage(pParent, "OptBasicIDEPage", "cui/ui/optbasicidepage.ui", &rSet)
 {
+    SvtMiscOptions aMiscOpt;
+    if( ! aMiscOpt.IsExperimentalMode() )
+    {
+        Disable();
+    }
+
     get(pCodeCompleteChk, "codecomplete_enable");
     get(pAutocloseProcChk, "autoclose_proc");
     get(pAutocloseParenChk, "autoclose_paren");
@@ -34,6 +41,7 @@ SvxBasicIDEOptionsPage::SvxBasicIDEOptionsPage( vcl::Window* pParent, const SfxI
     get(pUseExtendedTypesChk, "extendedtypes_enable");
 
     LoadConfig();
+
 }
 
 SvxBasicIDEOptionsPage::~SvxBasicIDEOptionsPage()
@@ -54,18 +62,19 @@ void SvxBasicIDEOptionsPage::dispose()
 
 void SvxBasicIDEOptionsPage::LoadConfig()
 {
-    pCodeCompleteChk->Check( officecfg::Office::BasicIDE::Autocomplete::CodeComplete::get() );
-    pCodeCompleteChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::CodeComplete::isReadOnly() );
-    pAutocloseProcChk->Check( officecfg::Office::BasicIDE::Autocomplete::AutocloseProc::get() );
-    pAutocloseProcChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::AutocloseProc::isReadOnly() );
-    pAutocloseQuotesChk->Check( officecfg::Office::BasicIDE::Autocomplete::AutocloseDoubleQuotes::get() );
-    pAutocloseQuotesChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::AutocloseDoubleQuotes::isReadOnly() );
-    pAutocloseParenChk->Check( officecfg::Office::BasicIDE::Autocomplete::AutocloseParenthesis::get() );
-    pAutocloseParenChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::AutocloseParenthesis::isReadOnly() );
-    pAutoCorrectChk->Check( officecfg::Office::BasicIDE::Autocomplete::AutoCorrect::get() );
-    pAutoCorrectChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::AutoCorrect::isReadOnly() );
-    pUseExtendedTypesChk->Check( officecfg::Office::BasicIDE::Autocomplete::UseExtended::get() );
-    pUseExtendedTypesChk->Enable( !officecfg::Office::BasicIDE::Autocomplete::UseExtended::isReadOnly() );
+    bool bProcClose = officecfg::Office::BasicIDE::Autocomplete::AutocloseProc::get();
+    bool bExtended = officecfg::Office::BasicIDE::Autocomplete::UseExtended::get();
+    bool bCodeCompleteOn = officecfg::Office::BasicIDE::Autocomplete::CodeComplete::get();
+    bool bParenClose = officecfg::Office::BasicIDE::Autocomplete::AutocloseParenthesis::get();
+    bool bQuoteClose = officecfg::Office::BasicIDE::Autocomplete::AutocloseDoubleQuotes::get();
+    bool bCorrect = officecfg::Office::BasicIDE::Autocomplete::AutoCorrect::get();
+
+    pCodeCompleteChk->Check( bCodeCompleteOn );
+    pAutocloseProcChk->Check( bProcClose );
+    pAutocloseQuotesChk->Check( bQuoteClose );
+    pAutocloseParenChk->Check( bParenClose );
+    pAutoCorrectChk->Check( bCorrect );
+    pUseExtendedTypesChk->Check( bExtended );
 }
 
 bool SvxBasicIDEOptionsPage::FillItemSet( SfxItemSet* /*rCoreSet*/ )

@@ -62,7 +62,10 @@ $(eval $(call gb_CppunitTest_set_include,sc_bugfix_test,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sc_bugfix_test))
+$(eval $(call gb_CppunitTest_use_api,sc_bugfix_test,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sc_bugfix_test))
 $(eval $(call gb_CppunitTest_use_vcl,sc_bugfix_test))
@@ -77,8 +80,6 @@ $(eval $(call gb_CppunitTest_use_components,sc_bugfix_test,\
     embeddedobj/util/embobj \
     eventattacher/source/evtatt \
     filter/source/config/cache/filterconfig1 \
-    filter/source/xmlfilteradaptor/xmlfa \
-    filter/source/xsltfilter/xsltfilter \
     forms/util/frm \
     framework/util/fwk \
     i18npool/source/search/i18nsearch \
@@ -103,9 +104,9 @@ $(eval $(call gb_CppunitTest_use_components,sc_bugfix_test,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
     xmlsecurity/util/xmlsecurity \
+    xmlsecurity/util/xsec_fw \
 ))
 
 ifeq ($(OS),WNT)
@@ -119,9 +120,5 @@ $(eval $(call gb_CppunitTest_use_components,sc_bugfix_test,\
 endif
 
 $(eval $(call gb_CppunitTest_use_configuration,sc_bugfix_test))
-
-$(eval $(call gb_CppunitTest_use_packages,sc_bugfix_test,\
-	filter_xslt \
-))
 
 # vim: set noet sw=4 ts=4:

@@ -40,6 +40,8 @@
 #include <svx/svdtrans.hxx>
 #include <svx/svdpage.hxx>
 
+#include <svl/smplhint.hxx>
+
 
 namespace sdr
 {
@@ -525,21 +527,21 @@ namespace sdr
                 SdrObject& rObj = GetSdrObject();
                 //SdrPage* pPage = rObj.GetPage();
 
-                switch(pStyleHint->GetId())
+                switch(pStyleHint->GetHint())
                 {
-                    case SfxHintId::StyleSheetCreated         :
+                    case SfxStyleSheetHintId::CREATED         :
                     {
                         // cannot happen, nothing to do
                         break;
                     }
-                    case SfxHintId::StyleSheetModified        :
-                    case SfxHintId::StyleSheetChanged         :
+                    case SfxStyleSheetHintId::MODIFIED        :
+                    case SfxStyleSheetHintId::CHANGED         :
                     {
                         // notify change
                         break;
                     }
-                    case SfxHintId::StyleSheetErased          :
-                    case SfxHintId::StyleSheetInDestruction   :
+                    case SfxStyleSheetHintId::ERASED          :
+                    case SfxStyleSheetHintId::INDESTRUCTION   :
                     {
                         // Style needs to be exchanged
                         SfxStyleSheet* pNewStSh = nullptr;
@@ -572,12 +574,11 @@ namespace sdr
 
                         break;
                     }
-                    default: break;
                 }
 
                 // Get old BoundRect. Do this after the style change is handled
                 // in the ItemSet parts because GetBoundRect() may calculate a new
-                tools::Rectangle aBoundRect = rObj.GetLastBoundRect();
+                Rectangle aBoundRect = rObj.GetLastBoundRect();
 
                 rObj.SetRectsDirty(true);
 
@@ -590,7 +591,7 @@ namespace sdr
                 //  rObj.BroadcastObjectChange();
                 //}
 
-                rObj.SendUserCall(SdrUserCallType::ChangeAttr, aBoundRect);
+                rObj.SendUserCall(SDRUSERCALL_CHGATTR, aBoundRect);
 
                 bHintUsed = true;
             }

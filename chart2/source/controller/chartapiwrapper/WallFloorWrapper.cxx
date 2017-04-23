@@ -20,6 +20,7 @@
 #include "WallFloorWrapper.hxx"
 #include "macros.hxx"
 #include "Chart2ModelContact.hxx"
+#include "ContainerHelper.hxx"
 #include <cppuhelper/supportsservice.hxx>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
@@ -43,6 +44,7 @@ using ::com::sun::star::uno::Sequence;
 
 namespace
 {
+static const char lcl_aServiceName[] = "com.sun.star.comp.chart.WallOrFloor";
 
 struct StaticWallFloorWrapperPropertyArray_Initializer
 {
@@ -55,12 +57,12 @@ struct StaticWallFloorWrapperPropertyArray_Initializer
 private:
     static Sequence< Property > lcl_GetPropertySequence()
     {
-        std::vector< css::beans::Property > aProperties;
+        ::std::vector< css::beans::Property > aProperties;
         ::chart::FillProperties::AddPropertiesToVector( aProperties );
         ::chart::LinePropertiesHelper::AddPropertiesToVector( aProperties );
         ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
 
-        std::sort( aProperties.begin(), aProperties.end(),
+        ::std::sort( aProperties.begin(), aProperties.end(),
                      ::chart::PropertyNameLess() );
 
         return comphelper::containerToSequence( aProperties );
@@ -79,7 +81,7 @@ namespace wrapper
 {
 
 WallFloorWrapper::WallFloorWrapper( bool bWall,
-    const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact ) :
+    std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
         m_spChart2ModelContact( spChart2ModelContact ),
         m_aEventListenerContainer( m_aMutex ),
         m_bWall( bWall )
@@ -93,6 +95,7 @@ WallFloorWrapper::~WallFloorWrapper()
 
 // ____ XComponent ____
 void SAL_CALL WallFloorWrapper::dispose()
+    throw (uno::RuntimeException, std::exception)
 {
     Reference< uno::XInterface > xSource( static_cast< ::cppu::OWeakObject* >( this ) );
     m_aEventListenerContainer.disposeAndClear( lang::EventObject( xSource ) );
@@ -103,12 +106,14 @@ void SAL_CALL WallFloorWrapper::dispose()
 
 void SAL_CALL WallFloorWrapper::addEventListener(
     const Reference< lang::XEventListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.addInterface( xListener );
 }
 
 void SAL_CALL WallFloorWrapper::removeEventListener(
     const Reference< lang::XEventListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.removeInterface( aListener );
 }
@@ -137,7 +142,7 @@ const Sequence< beans::Property >& WallFloorWrapper::getPropertySequence()
 
 const std::vector< WrappedProperty* > WallFloorWrapper::createWrappedProperties()
 {
-    std::vector< ::chart::WrappedProperty* > aWrappedProperties;
+    ::std::vector< ::chart::WrappedProperty* > aWrappedProperties;
 
     // use direct state always, so that in XML the value is always
     // exported. Because in the old chart the defaults is as follows:
@@ -149,24 +154,39 @@ const std::vector< WrappedProperty* > WallFloorWrapper::createWrappedProperties(
     return aWrappedProperties;
 }
 
-OUString SAL_CALL WallFloorWrapper::getImplementationName()
+Sequence< OUString > WallFloorWrapper::getSupportedServiceNames_Static()
 {
-    return OUString("com.sun.star.comp.chart.WallOrFloor");
+    Sequence< OUString > aServices( 4 );
+    aServices[ 0 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
+    aServices[ 1 ] = "com.sun.star.drawing.FillProperties";
+    aServices[ 2 ] = "com.sun.star.drawing.LineProperties";
+    aServices[ 3 ] = "com.sun.star.beans.PropertySet";
+
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
+OUString SAL_CALL WallFloorWrapper::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString WallFloorWrapper::getImplementationName_Static()
+{
+    return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL WallFloorWrapper::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL WallFloorWrapper::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        "com.sun.star.xml.UserDefinedAttributesSupplier",
-        "com.sun.star.drawing.FillProperties",
-        "com.sun.star.drawing.LineProperties",
-        "com.sun.star.beans.PropertySet"
-    };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace wrapper

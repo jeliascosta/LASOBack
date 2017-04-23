@@ -64,6 +64,13 @@ using namespace com::sun::star::text;
 using namespace com::sun::star::container;
 using namespace com::sun::star::style;
 
+static const sal_Char cNumberingType[] = "NumberingType";
+static const sal_Char cValue[] = "Value";
+static const sal_Char cParentNumbering[] = "ParentNumbering";
+static const sal_Char cPrefix[] = "Prefix";
+static const sal_Char cSuffix[] = "Suffix";
+static const sal_Char cBulletChar[] = "BulletChar";
+static const sal_Char cBulletFontName[] = "BulletFontName";
 
 // The selection of bullets from the star symbol
 static const sal_Unicode aBulletTypes[] =
@@ -81,7 +88,7 @@ static const sal_Unicode aBulletTypes[] =
 static vcl::Font& lcl_GetDefaultBulletFont()
 {
     static bool bInit = false;
-    static vcl::Font aDefBulletFont("OpenSymbol", "", Size(0, 14));
+    static vcl::Font aDefBulletFont( "StarSymbol", "", Size( 0, 14 ) );
     if(!bInit)
     {
         aDefBulletFont.SetCharSet( RTL_TEXTENCODING_SYMBOL );
@@ -133,7 +140,7 @@ void  SvxNumValueSet::UserDraw( const UserDrawEvent& rUDEvt )
     const Color aTextColor(COL_BLACK);
 
     vcl::RenderContext* pDev = rUDEvt.GetRenderContext();
-    tools::Rectangle aRect = rUDEvt.GetRect();
+    Rectangle aRect = rUDEvt.GetRect();
     sal_uInt16 nItemId = rUDEvt.GetItemId();
 
     long nRectWidth = aRect.GetWidth();
@@ -193,7 +200,7 @@ void  SvxNumValueSet::UserDraw( const UserDrawEvent& rUDEvt )
                         aOrgRect.TopLeft(), aRectSize,
                         *pVDev );
     // Now comes the text
-    const OUString sValue("Value");
+    const OUString sValue(cValue);
     if( NumberingPageType::SINGLENUM == ePageType ||
            NumberingPageType::BULLET == ePageType )
     {
@@ -273,17 +280,17 @@ void  SvxNumValueSet::UserDraw( const UserDrawEvent& rUDEvt )
                     aParentNumberings[i] = 0;
                     for(sal_Int32 nProperty = 0; nProperty < aLevel.getLength() - 1; nProperty++)
                     {
-                        if ( pValues[nProperty].Name == "NumberingType" )
+                        if ( pValues[nProperty].Name == cNumberingType )
                             pValues[nProperty].Value >>= aNumberingTypes[i];
-                        else if ( pValues[nProperty].Name == "BulletFontName" )
+                        else if ( pValues[nProperty].Name == cBulletFontName )
                             pValues[nProperty].Value >>= sFontNames[i];
-                        else if ( pValues[nProperty].Name == "BulletChar" )
+                        else if ( pValues[nProperty].Name == cBulletChar )
                             pValues[nProperty].Value >>= sBulletChars[i];
-                        else if ( pValues[nProperty].Name == "Prefix" )
+                        else if ( pValues[nProperty].Name == cPrefix )
                             pValues[nProperty].Value >>= sPrefixes[i];
-                        else if ( pValues[nProperty].Name == "Suffix" )
+                        else if ( pValues[nProperty].Name == cSuffix )
                             pValues[nProperty].Value >>= sSuffixes[i];
-                        else if ( pValues[nProperty].Name == "ParentNumbering" )
+                        else if ( pValues[nProperty].Name == cParentNumbering )
                             pValues[nProperty].Value >>= aParentNumberings[i];
                     }
                     Sequence< PropertyValue > aProperties(2);
@@ -379,6 +386,7 @@ void  SvxNumValueSet::UserDraw( const UserDrawEvent& rUDEvt )
 SvxNumValueSet::SvxNumValueSet(vcl::Window* pParent, WinBits nWinBits)
     : ValueSet(pParent, nWinBits)
     , ePageType(NumberingPageType::BULLET)
+    , bHTMLMode(false)
     , pVDev(nullptr)
 {
 }
@@ -388,6 +396,7 @@ VCL_BUILDER_FACTORY_ARGS(SvxNumValueSet, WB_TABSTOP)
 void SvxNumValueSet::init(NumberingPageType eType)
 {
     ePageType = eType;
+    bHTMLMode = false;
     pVDev = nullptr;
 
     SetColCount( 4 );
@@ -466,8 +475,8 @@ void SvxBmpNumValueSet::init()
     GalleryExplorer::BeginLocking(GALLERY_THEME_BULLETS);
     SetStyle( GetStyle() | WB_VSCROLL );
     SetLineCount( 3 );
-    aFormatIdle.SetPriority(TaskPriority::LOWEST);
-    aFormatIdle.SetInvokeHandler(LINK(this, SvxBmpNumValueSet, FormatHdl_Impl));
+    aFormatIdle.SetPriority(SchedulerPriority::LOWEST);
+    aFormatIdle.SetIdleHdl(LINK(this, SvxBmpNumValueSet, FormatHdl_Impl));
 }
 
 
@@ -487,7 +496,7 @@ void SvxBmpNumValueSet::UserDraw(const UserDrawEvent& rUDEvt)
 {
     SvxNumValueSet::UserDraw(rUDEvt);
 
-    tools::Rectangle aRect = rUDEvt.GetRect();
+    Rectangle aRect = rUDEvt.GetRect();
     vcl::RenderContext* pDev = rUDEvt.GetRenderContext();
     sal_uInt16  nItemId = rUDEvt.GetItemId();
     Point aBLPos = aRect.TopLeft();
@@ -513,7 +522,7 @@ void SvxBmpNumValueSet::UserDraw(const UserDrawEvent& rUDEvt)
     }
 }
 
-IMPL_LINK_NOARG(SvxBmpNumValueSet, FormatHdl_Impl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvxBmpNumValueSet, FormatHdl_Impl, Idle *, void)
 {
     // only when a graphics was not there, it needs to be formatted
     if (bGrfNotFound)

@@ -37,6 +37,7 @@
 #include <com/sun/star/uno/RuntimeException.hpp>
 #include <com/sun/star/ui/theUICategoryDescription.hpp>
 
+#include "acccfg.hrc"
 #include "helpid.hrc"
 #include <basic/sbx.hxx>
 #include <basic/basicmanagerrepository.hxx>
@@ -75,6 +76,9 @@ void SfxStylesInfo_Impl::setModel(const css::uno::Reference< css::frame::XModel 
     m_xDoc = xModel;
 }
 
+static const char CMDURL_SPART [] = ".uno:StyleApply?Style:string=";
+static const char CMDURL_FPART2[] = "&FamilyName:string=";
+
 static const char CMDURL_STYLEPROT_ONLY[] = ".uno:StyleApply?";
 static const char CMDURL_SPART_ONLY    [] = "Style:string=";
 static const char CMDURL_FPART_ONLY    [] = "FamilyName:string=";
@@ -83,10 +87,12 @@ static const char STYLEPROP_UINAME[] = "DisplayName";
 
 OUString SfxStylesInfo_Impl::generateCommand(const OUString& sFamily, const OUString& sStyle)
 {
-    return ".uno:StyleApply?Style:string="
-           + sStyle
-           + "&FamilyName:string="
-           + sFamily;
+    OUStringBuffer sCommand(1024);
+    sCommand.append(CMDURL_SPART );
+    sCommand.append(sStyle       );
+    sCommand.append(CMDURL_FPART2);
+    sCommand.append(sFamily      );
+    return sCommand.makeStringAndClear();
 }
 
 bool SfxStylesInfo_Impl::parseStyleCommand(SfxStyleInfo_Impl& aStyle)
@@ -158,16 +164,16 @@ void SfxStylesInfo_Impl::getLabel4Style(SfxStyleInfo_Impl& aStyle)
     }
 }
 
-std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyleFamilies()
+::std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyleFamilies()
 {
-    // It's an optional interface!
+    // Its an optional interface!
     css::uno::Reference< css::style::XStyleFamiliesSupplier > xModel(m_xDoc, css::uno::UNO_QUERY);
     if (!xModel.is())
-        return std::vector< SfxStyleInfo_Impl >();
+        return ::std::vector< SfxStyleInfo_Impl >();
 
     css::uno::Reference< css::container::XNameAccess > xCont = xModel->getStyleFamilies();
     css::uno::Sequence< OUString > lFamilyNames = xCont->getElementNames();
-    std::vector< SfxStyleInfo_Impl > lFamilies;
+    ::std::vector< SfxStyleInfo_Impl > lFamilies;
     sal_Int32 c = lFamilyNames.getLength();
     sal_Int32 i = 0;
     for(i=0; i<c; ++i)
@@ -190,7 +196,7 @@ std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyleFamilies()
         catch(const css::uno::RuntimeException&)
             { throw; }
         catch(const css::uno::Exception&)
-            { return std::vector< SfxStyleInfo_Impl >(); }
+            { return ::std::vector< SfxStyleInfo_Impl >(); }
 
         lFamilies.push_back(aFamilyInfo);
     }
@@ -198,8 +204,10 @@ std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyleFamilies()
     return lFamilies;
 }
 
-std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyles(const OUString& sFamily)
+::std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyles(const OUString& sFamily)
 {
+    static const char PROP_UINAME[] = "DisplayName";
+
     css::uno::Sequence< OUString > lStyleNames;
     css::uno::Reference< css::style::XStyleFamiliesSupplier > xModel(m_xDoc, css::uno::UNO_QUERY_THROW);
     css::uno::Reference< css::container::XNameAccess > xFamilies = xModel->getStyleFamilies();
@@ -212,9 +220,9 @@ std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyles(const OUString& s
     catch(const css::uno::RuntimeException&)
         { throw; }
     catch(const css::uno::Exception&)
-        { return std::vector< SfxStyleInfo_Impl >(); }
+        { return ::std::vector< SfxStyleInfo_Impl >(); }
 
-    std::vector< SfxStyleInfo_Impl > lStyles;
+    ::std::vector< SfxStyleInfo_Impl > lStyles;
     sal_Int32                          c      = lStyleNames.getLength();
     sal_Int32                          i      = 0;
     for (i=0; i<c; ++i)
@@ -230,7 +238,7 @@ std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyles(const OUString& s
             xStyleSet->getByName(aStyleInfo.sStyle) >>= xStyle;
             if (!xStyle.is())
                 continue;
-            xStyle->getPropertyValue("DisplayName") >>= aStyleInfo.sLabel;
+            xStyle->getPropertyValue(PROP_UINAME) >>= aStyleInfo.sLabel;
         }
         catch(const css::uno::RuntimeException&)
             { throw; }
@@ -250,7 +258,16 @@ SfxConfigFunctionListBox::SfxConfigFunctionListBox(vcl::Window* pParent, WinBits
     GetModel()->SetSortMode( SortAscending );
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SfxConfigFunctionListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(SfxConfigFunctionListBox)
+{
+    WinBits nWinBits = WB_TABSTOP;
+
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nWinBits |= WB_BORDER;
+
+    rRet = VclPtr<SfxConfigFunctionListBox>::Create(pParent, nWinBits);
+}
 
 SfxConfigFunctionListBox::~SfxConfigFunctionListBox()
 {
@@ -339,7 +356,7 @@ void SfxConfigFunctionListBox::SetStylesInfo(SfxStylesInfo_Impl* pStyles)
     pStylesInfo = pStyles;
 }
 
-struct SvxConfigGroupBoxResource_Impl
+struct SvxConfigGroupBoxResource_Impl : public Resource
 {
     Image m_hdImage;
     Image m_libImage;
@@ -357,29 +374,40 @@ struct SvxConfigGroupBoxResource_Impl
 };
 
 SvxConfigGroupBoxResource_Impl::SvxConfigGroupBoxResource_Impl() :
-    m_hdImage(BitmapEx(CUI_RES(RID_CUIBMP_HARDDISK))),
-    m_libImage(BitmapEx(CUI_RES(RID_CUIBMP_LIB))),
-    m_macImage(BitmapEx(CUI_RES(RID_CUIBMP_MACRO))),
-    m_docImage(BitmapEx(CUI_RES(RID_CUIBMP_DOC))),
+    Resource(CUI_RES(RID_SVXPAGE_CONFIGGROUPBOX)),
+    m_hdImage(CUI_RES(RID_CUIIMG_HARDDISK)),
+    m_libImage(CUI_RES(RID_CUIIMG_LIB)),
+    m_macImage(CUI_RES(RID_CUIIMG_MACRO)),
+    m_docImage(CUI_RES(RID_CUIIMG_DOC)),
     m_sMyMacros(CUI_RESSTR(RID_SVXSTR_MYMACROS)),
     m_sProdMacros(CUI_RESSTR(RID_SVXSTR_PRODMACROS)),
-    m_sMacros(CUI_RESSTR(RID_SVXSTR_BASICMACROS)),
+    m_sMacros(CUI_RESSTR(STR_BASICMACROS)),
     m_sDlgMacros(CUI_RESSTR(RID_SVXSTR_PRODMACROS)),
-    m_aStrGroupStyles(CUI_RESSTR(RID_SVXSTR_GROUP_STYLES)),
-    m_collapsedImage(BitmapEx(CUI_RES(RID_CUIBMP_COLLAPSED))),
-    m_expandedImage(BitmapEx(CUI_RES(RID_CUIBMP_EXPANDED)))
+    m_aStrGroupStyles(CUI_RESSTR(STR_GROUP_STYLES)),
+    m_collapsedImage(CUI_RES(BMP_COLLAPSED)),
+    m_expandedImage(CUI_RES(BMP_EXPANDED))
 {
+    FreeResource();
 }
 
 SfxConfigGroupListBox::SfxConfigGroupListBox(vcl::Window* pParent, WinBits nStyle)
     : SvTreeListBox(pParent, nStyle)
-    , xImp(new SvxConfigGroupBoxResource_Impl()), pFunctionListBox(nullptr), pStylesInfo(nullptr)
+    , pImp(new SvxConfigGroupBoxResource_Impl()), pFunctionListBox(nullptr), pStylesInfo(nullptr)
 {
     SetStyle( GetStyle() | WB_CLIPCHILDREN | WB_HSCROLL | WB_HASBUTTONS | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONSATROOT );
-    SetNodeBitmaps(xImp->m_collapsedImage, xImp->m_expandedImage);
+    SetNodeBitmaps( pImp->m_collapsedImage, pImp->m_expandedImage );
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SfxConfigGroupListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(SfxConfigGroupListBox)
+{
+    WinBits nWinBits = WB_TABSTOP;
+
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nWinBits |= WB_BORDER;
+
+    rRet = VclPtr<SfxConfigGroupListBox>::Create(pParent, nWinBits);
+}
 
 SfxConfigGroupListBox::~SfxConfigGroupListBox()
 {
@@ -556,7 +584,7 @@ void SfxConfigGroupListBox::Init(const css::uno::Reference< css::uno::XComponent
 
             aArr.push_back( o3tl::make_unique<SfxGroupInfo_Impl>( SfxCfgKind::GROUP_SCRIPTCONTAINER, 0,
                     static_cast<void *>(rootNode.get())));
-            OUString aTitle(xImp->m_sDlgMacros);
+            OUString aTitle(pImp->m_sDlgMacros);
             SvTreeListEntry *pNewEntry = InsertEntry( aTitle );
             pNewEntry->SetUserData( aArr.back().get() );
             pNewEntry->EnableChildrenOnDemand();
@@ -608,11 +636,11 @@ void SfxConfigGroupListBox::Init(const css::uno::Reference< css::uno::XComponent
                             {
                                 if ( uiName.equals( user ) )
                                 {
-                                    uiName = xImp->m_sMyMacros;
+                                    uiName = pImp->m_sMyMacros;
                                 }
                                 else if ( uiName.equals( share ) )
                                 {
-                                    uiName = xImp->m_sProdMacros;
+                                    uiName = pImp->m_sProdMacros;
                                 }
                             }
                         }
@@ -660,7 +688,7 @@ void SfxConfigGroupListBox::Init(const css::uno::Reference< css::uno::XComponent
     // add styles
     if ( m_xContext.is() )
     {
-        OUString sStyle(xImp->m_aStrGroupStyles);
+        OUString sStyle( pImp->m_aStrGroupStyles );
         SvTreeListEntry *pEntry = InsertEntry( sStyle );
         aArr.push_back( o3tl::make_unique<SfxGroupInfo_Impl>( SfxCfgKind::GROUP_STYLES, 0, nullptr ) ); // TODO last parameter should contain user data
         pEntry->SetUserData( aArr.back().get() );
@@ -673,7 +701,7 @@ void SfxConfigGroupListBox::Init(const css::uno::Reference< css::uno::XComponent
 
 Image SfxConfigGroupListBox::GetImage(
     const Reference< browse::XBrowseNode >& node,
-    Reference< XComponentContext > const & xCtx,
+    Reference< XComponentContext > xCtx,
     bool bIsRootNode
 )
 {
@@ -684,7 +712,7 @@ Image SfxConfigGroupListBox::GetImage(
         OUString share("share");
         if (node->getName().equals( user ) || node->getName().equals(share ) )
         {
-            aImage = xImp->m_hdImage;
+            aImage = pImp->m_hdImage;
         }
         else
         {
@@ -721,22 +749,22 @@ Image SfxConfigGroupListBox::GetImage(
             }
             else
             {
-                aImage = xImp->m_docImage;
+                aImage = pImp->m_docImage;
             }
         }
     }
     else
     {
         if( node->getType() == browse::BrowseNodeTypes::SCRIPT )
-            aImage = xImp->m_macImage;
+            aImage = pImp->m_macImage;
         else
-            aImage = xImp->m_libImage;
+            aImage = pImp->m_libImage;
     }
     return aImage;
 }
 
 Reference< XInterface  >
-SfxConfigGroupListBox::getDocumentModel( Reference< XComponentContext > const & xCtx, OUString& docName )
+SfxConfigGroupListBox::getDocumentModel( Reference< XComponentContext >& xCtx, OUString& docName )
 {
     Reference< XInterface > xModel;
     Reference< frame::XDesktop2 > desktop = frame::Desktop::create( xCtx );
@@ -891,8 +919,8 @@ void SfxConfigGroupListBox::GroupSelected()
             SfxStyleInfo_Impl* pFamily = static_cast<SfxStyleInfo_Impl*>(pInfo->pObject);
             if (pFamily)
             {
-                const std::vector< SfxStyleInfo_Impl > lStyles = pStylesInfo->getStyles(pFamily->sFamily);
-                std::vector< SfxStyleInfo_Impl >::const_iterator pIt;
+                const ::std::vector< SfxStyleInfo_Impl > lStyles = pStylesInfo->getStyles(pFamily->sFamily);
+                ::std::vector< SfxStyleInfo_Impl >::const_iterator pIt;
                 for (  pIt  = lStyles.begin();
                        pIt != lStyles.end()  ;
                      ++pIt                   )
@@ -1053,8 +1081,8 @@ void SfxConfigGroupListBox::RequestingChildren( SvTreeListEntry *pEntry )
         {
             if ( !GetChildCount( pEntry ) )
             {
-                const std::vector< SfxStyleInfo_Impl >                 lStyleFamilies = pStylesInfo->getStyleFamilies();
-                      std::vector< SfxStyleInfo_Impl >::const_iterator pIt;
+                const ::std::vector< SfxStyleInfo_Impl >                 lStyleFamilies = pStylesInfo->getStyleFamilies();
+                      ::std::vector< SfxStyleInfo_Impl >::const_iterator pIt;
                 for (  pIt  = lStyleFamilies.begin();
                        pIt != lStyleFamilies.end()  ;
                      ++pIt                          )
@@ -1084,7 +1112,7 @@ void SfxConfigGroupListBox::SelectMacro( const SfxMacroInfoItem *pItem )
 void SfxConfigGroupListBox::SelectMacro( const OUString& rBasic,
          const OUString& rMacro )
 {
-    const OUString aBasicName(rBasic + " " + xImp->m_sMacros);
+    const OUString aBasicName( rBasic + " " + pImp->m_sMacros );
     const sal_Int32 nCount = comphelper::string::getTokenCount(rMacro, '.');
     const OUString aMethod( rMacro.getToken( nCount-1, '.' ) );
     OUString aLib;

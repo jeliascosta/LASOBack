@@ -46,14 +46,14 @@ class SVX_DLLPUBLIC SpellDialogChildWindow
     : public SfxChildWindow
 {
     friend class SpellDialog;
-    VclPtr<AbstractSpellDialog> m_xAbstractSpellDialog;
+    std::unique_ptr<AbstractSpellDialog> m_xAbstractSpellDialog;
 public:
     SpellDialogChildWindow (
         vcl::Window*pParent,
         sal_uInt16 nId,
         SfxBindings* pBindings,
         SfxChildWinInfo* pInfo);
-    virtual ~SpellDialogChildWindow () override;
+    virtual ~SpellDialogChildWindow ();
 
 protected:
     /** This abstract method has to be defined by a derived class.  It

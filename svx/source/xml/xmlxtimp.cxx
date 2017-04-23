@@ -65,7 +65,7 @@ using namespace com::sun::star::xml::sax;
 using namespace ::xmloff::token;
 using namespace cppu;
 
-enum class SvxXMLTableImportContextEnum { Color, Marker, Dash, Hatch, Gradient, Bitmap };
+enum SvxXMLTableImportContextEnum { stice_unknown, stice_color, stice_marker, stice_dash, stice_hatch, stice_gradient, stice_bitmap };
 
 
 class SvxXMLTableImportContext : public SvXMLImportContext
@@ -73,6 +73,7 @@ class SvxXMLTableImportContext : public SvXMLImportContext
 public:
     SvxXMLTableImportContext( SvXMLImport& rImport, sal_uInt16 nPrfx, const OUString& rLName, const uno::Reference< XAttributeList >& xAttrList, SvxXMLTableImportContextEnum eContext, const uno::Reference< XNameContainer >& xTable,
         bool bOOoFormat );
+    virtual ~SvxXMLTableImportContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const uno::Reference< XAttributeList >& xAttrList ) override;
 
@@ -97,14 +98,18 @@ SvxXMLTableImportContext::SvxXMLTableImportContext( SvXMLImport& rImport, sal_uI
 {
 }
 
+SvxXMLTableImportContext::~SvxXMLTableImportContext()
+{
+}
+
 SvXMLImportContext *SvxXMLTableImportContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const uno::Reference< XAttributeList >& rAttrList )
 {
     if( XML_NAMESPACE_DRAW == nPrefix )
     {
         uno::Reference< XAttributeList > xAttrList( rAttrList );
         if( mbOOoFormat &&
-             (SvxXMLTableImportContextEnum::Dash == meContext || SvxXMLTableImportContextEnum::Hatch == meContext ||
-             SvxXMLTableImportContextEnum::Bitmap == meContext) )
+             (stice_dash == meContext || stice_hatch == meContext ||
+             stice_bitmap == meContext) )
         {
             SvXMLAttributeList *pAttrList = new SvXMLAttributeList( rAttrList );
             xAttrList = pAttrList;
@@ -117,7 +122,7 @@ SvXMLImportContext *SvxXMLTableImportContext::CreateChildContext( sal_uInt16 nPr
                     GetImport().GetNamespaceMap().GetKeyByAttrName( rAttrName,
                                                                 &aLocalName );
                 if( XML_NAMESPACE_XLINK == nPrefix_ &&
-                    SvxXMLTableImportContextEnum::Bitmap == meContext &&
+                    stice_bitmap == meContext &&
                     IsXMLToken( aLocalName, XML_HREF ) )
                 {
                     const OUString rValue = xAttrList->getValueByIndex( i );
@@ -125,11 +130,11 @@ SvXMLImportContext *SvxXMLTableImportContext::CreateChildContext( sal_uInt16 nPr
                         pAttrList->SetValueByIndex( i, rValue.copy( 1 ) );
                 }
                 else if( XML_NAMESPACE_DRAW == nPrefix_ &&
-                          ( ( SvxXMLTableImportContextEnum::Dash == meContext &&
+                          ( ( stice_dash == meContext &&
                               (IsXMLToken( aLocalName, XML_DOTS1_LENGTH ) ||
                                IsXMLToken( aLocalName, XML_DOTS2_LENGTH ) ||
                                IsXMLToken( aLocalName, XML_DISTANCE )) ) ||
-                            ( SvxXMLTableImportContextEnum::Hatch == meContext &&
+                            ( stice_hatch == meContext &&
                               IsXMLToken( aLocalName, XML_HATCH_DISTANCE ) ) ) )
                 {
                     const OUString rValue = xAttrList->getValueByIndex( i );
@@ -152,23 +157,25 @@ SvXMLImportContext *SvxXMLTableImportContext::CreateChildContext( sal_uInt16 nPr
 
             switch( meContext )
             {
-            case SvxXMLTableImportContextEnum::Color:
+            case stice_color:
                 importColor( nPrefix, rLocalName, xAttrList, aAny, aName );
                 break;
-            case SvxXMLTableImportContextEnum::Marker:
+            case stice_marker:
                 importMarker( nPrefix, rLocalName, xAttrList, aAny, aName  );
                 break;
-            case SvxXMLTableImportContextEnum::Dash:
+            case stice_dash:
                 importDash( nPrefix, rLocalName, xAttrList, aAny, aName  );
                 break;
-            case SvxXMLTableImportContextEnum::Hatch:
+            case stice_hatch:
                 importHatch( nPrefix, rLocalName, xAttrList, aAny, aName  );
                 break;
-            case SvxXMLTableImportContextEnum::Gradient:
+            case stice_gradient:
                 importGradient( nPrefix, rLocalName, xAttrList, aAny, aName  );
                 break;
-            case SvxXMLTableImportContextEnum::Bitmap:
+            case stice_bitmap:
                 importBitmap( nPrefix, rLocalName, xAttrList, aAny, aName  );
+                break;
+            case stice_unknown:
                 break;
             }
 
@@ -294,7 +301,7 @@ void SvxXMLTableImportContext::importBitmap( sal_uInt16 nPrfx, const OUString& r
     try
     {
         XMLImageStyle aImageStyle;
-        XMLImageStyle::importXML( xAttrList, rAny, rName, GetImport() );
+        aImageStyle.importXML( xAttrList, rAny, rName, GetImport() );
     }
     catch (const Exception&)
     {
@@ -342,7 +349,7 @@ static void openStorageStream( xml::sax::InputSource *pParserInput,
         return;
     }
     pParserInput->aInputStream = xIStm->getInputStream();
-    *ppGraphicHelper = SvXMLGraphicHelper::Create( xStorage, SvXMLGraphicHelperMode::Read );
+    *ppGraphicHelper = SvXMLGraphicHelper::Create( xStorage, GRAPHICHELPER_MODE_READ );
 }
 
 bool SvxXMLXTableImport::load( const OUString &rPath, const OUString &rReferer,
@@ -446,32 +453,32 @@ SvXMLImportContext *SvxXMLXTableImport::CreateContext( sal_uInt16 nPrefix, const
         if ( rLocalName == "color-table" )
         {
             if( aType == ::cppu::UnoType<sal_Int32>::get() )
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Color, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_color, mrTable, bOOoFormat );
         }
         else if ( rLocalName == "marker-table" )
         {
             if( aType == cppu::UnoType<drawing::PolyPolygonBezierCoords>::get())
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Marker, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_marker, mrTable, bOOoFormat );
         }
         else if ( rLocalName == "dash-table" )
         {
             if( aType == cppu::UnoType<drawing::LineDash>::get())
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Dash, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_dash, mrTable, bOOoFormat );
         }
         else if ( rLocalName == "hatch-table" )
         {
             if( aType == cppu::UnoType<drawing::Hatch>::get())
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Hatch, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_hatch, mrTable, bOOoFormat );
         }
         else if ( rLocalName == "gradient-table" )
         {
             if( aType == cppu::UnoType<awt::Gradient>::get())
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Gradient, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_gradient, mrTable, bOOoFormat );
         }
         else if ( rLocalName == "bitmap-table" )
         {
             if( aType == ::cppu::UnoType<OUString>::get())
-                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, SvxXMLTableImportContextEnum::Bitmap, mrTable, bOOoFormat );
+                return new SvxXMLTableImportContext( *this, nPrefix, rLocalName, xAttrList, stice_bitmap, mrTable, bOOoFormat );
         }
     }
 

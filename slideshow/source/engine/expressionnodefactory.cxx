@@ -84,8 +84,8 @@ namespace slideshow
             class BinaryExpressionBase : public ExpressionNode
             {
             public:
-                BinaryExpressionBase( const std::shared_ptr<ExpressionNode>&    rFirstArg,
-                                      const std::shared_ptr<ExpressionNode>&    rSecondArg ) :
+                BinaryExpressionBase( const ExpressionNodeSharedPtr&    rFirstArg,
+                                      const ExpressionNodeSharedPtr&    rSecondArg ) :
                     mpFirstArg( rFirstArg ),
                     mpSecondArg( rSecondArg )
                 {
@@ -99,15 +99,15 @@ namespace slideshow
                 }
 
             protected:
-                std::shared_ptr<ExpressionNode> mpFirstArg;
-                std::shared_ptr<ExpressionNode> mpSecondArg;
+                ExpressionNodeSharedPtr mpFirstArg;
+                ExpressionNodeSharedPtr mpSecondArg;
             };
 
             class PlusExpression : public BinaryExpressionBase
             {
             public:
-                PlusExpression( const std::shared_ptr<ExpressionNode>&  rFirstArg,
-                                const std::shared_ptr<ExpressionNode>&  rSecondArg ) :
+                PlusExpression( const ExpressionNodeSharedPtr&  rFirstArg,
+                                const ExpressionNodeSharedPtr&  rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -121,8 +121,8 @@ namespace slideshow
             class MinusExpression : public BinaryExpressionBase
             {
             public:
-                MinusExpression( const std::shared_ptr<ExpressionNode>& rFirstArg,
-                                 const std::shared_ptr<ExpressionNode>& rSecondArg ) :
+                MinusExpression( const ExpressionNodeSharedPtr& rFirstArg,
+                                 const ExpressionNodeSharedPtr& rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -136,8 +136,8 @@ namespace slideshow
             class MultipliesExpression : public BinaryExpressionBase
             {
             public:
-                MultipliesExpression( const std::shared_ptr<ExpressionNode>&    rFirstArg,
-                                      const std::shared_ptr<ExpressionNode>&    rSecondArg ) :
+                MultipliesExpression( const ExpressionNodeSharedPtr&    rFirstArg,
+                                      const ExpressionNodeSharedPtr&    rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -151,8 +151,8 @@ namespace slideshow
             class DividesExpression : public BinaryExpressionBase
             {
             public:
-                DividesExpression( const std::shared_ptr<ExpressionNode>&   rFirstArg,
-                                   const std::shared_ptr<ExpressionNode>&   rSecondArg ) :
+                DividesExpression( const ExpressionNodeSharedPtr&   rFirstArg,
+                                   const ExpressionNodeSharedPtr&   rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -166,8 +166,8 @@ namespace slideshow
             class MinExpression : public BinaryExpressionBase
             {
             public:
-                MinExpression( const std::shared_ptr<ExpressionNode>&   rFirstArg,
-                               const std::shared_ptr<ExpressionNode>&   rSecondArg ) :
+                MinExpression( const ExpressionNodeSharedPtr&   rFirstArg,
+                               const ExpressionNodeSharedPtr&   rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -181,8 +181,8 @@ namespace slideshow
             class MaxExpression : public BinaryExpressionBase
             {
             public:
-                MaxExpression( const std::shared_ptr<ExpressionNode>&   rFirstArg,
-                               const std::shared_ptr<ExpressionNode>&   rSecondArg ) :
+                MaxExpression( const ExpressionNodeSharedPtr&   rFirstArg,
+                               const ExpressionNodeSharedPtr&   rSecondArg ) :
                     BinaryExpressionBase( rFirstArg, rSecondArg )
                 {
                 }
@@ -194,50 +194,50 @@ namespace slideshow
             };
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createConstantValueExpression( double rConstantValue )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createConstantValueExpression( double rConstantValue )
         {
-            return std::shared_ptr<ExpressionNode>( new ConstantValueExpression(rConstantValue) );
+            return ExpressionNodeSharedPtr( new ConstantValueExpression(rConstantValue) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createValueTExpression()
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createValueTExpression()
         {
-            return std::shared_ptr<ExpressionNode>( new TValueExpression() );
+            return ExpressionNodeSharedPtr( new TValueExpression() );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createPlusExpression( const std::shared_ptr<ExpressionNode>& rLHS,
-                                                                             const std::shared_ptr<ExpressionNode>& rRHS )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createPlusExpression( const ExpressionNodeSharedPtr& rLHS,
+                                                                             const ExpressionNodeSharedPtr& rRHS )
         {
-            return std::shared_ptr<ExpressionNode>( new PlusExpression(rLHS, rRHS) );
+            return ExpressionNodeSharedPtr( new PlusExpression(rLHS, rRHS) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createMinusExpression( const std::shared_ptr<ExpressionNode>&    rLHS,
-                                                                              const std::shared_ptr<ExpressionNode>&    rRHS )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createMinusExpression( const ExpressionNodeSharedPtr&    rLHS,
+                                                                              const ExpressionNodeSharedPtr&    rRHS )
         {
-            return std::shared_ptr<ExpressionNode>( new MinusExpression(rLHS, rRHS) );
+            return ExpressionNodeSharedPtr( new MinusExpression(rLHS, rRHS) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createMultipliesExpression( const std::shared_ptr<ExpressionNode>&   rLHS,
-                                                                                   const std::shared_ptr<ExpressionNode>&   rRHS )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createMultipliesExpression( const ExpressionNodeSharedPtr&   rLHS,
+                                                                                   const ExpressionNodeSharedPtr&   rRHS )
         {
-            return std::shared_ptr<ExpressionNode>( new MultipliesExpression(rLHS, rRHS) );
+            return ExpressionNodeSharedPtr( new MultipliesExpression(rLHS, rRHS) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createDividesExpression( const std::shared_ptr<ExpressionNode>&  rLHS,
-                                                                                const std::shared_ptr<ExpressionNode>&  rRHS )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createDividesExpression( const ExpressionNodeSharedPtr&  rLHS,
+                                                                                const ExpressionNodeSharedPtr&  rRHS )
         {
-            return std::shared_ptr<ExpressionNode>( new DividesExpression(rLHS, rRHS) );
+            return ExpressionNodeSharedPtr( new DividesExpression(rLHS, rRHS) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createMinExpression   ( const std::shared_ptr<ExpressionNode>&   rOuterFunction,
-                                                                               const std::shared_ptr<ExpressionNode>&   rInnerFunction )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createMinExpression   ( const ExpressionNodeSharedPtr&   rOuterFunction,
+                                                                               const ExpressionNodeSharedPtr&   rInnerFunction )
         {
-            return std::shared_ptr<ExpressionNode>( new MinExpression(rOuterFunction, rInnerFunction) );
+            return ExpressionNodeSharedPtr( new MinExpression(rOuterFunction, rInnerFunction) );
         }
 
-        std::shared_ptr<ExpressionNode> ExpressionNodeFactory::createMaxExpression   ( const std::shared_ptr<ExpressionNode>&   rOuterFunction,
-                                                                               const std::shared_ptr<ExpressionNode>&   rInnerFunction )
+        ExpressionNodeSharedPtr ExpressionNodeFactory::createMaxExpression   ( const ExpressionNodeSharedPtr&   rOuterFunction,
+                                                                               const ExpressionNodeSharedPtr&   rInnerFunction )
         {
-            return std::shared_ptr<ExpressionNode>( new MaxExpression(rOuterFunction, rInnerFunction) );
+            return ExpressionNodeSharedPtr( new MaxExpression(rOuterFunction, rInnerFunction) );
         }
 
     }

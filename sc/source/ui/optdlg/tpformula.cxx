@@ -24,7 +24,7 @@
 #include <svl/stritem.hxx>
 #include "tpformula.hxx"
 #include "formulaopt.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 #include "scresid.hxx"
 #include <formula/grammar.hxx>
 #include "calcoptionsdlg.hxx"
@@ -196,7 +196,7 @@ bool ScTpFormulaOptions::IsValidSeparatorSet() const
     return true;
 }
 
-IMPL_LINK( ScTpFormulaOptions, ButtonHdl, Button*, pBtn, void )
+IMPL_LINK_TYPED( ScTpFormulaOptions, ButtonHdl, Button*, pBtn, void )
 {
     if (pBtn == mpBtnSepReset)
         ResetSeparators();
@@ -208,7 +208,7 @@ IMPL_LINK( ScTpFormulaOptions, ButtonHdl, Button*, pBtn, void )
         LaunchCustomCalcSettings();
 }
 
-IMPL_LINK( ScTpFormulaOptions, SepModifyHdl, Edit&, rEdit, void )
+IMPL_LINK_TYPED( ScTpFormulaOptions, SepModifyHdl, Edit&, rEdit, void )
 {
     OUString aStr = rEdit.GetText();
     if (aStr.getLength() > 1)
@@ -226,7 +226,7 @@ IMPL_LINK( ScTpFormulaOptions, SepModifyHdl, Edit&, rEdit, void )
     OnFocusSeparatorInput(&rEdit);
 }
 
-IMPL_LINK( ScTpFormulaOptions, SepEditOnFocusHdl, Control&, rControl, void )
+IMPL_LINK_TYPED( ScTpFormulaOptions, SepEditOnFocusHdl, Control&, rControl, void )
 {
     OnFocusSeparatorInput(static_cast<Edit*>(&rControl));
 }
@@ -292,7 +292,7 @@ bool ScTpFormulaOptions::FillItemSet(SfxItemSet* rCoreSet)
         aOpt.SetODFRecalcOptions(eODFRecalc);
         aOpt.SetWriteCalcConfig( maCurrentDocOptions.IsWriteCalcConfig());
 
-        rCoreSet->Put( ScTpFormulaItem( aOpt ) );
+        rCoreSet->Put( ScTpFormulaItem( SID_SCFORMULAOPTIONS, aOpt ) );
         rCoreSet->Put( ScTpCalcItem( SID_SCDOCOPTIONS, maCurrentDocOptions ) );
 
         bRet = true;
@@ -371,10 +371,10 @@ void ScTpFormulaOptions::Reset(const SfxItemSet* rCoreSet)
     maCurrentDocOptions = maSavedDocOptions;
 }
 
-DeactivateRC ScTpFormulaOptions::DeactivatePage(SfxItemSet* /*pSet*/)
+SfxTabPage::sfxpg ScTpFormulaOptions::DeactivatePage(SfxItemSet* /*pSet*/)
 {
     // What's this method for ?
-    return DeactivateRC::KeepPage;
+    return KEEP_PAGE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

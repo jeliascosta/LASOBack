@@ -166,7 +166,7 @@ public class APIDescGetter extends DescGetter
             }
             else
             {
-                //look the scenario like this? :
+                //look the scenarion like this? :
                 // sw.SwXBodyText,sw.SwXTextCursor
                 ArrayList<String> subs = getSubObjects(job);
                 DescEntry[] entries = new DescEntry[subs.size()];

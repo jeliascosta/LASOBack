@@ -52,7 +52,7 @@ OUString BinaryInputStream::readNulUnicodeArray()
     return aBuffer.makeStringAndClear();
 }
 
-OString BinaryInputStream::readCharArray( sal_Int32 nChars )
+OString BinaryInputStream::readCharArray( sal_Int32 nChars, bool bAllowNulChars )
 {
     if( nChars <= 0 )
         return OString();
@@ -63,15 +63,15 @@ OString BinaryInputStream::readCharArray( sal_Int32 nChars )
         return OString();
 
     aBuffer.resize( static_cast< size_t >( nCharsRead ) );
-    // NUL characters are replaced by question marks.
-    ::std::replace( aBuffer.begin(), aBuffer.end(), '\0', '?' );
+    if( !bAllowNulChars )
+        ::std::replace( aBuffer.begin(), aBuffer.end(), '\0', '?' );
 
-    return OString(reinterpret_cast<sal_Char*>(aBuffer.data()), nCharsRead);
+    return OString( reinterpret_cast< sal_Char* >( &aBuffer.front() ), nCharsRead );
 }
 
-OUString BinaryInputStream::readCharArrayUC( sal_Int32 nChars, rtl_TextEncoding eTextEnc )
+OUString BinaryInputStream::readCharArrayUC( sal_Int32 nChars, rtl_TextEncoding eTextEnc, bool bAllowNulChars )
 {
-    return OStringToOUString( readCharArray( nChars ), eTextEnc );
+    return OStringToOUString( readCharArray( nChars, bAllowNulChars ), eTextEnc );
 }
 
 OUString BinaryInputStream::readUnicodeArray( sal_Int32 nChars, bool bAllowNulChars )
@@ -95,12 +95,12 @@ OUString BinaryInputStream::readUnicodeArray( sal_Int32 nChars, bool bAllowNulCh
     return aStringBuffer.makeStringAndClear();
 }
 
-OUString BinaryInputStream::readCompressedUnicodeArray( sal_Int32 nChars, bool bCompressed )
+OUString BinaryInputStream::readCompressedUnicodeArray( sal_Int32 nChars, bool bCompressed, bool bAllowNulChars )
 {
     return bCompressed ?
          // ISO-8859-1 maps all byte values 0xHH to the same Unicode code point U+00HH
-        readCharArrayUC( nChars, RTL_TEXTENCODING_ISO_8859_1 ) :
-        readUnicodeArray( nChars );
+        readCharArrayUC( nChars, RTL_TEXTENCODING_ISO_8859_1, bAllowNulChars ) :
+        readUnicodeArray( nChars, bAllowNulChars );
 }
 
 void BinaryInputStream::copyToStream( BinaryOutputStream& rOutStrm )

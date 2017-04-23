@@ -64,15 +64,15 @@ class ODocumentDefinition
     css::uno::Reference< css::embed::XStateChangeListener >   m_xListener;
     css::uno::Reference< css::sdbc::XConnection >             m_xLastKnownConnection;
 
-    rtl::Reference<OInterceptor>                              m_pInterceptor;
+    OInterceptor*                                             m_pInterceptor;
     bool                                                      m_bForm; // <TRUE/> if it is a form
     bool                                                      m_bOpenInDesign;
     bool                                                      m_bInExecute;
     bool                                                      m_bRemoveListener;
-    rtl::Reference<OEmbeddedClientHelper>                     m_pClientHelper;
+    OEmbeddedClientHelper*                                    m_pClientHelper;
 
 protected:
-    virtual ~ODocumentDefinition() override;
+    virtual ~ODocumentDefinition();
 
 public:
 
@@ -89,14 +89,16 @@ public:
                 const css::uno::Reference< css::sdbc::XConnection >& i_rConnection
             );
 
-    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes() override;
-    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId() override;
+    virtual css::uno::Sequence<css::uno::Type> SAL_CALL getTypes()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 // css::uno::XInterface
     DECLARE_XINTERFACE( )
 
 // css::beans::XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // OPropertySetHelper
     virtual void SAL_CALL getFastPropertyValue(
@@ -105,33 +107,33 @@ public:
                             ) const override;
 
     // XComponentSupplier
-    virtual css::uno::Reference< css::util::XCloseable > SAL_CALL getComponent(  ) override;
+    virtual css::uno::Reference< css::util::XCloseable > SAL_CALL getComponent(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XSubDocument
-    virtual css::uno::Reference< css::lang::XComponent > SAL_CALL open(  ) override;
-    virtual css::uno::Reference< css::lang::XComponent > SAL_CALL openDesign(  ) override;
-    virtual void SAL_CALL store(  ) override;
-    virtual sal_Bool SAL_CALL close(  ) override;
+    virtual css::uno::Reference< css::lang::XComponent > SAL_CALL open(  ) throw (css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::lang::XComponent > SAL_CALL openDesign(  ) throw (css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL store(  ) throw (css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL close(  ) throw (css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XHierarchicalName
-    virtual OUString SAL_CALL getHierarchicalName(  ) override;
-    virtual OUString SAL_CALL composeHierarchicalName( const OUString& aRelativeName ) override;
+    virtual OUString SAL_CALL getHierarchicalName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL composeHierarchicalName( const OUString& aRelativeName ) throw (css::lang::IllegalArgumentException, css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
 
 // OPropertySetHelper
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
     // XCommandProcessor
-    virtual css::uno::Any SAL_CALL execute( const css::ucb::Command& aCommand, sal_Int32 CommandId, const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment ) override ;
+    virtual css::uno::Any SAL_CALL execute( const css::ucb::Command& aCommand, sal_Int32 CommandId, const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment ) throw (css::uno::Exception, css::ucb::CommandAbortedException, css::uno::RuntimeException, std::exception) override ;
 
     // XRename
-    virtual void SAL_CALL rename( const OUString& newName ) override;
+    virtual void SAL_CALL rename( const OUString& newName ) throw (css::sdbc::SQLException, css::container::ElementExistException, css::uno::RuntimeException, std::exception) override;
 
     // XCloseListener
-    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) override;
-    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) throw (css::util::CloseVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     /** returns the forms/reports container storage, depending on m_bForm. Our own storage
         inside this container storage is the one with the name as indicated by m_pImpl->m_aProps.sPersistentName.
@@ -143,7 +145,7 @@ public:
     void saveAs();
     void closeObject();
     bool isModified();
-    bool isNewReport() const { return !m_bForm && !m_pImpl->m_aProps.bAsTemplate; }
+    inline bool isNewReport() const { return !m_bForm && !m_pImpl->m_aProps.bAsTemplate; }
 
     static void fillReportData(
                     const css::uno::Reference< css::uno::XComponentContext > & _rxContext,
@@ -202,7 +204,7 @@ private:
     static void impl_initFormEditView( const css::uno::Reference< css::frame::XController >& _rxController );
 
     /** removes the given frame from the desktop's frame collection
-        @throws css::uno::RuntimeException
+        @raises css::uno::RuntimeException
     */
     static void impl_removeFrameFromDesktop_throw(
                     const css::uno::Reference< css::uno::XComponentContext >& _rContxt,
@@ -317,8 +319,7 @@ private:
     //- commands
 
     void onCommandGetDocumentProperties( css::uno::Any& _rProps );
-    /// @throws css::uno::Exception
-    void onCommandInsert( const OUString& _sURL, const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment );
+    void onCommandInsert( const OUString& _sURL, const css::uno::Reference< css::ucb::XCommandEnvironment >& Environment ) throw( css::uno::Exception );
     void onCommandPreview( css::uno::Any& _rImage );
     css::uno::Any
         onCommandOpenSomething(

@@ -34,12 +34,14 @@ class SotStorage;
 
 enum class BasicErrorReason
 {
+    OPENSTORAGE      = 0x0001,
     OPENLIBSTORAGE   = 0x0002,
     OPENMGRSTREAM    = 0x0004,
     OPENLIBSTREAM    = 0x0008,
     LIBNOTFOUND      = 0x0010,
     STORAGENOTFOUND  = 0x0020,
     BASICLOADERROR   = 0x0040,
+    NOSTORAGENAME    = 0x0080,
     STDLIB           = 0x0100
 };
 
@@ -48,10 +50,11 @@ class BASIC_DLLPUBLIC BasicError
 private:
     sal_uInt64 nErrorId;
     BasicErrorReason  nReason;
+    OUString  aErrStr;
 
 public:
             BasicError( const BasicError& rErr );
-            BasicError( sal_uInt64 nId, BasicErrorReason nR );
+            BasicError( sal_uInt64 nId, BasicErrorReason nR, const OUString& rErrStr );
 
     sal_uInt64 GetErrorId() const                  { return nErrorId; }
 };
@@ -84,8 +87,8 @@ struct LibraryContainerInfo
 
     LibraryContainerInfo
     (
-        css::uno::Reference< css::script::XPersistentLibraryContainer > const & xScriptCont,
-        css::uno::Reference< css::script::XPersistentLibraryContainer > const & xDialogCont,
+        css::uno::Reference< css::script::XPersistentLibraryContainer > xScriptCont,
+        css::uno::Reference< css::script::XPersistentLibraryContainer > xDialogCont,
         OldBasicPassword* pOldBasicPassword
     )
         : mxScriptCont( xScriptCont )
@@ -113,7 +116,7 @@ private:
     OUString            maStorageName;
     bool                mbDocMgr;
 
-    std::unique_ptr<BasicManagerImpl>   mpImpl;
+    BasicManagerImpl*   mpImpl;
 
     BASIC_DLLPRIVATE void Init();
 
@@ -128,7 +131,7 @@ protected:
     static bool     ImplEncryptStream( SvStream& rStream );
     BasicLibInfo*   FindLibInfo( StarBASIC* pBasic );
     static void     CheckModules( StarBASIC* pBasic, bool bReference );
-    virtual ~BasicManager() override;
+    virtual ~BasicManager();
 
 public:
                     BasicManager( SotStorage& rStorage, const OUString& rBaseURL, StarBASIC* pParentFromStdLib = nullptr, OUString* pLibPath = nullptr, bool bDocMgr = false );

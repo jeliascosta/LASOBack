@@ -43,7 +43,6 @@
 
 #include <com/sun/star/sdbcx/XColumnsSupplier.hpp>
 #include <com/sun/star/sdbc/ColumnValue.hpp>
-#include <com/sun/star/sdbc/SQLException.hpp>
 #include <com/sun/star/sdbc/XRow.hpp>
 
 #include <string.h>
@@ -77,7 +76,7 @@ namespace pq_sdbc_driver
 //     OUString tableName;
 //     OUString schemaTableName;
 //     OUString typeName;
-//     css::sdbc::DataType type;
+//     com::sun::star::sdbc::DataType type;
 //     sal_Int32 precision;
 //     sal_Int32 scale;
 //     sal_Bool isCurrency;
@@ -114,7 +113,7 @@ static void extractPrecisionAndScale( sal_Int32 atttypmod, sal_Int32 *precision,
 
 ResultSetMetaData::ResultSetMetaData(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const css::uno::Reference< css::sdbc::XResultSet >  & origin,
+    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XResultSet >  & origin,
     ResultSet * pResultSet,
     ConnectionSettings **ppSettings,
     PGresult *pResult,
@@ -145,9 +144,9 @@ ResultSetMetaData::ResultSetMetaData(
             & ( m_colDesc[col].precision ),
             & ( m_colDesc[col].scale ) );
         char *name = PQfname( pResult, col );
-        m_colDesc[col].name = OUString( name, strlen(name) , ConnectionSettings::encoding );
+        m_colDesc[col].name = OUString( name, strlen(name) , (*m_ppSettings)->encoding );
         m_colDesc[col].typeOid = PQftype( pResult, col );
-        m_colDesc[col].type = css::sdbc::DataType::LONGVARCHAR;
+        m_colDesc[col].type = com::sun::star::sdbc::DataType::LONGVARCHAR;
     }
 }
 
@@ -199,7 +198,7 @@ void ResultSetMetaData::checkTable()
         if( m_tableName.getLength() )
         {
 
-            Reference< css::container::XNameAccess > tables = (*m_ppSettings)->tables;
+            Reference< com::sun::star::container::XNameAccess > tables = (*m_ppSettings)->tables;
             if( ! tables.is() )
             {
 
@@ -234,7 +233,7 @@ sal_Int32 ResultSetMetaData::getIntColumnProperty( const OUString & name, int in
             set->getPropertyValue( name ) >>= ret;
         }
     }
-    catch( css::uno::Exception & )
+    catch( com::sun::star::uno::Exception & )
     {
     }
     return ret;
@@ -253,14 +252,14 @@ bool ResultSetMetaData::getBoolColumnProperty( const OUString & name, int index,
             set->getPropertyValue( name ) >>= ret;
         }
     }
-    catch( css::uno::Exception & )
+    catch( com::sun::star::uno::Exception & )
     {
     }
 
     return ret;
 }
 
-Reference< css::beans::XPropertySet > ResultSetMetaData::getColumnByIndex( int index )
+Reference< com::sun::star::beans::XPropertySet > ResultSetMetaData::getColumnByIndex( int index )
 {
     Reference< XPropertySet > ret;
     checkTable();
@@ -282,11 +281,13 @@ Reference< css::beans::XPropertySet > ResultSetMetaData::getColumnByIndex( int i
 
 // Methods
 sal_Int32 ResultSetMetaData::getColumnCount(  )
+    throw (SQLException, RuntimeException, std::exception)
 {
     return m_colCount;
 }
 
 sal_Bool ResultSetMetaData::isAutoIncrement( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
 
     bool ret = getBoolColumnProperty( getStatics().IS_AUTO_INCREMENT, column, false );
@@ -294,35 +295,39 @@ sal_Bool ResultSetMetaData::isAutoIncrement( sal_Int32 column )
 }
 
 sal_Bool ResultSetMetaData::isCaseSensitive( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return true; // ??? hmm, numeric types or
 }
 
-sal_Bool ResultSetMetaData::isSearchable( sal_Int32 column )
+sal_Bool ResultSetMetaData::isSearchable( sal_Int32 column ) throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return true; // mmm, what types are not searchable ?
 }
 
-sal_Bool ResultSetMetaData::isCurrency( sal_Int32 column )
+sal_Bool ResultSetMetaData::isCurrency( sal_Int32 column ) throw (SQLException, RuntimeException, std::exception)
 {
     return getBoolColumnProperty( getStatics().IS_CURRENCY, column, false );
 }
 
 sal_Int32 ResultSetMetaData::isNullable( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     return getIntColumnProperty(
-        getStatics().IS_NULLABLE, column, css::sdbc::ColumnValue::NULLABLE_UNKNOWN );
+        getStatics().IS_NULLABLE, column, com::sun::star::sdbc::ColumnValue::NULLABLE_UNKNOWN );
 }
 
 sal_Bool ResultSetMetaData::isSigned( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return true;
 }
 
 sal_Int32 ResultSetMetaData::getColumnDisplaySize( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkColumnIndex( column );
@@ -330,11 +335,12 @@ sal_Int32 ResultSetMetaData::getColumnDisplaySize( sal_Int32 column )
 }
 
 OUString ResultSetMetaData::getColumnLabel( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     return getColumnName( column);
 }
 
-OUString ResultSetMetaData::getColumnName( sal_Int32 column )
+OUString ResultSetMetaData::getColumnName( sal_Int32 column ) throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkColumnIndex( column );
@@ -342,13 +348,14 @@ OUString ResultSetMetaData::getColumnName( sal_Int32 column )
     return m_colDesc[column-1].name;
 }
 
-OUString ResultSetMetaData::getSchemaName( sal_Int32 column )
+OUString ResultSetMetaData::getSchemaName( sal_Int32 column ) throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return m_schemaName;
 }
 
 sal_Int32 ResultSetMetaData::getPrecision( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkColumnIndex( column );
@@ -356,6 +363,7 @@ sal_Int32 ResultSetMetaData::getPrecision( sal_Int32 column )
 }
 
 sal_Int32 ResultSetMetaData::getScale( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_refMutex->mutex );
     checkColumnIndex( column );
@@ -363,23 +371,26 @@ sal_Int32 ResultSetMetaData::getScale( sal_Int32 column )
 }
 
 OUString ResultSetMetaData::getTableName( sal_Int32 )
+    throw (SQLException, RuntimeException, std::exception)
 {
 // LEM TODO This is very fishy.. Should probably return the table to which that column belongs!
     return m_tableName;
 }
 
 OUString ResultSetMetaData::getCatalogName( sal_Int32 )
+    throw (SQLException, RuntimeException, std::exception)
 {
     // can do this through XConnection.getCatalog() !
     return OUString();
 }
 sal_Int32 ResultSetMetaData::getColumnType( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     int ret = getIntColumnProperty( getStatics().TYPE, column, -100 );
     if( -100 == ret )
     {
         checkForTypes();
-        if( css::sdbc::DataType::LONGVARCHAR == m_colDesc[column-1].type && m_pResultSet )
+        if( com::sun::star::sdbc::DataType::LONGVARCHAR == m_colDesc[column-1].type && m_pResultSet )
             m_colDesc[column-1].type = m_pResultSet->guessDataType( column );
         ret = m_colDesc[column-1].type;
     }
@@ -387,6 +398,7 @@ sal_Int32 ResultSetMetaData::getColumnType( sal_Int32 column )
 }
 
 OUString ResultSetMetaData::getColumnTypeName( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     OUString ret; // give defensive answers, when data is not available
     try
@@ -405,7 +417,7 @@ OUString ResultSetMetaData::getColumnTypeName( sal_Int32 column )
             ret = m_colDesc[column-1].typeName;
         }
     }
-    catch( css::uno::Exception & )
+    catch( com::sun::star::uno::Exception & )
     {
     }
     return ret;
@@ -413,34 +425,43 @@ OUString ResultSetMetaData::getColumnTypeName( sal_Int32 column )
 
 
 sal_Bool ResultSetMetaData::isReadOnly( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return false;
 }
 
 sal_Bool ResultSetMetaData::isWritable( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     return ! isReadOnly( column ); // what's the sense if this method ?
 }
 
 sal_Bool ResultSetMetaData::isDefinitelyWritable( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     return isWritable(column); // uhh, now it becomes really esoteric ....
 }
 OUString ResultSetMetaData::getColumnServiceName( sal_Int32 column )
+    throw (SQLException, RuntimeException, std::exception)
 {
     (void) column;
     return OUString();
 }
 
 void ResultSetMetaData::checkColumnIndex(sal_Int32 columnIndex)
+    throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException)
 {
     if( columnIndex < 1 || columnIndex > m_colCount )
     {
+        OUStringBuffer buf(128);
+
+        buf.append( "pq_resultsetmetadata: index out of range (expected 1 to " );
+        buf.append( m_colCount );
+        buf.append( ", got " );
+        buf.append( columnIndex );
         throw SQLException(
-            "pq_resultsetmetadata: index out of range (expected 1 to "
-            + OUString::number( m_colCount ) + ", got " + OUString::number( columnIndex ),
-            *this, OUString(), 1, Any() );
+            buf.makeStringAndClear(), *this, OUString(), 1, Any() );
     }
 }
 

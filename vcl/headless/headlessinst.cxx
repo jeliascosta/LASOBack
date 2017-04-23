@@ -14,8 +14,9 @@ class HeadlessSalInstance : public SvpSalInstance
 {
 public:
     explicit HeadlessSalInstance( SalYieldMutex *pMutex );
+    virtual ~HeadlessSalInstance();
 
-    virtual SalSystem* CreateSalSystem() override;
+    virtual SalSystem* CreateSalSystem();
 };
 
 HeadlessSalInstance::HeadlessSalInstance( SalYieldMutex *pMutex ) :
@@ -23,13 +24,18 @@ HeadlessSalInstance::HeadlessSalInstance( SalYieldMutex *pMutex ) :
 {
 }
 
+HeadlessSalInstance::~HeadlessSalInstance()
+{
+}
+
 class HeadlessSalSystem : public SvpSalSystem {
 public:
     HeadlessSalSystem() : SvpSalSystem() {}
+    virtual ~HeadlessSalSystem() {}
     virtual int ShowNativeDialog( const OUString& rTitle,
                                   const OUString& rMessage,
                                   const std::list< OUString >& rButtons,
-                                  int nDefButton ) override
+                                  int nDefButton )
     {
         (void)rButtons; (void)nDefButton;
         ::fprintf(stdout, "LibreOffice - dialog '%s': '%s'",
@@ -48,8 +54,8 @@ class HeadlessSalData : public SalGenericData
 {
 public:
     explicit HeadlessSalData( SalInstance *pInstance ) : SalGenericData( SAL_DATA_HEADLESS, pInstance ) {}
-    virtual void ErrorTrapPush() override {}
-    virtual bool ErrorTrapPop( bool ) override { return false; }
+    virtual void ErrorTrapPush() {}
+    virtual bool ErrorTrapPop( bool ) { return false; }
 };
 
 // All the interesting stuff is slaved from the AndroidSalInstance
@@ -79,9 +85,9 @@ const OUString& SalGetDesktopEnvironment()
 }
 
 SalData::SalData() :
-    m_pInstance( nullptr ),
-    m_pPlugin( nullptr ),
-    m_pPIManager( nullptr )
+    m_pInstance( 0 ),
+    m_pPlugin( 0 ),
+    m_pPIManager(0 )
 {
 }
 

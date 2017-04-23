@@ -23,7 +23,6 @@
 #include <com/sun/star/embed/OLEEmbeddedObjectFactory.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/datatransfer/DataFlavor.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/ucb/CommandAbortedException.hpp>
 
 #include <osl/thread.h>
@@ -49,7 +48,7 @@ class InitializedOleGuard
 public:
     InitializedOleGuard()
     {
-        if ( !SUCCEEDED( OleInitialize( nullptr ) ) )
+        if ( !SUCCEEDED( OleInitialize( NULL ) ) )
             throw css::uno::RuntimeException();
     }
 
@@ -131,6 +130,10 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceByDia
             const uno::Reference< embed::XStorage >& xStorage,
             const OUString& sEntName,
             const uno::Sequence< beans::PropertyValue >& aInObjArgs )
+    throw ( lang::IllegalArgumentException,
+            io::IOException,
+            uno::Exception,
+            uno::RuntimeException )
 {
     embed::InsertedObjectInfo aObjectInfo;
     uno::Sequence< beans::PropertyValue > aObjArgs( aInObjArgs );
@@ -166,11 +169,11 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceByDia
 
 
     ::osl::Module aOleDlgLib;
-    if( !aOleDlgLib.load( "oledlg" ))
+    if( !aOleDlgLib.load( OUString( "oledlg" ) ))
         throw uno::RuntimeException();
 
-    OleUIInsertObjectA_Type * pInsertFct = reinterpret_cast<OleUIInsertObjectA_Type *>(
-                                aOleDlgLib.getSymbol( "OleUIInsertObjectA" ));
+    OleUIInsertObjectA_Type * pInsertFct = (OleUIInsertObjectA_Type *)
+                                aOleDlgLib.getSymbol( OUString( "OleUIInsertObjectA" ));
     if( !pInsertFct )
         throw uno::RuntimeException();
 
@@ -228,26 +231,26 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceByDia
                                     uno::UNO_QUERY );
         }
 
-        if ( ( io.dwFlags & IOF_CHECKDISPLAYASICON) && io.hMetaPict != nullptr )
+        if ( ( io.dwFlags & IOF_CHECKDISPLAYASICON) && io.hMetaPict != NULL )
         {
-            METAFILEPICT* pMF = static_cast<METAFILEPICT*>(GlobalLock( io.hMetaPict ));
+            METAFILEPICT* pMF = ( METAFILEPICT* )GlobalLock( io.hMetaPict );
             if ( pMF )
             {
-                sal_uInt32 nBufSize = GetMetaFileBitsEx( pMF->hMF, 0, nullptr );
+                sal_uInt32 nBufSize = GetMetaFileBitsEx( pMF->hMF, 0, NULL );
                 uno::Sequence< sal_Int8 > aMetafile( nBufSize + 22 );
-                sal_Int8* pBuf = aMetafile.getArray();
-                *reinterpret_cast<long*>( pBuf ) = 0x9ac6cdd7L;
-                *reinterpret_cast<short*>( pBuf+6 ) = ( SHORT ) 0;
-                *reinterpret_cast<short*>( pBuf+8 ) = ( SHORT ) 0;
-                *reinterpret_cast<short*>( pBuf+10 ) = ( SHORT ) pMF->xExt;
-                *reinterpret_cast<short*>( pBuf+12 ) = ( SHORT ) pMF->yExt;
-                *reinterpret_cast<short*>( pBuf+14 ) = ( USHORT ) 2540;
+                sal_uInt8* pBuf = (sal_uInt8*)( aMetafile.getArray() );
+                *( (long* )pBuf ) = 0x9ac6cdd7L;
+                *( (short* )( pBuf+6 )) = ( SHORT ) 0;
+                *( (short* )( pBuf+8 )) = ( SHORT ) 0;
+                *( (short* )( pBuf+10 )) = ( SHORT ) pMF->xExt;
+                *( (short* )( pBuf+12 )) = ( SHORT ) pMF->yExt;
+                *( (short* )( pBuf+14 )) = ( USHORT ) 2540;
 
                 if ( nBufSize && nBufSize == GetMetaFileBitsEx( pMF->hMF, nBufSize, pBuf+22 ) )
                 {
                     datatransfer::DataFlavor aFlavor(
-                        "application/x-openoffice-wmf;windows_formatname=\"Image WMF\"",
-                        "Image WMF",
+                        OUString( "application/x-openoffice-wmf;windows_formatname=\"Image WMF\"" ),
+                        OUString( "Image WMF" ),
                         cppu::UnoType<uno::Sequence< sal_Int8 >>::get() );
 
                     aObjectInfo.Options.realloc( 2 );
@@ -279,6 +282,10 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceInitF
                 const uno::Reference< embed::XStorage >& xStorage,
                 const OUString& sEntryName,
                 const uno::Sequence< beans::PropertyValue >& aObjectArgs )
+        throw ( lang::IllegalArgumentException,
+                io::IOException,
+                uno::Exception,
+                uno::RuntimeException )
 {
     embed::InsertedObjectInfo aObjectInfo;
 
@@ -297,7 +304,11 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceInitF
                     static_cast< ::cppu::OWeakObject* > ( new OleEmbeddedObject( m_xFactory ) ),
                     uno::UNO_QUERY );
 
-    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY_THROW );
+    uno::Reference< embed::XEmbedPersist > xPersist( xResult, uno::UNO_QUERY );
+
+    if ( !xPersist.is() )
+        throw uno::RuntimeException(); // TODO: the interface must be supported by own document objects
+
     xPersist->setPersistentEntry( xStorage,
                                     sEntryName,
                                     embed::EntryInitModes::DEFAULT_INIT,
@@ -320,18 +331,21 @@ embed::InsertedObjectInfo SAL_CALL MSOLEDialogObjectCreator::createInstanceInitF
 
 
 OUString SAL_CALL MSOLEDialogObjectCreator::getImplementationName()
+    throw ( uno::RuntimeException )
 {
     return impl_staticGetImplementationName();
 }
 
 
 sal_Bool SAL_CALL MSOLEDialogObjectCreator::supportsService( const OUString& ServiceName )
+    throw ( uno::RuntimeException )
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL MSOLEDialogObjectCreator::getSupportedServiceNames()
+    throw ( uno::RuntimeException )
 {
     return impl_staticGetSupportedServiceNames();
 }

@@ -31,7 +31,6 @@
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <vcl/svapp.hxx>
 #include <rtl/uuid.h>
@@ -81,18 +80,19 @@ AccessibleBase::AccessibleBase(
         m_bMayHaveChildren( bMayHaveChildren ),
         m_bChildrenInitialized( false ),
         m_nEventNotifierId(0),
-        m_xStateSetHelper( new ::utl::AccessibleStateSetHelper() ),
+        m_pStateSetHelper( new ::utl::AccessibleStateSetHelper() ),
+        m_aStateSet( m_pStateSetHelper ),
         m_aAccInfo( rAccInfo ),
         m_bAlwaysTransparent( bAlwaysTransparent ),
         m_bStateSetInitialized( false )
 {
     // initialize some states
-    OSL_ASSERT( m_xStateSetHelper.is() );
-    m_xStateSetHelper->AddState( AccessibleStateType::ENABLED );
-    m_xStateSetHelper->AddState( AccessibleStateType::SHOWING );
-    m_xStateSetHelper->AddState( AccessibleStateType::VISIBLE );
-    m_xStateSetHelper->AddState( AccessibleStateType::SELECTABLE );
-    m_xStateSetHelper->AddState( AccessibleStateType::FOCUSABLE );
+    OSL_ASSERT( m_pStateSetHelper );
+    m_pStateSetHelper->AddState( AccessibleStateType::ENABLED );
+    m_pStateSetHelper->AddState( AccessibleStateType::SHOWING );
+    m_pStateSetHelper->AddState( AccessibleStateType::VISIBLE );
+    m_pStateSetHelper->AddState( AccessibleStateType::SELECTABLE );
+    m_pStateSetHelper->AddState( AccessibleStateType::FOCUSABLE );
 }
 
 AccessibleBase::~AccessibleBase()
@@ -101,6 +101,7 @@ AccessibleBase::~AccessibleBase()
 }
 
 bool AccessibleBase::CheckDisposeState( bool bThrowException /* default: true */ ) const
+    throw (lang::DisposedException)
 {
     if( bThrowException &&
         m_bIsDisposed )
@@ -122,7 +123,14 @@ bool AccessibleBase::NotifyEvent( EventType eEventType, const AccessibleUniqueId
         aSelected <<= AccessibleStateType::SELECTED;
         switch( eEventType )
         {
-            case EventType::GOT_SELECTION:
+            case OBJECT_CHANGE:
+                {
+                    BroadcastAccEvent( AccessibleEventId::VISIBLE_DATA_CHANGED, aEmpty, aEmpty );
+                    SAL_INFO("chart2.accessibility", "Visible data event sent by: " << getAccessibleName());
+                }
+                break;
+
+            case GOT_SELECTION:
                 {
                     AddState( AccessibleStateType::SELECTED );
                     BroadcastAccEvent( AccessibleEventId::STATE_CHANGED, aSelected, aEmpty );
@@ -135,7 +143,7 @@ bool AccessibleBase::NotifyEvent( EventType eEventType, const AccessibleUniqueId
                 }
                 break;
 
-            case EventType::LOST_SELECTION:
+            case LOST_SELECTION:
                 {
                     RemoveState( AccessibleStateType::SELECTED );
                     BroadcastAccEvent( AccessibleEventId::STATE_CHANGED, aEmpty, aSelected );
@@ -144,6 +152,12 @@ bool AccessibleBase::NotifyEvent( EventType eEventType, const AccessibleUniqueId
                     aSelected <<= AccessibleStateType::FOCUSED;
                     BroadcastAccEvent( AccessibleEventId::STATE_CHANGED, aEmpty, aSelected, true );
                     SAL_INFO("chart2.accessibility", "Selection lost by: " << getAccessibleName());
+                }
+                break;
+
+            case PROPERTY_CHANGE:
+                {
+                    //not implemented --> rebuild all
                 }
                 break;
         }
@@ -175,17 +189,19 @@ bool AccessibleBase::NotifyEvent( EventType eEventType, const AccessibleUniqueId
 }
 
 void AccessibleBase::AddState( sal_Int16 aState )
+    throw (RuntimeException)
 {
     CheckDisposeState();
-    OSL_ASSERT( m_xStateSetHelper.is() );
-    m_xStateSetHelper->AddState( aState );
+    OSL_ASSERT( m_pStateSetHelper );
+    m_pStateSetHelper->AddState( aState );
 }
 
 void AccessibleBase::RemoveState( sal_Int16 aState )
+    throw (RuntimeException)
 {
     CheckDisposeState();
-    OSL_ASSERT( m_xStateSetHelper.is() );
-    m_xStateSetHelper->RemoveState( aState );
+    OSL_ASSERT( m_pStateSetHelper );
+    m_pStateSetHelper->RemoveState( aState );
 }
 
 bool AccessibleBase::UpdateChildren()
@@ -216,23 +232,23 @@ bool AccessibleBase::ImplUpdateChildren()
     {
         ObjectHierarchy::tChildContainer aModelChildren(
             m_aAccInfo.m_spObjectHierarchy->getChildren( GetId() ));
-        std::vector< ChildOIDMap::key_type > aAccChildren;
+        ::std::vector< ChildOIDMap::key_type > aAccChildren;
         aAccChildren.reserve( aModelChildren.size());
-        std::transform( m_aChildOIDMap.begin(), m_aChildOIDMap.end(),
-                          std::back_inserter( aAccChildren ),
+        ::std::transform( m_aChildOIDMap.begin(), m_aChildOIDMap.end(),
+                          ::std::back_inserter( aAccChildren ),
                           ::o3tl::select1st< ChildOIDMap::value_type >() );
 
-        std::sort( aModelChildren.begin(), aModelChildren.end());
+        ::std::sort( aModelChildren.begin(), aModelChildren.end());
 
-        std::vector< ObjectIdentifier > aChildrenToRemove, aChildrenToAdd;
-        std::set_difference( aModelChildren.begin(), aModelChildren.end(),
+        ::std::vector< ObjectHierarchy::tOID > aChildrenToRemove, aChildrenToAdd;
+        ::std::set_difference( aModelChildren.begin(), aModelChildren.end(),
                                aAccChildren.begin(), aAccChildren.end(),
-                               std::back_inserter( aChildrenToAdd ));
-        std::set_difference( aAccChildren.begin(), aAccChildren.end(),
+                               ::std::back_inserter( aChildrenToAdd ));
+        ::std::set_difference( aAccChildren.begin(), aAccChildren.end(),
                                aModelChildren.begin(), aModelChildren.end(),
-                               std::back_inserter( aChildrenToRemove ));
+                               ::std::back_inserter( aChildrenToRemove ));
 
-        std::vector< ObjectIdentifier >::const_iterator aIt( aChildrenToRemove.begin());
+        ::std::vector< ObjectHierarchy::tOID >::const_iterator aIt( aChildrenToRemove.begin());
         for( ; aIt != aChildrenToRemove.end(); ++aIt )
         {
             RemoveChildByOId( *aIt );
@@ -300,7 +316,7 @@ void AccessibleBase::RemoveChildByOId( const ObjectIdentifier& rOId )
 
         // search child in vector
         ChildListVectorType::iterator aVecIter =
-            std::find( m_aChildList.begin(), m_aChildList.end(), xChild );
+            ::std::find( m_aChildList.begin(), m_aChildList.end(), xChild );
 
         OSL_ENSURE( aVecIter != m_aChildList.end(),
                     "Inconsistent ChildMap" );
@@ -437,11 +453,16 @@ void SAL_CALL AccessibleBase::disposing()
     // reset pointers
     m_aAccInfo.m_pParent = nullptr;
 
+    // invalidate implementation for helper, but keep UNO reference to still
+    // allow a tool to query the DEFUNC state.
+    // Note: The object will be deleted when the last reference is released
+    m_pStateSetHelper = nullptr;
+
     // attach new empty state set helper to member reference
     ::utl::AccessibleStateSetHelper * pHelper = new ::utl::AccessibleStateSetHelper();
     pHelper->AddState( AccessibleStateType::DEFUNC );
     // release old helper and attach new one
-    m_xStateSetHelper = pHelper;
+    m_aStateSet.set( pHelper );
 
     m_bIsDisposed = true;
 
@@ -458,12 +479,14 @@ void SAL_CALL AccessibleBase::disposing()
 
 // ________ XAccessible ________
 Reference< XAccessibleContext > SAL_CALL AccessibleBase::getAccessibleContext()
+    throw (RuntimeException, std::exception)
 {
     return this;
 }
 
 // ________ AccessibleBase::XAccessibleContext ________
 sal_Int32 SAL_CALL AccessibleBase::getAccessibleChildCount()
+    throw (RuntimeException, std::exception)
 {
     ClearableMutexGuard aGuard( GetMutex() );
     if( ! m_bMayHaveChildren ||
@@ -483,11 +506,13 @@ sal_Int32 SAL_CALL AccessibleBase::getAccessibleChildCount()
 }
 
 sal_Int32 AccessibleBase::ImplGetAccessibleChildCount() const
+    throw (RuntimeException)
 {
     return m_aChildList.size();
 }
 
 Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleChild( sal_Int32 i )
+    throw (lang::IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     CheckDisposeState();
     Reference< XAccessible > xResult;
@@ -507,6 +532,7 @@ Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleChild( sal_Int32 
 }
 
 Reference< XAccessible > AccessibleBase::ImplGetAccessibleChildById( sal_Int32 i ) const
+    throw (lang::IndexOutOfBoundsException, RuntimeException)
 {
     Reference< XAccessible > xResult;
 
@@ -530,6 +556,7 @@ Reference< XAccessible > AccessibleBase::ImplGetAccessibleChildById( sal_Int32 i
 }
 
 Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleParent()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
     Reference< XAccessible > aResult;
@@ -540,6 +567,7 @@ Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleParent()
 }
 
 sal_Int32 SAL_CALL AccessibleBase::getAccessibleIndexInParent()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
 
@@ -549,17 +577,20 @@ sal_Int32 SAL_CALL AccessibleBase::getAccessibleIndexInParent()
 }
 
 sal_Int16 SAL_CALL AccessibleBase::getAccessibleRole()
+    throw (RuntimeException, std::exception)
 {
     return AccessibleRole::SHAPE;
 }
 
 Reference< XAccessibleRelationSet > SAL_CALL AccessibleBase::getAccessibleRelationSet()
+    throw (RuntimeException, std::exception)
 {
     Reference< XAccessibleRelationSet > aResult;
     return aResult;
 }
 
 Reference< XAccessibleStateSet > SAL_CALL AccessibleBase::getAccessibleStateSet()
+    throw (RuntimeException, std::exception)
 {
     if( ! m_bStateSetInitialized )
     {
@@ -576,10 +607,11 @@ Reference< XAccessibleStateSet > SAL_CALL AccessibleBase::getAccessibleStateSet(
         m_bStateSetInitialized = true;
     }
 
-    return m_xStateSetHelper.get();
+    return m_aStateSet;
 }
 
 lang::Locale SAL_CALL AccessibleBase::getLocale()
+    throw (IllegalAccessibleComponentStateException, RuntimeException, std::exception)
 {
     CheckDisposeState();
 
@@ -588,6 +620,7 @@ lang::Locale SAL_CALL AccessibleBase::getLocale()
 
 // ________ AccessibleBase::XAccessibleComponent ________
 sal_Bool SAL_CALL AccessibleBase::containsPoint( const awt::Point& aPoint )
+    throw (RuntimeException, std::exception)
 {
     awt::Rectangle aRect( getBounds() );
 
@@ -602,6 +635,7 @@ sal_Bool SAL_CALL AccessibleBase::containsPoint( const awt::Point& aPoint )
 }
 
 Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleAtPoint( const awt::Point& aPoint )
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
     Reference< XAccessible > aResult;
@@ -641,16 +675,17 @@ Reference< XAccessible > SAL_CALL AccessibleBase::getAccessibleAtPoint( const aw
 }
 
 awt::Rectangle SAL_CALL AccessibleBase::getBounds()
+    throw (RuntimeException, std::exception)
 {
     ExplicitValueProvider *pExplicitValueProvider(
         ExplicitValueProvider::getExplicitValueProvider( m_aAccInfo.m_xView ));
     if( pExplicitValueProvider )
     {
-        VclPtr<vcl::Window> pWindow( VCLUnoHelper::GetWindow( m_aAccInfo.m_xWindow ));
+        vcl::Window* pWindow( VCLUnoHelper::GetWindow( m_aAccInfo.m_xWindow ));
         awt::Rectangle aLogicRect( pExplicitValueProvider->getRectangleOfObject( m_aAccInfo.m_aOID.getObjectCID() ));
         if( pWindow )
         {
-            tools::Rectangle aRect( aLogicRect.X, aLogicRect.Y,
+            Rectangle aRect( aLogicRect.X, aLogicRect.Y,
                              aLogicRect.X + aLogicRect.Width,
                              aLogicRect.Y + aLogicRect.Height );
             SolarMutexGuard aSolarGuard;
@@ -676,6 +711,7 @@ awt::Rectangle SAL_CALL AccessibleBase::getBounds()
 }
 
 awt::Point SAL_CALL AccessibleBase::getLocation()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
     awt::Rectangle aBBox( getBounds() );
@@ -683,6 +719,7 @@ awt::Point SAL_CALL AccessibleBase::getLocation()
 }
 
 awt::Point SAL_CALL AccessibleBase::getLocationOnScreen()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
 
@@ -703,6 +740,7 @@ awt::Point SAL_CALL AccessibleBase::getLocationOnScreen()
 }
 
 awt::Size SAL_CALL AccessibleBase::getSize()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
     awt::Rectangle aBBox( getBounds() );
@@ -710,6 +748,7 @@ awt::Size SAL_CALL AccessibleBase::getSize()
 }
 
 void SAL_CALL AccessibleBase::grabFocus()
+    throw (RuntimeException, std::exception)
 {
     CheckDisposeState();
 
@@ -721,11 +760,13 @@ void SAL_CALL AccessibleBase::grabFocus()
 }
 
 sal_Int32 SAL_CALL AccessibleBase::getForeground()
+    throw (RuntimeException, std::exception)
 {
     return getColor( ACC_BASE_FOREGROUND );
 }
 
 sal_Int32 SAL_CALL AccessibleBase::getBackground()
+    throw (RuntimeException, std::exception)
 {
     return getColor( ACC_BASE_BACKGROUND );
 }
@@ -824,30 +865,37 @@ sal_Int32 AccessibleBase::getColor( eColorType eColType )
 
 // ________ AccessibleBase::XServiceInfo ________
 OUString SAL_CALL AccessibleBase::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString( "AccessibleBase" );
 }
 
 sal_Bool SAL_CALL AccessibleBase::supportsService( const OUString& ServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService( this, ServiceName );
 }
 
 uno::Sequence< OUString > SAL_CALL AccessibleBase::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
-    return {
-        "com.sun.star.accessibility.Accessible",
-        "com.sun.star.accessibility.AccessibleContext"
-    };
+    uno::Sequence< OUString > aSeq( 2 );
+    OUString* pStr = aSeq.getArray();
+    pStr[ 0 ] = "com.sun.star.accessibility.Accessible";
+    pStr[ 1 ] = "com.sun.star.accessibility.AccessibleContext";
+
+    return aSeq;
 }
 
 // ________ AccessibleBase::XEventListener ________
 void SAL_CALL AccessibleBase::disposing( const lang::EventObject& /*Source*/ )
+    throw (RuntimeException, std::exception)
 {
 }
 
 // ________ XAccessibleEventBroadcasters ________
 void SAL_CALL AccessibleBase::addAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
 
@@ -861,10 +909,11 @@ void SAL_CALL AccessibleBase::addAccessibleEventListener( const Reference< XAcce
 }
 
 void SAL_CALL AccessibleBase::removeAccessibleEventListener( const Reference< XAccessibleEventListener >& xListener )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard aGuard( GetMutex() );
 
-    if ( xListener.is() && m_nEventNotifierId)
+    if ( xListener.is() )
     {
         sal_Int32 nListenerCount = ::comphelper::AccessibleEventNotifier::removeEventListener( m_nEventNotifierId, xListener );
         if ( !nListenerCount )

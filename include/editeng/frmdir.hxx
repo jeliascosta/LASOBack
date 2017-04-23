@@ -20,35 +20,28 @@
 #ifndef INCLUDED_EDITENG_FRMDIR_HXX
 #define INCLUDED_EDITENG_FRMDIR_HXX
 
-#include <com/sun/star/text/WritingMode2.hpp>
 
-/**
- * Defines possible text directions in frames.
- * A scoped enum over the constants in css::text:WritingMode2.
- */
-enum class SvxFrameDirection
+/** Defines possible text directions in frames. */
+enum SvxFrameDirection
 {
-    /** used as an error return value in SW */
-    Unknown = -1,
-
     /** Horizontal, from left to right, from top to bottom
         (typical for western languages). */
-    Horizontal_LR_TB = css::text::WritingMode2::LR_TB,
+    FRMDIR_HORI_LEFT_TOP,
 
     /** Horizontal, from right to left, from top to bottom
         (typical for arabic/hebrew languages). */
-    Horizontal_RL_TB = css::text::WritingMode2::RL_TB,
+    FRMDIR_HORI_RIGHT_TOP,
 
     /** Vertical, from top to bottom, from right to left
         (typical for asian languages). */
-    Vertical_RL_TB = css::text::WritingMode2::TB_RL,
+    FRMDIR_VERT_TOP_RIGHT,
 
     /** Vertical, from top to bottom, from left to right
         (typical for mongol language). */
-    Vertical_LR_TB = css::text::WritingMode2::TB_LR,
+    FRMDIR_VERT_TOP_LEFT,
 
     /** Use the value from the environment, can only be used in frames. */
-    Environment = css::text::WritingMode2::CONTEXT
+    FRMDIR_ENVIRONMENT
 };
 
 

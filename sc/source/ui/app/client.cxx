@@ -61,7 +61,7 @@ SdrOle2Obj* ScClient::GetDrawObj()
     for (sal_uInt16 nPNr=0; nPNr<nPages && !pOle2Obj; nPNr++)
     {
         SdrPage* pPage = pModel->GetPage(nPNr);
-        SdrObjListIter aIter( *pPage, SdrIterMode::DeepNoGroups );
+        SdrObjListIter aIter( *pPage, IM_DEEPNOGROUPS );
         SdrObject* pObject = aIter.Next();
         while (pObject && !pOle2Obj)
         {
@@ -77,7 +77,7 @@ SdrOle2Obj* ScClient::GetDrawObj()
     return pOle2Obj;
 }
 
-void ScClient::RequestNewObjectArea( tools::Rectangle& aLogicRect )
+void ScClient::RequestNewObjectArea( Rectangle& aLogicRect )
 {
     SfxViewShell* pSfxViewSh = GetViewShell();
     ScTabViewShell* pViewSh = dynamic_cast<ScTabViewShell*>( pSfxViewSh  );
@@ -87,7 +87,7 @@ void ScClient::RequestNewObjectArea( tools::Rectangle& aLogicRect )
         return;
     }
 
-    tools::Rectangle aOldRect = GetObjArea();
+    Rectangle aOldRect = GetObjArea();
     SdrOle2Obj*  pDrawObj = GetDrawObj();
     if ( pDrawObj )
     {
@@ -109,7 +109,7 @@ void ScClient::RequestNewObjectArea( tools::Rectangle& aLogicRect )
             aPos.X() = aSize.Width() + 1;       // negative
             aSize.Width() = -aSize.Width();     // positive
         }
-        tools::Rectangle aPageRect( aPos, aSize );
+        Rectangle aPageRect( aPos, aSize );
 
         if (aLogicRect.Right() > aPageRect.Right())
         {
@@ -153,7 +153,7 @@ void ScClient::ObjectAreaChanged()
     SdrOle2Obj* pDrawObj = GetDrawObj();
     if (pDrawObj)
     {
-        tools::Rectangle aNewRectangle(GetScaledObjArea());
+        Rectangle aNewRectangle(GetScaledObjArea());
 
         // #i118524# if sheared/rotated, center to non-rotated LogicRect
         pDrawObj->setSuppressSetVisAreaSize(true);
@@ -162,7 +162,7 @@ void ScClient::ObjectAreaChanged()
         {
             pDrawObj->SetLogicRect( aNewRectangle );
 
-            const tools::Rectangle& rBoundRect = pDrawObj->GetCurrentBoundRect();
+            const Rectangle& rBoundRect = pDrawObj->GetCurrentBoundRect();
             const Point aDelta(aNewRectangle.Center() - rBoundRect.Center());
 
             aNewRectangle.Move(aDelta.X(), aDelta.Y());
@@ -206,13 +206,13 @@ void ScClient::ViewChanged()
     }
 
     MapUnit aMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( GetAspect() ) );
-    Size aVisSize = OutputDevice::LogicToLogic( Size( aSz.Width, aSz.Height ), aMapUnit, MapUnit::Map100thMM );
+    Size aVisSize = OutputDevice::LogicToLogic( Size( aSz.Width, aSz.Height ), aMapUnit, MAP_100TH_MM );
 
     // Take over position and size into document
     SdrOle2Obj* pDrawObj = GetDrawObj();
     if (pDrawObj)
     {
-        tools::Rectangle aLogicRect = pDrawObj->GetLogicRect();
+        Rectangle aLogicRect = pDrawObj->GetLogicRect();
         Fraction aFractX = GetScaleWidth();
         Fraction aFractY = GetScaleHeight();
         aFractX *= aVisSize.Width();

@@ -25,14 +25,18 @@
 #include "olinetab.hxx"
 #include "document.hxx"
 #include "dbfunc.hxx"
-#include "scres.hrc"
-#include "scresid.hxx"
+#include "sc.hrc"
 
 const long SC_OL_BITMAPSIZE                 = 12;
 const long SC_OL_POSOFFSET                  = 2;
 
 const size_t SC_OL_NOLEVEL                  = static_cast< size_t >( -1 );
 const size_t SC_OL_HEADERENTRY              = static_cast< size_t >( -1 );
+
+const sal_uInt16 SC_OL_IMAGE_PLUS               = 9;
+const sal_uInt16 SC_OL_IMAGE_MINUS              = SC_OL_IMAGE_PLUS + 1;
+const sal_uInt16 SC_OL_IMAGE_NOTPRESSED         = SC_OL_IMAGE_MINUS + 1;
+const sal_uInt16 SC_OL_IMAGE_PRESSED            = SC_OL_IMAGE_NOTPRESSED + 1;
 
 ScOutlineWindow::ScOutlineWindow( vcl::Window* pParent, ScOutlineMode eMode, ScViewData* pViewData, ScSplitPos eWhich ) :
     Window( pParent ),
@@ -41,6 +45,7 @@ ScOutlineWindow::ScOutlineWindow( vcl::Window* pParent, ScOutlineMode eMode, ScV
     mbHoriz( eMode == SC_OUTLINE_HOR ),
     mbMirrorEntries( false ),           // updated in SetHeaderSize
     mbMirrorLevels( false ),            // updated in SetHeaderSize
+    mpSymbols( nullptr ),
     maLineColor( COL_BLACK ),
     mnHeaderSize( 0 ),
     mnHeaderPos( 0 ),
@@ -136,7 +141,7 @@ void ScOutlineWindow::ScrollPixel( long nDiff )
 
 void ScOutlineWindow::ScrollRel( long nEntryDiff, long nEntryStart, long nEntryEnd )
 {
-    tools::Rectangle aRect( GetRectangle( 0, nEntryStart, GetOutputSizeLevel() - 1, nEntryEnd ) );
+    Rectangle aRect( GetRectangle( 0, nEntryStart, GetOutputSizeLevel() - 1, nEntryEnd ) );
     if ( mbHoriz )
         Scroll( nEntryDiff, 0, aRect );
     else
@@ -150,6 +155,7 @@ void ScOutlineWindow::InitSettings()
     const StyleSettings& rStyleSettings = GetSettings().GetStyleSettings();
     SetBackground( rStyleSettings.GetFaceColor() );
     maLineColor = rStyleSettings.GetButtonTextColor();
+    mpSymbols = ScGlobal::GetOutlineSymbols();
     Invalidate();
 }
 
@@ -210,10 +216,10 @@ Point ScOutlineWindow::GetPoint( long nLevelPos, long nEntryPos ) const
     return mbHoriz ? Point( nEntryPos, nLevelPos ) : Point( nLevelPos, nEntryPos );
 }
 
-tools::Rectangle ScOutlineWindow::GetRectangle(
+Rectangle ScOutlineWindow::GetRectangle(
         long nLevelStart, long nEntryStart, long nLevelEnd, long nEntryEnd ) const
 {
-    return tools::Rectangle( GetPoint( nLevelStart, nEntryStart ), GetPoint( nLevelEnd, nEntryEnd ) );
+    return Rectangle( GetPoint( nLevelStart, nEntryStart ), GetPoint( nLevelEnd, nEntryEnd ) );
 }
 
 long ScOutlineWindow::GetOutputSizeLevel() const
@@ -510,7 +516,7 @@ void ScOutlineWindow::DataChanged( const DataChangedEvent& rDCEvt )
 
 void ScOutlineWindow::SetEntryAreaClipRegion()
 {
-    SetClipRegion( vcl::Region(tools::Rectangle(
+    SetClipRegion( vcl::Region(Rectangle(
         GetPoint( 0, mnMainFirstPos ),
         GetPoint( GetOutputSizeLevel() - 1, mnMainLastPos ))));
 }
@@ -527,21 +533,14 @@ void ScOutlineWindow::DrawRectRel(
     DrawRect( GetRectangle( nLevelStart, nEntryStart, nLevelEnd, nEntryEnd ) );
 }
 
-namespace
+void ScOutlineWindow::DrawImageRel( long nLevelPos, long nEntryPos, sal_uInt16 nId )
 {
-    Image GetImage(sal_uInt16 nId)
-    {
-        return Image(BitmapEx(ScResId(nId)));
-    }
-}
-
-void ScOutlineWindow::DrawImageRel(long nLevelPos, long nEntryPos, sal_uInt16 nId)
-{
-    const Image& rImage = GetImage(nId);
+    OSL_ENSURE( mpSymbols, "ScOutlineWindow::DrawImageRel - no images" );
+    const Image& rImage = mpSymbols->GetImage( nId );
     SetLineColor();
     SetFillColor( GetBackground().GetColor() );
     Point aPos( GetPoint( nLevelPos, nEntryPos ) );
-    DrawRect( tools::Rectangle( aPos, rImage.GetSizePixel() ) );
+    DrawRect( Rectangle( aPos, rImage.GetSizePixel() ) );
     DrawImage( aPos, rImage );
 }
 
@@ -550,11 +549,12 @@ void ScOutlineWindow::DrawBorderRel( size_t nLevel, size_t nEntry, bool bPressed
     Point aPos;
     if ( GetImagePos( nLevel, nEntry, aPos ) )
     {
-        sal_uInt16 nId = bPressed ? RID_BMP_PRESSED : RID_BMP_NOTPRESSED;
+        OSL_ENSURE( mpSymbols, "ScOutlineWindow::DrawBorderRel - no images" );
+        sal_uInt16 nId = bPressed ? SC_OL_IMAGE_PRESSED : SC_OL_IMAGE_NOTPRESSED;
         bool bClip = (nEntry != SC_OL_HEADERENTRY);
         if ( bClip )
             SetEntryAreaClipRegion();
-        DrawImage(aPos, GetImage(nId));
+        DrawImage( aPos, mpSymbols->GetImage( nId ) );
         if ( bClip )
             SetClipRegion();
     }
@@ -574,7 +574,7 @@ void ScOutlineWindow::ShowFocus()
             if ( GetImagePos( mnFocusLevel, mnFocusEntry, aPos ) )
             {
                 aPos += Point( 1, 1 );
-                maFocusRect = tools::Rectangle( aPos, Size( SC_OL_BITMAPSIZE - 2, SC_OL_BITMAPSIZE - 2 ) );
+                maFocusRect = Rectangle( aPos, Size( SC_OL_BITMAPSIZE - 2, SC_OL_BITMAPSIZE - 2 ) );
                 bool bClip = (mnFocusEntry != SC_OL_HEADERENTRY);
                 if ( bClip )
                     SetEntryAreaClipRegion();
@@ -600,7 +600,7 @@ void ScOutlineWindow::HideFocus()
     }
 }
 
-void ScOutlineWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& /* rRect */ )
+void ScOutlineWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& /* rRect */ )
 {
     long nEntriesSign = mbMirrorEntries ? -1 : 1;
     long nLevelsSign  = mbMirrorLevels  ? -1 : 1;
@@ -624,7 +624,7 @@ void ScOutlineWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
     {
         long nEntryPos = GetHeaderEntryPos();
         for ( size_t nLevel = 0; nLevel < nLevelCount; ++nLevel )
-            DrawImageRel(GetLevelPos(nLevel), nEntryPos, RID_BMP_LEVEL1 + nLevel);
+            DrawImageRel( GetLevelPos( nLevel ), nEntryPos, static_cast< sal_uInt16 >( nLevel + 1 ) );
 
         SetLineColor( maLineColor );
         long nLinePos = mnHeaderPos + (mbMirrorEntries ? 0 : (mnHeaderSize - 1));
@@ -696,7 +696,7 @@ void ScOutlineWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const tools
             // draw, if not hidden by higher levels
             if ( bDraw )
             {
-                sal_uInt16 nImageId = pEntry->IsHidden() ? RID_BMP_PLUS : RID_BMP_MINUS;
+                sal_uInt16 nImageId = pEntry->IsHidden() ? SC_OL_IMAGE_PLUS : SC_OL_IMAGE_MINUS;
                 DrawImageRel( nLevelPos, nImagePos, nImageId );
             }
         }

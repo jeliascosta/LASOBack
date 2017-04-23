@@ -28,8 +28,6 @@
 class IDocumentDrawModelAccess;
 class IDocumentRedlineAccess;
 class IDocumentState;
-class SwDocShell;
-class SwView;
 
 namespace sw {
 
@@ -38,7 +36,7 @@ class UndoManager
     , public SdrUndoManager
 {
 public:
-    UndoManager(std::shared_ptr<SwNodes> const & pUndoNodes,
+    UndoManager(std::shared_ptr<SwNodes> pUndoNodes,
         IDocumentDrawModelAccess & rDrawModelAccess,
         IDocumentRedlineAccess & rRedlineAccess,
         IDocumentState & rState);
@@ -50,8 +48,6 @@ public:
     virtual bool DoesGroupUndo() const override;
     virtual void DoDrawUndo(bool const bDoUndo) override;
     virtual bool DoesDrawUndo() const override;
-    void DoRepair(bool bRepair) override;
-    bool DoesRepair() const override;
     virtual void SetUndoNoModifiedPosition() override;
     virtual void LockUndoNoModifiedPosition() override;
     virtual void UnLockUndoNoModifiedPosition() override;
@@ -64,12 +60,10 @@ public:
                              SwRewriter const*const pRewriter) override;
     virtual void DelAllUndoObj() override;
     virtual bool GetLastUndoInfo(OUString *const o_pStr,
-                                 SwUndoId *const o_pId,
-                                 const SwView* pView = nullptr) const override;
+                                 SwUndoId *const o_pId) const override;
     virtual SwUndoComments_t GetUndoComments() const override;
     virtual bool GetFirstRedoInfo(OUString *const o_pStr,
-                                  SwUndoId *const o_pId,
-                                  const SwView* pView = nullptr) const override;
+                                  SwUndoId *const o_pId = nullptr) const override;
     virtual SwUndoComments_t GetRedoComments() const override;
     virtual bool Repeat(::sw::RepeatContext & rContext,
                         sal_uInt16 const nRepeatCnt) override;
@@ -78,21 +72,19 @@ public:
     virtual void ClearRedo() override;
     virtual bool IsUndoNodes(SwNodes const& rNodes) const override;
     virtual size_t GetUndoActionCount(const bool bCurrentLevel = true) const override;
-    size_t GetRedoActionCount(const bool bCurrentLevel = true) const override;
-    void SetView(SwView* pView) override;
 
     // ::svl::IUndoManager
     virtual void AddUndoAction(SfxUndoAction *pAction,
                                    bool bTryMerg = false) override;
     virtual bool Undo() override;
     virtual bool Redo() override;
+    virtual void EnableUndo(bool bEnable) override;
 
     SwUndo * RemoveLastUndo();
     SwUndo * GetLastUndo();
 
     SwNodes const& GetUndoNodes() const;
     SwNodes      & GetUndoNodes();
-    void SetDocShell(SwDocShell* pDocShell);
 
 private:
     IDocumentDrawModelAccess & m_rDrawModelAccess;
@@ -104,16 +96,12 @@ private:
 
     bool m_bGroupUndo       : 1;    // TRUE: Undo grouping enabled
     bool m_bDrawUndo        : 1;    // TRUE: Draw Undo enabled
-    /// If true, then repair mode is enabled.
-    bool m_bRepair;
     bool m_bLockUndoNoModifiedPosition : 1;
     /// position in Undo-Array at which Doc was saved (and is not modified)
     UndoStackMark m_UndoSaveMark;
-    SwDocShell* m_pDocShell;
-    SwView* m_pView;
 
-    enum class UndoOrRedoType { Undo, Redo };
-    bool impl_DoUndoRedo(UndoOrRedoType undoOrRedo);
+    typedef enum { UNDO = int(true), REDO = int(false) } UndoOrRedo_t;
+    bool impl_DoUndoRedo(UndoOrRedo_t const undoOrRedo);
 
     // UGLY: should not be called
     using SdrUndoManager::Repeat;

@@ -12,7 +12,6 @@
 
 #include "plugin.hxx"
 #include "compat.hxx"
-#include "check.hxx"
 #include "clang/AST/CXXInheritance.h"
 
 /*
@@ -40,7 +39,7 @@ bool BaseCheckNotSfxPoolItemSubclass(
 #endif
     )
 {
-    if (BaseDefinition && loplugin::TypeCheck(BaseDefinition).Class("SfxPoolItem").GlobalNamespace()) {
+    if (BaseDefinition && BaseDefinition->getQualifiedNameAsString() == "SfxPoolItem") {
         return false;
     }
     return true;
@@ -49,7 +48,7 @@ bool BaseCheckNotSfxPoolItemSubclass(
 bool isDerivedFromSfxPoolItem(const CXXRecordDecl *decl) {
     if (!decl)
         return false;
-    if (loplugin::TypeCheck(decl).Class("SfxPoolItem").GlobalNamespace())
+    if (decl->getQualifiedNameAsString() == "SfxPoolItem")
         return true;
     if (!decl->hasDefinition()) {
         return false;
@@ -71,7 +70,7 @@ bool BaseCheckNotSwMsgPoolItemSubclass(
 #endif
     )
 {
-    if (BaseDefinition && loplugin::TypeCheck(BaseDefinition).Class("SwMsgPoolItem")) {
+    if (BaseDefinition && BaseDefinition->getQualifiedNameAsString() == "SwMsgPoolItem") {
         return false;
     }
     return true;
@@ -80,7 +79,7 @@ bool BaseCheckNotSwMsgPoolItemSubclass(
 bool isDerivedFromSwMsgPoolItem(const CXXRecordDecl *decl) {
     if (!decl)
         return false;
-    if (loplugin::TypeCheck(decl).Class("SwMsgPoolItem").GlobalNamespace())
+    if (decl->getQualifiedNameAsString() == "SwMsgPoolItem")
         return true;
     if (!decl->hasDefinition()) {
         return false;
@@ -119,12 +118,12 @@ bool SfxPoolItem::VisitCXXRecordDecl(const CXXRecordDecl* decl)
         return true;
     }
     // the enum types do some weird stuff involving SfxEnumItemInterface
-    auto tc = loplugin::TypeCheck(decl);
-    if (tc.Class("SfxEnumItem").GlobalNamespace() || tc.Class("SfxAllEnumItem").GlobalNamespace())
+    std::string sRecordName = decl->getQualifiedNameAsString();
+    if (sRecordName == "SfxEnumItem" || sRecordName == "SfxAllEnumItem")
         return true;
 
     // the new field is only used for reading and writing to storage
-    if (tc.Class("SvxCharSetColorItem").GlobalNamespace())
+    if (sRecordName == "SvxCharSetColorItem")
         return true;
 
     for (auto it = decl->method_begin(); it != decl->method_end(); ++it) {
@@ -133,7 +132,7 @@ bool SfxPoolItem::VisitCXXRecordDecl(const CXXRecordDecl* decl)
     }
     report(
             DiagnosticsEngine::Warning,
-            "SfxPoolItem subclass %0 declares new fields, but does not override operator==",
+            "SfxPoolItem subclass %0 declares new fields, but does not overide operator==",
             decl->getLocStart())
         << decl->getQualifiedNameAsString() << decl->getSourceRange();
     return true;

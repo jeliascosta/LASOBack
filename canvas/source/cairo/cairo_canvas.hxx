@@ -111,7 +111,7 @@ namespace cairocanvas
         void initialize();
 
         /// For resource tracking
-        virtual ~Canvas() override;
+        virtual ~Canvas();
 
         /// Dispose all internal references
         virtual void disposeThis() override;
@@ -124,7 +124,7 @@ namespace cairocanvas
         DECLARE_UNO3_XCOMPONENT_AGG_DEFAULTS( Canvas, GraphicDeviceBase_Base, ::cppu::WeakComponentImplHelperBase )
 
         // XServiceName
-        virtual OUString SAL_CALL getServiceName(  ) override;
+        virtual OUString SAL_CALL getServiceName(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // RepaintTarget
         virtual bool repaint( const ::cairo::SurfaceSharedPtr& pSurface,
@@ -133,9 +133,9 @@ namespace cairocanvas
 
         // SurfaceProvider
         virtual ::cairo::SurfaceSharedPtr getSurface() override;
-        virtual ::cairo::SurfaceSharedPtr createSurface( const ::basegfx::B2ISize& rSize, int aContent ) override;
+        virtual ::cairo::SurfaceSharedPtr createSurface( const ::basegfx::B2ISize& rSize, int aContent = CAIRO_CONTENT_COLOR_ALPHA ) override;
         virtual ::cairo::SurfaceSharedPtr createSurface( ::Bitmap& rBitmap ) override;
-        virtual ::cairo::SurfaceSharedPtr changeSurface() override;
+        virtual ::cairo::SurfaceSharedPtr changeSurface( bool bHasAlpha, bool bCopyContent ) override;
         virtual OutputDevice* getOutputDevice() override;
 
      private:

@@ -117,70 +117,69 @@ public:
     OInterfaceContainer( ::osl::Mutex& _rMutex, const OInterfaceContainer& _cloneSource );
 
     // late constructor for cloning
-    /// @throws css::uno::RuntimeException
-    void clonedFrom(const OInterfaceContainer& _cloneSource);
+    void clonedFrom(const OInterfaceContainer& _cloneSource) throw(css::uno::RuntimeException, std::exception);
 
 protected:
     virtual ~OInterfaceContainer();
 
 public:
 // css::io::XPersistObject
-    virtual OUString SAL_CALL getServiceName(  ) override = 0;
-    virtual void SAL_CALL write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream ) override;
-    virtual void SAL_CALL read( const css::uno::Reference< css::io::XObjectInputStream >& InStream ) override;
+    virtual OUString SAL_CALL getServiceName(  ) throw(css::uno::RuntimeException, std::exception) override = 0;
+    virtual void SAL_CALL write( const css::uno::Reference< css::io::XObjectOutputStream >& OutStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL read( const css::uno::Reference< css::io::XObjectInputStream >& InStream ) throw(css::io::IOException, css::uno::RuntimeException, std::exception) override;
 
 // css::lang::XEventListener
-    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) override;
+    virtual void SAL_CALL disposing(const css::lang::EventObject& _rSource) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::beans::XPropertyChangeListener
-    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) override;
+    virtual void SAL_CALL propertyChange(const css::beans::PropertyChangeEvent& evt) throw (css::uno::RuntimeException, std::exception) override;
 
 // css::container::XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override ;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType() throw(css::uno::RuntimeException, std::exception) override ;
+    virtual sal_Bool SAL_CALL hasElements() throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XEnumerationAccess
-    virtual css::uno::Reference< css::container::XEnumeration> SAL_CALL createEnumeration() override;
+    virtual css::uno::Reference< css::container::XEnumeration> SAL_CALL createEnumeration() throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence<OUString> SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<OUString> SAL_CALL getElementNames(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameReplace
-    virtual void SAL_CALL replaceByName(const OUString& Name, const css::uno::Any& _rElement) override;
+    virtual void SAL_CALL replaceByName(const OUString& Name, const css::uno::Any& _rElement) throw(css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XNameContainer
-    virtual void SAL_CALL insertByName(const OUString& Name, const css::uno::Any& _rElement) override;
-    virtual void SAL_CALL removeByName(const OUString& Name) override;
+    virtual void SAL_CALL insertByName(const OUString& Name, const css::uno::Any& _rElement) throw(css::lang::IllegalArgumentException, css::container::ElementExistException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName(const OUString& Name) throw(css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 _nIndex) override;
+    virtual sal_Int32 SAL_CALL getCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 _nIndex) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XIndexReplace
-    virtual void SAL_CALL replaceByIndex(sal_Int32 _nIndex, const css::uno::Any& _rElement) override;
+    virtual void SAL_CALL replaceByIndex(sal_Int32 _nIndex, const css::uno::Any& _rElement) throw(css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XIndexContainer
-    virtual void SAL_CALL insertByIndex(sal_Int32 _nIndex, const css::uno::Any& Element) override;
-    virtual void SAL_CALL removeByIndex(sal_Int32 _nIndex) override;
+    virtual void SAL_CALL insertByIndex(sal_Int32 _nIndex, const css::uno::Any& Element) throw(css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByIndex(sal_Int32 _nIndex) throw(css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
 // css::container::XContainer
-    virtual void SAL_CALL addContainerListener(const css::uno::Reference< css::container::XContainerListener>& _rxListener) override;
-    virtual void SAL_CALL removeContainerListener(const css::uno::Reference< css::container::XContainerListener>& _rxListener) override;
+    virtual void SAL_CALL addContainerListener(const css::uno::Reference< css::container::XContainerListener>& _rxListener) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeContainerListener(const css::uno::Reference< css::container::XContainerListener>& _rxListener) throw(css::uno::RuntimeException, std::exception) override;
 
 // css::script::XEventAttacherManager
-    virtual void SAL_CALL registerScriptEvent( sal_Int32 nIndex, const css::script::ScriptEventDescriptor& aScriptEvent ) override;
-    virtual void SAL_CALL registerScriptEvents( sal_Int32 nIndex, const css::uno::Sequence< css::script::ScriptEventDescriptor >& aScriptEvents ) override;
-    virtual void SAL_CALL revokeScriptEvent( sal_Int32 nIndex, const OUString& aListenerType, const OUString& aEventMethod, const OUString& aRemoveListenerParam ) override;
-    virtual void SAL_CALL revokeScriptEvents( sal_Int32 nIndex ) override;
-    virtual void SAL_CALL insertEntry( sal_Int32 nIndex ) override;
-    virtual void SAL_CALL removeEntry( sal_Int32 nIndex ) override;
-    virtual css::uno::Sequence< css::script::ScriptEventDescriptor > SAL_CALL getScriptEvents( sal_Int32 Index ) override;
-    virtual void SAL_CALL attach( sal_Int32 nIndex, const css::uno::Reference< css::uno::XInterface >& xObject, const css::uno::Any& aHelper ) override;
-    virtual void SAL_CALL detach( sal_Int32 nIndex, const css::uno::Reference< css::uno::XInterface >& xObject ) override;
-    virtual void SAL_CALL addScriptListener( const css::uno::Reference< css::script::XScriptListener >& xListener ) override;
-    virtual void SAL_CALL removeScriptListener( const css::uno::Reference< css::script::XScriptListener >& Listener ) override;
+    virtual void SAL_CALL registerScriptEvent( sal_Int32 nIndex, const css::script::ScriptEventDescriptor& aScriptEvent ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL registerScriptEvents( sal_Int32 nIndex, const css::uno::Sequence< css::script::ScriptEventDescriptor >& aScriptEvents ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL revokeScriptEvent( sal_Int32 nIndex, const OUString& aListenerType, const OUString& aEventMethod, const OUString& aRemoveListenerParam ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL revokeScriptEvents( sal_Int32 nIndex ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL insertEntry( sal_Int32 nIndex ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEntry( sal_Int32 nIndex ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::script::ScriptEventDescriptor > SAL_CALL getScriptEvents( sal_Int32 Index ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL attach( sal_Int32 nIndex, const css::uno::Reference< css::uno::XInterface >& xObject, const css::uno::Any& aHelper ) throw(css::lang::IllegalArgumentException, css::lang::ServiceNotRegisteredException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL detach( sal_Int32 nIndex, const css::uno::Reference< css::uno::XInterface >& xObject ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addScriptListener( const css::uno::Reference< css::script::XScriptListener >& xListener ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeScriptListener( const css::uno::Reference< css::script::XScriptListener >& Listener ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 protected:
     // helper
@@ -210,7 +209,6 @@ protected:
             is done within implInsert.
         @param _bFire
             if <TRUE/>, a notification about the insertion will be fired
-        @throws css::lang::IllegalArgumentException
     */
             void implInsert(
                 sal_Int32 _nIndex,
@@ -218,7 +216,7 @@ protected:
                 bool _bEvents /* = sal_True */,
                 ElementDescription* _pApprovalResult /* = NULL */ ,
                 bool _bFire /* = sal_True */
-            );
+            ) throw(css::lang::IllegalArgumentException);
 
     // called after the object is inserted, but before the "real listeners" are notified
     virtual void implInserted( const ElementDescription* _pElement );
@@ -269,7 +267,13 @@ private:
     // hack for Vba Events
     void impl_addVbEvents_nolck_nothrow( const sal_Int32 i_nIndex );
 
-    void    transformEvents();
+    // the runtime event format has changed from version SO5.2 to OOo
+    enum EventFormat
+    {
+        efVersionSO5x,
+        efVersionSO6x
+    };
+    void    transformEvents( const EventFormat _eTargetFormat );
 
     void    impl_createEventAttacher_nothrow();
 };
@@ -288,19 +292,19 @@ protected:
 public:
     OFormComponents(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
     OFormComponents( const OFormComponents& _cloneSource );
-    virtual ~OFormComponents() override;
+    virtual ~OFormComponents();
 
     DECLARE_UNO3_AGG_DEFAULTS(OFormComponents, FormComponentsBase)
 
-    virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) override;
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+    virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw(css::uno::RuntimeException, std::exception) override;
 
 // OComponentHelper
     virtual void SAL_CALL disposing() override;
 
 // css::form::XFormComponent
-    virtual css::uno::Reference<css::uno::XInterface> SAL_CALL getParent() override;
-    virtual void SAL_CALL setParent(const css::uno::Reference<css::uno::XInterface>& Parent) override;
+    virtual css::uno::Reference<css::uno::XInterface> SAL_CALL getParent() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setParent(const css::uno::Reference<css::uno::XInterface>& Parent) throw(css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
     using OInterfaceContainer::disposing;

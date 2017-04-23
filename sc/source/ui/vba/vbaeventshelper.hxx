@@ -33,48 +33,35 @@ public:
     ScVbaEventsHelper(
         const css::uno::Sequence< css::uno::Any >& rArgs,
         const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~ScVbaEventsHelper() override;
+    virtual ~ScVbaEventsHelper();
 
-    virtual void SAL_CALL notifyEvent( const css::document::EventObject& rEvent ) override;
+    virtual void SAL_CALL notifyEvent( const css::document::EventObject& rEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
-    virtual bool implPrepareEvent( EventQueue& rEventQueue, const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) override;
-    virtual css::uno::Sequence< css::uno::Any > implBuildArgumentList( const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) override;
-    virtual void implPostProcessEvent( EventQueue& rEventQueue, const EventHandlerInfo& rInfo, bool bCancel ) override;
-    virtual OUString implGetDocumentModuleName( const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) const override;
+    virtual bool implPrepareEvent( EventQueue& rEventQueue, const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) throw (css::uno::RuntimeException) override;
+    virtual css::uno::Sequence< css::uno::Any > implBuildArgumentList( const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void implPostProcessEvent( EventQueue& rEventQueue, const EventHandlerInfo& rInfo, bool bCancel ) throw (css::uno::RuntimeException) override;
+    virtual OUString implGetDocumentModuleName( const EventHandlerInfo& rInfo, const css::uno::Sequence< css::uno::Any >& rArgs ) const throw (css::lang::IllegalArgumentException, css::uno::RuntimeException) override;
 
 private:
     /** Checks if selection has been changed compared to selection of last call.
-        @return true, if the selection has been changed.
-        @throws css::lang::IllegalArgumentException
-        @throws css::uno::RuntimeException
-    */
-    bool isSelectionChanged( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex );
+        @return true, if the selection has been changed. */
+    bool isSelectionChanged( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
 
-    /** Creates a VBA Worksheet object (the argument must contain a sheet index).
-        @throws css::lang::IllegalArgumentException
-        @throws css::uno::RuntimeException
-    */
-    css::uno::Any createWorksheet( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const;
-    /** Creates a VBA Range object (the argument must contain a UNO range or UNO range list).
-        @throws css::lang::IllegalArgumentException
-        @throws css::uno::RuntimeException
-    */
-    css::uno::Any createRange( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const;
-    /** Creates a VBA Hyperlink object (the argument must contain a UNO cell).
-        @throws css::lang::IllegalArgumentException
-        @throws css::uno::RuntimeException
-    */
-    css::uno::Any createHyperlink( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const;
-    /** Creates a VBA Window object (the argument must contain a model controller).
-        @throws css::lang::IllegalArgumentException
-        @throws css::uno::RuntimeException
-    */
-    css::uno::Any createWindow( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const;
+    /** Creates a VBA Worksheet object (the argument must contain a sheet index). */
+    css::uno::Any createWorksheet( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception);
+    /** Creates a VBA Range object (the argument must contain a UNO range or UNO range list). */
+    css::uno::Any createRange( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception);
+    /** Creates a VBA Hyperlink object (the argument must contain a UNO cell). */
+    css::uno::Any createHyperlink( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception);
+    /** Creates a VBA Window object (the argument must contain a model controller). */
+    css::uno::Any createWindow( const css::uno::Sequence< css::uno::Any >& rArgs, sal_Int32 nIndex ) const throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception);
 
 private:
     ::rtl::Reference< ScVbaEventListener > mxListener;

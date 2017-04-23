@@ -113,7 +113,7 @@ bool VPolarAngleAxis::createTextShapes_ForAngleAxis(
                 aLabel = aFixedNumberFormatter.getFormattedString( pTickInfo->getUnscaledTickValue(), nExtraColor, bHasExtraColor );
 
             if(pColorAny)
-                *pColorAny <<= bHasExtraColor?nExtraColor:nColor;
+                *pColorAny = uno::makeAny(bHasExtraColor?nExtraColor:nColor);
 
             double fLogicAngle = pTickInfo->getUnscaledTickValue();
 

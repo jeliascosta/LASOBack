@@ -34,13 +34,15 @@
 
 // values of the mpLineDist listbox
 #define LLINESPACE_1          0
-#define LLINESPACE_115        1
-#define LLINESPACE_15         2
-#define LLINESPACE_2          3
-#define LLINESPACE_PROP       4
-#define LLINESPACE_MIN        5
-#define LLINESPACE_DURCH      6
-#define LLINESPACE_FIX        7
+#define LLINESPACE_15         1
+#define LLINESPACE_2          2
+#define LLINESPACE_PROP       3
+#define LLINESPACE_MIN        4
+#define LLINESPACE_DURCH      5
+#define LLINESPACE_FIX        6
+
+// special case; should not conflict with the mpLinDist values
+#define LLINESPACE_115        7
 
 #define MIN_FIXED_DISTANCE    28
 
@@ -62,7 +64,7 @@ ParaLineSpacingControl::ParaLineSpacingControl(sal_uInt16 nId)
 
     mpActLineDistFld = mpLineDistAtPercentBox.get();
 
-    meLNSpaceUnit = MapUnit::Map100thMM;
+    meLNSpaceUnit = SFX_MAPUNIT_100TH_MM;
 
     Link<Button*,void> aLink = LINK(this, ParaLineSpacingControl, PredefinedValuesHandler);
     mpSpacing1Button->SetClickHdl(aLink);
@@ -120,30 +122,26 @@ void ParaLineSpacingControl::Initialize()
 
     if( eState >= SfxItemState::DEFAULT )
     {
-        MapUnit eUnit = MapUnit::Map100thMM;
+        SfxMapUnit eUnit = SFX_MAPUNIT_100TH_MM;
         meLNSpaceUnit = eUnit;
 
         switch( currSPItem->GetLineSpaceRule() )
         {
-        case SvxLineSpaceRule::Auto:
+        case SVX_LINE_SPACE_AUTO:
             {
-                SvxInterLineSpaceRule eInter = currSPItem->GetInterLineSpaceRule();
+                SvxInterLineSpace eInter = currSPItem->GetInterLineSpaceRule();
 
                 switch( eInter )
                 {
-                case SvxInterLineSpaceRule::Off:
+                case SVX_INTER_LINE_SPACE_OFF:
                     SelectEntryPos(LLINESPACE_1);
                     break;
 
-                case SvxInterLineSpaceRule::Prop:
+                case SVX_INTER_LINE_SPACE_PROP:
                     {
                         if ( LINESPACE_1 == currSPItem->GetPropLineSpace() )
                         {
                             SelectEntryPos(LLINESPACE_1);
-                        }
-                        else if ( LINESPACE_115 == currSPItem->GetPropLineSpace() )
-                        {
-                            SelectEntryPos(LLINESPACE_115);
                         }
                         else if ( LINESPACE_15 == currSPItem->GetPropLineSpace() )
                         {
@@ -161,7 +159,7 @@ void ParaLineSpacingControl::Initialize()
                     }
                     break;
 
-                case SvxInterLineSpaceRule::Fix:
+                case SVX_INTER_LINE_SPACE_FIX:
                     {
                         SelectEntryPos(LLINESPACE_DURCH);
                         SetMetricValue(*mpLineDistAtMetricBox, currSPItem->GetInterLineSpace(), eUnit);
@@ -172,14 +170,14 @@ void ParaLineSpacingControl::Initialize()
                 }
             }
             break;
-        case SvxLineSpaceRule::Fix:
+        case SVX_LINE_SPACE_FIX:
             {
                 SelectEntryPos(LLINESPACE_FIX);
                 SetMetricValue(*mpLineDistAtMetricBox, currSPItem->GetLineHeight(), eUnit);
             }
             break;
 
-        case SvxLineSpaceRule::Min:
+        case SVX_LINE_SPACE_MIN:
             {
                 SelectEntryPos(LLINESPACE_MIN);
                 SetMetricValue(*mpLineDistAtMetricBox, currSPItem->GetLineHeight(), eUnit);
@@ -213,14 +211,14 @@ void ParaLineSpacingControl::Initialize()
     {
         switch (currentContext.GetCombinedContext_DI())
         {
-        case CombinedEnumContext(Application::DrawImpress, Context::Table):
-        case CombinedEnumContext(Application::DrawImpress, Context::DrawText):
-        case CombinedEnumContext(Application::DrawImpress, Context::Draw):
-        case CombinedEnumContext(Application::DrawImpress, Context::TextObject):
-        case CombinedEnumContext(Application::DrawImpress, Context::Graphic):
-        case CombinedEnumContext(Application::Calc, Context::DrawText):
-        case CombinedEnumContext(Application::WriterVariants, Context::DrawText):
-        case CombinedEnumContext(Application::WriterVariants, Context::Annotation):
+        case CombinedEnumContext(Application_DrawImpress, Context_Table):
+        case CombinedEnumContext(Application_DrawImpress, Context_DrawText):
+        case CombinedEnumContext(Application_DrawImpress, Context_Draw):
+        case CombinedEnumContext(Application_DrawImpress, Context_TextObject):
+        case CombinedEnumContext(Application_DrawImpress, Context_Graphic):
+        case CombinedEnumContext(Application_Calc, Context_DrawText):
+        case CombinedEnumContext(Application_WriterVariants, Context_DrawText):
+        case CombinedEnumContext(Application_WriterVariants, Context_Annotation):
             {
                 mpLineDist->RemoveEntry(LLINESPACE_FIX);
             }
@@ -230,9 +228,9 @@ void ParaLineSpacingControl::Initialize()
     {
         switch (currentContext.GetCombinedContext_DI())
         {
-            case CombinedEnumContext(Application::WriterVariants, Context::Default):
-            case CombinedEnumContext(Application::WriterVariants, Context::Text):
-            case CombinedEnumContext(Application::WriterVariants, Context::Table):
+            case CombinedEnumContext(Application_WriterVariants, Context_Default):
+            case CombinedEnumContext(Application_WriterVariants, Context_Text):
+            case CombinedEnumContext(Application_WriterVariants, Context_Table):
             {
                 mpLineDist->InsertEntry(OUString("Fixed"), LLINESPACE_FIX);
             }
@@ -246,7 +244,6 @@ void ParaLineSpacingControl::UpdateMetricFields()
     switch (mpLineDist->GetSelectEntryPos())
     {
         case LLINESPACE_1:
-        case LLINESPACE_115:
         case LLINESPACE_15:
         case LLINESPACE_2:
             if (mpActLineDistFld == mpLineDistAtPercentBox)
@@ -309,7 +306,7 @@ void ParaLineSpacingControl::UpdateMetricFields()
             mpLineDistAtMetricBox->SetMin(mpLineDistAtMetricBox->Normalize(MIN_FIXED_DISTANCE), FUNIT_TWIP);
 
             if (mpLineDistAtMetricBox->GetValue() != nTemp)
-                SetMetricValue(*mpLineDistAtMetricBox, FIX_DIST_DEF, MapUnit::MapTwip);
+                SetMetricValue(*mpLineDistAtMetricBox, FIX_DIST_DEF, SFX_MAPUNIT_TWIP);
 
             mpLineDistLabel->Enable();
             mpActLineDistFld->Show();
@@ -324,13 +321,13 @@ void ParaLineSpacingControl::SelectEntryPos(sal_Int32 nPos)
     UpdateMetricFields();
 }
 
-IMPL_LINK_NOARG(ParaLineSpacingControl, LineSPDistHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ParaLineSpacingControl, LineSPDistHdl_Impl, ListBox&, void)
 {
     UpdateMetricFields();
     ExecuteLineSpace();
 }
 
-IMPL_LINK_NOARG( ParaLineSpacingControl, LineSPDistAtHdl_Impl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( ParaLineSpacingControl, LineSPDistAtHdl_Impl, Edit&, void )
 {
     ExecuteLineSpace();
 }
@@ -345,7 +342,6 @@ void ParaLineSpacingControl::ExecuteLineSpace()
     switch ( nPos )
     {
         case LLINESPACE_1:
-        case LLINESPACE_115:
         case LLINESPACE_15:
         case LLINESPACE_2:
             SetLineSpace(aSpacing, nPos);
@@ -374,49 +370,44 @@ void ParaLineSpacingControl::SetLineSpace(SvxLineSpacingItem& rLineSpace, sal_In
     switch ( eSpace )
     {
         case LLINESPACE_1:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
-            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
-            break;
-
-        case LLINESPACE_115:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
-            rLineSpace.SetPropLineSpace( LINESPACE_115 );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
             break;
 
         case LLINESPACE_15:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
             rLineSpace.SetPropLineSpace( LINESPACE_15 );
             break;
 
         case LLINESPACE_2:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
             rLineSpace.SetPropLineSpace( LINESPACE_2 );
             break;
 
         case LLINESPACE_PROP:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
             rLineSpace.SetPropLineSpace( (sal_uInt8)lValue );
             break;
 
         case LLINESPACE_MIN:
             rLineSpace.SetLineHeight( (sal_uInt16)lValue );
-            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
+            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
             break;
 
         case LLINESPACE_DURCH:
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
             rLineSpace.SetInterLineSpace( (sal_uInt16)lValue );
             break;
 
         case LLINESPACE_FIX:
             rLineSpace.SetLineHeight((sal_uInt16)lValue);
-            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Fix );
-            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
+            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_FIX;
+            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
         break;
     }
 }
 
-IMPL_LINK(ParaLineSpacingControl, PredefinedValuesHandler, Button*, pControl, void)
+IMPL_LINK_TYPED(ParaLineSpacingControl, PredefinedValuesHandler, Button*, pControl, void)
 {
     if (pControl == mpSpacing1Button)
     {
@@ -440,7 +431,11 @@ void ParaLineSpacingControl::ExecuteLineSpacing(sal_Int32 nEntry)
 {
     SvxLineSpacingItem aSpacing(DEFAULT_LINE_SPACING, SID_ATTR_PARA_LINESPACE);
 
-    SetLineSpace(aSpacing, nEntry);
+    // special-case the 1.15 line spacing
+    if (nEntry == LLINESPACE_115)
+        SetLineSpace(aSpacing, LLINESPACE_PROP, mpLineDistAtPercentBox->Denormalize(LINESPACE_115));
+    else
+        SetLineSpace(aSpacing, nEntry);
 
     SfxViewFrame::Current()->GetBindings().GetDispatcher()->ExecuteList(
             SID_ATTR_PARA_LINESPACE, SfxCallMode::RECORD, { &aSpacing });

@@ -109,10 +109,11 @@ class OLUndoExpand : public EditUndo
     void Restore( bool bUndo );
 public:
     OLUndoExpand( Outliner* pOut, sal_uInt16 nId );
-    virtual ~OLUndoExpand() override;
+    virtual ~OLUndoExpand();
     virtual void Undo() override;
     virtual void Redo() override;
 
+    sal_uInt16* pParas;  // 0 == nCount contains paragraph number
     Outliner* pOutliner;
     sal_Int32 nCount;
 };

@@ -57,7 +57,7 @@ class ScXMLSourceDlg : public ScAnyRefDlg
 public:
     ScXMLSourceDlg(
         SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent, ScDocument* pDoc);
-    virtual ~ScXMLSourceDlg() override;
+    virtual ~ScXMLSourceDlg();
     virtual void dispose() override;
 
     virtual bool IsRefInputMode() const override;
@@ -94,10 +94,10 @@ private:
     void CancelPressed();
     void RefEditModified();
 
-    DECL_LINK(GetFocusHdl, Control&, void);
-    DECL_LINK(BtnPressedHdl, Button*, void);
-    DECL_LINK(TreeItemSelectHdl, SvTreeListBox*, void);
-    DECL_LINK(RefModifiedHdl, Edit&, void);
+    DECL_LINK_TYPED(GetFocusHdl, Control&, void);
+    DECL_LINK_TYPED(BtnPressedHdl, Button*, void);
+    DECL_LINK_TYPED(TreeItemSelectHdl, SvTreeListBox*, void);
+    DECL_LINK_TYPED(RefModifiedHdl, Edit&, void);
 };
 
 #endif

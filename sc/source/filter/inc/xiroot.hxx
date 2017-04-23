@@ -119,7 +119,7 @@ struct XclImpRootData : public XclRootData
 
     explicit            XclImpRootData( XclBiff eBiff, SfxMedium& rMedium,
                             tools::SvRef<SotStorage> xRootStrg, ScDocument& rDoc, rtl_TextEncoding eTextEnc );
-    virtual             ~XclImpRootData() override;
+    virtual             ~XclImpRootData();
 };
 
 /** Access to global data from other classes. */
@@ -129,8 +129,8 @@ public:
     explicit            XclImpRoot( XclImpRootData& rImpRootData );
 
     /** Returns this root instance - for code readability in derived classes. */
-    const XclImpRoot& GetRoot() const { return *this; }
-    XclImpRoot& GetRoot() { return *this; }
+    inline const XclImpRoot& GetRoot() const { return *this; }
+    inline XclImpRoot& GetRoot() { return *this; }
 
     /** Sets a code page read from a CODEPAGE record for byte string import. */
     void                SetCodePage( sal_uInt16 nCodePage );
@@ -204,9 +204,9 @@ public:
     static OUString      GetScAddInName( const OUString& rXclName );
 
     /** Returns true, if the document contains a VB project. */
-    bool         HasBasic() const { return mrImpData.mbHasBasic; }
+    inline bool         HasBasic() const { return mrImpData.mbHasBasic; }
     /** Called to indicate that the document contains a VB project. */
-    void         SetHasBasic() { mrImpData.mbHasBasic = true; }
+    inline void         SetHasBasic() { mrImpData.mbHasBasic = true; }
     /** Reads the CODENAME record and inserts the codename into the document. */
     void                ReadCodeName( XclImpStream& rStrm, bool bGlobals );
 

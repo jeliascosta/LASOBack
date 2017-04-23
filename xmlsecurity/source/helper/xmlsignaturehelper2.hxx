@@ -26,6 +26,8 @@
 #include <cppuhelper/implbase.hxx>
 
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
+#include <com/sun/star/xml/crypto/sax/XSignatureCreationResultListener.hpp>
+#include <com/sun/star/xml/crypto/sax/XSignatureVerifyResultListener.hpp>
 
 namespace com {
 namespace sun {
@@ -38,43 +40,61 @@ namespace embed {
 
 // MT: Not needed any more, remove later...
 
-// FIXME: I certainly would love to remove as much as possible of this steaming pile of
-// over-engineering, but I wonder what exactly the above comment means. Certainly it is not
-// straightforward to remove this class, it is used.
-
 class ImplXMLSignatureListener : public cppu::WeakImplHelper
 <
+    css::xml::crypto::sax::XSignatureCreationResultListener,
+    css::xml::crypto::sax::XSignatureVerifyResultListener,
     css::xml::sax::XDocumentHandler
 >
 {
 private:
-    XMLSignatureHelper& m_rXMLSignatureHelper;
+    Link<XMLSignatureCreationResult&,void> maCreationResultListenerListener;
+    Link<XMLSignatureVerifyResult&,void>   maVerifyResultListenerListener;
+    Link<LinkParamNone*,void>              maStartVerifySignatureElementListener;
 
     css::uno::Reference<
         css::xml::sax::XDocumentHandler > m_xNextHandler;
 
 public:
-    ImplXMLSignatureListener(XMLSignatureHelper& rXMLSignatureHelper);
-    virtual ~ImplXMLSignatureListener() override;
+    ImplXMLSignatureListener(const Link<XMLSignatureCreationResult&,void>& rCreationResultListenerListener,
+                             const Link<XMLSignatureVerifyResult&,void>& rVerifyResultListenerListener,
+                             const Link<LinkParamNone*, void>& rStartVerifySignatureElement);
+    virtual ~ImplXMLSignatureListener();
 
     void setNextHandler(const css::uno::Reference< css::xml::sax::XDocumentHandler >& xNextHandler);
 
+    // css::xml::crypto::sax::XSignatureCreationResultListener
+    virtual void SAL_CALL signatureCreated( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus creationResult )
+        throw (css::uno::RuntimeException, std::exception) override;
+
+    // css::xml::crypto::sax::XSignatureVerifyResultListener
+    virtual void SAL_CALL signatureVerified( sal_Int32 securityId, css::xml::crypto::SecurityOperationStatus verifyResult )
+        throw (css::uno::RuntimeException, std::exception) override;
+
     // css::xml::sax::XDocumentHandler
-    virtual void SAL_CALL startElement( const OUString& aName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs ) override;
+    virtual void SAL_CALL startElement( const OUString& aName, const css::uno::Reference< css::xml::sax::XAttributeList >& xAttribs )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL startDocument(  ) override;
+    virtual void SAL_CALL startDocument(  )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL endDocument(  ) override;
+    virtual void SAL_CALL endDocument(  )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL endElement( const OUString& aName ) override;
+    virtual void SAL_CALL endElement( const OUString& aName )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL characters( const OUString& aChars ) override;
+    virtual void SAL_CALL characters( const OUString& aChars )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces ) override;
+    virtual void SAL_CALL ignorableWhitespace( const OUString& aWhitespaces )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData ) override;
+    virtual void SAL_CALL processingInstruction( const OUString& aTarget, const OUString& aData )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator ) override;
+    virtual void SAL_CALL setDocumentLocator( const css::uno::Reference< css::xml::sax::XLocator >& xLocator )
+        throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
 };
 
 // XUriBinding
@@ -88,9 +108,11 @@ public:
     UriBindingHelper();
     explicit UriBindingHelper( const css::uno::Reference < css::embed::XStorage >& rxStorage );
 
-    void SAL_CALL setUriBinding( const OUString& uri, const css::uno::Reference< css::io::XInputStream >& aInputStream ) override;
+    void SAL_CALL setUriBinding( const OUString& uri, const css::uno::Reference< css::io::XInputStream >& aInputStream )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Reference< css::io::XInputStream > SAL_CALL getUriBinding( const OUString& uri ) override;
+    css::uno::Reference< css::io::XInputStream > SAL_CALL getUriBinding( const OUString& uri )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     static css::uno::Reference < css::io::XInputStream > OpenInputStream( const css::uno::Reference < css::embed::XStorage >& rxStore, const OUString& rURI );
 };

@@ -34,10 +34,10 @@ namespace sfx2
     public:
         TitledDockingWindow(
             SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow,
-            vcl::Window* i_pParent
+            vcl::Window* i_pParent, WinBits i_nStyle = 0
         );
 
-        virtual ~TitledDockingWindow() override;
+        virtual ~TitledDockingWindow();
         virtual void dispose() override;
 
         /** sets a title to be displayed in the docking window
@@ -57,14 +57,14 @@ namespace sfx2
 
     protected:
         // Window overridables
-        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& i_rArea) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& i_rArea) override;
         virtual void Resize() override;
         virtual void StateChanged( StateChangedType i_nType ) override;
         virtual void DataChanged( const DataChangedEvent& i_rDataChangedEvent ) override;
         virtual void SetText( const OUString& i_rText ) override;
 
         // DockingWindow overridables
-        void EndDocking(const tools::Rectangle& rRect, bool bFloatMode) override;
+        void EndDocking(const Rectangle& rRect, bool bFloatMode) override;
 
         virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
     protected:
@@ -72,8 +72,14 @@ namespace sfx2
         */
         void    impl_resetToolBox();
 
+        /** returns the current title.
+
+            If no title has been set via SetTitle, then the window text (Window::GetText) is returned.
+        */
+        OUString  impl_getTitle() const;
+
     private:
-        DECL_LINK( OnToolboxItemSelected, ToolBox*, void );
+        DECL_LINK_TYPED( OnToolboxItemSelected, ToolBox*, void );
 
         void    impl_construct();
         void    impl_layout();

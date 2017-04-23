@@ -25,7 +25,6 @@
 #include <vcl/graph.hxx>
 #include <sfx2/lnkbase.hxx>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
-#include <o3tl/typed_flags_set.hxx>
 
 class Graphic;
 class ImageMap;
@@ -40,19 +39,18 @@ class SwFrameShell;
 class SwView_Impl;
 enum class SwPasteSdr;
 
-enum class TransferBufferType : sal_uInt16
+typedef sal_uInt16 TransferBufferType;
+namespace nsTransferBufferType
 {
-        NONE          = 0x0000,
-        Document      = 0x0001,
-        DocumentWord  = 0x0002,
-        Graphic       = 0x0004,
-        Table         = 0x0008,
-        Ole           = 0x0020,
-        InetField     = 0x0040,
-        Drawing       = 0x0081,   // drawing is internal too!
-};
-namespace o3tl {
-    template<> struct typed_flags<TransferBufferType> : is_typed_flags<TransferBufferType, 0x00ef> {};
+    const sal_uInt16 TRNSFR_NONE            = 0x0000;
+    const sal_uInt16 TRNSFR_DOCUMENT        = 0x0001;
+    const sal_uInt16 TRNSFR_DOCUMENT_WORD   = 0x0002;
+    const sal_uInt16 TRNSFR_GRAPHIC         = 0x0004;
+    const sal_uInt16 TRNSFR_TABELLE         = 0x0008;
+    const sal_uInt16 TRNSFR_DDELINK         = 0x0010;
+    const sal_uInt16 TRNSFR_OLE             = 0x0020;
+    const sal_uInt16 TRNSFR_INETFLD         = 0x0040;
+    const sal_uInt16 TRNSFR_DRAWING         = 0x0081;   // drawing is internal too!
 }
 
 class SW_DLLPUBLIC SwTransferable : public TransferableHelper
@@ -149,7 +147,7 @@ protected:
 
 public:
     SwTransferable( SwWrtShell& );
-    virtual ~SwTransferable() override;
+    virtual ~SwTransferable();
 
     static SotExchangeDest GetSotDestination( const SwWrtShell& rSh );
 
@@ -206,7 +204,7 @@ public:
     void    Invalidate() {m_pWrtShell = nullptr;}
     static const css::uno::Sequence< sal_Int8 >& getUnoTunnelId();
 
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw( css::uno::RuntimeException, std::exception ) override;
 };
 
 #endif

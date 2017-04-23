@@ -124,17 +124,17 @@ private:
 
   @see OInterfaceIteratorHelper
  */
-class SAL_WARN_UNUSED CPPUHELPER_DLLPUBLIC OInterfaceContainerHelper
+class CPPUHELPER_DLLPUBLIC OInterfaceContainerHelper
 {
 public:
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     /**
@@ -312,13 +312,13 @@ class OMultiTypeInterfaceContainerHelperVar
 {
 public:
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     /**
@@ -400,7 +400,7 @@ private:
     InterfaceMap *m_pMap;
     ::osl::Mutex &  rMutex;
 
-    typename InterfaceMap::iterator find(const key &rKey) const
+    inline typename InterfaceMap::iterator find(const key &rKey) const
     {
         typename InterfaceMap::iterator iter = m_pMap->begin();
         typename InterfaceMap::iterator end = m_pMap->end();
@@ -410,7 +410,7 @@ private:
             equalImpl equal;
             if( equal( iter->first, rKey ) )
                 break;
-            ++iter;
+            iter++;
         }
         return iter;
     }
@@ -432,7 +432,7 @@ private:
   can't compile addListener( const container::keyType &key ).
  */
 template < class container , class keyType >
-struct SAL_WARN_UNUSED OBroadcastHelperVar
+struct OBroadcastHelperVar
 {
     /** The shared mutex. */
     ::osl::Mutex &                      rMutex;
@@ -450,14 +450,14 @@ struct SAL_WARN_UNUSED OBroadcastHelperVar
     OBroadcastHelperVar( ::osl::Mutex & rMutex_ )
         : rMutex( rMutex_ )
         , aLC( rMutex_ )
-        , bDisposed( false )
-        , bInDispose( false )
+        , bDisposed( sal_False )
+        , bInDispose( sal_False )
     {}
 
     /**
       adds a listener threadsafe.
      **/
-    void addListener(
+    inline void addListener(
         const keyType &key,
         const css::uno::Reference < css::uno::XInterface > &r )
     {
@@ -471,11 +471,12 @@ struct SAL_WARN_UNUSED OBroadcastHelperVar
     /**
       removes a listener threadsafe
      **/
-    void removeListener(
+    inline void removeListener(
         const keyType &key,
         const css::uno::Reference < css::uno::XInterface > & r )
     {
         ::osl::MutexGuard guard( rMutex );
+        OSL_ENSURE( !bDisposed, "object is disposed" );
         if( ! bInDispose && ! bDisposed  )
             aLC.removeInterface( key , r );
     }
@@ -486,7 +487,7 @@ struct SAL_WARN_UNUSED OBroadcastHelperVar
                 was not created, null was returned. This can be used to optimize
               performance ( construction of an event object can be avoided ).
      ***/
-    OInterfaceContainerHelper * SAL_CALL getContainer( const keyType &key ) const
+    inline OInterfaceContainerHelper * SAL_CALL getContainer( const keyType &key ) const
         { return aLC.getContainer( key ); }
 };
 
@@ -512,13 +513,13 @@ class CPPUHELPER_DLLPUBLIC OMultiTypeInterfaceContainerHelper
 {
 public:
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new( size_t nSize )
+    inline static void * SAL_CALL operator new( size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete( void * pMem )
+    inline static void SAL_CALL operator delete( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new( size_t, void * pMem )
+    inline static void * SAL_CALL operator new( size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete( void *, void * )
+    inline static void SAL_CALL operator delete( void *, void * )
         {}
 
     /**

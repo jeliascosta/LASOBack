@@ -98,7 +98,7 @@ namespace comphelper
 
             @return
                 <TRUE/> if all listeners have been notified, <FALSE/> else. The latter can happen
-                if <member>implNotify</member> cancels the notification loop.
+                if <member>implNotify</member> cancelles the notification loop.
 
             @see implNotify
         */
@@ -169,12 +169,12 @@ namespace comphelper
         {
         }
 
-        void addListener( const css::uno::Reference< ListenerClass >& _rxListener )
+        inline void addListener( const css::uno::Reference< ListenerClass >& _rxListener )
         {
             OListenerContainer::impl_addListener( _rxListener.get() );
         }
 
-        void removeListener( const css::uno::Reference< ListenerClass >& _rxListener )
+        inline void removeListener( const css::uno::Reference< ListenerClass >& _rxListener )
         {
             OListenerContainer::impl_removeListener( _rxListener.get() );
         }
@@ -224,21 +224,21 @@ namespace comphelper
         typedef EVENT       EventClass;
 
     public:
-        OListenerContainerBase( ::osl::Mutex& _rMutex ) : OListenerContainer( _rMutex )
+        inline OListenerContainerBase( ::osl::Mutex& _rMutex ) : OListenerContainer( _rMutex )
         {
         }
 
-        void addTypedListener( const css::uno::Reference< ListenerClass >& _rxListener )
+        inline void addTypedListener( const css::uno::Reference< ListenerClass >& _rxListener )
         {
             OListenerContainer::impl_addListener( _rxListener.get() );
         }
 
-        void removeTypedListener( const css::uno::Reference< ListenerClass >& _rxListener )
+        inline void removeTypedListener( const css::uno::Reference< ListenerClass >& _rxListener )
         {
             OListenerContainer::impl_removeListener( _rxListener.get() );
         }
 
-        bool notify( const EventClass& _rEvent )
+        inline bool notify( const EventClass& _rEvent )
         {
             return OListenerContainer::impl_notify( _rEvent );
         }

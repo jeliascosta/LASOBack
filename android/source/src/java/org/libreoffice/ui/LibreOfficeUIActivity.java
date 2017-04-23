@@ -10,34 +10,20 @@
 package org.libreoffice.ui;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
-import android.graphics.drawable.Icon;
-import android.hardware.usb.UsbManager;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -50,40 +36,37 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.OvershootInterpolator;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.libreoffice.AboutDialogFragment;
+import org.libreoffice.LOAbout;
 import org.libreoffice.LibreOfficeMainActivity;
 import org.libreoffice.R;
 import org.libreoffice.SettingsActivity;
-import org.libreoffice.SettingsListenerModel;
 import org.libreoffice.storage.DocumentProviderFactory;
 import org.libreoffice.storage.DocumentProviderSettingsActivity;
 import org.libreoffice.storage.IDocumentProvider;
 import org.libreoffice.storage.IFile;
-import org.libreoffice.storage.local.LocalFile;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class LibreOfficeUIActivity extends AppCompatActivity implements SettingsListenerModel.OnSettingsPreferenceChangedListener, View.OnClickListener{
+public class LibreOfficeUIActivity extends AppCompatActivity implements ActionBar.OnNavigationListener {
     private String LOGTAG = LibreOfficeUIActivity.class.getSimpleName();
     private SharedPreferences prefs;
     private int filterMode = FileUtilities.ALL;
@@ -92,52 +75,34 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
 
     FileFilter fileFilter;
     FilenameFilter filenameFilter;
-    private List<IFile> filePaths = new ArrayList<IFile>();
+    private List<IFile> filePaths;
     private DocumentProviderFactory documentProviderFactory;
     private IDocumentProvider documentProvider;
     private IFile homeDirectory;
     private IFile currentDirectory;
-    private int currentlySelectedFile;
 
     private static final String CURRENT_DIRECTORY_KEY = "CURRENT_DIRECTORY";
-    private static final String DOC_PROVIDER_KEY = "CURRENT_DOCUMENT_PROVIDER";
+    private static final String DOC_PROIVDER_KEY = "CURRENT_DOCUMENT_PROVIDER";
     private static final String FILTER_MODE_KEY = "FILTER_MODE";
     public static final String EXPLORER_VIEW_TYPE_KEY = "EXPLORER_VIEW_TYPE";
     public static final String EXPLORER_PREFS_KEY = "EXPLORER_PREFS";
     public static final String SORT_MODE_KEY = "SORT_MODE";
-    private static final String RECENT_DOCUMENTS_KEY = "RECENT_DOCUMENTS";
-
-    public static final String NEW_DOC_TYPE_KEY = "NEW_DOC_TYPE_KEY";
-    public static final String NEW_WRITER_STRING_KEY = "private:factory/swriter";
-    public static final String NEW_IMPRESS_STRING_KEY = "private:factory/simpress";
-    public static final String NEW_CALC_STRING_KEY = "private:factory/scalc";
-    public static final String NEW_DRAW_STRING_KEY = "private:factory/sdraw";
 
     public static final int GRID_VIEW = 0;
     public static final int LIST_VIEW = 1;
 
     private DrawerLayout drawerLayout;
-    private NavigationView navigationDrawer;
-    private ActionBar actionBar;
+    private ListView drawerList;
     private ActionBarDrawerToggle drawerToggle;
-    private RecyclerView fileRecyclerView;
-    private RecyclerView recentRecyclerView;
+    GridView gv;
+    ListView lv;
 
+    private final LOAbout mAbout;
     private boolean canQuit = false;
 
-    private Animation fabOpenAnimation;
-    private Animation fabCloseAnimation;
-    private boolean isFabMenuOpen = false;
-    private FloatingActionButton editFAB;
-    private FloatingActionButton writerFAB;
-    private FloatingActionButton drawFAB;
-    private FloatingActionButton impressFAB;
-    private FloatingActionButton calcFAB;
-    private LinearLayout drawLayout;
-    private LinearLayout writerLayout;
-    private LinearLayout impressLayout;
-    private LinearLayout calcLayout;
-
+    public LibreOfficeUIActivity() {
+        mAbout = new LOAbout(this, true);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -148,17 +113,12 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         documentProviderFactory = DocumentProviderFactory.getInstance();
 
         PreferenceManager.setDefaultValues(this, R.xml.documentprovider_preferences, false);
+
         readPreferences();
-        SettingsListenerModel.getInstance().setListener(this);
-        // Registering the USB detect broadcast receiver
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(mUSBReceiver, filter);
+
         // init UI and populate with contents from the provider
-        switchToDocumentProvider(documentProviderFactory.getDefaultProvider());
         createUI();
-        getAnimations();
+        switchToDocumentProvider(documentProviderFactory.getDefaultProvider());
     }
 
     public void createUI() {
@@ -167,111 +127,44 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        actionBar = getSupportActionBar();
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayShowTitleEnabled(false); //This should show current directory if anything
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
+        //make the navigation spinner
+        Context context = actionBar.getThemedContext();
+        ArrayAdapter<CharSequence> list = ArrayAdapter.createFromResource(context, R.array.file_view_modes, android.R.layout.simple_spinner_item);
+        list.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-        editFAB = (FloatingActionButton) findViewById(R.id.editFAB);
-        editFAB.setOnClickListener(this);
-        impressFAB = (FloatingActionButton) findViewById(R.id.newImpressFAB);
-        impressFAB.setOnClickListener(this);
-        writerFAB = (FloatingActionButton) findViewById(R.id.newWriterFAB);
-        writerFAB.setOnClickListener(this);
-        calcFAB = (FloatingActionButton) findViewById(R.id.newCalcFAB);
-        calcFAB.setOnClickListener(this);
-        drawFAB = (FloatingActionButton) findViewById(R.id.newDrawFAB);
-        drawFAB.setOnClickListener(this);
-        writerLayout = (LinearLayout) findViewById(R.id.writerLayout);
-        impressLayout = (LinearLayout) findViewById(R.id.impressLayout);
-        calcLayout = (LinearLayout) findViewById(R.id.calcLayout);
-        drawLayout = (LinearLayout) findViewById(R.id.drawLayout);
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+        actionBar.setListNavigationCallbacks(list, this);
 
-        recentRecyclerView = (RecyclerView) findViewById(R.id.list_recent);
+        LinearLayout content = (LinearLayout) findViewById(R.id.browser_main_content);
 
-        Set<String> recentFileStrings = prefs.getStringSet(RECENT_DOCUMENTS_KEY, new HashSet<String>());
-
-        final ArrayList<IFile> recentFiles = new ArrayList<IFile>();
-        for (String recentFileString : recentFileStrings) {
-            try {
-                recentFiles.add(documentProvider.createFromUri(new URI(recentFileString)));
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            } catch (RuntimeException e){
-                e.printStackTrace();
-            }
-        }
-
-        recentRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        recentRecyclerView.setAdapter(new RecentFilesAdapter(this, recentFiles));
-
-        fileRecyclerView = (RecyclerView) findViewById(R.id.file_recycler_view);
-        //This should be tested because it possibly disables view recycling
-        fileRecyclerView.setNestedScrollingEnabled(false);
-        openDirectory(currentDirectory);
-        registerForContextMenu(fileRecyclerView);
-
-        //Setting up navigation drawer
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        navigationDrawer = (NavigationView) findViewById(R.id.navigation_drawer);
-
-        final ArrayList<CharSequence> providerNames = new ArrayList<CharSequence>(
-                Arrays.asList(documentProviderFactory.getNames())
-        );
-
-        // Loop through the document providers menu items and check if they are available or not
-        for (int index = 0; index < providerNames.size(); index++) {
-            MenuItem item = navigationDrawer.getMenu().getItem(index);
-            boolean isDocumentProviderAvailable = checkDocumentProviderAvailability(documentProviderFactory.getProvider(index));
-            if (!isDocumentProviderAvailable){
-                item.setEnabled(false);
-            }
-        }
-
-        final Context context = this; //needed for anonymous method below
-        navigationDrawer.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
-                switch (item.getItemId()) {
-                    case R.id.menu_storage_preferences: {
-                        startActivity(new Intent(context, DocumentProviderSettingsActivity.class));
-                        return true;
-                    }
-
-                    case R.id.menu_provider_documents: {
-                        switchToDocumentProvider(documentProviderFactory.getProvider(0));
-                        return true;
-                    }
-
-                    case R.id.menu_provider_filesystem: {
-                        switchToDocumentProvider(documentProviderFactory.getProvider(1));
-                        return true;
-                    }
-
-                    case R.id.menu_provider_extsd: {
-                        switchToDocumentProvider(documentProviderFactory.getProvider(2));
-                        return true;
-                    }
-
-                    case R.id.menu_provider_otg: {
-                        switchToDocumentProvider(documentProviderFactory.getProvider(3));
-                        return true;
-                    }
-
-                    case R.id.menu_provider_owncloud: {
-                        switchToDocumentProvider(documentProviderFactory.getProvider(4));
-                        return true;
-                    }
-
-                    default:
-                        return false;
+        if (viewMode == GRID_VIEW) {
+            // code to make a grid view
+            getLayoutInflater().inflate(R.layout.file_grid, content);
+            gv = (GridView)findViewById(R.id.file_explorer_grid_view);
+            gv.setOnItemClickListener(new OnItemClickListener() {
+                public void onItemClick(AdapterView<?> parent, View view,
+                    int position, long id) {
+                    open(position);
                 }
+            });
+            actionBar.setSelectedNavigationItem(filterMode + 1);//This triggers the listener which modifies the view.
+            registerForContextMenu(gv);
+        } else {
+            getLayoutInflater().inflate(R.layout.file_list, content);
+            lv = (ListView)findViewById(R.id.file_explorer_list_view);
+            lv.setClickable(true);
+            actionBar.setSelectedNavigationItem(filterMode + 1);
+            registerForContextMenu(lv);
+        }
 
+        // setup the drawer
 
-            }
-        });
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerList = (ListView) findViewById(R.id.left_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
                 R.string.document_locations, R.string.close_document_locations) {
 
@@ -279,10 +172,7 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
                 supportInvalidateOptionsMenu();
-                navigationDrawer.requestFocus(); // Make keypad navigation easier
-                if (isFabMenuOpen) {
-                    collapseFabMenu(); //Collapse FAB Menu when drawer is opened
-                }
+                drawerList.requestFocus(); // Make keypad navigation easier
             }
 
             @Override
@@ -292,43 +182,21 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
             }
         };
         drawerToggle.setDrawerIndicatorEnabled(true);
-        drawerLayout.addDrawerListener(drawerToggle);
+        drawerLayout.setDrawerListener(drawerToggle);
         drawerToggle.syncState();
-    }
 
-    private void getAnimations() {
-        fabOpenAnimation = AnimationUtils.loadAnimation(this, R.anim.fab_open);
-        fabCloseAnimation = AnimationUtils.loadAnimation(this, R.anim.fab_close);
-    }
-
-    private void expandFabMenu() {
-        ViewCompat.animate(editFAB).rotation(45.0F).withLayer().setDuration(300).setInterpolator(new OvershootInterpolator(10.0F)).start();
-        drawLayout.startAnimation(fabOpenAnimation);
-        impressLayout.startAnimation(fabOpenAnimation);
-        writerLayout.startAnimation(fabOpenAnimation);
-        calcLayout.startAnimation(fabOpenAnimation);
-        writerFAB.setClickable(true);
-        impressFAB.setClickable(true);
-        drawFAB.setClickable(true);
-        calcFAB.setClickable(true);
-        isFabMenuOpen = true;
-    }
-
-    private void collapseFabMenu() {
-        ViewCompat.animate(editFAB).rotation(0.0F).withLayer().setDuration(300).setInterpolator(new OvershootInterpolator(10.0F)).start();
-        writerLayout.startAnimation(fabCloseAnimation);
-        impressLayout.startAnimation(fabCloseAnimation);
-        drawLayout.startAnimation(fabCloseAnimation);
-        calcLayout.startAnimation(fabCloseAnimation);
-        writerFAB.setClickable(false);
-        impressFAB.setClickable(false);
-        drawFAB.setClickable(false);
-        calcFAB.setClickable(false);
-        isFabMenuOpen = false;
-    }
-
-    private boolean checkDocumentProviderAvailability(IDocumentProvider provider) {
-        return provider.checkProviderAvailability();
+        // Set the adapter for the list view
+        drawerList.setAdapter(new ArrayAdapter<String>(this,
+                R.layout.item_in_drawer, documentProviderFactory.getNames()));
+        // Set the list's click listener
+        drawerList.setOnItemClickListener(new ListView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView parent, View view,
+                    int position, long id) {
+                switchToDocumentProvider(documentProviderFactory
+                        .getProvider(position));
+            }
+        });
     }
 
     @Override
@@ -348,27 +216,24 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
 
         FileUtilities.sortFiles(filePaths, sortMode);
         // refresh view
-        fileRecyclerView.setLayoutManager(isViewModeList() ? new LinearLayoutManager(this) : new GridLayoutManager(this, 3));
-        fileRecyclerView.setAdapter(new ExplorerItemAdapter(this, filePaths));
-        // close drawer if it was open
-        drawerLayout.closeDrawer(navigationDrawer);
-        if (isFabMenuOpen) {
-            collapseFabMenu();
+        if (viewMode == GRID_VIEW) {
+            gv.setAdapter(new GridItemAdapter(getApplicationContext(),
+                    currentDirectory, filePaths));
+        } else {
+            lv.setAdapter(new ListItemAdapter(getApplicationContext(),
+                    filePaths));
         }
+        // close drawer if it was open
+        drawerLayout.closeDrawer(drawerList);
     }
 
     @Override
     public void onBackPressed() {
-        if (drawerLayout.isDrawerOpen(navigationDrawer)) {
-            drawerLayout.closeDrawer(navigationDrawer);
-            if (isFabMenuOpen) {
-                collapseFabMenu();
-            }
+        if (drawerLayout.isDrawerOpen(drawerList)) {
+            drawerLayout.closeDrawer(drawerList);
         } else if (!currentDirectory.equals(homeDirectory)) {
             // navigate upwards in directory hierarchy
             openParentDirectory();
-        } else if (isFabMenuOpen) {
-            collapseFabMenu();
         } else {
             // only exit if warning has been shown
             if (canQuit) {
@@ -399,20 +264,18 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item
+                .getMenuInfo();
         switch (item.getItemId()) {
             case R.id.context_menu_open:
-                open(currentlySelectedFile);
+                open(info.position);
                 return true;
             case R.id.context_menu_share:
-                share(currentlySelectedFile);
+                share(info.position);
                 return true;
             default:
                 return super.onContextItemSelected(item);
         }
-    }
-
-    private boolean isViewModeList(){
-        return viewMode == LIST_VIEW;
     }
 
     private void switchToDocumentProvider(IDocumentProvider provider) {
@@ -439,7 +302,6 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
-                    startActivity(new Intent(activity, DocumentProviderSettingsActivity.class));
                     Log.e(LOGTAG, e.getMessage(), e.getCause());
                 }
                 return null;
@@ -455,20 +317,6 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
     public void openDirectory(IFile dir) {
         if (dir == null)
             return;
-
-        //show recent files if in home directory
-        if (dir.equals(homeDirectory)) {
-            recentRecyclerView.setVisibility(View.VISIBLE);
-            findViewById(R.id.header_browser).setVisibility((View.VISIBLE));
-            findViewById(R.id.header_recents).setVisibility((View.VISIBLE));
-            actionBar.setTitle(R.string.app_name);
-        } else {
-            recentRecyclerView.setVisibility(View.GONE);
-            findViewById(R.id.header_browser).setVisibility((View.GONE));
-            findViewById(R.id.header_recents).setVisibility((View.GONE));
-            actionBar.setTitle(dir.getName());
-
-        }
 
         new AsyncTask<IFile, Void, Void>() {
             @Override
@@ -503,7 +351,6 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
     }
 
     public void open(final IFile document) {
-        addDocumentToRecents(document);
         new AsyncTask<IFile, Void, File>() {
             @Override
             protected File doInBackground(IFile... document) {
@@ -545,13 +392,6 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
                 }
             }
         }.execute(document);
-    }
-
-    // For opening a new Document
-    private void open(String newDocumentType) {
-        Intent intent = new Intent(this, LibreOfficeMainActivity.class);
-        intent.putExtra(NEW_DOC_TYPE_KEY, newDocumentType);
-        startActivity(intent);
     }
 
     private void open(int position) {
@@ -623,58 +463,34 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.view_menu, menu);
 
-        switch (sortMode) {
-            case FileUtilities.SORT_SMALLEST: {
-                menu.findItem(R.id.menu_sort_size_asc).setChecked(true);
-            }
-            break;
-
-            case FileUtilities.SORT_LARGEST: {
-                menu.findItem(R.id.menu_sort_size_desc).setChecked(true);
-            }
-            break;
-
-            case FileUtilities.SORT_AZ: {
-                menu.findItem(R.id.menu_sort_az).setChecked(true);
-            }
-            break;
-
-            case FileUtilities.SORT_ZA: {
-                menu.findItem(R.id.menu_sort_za).setChecked(true);
-            }
-            break;
-
-            case FileUtilities.SORT_NEWEST: {
-                menu.findItem(R.id.menu_sort_modified_newest).setChecked(true);
-            }
-            break;
-
-            case FileUtilities.SORT_OLDEST: {
-                menu.findItem(R.id.menu_sort_modified_oldest).setChecked(true);
-            }
-            break;
+        MenuItem item = menu.findItem(R.id.menu_view_toggle);
+        if (viewMode == GRID_VIEW) {
+            item.setTitle(R.string.list_view);
+            item.setIcon(R.drawable.light_view_as_list);
+        } else {
+            item.setTitle(R.string.grid_view);
+            item.setIcon(R.drawable.light_view_as_grid);
         }
 
-        switch (filterMode) {
-            case FileUtilities.ALL:
-                menu.findItem(R.id.menu_filter_everything).setChecked(true);
-                break;
+        item = menu.findItem(R.id.menu_sort_size);
+        if (sortMode == FileUtilities.SORT_LARGEST) {
+            item.setTitle(R.string.sort_smallest);
+        } else {
+            item.setTitle(R.string.sort_largest);
+        }
 
-            case FileUtilities.DOC:
-                menu.findItem(R.id.menu_filter_documents).setChecked(true);
-                break;
+        item = menu.findItem(R.id.menu_sort_az);
+        if (sortMode == FileUtilities.SORT_AZ) {
+            item.setTitle(R.string.sort_za);
+        } else {
+            item.setTitle(R.string.sort_az);
+        }
 
-            case FileUtilities.CALC:
-                menu.findItem(R.id.menu_filter_presentations).setChecked(true);
-                break;
-
-            case FileUtilities.IMPRESS:
-                menu.findItem(R.id.menu_filter_presentations).setChecked(true);
-                break;
-
-            case FileUtilities.DRAWING:
-                menu.findItem(R.id.menu_filter_drawings).setChecked(true);
-                break;
+        item = menu.findItem(R.id.menu_sort_modified);
+        if (sortMode == FileUtilities.SORT_NEWEST) {
+            item.setTitle(R.string.sort_oldest);
+        } else {
+            item.setTitle(R.string.sort_newest);
         }
 
         return true;
@@ -693,81 +509,32 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
                     openParentDirectory();
                 }
                 break;
-
-            case R.id.menu_filter_everything:
-                item.setChecked(true);
-                filterMode = FileUtilities.ALL;
-                openDirectory(currentDirectory);
+            case R.id.menu_view_toggle:
+                if (viewMode == GRID_VIEW){
+                    viewMode = LIST_VIEW;
+                    item.setTitle(R.string.grid_view); // Button points to next view.
+                    item.setIcon(R.drawable.light_view_as_grid);
+                } else {
+                    viewMode = GRID_VIEW;
+                    item.setTitle(R.string.list_view); // Button points to next view.
+                    item.setIcon(R.drawable.light_view_as_list);
+                }
+                createUI();
                 break;
-
-            case R.id.menu_filter_documents:
-                item.setChecked(true);
-                filterMode = FileUtilities.DOC;
-                openDirectory(currentDirectory);
+            case R.id.menu_sort_size:
+            case R.id.menu_sort_az:
+            case R.id.menu_sort_modified:
+                sortFiles(item);
                 break;
-
-            case R.id.menu_filter_spreadsheets:
-                item.setChecked(true);
-                filterMode = FileUtilities.CALC;
-                openDirectory(currentDirectory);
-                break;
-
-            case R.id.menu_filter_presentations:
-                item.setChecked(true);
-                filterMode = FileUtilities.IMPRESS;
-                openDirectory(currentDirectory);
-                break;
-
-            case R.id.menu_filter_drawings:
-                item.setChecked(true);
-                filterMode = FileUtilities.DRAWING;
-                openDirectory(currentDirectory);
-                break;
-
-            case R.id.menu_sort_size_asc: {
-                sortMode = FileUtilities.SORT_SMALLEST;
-                this.onResume();
-            }
-            break;
-
-            case R.id.menu_sort_size_desc: {
-                sortMode = FileUtilities.SORT_LARGEST;
-                this.onResume();
-            }
-            break;
-
-            case R.id.menu_sort_az: {
-                sortMode = FileUtilities.SORT_AZ;
-                this.onResume();
-            }
-            break;
-
-            case R.id.menu_sort_za: {
-                sortMode = FileUtilities.SORT_ZA;
-                this.onResume();
-            }
-            break;
-
-            case R.id.menu_sort_modified_newest: {
-                sortMode = FileUtilities.SORT_NEWEST;
-                this.onResume();
-            }
-            break;
-
-            case R.id.menu_sort_modified_oldest: {
-                sortMode = FileUtilities.SORT_OLDEST;
-                this.onResume();
-            }
-            break;
-
-            case R.id.action_about: {
-                AboutDialogFragment aboutDialogFragment = new AboutDialogFragment();
-                aboutDialogFragment.show(getSupportFragmentManager(), "AboutDialogFragment");
-            }
+            case R.id.action_about:
+                mAbout.showAbout();
                 return true;
             case R.id.action_settings:
                 startActivity(new Intent(getApplicationContext(), SettingsActivity.class));
                 return true;
+            case R.id.menu_storage_preferences:
+                startActivity(new Intent(this, DocumentProviderSettingsActivity.class));
+                break;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -775,11 +542,46 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         return true;
     }
 
+    public void sortFiles(MenuItem item){
+        switch (item.getItemId()) {
+            case R.id.menu_sort_az:
+                if (sortMode == FileUtilities.SORT_AZ){
+                    sortMode = FileUtilities.SORT_ZA;
+                    item.setTitle(R.string.sort_az);
+                } else {
+                    sortMode = FileUtilities.SORT_AZ;
+                    item.setTitle(R.string.sort_za);
+                }
+                break;
+            case R.id.menu_sort_modified:
+                if (sortMode == FileUtilities.SORT_NEWEST){
+                    sortMode = FileUtilities.SORT_OLDEST;
+                    item.setTitle(R.string.sort_newest);
+                } else {
+                    sortMode = FileUtilities.SORT_NEWEST;
+                    item.setTitle(R.string.sort_oldest);
+                }
+                break;
+            case R.id.menu_sort_size:
+                if (sortMode == FileUtilities.SORT_LARGEST){
+                    sortMode = FileUtilities.SORT_SMALLEST;
+                    item.setTitle(R.string.sort_largest);
+                } else {
+                    sortMode = FileUtilities.SORT_LARGEST;
+                    item.setTitle(R.string.sort_smallest);
+                }
+                break;
+            default:
+                break;
+        }
+        this.onResume();
+    }
+
     public void readPreferences(){
         prefs = getSharedPreferences(EXPLORER_PREFS_KEY, MODE_PRIVATE);
+        viewMode = prefs.getInt(EXPLORER_VIEW_TYPE_KEY, GRID_VIEW);
         sortMode = prefs.getInt(SORT_MODE_KEY, FileUtilities.SORT_AZ);
         SharedPreferences defaultPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        viewMode = Integer.valueOf(defaultPrefs.getString(EXPLORER_VIEW_TYPE_KEY, ""+ GRID_VIEW));
         filterMode = Integer.valueOf(defaultPrefs.getString(FILTER_MODE_KEY , "-1"));
 
         Intent i = this.getIntent();
@@ -805,19 +607,13 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
     }
 
     @Override
-    public void settingsPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        readPreferences();
-        refreshView();
-    }
-
-    @Override
     protected void onSaveInstanceState(Bundle outState) {
         // TODO Auto-generated method stub
         super.onSaveInstanceState(outState);
         outState.putString(CURRENT_DIRECTORY_KEY, currentDirectory.getUri().toString());
         outState.putInt(FILTER_MODE_KEY, filterMode);
         outState.putInt(EXPLORER_VIEW_TYPE_KEY , viewMode);
-        outState.putInt(DOC_PROVIDER_KEY, documentProvider.getId());
+        outState.putInt(DOC_PROIVDER_KEY, documentProvider.getId());
 
         Log.d(LOGTAG, currentDirectory.toString() + Integer.toString(filterMode) + Integer.toString(viewMode));
         //prefs.edit().putInt(EXPLORER_VIEW_TYPE, viewType).commit();
@@ -834,7 +630,7 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         if (documentProvider == null) {
             Log.d(LOGTAG, "onRestoreInstanceState - documentProvider is null");
             documentProvider = DocumentProviderFactory.getInstance()
-                    .getProvider(savedInstanceState.getInt(DOC_PROVIDER_KEY));
+                    .getProvider(savedInstanceState.getInt(DOC_PROIVDER_KEY));
         }
         try {
             currentDirectory = documentProvider.createFromUri(new URI(
@@ -849,20 +645,9 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         Log.d(LOGTAG, currentDirectory.toString() + Integer.toString(filterMode) + Integer.toString(viewMode));
     }
 
-    private final BroadcastReceiver mUSBReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                Toast.makeText(context, R.string.usb_connected_configure, Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(context, DocumentProviderSettingsActivity.class));
-                Log.d(LOGTAG, "USB device attached");
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                Log.d(LOGTAG, "USB device detached");
-            }
-        }
-    };
     @Override
     protected void onPause() {
+        //prefs.edit().putInt(EXPLORER_VIEW_TYPE, viewType).commit();
         super.onPause();
         Log.d(LOGTAG, "onPause");
     }
@@ -893,225 +678,160 @@ public class LibreOfficeUIActivity extends AppCompatActivity implements Settings
         Log.d(LOGTAG, "onDestroy");
     }
 
+    public boolean onNavigationItemSelected(int itemPosition, long itemId) {
+        filterMode = itemPosition -1; //bit of a hack, I know. -1 is ALL 0 Docs etc
+        openDirectory(currentDirectory);// Uses filter mode
+        return true;
+    }
+
     private int dpToPx(int dp){
         final float scale = getApplicationContext().getResources().getDisplayMetrics().density;
         return (int) (dp * scale + 0.5f);
     }
 
-    private void addDocumentToRecents(IFile iFile) {
-        String newRecent = iFile.getUri().toString();
-        Set<String> recentsSet = prefs.getStringSet(RECENT_DOCUMENTS_KEY, new HashSet<String>());
-
-        //create array to work with
-        ArrayList<String> recentsArrayList = new ArrayList<String>(recentsSet);
-
-        //remove string if present, so that it doesn't appear multiple times
-        recentsSet.remove(newRecent);
-
-        //put the new value in the first place
-        recentsArrayList.add(0, newRecent);
-
-
-        /*
-         * 4 because the number of recommended items in App Shortcuts is 4, and also
-         * because it's a good number of recent items in general
-         */
-        final int RECENTS_SIZE = 4;
-
-        while (recentsArrayList.size() > RECENTS_SIZE) {
-            recentsArrayList.remove(RECENTS_SIZE);
-        }
-
-        //switch to Set, so that it could be inserted into prefs
-        recentsSet = new HashSet<String>(recentsArrayList);
-
-        prefs.edit().putStringSet(RECENT_DOCUMENTS_KEY, recentsSet).apply();
-
-
-        //update app shortcuts (7.0 and above)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N_MR1) {
-            ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
-
-            //Remove all shortcuts, and apply new ones.
-            shortcutManager.removeAllDynamicShortcuts();
-
-            ArrayList<ShortcutInfo> shortcuts = new ArrayList<ShortcutInfo>();
-            for (String pathString : recentsArrayList) {
-
-                //find the appropriate drawable
-                int drawable = 0;
-                switch (FileUtilities.getType(pathString)) {
-                    case FileUtilities.DOC:
-                        drawable = R.drawable.writer;
-                        break;
-                    case FileUtilities.CALC:
-                        drawable = R.drawable.calc;
-                        break;
-                    case FileUtilities.DRAWING:
-                        drawable = R.drawable.draw;
-                        break;
-                    case FileUtilities.IMPRESS:
-                        drawable = R.drawable.impress;
-                        break;
-                }
-
-                File file = new File(pathString);
-
-                //for some reason, getName uses %20 instead of space
-                String filename = file.getName().replace("%20", " ");
-
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.fromFile(file));
-                String packageName = this.getApplicationContext().getPackageName();
-                ComponentName componentName = new ComponentName(packageName, LibreOfficeMainActivity.class.getName());
-                intent.setComponent(componentName);
-
-                ShortcutInfo shortcut = new ShortcutInfo.Builder(this, filename)
-                        .setShortLabel(filename)
-                        .setLongLabel(filename)
-                        .setIcon(Icon.createWithResource(this, drawable))
-                        .setIntent(intent)
-                        .build();
-
-                shortcuts.add(shortcut);
-            }
-            shortcutManager.setDynamicShortcuts(shortcuts);
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-        switch (id){
-            case R.id.editFAB:
-                if (isFabMenuOpen) {
-                    collapseFabMenu();
-                } else {
-                    expandFabMenu();
-                }
-                break;
-            case R.id.newWriterFAB:
-                open(NEW_WRITER_STRING_KEY);
-                break;
-            case R.id.newImpressFAB:
-                open(NEW_IMPRESS_STRING_KEY);
-                break;
-            case R.id.newCalcFAB:
-                open(NEW_CALC_STRING_KEY);
-                break;
-            case R.id.newDrawFAB:
-                open(NEW_DRAW_STRING_KEY);
-                break;
-        }
-    }
-
-
-    class ExplorerItemAdapter extends RecyclerView.Adapter<ExplorerItemAdapter.ViewHolder> {
-
-        private Activity mActivity;
+    class ListItemAdapter implements ListAdapter{
+        private Context mContext;
         private List<IFile> filePaths;
         private final long KB = 1024;
         private final long MB = 1048576;
 
-        ExplorerItemAdapter(Activity activity, List<IFile> filePaths) {
-            this.mActivity = activity;
+        public ListItemAdapter(Context mContext, List<IFile> filePaths) {
+            this.mContext = mContext;
             this.filePaths = filePaths;
         }
 
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View item = LayoutInflater.from(parent.getContext())
-                    .inflate(isViewModeList() ? R.layout.file_list_item : R.layout.file_explorer_grid_item, parent, false);
-            return new ViewHolder(item);
+        public int getCount() {
+            return filePaths != null ? filePaths.size() : 0;
         }
 
-        @Override
-        public void onBindViewHolder(final ViewHolder holder, final int position) {
-            final IFile file = filePaths.get(position);
+        public Object getItem(int arg0) {
+            return null;
+        }
 
-            holder.itemView.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    open(holder.getAdapterPosition());
+        public long getItemId(int arg0) {
+            return 0;
+        }
+
+        public int getItemViewType(int arg0) {
+            return 0;
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(
+                    Context.LAYOUT_INFLATER_SERVICE);
+
+            View listItem;
+
+            if (convertView == null) {
+                listItem = new View(mContext);
+                listItem = inflater.inflate(R.layout.file_list_item, null);
+            } else {
+                listItem = convertView;
+            }
+            final int pos = position;
+            listItem.setClickable(true);
+            listItem.setOnClickListener(new OnClickListener() {
+
+                public void onClick(View v) {
+                    open(pos);
                 }
             });
-            holder.itemView.setOnLongClickListener(new OnLongClickListener() {
+            listItem.setOnLongClickListener(new OnLongClickListener() {
 
                 @Override
-                public boolean onLongClick(View view) {
-                    //to be picked out by floating context menu (workaround-ish)
-                    currentlySelectedFile = holder.getAdapterPosition();
-                    //must return false so the click is not consumed
+                public boolean onLongClick(View v) {
+                    // workaround to show the context menu:
+                    // prevent onClickListener from getting this event
                     return false;
                 }
+
             });
 
-            holder.filenameView.setText(file.getName());
-            switch (FileUtilities.getType(file.getName())) {
+
+
+            // set value into textview
+            TextView filename = (TextView) listItem.findViewById(R.id.file_list_item_name);
+            filename.setText(filePaths.get(position).getName());
+            //filename.setClickable(true);
+
+            TextView fileSize = (TextView) listItem.findViewById(R.id.file_list_item_size);
+            //TODO Give size in KB , MB as appropriate.
+            String size = "0B";
+            long length = filePaths.get(position).getSize();
+            if (length < KB){
+                size = Long.toString(length) + "B";
+            }
+            if (length >= KB && length < MB){
+                size = Long.toString(length/KB) + "KB";
+            }
+            if (length >= MB){
+                size = Long.toString(length/MB) + "MB";
+            }
+            fileSize.setText(size);
+            //fileSize.setClickable(true);
+
+            TextView fileDate = (TextView) listItem.findViewById(R.id.file_list_item_date);
+            SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy hh:ss");
+            Date date = filePaths.get(position).getLastModified();
+            //TODO format date
+            fileDate.setText(df.format(date));
+
+            // set image based on selected text
+            ImageView imageView = (ImageView) listItem.findViewById(R.id.file_list_item_icon);
+            switch (FileUtilities.getType(filePaths.get(position).getName()))
+            {
                 case FileUtilities.DOC:
-                    holder.iconView.setImageResource(R.drawable.writer);
+                    imageView.setImageResource(R.drawable.writer);
                     break;
                 case FileUtilities.CALC:
-                    holder.iconView.setImageResource(R.drawable.calc);
+                    imageView.setImageResource(R.drawable.calc);
                     break;
                 case FileUtilities.DRAWING:
-                    holder.iconView.setImageResource(R.drawable.draw);
+                    imageView.setImageResource(R.drawable.draw);
                     break;
                 case FileUtilities.IMPRESS:
-                    holder.iconView.setImageResource(R.drawable.impress);
+                    imageView.setImageResource(R.drawable.impress);
+                    break;
+                default:
                     break;
             }
-
-            if (file.isDirectory()) {
+            if (filePaths.get(position).isDirectory()) {
                 //Eventually have thumbnails of each sub file on a black circle
                 //For now just a folder icon
-                holder.iconView.setImageResource(R.drawable.ic_folder_black_24dp);
-                holder.iconView.setColorFilter(ContextCompat.getColor(mActivity, R.color.text_color_secondary));
+                imageView.setImageResource(R.drawable.folder);
             }
-
-            // Date and Size field only exist when we are displaying items in a list.
-            if(isViewModeList()) {
-                if (!file.isDirectory()) {
-                    String size;
-                    long length = filePaths.get(position).getSize();
-                    if (length < KB) {
-                        size = Long.toString(length) + "B";
-                    } else if (length < MB) {
-                        size = Long.toString(length / KB) + "KB";
-                    } else {
-                        size = Long.toString(length / MB) + "MB";
-                    }
-                    holder.fileSizeView.setText(size);
-                }
-                SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy hh:ss");
-                Date date = file.getLastModified();
-                //TODO format date
-                holder.fileDateView.setText(df.format(date));
-            }
+            //imageView.setClickable(true);
+            return listItem;
         }
 
-        @Override
-        public int getItemCount() {
-            return filePaths.size();
+        public int getViewTypeCount() {
+            return 1;
         }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
-
-            View itemView;
-            TextView filenameView, fileSizeView, fileDateView;
-            ImageView iconView;
-
-            ViewHolder(View itemView) {
-                super(itemView);
-                this.itemView = itemView;
-                filenameView = (TextView) itemView.findViewById(R.id.file_item_name);
-                iconView = (ImageView) itemView.findViewById(R.id.file_item_icon);
-                // Check if view mode is List, only then initialise Size and Date field
-                if (isViewModeList()) {
-                    fileSizeView = (TextView) itemView.findViewById(R.id.file_item_size);
-                    fileDateView = (TextView) itemView.findViewById(R.id.file_item_date);
-                }
-            }
+        public boolean hasStableIds() {
+            return false;
         }
+
+        public boolean isEmpty() {
+            return false;
+        }
+
+        public void registerDataSetObserver(DataSetObserver arg0) {
+
+        }
+
+        public void unregisterDataSetObserver(DataSetObserver arg0) {
+
+        }
+
+        public boolean areAllItemsEnabled() {
+            return false;
+        }
+
+        public boolean isEnabled(int position) {
+            return false;
+        }
+
     }
 }
 

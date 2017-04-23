@@ -43,7 +43,6 @@
 #include "svx/svdpagv.hxx"
 #include "svx/xmlexchg.hxx"
 
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/ui/dialogs/XExecutableDialog.hpp>
 #include <com/sun/star/sdbc/XRowSet.hpp>
 #include <com/sun/star/form/XLoadable.hpp>
@@ -220,23 +219,23 @@ void FormViewPageWindowAdapter::dispose()
     m_aControllerList.clear();
 }
 
-sal_Bool SAL_CALL FormViewPageWindowAdapter::hasElements()
+sal_Bool SAL_CALL FormViewPageWindowAdapter::hasElements() throw( RuntimeException, std::exception )
 {
     return getCount() != 0;
 }
 
-Type SAL_CALL  FormViewPageWindowAdapter::getElementType()
+Type SAL_CALL  FormViewPageWindowAdapter::getElementType() throw( RuntimeException, std::exception )
 {
     return cppu::UnoType<XFormController>::get();
 }
 
 // XIndexAccess
-sal_Int32 SAL_CALL FormViewPageWindowAdapter::getCount()
+sal_Int32 SAL_CALL FormViewPageWindowAdapter::getCount() throw( RuntimeException, std::exception )
 {
     return m_aControllerList.size();
 }
 
-Any SAL_CALL FormViewPageWindowAdapter::getByIndex(sal_Int32 nIndex)
+Any SAL_CALL FormViewPageWindowAdapter::getByIndex(sal_Int32 nIndex) throw( IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception )
 {
     if (nIndex < 0 ||
         nIndex >= getCount())
@@ -247,7 +246,7 @@ Any SAL_CALL FormViewPageWindowAdapter::getByIndex(sal_Int32 nIndex)
     return aElement;
 }
 
-void SAL_CALL FormViewPageWindowAdapter::makeVisible( const Reference< XControl >& Control )
+void SAL_CALL FormViewPageWindowAdapter::makeVisible( const Reference< XControl >& Control ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
@@ -255,7 +254,7 @@ void SAL_CALL FormViewPageWindowAdapter::makeVisible( const Reference< XControl 
     if ( xWindow.is() && m_pViewImpl->getView() && m_pWindow )
     {
         awt::Rectangle aRect = xWindow->getPosSize();
-        ::tools::Rectangle aNewRect( aRect.X, aRect.Y, aRect.X + aRect.Width, aRect.Y + aRect.Height );
+        ::Rectangle aNewRect( aRect.X, aRect.Y, aRect.X + aRect.Width, aRect.Y + aRect.Height );
         aNewRect = m_pWindow->PixelToLogic( aNewRect );
         m_pViewImpl->getView()->MakeVisible( aNewRect, *m_pWindow );
     }
@@ -462,29 +461,22 @@ FmXFormView::~FmXFormView()
 
 //      EventListener
 
-void SAL_CALL FmXFormView::disposing(const EventObject& Source)
+void SAL_CALL FmXFormView::disposing(const EventObject& Source) throw( RuntimeException, std::exception )
 {
     if ( m_xWindow.is() && Source.Source == m_xWindow )
-    {
-        m_xWindow->removeFocusListener(this);
-        if ( m_pView )
-        {
-            m_pView->SetMoveOutside( false, FmFormView::ImplAccess() );
-        }
-        m_xWindow = nullptr;
-    }
+        removeGridWindowListening();
 }
 
 // XFormControllerListener
 
-void SAL_CALL FmXFormView::formActivated(const EventObject& rEvent)
+void SAL_CALL FmXFormView::formActivated(const EventObject& rEvent) throw( RuntimeException, std::exception )
 {
     if ( m_pView && m_pView->GetFormShell() && m_pView->GetFormShell()->GetImpl() )
         m_pView->GetFormShell()->GetImpl()->formActivated( rEvent );
 }
 
 
-void SAL_CALL FmXFormView::formDeactivated(const EventObject& rEvent)
+void SAL_CALL FmXFormView::formDeactivated(const EventObject& rEvent) throw( RuntimeException, std::exception )
 {
     if ( m_pView && m_pView->GetFormShell() && m_pView->GetFormShell()->GetImpl() )
         m_pView->GetFormShell()->GetImpl()->formDeactivated( rEvent );
@@ -492,7 +484,7 @@ void SAL_CALL FmXFormView::formDeactivated(const EventObject& rEvent)
 
 // XContainerListener
 
-void SAL_CALL FmXFormView::elementInserted(const ContainerEvent& evt)
+void SAL_CALL FmXFormView::elementInserted(const ContainerEvent& evt) throw( RuntimeException, std::exception )
 {
     try
     {
@@ -520,13 +512,13 @@ void SAL_CALL FmXFormView::elementInserted(const ContainerEvent& evt)
 }
 
 
-void SAL_CALL FmXFormView::elementReplaced(const ContainerEvent& evt)
+void SAL_CALL FmXFormView::elementReplaced(const ContainerEvent& evt) throw( RuntimeException, std::exception )
 {
     elementInserted(evt);
 }
 
 
-void SAL_CALL FmXFormView::elementRemoved(const ContainerEvent& /*evt*/)
+void SAL_CALL FmXFormView::elementRemoved(const ContainerEvent& /*evt*/) throw( RuntimeException, std::exception )
 {
 }
 
@@ -604,7 +596,7 @@ void FmXFormView::displayAsyncErrorMessage( const SQLErrorEvent& _rEvent )
 }
 
 
-IMPL_LINK_NOARG(FmXFormView, OnDelayedErrorMessage, void*, void)
+IMPL_LINK_NOARG_TYPED(FmXFormView, OnDelayedErrorMessage, void*, void)
 {
     m_nErrorMessageEvent = nullptr;
     displayException( m_aAsyncError );
@@ -712,7 +704,7 @@ namespace
 }
 
 
-IMPL_LINK_NOARG(FmXFormView, OnActivate, void*, void)
+IMPL_LINK_NOARG_TYPED(FmXFormView, OnActivate, void*, void)
 {
     m_nActivationEvent = nullptr;
 
@@ -896,7 +888,7 @@ namespace
         {
             Reference< XInterface > xNormalizedForm( _rxForm, UNO_QUERY_THROW );
 
-            SdrObjListIter aSdrObjectLoop( _rPage, SdrIterMode::DeepNoGroups );
+            SdrObjListIter aSdrObjectLoop( _rPage, IM_DEEPNOGROUPS );
             while ( aSdrObjectLoop.IsMore() )
             {
                 FmFormObj* pFormObject = FmFormObj::GetFormObject( aSdrObjectLoop.Next() );
@@ -948,7 +940,7 @@ Reference< XFormController > FmXFormView::getFormController( const Reference< XF
 }
 
 
-IMPL_LINK_NOARG(FmXFormView, OnAutoFocus, void*, void)
+IMPL_LINK_NOARG_TYPED(FmXFormView, OnAutoFocus, void*, void)
 {
     m_nAutoFocusEvent = nullptr;
 
@@ -1005,7 +997,7 @@ IMPL_LINK_NOARG(FmXFormView, OnAutoFocus, void*, void)
         if ( pCurrentWindow )
         {
             awt::Rectangle aRect = xControlWindow->getPosSize();
-            ::tools::Rectangle aNonUnoRect( aRect.X, aRect.Y, aRect.X + aRect.Width, aRect.Y + aRect.Height );
+            ::Rectangle aNonUnoRect( aRect.X, aRect.Y, aRect.X + aRect.Width, aRect.Y + aRect.Height );
             m_pView->MakeVisible( pCurrentWindow->PixelToLogic( aNonUnoRect ), *const_cast< vcl::Window* >( pCurrentWindow ) );
         }
     }
@@ -1062,7 +1054,7 @@ void FmXFormView::breakCreateFormObject()
     m_xLastCreatedControlModel.clear();
 }
 
-IMPL_LINK_NOARG( FmXFormView, OnStartControlWizard, void*, void )
+IMPL_LINK_NOARG_TYPED( FmXFormView, OnStartControlWizard, void*, void )
 {
     m_nControlWizardEvent = nullptr;
     OSL_PRECOND( m_xLastCreatedControlModel.is(), "FmXFormView::OnStartControlWizard: illegal call!" );
@@ -1137,8 +1129,8 @@ IMPL_LINK_NOARG( FmXFormView, OnStartControlWizard, void*, void )
 namespace
 {
     void lcl_insertIntoFormComponentHierarchy_throw( const FmFormView& _rView, const SdrUnoObj& _rSdrObj,
-        const Reference< XDataSource >& _rxDataSource, const OUString& _rDataSourceName,
-        const OUString& _rCommand, const sal_Int32 _nCommandType )
+        const Reference< XDataSource >& _rxDataSource = nullptr, const OUString& _rDataSourceName = OUString(),
+        const OUString& _rCommand = OUString(), const sal_Int32 _nCommandType = -1 )
     {
         FmFormPage& rPage = static_cast< FmFormPage& >( *_rView.GetSdrPageView()->GetPage() );
 
@@ -1166,12 +1158,12 @@ SdrObject* FmXFormView::implCreateFieldControl( const svx::ODataAccessDescriptor
     SharedConnection xConnection;
 
     OUString sDataSource = _rColumnDescriptor.getDataSource();
-    _rColumnDescriptor[ DataAccessDescriptorProperty::Command ]     >>= sCommand;
-    _rColumnDescriptor[ DataAccessDescriptorProperty::ColumnName ]  >>= sFieldName;
-    _rColumnDescriptor[ DataAccessDescriptorProperty::CommandType ] >>= nCommandType;
+    _rColumnDescriptor[ daCommand ]     >>= sCommand;
+    _rColumnDescriptor[ daColumnName ]  >>= sFieldName;
+    _rColumnDescriptor[ daCommandType ] >>= nCommandType;
     {
         Reference< XConnection > xExternalConnection;
-        _rColumnDescriptor[ DataAccessDescriptorProperty::Connection ]  >>= xExternalConnection;
+        _rColumnDescriptor[ daConnection ]  >>= xExternalConnection;
         xConnection.reset( xExternalConnection, SharedConnection::NoTakeOwnership );
     }
 
@@ -1450,7 +1442,7 @@ SdrObject* FmXFormView::implCreateXFormsControl( const svx::OXFormsDescriptor &_
             SdrUnoObj* pLabel( nullptr );
             SdrUnoObj* pControl( nullptr );
             if  (   !createControlLabelPair( *pOutDev, 0, 0, nullptr, xNumberFormats, nOBJID, sLabelPostfix,
-                        pLabel, pControl, nullptr, "", "", -1 )
+                        pLabel, pControl )
                 )
             {
                 return nullptr;
@@ -1483,14 +1475,14 @@ SdrObject* FmXFormView::implCreateXFormsControl( const svx::OXFormsDescriptor &_
 
             // create a button control
             const MapMode eTargetMode( pOutDev->GetMapMode() );
-            const MapMode eSourceMode(MapUnit::Map100thMM);
+            const MapMode eSourceMode(MAP_100TH_MM);
             const sal_uInt16 nObjID = OBJ_FM_BUTTON;
             ::Size controlSize(4000, 500);
-            FmFormObj *pControl = static_cast<FmFormObj*>(SdrObjFactory::MakeNewObject( SdrInventor::FmForm, nObjID, nullptr ));
+            FmFormObj *pControl = static_cast<FmFormObj*>(SdrObjFactory::MakeNewObject( FmFormInventor, nObjID, nullptr ));
             controlSize.Width() = Fraction(controlSize.Width(), 1) * eTargetMode.GetScaleX();
             controlSize.Height() = Fraction(controlSize.Height(), 1) * eTargetMode.GetScaleY();
             ::Point controlPos( OutputDevice::LogicToLogic( ::Point( controlSize.Width(), 0 ), eSourceMode, eTargetMode ) );
-            ::tools::Rectangle controlRect( controlPos, OutputDevice::LogicToLogic( controlSize, eSourceMode, eTargetMode ) );
+            ::Rectangle controlRect( controlPos, OutputDevice::LogicToLogic( controlSize, eSourceMode, eTargetMode ) );
             pControl->SetLogicRect(controlRect);
 
             // set the button label
@@ -1524,7 +1516,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
         const OUString& _rCommand, const sal_Int32 _nCommandType )
 {
     if  (   !createControlLabelPair( _rOutDev, _nXOffsetMM, _nYOffsetMM,
-                _rxField, _rxNumberFormats, _nControlObjectID, _rFieldPostfix, SdrInventor::FmForm, OBJ_FM_FIXEDTEXT,
+                _rxField, _rxNumberFormats, _nControlObjectID, _rFieldPostfix, FmFormInventor, OBJ_FM_FIXEDTEXT,
                 nullptr, nullptr, nullptr, _rpLabel, _rpControl )
         )
         return false;
@@ -1547,7 +1539,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
 bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXOffsetMM, sal_Int32 _nYOffsetMM,
     const Reference< XPropertySet >& _rxField,
     const Reference< XNumberFormats >& _rxNumberFormats, sal_uInt16 _nControlObjectID,
-    const OUString& _rFieldPostfix, SdrInventor _nInventor, sal_uInt16 _nLabelObjectID,
+    const OUString& _rFieldPostfix, sal_uInt32 _nInventor, sal_uInt16 _nLabelObjectID,
     SdrPage* _pLabelPage, SdrPage* _pControlPage, SdrModel* _pModel, SdrUnoObj*& _rpLabel, SdrUnoObj*& _rpControl)
 {
     sal_Int32 nDataType = 0;
@@ -1556,7 +1548,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
     if ( _rxField.is() )
     {
         nDataType = ::comphelper::getINT32(_rxField->getPropertyValue(FM_PROP_FIELDTYPE));
-        aFieldName = _rxField->getPropertyValue(FM_PROP_NAME);
+        aFieldName = Any(_rxField->getPropertyValue(FM_PROP_NAME));
         aFieldName >>= sFieldName;
     }
 
@@ -1564,7 +1556,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
     ::Size aTextSize( _rOutDev.GetTextWidth(sFieldName + _rFieldPostfix), _rOutDev.GetTextHeight() );
 
     MapMode   eTargetMode( _rOutDev.GetMapMode() ),
-              eSourceMode( MapUnit::Map100thMM );
+              eSourceMode( MAP_100TH_MM );
 
     // Textbreite ist mindestens 4cm
     // Texthoehe immer halber cm
@@ -1608,7 +1600,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
             xLabelModel->setPropertyValue(FM_PROP_NAME, makeAny(sObjectLabel));
         }
 
-        pLabel->SetLogicRect( ::tools::Rectangle(
+        pLabel->SetLogicRect( ::Rectangle(
             OutputDevice::LogicToLogic( ::Point( _nXOffsetMM, _nYOffsetMM ), eSourceMode, eTargetMode ),
             OutputDevice::LogicToLogic( aRealSize, eSourceMode, eTargetMode )
         ) );
@@ -1647,7 +1639,7 @@ bool FmXFormView::createControlLabelPair( OutputDevice& _rOutDev, sal_Int32 _nXO
     aControlSize.Width() = long(Fraction(aControlSize.Width(), 1) * eTargetMode.GetScaleX());
     aControlSize.Height() = long(Fraction(aControlSize.Height(), 1) * eTargetMode.GetScaleY());
 
-    pControl->SetLogicRect( ::tools::Rectangle(
+    pControl->SetLogicRect( ::Rectangle(
         OutputDevice::LogicToLogic( ::Point( aRealSize.Width() + _nXOffsetMM, _nYOffsetMM ), eSourceMode, eTargetMode ),
         OutputDevice::LogicToLogic( aControlSize, eSourceMode, eTargetMode )
     ) );
@@ -1707,7 +1699,7 @@ FmXFormView::ObjectRemoveListener::ObjectRemoveListener( FmXFormView* pParent )
 void FmXFormView::ObjectRemoveListener::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
 {
     const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
-    if (pSdrHint && pSdrHint->GetKind() == SdrHintKind::ObjectRemoved)
+    if (pSdrHint && pSdrHint->GetKind() == HINT_OBJREMOVED)
         m_pParent->ObjectRemovedInAliveMode(pSdrHint->GetObject());
 }
 
@@ -1763,6 +1755,7 @@ void FmXFormView::startMarkListWatching()
     }
 }
 
+
 void FmXFormView::saveMarkList()
 {
     if ( m_pView )
@@ -1781,7 +1774,7 @@ void FmXFormView::saveMarkList()
                     SdrObjListIter aIter( *pObj->GetSubList() );
                     bool bMixed = false;
                     while ( aIter.IsMore() && !bMixed )
-                        bMixed = ( aIter.Next()->GetObjInventor() != SdrInventor::FmForm );
+                        bMixed = ( aIter.Next()->GetObjInventor() != FmFormInventor );
 
                     if ( !bMixed )
                     {
@@ -1791,7 +1784,7 @@ void FmXFormView::saveMarkList()
                 }
                 else
                 {
-                    if ( pObj->GetObjInventor() == SdrInventor::FmForm )
+                    if ( pObj->GetObjInventor() == FmFormInventor )
                     {   // this is a form layer object
                         m_pView->MarkObj( pMark->GetMarkedSdrObj(), pMark->GetPageView(), true /* unmark! */ );
                     }
@@ -1802,9 +1795,10 @@ void FmXFormView::saveMarkList()
     else
     {
         OSL_FAIL( "FmXFormView::saveMarkList: invalid view!" );
-        m_aMark.Clear();
+        m_aMark = SdrMarkList();
     }
 }
+
 
 static bool lcl_hasObject( SdrObjListIter& rIter, SdrObject* pObj )
 {
@@ -1892,7 +1886,7 @@ void FmXFormView::restoreMarkList( SdrMarkList& _rRestoredMarkList )
                 {
                     SdrMark* pMark = m_aMark.GetMark(i);
                     SdrObject* pObj = pMark->GetMarkedSdrObj();
-                    if ( pObj->GetObjInventor() == SdrInventor::FmForm )
+                    if ( pObj->GetObjInventor() == FmFormInventor )
                         if ( !m_pView->IsObjMarked( pObj ) )
                             m_pView->MarkObj( pObj, pMark->GetPageView() );
                 }
@@ -1904,7 +1898,7 @@ void FmXFormView::restoreMarkList( SdrMarkList& _rRestoredMarkList )
     }
 }
 
-void SAL_CALL FmXFormView::focusGained( const FocusEvent& /*e*/ )
+void SAL_CALL FmXFormView::focusGained( const FocusEvent& /*e*/ ) throw (RuntimeException, std::exception)
 {
     if ( m_xWindow.is() && m_pView )
     {
@@ -1912,7 +1906,7 @@ void SAL_CALL FmXFormView::focusGained( const FocusEvent& /*e*/ )
     }
 }
 
-void SAL_CALL FmXFormView::focusLost( const FocusEvent& /*e*/ )
+void SAL_CALL FmXFormView::focusLost( const FocusEvent& /*e*/ ) throw (RuntimeException, std::exception)
 {
     // when switch the focus outside the office the mark didn't change
     // so we can not remove us as focus listener
@@ -1921,6 +1915,20 @@ void SAL_CALL FmXFormView::focusLost( const FocusEvent& /*e*/ )
         m_pView->SetMoveOutside( false, FmFormView::ImplAccess() );
     }
 }
+
+void FmXFormView::removeGridWindowListening()
+{
+    if ( m_xWindow.is() )
+    {
+        m_xWindow->removeFocusListener(this);
+        if ( m_pView )
+        {
+            m_pView->SetMoveOutside( false, FmFormView::ImplAccess() );
+        }
+        m_xWindow = nullptr;
+    }
+}
+
 
 DocumentType FmXFormView::impl_getDocumentType() const
 {

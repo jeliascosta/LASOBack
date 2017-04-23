@@ -45,11 +45,12 @@ class ListLevel : public PropertyMap
     sal_Int32                                     m_nNFC;            //LN_CT_Lvl_numFmt
     sal_Int32                                     m_nJC;             //LN_JC
     sal_Int32                                     m_nFLegal;         //LN_FLEGAL
+    sal_Int32                                     m_nFPrev;          //LN_FPREV
     sal_Int32                                     m_nFPrevSpace;     //LN_FPREVSPACE
+    sal_Int32                                     m_nFWord6;         //LN_FWORD6
     sal_Int16                                     m_nXChFollow;      //LN_IXCHFOLLOW
     OUString                               m_sBulletChar;
     OUString                               m_sGraphicURL;
-    css::awt::Size                         m_aGraphicSize;
     css::uno::Reference<css::graphic::XGraphic> m_sGraphicBitmap;
     sal_Int32                                     m_nTabstop;
     std::shared_ptr< StyleSheetEntry >          m_pParaStyle;
@@ -64,18 +65,20 @@ public:
         ,m_nNFC(-1)
         ,m_nJC(-1)
         ,m_nFLegal(-1)
+        ,m_nFPrev(-1)
         ,m_nFPrevSpace(-1)
+        ,m_nFWord6(-1)
         ,m_nXChFollow(SvxNumberFormat::LISTTAB)
         ,m_nTabstop( 0 )
         ,m_outline(false)
         {}
 
+    virtual ~ListLevel( ){ }
+
     // Setters for the import
     void SetValue( Id nId, sal_Int32 nValue );
     void SetBulletChar( const OUString& sValue ) { m_sBulletChar = sValue; };
     void SetGraphicURL( const OUString& sValue ) { m_sGraphicURL = sValue; };
-    void SetGraphicSize( const css::awt::Size& aValue ) { m_aGraphicSize = aValue; };
-
     void SetGraphicBitmap(css::uno::Reference<css::graphic::XGraphic> const& sValue)
         { m_sGraphicBitmap = sValue; }
     void SetParaStyle( const std::shared_ptr< StyleSheetEntry >& pStyle );
@@ -102,12 +105,12 @@ private:
 };
 
 /// Represents a numbering picture bullet: an id and a graphic.
-class NumPicBullet final
+class NumPicBullet
 {
 public:
     typedef std::shared_ptr<NumPicBullet> Pointer;
     NumPicBullet();
-    ~NumPicBullet();
+    virtual ~NumPicBullet();
 
     void SetId(sal_Int32 nId);
     sal_Int32 GetId() { return m_nId;}
@@ -175,7 +178,7 @@ public:
     typedef std::shared_ptr< ListDef > Pointer;
 
     ListDef( );
-    virtual ~ListDef( ) override;
+    virtual ~ListDef( );
 
     // Accessors
     void SetAbstractDefinition( AbstractListDef::Pointer pAbstract ) { m_pAbstractDef = pAbstract; };
@@ -212,6 +215,7 @@ private:
     // These members are used for import only
     AbstractListDef::Pointer                            m_pCurrentDefinition;
     NumPicBullet::Pointer                               m_pCurrentNumPicBullet;
+    bool                                                m_bIsLFOImport;
 
     AbstractListDef::Pointer    GetAbstractList( sal_Int32 nId );
 
@@ -225,7 +229,7 @@ private:
 public:
 
     ListsManager(DomainMapper& rDMapper, const css::uno::Reference<css::lang::XMultiServiceFactory>& xFactory);
-    virtual ~ListsManager() override;
+    virtual ~ListsManager();
 
     typedef std::shared_ptr< ListsManager >  Pointer;
 

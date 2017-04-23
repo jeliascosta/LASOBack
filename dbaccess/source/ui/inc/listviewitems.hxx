@@ -25,7 +25,7 @@
 namespace dbaui
 {
 
-    #define SV_ITEM_ID_BOLDLBSTRING SvLBoxItemType::String
+    #define SV_ITEM_ID_BOLDLBSTRING SV_ITEM_ID_LBOXSTRING
 
     // OBoldListboxString
     class OBoldListboxString : public SvLBoxString
@@ -39,11 +39,11 @@ namespace dbaui
         {
         }
 
-        virtual SvLBoxItemType GetType() const override;
+        virtual sal_uInt16 GetType() const override;
 
         virtual void Paint(const Point& rPos, SvTreeListBox& rOutDev, vcl::RenderContext& rRenderContext,
                            const SvViewDataEntry* pView, const SvTreeListEntry& rEntry) override;
-        virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* _pViewData = nullptr) override;
+        virtual void InitViewData( SvTreeListBox* pView,SvTreeListEntry* pEntry, SvViewDataItem* _pViewData) override;
 
         bool    isEmphasized() const { return m_bEmphasized; }
         void        emphasize(bool _bEmphasize) { m_bEmphasized = _bEmphasize; }

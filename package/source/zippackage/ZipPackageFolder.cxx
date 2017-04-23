@@ -37,8 +37,6 @@
 #include <EncryptedDataHeader.hxx>
 #include <rtl/instance.hxx>
 
-#include <o3tl/make_unique.hxx>
-
 using namespace com::sun::star;
 using namespace com::sun::star::packages::zip::ZipConstants;
 using namespace com::sun::star::packages::zip;
@@ -88,7 +86,7 @@ bool ZipPackageFolder::LookForUnexpectedODF12Streams( const OUString& aPath )
           ++aCI)
     {
         const OUString &rShortName = (*aCI).first;
-        const ZipContentInfo &rInfo = *(*aCI).second;
+        const ContentInfo &rInfo = *(*aCI).second;
 
         if ( rInfo.bFolder )
         {
@@ -135,7 +133,7 @@ bool ZipPackageFolder::LookForUnexpectedODF12Streams( const OUString& aPath )
 void ZipPackageFolder::setChildStreamsTypeByExtension( const beans::StringPair& aPair )
 {
     OUString aExt;
-    if ( aPair.First.toChar() == '.' )
+    if ( aPair.First.toChar() == (sal_Unicode)'.' )
         aExt = aPair.First;
     else
         aExt = "." + aPair.First;
@@ -145,7 +143,7 @@ void ZipPackageFolder::setChildStreamsTypeByExtension( const beans::StringPair& 
           ++aCI)
     {
         const OUString &rShortName = (*aCI).first;
-        const ZipContentInfo &rInfo = *(*aCI).second;
+        const ContentInfo &rInfo = *(*aCI).second;
 
         if ( rInfo.bFolder )
             rInfo.pFolder->setChildStreamsTypeByExtension( aPair );
@@ -159,6 +157,21 @@ void ZipPackageFolder::setChildStreamsTypeByExtension( const beans::StringPair& 
     }
 }
 
+void ZipPackageFolder::copyZipEntry( ZipEntry &rDest, const ZipEntry &rSource)
+{
+      rDest.nVersion            = rSource.nVersion;
+    rDest.nFlag             = rSource.nFlag;
+    rDest.nMethod           = rSource.nMethod;
+    rDest.nTime             = rSource.nTime;
+    rDest.nCrc              = rSource.nCrc;
+    rDest.nCompressedSize   = rSource.nCompressedSize;
+    rDest.nSize             = rSource.nSize;
+    rDest.nOffset           = rSource.nOffset;
+    rDest.sPath             = rSource.sPath;
+    rDest.nPathLen          = rSource.nPathLen;
+    rDest.nExtraLen         = rSource.nExtraLen;
+}
+
 css::uno::Sequence < sal_Int8 > ZipPackageFolder::static_getImplementationId()
 {
     return lcl_CachedImplId::get().getImplementationId();
@@ -166,6 +179,7 @@ css::uno::Sequence < sal_Int8 > ZipPackageFolder::static_getImplementationId()
 
     // XNameContainer
 void SAL_CALL ZipPackageFolder::insertByName( const OUString& aName, const uno::Any& aElement )
+        throw(IllegalArgumentException, ElementExistException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if (hasByName(aName))
         throw ElementExistException(THROW_WHERE );
@@ -199,6 +213,7 @@ void SAL_CALL ZipPackageFolder::insertByName( const OUString& aName, const uno::
     }
 }
 void SAL_CALL ZipPackageFolder::removeByName( const OUString& Name )
+        throw(NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     ContentHash::iterator aIter = maContents.find ( Name );
     if ( aIter == maContents.end() )
@@ -207,32 +222,37 @@ void SAL_CALL ZipPackageFolder::removeByName( const OUString& Name )
 }
     // XEnumerationAccess
 uno::Reference< XEnumeration > SAL_CALL ZipPackageFolder::createEnumeration(  )
+        throw(uno::RuntimeException, std::exception)
 {
     return uno::Reference < XEnumeration> (new ZipPackageFolderEnumeration(maContents));
 }
     // XElementAccess
 uno::Type SAL_CALL ZipPackageFolder::getElementType(  )
+        throw(uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<XUnoTunnel>::get();
 }
 sal_Bool SAL_CALL ZipPackageFolder::hasElements(  )
+        throw(uno::RuntimeException, std::exception)
 {
     return maContents.size() > 0;
 }
     // XNameAccess
-ZipContentInfo& ZipPackageFolder::doGetByName( const OUString& aName )
+ContentInfo& ZipPackageFolder::doGetByName( const OUString& aName )
+    throw(NoSuchElementException, WrappedTargetException, uno::RuntimeException)
 {
     ContentHash::iterator aIter = maContents.find ( aName );
     if ( aIter == maContents.end())
         throw NoSuchElementException(THROW_WHERE );
-    return *aIter->second;
+    return *(*aIter).second;
 }
-
 uno::Any SAL_CALL ZipPackageFolder::getByName( const OUString& aName )
+    throw(NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     return uno::makeAny ( doGetByName ( aName ).xTunnel );
 }
 uno::Sequence< OUString > SAL_CALL ZipPackageFolder::getElementNames(  )
+        throw(uno::RuntimeException, std::exception)
 {
     sal_uInt32 i=0, nSize = maContents.size();
     uno::Sequence < OUString > aSequence ( nSize );
@@ -243,11 +263,13 @@ uno::Sequence< OUString > SAL_CALL ZipPackageFolder::getElementNames(  )
     return aSequence;
 }
 sal_Bool SAL_CALL ZipPackageFolder::hasByName( const OUString& aName )
+    throw(uno::RuntimeException, std::exception)
 {
     return maContents.find ( aName ) != maContents.end ();
 }
     // XNameReplace
 void SAL_CALL ZipPackageFolder::replaceByName( const OUString& aName, const uno::Any& aElement )
+        throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if ( hasByName( aName ) )
         removeByName( aName );
@@ -299,13 +321,15 @@ void ZipPackageFolder::saveContents(
         ZipOutputStream & rZipOut,
         const uno::Sequence < sal_Int8 >& rEncryptionKey,
         const rtlRandomPool &rRandomPool ) const
+    throw( uno::RuntimeException )
 {
     bool bWritingFailed = false;
 
     if ( maContents.empty() && !rPath.isEmpty() && m_nFormat != embed::StorageFormats::OFOPXML )
     {
         // it is an empty subfolder, use workaround to store it
-        ZipEntry* pTempEntry = new ZipEntry(aEntry);
+        ZipEntry* pTempEntry = new ZipEntry();
+        ZipPackageFolder::copyZipEntry ( *pTempEntry, aEntry );
         pTempEntry->nPathLen = (sal_Int16)( OUStringToOString( rPath, RTL_TEXTENCODING_UTF8 ).getLength() );
         pTempEntry->nExtraLen = -1;
         pTempEntry->sPath = rPath;
@@ -345,7 +369,7 @@ void ZipPackageFolder::saveContents(
           ++aCI)
     {
         const OUString &rShortName = (*aCI).first;
-        const ZipContentInfo &rInfo = *(*aCI).second;
+        const ContentInfo &rInfo = *(*aCI).second;
 
         if ( !bMimeTypeStreamStored || !rShortName.equals( aMimeTypeStreamName ) )
         {
@@ -367,6 +391,7 @@ void ZipPackageFolder::saveContents(
 }
 
 sal_Int64 SAL_CALL ZipPackageFolder::getSomething( const uno::Sequence< sal_Int8 >& aIdentifier )
+    throw(uno::RuntimeException, std::exception)
 {
     sal_Int64 nMe = 0;
     if ( aIdentifier.getLength() == 16 &&
@@ -375,6 +400,7 @@ sal_Int64 SAL_CALL ZipPackageFolder::getSomething( const uno::Sequence< sal_Int8
     return nMe;
 }
 void SAL_CALL ZipPackageFolder::setPropertyValue( const OUString& aPropertyName, const uno::Any& aValue )
+        throw(UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if ( aPropertyName == "MediaType" )
     {
@@ -392,6 +418,7 @@ void SAL_CALL ZipPackageFolder::setPropertyValue( const OUString& aPropertyName,
         throw UnknownPropertyException(THROW_WHERE );
 }
 uno::Any SAL_CALL ZipPackageFolder::getPropertyValue( const OUString& PropertyName )
+        throw(UnknownPropertyException, WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if ( PropertyName == "MediaType" )
     {
@@ -410,13 +437,14 @@ uno::Any SAL_CALL ZipPackageFolder::getPropertyValue( const OUString& PropertyNa
 }
 
 void ZipPackageFolder::doInsertByName ( ZipPackageEntry *pEntry, bool bSetParent )
+        throw(IllegalArgumentException, ElementExistException, WrappedTargetException, uno::RuntimeException)
 {
     try
     {
         if ( pEntry->IsFolder() )
-            maContents[pEntry->getName()] = o3tl::make_unique<ZipContentInfo>(static_cast<ZipPackageFolder*>(pEntry));
+            maContents[pEntry->getName()] = new ContentInfo ( static_cast < ZipPackageFolder *> ( pEntry ) );
         else
-            maContents[pEntry->getName()] = o3tl::make_unique<ZipContentInfo>(static_cast<ZipPackageStream*>(pEntry));
+            maContents[pEntry->getName()] = new ContentInfo ( static_cast < ZipPackageStream *> ( pEntry ) );
     }
     catch(const uno::Exception& rEx)
     {
@@ -427,17 +455,20 @@ void ZipPackageFolder::doInsertByName ( ZipPackageEntry *pEntry, bool bSetParent
         pEntry->setParent ( *this );
 }
 OUString ZipPackageFolder::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString("ZipPackageFolder");
 }
 
 uno::Sequence< OUString > ZipPackageFolder::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > aNames { "com.sun.star.packages.PackageFolder" };
     return aNames;
 }
 
 sal_Bool SAL_CALL ZipPackageFolder::supportsService( OUString const & rServiceName )
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }

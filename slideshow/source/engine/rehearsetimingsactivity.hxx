@@ -52,7 +52,7 @@ public:
     static std::shared_ptr<RehearseTimingsActivity> create(
         const SlideShowContext& rContext );
 
-    virtual ~RehearseTimingsActivity() override;
+    virtual ~RehearseTimingsActivity();
     RehearseTimingsActivity(const RehearseTimingsActivity&) = delete;
     RehearseTimingsActivity& operator=(const RehearseTimingsActivity&) = delete;
 

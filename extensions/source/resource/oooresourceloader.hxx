@@ -31,9 +31,9 @@
 
 namespace extensions { namespace resource
 {
-    typedef std::pair< OUString, css::lang::Locale> ResourceBundleDescriptor;
+    typedef ::std::pair< OUString, css::lang::Locale> ResourceBundleDescriptor;
 
-    struct ResourceBundleDescriptorLess : public std::binary_function<ResourceBundleDescriptor, ResourceBundleDescriptor, bool>
+    struct ResourceBundleDescriptorLess : public ::std::binary_function<ResourceBundleDescriptor, ResourceBundleDescriptor, bool>
     {
         bool operator()( const ResourceBundleDescriptor& _lhs, const ResourceBundleDescriptor& _rhs ) const
         {
@@ -52,15 +52,15 @@ namespace extensions { namespace resource
     class OpenOfficeResourceLoader : public ::cppu::WeakImplHelper< css::resource::XResourceBundleLoader>
     {
     public:
-        typedef std::map<
+        typedef ::std::map<
             ResourceBundleDescriptor,
             css::uno::WeakReference< css::resource::XResourceBundle>,
             ResourceBundleDescriptorLess> ResourceBundleCache;
 
         OpenOfficeResourceLoader(css::uno::Reference< css::uno::XComponentContext> const&);
         // XResourceBundleLoader
-        virtual  css::uno::Reference< css::resource::XResourceBundle> SAL_CALL loadBundle_Default( const OUString& aBaseName ) override;
-        virtual  css::uno::Reference<  css::resource::XResourceBundle> SAL_CALL loadBundle( const OUString& abaseName, const css::lang::Locale& aLocale ) override;
+        virtual  css::uno::Reference< css::resource::XResourceBundle> SAL_CALL loadBundle_Default( const OUString& aBaseName ) throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
+        virtual  css::uno::Reference<  css::resource::XResourceBundle> SAL_CALL loadBundle( const OUString& abaseName, const css::lang::Locale& aLocale ) throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
 
     private:
         OpenOfficeResourceLoader( const OpenOfficeResourceLoader& ) = delete;

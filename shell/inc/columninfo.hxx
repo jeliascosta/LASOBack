@@ -42,22 +42,25 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject) override;
+            void __RPC_FAR *__RPC_FAR *ppvObject);
 
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
+    virtual ULONG STDMETHODCALLTYPE AddRef();
 
-    virtual ULONG STDMETHODCALLTYPE Release() override;
+    virtual ULONG STDMETHODCALLTYPE Release();
 
 
     // IColumnProvider
 
 
-    virtual HRESULT STDMETHODCALLTYPE Initialize(LPCSHCOLUMNINIT psci) override;
+    virtual HRESULT STDMETHODCALLTYPE Initialize(LPCSHCOLUMNINIT psci);
 
-    virtual HRESULT STDMETHODCALLTYPE GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO *psci) override;
+    virtual HRESULT STDMETHODCALLTYPE GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO *psci);
 
     virtual HRESULT STDMETHODCALLTYPE GetItemData(
-        LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT *pvarData) override;
+        LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT *pvarData);
+
+private:
+    bool IsOOFileExtension(wchar_t* Extension) const;
 
 private:
     long    m_RefCnt;

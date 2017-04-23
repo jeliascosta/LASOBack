@@ -28,6 +28,7 @@
 #include <vcl/image.hxx>
 #include "TableWindowListBox.hxx"
 #include "dbu_qry.hrc"
+#include "Query.hrc"
 #include <com/sun/star/sdbcx/XKeysSupplier.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
@@ -48,11 +49,14 @@ using namespace ::com::sun::star::container;
 using namespace ::com::sun::star::beans;
 using namespace dbaui;
 // class OQueryTableWindow
-OQueryTableWindow::OQueryTableWindow( vcl::Window* pParent, const TTableWindowData::value_type& pTabWinData)
+OQueryTableWindow::OQueryTableWindow( vcl::Window* pParent, const TTableWindowData::value_type& pTabWinData, sal_Unicode* pszInitialAlias)
     :OTableWindow( pParent, pTabWinData )
     ,m_nAliasNum(0)
 {
-    m_strInitialAlias = GetAliasName();
+    if (pszInitialAlias != nullptr)
+        m_strInitialAlias = OUString(pszInitialAlias);
+    else
+        m_strInitialAlias = GetAliasName();
 
     // if table name matches alias, do not pass to InitialAlias,
     // as the appending of a possible token could not succeed...
@@ -89,7 +93,7 @@ bool OQueryTableWindow::Init()
         sAliasName += "_" + OUString::number(m_nAliasNum);
     }
 
-    sAliasName = sAliasName.replaceAll("\"", "");
+    sAliasName = comphelper::string::remove(sAliasName, '"');
     SetAliasName(sAliasName);
         // SetAliasName passes it as WinName, hence it uses the base class
     // reset the title
@@ -181,6 +185,11 @@ bool OQueryTableWindow::ExistsField(const OUString& strFieldName, OTableFieldDes
 bool OQueryTableWindow::ExistsAVisitedConn() const
 {
     return static_cast<const OQueryTableView*>(getTableView())->ExistsAVisitedConn(this);
+}
+
+void OQueryTableWindow::KeyInput( const KeyEvent& rEvt )
+{
+    OTableWindow::KeyInput( rEvt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

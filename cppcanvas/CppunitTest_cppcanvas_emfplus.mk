@@ -30,7 +30,10 @@ $(eval $(call gb_CppunitTest_use_libraries,cppcanvas_emfplus, \
 
 $(eval $(call gb_CppunitTest_use_external,cppcanvas_emfplus,boost_headers))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,cppcanvas_emfplus))
+$(eval $(call gb_CppunitTest_use_api,cppcanvas_emfplus,\
+	offapi \
+	udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,cppcanvas_emfplus))
 $(eval $(call gb_CppunitTest_use_vcl_non_headless,cppcanvas_emfplus))
@@ -54,7 +57,6 @@ $(eval $(call gb_CppunitTest_use_components,cppcanvas_emfplus,\
 	ucb/source/core/ucb1 \
 	ucb/source/ucp/file/ucpfile1 \
 	unoxml/source/service/unoxml \
-	uui/util/uui \
 	svtools/util/svt \
 ))
 

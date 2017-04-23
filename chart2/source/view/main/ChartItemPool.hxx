@@ -27,17 +27,18 @@ namespace chart
 class ChartItemPool : public SfxItemPool
 {
 private:
+    SfxPoolItem**   ppPoolDefaults;
     SfxItemInfo*    pItemInfos;
 
 public:
     ChartItemPool();
     ChartItemPool(const ChartItemPool& rPool);
 protected:
-    virtual ~ChartItemPool() override;
+    virtual ~ChartItemPool();
 public:
 
     virtual SfxItemPool* Clone() const override;
-    MapUnit GetMetric( sal_uInt16 nWhich ) const override;
+    SfxMapUnit GetMetric( sal_uInt16 nWhich ) const override;
 
     /// creates a pure chart item pool
     static SfxItemPool* CreateChartItemPool();

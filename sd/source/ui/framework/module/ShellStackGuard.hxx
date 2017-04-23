@@ -33,6 +33,14 @@
 #include <cppuhelper/compbase.hxx>
 #include <memory>
 
+namespace {
+
+typedef ::cppu::WeakComponentImplHelper <
+    css::drawing::framework::XConfigurationChangeListener
+    > ShellStackGuardInterfaceBase;
+
+} // end of anonymous namespace.
+
 namespace sd {
 
 class ViewShellBase;
@@ -40,10 +48,6 @@ class ViewShellBase;
 }
 
 namespace sd { namespace framework {
-
-typedef ::cppu::WeakComponentImplHelper <
-    css::drawing::framework::XConfigurationChangeListener
-    > ShellStackGuardInterfaceBase;
 
 /** This module locks updates of the current configuration in situations
     when the shell stack must not be modified.
@@ -61,18 +65,20 @@ class ShellStackGuard
 {
 public:
     explicit ShellStackGuard (css::uno::Reference<css::frame::XController>& rxController);
-    virtual ~ShellStackGuard() override;
+    virtual ~ShellStackGuard();
 
     virtual void SAL_CALL disposing() override;
 
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
 
-    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent) override;
+    virtual void SAL_CALL disposing (const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XConfigurationController>
@@ -81,7 +87,7 @@ private:
     std::unique_ptr<ConfigurationController::Lock> mpUpdateLock;
     Idle maPrinterPollingIdle;
 
-    DECL_LINK(TimeoutHandler, Timer*, void);
+    DECL_LINK_TYPED(TimeoutHandler, Idle*, void);
 
     /** Return <TRUE/> when the printer is printing.  Return <FALSE/> when
         the printer is not printing, or there is no printer, or something

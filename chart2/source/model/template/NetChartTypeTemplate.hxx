@@ -36,20 +36,23 @@ public:
         bool bHasLines = true,
         bool bHasFilledArea = false
         );
-    virtual ~NetChartTypeTemplate() override;
+    virtual ~NetChartTypeTemplate();
 
 protected:
     // ____ XChartTypeTemplate ____
     virtual sal_Bool SAL_CALL matchesTemplate(
         const css::uno::Reference< css::chart2::XDiagram >& xDiagram,
-        sal_Bool bAdaptProperties ) override;
+        sal_Bool bAdaptProperties )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Reference< css::chart2::XChartType > SAL_CALL
-        getChartTypeForNewSeries( const css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > >& aFormerlyUsedChartTypes ) override;
+        getChartTypeForNewSeries( const css::uno::Sequence< css::uno::Reference< css::chart2::XChartType > >& aFormerlyUsedChartTypes )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL applyStyle(
         const css::uno::Reference< css::chart2::XDataSeries >& xSeries,
         ::sal_Int32 nChartTypeGroupIndex,
         ::sal_Int32 nSeriesIndex,
-        ::sal_Int32 nSeriesCount ) override;
+        ::sal_Int32 nSeriesCount )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ ChartTypeTemplate ____
     virtual css::uno::Reference< css::chart2::XChartType >

@@ -43,6 +43,7 @@ rtl::Reference< DAVSession > DAVSessionFactory::createDAVSession(
                 const OUString & inUri,
                 const uno::Sequence< beans::NamedValue >& rFlags,
                 const uno::Reference< uno::XComponentContext > & rxContext )
+    throw( DAVException )
 {
     m_xContext = rxContext;
 

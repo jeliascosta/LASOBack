@@ -99,7 +99,7 @@ class SwFramePage: public SfxTabPage
     bool            m_bNew;
     bool            m_bNoModifyHdl;
     bool            m_bIsVerticalFrame;  //current frame is in vertical environment - strings are exchanged
-    // #mongolianlayout#
+    // --> OD 2009-08-31 #mongolianlayout#
     bool            m_bIsVerticalL2R;
     bool            m_bIsInRightToLeft; // current frame is in right-to-left environment - strings are exchanged
     bool            m_bHtmlMode;
@@ -128,37 +128,37 @@ class SwFramePage: public SfxTabPage
     bool    m_bIsMathBaselineAlignment;
 
     virtual void    ActivatePage(const SfxItemSet& rSet) override;
-    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
+    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
 
-    DECL_LINK(RangeModifyLoseFocusHdl, Control&, void);
-    DECL_LINK(RangeModifyClickHdl, Button*, void);
+    DECL_LINK_TYPED(RangeModifyLoseFocusHdl, Control&, void);
+    DECL_LINK_TYPED(RangeModifyClickHdl, Button*, void);
     void RangeModifyHdl();
-    DECL_LINK(AnchorTypeHdl, Button*, void);
-    DECL_LINK( PosHdl, ListBox&, void );
-    DECL_LINK( RelHdl, ListBox&, void );
+    DECL_LINK_TYPED(AnchorTypeHdl, Button*, void);
+    DECL_LINK_TYPED( PosHdl, ListBox&, void );
+    DECL_LINK_TYPED( RelHdl, ListBox&, void );
     void            InitPos(RndStdIds eId, sal_Int16 nH, sal_Int16 nHRel,
                             sal_Int16 nV, sal_Int16 nVRel,
                             long   nX,  long   nY);
 
-    DECL_LINK(RealSizeHdl, Button *, void);
-    DECL_LINK( RelSizeClickHdl, Button *, void );
-    DECL_LINK(MirrorHdl, Button *, void);
+    DECL_LINK_TYPED(RealSizeHdl, Button *, void);
+    DECL_LINK_TYPED( RelSizeClickHdl, Button *, void );
+    DECL_LINK_TYPED(MirrorHdl, Button *, void);
 
-    DECL_LINK( AutoWidthClickHdl, Button *, void);
-    DECL_LINK( AutoHeightClickHdl, Button *, void);
+    DECL_LINK_TYPED( AutoWidthClickHdl, Button *, void);
+    DECL_LINK_TYPED( AutoHeightClickHdl, Button *, void);
 
     // update example
     void            UpdateExample();
-    DECL_LINK( ModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( ModifyHdl, Edit&, void );
 
     void            Init(const SfxItemSet& rSet, bool bReset = false);
-    // OD 12.11.2003 #i22341# - adjustment to handle maps, that are ambiguous
+    // OD 12.11.2003 #i22341# - adjustment to handle maps, that are ambigous
     //                          in the alignment.
     sal_Int32       FillPosLB( const FrameMap* _pMap,
                                const sal_Int16 _nAlign,
                                const sal_Int16 _nRel,
                                ListBox& _rLB );
-    // OD 14.11.2003 #i22341# - adjustment to handle maps, that are ambiguous
+    // OD 14.11.2003 #i22341# - adjustment to handle maps, that are ambigous
     //                          in their string entries.
     void            FillRelLB( const FrameMap* _pMap,
                                const sal_uInt16 _nLBSelPos,
@@ -185,7 +185,7 @@ class SwFramePage: public SfxTabPage
 
 public:
     SwFramePage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwFramePage() override;
+    virtual ~SwFramePage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -197,7 +197,7 @@ public:
     void            SetNewFrame(bool bNewFrame) { m_bNew      = bNewFrame; }
     void            SetFormatUsed(bool bFormat);
     void            SetFrameType(const OUString &rType) { m_sDlgType  = rType; }
-    bool     IsInGraficMode() { return m_sDlgType == "PictureDialog" || m_sDlgType == "ObjectDialog"; }
+    inline bool     IsInGraficMode() { return m_sDlgType == "PictureDialog" || m_sDlgType == "ObjectDialog"; }
     void            EnableVerticalPositioning( bool bEnable );
 };
 
@@ -223,11 +223,11 @@ class SwGrfExtPage: public SfxTabPage
     bool            bHtmlMode;
 
     // handler for mirroring
-    DECL_LINK(MirrorHdl, Button*, void);
-    DECL_LINK(BrowseHdl, Button*, void);
+    DECL_LINK_TYPED(MirrorHdl, Button*, void);
+    DECL_LINK_TYPED(BrowseHdl, Button*, void);
 
     virtual void    ActivatePage(const SfxItemSet& rSet) override;
-    virtual ~SwGrfExtPage() override;
+    virtual ~SwGrfExtPage();
     virtual void dispose() override;
 
     using SfxTabPage::ActivatePage;
@@ -240,7 +240,7 @@ public:
 
     virtual bool FillItemSet(SfxItemSet *rSet) override;
     virtual void Reset(const SfxItemSet *rSet) override;
-    virtual DeactivateRC DeactivatePage(SfxItemSet *pSet) override;
+    virtual sfxpg DeactivatePage(SfxItemSet *pSet) override;
 };
 
 class SwFrameURLPage : public SfxTabPage
@@ -255,14 +255,14 @@ class SwFrameURLPage : public SfxTabPage
     VclPtr<CheckBox>        pServerCB;
     VclPtr<CheckBox>        pClientCB;
 
-    DECL_LINK(InsertFileHdl, Button*, void);
+    DECL_LINK_TYPED(InsertFileHdl, Button*, void);
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
 
 public:
     SwFrameURLPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwFrameURLPage() override;
+    virtual ~SwFrameURLPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -304,14 +304,14 @@ class SwFrameAddPage : public SfxTabPage
     bool      m_bFormat;
     bool      m_bNew;
 
-    DECL_LINK(EditModifyHdl, Edit&, void);
-    DECL_LINK(ChainModifyHdl, ListBox&, void);
+    DECL_LINK_TYPED(EditModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(ChainModifyHdl, ListBox&, void);
 
     static const sal_uInt16 aAddPgRg[];
 
 public:
     SwFrameAddPage(vcl::Window *pParent, const SfxItemSet &rSet);
-    virtual ~SwFrameAddPage() override;
+    virtual ~SwFrameAddPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);

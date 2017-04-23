@@ -72,7 +72,7 @@ class OnewayExecutor extends Thread
     /**
      * @member  m_rLink     the object, which wish to be called back by this thread
      * @member  m_nRequest  describes the type of the original request (means the
-     *                      called oneway method)
+     *                      called oneyway method)
      * @member  m_lParams   list of parameters of the original request
      */
     private final IOnewayLink m_rLink     ;

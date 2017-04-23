@@ -69,10 +69,10 @@ namespace svt
 
     protected:
         // XInteractionHandler
-        virtual void SAL_CALL handle( const css::uno::Reference< css::task::XInteractionRequest >& _rxRequest ) override;
+        virtual void SAL_CALL handle( const css::uno::Reference< css::task::XInteractionRequest >& _rxRequest ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
-        virtual ~OFilePickerInteractionHandler() override;
+        virtual ~OFilePickerInteractionHandler();
     };
 
 

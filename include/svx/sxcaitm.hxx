@@ -25,13 +25,13 @@
 #include <svx/sdooitm.hxx>
 
 // SDRATTR_CAPTIONFIXEDANGLE SdrOnOffItem:
-// sal_True=angle predefined by SdrCaptionAngleItem
-// sal_False=free angle
+// sal_True=Winkel durch SdrCaptionAngleItem vorgegeben
+// sal_False=Freier Winkel
 
 // class SdrCaptionAngleItem
-// angle in 1/100 degree
-// only if Type2, Type3 and Type4
-// and only if SdrCaptionIsFixedAngleItem=TRUE
+// Winkelangabe in 1/100 Degree
+// Nur bei Type2, Type3 und Type4
+// und nur wenn SdrCaptionIsFixedAngleItem=TRUE
 
 class SdrCaptionAngleItem: public SdrAngleItem {
 public:

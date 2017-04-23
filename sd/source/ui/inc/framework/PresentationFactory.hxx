@@ -33,12 +33,16 @@
 
 #include <memory>
 
-namespace sd { namespace framework {
+namespace {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XResourceFactory,
     css::drawing::framework::XConfigurationChangeListener
     > PresentationFactoryInterfaceBase;
+
+} // end of anonymous namespace.
+
+namespace sd { namespace framework {
 
 /** This factory creates a marker view whose existence in a configuration
     indicates that a slideshow is running (in another but associated
@@ -49,9 +53,11 @@ class PresentationFactory
       public PresentationFactoryInterfaceBase
 {
 public:
+    static const OUString msPresentationViewURL;
+
     PresentationFactory (
         const css::uno::Reference<css::frame::XController>& rxController);
-    virtual ~PresentationFactory() override;
+    virtual ~PresentationFactory();
 
     virtual void SAL_CALL disposing() override;
 
@@ -60,28 +66,32 @@ public:
     virtual css::uno::Reference<css::drawing::framework::XResource>
         SAL_CALL createResource (
             const css::uno::Reference<
-                css::drawing::framework::XResourceId>& rxViewId) override;
+                css::drawing::framework::XResourceId>& rxViewId)
+        throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, std::exception) override;
 
     virtual void SAL_CALL releaseResource (
-        const css::uno::Reference<css::drawing::framework::XResource>& xView) override;
+        const css::uno::Reference<css::drawing::framework::XResource>& xView)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // lang::XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEventObject) override;
+        const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference<css::drawing::framework::XConfigurationController>
         mxConfigurationController;
     css::uno::Reference<css::frame::XController> mxController;
 
-    /// @throws css::lang::DisposedException
-    void ThrowIfDisposed() const;
+    void ThrowIfDisposed() const
+        throw (css::lang::DisposedException);
 };
 
 } } // end of namespace sd::framework

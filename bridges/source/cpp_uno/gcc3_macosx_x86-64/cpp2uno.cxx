@@ -30,10 +30,10 @@
 #include <uno/data.h>
 #include <typelib/typedescription.hxx>
 
-#include "bridge.hxx"
-#include "cppinterfaceproxy.hxx"
-#include "types.hxx"
-#include "vtablefactory.hxx"
+#include "bridges/cpp_uno/shared/bridge.hxx"
+#include "bridges/cpp_uno/shared/cppinterfaceproxy.hxx"
+#include "bridges/cpp_uno/shared/types.hxx"
+#include "bridges/cpp_uno/shared/vtablefactory.hxx"
 
 #include "abi.hxx"
 #include "call.hxx"
@@ -241,7 +241,7 @@ static typelib_TypeClass cpp2uno_call(
         }
         if ( pReturnTypeDescr )
         {
-            typelib_TypeClass eRet = pReturnTypeDescr->eTypeClass;
+            typelib_TypeClass eRet = (typelib_TypeClass)pReturnTypeDescr->eTypeClass;
             TYPELIB_DANGER_RELEASE( pReturnTypeDescr );
             return eRet;
         }
@@ -414,16 +414,11 @@ unsigned char * codeSnippet( unsigned char * code,
 
     // movq $<nOffsetAndIndex>, %r10
     *reinterpret_cast<sal_uInt16 *>( code ) = 0xba49;
-    *reinterpret_cast<sal_uInt16 *>( code + 2 ) = nOffsetAndIndex & 0xFFFF;
-    *reinterpret_cast<sal_uInt32 *>( code + 4 ) = nOffsetAndIndex >> 16;
-    *reinterpret_cast<sal_uInt16 *>( code + 8 ) = nOffsetAndIndex >> 48;
+    *reinterpret_cast<sal_uInt64 *>( code + 2 ) = nOffsetAndIndex;
 
     // movq $<address of the privateSnippetExecutor>, %r11
     *reinterpret_cast<sal_uInt16 *>( code + 10 ) = 0xbb49;
-    *reinterpret_cast<sal_uInt32 *>( code + 12 )
-        = reinterpret_cast<sal_uInt64>(privateSnippetExecutor);
-    *reinterpret_cast<sal_uInt32 *>( code + 16 )
-        = reinterpret_cast<sal_uInt64>(privateSnippetExecutor) >> 32;
+    *reinterpret_cast<sal_uInt64 *>( code + 12 ) = reinterpret_cast<sal_uInt64>( privateSnippetExecutor );
 
     // jmpq *%r11
     *reinterpret_cast<sal_uInt32 *>( code + 20 ) = 0x00e3ff49;
@@ -445,7 +440,7 @@ bridges::cpp_uno::shared::VtableFactory::mapBlockToVtable(void * block)
     return static_cast< Slot * >(block) + 2;
 }
 
-std::size_t bridges::cpp_uno::shared::VtableFactory::getBlockSize(
+sal_Size bridges::cpp_uno::shared::VtableFactory::getBlockSize(
     sal_Int32 slotCount)
 {
     return (slotCount + 2) * sizeof (Slot) + slotCount * codeSnippetSize;

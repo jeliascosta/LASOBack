@@ -40,7 +40,7 @@ class OOXMLFormulaParserImpl : private FormulaFinalizer
 public:
     explicit            OOXMLFormulaParserImpl( const Reference< XMultiServiceFactory >& rxModelFactory );
 
-    Sequence< FormulaToken > parseFormula( const OUString& rFormula, const ScAddress& rReferencePos );
+    Sequence< FormulaToken > parseFormula( const OUString& rFormula, const CellAddress& rReferencePos );
 
 protected:
     virtual const FunctionInfo* resolveBadFuncName( const OUString& rTokenData ) const override;
@@ -50,12 +50,12 @@ private:
 };
 
 OOXMLFormulaParserImpl::OOXMLFormulaParserImpl( const Reference< XMultiServiceFactory >& rxModelFactory ) :
-    FormulaFinalizer( OpCodeProvider( rxModelFactory, true ) ),
+    FormulaFinalizer( OpCodeProvider( rxModelFactory, FILTER_OOXML, BIFF_UNKNOWN, true ) ),
     maApiParser( rxModelFactory, *this )
 {
 }
 
-Sequence< FormulaToken > OOXMLFormulaParserImpl::parseFormula( const OUString& rFormula, const ScAddress& rReferencePos )
+Sequence< FormulaToken > OOXMLFormulaParserImpl::parseFormula( const OUString& rFormula, const CellAddress& rReferencePos )
 {
     return finalizeTokenArray( maApiParser.parseFormula( rFormula, rReferencePos ) );
 }
@@ -108,17 +108,17 @@ OOXMLFormulaParser::~OOXMLFormulaParser()
 }
 
 // com.sun.star.lang.XServiceInfo interface -----------------------------------
-OUString SAL_CALL OOXMLFormulaParser::getImplementationName()
+OUString SAL_CALL OOXMLFormulaParser::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.oox.xls.FormulaParser");
 }
 
-sal_Bool SAL_CALL OOXMLFormulaParser::supportsService( const OUString& rService )
+sal_Bool SAL_CALL OOXMLFormulaParser::supportsService( const OUString& rService ) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rService);
 }
 
-Sequence< OUString > SAL_CALL OOXMLFormulaParser::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL OOXMLFormulaParser::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aServiceNames { "com.sun.star.sheet.FilterFormulaParser" };
     return aServiceNames;
@@ -126,7 +126,7 @@ Sequence< OUString > SAL_CALL OOXMLFormulaParser::getSupportedServiceNames()
 
 // com.sun.star.lang.XInitialization interface --------------------------------
 
-void SAL_CALL OOXMLFormulaParser::initialize( const Sequence< Any >& rArgs )
+void SAL_CALL OOXMLFormulaParser::initialize( const Sequence< Any >& rArgs ) throw( Exception, RuntimeException, std::exception )
 {
     OSL_ENSURE( rArgs.hasElements(), "OOXMLFormulaParser::initialize - missing arguments" );
     if( !rArgs.hasElements() )
@@ -136,7 +136,7 @@ void SAL_CALL OOXMLFormulaParser::initialize( const Sequence< Any >& rArgs )
 
 // com.sun.star.sheet.XFilterFormulaParser interface --------------------------
 
-OUString SAL_CALL OOXMLFormulaParser::getSupportedNamespace()
+OUString SAL_CALL OOXMLFormulaParser::getSupportedNamespace() throw( RuntimeException, std::exception )
 {
     return OUString( "http://schemas.microsoft.com/office/excel/formula");
 }
@@ -144,19 +144,18 @@ OUString SAL_CALL OOXMLFormulaParser::getSupportedNamespace()
 // com.sun.star.sheet.XFormulaParser interface --------------------------------
 
 Sequence< FormulaToken > SAL_CALL OOXMLFormulaParser::parseFormula(
-        const OUString& rFormula, const CellAddress& rReferencePos )
+        const OUString& rFormula, const CellAddress& rReferencePos ) throw( RuntimeException, std::exception )
 {
     if( !mxParserImpl )
     {
         Reference< XMultiServiceFactory > xModelFactory( mxComponent, UNO_QUERY_THROW );
         mxParserImpl.reset( new OOXMLFormulaParserImpl( xModelFactory ) );
     }
-    return mxParserImpl->parseFormula( rFormula,
-                                       ScAddress(rReferencePos.Column, rReferencePos.Row, rReferencePos.Sheet) );
+    return mxParserImpl->parseFormula( rFormula, rReferencePos );
 }
 
 OUString SAL_CALL OOXMLFormulaParser::printFormula(
-        const Sequence< FormulaToken >& /*rTokens*/, const CellAddress& /*rReferencePos*/ )
+        const Sequence< FormulaToken >& /*rTokens*/, const CellAddress& /*rReferencePos*/ ) throw( RuntimeException, std::exception )
 {
     // not implemented
     throw RuntimeException();

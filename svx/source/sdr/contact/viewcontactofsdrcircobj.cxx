@@ -50,7 +50,7 @@ namespace sdr
                     false));
 
             // take unrotated snap rect (direct model data) for position and size
-            tools::Rectangle aRectangle = GetCircObj().GetGeoRect();
+            Rectangle aRectangle = GetCircObj().GetGeoRect();
             // Hack for calc, transform position of object according
             // to current zoom so as objects relative position to grid
             // appears stable

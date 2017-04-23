@@ -42,6 +42,7 @@ private:
     static  SfxProgress*    pGlobalProgress;
     static  sal_uLong        nGlobalRange;
     static  sal_uLong       nGlobalPercent;
+    static  bool            bGlobalNoUserBreak;
     static  ScProgress*     pInterpretProgress;
     static  ScProgress*     pOldInterpretProgress;
     static  sal_uLong       nInterpretProgress;
@@ -62,6 +63,7 @@ private:
                                 }
 
 public:
+    static  bool            IsUserBreak() { return !bGlobalNoUserBreak; }
     static  void            CreateInterpretProgress( ScDocument* pDoc,
                                                     bool bWait = true );
     static  ScProgress*     GetInterpretProgress() { return pInterpretProgress; }
@@ -70,7 +72,7 @@ public:
                             ScProgress( SfxObjectShell* pObjSh,
                                          const OUString& rText,
                                          sal_uLong nRange,
-                                         bool bWait );
+                                         bool bWait = true );
                             ~ScProgress();
 
 #ifdef SC_PROGRESS_CXX
@@ -78,37 +80,47 @@ public:
                             ScProgress();
 #endif
 
-            void            SetStateText( sal_uLong nVal, const OUString &rVal )
+            bool            SetStateText( sal_uLong nVal, const OUString &rVal )
                                 {
                                     if ( pProgress )
                                     {
                                         CalcGlobalPercent( nVal );
-                                        pProgress->SetStateText( nVal, rVal );
+                                        if ( !pProgress->SetStateText( nVal, rVal ) )
+                                            bGlobalNoUserBreak = false;
+                                        return bGlobalNoUserBreak;
                                     }
+                                    return true;
                                 }
-            void            SetState( sal_uLong nVal, sal_uLong nNewRange = 0 )
+            bool            SetState( sal_uLong nVal, sal_uLong nNewRange = 0 )
                                 {
                                     if ( pProgress )
                                     {
                                         if ( nNewRange )
                                             nGlobalRange = nNewRange;
                                         CalcGlobalPercent( nVal );
-                                        pProgress->SetState( nVal, nNewRange );
+                                        if ( !pProgress->SetState( nVal, nNewRange ) )
+                                            bGlobalNoUserBreak = false;
+                                        return bGlobalNoUserBreak;
                                     }
+                                    return true;
                                 }
-            void            SetStateCountDown( sal_uLong nVal )
+            bool            SetStateCountDown( sal_uLong nVal )
                                 {
                                     if ( pProgress )
                                     {
                                         CalcGlobalPercent( nGlobalRange - nVal );
-                                        pProgress->SetState( nGlobalRange - nVal );
+                                        if ( !pProgress->SetState( nGlobalRange - nVal ) )
+                                            bGlobalNoUserBreak = false;
+                                        return bGlobalNoUserBreak;
                                     }
+                                    return true;
                                 }
-            void            SetStateOnPercent( sal_uLong nVal )
+            bool            SetStateOnPercent( sal_uLong nVal )
                                 {   /// only if percentage increased
                                     if ( nGlobalRange && (nVal * 100 /
                                             nGlobalRange) > nGlobalPercent )
-                                        SetState( nVal );
+                                        return SetState( nVal );
+                                    return true;
                                 }
             void            SetStateCountDownOnPercent( sal_uLong nVal )
                                 {   /// only if percentage increased

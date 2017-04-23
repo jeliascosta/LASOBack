@@ -37,34 +37,47 @@ class CharacterClassificationImpl : public cppu::WeakImplHelper
 public:
 
     CharacterClassificationImpl( const css::uno::Reference < css::uno::XComponentContext >& rxContext );
-    virtual ~CharacterClassificationImpl() override;
+    virtual ~CharacterClassificationImpl();
 
     virtual OUString SAL_CALL toUpper( const OUString& Text,
-        sal_Int32 nPos, sal_Int32 nCount, const css::lang::Locale& rLocale ) override;
+        sal_Int32 nPos, sal_Int32 nCount, const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL toLower( const OUString& Text,
-        sal_Int32 nPos, sal_Int32 nCount, const css::lang::Locale& rLocale ) override;
+        sal_Int32 nPos, sal_Int32 nCount, const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL toTitle( const OUString& Text, sal_Int32 nPos,
-        sal_Int32 nCount, const css::lang::Locale& rLocale ) override;
-    virtual sal_Int16 SAL_CALL getType( const OUString& Text, sal_Int32 nPos ) override;
-    virtual sal_Int16 SAL_CALL getCharacterDirection( const OUString& Text, sal_Int32 nPos ) override;
-    virtual sal_Int16 SAL_CALL getScript( const OUString& Text, sal_Int32 nPos ) override;
+        sal_Int32 nCount, const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getType( const OUString& Text, sal_Int32 nPos )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getCharacterDirection( const OUString& Text, sal_Int32 nPos )
+        throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getScript( const OUString& Text, sal_Int32 nPos )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL getCharacterType( const OUString& text, sal_Int32 nPos,
-        const css::lang::Locale& rLocale ) override;
+        const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual sal_Int32 SAL_CALL getStringType( const OUString& text, sal_Int32 nPos,
-        sal_Int32 nCount, const css::lang::Locale& rLocale ) override;
+        sal_Int32 nCount, const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual ParseResult SAL_CALL parseAnyToken( const OUString& Text, sal_Int32 nPos,
         const css::lang::Locale& rLocale, sal_Int32 nStartCharFlags,
         const OUString& userDefinedCharactersStart, sal_Int32 nContCharFlags,
-        const OUString& userDefinedCharactersCont ) override;
+        const OUString& userDefinedCharactersCont )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual ParseResult SAL_CALL parsePredefinedToken( sal_Int32 nTokenType,
         const OUString& Text, sal_Int32 nPos, const css::lang::Locale& rLocale,
         sal_Int32 nStartCharFlags, const OUString& userDefinedCharactersStart,
-        sal_Int32 nContCharFlags, const OUString& userDefinedCharactersCont ) override;
+        sal_Int32 nContCharFlags, const OUString& userDefinedCharactersCont )
+        throw(css::uno::RuntimeException, std::exception) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+                throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
     struct lookupTableItem {
@@ -86,8 +99,8 @@ private:
     css::uno::Reference < css::uno::XComponentContext > m_xContext;
     css::uno::Reference < XCharacterClassification > xUCI;
 
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference < XCharacterClassification > const & SAL_CALL getLocaleSpecificCharacterClassification(const css::lang::Locale& rLocale);
+    css::uno::Reference < XCharacterClassification > SAL_CALL getLocaleSpecificCharacterClassification(const css::lang::Locale& rLocale)
+        throw(css::uno::RuntimeException);
     bool SAL_CALL createLocaleSpecificCharacterClassification(const OUString& serviceName, const css::lang::Locale& rLocale);
 
 };

@@ -33,8 +33,8 @@ class SwExtTextInput : public SwPaM
     bool bIsOverwriteCursor : 1;
     LanguageType eInputLanguage;
 public:
-    SwExtTextInput( const SwPaM& rPam, Ring* pRing );
-    virtual ~SwExtTextInput() override;
+    SwExtTextInput( const SwPaM& rPam, Ring* pRing = nullptr );
+    virtual ~SwExtTextInput();
 
     void SetInputData( const CommandExtTextInputData& rData );
     const std::vector<ExtTextInputAttr>& GetAttrs() const { return aAttrs; }

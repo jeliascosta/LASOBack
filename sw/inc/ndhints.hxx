@@ -33,7 +33,10 @@ class SfxPoolItem;
 class SfxItemSet;
 class SwDoc;
 
-enum class CopyOrNewType { Copy, New };
+typedef enum {
+    COPY = int(true),
+    NEW  = int(false),
+} CopyOrNew_t;
 
 /// if COPY then pTextNode must be given!
 SwTextAttr * MakeTextAttr(
@@ -41,7 +44,7 @@ SwTextAttr * MakeTextAttr(
     SfxPoolItem & rNew,
     sal_Int32 const nStt,
     sal_Int32 const nEnd,
-    CopyOrNewType const bIsCopy = CopyOrNewType::New,
+    CopyOrNew_t const bIsCopy = NEW,
     SwTextNode *const pTextNode = nullptr );
 
 SwTextAttr * MakeTextAttr(

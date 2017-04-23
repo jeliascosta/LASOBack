@@ -19,6 +19,7 @@
 
 #include "requeststringresolver.hxx"
 #include "iahndl.hxx"
+#include <comphelper/processfactory.hxx>
 #include <cppuhelper/supportsservice.hxx>
 
 using namespace css;
@@ -36,28 +37,31 @@ UUIInteractionRequestStringResolver::~UUIInteractionRequestStringResolver()
 
 OUString SAL_CALL
 UUIInteractionRequestStringResolver::getImplementationName()
+    throw (uno::RuntimeException, std::exception)
 {
-    return OUString("com.sun.star.comp.uui.UUIInteractionRequestStringResolver");
+    return OUString::createFromAscii(m_aImplementationName);
 }
 
 sal_Bool SAL_CALL
 UUIInteractionRequestStringResolver::supportsService(
         OUString const & rServiceName)
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
-
 uno::Sequence< OUString > SAL_CALL
 UUIInteractionRequestStringResolver::getSupportedServiceNames()
+    throw (uno::RuntimeException, std::exception)
 {
-    return { "com.sun.star.task.InteractionRequestStringResolver" };
+    return getSupportedServiceNames_static();
 }
 
 beans::Optional< OUString > SAL_CALL
 UUIInteractionRequestStringResolver::getStringFromInformationalRequest(
     const uno::Reference<
         task::XInteractionRequest >& Request )
+    throw (uno::RuntimeException, std::exception)
 {
     try
     {
@@ -69,12 +73,29 @@ UUIInteractionRequestStringResolver::getStringFromInformationalRequest(
     }
 }
 
-extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
-com_sun_star_comp_uui_UUIInteractionRequestStringResolver_get_implementation(
-    css::uno::XComponentContext *context,
-    css::uno::Sequence<css::uno::Any> const &)
+char const UUIInteractionRequestStringResolver::m_aImplementationName[]
+    = "com.sun.star.comp.uui.UUIInteractionRequestStringResolver";
+
+uno::Sequence< OUString >
+UUIInteractionRequestStringResolver::getSupportedServiceNames_static()
 {
-    return cppu::acquire(new UUIInteractionRequestStringResolver(context));
+    uno::Sequence< OUString > aNames { "com.sun.star.task.InteractionRequestStringResolver" };
+    return aNames;
+}
+
+uno::Reference< uno::XInterface > SAL_CALL
+UUIInteractionRequestStringResolver::createInstance(
+    uno::Reference< lang::XMultiServiceFactory > const &
+        rServiceFactory)
+{
+    try
+    {
+        return *new UUIInteractionRequestStringResolver(comphelper::getComponentContext(rServiceFactory));
+    }
+    catch (std::bad_alloc const &)
+    {
+        throw uno::RuntimeException("out of memory", nullptr);
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

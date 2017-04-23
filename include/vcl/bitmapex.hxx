@@ -33,11 +33,11 @@ namespace com { namespace sun { namespace star { namespace rendering {
     class XBitmapCanvas;
 } } } }
 
-enum class TransparentType
+enum TransparentType
 {
-    NONE,
-    Color,
-    Bitmap
+    TRANSPARENT_NONE,
+    TRANSPARENT_COLOR,
+    TRANSPARENT_BITMAP
 };
 
 class VCL_DLLPUBLIC BitmapEx
@@ -53,6 +53,7 @@ public:
                         BitmapEx( const Bitmap& rBmp, const Bitmap& rMask );
                         BitmapEx( const Bitmap& rBmp, const AlphaMask& rAlphaMask );
                         BitmapEx( const Bitmap& rBmp, const Color& rTransparentColor );
+                        ~BitmapEx();
 
     BitmapEx&           operator=( const BitmapEx& rBitmapEx );
     bool                operator==( const BitmapEx& rBitmapEx ) const;
@@ -134,7 +135,7 @@ public:
         nothing had to be cropped, because e.g. the crop rectangle
         included the bitmap, false is returned, too!
      */
-    bool                Crop( const tools::Rectangle& rRectPixel );
+    bool                Crop( const Rectangle& rRectPixel );
 
     /** Expand the bitmap by pixel padding
 
@@ -143,6 +144,9 @@ public:
 
         @param nDY
         Number of scanlines to pad at the bottom border of the bitmap
+
+        @param pInitColor
+        Color to use for padded pixel
 
         @param bExpandTransparent
         Whether to expand the transparency color or not.
@@ -153,6 +157,7 @@ public:
      */
     bool                Expand(
                             sal_uLong nDX, sal_uLong nDY,
+                            const Color* pInitColor = nullptr,
                             bool bExpandTransparent = false );
 
     /** Copy a rectangular area from another bitmap
@@ -178,9 +183,9 @@ public:
         empty.
      */
     bool                CopyPixel(
-                            const tools::Rectangle& rRectDst,
-                            const tools::Rectangle& rRectSrc,
-                            const BitmapEx* pBmpExSrc );
+                            const Rectangle& rRectDst,
+                            const Rectangle& rRectSrc,
+                            const BitmapEx* pBmpExSrc = nullptr );
 
     /** Fill the entire bitmap with the given color
 
@@ -325,11 +330,11 @@ public:
         @return true, if the operation was completed successfully.
      */
     bool                Adjust(
-                            short nLuminancePercent,
-                            short nContrastPercent,
-                            short nChannelRPercent,
-                            short nChannelGPercent,
-                            short nChannelBPercent,
+                            short nLuminancePercent = 0,
+                            short nContrastPercent = 0,
+                            short nChannelRPercent = 0,
+                            short nChannelGPercent = 0,
+                            short nChannelBPercent = 0,
                             double fGamma = 1.0,
                             bool bInvert = false,
                             bool msoBrightness = false );
@@ -382,7 +387,7 @@ public:
                             double fWidth,
                             double fHeight,
                             const basegfx::B2DHomMatrix& rTransformation,
-                            bool bSmooth) const;
+                            bool bSmooth = true) const;
 
     /** Create transformed Bitmap
 
@@ -408,8 +413,8 @@ public:
     BitmapEx            getTransformed(
                             const basegfx::B2DHomMatrix& rTransformation,
                             const basegfx::B2DRange& rVisibleRange,
-                            double fMaximumArea,
-                            bool bSmooth) const;
+                            double fMaximumArea = 500000.0,
+                            bool bSmooth = true) const;
 
     /** Create ColorStack-modified version of this BitmapEx
 

@@ -49,6 +49,7 @@ static const SvXMLTokenMapEntry aChildren[] =
     XML_TOKEN_MAP_END
 };
 
+
 SchemaContext::SchemaContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
@@ -56,6 +57,10 @@ SchemaContext::SchemaContext(
     const Reference<XDataTypeRepository>& rRepository ) :
         TokenContext( rImport, nPrefix, rLocalName, aAttributes, aChildren ),
         mxRepository( rRepository )
+{
+}
+
+SchemaContext::~SchemaContext()
 {
 }
 

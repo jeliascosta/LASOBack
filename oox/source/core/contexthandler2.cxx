@@ -37,7 +37,7 @@ struct ElementInfo
     sal_Int32           mnElement;          /// The element identifier.
     bool                mbTrimSpaces;       /// True = trims leading/trailing spaces from text data.
 
-    explicit     ElementInfo() : maChars( 0), mnElement( XML_TOKEN_INVALID ), mbTrimSpaces( false ) {}
+    inline explicit     ElementInfo() : maChars( 0), mnElement( XML_TOKEN_INVALID ), mbTrimSpaces( false ) {}
 };
 
 ContextHandler2Helper::ContextHandler2Helper( bool bEnableTrimSpace ) :
@@ -188,23 +188,23 @@ ContextHandler2::~ContextHandler2()
 // com.sun.star.xml.sax.XFastContextHandler interface -------------------------
 
 Reference< XFastContextHandler > SAL_CALL ContextHandler2::createFastChildContext(
-        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs )
+        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs ) throw( SAXException, RuntimeException, std::exception )
 {
     return implCreateChildContext( nElement, rxAttribs );
 }
 
 void SAL_CALL ContextHandler2::startFastElement(
-        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs )
+        sal_Int32 nElement, const Reference< XFastAttributeList >& rxAttribs ) throw( SAXException, RuntimeException, std::exception )
 {
     implStartElement( nElement, rxAttribs );
 }
 
-void SAL_CALL ContextHandler2::characters( const OUString& rChars )
+void SAL_CALL ContextHandler2::characters( const OUString& rChars ) throw( SAXException, RuntimeException, std::exception )
 {
     implCharacters( rChars );
 }
 
-void SAL_CALL ContextHandler2::endFastElement( sal_Int32 nElement )
+void SAL_CALL ContextHandler2::endFastElement( sal_Int32 nElement ) throw( SAXException, RuntimeException, std::exception )
 {
     implEndElement( nElement );
 }

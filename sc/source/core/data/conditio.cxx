@@ -41,7 +41,6 @@
 #include "editutil.hxx"
 #include "tokenarray.hxx"
 #include "refupdatecontext.hxx"
-#include <formula/errorcodes.hxx>
 #include <svl/sharedstring.hxx>
 #include <svl/sharedstringpool.hxx>
 #include <memory>
@@ -169,7 +168,7 @@ void ScConditionEntry::StartListening()
     start_listen_to(*mpListener, pFormula1, rRanges);
     start_listen_to(*mpListener, pFormula2, rRanges);
 
-    mpListener->setCallback([&]() { pCondFormat->DoRepaint();});
+    mpListener->setCallback([&]() { pCondFormat->DoRepaint(nullptr);});
 }
 
 void ScConditionEntry::SetParent(ScConditionalFormat* pParent)
@@ -783,7 +782,7 @@ void ScConditionEntry::Interpret( const ScAddress& rPos )
     if (bDirty && !bFirstRun)
     {
         // Repaint everything for dependent formats
-        DataChanged();
+        DataChanged( nullptr );
     }
 
     bFirstRun = false;
@@ -1038,7 +1037,7 @@ bool ScConditionEntry::IsError( const ScAddress& rPos ) const
 
     if (rCell.meType == CELLTYPE_FORMULA)
     {
-        if (rCell.mpFormula->GetErrCode() != FormulaError::NONE)
+        if (rCell.mpFormula->GetErrCode())
             return true;
     }
 
@@ -1120,7 +1119,7 @@ bool ScConditionEntry::IsValid( double nArg, const ScAddress& rPos ) const
             }
             break;
         case SC_COND_DIRECT:
-            bValid = nComp1 != 0.0;
+            bValid = !::rtl::math::approxEqual( nComp1, 0.0 );
             break;
         case SC_COND_TOP10:
             bValid = IsTopNElement( nArg );
@@ -1203,7 +1202,7 @@ bool ScConditionEntry::IsValidStr( const OUString& rArg, const ScAddress& rPos )
     bool bValid = false;
     // Interpret must already have been called
     if ( eOp == SC_COND_DIRECT ) // Formula is independent from the content
-        return nVal1 != 0.0;
+        return !::rtl::math::approxEqual( nVal1, 0.0 );
 
     if ( eOp == SC_COND_DUPLICATE || eOp == SC_COND_NOTDUPLICATE )
     {
@@ -1375,6 +1374,7 @@ ScTokenArray* ScConditionEntry::CreateFlatCopiedTokenArray( sal_uInt16 nIndex ) 
 {
     assert(nIndex <= 1);
     ScTokenArray* pRet = nullptr;
+    ScAddress aAddr;
 
     if ( nIndex==0 )
     {
@@ -1466,7 +1466,7 @@ ScAddress ScConditionEntry::GetValidSrcPos() const
     return aValidPos;
 }
 
-void ScConditionEntry::DataChanged() const
+void ScConditionEntry::DataChanged( const ScRange* /* pModified */ ) const
 {
     //FIXME: Nothing so far
 }
@@ -1488,10 +1488,10 @@ ScFormatEntry* ScConditionEntry::Clone(ScDocument* pDoc) const
     return new ScConditionEntry(pDoc, *this);
 }
 
-ScConditionMode ScConditionEntry::GetModeFromApi(css::sheet::ConditionOperator nOperation)
+ScConditionMode ScConditionEntry::GetModeFromApi(sal_Int32 nOperation)
 {
     ScConditionMode eMode = SC_COND_NONE;
-    switch ((sal_Int32)nOperation)
+    switch (nOperation)
     {
         case css::sheet::ConditionOperator2::EQUAL:
             eMode = SC_COND_EQUAL;
@@ -1590,10 +1590,10 @@ ScCondFormatEntry::~ScCondFormatEntry()
 {
 }
 
-void ScCondFormatEntry::DataChanged() const
+void ScCondFormatEntry::DataChanged( const ScRange* pModified ) const
 {
     if ( pCondFormat )
-        pCondFormat->DoRepaint();
+        pCondFormat->DoRepaint( pModified );
 }
 
 ScFormatEntry* ScCondFormatEntry::Clone( ScDocument* pDoc ) const
@@ -1692,7 +1692,7 @@ bool ScCondDateFormatEntry::IsValid( const ScAddress& rPos ) const
         case condformat::LASTMONTH:
             if( rActDate.GetMonth() == 1 )
             {
-                if( aCellDate.GetMonth() == 12 && rActDate.GetYear() == aCellDate.GetNextYear() )
+                if( aCellDate.GetMonth() == 12 && rActDate.GetYear() == aCellDate.GetYear() + 1 )
                     return true;
             }
             else if( rActDate.GetYear() == aCellDate.GetYear() )
@@ -1721,7 +1721,7 @@ bool ScCondDateFormatEntry::IsValid( const ScAddress& rPos ) const
             }
             break;
         case condformat::LASTYEAR:
-            if( rActDate.GetYear() == aCellDate.GetNextYear() )
+            if( rActDate.GetYear() == aCellDate.GetYear() + 1 )
                 return true;
             break;
         case condformat::THISYEAR:
@@ -1775,7 +1775,6 @@ ScConditionalFormat* ScConditionalFormat::Clone(ScDocument* pNewDoc) const
         pNewDoc = pDoc;
 
     ScConditionalFormat* pNew = new ScConditionalFormat(nKey, pNewDoc);
-    pNew->SetRange( maRanges );     // prerequisite for listeners
 
     for (CondFormatContainer::const_iterator itr = maEntries.begin(); itr != maEntries.end(); ++itr)
     {
@@ -1783,6 +1782,7 @@ ScConditionalFormat* ScConditionalFormat::Clone(ScDocument* pNewDoc) const
         pNew->maEntries.push_back( std::unique_ptr<ScFormatEntry>(pNewEntry) );
         pNewEntry->SetParent(pNew);
     }
+    pNew->SetRange( maRanges );
 
     return pNew;
 }
@@ -1820,7 +1820,7 @@ void ScConditionalFormat::RemoveEntry(size_t n)
     if (n < maEntries.size())
     {
         maEntries.erase(maEntries.begin() + n);
-        DoRepaint();
+        DoRepaint(nullptr);
     }
 }
 
@@ -1903,10 +1903,18 @@ ScCondFormatData ScConditionalFormat::GetData( ScRefCellValue& rCell, const ScAd
     return aData;
 }
 
-void ScConditionalFormat::DoRepaint()
+void ScConditionalFormat::DoRepaint( const ScRange* pModified )
 {
-    // all conditional format cells
-    pDoc->RepaintRange( maRanges );
+    if(pModified)
+    {
+        if(maRanges.Intersects(*pModified))
+            pDoc->RepaintRange(*pModified);
+    }
+    else
+    {
+        // all conditional format cells
+        pDoc->RepaintRange( maRanges );
+    }
 }
 
 void ScConditionalFormat::CompileAll()
@@ -1925,13 +1933,13 @@ void ScConditionalFormat::CompileXML()
 
 void ScConditionalFormat::UpdateReference( sc::RefUpdateContext& rCxt, bool bCopyAsMove )
 {
-    for(CondFormatContainer::iterator itr = maEntries.begin(); itr != maEntries.end(); ++itr)
-        (*itr)->UpdateReference(rCxt);
-
     if (rCxt.meMode == URM_COPY && bCopyAsMove)
         maRanges.UpdateReference(URM_MOVE, pDoc, rCxt.maRange, rCxt.mnColDelta, rCxt.mnRowDelta, rCxt.mnTabDelta);
     else
         maRanges.UpdateReference(rCxt.meMode, pDoc, rCxt.maRange, rCxt.mnColDelta, rCxt.mnRowDelta, rCxt.mnTabDelta);
+
+    for(CondFormatContainer::iterator itr = maEntries.begin(); itr != maEntries.end(); ++itr)
+        (*itr)->UpdateReference(rCxt);
 }
 
 void ScConditionalFormat::InsertRow(SCTAB nTab, SCCOL nColStart, SCCOL nColEnd, SCROW nRowPos, SCSIZE nSize)
@@ -2242,43 +2250,6 @@ ScConditionalFormatList::iterator ScConditionalFormatList::end()
 ScConditionalFormatList::const_iterator ScConditionalFormatList::end() const
 {
     return m_ConditionalFormats.end();
-}
-
-ScRangeList ScConditionalFormatList::GetCombinedRange() const
-{
-    ScRangeList aRange;
-    for (auto& itr: m_ConditionalFormats)
-    {
-        const ScRangeList& rRange = itr->GetRange();
-        for (size_t i = 0, n = rRange.size(); i < n; ++i)
-        {
-            if (rRange[i])
-                aRange.Join(*rRange[i]);
-        }
-    }
-    return aRange;
-}
-
-void ScConditionalFormatList::RemoveFromDocument(ScDocument* pDoc) const
-{
-    ScRangeList aRange = GetCombinedRange();
-    ScMarkData aMark;
-    aMark.MarkFromRangeList(aRange, true);
-    sal_uInt16 pItems[2] = { ATTR_CONDITIONAL,0};
-    pDoc->ClearSelectionItems(pItems, aMark);
-}
-
-void ScConditionalFormatList::AddToDocument(ScDocument* pDoc) const
-{
-    for (auto& itr: m_ConditionalFormats)
-    {
-        const ScRangeList& rRange = itr->GetRange();
-        if (rRange.empty())
-            continue;
-
-        SCTAB nTab = rRange.front()->aStart.Tab();
-        pDoc->AddCondFormatData(rRange, nTab, itr->GetKey());
-    }
 }
 
 size_t ScConditionalFormatList::size() const

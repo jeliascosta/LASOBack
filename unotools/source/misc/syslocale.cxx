@@ -34,11 +34,8 @@
 using namespace osl;
 using namespace com::sun::star;
 
-namespace {
-
-std::weak_ptr<SvtSysLocale_Impl> g_pSysLocale;
-
-}
+SvtSysLocale_Impl*  SvtSysLocale::pImpl = nullptr;
+sal_Int32           SvtSysLocale::nRefCount = 0;
 
 class SvtSysLocale_Impl : public utl::ConfigurationListener
 {
@@ -48,10 +45,10 @@ public:
         CharClass*              pCharClass;
 
                                 SvtSysLocale_Impl();
-    virtual                     ~SvtSysLocale_Impl() override;
+    virtual                     ~SvtSysLocale_Impl();
 
     CharClass*                  GetCharClass();
-    virtual void                ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+    virtual void                ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
 private:
     void                        setDateAcceptancePatternsConfig();
@@ -80,17 +77,17 @@ CharClass* SvtSysLocale_Impl::GetCharClass()
     return pCharClass;
 }
 
-void SvtSysLocale_Impl::ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints nHint )
+void SvtSysLocale_Impl::ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 nHint )
 {
     MutexGuard aGuard( SvtSysLocale::GetMutex() );
 
-    if ( nHint & ConfigurationHints::Locale )
+    if ( nHint & SYSLOCALEOPTIONS_HINT_LOCALE )
     {
         const LanguageTag& rLanguageTag = aSysLocaleOptions.GetRealLanguageTag();
         pLocaleData->setLanguageTag( rLanguageTag );
         GetCharClass()->setLanguageTag( rLanguageTag );
     }
-    if ( nHint & ConfigurationHints::DatePatterns )
+    if ( nHint & SYSLOCALEOPTIONS_HINT_DATEPATTERNS )
     {
         setDateAcceptancePatternsConfig();
     }
@@ -117,18 +114,19 @@ void SvtSysLocale_Impl::setDateAcceptancePatternsConfig()
 SvtSysLocale::SvtSysLocale()
 {
     MutexGuard aGuard( GetMutex() );
-    pImpl = g_pSysLocale.lock();
     if ( !pImpl )
-    {
-        pImpl = std::make_shared<SvtSysLocale_Impl>();
-        g_pSysLocale = pImpl;
-    }
+        pImpl = new SvtSysLocale_Impl;
+    ++nRefCount;
 }
 
 SvtSysLocale::~SvtSysLocale()
 {
     MutexGuard aGuard( GetMutex() );
-    pImpl.reset();
+    if ( !--nRefCount )
+    {
+        delete pImpl;
+        pImpl = nullptr;
+    }
 }
 
 // static

@@ -128,7 +128,7 @@ void OControlStyleContext::AddProperty(const sal_Int16 nContextID, const uno::An
     sal_Int32 nIndex(static_cast<OReportStylesContext *>(pStyles)->GetIndex(nContextID));
     OSL_ENSURE(nIndex != -1, "Property not found in Map");
     XMLPropertyState aPropState(nIndex, rValue);
-    GetProperties().push_back(aPropState); // has to be inserted in a sort order later
+    GetProperties().push_back(aPropState); // has to be insertes in a sort order later
 }
 
 void OControlStyleContext::SetAttribute( sal_uInt16 nPrefixKey,
@@ -292,7 +292,7 @@ Reference < XNameContainer >
     Reference < XNameContainer > xStyles(SvXMLStylesContext::GetStylesContainer(nFamily));
     if (!xStyles.is())
     {
-        OUString sName;
+     OUString sName;
         switch( nFamily )
         {
             case XML_STYLE_FAMILY_TABLE_TABLE:
@@ -300,7 +300,8 @@ Reference < XNameContainer >
                 if( m_xTableStyles.is() )
                     xStyles.set(m_xTableStyles);
                 else
-                    sName = "TableStyles";
+                    sName =
+                     OUString( OUString( "TableStyles" ));
             }
             break;
             case XML_STYLE_FAMILY_TABLE_CELL:
@@ -308,7 +309,8 @@ Reference < XNameContainer >
                 if( m_xCellStyles.is() )
                     xStyles.set(m_xCellStyles);
                 else
-                    sName = "CellStyles";
+                    sName =
+                     OUString( OUString( "CellStyles" ));
             }
             break;
             case XML_STYLE_FAMILY_TABLE_COLUMN:
@@ -316,7 +318,8 @@ Reference < XNameContainer >
                 if( m_xColumnStyles.is() )
                     xStyles.set(m_xColumnStyles);
                 else
-                    sName = "ColumnStyles";
+                    sName =
+                     OUString( OUString( "ColumnStyles" ));
             }
             break;
             case XML_STYLE_FAMILY_TABLE_ROW:
@@ -324,7 +327,8 @@ Reference < XNameContainer >
                 if( m_xRowStyles.is() )
                     xStyles.set(m_xRowStyles);
                 else
-                    sName = "RowStyles";
+                    sName =
+                     OUString( OUString( "RowStyles" ));
             }
             break;
             case XML_STYLE_FAMILY_SD_GRAPHICS_ID:

@@ -29,7 +29,6 @@
 #include <cppuhelper/supportsservice.hxx>
 #include <comphelper/seqstream.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/io/NotConnectedException.hpp>
 #include <com/sun/star/io/XSequenceOutputStream.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 
@@ -49,20 +48,20 @@ public:
     const SequenceOutputStreamService& operator=(const SequenceOutputStreamService&) = delete;
 
     // css::lang::XServiceInfo:
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString & ServiceName ) override;
-    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw ( uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString & ServiceName ) throw ( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw ( uno::RuntimeException, std::exception ) override;
 
     // css::io::XOutputStream:
-    virtual void SAL_CALL writeBytes( const uno::Sequence< ::sal_Int8 > & aData ) override;
-    virtual void SAL_CALL flush() override;
-    virtual void SAL_CALL closeOutput() override;
+    virtual void SAL_CALL writeBytes( const uno::Sequence< ::sal_Int8 > & aData ) throw ( io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception ) override;
+    virtual void SAL_CALL flush() throw ( uno::RuntimeException, io::NotConnectedException, io::BufferSizeExceededException, io::IOException, std::exception ) override;
+    virtual void SAL_CALL closeOutput() throw ( uno::RuntimeException, io::NotConnectedException, io::BufferSizeExceededException, io::IOException, std::exception ) override;
 
     // css::io::XSequenceOutputStream:
-    virtual uno::Sequence< ::sal_Int8 > SAL_CALL getWrittenBytes(  ) override;
+    virtual uno::Sequence< ::sal_Int8 > SAL_CALL getWrittenBytes(  ) throw ( io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception) override;
 
 private:
-    virtual ~SequenceOutputStreamService() override {};
+    virtual ~SequenceOutputStreamService() {};
 
 
     ::osl::Mutex m_aMutex;
@@ -75,24 +74,24 @@ SequenceOutputStreamService::SequenceOutputStreamService()
 }
 
 // com.sun.star.uno.XServiceInfo:
-OUString SAL_CALL SequenceOutputStreamService::getImplementationName()
+OUString SAL_CALL SequenceOutputStreamService::getImplementationName() throw ( uno::RuntimeException, std::exception )
 {
     return OUString("com.sun.star.comp.SequenceOutputStreamService");
 }
 
-sal_Bool SAL_CALL SequenceOutputStreamService::supportsService( OUString const & serviceName )
+sal_Bool SAL_CALL SequenceOutputStreamService::supportsService( OUString const & serviceName ) throw ( uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, serviceName);
 }
 
-uno::Sequence< OUString > SAL_CALL SequenceOutputStreamService::getSupportedServiceNames()
+uno::Sequence< OUString > SAL_CALL SequenceOutputStreamService::getSupportedServiceNames() throw ( uno::RuntimeException, std::exception )
 {
     uno::Sequence<OUString> s { "com.sun.star.io.SequenceOutputStream" };
     return s;
 }
 
 // css::io::XOutputStream:
-void SAL_CALL SequenceOutputStreamService::writeBytes( const uno::Sequence< ::sal_Int8 > & aData )
+void SAL_CALL SequenceOutputStreamService::writeBytes( const uno::Sequence< ::sal_Int8 > & aData ) throw ( uno::RuntimeException, io::NotConnectedException, io::BufferSizeExceededException, io::IOException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( !m_xOutputStream.is() )
@@ -102,7 +101,7 @@ void SAL_CALL SequenceOutputStreamService::writeBytes( const uno::Sequence< ::sa
     m_aSequence = aData;
 }
 
-void SAL_CALL SequenceOutputStreamService::flush()
+void SAL_CALL SequenceOutputStreamService::flush() throw ( uno::RuntimeException, io::NotConnectedException, io::BufferSizeExceededException, io::IOException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( !m_xOutputStream.is() )
@@ -111,7 +110,7 @@ void SAL_CALL SequenceOutputStreamService::flush()
     m_xOutputStream->flush();
 };
 
-void SAL_CALL SequenceOutputStreamService::closeOutput()
+void SAL_CALL SequenceOutputStreamService::closeOutput() throw ( uno::RuntimeException, io::NotConnectedException, io::BufferSizeExceededException, io::IOException, std::exception )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( !m_xOutputStream.is() )
@@ -122,7 +121,7 @@ void SAL_CALL SequenceOutputStreamService::closeOutput()
 }
 
 // css::io::XSequenceOutputStream:
-uno::Sequence< ::sal_Int8 > SAL_CALL SequenceOutputStreamService::getWrittenBytes()
+uno::Sequence< ::sal_Int8 > SAL_CALL SequenceOutputStreamService::getWrittenBytes() throw ( io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if ( !m_xOutputStream.is() )

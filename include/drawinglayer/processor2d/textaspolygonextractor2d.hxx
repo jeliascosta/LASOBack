@@ -82,7 +82,7 @@ namespace drawinglayer
 
         public:
             explicit TextAsPolygonExtractor2D(const geometry::ViewInformation2D& rViewInformation);
-            virtual ~TextAsPolygonExtractor2D() override;
+            virtual ~TextAsPolygonExtractor2D();
 
             // data read access
             const TextAsPolygonDataNodeVector& getTarget() const { return maTarget; }

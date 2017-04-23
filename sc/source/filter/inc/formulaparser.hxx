@@ -101,7 +101,7 @@ class FormulaParser : public FormulaProcessorBase
 {
 public:
     explicit            FormulaParser( const WorkbookHelper& rHelper );
-    virtual             ~FormulaParser() override;
+    virtual             ~FormulaParser();
 
     /** Converts an OOXML formula string. */
     ApiTokenSequence    importFormula(

@@ -42,7 +42,7 @@ namespace vclcanvas
          */
         BackBuffer( const OutputDevice& rRefDevice,
                     bool                bMonochromeBuffer=false );
-        virtual ~BackBuffer() override;
+        virtual ~BackBuffer();
 
         virtual OutputDevice&       getOutDev() override;
         virtual const OutputDevice& getOutDev() const override;

@@ -92,23 +92,23 @@ using namespace ::dbaui;
 using namespace ::comphelper;
 using namespace ::osl;
 
-OUString SAL_CALL ORelationController::getImplementationName()
+OUString SAL_CALL ORelationController::getImplementationName() throw( RuntimeException, std::exception )
 {
     return getImplementationName_Static();
 }
 
-OUString ORelationController::getImplementationName_Static()
+OUString ORelationController::getImplementationName_Static() throw( RuntimeException )
 {
     return OUString("org.openoffice.comp.dbu.ORelationDesign");
 }
 
-Sequence< OUString> ORelationController::getSupportedServiceNames_Static()
+Sequence< OUString> ORelationController::getSupportedServiceNames_Static() throw( RuntimeException )
 {
     Sequence<OUString> aSupported { "com.sun.star.sdb.RelationDesign" };
     return aSupported;
 }
 
-Sequence< OUString> SAL_CALL ORelationController::getSupportedServiceNames()
+Sequence< OUString> SAL_CALL ORelationController::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
@@ -274,7 +274,7 @@ namespace
 {
     class RelationLoader : public ::osl::Thread
     {
-        typedef std::map<OUString, std::shared_ptr<OTableWindowData>, ::comphelper::UStringMixLess> TTableDataHelper;
+        typedef std::map<OUString, ::std::shared_ptr<OTableWindowData>, ::comphelper::UStringMixLess> TTableDataHelper;
         TTableDataHelper                    m_aTableData;
         TTableConnectionData                m_vTableConnectionData;
         const Sequence< OUString>    m_aTableList;
@@ -305,7 +305,7 @@ namespace
         virtual void SAL_CALL run() override;
         virtual void SAL_CALL onTerminated() override;
     protected:
-        virtual ~RelationLoader() override {}
+        virtual ~RelationLoader(){}
 
         void loadTableData(const Any& _aTable);
     };
@@ -393,7 +393,7 @@ namespace
                             aRefFind->second->ShowAll(false);
                         }
                         else
-                            continue; // table name could not be found so we do not show this table relation
+                            continue; // table name could not be found so we do not show this table releation
                     }
                     TTableWindowData::value_type pReferencedTable = aRefFind->second;
 
@@ -442,7 +442,7 @@ void ORelationController::mergeData(const TTableConnectionData& _aConnectionData
 {
     ::osl::MutexGuard aGuard( getMutex() );
 
-    std::copy( _aConnectionData.begin(), _aConnectionData.end(), std::back_inserter( m_vTableConnectionData ));
+    ::std::copy( _aConnectionData.begin(), _aConnectionData.end(), ::std::back_inserter( m_vTableConnectionData ));
     // here we are finished, so we can collect the table from connection data
     TTableConnectionData::const_iterator aConnDataIter = m_vTableConnectionData.begin();
     TTableConnectionData::const_iterator aConnDataEnd = m_vTableConnectionData.end();
@@ -465,7 +465,7 @@ void ORelationController::mergeData(const TTableConnectionData& _aConnectionData
     }
 }
 
-IMPL_LINK_NOARG( ORelationController, OnThreadFinished, void*, void )
+IMPL_LINK_NOARG_TYPED( ORelationController, OnThreadFinished, void*, void )
 {
     ::SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -501,7 +501,7 @@ void ORelationController::loadData()
         if ( aMeta.supportsThreads() )
         {
             const sal_Int32 nMaxElements = (nCount / MAX_THREADS) +1;
-            sal_Int32 nStart = 0,nEnd = std::min(nMaxElements,nCount);
+            sal_Int32 nStart = 0,nEnd = ::std::min(nMaxElements,nCount);
             while(nStart != nEnd)
             {
                 ++m_nThreadEvent;
@@ -511,7 +511,7 @@ void ORelationController::loadData()
                 pThread->resume();
                 nStart = nEnd;
                 nEnd += nMaxElements;
-                nEnd = std::min(nEnd,nCount);
+                nEnd = ::std::min(nEnd,nCount);
             }
         }
         else

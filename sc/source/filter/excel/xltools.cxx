@@ -197,50 +197,56 @@ sal_uInt8 XclTools::GetXclOrientFromRot( sal_uInt16 nXclRot )
     return EXC_ORIENT_NONE;
 }
 
-sal_uInt8 XclTools::GetXclErrorCode( FormulaError nScError )
+sal_uInt8 XclTools::GetXclErrorCode( sal_uInt16 nScError )
 {
     switch( nScError )
     {
-        case FormulaError::IllegalArgument:        return EXC_ERR_VALUE;
-        case FormulaError::IllegalFPOperation:     return EXC_ERR_NUM;     // maybe DIV/0 or NUM...
-        case FormulaError::DivisionByZero:         return EXC_ERR_DIV0;
-        case FormulaError::IllegalParameter:       return EXC_ERR_VALUE;
-        case FormulaError::PairExpected:           return EXC_ERR_VALUE;
-        case FormulaError::OperatorExpected:       return EXC_ERR_VALUE;
-        case FormulaError::VariableExpected:       return EXC_ERR_VALUE;
-        case FormulaError::ParameterExpected:      return EXC_ERR_VALUE;
-        case FormulaError::NoValue:                return EXC_ERR_VALUE;
-        case FormulaError::CircularReference:      return EXC_ERR_VALUE;
-        case FormulaError::NoCode:                 return EXC_ERR_NULL;
-        case FormulaError::NoRef:                  return EXC_ERR_REF;
-        case FormulaError::NoName:                 return EXC_ERR_NAME;
-        case FormulaError::NoAddin:                return EXC_ERR_NAME;
-        case FormulaError::NoMacro:                return EXC_ERR_NAME;
-        case FormulaError::NotAvailable:           return EXC_ERR_NA;
-        default: break;
+        case formula::errIllegalArgument:        return EXC_ERR_VALUE;
+        case formula::errIllegalFPOperation:     return EXC_ERR_NUM;     // maybe DIV/0 or NUM...
+        case formula::errDivisionByZero:         return EXC_ERR_DIV0;
+        case formula::errIllegalParameter:       return EXC_ERR_VALUE;
+        case formula::errPairExpected:           return EXC_ERR_VALUE;
+        case formula::errOperatorExpected:       return EXC_ERR_VALUE;
+        case formula::errVariableExpected:       return EXC_ERR_VALUE;
+        case formula::errParameterExpected:      return EXC_ERR_VALUE;
+        case formula::errNoValue:                return EXC_ERR_VALUE;
+        case formula::errCircularReference:      return EXC_ERR_VALUE;
+        case formula::errNoCode:                 return EXC_ERR_NULL;
+        case formula::errNoRef:                  return EXC_ERR_REF;
+        case formula::errNoName:                 return EXC_ERR_NAME;
+        case formula::errNoAddin:                return EXC_ERR_NAME;
+        case formula::errNoMacro:                return EXC_ERR_NAME;
+        case formula::NOTAVAILABLE:              return EXC_ERR_NA;
     }
     return EXC_ERR_NA;
 }
 
-FormulaError XclTools::GetScErrorCode( sal_uInt8 nXclError )
+sal_uInt16 XclTools::GetScErrorCode( sal_uInt8 nXclError )
 {
     switch( nXclError )
     {
-        case EXC_ERR_NULL:  return FormulaError::NoCode;
-        case EXC_ERR_DIV0:  return FormulaError::DivisionByZero;
-        case EXC_ERR_VALUE: return FormulaError::NoValue;
-        case EXC_ERR_REF:   return FormulaError::NoRef;
-        case EXC_ERR_NAME:  return FormulaError::NoName;
-        case EXC_ERR_NUM:   return FormulaError::IllegalFPOperation;
-        case EXC_ERR_NA:    return FormulaError::NotAvailable;
+        case EXC_ERR_NULL:  return formula::errNoCode;
+        case EXC_ERR_DIV0:  return formula::errDivisionByZero;
+        case EXC_ERR_VALUE: return formula::errNoValue;
+        case EXC_ERR_REF:   return formula::errNoRef;
+        case EXC_ERR_NAME:  return formula::errNoName;
+        case EXC_ERR_NUM:   return formula::errIllegalFPOperation;
+        case EXC_ERR_NA:    return formula::NOTAVAILABLE;
         default:            OSL_FAIL( "XclTools::GetScErrorCode - unknown error code" );
     }
-    return FormulaError::NotAvailable;
+    return formula::NOTAVAILABLE;
 }
 
 double XclTools::ErrorToDouble( sal_uInt8 nXclError )
 {
-    return CreateDoubleError(GetScErrorCode( nXclError ));
+    union
+    {
+        double fVal;
+        sal_math_Double smD;
+    };
+    ::rtl::math::setNan( &fVal );
+    smD.nan_parts.fraction_lo = GetScErrorCode( nXclError );
+    return fVal;
 }
 
 XclBoolError XclTools::ErrorToEnum( double& rfDblValue, bool bErrOrBool, sal_uInt8 nValue )
@@ -387,15 +393,15 @@ const XclCodePageEntry* const pCodePageTableEnd = std::end(pCodePageTable);
 
 struct XclCodePageEntry_CPPred
 {
-    explicit     XclCodePageEntry_CPPred( sal_uInt16 nCodePage ) : mnCodePage( nCodePage ) {}
-    bool         operator()( const XclCodePageEntry& rEntry ) const { return rEntry.mnCodePage == mnCodePage; }
+    inline explicit     XclCodePageEntry_CPPred( sal_uInt16 nCodePage ) : mnCodePage( nCodePage ) {}
+    inline bool         operator()( const XclCodePageEntry& rEntry ) const { return rEntry.mnCodePage == mnCodePage; }
     sal_uInt16          mnCodePage;
 };
 
 struct XclCodePageEntry_TEPred
 {
-    explicit     XclCodePageEntry_TEPred( rtl_TextEncoding eTextEnc ) : meTextEnc( eTextEnc ) {}
-    bool         operator()( const XclCodePageEntry& rEntry ) const { return rEntry.meTextEnc == meTextEnc; }
+    inline explicit     XclCodePageEntry_TEPred( rtl_TextEncoding eTextEnc ) : meTextEnc( eTextEnc ) {}
+    inline bool         operator()( const XclCodePageEntry& rEntry ) const { return rEntry.meTextEnc == meTextEnc; }
     rtl_TextEncoding    meTextEnc;
 };
 
@@ -406,7 +412,7 @@ rtl_TextEncoding XclTools::GetTextEncoding( sal_uInt16 nCodePage )
     const XclCodePageEntry* pEntry = ::std::find_if( pCodePageTable, pCodePageTableEnd, XclCodePageEntry_CPPred( nCodePage ) );
     if( pEntry == pCodePageTableEnd )
     {
-        SAL_WARN("sc",  "XclTools::GetTextEncoding - unknown code page: 0x" << std::hex << nCodePage );
+        OSL_TRACE( "XclTools::GetTextEncoding - unknown code page: 0x%04hX (%d)", nCodePage, nCodePage );
         return RTL_TEXTENCODING_DONTKNOW;
     }
     return pEntry->meTextEnc;
@@ -420,7 +426,7 @@ sal_uInt16 XclTools::GetXclCodePage( rtl_TextEncoding eTextEnc )
     const XclCodePageEntry* pEntry = ::std::find_if( pCodePageTable, pCodePageTableEnd, XclCodePageEntry_TEPred( eTextEnc ) );
     if( pEntry == pCodePageTableEnd )
     {
-        SAL_WARN("sc",  "XclTools::GetXclCodePage - unsupported text encoding: 0x" << std::hex << eTextEnc );
+        OSL_TRACE( "XclTools::GetXclCodePage - unsupported text encoding: %d", eTextEnc );
         return 1252;
     }
     return pEntry->mnCodePage;
@@ -434,8 +440,9 @@ OUString XclTools::GetXclFontName( const OUString& rFontName )
 }
 
 // built-in defined names
-static const char maDefNamePrefix[]    = "Excel_BuiltIn_"; /// Prefix for built-in defined names.
-static const char maDefNamePrefixXml[] = "_xlnm.";         /// Prefix for built-in defined names for OOX
+const OUString XclTools::maDefNamePrefix( "Excel_BuiltIn_" );
+
+const OUString XclTools::maDefNamePrefixXml ( "_xlnm." );
 
 static const sal_Char* const ppcDefNames[] =
 {
@@ -482,7 +489,7 @@ OUString XclTools::GetBuiltInDefNameXml( sal_Unicode cBuiltIn )
 
 sal_Unicode XclTools::GetBuiltInDefNameIndex( const OUString& rDefName )
 {
-    sal_Int32 nPrefixLen = strlen(maDefNamePrefix);
+    sal_Int32 nPrefixLen = maDefNamePrefix.getLength();
     if( rDefName.startsWithIgnoreAsciiCase( maDefNamePrefix ) )
     {
         for( sal_Unicode cBuiltIn = 0; cBuiltIn < EXC_BUILTIN_UNKNOWN; ++cBuiltIn )
@@ -504,8 +511,8 @@ sal_Unicode XclTools::GetBuiltInDefNameIndex( const OUString& rDefName )
 
 // built-in style names
 
-static const char maStyleNamePrefix1[] = "Excel_BuiltIn_";  /// Prefix for built-in cell style names.
-static const char maStyleNamePrefix2[] = "Excel Built-in "; /// Prefix for built-in cell style names from OOX filter.
+const OUString XclTools::maStyleNamePrefix1( "Excel_BuiltIn_" );
+const OUString XclTools::maStyleNamePrefix2( "Excel Built-in " );
 
 static const sal_Char* const ppcStyleNames[] =
 {
@@ -564,9 +571,9 @@ bool XclTools::IsBuiltInStyleName( const OUString& rStyleName, sal_uInt8* pnStyl
 
     sal_Int32 nPrefixLen = 0;
     if( rStyleName.startsWithIgnoreAsciiCase( maStyleNamePrefix1 ) )
-        nPrefixLen = strlen(maStyleNamePrefix1);
+        nPrefixLen = maStyleNamePrefix1.getLength();
     else if( rStyleName.startsWithIgnoreAsciiCase( maStyleNamePrefix2 ) )
-        nPrefixLen = strlen(maStyleNamePrefix2);
+        nPrefixLen = maStyleNamePrefix2.getLength();
     if( nPrefixLen > 0 )
     {
         for( sal_uInt8 nId = 0; nId < SAL_N_ELEMENTS( ppcStyleNames ); ++nId )
@@ -628,8 +635,8 @@ bool XclTools::GetBuiltInStyleId( sal_uInt8& rnStyleId, sal_uInt8& rnLevel, cons
 
 // conditional formatting style names
 
-static const char maCFStyleNamePrefix1[] = "Excel_CondFormat_"; /// Prefix for cond. formatting style names.
-static const char maCFStyleNamePrefix2[] = "ConditionalStyle_"; /// Prefix for cond. formatting style names from OOX filter.
+const OUString XclTools::maCFStyleNamePrefix1( "Excel_CondFormat_" );
+const OUString XclTools::maCFStyleNamePrefix2( "ConditionalStyle_" );
 
 OUString XclTools::GetCondFormatStyleName( SCTAB nScTab, sal_Int32 nFormat, sal_uInt16 nCondition )
 {
@@ -669,8 +676,8 @@ void XclTools::SkipSubStream( XclImpStream& rStrm )
 
 // Basic macro names
 
-static const char maSbMacroPrefix[] = "vnd.sun.star.script:";              /// Prefix for StarBasic macros.
-static const char maSbMacroSuffix[] = "?language=Basic&location=document"; /// Suffix for StarBasic macros.
+const OUString XclTools::maSbMacroPrefix( "vnd.sun.star.script:" );
+const OUString XclTools::maSbMacroSuffix( "?language=Basic&location=document" );
 
 OUString XclTools::GetSbMacroUrl( const OUString& rMacroName, SfxObjectShell* pDocShell )
 {
@@ -684,12 +691,12 @@ OUString XclTools::GetSbMacroUrl( const OUString& rMacroName, SfxObjectShell* pD
 OUString XclTools::GetXclMacroName( const OUString& rSbMacroUrl )
 {
     sal_Int32 nSbMacroUrlLen = rSbMacroUrl.getLength();
-    sal_Int32 nMacroNameLen = nSbMacroUrlLen - strlen(maSbMacroPrefix) - strlen(maSbMacroSuffix);
+    sal_Int32 nMacroNameLen = nSbMacroUrlLen - maSbMacroPrefix.getLength() - maSbMacroSuffix.getLength();
     if( (nMacroNameLen > 0) && rSbMacroUrl.startsWithIgnoreAsciiCase( maSbMacroPrefix ) &&
             rSbMacroUrl.endsWithIgnoreAsciiCase( maSbMacroSuffix ) )
     {
-        sal_Int32 nPrjDot = rSbMacroUrl.indexOf( '.', strlen(maSbMacroPrefix) ) + 1;
-        return rSbMacroUrl.copy( nPrjDot, nSbMacroUrlLen - nPrjDot - strlen(maSbMacroSuffix) );
+        sal_Int32 nPrjDot = rSbMacroUrl.indexOf( '.', maSbMacroPrefix.getLength() ) + 1;
+        return rSbMacroUrl.copy( nPrjDot, nSbMacroUrlLen - nPrjDot - maSbMacroSuffix.getLength() );
     }
     return OUString();
 }

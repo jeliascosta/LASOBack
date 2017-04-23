@@ -152,7 +152,7 @@ uno::Any ScDocOptionsHelper::getPropertyValue(
             aRet <<= (sal_Int32)( rOptions.GetIterCount() );
         break;
         case PROP_UNO_ITEREPSILON:
-            aRet <<= rOptions.GetIterEps();
+            aRet <<= (double)( rOptions.GetIterEps() );
         break;
         case PROP_UNO_LOOKUPLABELS:
             aRet <<= rOptions.IsLookUpColRowNames();
@@ -162,8 +162,7 @@ uno::Any ScDocOptionsHelper::getPropertyValue(
         break;
         case PROP_UNO_NULLDATE:
         {
-            sal_uInt16 nD, nM;
-            sal_Int16 nY;
+            sal_uInt16 nD, nM, nY;
             rOptions.GetDate( nD, nM, nY );
             util::Date aDate( nD, nM, nY );
             aRet <<= aDate;
@@ -198,6 +197,9 @@ ScDocOptionsObj::~ScDocOptionsObj()
 
 void SAL_CALL ScDocOptionsObj::setPropertyValue(
                         const OUString& aPropertyName, const uno::Any& aValue )
+                throw(beans::UnknownPropertyException, beans::PropertyVetoException,
+                        lang::IllegalArgumentException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -208,6 +210,8 @@ void SAL_CALL ScDocOptionsObj::setPropertyValue(
 }
 
 uno::Any SAL_CALL ScDocOptionsObj::getPropertyValue( const OUString& aPropertyName )
+                throw(beans::UnknownPropertyException, lang::WrappedTargetException,
+                        uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 

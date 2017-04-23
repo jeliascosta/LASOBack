@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblelistbox.hxx>
-#include <standard/vclxaccessiblelistitem.hxx>
-#include <helper/listboxhelper.hxx>
+#include <accessibility/standard/vclxaccessiblelistbox.hxx>
+#include <accessibility/standard/vclxaccessiblelistitem.hxx>
+#include <accessibility/helper/listboxhelper.hxx>
 
 #include <algorithm>
 
@@ -57,15 +57,22 @@ bool VCLXAccessibleListBox::IsValid() const
     return GetWindow().get() != nullptr;
 }
 
+void VCLXAccessibleListBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEvent)
+{
+    VCLXAccessibleBox::ProcessWindowEvent( rVclWindowEvent );
+}
+
 // XServiceInfo
 
 OUString VCLXAccessibleListBox::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleListBox" );
 }
 
 
 Sequence< OUString > VCLXAccessibleListBox::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aNames = VCLXAccessibleBox::getSupportedServiceNames();
     sal_Int32 nLength = aNames.getLength();

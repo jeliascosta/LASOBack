@@ -88,7 +88,6 @@ $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/chart2,\
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/chart2/data,\
 	DatabaseDataProvider \
     LabeledDataSequence \
-    PivotTableFieldEntry \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/configuration,\
     ReadOnlyAccess \
@@ -245,9 +244,11 @@ $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/linguistic2,\
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/logging,\
 	ConsoleHandler \
 	CsvLogFormatter \
+	DocumentIOLogRing \
 	FileHandler \
 	LoggerPool \
 	PlainTextFormatter \
+	SimpleLogRing \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/mail,\
 	MailMessage \
@@ -436,9 +437,6 @@ $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/ui/dialogs,\
 	Wizard \
 	XSLTFilterDialog \
 ))
-$(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/ui/test,\
-    UITest \
-))
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/util,\
 	JobManager \
 	NumberFormatter \
@@ -460,7 +458,9 @@ $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/xml/crypto,\
 	NSSInitializer \
 	SecurityEnvironment \
 	SEInitializer \
+	XMLEncryptionTemplate \
 	XMLSecurityContext \
+	XMLSignatureTemplate \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles_nohdl,offapi,com/sun/star/xml/dom,\
 	DocumentBuilder \
@@ -1592,6 +1592,13 @@ $(eval $(call gb_UnoApi_add_idlfiles_noheader,offapi,com/sun/star/xml/crypto,\
 	XMLEncryption \
 	XMLSignature \
 ))
+$(eval $(call gb_UnoApi_add_idlfiles_noheader,offapi,com/sun/star/xml/crypto/sax,\
+	Decryptor \
+	Encryptor \
+	SAXEventKeeper \
+	SignatureCreator \
+	SignatureVerifier \
+))
 $(eval $(call gb_UnoApi_add_idlfiles_noheader,offapi,com/sun/star/xml/input,\
 	SaxDocumentHandler \
 ))
@@ -2056,7 +2063,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/chart2/data,\
 	XLabeledDataSequence \
 	XLabeledDataSequence2 \
 	XNumericalDataSequence \
-	XPivotTableDataProvider \
 	XRangeHighlighter \
 	XRangeXMLConversion \
 	XSheetDataProvider \
@@ -2524,7 +2530,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/form/binding,\
 	XListEntryListener \
 	XListEntrySink \
 	XListEntrySource \
-	XListEntryTypedSource \
 	XValueBinding \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/form/runtime,\
@@ -2659,7 +2664,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/frame/status,\
 	ItemState \
 	ItemStatus \
 	LeftRightMargin \
-	LeftRightMarginScale \
 	Template \
 	UpperLowerMargin \
 	UpperLowerMarginScale \
@@ -2861,6 +2865,7 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/logging,\
 	XLogHandler \
 	XLogger \
 	XLoggerPool \
+	XSimpleLogRing \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/mail,\
 	MailAttachment \
@@ -2895,6 +2900,7 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/mozilla,\
 	XProfileDiscover \
 	XProfileManager \
 	XProxyRunner \
+	XRemoteServiceManagerProvider \
 ))
 $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/office,\
 	XAnnotation \
@@ -3400,7 +3406,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/sheet,\
 	FunctionArgument \
 	FunctionCategory \
 	GeneralFunction \
-       GeneralFunction2 \
 	GoalResult \
 	IconSetFormatEntry \
 	IconSetType \
@@ -3496,7 +3501,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/sheet,\
 	XLabelRange \
 	XLabelRanges \
 	XLevelsSupplier \
-	XMembersAccess \
 	XMembersSupplier \
 	XMultiFormulaTokens \
 	XMultipleOperation \
@@ -3636,9 +3640,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/table,\
 	XTableChart \
 	XTableCharts \
 	XTableChartsSupplier \
-	XTablePivotChart \
-	XTablePivotCharts \
-	XTablePivotChartsSupplier \
 	XTableColumns \
 	XTableRows \
 ))
@@ -4062,10 +4063,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/ui/dialogs,\
 	XWizardController \
 	XWizardPage \
 ))
-$(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/ui/test,\
-	XUIObject \
-	XUITest \
-))
 $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/util,\
 	AliasProgrammaticPair \
 	AtomClassRequest \
@@ -4107,7 +4104,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/util,\
 	TriState \
 	URL \
 	VetoException \
-	XAccounting \
 	XAtomServer \
 	XBroadcaster \
 	XCancellable \
@@ -4253,6 +4249,7 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/xml/crypto/sax,\
 	XSAXEventKeeper \
 	XSAXEventKeeperStatusChangeBroadcaster \
 	XSAXEventKeeperStatusChangeListener \
+	XSecurityController \
 	XSecuritySAXEventKeeper \
 	XSignatureCreationResultBroadcaster \
 	XSignatureCreationResultListener \
@@ -4324,7 +4321,6 @@ $(eval $(call gb_UnoApi_add_idlfiles,offapi,com/sun/star/xml/sax,\
 	XEntityResolver \
 	XErrorHandler \
 	XExtendedDocumentHandler \
-	XFastNamespaceHandler \
 	XFastAttributeList \
 	XFastContextHandler \
 	XFastDocumentHandler \

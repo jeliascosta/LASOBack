@@ -112,7 +112,7 @@
 #define W_META_CREATEBITMAP         0x06FE
 #define W_META_CREATEREGION         0x06FF
 
-static void GetWinExtMax( const Point& rSource, tools::Rectangle& rPlaceableBound, const sal_Int16 nMapMode )
+static void GetWinExtMax( const Point& rSource, Rectangle& rPlaceableBound, const sal_Int16 nMapMode )
 {
     Point aSource( rSource );
     if ( nMapMode == MM_HIMETRIC )
@@ -127,7 +127,7 @@ static void GetWinExtMax( const Point& rSource, tools::Rectangle& rPlaceableBoun
         rPlaceableBound.Bottom() = aSource.Y();
 }
 
-static void GetWinExtMax( const tools::Rectangle& rSource, tools::Rectangle& rPlaceableBound, const sal_Int16 nMapMode )
+static void GetWinExtMax( const Rectangle& rSource, Rectangle& rPlaceableBound, const sal_Int16 nMapMode )
 {
     GetWinExtMax( rSource.TopLeft(), rPlaceableBound, nMapMode );
     GetWinExtMax( rSource.BottomRight(), rPlaceableBound, nMapMode );
@@ -147,14 +147,14 @@ inline Point WMFReader::ReadYX()
     return Point( nX, nY );
 }
 
-tools::Rectangle WMFReader::ReadRectangle()
+Rectangle WMFReader::ReadRectangle()
 {
     Point aBR, aTL;
     aBR = ReadYX();
     aTL = ReadYX();
     aBR.X()--;
     aBR.Y()--;
-    return tools::Rectangle( aTL, aBR );
+    return Rectangle( aTL, aBR );
 }
 
 Size WMFReader::ReadYXExt()
@@ -195,7 +195,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
         {
             sal_uInt16 nROP2 = 0;
             pWMF->ReadUInt16( nROP2 );
-            pOut->SetRasterOp( (WMFRasterOp)nROP2 );
+            pOut->SetRasterOp( nROP2 );
         }
         break;
 
@@ -306,7 +306,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
         {
             Point aEnd( ReadYX() );
             Point aStart( ReadYX() );
-            tools::Rectangle aRect( ReadRectangle() );
+            Rectangle aRect( ReadRectangle() );
             aRect.Justify();
             pOut->DrawArc( aRect, aStart, aEnd );
         }
@@ -316,7 +316,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
         {
             Point     aEnd( ReadYX() );
             Point     aStart( ReadYX() );
-            tools::Rectangle aRect( ReadRectangle() );
+            Rectangle aRect( ReadRectangle() );
             aRect.Justify();
 
             // #i73608# OutputDevice deviates from WMF
@@ -332,7 +332,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
         {
             Point aEnd( ReadYX() );
             Point aStart( ReadYX() );
-            tools::Rectangle aRect( ReadRectangle() );
+            Rectangle aRect( ReadRectangle() );
             aRect.Justify();
             pOut->DrawChord( aRect, aStart, aEnd );
         }
@@ -357,7 +357,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                 pOut->DrawPolygon(aPoly);
             }
 
-            SAL_WARN_IF(!bRecordOk, "vcl.wmf", "polygon record has more points than we can handle");
+            SAL_WARN_IF(!bRecordOk, "vcl.filter", "polygon record has more points than we can handle");
 
             bRecordOk &= pWMF->good();
 
@@ -400,7 +400,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                     nPoints += pnPoints[a];
                 }
 
-                SAL_WARN_IF(!bRecordOk, "vcl.wmf", "polypolygon record has more polygons than we can handle");
+                SAL_WARN_IF(!bRecordOk, "vcl.filter", "polypolygon record has more polygons than we can handle");
 
                 bRecordOk &= pWMF->good();
 
@@ -464,7 +464,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                 pOut->DrawPolyLine( aPoly );
             }
 
-            SAL_WARN_IF(!bRecordOk, "vcl.wmf", "polyline record has more points than we can handle");
+            SAL_WARN_IF(!bRecordOk, "vcl.filter", "polyline record has more points than we can handle");
 
             bRecordOk &= pWMF->good();
 
@@ -508,7 +508,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
             if ( nLength )
             {
                 std::unique_ptr<char[]> pChar(new char[ ( nLength + 1 ) &~ 1 ]);
-                pWMF->ReadBytes(pChar.get(), (nLength + 1) &~ 1);
+                pWMF->Read( pChar.get(), ( nLength + 1 ) &~ 1 );
                 OUString aText( pChar.get(), nLength, pOut->GetCharSet() );
                 pChar.reset();
                 Point aPosition( ReadYX() );
@@ -519,48 +519,44 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
 
         case W_META_EXTTEXTOUT:
         {
+            sal_uInt16  nLen = 0, nOptions = 0;
+            sal_Int32   nRecordPos, nRecordSize = 0, nOriginalTextLen, nNewTextLen;
+            Point       aPosition;
+            Rectangle   aRect;
+            std::unique_ptr<long[]> pDXAry;
+
             pWMF->SeekRel(-6);
-            sal_Int32 nRecordPos = pWMF->Tell(), nRecordSize = 0;
+            nRecordPos = pWMF->Tell();
             pWMF->ReadInt32( nRecordSize );
             pWMF->SeekRel(2);
-            Point aPosition = ReadYX();
-            sal_uInt16 nLen = 0, nOptions = 0;
-            pWMF->ReadUInt16( nLen ).ReadUInt16( nOptions );
+            aPosition = ReadYX();
+            pWMF->ReadUInt16( nLen );
+            pWMF->ReadUInt16( nOptions );
 
-            ComplexTextLayoutFlags nTextLayoutMode = ComplexTextLayoutFlags::Default;
+            ComplexTextLayoutMode nTextLayoutMode = TEXT_LAYOUT_DEFAULT;
             if ( nOptions & ETO_RTLREADING )
-                nTextLayoutMode = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft;
+                nTextLayoutMode = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT;
             pOut->SetTextLayoutMode( nTextLayoutMode );
-            SAL_WARN_IF( ( nOptions & ( ETO_PDY | ETO_GLYPH_INDEX ) ) != 0, "vcl.wmf", "SJ: ETO_PDY || ETO_GLYPH_INDEX in WMF" );
+            DBG_ASSERT( ( nOptions & ( ETO_PDY | ETO_GLYPH_INDEX ) ) == 0, "SJ: ETO_PDY || ETO_GLYPH_INDEX in WMF" );
 
             // output only makes sense if the text contains characters
             if( nLen )
             {
-                sal_Int32 nOriginalTextLen = nLen;
-                sal_Int32 nOriginalBlockLen = ( nOriginalTextLen + 1 ) &~ 1;
-                tools::Rectangle aRect;
+                nOriginalTextLen = nLen;
                 if( nOptions & ETO_CLIPPED )
                 {
                     const Point aPt1( ReadPoint() );
                     const Point aPt2( ReadPoint() );
-                    aRect = tools::Rectangle( aPt1, aPt2 );
+                    aRect = Rectangle( aPt1, aPt2 );
                 }
+                std::unique_ptr<char[]> pChar(new char[ ( nOriginalTextLen + 1 ) &~ 1 ]);
+                pWMF->Read( pChar.get(), ( nOriginalTextLen + 1 ) &~ 1 );
+                OUString aText( pChar.get(), (sal_uInt16)nOriginalTextLen, pOut->GetCharSet() );// after this conversion the text may contain
+                nNewTextLen = aText.getLength();                                          // less character (japanese version), so the
+                pChar.reset();                                                         // dxAry will not fit
 
-                auto nRemainingSize = pWMF->remainingSize();
-                if (nRemainingSize < static_cast<sal_uInt32>(nOriginalBlockLen))
-                {
-                    SAL_WARN("vcl.wmf", "exttextout record claimed more data than the stream can provide");
-                    nOriginalTextLen = nOriginalBlockLen = nRemainingSize;
-                }
-
-                std::unique_ptr<char[]> pChar(new char[nOriginalBlockLen]);
-                pWMF->ReadBytes(pChar.get(), nOriginalBlockLen);
-                OUString aText(pChar.get(), nOriginalTextLen, pOut->GetCharSet()); // after this conversion the text may contain
-                sal_Int32 nNewTextLen = aText.getLength();                         // less character (japanese version), so the
-                                                                                   // dxAry will not fit
                 if ( nNewTextLen )
                 {
-                    std::unique_ptr<long[]> pDXAry, pDYAry;
                     sal_uInt32  nMaxStreamPos = nRecordPos + ( nRecordSize << 1 );
                     sal_Int32   nDxArySize =  nMaxStreamPos - pWMF->Tell();
                     sal_Int32   nDxAryEntries = nDxArySize >> 1;
@@ -568,56 +564,37 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
 
                     if ( ( ( nDxAryEntries % nOriginalTextLen ) == 0 ) && ( nNewTextLen <= nOriginalTextLen ) )
                     {
-                        sal_Int32 i; // needed just outside the for
+                        sal_Int16 nDx = 0, nDxTmp = 0;
+                        sal_uInt16 i; //needed just outside the for
                         pDXAry.reset(new long[ nNewTextLen ]);
-                        if ( nOptions & ETO_PDY )
-                        {
-                            pDYAry.reset(new long[ nNewTextLen ]);
-                        }
                         for (i = 0; i < nNewTextLen; i++ )
                         {
                             if ( pWMF->Tell() >= nMaxStreamPos )
                                 break;
-                            sal_Int32 nDxCount = 1;
+                            pWMF->ReadInt16( nDx );
                             if ( nNewTextLen != nOriginalTextLen )
                             {
-                                sal_Unicode cUniChar = aText[i];
-                                OString aTmp(&cUniChar, 1, pOut->GetCharSet());
+                                sal_Unicode nUniChar = aText[i];
+                                OString aTmp(&nUniChar, 1, pOut->GetCharSet());
                                 if ( aTmp.getLength() > 1 )
                                 {
-                                    nDxCount = aTmp.getLength();
-                                }
-                            }
-
-                            sal_Int16 nDx = 0, nDy = 0;
-                            while ( nDxCount-- )
-                            {
-                                if ( ( pWMF->Tell() + 2 ) > nMaxStreamPos )
-                                    break;
-                                sal_Int16 nDxTmp = 0;
-                                pWMF->ReadInt16(nDxTmp);
-                                nDx += nDxTmp;
-                                if ( nOptions & ETO_PDY )
-                                {
-                                    if ( ( pWMF->Tell() + 2 ) > nMaxStreamPos )
+                                    sal_Int32 nDxCount = aTmp.getLength() - 1;
+                                    if ( ( ( nDxCount * 2 ) + pWMF->Tell() ) > nMaxStreamPos )
                                         break;
-                                    sal_Int16 nDyTmp = 0;
-                                    pWMF->ReadInt16(nDyTmp);
-                                    nDy += nDyTmp;
+                                    while ( nDxCount-- )
+                                    {
+                                        pWMF->ReadInt16( nDxTmp );
+                                        nDx = nDx + nDxTmp;
+                                    }
                                 }
                             }
-
                             pDXAry[ i ] = nDx;
-                            if ( nOptions & ETO_PDY )
-                            {
-                                pDYAry[i] = nDy;
-                            }
                         }
                         if ( i == nNewTextLen )
                             bUseDXAry = true;
                     }
                     if ( pDXAry && bUseDXAry )
-                        pOut->DrawText( aPosition, aText, pDXAry.get(), pDYAry.get() );
+                        pOut->DrawText( aPosition, aText, pDXAry.get() );
                     else
                         pOut->DrawText( aPosition, aText );
                 }
@@ -674,7 +651,8 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
             if (bOk)
             {
                 Bitmap aBmp( Size( nWidth, nHeight ), nBitCount );
-                Bitmap::ScopedWriteAccess pAcc(aBmp);
+                BitmapWriteAccess* pAcc;
+                pAcc = aBmp.AcquireWriteAccess();
                 if ( pAcc )
                 {
                     for (sal_uInt16 y = 0; y < nHeight && pWMF->good(); ++y)
@@ -694,15 +672,15 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                             }
                         }
                     }
-                    pAcc.reset();
+                    Bitmap::ReleaseAccess( pAcc );
                     if ( nSye && nSxe &&
                         ( ( nSx + nSxe ) <= aBmp.GetSizePixel().Width() ) &&
                             ( ( nSy + nSye <= aBmp.GetSizePixel().Height() ) ) )
                     {
-                        tools::Rectangle aCropRect( Point( nSx, nSy ), Size( nSxe, nSye ) );
+                        Rectangle aCropRect( Point( nSx, nSy ), Size( nSxe, nSye ) );
                         aBmp.Crop( aCropRect );
                     }
-                    tools::Rectangle aDestRect( aPoint, Size( nSxe, nSye ) );
+                    Rectangle aDestRect( aPoint, Size( nSxe, nSye ) );
                     aBmpSaveList.emplace_back(new BSaveStruct(aBmp, aDestRect, nWinROP));
                 }
             }
@@ -741,7 +719,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                 Size aDestSize( ReadYXExt() );
                 if ( aDestSize.Width() && aDestSize.Height() )  // #92623# do not try to read buggy bitmaps
                 {
-                    tools::Rectangle aDestRect( ReadYX(), aDestSize );
+                    Rectangle aDestRect( ReadYX(), aDestSize );
                     if ( nWinROP != PATCOPY )
                         ReadDIB(aBmp, *pWMF, false);
 
@@ -750,7 +728,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                         ( ( nSx + nSxe ) <= aBmp.GetSizePixel().Width() ) &&
                             ( ( nSy + nSye <= aBmp.GetSizePixel().Height() ) ) )
                     {
-                        tools::Rectangle aCropRect( Point( nSx, nSy ), Size( nSxe, nSye ) );
+                        Rectangle aCropRect( Point( nSx, nSy ), Size( nSxe, nSye ) );
                         aBmp.Crop( aCropRect );
                     }
                     aBmpSaveList.emplace_back(new BSaveStruct(aBmp, aDestRect, nWinROP));
@@ -762,13 +740,14 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
         case W_META_DIBCREATEPATTERNBRUSH:
         {
             Bitmap  aBmp;
+            BitmapReadAccess* pBmp;
             sal_uInt32  nRed = 0, nGreen = 0, nBlue = 0, nCount = 1;
             sal_uInt16  nFunction = 0;
 
             pWMF->ReadUInt16( nFunction ).ReadUInt16( nFunction );
 
             ReadDIB(aBmp, *pWMF, false);
-            Bitmap::ScopedReadAccess pBmp(aBmp);
+            pBmp = aBmp.AcquireReadAccess();
             if ( pBmp )
             {
                 for ( long y = 0; y < pBmp->Height(); y++ )
@@ -785,7 +764,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                 nCount = pBmp->Height() * pBmp->Width();
                 if ( !nCount )
                     nCount++;
-                pBmp.reset();
+                Bitmap::ReleaseAccess( pBmp );
             }
             Color aColor( (sal_uInt8)( nRed / nCount ), (sal_uInt8)( nGreen / nCount ), (sal_uInt8)( nBlue / nCount ) );
             pOut->CreateObject(o3tl::make_unique<WinMtfFillStyle>( aColor, false ));
@@ -837,33 +816,33 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
             switch( nStyle & 0xFF )
             {
                 case PS_DASHDOTDOT :
-                    aLineInfo.SetStyle( LineStyle::Dash );
+                    aLineInfo.SetStyle( LINE_DASH );
                     aLineInfo.SetDashCount( 1 );
                     aLineInfo.SetDotCount( 2 );
                 break;
                 case PS_DASHDOT :
-                    aLineInfo.SetStyle( LineStyle::Dash );
+                    aLineInfo.SetStyle( LINE_DASH );
                     aLineInfo.SetDashCount( 1 );
                     aLineInfo.SetDotCount( 1 );
                 break;
                 case PS_DOT :
-                    aLineInfo.SetStyle( LineStyle::Dash );
+                    aLineInfo.SetStyle( LINE_DASH );
                     aLineInfo.SetDashCount( 0 );
                     aLineInfo.SetDotCount( 1 );
                 break;
                 case PS_DASH :
-                    aLineInfo.SetStyle( LineStyle::Dash );
+                    aLineInfo.SetStyle( LINE_DASH );
                     aLineInfo.SetDashCount( 1 );
                     aLineInfo.SetDotCount( 0 );
                 break;
                 case PS_NULL :
                     bTransparent = true;
-                    aLineInfo.SetStyle( LineStyle::NONE );
+                    aLineInfo.SetStyle( LINE_NONE );
                 break;
                 default :
                 case PS_INSIDEFRAME :
                 case PS_SOLID :
-                    aLineInfo.SetStyle( LineStyle::Solid );
+                    aLineInfo.SetStyle( LINE_SOLID );
             }
             switch( nStyle & 0xF00 )
             {
@@ -924,7 +903,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
             pWMF->ReadUChar( aLogFont.lfClipPrecision );
             pWMF->ReadUChar( aLogFont.lfQuality );
             pWMF->ReadUChar( aLogFont.lfPitchAndFamily );
-            size_t nRet = pWMF->ReadBytes( lfFaceName, LF_FACESIZE );
+            size_t nRet = pWMF->Read( lfFaceName, LF_FACESIZE );
             lfFaceName[nRet] = 0;
             aLogFont.lfWidth = aFontSize.Width();
             aLogFont.lfHeight = aFontSize.Height();
@@ -973,12 +952,11 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
 
         case W_META_PATBLT:
         {
-            sal_uInt32 nROP = 0;
-            WMFRasterOp nOldROP = WMFRasterOp::NONE;
+            sal_uInt32 nROP = 0, nOldROP = 0;
             pWMF->ReadUInt32( nROP );
             Size aSize = ReadYXExt();
-            nOldROP = pOut->SetRasterOp( (WMFRasterOp)nROP );
-            pOut->DrawRect( tools::Rectangle( ReadYX(), aSize ), false );
+            nOldROP = pOut->SetRasterOp( nROP );
+            pOut->DrawRect( Rectangle( ReadYX(), aSize ), false );
             pOut->SetRasterOp( nOldROP );
         }
         break;
@@ -1046,7 +1024,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                                 if ( nEscLen > 0 )
                                 {
                                     pData.reset(new sal_Int8[ nEscLen ]);
-                                    pWMF->ReadBytes(pData.get(), nEscLen);
+                                    pWMF->Read( pData.get(), nEscLen );
                                     nCheckSum = rtl_crc32( nCheckSum, pData.get(), nEscLen );
                                 }
                                 if ( nCheck == nCheckSum )
@@ -1063,7 +1041,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                                                 sal_uInt32  nStringLen, nDXCount;
                                                 std::unique_ptr<long[]> pDXAry;
                                                 SvMemoryStream aMemoryStream( nEscLen );
-                                                aMemoryStream.WriteBytes(pData.get(), nEscLen);
+                                                aMemoryStream.Write( pData.get(), nEscLen );
                                                 aMemoryStream.Seek( STREAM_SEEK_TO_BEGIN );
                                                 sal_Int32 nTmpX(0), nTmpY(0);
                                                 aMemoryStream.ReadInt32( nTmpX )
@@ -1115,13 +1093,7 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                             {   // first EMF comment
                                 nEMFRecCount    = nComRecCount;
                                 nEMFSize        = nEMFTotalSize;
-                                if (nEMFSize > pWMF->remainingSize())
-                                {
-                                    SAL_WARN("vcl.wmf", "emf size claims to be larger than remaining data");
-                                    pEMFStream.reset();
-                                }
-                                else
-                                    pEMFStream = o3tl::make_unique<SvMemoryStream>(nEMFSize, 0);
+                                pEMFStream = o3tl::make_unique<SvMemoryStream>(nEMFSize, 0);
                             }
                             else if( ( nEMFRecCount != nComRecCount ) || ( nEMFSize != nEMFTotalSize ) ) // add additional checks here
                             {
@@ -1131,25 +1103,18 @@ void WMFReader::ReadRecordParams( sal_uInt16 nFunc )
                             }
                             nEMFRec++;
 
-                            if (pEMFStream && nCurRecSize + 34 > nLen)
+                            if( pEMFStream && nCurRecSize + 34 > nLen )
                             {
                                 nEMFRecCount = 0xFFFFFFFF;
                                 pEMFStream.reset();
                             }
 
-                            if (pEMFStream && nCurRecSize > pWMF->remainingSize())
+                            if( pEMFStream )
                             {
-                                SAL_WARN("vcl.wmf", "emf record size claims to be larger than remaining data");
-                                nEMFRecCount = 0xFFFFFFFF;
-                                pEMFStream.reset();
-                            }
-
-                            if (pEMFStream)
-                            {
-                                std::vector<sal_Int8> aBuf(nCurRecSize);
-                                sal_uInt32 nCount = pWMF->ReadBytes(aBuf.data(), nCurRecSize);
+                                std::unique_ptr<sal_Int8[]> pBuf(new sal_Int8[ nCurRecSize ]);
+                                sal_uInt32 nCount = pWMF->Read( pBuf.get(), nCurRecSize );
                                 if( nCount == nCurRecSize )
-                                    pEMFStream->WriteBytes(aBuf.data(), nCount);
+                                    pEMFStream->Write( pBuf.get(), nCount );
                             }
                         }
                     }
@@ -1191,7 +1156,7 @@ static const long   aMaxWidth = 1024;
 
 bool WMFReader::ReadHeader()
 {
-    sal_uInt64 const nStrmPos = pWMF->Tell();
+    sal_Size nStrmPos = pWMF->Tell();
 
     sal_uInt32 nPlaceableMetaKey(0);
     // if available read the METAFILEHEADER
@@ -1199,7 +1164,7 @@ bool WMFReader::ReadHeader()
     if (!pWMF->good())
         return false;
 
-    tools::Rectangle aPlaceableBound;
+    Rectangle aPlaceableBound;
 
     bool bPlaceable = nPlaceableMetaKey == 0x9ac6cdd7L;
 
@@ -1243,7 +1208,7 @@ bool WMFReader::ReadHeader()
             && (pExternalHeader->mapMode == MM_ISOTROPIC || pExternalHeader->mapMode == MM_ANISOTROPIC))
         {
             // #n417818#: If we have an external header then overwrite the bounds!
-            tools::Rectangle aExtRect(0, 0,
+            Rectangle aExtRect(0, 0,
                           (double) pExternalHeader->xExt * 567 * nUnitsPerInch / 1440000,
                           (double) pExternalHeader->yExt * 567 * nUnitsPerInch / 1440000);
             aPlaceableBound = aExtRect;
@@ -1266,7 +1231,7 @@ bool WMFReader::ReadHeader()
             {
                 double fRatio = aPlaceableBound.GetWidth() / fMaxWidth;
 
-                aPlaceableBound = tools::Rectangle(
+                aPlaceableBound = Rectangle(
                                     aPlaceableBound.Left()   / fRatio,
                                     aPlaceableBound.Top()    / fRatio,
                                     aPlaceableBound.Right()  / fRatio,
@@ -1291,8 +1256,8 @@ bool WMFReader::ReadHeader()
     if( ( labs( aWMFSize.Width() ) > 1 ) && ( labs( aWMFSize.Height() ) > 1 ) )
     {
         const Fraction  aFrac( 1, nUnitsPerInch );
-        MapMode         aWMFMap( MapUnit::MapInch, Point(), aFrac, aFrac );
-        Size            aSize100( OutputDevice::LogicToLogic( aWMFSize, aWMFMap, MapUnit::Map100thMM ) );
+        MapMode         aWMFMap( MAP_INCH, Point(), aFrac, aFrac );
+        Size            aSize100( OutputDevice::LogicToLogic( aWMFSize, aWMFMap, MAP_100TH_MM ) );
         aDevExt = Size( labs( aSize100.Width() ), labs( aSize100.Height() ) );
     }
     pOut->SetDevExt( aDevExt );
@@ -1331,6 +1296,7 @@ void WMFReader::ReadWMF()
 
     nSkipActions = 0;
     nCurrentAction = 0;
+    nUnicodeEscapeAction = 0;
 
     pEMFStream.reset();
     nEMFRecCount    = 0;
@@ -1405,7 +1371,7 @@ void WMFReader::ReadWMF()
                         if( bEMFAvailable )
                         {
                             pOut->AddFromGDIMetaFile( aMeta );
-                            pOut->SetrclFrame( tools::Rectangle( Point(0, 0), aMeta.GetPrefSize()));
+                            pOut->SetrclFrame( Rectangle( Point(0, 0), aMeta.GetPrefSize()));
 
                             // the stream needs to be set to the wmf end position,
                             // otherwise the GfxLink that is created will be incorrect
@@ -1442,11 +1408,11 @@ void WMFReader::ReadWMF()
         pWMF->Seek( nStartPos );
 }
 
-void WMFReader::GetPlaceableBound( tools::Rectangle& rPlaceableBound, SvStream* pStm )
+void WMFReader::GetPlaceableBound( Rectangle& rPlaceableBound, SvStream* pStm )
 {
     bool bRet = true;
 
-    tools::Rectangle aBound;
+    Rectangle aBound;
     aBound.Left()   = RECT_MAX;
     aBound.Top()    = RECT_MAX;
     aBound.Right()  = RECT_MIN;
@@ -1745,7 +1711,7 @@ void WMFReader::GetPlaceableBound( tools::Rectangle& rPlaceableBound, SvStream* 
                         Size aDestSize( ReadYXExt() );
                         if ( aDestSize.Width() && aDestSize.Height() )  // #92623# do not try to read buggy bitmaps
                         {
-                            tools::Rectangle aDestRect( ReadYX(), aDestSize );
+                            Rectangle aDestRect( ReadYX(), aDestSize );
                             GetWinExtMax( aDestRect, aBound, nMapMode );
                             bBoundsDetermined = true;
                         }
@@ -1758,7 +1724,7 @@ void WMFReader::GetPlaceableBound( tools::Rectangle& rPlaceableBound, SvStream* 
                     sal_uInt32 nROP;
                     pStm->ReadUInt32( nROP );
                     Size aSize = ReadYXExt();
-                    GetWinExtMax( tools::Rectangle( ReadYX(), aSize ), aBound, nMapMode );
+                    GetWinExtMax( Rectangle( ReadYX(), aSize ), aBound, nMapMode );
                     bBoundsDetermined = true;
                 }
                 break;
@@ -1788,14 +1754,14 @@ void WMFReader::GetPlaceableBound( tools::Rectangle& rPlaceableBound, SvStream* 
     {
         if (aWinExt)
         {
-            rPlaceableBound = tools::Rectangle(aWinOrg, *aWinExt);
+            rPlaceableBound = Rectangle(aWinOrg, *aWinExt);
             SAL_INFO("vcl.wmf", "Window dimension "
                        " t: " << rPlaceableBound.Left()  << " l: " << rPlaceableBound.Top()
                     << " b: " << rPlaceableBound.Right() << " r: " << rPlaceableBound.Bottom());
         }
         else if (aViewportExt)
         {
-            rPlaceableBound = tools::Rectangle(aViewportOrg, *aViewportExt);
+            rPlaceableBound = Rectangle(aViewportOrg, *aViewportExt);
             SAL_INFO("vcl.wmf", "Viewport dimension "
                        " t: " << rPlaceableBound.Left()  << " l: " << rPlaceableBound.Top()
                     << " b: " << rPlaceableBound.Right() << " r: " << rPlaceableBound.Bottom());
@@ -1830,6 +1796,7 @@ WMFReader::WMFReader(SvStream& rStreamWMF, GDIMetaFile& rGDIMetaFile,
     , nEMFSize(0)
     , nSkipActions(0)
     , nCurrentAction(0)
+    , nUnicodeEscapeAction(0)
     , pExternalHeader(pExtHeader)
 {}
 

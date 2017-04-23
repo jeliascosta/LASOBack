@@ -32,7 +32,7 @@ class SdrMediaWindow : public ::avmedia::MediaWindow
 public:
 
                             SdrMediaWindow( vcl::Window* pParent, ViewObjectContactOfSdrMediaObj& rViewObjContact );
-                            virtual ~SdrMediaWindow() override;
+                            virtual ~SdrMediaWindow();
 
         virtual void        MouseMove( const MouseEvent& rMEvt ) override;
         virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;

@@ -68,7 +68,7 @@ namespace offapp
         virtual void InitController( ::svt::CellControllerRef& rController, long nRow, sal_uInt16 nCol ) override;
         virtual ::svt::CellController* GetController( long nRow, sal_uInt16 nCol ) override;
 
-        virtual void PaintCell( OutputDevice& rDev, const ::tools::Rectangle& rRect, sal_uInt16 nColId ) const override;
+        virtual void PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColId ) const override;
 
         virtual bool SeekRow( long nRow ) override;
         virtual bool SaveModified() override;
@@ -127,11 +127,11 @@ namespace offapp
     {
         EditBrowseBox::Init();
 
-        Size aColWidth = LogicToPixel(Size(160, 0), MapUnit::MapAppFont);
+        Size aColWidth = LogicToPixel(Size(160, 0), MAP_APPFONT);
         InsertDataColumn(1, OUString(CUI_RES(RID_SVXSTR_DRIVER_NAME)), aColWidth.Width());
-        aColWidth = LogicToPixel(Size(30, 0), MapUnit::MapAppFont);
+        aColWidth = LogicToPixel(Size(30, 0), MAP_APPFONT);
         InsertDataColumn(2, OUString(CUI_RES(RID_SVXSTR_POOLED_FLAG)), aColWidth.Width());
-        aColWidth = LogicToPixel(Size(60, 0), MapUnit::MapAppFont);
+        aColWidth = LogicToPixel(Size(60, 0), MAP_APPFONT);
         InsertDataColumn(3, OUString(CUI_RES(RID_SVXSTR_POOL_TIMEOUT)), aColWidth.Width());
             // Attention: the resource of the string is local to the resource of the enclosing dialog!
     }
@@ -266,7 +266,7 @@ namespace offapp
     }
 
 
-    void DriverListControl::PaintCell( OutputDevice& rDev, const ::tools::Rectangle& rRect, sal_uInt16 nColId ) const
+    void DriverListControl::PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColId ) const
     {
         OSL_ENSURE(m_aSeekRow != m_aSettings.end(), "DriverListControl::PaintCell: invalid row!");
 
@@ -303,7 +303,7 @@ namespace offapp
         get(m_pTimeout, "timeout");
 
         Size aControlSize(248, 100);
-        aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
+        aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
         m_pDriverList->set_width_request(aControlSize.Width());
         m_pDriverList->set_height_request(aControlSize.Height());
         m_pDriverList->Init();
@@ -363,13 +363,13 @@ namespace offapp
     }
 
 
-    bool ConnectionPoolOptionsPage::EventNotify( NotifyEvent& _rNEvt )
+    bool ConnectionPoolOptionsPage::Notify( NotifyEvent& _rNEvt )
     {
         if (MouseNotifyEvent::LOSEFOCUS == _rNEvt.GetType())
             if (m_pTimeout->IsWindowOrChild(_rNEvt.GetWindow()))
                 commitTimeoutField();
 
-        return SfxTabPage::EventNotify(_rNEvt);
+        return SfxTabPage::Notify(_rNEvt);
     }
 
 
@@ -381,14 +381,14 @@ namespace offapp
         // the enabled flag
         if (m_pEnablePooling->IsValueChangedFromSaved())
         {
-            _rSet->Put(SfxBoolItem(SID_SB_POOLING_ENABLED, m_pEnablePooling->IsChecked()));
+            _rSet->Put(SfxBoolItem(SID_SB_POOLING_ENABLED, m_pEnablePooling->IsChecked()), SID_SB_POOLING_ENABLED);
             bModified = true;
         }
 
         // the settings for the single drivers
         if (m_pDriverList->isModified())
         {
-            _rSet->Put(DriverPoolingSettingsItem(SID_SB_DRIVER_TIMEOUTS, m_pDriverList->getSettings()));
+            _rSet->Put(DriverPoolingSettingsItem(SID_SB_DRIVER_TIMEOUTS, m_pDriverList->getSettings()), SID_SB_DRIVER_TIMEOUTS);
             bModified = true;
         }
 
@@ -409,7 +409,7 @@ namespace offapp
     }
 
 
-    IMPL_LINK( ConnectionPoolOptionsPage, OnDriverRowChanged, const DriverPooling*, pDriverPos, void )
+    IMPL_LINK_TYPED( ConnectionPoolOptionsPage, OnDriverRowChanged, const DriverPooling*, pDriverPos, void )
     {
         bool bValidRow = (nullptr != pDriverPos);
         m_pDriverPoolingEnabled->Enable(bValidRow && m_pEnablePooling->IsChecked());
@@ -441,7 +441,7 @@ namespace offapp
     }
 
 
-    IMPL_LINK( ConnectionPoolOptionsPage, OnEnabledDisabled, Button*, _pCheckBox, void )
+    IMPL_LINK_TYPED( ConnectionPoolOptionsPage, OnEnabledDisabled, Button*, _pCheckBox, void )
     {
         bool bGloballyEnabled = m_pEnablePooling->IsChecked();
         bool bLocalDriverChanged = m_pDriverPoolingEnabled == _pCheckBox;

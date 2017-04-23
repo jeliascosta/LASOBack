@@ -22,6 +22,10 @@
 #pragma warning(disable : 4917 4555)
 #endif
 
+#ifdef __MINGW32__
+#define _INIT_ATL_COMMON_VARS
+#endif
+
 #include "stdafx.h"
 
 #include <atlbase.h>
@@ -63,7 +67,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-        _Module.Init(ObjectMap, hInstance);
+        _Module.Init(ObjectMap, hInstance, NULL);
         DisableThreadLibraryCalls(hInstance);
     }
     else if (dwReason == DLL_PROCESS_DETACH)

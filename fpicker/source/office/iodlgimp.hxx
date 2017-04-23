@@ -80,14 +80,14 @@ enum SvtFileDlgType
 class SvtFileDialogURLSelector : public MenuButton
 {
 public:
-    virtual ~SvtFileDialogURLSelector() override;
+    virtual ~SvtFileDialogURLSelector();
     virtual void dispose() override;
 private:
     VclPtr<SvtFileDialog>      m_pDlg;
-    VclPtr<PopupMenu>          m_pMenu;
+    PopupMenu*          m_pMenu;
 
 protected:
-    SvtFileDialog*  GetDialogParent()       { return m_pDlg; }
+    inline        SvtFileDialog*  GetDialogParent()       { return m_pDlg; }
 
     virtual void    FillURLMenu( PopupMenu* _pMenu ) = 0;
 
@@ -103,7 +103,7 @@ private:
 
 public:
     SvtUpButton_Impl( vcl::Window* pParent, SvtFileDialog* pDlg, WinBits nBits );
-    virtual ~SvtUpButton_Impl() override;
+    virtual ~SvtUpButton_Impl();
 
 protected:
     virtual void        FillURLMenu( PopupMenu* _pMenu ) override;
@@ -166,7 +166,7 @@ public:
     bool                        m_bNeedDelayedFilterExecute;
 
     // list of the 5 most recently used filters
-    // Defaultfilter for <All> or <All ...>
+    // Defaultfilter for <All> oder <All ...>
     const SvtFileDialogFilter_Impl* _pDefaultFilter;
 
     // MultiSelection?
@@ -179,11 +179,11 @@ public:
                             ~SvtExpFileDlg_Impl();
 
 
-    void             SetBlackList( const css::uno::Sequence< OUString >& rBlackList ) { _aBlackList = rBlackList; }
-    const css::uno::Sequence< OUString >& GetBlackList() const { return _aBlackList; }
+    inline void             SetBlackList( const css::uno::Sequence< OUString >& rBlackList ) { _aBlackList = rBlackList; }
+    inline const css::uno::Sequence< OUString >& GetBlackList() const { return _aBlackList; }
     void                    SetStandardDir( const OUString& _rDir );
-    const OUString&  GetStandardDir() const          { return _aStdDir; }
-    void             DisableFilterBoxAutoWidth()     { _pLbFilter->EnableDDAutoWidth( false ); }
+    inline const OUString&  GetStandardDir() const          { return _aStdDir; }
+    inline void             DisableFilterBoxAutoWidth()     { _pLbFilter->EnableDDAutoWidth( false ); }
 
 
     // access to the filter listbox only as Control* - we want to maintain the entries/userdata ourself
@@ -192,8 +192,9 @@ public:
     inline  void            SetFilterListSelectHdl( const Link<ListBox&,void>& _rHandler );
 
     // inits the listbox for the filters from the filter list (_pFilter)
+            void            ClearFilterList( );
             void            InitFilterList( );
-    inline  bool            HasFilterListEntry( const OUString& _rFilterName );
+    inline  bool        HasFilterListEntry( const OUString& _rFilterName );
     inline  void            SelectFilterListEntry( const OUString& _rFilterName );
     inline  void            SetNoFilterListSelection( );
             void            InsertFilterListEntry( const SvtFileDialogFilter_Impl* _pFilterDesc );

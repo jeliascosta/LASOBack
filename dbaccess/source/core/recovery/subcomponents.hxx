@@ -44,7 +44,7 @@ namespace dbaccess
         UNKNOWN         = 10001
     };
 
-    struct SubComponentDescriptor
+    struct DBACCESS_DLLPRIVATE SubComponentDescriptor
     {
         OUString     sName;
         bool                bForEditing;

@@ -29,30 +29,31 @@ class SwTextFormatInfo;
 class SwTextGuess
 {
     css::uno::Reference< css::linguistic2::XHyphenatedWord >  xHyphWord;
-    std::unique_ptr<SwHangingPortion> pHanging; // for hanging punctuation
+    SwHangingPortion *pHanging; // for hanging punctuation
     sal_Int32 nCutPos;         // this character doesn't fit
     sal_Int32 nBreakStart;     // start index of word containing line break
     sal_Int32 nBreakPos;       // start index of break position
-    sal_Int32 nFieldDiff;      // absolute positions can be wrong if we
+    sal_Int32 nFieldDiff;      // absolut positions can be wrong if we
                                // a field in the text has been expanded
     sal_uInt16 nBreakWidth;    // width of the broken portion
 public:
-    SwTextGuess(): pHanging( nullptr ), nCutPos(0), nBreakStart(0),
+    inline SwTextGuess(): pHanging( nullptr ), nCutPos(0), nBreakStart(0),
                         nBreakPos(0), nFieldDiff(0), nBreakWidth(0)
         { }
+    ~SwTextGuess() { delete pHanging; }
 
     // true, if current portion still fits to current line
     bool Guess( const SwTextPortion& rPor, SwTextFormatInfo &rInf,
                     const sal_uInt16 nHeight );
     bool AlternativeSpelling( const SwTextFormatInfo &rInf, const sal_Int32 nPos );
 
-    SwHangingPortion* GetHangingPortion() const { return pHanging.get(); }
-    SwHangingPortion* ReleaseHangingPortion() { return pHanging.release(); }
-    sal_uInt16 BreakWidth() const { return nBreakWidth; }
-    sal_Int32 CutPos() const { return nCutPos; }
-    sal_Int32 BreakStart() const { return nBreakStart; }
-    sal_Int32 BreakPos() const {return nBreakPos; }
-    sal_Int32 FieldDiff() const {return nFieldDiff; }
+    inline SwHangingPortion* GetHangingPortion() const { return pHanging; }
+    inline void ClearHangingPortion() { pHanging = nullptr; }
+    inline sal_uInt16 BreakWidth() const { return nBreakWidth; }
+    inline sal_Int32 CutPos() const { return nCutPos; }
+    inline sal_Int32 BreakStart() const { return nBreakStart; }
+    inline sal_Int32 BreakPos() const {return nBreakPos; }
+    inline sal_Int32 FieldDiff() const {return nFieldDiff; }
     const css::uno::Reference< css::linguistic2::XHyphenatedWord >& HyphWord() const
         { return xHyphWord; }
 };

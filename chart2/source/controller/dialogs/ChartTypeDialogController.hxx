@@ -60,6 +60,7 @@ public:
                     ,  bool _bSymbols = true, bool _bLines = true
                     , css::chart2::CurveStyle eCurveStyle = css::chart2::CurveStyle_LINES );
     ChartTypeParameter();
+    virtual ~ChartTypeParameter();
 
     bool mapsToSameService( const ChartTypeParameter& rParameter ) const;
     bool mapsToSimilarService( const ChartTypeParameter& rParameter, sal_Int32 nTheHigherTheLess ) const;
@@ -91,7 +92,7 @@ class ChartTypeDialogController : public ChangingResource
 {
 public:
     ChartTypeDialogController();
-    virtual ~ChartTypeDialogController() override;
+    virtual ~ChartTypeDialogController();
 
     virtual OUString  getName()=0;
     virtual Image   getImage();
@@ -110,9 +111,8 @@ public:
     virtual void    hideExtraControls() const;
     virtual void    fillExtraControls( const ChartTypeParameter& rParameter
                                      , const css::uno::Reference< css::chart2::XChartDocument >& xChartModel
-                                     , const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const;
-    /// @throws css::uno::RuntimeException
-    virtual void    setTemplateProperties( const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const;
+                                     , const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps=css::uno::Reference< css::beans::XPropertySet >() ) const;
+    virtual void    setTemplateProperties( const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const throw (css::uno::RuntimeException);
 
     bool                isSubType( const OUString& rServiceName );
     ChartTypeParameter  getChartTypeParameterForService( const OUString& rServiceName, const css::uno::Reference<
@@ -136,7 +136,7 @@ class ColumnOrBarChartDialogController_Base : public ChartTypeDialogController
 {
 public:
     ColumnOrBarChartDialogController_Base();
-    virtual ~ColumnOrBarChartDialogController_Base() override;
+    virtual ~ColumnOrBarChartDialogController_Base();
 
     virtual bool    shouldShow_3DLookControl() const override;
     virtual bool    shouldShow_GeometryControl() const override;
@@ -148,7 +148,7 @@ class ColumnChartDialogController : public ColumnOrBarChartDialogController_Base
 {
 public:
     ColumnChartDialogController();
-    virtual ~ColumnChartDialogController() override;
+    virtual ~ColumnChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -160,7 +160,7 @@ class BarChartDialogController : public ColumnOrBarChartDialogController_Base
 {
 public:
     BarChartDialogController();
-    virtual ~BarChartDialogController() override;
+    virtual ~BarChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -172,7 +172,7 @@ class PieChartDialogController : public ChartTypeDialogController
 {
 public:
     PieChartDialogController();
-    virtual ~PieChartDialogController() override;
+    virtual ~PieChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -187,7 +187,7 @@ class LineChartDialogController : public ChartTypeDialogController
 {
 public:
     LineChartDialogController();
-    virtual ~LineChartDialogController() override;
+    virtual ~LineChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -205,7 +205,7 @@ class XYChartDialogController : public ChartTypeDialogController
 {
 public:
     XYChartDialogController();
-    virtual ~XYChartDialogController() override;
+    virtual ~XYChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -221,7 +221,7 @@ class AreaChartDialogController : public ChartTypeDialogController
 {
 public:
     AreaChartDialogController();
-    virtual ~AreaChartDialogController() override;
+    virtual ~AreaChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -237,7 +237,7 @@ class NetChartDialogController : public ChartTypeDialogController
 {
 public:
     NetChartDialogController();
-    virtual ~NetChartDialogController() override;
+    virtual ~NetChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -252,7 +252,7 @@ class StockChartDialogController : public ChartTypeDialogController
 {
 public:
     StockChartDialogController();
-    virtual ~StockChartDialogController() override;
+    virtual ~StockChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;
@@ -276,12 +276,12 @@ public:
     virtual void    hideExtraControls() const override;
     virtual void    fillExtraControls( const ChartTypeParameter& rParameter
                                      , const css::uno::Reference< css::chart2::XChartDocument >& xChartModel
-                                     , const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const override;
+                                     , const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps=css::uno::Reference< css::beans::XPropertySet >() ) const override;
 
-    virtual void    setTemplateProperties( const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const override;
+    virtual void    setTemplateProperties( const css::uno::Reference< css::beans::XPropertySet >& xTemplateProps ) const throw (css::uno::RuntimeException) override;
 
 private:
-    DECL_LINK( ChangeLineCountHdl, Edit&, void );
+    DECL_LINK_TYPED( ChangeLineCountHdl, Edit&, void );
 
 private:
     VclPtr<FixedText>    m_pFT_NumberOfLines;
@@ -292,7 +292,7 @@ class BubbleChartDialogController : public ChartTypeDialogController
 {
 public:
     BubbleChartDialogController();
-    virtual ~BubbleChartDialogController() override;
+    virtual ~BubbleChartDialogController();
 
     virtual OUString  getName() override;
     virtual Image   getImage() override;

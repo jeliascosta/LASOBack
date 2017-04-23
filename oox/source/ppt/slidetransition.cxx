@@ -20,9 +20,9 @@
 #include "oox/ppt/slidetransition.hxx"
 
 #include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/presentation/AnimationSpeed.hpp>
 #include <com/sun/star/animations/TransitionType.hpp>
 #include <com/sun/star/animations/TransitionSubType.hpp>
-#include <com/sun/star/animations/XTransitionFilter.hpp>
 
 #include <osl/diagnose.h>
 
@@ -293,7 +293,7 @@ namespace oox { namespace ppt {
                 mnTransitionType = TransitionType::BARWIPE;
                 mnTransitionSubType = TransitionSubType::FADEOVERCOLOR;
             }
-            SAL_WARN("oox.ppt", "OOX: cut transition fallback." );
+            OSL_TRACE( "OOX: cut transition fallback." );
             break;
         case PPT_TOKEN( fade ):
             mnTransitionType = TransitionType::FADE;

@@ -24,7 +24,9 @@ using namespace ::com::sun::star;
 TablePositionHandler::TablePositionHandler() :
     LoggedProperties("TablePositionHandler"),
     m_aVertAnchor("margin"),
+    m_aYSpec(),
     m_aHorzAnchor("text"),
+    m_aXSpec(),
     m_nY(0),
     m_nX(0),
     m_nLeftFromText(0),

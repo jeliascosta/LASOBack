@@ -73,7 +73,7 @@ public:
 
     explicit XFTextContent(const OUString& text);
 
-    virtual ~XFTextContent() override;
+    virtual ~XFTextContent();
 
 public:
     /**

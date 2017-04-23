@@ -9,16 +9,12 @@
 
 gb__LinkTarget_LDFLAGS_zdefs := -Wl,-z,defs
 ifeq ($(COM_IS_CLANG),TRUE)
-ifneq ($(filter -fsanitize=%,$(CC) $(LDFLAGS)),)
+ifneq ($(filter -fsanitize=%,$(CC)),)
 gb__LinkTarget_LDFLAGS_zdefs :=
 endif
 endif
 gb_LinkTarget_LDFLAGS += $(gb__LinkTarget_LDFLAGS_zdefs)
 
 include $(GBUILDDIR)/platform/unxgcc.mk
-
-ifeq ($(DISABLE_DYNLOADING),TRUE)
-gb_STDLIBS := -lpthread -ldl
-endif
 
 # vim: set noet sw=4 ts=4:

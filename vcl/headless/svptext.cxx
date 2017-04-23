@@ -23,19 +23,18 @@
 #include "headless/svpgdi.hxx"
 #include <config_cairo_canvas.h>
 #include "impfontmetricdata.hxx"
-#include "CommonSalLayout.hxx"
 
 void SvpSalGraphics::SetFont( FontSelectPattern* pIFSD, int nFallbackLevel )
 {
     m_aTextRenderImpl.SetFont(pIFSD, nFallbackLevel);
 }
 
-void SvpSalGraphics::GetFontMetric( ImplFontMetricDataRef& xFontMetric, int nFallbackLevel )
+void SvpSalGraphics::GetFontMetric( ImplFontMetricDataPtr& xFontMetric, int nFallbackLevel )
 {
     m_aTextRenderImpl.GetFontMetric(xFontMetric, nFallbackLevel);
 }
 
-const FontCharMapRef SvpSalGraphics::GetFontCharMap() const
+const FontCharMapPtr SvpSalGraphics::GetFontCharMap() const
 {
     return m_aTextRenderImpl.GetFontCharMap();
 }
@@ -73,9 +72,20 @@ bool SvpSalGraphics::CreateFontSubset(
     return m_aTextRenderImpl.CreateFontSubset(rToFile, pFont, pGlyphIds, pEncoding, pWidths, nGlyphCount, rInfo);
 }
 
-const void* SvpSalGraphics::GetEmbedFontData(const PhysicalFontFace* pFont, long* pDataLen)
+const Ucs2SIntMap* SvpSalGraphics::GetFontEncodingVector( const PhysicalFontFace* pFont, const Ucs2OStrMap** pNonEncoded, std::set<sal_Unicode> const** ppPriority)
 {
-    return m_aTextRenderImpl.GetEmbedFontData(pFont, pDataLen);
+    return m_aTextRenderImpl.GetFontEncodingVector(pFont, pNonEncoded, ppPriority);
+}
+
+const void* SvpSalGraphics::GetEmbedFontData(
+    const PhysicalFontFace* pFont,
+    const sal_Ucs* pUnicodes,
+    sal_Int32* pWidths,
+    size_t nLen,
+    FontSubsetInfo& rInfo,
+    long* pDataLen)
+{
+    return m_aTextRenderImpl.GetEmbedFontData(pFont, pUnicodes, pWidths, nLen, rInfo, pDataLen);
 }
 
 void SvpSalGraphics::FreeEmbedFontData( const void* pData, long nLen )
@@ -85,20 +95,20 @@ void SvpSalGraphics::FreeEmbedFontData( const void* pData, long nLen )
 
 void SvpSalGraphics::GetGlyphWidths( const PhysicalFontFace* pFont,
                                    bool bVertical,
-                                   std::vector< sal_Int32 >& rWidths,
+                                   Int32Vector& rWidths,
                                    Ucs2UIntMap& rUnicodeEnc )
 {
     m_aTextRenderImpl.GetGlyphWidths(pFont, bVertical, rWidths, rUnicodeEnc);
 }
 
-bool SvpSalGraphics::GetGlyphBoundRect(const GlyphItem& rGlyph, tools::Rectangle& rRect)
+bool SvpSalGraphics::GetGlyphBoundRect( sal_GlyphId aGlyphId, Rectangle& rRect )
 {
-    return m_aTextRenderImpl.GetGlyphBoundRect(rGlyph, rRect);
+    return m_aTextRenderImpl.GetGlyphBoundRect(aGlyphId, rRect);
 }
 
-bool SvpSalGraphics::GetGlyphOutline(const GlyphItem& rGlyph, basegfx::B2DPolyPolygon& rPolyPoly)
+bool SvpSalGraphics::GetGlyphOutline( sal_GlyphId aGlyphId, basegfx::B2DPolyPolygon& rPolyPoly )
 {
-    return m_aTextRenderImpl.GetGlyphOutline(rGlyph, rPolyPoly);
+    return m_aTextRenderImpl.GetGlyphOutline(aGlyphId, rPolyPoly);
 }
 
 SalLayout* SvpSalGraphics::GetTextLayout( ImplLayoutArgs& rArgs, int nFallbackLevel )
@@ -106,9 +116,9 @@ SalLayout* SvpSalGraphics::GetTextLayout( ImplLayoutArgs& rArgs, int nFallbackLe
     return m_aTextRenderImpl.GetTextLayout(rArgs, nFallbackLevel);
 }
 
-void SvpSalGraphics::DrawTextLayout(const CommonSalLayout& rLayout)
+void SvpSalGraphics::DrawServerFontLayout( const ServerFontLayout& rSalLayout )
 {
-    m_aTextRenderImpl.DrawTextLayout(rLayout);
+    m_aTextRenderImpl.DrawServerFontLayout(rSalLayout );
 }
 
 void SvpSalGraphics::SetTextColor( SalColor nSalColor )

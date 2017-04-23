@@ -16,7 +16,7 @@ using namespace std;
 
 /* TrieNode */
 
-struct TrieNode final
+struct TrieNode
 {
     static const int LATIN_ARRAY_SIZE = 26;
 
@@ -27,7 +27,7 @@ struct TrieNode final
 
 
     explicit TrieNode(sal_Unicode aCharacter = '\0');
-    ~TrieNode();
+    virtual ~TrieNode();
 
     void      markWord();
     TrieNode* findChild(sal_Unicode aCharacter);
@@ -120,7 +120,7 @@ void TrieNode::collectSuggestions(const OUString& sPath, vector<OUString>& rSugg
 
 void TrieNode::collectSuggestionsForCurrentNode(TrieNode* pCurrent, const OUString& sPath, vector<OUString>& rSuggestionList)
 {
-    OUString aStringPath = sPath + OUStringLiteral1(pCurrent->mCharacter);
+    OUString aStringPath = sPath + OUString(pCurrent->mCharacter);
     if(pCurrent->mMarker)
     {
         rSuggestionList.push_back(aStringPath);

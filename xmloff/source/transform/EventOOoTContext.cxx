@@ -43,6 +43,7 @@ public:
 
     XMLTransformerOOoEventMap_Impl( XMLTransformerEventMapEntry *pInit,
                                        XMLTransformerEventMapEntry *pInit2  );
+    ~XMLTransformerOOoEventMap_Impl();
 };
 
 void XMLTransformerOOoEventMap_Impl::AddMap( XMLTransformerEventMapEntry *pInit )
@@ -77,6 +78,10 @@ XMLTransformerOOoEventMap_Impl::XMLTransformerOOoEventMap_Impl(
         AddMap( pInit );
     if( pInit2 )
         AddMap( pInit2 );
+}
+
+XMLTransformerOOoEventMap_Impl::~XMLTransformerOOoEventMap_Impl()
+{
 }
 
 XMLEventOOoTransformerContext::XMLEventOOoTransformerContext(
@@ -209,7 +214,8 @@ void XMLEventOOoTransformerContext::StartElement(
     if( m_bPersistent )
         XMLPersElemContentTContext::StartElement( xAttrList );
     else
-        GetTransformer().GetDocHandler()->startElement( GetExportQName(), xAttrList );
+        GetTransformer().GetDocHandler()->startElement( GetExportQName(),
+                                                        xAttrList );
 }
 
 void XMLEventOOoTransformerContext::EndElement()

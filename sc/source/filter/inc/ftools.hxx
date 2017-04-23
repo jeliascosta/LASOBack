@@ -37,9 +37,13 @@
 #define GETITEM( itemset, itemtype, which ) \
     static_cast< const itemtype & >( (itemset).Get( which ) )
 
+/** Expands to the value (with type 'valuetype') of the item with Which-ID 'which'. */
+#define GETITEMVALUE( itemset, itemtype, which, valuetype ) \
+    static_cast< valuetype >( GETITEM( itemset, itemtype, which ).GetValue() )
+
 /** Expands to the value of the SfxBoolItem with Which-ID 'which'. */
 #define GETITEMBOOL( itemset, which ) \
-    (static_cast<const SfxBoolItem &>( (itemset).Get( which )).GetValue() )
+    GETITEMVALUE( itemset, SfxBoolItem, which, bool )
 
 // Global static helpers ======================================================
 
@@ -152,14 +156,14 @@ public:
 // *** streams and storages *** -----------------------------------------------
 
     /** Tries to open an existing storage with the specified name in the passed storage (read-only). */
-    static tools::SvRef<SotStorage> OpenStorageRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName );
+    static tools::SvRef<SotStorage> OpenStorageRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName );
     /** Creates and opens a storage with the specified name in the passed storage (read/write). */
-    static tools::SvRef<SotStorage> OpenStorageWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName );
+    static tools::SvRef<SotStorage> OpenStorageWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName );
 
     /** Tries to open an existing stream with the specified name in the passed storage (read-only). */
-    static tools::SvRef<SotStorageStream> OpenStorageStreamRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName );
+    static tools::SvRef<SotStorageStream> OpenStorageStreamRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName );
     /** Creates and opens a stream with the specified name in the passed storage (read/write). */
-    static tools::SvRef<SotStorageStream> OpenStorageStreamWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName );
+    static tools::SvRef<SotStorageStream> OpenStorageStreamWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName );
 
 // *** item handling *** ------------------------------------------------------
 
@@ -212,7 +216,7 @@ public:
     /** Reads and returns a zero terminated byte string and decreases a stream counter. */
     static OString read_zeroTerminated_uInt8s_ToOString(SvStream& rStrm, sal_Int32& rnBytesLeft);
     /** Reads and returns a zero terminated byte string and decreases a stream counter. */
-    static OUString read_zeroTerminated_uInt8s_ToOUString(SvStream& rStrm, sal_Int32& rnBytesLeft, rtl_TextEncoding eTextEnc)
+    inline static OUString read_zeroTerminated_uInt8s_ToOUString(SvStream& rStrm, sal_Int32& rnBytesLeft, rtl_TextEncoding eTextEnc)
     {
         return OStringToOUString(read_zeroTerminated_uInt8s_ToOString(rStrm, rnBytesLeft), eTextEnc);
     }
@@ -263,19 +267,19 @@ public:
     ScFormatFilterPluginImpl();
     virtual ~ScFormatFilterPluginImpl();
     // various import filters
-    virtual FltError ScImportLotus123( SfxMedium&, ScDocument*, rtl_TextEncoding eSrc ) override;
+    virtual FltError ScImportLotus123( SfxMedium&, ScDocument*, rtl_TextEncoding eSrc = RTL_TEXTENCODING_DONTKNOW ) override;
     virtual FltError ScImportQuattroPro( SfxMedium &rMedium, ScDocument *pDoc ) override;
     virtual FltError ScImportExcel( SfxMedium&, ScDocument*, const EXCIMPFORMAT ) override;
-        // eFormat == EIF_AUTO  -> matching filter is used automatically
-        // eFormat == EIF_BIFF5 -> only Biff5 stream leads to success (even in an Excel97 doc)
-        // eFormat == EIF_BIFF8 -> only Biff8 stream leads to success (only in Excel97 docs)
-        // eFormat == EIF_BIFF_LE4 -> only non-storage files _could_ lead to success
+        // eFormat == EIF_AUTO  -> passender Filter wird automatisch verwendet
+        // eFormat == EIF_BIFF5 -> nur Biff5-Stream fuehrt zum Erfolg (auch wenn in einem Excel97-Doc)
+        // eFormat == EIF_BIFF8 -> nur Biff8-Stream fuehrt zum Erfolg (nur in Excel97-Docs)
+        // eFormat == EIF_BIFF_LE4 -> nur Nicht-Storage-Dateien _koennen_ zum Erfolg fuehren
     virtual FltError ScImportStarCalc10( SvStream&, ScDocument* ) override;
     virtual FltError ScImportDif( SvStream&, ScDocument*, const ScAddress& rInsPos,
-                 const rtl_TextEncoding eSrc ) override;
+                 const rtl_TextEncoding eSrc = RTL_TEXTENCODING_DONTKNOW, sal_uInt32 nDifOption = SC_DIFOPT_EXCEL ) override;
     virtual FltError ScImportRTF( SvStream&, const OUString& rBaseURL, ScDocument*, ScRange& rRange ) override;
     virtual FltError ScImportHTML( SvStream&, const OUString& rBaseURL, ScDocument*, ScRange& rRange,
-                                   double nOutputFactor, bool bCalcWidthHeight,
+                                   double nOutputFactor = 1.0, bool bCalcWidthHeight = true,
                                    SvNumberFormatter* pFormatter = nullptr, bool bConvertDate = true ) override;
 
     virtual ScEEAbsImport *CreateRTFImport( ScDocument* pDoc, const ScRange& rRange ) override;
@@ -285,7 +289,7 @@ public:
     // various export filters
     virtual FltError ScExportExcel5( SfxMedium&, ScDocument*, ExportFormatExcel eFormat, rtl_TextEncoding eDest ) override;
     virtual void ScExportDif( SvStream&, ScDocument*, const ScAddress& rOutPos, const rtl_TextEncoding eDest ) override;
-    virtual void ScExportDif( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;
+    virtual FltError ScExportDif( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;
     virtual void ScExportHTML( SvStream&, const OUString& rBaseURL, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest, bool bAll,
                   const OUString& rStreamPath, OUString& rNonConvertibleChars, const OUString& rFilterOptions ) override;
     virtual void ScExportRTF( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;

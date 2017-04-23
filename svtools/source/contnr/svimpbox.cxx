@@ -64,7 +64,7 @@ SvImpLBox::SvImpLBox( SvTreeListBox* pLBView, SvTreeList* pLBTree, WinBits nWinS
     aSelEng.SetFunctionSet( static_cast<FunctionSet*>(&aFctSet) );
     aSelEng.ExpandSelectionOnMouseMove( false );
     SetStyle( nWinStyle );
-    SetSelectionMode( SelectionMode::Single );
+    SetSelectionMode( SINGLE_SELECTION );
     SetDragDropMode( DragDropMode::NONE );
 
     aVerSBar->SetScrollHdl( LINK( this, SvImpLBox, ScrollUpDownHdl ) );
@@ -89,8 +89,8 @@ SvImpLBox::SvImpLBox( SvTreeListBox* pLBView, SvTreeList* pLBTree, WinBits nWinS
     nNodeBmpWidth       = 0;
 
     bAsyncBeginDrag     = false;
-    aAsyncBeginDragIdle.SetPriority( TaskPriority::HIGHEST );
-    aAsyncBeginDragIdle.SetInvokeHandler( LINK(this,SvImpLBox,BeginDragHdl));
+    aAsyncBeginDragIdle.SetPriority( SchedulerPriority::HIGHEST );
+    aAsyncBeginDragIdle.SetIdleHdl( LINK(this,SvImpLBox,BeginDragHdl));
     // button animation in listbox
     pActiveButton = nullptr;
     pActiveEntry = nullptr;
@@ -99,8 +99,8 @@ SvImpLBox::SvImpLBox( SvTreeListBox* pLBView, SvTreeList* pLBTree, WinBits nWinS
     nFlags = LBoxFlags::NONE;
     nCurTabPos = FIRST_ENTRY_TAB;
 
-    aEditIdle.SetPriority( TaskPriority::LOWEST );
-    aEditIdle.SetInvokeHandler( LINK(this,SvImpLBox,EditTimerCall) );
+    aEditIdle.SetPriority( SchedulerPriority::LOWEST );
+    aEditIdle.SetIdleHdl( LINK(this,SvImpLBox,EditTimerCall) );
 
     nMostRight = -1;
     pMostRightEntry = nullptr;
@@ -186,7 +186,7 @@ void SvImpLBox::UpdateContextBmpWidthVectorFromMovedEntry( SvTreeListEntry* pEnt
 {
     DBG_ASSERT( pEntry, "Moved Entry is invalid!" );
 
-    SvLBoxContextBmp* pBmpItem = static_cast< SvLBoxContextBmp* >( pEntry->GetFirstItem(SvLBoxItemType::ContextBmp) );
+    SvLBoxContextBmp* pBmpItem = static_cast< SvLBoxContextBmp* >( pEntry->GetFirstItem( SV_ITEM_ID_LBOXCONTEXTBMP ) );
     short nExpWidth = (short)pBmpItem->GetBitmap1().GetSizePixel().Width();
     short nColWidth = (short)pBmpItem->GetBitmap2().GetSizePixel().Width();
     short nMax = std::max(nExpWidth, nColWidth);
@@ -218,7 +218,7 @@ void SvImpLBox::UpdateContextBmpWidthMax( SvTreeListEntry* pEntry )
     }
 }
 
-void SvImpLBox::CalcCellFocusRect( SvTreeListEntry* pEntry, tools::Rectangle& rRect )
+void SvImpLBox::CalcCellFocusRect( SvTreeListEntry* pEntry, Rectangle& rRect )
 {
     if ( pEntry && bIsCellFocusEnabled )
     {
@@ -240,7 +240,7 @@ void SvImpLBox::CalcCellFocusRect( SvTreeListEntry* pEntry, tools::Rectangle& rR
 void SvImpLBox::SetStyle( WinBits i_nWinStyle )
 {
     m_nStyle = i_nWinStyle;
-    if ( ( m_nStyle & WB_SIMPLEMODE) && ( aSelEng.GetSelectionMode() == SelectionMode::Multiple ) )
+    if ( ( m_nStyle & WB_SIMPLEMODE) && ( aSelEng.GetSelectionMode() == MULTIPLE_SELECTION ) )
         aSelEng.AddAlways( true );
 }
 
@@ -291,14 +291,14 @@ void SvImpLBox::Clear()
 
     aContextBmpWidthVector.clear();
 
-    CallEventListeners( VclEventId::ListboxItemRemoved );
+    CallEventListeners( VCLEVENT_LISTBOX_ITEMREMOVED );
 }
 
 // *********************************************************************
 // Paint, navigate, scroll
 // *********************************************************************
 
-IMPL_LINK_NOARG(SvImpLBox, EndScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG_TYPED(SvImpLBox, EndScrollHdl, ScrollBar*, void)
 {
     if( nFlags & LBoxFlags::EndScrollSetVisSize )
     {
@@ -310,7 +310,7 @@ IMPL_LINK_NOARG(SvImpLBox, EndScrollHdl, ScrollBar*, void)
 
 // handler for vertical scrollbar
 
-IMPL_LINK( SvImpLBox, ScrollUpDownHdl, ScrollBar *, pScrollBar, void )
+IMPL_LINK_TYPED( SvImpLBox, ScrollUpDownHdl, ScrollBar *, pScrollBar, void )
 {
     DBG_ASSERT(!bInVScrollHdl,"Scroll handler out-paces itself!");
     long nDelta = pScrollBar->GetDelta();
@@ -359,7 +359,7 @@ void SvImpLBox::CursorDown()
         ShowCursor( false );
         pView->Update();
         pStartEntry = pNextFirstToDraw;
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         pView->Scroll( 0, -(pView->GetEntryHeight()), aArea, ScrollFlags::NoChildren );
         pView->Update();
         ShowCursor( true );
@@ -380,7 +380,7 @@ void SvImpLBox::CursorUp()
         ShowCursor( false );
         pView->Update();
         pStartEntry = pPrevFirstToDraw;
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         aArea.Bottom() -= nEntryHeight;
         pView->Scroll( 0, nEntryHeight, aArea, ScrollFlags::NoChildren );
         pView->Update();
@@ -416,7 +416,7 @@ void SvImpLBox::PageDown( sal_uInt16 nDelta )
     }
     else
     {
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         long nScroll = pView->GetEntryHeight() * static_cast<long>(nRealDelta);
         nScroll = -nScroll;
         pView->Update();
@@ -454,7 +454,7 @@ void SvImpLBox::PageUp( sal_uInt16 nDelta )
     else
     {
         long nEntryHeight = pView->GetEntryHeight();
-        tools::Rectangle aArea( GetVisibleArea() );
+        Rectangle aArea( GetVisibleArea() );
         pView->Update();
         pView->Scroll( 0, nEntryHeight*nRealDelta, aArea, ScrollFlags::NoChildren );
         pView->Update();
@@ -535,7 +535,7 @@ void SvImpLBox::InvalidateEntriesFrom( long nY ) const
 {
     if( !(nFlags & LBoxFlags::InPaint ))
     {
-        tools::Rectangle aRect( GetVisibleArea() );
+        Rectangle aRect( GetVisibleArea() );
         aRect.Top() = nY;
         pView->Invalidate( aRect );
     }
@@ -545,7 +545,7 @@ void SvImpLBox::InvalidateEntry( long nY ) const
 {
     if( !(nFlags & LBoxFlags::InPaint ))
     {
-        tools::Rectangle aRect( GetVisibleArea() );
+        Rectangle aRect( GetVisibleArea() );
         long nMaxBottom = aRect.Bottom();
         aRect.Top() = nY;
         aRect.Bottom() = nY; aRect.Bottom() += pView->GetEntryHeight();
@@ -587,7 +587,7 @@ void SvImpLBox::RecalcFocusRect()
     {
         pView->HideFocus();
         long nY = GetEntryLine( pCursor );
-        tools::Rectangle aRect = pView->GetFocusRect( pCursor, nY );
+        Rectangle aRect = pView->GetFocusRect( pCursor, nY );
         CalcCellFocusRect( pCursor, aRect );
         vcl::Region aOldClip( pView->GetClipRegion());
         vcl::Region aClipRegion( GetClipRegionRect() );
@@ -638,30 +638,30 @@ void SvImpLBox::SetCursor( SvTreeListEntry* pEntry, bool bForceNoSelect )
         if(!bForceNoSelect && bSimpleTravel && !(nFlags & LBoxFlags::DeselectAll) && GetUpdateMode())
         {
             pView->Select( pCursor );
-            CallEventListeners( VclEventId::ListboxTreeFocus, pCursor );
+            CallEventListeners( VCLEVENT_LISTBOX_TREEFOCUS, pCursor );
         }
         // multiple selection: select in cursor move if we're not in
         // Add mode (Ctrl-F8)
         else if( GetUpdateMode() &&
-                 pView->GetSelectionMode() == SelectionMode::Multiple &&
+                 pView->GetSelectionMode() == MULTIPLE_SELECTION &&
                  !(nFlags & LBoxFlags::DeselectAll) && !aSelEng.IsAddMode() &&
                  !bForceNoSelect )
         {
             pView->Select( pCursor );
-            CallEventListeners( VclEventId::ListboxTreeFocus, pCursor );
+            CallEventListeners( VCLEVENT_LISTBOX_TREEFOCUS, pCursor );
         }
         else
         {
             ShowCursor( true );
             if (bForceNoSelect && GetUpdateMode())
             {
-                CallEventListeners( VclEventId::ListboxTreeFocus, pCursor);
+                CallEventListeners( VCLEVENT_LISTBOX_TREEFOCUS, pCursor);
             }
         }
 
         if( pAnchor )
         {
-            DBG_ASSERT(aSelEng.GetSelectionMode() != SelectionMode::Single,"Mode?");
+            DBG_ASSERT(aSelEng.GetSelectionMode() != SINGLE_SELECTION,"Mode?");
             SetAnchorSelection( pOldCursor, pCursor );
         }
     }
@@ -683,7 +683,7 @@ void SvImpLBox::ShowCursor( bool bShow )
     else
     {
         long nY = GetEntryLine( pCursor );
-        tools::Rectangle aRect = pView->GetFocusRect( pCursor, nY );
+        Rectangle aRect = pView->GetFocusRect( pCursor, nY );
         CalcCellFocusRect( pCursor, aRect );
         vcl::Region aOldClip( pView->GetClipRegion());
         vcl::Region aClipRegion( GetClipRegionRect() );
@@ -710,7 +710,7 @@ void SvImpLBox::UpdateAll( bool bInvalidateCompleteView )
         pView->Invalidate( GetVisibleArea() );
 }
 
-IMPL_LINK( SvImpLBox, ScrollLeftRightHdl, ScrollBar *, pScrollBar, void )
+IMPL_LINK_TYPED( SvImpLBox, ScrollLeftRightHdl, ScrollBar *, pScrollBar, void )
 {
     long nDelta = pScrollBar->GetDelta();
     if( nDelta )
@@ -743,7 +743,7 @@ void SvImpLBox::KeyLeftRight( long nDelta )
 
     if( !(nFlags & LBoxFlags::InResize) )
     {
-        tools::Rectangle aRect( GetVisibleArea() );
+        Rectangle aRect( GetVisibleArea() );
         pView->Scroll( -nDelta, 0, aRect, ScrollFlags::NoChildren );
     }
     else
@@ -775,7 +775,7 @@ SvTreeListEntry* SvImpLBox::GetClickedEntry( const Point& rPoint ) const
 
 
 //  checks if the entry was hit "the right way"
-//  (Focusrect+ ContextBitmap at TreeListBox)
+//  (Focusrect+ ContextBitmap bei TreeListBox)
 
 bool SvImpLBox::EntryReallyHit(SvTreeListEntry* pEntry, const Point& rPosPixel, long nLine)
 {
@@ -785,10 +785,10 @@ bool SvImpLBox::EntryReallyHit(SvTreeListEntry* pEntry, const Point& rPosPixel, 
     if( pEntry->ItemCount() >= 3 )
         return true;
 
-    tools::Rectangle aRect( pView->GetFocusRect( pEntry, nLine ));
+    Rectangle aRect( pView->GetFocusRect( pEntry, nLine ));
     aRect.Right() = GetOutputSize().Width() - pView->GetMapMode().GetOrigin().X();
 
-    SvLBoxContextBmp* pBmp = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SvLBoxItemType::ContextBmp));
+    SvLBoxContextBmp* pBmp = static_cast<SvLBoxContextBmp*>(pEntry->GetFirstItem(SV_ITEM_ID_LBOXCONTEXTBMP));
     aRect.Left() -= pBmp->GetSize(pView,pEntry).Width();
     aRect.Left() -= 4; // a little tolerance
 
@@ -853,7 +853,7 @@ SvTreeListEntry* SvImpLBox::MakePointVisible(const Point& rPoint)
         if( pEntry )
         {
             if( pEntry != pCursor &&
-                 aSelEng.GetSelectionMode() == SelectionMode::Single
+                 aSelEng.GetSelectionMode() == SINGLE_SELECTION
             )
                 pView->Select( pCursor, false );
         }
@@ -861,17 +861,17 @@ SvTreeListEntry* SvImpLBox::MakePointVisible(const Point& rPoint)
     return pEntry;
 }
 
-tools::Rectangle SvImpLBox::GetClipRegionRect() const
+Rectangle SvImpLBox::GetClipRegionRect() const
 {
     Point aOrigin( pView->GetMapMode().GetOrigin() );
     aOrigin.X() *= -1; // conversion document coordinates
-    tools::Rectangle aClipRect( aOrigin, aOutputSize );
+    Rectangle aClipRect( aOrigin, aOutputSize );
     aClipRect.Bottom()++;
     return aClipRect;
 }
 
 
-void SvImpLBox::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void SvImpLBox::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if (!pView->GetVisibleCount())
         return;
@@ -930,7 +930,7 @@ void SvImpLBox::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle
     if (!pCursor && ((nExtendedWinBits & EWB_NO_AUTO_CURENTRY) == 0))
     {
         // do not select if multiselection or explicit set
-        bool bNotSelect = (aSelEng.GetSelectionMode() == SelectionMode::Multiple ) || ((m_nStyle & WB_NOINITIALSELECTION) == WB_NOINITIALSELECTION);
+        bool bNotSelect = (aSelEng.GetSelectionMode() == MULTIPLE_SELECTION ) || ((m_nStyle & WB_NOINITIALSELECTION) == WB_NOINITIALSELECTION);
         SetCursor(pStartEntry, bNotSelect);
     }
 
@@ -1031,7 +1031,7 @@ void SvImpLBox::DrawNet(vcl::RenderContext& rRenderContext)
         ImplControlValue aControlValue;
         ControlState nState = ControlState::ENABLED;
         if (rRenderContext.DrawNativeControl(ControlType::ListNet, ControlPart::Entire,
-                                             tools::Rectangle(), nState, aControlValue, OUString()))
+                                             Rectangle(), nState, aControlValue, OUString()))
         {
             return;
         }
@@ -1230,7 +1230,7 @@ void SvImpLBox::AdjustScrollBars( Size& rSize )
     // adapt Range, VisibleRange etc.
 
     // refresh output size, in case we have to scroll
-    tools::Rectangle aRect;
+    Rectangle aRect;
     aRect.SetSize( aOSize );
     aSelEng.SetVisibleArea( aRect );
 
@@ -1331,7 +1331,7 @@ void SvImpLBox::FillView()
     {
         sal_uInt16 nLast = (sal_uInt16)(pView->GetVisiblePos(pView->LastVisible()));
         sal_uInt16 nThumb = (sal_uInt16)(pView->GetVisiblePos( pStartEntry ));
-        sal_uLong nCurDispEntries = nLast-nThumb+1;
+        sal_uInt16 nCurDispEntries = nLast-nThumb+1;
         if( nCurDispEntries <  nVisibleCount )
         {
             ShowCursor( false );
@@ -1600,7 +1600,7 @@ void SvImpLBox::EntrySelected( SvTreeListEntry* pEntry, bool bSelect )
 
     nFlags &= (~LBoxFlags::DeselectAll);
     if( bSelect &&
-        aSelEng.GetSelectionMode() == SelectionMode::Single &&
+        aSelEng.GetSelectionMode() == SINGLE_SELECTION &&
         pEntry != pCursor )
     {
         SetCursor( pEntry );
@@ -1622,7 +1622,7 @@ void SvImpLBox::EntrySelected( SvTreeListEntry* pEntry, bool bSelect )
 
 void SvImpLBox::RemovingEntry( SvTreeListEntry* pEntry )
 {
-    CallEventListeners( VclEventId::ListboxItemRemoved , pEntry );
+    CallEventListeners( VCLEVENT_LISTBOX_ITEMREMOVED , pEntry );
 
     DestroyAnchor();
 
@@ -1869,7 +1869,7 @@ void SvImpLBox::EntryInserted( SvTreeListEntry* pEntry )
 bool SvImpLBox::ButtonDownCheckCtrl(const MouseEvent& rMEvt, SvTreeListEntry* pEntry, long /*nY*/)
 {
     SvLBoxItem* pItem = pView->GetItem(pEntry,rMEvt.GetPosPixel().X(),&pActiveTab);
-    if (pItem && pItem->GetType() == SvLBoxItemType::Button)
+    if (pItem && pItem->GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         pActiveButton = static_cast<SvLBoxButton*>(pItem);
         pActiveEntry = pEntry;
@@ -2069,13 +2069,13 @@ void SvImpLBox::MouseButtonDown( const MouseEvent& rMEvt )
             return;
         // Inplace-Editing?
     }
-    if ( aSelEng.GetSelectionMode() != SelectionMode::NONE )
+    if ( aSelEng.GetSelectionMode() != NO_SELECTION )
         aSelEng.SelMouseButtonDown( rMEvt );
 }
 
 void SvImpLBox::MouseButtonUp( const MouseEvent& rMEvt)
 {
-    if ( !ButtonUpCheckCtrl( rMEvt ) && ( aSelEng.GetSelectionMode() != SelectionMode::NONE ) )
+    if ( !ButtonUpCheckCtrl( rMEvt ) && ( aSelEng.GetSelectionMode() != NO_SELECTION ) )
         aSelEng.SelMouseButtonUp( rMEvt );
     EndScroll();
     if( nFlags & LBoxFlags::StartEditTimer )
@@ -2091,7 +2091,7 @@ void SvImpLBox::MouseButtonUp( const MouseEvent& rMEvt)
 void SvImpLBox::MouseMove( const MouseEvent& rMEvt)
 {
     SvTreeListEntry* pEntry = GetClickedEntry( rMEvt.GetPosPixel() );
-    if ( !MouseMoveCheckCtrl( rMEvt, pEntry ) && ( aSelEng.GetSelectionMode() != SelectionMode::NONE ) )
+    if ( !MouseMoveCheckCtrl( rMEvt, pEntry ) && ( aSelEng.GetSelectionMode() != NO_SELECTION ) )
         aSelEng.SelMouseMove( rMEvt );
     return;
 }
@@ -2194,7 +2194,7 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
             {
                 // only try to expand if sublist is expandable,
                 // otherwise ignore the key press
-                if( IsExpandable() && !pView->IsExpanded( pCursor ) )
+                if( IsNowExpandable() )
                     pView->Expand( pCursor );
             }
             else if ( bIsCellFocusEnabled && pCursor )
@@ -2203,7 +2203,7 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
                 {
                     ++nCurTabPos;
                     ShowCursor( true );
-                    CallEventListeners( VclEventId::ListboxSelect, pCursor );
+                    CallEventListeners( VCLEVENT_LISTBOX_SELECT, pCursor );
                 }
             }
             else if( nWindowStyle & WB_HSCROLL )
@@ -2234,7 +2234,7 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
                 {
                     --nCurTabPos;
                     ShowCursor( true );
-                    CallEventListeners( VclEventId::ListboxSelect, pCursor );
+                    CallEventListeners( VCLEVENT_LISTBOX_SELECT, pCursor );
                 }
             }
             else if ( nWindowStyle & WB_HSCROLL )
@@ -2337,11 +2337,11 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
             break;
 
         case KEY_SPACE:
-            if ( pView->GetSelectionMode() != SelectionMode::NONE )
+            if ( pView->GetSelectionMode() != NO_SELECTION )
             {
                 if ( bMod1 )
                 {
-                    if ( pView->GetSelectionMode() == SelectionMode::Multiple && !bShift )
+                    if ( pView->GetSelectionMode() == MULTIPLE_SELECTION && !bShift )
                         // toggle selection
                         pView->Select( pCursor, !pView->IsSelected( pCursor ) );
                 }
@@ -2390,7 +2390,7 @@ bool SvImpLBox::KeyInput( const KeyEvent& rKEvt)
             break;
 
         case KEY_F8:
-            if( bShift && pView->GetSelectionMode()==SelectionMode::Multiple &&
+            if( bShift && pView->GetSelectionMode()==MULTIPLE_SELECTION &&
                 !(m_nStyle & WB_SIMPLEMODE))
             {
                 if( aSelEng.IsAlwaysAdding() )
@@ -2846,11 +2846,11 @@ void SvImpLBox::SelAllDestrAnch(
 void SvImpLBox::SetSelectionMode( SelectionMode eSelMode  )
 {
     aSelEng.SetSelectionMode( eSelMode);
-    if( eSelMode == SelectionMode::Single )
+    if( eSelMode == SINGLE_SELECTION )
         bSimpleTravel = true;
     else
         bSimpleTravel = false;
-    if( (m_nStyle & WB_SIMPLEMODE) && (eSelMode == SelectionMode::Multiple) )
+    if( (m_nStyle & WB_SIMPLEMODE) && (eSelMode == MULTIPLE_SELECTION) )
         aSelEng.AddAlways( true );
 }
 
@@ -2888,7 +2888,7 @@ void SvImpLBox::BeginDrag()
     }
 }
 
-IMPL_LINK_NOARG(SvImpLBox, BeginDragHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvImpLBox, BeginDragHdl, Idle *, void)
 {
     pView->StartDrag( 0, aAsyncBeginDragPos );
 }
@@ -2904,12 +2904,26 @@ void SvImpLBox::PaintDDCursor( SvTreeListEntry* pInsertionPos )
     else
         nY = 1;
     RasterOp eOldOp = pView->GetRasterOp();
-    pView->SetRasterOp( RasterOp::Invert );
+    pView->SetRasterOp( ROP_INVERT );
     Color aOldLineColor = pView->GetLineColor();
     pView->SetLineColor( Color( COL_BLACK ) );
     pView->DrawLine( Point( 0, nY ), Point( aOutputSize.Width(), nY ) );
     pView->SetLineColor( aOldLineColor );
     pView->SetRasterOp( eOldOp );
+}
+
+// Delete all submenus of a PopupMenu, recursively
+static void lcl_DeleteSubPopups(PopupMenu* pPopup)
+{
+    for(sal_uInt16 i = 0; i < pPopup->GetItemCount(); i++)
+    {
+        PopupMenu* pSubPopup = pPopup->GetPopupMenu( pPopup->GetItemId( i ));
+        if(pSubPopup)
+        {
+            lcl_DeleteSubPopups(pSubPopup);
+            delete pSubPopup;
+        }
+    }
 }
 
 void SvImpLBox::Command( const CommandEvent& rCEvt )
@@ -2955,7 +2969,7 @@ void SvImpLBox::Command( const CommandEvent& rCEvt )
                     pView->SetCursor( pClickedEntry );
                 }
             }
-            else if( aSelEng.GetSelectionMode() == SelectionMode::Single )
+            else if( aSelEng.GetSelectionMode() == SINGLE_SELECTION )
             {
                 bClickedIsFreePlace = true;
                 sal_Int32               nSelectedEntries = pView->GetSelectionCount();
@@ -3003,14 +3017,14 @@ void SvImpLBox::Command( const CommandEvent& rCEvt )
         }
 
         {
-            VclPtr<PopupMenu> pPopup = pView->CreateContextMenu();
-            if (pPopup)
+            std::unique_ptr<PopupMenu> pPopup = pView->CreateContextMenu();
+            if( pPopup.get() )
             {
                 // do action for selected entry in popup menu
                 sal_uInt16 nMenuAction = pPopup->Execute( pView, aPopupPos );
                 if ( nMenuAction )
                     pView->ExecuteContextMenuAction( nMenuAction );
-                pPopup.disposeAndClear();
+                lcl_DeleteSubPopups(pPopup.get());
             }
         }
 
@@ -3033,12 +3047,14 @@ void SvImpLBox::Command( const CommandEvent& rCEvt )
             }
         }
     }
+#ifndef NOCOMMAND
     else
     {
         const Point& rPos = rCEvt.GetMousePosPixel();
         if( rPos.X() < aOutputSize.Width() && rPos.Y() < aOutputSize.Height() )
             aSelEng.Command( rCEvt );
     }
+#endif
 }
 
 void SvImpLBox::BeginScroll()
@@ -3059,11 +3075,11 @@ void SvImpLBox::EndScroll()
 }
 
 
-tools::Rectangle SvImpLBox::GetVisibleArea() const
+Rectangle SvImpLBox::GetVisibleArea() const
 {
     Point aPos( pView->GetMapMode().GetOrigin() );
     aPos.X() *= -1;
-    tools::Rectangle aRect( aPos, aOutputSize );
+    Rectangle aRect( aPos, aOutputSize );
     return aRect;
 }
 
@@ -3074,18 +3090,18 @@ void SvImpLBox::Invalidate()
 
 void SvImpLBox::SetCurEntry( SvTreeListEntry* pEntry )
 {
-    if  (  ( aSelEng.GetSelectionMode() != SelectionMode::Single )
-        && ( aSelEng.GetSelectionMode() != SelectionMode::NONE )
+    if  (  ( aSelEng.GetSelectionMode() != SINGLE_SELECTION )
+        && ( aSelEng.GetSelectionMode() != NO_SELECTION )
         )
         SelAllDestrAnch( false );
     if ( pEntry )
         MakeVisible( pEntry );
     SetCursor( pEntry );
-    if ( pEntry && ( aSelEng.GetSelectionMode() != SelectionMode::NONE ) )
+    if ( pEntry && ( aSelEng.GetSelectionMode() != NO_SELECTION ) )
         pView->Select( pEntry );
 }
 
-IMPL_LINK_NOARG(SvImpLBox, EditTimerCall, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvImpLBox, EditTimerCall, Idle *, void)
 {
     if( pView->IsInplaceEditingEnabled() )
     {
@@ -3125,7 +3141,7 @@ bool SvImpLBox::RequestHelp( const HelpEvent& rHEvt )
             // recalculate text rectangle
             SvLBoxTab* pTab;
             SvLBoxItem* pItem = pView->GetItem( pEntry, aPos.X(), &pTab );
-            if (!pItem || pItem->GetType() != SvLBoxItemType::String)
+            if (!pItem || pItem->GetType() != SV_ITEM_ID_LBOXSTRING)
                 return false;
 
             aPos = GetEntryPosition( pEntry );
@@ -3139,9 +3155,9 @@ bool SvImpLBox::RequestHelp( const HelpEvent& rHEvt )
                 aSize.Width() = pNextTab->GetPos() - pTab->GetPos();
                 bItemClipped = true;
             }
-            tools::Rectangle aItemRect( aPos, aSize );
+            Rectangle aItemRect( aPos, aSize );
 
-            tools::Rectangle aViewRect( GetVisibleArea() );
+            Rectangle aViewRect( GetVisibleArea() );
 
             if( bItemClipped || !aViewRect.IsInside( aItemRect ) )
             {
@@ -3291,7 +3307,12 @@ bool SvImpLBox::IsExpandable() const
     return pCursor->HasChildren() || pCursor->HasChildrenOnDemand();
 }
 
-IMPL_LINK(SvImpLBox, MyUserEvent, void*, pArg, void )
+bool SvImpLBox::IsNowExpandable() const
+{
+    return IsExpandable() && !pView->IsExpanded( pCursor );
+}
+
+IMPL_LINK_TYPED(SvImpLBox, MyUserEvent, void*, pArg, void )
 {
     nCurUserEvent = nullptr;
     if( !pArg )
@@ -3322,7 +3343,7 @@ void SvImpLBox::ShowFocusRect( const SvTreeListEntry* pEntry )
     if( pEntry )
     {
         long nY = GetEntryLine( const_cast<SvTreeListEntry*>(pEntry) );
-        tools::Rectangle aRect = pView->GetFocusRect( const_cast<SvTreeListEntry*>(pEntry), nY );
+        Rectangle aRect = pView->GetFocusRect( const_cast<SvTreeListEntry*>(pEntry), nY );
         vcl::Region aOldClip( pView->GetClipRegion());
         vcl::Region aClipRegion( GetClipRegionRect() );
         pView->SetClipRegion( aClipRegion );
@@ -3343,8 +3364,8 @@ void SvImpLBox::implInitDefaultNodeImages()
         // assume that all or nothing is initialized
         return;
 
-    s_pDefCollapsed = new Image(BitmapEx(SvtResId(RID_BMP_TREENODE_COLLAPSED)));
-    s_pDefExpanded = new Image(BitmapEx(SvtResId(RID_BMP_TREENODE_EXPANDED)));
+    s_pDefCollapsed  = new Image( SvtResId( RID_IMG_TREENODE_COLLAPSED ) );
+    s_pDefExpanded   = new Image( SvtResId( RID_IMG_TREENODE_EXPANDED ) );
 }
 
 
@@ -3362,7 +3383,7 @@ const Image& SvImpLBox::GetDefaultCollapsedNodeImage( )
 }
 
 
-void SvImpLBox::CallEventListeners( VclEventId nEvent, void* pData )
+void SvImpLBox::CallEventListeners( sal_uLong nEvent, void* pData )
 {
     if ( pView )
         pView->CallImplEventListeners( nEvent, pData);

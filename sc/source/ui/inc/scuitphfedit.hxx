@@ -56,7 +56,7 @@ protected:
                               const SfxItemSet& rCoreSet,
                               sal_uInt16        nWhich,
                               bool              bHeader );
-    virtual     ~ScHFEditPage() override;
+    virtual     ~ScHFEditPage();
     virtual void dispose() override;
 
 private:
@@ -86,20 +86,20 @@ private:
 
     sal_uInt16       nWhich;
 
-    DECL_LINK( ObjectSelectHdl, ScEditWindow&, void );
+    DECL_LINK_TYPED( ObjectSelectHdl, ScEditWindow&, void );
 
 private:
     void InitPreDefinedList();
-    void ProcessDefinedListSel(ScHFEntryId eSel, bool bTravelling);
+    void ProcessDefinedListSel(ScHFEntryId eSel, bool bTravelling = false);
     void InsertToDefinedList();
     void RemoveFromDefinedList();
     void SetSelectDefinedList();
     bool IsPageEntry(EditEngine*pEngine, EditTextObject* pTextObj);
     static bool IsDateEntry(EditTextObject* pTextObj);
     static bool IsExtFileNameEntry(EditTextObject* pTextObj);
-    DECL_LINK( ListHdl_Impl, ListBox&, void);
-    DECL_LINK( ClickHdl, Button*, void );
-    DECL_LINK( MenuHdl, ScExtIButton&, void );
+    DECL_LINK_TYPED( ListHdl_Impl, ListBox&, void);
+    DECL_LINK_TYPED( ClickHdl, Button*, void );
+    DECL_LINK_TYPED( MenuHdl, ScExtIButton&, void );
 };
 
 class ScRightHeaderEditPage : public ScHFEditPage

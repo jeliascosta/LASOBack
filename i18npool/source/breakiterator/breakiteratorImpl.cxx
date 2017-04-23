@@ -16,7 +16,6 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-#include <config_locales.h>
 
 #include <breakiteratorImpl.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -49,6 +48,7 @@ BreakIteratorImpl::~BreakIteratorImpl()
 
 sal_Int32 SAL_CALL BreakIteratorImpl::nextCharacters( const OUString& Text, sal_Int32 nStartPos,
         const Locale &rLocale, sal_Int16 nCharacterIteratorMode, sal_Int32 nCount, sal_Int32& nDone )
+        throw(RuntimeException, std::exception)
 {
     if (nCount < 0) throw RuntimeException();
 
@@ -57,6 +57,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::nextCharacters( const OUString& Text, sal_
 
 sal_Int32 SAL_CALL BreakIteratorImpl::previousCharacters( const OUString& Text, sal_Int32 nStartPos,
         const Locale& rLocale, sal_Int16 nCharacterIteratorMode, sal_Int32 nCount, sal_Int32& nDone )
+        throw(RuntimeException, std::exception)
 {
     if (nCount < 0) throw RuntimeException();
 
@@ -95,7 +96,7 @@ static sal_Int32 skipSpace(const OUString& Text, sal_Int32 nPos, sal_Int32 len, 
 }
 
 Boundary SAL_CALL BreakIteratorImpl::nextWord( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& rLocale, sal_Int16 rWordType )
+        const Locale& rLocale, sal_Int16 rWordType ) throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
     if( nStartPos < 0 || len == 0 )
@@ -125,7 +126,7 @@ static inline bool SAL_CALL isCJK( const Locale& rLocale ) {
 }
 
 Boundary SAL_CALL BreakIteratorImpl::previousWord( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& rLocale, sal_Int16 rWordType)
+        const Locale& rLocale, sal_Int16 rWordType) throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
     if( nStartPos <= 0 || len == 0 ) {
@@ -151,7 +152,7 @@ Boundary SAL_CALL BreakIteratorImpl::previousWord( const OUString& Text, sal_Int
 
 
 Boundary SAL_CALL BreakIteratorImpl::getWordBoundary( const OUString& Text, sal_Int32 nPos, const Locale& rLocale,
-        sal_Int16 rWordType, sal_Bool bDirection )
+        sal_Int16 rWordType, sal_Bool bDirection ) throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
     if( nPos < 0 || len == 0 )
@@ -184,7 +185,7 @@ Boundary SAL_CALL BreakIteratorImpl::getWordBoundary( const OUString& Text, sal_
 }
 
 sal_Bool SAL_CALL BreakIteratorImpl::isBeginWord( const OUString& Text, sal_Int32 nPos,
-        const Locale& rLocale, sal_Int16 rWordType )
+        const Locale& rLocale, sal_Int16 rWordType ) throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
 
@@ -200,7 +201,7 @@ sal_Bool SAL_CALL BreakIteratorImpl::isBeginWord( const OUString& Text, sal_Int3
 }
 
 sal_Bool SAL_CALL BreakIteratorImpl::isEndWord( const OUString& Text, sal_Int32 nPos,
-        const Locale& rLocale, sal_Int16 rWordType )
+        const Locale& rLocale, sal_Int16 rWordType ) throw(RuntimeException, std::exception)
 {
     sal_Int32 len = Text.getLength();
 
@@ -216,7 +217,7 @@ sal_Bool SAL_CALL BreakIteratorImpl::isEndWord( const OUString& Text, sal_Int32 
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::beginOfSentence( const OUString& Text, sal_Int32 nStartPos,
-        const Locale &rLocale )
+        const Locale &rLocale ) throw(RuntimeException, std::exception)
 {
     if (nStartPos < 0 || nStartPos > Text.getLength())
         return -1;
@@ -225,7 +226,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::beginOfSentence( const OUString& Text, sal
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::endOfSentence( const OUString& Text, sal_Int32 nStartPos,
-        const Locale &rLocale )
+        const Locale &rLocale ) throw(RuntimeException, std::exception)
 {
     if (nStartPos < 0 || nStartPos > Text.getLength())
         return -1;
@@ -235,12 +236,13 @@ sal_Int32 SAL_CALL BreakIteratorImpl::endOfSentence( const OUString& Text, sal_I
 
 LineBreakResults SAL_CALL BreakIteratorImpl::getLineBreak( const OUString& Text, sal_Int32 nStartPos,
         const Locale& rLocale, sal_Int32 nMinBreakPos, const LineBreakHyphenationOptions& hOptions,
-        const LineBreakUserOptions& bOptions )
+        const LineBreakUserOptions& bOptions ) throw(RuntimeException, std::exception)
 {
     return LBI->getLineBreak(Text, nStartPos, rLocale, nMinBreakPos, hOptions, bOptions);
 }
 
 sal_Int16 SAL_CALL BreakIteratorImpl::getScriptType( const OUString& Text, sal_Int32 nPos )
+        throw(RuntimeException, std::exception)
 {
     return (nPos < 0 || nPos >= Text.getLength()) ? ScriptType::WEAK :
         getScriptClass(Text.iterateCodePoints(&nPos, 0));
@@ -275,7 +277,7 @@ static sal_Int32 SAL_CALL iterateCodePoints(const OUString& Text, sal_Int32 &nSt
 
 
 sal_Int32 SAL_CALL BreakIteratorImpl::beginOfScript( const OUString& Text,
-        sal_Int32 nStartPos, sal_Int16 ScriptType )
+        sal_Int32 nStartPos, sal_Int16 ScriptType ) throw(RuntimeException, std::exception)
 {
     if (nStartPos < 0 || nStartPos >= Text.getLength())
         return -1;
@@ -293,7 +295,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::beginOfScript( const OUString& Text,
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::endOfScript( const OUString& Text,
-        sal_Int32 nStartPos, sal_Int16 ScriptType )
+        sal_Int32 nStartPos, sal_Int16 ScriptType ) throw(RuntimeException, std::exception)
 {
     if (nStartPos < 0 || nStartPos >= Text.getLength())
         return -1;
@@ -312,7 +314,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::endOfScript( const OUString& Text,
 }
 
 sal_Int32  SAL_CALL BreakIteratorImpl::previousScript( const OUString& Text,
-        sal_Int32 nStartPos, sal_Int16 ScriptType )
+        sal_Int32 nStartPos, sal_Int16 ScriptType ) throw(RuntimeException, std::exception)
 {
     if (nStartPos < 0)
         return -1;
@@ -333,7 +335,7 @@ sal_Int32  SAL_CALL BreakIteratorImpl::previousScript( const OUString& Text,
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::nextScript( const OUString& Text, sal_Int32 nStartPos,
-        sal_Int16 ScriptType )
+        sal_Int16 ScriptType ) throw(RuntimeException, std::exception)
 
 {
     if (nStartPos < 0)
@@ -355,7 +357,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::nextScript( const OUString& Text, sal_Int3
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::beginOfCharBlock( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& /*rLocale*/, sal_Int16 CharType )
+        const Locale& /*rLocale*/, sal_Int16 CharType ) throw(RuntimeException, std::exception)
 {
     if (CharType == CharType::ANY_CHAR) return 0;
     if (nStartPos < 0 || nStartPos >= Text.getLength()) return -1;
@@ -367,7 +369,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::beginOfCharBlock( const OUString& Text, sa
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::endOfCharBlock( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& /*rLocale*/, sal_Int16 CharType )
+        const Locale& /*rLocale*/, sal_Int16 CharType ) throw(RuntimeException, std::exception)
 {
     sal_Int32 strLen = Text.getLength();
 
@@ -381,7 +383,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::endOfCharBlock( const OUString& Text, sal_
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::nextCharBlock( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& /*rLocale*/, sal_Int16 CharType )
+        const Locale& /*rLocale*/, sal_Int16 CharType ) throw(RuntimeException, std::exception)
 {
     if (CharType == CharType::ANY_CHAR) return -1;
     if (nStartPos < 0 || nStartPos >= Text.getLength()) return -1;
@@ -398,7 +400,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::nextCharBlock( const OUString& Text, sal_I
 }
 
 sal_Int32 SAL_CALL BreakIteratorImpl::previousCharBlock( const OUString& Text, sal_Int32 nStartPos,
-        const Locale& /*rLocale*/, sal_Int16 CharType )
+        const Locale& /*rLocale*/, sal_Int16 CharType ) throw(RuntimeException, std::exception)
 {
     if(CharType == CharType::ANY_CHAR) return -1;
     if (nStartPos < 0 || nStartPos >= Text.getLength()) return -1;
@@ -419,7 +421,7 @@ sal_Int32 SAL_CALL BreakIteratorImpl::previousCharBlock( const OUString& Text, s
 
 
 sal_Int16 SAL_CALL BreakIteratorImpl::getWordType( const OUString& /*Text*/,
-        sal_Int32 /*nPos*/, const Locale& /*rLocale*/ )
+        sal_Int32 /*nPos*/, const Locale& /*rLocale*/ ) throw(RuntimeException, std::exception)
 {
     return 0;
 }
@@ -442,8 +444,7 @@ struct UBlock2Script
 static const UBlock2Script scriptList[] =
 {
     {UBLOCK_NO_BLOCK, UBLOCK_NO_BLOCK, ScriptType::WEAK},
-    {UBLOCK_BASIC_LATIN, UBLOCK_SPACING_MODIFIER_LETTERS, ScriptType::LATIN},
-    {UBLOCK_GREEK, UBLOCK_ARMENIAN, ScriptType::LATIN},
+    {UBLOCK_BASIC_LATIN, UBLOCK_ARMENIAN, ScriptType::LATIN},
     {UBLOCK_HEBREW, UBLOCK_MYANMAR, ScriptType::COMPLEX},
     {UBLOCK_GEORGIAN, UBLOCK_GEORGIAN, ScriptType::LATIN},
     {UBLOCK_HANGUL_JAMO, UBLOCK_HANGUL_JAMO, ScriptType::ASIAN},
@@ -509,7 +510,7 @@ bool getCompatibilityScriptClassByBlock(sal_uInt32 currentChar, sal_Int16 &rScri
 sal_Int16  BreakIteratorImpl::getScriptClass(sal_uInt32 currentChar)
 {
     static sal_uInt32 lastChar = 0;
-    static sal_Int16 nRet = ScriptType::WEAK;
+    static sal_Int16 nRet = 0;
 
     if (currentChar != lastChar)
     {
@@ -522,7 +523,7 @@ sal_Int16  BreakIteratorImpl::getScriptClass(sal_uInt32 currentChar)
     return nRet;
 }
 
-bool SAL_CALL BreakIteratorImpl::createLocaleSpecificBreakIterator(const OUString& aLocaleName)
+bool SAL_CALL BreakIteratorImpl::createLocaleSpecificBreakIterator(const OUString& aLocaleName) throw( RuntimeException )
 {
     // to share service between same Language but different Country code, like zh_CN and zh_TW
     for (lookupTableItem* listItem : lookupTable) {
@@ -531,23 +532,6 @@ bool SAL_CALL BreakIteratorImpl::createLocaleSpecificBreakIterator(const OUStrin
             return true;
         }
     }
-
-#if !WITH_LOCALE_ALL && !WITH_LOCALE_ja
-    if (aLocaleName == "ja")
-        return false;
-#endif
-#if !WITH_LOCALE_ALL && !WITH_LOCALE_zh
-    if (aLocaleName == "zh" || aLocaleName == "zh_TW")
-        return false;
-#endif
-#if !WITH_LOCALE_ALL && !WITH_LOCALE_ko
-    if (aLocaleName == "ko")
-        return false;
-#endif
-#if !WITH_LOCALE_ALL && !WITH_LOCALE_th
-    if (aLocaleName == "th")
-        return false;
-#endif
 
     Reference < uno::XInterface > xI = m_xContext->getServiceManager()->createInstanceWithContext(
             "com.sun.star.i18n.BreakIterator_" + aLocaleName, m_xContext);
@@ -563,7 +547,7 @@ bool SAL_CALL BreakIteratorImpl::createLocaleSpecificBreakIterator(const OUStrin
 }
 
 Reference < XBreakIterator > SAL_CALL
-BreakIteratorImpl::getLocaleSpecificBreakIterator(const Locale& rLocale)
+BreakIteratorImpl::getLocaleSpecificBreakIterator(const Locale& rLocale) throw (RuntimeException)
 {
     if (xBI.is() && rLocale == aLocale)
         return xBI;
@@ -575,7 +559,7 @@ BreakIteratorImpl::getLocaleSpecificBreakIterator(const Locale& rLocale)
                 return xBI = listItem->xBI;
         }
 
-        sal_Unicode under = '_';
+        sal_Unicode under = (sal_Unicode)'_';
 
         sal_Int32 l = rLocale.Language.getLength();
         sal_Int32 c = rLocale.Country.getLength();
@@ -609,19 +593,19 @@ BreakIteratorImpl::getLocaleSpecificBreakIterator(const Locale& rLocale)
 }
 
 OUString SAL_CALL
-BreakIteratorImpl::getImplementationName()
+BreakIteratorImpl::getImplementationName() throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.i18n.BreakIterator");
 }
 
 sal_Bool SAL_CALL
-BreakIteratorImpl::supportsService(const OUString& rServiceName)
+BreakIteratorImpl::supportsService(const OUString& rServiceName) throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > SAL_CALL
-BreakIteratorImpl::getSupportedServiceNames()
+BreakIteratorImpl::getSupportedServiceNames() throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.i18n.BreakIterator" };
     return aRet;

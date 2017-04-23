@@ -32,10 +32,9 @@
 #include <svx/svxdllapi.h>
 #include <drawinglayer/primitive2d/baseprimitive2d.hxx>
 #include <svx/svdpagv.hxx>
-#include <rtl/ref.hxx>
 
 
-//   forward declarations
+//   Vorausdeklarationen
 
 
 class OutlinerParaObject;
@@ -84,18 +83,18 @@ namespace sdr { namespace table {
 #define SDRUSERDATA_OBJTEXTLINK         (1)
 
 
-//   helper class SdrTextObjGeoData
+//   Hilfsklasse SdrTextObjGeoData
 
 
 class SdrTextObjGeoData : public SdrObjGeoData
 {
 public:
-    tools::Rectangle                   aRect;
+    Rectangle                   aRect;
     GeoStat                     aGeo;
 };
 
 
-//   helper class ImpSdrObjTextLinkUserData
+//   Hilfsklasse ImpSdrObjTextLinkUserData
 
 
 class ImpSdrObjTextLinkUserData : public SdrObjUserData
@@ -103,16 +102,15 @@ class ImpSdrObjTextLinkUserData : public SdrObjUserData
     friend class                SdrTextObj;
     friend class                ImpSdrObjTextLink;
 
-    OUString                    aFileName;   // name of the referenced document
-    OUString                    aFilterName; // a filter, if need be
-    DateTime                    aFileDate0;  // avoiding unnecessary reload
-    tools::SvRef<ImpSdrObjTextLink>
-                                pLink;
+    OUString                    aFileName;   // Name des referenzierten Dokuments
+    OUString                    aFilterName; // ggf. ein Filter
+    DateTime                    aFileDate0;  // Unnoetiges neuladen vermeiden
+    ImpSdrObjTextLink*          pLink;
     rtl_TextEncoding            eCharSet;
 
 public:
     ImpSdrObjTextLinkUserData();
-    virtual ~ImpSdrObjTextLinkUserData() override;
+    virtual ~ImpSdrObjTextLinkUserData();
 
     virtual SdrObjUserData* Clone(SdrObject* pObj1) const override;
 };
@@ -171,42 +169,43 @@ private:
 
     friend class                ImpSdrObjTextLink;
     friend class                ImpSdrObjTextLinkUserData;
-    friend class                SdrPowerPointImport; // for PowerPointImport
-    friend class                SdrExchangeView;     // for ImpGetDrawOutliner
-    friend class                SdrView;             // for ImpGetDrawOutliner
-    friend class                SdrObjEditView;      // for TextEdit
-    friend class                SdrMeasureObj;       // for ImpGetDrawOutliner
-    friend class                SvxMSDffManager;     // for ImpGetDrawOutliner
-    friend class                SdrObjCustomShape;   // for ImpGetDrawOutliner
-    friend class                SdrText;             // for ImpGetDrawOutliner
+    friend class                SdrPowerPointImport; // fuer PowerPointImport
+    friend class                SdrExchangeView; // fuer ImpGetDrawOutliner
+    friend class                SdrView;         // fuer ImpGetDrawOutliner
+    friend class                SdrObjEditView;  // fuer TextEdit
+    friend class                SdrMeasureObj;   // fuer ImpGetDrawOutliner
+    friend class                SvxMSDffManager; // fuer ImpGetDrawOutliner
+    friend class                SdrObjCustomShape;// fuer ImpGetDrawOutliner
+    friend class                SdrText;        // fuer ImpGetDrawOutliner
 
 protected:
-    // The "aRect" is also the rect of RectObj and CircObj.
-    // When bTextFrame=sal_True the text will be formatted into this rect
-    // When bTextFrame=sal_False the text will be centered around its middle
-    tools::Rectangle maRect;
+    // Das aRect ist gleichzeig auch das Rect vom RectObj und CircObj.
+    // Bei bTextFrame=sal_True wird der Text in dieses Rect hineinformatiert.
+    // Bei bTextFrame=sal_False wird der Text am Mittelpunkt des Rect zentriert.
+    Rectangle maRect;
 
-    // The GeoStat contains the rotation and shear angles
+    // Der GeoStat enthaelt den Drehwinkel und einen Shearwinkel
     GeoStat                     aGeo;
 
     // this is the active text
     SdrText*                    mpText;
 
-    // This contains the dimensions of the text
+    // Hier merke ich mir die Ausmasse des Textes (n.i.)
     Size                        aTextSize;
 
-    // an Outliner*, so that
-    // 1. the TextObj won't be edited simultaneously by multiple views, and
-    // 2. when streaming while editing Flush() can be done
+    // Ein Outliner*, damit
+    // 1. das TextObj nicht von mehreren Views gleichzeitig editiert und
+    // 2. beim Streamen waerend des Editierens ein Flush() ausgefuehrt
+    // werden kann
     SdrOutliner*                pEdtOutl;
 
-    // Possible values for eTextKind are:
-    //     OBJ_TEXT         regular text frame
-    //     OBJ_TEXTEXT      text continuation frame
-    //     OBJ_TITLETEXT    TitleText for presentations
-    //     OBJ_OUTLINETEXT  OutlineText for presentations
-    // eTextKind only has meaning when bTextFrame=sal_True, since otherwise
-    // we're dealing with a labeled graphical object
+    // Moegliche Werte fuer eTextKind sind:
+    //     OBJ_TEXT         normaler Textrahmen
+    //     OBJ_TEXTEXT      Textfortsetzungsrahmen
+    //     OBJ_TITLETEXT    TitleText fuer StarDraw-Praesentation
+    //     OBJ_OUTLINETEXT  OutlineText fuer StarDraw-Praesentation
+    // eTextKind hat nur Bedeutung, wenn bTextFrame=sal_True, da es sich sonst
+    // um ein beschriftetes Grafikobjekt handelt.
     SdrObjKind                  eTextKind;
 
     // For text editing in SW Header/Footer it is necessary to be
@@ -228,28 +227,35 @@ protected:
     SdrTextObj *mpNextInChain = nullptr;
     SdrTextObj *mpPrevInChain = nullptr;
 
-    // For labeled graphical objects bTextFrame is FALSE. The block of text
-    // will then be centered horizontally and vertically on aRect.
-    // For bTextFalse=sal_True the text will be formatted into aRect.
-    // The actual text frame is realized by an SdrRectObj with
-    // bTextFrame=sal_True.
+    // indicating the for its text to be chained to another text box
+    bool mbToBeChained : 1;
+
+    // Fuer beschriftete Zeichenobjekte ist bTextFrame=FALSE. Der Textblock
+    // wird dann hoizontal und vertikal an aRect zentriert. Bei bTextFrame=
+    // sal_True wird der Text in aRect hineinformatiert. Der eigentliche Textrahmen
+    // ist durch ein SdrRectObj mit bTextFrame=sal_True realisiert.
     bool                        bTextFrame : 1;
-    bool                        bPortionInfoChecked : 1; // to optimise text objects
-    bool                        bNoShear : 1;            // disable shearing   (->graphic+Ole+TextFrame)
-    bool                        bNoMirror : 1;           // disable mirroring (->Ole,TextFrame)
+    bool                        bPortionInfoChecked : 1; // Fuer Optimierung von Textobjekten
+    bool                        bNoShear : 1;            // Obj darf nicht gesheart werden   (->Graf+Ole+TextFrame)
+    bool                        bNoRotate : 1;           // Obj darf nicht gedreht werden    (->Ole)
+    bool                        bNoMirror : 1;           // Obj darf nicht gespiegelt werden (->Ole,TextFrame)
     bool                        bTextSizeDirty : 1;
 
     bool                        mbInEditMode : 1;   // Is this text object in edit mode?
 
-    // For objects with free size (flow text). The flag is set by the
-    // application on create. If the object width is later resized,
-    // AutoGrowWidth will be disabled (set to sal_False). This flag will
-    // then also be set to sal_False, so that the object behaves like a
-    // normal text object.
-    // Width resize can result from:
-    // - Interactive Resize in single or multiple selections
-    // - position/size dialog
+    // Fuer Objekt mit freier Groesse im Draw (Mengentext). Das Flag wird vom
+    // der App beim Create gesetzt.
+    // Wenn das Objekt dann spaeter in der Breite resized wird, wird
+    // AutoGrowWidth abgeschaltet (Hart auf sal_False attributiert). Das Flag wird
+    // dann ebenfalls auf sal_False gesetzt, sodass sich das Objekt anschliessend
+    // wie ein normales Textobjekt verhaelt.
+    // Resize in der Breite kann sein:
+    // - Interaktives Resize in Einfach- oder Mehrfachselektion
+    // - Positions+Groesse Dialog
     bool                        bDisableAutoWidthOnDragging : 1;
+
+    // Allow text suppression
+    bool                        mbTextHidden : 1;
 
     // Flag for allowing text animation. Default is sal_true.
     bool                        mbTextAnimationAllowed : 1;
@@ -266,9 +272,9 @@ private:
     // #101029#: Extracted from Paint()
     SVX_DLLPRIVATE void ImpSetupDrawOutlinerForPaint( bool bContourFrame,
                                        SdrOutliner&     rOutliner,
-                                       tools::Rectangle&       rTextRect,
-                                       tools::Rectangle&       rAnchorRect,
-                                       tools::Rectangle&       rPaintRect,
+                                       Rectangle&       rTextRect,
+                                       Rectangle&       rAnchorRect,
+                                       Rectangle&       rPaintRect,
                                        Fraction&        aFitXKorreg ) const;
     void ImpAutoFitText( SdrOutliner& rOutliner ) const;
     static void ImpAutoFitText( SdrOutliner& rOutliner, const Size& rShapeSize, bool bIsVerticalWriting );
@@ -290,14 +296,14 @@ protected:
     SdrObject* ImpConvertAddText(SdrObject* pObj, bool bBezier) const;
     void ImpSetTextStyleSheetListeners();
     static void ImpSetCharStretching(SdrOutliner& rOutliner, const Size& rTextSize, const Size& rShapeSize, Fraction& rFitXKorreg);
-    static void ImpJustifyRect(tools::Rectangle& rRect);
+    static void ImpJustifyRect(Rectangle& rRect);
     void ImpCheckShear();
-    tools::Rectangle ImpDragCalcRect(const SdrDragStat& rDrag) const;
+    Rectangle ImpDragCalcRect(const SdrDragStat& rDrag) const;
     void ImpSetTextEditParams() const;
     void SetTextSizeDirty() { bTextSizeDirty=true; }
 
-    // rAnchorRect is InOut-Parameter!
-    void ImpSetContourPolygon( SdrOutliner& rOutliner, tools::Rectangle& rAnchorRect, bool bLineWidth ) const;
+    // rAnchorRect ist InOut-Parameter!
+    void ImpSetContourPolygon( SdrOutliner& rOutliner, Rectangle& rAnchorRect, bool bLineWidth ) const;
 
     virtual SdrObjGeoData* NewGeoData() const override;
     virtual void SaveGeoData(SdrObjGeoData& rGeo) const override;
@@ -309,38 +315,37 @@ protected:
     // and object sizes
     virtual void AdaptTextMinSize();
 
-    // constructors for labeled graphical objects
+    // Konstruktoren fuer beschriftete Zeichenobjekte
     SdrTextObj();
-    SdrTextObj(const tools::Rectangle& rNewRect);
+    SdrTextObj(const Rectangle& rNewRect);
 
-    // constructors for text frames
+    // Konstruktoren fuer Textrahmen
     SdrTextObj(SdrObjKind eNewTextKind);
-    SdrTextObj(SdrObjKind eNewTextKind, const tools::Rectangle& rNewRect);
+    SdrTextObj(SdrObjKind eNewTextKind, const Rectangle& rNewRect);
 
-    virtual ~SdrTextObj() override;
+    virtual ~SdrTextObj();
 
 public:
 
     bool IsInEditMode() const { return mbInEditMode; }
 
-    // via eCharSet the character set of a file can be passed. For
-    // RTL_TEXTENCODING_DONTKNOW the platform's character set is used.
-    // Currently ASCII and RTF are supported and the differentiation is done
-    // internally.
-    // rFilterName has no meaning and must be empty
-    // Normally the application only has to call SetTextLink() - the
-    // remainder is automatic (SfxLinkManager).
-    // The LoadText() method can also be used to load a file into a text
-    // object (without linking.)
-    // TextLinks can't be edited (if needed later could be ReadOnly).
-    // Setting attributes can only be done on the text frame.
+    // via eCharSet kann der CharSet der vorliegenden Datei uebergeben werden.
+    // Bei RTL_TEXTENCODING_DONTKNOW wird der CharSet der aktuellen Plattform verwendet.
+    // Derzeit unterstuetzt wird ASCII und RTF wobei ich die Unterscheidung
+    // selbst treffe. rFilterName ist noch ohne Bedeutung und muss leer gelassen
+    // werden.
+    // I.d.R. muss die App nur SetTextLink() rufen - der Rest geschieht von
+    // selbst (SfxLinkManager). Die Methode LoadText() kann ausserdem verwendet
+    // werden, um eine Datei in ein Textobjekt zu laden (ohne Verknuepfung).
+    // TextLinks koennen nicht editiert werden (allenfalls spaeter mal ReadOnly).
+    // Eine Attributierung kann nur am Textrahmen vollzogen werden.
     void SetTextLink(const OUString& rFileName, const OUString& rFilterName, rtl_TextEncoding eCharSet);
     void ReleaseTextLink();
     bool IsLinkedText() const { return pPlusData!=nullptr && GetLinkUserData()!=nullptr; }
-    bool ReloadLinkedText(bool bForceLoad);
+    bool ReloadLinkedText(bool bForceLoad = false);
     bool LoadText(const OUString& rFileName, const OUString& rFilterName, rtl_TextEncoding eCharSet);
 
-    virtual bool AdjustTextFrameWidthAndHeight(tools::Rectangle& rR, bool bHgt = true, bool bWdt = true) const;
+    virtual bool AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt = true, bool bWdt = true) const;
     virtual bool NbcAdjustTextFrameWidthAndHeight(bool bHgt = true, bool bWdt = true);
     virtual bool AdjustTextFrameWidthAndHeight();
     bool IsTextFrame() const { return bTextFrame; }
@@ -351,10 +356,12 @@ public:
     bool IsFitToSize() const;
 
     // Chaining
+    bool IsToBeChained() const;
     SdrTextObj *GetNextLinkInChain() const;
     void SetNextLinkInChain(SdrTextObj *);
     SdrTextObj *GetPrevLinkInChain() const;
     bool IsChainable() const;
+    void SetPreventChainable();
     bool GetPreventChainable() const;
     TextChain *GetTextChain() const;
 
@@ -363,7 +370,8 @@ public:
     // #i121917#
     virtual bool HasText() const override;
 
-    bool IsTextEditActive() const { return pEdtOutl != nullptr; }
+    bool HasEditText() const;
+    bool IsTextEditActive() const { return (pEdtOutl != nullptr); }
 
     /** returns the currently active text. */
     virtual SdrText* getActiveText() const;
@@ -389,18 +397,17 @@ public:
     void NbcSetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
     void SetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
 
-    // FitToSize and Fontwork are not taken into account in GetTextSize()!
+    // FitToSize und Fontwork wird bei GetTextSize() nicht berueksichtigt!
     virtual const Size& GetTextSize() const;
     void FitFrameToTextSize();
 
-    // Simultaneously sets the text into the Outliner (possibly
-    // the one of the EditOutliner) and sets the PaperSize.
-    virtual void TakeTextRect( SdrOutliner& rOutliner, tools::Rectangle& rTextRect, bool bNoEditText,
-        tools::Rectangle* pAnchorRect, bool bLineWidth = true ) const;
-    virtual void TakeTextAnchorRect(::tools::Rectangle& rAnchorRect) const;
+    // Gleichzeitig wird der Text in den Outliner gesetzt (ggf.
+    // der des EditOutliners) und die PaperSize gesetzt.
+    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
+        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const;
+    virtual void TakeTextAnchorRect(::Rectangle& rAnchorRect) const;
     const GeoStat& GetGeoStat() const { return aGeo; }
 
-    // get corner radius
     long GetEckenradius() const;
     virtual bool IsAutoGrowHeight() const;
     long GetMinTextFrameHeight() const;
@@ -410,20 +417,22 @@ public:
     long GetMaxTextFrameWidth() const;
 
     SdrFitToSizeType GetFitToSize() const;
-    const tools::Rectangle &GetGeoRect() const;
+    const Rectangle &GetGeoRect() const;
 
-    // check if it's a TextFontwork
+    // Feststellen, ob TextFontwork
     virtual bool IsFontwork() const;
 
-    // should the Fontwork contour be hidden?
+    // Soll die Fontwork-Kontour versteckt werden?
     bool IsHideContour() const;
 
-    // text flow within contour
+    // Textfluss innerhalb Kontur
     bool IsContourTextFrame() const;
 
+    // Horizontale Textausrichtung
     SdrTextHorzAdjust GetTextHorizontalAdjust(const SfxItemSet& rSet) const;
     SdrTextHorzAdjust GetTextHorizontalAdjust() const;
 
+    // Vertikale Textausrichtung
     SdrTextVertAdjust GetTextVerticalAdjust(const SfxItemSet& rSet) const;
     SdrTextVertAdjust GetTextVerticalAdjust() const;
 
@@ -443,8 +452,8 @@ public:
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
 
-    // needed to determine text anchor area
-    virtual void TakeUnrotatedSnapRect(tools::Rectangle& rRect) const;
+    // Wird zur Bestimmung des Textankerbereichs benoetigt
+    virtual void TakeUnrotatedSnapRect(Rectangle& rRect) const;
     virtual OUString TakeObjNameSingul() const override;
     virtual OUString TakeObjNamePlural() const override;
     virtual SdrTextObj* Clone() const override;
@@ -452,9 +461,9 @@ public:
     virtual basegfx::B2DPolyPolygon TakeXorPoly() const override;
     virtual basegfx::B2DPolyPolygon TakeContour() const override;
     virtual void RecalcSnapRect() override;
-    virtual void NbcSetSnapRect(const tools::Rectangle& rRect) override;
-    virtual void NbcSetLogicRect(const tools::Rectangle& rRect) override;
-    virtual const tools::Rectangle& GetLogicRect() const override;
+    virtual void NbcSetSnapRect(const Rectangle& rRect) override;
+    virtual void NbcSetLogicRect(const Rectangle& rRect) override;
+    virtual const Rectangle& GetLogicRect() const override;
     virtual long GetRotateAngle() const override;
     virtual long GetShearAngle(bool bVertical = false) const override;
 
@@ -485,14 +494,14 @@ public:
 
     virtual bool HasTextEdit() const override;
     virtual bool BegTextEdit(SdrOutliner& rOutl) override;
-    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, tools::Rectangle* pViewInit, tools::Rectangle* pViewMin) const;
+    virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const;
     virtual void EndTextEdit(SdrOutliner& rOutl) override;
     virtual sal_uInt16 GetOutlinerViewAnchorMode() const;
 
     virtual void NbcSetOutlinerParaObject(OutlinerParaObject* pTextObject) override;
     void NbcSetOutlinerParaObjectForText( OutlinerParaObject* pTextObject, SdrText* pText );
     virtual OutlinerParaObject* GetOutlinerParaObject() const override;
-    OutlinerParaObject* GetEditOutlinerParaObject() const;
+    virtual OutlinerParaObject* GetEditOutlinerParaObject() const;
 
     virtual void NbcReformatText() override;
     virtual void ReformatText() override;
@@ -520,7 +529,7 @@ public:
         The region to paint the outliner content into. This is useful
         to e.g. determine the top, left position of text in shapes.
      */
-    void SetupOutlinerFormatting( SdrOutliner& rOutl, tools::Rectangle& rPaintRect ) const;
+    void SetupOutlinerFormatting( SdrOutliner& rOutl, Rectangle& rPaintRect ) const;
 
     /** Update given Outliner equivalently to SdrTextObj::Paint()
 
@@ -534,7 +543,7 @@ public:
         The region to paint the outliner content into. This is useful
         to e.g. determine the top, left position of text in shapes.
      */
-    void UpdateOutlinerFormatting( SdrOutliner& rOutl, tools::Rectangle& rPaintRect ) const;
+    void UpdateOutlinerFormatting( SdrOutliner& rOutl, Rectangle& rPaintRect ) const;
     void ForceOutlinerParaObject();
     virtual bool IsVerticalWriting() const;
     virtual void SetVerticalWriting(bool bVertical);
@@ -568,7 +577,7 @@ public:
 
     // Get necessary data for text scroll animation. ATM base it on a Text-Metafile and a
     // painting rectangle. Rotation is taken from the object.
-    GDIMetaFile* GetTextScrollMetaFileAndRectangle(tools::Rectangle& rScrollRectangle, tools::Rectangle& rPaintRectangle);
+    GDIMetaFile* GetTextScrollMetaFileAndRectangle(Rectangle& rScrollRectangle, Rectangle& rPaintRectangle);
 
     // Access to TextAnimationAllowed flag
     void SetTextAnimationAllowed(bool bNew);

@@ -25,7 +25,7 @@ shell basctl_Shell
     import BasicIDEView;
 
 
-    // Current, according to current window:
+    // Current, je nach aktuellem Fenster:
 
     SID_SHOWLINES
     [
@@ -130,7 +130,7 @@ shell basctl_Shell
     ]
 
 
-    // Global: Whatever, which window is currently active:
+    // Global: Egal, welches Fenster gerade aktiv ist:
 
     SID_BASICIDE_LIBSELECTOR
     [
@@ -209,7 +209,7 @@ shell basctl_Shell
         StateMethod = GetState;
     ]
 
-    // From here on normal ...
+    // Ab hier normal...
     SID_BASICIDE_CHOOSEMACRO
     [
         ExecMethod  = ExecuteGlobal;
@@ -282,6 +282,12 @@ shell basctl_Shell
         StateMethod = GetState;
     ]
 
+    SID_BASICIDE_NEWJAVAMODULE
+    [
+        ExecMethod  = ExecuteGlobal;
+        StateMethod = GetState;
+    ]
+
     SID_BASICIDE_NEWDIALOG
     [
         ExecMethod  = ExecuteGlobal;
@@ -312,7 +318,7 @@ shell basctl_Shell
     ]
 
 
-    // Only, when BasicWindow up
+    // Nur, wenn BasicFenster oben
 
     SID_BASICRUN
     [
@@ -399,128 +405,9 @@ shell basctl_Shell
     ]
 
 
-    // Only, when dialog window up
+    // Nur, wenn Dialogfenster oben
 
     SID_CHOOSE_CONTROLS
-    [
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_PUSHBUTTON
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_CHECKBOX
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_RADIOBUTTON
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_SPINBUTTON
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_FIXEDTEXT
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_GROUPBOX
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_LISTBOX
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_COMBOBOX
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_EDIT
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_HSCROLLBAR
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_VSCROLLBAR
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_SELECT
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_IMAGECONTROL
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_PROGRESSBAR
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_HFIXEDLINE
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_VFIXEDLINE
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_DATEFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_TIMEFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_NUMERICFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_CURRENCYFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_FORMATTEDFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_PATTERNFIELD
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_FILECONTROL
-    [
-        ExecMethod      = ExecuteDialog;
-        StateMethod     = GetState;
-    ]
-    SID_INSERT_TREECONTROL
     [
         ExecMethod      = ExecuteDialog;
         StateMethod     = GetState;

@@ -67,7 +67,7 @@ void ScNavigatorControllerItem::StateChanged( sal_uInt16 /* nSID */, SfxItemStat
 
                 OSL_ENSURE( pTabItem, "SfxUInt16Item expected!" );
 
-                //  table for Basic is 1-based
+                //  Tabelle fuer Basic ist 1-basiert
                 if ( pTabItem && pTabItem->GetValue() )
                 {
                     SCTAB nTab = pTabItem->GetValue() - 1;
@@ -81,7 +81,7 @@ void ScNavigatorControllerItem::StateChanged( sal_uInt16 /* nSID */, SfxItemStat
 
         case SID_CURRENTDOC:
 
-            //  nothing is done via SfxHintId::DocChanged
+            //  gar nix mehr, wird ueber SFX_HINT_DOCCHANGED erledigt
 
             break;
 

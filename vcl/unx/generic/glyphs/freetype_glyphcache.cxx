@@ -20,6 +20,7 @@
 
 #include <vcl/fontcharmap.hxx>
 
+#include <unx/cairotextrender.hxx>
 #include "unx/freetype_glyphcache.hxx"
 
 #include <vcl/svapp.hxx>
@@ -28,6 +29,12 @@
 #include "fontattributes.hxx"
 
 #include <config_features.h>
+#include <config_graphite.h>
+#if ENABLE_GRAPHITE
+#  include <graphite_static.hxx>
+#  include <graphite2/Font.h>
+#  include <graphite_layout.hxx>
+#endif
 #include <unotools/fontdefs.hxx>
 
 #include "tools/poly.hxx"
@@ -164,6 +171,33 @@ void FreetypeFontFile::Unmap()
     mpFileMap = nullptr;
 }
 
+#if ENABLE_GRAPHITE
+// wrap FreetypeFontInfo's table function
+const void * graphiteFontTable(const void* appFaceHandle, unsigned int name, size_t *len)
+{
+    const FreetypeFontInfo * pFontInfo = static_cast<const FreetypeFontInfo*>(appFaceHandle);
+    typedef union {
+        char m_c[5];
+        unsigned int m_id;
+    } TableId;
+    TableId tableId;
+    tableId.m_id = name;
+#ifndef OSL_BIGENDIAN
+    TableId swapped;
+    swapped.m_c[3] = tableId.m_c[0];
+    swapped.m_c[2] = tableId.m_c[1];
+    swapped.m_c[1] = tableId.m_c[2];
+    swapped.m_c[0] = tableId.m_c[3];
+    tableId.m_id = swapped.m_id;
+#endif
+    tableId.m_c[4] = '\0';
+    sal_uLong nLength = 0;
+    const void * pTable = static_cast<const void*>(pFontInfo->GetTable(tableId.m_c, &nLength));
+    if (len) *len = static_cast<size_t>(nLength);
+    return pTable;
+}
+#endif
+
 FreetypeFontInfo::FreetypeFontInfo( const FontAttributes& rDevFontAttributes,
     const OString& rNativeFileName, int nFaceNum, sal_IntPtr nFontId)
 :
@@ -171,9 +205,15 @@ FreetypeFontInfo::FreetypeFontInfo( const FontAttributes& rDevFontAttributes,
     mpFontFile( FreetypeFontFile::FindFontFile( rNativeFileName ) ),
     mnFaceNum( nFaceNum ),
     mnRefCount( 0 ),
+#if ENABLE_GRAPHITE
+    mbCheckedGraphite(false),
+    mpGraphiteFace(nullptr),
+#endif
     mnFontId( nFontId ),
     maDevFontAttributes( rDevFontAttributes ),
-    mxFontCharMap( nullptr )
+    mxFontCharMap( nullptr ),
+    mpChar2Glyph( nullptr ),
+    mpGlyph2Char( nullptr )
 {
     // prefer font with low ID
     maDevFontAttributes.IncreaseQualityBy( 10000 - nFontId );
@@ -183,6 +223,20 @@ FreetypeFontInfo::FreetypeFontInfo( const FontAttributes& rDevFontAttributes,
 
 FreetypeFontInfo::~FreetypeFontInfo()
 {
+    if( mxFontCharMap )
+        mxFontCharMap = nullptr;
+    delete mpChar2Glyph;
+    delete mpGlyph2Char;
+#if ENABLE_GRAPHITE
+    delete mpGraphiteFace;
+#endif
+}
+
+void FreetypeFontInfo::InitHashes() const
+{
+    // TODO: avoid pointers when empty stl::hash_* objects become cheap
+    mpChar2Glyph = new Int2IntMap();
+    mpGlyph2Char = new Int2IntMap();
 }
 
 FT_FaceRec_* FreetypeFontInfo::GetFaceFT()
@@ -200,6 +254,29 @@ FT_FaceRec_* FreetypeFontInfo::GetFaceFT()
    return maFaceFT;
 }
 
+#if ENABLE_GRAPHITE
+GraphiteFaceWrapper * FreetypeFontInfo::GetGraphiteFace()
+{
+    if (mbCheckedGraphite)
+        return mpGraphiteFace;
+    // test for graphite here so that it is cached most efficiently
+    if (GetTable("Silf"))
+    {
+        static const char* pGraphiteCacheStr = getenv( "SAL_GRAPHITE_CACHE_SIZE" );
+        int graphiteSegCacheSize = pGraphiteCacheStr ? (atoi(pGraphiteCacheStr)) : 0;
+        gr_face * pGraphiteFace;
+        if (graphiteSegCacheSize > 500)
+            pGraphiteFace = gr_make_face_with_seg_cache(this, graphiteFontTable, graphiteSegCacheSize, gr_face_cacheCmap);
+        else
+            pGraphiteFace = gr_make_face(this, graphiteFontTable, gr_face_cacheCmap);
+        if (pGraphiteFace)
+            mpGraphiteFace = new GraphiteFaceWrapper(pGraphiteFace);
+    }
+    mbCheckedGraphite = true;
+    return mpGraphiteFace;
+}
+#endif
+
 void FreetypeFontInfo::ReleaseFaceFT()
 {
     if (--mnRefCount <= 0)
@@ -212,6 +289,7 @@ void FreetypeFontInfo::ReleaseFaceFT()
 
 static unsigned GetUInt( const unsigned char* p ) { return((p[0]<<24)+(p[1]<<16)+(p[2]<<8)+p[3]);}
 static unsigned GetUShort( const unsigned char* p ){ return((p[0]<<8)+p[1]);}
+//static signed GetSShort( const unsigned char* p ){ return((short)((p[0]<<8)+p[1]));}
 
 static const sal_uInt32 T_true = 0x74727565;        /* 'true' */
 static const sal_uInt32 T_ttcf = 0x74746366;        /* 'ttcf' */
@@ -283,7 +361,7 @@ FreetypeManager::FreetypeManager()
     vclFontFileList::get();
 }
 
-FT_Face FreetypeFont::GetFtFace() const
+FT_Face ServerFont::GetFtFace() const
 {
     FT_Activate_Size( maSizeFT );
 
@@ -330,7 +408,7 @@ void FreetypeManager::ClearFontList( )
     maFontList.clear();
 }
 
-FreetypeFont* FreetypeManager::CreateFont( const FontSelectPattern& rFSD )
+ServerFont* FreetypeManager::CreateFont( const FontSelectPattern& rFSD )
 {
     FreetypeFontInfo* pFontInfo = nullptr;
 
@@ -343,7 +421,7 @@ FreetypeFont* FreetypeManager::CreateFont( const FontSelectPattern& rFSD )
     if( !pFontInfo )
         return nullptr;
 
-    FreetypeFont* pNew = new FreetypeFont( rFSD, pFontInfo );
+    ServerFont* pNew = new ServerFont( rFSD, pFontInfo );
 
     return pNew;
 }
@@ -352,27 +430,30 @@ FreetypeFontFace::FreetypeFontFace( FreetypeFontInfo* pFI, const FontAttributes&
 :   PhysicalFontFace( rDFA ),
     mpFreetypeFontInfo( pFI )
 {
+    SetBuiltInFontFlag( false );
+    SetOrientationFlag( true );
 }
 
 LogicalFontInstance* FreetypeFontFace::CreateFontInstance( FontSelectPattern& rFSD ) const
 {
-    FreetypeFontInstance* pEntry = new FreetypeFontInstance( rFSD );
+    ServerFontInstance* pEntry = new ServerFontInstance( rFSD );
     return pEntry;
 }
 
-// FreetypeFont
+// ServerFont
 
-FreetypeFont::FreetypeFont( const FontSelectPattern& rFSD, FreetypeFontInfo* pFI )
+ServerFont::ServerFont( const FontSelectPattern& rFSD, FreetypeFontInfo* pFI )
 :   maGlyphList( 0),
     maFontSelData(rFSD),
     mnRefCount(1),
-    mnBytesUsed( sizeof(FreetypeFont) ),
+    mnBytesUsed( sizeof(ServerFont) ),
     mpPrevGCFont( nullptr ),
     mpNextGCFont( nullptr ),
     mnCos( 0x10000),
     mnSin( 0 ),
     mnPrioEmbedded(nDefaultPrioEmbedded),
     mnPrioAntiAlias(nDefaultPrioAntiAlias),
+    mnPrioAutoHint(nDefaultPrioAutoHint),
     mpFontInfo( pFI ),
     mnLoadFlags( 0 ),
     maFaceFT( nullptr ),
@@ -381,11 +462,11 @@ FreetypeFont::FreetypeFont( const FontSelectPattern& rFSD, FreetypeFontInfo* pFI
     mbArtItalic( false ),
     mbArtBold( false ),
     mbUseGamma( false ),
-    mpHbFont( nullptr )
+    mpLayoutEngine( nullptr )
 {
     // TODO: move update of mpFontInstance into FontEntry class when
-    // it becomes responsible for the FreetypeFont instantiation
-    static_cast<FreetypeFontInstance*>(rFSD.mpFontInstance)->SetFreetypeFont( this );
+    // it becomes responsible for the ServerFont instantiation
+    static_cast<ServerFontInstance*>(rFSD.mpFontInstance)->SetServerFont( this );
 
     maFaceFT = pFI->GetFaceFT();
 
@@ -427,6 +508,8 @@ FreetypeFont::FreetypeFont( const FontSelectPattern& rFSD, FreetypeFontInfo* pFI
 
     mbFaceOk = true;
 
+    ApplyGSUB( rFSD );
+
     // TODO: query GASP table for load flags
     mnLoadFlags = FT_LOAD_DEFAULT | FT_LOAD_IGNORE_TRANSFORM;
 
@@ -451,64 +534,101 @@ FreetypeFont::FreetypeFont( const FontSelectPattern& rFSD, FreetypeFontInfo* pFI
         mnLoadFlags |= FT_LOAD_NO_BITMAP;
 }
 
-namespace
+void ServerFont::SetFontOptions(const std::shared_ptr<FontConfigFontOptions>& xFontOptions)
 {
-    FontConfigFontOptions* GetFCFontOptions( const FontAttributes& rFontAttributes, int nSize)
+    mxFontOptions = xFontOptions;
+
+    if (!mxFontOptions)
+        return;
+
+    FontAutoHint eHint = mxFontOptions->GetUseAutoHint();
+    if( eHint == AUTOHINT_DONTKNOW )
+        eHint = mbUseGamma ? AUTOHINT_TRUE : AUTOHINT_FALSE;
+
+    if( eHint == AUTOHINT_TRUE )
+        mnLoadFlags |= FT_LOAD_FORCE_AUTOHINT;
+
+    if( (mnSin != 0) && (mnCos != 0) ) // hinting for 0/90/180/270 degrees only
+        mnLoadFlags |= FT_LOAD_NO_HINTING;
+    mnLoadFlags |= FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH;
+
+    if (mxFontOptions->DontUseAntiAlias())
+      mnPrioAntiAlias = 0;
+    if (mxFontOptions->DontUseEmbeddedBitmaps())
+      mnPrioEmbedded = 0;
+    if (mxFontOptions->DontUseHinting())
+      mnPrioAutoHint = 0;
+
+    if( mnPrioAutoHint <= 0 )
+        mnLoadFlags |= FT_LOAD_NO_HINTING;
+
+#if defined(FT_LOAD_TARGET_LIGHT) && defined(FT_LOAD_TARGET_NORMAL)
+    if( !(mnLoadFlags & FT_LOAD_NO_HINTING) )
     {
-        psp::FastPrintFontInfo aInfo;
-
-        aInfo.m_aFamilyName = rFontAttributes.GetFamilyName();
-        aInfo.m_eItalic = rFontAttributes.GetItalic();
-        aInfo.m_eWeight = rFontAttributes.GetWeight();
-        aInfo.m_eWidth = rFontAttributes.GetWidthType();
-
-        return psp::PrintFontManager::getFontOptions(aInfo, nSize);
+       mnLoadFlags |= FT_LOAD_TARGET_NORMAL;
+       switch (mxFontOptions->GetHintStyle())
+       {
+           case FontHintStyle::NONE:
+                mnLoadFlags |= FT_LOAD_NO_HINTING;
+                break;
+           case FontHintStyle::Slight:
+                mnLoadFlags |= FT_LOAD_TARGET_LIGHT;
+                break;
+           case FontHintStyle::Medium:
+                break;
+           case FontHintStyle::Full:
+           default:
+                break;
+       }
     }
+#endif
+
+    if( mnPrioEmbedded <= 0 )
+        mnLoadFlags |= FT_LOAD_NO_BITMAP;
 }
 
-const FontConfigFontOptions* FreetypeFont::GetFontOptions() const
+const std::shared_ptr<FontConfigFontOptions>& ServerFont::GetFontOptions() const
 {
     if (!mxFontOptions)
     {
+        SAL_WARN("vcl", "this doesn't happen in practice I believe");
         mxFontOptions.reset(GetFCFontOptions(mpFontInfo->GetFontAttributes(), maFontSelData.mnHeight));
-        mxFontOptions->SyncPattern(GetFontFileName(), GetFontFaceIndex(), NeedsArtificialBold());
     }
-    return mxFontOptions.get();
+    mxFontOptions->SyncPattern(GetFontFileName(), GetFontFaceIndex(), NeedsArtificialBold());
+    return mxFontOptions;
 }
 
-void FreetypeFont::ClearFontOptions()
-{
-    mxFontOptions.reset();
-}
-
-const OString& FreetypeFont::GetFontFileName() const
+const OString& ServerFont::GetFontFileName() const
 {
     return mpFontInfo->GetFontFileName();
 }
 
-int FreetypeFont::GetFontFaceIndex() const
+int ServerFont::GetFontFaceIndex() const
 {
     return mpFontInfo->GetFontFaceIndex();
 }
 
-FreetypeFont::~FreetypeFont()
+ServerFont::~ServerFont()
 {
+    delete mpLayoutEngine;
+
     if( maSizeFT )
         FT_Done_Size( maSizeFT );
 
     mpFontInfo->ReleaseFaceFT();
 
-    if( mpHbFont )
-        hb_font_destroy( mpHbFont );
-
     ReleaseFromGarbageCollect();
 }
 
 
-void FreetypeFont::GetFontMetric(ImplFontMetricDataRef& rxTo) const
+void ServerFont::GetFontMetric( ImplFontMetricDataPtr& rxTo, long& rFactor ) const
 {
     rxTo->FontAttributes::operator =(mpFontInfo->GetFontAttributes());
 
+    rxTo->SetScalableFlag( true ); // FIXME: Shouldn't this check FT_IS_SCALABLE( maFaceFT )?
+    rxTo->SetTrueTypeFlag( FT_IS_SFNT( maFaceFT ) != 0 );
+    rxTo->SetBuiltInFontFlag( true );
+    rxTo->SetKernableFlag( FT_HAS_KERNING( maFaceFT ) != 0 );
     rxTo->SetOrientation( GetFontSelData().mnOrientation );
 
     //Always consider [star]symbol as symbol fonts
@@ -517,20 +637,70 @@ void FreetypeFont::GetFontMetric(ImplFontMetricDataRef& rxTo) const
 
     FT_Activate_Size( maSizeFT );
 
-    sal_uLong nHhea = 0;
-    const uint8_t* pHheaBuf = mpFontInfo->GetTable("hhea", &nHhea);
-    const std::vector<uint8_t> rHhea(pHheaBuf, pHheaBuf + nHhea);
+    rFactor = 0x100;
 
-    sal_uLong nOS2 = 0;
-    const uint8_t* pOS2Buf = mpFontInfo->GetTable("OS/2", &nOS2);
-    const std::vector<uint8_t> rOS2(pOS2Buf, pOS2Buf + nOS2);
+    const TT_OS2* pOS2 = static_cast<const TT_OS2*>(FT_Get_Sfnt_Table( maFaceFT, ft_sfnt_os2 ));
+    const double fScale = (double)GetFontSelData().mnHeight / maFaceFT->units_per_EM;
 
-    rxTo->ImplCalcLineSpacing(rHhea, rOS2, maFaceFT->units_per_EM);
-
+    rxTo->SetAscent( 0 );
+    rxTo->SetDescent( 0 );
+    rxTo->SetExternalLeading( 0 );
     rxTo->SetSlant( 0 );
     rxTo->SetWidth( mnWidth );
 
-    const TT_OS2* pOS2 = static_cast<const TT_OS2*>(FT_Get_Sfnt_Table( maFaceFT, ft_sfnt_os2 ));
+    // Calculating ascender and descender:
+    // FreeType >= 2.4.6 does the right thing, so we just use what it gives us,
+    // for earlier versions we emulate its behaviour;
+    // take them from 'hhea' table,
+    // if zero take them from 'OS/2' table,
+    // if zero take them from FreeType's font metrics
+    if (nFTVERSION >= 2406)
+    {
+        const FT_Size_Metrics& rMetrics = maFaceFT->size->metrics;
+        rxTo->SetAscent( (rMetrics.ascender + 32) >> 6 );
+        rxTo->SetDescent( (-rMetrics.descender + 32) >> 6 );
+        rxTo->SetExternalLeading( ((rMetrics.height + 32) >> 6) - (rxTo->GetAscent() + rxTo->GetDescent()) );
+    }
+    else
+    {
+        const TT_HoriHeader* pHHea = static_cast<const TT_HoriHeader*>(FT_Get_Sfnt_Table(maFaceFT, ft_sfnt_hhea));
+        if (pHHea)
+        {
+            rxTo->SetAscent( pHHea->Ascender * fScale + 0.5 );
+            rxTo->SetDescent( -pHHea->Descender * fScale + 0.5 );
+            rxTo->SetExternalLeading( pHHea->Line_Gap * fScale + 0.5 );
+        }
+
+        if (!(rxTo->GetAscent() || rxTo->GetDescent()))
+        {
+            if (pOS2 && (pOS2->version != 0xFFFF))
+            {
+                if (pOS2->sTypoAscender || pOS2->sTypoDescender)
+                {
+                    rxTo->SetAscent( pOS2->sTypoAscender * fScale + 0.5 );
+                    rxTo->SetDescent( -pOS2->sTypoDescender * fScale + 0.5 );
+                    rxTo->SetExternalLeading( pOS2->sTypoLineGap * fScale + 0.5 );
+                }
+                else
+                {
+                    rxTo->SetAscent( pOS2->usWinAscent * fScale + 0.5 );
+                    rxTo->SetDescent( pOS2->usWinDescent * fScale + 0.5 );
+                    rxTo->SetExternalLeading( 0 );
+                }
+            }
+        }
+
+        if (!(rxTo->GetAscent() || rxTo->GetDescent()))
+        {
+            const FT_Size_Metrics& rMetrics = maFaceFT->size->metrics;
+            rxTo->SetAscent( (rMetrics.ascender + 32) >> 6 );
+            rxTo->SetDescent( (-rMetrics.descender + 32) >> 6 );
+            rxTo->SetExternalLeading( ((rMetrics.height + 32) >> 6) - (rxTo->GetAscent() + rxTo->GetDescent() ) );
+        }
+    }
+
+    rxTo->SetInternalLeading( rxTo->GetAscent() + rxTo->GetDescent() - (maFaceFT->units_per_EM * fScale + 0.5) );
+
     if( pOS2 && (pOS2->version != 0xFFFF) )
     {
         // map the panose info from the OS2 table to their VCL counterparts
@@ -564,22 +734,32 @@ void FreetypeFont::GetFontMetric(ImplFontMetricDataRef& rxTo) const
     }
 
     // initialize kashida width
-    const int nKashidaGlyphId = FT_Get_Char_Index(maFaceFT, 0x0640);
+    // TODO: what if there are different versions of this glyph available
+    const int nKashidaGlyphId = GetRawGlyphIndex( 0x0640 );
     if( nKashidaGlyphId )
     {
-        if (FT_Load_Glyph(maFaceFT, nKashidaGlyphId, mnLoadFlags) == FT_Err_Ok)
-        {
-            int nWidth = (maFaceFT->glyph->metrics.horiAdvance + 32) >> 6;
-            rxTo->SetMinKashida(nWidth);
-        }
+        GlyphData aGlyphData;
+        InitGlyphData( nKashidaGlyphId, aGlyphData );
+        rxTo->SetMinKashida( aGlyphData.GetMetric().GetCharWidth() );
     }
 
 }
 
-void FreetypeFont::ApplyGlyphTransform(bool bVertical, FT_Glyph pGlyphFT ) const
+static inline void SplitGlyphFlags( const ServerFont& rFont, sal_GlyphId& rGlyphId, int& nGlyphFlags )
 {
+    nGlyphFlags = rGlyphId & GF_FLAGMASK;
+    rGlyphId &= GF_IDXMASK;
+
+    if( rGlyphId & GF_ISCHAR )
+        rGlyphId = rFont.GetRawGlyphIndex( rGlyphId );
+}
+
+void ServerFont::ApplyGlyphTransform( int nGlyphFlags,
+    FT_Glyph pGlyphFT, bool bForBitmapProcessing ) const
+{
+    int nAngle = GetFontSelData().mnOrientation;
     // shortcut most common case
-    if (!GetFontSelData().mnOrientation && !bVertical)
+    if( !nAngle && !nGlyphFlags )
         return;
 
     const FT_Size_Metrics& rMetrics = maFaceFT->size->metrics;
@@ -588,19 +768,18 @@ void FreetypeFont::ApplyGlyphTransform(bool bVertical, FT_Glyph pGlyphFT ) const
 
     bool bStretched = false;
 
-    if (!bVertical)
+    switch( nGlyphFlags & GF_ROTMASK )
     {
-        // straight
+    default:    // straight
         aVector.x = 0;
         aVector.y = 0;
         aMatrix.xx = +mnCos;
         aMatrix.yy = +mnCos;
         aMatrix.xy = -mnSin;
         aMatrix.yx = +mnSin;
-    }
-    else
-    {
-        // left
+        break;
+    case GF_ROTL:    // left
+        nAngle += 900;
         bStretched = (mfStretch != 1.0);
         aVector.x  = (FT_Pos)(+rMetrics.descender * mfStretch);
         aVector.y  = -rMetrics.ascender;
@@ -608,14 +787,29 @@ void FreetypeFont::ApplyGlyphTransform(bool bVertical, FT_Glyph pGlyphFT ) const
         aMatrix.yy = (FT_Pos)(-mnSin * mfStretch);
         aMatrix.xy = (FT_Pos)(-mnCos * mfStretch);
         aMatrix.yx = (FT_Pos)(+mnCos / mfStretch);
+        break;
+    case GF_ROTR:    // right
+        nAngle -= 900;
+        bStretched = (mfStretch != 1.0);
+        aVector.x = -maFaceFT->glyph->metrics.horiAdvance;
+        aVector.x += (FT_Pos)(rMetrics.descender * mnSin/65536.0);
+        aVector.y  = (FT_Pos)(-rMetrics.descender * mfStretch * mnCos/65536.0);
+        aMatrix.xx = (FT_Pos)(+mnSin / mfStretch);
+        aMatrix.yy = (FT_Pos)(+mnSin * mfStretch);
+        aMatrix.xy = (FT_Pos)(+mnCos * mfStretch);
+        aMatrix.yx = (FT_Pos)(-mnCos / mfStretch);
+        break;
     }
+
+    while( nAngle < 0 )
+        nAngle += 3600;
 
     if( pGlyphFT->format != FT_GLYPH_FORMAT_BITMAP )
     {
         FT_Glyph_Transform( pGlyphFT, nullptr, &aVector );
 
         // orthogonal transforms are better handled by bitmap operations
-        if( bStretched )
+        if( bStretched || (bForBitmapProcessing && (nAngle % 900) != 0) )
         {
             // apply non-orthogonal or stretch transformations
             FT_Glyph_Transform( pGlyphFT, &aMatrix, nullptr );
@@ -630,32 +824,150 @@ void FreetypeFont::ApplyGlyphTransform(bool bVertical, FT_Glyph pGlyphFT ) const
     }
 }
 
-void FreetypeFont::InitGlyphData(const GlyphItem& rGlyph, GlyphData& rGD ) const
+sal_GlyphId ServerFont::GetRawGlyphIndex(sal_UCS4 aChar, sal_UCS4 aVS) const
+{
+    if( mpFontInfo->IsSymbolFont() )
+    {
+        if( !FT_IS_SFNT( maFaceFT ) )
+        {
+            if( (aChar & 0xFF00) == 0xF000 )
+                aChar &= 0xFF;    // PS font symbol mapping
+            else if( aChar > 0xFF )
+                return 0;
+        }
+    }
+
+    int nGlyphIndex = 0;
+#if HAVE_FT_FACE_GETCHARVARIANTINDEX
+    // If asked, check first for variant glyph with the given Unicode variation
+    // selector. This is quite uncommon so we don't bother with caching here.
+    // Disabled for buggy FreeType versions:
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=618406#c8
+    if (aVS && nFTVERSION >= 2404)
+        nGlyphIndex = FT_Face_GetCharVariantIndex(maFaceFT, aChar, aVS);
+#endif
+
+    if (nGlyphIndex == 0)
+    {
+        // cache glyph indexes in font info to share between different sizes
+        nGlyphIndex = mpFontInfo->GetGlyphIndex( aChar );
+        if( nGlyphIndex < 0 )
+        {
+            nGlyphIndex = FT_Get_Char_Index( maFaceFT, aChar );
+            if( !nGlyphIndex)
+            {
+                // check if symbol aliasing helps
+                if( (aChar <= 0x00FF) && mpFontInfo->IsSymbolFont() )
+                    nGlyphIndex = FT_Get_Char_Index( maFaceFT, aChar | 0xF000 );
+            }
+            mpFontInfo->CacheGlyphIndex( aChar, nGlyphIndex );
+        }
+    }
+
+    return sal_GlyphId( nGlyphIndex);
+}
+
+sal_GlyphId ServerFont::FixupGlyphIndex( sal_GlyphId aGlyphId, sal_UCS4 aChar ) const
+{
+    int nGlyphFlags = GF_NONE;
+
+    // do glyph substitution if necessary
+    // CJK vertical writing needs special treatment
+    if( GetFontSelData().mbVertical )
+    {
+        // TODO: rethink when GSUB is used for non-vertical case
+        GlyphSubstitution::const_iterator it = maGlyphSubstitution.find( aGlyphId );
+        if( it == maGlyphSubstitution.end() )
+        {
+            nGlyphFlags |= GetVerticalFlags( aChar );
+        }
+        else
+        {
+            // for vertical GSUB also compensate for nOrientation=2700
+            aGlyphId = (*it).second;
+            nGlyphFlags |= GF_GSUB | GF_ROTL;
+        }
+    }
+
+    if( aGlyphId != 0 )
+        aGlyphId |= nGlyphFlags;
+
+    return aGlyphId;
+}
+
+sal_GlyphId ServerFont::GetGlyphIndex( sal_UCS4 aChar ) const
+{
+    sal_GlyphId aGlyphId = GetRawGlyphIndex( aChar );
+    aGlyphId = FixupGlyphIndex( aGlyphId, aChar );
+    return aGlyphId;
+}
+
+static int lcl_GetCharWidth( FT_FaceRec_* pFaceFT, double fStretch, int nGlyphFlags )
+{
+    int nCharWidth = pFaceFT->glyph->metrics.horiAdvance;
+
+    if( nGlyphFlags & GF_ROTMASK )  // for bVertical rotated glyphs
+    {
+        const FT_Size_Metrics& rMetrics = pFaceFT->size->metrics;
+        nCharWidth = (int)((rMetrics.height + rMetrics.descender) * fStretch);
+    }
+
+    return (nCharWidth + 32) >> 6;
+}
+
+void ServerFont::InitGlyphData( sal_GlyphId aGlyphId, GlyphData& rGD ) const
 {
     FT_Activate_Size( maSizeFT );
 
-    FT_Error rc = FT_Load_Glyph(maFaceFT, rGlyph.maGlyphId, mnLoadFlags);
+    int nGlyphFlags;
+    SplitGlyphFlags( *this, aGlyphId, nGlyphFlags );
+
+    int nLoadFlags = mnLoadFlags;
+
+//  if( mbArtItalic )
+//      nLoadFlags |= FT_LOAD_NO_BITMAP;
+
+    FT_Error rc = FT_Load_Glyph( maFaceFT, aGlyphId, nLoadFlags );
 
     if( rc != FT_Err_Ok )
+    {
+        // we get here e.g. when a PS font lacks the default glyph
+        rGD.SetCharWidth( 0 );
+        rGD.SetDelta( 0, 0 );
+        rGD.SetOffset( 0, 0 );
+        rGD.SetSize( Size( 0, 0 ) );
         return;
+    }
 
+    const bool bOriginallyZeroWidth = (maFaceFT->glyph->metrics.horiAdvance == 0);
     if (mbArtBold)
         FT_GlyphSlot_Embolden(maFaceFT->glyph);
+
+    const int nCharWidth = bOriginallyZeroWidth ? 0 : lcl_GetCharWidth( maFaceFT, mfStretch, nGlyphFlags );
+    rGD.SetCharWidth( nCharWidth );
 
     FT_Glyph pGlyphFT;
     FT_Get_Glyph( maFaceFT->glyph, &pGlyphFT );
 
-    ApplyGlyphTransform(rGlyph.IsVertical(), pGlyphFT);
+    ApplyGlyphTransform( nGlyphFlags, pGlyphFT, false );
+    rGD.SetDelta( (pGlyphFT->advance.x + 0x8000) >> 16, -((pGlyphFT->advance.y + 0x8000) >> 16) );
 
     FT_BBox aBbox;
     FT_Glyph_Get_CBox( pGlyphFT, FT_GLYPH_BBOX_PIXELS, &aBbox );
+    if( aBbox.yMin > aBbox.yMax )   // circumvent freetype bug
+    {
+        int t=aBbox.yMin;
+        aBbox.yMin=aBbox.yMax;
+        aBbox.yMax=t;
+    }
 
-    rGD.SetBoundRect(tools::Rectangle(aBbox.xMin, -aBbox.yMax, aBbox.xMax, -aBbox.yMin));
+    rGD.SetOffset( aBbox.xMin, -aBbox.yMax );
+    rGD.SetSize( Size( (aBbox.xMax-aBbox.xMin+1), (aBbox.yMax-aBbox.yMin) ) );
 
     FT_Done_Glyph( pGlyphFT );
 }
 
-bool FreetypeFont::GetAntialiasAdvice() const
+bool ServerFont::GetAntialiasAdvice() const
 {
     if( GetFontSelData().mbNonAntialiased || (mnPrioAntiAlias<=0) )
         return false;
@@ -666,16 +978,16 @@ bool FreetypeFont::GetAntialiasAdvice() const
 
 // determine unicode ranges in font
 
-const FontCharMapRef FreetypeFont::GetFontCharMap() const
+const FontCharMapPtr ServerFont::GetFontCharMap() const
 {
-    const FontCharMapRef xFCMap = mpFontInfo->GetFontCharMap();
+    const FontCharMapPtr xFCMap = mpFontInfo->GetFontCharMap();
     return xFCMap;
 }
 
-const FontCharMapRef& FreetypeFontInfo::GetFontCharMap()
+const FontCharMapPtr FreetypeFontInfo::GetFontCharMap()
 {
     // check if the charmap is already cached
-    if( mxFontCharMap.is() )
+    if( mxFontCharMap )
         return mxFontCharMap;
 
     // get the charmap and cache it
@@ -683,12 +995,12 @@ const FontCharMapRef& FreetypeFontInfo::GetFontCharMap()
     bool bOK = GetFontCodeRanges( aCmapResult );
     if( bOK )
     {
-        FontCharMapRef xFontCharMap( new FontCharMap ( aCmapResult ) );
+        FontCharMapPtr xFontCharMap( new FontCharMap ( aCmapResult ) );
         mxFontCharMap = xFontCharMap;
     }
     else
     {
-        FontCharMapRef xFontCharMap( new FontCharMap() );
+        FontCharMapPtr xFontCharMap( new FontCharMap() );
         mxFontCharMap = xFontCharMap;
     }
     // mxFontCharMap on either branch now has a refcount of 1
@@ -745,11 +1057,15 @@ bool FreetypeFontInfo::GetFontCodeRanges( CmapResult& rResult ) const
     return true;
 }
 
-bool FreetypeFont::GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const
+bool ServerFont::GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const
 {
     bool bRet = false;
 
     sal_uLong nLength = 0;
+    // load GSUB table
+    const FT_Byte* pGSUB = mpFontInfo->GetTable("GSUB", &nLength);
+    if (pGSUB)
+        vcl::getTTScripts(rFontCapabilities.maGSUBScriptTags, pGSUB, nLength);
 
     // load OS/2 table
     const FT_Byte* pOS2 = mpFontInfo->GetTable("OS/2", &nLength);
@@ -781,17 +1097,14 @@ public:
 private:
     tools::PolyPolygon& mrPolyPoly;
 
-    Point*          mpPointAry;
-    PolyFlags*      mpFlagAry;
+    Point*      mpPointAry;
+    sal_uInt8*       mpFlagAry;
 
-    FT_Vector       maPosition;
+    FT_Vector   maPosition;
     sal_uInt16      mnMaxPoints;
     sal_uInt16      mnPoints;
     sal_uInt16      mnPoly;
-    bool            bHasOffline;
-
-    PolyArgs(const PolyArgs&) = delete;
-    PolyArgs& operator=(const PolyArgs&) = delete;
+    bool        bHasOffline;
 };
 
 PolyArgs::PolyArgs( tools::PolyPolygon& rPolyPoly, sal_uInt16 nMaxPoints )
@@ -802,7 +1115,7 @@ PolyArgs::PolyArgs( tools::PolyPolygon& rPolyPoly, sal_uInt16 nMaxPoints )
     bHasOffline(false)
 {
     mpPointAry  = new Point[ mnMaxPoints ];
-    mpFlagAry   = new PolyFlags [ mnMaxPoints ];
+    mpFlagAry   = new sal_uInt8 [ mnMaxPoints ];
     maPosition.x = maPosition.y = 0;
 }
 
@@ -814,7 +1127,7 @@ PolyArgs::~PolyArgs()
 
 void PolyArgs::AddPoint( long nX, long nY, PolyFlags aFlag )
 {
-    SAL_WARN_IF( (mnPoints >= mnMaxPoints), "vcl", "FTGlyphOutline: AddPoint overflow!" );
+    DBG_ASSERT( (mnPoints < mnMaxPoints), "FTGlyphOutline: AddPoint overflow!" );
     if( mnPoints >= mnMaxPoints )
         return;
 
@@ -822,7 +1135,7 @@ void PolyArgs::AddPoint( long nX, long nY, PolyFlags aFlag )
     maPosition.y = nY;
     mpPointAry[ mnPoints ] = Point( nX, nY );
     mpFlagAry[ mnPoints++ ]= aFlag;
-    bHasOffline |= (aFlag != PolyFlags::Normal);
+    bHasOffline |= (aFlag != POLY_NORMAL);
 }
 
 void PolyArgs::ClosePolygon()
@@ -832,11 +1145,11 @@ void PolyArgs::ClosePolygon()
 
     // freetype seems to always close the polygon with an ON_CURVE point
     // PolyPoly wants to close the polygon itself => remove last point
-    SAL_WARN_IF( (mnPoints < 2), "vcl", "FTGlyphOutline: PolyFinishNum failed!" );
+    DBG_ASSERT( (mnPoints >= 2), "FTGlyphOutline: PolyFinishNum failed!" );
     --mnPoints;
-    SAL_WARN_IF( (mpPointAry[0]!=mpPointAry[mnPoints]), "vcl", "FTGlyphOutline: PolyFinishEq failed!" );
-    SAL_WARN_IF( (mpFlagAry[0]!=PolyFlags::Normal), "vcl", "FTGlyphOutline: PolyFinishFE failed!" );
-    SAL_WARN_IF( (mpFlagAry[mnPoints]!=PolyFlags::Normal), "vcl", "FTGlyphOutline: PolyFinishFS failed!" );
+    DBG_ASSERT( (mpPointAry[0]==mpPointAry[mnPoints]), "FTGlyphOutline: PolyFinishEq failed!" );
+    DBG_ASSERT( (mpFlagAry[0]==POLY_NORMAL), "FTGlyphOutline: PolyFinishFE failed!" );
+    DBG_ASSERT( (mpFlagAry[mnPoints]==POLY_NORMAL), "FTGlyphOutline: PolyFinishFS failed!" );
 
     tools::Polygon aPoly( mnPoints, mpPointAry, (bHasOffline ? mpFlagAry : nullptr) );
 
@@ -847,11 +1160,11 @@ void PolyArgs::ClosePolygon()
     // #i48298#
     // Now really duplicating the first point, to close or correct the
     // polygon. Also no longer duplicating the flags, but enforcing
-    // PolyFlags::Normal for the newly added last point.
+    // POLY_NORMAL for the newly added last point.
     const sal_uInt16 nPolySize(aPoly.GetSize());
     if(nPolySize)
     {
-        if((aPoly.HasFlags() && PolyFlags::Control == aPoly.GetFlags(nPolySize - 1))
+        if((aPoly.HasFlags() && POLY_CONTROL == aPoly.GetFlags(nPolySize - 1))
             || (aPoly.GetPoint(nPolySize - 1) != aPoly.GetPoint(0)))
         {
             aPoly.SetSize(nPolySize + 1);
@@ -859,7 +1172,7 @@ void PolyArgs::ClosePolygon()
 
             if(aPoly.HasFlags())
             {
-                aPoly.SetFlags(nPolySize, PolyFlags::Normal);
+                aPoly.SetFlags(nPolySize, POLY_NORMAL);
             }
         }
     }
@@ -881,14 +1194,14 @@ static int FT_move_to( const FT_Vector* p0, void* vpPolyArgs )
     // move_to implies a new polygon => finish old polygon first
     rA.ClosePolygon();
 
-    rA.AddPoint( p0->x, p0->y, PolyFlags::Normal );
+    rA.AddPoint( p0->x, p0->y, POLY_NORMAL );
     return 0;
 }
 
 static int FT_line_to( const FT_Vector* p1, void* vpPolyArgs )
 {
     PolyArgs& rA = *static_cast<PolyArgs*>(vpPolyArgs);
-    rA.AddPoint( p1->x, p1->y, PolyFlags::Normal );
+    rA.AddPoint( p1->x, p1->y, POLY_NORMAL );
     return 0;
 }
 
@@ -899,34 +1212,37 @@ static int FT_conic_to( const FT_Vector* p1, const FT_Vector* p2, void* vpPolyAr
     // VCL's Polygon only knows cubic beziers
     const long nX1 = (2 * rA.GetPosX() + 4 * p1->x + 3) / 6;
     const long nY1 = (2 * rA.GetPosY() + 4 * p1->y + 3) / 6;
-    rA.AddPoint( nX1, nY1, PolyFlags::Control );
+    rA.AddPoint( nX1, nY1, POLY_CONTROL );
 
     const long nX2 = (2 * p2->x + 4 * p1->x + 3) / 6;
     const long nY2 = (2 * p2->y + 4 * p1->y + 3) / 6;
-    rA.AddPoint( nX2, nY2, PolyFlags::Control );
+    rA.AddPoint( nX2, nY2, POLY_CONTROL );
 
-    rA.AddPoint( p2->x, p2->y, PolyFlags::Normal );
+    rA.AddPoint( p2->x, p2->y, POLY_NORMAL );
     return 0;
 }
 
 static int FT_cubic_to( const FT_Vector* p1, const FT_Vector* p2, const FT_Vector* p3, void* vpPolyArgs )
 {
     PolyArgs& rA = *static_cast<PolyArgs*>(vpPolyArgs);
-    rA.AddPoint( p1->x, p1->y, PolyFlags::Control );
-    rA.AddPoint( p2->x, p2->y, PolyFlags::Control );
-    rA.AddPoint( p3->x, p3->y, PolyFlags::Normal );
+    rA.AddPoint( p1->x, p1->y, POLY_CONTROL );
+    rA.AddPoint( p2->x, p2->y, POLY_CONTROL );
+    rA.AddPoint( p3->x, p3->y, POLY_NORMAL );
     return 0;
 }
 
 } // extern "C"
 
-bool FreetypeFont::GetGlyphOutline(const GlyphItem& rGlyph,
+bool ServerFont::GetGlyphOutline( sal_GlyphId aGlyphId,
     basegfx::B2DPolyPolygon& rB2DPolyPoly ) const
 {
     if( maSizeFT )
         FT_Activate_Size( maSizeFT );
 
     rB2DPolyPoly.clear();
+
+    int nGlyphFlags;
+    SplitGlyphFlags( *this, aGlyphId, nGlyphFlags );
 
     FT_Int nLoadFlags = FT_LOAD_DEFAULT | FT_LOAD_IGNORE_TRANSFORM;
 
@@ -935,7 +1251,7 @@ bool FreetypeFont::GetGlyphOutline(const GlyphItem& rGlyph,
     nLoadFlags |= FT_LOAD_TARGET_LIGHT;
 #endif
 
-    FT_Error rc = FT_Load_Glyph(maFaceFT, rGlyph.maGlyphId, nLoadFlags);
+    FT_Error rc = FT_Load_Glyph( maFaceFT, aGlyphId, nLoadFlags );
     if( rc != FT_Err_Ok )
         return false;
 
@@ -973,7 +1289,7 @@ bool FreetypeFont::GetGlyphOutline(const GlyphItem& rGlyph,
     tools::PolyPolygon aToolPolyPolygon;
     PolyArgs aPolyArg( aToolPolyPolygon, nMaxPoints );
 
-    ApplyGlyphTransform(rGlyph.IsVertical(), pGlyphFT);
+    /*int nAngle =*/ ApplyGlyphTransform( nGlyphFlags, pGlyphFT, false );
 
     FT_Outline_Funcs aFuncs;
     aFuncs.move_to  = &FT_move_to;
@@ -994,9 +1310,244 @@ bool FreetypeFont::GetGlyphOutline(const GlyphItem& rGlyph,
     return true;
 }
 
-const unsigned char* FreetypeFont::GetTable(const char* pName, sal_uLong* pLength)
+void ServerFont::ApplyGSUB( const FontSelectPattern& rFSD )
+{
+#define MKTAG(s) ((((((s[0]<<8)+s[1])<<8)+s[2])<<8)+s[3])
+
+    typedef std::vector<sal_uLong> ReqFeatureTagList;
+    ReqFeatureTagList aReqFeatureTagList;
+    if( rFSD.mbVertical )
+        aReqFeatureTagList.push_back( MKTAG("vert") );
+    // TODO: request more features depending on script and language system
+
+    if( aReqFeatureTagList.empty()) // nothing to do
+        return;
+
+    // load GSUB table into memory
+    sal_uLong nLength = 0;
+    const FT_Byte* const pGsubBase = mpFontInfo->GetTable( "GSUB", &nLength );
+    if( !pGsubBase )
+        return;
+
+    // parse GSUB header
+    const FT_Byte* pGsubHeader = pGsubBase;
+    const sal_uInt16 nOfsScriptList     = GetUShort( pGsubHeader+4 );
+    const sal_uInt16 nOfsFeatureTable   = GetUShort( pGsubHeader+6 );
+    const sal_uInt16 nOfsLookupList     = GetUShort( pGsubHeader+8 );
+
+    std::vector<sal_uInt16> aFeatureIndexList;
+
+    // parse Script Table
+    const FT_Byte* pScriptHeader = pGsubBase + nOfsScriptList;
+    const sal_uInt16 nCntScript = GetUShort( pScriptHeader+0 );
+    pScriptHeader += 2;
+    for( sal_uInt16 nScriptIndex = 0; nScriptIndex < nCntScript; ++nScriptIndex )
+    {
+        const sal_uInt16 nOfsScriptTable= GetUShort( pScriptHeader+4 );
+        pScriptHeader += 6;
+
+        const FT_Byte* pScriptTable     = pGsubBase + nOfsScriptList + nOfsScriptTable;
+        const sal_uInt16 nDefaultLangsysOfs = GetUShort( pScriptTable+0 );
+        const sal_uInt16 nCntLangSystem     = GetUShort( pScriptTable+2 );
+        pScriptTable += 4;
+        sal_uInt16 nLangsysOffset = 0;
+
+        if (nCntLangSystem != 0)
+        {
+            nLangsysOffset = GetUShort( pScriptTable+4 );
+        }
+
+        if (nDefaultLangsysOfs != 0 && nDefaultLangsysOfs != nLangsysOffset)
+        {
+            const FT_Byte* pLangSys = pGsubBase + nOfsScriptList + nOfsScriptTable + nDefaultLangsysOfs;
+            const sal_uInt16 nReqFeatureIdx = GetUShort( pLangSys+2 );
+            const sal_uInt16 nCntFeature    = GetUShort( pLangSys+4 );
+            pLangSys += 6;
+            aFeatureIndexList.push_back( nReqFeatureIdx );
+            for( sal_uInt16 i = 0; i < nCntFeature; ++i )
+            {
+                const sal_uInt16 nFeatureIndex = GetUShort( pLangSys );
+                pLangSys += 2;
+                aFeatureIndexList.push_back( nFeatureIndex );
+            }
+        }
+
+        if( nLangsysOffset != 0 )
+        {
+            const FT_Byte* pLangSys = pGsubBase + nOfsScriptList + nOfsScriptTable + nLangsysOffset;
+            const sal_uInt16 nReqFeatureIdx = GetUShort( pLangSys+2 );
+            const sal_uInt16 nCntFeature    = GetUShort( pLangSys+4 );
+            pLangSys += 6;
+            aFeatureIndexList.push_back( nReqFeatureIdx );
+            for( sal_uInt16 i = 0; i < nCntFeature; ++i )
+            {
+                const sal_uInt16 nFeatureIndex = GetUShort( pLangSys );
+                pLangSys += 2;
+                aFeatureIndexList.push_back( nFeatureIndex );
+            }
+        }
+    }
+
+    if( aFeatureIndexList.empty() )
+        return;
+
+    std::vector<sal_uInt16> aLookupIndexList;
+    std::vector<sal_uInt16> aLookupOffsetList;
+
+    // parse Feature Table
+    const FT_Byte* pFeatureHeader = pGsubBase + nOfsFeatureTable;
+    const sal_uInt16 nCntFeature = GetUShort( pFeatureHeader );
+    pFeatureHeader += 2;
+    for( sal_uInt16 nFeatureIndex = 0; nFeatureIndex < nCntFeature; ++nFeatureIndex )
+    {
+        const sal_uLong nTag    = GetUInt( pFeatureHeader+0 ); // e.g. locl/vert/trad/smpl/liga/fina/...
+        const sal_uInt16 nOffset= GetUShort( pFeatureHeader+4 );
+        pFeatureHeader += 6;
+
+        // short circuit some feature lookups
+        if( aFeatureIndexList[0] != nFeatureIndex ) // required feature?
+        {
+            const int nRequested = std::count( aFeatureIndexList.begin(), aFeatureIndexList.end(), nFeatureIndex);
+            if( !nRequested )  // ignore features that are not requested
+                continue;
+            const int nAvailable = std::count( aReqFeatureTagList.begin(), aReqFeatureTagList.end(), nTag);
+            if( !nAvailable )  // some fonts don't provide features they request!
+                continue;
+        }
+
+        const FT_Byte* pFeatureTable = pGsubBase + nOfsFeatureTable + nOffset;
+        pFeatureTable += 2; // ignore FeatureParams
+        const sal_uInt16 nCntLookups = GetUShort( pFeatureTable+0 );
+        pFeatureTable += 2;
+        for( sal_uInt16 i = 0; i < nCntLookups; ++i )
+        {
+            const sal_uInt16 nLookupIndex = GetUShort( pFeatureTable );
+            pFeatureTable += 2;
+            aLookupIndexList.push_back( nLookupIndex );
+        }
+        if( nCntLookups == 0 ) //### hack needed by Mincho/Gothic/Mingliu/Simsun/...
+            aLookupIndexList.push_back( 0 );
+    }
+
+    // parse Lookup List
+    const FT_Byte* pLookupHeader = pGsubBase + nOfsLookupList;
+    const sal_uInt16 nCntLookupTable = GetUShort( pLookupHeader );
+    pLookupHeader += 2;
+    for( sal_uInt16 nLookupIdx = 0; nLookupIdx < nCntLookupTable; ++nLookupIdx )
+    {
+        const sal_uInt16 nOffset = GetUShort( pLookupHeader );
+        pLookupHeader += 2;
+        if( std::count( aLookupIndexList.begin(), aLookupIndexList.end(), nLookupIdx ) )
+            aLookupOffsetList.push_back( nOffset );
+    }
+
+    std::vector<sal_uInt16>::const_iterator lookup_it = aLookupOffsetList.begin();
+    for(; lookup_it != aLookupOffsetList.end(); ++lookup_it )
+    {
+        const sal_uInt16 nOfsLookupTable = *lookup_it;
+        const FT_Byte* pLookupTable = pGsubBase + nOfsLookupList + nOfsLookupTable;
+        const sal_uInt16 eLookupType        = GetUShort( pLookupTable+0 );
+        const sal_uInt16 nCntLookupSubtable = GetUShort( pLookupTable+4 );
+        pLookupTable += 6;
+
+        // TODO: switch( eLookupType )
+        if( eLookupType != 1 )  // TODO: once we go beyond SingleSubst
+            continue;
+
+        for( sal_uInt16 nSubTableIdx = 0; nSubTableIdx < nCntLookupSubtable; ++nSubTableIdx )
+        {
+            const sal_uInt16 nOfsSubLookupTable = GetUShort( pLookupTable );
+            pLookupTable += 2;
+            const FT_Byte* pSubLookup = pGsubBase + nOfsLookupList + nOfsLookupTable + nOfsSubLookupTable;
+
+            const sal_uInt16 nFmtSubstitution   = GetUShort( pSubLookup+0 );
+            const sal_uInt16 nOfsCoverage       = GetUShort( pSubLookup+2 );
+            pSubLookup += 4;
+
+            typedef std::pair<sal_uInt16,sal_uInt16> GlyphSubst;
+            typedef std::vector<GlyphSubst> SubstVector;
+            SubstVector aSubstVector;
+
+            const FT_Byte* pCoverage    = pGsubBase + nOfsLookupList + nOfsLookupTable + nOfsSubLookupTable + nOfsCoverage;
+            const sal_uInt16 nFmtCoverage   = GetUShort( pCoverage+0 );
+            pCoverage += 2;
+            switch( nFmtCoverage )
+            {
+                case 1:         // Coverage Format 1
+                    {
+                        const sal_uInt16 nCntGlyph = GetUShort( pCoverage );
+                        pCoverage += 2;
+                        aSubstVector.reserve( nCntGlyph );
+                        for( sal_uInt16 i = 0; i < nCntGlyph; ++i )
+                        {
+                            const sal_uInt16 nGlyphId = GetUShort( pCoverage );
+                            pCoverage += 2;
+                            aSubstVector.push_back( GlyphSubst( nGlyphId, 0 ) );
+                        }
+                    }
+                    break;
+
+                case 2:         // Coverage Format 2
+                    {
+                        const sal_uInt16 nCntRange = GetUShort( pCoverage );
+                        pCoverage += 2;
+                        for( int i = nCntRange; --i >= 0; )
+                        {
+                            const sal_uInt32 nGlyph0 = GetUShort( pCoverage+0 );
+                            const sal_uInt32 nGlyph1 = GetUShort( pCoverage+2 );
+                            const sal_uInt16 nCovIdx = GetUShort( pCoverage+4 );
+                            pCoverage += 6;
+                            for( sal_uInt32 j = nGlyph0; j <= nGlyph1; ++j )
+                                aSubstVector.push_back( GlyphSubst( static_cast<sal_uInt16>(j + nCovIdx), 0 ) );
+                        }
+                    }
+                    break;
+            }
+
+            SubstVector::iterator it( aSubstVector.begin() );
+
+            switch( nFmtSubstitution )
+            {
+                case 1:     // Single Substitution Format 1
+                    {
+                        const sal_uInt16 nDeltaGlyphId = GetUShort( pSubLookup );
+                        for(; it != aSubstVector.end(); ++it )
+                            (*it).second = (*it).first + nDeltaGlyphId;
+                    }
+                    break;
+
+                case 2:     // Single Substitution Format 2
+                    {
+                        const sal_uInt16 nCntGlyph = GetUShort( pSubLookup );
+                        pSubLookup += 2;
+                        for( int i = nCntGlyph; (it != aSubstVector.end()) && (--i>=0); ++it )
+                        {
+                            const sal_uInt16 nGlyphId = GetUShort( pSubLookup );
+                            pSubLookup += 2;
+                            (*it).second = nGlyphId;
+                        }
+                    }
+                    break;
+            }
+
+            DBG_ASSERT( (it == aSubstVector.end()), "lookup<->coverage table mismatch" );
+            // now apply the glyph substitutions that have been collected in this subtable
+            for( it = aSubstVector.begin(); it != aSubstVector.end(); ++it )
+                maGlyphSubstitution[ (*it).first ] =  (*it).second;
+        }
+    }
+}
+
+const unsigned char* ServerFont::GetTable(const char* pName, sal_uLong* pLength)
 {
     return mpFontInfo->GetTable( pName, pLength );
 }
+
+#if ENABLE_GRAPHITE
+GraphiteFaceWrapper* ServerFont::GetGraphiteFace() const
+{
+    return mpFontInfo->GetGraphiteFace();
+}
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -39,7 +39,7 @@ class XMLFontStyleContextFontFace : public SvXMLStyleContext
 
     XMLFontStylesContext *GetStyles()
     {
-        return static_cast<XMLFontStylesContext *>(xStyles.get());
+        return static_cast<XMLFontStylesContext *>(&xStyles);
     }
 
 public:
@@ -50,7 +50,7 @@ public:
             const css::uno::Reference<
                 css::xml::sax::XAttributeList > & xAttrList,
             XMLFontStylesContext& rStyles );
-    virtual ~XMLFontStyleContextFontFace() override;
+    virtual ~XMLFontStyleContextFontFace();
 
     void SetAttribute( sal_uInt16 nPrefixKey, const OUString& rLocalName,
                        const OUString& rValue ) override;

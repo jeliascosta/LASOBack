@@ -99,7 +99,6 @@
 #include <vcl/dialog.hxx>
 #include <vcl/dllapi.h>
 #include <vcl/edit.hxx>
-#include <vcl/EnumContext.hxx>
 #include <vcl/field.hxx>
 #include <vcl/fixed.hxx>
 #include <vcl/floatwin.hxx>
@@ -146,6 +145,7 @@
 #include <IDocumentUndoRedo.hxx>
 #include <IMark.hxx>
 #include <PostItMgr.hxx>
+#include <SidebarWin.hxx>
 #include <SwNodeNum.hxx>
 #include <SwRewriter.hxx>
 #include <SwSmartTagMgr.hxx>
@@ -413,6 +413,7 @@
 #include <sfx2/progress.hxx>
 #include <sfx2/request.hxx>
 #include <sfx2/shell.hxx>
+#include <sfx2/sidebar/EnumContext.hxx>
 #include <sfx2/tbxctrl.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/viewsh.hxx>
@@ -436,6 +437,7 @@
 #include <svl/poolitem.hxx>
 #include <svl/ptitem.hxx>
 #include <svl/slstitm.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/srchitem.hxx>
 #include <svl/stritem.hxx>
 #include <svl/svldllapi.h>

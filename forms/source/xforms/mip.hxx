@@ -52,6 +52,7 @@ class MIP
 
 public:
     MIP();
+    ~MIP();
 
     /// inherit from upper-level MIPs
     void inherit( const MIP& );
@@ -62,26 +63,31 @@ public:
 
     // - type (static; default: xsd:string)
     //        (currently default implemented as empty string)
+    bool hasTypeName() const { return mbHasTypeName; }
     const OUString& getTypeName() const { return msTypeName; }
     void setTypeName( const OUString& );
     void resetTypeName();
 
     // - readonly (computed XPath; default: false; true if calculate exists)
+    bool hasReadonly() const { return mbHasReadonly; }
     bool isReadonly() const;
     void setReadonly( bool );
     void resetReadonly();
 
     // - required (computed XPath; default: false)
+    bool hasRequired() const { return mbHasRequired; }
     bool isRequired() const { return mbRequired; }
     void setRequired( bool );
     void resetRequired();
 
     // - relevant (computed XPath; default: true)
+    bool hasRelevant() const { return mbHasRelevant; }
     bool isRelevant() const { return mbRelevant; }
     void setRelevant( bool );
     void resetRelevant();
 
     // - constraint (computed XPath; default: true)
+    bool hasConstraint() const { return mbHasConstraint; }
     bool isConstraint() const { return mbConstraint; }
     void setConstraint( bool );
     void resetConstraint();
@@ -94,7 +100,9 @@ public:
     //   (for calculate, we only store whether a calculate MIP is present;
     //    the actual calculate value is handled my changing the instance
     //    directly)
+    bool hasCalculate() const { return mbHasCalculate; }
     void setHasCalculate( bool );
+    void resetCalculate();
 
     // - minOccurs/maxOccurs (computed XPath; default: 0/inf)
     // - p3ptype (static; no default)

@@ -20,11 +20,8 @@
 #ifndef INCLUDED_FORMULA_EXTERNALREFERENCEHELPER_HXX
 #define INCLUDED_FORMULA_EXTERNALREFERENCEHELPER_HXX
 
-#include <cstddef>
-
-#include <formula/formuladllapi.h>
 #include <rtl/ustring.hxx>
-#include <sal/types.h>
+#include <formula/formuladllapi.h>
 
 namespace formula
 {

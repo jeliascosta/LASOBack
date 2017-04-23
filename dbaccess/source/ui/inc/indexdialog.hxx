@@ -54,14 +54,14 @@ namespace dbaui
 
         void SetEndEditHdl(const Link<SvTreeListEntry*,bool>& _rHdl) { m_aEndEditHdl = _rHdl; }
 
-        virtual bool Select(SvTreeListEntry* pEntry, bool bSelect = true) override;
+        virtual bool Select(SvTreeListEntry* pEntry, bool bSelect) override;
 
         void enableSelectHandler();
         void disableSelectHandler();
 
         void SelectNoHandlerCall( SvTreeListEntry* pEntry );
 
-        void setConnection(const css::uno::Reference< css::sdbc::XConnection >& _rxConnection)
+        inline void setConnection(const css::uno::Reference< css::sdbc::XConnection >& _rxConnection)
         {
              m_xConnection = _rxConnection;
         }
@@ -107,7 +107,7 @@ namespace dbaui
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext,
             sal_Int32 _nMaxColumnsInIndex
             );
-        virtual ~DbaIndexDialog() override;
+        virtual ~DbaIndexDialog();
         virtual void dispose() override;
 
         virtual void StateChanged( StateChangedType nStateChange ) override;
@@ -127,14 +127,14 @@ namespace dbaui
         void updateControls(const SvTreeListEntry* _pEntry);
 
     protected:
-        DECL_LINK( OnIndexSelected, DbaIndexList&, void );
-        DECL_LINK( OnIndexAction, ToolBox*, void );
-        DECL_LINK( OnEntryEdited, SvTreeListEntry*, bool );
-        DECL_LINK( OnModifiedClick, Button*, void );
-        DECL_LINK( OnModified, IndexFieldsControl&, void );
-        DECL_LINK( OnCloseDialog, Button*, void );
+        DECL_LINK_TYPED( OnIndexSelected, DbaIndexList&, void );
+        DECL_LINK_TYPED( OnIndexAction, ToolBox*, void );
+        DECL_LINK_TYPED( OnEntryEdited, SvTreeListEntry*, bool );
+        DECL_LINK_TYPED( OnModifiedClick, Button*, void );
+        DECL_LINK_TYPED( OnModified, IndexFieldsControl&, void );
+        DECL_LINK_TYPED( OnCloseDialog, Button*, void );
 
-        DECL_LINK( OnEditIndexAgain, void*, void );
+        DECL_LINK_TYPED( OnEditIndexAgain, void*, void );
 
     private:
         sal_uInt16 mnNewCmdId;

@@ -87,7 +87,7 @@ private:
     Reference<XComponentContext> m_xContext;
     // If m_bActive == sal_True then events are fired to XDropTargetListener s,
     // none otherwise. The default value is sal_True.
-    bool m_bActive;
+    sal_Bool m_bActive;
     sal_Int8    m_nDefaultActions;
 
     // This value is set when a XDropTargetListener calls accept or reject on
@@ -102,36 +102,39 @@ private:
     // action has changed (dropActionChanged)
 //  sal_Int8 m_userAction;
     // Set by listeners when they call XDropTargetDropContext::dropComplete
-    bool m_bDropComplete;
+    sal_Bool m_bDropComplete;
     Reference<XDropTargetDragContext> m_currentDragContext;
     Reference<XDropTargetDropContext> m_currentDropContext;
 
 public:
     explicit DropTarget(const Reference<XComponentContext>& rxContext);
-    virtual ~DropTarget() override;
+    virtual ~DropTarget();
     DropTarget(DropTarget&) = delete;
     DropTarget &operator= (DropTarget&) = delete;
 
     // Overrides WeakComponentImplHelper::disposing which is called by
     // WeakComponentImplHelper::dispose
     // Must be called.
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing();
    // XInitialization
-    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const Sequence< Any >& aArguments )
+        throw(Exception, RuntimeException);
 
     // XDropTarget
-    virtual void SAL_CALL addDropTargetListener( const Reference< XDropTargetListener >& dtl ) override;
-    virtual void SAL_CALL removeDropTargetListener( const Reference< XDropTargetListener >& dtl ) override;
+    virtual void SAL_CALL addDropTargetListener( const Reference< XDropTargetListener >& dtl )
+        throw(RuntimeException);
+    virtual void SAL_CALL removeDropTargetListener( const Reference< XDropTargetListener >& dtl )
+        throw(RuntimeException);
     // Default is not active
-    virtual sal_Bool SAL_CALL isActive(  ) override;
-    virtual void SAL_CALL setActive( sal_Bool isActive ) override;
-    virtual sal_Int8 SAL_CALL getDefaultActions(  ) override;
-    virtual void SAL_CALL setDefaultActions( sal_Int8 actions ) override;
+    virtual sal_Bool SAL_CALL isActive(  ) throw(RuntimeException);
+    virtual void SAL_CALL setActive( sal_Bool isActive ) throw(RuntimeException);
+    virtual sal_Int8 SAL_CALL getDefaultActions(  ) throw(RuntimeException);
+    virtual void SAL_CALL setDefaultActions( sal_Int8 actions ) throw(RuntimeException);
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (RuntimeException);
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (RuntimeException);
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (RuntimeException);
 
     // Functions called from the IDropTarget implementation ( m_pDropTarget)
     virtual HRESULT DragEnter(
@@ -158,7 +161,7 @@ public:
 
     void _acceptDrop( sal_Int8 dropOperation, const Reference<XDropTargetDropContext>& context);
     void _rejectDrop( const Reference<XDropTargetDropContext>& context);
-    void _dropComplete( bool success, const Reference<XDropTargetDropContext>& context);
+    void _dropComplete( sal_Bool success, const Reference<XDropTargetDropContext>& context);
 
 // XDropTargetDragContext delegated from DragContext
     void _acceptDrag( sal_Int8 dragOperation, const Reference<XDropTargetDragContext>& context);

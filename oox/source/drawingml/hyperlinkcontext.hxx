@@ -35,7 +35,7 @@ public:
                             ::oox::core::ContextHandler2Helper& rParent,
                             const ::oox::AttributeList& rAttribs,
                             PropertyMap& aProperties );
-    virtual             ~HyperLinkContext() override;
+    virtual             ~HyperLinkContext();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( ::sal_Int32 Element, const ::oox::AttributeList& rAttribs ) override;
 

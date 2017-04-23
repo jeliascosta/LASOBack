@@ -46,7 +46,6 @@
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/weakref.hxx>
 
-#include <rtl/ref.hxx>
 #include <tools/link.hxx>
 #include <vcl/timer.hxx>
 
@@ -74,7 +73,7 @@ class SwChartLockController_Helper
 {
     SwDoc   *pDoc;
 
-    DECL_LINK( DoUnlockAllCharts, Timer *, void );
+    DECL_LINK_TYPED( DoUnlockAllCharts, Timer *, void );
     Timer   aUnlockTimer;   // timer to unlock chart controllers
     bool    bIsLocked;
 
@@ -121,7 +120,14 @@ class SwChartDataProvider :
     typedef std::set< css::uno::WeakReference < css::chart2::data::XDataSequence >, lt_DataSequenceRef > Set_DataSequenceRef_t;
 
     // map of data-sequence sets for each table
-    typedef std::map< const SwTable *, Set_DataSequenceRef_t > Map_Set_DataSequenceRef_t;
+    struct lt_SwTable_Ptr
+    {
+        bool operator()( const SwTable *p1, const SwTable *p2 ) const
+        {
+            return p1 < p2;
+        }
+    };
+    typedef std::map< const SwTable *, Set_DataSequenceRef_t, lt_SwTable_Ptr > Map_Set_DataSequenceRef_t;
 
     // map of all data-sequences provided directly or indirectly (e.g. via
     // data-source) by this object. Since there is only one object of this type
@@ -136,12 +142,14 @@ class SwChartDataProvider :
     SwChartDataProvider( const SwChartDataProvider & ) = delete;
     SwChartDataProvider & operator = ( const SwChartDataProvider & ) = delete;
 
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference< css::chart2::data::XDataSource > SAL_CALL Impl_createDataSource( const css::uno::Sequence< css::beans::PropertyValue >& aArguments, bool bTestOnly = false );
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
-    css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL Impl_createDataSequenceByRangeRepresentation( const OUString& aRangeRepresentation, bool bTestOnly = false );
+    css::uno::Reference< css::chart2::data::XDataSource > SAL_CALL Impl_createDataSource( const css::uno::Sequence< css::beans::PropertyValue >& aArguments, bool bTestOnly = false )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException,
+               std::exception);
+    css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL Impl_createDataSequenceByRangeRepresentation( const OUString& aRangeRepresentation, bool bTestOnly = false )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException,
+               std::exception);
 
     static OUString GetBrokenCellRangeForExport( const OUString &rCellRangeRepresentation );
 
@@ -151,38 +159,42 @@ protected:
 
 public:
     SwChartDataProvider( const SwDoc* pDoc );
-    virtual ~SwChartDataProvider() override;
+    virtual ~SwChartDataProvider();
 
     // XDataProvider
-    virtual sal_Bool SAL_CALL createDataSourcePossible( const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) override;
-    virtual css::uno::Reference< css::chart2::data::XDataSource > SAL_CALL createDataSource( const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) override;
-    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL detectArguments( const css::uno::Reference< css::chart2::data::XDataSource >& xDataSource ) override;
-    virtual sal_Bool SAL_CALL createDataSequenceByRangeRepresentationPossible( const OUString& aRangeRepresentation ) override;
-    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL createDataSequenceByRangeRepresentation( const OUString& aRangeRepresentation ) override;
-    virtual css::uno::Reference< css::sheet::XRangeSelection > SAL_CALL getRangeSelection(  ) override;
+    virtual sal_Bool SAL_CALL createDataSourcePossible( const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::chart2::data::XDataSource > SAL_CALL createDataSource( const css::uno::Sequence< css::beans::PropertyValue >& aArguments ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL detectArguments( const css::uno::Reference< css::chart2::data::XDataSource >& xDataSource ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL createDataSequenceByRangeRepresentationPossible( const OUString& aRangeRepresentation ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL createDataSequenceByRangeRepresentation( const OUString& aRangeRepresentation ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::sheet::XRangeSelection > SAL_CALL getRangeSelection(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Reference<css::chart2::data::XDataSequence>
         SAL_CALL createDataSequenceByValueArray(
-            const OUString& aRole, const OUString& aRangeRepresentation ) override;
+            const OUString& aRole, const OUString& aRangeRepresentation )
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XRangeXMLConversion
-    virtual OUString SAL_CALL convertRangeToXML( const OUString& aRangeRepresentation ) override;
-    virtual OUString SAL_CALL convertRangeFromXML( const OUString& aXMLRange ) override;
+    virtual OUString SAL_CALL convertRangeToXML( const OUString& aRangeRepresentation )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException,
+               std::exception) override;
+    virtual OUString SAL_CALL convertRangeFromXML( const OUString& aXMLRange ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose(  ) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     void        AddDataSequence( const SwTable &rTable, css::uno::Reference< css::chart2::data::XDataSequence > &rxDataSequence );
     void        RemoveDataSequence( const SwTable &rTable, css::uno::Reference< css::chart2::data::XDataSequence > &rxDataSequence );
 
-    // will send modified events for all data-sequences of the table
+    // will send modifdied events for all data-sequences of the table
     void        InvalidateTable( const SwTable *pTable );
     bool        DeleteBox( const SwTable *pTable, const SwTableBox &rBox );
     void        DisposeAllDataSequences( const SwTable *pTable );
@@ -209,15 +221,15 @@ class SwChartDataSource :
 
 public:
     SwChartDataSource( const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > &rLDS );
-    virtual ~SwChartDataSource() override;
+    virtual ~SwChartDataSource();
 
     // XDataSource
-    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences(  ) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 typedef cppu::WeakImplHelper
@@ -241,12 +253,15 @@ class SwChartDataSequence :
 {
     ::comphelper::OInterfaceContainerHelper2          m_aEvtListeners;
     ::comphelper::OInterfaceContainerHelper2          m_aModifyListeners;
-    css::chart2::data::DataSequenceRole               m_aRole;
+    css::chart2::data::DataSequenceRole        m_aRole;
 
     OUString  m_aRowLabelText;
     OUString  m_aColLabelText;
 
-    rtl::Reference<SwChartDataProvider>                m_xDataProvider;
+    // holds a reference to the data-provider to guarantee its lifetime last as
+    // long as the pointer may be used.
+    css::uno::Reference< css::chart2::data::XDataProvider >    m_xDataProvider;
+    SwChartDataProvider *                   m_pDataProvider;
 
     sw::UnoCursorPointer m_pTableCursor;   // cursor spanned over cells to use
 
@@ -265,57 +280,67 @@ public:
     SwChartDataSequence( SwChartDataProvider &rProvider,
                          SwFrameFormat   &rTableFormat,
                          std::shared_ptr<SwUnoCursor> pTableCursor );
-    virtual ~SwChartDataSequence() override;
+    virtual ~SwChartDataSequence();
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId();
 
     //XUnoTunnel
-    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+    virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XDataSequence
-    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getData() override;
-    virtual OUString SAL_CALL getSourceRangeRepresentation() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL generateLabel( css::chart2::data::LabelOrigin eLabelOrigin ) override;
-    virtual ::sal_Int32 SAL_CALL getNumberFormatKeyByIndex( ::sal_Int32 nIndex ) override;
+    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getData()
+        throw (css::uno::RuntimeException,
+               std::exception) override;
+    virtual OUString SAL_CALL getSourceRangeRepresentation()
+        throw (css::uno::RuntimeException,
+               std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL generateLabel( css::chart2::data::LabelOrigin eLabelOrigin )
+        throw (css::uno::RuntimeException,
+               std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getNumberFormatKeyByIndex( ::sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     // XTextualDataSequence
-    virtual css::uno::Sequence< OUString > SAL_CALL getTextualData() override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getTextualData()
+        throw (css::uno::RuntimeException,
+               std::exception) override;
 
     // XNumericalDataSequence
-    virtual css::uno::Sequence< double > SAL_CALL getNumericalData() override;
+    virtual css::uno::Sequence< double > SAL_CALL getNumericalData()
+        throw (css::uno::RuntimeException,
+               std::exception) override;
 
     // XCloneable
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XPropertySet
-    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
-    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) override;
-    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) override;
-    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) override;
-    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) override;
-    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
-    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setPropertyValue( const OUString& aPropertyName, const css::uno::Any& aValue ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getPropertyValue( const OUString& PropertyName ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addPropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& xListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removePropertyChangeListener( const OUString& aPropertyName, const css::uno::Reference< css::beans::XPropertyChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifiable
-    virtual sal_Bool SAL_CALL isModified(  ) override;
-    virtual void SAL_CALL setModified( sal_Bool bModified ) override;
+    virtual sal_Bool SAL_CALL isModified(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setModified( sal_Bool bModified ) throw (css::beans::PropertyVetoException, css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose(  ) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     SwFrameFormat*   GetFrameFormat() const { return const_cast<SwFrameFormat*>(static_cast<const SwFrameFormat*>(GetRegisteredIn())); }
     bool    DeleteBox( const SwTableBox &rBox );
@@ -352,36 +377,36 @@ class SwChartLabeledDataSequence :
 
 public:
     SwChartLabeledDataSequence();
-    virtual ~SwChartLabeledDataSequence() override;
+    virtual ~SwChartLabeledDataSequence();
 
     // XLabeledDataSequence
-    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL getValues(  ) override;
-    virtual void SAL_CALL setValues( const css::uno::Reference< css::chart2::data::XDataSequence >& xSequence ) override;
-    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL getLabel(  ) override;
-    virtual void SAL_CALL setLabel( const css::uno::Reference< css::chart2::data::XDataSequence >& xSequence ) override;
+    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL getValues(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setValues( const css::uno::Reference< css::chart2::data::XDataSequence >& xSequence ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::chart2::data::XDataSequence > SAL_CALL getLabel(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setLabel( const css::uno::Reference< css::chart2::data::XDataSequence >& xSequence ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XCloneable
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifyListener
-    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL modified( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose(  ) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

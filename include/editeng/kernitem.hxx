@@ -49,11 +49,11 @@ public:
     virtual bool            HasMetrics() const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxKerningItem& operator=(const SvxKerningItem& rKern) {
+    inline SvxKerningItem& operator=(const SvxKerningItem& rKern) {
             SetValue( rKern.GetValue() );
             return *this;
         }

@@ -14,29 +14,29 @@
 extern "C" {
 #endif
 
-void rtl_arena_init(void);
+void rtl_arena_init();
 
-void rtl_arena_fini(void);
+void rtl_arena_fini();
 
-void ensureArenaSingleton(void);
+void ensureArenaSingleton();
 
-void rtl_cache_init(void);
+void rtl_cache_init();
 
-void rtl_cache_fini(void);
+void rtl_cache_fini();
 
-void ensureCacheSingleton(void);
+void ensureCacheSingleton();
 
-void rtl_memory_init(void);
+void rtl_memory_init();
 
-void rtl_memory_fini(void);
+void rtl_memory_fini();
 
-void ensureMemorySingleton(void);
+void ensureMemorySingleton();
 
-void rtl_locale_init(void);
+void rtl_locale_init();
 
-void rtl_locale_fini(void);
+void rtl_locale_fini();
 
-void ensureLocaleSingleton(void);
+void ensureLocaleSingleton();
 
 #if defined __cplusplus
 }

@@ -47,7 +47,7 @@ namespace cairocanvas
 
         SAL_INFO( "canvas.cairo", "sprite size: " << ::canvas::tools::roundUp( rSpriteSize.Width ) << ", " << ::canvas::tools::roundUp( rSpriteSize.Height ));
 
-        mpBufferSurface = mpSpriteCanvas->createSurface( maSize, CAIRO_CONTENT_COLOR_ALPHA );
+        mpBufferSurface = mpSpriteCanvas->createSurface( maSize );
 
         maCanvasHelper.init( maSize,
                              *rRefDevice,
@@ -117,14 +117,19 @@ namespace cairocanvas
         return mpSpriteCanvas->createSurface(rBitmap);
     }
 
-    SurfaceSharedPtr CanvasCustomSprite::changeSurface()
+    SurfaceSharedPtr CanvasCustomSprite::changeSurface( bool bHasAlpha, bool bCopyContent )
     {
-        SAL_INFO( "canvas.cairo", "replacing sprite background surface");
+        if( !bHasAlpha && !bCopyContent )
+        {
+            SAL_INFO( "canvas.cairo", "replacing sprite background surface");
 
-        mpBufferSurface = mpSpriteCanvas->createSurface( maSize, CAIRO_CONTENT_COLOR );
-        maSpriteHelper.setSurface( mpBufferSurface );
+            mpBufferSurface = mpSpriteCanvas->createSurface( maSize, CAIRO_CONTENT_COLOR );
+            maSpriteHelper.setSurface( mpBufferSurface );
 
-        return mpBufferSurface;
+            return mpBufferSurface;
+        }
+
+        return SurfaceSharedPtr();
     }
 
     OutputDevice* CanvasCustomSprite::getOutputDevice()
@@ -132,19 +137,21 @@ namespace cairocanvas
         return mpSpriteCanvas->getOutputDevice();
     }
 
-    OUString SAL_CALL CanvasCustomSprite::getImplementationName()
+    OUString SAL_CALL CanvasCustomSprite::getImplementationName() throw( uno::RuntimeException, std::exception )
     {
         return OUString( "CairoCanvas.CanvasCustomSprite" );
     }
 
-    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName ) throw( uno::RuntimeException, std::exception )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()
+    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()  throw( uno::RuntimeException, std::exception )
     {
-        return { "com.sun.star.rendering.CanvasCustomSprite" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasCustomSprite" };
+
+        return aRet;
     }
 }
 

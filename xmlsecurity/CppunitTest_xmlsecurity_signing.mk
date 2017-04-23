@@ -32,7 +32,6 @@ $(eval $(call gb_CppunitTest_use_libraries,xmlsecurity_signing, \
 
 $(eval $(call gb_CppunitTest_use_externals,xmlsecurity_signing,\
     boost_headers \
-    libxml2 \
 ))
 
 $(eval $(call gb_CppunitTest_set_include,xmlsecurity_signing,\
@@ -48,9 +47,5 @@ $(eval $(call gb_CppunitTest_use_vcl,xmlsecurity_signing))
 $(eval $(call gb_CppunitTest_use_rdb,xmlsecurity_signing,services))
 
 $(eval $(call gb_CppunitTest_use_configuration,xmlsecurity_signing))
-
-ifeq ($(ENABLE_PDFIMPORT),TRUE)
-$(eval $(call gb_CppunitTest_use_executable,xmlsecurity_signing,xpdfimport))
-endif
 
 # vim: set noet sw=4 ts=4:

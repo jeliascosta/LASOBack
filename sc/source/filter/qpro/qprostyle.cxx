@@ -65,27 +65,27 @@ void ScQProStyle::SetFormat( ScDocument *pDoc, sal_uInt8 nCol, sal_uInt16 nRow, 
     sal_uInt8 nOrient = ( nTmp & 0x60 );
 
     // Horizontal Alignment
-    SvxCellHorJustify eJustify = SvxCellHorJustify::Standard;
+    SvxCellHorJustify eJustify = SVX_HOR_JUSTIFY_STANDARD;
     switch( nHor )
     {
         case 0x00:
-            eJustify = SvxCellHorJustify::Standard;
+            eJustify = SVX_HOR_JUSTIFY_STANDARD;
             break;
 
         case 0x01:
-            eJustify = SvxCellHorJustify::Left;
+            eJustify = SVX_HOR_JUSTIFY_LEFT;
             break;
 
         case 0x02:
-            eJustify = SvxCellHorJustify::Center;
+            eJustify = SVX_HOR_JUSTIFY_CENTER;
             break;
 
         case 0x03:
-            eJustify = SvxCellHorJustify::Right;
+            eJustify = SVX_HOR_JUSTIFY_RIGHT;
             break;
 
         case 0x04:
-            eJustify = SvxCellHorJustify::Block;
+            eJustify = SVX_HOR_JUSTIFY_BLOCK;
             break;
     }
     rItemSet.Put( SvxHorJustifyItem( eJustify, ATTR_HOR_JUSTIFY ) );

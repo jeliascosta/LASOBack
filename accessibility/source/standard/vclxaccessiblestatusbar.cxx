@@ -17,11 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblestatusbar.hxx>
-#include <standard/vclxaccessiblestatusbaritem.hxx>
+#include <accessibility/standard/vclxaccessiblestatusbar.hxx>
+#include <accessibility/standard/vclxaccessiblestatusbaritem.hxx>
 #include <toolkit/helper/convert.hxx>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <vcl/status.hxx>
 
 
@@ -149,7 +148,7 @@ void VCLXAccessibleStatusBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::StatusbarItemAdded:
+        case VCLEVENT_STATUSBAR_ITEMADDED:
         {
             if ( m_pStatusBar )
             {
@@ -159,7 +158,7 @@ void VCLXAccessibleStatusBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
             }
         }
         break;
-        case VclEventId::StatusbarItemRemoved:
+        case VCLEVENT_STATUSBAR_ITEMREMOVED:
         {
             if ( m_pStatusBar )
             {
@@ -180,24 +179,30 @@ void VCLXAccessibleStatusBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
             }
         }
         break;
-        case VclEventId::StatusbarAllItemsRemoved:
+        case VCLEVENT_STATUSBAR_ALLITEMSREMOVED:
         {
             for ( sal_Int32 i = m_aAccessibleChildren.size() - 1; i >= 0; --i )
                 RemoveChild( i );
         }
         break;
-        case VclEventId::StatusbarShowItem:
-        case VclEventId::StatusbarHideItem:
+        case VCLEVENT_STATUSBAR_SHOWITEM:
+        case VCLEVENT_STATUSBAR_HIDEITEM:
         {
             if ( m_pStatusBar )
             {
                 sal_uInt16 nItemId = (sal_uInt16)reinterpret_cast<sal_IntPtr>(rVclWindowEvent.GetData());
                 sal_uInt16 nItemPos = m_pStatusBar->GetItemPos( nItemId );
-                UpdateShowing( nItemPos, rVclWindowEvent.GetId() == VclEventId::StatusbarShowItem );
+                UpdateShowing( nItemPos, rVclWindowEvent.GetId() == VCLEVENT_STATUSBAR_SHOWITEM );
             }
         }
         break;
-        case VclEventId::StatusbarNameChanged:
+        case VCLEVENT_STATUSBAR_SHOWALLITEMS:
+        {
+            for ( size_t i = 0; i < m_aAccessibleChildren.size(); ++i )
+                UpdateShowing( i, rVclWindowEvent.GetId() == VCLEVENT_STATUSBAR_SHOWALLITEMS );
+        }
+        break;
+        case VCLEVENT_STATUSBAR_NAMECHANGED:
         {
             if ( m_pStatusBar )
             {
@@ -207,7 +212,7 @@ void VCLXAccessibleStatusBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
             }
         }
         break;
-        case VclEventId::StatusbarDrawItem:
+        case VCLEVENT_STATUSBAR_DRAWITEM:
         {
             if ( m_pStatusBar )
             {
@@ -217,7 +222,7 @@ void VCLXAccessibleStatusBar::ProcessWindowEvent( const VclWindowEvent& rVclWind
             }
         }
         break;
-        case VclEventId::ObjectDying:
+        case VCLEVENT_OBJECT_DYING:
         {
             if ( m_pStatusBar )
             {
@@ -268,22 +273,23 @@ void VCLXAccessibleStatusBar::disposing()
 // XServiceInfo
 
 
-OUString VCLXAccessibleStatusBar::getImplementationName()
+OUString VCLXAccessibleStatusBar::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleStatusBar" );
 }
 
 
-Sequence< OUString > VCLXAccessibleStatusBar::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleStatusBar::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleStatusBar" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleStatusBar" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int32 VCLXAccessibleStatusBar::getAccessibleChildCount()
+sal_Int32 VCLXAccessibleStatusBar::getAccessibleChildCount() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -291,7 +297,7 @@ sal_Int32 VCLXAccessibleStatusBar::getAccessibleChildCount()
 }
 
 
-Reference< XAccessible > VCLXAccessibleStatusBar::getAccessibleChild( sal_Int32 i )
+Reference< XAccessible > VCLXAccessibleStatusBar::getAccessibleChild( sal_Int32 i ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -319,7 +325,7 @@ Reference< XAccessible > VCLXAccessibleStatusBar::getAccessibleChild( sal_Int32 
 // XAccessibleComponent
 
 
-Reference< XAccessible > VCLXAccessibleStatusBar::getAccessibleAtPoint( const awt::Point& rPoint )
+Reference< XAccessible > VCLXAccessibleStatusBar::getAccessibleAtPoint( const awt::Point& rPoint ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

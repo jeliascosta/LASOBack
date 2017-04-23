@@ -32,11 +32,11 @@ class OChildDispListener_Impl : public ::cppu::WeakImplHelper < css::lang::XEven
 
 public:
     explicit OChildDispListener_Impl( OStorage& aStorage );
-    virtual ~OChildDispListener_Impl() override;
+    virtual ~OChildDispListener_Impl();
 
     void OwnerIsDisposed();
 
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 };
 
 #endif

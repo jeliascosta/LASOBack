@@ -67,13 +67,19 @@ class DataSeries :
     public ::property::OPropertySet
 {
 public:
-    explicit DataSeries();
-    virtual ~DataSeries() override;
+    explicit DataSeries( const css::uno::Reference< css::uno::XComponentContext > & xContext );
+    virtual ~DataSeries();
 
     /// XServiceInfo declarations
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
     DECLARE_XINTERFACE()
@@ -89,31 +95,41 @@ protected:
     // ____ XDataSeries ____
     /// @see css::chart2::XDataSeries
     virtual css::uno::Reference< css::beans::XPropertySet >
-        SAL_CALL getDataPointByIndex( sal_Int32 nIndex ) override;
-    virtual void SAL_CALL resetDataPoint( sal_Int32 nIndex ) override;
-    virtual void SAL_CALL resetAllDataPoints() override;
+        SAL_CALL getDataPointByIndex( sal_Int32 nIndex )
+        throw (css::lang::IndexOutOfBoundsException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL resetDataPoint( sal_Int32 nIndex )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL resetAllDataPoints()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDataSink ____
     /// @see css::chart2::data::XDataSink
-    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > >& aData ) override;
+    virtual void SAL_CALL setData( const css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > >& aData )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XDataSource ____
     /// @see css::chart2::data::XDataSource
-    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences() override;
+    virtual css::uno::Sequence< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > SAL_CALL getDataSequences()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
-    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const override;
+    virtual css::uno::Any GetDefaultValue( sal_Int32 nHandle ) const
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException) override;
     virtual void SAL_CALL getFastPropertyValue( css::uno::Any& rValue, sal_Int32 nHandle ) const override;
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast
         ( sal_Int32 nHandle,
-          const css::uno::Any& rValue ) override;
+          const css::uno::Any& rValue )
+        throw (css::uno::Exception, std::exception) override;
 
     virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
     // ____ XPropertySet ____
     /// @see css::beans::XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
-        getPropertySetInfo() override;
+        getPropertySetInfo()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /// make original interface function visible again
     using ::com::sun::star::beans::XFastPropertySet::getFastPropertyValue;
@@ -121,29 +137,40 @@ protected:
     // ____ XRegressionCurveContainer ____
     /// @see css::chart2::XRegressionCurveContainer
     virtual void SAL_CALL addRegressionCurve(
-        const css::uno::Reference< css::chart2::XRegressionCurve >& aRegressionCurve ) override;
+        const css::uno::Reference< css::chart2::XRegressionCurve >& aRegressionCurve )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeRegressionCurve(
-        const css::uno::Reference< css::chart2::XRegressionCurve >& aRegressionCurve ) override;
-    virtual css::uno::Sequence< css::uno::Reference< css::chart2::XRegressionCurve > > SAL_CALL getRegressionCurves() override;
+        const css::uno::Reference< css::chart2::XRegressionCurve >& aRegressionCurve )
+        throw (css::container::NoSuchElementException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Reference< css::chart2::XRegressionCurve > > SAL_CALL getRegressionCurves()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setRegressionCurves(
-        const css::uno::Sequence< css::uno::Reference< css::chart2::XRegressionCurve > >& aRegressionCurves ) override;
+        const css::uno::Sequence< css::uno::Reference< css::chart2::XRegressionCurve > >& aRegressionCurves )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XCloneable ____
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyBroadcaster ____
     virtual void SAL_CALL addModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeModifyListener(
-        const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XModifyListener ____
     virtual void SAL_CALL modified(
-        const css::lang::EventObject& aEvent ) override;
+        const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source ) override;
+        const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
@@ -152,15 +179,16 @@ protected:
     void fireModifyEvent();
 
 private:
-    typedef std::vector< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > tDataSequenceContainer;
+    css::uno::Reference< css::uno::XComponentContext >  m_xContext;
+    typedef ::std::vector< css::uno::Reference< css::chart2::data::XLabeledDataSequence > > tDataSequenceContainer;
     tDataSequenceContainer        m_aDataSequences;
 
-    typedef std::map< sal_Int32,
+    typedef ::std::map< sal_Int32,
         css::uno::Reference< css::beans::XPropertySet > > tDataPointAttributeContainer;
     tDataPointAttributeContainer  m_aAttributedDataPoints;
 
     typedef
-        std::vector< css::uno::Reference< css::chart2::XRegressionCurve > >
+        ::std::vector< css::uno::Reference< css::chart2::XRegressionCurve > >
         tRegressionCurveContainerType;
     tRegressionCurveContainerType m_aRegressionCurves;
 

@@ -29,8 +29,13 @@ SfxSlotKind SfxSlot::GetKind() const
         return SfxSlotKind::Standard;
     if ( nMasterSlotId && fnExec==nullptr && fnState==nullptr )
     {
-        assert(false);
-        return SfxSlotKind::Standard;
+        if ( *pType->pType == typeid(SfxBoolItem) )
+            return SfxSlotKind::Enum;
+        else
+        {
+            OSL_FAIL( "invalid slot kind detected" );
+            return SfxSlotKind::Enum;
+        }
     }
     else
         return SfxSlotKind::Attribute;

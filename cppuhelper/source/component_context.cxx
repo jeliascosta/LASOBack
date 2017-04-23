@@ -28,10 +28,10 @@
 #include <uno/lbnames.h>
 #include <uno/mapping.hxx>
 
+#include <cppuhelper/implbase1.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/component_context.hxx>
 #include <cppuhelper/exc_hlp.hxx>
-#include <cppuhelper/implbase.hxx>
 
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
@@ -78,7 +78,7 @@ static inline void try_dispose( Reference< lang::XComponent > const & xComp )
 }
 
 class DisposingForwarder
-    : public WeakImplHelper< lang::XEventListener >
+    : public WeakImplHelper1< lang::XEventListener >
 {
     Reference< lang::XComponent > m_xTarget;
 
@@ -93,7 +93,8 @@ public:
         Reference< lang::XComponent > const & xSource,
         Reference< lang::XComponent > const & xTarget );
 
-    virtual void SAL_CALL disposing( lang::EventObject const & rSource ) override;
+    virtual void SAL_CALL disposing( lang::EventObject const & rSource )
+        throw (RuntimeException, std::exception) override;
 };
 
 inline void DisposingForwarder::listen(
@@ -107,6 +108,7 @@ inline void DisposingForwarder::listen(
 }
 
 void DisposingForwarder::disposing( lang::EventObject const & )
+    throw (RuntimeException, std::exception)
 {
     m_xTarget->dispose();
     m_xTarget.clear();
@@ -133,7 +135,7 @@ protected:
         Any value;
         bool lateInit;
 
-        ContextEntry( Any const & value_, bool lateInit_ )
+        inline ContextEntry( Any const & value_, bool lateInit_ )
             : value( value_ )
             , lateInit( lateInit_ )
             {}
@@ -151,32 +153,46 @@ public:
     ComponentContext(
         ContextEntry_Init const * pEntries, sal_Int32 nEntries,
         Reference< XComponentContext > const & xDelegate );
-    virtual ~ComponentContext() override;
+    virtual ~ComponentContext();
 
     // XComponentContext
-    virtual Any SAL_CALL getValueByName( OUString const & rName ) override;
-    virtual Reference<lang::XMultiComponentFactory> SAL_CALL getServiceManager() override;
+    virtual Any SAL_CALL getValueByName( OUString const & rName )
+        throw (RuntimeException, std::exception) override;
+    virtual Reference<lang::XMultiComponentFactory> SAL_CALL getServiceManager()
+        throw (RuntimeException, std::exception) override;
 
     // XNameContainer
     virtual void SAL_CALL insertByName(
-        OUString const & name, Any const & element ) override;
-    virtual void SAL_CALL removeByName( OUString const & name ) override;
+        OUString const & name, Any const & element )
+        throw (lang::IllegalArgumentException, container::ElementExistException,
+               lang::WrappedTargetException, RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName( OUString const & name )
+        throw (container::NoSuchElementException,
+               lang::WrappedTargetException, RuntimeException, std::exception) override;
     // XNameReplace
     virtual void SAL_CALL replaceByName(
-        OUString const & name, Any const & element ) override;
+        OUString const & name, Any const & element )
+        throw (lang::IllegalArgumentException,container::NoSuchElementException,
+               lang::WrappedTargetException, RuntimeException, std::exception) override;
     // XNameAccess
-    virtual Any SAL_CALL getByName( OUString const & name ) override;
-    virtual Sequence<OUString> SAL_CALL getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName( OUString const & name ) override;
+    virtual Any SAL_CALL getByName( OUString const & name )
+        throw (container::NoSuchElementException,
+               lang::WrappedTargetException, RuntimeException, std::exception) override;
+    virtual Sequence<OUString> SAL_CALL getElementNames()
+        throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( OUString const & name )
+        throw (RuntimeException, std::exception) override;
     // XElementAccess
-    virtual Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual Type SAL_CALL getElementType() throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements() throw (RuntimeException, std::exception) override;
 };
 
 // XNameContainer
 
 void ComponentContext::insertByName(
     OUString const & name, Any const & element )
+    throw (lang::IllegalArgumentException, container::ElementExistException,
+           lang::WrappedTargetException, RuntimeException, std::exception)
 {
     t_map::mapped_type entry(
         new ContextEntry(
@@ -185,7 +201,7 @@ void ComponentContext::insertByName(
             name.startsWith( "/singletons/" ) &&
             !element.hasValue() ) );
     MutexGuard guard( m_mutex );
-    std::pair<t_map::iterator, bool> insertion( m_map.insert(
+    ::std::pair<t_map::iterator, bool> insertion( m_map.insert(
         t_map::value_type( name, entry ) ) );
     if (! insertion.second)
         throw container::ElementExistException(
@@ -195,6 +211,8 @@ void ComponentContext::insertByName(
 
 
 void ComponentContext::removeByName( OUString const & name )
+        throw (container::NoSuchElementException,
+               lang::WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_mutex );
     t_map::iterator iFind( m_map.find( name ) );
@@ -211,6 +229,8 @@ void ComponentContext::removeByName( OUString const & name )
 
 void ComponentContext::replaceByName(
     OUString const & name, Any const & element )
+    throw (lang::IllegalArgumentException,container::NoSuchElementException,
+           lang::WrappedTargetException, RuntimeException, std::exception)
 {
     MutexGuard guard( m_mutex );
     t_map::const_iterator const iFind( m_map.find( name ) );
@@ -234,12 +254,15 @@ void ComponentContext::replaceByName(
 // XNameAccess
 
 Any ComponentContext::getByName( OUString const & name )
+    throw (container::NoSuchElementException,
+           lang::WrappedTargetException, RuntimeException, std::exception)
 {
     return getValueByName( name );
 }
 
 
 Sequence<OUString> ComponentContext::getElementNames()
+    throw (RuntimeException, std::exception)
 {
     MutexGuard guard( m_mutex );
     Sequence<OUString> ret( m_map.size() );
@@ -254,6 +277,7 @@ Sequence<OUString> ComponentContext::getElementNames()
 
 
 sal_Bool ComponentContext::hasByName( OUString const & name )
+    throw (RuntimeException, std::exception)
 {
     MutexGuard guard( m_mutex );
     return m_map.find( name ) != m_map.end();
@@ -261,13 +285,13 @@ sal_Bool ComponentContext::hasByName( OUString const & name )
 
 // XElementAccess
 
-Type ComponentContext::getElementType()
+Type ComponentContext::getElementType() throw (RuntimeException, std::exception)
 {
     return cppu::UnoType<void>::get();
 }
 
 
-sal_Bool ComponentContext::hasElements()
+sal_Bool ComponentContext::hasElements() throw (RuntimeException, std::exception)
 {
     MutexGuard guard( m_mutex );
     return ! m_map.empty();
@@ -359,7 +383,8 @@ Any ComponentContext::lookupMap( OUString const & rName )
             pEntry->lateInit = false;
             return pEntry->value;
         }
-        ret = pEntry->value;
+        else
+            ret = pEntry->value;
     }
     guard.clear();
     if (ret != xInstance) {
@@ -370,13 +395,15 @@ Any ComponentContext::lookupMap( OUString const & rName )
 
 
 Any ComponentContext::getValueByName( OUString const & rName )
+    throw (RuntimeException, std::exception)
 {
     // to determine the root context:
     if ( rName == "_root" )
     {
         if (m_xDelegate.is())
             return m_xDelegate->getValueByName( rName );
-        return Any( Reference<XComponentContext>(this) );
+        else
+            return makeAny( Reference<XComponentContext>(this) );
     }
 
     Any ret( lookupMap( rName ) );
@@ -388,6 +415,7 @@ Any ComponentContext::getValueByName( OUString const & rName )
 }
 
 Reference< lang::XMultiComponentFactory > ComponentContext::getServiceManager()
+    throw (RuntimeException, std::exception)
 {
     if ( !m_xSMgr.is() )
     {
@@ -536,7 +564,7 @@ ComponentContext::ComponentContext(
                 if (xProps.is())
                 {
                     Reference< XComponentContext > xThis( this );
-                    xProps->setPropertyValue( "DefaultContext", Any( xThis ) );
+                    xProps->setPropertyValue( "DefaultContext", makeAny( xThis ) );
                 }
             }
             catch (...)

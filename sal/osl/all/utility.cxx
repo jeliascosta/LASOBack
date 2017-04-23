@@ -33,6 +33,11 @@ class OGlobalTimer
 public:
 
     OGlobalTimer() {
+        getTime();
+    }
+
+    void getTime()
+    {
         osl_getGlobalTimer();
     }
 

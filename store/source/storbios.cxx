@@ -373,7 +373,7 @@ storeError SuperBlockPage::verify (OStorePageBIOS & rBIOS)
         else
         {
             // Double Failure.
-            SAL_WARN("store", "OStoreSuperBlockPage::verify(): double failure.");
+            OSL_TRACE("OStoreSuperBlockPage::verify(): double failure.");
         }
     }
 
@@ -584,11 +584,11 @@ storeError OStorePageBIOS::initialize_Impl (
     m_xLockBytes = pLockBytes;
     if (!m_xLockBytes.is())
         return store_E_InvalidParameter;
-    m_bWriteable = (eAccessMode != storeAccessMode::ReadOnly);
+    m_bWriteable = (eAccessMode != store_AccessReadOnly);
 
     // Check access mode.
     storeError eErrCode = store_E_None;
-    if (eAccessMode != storeAccessMode::Create)
+    if (eAccessMode != store_AccessCreate)
     {
         // Load SuperBlock page.
         if ((m_pSuper = new SuperBlockPage()) == nullptr)
@@ -619,9 +619,9 @@ storeError OStorePageBIOS::initialize_Impl (
             return eErrCode;
 
         // Check mode.
-        if (eAccessMode == storeAccessMode::ReadOnly)
+        if (eAccessMode == store_AccessReadOnly)
             return store_E_NotExists;
-        if (eAccessMode == storeAccessMode::ReadWrite)
+        if (eAccessMode == store_AccessReadWrite)
             return store_E_NotExists;
 
         // Check PageSize.
@@ -730,7 +730,7 @@ storeError OStorePageBIOS::acquirePage (
         return store_E_InvalidAccess;
 
     // Check access mode.
-    if (!(m_bWriteable || (eMode == storeAccessMode::ReadOnly)))
+    if (!(m_bWriteable || (eMode == store_AccessReadOnly)))
         return store_E_AccessViolation;
 
     // Find access control list entry.
@@ -738,7 +738,7 @@ storeError OStorePageBIOS::acquirePage (
     if (ace->m_addr == rDescr.m_nAddr)
     {
       // Acquire existing entry (with ShareDenyWrite).
-      if (eMode == storeAccessMode::ReadOnly)
+      if (eMode == store_AccessReadOnly)
         ace->m_used += 1;
       else
         return store_E_AccessViolation;

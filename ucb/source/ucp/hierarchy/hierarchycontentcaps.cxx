@@ -97,28 +97,28 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Required properties
 
                 beans::Property(
-                    "ContentType",
+                    OUString( "ContentType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsDocument",
+                    OUString( "IsDocument" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsFolder",
+                    OUString( "IsFolder" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "Title",
+                    OUString( "Title" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -128,14 +128,15 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Optional standard properties
 
                 beans::Property(
-                    "TargetURL",
+                    OUString( "TargetURL" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                     beans::PropertyAttribute::BOUND
@@ -154,28 +155,28 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Required properties
 
                 beans::Property(
-                    "ContentType",
+                    OUString( "ContentType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsDocument",
+                    OUString( "IsDocument" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsFolder",
+                    OUString( "IsFolder" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "Title",
+                    OUString( "Title" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -184,13 +185,14 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Optional standard properties
 
                 beans::Property(
-                    "TargetURL",
+                    OUString( "TargetURL" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                 ),
                 beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                     beans::PropertyAttribute::BOUND
@@ -217,28 +219,28 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Required properties
 
                 beans::Property(
-                    "ContentType",
+                    OUString( "ContentType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsDocument",
+                    OUString( "IsDocument" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsFolder",
+                    OUString( "IsFolder" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "Title",
+                    OUString( "Title" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -248,7 +250,8 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Optional standard properties
 
                 beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                     beans::PropertyAttribute::BOUND
@@ -267,28 +270,28 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Required properties
 
                 beans::Property(
-                    "ContentType",
+                    OUString( "ContentType" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsDocument",
+                    OUString( "IsDocument" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "IsFolder",
+                    OUString( "IsFolder" ),
                     -1,
                     cppu::UnoType<bool>::get(),
                     beans::PropertyAttribute::BOUND
                         | beans::PropertyAttribute::READONLY
                 ),
                 beans::Property(
-                    "Title",
+                    OUString( "Title" ),
                     -1,
                     cppu::UnoType<OUString>::get(),
                     beans::PropertyAttribute::BOUND
@@ -297,7 +300,8 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
                 // Optional standard properties
 
                 beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                     beans::PropertyAttribute::BOUND
@@ -325,28 +329,28 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
             // Required properties
 
             beans::Property(
-                "ContentType",
+                OUString( "ContentType" ),
                 -1,
                 cppu::UnoType<OUString>::get(),
                 beans::PropertyAttribute::BOUND
                     | beans::PropertyAttribute::READONLY
             ),
             beans::Property(
-                "IsDocument",
+                OUString( "IsDocument" ),
                 -1,
                 cppu::UnoType<bool>::get(),
                 beans::PropertyAttribute::BOUND
                     | beans::PropertyAttribute::READONLY
             ),
             beans::Property(
-                "IsFolder",
+                OUString( "IsFolder" ),
                 -1,
                 cppu::UnoType<bool>::get(),
                 beans::PropertyAttribute::BOUND
                     | beans::PropertyAttribute::READONLY
             ),
             beans::Property(
-                "Title",
+                OUString( "Title" ),
                 -1,
                 cppu::UnoType<OUString>::get(),
                 beans::PropertyAttribute::BOUND
@@ -356,7 +360,8 @@ uno::Sequence< beans::Property > HierarchyContent::getProperties(
             // Optional standard properties
 
             beans::Property(
-                    "CreatableContentsInfo",
+                    OUString(
+                        "CreatableContentsInfo" ),
                     -1,
                     cppu::UnoType<uno::Sequence< ucb::ContentInfo >>::get(),
                     beans::PropertyAttribute::BOUND
@@ -391,22 +396,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 )
@@ -427,22 +432,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 ),
@@ -450,12 +455,12 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Optional standard commands
 
                 ucb::CommandInfo(
-                    "delete",
+                    OUString( "delete" ),
                     -1,
                     cppu::UnoType<bool>::get()
                 ),
                 ucb::CommandInfo(
-                    "insert",
+                    OUString( "insert" ),
                     -1,
                     cppu::UnoType<void>::get()
                 )
@@ -481,22 +486,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 ),
@@ -504,7 +509,7 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Optional standard commands
 
                 ucb::CommandInfo(
-                    "open",
+                    OUString( "open" ),
                     -1,
                     cppu::UnoType<ucb::OpenCommandArgument2>::get()
                 )
@@ -522,22 +527,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 ),
@@ -545,27 +550,27 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Optional standard commands
 
                 ucb::CommandInfo(
-                    "delete",
+                    OUString( "delete" ),
                     -1,
                     cppu::UnoType<bool>::get()
                 ),
                 ucb::CommandInfo(
-                    "insert",
+                    OUString( "insert" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "open",
+                    OUString( "open" ),
                     -1,
                     cppu::UnoType<ucb::OpenCommandArgument2>::get()
                 ),
                 ucb::CommandInfo(
-                    "transfer",
+                    OUString( "transfer" ),
                     -1,
                     cppu::UnoType<ucb::TransferInfo>::get()
                 ),
                 ucb::CommandInfo(
-                    "createNewContent",
+                    OUString( "createNewContent" ),
                     -1,
                     cppu::UnoType<ucb::ContentInfo>::get()
                 )
@@ -591,22 +596,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 ),
@@ -614,7 +619,7 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Optional standard commands
 
                 ucb::CommandInfo(
-                    "open",
+                    OUString( "open" ),
                     -1,
                     cppu::UnoType<ucb::OpenCommandArgument2>::get()
                 )
@@ -632,22 +637,22 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Required commands
 
                 ucb::CommandInfo(
-                    "getCommandInfo",
+                    OUString( "getCommandInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertySetInfo",
+                    OUString( "getPropertySetInfo" ),
                     -1,
                     cppu::UnoType<void>::get()
                 ),
                 ucb::CommandInfo(
-                    "getPropertyValues",
+                    OUString( "getPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::Property >>::get()
                 ),
                 ucb::CommandInfo(
-                    "setPropertyValues",
+                    OUString( "setPropertyValues" ),
                     -1,
                     cppu::UnoType<uno::Sequence< beans::PropertyValue >>::get()
                 ),
@@ -655,17 +660,17 @@ uno::Sequence< ucb::CommandInfo > HierarchyContent::getCommands(
                 // Optional standard commands
 
                 ucb::CommandInfo(
-                    "open",
+                    OUString( "open" ),
                     -1,
                     cppu::UnoType<ucb::OpenCommandArgument2>::get()
                 ),
                 ucb::CommandInfo(
-                    "transfer",
+                    OUString( "transfer" ),
                     -1,
                     cppu::UnoType<ucb::TransferInfo>::get()
                 ),
                 ucb::CommandInfo(
-                    "createNewContent",
+                    OUString( "createNewContent" ),
                     -1,
                     cppu::UnoType<ucb::ContentInfo>::get()
                 )

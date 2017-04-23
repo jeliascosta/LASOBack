@@ -145,6 +145,7 @@ $(eval $(call gb_Library_add_exception_objects,scfilt,\
 	sc/source/filter/lotus/op \
 	sc/source/filter/lotus/optab \
 	sc/source/filter/lotus/tool \
+	sc/source/filter/qpro/biff \
 	sc/source/filter/qpro/qpro \
 	sc/source/filter/qpro/qproform \
 	sc/source/filter/qpro/qprostyle \
@@ -166,6 +167,7 @@ $(eval $(call gb_Library_add_exception_objects,scfilt,\
 	sc/source/filter/oox/autofiltercontext \
 	sc/source/filter/oox/biffcodec \
 	sc/source/filter/oox/biffhelper \
+	sc/source/filter/oox/biffinputstream \
 	sc/source/filter/oox/chartsheetfragment \
 	sc/source/filter/oox/commentsbuffer \
 	sc/source/filter/oox/commentsfragment \
@@ -176,6 +178,7 @@ $(eval $(call gb_Library_add_exception_objects,scfilt,\
 	sc/source/filter/oox/defnamesbuffer \
 	sc/source/filter/oox/drawingbase \
 	sc/source/filter/oox/drawingfragment \
+	sc/source/filter/oox/drawingmanager \
 	sc/source/filter/oox/excelchartconverter \
 	sc/source/filter/oox/excelhandlers \
 	sc/source/filter/oox/excelvbaproject \
@@ -221,6 +224,7 @@ $(eval $(call gb_Library_add_exception_objects,scfilt,\
 	sc/source/filter/oox/worksheetsettings \
 ))
 
+ifeq ($(ENABLE_ORCUS),TRUE)
 $(eval $(call gb_Library_use_externals,scfilt,\
 	orcus \
 	orcus-parser \
@@ -236,5 +240,7 @@ $(eval $(call gb_Library_add_exception_objects,scfilt,\
 	sc/source/filter/orcus/xmlcontext \
 	sc/source/filter/orcus/filterdetect \
 ))
+
+endif
 
 # vim: set noet sw=4 ts=4:

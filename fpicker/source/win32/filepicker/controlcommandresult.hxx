@@ -31,7 +31,7 @@
 class CControlCommandResult
 {
 public:
-    explicit CControlCommandResult( bool bResult = false ) :
+    explicit CControlCommandResult( sal_Bool bResult = sal_False ) :
         m_bResult( bResult )
     {
     }
@@ -40,20 +40,20 @@ public:
     {
     }
 
-    bool SAL_CALL hasResult( ) const
+    sal_Bool SAL_CALL hasResult( ) const
     {
         return m_bResult;
     }
 
 private:
-    bool m_bResult;
+    sal_Bool m_bResult;
 };
 
 
 class CValueCommandResult : public CControlCommandResult
 {
 public:
-    CValueCommandResult( bool bResult, const css::uno::Any& aValue ) :
+    CValueCommandResult( sal_Bool bResult, const css::uno::Any& aValue ) :
         CControlCommandResult( bResult ),
         m_aValue( aValue )
     {
@@ -72,7 +72,7 @@ private:
 class CLabelCommandResult : public CControlCommandResult
 {
 public:
-    CLabelCommandResult( bool bResult, const OUString& aLabel ) :
+    CLabelCommandResult( sal_Bool bResult, const OUString& aLabel ) :
         CControlCommandResult( bResult ),
         m_aLabel( aLabel )
     {

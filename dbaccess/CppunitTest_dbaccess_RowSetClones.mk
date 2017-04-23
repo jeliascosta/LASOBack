@@ -59,6 +59,10 @@ $(eval $(call gb_CppunitTest_use_libraries,dbaccess_RowSetClones, \
 	$(gb_UWINAPI) \
 ))
 
+$(eval $(call gb_CppunitTest_set_include,dbaccess_RowSetClones,\
+    $$(INCLUDE) \
+))
+
 $(eval $(call gb_CppunitTest_use_api,dbaccess_RowSetClones,\
     offapi \
     oovbaapi \
@@ -101,7 +105,6 @@ $(eval $(call gb_CppunitTest_use_components,dbaccess_RowSetClones,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
 ))
 

@@ -40,26 +40,29 @@ typedef ::cppu::WeakImplHelper<
     {
         public:
             MenuBarFactory( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~MenuBarFactory() override;
+            virtual ~MenuBarFactory();
 
-            virtual OUString SAL_CALL getImplementationName() override
+            virtual OUString SAL_CALL getImplementationName()
+                throw (css::uno::RuntimeException, std::exception) override
             {
                 return OUString("com.sun.star.comp.framework.MenuBarFactory");
             }
 
-            virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+            virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+                throw (css::uno::RuntimeException, std::exception) override
             {
                 return cppu::supportsService(this, ServiceName);
             }
 
-            virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+            virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+                throw (css::uno::RuntimeException, std::exception) override
             {
                 css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UIElementFactory" };
                 return aSeq;
             }
 
             // XUIElementFactory
-            virtual css::uno::Reference< css::ui::XUIElement > SAL_CALL createUIElement( const OUString& ResourceURL, const css::uno::Sequence< css::beans::PropertyValue >& Args ) override;
+            virtual css::uno::Reference< css::ui::XUIElement > SAL_CALL createUIElement( const OUString& ResourceURL, const css::uno::Sequence< css::beans::PropertyValue >& Args ) throw ( css::container::NoSuchElementException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
 
             static void CreateUIElement(const OUString& ResourceURL
                         ,const css::uno::Sequence< css::beans::PropertyValue >& Args

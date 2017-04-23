@@ -38,32 +38,34 @@ namespace com { namespace sun { namespace star {
  */
 class XMLChangeImportContext : public SvXMLImportContext
 {
+    bool bIsStart;
+    bool bIsEnd;
+    bool bIsOutsideOfParagraph;
+
 public:
-    enum class Element { START, END, POINT };
+
 
     /**
      * import a change mark
      * (<text:change>, <text:change-start>, <text:change-end>)
      * Note: a <text:change> mark denotes start and end of a change
-     * simultaneously, as in Element::POINT.
+     * simultaniously, so both bIsStart and bIsEnd parameters would
+     * be set true.
      */
     XMLChangeImportContext(
         SvXMLImport& rImport,
         sal_Int16 nPrefix,
         const OUString& rLocalName,
-        Element eElement,
+        bool bIsStart,  /// mark start of a change
+        bool bIsEnd,    /// mark end of a change
         /// true if change mark is encountered outside of a paragraph
         /// (usually before a section or table)
-        bool bIsOutsideOfParagraph);
+        bool bIsOutsideOfParagraph = false);
 
-    virtual ~XMLChangeImportContext() override;
+    virtual ~XMLChangeImportContext();
 
     virtual void StartElement(
         const css::uno::Reference<css::xml::sax::XAttributeList> & xAttrList) override;
-
-private:
-    Element m_Element;
-    bool m_bIsOutsideOfParagraph;
 };
 
 #endif

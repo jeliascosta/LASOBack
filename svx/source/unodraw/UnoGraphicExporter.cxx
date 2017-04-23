@@ -140,26 +140,27 @@ namespace {
     {
     public:
         GraphicExporter();
+        virtual ~GraphicExporter();
 
         // XFilter
-        virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) override;
-        virtual void SAL_CALL cancel(  ) override;
+        virtual sal_Bool SAL_CALL filter( const Sequence< PropertyValue >& aDescriptor ) throw(RuntimeException, std::exception) override;
+        virtual void SAL_CALL cancel(  ) throw(RuntimeException, std::exception) override;
 
         // XExporter
-        virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) override;
+        virtual void SAL_CALL setSourceDocument( const Reference< XComponent >& xDoc ) throw(IllegalArgumentException, RuntimeException, std::exception) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName(  ) override;
-        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+        virtual OUString SAL_CALL getImplementationName(  ) throw(RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception) override;
+        virtual Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(RuntimeException, std::exception) override;
 
         // XMimeTypeInfo
-        virtual sal_Bool SAL_CALL supportsMimeType( const OUString& MimeTypeName ) override;
-        virtual Sequence< OUString > SAL_CALL getSupportedMimeTypeNames(  ) override;
+        virtual sal_Bool SAL_CALL supportsMimeType( const OUString& MimeTypeName ) throw (RuntimeException, std::exception) override;
+        virtual Sequence< OUString > SAL_CALL getSupportedMimeTypeNames(  ) throw (RuntimeException, std::exception) override;
 
         VclPtr<VirtualDevice> CreatePageVDev( SdrPage* pPage, sal_uIntPtr nWidthPixel, sal_uIntPtr nHeightPixel ) const;
 
-        DECL_LINK( CalcFieldValueHdl, EditFieldInfo*, void );
+        DECL_LINK_TYPED( CalcFieldValueHdl, EditFieldInfo*, void );
 
         void ParseSettings( const Sequence< PropertyValue >& aDescriptor, ExportSettings& rSettings );
         bool GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, bool bVectorType );
@@ -177,7 +178,7 @@ namespace {
         SdrModel*           mpDoc;
     };
 
-    /** creates a bitmap that is optionally transparent from a metafile
+    /** creates a bitmap that is optionaly transparent from a metafile
     */
     BitmapEx GetBitmapFromMetaFile( const GDIMetaFile& rMtf, bool bTransparent, const Size* pSize )
     {
@@ -193,18 +194,18 @@ namespace {
             {
                 // use 100th mm for primitive bitmap converter tool, input is pixel
                 // use a real OutDev to get the correct DPI, the static LogicToLogic assumes 72dpi which is wrong (!)
-                const Size aSize100th(Application::GetDefaultDevice()->PixelToLogic(*pSize, MapMode(MapUnit::Map100thMM)));
+                const Size aSize100th(Application::GetDefaultDevice()->PixelToLogic(*pSize, MapMode(MAP_100TH_MM)));
 
                 aRange.expand(basegfx::B2DPoint(aSize100th.Width(), aSize100th.Height()));
 
-                // when explicitly pixels are requested from the GraphicExporter, use a *very* high limit
+                // when explicitely pixels are requested from the GraphicExporter, use a *very* high limit
                 // of 16gb (4096x4096 pixels), else use the default for the converters
                 nMaximumQuadraticPixels = std::min(sal_uInt32(4096 * 4096), sal_uInt32(pSize->Width() * pSize->Height()));
             }
             else
             {
                 // use 100th mm for primitive bitmap converter tool
-                const Size aSize100th(OutputDevice::LogicToLogic(rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapMode(MapUnit::Map100thMM)));
+                const Size aSize100th(OutputDevice::LogicToLogic(rMtf.GetPrefSize(), rMtf.GetPrefMapMode(), MapMode(MAP_100TH_MM)));
 
                 aRange.expand(basegfx::B2DPoint(aSize100th.Width(), aSize100th.Height()));
             }
@@ -223,8 +224,8 @@ namespace {
 
                 // get hairline and full bound rect to evtl. reduce given target pixel size when
                 // it is known that it will be expanded to get the right and bottom hairlines right
-                tools::Rectangle aHairlineRect;
-                const tools::Rectangle aRect(rMtf.GetBoundRect(*Application::GetDefaultDevice(), &aHairlineRect));
+                Rectangle aHairlineRect;
+                const Rectangle aRect(rMtf.GetBoundRect(*Application::GetDefaultDevice(), &aHairlineRect));
 
                 if(!aRect.IsEmpty() && !aHairlineRect.IsEmpty())
                 {
@@ -282,6 +283,7 @@ class ImplExportCheckVisisbilityRedirector : public sdr::contact::ViewObjectCont
 {
 public:
     explicit ImplExportCheckVisisbilityRedirector( SdrPage* pCurrentPage );
+    virtual ~ImplExportCheckVisisbilityRedirector();
 
     virtual drawinglayer::primitive2d::Primitive2DContainer createRedirectedPrimitive2DSequence(
         const sdr::contact::ViewObjectContact& rOriginal,
@@ -293,6 +295,10 @@ private:
 
 ImplExportCheckVisisbilityRedirector::ImplExportCheckVisisbilityRedirector( SdrPage* pCurrentPage )
 :   ViewObjectContactRedirector(), mpCurrentPage( pCurrentPage )
+{
+}
+
+ImplExportCheckVisisbilityRedirector::~ImplExportCheckVisisbilityRedirector()
 {
 }
 
@@ -327,7 +333,11 @@ GraphicExporter::GraphicExporter()
 {
 }
 
-IMPL_LINK(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
+GraphicExporter::~GraphicExporter()
+{
+}
+
+IMPL_LINK_TYPED(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 {
     if( pInfo )
     {
@@ -345,23 +355,23 @@ IMPL_LINK(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 
                 switch(mpDoc->GetPageNumType())
                 {
-                    case css::style::NumberingType::CHARS_UPPER_LETTER:
-                        aPageNumValue += OUStringLiteral1( (mnPageNumber - 1) % 26 + 'A' );
+                    case SVX_CHARS_UPPER_LETTER:
+                        aPageNumValue += OUString( (sal_Unicode)(char)((mnPageNumber - 1) % 26 + 'A') );
                         break;
-                    case css::style::NumberingType::CHARS_LOWER_LETTER:
-                        aPageNumValue += OUStringLiteral1( (mnPageNumber - 1) % 26 + 'a' );
+                    case SVX_CHARS_LOWER_LETTER:
+                        aPageNumValue += OUString( (sal_Unicode)(char)((mnPageNumber - 1) % 26 + 'a') );
                         break;
-                    case css::style::NumberingType::ROMAN_UPPER:
+                    case SVX_ROMAN_UPPER:
                         bUpper = true;
                         SAL_FALLTHROUGH;
-                    case css::style::NumberingType::ROMAN_LOWER:
+                    case SVX_ROMAN_LOWER:
                         aPageNumValue += SvxNumberFormat::CreateRomanString(mnPageNumber, bUpper);
                         break;
-                    case css::style::NumberingType::NUMBER_NONE:
+                    case SVX_NUMBER_NONE:
                         aPageNumValue = " ";
                         break;
                     default:
-                        aPageNumValue += OUString::number( mnPageNumber );
+                        aPageNumValue += OUString::number( (sal_Int32)mnPageNumber );
                 }
 
                 pInfo->SetRepresentation( aPageNumValue );
@@ -384,7 +394,7 @@ IMPL_LINK(GraphicExporter, CalcFieldValueHdl, EditFieldInfo*, pInfo, void)
 VclPtr<VirtualDevice> GraphicExporter::CreatePageVDev( SdrPage* pPage, sal_uIntPtr nWidthPixel, sal_uIntPtr nHeightPixel ) const
 {
     VclPtr<VirtualDevice>  pVDev = VclPtr<VirtualDevice>::Create();
-    MapMode         aMM( MapUnit::Map100thMM );
+    MapMode         aMM( MAP_100TH_MM );
 
     Point aPoint( 0, 0 );
     Size aPageSize(pPage->GetSize());
@@ -432,7 +442,7 @@ VclPtr<VirtualDevice> GraphicExporter::CreatePageVDev( SdrPage* pPage, sal_uIntP
         pView->SetHlplVisible( false );
         pView->SetGlueVisible( false );
         pView->ShowSdrPage(pPage);
-        vcl::Region aRegion (tools::Rectangle( aPoint, aPageSize ) );
+        vcl::Region aRegion (Rectangle( aPoint, aPageSize ) );
 
         ImplExportCheckVisisbilityRedirector aRedirector( mpCurrentPage );
 
@@ -636,7 +646,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
 
             if(pCorrectProperties)
             {
-                pTempBackgroundShape = new SdrRectObj(tools::Rectangle(Point(0,0), pPage->GetSize()));
+                pTempBackgroundShape = new SdrRectObj(Rectangle(Point(0,0), pPage->GetSize()));
                 pTempBackgroundShape->SetMergedItemSet(pCorrectProperties->GetItemSet());
                 pTempBackgroundShape->SetMergedItem(XLineStyleItem(drawing::LineStyle_NONE));
                 pTempBackgroundShape->NbcSetStyleSheet(pCorrectProperties->GetStyleSheet(), true);
@@ -687,15 +697,16 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                     }
                 }
 
-                std::unique_ptr<SdrView> xLocalView;
-                if (FmFormModel* pFormModel = dynamic_cast<FmFormModel*>(mpDoc))
+                std::unique_ptr< SdrView > pLocalView;
+                if( dynamic_cast<FmFormModel*>( mpDoc )  )
                 {
-                    xLocalView.reset(new FmFormView(pFormModel, aVDev) );
+                    pLocalView.reset( new FmFormView( dynamic_cast<FmFormModel*>( mpDoc ), aVDev )  );
                 }
                 else
                 {
-                    xLocalView.reset(new SdrView(mpDoc, aVDev));
+                    pLocalView.reset( new SdrView( mpDoc, aVDev ) );
                 }
+
 
                 ScopedVclPtr<VirtualDevice> pVDev(CreatePageVDev( pPage, nWidthPix, nHeightPix ));
 
@@ -720,9 +731,9 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
 
                 // create a view
                 std::unique_ptr< SdrView > pView;
-                if (FmFormModel *pFormModel = dynamic_cast<FmFormModel*>(mpDoc))
+                if( dynamic_cast<FmFormModel*>( mpDoc ) !=  nullptr  )
                 {
-                    pView.reset(new FmFormView(pFormModel, aVDev));
+                    pView.reset(new FmFormView( dynamic_cast<FmFormModel*>( mpDoc ), aVDev ) );
                 }
                 else
                 {
@@ -734,13 +745,13 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 pView->ShowSdrPage( pPage );
 
                 // tdf#96922 completely deactivate EditView PageVisualization, including
-                // PageBackground (formerly 'wiese').
+                // PageBackground (formally 'wiese').
                 pView->SetPagePaintingAllowed(false);
 
                 const Point aNewOrg( pPage->GetLftBorder(), pPage->GetUppBorder() );
                 aNewSize = Size( aSize.Width() - pPage->GetLftBorder() - pPage->GetRgtBorder(),
                                  aSize.Height() - pPage->GetUppBorder() - pPage->GetLwrBorder() );
-                const tools::Rectangle aClipRect( aNewOrg, aNewSize );
+                const Rectangle aClipRect( aNewOrg, aNewSize );
                 MapMode         aVMap( aMap );
 
                 aVDev->Push();
@@ -751,7 +762,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 // Use new StandardCheckVisisbilityRedirector
                 ImplExportCheckVisisbilityRedirector aRedirector( mpCurrentPage );
 
-                pView->CompleteRedraw(aVDev, vcl::Region(tools::Rectangle(aNewOrg, aNewSize)), &aRedirector);
+                pView->CompleteRedraw(aVDev, vcl::Region(Rectangle(aNewOrg, aNewSize)), &aRedirector);
 
                 aVDev->Pop();
 
@@ -823,7 +834,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 if( pObj && dynamic_cast<const SdrGrafObj*>( pObj) != nullptr && !static_cast<SdrGrafObj*>(pObj)->HasText() )
                 {
                     aGraphic = static_cast<SdrGrafObj*>(pObj)->GetTransformedGraphic();
-                    if ( aGraphic.GetType() == GraphicType::Bitmap )
+                    if ( aGraphic.GetType() == GRAPHIC_BITMAP )
                     {
                         Size aSizePixel( aGraphic.GetSizePixel() );
                         if( rSettings.mnWidth && rSettings.mnHeight &&
@@ -849,8 +860,8 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 if( pObj && dynamic_cast<const SdrTextObj*>( pObj) !=  nullptr
                     && static_cast<SdrTextObj*>(pObj)->HasText() )
                 {
-                    tools::Rectangle aScrollRectangle;
-                    tools::Rectangle aPaintRectangle;
+                    Rectangle aScrollRectangle;
+                    Rectangle aPaintRectangle;
 
                     const std::unique_ptr< GDIMetaFile > pMtf(
                         static_cast<SdrTextObj*>(pObj)->GetTextScrollMetaFileAndRectangle(
@@ -859,7 +870,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                     // take the larger one of the two rectangles (that
                     // should be the bound rect of the retrieved
                     // metafile)
-                    tools::Rectangle aTextRect;
+                    Rectangle aTextRect;
 
                     if( aScrollRectangle.IsInside( aPaintRectangle ) )
                         aTextRect = aScrollRectangle;
@@ -880,11 +891,11 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                     pMtf->AddAction( new MetaCommentAction(
                                          "XTEXT_SCROLLRECT", 0,
                                          reinterpret_cast<sal_uInt8 const*>(&aScrollRectangle),
-                                         sizeof( tools::Rectangle ) ) );
+                                         sizeof( Rectangle ) ) );
                     pMtf->AddAction( new MetaCommentAction(
                                          "XTEXT_PAINTRECT", 0,
                                          reinterpret_cast<sal_uInt8 const*>(&aPaintRectangle),
-                                         sizeof( tools::Rectangle ) ) );
+                                         sizeof( Rectangle ) ) );
 
                     aGraphic = Graphic( *pMtf );
 
@@ -899,7 +910,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
             ScopedVclPtrInstance< VirtualDevice > aOut;
 
             // calculate bound rect for all shapes
-            tools::Rectangle aBound;
+            Rectangle aBound;
 
             {
                 std::vector< SdrObject* >::iterator aIter = aShapes.begin();
@@ -908,7 +919,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
                 while( aIter != aEnd )
                 {
                     SdrObject* pObj = (*aIter++);
-                    tools::Rectangle aR1(pObj->GetCurrentBoundRect());
+                    Rectangle aR1(pObj->GetCurrentBoundRect());
                     if (aBound.IsEmpty())
                         aBound=aR1;
                     else
@@ -990,6 +1001,7 @@ bool GraphicExporter::GetGraphic( ExportSettings& rSettings, Graphic& aGraphic, 
 
 // XFilter
 sal_Bool SAL_CALL GraphicExporter::filter( const Sequence< PropertyValue >& aDescriptor )
+    throw(RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -1070,6 +1082,7 @@ sal_Bool SAL_CALL GraphicExporter::filter( const Sequence< PropertyValue >& aDes
 }
 
 void SAL_CALL GraphicExporter::cancel()
+    throw(RuntimeException, std::exception)
 {
 }
 
@@ -1077,6 +1090,7 @@ void SAL_CALL GraphicExporter::cancel()
 
 /** the source 'document' could be a XDrawPage, a XShape or a generic XShapes */
 void SAL_CALL GraphicExporter::setSourceDocument( const Reference< lang::XComponent >& xComponent )
+    throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     ::SolarMutexGuard aGuard;
 
@@ -1183,23 +1197,26 @@ void SAL_CALL GraphicExporter::setSourceDocument( const Reference< lang::XCompon
 
 // XServiceInfo
 OUString SAL_CALL GraphicExporter::getImplementationName(  )
+    throw(RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.Draw.GraphicExporter" );
 }
 
 sal_Bool SAL_CALL GraphicExporter::supportsService( const OUString& ServiceName )
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL GraphicExporter::getSupportedServiceNames(  )
+    throw(RuntimeException, std::exception)
 {
     Sequence< OUString > aSupportedServiceNames { "com.sun.star.drawing.GraphicExportFilter" };
     return aSupportedServiceNames;
 }
 
 // XMimeTypeInfo
-sal_Bool SAL_CALL GraphicExporter::supportsMimeType( const OUString& rMimeTypeName )
+sal_Bool SAL_CALL GraphicExporter::supportsMimeType( const OUString& rMimeTypeName ) throw (RuntimeException, std::exception)
 {
     GraphicFilter &rFilter = GraphicFilter::GetGraphicFilter();
     sal_uInt16 nCount = rFilter.GetExportFormatCount();
@@ -1215,7 +1232,7 @@ sal_Bool SAL_CALL GraphicExporter::supportsMimeType( const OUString& rMimeTypeNa
     return false;
 }
 
-Sequence< OUString > SAL_CALL GraphicExporter::getSupportedMimeTypeNames(  )
+Sequence< OUString > SAL_CALL GraphicExporter::getSupportedMimeTypeNames(  ) throw (RuntimeException, std::exception)
 {
     GraphicFilter &rFilter = GraphicFilter::GetGraphicFilter();
     sal_uInt16 nCount = rFilter.GetExportFormatCount();

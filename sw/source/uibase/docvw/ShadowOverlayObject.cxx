@@ -44,8 +44,7 @@ private:
     ShadowState                 maShadowState;
 
 protected:
-    virtual void create2DDecomposition(
-        drawinglayer::primitive2d::Primitive2DContainer& rContainer,
+    virtual drawinglayer::primitive2d::Primitive2DContainer create2DDecomposition(
         const drawinglayer::geometry::ViewInformation2D& rViewInformation) const override;
 
 public:
@@ -60,19 +59,21 @@ public:
     {}
 
     // data access
+    const basegfx::B2DPoint& getBasePosition() const { return maBasePosition; }
     const basegfx::B2DPoint& getSecondPosition() const { return maSecondPosition; }
+    ShadowState getShadowState() const { return maShadowState; }
 
     virtual bool operator==( const drawinglayer::primitive2d::BasePrimitive2D& rPrimitive ) const override;
 
     DeclPrimitive2DIDBlock()
 };
 
-void ShadowPrimitive::create2DDecomposition(
-    drawinglayer::primitive2d::Primitive2DContainer& rContainer,
+drawinglayer::primitive2d::Primitive2DContainer ShadowPrimitive::create2DDecomposition(
     const drawinglayer::geometry::ViewInformation2D& /*rViewInformation*/) const
 {
     // get logic sizes in object coordinate system
-    basegfx::B2DRange aRange(maBasePosition);
+    drawinglayer::primitive2d::Primitive2DContainer xRetval;
+    basegfx::B2DRange aRange(getBasePosition());
 
     switch(maShadowState)
     {
@@ -89,10 +90,12 @@ void ShadowPrimitive::create2DDecomposition(
                 basegfx::BColor(180.0/255.0,180.0/255.0,180.0/255.0),
                 2);
 
-            rContainer.push_back(
+            const drawinglayer::primitive2d::Primitive2DReference xReference(
                 new drawinglayer::primitive2d::FillGradientPrimitive2D(
                     aRange,
                     aFillGradientAttribute));
+
+            xRetval = drawinglayer::primitive2d::Primitive2DContainer { xReference };
             break;
         }
         case SS_VIEW:
@@ -108,10 +111,12 @@ void ShadowPrimitive::create2DDecomposition(
                 basegfx::BColor(180.0/255.0,180.0/255.0,180.0/255.0),
                 4);
 
-            rContainer.push_back(
+            const drawinglayer::primitive2d::Primitive2DReference xReference(
                 new drawinglayer::primitive2d::FillGradientPrimitive2D(
                     aRange,
                     aFillGradientAttribute));
+
+            xRetval = drawinglayer::primitive2d::Primitive2DContainer { xReference };
             break;
         }
         case SS_EDIT:
@@ -127,10 +132,12 @@ void ShadowPrimitive::create2DDecomposition(
                 basegfx::BColor(83.0/255.0,83.0/255.0,83.0/255.0),
                 4);
 
-            rContainer.push_back(
+            const drawinglayer::primitive2d::Primitive2DReference xReference(
                 new drawinglayer::primitive2d::FillGradientPrimitive2D(
                     aRange,
                     aFillGradientAttribute));
+
+            xRetval = drawinglayer::primitive2d::Primitive2DContainer { xReference };
             break;
         }
         default:
@@ -138,6 +145,8 @@ void ShadowPrimitive::create2DDecomposition(
             break;
         }
     }
+
+    return xRetval;
 }
 
 bool ShadowPrimitive::operator==( const drawinglayer::primitive2d::BasePrimitive2D& rPrimitive ) const
@@ -146,9 +155,9 @@ bool ShadowPrimitive::operator==( const drawinglayer::primitive2d::BasePrimitive
     {
         const ShadowPrimitive& rCompare = static_cast< const ShadowPrimitive& >(rPrimitive);
 
-        return (maBasePosition == rCompare.maBasePosition
+        return (getBasePosition() == rCompare.getBasePosition()
             && getSecondPosition() == rCompare.getSecondPosition()
-            && maShadowState == rCompare.maShadowState);
+            && getShadowState() == rCompare.getShadowState());
     }
 
     return false;
@@ -209,7 +218,7 @@ drawinglayer::primitive2d::Primitive2DContainer ShadowOverlayObject::createOverl
 {
     const drawinglayer::primitive2d::Primitive2DReference aReference(
         new ShadowPrimitive( getBasePosition(),
-                             maSecondPosition,
+                             GetSecondPosition(),
                              GetShadowState() ) );
     return drawinglayer::primitive2d::Primitive2DContainer { aReference };
 }
@@ -227,7 +236,7 @@ void ShadowOverlayObject::SetShadowState(ShadowState aState)
 void ShadowOverlayObject::SetPosition( const basegfx::B2DPoint& rPoint1,
                                        const basegfx::B2DPoint& rPoint2)
 {
-    if(!rPoint1.equal(getBasePosition()) || !rPoint2.equal(maSecondPosition))
+    if(!rPoint1.equal(getBasePosition()) || !rPoint2.equal(GetSecondPosition()))
     {
         maBasePosition = rPoint1;
         maSecondPosition = rPoint2;

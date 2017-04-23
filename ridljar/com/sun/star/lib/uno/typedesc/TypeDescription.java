@@ -23,6 +23,9 @@ import com.sun.star.lib.uno.typeinfo.MemberTypeInfo;
 import com.sun.star.lib.uno.typeinfo.MethodTypeInfo;
 import com.sun.star.lib.uno.typeinfo.ParameterTypeInfo;
 import com.sun.star.lib.uno.typeinfo.TypeInfo;
+import com.sun.star.uno.IFieldDescription;
+import com.sun.star.uno.IMethodDescription;
+import com.sun.star.uno.ITypeDescription;
 import com.sun.star.uno.Type;
 import com.sun.star.uno.TypeClass;
 import java.lang.ref.ReferenceQueue;
@@ -33,12 +36,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Supplies information about UNO types. Allows to examine a type
- * in detail (e.g. it is used for marshaling/unmarshaling).
+ * Supplies information about UNO types.
  *
  * @since UDK2.0
  */
-public final class TypeDescription {
+public final class TypeDescription implements ITypeDescription {
     public static TypeDescription getTypeDescription(String typeName)
         throws ClassNotFoundException
     {
@@ -61,7 +63,7 @@ public final class TypeDescription {
         throws ClassNotFoundException
     {
         //TODO: synchronize on type?
-        TypeDescription desc = type.getTypeDescription();
+        TypeDescription desc = (TypeDescription) type.getTypeDescription();
         if (desc == null) {
             desc = getTypeDescription(type.getTypeName());
             type.setTypeDescription(desc);
@@ -125,38 +127,21 @@ public final class TypeDescription {
         return getTypeDescription(typeClass) != null;
     }
 
-    /**
-     * Gets the <code>TypeDescription</code> of the
-     * super, if it exists.
-     * @return  the <code>TypeDescription</code>.
-     */
-    public TypeDescription getSuperType() {
+    // @see ITypeDescription#getSuperType
+    public ITypeDescription getSuperType() {
         // Arbitrarily take the first super type:
         return superTypes == null || superTypes.length == 0
             ? null : superTypes[0];
     }
 
-    /**
-     * Gets the <code>MethodDescription</code> for every
-     * method, if this type is an interface. Otherwise
-     * returns <code>null</code>.
-     * @return  the <code>MethodDescription[]</code>.
-     */
-    public MethodDescription[] getMethodDescriptions() {
+    // @see ITypeDescription#getMethodDescriptions
+    public IMethodDescription[] getMethodDescriptions() {
         initMethodDescriptions();
         return methodDescriptions; //TODO: clone?
     }
 
-    /**
-     * Gets the <code>MethodDescription</code> for the
-     * method with index methodId, if it exists, otherwise
-     * returns <code>null</code>.
-     *
-     * @param methodId the index.
-     *
-     * @return  the <code>MethodDescription</code>.
-     */
-    public MethodDescription getMethodDescription(int methodId) {
+    // @see ITypeDescription#getMethodDescription(int)
+    public IMethodDescription getMethodDescription(int methodId) {
         initMethodDescriptions();
         return methodId < 0
             ? null
@@ -168,16 +153,8 @@ public final class TypeDescription {
             : null;
     }
 
-    /**
-     * Gets the <code>MethodDescription</code> for the
-     * method with the name <code>name</code>, if it exists,
-     * otherwise returns <code>null</code>.
-     *
-     * @param name the name of the method.
-     *
-     * @return  the <code>MethodDescription</code>.
-     */
-    public MethodDescription getMethodDescription(String name) {
+    // @see ITypeDescription#getMethodDescription(String)
+    public IMethodDescription getMethodDescription(String name) {
         initMethodDescriptions();
         for (int i = 0; i < superMethodDescriptions.length; ++i) {
             if (superMethodDescriptions[i].getName().equals(name)) {
@@ -192,26 +169,13 @@ public final class TypeDescription {
         return null;
     }
 
-    /**
-     * Gets the <code>FieldDescription</code> for every
-     * field, if this type is an interface. Otherwise
-     * returns <code>null</code>.
-     * @return  the <code>FieldDescription[]</code>.
-     */
-    public FieldDescription[] getFieldDescriptions() {
+    // @see ITypeDescription#getFieldDescriptions
+    public IFieldDescription[] getFieldDescriptions() {
         return fieldDescriptions; //TODO: clone?
     }
 
-    /**
-     * Gets the <code>FieldDescription</code> for the
-     * field with the name <code>name</code>, if it exists,
-     * otherwise returns <code>null</code>.
-     *
-     * @param name the name of the field.
-     *
-     * @return  the <code>FieldDescription</code>.
-     */
-    public FieldDescription getFieldDescription(String name) {
+    // @see ITypeDescription#getFieldDescription
+    public IFieldDescription getFieldDescription(String name) {
         for (int i = 0; i < fieldDescriptions.length; ++i) {
             if (fieldDescriptions[i].getName().equals(name)) {
                 return fieldDescriptions[i];
@@ -221,102 +185,27 @@ public final class TypeDescription {
             ? superTypes[0].getFieldDescription(name) : null;
     }
 
-    /**
-     * Gets the IDL <code>TypeClass</code> of the type.
-     * @return  the <code>TypeClass</code>.
-     */
+    // @see ITypeDescription#getTypeClass
     public TypeClass getTypeClass() {
         return typeClass;
     }
 
-    /**
-     * Gets the component <code>TypeDescription</code> if
-     * this is an array type, otherwise returns <code>null</code>.
-     * @return the <code>TypeDescription</code>
-     */
-    public TypeDescription getComponentType() {
+    // @see ITypeDescription#getComponentType
+    public ITypeDescription getComponentType() {
         return componentType;
     }
 
-    /**
-     * Gets the (UNO) type name.
-     * <table>
-     *   <caption>Mapping from UNO types to type names</caption>
-     *   <thead>
-     *     <tr><th>UNO type</th><th>type name</th></tr>
-     *   </thead>
-     *   <tbody>
-     *     <tr><td>VOID</td><td><code>"void"</code></td></tr>
-     *     <tr><td>BOOLEAN</td><td><code>"boolean"</code></td></tr>
-     *     <tr><td>CHAR</td><td><code>"char"</code></td></tr>
-     *     <tr><td>BYTE</td><td><code>"byte"</code></td></tr>
-     *     <tr><td>SHORT</td><td><code>"short"</code></td></tr>
-     *     <tr>
-     *       <td>UNSIGNED SHORT</td><td><code>"unsigned short"</code></td>
-     *     </tr>
-     *     <tr><td>LONG</td><td><code>"long"</code></td></tr>
-     *     <tr><td>UNSIGNED LONG</td><td><code>"unsigned long"</code></td></tr>
-     *     <tr><td>HYPER</td><td><code>"hyper"</code></td></tr>
-     *     <tr>
-     *       <td>UNSIGNED HYPER</td><td><code>"unsigned hyper"</code></td>
-     *     </tr>
-     *     <tr><td>FLOAT</td><td><code>"float"</code></td></tr>
-     *     <tr><td>DOUBLE</td><td><code>"double"</code></td></tr>
-     *     <tr><td>STRING</td><td><code>"string"</code></td></tr>
-     *     <tr><td>TYPE</td><td><code>"type"</code></td></tr>
-     *     <tr><td>ANY</td><td><code>"any"</code></td></tr>
-     *     <tr>
-     *       <td>sequence type of base type <var>T</var></td>
-     *       <td><code>"[]"</code> followed by type name for <var>T</var></td>
-     *     </tr>
-     *     <tr>
-     *       <td>enum type named <var>N</var></td>
-     *       <td><var>N</var> (see below)</td>
-     *     </tr>
-     *     <tr>
-     *       <td>struct type named <var>N</var></td>
-     *       <td><var>N</var> (see below)</td>
-     *     </tr>
-     *     <tr>
-     *       <td>exception type named <var>N</var></td>
-     *       <td><var>N</var> (see below)</td>
-     *     </tr>
-     *     <tr>
-     *       <td>interface type named <var>N</var></td>
-     *       <td><var>N</var> (see below)</td>
-     *     </tr>
-     *   </tbody>
-     * </table>
-     * <p>For a UNO type named <var>N</var>, consisting of a sequence of module
-     * names <var>M<sub>1</sub></var>, ..., <var>M<sub>n</sub></var> followed by
-     * a simple name <var>S</var>, the corresponding type name consists of the
-     * same sequence of module names and simple name, with <code>"."</code>
-     * separating the individual elements.</p>
-     * @return the type name.
-     */
+    // @see ITypeDescription#getTypeName
     public String getTypeName() {
         return typeName;
     }
 
-    /**
-     * Gets the (Java) array type name.
-     * <p>The array type name is defined to be the Java class name (as returned
-     * by <code>Class.forName</code>) of the Java array class that corresponds
-     * to the UNO sequence type with this type (the UNO type represented by this
-     * <code>TypeDescription</code> instance) as base type.  For an
-     * <code>TypeDescription</code> instance representing the UNO type VOID,
-     * the array type name is defined to be
-     * <code>"[Ljava.lang.Void;"</code>.</p>
-     * @return the array type name.
-     */
+    // @see ITypeDescription#getArrayTypeName
     public String getArrayTypeName() {
         return arrayTypeName;
     }
 
-    /**
-     * Gets the corresponding java class for the type.
-     * @return   the corresponding java class.
-     */
+    // @see ITypeDescription#getZClass
     public Class<?> getZClass() {
         return zClass;
     }
@@ -416,7 +305,7 @@ public final class TypeDescription {
         case TypeClass.SEQUENCE_value:
             {
                 // assert typeName.startsWith("[]");
-                TypeDescription componentType = getTypeDescription(
+                ITypeDescription componentType = getTypeDescription(
                     typeName.substring("[]".length()));
                 // assert zClass.getName().startsWith("[");
                 return new TypeDescription(
@@ -487,7 +376,7 @@ public final class TypeDescription {
     private TypeDescription(
         TypeClass typeClass, String typeName, String arrayTypeName,
         Class<?> zClass, TypeDescription[] superTypes,
-        TypeDescription componentType)
+        ITypeDescription componentType)
     {
         this.typeClass = typeClass;
         this.typeName = typeName;
@@ -509,32 +398,32 @@ public final class TypeDescription {
             return;
         }
         if (superTypes.length == 0) { // com.sun.star.uno.XInterface
-            superMethodDescriptions = new MethodDescription[0];
-            methodDescriptions = new MethodDescription[] {
+            superMethodDescriptions = new IMethodDescription[0];
+            methodDescriptions = new IMethodDescription[] {
                 new MethodDescription(
                     "queryInterface", MethodDescription.ID_QUERY_INTERFACE,
-                    false, new TypeDescription[] { getDefinitely(Type.TYPE) },
-                    new TypeDescription[] { null }, getDefinitely(Type.ANY),
+                    false, new ITypeDescription[] { getDefinitely(Type.TYPE) },
+                    new ITypeDescription[] { null }, getDefinitely(Type.ANY),
                     null),
                 new MethodDescription(
                     "acquire", MethodDescription.ID_ACQUIRE, true,
-                    new TypeDescription[0], new TypeDescription[0],
+                    new ITypeDescription[0], new ITypeDescription[0],
                     getDefinitely(Type.VOID), null),
                 new MethodDescription(
                     "release", MethodDescription.ID_RELEASE, true,
-                    new TypeDescription[0], new TypeDescription[0],
+                    new ITypeDescription[0], new ITypeDescription[0],
                     getDefinitely(Type.VOID), null) };
         } else {
             int methodOffset = 0;
             ArrayList<MethodDescription> superList = new ArrayList<MethodDescription>();
             for (int i = 0; i < superTypes.length; ++i) {
-                MethodDescription[] ds = superTypes[i].getMethodDescriptions();
+                IMethodDescription[] ds = superTypes[i].getMethodDescriptions();
                 for (int j = 0; j < ds.length; ++j) {
                     superList.add(new MethodDescription(ds[j], methodOffset++));
                 }
             }
             superMethodDescriptions = superList.toArray(
-                new MethodDescription[superList.size()]);
+                new IMethodDescription[superList.size()]);
             ArrayList<MethodDescription> directList = new ArrayList<MethodDescription>();
             TypeInfo[] infos = getTypeInfo();
             int infoCount = infos == null ? 0 : infos.length;
@@ -551,13 +440,13 @@ public final class TypeDescription {
                     String getterName = "get" + info.getName();
                     Method getter = findMethod(methods, getterName);
                     Type t = info.getUnoType();
-                    TypeDescription type = t == null
+                    ITypeDescription type = t == null
                         ? getTypeDescription(getter.getReturnType(), info)
                         : getDefinitely(t);
                     directList.add(
                         new MethodDescription(
                             getterName, index++ + methodOffset, false,
-                            new TypeDescription[0], new TypeDescription[0],
+                            new ITypeDescription[0], new ITypeDescription[0],
                             type, getter));
                     if (!info.isReadOnly()) {
                         String setterName = "set" + info.getName();
@@ -565,8 +454,8 @@ public final class TypeDescription {
                         directList.add(
                             new MethodDescription(
                                 setterName, index++ + methodOffset, false,
-                                new TypeDescription[] { type },
-                                new TypeDescription[] { null },
+                                new ITypeDescription[] { type },
+                                new ITypeDescription[] { null },
                                 getDefinitely(Type.VOID), setter));
                     }
                 } else {
@@ -578,9 +467,9 @@ public final class TypeDescription {
                     }
                     Method method = findMethod(methods, info.getName());
                     Class<?>[] params = method.getParameterTypes();
-                    TypeDescription[] in = new TypeDescription[params.length];
-                    TypeDescription[] out
-                        = new TypeDescription[params.length];
+                    ITypeDescription[] in = new ITypeDescription[params.length];
+                    ITypeDescription[] out
+                        = new ITypeDescription[params.length];
                     for (int j = 0; j < params.length; ++j) {
                         ParameterTypeInfo p = null;
                         if (i < infoCount
@@ -590,7 +479,7 @@ public final class TypeDescription {
                             p = (ParameterTypeInfo) infos[i++];
                         }
                         Type pt = p == null ? null : p.getUnoType();
-                        TypeDescription d = pt == null
+                        ITypeDescription d = pt == null
                             ? getTypeDescription(params[j], p)
                             : getDefinitely(pt);
                         if (p == null || p.isIN()) {
@@ -612,7 +501,7 @@ public final class TypeDescription {
                 }
             }
             methodDescriptions = directList.toArray(
-                new MethodDescription[directList.size()]);
+                new IMethodDescription[directList.size()]);
         }
     }
 
@@ -671,7 +560,7 @@ public final class TypeDescription {
                 new TypeDescription[args.size()]);
     }
 
-    private FieldDescription[] calculateFieldDescriptions(
+    private IFieldDescription[] calculateFieldDescriptions(
         TypeDescription[] typeArguments)
     {
         if (typeClass != TypeClass.STRUCT && typeClass != TypeClass.EXCEPTION) {
@@ -679,11 +568,11 @@ public final class TypeDescription {
         }
         TypeInfo[] infos = getTypeInfo();
         int infoCount = infos == null ? 0 : infos.length;
-        TypeDescription superType = getSuperType();
-        FieldDescription[] superDescs = superType == null
+        ITypeDescription superType = getSuperType();
+        IFieldDescription[] superDescs = superType == null
             ? null : superType.getFieldDescriptions();
         int superCount = superDescs == null ? 0 : superDescs.length;
-        FieldDescription[] descs = new FieldDescription[
+        IFieldDescription[] descs = new IFieldDescription[
             superCount + infoCount];
         if (superCount != 0) {
             System.arraycopy(superDescs, 0, descs, 0, superCount);
@@ -737,7 +626,7 @@ public final class TypeDescription {
             "Bad UNOTYPEINFO for " + zClass + ": no method " + name);
     }
 
-    private static TypeDescription getTypeDescription(
+    private static ITypeDescription getTypeDescription(
         Class<?> zClass, TypeInfo typeInfo)
     {
         return getDefinitely(
@@ -811,9 +700,9 @@ public final class TypeDescription {
     private final String arrayTypeName;
     private final Class<?> zClass;
     private final TypeDescription[] superTypes;
-    private final TypeDescription componentType;
+    private final ITypeDescription componentType;
     private final boolean hasTypeArguments;
-    private final FieldDescription[] fieldDescriptions;
-    private MethodDescription[] methodDescriptions = null;
-    private MethodDescription[] superMethodDescriptions;
+    private final IFieldDescription[] fieldDescriptions;
+    private IMethodDescription[] methodDescriptions = null;
+    private IMethodDescription[] superMethodDescriptions;
 }

@@ -112,12 +112,10 @@ class DateImpl(DateTimeImpl):
 
     @staticmethod
     def parse(val):
-        date = val['mnDate']
-        y = date / 10000
-        if date < 0:
-            date = -date
-        m = (date / 100) % 100
+        date = val['nDate']
         d = date % 100
+        m = (date / 100) % 100
+        y = date / 10000
         return DateImpl(y, m, d)
 
 class DatePrinter(object):

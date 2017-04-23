@@ -56,13 +56,13 @@ public:
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
 
-    // constructor/destructor
+    // constructor/destuctor
     ChartAreaPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
 
-    virtual ~ChartAreaPanel() override;
+    virtual ~ChartAreaPanel();
 
     virtual void setFillTransparence(const XFillTransparenceItem& rItem) override;
     virtual void setFillFloatTransparence(const XFillFloatTransparenceItem& rItem) override;

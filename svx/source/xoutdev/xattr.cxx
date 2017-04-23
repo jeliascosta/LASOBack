@@ -28,7 +28,6 @@
 #include <com/sun/star/awt/Gradient.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/beans/PropertyValue.hpp>
-#include <o3tl/any.hxx>
 #include <svl/itempool.hxx>
 #include <editeng/memberids.hrc>
 #include <tools/stream.hxx>
@@ -151,7 +150,7 @@ OUString NameOrIndex::CheckNamedItem( const NameOrIndex* pCheckItem, const sal_u
             if( pItem && ( pItem->GetName() == pCheckItem->GetName() ) )
             {
                 // if there is already an item with the same name and the same
-                // value it's ok to set it
+                // value its ok to set it
                 if( !pCompareValueFunc( pItem, pCheckItem ) )
                 {
                     // same name but different value, we need a new name for this item
@@ -178,7 +177,7 @@ OUString NameOrIndex::CheckNamedItem( const NameOrIndex* pCheckItem, const sal_u
             int nIndex;
             for( nIndex = 0; nIndex < nCount; nIndex++ )
             {
-                const XPropertyEntry* pEntry = pDefaults->Get(nIndex);
+                XPropertyEntry* pEntry = pDefaults->Get(nIndex);
                 if( pEntry )
                 {
                     bool bFound = false;
@@ -188,25 +187,25 @@ OUString NameOrIndex::CheckNamedItem( const NameOrIndex* pCheckItem, const sal_u
                     case XATTR_FILLBITMAP:
                     {
                         const GraphicObject& rGraphicObjectA(static_cast<const XFillBitmapItem*>(pCheckItem)->GetGraphicObject());
-                        const GraphicObject& rGraphicObjectB(static_cast<const XBitmapEntry*>(pEntry)->GetGraphicObject());
+                        const GraphicObject& rGraphicObjectB(static_cast<XBitmapEntry*>(pEntry)->GetGraphicObject());
 
                         bFound = (rGraphicObjectA == rGraphicObjectB);
                         break;
                     }
                     case XATTR_LINEDASH:
-                        bFound = static_cast<const XLineDashItem*>(pCheckItem)->GetDashValue() == static_cast<const XDashEntry*>(pEntry)->GetDash();
+                        bFound = static_cast<const XLineDashItem*>(pCheckItem)->GetDashValue() == static_cast<XDashEntry*>(pEntry)->GetDash();
                         break;
                     case XATTR_LINESTART:
-                        bFound = static_cast<const XLineStartItem*>(pCheckItem)->GetLineStartValue() == static_cast<const XLineEndEntry*>(pEntry)->GetLineEnd();
+                        bFound = static_cast<const XLineStartItem*>(pCheckItem)->GetLineStartValue() == static_cast<XLineEndEntry*>(pEntry)->GetLineEnd();
                         break;
                     case XATTR_LINEEND:
-                        bFound = static_cast<const XLineEndItem*>(pCheckItem)->GetLineEndValue() == static_cast<const XLineEndEntry*>(pEntry)->GetLineEnd();
+                        bFound = static_cast<const XLineEndItem*>(pCheckItem)->GetLineEndValue() == static_cast<XLineEndEntry*>(pEntry)->GetLineEnd();
                         break;
                     case XATTR_FILLGRADIENT:
-                        bFound = static_cast<const XFillGradientItem*>(pCheckItem)->GetGradientValue() == static_cast<const XGradientEntry*>(pEntry)->GetGradient();
+                        bFound = static_cast<const XFillGradientItem*>(pCheckItem)->GetGradientValue() == static_cast<XGradientEntry*>(pEntry)->GetGradient();
                         break;
                     case XATTR_FILLHATCH:
-                        bFound = static_cast<const XFillHatchItem*>(pCheckItem)->GetHatchValue() == static_cast<const XHatchEntry*>(pEntry)->GetHatch();
+                        bFound = static_cast<const XFillHatchItem*>(pCheckItem)->GetHatchValue() == static_cast<XHatchEntry*>(pEntry)->GetHatch();
                         break;
                     }
 
@@ -260,11 +259,10 @@ OUString NameOrIndex::CheckNamedItem( const NameOrIndex* pCheckItem, const sal_u
 
 void NameOrIndex::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("NameOrIndex"));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("nameOrIndex"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("isIndex"), BAD_CAST(OString::boolean(IsIndex()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(GetName().toUtf8().getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("index"), BAD_CAST(OString::number(nPalIndex).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("index"), BAD_CAST(OString::number(GetIndex()).getStr()));
     xmlTextWriterEndElement(pWriter);
 }
 
@@ -359,7 +357,7 @@ bool XColorItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*/)
 SfxPoolItem* XLineStyleItem::CreateDefault() { return new XLineStyleItem; }
 
 XLineStyleItem::XLineStyleItem(css::drawing::LineStyle eTheLineStyle) :
-    SfxEnumItem(XATTR_LINESTYLE, eTheLineStyle)
+    SfxEnumItem(XATTR_LINESTYLE, sal::static_int_cast< sal_uInt16 >(eTheLineStyle))
 {
 }
 
@@ -381,8 +379,8 @@ SfxPoolItem* XLineStyleItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XLineStyleItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -390,7 +388,7 @@ bool XLineStyleItem::GetPresentation
 
     sal_uInt16 nId = 0;
 
-    switch( GetValue() )
+    switch( (sal_uInt16)GetValue() )
     {
         case css::drawing::LineStyle_NONE:
             nId = RID_SVXSTR_INVISIBLE;
@@ -398,7 +396,6 @@ bool XLineStyleItem::GetPresentation
         case css::drawing::LineStyle_SOLID:
             nId = RID_SVXSTR_SOLID;
             break;
-        default: break;
     }
 
     if ( nId )
@@ -425,7 +422,7 @@ bool XLineStyleItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*
         eLS = (css::drawing::LineStyle)nLS;
     }
 
-    SetValue( eLS );
+    SetValue( sal::static_int_cast< sal_uInt16 >( eLS ) );
     return true;
 }
 
@@ -708,7 +705,7 @@ SvStream& XLineDashItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
 
     if (!IsIndex())
     {
-        rOut.WriteInt32( (sal_Int32)aDash.GetDashStyle() );
+        rOut.WriteInt32( aDash.GetDashStyle() );
         rOut.WriteUInt16( aDash.GetDots() );
         rOut.WriteUInt32( aDash.GetDotLen() );
         rOut.WriteUInt16( aDash.GetDashes() );
@@ -723,8 +720,8 @@ SvStream& XLineDashItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
 bool XLineDashItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -766,10 +763,10 @@ bool XLineDashItem::QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId ) const
 
             OUString aApiName = SvxUnogetApiNameForItem(Which(), GetName());
             aPropSeq[0].Name    = "Name";
-            aPropSeq[0].Value   <<= aApiName;
+            aPropSeq[0].Value   = uno::makeAny( aApiName );
             aPropSeq[1].Name    = "LineDash";
-            aPropSeq[1].Value   <<= aLineDash;
-            rVal <<= aPropSeq;
+            aPropSeq[1].Value   = uno::makeAny( aLineDash );
+            rVal = uno::makeAny( aPropSeq );
             break;
         }
 
@@ -1003,7 +1000,7 @@ XLineDashItem* XLineDashItem::checkForUniqueItem( SdrModel* pModel ) const
                 this, XATTR_LINEDASH, &pModel->GetItemPool(),
                 pModel->GetStyleSheetPool() ? &pModel->GetStyleSheetPool()->GetPool() : nullptr,
                 XLineDashItem::CompareValueFunc, RID_SVXSTR_DASH11,
-                pModel->GetPropertyList( XPropertyListType::Dash ) );
+                pModel->GetPropertyList( XDASH_LIST ) );
 
         // if the given name is not valid, replace it!
         if( aUniqueName != GetName() )
@@ -1038,14 +1035,14 @@ SfxPoolItem* XLineWidthItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XLineWidthItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             eCoreUnit,
-    MapUnit             ePresUnit,
+    SfxMapUnit          eCoreUnit,
+    SfxMapUnit          ePresUnit,
     OUString&           rText, const IntlWrapper * pIntl
 )   const
 {
     rText = GetMetricText( (long) GetValue(),
                             eCoreUnit, ePresUnit, pIntl) +
-            " " + EditResId::GetString( GetMetricId( ePresUnit) );
+            " " + EE_RESSTR( GetMetricId( ePresUnit) );
     return true;
 }
 
@@ -1100,8 +1097,8 @@ SfxPoolItem* XLineColorItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XLineColorItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -1286,8 +1283,8 @@ SvStream& XLineStartItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
 bool XLineStartItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -1324,13 +1321,12 @@ bool XLineStartItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId )
     {
         maPolyPolygon.clear();
 
-        if( rVal.hasValue() )
+        if( rVal.hasValue() && rVal.getValue() )
         {
-            auto pCoords = o3tl::tryAccess<css::drawing::PolyPolygonBezierCoords>(
-                rVal);
-            if( !pCoords )
+            if( rVal.getValueType() != cppu::UnoType<css::drawing::PolyPolygonBezierCoords>::get())
                 return false;
 
+            css::drawing::PolyPolygonBezierCoords const * pCoords = static_cast<css::drawing::PolyPolygonBezierCoords const *>(rVal.getValue());
             if( pCoords->Coordinates.getLength() > 0 )
             {
                 maPolyPolygon = basegfx::unotools::polyPolygonBezierToB2DPolyPolygon( *pCoords );
@@ -1397,7 +1393,7 @@ XLineStartItem* XLineStartItem::checkForUniqueItem( SdrModel* pModel ) const
                 if( pItem && ( pItem->GetName() == pLineStartItem->GetName() ) )
                 {
                     // if there is already an item with the same name and the same
-                    // value it's ok to set it
+                    // value its ok to set it
                     if( pItem->GetLineStartValue() != pLineStartItem->GetLineStartValue() )
                     {
                         // same name but different value, we need a new name for this item
@@ -1419,7 +1415,7 @@ XLineStartItem* XLineStartItem::checkForUniqueItem( SdrModel* pModel ) const
                     if( pItem && ( pItem->GetName() == pLineStartItem->GetName() ) )
                     {
                         // if there is already an item with the same name and the same
-                        // value it's ok to set it
+                        // value its ok to set it
                         if( pItem->GetLineEndValue() != pLineStartItem->GetLineStartValue() )
                         {
                             // same name but different value, we need a new name for this item
@@ -1443,7 +1439,7 @@ XLineStartItem* XLineStartItem::checkForUniqueItem( SdrModel* pModel ) const
                 if( pItem && ( pItem->GetName() == pLineStartItem->GetName() ) )
                 {
                     // if there is already an item with the same name and the same
-                    // value it's ok to set it
+                    // value its ok to set it
                     if( pItem->GetLineStartValue() != pLineStartItem->GetLineStartValue() )
                     {
                         // same name but different value, we need a new name for this item
@@ -1464,7 +1460,7 @@ XLineStartItem* XLineStartItem::checkForUniqueItem( SdrModel* pModel ) const
                     if( pItem && ( pItem->GetName() == pLineStartItem->GetName() ) )
                     {
                         // if there is already an item with the same name and the same
-                        // value it's ok to set it
+                        // value its ok to set it
                         if( pItem->GetLineEndValue() != pLineStartItem->GetLineStartValue() )
                         {
                             // same name but different value, we need a new name for this item
@@ -1680,7 +1676,7 @@ XLineEndItem* XLineEndItem::checkForUniqueItem( SdrModel* pModel ) const
                 if( pItem && ( pItem->GetName() == pLineEndItem->GetName() ) )
                 {
                     // if there is already an item with the same name and the same
-                    // value it's ok to set it
+                    // value its ok to set it
                     if( pItem->GetLineStartValue() != pLineEndItem->GetLineEndValue() )
                     {
                         // same name but different value, we need a new name for this item
@@ -1702,7 +1698,7 @@ XLineEndItem* XLineEndItem::checkForUniqueItem( SdrModel* pModel ) const
                     if( pItem && ( pItem->GetName() == pLineEndItem->GetName() ) )
                     {
                         // if there is already an item with the same name and the same
-                        // value it's ok to set it
+                        // value its ok to set it
                         if( pItem->GetLineEndValue() != pLineEndItem->GetLineEndValue() )
                         {
                             // same name but different value, we need a new name for this item
@@ -1726,7 +1722,7 @@ XLineEndItem* XLineEndItem::checkForUniqueItem( SdrModel* pModel ) const
                 if( pItem && ( pItem->GetName() == pLineEndItem->GetName() ) )
                 {
                     // if there is already an item with the same name and the same
-                    // value it's ok to set it
+                    // value its ok to set it
                     if( pItem->GetLineStartValue() != pLineEndItem->GetLineEndValue() )
                     {
                         // same name but different value, we need a new name for this item
@@ -1747,7 +1743,7 @@ XLineEndItem* XLineEndItem::checkForUniqueItem( SdrModel* pModel ) const
                     if( pItem && ( pItem->GetName() == pLineEndItem->GetName() ) )
                     {
                         // if there is already an item with the same name and the same
-                        // value it's ok to set it
+                        // value its ok to set it
                         if( pItem->GetLineEndValue() != pLineEndItem->GetLineEndValue() )
                         {
                             // same name but different value, we need a new name for this item
@@ -1850,8 +1846,8 @@ XLineEndItem* XLineEndItem::checkForUniqueItem( SdrModel* pModel ) const
 bool XLineEndItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -1887,13 +1883,12 @@ bool XLineEndItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId )
     {
         maPolyPolygon.clear();
 
-        if( rVal.hasValue() )
+        if( rVal.hasValue() && rVal.getValue() )
         {
-            auto pCoords = o3tl::tryAccess<css::drawing::PolyPolygonBezierCoords>(
-                rVal);
-            if( !pCoords )
+            if( rVal.getValueType() != cppu::UnoType<css::drawing::PolyPolygonBezierCoords>::get())
                 return false;
 
+            css::drawing::PolyPolygonBezierCoords const * pCoords = static_cast<css::drawing::PolyPolygonBezierCoords const *>(rVal.getValue());
             if( pCoords->Coordinates.getLength() > 0 )
             {
                 maPolyPolygon = basegfx::unotools::polyPolygonBezierToB2DPolyPolygon( *pCoords );
@@ -1905,6 +1900,8 @@ bool XLineEndItem::PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId )
 
     return true;
 }
+
+SfxPoolItem* XLineStartWidthItem::CreateDefault() {return new XLineStartWidthItem;}
 
 XLineStartWidthItem::XLineStartWidthItem(long nWidth) :
     SfxMetricItem(XATTR_LINESTARTWIDTH, nWidth)
@@ -1929,20 +1926,20 @@ SfxPoolItem* XLineStartWidthItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) con
 bool XLineStartWidthItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             eCoreUnit,
-    MapUnit             ePresUnit,
+    SfxMapUnit          eCoreUnit,
+    SfxMapUnit          ePresUnit,
     OUString&           rText, const IntlWrapper * pIntl
 )   const
 {
     rText = GetMetricText( (long) GetValue(),
                             eCoreUnit, ePresUnit, pIntl) +
-            " " + EditResId::GetString( GetMetricId( ePresUnit) );
+            " " + EE_RESSTR( GetMetricId( ePresUnit) );
     return true;
 }
 
 bool XLineStartWidthItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= GetValue();
+    rVal <<= (sal_Int32)GetValue();
     return true;
 }
 
@@ -1953,6 +1950,8 @@ bool XLineStartWidthItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemb
     SetValue( nValue );
     return true;
 }
+
+SfxPoolItem* XLineEndWidthItem::CreateDefault() {return new XLineEndWidthItem;}
 
 XLineEndWidthItem::XLineEndWidthItem(long nWidth) :
    SfxMetricItem(XATTR_LINEENDWIDTH, nWidth)
@@ -1977,20 +1976,20 @@ SfxPoolItem* XLineEndWidthItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XLineEndWidthItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             eCoreUnit,
-    MapUnit             ePresUnit,
+    SfxMapUnit          eCoreUnit,
+    SfxMapUnit          ePresUnit,
     OUString&           rText, const IntlWrapper *pIntl
 )   const
 {
     rText = GetMetricText( (long) GetValue(),
                             eCoreUnit, ePresUnit, pIntl) +
-            " " + EditResId::GetString( GetMetricId( ePresUnit) );
+            " " + EE_RESSTR( GetMetricId( ePresUnit) );
     return true;
 }
 
 bool XLineEndWidthItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
-    rVal <<= GetValue();
+    rVal <<= (sal_Int32)GetValue();
     return true;
 }
 
@@ -2001,6 +2000,8 @@ bool XLineEndWidthItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMember
     SetValue( nValue );
     return true;
 }
+
+SfxPoolItem* XLineStartCenterItem::CreateDefault() {return new XLineStartCenterItem;}
 
 XLineStartCenterItem::XLineStartCenterItem(bool bStartCenter) :
     SfxBoolItem(XATTR_LINESTARTCENTER, bStartCenter)
@@ -2025,8 +2026,8 @@ SfxPoolItem* XLineStartCenterItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) co
 bool XLineStartCenterItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2044,13 +2045,14 @@ bool XLineStartCenterItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberI
 
 bool XLineStartCenterItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*/)
 {
-    auto b = o3tl::tryAccess<bool>(rVal);
-    if( !b )
+    if( !rVal.hasValue() || rVal.getValueType() != cppu::UnoType<bool>::get() )
         return false;
 
-    SetValue( *b );
+    SetValue( *static_cast<sal_Bool const *>(rVal.getValue()) );
     return true;
 }
+
+SfxPoolItem* XLineEndCenterItem::CreateDefault() {return new XLineEndCenterItem;}
 
 XLineEndCenterItem::XLineEndCenterItem(bool bEndCenter) :
     SfxBoolItem(XATTR_LINEENDCENTER, bEndCenter)
@@ -2075,8 +2077,8 @@ SfxPoolItem* XLineEndCenterItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) cons
 bool XLineEndCenterItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2094,11 +2096,10 @@ bool XLineEndCenterItem::QueryValue( css::uno::Any& rVal, sal_uInt8 /*nMemberId*
 
 bool XLineEndCenterItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*/)
 {
-    auto b = o3tl::tryAccess<bool>(rVal);
-    if( !b )
+    if( !rVal.hasValue() || rVal.getValueType() != cppu::UnoType<bool>::get() )
         return false;
 
-    SetValue( *b );
+    SetValue( *static_cast<sal_Bool const *>(rVal.getValue()) );
     return true;
 }
 
@@ -2108,7 +2109,7 @@ bool XLineEndCenterItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMembe
 SfxPoolItem* XFillStyleItem::CreateDefault() { return new XFillStyleItem; }
 
 XFillStyleItem::XFillStyleItem(drawing::FillStyle eFillStyle) :
-    SfxEnumItem(XATTR_FILLSTYLE, eFillStyle)
+    SfxEnumItem(XATTR_FILLSTYLE, sal::static_int_cast< sal_uInt16 >(eFillStyle))
 {
 }
 
@@ -2130,8 +2131,8 @@ SfxPoolItem* XFillStyleItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XFillStyleItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2139,7 +2140,7 @@ bool XFillStyleItem::GetPresentation
 
     sal_uInt16 nId = 0;
 
-    switch( GetValue() )
+    switch( (sal_uInt16)GetValue() )
     {
         case drawing::FillStyle_NONE:
             nId = RID_SVXSTR_INVISIBLE;
@@ -2156,7 +2157,6 @@ bool XFillStyleItem::GetPresentation
         case drawing::FillStyle_BITMAP:
             nId = RID_SVXSTR_BITMAP;
             break;
-        default: break;
     }
 
     if ( nId )
@@ -2190,19 +2190,19 @@ bool XFillStyleItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*
         eFS = (css::drawing::FillStyle)nFS;
     }
 
-    SetValue( eFS );
+    SetValue( sal::static_int_cast< sal_uInt16 >( eFS ) );
 
     return true;
 }
 
 void XFillStyleItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillStyleItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillStyleItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number((sal_Int16)GetValue()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(OString::number(GetValue()).getStr()));
 
     OUString aPresentation;
-    GetPresentation(SfxItemPresentation::Nameless, MapUnit::Map100thMM, MapUnit::Map100thMM, aPresentation);
+    GetPresentation(SFX_ITEM_PRESENTATION_NAMELESS, SFX_MAPUNIT_100TH_MM, SFX_MAPUNIT_100TH_MM, aPresentation);
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("presentation"), BAD_CAST(aPresentation.toUtf8().getStr()));
 
     xmlTextWriterEndElement(pWriter);
@@ -2239,8 +2239,8 @@ SfxPoolItem* XFillColorItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) const
 bool XFillColorItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2267,11 +2267,12 @@ bool XFillColorItem::PutValue( const css::uno::Any& rVal, sal_uInt8 /*nMemberId*
 
 void XFillColorItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("XFillColorItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("xFillColorItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(GetColorValue().AsRGBHexString().toUtf8().getStr()));
     xmlTextWriterEndElement(pWriter);
 }
+SfxPoolItem* XSecondaryFillColorItem::CreateDefault() {return new XSecondaryFillColorItem;}
 
 XSecondaryFillColorItem::XSecondaryFillColorItem(const OUString& rName, const Color& rTheColor) :
     XColorItem(XATTR_SECONDARYFILLCOLOR, rName, rTheColor)
@@ -2304,8 +2305,8 @@ sal_uInt16 XSecondaryFillColorItem::GetVersion( sal_uInt16 /*nFileFormatVersion*
 bool XSecondaryFillColorItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2451,7 +2452,7 @@ SvStream& XFillGradientItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) co
 
     if (!IsIndex())
     {
-        rOut.WriteInt16( (sal_Int16)aGradient.GetGradientStyle() );
+        rOut.WriteInt16( aGradient.GetGradientStyle() );
 
         sal_uInt16 nTmp;
 
@@ -2494,8 +2495,8 @@ sal_uInt16 XFillGradientItem::GetVersion( sal_uInt16 /*nFileFormatVersion*/) con
 bool XFillGradientItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2528,10 +2529,10 @@ bool XFillGradientItem::QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId ) c
 
             OUString aApiName = SvxUnogetApiNameForItem(Which(), GetName());
             aPropSeq[0].Name    = "Name";
-            aPropSeq[0].Value   <<= aApiName;
+            aPropSeq[0].Value   = uno::makeAny( aApiName );
             aPropSeq[1].Name    = "FillGradient";
-            aPropSeq[1].Value   <<= aGradient2;
-            rVal <<= aPropSeq;
+            aPropSeq[1].Value   = uno::makeAny( aGradient2 );
+            rVal = uno::makeAny( aPropSeq );
             break;
         }
 
@@ -2735,7 +2736,7 @@ XFillGradientItem* XFillGradientItem::checkForUniqueItem( SdrModel* pModel ) con
                 this, Which(), &pModel->GetItemPool(),
                 pModel->GetStyleSheetPool() ? &pModel->GetStyleSheetPool()->GetPool() : nullptr,
                 XFillGradientItem::CompareValueFunc, RID_SVXSTR_GRADIENT,
-                pModel->GetPropertyList( XPropertyListType::Gradient ) );
+                pModel->GetPropertyList( XGRADIENT_LIST ) );
 
         // if the given name is not valid, replace it!
         if( aUniqueName != GetName() )
@@ -2805,7 +2806,7 @@ bool XFillFloatTransparenceItem::PutValue( const css::uno::Any& rVal, sal_uInt8 
 }
 
 bool XFillFloatTransparenceItem::GetPresentation(    SfxItemPresentation ePres,
-                                                                    MapUnit eCoreUnit, MapUnit ePresUnit,
+                                                                    SfxMapUnit eCoreUnit, SfxMapUnit ePresUnit,
                                                                     OUString& rText,
                                                                     const IntlWrapper * pIntlWrapper ) const
 {
@@ -2938,7 +2939,7 @@ SvStream& XFillHatchItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
 
     if (!IsIndex())
     {
-        rOut.WriteInt16( (sal_Int16)aHatch.GetHatchStyle() );
+        rOut.WriteInt16( aHatch.GetHatchStyle() );
 
         sal_uInt16 nTmp;
         nTmp = VCLTOSVCOL( aHatch.GetColor().GetRed() ); rOut.WriteUInt16( nTmp );
@@ -2952,11 +2953,12 @@ SvStream& XFillHatchItem::Store( SvStream& rOut, sal_uInt16 nItemVersion ) const
     return rOut;
 }
 
+
 bool XFillHatchItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    MapUnit             /*eCoreUnit*/,
-    MapUnit             /*ePresUnit*/,
+    SfxMapUnit          /*eCoreUnit*/,
+    SfxMapUnit          /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -2993,10 +2995,10 @@ bool XFillHatchItem::QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId ) cons
 
             OUString aApiName = SvxUnogetApiNameForItem(Which(), GetName());
             aPropSeq[0].Name    = "Name";
-            aPropSeq[0].Value   <<= aApiName;
+            aPropSeq[0].Value   = uno::makeAny( aApiName );
             aPropSeq[1].Name    = "FillHatch";
-            aPropSeq[1].Value   <<= aUnoHatch;
-            rVal <<= aPropSeq;
+            aPropSeq[1].Value   = uno::makeAny( aUnoHatch );
+            rVal = uno::makeAny( aPropSeq );
             break;
         }
 
@@ -3141,7 +3143,7 @@ XFillHatchItem* XFillHatchItem::checkForUniqueItem( SdrModel* pModel ) const
                 this, XATTR_FILLHATCH, &pModel->GetItemPool(),
                 pModel->GetStyleSheetPool() ? &pModel->GetStyleSheetPool()->GetPool() : nullptr,
                 XFillHatchItem::CompareValueFunc, RID_SVXSTR_HATCH10,
-                pModel->GetPropertyList( XPropertyListType::Hatch ) );
+                pModel->GetPropertyList( XHATCH_LIST ) );
 
         // if the given name is not valid, replace it!
         if( aUniqueName != GetName() )
@@ -3157,7 +3159,7 @@ XFillHatchItem* XFillHatchItem::checkForUniqueItem( SdrModel* pModel ) const
 SfxPoolItem* XFormTextStyleItem::CreateDefault() { return new XFormTextStyleItem; }
 
 XFormTextStyleItem::XFormTextStyleItem(XFormTextStyle eTheStyle) :
-    SfxEnumItem(XATTR_FORMTXTSTYLE, eTheStyle)
+    SfxEnumItem(XATTR_FORMTXTSTYLE, sal::static_int_cast< sal_uInt16 >(eTheStyle))
 {
 }
 
@@ -3191,7 +3193,7 @@ bool XFormTextStyleItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/
 {
     sal_Int32 nValue = 0;
     rVal >>= nValue;
-    SetValue((XFormTextStyle)nValue);
+    SetValue(sal::static_int_cast< sal_uInt16 >(nValue));
 
     return true;
 }
@@ -3200,7 +3202,7 @@ bool XFormTextStyleItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/
 SfxPoolItem* XFormTextAdjustItem::CreateDefault() { return new XFormTextAdjustItem; }
 
 XFormTextAdjustItem::XFormTextAdjustItem(XFormTextAdjust eTheAdjust) :
-    SfxEnumItem(XATTR_FORMTXTADJUST, eTheAdjust)
+    SfxEnumItem(XATTR_FORMTXTADJUST, sal::static_int_cast< sal_uInt16 >(eTheAdjust))
 {
 }
 
@@ -3234,7 +3236,7 @@ bool XFormTextAdjustItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*
 {
     sal_Int32 nValue = 0;
     rVal >>= nValue;
-    SetValue((XFormTextAdjust)nValue);
+    SetValue(sal::static_int_cast< sal_uInt16 >(nValue));
 
     return true;
 }
@@ -3334,7 +3336,8 @@ SfxPoolItem* XFormTextOutlineItem::Create(SvStream& rIn, sal_uInt16 /*nVer*/) co
 SfxPoolItem* XFormTextShadowItem::CreateDefault() { return new XFormTextShadowItem; }
 
 XFormTextShadowItem::XFormTextShadowItem(XFormTextShadow eFormTextShadow) :
-    SfxEnumItem(XATTR_FORMTXTSHADOW, eFormTextShadow)
+    SfxEnumItem(
+        XATTR_FORMTXTSHADOW, sal::static_int_cast< sal_uInt16 >(eFormTextShadow))
 {
 }
 
@@ -3368,7 +3371,7 @@ bool XFormTextShadowItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*
 {
     sal_Int32 nValue = 0;
     rVal >>= nValue;
-    SetValue((XFormTextShadow)nValue);
+    SetValue(sal::static_int_cast< sal_uInt16 >(nValue));
 
     return true;
 }
@@ -3506,6 +3509,13 @@ SfxPoolItem* XLineAttrSetItem::Create( SvStream& rStream, sal_uInt16 /*nVersion*
     return new XLineAttrSetItem( pSet2 );
 }
 
+/// save a set item in a stream
+SvStream& XLineAttrSetItem::Store( SvStream& rStream, sal_uInt16 nItemVersion ) const
+{
+    return SfxSetItem::Store( rStream, nItemVersion );
+}
+
+
 /// fill attribute set item
 XFillAttrSetItem::XFillAttrSetItem( SfxItemSet* pItemSet ) :
     SfxSetItem( XATTRSET_FILL, pItemSet)
@@ -3541,6 +3551,12 @@ SfxPoolItem* XFillAttrSetItem::Create( SvStream& rStream, sal_uInt16 /*nVersion*
                                     XATTR_FILL_FIRST, XATTR_FILL_LAST);
     pSet2->Load( rStream );
     return new XFillAttrSetItem( pSet2 );
+}
+
+/// save a set item in a stream
+SvStream& XFillAttrSetItem::Store( SvStream& rStream, sal_uInt16 nItemVersion ) const
+{
+    return SfxSetItem::Store( rStream, nItemVersion );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

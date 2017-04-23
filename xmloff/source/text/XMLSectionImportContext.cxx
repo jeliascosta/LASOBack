@@ -47,6 +47,14 @@ using namespace ::com::sun::star::text;
 using namespace ::xmloff::token;
 
 
+const sal_Char sAPI_TextSection[] = "com.sun.star.text.TextSection";
+const sal_Char sAPI_IndexHeaderSection[] = "com.sun.star.text.IndexHeaderSection";
+const sal_Char sAPI_IsProtected[] = "IsProtected";
+const sal_Char sAPI_Condition[] = "Condition";
+const sal_Char sAPI_IsVisible[] = "IsVisible";
+const sal_Char sAPI_IsCurrentlyVisible[] = "IsCurrentlyVisible";
+const sal_Char sAPI_ProtectionKey[] = "ProtectionKey";
+
 enum XMLSectionToken
 {
     XML_TOK_SECTION_XMLID,
@@ -85,6 +93,13 @@ XMLSectionImportContext::XMLSectionImportContext(
     sal_uInt16 nPrfx,
     const OUString& rLocalName )
 :   SvXMLImportContext(rImport, nPrfx, rLocalName)
+,   sTextSection(sAPI_TextSection)
+,   sIndexHeaderSection(sAPI_IndexHeaderSection)
+,   sCondition(sAPI_Condition)
+,   sIsVisible(sAPI_IsVisible)
+,   sProtectionKey(sAPI_ProtectionKey)
+,   sIsProtected(sAPI_IsProtected)
+,   sIsCurrentlyVisible(sAPI_IsCurrentlyVisible)
 ,   bProtect(false)
 ,   bCondOK(false)
 ,   bIsVisible(true)
@@ -124,8 +139,8 @@ void XMLSectionImportContext::StartElement(
         if (xFactory.is())
         {
             Reference<XInterface> xIfc =
-                xFactory->createInstance( bIsIndexHeader ? OUString("com.sun.star.text.IndexHeaderSection")
-                                                         : OUString("com.sun.star.text.TextSection") );
+                xFactory->createInstance( bIsIndexHeader ? sIndexHeaderSection
+                                                        : sTextSection );
             if (xIfc.is())
             {
                 Reference<XPropertySet> xPropSet(xIfc, UNO_QUERY);
@@ -152,19 +167,19 @@ void XMLSectionImportContext::StartElement(
                 // IsVisible and condition (not for index headers)
                 if (! bIsIndexHeader)
                 {
-                    xPropSet->setPropertyValue( "IsVisible", Any(bIsVisible) );
+                    xPropSet->setPropertyValue( sIsVisible, Any(bIsVisible) );
 
                     // #97450# hidden sections must be hidden on reload
                     // For backwards compatibility, set flag only if it is
                     // present
                     if( bIsCurrentlyVisibleOK )
                     {
-                        xPropSet->setPropertyValue( "IsCurrentlyVisible", Any(bIsCurrentlyVisible));
+                        xPropSet->setPropertyValue( sIsCurrentlyVisible, Any(bIsCurrentlyVisible));
                     }
 
                     if (bCondOK)
                     {
-                        xPropSet->setPropertyValue( "Condition", Any(sCond) );
+                        xPropSet->setPropertyValue( sCondition, Any(sCond) );
                     }
                 }
 
@@ -172,11 +187,11 @@ void XMLSectionImportContext::StartElement(
                 if ( bSequenceOK &&
                      IsXMLToken(GetLocalName(), XML_SECTION) )
                 {
-                    xPropSet->setPropertyValue("ProtectionKey", Any(aSequence));
+                    xPropSet->setPropertyValue(sProtectionKey, Any(aSequence));
                 }
 
                 // protection
-                xPropSet->setPropertyValue( "IsProtected", Any(bProtect) );
+                xPropSet->setPropertyValue( sIsProtected, Any(bProtect) );
 
                 // insert marker, <paragraph>, marker; then insert
                 // section over the first marker character, and delete the
@@ -184,10 +199,11 @@ void XMLSectionImportContext::StartElement(
                 Reference<XTextRange> xStart =
                     rHelper->GetCursor()->getStart();
 #ifndef DBG_UTIL
-                OUString sMarkerString(" ");
+                static const sal_Char sMarker[] = " ";
 #else
-                OUString sMarkerString("X");
+                static const sal_Char sMarker[] = "X";
 #endif
+                OUString sMarkerString(sMarker);
                 rHelper->InsertString(sMarkerString);
                 rHelper->InsertControlCharacter(
                     ControlCharacter::APPEND_PARAGRAPH );

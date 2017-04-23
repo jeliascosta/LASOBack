@@ -23,8 +23,6 @@
 #include <bastype2.hxx>
 #include <sfx2/basedlgs.hxx>
 
-#include "com/sun/star/frame/XFrame.hpp"
-
 #include <vcl/button.hxx>
 
 namespace basctl
@@ -52,7 +50,7 @@ private:
     VclPtr<FixedText>              m_pMacrosSaveInTxt;
     VclPtr<TreeListBox>            m_pBasicBox;
     VclPtr<FixedText>              m_pMacrosInTxt;
-    OUString                       m_aMacrosInTxtBaseStr;
+    OUString                m_aMacrosInTxtBaseStr;
     VclPtr<SvTreeListBox>          m_pMacroBox;
 
     VclPtr<PushButton>             m_pRunButton;
@@ -64,19 +62,16 @@ private:
     VclPtr<PushButton>             m_pNewLibButton;
     VclPtr<PushButton>             m_pNewModButton;
 
-    // For forwarding to Assign dialog
-    ::css::uno::Reference< ::css::frame::XFrame > m_xDocumentFrame;
-
     bool                    bNewDelIsDel;
     bool                    bForceStoreBasic;
 
     Mode                    nMode;
 
-    DECL_LINK( MacroSelectHdl, SvTreeListBox *, void );
-    DECL_LINK( MacroDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK( BasicSelectHdl, SvTreeListBox *, void );
-    DECL_LINK( EditModifyHdl, Edit&, void );
-    DECL_LINK( ButtonHdl, Button *, void );
+    DECL_LINK_TYPED( MacroSelectHdl, SvTreeListBox *, void );
+    DECL_LINK_TYPED( MacroDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( BasicSelectHdl, SvTreeListBox *, void );
+    DECL_LINK_TYPED( EditModifyHdl, Edit&, void );
+    DECL_LINK_TYPED( ButtonHdl, Button *, void );
 
     void                CheckButtons();
     void                SaveSetCurEntry( SvTreeListBox& rBox, SvTreeListEntry* pEntry );
@@ -90,8 +85,8 @@ private:
     void                RestoreMacroDescription();
 
 public:
-                        MacroChooser( vcl::Window* pParent, const ::css::uno::Reference< ::css::frame::XFrame >& xDocFrame, bool bCreateEntries = true );
-                        virtual ~MacroChooser() override;
+                        MacroChooser( vcl::Window* pParent, bool bCreateEntries = true );
+                        virtual ~MacroChooser();
     virtual void        dispose() override;
 
     SbMethod*           GetMacro();

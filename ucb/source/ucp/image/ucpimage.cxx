@@ -12,7 +12,6 @@
 #include <cassert>
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/ucb/IllegalIdentifierException.hpp>
 #include <com/sun/star/ucb/XContentProvider.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/uri/UriReferenceFactory.hpp>
@@ -21,13 +20,13 @@
 #include <osl/mutex.hxx>
 #include <rtl/uri.hxx>
 #include <rtl/ustrbuf.hxx>
-#include <vcl/ImageTree.hxx>
+#include <vcl/implimagetree.hxx>
 #include <vcl/svapp.hxx>
 #include <ucbhelper/content.hxx>
 
 // A LO-private ("implementation detail") UCP used to access images from help
 // content, with theme fallback and localization support as provided by VCL's
-// ImageTree.
+// ImplImageTree.
 //
 // The URL scheme is
 //
@@ -47,13 +46,16 @@ public:
     {}
 
 private:
-    OUString SAL_CALL getImplementationName() override
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     { return OUString("com.sun.star.comp.ucb.ImageContentProvider"); }
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     { return cppu::supportsService(this, ServiceName); }
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return css::uno::Sequence<OUString>{
             "com.sun.star.ucb.ImageContentProvider"};
@@ -61,6 +63,9 @@ private:
 
     css::uno::Reference<css::ucb::XContent> SAL_CALL queryContent(
         css::uno::Reference<css::ucb::XContentIdentifier> const & Identifier)
+        throw (
+            css::ucb::IllegalIdentifierException, css::uno::RuntimeException,
+            std::exception)
         override
     {
         css::uno::Reference<css::uno::XComponentContext> context;
@@ -128,7 +133,7 @@ private:
         OUString newUrl;
         {
             SolarMutexGuard g;
-            newUrl = ImageTree::get().getImageUrl(decPath, auth, lang);
+            newUrl = ImplImageTree::get().getImageUrl(decPath, auth, lang);
         }
         ucbhelper::Content content;
         return
@@ -140,7 +145,8 @@ private:
 
     sal_Int32 SAL_CALL compareContentIds(
         css::uno::Reference<css::ucb::XContentIdentifier> const & Id1,
-        css::uno::Reference<css::ucb::XContentIdentifier> const & Id2) override
+        css::uno::Reference<css::ucb::XContentIdentifier> const & Id2)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return Id1->getContentIdentifier().compareTo(
             Id2->getContentIdentifier());

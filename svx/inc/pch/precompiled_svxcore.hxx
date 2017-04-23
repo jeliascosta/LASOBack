@@ -391,6 +391,7 @@
 #include <svl/languageoptions.hxx>
 #include <svl/lstner.hxx>
 #include <svl/poolitem.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/stritem.hxx>
 #include <svl/style.hxx>
 #include <svl/svldllapi.h>
@@ -465,6 +466,7 @@
 #include <svx/ipolypolygoneditorcontroller.hxx>
 #include <svx/lathe3d.hxx>
 #include <svx/obj3d.hxx>
+#include <svx/polysc3d.hxx>
 #include <svx/scene3d.hxx>
 #include <svx/sdmetitm.hxx>
 #include <svx/sdr/animation/scheduler.hxx>

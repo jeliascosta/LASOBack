@@ -125,20 +125,23 @@ bool MediaItem::operator==( const SfxPoolItem& rItem ) const
         && m_pImpl->m_eZoom == rOther.m_pImpl->m_eZoom;
 }
 
+
 SfxPoolItem* MediaItem::Clone( SfxItemPool* ) const
 {
     return new MediaItem( *this );
 }
 
+
 bool MediaItem::GetPresentation( SfxItemPresentation,
-                                 MapUnit,
-                                 MapUnit,
-                                 OUString& rText,
-                                 const IntlWrapper * ) const
+                                                  SfxMapUnit,
+                                                  SfxMapUnit,
+                                                  OUString& rText,
+                                                  const IntlWrapper * ) const
 {
     rText.clear();
     return false;
 }
+
 
 bool MediaItem::QueryValue( css::uno::Any& rVal, sal_uInt8 ) const
 {
@@ -417,12 +420,12 @@ CreateStream(uno::Reference<embed::XStorage> const& xStorage,
     uno::Reference< beans::XPropertySet > const xStreamProps(xStream,
         uno::UNO_QUERY);
     if (xStreamProps.is()) { // this is NOT supported in FileSystemStorage
-        xStreamProps->setPropertyValue("MediaType", uno::Any(OUString(
+        xStreamProps->setPropertyValue("MediaType", uno::makeAny(OUString(
             //FIXME how to detect real media type?
             //but currently xmloff has this one hardcoded anyway...
             "application/vnd.sun.star.media")));
         xStreamProps->setPropertyValue( // turn off compression
-            "Compressed", uno::Any(false));
+            "Compressed", uno::makeAny(false));
     }
     return xStream;
 }

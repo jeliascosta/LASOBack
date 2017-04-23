@@ -38,7 +38,7 @@ interface BaseTextDocument
     SID_STYLE_EDIT
     [
         ExecMethod = ExecStyleSheet ;
-        StateMethod = StateStyleSheet ;
+        StateMethod = NoState ;
     ]
 
     SID_STYLE_DELETE
@@ -104,12 +104,6 @@ interface BaseTextDocument
         StateMethod = StateStyleSheet ;
     ]
     SID_STYLE_FAMILY5
-    [
-        Export = FALSE ;
-        StateMethod = StateStyleSheet ;
-    ]
-
-    SID_STYLE_FAMILY6
     [
         Export = FALSE ;
         StateMethod = StateStyleSheet ;

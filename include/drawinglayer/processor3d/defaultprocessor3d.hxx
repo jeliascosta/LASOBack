@@ -96,6 +96,7 @@ namespace drawinglayer
             /// counter for entered transparence textures
             sal_uInt32                                          mnTransparenceCounter;
 
+            /// bitfield
             bool                                                mbModulate : 1;
             bool                                                mbFilter : 1;
             bool                                                mbSimpleTextureActive : 1;
@@ -126,7 +127,7 @@ namespace drawinglayer
                 const geometry::ViewInformation3D& rViewInformation,
                 const attribute::SdrSceneAttribute& rSdrSceneAttribute,
                 const attribute::SdrLightingAttribute& rSdrLightingAttribute);
-            virtual ~DefaultProcessor3D() override;
+            virtual ~DefaultProcessor3D();
 
             /// data read access
             const attribute::SdrSceneAttribute& getSdrSceneAttribute() const { return mrSdrSceneAttribute; }

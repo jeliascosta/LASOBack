@@ -21,16 +21,11 @@
 
 #include <svl/svldllapi.h>
 #include <rtl/ustring.hxx>
-#include <tools/datetime.hxx>
-#include <o3tl/strong_int.hxx>
 
 #include <limits>
 #include <memory>
 
 struct MarkedUndoAction;
-
-struct ViewShellIdTag;
-typedef o3tl::strong_int<sal_Int32, ViewShellIdTag> ViewShellId;
 
 class SVL_DLLPUBLIC SfxRepeatTarget
 {
@@ -46,11 +41,18 @@ public:
 };
 
 
+class SfxLinkUndoAction;
+
 class SVL_DLLPUBLIC SfxUndoAction
 {
+private:
+    SfxLinkUndoAction*      mpSfxLinkUndoAction;
+
 public:
                             SfxUndoAction();
     virtual                 ~SfxUndoAction();
+
+    virtual void SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction);
 
     virtual void            Undo();
     virtual void            UndoWithContext( SfxUndoContext& i_context );
@@ -63,17 +65,12 @@ public:
 
     virtual OUString    GetComment() const;
     virtual OUString    GetRepeatComment(SfxRepeatTarget&) const;
-    /// ID of the view shell that created this undo action.
-    virtual ViewShellId GetViewShellId() const;
-    /// Timestamp when this undo item was created.
-    const DateTime& GetDateTime() const;
+    virtual sal_uInt16  GetId() const;
     virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const;
 
 private:
     SfxUndoAction( const SfxUndoAction& ) = delete;
     SfxUndoAction& operator=( const SfxUndoAction& ) = delete;
-
-    DateTime m_aDateTime;
 };
 
 
@@ -138,8 +135,8 @@ class SVL_DLLPUBLIC SfxListUndoAction : public SfxUndoAction, public SfxUndoArra
 public:
 
     SfxListUndoAction(
-        const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId, ViewShellId nViewShellId, SfxUndoArray *pFather );
-    virtual ~SfxListUndoAction() override;
+        const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId, SfxUndoArray *pFather );
+    virtual ~SfxListUndoAction();
 
     virtual void            Undo() override;
     virtual void            UndoWithContext( SfxUndoContext& i_context ) override;
@@ -151,10 +148,8 @@ public:
     virtual bool            Merge( SfxUndoAction *pNextAction ) override;
 
     virtual OUString        GetComment() const override;
-    /// See SfxUndoAction::GetViewShellId().
-    ViewShellId GetViewShellId() const override;
     virtual OUString        GetRepeatComment(SfxRepeatTarget&) const override;
-    sal_uInt16              GetId() const;
+    virtual sal_uInt16      GetId() const override;
 
     void SetComment(const OUString& rComment);
     void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
@@ -193,20 +188,18 @@ namespace svl
         virtual                 ~IUndoManager() { };
 
         virtual void            SetMaxUndoActionCount( size_t nMaxUndoActionCount ) = 0;
+        virtual size_t          GetMaxUndoActionCount() const = 0;
 
         virtual void            AddUndoAction( SfxUndoAction *pAction, bool bTryMerg=false ) = 0;
 
         virtual size_t          GetUndoActionCount( bool const i_currentLevel = CurrentLevel ) const = 0;
+        virtual sal_uInt16      GetUndoActionId() const = 0;
         virtual OUString        GetUndoActionComment( size_t nNo=0, bool const i_currentLevel = CurrentLevel ) const = 0;
         virtual SfxUndoAction*  GetUndoAction( size_t nNo=0 ) const = 0;
-        /// Get info about all undo actions (comment, view shell id, etc.)
-        virtual OUString        GetUndoActionsInfo() const = 0;
 
         virtual size_t          GetRedoActionCount( bool const i_currentLevel = CurrentLevel ) const = 0;
         virtual OUString        GetRedoActionComment( size_t nNo=0, bool const i_currentLevel = CurrentLevel ) const = 0;
         virtual SfxUndoAction*  GetRedoAction() const = 0;
-        /// Get info about all redo actions (comment, view shell id, etc.)
-        virtual OUString        GetRedoActionsInfo() const = 0;
 
         virtual bool            Undo() = 0;
         virtual bool            Redo() = 0;
@@ -241,7 +234,7 @@ namespace svl
         virtual bool            Repeat( SfxRepeatTarget &rTarget ) = 0;
         virtual bool            CanRepeat( SfxRepeatTarget &rTarget ) const = 0;
 
-        virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId, ViewShellId nViewShellId) = 0;
+        virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId=0) = 0;
 
         /** leaves the list action entered with EnterListAction
             @return the number of the sub actions in the list which has just been left. Note that in case no such
@@ -306,23 +299,25 @@ namespace svl { namespace undo { namespace impl
 struct SfxUndoManager_Data;
 class SVL_DLLPUBLIC SfxUndoManager : public ::svl::IUndoManager
 {
+    friend class SfxLinkUndoAction;
+
     std::unique_ptr< SfxUndoManager_Data >
                             m_xData;
 public:
                             SfxUndoManager( size_t nMaxUndoActionCount = 20 );
-    virtual                 ~SfxUndoManager() override;
+    virtual                 ~SfxUndoManager();
 
     // IUndoManager overridables
     virtual void            SetMaxUndoActionCount( size_t nMaxUndoActionCount ) override;
+    virtual size_t          GetMaxUndoActionCount() const override;
     virtual void            AddUndoAction( SfxUndoAction *pAction, bool bTryMerg=false ) override;
     virtual size_t          GetUndoActionCount( bool const i_currentLevel = CurrentLevel ) const override;
+    virtual sal_uInt16      GetUndoActionId() const override;
     virtual OUString        GetUndoActionComment( size_t nNo=0, bool const i_currentLevel = CurrentLevel ) const override;
     virtual SfxUndoAction*  GetUndoAction( size_t nNo=0 ) const override;
-    OUString                GetUndoActionsInfo() const override;
     virtual size_t          GetRedoActionCount( bool const i_currentLevel = CurrentLevel ) const override;
     virtual OUString        GetRedoActionComment( size_t nNo=0, bool const i_currentLevel = CurrentLevel ) const override;
     virtual SfxUndoAction*  GetRedoAction() const override;
-    OUString                GetRedoActionsInfo() const override;
     virtual bool            Undo() override;
     virtual bool            Redo() override;
     virtual void            Clear() override;
@@ -333,7 +328,7 @@ public:
     virtual OUString        GetRepeatActionComment( SfxRepeatTarget &rTarget) const override;
     virtual bool            Repeat( SfxRepeatTarget &rTarget ) override;
     virtual bool            CanRepeat( SfxRepeatTarget &rTarget ) const override;
-    virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId, ViewShellId nViewShellId) override;
+    virtual void            EnterListAction(const OUString &rComment, const OUString& rRepeatComment, sal_uInt16 nId=0) override;
     virtual size_t          LeaveListAction() override;
     virtual size_t          LeaveAndMergeListAction() override;
     virtual bool            IsInListAction() const override;
@@ -395,6 +390,48 @@ private:
     bool ImplRedo( SfxUndoContext* i_contextOrNull );
 
     friend class ::svl::undo::impl::LockGuard;
+};
+
+
+class SVL_DLLPUBLIC SfxLinkUndoAction : public SfxUndoAction
+
+/*  [Explanation]
+
+    SfxLinkUndoAction is used to link two SfxUndoManager. The Undo/Redos inserted
+    in the first SfxUndoManager redirect their Undo/Redo to the second. With this it
+    does not matter, if the undo/redo initially was on the first or the second.
+
+    After inserting SfxLinkUndoAction on the first SfxUndoManager, you have to
+    insert it on the second as well. While the second SfxUndoManager is steered
+    from the first, you must not insert neither Actions nor issue a  undo/redo
+    command to the second, while it is steered by the first.
+*/
+
+{
+private:
+    friend class SfxUndoAction;
+    void LinkedSfxUndoActionDestructed(const SfxUndoAction& rCandidate);
+
+public:
+                            SfxLinkUndoAction(::svl::IUndoManager *pManager);
+                            virtual ~SfxLinkUndoAction();
+
+    virtual void            Undo() override;
+    virtual void            Redo() override;
+    virtual bool            CanRepeat(SfxRepeatTarget& r) const override;
+
+    virtual void            Repeat(SfxRepeatTarget&r) override;
+
+    virtual OUString        GetComment() const override;
+    virtual OUString        GetRepeatComment(SfxRepeatTarget&r) const override;
+    virtual sal_uInt16      GetId() const override;
+
+    SfxUndoAction*          GetAction() const { return pAction; }
+
+protected:
+    ::svl::IUndoManager*    pUndoManager;
+    SfxUndoAction*          pAction;
+
 };
 
 #endif

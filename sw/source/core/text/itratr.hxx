@@ -39,59 +39,59 @@ class SwAttrIter
     friend class SwFontSave;
 protected:
 
-    SwAttrHandler m_aAttrHandler;
-    SwViewShell *m_pViewShell;
-    SwFont *m_pFont;
-    SwpHints  *m_pHints;
-    const SwAttrSet* m_pAttrSet;       // The char attribute set
-    SwScriptInfo* m_pScriptInfo;
+    SwAttrHandler aAttrHandler;
+    SwViewShell *pShell;
+    SwFont *pFnt;
+    SwpHints  *pHints;
+    const SwAttrSet* pAttrSet;       // The char attribute set
+    SwScriptInfo* pScriptInfo;
 
 private:
-    VclPtr<OutputDevice> m_pLastOut;
-    short m_nChgCnt;
-    SwRedlineItr *m_pRedline;
-    size_t m_nStartIndex;
-    size_t m_nEndIndex;
-    sal_Int32 m_nPosition;
-    sal_uInt8 m_nPropFont;
-    o3tl::enumarray<SwFontScript, const void*> m_aMagicNo;
-    o3tl::enumarray<SwFontScript, sal_uInt16> m_aFontIdx;
+    VclPtr<OutputDevice> pLastOut;
+    short nChgCnt;
+    SwRedlineItr *pRedln;
+    size_t nStartIndex;
+    size_t nEndIndex;
+    sal_Int32 nPos;
+    sal_uInt8 nPropFont;
+    o3tl::enumarray<SwFontScript, const void*> aMagicNo;
+    o3tl::enumarray<SwFontScript, sal_uInt16> aFntIdx;
     const SwTextNode* m_pTextNode;
 
     void SeekFwd( const sal_Int32 nPos );
-    void SetFnt( SwFont* pNew ) { m_pFont = pNew; }
+    void SetFnt( SwFont* pNew ) { pFnt = pNew; }
 
 protected:
     void Chg( SwTextAttr *pHt );
     void Rst( SwTextAttr *pHt );
     void CtorInitAttrIter( SwTextNode& rTextNode, SwScriptInfo& rScrInf, SwTextFrame* pFrame = nullptr );
     explicit SwAttrIter(SwTextNode* pTextNode)
-        : m_pViewShell(nullptr)
-        , m_pFont(nullptr)
-        , m_pHints(nullptr)
-        , m_pAttrSet(nullptr)
-        , m_pScriptInfo(nullptr)
-        , m_pLastOut(nullptr)
-        , m_nChgCnt(0)
-        , m_pRedline(nullptr)
-        , m_nStartIndex(0)
-        , m_nEndIndex(0)
-        , m_nPosition(0)
-        , m_nPropFont(0)
+        : pShell(nullptr)
+        , pFnt(nullptr)
+        , pHints(nullptr)
+        , pAttrSet(nullptr)
+        , pScriptInfo(nullptr)
+        , pLastOut(nullptr)
+        , nChgCnt(0)
+        , pRedln(nullptr)
+        , nStartIndex(0)
+        , nEndIndex(0)
+        , nPos(0)
+        , nPropFont(0)
         , m_pTextNode(pTextNode)
         {
-            m_aMagicNo[SwFontScript::Latin] = m_aMagicNo[SwFontScript::CJK] = m_aMagicNo[SwFontScript::CTL] = nullptr;
+            aMagicNo[SwFontScript::Latin] = aMagicNo[SwFontScript::CJK] = aMagicNo[SwFontScript::CTL] = nullptr;
         }
 
 public:
     // Constructor, destructor
     SwAttrIter( SwTextNode& rTextNode, SwScriptInfo& rScrInf )
-        : m_pViewShell(nullptr), m_pFont(nullptr), m_pHints(nullptr), m_pScriptInfo(nullptr), m_pLastOut(nullptr), m_nChgCnt(0), m_pRedline(nullptr),m_nPropFont(0), m_pTextNode(&rTextNode)
+        : pShell(nullptr), pFnt(nullptr), pHints(nullptr), pScriptInfo(nullptr), pLastOut(nullptr), nChgCnt(0), pRedln(nullptr),nPropFont(0), m_pTextNode(&rTextNode)
         { CtorInitAttrIter( rTextNode, rScrInf ); }
 
     virtual ~SwAttrIter();
 
-    SwRedlineItr *GetRedln() { return m_pRedline; }
+    SwRedlineItr *GetRedln() { return pRedln; }
     // The parameter returns the position of the next change before or at the
     // char position.
     sal_Int32 GetNextAttr( ) const;
@@ -105,23 +105,23 @@ public:
      *  and change font to merge character border with neighbours.
     **/
     bool SeekAndChgAttrIter( const sal_Int32 nPos, OutputDevice* pOut );
-    bool SeekStartAndChgAttrIter( OutputDevice* pOut, const bool bParaFont );
+    bool SeekStartAndChgAttrIter( OutputDevice* pOut, const bool bParaFont = false );
 
     // Do we have an attribute change at all?
-    bool HasHints() const { return nullptr != m_pHints; }
+    bool HasHints() const { return nullptr != pHints; }
 
     // Returns the attribute for a position
     SwTextAttr *GetAttr( const sal_Int32 nPos ) const;
 
-    const SwpHints *GetHints() const { return m_pHints; }
+    const SwpHints *GetHints() const { return pHints; }
 
-    SwFont *GetFnt() { return m_pFont; }
-    const SwFont *GetFnt() const { return m_pFont; }
+    SwFont *GetFnt() { return pFnt; }
+    const SwFont *GetFnt() const { return pFnt; }
 
-    sal_uInt8 GetPropFont() const { return m_nPropFont; }
-    void SetPropFont( const sal_uInt8 nNew ) { m_nPropFont = nNew; }
+    sal_uInt8 GetPropFont() const { return nPropFont; }
+    void SetPropFont( const sal_uInt8 nNew ) { nPropFont = nNew; }
 
-    SwAttrHandler& GetAttrHandler() { return m_aAttrHandler; }
+    SwAttrHandler& GetAttrHandler() { return aAttrHandler; }
 };
 
 #endif

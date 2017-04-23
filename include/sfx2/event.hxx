@@ -34,55 +34,20 @@
 class SfxObjectShell;
 
 
-enum class SfxEventHintId {
-    NONE = 0,
-    ActivateDoc,
-    CloseDoc,
-    CloseView,
-    CreateDoc,
-    DeactivateDoc,
-    DocCreated,
-    LoadFinished,
-    ModifyChanged,
-    OpenDoc,
-    PrepareCloseDoc,
-    PrepareCloseView,
-    PrintDoc,
-    SaveAsDoc,
-    SaveAsDocDone,
-    SaveAsDocFailed,
-    SaveDoc,
-    SaveDocDone,
-    SaveDocFailed,
-    SaveToDoc,
-    SaveToDocDone,
-    SaveToDocFailed,
-    StorageChanged,
-    ViewCreated,
-    VisAreaChanged,
-    // SW events
-    SwMailMerge,
-    SwMailMergeEnd,
-    SwEventPageCount,
-    SwEventFieldMerge,
-    SwEventFieldMergeFinished,
-    SwEventLayoutFinished,
-};
-
 class SFX2_DLLPUBLIC SfxEventHint : public SfxHint
 {
     SfxObjectShell*     pObjShell;
-    OUString            aEventName;
-    SfxEventHintId      nEventId;
+    OUString     aEventName;
+    sal_uInt16              nEventId;
 
 public:
-    SfxEventHint( SfxEventHintId nId, const OUString& aName, SfxObjectShell *pObj )
+    SfxEventHint( sal_uInt16 nId, const OUString& aName, SfxObjectShell *pObj = nullptr )
                         :   pObjShell(pObj),
                             aEventName(aName),
                             nEventId(nId)
                         {}
 
-    SfxEventHintId      GetEventId() const
+    sal_uInt16              GetEventId() const
                         { return nEventId; }
 
     const OUString&     GetEventName() const
@@ -98,12 +63,12 @@ class SFX2_DLLPUBLIC SfxViewEventHint : public SfxEventHint
     css::uno::Reference< css::frame::XController2 > xViewController;
 
 public:
-    SfxViewEventHint( SfxEventHintId nId, const OUString& aName, SfxObjectShell *pObj, const css::uno::Reference< css::frame::XController >& xController )
+    SfxViewEventHint( sal_uInt16 nId, const OUString& aName, SfxObjectShell *pObj, const css::uno::Reference< css::frame::XController >& xController )
                         : SfxEventHint( nId, aName, pObj )
                         , xViewController( xController, css::uno::UNO_QUERY )
                         {}
 
-    SfxViewEventHint( SfxEventHintId nId, const OUString& aName, SfxObjectShell *pObj, const css::uno::Reference< css::frame::XController2 >& xController )
+    SfxViewEventHint( sal_uInt16 nId, const OUString& aName, SfxObjectShell *pObj, const css::uno::Reference< css::frame::XController2 >& xController )
                         : SfxEventHint( nId, aName, pObj )
                         , xViewController( xController )
                         {}
@@ -116,29 +81,29 @@ class Printer;
 
 class SfxPrintingHint : public SfxViewEventHint
 {
-    css::view::PrintableState mnPrintableState;
+    sal_Int32 mnPrintableState;
     css::uno::Sequence < css::beans::PropertyValue > aOpts;
 public:
         SfxPrintingHint(
-                css::view::PrintableState nState,
+                sal_Int32 nEvent,
                 const css::uno::Sequence < css::beans::PropertyValue >& rOpts,
                 SfxObjectShell *pObj,
                 const css::uno::Reference< css::frame::XController2 >& xController )
         : SfxViewEventHint(
-            SfxEventHintId::PrintDoc,
+            SFX_EVENT_PRINTDOC,
             GlobalEventConfig::GetEventName( GlobalEventId::PRINTDOC ),
             pObj,
             xController )
-        , mnPrintableState( nState )
+        , mnPrintableState( nEvent )
         , aOpts( rOpts )
         {}
 
-        SfxPrintingHint( css::view::PrintableState nState )
-        : SfxViewEventHint( SfxEventHintId::PrintDoc, rtl::OUString(), nullptr, css::uno::Reference< css::frame::XController >() )
-        , mnPrintableState( nState )
+        SfxPrintingHint( sal_Int32 nEvent )
+        : SfxViewEventHint( SFX_EVENT_PRINTDOC, rtl::OUString(), nullptr, css::uno::Reference< css::frame::XController >() )
+        , mnPrintableState( nEvent )
         {}
 
-    css::view::PrintableState GetWhich() const { return mnPrintableState; }
+    sal_Int32 GetWhich() const { return mnPrintableState; }
     const css::uno::Sequence < css::beans::PropertyValue >& GetOptions() const { return aOpts; }
 };
 

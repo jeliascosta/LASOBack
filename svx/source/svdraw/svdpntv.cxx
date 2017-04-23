@@ -25,9 +25,12 @@
 #include <svtools/grfmgr.hxx>
 #include <svx/svdmodel.hxx>
 
+#ifdef DBG_UTIL
+#include <svdibrow.hxx>
+#endif
 #include <svx/svdpage.hxx>
 #include <svx/svdpagv.hxx>
-#include <svl/hint.hxx>
+#include <svl/smplhint.hxx>
 
 #include <editeng/editdata.hxx>
 #include <svx/svdmrkv.hxx>
@@ -36,7 +39,7 @@
 #include <svx/svdglue.hxx>
 #include <svx/svdobj.hxx>
 #include <svx/svdograf.hxx>
-#include <svdibrow.hxx>
+#include "svdibrow.hxx"
 #include "svx/svditer.hxx"
 #include <svx/svdouno.hxx>
 #include <svx/sdr/overlay/overlayobjectlist.hxx>
@@ -57,7 +60,6 @@
 #include <drawinglayer/primitive2d/metafileprimitive2d.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <comphelper/lok.hxx>
-#include <svx/svdviter.hxx>
 
 using namespace ::com::sun::star;
 
@@ -86,14 +88,24 @@ SdrPaintWindow* SdrPaintView::GetPaintWindow(sal_uInt32 nIndex) const
     return nullptr;
 }
 
-void SdrPaintView::RemovePaintWindow(SdrPaintWindow& rOld)
+void SdrPaintView::AppendPaintWindow(SdrPaintWindow& rNew)
 {
+    maPaintWindows.push_back(&rNew);
+}
+
+SdrPaintWindow* SdrPaintView::RemovePaintWindow(SdrPaintWindow& rOld)
+{
+    SdrPaintWindow* pRetval = nullptr;
     const SdrPaintWindowVector::iterator aFindResult = ::std::find(maPaintWindows.begin(), maPaintWindows.end(), &rOld);
 
     if(aFindResult != maPaintWindows.end())
     {
+        // remember return value, aFindResult is no longer valid after deletion
+        pRetval = *aFindResult;
         maPaintWindows.erase(aFindResult);
     }
+
+    return pRetval;
 }
 
 OutputDevice* SdrPaintView::GetFirstOutputDevice() const
@@ -107,7 +119,8 @@ OutputDevice* SdrPaintView::GetFirstOutputDevice() const
 }
 
 
-SvxViewChangedHint::SvxViewChangedHint()
+SvxViewHint::SvxViewHint (HintType eHintType)
+    : meHintType(eHintType)
 {
 }
 
@@ -158,7 +171,7 @@ void SdrPaintView::ImpClearVars()
     mbPrintPreview=false;
     mbPreviewRenderer=false;
 
-    meAnimationMode = SdrAnimationMode::Animate;
+    meAnimationMode = SDR_ANIMATION_ANIMATE;
     mbAnimationPause = false;
 
     mnHitTolPix=2;
@@ -167,12 +180,12 @@ void SdrPaintView::ImpClearVars()
     mnMinMovLog=0;
     mpActualOutDev=nullptr;
     mpDragWin=nullptr;
+    mbRestoreColors=true;
     mpDefaultStyleSheet=nullptr;
     mbSomeObjChgdFlag=false;
     mnGraphicManagerDrawMode = GraphicManagerDrawFlags::STANDARD;
-    maComeBackIdle.SetPriority(TaskPriority::REPAINT);
-    maComeBackIdle.SetInvokeHandler(LINK(this,SdrPaintView,ImpComeBackHdl));
-    maComeBackIdle.SetDebugName( "svx::SdrPaintView aComeBackIdle" );
+    maComeBackIdle.SetPriority(SchedulerPriority::REPAINT);
+    maComeBackIdle.SetIdleHdl(LINK(this,SdrPaintView,ImpComeBackHdl));
 
     if (mpModel)
         SetDefaultStyleSheet(mpModel->GetDefaultStyleSheet(), true);
@@ -198,6 +211,9 @@ SdrPaintView::SdrPaintView(SdrModel* pModel, OutputDevice* pOut)
     {
         AddWindowToPaintView(pOut, nullptr);
     }
+
+    // flag to visualize groups
+    mbVisualizeEnteredGroup = true;
 
     maColorConfig.AddListener(this);
     onChangeColorConfig();
@@ -229,7 +245,8 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     //If the stylesheet has been destroyed
     if (&rBC == mpDefaultStyleSheet)
     {
-        if (rHint.GetId() == SfxHintId::Dying)
+        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+        if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING)
             mpDefaultStyleSheet = nullptr;
         return;
     }
@@ -239,7 +256,7 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
         return;
 
     SdrHintKind eKind = pSdrHint->GetKind();
-    if (eKind==SdrHintKind::ObjectChange || eKind==SdrHintKind::ObjectInserted || eKind==SdrHintKind::ObjectRemoved)
+    if (eKind==HINT_OBJCHG || eKind==HINT_OBJINSERTED || eKind==HINT_OBJREMOVED)
     {
         bool bObjChg = !mbSomeObjChgdFlag; // if true, evaluate for ComeBack timer
         if (bObjChg)
@@ -249,7 +266,7 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
         }
     }
 
-    if (eKind==SdrHintKind::PageOrderChange)
+    if (eKind==HINT_PAGEORDERCHG)
     {
         const SdrPage* pPg=pSdrHint->GetPage();
         if (pPg && !pPg->IsInserted())
@@ -262,13 +279,13 @@ void SdrPaintView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     }
 }
 
-void SdrPaintView::ConfigurationChanged( ::utl::ConfigurationBroadcaster* , ConfigurationHints )
+void SdrPaintView::ConfigurationChanged( ::utl::ConfigurationBroadcaster* , sal_uInt32 )
 {
     onChangeColorConfig();
     InvalidateAllWin();
 }
 
-IMPL_LINK_NOARG(SdrPaintView, ImpComeBackHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SdrPaintView, ImpComeBackHdl, Idle *, void)
 {
     if (mbSomeObjChgdFlag) {
         mbSomeObjChgdFlag=false;
@@ -329,7 +346,7 @@ void SdrPaintView::BrkAction()
 {
 }
 
-void SdrPaintView::TakeActionRect(tools::Rectangle&) const
+void SdrPaintView::TakeActionRect(Rectangle&) const
 {
 }
 
@@ -433,7 +450,7 @@ void SdrPaintView::AddWindowToPaintView(OutputDevice* pNewWin, vcl::Window *pWin
 {
     DBG_ASSERT(pNewWin, "SdrPaintView::AddWindowToPaintView: No OutputDevice(!)");
     SdrPaintWindow* pNewPaintWindow = new SdrPaintWindow(*this, *pNewWin, pWindow);
-    maPaintWindows.push_back(pNewPaintWindow);
+    AppendPaintWindow(*pNewPaintWindow);
 
     if(mpPageView)
     {
@@ -732,26 +749,6 @@ void SdrPaintView::EndCompleteRedraw(SdrPaintWindow& rPaintWindow, bool bPaintFo
             static_cast< SdrView* >(this)->TextEditDrawing(rPaintWindow);
         }
 
-        if (comphelper::LibreOfficeKit::isActive())
-        {
-            // Look for active text edits in other views showing the same page,
-            // and show them as well.
-            if (SdrPageView* pPageView = GetSdrPageView())
-            {
-                SdrViewIter aIter(pPageView->GetPage());
-                for (SdrView* pView = aIter.FirstView(); pView; pView = aIter.NextView())
-                {
-                    if (pView == this)
-                        continue;
-
-                    if (pView->IsTextEdit() && pView->GetSdrPageView())
-                    {
-                        pView->TextEditDrawing(rPaintWindow);
-                    }
-                }
-            }
-        }
-
         // draw Overlay, also to PreRender device if exists
         rPaintWindow.DrawOverlay(rPaintWindow.GetRedrawRegion());
 
@@ -914,7 +911,7 @@ void SdrPaintView::InvalidateAllWin()
     }
 }
 
-void SdrPaintView::InvalidateAllWin(const tools::Rectangle& rRect)
+void SdrPaintView::InvalidateAllWin(const Rectangle& rRect)
 {
     const sal_uInt32 nWindowCount(PaintWindowCount());
 
@@ -925,11 +922,11 @@ void SdrPaintView::InvalidateAllWin(const tools::Rectangle& rRect)
         if(pPaintWindow->OutputToWindow())
         {
             OutputDevice& rOutDev = pPaintWindow->GetOutputDevice();
-            tools::Rectangle aRect(rRect);
+            Rectangle aRect(rRect);
 
             Point aOrg(rOutDev.GetMapMode().GetOrigin());
             aOrg.X()=-aOrg.X(); aOrg.Y()=-aOrg.Y();
-            tools::Rectangle aOutRect(aOrg, rOutDev.GetOutputSize());
+            Rectangle aOutRect(aOrg, rOutDev.GetOutputSize());
 
             // In case of tiled rendering we want to get all invalidations, so visual area is not interesting.
             if (aRect.IsOver(aOutRect) || comphelper::LibreOfficeKit::isActive())
@@ -946,7 +943,7 @@ void SdrPaintView::InvalidateOneWin(vcl::Window& rWin)
     rWin.Invalidate(InvalidateFlags::NoErase);
 }
 
-void SdrPaintView::InvalidateOneWin(vcl::Window& rWin, const tools::Rectangle& rRect)
+void SdrPaintView::InvalidateOneWin(vcl::Window& rWin, const Rectangle& rRect)
 {
     // do not erase background, that causes flicker (!)
     rWin.Invalidate(rRect, InvalidateFlags::NoErase);
@@ -1086,7 +1083,7 @@ bool SdrPaintView::SetAttributes(const SfxItemSet& rSet, bool bReplaceAll)
 
 SfxStyleSheet* SdrPaintView::GetStyleSheet() const
 {
-    return mpDefaultStyleSheet;
+    return GetDefaultStyleSheet();
 }
 
 bool SdrPaintView::SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr)
@@ -1114,7 +1111,7 @@ void SdrPaintView::ShowItemBrowser(bool bShow)
 }
 #endif
 
-void SdrPaintView::MakeVisible(const tools::Rectangle& rRect, vcl::Window& rWin)
+void SdrPaintView::MakeVisible(const Rectangle& rRect, vcl::Window& rWin)
 {
     MapMode aMap(rWin.GetMapMode());
     Size aActualSize(rWin.GetOutputSize());
@@ -1169,7 +1166,7 @@ void SdrPaintView::DoConnect(SdrOle2Obj* /*pOleObj*/)
 
 void SdrPaintView::SetAnimationEnabled( bool bEnable )
 {
-    SetAnimationMode( bEnable ? SdrAnimationMode::Animate : SdrAnimationMode::Disable );
+    SetAnimationMode( bEnable ? SDR_ANIMATION_ANIMATE : SDR_ANIMATION_DISABLE );
 }
 
 #if defined DBG_UTIL
@@ -1181,7 +1178,7 @@ vcl::Window* SdrPaintView::GetItemBrowser() const
 
 void SdrPaintView::SetAnimationPause( bool bSet )
 {
-    if(mbAnimationPause != bSet)
+    if((bool)mbAnimationPause != bSet)
     {
         mbAnimationPause = bSet;
 
@@ -1233,13 +1230,18 @@ void SdrPaintView::VisAreaChanged(const OutputDevice* pOut)
 void SdrPaintView::VisAreaChanged(const SdrPageWindow& /*rWindow*/)
 {
     // notify SfxListener
-    Broadcast(SvxViewChangedHint());
+    Broadcast(SvxViewHint(SvxViewHint::SVX_HINT_VIEWCHANGED));
 }
 
 
 void SdrPaintView::onChangeColorConfig()
 {
-    maGridColor = Color( maColorConfig.GetColorValue( svtools::DRAWGRID ).nColor );
+    SetGridColor( Color( maColorConfig.GetColorValue( svtools::DRAWGRID ).nColor ) );
+}
+
+void SdrPaintView::SetGridColor( Color aColor )
+{
+    maGridColor = aColor;
 }
 
 
@@ -1268,7 +1270,7 @@ bool SdrPaintView::IsBufferedOutputAllowed() const
 
 void SdrPaintView::SetBufferedOutputAllowed(bool bNew)
 {
-    if(bNew != mbBufferedOutputAllowed)
+    if(bNew != (bool)mbBufferedOutputAllowed)
     {
         mbBufferedOutputAllowed = bNew;
     }
@@ -1281,7 +1283,7 @@ bool SdrPaintView::IsBufferedOverlayAllowed() const
 
 void SdrPaintView::SetBufferedOverlayAllowed(bool bNew)
 {
-    if(bNew != mbBufferedOverlayAllowed)
+    if(bNew != (bool)mbBufferedOverlayAllowed)
     {
         mbBufferedOverlayAllowed = bNew;
     }
@@ -1290,7 +1292,7 @@ void SdrPaintView::SetBufferedOverlayAllowed(bool bNew)
 
 void SdrPaintView::SetPagePaintingAllowed(bool bNew)
 {
-    if(bNew != mbPagePaintingAllowed)
+    if(bNew != (bool)mbPagePaintingAllowed)
     {
         mbPagePaintingAllowed = bNew;
     }

@@ -37,7 +37,6 @@
 #include <osl/mutex.hxx>
 #include <tools/urlobj.hxx>
 #include <vcl/opengl/OpenGLWrapper.hxx>
-#include <vcl/svapp.hxx>
 
 namespace framework{
 
@@ -91,6 +90,7 @@ void TitleHelper::setOwner(const css::uno::Reference< css::uno::XInterface >& xO
 }
 
 OUString SAL_CALL TitleHelper::getTitle()
+    throw (css::uno::RuntimeException, std::exception)
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -124,6 +124,7 @@ void TitleHelper::connectWithUntitledNumbers (const css::uno::Reference< css::fr
 }
 
 void SAL_CALL TitleHelper::setTitle(const OUString& sTitle)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -138,18 +139,21 @@ void SAL_CALL TitleHelper::setTitle(const OUString& sTitle)
 }
 
 void SAL_CALL TitleHelper::addTitleChangeListener(const css::uno::Reference< css::frame::XTitleChangeListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // container is threadsafe by himself
     m_aListener.addInterface( cppu::UnoType<css::frame::XTitleChangeListener>::get(), xListener );
 }
 
 void SAL_CALL TitleHelper::removeTitleChangeListener(const css::uno::Reference< css::frame::XTitleChangeListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // container is threadsafe by himself
     m_aListener.removeInterface( cppu::UnoType<css::frame::XTitleChangeListener>::get(), xListener );
 }
 
 void SAL_CALL TitleHelper::titleChanged(const css::frame::TitleChangedEvent& aEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -166,6 +170,7 @@ void SAL_CALL TitleHelper::titleChanged(const css::frame::TitleChangedEvent& aEv
 }
 
 void SAL_CALL TitleHelper::documentEventOccured(const css::document::DocumentEvent& aEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if ( ! aEvent.EventName.equalsIgnoreAsciiCase("OnSaveAsDone")
       && ! aEvent.EventName.equalsIgnoreAsciiCase("OnModeChanged")
@@ -192,6 +197,7 @@ void SAL_CALL TitleHelper::documentEventOccured(const css::document::DocumentEve
 }
 
 void SAL_CALL TitleHelper::frameAction(const css::frame::FrameActionEvent& aEvent)
+    throw(css::uno::RuntimeException, std::exception)
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -218,6 +224,7 @@ void SAL_CALL TitleHelper::frameAction(const css::frame::FrameActionEvent& aEven
 }
 
 void SAL_CALL TitleHelper::disposing(const css::lang::EventObject& aEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
@@ -354,7 +361,7 @@ void TitleHelper::impl_updateTitleForModel (const css::uno::Reference< css::fram
         OUStringBuffer sNewTitle(256);
         sNewTitle.append (xNumbers->getUntitledPrefix ());
         if (nLeasedNumber != css::frame::UntitledNumbersConst::INVALID_NUMBER)
-            sNewTitle.append(nLeasedNumber);
+            sNewTitle.append ((::sal_Int32)nLeasedNumber);
         else
             sNewTitle.append("?");
 
@@ -416,8 +423,8 @@ void TitleHelper::impl_updateTitleForController (const css::uno::Reference< css:
         sTitle.append      (xModelTitle->getTitle ());
         if ( nLeasedNumber > 1 )
         {
-            sTitle.append(" : ");
-            sTitle.append(nLeasedNumber);
+            sTitle.append (" : ");
+            sTitle.append      ((::sal_Int32)nLeasedNumber);
         }
         if (xModel.is ())
         {
@@ -435,7 +442,7 @@ void TitleHelper::impl_updateTitleForController (const css::uno::Reference< css:
         sTitle.append (xNumbers->getUntitledPrefix ());
         if ( nLeasedNumber > 1 )
         {
-            sTitle.append(nLeasedNumber  );
+            sTitle.append ((::sal_Int32)nLeasedNumber  );
         }
     }
 
@@ -485,7 +492,6 @@ void TitleHelper::impl_updateTitleForFrame (const css::uno::Reference< css::fram
     impl_appendModuleName       (sTitle);
     impl_appendDebugVersion     (sTitle);
 #endif
-    impl_appendSafeMode         (sTitle);
     // SYNCHRONIZED ->
     aLock.reset ();
 
@@ -573,12 +579,6 @@ void TitleHelper::impl_appendDebugVersion (OUStringBuffer&)
 }
 #endif
 
-void TitleHelper::impl_appendSafeMode (OUStringBuffer& sTitle)
-{
-    if (Application::IsSafeModeEnabled())
-        sTitle.append(FwkResId (STR_SAFEMODE_TITLE));
-}
-
 void TitleHelper::impl_startListeningForModel (const css::uno::Reference< css::frame::XModel >& xModel)
 {
     css::uno::Reference< css::document::XDocumentEventBroadcaster > xBroadcaster(xModel, css::uno::UNO_QUERY);
@@ -643,18 +643,18 @@ OUString TitleHelper::impl_convertURL2Title(const OUString& sURL)
         if (aURL.HasMark())
             aURL = INetURLObject(aURL.GetURLNoMark());
 
-        sTitle = aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset);
+        sTitle = aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET);
     }
     else
     {
         if (aURL.hasExtension())
-            sTitle = aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DecodeMechanism::WithCharset);
+            sTitle = aURL.getName(INetURLObject::LAST_SEGMENT, true, INetURLObject::DECODE_WITH_CHARSET);
 
         if ( sTitle.isEmpty() )
-            sTitle = aURL.GetHostPort(INetURLObject::DecodeMechanism::WithCharset);
+            sTitle = aURL.GetHostPort(INetURLObject::DECODE_WITH_CHARSET);
 
         if ( sTitle.isEmpty() )
-            sTitle = aURL.GetURLNoPass(INetURLObject::DecodeMechanism::WithCharset);
+            sTitle = aURL.GetURLNoPass(INetURLObject::DECODE_WITH_CHARSET);
     }
 
     return sTitle;

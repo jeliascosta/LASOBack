@@ -30,8 +30,12 @@ namespace com { namespace sun { namespace star {
         class Any;
     }
 }}}
+
 namespace rtl {class OUString;}
+
 class DateTime;
+
+//UUUU
 class SfxItemSet;
 
 namespace SWUnoHelper {
@@ -46,7 +50,7 @@ SW_DLLPUBLIC bool UCB_DeleteFile( const OUString& rURL );
 
     // copy/move the file to a new location
 bool UCB_CopyFile( const OUString& rURL, const OUString& rNewURL,
-                    bool bCopyIsMove );
+                    bool bCopyIsMove = false );
 
     // is the URL on the current system case sensitive?
 SW_DLLPUBLIC bool UCB_IsCaseSensitiveFileName( const OUString& rURL );
@@ -61,7 +65,7 @@ SW_DLLPUBLIC bool UCB_IsReadOnlyFileName( const OUString& rURL );
     //                       !! objects must be deleted from the caller!!
 bool UCB_GetFileListOfFolder( const OUString& rURL,
                                 std::vector<OUString>& rList,
-                                const OUString* pExtension,
+                                const OUString* pExtension = nullptr,
                                 std::vector<DateTime*>* pDateTimeList = nullptr );
 
     // is the URL an existing file?
@@ -70,8 +74,8 @@ SW_DLLPUBLIC bool UCB_IsFile( const OUString& rURL );
     // is the URL a existing directory?
 bool UCB_IsDirectory( const OUString& rURL );
 
-/// helper to check if fill style is set to color or bitmap
-/// and thus formerly used SvxBrushItem parts need to be mapped
+///UUUU helper to check if fill style is set to color or bitmap
+/// and thus formally used SvxBrushItem parts need to be mapped
 /// for backwards compatibility
 bool needToMapFillItemsToSvxBrushItemTypes(const SfxItemSet& rSet, sal_uInt16 const nMemberId);
 

@@ -67,52 +67,52 @@ void LoginDialog::SetPassword( const OUString& rNew )
     SetRequest();
 }
 
-void LoginDialog::HideControls_Impl( LoginFlags nFlags )
+void LoginDialog::HideControls_Impl( sal_uInt16 nFlags )
 {
-    if ( nFlags & LoginFlags::NoPath )
+    if ( ( nFlags & LF_NO_PATH ) == LF_NO_PATH )
     {
         m_pPathFT->Hide();
         m_pPathED->Hide();
         m_pPathBtn->Hide();
     }
-    else if ( nFlags & LoginFlags::PathReadonly )
+    else if ( ( nFlags & LF_PATH_READONLY ) == LF_PATH_READONLY )
     {
         m_pPathED->Enable( false );
         m_pPathBtn->Enable( false );
     }
 
-    if ( nFlags & LoginFlags::NoUsername )
+    if ( ( nFlags & LF_NO_USERNAME ) == LF_NO_USERNAME )
     {
         m_pNameFT->Hide();
         m_pNameED->Hide();
     }
-    else if ( nFlags & LoginFlags::UsernameReadonly )
+    else if ( ( nFlags & LF_USERNAME_READONLY ) == LF_USERNAME_READONLY )
     {
         m_pNameED->Enable( false );
     }
 
-    if ( nFlags & LoginFlags::NoPassword )
+    if ( ( nFlags & LF_NO_PASSWORD ) == LF_NO_PASSWORD )
     {
         m_pPasswordFT->Hide();
         m_pPasswordED->Hide();
     }
 
-    if ( nFlags & LoginFlags::NoSavePassword )
+    if ( ( nFlags & LF_NO_SAVEPASSWORD ) == LF_NO_SAVEPASSWORD )
         m_pSavePasswdBtn->Hide();
 
-    if ( nFlags & LoginFlags::NoErrorText )
+    if ( ( nFlags & LF_NO_ERRORTEXT ) == LF_NO_ERRORTEXT )
     {
         m_pErrorInfo->Hide();
         m_pErrorFT->Hide();
     }
 
-    if ( nFlags & LoginFlags::NoAccount )
+    if ( ( nFlags & LF_NO_ACCOUNT ) == LF_NO_ACCOUNT )
     {
         m_pAccountFT->Hide();
         m_pAccountED->Hide();
     }
 
-    if ( nFlags & LoginFlags::NoUseSysCreds )
+    if ( ( nFlags & LF_NO_USESYSCREDS ) == LF_NO_USESYSCREDS )
     {
         m_pUseSysCredsCB->Hide();
     }
@@ -151,7 +151,7 @@ void LoginDialog::SetRequest()
     m_pRequestInfo->SetText(aRequest);
 }
 
-IMPL_LINK_NOARG(LoginDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(LoginDialog, OKHdl_Impl, Button*, void)
 {
     // trim the strings
     m_pNameED->SetText(comphelper::string::strip(m_pNameED->GetText(), ' '));
@@ -159,7 +159,7 @@ IMPL_LINK_NOARG(LoginDialog, OKHdl_Impl, Button*, void)
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_NOARG(LoginDialog, PathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(LoginDialog, PathHdl_Impl, Button*, void)
 {
     try
     {
@@ -181,12 +181,12 @@ IMPL_LINK_NOARG(LoginDialog, PathHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG(LoginDialog, UseSysCredsHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(LoginDialog, UseSysCredsHdl_Impl, Button*, void)
 {
     EnableUseSysCredsControls_Impl( m_pUseSysCredsCB->IsChecked() );
 }
 
-LoginDialog::LoginDialog(vcl::Window* pParent, LoginFlags nFlags,
+LoginDialog::LoginDialog(vcl::Window* pParent, sal_uInt16 nFlags,
     const OUString& rServer, const OUString& rRealm)
     : ModalDialog(pParent, "LoginDialog", "uui/ui/logindialog.ui"),
       m_server(rServer), m_realm(rRealm)
@@ -207,7 +207,7 @@ LoginDialog::LoginDialog(vcl::Window* pParent, LoginFlags nFlags,
     get(m_pUseSysCredsCB, "syscreds");
     get(m_pOKBtn, "ok");
 
-    if ( !( nFlags & LoginFlags::NoUseSysCreds ) )
+    if ( !( ( nFlags & LF_NO_USESYSCREDS ) == LF_NO_USESYSCREDS ) )
       EnableUseSysCredsControls_Impl( m_pUseSysCredsCB->IsChecked() );
 
     SetRequest();

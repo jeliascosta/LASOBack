@@ -38,99 +38,103 @@ class ErrObject : public ::cppu::WeakImplHelper< vba::XErrObject,
 
 public:
     ErrObject();
-
+    virtual ~ErrObject();
     // Attributes
-    virtual ::sal_Int32 SAL_CALL getNumber() override;
-    virtual void SAL_CALL setNumber( ::sal_Int32 _number ) override;
-    virtual ::sal_Int32 SAL_CALL getHelpContext() override;
-    virtual void SAL_CALL setHelpContext( ::sal_Int32 _helpcontext ) override;
-    virtual OUString SAL_CALL getHelpFile() override;
-    virtual void SAL_CALL setHelpFile( const OUString& _helpfile ) override;
-    virtual OUString SAL_CALL getDescription() override;
-    virtual void SAL_CALL setDescription( const OUString& _description ) override;
-    virtual OUString SAL_CALL getSource() override;
-    virtual void SAL_CALL setSource( const OUString& _source ) override;
+    virtual ::sal_Int32 SAL_CALL getNumber() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setNumber( ::sal_Int32 _number ) throw (uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getHelpContext() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setHelpContext( ::sal_Int32 _helpcontext ) throw (uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getHelpFile() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setHelpFile( const OUString& _helpfile ) throw (uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getDescription() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDescription( const OUString& _description ) throw (uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getSource() throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setSource( const OUString& _source ) throw (uno::RuntimeException, std::exception) override;
 
     // Methods
-    virtual void SAL_CALL Clear(  ) override;
-    virtual void SAL_CALL Raise( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description, const uno::Any& HelpFile, const uno::Any& HelpContext ) override;
+    virtual void SAL_CALL Clear(  ) throw (uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL Raise( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description, const uno::Any& HelpFile, const uno::Any& HelpContext ) throw (uno::RuntimeException, std::exception) override;
     // XDefaultProperty
-    virtual OUString SAL_CALL getDefaultPropertyName(  ) override;
+    virtual OUString SAL_CALL getDefaultPropertyName(  ) throw (uno::RuntimeException, std::exception) override;
 
     // Helper method
-    /// @throws css::uno::RuntimeException
     void setData( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description,
-        const uno::Any& HelpFile, const uno::Any& HelpContext );
+        const uno::Any& HelpFile, const uno::Any& HelpContext ) throw (uno::RuntimeException);
 };
+
+
+ErrObject::~ErrObject()
+{
+}
 
 ErrObject::ErrObject() : m_nNumber(0), m_nHelpContext(0)
 {
 }
 
 sal_Int32 SAL_CALL
-ErrObject::getNumber()
+ErrObject::getNumber() throw (uno::RuntimeException, std::exception)
 {
     return m_nNumber;
 }
 
 void SAL_CALL
-ErrObject::setNumber( ::sal_Int32 _number )
+ErrObject::setNumber( ::sal_Int32 _number ) throw (uno::RuntimeException, std::exception)
 {
     GetSbData()->pInst->setErrorVB( _number, OUString() );
     OUString _description = GetSbData()->pInst->GetErrorMsg();
-    setData( uno::Any( _number ), uno::Any(), uno::Any( _description ), uno::Any(), uno::Any() );
+    setData( uno::makeAny( _number ), uno::Any(), uno::makeAny( _description ), uno::Any(), uno::Any() );
 }
 
 ::sal_Int32 SAL_CALL
-ErrObject::getHelpContext()
+ErrObject::getHelpContext() throw (uno::RuntimeException, std::exception)
 {
     return m_nHelpContext;
 }
 void SAL_CALL
-ErrObject::setHelpContext( ::sal_Int32 _helpcontext )
+ErrObject::setHelpContext( ::sal_Int32 _helpcontext ) throw (uno::RuntimeException, std::exception)
 {
     m_nHelpContext = _helpcontext;
 }
 
 OUString SAL_CALL
-ErrObject::getHelpFile()
+ErrObject::getHelpFile() throw (uno::RuntimeException, std::exception)
 {
     return m_sHelpFile;
 }
 
 void SAL_CALL
-ErrObject::setHelpFile( const OUString& _helpfile )
+ErrObject::setHelpFile( const OUString& _helpfile ) throw (uno::RuntimeException, std::exception)
 {
     m_sHelpFile = _helpfile;
 }
 
 OUString SAL_CALL
-ErrObject::getDescription()
+ErrObject::getDescription() throw (uno::RuntimeException, std::exception)
 {
     return m_sDescription;
 }
 
 void SAL_CALL
-ErrObject::setDescription( const OUString& _description )
+ErrObject::setDescription( const OUString& _description ) throw (uno::RuntimeException, std::exception)
 {
     m_sDescription = _description;
 }
 
 OUString SAL_CALL
-ErrObject::getSource()
+ErrObject::getSource() throw (uno::RuntimeException, std::exception)
 {
     return m_sSource;
 }
 
 void SAL_CALL
-ErrObject::setSource( const OUString& _source )
+ErrObject::setSource( const OUString& _source ) throw (uno::RuntimeException, std::exception)
 {
     m_sSource = _source;
 }
 
 // Methods
 void SAL_CALL
-ErrObject::Clear(  )
+ErrObject::Clear(  ) throw (uno::RuntimeException, std::exception)
 {
     m_sHelpFile.clear();
     m_sSource = m_sHelpFile;
@@ -140,7 +144,7 @@ ErrObject::Clear(  )
 }
 
 void SAL_CALL
-ErrObject::Raise( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description, const uno::Any& HelpFile, const uno::Any& HelpContext )
+ErrObject::Raise( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description, const uno::Any& HelpFile, const uno::Any& HelpContext ) throw (uno::RuntimeException, std::exception)
 {
     setData( Number, Source, Description, HelpFile, HelpContext );
     if ( m_nNumber )
@@ -149,12 +153,13 @@ ErrObject::Raise( const uno::Any& Number, const uno::Any& Source, const uno::Any
 
 // XDefaultProperty
 OUString SAL_CALL
-ErrObject::getDefaultPropertyName(  )
+ErrObject::getDefaultPropertyName(  ) throw (uno::RuntimeException, std::exception)
 {
     return OUString( "Number" );
 }
 
 void ErrObject::setData( const uno::Any& Number, const uno::Any& Source, const uno::Any& Description, const uno::Any& HelpFile, const uno::Any& HelpContext )
+    throw (uno::RuntimeException)
 {
     if ( !Number.hasValue() )
         throw uno::RuntimeException("Missing Required Parameter" );
@@ -170,6 +175,7 @@ SbxErrObject::SbxErrObject( const OUString& rName, const uno::Any& rUnoObj )
     : SbUnoObject( rName, rUnoObj )
     , m_pErrObject( nullptr )
 {
+    OSL_TRACE("SbxErrObject::SbxErrObject ctor");
     rUnoObj >>= m_xErr;
     if ( m_xErr.is() )
     {
@@ -180,27 +186,30 @@ SbxErrObject::SbxErrObject( const OUString& rName, const uno::Any& rUnoObj )
 
 SbxErrObject::~SbxErrObject()
 {
+    OSL_TRACE("SbxErrObject::~SbxErrObject dtor");
 }
 
-uno::Reference< vba::XErrObject > const &
+uno::Reference< vba::XErrObject >
 SbxErrObject::getUnoErrObject()
 {
-    SbxErrObject* pGlobErr = static_cast< SbxErrObject* >(  getErrObject().get() );
+    SbxVariable* pVar = getErrObject();
+    SbxErrObject* pGlobErr = static_cast< SbxErrObject* >(  pVar );
     return pGlobErr->m_xErr;
 }
 
-SbxVariableRef const &
+SbxVariableRef
 SbxErrObject::getErrObject()
 {
-    static SbxVariableRef pGlobErr = new SbxErrObject( "Err", uno::Any( uno::Reference< vba::XErrObject >( new ErrObject() ) ) );
+    static SbxVariableRef pGlobErr = new SbxErrObject( OUString("Err"), uno::makeAny( uno::Reference< vba::XErrObject >( new ErrObject() ) ) );
     return pGlobErr;
 }
 
 void SbxErrObject::setNumberAndDescription( ::sal_Int32 _number, const OUString& _description )
+    throw (uno::RuntimeException)
 {
     if( m_pErrObject != nullptr )
     {
-        m_pErrObject->setData( uno::Any( _number ), uno::Any(), uno::Any( _description ), uno::Any(), uno::Any() );
+        m_pErrObject->setData( uno::makeAny( _number ), uno::Any(), uno::makeAny( _description ), uno::Any(), uno::Any() );
     }
 }
 

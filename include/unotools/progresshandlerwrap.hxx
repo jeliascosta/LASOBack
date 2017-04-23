@@ -21,24 +21,27 @@
 #define INCLUDED_UNOTOOLS_PROGRESSHANDLERWRAP_HXX
 
 #include <unotools/unotoolsdllapi.h>
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <com/sun/star/task/XStatusIndicator.hpp>
 #include <com/sun/star/ucb/XProgressHandler.hpp>
 
 namespace utl
 {
 
-class UNOTOOLS_DLLPUBLIC ProgressHandlerWrap : public ::cppu::WeakImplHelper< css::ucb::XProgressHandler >
+class UNOTOOLS_DLLPUBLIC ProgressHandlerWrap : public ::cppu::WeakImplHelper1< css::ucb::XProgressHandler >
 {
     css::uno::Reference< css::task::XStatusIndicator > m_xStatusIndicator;
 
 public:
-    ProgressHandlerWrap( css::uno::Reference< css::task::XStatusIndicator > const & xSI );
+    ProgressHandlerWrap( css::uno::Reference< css::task::XStatusIndicator > xSI );
 
     // XProgressHandler
-    virtual void SAL_CALL push( const css::uno::Any& Status ) override;
-    virtual void SAL_CALL update( const css::uno::Any& Status ) override;
-    virtual void SAL_CALL pop() override;
+    virtual void SAL_CALL push( const css::uno::Any& Status )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL update( const css::uno::Any& Status )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL pop()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 }   // namespace utl

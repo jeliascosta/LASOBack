@@ -470,7 +470,7 @@ void OFileWriter::closeOutput()
 
 
 // Needed to switch on solaris threads
-#ifdef __sun
+#ifdef SOLARIS
 extern "C" void ChangeGlobalInit();
 #endif
 int main (int argc, char **argv)
@@ -480,7 +480,7 @@ int main (int argc, char **argv)
         printf( "usage : saxdemo inputfile outputfile\n" );
         exit( 0 );
     }
-#ifdef __sun
+#ifdef SOLARIS
     // switch on threads in solaris
     ChangeGlobalInit();
 #endif

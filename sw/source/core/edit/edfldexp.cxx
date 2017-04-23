@@ -20,7 +20,9 @@
 #include <editsh.hxx>
 #include <dbfld.hxx>
 #include <dbmgr.hxx>
+#include <com/sun/star/container/XNameAccess.hpp>
 #include <comphelper/processfactory.hxx>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/sdb/DatabaseContext.hpp>
 #include <doc.hxx>
 #include <IDocumentFieldsAccess.hxx>
@@ -40,27 +42,34 @@ bool SwEditShell::IsFieldDataSourceAvailable(OUString& rUsedDataSource) const
     uno::Reference<sdb::XDatabaseContext> xDBContext = sdb::DatabaseContext::create(xContext);
     for(const auto pFieldType : *pFieldTypes)
     {
-        if(IsUsed(*pFieldType) && pFieldType->Which() == SwFieldIds::Database)
+        if(IsUsed(*pFieldType))
         {
-            SwIterator<SwFormatField,SwFieldType> aIter( *pFieldType );
-            SwFormatField* pFormatField = aIter.First();
-            while(pFormatField)
+            switch(pFieldType->Which())
             {
-                if(pFormatField->IsFieldInDoc())
+                case RES_DBFLD:
                 {
-                    const SwDBData& rData =
-                            static_cast<SwDBFieldType*>(pFormatField->GetField()->GetTyp())->GetDBData();
-                    try
+                    SwIterator<SwFormatField,SwFieldType> aIter( *pFieldType );
+                    SwFormatField* pFormatField = aIter.First();
+                    while(pFormatField)
                     {
-                        return xDBContext->getByName(rData.sDataSource).hasValue();
-                    }
-                    catch(uno::Exception const &)
-                    {
-                        rUsedDataSource = rData.sDataSource;
-                        return false;
+                        if(pFormatField->IsFieldInDoc())
+                        {
+                            const SwDBData& rData =
+                                    static_cast<SwDBFieldType*>(pFormatField->GetField()->GetTyp())->GetDBData();
+                            try
+                            {
+                                return xDBContext->getByName(rData.sDataSource).hasValue();
+                            }
+                            catch(uno::Exception const &)
+                            {
+                                rUsedDataSource = rData.sDataSource;
+                                return false;
+                            }
+                        }
+                        pFormatField = aIter.Next();
                     }
                 }
-                pFormatField = aIter.Next();
+                break;
             }
         }
     }

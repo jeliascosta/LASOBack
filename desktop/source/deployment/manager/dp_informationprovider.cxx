@@ -25,7 +25,6 @@
 #include <com/sun/star/deployment/XPackageInformationProvider.hpp>
 #include <com/sun/star/deployment/ExtensionManager.hpp>
 #include <com/sun/star/deployment/XUpdateInformationProvider.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/registry/XRegistryKey.hpp>
 #include <com/sun/star/task/XAbortChannel.hpp>
@@ -43,7 +42,6 @@
 #include "dp_dependencies.hxx"
 #include "dp_descriptioninfoset.hxx"
 #include "dp_identifier.hxx"
-#include "dp_services.hxx"
 #include "dp_version.hxx"
 #include "dp_misc.h"
 #include "dp_update.hxx"
@@ -65,11 +63,15 @@ class PackageInformationProvider :
 {
     public:
     explicit PackageInformationProvider( uno::Reference< uno::XComponentContext >const& xContext);
+    virtual     ~PackageInformationProvider();
 
     // XPackageInformationProvider
-    virtual OUString SAL_CALL getPackageLocation( const OUString& extensionId ) override;
-    virtual uno::Sequence< uno::Sequence< OUString > > SAL_CALL isUpdateAvailable( const OUString& extensionId ) override;
-    virtual uno::Sequence< uno::Sequence< OUString > > SAL_CALL getExtensionList() override;
+    virtual OUString SAL_CALL getPackageLocation( const OUString& extensionId )
+        throw ( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< uno::Sequence< OUString > > SAL_CALL isUpdateAvailable( const OUString& extensionId )
+        throw ( uno::RuntimeException, std::exception ) override;
+    virtual uno::Sequence< uno::Sequence< OUString > > SAL_CALL getExtensionList()
+        throw ( uno::RuntimeException, std::exception ) override;
 
 private:
 
@@ -87,6 +89,12 @@ PackageInformationProvider::PackageInformationProvider( uno::Reference< uno::XCo
     mxUpdateInformation( deployment::UpdateInformationProvider::create( xContext ) )
 {
 }
+
+
+PackageInformationProvider::~PackageInformationProvider()
+{
+}
+
 
 OUString PackageInformationProvider::getPackageLocation(
     const OUString & repository,
@@ -125,6 +133,7 @@ OUString PackageInformationProvider::getPackageLocation(
 
 OUString SAL_CALL
 PackageInformationProvider::getPackageLocation( const OUString& _sExtensionId )
+    throw ( uno::RuntimeException, std::exception )
 {
     OUString aLocationURL = getPackageLocation( "user", _sExtensionId );
 
@@ -155,6 +164,7 @@ PackageInformationProvider::getPackageLocation( const OUString& _sExtensionId )
 
 uno::Sequence< uno::Sequence< OUString > > SAL_CALL
 PackageInformationProvider::isUpdateAvailable( const OUString& _sExtensionId )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Sequence< uno::Sequence< OUString > > aList;
 
@@ -265,6 +275,7 @@ PackageInformationProvider::isUpdateAvailable( const OUString& _sExtensionId )
 
 
 uno::Sequence< uno::Sequence< OUString > > SAL_CALL PackageInformationProvider::getExtensionList()
+    throw ( uno::RuntimeException, std::exception )
 {
     const uno::Reference<deployment::XExtensionManager> mgr =
         deployment::ExtensionManager::get(mxContext);
@@ -310,8 +321,8 @@ uno::Sequence< uno::Sequence< OUString > > SAL_CALL PackageInformationProvider::
 
 
 namespace sdecl = comphelper::service_decl;
-sdecl::class_<PackageInformationProvider> const servicePIP;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::class_<PackageInformationProvider> servicePIP;
+extern sdecl::ServiceDecl const serviceDecl(
     servicePIP,
     // a private one:
     "com.sun.star.comp.deployment.PackageInformationProvider",

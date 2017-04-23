@@ -60,7 +60,7 @@ private:
     SharedFontPointer maFont;
 
     FontProvider();
-    virtual ~FontProvider() override;
+    virtual ~FontProvider();
 
     FontProvider (const FontProvider&) = delete;
     FontProvider& operator= (const FontProvider&) = delete;

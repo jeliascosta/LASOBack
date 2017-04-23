@@ -22,11 +22,11 @@
 
 #include <tools/solar.h>
 #include <rtl/ref.hxx>
+#include <chcmprse.hxx>
 #include <fldupde.hxx>
 
 class SvxForbiddenCharactersTable;
 namespace com { namespace sun { namespace star { namespace i18n { struct ForbiddenCharacters; } } } }
-enum class CharCompressType;
 
 enum class DocumentSettingId
 {
@@ -54,14 +54,12 @@ enum class DocumentSettingId
     DO_NOT_JUSTIFY_LINES_WITH_MANUAL_BREAK,
     TREAT_SINGLE_COLUMN_BREAK_AS_PAGE_BREAK,
     DO_NOT_RESET_PARA_ATTRS_FOR_NUM_FONT,
+    OUTLINE_LEVEL_YIELDS_OUTLINE_RULE,
 
     DO_NOT_CAPTURE_DRAW_OBJS_ON_PAGE,
     TABLE_ROW_KEEP,
     IGNORE_TABS_AND_BLANKS_FOR_LINE_CALCULATION,
     CLIP_AS_CHARACTER_ANCHORED_WRITER_FLY_FRAME,
-
-    // tdf#104349 tdf#104668
-    MS_WORD_COMP_TRAILING_BLANKS,
 
     UNIX_FORCE_ZERO_EXT_LEADING,
     TABS_RELATIVE_TO_INDENT,
@@ -204,14 +202,14 @@ enum class DocumentSettingId
        @returns
        the current character compression mode.
     */
-    virtual CharCompressType getCharacterCompressionType() const = 0;
+    virtual SwCharCompressType getCharacterCompressionType() const = 0;
 
     /** Set the character compression type for Asian characters.
 
        @param nMode
        [in] the new character compression type.
     */
-    virtual void setCharacterCompressionType( /*[in]*/CharCompressType nType ) = 0;
+    virtual void setCharacterCompressionType( /*[in]*/SwCharCompressType nType ) = 0;
 
     /** Get the n32DummyCompatabilityOptions1
     */

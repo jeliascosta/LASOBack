@@ -32,7 +32,7 @@ ORowSetValue OOp_DayOfWeek::operate(const ORowSetValue& lhs) const
         return lhs;
 
     sal_Int32 nRet = 0;
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     Date aDate(aD.Day,aD.Month,aD.Year);
     DayOfWeek eDayOfWeek = aDate.GetDayOfWeek();
     switch(eDayOfWeek)
@@ -69,7 +69,7 @@ ORowSetValue OOp_DayOfMonth::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     return static_cast<sal_Int16>(aD.Day);
 }
 
@@ -78,7 +78,7 @@ ORowSetValue OOp_DayOfYear::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     Date aDate(aD.Day,aD.Month,aD.Year);
     return static_cast<sal_Int16>(aDate.GetDayOfYear());
 }
@@ -88,7 +88,7 @@ ORowSetValue OOp_Month::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     return static_cast<sal_Int16>(aD.Month);
 }
 
@@ -98,7 +98,7 @@ ORowSetValue OOp_DayName::operate(const ORowSetValue& lhs) const
         return lhs;
 
     OUString sRet;
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     Date aDate(aD.Day,aD.Month,aD.Year);
     DayOfWeek eDayOfWeek = aDate.GetDayOfWeek();
     switch(eDayOfWeek)
@@ -136,7 +136,7 @@ ORowSetValue OOp_MonthName::operate(const ORowSetValue& lhs) const
         return lhs;
 
     OUString sRet;
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     switch(aD.Month)
     {
         case 1:
@@ -185,7 +185,7 @@ ORowSetValue OOp_Quarter::operate(const ORowSetValue& lhs) const
         return lhs;
 
     sal_Int32 nRet = 1;
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     if ( aD.Month >= 4 && aD.Month < 7 )
         nRet = 2;
     else if ( aD.Month >= 7 && aD.Month < 10 )
@@ -195,14 +195,14 @@ ORowSetValue OOp_Quarter::operate(const ORowSetValue& lhs) const
     return nRet;
 }
 
-ORowSetValue OOp_Week::operate(const std::vector<ORowSetValue>& lhs) const
+ORowSetValue OOp_Week::operate(const ::std::vector<ORowSetValue>& lhs) const
 {
     if ( lhs.empty() || lhs.size() > 2 )
         return ORowSetValue();
 
     size_t nSize = lhs.size();
 
-    css::util::Date aD = lhs[nSize-1];
+    ::com::sun::star::util::Date aD = lhs[nSize-1];
     Date aDate(aD.Day,aD.Month,aD.Year);
 
     sal_Int16 nStartDay = SUNDAY;
@@ -217,7 +217,7 @@ ORowSetValue OOp_Year::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Date aD = lhs;
+    ::com::sun::star::util::Date aD = lhs;
     return static_cast<sal_Int16>(aD.Year);
 }
 
@@ -226,7 +226,7 @@ ORowSetValue OOp_Hour::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Time aT = lhs;
+    ::com::sun::star::util::Time aT = lhs;
     return static_cast<sal_Int16>(aT.Hours);
 }
 
@@ -235,7 +235,7 @@ ORowSetValue OOp_Minute::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Time aT = lhs;
+    ::com::sun::star::util::Time aT = lhs;
     return static_cast<sal_Int16>(aT.Minutes);
 }
 
@@ -244,11 +244,11 @@ ORowSetValue OOp_Second::operate(const ORowSetValue& lhs) const
     if ( lhs.isNull() )
         return lhs;
 
-    css::util::Time aT = lhs;
+    ::com::sun::star::util::Time aT = lhs;
     return static_cast<sal_Int16>(aT.Seconds);
 }
 
-ORowSetValue OOp_CurDate::operate(const std::vector<ORowSetValue>& lhs) const
+ORowSetValue OOp_CurDate::operate(const ::std::vector<ORowSetValue>& lhs) const
 {
     if ( !lhs.empty() )
         return ORowSetValue();
@@ -257,7 +257,7 @@ ORowSetValue OOp_CurDate::operate(const std::vector<ORowSetValue>& lhs) const
     return aCurDate.GetUNODate();
 }
 
-ORowSetValue OOp_CurTime::operate(const std::vector<ORowSetValue>& lhs) const
+ORowSetValue OOp_CurTime::operate(const ::std::vector<ORowSetValue>& lhs) const
 {
     if ( !lhs.empty() )
         return ORowSetValue();
@@ -266,7 +266,7 @@ ORowSetValue OOp_CurTime::operate(const std::vector<ORowSetValue>& lhs) const
     return aCurTime.GetUNOTime();
 }
 
-ORowSetValue OOp_Now::operate(const std::vector<ORowSetValue>& lhs) const
+ORowSetValue OOp_Now::operate(const ::std::vector<ORowSetValue>& lhs) const
 {
     if ( !lhs.empty() )
         return ORowSetValue();

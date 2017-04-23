@@ -34,7 +34,7 @@ public:
 
     BarChart( const css::uno::Reference< css::chart2::XChartType >& xChartTypeModel
             , sal_Int32 nDimensionCount );
-    virtual ~BarChart() override;
+    virtual ~BarChart();
 
     virtual void createShapes() override;
     virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
@@ -62,7 +62,7 @@ private: //methods
     void adaptOverlapAndGapwidthForGroupBarsPerAxis();
 
 private: //member
-    std::unique_ptr<BarPositionHelper>   m_pMainPosHelper;
+    BarPositionHelper*                   m_pMainPosHelper;
     css::uno::Sequence< sal_Int32 >      m_aOverlapSequence;
     css::uno::Sequence< sal_Int32 >      m_aGapwidthSequence;
 };

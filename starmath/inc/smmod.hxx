@@ -24,6 +24,7 @@
 #include <svl/lstner.hxx>
 #include <svtools/colorcfg.hxx>
 
+#include <tools/shl.hxx>
 #include "tools/rc.hxx"
 #include <sfx2/module.hxx>
 
@@ -55,12 +56,12 @@ class VirtualDevice;
 class SmResId : public ResId
 {
 public:
-    explicit SmResId(sal_uInt16 nId);
+    SmResId(sal_uInt16 nId);
 };
 
 #define SM_RESSTR(x) SmResId(x).toString()
 
-class SmLocalizedSymbolData
+class SmLocalizedSymbolData : public Resource
 {
     ResStringArray      aUiSymbolNamesAry;
     ResStringArray      aExportSymbolNamesAry;
@@ -93,17 +94,17 @@ class SmModule : public SfxModule, public utl::ConfigurationListener
     static void ApplyColorConfigValues( const svtools::ColorConfig &rColorCfg );
 
 public:
-    SFX_DECL_INTERFACE(SFX_INTERFACE_SMA_START + SfxInterfaceId(0))
+    SFX_DECL_INTERFACE(SFX_INTERFACE_SMA_START + 0)
 
 private:
     /// SfxInterface initializer.
     static void InitInterface_Impl();
 
 public:
-    explicit SmModule(SfxObjectFactory* pObjFact);
-    virtual ~SmModule() override;
+    SmModule(SfxObjectFactory* pObjFact);
+    virtual ~SmModule();
 
-    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, ConfigurationHints ) override;
+    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
     svtools::ColorConfig &  GetColorConfig();
 
@@ -124,7 +125,7 @@ public:
     virtual VclPtr<SfxTabPage> CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet ) override;
 };
 
-#define SM_MOD() ( static_cast<SmModule*>(SfxApplication::GetModule(SfxToolsModule::Math)) )
+#define SM_MOD() ( *reinterpret_cast<SmModule**>(GetAppData(SHL_SM)) )
 
 #endif // INCLUDED_STARMATH_INC_SMMOD_HXX
 

@@ -144,8 +144,6 @@ void SwKernPortion::Paint( const SwTextPaintInfo &rInf ) const
             rInf.DrawViewOpt( *this, POR_FLD );
 
         rInf.DrawBackBrush( *this );
-        if (GetJoinBorderWithNext() ||GetJoinBorderWithPrev())
-            rInf.DrawBorder( *this );
 
         // do we have to repaint a post it portion?
         if( rInf.OnWin() && pPortion && !pPortion->Width() )
@@ -250,14 +248,14 @@ SwTwips SwTextFrame::EmptyHeight() const
     }
 
     const IDocumentRedlineAccess& rIDRA = rTextNode.getIDocumentRedlineAccess();
-    if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
+    if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
     {
-        const SwRedlineTable::size_type nRedlPos = rIDRA.GetRedlinePos( rTextNode, USHRT_MAX );
-        if( SwRedlineTable::npos != nRedlPos )
+        const sal_uInt16 nRedlPos = rIDRA.GetRedlinePos( rTextNode, USHRT_MAX );
+        if( USHRT_MAX != nRedlPos )
         {
             SwAttrHandler aAttrHandler;
             aAttrHandler.Init(  GetTextNode()->GetSwAttrSet(),
-                               *GetTextNode()->getIDocumentSettingAccess() );
+                               *GetTextNode()->getIDocumentSettingAccess(), nullptr );
             SwRedlineItr aRedln( rTextNode, *pFnt, aAttrHandler,
                                  nRedlPos, true );
         }
@@ -291,13 +289,13 @@ bool SwTextFrame::FormatEmpty()
         return false;
     const SwAttrSet& aSet = GetTextNode()->GetSwAttrSet();
     const SvxAdjust nAdjust = aSet.GetAdjust().GetAdjust();
-    if( !bCollapse && ( ( ( ! IsRightToLeft() && ( SvxAdjust::Left != nAdjust ) ) ||
-          (   IsRightToLeft() && ( SvxAdjust::Right != nAdjust ) ) ) ||
+    if( !bCollapse && ( ( ( ! IsRightToLeft() && ( SVX_ADJUST_LEFT != nAdjust ) ) ||
+          (   IsRightToLeft() && ( SVX_ADJUST_RIGHT != nAdjust ) ) ) ||
           aSet.GetRegister().GetValue() ) )
         return false;
     const SvxLineSpacingItem &rSpacing = aSet.GetLineSpacing();
-    if( !bCollapse && ( SvxLineSpaceRule::Min == rSpacing.GetLineSpaceRule() ||
-        SvxLineSpaceRule::Fix == rSpacing.GetLineSpaceRule() ||
+    if( !bCollapse && ( SVX_LINE_SPACE_MIN == rSpacing.GetLineSpaceRule() ||
+        SVX_LINE_SPACE_FIX == rSpacing.GetLineSpaceRule() ||
         aSet.GetLRSpace().IsAutoFirst() ) )
         return false;
 
@@ -318,8 +316,8 @@ bool SwTextFrame::FormatEmpty()
             nHeight = pGrid->GetBaseHeight() + pGrid->GetRubyHeight();
     }
 
-    SwRectFnSet aRectFnSet(this);
-    const SwTwips nChg = nHeight - aRectFnSet.GetHeight(Prt());
+    SWRECTFN( this )
+    const SwTwips nChg = nHeight - (Prt().*fnRect->fnGetHeight)();
 
     if( !nChg )
         SetUndersized( false );
@@ -356,8 +354,8 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
         pFrame = pFrame->GetUpper();
     if( ( SwFrameType::Body| SwFrameType::Fly ) & pFrame->GetType() )
     {
-        SwRectFnSet aRectFnSet(pFrame);
-        rRegStart = aRectFnSet.GetPrtTop(*pFrame);
+        SWRECTFN( pFrame )
+        rRegStart = (pFrame->*fnRect->fnGetPrtTop)();
         pFrame = pFrame->FindPageFrame();
         if( pFrame->IsPageFrame() )
         {
@@ -371,7 +369,7 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
                     if( pFormat )
                     {
                         const SvxLineSpacingItem &rSpace = pFormat->GetLineSpacing();
-                        if( SvxLineSpaceRule::Fix == rSpace.GetLineSpaceRule() )
+                        if( SVX_LINE_SPACE_FIX == rSpace.GetLineSpaceRule() )
                         {
                             rRegDiff = rSpace.GetLineHeight();
                             pDesc->SetRegHeight( rRegDiff );
@@ -395,7 +393,7 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
                                 pOut = Application::GetDefaultDevice();
 
                             MapMode aOldMap( pOut->GetMapMode() );
-                            pOut->SetMapMode( MapMode( MapUnit::MapTwip ) );
+                            pOut->SetMapMode( MapMode( MAP_TWIP ) );
 
                             aFnt.ChgFnt( pSh, *pOut );
                             rRegDiff = aFnt.GetHeight( pSh, *pOut );
@@ -403,9 +401,9 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
 
                             switch( rSpace.GetLineSpaceRule() )
                             {
-                                case SvxLineSpaceRule::Auto:
+                                case SVX_LINE_SPACE_AUTO:
                                 break;
-                                case SvxLineSpaceRule::Min:
+                                case SVX_LINE_SPACE_MIN:
                                 {
                                     if( rRegDiff < rSpace.GetLineHeight() )
                                         rRegDiff = rSpace.GetLineHeight();
@@ -416,9 +414,9 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
                             }
                             switch( rSpace.GetInterLineSpaceRule() )
                             {
-                                case SvxInterLineSpaceRule::Off:
+                                case SVX_INTER_LINE_SPACE_OFF:
                                 break;
-                                case SvxInterLineSpaceRule::Prop:
+                                case SVX_INTER_LINE_SPACE_PROP:
                                 {
                                     long nTmp = rSpace.GetPropLineSpace();
                                     if( nTmp < 50 )
@@ -431,7 +429,7 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
                                     nNetHeight = rRegDiff;
                                     break;
                                 }
-                                case SvxInterLineSpaceRule::Fix:
+                                case SVX_INTER_LINE_SPACE_FIX:
                                 {
                                     rRegDiff = rRegDiff + rSpace.GetInterLineSpace();
                                     nNetHeight = rRegDiff;
@@ -447,7 +445,7 @@ bool SwTextFrame::FillRegister( SwTwips& rRegStart, sal_uInt16& rRegDiff )
                     }
                 }
                 const long nTmpDiff = pDesc->GetRegAscent() - rRegDiff;
-                if ( aRectFnSet.IsVert() )
+                if ( bVert )
                     rRegStart -= nTmpDiff;
                 else
                     rRegStart += nTmpDiff;
@@ -469,7 +467,7 @@ void SwHiddenTextPortion::Paint( const SwTextPaintInfo & rInf) const
     aPos.Y() -= 150;
     aPos.X() -= 25;
     SwRect aRect( aPos, Size( 100, 200 ) );
-    pOut->DrawRect( aRect.SVRect() );
+    static_cast<OutputDevice*>(pOut)->DrawRect( aRect.SVRect() );
     pOut->SetFillColor( aOldColor );
 #endif
 }

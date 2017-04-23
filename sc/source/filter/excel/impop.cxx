@@ -62,7 +62,6 @@
 #include "postit.hxx"
 
 #include "fapihelper.hxx"
-#include "namebuff.hxx"
 #include "xltools.hxx"
 #include "xltable.hxx"
 #include "xlview.hxx"
@@ -86,7 +85,8 @@
 
 using namespace ::com::sun::star;
 
-const double ImportExcel::fExcToTwips = TWIPS_PER_CHAR / 256.0;
+const double ImportExcel::fExcToTwips =
+    ( double ) TWIPS_PER_CHAR / 256.0;
 
 ImportTyp::ImportTyp( ScDocument* pDoc, rtl_TextEncoding eQ )
 {
@@ -129,7 +129,10 @@ ImportExcel::ImportExcel( XclImpRootData& rImpData, SvStream& rStrm ):
     pExcRoot->pShrfmlaBuff = new SharedFormulaBuffer( pExcRoot );     //&aShrfrmlaBuff;
     pExcRoot->pExtNameBuff = new ExtNameBuff ( *this );
 
-    pOutlineListBuffer = new XclImpOutlineListBuffer;
+    pExtNameBuff = new NameBuffer( pExcRoot );          //prevent empty rootdata
+    pExtNameBuff->SetBase( 1 );
+
+    pOutlineListBuffer = new XclImpOutlineListBuffer( );
 
     // ab Biff8
     pFormConv = pExcRoot->pFmlaConverter = new ExcelToSc( GetRoot() );
@@ -153,6 +156,8 @@ ImportExcel::ImportExcel( XclImpRootData& rImpData, SvStream& rStrm ):
 ImportExcel::~ImportExcel()
 {
     GetDoc().SetSrcCharSet( GetTextEncoding() );
+
+    delete pExtNameBuff;
 
     delete pOutlineListBuffer;
 
@@ -496,7 +501,7 @@ void ImportExcel::Columndefault()
     nColMic = aIn.ReaduInt16();
     nColMac = aIn.ReaduInt16();
 
-    OSL_ENSURE( aIn.GetRecLeft() == (std::size_t)(nColMac - nColMic) * 3 + 2,
+    OSL_ENSURE( aIn.GetRecLeft() == (sal_Size)(nColMac - nColMic) * 3 + 2,
                 "ImportExcel::Columndefault - wrong record size" );
 
     nColMac--;
@@ -577,19 +582,20 @@ void ImportExcel::Externname25()
     nOpt = aIn.ReaduInt16();
     nRes = aIn.ReaduInt32();
 
-    aIn.ReadByteString( false ); // name
+    OUString aName( aIn.ReadByteString( false ) );
 
     if( ( nOpt & 0x0001 ) || ( ( nOpt & 0xFFFE ) == 0x0000 ) )
     {// external name
-        pExcRoot->pExtNameBuff->AddName( mnLastRefIdx );
+        aName = ScfTools::ConvertToScDefinedName( aName );
+        pExcRoot->pExtNameBuff->AddName( aName, mnLastRefIdx );
     }
     else if( nOpt & 0x0010 )
     {// ole link
-        pExcRoot->pExtNameBuff->AddOLE( mnLastRefIdx, nRes );        // nRes is storage ID
+        pExcRoot->pExtNameBuff->AddOLE( aName, mnLastRefIdx, nRes );        // nRes is storage ID
     }
     else
     {// dde link
-        pExcRoot->pExtNameBuff->AddDDE( mnLastRefIdx );
+        pExcRoot->pExtNameBuff->AddDDE( aName, mnLastRefIdx );
     }
 }
 
@@ -726,7 +732,7 @@ void ImportExcel::Boundsheet()
 
     OUString aName( aIn.ReadByteString( false ) );
 
-    SCTAB nScTab = nBdshtTab;
+    SCTAB nScTab = static_cast< SCTAB >( nBdshtTab );
     if( nScTab > 0 )
     {
         OSL_ENSURE( !pD->HasTable( nScTab ), "ImportExcel::Boundsheet - sheet exists already" );
@@ -864,7 +870,7 @@ void ImportExcel::Shrfmla()
     rDoc.getDoc().EnsureTable(aPos.Tab());
     rDoc.setFormulaCell(aPos, pCell);
     pCell->SetNeedNumberFormat(false);
-    if (rtl::math::isFinite(mpLastFormula->mfValue))
+    if (!rtl::math::isNan(mpLastFormula->mfValue))
         pCell->SetResultDouble(mpLastFormula->mfValue);
 
     GetXFRangeBuffer().SetXF(aPos, mpLastFormula->mnXF);

@@ -38,12 +38,12 @@ static sal_Char const sHTML_SC_auto[] = "AUTO";
 #define HTML_O_READONLY "READONLY"
 #define HTML_O_EDIT     "EDIT"
 
-static HTMLOptionEnum<ScrollingMode> const aScrollingTable[] =
+static HTMLOptionEnum const aScollingTable[] =
 {
-    { sHTML_SC_yes,     ScrollingMode::Yes    },
-    { sHTML_SC_no,      ScrollingMode::No     },
-    { sHTML_SC_auto,    ScrollingMode::Auto   },
-    { nullptr,          (ScrollingMode)0 }
+    { sHTML_SC_yes,     ScrollingYes    },
+    { sHTML_SC_no,      ScrollingNo     },
+    { sHTML_SC_auto,    ScrollingAuto   },
+    { nullptr,                0               }
 };
 
 void SfxFrameHTMLParser::ParseFrameOptions(
@@ -55,7 +55,7 @@ void SfxFrameHTMLParser::ParseFrameOptions(
     // Netscape seems to set marginwidth to 0 as soon as
     // marginheight is set, and vice versa.
     // Netscape does however not allow for a direct
-    // setting to 0, while IE4.0 does
+    // seting to 0, while IE4.0 does
     // We will not mimic that bug !
     bool bMarginWidth = false, bMarginHeight = false;
 
@@ -93,7 +93,9 @@ void SfxFrameHTMLParser::ParseFrameOptions(
             bMarginHeight = true;
             break;
         case HTML_O_SCROLLING:
-            pFrame->SetScrollingMode( rOption.GetEnum( aScrollingTable, ScrollingMode::Auto ) );
+            pFrame->SetScrollingMode(
+                (ScrollingMode)rOption.GetEnum( aScollingTable,
+                                                 ScrollingAuto ) );
             break;
         case HTML_O_FRAMEBORDER:
         {

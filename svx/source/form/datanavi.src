@@ -22,49 +22,41 @@
 #include "svx/fmresids.hrc"
 #include "fmhelp.hrc"
 
-Bitmap RID_SVXBMP_ADD
-{
-    File = "tb01.png";
-};
+#define MASKCOLOR   MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
 
-Bitmap RID_SVXBMP_ADD_ELEMENT
-{
-    File = "tb02.png";
-};
+#define IMG_LST                 \
+IdList =                        \
+{                               \
+    IID_ITEM_ADD ;              \
+    IID_ITEM_ADD_ELEMENT ;      \
+    IID_ITEM_ADD_ATTRIBUTE ;    \
+    IID_ITEM_EDIT ;             \
+    IID_ITEM_REMOVE ;           \
+};                              \
+IdCount = { 5 ; } ;
 
-Bitmap RID_SVXBMP_ADD_ATTRIBUTE
+ImageList RID_SVXIMGLIST_XFORMS_TBX
 {
-    File = "tb03.png";
+    Prefix = "tb";
+    MASKCOLOR
+    IMG_LST
 };
+#undef IMG_LST
 
-Bitmap RID_SVXBMP_EDIT
+ImageList RID_SVXIL_DATANAVI
 {
-    File = "tb04.png";
-};
-
-Bitmap RID_SVXBMP_REMOVE
-{
-    File = "tb05.png";
-};
-
-Bitmap RID_SVXBMP_ELEMENT
-{
-    File = "da03.png";
-};
-
-Bitmap RID_SVXBMP_ATTRIBUTE
-{
-    File = "da04.png";
-};
-
-Bitmap RID_SVXBMP_TEXT
-{
-    File = "da05.png";
-};
-
-Bitmap RID_SVXBMP_OTHER
-{
-    File = "da06.png";
+    Prefix = "da";
+    MASKCOLOR
+    IdList =
+    {
+        IID_GROUP_CLOSED ;
+        IID_GROUP_OPEN ;
+        IID_ELEMENT ;
+        IID_ATTRIBUTE ;
+        IID_TEXT ;
+        IID_OTHER ;
+    };
+    IdCount = { 6 ; } ;
 };
 
 String RID_STR_QRY_REMOVE_MODEL
@@ -197,6 +189,16 @@ String RID_STR_REPLACE_INST
 String RID_STR_REPLACE_DOC
 {
     Text [ en-US ] = "Document" ;
+};
+
+String RID_STR_DATANAV_SUBM_PARENT
+{
+    Text [ en-US ] = "Submission: " ;
+};
+
+String RID_STR_DATANAV_SUBM_ID
+{
+    Text [ en-US ] = "ID: " ;
 };
 
 String RID_STR_DATANAV_SUBM_BIND

@@ -40,7 +40,7 @@ public:
 
     virtual bool isAnythingToDraw() override;
 
-    virtual ~VPolarAxis() override;
+    virtual ~VPolarAxis();
 
 protected:
     VPolarAxis( const AxisProperties& rAxisProperties
@@ -49,7 +49,7 @@ protected:
 
 protected: //member
     PolarPlottingPositionHelper* m_pPosHelper;
-    std::vector< ExplicitIncrementData >   m_aIncrements;
+    ::std::vector< ExplicitIncrementData >   m_aIncrements;
 };
 
 } //namespace chart

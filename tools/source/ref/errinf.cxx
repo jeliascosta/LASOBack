@@ -47,11 +47,11 @@ struct TheEDcrData: public rtl::Static<EDcrData, TheEDcrData> {};
 
 class DynamicErrorInfo_Impl
 {
-    ErrCode                 lErrId;
-    ErrorHandlerFlags           nMask;
+    sal_uIntPtr                 lErrId;
+    sal_uInt16                  nMask;
 
     void                        RegisterEDcr(DynamicErrorInfo *);
-    static void                 UnRegisterEDcr(DynamicErrorInfo const *);
+    static void                 UnRegisterEDcr(DynamicErrorInfo *);
     static ErrorInfo           *GetDynamicErrorInfo(sal_uIntPtr lId);
 
 friend class DynamicErrorInfo;
@@ -83,11 +83,11 @@ void DynamicErrorInfo_Impl::RegisterEDcr(DynamicErrorInfo *pDcr)
         rData.nNextDcr=0;
 }
 
-void DynamicErrorInfo_Impl::UnRegisterEDcr(DynamicErrorInfo const *pDcr)
+void DynamicErrorInfo_Impl::UnRegisterEDcr(DynamicErrorInfo *pDcr)
 {
     DynamicErrorInfo **ppDcr = TheEDcrData::get().ppDcr;
     sal_uIntPtr lIdx = (((sal_uIntPtr)(*pDcr) & ERRCODE_DYNAMIC_MASK) >> ERRCODE_DYNAMIC_SHIFT) - 1;
-    DBG_ASSERT(ppDcr[lIdx]==pDcr,"ErrHdl: Error not found");
+    DBG_ASSERT(ppDcr[lIdx]==pDcr,"ErrHdl: Error nicht gefunden");
     if(ppDcr[lIdx]==pDcr)
         ppDcr[lIdx]=nullptr;
 }
@@ -110,7 +110,7 @@ DynamicErrorInfo::operator sal_uIntPtr() const
     return pImpl->lErrId;
 }
 
-DynamicErrorInfo::DynamicErrorInfo(sal_uIntPtr lArgUserId, ErrorHandlerFlags nMask)
+DynamicErrorInfo::DynamicErrorInfo(sal_uIntPtr lArgUserId, sal_uInt16 nMask)
 : ErrorInfo(lArgUserId),
   pImpl(new DynamicErrorInfo_Impl)
 {
@@ -133,13 +133,13 @@ ErrorInfo* DynamicErrorInfo_Impl::GetDynamicErrorInfo(sal_uIntPtr lId)
         return new ErrorInfo(lId & ~ERRCODE_DYNAMIC_MASK);
 }
 
-ErrorHandlerFlags DynamicErrorInfo::GetDialogMask() const
+sal_uInt16 DynamicErrorInfo::GetDialogMask() const
 {
     return pImpl->nMask;
 }
 
 StringErrorInfo::StringErrorInfo(
-    sal_uIntPtr UserId, const OUString& aStringP, ErrorHandlerFlags nMask)
+    sal_uIntPtr UserId, const OUString& aStringP, sal_uInt16 nMask)
 : DynamicErrorInfo(UserId, nMask), aString(aStringP)
 {
 }
@@ -147,14 +147,14 @@ StringErrorInfo::StringErrorInfo(
 class ErrorHandler_Impl
 {
 public:
-    static bool         CreateString(const ErrorInfo*, OUString&);
+    static bool         CreateString(const ErrorInfo*, OUString&, sal_uInt16&);
 };
 
 static void aDspFunc(const OUString &rErr, const OUString &rAction)
 {
-    OStringBuffer aErr("Action: ");
+    OStringBuffer aErr("Aktion: ");
     aErr.append(OUStringToOString(rAction, RTL_TEXTENCODING_ASCII_US));
-    aErr.append(" Error: ");
+    aErr.append(" Fehler: ");
     aErr.append(OUStringToOString(rErr, RTL_TEXTENCODING_ASCII_US));
     OSL_FAIL(aErr.getStr());
 }
@@ -185,6 +185,7 @@ ErrorContext *ErrorContext::GetContext()
 
 
 ErrorHandler::ErrorHandler()
+    : pImpl(new ErrorHandler_Impl)
 {
     EDcrData &rData = TheEDcrData::get();
     rData.errorHandlers.insert(rData.errorHandlers.begin(), this);
@@ -226,25 +227,25 @@ void ErrorHandler::RegisterDisplay(BasicDisplayErrorFunc *aDsp)
     1. nFlags,
     2. Resource Flags
     3. Dynamic Flags
-    4. Default ButtonsOk, MessageError
+    4. Default ERRCODE_BUTTON_OK, ERRCODE_MSG_ERROR
 
-    @param nErrCodeId        error id
+    @param lId               error id
     @param nFlags            error flags.
     @param bJustCreateString ???
     @param rError            ???
 
     @return ???
 */
-ErrorHandlerFlags ErrorHandler::HandleError_Impl(
-    sal_uIntPtr nErrCodeId, ErrorHandlerFlags nFlags, bool bJustCreateString, OUString & rError)
+sal_uInt16 ErrorHandler::HandleError_Impl(
+    sal_uIntPtr lId, sal_uInt16 nFlags, bool bJustCreateString, OUString & rError)
 {
     OUString aErr;
     OUString aAction;
-    if(!nErrCodeId || nErrCodeId == ERRCODE_ABORT)
-        return ErrorHandlerFlags::NONE;
+    if(!lId || lId == ERRCODE_ABORT)
+        return 0;
     EDcrData &rData      = TheEDcrData::get();
     vcl::Window *pParent = nullptr;
-    ErrorInfo *pInfo     = ErrorInfo::GetErrorInfo(nErrCodeId);
+    ErrorInfo *pInfo     = ErrorInfo::GetErrorInfo(lId);
     if (!rData.contexts.empty())
     {
         rData.contexts.front()->GetString(pInfo->GetErrorCode(), aAction);
@@ -257,27 +258,27 @@ ErrorHandlerFlags ErrorHandler::HandleError_Impl(
             }
     }
 
-    bool bWarning = ((nErrCodeId & ERRCODE_WARNING_MASK) == ERRCODE_WARNING_MASK);
-    ErrorHandlerFlags nErrFlags = ErrorHandlerFlags::ButtonDefaultsOk | ErrorHandlerFlags::ButtonsOk;
+    bool bWarning = ((lId & ERRCODE_WARNING_MASK) == ERRCODE_WARNING_MASK);
+    sal_uInt16 nErrFlags = ERRCODE_BUTTON_DEF_OK | ERRCODE_BUTTON_OK;
     if (bWarning)
-        nErrFlags |= ErrorHandlerFlags::MessageWarning;
+        nErrFlags |= ERRCODE_MSG_WARNING;
     else
-        nErrFlags |= ErrorHandlerFlags::MessageError;
+        nErrFlags |= ERRCODE_MSG_ERROR;
 
     DynamicErrorInfo* pDynPtr=dynamic_cast<DynamicErrorInfo*>(pInfo);
     if(pDynPtr)
     {
-        ErrorHandlerFlags nDynFlags = pDynPtr->GetDialogMask();
-        if( nDynFlags != ErrorHandlerFlags::NONE )
+        sal_uInt16 nDynFlags = pDynPtr->GetDialogMask();
+        if( nDynFlags )
             nErrFlags = nDynFlags;
     }
 
-    if(ErrorHandler_Impl::CreateString(pInfo,aErr))
+    if(ErrorHandler_Impl::CreateString(pInfo,aErr,nErrFlags))
     {
         if (bJustCreateString)
         {
             rError = aErr;
-            return ErrorHandlerFlags::ButtonsOk;
+            return 1;
         }
         else
         {
@@ -295,11 +296,11 @@ ErrorHandlerFlags ErrorHandler::HandleError_Impl(
                 if(!rData.bIsWindowDsp)
                 {
                     (*reinterpret_cast<BasicDisplayErrorFunc*>(rData.pDsp))(aErr,aAction);
-                    return ErrorHandlerFlags::NONE;
+                    return 0;
                 }
                 else
                 {
-                    if (nFlags != ErrorHandlerFlags::MAX)
+                    if (nFlags != USHRT_MAX)
                         nErrFlags = nFlags;
                     return (*reinterpret_cast<WindowDisplayErrorFunc*>(rData.pDsp))(
                         pParent, nErrFlags, aErr, aAction);
@@ -307,41 +308,42 @@ ErrorHandlerFlags ErrorHandler::HandleError_Impl(
             }
         }
     }
-    OSL_FAIL("Error not handled");
+    OSL_FAIL("Error nicht behandelt");
     // Error 1 is General Error in the Sfx
     if(pInfo->GetErrorCode()!=1)
     {
-        HandleError_Impl(1, ErrorHandlerFlags::MAX, bJustCreateString, rError);
+        HandleError_Impl(1, USHRT_MAX, bJustCreateString, rError);
     }
     else
     {
-        OSL_FAIL("Error 1 not handled");
+        OSL_FAIL("Error 1 nicht gehandeled");
     }
     delete pInfo;
-    return ErrorHandlerFlags::NONE;
+    return 0;
 }
 
 // static
 bool ErrorHandler::GetErrorString(sal_uIntPtr lId, OUString& rStr)
 {
-    return HandleError_Impl( lId, ErrorHandlerFlags::MAX, true, rStr ) != ErrorHandlerFlags::NONE;
+    return (bool)HandleError_Impl( lId, USHRT_MAX, true, rStr );
 }
 
 /** Handles an error.
 
     @see ErrorHandler::HandleError_Impl
 */
-ErrorHandlerFlags ErrorHandler::HandleError(sal_uIntPtr lId, ErrorHandlerFlags nFlags)
+sal_uInt16 ErrorHandler::HandleError(sal_uIntPtr lId, sal_uInt16 nFlags)
 {
     OUString aDummy;
     return HandleError_Impl( lId, nFlags, false, aDummy );
 }
 
-bool ErrorHandler_Impl::CreateString(const ErrorInfo* pInfo, OUString& rStr)
+bool ErrorHandler_Impl::CreateString( const ErrorInfo* pInfo, OUString& pStr,
+                                    sal_uInt16 &rFlags)
 {
     for(const ErrorHandler *pHdl : TheEDcrData::get().errorHandlers)
     {
-        if(pHdl->CreateString(pInfo, rStr))
+        if(pHdl->CreateString( pInfo, pStr, rFlags))
             return true;
     }
     return false;

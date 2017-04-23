@@ -21,7 +21,10 @@
 #include <basic/sbx.hxx>
 #include "sbxconv.hxx"
 
-#include <rtl/math.hxx>
+double ImpRound( double d )
+{
+    return d + ( d < 0 ? -0.5 : 0.5 );
+}
 
 sal_Int16 ImpGetInteger( const SbxValues* p )
 {
@@ -81,7 +84,7 @@ start:
                 SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMININT;
             }
             else
-                nRes = (sal_Int16) rtl::math::round( p->nSingle );
+                nRes = (sal_Int16) ImpRound( p->nSingle );
             break;
         case SbxCURRENCY:
             {
@@ -142,7 +145,7 @@ start:
                 SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMININT;
             }
             else
-                nRes = (sal_Int16) rtl::math::round( dVal );
+                nRes = (sal_Int16) ImpRound( dVal );
             break;
             }
         case SbxLPSTR:
@@ -165,7 +168,7 @@ start:
                     SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMININT;
                 }
                 else
-                    nRes = (sal_Int16) rtl::math::round( d );
+                    nRes = (sal_Int16) ImpRound( d );
             }
             break;
         case SbxOBJECT:
@@ -347,7 +350,7 @@ sal_Int64 ImpDoubleToSalInt64( double d )
         SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = SbxMINSALINT64;
     }
     else
-        nRes = (sal_Int64) rtl::math::round( d );
+        nRes = (sal_Int64) ImpRound( d );
     return nRes;
 }
 
@@ -363,7 +366,7 @@ sal_uInt64 ImpDoubleToSalUInt64( double d )
         SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = 0;
     }
     else
-        nRes = (sal_uInt64) rtl::math::round( d );
+        nRes = (sal_uInt64) ImpRound( d );
     return nRes;
 }
 
@@ -632,7 +635,7 @@ start:
             {
                 SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); n = 0;
             }
-            *p->puInt64 = n; break;
+            *p->puInt64 = (sal_Int64) n; break;
 
         default:
             SbxBase::SetError( ERRCODE_SBX_CONVERSION );
@@ -713,7 +716,7 @@ start:
                         SbxBase::SetError( ERRCODE_SBX_OVERFLOW ); nRes = 0;
                     }
                     else
-                        nRes = (sal_uInt64) rtl::math::round( d );
+                        nRes = (sal_uInt64) ImpRound( d );
                 }
                 else if( n64 < 0 )
                 {

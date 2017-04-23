@@ -36,6 +36,7 @@ ImpBitmap::ImpBitmap(SalBitmap* pBitmap)
 
 ImpBitmap::~ImpBitmap()
 {
+    delete mpSalBitmap;
 }
 
 bool ImpBitmap::ImplIsEqual(const ImpBitmap& rBmp) const
@@ -102,11 +103,6 @@ void ImpBitmap::ImplInvalidateChecksum()
     mpSalBitmap->InvalidateChecksum();
 }
 
-bool ImpBitmap::ImplScalingSupported() const
-{
-    return mpSalBitmap->ScalingSupported();
-}
-
 bool ImpBitmap::ImplScale( const double& rScaleX, const double& rScaleY, BmpScaleFlag nScaleFlag )
 {
     return mpSalBitmap->Scale( rScaleX, rScaleY, nScaleFlag );
@@ -120,7 +116,7 @@ bool ImpBitmap::ImplReplace( const Color& rSearchColor, const Color& rReplaceCol
 bool ImpBitmap::ImplConvert( BmpConversion eConversion )
 {
     // avoid large chunk of obsolete and hopefully rarely used conversions.
-    if (eConversion != BmpConversion::N8BitGreys)
+    if (eConversion != BMP_CONVERSION_8BIT_GREYS)
         return false;
 
     // frequently used conversion for creating alpha masks

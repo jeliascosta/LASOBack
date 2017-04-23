@@ -44,8 +44,6 @@
 #include "OpenglShapeFactory.hxx"
 #include "ShapeFactory.hxx"
 
-#include <config_features.h>
-
 using namespace com::sun::star;
 
 namespace chart {
@@ -53,8 +51,6 @@ namespace chart {
 namespace {
 
 typedef opengl::OpenglShapeFactory* (*getOpenglShapeFactory_)(void);
-
-#if HAVE_FEATURE_UI
 
 #ifndef DISABLE_DYNLOADING
 
@@ -77,8 +73,6 @@ osl::Module* getOpenGLModule()
 
 #endif
 
-#endif
-
 }
 
 #ifdef DISABLE_DYNLOADING
@@ -89,10 +83,9 @@ AbstractShapeFactory* AbstractShapeFactory::getOrCreateShapeFactory(const uno::R
 {
     static AbstractShapeFactory* pShapeFactory = nullptr;
 
-    if (pShapeFactory)
+    if(pShapeFactory)
         return pShapeFactory;
 
-#if HAVE_FEATURE_UI
     if(getenv("CHART_DUMMY_FACTORY") && !Application::IsHeadlessModeEnabled())
     {
 #ifndef DISABLE_DYNLOADING
@@ -104,19 +97,18 @@ AbstractShapeFactory* AbstractShapeFactory::getOrCreateShapeFactory(const uno::R
             {
 
                 pShapeFactory = reinterpret_cast<getOpenglShapeFactory_>(fn)();
-                pShapeFactory->m_xShapeFactory = xFactory;
+                pShapeFactory->setShapeFactory(xFactory);
             }
         }
 #elif defined(IOS) || defined(ANDROID) // Library_chartopengl is not portable enough yet
         pShapeFactory = NULL;
 #else
         pShapeFactory = getOpenglShapeFactory();
-        pShapeFactory->m_xShapeFactory = xFactory;
+        pShapeFactory->setShapeFactory(xFactory);
 #endif
     }
-#endif
 
-    if (!pShapeFactory)
+    if(!pShapeFactory)
         pShapeFactory = new ShapeFactory(xFactory);
 
     return pShapeFactory;
@@ -154,8 +146,8 @@ void AbstractShapeFactory::makeShapeInvisible( const uno::Reference< drawing::XS
     {
         try
         {
-            xShapeProp->setPropertyValue( "LineStyle", uno::Any( drawing::LineStyle_NONE ));
-            xShapeProp->setPropertyValue( "FillStyle", uno::Any( drawing::FillStyle_NONE ));
+            xShapeProp->setPropertyValue( "LineStyle", uno::makeAny( drawing::LineStyle_NONE ));
+            xShapeProp->setPropertyValue( "FillStyle", uno::makeAny( drawing::FillStyle_NONE ));
         }
         catch( const uno::Exception& e )
         {
@@ -178,7 +170,7 @@ void AbstractShapeFactory::setShapeName( const uno::Reference< drawing::XShape >
         try
         {
             xProp->setPropertyValue( UNO_NAME_MISC_OBJ_NAME
-                , uno::Any( rName ) );
+                , uno::makeAny( rName ) );
         }
         catch( const uno::Exception& e )
         {
@@ -216,7 +208,7 @@ uno::Any AbstractShapeFactory::makeTransformation( const awt::Point& rScreenPosi
     // aM.scale( 1, 1 ); Oops? A scale with this parameters is neutral, line commented out
     aM.rotate( fRotationAnglePi );
     aM.translate( rScreenPosition2D.X, rScreenPosition2D.Y );
-    uno::Any aATransformation( B2DHomMatrixToHomogenMatrix3(aM) );
+    uno::Any aATransformation = uno::makeAny( B2DHomMatrixToHomogenMatrix3(aM) );
     return aATransformation;
 }
 
@@ -314,7 +306,7 @@ awt::Size AbstractShapeFactory::getSizeAfterRotation(
     {
         const awt::Size aSize( xShape->getSize() );
 
-        if( fRotationAngleDegree == 0.0 )
+        if( ::rtl::math::approxEqual( fRotationAngleDegree, 0.0 ) )
             aRet = aSize;
         else
         {

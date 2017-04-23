@@ -38,23 +38,23 @@ public:
     ThreeD_SceneGeometry_TabPage( vcl::Window* pWindow,
                                   const css::uno::Reference< css::beans::XPropertySet > & xSceneProperties,
                                   ControllerLockHelper & rControllerLockHelper );
-    virtual ~ThreeD_SceneGeometry_TabPage() override;
+    virtual ~ThreeD_SceneGeometry_TabPage();
     virtual void dispose() override;
 
     // has to be called in case the dialog was closed with OK
     void commitPendingChanges();
 
     // is called by timer to apply changes to model
-    DECL_LINK( AngleChanged, Edit&, void );
+    DECL_LINK_TYPED( AngleChanged, Edit&, void );
     // is called immediately when a field changes
-    DECL_LINK( AngleEdited, Edit&, void );
+    DECL_LINK_TYPED( AngleEdited, Edit&, void );
 
     // is called by timer to apply changes to model
-    DECL_LINK( PerspectiveChanged, Edit&, void );
+    DECL_LINK_TYPED( PerspectiveChanged, Edit&, void );
     // is called immediately when a field changes
-    DECL_LINK( PerspectiveEdited, Edit&, void );
-    DECL_LINK( PerspectiveToggled, CheckBox&, void );
-    DECL_LINK( RightAngledAxesToggled, CheckBox&, void );
+    DECL_LINK_TYPED( PerspectiveEdited, Edit&, void );
+    DECL_LINK_TYPED( PerspectiveToggled, CheckBox&, void );
+    DECL_LINK_TYPED( RightAngledAxesToggled, CheckBox&, void );
 
 private:
     void applyAnglesToModel();

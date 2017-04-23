@@ -41,7 +41,7 @@ public:
         const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList,
         css::uno::Reference< css::drawing::XShapes >& rShapes);
-    virtual ~SdXMLDrawPageContext() override;
+    virtual ~SdXMLDrawPageContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,
@@ -59,7 +59,7 @@ class SdXMLBodyContext : public SvXMLImportContext
 
 public:
     SdXMLBodyContext( SdXMLImport& rImport, const OUString& rLocalName );
-    virtual ~SdXMLBodyContext() override;
+    virtual ~SdXMLBodyContext();
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 nPrefix, const OUString& rLocalName,

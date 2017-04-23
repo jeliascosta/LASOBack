@@ -63,7 +63,10 @@ $(eval $(call gb_CppunitTest_set_include,chart2_import,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,chart2_import))
+$(eval $(call gb_CppunitTest_use_api,chart2_import,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,chart2_import))
 $(eval $(call gb_CppunitTest_use_vcl,chart2_import))
@@ -120,7 +123,6 @@ $(eval $(call gb_CppunitTest_use_components,chart2_import,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     writerfilter/util/writerfilter \
     xmloff/util/xo \
     xmlscript/util/xmlscript \

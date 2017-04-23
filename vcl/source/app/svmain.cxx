@@ -30,16 +30,14 @@
 #include <tools/resmgr.hxx>
 
 #include <comphelper/processfactory.hxx>
-#include <comphelper/asyncnotification.hxx>
 
 #include <unotools/syslocaleoptions.hxx>
 #include <vcl/svapp.hxx>
-#include <vcl/vclmain.hxx>
 #include <vcl/wrkwin.hxx>
 #include <vcl/cvtgrf.hxx>
 #include <vcl/scheduler.hxx>
 #include <vcl/image.hxx>
-#include <vcl/ImageTree.hxx>
+#include <vcl/implimagetree.hxx>
 #include <vcl/settings.hxx>
 #include <vcl/unowrap.hxx>
 #include <vcl/commandinfoprovider.hxx>
@@ -47,11 +45,6 @@
 #include <vcl/lazydelete.hxx>
 #include <vcl/embeddedfontshelper.hxx>
 #include <vcl/debugevent.hxx>
-#include <vcl/dialog.hxx>
-#include <vcl/menu.hxx>
-#include <vcl/virdev.hxx>
-#include <vcl/print.hxx>
-#include <scrwnd.hxx>
 
 #ifdef _WIN32
 #include <svsys.h>
@@ -70,6 +63,7 @@
 #include <vcl/svmain.hxx>
 #include "dbggui.hxx"
 #include "accmgr.hxx"
+#include "idlemgr.hxx"
 #include "outdev.h"
 #include "fontinstance.hxx"
 #include "PhysicalFontCollection.hxx"
@@ -78,7 +72,7 @@
 #include "salsys.hxx"
 #include "saltimer.hxx"
 #include "salimestatus.hxx"
-#include "displayconnectiondispatch.hxx"
+#include "xconnection.hxx"
 
 #include <config_features.h>
 #if HAVE_FEATURE_OPENGL
@@ -178,7 +172,7 @@ int ImplSVMain()
     // The 'real' SVMain()
     ImplSVData* pSVData = ImplGetSVData();
 
-    SAL_WARN_IF( !pSVData->mpApp, "vcl", "no instance of class Application" );
+    DBG_ASSERT( pSVData->mpApp, "no instance of class Application" );
 
     int nReturn = EXIT_FAILURE;
 
@@ -243,19 +237,20 @@ public:
         : m_xNextContext( ctx ) {}
 
     // XCurrentContext
-    virtual css::uno::Any SAL_CALL getValueByName( const OUString& Name ) override;
+    virtual css::uno::Any SAL_CALL getValueByName( const OUString& Name )
+            throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     css::uno::Reference< css::uno::XCurrentContext > m_xNextContext;
 };
 
-uno::Any SAL_CALL DesktopEnvironmentContext::getValueByName( const OUString& Name)
+uno::Any SAL_CALL DesktopEnvironmentContext::getValueByName( const OUString& Name) throw (uno::RuntimeException, std::exception)
 {
     uno::Any retVal;
 
     if ( Name == "system.desktop-environment" )
     {
-        retVal <<= Application::GetDesktopEnvironment();
+        retVal = uno::makeAny( Application::GetDesktopEnvironment() );
     }
     else if( m_xNextContext.is() )
     {
@@ -272,17 +267,6 @@ static bool isInitVCL()
             pSVData->mpApp != nullptr &&
             pSVData->mpDefInst != nullptr;
 }
-
-#ifdef DBG_UTIL
-namespace vclmain
-{
-    bool isAlive()
-    {
-        return ImplGetSVData()->mpDefInst;
-    }
-}
-#endif
-
 
 bool InitVCL()
 {
@@ -358,11 +342,12 @@ namespace
  */
 class VCLUnoWrapperDeleter : public cppu::WeakImplHelper<css::lang::XEventListener>
 {
-    virtual void SAL_CALL disposing(lang::EventObject const& rSource) override;
+    virtual void SAL_CALL disposing(lang::EventObject const& rSource) throw(uno::RuntimeException, std::exception) override;
 };
 
 void
 VCLUnoWrapperDeleter::disposing(lang::EventObject const& /* rSource */)
+    throw(uno::RuntimeException, std::exception)
 {
     ImplSVData* const pSVData = ImplGetSVData();
     if (pSVData && pSVData->mpUnoWrapper)
@@ -376,12 +361,7 @@ VCLUnoWrapperDeleter::disposing(lang::EventObject const& /* rSource */)
 
 void DeInitVCL()
 {
-    {
-        SolarMutexReleaser r; // unblock threads blocked on that so we can join
-        ::comphelper::JoinAsyncEventNotifiers();
-    }
     ImplSVData* pSVData = ImplGetSVData();
-
     // lp#1560328: clear cache before disposing rest of VCL
     if(pSVData->mpBlendFrameCache)
         pSVData->mpBlendFrameCache->m_aLastResult.Clear();
@@ -416,10 +396,10 @@ void DeInitVCL()
             aBuf.append( "\n" );
         }
     }
-    SAL_WARN_IF( nBadTopWindows!=0, "vcl", aBuf.getStr() );
+    DBG_ASSERT( nBadTopWindows==0, aBuf.getStr() );
 #endif
 
-    ImageTree::get().shutdown();
+    ImplImageTree::get().shutDown();
 
     osl_removeSignalHandler( pExceptionHandler);
     pExceptionHandler = nullptr;
@@ -433,11 +413,53 @@ void DeInitVCL()
         pSVData->mpSettingsConfigItem = nullptr;
     }
 
+    if ( pSVData->maAppData.mpIdleMgr )
+    {
+        delete pSVData->maAppData.mpIdleMgr;
+        pSVData->maAppData.mpIdleMgr = nullptr;
+    }
     Scheduler::ImplDeInitScheduler();
 
-    pSVData->maWinData.maMsgBoxImgList.clear();
-    pSVData->maCtrlData.maCheckImgList.clear();
-    pSVData->maCtrlData.maRadioImgList.clear();
+    if ( pSVData->maWinData.mpMsgBoxImgList )
+    {
+        delete pSVData->maWinData.mpMsgBoxImgList;
+        pSVData->maWinData.mpMsgBoxImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpCheckImgList )
+    {
+        delete pSVData->maCtrlData.mpCheckImgList;
+        pSVData->maCtrlData.mpCheckImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpRadioImgList )
+    {
+        delete pSVData->maCtrlData.mpRadioImgList;
+        pSVData->maCtrlData.mpRadioImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpPinImgList )
+    {
+        delete pSVData->maCtrlData.mpPinImgList;
+        pSVData->maCtrlData.mpPinImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpSplitHPinImgList )
+    {
+        delete pSVData->maCtrlData.mpSplitHPinImgList;
+        pSVData->maCtrlData.mpSplitHPinImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpSplitVPinImgList )
+    {
+        delete pSVData->maCtrlData.mpSplitVPinImgList;
+        pSVData->maCtrlData.mpSplitVPinImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpSplitHArwImgList )
+    {
+        delete pSVData->maCtrlData.mpSplitHArwImgList;
+        pSVData->maCtrlData.mpSplitHArwImgList = nullptr;
+    }
+    if ( pSVData->maCtrlData.mpSplitVArwImgList )
+    {
+        delete pSVData->maCtrlData.mpSplitVArwImgList;
+        pSVData->maCtrlData.mpSplitVArwImgList = nullptr;
+    }
     if ( pSVData->maCtrlData.mpDisclosurePlus )
     {
         delete pSVData->maCtrlData.mpDisclosurePlus;
@@ -460,7 +482,7 @@ void DeInitVCL()
         {
             uno::Reference<frame::XDesktop2> const xDesktop = frame::Desktop::create(
                     comphelper::getProcessComponentContext() );
-            xDesktop->addEventListener(new VCLUnoWrapperDeleter);
+            xDesktop->addEventListener(new VCLUnoWrapperDeleter());
         }
         catch (uno::Exception const&)
         {
@@ -542,6 +564,12 @@ void DeInitVCL()
         pSVData->mpBlendFrameCache = nullptr;
     }
 
+    if (pSVData->mpCommandInfoProvider)
+    {
+        pSVData->mpCommandInfoProvider->dispose();
+        pSVData->mpCommandInfoProvider = nullptr;
+    }
+
     ImplDeletePrnQueueList();
     delete pSVData->maGDIData.mpScreenFontList;
     pSVData->maGDIData.mpScreenFontList = nullptr;
@@ -563,31 +591,6 @@ void DeInitVCL()
     delete pSVData->mpSalTimer;
     pSVData->mpSalTimer = nullptr;
 
-    pSVData->mpDefaultWin = nullptr;
-    pSVData->mpIntroWindow = nullptr;
-    pSVData->maAppData.mpActivePopupMenu = nullptr;
-    pSVData->maAppData.mpWheelWindow = nullptr;
-    pSVData->maGDIData.mpFirstWinGraphics = nullptr;
-    pSVData->maGDIData.mpLastWinGraphics = nullptr;
-    pSVData->maGDIData.mpFirstVirGraphics = nullptr;
-    pSVData->maGDIData.mpLastVirGraphics = nullptr;
-    pSVData->maGDIData.mpFirstPrnGraphics = nullptr;
-    pSVData->maGDIData.mpLastPrnGraphics = nullptr;
-    pSVData->maGDIData.mpFirstVirDev = nullptr;
-    pSVData->maGDIData.mpLastVirDev = nullptr;
-    pSVData->maGDIData.mpFirstPrinter = nullptr;
-    pSVData->maGDIData.mpLastPrinter = nullptr;
-    pSVData->maWinData.mpFirstFrame = nullptr;
-    pSVData->maWinData.mpAppWin = nullptr;
-    pSVData->maWinData.mpActiveApplicationFrame = nullptr;
-    pSVData->maWinData.mpCaptureWin = nullptr;
-    pSVData->maWinData.mpLastDeacWin = nullptr;
-    pSVData->maWinData.mpFirstFloat = nullptr;
-    pSVData->maWinData.mpLastExecuteDlg = nullptr;
-    pSVData->maWinData.mpExtTextInputWin = nullptr;
-    pSVData->maWinData.mpTrackWin = nullptr;
-    pSVData->maWinData.mpAutoScrollWin = nullptr;
-    pSVData->maWinData.mpLastWheelWindow = nullptr;
     // Deinit Sal
     if (pSVData->mpDefInst)
     {
@@ -617,14 +620,14 @@ struct WorkerThreadData
 };
 
 #ifdef _WIN32
-static HANDLE hThreadID = nullptr;
-static unsigned __stdcall threadmain( void *pArgs )
+static HANDLE hThreadID = 0;
+static unsigned __stdcall _threadmain( void *pArgs )
 {
     OleInitialize( nullptr );
     static_cast<WorkerThreadData*>(pArgs)->pWorker( static_cast<WorkerThreadData*>(pArgs)->pThreadData );
     delete static_cast<WorkerThreadData*>(pArgs);
     OleUninitialize();
-    hThreadID = nullptr;
+    hThreadID = 0;
     return 0;
 }
 #else
@@ -646,13 +649,13 @@ void CreateMainLoopThread( oslWorkerFunction pWorker, void * pThreadData )
     // sal thread always call CoInitializeEx, so a system dependent implementation is necessary
 
     unsigned uThreadID;
-    hThreadID = reinterpret_cast<HANDLE>(_beginthreadex(
-        nullptr,       // no security handle
+    hThreadID = (HANDLE)_beginthreadex(
+        NULL,       // no security handle
         0,          // stacksize 0 means default
-        threadmain,    // thread worker function
+        _threadmain,    // thread worker function
         new WorkerThreadData( pWorker, pThreadData ),       // arguments for worker function
         0,          // 0 means: create immediately otherwise use CREATE_SUSPENDED
-        &uThreadID ));   // thread id to fill
+        &uThreadID );   // thread id to fill
 #else
     hThreadID = osl_createThread( MainWorkerFunction, new WorkerThreadData( pWorker, pThreadData ) );
 #endif

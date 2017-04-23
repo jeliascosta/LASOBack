@@ -46,15 +46,18 @@ public:
         RangeSelectionListenerParent & rParent,
         const OUString & rInitialRange,
         const css::uno::Reference< css::frame::XModel >& xModelToLockController );
-    virtual ~RangeSelectionListener() override;
+    virtual ~RangeSelectionListener();
 
 protected:
     // ____ XRangeSelectionListener ____
-    virtual void SAL_CALL done( const css::sheet::RangeSelectionEvent& aEvent ) override;
-    virtual void SAL_CALL aborted( const css::sheet::RangeSelectionEvent& aEvent ) override;
+    virtual void SAL_CALL done( const css::sheet::RangeSelectionEvent& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL aborted( const css::sheet::RangeSelectionEvent& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ XEventListener ____
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     RangeSelectionListenerParent & m_rParent;

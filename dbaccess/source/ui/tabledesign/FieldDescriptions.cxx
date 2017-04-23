@@ -47,7 +47,7 @@ OFieldDescription::OFieldDescription()
     ,m_nScale(0)
     ,m_nIsNullable(ColumnValue::NULLABLE)
     ,m_nFormatKey(0)
-    ,m_eHorJustify(SvxCellHorJustify::Standard)
+    ,m_eHorJustify(SVX_HOR_JUSTIFY_STANDARD)
     ,m_bIsAutoIncrement(false)
     ,m_bIsPrimaryKey(false)
     ,m_bIsCurrency(false)
@@ -91,13 +91,13 @@ OFieldDescription::OFieldDescription(const Reference< XPropertySet >& xAffectedC
     ,m_nScale(0)
     ,m_nIsNullable(ColumnValue::NULLABLE)
     ,m_nFormatKey(0)
-    ,m_eHorJustify(SvxCellHorJustify::Standard)
+    ,m_eHorJustify(SVX_HOR_JUSTIFY_STANDARD)
     ,m_bIsAutoIncrement(false)
     ,m_bIsPrimaryKey(false)
     ,m_bIsCurrency(false)
     ,m_bHidden(false)
 {
-    OSL_ENSURE(xAffectedCol.is(),"PropertySet can not be null!");
+    OSL_ENSURE(xAffectedCol.is(),"PropetySet can not be null!");
     if ( xAffectedCol.is() )
     {
         if ( _bUseAsDest )
@@ -189,13 +189,13 @@ void OFieldDescription::FillFromTypeInfo(const TOTypeInfoSP& _pType,bool _bForce
                     sal_Int32 nPrec = DEFAULT_VARCHAR_PRECISION;
                     if ( GetPrecision() )
                         nPrec = GetPrecision();
-                    SetPrecision(std::min<sal_Int32>(nPrec,_pType->nPrecision));
+                    SetPrecision(::std::min<sal_Int32>(nPrec,_pType->nPrecision));
                 }
                 break;
             case DataType::TIMESTAMP:
                 if ( bForce && _pType->nMaximumScale)
                 {
-                    SetScale(std::min<sal_Int32>(GetScale() ? GetScale() : DEFAULT_NUMERIC_SCALE,_pType->nMaximumScale));
+                    SetScale(::std::min<sal_Int32>(GetScale() ? GetScale() : DEFAULT_NUMERIC_SCALE,_pType->nMaximumScale));
                 }
                 break;
             default:
@@ -216,9 +216,9 @@ void OFieldDescription::FillFromTypeInfo(const TOTypeInfoSP& _pType,bool _bForce
                     }
 
                     if ( _pType->nPrecision )
-                        SetPrecision(std::min<sal_Int32>(nPrec ? nPrec : DEFAULT_NUMERIC_PRECISION,_pType->nPrecision));
+                        SetPrecision(::std::min<sal_Int32>(nPrec ? nPrec : DEFAULT_NUMERIC_PRECISION,_pType->nPrecision));
                     if ( _pType->nMaximumScale )
-                        SetScale(std::min<sal_Int32>(GetScale() ? GetScale() : DEFAULT_NUMERIC_SCALE,_pType->nMaximumScale));
+                        SetScale(::std::min<sal_Int32>(GetScale() ? GetScale() : DEFAULT_NUMERIC_SCALE,_pType->nMaximumScale));
                 }
         }
         if ( _pType->aCreateParams.isEmpty() )
@@ -628,7 +628,7 @@ void OFieldDescription::copyColumnSettingsTo(const Reference< XPropertySet >& _r
 
         if ( GetFormatKey() != NumberFormat::ALL && xInfo->hasPropertyByName(PROPERTY_FORMATKEY) )
             _rxColumn->setPropertyValue(PROPERTY_FORMATKEY,makeAny(GetFormatKey()));
-        if ( GetHorJustify() != SvxCellHorJustify::Standard && xInfo->hasPropertyByName(PROPERTY_ALIGN) )
+        if ( GetHorJustify() != SVX_HOR_JUSTIFY_STANDARD && xInfo->hasPropertyByName(PROPERTY_ALIGN) )
             _rxColumn->setPropertyValue(PROPERTY_ALIGN,makeAny(dbaui::mapTextAllign(GetHorJustify())));
         if ( !GetHelpText().isEmpty() && xInfo->hasPropertyByName(PROPERTY_HELPTEXT) )
             _rxColumn->setPropertyValue(PROPERTY_HELPTEXT,makeAny(GetHelpText()));

@@ -45,21 +45,28 @@ public:
     ChartFrameLoader() = delete;
 
     explicit ChartFrameLoader(css::uno::Reference< css::uno::XComponentContext > const & xContext);
-    virtual ~ChartFrameLoader() override;
+    virtual ~ChartFrameLoader();
 
     // css::lang::XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+            throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+            throw( css::uno::RuntimeException, std::exception ) override;
+
+    static OUString getImplementationName_Static();
+    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // css::frame::XFrameLoader
 
     virtual sal_Bool SAL_CALL
         load( const css::uno::Sequence< css::beans::PropertyValue >& rMediaDescriptor
-                ,const css::uno::Reference< css::frame::XFrame >& xFrame ) override;
+                ,const css::uno::Reference< css::frame::XFrame >& xFrame )
+                            throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL
-        cancel() override;
+        cancel()            throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } //namespace chart

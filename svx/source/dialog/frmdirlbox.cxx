@@ -38,7 +38,7 @@ inline SvxFrameDirection lclVoidToEnum( void* pDirection )
 
 FrameDirectionListBox::FrameDirectionListBox( vcl::Window* pParent, WinBits nBits )
     : ListBox(pParent, nBits)
-    , meSaveValue(SvxFrameDirection::Horizontal_LR_TB)
+    , meSaveValue(FRMDIR_HORI_LEFT_TOP)
 {
 }
 

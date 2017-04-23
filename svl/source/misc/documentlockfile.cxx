@@ -53,7 +53,7 @@ bool DocumentLockFile::m_bAllowInteraction = true;
 
 
 DocumentLockFile::DocumentLockFile( const OUString& aOrigURL )
-: LockFileCommon( aOrigURL, ".~lock." )
+: LockFileCommon( aOrigURL, OUString( ".~lock."  ) )
 {
 }
 

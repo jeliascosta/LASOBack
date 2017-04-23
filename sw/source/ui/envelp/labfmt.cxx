@@ -112,7 +112,7 @@ SwLabPreview::SwLabPreview(vcl::Window* pParent)
     , m_aPWidthStr(SW_RESSTR(STR_PWIDTH))
     , m_aPHeightStr(SW_RESSTR(STR_PHEIGHT))
 {
-    SetMapMode(MapUnit::MapPixel);
+    SetMapMode(MAP_PIXEL);
 
     // FIXME RenderContext
 
@@ -139,12 +139,12 @@ SwLabPreview::SwLabPreview(vcl::Window* pParent)
 
 Size SwLabPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(146 , 161), MapMode(MapUnit::MapAppFont));
+    return LogicToPixel(Size(146 , 161), MapMode(MAP_APPFONT));
 }
 
 VCL_BUILDER_FACTORY(SwLabPreview)
 
-void SwLabPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&)
+void SwLabPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
 {
     const Size aSz(GetOutputSizePixel());
 
@@ -202,7 +202,7 @@ void SwLabPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
     const long lY3 = lY0 + ROUND(f * (m_aItem.m_lUpper + m_aItem.m_lVDist ));
 
     // draw outline (area)
-    rRenderContext.DrawRect(tools::Rectangle(Point(lX0, lY0), Size(lOutlineW, lOutlineH)));
+    rRenderContext.DrawRect(Rectangle(Point(lX0, lY0), Size(lOutlineW, lOutlineH)));
 
     // draw outline (border)
     rRenderContext.SetLineColor(rFieldTextColor);
@@ -214,13 +214,13 @@ void SwLabPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectan
         rRenderContext.DrawLine(Point(lX0, lY0 + lOutlineH - 1), Point(lX0 + lOutlineW - 1, lY0 + lOutlineH - 1)); // Down
 
     // Labels
-    rRenderContext.SetClipRegion(vcl::Region(tools::Rectangle(Point(lX0, lY0), Size(lOutlineW, lOutlineH))));
+    rRenderContext.SetClipRegion(vcl::Region(Rectangle(Point(lX0, lY0), Size(lOutlineW, lOutlineH))));
     rRenderContext.SetFillColor(COL_LIGHTGRAYBLUE);
     const sal_Int32 nRows = std::min<sal_Int32>(2, m_aItem.m_nRows);
     const sal_Int32 nCols = std::min<sal_Int32>(2, m_aItem.m_nCols);
     for (sal_Int32 nRow = 0; nRow < nRows; ++nRow)
         for (sal_Int32 nCol = 0; nCol < nCols; ++nCol)
-            rRenderContext.DrawRect(tools::Rectangle(Point(lX0 + ROUND(f * (m_aItem.m_lLeft  + nCol * m_aItem.m_lHDist)),
+            rRenderContext.DrawRect(Rectangle(Point(lX0 + ROUND(f * (m_aItem.m_lLeft  + nCol * m_aItem.m_lHDist)),
                                                     lY0 + ROUND(f * (m_aItem.m_lUpper + nRow * m_aItem.m_lVDist))),
                                               Size(ROUND(f * m_aItem.m_lWidth),
                                                    ROUND(f * m_aItem.m_lHeight))));
@@ -353,8 +353,8 @@ SwLabFormatPage::SwLabFormatPage(vcl::Window* pParent, const SfxItemSet& rSet)
 
     m_pSavePB->SetClickHdl( LINK (this, SwLabFormatPage, SaveHdl));
     // Set timer
-    aPreviewIdle.SetPriority(TaskPriority::LOWEST);
-    aPreviewIdle.SetInvokeHandler(LINK(this, SwLabFormatPage, PreviewHdl));
+    aPreviewIdle.SetPriority(SchedulerPriority::LOWEST);
+    aPreviewIdle.SetIdleHdl(LINK(this, SwLabFormatPage, PreviewHdl));
 }
 
 SwLabFormatPage::~SwLabFormatPage()
@@ -383,14 +383,14 @@ void SwLabFormatPage::dispose()
 
 
 // Modify-handler of MetricFields. start preview timer
-IMPL_LINK_NOARG(SwLabFormatPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwLabFormatPage, ModifyHdl, Edit&, void)
 {
     bModified = true;
     aPreviewIdle.Start();
 }
 
 // Invalidate preview
-IMPL_LINK_NOARG(SwLabFormatPage, PreviewHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SwLabFormatPage, PreviewHdl, Idle *, void)
 {
     aPreviewIdle.Stop();
     ChangeMinMax();
@@ -399,7 +399,7 @@ IMPL_LINK_NOARG(SwLabFormatPage, PreviewHdl, Timer *, void)
 }
 
 // LoseFocus-Handler: Update on change
-IMPL_LINK( SwLabFormatPage, LoseFocusHdl, Control&, rControl, void )
+IMPL_LINK_TYPED( SwLabFormatPage, LoseFocusHdl, Control&, rControl, void )
 {
     if (static_cast<Edit*>( &rControl)->IsModified())
         PreviewHdl(nullptr);
@@ -495,12 +495,12 @@ void SwLabFormatPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&aSet);
 }
 
-DeactivateRC SwLabFormatPage::DeactivatePage(SfxItemSet* _pSet)
+SfxTabPage::sfxpg SwLabFormatPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if (_pSet)
         FillItemSet(_pSet);
 
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 void SwLabFormatPage::FillItem(SwLabItem& rItem)
@@ -564,7 +564,7 @@ void SwLabFormatPage::Reset(const SfxItemSet* )
     PreviewHdl(nullptr);
 }
 
-IMPL_LINK_NOARG(SwLabFormatPage, SaveHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwLabFormatPage, SaveHdl, Button*, void)
 {
     SwLabRec aRec;
     aRec.lHDist  = static_cast< long >(GETFLDVAL(*m_pHDistField));
@@ -633,7 +633,7 @@ void SwSaveLabelDlg::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG(SwSaveLabelDlg, OkHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwSaveLabelDlg, OkHdl, Button*, void)
 {
     SwLabelConfig& rCfg = pLabPage->GetParentSwLabDlg()->GetLabelsConfig();
     OUString sMake(m_pMakeCB->GetText());
@@ -664,7 +664,7 @@ IMPL_LINK_NOARG(SwSaveLabelDlg, OkHdl, Button*, void)
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG(SwSaveLabelDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwSaveLabelDlg, ModifyHdl, Edit&, void)
 {
     m_pOKPB->Enable(!m_pMakeCB->GetText().isEmpty() && !m_pTypeED->GetText().isEmpty());
 }

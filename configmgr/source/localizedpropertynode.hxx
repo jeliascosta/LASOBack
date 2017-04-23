@@ -46,7 +46,7 @@ public:
 private:
     LocalizedPropertyNode(LocalizedPropertyNode const & other);
 
-    virtual ~LocalizedPropertyNode() override;
+    virtual ~LocalizedPropertyNode();
 
     virtual Kind kind() const override;
 

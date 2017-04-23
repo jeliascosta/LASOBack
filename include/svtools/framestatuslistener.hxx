@@ -29,7 +29,7 @@
 #include <com/sun/star/frame/XStatusListener.hpp>
 #include <cppuhelper/weak.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
 
 #include <unordered_map>
 
@@ -39,36 +39,37 @@ namespace svt
 class SVT_DLLPUBLIC FrameStatusListener : public css::frame::XStatusListener,
                             public css::frame::XFrameActionListener,
                             public css::lang::XComponent,
-                            public ::cppu::BaseMutex,
+                            public ::comphelper::OBaseMutex,
                             public ::cppu::OWeakObject
 {
     public:
         FrameStatusListener( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                              const css::uno::Reference< css::frame::XFrame >& xFrame );
-        virtual ~FrameStatusListener() override;
+        virtual ~FrameStatusListener();
 
         // methods to support status forwarder, known by the old sfx2 toolbox controller implementation
         void addStatusListener( const OUString& aCommandURL );
         void bindListener();
+        void unbindListener();
 
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL acquire() throw () override;
         virtual void SAL_CALL release() throw () override;
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
-        virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+        virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XEventListener
-        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
 
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override = 0;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override = 0;
 
         // XFrameActionListener
-        virtual void SAL_CALL frameAction( const css::frame::FrameActionEvent& Action ) override;
+        virtual void SAL_CALL frameAction( const css::frame::FrameActionEvent& Action ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     protected:
         struct Listener
@@ -84,7 +85,8 @@ class SVT_DLLPUBLIC FrameStatusListener : public css::frame::XStatusListener,
                                     css::uno::Reference< css::frame::XDispatch >,
                                     OUStringHash > URLToDispatchMap;
 
-        bool                                                      m_bDisposed : 1;
+        bool                                                      m_bInitialized : 1,
+                                                                  m_bDisposed : 1;
         css::uno::Reference< css::frame::XFrame >                 m_xFrame;
         css::uno::Reference< css::uno::XComponentContext >        m_xContext;
         URLToDispatchMap                                          m_aListenerMap;

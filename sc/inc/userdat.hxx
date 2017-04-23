@@ -26,6 +26,8 @@
 #include "global.hxx"
 #include "address.hxx"
 
+#define SC_DRAWLAYER 0x30334353     // Inventor: "SC30"
+
 // Object-Ids fuer UserData
 #define SC_UD_OBJDATA       1
 #define SC_UD_IMAPDATA      2
@@ -33,7 +35,7 @@
 
 class ScDrawObjFactory
 {
-    DECL_STATIC_LINK( ScDrawObjFactory, MakeUserData, SdrObjUserDataCreatorParams, SdrObjUserData* );
+    DECL_STATIC_LINK_TYPED( ScDrawObjFactory, MakeUserData, SdrObjFactory *, void );
 public:
     ScDrawObjFactory();
    ~ScDrawObjFactory();
@@ -49,7 +51,7 @@ public:
     Point               maStartOffset;
     Point               maEndOffset;
     Type                meType;
-    tools::Rectangle           maLastRect;
+    Rectangle           maLastRect;
 
     explicit            ScDrawObjData();
 
@@ -65,7 +67,7 @@ public:
                     ScIMapInfo();
                     ScIMapInfo( const ImageMap& rImageMap );
                     ScIMapInfo( const ScIMapInfo& rIMapInfo );
-    virtual         ~ScIMapInfo() override;
+    virtual         ~ScIMapInfo();
 
     virtual SdrObjUserData* Clone( SdrObject* pObj ) const override;
 
@@ -77,7 +79,7 @@ class ScMacroInfo : public SdrObjUserData
 {
 public:
                     ScMacroInfo();
-    virtual         ~ScMacroInfo() override;
+    virtual         ~ScMacroInfo();
 
     virtual SdrObjUserData* Clone( SdrObject* pObj ) const override;
 

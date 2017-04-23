@@ -118,8 +118,8 @@ void SwWrtShell::DelToEndOfLine()
 long SwWrtShell::DelLeft()
 {
     // If it's a Fly, throw it away
-    SelectionType nSelType = GetSelectionType();
-    const SelectionType nCmp = SelectionType::Frame | SelectionType::Graphic | SelectionType::Ole | SelectionType::DrawObject;
+    int nSelType = GetSelectionType();
+    const int nCmp = nsSelectionType::SEL_FRM | nsSelectionType::SEL_GRF | nsSelectionType::SEL_OLE | nsSelectionType::SEL_DRW;
     if( nCmp & nSelType )
     {
         // #108205# Remember object's position.
@@ -209,19 +209,8 @@ long SwWrtShell::DelLeft()
     }
     else
     {
-        // If we are just to the right to a fieldmark, then remove it completely
-        const SwPosition* pCurPos = GetCursor()->GetPoint();
-        SwPosition aPrevChar(*pCurPos);
-        --aPrevChar.nContent;
-        sw::mark::IFieldmark* pFm = getIDocumentMarkAccess()->getFieldmarkFor(aPrevChar);
-        if (pFm && pFm->GetMarkEnd() == *pCurPos)
-        {
-            getIDocumentMarkAccess()->deleteMark(pFm);
-            return 1;
-        }
-
         OpenMark();
-        SwCursorShell::Left(1, CRSR_SKIP_CHARS);
+        SwCursorShell::Left(1,CRSR_SKIP_CHARS);
     }
     long nRet = Delete();
     if( !nRet && bSwap )
@@ -233,22 +222,22 @@ long SwWrtShell::DelLeft()
 long SwWrtShell::DelRight()
 {
         // Will be or'ed, if a tableselection exists;
-        // will here be implemented on SelectionType::Table
+        // will here be implemented on nsSelectionType::SEL_TBL
     long nRet = 0;
-    SelectionType nSelection = GetSelectionType();
-    if(nSelection & SelectionType::TableCell)
-        nSelection = SelectionType::Table;
-    if(nSelection & SelectionType::Text)
-        nSelection = SelectionType::Text;
+    int nSelection = GetSelectionType();
+    if(nSelection & nsSelectionType::SEL_TBL_CELLS)
+        nSelection = nsSelectionType::SEL_TBL;
+    if(nSelection & nsSelectionType::SEL_TXT)
+        nSelection = nsSelectionType::SEL_TXT;
 
     const SwTableNode * pWasInTableNd = nullptr;
 
-    switch( nSelection & ~(SelectionType::Ornament) )
+    switch( nSelection & ~(nsSelectionType::SEL_BEZ) )
     {
-    case SelectionType::PostIt:
-    case SelectionType::Text:
-    case SelectionType::Table:
-    case SelectionType::NumberList:
+    case nsSelectionType::SEL_POSTIT:
+    case nsSelectionType::SEL_TXT:
+    case nsSelectionType::SEL_TBL:
+    case nsSelectionType::SEL_NUM:
             //  If a selection exists, erase it.
         if( IsSelection() )
         {
@@ -279,7 +268,7 @@ long SwWrtShell::DelRight()
 
         pWasInTableNd = IsCursorInTable();
 
-        if( SelectionType::Text & nSelection && SwCursorShell::IsSttPara() &&
+        if( nsSelectionType::SEL_TXT & nSelection && SwCursorShell::IsSttPara() &&
             SwCursorShell::IsEndPara() )
         {
             // save cursor
@@ -340,29 +329,20 @@ long SwWrtShell::DelRight()
                 // restore cursor
                 SwCursorShell::Pop( false );
             }
-
-            // If we are just ahead of a fieldmark, then remove it completely
-            sw::mark::IFieldmark* pFm = GetCurrentFieldmark();
-            if (pFm && pFm->GetMarkStart() == *GetCursor()->GetPoint())
-            {
-                getIDocumentMarkAccess()->deleteMark(pFm);
-                nRet = 1;
-                break;
-            }
         }
 
         OpenMark();
-        SwCursorShell::Right(1, CRSR_SKIP_CELLS);
+        SwCursorShell::Right(1,CRSR_SKIP_CELLS);
         nRet = Delete();
         CloseMark( 0 != nRet );
         break;
 
-    case SelectionType::Frame:
-    case SelectionType::Graphic:
-    case SelectionType::Ole:
-    case SelectionType::DrawObject:
-    case SelectionType::DrawObjectEditMode:
-    case SelectionType::DbForm:
+    case nsSelectionType::SEL_FRM:
+    case nsSelectionType::SEL_GRF:
+    case nsSelectionType::SEL_OLE:
+    case nsSelectionType::SEL_DRW:
+    case nsSelectionType::SEL_DRW_TXT:
+    case nsSelectionType::SEL_DRW_FORM:
         {
             // #108205# Remember object's position.
             Point aTmpPt = GetObjRect().TopLeft();
@@ -393,10 +373,10 @@ long SwWrtShell::DelRight()
         // <IsFrameSelected()> can't be true - see above.
         {
             nSelection = GetSelectionType();
-            if ( SelectionType::Frame & nSelection ||
-                 SelectionType::Graphic & nSelection ||
-                 SelectionType::Ole & nSelection ||
-                 SelectionType::DrawObject & nSelection )
+            if ( nsSelectionType::SEL_FRM & nSelection ||
+                 nsSelectionType::SEL_GRF & nSelection ||
+                 nsSelectionType::SEL_OLE & nSelection ||
+                 nsSelectionType::SEL_DRW & nSelection )
             {
                 EnterSelFrameMode();
                 GotoNextFly();
@@ -404,7 +384,6 @@ long SwWrtShell::DelRight()
         }
         nRet = 1;
         break;
-    default: break;
     }
     return nRet;
 }
@@ -415,7 +394,7 @@ void SwWrtShell::DelToEndOfPara()
     ResetCursorStack();
     Push();
     SetMark();
-    if( !MovePara(GoCurrPara,fnParaEnd))
+    if( !MovePara(fnParaCurr,fnParaEnd))
     {
         Pop(false);
         return;
@@ -432,7 +411,7 @@ void SwWrtShell::DelToStartOfPara()
     ResetCursorStack();
     Push();
     SetMark();
-    if( !MovePara(GoCurrPara,fnParaStart))
+    if( !MovePara(fnParaCurr,fnParaStart))
     {
         Pop(false);
         return;
@@ -473,7 +452,7 @@ long SwWrtShell::DelToEndOfSentence()
             SetMark();
             if (!IsEndPara()) // can only be at the end if it's empty
             {   // for an empty paragraph this would actually select the _next_
-                SwCursorShell::MovePara(GoCurrPara, fnParaEnd);
+                SwCursorShell::MovePara(fnParaCurr, fnParaEnd);
             }
             if (!IsEndOfDoc()) // do not delete last paragraph in body text
             {

@@ -20,7 +20,8 @@
 #include "sal/config.h"
 
 #include <cppuhelper/implbase.hxx>
-#include <com/sun/star/container/NoSuchElementException.hpp>
+
+#include "com/sun/star/uno/XComponentContext.hpp"
 #include "com/sun/star/office/XAnnotationEnumeration.hpp"
 
 #include "AnnotationEnumeration.hxx"
@@ -41,8 +42,8 @@ public:
     AnnotationEnumeration& operator=(const AnnotationEnumeration&) = delete;
 
     // css::office::XAnnotationEnumeration:
-    virtual sal_Bool SAL_CALL hasMoreElements() override;
-    virtual css::uno::Reference< css::office::XAnnotation > SAL_CALL nextElement() override;
+    virtual sal_Bool SAL_CALL hasMoreElements() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::office::XAnnotation > SAL_CALL nextElement() throw (css::uno::RuntimeException, css::container::NoSuchElementException, std::exception) override;
 
 private:
     // destructor is private and will be called indirectly by the release call    virtual ~AnnotationEnumeration() {}
@@ -63,12 +64,12 @@ AnnotationEnumeration::AnnotationEnumeration( const AnnotationVector& rAnnotatio
 }
 
 // css::office::XAnnotationEnumeration:
-sal_Bool SAL_CALL AnnotationEnumeration::hasMoreElements()
+sal_Bool SAL_CALL AnnotationEnumeration::hasMoreElements() throw (css::uno::RuntimeException, std::exception)
 {
     return maIter != maAnnotations.end();
 }
 
-css::uno::Reference< css::office::XAnnotation > SAL_CALL AnnotationEnumeration::nextElement()
+css::uno::Reference< css::office::XAnnotation > SAL_CALL AnnotationEnumeration::nextElement() throw (css::uno::RuntimeException, css::container::NoSuchElementException, std::exception)
 {
     if( maIter == maAnnotations.end() )
         throw css::container::NoSuchElementException();

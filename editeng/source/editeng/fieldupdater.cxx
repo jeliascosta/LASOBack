@@ -32,7 +32,7 @@ public:
         for (std::unique_ptr<ContentInfo> & i : rContents)
         {
             ContentInfo& rContent = *i.get();
-            ContentInfo::XEditAttributesType& rAttribs = rContent.GetCharAttribs();
+            ContentInfo::XEditAttributesType& rAttribs = rContent.GetAttribs();
             for (std::unique_ptr<XEditAttribute> & rAttrib : rAttribs)
             {
                 XEditAttribute& rAttr = *rAttrib.get();

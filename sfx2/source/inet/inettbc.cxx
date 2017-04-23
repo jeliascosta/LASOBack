@@ -108,17 +108,17 @@ void SfxURLToolBoxControl_Impl::OpenURL( const OUString& rName, bool /*bNew*/ ) 
         {
             Sequence< PropertyValue > aArgs( 2 );
             aArgs[0].Name = "Referer";
-            aArgs[0].Value <<= OUString( "private:user" );
+            aArgs[0].Value = makeAny( OUString( "private:user" ));
             aArgs[1].Name = "FileName";
-            aArgs[1].Value <<= aName;
+            aArgs[1].Value = makeAny( OUString( aName ));
 
             if ( !aFilter.isEmpty() )
             {
                 aArgs.realloc( 4 );
                 aArgs[2].Name = "FilterOptions";
-                aArgs[2].Value <<= aOptions;
+                aArgs[2].Value = makeAny( OUString( aOptions ));
                 aArgs[3].Name = "FilterName";
-                aArgs[3].Value <<= aFilter;
+                aArgs[3].Value = makeAny( OUString( aFilter ));
             }
 
             SfxURLToolBoxControl_Impl::ExecuteInfo* pExecuteInfo = new SfxURLToolBoxControl_Impl::ExecuteInfo;
@@ -131,7 +131,7 @@ void SfxURLToolBoxControl_Impl::OpenURL( const OUString& rName, bool /*bNew*/ ) 
 }
 
 
-IMPL_STATIC_LINK( SfxURLToolBoxControl_Impl, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( SfxURLToolBoxControl_Impl, ExecuteHdl_Impl, void*, p, void )
 {
     ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
     try
@@ -157,7 +157,7 @@ VclPtr<vcl::Window> SfxURLToolBoxControl_Impl::CreateItemWindow( vcl::Window* pP
     return pURLBox.get();
 }
 
-IMPL_LINK_NOARG(SfxURLToolBoxControl_Impl, SelectHdl, ComboBox&, void)
+IMPL_LINK_NOARG_TYPED(SfxURLToolBoxControl_Impl, SelectHdl, ComboBox&, void)
 {
     SvtURLBox* pURLBox = GetURLBox();
     OUString aName( pURLBox->GetURL() );
@@ -166,7 +166,7 @@ IMPL_LINK_NOARG(SfxURLToolBoxControl_Impl, SelectHdl, ComboBox&, void)
         OpenURL( aName, false );
 }
 
-IMPL_LINK_NOARG(SfxURLToolBoxControl_Impl, OpenHdl, SvtURLBox*, void)
+IMPL_LINK_NOARG_TYPED(SfxURLToolBoxControl_Impl, OpenHdl, SvtURLBox*, void)
 {
     SvtURLBox* pURLBox = GetURLBox();
     OpenURL( pURLBox->GetURL(), pURLBox->IsCtrlOpen() );
@@ -175,7 +175,7 @@ IMPL_LINK_NOARG(SfxURLToolBoxControl_Impl, OpenHdl, SvtURLBox*, void)
     Reference< XFrame > xFrame( xDesktop->getActiveFrame(), UNO_QUERY );
     if ( xFrame.is() )
     {
-        VclPtr<vcl::Window> pWin = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
+        vcl::Window* pWin = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
         if ( pWin )
         {
             pWin->GrabFocus();
@@ -224,7 +224,7 @@ void SfxURLToolBoxControl_Impl::StateChanged
                         continue;
 
                     INetURLObject aURL    ( sURL );
-                    OUString      sMainURL( aURL.GetMainURL( INetURLObject::DecodeMechanism::WithCharset ) );
+                    OUString      sMainURL( aURL.GetMainURL( INetURLObject::DECODE_WITH_CHARSET ) );
                     OUString      sFile;
 
                     if (osl::FileBase::getSystemPathFromFileURL(sMainURL, sFile) == osl::FileBase::E_None)

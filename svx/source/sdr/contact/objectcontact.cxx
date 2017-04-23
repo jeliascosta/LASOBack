@@ -66,12 +66,7 @@ ObjectContact::~ObjectContact()
     DBG_ASSERT(maViewObjectContactVector.empty(), "Corrupted ViewObjectContactList (!)");
 
     // delete the EventHandler. This will destroy all still contained events.
-    if(mpEventHandler)
-    {
-        // If there are still Events registered, something has went wrong
-        delete mpEventHandler;
-        mpEventHandler = nullptr;
-    }
+    DeleteEventHandler();
 }
 
 // LazyInvalidate request. Default implementation directly handles
@@ -112,7 +107,7 @@ void ObjectContact::ProcessDisplay(DisplayInfo& /*rDisplayInfo*/)
 // test if visualizing of entered groups is switched on at all
 bool ObjectContact::DoVisualizeEnteredGroup() const
 {
-    // Do not do that as default
+    // Don not do that as default
     return false;
 }
 
@@ -143,6 +138,13 @@ bool ObjectContact::AreGluePointsVisible() const
     return false;
 }
 
+// method to create a EventHandler. Needs to give a result.
+sdr::event::TimerEventHandler* ObjectContact::CreateEventHandler()
+{
+    // Create and return a new EventHandler
+    return new sdr::event::TimerEventHandler();
+}
+
 // method to get the primitiveAnimator
 
 // method to get the EventHandler. It will
@@ -151,9 +153,22 @@ sdr::event::TimerEventHandler& ObjectContact::GetEventHandler() const
 {
     if(!HasEventHandler())
     {
-        const_cast< ObjectContact* >(this)->mpEventHandler = new sdr::event::TimerEventHandler();
+        const_cast< ObjectContact* >(this)->mpEventHandler = sdr::contact::ObjectContact::CreateEventHandler();
+        DBG_ASSERT(mpEventHandler, "ObjectContact::GetEventHandler(): Got no EventHandler (!)");
     }
+
     return *mpEventHandler;
+}
+
+// delete the EventHandler
+void ObjectContact::DeleteEventHandler()
+{
+    if(mpEventHandler)
+    {
+        // If there are still Events registered, something has went wrong
+        delete mpEventHandler;
+        mpEventHandler = nullptr;
+    }
 }
 
 // test if there is an EventHandler without creating one on demand

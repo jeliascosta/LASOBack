@@ -54,9 +54,9 @@ AccessibleViewForwarder::~AccessibleViewForwarder()
     // empty
 }
 
-::tools::Rectangle AccessibleViewForwarder::GetVisibleArea() const
+Rectangle AccessibleViewForwarder::GetVisibleArea() const
 {
-    ::tools::Rectangle aVisibleArea;
+    Rectangle aVisibleArea;
 
     if((sal_uInt32)mnWindowId < mpView->PaintWindowCount())
     {
@@ -78,7 +78,7 @@ Point AccessibleViewForwarder::LogicToPixel (const Point& rPoint) const
     {
         SdrPaintWindow* pPaintWindow = mpView->GetPaintWindow((sal_uInt32)mnWindowId);
         OutputDevice& rOutDev = pPaintWindow->GetOutputDevice();
-        ::tools::Rectangle aBBox(static_cast<vcl::Window&>(rOutDev).GetWindowExtentsRelative(nullptr));
+        Rectangle aBBox(static_cast<vcl::Window&>(rOutDev).GetWindowExtentsRelative(nullptr));
         return rOutDev.LogicToPixel (rPoint) + aBBox.TopLeft();
     }
     else

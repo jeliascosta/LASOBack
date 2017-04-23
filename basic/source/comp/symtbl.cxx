@@ -24,8 +24,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <rtl/character.hxx>
-#include <o3tl/make_unique.hxx>
 
 // All symbol names are laid down int the symbol-pool's stringpool, so that
 // all symbols are handled in the same case. On saving the code-image, the
@@ -160,9 +160,9 @@ void SbiSymPool::Add( SbiSymDef* pDef )
             OUString aName( pDef->aName );
             if( pDef->IsStatic() )
             {
-                aName = pParser->aGblStrings.Find( nProcId )
-                      + ":"
-                      + pDef->aName;
+                aName = pParser->aGblStrings.Find( nProcId );
+                aName += ":";
+                aName += pDef->aName;
             }
             pDef->nId = rStrings.Add( aName );
         }
@@ -281,13 +281,15 @@ SbiSymDef::SbiSymDef( const OUString& rName ) : aName( rName )
     bByVal   =
     bChained =
     bGlobal  = false;
-    pIn      = nullptr;
+    pIn      =
+    pPool    = nullptr;
     nDefaultId = 0;
     nFixedStringLength = -1;
 }
 
 SbiSymDef::~SbiSymDef()
 {
+    delete pPool;
 }
 
 SbiProcDef* SbiSymDef::GetProcDef()
@@ -320,7 +322,7 @@ void SbiSymDef::SetType( SbxDataType t )
         sal_Unicode cu = aName[0];
         if( cu < 256 )
         {
-            unsigned char ch = (unsigned char)cu;
+            char ch = (char)cu;
             if( ch == '_' )
             {
                 ch = 'Z';
@@ -369,7 +371,7 @@ SbiSymPool& SbiSymDef::GetPool()
 {
     if( !pPool )
     {
-        pPool = o3tl::make_unique<SbiSymPool>( pIn->pParser->aGblStrings, SbLOCAL, pIn->pParser );// is dumped
+        pPool = new SbiSymPool( pIn->pParser->aGblStrings, SbLOCAL, pIn->pParser );   // is dumped
     }
     return *pPool;
 }
@@ -395,7 +397,7 @@ SbiProcDef::SbiProcDef( SbiParser* pParser, const OUString& rName,
          , mbProcDecl( bProcDecl )
 {
     aParams.SetParent( &pParser->aPublics );
-    pPool = o3tl::make_unique<SbiSymPool>( pParser->aGblStrings, SbLOCAL, pParser );
+    pPool = new SbiSymPool( pParser->aGblStrings, SbLOCAL, pParser );
     pPool->SetParent( &aParams );
     nLine1  =
     nLine2  = 0;

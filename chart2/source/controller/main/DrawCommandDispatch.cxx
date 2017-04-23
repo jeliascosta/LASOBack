@@ -55,7 +55,7 @@ namespace
 {
 
     // comparing two PropertyValue instances
-    struct PropertyValueCompare : public std::binary_function< beans::PropertyValue, OUString, bool >
+    struct PropertyValueCompare : public ::std::binary_function< beans::PropertyValue, OUString, bool >
     {
         bool operator() ( const beans::PropertyValue& rPropValue, const OUString& rName ) const
         {
@@ -79,6 +79,11 @@ DrawCommandDispatch::~DrawCommandDispatch()
 {
 }
 
+void DrawCommandDispatch::initialize()
+{
+    FeatureCommandDispatchBase::initialize();
+}
+
 bool DrawCommandDispatch::isFeatureSupported( const OUString& rCommandURL )
 {
     sal_uInt16 nFeatureId = 0;
@@ -97,7 +102,7 @@ bool DrawCommandDispatch::isFeatureSupported( const OUString& rCommandURL )
         long nCount = pLineEndList->Count();
         for ( long nIndex = 0; nIndex < nCount; ++nIndex )
         {
-            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
+            XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nIndex );
             if ( pEntry->GetName() == aName )
             {
                 aReturn = pEntry->GetLineEnd();
@@ -119,7 +124,7 @@ void DrawCommandDispatch::setAttributes( SdrObject* pObj )
             bool bAttributesAppliedFromGallery = false;
             if ( GalleryExplorer::GetSdrObjCount( GALLERY_THEME_POWERPOINT ) )
             {
-                std::vector< OUString > aObjList;
+                ::std::vector< OUString > aObjList;
                 if ( GalleryExplorer::FillObjListTitle( GALLERY_THEME_POWERPOINT, aObjList ) )
                 {
                     for ( size_t i = 0; i < aObjList.size(); ++i )
@@ -167,7 +172,7 @@ void DrawCommandDispatch::setAttributes( SdrObject* pObj )
             }
             if ( !bAttributesAppliedFromGallery )
             {
-                pObj->SetMergedItem( SvxAdjustItem( SvxAdjust::Center, 0 ) );
+                pObj->SetMergedItem( SvxAdjustItem( SVX_ADJUST_CENTER, 0 ) );
                 pObj->SetMergedItem( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
                 pObj->SetMergedItem( SdrTextHorzAdjustItem( SDRTEXTHORZADJUST_BLOCK ) );
                 pObj->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );
@@ -228,6 +233,7 @@ void DrawCommandDispatch::disposing()
 
 // XEventListener
 void DrawCommandDispatch::disposing( const lang::EventObject& /* Source */ )
+    throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -372,8 +378,8 @@ void DrawCommandDispatch::execute( const OUString& rCommand, const Sequence< bea
                 const OUString sKeyModifier( "KeyModifier" );
                 const beans::PropertyValue* pIter = rArgs.getConstArray();
                 const beans::PropertyValue* pEnd  = pIter + rArgs.getLength();
-                const beans::PropertyValue* pKeyModifier = std::find_if(
-                    pIter, pEnd, std::bind2nd( PropertyValueCompare(), std::cref( sKeyModifier ) ) );
+                const beans::PropertyValue* pKeyModifier = ::std::find_if(
+                    pIter, pEnd, ::std::bind2nd( PropertyValueCompare(), std::cref( sKeyModifier ) ) );
                 sal_Int16 nKeyModifier = 0;
                 if ( pKeyModifier != pEnd && pKeyModifier && ( pKeyModifier->Value >>= nKeyModifier ) && nKeyModifier == KEY_MOD1 )
                 {
@@ -384,7 +390,12 @@ void DrawCommandDispatch::execute( const OUString& rCommand, const Sequence< bea
                         {
                             SdrPageView* pPageView = pDrawViewWrapper->GetSdrPageView();
                             pDrawViewWrapper->InsertObjectAtView( pObj, *pPageView );
-                            m_pChartController->SetAndApplySelection(Reference<drawing::XShape>(pObj->getUnoShape(), uno::UNO_QUERY));
+                            Reference< drawing::XShape > xShape( pObj->getUnoShape(), uno::UNO_QUERY );
+                            if ( xShape.is() )
+                            {
+                                m_pChartController->m_aSelection.setSelection( xShape );
+                                m_pChartController->m_aSelection.applySelection( pDrawViewWrapper );
+                            }
                             if ( nFeatureId == COMMAND_ID_DRAW_TEXT )
                             {
                                 m_pChartController->StartTextEdit();
@@ -444,11 +455,11 @@ SdrObject* DrawCommandDispatch::createDefaultObject( const sal_uInt16 nID )
                 long nDefaultObjectSizeWidth = 4000;
                 long nDefaultObjectSizeHeight = 2500;
                 Size aObjectSize( nDefaultObjectSizeWidth, nDefaultObjectSizeHeight );
-                tools::Rectangle aPageRect( tools::Rectangle( Point( 0, 0 ), pPage->GetSize() ) );
+                Rectangle aPageRect( Rectangle( Point( 0, 0 ), pPage->GetSize() ) );
                 Point aObjectPos = aPageRect.Center();
                 aObjectPos.X() -= aObjectSize.Width() / 2;
                 aObjectPos.Y() -= aObjectSize.Height() / 2;
-                tools::Rectangle aRect( aObjectPos, aObjectSize );
+                Rectangle aRect( aObjectPos, aObjectSize );
 
                 switch ( nID )
                 {

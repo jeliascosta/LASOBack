@@ -86,7 +86,7 @@ void RecentMasterPagesSelector::LateInit()
         LINK(this,RecentMasterPagesSelector,MasterPageListListener));
 }
 
-IMPL_LINK_NOARG(RecentMasterPagesSelector, MasterPageListListener, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(RecentMasterPagesSelector, MasterPageListListener, LinkParamNone*, void)
 {
     MasterPagesSelector::Fill();
 }
@@ -95,10 +95,11 @@ void RecentMasterPagesSelector::Fill (ItemList& rItemList)
 {
     // Create a set of names of the master pages used by the document.
     MasterPageObserver::MasterPageNameSet aCurrentNames;
-    sal_uInt16 nMasterPageCount = mrDocument.GetMasterSdPageCount(PageKind::Standard);
-    for (sal_uInt16 nIndex=0; nIndex<nMasterPageCount; nIndex++)
+    sal_uInt16 nMasterPageCount = mrDocument.GetMasterSdPageCount(PK_STANDARD);
+    sal_uInt16 nIndex;
+    for (nIndex=0; nIndex<nMasterPageCount; nIndex++)
     {
-        SdPage* pMasterPage = mrDocument.GetMasterSdPage (nIndex, PageKind::Standard);
+        SdPage* pMasterPage = mrDocument.GetMasterSdPage (nIndex, PK_STANDARD);
         if (pMasterPage != nullptr)
             aCurrentNames.insert (pMasterPage->GetName());
     }
@@ -106,7 +107,7 @@ void RecentMasterPagesSelector::Fill (ItemList& rItemList)
     // Insert the recently used master pages that are currently not used.
     RecentlyUsedMasterPages& rInstance (RecentlyUsedMasterPages::Instance());
     int nPageCount = rInstance.GetMasterPageCount();
-    for (int nIndex=0; nIndex<nPageCount; nIndex++)
+    for (nIndex=0; nIndex<nPageCount; nIndex++)
     {
         // Add an entry when a) the page is already known to the
         // MasterPageContainer, b) the style name is empty, i.e. it has not yet
@@ -145,9 +146,8 @@ void RecentMasterPagesSelector::AssignMasterPageToPageList (
 
 void RecentMasterPagesSelector::ProcessPopupMenu (Menu& rMenu)
 {
-    sal_uInt16 nItemid = rMenu.GetItemId("edit");
-    if (rMenu.GetItemPos(nItemid) != MENU_ITEM_NOTFOUND)
-        rMenu.EnableItem(nItemid, false);
+    if (rMenu.GetItemPos(SID_TP_EDIT_MASTER) != MENU_ITEM_NOTFOUND)
+        rMenu.EnableItem(SID_TP_EDIT_MASTER, false);
 }
 
 } } // end of namespace sd::sidebar

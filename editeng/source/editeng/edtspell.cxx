@@ -46,8 +46,8 @@ EditSpellWrapper::EditSpellWrapper( vcl::Window* _pWin,
 {
     SAL_WARN_IF( !pView, "editeng", "One view has to be abandoned!" );
     // Keep IgnoreList, delete ReplaceList...
-    if (LinguMgr::GetChangeAllList().is())
-        LinguMgr::GetChangeAllList()->clear();
+    if (SvxGetChangeAllList().is())
+        SvxGetChangeAllList()->clear();
     pEditView = pView;
 }
 
@@ -57,7 +57,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
     ImpEditEngine* pImpEE = pEditView->GetImpEditEngine();
     SpellInfo* pSpellInfo = pImpEE->GetSpellInfo();
 
-    if ( eArea == SvxSpellArea::BodyStart )
+    if ( eArea == SVX_SPELL_BODY_START )
     {
         // Is called when
         // a) Spell-Forward has arrived at the end and should restart at the top
@@ -76,7 +76,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
                     pEE->GetEditDoc().GetStartPaM() );
         }
     }
-    else if ( eArea == SvxSpellArea::BodyEnd )
+    else if ( eArea == SVX_SPELL_BODY_END )
     {
         // Is called when
         // a) Spell-Forward is launched
@@ -95,7 +95,7 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
                     pEE->GetEditDoc().GetEndPaM() );
         }
     }
-    else if ( eArea == SvxSpellArea::Body )
+    else if ( eArea == SVX_SPELL_BODY )
     {
         ;   // Is handled by the App through SpellNextDocument
     }
@@ -108,6 +108,12 @@ void EditSpellWrapper::SpellStart( SvxSpellArea eArea )
 void EditSpellWrapper::SpellContinue()
 {
     SetLast( pEditView->GetImpEditEngine()->ImpSpell( pEditView ) );
+}
+
+void EditSpellWrapper::SpellEnd()
+{
+    // Base class will show language errors...
+    SvxSpellWrapper::SpellEnd();
 }
 
 bool EditSpellWrapper::HasOtherCnt()
@@ -127,7 +133,7 @@ bool EditSpellWrapper::SpellMore()
         SetCurTextObj( nullptr );
         if ( bMore )
         {
-            // The text has been entered into the engine, when backwards then
+            // The text has been entered into the engine, when backwords then
             // it must be behind the selection.
             pEditView->GetImpEditView()->SetEditSelection(
                         pEE->GetEditDoc().GetStartPaM() );
@@ -624,7 +630,7 @@ void EdtAutoCorrDoc::SetAttr(sal_Int32 nStt, sal_Int32 nEnd,
 
         EditSelection aSel( EditPaM( pCurNode, nStt ), EditPaM( pCurNode, nEnd ) );
         aSel.Max().SetIndex( nEnd );    // ???
-        mpEditEngine->SetAttribs( aSel, aSet, SetAttribsMode::Edge );
+        mpEditEngine->SetAttribs( aSel, aSet, ATTRSPECIAL_EDGE );
         bAllowUndoAction = false;
     }
 }

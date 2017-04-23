@@ -55,8 +55,8 @@ class SC_DLLPUBLIC ScPreviewShell: public SfxViewShell
     bool            GetPageSize( Size& aPageSize );
 private:
     void            Construct( vcl::Window* pParent );
-    DECL_LINK( ScrollHandler, ScrollBar*, void );
-    DECL_LINK( CloseHdl, SystemWindow&, void);
+    DECL_LINK_TYPED( ScrollHandler, ScrollBar*, void );
+    DECL_LINK_TYPED( CloseHdl, SystemWindow&, void);
     void            DoScroll( sal_uInt16 nMode );
     void            ExitPreview();
 
@@ -65,7 +65,7 @@ protected:
     virtual void    Deactivate(bool bMDI) override;
     virtual void    AdjustPosSizePixel( const Point &rPos, const Size &rSize ) override;
 
-    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize, bool inplaceEditModeChange ) override;
+    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize ) override;
     virtual void    OuterResizePixel( const Point &rOfs, const Size &rSize ) override;
 
     virtual void    WriteUserData(OUString &, bool bBrowse = false) override;
@@ -86,12 +86,12 @@ public:
                     ScPreviewShell( SfxViewFrame*           pViewFrame,
                                     SfxViewShell*           pOldSh );
 
-    virtual         ~ScPreviewShell() override;
+    virtual         ~ScPreviewShell();
 
     void            InitStartTable(SCTAB nTab);
 
     void            UpdateScrollBars();
-    void            UpdateNeededScrollBars(bool bFromZoom);
+    void            UpdateNeededScrollBars(bool bFromZoom = false);
     bool            ScrollCommand( const CommandEvent& rCEvt );
 
     void            Execute( SfxRequest& rReq );

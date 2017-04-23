@@ -126,7 +126,7 @@ void DiscoveryService::setupSockets()
 #if defined(_WIN32_WINNT) &&  _WIN32_WINNT >= _WIN32_WINNT_VISTA
     IN_ADDR addr;
     OUString const saddr("239.0.0.1");
-    INT ret = InetPtonW(AF_INET, SAL_W(saddr.getStr()), & addr);
+    INT ret = InetPtonW(AF_INET, saddr.getStr(), & addr);
     if (1 == ret)
     {
         multicastRequest.imr_multiaddr.s_addr = addr.S_un.S_addr;
@@ -138,11 +138,9 @@ void DiscoveryService::setupSockets()
 
     rc = setsockopt( mSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP,
     #ifdef _WIN32
-        reinterpret_cast<const char*>(&multicastRequest),
-    #else
-        &multicastRequest,
+        (const char*)
     #endif
-        sizeof(multicastRequest));
+        &multicastRequest, sizeof(multicastRequest));
 
     if (rc)
     {

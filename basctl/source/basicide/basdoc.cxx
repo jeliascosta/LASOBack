@@ -27,7 +27,6 @@
 #define basctl_DocShell     // This CANNOT come before basdoc apparently
 #include <basslots.hxx>
 #include <sfx2/sfxmodelfactory.hxx>
-#include <svl/itemset.hxx>
 #include <svx/svxids.hrc>
 #include <tools/globname.hxx>
 

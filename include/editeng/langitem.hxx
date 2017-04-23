@@ -32,15 +32,7 @@ class SvXMLUnitConverter;
     This item describes a Language.
 */
 
-// MSVC hack:
-class SvxLanguageItem_Base: public SfxEnumItem<LanguageType> {
-protected:
-    explicit SvxLanguageItem_Base(sal_uInt16 nWhich, LanguageType nValue):
-        SfxEnumItem(nWhich, nValue)
-    {}
-};
-
-class EDITENG_DLLPUBLIC SvxLanguageItem : public SvxLanguageItem_Base
+class EDITENG_DLLPUBLIC SvxLanguageItem : public SfxEnumItem
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -49,24 +41,25 @@ public:
                      const sal_uInt16 nId  );
 
     // "pure virtual Methods" from SfxPoolItem
-    virtual bool GetPresentation(SfxItemPresentation ePres,
-                                 MapUnit eCoreMetric,
-                                 MapUnit ePresMetric,
-                                 OUString &rText, const IntlWrapper * = nullptr) const override;
+    virtual bool GetPresentation( SfxItemPresentation ePres,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
-    virtual sal_uInt16      GetValueCount() const override;
+    virtual sal_uInt16          GetValueCount() const override;
 
-    SvxLanguageItem& operator=(const SvxLanguageItem& rLang)
+    inline SvxLanguageItem& operator=(const SvxLanguageItem& rLang)
         {
             SetValue( rLang.GetValue() );
             return *this;
         }
 
+    // enum cast
     LanguageType            GetLanguage() const
-                                { return GetValue(); }
+                                { return (LanguageType)GetValue(); }
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 };

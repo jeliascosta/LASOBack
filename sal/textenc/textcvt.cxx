@@ -107,7 +107,8 @@ rtl_TextToUnicodeConverter SAL_CALL rtl_createTextToUnicodeConverter( rtl_TextEn
     const ImplTextEncodingData* pData = Impl_getTextEncodingData( eTextEncoding );
     if ( pData )
         return static_cast<rtl_TextToUnicodeConverter>(const_cast<ImplTextConverter *>(&pData->maConverter));
-    return nullptr;
+    else
+        return nullptr;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -123,9 +124,10 @@ rtl_TextToUnicodeContext SAL_CALL rtl_createTextToUnicodeContext( rtl_TextToUnic
     const ImplTextConverter* pConverter = static_cast<const ImplTextConverter*>(hConverter);
     if ( !pConverter )
         return nullptr;
-    if ( pConverter->mpCreateTextToUnicodeContext )
+    else if ( pConverter->mpCreateTextToUnicodeContext )
         return pConverter->mpCreateTextToUnicodeContext();
-    return reinterpret_cast<rtl_TextToUnicodeContext>(1);
+    else
+        return reinterpret_cast<rtl_TextToUnicodeContext>(1);
 }
 
 /* ----------------------------------------------------------------------- */
@@ -183,7 +185,8 @@ rtl_UnicodeToTextConverter SAL_CALL rtl_createUnicodeToTextConverter( rtl_TextEn
     const ImplTextEncodingData* pData = Impl_getTextEncodingData( eTextEncoding );
     if ( pData )
         return static_cast<rtl_TextToUnicodeConverter>(const_cast<ImplTextConverter *>(&pData->maConverter));
-    return nullptr;
+    else
+        return nullptr;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -199,9 +202,10 @@ rtl_UnicodeToTextContext SAL_CALL rtl_createUnicodeToTextContext( rtl_UnicodeToT
     const ImplTextConverter* pConverter = static_cast<const ImplTextConverter*>(hConverter);
     if ( !pConverter )
         return nullptr;
-    if ( pConverter->mpCreateUnicodeToTextContext )
+    else if ( pConverter->mpCreateUnicodeToTextContext )
         return pConverter->mpCreateUnicodeToTextContext();
-    return reinterpret_cast<rtl_UnicodeToTextContext>(1);
+    else
+        return reinterpret_cast<rtl_UnicodeToTextContext>(1);
 }
 
 /* ----------------------------------------------------------------------- */

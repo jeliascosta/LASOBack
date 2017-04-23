@@ -91,7 +91,7 @@ namespace svt
     public:
 
         CellController(Control* pW);
-        virtual ~CellController() override;
+        virtual ~CellController();
 
         Control& GetWindow() const { return *const_cast< CellController* >( this )->pWindow; }
 
@@ -106,7 +106,7 @@ namespace svt
         // suspending the controller is not culmulative!
                 void        suspend( );
                 void        resume( );
-        bool        isSuspended( ) const { return bSuspended; }
+        inline  bool        isSuspended( ) const { return bSuspended; }
 
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const;
@@ -237,7 +237,7 @@ namespace svt
     public:
         EditCellController( Edit* _pEdit );
         EditCellController( IEditImplementation* _pImplementation );
-        virtual ~EditCellController( ) override;
+        virtual ~EditCellController( );
 
         const IEditImplementation* GetEditImplementation( ) const { return m_pEditImplementation; }
               IEditImplementation* GetEditImplementation( )       { return m_pEditImplementation; }
@@ -249,7 +249,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK(ModifyHdl, Edit&, void);
+        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
     };
 
 
@@ -269,7 +269,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK(ModifyHdl, Edit&, void);
+        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
     };
 
 
@@ -278,18 +278,18 @@ namespace svt
     class SVT_DLLPUBLIC CheckBoxControl : public Control
     {
         VclPtr<CheckBox>             pBox;
-        tools::Rectangle                    aFocusRect;
+        Rectangle                    aFocusRect;
         Link<VclPtr<CheckBox>,void>  m_aClickLink;
         Link<LinkParamNone*,void>    m_aModifyLink;
 
     public:
         CheckBoxControl(vcl::Window* pParent);
-        virtual ~CheckBoxControl() override;
+        virtual ~CheckBoxControl();
         virtual void dispose() override;
 
         virtual void GetFocus() override;
         virtual bool PreNotify(NotifyEvent& rEvt) override;
-        virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rClientRect) override;
+        virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rClientRect) override;
         virtual void Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
         virtual void StateChanged( StateChangedType nStateChange ) override;
         virtual void DataChanged( const DataChangedEvent& _rEvent ) override;
@@ -302,7 +302,7 @@ namespace svt
         CheckBox&   GetBox() {return *pBox;};
 
     private:
-        DECL_LINK( OnClick, Button*, void );
+        DECL_LINK_TYPED( OnClick, Button*, void );
     };
 
 
@@ -321,7 +321,7 @@ namespace svt
     protected:
         virtual bool WantMouseEvent() const override;
     private:
-        DECL_LINK(ModifyHdl, LinkParamNone*, void);
+        DECL_LINK_TYPED(ModifyHdl, LinkParamNone*, void);
     };
 
 
@@ -354,7 +354,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK(ModifyHdl, Edit&, void);
+        DECL_LINK_TYPED(ModifyHdl, Edit&, void);
     };
 
 
@@ -388,7 +388,7 @@ namespace svt
     protected:
         virtual bool MoveAllowed(const KeyEvent& rEvt) const override;
     private:
-        DECL_LINK(ListBoxSelectHdl, ListBox&, void);
+        DECL_LINK_TYPED(ListBoxSelectHdl, ListBox&, void);
     };
 
 
@@ -490,7 +490,8 @@ namespace svt
         VclPtr<CheckBoxControl> pCheckBoxPaint;
 
         EditBrowseBoxFlags  m_nBrowserFlags;
-        std::unique_ptr< EditBrowseBoxImpl> m_aImpl;
+        ImageList   m_aStatusImages;
+        ::std::unique_ptr< EditBrowseBoxImpl> m_aImpl;
 
     protected:
         VclPtr<BrowserHeader>  pHeader;
@@ -523,17 +524,17 @@ namespace svt
         using BrowseBox::MouseButtonDown;
 
         virtual bool PreNotify(NotifyEvent& rNEvt ) override;
-        virtual bool EventNotify(NotifyEvent& rNEvt) override;
+        virtual bool Notify(NotifyEvent& rNEvt) override;
 
         virtual void EndScroll() override;
 
         // should be used instead of GetFieldRectPixel, 'cause this method here takes into account the borders
-        tools::Rectangle GetCellRect(long nRow, sal_uInt16 nColId, bool bRelToBrowser = true) const;
+        Rectangle GetCellRect(long nRow, sal_uInt16 nColId, bool bRelToBrowser = true) const;
         virtual sal_uInt32 GetTotalCellWidth(long nRow, sal_uInt16 nColId);
         sal_uInt32 GetAutoColumnWidth(sal_uInt16 nColId);
 
-        virtual void PaintStatusCell(OutputDevice& rDev, const tools::Rectangle& rRect) const;
-        virtual void PaintCell(OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColId) const = 0;
+        virtual void PaintStatusCell(OutputDevice& rDev, const Rectangle& rRect) const;
+        virtual void PaintCell(OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColId) const = 0;
 
         virtual RowStatus GetRowStatus(long nRow) const;
 
@@ -541,6 +542,7 @@ namespace svt
 
         // callbacks for the data window
         virtual void    ImplStartTracking() override;
+        virtual void    ImplTracking() override;
         virtual void    ImplEndTracking() override;
 
         // when changing a row:
@@ -555,11 +557,11 @@ namespace svt
                                             // return sal_False prevents leaving the cell
         virtual bool SaveRow();         // commit the current row
 
-        virtual bool IsModified() const {return aController.is() && aController->IsModified();}
+        virtual bool IsModified() const {return aController.Is() && aController->IsModified();}
 
         virtual CellController* GetController(long nRow, sal_uInt16 nCol);
         virtual void InitController(CellControllerRef& rController, long nRow, sal_uInt16 nCol);
-        static void ResizeController(CellControllerRef& rController, const tools::Rectangle&);
+        static void ResizeController(CellControllerRef& rController, const Rectangle&);
         virtual void DoubleClick(const BrowserMouseEvent&) override;
 
         void ActivateCell() { ActivateCell(GetCurRow(), GetCurColumnId()); }
@@ -570,7 +572,7 @@ namespace svt
         // inserting columns
         // if you don't set a width, this will be calculated automatically
         // if the id isn't set the smallest unused will do it ...
-        virtual sal_uInt16 AppendColumn(const OUString& rName, sal_uInt16 nWidth, sal_uInt16 nPos = HEADERBAR_APPEND, sal_uInt16 nId = (sal_uInt16)-1);
+        virtual sal_uInt16 AppendColumn(const OUString& rName, sal_uInt16 nWidth = 0, sal_uInt16 nPos = HEADERBAR_APPEND, sal_uInt16 nId = (sal_uInt16)-1);
 
         // called whenever (Shift)Tab or Enter is pressed. If true is returned, these keys
         // result in traveling to the next or to th previous cell
@@ -578,17 +580,18 @@ namespace svt
 
         virtual bool IsCursorMoveAllowed(long nNewRow, sal_uInt16 nNewColId) const override;
 
-        void    PaintTristate(OutputDevice& rDev, const tools::Rectangle& rRect, const TriState& eState, bool _bEnabled=true) const;
+        void    PaintTristate(OutputDevice& rDev, const Rectangle& rRect, const TriState& eState, bool _bEnabled=true) const;
 
         void AsynchGetFocus();
             // secure starting of StartEditHdl
 
     public:
-        EditBrowseBox(vcl::Window* pParent, EditBrowseBoxFlags nBrowserFlags, WinBits nBits = WB_TABSTOP, BrowserMode nMode = BrowserMode::NONE );
-        virtual ~EditBrowseBox() override;
+        EditBrowseBox(vcl::Window* pParent, EditBrowseBoxFlags nBrowserFlags = EditBrowseBoxFlags::NONE, WinBits nBits = WB_TABSTOP, BrowserMode nMode = BrowserMode::NONE );
+        EditBrowseBox(vcl::Window* pParent, const ResId& rId, EditBrowseBoxFlags nBrowserFlags = EditBrowseBoxFlags::NONE, BrowserMode nMode = BrowserMode::NONE );
+        virtual ~EditBrowseBox();
         virtual void dispose() override;
 
-        bool IsEditing() const {return aController.is();}
+        bool IsEditing() const {return aController.Is();}
         void InvalidateStatusCell(long nRow) {RowModified(nRow, 0);}
         void InvalidateHandleColumn();
 
@@ -605,6 +608,16 @@ namespace svt
         virtual void DeactivateCell(bool bUpdate = true);
         // Children ---------------------------------------------------------------
 
+        /** Creates the accessible object of a data table cell.
+        @param nRow
+            The row index of the cell.
+        @param nColumnId
+            The column ID of the cell.
+        @return
+            The XAccessible interface of the specified cell. */
+        virtual css::uno::Reference< css::accessibility::XAccessible >
+        CreateAccessibleCell( sal_Int32 nRow, sal_uInt16 nColumnPos ) override;
+
         /** @return  The count of additional controls of the control area. */
         virtual sal_Int32 GetAccessibleControlCount() const override;
 
@@ -616,10 +629,18 @@ namespace svt
         virtual css::uno::Reference< css::accessibility::XAccessible >
         CreateAccessibleControl( sal_Int32 nIndex ) override;
 
+        /** Creates the accessible object of a column header.
+            @param nColumnId
+                The column ID of the header.
+            @return
+                The XAccessible interface of the specified column header. */
+        virtual css::uno::Reference< css::accessibility::XAccessible >
+        CreateAccessibleRowHeader( sal_Int32 _nRow ) override;
+
         /** Sets focus to current cell of the data table. */
         virtual void GrabTableFocus() override;
 
-        virtual tools::Rectangle GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex) override;
+        virtual Rectangle GetFieldCharacterBounds(sal_Int32 _nRow,sal_Int32 _nColumnPos,sal_Int32 nIndex) override;
         virtual sal_Int32 GetFieldIndexAtPoint(sal_Int32 _nRow,sal_Int32 _nColumnPos,const Point& _rPoint) override;
 
         css::uno::Reference< css::accessibility::XAccessible > CreateAccessibleCheckBoxCell(long _nRow, sal_uInt16 _nColumnPos,const TriState& eState);
@@ -628,20 +649,21 @@ namespace svt
         void    implCreateActiveAccessible( );
 
     private:
-        virtual void PaintField(OutputDevice& rDev, const tools::Rectangle& rRect,
+        virtual void PaintField(OutputDevice& rDev, const Rectangle& rRect,
                                 sal_uInt16 nColumnId ) const override;
         using Control::ImplInitSettings;
         SVT_DLLPRIVATE void ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
         SVT_DLLPRIVATE void DetermineFocus( const GetFocusFlags _nGetFocusFlags = GetFocusFlags::NONE);
+        static inline void HideAndDisable(CellControllerRef& rController);
         inline void EnableAndShow() const;
 
         SVT_DLLPRIVATE void implActivateCellOnMouseEvent(const BrowserMouseEvent& _rEvt, bool _bUp);
         SVT_DLLPRIVATE void impl_construct();
 
-        DECL_DLLPRIVATE_LINK( ModifyHdl, LinkParamNone*, void );
-        DECL_DLLPRIVATE_LINK( StartEditHdl, void*, void );
-        DECL_DLLPRIVATE_LINK( EndEditHdl, void*, void );
-        DECL_DLLPRIVATE_LINK( CellModifiedHdl, void*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( ModifyHdl, LinkParamNone*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( StartEditHdl, void*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( EndEditHdl, void*, void );
+        DECL_DLLPRIVATE_LINK_TYPED( CellModifiedHdl, void*, void );
     };
 
 

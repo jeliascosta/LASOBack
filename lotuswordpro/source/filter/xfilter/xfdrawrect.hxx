@@ -76,6 +76,9 @@ public:
     void    SetSize(double width, double height);
 
     virtual void    ToXml(IXFStream *pStrm) override;
+
+private:
+    double  m_fCornerRadius;
 };
 
 inline void XFDrawRect::SetSize(double width, double height)

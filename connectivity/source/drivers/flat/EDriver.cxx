@@ -29,33 +29,33 @@
 
 using namespace connectivity::flat;
 using namespace connectivity::file;
-using namespace css::uno;
-using namespace css::beans;
-using namespace css::sdbcx;
-using namespace css::sdbc;
-using namespace css::lang;
+using namespace ::com::sun::star::uno;
+using namespace ::com::sun::star::beans;
+using namespace ::com::sun::star::sdbcx;
+using namespace ::com::sun::star::sdbc;
+using namespace ::com::sun::star::lang;
 
 
 // static ServiceInfo
 
-OUString ODriver::getImplementationName_Static(  )
+OUString ODriver::getImplementationName_Static(  ) throw(RuntimeException)
 {
     return OUString("com.sun.star.comp.sdbc.flat.ODriver");
 }
 
 
-OUString SAL_CALL ODriver::getImplementationName(  )
+OUString SAL_CALL ODriver::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
 
-css::uno::Reference< css::uno::XInterface >  SAL_CALL connectivity::flat::ODriver_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& _rxFactory)
+::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >  SAL_CALL connectivity::flat::ODriver_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& _rxFactory) throw( ::com::sun::star::uno::Exception )
 {
     return *(new ODriver( comphelper::getComponentContext(_rxFactory) ));
 }
 
-Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info )
+Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     if (ODriver_BASE::rBHelper.bDisposed)
@@ -73,53 +73,54 @@ Reference< XConnection > SAL_CALL ODriver::connect( const OUString& url, const S
 }
 
 sal_Bool SAL_CALL ODriver::acceptsURL( const OUString& url )
+                throw(SQLException, RuntimeException, std::exception)
 {
     return url.startsWith("sdbc:flat:");
 }
 
-Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info )
+Sequence< DriverPropertyInfo > SAL_CALL ODriver::getPropertyInfo( const OUString& url, const Sequence< PropertyValue >& info ) throw(SQLException, RuntimeException, std::exception)
 {
     if ( acceptsURL(url) )
     {
-        std::vector< DriverPropertyInfo > aDriverInfo;
+        ::std::vector< DriverPropertyInfo > aDriverInfo;
 
         Sequence< OUString > aBoolean(2);
         aBoolean[0] = "0";
         aBoolean[1] = "1";
 
         aDriverInfo.push_back(DriverPropertyInfo(
-                "FieldDelimiter"
-                ,"Field separator."
+                OUString("FieldDelimiter")
+                ,OUString("Field separator.")
                 ,false
                 ,OUString()
                 ,Sequence< OUString >())
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "HeaderLine"
-                ,"Text contains headers."
+                OUString("HeaderLine")
+                ,OUString("Text contains headers.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "StringDelimiter"
-                ,"Text separator."
+                OUString("StringDelimiter")
+                ,OUString("Text separator.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "DecimalDelimiter"
-                ,"Decimal separator."
+                OUString("DecimalDelimiter")
+                ,OUString("Decimal separator.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         aDriverInfo.push_back(DriverPropertyInfo(
-                "ThousandDelimiter"
-                ,"Thousands separator."
+                OUString("ThousandDelimiter")
+                ,OUString("Thousands separator.")
                 ,false
-                ,"0"
+                ,OUString("0")
                 ,aBoolean)
                 );
         return ::comphelper::concatSequences(OFileDriver::getPropertyInfo(url,info ),

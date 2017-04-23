@@ -29,7 +29,6 @@
 #include <xmloff/styleexp.hxx>
 #include <xmloff/xmltoken.hxx>
 #include <xmloff/SinglePropertySetInfoCache.hxx>
-#include <xmloff/XMLTextListAutoStylePool.hxx>
 #include <memory>
 #include <vector>
 
@@ -87,7 +86,7 @@ class XMLOFF_DLLPUBLIC XMLTextParagraphExport : public XMLStyleExport
     const ::std::unique_ptr< ::xmloff::BoundFrameSets > pBoundFrameSets;
     XMLTextFieldExport          *pFieldExport;
     std::vector<OUString>  *pListElements;
-    XMLTextListAutoStylePool    maListAutoPool;
+    XMLTextListAutoStylePool    *pListAutoPool;
     XMLSectionExport            *pSectionExport;
     XMLIndexMarkExport          *pIndexMarkExport;
 
@@ -122,7 +121,7 @@ public:
             bool& rPrevCharIsSpace,
             FieldmarkType& openFieldMark);
 
-private:
+protected:
 
     // Implement Title/Description Elements UI (#i73249#)
     const OUString sTitle;
@@ -142,6 +141,7 @@ private:
     const OUString sFootnote;
     const OUString sFootnoteCounting;
     const OUString sFrame;
+    const OUString sFrameStyleName;
     const OUString sGraphicFilter;
     const OUString sGraphicRotation;
     const OUString sGraphicURL;
@@ -202,8 +202,6 @@ private:
     const OUString sTextFieldEnd;
     const OUString sTextFieldStartEnd;
 
-protected:
-    const OUString sFrameStyleName;
     SinglePropertySetInfoCache aCharStyleNamesPropInfoCache;
 
     SvXMLAutoStylePoolP& GetAutoStylePool() { return rAutoStylePool; }
@@ -220,6 +218,10 @@ public:
         return xTextPropMapper;
     }
 
+    const rtl::Reference < SvXMLExportPropertyMapper >& GetFramePropMapper() const
+    {
+        return xFramePropMapper;
+    }
     const rtl::Reference < SvXMLExportPropertyMapper >& GetAutoFramePropMapper() const
     {
         return xAutoFramePropMapper;
@@ -246,7 +248,8 @@ public:
 
     void exportTextRangeEnumeration(
         const css::uno::Reference< css::container::XEnumeration > & rRangeEnum,
-        bool bAutoStyles, bool bProgress, bool & rPrevCharIsSpace);
+        bool bAutoStyles, bool bProgress,
+        bool bPrvChrIsSpc = true );
 
 protected:
 
@@ -261,7 +264,7 @@ protected:
 
     void exportPageFrames( bool bProgress );
     void exportFrameFrames( bool bAutoStyles, bool bProgress,
-            const css::uno::Reference< css::text::XTextFrame > *pParentTxtFrame );
+            const css::uno::Reference< css::text::XTextFrame > *pParentTxtFrame = nullptr );
 
     void exportNumStyles( bool bUsed );
 
@@ -275,7 +278,7 @@ protected:
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
         bool bAutoStyles, bool bProgress, bool bExportParagraph, TextPNS eExtensionNS = TextPNS::ODF );
 
-    void exportTextContentEnumeration(
+    bool exportTextContentEnumeration(
         const css::uno::Reference< css::container::XEnumeration > & rContentEnum,
         bool bAutoStyles,
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
@@ -289,7 +292,7 @@ protected:
         bool bAutoStyles, bool bProgress,
         bool bExportParagraph,
         MultiPropertySetHelper& rPropSetHelper,
-        TextPNS eExtensionNS);
+        TextPNS eExtensionNS = TextPNS::ODF);
 
     virtual void exportTable(
         const css::uno::Reference< css::text::XTextContent > & rTextContent,
@@ -297,18 +300,18 @@ protected:
 
     void exportTextField(
         const css::uno::Reference< css::text::XTextRange > & rTextRange,
-        bool bAutoStyles, bool bProgress, bool * pPrevCharIsSpace);
+        bool bAutoStyles, bool bProgress );
 
     void exportTextField(
         const css::uno::Reference< css::text::XTextField> & xTextField,
         const bool bAutoStyles, const bool bProgress,
-        const bool bRecursive, bool * pPrevCharIsSpace);
+        const bool bRecursive );
 
     void exportAnyTextFrame(
         const css::uno::Reference< css::text::XTextContent > & rTextContent,
         FrameType eTxpe,
         bool bAutoStyles, bool bProgress, bool bExportContent,
-        const css::uno::Reference< css::beans::XPropertySet > *pRangePropSet );
+        const css::uno::Reference< css::beans::XPropertySet > *pRangePropSet = nullptr );
     void _exportTextFrame(
         const css::uno::Reference< css::beans::XPropertySet > & rPropSet,
         const css::uno::Reference< css::beans::XPropertySetInfo > & rPropSetInfo,
@@ -417,7 +420,7 @@ protected:
     /// export a text:meta
     void exportMeta(
         const css::uno::Reference< css::beans::XPropertySet> & i_xPortion,
-        bool i_bAutoStyles, bool i_isProgress, bool & rPrevCharIsSpace);
+        bool i_bAutoStyles, bool i_isProgress );
 
 public:
 
@@ -425,7 +428,7 @@ public:
             SvXMLExport& rExp,
                SvXMLAutoStylePoolP & rASP
                           );
-    virtual ~XMLTextParagraphExport() override;
+    virtual ~XMLTextParagraphExport();
 
     /// add autostyle for specified family
     void Add(
@@ -454,7 +457,9 @@ public:
                                                 SvXMLExport& rExport);
 
     // This methods exports all (or all used) styles
-    void exportTextStyles( bool bUsed, bool bProg );
+    void exportTextStyles( bool bUsed
+                           , bool bProg = false
+                         );
 
     /// This method exports (text field) declarations etc.
     void exportTextDeclarations();
@@ -491,7 +496,7 @@ public:
 
 
     // This method exports the given OUString
-    void exportCharacterData(
+    void exportText(
         const OUString& rText,
         bool& rPrevCharWasSpace);
 
@@ -507,14 +512,15 @@ public:
     void collectTextAutoStyles(
         const css::uno::Reference< css::text::XText > & rText,
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
-        bool bIsProgress )
+        bool bIsProgress = false )
     {
         exportText( rText, rBaseSection, true, bIsProgress, true/*bExportParagraph*/ );
     }
 
     // It the model implements the xAutoStylesSupplier interface, the automatic
     // styles can exported without iterating over the text portions
-    bool collectTextAutoStylesOptimized( bool bIsProgress );
+    bool collectTextAutoStylesOptimized(
+        bool bIsProgress = false );
 
     // This method exports all automatic styles that have been collected.
     void exportTextAutoStyles();
@@ -537,15 +543,21 @@ public:
     void exportText(
         const css::uno::Reference< css::text::XText > & rText,
         const css::uno::Reference< css::text::XTextSection > & rBaseSection,
-        bool bIsProgress,
+        bool bIsProgress = false,
         TextPNS eExtensionNS = TextPNS::ODF)
     {
         exportText( rText, rBaseSection, false, bIsProgress, true/*bExportParagraph*/, eExtensionNS );
     }
 
-    void exportFramesBoundToPage( bool bIsProgress )
+    void exportFramesBoundToPage( bool bIsProgress = false )
     {
         exportPageFrames( bIsProgress );
+    }
+    void exportFramesBoundToFrame(
+            const css::uno::Reference< css::text::XTextFrame >& rParentTxtFrame,
+            bool bIsProgress = false )
+    {
+        exportFrameFrames( false, bIsProgress, &rParentTxtFrame );
     }
     inline const XMLTextListAutoStylePool& GetListAutoStylePool() const;
 
@@ -587,7 +599,7 @@ private:
 inline const XMLTextListAutoStylePool&
     XMLTextParagraphExport::GetListAutoStylePool() const
 {
-    return maListAutoPool;
+    return *pListAutoPool;
 }
 
 inline void XMLTextParagraphExport::exportTextFrame(

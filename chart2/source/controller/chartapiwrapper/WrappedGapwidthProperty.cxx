@@ -38,8 +38,8 @@ WrappedBarPositionProperty_Base::WrappedBarPositionProperty_Base(
                   const OUString& rOuterName
                 , const OUString& rInnerSequencePropertyName
                 , sal_Int32 nDefaultValue
-                , const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
-            : WrappedDefaultProperty( rOuterName, OUString(), uno::Any( nDefaultValue ) )
+                , std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+            : WrappedDefaultProperty( rOuterName, OUString(), uno::makeAny( nDefaultValue ) )
             , m_nDimensionIndex(0)
             , m_nAxisIndex(0)
             , m_spChart2ModelContact( spChart2ModelContact )
@@ -59,6 +59,7 @@ WrappedBarPositionProperty_Base::~WrappedBarPositionProperty_Base()
 }
 
 void WrappedBarPositionProperty_Base::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& /*xInnerPropertySet*/ ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     sal_Int32 nNewValue = 0;
     if( ! (rOuterValue >>= nNewValue) )
@@ -94,7 +95,7 @@ void WrappedBarPositionProperty_Base::setPropertyValue( const Any& rOuterValue, 
                     }
                     aBarPositionSequence[m_nAxisIndex] = nNewValue;
 
-                    xProp->setPropertyValue( m_InnerSequencePropertyName, uno::Any( aBarPositionSequence ) );
+                    xProp->setPropertyValue( m_InnerSequencePropertyName, uno::makeAny( aBarPositionSequence ) );
                 }
             }
             catch( uno::Exception& e )
@@ -108,6 +109,7 @@ void WrappedBarPositionProperty_Base::setPropertyValue( const Any& rOuterValue, 
 }
 
 Any WrappedBarPositionProperty_Base::getPropertyValue( const Reference< beans::XPropertySet >& /*xInnerPropertySet*/ ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Reference< chart2::XDiagram > xDiagram( m_spChart2ModelContact->getChart2Diagram() );
     if( xDiagram.is() )
@@ -151,7 +153,7 @@ Any WrappedBarPositionProperty_Base::getPropertyValue( const Reference< beans::X
 }
 
 WrappedGapwidthProperty::WrappedGapwidthProperty(
-        const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+        std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
     : WrappedBarPositionProperty_Base( "GapWidth", "GapwidthSequence", DEFAULT_GAPWIDTH, spChart2ModelContact )
 {
 }
@@ -160,7 +162,7 @@ WrappedGapwidthProperty::~WrappedGapwidthProperty()
 }
 
 WrappedBarOverlapProperty::WrappedBarOverlapProperty(
-        const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
+        std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
     : WrappedBarPositionProperty_Base( "Overlap", "OverlapSequence", DEFAULT_OVERLAP, spChart2ModelContact )
 {
 }

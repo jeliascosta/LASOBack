@@ -36,18 +36,18 @@ class SVT_DLLPUBLIC GenericToolboxController : public svt::ToolboxController
                                   ToolBox* pToolBox,
                                   sal_uInt16   nID,
                                   const OUString& aCommand );
-        virtual ~GenericToolboxController() override;
+        virtual ~GenericToolboxController();
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
+        virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
 
         // XToolbarController
-        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) override;
+        virtual void SAL_CALL execute( sal_Int16 KeyModifier ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XStatusListener
-        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
+        virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
 
-         DECL_STATIC_LINK( GenericToolboxController, ExecuteHdl_Impl, void*, void );
+         DECL_STATIC_LINK_TYPED( GenericToolboxController, ExecuteHdl_Impl, void*, void );
 
     private:
         VclPtr<ToolBox>    m_pToolbox;

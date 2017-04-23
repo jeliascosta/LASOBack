@@ -62,22 +62,17 @@ protected:
     std::unique_ptr<SvXMLItemMapEntries_impl> mpImpl;
 
 public:
-    explicit SvXMLItemMapEntries(SvXMLItemMapEntry const * pEntrys);
-    virtual ~SvXMLItemMapEntries() override;
+    explicit SvXMLItemMapEntries(SvXMLItemMapEntry* pEntrys);
+    virtual ~SvXMLItemMapEntries();
 
-    SvXMLItemMapEntry const * getByName( sal_uInt16 nNameSpace,
+    SvXMLItemMapEntry* getByName( sal_uInt16 nNameSpace,
                                   const OUString& rString ) const;
-    SvXMLItemMapEntry const & getByIndex( sal_uInt16 nIndex ) const;
+    SvXMLItemMapEntry& getByIndex( sal_uInt16 nIndex ) const;
 
     sal_uInt16 getCount() const;
 };
 
 typedef tools::SvRef<SvXMLItemMapEntries> SvXMLItemMapEntriesRef;
-
-extern SvXMLItemMapEntry const aXMLTableItemMap[];
-extern SvXMLItemMapEntry const aXMLTableColItemMap[];
-extern SvXMLItemMapEntry const aXMLTableRowItemMap[];
-extern SvXMLItemMapEntry const aXMLTableCellItemMap[];
 
 #endif // INCLUDED_SW_SOURCE_FILTER_XML_XMLITMAP_HXX
 

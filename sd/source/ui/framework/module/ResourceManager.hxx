@@ -27,11 +27,15 @@
 #include <cppuhelper/compbase.hxx>
 #include <memory>
 
-namespace sd { namespace framework {
+namespace {
 
 typedef ::cppu::WeakComponentImplHelper <
     css::drawing::framework::XConfigurationChangeListener
     > ResourceManagerInterfaceBase;
+
+} // end of anonymous namespace.
+
+namespace sd { namespace framework {
 
 /** Manage the activation state of one resource depending on the view in the
     center pane.  The ResourceManager remembers in which configuration to
@@ -47,7 +51,7 @@ public:
     ResourceManager (
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxResourceId);
-    virtual ~ResourceManager() override;
+    virtual ~ResourceManager();
 
     /** Remember the given URL as one of a center pane view for which to
         activate the resource managed by the called object.
@@ -61,12 +65,14 @@ public:
     // XConfigurationChangeListener
 
     virtual void SAL_CALL notifyConfigurationChange (
-        const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+        const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
 
     virtual void SAL_CALL disposing (
-        const css::lang::EventObject& rEvent) override;
+        const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     css::uno::Reference<css::drawing::framework::XConfigurationController>
@@ -91,6 +97,7 @@ private:
     void HandleResourceRequest(
         bool bActivation,
         const css::uno::Reference<css::drawing::framework::XConfiguration>& rxConfiguration);
+    void UpdateForMainViewShell();
 };
 
 } } // end of namespace sd::framework

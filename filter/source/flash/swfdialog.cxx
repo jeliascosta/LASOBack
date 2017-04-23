@@ -42,12 +42,14 @@ using namespace ::com::sun::star::document;
 
 
 OUString SWFDialog_getImplementationName ()
+    throw (RuntimeException)
 {
     return OUString ( SERVICE_NAME );
 }
 
 
 Sequence< OUString > SAL_CALL SWFDialog_getSupportedServiceNames()
+    throw (RuntimeException)
 {
     Sequence<OUString> aRet { SERVICE_NAME };
     return aRet;
@@ -55,6 +57,7 @@ Sequence< OUString > SAL_CALL SWFDialog_getSupportedServiceNames()
 
 
 Reference< XInterface > SAL_CALL SWFDialog_createInstance( const Reference< XMultiServiceFactory > & rSMgr)
+    throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new SWFDialog( comphelper::getComponentContext(rSMgr) ));
 }
@@ -73,6 +76,7 @@ SWFDialog::~SWFDialog()
 
 
 Any SAL_CALL SWFDialog::queryInterface( const Type& rType )
+    throw (RuntimeException, std::exception)
 {
     Any aReturn = OGenericUnoDialog::queryInterface( rType );
 
@@ -100,18 +104,21 @@ void SAL_CALL SWFDialog::release()
 
 
 Sequence< sal_Int8 > SAL_CALL SWFDialog::getImplementationId()
+    throw(RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 
 OUString SAL_CALL SWFDialog::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return SWFDialog_getImplementationName();
 }
 
 
 Sequence< OUString > SAL_CALL SWFDialog::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return SWFDialog_getSupportedServiceNames();
 }
@@ -124,7 +131,7 @@ VclPtr<Dialog> SWFDialog::createDialog( vcl::Window* pParent )
     if (mxSrcDoc.is())
     {
 /*      TODO: From the controller we may get information what page is visible and what shapes
-              are selected, if we optionally want to limit output to that
+              are selected, if we optionaly want to limit output to that
         Any aSelection;
 
         try
@@ -160,6 +167,7 @@ void SWFDialog::executedDialog( sal_Int16 nExecutionResult )
 
 
 Reference< XPropertySetInfo > SAL_CALL SWFDialog::getPropertySetInfo()
+    throw(RuntimeException, std::exception)
 {
     Reference< XPropertySetInfo >  xInfo( createPropertySetInfo( getInfoHelper() ) );
     return xInfo;
@@ -181,6 +189,7 @@ Reference< XPropertySetInfo > SAL_CALL SWFDialog::getPropertySetInfo()
 
 
 Sequence< PropertyValue > SAL_CALL SWFDialog::getPropertyValues()
+    throw ( RuntimeException, std::exception )
 {
     sal_Int32 i, nCount;
 
@@ -201,6 +210,7 @@ Sequence< PropertyValue > SAL_CALL SWFDialog::getPropertyValues()
 
 
 void SAL_CALL SWFDialog::setPropertyValues( const Sequence< PropertyValue >& rProps )
+    throw ( UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception )
 {
     maMediaDescriptor = rProps;
 
@@ -216,6 +226,7 @@ void SAL_CALL SWFDialog::setPropertyValues( const Sequence< PropertyValue >& rPr
 
 
 void SAL_CALL SWFDialog::setSourceDocument( const Reference< XComponent >& xDoc )
+    throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     mxSrcDoc = xDoc;
 }

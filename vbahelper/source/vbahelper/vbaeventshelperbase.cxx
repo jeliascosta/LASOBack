@@ -18,15 +18,12 @@
  */
 
 #include "vbahelper/vbaeventshelperbase.hxx"
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/XEventBroadcaster.hpp>
 #include <com/sun/star/script/ModuleType.hpp>
 #include <com/sun/star/script/vba/XVBAModuleInfo.hpp>
 #include <com/sun/star/util/XChangesNotifier.hpp>
-#include <cppuhelper/supportsservice.hxx>
 #include <filter/msfilter/msvbahelper.hxx>
 #include <unotools/eventcfg.hxx>
-#include <vbahelper/vbahelper.hxx>
 
 using namespace ::com::sun::star;
 using namespace ::ooo::vba;
@@ -54,6 +51,7 @@ VbaEventsHelperBase::~VbaEventsHelperBase()
 }
 
 sal_Bool SAL_CALL VbaEventsHelperBase::processVbaEvent( sal_Int32 nEventId, const uno::Sequence< uno::Any >& rArgs )
+        throw (lang::IllegalArgumentException, util::VetoException, uno::RuntimeException, std::exception)
 {
     /*  Derived classes may add new event identifiers to be processed while
         processing the original event. All unprocessed events are collected in
@@ -130,14 +128,14 @@ sal_Bool SAL_CALL VbaEventsHelperBase::processVbaEvent( sal_Int32 nEventId, cons
     return bExecuted;
 }
 
-void SAL_CALL VbaEventsHelperBase::notifyEvent( const document::EventObject& rEvent )
+void SAL_CALL VbaEventsHelperBase::notifyEvent( const document::EventObject& rEvent ) throw (uno::RuntimeException, std::exception)
 {
     SAL_INFO("vbahelper", "VbaEventsHelperBase::notifyEvent( \"" << rEvent.EventName << "\" )");
     if( rEvent.EventName == GlobalEventConfig::GetEventName( GlobalEventId::CLOSEDOC ) )
         stopListening();
 }
 
-void SAL_CALL VbaEventsHelperBase::changesOccurred( const util::ChangesEvent& rEvent )
+void SAL_CALL VbaEventsHelperBase::changesOccurred( const util::ChangesEvent& rEvent ) throw (uno::RuntimeException, std::exception)
 {
     // make sure the VBA library exists
     try
@@ -175,7 +173,7 @@ void SAL_CALL VbaEventsHelperBase::changesOccurred( const util::ChangesEvent& rE
     }
 }
 
-void SAL_CALL VbaEventsHelperBase::disposing( const lang::EventObject& rEvent )
+void SAL_CALL VbaEventsHelperBase::disposing( const lang::EventObject& rEvent ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xSender( rEvent.Source, uno::UNO_QUERY );
     if( xSender.is() )
@@ -183,6 +181,7 @@ void SAL_CALL VbaEventsHelperBase::disposing( const lang::EventObject& rEvent )
 }
 
 sal_Bool VbaEventsHelperBase::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
@@ -239,6 +238,7 @@ void VbaEventsHelperBase::stopListening()
 }
 
 sal_Bool SAL_CALL VbaEventsHelperBase::hasVbaEventHandler( sal_Int32 nEventId, const uno::Sequence< uno::Any >& rArgs )
+        throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     EventHandlerInfoMap::const_iterator aIt = maEventInfos.find( nEventId );
     if( aIt == maEventInfos.end() )
@@ -248,7 +248,7 @@ sal_Bool SAL_CALL VbaEventsHelperBase::hasVbaEventHandler( sal_Int32 nEventId, c
 }
 
 const VbaEventsHelperBase::EventHandlerInfo& VbaEventsHelperBase::getEventHandlerInfo(
-        sal_Int32 nEventId ) const
+        sal_Int32 nEventId ) const throw (lang::IllegalArgumentException)
 {
     EventHandlerInfoMap::const_iterator aIt = maEventInfos.find( nEventId );
     if( aIt == maEventInfos.end() )
@@ -257,7 +257,7 @@ const VbaEventsHelperBase::EventHandlerInfo& VbaEventsHelperBase::getEventHandle
 }
 
 OUString VbaEventsHelperBase::getEventHandlerPath( const EventHandlerInfo& rInfo,
-        const uno::Sequence< uno::Any >& rArgs )
+        const uno::Sequence< uno::Any >& rArgs ) throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     OUString aModuleName;
     switch( rInfo.mnModuleType )
@@ -284,7 +284,7 @@ OUString VbaEventsHelperBase::getEventHandlerPath( const EventHandlerInfo& rInfo
     return rPathMap[ rInfo.mnEventId ];
 }
 
-void VbaEventsHelperBase::ensureVBALibrary()
+void VbaEventsHelperBase::ensureVBALibrary() throw (uno::RuntimeException)
 {
     if( !mxModuleInfos.is() ) try
     {
@@ -307,7 +307,7 @@ void VbaEventsHelperBase::ensureVBALibrary()
     }
 }
 
-sal_Int32 VbaEventsHelperBase::getModuleType( const OUString& rModuleName )
+sal_Int32 VbaEventsHelperBase::getModuleType( const OUString& rModuleName ) throw (uno::RuntimeException)
 {
     // make sure the VBA library exists
     ensureVBALibrary();
@@ -327,7 +327,7 @@ sal_Int32 VbaEventsHelperBase::getModuleType( const OUString& rModuleName )
     throw uno::RuntimeException();
 }
 
-VbaEventsHelperBase::ModulePathMap& VbaEventsHelperBase::updateModulePathMap( const OUString& rModuleName )
+VbaEventsHelperBase::ModulePathMap& VbaEventsHelperBase::updateModulePathMap( const OUString& rModuleName ) throw (uno::RuntimeException, std::exception)
 {
     // get type of the specified module (throws on error)
     sal_Int32 nModuleType = getModuleType( rModuleName );

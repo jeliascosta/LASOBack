@@ -23,6 +23,7 @@
 #include <sfx2/dllapi.h>
 #include <sal/types.h>
 #include <tools/errcode.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/poolitem.hxx>
 #include <vcl/image.hxx>
 #include <com/sun/star/script/XLibraryContainer.hpp>
@@ -41,7 +42,7 @@ class BasicManager;
 class DdeService;
 class PrinterDialog;
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class AppSettings;
 struct SfxChildWinContextFactory;
 class SfxAppData_Impl;
@@ -57,7 +58,6 @@ class SfxMenuCtrlFactArr_Impl;
 class SfxNewFileDialog;
 class SfxObjectShell;
 class SfxObjectShellArr_Impl;
-class SfxObjectShellLock;
 class SfxProgress;
 class SfxSlotPool;
 class SfxStbCtrlFactArr_Impl;
@@ -69,6 +69,7 @@ class SfxViewShellArr_Impl;
 class StarBASIC;
 class SfxWorkWindow;
 class SfxFilterMatcher;
+class SfxModule;
 class SfxModule;
 namespace vcl { class Window; }
 struct SfxChildWinFactory;
@@ -87,16 +88,6 @@ namespace sfx2
     }
 }
 
-enum class SfxToolsModule
-{
-    Math = 0,
-    Calc = 1,
-    Draw = 2,
-    Writer = 3,
-    Basic = 4,
-    LAST = Basic
-};
-
 class SFX2_DLLPUBLIC SfxLinkItem : public SfxPoolItem
 {
     Link<SfxPoolItem*, void> aLink;
@@ -112,11 +103,13 @@ public:
                              GetValue() const { return aLink; }
 };
 
+class SfxObjectShellLock;
+
 class SFX2_DLLPUBLIC SfxApplication: public SfxShell
 {
-    std::unique_ptr<SfxAppData_Impl>            pImpl;
+    SfxAppData_Impl*            pAppData_Impl;
 
-    DECL_DLLPRIVATE_STATIC_LINK( SfxApplication, GlobalBasicErrorHdl_Impl, StarBASIC*, bool );
+    DECL_DLLPRIVATE_LINK_TYPED( GlobalBasicErrorHdl_Impl, StarBASIC*, bool );
 
     void                        Deinitialize();
 
@@ -126,10 +119,11 @@ public:
 private:
     /// SfxInterface initializer.
     static void InitInterface_Impl();
-    SfxApplication();
 
 public:
-    virtual ~SfxApplication() override;
+
+                                SfxApplication();
+                                virtual ~SfxApplication();
     static SfxApplication*      GetOrCreate();
     static SfxApplication*      Get();
 
@@ -138,7 +132,7 @@ public:
 
     // DDE
 #if defined(_WIN32)
-    static long                 DdeExecute( const OUString& rCmd );
+    long                        DdeExecute( const OUString& rCmd );
 #endif
     bool                        InitializeDde();
     const DdeService*           GetDdeService() const;
@@ -152,12 +146,13 @@ public:
     /**
     * @param pArgs Takes ownership
     */
-    sal_uIntPtr                       LoadTemplate( SfxObjectShellLock& xDoc, const OUString& rFileName, SfxItemSet* pArgs );
+    sal_uIntPtr                       LoadTemplate( SfxObjectShellLock& xDoc, const OUString& rFileName, SfxItemSet* pArgs = nullptr );
     vcl::Window*                     GetTopWindow() const;
 
     // members
     SfxFilterMatcher&           GetFilterMatcher();
     SfxProgress*                GetProgress() const;
+    const OUString&               GetLastSaveDirectory() const;
     sal_uInt16                  GetFreeIndex();
     void                        ReleaseIndex(sal_uInt16 i);
 
@@ -188,7 +183,7 @@ public:
     SAL_DLLPRIVATE void         SetOptions_Impl(const SfxItemSet &);
     SAL_DLLPRIVATE void         Initialize_Impl();
 
-    SAL_DLLPRIVATE SfxAppData_Impl* Get_Impl() const { return pImpl.get(); }
+    SAL_DLLPRIVATE SfxAppData_Impl* Get_Impl() const { return pAppData_Impl; }
 
     // Object-Factories/global arrays
     SAL_DLLPRIVATE void         RegisterChildWindow_Impl(SfxModule*, SfxChildWinFactory*);
@@ -209,29 +204,25 @@ public:
     SAL_DLLPRIVATE void         NewDocExec_Impl(SfxRequest &);
     SAL_DLLPRIVATE void         OpenDocExec_Impl(SfxRequest &);
     SAL_DLLPRIVATE void         OpenRemoteExec_Impl(SfxRequest &);
-    SAL_DLLPRIVATE void         SignPDFExec_Impl(SfxRequest&);
     SAL_DLLPRIVATE void         MiscExec_Impl(SfxRequest &);
     SAL_DLLPRIVATE void         MiscState_Impl(SfxItemSet &);
-    SAL_DLLPRIVATE static void  PropExec_Impl(SfxRequest &);
-    SAL_DLLPRIVATE static void  PropState_Impl(SfxItemSet &);
+    SAL_DLLPRIVATE void         PropExec_Impl(SfxRequest &);
+    SAL_DLLPRIVATE void         PropState_Impl(SfxItemSet &);
     SAL_DLLPRIVATE void         OfaExec_Impl(SfxRequest &);
-    SAL_DLLPRIVATE static void  OfaState_Impl(SfxItemSet &);
+    SAL_DLLPRIVATE void         OfaState_Impl(SfxItemSet &);
 
     SAL_DLLPRIVATE void         SetProgress_Impl(SfxProgress *);
     SAL_DLLPRIVATE const OUString& GetLastDir_Impl() const;
     SAL_DLLPRIVATE void         SetLastDir_Impl( const OUString & );
 
-    SAL_DLLPRIVATE static void  Registrations_Impl();
-    SAL_DLLPRIVATE SfxWorkWindow* GetWorkWindow_Impl(const SfxViewFrame *pFrame) const;
+    SAL_DLLPRIVATE void         Registrations_Impl();
+    SAL_DLLPRIVATE SfxWorkWindow* GetWorkWindow_Impl(const SfxViewFrame *pFrame=nullptr) const;
 
     // TODO/CLEANUP: still needed? -- unclear whether this comment
     // refers to the GetDisabledSlotList_Impl() method which was
     // already removed, or the below methods?
     SAL_DLLPRIVATE SfxSlotPool& GetAppSlotPool_Impl() const;
-    SAL_DLLPRIVATE static SfxModule* GetModule_Impl();
-
-    static void                 SetModule(SfxToolsModule nSharedLib, std::unique_ptr<SfxModule> pModule);
-    static SfxModule*           GetModule(SfxToolsModule nSharedLib);
+    SAL_DLLPRIVATE SfxModule*   GetModule_Impl();
 
     static bool loadBrandSvg(const char *pName, BitmapEx &rBitmap, int nWidth);
 
@@ -244,7 +235,7 @@ public:
 
 inline SfxApplication* SfxGetpApp()
 {
-    return SfxApplication::Get();
+    return SfxApplication::GetOrCreate();
 }
 
 #endif

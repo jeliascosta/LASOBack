@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <config_features.h>
-
 #include <vcl/layout.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
@@ -50,9 +48,7 @@
 #include <rtl/ustrbuf.hxx>
 #include <vcl/bitmap.hxx>
 
-#if HAVE_FEATURE_OPENCL
 #include <opencl/openclwrapper.hxx>
-#endif
 #include <officecfg/Office/Common.hxx>
 
 using namespace ::com::sun::star::uno;
@@ -67,7 +63,6 @@ AboutDialog::AboutDialog(vcl::Window* pParent)
     get(m_pVersion, "version");
     get(m_pDescriptionText, "description");
     get(m_pCopyrightText, "copyright");
-    get(m_pBuildIdLink, "buildIdLink");
     m_aCopyrightTextStr = m_pCopyrightText->GetText();
     get(m_pWebsiteButton, "website");
     get(m_pCreditsButton, "credits");
@@ -78,14 +73,11 @@ AboutDialog::AboutDialog(vcl::Window* pParent)
     m_aBasedTextStr = get<FixedText>("libreoffice")->GetText();
     m_aBasedDerivedTextStr = get<FixedText>("derived")->GetText();
     m_aLocaleStr = get<FixedText>("locale")->GetText();
-    m_buildIdLinkString = m_pBuildIdLink->GetText();
 
     m_pVersion->SetText(GetVersionString());
 
     OUString aCopyrightString = GetCopyrightString();
     m_pCopyrightText->SetText( aCopyrightString );
-
-    SetBuildIdLink();
 
     StyleControls();
 
@@ -112,11 +104,10 @@ void AboutDialog::dispose()
     m_pLogoReplacement.clear();
     m_pCreditsButton.clear();
     m_pWebsiteButton.clear();
-    m_pBuildIdLink.clear();
     SfxModalDialog::dispose();
 }
 
-IMPL_LINK( AboutDialog, HandleClick, Button*, pButton, void )
+IMPL_LINK_TYPED( AboutDialog, HandleClick, Button*, pButton, void )
 {
     OUString sURL = "";
 
@@ -146,27 +137,6 @@ IMPL_LINK( AboutDialog, HandleClick, Button*, pButton, void )
         ScopedVclPtrInstance< MessageDialog > aErrorBox(nullptr, msg);
         aErrorBox->SetText( GetText() );
         aErrorBox->Execute();
-    }
-}
-
-void AboutDialog::SetBuildIdLink()
-{
-    const OUString buildId = GetBuildId();
-
-    if (IsStringValidGitHash(buildId))
-    {
-        if (m_buildIdLinkString.indexOf("$GITHASH") == -1)
-        {
-            SAL_WARN( "cui.dialogs", "translated git hash string in translations doesn't contain $GITHASH placeholder" );
-            m_buildIdLinkString += " $GITHASH";
-        }
-
-        m_pBuildIdLink->SetText(m_buildIdLinkString.replaceAll("$GITHASH", buildId));
-        m_pBuildIdLink->SetURL("https://hub.libreoffice.org/git-core/" + buildId);
-    }
-    else
-    {
-        m_pBuildIdLink->Hide();
     }
 }
 
@@ -242,7 +212,7 @@ void AboutDialog::Resize()
     }
 }
 
-void AboutDialog::Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
+void AboutDialog::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     rRenderContext.SetClipRegion(vcl::Region(rRect));
 
@@ -292,19 +262,6 @@ OUString AboutDialog::GetLocaleString()
     return aLocaleStr;
 }
 
-bool AboutDialog::IsStringValidGitHash(const OUString& hash)
-{
-    for (int i = 0; i < hash.getLength(); i++)
-    {
-        if (!rtl::isAsciiHexDigit(hash[i]))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 OUString AboutDialog::GetVersionString()
 {
     OUString sVersion = m_aVersionTextStr;
@@ -328,7 +285,8 @@ OUString AboutDialog::GetVersionString()
         sVersion += m_sBuildStr.replaceAll("$BUILDID", sBuildId);
     }
 
-    sVersion += "\n" + Application::GetHWOSConfInfo();
+    sVersion += "\n";
+    sVersion += Application::GetHWOSConfInfo();
 
     if (EXTRA_BUILDID[0] != '\0')
     {
@@ -346,7 +304,6 @@ OUString AboutDialog::GetVersionString()
         sVersion += m_aLocaleStr.replaceAll("$LOCALE", aLocaleStr);
     }
 
-#if HAVE_FEATURE_OPENCL
     OUString aCalcMode = "Calc: "; // Calc calculation mode
     bool bSWInterp = officecfg::Office::Common::Misc::UseSwInterpreter::get();
     bool bOpenCL = opencl::GPUEnv::isOpenCLEnabled();
@@ -357,15 +314,17 @@ OUString AboutDialog::GetVersionString()
     else
         aCalcMode += "single";
     sVersion += "; " + aCalcMode;
-#endif
 
     return sVersion;
 }
 
 OUString AboutDialog::GetCopyrightString()
 {
-    OUString aCopyrightString  = m_aVendorTextStr + "\n"
-                               + m_aCopyrightTextStr + "\n";
+    OUString aCopyrightString = m_aVendorTextStr;
+    aCopyrightString += "\n";
+
+    aCopyrightString += m_aCopyrightTextStr;
+    aCopyrightString += "\n";
 
     if (utl::ConfigManager::getProductName() == "LibreOffice")
         aCopyrightString += m_aBasedTextStr;

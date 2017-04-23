@@ -69,12 +69,12 @@ class SwTemplateDlg: public SfxStyleDialog
 public:
     /// @param sPage
     /// Identifies name of page to open at by default
-    SwTemplateDlg(  vcl::Window*        pParent,
+    SwTemplateDlg(  vcl::Window*             pParent,
                     SfxStyleSheetBase&  rBase,
                     SfxStyleFamily      nRegion,
-                    const OString&      sPage,
-                    SwWrtShell*         pActShell,
-                    bool                bNew );
+                    const OString&      sPage = OString(),
+                    SwWrtShell*         pActShell = nullptr,
+                    bool                bNew = false );
 
     virtual void RefreshInputSet() override;
 

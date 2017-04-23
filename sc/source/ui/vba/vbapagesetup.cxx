@@ -30,7 +30,6 @@
 #include <ooo/vba/excel/XlPageOrientation.hpp>
 #include <ooo/vba/excel/XlOrder.hpp>
 #include <ooo/vba/excel/Constants.hpp>
-#include <basic/sberrors.hxx>
 #include <i18nutil/paper.hxx>
 #include <sal/macros.h>
 #include <algorithm>
@@ -45,7 +44,7 @@ using namespace ::ooo::vba;
 ScVbaPageSetup::ScVbaPageSetup(const uno::Reference< XHelperInterface >& xParent,
                 const uno::Reference< uno::XComponentContext >& xContext,
                 const uno::Reference< sheet::XSpreadsheet >& xSheet,
-                const uno::Reference< frame::XModel >& xModel):
+                const uno::Reference< frame::XModel >& xModel) throw (uno::RuntimeException):
            ScVbaPageSetup_BASE( xParent, xContext ), mxSheet( xSheet ), mbIsLandscape( false )
 {
     // query for current page style
@@ -64,7 +63,7 @@ ScVbaPageSetup::ScVbaPageSetup(const uno::Reference< XHelperInterface >& xParent
     mxPageProps->getPropertyValue("IsLandscape") >>= mbIsLandscape;
 }
 
-OUString SAL_CALL ScVbaPageSetup::getPrintArea()
+OUString SAL_CALL ScVbaPageSetup::getPrintArea() throw (css::uno::RuntimeException, std::exception)
 {
     OUString aPrintArea;
     uno::Reference< sheet::XPrintAreas > xPrintAreas( mxSheet, uno::UNO_QUERY_THROW );
@@ -87,7 +86,7 @@ OUString SAL_CALL ScVbaPageSetup::getPrintArea()
     return aPrintArea;
 }
 
-void SAL_CALL ScVbaPageSetup::setPrintArea( const OUString& rAreas )
+void SAL_CALL ScVbaPageSetup::setPrintArea( const OUString& rAreas ) throw (css::uno::RuntimeException, std::exception)
 {
     uno::Reference< sheet::XPrintAreas > xPrintAreas( mxSheet, uno::UNO_QUERY_THROW );
     if( rAreas.isEmpty() ||
@@ -116,32 +115,32 @@ void SAL_CALL ScVbaPageSetup::setPrintArea( const OUString& rAreas )
     }
 }
 
-double SAL_CALL ScVbaPageSetup::getHeaderMargin()
+double SAL_CALL ScVbaPageSetup::getHeaderMargin() throw (css::uno::RuntimeException)
 {
     return VbaPageSetupBase::getHeaderMargin();
 }
 
-void SAL_CALL ScVbaPageSetup::setHeaderMargin( double margin )
+void SAL_CALL ScVbaPageSetup::setHeaderMargin( double margin ) throw (css::uno::RuntimeException)
 {
     VbaPageSetupBase::setHeaderMargin( margin );
 }
 
-double SAL_CALL ScVbaPageSetup::getFooterMargin()
+double SAL_CALL ScVbaPageSetup::getFooterMargin() throw (css::uno::RuntimeException)
 {
     return VbaPageSetupBase::getFooterMargin();
 }
 
-void SAL_CALL ScVbaPageSetup::setFooterMargin( double margin )
+void SAL_CALL ScVbaPageSetup::setFooterMargin( double margin ) throw (css::uno::RuntimeException)
 {
     VbaPageSetupBase::setFooterMargin( margin );
 }
 
-uno::Any SAL_CALL ScVbaPageSetup::getFitToPagesTall()
+uno::Any SAL_CALL ScVbaPageSetup::getFitToPagesTall() throw (css::uno::RuntimeException, std::exception)
 {
     return mxPageProps->getPropertyValue("ScaleToPagesY");
 }
 
-void SAL_CALL ScVbaPageSetup::setFitToPagesTall( const uno::Any& fitToPagesTall)
+void SAL_CALL ScVbaPageSetup::setFitToPagesTall( const uno::Any& fitToPagesTall) throw (css::uno::RuntimeException, std::exception)
 {
     sal_uInt16 scaleToPageY = 0;
     try
@@ -159,12 +158,12 @@ void SAL_CALL ScVbaPageSetup::setFitToPagesTall( const uno::Any& fitToPagesTall)
     }
 }
 
-uno::Any SAL_CALL ScVbaPageSetup::getFitToPagesWide()
+uno::Any SAL_CALL ScVbaPageSetup::getFitToPagesWide() throw (css::uno::RuntimeException, std::exception)
 {
     return mxPageProps->getPropertyValue("ScaleToPagesX");
 }
 
-void SAL_CALL ScVbaPageSetup::setFitToPagesWide( const uno::Any& fitToPagesWide)
+void SAL_CALL ScVbaPageSetup::setFitToPagesWide( const uno::Any& fitToPagesWide) throw (css::uno::RuntimeException, std::exception)
 {
     sal_uInt16 scaleToPageX = 0;
     try
@@ -182,12 +181,12 @@ void SAL_CALL ScVbaPageSetup::setFitToPagesWide( const uno::Any& fitToPagesWide)
     }
 }
 
-uno::Any SAL_CALL ScVbaPageSetup::getZoom()
+uno::Any SAL_CALL ScVbaPageSetup::getZoom() throw (css::uno::RuntimeException, std::exception)
 {
     return mxPageProps->getPropertyValue("PageScale");
 }
 
-void SAL_CALL ScVbaPageSetup::setZoom( const uno::Any& zoom)
+void SAL_CALL ScVbaPageSetup::setZoom( const uno::Any& zoom) throw (css::uno::RuntimeException, std::exception)
 {
     sal_uInt16 pageScale = 0;
     try
@@ -230,7 +229,7 @@ void SAL_CALL ScVbaPageSetup::setZoom( const uno::Any& zoom)
     mxPageProps->setPropertyValue("PageScale", uno::makeAny( pageScale ));
 }
 
-OUString SAL_CALL ScVbaPageSetup::getLeftHeader()
+OUString SAL_CALL ScVbaPageSetup::getLeftHeader() throw (css::uno::RuntimeException, std::exception)
 {
     OUString leftHeader;
     try
@@ -249,7 +248,7 @@ OUString SAL_CALL ScVbaPageSetup::getLeftHeader()
     return leftHeader;
 }
 
-void SAL_CALL ScVbaPageSetup::setLeftHeader( const OUString& leftHeader)
+void SAL_CALL ScVbaPageSetup::setLeftHeader( const OUString& leftHeader) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -266,7 +265,7 @@ void SAL_CALL ScVbaPageSetup::setLeftHeader( const OUString& leftHeader)
     }
 }
 
-OUString SAL_CALL ScVbaPageSetup::getCenterHeader()
+OUString SAL_CALL ScVbaPageSetup::getCenterHeader() throw (css::uno::RuntimeException, std::exception)
 {
     OUString centerHeader;
     try
@@ -285,7 +284,7 @@ OUString SAL_CALL ScVbaPageSetup::getCenterHeader()
     return centerHeader;
 }
 
-void SAL_CALL ScVbaPageSetup::setCenterHeader( const OUString& centerHeader)
+void SAL_CALL ScVbaPageSetup::setCenterHeader( const OUString& centerHeader) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -302,7 +301,7 @@ void SAL_CALL ScVbaPageSetup::setCenterHeader( const OUString& centerHeader)
     }
 }
 
-OUString SAL_CALL ScVbaPageSetup::getRightHeader()
+OUString SAL_CALL ScVbaPageSetup::getRightHeader() throw (css::uno::RuntimeException, std::exception)
 {
     OUString rightHeader;
     try
@@ -321,7 +320,7 @@ OUString SAL_CALL ScVbaPageSetup::getRightHeader()
     return rightHeader;
 }
 
-void SAL_CALL ScVbaPageSetup::setRightHeader( const OUString& rightHeader)
+void SAL_CALL ScVbaPageSetup::setRightHeader( const OUString& rightHeader) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -338,7 +337,7 @@ void SAL_CALL ScVbaPageSetup::setRightHeader( const OUString& rightHeader)
     }
 }
 
-OUString SAL_CALL ScVbaPageSetup::getLeftFooter()
+OUString SAL_CALL ScVbaPageSetup::getLeftFooter() throw (css::uno::RuntimeException, std::exception)
 {
     OUString leftFooter;
     try
@@ -357,7 +356,7 @@ OUString SAL_CALL ScVbaPageSetup::getLeftFooter()
     return leftFooter;
 }
 
-void SAL_CALL ScVbaPageSetup::setLeftFooter( const OUString& leftFooter)
+void SAL_CALL ScVbaPageSetup::setLeftFooter( const OUString& leftFooter) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -374,7 +373,7 @@ void SAL_CALL ScVbaPageSetup::setLeftFooter( const OUString& leftFooter)
     }
 }
 
-OUString SAL_CALL ScVbaPageSetup::getCenterFooter()
+OUString SAL_CALL ScVbaPageSetup::getCenterFooter() throw (css::uno::RuntimeException, std::exception)
 {
     OUString centerFooter;
     try
@@ -393,7 +392,7 @@ OUString SAL_CALL ScVbaPageSetup::getCenterFooter()
     return centerFooter;
 }
 
-void SAL_CALL ScVbaPageSetup::setCenterFooter( const OUString& centerFooter)
+void SAL_CALL ScVbaPageSetup::setCenterFooter( const OUString& centerFooter) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -411,7 +410,7 @@ void SAL_CALL ScVbaPageSetup::setCenterFooter( const OUString& centerFooter)
 
 }
 
-OUString SAL_CALL ScVbaPageSetup::getRightFooter()
+OUString SAL_CALL ScVbaPageSetup::getRightFooter() throw (css::uno::RuntimeException, std::exception)
 {
     OUString rightFooter;
     try
@@ -430,7 +429,7 @@ OUString SAL_CALL ScVbaPageSetup::getRightFooter()
     return rightFooter;
 }
 
-void SAL_CALL ScVbaPageSetup::setRightFooter( const OUString& rightFooter)
+void SAL_CALL ScVbaPageSetup::setRightFooter( const OUString& rightFooter) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -447,7 +446,7 @@ void SAL_CALL ScVbaPageSetup::setRightFooter( const OUString& rightFooter)
     }
 }
 
-sal_Int32 SAL_CALL ScVbaPageSetup::getOrder()
+sal_Int32 SAL_CALL ScVbaPageSetup::getOrder() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int32 order = excel::XlOrder::xlDownThenOver;
     try
@@ -465,7 +464,7 @@ sal_Int32 SAL_CALL ScVbaPageSetup::getOrder()
     return order;
 }
 
-void SAL_CALL ScVbaPageSetup::setOrder(sal_Int32 order)
+void SAL_CALL ScVbaPageSetup::setOrder(sal_Int32 order) throw (css::uno::RuntimeException, std::exception)
 {
     bool bOrder = true;
     switch( order )
@@ -488,7 +487,7 @@ void SAL_CALL ScVbaPageSetup::setOrder(sal_Int32 order)
     }
 }
 
-sal_Int32 SAL_CALL ScVbaPageSetup::getFirstPageNumber()
+sal_Int32 SAL_CALL ScVbaPageSetup::getFirstPageNumber() throw (css::uno::RuntimeException, std::exception)
 {
     sal_Int16 number = 0;
     try
@@ -508,7 +507,7 @@ sal_Int32 SAL_CALL ScVbaPageSetup::getFirstPageNumber()
     return number;
 }
 
-void SAL_CALL ScVbaPageSetup::setFirstPageNumber( sal_Int32 firstPageNumber)
+void SAL_CALL ScVbaPageSetup::setFirstPageNumber( sal_Int32 firstPageNumber) throw (css::uno::RuntimeException, std::exception)
 {
     if( firstPageNumber == excel::Constants::xlAutomatic )
         firstPageNumber = 0;
@@ -524,7 +523,7 @@ void SAL_CALL ScVbaPageSetup::setFirstPageNumber( sal_Int32 firstPageNumber)
     }
 }
 
-sal_Bool SAL_CALL ScVbaPageSetup::getCenterVertically()
+sal_Bool SAL_CALL ScVbaPageSetup::getCenterVertically() throw (css::uno::RuntimeException, std::exception)
 {
     bool centerVertically = false;
     try
@@ -538,7 +537,7 @@ sal_Bool SAL_CALL ScVbaPageSetup::getCenterVertically()
     return centerVertically;
 }
 
-void SAL_CALL ScVbaPageSetup::setCenterVertically( sal_Bool centerVertically)
+void SAL_CALL ScVbaPageSetup::setCenterVertically( sal_Bool centerVertically) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -549,7 +548,7 @@ void SAL_CALL ScVbaPageSetup::setCenterVertically( sal_Bool centerVertically)
     }
 }
 
-sal_Bool SAL_CALL ScVbaPageSetup::getCenterHorizontally()
+sal_Bool SAL_CALL ScVbaPageSetup::getCenterHorizontally() throw (css::uno::RuntimeException, std::exception)
 {
     bool centerHorizontally = false;
     try
@@ -563,7 +562,7 @@ sal_Bool SAL_CALL ScVbaPageSetup::getCenterHorizontally()
     return centerHorizontally;
 }
 
-void SAL_CALL ScVbaPageSetup::setCenterHorizontally( sal_Bool centerHorizontally)
+void SAL_CALL ScVbaPageSetup::setCenterHorizontally( sal_Bool centerHorizontally) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -574,7 +573,7 @@ void SAL_CALL ScVbaPageSetup::setCenterHorizontally( sal_Bool centerHorizontally
     }
 }
 
-sal_Bool SAL_CALL ScVbaPageSetup::getPrintHeadings()
+sal_Bool SAL_CALL ScVbaPageSetup::getPrintHeadings() throw (css::uno::RuntimeException, std::exception)
 {
     bool printHeadings = false;
     try
@@ -588,7 +587,7 @@ sal_Bool SAL_CALL ScVbaPageSetup::getPrintHeadings()
     return printHeadings;
 }
 
-void SAL_CALL ScVbaPageSetup::setPrintHeadings( sal_Bool printHeadings)
+void SAL_CALL ScVbaPageSetup::setPrintHeadings( sal_Bool printHeadings) throw (css::uno::RuntimeException, std::exception)
 {
     try
     {
@@ -599,32 +598,32 @@ void SAL_CALL ScVbaPageSetup::setPrintHeadings( sal_Bool printHeadings)
     }
 }
 
-sal_Bool SAL_CALL ScVbaPageSetup::getPrintGridlines()
+sal_Bool SAL_CALL ScVbaPageSetup::getPrintGridlines() throw (uno::RuntimeException, std::exception)
 {
     return false;
 }
 
-void SAL_CALL ScVbaPageSetup::setPrintGridlines( sal_Bool /*_printgridlines*/ )
+void SAL_CALL ScVbaPageSetup::setPrintGridlines( sal_Bool /*_printgridlines*/ ) throw (uno::RuntimeException, std::exception)
 {
 }
 
-OUString SAL_CALL ScVbaPageSetup::getPrintTitleRows()
+OUString SAL_CALL ScVbaPageSetup::getPrintTitleRows() throw (uno::RuntimeException, std::exception)
 {
     return OUString();
 }
-void SAL_CALL ScVbaPageSetup::setPrintTitleRows( const OUString& /*_printtitlerows*/ )
+void SAL_CALL ScVbaPageSetup::setPrintTitleRows( const OUString& /*_printtitlerows*/ ) throw (css::uno::RuntimeException, std::exception)
 {
 }
-OUString SAL_CALL ScVbaPageSetup::getPrintTitleColumns()
+OUString SAL_CALL ScVbaPageSetup::getPrintTitleColumns() throw (uno::RuntimeException, std::exception)
 {
     return OUString();
 }
 
-void SAL_CALL ScVbaPageSetup::setPrintTitleColumns( const OUString& /*_printtitlecolumns*/ )
+void SAL_CALL ScVbaPageSetup::setPrintTitleColumns( const OUString& /*_printtitlecolumns*/ ) throw (uno::RuntimeException, std::exception)
 {
 }
 
-sal_Int32 SAL_CALL ScVbaPageSetup::getPaperSize()
+sal_Int32 SAL_CALL ScVbaPageSetup::getPaperSize() throw (uno::RuntimeException, std::exception)
 {
     awt::Size aSize; // current papersize
     mxPageProps->getPropertyValue( "Size" ) >>= aSize;
@@ -637,7 +636,7 @@ sal_Int32 SAL_CALL ScVbaPageSetup::getPaperSize()
     return nPaperSizeIndex;
 }
 
-void SAL_CALL ScVbaPageSetup::setPaperSize( sal_Int32 papersize )
+void SAL_CALL ScVbaPageSetup::setPaperSize( sal_Int32 papersize ) throw (uno::RuntimeException, std::exception)
 {
     if ( papersize != excel::XlPaperSize::xlPaperUser )
     {

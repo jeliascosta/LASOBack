@@ -33,18 +33,18 @@ namespace dxcanvas
     {
     public:
         DXSurfaceBitmap( const ::basegfx::B2IVector&                    rSize,
-                         const std::shared_ptr<canvas::ISurfaceProxyManager>&   rMgr,
+                         const canvas::ISurfaceProxyManagerSharedPtr&   rMgr,
                          const IDXRenderModuleSharedPtr&                rRenderModule,
                          bool                                           bWithAlpha );
 
         bool resize( const ::basegfx::B2IVector& rSize );
         void clear();
 
-        virtual GraphicsSharedPtr         getGraphics() override;
+        virtual GraphicsSharedPtr         getGraphics();
 
-        virtual BitmapSharedPtr           getBitmap() const override;
-        virtual ::basegfx::B2IVector      getSize() const override;
-        virtual bool                      hasAlpha() const override;
+        virtual BitmapSharedPtr           getBitmap() const;
+        virtual ::basegfx::B2IVector      getSize() const;
+        virtual bool                      hasAlpha() const;
 
         COMReference<surface_type>              getSurface() const { return mpSurface; }
 
@@ -66,21 +66,21 @@ namespace dxcanvas
 
         virtual css::uno::Sequence< sal_Int8 > getData(
             css::rendering::IntegerBitmapLayout&       bitmapLayout,
-            const css::geometry::IntegerRectangle2D&   rect ) override;
+            const css::geometry::IntegerRectangle2D&   rect );
 
         virtual void setData(
             const css::uno::Sequence< sal_Int8 >&      data,
             const css::rendering::IntegerBitmapLayout& bitmapLayout,
-            const css::geometry::IntegerRectangle2D&   rect ) override;
+            const css::geometry::IntegerRectangle2D&   rect );
 
         virtual void setPixel(
             const css::uno::Sequence< sal_Int8 >&      color,
             const css::rendering::IntegerBitmapLayout& bitmapLayout,
-            const css::geometry::IntegerPoint2D&       pos ) override;
+            const css::geometry::IntegerPoint2D&       pos );
 
         virtual css::uno::Sequence< sal_Int8 > getPixel(
             css::rendering::IntegerBitmapLayout&       bitmapLayout,
-            const css::geometry::IntegerPoint2D&       pos ) override;
+            const css::geometry::IntegerPoint2D&       pos );
 
     private:
         void init();
@@ -100,7 +100,7 @@ namespace dxcanvas
 
         // pointer to the surface manager, needed in case clients
         // want to resize the bitmap.
-        std::shared_ptr<canvas::ISurfaceProxyManager> mpSurfaceManager;
+        canvas::ISurfaceProxyManagerSharedPtr mpSurfaceManager;
 
         // access point to the surface proxy which handles
         // the hardware-dependent rendering stuff.
@@ -118,7 +118,7 @@ namespace dxcanvas
         GraphicsSharedPtr mpGraphics;
 
         // internal implementation of the iColorBuffer interface
-        std::shared_ptr<canvas::IColorBuffer> mpColorBuffer;
+        canvas::IColorBufferSharedPtr mpColorBuffer;
 
         // indicates whether the associated surface needs
         // to refresh its contents or not. in other words,

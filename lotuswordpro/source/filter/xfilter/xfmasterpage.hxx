@@ -68,11 +68,16 @@ class XFHeader;
 class XFMasterPage : public XFStyle
 {
 public:
+    XFMasterPage();
+
+    virtual ~XFMasterPage();
+
+public:
     void    SetPageMaster(const OUString& pm);
 
-    void    SetHeader(rtl::Reference<XFHeader>& rHeader);
+    void    SetHeader(XFHeader *pHeader);
 
-    void    SetFooter(rtl::Reference<XFFooter>& rFooter);
+    void    SetFooter(XFFooter *pFooter);
 
     virtual enumXFStyle GetStyleFamily() override;
 
@@ -80,8 +85,8 @@ public:
 
 private:
     OUString   m_strPageMaster;
-    rtl::Reference<XFHeader> m_xHeader;
-    rtl::Reference<XFFooter> m_xFooter;
+    XFHeader    *m_pHeader;
+    XFFooter    *m_pFooter;
 };
 
 #endif

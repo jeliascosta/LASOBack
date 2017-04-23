@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblefixedhyperlink.hxx>
+#include <accessibility/standard/vclxaccessiblefixedhyperlink.hxx>
 
 using namespace ::com::sun::star;
 
@@ -36,16 +36,29 @@ VCLXAccessibleFixedHyperlink::~VCLXAccessibleFixedHyperlink()
 }
 
 
+void VCLXAccessibleFixedHyperlink::FillAccessibleStateSet( utl::AccessibleStateSetHelper& rStateSet )
+{
+    VCLXAccessibleTextComponent::FillAccessibleStateSet( rStateSet );
+}
+
+
+void VCLXAccessibleFixedHyperlink::implGetLineBoundary( i18n::Boundary& rBoundary, sal_Int32 nIndex )
+{
+    // TODO
+    OCommonAccessibleText::implGetLineBoundary( rBoundary, nIndex );
+}
+
+
 // XServiceInfo
 
 
-OUString VCLXAccessibleFixedHyperlink::getImplementationName()
+OUString VCLXAccessibleFixedHyperlink::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleFixedHyperlink" );
 }
 
 
-uno::Sequence< OUString > VCLXAccessibleFixedHyperlink::getSupportedServiceNames()
+uno::Sequence< OUString > VCLXAccessibleFixedHyperlink::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
 {
     return { "com.sun.star.awt.AccessibleFixedHyperlink" };
 }

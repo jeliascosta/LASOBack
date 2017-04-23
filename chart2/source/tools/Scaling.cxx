@@ -54,6 +54,7 @@ LogarithmicScaling::~LogarithmicScaling()
 }
 
 double SAL_CALL LogarithmicScaling::doScaling( double value )
+    throw (uno::RuntimeException, std::exception)
 {
     double fResult;
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -64,28 +65,45 @@ double SAL_CALL LogarithmicScaling::doScaling( double value )
 }
 
 uno::Reference< XScaling > SAL_CALL LogarithmicScaling::getInverseScaling()
+    throw (uno::RuntimeException, std::exception)
 {
     return new ExponentialScaling( m_fBase );
 }
 
 OUString SAL_CALL LogarithmicScaling::getServiceName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_Logarithmic);
 }
 
+uno::Sequence< OUString > LogarithmicScaling::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aSeq { lcl_aServiceName_Logarithmic };
+    return aSeq;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL LogarithmicScaling::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString LogarithmicScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Logarithmic);
 }
 
 sal_Bool SAL_CALL LogarithmicScaling::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL LogarithmicScaling::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { lcl_aServiceName_Logarithmic };
+    return getSupportedServiceNames_Static();
 }
 
 ExponentialScaling::ExponentialScaling() :
@@ -103,6 +121,7 @@ ExponentialScaling::~ExponentialScaling()
 }
 
 double SAL_CALL ExponentialScaling::doScaling( double value )
+    throw (uno::RuntimeException, std::exception)
 {
     double fResult;
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -113,28 +132,45 @@ double SAL_CALL ExponentialScaling::doScaling( double value )
 }
 
 uno::Reference< XScaling > SAL_CALL ExponentialScaling::getInverseScaling()
+    throw (uno::RuntimeException, std::exception)
 {
     return new LogarithmicScaling( m_fBase );
 }
 
 OUString SAL_CALL ExponentialScaling::getServiceName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_Exponential);
 }
 
+uno::Sequence< OUString > ExponentialScaling::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aSeq { lcl_aServiceName_Exponential };
+    return aSeq;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ExponentialScaling::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString ExponentialScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Exponential);
 }
 
 sal_Bool SAL_CALL ExponentialScaling::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL ExponentialScaling::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { lcl_aServiceName_Exponential };
+    return getSupportedServiceNames_Static();
 }
 
 LinearScaling::LinearScaling() :
@@ -151,6 +187,7 @@ LinearScaling::~LinearScaling()
 {}
 
 double SAL_CALL LinearScaling::doScaling( double value )
+    throw (uno::RuntimeException, std::exception)
 {
     double fResult;
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -162,6 +199,7 @@ double SAL_CALL LinearScaling::doScaling( double value )
 
 uno::Reference< XScaling > SAL_CALL
     LinearScaling::getInverseScaling()
+    throw (uno::RuntimeException, std::exception)
 {
     // ToDo: ApproxEqual ?
     if( m_fSlope == 0 )
@@ -171,23 +209,39 @@ uno::Reference< XScaling > SAL_CALL
 }
 
 OUString SAL_CALL LinearScaling::getServiceName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_Linear);
 }
 
+uno::Sequence< OUString > LinearScaling::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aSeq { lcl_aServiceName_Linear };
+    return aSeq;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL LinearScaling::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString LinearScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Linear) ;
 }
 
 sal_Bool SAL_CALL LinearScaling::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL LinearScaling::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { lcl_aServiceName_Linear };
+    return getSupportedServiceNames_Static();
 }
 
 PowerScaling::PowerScaling() :
@@ -202,6 +256,7 @@ PowerScaling::~PowerScaling()
 {}
 
 double SAL_CALL PowerScaling::doScaling( double value )
+    throw (uno::RuntimeException, std::exception)
 {
     double fResult;
     if( ::rtl::math::isNan( value ) || ::rtl::math::isInf( value ) )
@@ -213,6 +268,7 @@ double SAL_CALL PowerScaling::doScaling( double value )
 
 uno::Reference< XScaling > SAL_CALL
     PowerScaling::getInverseScaling()
+    throw (uno::RuntimeException, std::exception)
 {
     // ToDo: ApproxEqual ?
     if( m_fExponent == 0 )
@@ -223,23 +279,39 @@ uno::Reference< XScaling > SAL_CALL
 
     OUString SAL_CALL
 PowerScaling::getServiceName()
+    throw (uno::RuntimeException, std::exception)
 {
     return OUString(lcl_aServiceName_Power);
 }
 
+uno::Sequence< OUString > PowerScaling::getSupportedServiceNames_Static()
+{
+    uno::Sequence< OUString > aSeq { lcl_aServiceName_Power };
+    return aSeq;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL PowerScaling::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString PowerScaling::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName_Power);
 }
 
 sal_Bool SAL_CALL PowerScaling::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL PowerScaling::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return { lcl_aServiceName_Power };
+    return getSupportedServiceNames_Static();
 }
 
 } //namespace chart

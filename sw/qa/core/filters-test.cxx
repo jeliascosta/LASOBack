@@ -87,7 +87,7 @@ bool SwFiltersTest::filter(const OUString &rFilter, const OUString &rURL,
     const_cast<SfxFilter*>(pFilter.get())->SetVersion(nFilterVersion);
 
     SwDocShellRef xDocShRef = new SwDocShell;
-    SfxMedium* pSrcMed = new SfxMedium(rURL, StreamMode::STD_READ);
+    SfxMedium* pSrcMed = new SfxMedium(rURL, STREAM_STD_READ);
 
     std::shared_ptr<const SfxFilter> pImportFilter;
     std::shared_ptr<const SfxFilter> pExportFilter;
@@ -110,7 +110,7 @@ bool SwFiltersTest::filter(const OUString &rFilter, const OUString &rURL,
     bool bLoaded = xDocShRef->DoLoad(pSrcMed);
     if (!bExport)
     {
-        if (xDocShRef.is())
+        if (xDocShRef.Is())
             xDocShRef->DoClose();
         return bLoaded;
     }
@@ -121,10 +121,10 @@ bool SwFiltersTest::filter(const OUString &rFilter, const OUString &rURL,
 
     utl::TempFile aTempFile;
     aTempFile.EnableKillingFile();
-    SfxMedium aDstMed(aTempFile.GetURL(), StreamMode::STD_WRITE);
+    SfxMedium aDstMed(aTempFile.GetURL(), STREAM_STD_WRITE);
     aDstMed.SetFilter(pExportFilter);
     bool bSaved = xDocShRef->DoSaveAs(aDstMed);
-    if (xDocShRef.is())
+    if (xDocShRef.Is())
         xDocShRef->DoClose();
     return bSaved;
 }

@@ -70,7 +70,7 @@ public class _XAccessibleEditableText extends MultiMethodTest {
 
      /**
       * Retrieves object relation. Stores initial component text
-      * for restoring it in <code>after</code>.
+      * for restoding it in <code>after</code>.
       */
      @Override
     protected void before() {

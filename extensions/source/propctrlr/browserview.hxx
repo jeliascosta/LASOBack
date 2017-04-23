@@ -41,12 +41,12 @@ namespace pcr
     protected:
         virtual void Resize() override;
         virtual void GetFocus() override;
-        virtual bool EventNotify( NotifyEvent& _rNEvt ) override;
+        virtual bool Notify( NotifyEvent& _rNEvt ) override;
 
     public:
         explicit OPropertyBrowserView( vcl::Window* pParent);
 
-        virtual ~OPropertyBrowserView() override;
+        virtual ~OPropertyBrowserView();
         virtual void dispose() override;
 
         OPropertyEditor&    getPropertyBox() { return *m_pPropBox; }
@@ -60,7 +60,7 @@ namespace pcr
         css::awt::Size getMinimumSize();
 
     protected:
-        DECL_LINK(OnPageActivation, LinkParamNone*, void);
+        DECL_LINK_TYPED(OnPageActivation, LinkParamNone*, void);
     };
 
 

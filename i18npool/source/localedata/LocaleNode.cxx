@@ -22,7 +22,6 @@
 #include <string.h>
 #include <algorithm>
 #include <iostream>
-#include <memory>
 #include <set>
 #include <vector>
 
@@ -85,14 +84,18 @@ void LocaleNode::addChild ( LocaleNode * node) {
         children = arrN;
     }
     children[nChildren++] = node;
-    node->parent = this;
+    node->setParent (this);
+}
+
+void LocaleNode::setParent ( LocaleNode * node) {
+    parent = node;
 }
 
 const LocaleNode* LocaleNode::getRoot() const
 {
     const LocaleNode* pRoot = nullptr;
     const LocaleNode* pParent = this;
-    while ( (pParent = pParent->parent) != nullptr )
+    while ( (pParent = pParent->getParent()) != nullptr )
         pRoot = pParent;
     return pRoot;
 }
@@ -173,7 +176,7 @@ void print_color( int color )
      printf("\033[%dm", color);
 }
 
-void print_node( const LocaleNode* p, int depth )
+void print_node( const LocaleNode* p, int depth=0 )
 {
      if( !p ) return;
 
@@ -662,8 +665,6 @@ void LCFormatNode::generateCode (const OFileWriter &of) const
     NameSet  aDefaultsSet;
     bool bCtypeIsRef = false;
     bool bHaveEngineering = false;
-    bool bShowNextFreeFormatIndex = false;
-    const sal_Int16 nFirstFreeFormatIndex = 60;
 
     for (sal_Int32 i = 0; i< getNumberOfChildren() ; i++, formatCount++)
     {
@@ -710,16 +711,10 @@ void LCFormatNode::generateCode (const OFileWriter &of) const
         sal_Int16 formatindex = (sal_Int16)aFormatIndex.toInt32();
         // Ensure the new reserved range is not used anymore, free usage start
         // was up'ed from 50 to 60.
-        if (50 <= formatindex && formatindex < nFirstFreeFormatIndex)
-        {
-            incErrorInt( "Error: Reserved formatindex=\"%d\" in FormatElement.\n", formatindex);
-            bShowNextFreeFormatIndex = true;
-        }
+        if (50 <= formatindex && formatindex < 60)
+            incErrorInt( "Error: Reserved formatindex=\"%d\" in FormatElement, free usage starts at 60.\n", formatindex);
         if (!aFormatIndexSet.insert( formatindex).second)
-        {
             incErrorInt( "Error: Duplicated formatindex=\"%d\" in FormatElement.\n", formatindex);
-            bShowNextFreeFormatIndex = true;
-        }
         of.writeIntParameter("Formatindex", formatCount, formatindex);
 
         // Ensure only one default per usage and type.
@@ -728,7 +723,13 @@ void LCFormatNode::generateCode (const OFileWriter &of) const
             OUString aKey( aUsage + "," + aType);
             if (!aDefaultsSet.insert( aKey).second)
             {
-                OUString aStr = "Duplicated default for usage=\"" + aUsage + "\" type=\"" + aType + "\": formatindex=\"" + aFormatIndex + "\".";
+                OUString aStr(  "Duplicated default for usage=\"");
+                aStr += aUsage;
+                aStr += "\" type=\"";
+                aStr += aType;
+                aStr += "\": formatindex=\"";
+                aStr += aFormatIndex;
+                aStr += "\".";
                 incError( aStr);
             }
         }
@@ -913,22 +914,6 @@ void LCFormatNode::generateCode (const OFileWriter &of) const
         else
             of.writeParameter("FormatDefaultName", OUString(), formatCount);
 
-    }
-
-    if (bShowNextFreeFormatIndex)
-    {
-        sal_Int16 nNext = nFirstFreeFormatIndex;
-        std::set<sal_Int16>::const_iterator it( aFormatIndexSet.find( nNext));
-        if (it != aFormatIndexSet.end())
-        {
-            // nFirstFreeFormatIndex already used, find next free including gaps.
-            do
-            {
-                ++nNext;
-            }
-            while (++it != aFormatIndexSet.end() && *it == nNext);
-        }
-        fprintf( stderr, "Hint: Next free formatindex is %d.\n", (int)nNext);
     }
 
     // Check presence of all required format codes only in first section
@@ -1349,8 +1334,9 @@ void LCCollationNode::generateCode (const OFileWriter &of) const
     }
     sal_Int16 nbOfCollations = 0;
     sal_Int16 nbOfCollationOptions = 0;
+    sal_Int16 j;
 
-    for ( sal_Int32 j = 0; j < getNumberOfChildren(); j++ ) {
+    for ( j = 0; j < getNumberOfChildren(); j++ ) {
         LocaleNode * currNode = getChildAt (j);
         if( currNode->getName() == "Collator" )
         {
@@ -1384,7 +1370,7 @@ void LCCollationNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString(";\n\n");
 
     of.writeAsciiString("\nstatic const sal_Unicode* LCCollatorArray[] = {\n");
-    for(sal_Int16 j = 0; j < nbOfCollations; j++) {
+    for(j = 0; j < nbOfCollations; j++) {
         of.writeAsciiString("\tCollatorID");
         of.writeInt(j);
         of.writeAsciiString(",\n");
@@ -1400,7 +1386,7 @@ void LCCollationNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString("};\n\n");
 
     of.writeAsciiString("static const sal_Unicode* collationOptions[] = {");
-    for( sal_Int16 j=0; j<nbOfCollationOptions; j++ )
+    for( j=0; j<nbOfCollationOptions; j++ )
     {
         of.writeAsciiString( "collationOption" );
         of.writeInt( j );
@@ -1463,7 +1449,8 @@ void LCIndexNode::generateCode (const OFileWriter &of) const
     sal_Int16 nbOfIndexs = 0;
     sal_Int16 nbOfUnicodeScripts = 0;
     sal_Int16 nbOfPageWords = 0;
-    for (sal_Int32 i = 0; i< getNumberOfChildren();i++) {
+    sal_Int16 i;
+    for (i = 0; i< getNumberOfChildren();i++) {
         LocaleNode * currNode = getChildAt (i);
         if( currNode->getName() == "IndexKey" )
         {
@@ -1499,7 +1486,7 @@ void LCIndexNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString(";\n\n");
 
     of.writeAsciiString("\nstatic const sal_Unicode* IndexArray[] = {\n");
-    for(sal_Int16 i = 0; i < nbOfIndexs; i++) {
+    for(i = 0; i < nbOfIndexs; i++) {
         of.writeAsciiString("\tIndexID");
         of.writeInt(i);
         of.writeAsciiString(",\n");
@@ -1527,7 +1514,7 @@ void LCIndexNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString(";\n\n");
 
     of.writeAsciiString("static const sal_Unicode* UnicodeScriptArray[] = {");
-    for( sal_Int16 i=0; i<nbOfUnicodeScripts; i++ )
+    for( i=0; i<nbOfUnicodeScripts; i++ )
     {
         of.writeAsciiString( "unicodeScript" );
         of.writeInt( i );
@@ -1540,7 +1527,7 @@ void LCIndexNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString(";\n\n");
 
     of.writeAsciiString("static const sal_Unicode* FollowPageWordArray[] = {\n");
-    for(sal_Int16 i = 0; i < nbOfPageWords; i++) {
+    for(i = 0; i < nbOfPageWords; i++) {
         of.writeAsciiString("\tfollowPageWord");
         of.writeInt(i);
         of.writeAsciiString(",\n");
@@ -1620,11 +1607,11 @@ void LCCalendarNode::generateCode (const OFileWriter &of) const
     }
     sal_Int16 nbOfCalendars = sal::static_int_cast<sal_Int16>( getNumberOfChildren() );
     OUString str;
-    std::unique_ptr<sal_Int16[]> nbOfDays( new sal_Int16[nbOfCalendars] );
-    std::unique_ptr<sal_Int16[]> nbOfMonths( new sal_Int16[nbOfCalendars] );
-    std::unique_ptr<sal_Int16[]> nbOfGenitiveMonths( new sal_Int16[nbOfCalendars] );
-    std::unique_ptr<sal_Int16[]> nbOfPartitiveMonths( new sal_Int16[nbOfCalendars] );
-    std::unique_ptr<sal_Int16[]> nbOfEras( new sal_Int16[nbOfCalendars] );
+    sal_Int16 * nbOfDays = new sal_Int16[nbOfCalendars];
+    sal_Int16 * nbOfMonths = new sal_Int16[nbOfCalendars];
+    sal_Int16 * nbOfGenitiveMonths = new sal_Int16[nbOfCalendars];
+    sal_Int16 * nbOfPartitiveMonths = new sal_Int16[nbOfCalendars];
+    sal_Int16 * nbOfEras = new sal_Int16[nbOfCalendars];
     sal_Int16 j;
     sal_Int16 i;
     bool bHasGregorian = false;
@@ -1913,6 +1900,12 @@ void LCCalendarNode::generateCode (const OFileWriter &of) const
 
     of.writeAsciiString("};\n\n");
     of.writeFunction("getAllCalendars_", "calendarsCount", "calendars");
+
+    delete []nbOfDays;
+    delete []nbOfMonths;
+    delete []nbOfGenitiveMonths;
+    delete []nbOfPartitiveMonths;
+    delete []nbOfEras;
 }
 
 bool isIso4217( const OUString& rStr )
@@ -1935,10 +1928,11 @@ void LCCurrencyNode::generateCode (const OFileWriter &of) const
     }
     sal_Int16 nbOfCurrencies = 0;
     OUString str;
+    sal_Int16 i;
 
     bool bTheDefault= false;
     bool bTheCompatible = false;
-    for ( sal_Int32 i = 0; i < getNumberOfChildren(); i++,nbOfCurrencies++) {
+    for ( i = 0; i < getNumberOfChildren(); i++,nbOfCurrencies++) {
         LocaleNode * currencyNode = getChildAt (i);
         str = currencyNode->getAttr().getValueByName("default");
         bool bDefault = of.writeDefaultParameter("Currency", str, nbOfCurrencies);
@@ -1996,7 +1990,7 @@ void LCCurrencyNode::generateCode (const OFileWriter &of) const
     of.writeInt(nbOfCurrencies);
     of.writeAsciiString(";\n\n");
     of.writeAsciiString("static const sal_Unicode* currencies[] = {\n");
-    for(sal_Int16 i = 0; i < nbOfCurrencies; i++) {
+    for(i = 0; i < nbOfCurrencies; i++) {
         of.writeAsciiString("\tcurrencyID");
         of.writeInt(i);
         of.writeAsciiString(",\n");
@@ -2036,8 +2030,9 @@ void LCTransliterationNode::generateCode (const OFileWriter &of) const
     }
     sal_Int16 nbOfModules = 0;
     OUString str;
+    sal_Int16 i;
 
-    for ( sal_Int32 i = 0; i < getNumberOfChildren(); i++,nbOfModules++) {
+    for ( i = 0; i < getNumberOfChildren(); i++,nbOfModules++) {
         LocaleNode * transNode = getChildAt (i);
         str = transNode->getAttr().getValueByIndex(0);
         of.writeParameter("Transliteration", str, nbOfModules);
@@ -2047,7 +2042,7 @@ void LCTransliterationNode::generateCode (const OFileWriter &of) const
     of.writeAsciiString(";\n\n");
 
     of.writeAsciiString("\nstatic const sal_Unicode* LCTransliterationsArray[] = {\n");
-    for( sal_Int16 i = 0; i < nbOfModules; i++) {
+    for( i = 0; i < nbOfModules; i++) {
         of.writeAsciiString("\tTransliteration");
         of.writeInt(i);
         of.writeAsciiString(",\n");

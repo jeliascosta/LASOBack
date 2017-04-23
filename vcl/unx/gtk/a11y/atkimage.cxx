@@ -35,9 +35,8 @@ getAsConst( const OUString& rString )
     return aUgly[ nIdx ].getStr();
 }
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleImage>
-    getImage( AtkImage *pImage )
+    getImage( AtkImage *pImage ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pImage );
     if( pWrap )

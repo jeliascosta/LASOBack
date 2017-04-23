@@ -60,9 +60,7 @@ namespace drawinglayer
                 const SdrFillGraphicAttribute& rFillGraphic);
             SdrFillAttribute();
             SdrFillAttribute(const SdrFillAttribute& rCandidate);
-            SdrFillAttribute(SdrFillAttribute&& rCandidate);
             SdrFillAttribute& operator=(const SdrFillAttribute& rCandidate);
-            SdrFillAttribute& operator=(SdrFillAttribute&& rCandidate);
             ~SdrFillAttribute();
 
             // checks if the incarnation is default constructed

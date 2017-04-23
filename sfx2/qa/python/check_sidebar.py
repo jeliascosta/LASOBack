@@ -1,4 +1,4 @@
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
+# -*- Mode: makefile-gmake; tab-width: 4; indent-tabs-mode: t -*-
 #
 # This file is part of the LibreOffice project.
 #
@@ -19,6 +19,8 @@ from com.sun.star.ui import XPanels
 from com.sun.star.ui import XPanel
 
 class CheckSidebar(unittest.TestCase):
+    _uno = None
+    _xDoc = None
 
     @classmethod
     def setUpClass(cls):
@@ -53,118 +55,118 @@ class CheckSidebar(unittest.TestCase):
 
         xDecks = xSidebar.getDecks()
 
-        first_deck_name = "PropertyDeck";
+        firstDeckName = "PropertyDeck";
 
-        deck_element_names = xDecks.getElementNames()
-        assert ( first_deck_name in deck_element_names )
-        assert ( xDecks.hasByName(first_deck_name) )
+        deckElementNames = xDecks.getElementNames()
+        assert ( firstDeckName in deckElementNames )
+        assert ( xDecks.hasByName(firstDeckName) )
 
-        decks_count = len(xDecks)
-        self.assertEqual ( 5, decks_count )
+        decksCount = xDecks.getCount()
+        self.assertEqual ( 5, decksCount )
 
-        xDeck = xDecks[first_deck_name]
+        xDeck = xDecks.getByName(firstDeckName)
         assert ( xDeck )
-        assert ( xDeck.getId() == first_deck_name )
+        assert ( xDeck.getId() == firstDeckName )
 
-        new_deck_title = "New title"
-        xDeck.setTitle(new_deck_title)
-        assert ( xDeck.getTitle() == new_deck_title )
+        newDeckTitle = "New title"
+        xDeck.setTitle(newDeckTitle)
+        assert ( xDeck.getTitle() == newDeckTitle )
 
         xDeck.moveFirst()
-        initial_index = xDeck.getOrderIndex()
-        self.assertEqual(100, initial_index)
+        initialIndex = xDeck.getOrderIndex()
+        self.assertEqual(100, initialIndex)
 
         xDeck.moveLast()
-        assert ( xDeck.getOrderIndex() > initial_index )
+        assert ( xDeck.getOrderIndex() > initialIndex )
 
-        initial_index = xDeck.getOrderIndex()
+        initialIndex = xDeck.getOrderIndex()
         xDeck.moveFirst()
-        assert ( xDeck.getOrderIndex() < initial_index )
+        assert ( xDeck.getOrderIndex() < initialIndex )
 
-        initial_index = xDeck.getOrderIndex()
+        initialIndex = xDeck.getOrderIndex()
         xDeck.moveDown()
-        assert ( xDeck.getOrderIndex() > initial_index )
+        assert ( xDeck.getOrderIndex() > initialIndex )
 
-        initial_index = xDeck.getOrderIndex()
+        initialIndex = xDeck.getOrderIndex()
         xDeck.moveUp()
-        assert ( xDeck.getOrderIndex() < initial_index )
+        assert ( xDeck.getOrderIndex() < initialIndex )
 
         xPanels = xDeck.getPanels()
 
-        panels_count = len(xPanels)
-        self.assertEqual ( panels_count, 5 )
+        panelsCount = xPanels.getCount()
+        self.assertEqual ( panelsCount, 5 )
 
-        first_panel_name = self.getFirstPanel(xPanels)
+        firstPanelName = self.getFirstPanel(xPanels)
 
-        panel_element_names = xPanels.getElementNames()
-        assert ( first_panel_name in panel_element_names )
-        assert ( xPanels.hasByName(first_panel_name) )
+        panelElementNames = xPanels.getElementNames()
+        assert ( firstPanelName in panelElementNames )
+        assert ( xPanels.hasByName(firstPanelName) )
 
-        xPanel = xPanels[first_panel_name]
+        xPanel = xPanels.getByName(firstPanelName)
         assert ( xPanel )
-        assert ( xPanel.getId() == first_panel_name )
+        assert ( xPanel.getId() == firstPanelName )
 
-        new_title = "New title"
-        xPanel.setTitle(new_title)
-        assert ( xPanel.getTitle() == new_title )
+        newTitle = "New title"
+        xPanel.setTitle(newTitle)
+        assert ( xPanel.getTitle() == newTitle )
 
-        initial_index = xPanel.getOrderIndex()
+        initialIndex = xPanel.getOrderIndex()
         xPanel.moveLast()
-        assert ( xPanel.getOrderIndex() > initial_index )
+        assert ( xPanel.getOrderIndex() > initialIndex )
 
-        initial_index = xPanel.getOrderIndex()
+        initialIndex = xPanel.getOrderIndex()
         xPanel.moveFirst()
-        assert ( xPanel.getOrderIndex() < initial_index )
+        assert ( xPanel.getOrderIndex() < initialIndex )
 
-        initial_index = xPanel.getOrderIndex()
+        initialIndex = xPanel.getOrderIndex()
         xPanel.moveDown()
-        assert ( xPanel.getOrderIndex() > initial_index )
+        assert ( xPanel.getOrderIndex() > initialIndex )
 
-        initial_index = xPanel.getOrderIndex()
+        initialIndex = xPanel.getOrderIndex()
         xPanel.moveUp()
-        assert ( xPanel.getOrderIndex() < initial_index )
+        assert ( xPanel.getOrderIndex() < initialIndex )
 
         xPanel.collapse()
         assert( not xPanel.isExpanded() )
 
-        last_panel_name = self.getLastPanel(xPanels)
+        lastPanelName = self.getLastPanel(xPanels)
 
-        other_panel = xPanels[last_panel_name]
-        other_panel.expand(False)
-        assert( other_panel.isExpanded() )
+        otherPanel = xPanels.getByName(lastPanelName)
+        otherPanel.expand(False)
+        assert( otherPanel.isExpanded() )
 
         xPanel.expand(True)
         assert( xPanel.isExpanded() )
-        assert( not other_panel.isExpanded() )
+        assert( not otherPanel.isExpanded() )
 
     # close the document
         xDoc.dispose()
 
     def getFirstPanel(self, xPanels):
 
-        panel_name = ""
-        cur_index = 10000
+        panelName = ""
+        curIndex = 10000
 
         for panel in xPanels:
-            if panel.getOrderIndex() < cur_index:
-                panel_name = panel.getId()
-                cur_index = panel.getOrderIndex()
+            if panel.getOrderIndex() < curIndex:
+                panelName = panel.getId()
+                curIndex = panel.getOrderIndex()
 
-        return panel_name
+        return panelName
 
     def getLastPanel(self, xPanels):
 
-        panel_name = ""
-        cur_index = 0
+        panelName = ""
+        curIndex = 0
 
         for panel in xPanels:
-            if panel.getOrderIndex() > cur_index:
-                panel_name = panel.getId()
-                cur_index = panel.getOrderIndex()
+            if panel.getOrderIndex() > curIndex:
+                panelName = panel.getId()
+                curIndex = panel.getOrderIndex()
 
-        return panel_name
+        return panelName
 
 if __name__ == "__main__":
     unittest.main()
 
-# vim: set shiftwidth=4 softtabstop=4 expandtab:
+# vim: set noet sw=4 ts=4:

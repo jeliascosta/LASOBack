@@ -185,15 +185,15 @@ void SvXMLUnitConverter::convertMeasureToXML( OUStringBuffer& rString,
 /** convert string to enum using given enum map, if the enum is
     not found in the map, this method will return false
 */
-bool SvXMLUnitConverter::convertEnumImpl( sal_uInt16& rEnum,
+bool SvXMLUnitConverter::convertEnum( sal_uInt16& rEnum,
                                       const OUString& rValue,
-                                      const SvXMLEnumStringMapEntry<sal_uInt16> *pMap )
+                                      const SvXMLEnumStringMapEntry *pMap )
 {
-    while( pMap->GetName() )
+    while( pMap->pName )
     {
-        if( rValue.equalsAsciiL( pMap->GetName(), pMap->GetNameLength() ) )
+        if( rValue.equalsAsciiL( pMap->pName, pMap->nNameLength ) )
         {
-            rEnum = pMap->GetValue();
+            rEnum = pMap->nValue;
             return true;
         }
         ++pMap;
@@ -204,16 +204,16 @@ bool SvXMLUnitConverter::convertEnumImpl( sal_uInt16& rEnum,
 
 /** convert string to enum using given token map, if the enum is
     not found in the map, this method will return false */
-bool SvXMLUnitConverter::convertEnumImpl(
+bool SvXMLUnitConverter::convertEnum(
     sal_uInt16& rEnum,
     const OUString& rValue,
-    const SvXMLEnumMapEntry<sal_uInt16> *pMap )
+    const SvXMLEnumMapEntry *pMap )
 {
-    while( pMap->GetToken() != XML_TOKEN_INVALID )
+    while( pMap->eToken != XML_TOKEN_INVALID )
     {
-        if( IsXMLToken( rValue, pMap->GetToken() ) )
+        if( IsXMLToken( rValue, pMap->eToken ) )
         {
-            rEnum = pMap->GetValue();
+            rEnum = pMap->nValue;
             return true;
         }
         ++pMap;
@@ -225,19 +225,19 @@ bool SvXMLUnitConverter::convertEnumImpl(
     default token. If the enum is not found in the map,
     this method will either use the given default or return
     false if no default is set */
-bool SvXMLUnitConverter::convertEnumImpl(
+bool SvXMLUnitConverter::convertEnum(
     OUStringBuffer& rBuffer,
-    sal_uInt16 nValue,
-    const SvXMLEnumMapEntry<sal_uInt16> *pMap,
+    unsigned int nValue,
+    const SvXMLEnumMapEntry *pMap,
     enum XMLTokenEnum eDefault)
 {
     enum XMLTokenEnum eTok = eDefault;
 
-    while( pMap->GetToken() != XML_TOKEN_INVALID )
+    while( pMap->eToken != XML_TOKEN_INVALID )
     {
-        if( pMap->GetValue() == nValue )
+        if( pMap->nValue == nValue )
         {
-            eTok = pMap->GetToken();
+            eTok = pMap->eToken;
             break;
         }
         ++pMap;
@@ -375,29 +375,21 @@ void SvXMLUnitConverter::convertDateTime( OUStringBuffer& rBuffer,
             aDate += 1;
         }
     }
-    sal_Int16 nTempYear = aDate.GetYear();
-    assert(nTempYear != 0);
-    if (nTempYear < 0)
-    {
-        rBuffer.append( '-');
-        nTempYear = -nTempYear;
-    }
-    if (nTempYear < 1000)
+    sal_uInt16 nTemp = aDate.GetYear();
+    if (nTemp < 1000)
         rBuffer.append( '0');
-    if (nTempYear < 100)
+    if (nTemp < 100)
         rBuffer.append( '0');
-    if (nTempYear < 10)
+    if (nTemp < 10)
         rBuffer.append( '0');
-    rBuffer.append( sal_Int32( nTempYear));
+    rBuffer.append( sal_Int32( nTemp));
     rBuffer.append( '-');
-    sal_uInt16 nTemp = aDate.GetMonth();
-    assert(1 <= nTemp && nTemp <= 12);
+    nTemp = aDate.GetMonth();
     if (nTemp < 10)
         rBuffer.append( '0');
     rBuffer.append( sal_Int32( nTemp));
     rBuffer.append( '-');
     nTemp = aDate.GetDay();
-    assert(1 <= nTemp && nTemp <= 31);
     if (nTemp < 10)
         rBuffer.append( '0');
     rBuffer.append( sal_Int32( nTemp));
@@ -665,7 +657,7 @@ void SvXMLUnitConverter::convertNumFormat( OUStringBuffer& rBuffer,
     case NumberingType::CHAR_SPECIAL:
     case NumberingType::PAGE_DESCRIPTOR:
     case NumberingType::BITMAP:
-        SAL_WARN_IF( eFormat == XML_TOKEN_INVALID, "xmloff", "invalid number format" );
+        DBG_ASSERT( eFormat != XML_TOKEN_INVALID, "invalid number format" );
         break;
     default:
         break;
@@ -705,7 +697,7 @@ void SvXMLUnitConverter::convertNumLetterSync( OUStringBuffer& rBuffer,
     case NumberingType::CHAR_SPECIAL:
     case NumberingType::PAGE_DESCRIPTOR:
     case NumberingType::BITMAP:
-        SAL_WARN_IF( eSync == XML_TOKEN_INVALID, "xmloff", "invalid number format" );
+        DBG_ASSERT( eSync != XML_TOKEN_INVALID, "invalid number format" );
         break;
     }
     if( eSync != XML_TOKEN_INVALID )

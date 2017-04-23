@@ -59,7 +59,7 @@ AnimationActivitySharedPtr AnimationTransformNode::createActivity() const
                 rShape,
                 getContext().mpSubsettableShapeManager,
                 getSlideSize(),
-                nTransformType, 0 ),
+                nTransformType ),
             getXAnimateNode() );
 
     case animations::AnimationTransformType::ROTATE:

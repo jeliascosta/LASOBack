@@ -102,11 +102,11 @@ inline void OfaMemoryOptionsPage::SetNfGraphicObjectCacheLast( long nSizeInBytes
     m_pNfGraphicObjectCache->SetLast( long( double( nSizeInBytes ) * BYTES2NF ) );
 }
 
-DeactivateRC OfaMemoryOptionsPage::DeactivatePage( SfxItemSet* _pSet )
+SfxTabPage::sfxpg OfaMemoryOptionsPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return DeactivateRC::LeavePage;
+    return LEAVE_PAGE;
 }
 
 
@@ -134,7 +134,7 @@ OfaMemoryOptionsPage::OfaMemoryOptionsPage(vcl::Window* pParent, const SfxItemSe
     m_pQuickStarterFrame->Hide();
 #endif
 
-    m_pTfGraphicObjectTime->SetExtFormat( ExtTimeFieldFormat::Short24H );
+    m_pTfGraphicObjectTime->SetExtFormat( EXTTIMEF_24H_SHORT );
 
     SetExchangeSupport();
 
@@ -252,12 +252,12 @@ void OfaMemoryOptionsPage::Reset( const SfxItemSet* rSet )
     m_pQuickLaunchCB->SaveValue();
 }
 
-IMPL_LINK_NOARG(OfaMemoryOptionsPage, GraphicCacheLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG_TYPED(OfaMemoryOptionsPage, GraphicCacheLoseFocusHdl, Control&, void)
 {
     GraphicCacheConfigHdl(*m_pNfGraphicCache);
 }
 
-IMPL_LINK_NOARG(OfaMemoryOptionsPage, GraphicCacheConfigHdl, SpinField&, void)
+IMPL_LINK_NOARG_TYPED(OfaMemoryOptionsPage, GraphicCacheConfigHdl, SpinField&, void)
 {
     sal_Int32 n = GetNfGraphicCacheVal();
     SetNfGraphicObjectCacheMax( n );

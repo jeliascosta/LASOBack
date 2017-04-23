@@ -28,16 +28,16 @@ class WinSalObject : public SalObject
 public:
     HWND                    mhWnd;                  // Window handle
     HWND                    mhWndChild;             // Child Window handle
-    HWND                    mhLastFocusWnd;         // Child-Window, which had the last focus
+    HWND                    mhLastFocusWnd;         // Child-Window, welches als letztes den Focus hatte
     SystemEnvData           maSysData;              // SystemEnvData
     RGNDATA*                mpClipRgnData;          // ClipRegion-Data
     RGNDATA*                mpStdClipRgnData;       // Cache Standard-ClipRegion-Data
-    RECT*                   mpNextClipRect;         // next ClipRegion-Rect
+    RECT*                   mpNextClipRect;         // Naechstes ClipRegion-Rect
     bool                    mbFirstClipRect;        // Flag for first cliprect to insert
     WinSalObject*           mpNextObject;           // pointer to next object
 
     WinSalObject();
-    virtual ~WinSalObject() override;
+    virtual ~WinSalObject();
 
     virtual void                    ResetClipRegion() override;
     virtual void                    BeginSetClipRegion( sal_uIntPtr nRects ) override;

@@ -63,8 +63,6 @@
 
 #include "lwpobj.hxx"
 #include "lwpdlvlist.hxx"
-#include "lwpoverride.hxx"
-#include "lwpcharborderoverride.hxx"
 
 class LwpAtomHolder;
 class LwpTextLanguageOverride;
@@ -77,7 +75,7 @@ class LwpTextStyle : public LwpDLNFPVList
 public:
     LwpTextStyle(LwpObjectHeader& objHdr, LwpSvStream* pStrm);
 
-    virtual ~LwpTextStyle() override;
+    virtual ~LwpTextStyle();
 
     inline sal_uInt32 GetFinalFontID() const;
 
@@ -94,12 +92,12 @@ protected:
     sal_uInt16      m_nCSFlags;
     sal_uInt32      m_nUseCount;
 
-    LwpAtomHolder                   m_aDescription;
-    LwpTextLanguageOverride         m_aLangOverride;
-    LwpTextAttributeOverride        m_aTxtAttrOverride;
+    LwpAtomHolder*                  m_pDescription;
+    LwpTextLanguageOverride*        m_pLangOverride;
+    LwpTextAttributeOverride*       m_pTxtAttrOverride;
 
-    LwpCharacterBorderOverride      m_aCharacterBorderOverride;
-    LwpAmikakeOverride              m_aAmikakeOverride;
+    LwpCharacterBorderOverride*     m_pCharacterBorderOverride;
+    LwpAmikakeOverride*             m_pAmikakeOverride;
 
     LwpObjectID     m_CharacterBorder;
     LwpObjectID     m_Amikake;

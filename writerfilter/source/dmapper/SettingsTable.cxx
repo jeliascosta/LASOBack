@@ -30,7 +30,6 @@
 #include <comphelper/sequence.hxx>
 #include <ooxml/resourceids.hxx>
 #include <ConversionHelper.hxx>
-#include <DomainMapper.hxx>
 #include "util.hxx"
 
 using namespace com::sun::star;
@@ -66,7 +65,6 @@ struct SettingsTable_Impl
     bool                m_bSplitPgBreakAndParaMark;
     bool                m_bMirrorMargin;
     bool                m_bProtectForm;
-    bool                m_bDisplayBackgroundShape;
 
     uno::Sequence<beans::PropertyValue> m_pThemeFontLangProps;
 
@@ -93,21 +91,18 @@ struct SettingsTable_Impl
     , m_bSplitPgBreakAndParaMark(false)
     , m_bMirrorMargin(false)
     , m_bProtectForm(false)
-    , m_bDisplayBackgroundShape(false)
     , m_pThemeFontLangProps(3)
     , m_pCurrentCompatSetting(3)
     {}
 
 };
 
-SettingsTable::SettingsTable(const DomainMapper& rDomainMapper)
+SettingsTable::SettingsTable()
 : LoggedProperties("SettingsTable")
 , LoggedTable("SettingsTable")
 , m_pImpl( new SettingsTable_Impl )
 {
-    // HTML paragraph auto-spacing is opt-in for RTF, opt-out for OOXML.
-    if (rDomainMapper.IsRTFImport())
-        m_pImpl->m_bDoNotUseHTMLParagraphAutoSpacing = true;
+
 }
 
 SettingsTable::~SettingsTable()
@@ -265,7 +260,7 @@ void SettingsTable::lcl_sprm(Sprm& rSprm)
 
             beans::PropertyValue aValue;
             aValue.Name = "compatSetting";
-            aValue.Value <<= m_pImpl->m_pCurrentCompatSetting;
+            aValue.Value = uno::makeAny(m_pImpl->m_pCurrentCompatSetting);
             m_pImpl->m_aCompatSettings.push_back(aValue);
         }
     }
@@ -278,9 +273,6 @@ void SettingsTable::lcl_sprm(Sprm& rSprm)
         break;
     case NS_ooxml::LN_CT_Settings_widowControl:
         m_pImpl->m_bWidowControl = nIntValue;
-        break;
-    case NS_ooxml::LN_CT_Settings_displayBackgroundShape:
-        m_pImpl->m_bDisplayBackgroundShape = nIntValue;
         break;
     default:
     {
@@ -355,11 +347,6 @@ bool SettingsTable::GetSplitPgBreakAndParaMark() const
 bool SettingsTable::GetMirrorMarginSettings() const
 {
     return m_pImpl->m_bMirrorMargin;
-}
-
-bool SettingsTable::GetDisplayBackgroundShape() const
-{
-    return m_pImpl->m_bDisplayBackgroundShape;
 }
 
 bool SettingsTable::GetProtectForm() const

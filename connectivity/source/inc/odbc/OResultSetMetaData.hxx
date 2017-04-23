@@ -34,26 +34,22 @@ namespace connectivity
 
         //************ Class: ResultSetMetaData
 
-        typedef ::cppu::WeakImplHelper<        css::sdbc::XResultSetMetaData>   OResultSetMetaData_BASE;
+        typedef ::cppu::WeakImplHelper<        ::com::sun::star::sdbc::XResultSetMetaData>   OResultSetMetaData_BASE;
 
         class OOO_DLLPUBLIC_ODBCBASE OResultSetMetaData :
             public  OResultSetMetaData_BASE
         {
         protected:
-            std::vector<sal_Int32> m_vMapping; // when not every column is needed
-            std::map<sal_Int32,sal_Int32> m_aColumnTypes;
+            ::std::vector<sal_Int32> m_vMapping; // when not every column is needed
+            ::std::map<sal_Int32,sal_Int32> m_aColumnTypes;
 
             SQLHANDLE       m_aStatementHandle;
             OConnection*    m_pConnection;
             sal_Int32       m_nColCount;
             bool        m_bUseODBC2Types;
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            OUString getCharColAttrib(sal_Int32 column,sal_Int32 ident);
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
-            sal_Int32 getNumColAttrib(sal_Int32 column,sal_Int32 ident);
+            OUString getCharColAttrib(sal_Int32 column,sal_Int32 ident) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
+            sal_Int32 getNumColAttrib(sal_Int32 column,sal_Int32 ident) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
         public:
             // A ctor that is needed for returning the object
             OResultSetMetaData(OConnection* _pConnection, SQLHANDLE _pStmt )
@@ -62,57 +58,54 @@ namespace connectivity
                 ,m_nColCount(-1)
                 ,m_bUseODBC2Types(false)
             {}
-            OResultSetMetaData(OConnection* _pConnection, SQLHANDLE _pStmt ,const std::vector<sal_Int32> & _vMapping)
+            OResultSetMetaData(OConnection* _pConnection, SQLHANDLE _pStmt ,const ::std::vector<sal_Int32> & _vMapping)
                     :m_vMapping(_vMapping)
                     ,m_aStatementHandle( _pStmt )
                     ,m_pConnection(_pConnection)
                     ,m_nColCount(_vMapping.size()-1)
                     ,m_bUseODBC2Types(false)
             {}
-            virtual ~OResultSetMetaData() override;
+            virtual ~OResultSetMetaData();
 
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static SQLLEN getNumColAttrib(OConnection* _pConnection
                                               ,SQLHANDLE _aStatementHandle
-                                              ,const css::uno::Reference< css::uno::XInterface >& _xInterface
+                                              ,const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface
                                               ,sal_Int32 _column
-                                              ,sal_Int32 ident);
+                                              ,sal_Int32 ident) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            /// @throws css::sdbc::SQLException
-            /// @throws css::uno::RuntimeException
             static SQLSMALLINT getColumnODBCType(OConnection* _pConnection
                                               ,SQLHANDLE _aStatementHandle
-                                              ,const css::uno::Reference< css::uno::XInterface >& _xInterface
-                                              ,sal_Int32 column);
+                                              ,const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _xInterface
+                                              ,sal_Int32 column)
+                                               throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException);
 
-            oslGenericFunction getOdbcFunction(ODBC3SQLFunctionId _nIndex)  const
+            inline oslGenericFunction getOdbcFunction(ODBC3SQLFunctionId _nIndex)  const
             {
                 return m_pConnection->getOdbcFunction(_nIndex);
             }
 
-            virtual sal_Int32 SAL_CALL getColumnCount(  ) override;
-            virtual sal_Bool SAL_CALL isAutoIncrement( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isCaseSensitive( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isSearchable( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isCurrency( sal_Int32 column ) override;
-            virtual sal_Int32 SAL_CALL isNullable( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isSigned( sal_Int32 column ) override;
-            virtual sal_Int32 SAL_CALL getColumnDisplaySize( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getColumnLabel( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getColumnName( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getSchemaName( sal_Int32 column ) override;
-            virtual sal_Int32 SAL_CALL getPrecision( sal_Int32 column ) override;
-            virtual sal_Int32 SAL_CALL getScale( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getTableName( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getCatalogName( sal_Int32 column ) override;
-            virtual sal_Int32 SAL_CALL getColumnType( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getColumnTypeName( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isReadOnly( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isWritable( sal_Int32 column ) override;
-            virtual sal_Bool SAL_CALL isDefinitelyWritable( sal_Int32 column ) override;
-            virtual OUString SAL_CALL getColumnServiceName( sal_Int32 column ) override;
+            virtual sal_Int32 SAL_CALL getColumnCount(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isAutoIncrement( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isCaseSensitive( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isSearchable( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isCurrency( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL isNullable( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isSigned( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL getColumnDisplaySize( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getColumnLabel( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getColumnName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getSchemaName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL getPrecision( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL getScale( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getTableName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getCatalogName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Int32 SAL_CALL getColumnType( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getColumnTypeName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isReadOnly( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isWritable( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual sal_Bool SAL_CALL isDefinitelyWritable( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual OUString SAL_CALL getColumnServiceName( sal_Int32 column ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
         };
     }
 }

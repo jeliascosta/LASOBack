@@ -24,7 +24,6 @@
 #include <com/sun/star/embed/EmbedUpdateModes.hpp>
 #include <com/sun/star/embed/XInplaceClient.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
-#include <com/sun/star/lang/NoSupportException.hpp>
 #include <com/sun/star/beans/NamedValue.hpp>
 
 #include <cppuhelper/typeprovider.hxx>
@@ -32,8 +31,6 @@
 #include <cppuhelper/interfacecontainer.h>
 #include <comphelper/mimeconfighelper.hxx>
 #include <comphelper/processfactory.hxx>
-
-#include <vcl/svapp.hxx>
 
 #include "closepreventer.hxx"
 #include "intercept.hxx"
@@ -44,7 +41,8 @@ using namespace ::com::sun::star;
 
 OCommonEmbeddedObject::OCommonEmbeddedObject( const uno::Reference< uno::XComponentContext >& rxContext,
                                                 const uno::Sequence< beans::NamedValue >& aObjProps )
-: m_pInterfaceContainer( nullptr )
+: m_pDocHolder( nullptr )
+, m_pInterfaceContainer( nullptr )
 , m_bReadOnly( false )
 , m_bDisposed( false )
 , m_bClosed( false )
@@ -70,7 +68,8 @@ OCommonEmbeddedObject::OCommonEmbeddedObject(
         const uno::Sequence< beans::NamedValue >& aObjProps,
         const uno::Sequence< beans::PropertyValue >& aMediaDescr,
         const uno::Sequence< beans::PropertyValue >& aObjectDescr )
-: m_pInterfaceContainer( nullptr )
+: m_pDocHolder( nullptr )
+, m_pInterfaceContainer( nullptr )
 , m_bReadOnly( false )
 , m_bDisposed( false )
 , m_bClosed( false )
@@ -98,7 +97,8 @@ void OCommonEmbeddedObject::CommonInit_Impl( const uno::Sequence< beans::NamedVa
     if ( !m_xContext.is() )
         throw uno::RuntimeException();
 
-    m_xDocHolder = new DocumentHolder( m_xContext, this );
+    m_pDocHolder = new DocumentHolder( m_xContext, this );
+    m_pDocHolder->acquire();
 
     // parse configuration entries
     // TODO/LATER: in future UI names can be also provided here
@@ -254,13 +254,13 @@ void OCommonEmbeddedObject::LinkInit_Impl(
     CommonInit_Impl( aObjectProps );
 
     if ( xDispatchInterceptor.is() )
-        m_xDocHolder->SetOutplaceDispatchInterceptor( xDispatchInterceptor );
+        m_pDocHolder->SetOutplaceDispatchInterceptor( xDispatchInterceptor );
 }
 
 
 OCommonEmbeddedObject::~OCommonEmbeddedObject()
 {
-    if ( m_pInterfaceContainer || m_xDocHolder.is() )
+    if ( m_pInterfaceContainer || m_pDocHolder )
     {
         m_refCount++;
         try {
@@ -276,15 +276,16 @@ OCommonEmbeddedObject::~OCommonEmbeddedObject()
         } catch( const uno::Exception& ) {}
 
         try {
-            if ( m_xDocHolder.is() )
+            if ( m_pDocHolder )
             {
-                m_xDocHolder->CloseFrame();
+                m_pDocHolder->CloseFrame();
                 try {
-                    m_xDocHolder->CloseDocument( true, true );
+                    m_pDocHolder->CloseDocument( true, true );
                 } catch ( const uno::Exception& ) {}
-                m_xDocHolder->FreeOffice();
+                m_pDocHolder->FreeOffice();
 
-                m_xDocHolder.clear();
+                m_pDocHolder->release();
+                m_pDocHolder = nullptr;
             }
         } catch( const uno::Exception& ) {}
     }
@@ -351,6 +352,7 @@ void OCommonEmbeddedObject::PostEvent_Impl( const OUString& aEventName )
 
 
 uno::Any SAL_CALL OCommonEmbeddedObject::queryInterface( const uno::Type& rType )
+        throw( uno::RuntimeException, std::exception )
 {
     uno::Any aReturn;
 
@@ -365,7 +367,7 @@ uno::Any SAL_CALL OCommonEmbeddedObject::queryInterface( const uno::Type& rType 
         return uno::Any(&p, rType);
     }
     else
-        aReturn = ::cppu::queryInterface(
+        aReturn <<= ::cppu::queryInterface(
                     rType,
                     static_cast< embed::XInplaceObject* >( this ),
                     static_cast< embed::XVisualObject* >( this ),
@@ -403,6 +405,7 @@ void SAL_CALL OCommonEmbeddedObject::release()
 
 
 uno::Sequence< sal_Int8 > SAL_CALL OCommonEmbeddedObject::getClassID()
+        throw ( uno::RuntimeException, std::exception )
 {
     if ( m_bDisposed )
         throw lang::DisposedException();
@@ -411,6 +414,7 @@ uno::Sequence< sal_Int8 > SAL_CALL OCommonEmbeddedObject::getClassID()
 }
 
 OUString SAL_CALL OCommonEmbeddedObject::getClassName()
+        throw ( uno::RuntimeException, std::exception )
 {
     if ( m_bDisposed )
         throw lang::DisposedException();
@@ -420,6 +424,8 @@ OUString SAL_CALL OCommonEmbeddedObject::getClassName()
 
 void SAL_CALL OCommonEmbeddedObject::setClassInfo(
                 const uno::Sequence< sal_Int8 >& /*aClassID*/, const OUString& /*aClassName*/ )
+        throw ( lang::NoSupportException,
+                uno::RuntimeException, std::exception )
 {
     // the object class info can not be changed explicitly
     throw lang::NoSupportException(); //TODO:
@@ -427,8 +433,9 @@ void SAL_CALL OCommonEmbeddedObject::setClassInfo(
 
 
 uno::Reference< util::XCloseable > SAL_CALL OCommonEmbeddedObject::getComponent()
+        throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
         throw lang::DisposedException(); // TODO
 
@@ -440,13 +447,14 @@ uno::Reference< util::XCloseable > SAL_CALL OCommonEmbeddedObject::getComponent(
                                      static_cast< ::cppu::OWeakObject* >(this) );
     }
 
-    return uno::Reference< util::XCloseable >( m_xDocHolder->GetComponent(), uno::UNO_QUERY );
+    return uno::Reference< util::XCloseable >( m_pDocHolder->GetComponent(), uno::UNO_QUERY );
 }
 
 
 void SAL_CALL OCommonEmbeddedObject::addStateChangeListener( const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
         throw lang::DisposedException(); // TODO
 
@@ -460,8 +468,9 @@ void SAL_CALL OCommonEmbeddedObject::addStateChangeListener( const uno::Referenc
 
 void SAL_CALL OCommonEmbeddedObject::removeStateChangeListener(
                     const uno::Reference< embed::XStateChangeListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )
         m_pInterfaceContainer->removeInterface( cppu::UnoType<embed::XStateChangeListener>::get(),
                                                 xListener );
@@ -469,8 +478,10 @@ void SAL_CALL OCommonEmbeddedObject::removeStateChangeListener(
 
 
 void SAL_CALL OCommonEmbeddedObject::close( sal_Bool bDeliverOwnership )
+    throw ( util::CloseVetoException,
+            uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bClosed )
         throw lang::DisposedException(); // TODO
 
@@ -524,27 +535,29 @@ void SAL_CALL OCommonEmbeddedObject::close( sal_Bool bDeliverOwnership )
     // the exception will be thrown otherwise in addition to exception the object must register itself
     // as termination listener and listen for document events
 
-    if ( m_xDocHolder.is() )
+    if ( m_pDocHolder )
     {
-        m_xDocHolder->CloseFrame();
+        m_pDocHolder->CloseFrame();
 
         try {
-            m_xDocHolder->CloseDocument( bDeliverOwnership, bDeliverOwnership );
+            m_pDocHolder->CloseDocument( bDeliverOwnership, bDeliverOwnership );
         }
         catch( const uno::Exception& )
         {
             if ( bDeliverOwnership )
             {
-                m_xDocHolder.clear();
+                m_pDocHolder->release();
+                m_pDocHolder = nullptr;
                 m_bClosed = true;
             }
 
             throw;
         }
 
-        m_xDocHolder->FreeOffice();
+        m_pDocHolder->FreeOffice();
 
-        m_xDocHolder.clear();
+        m_pDocHolder->release();
+        m_pDocHolder = nullptr;
     }
 
     // TODO: for now the storage will be disposed by the object, but after the document
@@ -570,21 +583,23 @@ void SAL_CALL OCommonEmbeddedObject::close( sal_Bool bDeliverOwnership )
 
 
 void SAL_CALL OCommonEmbeddedObject::addCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
         throw lang::DisposedException(); // TODO
 
     if ( !m_pInterfaceContainer )
-        m_pInterfaceContainer = new ::cppu::OMultiTypeInterfaceContainerHelper(m_aMutex);
+        m_pInterfaceContainer = new ::cppu::OMultiTypeInterfaceContainerHelper( m_aMutex );
 
     m_pInterfaceContainer->addInterface( cppu::UnoType<util::XCloseListener>::get(), xListener );
 }
 
 
 void SAL_CALL OCommonEmbeddedObject::removeCloseListener( const uno::Reference< util::XCloseListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )
         m_pInterfaceContainer->removeInterface( cppu::UnoType<util::XCloseListener>::get(),
                                                 xListener );
@@ -592,21 +607,23 @@ void SAL_CALL OCommonEmbeddedObject::removeCloseListener( const uno::Reference< 
 
 
 void SAL_CALL OCommonEmbeddedObject::addEventListener( const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_bDisposed )
         throw lang::DisposedException(); // TODO
 
     if ( !m_pInterfaceContainer )
-        m_pInterfaceContainer = new ::cppu::OMultiTypeInterfaceContainerHelper(m_aMutex);
+        m_pInterfaceContainer = new ::cppu::OMultiTypeInterfaceContainerHelper( m_aMutex );
 
     m_pInterfaceContainer->addInterface( cppu::UnoType<document::XEventListener>::get(), xListener );
 }
 
 
 void SAL_CALL OCommonEmbeddedObject::removeEventListener( const uno::Reference< document::XEventListener >& xListener )
+        throw ( uno::RuntimeException, std::exception )
 {
-    SolarMutexGuard aGuard;
+    ::osl::MutexGuard aGuard( m_aMutex );
     if ( m_pInterfaceContainer )
         m_pInterfaceContainer->removeInterface( cppu::UnoType<document::XEventListener>::get(),
                                                 xListener );

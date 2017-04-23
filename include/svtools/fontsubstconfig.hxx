@@ -44,7 +44,7 @@ private:
 
 public:
     SvtFontSubstConfig();
-    virtual ~SvtFontSubstConfig() override;
+    virtual ~SvtFontSubstConfig();
 
     virtual void                Notify( const css::uno::Sequence< OUString >& _rPropertyNames) override;
 

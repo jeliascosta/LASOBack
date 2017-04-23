@@ -30,7 +30,7 @@ namespace connectivity
         static jclass theClass;
     public:
         virtual jclass getMyClass() const override;
-        virtual ~java_util_Properties() override;
+        virtual ~java_util_Properties();
         java_util_Properties( );
         void setProperty(const OUString& key, const OUString& value);
     };

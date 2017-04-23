@@ -271,7 +271,7 @@ static sal_Bool test_corefl( const Reference< XIdlReflection > & xRefl )
     }
 
     Any gulp;
-    gulp <<= OUString("Test");
+    gulp <<= OUString(OUString("Test"));
     Any blup;
     blup <<= aStructC;
     xRefl->forName("ModuleA.StructC")->getField(OUString("aString"))->set(blup, gulp);
@@ -367,7 +367,12 @@ SAL_IMPLEMENT_MAIN()
     }
     catch (const Exception & rExc)
     {
-        SAL_WARN("stoc", "### exception occurred: " << rExc.Message );
+        OSL_FAIL( "### exception occurred!" );
+        OString aMsg(
+            OUStringToOString( rExc.Message, RTL_TEXTENCODING_ASCII_US ) );
+        OSL_TRACE( "### exception occurred: " );
+        OSL_TRACE( "%s", aMsg.getStr() );
+        OSL_TRACE( "\n" );
     }
 
     printf( "testcorefl %s !\n", (bSucc ? "succeeded" : "failed") );

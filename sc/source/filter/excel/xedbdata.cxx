@@ -13,7 +13,6 @@
 #include "dbdata.hxx"
 #include "document.hxx"
 #include <oox/export/utils.hxx>
-#include <oox/token/namespaces.hxx>
 
 using namespace oox;
 
@@ -22,6 +21,7 @@ class XclExpTablesImpl5 : public XclExpTables
 {
 public:
     explicit            XclExpTablesImpl5( const XclExpRoot& rRoot );
+    virtual             ~XclExpTablesImpl5();
 
     virtual void        Save( XclExpStream& rStrm ) override;
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -32,6 +32,7 @@ class XclExpTablesImpl8 : public XclExpTables
 {
 public:
     explicit            XclExpTablesImpl8( const XclExpRoot& rRoot );
+    virtual             ~XclExpTablesImpl8();
 
     virtual void        Save( XclExpStream& rStrm ) override;
     virtual void        SaveXml( XclExpXmlStream& rStrm ) override;
@@ -40,6 +41,10 @@ public:
 
 XclExpTablesImpl5::XclExpTablesImpl5( const XclExpRoot& rRoot ) :
     XclExpTables( rRoot )
+{
+}
+
+XclExpTablesImpl5::~XclExpTablesImpl5()
 {
 }
 
@@ -56,6 +61,10 @@ void XclExpTablesImpl5::SaveXml( XclExpXmlStream& /*rStrm*/ )
 
 XclExpTablesImpl8::XclExpTablesImpl8( const XclExpRoot& rRoot ) :
     XclExpTables( rRoot )
+{
+}
+
+XclExpTablesImpl8::~XclExpTablesImpl8()
 {
 }
 
@@ -181,7 +190,7 @@ void XclExpTables::SaveTableXml( XclExpXmlStream& rStrm, const Entry& rEntry )
     rData.GetArea( aRange);
     sax_fastparser::FSHelperPtr& pTableStrm = rStrm.GetCurrentStream();
     pTableStrm->startElement( XML_table,
-        XML_xmlns, XclXmlUtils::ToOString(rStrm.getNamespaceURL(OOX_NS(xls))).getStr(),
+        XML_xmlns, "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
         XML_id, OString::number( rEntry.mnTableId).getStr(),
         XML_name, XclXmlUtils::ToOString( rData.GetName()).getStr(),
         XML_displayName, XclXmlUtils::ToOString( rData.GetName()).getStr(),

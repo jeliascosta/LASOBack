@@ -61,9 +61,9 @@ typedef std::shared_ptr< XclExpBiff8Encrypter > XclExpEncrypterRef;
     If some data exceeds the record size limit, a CONTINUE record is started automatically
     and the new data will be written to this record.
 
-    If specific data pieces must not be splitted, use SetSliceSize(). For instance:
+    If specific data pieces must not be splitted, use SetSliceLen(). For instance:
     To write a sequence of 16-bit values, where 4 values form a unit and cannot be
-    split, call SetSliceSize( 8 ) first (4*2 bytes == 8).
+    split, call SetSliceLen( 8 ) first (4*2 bytes == 8).
 
     To write unicode character arrays, call WriteUnicodeBuffer(). It creates CONTINUE
     records and repeats the unicode string flag byte automatically. This function is used
@@ -84,15 +84,15 @@ public:
                         ~XclExpStream();
 
     /** Returns the filter root data. */
-    const XclExpRoot& GetRoot() const { return mrRoot; }
+    inline const XclExpRoot& GetRoot() const { return mrRoot; }
 
     /** Starts a new record: writes header data, stores calculated record size. */
-    void                StartRecord( sal_uInt16 nRecId, std::size_t nRecSize );
+    void                StartRecord( sal_uInt16 nRecId, sal_Size nRecSize );
     /** Checks and corrects real record length. Must be called every time a record is finished. */
     void                EndRecord();
 
     /** Returns the position inside of current record (starts by 0 in every CONTINUE). */
-    sal_uInt16   GetRawRecPos() const { return mnCurrSize; }
+    inline sal_uInt16   GetRawRecPos() const { return mnCurrSize; }
 
     /** Sets data slice length. 0 = no slices. */
     void                SetSliceSize( sal_uInt16 nSize );
@@ -107,11 +107,11 @@ public:
     XclExpStream& operator<<( double fValue );
 
     /** Writes nBytes bytes from memory. */
-    std::size_t         Write( const void* pData, std::size_t nBytes );
+    sal_Size            Write( const void* pData, sal_Size nBytes );
     /** Writes a sequence of nBytes zero bytes (respects slice setting). */
-    void                WriteZeroBytes( std::size_t nBytes );
+    void                WriteZeroBytes( sal_Size nBytes );
 
-    void                WriteZeroBytesToRecord( std::size_t nBytes );
+    void                WriteZeroBytesToRecord( sal_Size nBytes );
 
     /** Copies nBytes bytes from current position of the stream rInStrm.
         @descr  Omitting the second parameter means: read to end of stream. */
@@ -137,9 +137,9 @@ public:
     /** Sets position of system stream (only allowed outside of records). */
     void                SetSvStreamPos(sal_uInt64 nPos);
     /** Returns the absolute position of the system stream. */
-    sal_uInt64   GetSvStreamPos() const { return mrStrm.Tell(); }
+    inline sal_uInt64   GetSvStreamPos() const { return mrStrm.Tell(); }
 
-    void                SetEncrypter( XclExpEncrypterRef const & xEncrypter );
+    void                SetEncrypter( XclExpEncrypterRef xEncrypter );
 
     bool                HasValidEncrypter() const;
 
@@ -153,7 +153,7 @@ private:
     /** Rewrites correct record length, if different from calculated. */
     void                UpdateRecSize();
     /** Recalculates mnCurrSize and mnSliceSize. */
-    void                UpdateSizeVars( std::size_t nSize );
+    void                UpdateSizeVars( sal_Size nSize );
     /** Writes CONTINUE header, internal setup. */
     void                StartContinue();
     /** Refreshes counter vars, creates CONTINUE records. */
@@ -163,7 +163,7 @@ private:
     sal_uInt16          PrepareWrite();
 
     /** Writes a raw sequence of zero bytes. */
-    void                WriteRawZeroBytes( std::size_t nBytes );
+    void                WriteRawZeroBytes( sal_Size nBytes );
 
 private:
     SvStream&           mrStrm;         /// Reference to the system output stream.
@@ -180,10 +180,10 @@ private:
     sal_uInt16          mnHeaderSize;   /// Record size written in last record header.
     sal_uInt16          mnCurrSize;     /// Count of bytes already written in current record.
     sal_uInt16          mnSliceSize;    /// Count of bytes already written in current slice.
-    std::size_t         mnPredictSize;   /// Predicted size received from calling function.
+    sal_Size            mnPredictSize;   /// Predicted size received from calling function.
 
                         // stream position data
-    std::size_t         mnLastSizePos;  /// Stream position of size field in current header.
+    sal_Size            mnLastSizePos;  /// Stream position of size field in current header.
     bool                mbInRec;        /// true = currently writing inside of a record.
 };
 
@@ -215,8 +215,8 @@ public:
 private:
     void Init( const css::uno::Sequence< css::beans::NamedValue >& aEncryptionData );
 
-    static sal_uInt32 GetBlockPos( std::size_t nStrmPos );
-    static sal_uInt16 GetOffsetInBlock( std::size_t nStrmPos );
+    static sal_uInt32 GetBlockPos( sal_Size nStrmPos );
+    static sal_uInt16 GetOffsetInBlock( sal_Size nStrmPos );
 
 private:
     ::msfilter::MSCodec_Std97 maCodec;      /// Crypto algorithm implementation.
@@ -292,13 +292,13 @@ class XclExpXmlStream : public oox::core::XmlFilterBase
 {
 public:
     XclExpXmlStream( const css::uno::Reference< css::uno::XComponentContext >& rCC, bool bExportVBA );
-    virtual ~XclExpXmlStream() override;
+    virtual ~XclExpXmlStream();
 
     /** Returns the filter root data. */
-    const XclExpRoot& GetRoot() const { return *mpRoot; }
+    inline const XclExpRoot& GetRoot() const { return *mpRoot; }
 
     sax_fastparser::FSHelperPtr& GetCurrentStream();
-    void PushStream( sax_fastparser::FSHelperPtr const & aStream );
+    void PushStream( sax_fastparser::FSHelperPtr aStream );
     void PopStream();
 
     sax_fastparser::FSHelperPtr     GetStreamForPath( const OUString& rPath );
@@ -318,7 +318,10 @@ public:
                                         OUString* pRelationshipId = nullptr );
 
     // ignore
-    virtual bool exportDocument() override;
+    virtual bool exportDocument()
+        throw (css::uno::RuntimeException,
+               css::ucb::ContentCreationException,
+               std::exception) override;
 
     // only needed for import; ignore
     virtual bool importDocument() throw() override;
@@ -358,7 +361,7 @@ public:
 
 private:
     virtual ::oox::ole::VbaProject* implCreateVbaProject() const override;
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
     ScDocShell *getDocShell();
     sax_fastparser::FSHelperPtr&    WriteAttributesInternal( sal_Int32 nAttribute, ... );
 

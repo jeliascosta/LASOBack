@@ -32,29 +32,29 @@ namespace com { namespace sun { namespace star {
     namespace xml { namespace sax { class XAttributeList; } }
     namespace beans { class XPropertySet; }
 } } }
-template<typename EnumT> struct SvXMLEnumMapEntry;
+struct SvXMLEnumMapEntry;
 
 
 // constants for the XMLIndexTemplateContext constructor
 
 // TOC and user defined index:
-extern const SvXMLEnumMapEntry<sal_uInt16> aSvLevelNameTOCMap[];
+extern const SvXMLEnumMapEntry aSvLevelNameTOCMap[];
 extern const sal_Char* aLevelStylePropNameTOCMap[];
 extern const bool aAllowedTokenTypesTOC[];
 extern const bool aAllowedTokenTypesUser[];
 
 // alphabetical index:
-extern const SvXMLEnumMapEntry<sal_uInt16> aLevelNameAlphaMap[];
+extern const SvXMLEnumMapEntry aLevelNameAlphaMap[];
 extern const sal_Char* aLevelStylePropNameAlphaMap[];
 extern const bool aAllowedTokenTypesAlpha[];
 
 // bibliography:
-extern const SvXMLEnumMapEntry<sal_uInt16> aLevelNameBibliographyMap[];
+extern const SvXMLEnumMapEntry aLevelNameBibliographyMap[];
 extern const sal_Char* aLevelStylePropNameBibliographyMap[];
 extern const bool aAllowedTokenTypesBibliography[];
 
 // table, illustration and object tables:
-extern const SvXMLEnumMapEntry<sal_uInt16>* aLevelNameTableMap; // NULL: no outline-level
+extern const SvXMLEnumMapEntry* aLevelNameTableMap; // NULL: no outline-level
 extern const sal_Char* aLevelStylePropNameTableMap[];
 extern const bool aAllowedTokenTypesTable[];
 
@@ -69,7 +69,7 @@ class XMLIndexTemplateContext : public SvXMLImportContext
 
     OUString sStyleName;
 
-    const SvXMLEnumMapEntry<sal_uInt16>* pOutlineLevelNameMap;
+    const SvXMLEnumMapEntry* pOutlineLevelNameMap;
     enum ::xmloff::token::XMLTokenEnum eOutlineLevelAttrName;
     const sal_Char** pOutlineLevelStylePropMap;
     const bool* pAllowedTokenTypesMap;
@@ -83,32 +83,44 @@ class XMLIndexTemplateContext : public SvXMLImportContext
     css::uno::Reference<css::beans::XPropertySet> & rPropertySet;
 
 public:
-    template<typename EnumT>
-    XMLIndexTemplateContext(
-        SvXMLImport& rImport,
-        css::uno::Reference<css::beans::XPropertySet> & rPropSet,
-        sal_uInt16 nPrfx,
-        const OUString& rLocalName,
-        const SvXMLEnumMapEntry<EnumT>* aLevelNameMap,
-        enum ::xmloff::token::XMLTokenEnum eLevelAttrName,
-        const sal_Char** aLevelStylePropNameMap,
-        const bool* aAllowedTokenTypes,
-        bool bTOC_=false)
-        : XMLIndexTemplateContext(rImport,rPropSet,nPrfx,rLocalName,
-                reinterpret_cast<const SvXMLEnumMapEntry<sal_uInt16>*>(aLevelNameMap),
-                eLevelAttrName, aLevelStylePropNameMap, aAllowedTokenTypes, bTOC_) {}
-    XMLIndexTemplateContext(
-        SvXMLImport& rImport,
-        css::uno::Reference<css::beans::XPropertySet> & rPropSet,
-        sal_uInt16 nPrfx,
-        const OUString& rLocalName,
-        const SvXMLEnumMapEntry<sal_uInt16>* aLevelNameMap,
-        enum ::xmloff::token::XMLTokenEnum eLevelAttrName,
-        const sal_Char** aLevelStylePropNameMap,
-        const bool* aAllowedTokenTypes,
-        bool bTOC);
 
-    virtual ~XMLIndexTemplateContext() override;
+    // constants made available to other contexts (template entry
+    // contexts, in particular)
+    const OUString sTokenEntryNumber;
+    const OUString sTokenEntryText;
+    const OUString sTokenTabStop;
+    const OUString sTokenText;
+    const OUString sTokenPageNumber;
+    const OUString sTokenChapterInfo;
+    const OUString sTokenHyperlinkStart;
+    const OUString sTokenHyperlinkEnd;
+    const OUString sTokenBibliographyDataField;
+
+    const OUString sCharacterStyleName;
+    const OUString sTokenType;
+    const OUString sText;
+    const OUString sTabStopRightAligned;
+    const OUString sTabStopPosition;
+    const OUString sTabStopFillCharacter;
+    const OUString sBibliographyDataField;
+    const OUString sChapterFormat;
+    const OUString sChapterLevel;//i53420
+
+    const OUString sLevelFormat;
+
+
+    XMLIndexTemplateContext(
+        SvXMLImport& rImport,
+        css::uno::Reference<css::beans::XPropertySet> & rPropSet,
+        sal_uInt16 nPrfx,
+        const OUString& rLocalName,
+        const SvXMLEnumMapEntry* aLevelNameMap,
+        enum ::xmloff::token::XMLTokenEnum eLevelAttrName,
+        const sal_Char** aLevelStylePropNameMap,
+        const bool* aAllowedTokenTypes,
+        bool bTOC=false);
+
+    virtual ~XMLIndexTemplateContext();
 
     /** add template; to be called by child template entry contexts */
     void addTemplateEntry(

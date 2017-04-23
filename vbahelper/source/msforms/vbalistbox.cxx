@@ -36,7 +36,7 @@ ScVbaListBox::ScVbaListBox( const uno::Reference< XHelperInterface >& xParent, c
 
 // Attributes
 void SAL_CALL
-ScVbaListBox::setListIndex( const uno::Any& _value )
+ScVbaListBox::setListIndex( const uno::Any& _value ) throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nIndex = 0;
     _value >>= nIndex;
@@ -45,7 +45,7 @@ ScVbaListBox::setListIndex( const uno::Any& _value )
 }
 
 uno::Any SAL_CALL
-ScVbaListBox::getListIndex()
+ScVbaListBox::getListIndex() throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< sal_Int16 > sSelection;
     m_xProps->getPropertyValue( "SelectedItems" ) >>= sSelection;
@@ -55,7 +55,7 @@ ScVbaListBox::getListIndex()
 }
 
 uno::Any SAL_CALL
-ScVbaListBox::getValue()
+ScVbaListBox::getValue() throw (uno::RuntimeException, std::exception)
 {
     uno::Sequence< sal_Int16 > sSelection;
     uno::Sequence< OUString > sItems;
@@ -65,12 +65,12 @@ ScVbaListBox::getValue()
         throw uno::RuntimeException( "Attribute use invalid." );
     uno::Any aRet;
     if ( sSelection.getLength() )
-        aRet <<= sItems[ sSelection[ 0 ] ];
+        aRet = uno::makeAny( sItems[ sSelection[ 0 ] ] );
     return aRet;
 }
 
 void SAL_CALL
-ScVbaListBox::setValue( const uno::Any& _value )
+ScVbaListBox::setValue( const uno::Any& _value ) throw (uno::RuntimeException, std::exception)
 {
     if( getMultiSelect() )
     {
@@ -103,7 +103,7 @@ ScVbaListBox::setValue( const uno::Any& _value )
 }
 
 OUString SAL_CALL
-ScVbaListBox::getText()
+ScVbaListBox::getText() throw (uno::RuntimeException, std::exception)
 {
     OUString result;
     getValue() >>= result;
@@ -111,13 +111,13 @@ ScVbaListBox::getText()
 }
 
 void SAL_CALL
-ScVbaListBox::setText( const OUString& _text )
+ScVbaListBox::setText( const OUString& _text ) throw (uno::RuntimeException, std::exception)
 {
     setValue( uno::makeAny( _text ) ); // seems the same
 }
 
 sal_Int32 SAL_CALL
-ScVbaListBox::getMultiSelect()
+ScVbaListBox::getMultiSelect() throw (css::uno::RuntimeException, std::exception)
 {
     bool bMultiSelect = false;
     m_xProps->getPropertyValue( "MultiSelection" ) >>= bMultiSelect;
@@ -126,7 +126,7 @@ ScVbaListBox::getMultiSelect()
 }
 
 void SAL_CALL
-ScVbaListBox::setMultiSelect( sal_Int32 _multiselect )
+ScVbaListBox::setMultiSelect( sal_Int32 _multiselect ) throw (css::uno::RuntimeException, std::exception)
 {
     bool bBoolVal = false;
     switch ( _multiselect )
@@ -147,7 +147,7 @@ ScVbaListBox::setMultiSelect( sal_Int32 _multiselect )
 
 
 css::uno::Any SAL_CALL
-ScVbaListBox::Selected( sal_Int32 index )
+ScVbaListBox::Selected( sal_Int32 index ) throw (css::uno::RuntimeException, std::exception)
 {
     uno::Sequence< OUString > sList;
     m_xProps->getPropertyValue( "StringItemList" ) >>= sList;
@@ -163,19 +163,19 @@ ScVbaListBox::Selected( sal_Int32 index )
 
 // Methods
 void SAL_CALL
-ScVbaListBox::AddItem( const uno::Any& pvargItem, const uno::Any& pvargIndex )
+ScVbaListBox::AddItem( const uno::Any& pvargItem, const uno::Any& pvargIndex ) throw (uno::RuntimeException, std::exception)
 {
     mpListHelper->AddItem( pvargItem, pvargIndex );
         }
 
 void SAL_CALL
-ScVbaListBox::removeItem( const uno::Any& index )
+ScVbaListBox::removeItem( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     mpListHelper->removeItem( index );
 }
 
 void SAL_CALL
-ScVbaListBox::Clear(  )
+ScVbaListBox::Clear(  ) throw (uno::RuntimeException, std::exception)
 {
     mpListHelper->Clear();
 }
@@ -254,25 +254,25 @@ ScVbaListBox::getValueEvent()
 }
 
 void SAL_CALL
-ScVbaListBox::setRowSource( const OUString& _rowsource )
+ScVbaListBox::setRowSource( const OUString& _rowsource ) throw (uno::RuntimeException, std::exception)
 {
     ScVbaControl::setRowSource( _rowsource );
     mpListHelper->setRowSource( _rowsource );
 }
 
 sal_Int32 SAL_CALL
-ScVbaListBox::getListCount()
+ScVbaListBox::getListCount() throw (uno::RuntimeException, std::exception)
 {
     return mpListHelper->getListCount();
 }
 
 uno::Any SAL_CALL
-ScVbaListBox::List( const ::uno::Any& pvargIndex, const uno::Any& pvarColumn )
+ScVbaListBox::List( const ::uno::Any& pvargIndex, const uno::Any& pvarColumn ) throw (uno::RuntimeException, std::exception)
 {
     return mpListHelper->List( pvargIndex, pvarColumn );
 }
 
-uno::Reference< msforms::XNewFont > SAL_CALL ScVbaListBox::getFont()
+uno::Reference< msforms::XNewFont > SAL_CALL ScVbaListBox::getFont() throw (uno::RuntimeException, std::exception)
 {
     return new VbaNewFont( m_xProps );
 }

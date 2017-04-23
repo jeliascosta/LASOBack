@@ -21,6 +21,7 @@
 #define INCLUDED_SVX_SVDPAGV_HXX
 
 #include <com/sun/star/awt/XControlContainer.hpp>
+#include <cppuhelper/implbase4.hxx>
 #include <rtl/ustring.hxx>
 #include <svl/lstner.hxx>
 #include <svx/svdhlpln.hxx>
@@ -28,6 +29,7 @@
 #include <svx/svdtypes.hxx>
 #include <svx/svxdllapi.h>
 
+#include <cppuhelper/implbase3.hxx>
 #include <vector>
 #include <basegfx/polygon/b2dpolypolygon.hxx>
 
@@ -64,8 +66,8 @@ private:
     SdrPage*     mpPage;
     Point        aPgOrg;   // The Page's point of origin
 
-    tools::Rectangle    aMarkBound;
-    tools::Rectangle    aMarkSnap;
+    Rectangle    aMarkBound;
+    Rectangle    aMarkSnap;
     bool         mbHasMarked;
     bool         mbVisible;
 
@@ -91,7 +93,9 @@ private:
     SdrPageWindow* mpPreparedPageWindow;
 
     // interface to SdrPageWindow
+private:
     void ClearPageWindows();
+    void AppendPageWindow(SdrPageWindow& rNew);
     SdrPageWindow* RemovePageWindow(SdrPageWindow& rOld);
 public:
     sal_uInt32 PageWindowCount() const { return maPageWindows.size(); }
@@ -108,6 +112,8 @@ public:
     const SdrPageWindow* FindPatchedPageWindow( const OutputDevice& rOutDev ) const;
 
 private:
+    SVX_DLLPRIVATE void CreateNewPageWindowEntry(SdrPaintWindow& rPaintWindow);
+
     void ImpInvalidateHelpLineArea(sal_uInt16 nNum) const;
 
     void SetLayer(const OUString& rName, SetOfByte& rBS, bool bJa);
@@ -156,17 +162,16 @@ public:
     void PrePaint();
 
     /// @param rReg refers to the OutDev and not to the Page
-    void CompleteRedraw( SdrPaintWindow& rPaintWindow, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector );
+    void CompleteRedraw( SdrPaintWindow& rPaintWindow, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr );
 
     /// Write access to mpPreparedPageWindow
     void setPreparedPageWindow(SdrPageWindow* pKnownTarget);
 
-    void DrawLayer(SdrLayerID nID, OutputDevice* pGivenTarget, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr,
-                   const tools::Rectangle& rRect = tools::Rectangle(),
-                   basegfx::B2IRange const* pPageFrame = nullptr);
-    void DrawPageViewGrid(OutputDevice& rOut, const tools::Rectangle& rRect, Color aColor = Color( COL_BLACK ) );
+    void DrawLayer(SdrLayerID nID, OutputDevice* pGivenTarget = nullptr, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr,
+                   const Rectangle& rRect =  Rectangle());
+    void DrawPageViewGrid(OutputDevice& rOut, const Rectangle& rRect, Color aColor = Color( COL_BLACK ) );
 
-    tools::Rectangle GetPageRect() const;
+    Rectangle GetPageRect() const;
     SdrPage* GetPage() const { return mpPage; }
 
     /// Return current List
@@ -181,22 +186,22 @@ public:
     bool HasMarkedObjPageView() const { return mbHasMarked; }
     void SetHasMarkedObj(bool bOn) { mbHasMarked = bOn; }
 
-    const tools::Rectangle& MarkBound() const { return aMarkBound; }
-    const tools::Rectangle& MarkSnap() const { return aMarkSnap; }
-    tools::Rectangle& MarkBound() { return aMarkBound; }
-    tools::Rectangle& MarkSnap() { return aMarkSnap; }
+    const Rectangle& MarkBound() const { return aMarkBound; }
+    const Rectangle& MarkSnap() const { return aMarkSnap; }
+    Rectangle& MarkBound() { return aMarkBound; }
+    Rectangle& MarkSnap() { return aMarkSnap; }
 
-    void SetLayerVisible(const OUString& rName, bool bShow) {
+    void SetLayerVisible(const OUString& rName, bool bShow = true) {
         SetLayer(rName, aLayerVisi, bShow);
         if(!bShow) AdjHdl();
         InvalidateAllWin();
     }
     bool IsLayerVisible(const OUString& rName) const { return IsLayer(rName, aLayerVisi); }
 
-    void SetLayerLocked(const OUString& rName, bool bLock) { SetLayer(rName, aLayerLock, bLock); if(bLock) AdjHdl(); }
+    void SetLayerLocked(const OUString& rName, bool bLock = true) { SetLayer(rName, aLayerLock, bLock); if(bLock) AdjHdl(); }
     bool IsLayerLocked(const OUString& rName) const { return IsLayer(rName,aLayerLock); }
 
-    void SetLayerPrintable(const OUString& rName, bool bPrn) { SetLayer(rName, aLayerPrn, bPrn); }
+    void SetLayerPrintable(const OUString& rName, bool bPrn = true) { SetLayer(rName, aLayerPrn, bPrn); }
     bool IsLayerPrintable(const OUString& rName) const { return IsLayer(rName, aLayerPrn); }
 
     /// PV represents a RefPage or a SubList of a RefObj, or the Model is ReadOnly
@@ -207,7 +212,7 @@ public:
     void SetPageOrigin(const Point& rOrg);
 
     void LogicToPagePos(Point& rPnt) const { rPnt-=aPgOrg; }
-    void LogicToPagePos(tools::Rectangle& rRect) const { rRect.Move(-aPgOrg.X(),-aPgOrg.Y()); }
+    void LogicToPagePos(Rectangle& rRect) const { rRect.Move(-aPgOrg.X(),-aPgOrg.Y()); }
     void PagePosToLogic(Point& rPnt) const { rPnt+=aPgOrg; }
 
     void SetVisibleLayers(const SetOfByte& rSet) { aLayerVisi=rSet; }
@@ -227,8 +232,13 @@ public:
     /// At least one member must be visible for the Group object and
     /// it must not be locked
     /// @returns
-    ///      true, if the object's layer is visible and not locked
+    //       true, if the object's layer is visible and not locked
     bool IsObjMarkable(SdrObject* pObj) const;
+
+    /// Hmm, selectable is surely the same as markable, now that I
+    /// see this as I look for a place to put it.
+    /// TODO: merge these
+    bool IsObjSelectable(SdrObject *pObj) const;
 
     /// Entering (editing) an object group
     /// After that, we have direct access to all member objects of the group.

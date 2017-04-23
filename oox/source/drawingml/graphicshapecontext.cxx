@@ -23,7 +23,7 @@
 #include <osl/diagnose.h>
 
 #include <drawingml/embeddedwavaudiofile.hxx>
-#include "drawingml/misccontexts.hxx"
+#include "drawingml/fillpropertiesgroupcontext.hxx"
 #include "drawingml/graphicproperties.hxx"
 #include "drawingml/customshapeproperties.hxx"
 #include "drawingml/diagram/diagram.hxx"
@@ -35,7 +35,7 @@
 #include "oox/vml/vmldrawing.hxx"
 #include "oox/vml/vmlshape.hxx"
 #include "oox/vml/vmlshapecontainer.hxx"
-#include "drawingml/fillproperties.hxx"
+#include "oox/drawingml/fillproperties.hxx"
 #include "drawingml/transform2dcontext.hxx"
 #include "oox/helper/binaryinputstream.hxx"
 #include "oox/helper/binaryoutputstream.hxx"
@@ -157,7 +157,7 @@ ContextHandlerRef GraphicalObjectFrameContext::onCreateContext( sal_Int32 aEleme
                 return new table::TableContext( *this, mpShapePtr );
             else
             {
-                SAL_WARN("oox.drawingml", "OOX: Ignore graphicsData of :" << sUri );
+                SAL_WARN("oox", "OOX: Ignore graphicsData of :" << sUri );
                 return nullptr;
             }
         }
@@ -263,12 +263,14 @@ ContextHandlerRef DiagramGraphicDataContext::onCreateContext( ::sal_Int32 aEleme
                     getFragmentPathFromRelId( msLo ),
                     getFragmentPathFromRelId( msQs ),
                     getFragmentPathFromRelId( msCs ));
-        SAL_INFO("oox.drawingml", "DiagramGraphicDataContext::onCreateContext: added shape " << mpShapePtr->getName()
+        SAL_INFO("oox.drawingml", OSL_THIS_FUNC
+                 << "diagram added shape " << mpShapePtr->getName()
                  << " of type " << mpShapePtr->getServiceName()
-                 << ", position: " << mpShapePtr->getPosition().X
+                 << ", size (" << mpShapePtr->getPosition().X
                  << "," << mpShapePtr->getPosition().Y
-                 << ", size: " << mpShapePtr->getSize().Width
-                 << "x" << mpShapePtr->getSize().Height);
+                 << "," << mpShapePtr->getSize().Width
+                 << "," << mpShapePtr->getSize().Height
+                 <<")");
 
         // No DrawingML fallback, need to warn the user at the end.
         if (mpShapePtr->getExtDrawings().empty())

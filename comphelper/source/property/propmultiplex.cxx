@@ -31,12 +31,13 @@ using namespace ::com::sun::star::beans;
 
 OPropertyChangeListener::~OPropertyChangeListener()
 {
-    if (m_xAdapter.is())
-        m_xAdapter->dispose();
+    if (m_pAdapter)
+        m_pAdapter->dispose();
 }
 
 
 void OPropertyChangeListener::_disposing(const EventObject&)
+    throw (RuntimeException, std::exception)
 {
     // nothing to do here
 }
@@ -44,18 +45,29 @@ void OPropertyChangeListener::_disposing(const EventObject&)
 
 void OPropertyChangeListener::disposeAdapter()
 {
-    if ( m_xAdapter.is() )
-        m_xAdapter->dispose();
+    if ( m_pAdapter )
+        m_pAdapter->dispose();
 
     // will automatically set a new adapter
-    OSL_ENSURE( !m_xAdapter.is(), "OPropertyChangeListener::disposeAdapter: what did dispose do?" );
+    OSL_ENSURE( !m_pAdapter, "OPropertyChangeListener::disposeAdapter: what did dispose do?" );
 }
 
 
 void OPropertyChangeListener::setAdapter(OPropertyChangeMultiplexer* pAdapter)
 {
-    ::osl::MutexGuard aGuard(m_rMutex);
-    m_xAdapter = pAdapter;
+    if (m_pAdapter)
+    {
+        ::osl::MutexGuard aGuard(m_rMutex);
+        m_pAdapter->release();
+        m_pAdapter = nullptr;
+    }
+
+    if (pAdapter)
+    {
+        ::osl::MutexGuard aGuard(m_rMutex);
+        m_pAdapter = pAdapter;
+        m_pAdapter->acquire();
+    }
 }
 
 OPropertyChangeMultiplexer::OPropertyChangeMultiplexer(OPropertyChangeListener* _pListener, const  Reference< XPropertySet>& _rxSet, bool _bAutoReleaseSet)
@@ -107,7 +119,7 @@ void OPropertyChangeMultiplexer::dispose()
 
 // XEventListener
 
-void SAL_CALL OPropertyChangeMultiplexer::disposing( const  EventObject& _rSource)
+void SAL_CALL OPropertyChangeMultiplexer::disposing( const  EventObject& _rSource) throw( RuntimeException, std::exception)
 {
     if (m_pListener)
     {
@@ -128,7 +140,7 @@ void SAL_CALL OPropertyChangeMultiplexer::disposing( const  EventObject& _rSourc
 
 // XPropertyChangeListener
 
-void SAL_CALL OPropertyChangeMultiplexer::propertyChange( const  PropertyChangeEvent& _rEvent )
+void SAL_CALL OPropertyChangeMultiplexer::propertyChange( const  PropertyChangeEvent& _rEvent ) throw( RuntimeException, std::exception)
 {
     if (m_pListener && !locked())
         m_pListener->_propertyChanged(_rEvent);

@@ -74,7 +74,7 @@ private:
 public:
     DlgEdHint (Kind);
     DlgEdHint (Kind, DlgEdObj* pObj);
-    virtual ~DlgEdHint() override;
+    virtual ~DlgEdHint();
 
     Kind       GetKind() const { return eKind; }
     DlgEdObj*  GetObject() const { return pDlgEdObj; }
@@ -102,7 +102,7 @@ public:
     };
 
 private:
-    DECL_LINK(MarkTimeout, Timer *, void);
+    DECL_LINK_TYPED(MarkTimeout, Idle *, void);
 
     static void Print( Printer* pPrinter, const OUString& rTitle );
 
@@ -126,8 +126,10 @@ private:
     sal_uInt16          eActObj;
     bool                bFirstDraw;
     Size                aGridSize;
+    bool                bGridVisible;
+    bool                bGridSnap;
     bool                bCreateOK;
-    tools::Rectangle           aPaintRect;
+    Rectangle           aPaintRect;
     bool                bDialogModelChanged;
     Idle                aMarkIdle;
     long                mnPaintGuard;
@@ -137,9 +139,9 @@ public:
     DlgEditor (
         vcl::Window&, DialogWindowLayout&,
         css::uno::Reference<css::frame::XModel> const& xModel,
-        css::uno::Reference<css::container::XNameContainer> const & xDialogModel
+        css::uno::Reference<css::container::XNameContainer> xDialogModel
     );
-    virtual ~DlgEditor() override;
+    virtual ~DlgEditor();
 
     vcl::Window& GetWindow() const { return rWindow; }
 
@@ -147,7 +149,7 @@ public:
         @see GetWindow
         @see SetWindow
     */
-    css::uno::Reference< css::awt::XControlContainer > const &
+    css::uno::Reference< css::awt::XControlContainer >
                     GetWindowControlContainer();
 
     void            SetScrollBars( ScrollBar* pHScroll, ScrollBar* pVScroll );
@@ -181,11 +183,12 @@ public:
     void            MouseButtonDown( const MouseEvent& rMEvt );
     void            MouseButtonUp( const MouseEvent& rMEvt );
     void            MouseMove( const MouseEvent& rMEvt );
-    void            Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+    void            Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
     bool            KeyInput( const KeyEvent& rKEvt );
 
     void            SetMode (Mode eMode);
     void            SetInsertObj( sal_uInt16 eObj );
+    sal_uInt16      GetInsertObj() const { return eActObj;}
     void            CreateDefaultObject();
     Mode            GetMode() const { return eMode; }
     bool            IsCreateOK() const { return bCreateOK; }

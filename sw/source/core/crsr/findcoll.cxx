@@ -35,11 +35,11 @@ struct SwFindParaFormatColl : public SwFindParas
         : pFormatColl( &rFormatColl ), pReplColl( pRpColl )
     {}
     virtual ~SwFindParaFormatColl() {}
-    virtual int Find( SwPaM* , SwMoveFnCollection const & , const SwPaM*, bool bInReadOnly ) override;
+    virtual int Find( SwPaM* , SwMoveFn , const SwPaM*, bool bInReadOnly ) override;
     virtual bool IsReplaceMode() const override;
 };
 
-int SwFindParaFormatColl::Find( SwPaM* pCursor, SwMoveFnCollection const & fnMove, const SwPaM* pRegion,
+int SwFindParaFormatColl::Find( SwPaM* pCursor, SwMoveFn fnMove, const SwPaM* pRegion,
                              bool bInReadOnly )
 {
     int nRet = FIND_FOUND;
@@ -80,7 +80,7 @@ sal_uLong SwCursor::Find( const SwTextFormatColl& rFormatColl, SwDocPositions nS
         aRewriter.AddRule(UndoArg2, SW_RES(STR_YIELDS));
         aRewriter.AddRule(UndoArg3, pReplFormatColl->GetName());
 
-        pDoc->GetIDocumentUndoRedo().StartUndo( SwUndoId::UI_REPLACE_STYLE,
+        pDoc->GetIDocumentUndoRedo().StartUndo( UNDO_UI_REPLACE_STYLE,
                 &aRewriter );
     }
 
@@ -94,7 +94,7 @@ sal_uLong SwCursor::Find( const SwTextFormatColl& rFormatColl, SwDocPositions nS
 
     if (bStartUndo)
     {
-        pDoc->GetIDocumentUndoRedo().EndUndo(SwUndoId::END, nullptr);
+        pDoc->GetIDocumentUndoRedo().EndUndo(UNDO_END, nullptr);
     }
     return nRet;
 }

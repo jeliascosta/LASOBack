@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- tab-width: 4; indent-tabs-mode: nil; py-indent-offset: 4 -*-
+# -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,10 +13,9 @@ def detect_platform():
     return platform.system()
 
 def main():
-    if len(sys.argv) < 4:
+    if len(sys.argv) != 4:
         print(sys.argv)
         print("Invalid number of parameters")
-        print("Usage: upload-symbols.py symbols.zip config.ini \"long explanation\" [--system]")
         sys.exit(1)
 
     upload_url = "http://crashreport.libreoffice.org/upload/"
@@ -31,9 +30,6 @@ def main():
     platform = detect_platform()
     files = {'symbols': open(sys.argv[1], 'rb')}
     data = {'version': sys.argv[3], 'platform': platform}
-
-    if len(sys.argv) > 4 and sys.argv[4] == "--system":
-        data['system'] = True
 
     session = requests.session()
     session.get(login_url)
@@ -50,4 +46,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# vim: set shiftwidth=4 softtabstop=4 expandtab:
+# vim:set shiftwidth=4 softtabstop=4 expandtab: */

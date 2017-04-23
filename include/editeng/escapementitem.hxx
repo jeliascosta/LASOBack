@@ -54,8 +54,8 @@ public:
     // "pure virtual Methods" from SfxPoolItem
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    MapUnit eCoreMetric,
-                                    MapUnit ePresMetric,
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
                                     OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
@@ -65,15 +65,15 @@ public:
     virtual SfxPoolItem*     Create(SvStream &, sal_uInt16) const override;
     virtual SvStream&        Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
-    void SetEscapement( const SvxEscapement eNew )
+    inline void SetEscapement( const SvxEscapement eNew )
     {
-        if( SvxEscapement::Off == eNew )
+        if( SVX_ESCAPEMENT_OFF == eNew )
         {
             nEsc = 0;
             nProp = 100;
         }
         else
-            if( SvxEscapement::Superscript == eNew )
+            if( SVX_ESCAPEMENT_SUPERSCRIPT == eNew )
             {
                 nEsc = DFLT_ESC_SUPER;
                 nProp = DFLT_ESC_PROP;
@@ -84,15 +84,15 @@ public:
                 nProp = DFLT_ESC_PROP;
             }
     }
-    SvxEscapement GetEscapement() const { return static_cast< SvxEscapement >( GetEnumValue() ); }
+    inline SvxEscapement GetEscapement() const { return static_cast< SvxEscapement >( GetEnumValue() ); }
 
-    short &GetEsc() { return nEsc; }
-    short GetEsc() const { return nEsc; }
+    inline short &GetEsc() { return nEsc; }
+    inline short GetEsc() const { return nEsc; }
 
-    sal_uInt8 &GetProportionalHeight() { return nProp; }
-    sal_uInt8  GetProportionalHeight() const { return nProp; }
+    inline sal_uInt8 &GetProportionalHeight() { return nProp; }
+    inline sal_uInt8  GetProportionalHeight() const { return nProp; }
 
-    SvxEscapementItem& operator=(const SvxEscapementItem& rEsc)
+    inline SvxEscapementItem& operator=(const SvxEscapementItem& rEsc)
         {
             nEsc  = rEsc.GetEsc();
             nProp = rEsc.GetProportionalHeight();

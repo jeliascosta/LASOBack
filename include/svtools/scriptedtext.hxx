@@ -35,7 +35,7 @@ class Point;
 /**
 This class provides drawing text with different script types on any output devices.
 */
-class SVT_DLLPUBLIC SvtScriptedTextHelper final
+class SVT_DLLPUBLIC SvtScriptedTextHelper
 {
 private:
     std::unique_ptr<SvtScriptedTextHelper_Impl> mpImpl;             /// Implementation of class functionality.
@@ -53,7 +53,7 @@ public:
                                     const SvtScriptedTextHelper& _rCopy );
 
                                 /** Destructor. */
-                                ~SvtScriptedTextHelper();
+    virtual                     ~SvtScriptedTextHelper();
 
                                 /** Sets new fonts and recalculates the text width.
                                     @param  _pLatinFont

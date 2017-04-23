@@ -36,7 +36,7 @@ public:
     VAxisBase( sal_Int32 nDimensionIndex, sal_Int32 nDimensionCount
            , const AxisProperties& rAxisProperties
            , const css::uno::Reference< css::util::XNumberFormatsSupplier >& xNumberFormatsSupplier );
-    virtual ~VAxisBase() override;
+    virtual ~VAxisBase();
 
     /**
      * Return the number of dimensions the diagram has.  2 for x and y, and 3
@@ -55,7 +55,8 @@ public:
 
     virtual void setExplicitScaleAndIncrement(
             const ExplicitScaleData& rScale
-          , const ExplicitIncrementData& rIncrement ) override;
+          , const ExplicitIncrementData& rIncrement )
+                throw (css::uno::RuntimeException) override;
 
     virtual sal_Int32 estimateMaximumAutoMainIncrementCount();
     virtual void createAllTickInfos( TickInfoArraysType& rAllTickInfos );

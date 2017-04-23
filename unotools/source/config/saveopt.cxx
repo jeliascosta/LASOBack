@@ -97,6 +97,7 @@ class SvtSaveOptions_Impl : public utl::ConfigItem
 
 public:
                             SvtSaveOptions_Impl();
+                            virtual ~SvtSaveOptions_Impl();
 
     virtual void            Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 
@@ -283,50 +284,59 @@ bool SvtSaveOptions_Impl::IsReadOnly( SvtSaveOptions::EOption eOption ) const
     bool bReadOnly = CFG_READONLY_DEFAULT;
     switch(eOption)
     {
-        case SvtSaveOptions::EOption::AutoSaveTime :
+        case SvtSaveOptions::E_AUTOSAVETIME :
             bReadOnly = bROAutoSaveTime;
             break;
-        case SvtSaveOptions::EOption::UseUserData :
+        case SvtSaveOptions::E_USEUSERDATA :
             bReadOnly = bROUseUserData;
             break;
-        case SvtSaveOptions::EOption::Backup :
+        case SvtSaveOptions::E_BACKUP :
             bReadOnly = bROBackup;
             break;
-        case SvtSaveOptions::EOption::AutoSave :
+        case SvtSaveOptions::E_AUTOSAVE :
             bReadOnly = bROAutoSave;
             break;
-        case SvtSaveOptions::EOption::AutoSavePrompt :
+        case SvtSaveOptions::E_AUTOSAVEPROMPT :
             bReadOnly = bROAutoSavePrompt;
             break;
-        case SvtSaveOptions::EOption::UserAutoSave :
+        case SvtSaveOptions::E_USERAUTOSAVE :
             bReadOnly = bROUserAutoSave;
             break;
-        case SvtSaveOptions::EOption::DocInfSave :
+        case SvtSaveOptions::E_DOCINFSAVE :
             bReadOnly = bRODocInfSave;
             break;
-        case SvtSaveOptions::EOption::SaveWorkingSet :
+        case SvtSaveOptions::E_SAVEWORKINGSET :
             bReadOnly = bROSaveWorkingSet;
             break;
-        case SvtSaveOptions::EOption::SaveDocView :
+        case SvtSaveOptions::E_SAVEDOCVIEW :
             bReadOnly = bROSaveDocView;
             break;
-        case SvtSaveOptions::EOption::SaveRelInet :
+        case SvtSaveOptions::E_SAVERELINET :
             bReadOnly = bROSaveRelINet;
             break;
-        case SvtSaveOptions::EOption::SaveRelFsys :
+        case SvtSaveOptions::E_SAVERELFSYS :
             bReadOnly = bROSaveRelFSys;
             break;
-        case SvtSaveOptions::EOption::DoPrettyPrinting :
+        case SvtSaveOptions::E_SAVEUNPACKED :
+            bReadOnly = bROSaveUnpacked;
+            break;
+        case SvtSaveOptions::E_DOPRETTYPRINTING :
             bReadOnly = bRODoPrettyPrinting;
             break;
-        case SvtSaveOptions::EOption::WarnAlienFormat :
+        case SvtSaveOptions::E_WARNALIENFORMAT :
             bReadOnly = bROWarnAlienFormat;
             break;
-        case SvtSaveOptions::EOption::LoadDocPrinter :
+        case SvtSaveOptions::E_LOADDOCPRINTER :
             bReadOnly = bROLoadDocPrinter;
             break;
-        case SvtSaveOptions::EOption::OdfDefaultVersion :
+        case SvtSaveOptions::E_ODFDEFAULTVERSION :
             bReadOnly = bROLoadDocPrinter;
+            break;
+        case SvtSaveOptions::E_USESHA1INODF12:
+            bReadOnly = bROUseSHA1InODF12;
+            break;
+        case SvtSaveOptions::E_USEBLOWFISHINODF12:
+            bReadOnly = bROUseBlowfishInODF12;
             break;
     }
     return bReadOnly;
@@ -385,7 +395,7 @@ Sequence< OUString > GetPropertyNames()
 }
 
 SvtSaveOptions_Impl::SvtSaveOptions_Impl()
-    : ConfigItem( "Office.Common/Save" )
+    : ConfigItem( OUString("Office.Common/Save") )
     , nAutoSaveTime( 0 )
     , bUseUserData( false )
     , bBackup( false )
@@ -570,6 +580,9 @@ SvtSaveOptions_Impl::SvtSaveOptions_Impl()
         bUserAutoSave = false;
     }
 }
+
+SvtSaveOptions_Impl::~SvtSaveOptions_Impl()
+{}
 
 void SvtSaveOptions_Impl::ImplCommit()
 {
@@ -757,6 +770,7 @@ private:
 
 public:
                             SvtLoadOptions_Impl();
+                            virtual ~SvtLoadOptions_Impl();
 
     virtual void            Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 
@@ -767,7 +781,7 @@ public:
 const sal_Char cUserDefinedSettings[] = "UserDefinedSettings";
 
 SvtLoadOptions_Impl::SvtLoadOptions_Impl()
-    : ConfigItem( "Office.Common/Load" )
+    : ConfigItem( OUString("Office.Common/Load") )
     , bLoadUserDefinedSettings( false )
 {
     Sequence< OUString > aNames { cUserDefinedSettings };
@@ -775,7 +789,12 @@ SvtLoadOptions_Impl::SvtLoadOptions_Impl()
     EnableNotification( aNames );
     const Any* pValues = aValues.getConstArray();
     DBG_ASSERT( aValues.getLength() == aNames.getLength(), "GetProperties failed" );
-    pValues[0] >>= bLoadUserDefinedSettings;
+    if (pValues[0].getValueTypeClass() == css::uno::TypeClass_BOOLEAN)
+         bLoadUserDefinedSettings = *static_cast<sal_Bool const *>(pValues[0].getValue());
+}
+
+SvtLoadOptions_Impl::~SvtLoadOptions_Impl()
+{
 }
 
 void SvtLoadOptions_Impl::ImplCommit()
@@ -806,7 +825,7 @@ SvtSaveOptions::SvtSaveOptions()
         pOptions->pSaveOpt = new SvtSaveOptions_Impl;
         pOptions->pLoadOpt = new SvtLoadOptions_Impl;
 
-        ItemHolder1::holdConfigItem(EItem::SaveOptions);
+        ItemHolder1::holdConfigItem(E_SAVEOPTIONS);
    }
    ++nRefCount;
     pImp = pOptions;

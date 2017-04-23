@@ -96,7 +96,7 @@ void OStatement_BASE2::disposing()
 
 void SAL_CALL OStatement_BASE2::release() throw()
 {
-    release_ChildImpl();
+    relase_ChildImpl();
 }
 
 Any SAL_CALL OStatement_Base::queryInterface( const Type & rType ) throw(RuntimeException)

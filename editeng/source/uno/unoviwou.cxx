@@ -41,7 +41,7 @@ SvxDrawOutlinerViewForwarder::~SvxDrawOutlinerViewForwarder()
 Point SvxDrawOutlinerViewForwarder::GetTextOffset() const
 {
     // calc text offset from shape anchor
-    tools::Rectangle aOutputRect( mrOutlinerView.GetOutputArea() );
+    Rectangle aOutputRect( mrOutlinerView.GetOutputArea() );
 
     return aOutputRect.TopLeft() - maTextShapeTopLeft;
 }
@@ -51,13 +51,13 @@ bool SvxDrawOutlinerViewForwarder::IsValid() const
     return true;
 }
 
-tools::Rectangle SvxDrawOutlinerViewForwarder::GetVisArea() const
+Rectangle SvxDrawOutlinerViewForwarder::GetVisArea() const
 {
     OutputDevice* pOutDev = mrOutlinerView.GetWindow();
 
     if( pOutDev )
     {
-        tools::Rectangle aVisArea = mrOutlinerView.GetVisArea();
+        Rectangle aVisArea = mrOutlinerView.GetVisArea();
 
         Point aTextOffset( GetTextOffset() );
         aVisArea.Move( aTextOffset.X(), aTextOffset.Y() );
@@ -76,7 +76,7 @@ tools::Rectangle SvxDrawOutlinerViewForwarder::GetVisArea() const
         }
     }
 
-    return tools::Rectangle();
+    return Rectangle();
 }
 
 Point SvxDrawOutlinerViewForwarder::LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const

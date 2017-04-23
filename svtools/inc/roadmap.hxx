@@ -24,7 +24,6 @@
 #include <vcl/imgctrl.hxx>
 
 #include <svtools/hyperlabel.hxx>
-#include <memory>
 
 class Bitmap;
 
@@ -44,14 +43,14 @@ class RoadmapItem;
 class SVT_DLLPUBLIC ORoadmap : public Control, public RoadmapTypes
 {
 protected:
-    std::unique_ptr<RoadmapImpl>    m_pImpl;
+    RoadmapImpl*    m_pImpl;
     // Window overridables
-    void            Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect) override;
+    void            Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect) override;
     void            implInit(vcl::RenderContext& rRenderContext);
 
 public:
-    ORoadmap( vcl::Window* _pParent, WinBits _nWinStyle );
-    virtual ~ORoadmap( ) override;
+    ORoadmap( vcl::Window* _pParent, WinBits _nWinStyle = 0 );
+    virtual ~ORoadmap( );
     virtual void dispose() override;
 
     void            SetRoadmapBitmap( const BitmapEx& maBitmap );
@@ -70,7 +69,7 @@ public:
     ItemIndex       GetItemCount() const;
     ItemId          GetItemID( ItemIndex _nIndex ) const;
 
-    void            InsertRoadmapItem( ItemIndex Index, const OUString& RoadmapItem, ItemId _nUniqueId, bool _bEnabled );
+    void            InsertRoadmapItem( ItemIndex Index, const OUString& RoadmapItem, ItemId _nUniqueId, bool _bEnabled = true );
     void            ReplaceRoadmapItem( ItemIndex Index, const OUString& RoadmapItem, ItemId _nUniqueId, bool _bEnabled );
     void            DeleteRoadmapItem( ItemIndex _nIndex );
 
@@ -91,7 +90,7 @@ protected:
     void    Select();
 
 private:
-    DECL_LINK(ImplClickHdl, HyperLabel*, void);
+    DECL_LINK_TYPED(ImplClickHdl, HyperLabel*, void);
 
     RoadmapItem*         GetByIndex( ItemIndex _nItemIndex );
     const RoadmapItem*   GetByIndex( ItemIndex _nItemIndex ) const;

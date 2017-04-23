@@ -57,28 +57,33 @@ class ObjectMenuController :  public svt::PopupMenuControllerBase
 
 public:
     explicit ObjectMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext );
+    virtual ~ObjectMenuController();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.framework.ObjectMenuController");
     }
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override
+    virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override
     {
-        return {"com.sun.star.frame.PopupMenuController"};
+        css::uno::Sequence< OUString > aSeq { "com.sun.star.frame.PopupMenuController" };
+        return aSeq;
     }
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
 
 private:
     void fillPopupMenu( const css::uno::Sequence< css::embed::VerbDescriptor >& rVerbCommandSeq, css::uno::Reference< css::awt::XPopupMenu >& rPopupMenu );
@@ -88,6 +93,10 @@ private:
 
 ObjectMenuController::ObjectMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext ) :
     svt::PopupMenuControllerBase( xContext )
+{
+}
+
+ObjectMenuController::~ObjectMenuController()
 {
 }
 
@@ -124,7 +133,7 @@ void ObjectMenuController::fillPopupMenu( const Sequence< css::embed::VerbDescri
 }
 
 // XEventListener
-void SAL_CALL ObjectMenuController::disposing( const EventObject& )
+void SAL_CALL ObjectMenuController::disposing( const EventObject& ) throw ( RuntimeException, std::exception )
 {
     Reference< css::awt::XMenuListener > xHolder(static_cast<OWeakObject *>(this), UNO_QUERY );
 
@@ -139,7 +148,7 @@ void SAL_CALL ObjectMenuController::disposing( const EventObject& )
 }
 
 // XStatusListener
-void SAL_CALL ObjectMenuController::statusChanged( const FeatureStateEvent& Event )
+void SAL_CALL ObjectMenuController::statusChanged( const FeatureStateEvent& Event ) throw ( RuntimeException, std::exception )
 {
     Sequence < css::embed::VerbDescriptor > aVerbCommandSeq;
     if ( Event.State >>= aVerbCommandSeq )

@@ -84,6 +84,7 @@ uno::Reference< awt::XWindow > ProgressBarWrapper::getStatusBar() const
 
 // wrapped methods of css::task::XStatusIndicator
 void ProgressBarWrapper::start( const OUString& Text, ::sal_Int32 Range )
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xWindow;
     sal_Int32                      nValue( 0 );
@@ -103,10 +104,10 @@ void ProgressBarWrapper::start( const OUString& Text, ::sal_Int32 Range )
     if ( xWindow.is() )
     {
         SolarMutexGuard aSolarMutexGuard;
-        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
-        if ( pWindow && pWindow->GetType() == WindowType::STATUSBAR )
+        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        if ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR )
         {
-            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow.get());
+            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow);
             if ( !pStatusBar->IsProgressMode() )
                 pStatusBar->StartProgressMode( Text );
             else
@@ -123,6 +124,7 @@ void ProgressBarWrapper::start( const OUString& Text, ::sal_Int32 Range )
 }
 
 void ProgressBarWrapper::end()
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xWindow;
 
@@ -140,10 +142,10 @@ void ProgressBarWrapper::end()
     if ( xWindow.is() )
     {
         SolarMutexGuard aSolarMutexGuard;
-        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
-        if ( pWindow && pWindow->GetType() == WindowType::STATUSBAR )
+        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        if ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR )
         {
-            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow.get());
+            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow);
             if ( pStatusBar->IsProgressMode() )
                 pStatusBar->EndProgressMode();
         }
@@ -151,6 +153,7 @@ void ProgressBarWrapper::end()
 }
 
 void ProgressBarWrapper::setText( const OUString& Text )
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xWindow;
     sal_Int32 nValue( 0 );
@@ -169,10 +172,10 @@ void ProgressBarWrapper::setText( const OUString& Text )
     if ( xWindow.is() )
     {
         SolarMutexGuard aSolarMutexGuard;
-        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
-        if ( pWindow && pWindow->GetType() == WindowType::STATUSBAR )
+        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        if ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR )
         {
-            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow.get());
+            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow);
             if( pStatusBar->IsProgressMode() )
             {
                 pStatusBar->SetUpdateMode( false );
@@ -188,6 +191,7 @@ void ProgressBarWrapper::setText( const OUString& Text )
 }
 
 void ProgressBarWrapper::setValue( ::sal_Int32 nValue )
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< awt::XWindow > xWindow;
     OUString aText;
@@ -221,10 +225,10 @@ void ProgressBarWrapper::setValue( ::sal_Int32 nValue )
     if ( xWindow.is() && bSetValue )
     {
         SolarMutexGuard aSolarMutexGuard;
-        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
-        if ( pWindow && pWindow->GetType() == WindowType::STATUSBAR )
+        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        if ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR )
         {
-            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow.get());
+            StatusBar* pStatusBar = static_cast<StatusBar *>(pWindow);
             if ( !pStatusBar->IsProgressMode() )
                 pStatusBar->StartProgressMode( aText );
             pStatusBar->SetProgressValue( sal_uInt16( nValue ));
@@ -233,6 +237,7 @@ void ProgressBarWrapper::setValue( ::sal_Int32 nValue )
 }
 
 void ProgressBarWrapper::reset()
+    throw (uno::RuntimeException, std::exception)
 {
     setText( OUString() );
     setValue( 0 );
@@ -240,18 +245,21 @@ void ProgressBarWrapper::reset()
 
 // XInitialization
 void SAL_CALL ProgressBarWrapper::initialize( const uno::Sequence< uno::Any >& )
+throw (uno::Exception, uno::RuntimeException, std::exception)
 {
     // dummy - do nothing
 }
 
 // XUpdatable
 void SAL_CALL ProgressBarWrapper::update()
+throw (uno::RuntimeException, std::exception)
 {
     // dummy - do nothing
 }
 
 // XComponent
 void SAL_CALL ProgressBarWrapper::dispose()
+throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< lang::XComponent > xThis(
         static_cast< cppu::OWeakObject* >(this),
@@ -289,6 +297,7 @@ void SAL_CALL ProgressBarWrapper::dispose()
 
 // XUIElement
 uno::Reference< uno::XInterface > SAL_CALL ProgressBarWrapper::getRealInterface()
+throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 

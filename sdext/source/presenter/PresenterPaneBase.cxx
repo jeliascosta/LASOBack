@@ -56,6 +56,7 @@ PresenterPaneBase::PresenterPaneBase (
       msTitle(),
       mxComponentContext(rxContext),
       mpViewBackground(),
+      mbHasCallout(false),
       maCalloutAnchor()
 {
     if (mpPresenterController.get() != nullptr)
@@ -126,6 +127,35 @@ const Reference<drawing::framework::XPaneBorderPainter>&
     return mxBorderPainter;
 }
 
+void PresenterPaneBase::SetCalloutAnchor (const css::awt::Point& rCalloutAnchor)
+{
+    mbHasCallout = true;
+    // Anchor is given in the coordinate system of the parent window.
+    // Transform it into the local coordinate system.
+    maCalloutAnchor = rCalloutAnchor;
+    const awt::Rectangle aBorderBox (mxBorderWindow->getPosSize());
+    maCalloutAnchor.X -= aBorderBox.X;
+    maCalloutAnchor.Y -= aBorderBox.Y;
+
+    // Move the bottom of the border window so that it goes through the
+    // callout anchor (special case for bottom callout).
+    sal_Int32 nHeight (rCalloutAnchor.Y - aBorderBox.Y);
+    if (mxBorderPainter.is() && mxPaneId.is())
+        nHeight += mxBorderPainter->getCalloutOffset(mxPaneId->getResourceURL()).Y;
+
+    if (nHeight != aBorderBox.Height)
+    {
+        mxBorderWindow->setPosSize(
+            aBorderBox.X,
+            aBorderBox.Y,
+            aBorderBox.Width,
+            nHeight,
+            awt::PosSize::HEIGHT);
+    }
+
+    mpPresenterController->GetPaintManager()->Invalidate(mxBorderWindow);
+}
+
 const awt::Point& PresenterPaneBase::GetCalloutAnchor() const
 {
     return maCalloutAnchor;
@@ -134,6 +164,7 @@ const awt::Point& PresenterPaneBase::GetCalloutAnchor() const
 //----- XInitialization -------------------------------------------------------
 
 void SAL_CALL PresenterPaneBase::initialize (const Sequence<Any>& rArguments)
+    throw (Exception, RuntimeException, std::exception)
 {
     ThrowIfDisposed();
 
@@ -230,12 +261,14 @@ void SAL_CALL PresenterPaneBase::initialize (const Sequence<Any>& rArguments)
 //----- XResourceId -----------------------------------------------------------
 
 Reference<XResourceId> SAL_CALL PresenterPaneBase::getResourceId()
+    throw (RuntimeException, std::exception)
 {
     ThrowIfDisposed();
     return mxPaneId;
 }
 
 sal_Bool SAL_CALL PresenterPaneBase::isAnchorOnly()
+    throw (RuntimeException, std::exception)
 {
     return true;
 }
@@ -243,24 +276,28 @@ sal_Bool SAL_CALL PresenterPaneBase::isAnchorOnly()
 //----- XWindowListener -------------------------------------------------------
 
 void SAL_CALL PresenterPaneBase::windowResized (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterPaneBase::windowMoved (const awt::WindowEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterPaneBase::windowShown (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
 }
 
 void SAL_CALL PresenterPaneBase::windowHidden (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     (void)rEvent;
     ThrowIfDisposed();
@@ -269,6 +306,7 @@ void SAL_CALL PresenterPaneBase::windowHidden (const lang::EventObject& rEvent)
 //----- lang::XEventListener --------------------------------------------------
 
 void SAL_CALL PresenterPaneBase::disposing (const lang::EventObject& rEvent)
+    throw (RuntimeException, std::exception)
 {
     if (rEvent.Source == mxBorderWindow)
     {
@@ -354,7 +392,16 @@ void PresenterPaneBase::PaintBorder (const awt::Rectangle& rUpdateBox)
 
         PaintBorderBackground(aLocalBorderBox, rUpdateBox);
 
-        mxBorderPainter->paintBorder(
+        if (mbHasCallout)
+            mxBorderPainter->paintBorderWithCallout(
+                mxPaneId->getResourceURL(),
+                mxBorderCanvas,
+                aLocalBorderBox,
+                rUpdateBox,
+                msTitle,
+                maCalloutAnchor);
+        else
+            mxBorderPainter->paintBorder(
                 mxPaneId->getResourceURL(),
                 mxBorderCanvas,
                 aLocalBorderBox,
@@ -394,6 +441,7 @@ bool PresenterPaneBase::IsVisible() const
 }
 
 void PresenterPaneBase::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
 {
     if (rBHelper.bDisposed || rBHelper.bInDispose)
     {

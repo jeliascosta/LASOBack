@@ -313,7 +313,7 @@ namespace canvas
 
             @param i_rxCanvas
             Input parameter, the canvas representation for which the device information
-            is to be retrieved
+            is to be retrieveds
 
             @param o_rxParams
             Output parameter, the sequence of Anys that hold the device parameters. Layout is as described above
@@ -377,7 +377,7 @@ namespace canvas
                 ( arg>TargetLimits::max() ) )                               // overflow will happen
             {
 # if OSL_DEBUG_LEVEL > 2
-                SAL_WARN("canvas", "numeric_cast detected data loss");
+                OSL_TRACE("numeric_cast detected data loss");
 #endif
                 throw css::uno::RuntimeException(
                     "numeric_cast detected data loss",
@@ -460,7 +460,9 @@ namespace canvas
                 if( !mbCaseSensitive &&
                     aStr != aStr.toAsciiLowerCase() )
                 {
-                    SAL_WARN("canvas", "ValueMap::ValueMap(): Key is not lowercase " << pMap->maKey);
+                    OSL_TRACE("ValueMap::ValueMap(): Key %s is not lowercase",
+                              pMap->maKey);
+                    OSL_FAIL( "ValueMap::ValueMap(): Key is not lowercase" );
                 }
 
                 if( mnEntries > 1 )
@@ -470,8 +472,9 @@ namespace canvas
                         if( !mapComparator(pMap[0], pMap[1]) &&
                             mapComparator(pMap[1], pMap[0]) )
                         {
-                            SAL_WARN("canvas", "ValueMap::ValueMap(): Map is not sorted, keys are wrong, "
-                                      << pMap[0].maKey << " and " << pMap[1].maKey);
+                            OSL_TRACE("ValueMap::ValueMap(): Map is not sorted, keys %s and %s are wrong",
+                                      pMap[0].maKey,
+                                      pMap[1].maKey);
                             OSL_FAIL( "ValueMap::ValueMap(): Map is not sorted" );
                         }
 
@@ -479,7 +482,9 @@ namespace canvas
                         if( !mbCaseSensitive &&
                             aStr2 != aStr2.toAsciiLowerCase() )
                         {
-                            SAL_WARN("canvas", "ValueMap::ValueMap(): Key is not lowercase" << pMap[1].maKey);
+                            OSL_TRACE("ValueMap::ValueMap(): Key %s is not lowercase",
+                                      pMap[1].maKey);
+                            OSL_FAIL( "ValueMap::ValueMap(): Key is not lowercase" );
                         }
                     }
                 }

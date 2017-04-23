@@ -26,7 +26,7 @@ using namespace ::com::sun::star::io;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::lang;
 
-ByteChucker::ByteChucker(Reference<XOutputStream> const & xOstream)
+ByteChucker::ByteChucker(Reference<XOutputStream> xOstream)
 : xStream(xOstream)
 , xSeek (xOstream, UNO_QUERY )
 , a1Sequence ( 1 )
@@ -43,11 +43,13 @@ ByteChucker::~ByteChucker()
 }
 
 void ByteChucker::WriteBytes( const Sequence< sal_Int8 >& aData )
+    throw(NotConnectedException, BufferSizeExceededException, IOException, RuntimeException)
 {
     xStream->writeBytes(aData);
 }
 
 sal_Int64 ByteChucker::GetPosition(  )
+        throw(IOException, RuntimeException)
 {
     return xSeek->getPosition();
 }

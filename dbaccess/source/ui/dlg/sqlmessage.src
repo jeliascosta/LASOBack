@@ -20,19 +20,22 @@
 #include "dbaccess_helpid.hrc"
 #include "dbu_dlg.hrc"
 
-Bitmap BMP_EXCEPTION_ERROR
+Image BMP_EXCEPTION_ERROR
 {
-    File = "exerror.png";
+    ImageBitmap = Bitmap { File = "exerror.png"; };
+    MaskColor = Color { Red = 0xff00 ; Green = 0x0000 ; Blue = 0xff00 ; };
 };
 
-Bitmap BMP_EXCEPTION_WARNING
+Image BMP_EXCEPTION_WARNING
 {
-    File = "exwarning.png";
+    ImageBitmap = Bitmap { File = "exwarning.png"; };
+    MaskColor = Color { Red = 0xff00 ; Green = 0x0000 ; Blue = 0xff00 ; };
 };
 
-Bitmap BMP_EXCEPTION_INFO
+Image BMP_EXCEPTION_INFO
 {
-    File = "exinfo.png";
+    ImageBitmap = Bitmap { File = "exinfo.png"; };
+    MaskColor = Color { Red = 0xff00 ; Green = 0x0000 ; Blue = 0xff00 ; };
 };
 
 String STR_EXCEPTION_STATUS

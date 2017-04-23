@@ -39,7 +39,7 @@ public:
                         sal_Int32 nStartIndex, sal_Int32 nEndIndex,
                         const bool bHeader);
 
-    virtual ~PageHeaderFooterContext() override;
+    virtual ~PageHeaderFooterContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

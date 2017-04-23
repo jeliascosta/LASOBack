@@ -26,6 +26,11 @@
 #endif
 #include <objidl.h>
 #include <shlobj.h>
+#ifdef __MINGW32__
+#include <algorithm>
+using std::min;
+using std::max;
+#endif
 #ifndef DONT_HAVE_GDIPLUS
 #include <gdiplus.h>
 #endif
@@ -46,17 +51,17 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID riid,
-            void __RPC_FAR *__RPC_FAR *ppvObject) override;
+            void __RPC_FAR *__RPC_FAR *ppvObject);
 
-    virtual ULONG STDMETHODCALLTYPE AddRef() override;
+    virtual ULONG STDMETHODCALLTYPE AddRef();
 
-    virtual ULONG STDMETHODCALLTYPE Release() override;
+    virtual ULONG STDMETHODCALLTYPE Release();
 
 
     // IExtractImage methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE Extract(HBITMAP *phBmpImage) override;
+    virtual HRESULT STDMETHODCALLTYPE Extract(HBITMAP *phBmpImage);
 
     virtual HRESULT STDMETHODCALLTYPE GetLocation(
         LPWSTR pszPathBuffer,
@@ -64,33 +69,36 @@ public:
         DWORD *pdwPriority,
         const SIZE *prgSize,
         DWORD dwRecClrDepth,
-        DWORD *pdwFlags) override;
+        DWORD *pdwFlags);
 
 
     // IPersist methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE GetClassID(CLSID* pClassID) override;
+    virtual HRESULT STDMETHODCALLTYPE GetClassID(CLSID* pClassID);
 
 
     // IPersistFile methods
 
 
-    virtual HRESULT STDMETHODCALLTYPE IsDirty() override;
+    virtual HRESULT STDMETHODCALLTYPE IsDirty();
 
     virtual HRESULT STDMETHODCALLTYPE Load(
             /* [in] */ LPCOLESTR pszFileName,
-            /* [in] */ DWORD dwMode) override;
+            /* [in] */ DWORD dwMode);
 
     virtual HRESULT STDMETHODCALLTYPE Save(
             /* [unique][in] */ LPCOLESTR pszFileName,
-            /* [in] */ BOOL fRemember) override;
+            /* [in] */ BOOL fRemember);
 
     virtual HRESULT STDMETHODCALLTYPE SaveCompleted(
-            /* [unique][in] */ LPCOLESTR pszFileName) override;
+            /* [unique][in] */ LPCOLESTR pszFileName);
 
     virtual HRESULT STDMETHODCALLTYPE GetCurFile(
-            /* [out] */ LPOLESTR __RPC_FAR *ppszFileName) override;
+            /* [out] */ LPOLESTR __RPC_FAR *ppszFileName);
+
+private:
+    Gdiplus::Rect CalcScaledAspectRatio(const Gdiplus::Rect& src, const Gdiplus::Rect& dest);
 
 private:
     long         ref_count_;

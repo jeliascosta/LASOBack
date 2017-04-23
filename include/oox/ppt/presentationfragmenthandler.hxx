@@ -20,21 +20,17 @@
 #ifndef INCLUDED_OOX_PPT_PRESENTATIONFRAGMENTHANDLER_HXX
 #define INCLUDED_OOX_PPT_PRESENTATIONFRAGMENTHANDLER_HXX
 
-#include <vector>
-
+#include <com/sun/star/drawing/XDrawPage.hpp>
 #include <com/sun/star/awt/Size.hpp>
+#include <oox/ppt/slidepersist.hxx>
 #include <oox/core/contexthandler.hxx>
 #include <oox/core/fragmenthandler.hxx>
 #include <oox/core/fragmenthandler2.hxx>
-#include <oox/drawingml/drawingmltypes.hxx>
+#include <oox/core/relations.hxx>
 #include <oox/ppt/customshowlistcontext.hxx>
 #include <oox/ppt/comments.hxx>
-#include <oox/ppt/slidepersist.hxx>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
-
-namespace oox { class AttributeList; }
-namespace oox { namespace core { class XmlFilterBase; } }
+#include <stack>
+#include <vector>
 
 namespace oox { namespace ppt {
 
@@ -42,7 +38,7 @@ class PresentationFragmentHandler : public ::oox::core::FragmentHandler2
 {
 public:
     PresentationFragmentHandler( ::oox::core::XmlFilterBase& rFilter, const OUString& rFragmentPath ) throw();
-    virtual ~PresentationFragmentHandler() throw() override;
+    virtual ~PresentationFragmentHandler() throw();
     virtual void finalizeImport() override;
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;
 

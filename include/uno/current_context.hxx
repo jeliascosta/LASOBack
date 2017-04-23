@@ -92,7 +92,7 @@ public:
 
         @return the previously set context
     */
-    Reference< XCurrentContext > SAL_CALL getPreviousContext() const
+    inline Reference< XCurrentContext > SAL_CALL getPreviousContext() const
         { return m_xPreviousContext; }
 };
 

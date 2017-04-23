@@ -19,7 +19,6 @@
 
 #include <hintids.hxx>
 
-#include <o3tl/any.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/layout.hxx>
 #include <vcl/help.hxx>
@@ -98,7 +97,7 @@ static OUString lcl_GetValidShortCut( const OUString& rName )
     for( ; nStart < nSz; ++nStart )
     {
         if( rName[nStart-1]==' ' && rName[nStart]!=' ')
-            aBuf += OUStringLiteral1(rName[nStart]);
+            aBuf += OUString(rName[nStart]);
     }
     return aBuf;
 }
@@ -125,14 +124,14 @@ class SwNewGlosNameDlg : public ModalDialog
     VclPtr<Edit>        m_pOldShort;
 
 protected:
-    DECL_LINK( Modify, Edit&, void );
-    DECL_LINK(Rename, Button*, void);
+    DECL_LINK_TYPED( Modify, Edit&, void );
+    DECL_LINK_TYPED(Rename, Button*, void);
 
 public:
     SwNewGlosNameDlg( vcl::Window* pParent,
                       const OUString& rOldName,
                       const OUString& rOldShort );
-    virtual ~SwNewGlosNameDlg() override;
+    virtual ~SwNewGlosNameDlg();
     virtual void dispose() override;
 
     OUString GetNewName()  const { return m_pNewName->GetText(); }
@@ -274,7 +273,7 @@ void SwGlossaryDlg::dispose()
 }
 
 // select new group
-IMPL_LINK( SwGlossaryDlg, GrpSelect, SvTreeListBox *, pBox, void )
+IMPL_LINK_TYPED( SwGlossaryDlg, GrpSelect, SvTreeListBox *, pBox, void )
 {
     SvTreeListEntry* pEntry = pBox->FirstSelected();
     if(!pEntry)
@@ -282,7 +281,7 @@ IMPL_LINK( SwGlossaryDlg, GrpSelect, SvTreeListBox *, pBox, void )
     SvTreeListEntry* pParent = pBox->GetParent(pEntry) ? pBox->GetParent(pEntry) : pEntry;
     GroupUserData* pGroupData = static_cast<GroupUserData*>(pParent->GetUserData());
     ::SetCurrGlosGroup(pGroupData->sGroupName
-        + OUStringLiteral1(GLOS_DELIM)
+        + OUStringLiteral1<GLOS_DELIM>()
         + OUString::number(pGroupData->nPathIdx));
     pGlossaryHdl->SetCurGroup(::GetCurrGlosGroup());
     // set current text block
@@ -317,7 +316,6 @@ IMPL_LINK( SwGlossaryDlg, GrpSelect, SvTreeListBox *, pBox, void )
         aReq.AppendItem(SfxStringItem(FN_SET_ACT_GLOSSARY, sTemp));
         aReq.Done();
     }
-    Invalidate(InvalidateFlags::Update);
 }
 
 void SwGlossaryDlg::Apply()
@@ -372,7 +370,7 @@ SvTreeListEntry* SwGlossaryDlg::DoesBlockExist(const OUString& rBlock,
     return nullptr;
 }
 
-IMPL_LINK( SwGlossaryDlg, NameModify, Edit&, rEdit, void )
+IMPL_LINK_TYPED( SwGlossaryDlg, NameModify, Edit&, rEdit, void )
 {
     const OUString aName(m_pNameED->GetText());
     bool bNameED = &rEdit == m_pNameED;
@@ -411,7 +409,7 @@ IMPL_LINK( SwGlossaryDlg, NameModify, Edit&, rEdit, void )
     }
 }
 
-IMPL_LINK( SwGlossaryDlg, NameDoubleClick, SvTreeListBox*, pBox, bool )
+IMPL_LINK_TYPED( SwGlossaryDlg, NameDoubleClick, SvTreeListBox*, pBox, bool )
 {
     SvTreeListEntry* pEntry = pBox->FirstSelected();
     if(pBox->GetParent(pEntry) && !bIsDocReadOnly)
@@ -419,7 +417,7 @@ IMPL_LINK( SwGlossaryDlg, NameDoubleClick, SvTreeListBox*, pBox, bool )
     return false;
 }
 
-IMPL_LINK( SwGlossaryDlg, EnableHdl, Menu *, pMn, bool )
+IMPL_LINK_TYPED( SwGlossaryDlg, EnableHdl, Menu *, pMn, bool )
 {
     SvTreeListEntry* pEntry = m_pCategoryBox->FirstSelected();
 
@@ -441,7 +439,7 @@ IMPL_LINK( SwGlossaryDlg, EnableHdl, Menu *, pMn, bool )
     return true;
 }
 
-IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
+IMPL_LINK_TYPED( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
 {
     OString sItemIdent(pMn->GetCurItemIdent());
 
@@ -464,7 +462,7 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
         const OUString aShortName(m_pShortNameEdit->GetText());
         if(pGlossaryHdl->HasShortName(aShortName))
         {
-            ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_DOUBLE_SHORTNAME), VclMessageType::Info)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_DOUBLE_SHORTNAME), VCL_MESSAGE_INFO)->Execute();
             m_pShortNameEdit->SetSelection(Selection(0, SELECTION_MAX));
             m_pShortNameEdit->GrabFocus();
             return true;
@@ -522,7 +520,7 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
     }
     else if (sItemIdent == "delete")
     {
-        ScopedVclPtrInstance< MessageDialog > aQuery(this, SW_RES(STR_QUERY_DELETE), VclMessageType::Question, VclButtonsType::YesNo);
+        ScopedVclPtrInstance< MessageDialog > aQuery(this, SW_RES(STR_QUERY_DELETE), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
         if (RET_YES == aQuery->Execute())
         {
             const OUString aShortName(m_pShortNameEdit->GetText());
@@ -559,7 +557,7 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
 
         const SfxPoolItem* pItem;
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        ScopedVclPtr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet,
+        std::unique_ptr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet,
             pSh->GetView().GetViewFrame()->GetFrame().GetFrameInterface(), SID_EVENTCONFIG ));
         if ( pMacroDlg && pMacroDlg->Execute() == RET_OK &&
             SfxItemState::SET == pMacroDlg->GetOutputItemSet()->GetItemState( RES_FRMMACRO, false, &pItem ) )
@@ -580,18 +578,12 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
         xFP->setDisplayDirectory(aPathOpt.GetWorkPath() );
 
         uno::Reference<XFilterManager> xFltMgr(xFP, UNO_QUERY);
-        SfxFilterMatcher aMatcher( SwDocShell::Factory().GetFactoryName() );
+        SfxFilterMatcher aMatcher( OUString::createFromAscii(SwDocShell::Factory().GetShortName()) );
         SfxFilterMatcherIter aIter( aMatcher );
         std::shared_ptr<const SfxFilter> pFilter = aIter.First();
         while ( pFilter )
         {
             if( pFilter->GetUserData() == FILTER_WW8 )
-            {
-                xFltMgr->appendFilter( pFilter->GetUIName(),
-                            pFilter->GetWildcard().getGlob() );
-                xFltMgr->setCurrentFilter( pFilter->GetUIName() ) ;
-            }
-            else if( pFilter->GetUserData() == FILTER_DOCX )
             {
                 xFltMgr->appendFilter( pFilter->GetUIName(),
                             pFilter->GetWildcard().getGlob() );
@@ -607,7 +599,7 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
                 Init();
             else
             {
-                ScopedVclPtrInstance<MessageDialog>(this, SW_RES( STR_NO_GLOSSARIES ), VclMessageType::Info)->Execute();
+                ScopedVclPtrInstance<MessageDialog>(this, SW_RES( STR_NO_GLOSSARIES ), VCL_MESSAGE_INFO)->Execute();
             }
         }
     }
@@ -619,7 +611,7 @@ IMPL_LINK( SwGlossaryDlg, MenuHdl, Menu *, pMn, bool )
 }
 
 // dialog manage regions
-IMPL_LINK_NOARG(SwGlossaryDlg, BibHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryDlg, BibHdl, Button*, void)
 {
     SwGlossaries* pGloss = ::GetGlossaries();
     if( pGloss->IsGlosPathErr() )
@@ -644,7 +636,7 @@ IMPL_LINK_NOARG(SwGlossaryDlg, BibHdl, Button*, void)
                 Any aAny = aTestContent.getPropertyValue( "IsReadOnly" );
                 if(aAny.hasValue())
                 {
-                    bIsWritable = !*o3tl::doAccess<bool>(aAny);
+                    bIsWritable = !*static_cast<sal_Bool const *>(aAny.getValue());
                 }
             }
             catch (const Exception&)
@@ -669,7 +661,7 @@ IMPL_LINK_NOARG(SwGlossaryDlg, BibHdl, Button*, void)
                     {
                         GroupUserData* pGroupData = static_cast<GroupUserData*>(pEntry->GetUserData());
                         const OUString sGroup = pGroupData->sGroupName
-                            + OUStringLiteral1(GLOS_DELIM)
+                            + OUStringLiteral1<GLOS_DELIM>()
                             + OUString::number(pGroupData->nPathIdx);
                         if(sGroup == sNewGroup)
                         {
@@ -686,7 +678,7 @@ IMPL_LINK_NOARG(SwGlossaryDlg, BibHdl, Button*, void)
         }
         else
         {
-            ScopedVclPtrInstance< MessageDialog > aBox(this, sReadonlyPath, VclMessageType::Question, VclButtonsType::YesNo);
+            ScopedVclPtrInstance< MessageDialog > aBox(this, sReadonlyPath, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
 
             if(RET_YES == aBox->Execute())
                 PathHdl(m_pPathBtn);
@@ -770,8 +762,8 @@ void SwGlossaryDlg::Init()
         GrpSelect(m_pCategoryBox);
     }
     //JP 16.11.99: the SvxTreeListBox has a Bug. The Box don't recalc the
-    //      outputsize, when all entries are inserted. The result is, that
-    //      the Focus/Highlight rectangle is to large and painted over the
+    //      outputsize, when all entries are insertet. The result is, that
+    //      the Focus/Highlight rectangle is to large and paintet over the
     //      HScrollbar. -> Fix: call the resize
     m_pCategoryBox->Resize();
 
@@ -788,7 +780,7 @@ void SwGlossaryDlg::Init()
     m_pInsertTipCB->SetClickHdl(LINK(this, SwGlossaryDlg, CheckBoxHdl));
 }
 
-IMPL_LINK_NOARG(SwGlossaryDlg, EditHdl, MenuButton *, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryDlg, EditHdl, MenuButton *, void)
 {
 // EndDialog must not be called in MenuHdl
     if (m_pEditBtn->GetCurItemIdent() == "edit")
@@ -800,7 +792,7 @@ IMPL_LINK_NOARG(SwGlossaryDlg, EditHdl, MenuButton *, void)
 }
 
 // KeyInput for ShortName - Edits without Spaces
-IMPL_LINK( SwNewGlosNameDlg, Modify, Edit&, rBox, void )
+IMPL_LINK_TYPED( SwNewGlosNameDlg, Modify, Edit&, rBox, void )
 {
     OUString aName(m_pNewName->GetText());
     SwGlossaryDlg* pDlg = static_cast<SwGlossaryDlg*>(GetParent());
@@ -813,21 +805,21 @@ IMPL_LINK( SwNewGlosNameDlg, Modify, Edit&, rBox, void )
     m_pOk->Enable(bEnable);
 }
 
-IMPL_LINK_NOARG(SwNewGlosNameDlg, Rename, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwNewGlosNameDlg, Rename, Button*, void)
 {
     SwGlossaryDlg* pDlg = static_cast<SwGlossaryDlg*>(GetParent());
     OUString sNew = GetAppCharClass().uppercase(m_pNewShort->GetText());
     if( pDlg->pGlossaryHdl->HasShortName(m_pNewShort->GetText())
         && sNew != m_pOldShort->GetText() )
     {
-        ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_DOUBLE_SHORTNAME), VclMessageType::Info)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(this, SW_RES(STR_DOUBLE_SHORTNAME), VCL_MESSAGE_INFO)->Execute();
         m_pNewShort->GrabFocus();
     }
     else
         EndDialog(RET_OK);
 }
 
-IMPL_LINK( SwGlossaryDlg, CheckBoxHdl, Button *, pBox, void )
+IMPL_LINK_TYPED( SwGlossaryDlg, CheckBoxHdl, Button *, pBox, void )
 {
     SvxAutoCorrCfg& rCfg = SvxAutoCorrCfg::Get();
     bool bCheck = static_cast<CheckBox*>(pBox)->IsChecked();
@@ -851,7 +843,7 @@ SwGlTreeListBox::SwGlTreeListBox(vcl::Window* pParent, WinBits nBits)
 
 Size SwGlTreeListBox::GetOptimalSize() const
 {
-    return LogicToPixel(Size(212, 84), MapMode(MapUnit::MapAppFont));
+    return LogicToPixel(Size(212, 84), MapMode(MAP_APPFONT));
 }
 
 VCL_BUILDER_FACTORY_ARGS(SwGlTreeListBox, WB_BORDER | WB_TABSTOP)
@@ -888,7 +880,7 @@ void SwGlTreeListBox::RequestHelp( const HelpEvent& rHEvt )
             if((aPos.X() + aSize.Width()) > GetSizePixel().Width())
                 aSize.Width() = GetSizePixel().Width() - aPos.X();
             aPos = OutputToScreenPixel(aPos);
-             tools::Rectangle aItemRect( aPos, aSize );
+             Rectangle aItemRect( aPos, aSize );
             OUString sMsg;
             if(!GetParent(pEntry))
             {
@@ -931,7 +923,7 @@ DragDropMode SwGlTreeListBox::NotifyStartDrag(
 
         GroupUserData* pGroupData = static_cast<GroupUserData*>(pParent->GetUserData());
         OUString sEntry = pGroupData->sGroupName
-            + OUStringLiteral1(GLOS_DELIM)
+            + OUStringLiteral1<GLOS_DELIM>()
             + OUString::number(pGroupData->nPathIdx);
         sal_Int8 nDragOption = DND_ACTION_COPY;
         eRet = DragDropMode::CTRL_COPY;
@@ -995,7 +987,7 @@ TriState SwGlTreeListBox::NotifyCopyingOrMoving(
 
         GroupUserData* pGroupData = static_cast<GroupUserData*>(pSrcParent->GetUserData());
         OUString sSourceGroup = pGroupData->sGroupName
-            + OUStringLiteral1(GLOS_DELIM)
+            + OUStringLiteral1<GLOS_DELIM>()
             + OUString::number(pGroupData->nPathIdx);
 
         pDlg->pGlossaryHdl->SetCurGroup(sSourceGroup);
@@ -1004,7 +996,7 @@ TriState SwGlTreeListBox::NotifyCopyingOrMoving(
 
         GroupUserData* pDestData = static_cast<GroupUserData*>(pDestParent->GetUserData());
         OUString sDestName = pDestData->sGroupName
-            + OUStringLiteral1(GLOS_DELIM)
+            + OUStringLiteral1<GLOS_DELIM>()
             + OUString::number(pDestData->nPathIdx);
 
         const bool bRet = pDlg->pGlossaryHdl->CopyOrMove( sSourceGroup,  sShortName,
@@ -1022,12 +1014,6 @@ TriState SwGlTreeListBox::NotifyCopyingOrMoving(
     return TRISTATE_FALSE; // otherwise the entry is being set automatically
 }
 
-void SwGlTreeListBox::ExpandedHdl()
-{
-    Invalidate(InvalidateFlags::Update);
-    SvTreeListBox::ExpandedHdl();
-}
-
 OUString SwGlossaryDlg::GetCurrGrpName() const
 {
     SvTreeListEntry* pEntry = m_pCategoryBox->FirstSelected();
@@ -1036,17 +1022,17 @@ OUString SwGlossaryDlg::GetCurrGrpName() const
         pEntry =
             m_pCategoryBox->GetParent(pEntry) ? m_pCategoryBox->GetParent(pEntry) : pEntry;
         GroupUserData* pGroupData = static_cast<GroupUserData*>(pEntry->GetUserData());
-        return pGroupData->sGroupName + OUStringLiteral1(GLOS_DELIM) + OUString::number(pGroupData->nPathIdx);
+        return pGroupData->sGroupName + OUStringLiteral1<GLOS_DELIM>() + OUString::number(pGroupData->nPathIdx);
     }
     return OUString();
 }
 
-IMPL_LINK( SwGlossaryDlg, PathHdl, Button *, pBtn, void )
+IMPL_LINK_TYPED( SwGlossaryDlg, PathHdl, Button *, pBtn, void )
 {
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     if(pFact)
     {
-        ScopedVclPtr<AbstractSvxMultiPathDialog> pDlg(pFact->CreateSvxPathSelectDialog(pBtn));
+        std::unique_ptr<AbstractSvxMultiPathDialog> pDlg(pFact->CreateSvxPathSelectDialog(pBtn));
         OSL_ENSURE(pDlg, "Dialog creation failed!");
         SvtPathOptions aPathOpt;
         const OUString sGlosPath( aPathOpt.GetAutoTextPath() );
@@ -1064,7 +1050,7 @@ IMPL_LINK( SwGlossaryDlg, PathHdl, Button *, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG(SwGlossaryDlg, InsertHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryDlg, InsertHdl, Button*, void)
 {
     EndDialog(RET_OK);
 }
@@ -1082,7 +1068,7 @@ void SwGlossaryDlg::ShowPreview()
     ShowAutoText(::GetCurrGlosGroup(), m_pShortNameEdit->GetText());
 };
 
-IMPL_LINK_NOARG(SwGlossaryDlg, PreviewLoadedHdl, SwOneExampleFrame&, void)
+IMPL_LINK_NOARG_TYPED(SwGlossaryDlg, PreviewLoadedHdl, SwOneExampleFrame&, void)
 {
     ResumeShowAutoText();
 }
@@ -1127,7 +1113,7 @@ void SwGlossaryDlg::ResumeShowAutoText()
             }
         }
     }
-    bResume = false;
+    ResetResumeData();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

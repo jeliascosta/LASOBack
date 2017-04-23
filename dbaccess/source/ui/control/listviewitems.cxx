@@ -39,9 +39,9 @@ namespace dbaui
         pView->Pop();
     }
 
-    SvLBoxItemType OBoldListboxString::GetType() const
+    sal_uInt16 OBoldListboxString::GetType() const
     {
-        return SvLBoxItemType::String;
+        return SV_ITEM_ID_BOLDLBSTRING;
     }
 
     void OBoldListboxString::Paint(const Point& rPos, SvTreeListBox& rDev, vcl::RenderContext& rRenderContext,

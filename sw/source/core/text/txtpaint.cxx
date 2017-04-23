@@ -21,7 +21,7 @@
 #include "swrect.hxx"
 #include "rootfrm.hxx"
 
-SwSaveClip::~SwSaveClip()
+void SwSaveClip::Reset()
 {
     // We recover the old state
     if( pOut && bChg )
@@ -69,7 +69,7 @@ void SwSaveClip::ChgClip_( const SwRect &rRect, const SwTextFrame* pFrame,
         pOut->SetClipRegion();
     else
     {
-        tools::Rectangle aRect( rRect.SVRect() );
+        Rectangle aRect( rRect.SVRect() );
 
         // Having underscores in our line, we enlarged the repaint area
         // (see frmform.cxx) because for some fonts it could be too small.
@@ -98,7 +98,7 @@ void SwSaveClip::ChgClip_( const SwRect &rRect, const SwTextFrame* pFrame,
         static bool bDbg = false;
         if( bDbg )
         {
-            DbgBackColor aDbg( pOut, bDbg );
+            DbgBackColor aDbg( pOut, bDbg, COL_RED );
             pOut->DrawRect( aRect );
         }
 #endif

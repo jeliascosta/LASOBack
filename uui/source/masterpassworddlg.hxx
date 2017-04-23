@@ -21,6 +21,7 @@
 #define INCLUDED_UUI_SOURCE_MASTERPASSWORDDLG_HXX
 
 #include <com/sun/star/task/PasswordRequestMode.hpp>
+#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/edit.hxx>
@@ -32,11 +33,11 @@ class MasterPasswordDialog : public ModalDialog
     VclPtr<Edit>     m_pEDMasterPassword;
     VclPtr<OKButton> m_pOKBtn;
 
-    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
 
 public:
     MasterPasswordDialog( vcl::Window* pParent, css::task::PasswordRequestMode nDlgMode, ResMgr * pResMgr );
-    virtual ~MasterPasswordDialog() override;
+    virtual ~MasterPasswordDialog();
     virtual void dispose() override;
 
     OUString        GetMasterPassword() const { return m_pEDMasterPassword->GetText(); }

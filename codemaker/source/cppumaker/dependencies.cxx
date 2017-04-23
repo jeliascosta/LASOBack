@@ -59,11 +59,11 @@ Dependencies::Dependencies(
             rtl::Reference< unoidl::PlainStructTypeEntity > ent2(
                 static_cast< unoidl::PlainStructTypeEntity * >(ent.get()));
             if (!ent2->getDirectBase().isEmpty()) {
-                insert(ent2->getDirectBase(), KIND_NORMAL);
+                insert(ent2->getDirectBase());
             }
             for (const unoidl::PlainStructTypeEntity::Member& member : ent2->getDirectMembers())
             {
-                insert(member.type, KIND_NORMAL);
+                insert(member.type);
             }
             break;
         }
@@ -75,7 +75,7 @@ Dependencies::Dependencies(
             for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member : ent2->getMembers())
             {
                 if (!member.parameterized) {
-                    insert(member.type, KIND_NORMAL);
+                    insert(member.type);
                 }
             }
             break;
@@ -85,11 +85,11 @@ Dependencies::Dependencies(
             rtl::Reference< unoidl::ExceptionTypeEntity > ent2(
                 static_cast< unoidl::ExceptionTypeEntity * >(ent.get()));
             if (!ent2->getDirectBase().isEmpty()) {
-                insert(ent2->getDirectBase(), KIND_NORMAL);
+                insert(ent2->getDirectBase());
             }
             for (const unoidl::ExceptionTypeEntity::Member& member : ent2->getDirectMembers())
             {
-                insert(member.type, KIND_NORMAL);
+                insert(member.type);
             }
             break;
         }
@@ -99,43 +99,41 @@ Dependencies::Dependencies(
                 static_cast< unoidl::InterfaceTypeEntity * >(ent.get()));
             for (const unoidl::AnnotatedReference& ar : ent2->getDirectMandatoryBases())
             {
-                insert(ar.name, KIND_BASE);
+                insert(ar.name, true);
             }
             if (!(ent2->getDirectAttributes().empty()
                   && ent2->getDirectMethods().empty()))
             {
-                insert("com.sun.star.uno.RuntimeException", KIND_EXCEPTION);
+                insert("com.sun.star.uno.RuntimeException");
             }
             for (const unoidl::InterfaceTypeEntity::Attribute& attr : ent2->getDirectAttributes())
             {
-                insert(attr.type, KIND_NORMAL);
+                insert(attr.type);
                 for (const OUString& ex : attr.getExceptions)
                 {
-                    insert(ex, KIND_EXCEPTION);
+                    insert(ex);
                 }
                 for (const OUString& ex : attr.setExceptions)
                 {
-                    insert(ex, KIND_EXCEPTION);
+                    insert(ex);
                 }
             }
             for (const unoidl::InterfaceTypeEntity::Method& method : ent2->getDirectMethods())
             {
-                insert(method.returnType, KIND_NORMAL);
+                insert(method.returnType);
                 for (const unoidl::InterfaceTypeEntity::Method::Parameter& param : method.parameters)
                 {
-                    insert(param.type, KIND_NORMAL);
+                    insert(param.type);
                 }
                 for (const OUString& ex : method.exceptions)
                 {
-                    insert(ex, KIND_EXCEPTION);
+                    insert(ex);
                 }
             }
             break;
         }
     case UnoType::Sort::Typedef:
-        insert(
-            static_cast< unoidl::TypedefEntity * >(ent.get())->getType(),
-            KIND_NORMAL);
+        insert(static_cast< unoidl::TypedefEntity * >(ent.get())->getType());
         break;
     case UnoType::Sort::ConstantGroup:
         {
@@ -184,21 +182,21 @@ Dependencies::Dependencies(
                 static_cast< unoidl::SingleInterfaceBasedServiceEntity * >(
                     ent.get()));
             if (!ent2->getConstructors().empty()) {
-                insert(ent2->getBase(), KIND_NORMAL);
+                insert(ent2->getBase());
             }
             for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor& cons : ent2->getConstructors())
             {
                 for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor::Parameter& param
                          : cons.parameters)
                 {
-                    insert(param.type, KIND_NORMAL);
+                    insert(param.type);
                     if (param.rest) {
                         m_sequenceDependency = true;
                     }
                 }
                 for (const OUString& ex : cons.exceptions)
                 {
-                    insert(ex, KIND_EXCEPTION);
+                    insert(ex);
                 }
             }
             break;
@@ -206,8 +204,7 @@ Dependencies::Dependencies(
     case UnoType::Sort::InterfaceBasedSingleton:
         insert(
             static_cast< unoidl::InterfaceBasedSingletonEntity * >(ent.get())->
-                getBase(),
-            KIND_NORMAL);
+            getBase());
         break;
     default:
         assert(false); // this cannot happen
@@ -216,7 +213,7 @@ Dependencies::Dependencies(
 
 Dependencies::~Dependencies() {}
 
-void Dependencies::insert(OUString const & name, Kind kind) {
+void Dependencies::insert(OUString const & name, bool base) {
     sal_Int32 k;
     std::vector< OString > args;
     OUString n(b2u(UnoType::decompose(u2b(name), &k, &args)));
@@ -272,7 +269,7 @@ void Dependencies::insert(OUString const & name, Kind kind) {
     case UnoType::Sort::PolymorphicStructTemplate:
         for (const OString& arg : args)
         {
-            insert(b2u(arg), KIND_NORMAL);
+            insert(b2u(arg));
         }
         SAL_FALLTHROUGH;
     case UnoType::Sort::Sequence:
@@ -284,9 +281,8 @@ void Dependencies::insert(OUString const & name, Kind kind) {
         {
             std::pair< Map::iterator, bool > i(
                 m_map.insert(
-                    Map::value_type(n, kind)));
-            if (!i.second && kind == KIND_BASE) {
-                assert(i.first->second != KIND_EXCEPTION);
+                    Map::value_type(n, base ? KIND_BASE : KIND_NO_BASE)));
+            if (!i.second && base) {
                 i.first->second = KIND_BASE;
             }
             break;

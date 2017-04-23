@@ -37,7 +37,7 @@ class XMLScriptExportHandler : public XMLEventExportHandler
 
 public:
     XMLScriptExportHandler();
-    virtual ~XMLScriptExportHandler() override;
+    virtual ~XMLScriptExportHandler();
 
     virtual void Export(
         SvXMLExport& rExport,

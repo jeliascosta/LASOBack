@@ -53,8 +53,7 @@ SFX_IMPL_INTERFACE(ScTabViewShell, SfxViewShell)
 
 void ScTabViewShell::InitInterface_Impl()
 {
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS,
-                                            SfxVisibilityFlags::Standard | SfxVisibilityFlags::FullScreen | SfxVisibilityFlags::Server,
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_TOOLS | SFX_VISIBILITY_STANDARD | SFX_VISIBILITY_FULLSCREEN | SFX_VISIBILITY_SERVER,
                                             RID_OBJECTBAR_TOOLS);
 
     GetStaticInterface()->RegisterChildWindow(FID_INPUTLINE_STATUS);

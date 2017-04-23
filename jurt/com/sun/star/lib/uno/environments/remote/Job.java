@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import com.sun.star.lib.uno.typedesc.MethodDescription;
 import com.sun.star.uno.Any;
+import com.sun.star.uno.IMethodDescription;
 import com.sun.star.uno.Type;
 import com.sun.star.uno.UnoRuntime;
 import com.sun.star.uno.XCurrentContext;
@@ -40,6 +41,8 @@ import com.sun.star.uno.XCurrentContext;
  * @since       UDK1.0
  */
 public class Job {
+    protected Job _next;
+
     protected IReceiver _iReceiver;
     protected Message  _iMessage;
               Object    _disposeId;
@@ -78,7 +81,7 @@ public class Job {
         if (_iMessage.isRequest()) {
             Object result = null;
             Throwable exception = null;
-            MethodDescription md = _iMessage.getMethod();
+            IMethodDescription md = _iMessage.getMethod();
             Object[] args = _iMessage.getArguments();
             XCurrentContext oldCC = UnoRuntime.getCurrentContext();
             UnoRuntime.setCurrentContext(_iMessage.getCurrentContext());

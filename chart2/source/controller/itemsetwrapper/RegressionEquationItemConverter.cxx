@@ -59,7 +59,7 @@ RegressionEquationItemConverter::RegressionEquationItemConverter(
     m_aConverters.push_back( new GraphicPropertyItemConverter(
                                  rPropertySet, rItemPool, rDrawModel,
                                  xNamedPropertyContainerFactory,
-                                 GraphicObjectType::LineAndFillProperties ));
+                                 GraphicPropertyItemConverter::LINE_AND_FILL_PROPERTIES ));
 
     m_aConverters.push_back(
         new CharacterPropertyItemConverter(rPropertySet, rItemPool, pRefSize, "ReferencePageSize"));
@@ -67,7 +67,7 @@ RegressionEquationItemConverter::RegressionEquationItemConverter(
 
 RegressionEquationItemConverter::~RegressionEquationItemConverter()
 {
-    std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
+    ::std::for_each(m_aConverters.begin(), m_aConverters.end(), std::default_delete<ItemConverter>());
 }
 
 void RegressionEquationItemConverter::FillItemSet( SfxItemSet & rOutItemSet ) const
@@ -110,6 +110,7 @@ bool RegressionEquationItemConverter::GetItemProperty( tWhichIdType nWhichId, tP
 
 bool RegressionEquationItemConverter::ApplySpecialItem(
     sal_uInt16 nWhichId, const SfxItemSet & rItemSet )
+    throw( uno::Exception )
 {
     bool bChanged = false;
 
@@ -134,6 +135,7 @@ bool RegressionEquationItemConverter::ApplySpecialItem(
 
 void RegressionEquationItemConverter::FillSpecialItem(
     sal_uInt16 nWhichId, SfxItemSet & rOutItemSet ) const
+    throw( uno::Exception )
 {
     switch( nWhichId )
     {

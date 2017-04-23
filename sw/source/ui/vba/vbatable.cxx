@@ -34,19 +34,19 @@
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
 
-SwVbaTable::SwVbaTable(  const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextDocument >& rDocument, const  uno::Reference< text::XTextTable >& xTextTable) : SwVbaTable_BASE( rParent, rContext ), mxTextDocument( rDocument )
+SwVbaTable::SwVbaTable(  const uno::Reference< ooo::vba::XHelperInterface >& rParent, const uno::Reference< uno::XComponentContext >& rContext, const uno::Reference< text::XTextDocument >& rDocument, const  uno::Reference< text::XTextTable >& xTextTable) throw ( uno::RuntimeException ) : SwVbaTable_BASE( rParent, rContext ), mxTextDocument( rDocument )
 {
     mxTextTable.set( xTextTable, uno::UNO_QUERY_THROW );
 }
 
 uno::Reference< word::XRange > SAL_CALL
-SwVbaTable::Range(  )
+SwVbaTable::Range(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     return new SwVbaRange( mxParent, mxContext, mxTextDocument, mxTextTable->getAnchor() );
 }
 
 void SAL_CALL
-SwVbaTable::Select(  )
+SwVbaTable::Select(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< frame::XModel > xModel( mxTextDocument, uno::UNO_QUERY_THROW );
     uno::Reference< frame::XController > xController = xModel->getCurrentController();
@@ -64,21 +64,21 @@ SwVbaTable::Select(  )
 }
 
 void SAL_CALL
-SwVbaTable::Delete(  )
+SwVbaTable::Delete(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
     uno::Reference< table::XTableRows > xRows( mxTextTable->getRows() );
     xRows->removeByIndex( 0, xRows->getCount() );
 }
 
 OUString SAL_CALL
-SwVbaTable::getName()
+SwVbaTable::getName() throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< container::XNamed > xNamed( mxTextTable, uno::UNO_QUERY_THROW );
     return xNamed->getName();
 }
 
 uno::Any SAL_CALL
-SwVbaTable::Borders( const uno::Any& index )
+SwVbaTable::Borders( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< table::XCellRange > aCellRange( mxTextTable, uno::UNO_QUERY_THROW );
     VbaPalette aPalette;
@@ -89,7 +89,7 @@ SwVbaTable::Borders( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaTable::Rows( const uno::Any& index )
+SwVbaTable::Rows( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< table::XTableRows > xTableRows( mxTextTable->getRows(), uno::UNO_QUERY_THROW );
     uno::Reference< XCollection > xCol( new SwVbaRows( this, mxContext, mxTextTable, xTableRows ) );
@@ -99,7 +99,7 @@ SwVbaTable::Rows( const uno::Any& index )
 }
 
 uno::Any SAL_CALL
-SwVbaTable::Columns( const uno::Any& index )
+SwVbaTable::Columns( const uno::Any& index ) throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< table::XTableColumns > xTableColumns( mxTextTable->getColumns(), uno::UNO_QUERY_THROW );
     uno::Reference< XCollection > xCol( new SwVbaColumns( this, mxContext, mxTextTable, xTableColumns ) );

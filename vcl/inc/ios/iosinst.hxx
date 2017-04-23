@@ -39,7 +39,7 @@ public:
 
     virtual SalSystem* CreateSalSystem() override;
 
-    void GetWorkArea( tools::Rectangle& rRect );
+    void GetWorkArea( Rectangle& rRect );
     SalFrame* CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
     SalFrame* CreateChildFrame( SystemParentData* pParent, SalFrameStyleFlags nStyle ) override;
 };

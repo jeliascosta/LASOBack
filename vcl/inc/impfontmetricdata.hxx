@@ -21,16 +21,18 @@
 #define INCLUDED_VCL_INC_IMPFONTMETRICDATA_HXX
 
 #include <vcl/dllapi.h>
-#include <tools/ref.hxx>
+
 #include "fontattributes.hxx"
 
+#include <boost/intrusive_ptr.hpp>
+
 class ImplFontMetricData;
-typedef tools::SvRef<ImplFontMetricData> ImplFontMetricDataRef;
+typedef boost::intrusive_ptr< ImplFontMetricData > ImplFontMetricDataPtr;
 
 class OutputDevice;
 class FontSelectPattern;
 
-class ImplFontMetricData : public FontAttributes, public SvRefBase
+class ImplFontMetricData : public FontAttributes
 {
 public:
     explicit        ImplFontMetricData( const FontSelectPattern& );
@@ -50,14 +52,25 @@ public:
     int             GetSlant()                                                      { return mnSlant; }
     long            GetMinKashida()                                                 { return mnMinKashida; }
 
+    void            SetAscent(long nAscent)                                         { mnAscent=nAscent; }
+    void            SetDescent(long nDescent)                                       { mnDescent=nDescent; }
+    void            SetInternalLeading(long nIntLeading)                            { mnIntLeading = nIntLeading; }
+    void            SetExternalLeading(long nExtLeading)                            { mnExtLeading = nExtLeading; }
     void            SetSlant(int nSlant)                                            { mnSlant=nSlant; }
     void            SetMinKashida( long nMinKashida )                               { mnMinKashida=nMinKashida; }
 
     // font attributes queried from the font instance
+    bool            IsScalable()                                                    { return mbScalableFont; }
+    bool            IsTrueTypeFont()                                                { return mbTrueTypeFont; }
+    bool            IsKernable()                                                    { return mbKernableFont; }
     bool            IsFullstopCentered()                                            { return mbFullstopCentered; }
     long            GetBulletOffset()                                               { return mnBulletOffset; }
 
+    void            SetScalableFlag(bool bScalable)                                 { mbScalableFont = bScalable; }
+    void            SetTrueTypeFlag(bool bTrueTypeFont)                             { mbTrueTypeFont = bTrueTypeFont; }
+    void            SetKernableFlag(bool bKernable)                                 { mbKernableFont = bKernable; }
     void            SetFullstopCenteredFlag(bool bFullstopCentered)                 { mbFullstopCentered = bFullstopCentered; }
+    void            SetBulletOffset(long nBulletOffset)                             { mnBulletOffset = nBulletOffset; }
 
     // font metrics that are usually derived from the measurements
     long            GetUnderlineSize()                                              { return mnUnderlineSize; }
@@ -86,15 +99,42 @@ public:
     long            GetDoubleStrikeoutOffset1()                                     { return mnDStrikeoutOffset1; }
     long            GetDoubleStrikeoutOffset2()                                     { return mnDStrikeoutOffset2; }
 
+    void            SetUnderlineSize( long nUnderlineSize )                         { mnUnderlineSize = nUnderlineSize; }
+    void            SetUnderlineOffset( long nUnderlineOffset )                     { mnUnderlineOffset = nUnderlineOffset; }
+    void            SetBoldUnderlineSize( long nBUnderlineSize )                    { mnBUnderlineSize = nBUnderlineSize; }
+    void            SetBoldUnderlineOffset( long nBUnderlineOffset )                { mnBUnderlineOffset = nBUnderlineOffset; }
+    void            SetDoubleUnderlineSize( long nDUnderlineSize )                  { mnDUnderlineSize = nDUnderlineSize; }
+    void            SetDoubleUnderlineOffset1( long nDUnderlineOffset1 )            { mnDUnderlineOffset1 = nDUnderlineOffset1; }
+    void            SetDoubleUnderlineOffset2( long nDUnderlineOffset2 )            { mnDUnderlineOffset2 = nDUnderlineOffset2; }
+    void            SetWavelineUnderlineSize( long nWUnderlineSize )                { mnWUnderlineSize = nWUnderlineSize; }
+    void            SetWavelineUnderlineOffset( long nWUnderlineOffset )            { mnWUnderlineOffset = nWUnderlineOffset; }
+    void            SetAboveUnderlineSize( long nAboveUnderlineSize )               { mnAboveUnderlineSize = nAboveUnderlineSize; }
+    void            SetAboveUnderlineOffset( long nAboveUnderlineOffset )           { mnAboveUnderlineOffset = nAboveUnderlineOffset; }
+    void            SetAboveBoldUnderlineSize( long nAboveBUnderlineSize )          { mnAboveBUnderlineSize = nAboveBUnderlineSize; }
+    void            SetAboveBoldUnderlineOffset( long nAboveBUnderlineOffset )      { mnAboveBUnderlineOffset = nAboveBUnderlineOffset; }
+    void            SetAboveDoubleUnderlineSize( long nAboveDUnderlineSize )        { mnAboveDUnderlineSize = nAboveDUnderlineSize; }
+    void            SetAboveDoubleUnderlineOffset1( long nAboveDUnderlineOffset1 )  { mnAboveDUnderlineOffset1 = nAboveDUnderlineOffset1; }
+    void            SetAboveDoubleUnderlineOffset2( long nAboveDUnderlineOffset2 )  { mnAboveDUnderlineOffset2 = nAboveDUnderlineOffset2; }
+    void            SetAboveWavelineUnderlineSize( long nAboveWUnderlineSize )      { mnAboveWUnderlineSize = nAboveWUnderlineSize; }
+    void            SetAboveWavelineUnderlineOffset( long nAboveWUnderlineOffset )  { mnAboveWUnderlineOffset = nAboveWUnderlineOffset; }
+    void            SetStrikeoutSize( long nStrikeoutSize )                         { mnStrikeoutSize = nStrikeoutSize; }
+    void            SetStrikeoutOffset( long nStrikeoutOffset )                     { mnStrikeoutOffset = nStrikeoutOffset; }
+    void            SetBoldStrikeoutSize( long nBStrikeoutSize )                    { mnBStrikeoutSize = nBStrikeoutSize; }
+    void            SetBoldStrikeoutOffset( long nBStrikeoutOffset )                { mnBStrikeoutOffset = nBStrikeoutOffset; }
+    void            SetDoubleStrikeoutSize( long nDStrikeoutSize )                  { mnDStrikeoutSize = nDStrikeoutSize; }
+    void            SetDoubleStrikeoutOffset1( long nDStrikeoutOffset1 )            { mnDStrikeoutOffset1 = nDStrikeoutOffset1; }
+    void            SetDoubleStrikeoutOffset2( long nDStrikeoutOffset2 )            { mnDStrikeoutOffset2 = nDStrikeoutOffset2; }
+
     void            ImplInitTextLineSize( const OutputDevice* pDev );
     void            ImplInitAboveTextLineSize();
-    void            ImplCalcLineSpacing(const std::vector<uint8_t>& rHhea,
-                                        const std::vector<uint8_t>& rOS_2,
-                                        int nUPEM);
 
 private:
+    friend void intrusive_ptr_add_ref(ImplFontMetricData* pImplFontMetricData);
+    friend void intrusive_ptr_release(ImplFontMetricData* pImplFontMetricData);
+
+    long            mnRefCount;
+
     // font instance attributes from the font request
-    long            mnHeight;                   // Font size
     long            mnWidth;                    // Reference Width
     short           mnOrientation;              // Rotation in 1/10 degrees
 
@@ -107,6 +147,9 @@ private:
     long            mnMinKashida;               // Minimal width of kashida (Arabic)
 
     // font attributes queried from the font instance
+    bool            mbScalableFont;
+    bool            mbTrueTypeFont;
+    bool            mbKernableFont;
     bool            mbFullstopCentered;
     long            mnBulletOffset;             // Offset to position non-print character
 
@@ -138,6 +181,17 @@ private:
     long            mnDStrikeoutOffset2;        // Offset of double strike-out to baseline
 
 };
+
+inline void intrusive_ptr_add_ref(ImplFontMetricData* pImplFontMetricData)
+{
+    ++pImplFontMetricData->mnRefCount;
+}
+
+inline void intrusive_ptr_release(ImplFontMetricData* pImplFontMetricData)
+{
+    if (--pImplFontMetricData->mnRefCount == 0)
+        delete pImplFontMetricData;
+}
 
 #endif // INCLUDED_VCL_INC_IMPFONTMETRICDATA_HXX
 

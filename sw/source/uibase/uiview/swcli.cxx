@@ -40,7 +40,7 @@ SwOleClient::SwOleClient(SwView *pView, SwEditWin *pWin, const svt::EmbeddedObje
     SetObject( xObj.GetObject() );
 }
 
-void SwOleClient::RequestNewObjectArea( tools::Rectangle& aLogRect )
+void SwOleClient::RequestNewObjectArea( Rectangle& aLogRect )
 {
     // The server wants to change the client size.
     // We put the desired size in the core. The attributes of the frame
@@ -78,8 +78,8 @@ void SwOleClient::RequestNewObjectArea( tools::Rectangle& aLogRect )
 
     rSh.EndAllAction();
 
-    SwRect aFrame( rSh.GetAnyCurRect( CurRectType::FlyEmbedded,     nullptr, GetObject() )),
-           aPrt( rSh.GetAnyCurRect( CurRectType::FlyEmbeddedPrt, nullptr, GetObject() ));
+    SwRect aFrame( rSh.GetAnyCurRect( RECT_FLY_EMBEDDED,     nullptr, GetObject() )),
+           aPrt( rSh.GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, GetObject() ));
     aLogRect.SetPos( aPrt.Pos() + aFrame.Pos() );
     aLogRect.SetSize( aPrt.SSize() );
 }
@@ -87,7 +87,7 @@ void SwOleClient::RequestNewObjectArea( tools::Rectangle& aLogRect )
 void SwOleClient::ObjectAreaChanged()
 {
     SwWrtShell &rSh  = static_cast<SwView*>(GetViewShell())->GetWrtShell();
-    SwRect aFrame( rSh.GetAnyCurRect( CurRectType::FlyEmbedded,     nullptr, GetObject() ));
+    SwRect aFrame( rSh.GetAnyCurRect( RECT_FLY_EMBEDDED,     nullptr, GetObject() ));
     if ( !aFrame.IsOver( rSh.VisArea() ) )
         rSh.MakeVisible( aFrame );
 }
@@ -138,7 +138,7 @@ void SwOleClient::ViewChanged()
     // first convert to TWIPS before scaling, because scaling factors are calculated for
     // the TWIPS mapping and so they will produce the best results if applied to TWIPS based
     // coordinates
-    const MapMode aMyMap ( MapUnit::MapTwip );
+    const MapMode aMyMap ( MAP_TWIP );
     const MapMode aObjMap( VCLUnoHelper::UnoEmbed2VCLMapUnit( GetObject()->getMapUnit( GetAspect() ) ) );
     aVisSize = OutputDevice::LogicToLogic( aVisSize, aObjMap, aMyMap );
 

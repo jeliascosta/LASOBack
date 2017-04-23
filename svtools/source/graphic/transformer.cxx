@@ -72,6 +72,7 @@ void setAlpha( Bitmap& rBitmap, AlphaMask& rAlpha, sal_uInt8 cIndexFrom, sal_Int
 // XGraphicTransformer
 uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::colorChange(
     const uno::Reference< graphic::XGraphic >& rxGraphic, sal_Int32 nColorFrom, sal_Int8 nTolerance, sal_Int32 nColorTo, sal_Int8 nAlphaTo )
+        throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     const uno::Reference< uno::XInterface > xIFace( rxGraphic, uno::UNO_QUERY );
     ::Graphic aGraphic( *::unographic::Graphic::getImplementation( xIFace ) );
@@ -80,7 +81,7 @@ uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::colorChange(
     BitmapColor aColorTo( static_cast< sal_uInt8 >( nColorTo ), static_cast< sal_uInt8 >( nColorTo >> 8 ), static_cast< sal_uInt8 >( nColorTo  >> 16 ) );
     const sal_uInt8 cIndexFrom = aColorFrom.GetBlueOrIndex();
 
-    if ( aGraphic.GetType() == GraphicType::Bitmap || aGraphic.GetType() == GraphicType::GdiMetafile )
+    if ( aGraphic.GetType() == GRAPHIC_BITMAP || aGraphic.GetType() == GRAPHIC_GDIMETAFILE )
     {
         BitmapEx    aBitmapEx( aGraphic.GetBitmapEx() );
         Bitmap      aBitmap( aBitmapEx.GetBitmap() );
@@ -98,7 +99,7 @@ uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::colorChange(
             {
                 Bitmap aMask( aBitmapEx.GetMask() );
                 Bitmap aMask2( aBitmap.CreateMask( aColorFrom, nTolerance ) );
-                aMask.CombineSimple( aMask2, BmpCombine::Or );
+                aMask.CombineSimple( aMask2, BMP_COMBINE_OR );
                 aBitmap.Replace( aColorFrom, aColorTo, nTolerance );
                 aGraphic = ::Graphic( BitmapEx( aBitmap, aMask ) );
             }
@@ -135,6 +136,7 @@ uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::colorChange(
 
 uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::applyDuotone(
     const uno::Reference< graphic::XGraphic >& rxGraphic, sal_Int32 nColorOne, sal_Int32 nColorTwo )
+        throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     const uno::Reference< uno::XInterface > xIFace( rxGraphic, uno::UNO_QUERY );
     ::Graphic aGraphic( *::unographic::Graphic::getImplementation( xIFace ) );
@@ -143,7 +145,7 @@ uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::applyDuotone(
     AlphaMask   aMask( aBitmapEx.GetAlpha() );
     Bitmap      aBitmap( aBitmapEx.GetBitmap() );
     BmpFilterParam aFilter( (sal_uLong) nColorOne, (sal_uLong) nColorTwo );
-    aBitmap.Filter( BmpFilter::DuoTone, &aFilter );
+    aBitmap.Filter( BMP_FILTER_DUOTONE, &aFilter );
     aGraphic = ::Graphic( BitmapEx( aBitmap, aMask ) );
 
     ::unographic::Graphic* pUnoGraphic = new ::unographic::Graphic();
@@ -154,6 +156,7 @@ uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::applyDuotone(
 
 uno::Reference< graphic::XGraphic > SAL_CALL GraphicTransformer::applyBrightnessContrast(
     const uno::Reference< graphic::XGraphic >& rxGraphic, sal_Int32 nBrightness, sal_Int32 nContrast, sal_Bool mso )
+        throw ( lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     const uno::Reference< uno::XInterface > xIFace( rxGraphic, uno::UNO_QUERY );
     ::Graphic aGraphic( *::unographic::Graphic::getImplementation( xIFace ) );

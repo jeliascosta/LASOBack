@@ -56,6 +56,7 @@ namespace drawinglayer
             SdrTextHorzAdjust                   maSdrTextHorzAdjust;
             SdrTextVertAdjust                   maSdrTextVertAdjust;
 
+            // bitfield
             bool                                mbContour : 1;
             bool                                mbFitToSize : 1;
             bool                                mbAutoFit : 1;
@@ -66,6 +67,7 @@ namespace drawinglayer
             bool                                mbFixedCellHeight : 1;
             bool                                mbWrongSpell : 1;
 
+            bool                                mbToBeChained : 1;
             bool                                mbChainable : 1;
 
 
@@ -89,6 +91,7 @@ namespace drawinglayer
                 bool bInEditMode,
                 bool bFixedCellHeight,
                 bool bWrongSpell,
+                bool bToBeChained,
                 bool bChainable)
             :   mpSdrText(pSdrText),
                 mxOutlinerParaObject(new OutlinerParaObject(rOutlinerParaObject)),
@@ -109,11 +112,12 @@ namespace drawinglayer
                 mbInEditMode(bInEditMode),
                 mbFixedCellHeight(bFixedCellHeight),
                 mbWrongSpell(bWrongSpell),
+                mbToBeChained(bToBeChained),
                 mbChainable(bChainable)
             {
                 if(pSdrText)
                 {
-                    if(XFormTextStyle::NONE != eFormTextStyle)
+                    if(XFT_NONE != eFormTextStyle)
                     {
                         // text on path. Create FormText attribute
                         const SfxItemSet& rSet = pSdrText->GetItemSet();
@@ -146,6 +150,7 @@ namespace drawinglayer
                 mbInEditMode(false),
                 mbFixedCellHeight(false),
                 mbWrongSpell(false),
+                mbToBeChained(false),
                 mbChainable(false)
             {
             }
@@ -171,12 +176,15 @@ namespace drawinglayer
             bool isScroll() const { return mbScroll; }
             bool isInEditMode() const { return mbInEditMode; }
             bool isFixedCellHeight() const { return mbFixedCellHeight; }
+            bool isWrongSpell() const { return mbWrongSpell; }
+            bool isToBeChained() const { return mbToBeChained; }
             bool isChainable() const { return mbChainable; }
             const SdrFormTextAttribute& getSdrFormTextAttribute() const { return maSdrFormTextAttribute; }
             sal_Int32 getTextLeftDistance() const { return maTextLeftDistance; }
             sal_Int32 getTextUpperDistance() const { return maTextUpperDistance; }
             sal_Int32 getTextRightDistance() const { return maTextRightDistance; }
             sal_Int32 getTextLowerDistance() const { return maTextLowerDistance; }
+            sal_uInt32 getPropertiesVersion() const { return maPropertiesVersion; }
             SdrTextHorzAdjust getSdrTextHorzAdjust() const { return maSdrTextHorzAdjust; }
             SdrTextVertAdjust getSdrTextVertAdjust() const { return maSdrTextVertAdjust; }
 
@@ -216,7 +224,7 @@ namespace drawinglayer
                     && getTextUpperDistance() == rCandidate.getTextUpperDistance()
                     && getTextRightDistance() == rCandidate.getTextRightDistance()
                     && getTextLowerDistance() == rCandidate.getTextLowerDistance()
-                    && maPropertiesVersion == rCandidate.maPropertiesVersion
+                    && getPropertiesVersion() == rCandidate.getPropertiesVersion()
 
                     && getSdrTextHorzAdjust() == rCandidate.getSdrTextHorzAdjust()
                     && getSdrTextVertAdjust() == rCandidate.getSdrTextVertAdjust()
@@ -229,7 +237,8 @@ namespace drawinglayer
                     && isScroll() == rCandidate.isScroll()
                     && isInEditMode() == rCandidate.isInEditMode()
                     && isFixedCellHeight() == rCandidate.isFixedCellHeight()
-                    && mbWrongSpell == rCandidate.mbWrongSpell );
+                    && isWrongSpell() == rCandidate.isWrongSpell()
+                    && isToBeChained() == rCandidate.isToBeChained() );
             }
         };
 
@@ -258,6 +267,7 @@ namespace drawinglayer
             bool bInEditMode,
             bool bFixedCellHeight,
             bool bWrongSpell,
+            bool bIsToBeChained,
             bool bChainable)
         :   mpSdrTextAttribute(
                 ImpSdrTextAttribute(
@@ -265,7 +275,7 @@ namespace drawinglayer
                     aTextUpperDistance, aTextRightDistance, aTextLowerDistance,
                     aSdrTextHorzAdjust, aSdrTextVertAdjust, bContour, bFitToSize, bAutoFit,
                     bHideContour, bBlink, bScroll, bInEditMode, bFixedCellHeight, bWrongSpell,
-                    bChainable))
+                    bIsToBeChained, bChainable))
         {
         }
 
@@ -276,11 +286,6 @@ namespace drawinglayer
 
         SdrTextAttribute::SdrTextAttribute(const SdrTextAttribute& rCandidate)
         :   mpSdrTextAttribute(rCandidate.mpSdrTextAttribute)
-        {
-        }
-
-        SdrTextAttribute::SdrTextAttribute(SdrTextAttribute&& rCandidate)
-        :   mpSdrTextAttribute(std::move(rCandidate.mpSdrTextAttribute))
         {
         }
 
@@ -296,12 +301,6 @@ namespace drawinglayer
         SdrTextAttribute& SdrTextAttribute::operator=(const SdrTextAttribute& rCandidate)
         {
             mpSdrTextAttribute = rCandidate.mpSdrTextAttribute;
-            return *this;
-        }
-
-        SdrTextAttribute& SdrTextAttribute::operator=(SdrTextAttribute&& rCandidate)
-        {
-            mpSdrTextAttribute = std::move(rCandidate.mpSdrTextAttribute);
             return *this;
         }
 

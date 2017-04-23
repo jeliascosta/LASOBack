@@ -23,7 +23,7 @@
 #include <com/sun/star/report/XFunctionsSupplier.hpp>
 #include <cppuhelper/compbase.hxx>
 #include <comphelper/interfacecontainer2.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <comphelper/broadcasthelper.hxx>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <list>
 
@@ -35,7 +35,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OFunctions : public cppu::BaseMutex,
+    class OFunctions : public comphelper::OBaseMutex,
                     public FunctionsBase
     {
         typedef ::std::list< css::uno::Reference< css::report::XFunction > >  TFunctions;
@@ -50,7 +50,7 @@ namespace reportdesign
     protected:
         // TODO: VirtualFunctionFinder: This is virtual function!
 
-        virtual ~OFunctions() override;
+        virtual ~OFunctions();
 
         /** this function is called upon disposing the component
         */
@@ -63,32 +63,32 @@ namespace reportdesign
 
     // XFunctions
         // Methods
-        virtual css::uno::Reference< css::report::XFunction > SAL_CALL createFunction(  ) override;
+        virtual css::uno::Reference< css::report::XFunction > SAL_CALL createFunction(  ) throw (css::uno::RuntimeException, std::exception) override;
     // XIndexContainer
-        virtual void SAL_CALL insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) override;
-        virtual void SAL_CALL removeByIndex( ::sal_Int32 Index ) override;
+        virtual void SAL_CALL insertByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     // XIndexReplace
-        virtual void SAL_CALL replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) override;
+        virtual void SAL_CALL replaceByIndex( ::sal_Int32 Index, const css::uno::Any& Element ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     // XIndexAccess
-        virtual ::sal_Int32 SAL_CALL getCount(  ) override;
-        virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) override;
+        virtual ::sal_Int32 SAL_CALL getCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual css::uno::Any SAL_CALL getByIndex( ::sal_Int32 Index ) throw (css::lang::IndexOutOfBoundsException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     // XElementAccess
-        virtual css::uno::Type SAL_CALL getElementType(  ) override;
-        virtual sal_Bool SAL_CALL hasElements(  ) override;
+        virtual css::uno::Type SAL_CALL getElementType(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual sal_Bool SAL_CALL hasElements(  ) throw (css::uno::RuntimeException, std::exception) override;
     // XChild
-        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) override;
-        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) override;
+        virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getParent(  ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
     // XContainer
-        virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
-        virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) override;
+        virtual void SAL_CALL addContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeContainerListener( const css::uno::Reference< css::container::XContainerListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XComponent
-        virtual void SAL_CALL dispose() override;
-        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override
+        virtual void SAL_CALL dispose() throw(css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL addEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override
         {
             cppu::WeakComponentImplHelperBase::addEventListener(aListener);
         }
-        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) override
+        virtual void SAL_CALL removeEventListener(const css::uno::Reference< css::lang::XEventListener > & aListener) throw(css::uno::RuntimeException, std::exception) override
         {
             cppu::WeakComponentImplHelperBase::removeEventListener(aListener);
         }

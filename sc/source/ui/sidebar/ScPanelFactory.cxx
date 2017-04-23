@@ -54,6 +54,10 @@ ScPanelFactory::~ScPanelFactory()
 Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
     const ::rtl::OUString& rsResourceURL,
     const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments)
+    throw(
+        container::NoSuchElementException,
+        lang::IllegalArgumentException,
+        RuntimeException, std::exception)
 {
     Reference<ui::XUIElement> xElement;
 
@@ -65,7 +69,7 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
         const sal_uInt64 nBindingsValue (aArguments.getOrDefault("SfxBindings", sal_uInt64(0)));
         SfxBindings* pBindings = reinterpret_cast<SfxBindings*>(nBindingsValue);
 
-        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if ( ! xParentWindow.is() || pParentWindow==nullptr)
             throw RuntimeException(
                 "PanelFactory::createUIElement called without ParentWindow",
@@ -89,12 +93,12 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
             pPanel = NumberFormatPropertyPanel::Create( pParentWindow, xFrame, pBindings );
         else if (rsResourceURL.endsWith("/NavigatorPanel"))
         {
-            pPanel = VclPtr<ScNavigatorDlg>::Create(pBindings, pParentWindow);
+            pPanel = VclPtr<ScNavigatorDlg>::Create(pBindings, nullptr, pParentWindow, false);
             nMinimumSize = 0;
         }
         else if (rsResourceURL.endsWith("/FunctionsPanel"))
         {
-            pPanel = VclPtr<ScFunctionWin>::Create(pParentWindow, xFrame);
+            pPanel = VclPtr<ScFunctionWin>::Create(pBindings, pParentWindow, ScResId(FID_FUNCTION_BOX));
             nMinimumSize = 0;
         }
 
@@ -112,7 +116,7 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
     catch (const uno::Exception& e)
     {
         throw lang::WrappedTargetRuntimeException(
-            "ScPanelFactory::createUIElement exception",
+            OUString("ScPanelFactory::createUIElement exception"),
             nullptr, uno::makeAny(e));
     }
 
@@ -120,16 +124,19 @@ Reference<ui::XUIElement> SAL_CALL ScPanelFactory::createUIElement (
 }
 
 OUString ScPanelFactory::getImplementationName()
+    throw (css::uno::RuntimeException, std::exception)
 {
     return OUString("org.apache.openoffice.comp.sc.sidebar.ScPanelFactory");
 }
 
 sal_Bool ScPanelFactory::supportsService(OUString const & ServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 css::uno::Sequence<OUString> ScPanelFactory::getSupportedServiceNames()
+    throw (css::uno::RuntimeException, std::exception)
 {
     css::uno::Sequence<OUString> aServiceNames { "com.sun.star.ui.UIElementFactory" };
     return aServiceNames;

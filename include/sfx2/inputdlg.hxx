@@ -21,16 +21,16 @@ class Button;
 class SFX2_DLLPUBLIC InputDialog : public ModalDialog
 {
 public:
-    InputDialog (const OUString &labelText, vcl::Window *pParent);
+    InputDialog (const OUString &labelText, vcl::Window *pParent = nullptr);
     OUString GetEntryText () const;
     void SetEntryText( OUString const & sStr );
     void HideHelpBtn();
-    virtual ~InputDialog() override;
+    virtual ~InputDialog();
     virtual void dispose() override;
 
 private:
 
-    DECL_LINK(ClickHdl, Button*, void);
+    DECL_LINK_TYPED(ClickHdl, Button*, void);
 
 private:
 

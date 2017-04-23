@@ -37,11 +37,11 @@ private:
 public:
     explicit            SvxDrawOutlinerViewForwarder( OutlinerView& rOutl );
                         SvxDrawOutlinerViewForwarder( OutlinerView& rOutl, const Point& rShapePosTopLeft );
-    virtual             ~SvxDrawOutlinerViewForwarder() override;
+    virtual             ~SvxDrawOutlinerViewForwarder();
 
     virtual bool        IsValid() const override;
 
-    virtual tools::Rectangle   GetVisArea() const override;
+    virtual Rectangle   GetVisArea() const override;
     virtual Point       LogicToPixel( const Point& rPoint, const MapMode& rMapMode ) const override;
     virtual Point       PixelToLogic( const Point& rPoint, const MapMode& rMapMode ) const override;
 

@@ -28,7 +28,7 @@
 class XMLKerningPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLKerningPropHdl() override;
+    virtual ~XMLKerningPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

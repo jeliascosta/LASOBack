@@ -52,7 +52,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OFormNavigationHelper::dispose( )
+    void SAL_CALL OFormNavigationHelper::dispose( ) throw( RuntimeException )
     {
         m_pFeatureInterception->dispose();
         disconnectDispatchers();
@@ -77,21 +77,21 @@ namespace frm
     }
 
 
-    void SAL_CALL OFormNavigationHelper::registerDispatchProviderInterceptor( const Reference< XDispatchProviderInterceptor >& _rxInterceptor )
+    void SAL_CALL OFormNavigationHelper::registerDispatchProviderInterceptor( const Reference< XDispatchProviderInterceptor >& _rxInterceptor ) throw (RuntimeException, std::exception)
     {
         m_pFeatureInterception->registerDispatchProviderInterceptor( _rxInterceptor );
         interceptorsChanged();
     }
 
 
-    void SAL_CALL OFormNavigationHelper::releaseDispatchProviderInterceptor( const Reference< XDispatchProviderInterceptor >& _rxInterceptor )
+    void SAL_CALL OFormNavigationHelper::releaseDispatchProviderInterceptor( const Reference< XDispatchProviderInterceptor >& _rxInterceptor ) throw (RuntimeException, std::exception)
     {
         m_pFeatureInterception->releaseDispatchProviderInterceptor( _rxInterceptor );
         interceptorsChanged();
     }
 
 
-    void SAL_CALL OFormNavigationHelper::statusChanged( const FeatureStateEvent& _rState )
+    void SAL_CALL OFormNavigationHelper::statusChanged( const FeatureStateEvent& _rState ) throw (RuntimeException, std::exception)
     {
         for (   FeatureMap::iterator aFeature = m_aSupportedFeatures.begin();
                 aFeature != m_aSupportedFeatures.end();
@@ -119,7 +119,7 @@ namespace frm
     }
 
 
-    void SAL_CALL OFormNavigationHelper::disposing( const EventObject& _rSource )
+    void SAL_CALL OFormNavigationHelper::disposing( const EventObject& _rSource ) throw (RuntimeException, std::exception)
     {
         // was it one of our external dispatchers?
         if ( m_nConnectedFeatures )
@@ -332,7 +332,7 @@ namespace frm
         if ( m_aSupportedFeatures.end() != aInfo )
             aInfo->second.aCachedAdditionalState >>= bState;
 
-        return bState;
+        return (bool)bState;
     }
 
 

@@ -61,7 +61,9 @@
 namespace OpenStormBento
 {
 
-class CUtList;
+UtDefClassP(CUtListElmt);
+UtDefClassP(CUtList);
+UtDefClassP(CUtComparableListElmt);
 
 class CUtListElmt
 {
@@ -70,16 +72,17 @@ public: // Methods
         : cpNext(nullptr)
         , cpPrev(nullptr)
     {}
-    explicit CUtListElmt(CUtListElmt * pPrev) { InsertAfter(pPrev); }
-    explicit CUtListElmt(CUtList * pList);
+    explicit CUtListElmt(pCUtListElmt pPrev) { InsertAfter(pPrev); }
+    explicit CUtListElmt(pCUtList pList);
     virtual ~CUtListElmt();
+    bool OnList() { return cpNext != nullptr; }
     void MakeNotOnList() { cpNext = nullptr; } // Same as Remove but doesn't
                                             // patch up list
-    CUtListElmt * GetNext() const { return cpNext; }
-    void SetNext(CUtListElmt * pNext) { cpNext = pNext; }
-    CUtListElmt * GetPrev() const { return cpPrev; }
-    void SetPrev(CUtListElmt * pPrev) { cpPrev = pPrev; }
-    void InsertAfter(CUtListElmt * pPrev)
+    pCUtListElmt GetNext() const { return cpNext; }
+    void SetNext(pCUtListElmt pNext) { cpNext = pNext; }
+    pCUtListElmt GetPrev() const { return cpPrev; }
+    void SetPrev(pCUtListElmt pPrev) { cpPrev = pPrev; }
+    void InsertAfter(pCUtListElmt pPrev)
     {
         cpNext = pPrev->cpNext;
         cpPrev = pPrev;
@@ -88,8 +91,8 @@ public: // Methods
     }
 
 private: // Data
-    CUtListElmt * cpNext;
-    CUtListElmt * cpPrev;
+    pCUtListElmt cpNext;
+    pCUtListElmt cpPrev;
 };
 
 class CUtList
@@ -98,10 +101,10 @@ public: // Methods
     CUtList() { cDummyElmt.SetNext(&cDummyElmt);
       cDummyElmt.SetPrev(&cDummyElmt); }
     virtual ~CUtList();
-    CUtListElmt * GetFirst() { return cDummyElmt.GetNext(); }
-    CUtListElmt * GetLast() { return cDummyElmt.GetPrev(); }
+    pCUtListElmt GetFirst() { return cDummyElmt.GetNext(); }
+    pCUtListElmt GetLast() { return cDummyElmt.GetPrev(); }
     CUtListElmt& GetTerminating() { return cDummyElmt; }
-    CUtListElmt * GetNextOrNULL(CUtListElmt * pCurr);
+    pCUtListElmt GetNextOrNULL(pCUtListElmt pCurr);
 
     void Destroy();
 
@@ -112,7 +115,7 @@ private: // Data
 class CUtOwningList : public CUtList
 {
 public: // Methods
-    virtual ~CUtOwningList() override;
+    virtual ~CUtOwningList();
 };
 }//end namespace OpenStormBento
 #endif

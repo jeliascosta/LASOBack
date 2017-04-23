@@ -115,7 +115,7 @@ public:
 
         In case there is no publisher element then a pair of two empty strings is returned.
     */
-    std::pair< OUString, OUString > getLocalizedPublisherNameAndURL() const;
+    ::std::pair< OUString, OUString > getLocalizedPublisherNameAndURL() const;
 
     /**
         Returns the URL for the release notes corresponding to the office's locale.
@@ -260,9 +260,9 @@ private:
 
     /** Helper method to compare the versions with the current version
      */
-    SAL_DLLPRIVATE static bool
+    SAL_DLLPRIVATE bool
         checkBlacklistVersion(const OUString& currentversion,
-                              css::uno::Sequence< OUString > const & versions);
+                              css::uno::Sequence< OUString > const & versions) const;
 
     css::uno::Reference< css::uno::XComponentContext > m_context;
     css::uno::Reference< css::xml::dom::XNode >        m_element;

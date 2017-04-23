@@ -53,7 +53,7 @@ public:
     SvxFrameDirection   GetSelectEntryValue() const;
 
     /** Saves the currently selected frame direction. */
-    void         SaveValue() { meSaveValue = GetSelectEntryValue(); }
+    inline void         SaveValue() { meSaveValue = GetSelectEntryValue(); }
 
 private:
     SvxFrameDirection   meSaveValue;    /// Saved value for later comparison.
@@ -76,7 +76,7 @@ public:
 };
 
 /** Wrapper for usage of a SvxFrameDirectionItem in item connections. */
-typedef sfx::ValueItemWrapper< SvxFrameDirectionItem, SvxFrameDirection > FrameDirItemWrapper;
+typedef sfx::ValueItemWrapper< SvxFrameDirectionItem, SvxFrameDirection, sal_uInt16 > FrameDirItemWrapper;
 
 /** An item<->control connection for a FrameDirectionListBox. */
 typedef sfx::ItemControlConnection< FrameDirItemWrapper, FrameDirListBoxWrapper > FrameDirListBoxConnection;

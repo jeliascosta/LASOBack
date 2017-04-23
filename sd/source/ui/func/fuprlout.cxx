@@ -20,6 +20,7 @@
 #include "fuprlout.hxx"
 #include <vcl/wrkwin.hxx>
 #include <sfx2/dispatch.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/itempool.hxx>
 #include <sot/storage.hxx>
 #include <vcl/msgbox.hxx>
@@ -94,7 +95,7 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
     if (DrawViewShell *pShell = dynamic_cast<DrawViewShell*>(mpViewShell))
     {
         EditMode eEditMode = pShell->GetEditMode();
-        if (eEditMode == EditMode::MasterPage)
+        if (eEditMode == EM_MASTERPAGE)
             bOnMaster = true;
     }
 
@@ -114,7 +115,7 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
                 for (auto it = xSelection->begin(); it != xSelection->end(); ++it)
                 {
                     SdPage *pPage = *it;
-                    if (pPage->IsSelected() || pPage->GetPageKind() != PageKind::Standard)
+                    if (pPage->IsSelected() || pPage->GetPageKind() != PK_STANDARD)
                         continue;
                     mpDoc->SetSelected(pPage, true);
                     aUnselect.push_back(pPage);
@@ -126,9 +127,9 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
     std::vector<SdPage*> aSelectedPages;
     std::vector<sal_uInt16> aSelectedPageNums;
     // determine the active pages
-    for (sal_uInt16 nPage = 0; nPage < mpDoc->GetSdPageCount(PageKind::Standard); nPage++)
+    for (sal_uInt16 nPage = 0; nPage < mpDoc->GetSdPageCount(PK_STANDARD); nPage++)
     {
-        SdPage* pPage = mpDoc->GetSdPage(nPage, PageKind::Standard);
+        SdPage* pPage = mpDoc->GetSdPage(nPage, PK_STANDARD);
         if (pPage->IsSelected())
         {
             aSelectedPages.push_back(pPage);
@@ -174,7 +175,7 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
     else
     {
         SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-        ScopedVclPtr<AbstractSdPresLayoutDlg> pDlg(pFact ? pFact->CreateSdPresLayoutDlg(mpDocSh, aSet ) : nullptr);
+        std::unique_ptr<AbstractSdPresLayoutDlg> pDlg(pFact ? pFact->CreateSdPresLayoutDlg(mpDocSh, nullptr, aSet ) : nullptr);
 
         sal_uInt16 nResult = pDlg ? pDlg->Execute() : static_cast<short>(RET_CANCEL);
 
@@ -239,7 +240,7 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
             static_cast<DrawView*>(mpView)->BlockPageOrderChangedHint(false);
 
         // if the master page was visible, show it again
-        if (!aSelectedPages.empty())
+        if (!bError && !aSelectedPages.empty())
         {
             if (bOnMaster)
             {
@@ -251,7 +252,7 @@ void FuPresentationLayout::DoExecute( SfxRequest& rReq )
                     {
                         sal_uInt16 nPgNum = pSelectedPage->TRG_GetMasterPage().GetPageNum();
 
-                        if (static_cast<DrawViewShell*>(mpViewShell)->GetPageKind() == PageKind::Notes)
+                        if (static_cast<DrawViewShell*>(mpViewShell)->GetPageKind() == PK_NOTES)
                             nPgNum++;
 
                         pView->HideSdrPage();

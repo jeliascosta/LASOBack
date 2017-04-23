@@ -41,7 +41,7 @@ public:
     SvxColorItem(const Color& aColor, const sal_uInt16 nId);
     SvxColorItem(SvStream& rStream, const sal_uInt16 nId);
     SvxColorItem(const SvxColorItem& rCopy);
-    virtual ~SvxColorItem() override;
+    virtual ~SvxColorItem();
 
     // "pure virtual Methods" from SfxPoolItem
     virtual bool operator==(const SfxPoolItem& rPoolItem) const override;
@@ -50,14 +50,14 @@ public:
     virtual sal_uInt16 GetVersion(sal_uInt16 nFileVersion) const override;
 
     virtual bool GetPresentation(SfxItemPresentation ePres,
-                                 MapUnit eCoreMetric, MapUnit ePresMetric,
+                                 SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric,
                                  OUString &rText, const IntlWrapper* pIntlWrapper = nullptr) const override;
 
     virtual SfxPoolItem* Clone(SfxItemPool* pPool = nullptr) const override;
     virtual SfxPoolItem* Create(SvStream& rStream, sal_uInt16 nVersion) const override;
     virtual SvStream& Store(SvStream& rStream, sal_uInt16 nVersion) const override;
 
-    SvxColorItem& operator=(const SvxColorItem& rColor)
+    inline SvxColorItem& operator=(const SvxColorItem& rColor)
     {
         SetValue(rColor.GetValue());
         return *this;

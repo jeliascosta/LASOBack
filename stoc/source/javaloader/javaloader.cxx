@@ -100,22 +100,27 @@ class JavaComponentLoader : public WeakImplHelper<XImplementationLoader, XServic
 
 
 public:
-    /// @throws RuntimeException
-    explicit JavaComponentLoader(const css::uno::Reference<XComponentContext> & xCtx);
+    explicit JavaComponentLoader(const css::uno::Reference<XComponentContext> & xCtx)
+        throw(RuntimeException);
+    virtual ~JavaComponentLoader() throw();
 
 public:
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw(RuntimeException, std::exception) override;
+    virtual Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw(RuntimeException, std::exception) override;
 
     // XImplementationLoader
     virtual css::uno::Reference<XInterface> SAL_CALL activate(
         const OUString& implementationName, const OUString& implementationLoaderUrl,
-        const OUString& locationUrl, const css::uno::Reference<XRegistryKey>& xKey) override;
+        const OUString& locationUrl, const css::uno::Reference<XRegistryKey>& xKey)
+        throw(CannotActivateFactoryException, RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL writeRegistryInfo(
         const css::uno::Reference<XRegistryKey>& xKey,
-        const OUString& implementationLoaderUrl, const OUString& locationUrl) override;
+        const OUString& implementationLoaderUrl, const OUString& locationUrl)
+        throw(CannotRegisterImplementationException, RuntimeException, std::exception) override;
 };
 
 const css::uno::Reference<XImplementationLoader> & JavaComponentLoader::getJavaLoader()
@@ -257,7 +262,10 @@ const css::uno::Reference<XImplementationLoader> & JavaComponentLoader::getJavaL
         }
 
         // set the service manager at the javaloader
-        css::uno::Reference<XInitialization> javaLoader_XInitialization(m_javaLoader, UNO_QUERY_THROW);
+        css::uno::Reference<XInitialization> javaLoader_XInitialization(m_javaLoader, UNO_QUERY);
+        if(!javaLoader_XInitialization.is())
+            throw RuntimeException(
+                "javaloader error - initialization of java javaloader failed, no XInitialization");
 
         Any any;
         any <<= css::uno::Reference<XMultiComponentFactory>(
@@ -277,29 +285,36 @@ const css::uno::Reference<XImplementationLoader> & JavaComponentLoader::getJavaL
                 reinterpret_cast<typelib_TypeDescription *>(pType_XImplementationLoader));
         throw;
     }
-    SAL_INFO("stoc", "javaloader.cxx: mapped javaloader - 0x" << m_javaLoader.get());
+    OSL_TRACE("javaloader.cxx: mapped javaloader - 0x%p", m_javaLoader.get());
     return m_javaLoader;
 }
 
-JavaComponentLoader::JavaComponentLoader(const css::uno::Reference<XComponentContext> & xCtx) :
+JavaComponentLoader::JavaComponentLoader(const css::uno::Reference<XComponentContext> & xCtx) throw(RuntimeException) :
     m_xComponentContext(xCtx)
 
 {
 
 }
 
+JavaComponentLoader::~JavaComponentLoader() throw()
+{
+}
+
 // XServiceInfo
 OUString SAL_CALL JavaComponentLoader::getImplementationName()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return loader_getImplementationName();
 }
 
 sal_Bool SAL_CALL JavaComponentLoader::supportsService(const OUString & ServiceName)
+    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence<OUString> SAL_CALL JavaComponentLoader::getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return loader_getSupportedServiceNames();
 }
@@ -309,6 +324,7 @@ Sequence<OUString> SAL_CALL JavaComponentLoader::getSupportedServiceNames()
 sal_Bool SAL_CALL JavaComponentLoader::writeRegistryInfo(
     const css::uno::Reference<XRegistryKey> & xKey, const OUString & blabla,
     const OUString & rLibName)
+    throw(CannotRegisterImplementationException, RuntimeException, std::exception)
 {
     const css::uno::Reference<XImplementationLoader> & loader = getJavaLoader();
     if (loader.is())
@@ -321,6 +337,7 @@ sal_Bool SAL_CALL JavaComponentLoader::writeRegistryInfo(
 css::uno::Reference<XInterface> SAL_CALL JavaComponentLoader::activate(
     const OUString & rImplName, const OUString & blabla, const OUString & rLibName,
     const css::uno::Reference<XRegistryKey> & xKey)
+    throw(CannotActivateFactoryException, RuntimeException, std::exception)
 {
     const css::uno::Reference<XImplementationLoader> & loader = getJavaLoader();
     if (loader.is())
@@ -344,8 +361,7 @@ static Mutex & getInitMutex()
     return *pMutex;
 }
 
-/// @throws Exception
-css::uno::Reference<XInterface> SAL_CALL JavaComponentLoader_CreateInstance(const css::uno::Reference<XComponentContext> & xCtx)
+css::uno::Reference<XInterface> SAL_CALL JavaComponentLoader_CreateInstance(const css::uno::Reference<XComponentContext> & xCtx) throw(Exception)
 {
     css::uno::Reference<XInterface> xRet;
 

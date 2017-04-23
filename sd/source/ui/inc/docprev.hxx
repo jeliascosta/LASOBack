@@ -36,17 +36,22 @@ namespace sd {
     class SlideShow;
 }
 
+class GDIMetaFile;
+
 class SD_DLLPUBLIC SdDocPreviewWin : public Control, public SfxListener
 {
 protected:
+    GDIMetaFile*    pMetaFile;
     Link<SdDocPreviewWin&,void> aClickHdl;
+    SfxObjectShell* mpObj;
+    sal_uInt16      mnShowPage;
     Color           maDocumentColor;
     rtl::Reference< sd::SlideShow > mxSlideShow;
 
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual Size    GetOptimalSize() const override;
-    static void     CalcSizeAndPos( Size& rSize, Point& rPoint );
-    static void     ImpPaint( OutputDevice* pVDev );
+    static void     CalcSizeAndPos( GDIMetaFile* pFile, Size& rSize, Point& rPoint );
+    void            ImpPaint( GDIMetaFile* pFile, OutputDevice* pVDev );
 
     static const int FRAME;
 
@@ -56,11 +61,15 @@ protected:
 
 public:
                     SdDocPreviewWin( vcl::Window* pParent, const WinBits nStyle );
-                    virtual ~SdDocPreviewWin() override;
+                    virtual ~SdDocPreviewWin();
     virtual void    dispose() override;
+    void            SetObjectShell( SfxObjectShell* pObj, sal_uInt16 nShowPage = 0 );
     virtual void    Resize() override;
+    void            startPreview();
 
-    virtual bool    EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool    Notify( NotifyEvent& rNEvt ) override;
+
+    void            SetClickHdl( const Link<SdDocPreviewWin&,void>& rLink ) { aClickHdl = rLink; }
 
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 

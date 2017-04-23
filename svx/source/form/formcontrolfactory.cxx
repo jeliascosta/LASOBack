@@ -128,7 +128,7 @@ namespace svxform
     void FormControlFactory::initializeControlModel( const DocumentType _eDocType, const Reference< XPropertySet >& _rxControlModel )
     {
         initializeControlModel(
-            _eDocType, _rxControlModel, tools::Rectangle()
+            _eDocType, _rxControlModel, Rectangle()
         );
     }
 
@@ -168,7 +168,7 @@ namespace svxform
                 {
                     OUStringBuffer aBuffer( _rBaseLabel );
                     aBuffer.append( " " );
-                    aBuffer.append( i++ );
+                    aBuffer.append( (sal_Int32)i++ );
                     sLabel = aBuffer.makeStringAndClear();
                 }
             }
@@ -381,7 +381,7 @@ namespace svxform
 
 
     sal_Int16 FormControlFactory::initializeControlModel( const DocumentType _eDocType, const Reference< XPropertySet >& _rxControlModel,
-        const tools::Rectangle& _rControlBoundRect )
+        const Rectangle& _rControlBoundRect )
     {
         sal_Int16 nClassId = FormComponentType::CONTROL;
 
@@ -604,7 +604,7 @@ namespace svxform
                 if ( aProperty.Type.getTypeClass() == TypeClass_DOUBLE )
                     aValue <<= (double)nMinValue;
                 else if ( aProperty.Type.getTypeClass() == TypeClass_LONG )
-                    aValue <<= nMinValue;
+                    aValue <<= (sal_Int32)nMinValue;
                 else
                 {
                     OSL_FAIL( "FormControlFactory::initializeFieldDependentProperties: unexpected property type (MinValue)!" );
@@ -616,7 +616,7 @@ namespace svxform
                 if ( aProperty.Type.getTypeClass() == TypeClass_DOUBLE )
                     aValue <<= (double)nMaxValue;
                 else if ( aProperty.Type.getTypeClass() == TypeClass_LONG )
-                    aValue <<= nMaxValue;
+                    aValue <<= (sal_Int32)nMaxValue;
                 else
                 {
                     OSL_FAIL( "FormControlFactory::initializeFieldDependentProperties: unexpected property type (MaxValue)!" );

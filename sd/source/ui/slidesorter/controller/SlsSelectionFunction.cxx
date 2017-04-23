@@ -195,6 +195,7 @@ public:
     NormalModeHandler (
         SlideSorter& rSlideSorter,
         SelectionFunction& rSelectionFunction);
+    virtual ~NormalModeHandler();
 
     virtual SelectionFunction::Mode GetMode() const override;
     virtual void Abort() override;
@@ -233,7 +234,7 @@ public:
         const Point& rMouseModelPosition,
         const sal_uInt32 nEventCode);
 #endif
-    virtual ~MultiSelectionModeHandler() override;
+    virtual ~MultiSelectionModeHandler();
 
 #ifndef MACOSX
     void Initialize(const sal_uInt32 nEventCode);
@@ -290,7 +291,7 @@ public:
         const Point& rMousePosition,
         vcl::Window* pWindow);
 #endif
-    virtual ~DragAndDropModeHandler() override;
+    virtual ~DragAndDropModeHandler();
 
 #ifndef MACOSX
     void Initialize(const Point& rMousePosition, vcl::Window* pWindow);
@@ -445,25 +446,25 @@ bool SelectionFunction::KeyInput (const KeyEvent& rEvent)
 
         // Move the focus indicator left.
         case KEY_LEFT:
-            MoveFocus(FocusManager::FocusMoveDirection::Left, rCode.IsShift(), rCode.IsMod1());
+            MoveFocus(FocusManager::FMD_LEFT, rCode.IsShift(), rCode.IsMod1());
             bResult = true;
             break;
 
         // Move the focus indicator right.
         case KEY_RIGHT:
-            MoveFocus(FocusManager::FocusMoveDirection::Right, rCode.IsShift(), rCode.IsMod1());
+            MoveFocus(FocusManager::FMD_RIGHT, rCode.IsShift(), rCode.IsMod1());
             bResult = true;
             break;
 
         // Move the focus indicator up.
         case KEY_UP:
-            MoveFocus(FocusManager::FocusMoveDirection::Up, rCode.IsShift(), rCode.IsMod1());
+            MoveFocus(FocusManager::FMD_UP, rCode.IsShift(), rCode.IsMod1());
             bResult = true;
             break;
 
         // Move the focus indicator down.
         case KEY_DOWN:
-            MoveFocus(FocusManager::FocusMoveDirection::Down, rCode.IsShift(), rCode.IsMod1());
+            MoveFocus(FocusManager::FMD_DOWN, rCode.IsShift(), rCode.IsMod1());
             bResult = true;
             break;
 
@@ -582,6 +583,16 @@ void SelectionFunction::MoveFocus (
         // Without shift just select the focused page.
         mpModeHandler->SelectOnePage(pFocusedDescriptor);
     }
+}
+
+void SelectionFunction::Activate()
+{
+    FuPoor::Activate();
+}
+
+void SelectionFunction::Deactivate()
+{
+    FuPoor::Deactivate();
 }
 
 void SelectionFunction::DoCut()
@@ -786,7 +797,7 @@ SelectionFunction::EventDescriptor::EventDescriptor (
     // we can call IsLeaveWindow at the event.  Otherwise we have to make an
     // explicit test.
     mbIsLeaving = rEvent.IsLeaveWindow()
-        || ! ::tools::Rectangle(Point(0,0),
+        || ! Rectangle(Point(0,0),
              rSlideSorter.GetContentWindow()->GetOutputSizePixel()).IsInside(maMousePosition);
 }
 
@@ -817,7 +828,7 @@ SelectionFunction::EventDescriptor::EventDescriptor (
     // we can call IsLeaveWindow at the event.  Otherwise we have to make an
     // explicit test.
     mbIsLeaving = rEvent.mbLeaving
-        || ! ::tools::Rectangle(Point(0,0),
+        || ! Rectangle(Point(0,0),
              rSlideSorter.GetContentWindow()->GetOutputSizePixel()).IsInside(maMousePosition);
 }
 
@@ -1021,6 +1032,10 @@ NormalModeHandler::NormalModeHandler (
     SelectionFunction& rSelectionFunction)
     : ModeHandler(rSlideSorter, rSelectionFunction, true),
       maButtonDownLocation()
+{
+}
+
+NormalModeHandler::~NormalModeHandler()
 {
 }
 
@@ -1362,7 +1377,7 @@ void MultiSelectionModeHandler::UpdatePosition (
     // Convert window coordinates into model coordinates (we need the
     // window coordinates for auto-scrolling because that remains
     // constant while scrolling.)
-    sd::Window *pWindow (mrSlideSorter.GetContentWindow().get());
+    sd::Window *pWindow (mrSlideSorter.GetContentWindow());
     const Point aMouseModelPosition (pWindow->PixelToLogic(rMousePosition));
 
     bool bDoAutoScroll = bAllowAutoScroll && mrSlideSorter.GetController().GetScrollBarManager().AutoScroll(
@@ -1512,7 +1527,7 @@ DragAndDropModeHandler::~DragAndDropModeHandler()
     if (mpDragAndDropContext)
     {
         // Disconnect the substitution handler from this selection function.
-        mpDragAndDropContext->SetTargetSlideSorter(Point(0,0));
+        mpDragAndDropContext->SetTargetSlideSorter();
         mpDragAndDropContext.reset();
     }
     mrSlideSorter.GetController().GetInsertionIndicatorHandler()->End(Animator::AM_Animated);
@@ -1558,7 +1573,7 @@ bool DragAndDropModeHandler::ProcessDragEvent (SelectionFunction::EventDescripto
     {
         mpDragAndDropContext->UpdatePosition(
             rDescriptor.maMousePosition,
-            rDescriptor.meDragMode, true);
+            rDescriptor.meDragMode);
     }
 
     return true;

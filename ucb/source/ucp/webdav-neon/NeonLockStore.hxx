@@ -43,6 +43,14 @@ namespace webdav_ucp
 class TickerThread;
 class NeonSession;
 
+struct ltptr
+{
+    bool operator()( const NeonLock * p1, const NeonLock * p2 ) const
+    {
+        return p1 < p2;
+    }
+};
+
 struct LockInfo
 {
     rtl::Reference< NeonSession > xSession;
@@ -58,7 +66,7 @@ struct LockInfo
 
 };
 
-typedef std::map< NeonLock *, LockInfo > LockInfoMap;
+typedef std::map< NeonLock *, LockInfo, ltptr > LockInfoMap;
 
 class NeonLockStore
 {

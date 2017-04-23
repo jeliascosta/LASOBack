@@ -47,16 +47,16 @@ public:
 public:
     inline explicit Enterable();
 
-    void enter() {m_enter(this);}
-    void leave() {m_leave(this);}
+    inline void enter() {m_enter(this);}
+    inline void leave() {m_leave(this);}
 
-    void callInto_v(uno_EnvCallee * pCallee, va_list * pParam) {m_callInto_v(this, pCallee, pParam);}
-    void callOut_v (uno_EnvCallee * pCallee, va_list * pParam) {m_callOut_v (this, pCallee, pParam);}
+    inline void callInto_v(uno_EnvCallee * pCallee, va_list * pParam) {m_callInto_v(this, pCallee, pParam);}
+    inline void callOut_v (uno_EnvCallee * pCallee, va_list * pParam) {m_callOut_v (this, pCallee, pParam);}
 
     inline void callInto(uno_EnvCallee * pCallee, ...);
     inline void callOut (uno_EnvCallee * pCallee, ...);
 
-    int  isValid (rtl::OUString * pReason) {return m_isValid(this, &pReason->pData);}
+    inline int  isValid (rtl::OUString * pReason) {return m_isValid(this, &pReason->pData);}
 
 private:
     Enterable(Enterable const &) SAL_DELETED_FUNCTION;

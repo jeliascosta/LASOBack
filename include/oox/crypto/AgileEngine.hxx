@@ -26,23 +26,25 @@ namespace oox {
 namespace oox {
 namespace core {
 
+const sal_uInt32 SEGMENT_LENGTH = 4096;
+
 struct AgileEncryptionInfo
 {
-    sal_Int32 spinCount;
-    sal_Int32 saltSize;
-    sal_Int32 keyBits;
-    sal_Int32 hashSize;
-    sal_Int32 blockSize;
+    sal_Int32               spinCount;
+    sal_Int32               saltSize;
+    sal_Int32               keyBits;
+    sal_Int32               hashSize;
+    sal_Int32               blockSize;
 
     OUString cipherAlgorithm;
     OUString cipherChaining;
     OUString hashAlgorithm;
 
-    std::vector<sal_uInt8> keyDataSalt;
-    std::vector<sal_uInt8> saltValue;
-    std::vector<sal_uInt8> encryptedVerifierHashInput;
-    std::vector<sal_uInt8> encryptedVerifierHashValue;
-    std::vector<sal_uInt8> encryptedKeyValue;
+    std::vector<sal_uInt8>  keyDataSalt;
+    std::vector<sal_uInt8>  saltValue;
+    std::vector<sal_uInt8>  encryptedVerifierHashInput;
+    std::vector<sal_uInt8>  encryptedVerifierHashValue;
+    std::vector<sal_uInt8>  encryptedKeyValue;
 };
 
 class AgileEngine : public CryptoEngine
@@ -52,7 +54,8 @@ class AgileEngine : public CryptoEngine
     void calculateHashFinal(const OUString& rPassword, std::vector<sal_uInt8>& aHashFinal);
 
     void calculateBlock(
-            std::vector<sal_uInt8> const & rBlock,
+            const sal_uInt8* rBlock,
+            sal_uInt32 aBlockSize,
             std::vector<sal_uInt8>& rHashFinal,
             std::vector<sal_uInt8>& rInput,
             std::vector<sal_uInt8>& rOutput);
@@ -60,7 +63,8 @@ class AgileEngine : public CryptoEngine
     static Crypto::CryptoType cryptoType(const AgileEncryptionInfo& rInfo);
 
 public:
-    AgileEngine() = default;
+    AgileEngine();
+    virtual ~AgileEngine();
 
     AgileEncryptionInfo& getInfo() { return mInfo;}
 

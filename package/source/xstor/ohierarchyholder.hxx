@@ -65,8 +65,8 @@ struct OHierarchyElement_Impl : public cppu::WeakImplHelper< css::embed::XTransa
     OWeakStorRefList_Impl m_aOpenStreams;
 
 public:
-    explicit OHierarchyElement_Impl( const css::uno::Reference< css::embed::XStorage >& xStorage )
-    : m_rParent( nullptr )
+    OHierarchyElement_Impl( OHierarchyElement_Impl* pParent, const css::uno::Reference< css::embed::XStorage >& xStorage )
+    : m_rParent( pParent )
     , m_xOwnStorage( xStorage )
     {}
 
@@ -87,18 +87,23 @@ public:
         GetStreamHierarchically( sal_Int32 nStorageMode,
                                 OStringList_Impl& aPath,
                                 sal_Int32 nStreamMode,
-                                const ::comphelper::SequenceAsHashMap& aEncryptionData );
+                                const ::comphelper::SequenceAsHashMap& aEncryptionData = ::comphelper::SequenceAsHashMap() );
 
     void RemoveStreamHierarchically( OStringList_Impl& aListPath );
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XTransactionListener
-    virtual void SAL_CALL preCommit( const css::lang::EventObject& aEvent ) override;
-    virtual void SAL_CALL commited( const css::lang::EventObject& aEvent ) override;
-    virtual void SAL_CALL preRevert( const css::lang::EventObject& aEvent ) override;
-    virtual void SAL_CALL reverted( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL preCommit( const css::lang::EventObject& aEvent )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL commited( const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL preRevert( const css::lang::EventObject& aEvent )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL reverted( const css::lang::EventObject& aEvent )
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 

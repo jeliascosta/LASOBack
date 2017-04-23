@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include "vbacommandbarhelper.hxx"
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/ui/theModuleUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationStorage.hpp>
@@ -38,7 +37,7 @@ using namespace ooo::vba;
 
 typedef std::map< OUString, OUString > MSO2OOCommandbarMap;
 
-class MSO2OOCommandbarHelper final
+class MSO2OOCommandbarHelper
 {
 private:
     static MSO2OOCommandbarHelper* pMSO2OOCommandbarHelper;
@@ -61,6 +60,7 @@ private:
     }
 
 public:
+    virtual ~MSO2OOCommandbarHelper() {};
     static MSO2OOCommandbarHelper* getMSO2OOCommandbarHelper()
     {
         if( pMSO2OOCommandbarHelper == nullptr )
@@ -86,12 +86,12 @@ public:
 MSO2OOCommandbarHelper* MSO2OOCommandbarHelper::pMSO2OOCommandbarHelper = nullptr;
 
 
-VbaCommandBarHelper::VbaCommandBarHelper( const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Reference< css::frame::XModel >& xModel ) : mxContext( xContext ), mxModel( xModel )
+VbaCommandBarHelper::VbaCommandBarHelper( const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Reference< css::frame::XModel >& xModel ) throw (css::uno::RuntimeException) : mxContext( xContext ), mxModel( xModel )
 {
     Init();
 }
 
-void VbaCommandBarHelper::Init( )
+void VbaCommandBarHelper::Init( ) throw (css::uno::RuntimeException)
 {
     uno::Reference< css::ui::XUIConfigurationManagerSupplier > xUICfgSupplier( mxModel, uno::UNO_QUERY_THROW );
     m_xDocCfgMgr = xUICfgSupplier->getUIConfigurationManager();
@@ -121,7 +121,7 @@ void VbaCommandBarHelper::Init( )
     m_xWindowState.set( xNameAccess->getByName( maModuleId ), uno::UNO_QUERY_THROW );
 }
 
-css::uno::Reference< css::container::XIndexAccess > VbaCommandBarHelper::getSettings( const OUString& sResourceUrl )
+css::uno::Reference< css::container::XIndexAccess > VbaCommandBarHelper::getSettings( const OUString& sResourceUrl ) throw (css::uno::RuntimeException)
 {
     if( m_xDocCfgMgr->hasSettings( sResourceUrl ) )
         return m_xDocCfgMgr->getSettings( sResourceUrl, true );
@@ -134,7 +134,7 @@ css::uno::Reference< css::container::XIndexAccess > VbaCommandBarHelper::getSett
     }
 }
 
-void VbaCommandBarHelper::removeSettings( const OUString& sResourceUrl )
+void VbaCommandBarHelper::removeSettings( const OUString& sResourceUrl ) throw (css::uno::RuntimeException)
 {
     if( m_xDocCfgMgr->hasSettings( sResourceUrl ) )
         m_xDocCfgMgr->removeSettings( sResourceUrl );
@@ -144,7 +144,7 @@ void VbaCommandBarHelper::removeSettings( const OUString& sResourceUrl )
     // persistChanges();
 }
 
-void VbaCommandBarHelper::ApplyTempChange( const OUString& sResourceUrl, const css::uno::Reference< css::container::XIndexAccess >& xSettings )
+void VbaCommandBarHelper::ApplyTempChange( const OUString& sResourceUrl, const css::uno::Reference< css::container::XIndexAccess >& xSettings ) throw (css::uno::RuntimeException)
 {
     if( m_xDocCfgMgr->hasSettings( sResourceUrl ) )
     {
@@ -156,7 +156,16 @@ void VbaCommandBarHelper::ApplyTempChange( const OUString& sResourceUrl, const c
     }
 }
 
-uno::Reference< frame::XLayoutManager > VbaCommandBarHelper::getLayoutManager()
+void VbaCommandBarHelper::persistChanges() throw (css::uno::RuntimeException)
+{
+    uno::Reference< css::ui::XUIConfigurationPersistence > xConfigPersistence( m_xDocCfgMgr, uno::UNO_QUERY_THROW );
+    if( xConfigPersistence->isModified() )
+    {
+        xConfigPersistence->store();
+    }
+}
+
+uno::Reference< frame::XLayoutManager > VbaCommandBarHelper::getLayoutManager() throw (uno::RuntimeException)
 {
     uno::Reference< frame::XFrame > xFrame( getModel()->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
     uno::Reference< beans::XPropertySet > xPropertySet( xFrame, uno::UNO_QUERY_THROW );
@@ -164,7 +173,7 @@ uno::Reference< frame::XLayoutManager > VbaCommandBarHelper::getLayoutManager()
     return xLayoutManager;
 }
 
-bool VbaCommandBarHelper::hasToolbar( const OUString& sResourceUrl, const OUString& sName )
+bool VbaCommandBarHelper::hasToolbar( const OUString& sResourceUrl, const OUString& sName ) throw (css::uno::RuntimeException)
 {
     if( m_xDocCfgMgr->hasSettings( sResourceUrl ) )
     {
@@ -178,7 +187,7 @@ bool VbaCommandBarHelper::hasToolbar( const OUString& sResourceUrl, const OUStri
 }
 
 // return the resource url if found
-OUString VbaCommandBarHelper::findToolbarByName( const css::uno::Reference< css::container::XNameAccess >& xNameAccess, const OUString& sName )
+OUString VbaCommandBarHelper::findToolbarByName( const css::uno::Reference< css::container::XNameAccess >& xNameAccess, const OUString& sName ) throw (css::uno::RuntimeException)
 {
     OUString sResourceUrl;
 
@@ -199,7 +208,8 @@ OUString VbaCommandBarHelper::findToolbarByName( const css::uno::Reference< css:
     }
 
     // the customize toolbars creating during importing, should found there.
-    sResourceUrl = "private:resource/toolbar/custom_" + sName;
+    static const char sToolbarPrefix[] = "private:resource/toolbar/custom_";
+    sResourceUrl = sToolbarPrefix + sName;
     if( hasToolbar( sResourceUrl, sName ) )
         return sResourceUrl;
 
@@ -207,7 +217,7 @@ OUString VbaCommandBarHelper::findToolbarByName( const css::uno::Reference< css:
 }
 
 // if found, return the position of the control. if not found, return -1
-sal_Int32 VbaCommandBarHelper::findControlByName( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess, const OUString& sName, bool bMenu )
+sal_Int32 VbaCommandBarHelper::findControlByName( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess, const OUString& sName, bool bMenu ) throw (css::uno::RuntimeException)
 {
     sal_Int32 nCount = xIndexAccess->getCount();
     css::uno::Sequence< css::beans::PropertyValue > aProps;

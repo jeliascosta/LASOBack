@@ -31,6 +31,7 @@ namespace drawinglayer
             Graphic                                 maGraphic;
             basegfx::B2DRange                       maGraphicRange;
 
+            // bitfield
             bool                                    mbTiling : 1;
 
             // tiling definitions, offsets in X/Y in percent for each 2nd row.

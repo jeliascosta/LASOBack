@@ -22,6 +22,7 @@
 
 #include <com/sun/star/uno/Sequence.h>
 #include <com/sun/star/beans/PropertyValue.hpp>
+#include <svtools/stdctrl.hxx>
 
 #include <vcl/dialog.hxx>
 #include <vcl/button.hxx>
@@ -49,12 +50,12 @@ private:
 
     FilterConfigItem    maConfigItem;
 
-    DECL_LINK( OnToggleCheckbox, CheckBox&, void );
+    DECL_LINK_TYPED( OnToggleCheckbox, CheckBox&, void );
 
 public:
     ImpSWFDialog( vcl::Window* pParent,
                   css::uno::Sequence< css::beans::PropertyValue >& rFilterData );
-    virtual ~ImpSWFDialog() override;
+    virtual ~ImpSWFDialog();
     virtual void dispose() override;
 
     css::uno::Sequence< css::beans::PropertyValue > GetFilterData();

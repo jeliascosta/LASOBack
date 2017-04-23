@@ -15,10 +15,11 @@ namespace sd{
 
     public:
         WINNetworkService(const std::string& aname = "", unsigned int aport = 1599)
-            : ZeroconfService(aname, aport), client(nullptr) {}
+            : ZeroconfService(aname, aport), client(0) {}
+        virtual ~WINNetworkService(){}
 
-        void clear() override;
-        void setup() override;
+        void clear();
+        void setup();
 
     };
 }

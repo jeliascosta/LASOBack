@@ -29,7 +29,6 @@
 class SwCursorShell;
 class SwShellCursor;
 class SwTextInputField;
-class SfxViewShell;
 
 // From here classes/methods for non-text cursor.
 
@@ -47,6 +46,8 @@ class SwVisibleCursor
     /// For LibreOfficeKit only - remember what page we were at the last time.
     sal_uInt16 m_nPageLastTime;
 
+    void SetPosAndShow();
+
 public:
     SwVisibleCursor( const SwCursorShell * pCShell );
     ~SwVisibleCursor();
@@ -56,7 +57,6 @@ public:
 
     bool IsVisible() const { return m_bIsVisible; }
     void SetDragCursor( bool bFlag = true ) { m_bIsDragCursor = bFlag; }
-    void SetPosAndShow(SfxViewShell* pViewShell);
 };
 
 // From here classes/methods for selections.
@@ -103,7 +103,7 @@ public:
     void Hide();
     void Invalidate( const SwRect& rRect );
 
-    void SetShowTextInputFieldOverlay( const bool bShow )
+    inline void SetShowTextInputFieldOverlay( const bool bShow )
     {
         m_bShowTextInputFieldOverlay = bShow;
     }
@@ -128,16 +128,16 @@ private:
 public:
     SwShellCursor( const SwCursorShell& rCursorSh, const SwPosition &rPos );
     SwShellCursor( const SwCursorShell& rCursorSh, const SwPosition &rPos,
-                    const Point& rPtPos, SwPaM* pRing );
+                    const Point& rPtPos, SwPaM* pRing = nullptr );
     // note: *intentionally* links the new shell cursor into the old one's Ring
     SwShellCursor( SwShellCursor& );
-    virtual ~SwShellCursor() override;
+    virtual ~SwShellCursor();
 
-    virtual void FillRects() override;   // For Table- and normal cursors.
+    virtual void FillRects() override;   // For Table- und normal cursors.
     /// @see SwSelPaintRects::FillStartEnd(), override for text selections.
     virtual void FillStartEnd(SwRect& rStart, SwRect& rEnd) const override;
 
-    void Show(SfxViewShell* pViewShell); // Update and display all selections.
+    void Show();            // Update and display all selections.
     void Hide();            // Hide all selections.
     void Invalidate( const SwRect& rRect );
 
@@ -155,9 +155,9 @@ public:
     virtual SwCursor* Create( SwPaM* pRing = nullptr ) const override;
 
     virtual short MaxReplaceArived() override; //returns RET_YES/RET_CANCEL/RET_NO
-    virtual void SaveTableBoxContent( const SwPosition* pPos ) override;
+    virtual void SaveTableBoxContent( const SwPosition* pPos = nullptr ) override;
 
-    bool UpDown( bool bUp, sal_uInt16 nCnt );
+    bool UpDown( bool bUp, sal_uInt16 nCnt = 1 );
 
     // true: Cursor can be set to this position.
     virtual bool IsAtValidPos( bool bPoint = true ) const override;
@@ -182,7 +182,7 @@ public:
     SwShellTableCursor( const SwCursorShell& rCursorSh,
                     const SwPosition &rMkPos, const Point& rMkPt,
                     const SwPosition &rPtPos, const Point& rPtPt );
-    virtual ~SwShellTableCursor() override;
+    virtual ~SwShellTableCursor();
 
     virtual void FillRects() override;   // For table and normal cursor.
     /// @see SwSelPaintRects::FillStartEnd(), override for table selections.
@@ -195,7 +195,7 @@ public:
     virtual SwCursor* Create( SwPaM* pRing = nullptr ) const override;
 
     virtual short MaxReplaceArived() override; //returns RET_YES/RET_CANCEL/RET_NO
-    virtual void SaveTableBoxContent( const SwPosition* pPos ) override;
+    virtual void SaveTableBoxContent( const SwPosition* pPos = nullptr ) override;
 
     // true: Cursor can be set to this position.
     virtual bool IsAtValidPos( bool bPoint = true ) const override;

@@ -15,14 +15,12 @@
 
 #include <tools/color.hxx>
 #include <tools/fontenum.hxx>
-#include <editeng/svxenum.hxx>
 
 #include "sharedformulagroups.hxx"
 
 #include "conditio.hxx"
 
 #include <rtl/strbuf.hxx>
-#include <editeng/borderline.hxx>
 
 #define __ORCUS_STATIC_LIB
 #include <orcus/spreadsheet/import_interface.hpp>
@@ -87,7 +85,7 @@ class ScOrcusConditionalFormat : public orcus::spreadsheet::iface::import_condit
 {
 public:
     ScOrcusConditionalFormat(SCTAB nTab, ScDocument& rDoc);
-    virtual ~ScOrcusConditionalFormat() override;
+    virtual ~ScOrcusConditionalFormat();
 
     virtual void set_color(orcus::spreadsheet::color_elem_t alpha, orcus::spreadsheet::color_elem_t red,
             orcus::spreadsheet::color_elem_t green, orcus::spreadsheet::color_elem_t blue) override;
@@ -150,7 +148,7 @@ class ScOrcusAutoFilter : public orcus::spreadsheet::iface::import_auto_filter
 public:
     ScOrcusAutoFilter(ScDocument& rDoc);
 
-    virtual ~ScOrcusAutoFilter() override;
+    virtual ~ScOrcusAutoFilter();
 
     virtual void set_range(const char* p_ref, size_t n_ref) override;
 
@@ -172,7 +170,7 @@ class ScOrcusSheetProperties : public orcus::spreadsheet::iface::import_sheet_pr
     SCTAB mnTab;
 public:
     ScOrcusSheetProperties(SCTAB nTab, ScDocumentImport& rDoc);
-    virtual ~ScOrcusSheetProperties() override;
+    virtual ~ScOrcusSheetProperties();
 
     virtual void set_column_width(orcus::spreadsheet::col_t col, double width, orcus::length_unit_t unit) override;
 
@@ -257,15 +255,7 @@ private:
         OUString maName;
         double mnSize;
         Color maColor;
-
-        bool mbHasFontAttr;
-        bool mbHasUnderlineAttr;
-        bool mbHasStrikeout;
-
         FontLineStyle meUnderline;
-        Color maUnderlineColor;
-
-        FontStrikeout meStrikeout;
 
         font();
 
@@ -281,10 +271,6 @@ private:
         Color maFgColor;
         Color maBgColor;
 
-        bool mbHasFillAttr;
-
-        fill();
-
         void applyToItemSet(SfxItemSet& rSet) const;
     };
 
@@ -295,15 +281,9 @@ private:
     {
         struct border_line
         {
-            SvxBorderLineStyle mestyle;
             Color maColor;
-            double mnWidth;
-
-            border_line();
         };
         std::map<orcus::spreadsheet::border_direction_t, border_line> border_lines;
-
-        bool mbHasBorderAttr;
 
         border();
 
@@ -317,10 +297,6 @@ private:
     {
         bool mbHidden;
         bool mbLocked;
-        bool mbPrintContent;
-        bool mbFormulaHidden;
-
-        bool mbHasProtectionAttr;
 
         protection();
         void applyToItemSet(SfxItemSet& rSet) const;
@@ -333,10 +309,7 @@ private:
     {
         OUString maCode;
 
-        bool mbHasNumberFormatAttr;
-
-        number_format();
-        void applyToItemSet(SfxItemSet& rSet, ScDocument& rDoc) const;
+        void applyToItemSet(SfxItemSet& rSet) const;
     };
 
     number_format maCurrentNumberFormat;
@@ -350,10 +323,6 @@ private:
         size_t mnProtectionId;
         size_t mnNumberFormatId;
         size_t mnStyleXf;
-        bool mbAlignment;
-
-        SvxCellHorJustify meHor_alignment;
-        SvxCellVerJustify meVer_alignment;
 
         xf();
     };
@@ -365,7 +334,6 @@ private:
     struct cell_style
     {
         OUString maName;
-        OUString maParentName;
         size_t mnXFId;
         size_t mnBuiltInId;
 
@@ -389,21 +357,10 @@ public:
     virtual void set_font_name(const char* s, size_t n) override;
     virtual void set_font_size(double point) override;
     virtual void set_font_underline(orcus::spreadsheet::underline_t e) override;
-    virtual void set_font_underline_width(orcus::spreadsheet::underline_width_t e) override;
-    virtual void set_font_underline_mode(orcus::spreadsheet::underline_mode_t e) override;
-    virtual void set_font_underline_type(orcus::spreadsheet::underline_type_t e) override;
-    virtual void set_font_underline_color(orcus::spreadsheet::color_elem_t alpha,
-            orcus::spreadsheet::color_elem_t red,
-            orcus::spreadsheet::color_elem_t green,
-            orcus::spreadsheet::color_elem_t blue) override;
     virtual void set_font_color( orcus::spreadsheet::color_elem_t alpha,
             orcus::spreadsheet::color_elem_t red,
             orcus::spreadsheet::color_elem_t green,
             orcus::spreadsheet::color_elem_t blue) override;
-    virtual void set_strikethrough_style(orcus::spreadsheet::strikethrough_style_t s) override;
-    virtual void set_strikethrough_type(orcus::spreadsheet::strikethrough_type_t s) override;
-    virtual void set_strikethrough_width(orcus::spreadsheet::strikethrough_width_t s) override;
-    virtual void set_strikethrough_text(orcus::spreadsheet::strikethrough_text_t s) override;
     virtual size_t commit_font() override;
 
     // fill
@@ -424,14 +381,11 @@ public:
             orcus::spreadsheet::color_elem_t red,
             orcus::spreadsheet::color_elem_t green,
             orcus::spreadsheet::color_elem_t blue) override;
-    virtual void set_border_width(orcus::spreadsheet::border_direction_t dir, double val, orcus::length_unit_t unit) override;
     virtual size_t commit_border() override;
 
     // cell protection
     virtual void set_cell_hidden(bool b) override;
     virtual void set_cell_locked(bool b) override;
-    virtual void set_cell_print_content(bool b) override;
-    virtual void set_cell_formula_hidden(bool b) override;
     virtual size_t commit_cell_protection() override;
 
     // number format

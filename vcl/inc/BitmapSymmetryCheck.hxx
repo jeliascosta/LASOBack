@@ -14,15 +14,15 @@
 #include <vcl/bitmap.hxx>
 #include <vcl/bitmapaccess.hxx>
 
-class VCL_DLLPUBLIC BitmapSymmetryCheck final
+class VCL_DLLPUBLIC BitmapSymmetryCheck
 {
 public:
     BitmapSymmetryCheck();
-    ~BitmapSymmetryCheck();
+    virtual ~BitmapSymmetryCheck();
 
     static bool check(Bitmap& rBitmap);
 
-private:
+protected:
     static bool checkImpl(BitmapReadAccess* pReadAccess);
 };
 

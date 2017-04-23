@@ -45,7 +45,7 @@ namespace dbaui
         OQueryTableConnectionData( const OQueryTableConnectionData& rConnData );
         OQueryTableConnectionData( const TTableWindowData::value_type& _pReferencingTable,const TTableWindowData::value_type& _pReferencedTable,
             const OUString& rConnName=OUString());
-        virtual ~OQueryTableConnectionData() override;
+        virtual ~OQueryTableConnectionData();
 
         virtual void CopyFrom(const OTableConnectionData& rSource) override;
         virtual OTableConnectionData* NewInstance() const override;
@@ -69,8 +69,8 @@ namespace dbaui
         EJoinType       GetJoinType() const { return m_eJoinType; };
         void            SetJoinType(const EJoinType& eJT) { m_eJoinType = eJT; };
 
-        void setNatural(bool _bNatural) { m_bNatural = _bNatural; }
-        bool isNatural() const { return m_bNatural; }
+        inline void setNatural(bool _bNatural) { m_bNatural = _bNatural; }
+        inline bool isNatural() const { return m_bNatural; }
     };
 
 }

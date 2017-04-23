@@ -58,7 +58,7 @@ QueueProcessor::QueueProcessor (
     if (aTimeBetweenReqeusts.has<sal_Int32>())
         aTimeBetweenReqeusts >>= mnTimeBetweenRequestsWhenNotIdle;
 
-    maTimer.SetInvokeHandler (LINK(this,QueueProcessor,ProcessRequestHdl));
+    maTimer.SetTimeoutHdl (LINK(this,QueueProcessor,ProcessRequestHdl));
     maTimer.SetTimeout (10);
 }
 
@@ -106,7 +106,7 @@ void QueueProcessor::SetPreviewSize (
     mbDoSuperSampling = bDoSuperSampling;
 }
 
-IMPL_LINK_NOARG(QueueProcessor, ProcessRequestHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(QueueProcessor, ProcessRequestHdl, Timer *, void)
 {
     ProcessRequests();
 }

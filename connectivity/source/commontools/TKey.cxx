@@ -39,7 +39,7 @@ OTableKeyHelper::OTableKeyHelper(OTableHelper* _pTable) : connectivity::sdbcx::O
 
 OTableKeyHelper::OTableKeyHelper(   OTableHelper* _pTable
             ,const OUString& Name
-            ,const std::shared_ptr<sdbcx::KeyProperties>& _rProps
+            ,const sdbcx::TKeyProperties& _rProps
             ) : connectivity::sdbcx::OKey(Name,_rProps,true)
                 ,m_pTable(_pTable)
 {
@@ -52,7 +52,7 @@ void OTableKeyHelper::refreshColumns()
     if ( !m_pTable )
         return;
 
-    std::vector< OUString> aVector;
+    ::std::vector< OUString> aVector;
     if ( !isNew() )
     {
         aVector = m_aProps->m_aKeyColumnNames;
@@ -98,9 +98,9 @@ void OTableKeyHelper::refreshColumns()
 
 
     if ( m_pColumns )
-        m_pColumns->reFill(aVector);
+        m_pColumns ->reFill(aVector);
     else
-        m_pColumns.reset( new OKeyColumnsHelper(this,m_aMutex,aVector) );
+        m_pColumns  = new OKeyColumnsHelper(this,m_aMutex,aVector);
 }
 
 

@@ -61,7 +61,7 @@ namespace chart
 
 extern "C" {
     SAL_DLLPUBLIC_EXPORT opengl::OpenglShapeFactory* getOpenglShapeFactory()
-                              {    return new opengl::OpenglShapeFactory;}
+                              {    return new opengl::OpenglShapeFactory();}
     }
 
 using dummy::DummyCylinder;
@@ -351,7 +351,7 @@ uno::Reference< drawing::XShape > OpenglShapeFactory::createInvisibleRectangle(
             , const awt::Size& rSize )
 {
     dummy::DummyRectangle* pRectangle = new dummy::DummyRectangle(rSize);
-    pRectangle->setPropertyValue("Invisible", uno::Any(true));
+    pRectangle->setPropertyValue("Invisible", uno::makeAny(true));
     xTarget->add(pRectangle);
     return pRectangle;
 }
@@ -430,10 +430,10 @@ uno::Reference< drawing::XShape >
         drawing::TextHorizontalAdjust eHorizontalAdjust = drawing::TextHorizontalAdjust_CENTER;
         drawing::TextVerticalAdjust eVerticalAdjust = drawing::TextVerticalAdjust_CENTER;
 
-        aValueMap.insert( tPropertyNameValueMap::value_type( "TextHorizontalAdjust", uno::Any(eHorizontalAdjust) ) ); // drawing::TextHorizontalAdjust
-        aValueMap.insert( tPropertyNameValueMap::value_type( "TextVerticalAdjust", uno::Any(eVerticalAdjust) ) ); //drawing::TextVerticalAdjust
-        aValueMap.insert( tPropertyNameValueMap::value_type( "TextAutoGrowHeight", uno::Any(true) ) ); // sal_Bool
-        aValueMap.insert( tPropertyNameValueMap::value_type( "TextAutoGrowWidth", uno::Any(true) ) ); // sal_Bool
+        aValueMap.insert( tPropertyNameValueMap::value_type( "TextHorizontalAdjust", uno::makeAny(eHorizontalAdjust) ) ); // drawing::TextHorizontalAdjust
+        aValueMap.insert( tPropertyNameValueMap::value_type( "TextVerticalAdjust", uno::makeAny(eVerticalAdjust) ) ); //drawing::TextVerticalAdjust
+        aValueMap.insert( tPropertyNameValueMap::value_type( "TextAutoGrowHeight", uno::makeAny(true) ) ); // sal_Bool
+        aValueMap.insert( tPropertyNameValueMap::value_type( "TextAutoGrowWidth", uno::makeAny(true) ) ); // sal_Bool
 
     }
 
@@ -451,7 +451,7 @@ uno::Reference< drawing::XShape >
     aM.translate( nXPos, nYPos );
 
     dummy::DummyText* pText = new dummy::DummyText(aString, aPropNames, aPropValues,
-            uno::Any(B2DHomMatrixToHomogenMatrix3(aM)), xTarget, nRotation);
+            uno::makeAny(B2DHomMatrixToHomogenMatrix3(aM)), xTarget, nRotation);
     pText->setName(rName);
     return pText;
 }

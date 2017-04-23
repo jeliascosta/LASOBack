@@ -48,7 +48,7 @@ public:
     const Size&  GetSizePixel() const            { return aBtnSize; }
 
 private:
-    void    ImpDrawArrow( const tools::Rectangle&  rRect );
+    void    ImpDrawArrow( const Rectangle&  rRect );
 
 protected:
     VclPtr<OutputDevice> pOut;

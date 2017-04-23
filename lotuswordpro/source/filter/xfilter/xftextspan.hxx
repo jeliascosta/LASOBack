@@ -77,7 +77,7 @@ public:
     XFTextSpan();
     XFTextSpan(const OUString& text, const OUString& style );
 
-    virtual ~XFTextSpan() override;
+    virtual ~XFTextSpan();
 
     void            Add(XFContent *pContent);
     void            Add(const OUString& text);

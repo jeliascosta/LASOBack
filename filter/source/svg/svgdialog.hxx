@@ -30,11 +30,10 @@
 
 class ResMgr;
 
-class SVGDialog final:
-    public ::svt::OGenericUnoDialog,
-    public ::comphelper::OPropertyArrayUsageHelper< SVGDialog >,
-    public css::beans::XPropertyAccess,
-    public css::document::XExporter
+class SVGDialog : public ::svt::OGenericUnoDialog,
+                  public ::comphelper::OPropertyArrayUsageHelper< SVGDialog >,
+                  public css::beans::XPropertyAccess,
+                  public css::document::XExporter
 {
 private:
 
@@ -42,45 +41,54 @@ private:
     css::uno::Sequence< css::beans::PropertyValue > maFilterData;
     css::uno::Reference< css::lang::XComponent >    mxSrcDoc;
 
+protected:
+
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire() throw () override;
     virtual void SAL_CALL release() throw () override;
 
     // OGenericUnoDialog
-    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() override;
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
     virtual VclPtr<Dialog> createDialog( vcl::Window* pParent ) override;
     virtual void executedDialog( sal_Int16 nExecutionResult ) override;
-    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() override;
+    virtual css::uno::Reference< css::beans::XPropertySetInfo>  SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
     virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
     virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
 
     // XPropertyAccess
     using cppu::OPropertySetHelper::getPropertyValues;
-    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getPropertyValues(  ) override;
+    virtual css::uno::Sequence< css::beans::PropertyValue > SAL_CALL getPropertyValues(  ) throw (css::uno::RuntimeException, std::exception) override;
     using cppu::OPropertySetHelper::setPropertyValues;
-    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< css::beans::PropertyValue >& aProps ) override;
+    virtual void SAL_CALL setPropertyValues( const css::uno::Sequence< css::beans::PropertyValue >& aProps ) throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
        // XExporter
-    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+    virtual void SAL_CALL setSourceDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 public:
 
     explicit SVGDialog( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual     ~SVGDialog() override;
+    virtual     ~SVGDialog();
 };
 
-/// @throws css::uno::RuntimeException
-OUString SVGDialog_getImplementationName ();
 
-/// @throws css::uno::RuntimeException
-css::uno::Sequence< OUString > SAL_CALL SVGDialog_getSupportedServiceNames(  );
+OUString SVGDialog_getImplementationName ()
+    throw ( css::uno::RuntimeException );
 
-/// @throws css::uno::Exception
+
+bool SAL_CALL SVGDialog_supportsService( const OUString& ServiceName )
+    throw ( css::uno::RuntimeException );
+
+
+css::uno::Sequence< OUString > SAL_CALL SVGDialog_getSupportedServiceNames(  )
+    throw ( css::uno::RuntimeException );
+
+
 css::uno::Reference< css::uno::XInterface >
-    SAL_CALL SVGDialog_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr);
+    SAL_CALL SVGDialog_createInstance( const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr)
+        throw ( css::uno::Exception );
 
 #endif // INCLUDED_FILTER_SOURCE_SVG_SVGDIALOG_HXX
 

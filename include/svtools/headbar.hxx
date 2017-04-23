@@ -196,12 +196,13 @@ enum class HeaderBarItemBits
     FLAT                = 0x0800,
     DOWNARROW           = 0x1000,
     UPARROW             = 0x2000,
+    USERDRAW            = 0x4000,
     STDSTYLE            = LEFT | LEFTIMAGE | VCENTER | CLICKABLE,
 };
 
 namespace o3tl
 {
-    template<> struct typed_flags<HeaderBarItemBits> : is_typed_flags<HeaderBarItemBits, 0x3fff> {};
+    template<> struct typed_flags<HeaderBarItemBits> : is_typed_flags<HeaderBarItemBits, 0x7fff> {};
 }
 
 #define HEADERBAR_APPEND            ((sal_uInt16)0xFFFF)
@@ -251,14 +252,14 @@ private:
     SVT_DLLPRIVATE void             ImplInit( WinBits nWinStyle );
     SVT_DLLPRIVATE void             ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
     SVT_DLLPRIVATE long             ImplGetItemPos( sal_uInt16 nPos ) const;
-    SVT_DLLPRIVATE tools::Rectangle            ImplGetItemRect( sal_uInt16 nPos ) const;
+    SVT_DLLPRIVATE Rectangle            ImplGetItemRect( sal_uInt16 nPos ) const;
     using Window::ImplHitTest;
     SVT_DLLPRIVATE sal_uInt16               ImplHitTest( const Point& rPos, long& nMouseOff, sal_uInt16& nPos ) const;
     SVT_DLLPRIVATE void             ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos );
     SVT_DLLPRIVATE void             ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, bool bHigh,
-                                                 const tools::Rectangle& rItemRect, const tools::Rectangle* pRect, DrawFlags nFlags);
+                                                 const Rectangle& rItemRect, const Rectangle* pRect, DrawFlags nFlags);
     SVT_DLLPRIVATE void             ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, bool bHigh,
-                                                 const tools::Rectangle* pRect);
+                                                 const Rectangle* pRect);
     SVT_DLLPRIVATE void             ImplUpdate( sal_uInt16 nPos,
                                        bool bEnd = false );
     SVT_DLLPRIVATE void             ImplStartDrag( const Point& rPos, bool bCommand );
@@ -268,14 +269,14 @@ private:
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
 public:
-    HeaderBar( vcl::Window* pParent, WinBits nWinBits );
-    virtual ~HeaderBar() override;
+    HeaderBar( vcl::Window* pParent, WinBits nWinBits = WB_STDHEADERBAR );
+    virtual ~HeaderBar();
     virtual void dispose() override;
 
     virtual void        MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void        MouseMove( const MouseEvent& rMEvt ) override;
     virtual void        Tracking( const TrackingEvent& rTEvt ) override;
-    virtual void        Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void        Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void        Resize() override;
     virtual void        Command( const CommandEvent& rCEvt ) override;
@@ -283,6 +284,8 @@ public:
     virtual void        StateChanged( StateChangedType nStateChange ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
+    void                StartDrag();
+    void                Drag();
     virtual void        EndDrag();
     virtual void        Select();
     virtual void        DoubleClick();
@@ -294,14 +297,14 @@ public:
     void                MoveItem( sal_uInt16 nItemId, sal_uInt16 nNewPos );
     void                Clear();
 
-    void                SetOffset( long nNewOffset );
-    void         SetDragSize( long nNewSize ) { mnDragSize = nNewSize; }
+    void                SetOffset( long nNewOffset = 0 );
+    inline void         SetDragSize( long nNewSize = 0 ) { mnDragSize = nNewSize; }
 
     sal_uInt16          GetItemCount() const;
     sal_uInt16          GetItemPos( sal_uInt16 nItemId ) const;
     sal_uInt16          GetItemId( sal_uInt16 nPos ) const;
     sal_uInt16          GetItemId( const Point& rPos ) const;
-    tools::Rectangle           GetItemRect( sal_uInt16 nItemId ) const;
+    Rectangle           GetItemRect( sal_uInt16 nItemId ) const;
     sal_uInt16          GetCurItemId() const { return mnCurItemId; }
     long                GetDragPos() const { return mnDragPos; }
     bool                IsItemMode() const { return mbItemMode; }
@@ -319,20 +322,21 @@ public:
 
     Size                CalcWindowSizePixel() const;
 
-    using Window::SetHelpId;
+    inline void         SetHelpId( const OString& rId )    { Window::SetHelpId( rId ); }
 
-    void         SetStartDragHdl( const Link<HeaderBar*,void>& rLink )      { maStartDragHdl = rLink; }
-    void         SetDragHdl( const Link<HeaderBar*,void>& rLink )           { maDragHdl = rLink; }
-    void         SetEndDragHdl( const Link<HeaderBar*,void>& rLink )        { maEndDragHdl = rLink; }
-    void         SetSelectHdl( const Link<HeaderBar*,void>& rLink )         { maSelectHdl = rLink; }
-    void         SetCreateAccessibleHdl( const Link<HeaderBar*,void>& rLink ) { maCreateAccessibleHdl = rLink; }
 
-    bool         IsDragable() const                          { return mbDragable; }
+    inline void         SetStartDragHdl( const Link<HeaderBar*,void>& rLink )      { maStartDragHdl = rLink; }
+    inline void         SetDragHdl( const Link<HeaderBar*,void>& rLink )           { maDragHdl = rLink; }
+    inline void         SetEndDragHdl( const Link<HeaderBar*,void>& rLink )        { maEndDragHdl = rLink; }
+    inline void         SetSelectHdl( const Link<HeaderBar*,void>& rLink )         { maSelectHdl = rLink; }
+    inline void         SetCreateAccessibleHdl( const Link<HeaderBar*,void>& rLink ) { maCreateAccessibleHdl = rLink; }
+
+    inline bool         IsDragable() const                          { return mbDragable; }
 
     /** Creates and returns the accessible object of the header bar. */
     virtual css::uno::Reference< css::accessibility::XAccessible >  CreateAccessible() override;
     void SetAccessible( const css::uno::Reference< css::accessibility::XAccessible >& );
-    virtual css::uno::Reference< css::awt::XWindowPeer > GetComponentInterface( bool bCreate = true ) override;
+    virtual css::uno::Reference< css::awt::XWindowPeer > GetComponentInterface( bool bCreate ) override;
 
 };
 

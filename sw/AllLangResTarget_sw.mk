@@ -66,6 +66,7 @@ $(eval $(call gb_SrsTarget_add_files,sw/res,\
     sw/source/uibase/dialog/regionsw.src \
     sw/source/uibase/docvw/docvw.src \
     sw/source/uibase/lingu/olmenu.src \
+    sw/source/uibase/misc/redlndlg.src \
     sw/source/uibase/ribbar/inputwin.src \
     sw/source/uibase/ribbar/workctrl.src \
     sw/source/uibase/uiview/view.src \
@@ -78,6 +79,7 @@ $(eval $(call gb_SrsTarget_add_files,sw/res,\
     sw/source/uibase/dbui/mailmergechildwindow.src \
     sw/source/ui/app/app.src \
     sw/source/ui/app/error.src \
+    sw/source/ui/app/mn.src \
     sw/source/ui/chrdlg/chrdlg.src \
     sw/source/ui/config/optdlg.src \
     sw/source/ui/config/optload.src \
@@ -98,6 +100,7 @@ $(eval $(call gb_SrsTarget_add_files,sw/res,\
     sw/source/ui/index/cnttab.src \
     sw/source/ui/index/idxmrk.src \
     sw/source/ui/misc/glossary.src \
+    sw/source/ui/misc/numberingtypelistbox.src \
     sw/source/ui/misc/swruler.src \
     sw/source/ui/shells/shells.src \
     sw/source/ui/sidebar/PagePropertyPanel.src \

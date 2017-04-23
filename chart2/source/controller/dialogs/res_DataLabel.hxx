@@ -19,6 +19,8 @@
 #ifndef INCLUDED_CHART2_SOURCE_CONTROLLER_DIALOGS_RES_DATALABEL_HXX
 #define INCLUDED_CHART2_SOURCE_CONTROLLER_DIALOGS_RES_DATALABEL_HXX
 
+#define NUMBER_SEPARATORS 4
+
 #include <vcl/button.hxx>
 #include <vcl/layout.hxx>
 #include <svl/itemset.hxx>
@@ -31,11 +33,11 @@ class SvNumberFormatter;
 namespace chart
 {
 
-class DataLabelResources final
+class DataLabelResources
 {
 public:
     DataLabelResources( VclBuilderContainer* pWindow, vcl::Window* pParent, const SfxItemSet& rInAttrs );
-    ~DataLabelResources();
+    virtual ~DataLabelResources();
 
     bool FillItemSet(SfxItemSet* rOutAttrs) const;
     void Reset(const SfxItemSet& rInAttrs);
@@ -54,6 +56,7 @@ private:
 
     VclPtr<VclHBox>             m_pSeparatorResources;
     VclPtr<ListBox>             m_pLB_Separator;
+    OUString             m_aEntryMap[NUMBER_SEPARATORS];
 
     VclPtr<VclHBox>             m_pBxLabelPlacement;
     VclPtr<ListBox>             m_pLB_LabelPlacement;
@@ -66,8 +69,8 @@ private:
     VclPtr<VclHBox>             m_pBxTextDirection;
     VclPtr<TextDirectionListBox>    m_pLB_TextDirection;
 
-    std::map< sal_Int32, sal_uInt16 > m_aPlacementToListBoxMap;
-    std::map< sal_uInt16, sal_Int32 > m_aListBoxToPlacementMap;
+    ::std::map< sal_Int32, sal_uInt16 > m_aPlacementToListBoxMap;
+    ::std::map< sal_uInt16, sal_Int32 > m_aListBoxToPlacementMap;
 
     SvNumberFormatter*  m_pNumberFormatter;
     bool                m_bNumberFormatMixedState;
@@ -83,8 +86,8 @@ private:
     VclPtr<vcl::Window>             m_pWindow;
     SfxItemPool*        m_pPool;
 
-    DECL_LINK(NumberFormatDialogHdl, Button *, void );
-    DECL_LINK(CheckHdl, Button*, void );
+    DECL_LINK_TYPED(NumberFormatDialogHdl, Button *, void );
+    DECL_LINK_TYPED(CheckHdl, Button*, void );
     void EnableControls();
 };
 

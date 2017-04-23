@@ -68,6 +68,7 @@ ComplexToolbarController::~ComplexToolbarController()
 }
 
 void SAL_CALL ComplexToolbarController::dispose()
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -90,6 +91,7 @@ Sequence<PropertyValue> ComplexToolbarController::getExecuteArgs(sal_Int16 KeyMo
 }
 
 void SAL_CALL ComplexToolbarController::execute( sal_Int16 KeyModifier )
+throw ( RuntimeException, std::exception )
 {
     Reference< XDispatch >       xDispatch;
     Reference< XURLTransformer > xURLTransformer;
@@ -127,6 +129,7 @@ void SAL_CALL ComplexToolbarController::execute( sal_Int16 KeyModifier )
 }
 
 void ComplexToolbarController::statusChanged( const FeatureStateEvent& Event )
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -193,7 +196,7 @@ void ComplexToolbarController::statusChanged( const FeatureStateEvent& Event )
     }
 }
 
-IMPL_STATIC_LINK( ComplexToolbarController, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( ComplexToolbarController, ExecuteHdl_Impl, void*, p, void )
 {
    ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
    SolarMutexReleaser aReleaser;
@@ -211,7 +214,7 @@ IMPL_STATIC_LINK( ComplexToolbarController, ExecuteHdl_Impl, void*, p, void )
    delete pExecuteInfo;
 }
 
-IMPL_STATIC_LINK( ComplexToolbarController, Notify_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( ComplexToolbarController, Notify_Impl, void*, p, void )
 {
    NotifyInfo* pNotifyInfo = static_cast<NotifyInfo*>(p);
    SolarMutexReleaser aReleaser;
@@ -254,7 +257,7 @@ void ComplexToolbarController::addNotifyInfo(
         uno::Sequence< beans::NamedValue > aInfoSeq( rInfo );
         aInfoSeq.realloc( nCount+1 );
         aInfoSeq[nCount].Name  = "Source";
-        aInfoSeq[nCount].Value <<= getFrameInterface();
+        aInfoSeq[nCount].Value = uno::makeAny( getFrameInterface() );
         pNotifyInfo->aInfoSeq  = aInfoSeq;
 
         Application::PostUserEvent( LINK(nullptr, ComplexToolbarController, Notify_Impl), pNotifyInfo );
@@ -268,7 +271,7 @@ sal_Int32 ComplexToolbarController::getFontSizePixel( const vcl::Window* pWindow
 
     // Calculate height of the application font used by window
     sal_Int32 nHeight = sal_Int32( rFont.GetFontHeight() );
-    ::Size aPixelSize = pWindow->LogicToPixel( ::Size( 0, nHeight ), MapUnit::MapAppFont );
+    ::Size aPixelSize = pWindow->LogicToPixel( ::Size( 0, nHeight ), MAP_APPFONT );
     return aPixelSize.Height();
 }
 

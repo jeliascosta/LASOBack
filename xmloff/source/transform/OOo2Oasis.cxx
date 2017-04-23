@@ -1096,6 +1096,8 @@ public:
                               sal_uInt16 nPrefix,
                               ::xmloff::token::XMLTokenEnum eToken  );
 
+    virtual ~XMLDocumentTransformerContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 };
@@ -1115,6 +1117,10 @@ XMLDocumentTransformerContext_Impl::XMLDocumentTransformerContext_Impl(
     XMLTransformerContext( rImp, rQName ),
     m_aElemQName( rImp.GetNamespaceMap().GetQNameByKey( nPrefix,
                             ::xmloff::token::GetXMLToken( eToken ) ) )
+{
+}
+
+XMLDocumentTransformerContext_Impl::~XMLDocumentTransformerContext_Impl()
 {
 }
 
@@ -1231,6 +1237,8 @@ public:
     XMLBodyTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLBodyTransformerContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 };
@@ -1239,6 +1247,10 @@ XMLBodyTransformerContext_Impl::XMLBodyTransformerContext_Impl(
         XMLTransformerBase& rImp,
         const OUString& rQName ) :
     XMLTransformerContext( rImp, rQName )
+{
+}
+
+XMLBodyTransformerContext_Impl::~XMLBodyTransformerContext_Impl()
 {
 }
 
@@ -1283,6 +1295,8 @@ public:
     XMLTabStopOOoTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLTabStopOOoTContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -1290,6 +1304,10 @@ XMLTabStopOOoTContext_Impl::XMLTabStopOOoTContext_Impl(
         XMLTransformerBase& rImp,
         const OUString& rQName ) :
     XMLPersElemContentTContext( rImp, rQName )
+{
+}
+
+XMLTabStopOOoTContext_Impl::~XMLTabStopOOoTContext_Impl()
 {
 }
 
@@ -1375,6 +1393,8 @@ public:
                                sal_uInt16 nPrefix,
                             XMLTokenEnum eToken );
 
+    virtual ~XMLTrackedChangesOOoTContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 };
 
@@ -1386,6 +1406,10 @@ XMLTrackedChangesOOoTContext_Impl::XMLTrackedChangesOOoTContext_Impl(
     XMLTransformerContext( rImp, rQName ),
     m_nPrefix( nPrefix ),
     m_eToken( eToken )
+{
+}
+
+XMLTrackedChangesOOoTContext_Impl::~XMLTrackedChangesOOoTContext_Impl()
 {
 }
 
@@ -1407,7 +1431,8 @@ void XMLTrackedChangesOOoTContext_Impl::StartElement(
             OSL_ENSURE( rPropSet.is(), "no info property set" );
             if( rPropSet.is() )
             {
-                OUString aPropName("RedlineProtectionKey");
+                const sal_Char sRedlineProtectionKey[] = "RedlineProtectionKey";
+                OUString aPropName(sRedlineProtectionKey);
                 Reference< XPropertySetInfo > xPropSetInfo(
                             rPropSet->getPropertySetInfo() );
                 if( xPropSetInfo.is() &&
@@ -1437,6 +1462,8 @@ public:
     XMLTableOOoTransformerContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
+    virtual ~XMLTableOOoTransformerContext_Impl();
+
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;
 };
@@ -1446,6 +1473,10 @@ XMLTableOOoTransformerContext_Impl::XMLTableOOoTransformerContext_Impl(
         const OUString& rQName ) :
     XMLTransformerContext( rImp, rQName ),
     m_aElemQName( rQName )
+{
+}
+
+XMLTableOOoTransformerContext_Impl::~XMLTableOOoTransformerContext_Impl()
 {
 }
 
@@ -1810,6 +1841,7 @@ OOo2OasisTransformer::~OOo2OasisTransformer() throw()
 }
 
 Any OOo2OasisTransformer::queryInterface( const Type& rType )
+    throw (RuntimeException, std::exception)
 {
     Any aRet;
     if ( rType == cppu::UnoType<XImporter>::get())
@@ -1833,6 +1865,7 @@ Any OOo2OasisTransformer::queryInterface( const Type& rType )
 // XImporter
 void SAL_CALL OOo2OasisTransformer::setTargetDocument(
         const Reference< XComponent >& xDoc )
+    throw( IllegalArgumentException, RuntimeException, std::exception)
 {
     if( !GetDocHandler().is() )
     {
@@ -1853,6 +1886,7 @@ void SAL_CALL OOo2OasisTransformer::setTargetDocument(
 // XFilter
 sal_Bool SAL_CALL OOo2OasisTransformer::filter(
         const Sequence< PropertyValue >& aDescriptor )
+    throw ( RuntimeException, std::exception)
 {
     Reference< XFilter> xFilter( GetDocHandler(), UNO_QUERY );
     OSL_ENSURE( xFilter.is(), "doc handler is not a filter" );
@@ -1863,6 +1897,7 @@ sal_Bool SAL_CALL OOo2OasisTransformer::filter(
 }
 
 void SAL_CALL OOo2OasisTransformer::cancel(  )
+    throw ( RuntimeException, std::exception)
 {
     Reference< XFilter> xFilter( GetDocHandler(), UNO_QUERY );
     OSL_ENSURE( xFilter.is(), "doc handler is not a filter" );
@@ -1873,11 +1908,13 @@ void SAL_CALL OOo2OasisTransformer::cancel(  )
 // XInitialize
 void SAL_CALL OOo2OasisTransformer::initialize(
                 const Sequence< Any >& rArguments )
+    throw( Exception, RuntimeException, std::exception )
 {
     Initialize( rArguments );
 }
 
 void SAL_CALL OOo2OasisTransformer::startDocument()
+    throw( SAXException, RuntimeException, std::exception )
 {
     if( !GetDocHandler().is() )
     {
@@ -1892,6 +1929,7 @@ void SAL_CALL OOo2OasisTransformer::startDocument()
 
 void SAL_CALL OOo2OasisTransformer::Initialize(
                 const Sequence< Any >& rArguments )
+    throw( Exception, RuntimeException )
 {
     OSL_ENSURE( !GetDocHandler().is(), "duplication initialization" );
 
@@ -1935,12 +1973,18 @@ namespace
     class theOOo2OasisTransformerUnoTunnelId : public rtl::Static< UnoTunnelIdInit, theOOo2OasisTransformerUnoTunnelId> {};
 }
 
+const Sequence< sal_Int8 > & OOo2OasisTransformer::getUnoTunnelId() throw()
+{
+    return theOOo2OasisTransformerUnoTunnelId::get().getSeq();
+}
+
 // XUnoTunnel
 sal_Int64 SAL_CALL OOo2OasisTransformer::getSomething( const Sequence< sal_Int8 >& rId )
+    throw(RuntimeException, std::exception)
 {
     if( rId.getLength() == 16
-        && 0 == memcmp( theOOo2OasisTransformerUnoTunnelId::get().getSeq().getConstArray(),
-                        rId.getConstArray(), 16 ) )
+        && 0 == memcmp( getUnoTunnelId().getConstArray(),
+                                        rId.getConstArray(), 16 ) )
     {
         return reinterpret_cast< sal_Int64 >( this );
     }
@@ -1952,16 +1996,19 @@ sal_Int64 SAL_CALL OOo2OasisTransformer::getSomething( const Sequence< sal_Int8 
 
 // XServiceInfo
 OUString SAL_CALL OOo2OasisTransformer::getImplementationName()
+    throw(RuntimeException, std::exception)
 {
     return m_aImplName;
 }
 
 sal_Bool SAL_CALL OOo2OasisTransformer::supportsService( const OUString& ServiceName )
+    throw(RuntimeException, std::exception)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 Sequence< OUString > SAL_CALL OOo2OasisTransformer::getSupportedServiceNames(  )
+    throw(RuntimeException, std::exception)
 {
     Sequence<OUString> aSeq(0);
     return aSeq;
@@ -1969,7 +2016,7 @@ Sequence< OUString > SAL_CALL OOo2OasisTransformer::getSupportedServiceNames(  )
 
 // XTypeProvider
 Sequence< css::uno::Type > SAL_CALL
-    OOo2OasisTransformer::getTypes()
+    OOo2OasisTransformer::getTypes() throw(RuntimeException, std::exception)
 {
     Sequence< css::uno::Type > aTypes( XMLTransformerBase::getTypes() );
 
@@ -1999,6 +2046,7 @@ Sequence< OUString > SAL_CALL OOo2OasisTransformer_getSupportedServiceNames() th
 
 Reference< XInterface > SAL_CALL OOo2OasisTransformer_createInstance(
         const Reference< XMultiServiceFactory > & )
+    throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new OOo2OasisTransformer());
 }
@@ -2018,6 +2066,7 @@ Sequence< OUString > SAL_CALL className##_getSupportedServiceNames() throw()\
                                                                         \
 Reference< XInterface > SAL_CALL className##_createInstance(            \
         const Reference< XMultiServiceFactory > & )                     \
+    throw( Exception )                                                  \
 {                                                                       \
     return static_cast<cppu::OWeakObject*>(new OOo2OasisTransformer( implName,      \
                                          subServiceName ));              \

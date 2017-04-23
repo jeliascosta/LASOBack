@@ -33,13 +33,14 @@ using namespace salhelper;
 
 Condition::Condition(osl::Mutex& aMutex)
     : m_aMutex(aMutex),
-      m_aCondition()
+      m_aCondition(osl_createCondition())
 {
 }
 
 
 Condition::~Condition()
 {
+    osl_destroyCondition(m_aCondition);
 }
 
 
@@ -59,7 +60,7 @@ ConditionModifier::ConditionModifier(Condition& aCond)
 ConditionModifier::~ConditionModifier()
 {
     if(m_aCond.applies())
-        m_aCond.m_aCondition.set();
+        osl_setCondition(m_aCond.m_aCondition);
 
     m_aCond.m_aMutex.release();
 }
@@ -84,13 +85,13 @@ ConditionWaiter::ConditionWaiter(Condition& aCond)
     : m_aCond(aCond)
 {
     while(true) {
-        m_aCond.m_aCondition.wait();
+        osl_waitCondition(m_aCond.m_aCondition,nullptr);
         m_aCond.m_aMutex.acquire();
 
         if(m_aCond.applies())
             break;
         else {
-            m_aCond.m_aCondition.reset();
+            osl_resetCondition(m_aCond.m_aCondition);
             m_aCond.m_aMutex.release();
         }
     }
@@ -98,6 +99,9 @@ ConditionWaiter::ConditionWaiter(Condition& aCond)
 
 
 ConditionWaiter::ConditionWaiter(Condition& aCond,sal_uInt32 milliSec)
+    throw(
+        ConditionWaiter::timedout
+    )
     : m_aCond(aCond)
 {
     TimeValue aTime;
@@ -105,8 +109,8 @@ ConditionWaiter::ConditionWaiter(Condition& aCond,sal_uInt32 milliSec)
     aTime.Nanosec = 1000000 * ( milliSec % 1000 );
 
     while(true) {
-        if( m_aCond.m_aCondition.wait(&aTime) ==
-            osl::Condition::result_timeout )
+        if( osl_waitCondition(m_aCond.m_aCondition,&aTime) ==
+            osl_cond_result_timeout )
             throw timedout();
 
         m_aCond.m_aMutex.acquire();
@@ -114,7 +118,7 @@ ConditionWaiter::ConditionWaiter(Condition& aCond,sal_uInt32 milliSec)
         if(m_aCond.applies())
             break;
         else {
-            m_aCond.m_aCondition.reset();
+            osl_resetCondition(m_aCond.m_aCondition);
             m_aCond.m_aMutex.release();
         }
     }
@@ -124,7 +128,7 @@ ConditionWaiter::ConditionWaiter(Condition& aCond,sal_uInt32 milliSec)
 ConditionWaiter::~ConditionWaiter()
 {
     if(! m_aCond.applies())
-        m_aCond.m_aCondition.reset();
+        osl_resetCondition(m_aCond.m_aCondition);
     m_aCond.m_aMutex.release();
 }
 

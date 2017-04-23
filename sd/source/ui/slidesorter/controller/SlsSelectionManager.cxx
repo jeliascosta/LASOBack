@@ -62,13 +62,17 @@ namespace sd { namespace slidesorter { namespace controller {
 SelectionManager::SelectionManager (SlideSorter& rSlideSorter)
     : mrSlideSorter(rSlideSorter),
       mrController(rSlideSorter.GetController()),
+      mbIsMakeSelectionVisiblePending(true),
       mnInsertionPosition(-1),
+      mnAnimationId(Animator::NotAnAnimationId),
       mpSelectionObserver(new SelectionObserver(rSlideSorter))
 {
 }
 
 SelectionManager::~SelectionManager()
 {
+    if (mnAnimationId != Animator::NotAnAnimationId)
+        mrController.GetAnimator()->RemoveAnimation(mnAnimationId);
 }
 
 void SelectionManager::DeleteSelectedPages (const bool bSelectFollowingPage)
@@ -118,7 +122,7 @@ void SelectionManager::DeleteSelectedPages (const bool bSelectFollowingPage)
     // helper functions.  They are specialized for normal respectively for
     // master pages.
     mrSlideSorter.GetView().BegUndo (SdResId(STR_UNDO_DELETEPAGES));
-    if (mrSlideSorter.GetModel().GetEditMode() == EditMode::Page)
+    if (mrSlideSorter.GetModel().GetEditMode() == EM_PAGE)
         DeleteSelectedNormalPages(aSelectedPages);
     else
         DeleteSelectedMasterPages(aSelectedPages);
@@ -150,7 +154,7 @@ void SelectionManager::DeleteSelectedPages (const bool bSelectFollowingPage)
 void SelectionManager::DeleteSelectedNormalPages (const ::std::vector<SdPage*>& rSelectedPages)
 {
     // Prepare the deletion via the UNO API.
-    OSL_ASSERT(mrSlideSorter.GetModel().GetEditMode() == EditMode::Page);
+    OSL_ASSERT(mrSlideSorter.GetModel().GetEditMode() == EM_PAGE);
 
     try
     {
@@ -183,7 +187,7 @@ void SelectionManager::DeleteSelectedNormalPages (const ::std::vector<SdPage*>& 
 void SelectionManager::DeleteSelectedMasterPages (const ::std::vector<SdPage*>& rSelectedPages)
 {
     // Prepare the deletion via the UNO API.
-    OSL_ASSERT(mrSlideSorter.GetModel().GetEditMode() == EditMode::MasterPage);
+    OSL_ASSERT(mrSlideSorter.GetModel().GetEditMode() == EM_MASTERPAGE);
 
     try
     {
@@ -215,6 +219,8 @@ void SelectionManager::DeleteSelectedMasterPages (const ::std::vector<SdPage*>& 
 
 void SelectionManager::SelectionHasChanged ()
 {
+    mbIsMakeSelectionVisiblePending = true;
+
     ViewShell* pViewShell = mrSlideSorter.GetViewShell();
     if (pViewShell != nullptr)
     {

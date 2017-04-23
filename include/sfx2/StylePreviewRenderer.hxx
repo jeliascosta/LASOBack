@@ -31,13 +31,13 @@ protected:
 public:
     enum class RenderAlign
     {
-        TOP, CENTER
+        TOP, CENTER, BOTTOM
     };
 
     StylePreviewRenderer(const SfxObjectShell& rShell,
                          OutputDevice& rOutputDev,
                          SfxStyleSheetBase* pStyle,
-                         long nMaxHeight)
+                         long nMaxHeight = 32)
         : mrShell(rShell)
         , mrOutputDev(rOutputDev)
         , mpStyle(pStyle)
@@ -50,7 +50,7 @@ public:
 
     virtual bool recalculate() = 0;
     virtual Size getRenderSize() = 0;
-    virtual bool render(const tools::Rectangle& aRectangle, RenderAlign eRenderAlign = RenderAlign::CENTER) = 0;
+    virtual bool render(const Rectangle& aRectangle, RenderAlign eRenderAlign = RenderAlign::CENTER) = 0;
 };
 
 } // end namespace sfx2

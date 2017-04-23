@@ -48,7 +48,7 @@ namespace basegfx
         For the exact definitions of the color blending applied refer to the
         implementation of the method getModifiedColor
 
-        BColorModifier is not copyable (no copy constructor, no assignment
+        BColorModifier is not copyable (no copy constructor, no assigment
         operator); local values cannot be changed after construction. The
         instances are cheap and the idea is to create them on demand. To
         be able to reuse these as much as possible, a define for a
@@ -98,7 +98,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_gray() override;
+        virtual ~BColorModifier_gray();
 
         // compare operator
         virtual bool operator==(const BColorModifier& rCompare) const override;
@@ -125,7 +125,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_invert() override;
+        virtual ~BColorModifier_invert();
 
         // compare operator
         virtual bool operator==(const BColorModifier& rCompare) const override;
@@ -156,7 +156,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_luminance_to_alpha() override;
+        virtual ~BColorModifier_luminance_to_alpha();
 
         // compare operator
         virtual bool operator==(const BColorModifier& rCompare) const override;
@@ -188,7 +188,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_replace() override;
+        virtual ~BColorModifier_replace();
 
         // data access
         const ::basegfx::BColor& getBColor() const { return maBColor; }
@@ -226,7 +226,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_interpolate() override;
+        virtual ~BColorModifier_interpolate();
 
         // data access
         const ::basegfx::BColor& getBColor() const { return maBColor; }
@@ -261,7 +261,7 @@ namespace basegfx
         {
         }
 
-        virtual ~BColorModifier_black_and_white() override;
+        virtual ~BColorModifier_black_and_white();
 
         // data access
         double getValue() const { return mfValue; }
@@ -290,13 +290,14 @@ namespace basegfx
         double                      mfValue;
         double                      mfInvValue;
 
+        /// bitfield
         bool                        mbUseIt : 1;
 
     protected:
     public:
         BColorModifier_gamma(double fValue);
 
-        virtual ~BColorModifier_gamma() override;
+        virtual ~BColorModifier_gamma();
 
         // data access
         double getValue() const { return mfValue; }
@@ -334,13 +335,14 @@ namespace basegfx
         double                      mfGreenOff;
         double                      mfBlueOff;
 
+        /// bitfield
         bool                        mbUseIt : 1;
 
     protected:
     public:
         BColorModifier_RGBLuminanceContrast(double fRed, double fGreen, double fBlue, double fLuminance, double fContrast);
 
-        virtual ~BColorModifier_RGBLuminanceContrast() override;
+        virtual ~BColorModifier_RGBLuminanceContrast();
 
         // data access
         double getRed() const { return mfRed; }

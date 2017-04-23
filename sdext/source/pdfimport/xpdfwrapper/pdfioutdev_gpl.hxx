@@ -48,7 +48,6 @@
 
 #include <unordered_map>
 #include <vector>
-#include <memory>
 
 class GfxPath;
 class GfxFont;
@@ -135,7 +134,7 @@ namespace pdfi
         PDFDoc*                                 m_pDoc;
         mutable std::unordered_map< long long,
                                FontAttributes > m_aFontMap;
-        std::unique_ptr<UnicodeMap>             m_pUtf8Map;
+        UnicodeMap*                             m_pUtf8Map;
         bool                                    m_bSkipImages;
 
         int  parseFont( long long nNewId, GfxFont* pFont, GfxState* state ) const;
@@ -144,7 +143,7 @@ namespace pdfi
 
     public:
         explicit PDFOutDev( PDFDoc* pDoc );
-        virtual ~PDFOutDev() override;
+        virtual ~PDFOutDev();
 
         //----- get info about output device
 

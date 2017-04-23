@@ -18,13 +18,11 @@
  */
 
 #include <defaultnumberingprovider.hxx>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
 #include <com/sun/star/style/NumberingType.hpp>
 #include <com/sun/star/beans/PropertyValue.hpp>
 #include <com/sun/star/configuration/theDefaultProvider.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <osl/diagnose.h>
-#include <rtl/ref.hxx>
 #include <localedata.hxx>
 #include <nativenumbersupplier.hxx>
 #include <stdio.h>
@@ -45,17 +43,13 @@
 #define S_GR_A "\xCE\xB1"
 #define S_GR_B "\xCE\xB2"
 
-//Hebrew
-#define S_HE_ALEPH "\xD7\x90"
-#define S_HE_YOD "\xD7\x99"
-#define S_HE_QOF "\xD7\xA7"
-
 #include <math.h>
 #include <sal/macros.h>
 #include <rtl/ustring.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <com/sun/star/i18n/XTransliteration.hpp>
 #include <com/sun/star/i18n/TransliterationType.hpp>
+#include <com/sun/star/i18n/TransliterationModulesNew.hpp>
 #include <com/sun/star/i18n/XLocaleData.hpp>
 
 #include <bullet.h>
@@ -273,18 +267,25 @@ DefaultNumberingProvider::DefaultNumberingProvider( const Reference < XComponent
 
 DefaultNumberingProvider::~DefaultNumberingProvider()
 {
+    delete translit;
+}
+
+void DefaultNumberingProvider::impl_loadTranslit()
+{
+    if ( !translit )
+        translit = new TransliterationImpl(m_xContext);
 }
 
 Sequence< Reference<container::XIndexAccess> >
-DefaultNumberingProvider::getDefaultOutlineNumberings(const Locale& rLocale )
+DefaultNumberingProvider::getDefaultOutlineNumberings(const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
-     return LocaleDataImpl::get()->getOutlineNumberingLevels( rLocale );
+     return LocaleDataImpl().getOutlineNumberingLevels( rLocale );
 }
 
 Sequence< Sequence<beans::PropertyValue> >
-DefaultNumberingProvider::getDefaultContinuousNumberingLevels( const Locale& rLocale )
+DefaultNumberingProvider::getDefaultContinuousNumberingLevels( const Locale& rLocale ) throw(RuntimeException, std::exception)
 {
-     return LocaleDataImpl::get()->getContinuousNumberingLevels( rLocale );
+     return LocaleDataImpl().getContinuousNumberingLevels( rLocale );
 }
 
 OUString toRoman( sal_Int32 n )
@@ -341,7 +342,7 @@ void lcl_formatChars( const sal_Unicode table[], int tableSize, int n, OUString&
 
      if( n>=tableSize ) lcl_formatChars( table, tableSize, (n-tableSize)/tableSize, s );
 
-     s += OUStringLiteral1( table[ n % tableSize ] );
+     s += OUString( table[ n % tableSize ] );
 }
 
 static
@@ -354,7 +355,7 @@ void lcl_formatChars1( const sal_Unicode table[], int tableSize, int n, OUString
      int repeat_count = n / tableSize + 1;
 
      for( int i=0; i<repeat_count; i++ )
-         s += OUStringLiteral1( table[ n%tableSize ] );
+         s += OUString( table[ n%tableSize ] );
 }
 
 static
@@ -366,9 +367,9 @@ void lcl_formatChars2( const sal_Unicode table_capital[], const sal_Unicode tabl
      if( n>=tableSize )
      {
           lcl_formatChars2( table_capital, table_small, tableSize, (n-tableSize)/tableSize, s );
-          s += OUStringLiteral1( table_small[ n % tableSize ] );
+          s += OUString( table_small[ n % tableSize ] );
      } else
-          s += OUStringLiteral1( table_capital[ n % tableSize ] );
+          s += OUString( table_capital[ n % tableSize ] );
 }
 
 static
@@ -378,22 +379,20 @@ void lcl_formatChars3( const sal_Unicode table_capital[], const sal_Unicode tabl
      // if A=='A' then 0=>A, 1=>B, ..., 25=>Z, 26=>Aa, 27=>Bb, ...
 
      int repeat_count = n / tableSize + 1;
-     s += OUStringLiteral1( table_capital[ n%tableSize ] );
+     s += OUString( table_capital[ n%tableSize ] );
 
      for( int i=1; i<repeat_count; i++ )
-         s += OUStringLiteral1( table_small[ n%tableSize ] );
+         s += OUString( table_small[ n%tableSize ] );
 }
 
 
 /** Returns number's representation in persian words up to 999999999999
     respectively limited by sal_Int32 >=0.
     The caller assures that nNumber is not negative.
-
-    @throws IllegalArgumentException
-    @throws RuntimeException
  */
 static
 void lcl_formatPersianWord( sal_Int32 nNumber, OUString& rsResult )
+    throw( IllegalArgumentException, RuntimeException )
 {
     OUStringBuffer aTemp(64);
     static const sal_Unicode asPersianWord_conjunction_data[] = {0x20,0x0648,0x20,0};
@@ -545,6 +544,7 @@ Any getPropertyByName( const Sequence<beans::PropertyValue>& aProperties,
 OUString
 DefaultNumberingProvider::makeNumberingString( const Sequence<beans::PropertyValue>& aProperties,
                                                const Locale& aLocale )
+     throw( IllegalArgumentException, RuntimeException, std::exception )
 {
      // the Sequence of PropertyValues is expected to have at least 4 elements:
      // elt Name              Type             purpose
@@ -646,8 +646,7 @@ DefaultNumberingProvider::makeNumberingString( const Sequence<beans::PropertyVal
                     const OUString &tmp = OUString::number( number );
                     OUString transliteration;
                     getPropertyByName(aProperties, "Transliteration", true) >>= transliteration;
-                    if ( !translit )
-                        translit.reset( new TransliterationImpl(m_xContext) );
+                    impl_loadTranslit();
                     translit->loadModuleByImplName(transliteration, aLocale);
                     result += translit->transliterateString2String(tmp, 0, tmp.getLength());
                } catch (Exception& ) {
@@ -755,10 +754,6 @@ DefaultNumberingProvider::makeNumberingString( const Sequence<beans::PropertyVal
           case CHARS_HEBREW:
               lcl_formatChars(table_Alphabet_he, SAL_N_ELEMENTS(table_Alphabet_he), number - 1, result);
               break;
-          case NUMBER_HEBREW:
-              natNum = NativeNumberMode::NATNUM1;
-              locale.Language = "he";
-              break;
           case CHARS_NEPALI:
               lcl_formatChars(table_Alphabet_ne, SAL_N_ELEMENTS(table_Alphabet_ne), number - 1, result);
               break;
@@ -863,7 +858,7 @@ DefaultNumberingProvider::makeNumberingString( const Sequence<beans::PropertyVal
       }
 
         if (natNum) {
-            rtl::Reference<NativeNumberSupplierService> xNatNum(new NativeNumberSupplierService);
+            uno::Reference<NativeNumberSupplierService> xNatNum(new NativeNumberSupplierService);
             result += xNatNum->getNativeNumberString(OUString::number( number ), locale, natNum);
         } else if (tableSize) {
             if ( number > tableSize && !bRecycleSymbol)
@@ -924,7 +919,6 @@ static const Supported_NumberingType aSupportedTypes[] =
         {style::NumberingType::CHARS_ARABIC_ABJAD,   nullptr, LANG_CTL},
         {style::NumberingType::CHARS_THAI,      nullptr, LANG_CTL},
         {style::NumberingType::CHARS_HEBREW,    nullptr, LANG_CTL},
-        {style::NumberingType::NUMBER_HEBREW,    S_HE_ALEPH ", " S_HE_YOD ", " S_HE_QOF ", ...", LANG_CTL},
         {style::NumberingType::CHARS_NEPALI,    nullptr, LANG_CTL},
         {style::NumberingType::CHARS_KHMER,     nullptr, LANG_CTL},
         {style::NumberingType::CHARS_LAO,       nullptr, LANG_CTL},
@@ -950,6 +944,7 @@ static const Supported_NumberingType aSupportedTypes[] =
 static const sal_Int32 nSupported_NumberingTypes = sizeof(aSupportedTypes) / sizeof(Supported_NumberingType);
 
 OUString DefaultNumberingProvider::makeNumberingIdentifier(sal_Int16 index)
+                                throw(RuntimeException, std::exception)
 {
     if (index < 0 || index >= nSupported_NumberingTypes)
         throw RuntimeException();
@@ -958,7 +953,7 @@ OUString DefaultNumberingProvider::makeNumberingIdentifier(sal_Int16 index)
         return OUString(aSupportedTypes[index].cSymbol, strlen(aSupportedTypes[index].cSymbol), RTL_TEXTENCODING_UTF8);
     else {
         OUString result;
-        Locale aLocale("en", OUString(), OUString());
+        Locale aLocale(OUString("en"), OUString(), OUString());
         Sequence<beans::PropertyValue> aProperties(2);
         aProperties[0].Name = "NumberingType";
         aProperties[0].Value <<= aSupportedTypes[index].nType;
@@ -974,7 +969,7 @@ OUString DefaultNumberingProvider::makeNumberingIdentifier(sal_Int16 index)
 }
 
 bool SAL_CALL
-DefaultNumberingProvider::isScriptFlagEnabled(const OUString& aName)
+DefaultNumberingProvider::isScriptFlagEnabled(const OUString& aName) throw(RuntimeException)
 {
     if (! xHierarchicalNameAccess.is()) {
         Reference< XMultiServiceFactory > xConfigProvider =
@@ -992,7 +987,10 @@ DefaultNumberingProvider::isScriptFlagEnabled(const OUString& aName)
         Reference<XInterface> xInterface = xConfigProvider->createInstanceWithArguments(
             "com.sun.star.configuration.ConfigurationAccess", aArgs);
 
-        xHierarchicalNameAccess.set(xInterface, UNO_QUERY_THROW);
+        xHierarchicalNameAccess.set(xInterface, UNO_QUERY);
+
+        if (! xHierarchicalNameAccess.is())
+            throw RuntimeException();
     }
 
     Any aEnabled = xHierarchicalNameAccess->getByHierarchicalName(aName);
@@ -1005,6 +1003,7 @@ DefaultNumberingProvider::isScriptFlagEnabled(const OUString& aName)
 }
 
 Sequence< sal_Int16 > DefaultNumberingProvider::getSupportedNumberingTypes(  )
+                                throw(RuntimeException, std::exception)
 {
     Sequence< sal_Int16 > aRet(nSupported_NumberingTypes );
     sal_Int16* pArray = aRet.getArray();
@@ -1022,6 +1021,7 @@ Sequence< sal_Int16 > DefaultNumberingProvider::getSupportedNumberingTypes(  )
 }
 
 sal_Int16 DefaultNumberingProvider::getNumberingType( const OUString& rNumberingIdentifier )
+                                throw(RuntimeException, std::exception)
 {
     for(sal_Int16 i = 0; i < nSupported_NumberingTypes; i++)
         if(rNumberingIdentifier.equals(makeNumberingIdentifier(i)))
@@ -1030,6 +1030,7 @@ sal_Int16 DefaultNumberingProvider::getNumberingType( const OUString& rNumbering
 }
 
 sal_Bool DefaultNumberingProvider::hasNumberingType( const OUString& rNumberingIdentifier )
+                                throw(RuntimeException, std::exception)
 {
     for(sal_Int16 i = 0; i < nSupported_NumberingTypes; i++)
         if(rNumberingIdentifier.equals(makeNumberingIdentifier(i)))
@@ -1038,6 +1039,7 @@ sal_Bool DefaultNumberingProvider::hasNumberingType( const OUString& rNumberingI
 }
 
 OUString DefaultNumberingProvider::getNumberingIdentifier( sal_Int16 nNumberingType )
+                                throw(RuntimeException, std::exception)
 {
     for(sal_Int16 i = 0; i < nSupported_NumberingTypes; i++)
         if(nNumberingType == aSupportedTypes[i].nType)
@@ -1046,16 +1048,19 @@ OUString DefaultNumberingProvider::getNumberingIdentifier( sal_Int16 nNumberingT
 }
 
 OUString DefaultNumberingProvider::getImplementationName()
+                throw( RuntimeException, std::exception )
 {
     return OUString("com.sun.star.text.DefaultNumberingProvider");
 }
 
 sal_Bool DefaultNumberingProvider::supportsService(const OUString& rServiceName)
+                throw( RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > DefaultNumberingProvider::getSupportedServiceNames()
+                throw( RuntimeException, std::exception )
 {
     Sequence< OUString > aRet { "com.sun.star.text.DefaultNumberingProvider" };
     return aRet;

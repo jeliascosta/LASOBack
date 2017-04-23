@@ -22,8 +22,6 @@ export VCL_HIDE_WINDOWS=1
 
 gb_SDKDIR := $(MACOSX_SDK_PATH)
 
-gb_COMPILEROPTFLAGS := -O1
-
 include $(GBUILDDIR)/platform/com_GCC_defs.mk
 
 # Darwin mktemp -t expects a prefix, not a pattern
@@ -39,7 +37,7 @@ gb_OSDEFS := \
 	-DMAC_OS_X_VERSION_MIN_REQUIRED=$(MAC_OS_X_VERSION_MIN_REQUIRED) \
 	-DMAC_OS_X_VERSION_MAX_ALLOWED=$(MAC_OS_X_VERSION_MAX_ALLOWED) \
 	-DMACOSX_SDK_VERSION=$(MACOSX_SDK_VERSION) \
-	$(LFS_CFLAGS) \
+	$(EXTRA_CDEFS) \
 
 
 gb_CFLAGS := \
@@ -89,6 +87,13 @@ gb_LinkTarget_CFLAGS := $(gb_CFLAGS)
 gb_LinkTarget_CXXFLAGS := $(gb_CXXFLAGS)
 gb_LinkTarget_OBJCXXFLAGS := $(gb_CXXFLAGS) $(gb_OBJCXXFLAGS)
 gb_LinkTarget_OBJCFLAGS := $(gb_CFLAGS) $(gb_OBJCFLAGS)
+
+ifeq ($(gb_SYMBOL),$(true))
+gb_LinkTarget_CFLAGS += $(gb_DEBUGINFO_FLAGS)
+gb_LinkTarget_CXXFLAGS += $(gb_DEBUGINFO_FLAGS)
+gb_LinkTarget_OBJCFLAGS += $(gb_DEBUGINFO_FLAGS)
+gb_LinkTarget_OBJCXXFLAGS += $(gb_DEBUGINFO_FLAGS)
+endif
 
 define gb_LinkTarget__get_layer
 $(if $(filter Executable,$(1)),\
@@ -334,7 +339,7 @@ gb_CliAssemblyTarget_get_dll :=
 
 # Extension class
 
-gb_Extension_LICENSEFILE_DEFAULT := $(INSTROOT)/Resources/LICENSE
+gb_Extension_LICENSEFILE_DEFAULT := $(INSTROOT)/LICENSE
 
 # UnpackedTarget class
 

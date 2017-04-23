@@ -28,9 +28,12 @@
 
 namespace sc { namespace sidebar {
 
-typedef ::cppu::WeakComponentImplHelper <
-    css::ui::XUIElementFactory, css::lang::XServiceInfo
-    > PanelFactoryInterfaceBase;
+namespace
+{
+    typedef ::cppu::WeakComponentImplHelper <
+        css::ui::XUIElementFactory, css::lang::XServiceInfo
+        > PanelFactoryInterfaceBase;
+}
 
 class ScPanelFactory
     : private ::cppu::BaseMutex,
@@ -42,18 +45,25 @@ public:
     const ScPanelFactory& operator=(const ScPanelFactory&) = delete;
 
     ScPanelFactory();
-    virtual ~ScPanelFactory() override;
+    virtual ~ScPanelFactory();
 
     // XUIElementFactory
     css::uno::Reference<css::ui::XUIElement> SAL_CALL createUIElement(
         const ::rtl::OUString& rsResourceURL,
-        const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments) override;
+        const ::css::uno::Sequence<css::beans::PropertyValue>& rArguments)
+        throw(
+            css::container::NoSuchElementException,
+            css::lang::IllegalArgumentException,
+            css::uno::RuntimeException, std::exception ) override;
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 } } // end of namespace sc::sidebar

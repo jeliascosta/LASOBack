@@ -21,7 +21,6 @@
 #define INCLUDED_OOX_TOKEN_PROPERTYNAMES_HXX
 
 #include <vector>
-
 #include <rtl/instance.hxx>
 #include <rtl/ustring.hxx>
 

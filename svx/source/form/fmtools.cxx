@@ -280,13 +280,25 @@ FmXDisposeListener::~FmXDisposeListener()
 
 void FmXDisposeListener::setAdapter(FmXDisposeMultiplexer* pAdapter)
 {
-    ::osl::MutexGuard aGuard(m_aMutex);
-    m_pAdapter = pAdapter;
+    if (m_pAdapter)
+    {
+        ::osl::MutexGuard aGuard(m_aMutex);
+        m_pAdapter->release();
+        m_pAdapter = nullptr;
+    }
+
+    if (pAdapter)
+    {
+        ::osl::MutexGuard aGuard(m_aMutex);
+        m_pAdapter = pAdapter;
+        m_pAdapter->acquire();
+    }
 }
 
 FmXDisposeMultiplexer::FmXDisposeMultiplexer(FmXDisposeListener* _pListener, const Reference< css::lang::XComponent>& _rxObject)
     :m_xObject(_rxObject)
     ,m_pListener(_pListener)
+    ,m_nId(0)
 {
     m_pListener->setAdapter(this);
 
@@ -300,13 +312,13 @@ FmXDisposeMultiplexer::~FmXDisposeMultiplexer()
 
 // css::lang::XEventListener
 
-void FmXDisposeMultiplexer::disposing(const css::lang::EventObject& Source)
+void FmXDisposeMultiplexer::disposing(const css::lang::EventObject& Source) throw( RuntimeException, std::exception )
 {
     Reference< css::lang::XEventListener> xPreventDelete(this);
 
     if (m_pListener)
     {
-        m_pListener->disposing(Source, 0);
+        m_pListener->disposing(Source, m_nId);
         m_pListener->setAdapter(nullptr);
         m_pListener = nullptr;
     }

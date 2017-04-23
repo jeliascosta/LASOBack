@@ -17,8 +17,8 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <aststruct.hxx>
-#include <astmember.hxx>
+#include <idlc/aststruct.hxx>
+#include <idlc/astmember.hxx>
 
 #include <registry/version.h>
 #include <registry/writer.hxx>

@@ -23,7 +23,9 @@
 #include "globals.hrc"
 
 #include <com/sun/star/scanner/XScannerManager2.hpp>
+#include <com/sun/star/datatransfer/clipboard/XClipboardNotifier.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <comphelper/processfactory.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/layout.hxx>
@@ -55,8 +57,14 @@ using namespace ::com::sun::star::datatransfer::clipboard;
 SwView_Impl::SwView_Impl(SwView* pShell)
     : mxXTextView()
     , pView(pShell)
-    , eShellMode(ShellMode::Text)
+    , pScanEvtLstnr(nullptr)
+    , pClipEvtLstnr(nullptr)
+    , eShellMode(SHELL_MODE_TEXT)
+#if HAVE_FEATURE_DBCONNECTIVITY
+    , pConfigItem(nullptr)
     , nMailMergeRestartPage(0)
+    , bMailMergeSourceView(true)
+#endif
     , m_pDocInserter(nullptr)
     , m_pRequest(nullptr)
     , m_nParam(0)
@@ -81,21 +89,22 @@ SwView_Impl::~SwView_Impl()
     view::XSelectionSupplier* pTextView = mxXTextView.get();
     static_cast<SwXTextView*>(pTextView)->Invalidate();
     mxXTextView.clear();
-    if( mxScanEvtLstnr.is() )
-           mxScanEvtLstnr->ViewDestroyed();
-    if( mxClipEvtLstnr.is() )
+    if( xScanEvtLstnr.is() )
+           pScanEvtLstnr->ViewDestroyed();
+    if( xClipEvtLstnr.is() )
     {
-        mxClipEvtLstnr->AddRemoveListener( false );
-        mxClipEvtLstnr->ViewDestroyed();
+        pClipEvtLstnr->AddRemoveListener( false );
+        pClipEvtLstnr->ViewDestroyed();
     }
 #if HAVE_FEATURE_DBCONNECTIVITY
-    xConfigItem.reset();
+    if(bMailMergeSourceView)
+        delete pConfigItem;
 #endif
     delete m_pDocInserter;
     delete m_pRequest;
 }
 
-void SwView_Impl::SetShellMode(ShellMode eSet)
+void SwView_Impl::SetShellMode(ShellModes eSet)
 {
     eShellMode = eSet;
 }
@@ -174,7 +183,7 @@ void SwView_Impl::ExecuteScan( SfxRequest& rReq )
 
             if( !bDone )
             {
-                ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RES(STR_SCAN_NOSOURCE), VclMessageType::Info)->Execute();
+                ScopedVclPtrInstance<MessageDialog>( nullptr, SW_RES(STR_SCAN_NOSOURCE), VCL_MESSAGE_INFO )->Execute();
                 rReq.Ignore();
             }
             else
@@ -191,17 +200,17 @@ void SwView_Impl::ExecuteScan( SfxRequest& rReq )
 
 SwScannerEventListener& SwView_Impl::GetScannerEventListener()
 {
-    if(!mxScanEvtLstnr.is())
-        mxScanEvtLstnr = new SwScannerEventListener(*pView);
-    return *mxScanEvtLstnr;
+    if(!xScanEvtLstnr.is())
+        xScanEvtLstnr = pScanEvtLstnr = new SwScannerEventListener(*pView);
+    return *pScanEvtLstnr;
 }
 
 void SwView_Impl::AddClipboardListener()
 {
-    if(!mxClipEvtLstnr.is())
+    if(!xClipEvtLstnr.is())
     {
-        mxClipEvtLstnr = new SwClipboardChangeListener( *pView );
-        mxClipEvtLstnr->AddRemoveListener( true );
+        xClipEvtLstnr = pClipEvtLstnr = new SwClipboardChangeListener( *pView );
+        pClipEvtLstnr->AddRemoveListener( true );
     }
 }
 
@@ -252,7 +261,7 @@ SwScannerEventListener::~SwScannerEventListener()
 {
 }
 
-void SAL_CALL SwScannerEventListener::disposing( const EventObject& rEventObject)
+void SAL_CALL SwScannerEventListener::disposing( const EventObject& rEventObject) throw(uno::RuntimeException, std::exception)
 {
 #if defined(_WIN32) || defined UNX
     SolarMutexGuard aGuard;
@@ -266,10 +275,12 @@ SwClipboardChangeListener::~SwClipboardChangeListener()
 }
 
 void SAL_CALL SwClipboardChangeListener::disposing( const EventObject& /*rEventObject*/ )
+    throw ( RuntimeException, std::exception )
 {
 }
 
 void SAL_CALL SwClipboardChangeListener::changedContents( const css::datatransfer::clipboard::ClipboardEvent& rEventObject )
+    throw (RuntimeException, std::exception)
 
 {
     const SolarMutexGuard aGuard;

@@ -36,7 +36,6 @@
 
 class XclImpStream;
 class XclExpStream;
-enum class ScGeneralFunction;
 
 // Constants and Enumerations =================================================
 
@@ -389,7 +388,7 @@ public:
     void                SetBool( bool bValue );
 
     /** Returns the text representation of the item. */
-    const OUString& ConvertToText() const { return maText; }
+    inline const OUString& ConvertToText() const { return maText; }
 
     /** Returns true, if the passed term equals this item. */
     bool                IsEqual( const XclPCItem& rItem ) const;
@@ -476,7 +475,7 @@ public:
     virtual             ~XclPCField();
 
     /** Returns the index of this field in the containing pivot cache. */
-    sal_uInt16   GetFieldIndex() const { return mnFieldIdx; }
+    inline sal_uInt16   GetFieldIndex() const { return mnFieldIdx; }
 
     /** Returns true, if the type of the field is supported by Calc. */
     bool                IsSupportedField() const;
@@ -545,7 +544,7 @@ struct XclPTCachedName
     OUString       maName;         /// The visible name, if used.
     bool                mbUseCache;     /// true = Use name in cache instead of maName.
 
-    explicit     XclPTCachedName() : mbUseCache( true ) {}
+    inline explicit     XclPTCachedName() : mbUseCache( true ) {}
 };
 
 XclImpStream& operator>>( XclImpStream& rStrm, XclPTCachedName& rCachedName );
@@ -557,7 +556,7 @@ struct XclPTVisNameInfo
     XclPTCachedName     maVisName;      /// The displayed name of the item.
 
     /** Returns true, if the name is set explicitly (maVisName.mbUseCache is false). */
-    bool         HasVisName() const { return !maVisName.mbUseCache; }
+    inline bool         HasVisName() const { return !maVisName.mbUseCache; }
     /** Returns the name, if set explicitly (maVisName.mbUseCache is false). */
     const OUString* GetVisName() const;
     /** Sets the visible name and enables usage of cache if name is empty. */
@@ -581,7 +580,7 @@ XclExpStream& operator<<( XclExpStream& rStrm, const XclPTItemInfo& rInfo );
 
 // General field settings =====================================================
 
-typedef ::std::vector< ScGeneralFunction > XclPTSubtotalVec;
+typedef ::std::vector< sal_uInt16 > XclPTSubtotalVec;
 
 /** Contains data for a pivot table field (SXVD record). */
 struct XclPTFieldInfo : public XclPTVisNameInfo
@@ -677,9 +676,9 @@ struct XclPTDataFieldInfo : public XclPTVisNameInfo
     explicit            XclPTDataFieldInfo();
 
     /** Returns the API enum representing the aggregation function. */
-    ScGeneralFunction GetApiAggFunc() const;
+    css::sheet::GeneralFunction GetApiAggFunc() const;
     /** Sets the aggregation function represented by the passed API enum. */
-    void                SetApiAggFunc( ScGeneralFunction eAggFunc );
+    void                SetApiAggFunc( css::sheet::GeneralFunction eAggFunc );
 
     /** Returns the API constant representing the result reference type. */
     sal_Int32           GetApiRefType() const;

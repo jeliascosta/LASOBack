@@ -182,7 +182,7 @@ void Reader::readMessage(Unmarshal & unmarshal) {
         oid = unmarshal.readOid();
         if (oid.isEmpty()) {
             throw css::io::IOException(
-                "binaryurp::Unmarshal: empty OID");
+                "binaryurp::Unmarshal: emtpy OID");
         }
         lastOid_ = oid;
     } else {

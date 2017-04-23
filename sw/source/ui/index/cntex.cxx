@@ -68,7 +68,7 @@ static void lcl_SetProp( uno::Reference< XPropertySetInfo > & xInfo,
     if(xInfo->hasPropertyByName(aPropName))
     {
         uno::Any aValue;
-        aValue <<= rValue;
+        aValue <<= OUString(rValue);
         xProps->setPropertyValue(aPropName, aValue);
     }
 }
@@ -96,7 +96,7 @@ static void lcl_SetBOOLProp(
     }
 }
 
-IMPL_LINK_NOARG(SwMultiTOXTabDialog, CreateExample_Hdl, SwOneExampleFrame&, void)
+IMPL_LINK_NOARG_TYPED(SwMultiTOXTabDialog, CreateExample_Hdl, SwOneExampleFrame&, void)
 {
     try
     {
@@ -195,7 +195,7 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
          uno::Reference< beans::XPropertySet >  xIdxProps(pxIndexSectionsArr[nTOXIndex]->xDocumentIndex, uno::UNO_QUERY);
          uno::Reference< beans::XPropertySetInfo >  xInfo = xIdxProps->getPropertySetInfo();
          SwTOXDescription& rDesc = GetTOXDescription(eCurrentTOXType);
-         SwTOIOptions nIdxOptions = rDesc.GetIndexOptions();
+         sal_uInt16 nIdxOptions = rDesc.GetIndexOptions();
          if(bInitialCreate || !nPage || nPage == TOX_PAGE_SELECT)
          {
             //title
@@ -203,10 +203,10 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
                 lcl_SetProp(xInfo, xIdxProps, UNO_NAME_TITLE, *rDesc.GetTitle());
 
             //stylenames
-            SwTOXElement  nContentOptions = rDesc.GetContentOptions();
+            sal_uInt16  nContentOptions = rDesc.GetContentOptions();
             if(xInfo->hasPropertyByName(UNO_NAME_LEVEL_PARAGRAPH_STYLES))
             {
-                bool bOn( nContentOptions&SwTOXElement::Template );
+                bool bOn = 0!=(nContentOptions&nsSwTOXElement::TOX_TEMPLATE    );
                 uno::Any aStyleNames(xIdxProps->getPropertyValue(UNO_NAME_LEVEL_PARAGRAPH_STYLES));
                 uno::Reference< container::XIndexReplace >  xAcc;
                 aStyleNames >>= xAcc;
@@ -227,28 +227,28 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
                 }
             }
             lcl_SetProp(xInfo, xIdxProps, UNO_NAME_LEVEL, (sal_Int16)rDesc.GetLevel());
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_MARKS,           bool(nContentOptions & SwTOXElement::Mark        ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_OUTLINE,         bool(nContentOptions & SwTOXElement::OutlineLevel));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_EMBEDDED_OBJECTS,bool(nContentOptions & SwTOXElement::Ole            ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_TABLES ,         bool(nContentOptions & SwTOXElement::Table          ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_GRAPHIC_OBJECTS, bool(nContentOptions & SwTOXElement::Graphic        ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_TEXT_FRAMES,     bool(nContentOptions & SwTOXElement::Frame          ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_LABELS,          bool(nContentOptions & SwTOXElement::Sequence       ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_HIDE_TAB_LEADER_AND_PAGE_NUMBERS, bool(nContentOptions & SwTOXElement::TableLeader       ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TAB_IN_TOC,                  bool(nContentOptions & SwTOXElement::TableInToc       ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TOC_NEWLINE,                 bool(nContentOptions & SwTOXElement::Newline));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TOC_PARAGRAPH_OUTLINE_LEVEL, bool(nContentOptions & SwTOXElement::ParagraphOutlineLevel));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_MARKS,           0!=(nContentOptions&nsSwTOXElement::TOX_MARK        ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_OUTLINE,         0!=(nContentOptions&nsSwTOXElement::TOX_OUTLINELEVEL));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_EMBEDDED_OBJECTS,0!=(nContentOptions&nsSwTOXElement::TOX_OLE            ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_TABLES ,         0!=(nContentOptions&nsSwTOXElement::TOX_TABLE          ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_GRAPHIC_OBJECTS, 0!=(nContentOptions&nsSwTOXElement::TOX_GRAPHIC        ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_TEXT_FRAMES,     0!=(nContentOptions&nsSwTOXElement::TOX_FRAME          ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_LABELS,          0!=(nContentOptions&nsSwTOXElement::TOX_SEQUENCE       ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_HIDE_TAB_LEADER_AND_PAGE_NUMBERS,          0!=(nContentOptions&nsSwTOXElement::TOX_TABLEADER       ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TAB_IN_TOC,                  0!=(nContentOptions&nsSwTOXElement::TOX_TAB_IN_TOC       ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TOC_NEWLINE,                 0!=(nContentOptions&nsSwTOXElement::TOX_NEWLINE));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_TOC_PARAGRAPH_OUTLINE_LEVEL,                 0!=(nContentOptions&nsSwTOXElement::TOX_PARAGRAPH_OUTLINE_LEVEL));
 
             lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_CHAPTER, rDesc.IsFromChapter());
             lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_IS_PROTECTED, rDesc.IsReadonly());
 
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_COMBINED_ENTRIES,        bool(nIdxOptions & SwTOIOptions::SameEntry        ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_P_P,                     bool(nIdxOptions & SwTOIOptions::FF                   ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_IS_CASE_SENSITIVE,           bool(nIdxOptions & SwTOIOptions::CaseSensitive     ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_KEY_AS_ENTRY,            bool(nIdxOptions & SwTOIOptions::KeyAsEntry     ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_ALPHABETICAL_SEPARATORS, bool(nIdxOptions & SwTOIOptions::AlphaDelimiter));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_DASH,                    bool(nIdxOptions & SwTOIOptions::Dash             ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_UPPER_CASE,              bool(nIdxOptions & SwTOIOptions::InitialCaps     ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_COMBINED_ENTRIES,        0 != (nIdxOptions&nsSwTOIOptions::TOI_SAME_ENTRY        ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_P_P,                     0 != (nIdxOptions&nsSwTOIOptions::TOI_FF                   ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_IS_CASE_SENSITIVE,           0 != (nIdxOptions&nsSwTOIOptions::TOI_CASE_SENSITIVE     ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_KEY_AS_ENTRY,            0 != (nIdxOptions&nsSwTOIOptions::TOI_KEY_AS_ENTRY     ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_ALPHABETICAL_SEPARATORS, 0 != (nIdxOptions&nsSwTOIOptions::TOI_ALPHA_DELIMITTER));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_DASH,                    0 != (nIdxOptions&nsSwTOIOptions::TOI_DASH             ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_UPPER_CASE,              0 != (nIdxOptions&nsSwTOIOptions::TOI_INITIAL_CAPS     ));
 
             OUString aTmpName( SwStyleNameMapper::GetSpecialExtraProgName( rDesc.GetSequenceName() ) );
             lcl_SetProp(xInfo, xIdxProps, UNO_NAME_LABEL_CATEGORY, aTmpName );
@@ -263,18 +263,18 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
             }
             lcl_SetProp(xInfo, xIdxProps, UNO_NAME_LABEL_DISPLAY_TYPE, nSet);
 
-            SwTOOElements  nOLEOptions = rDesc.GetOLEOptions();
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_MATH,   bool(SwTOOElements::Math &nOLEOptions           ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_CHART,  bool(SwTOOElements::Chart    &nOLEOptions       ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_CALC,   bool(SwTOOElements::Calc &nOLEOptions           ));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_DRAW,   bool(SwTOOElements::DrawImpress&nOLEOptions));
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_OTHER_EMBEDDED_OBJECTS, bool(SwTOOElements::Other & nOLEOptions));
+            sal_uInt16  nOLEOptions = rDesc.GetOLEOptions();
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_MATH,   0 != (nsSwTOOElements::TOO_MATH &nOLEOptions           ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_CHART,  0 != (nsSwTOOElements::TOO_CHART    &nOLEOptions       ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_CALC,   0 != (nsSwTOOElements::TOO_CALC &nOLEOptions           ));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_STAR_DRAW,   0 != (nsSwTOOElements::TOO_DRAW_IMPRESS&nOLEOptions));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_CREATE_FROM_OTHER_EMBEDDED_OBJECTS, 0 != (nsSwTOOElements::TOO_OTHER & nOLEOptions));
          }
          const SwForm* pForm = GetForm(eCurrentTOXType);
          if(bInitialCreate || !nPage || nPage == TOX_PAGE_ENTRY)
          {
             lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_IS_COMMA_SEPARATED, pForm->IsCommaSeparated());
-            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_ALPHABETICAL_SEPARATORS, bool(nIdxOptions&SwTOIOptions::AlphaDelimiter));
+            lcl_SetBOOLProp(xInfo, xIdxProps, UNO_NAME_USE_ALPHABETICAL_SEPARATORS, 0 != (nIdxOptions&nsSwTOIOptions::TOI_ALPHA_DELIMITTER));
             const bool bUseCurrent = nCurrentLevel < pForm->GetFormMax();
             const sal_uInt16 nStartLevel = bUseCurrent ? nCurrentLevel : 0;
             const sal_uInt16 nEndLevel = bUseCurrent ? nCurrentLevel : pForm->GetFormMax() - 1;
@@ -339,11 +339,11 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
                         pPropValArr[0].Name = "TokenType";
                         pPropValArr[0].Value <<= sTokenType;
                         pPropValArr[1].Name = "CharacterStyleName";
-                        pPropValArr[1].Value <<= aToken.sCharStyleName;
+                        pPropValArr[1].Value <<= OUString(aToken.sCharStyleName);
                         if(TOKEN_TAB_STOP == aToken.eTokenType)
                         {
                             pPropValArr[2].Name = "TabStopRightAligned";
-                            pPropValArr[2].Value <<= SvxTabAdjust::End == aToken.eTabAlign;
+                            pPropValArr[2].Value <<= SVX_TAB_ADJUST_END == aToken.eTabAlign;
                             pPropValArr[3].Name = "TabStopFillCharacter";
                             pPropValArr[3].Value <<= OUString(aToken.cTabFillChar);
                             pPropValArr[4].Name = "TabStopPosition";
@@ -355,7 +355,7 @@ void SwMultiTOXTabDialog::CreateOrUpdateExample(
                         else if(TOKEN_TEXT == aToken.eTokenType)
                         {
                             pPropValArr[2].Name = "Text";
-                            pPropValArr[2].Value <<= aToken.sText;
+                            pPropValArr[2].Value <<= OUString(aToken.sText);
                         }
                         beans::PropertyValues* pValues = aSequPropVals.getArray();
                         pValues[nTokenIndex] = aPropVals;

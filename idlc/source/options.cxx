@@ -18,7 +18,7 @@
  */
 
 
-#include "options.hxx"
+#include "idlc/options.hxx"
 
 #include <osl/diagnose.h>
 #include <rtl/string.hxx>
@@ -69,16 +69,14 @@ bool Options::checkArgument (std::vector< std::string > & rArgs, char const * ar
     switch(arg[0])
     {
     case '@':
-      result = len > 1;
-      if (result)
+      if ((result = (len > 1)))
       {
         // "@<cmdfile>"
         result = Options::checkCommandFile (rArgs, &(arg[1]));
       }
       break;
     case '-':
-      result = len > 1;
-      if (result)
+      if ((result = (len > 1)))
       {
         // "-<option>"
         switch (arg[1])
@@ -174,7 +172,7 @@ bool Options::checkCommandFile (std::vector< std::string > & rArgs, char const *
     return (fclose(fp) == 0);
 }
 
-bool Options::badOption(char const * reason, std::string const & rArg)
+bool Options::badOption(char const * reason, std::string const & rArg) throw(IllegalArgument)
 {
   OStringBuffer message;
   if (reason != nullptr)
@@ -194,7 +192,7 @@ bool Options::setOption(char const * option, std::string const & rArg)
 }
 
 #ifdef _WIN32
-/* Helper function to convert windows paths including spaces, brackets etc. into
+/* Helper functiopn to convert windows paths including spaces, brackets etc. into
    a windows short Url. The ucpp preprocessor has problems with such paths and returns
    with error.
 */
@@ -216,7 +214,7 @@ OString convertIncPathtoShortWindowsPath(const OString& incPath) {
 }
 #endif
 
-bool Options::initOptions(std::vector< std::string > & rArgs)
+bool Options::initOptions(std::vector< std::string > & rArgs) throw(IllegalArgument)
 {
   std::vector< std::string >::const_iterator first = rArgs.begin(), last = rArgs.end();
   for (; first != last; ++first)
@@ -427,6 +425,7 @@ bool Options::isValid(const OString& option)
 }
 
 const OString& Options::getOption(const OString& option)
+    throw( IllegalArgument )
 {
     if (!isValid(option))
     {

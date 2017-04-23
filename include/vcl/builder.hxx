@@ -18,8 +18,6 @@
 #include <vcl/dllapi.h>
 #include <vcl/window.hxx>
 #include <vcl/vclptr.hxx>
-#include <tools/wintypes.hxx>
-#include <vcl/EnumContext.hxx>
 
 #include <memory>
 #include <map>
@@ -49,7 +47,6 @@ class VCL_DLLPUBLIC VclBuilder
 {
 public:
     typedef std::map<OString, OString> stringmap;
-    typedef std::map<OString, std::pair<OString, OString>> accelmap;
     /// These functions create a new widget with parent pParent and return it in rRet
     typedef void (*customMakeWidget)(VclPtr<vcl::Window> &rRet, VclPtr<vcl::Window> &pParent, stringmap &rVec);
 
@@ -109,11 +106,7 @@ public:
     static void     reorderWithinParent(std::vector< vcl::Window*>& rChilds, bool bIsButtonBox);
     static void     reorderWithinParent(vcl::Window &rWindow, sal_uInt16 nNewPosition);
 
-    /// return UI-File name (without '.ui')
-    const OString& getUIFile() const
-    {
-        return m_sHelpRoot;
-    }
+    const css::uno::Reference<css::frame::XFrame>& getFrame() { return m_xFrame; }
 
 private:
     VclBuilder(const VclBuilder&) = delete;
@@ -163,9 +156,12 @@ private:
     struct MenuAndId
     {
         OString m_sID;
-        VclPtr<PopupMenu> m_pMenu;
-        MenuAndId(const OString &rId, PopupMenu *pMenu);
-        ~MenuAndId();
+        PopupMenu *m_pMenu;
+        MenuAndId(const OString &rId, PopupMenu *pMenu)
+            : m_sID(rId)
+            , m_pMenu(pMenu)
+        {
+        }
     };
     std::vector<MenuAndId> m_aMenus;
 
@@ -295,8 +291,6 @@ private:
 
         sal_uInt16 m_nLastToolbarId;
 
-        sal_uInt16 m_nLastMenuItemId;
-
         ParserState();
     };
 
@@ -358,27 +352,26 @@ private:
     void        handleChild(vcl::Window *pParent, xmlreader::XmlReader &reader);
     VclPtr<vcl::Window> handleObject(vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        handlePacking(vcl::Window *pCurrent, vcl::Window *pParent, xmlreader::XmlReader &reader);
-    static std::vector<vcl::EnumContext::Context> handleStyle(xmlreader::XmlReader &reader, int &nPriority);
-    static OString getStyleClass(xmlreader::XmlReader &reader);
     void        applyPackingProperty(vcl::Window *pCurrent, vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        collectProperty(xmlreader::XmlReader &reader, const OString &rID, stringmap &rVec);
     static void collectPangoAttribute(xmlreader::XmlReader &reader, stringmap &rMap);
     static void collectAtkAttribute(xmlreader::XmlReader &reader, stringmap &rMap);
-    static void collectAccelerator(xmlreader::XmlReader &reader, accelmap &rMap);
+    static void collectAccelerator(xmlreader::XmlReader &reader, stringmap &rMap);
 
     void        insertMenuObject(
                    PopupMenu *pParent,
-                   PopupMenu *pSubMenu,
                    const OString &rClass,
                    const OString &rID,
                    stringmap &rProps,
-                   accelmap &rAccels);
+                   stringmap &rAccels);
 
     void        handleMenuChild(PopupMenu *pParent, xmlreader::XmlReader &reader);
     void        handleMenuObject(PopupMenu *pParent, xmlreader::XmlReader &reader);
 
     void        handleListStore(xmlreader::XmlReader &reader, const OString &rID);
     void        handleRow(xmlreader::XmlReader &reader, const OString &rID, sal_Int32 nRowIndex);
+    void        handleAdjustment(const OString &rID, stringmap &rProperties);
+    void        handleTextBuffer(const OString &rID, stringmap &rProperties);
     void        handleTabChild(vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        handleMenu(xmlreader::XmlReader &reader, const OString &rID);
     std::vector<OString> handleItems(xmlreader::XmlReader &reader, const OString &rID);
@@ -448,6 +441,8 @@ public:
     static OUString getUIRootDir();
     bool            hasBuilder() const { return m_pUIBuilder != nullptr; }
 
+    css::uno::Reference<css::frame::XFrame> getFrame() { return m_pUIBuilder->getFrame(); }
+
     template <typename T> T* get(VclPtr<T>& ret, const OString& sID)
     {
         return m_pUIBuilder->get<T>(ret, sID);
@@ -466,18 +461,9 @@ public:
             return;
         m_pUIBuilder->setDeferredProperties();
     }
-    OString getUIFile() const
-    {
-        if (m_pUIBuilder)
-        {
-            return m_pUIBuilder->getUIFile();
-        }
-
-        return OString();
-    }
 
 protected:
-    std::unique_ptr<VclBuilder> m_pUIBuilder;
+    VclBuilder *m_pUIBuilder;
 };
 
 /*

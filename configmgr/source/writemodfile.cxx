@@ -20,15 +20,12 @@
 #include <sal/config.h>
 
 #include <cassert>
-#include <cstddef>
-#include <limits>
 
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/uno/RuntimeException.hpp>
 #include <com/sun/star/uno/Sequence.hxx>
 #include <com/sun/star/uno/XInterface.hpp>
-#include <o3tl/string_view.hxx>
 #include <osl/file.h>
 #include <osl/file.hxx>
 #include <rtl/string.h>
@@ -60,11 +57,13 @@ class Components;
 
 namespace {
 
-OString convertToUtf8(o3tl::u16string_view text) {
+OString convertToUtf8(
+    OUString const & text, sal_Int32 offset, sal_Int32 length)
+{
+    assert(offset <= text.getLength() && text.getLength() - offset >= length);
     OString s;
-    assert(text.size() <= sal_uInt32(std::numeric_limits<sal_Int32>::max()));
     if (!rtl_convertUStringToString(
-            &s.pData, text.data(), text.size(),
+            &s.pData, text.pData->buffer + offset, length,
             RTL_TEXTENCODING_UTF8,
             (RTL_UNICODETOTEXT_FLAGS_UNDEFINED_ERROR |
              RTL_UNICODETOTEXT_FLAGS_INVALID_ERROR)))
@@ -98,7 +97,7 @@ TempFile::~TempFile() {
 oslFileError TempFile::closeWithoutUnlink() {
     flush();
     oslFileError e = osl_closeFile(handle);
-    handle = nullptr;
+    handle = 0;
     closed = true;
     return e;
 }
@@ -140,38 +139,43 @@ oslFileError TempFile::flush() {
     return e;
 }
 
-void TempFile::writeString(o3tl::string_view text) {
-    buffer.append(text.data(), text.size());
+void TempFile::writeString(char const *begin, sal_Int32 length) {
+    buffer.append(begin, length);
     if (buffer.getLength() > 0x10000)
         flush();
 }
 
 namespace {
 
+void writeData_(TempFile &handle, char const * begin, sal_Int32 length) {
+    assert(length >= 0);
+    handle.writeString(begin, length);
+}
+
 void writeValueContent_(TempFile &, bool) = delete;
     // silence loplugin:salbool
 void writeValueContent_(TempFile &handle, sal_Bool value) {
     if (value) {
-        handle.writeString("true");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("true"));
     } else {
-        handle.writeString("false");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("false"));
     }
 }
 
 void writeValueContent_(TempFile &handle, sal_Int16 value) {
-    handle.writeString(OString::number(value));
+    writeData(handle, OString::number(value));
 }
 
 void writeValueContent_(TempFile &handle, sal_Int32 value) {
-    handle.writeString(OString::number(value));
+    writeData(handle, OString::number(value));
 }
 
 void writeValueContent_(TempFile &handle, sal_Int64 value) {
-    handle.writeString(OString::number(value));
+    writeData(handle, OString::number(value));
 }
 
 void writeValueContent_(TempFile &handle, double value) {
-    handle.writeString(OString::number(value));
+    writeData(handle, OString::number(value));
 }
 
 void writeValueContent_(TempFile &handle, const OUString& value) {
@@ -185,49 +189,48 @@ void writeValueContent_(
         static char const hexDigit[16] = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
             'D', 'E', 'F' };
-        handle.writeString(
-            o3tl::string_view(hexDigit + ((value[i] >> 4) & 0xF), 1));
-        handle.writeString(o3tl::string_view(hexDigit + (value[i] & 0xF), 1));
+        writeData_(handle, hexDigit + ((value[i] >> 4) & 0xF), 1);
+        writeData_(handle, hexDigit + (value[i] & 0xF), 1);
     }
 }
 
 template< typename T > void writeSingleValue(
     TempFile &handle, css::uno::Any const & value)
 {
-    handle.writeString(">");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM(">"));
     T val = T();
     value >>= val;
     writeValueContent_(handle, val);
-    handle.writeString("</value>");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</value>"));
 }
 
 template< typename T > void writeListValue(
     TempFile &handle, css::uno::Any const & value)
 {
-    handle.writeString(">");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM(">"));
     css::uno::Sequence< T > val;
     value >>= val;
     for (sal_Int32 i = 0; i < val.getLength(); ++i) {
         if (i != 0) {
-            handle.writeString(" ");
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM(" "));
         }
         writeValueContent_(handle, val[i]);
     }
-    handle.writeString("</value>");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</value>"));
 }
 
 template< typename T > void writeItemListValue(
     TempFile &handle, css::uno::Any const & value)
 {
-    handle.writeString(">");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM(">"));
     css::uno::Sequence< T > val;
     value >>= val;
     for (sal_Int32 i = 0; i < val.getLength(); ++i) {
-        handle.writeString("<it>");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<it>"));
         writeValueContent_(handle, val[i]);
-        handle.writeString("</it>");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</it>"));
     }
-    handle.writeString("</value>");
+    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</value>"));
 }
 
 void writeValue(TempFile &handle, Type type, css::uno::Any const & value) {
@@ -281,7 +284,7 @@ void writeValue(TempFile &handle, Type type, css::uno::Any const & value) {
 
 void writeNode(
     Components & components, TempFile &handle,
-    rtl::Reference< Node > const & parent, o3tl::u16string_view name,
+    rtl::Reference< Node > const & parent, OUString const & name,
     rtl::Reference< Node > const & node)
 {
     static xmlreader::Span const typeNames[] = {
@@ -305,49 +308,51 @@ void writeNode(
     case Node::KIND_PROPERTY:
         {
             PropertyNode * prop = static_cast< PropertyNode * >(node.get());
-            handle.writeString("<prop oor:name=\"");
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<prop oor:name=\""));
             writeAttributeValue(handle, name);
-            handle.writeString("\" oor:op=\"fuse\"");
+            writeData_(
+                handle, RTL_CONSTASCII_STRINGPARAM("\" oor:op=\"fuse\""));
             Type type = prop->getStaticType();
             Type dynType = getDynamicType(prop->getValue(components));
             assert(dynType != TYPE_ERROR);
             if (type == TYPE_ANY) {
                 type = dynType;
                 if (type != TYPE_NIL) {
-                    handle.writeString(" oor:type=\"");
-                    handle.writeString(
-                        o3tl::string_view(
-                            typeNames[type].begin, typeNames[type].length));
-                    handle.writeString("\"");
+                    writeData_(
+                        handle, RTL_CONSTASCII_STRINGPARAM(" oor:type=\""));
+                    writeData_(
+                        handle, typeNames[type].begin, typeNames[type].length);
+                    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\""));
                 }
             }
-            handle.writeString("><value");
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("><value"));
             if (dynType == TYPE_NIL) {
-                handle.writeString(" xsi:nil=\"true\"/>");
+                writeData_(
+                    handle, RTL_CONSTASCII_STRINGPARAM(" xsi:nil=\"true\"/>"));
             } else {
                 writeValue(handle, type, prop->getValue(components));
             }
-            handle.writeString("</prop>");
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</prop>"));
         }
         break;
     case Node::KIND_LOCALIZED_PROPERTY:
-        handle.writeString("<prop oor:name=\"");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<prop oor:name=\""));
         writeAttributeValue(handle, name);
-        handle.writeString("\" oor:op=\"fuse\">");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\" oor:op=\"fuse\">"));
         for (NodeMap::const_iterator i(node->getMembers().begin());
              i != node->getMembers().end(); ++i)
         {
             writeNode(components, handle, node, i->first, i->second);
         }
-        handle.writeString("</prop>");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</prop>"));
         break;
     case Node::KIND_LOCALIZED_VALUE:
         {
-            handle.writeString("<value");
-            if (!name.empty()) {
-                handle.writeString(" xml:lang=\"");
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<value"));
+            if (!name.isEmpty()) {
+                writeData_(handle, RTL_CONSTASCII_STRINGPARAM(" xml:lang=\""));
                 writeAttributeValue(handle, name);
-                handle.writeString("\"");
+                writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\""));
             }
             Type type = static_cast< LocalizedPropertyNode * >(parent.get())->
                 getStaticType();
@@ -358,15 +363,16 @@ void writeNode(
             if (type == TYPE_ANY) {
                 type = dynType;
                 if (type != TYPE_NIL) {
-                    handle.writeString(" oor:type=\"");
-                    handle.writeString(
-                        o3tl::string_view(
-                            typeNames[type].begin, typeNames[type].length));
-                    handle.writeString("\"");
+                    writeData_(
+                        handle, RTL_CONSTASCII_STRINGPARAM(" oor:type=\""));
+                    writeData_(
+                        handle, typeNames[type].begin, typeNames[type].length);
+                    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\""));
                 }
             }
             if (dynType == TYPE_NIL) {
-                handle.writeString(" xsi:nil=\"true\"/>");
+                writeData_(
+                    handle, RTL_CONSTASCII_STRINGPARAM(" xsi:nil=\"true\"/>"));
             } else {
                 writeValue(handle, type, value);
             }
@@ -374,34 +380,25 @@ void writeNode(
         break;
     case Node::KIND_GROUP:
     case Node::KIND_SET:
-        handle.writeString("<node oor:name=\"");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<node oor:name=\""));
         writeAttributeValue(handle, name);
         if (!node->getTemplateName().isEmpty()) { // set member
-            handle.writeString("\" oor:op=\"replace");
+            writeData_(
+                handle, RTL_CONSTASCII_STRINGPARAM("\" oor:op=\"replace"));
         }
-        handle.writeString("\">");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\">"));
         for (NodeMap::const_iterator i(node->getMembers().begin());
              i != node->getMembers().end(); ++i)
         {
             writeNode(components, handle, node, i->first, i->second);
         }
-        handle.writeString("</node>");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</node>"));
         break;
     case Node::KIND_ROOT:
         assert(false); // this cannot happen
         break;
     }
 }
-
-// helpers to allow sorting of configmgr::Modifications::Node
-typedef std::pair< const rtl::OUString, configmgr::Modifications::Node > ModNodePairEntry;
-struct PairEntrySorter
-{
-    bool operator() (const ModNodePairEntry* pValue1, const ModNodePairEntry* pValue2) const
-    {
-        return pValue1->first.compareTo(pValue2->first) < 0;
-    }
-};
 
 void writeModifications(
     Components & components, TempFile &handle,
@@ -415,151 +412,149 @@ void writeModifications(
     if (modifications.children.empty()) {
         assert(parent.is());
             // components themselves have no parent but must have children
-        handle.writeString("<item oor:path=\"");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<item oor:path=\""));
         writeAttributeValue(handle, parentPathRepresentation);
-        handle.writeString("\">");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\">"));
         if (node.is()) {
             writeNode(components, handle, parent, nodeName, node);
         } else {
             switch (parent->kind()) {
             case Node::KIND_LOCALIZED_PROPERTY:
-                handle.writeString("<value");
+                writeData_(handle, RTL_CONSTASCII_STRINGPARAM("<value"));
                 if (!nodeName.isEmpty()) {
-                    handle.writeString(" xml:lang=\"");
+                    writeData_(
+                        handle, RTL_CONSTASCII_STRINGPARAM(" xml:lang=\""));
                     writeAttributeValue(handle, nodeName);
-                    handle.writeString("\"");
+                    writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\""));
                 }
-                handle.writeString(" oor:op=\"remove\"/>");
+                writeData_(
+                    handle, RTL_CONSTASCII_STRINGPARAM(" oor:op=\"remove\"/>"));
                 break;
             case Node::KIND_GROUP:
                 assert(
                     static_cast< GroupNode * >(parent.get())->isExtensible());
-                handle.writeString("<prop oor:name=\"");
+                writeData_(
+                    handle, RTL_CONSTASCII_STRINGPARAM("<prop oor:name=\""));
                 writeAttributeValue(handle, nodeName);
-                handle.writeString("\" oor:op=\"remove\"/>");
+                writeData_(
+                    handle,
+                    RTL_CONSTASCII_STRINGPARAM("\" oor:op=\"remove\"/>"));
                 break;
             case Node::KIND_SET:
-                handle.writeString("<node oor:name=\"");
+                writeData_(
+                    handle, RTL_CONSTASCII_STRINGPARAM("<node oor:name=\""));
                 writeAttributeValue(handle, nodeName);
-                handle.writeString("\" oor:op=\"remove\"/>");
+                writeData_(
+                    handle,
+                    RTL_CONSTASCII_STRINGPARAM("\" oor:op=\"remove\"/>"));
                 break;
             default:
                 assert(false); // this cannot happen
                 break;
             }
         }
-        handle.writeString("</item>\n");
+        writeData_(handle, RTL_CONSTASCII_STRINGPARAM("</item>\n"));
     } else {
         assert(node.is());
         OUString pathRep(
             parentPathRepresentation + "/" +
             Data::createSegment(node->getTemplateName(), nodeName));
-
-        // copy configmgr::Modifications::Node's to a sortable list. Use pointers
-        // to just reference the data instead of copying it
-        std::vector< const ModNodePairEntry* > ModNodePairEntryVector;
-        ModNodePairEntryVector.reserve(modifications.children.size());
-
-        for (const auto& rCand : modifications.children)
-        {
-            ModNodePairEntryVector.push_back(&rCand);
-        }
-
-        // sort the list
-        std::sort(ModNodePairEntryVector.begin(), ModNodePairEntryVector.end(), PairEntrySorter());
-
-        // now use the list to write entries in sorted order
-        // instead of random as from the unordered map
-        for (const auto & i : ModNodePairEntryVector)
+        for (const auto & i : modifications.children)
         {
             writeModifications(
-                components, handle, pathRep, node, i->first,
-                node->getMember(i->first), i->second);
+                components, handle, pathRep, node, i.first,
+                node->getMember(i.first), i.second);
         }
     }
 }
 
 }
 
-void writeAttributeValue(TempFile &handle, o3tl::u16string_view value) {
-    std::size_t i = 0;
-    std::size_t j = i;
-    for (; j != value.size(); ++j) {
+void writeData(TempFile &handle, OString const & text) {
+    writeData_(handle, text.getStr(), text.getLength());
+}
+
+void writeAttributeValue(TempFile &handle, OUString const & value) {
+    sal_Int32 i = 0;
+    sal_Int32 j = i;
+    for (; j < value.getLength(); ++j) {
         assert(
             value[j] == 0x0009 || value[j] == 0x000A || value[j] == 0x000D ||
             (value[j] >= 0x0020 && value[j] != 0xFFFE && value[j] != 0xFFFF));
         switch(value[j]) {
         case '\x09':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&#9;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&#9;"));
             i = j + 1;
             break;
         case '\x0A':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&#xA;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&#xA;"));
             i = j + 1;
             break;
         case '\x0D':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&#xD;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&#xD;"));
             i = j + 1;
             break;
         case '"':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&quot;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&quot;"));
             i = j + 1;
             break;
         case '&':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&amp;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&amp;"));
             i = j + 1;
             break;
         case '<':
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&lt;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&lt;"));
             i = j + 1;
             break;
         default:
             break;
         }
     }
-    handle.writeString(convertToUtf8(value.substr(i, j - i)));
+    writeData(handle, convertToUtf8(value, i, j - i));
 }
 
-void writeValueContent(TempFile &handle, o3tl::u16string_view value) {
-    std::size_t i = 0;
-    std::size_t j = i;
-    for (; j != value.size(); ++j) {
-        char16_t c = value[j];
+void writeValueContent(TempFile &handle, OUString const & value) {
+    sal_Int32 i = 0;
+    sal_Int32 j = i;
+    for (; j < value.getLength(); ++j) {
+        sal_Unicode c = value[j];
         if ((c < 0x0020 && c != 0x0009 && c != 0x000A && c != 0x000D) ||
             c == 0xFFFE || c == 0xFFFF)
         {
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("<unicode oor:scalar=\"");
-            handle.writeString(OString::number(c));
-            handle.writeString("\"/>");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(
+                handle, RTL_CONSTASCII_STRINGPARAM("<unicode oor:scalar=\""));
+            writeData(
+                handle, OString::number(c));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("\"/>"));
             i = j + 1;
         } else if (c == '\x0D') {
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&#xD;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&#xD;"));
             i = j + 1;
         } else if (c == '&') {
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&amp;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&amp;"));
             i = j + 1;
         } else if (c == '<') {
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&lt;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&lt;"));
             i = j + 1;
         } else if (c == '>') {
             // "MUST, for compatibility, be escaped [...] when it appears in the
             // string ']]>'":
-            handle.writeString(convertToUtf8(value.substr(i, j - i)));
-            handle.writeString("&gt;");
+            writeData(handle, convertToUtf8(value, i, j - i));
+            writeData_(handle, RTL_CONSTASCII_STRINGPARAM("&gt;"));
             i = j + 1;
         }
     }
-    handle.writeString(convertToUtf8(value.substr(i, j - i)));
+    writeData(handle, convertToUtf8(value, i, j - i));
 }
 
 void writeModFile(
@@ -596,46 +591,26 @@ void writeModFile(
         throw css::uno::RuntimeException(
             "cannot create temporary file in " + dir);
     }
-    tmp.writeString(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<oor:items"
-        " xmlns:oor=\"http://openoffice.org/2001/registry\""
-        " xmlns:xs=\"http://www.w3.org/2001/XMLSchema\""
-        " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+    writeData_(
+        tmp,
+        RTL_CONSTASCII_STRINGPARAM(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<oor:items"
+            " xmlns:oor=\"http://openoffice.org/2001/registry\""
+            " xmlns:xs=\"http://www.w3.org/2001/XMLSchema\""
+            " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"));
     //TODO: Do not write back information about those removed items that did not
     // come from the .xcs/.xcu files, anyway (but had been added dynamically
     // instead):
-
-    // For profilesafemode it is necessary to detect changes in the
-    // registrymodifications file, this is done based on file size in bytes and crc32.
-    // Unfortunately this write is based on writing unordered map entries, which creates
-    // valid and semantically equal XML-Files, bubt with different crc32 checksums. For
-    // the future usage it will be preferable to have easily comparable config files
-    // which is guaranteed by writing the entries in sorted order. Indeed with this change
-    // (and in the recursive writeModifications call) the same config files get written
-
-    // copy configmgr::Modifications::Node's to a sortable list. Use pointers
-    // to just reference the data instead of copying it
-    std::vector< const ModNodePairEntry* > ModNodePairEntryVector;
-    ModNodePairEntryVector.reserve(data.modifications.getRoot().children.size());
-
-    for (const auto& rCand : data.modifications.getRoot().children)
-    {
-        ModNodePairEntryVector.push_back(&rCand);
-    }
-
-    // sort the list
-    std::sort(ModNodePairEntryVector.begin(), ModNodePairEntryVector.end(), PairEntrySorter());
-
-    // now use the list to write entries in sorted order
-    // instead of random as from the unordered map
-    for (const auto& j : ModNodePairEntryVector)
+    for (Modifications::Node::Children::const_iterator j(
+             data.modifications.getRoot().children.begin());
+         j != data.modifications.getRoot().children.end(); ++j)
     {
         writeModifications(
             components, tmp, "", rtl::Reference< Node >(), j->first,
             data.getComponents().findNode(Data::NO_LAYER, j->first),
             j->second);
     }
-    tmp.writeString("</oor:items>\n");
+    writeData_(tmp, RTL_CONSTASCII_STRINGPARAM("</oor:items>\n"));
     tmp.closeAndRename(url);
 }
 

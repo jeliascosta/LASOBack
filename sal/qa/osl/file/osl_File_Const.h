@@ -85,6 +85,8 @@ const sal_Char pBuffer_Blank[]  = "";
 #if defined(_WIN32)                      // Windows
 #       include <tchar.h>
 #       include <io.h>
+#       include <stdio.h>
+#       include <stdlib.h>
 #   define PATH_MAX             MAX_PATH
 #   define TEST_PLATFORM        "c:/"
 #   define TEST_PLATFORM_ROOT   "c:/"
@@ -161,7 +163,7 @@ OUString aTypeURL3( FILE_PREFIX "" );
 
 #if ( defined UNX )                                     //          Unix
 OUString aVolURL1( FILE_PREFIX  "");            //ufs       Solaris/Linux
-#ifdef __sun
+#ifdef SOLARIS
 OUString aVolURL2( FILE_PREFIX  "dev/fd" );     //fd        Solaris
 #else
 OUString aVolURL2( FILE_PREFIX  "dev/floppy/0u1440" );  //fd0       Linux

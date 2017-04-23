@@ -34,11 +34,11 @@ class RscFlag : public RscConst
     };
     RSCINST         CreateBasic( RSCINST * pInst );
 public:
-                    RscFlag( Atom nId, RESOURCE_TYPE nTypId );
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool bOwnClass = false ) override;
+                    RscFlag( Atom nId, sal_uInt32 nTypId );
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool ) override;
     RSCINST         CreateClient( RSCINST * pInst, const RSCINST & rDflt,
                                   bool bOwnClass, Atom nConsId );
-    sal_uInt32      Size() const override;
+    sal_uInt32      Size() override;
 
     virtual void    SetToDefault( const RSCINST & rInst ) override;
     bool            IsDefault( const RSCINST & rInst ) override;
@@ -58,7 +58,7 @@ public:
     void            WriteSrc( const RSCINST & rInst, FILE * fOutput,
                               RscTypCont * pTC, sal_uInt32 nTab, const char * ) override;
     ERRTYPE         WriteRc( const RSCINST & rInst, RscWriteRc & aMem,
-                             RscTypCont * pTC, sal_uInt32 ) override;
+                             RscTypCont * pTC, sal_uInt32, bool bExtra ) override;
 };
 
 /******************* R s c C l i e n t ***********************************/
@@ -67,11 +67,11 @@ class RscClient : public RscTop
     RscFlag *       pRefClass;  // class which is used as server
     Atom            nConstId;   // id of the value to set
 public:
-                    RscClient( Atom nId, RESOURCE_TYPE nTypId, RscFlag * pClass,
+                    RscClient( Atom nId, sal_uInt32 nTypId, RscFlag * pClass,
                                Atom nConstantId );
     virtual RSCCLASS_TYPE   GetClassType() const override;
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool bOwnClass = false ) override;
-    sal_uInt32      Size() const override { return pRefClass->Size(); }
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDflt, bool ) override;
+    sal_uInt32      Size() override { return pRefClass->Size(); }
 
                     // an assignment to a variable
     bool            IsDefault( const RSCINST & rInst ) override {

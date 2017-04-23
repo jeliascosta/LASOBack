@@ -30,7 +30,7 @@ public:
     SdHTMLFilter (
         SfxMedium& rMedium,
         ::sd::DrawDocShell& rDocShell);
-    virtual ~SdHTMLFilter() override;
+    virtual ~SdHTMLFilter();
 
     virtual bool        Export() override;
 };

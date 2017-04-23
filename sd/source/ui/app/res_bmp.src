@@ -199,147 +199,178 @@ Bitmap BMP_PLACEHOLDER_TABLE_LARGE_HOVER
 
 Bitmap BMP_FOILN_01
 {
-    File = "foiln01.png" ;
+    File = "foiln01.bmp" ;
 };
 
 Bitmap BMP_PAGE
 {
-    File = "page.png" ;
+    File = "page.bmp" ;
 };
 
 Bitmap BMP_PAGE_EXCLUDED
 {
-    File = "pageexcl.png" ;
+    File = "pageexcl.bmp" ;
 };
 
 Bitmap BMP_PAGEOBJS_EXCLUDED
 {
-    File = "pagobjex.png" ;
+    File = "pagobjex.bmp" ;
 };
 
 Bitmap BMP_PAGEOBJS
 {
-    File = "pageobjs.png" ;
+    File = "pageobjs.bmp" ;
 };
 
 Bitmap BMP_OBJECTS
 {
-    File = "objects.png" ;
+    File = "objects.bmp" ;
 };
 
 Bitmap BMP_OLE
 {
-    File = "ole.png" ;
+    File = "ole.bmp" ;
 };
 
 Bitmap BMP_GROUP
 {
-    File = "group.png" ;
+    File = "group.bmp" ;
 };
 
 Bitmap BMP_DOC_OPEN
 {
-    File = "docopen.png" ;
+    File = "docopen.bmp" ;
 };
 
 Bitmap BMP_DOC_CLOSED
 {
-    File = "docclose.png" ;
+    File = "docclose.bmp" ;
 };
 
 Bitmap BMP_DOC_TEXT
 {
-    File = "doctext.png" ;
+    File = "doctext.bmp" ;
 };
 
 Bitmap BMP_EXPAND
 {
-    File = "plus.png" ;
+    File = "plus.bmp" ;
 };
 
 Bitmap BMP_COLLAPSE
 {
-    File = "minus.png" ;
+    File = "minus.bmp" ;
 };
 
 Bitmap BMP_GRAPHIC
 {
-    File = "graphic.png" ;
+    File = "graphic.bmp" ;
 };
 
-StringArray RID_GRAPHICSTYLEFAMILY
+String STR_STYLE_FILTER_USED
 {
-    ItemList [ en-US ] =
+    Text [ en-US ] = "Applied Styles" ;
+};
+String STR_STYLE_FILTER_USERDEF
+{
+    Text [ en-US ] = "Custom Styles" ;
+};
+String STR_STYLE_FILTER_ALL
+{
+    Text [ en-US ] = "All Styles" ;
+};
+
+SfxStyleFamilies DLG_STYLE_DESIGNER
+{
+    StyleFamilyList =
     {
-        < "All Styles" ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles" ; SFXSTYLEBIT_HIDDEN ; > ;
-        < "Applied Styles" ; SFXSTYLEBIT_USED ; > ;
-        < "Custom Styles" ; SFXSTYLEBIT_USERDEF ; > ;
+        SfxStyleFamilyItem RID_GRAPHICSTYLEFAMILY
+        {
+            Text [ en-US ] = "Graphic Styles" ;
+            StyleFamily = SfxStyleFamily::Para ;
+            FilterList [ en-US ] =
+            {
+                < "All Styles" ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles" ; SFXSTYLEBIT_HIDDEN ; > ;
+                < "Applied Styles" ; SFXSTYLEBIT_USED ; > ;
+                < "Custom Styles" ; SFXSTYLEBIT_USERDEF ; > ;
+            };
+        };
+        SfxStyleFamilyItem RID_PRESENTATIONSTYLEFAMILY
+        {
+            Text [ en-US ] = "Presentation Styles" ;
+            StyleFamily = SfxStyleFamily::Pseudo ;
+            FilterList [ en-US ] =
+            {
+                < "All Styles" ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
+                < "Hidden Styles" ; SFXSTYLEBIT_HIDDEN ; > ;
+            };
+        };
     };
-};
+    #define STYLE_IMAGE_LISTEF \
+        IdList = \
+        { \
+            1; 2; \
+        }; \
+        IdCount = 2;
 
-StringArray RID_PRESENTATIONSTYLEFAMILY
-{
-    ItemList [ en-US ] =
+    ImageList 1 // == BMP_COLOR_NORMAL + 1
     {
-        < "All Styles" ; SFXSTYLEBIT_ALL_VISIBLE ; > ;
-        < "Hidden Styles" ; SFXSTYLEBIT_HIDDEN ; > ;
+        Prefix = "sf";
+        MaskColor = IMAGE_MASK_STDCOLOR;
+        STYLE_IMAGE_LISTEF
     };
-};
-
-Bitmap BMP_STYLES_FAMILY_GRAPHICS
-{
-    File = "sf01.png" ;
-};
-
-Bitmap BMP_STYLES_FAMILY_PRESENTATIONS
-{
-    File = "sf02.png" ;
+    #undef STYLE_IMAGE_LISTEF
 };
 
 Bitmap BMP_PRESOBJ_GRAPHIC
 {
-    File = "image.png" ;
+    File = "image.bmp" ;
 };
 
 Bitmap BMP_PRESOBJ_OBJECT
 {
-    File = "object.png" ;
+    File = "object.bmp" ;
 };
 
 Bitmap BMP_PRESOBJ_CHART
 {
-    File = "chart.png" ;
+    File = "chart.bmp" ;
 };
 
 Bitmap BMP_PRESOBJ_ORGCHART
 {
-    File = "orgchart.png" ;
+    File = "orgchart.bmp" ;
 };
 
 Bitmap BMP_PRESOBJ_TABLE
 {
-    File = "table.png" ;
+    File = "table.bmp" ;
 };
 
 Bitmap BMP_POINTER_ICON
 {
-    File = "pointericon.png";
+    File = "pointericon.bmp";
 };
 
 Bitmap BMP_WAIT_ICON
 {
-    File = "waiticon.png";
+    File = "waiticon.bmp";
 };
 
 Bitmap BMP_FADE_EFFECT_INDICATOR
 {
-    File = "fade_effect_indicator.png";
+    File = "fade_effect_indicator.bmp";
 };
 
 Bitmap BMP_CUSTOM_ANIMATION_INDICATOR
 {
-    File = "click_16.png";
+    File = "click_16.bmp";
+};
+
+Bitmap BMP_COMMENTS_INDICATOR
+{
+    File = "comments_indicator.bmp";
 };
 
 // Presenter Screen bitmaps:
@@ -825,21 +856,6 @@ Bitmap BMP_PRESENTERSCREEN_BUTTON_PLUS_DISABLED
 Bitmap BMP_PRESENTATION_MINIMIZER
 {
     File = "minimize_presi_80.png";
-};
-
-Bitmap BMP_EMBEDDED
-{
-    File = "nv08.png" ;
-};
-
-Bitmap BMP_LINK
-{
-    File = "nv09.png" ;
-};
-
-Bitmap BMP_HYPERLINK
-{
-    File = "nv010.png" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

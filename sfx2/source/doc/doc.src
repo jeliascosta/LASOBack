@@ -28,6 +28,10 @@ String STR_SAVEDOC
 {
     Text [ en-US ] = "~Save" ;
 };
+String STR_UPDATEDOC
+{
+    Text [ en-US ] = "~Update" ;
+};
 String STR_SAVEASDOC
 {
     Text [ en-US ] = "Save ~As..." ;
@@ -39,6 +43,10 @@ String STR_SAVEACOPY
 String STR_CLOSEDOC
 {
     Text [ en-US ] = "~Close" ;
+};
+String STR_CLOSEDOC_ANDRETURN
+{
+    Text [ en-US ] = "~Close & Return to " ;
 };
 String STR_OPEN
 {
@@ -68,6 +76,10 @@ String STR_CATEGORY_RENAME
 {
     Text [ en-US ] = "Rename Category" ;
 };
+String STR_PROPERTIES
+{
+    Text [ en-US ] = "Properties" ;
+};
 String STR_RENAME_TEMPLATE
 {
     Text [ en-US ] = "Enter New Name: " ;
@@ -75,10 +87,6 @@ String STR_RENAME_TEMPLATE
 String STR_TEMPLATE_TOOLTIP
 {
     Text [ en-US ] = "Title: $1\nCategory: $2" ;
-};
-String STR_TEMPLATE_SELECTION
-{
-    Text [ en-US ] = "Select a Template" ;
 };
 String STR_AUTOMATICVERSION
 {
@@ -146,6 +154,14 @@ String STR_HIDDENINFO_DOCVERSIONS
 {
     Text [ en-US ] = "Document versions" ;
 };
+String STR_HIDDENINFO_FIELDS
+{
+    Text [ en-US ] = "Fields" ;
+};
+String STR_HIDDENINFO_LINKDATA
+{
+    Text [ en-US ] = "Linked data..." ;
+};
 String STR_HIDDENINFO_CONTINUE_SAVING
 {
     Text [ en-US ] = "Do you want to continue saving the document?" ;
@@ -166,6 +182,17 @@ String STR_HIDDENINFO_CONTINUE_CREATEPDF
 String STR_NEW_FILENAME_SAVE
 {
     Text [ en-US ] = "If you do not want to overwrite the original document, you should save your work under a new filename." ;
+};
+
+String STR_ERROR_DELETE_TEMPLATE_DIR
+{
+    Text [ en-US ] = "Some template files are protected and can not be deleted.";
+};
+
+String STR_DOCINFO_INFOFIELD
+{
+    Text [ en-US ] = "Info %1";
+    Text [ x-comment ] = "pb: %1 == a number [1-4]";
 };
 
 String STR_SHARED
@@ -199,6 +226,11 @@ String STR_QRYTEMPL_KEEP_BTN
     Text [ en-US ] = "~Keep Old Styles";
 };
 
+String STR_ACTION_SORT_NAME
+{
+    Text [ en-US ] = "Sort by name";
+};
+
 String STR_ACTION_REFRESH
 {
     Text [ en-US ] = "Refresh";
@@ -208,6 +240,11 @@ String STR_ACTION_DEFAULT
 {
     Text [ x-comment ] = "leave ending space";
     Text [ en-US ] = "Reset Default Template ";
+};
+
+String STR_MOVE_NEW
+{
+    Text [ en-US ] = "New folder";
 };
 
 String STR_CATEGORY_NEW
@@ -250,9 +287,24 @@ String STR_INPUT_NEW
     Text [ en-US ] = "Enter category name:";
 };
 
+String STR_REPOSITORY_LOCAL
+{
+    Text [ en-US ] = "Local";
+};
+
+String STR_REPOSITORY_NEW
+{
+    Text [ en-US ] = "New Repository";
+};
+
 String STR_MSG_ERROR_LOCAL_MOVE
 {
     Text [ en-US ] = "Error moving the following templates to $1.\n$2" ;
+};
+
+String STR_MSG_ERROR_REMOTE_MOVE
+{
+    Text [ en-US ] = "Error moving the following templates from repository $1 to folder $2.\n$3" ;
 };
 
 String STR_MSG_ERROR_EXPORT
@@ -275,6 +327,21 @@ String STR_MSG_ERROR_DELETE_FOLDER
     Text [ en-US ] = "The following folders cannot be deleted:\n$1";
 };
 
+String STR_MSG_ERROR_REPOSITORY_NAME
+{
+    Text [ en-US ] = "Failed to create repository \"$1\".\nA repository with this name may already exist.";
+};
+
+String STR_MSG_ERROR_SELECT_FOLDER
+{
+    Text [ en-US ] = "Select the destination folder(s) to save the template.";
+};
+
+String STR_INPUT_TEMPLATE_NEW
+{
+    Text [ en-US ] = "Enter template name:";
+};
+
 String STR_QMSG_SEL_FOLDER_DELETE
 {
     Text [ en-US ] = "Do you want to delete the selected folders?";
@@ -290,24 +357,20 @@ String STR_QMSG_SEL_TEMPLATE_DELETE
     Text [ en-US ] = "Do you want to delete the selected templates?";
 };
 
-String STR_QMSG_ERROR_OPENING_FILE
+Image IMG_ACTION_SORT
 {
-    Text [ en-US ] = "An error occurred during opening the file. This may be caused by incorrect file contents.\n";
+    ImageBitmap = Bitmap
+    {
+        File = "sortascending.png";
+    };
 };
 
-String STR_QMSG_ERROR_OPENING_FILE_DETAILS
+Image IMG_ACTION_REFRESH
 {
-    Text [ en-US ] = "The error details are:\n";
-};
-
-String STR_QMSG_ERROR_OPENING_FILE_CONTINUE
-{
-    Text [ en-US ] = "\nProceeding with import may cause data loss or corruption, and application may become unstable or crash.\n\nDo you want to ignore the error and attempt to continue loading the file?";
-};
-
-Bitmap BMP_ACTION_REFRESH
-{
-    File = "reload.png";
+    ImageBitmap = Bitmap
+    {
+        File = "reload.png";
+    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

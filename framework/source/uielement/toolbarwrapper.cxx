@@ -74,6 +74,7 @@ void SAL_CALL ToolBarWrapper::release() throw()
 }
 
 uno::Any SAL_CALL ToolBarWrapper::queryInterface( const uno::Type & rType )
+throw( css::uno::RuntimeException, std::exception )
 {
     Any a = ::cppu::queryInterface(
                 rType ,
@@ -86,7 +87,7 @@ uno::Any SAL_CALL ToolBarWrapper::queryInterface( const uno::Type & rType )
 }
 
 // XComponent
-void SAL_CALL ToolBarWrapper::dispose()
+void SAL_CALL ToolBarWrapper::dispose() throw ( RuntimeException, std::exception )
 {
     Reference< XComponent > xThis( static_cast< OWeakObject* >(this), UNO_QUERY );
 
@@ -111,7 +112,7 @@ void SAL_CALL ToolBarWrapper::dispose()
 }
 
 // XInitialization
-void SAL_CALL ToolBarWrapper::initialize( const Sequence< Any >& aArguments )
+void SAL_CALL ToolBarWrapper::initialize( const Sequence< Any >& aArguments ) throw ( Exception, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -140,11 +141,11 @@ void SAL_CALL ToolBarWrapper::initialize( const Sequence< Any >& aArguments )
         if ( xFrame.is() && m_xConfigSource.is() )
         {
             // Create VCL based toolbar which will be filled with settings data
-            VclPtr<ToolBox> pToolBar;
+            ToolBox* pToolBar = nullptr;
             ToolBarManager* pToolBarManager = nullptr;
             {
                 SolarMutexGuard aSolarMutexGuard;
-                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
+                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
                 if ( pWindow )
                 {
                     sal_uLong nStyles = WB_LINESPACING | WB_BORDER | WB_SCROLL | WB_MOVEABLE | WB_3DLOOK | WB_DOCKABLE | WB_SIZEABLE | WB_CLOSEABLE;
@@ -191,13 +192,13 @@ void SAL_CALL ToolBarWrapper::initialize( const Sequence< Any >& aArguments )
 }
 
 // XEventListener
-void SAL_CALL ToolBarWrapper::disposing( const css::lang::EventObject& )
+void SAL_CALL ToolBarWrapper::disposing( const css::lang::EventObject& ) throw (css::uno::RuntimeException, std::exception)
 {
     // nothing todo
 }
 
 // XUpdatable
-void SAL_CALL ToolBarWrapper::update()
+void SAL_CALL ToolBarWrapper::update() throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -210,7 +211,7 @@ void SAL_CALL ToolBarWrapper::update()
 }
 
 // XUIElementSettings
-void SAL_CALL ToolBarWrapper::updateSettings()
+void SAL_CALL ToolBarWrapper::updateSettings() throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -249,7 +250,7 @@ void ToolBarWrapper::impl_fillNewData()
 }
 
 // XUIElement interface
-Reference< XInterface > SAL_CALL ToolBarWrapper::getRealInterface(  )
+Reference< XInterface > SAL_CALL ToolBarWrapper::getRealInterface(  ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -270,6 +271,7 @@ Reference< XInterface > SAL_CALL ToolBarWrapper::getRealInterface(  )
 void SAL_CALL ToolBarWrapper::functionExecute(
     const OUString& aUIElementName,
     const OUString& aCommand )
+throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
@@ -281,7 +283,7 @@ void SAL_CALL ToolBarWrapper::functionExecute(
     }
 }
 
-void SAL_CALL ToolBarWrapper::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any&  aValue )
+void SAL_CALL ToolBarWrapper::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const css::uno::Any&  aValue ) throw( css::uno::Exception, std::exception )
 {
     SolarMutexResettableGuard aLock;
     bool bNoClose( m_bNoClose );

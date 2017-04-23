@@ -90,8 +90,9 @@ Color SvxBorderLine::threeDMediumColor( Color aMain )
 }
 
 SvxBorderLine::SvxBorderLine( const Color *pCol, long nWidth,
-       SvxBorderLineStyle nStyle,
-       Color (*pColorOutFn)( Color ), Color (*pColorInFn)( Color ) )
+       SvxBorderStyle nStyle,
+       Color (*pColorOutFn)( Color ), Color (*pColorInFn)( Color ),
+       Color (*pColorGapFn)( Color ) )
 : m_nWidth( nWidth )
 , m_bMirrorWidths( false )
 , m_aWidthImpl( SvxBorderLine::getWidthImpl( nStyle ) )
@@ -101,14 +102,14 @@ SvxBorderLine::SvxBorderLine( const Color *pCol, long nWidth,
 , m_bUseLeftTop( false )
 , m_pColorOutFn( pColorOutFn )
 , m_pColorInFn( pColorInFn )
-, m_pColorGapFn( nullptr )
+, m_pColorGapFn( pColorGapFn )
 {
     if ( pCol )
         aColor = *pCol;
 }
 
 
-SvxBorderLineStyle
+SvxBorderStyle
 ConvertBorderStyleFromWord(int const nWordLineStyle)
 {
     switch (nWordLineStyle)
@@ -119,50 +120,50 @@ ConvertBorderStyleFromWord(int const nWordLineStyle)
         case  5: // hairline
         // and the unsupported special cases which we map to a single line
         case 20:
-            return SvxBorderLineStyle::SOLID;
+            return SOLID;
         case  6:
-            return SvxBorderLineStyle::DOTTED;
+            return DOTTED;
         case  7:
-            return SvxBorderLineStyle::DASHED;
+            return DASHED;
         case 22:
-            return SvxBorderLineStyle::FINE_DASHED;
+            return FINE_DASHED;
         case 8:
-            return SvxBorderLineStyle::DASH_DOT;
+            return DASH_DOT;
         case 9:
-            return SvxBorderLineStyle::DASH_DOT_DOT;
+            return DASH_DOT_DOT;
         // then the shading beams which we represent by a double line
         case 23:
-            return SvxBorderLineStyle::DOUBLE;
+            return DOUBLE;
         // then the double lines, for which we have good matches
         case  3:
         case 10: // Don't have triple so use double
         case 21: // Don't have double wave: use double instead
-            return SvxBorderLineStyle::DOUBLE;
+            return DOUBLE;
         case 11:
-            return SvxBorderLineStyle::THINTHICK_SMALLGAP;
+            return THINTHICK_SMALLGAP;
         case 12:
         case 13: // Don't have thin thick thin, so use thick thin
-            return SvxBorderLineStyle::THICKTHIN_SMALLGAP;
+            return THICKTHIN_SMALLGAP;
         case 14:
-            return SvxBorderLineStyle::THINTHICK_MEDIUMGAP;
+            return THINTHICK_MEDIUMGAP;
         case 15:
         case 16: // Don't have thin thick thin, so use thick thin
-            return SvxBorderLineStyle::THICKTHIN_MEDIUMGAP;
+            return THICKTHIN_MEDIUMGAP;
         case 17:
-            return SvxBorderLineStyle::THINTHICK_LARGEGAP;
+            return THINTHICK_LARGEGAP;
         case 18:
         case 19: // Don't have thin thick thin, so use thick thin
-            return SvxBorderLineStyle::THICKTHIN_LARGEGAP;
+            return THICKTHIN_LARGEGAP;
         case 24:
-            return SvxBorderLineStyle::EMBOSSED;
+            return EMBOSSED;
         case 25:
-            return SvxBorderLineStyle::ENGRAVED;
+            return ENGRAVED;
         case 26:
-            return SvxBorderLineStyle::OUTSET;
+            return OUTSET;
         case 27:
-            return SvxBorderLineStyle::INSET;
+            return INSET;
         default:
-            return SvxBorderLineStyle::NONE;
+            return css::table::BorderLineStyle::NONE;
     }
 }
 
@@ -178,7 +179,7 @@ static const double OUTSET_line1 = 15.0;
 static const double INSET_line2  = 15.0;
 
 double
-ConvertBorderWidthFromWord(SvxBorderLineStyle const eStyle, double const i_fWidth,
+ConvertBorderWidthFromWord(SvxBorderStyle const eStyle, double const i_fWidth,
         int const nWordLineStyle)
 {
     // fdo#68779: at least for RTF, 0.75pt is the default if width is missing
@@ -186,7 +187,7 @@ ConvertBorderWidthFromWord(SvxBorderLineStyle const eStyle, double const i_fWidt
     switch (eStyle)
     {
         // Single lines
-        case SvxBorderLineStyle::SOLID:
+        case SOLID:
             switch (nWordLineStyle)
             {
                 case 2:
@@ -198,42 +199,42 @@ ConvertBorderWidthFromWord(SvxBorderLineStyle const eStyle, double const i_fWidt
             }
             break;
 
-        case SvxBorderLineStyle::DOTTED:
-        case SvxBorderLineStyle::DASHED:
-        case SvxBorderLineStyle::DASH_DOT:
-        case SvxBorderLineStyle::DASH_DOT_DOT:
+        case DOTTED:
+        case DASHED:
+        case DASH_DOT:
+        case DASH_DOT_DOT:
             return fWidth;
 
         // Display a minimum effective border width of 1pt
-        case SvxBorderLineStyle::FINE_DASHED:
+        case FINE_DASHED:
             return (fWidth > 0 && fWidth < 20) ? 20 : fWidth;
 
         // Double lines
-        case SvxBorderLineStyle::DOUBLE:
+        case DOUBLE:
             return fWidth * 3.0;
 
-        case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
-        case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
-        case SvxBorderLineStyle::EMBOSSED:
-        case SvxBorderLineStyle::ENGRAVED:
+        case THINTHICK_MEDIUMGAP:
+        case THICKTHIN_MEDIUMGAP:
+        case EMBOSSED:
+        case ENGRAVED:
             return fWidth * 2.0;
 
-        case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+        case THINTHICK_SMALLGAP:
             return fWidth + THINTHICK_SMALLGAP_line2 + THINTHICK_SMALLGAP_gap;
 
-        case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+        case THINTHICK_LARGEGAP:
             return fWidth + THINTHICK_LARGEGAP_line1 + THINTHICK_LARGEGAP_line2;
 
-        case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+        case THICKTHIN_SMALLGAP:
             return fWidth + THICKTHIN_SMALLGAP_line1 + THICKTHIN_SMALLGAP_gap;
 
-        case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
+        case THICKTHIN_LARGEGAP:
             return fWidth + THICKTHIN_LARGEGAP_line1 + THICKTHIN_LARGEGAP_line2;
 
-        case SvxBorderLineStyle::OUTSET:
+        case OUTSET:
             return (fWidth * 2.0) + OUTSET_line1;
 
-        case SvxBorderLineStyle::INSET:
+        case INSET:
             return (fWidth * 2.0) + INSET_line2;
 
         default:
@@ -243,49 +244,49 @@ ConvertBorderWidthFromWord(SvxBorderLineStyle const eStyle, double const i_fWidt
 }
 
 double
-ConvertBorderWidthToWord(SvxBorderLineStyle const eStyle, double const fWidth)
+ConvertBorderWidthToWord(SvxBorderStyle const eStyle, double const fWidth)
 {
     switch (eStyle)
     {
         // Single lines
-        case SvxBorderLineStyle::SOLID:
-        case SvxBorderLineStyle::DOTTED:
-        case SvxBorderLineStyle::DASHED:
-        case SvxBorderLineStyle::FINE_DASHED:
-        case SvxBorderLineStyle::DASH_DOT:
-        case SvxBorderLineStyle::DASH_DOT_DOT:
+        case SOLID:
+        case DOTTED:
+        case DASHED:
+        case FINE_DASHED:
+        case DASH_DOT:
+        case DASH_DOT_DOT:
             return fWidth;
 
         // Double lines
-        case SvxBorderLineStyle::DOUBLE:
-        case SvxBorderLineStyle::DOUBLE_THIN:
+        case DOUBLE:
+        case DOUBLE_THIN:
             return fWidth / 3.0;
 
-        case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
-        case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
-        case SvxBorderLineStyle::EMBOSSED:
-        case SvxBorderLineStyle::ENGRAVED:
+        case THINTHICK_MEDIUMGAP:
+        case THICKTHIN_MEDIUMGAP:
+        case EMBOSSED:
+        case ENGRAVED:
             return fWidth / 2.0;
 
-        case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+        case THINTHICK_SMALLGAP:
             return fWidth - THINTHICK_SMALLGAP_line2 - THINTHICK_SMALLGAP_gap;
 
-        case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+        case THINTHICK_LARGEGAP:
             return fWidth - THINTHICK_LARGEGAP_line1 - THINTHICK_LARGEGAP_line2;
 
-        case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+        case THICKTHIN_SMALLGAP:
             return fWidth - THICKTHIN_SMALLGAP_line1 - THICKTHIN_SMALLGAP_gap;
 
-        case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
+        case THICKTHIN_LARGEGAP:
             return fWidth - THICKTHIN_LARGEGAP_line1 - THICKTHIN_LARGEGAP_line2;
 
-        case SvxBorderLineStyle::OUTSET:
+        case OUTSET:
             return (fWidth - OUTSET_line1) / 2.0;
 
-        case SvxBorderLineStyle::INSET:
+        case INSET:
             return (fWidth - INSET_line2) / 2.0;
 
-        case SvxBorderLineStyle::NONE:
+        case css::table::BorderLineStyle::NONE:
             return 0;
 
         default:
@@ -298,30 +299,30 @@ ConvertBorderWidthToWord(SvxBorderLineStyle const eStyle, double const fWidth)
     units handled by the resulting object are Twips and the
     BorderWidthImpl::GetLine1() corresponds to the Outer Line.
   */
-BorderWidthImpl SvxBorderLine::getWidthImpl( SvxBorderLineStyle nStyle )
+BorderWidthImpl SvxBorderLine::getWidthImpl( SvxBorderStyle nStyle )
 {
     BorderWidthImpl aImpl;
 
     switch ( nStyle )
     {
         // No line: no width
-        case SvxBorderLineStyle::NONE:
+        case css::table::BorderLineStyle::NONE:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::FIXED, 0.0 );
             break;
 
         // Single lines
-        case SvxBorderLineStyle::SOLID:
-        case SvxBorderLineStyle::DOTTED:
-        case SvxBorderLineStyle::DASHED:
-        case SvxBorderLineStyle::FINE_DASHED:
-        case SvxBorderLineStyle::DASH_DOT:
-        case SvxBorderLineStyle::DASH_DOT_DOT:
+        case SOLID:
+        case DOTTED:
+        case DASHED:
+        case FINE_DASHED:
+        case DASH_DOT:
+        case DASH_DOT_DOT:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::CHANGE_LINE1, 1.0 );
             break;
 
         // Double lines
 
-        case SvxBorderLineStyle::DOUBLE:
+        case DOUBLE:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE1 | BorderWidthImplFlags::CHANGE_LINE2 | BorderWidthImplFlags::CHANGE_DIST,
                     // fdo#46112 fdo#38542 fdo#43249:
@@ -329,38 +330,38 @@ BorderWidthImpl SvxBorderLine::getWidthImpl( SvxBorderLineStyle nStyle )
                     1.0/3.0, 1.0/3.0, 1.0/3.0 );
             break;
 
-        case SvxBorderLineStyle::DOUBLE_THIN:
+        case DOUBLE_THIN:
             aImpl = BorderWidthImpl(BorderWidthImplFlags::CHANGE_DIST, 10.0, 10.0, 1.0);
             break;
 
-        case SvxBorderLineStyle::THINTHICK_SMALLGAP:
+        case THINTHICK_SMALLGAP:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::CHANGE_LINE1, 1.0,
                     THINTHICK_SMALLGAP_line2, THINTHICK_SMALLGAP_gap );
             break;
 
-        case SvxBorderLineStyle::THINTHICK_MEDIUMGAP:
+        case THINTHICK_MEDIUMGAP:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE1 | BorderWidthImplFlags::CHANGE_LINE2 | BorderWidthImplFlags::CHANGE_DIST,
                     0.5, 0.25, 0.25 );
             break;
 
-        case SvxBorderLineStyle::THINTHICK_LARGEGAP:
+        case THINTHICK_LARGEGAP:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::CHANGE_DIST,
                     THINTHICK_LARGEGAP_line1, THINTHICK_LARGEGAP_line2, 1.0 );
             break;
 
-        case SvxBorderLineStyle::THICKTHIN_SMALLGAP:
+        case THICKTHIN_SMALLGAP:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::CHANGE_LINE2, THICKTHIN_SMALLGAP_line1,
                     1.0, THICKTHIN_SMALLGAP_gap );
             break;
 
-        case SvxBorderLineStyle::THICKTHIN_MEDIUMGAP:
+        case THICKTHIN_MEDIUMGAP:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE1 | BorderWidthImplFlags::CHANGE_LINE2 | BorderWidthImplFlags::CHANGE_DIST,
                     0.25, 0.5, 0.25 );
             break;
 
-        case SvxBorderLineStyle::THICKTHIN_LARGEGAP:
+        case THICKTHIN_LARGEGAP:
             aImpl = BorderWidthImpl( BorderWidthImplFlags::CHANGE_DIST, THICKTHIN_LARGEGAP_line1,
                     THICKTHIN_LARGEGAP_line2, 1.0 );
             break;
@@ -371,8 +372,8 @@ BorderWidthImpl SvxBorderLine::getWidthImpl( SvxBorderLineStyle nStyle )
          *      0.75pt up to 3pt and then 3pt
          */
 
-        case SvxBorderLineStyle::EMBOSSED:
-        case SvxBorderLineStyle::ENGRAVED:
+        case EMBOSSED:
+        case ENGRAVED:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE1 | BorderWidthImplFlags::CHANGE_LINE2 | BorderWidthImplFlags::CHANGE_DIST,
                     0.25, 0.25, 0.5 );
@@ -383,13 +384,13 @@ BorderWidthImpl SvxBorderLine::getWidthImpl( SvxBorderLineStyle nStyle )
          * Word compat: the gap width should be measured relatively to the biggest width for the
          *      row or column.
          */
-        case SvxBorderLineStyle::OUTSET:
+        case OUTSET:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE2 | BorderWidthImplFlags::CHANGE_DIST,
                     OUTSET_line1, 0.5, 0.5 );
             break;
 
-        case SvxBorderLineStyle::INSET:
+        case INSET:
             aImpl = BorderWidthImpl(
                     BorderWidthImplFlags::CHANGE_LINE1 | BorderWidthImplFlags::CHANGE_DIST,
                     0.5, INSET_line2, 0.5 );
@@ -429,32 +430,32 @@ void SvxBorderLine::ScaleMetrics( long nMult, long nDiv )
     m_nDiv = nDiv;
 }
 
-void SvxBorderLine::GuessLinesWidths( SvxBorderLineStyle nStyle, sal_uInt16 nOut, sal_uInt16 nIn, sal_uInt16 nDist )
+void SvxBorderLine::GuessLinesWidths( SvxBorderStyle nStyle, sal_uInt16 nOut, sal_uInt16 nIn, sal_uInt16 nDist )
 {
-    if (SvxBorderLineStyle::NONE == nStyle)
+    if (css::table::BorderLineStyle::NONE == nStyle)
     {
-        nStyle = SvxBorderLineStyle::SOLID;
+        nStyle = SOLID;
         if ( nOut > 0 && nIn > 0 )
-            nStyle = SvxBorderLineStyle::DOUBLE;
+            nStyle = DOUBLE;
     }
 
-    if ( nStyle == SvxBorderLineStyle::DOUBLE )
+    if ( nStyle == DOUBLE )
     {
-        static const SvxBorderLineStyle aDoubleStyles[] =
+        static const SvxBorderStyle aDoubleStyles[] =
         {
-            SvxBorderLineStyle::DOUBLE,
-            SvxBorderLineStyle::DOUBLE_THIN,
-            SvxBorderLineStyle::THINTHICK_SMALLGAP,
-            SvxBorderLineStyle::THINTHICK_MEDIUMGAP,
-            SvxBorderLineStyle::THINTHICK_LARGEGAP,
-            SvxBorderLineStyle::THICKTHIN_SMALLGAP,
-            SvxBorderLineStyle::THICKTHIN_MEDIUMGAP,
-            SvxBorderLineStyle::THICKTHIN_LARGEGAP
+            DOUBLE,
+            DOUBLE_THIN,
+            THINTHICK_SMALLGAP,
+            THINTHICK_MEDIUMGAP,
+            THINTHICK_LARGEGAP,
+            THICKTHIN_SMALLGAP,
+            THICKTHIN_MEDIUMGAP,
+            THICKTHIN_LARGEGAP
         };
 
         static size_t const len = SAL_N_ELEMENTS(aDoubleStyles);
         long nWidth = 0;
-        SvxBorderLineStyle nTestStyle(SvxBorderLineStyle::NONE);
+        SvxBorderStyle nTestStyle(css::table::BorderLineStyle::NONE);
         for (size_t i = 0; i < len && nWidth == 0; ++i)
         {
             nTestStyle = aDoubleStyles[i];
@@ -494,13 +495,13 @@ void SvxBorderLine::GuessLinesWidths( SvxBorderLineStyle nStyle, sal_uInt16 nOut
             // and returns a 0 width.
             switch (nStyle)
             {
-                case SvxBorderLineStyle::SOLID:
-                case SvxBorderLineStyle::DOTTED:
-                case SvxBorderLineStyle::DASHED:
-                case SvxBorderLineStyle::FINE_DASHED:
-                case SvxBorderLineStyle::DASH_DOT:
-                case SvxBorderLineStyle::DASH_DOT_DOT:
-                    std::swap( nOut, nIn);
+                case SOLID:
+                case DOTTED:
+                case DASHED:
+                case FINE_DASHED:
+                case DASH_DOT:
+                case DASH_DOT_DOT:
+                    ::std::swap( nOut, nIn);
                     break;
                 default:
                     ;   // nothing
@@ -545,32 +546,32 @@ bool SvxBorderLine::operator==( const SvxBorderLine& rCmp ) const
              ( m_pColorGapFn == rCmp.m_pColorGapFn ) );
 }
 
-void SvxBorderLine::SetBorderLineStyle( SvxBorderLineStyle nNew )
+void SvxBorderLine::SetBorderLineStyle( SvxBorderStyle nNew )
 {
     m_nStyle = nNew;
     m_aWidthImpl = getWidthImpl( m_nStyle );
 
     switch ( nNew )
     {
-        case SvxBorderLineStyle::EMBOSSED:
+        case EMBOSSED:
             m_pColorOutFn = threeDLightColor;
             m_pColorInFn  = threeDDarkColor;
             m_pColorGapFn = threeDMediumColor;
             m_bUseLeftTop = true;
             break;
-        case SvxBorderLineStyle::ENGRAVED:
+        case ENGRAVED:
             m_pColorOutFn = threeDDarkColor;
             m_pColorInFn  = threeDLightColor;
             m_pColorGapFn = threeDMediumColor;
             m_bUseLeftTop = true;
             break;
-        case SvxBorderLineStyle::OUTSET:
+        case OUTSET:
             m_pColorOutFn = lightColor;
             m_pColorInFn  = darkColor;
             m_bUseLeftTop = true;
             m_pColorGapFn = nullptr;
             break;
-        case SvxBorderLineStyle::INSET:
+        case INSET:
             m_pColorOutFn = darkColor;
             m_pColorInFn  = lightColor;
             m_bUseLeftTop = true;
@@ -632,10 +633,10 @@ void SvxBorderLine::SetWidth( long nWidth )
     m_nWidth = nWidth;
 }
 
-OUString SvxBorderLine::GetValueString(MapUnit eSrcUnit,
-                                       MapUnit eDestUnit,
-                                       const IntlWrapper* pIntl,
-                                       bool bMetricStr) const
+OUString SvxBorderLine::GetValueString( SfxMapUnit eSrcUnit,
+                                      SfxMapUnit eDestUnit,
+                                      const IntlWrapper* pIntl,
+                                      bool bMetricStr) const
 {
     static const sal_uInt16 aStyleIds[] =
     {
@@ -660,14 +661,14 @@ OUString SvxBorderLine::GetValueString(MapUnit eSrcUnit,
     };
     OUString aStr = "(" + ::GetColorString( aColor ) + OUString(cpDelim);
 
-    if ( (int)m_nStyle < int(SAL_N_ELEMENTS(aStyleIds)) )
+    if ( m_nStyle < int(SAL_N_ELEMENTS(aStyleIds)) )
     {
-        sal_uInt16 nResId = aStyleIds[(int)m_nStyle];
-        aStr += EditResId::GetString(nResId);
+        sal_uInt16 nResId = aStyleIds[m_nStyle];
+        aStr += EE_RESSTR(nResId);
     }
     else
     {
-        OUString sMetric = EditResId::GetString(GetMetricId( eDestUnit ));
+        OUString sMetric = EE_RESSTR(GetMetricId( eDestUnit ));
         aStr += GetMetricText( (long)GetInWidth(), eSrcUnit, eDestUnit, pIntl );
         if ( bMetricStr )
             aStr += sMetric;

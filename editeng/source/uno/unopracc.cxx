@@ -41,13 +41,14 @@ SvxAccessibleTextPropertySet::~SvxAccessibleTextPropertySet() throw()
 {
 }
 
-uno::Reference< text::XText > SAL_CALL SvxAccessibleTextPropertySet::getText()
+uno::Reference< text::XText > SAL_CALL SvxAccessibleTextPropertySet::getText() throw (uno::RuntimeException, std::exception)
 {
   // TODO (empty?)
   return uno::Reference< text::XText > ();
 }
 
 uno::Any SAL_CALL SvxAccessibleTextPropertySet::queryInterface( const uno::Type & rType )
+    throw(uno::RuntimeException, std::exception)
 {
     return OWeakObject::queryInterface(rType);
 }
@@ -65,7 +66,7 @@ void SAL_CALL SvxAccessibleTextPropertySet::release()
 }
 
 // XTypeProvider
-uno::Sequence< uno::Type > SAL_CALL SvxAccessibleTextPropertySet::getTypes()
+uno::Sequence< uno::Type > SAL_CALL SvxAccessibleTextPropertySet::getTypes() throw ( uno::RuntimeException, std::exception )
 {
     static ::cppu::OTypeCollection* pTypeCollection = nullptr ;
 
@@ -94,19 +95,26 @@ uno::Sequence< uno::Type > SAL_CALL SvxAccessibleTextPropertySet::getTypes()
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL SvxAccessibleTextPropertySet::getImplementationId()
+    throw (uno::RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 // XServiceInfo
-OUString SAL_CALL SAL_CALL SvxAccessibleTextPropertySet::getImplementationName()
+OUString SAL_CALL SAL_CALL SvxAccessibleTextPropertySet::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
     return OUString("SvxAccessibleTextPropertySet");
 }
 
-sal_Bool SAL_CALL SvxAccessibleTextPropertySet::supportsService (const OUString& sServiceName)
+sal_Bool SAL_CALL SvxAccessibleTextPropertySet::supportsService (const OUString& sServiceName) throw (uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, sServiceName);
+}
+
+uno::Sequence< OUString> SAL_CALL SvxAccessibleTextPropertySet::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
+{
+    // TODO
+    return SvxUnoTextRangeBase::getSupportedServiceNames();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

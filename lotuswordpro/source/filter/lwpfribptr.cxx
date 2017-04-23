@@ -82,7 +82,6 @@
 #include "xfilter/xfchange.hxx"
 #include "lwpchangemgr.hxx"
 #include "lwpglobalmgr.hxx"
-#include "lwpdropcapmgr.hxx"
 
 LwpFribPtr::LwpFribPtr()
     : m_pFribs(nullptr),m_pXFPara(nullptr),m_pPara(nullptr)
@@ -143,6 +142,7 @@ void LwpFribPtr::ReadPara(LwpObjectStream* pObjStrm)
     }
 }
 
+#include "lwpdropcapmgr.hxx"
 void LwpFribPtr::XFConvert()
 {
     LwpFrib* pFrib = m_pFribs;
@@ -195,13 +195,13 @@ void LwpFribPtr::XFConvert()
             {
                 XFTextSpan *pSpan = new XFTextSpan();
                 pSpan->SetStyleName(tabFrib->GetStyleName());
-                XFTabStop *pTab = new XFTabStop;
+                XFTabStop *pTab = new XFTabStop();
                 pSpan->Add(pTab);
                 m_pXFPara->Add(pSpan);
             }
             else
             {
-                XFTabStop *pTab = new XFTabStop;
+                XFTabStop *pTab = new XFTabStop();
                 m_pXFPara->Add(pTab);
             }
         }
@@ -248,7 +248,7 @@ void LwpFribPtr::XFConvert()
             break;
         case FRIB_TAG_LINEBREAK:
         {
-            XFLineBreak *pLineBreak = new XFLineBreak;
+            XFLineBreak *pLineBreak = new XFLineBreak();
             m_pXFPara->Add(pLineBreak);
         }
             break;

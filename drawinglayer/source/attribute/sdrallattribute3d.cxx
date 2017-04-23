@@ -51,7 +51,7 @@ namespace drawinglayer
         {
             return(getLine() == rCandidate.getLine()
                 && getFill() == rCandidate.getFill()
-                && maLineStartEnd == rCandidate.maLineStartEnd
+                && getLineStartEnd() == rCandidate.getLineStartEnd()
                 && getShadow() == rCandidate.getShadow()
                 && getFillFloatTransGradient() == rCandidate.getFillFloatTransGradient());
         }

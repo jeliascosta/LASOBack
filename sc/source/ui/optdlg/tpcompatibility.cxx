@@ -75,9 +75,9 @@ void ScTpCompatOptions::Reset(const SfxItemSet *rCoreAttrs)
     m_pLbKeyBindings->SaveValue();
 }
 
-DeactivateRC ScTpCompatOptions::DeactivatePage(SfxItemSet* /*pSet*/)
+SfxTabPage::sfxpg ScTpCompatOptions::DeactivatePage(SfxItemSet* /*pSet*/)
 {
-    return DeactivateRC::KeepPage;
+    return KEEP_PAGE;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

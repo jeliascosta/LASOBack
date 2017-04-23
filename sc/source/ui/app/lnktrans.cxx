@@ -65,6 +65,11 @@ bool ScLinkTransferObj::GetData(
     return bOK;
 }
 
+void ScLinkTransferObj::ObjectReleased()
+{
+    TransferableHelper::ObjectReleased();
+}
+
 void ScLinkTransferObj::DragFinished( sal_Int8 nDropAction )
 {
     ScModule* pScMod = SC_MOD();

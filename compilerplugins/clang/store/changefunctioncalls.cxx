@@ -27,7 +27,6 @@ This can be easily adjusted for different modifications to a function:
 */
 
 #include "plugin.hxx"
-#include "check.hxx"
 
 namespace loplugin
 {
@@ -62,14 +61,15 @@ bool ChangeFunctionCalls::VisitCallExpr( const CallExpr* call )
     //    if( const FunctionDecl* func = dyn_cast_or_null< FunctionDecl >( call->getCalleeDecl()))
     if( const FunctionDecl* func = call->getDirectCallee())
         {
+        // Optimize, getQualifiedNameAsString() is reportedly expensive,
         // so first check fast details like number of arguments or the (unqualified)
         // name before checking the fully qualified name.
         // See FunctionDecl for all the API about the function.
         if( func->getNumParams() == 1 && func->getIdentifier() != NULL
             && ( func->getName() == "bar" ))
             {
-            auto qt = loplugin::DeclCheck(func);
-            if( qt.Function("bar").GlobalNamespace() )
+            string qualifiedName = func->getQualifiedNameAsString();
+            if( qualifiedName == "bar" )
                 {
                 // Further checks about arguments. Check mainly ParmVarDecl, VarDecl,
                 // ValueDecl and QualType for Clang API details.

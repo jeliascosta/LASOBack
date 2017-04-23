@@ -19,7 +19,6 @@
 
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <com/sun/star/lang/IllegalAccessException.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/supportsservice.hxx>
 
 #include <osl/mutex.hxx>
@@ -29,7 +28,7 @@
 
 #include <svx/unoprov.hxx>
 
-#include "strings.hrc"
+#include "../ui/inc/strings.hrc"
 #include "stlfamily.hxx"
 #include "stlsheet.hxx"
 #include "sdresid.hxx"
@@ -75,7 +74,7 @@ PresStyleMap& SdStyleFamilyImpl::getStyleSheets()
             maStyleSheets.clear();
 
             // The iterator will return only style sheets of family master page
-            std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), SD_STYLE_FAMILY_MASTERPAGE);
+            SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), SD_STYLE_FAMILY_MASTERPAGE);
             for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                      pStyle = aSSSIterator->Next() )
             {
@@ -95,13 +94,14 @@ PresStyleMap& SdStyleFamilyImpl::getStyleSheets()
 SdStyleFamily::SdStyleFamily( const rtl::Reference< SfxStyleSheetPool >& xPool, SfxStyleFamily nFamily )
 : mnFamily( nFamily )
 , mxPool( xPool )
+, mpImpl( nullptr )
 {
 }
 
 SdStyleFamily::SdStyleFamily( const rtl::Reference< SfxStyleSheetPool >& xPool, const SdPage* pMasterPage )
 : mnFamily( SD_STYLE_FAMILY_MASTERPAGE )
 , mxPool( xPool )
-, mpImpl( new SdStyleFamilyImpl )
+, mpImpl( new SdStyleFamilyImpl() )
 {
     mpImpl->mxMasterPage.reset( const_cast< SdPage* >( pMasterPage ) );
     mpImpl->mxPool = xPool;
@@ -110,15 +110,16 @@ SdStyleFamily::SdStyleFamily( const rtl::Reference< SfxStyleSheetPool >& xPool, 
 SdStyleFamily::~SdStyleFamily()
 {
     DBG_ASSERT( !mxPool.is(), "SdStyleFamily::~SdStyleFamily(), dispose me first!" );
+    delete mpImpl;
 }
 
-void SdStyleFamily::throwIfDisposed() const
+void SdStyleFamily::throwIfDisposed() const throw(RuntimeException)
 {
     if( !mxPool.is() )
         throw DisposedException();
 }
 
-SdStyleSheet* SdStyleFamily::GetValidNewSheet( const Any& rElement )
+SdStyleSheet* SdStyleFamily::GetValidNewSheet( const Any& rElement ) throw(IllegalArgumentException)
 {
     Reference< XStyle > xStyle( rElement, UNO_QUERY );
     SdStyleSheet* pStyle = static_cast< SdStyleSheet* >( xStyle.get() );
@@ -129,7 +130,7 @@ SdStyleSheet* SdStyleFamily::GetValidNewSheet( const Any& rElement )
     return pStyle;
 }
 
-SdStyleSheet* SdStyleFamily::GetSheetByName( const OUString& rName )
+SdStyleSheet* SdStyleFamily::GetSheetByName( const OUString& rName ) throw(NoSuchElementException, WrappedTargetException )
 {
     SdStyleSheet* pRet = nullptr;
     if( !rName.isEmpty() )
@@ -143,7 +144,7 @@ SdStyleSheet* SdStyleFamily::GetSheetByName( const OUString& rName )
         }
         else
         {
-            std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+            SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
             for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                      pStyle = aSSSIterator->Next() )
             {
@@ -164,17 +165,17 @@ SdStyleSheet* SdStyleFamily::GetSheetByName( const OUString& rName )
 }
 
 // XServiceInfo
-OUString SAL_CALL SdStyleFamily::getImplementationName()
+OUString SAL_CALL SdStyleFamily::getImplementationName() throw(RuntimeException, std::exception)
 {
     return OUString( "SdStyleFamily" );
 }
 
-sal_Bool SAL_CALL SdStyleFamily::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL SdStyleFamily::supportsService( const OUString& ServiceName ) throw(RuntimeException, std::exception)
 {
     return cppu::supportsService( this, ServiceName );
 }
 
-Sequence< OUString > SAL_CALL SdStyleFamily::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL SdStyleFamily::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     OUString aServiceName( "com.sun.star.style.StyleFamily" );
     Sequence< OUString > aSeq( &aServiceName, 1 );
@@ -182,7 +183,7 @@ Sequence< OUString > SAL_CALL SdStyleFamily::getSupportedServiceNames()
 }
 
 // XNamed
-OUString SAL_CALL SdStyleFamily::getName()
+OUString SAL_CALL SdStyleFamily::getName() throw (RuntimeException, std::exception)
 {
     if( mnFamily == SD_STYLE_FAMILY_MASTERPAGE )
     {
@@ -204,20 +205,20 @@ OUString SAL_CALL SdStyleFamily::getName()
     }
 }
 
-void SAL_CALL SdStyleFamily::setName( const OUString& )
+void SAL_CALL SdStyleFamily::setName( const OUString& ) throw (RuntimeException, std::exception)
 {
 }
 
 // XNameAccess
 
-Any SAL_CALL SdStyleFamily::getByName( const OUString& rName )
+Any SAL_CALL SdStyleFamily::getByName( const OUString& rName ) throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
     return Any( Reference< XStyle >( static_cast<SfxUnoStyleSheet*>(GetSheetByName( rName )) ) );
 }
 
-Sequence< OUString > SAL_CALL SdStyleFamily::getElementNames()
+Sequence< OUString > SAL_CALL SdStyleFamily::getElementNames() throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -244,7 +245,7 @@ Sequence< OUString > SAL_CALL SdStyleFamily::getElementNames()
     else
     {
         std::vector< OUString > aNames;
-        std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+        SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
         for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                  pStyle = aSSSIterator->Next() )
         {
@@ -259,7 +260,7 @@ Sequence< OUString > SAL_CALL SdStyleFamily::getElementNames()
     }
 }
 
-sal_Bool SAL_CALL SdStyleFamily::hasByName( const OUString& aName )
+sal_Bool SAL_CALL SdStyleFamily::hasByName( const OUString& aName ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -274,7 +275,7 @@ sal_Bool SAL_CALL SdStyleFamily::hasByName( const OUString& aName )
         }
         else
         {
-            std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+            SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
             for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                      pStyle = aSSSIterator->Next() )
             {
@@ -296,12 +297,12 @@ sal_Bool SAL_CALL SdStyleFamily::hasByName( const OUString& aName )
 
 // XElementAccess
 
-Type SAL_CALL SdStyleFamily::getElementType()
+Type SAL_CALL SdStyleFamily::getElementType() throw(RuntimeException, std::exception)
 {
     return cppu::UnoType<XStyle>::get();
 }
 
-sal_Bool SAL_CALL SdStyleFamily::hasElements()
+sal_Bool SAL_CALL SdStyleFamily::hasElements() throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -312,7 +313,7 @@ sal_Bool SAL_CALL SdStyleFamily::hasElements()
     }
     else
     {
-        std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+        SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
         if (aSSSIterator->First())
         {
             return true;
@@ -324,7 +325,7 @@ sal_Bool SAL_CALL SdStyleFamily::hasElements()
 
 // XIndexAccess
 
-sal_Int32 SAL_CALL SdStyleFamily::getCount()
+sal_Int32 SAL_CALL SdStyleFamily::getCount() throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -336,7 +337,7 @@ sal_Int32 SAL_CALL SdStyleFamily::getCount()
     }
     else
     {
-        std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+        SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
         for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                  pStyle = aSSSIterator->Next() )
         {
@@ -347,7 +348,7 @@ sal_Int32 SAL_CALL SdStyleFamily::getCount()
     return nCount;
 }
 
-Any SAL_CALL SdStyleFamily::getByIndex( sal_Int32 Index )
+Any SAL_CALL SdStyleFamily::getByIndex( sal_Int32 Index ) throw(IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -369,7 +370,7 @@ Any SAL_CALL SdStyleFamily::getByIndex( sal_Int32 Index )
         }
         else
         {
-            std::shared_ptr<SfxStyleSheetIterator> aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
+            SfxStyleSheetIteratorPtr aSSSIterator = std::make_shared<SfxStyleSheetIterator>(mxPool.get(), mnFamily);
             for ( SfxStyleSheetBase* pStyle = aSSSIterator->First(); pStyle;
                                      pStyle = aSSSIterator->Next() )
             {
@@ -388,7 +389,7 @@ Any SAL_CALL SdStyleFamily::getByIndex( sal_Int32 Index )
 
 // XNameContainer
 
-void SAL_CALL SdStyleFamily::insertByName( const OUString& rName, const Any& rElement )
+void SAL_CALL SdStyleFamily::insertByName( const OUString& rName, const Any& rElement ) throw(IllegalArgumentException, ElementExistException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -404,7 +405,7 @@ void SAL_CALL SdStyleFamily::insertByName( const OUString& rName, const Any& rEl
     mxPool->Insert( pStyle );
 }
 
-void SAL_CALL SdStyleFamily::removeByName( const OUString& rName )
+void SAL_CALL SdStyleFamily::removeByName( const OUString& rName ) throw(NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -419,7 +420,7 @@ void SAL_CALL SdStyleFamily::removeByName( const OUString& rName )
 
 // XNameReplace
 
-void SAL_CALL SdStyleFamily::replaceByName( const OUString& rName, const Any& aElement )
+void SAL_CALL SdStyleFamily::replaceByName( const OUString& rName, const Any& aElement ) throw(IllegalArgumentException, NoSuchElementException, WrappedTargetException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -433,7 +434,7 @@ void SAL_CALL SdStyleFamily::replaceByName( const OUString& rName, const Any& aE
 
 // XSingleServiceFactory
 
-Reference< XInterface > SAL_CALL SdStyleFamily::createInstance()
+Reference< XInterface > SAL_CALL SdStyleFamily::createInstance() throw(Exception, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     throwIfDisposed();
@@ -448,43 +449,47 @@ Reference< XInterface > SAL_CALL SdStyleFamily::createInstance()
     }
 }
 
-Reference< XInterface > SAL_CALL SdStyleFamily::createInstanceWithArguments( const Sequence< Any >&  )
+Reference< XInterface > SAL_CALL SdStyleFamily::createInstanceWithArguments( const Sequence< Any >&  ) throw(Exception, RuntimeException, std::exception)
 {
     return createInstance();
 }
 
 // XComponent
 
-void SAL_CALL SdStyleFamily::dispose(  )
+void SAL_CALL SdStyleFamily::dispose(  ) throw (RuntimeException, std::exception)
 {
     if( mxPool.is() )
         mxPool.clear();
 
-    mpImpl.reset();
+    if( mpImpl )
+    {
+        delete mpImpl;
+        mpImpl = nullptr;
+    }
 }
 
-void SAL_CALL SdStyleFamily::addEventListener( const Reference< XEventListener >&  )
+void SAL_CALL SdStyleFamily::addEventListener( const Reference< XEventListener >&  ) throw (RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL SdStyleFamily::removeEventListener( const Reference< XEventListener >&  )
+void SAL_CALL SdStyleFamily::removeEventListener( const Reference< XEventListener >&  ) throw (RuntimeException, std::exception)
 {
 }
 
 // XPropertySet
 
-Reference<XPropertySetInfo> SdStyleFamily::getPropertySetInfo()
+Reference<XPropertySetInfo> SdStyleFamily::getPropertySetInfo() throw (RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
     return Reference<XPropertySetInfo>();
 }
 
-void SdStyleFamily::setPropertyValue( const OUString& , const Any&  )
+void SdStyleFamily::setPropertyValue( const OUString& , const Any&  ) throw (UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException, RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
 }
 
-Any SdStyleFamily::getPropertyValue( const OUString& PropertyName )
+Any SdStyleFamily::getPropertyValue( const OUString& PropertyName ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     if ( PropertyName == "DisplayName" )
     {
@@ -504,22 +509,22 @@ Any SdStyleFamily::getPropertyValue( const OUString& PropertyName )
     }
 }
 
-void SdStyleFamily::addPropertyChangeListener( const OUString& , const Reference<XPropertyChangeListener>&  )
+void SdStyleFamily::addPropertyChangeListener( const OUString& , const Reference<XPropertyChangeListener>&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
 }
 
-void SdStyleFamily::removePropertyChangeListener( const OUString& , const Reference<XPropertyChangeListener>&  )
+void SdStyleFamily::removePropertyChangeListener( const OUString& , const Reference<XPropertyChangeListener>&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
 }
 
-void SdStyleFamily::addVetoableChangeListener( const OUString& , const Reference<XVetoableChangeListener>& )
+void SdStyleFamily::addVetoableChangeListener( const OUString& , const Reference<XVetoableChangeListener>& ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
 }
 
-void SdStyleFamily::removeVetoableChangeListener( const OUString& , const Reference<XVetoableChangeListener>&  )
+void SdStyleFamily::removeVetoableChangeListener( const OUString& , const Reference<XVetoableChangeListener>&  ) throw (UnknownPropertyException, WrappedTargetException, RuntimeException, std::exception)
 {
     OSL_FAIL( "###unexpected!" );
 }

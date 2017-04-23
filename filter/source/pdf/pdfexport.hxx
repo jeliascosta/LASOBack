@@ -46,7 +46,6 @@ private:
     bool                mbExportNotes;
     bool                mbExportPlaceholders;
     bool                mbViewPDF;
-    bool                mbUseReferenceXObject;
     bool                mbExportNotesPages;
     bool                mbExportOnlyNotesPages;
     bool                mbUseTransitionEffects;
@@ -82,6 +81,7 @@ private:
     sal_Int32           mnZoom;
     sal_Int32           mnInitialPage;
     sal_Int32           mnPDFPageLayout;
+    bool                mbFirstPageLeft;
 
     bool                mbEncrypt;
     bool                mbRestrictPermissions;

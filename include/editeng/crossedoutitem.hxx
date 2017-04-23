@@ -31,7 +31,7 @@ class SvXMLUnitConverter;
     This item describes, whether and how it is striked out.
 */
 
-class EDITENG_DLLPUBLIC SvxCrossedOutItem : public SfxEnumItem<FontStrikeout>
+class EDITENG_DLLPUBLIC SvxCrossedOutItem : public SfxEnumItem
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -41,9 +41,9 @@ public:
 
     // "pure virtual Methods" from SfxPoolItem
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
@@ -53,13 +53,15 @@ public:
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    using SfxEnumItem::SetValue;
+    // MS VC4.0 messes things up
+    void                    SetValue( sal_uInt16 nNewVal )
+                                {SfxEnumItem::SetValue(nNewVal); }
 
     virtual bool            HasBoolValue() const override;
     virtual bool            GetBoolValue() const override;
     virtual void            SetBoolValue( bool bVal ) override;
 
-    SvxCrossedOutItem& operator=(const SvxCrossedOutItem& rCross)
+    inline SvxCrossedOutItem& operator=(const SvxCrossedOutItem& rCross)
         {
             SetValue( rCross.GetValue() );
             return *this;
@@ -67,7 +69,7 @@ public:
 
     // enum cast
     FontStrikeout           GetStrikeout() const
-                                { return GetValue(); }
+                                { return (FontStrikeout)GetValue(); }
 };
 
 #endif // INCLUDED_EDITENG_CROSSEDOUTITEM_HXX

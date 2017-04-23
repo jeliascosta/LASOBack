@@ -95,6 +95,8 @@ namespace dxcanvas
 
         try
         {
+            uno::Sequence< OUString > aName { "DeviceBlacklist" };
+
             uno::Sequence< sal_Int32 > aValues( sizeof(DeviceInfo)/sizeof(sal_Int32)*maValues.size() );
 
             sal_Int32* pValues = aValues.getArray();
@@ -111,7 +113,9 @@ namespace dxcanvas
                 *pValues++ = rInfo.nDriverBuildId;
             }
 
-            PutProperties({"DeviceBlacklist"}, {css::uno::Any(aValues)});
+            uno::Sequence< uno::Any > aValue(1);
+            aValue[0] <<= aValues;
+            PutProperties( aName, aValue );
         }
         catch( const uno::Exception& )
         {

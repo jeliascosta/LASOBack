@@ -235,8 +235,16 @@
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if you have the `snprintf' function. */
-#if defined( UNX ) || defined(_MSC_VER)
+#ifdef UNX
 #define HAVE_SNPRINTF 1
+#endif
+
+#ifdef _WIN32
+#if _MSC_VER >= 1900 // VS 2015
+#define HAVE_SNPRINTF 1
+#else
+#define snprintf _snprintf
+#endif
 #endif
 
 /* Define to 1 if the system has the type `socklen_t'. */
@@ -329,7 +337,7 @@
 /* Define if the timezone global is available */
 #ifndef MACOSX
 #define HAVE_TIMEZONE 1
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER >= 1900 // VS 2015
 #define timezone _timezone
 #endif
 #endif
@@ -351,7 +359,7 @@
 #endif
 
 /* Define to 1 if you have the `vsnprintf' function. */
-#if defined(UNX) || defined(_MSC_VER)
+#if defined( UNX ) || defined(_MSC_VER)
 #define HAVE_VSNPRINTF 1
 #endif
 
@@ -480,7 +488,7 @@
 /* #undef SIZEOF_XML_SIZE */
 
 /* Define to 1 if you have the ANSI C header files. */
-#ifdef __sun
+#ifdef SOLARIS
 #define STDC_HEADERS 1
 #endif
 
@@ -522,7 +530,7 @@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined (__sun) && defined (SPARC)
+#if defined (SOLARIS) && defined (SPARC)
 #define WORDS_BIGENDIAN 1
 #endif
 
@@ -548,7 +556,7 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#if defined (__sun) && defined (__SUNPRO_C)
+#if defined (SOLARIS) && defined (__SUNPRO_C)
 #define inline
 #endif
 #endif

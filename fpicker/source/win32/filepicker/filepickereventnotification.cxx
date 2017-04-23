@@ -20,15 +20,23 @@
 #include "filepickereventnotification.hxx"
 #include <sal/types.h>
 
+
+// namespace directives
+
+
 using namespace com::sun::star::uno;
 using namespace com::sun::star::ui::dialogs;
 
-// A FilePicker event without parameter
+
+// A FilePicker event without
+// parameter
+
 
 CFilePickerEventNotification::CFilePickerEventNotification(EventListenerMethod_t EventListenerMethod) :
     m_EventListenerMethod(EventListenerMethod)
 {
 }
+
 
 void SAL_CALL CFilePickerEventNotification::notifyEventListener( Reference< XInterface > xListener )
 {
@@ -37,7 +45,9 @@ void SAL_CALL CFilePickerEventNotification::notifyEventListener( Reference< XInt
         (xFilePickerListener.get()->*m_EventListenerMethod)();
 }
 
+
 // A FilePicker event with parameter
+
 
 CFilePickerParamEventNotification::CFilePickerParamEventNotification(EventListenerMethod_t EventListenerMethod, const FilePickerEvent& FilePickerEvent) :
     m_EventListenerMethod(EventListenerMethod),
@@ -45,7 +55,9 @@ CFilePickerParamEventNotification::CFilePickerParamEventNotification(EventListen
 {
 }
 
+
 // A FilePicker event with parameter
+
 
 void SAL_CALL CFilePickerParamEventNotification::notifyEventListener( Reference< XInterface > xListener )
 {

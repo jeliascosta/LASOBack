@@ -20,6 +20,7 @@
 #ifndef INCLUDED_SC_SOURCE_UI_INC_IMPEX_HXX
 #define INCLUDED_SC_SOURCE_UI_INC_IMPEX_HXX
 
+#include <osl/endian.h>
 #include <sot/exchange.hxx>
 #include "global.hxx"
 #include "address.hxx"
@@ -108,9 +109,10 @@ public:
             bool bMergeSeps, bool& rbIsQuoted, bool& rbOverflowCell );
     static  void    WriteUnicodeOrByteString( SvStream& rStrm, const OUString& rString, bool bZero = false );
     static  void    WriteUnicodeOrByteEndl( SvStream& rStrm );
+    static  inline  bool    IsEndianSwap( const SvStream& rStrm );
 
     //! only if stream is only used in own (!) memory
-    static  void    SetNoEndianSwap( SvStream& rStrm );
+    static  inline  void    SetNoEndianSwap( SvStream& rStrm );
 
     void SetSeparator( sal_Unicode c ) { cSep = c; }
     void SetDelimiter( sal_Unicode c ) { cStr = c; }
@@ -119,12 +121,12 @@ public:
 
     void            SetStreamPath( const OUString& rPath ) { aStreamPath = rPath; }
 
-    bool ImportString( const OUString&, SotClipboardFormatId );
-    bool ExportString( OUString&, SotClipboardFormatId );
-    bool ExportByteString( OString&, rtl_TextEncoding, SotClipboardFormatId );
+    bool ImportString( const OUString&, SotClipboardFormatId=SotClipboardFormatId::STRING );
+    bool ExportString( OUString&, SotClipboardFormatId=SotClipboardFormatId::STRING );
+    bool ExportByteString( OString&, rtl_TextEncoding, SotClipboardFormatId=SotClipboardFormatId::STRING );
 
-    bool ImportStream( SvStream&, const OUString& rBaseURL, SotClipboardFormatId );
-    bool ExportStream( SvStream&, const OUString& rBaseURL, SotClipboardFormatId );
+    bool ImportStream( SvStream&, const OUString& rBaseURL, SotClipboardFormatId=SotClipboardFormatId::STRING );
+    bool ExportStream( SvStream&, const OUString& rBaseURL, SotClipboardFormatId=SotClipboardFormatId::STRING );
 
     static bool ImportData( const OUString& rMimeType,
                      const css::uno::Any & rValue );
@@ -145,11 +147,39 @@ public:
     void SetExportTextOptions( const ScExportTextOptions& options ) { mExportTextOptions = options; }
 };
 
+inline bool ScImportExport::IsEndianSwap( const SvStream& rStrm )
+{
+#ifdef OSL_BIGENDIAN
+    return rStrm.GetEndian() != SvStreamEndian::BIG;
+#else
+    return rStrm.GetEndian() != SvStreamEndian::LITTLE;
+#endif
+}
+
+inline void ScImportExport::SetNoEndianSwap( SvStream& rStrm )
+{
+#ifdef OSL_BIGENDIAN
+    rStrm.SetEndian( SvStreamEndian::BIG );
+#else
+    rStrm.SetEndian( SvStreamEndian::LITTLE );
+#endif
+}
+
 // Helper class for importing clipboard strings as streams.
 class ScImportStringStream : public SvMemoryStream
 {
 public:
-    ScImportStringStream(const OUString& rStr);
+    ScImportStringStream( const OUString& rStr )
+        : SvMemoryStream( const_cast<sal_Unicode *>(rStr.getStr()),
+                rStr.getLength() * sizeof(sal_Unicode), StreamMode::READ)
+    {
+        SetStreamCharSet( RTL_TEXTENCODING_UNICODE );
+#ifdef OSL_BIGENDIAN
+        SetEndian(SvStreamEndian::BIG);
+#else
+        SetEndian(SvStreamEndian::LITTLE);
+#endif
+    }
 };
 
 /** Read a CSV (comma separated values) data line using

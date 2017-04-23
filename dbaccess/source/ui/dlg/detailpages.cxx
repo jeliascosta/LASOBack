@@ -25,8 +25,8 @@
 #include "DbAdminImpl.hxx"
 #include "dsitems.hxx"
 #include "dbfindex.hxx"
+#include "localresaccess.hxx"
 #include "dsnItem.hxx"
-#include "moduledbu.hxx"
 
 #include "dbaccess_helpid.hrc"
 #include "dbu_dlg.hrc"
@@ -58,7 +58,7 @@ namespace dbaui
 
     OCommonBehaviourTabPage::OCommonBehaviourTabPage(vcl::Window* pParent, const OString& rId,
         const OUString& rUIXMLDescription, const SfxItemSet& _rCoreAttrs,
-        OCommonBehaviourTabPageFlags nControlFlags)
+        sal_uInt32 nControlFlags)
 
         :OGenericAdministrationPage(pParent, rId, rUIXMLDescription, _rCoreAttrs)
         ,m_pOptionsLabel(nullptr)
@@ -73,7 +73,7 @@ namespace dbaui
         ,m_nControlFlags(nControlFlags)
     {
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseOptions)
+        if ((m_nControlFlags & CBTP_USE_OPTIONS) == CBTP_USE_OPTIONS)
         {
             m_pOptionsLabel = get<FixedText>("optionslabel");
             m_pOptionsLabel->Show();
@@ -82,7 +82,7 @@ namespace dbaui
             m_pOptions->SetModifyHdl(LINK(this,OGenericAdministrationPage,OnControlEditModifyHdl));
         }
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseCharset)
+        if ((m_nControlFlags & CBTP_USE_CHARSET) == CBTP_USE_CHARSET)
         {
             FixedText* pDataConvertLabel = get<FixedText>("charsetheader");
             pDataConvertLabel->Show();
@@ -94,7 +94,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG(OCommonBehaviourTabPage, CharsetSelectHdl, ListBox&, void)
+    IMPL_LINK_NOARG_TYPED(OCommonBehaviourTabPage, CharsetSelectHdl, ListBox&, void)
     {
         callModifiedHdl();
     }
@@ -118,24 +118,24 @@ namespace dbaui
         OGenericAdministrationPage::dispose();
     }
 
-    void OCommonBehaviourTabPage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OCommonBehaviourTabPage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseOptions)
+        if ((m_nControlFlags & CBTP_USE_OPTIONS) == CBTP_USE_OPTIONS)
         {
             _rControlList.push_back(new ODisableWrapper<FixedText>(m_pOptionsLabel));
         }
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseCharset)
+        if ((m_nControlFlags & CBTP_USE_CHARSET) == CBTP_USE_CHARSET)
         {
             _rControlList.push_back(new ODisableWrapper<FixedText>(m_pCharsetLabel));
         }
     }
-    void OCommonBehaviourTabPage::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OCommonBehaviourTabPage::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseOptions)
+        if ((m_nControlFlags & CBTP_USE_OPTIONS) == CBTP_USE_OPTIONS)
             _rControlList.push_back(new OSaveValueWrapper<Edit>(m_pOptions));
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseCharset)
+        if ((m_nControlFlags & CBTP_USE_CHARSET) == CBTP_USE_CHARSET)
             _rControlList.push_back(new OSaveValueWrapper<ListBox>(m_pCharset));
     }
 
@@ -152,13 +152,13 @@ namespace dbaui
         // forward the values to the controls
         if (bValid)
         {
-            if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseOptions)
+            if ((m_nControlFlags & CBTP_USE_OPTIONS) == CBTP_USE_OPTIONS)
             {
                 m_pOptions->SetText(pOptionsItem->GetValue());
                 m_pOptions->ClearModifyFlag();
             }
 
-            if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseCharset)
+            if ((m_nControlFlags & CBTP_USE_CHARSET) == CBTP_USE_CHARSET)
             {
                 m_pCharset->SelectEntryByIanaName( pCharsetItem->GetValue() );
             }
@@ -170,12 +170,12 @@ namespace dbaui
     {
         bool bChangedSomething = false;
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseOptions)
+        if ((m_nControlFlags & CBTP_USE_OPTIONS) == CBTP_USE_OPTIONS)
         {
             fillString(*_rSet,m_pOptions,DSID_ADDITIONALOPTIONS,bChangedSomething);
         }
 
-        if (m_nControlFlags & OCommonBehaviourTabPageFlags::UseCharset)
+        if ((m_nControlFlags & CBTP_USE_CHARSET) == CBTP_USE_CHARSET)
         {
             if ( m_pCharset->StoreSelectedCharSet( *_rSet, DSID_CHARSET ) )
                 bChangedSomething = true;
@@ -186,7 +186,7 @@ namespace dbaui
 
     // ODbaseDetailsPage
     ODbaseDetailsPage::ODbaseDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "DbasePage", "dbaccess/ui/dbasepage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset)
+        :OCommonBehaviourTabPage(pParent, "DbasePage", "dbaccess/ui/dbasepage.ui", _rCoreAttrs, CBTP_USE_CHARSET)
     {
         get(m_pShowDeleted, "showDelRowsCheckbutton");
         get(m_pFT_Message, "specMessageLabel");
@@ -248,7 +248,7 @@ namespace dbaui
         return bChangedSomething;
     }
 
-    IMPL_LINK( ODbaseDetailsPage, OnButtonClicked, Button*, pButton, void )
+    IMPL_LINK_TYPED( ODbaseDetailsPage, OnButtonClicked, Button*, pButton, void )
     {
         if (m_pIndexes == pButton)
         {
@@ -265,7 +265,7 @@ namespace dbaui
 
     // OAdoDetailsPage
     OAdoDetailsPage::OAdoDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "AutoCharset", "dbaccess/ui/autocharsetpage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset )
+        :OCommonBehaviourTabPage(pParent, "AutoCharset", "dbaccess/ui/autocharsetpage.ui", _rCoreAttrs, CBTP_USE_CHARSET )
     {
 
     }
@@ -277,7 +277,7 @@ namespace dbaui
 
     // OOdbcDetailsPage
     OOdbcDetailsPage::OOdbcDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "ODBC", "dbaccess/ui/odbcpage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset | OCommonBehaviourTabPageFlags::UseOptions)
+        :OCommonBehaviourTabPage(pParent, "ODBC", "dbaccess/ui/odbcpage.ui", _rCoreAttrs, CBTP_USE_CHARSET | CBTP_USE_OPTIONS)
     {
         get(m_pUseCatalog, "useCatalogCheckbutton");
         m_pUseCatalog->SetToggleHdl( LINK(this, OGenericAdministrationPage, ControlModifiedCheckBoxHdl) );
@@ -321,7 +321,7 @@ namespace dbaui
     // OOdbcDetailsPage
     OUserDriverDetailsPage::OUserDriverDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
         : OCommonBehaviourTabPage(pParent, "UserDetailsPage", "dbaccess/ui/userdetailspage.ui", _rCoreAttrs,
-            OCommonBehaviourTabPageFlags::UseCharset | OCommonBehaviourTabPageFlags::UseOptions)
+            CBTP_USE_CHARSET | CBTP_USE_OPTIONS)
     {
         get(m_pFTHostname, "hostnameft");
         get(m_pEDHostname, "hostname");
@@ -362,14 +362,14 @@ namespace dbaui
 
         return bChangedSomething;
     }
-    void OUserDriverDetailsPage::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OUserDriverDetailsPage::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillControls(_rControlList);
         _rControlList.push_back(new OSaveValueWrapper<Edit>(m_pEDHostname));
         _rControlList.push_back(new OSaveValueWrapper<CheckBox>(m_pUseCatalog));
         _rControlList.push_back(new OSaveValueWrapper<NumericField>(m_pNFPortNumber));
     }
-    void OUserDriverDetailsPage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OUserDriverDetailsPage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillWindows(_rControlList);
         _rControlList.push_back(new ODisableWrapper<FixedText>(m_pFTHostname));
@@ -400,7 +400,7 @@ namespace dbaui
     }
     // OMySQLODBCDetailsPage
     OMySQLODBCDetailsPage::OMySQLODBCDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "AutoCharset", "dbaccess/ui/autocharsetpage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset )
+        :OCommonBehaviourTabPage(pParent, "AutoCharset", "dbaccess/ui/autocharsetpage.ui", _rCoreAttrs, CBTP_USE_CHARSET )
     {
     }
 
@@ -411,7 +411,7 @@ namespace dbaui
 
     // OMySQLJDBCDetailsPage
     OGeneralSpecialJDBCDetailsPage::OGeneralSpecialJDBCDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs ,sal_uInt16 _nPortId, bool bShowSocket )
-        :OCommonBehaviourTabPage(pParent, "GeneralSpecialJDBCDetails", "dbaccess/ui/generalspecialjdbcdetailspage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset)
+        :OCommonBehaviourTabPage(pParent, "GeneralSpecialJDBCDetails", "dbaccess/ui/generalspecialjdbcdetailspage.ui", _rCoreAttrs, CBTP_USE_CHARSET)
         ,m_nPortId(_nPortId)
         ,m_bUseClass(true)
     {
@@ -519,7 +519,7 @@ namespace dbaui
             m_pEDDriverClass->SetModifyFlag();
         }
     }
-    IMPL_LINK_NOARG(OGeneralSpecialJDBCDetailsPage, OnTestJavaClickHdl, Button*, void)
+    IMPL_LINK_NOARG_TYPED(OGeneralSpecialJDBCDetailsPage, OnTestJavaClickHdl, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         OSL_ENSURE(m_bUseClass,"Who called me?");
@@ -556,7 +556,7 @@ namespace dbaui
 
     // MySQLNativePage
     MySQLNativePage::MySQLNativePage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "MysqlNativePage", "dbaccess/ui/mysqlnativepage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::UseCharset )
+        :OCommonBehaviourTabPage(pParent, "MysqlNativePage", "dbaccess/ui/mysqlnativepage.ui", _rCoreAttrs, CBTP_USE_CHARSET )
         ,m_aMySQLSettings       ( VclPtr<MySQLNativeSettings>::Create(*get<VclVBox>("MySQLSettingsContainer"), LINK(this,OGenericAdministrationPage,OnControlModified)) )
     {
         get(m_pSeparator1, "connectionheader");
@@ -586,7 +586,7 @@ namespace dbaui
         OCommonBehaviourTabPage::dispose();
     }
 
-    void MySQLNativePage::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
+    void MySQLNativePage::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillControls( _rControlList );
         m_aMySQLSettings->fillControls( _rControlList );
@@ -594,7 +594,7 @@ namespace dbaui
         _rControlList.push_back(new OSaveValueWrapper<Edit>(m_pUserName));
         _rControlList.push_back(new OSaveValueWrapper<CheckBox>(m_pPasswordRequired));
     }
-    void MySQLNativePage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void MySQLNativePage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillWindows( _rControlList );
         m_aMySQLSettings->fillWindows( _rControlList);
@@ -657,7 +657,7 @@ namespace dbaui
 
     // OLDAPDetailsPage
     OLDAPDetailsPage::OLDAPDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "LDAP", "dbaccess/ui/ldappage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::NONE)
+        :OCommonBehaviourTabPage(pParent, "LDAP", "dbaccess/ui/ldappage.ui", _rCoreAttrs, 0)
     {
         get(m_pETBaseDN, "baseDNEntry");
         get(m_pCBUseSSL, "useSSLCheckbutton");
@@ -705,7 +705,7 @@ namespace dbaui
         fillBool(*_rSet,m_pCBUseSSL,DSID_CONN_LDAP_USESSL,bChangedSomething);
         return bChangedSomething;
     }
-    IMPL_LINK( OLDAPDetailsPage, OnCheckBoxClick, Button*, pCheckBox, void )
+    IMPL_LINK_TYPED( OLDAPDetailsPage, OnCheckBoxClick, Button*, pCheckBox, void )
     {
         callModifiedHdl();
         if ( pCheckBox == m_pCBUseSSL)
@@ -747,7 +747,7 @@ namespace dbaui
 
     // OTextDetailsPage
     OTextDetailsPage::OTextDetailsPage( vcl::Window* pParent, const SfxItemSet& _rCoreAttrs )
-        :OCommonBehaviourTabPage(pParent, "EmptyPage", "dbaccess/ui/emptypage.ui", _rCoreAttrs, OCommonBehaviourTabPageFlags::NONE)
+        :OCommonBehaviourTabPage(pParent, "EmptyPage", "dbaccess/ui/emptypage.ui", _rCoreAttrs, 0)
     {
 
         m_pTextConnectionHelper = VclPtr<OTextConnectionHelper>::Create( get<VclVBox>("EmptyPage"), TC_EXTENSION | TC_HEADER | TC_SEPARATORS | TC_CHARSET );
@@ -768,13 +768,13 @@ namespace dbaui
     {
         return VclPtr<OTextDetailsPage>::Create( pParent, *_rAttrSet );
     }
-    void OTextDetailsPage::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OTextDetailsPage::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillControls(_rControlList);
         m_pTextConnectionHelper->fillControls(_rControlList);
 
     }
-    void OTextDetailsPage::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OTextDetailsPage::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         OCommonBehaviourTabPage::fillWindows(_rControlList);
         m_pTextConnectionHelper->fillWindows(_rControlList);

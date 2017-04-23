@@ -107,26 +107,28 @@ namespace com { namespace sun { namespace star {
         void releaseAggregation();
 
     protected:
-        virtual ~OGeometryControlModel_Base() override;
+        virtual ~OGeometryControlModel_Base();
 
         // XAggregation
-        css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _aType ) override;
+        css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _aType ) throw(css::uno::RuntimeException, std::exception) override;
 
         // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+        virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw(css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL acquire(  ) throw() override;
         virtual void SAL_CALL release(  ) throw() override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
+        virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // OPropertySetHelper overridables
         virtual sal_Bool SAL_CALL convertFastPropertyValue(
                 css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue,
-                sal_Int32 _nHandle, const css::uno::Any& _rValue ) override;
+                sal_Int32 _nHandle, const css::uno::Any& _rValue )
+            throw (css::lang::IllegalArgumentException) override;
 
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
-                sal_Int32 _nHandle, const css::uno::Any& _rValue) override;
+                sal_Int32 _nHandle, const css::uno::Any& _rValue)
+            throw (css::uno::Exception, std::exception) override;
 
         using comphelper::OPropertySetAggregationHelper::getFastPropertyValue;
         virtual void SAL_CALL getFastPropertyValue(
@@ -138,17 +140,17 @@ namespace com { namespace sun { namespace star {
         virtual css::uno::Any              getPropertyDefaultByHandle(sal_Int32 nHandle) const override;
 
         // XPropertySet
-        virtual css::uno::Reference< css::beans::XPropertySetInfo> SAL_CALL getPropertySetInfo() override;
+        virtual css::uno::Reference< css::beans::XPropertySetInfo> SAL_CALL getPropertySetInfo() throw(css::uno::RuntimeException, std::exception) override;
 
         // OPropertySetAggregationHelper overridables
         using OPropertySetAggregationHelper::getInfoHelper;
 
         // XCloneable
-        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         //XScriptEventsSupplier
         virtual css::uno::Reference< css::container::XNameContainer >
-            SAL_CALL getEvents(  ) override;
+            SAL_CALL getEvents(  ) throw(css::uno::RuntimeException, std::exception) override;
 
         // XCloneable implementation - to be overwritten
         virtual OGeometryControlModel_Base* createClone_Impl(
@@ -202,7 +204,7 @@ namespace com { namespace sun { namespace star {
             css::uno::Reference< css::util::XCloneable >& _rxAggregateInstance) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw (css::uno::RuntimeException, std::exception) override;
     };
 
 
@@ -242,11 +244,12 @@ namespace com { namespace sun { namespace star {
             css::uno::Reference< css::util::XCloneable >& _rxAggregateInstance) override;
 
         // XTypeProvider
-        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) override;
+        virtual css::uno::Sequence< sal_Int8 > SAL_CALL getImplementationId(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     private:
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(
-                sal_Int32 _nHandle, const css::uno::Any& _rValue) override;
+                sal_Int32 _nHandle, const css::uno::Any& _rValue)
+            throw (css::uno::Exception, std::exception) override;
     };
 
 #include <toolkit/controls/geometrycontrolmodel_impl.hxx>

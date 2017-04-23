@@ -70,7 +70,7 @@ void HyphenatorDispatcher::ClearSvcList()
 Reference<XHyphenatedWord>  HyphenatorDispatcher::buildHyphWord(
             const OUString& rOrigWord,
             const Reference<XDictionaryEntry> &xEntry,
-            LanguageType nLang, sal_Int16 nMaxLeading )
+            sal_Int16 nLang, sal_Int16 nMaxLeading )
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -182,7 +182,7 @@ Reference<XHyphenatedWord>  HyphenatorDispatcher::buildHyphWord(
 
 
 Reference< XPossibleHyphens > HyphenatorDispatcher::buildPossHyphens(
-            const Reference< XDictionaryEntry > &xEntry, LanguageType nLanguage )
+            const Reference< XDictionaryEntry > &xEntry, sal_Int16 nLanguage )
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -246,6 +246,7 @@ Reference< XPossibleHyphens > HyphenatorDispatcher::buildPossHyphens(
 
 
 Sequence< Locale > SAL_CALL HyphenatorDispatcher::getLocales()
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
@@ -261,6 +262,7 @@ Sequence< Locale > SAL_CALL HyphenatorDispatcher::getLocales()
 
 
 sal_Bool SAL_CALL HyphenatorDispatcher::hasLocale(const Locale& rLocale)
+        throw(RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
     HyphSvcByLangMap_t::const_iterator aIt( aSvcMap.find( LinguLocaleToLanguage( rLocale ) ) );
@@ -272,13 +274,14 @@ Reference< XHyphenatedWord > SAL_CALL
     HyphenatorDispatcher::hyphenate(
             const OUString& rWord, const Locale& rLocale, sal_Int16 nMaxLeading,
             const PropertyValues& rProperties )
+        throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     Reference< XHyphenatedWord >    xRes;
 
     sal_Int32 nWordLen = rWord.getLength();
-    LanguageType nLanguage = LinguLocaleToLanguage( rLocale );
+    sal_Int16 nLanguage = LinguLocaleToLanguage( rLocale );
     if (LinguIsUnspecified(nLanguage) || !nWordLen ||
         nMaxLeading == 0 || nMaxLeading == nWordLen)
         return xRes;
@@ -366,7 +369,7 @@ Reference< XHyphenatedWord > SAL_CALL
                 }
                 catch (uno::Exception &)
                 {
-                    SAL_WARN( "linguistic", "createInstanceWithArguments failed" );
+                    DBG_ASSERT( false, "createInstanceWithArguments failed" );
                 }
                 pRef [i] = xHyph;
 
@@ -408,13 +411,14 @@ Reference< XHyphenatedWord > SAL_CALL
     HyphenatorDispatcher::queryAlternativeSpelling(
             const OUString& rWord, const Locale& rLocale, sal_Int16 nIndex,
             const PropertyValues& rProperties )
+        throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     Reference< XHyphenatedWord >    xRes;
 
     sal_Int32 nWordLen = rWord.getLength();
-    LanguageType nLanguage = LinguLocaleToLanguage( rLocale );
+    sal_Int16 nLanguage = LinguLocaleToLanguage( rLocale );
     if (LinguIsUnspecified(nLanguage) || !nWordLen)
         return xRes;
 
@@ -497,7 +501,7 @@ Reference< XHyphenatedWord > SAL_CALL
                 }
                 catch (uno::Exception &)
                 {
-                    SAL_WARN( "linguistic", "createInstanceWithArguments failed" );
+                    DBG_ASSERT( false, "createInstanceWithArguments failed" );
                 }
                 pRef [i] = xHyph;
 
@@ -539,12 +543,13 @@ Reference< XPossibleHyphens > SAL_CALL
     HyphenatorDispatcher::createPossibleHyphens(
             const OUString& rWord, const Locale& rLocale,
             const PropertyValues& rProperties )
+        throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
     Reference< XPossibleHyphens >   xRes;
 
-    LanguageType nLanguage = LinguLocaleToLanguage( rLocale );
+    sal_Int16 nLanguage = LinguLocaleToLanguage( rLocale );
     if (LinguIsUnspecified(nLanguage) || rWord.isEmpty())
         return xRes;
 
@@ -619,7 +624,7 @@ Reference< XPossibleHyphens > SAL_CALL
                 }
                 catch (uno::Exception &)
                 {
-                    SAL_WARN( "linguistic", "createWithArguments failed" );
+                    DBG_ASSERT( false, "createWithArguments failed" );
                 }
                 pRef [i] = xHyph;
 
@@ -658,7 +663,7 @@ void HyphenatorDispatcher::SetServiceList( const Locale &rLocale,
 {
     MutexGuard  aGuard( GetLinguMutex() );
 
-    LanguageType nLanguage = LinguLocaleToLanguage( rLocale );
+    sal_Int16 nLanguage = LinguLocaleToLanguage( rLocale );
 
     sal_Int32 nLen = rSvcImplNames.getLength();
     if (0 == nLen)
@@ -693,7 +698,7 @@ Sequence< OUString >
     Sequence< OUString > aRes;
 
     // search for entry with that language and use data from that
-    LanguageType nLanguage = LinguLocaleToLanguage( rLocale );
+    sal_Int16 nLanguage = LinguLocaleToLanguage( rLocale );
     const HyphSvcByLangMap_t::const_iterator  aIt( aSvcMap.find( nLanguage ) );
     const LangSvcEntries_Hyph       *pEntry = aIt != aSvcMap.end() ? aIt->second.get() : nullptr;
     if (pEntry)

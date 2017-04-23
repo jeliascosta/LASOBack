@@ -57,7 +57,7 @@ using namespace ::comphelper;
 #define EDITMASK_ALLCHAR       'x'
 #define EDITMASK_UPPERALLCHAR  'X'
 
-uno::Reference< i18n::XCharacterClassification > const & ImplGetCharClass()
+uno::Reference< i18n::XCharacterClassification > ImplGetCharClass()
 {
     static uno::Reference< i18n::XCharacterClassification > xCharClass;
     if ( !xCharClass.is() )
@@ -113,16 +113,6 @@ static sal_Unicode* ImplAddNum( sal_Unicode* pBuf, sal_uLong nNumber, int nMinLe
     while ( pTempBuf != aTempBuf );
 
     return pBuf;
-}
-
-static sal_Unicode* ImplAddSNum( sal_Unicode* pBuf, sal_Int32 nNumber, int nMinLen )
-{
-    if (nNumber < 0)
-    {
-        *pBuf++ = '-';
-        nNumber = -nNumber;
-    }
-    return ImplAddNum( pBuf, nNumber, nMinLen);
 }
 
 static sal_uInt16 ImplGetNum( const sal_Unicode*& rpBuf, bool& rbError )
@@ -777,6 +767,7 @@ void PatternFormatter::ImplSetMask(const OString& rEditMask, const OUString& rLi
 
 PatternFormatter::PatternFormatter()
 {
+    mnFormatFlags       = 0;
     mbSameMask          = true;
     mbInPattKeyInput    = false;
 }
@@ -807,14 +798,14 @@ OUString PatternFormatter::GetString() const
     if ( !GetField() )
         return OUString();
     else
-        return ImplPatternReformat( GetField()->GetText(), m_aEditMask, maLiteralMask, 0/*nFormatFlags*/ );
+        return ImplPatternReformat( GetField()->GetText(), m_aEditMask, maLiteralMask, mnFormatFlags );
 }
 
 void PatternFormatter::Reformat()
 {
     if ( GetField() )
     {
-        ImplSetText( ImplPatternReformat( GetField()->GetText(), m_aEditMask, maLiteralMask, 0/*nFormatFlags*/ ) );
+        ImplSetText( ImplPatternReformat( GetField()->GetText(), m_aEditMask, maLiteralMask, mnFormatFlags ) );
         if ( !mbSameMask && IsStrictFormat() && !GetField()->IsReadOnly() )
             GetField()->SetInsertMode( false );
     }
@@ -838,7 +829,7 @@ bool PatternField::PreNotify( NotifyEvent& rNEvt )
     if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && !rNEvt.GetKeyEvent()->GetKeyCode().IsMod2() )
     {
         if ( ImplPatternProcessKeyInput( GetField(), *rNEvt.GetKeyEvent(), GetEditMask(), GetLiteralMask(),
-                                         IsStrictFormat(), 0/*nFormatFlags*/,
+                                         IsStrictFormat(), GetFormatFlags(),
                                          ImplIsSameMask(), ImplGetInPattKeyInput() ) )
             return true;
     }
@@ -846,7 +837,7 @@ bool PatternField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool PatternField::EventNotify( NotifyEvent& rNEvt )
+bool PatternField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -856,7 +847,7 @@ bool PatternField::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void PatternField::Modify()
@@ -864,7 +855,7 @@ void PatternField::Modify()
     if ( !ImplGetInPattKeyInput() )
     {
         if ( IsStrictFormat() )
-            ImplPatternProcessStrictModify( GetField(), GetEditMask(), GetLiteralMask(), 0/*nFormatFlags*/, ImplIsSameMask() );
+            ImplPatternProcessStrictModify( GetField(), GetEditMask(), GetLiteralMask(), GetFormatFlags(), ImplIsSameMask() );
         else
             MarkToBeReformatted( true );
     }
@@ -890,7 +881,7 @@ bool PatternBox::PreNotify( NotifyEvent& rNEvt )
     if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && !rNEvt.GetKeyEvent()->GetKeyCode().IsMod2() )
     {
         if ( ImplPatternProcessKeyInput( GetField(), *rNEvt.GetKeyEvent(), GetEditMask(), GetLiteralMask(),
-                                         IsStrictFormat(), 0/*nFormatFlags*/,
+                                         IsStrictFormat(), GetFormatFlags(),
                                          ImplIsSameMask(), ImplGetInPattKeyInput() ) )
             return true;
     }
@@ -898,7 +889,7 @@ bool PatternBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-bool PatternBox::EventNotify( NotifyEvent& rNEvt )
+bool PatternBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -908,7 +899,7 @@ bool PatternBox::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void PatternBox::Modify()
@@ -916,7 +907,7 @@ void PatternBox::Modify()
     if ( !ImplGetInPattKeyInput() )
     {
         if ( IsStrictFormat() )
-            ImplPatternProcessStrictModify( GetField(), GetEditMask(), GetLiteralMask(), 0/*nFormatFlags*/, ImplIsSameMask() );
+            ImplPatternProcessStrictModify( GetField(), GetEditMask(), GetLiteralMask(), GetFormatFlags(), ImplIsSameMask() );
         else
             MarkToBeReformatted( true );
     }
@@ -931,7 +922,7 @@ void PatternBox::ReformatAll()
     const sal_Int32 nEntryCount = GetEntryCount();
     for ( sal_Int32 i=0; i < nEntryCount; ++i )
     {
-        aStr = ImplPatternReformat( GetEntry( i ), GetEditMask(), GetLiteralMask(), 0/*nFormatFlags*/ );
+        aStr = ImplPatternReformat( GetEntry( i ), GetEditMask(), GetLiteralMask(), GetFormatFlags() );
         RemoveEntryAt(i);
         InsertEntry( aStr, i );
     }
@@ -939,13 +930,13 @@ void PatternBox::ReformatAll()
     SetUpdateMode( true );
 }
 
-static ExtDateFieldFormat ImplGetExtFormat( DateOrder eOld )
+static ExtDateFieldFormat ImplGetExtFormat( DateFormat eOld )
 {
     switch( eOld )
     {
-        case DateOrder::DMY:   return ExtDateFieldFormat::ShortDDMMYY;
-        case DateOrder::MDY:   return ExtDateFieldFormat::ShortMMDDYY;
-        default:               return ExtDateFieldFormat::ShortYYMMDD;
+        case DMY:   return XTDATEF_SHORT_DDMMYY;
+        case MDY:   return XTDATEF_SHORT_MMDDYY;
+        default:    return XTDATEF_SHORT_YYMMDD;
     }
 }
 
@@ -992,7 +983,7 @@ static sal_uInt16 ImplCutMonthFromString( OUString& rStr, const CalendarWrapper&
 
 static OUString ImplGetDateSep( const LocaleDataWrapper& rLocaleDataWrapper, ExtDateFieldFormat eFormat )
 {
-    if ( ( eFormat == ExtDateFieldFormat::ShortYYMMDD_DIN5008 ) || ( eFormat == ExtDateFieldFormat::ShortYYYYMMDD_DIN5008 ) )
+    if ( ( eFormat == XTDATEF_SHORT_YYMMDD_DIN5008 ) || ( eFormat == XTDATEF_SHORT_YYYYMMDD_DIN5008 ) )
         return OUString("-");
     else
         return rLocaleDataWrapper.getDateSep();
@@ -1012,7 +1003,7 @@ static bool ImplDateProcessKeyInput( Edit*, const KeyEvent& rKEvt, ExtDateFieldF
         return true;
 }
 
-static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFormat eDateOrder,
+static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFormat eDateFormat,
                               const LocaleDataWrapper& rLocaleDataWrapper, const CalendarWrapper& rCalendarWrapper,
                               const AllSettings& )
 {
@@ -1022,22 +1013,22 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
     bool bError = false;
     OUString aStr( rStr );
 
-    if ( eDateOrder == ExtDateFieldFormat::SystemLong )
+    if ( eDateFormat == XTDATEF_SYSTEM_LONG )
     {
-        DateOrder eFormat = rLocaleDataWrapper.getLongDateOrder();
+        DateFormat eFormat = rLocaleDataWrapper.getLongDateFormat();
         switch( eFormat )
         {
-            case DateOrder::MDY:
+            case MDY:
                 nMonth = ImplCutMonthFromString( aStr, rCalendarWrapper );
                 nDay = ImplCutNumberFromString( aStr );
                 nYear  = ImplCutNumberFromString( aStr );
                 break;
-            case DateOrder::DMY:
+            case DMY:
                 nDay = ImplCutNumberFromString( aStr );
                 nMonth = ImplCutMonthFromString( aStr, rCalendarWrapper );
                 nYear  = ImplCutNumberFromString( aStr );
                 break;
-            case DateOrder::YMD:
+            case YMD:
             default:
                 nYear = ImplCutNumberFromString( aStr );
                 nMonth = ImplCutMonthFromString( aStr, rCalendarWrapper );
@@ -1050,7 +1041,7 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
         bool bYear = true;
 
         // Check if year is present:
-        OUString aDateSep = ImplGetDateSep( rLocaleDataWrapper, eDateOrder );
+        OUString aDateSep = ImplGetDateSep( rLocaleDataWrapper, eDateFormat );
         sal_Int32 nSepPos = aStr.indexOf( aDateSep );
         if ( nSepPos < 0 )
             return false;
@@ -1058,16 +1049,16 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
         if ( ( nSepPos < 0 ) || ( nSepPos == (aStr.getLength()-1) ) )
         {
             bYear = false;
-            nYear = Date( Date::SYSTEM ).GetYearUnsigned();
+            nYear = Date( Date::SYSTEM ).GetYear();
         }
 
         const sal_Unicode* pBuf = aStr.getStr();
         ImplSkipDelimiters( pBuf );
 
-        switch ( eDateOrder )
+        switch ( eDateFormat )
         {
-            case ExtDateFieldFormat::ShortDDMMYY:
-            case ExtDateFieldFormat::ShortDDMMYYYY:
+            case XTDATEF_SHORT_DDMMYY:
+            case XTDATEF_SHORT_DDMMYYYY:
             {
                 nDay = ImplGetNum( pBuf, bError );
                 ImplSkipDelimiters( pBuf );
@@ -1077,8 +1068,8 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
                     nYear = ImplGetNum( pBuf, bError );
             }
             break;
-            case ExtDateFieldFormat::ShortMMDDYY:
-            case ExtDateFieldFormat::ShortMMDDYYYY:
+            case XTDATEF_SHORT_MMDDYY:
+            case XTDATEF_SHORT_MMDDYYYY:
             {
                 nMonth = ImplGetNum( pBuf, bError );
                 ImplSkipDelimiters( pBuf );
@@ -1088,10 +1079,10 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
                     nYear = ImplGetNum( pBuf, bError );
             }
             break;
-            case ExtDateFieldFormat::ShortYYMMDD:
-            case ExtDateFieldFormat::ShortYYYYMMDD:
-            case ExtDateFieldFormat::ShortYYMMDD_DIN5008:
-            case ExtDateFieldFormat::ShortYYYYMMDD_DIN5008:
+            case XTDATEF_SHORT_YYMMDD:
+            case XTDATEF_SHORT_YYYYMMDD:
+            case XTDATEF_SHORT_YYMMDD_DIN5008:
+            case XTDATEF_SHORT_YYYYMMDD_DIN5008:
             {
                 if ( bYear )
                     nYear = ImplGetNum( pBuf, bError );
@@ -1104,7 +1095,7 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
 
             default:
             {
-                OSL_FAIL( "DateOrder???" );
+                OSL_FAIL( "DateFormat???" );
             }
         }
     }
@@ -1124,7 +1115,7 @@ static bool ImplDateGetValue( const OUString& rStr, Date& rDate, ExtDateFieldFor
 
 bool DateFormatter::ImplDateReformat( const OUString& rStr, OUString& rOutStr, const AllSettings& rSettings )
 {
-    Date aDate( Date::EMPTY );
+    Date aDate( 0, 0, 0 );
     if ( !ImplDateGetValue( rStr, aDate, GetExtDateFormat(true), ImplGetLocaleDataWrapper(), GetCalendarWrapper(), GetFieldSettings() ) )
         return true;
 
@@ -1145,12 +1136,12 @@ OUString DateFormatter::ImplGetDateAsText( const Date& rDate,
     bool bShowCentury = false;
     switch ( GetExtDateFormat() )
     {
-        case ExtDateFieldFormat::SystemShortYYYY:
-        case ExtDateFieldFormat::SystemLong:
-        case ExtDateFieldFormat::ShortDDMMYYYY:
-        case ExtDateFieldFormat::ShortMMDDYYYY:
-        case ExtDateFieldFormat::ShortYYYYMMDD:
-        case ExtDateFieldFormat::ShortYYYYMMDD_DIN5008:
+        case XTDATEF_SYSTEM_SHORT_YYYY:
+        case XTDATEF_SYSTEM_LONG:
+        case XTDATEF_SHORT_DDMMYYYY:
+        case XTDATEF_SHORT_MMDDYYYY:
+        case XTDATEF_SHORT_YYYYMMDD:
+        case XTDATEF_SHORT_YYYYMMDD_DIN5008:
         {
             bShowCentury = true;
         }
@@ -1165,7 +1156,7 @@ OUString DateFormatter::ImplGetDateAsText( const Date& rDate,
     {
         // Check if I have to use force showing the century
         sal_uInt16 nTwoDigitYearStart = utl::MiscCfg().GetYear2000();
-        sal_uInt16 nYear = rDate.GetYearUnsigned();
+        sal_uInt16 nYear = rDate.GetYear();
 
         // If year is not in double digit range
         if ( (nYear < nTwoDigitYearStart) || (nYear >= nTwoDigitYearStart+100) )
@@ -1178,7 +1169,7 @@ OUString DateFormatter::ImplGetDateAsText( const Date& rDate,
     OUString aDateSep = ImplGetDateSep( ImplGetLocaleDataWrapper(), GetExtDateFormat( true ) );
     sal_uInt16 nDay = rDate.GetDay();
     sal_uInt16 nMonth = rDate.GetMonth();
-    sal_Int16 nYear = rDate.GetYear();
+    sal_uInt16 nYear = rDate.GetYear();
     sal_uInt16 nYearLen = bShowCentury ? 4 : 2;
 
     if ( !bShowCentury )
@@ -1186,36 +1177,36 @@ OUString DateFormatter::ImplGetDateAsText( const Date& rDate,
 
     switch ( GetExtDateFormat( true ) )
     {
-        case ExtDateFieldFormat::SystemLong:
+        case XTDATEF_SYSTEM_LONG:
         {
             return ImplGetLocaleDataWrapper().getLongDate( rDate, GetCalendarWrapper(), !bShowCentury );
         }
-        case ExtDateFieldFormat::ShortDDMMYY:
-        case ExtDateFieldFormat::ShortDDMMYYYY:
+        case XTDATEF_SHORT_DDMMYY:
+        case XTDATEF_SHORT_DDMMYYYY:
         {
             pBuf = ImplAddNum( pBuf, nDay, 2 );
             pBuf = ImplAddString( pBuf, aDateSep );
             pBuf = ImplAddNum( pBuf, nMonth, 2 );
             pBuf = ImplAddString( pBuf, aDateSep );
-            pBuf = ImplAddSNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
         }
         break;
-        case ExtDateFieldFormat::ShortMMDDYY:
-        case ExtDateFieldFormat::ShortMMDDYYYY:
+        case XTDATEF_SHORT_MMDDYY:
+        case XTDATEF_SHORT_MMDDYYYY:
         {
             pBuf = ImplAddNum( pBuf, nMonth, 2 );
             pBuf = ImplAddString( pBuf, aDateSep );
             pBuf = ImplAddNum( pBuf, nDay, 2 );
             pBuf = ImplAddString( pBuf, aDateSep );
-            pBuf = ImplAddSNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
         }
         break;
-        case ExtDateFieldFormat::ShortYYMMDD:
-        case ExtDateFieldFormat::ShortYYYYMMDD:
-        case ExtDateFieldFormat::ShortYYMMDD_DIN5008:
-        case ExtDateFieldFormat::ShortYYYYMMDD_DIN5008:
+        case XTDATEF_SHORT_YYMMDD:
+        case XTDATEF_SHORT_YYYYMMDD:
+        case XTDATEF_SHORT_YYMMDD_DIN5008:
+        case XTDATEF_SHORT_YYYYMMDD_DIN5008:
         {
-            pBuf = ImplAddSNum( pBuf, nYear, nYearLen );
+            pBuf = ImplAddNum( pBuf, nYear, nYearLen );
             pBuf = ImplAddString( pBuf, aDateSep );
             pBuf = ImplAddNum( pBuf, nMonth, 2 );
             pBuf = ImplAddString( pBuf, aDateSep );
@@ -1224,7 +1215,7 @@ OUString DateFormatter::ImplGetDateAsText( const Date& rDate,
         break;
         default:
         {
-            OSL_FAIL( "DateOrder???" );
+            OSL_FAIL( "DateFormat???" );
         }
     }
 
@@ -1237,12 +1228,12 @@ static void ImplDateIncrementDay( Date& rDate, bool bUp )
 
     if ( bUp )
     {
-        if ( (rDate.GetDay() != 31) || (rDate.GetMonth() != 12) || (rDate.GetYear() != SAL_MAX_INT16) )
+        if ( (rDate.GetDay() != 31) || (rDate.GetMonth() != 12) || (rDate.GetYear() != 9999) )
             ++rDate;
     }
     else
     {
-        if ( (rDate.GetDay() != 1 ) || (rDate.GetMonth() != 1) || (rDate.GetYear() != SAL_MIN_INT16) )
+        if ( (rDate.GetDay() != 1 ) || (rDate.GetMonth() != 1) || (rDate.GetYear() != 0) )
             --rDate;
     }
 }
@@ -1252,13 +1243,13 @@ static void ImplDateIncrementMonth( Date& rDate, bool bUp )
     DateFormatter::ExpandCentury( rDate );
 
     sal_uInt16 nMonth = rDate.GetMonth();
-    sal_Int16 nYear = rDate.GetYear();
+    sal_uInt16 nYear = rDate.GetYear();
     if ( bUp )
     {
-        if ( (nMonth == 12) && (nYear < SAL_MAX_INT16) )
+        if ( (nMonth == 12) && (nYear < 9999) )
         {
             rDate.SetMonth( 1 );
-            rDate.SetYear( rDate.GetNextYear() );
+            rDate.SetYear( nYear + 1 );
         }
         else
         {
@@ -1268,10 +1259,10 @@ static void ImplDateIncrementMonth( Date& rDate, bool bUp )
     }
     else
     {
-        if ( (nMonth == 1) && (nYear > SAL_MIN_INT16) )
+        if ( (nMonth == 1) && (nYear > 0) )
         {
             rDate.SetMonth( 12 );
-            rDate.SetYear( rDate.GetPrevYear() );
+            rDate.SetYear( nYear - 1 );
         }
         else
         {
@@ -1289,17 +1280,17 @@ static void ImplDateIncrementYear( Date& rDate, bool bUp )
 {
     DateFormatter::ExpandCentury( rDate );
 
-    sal_Int16 nYear = rDate.GetYear();
+    sal_uInt16 nYear = rDate.GetYear();
     sal_uInt16 nMonth = rDate.GetMonth();
     if ( bUp )
     {
-        if ( nYear < SAL_MAX_INT16 )
-            rDate.SetYear( rDate.GetNextYear() );
+        if ( nYear < 9999 )
+            rDate.SetYear( nYear + 1 );
     }
     else
     {
-        if ( nYear > SAL_MIN_INT16 )
-            rDate.SetYear( rDate.GetPrevYear() );
+        if ( nYear > 0 )
+            rDate.SetYear( nYear - 1 );
     }
     if (nMonth == 2)
     {
@@ -1338,9 +1329,9 @@ void DateField::ImplDateSpinArea( bool bUp )
             sal_Int8 nDateArea = 0;
 
             ExtDateFieldFormat eFormat = GetExtDateFormat( true );
-            if ( eFormat == ExtDateFieldFormat::SystemLong )
+            if ( eFormat == XTDATEF_SYSTEM_LONG )
             {
-                eFormat = ImplGetExtFormat( ImplGetLocaleDataWrapper().getLongDateOrder() );
+                eFormat = ImplGetExtFormat( ImplGetLocaleDataWrapper().getLongDateFormat() );
                 nDateArea = 1;
             }
             else
@@ -1363,8 +1354,8 @@ void DateField::ImplDateSpinArea( bool bUp )
 
             switch( eFormat )
             {
-                case ExtDateFieldFormat::ShortMMDDYY:
-                case ExtDateFieldFormat::ShortMMDDYYYY:
+                case XTDATEF_SHORT_MMDDYY:
+                case XTDATEF_SHORT_MMDDYYYY:
                 switch( nDateArea )
                 {
                     case 1: ImplDateIncrementMonth( aDate, bUp );
@@ -1375,8 +1366,8 @@ void DateField::ImplDateSpinArea( bool bUp )
                             break;
                 }
                 break;
-                case ExtDateFieldFormat::ShortDDMMYY:
-                case ExtDateFieldFormat::ShortDDMMYYYY:
+                case XTDATEF_SHORT_DDMMYY:
+                case XTDATEF_SHORT_DDMMYYYY:
                 switch( nDateArea )
                 {
                     case 1: ImplDateIncrementDay( aDate, bUp );
@@ -1387,10 +1378,10 @@ void DateField::ImplDateSpinArea( bool bUp )
                             break;
                 }
                 break;
-                case ExtDateFieldFormat::ShortYYMMDD:
-                case ExtDateFieldFormat::ShortYYYYMMDD:
-                case ExtDateFieldFormat::ShortYYMMDD_DIN5008:
-                case ExtDateFieldFormat::ShortYYYYMMDD_DIN5008:
+                case XTDATEF_SHORT_YYMMDD:
+                case XTDATEF_SHORT_YYYYMMDD:
+                case XTDATEF_SHORT_YYMMDD_DIN5008:
+                case XTDATEF_SHORT_YYYYMMDD_DIN5008:
                 switch( nDateArea )
                 {
                     case 1: ImplDateIncrementYear( aDate, bUp );
@@ -1417,7 +1408,7 @@ void DateFormatter::ImplInit()
     mbShowDateCentury   = true;
     mpCalendarWrapper   = nullptr;
     mnDateFormat        = 0xFFFF;
-    mnExtDateFormat     = ExtDateFieldFormat::SystemShort;
+    mnExtDateFormat     = XTDATEF_SYSTEM_SHORT;
 }
 
 DateFormatter::DateFormatter() :
@@ -1464,19 +1455,17 @@ ExtDateFieldFormat DateFormatter::GetExtDateFormat( bool bResolveSystemFormat ) 
 {
     ExtDateFieldFormat eDateFormat = (ExtDateFieldFormat)mnExtDateFormat;
 
-    if ( bResolveSystemFormat && ( eDateFormat <= ExtDateFieldFormat::SystemShortYYYY ) )
+    if ( bResolveSystemFormat && ( eDateFormat <= XTDATEF_SYSTEM_SHORT_YYYY ) )
     {
-        bool bShowCentury = (eDateFormat == ExtDateFieldFormat::SystemShortYYYY);
-        switch ( ImplGetLocaleDataWrapper().getDateOrder() )
+        bool bShowCentury = (eDateFormat == XTDATEF_SYSTEM_SHORT_YYYY);
+        switch ( ImplGetLocaleDataWrapper().getDateFormat() )
         {
-            case DateOrder::DMY:
-                eDateFormat = bShowCentury ? ExtDateFieldFormat::ShortDDMMYYYY : ExtDateFieldFormat::ShortDDMMYY;
-                break;
-            case DateOrder::MDY:
-                eDateFormat = bShowCentury ? ExtDateFieldFormat::ShortMMDDYYYY : ExtDateFieldFormat::ShortMMDDYY;
-                break;
-            default:
-                eDateFormat = bShowCentury ? ExtDateFieldFormat::ShortYYYYMMDD : ExtDateFieldFormat::ShortYYMMDD;
+            case DMY:   eDateFormat = bShowCentury ? XTDATEF_SHORT_DDMMYYYY : XTDATEF_SHORT_DDMMYY;
+                        break;
+            case MDY:   eDateFormat = bShowCentury ? XTDATEF_SHORT_MMDDYYYY : XTDATEF_SHORT_MMDDYY;
+                        break;
+            default:    eDateFormat = bShowCentury ? XTDATEF_SHORT_YYYYMMDD : XTDATEF_SHORT_YYMMDD;
+
         }
     }
 
@@ -1509,12 +1498,12 @@ void DateFormatter::SetLongFormat( bool bLong )
     // #91913# Remove LongFormat and DateShowCentury - redundant
     if ( bLong )
     {
-        SetExtDateFormat( ExtDateFieldFormat::SystemLong );
+        SetExtDateFormat( XTDATEF_SYSTEM_LONG );
     }
     else
     {
-        if( mnExtDateFormat == ExtDateFieldFormat::SystemLong )
-            SetExtDateFormat( ExtDateFieldFormat::SystemShort );
+        if( mnExtDateFormat == XTDATEF_SYSTEM_LONG )
+            SetExtDateFormat( XTDATEF_SYSTEM_SHORT );
     }
 
     ReformatAll();
@@ -1529,17 +1518,17 @@ void DateFormatter::SetShowDateCentury( bool bShowDateCentury )
     {
         switch ( GetExtDateFormat() )
         {
-            case ExtDateFieldFormat::SystemShort:
-            case ExtDateFieldFormat::SystemShortYY:
-                SetExtDateFormat( ExtDateFieldFormat::SystemShortYYYY );  break;
-            case ExtDateFieldFormat::ShortDDMMYY:
-                SetExtDateFormat( ExtDateFieldFormat::ShortDDMMYYYY );     break;
-            case ExtDateFieldFormat::ShortMMDDYY:
-                SetExtDateFormat( ExtDateFieldFormat::ShortMMDDYYYY );     break;
-            case ExtDateFieldFormat::ShortYYMMDD:
-                SetExtDateFormat( ExtDateFieldFormat::ShortYYYYMMDD );     break;
-            case ExtDateFieldFormat::ShortYYMMDD_DIN5008:
-                SetExtDateFormat( ExtDateFieldFormat::ShortYYYYMMDD_DIN5008 ); break;
+            case XTDATEF_SYSTEM_SHORT:
+            case XTDATEF_SYSTEM_SHORT_YY:
+                SetExtDateFormat( XTDATEF_SYSTEM_SHORT_YYYY );  break;
+            case XTDATEF_SHORT_DDMMYY:
+                SetExtDateFormat( XTDATEF_SHORT_DDMMYYYY );     break;
+            case XTDATEF_SHORT_MMDDYY:
+                SetExtDateFormat( XTDATEF_SHORT_MMDDYYYY );     break;
+            case XTDATEF_SHORT_YYMMDD:
+                SetExtDateFormat( XTDATEF_SHORT_YYYYMMDD );     break;
+            case XTDATEF_SHORT_YYMMDD_DIN5008:
+                SetExtDateFormat( XTDATEF_SHORT_YYYYMMDD_DIN5008 ); break;
             default:
                 ;
         }
@@ -1548,17 +1537,17 @@ void DateFormatter::SetShowDateCentury( bool bShowDateCentury )
     {
         switch ( GetExtDateFormat() )
         {
-            case ExtDateFieldFormat::SystemShort:
-            case ExtDateFieldFormat::SystemShortYYYY:
-                SetExtDateFormat( ExtDateFieldFormat::SystemShortYY );    break;
-            case ExtDateFieldFormat::ShortDDMMYYYY:
-                SetExtDateFormat( ExtDateFieldFormat::ShortDDMMYY );       break;
-            case ExtDateFieldFormat::ShortMMDDYYYY:
-                SetExtDateFormat( ExtDateFieldFormat::ShortMMDDYY );       break;
-            case ExtDateFieldFormat::ShortYYYYMMDD:
-                SetExtDateFormat( ExtDateFieldFormat::ShortYYMMDD );       break;
-            case ExtDateFieldFormat::ShortYYYYMMDD_DIN5008:
-                SetExtDateFormat( ExtDateFieldFormat::ShortYYMMDD_DIN5008 );  break;
+            case XTDATEF_SYSTEM_SHORT:
+            case XTDATEF_SYSTEM_SHORT_YYYY:
+                SetExtDateFormat( XTDATEF_SYSTEM_SHORT_YY );    break;
+            case XTDATEF_SHORT_DDMMYYYY:
+                SetExtDateFormat( XTDATEF_SHORT_DDMMYY );       break;
+            case XTDATEF_SHORT_MMDDYYYY:
+                SetExtDateFormat( XTDATEF_SHORT_MMDDYY );       break;
+            case XTDATEF_SHORT_YYYYMMDD:
+                SetExtDateFormat( XTDATEF_SHORT_YYMMDD );       break;
+            case XTDATEF_SHORT_YYYYMMDD_DIN5008:
+                SetExtDateFormat( XTDATEF_SHORT_YYMMDD_DIN5008 );  break;
             default:
                 ;
         }
@@ -1569,9 +1558,14 @@ void DateFormatter::SetShowDateCentury( bool bShowDateCentury )
 
 void DateFormatter::SetDate( const Date& rNewDate )
 {
-    ImplSetUserDate( rNewDate );
+    SetUserDate( rNewDate );
     maFieldDate = maLastDate;
     maLastDate = GetDate();
+}
+
+void DateFormatter::SetUserDate( const Date& rNewDate )
+{
+    ImplSetUserDate( rNewDate );
 }
 
 void DateFormatter::ImplSetUserDate( const Date& rNewDate, Selection* pNewSelection )
@@ -1618,7 +1612,7 @@ void DateFormatter::ImplNewFieldValue( const Date& rDate )
 
 Date DateFormatter::GetDate() const
 {
-    Date aDate( Date::EMPTY );
+    Date aDate( 0, 0, 0 );
 
     if ( GetField() )
     {
@@ -1642,7 +1636,7 @@ Date DateFormatter::GetDate() const
                     aDate = Date( Date::SYSTEM );
             }
             else
-                aDate = Date( Date::EMPTY ); // set invalid date
+                aDate = GetInvalidDate();
         }
     }
 
@@ -1689,7 +1683,7 @@ void DateFormatter::Reformat()
     if ( !aStr.isEmpty() )
     {
         ImplSetText( aStr );
-        (void)ImplDateGetValue(aStr, maLastDate, GetExtDateFormat(true), ImplGetLocaleDataWrapper(), GetCalendarWrapper(), GetFieldSettings());
+        ImplDateGetValue( aStr, maLastDate, GetExtDateFormat(true), ImplGetLocaleDataWrapper(), GetCalendarWrapper(), GetFieldSettings() );
     }
     else
     {
@@ -1712,8 +1706,8 @@ void DateFormatter::ExpandCentury( Date& rDate )
 
 void DateFormatter::ExpandCentury( Date& rDate, sal_uInt16 nTwoDigitYearStart )
 {
-    sal_Int16 nDateYear = rDate.GetYear();
-    if ( 0 <= nDateYear && nDateYear < 100 )
+    sal_uInt16 nDateYear = rDate.GetYear();
+    if ( nDateYear < 100 )
     {
         sal_uInt16 nCentury = nTwoDigitYearStart / 100;
         if ( nDateYear < (nTwoDigitYearStart % 100) )
@@ -1742,7 +1736,7 @@ void DateField::dispose()
 bool DateField::PreNotify( NotifyEvent& rNEvt )
 {
     if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && IsStrictFormat() &&
-         ( GetExtDateFormat() != ExtDateFieldFormat::SystemLong ) &&
+         ( GetExtDateFormat() != XTDATEF_SYSTEM_LONG ) &&
          !rNEvt.GetKeyEvent()->GetKeyCode().IsMod2() )
     {
         if ( ImplDateProcessKeyInput( GetField(), *rNEvt.GetKeyEvent(), GetExtDateFormat( true ), ImplGetLocaleDataWrapper() ) )
@@ -1752,7 +1746,7 @@ bool DateField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool DateField::EventNotify( NotifyEvent& rNEvt )
+bool DateField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -1785,7 +1779,7 @@ bool DateField::EventNotify( NotifyEvent& rNEvt )
         }
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void DateField::DataChanged( const DataChangedEvent& rDCEvt )
@@ -1847,7 +1841,7 @@ void DateBox::dispose()
 bool DateBox::PreNotify( NotifyEvent& rNEvt )
 {
     if ( (rNEvt.GetType() == MouseNotifyEvent::KEYINPUT) && IsStrictFormat() &&
-         ( GetExtDateFormat() != ExtDateFieldFormat::SystemLong ) &&
+         ( GetExtDateFormat() != XTDATEF_SYSTEM_LONG ) &&
          !rNEvt.GetKeyEvent()->GetKeyCode().IsMod2() )
     {
         if ( ImplDateProcessKeyInput( GetField(), *rNEvt.GetKeyEvent(), GetExtDateFormat( true ), ImplGetLocaleDataWrapper() ) )
@@ -1869,7 +1863,7 @@ void DateBox::DataChanged( const DataChangedEvent& rDCEvt )
     }
 }
 
-bool DateBox::EventNotify( NotifyEvent& rNEvt )
+bool DateBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -1888,7 +1882,7 @@ bool DateBox::EventNotify( NotifyEvent& rNEvt )
         }
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void DateBox::Modify()
@@ -1932,6 +1926,7 @@ static bool ImplTimeProcessKeyInput( Edit*, const KeyEvent& rKEvt,
              (rLocaleDataWrapper.getTimePM().indexOf(cChar) != -1) ||
              // Accept AM/PM:
              (cChar == 'a') || (cChar == 'A') || (cChar == 'm') || (cChar == 'M') || (cChar == 'p') || (cChar == 'P') ||
+             ((eFormat == TimeFieldFormat::F_100TH_SEC) && string::equals(rLocaleDataWrapper.getTime100SecSep(), cChar)) ||
              ((eFormat == TimeFieldFormat::F_SEC_CS) && string::equals(rLocaleDataWrapper.getTime100SecSep(), cChar)) ||
              (bDuration && (cChar == '-')) )
             return false;
@@ -1964,11 +1959,8 @@ static bool ImplIsValidTimePortion( bool _bSkipInvalidCharacters, const OUString
 static bool ImplCutTimePortion( OUStringBuffer& _rStr, sal_Int32 _nSepPos, bool _bSkipInvalidCharacters, short* _pPortion )
 {
     OUString sPortion(_rStr.getStr(), _nSepPos );
-
-    if (_nSepPos < _rStr.getLength())
-        _rStr.remove(0, _nSepPos + 1);
-    else
-        _rStr.truncate();
+    _rStr = _nSepPos < _rStr.getLength()
+        ? _rStr.copy( _nSepPos + 1 ) : OUStringBuffer();
 
     if ( !ImplIsValidTimePortion( _bSkipInvalidCharacters, sPortion ) )
         return false;
@@ -2186,6 +2178,8 @@ bool TimeFormatter::ImplTimeReformat( const OUString& rStr, OUString& rOutStr )
     bool b100Sec = false;
     if ( meFormat != TimeFieldFormat::F_NONE )
         bSecond = true;
+    if ( meFormat == TimeFieldFormat::F_100TH_SEC )
+        b100Sec = true;
 
     if ( meFormat == TimeFieldFormat::F_SEC_CS )
     {
@@ -2205,7 +2199,7 @@ bool TimeFormatter::ImplTimeReformat( const OUString& rStr, OUString& rOutStr )
     else
     {
         rOutStr = ImplGetLocaleDataWrapper().getTime( aTempTime, bSecond, b100Sec );
-        if ( GetTimeFormat() == TimeFormat::Hour12 )
+        if ( GetTimeFormat() == HOUR_12 )
         {
             if ( aTempTime.GetHour() > 12 )
             {
@@ -2305,7 +2299,7 @@ void TimeFormatter::ImplInit()
 {
     meFormat        = TimeFieldFormat::F_NONE;
     mbDuration      = false;
-    mnTimeFormat    = TimeFormat::Hour24;  // Should become a ExtTimeFieldFormat in next implementation, merge with mbDuration and meFormat
+    mnTimeFormat    = HOUR_24;  // Should become a ExtTimeFieldFormat in next implementation, merge with mbDuration and meFormat
 }
 
 TimeFormatter::TimeFormatter() :
@@ -2343,7 +2337,7 @@ void TimeFormatter::SetMax( const tools::Time& rNewMax )
 
 void TimeFormatter::SetTimeFormat( TimeFormatter::TimeFormat eNewFormat )
 {
-    mnTimeFormat = eNewFormat;
+    mnTimeFormat = sal::static_int_cast<sal_uInt16>(eNewFormat);
 }
 
 
@@ -2411,7 +2405,7 @@ void TimeFormatter::ImplSetUserTime( const tools::Time& rNewTime, Selection* pNe
         bool b100Sec = false;
         if ( meFormat != TimeFieldFormat::F_NONE )
             bSec = true;
-        if ( meFormat == TimeFieldFormat::F_SEC_CS )
+        if ( meFormat == TimeFieldFormat::F_100TH_SEC || meFormat == TimeFieldFormat::F_SEC_CS )
             b100Sec = true;
         if ( meFormat == TimeFieldFormat::F_SEC_CS )
         {
@@ -2433,7 +2427,7 @@ void TimeFormatter::ImplSetUserTime( const tools::Time& rNewTime, Selection* pNe
         else
         {
             aStr = ImplGetLocaleDataWrapper().getTime( aNewTime, bSec, b100Sec );
-            if ( GetTimeFormat() == TimeFormat::Hour12 )
+            if ( GetTimeFormat() == HOUR_12 )
             {
                 if ( aNewTime.GetHour() > 12 )
                 {
@@ -2475,7 +2469,7 @@ tools::Time TimeFormatter::GetTime() const
         else
         {
             if ( bAllowMailformed )
-                aTime = tools::Time( 99, 99, 99 ); // set invalid time
+                aTime = GetInvalidTime();
             else
                 aTime = maLastTime;
         }
@@ -2533,7 +2527,7 @@ bool TimeField::PreNotify( NotifyEvent& rNEvt )
     return SpinField::PreNotify( rNEvt );
 }
 
-bool TimeField::EventNotify( NotifyEvent& rNEvt )
+bool TimeField::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -2554,7 +2548,7 @@ bool TimeField::EventNotify( NotifyEvent& rNEvt )
         }
     }
 
-    return SpinField::EventNotify( rNEvt );
+    return SpinField::Notify( rNEvt );
 }
 
 void TimeField::DataChanged( const DataChangedEvent& rDCEvt )
@@ -2603,17 +2597,43 @@ void TimeField::SetExtFormat( ExtTimeFieldFormat eFormat )
 {
     switch ( eFormat )
     {
-        case ExtTimeFieldFormat::Short24H:
+        case EXTTIMEF_24H_SHORT:
         {
-            SetTimeFormat( TimeFormat::Hour24 );
+            SetTimeFormat( HOUR_24 );
             SetDuration( false );
             SetFormat( TimeFieldFormat::F_NONE );
         }
         break;
-        case ExtTimeFieldFormat::Long24H:
+        case EXTTIMEF_24H_LONG:
         {
-            SetTimeFormat( TimeFormat::Hour24 );
+            SetTimeFormat( HOUR_24 );
             SetDuration( false );
+            SetFormat( TimeFieldFormat::F_SEC );
+        }
+        break;
+        case EXTTIMEF_12H_SHORT:
+        {
+            SetTimeFormat( HOUR_12 );
+            SetDuration( false );
+            SetFormat( TimeFieldFormat::F_NONE );
+        }
+        break;
+        case EXTTIMEF_12H_LONG:
+        {
+            SetTimeFormat( HOUR_12 );
+            SetDuration( false );
+            SetFormat( TimeFieldFormat::F_SEC );
+        }
+        break;
+        case EXTTIMEF_DURATION_SHORT:
+        {
+            SetDuration( true );
+            SetFormat( TimeFieldFormat::F_NONE );
+        }
+        break;
+        case EXTTIMEF_DURATION_LONG:
+        {
+            SetDuration( true );
             SetFormat( TimeFieldFormat::F_SEC );
         }
         break;
@@ -2650,7 +2670,7 @@ bool TimeBox::PreNotify( NotifyEvent& rNEvt )
     return ComboBox::PreNotify( rNEvt );
 }
 
-bool TimeBox::EventNotify( NotifyEvent& rNEvt )
+bool TimeBox::Notify( NotifyEvent& rNEvt )
 {
     if ( rNEvt.GetType() == MouseNotifyEvent::GETFOCUS )
         MarkToBeReformatted( false );
@@ -2660,7 +2680,7 @@ bool TimeBox::EventNotify( NotifyEvent& rNEvt )
             Reformat();
     }
 
-    return ComboBox::EventNotify( rNEvt );
+    return ComboBox::Notify( rNEvt );
 }
 
 void TimeBox::DataChanged( const DataChangedEvent& rDCEvt )

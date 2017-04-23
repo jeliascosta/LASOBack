@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.PointF;
 
 import org.libreoffice.LOKitShell;
-import org.libreoffice.LibreOfficeMainActivity;
 import org.mozilla.gecko.gfx.ImmutableViewportMetrics;
 
 /**
@@ -18,11 +17,8 @@ public abstract class SelectionHandle extends BitmapHandle {
     private final PointF mDragDocumentPosition = new PointF();
     private long mLastTime = 0;
 
-    private LibreOfficeMainActivity mContext;
-
-    public SelectionHandle(LibreOfficeMainActivity context, Bitmap bitmap) {
+    public SelectionHandle(Bitmap bitmap) {
         super(bitmap);
-        mContext = context;
     }
 
     /**
@@ -56,7 +52,7 @@ public abstract class SelectionHandle extends BitmapHandle {
      * Signal to move the handle to a new position to LO.
      */
     private void signalHandleMove(float newX, float newY) {
-        ImmutableViewportMetrics viewportMetrics = mContext.getLayerClient().getViewportMetrics();
+        ImmutableViewportMetrics viewportMetrics = LOKitShell.getLayerView().getLayerClient().getViewportMetrics();
         float zoom = viewportMetrics.zoomFactor;
 
         float deltaX = (newX - mDragStartPoint.x) / zoom;

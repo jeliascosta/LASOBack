@@ -27,7 +27,8 @@
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/polygon/b2dpolypolygon.hxx>
 
-enum class SvxBorderLineStyle : sal_Int16;
+#include <com/sun/star/table/BorderLineStyle.hpp>
+
 
 namespace drawinglayer
 {
@@ -65,13 +66,18 @@ namespace drawinglayer
             basegfx::BColor                                 maRGBColorGap;
             bool                                            mbHasGapColor;
 
-            SvxBorderLineStyle                              mnStyle;
+            short                                           mnStyle;
 
             double                                          mfPatternScale;
 
             /// local helpers
             double getWidth(
                     const geometry::ViewInformation2D& rViewInformation) const;
+
+            bool isSolidLine() const
+            {
+                return mnStyle == css::table::BorderLineStyle::SOLID;
+            }
 
             bool isInsideUsed() const
             {
@@ -88,7 +94,7 @@ namespace drawinglayer
                     const geometry::ViewInformation2D& rViewInformation) const;
 
             /// create local decomposition
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -106,7 +112,7 @@ namespace drawinglayer
                 const basegfx::BColor& rRGBColorLeft,
                 const basegfx::BColor& rRGBColorGap,
                 bool bHasGapColor,
-                SvxBorderLineStyle nStyle,
+                const short nStyle,
                 double fPatternScale = 1.0 );
 
             /// data read access
@@ -123,10 +129,10 @@ namespace drawinglayer
             const basegfx::BColor& getRGBColorLeft () const { return maRGBColorLeft; }
             const basegfx::BColor& getRGBColorGap () const { return maRGBColorGap; }
             bool hasGapColor( ) const { return mbHasGapColor; }
-            SvxBorderLineStyle getStyle () const { return mnStyle; }
+            short getStyle () const { return mnStyle; }
             double getPatternScale() const { return mfPatternScale; }
             /// Same as create2DDecomposition(), but can do pixel correction if requested.
-            void createDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const;
+            Primitive2DContainer createDecomposition(const geometry::ViewInformation2D& rViewInformation, bool bPixelCorrection) const;
 
             /// compare operator
             virtual bool operator==(const BasePrimitive2D& rPrimitive) const override;

@@ -164,7 +164,7 @@ public:
     void                finalizeImport();
 
     /** Returns the priority of this rule. */
-    sal_Int32    getPriority() const { return maModel.mnPriority; }
+    inline sal_Int32    getPriority() const { return maModel.mnPriority; }
 
     ColorScaleRule*     getColorScale();
     DataBarRule*        getDataBar();
@@ -184,7 +184,7 @@ typedef std::shared_ptr< CondFormatRule > CondFormatRuleRef;
 /** Model for a conditional formatting object. */
 struct CondFormatModel
 {
-    ScRangeList         maRanges;           /// Cell ranges for this conditional format.
+    ApiCellRangeList    maRanges;           /// Cell ranges for this conditional format.
     bool                mbPivot;            /// Conditional formatting belongs to pivot table.
 
     explicit            CondFormatModel();
@@ -210,12 +210,12 @@ public:
     void                finalizeImport();
 
     /** Returns the cell ranges this conditional formatting belongs to. */
-    const ScRangeList& getRanges() const { return maModel.maRanges; }
+    inline const ApiCellRangeList& getRanges() const { return maModel.maRanges; }
 
     void                setReadyForFinalize() { mbReadyForFinalize = true; }
 private:
     CondFormatRuleRef   createRule();
-    void                insertRule( CondFormatRuleRef const & xRule );
+    void                insertRule( CondFormatRuleRef xRule );
 
 private:
     typedef RefMap< sal_Int32, CondFormatRule > CondFormatRuleMap;

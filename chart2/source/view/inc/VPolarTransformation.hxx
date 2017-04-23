@@ -32,16 +32,20 @@ class VPolarTransformation : public ::cppu::WeakImplHelper<
 {
 public:
     VPolarTransformation( const PolarPlottingPositionHelper& rPositionHelper );
-    virtual ~VPolarTransformation() override;
+    virtual ~VPolarTransformation();
 
     // ____ XTransformation ____
     /// @see css::chart2::XTransformation
     virtual css::uno::Sequence< double > SAL_CALL transform(
-        const css::uno::Sequence< double >& rSourceValues ) override;
+        const css::uno::Sequence< double >& rSourceValues )
+        throw (css::lang::IllegalArgumentException,
+               css::uno::RuntimeException, std::exception) override;
     /// @see css::chart2::XTransformation
-    virtual sal_Int32 SAL_CALL getSourceDimension() override;
+    virtual sal_Int32 SAL_CALL getSourceDimension()
+        throw (css::uno::RuntimeException, std::exception) override;
     /// @see css::chart2::XTransformation
-    virtual sal_Int32 SAL_CALL getTargetDimension() override;
+    virtual sal_Int32 SAL_CALL getTargetDimension()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     PolarPlottingPositionHelper     m_aPositionHelper;

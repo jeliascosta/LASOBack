@@ -62,9 +62,9 @@ namespace frm
     {
         Any aError;
         if ( !_rContextDescription.isEmpty() )
-            aError <<= prependErrorInfo( _rException, static_cast< XSQLErrorBroadcaster* >( this ), _rContextDescription );
+            aError = makeAny( prependErrorInfo( _rException, static_cast< XSQLErrorBroadcaster* >( this ), _rContextDescription ) );
         else
-            aError <<= _rException;
+            aError = makeAny( _rException );
 
         onError( SQLErrorEvent( static_cast< XSQLErrorBroadcaster* >( this ), aError ) );
     }
@@ -82,13 +82,13 @@ namespace frm
     }
 
 
-    void SAL_CALL OErrorBroadcaster::addSQLErrorListener( const Reference< XSQLErrorListener >& _rxListener )
+    void SAL_CALL OErrorBroadcaster::addSQLErrorListener( const Reference< XSQLErrorListener >& _rxListener ) throw( RuntimeException, std::exception )
     {
         m_aErrorListeners.addInterface( _rxListener );
     }
 
 
-    void SAL_CALL OErrorBroadcaster::removeSQLErrorListener( const Reference< XSQLErrorListener >& _rxListener )
+    void SAL_CALL OErrorBroadcaster::removeSQLErrorListener( const Reference< XSQLErrorListener >& _rxListener ) throw( RuntimeException, std::exception )
     {
         m_aErrorListeners.removeInterface( _rxListener );
     }

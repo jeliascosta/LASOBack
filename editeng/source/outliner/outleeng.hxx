@@ -36,7 +36,7 @@ protected:
 
 public:
                         OutlinerEditEng( Outliner* pOwner, SfxItemPool* pPool );
-                        virtual ~OutlinerEditEng() override;
+                        virtual ~OutlinerEditEng();
 
     virtual void        PaintingFirstLine( sal_Int32 nPara, const Point& rStartPos, long nBaseLineY, const Point& rOrigin, short nOrientation, OutputDevice* pOutDev ) override;
 
@@ -74,7 +74,7 @@ public:
     virtual void        FieldClicked( const SvxFieldItem& rField, sal_Int32 nPara, sal_Int32 nPos ) override;
     virtual OUString    CalcFieldValue( const SvxFieldItem& rField, sal_Int32 nPara, sal_Int32 nPos, Color*& rTxtColor, Color*& rFldColor ) override;
 
-    virtual tools::Rectangle   GetBulletArea( sal_Int32 nPara ) override;
+    virtual Rectangle   GetBulletArea( sal_Int32 nPara ) override;
 
        virtual void        SetParaAttribs( sal_Int32 nPara, const SfxItemSet& rSet ) override;
 

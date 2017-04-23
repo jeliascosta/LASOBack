@@ -19,22 +19,10 @@
 #ifndef INCLUDED_VBAHELPER_VBAHELPERINTERFACE_HXX
 #define INCLUDED_VBAHELPER_VBAHELPERINTERFACE_HXX
 
-#include <com/sun/star/container/XNameAccess.hpp>
-#include <com/sun/star/script/BasicErrorException.hpp>
-#include <com/sun/star/uno/Any.hxx>
-#include <com/sun/star/uno/Reference.hxx>
-#include <com/sun/star/uno/RuntimeException.hpp>
-#include <com/sun/star/uno/Sequence.hxx>
 #include <cppuhelper/implbase.hxx>
-#include <cppuhelper/weakref.hxx>
 #include <ooo/vba/XHelperInterface.hpp>
-#include <rtl/ustring.hxx>
-#include <sal/types.h>
 #include <vbahelper/vbahelper.hxx>
-
-namespace com { namespace sun { namespace star {
-    namespace uno { class XComponentContext; } }
-} }
+#include <com/sun/star/container/XNameAccess.hpp>
 
 // use this class when you have an a object like
 // interface  XAnInterface which contains XHelperInterface in its inheritance hierarchy
@@ -70,18 +58,20 @@ protected:
     css::uno::WeakReference< ov::XHelperInterface > mxParent;
     css::uno::Reference< css::uno::XComponentContext > mxContext;
 public:
+    InheritedHelperInterfaceImpl() {}
+    InheritedHelperInterfaceImpl( const css::uno::Reference< css::uno::XComponentContext >& xContext ) : mxContext( xContext ) {}
     InheritedHelperInterfaceImpl( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext ) : mxParent( xParent ), mxContext( xContext ) {}
     virtual OUString getServiceImplName() = 0;
     virtual css::uno::Sequence<OUString> getServiceNames() = 0;
 
     // XHelperInterface Methods
-    virtual ::sal_Int32 SAL_CALL getCreator() override
+    virtual ::sal_Int32 SAL_CALL getCreator() throw (css::script::BasicErrorException, css::uno::RuntimeException) override
     {
         return 0x53756E4F;
     }
-    virtual css::uno::Reference< ov::XHelperInterface > SAL_CALL getParent(  ) override { return mxParent; }
+    virtual css::uno::Reference< ov::XHelperInterface > SAL_CALL getParent(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException) override { return mxParent; }
 
-    virtual css::uno::Any SAL_CALL Application(  ) override {
+    virtual css::uno::Any SAL_CALL Application(  ) throw (css::script::BasicErrorException, css::uno::RuntimeException) override {
             // The application could certainly be passed around in the context - seems
             // to make sense
             css::uno::Reference< css::container::XNameAccess > xNameAccess( mxContext, css::uno::UNO_QUERY_THROW );
@@ -89,8 +79,8 @@ public:
     }
 
     // XServiceInfo Methods
-    virtual OUString SAL_CALL getImplementationName(  ) override { return getServiceImplName(); }
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException) override { return getServiceImplName(); }
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException) override
     {
         css::uno::Sequence< OUString > sServices = getSupportedServiceNames();
         const OUString* pStart = sServices.getConstArray();
@@ -100,7 +90,7 @@ public:
                 return true;
         return false;
     }
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException) override
     {
         css::uno::Sequence< OUString > aNames = getServiceNames();
         return aNames;
@@ -112,6 +102,8 @@ class SAL_DLLPUBLIC_TEMPLATE InheritedHelperInterfaceWeakImpl : public Inherited
 {
     typedef InheritedHelperInterfaceImpl< ::cppu::WeakImplHelper< Ifc... > > Base;
 public:
+    InheritedHelperInterfaceWeakImpl< Ifc... >() {}
+    InheritedHelperInterfaceWeakImpl< Ifc... >( const css::uno::Reference< css::uno::XComponentContext >& xContext ) : Base( xContext ) {}
     InheritedHelperInterfaceWeakImpl< Ifc... >( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext ) : Base( xParent, xContext ) {}
 };
 

@@ -22,6 +22,7 @@
 #include "osl/thread.h"
 
 #include "unx/saldisp.hxx"
+#include "unx/saldata.hxx"
 #include "unx/salgdi.h"
 
 #include "gcach_xpeer.hxx"
@@ -62,10 +63,6 @@ namespace
     {
     private:
         X11GlyphCache* m_pX11GlyphCache;
-
-        GlyphCacheHolder(const GlyphCacheHolder&) = delete;
-        GlyphCacheHolder& operator=(const GlyphCacheHolder&) = delete;
-
     public:
         GlyphCacheHolder()
         {

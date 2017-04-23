@@ -25,18 +25,26 @@ Private TraceLogCount		As Integer
 Private TraceLogLast		As Integer
 Private TraceLogMaxEntries	As Integer
 Private CalledSub			As String
-Private DebugPrintShort		As Boolean
 Private Introspection		As Object				&apos;	com.sun.star.beans.Introspection	
 Private VersionNumber		As String				&apos;	Actual Access2Base version number
-Private Locale				As String
-Private ExcludeA2B			As Boolean
-Private TextSearch			As Object
-Private SearchOptions		As Variant
 Private FindRecord			As Object
 Private StatusBar			As Object
 Private Dialogs				As Object				&apos;	Collection
 Private TempVars			As Object				&apos;	Collection
 Private CurrentDoc()		As Variant				&apos;	Array of document containers - [0] = Base document, [1 ... N] = other documents
+
+Type DocContainer
+	Document			As Object				&apos;	com.sun.star.comp.dba.ODatabaseDocument	or SwXTextDocument or ScModelObj
+	Active				As Boolean
+	DbConnect			As Integer				&apos;	DBCONNECTxxx constants
+	URL					As String
+	DbContainers()		As Variant				&apos;	One entry by (data-aware) form
+End Type
+
+Type DbContainer
+	FormName			As String				&apos;	name of data-aware form
+	Database			As Object				&apos;	Database type
+End Type
 
 REM -----------------------------------------------------------------------------------------------------------------------
 REM --- CONSTRUCTORS / DESTRUCTORS						        														---
@@ -51,17 +59,7 @@ Dim vCurrentDoc() As Variant
 	TraceLogLast = 0
 	TraceLogMaxEntries = 0
 	CalledSub = &quot;&quot;
-	DebugPrintShort = True
-	Locale = L10N._GetLocale()
-	ExcludeA2B = True
 	Set Introspection = CreateUnoService(&quot;com.sun.star.beans.Introspection&quot;)
-	Set TextSearch = CreateUnoService(&quot;com.sun.star.util.TextSearch&quot;)
-	SearchOptions = New com.sun.star.util.SearchOptions
-	With SearchOptions
-		.algorithmType = com.sun.star.util.SearchAlgorithms.REGEXP
-		.searchFlag = 0
-		.transliterateFlags = com.sun.star.i18n.TransliterationModules.IGNORE_CASE
-	End With
 	Set FindRecord = Nothing
 	Set StatusBar = Nothing
 	Set Dialogs = New Collection

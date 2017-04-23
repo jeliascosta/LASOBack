@@ -67,7 +67,7 @@ protected:
     virtual void FillInfo( SfxChildWinInfo& rInfo ) const override;
     virtual bool Close() override;
 
-    DECL_LINK( OnAsyncGetFocus, void*, void );
+    DECL_LINK_TYPED( OnAsyncGetFocus, void*, void );
 
     void implSetNewSelection( const InterfaceBag& _rSelection );
     void implDetachController();
@@ -82,7 +82,7 @@ public:
         vcl::Window* pParent,
         const SfxChildWinInfo* _pInfo
     );
-    virtual ~FmPropBrw() override;
+    virtual ~FmPropBrw();
     virtual void dispose() override;
 
     using SfxFloatingWindow::StateChanged;

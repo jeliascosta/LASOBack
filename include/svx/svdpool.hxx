@@ -34,14 +34,15 @@ public:
     SdrItemPool(SfxItemPool* pMaster = nullptr, bool bLoadRefCounts = true);
     SdrItemPool(const SdrItemPool& rPool);
 protected:
-    virtual ~SdrItemPool() override;
+    virtual ~SdrItemPool();
 public:
 
     virtual SfxItemPool* Clone() const override;
     virtual bool GetPresentation(const SfxPoolItem& rItem,
-                                 MapUnit ePresentationMetric,
-                                 OUString& rText,
-                                 const IntlWrapper * pIntlWrapper = nullptr) const override;
+        SfxMapUnit          ePresentationMetric,
+        OUString&             rText,
+        const IntlWrapper * pIntlWrapper
+        = nullptr) const override;
 
     static void TakeItemName(sal_uInt16 nWhich, OUString& rItemName);
 };

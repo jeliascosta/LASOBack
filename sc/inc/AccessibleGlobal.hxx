@@ -30,18 +30,22 @@ class ScAccessibleStateSet : public ::cppu::WeakImplHelper< css::accessibility::
 {
 public:
     ScAccessibleStateSet();
-    virtual ~ScAccessibleStateSet() override;
+    virtual ~ScAccessibleStateSet();
 
     // XAccessibleStateSet
 
-    virtual sal_Bool SAL_CALL isEmpty() override;
+    virtual sal_Bool SAL_CALL isEmpty()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL contains(sal_Int16 nState) override;
+    virtual sal_Bool SAL_CALL contains(sal_Int16 nState)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual sal_Bool SAL_CALL containsAll(
-        const css::uno::Sequence<sal_Int16>& aStateSet) override;
+        const css::uno::Sequence<sal_Int16>& aStateSet)
+            throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Sequence<sal_Int16> SAL_CALL getStates() override;
+    virtual css::uno::Sequence<sal_Int16> SAL_CALL getStates()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // Non-UNO Methods
 

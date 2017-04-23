@@ -8,10 +8,9 @@
  *
  */
 
+#include <vcl/BitmapProcessor.hxx>
 #include <vcl/bitmapaccess.hxx>
 #include <basegfx/color/bcolortools.hxx>
-
-#include "BitmapProcessor.hxx"
 
 BitmapEx BitmapProcessor::createLightImage(const BitmapEx& rBitmapEx)
 {
@@ -20,8 +19,8 @@ BitmapEx BitmapProcessor::createLightImage(const BitmapEx& rBitmapEx)
     Bitmap aBitmap(rBitmapEx.GetBitmap());
     Bitmap aDarkBitmap(aSize, 24);
 
-    Bitmap::ScopedReadAccess pRead(aBitmap);
-    Bitmap::ScopedWriteAccess pWrite(aDarkBitmap);
+    BitmapReadAccess* pRead(aBitmap.AcquireReadAccess());
+    BitmapWriteAccess* pWrite(aDarkBitmap.AcquireWriteAccess());
 
     if (pRead && pWrite)
     {
@@ -50,8 +49,8 @@ BitmapEx BitmapProcessor::createLightImage(const BitmapEx& rBitmapEx)
             }
         }
     }
-    pWrite.reset();
-    pRead.reset();
+    Bitmap::ReleaseAccess(pWrite);
+    Bitmap::ReleaseAccess(pRead);
 
     return BitmapEx(aDarkBitmap, rBitmapEx.GetAlpha());
 }
@@ -60,28 +59,21 @@ BitmapEx BitmapProcessor::createDisabledImage(const BitmapEx& rBitmapEx)
 {
     const Size aSize(rBitmapEx.GetSizePixel());
 
-    //keep disable image at same depth as original where possible, otherwise
-    //use 8 bit
-    sal_uInt16 nBitCount = rBitmapEx.GetBitCount();
-    if (nBitCount < 8)
-        nBitCount = 8;
-    const BitmapPalette* pPal = nBitCount == 8 ? &Bitmap::GetGreyPalette(256) : nullptr;
-    Bitmap aGrey(aSize, nBitCount, pPal);
-
+    Bitmap aGrey(aSize, rBitmapEx.GetBitCount());
     AlphaMask aGreyAlpha(aSize);
 
     Bitmap aBitmap(rBitmapEx.GetBitmap());
-    Bitmap::ScopedReadAccess pRead(aBitmap);
+    BitmapReadAccess* pRead(aBitmap.AcquireReadAccess());
 
-    Bitmap::ScopedWriteAccess pGrey(aGrey);
-    AlphaMask::ScopedWriteAccess pGreyAlpha(aGreyAlpha);
+    BitmapWriteAccess* pGrey(aGrey.AcquireWriteAccess());
+    BitmapWriteAccess* pGreyAlpha(aGreyAlpha.AcquireWriteAccess());
 
     BitmapEx aReturnBitmap;
 
     if (rBitmapEx.IsTransparent())
     {
         AlphaMask aBitmapAlpha(rBitmapEx.GetAlpha());
-        AlphaMask::ScopedReadAccess pReadAlpha(aBitmapAlpha);
+        BitmapReadAccess* pReadAlpha(aBitmapAlpha.AcquireReadAccess());
 
         if (pRead && pReadAlpha && pGrey && pGreyAlpha)
         {
@@ -102,7 +94,7 @@ BitmapEx BitmapProcessor::createDisabledImage(const BitmapEx& rBitmapEx)
                 }
             }
         }
-        pReadAlpha.reset();
+        aBitmapAlpha.ReleaseAccess(pReadAlpha);
         aReturnBitmap = BitmapEx(aGrey, aGreyAlpha);
     }
     else
@@ -127,9 +119,10 @@ BitmapEx BitmapProcessor::createDisabledImage(const BitmapEx& rBitmapEx)
         aReturnBitmap = BitmapEx(aGrey);
     }
 
-    pRead.reset();
-    pGrey.reset();
-    pGreyAlpha.reset();
+    Bitmap::ReleaseAccess(pRead);
+
+    Bitmap::ReleaseAccess(pGrey);
+    aGreyAlpha.ReleaseAccess(pGreyAlpha);
 
     return aReturnBitmap;
 }

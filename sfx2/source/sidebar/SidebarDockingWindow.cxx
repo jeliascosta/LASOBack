@@ -44,7 +44,7 @@ SidebarDockingWindow::SidebarDockingWindow(SfxBindings* pSfxBindings, SidebarChi
     {
         const SfxViewFrame* pViewFrame = pSfxBindings->GetDispatcher()->GetFrame();
         const SfxFrame& rFrame = pViewFrame->GetFrame();
-        mpSidebarController.set(sfx2::sidebar::SidebarController::create(this, rFrame.GetFrameInterface()).get());
+        mpSidebarController.set(new sfx2::sidebar::SidebarController(this, rFrame.GetFrameInterface()));
     }
 }
 
@@ -75,6 +75,12 @@ void SidebarDockingWindow::GetFocus()
         mpSidebarController->GetFocusManager().GrabFocus();
     else
         SfxDockingWindow::GetFocus();
+}
+
+// fdo#87217
+bool SidebarDockingWindow::Close()
+{
+    return SfxDockingWindow::Close();
 }
 
 SfxChildAlignment SidebarDockingWindow::CheckAlignment (

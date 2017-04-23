@@ -45,8 +45,8 @@ public:
     SvxZoomType GetZoomType() const             { return eZoomType;     }
     void        SetSynchronizeZoom( bool bNew ) { bSynchronizeZoom = bNew; }
     bool        GetSynchronizeZoom() const      { return bSynchronizeZoom; }
-    sal_uInt16  GetLRUFuncListCount() const     { return nLRUFuncCount; }
-    sal_uInt16* GetLRUFuncList() const          { return pLRUList.get();      }
+    sal_uInt16      GetLRUFuncListCount() const     { return nLRUFuncCount; }
+    sal_uInt16*     GetLRUFuncList() const          { return pLRUList;      }
     void        SetLRUFuncList( const sal_uInt16* pList,
                                 const sal_uInt16  nCount );
     void        SetStatusFunc( sal_uInt32 nNew )    { nStatusFunc = nNew;   }
@@ -83,8 +83,7 @@ public:
 private:
     FieldUnit       eMetric;
     sal_uInt16      nLRUFuncCount;
-    std::unique_ptr<sal_uInt16[]>
-                    pLRUList;
+    sal_uInt16*     pLRUList;
     SvxZoomType     eZoomType;
     sal_uInt16      nZoom;
     bool            bSynchronizeZoom;
@@ -117,13 +116,13 @@ class ScAppCfg : public ScAppOptions
     ScLinkConfigItem    aMiscItem;
     ScLinkConfigItem    aCompatItem;
 
-    DECL_LINK( LayoutCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( InputCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( RevisionCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( ContentCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( SortListCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( MiscCommitHdl, ScLinkConfigItem&, void );
-    DECL_LINK( CompatCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( LayoutCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( InputCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( RevisionCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( ContentCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( SortListCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( MiscCommitHdl, ScLinkConfigItem&, void );
+    DECL_LINK_TYPED( CompatCommitHdl, ScLinkConfigItem&, void );
 
     static css::uno::Sequence<OUString> GetLayoutPropertyNames();
     static css::uno::Sequence<OUString> GetInputPropertyNames();

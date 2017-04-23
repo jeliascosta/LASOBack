@@ -86,13 +86,13 @@ class UndoObjectSetText : public SdrUndoObjSetText
 {
 public:
     UndoObjectSetText( SdrObject& rNewObj, sal_Int32 nText );
-    virtual ~UndoObjectSetText() override;
+    virtual ~UndoObjectSetText();
 
     virtual void Undo() override;
     virtual void Redo() override;
 
 private:
-    std::unique_ptr<SfxUndoAction> mpUndoAnimation;
+    SfxUndoAction* mpUndoAnimation;
     bool            mbNewEmptyPresObj;
     SdrObjectWeakRef mxSdrObject;
 };

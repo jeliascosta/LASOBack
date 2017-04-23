@@ -39,7 +39,7 @@ namespace canvas
     {
     public:
 
-        SurfaceProxy( const std::shared_ptr<canvas::IColorBuffer>& pBuffer,
+        SurfaceProxy( const canvas::IColorBufferSharedPtr& pBuffer,
                       const PageManagerSharedPtr &pPageManager );
 
         // ISurfaceProxy interface
@@ -112,7 +112,7 @@ namespace canvas
         // pointer to the source of image data
         // which always is stored in system memory,
         // 32bit rgba and can have any size.
-        std::shared_ptr<canvas::IColorBuffer> mpBuffer;
+        canvas::IColorBufferSharedPtr mpBuffer;
     };
 }
 

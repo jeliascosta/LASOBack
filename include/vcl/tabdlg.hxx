@@ -39,9 +39,9 @@ private:
 
 public:
                         TabDialog( vcl::Window* pParent,
-                                   WinBits nStyle );
+                                   WinBits nStyle = WB_STDTABDIALOG );
                         TabDialog( vcl::Window* pParent, const OUString& rID, const OUString& rUIXMLDescription );
-    virtual             ~TabDialog() override;
+    virtual             ~TabDialog();
     virtual void        dispose() override;
 
     virtual void        StateChanged( StateChangedType nStateChange ) override;
@@ -49,10 +49,6 @@ public:
     void                SetViewWindow( vcl::Window* pWindow ) { mpViewWindow = pWindow; }
     vcl::Window*        GetViewWindow() const { return mpViewWindow; }
     void                SetViewAlign( WindowAlign eAlign ) { meViewAlign = eAlign; }
-
-    // Screenshot interface
-    virtual std::vector<OString> getAllPageUIXMLDescriptions() const override;
-    virtual bool selectPageByUIXMLDescription(const OString& rUIXMLDescription) override;
 };
 
 #endif // INCLUDED_VCL_TABDLG_HXX

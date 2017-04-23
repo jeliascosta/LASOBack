@@ -141,12 +141,16 @@ bool XMLFontWeightPropHdl::exportXML( OUString& rStrExpValue, const Any& rValue,
             }
         }
 
+        OUStringBuffer aOut;
+
         if( 400 == nWeight )
-            rStrExpValue = GetXMLToken(XML_WEIGHT_NORMAL);
+            aOut.append( GetXMLToken(XML_WEIGHT_NORMAL) );
         else if( 700 == nWeight )
-            rStrExpValue = GetXMLToken(XML_WEIGHT_BOLD);
+            aOut.append( GetXMLToken(XML_WEIGHT_BOLD) );
         else
-            rStrExpValue = OUString::number( nWeight );
+            ::sax::Converter::convertNumber( aOut, (sal_Int32)nWeight );
+
+        rStrExpValue = aOut.makeStringAndClear();
     }
 
     return bRet;

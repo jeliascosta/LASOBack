@@ -186,6 +186,7 @@ namespace basegfx
             double                 mfRotate;
             double                 mfShearX;
 
+            // bitfield
             bool                   mbDecomposed : 1;
 
             void impCheckDecompose()

@@ -11,7 +11,7 @@
 #define INCLUDED_OPENCL_INC_OPENCL_DEVICE_SELECTION_H
 
 #ifdef _MSC_VER
-//#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include <stdlib.h>
@@ -47,12 +47,7 @@ enum ds_status
 enum class DeviceType
 {
     None,
-    // NativeCPU means the traditional Calc interpreter code path. (That also includes the so-called
-    // "software interpreter", but note that it definitely does not mean *exclusively* that.)
     NativeCPU,
-    // OpenCLDevice means an OpenCL device as supplied by an OpenCL platform, which might well be
-    // implemented using code that runs on the CPU (and not a GPU). On Windows, OpenCL platforms
-    // typically provide two devices, one for the GPU and one for the CPU.
     OpenCLDevice
 };
 
@@ -88,7 +83,7 @@ struct ds_profile
     std::vector<ds_device> devices;
     OString version;
 
-    ds_profile(OString const & inVersion)
+    ds_profile(OString& inVersion)
         : version(inVersion)
     {}
 };
@@ -127,14 +122,12 @@ inline OString getDeviceType(cl_device_id aDeviceId)
 
 inline bool getDeviceInfoBool(cl_device_id aDeviceId, cl_device_info aDeviceInfo)
 {
-    cl_bool bCLBool = 0;
-        // init to false in case clGetDeviceInfo returns CL_INVALID_VALUE when
-        // requesting unsupported (in version 1.0) CL_DEVICE_LINKER_AVAILABLE
+    cl_bool bCLBool;
     clGetDeviceInfo(aDeviceId, aDeviceInfo, sizeof(bCLBool), &bCLBool, nullptr);
     return bCLBool == CL_TRUE;
 }
 
-inline ds_status initDSProfile(std::unique_ptr<ds_profile>& rProfile, OString const & rVersion)
+inline ds_status initDSProfile(std::unique_ptr<ds_profile>& rProfile, OString rVersion)
 {
     OpenCLZone zone;
 
@@ -148,18 +141,18 @@ inline ds_status initDSProfile(std::unique_ptr<ds_profile>& rProfile, OString co
 
     rProfile = std::unique_ptr<ds_profile>(new ds_profile(rVersion));
 
-    clGetPlatformIDs(0, nullptr, &numPlatforms);
+    clGetPlatformIDs(0, NULL, &numPlatforms);
     if (numPlatforms != 0)
     {
         platforms.resize(numPlatforms);
-        clGetPlatformIDs(numPlatforms, platforms.data(), nullptr);
+        clGetPlatformIDs(numPlatforms, platforms.data(), NULL);
     }
 
     numDevices = 0;
     for (i = 0; i < (unsigned int)numPlatforms; i++)
     {
         cl_uint num = 0;
-        cl_int err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, nullptr, &num);
+        cl_int err = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &num);
         if (err != CL_SUCCESS)
         {
             /* we want to catch at least the case when the call returns
@@ -233,6 +226,9 @@ inline ds_status initDSProfile(std::unique_ptr<ds_profile>& rProfile, OString co
     return DS_SUCCESS;
 }
 
+namespace
+{
+
 /**
  * XmlWriter writes a XML to a SvStream. It uses libxml2 for writing but hides
  * all the internal libxml2 workings and uses types that are native for LO
@@ -252,7 +248,7 @@ private:
     static int funcWriteCallback(void* pContext, const char* sBuffer, int nLen)
     {
         SvStream* pStream = static_cast<SvStream*>(pContext);
-        return static_cast<int>(pStream->WriteBytes(sBuffer, nLen));
+        return static_cast<int>(pStream->Write(sBuffer, nLen));
     }
 
     static int funcCloseCallback(void* pContext)
@@ -318,7 +314,7 @@ public:
  * XmlWalker main purpose is to make it easier for walking the
  * parsed XML DOM tree.
  *
- * It hides all the libxml2 and C -isms and makes the usage more
+ * It hides all the libxml2 and C -isms and makes the useage more
  * comfortable from LO developer point of view.
  *
  * TODO: move to common code
@@ -346,9 +342,9 @@ public:
 
     bool open(SvStream* pStream)
     {
-        std::size_t nSize = pStream->remainingSize();
+        sal_Size nSize = pStream->remainingSize();
         std::vector<sal_uInt8> aBuffer(nSize + 1);
-        pStream->ReadBytes(aBuffer.data(), nSize);
+        pStream->Read(aBuffer.data(), nSize);
         aBuffer[nSize] = 0;
         mpDocPtr = xmlParseDoc(reinterpret_cast<xmlChar*>(aBuffer.data()));
         if (mpDocPtr == nullptr)
@@ -399,6 +395,8 @@ public:
     }
 };
 
+} // end anonymous namespace
+
 inline ds_status writeProfile(const OUString& rStreamName, std::unique_ptr<ds_profile>& pProfile)
 {
     if (pProfile == nullptr)
@@ -407,7 +405,7 @@ inline ds_status writeProfile(const OUString& rStreamName, std::unique_ptr<ds_pr
         return DS_INVALID_PROFILE;
 
     std::unique_ptr<SvStream> pStream;
-    pStream.reset(new SvFileStream(rStreamName, StreamMode::STD_READWRITE | StreamMode::TRUNC));
+    pStream.reset(new SvFileStream(rStreamName, STREAM_STD_READWRITE | StreamMode::TRUNC));
 
     XmlWriter aXmlWriter(pStream.get());
 

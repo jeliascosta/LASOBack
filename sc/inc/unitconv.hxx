@@ -30,7 +30,7 @@ class ScUnitConverterData
 
 public:
     ScUnitConverterData( const OUString& rFromUnit,
-        const OUString& rToUnit, double fValue );
+        const OUString& rToUnit, double fValue = 1.0 );
     ScUnitConverterData( const ScUnitConverterData& );
     ~ScUnitConverterData();
 

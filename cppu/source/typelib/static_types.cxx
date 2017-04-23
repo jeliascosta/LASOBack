@@ -104,7 +104,10 @@ static inline typelib_TypeDescriptionReference * igetTypeByName( rtl_uString * p
     {
         return pRef;
     }
-    return nullptr;
+    else
+    {
+        return nullptr;
+    }
 }
 
 extern "C"
@@ -286,7 +289,7 @@ void SAL_CALL typelib_static_type_init(
             OUString aTypeName( OUString::createFromAscii( pTypeName ) );
             ::typelib_typedescriptionreference_new( ppRef, eTypeClass, aTypeName.pData );
 
-            assert(*ppRef && "coverity[var_deref_op] - shouldn't be possible");
+            // coverity[var_deref_op] - another static ref
             ++((*ppRef)->nStaticRefCount);
         }
     }

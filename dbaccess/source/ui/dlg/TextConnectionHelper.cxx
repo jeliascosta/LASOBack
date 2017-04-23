@@ -31,6 +31,7 @@
 #include "dsitems.hxx"
 #include "dbfindex.hxx"
 #include "dbaccess_helpid.hrc"
+#include "localresaccess.hxx"
 #include <vcl/layout.hxx>
 #include <vcl/mnemonic.hxx>
 #include <svl/cjkoptions.hxx>
@@ -168,12 +169,12 @@ namespace dbaui
         TabPage::dispose();
     }
 
-    IMPL_LINK_NOARG(OTextConnectionHelper, OnEditModified, Edit&, void)
+    IMPL_LINK_NOARG_TYPED(OTextConnectionHelper, OnEditModified, Edit&, void)
     {
         m_aGetExtensionHandler.Call(this);
     }
 
-    IMPL_LINK_NOARG(OTextConnectionHelper, OnSetExtensionHdl, RadioButton&, void)
+    IMPL_LINK_NOARG_TYPED(OTextConnectionHelper, OnSetExtensionHdl, RadioButton&, void)
     {
         bool bDoEnable = m_pAccessOtherFiles->IsChecked();
         m_pOwnExtension->Enable(bDoEnable);
@@ -181,7 +182,7 @@ namespace dbaui
         m_aGetExtensionHandler.Call(this);
     }
 
-    void OTextConnectionHelper::fillControls(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OTextConnectionHelper::fillControls(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back(new OSaveValueWrapper<ComboBox>(m_pFieldSeparator));
         _rControlList.push_back(new OSaveValueWrapper<ComboBox>(m_pTextSeparator));
@@ -191,7 +192,7 @@ namespace dbaui
         _rControlList.push_back(new OSaveValueWrapper<ListBox>(m_pCharSet));
     }
 
-    void OTextConnectionHelper::fillWindows(std::vector< ISaveValueWrapper* >& _rControlList)
+    void OTextConnectionHelper::fillWindows(::std::vector< ISaveValueWrapper* >& _rControlList)
     {
         _rControlList.push_back(new ODisableWrapper<FixedText>(m_pFieldSeparatorLabel));
         _rControlList.push_back(new ODisableWrapper<FixedText>(m_pTextSeparatorLabel));

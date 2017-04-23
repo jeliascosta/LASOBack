@@ -11,10 +11,7 @@
 #define INCLUDED_SFX2_LOKHELPER_HXX
 
 #include <sfx2/dllapi.h>
-#include <sfx2/viewsh.hxx>
 #include <cstddef>
-#include <rtl/string.hxx>
-#include <comphelper/lok.hxx>
 
 class SfxViewShell;
 
@@ -24,44 +21,14 @@ public:
     /// Create a new view shell from the current view frame.
     static int createView();
     /// Destroy a view shell from the global shell list.
-    static void destroyView(int nId);
+    static void destroyView(std::size_t nId);
     /// Set a view shell as current one.
-    static void setView(int nId);
+    static void setView(std::size_t nId);
     /// Get the currently active view.
-    static int getView(SfxViewShell* pViewShell = nullptr);
+    static std::size_t getView();
     /// Get the number of views of the current object shell.
-    static std::size_t getViewsCount();
-    /// Get viewIds of all existing views.
-    static bool getViewIds(int* pArray, size_t nSize);
-    /// Iterate over any view shell, except pThisViewShell, passing it to the f function.
-    template<typename ViewShellType, typename FunctionType>
-    static void forEachOtherView(ViewShellType* pThisViewShell, FunctionType f);
-    /// Invoke the LOK callback of all views except pThisView, with a payload of rKey-rPayload.
-    static void notifyOtherViews(SfxViewShell* pThisView, int nType, const OString& rKey, const OString& rPayload);
-    /// Same as notifyOtherViews(), but works on a selected "other" view, not on all of them.
-    static void notifyOtherView(SfxViewShell* pThisView, SfxViewShell* pOtherView, int nType, const OString& rKey, const OString& rPayload);
-    /// Emits a LOK_CALLBACK_INVALIDATE_TILES, but tweaks it according to setOptionalFeatures() if needed.
-    static void notifyInvalidation(SfxViewShell* pThisView, const OString& rPayload);
-
-    /// A special value to signify 'infinity'.
-    /// This value is chosen such that sal_Int32 will not overflow when manipulated.
-    static const long MaxTwips = 1e9;
+    static std::size_t getViews();
 };
-
-template<typename ViewShellType, typename FunctionType>
-void SfxLokHelper::forEachOtherView(ViewShellType* pThisViewShell, FunctionType f)
-{
-    SfxViewShell* pViewShell = SfxViewShell::GetFirst();
-    while (pViewShell)
-    {
-        auto pOtherViewShell = dynamic_cast<ViewShellType*>(pViewShell);
-        if (pOtherViewShell != nullptr && pOtherViewShell != pThisViewShell)
-        {
-            f(pOtherViewShell);
-        }
-        pViewShell = SfxViewShell::GetNext(*pViewShell);
-    }
-}
 
 #endif
 

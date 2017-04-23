@@ -39,7 +39,6 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <limits>
 
 class ScDocument;
 class SbxVariable;
@@ -63,15 +62,6 @@ struct RangeMatrix;
 struct Compare;
 struct CompareOptions;
 
-struct ParamIfsResult
-{
-    double mfSum = 0.0;
-    double mfMem = 0.0;
-    double mfCount = 0.0;
-    double mfMin = std::numeric_limits<double>::max();
-    double mfMax = std::numeric_limits<double>::min();
-};
-
 }
 
 namespace svl {
@@ -86,7 +76,7 @@ class ScTokenStack
 {
 public:
     DECL_FIXEDMEMPOOL_NEWDEL( ScTokenStack )
-    const formula::FormulaToken* pPointer[ MAXSTACK ];
+    formula::FormulaToken* pPointer[ MAXSTACK ];
 };
 
 enum ScIterFunc {
@@ -106,6 +96,15 @@ enum ScIterFuncIf
     ifAVERAGEIF                         // Conditional average
 };
 
+enum ScIterFuncIfs
+{
+    ifSUMIFS,     // Multi-Conditional sum
+    ifAVERAGEIFS, // Multi-Conditional average
+    ifCOUNTIFS,   // Multi-Conditional count
+    ifMINIFS,     // Multi-Conditional minimum
+    ifMAXIFS      // Multi-Conditional maximum
+};
+
 enum ScETSType
 {
     etsAdd,
@@ -122,7 +121,7 @@ struct FormulaTokenRef_less
     bool operator () ( const formula::FormulaConstTokenRef& r1, const formula::FormulaConstTokenRef& r2 ) const
         { return r1.get() < r2.get(); }
 };
-typedef ::std::map< const formula::FormulaConstTokenRef, formula::FormulaConstTokenRef, FormulaTokenRef_less> ScTokenMatrixMap;
+typedef ::std::map< const formula::FormulaConstTokenRef, formula::FormulaTokenRef, FormulaTokenRef_less> ScTokenMatrixMap;
 
 class ScInterpreter
 {
@@ -143,22 +142,24 @@ public:
     static void GlobalExit();           // called by ScGlobal::Clear()
 
     /// Could string be a regular expression?
-    /// if regularExpressions are disabled the function returns false regardless
+    /// If pDoc!=NULL the document options are taken into account and if
+    /// RegularExpressions are disabled the function returns false regardless
     /// of the string content.
-    static bool MayBeRegExp( const OUString& rStr, bool bIgnoreWildcards = false );
+    static bool MayBeRegExp( const OUString& rStr, const ScDocument* pDoc, bool bIgnoreWildcards = false );
 
     /** Could string be a wildcard (*,?,~) expression?
-        If wildcards are disabled the function returns false regardless of the
+        If pDoc!=NULL the document options are taken into account and if
+        Wildcards are disabled the function returns false regardless of the
         string content.
      */
-    static bool MayBeWildcard( const OUString& rStr );
+    static bool MayBeWildcard( const OUString& rStr, const ScDocument* pDoc );
 
     /** Detect if string should be used as regular expression or wildcard
         expression or literal string.
      */
     static utl::SearchParam::SearchType DetectSearchType( const OUString& rStr, const ScDocument* pDoc );
 
-    /// Fail safe division, returning an FormulaError::DivisionByZero coded into a double
+    /// Fail safe division, returning an errDivisionByZero coded into a double
     /// if denominator is 0.0
     static inline double div( const double& fNumerator, const double& fDenominator );
 
@@ -186,7 +187,7 @@ private:
     ScDocument* pDok;
     sfx2::LinkManager* mpLinkManager;
     svl::SharedStringPool& mrStrPool;
-    formula::FormulaConstTokenRef  xResult;
+    formula::FormulaTokenRef  xResult;
     ScJumpMatrix*   pJumpMatrix;        // currently active array condition, if any
     ScTokenMatrixMap* pTokenMatrixMap;  // map FormulaToken* to formula::FormulaTokenRef if in array condition
     ScFormulaCell* pMyFormulaCell;      // the cell of this formula expression
@@ -195,8 +196,8 @@ private:
     const formula::FormulaToken*
                 pCur;                   // current token
     ScTokenStack* pStackObj;            // contains the stacks
-    const formula::FormulaToken ** pStack;  // the current stack
-    FormulaError nGlobalError;          // global (local to this formula expression) error
+    formula::FormulaToken**   pStack;   // the current stack
+    sal_uInt16  nGlobalError;           // global (local to this formula expression) error
     sal_uInt16  sp;                     // stack pointer
     sal_uInt16  maxsp;                  // the maximal used stack pointer
     sal_uLong   nFuncFmtIndex;          // NumberFormatIndex of a function
@@ -205,8 +206,8 @@ private:
     short       nFuncFmtType;           // NumberFormatType of a function
     short       nCurFmtType;            // current NumberFormatType
     short       nRetFmtType;            // NumberFormatType of an expression
-    FormulaError  mnStringNoValueError; // the error set in ConvertStringToValue() if no value
-    SubtotalFlags mnSubTotalFlags;      // flags for subtotal and aggregate functions
+    sal_uInt16  mnStringNoValueError;   // the error set in ConvertStringToValue() if no value
+    sal_uInt16  mnSubTotalFlags;        // flags for subtotal and aggregate functions
     sal_uInt8   cPar;                   // current count of parameters
     bool        bCalcAsShown;           // precision as shown
     bool        bMatrixFormula;         // formula cell is a matrix formula
@@ -229,20 +230,20 @@ void PushNA();
 // Functions for accessing a document
 
 void ReplaceCell( ScAddress& );     // for TableOp
+void ReplaceCell( SCCOL& rCol, SCROW& rRow, SCTAB& rTab );  // for TableOp
 bool IsTableOpInRange( const ScRange& );
 sal_uLong GetCellNumberFormat( const ScAddress& rPos, ScRefCellValue& rCell );
 double ConvertStringToValue( const OUString& );
 public:
-static double ScGetGCD(double fx, double fy);
 /** For matrix back calls into the current interpreter.
     Uses rError instead of nGlobalError and rCurFmtType instead of nCurFmtType. */
-double ConvertStringToValue( const OUString&, FormulaError& rError, short& rCurFmtType );
+double ConvertStringToValue( const OUString&, sal_uInt16& rError, short& rCurFmtType );
 private:
 double GetCellValue( const ScAddress&, ScRefCellValue& rCell );
 double GetCellValueOrZero( const ScAddress&, ScRefCellValue& rCell );
 double GetValueCellValue( const ScAddress&, double fOrig );
 void GetCellString( svl::SharedString& rStr, ScRefCellValue& rCell );
-static FormulaError GetCellErrCode( const ScRefCellValue& rCell );
+static sal_uInt16 GetCellErrCode( const ScRefCellValue& rCell );
 
 bool CreateDoubleArr(SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
                      SCCOL nCol2, SCROW nRow2, SCTAB nTab2, sal_uInt8* pCellArr);
@@ -256,41 +257,40 @@ bool CreateCellArr(SCCOL nCol1, SCROW nRow1, SCTAB nTab1,
 /** Does substitute with formula::FormulaErrorToken in case nGlobalError is set and the token
     passed is not formula::FormulaErrorToken.
     Increments RefCount of the original token if not substituted. */
-void Push( const formula::FormulaToken& r );
+void Push( formula::FormulaToken& r );
 
 /** Does not substitute with formula::FormulaErrorToken in case nGlobalError is set.
     Used to push RPN tokens or from within Push() or tokens that are already
     explicit formula::FormulaErrorToken. Increments RefCount. */
-void PushWithoutError( const formula::FormulaToken& r );
+void PushWithoutError( formula::FormulaToken& r );
+
+/** Clones the token to be pushed or substitutes with formula::FormulaErrorToken if
+    nGlobalError is set and the token passed is not formula::FormulaErrorToken. */
+void PushTempToken( const formula::FormulaToken& );
 
 /** Does substitute with formula::FormulaErrorToken in case nGlobalError is set and the token
     passed is not formula::FormulaErrorToken.
     Increments RefCount of the original token if not substituted.
     ATTENTION! The token had to be allocated with `new' and must not be used
     after this call if no RefCount was set because possibly it gets immediately
-    deleted in case of an FormulaError::StackOverflow or if substituted with formula::FormulaErrorToken! */
+    deleted in case of an errStackOverflow or if substituted with formula::FormulaErrorToken! */
 void PushTempToken( formula::FormulaToken* );
-
-/** Pushes the token or substitutes with formula::FormulaErrorToken in case
-    nGlobalError is set and the token passed is not formula::FormulaErrorToken.
-    Increments RefCount of the original token if not substituted. */
-void PushTokenRef( const formula::FormulaConstTokenRef& );
 
 /** Does not substitute with formula::FormulaErrorToken in case nGlobalError is set.
     Used to push tokens from within PushTempToken() or tokens that are already
     explicit formula::FormulaErrorToken. Increments RefCount.
     ATTENTION! The token had to be allocated with `new' and must not be used
     after this call if no RefCount was set because possibly it gets immediately
-    decremented again and thus deleted in case of an FormulaError::StackOverflow! */
-void PushTempTokenWithoutError( const formula::FormulaToken* );
+    decremented again and thus deleted in case of an errStackOverflow! */
+void PushTempTokenWithoutError( formula::FormulaToken* );
 
 /** If nGlobalError is set push formula::FormulaErrorToken.
     If nGlobalError is not set do nothing.
     Used in PushTempToken() and alike to simplify handling.
     @return: <TRUE/> if nGlobalError. */
-bool IfErrorPushError()
+inline bool IfErrorPushError()
 {
-    if (nGlobalError != FormulaError::NONE)
+    if (nGlobalError)
     {
         PushTempTokenWithoutError( new formula::FormulaErrorToken( nGlobalError));
         return true;
@@ -299,24 +299,13 @@ bool IfErrorPushError()
 }
 
 /** Obtain cell result / content from address and push as temp token.
-
-    @param  bDisplayEmptyAsString
-            is passed to ScEmptyCell in case of an empty cell result.
-
-    @param  pRetTypeExpr
-    @param  pRetIndexExpr
-            Obtain number format and type if _both_, type and index pointer,
-            are not NULL.
-
-    @param  bFinalResult
-            If TRUE, only a standard FormulaDoubleToken is pushed.
-            If FALSE, PushDouble() is used that may push either a
-            FormulaDoubleToken or a FormulaTypedDoubleToken.
- */
+    bDisplayEmptyAsString is passed to ScEmptyCell in case of an empty cell
+    result. Also obtain number format and type if _both_, type and index
+    pointer, are not NULL. */
 void PushCellResultToken( bool bDisplayEmptyAsString, const ScAddress & rAddress,
-        short * pRetTypeExpr, sal_uLong * pRetIndexExpr, bool bFinalResult = false );
+        short * pRetTypeExpr, sal_uLong * pRetIndexExpr );
 
-formula::FormulaConstTokenRef PopToken();
+formula::FormulaTokenRef PopToken();
 void Pop();
 void PopError();
 double PopDouble();
@@ -344,40 +333,26 @@ void DoubleRefToVars( const formula::FormulaToken* p,
 ScDBRangeBase* PopDBDoubleRef();
 void PopDoubleRef(SCCOL& rCol1, SCROW &rRow1, SCTAB& rTab1,
                           SCCOL& rCol2, SCROW &rRow2, SCTAB& rTab2 );
-
 void PopExternalSingleRef(sal_uInt16& rFileId, OUString& rTabName, ScSingleRefData& rRef);
-
-/** Guarantees that nGlobalError is set if rToken could not be obtained. */
 void PopExternalSingleRef(ScExternalRefCache::TokenRef& rToken, ScExternalRefCache::CellFormat* pFmt = nullptr);
-
-/** Guarantees that nGlobalError is set if rToken could not be obtained. */
 void PopExternalSingleRef(sal_uInt16& rFileId, OUString& rTabName, ScSingleRefData& rRef,
                           ScExternalRefCache::TokenRef& rToken, ScExternalRefCache::CellFormat* pFmt = nullptr);
-
 void PopExternalDoubleRef(sal_uInt16& rFileId, OUString& rTabName, ScComplexRefData& rRef);
 void PopExternalDoubleRef(ScExternalRefCache::TokenArrayRef& rArray);
 void PopExternalDoubleRef(ScMatrixRef& rMat);
 void GetExternalDoubleRef(sal_uInt16 nFileId, const OUString& rTabName, const ScComplexRefData& aData, ScExternalRefCache::TokenArrayRef& rArray);
 bool PopDoubleRefOrSingleRef( ScAddress& rAdr );
 void PopDoubleRefPushMatrix();
-// If MatrixFormula: convert svDoubleRef to svMatrix, create JumpMatrix.
+// If MatrixFormula: convert formula::svDoubleRef to svMatrix, create JumpMatrix.
 // Else convert area reference parameters marked as ForceArray to array.
 // Returns true if JumpMatrix created.
 bool ConvertMatrixParameters();
-// If MatrixFormula: ConvertMatrixJumpConditionToMatrix()
-inline void MatrixJumpConditionToMatrix();
-// For MatrixFormula (preconditions already checked by
-// MatrixJumpConditionToMatrix()): convert svDoubleRef to svMatrix, or if
-// JumpMatrix currently in effect convert also other types to svMatrix so
-// another JumpMatrix will be created by jump commands.
-void ConvertMatrixJumpConditionToMatrix();
+inline void MatrixDoubleRefToMatrix();      // if MatrixFormula: PopDoubleRefPushMatrix
 // If MatrixFormula or ForceArray: ConvertMatrixParameters()
 inline bool MatrixParameterConversion();
 ScMatrixRef PopMatrix();
 sc::RangeMatrix PopRangeMatrix();
 void QueryMatrixType(ScMatrixRef& xMat, short& rRetTypeExpr, sal_uLong& rRetIndexExpr);
-
-formula::FormulaToken* CreateDoubleOrTypedToken( double fVal );
 
 void PushDouble(double nVal);
 void PushInt( int nVal );
@@ -396,7 +371,7 @@ void PushSingleRef( const ScRefAddress& rRef );
 void PushDoubleRef( const ScRefAddress& rRef1, const ScRefAddress& rRef2 );
 void PushMatrix( const sc::RangeMatrix& rMat );
 void PushMatrix(const ScMatrixRef& pMat);
-void PushError( FormulaError nError );
+void PushError( sal_uInt16 nError );
 /// Raw stack type without default replacements.
 formula::StackVar GetRawStackType();
 /// Stack type with replacement of defaults, e.g. svMissing and formula::svEmptyCell will result in formula::svDouble.
@@ -412,18 +387,7 @@ double GetDoubleFromMatrix(const ScMatrixRef& pMat);
 double GetDouble();
 double GetDoubleWithDefault(double nDefault);
 bool IsMissing();
-sal_Int32 double_to_int32(double fVal);
-/** if GetDouble() not within int32 limits sets nGlobalError and returns SAL_MAX_INT32 */
-sal_Int32 GetInt32();
-/** if GetDoubleWithDefault() not within int32 limits sets nGlobalError and returns SAL_MAX_INT32 */
-sal_Int32 GetInt32WithDefault( sal_Int32 nDefault );
-/** if GetDouble() not within int16 limits sets nGlobalError and returns SAL_MAX_INT16 */
-sal_Int16 GetInt16();
-/** if GetDouble() not within uint32 limits sets nGlobalError and returns SAL_MAX_UINT32 */
-sal_uInt32 GetUInt32();
 bool GetBool() { return GetDouble() != 0.0; }
-/// returns TRUE if double (or error, check nGlobalError), else FALSE
-bool GetDoubleOrString( double& rValue, svl::SharedString& rString );
 svl::SharedString GetString();
 svl::SharedString GetStringFromMatrix(const ScMatrixRef& pMat);
 // pop matrix and obtain one element, upper left or according to jump matrix
@@ -440,7 +404,7 @@ void ScTableOp();                                       // repeated operations
 
 // common helper functions
 
-void CurFmtToFuncFmt()
+inline void CurFmtToFuncFmt()
     { nFuncFmtType = nCurFmtType; nFuncFmtIndex = nCurFmtIndex; }
 
 /** Check if a double is suitable as string position or length argument.
@@ -591,7 +555,7 @@ double IterateParametersIf( ScIterFuncIf );
 void ScCountIf();
 void ScSumIf();
 void ScAverageIf();
-void IterateParametersIfs( sc::ParamIfsResult& rRes );
+double IterateParametersIfs( ScIterFuncIfs );
 void ScSumIfs();
 void ScAverageIfs();
 void ScCountIfs();
@@ -652,7 +616,7 @@ void ScExternal();
 void ScMissing();
 void ScMacro();
 bool SetSbxVariable( SbxVariable* pVar, const ScAddress& );
-FormulaError GetErrorType();
+sal_uInt16 GetErrorType();
 void ScErrorType();
 void ScErrorType_ODF();
 void ScDBArea();
@@ -690,10 +654,10 @@ void ScGetWeekOfYear();
 void ScGetIsoWeekOfYear();
 void ScWeeknumOOo();
 void ScEasterSunday();
-FormulaError GetWeekendAndHolidayMasks( const sal_uInt8 nParamCount, const sal_uInt32 nNullDate,
+sal_uInt16 GetWeekendAndHolidayMasks( const sal_uInt8 nParamCount, const sal_uInt32 nNullDate,
         ::std::vector<double>& rSortArray, bool bWeekendMask[ 7 ] );
-FormulaError GetWeekendAndHolidayMasks_MS( const sal_uInt8 nParamCount, const sal_uInt32 nNullDate,
-        ::std::vector<double>& rSortArray, bool bWeekendMask[ 7 ], bool bWorkdayFunction );
+sal_uInt16 GetWeekendAndHolidayMasks_MS( const sal_uInt8 nParamCount, const sal_uInt32 nNullDate,
+        ::std::vector<double>& rSortArray, bool bWeekendMask[ 7 ] );
 static inline sal_Int16 GetDayOfWeek( sal_Int32 n );
 void ScNetWorkdays( bool bOOXML_Version );
 void ScWorkday_MS();
@@ -736,9 +700,8 @@ void ScStyle();
 void ScDde();
 void ScBase();
 void ScDecimal();
-void ScConvertOOo();
+void ScConvert();
 void ScEuroConvert();
-void ScRoundSignificant();
 
 // financial functions
 void ScNPV();
@@ -746,8 +709,8 @@ void ScIRR();
 void ScMIRR();
 void ScISPMT();
 
-static double ScGetBw(double fInterest, double fZzr, double fRmz,
-                      double fZw, bool bPayInAdvance);
+static double ScGetBw(double fZins, double fZzr, double fRmz,
+                      double fZw, double fF);
 void ScPV();
 void ScSYD();
 static double ScGetGDA(double fWert, double fRest, double fDauer,
@@ -757,29 +720,30 @@ void ScDB();
 static double ScInterVDB(double fWert,double fRest,double fDauer,double fDauer1,
                 double fPeriode,double fFactor);
 void ScVDB();
-void ScPDuration();
+void ScDuration();
 void ScSLN();
-static double ScGetRmz(double fInterest, double fZzr, double fBw,
-                       double fZw, bool bPayInAdvance);
+static double ScGetRmz(double fZins, double fZzr, double fBw,
+                       double fZw, double fF);
 void ScPMT();
 void ScRRI();
-static double ScGetZw(double fInterest, double fZzr, double fRmz,
-                      double fBw, bool bFlag);
+static double ScGetZw(double fZins, double fZzr, double fRmz,
+                      double fBw, double fF);
 void ScFV();
 void ScNper();
 static bool RateIteration(double fNper, double fPayment, double fPv,
-                                double fFv, bool bPayType, double& fGuess);
+                                double fFv, double fPayType, double& fGuess);
 void ScRate();
-double ScGetCompoundInterest(double fInterest, double fZr, double fZzr, double fBw,
-                         double fZw, bool bPayInAdvance, double& fRmz);
+double ScGetCompoundInterest(double fZins, double fZr, double fZzr, double fBw,
+                         double fZw, double fF, double& fRmz);
 void ScIpmt();
 void ScPpmt();
 void ScCumIpmt();
 void ScCumPrinc();
-void ScEffect();
+void ScEffective();
 void ScNominal();
 void ScMod();
 void ScIntercept();
+static double ScGetGCD(double fx, double fy);
 void ScGCD();
 void ScLCM();
 
@@ -831,7 +795,6 @@ static SC_DLLPUBLIC double integralPhi(double x);
 static SC_DLLPUBLIC double gaussinv(double x);
 static SC_DLLPUBLIC double GetPercentile( ::std::vector<double> & rArray, double fPercentile );
 
-
 private:
 double GetBetaDist(double x, double alpha, double beta);  //cumulative distribution function
 double GetBetaDistPDF(double fX, double fA, double fB); //probability density function)
@@ -858,17 +821,18 @@ void ScFisher();
 void ScFisherInv();
 void ScFact();
 void ScNormDist( int nMinParamCount );
-void ScGammaDist( bool bODFF );
+void ScGammaDist( int nMinParamCount );
 void ScGammaInv();
 void ScExpDist();
 void ScBinomDist();
-void ScPoissonDist( bool bODFF );
+void ScPoissonDist();
 void ScCombin();
 void ScCombinA();
 void ScPermut();
 void ScPermutationA();
 void ScB();
-void ScHypGeomDist( int nMinParamCount );
+void ScHypGeomDist();
+void ScHypGeomDist_MS();
 void ScLogNormDist( int nMinParamCount );
 void ScLogNormInv();
 void ScTDist();
@@ -876,7 +840,7 @@ void ScTDist_MS();
 void ScTDist_T( int nTails );
 void ScFDist();
 void ScFDist_LT();
-void ScChiDist( bool bODFF);   // for LEGACY.CHIDIST, returns right tail
+void ScChiDist();   // for LEGACY.CHIDIST, returns right tail
 void ScChiSqDist(); // returns left tail or density
 void ScChiSqDist_MS();
 void ScChiSqInv(); //invers to CHISQDIST
@@ -902,7 +866,7 @@ double GetMedian( ::std::vector<double> & rArray );
 double GetPercentileExclusive( ::std::vector<double> & rArray, double fPercentile );
 void GetNumberSequenceArray( sal_uInt8 nParamCount, ::std::vector<double>& rArray, bool bConvertTextInArray );
 void GetSortArray( sal_uInt8 nParamCount, ::std::vector<double>& rSortArray, ::std::vector<long>* pIndexOrder, bool bConvertTextInArray, bool bAllowEmptyArray );
-static void QuickSort(::std::vector<double>& rSortArray, ::std::vector<long>* pIndexOrder);
+static void QuickSort(::std::vector<double>& rSortArray, ::std::vector<long>* pIndexOrder = nullptr);
 void ScModalValue();
 void ScModalValue_Multi();
 void ScAveDev();
@@ -966,26 +930,29 @@ public:
 
     formula::StackVar Interpret();
 
-    void SetError(FormulaError nError)
-            { if (nError != FormulaError::NONE && nGlobalError == FormulaError::NONE) nGlobalError = nError; }
+    void SetError(sal_uInt16 nError)
+            { if (nError && !nGlobalError) nGlobalError = nError; }
     void AssertFormulaMatrix();
 
     void SetLinkManager(sfx2::LinkManager* pLinkMgr)
             { mpLinkManager = pLinkMgr; }
 
-    FormulaError                GetError() const            { return nGlobalError; }
+    sal_uInt16                  GetError() const            { return nGlobalError; }
     formula::StackVar           GetResultType() const       { return xResult->GetType(); }
     svl::SharedString GetStringResult() const;
     double                      GetNumResult() const        { return xResult->GetDouble(); }
-    const formula::FormulaConstTokenRef& GetResultToken() const { return xResult; }
+    const formula::FormulaTokenRef& GetResultToken() const      { return xResult; }
     short                       GetRetFormatType() const    { return nRetFmtType; }
     sal_uLong                   GetRetFormatIndex() const   { return nRetFmtIndex; }
 };
 
-inline void ScInterpreter::MatrixJumpConditionToMatrix()
+inline void ScInterpreter::MatrixDoubleRefToMatrix()
 {
-    if (bMatrixFormula || pCur->IsInForceArray())
-        ConvertMatrixJumpConditionToMatrix();
+    if ( (bMatrixFormula || pCur->IsInForceArray()) && GetStackType() == formula::svDoubleRef )
+    {
+        GetTokenMatrixMap();    // make sure it exists, create if not.
+        PopDoubleRefPushMatrix();
+    }
 }
 
 inline bool ScInterpreter::MatrixParameterConversion()
@@ -1067,7 +1034,7 @@ inline bool ScInterpreter::CheckStringResultLen( OUString& rResult, const OUStri
 {
     if ( rResult.getLength() + rAdd.getLength() > SAL_MAX_UINT16 )
     {
-        SetError( FormulaError::StringOverflow );
+        SetError( formula::errStringOverflow );
         rResult.clear();
         return false;
     }
@@ -1078,11 +1045,11 @@ inline void ScInterpreter::TreatDoubleError( double& rVal )
 {
     if ( !::rtl::math::isFinite( rVal ) )
     {
-        FormulaError nErr = GetDoubleErrorValue( rVal );
-        if ( nErr != FormulaError::NONE )
+        sal_uInt16 nErr = formula::GetDoubleErrorValue( rVal );
+        if ( nErr )
             SetError( nErr );
         else
-            SetError( FormulaError::NoValue );
+            SetError( formula::errNoValue );
         rVal = 0.0;
     }
 }

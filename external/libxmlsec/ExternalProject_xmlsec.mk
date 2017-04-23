@@ -21,6 +21,21 @@ $(eval $(call gb_ExternalProject_register_targets,xmlsec,\
 
 ifeq ($(OS),WNT)
 
+ifeq ($(COM),GCC)
+$(call gb_ExternalProject_get_state_target,xmlsec,build) :
+	$(call gb_ExternalProject_run,build,\
+		autoreconf \
+		&& ./configure --build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM) \
+			--without-libxslt --without-openssl --without-gnutls --disable-crypto-dl \
+			$(if $(SYSTEM_NSS),,--disable-pkgconfig) \
+			CC="$(CC) -mthreads $(if $(MINGW_SHARED_GCCLIB),-shared-libgcc)" \
+			LDFLAGS="-Wl$(COMMA)--no-undefined $(ILIB:;= -L)" \
+			LIBS="$(if $(MINGW_SHARED_GXXLIB),$(MINGW_SHARED__LIBSTDCPP))" \
+			lt_cv_deplibs_check_method=pass_all \
+		&& $(MAKE) \
+	)
+
+else
 $(call gb_ExternalProject_get_state_target,xmlsec,build) :
 	$(call gb_ExternalProject_run,build,\
 		cscript /e:javascript configure.js crypto=mscrypto xslt=no iconv=no static=no \
@@ -29,6 +44,7 @@ $(call gb_ExternalProject_get_state_target,xmlsec,build) :
 		&& unset MAKEFLAGS \
 		&& LIB="$(ILIB)" nmake \
 	,win32)
+endif
 
 else
 
@@ -40,7 +56,7 @@ $(call gb_ExternalProject_get_state_target,xmlsec,build) :
 		&& ./configure \
 			--with-pic --disable-shared --disable-crypto-dl --without-libxslt --without-gnutls \
 			$(if $(verbose),--disable-silent-rules,--enable-silent-rules) \
-			CFLAGS="$(CFLAGS) $(if $(debug),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUGINFO_FLAGS) $(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS))" \
+			CFLAGS="$(CFLAGS) $(if $(debug),$(gb_COMPILERNOOPTFLAGS) $(gb_DEBUG_CFLAGS),$(gb_COMPILEROPTFLAGS))" \
 			$(if $(or $(filter-out ANDROID,$(OS)),$(DISABLE_OPENSSL)),--without-openssl,--with-openssl=$(call gb_UnpackedTarball_get_dir,openssl)) \
 			$(if $(filter MACOSX,$(OS)),--prefix=/@.__________________________________________________OOO) \
 			$(if $(SYSTEM_NSS),,$(if $(filter MACOSX,$(OS)),--disable-pkgconfig)) \

@@ -42,7 +42,7 @@ class ScRedlinData : public RedlinData
 {
 public:
                     ScRedlinData();
-                    virtual ~ScRedlinData() override;
+                    virtual ~ScRedlinData();
     SCTAB           nTable;
     SCCOL           nCol;
     SCROW           nRow;
@@ -55,9 +55,9 @@ public:
 class ScAcceptChgDlg : public SfxModelessDialog
 {
 private:
+
     Idle                    aSelectionIdle;
     Idle                    aReOpenIdle;
-    VclPtr<PopupMenu>       m_xPopup;
     VclPtr<SvxAcceptChgCtr> m_pAcceptChgCtr;
     ScViewData*             pViewData;
     ScDocument*             pDoc;
@@ -87,28 +87,30 @@ private:
     sal_uLong                   nRejectCount;
     bool                    bAcceptEnableFlag:1;
     bool                    bRejectEnableFlag:1;
+    bool                    bNeedsUpdate:1;
     bool                    bIgnoreMsg:1;
     bool                    bNoSelection:1;
     bool                    bHasFilterEntry:1;
     bool                    bUseColor:1;
 
     void            Init();
+    void            InitFilter();
 
-    DECL_LINK( FilterHandle, SvxTPFilter*, void );
-    DECL_LINK( RefHandle, SvxTPFilter*, void );
-    DECL_LINK( RejectHandle, SvxTPView*, void );
-    DECL_LINK( AcceptHandle, SvxTPView*, void );
-    DECL_LINK( RejectAllHandle, SvxTPView*, void );
-    DECL_LINK( AcceptAllHandle, SvxTPView*, void );
-    DECL_LINK( ExpandingHandle, SvTreeListBox*, bool );
-    DECL_LINK( SelectHandle, SvTreeListBox*, void );
-    DECL_LINK( RefInfoHandle, const OUString*, void );
+    DECL_LINK_TYPED( FilterHandle, SvxTPFilter*, void );
+    DECL_LINK_TYPED( RefHandle, SvxTPFilter*, void );
+    DECL_LINK_TYPED( RejectHandle, SvxTPView*, void );
+    DECL_LINK_TYPED( AcceptHandle, SvxTPView*, void );
+    DECL_LINK_TYPED( RejectAllHandle, SvxTPView*, void );
+    DECL_LINK_TYPED( AcceptAllHandle, SvxTPView*, void );
+    DECL_LINK_TYPED( ExpandingHandle, SvTreeListBox*, bool );
+    DECL_LINK_TYPED( SelectHandle, SvTreeListBox*, void );
+    DECL_LINK_TYPED( RefInfoHandle, const OUString*, void );
 
-    DECL_LINK( UpdateSelectionHdl, Timer*, void );
-    DECL_LINK( ChgTrackModHdl, ScChangeTrack&, void );
-    DECL_LINK( CommandHdl, SvSimpleTable*, void );
-    DECL_LINK( ReOpenTimerHdl, Timer*, void );
-    DECL_LINK( ColCompareHdl, const SvSortData*, sal_Int32 );
+    DECL_LINK_TYPED( UpdateSelectionHdl, Idle*, void );
+    DECL_LINK_TYPED( ChgTrackModHdl, ScChangeTrack&, void );
+    DECL_LINK_TYPED( CommandHdl, SvSimpleTable*, void );
+    DECL_LINK_TYPED( ReOpenTimerHdl, Idle*, void );
+    DECL_LINK_TYPED( ColCompareHdl, const SvSortData*, sal_Int32 );
 
 protected:
 
@@ -119,15 +121,15 @@ protected:
 
     OUString* MakeTypeString(ScChangeActionType eType);
 
-    SvTreeListEntry* AppendChangeAction(
+    SvTreeListEntry* InsertChangeAction(
         const ScChangeAction* pScChangeAction,ScChangeActionState eState,
         SvTreeListEntry* pParent=nullptr,bool bDelMaster = false,
-        bool bDisabled = false);
+        bool bDisabled = false,sal_uLong nPos = TREELIST_APPEND);
 
-    SvTreeListEntry* AppendFilteredAction(
+    SvTreeListEntry* InsertFilteredAction(
         const ScChangeAction* pScChangeAction,ScChangeActionState eState,
         SvTreeListEntry* pParent = nullptr,bool bDelMaster = false,
-        bool bDisabled = false);
+        bool bDisabled = false, sal_uLong nPos = TREELIST_APPEND);
 
     SvTreeListEntry*    InsertChangeActionContent(const ScChangeActionContent* pScChangeAction,
                                               SvTreeListEntry* pParent,sal_uLong nSpecial);
@@ -161,10 +163,12 @@ public:
                     ScAcceptChgDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                ScViewData*      ptrViewData);
 
-                    virtual ~ScAcceptChgDlg() override;
+                    virtual ~ScAcceptChgDlg();
     virtual void    dispose() override;
 
     void            ReInit(ScViewData* ptrViewData);
+
+    virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
 
     void            Initialize (SfxChildWinInfo* pInfo);
     virtual void    FillInfo(SfxChildWinInfo&) const override;

@@ -59,7 +59,7 @@ private:
 public:
     SwSrcView(SfxViewFrame* pFrame, SfxViewShell*);
 
-    virtual ~SwSrcView() override;
+    virtual ~SwSrcView();
 
     SwDocShell*         GetDocShell();
     void                SaveContent(const OUString& rTmpFile);
@@ -80,6 +80,7 @@ public:
 
     sal_Int32       PrintSource( OutputDevice *pOutDev, sal_Int32 nPage, bool bCalcNumPagesOnly );
 
+    void            SourceSaved() {bSourceSaved = true;}
     bool            HasSourceSaved() const {return bSourceSaved;}
 
 };

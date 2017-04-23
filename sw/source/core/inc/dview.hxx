@@ -79,7 +79,7 @@ protected:
     virtual SdrUndoManager* getSdrUndoManagerForEnhancedTextEdit() const override;
 
 public:
-    SwDrawView( SwViewShellImp &rI, SdrModel *pMd, OutputDevice* pOutDev );
+    SwDrawView( SwViewShellImp &rI, SdrModel *pMd, OutputDevice* pOutDev=nullptr );
 
     // from base class
     virtual SdrObject*   GetMaxToTopObj(SdrObject* pObj) const override;
@@ -92,8 +92,8 @@ public:
 
     virtual void         ObjOrderChanged( SdrObject* pObj, sal_uLong nOldPos,
                                             sal_uLong nNewPos ) override;
-    virtual bool TakeDragLimit(SdrDragMode eMode, tools::Rectangle& rRect) const override;
-    virtual void MakeVisible( const tools::Rectangle&, vcl::Window &rWin ) override;
+    virtual bool TakeDragLimit(SdrDragMode eMode, Rectangle& rRect) const override;
+    virtual void MakeVisible( const Rectangle&, vcl::Window &rWin ) override;
     virtual void CheckPossibilities() override;
 
     const SwViewShellImp &Imp() const { return rImp; }
@@ -104,7 +104,7 @@ public:
 
     virtual void DeleteMarked() override;
 
-    void ValidateMarkList() { FlushComeBackTimer(); }
+    inline void ValidateMarkList() { FlushComeBackTimer(); }
 
     // #i99665#
     bool IsAntiAliasing() const;
@@ -112,9 +112,6 @@ public:
     // method to replace marked/selected <SwDrawVirtObj>
     // by its reference object for delete of selection and group selection
     static void ReplaceMarkedDrawVirtObjs( SdrMarkView& _rMarkView );
-
-    /// See SdrMarkView::GetSfxViewShell().
-    SfxViewShell* GetSfxViewShell() const override;
 };
 
 #endif

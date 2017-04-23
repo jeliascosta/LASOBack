@@ -46,7 +46,7 @@ using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star;
 
-#define ROOTNODE_ADDONMENU                              "Office.Addons"
+#define ROOTNODE_ADDONMENU                              OUString("Office.Addons" )
 #define PATHDELIMITER                                   OUString("/"             )
 #define SEPARATOR_URL                                   "private:separator"
 
@@ -165,14 +165,14 @@ class AddonsOptions_Impl : public ConfigItem
         //  constructor / destructor
 
          AddonsOptions_Impl();
-        virtual ~AddonsOptions_Impl() override;
+        virtual ~AddonsOptions_Impl();
 
         //  overridden methods of baseclass
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
-            @descr      This method is called from the ConfigManager before application ends or from the
-                        PropertyChangeListener if the sub tree broadcasts changes. You must update your
+            @descr      These method is called from the ConfigManager before application ends or from the
+                         PropertyChangeListener if the sub tree broadcasts changes. You must update your
                         internal values.
 
             @seealso    baseclass ConfigItem
@@ -202,6 +202,7 @@ class AddonsOptions_Impl : public ConfigItem
         bool                                            GetMergeToolbarInstructions( const OUString& rToolbarName, MergeToolbarInstructionContainer& rToolbarInstructions ) const;
         const MergeStatusbarInstructionContainer&       GetMergeStatusbarInstructions() const { return m_aCachedStatusbarMergingInstructions;}
         void                                            ReadConfigurationData();
+
 
     private:
         enum ImageSize
@@ -234,7 +235,7 @@ class AddonsOptions_Impl : public ConfigItem
         typedef std::unordered_map< OUString, MergeToolbarInstructionContainer, OUStringHash > ToolbarMergingInstructions;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent our module tree
+            @short      return list of key names of our configuration management which represent oue module tree
             @descr      These methods return the current list of key names! We need it to get needed values from our
                         configuration management!
             @param      "nCount"     ,   returns count of menu entries for "new"
@@ -274,8 +275,6 @@ class AddonsOptions_Impl : public ConfigItem
         Sequence< OUString > GetPropertyNamesStatusbarItem( const ::rtl::OUString& aPropertyRootNode ) const;
         Sequence< OUString > GetPropertyNamesImages( const OUString& aPropertyRootNode ) const;
         bool                 CreateImageFromSequence( Image& rImage, Sequence< sal_Int8 >& rBitmapDataSeq ) const;
-
-        DECL_LINK(NotifyEvent, void*, void);
 
         virtual void ImplCommit() override;
 
@@ -411,7 +410,7 @@ void AddonsOptions_Impl::ReadConfigurationData()
 
 void AddonsOptions_Impl::Notify( const Sequence< OUString >& /*lPropertyNames*/ )
 {
-    Application::PostUserEvent(LINK(this, AddonsOptions_Impl, NotifyEvent));
+    Application::PostUserEvent( LINK( nullptr, AddonsOptions, Notify ) );
 }
 
 //  public method
@@ -471,11 +470,12 @@ bool AddonsOptions_Impl::GetMergeToolbarInstructions(
         return false;
 }
 
+
 //  public method
 
 static Image ScaleImage( const Image &rImage, bool bBig )
 {
-    Size aSize = ToolBox::GetDefaultImageSize(bBig ? ToolBoxButtonSize::Large : ToolBoxButtonSize::Small);
+    Size aSize = ToolBox::GetDefaultImageSize(bBig);
     BitmapEx aScaleBmp(rImage.GetBitmapEx());
     SAL_INFO("fwk", "Addons: expensive scale image from "
              << aScaleBmp.GetSizePixel() << " to " << aSize);
@@ -1035,11 +1035,11 @@ bool AddonsOptions_Impl::ReadStatusBarItem(
     if (( aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_URL ] >>= aURL ) && aURL.getLength() > 0 )
     {
         aStatusbarItem[ OFFSET_STATUSBARITEM_URL        ].Value <<= aURL;
-        aStatusbarItem[ OFFSET_STATUSBARITEM_TITLE      ].Value = aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_TITLE     ];
-        aStatusbarItem[ OFFSET_STATUSBARITEM_CONTEXT    ].Value = aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_CONTEXT   ];
-        aStatusbarItem[ OFFSET_STATUSBARITEM_ALIGN      ].Value = aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_ALIGN     ];
-        aStatusbarItem[ OFFSET_STATUSBARITEM_AUTOSIZE   ].Value = aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_AUTOSIZE  ];
-        aStatusbarItem[ OFFSET_STATUSBARITEM_OWNERDRAW  ].Value = aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_OWNERDRAW ];
+        aStatusbarItem[ OFFSET_STATUSBARITEM_TITLE      ].Value <<= aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_TITLE     ];
+        aStatusbarItem[ OFFSET_STATUSBARITEM_CONTEXT    ].Value <<= aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_CONTEXT   ];
+        aStatusbarItem[ OFFSET_STATUSBARITEM_ALIGN      ].Value <<= aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_ALIGN     ];
+        aStatusbarItem[ OFFSET_STATUSBARITEM_AUTOSIZE   ].Value <<= aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_AUTOSIZE  ];
+        aStatusbarItem[ OFFSET_STATUSBARITEM_OWNERDRAW  ].Value <<= aStatusbarItemNodePropValues[ OFFSET_STATUSBARITEM_OWNERDRAW ];
 
         // Configuration uses hyper for long. Therefore transform into sal_Int32
         sal_Int64 nValue( 0 );
@@ -1080,7 +1080,7 @@ bool AddonsOptions_Impl::ReadMenuItem( const OUString& aMenuNodeName, Sequence< 
             aMenuItem[ OFFSET_MENUITEM_URL              ].Value <<= aPopupMenuURL;
             aMenuItem[ OFFSET_MENUITEM_TARGET           ].Value <<= m_aEmpty;
             aMenuItem[ OFFSET_MENUITEM_IMAGEIDENTIFIER  ].Value <<= aPopupMenuImageId;
-            aMenuItem[ OFFSET_MENUITEM_CONTEXT          ].Value = aMenuItemNodePropValues[ OFFSET_MENUITEM_CONTEXT ];
+            aMenuItem[ OFFSET_MENUITEM_CONTEXT          ].Value <<= aMenuItemNodePropValues[ OFFSET_MENUITEM_CONTEXT ];
 
             // Continue to read the sub menu nodes
             Sequence< Sequence< PropertyValue > > aSubMenuSeq;
@@ -1100,9 +1100,9 @@ bool AddonsOptions_Impl::ReadMenuItem( const OUString& aMenuNodeName, Sequence< 
              ReadAndAssociateImages( aStrValue, aMenuImageId );
 
             aMenuItem[ OFFSET_MENUITEM_URL              ].Value <<= aStrValue;
-            aMenuItem[ OFFSET_MENUITEM_TARGET           ].Value = aMenuItemNodePropValues[ OFFSET_MENUITEM_TARGET         ];
+            aMenuItem[ OFFSET_MENUITEM_TARGET           ].Value <<= aMenuItemNodePropValues[ OFFSET_MENUITEM_TARGET         ];
             aMenuItem[ OFFSET_MENUITEM_IMAGEIDENTIFIER  ].Value <<= aMenuImageId;
-            aMenuItem[ OFFSET_MENUITEM_CONTEXT          ].Value = aMenuItemNodePropValues[ OFFSET_MENUITEM_CONTEXT        ];
+            aMenuItem[ OFFSET_MENUITEM_CONTEXT          ].Value <<= aMenuItemNodePropValues[ OFFSET_MENUITEM_CONTEXT        ];
             aMenuItem[ OFFSET_MENUITEM_SUBMENU          ].Value <<= Sequence< Sequence< PropertyValue > >(); // Submenu set!
 
             bResult = true;
@@ -1145,7 +1145,7 @@ bool AddonsOptions_Impl::ReadPopupMenu( const OUString& aPopupMenuNodeName, Sequ
             OUString aPopupMenuURL = GeneratePrefixURL();
 
             aPopupMenu[ OFFSET_POPUPMENU_URL        ].Value <<= aPopupMenuURL;
-            aPopupMenu[ OFFSET_POPUPMENU_CONTEXT    ].Value = aPopupMenuNodePropValues[ OFFSET_POPUPMENU_CONTEXT ];
+            aPopupMenu[ OFFSET_POPUPMENU_CONTEXT    ].Value <<= aPopupMenuNodePropValues[ OFFSET_POPUPMENU_CONTEXT ];
 
             // Continue to read the sub menu nodes
             Sequence< Sequence< PropertyValue > > aSubMenuSeq;
@@ -1192,7 +1192,7 @@ bool AddonsOptions_Impl::ReadToolBarItem( const OUString& aToolBarItemNodeName, 
     {
         if ( aURL == SEPARATOR_URL )
         {
-            // A separator toolbar item only needs a URL
+            // A speparator toolbar item only needs a URL
             aToolBarItem[ OFFSET_TOOLBARITEM_URL                ].Value <<= aURL;
             aToolBarItem[ OFFSET_TOOLBARITEM_TITLE              ].Value <<= m_aEmpty;
             aToolBarItem[ OFFSET_TOOLBARITEM_TARGET             ].Value <<= m_aEmpty;
@@ -1214,10 +1214,10 @@ bool AddonsOptions_Impl::ReadToolBarItem( const OUString& aToolBarItemNodeName, 
 
             aToolBarItem[ OFFSET_TOOLBARITEM_URL                ].Value <<= aURL;
             aToolBarItem[ OFFSET_TOOLBARITEM_TITLE              ].Value <<= aTitle;
-            aToolBarItem[ OFFSET_TOOLBARITEM_TARGET             ].Value = aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_TARGET      ];
+            aToolBarItem[ OFFSET_TOOLBARITEM_TARGET             ].Value <<= aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_TARGET      ];
             aToolBarItem[ OFFSET_TOOLBARITEM_IMAGEIDENTIFIER    ].Value <<= aImageId;
-            aToolBarItem[ OFFSET_TOOLBARITEM_CONTEXT            ].Value = aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_CONTEXT     ];
-            aToolBarItem[ OFFSET_TOOLBARITEM_CONTROLTYPE        ].Value = aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_CONTROLTYPE ];
+            aToolBarItem[ OFFSET_TOOLBARITEM_CONTEXT            ].Value <<= aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_CONTEXT     ];
+            aToolBarItem[ OFFSET_TOOLBARITEM_CONTROLTYPE        ].Value <<= aToolBarItemNodePropValues[ OFFSET_TOOLBARITEM_CONTROLTYPE ];
 
             // Configuration uses hyper for long. Therefore transform into sal_Int32
             sal_Int64 nValue( 0 );
@@ -1273,7 +1273,7 @@ Image AddonsOptions_Impl::ReadImageFromURL(const OUString& aImageURL)
 {
     Image aImage;
 
-    SvStream* pStream = UcbStreamHelper::CreateStream( aImageURL, StreamMode::STD_READ );
+    SvStream* pStream = UcbStreamHelper::CreateStream( aImageURL, STREAM_STD_READ );
     if ( pStream && ( pStream->GetErrorCode() == 0 ))
     {
         // Use graphic class to also support more graphic formats (bmp,png,...)
@@ -1376,7 +1376,7 @@ bool AddonsOptions_Impl::CreateImageFromSequence( Image& rImage, Sequence< sal_I
 
     if ( rBitmapDataSeq.getLength() > 0 )
     {
-        SvMemoryStream  aMemStream( rBitmapDataSeq.getArray(), rBitmapDataSeq.getLength(), StreamMode::STD_READ );
+        SvMemoryStream  aMemStream( rBitmapDataSeq.getArray(), rBitmapDataSeq.getLength(), STREAM_STD_READ );
         BitmapEx        aBitmapEx;
 
         ReadDIBBitmapEx(aBitmapEx, aMemStream);
@@ -1471,30 +1471,43 @@ Sequence< OUString > AddonsOptions_Impl::GetPropertyNamesImages( const OUString&
     return lResult;
 }
 
-namespace{
-    //global
-    std::weak_ptr<AddonsOptions_Impl> g_pAddonsOptions;
-}
+//  initialize static member
+//  DON'T DO IT IN YOUR HEADER!
+//  see definition for further information
+
+AddonsOptions_Impl*     AddonsOptions::m_pDataContainer = nullptr;
+sal_Int32               AddonsOptions::m_nRefCount      = 0;
+
+//  constructor
 
 AddonsOptions::AddonsOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetOwnStaticMutex() );
-
-    m_pImpl = g_pAddonsOptions.lock();
-    if( !m_pImpl )
+    // Increase our refcount ...
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<AddonsOptions_Impl>();
-        g_pAddonsOptions = m_pImpl;
+        m_pDataContainer = new AddonsOptions_Impl;
     }
 }
+
+//  destructor
 
 AddonsOptions::~AddonsOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetOwnStaticMutex() );
-
-    m_pImpl.reset();
+    // Decrease our refcount.
+    --m_nRefCount;
+    // If last instance was deleted ...
+    // we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 //  public method
@@ -1502,7 +1515,7 @@ AddonsOptions::~AddonsOptions()
 bool AddonsOptions::HasAddonsMenu() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->HasAddonsMenu();
+    return m_pDataContainer->HasAddonsMenu();
 }
 
 //  public method
@@ -1510,7 +1523,7 @@ bool AddonsOptions::HasAddonsMenu() const
 sal_Int32 AddonsOptions::GetAddonsToolBarCount() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsToolBarCount();
+    return m_pDataContainer->GetAddonsToolBarCount();
 }
 
 //  public method
@@ -1518,7 +1531,7 @@ sal_Int32 AddonsOptions::GetAddonsToolBarCount() const
 const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsMenu() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsMenu();
+    return m_pDataContainer->GetAddonsMenu();
 }
 
 //  public method
@@ -1526,7 +1539,7 @@ const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsMenu() cons
 const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsMenuBarPart() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsMenuBarPart();
+    return m_pDataContainer->GetAddonsMenuBarPart();
 }
 
 //  public method
@@ -1534,7 +1547,7 @@ const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsMenuBarPart
 const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsToolBarPart( sal_uInt32 nIndex ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsToolBarPart( nIndex );
+    return m_pDataContainer->GetAddonsToolBarPart( nIndex );
 }
 
 //  public method
@@ -1542,7 +1555,7 @@ const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsToolBarPart
 const OUString AddonsOptions::GetAddonsToolbarResourceName( sal_uInt32 nIndex ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsToolbarResourceName( nIndex );
+    return m_pDataContainer->GetAddonsToolbarResourceName( nIndex );
 }
 
 //  public method
@@ -1550,7 +1563,7 @@ const OUString AddonsOptions::GetAddonsToolbarResourceName( sal_uInt32 nIndex ) 
 const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsHelpMenu() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetAddonsHelpMenu();
+    return m_pDataContainer->GetAddonsHelpMenu();
 }
 
 //  public method
@@ -1558,7 +1571,7 @@ const Sequence< Sequence< PropertyValue > >& AddonsOptions::GetAddonsHelpMenu() 
 const MergeMenuInstructionContainer& AddonsOptions::GetMergeMenuInstructions() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetMergeMenuInstructions();
+    return m_pDataContainer->GetMergeMenuInstructions();
 }
 
 //  public method
@@ -1568,14 +1581,14 @@ bool AddonsOptions::GetMergeToolbarInstructions(
     MergeToolbarInstructionContainer& rToolbarInstructions ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetMergeToolbarInstructions(
+    return m_pDataContainer->GetMergeToolbarInstructions(
         rToolbarName, rToolbarInstructions );
 }
 
 const MergeStatusbarInstructionContainer& AddonsOptions::GetMergeStatusbarInstructions() const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetMergeStatusbarInstructions();
+    return m_pDataContainer->GetMergeStatusbarInstructions();
 }
 
 //  public method
@@ -1583,7 +1596,7 @@ const MergeStatusbarInstructionContainer& AddonsOptions::GetMergeStatusbarInstru
 Image AddonsOptions::GetImageFromURL( const OUString& aURL, bool bBig, bool bNoScale ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pImpl->GetImageFromURL( aURL, bBig, bNoScale );
+    return m_pDataContainer->GetImageFromURL( aURL, bBig, bNoScale );
 }
 
 //  public method
@@ -1615,10 +1628,10 @@ Mutex& AddonsOptions::GetOwnStaticMutex()
     return *pMutex;
 }
 
-IMPL_LINK_NOARG(AddonsOptions_Impl, NotifyEvent, void*, void)
+IMPL_STATIC_LINK_NOARG_TYPED( AddonsOptions, Notify, void*, void )
 {
-    MutexGuard aGuard(AddonsOptions::GetOwnStaticMutex());
-    ReadConfigurationData();
+    MutexGuard aGuard( GetOwnStaticMutex() );
+    m_pDataContainer->ReadConfigurationData();
 }
 
 }

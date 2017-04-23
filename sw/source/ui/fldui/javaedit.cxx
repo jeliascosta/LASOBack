@@ -75,7 +75,7 @@ SwJavaEditDialog::SwJavaEditDialog(vcl::Window* pParent, SwWrtShell* pWrtSh) :
     pMgr = new SwFieldMgr(pSh);
     pField = static_cast<SwScriptField*>(pMgr->GetCurField());
 
-    bNew = !(pField && pField->GetTyp()->Which() == SwFieldIds::Script);
+    bNew = !(pField && pField->GetTyp()->Which() == RES_SCRIPTFLD);
 
     CheckTravel();
 
@@ -107,7 +107,7 @@ void SwJavaEditDialog::dispose()
     SvxStandardDialog::dispose();
 }
 
-IMPL_LINK_NOARG(SwJavaEditDialog, PrevHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwJavaEditDialog, PrevHdl, Button*, void)
 {
     pSh->EnterStdMode();
 
@@ -118,7 +118,7 @@ IMPL_LINK_NOARG(SwJavaEditDialog, PrevHdl, Button*, void)
     RadioButtonHdl(nullptr);
 }
 
-IMPL_LINK_NOARG(SwJavaEditDialog, NextHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwJavaEditDialog, NextHdl, Button*, void)
 {
     pSh->EnterStdMode();
 
@@ -129,7 +129,7 @@ IMPL_LINK_NOARG(SwJavaEditDialog, NextHdl, Button*, void)
     RadioButtonHdl(nullptr);
 }
 
-IMPL_LINK_NOARG(SwJavaEditDialog, OKHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwJavaEditDialog, OKHdl, Button*, void)
 {
     SetField();
     EndDialog( RET_OK );
@@ -154,8 +154,7 @@ void SwJavaEditDialog::CheckTravel()
         if( bNext )
             pMgr->GoPrev();
 
-        bPrev = pMgr->GoPrev();
-        if( bPrev )
+        if( ( bPrev = pMgr->GoPrev() ) )
             pMgr->GoNext();
         bTravel |= bNext || bPrev;
 
@@ -230,7 +229,7 @@ bool SwJavaEditDialog::IsUpdate() const
     return pField && ( sal_uInt32(bIsUrl ? 1 : 0) != pField->GetFormat() || pField->GetPar2() != aType || pField->GetPar1() != aText );
 }
 
-IMPL_LINK_NOARG(SwJavaEditDialog, RadioButtonHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwJavaEditDialog, RadioButtonHdl, Button*, void)
 {
     bool bEnable = m_pUrlRB->IsChecked();
     m_pUrlPB->Enable(bEnable);
@@ -249,19 +248,19 @@ IMPL_LINK_NOARG(SwJavaEditDialog, RadioButtonHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG( SwJavaEditDialog, InsertFileHdl, Button *, void )
+IMPL_LINK_NOARG_TYPED( SwJavaEditDialog, InsertFileHdl, Button *, void )
 {
     if ( !pFileDlg )
     {
         pFileDlg = new ::sfx2::FileDialogHelper(
             ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE,
-            FileDialogFlags::Insert, "swriter" );
+            FileDialogFlags::Insert, OUString("swriter") );
     }
 
     pFileDlg->StartExecuteModal( LINK( this, SwJavaEditDialog, DlgClosedHdl ) );
 }
 
-IMPL_LINK_NOARG(SwJavaEditDialog, DlgClosedHdl, sfx2::FileDialogHelper *, void)
+IMPL_LINK_NOARG_TYPED(SwJavaEditDialog, DlgClosedHdl, sfx2::FileDialogHelper *, void)
 {
     if ( pFileDlg->GetError() == ERRCODE_NONE )
     {

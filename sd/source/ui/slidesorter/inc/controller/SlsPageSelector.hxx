@@ -144,7 +144,7 @@ public:
     */
     void SetPageSelection (
         const std::shared_ptr<PageSelection>& rSelection,
-        const bool bUpdateCurrentPage);
+        const bool bUpdateCurrentPage = true);
 
     /** Call this method after the model has changed to set the number
         of selected pages.

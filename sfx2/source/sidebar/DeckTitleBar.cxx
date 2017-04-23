@@ -21,7 +21,7 @@
 #include <sfx2/sidebar/Theme.hxx>
 #include <sfx2/sfxresid.hxx>
 
-#include "Sidebar.hrc"
+#include <sfx2/sidebar/Sidebar.hrc>
 
 #include <vcl/image.hxx>
 
@@ -41,6 +41,7 @@ DeckTitleBar::DeckTitleBar (const OUString& rsTitle,
                             vcl::Window* pParentWindow,
                             const std::function<void()>& rCloserAction)
     : TitleBar(rsTitle, pParentWindow, GetBackgroundPaint())
+    , mnCloserItemIndex(1)
     , maCloserAction(rCloserAction)
     , mbIsCloserVisible(false)
 {
@@ -72,17 +73,17 @@ void DeckTitleBar::SetCloserVisible (const bool bIsCloserVisible)
     }
 }
 
-tools::Rectangle DeckTitleBar::GetTitleArea (const tools::Rectangle& rTitleBarBox)
+Rectangle DeckTitleBar::GetTitleArea (const Rectangle& rTitleBarBox)
 {
     Image aGripImage (Theme::GetImage(Theme::Image_Grip));
-    return tools::Rectangle(
+    return Rectangle(
         aGripImage.GetSizePixel().Width() + gaLeftGripPadding + gaRightGripPadding,
         rTitleBarBox.Top(),
         rTitleBarBox.Right(),
         rTitleBarBox.Bottom());
 }
 
-void DeckTitleBar::PaintDecoration(vcl::RenderContext& /*rRenderContext*/, const tools::Rectangle& /*rTitleBarBox*/)
+void DeckTitleBar::PaintDecoration(vcl::RenderContext& /*rRenderContext*/, const Rectangle& /*rTitleBarBox*/)
 {
 }
 
@@ -99,8 +100,9 @@ void DeckTitleBar::HandleToolBoxItemClick (const sal_uInt16 nItemIndex)
 
 css::uno::Reference<css::accessibility::XAccessible> DeckTitleBar::CreateAccessible()
 {
-    SetAccessibleName(msTitle);
-    SetAccessibleDescription(msTitle);
+    const OUString sAccessibleName(msTitle);
+    SetAccessibleName(sAccessibleName);
+    SetAccessibleDescription(sAccessibleName);
     return TitleBar::CreateAccessible();
 }
 

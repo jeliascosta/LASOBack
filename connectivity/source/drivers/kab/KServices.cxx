@@ -59,6 +59,7 @@ struct ProviderRequest
     {
     }
 
+    inline
     bool CREATE_PROVIDER(
                 const OUString& Implname,
                 const Sequence< OUString > & Services,
@@ -70,7 +71,7 @@ struct ProviderRequest
         {
             try
             {
-                xRet = creator( xServiceManager, sImplementationName,Factory, Services, nullptr);
+                xRet = creator( xServiceManager, sImplementationName,Factory, Services,0);
             }
             catch(...)
             {
@@ -88,7 +89,7 @@ extern "C" SAL_DLLPUBLIC_EXPORT void* SAL_CALL kab_component_getFactory(
                     void* pServiceManager,
                     void*)
 {
-    void* pRet = nullptr;
+    void* pRet = 0;
     if (pServiceManager)
     {
         ProviderRequest aReq(pServiceManager,pImplementationName);

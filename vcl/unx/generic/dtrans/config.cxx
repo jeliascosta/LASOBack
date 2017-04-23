@@ -18,7 +18,6 @@
  */
 
 #include <cstdio>
-#include <o3tl/any.hxx>
 #include <unotools/configitem.hxx>
 
 #include "X11_selection.hxx"
@@ -38,6 +37,7 @@ class DtransX11ConfigItem : public ::utl::ConfigItem
 
 public:
     DtransX11ConfigItem();
+    virtual ~DtransX11ConfigItem();
 
     sal_Int32 getSelectionTimeout() const { return m_nSelectionTimeout; }
 };
@@ -66,7 +66,7 @@ sal_Int32 SelectionManager::getSelectionTimeout()
  */
 
 DtransX11ConfigItem::DtransX11ConfigItem() :
-    ConfigItem( SETTINGS_CONFIGNODE,
+    ConfigItem( OUString( SETTINGS_CONFIGNODE ),
                 ConfigItemMode::DelayedUpdate ),
     m_nSelectionTimeout( 3 )
 {
@@ -78,8 +78,9 @@ DtransX11ConfigItem::DtransX11ConfigItem() :
     Any* pValue = aValues.getArray();
     for( int i = 0; i < aValues.getLength(); i++, pValue++ )
     {
-        if( auto pLine = o3tl::tryAccess<OUString>(*pValue) )
+        if( pValue->getValueTypeClass() == TypeClass_STRING )
         {
+            const OUString* pLine = static_cast<const OUString*>(pValue->getValue());
             if( !pLine->isEmpty() )
             {
                 m_nSelectionTimeout = pLine->toInt32();
@@ -97,6 +98,14 @@ DtransX11ConfigItem::DtransX11ConfigItem() :
                      OUStringToOString( pValue->getValueType().getTypeName(), osl_getThreadTextEncoding() ).getStr() );
 #endif
     }
+}
+
+/*
+ *  DtransX11ConfigItem destructor
+ */
+
+DtransX11ConfigItem::~DtransX11ConfigItem()
+{
 }
 
 void DtransX11ConfigItem::ImplCommit()

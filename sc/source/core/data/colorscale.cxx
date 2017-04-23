@@ -20,7 +20,6 @@
 #include <o3tl/make_unique.hxx>
 
 #include <algorithm>
-#include <cassert>
 
 ScFormulaListener::ScFormulaListener(ScFormulaCell* pCell):
     mbDirty(false),
@@ -37,7 +36,7 @@ ScFormulaListener::ScFormulaListener(ScDocument* pDoc):
 
 void ScFormulaListener::startListening(ScTokenArray* pArr, const ScRange& rRange)
 {
-    if (!pArr || mpDoc->IsClipOrUndo())
+    if (!pArr)
         return;
 
     pArr->Reset();
@@ -124,9 +123,6 @@ private:
 
 void ScFormulaListener::stopListening()
 {
-    if (mpDoc->IsClipOrUndo())
-        return;
-
     std::for_each(maCells.begin(), maCells.end(), StopListeningCell(mpDoc, this));
 }
 
@@ -139,7 +135,8 @@ void ScFormulaListener::Notify(const SfxHint& rHint)
 {
     mbDirty = true;
 
-    if (rHint.GetId() == SfxHintId::Dying)
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING)
         return;
 
     if (maCallbackFunction)
@@ -173,7 +170,7 @@ ScColorScaleEntry::ScColorScaleEntry(const ScColorScaleEntry& rEntry):
 {
     if(rEntry.mpCell)
     {
-        mpCell.reset(new ScFormulaCell(*rEntry.mpCell, *rEntry.mpCell->GetDocument(), rEntry.mpCell->aPos, ScCloneFlags::NoMakeAbsExternal));
+        mpCell.reset(new ScFormulaCell(*rEntry.mpCell, *rEntry.mpCell->GetDocument(), rEntry.mpCell->aPos, SC_CLONECELL_NOMAKEABS_EXTERNAL));
         mpCell->StartListeningTo( mpCell->GetDocument() );
         mpListener.reset(new ScFormulaListener(mpCell.get()));
     }
@@ -187,7 +184,7 @@ ScColorScaleEntry::ScColorScaleEntry(ScDocument* pDoc, const ScColorScaleEntry& 
 {
     if(rEntry.mpCell)
     {
-        mpCell.reset(new ScFormulaCell(*rEntry.mpCell, *rEntry.mpCell->GetDocument(), rEntry.mpCell->aPos, ScCloneFlags::NoMakeAbsExternal));
+        mpCell.reset(new ScFormulaCell(*rEntry.mpCell, *rEntry.mpCell->GetDocument(), rEntry.mpCell->aPos, SC_CLONECELL_NOMAKEABS_EXTERNAL));
         mpCell->StartListeningTo( pDoc );
         mpListener.reset(new ScFormulaListener(mpCell.get()));
     }
@@ -282,6 +279,14 @@ void ScColorScaleEntry::UpdateMoveTab( sc::RefUpdateMoveTabContext& rCxt )
     SCTAB nTabNo = rCxt.getNewTab(mpCell->aPos.Tab());
     mpCell->UpdateMoveTab(rCxt, nTabNo);
     mpListener.reset(new ScFormulaListener(mpCell.get()));
+}
+
+bool ScColorScaleEntry::NeedsRepaint() const
+{
+    if(mpListener)
+        return mpListener->NeedsRepaint();
+
+    return false;
 }
 
 void ScColorScaleEntry::SetColor(const Color& rColor)
@@ -771,7 +776,7 @@ ScDataBarInfo* ScDataBarFormat::GetDataBarInfo(const ScAddress& rAddr) const
 
     double nValue = rCell.getValue();
 
-    ScDataBarInfo* pInfo = new ScDataBarInfo;
+    ScDataBarInfo* pInfo = new ScDataBarInfo();
     if(mpFormatData->meAxisPosition == databar::NONE)
     {
         if(nValue <= nMin)
@@ -850,8 +855,6 @@ ScDataBarInfo* ScDataBarFormat::GetDataBarInfo(const ScAddress& rAddr) const
                 pInfo->mnLength = nMaxLength * (std::max(nValue, nMin)/nAbsMax);
         }
     }
-    else
-        assert(false);
 
     // set color
     if(mpFormatData->mbNeg && nValue < 0)
@@ -962,7 +965,6 @@ ScIconSetInfo* ScIconSetFormat::GetIconSetInfo(const ScAddress& rAddr) const
         nValMax = CalcValue(nMin, nMax, itr);
         ++itr;
     }
-
     if(nVal >= nValMax)
         ++nIndex;
 
@@ -1107,7 +1109,9 @@ double ScIconSetFormat::CalcValue(double nMin, double nMax, ScIconSetFormat::con
     return (*itr)->GetValue();
 }
 
-const ScIconSetMap ScIconSetFormat::g_IconSetMap[] = {
+namespace {
+
+ScIconSetMap aIconSetMap[] = {
     { "3Arrows", IconSet_3Arrows, 3 },
     { "3ArrowsGray", IconSet_3ArrowsGray, 3 },
     { "3Flags", IconSet_3Flags, 3 },
@@ -1132,6 +1136,13 @@ const ScIconSetMap ScIconSetFormat::g_IconSetMap[] = {
     { "5Boxes", IconSet_5Boxes, 5 },
     { nullptr, IconSet_3Arrows, 0 }
 };
+
+}
+
+ScIconSetMap* ScIconSetFormat::getIconSetMap()
+{
+    return aIconSetMap;
+}
 
 size_t ScIconSetFormat::size() const
 {
@@ -1296,7 +1307,7 @@ BitmapEx& ScIconSetFormat::getBitmap(sc::IconSetBitmapMap & rIconSetBitmapMap,
 void ScIconSetFormat::EnsureSize()
 {
     ScIconSetType eType = mpFormatData->eIconSetType;
-    for (const ScIconSetMap & i : g_IconSetMap)
+    for (ScIconSetMap & i : aIconSetMap)
     {
         if (i.eType == eType)
         {

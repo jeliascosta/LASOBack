@@ -73,7 +73,7 @@ private:
 
 CheckDataPilotTable::CheckDataPilotTable()
      : CalcUnoApiTest("/sc/qa/extras/testdocuments"),
-       apitest::XNamed("DataPilotTable")
+       apitest::XNamed(OUString("DataPilotTable"))
 {
 }
 

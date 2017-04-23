@@ -122,7 +122,7 @@ protected:
     // checks if forward flow makes sense to prevent infinite moves
     inline bool IsFwdMoveAllowed();
     // #i44049# - method <CalcContent(..)> has to check this property.
-    friend void CalcContent( SwLayoutFrame *pLay, bool bNoColl );
+    friend void CalcContent( SwLayoutFrame *pLay, bool bNoColl, bool bNoCalcFollow );
     bool IsKeepFwdMoveAllowed( bool bIgnoreMyOwnKeepValue = false );    // like above, forward flow for Keep.
 
     /** method to determine overlapping of an object that requests floating
@@ -152,8 +152,8 @@ public:
     static bool IsMoveBwdJump() { return m_bMoveBwdJump; }
     static void SetMoveBwdJump( bool bNew ){ m_bMoveBwdJump = bNew; }
 
-    void SetUndersized( const bool bNew ) { m_bUndersized = bNew; }
-    bool IsUndersized()  const { return m_bUndersized; }
+    inline void SetUndersized( const bool bNew ) { m_bUndersized = bNew; }
+    inline bool IsUndersized()  const { return m_bUndersized; }
 
     bool IsPrevObjMove() const;
 

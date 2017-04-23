@@ -208,7 +208,7 @@ SvtOptionsDialogOptions::SvtOptionsDialogOptions()
     {
         pOptions = new SvtOptionsDlgOptions_Impl;
 
-        ItemHolder1::holdConfigItem( EItem::OptionsDialogOptions );
+        ItemHolder1::holdConfigItem( E_OPTIONSDLGOPTIONS );
     }
     m_pImp = pOptions;
 }

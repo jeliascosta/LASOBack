@@ -42,10 +42,17 @@
 
 #pragma mark DEFINES
 
+// namespace directives
+
+
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::ui::dialogs;
 using namespace ::com::sun::star::lang;
 using namespace ::com::sun::star::uno;
+
+
+// helper functions
+
 
 namespace
 {
@@ -59,22 +66,27 @@ namespace
     }
 }
 
+
+// constructor
+
 SalAquaFolderPicker::SalAquaFolderPicker( const uno::Reference<lang::XMultiServiceFactory>& xServiceMgr ) :
     m_xServiceMgr( xServiceMgr )
 {
     m_nDialogType = NAVIGATIONSERVICES_DIRECTORY;
 }
 
-// XExecutableDialog
 
-void SAL_CALL SalAquaFolderPicker::setTitle( const rtl::OUString& aTitle )
+// XExecutableDialog functions
+
+
+void SAL_CALL SalAquaFolderPicker::setTitle( const rtl::OUString& aTitle ) throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
     implsetTitle(aTitle);
 }
 
-sal_Int16 SAL_CALL SalAquaFolderPicker::execute()
+sal_Int16 SAL_CALL SalAquaFolderPicker::execute() throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -108,16 +120,19 @@ sal_Int16 SAL_CALL SalAquaFolderPicker::execute()
     return retVal;
 }
 
-// XFolderPicker
+
+// XFolderPicker functions
+
 
 void SAL_CALL SalAquaFolderPicker::setDisplayDirectory( const rtl::OUString& aDirectory )
+    throw( lang::IllegalArgumentException, uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
     implsetDisplayDirectory(aDirectory);
 }
 
-rtl::OUString SAL_CALL SalAquaFolderPicker::getDisplayDirectory()
+rtl::OUString SAL_CALL SalAquaFolderPicker::getDisplayDirectory() throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -126,7 +141,7 @@ rtl::OUString SAL_CALL SalAquaFolderPicker::getDisplayDirectory()
     return aDirectory;
 }
 
-rtl::OUString SAL_CALL SalAquaFolderPicker::getDirectory()
+rtl::OUString SAL_CALL SalAquaFolderPicker::getDirectory() throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
@@ -154,13 +169,17 @@ rtl::OUString SAL_CALL SalAquaFolderPicker::getDirectory()
 }
 
 void SAL_CALL SalAquaFolderPicker::setDescription( const rtl::OUString& rDescription )
+    throw( uno::RuntimeException )
 {
     [m_pDialog setMessage:[NSString stringWithOUString:rDescription]];
 }
 
+
 // XServiceInfo
 
+
 rtl::OUString SAL_CALL SalAquaFolderPicker::getImplementationName()
+    throw( uno::RuntimeException )
 {
     rtl::OUString retVal( FOLDER_PICKER_IMPL_NAME );
 
@@ -168,27 +187,34 @@ rtl::OUString SAL_CALL SalAquaFolderPicker::getImplementationName()
 }
 
 sal_Bool SAL_CALL SalAquaFolderPicker::supportsService( const rtl::OUString& sServiceName )
+    throw( uno::RuntimeException )
 {
     return cppu::supportsService(this, sServiceName);
 }
 
 uno::Sequence<rtl::OUString> SAL_CALL SalAquaFolderPicker::getSupportedServiceNames()
+    throw( uno::RuntimeException )
 {
     return FolderPicker_getSupportedServiceNames();
 }
 
+
 // XCancellable
 
-void SAL_CALL SalAquaFolderPicker::cancel()
+
+void SAL_CALL SalAquaFolderPicker::cancel() throw( uno::RuntimeException )
 {
     SolarMutexGuard aGuard;
 
     [m_pDialog cancel:nil];
 }
 
+
 // XEventListener
 
+
 void SAL_CALL SalAquaFolderPicker::disposing( const lang::EventObject& )
+    throw( uno::RuntimeException )
 {
 }
 

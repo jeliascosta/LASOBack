@@ -75,6 +75,20 @@ namespace basegfx
             mfZ(fZ)
         {}
 
+        /** Create a copy of a 3D Tuple
+
+            @param rTup
+            The 3D Tuple which will be copied.
+        */
+        B3DTuple(const B3DTuple& rTup)
+        :   mfX( rTup.mfX ),
+            mfY( rTup.mfY ),
+            mfZ( rTup.mfZ )
+        {}
+
+        ~B3DTuple()
+        {}
+
         /// get X-Coordinate of 3D Tuple
         double getX() const
         {
@@ -214,6 +228,14 @@ namespace basegfx
         bool operator!=( const B3DTuple& rTup ) const
         {
             return mfX != rTup.mfX || mfY != rTup.mfY || mfZ != rTup.mfZ;
+        }
+
+        B3DTuple& operator=( const B3DTuple& rTup )
+        {
+            mfX = rTup.mfX;
+            mfY = rTup.mfY;
+            mfZ = rTup.mfZ;
+            return *this;
         }
 
         void correctValues(const double fCompareValue = 0.0)

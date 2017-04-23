@@ -72,7 +72,8 @@ public:
     void exportXML( SvXMLExport& rExport,
                     const SfxItemSet& rSet,
                     const SvXMLUnitConverter& rUnitConverter,
-                    ::xmloff::token::XMLTokenEnum ePropToken ) const;
+                    ::xmloff::token::XMLTokenEnum ePropToken,
+                    SvXmlExportFlags nFlags = SvXmlExportFlags::NONE ) const;
 
     /** this method is called for every item that has the
         MID_SW_FLAG_SPECIAL_ITEM_EXPORT flag set */
@@ -81,7 +82,7 @@ public:
                                     const SfxPoolItem& rItem,
                                     const SvXMLUnitConverter& rUnitConverter,
                                     const SvXMLNamespaceMap& rNamespaceMap,
-                                    const SfxItemSet *pSet ) const;
+                                    const SfxItemSet *pSet = nullptr ) const;
 
     /** this method is called for every item that has the
         MID_SW_FLAG_NO_ITEM_EXPORT flag set */

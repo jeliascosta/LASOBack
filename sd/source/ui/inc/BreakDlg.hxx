@@ -27,6 +27,7 @@
 #include <vcl/fixed.hxx>
 #include <vcl/prgsbar.hxx>
 #include <vcl/edit.hxx>
+#include <svtools/stdctrl.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <vcl/idle.hxx>
 
@@ -51,7 +52,7 @@ public:
         DrawDocShell* pShell,
         sal_uLong nSumActionCount,
         sal_uLong nObjCount);
-    virtual ~BreakDlg() override;
+    virtual ~BreakDlg();
     virtual void dispose() override;
 
     short Execute() override;
@@ -66,13 +67,13 @@ private:
 
     bool            bCancel;
 
-    Idle            m_aUpdateIdle;
+    Idle            aIdle;
     SvdProgressInfo *pProgrInfo;
     SfxProgress     *mpProgress;
 
-    DECL_LINK( CancelButtonHdl, Button*, void );
-    DECL_LINK( UpDate, void*, bool );
-    DECL_LINK( InitialUpdate, Timer*, void );
+    DECL_LINK_TYPED( CancelButtonHdl, Button*, void );
+    DECL_LINK_TYPED( UpDate, void*, bool );
+    DECL_LINK_TYPED( InitialUpdate, Idle*, void );
 };
 
 } // end of namespace sd

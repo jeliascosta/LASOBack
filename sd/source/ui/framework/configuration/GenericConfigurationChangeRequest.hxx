@@ -29,12 +29,16 @@
 #include <com/sun/star/beans/PropertyValues.hpp>
 #include <cppuhelper/compbase.hxx>
 
-namespace sd { namespace framework {
+namespace {
 
 typedef ::cppu::WeakComponentImplHelper <
       css::drawing::framework::XConfigurationChangeRequest,
       css::container::XNamed
     > GenericConfigurationChangeRequestInterfaceBase;
+
+} // end of anonymous namespace.
+
+namespace sd { namespace framework {
 
 /** This implementation of the XConfigurationChangeRequest interface
     represents a single explicit request for a configuration change.  On its
@@ -59,14 +63,14 @@ public:
         @param eMode
             The mode specifies whether to activate or to deactivate the
             resource.
-        @throws css::css::lang::IllegalArgumentException
     */
     GenericConfigurationChangeRequest (
         const css::uno::Reference<css::drawing::framework::XResourceId>&
             rxResourceId,
-        const Mode eMode);
+        const Mode eMode)
+        throw (css::lang::IllegalArgumentException);
 
-    virtual ~GenericConfigurationChangeRequest() throw() override;
+    virtual ~GenericConfigurationChangeRequest() throw();
 
     // XConfigurationChangeOperation
 
@@ -78,19 +82,22 @@ public:
             The configuration to which the requested change is made.
     */
     virtual void SAL_CALL execute (
-        const css::uno::Reference<css::drawing::framework::XConfiguration>& rxConfiguration) override;
+        const css::uno::Reference<css::drawing::framework::XConfiguration>& rxConfiguration)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XNamed
 
     /** Return a human readable string representation.  This is used for
         debugging purposes.
     */
-    virtual OUString SAL_CALL getName() override;
+    virtual OUString SAL_CALL getName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     /** This call is ignored because the XNamed interface is (mis)used to
         give access to a human readable name for debugging purposes.
     */
-    virtual void SAL_CALL setName (const OUString& rName) override;
+    virtual void SAL_CALL setName (const OUString& rName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     const css::uno::Reference<css::drawing::framework::XResourceId> mxResourceId;

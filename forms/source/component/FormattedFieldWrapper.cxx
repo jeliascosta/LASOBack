@@ -82,7 +82,7 @@ css::uno::Reference<css::uno::XInterface> OFormattedFieldWrapper::createFormatte
     return xRef;
 }
 
-Reference< XCloneable > SAL_CALL OFormattedFieldWrapper::createClone()
+Reference< XCloneable > SAL_CALL OFormattedFieldWrapper::createClone() throw (RuntimeException, std::exception)
 {
     ensureAggregate();
 
@@ -126,7 +126,7 @@ OFormattedFieldWrapper::~OFormattedFieldWrapper()
 
 }
 
-Any SAL_CALL OFormattedFieldWrapper::queryAggregation(const Type& _rType)
+Any SAL_CALL OFormattedFieldWrapper::queryAggregation(const Type& _rType) throw (RuntimeException, std::exception)
 {
     Any aReturn;
 
@@ -170,23 +170,23 @@ Any SAL_CALL OFormattedFieldWrapper::queryAggregation(const Type& _rType)
     return aReturn;
 }
 
-OUString SAL_CALL OFormattedFieldWrapper::getServiceName()
+OUString SAL_CALL OFormattedFieldWrapper::getServiceName() throw(RuntimeException, std::exception)
 {
     // return the old compatibility name for an EditModel
     return OUString(FRM_COMPONENT_EDIT);
 }
 
-OUString SAL_CALL OFormattedFieldWrapper::getImplementationName(  )
+OUString SAL_CALL OFormattedFieldWrapper::getImplementationName(  ) throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.forms.OFormattedFieldWrapper_ForcedFormatted");
 }
 
-sal_Bool SAL_CALL OFormattedFieldWrapper::supportsService( const OUString& _rServiceName )
+sal_Bool SAL_CALL OFormattedFieldWrapper::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, _rServiceName);
 }
 
-Sequence< OUString > SAL_CALL OFormattedFieldWrapper::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL OFormattedFieldWrapper::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
 {
     DBG_ASSERT(m_xAggregate.is(), "OFormattedFieldWrapper::getSupportedServiceNames: should never have made it 'til here without an aggregate!");
     Reference< XServiceInfo > xSI;
@@ -194,7 +194,7 @@ Sequence< OUString > SAL_CALL OFormattedFieldWrapper::getSupportedServiceNames( 
     return xSI->getSupportedServiceNames();
 }
 
-void SAL_CALL OFormattedFieldWrapper::write(const Reference<XObjectOutputStream>& _rxOutStream)
+void SAL_CALL OFormattedFieldWrapper::write(const Reference<XObjectOutputStream>& _rxOutStream) throw( IOException, RuntimeException, std::exception )
 {
     // can't write myself
     ensureAggregate();
@@ -233,11 +233,11 @@ void SAL_CALL OFormattedFieldWrapper::write(const Reference<XObjectOutputStream>
     m_xFormattedPart->write(_rxOutStream);
 }
 
-void SAL_CALL OFormattedFieldWrapper::read(const Reference<XObjectInputStream>& _rxInStream)
+void SAL_CALL OFormattedFieldWrapper::read(const Reference<XObjectInputStream>& _rxInStream) throw( IOException, RuntimeException, std::exception )
 {
     SolarMutexGuard g;
     if (m_xAggregate.is())
-    {   //  we already did a decision if we're an EditModel or a FormattedModel
+    {   //  we alread did a decision if we're an EditModel or a FormattedModel
 
         // if we act as formatted, we have to read the edit part first
         if (m_xFormattedPart.is())
@@ -288,7 +288,7 @@ void SAL_CALL OFormattedFieldWrapper::read(const Reference<XObjectInputStream>& 
         }
         else
         {   // no -> substitute it with a formatted model
-            // let the formatted model do the reading
+            // let the formmatted model do the reading
             m_xFormattedPart.set(new OFormattedModel(m_xContext));
             m_xFormattedPart->read(_rxInStream);
             m_pEditPart = pBasicReader;

@@ -37,8 +37,10 @@ namespace basegfx
             return 0.0;
         }
 
-        template < sal_uInt16 RowSize > class ImplMatLine
+        template < unsigned int RowSize_ > class ImplMatLine
         {
+            enum { RowSize = RowSize_ };
+
             double                                          mfValue[RowSize];
 
         public:
@@ -72,8 +74,10 @@ namespace basegfx
             }
         };
 
-        template < sal_uInt16 RowSize > class ImplHomMatrixTemplate
+        template < unsigned int RowSize_ > class ImplHomMatrixTemplate
         {
+            enum { RowSize = RowSize_ };
+
             ImplMatLine< RowSize >                          maLine[RowSize - 1];
             ImplMatLine< RowSize >*                         mpLine;
 

@@ -190,6 +190,11 @@ namespace cppcanvas
             if( mxSprite.is() )
                 mxSprite->setPriority(fPriority);
         }
+
+        uno::Reference< rendering::XSprite > ImplSprite::getUNOSprite() const
+        {
+            return mxSprite;
+        }
     }
 }
 

@@ -32,6 +32,7 @@
 namespace oox {
 namespace xls {
 
+using namespace ::com::sun::star::table;
 using namespace ::oox::drawingml;
 
 namespace {
@@ -67,7 +68,7 @@ AnchorClientDataModel::AnchorClientDataModel() :
 ShapeAnchor::ShapeAnchor( const WorksheetHelper& rHelper ) :
     WorksheetHelper( rHelper ),
     meAnchorType( ANCHOR_INVALID ),
-    meCellAnchorType( CellAnchorType::Emu ),
+    meCellAnchorType( CELLANCHOR_EMU ),
     meEditAs( ANCHOR_TWOCELL )
 {
 }
@@ -98,7 +99,7 @@ void ShapeAnchor::importAnchor( sal_Int32 nElement, const AttributeList& rAttrib
         default:
             OSL_ENSURE( false, "ShapeAnchor::importAnchor - unexpected element" );
     }
-    meCellAnchorType = CellAnchorType::Emu;
+    meCellAnchorType = CELLANCHOR_EMU;
 }
 
 void ShapeAnchor::importPos( const AttributeList& rAttribs )
@@ -150,7 +151,7 @@ void ShapeAnchor::setCellPos( sal_Int32 nElement, sal_Int32 nParentContext, cons
 void ShapeAnchor::importVmlAnchor( const OUString& rAnchor )
 {
     meAnchorType = ANCHOR_VML;
-    meCellAnchorType = CellAnchorType::Pixel;
+    meCellAnchorType = CELLANCHOR_PIXEL;
 
     ::std::vector< OUString > aTokens;
     sal_Int32 nIndex = 0;
@@ -271,16 +272,27 @@ EmuPoint ShapeAnchor::calcCellAnchorEmu( const CellAnchorModel& rModel ) const
     // add the offset inside the cell
     switch( meCellAnchorType )
     {
-        case CellAnchorType::Emu:
+        case CELLANCHOR_EMU:
             aEmuPoint.X += rModel.mnColOffset;
             aEmuPoint.Y += rModel.mnRowOffset;
         break;
 
-        case CellAnchorType::Pixel:
+        case CELLANCHOR_PIXEL:
         {
             const UnitConverter& rUnitConv = getUnitConverter();
             aEmuPoint.X += static_cast< sal_Int64 >( rUnitConv.scaleValue( static_cast< double >( rModel.mnColOffset ), UNIT_SCREENX, UNIT_EMU ) );
             aEmuPoint.Y += static_cast< sal_Int64 >( rUnitConv.scaleValue( static_cast< double >( rModel.mnRowOffset ), UNIT_SCREENY, UNIT_EMU ) );
+        }
+        break;
+
+        case CELLANCHOR_COLROW:
+        {
+            css::awt::Size aCellSize = getCellSize( rModel.mnCol, rModel.mnRow );
+            EmuSize aEmuSize( lclHmmToEmu( aCellSize.Width ), lclHmmToEmu( aCellSize.Height ) );
+            // X offset is given in 1/1024 of column width
+            aEmuPoint.X += static_cast< sal_Int64 >( aEmuSize.Width * getLimitedValue< double >( static_cast< double >( rModel.mnColOffset ) / 1024.0, 0.0, 1.0 ) + 0.5 );
+            // Y offset is given in 1/256 of row height
+            aEmuPoint.Y += static_cast< sal_Int64 >( aEmuSize.Height * getLimitedValue< double >( static_cast< double >( rModel.mnRowOffset ) / 256.0, 0.0, 1.0 ) + 0.5 );
         }
         break;
     }

@@ -146,7 +146,7 @@ calls or by ending a selection.
 
 #define DIB_BOLD                    ((sal_uInt16)0x0001)
 
-typedef std::set<sal_Int32> IntDateSet;
+typedef std::set<sal_uInt32> IntDateSet;
 
 
 class SVT_DLLPUBLIC Calendar : public Control
@@ -159,8 +159,8 @@ private:
     OUString        maDayText;
     OUString        maWeekText;
     CalendarWrapper maCalendarWrapper;
-    tools::Rectangle       maPrevRect;
-    tools::Rectangle       maNextRect;
+    Rectangle       maPrevRect;
+    Rectangle       maNextRect;
     OUString        maDayOfWeekText;
     long            mnDayOfWeekAry[7];
     Date            maOldFormatFirstDate;
@@ -188,8 +188,9 @@ private:
     long            mnDayHeight;
     long            mnWeekWidth;
     WinBits         mnWinStyle;
-    sal_Int16       mnFirstYear;
-    sal_Int16       mnLastYear;
+    sal_uInt16      mnFirstYear;
+    sal_uInt16      mnLastYear;
+    sal_uInt16      mnRequestYear;
     bool            mbCalc:1,
                     mbFormat:1,
                     mbDrag:1,
@@ -202,6 +203,7 @@ private:
                     mbPrevIn:1,
                     mbNextIn:1,
                     mbDirect:1,
+                    mbInSelChange:1,
                     mbTravelSelect:1,
                     mbScrollDateRange:1,
                     mbSelLeft:1,
@@ -218,15 +220,15 @@ private:
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
 
-    SVT_DLLPRIVATE static void  ImplGetWeekFont( vcl::Font& rFont );
+    SVT_DLLPRIVATE void         ImplGetWeekFont( vcl::Font& rFont ) const;
     SVT_DLLPRIVATE void         ImplFormat();
     using Window::ImplHitTest;
     SVT_DLLPRIVATE sal_uInt16   ImplHitTest( const Point& rPos, Date& rDate ) const;
     SVT_DLLPRIVATE void         ImplDrawSpin(vcl::RenderContext& rRenderContext);
     SVT_DLLPRIVATE void         ImplDrawDate(vcl::RenderContext& rRenderContext, long nX, long nY,
-                                             sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear,
+                                             sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear,
                                              DayOfWeek eDayOfWeek,
-                                             bool bOther, sal_Int32 nToday);
+                                             bool bOther, sal_uLong nToday);
     SVT_DLLPRIVATE void         ImplDraw(vcl::RenderContext& rRenderContext);
     SVT_DLLPRIVATE void         ImplUpdateDate( const Date& rDate );
     SVT_DLLPRIVATE void         ImplUpdateSelection( IntDateSet* pOld );
@@ -243,11 +245,11 @@ private:
 
 protected:
 
-    DECL_LINK( ScrollHdl, Timer *, void );
+    DECL_LINK_TYPED( ScrollHdl, Timer *, void );
 
 public:
-                    Calendar( vcl::Window* pParent, WinBits nWinStyle );
-    virtual         ~Calendar() override;
+                    Calendar( vcl::Window* pParent, WinBits nWinStyle = 0 );
+    virtual         ~Calendar();
     virtual void    dispose() override;
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -255,7 +257,7 @@ public:
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
     virtual void    Tracking( const TrackingEvent& rMEvt ) override;
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
     virtual void    Resize() override;
     virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
@@ -280,7 +282,7 @@ public:
     Date            GetLastMonth() const;
     sal_uInt16      GetMonthCount() const;
     bool            GetDate( const Point& rPos, Date& rDate ) const;
-    tools::Rectangle       GetDateRect( const Date& rDate ) const;
+    Rectangle       GetDateRect( const Date& rDate ) const;
 
     void            StartSelection();
     void            EndSelection();
@@ -344,16 +346,17 @@ private:
     bool                mbToday;
     bool                mbNone;
 
-                        DECL_DLLPRIVATE_LINK( ImplSelectHdl, Calendar*, void );
-                        DECL_DLLPRIVATE_LINK( ImplClickHdl, Button*, void );
-                        DECL_DLLPRIVATE_LINK( ImplPopupModeEndHdl, FloatingWindow*, void );
+                        DECL_DLLPRIVATE_LINK_TYPED( ImplSelectHdl, Calendar*, void );
+                        DECL_DLLPRIVATE_LINK_TYPED( ImplClickHdl, Button*, void );
+                        DECL_DLLPRIVATE_LINK_TYPED( ImplPopupModeEndHdl, FloatingWindow*, void );
 
 public:
                         CalendarField( vcl::Window* pParent, WinBits nWinStyle );
-    virtual             ~CalendarField() override;
+    virtual             ~CalendarField();
     virtual void        dispose() override;
 
     virtual bool        ShowDropDown( bool bShow ) override;
+    VclPtr<Calendar>    CreateCalendar( vcl::Window* pParent );
     Calendar*           GetCalendar();
 
     void                EnableToday() { mbToday = true; }

@@ -59,7 +59,6 @@ public:
     double          GetUnitMultiplier() const;
 
     MapMode&        operator=( const MapMode& rMapMode );
-    MapMode&        operator=( MapMode&& rMapMode );
     bool            operator==( const MapMode& rMapMode ) const;
     bool            operator!=( const MapMode& rMapMode ) const
                         { return !(MapMode::operator==( rMapMode )); }

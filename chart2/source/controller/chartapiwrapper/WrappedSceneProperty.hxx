@@ -41,12 +41,17 @@ class WrappedD3DTransformMatrixProperty : public WrappedProperty
 {
 public:
     explicit WrappedD3DTransformMatrixProperty(
-        const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
-    virtual ~WrappedD3DTransformMatrixProperty() override;
+        std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~WrappedD3DTransformMatrixProperty();
 
-    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual css::uno::Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
+
+    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
 private:
     std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;

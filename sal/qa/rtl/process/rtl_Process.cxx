@@ -42,7 +42,7 @@ using ::rtl::OUStringToOString;
 
 /** print a UNI_CODE String. And also print some comments of the string.
 */
-inline void printUString( const ::rtl::OUString & str, const sal_Char * msg )
+inline void printUString( const ::rtl::OUString & str, const sal_Char * msg = nullptr )
 {
     if ( msg != nullptr )
     {
@@ -107,10 +107,10 @@ public:
             0,
             &hProcess );
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE
+        CPPUNIT_ASSERT_MESSAGE
         (
             "osl_createProcess failed",
-            osl_Process_E_None, osl_error
+            osl_error == osl_Process_E_None
         );
     //we could get return value only after the process terminated
         osl_joinProcess(hProcess);
@@ -119,19 +119,20 @@ public:
         //     "osl_joinProcess returned with failure",
         //     osl_Process_E_None == osl_error
         // );
-    std::unique_ptr<oslProcessInfo> pInfo( new oslProcessInfo );
+    oslProcessInfo* pInfo = new oslProcessInfo;
     //please pay attention to initial the Size to sizeof(oslProcessInfo), or else
     //you will get unknown error when call osl_getProcessInfo
     pInfo->Size = sizeof(oslProcessInfo);
-    osl_error = osl_getProcessInfo( hProcess, osl_Process_EXITCODE, pInfo.get() );
-    CPPUNIT_ASSERT_EQUAL_MESSAGE
+    osl_error = osl_getProcessInfo( hProcess, osl_Process_EXITCODE, pInfo );
+    CPPUNIT_ASSERT_MESSAGE
         (
             "osl_getProcessInfo returned with failure",
-            osl_error, osl_Process_E_None
+            osl_Process_E_None == osl_error
         );
 
     printf("the exit code is %" SAL_PRIuUINT32 ".\n", pInfo->Code );
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("rtl_getAppCommandArg or rtl_getAppCommandArgCount error.", static_cast<oslProcessExitCode>(2), pInfo->Code);
+    CPPUNIT_ASSERT_MESSAGE("rtl_getAppCommandArg or rtl_getAppCommandArgCount error.", pInfo->Code == 2);
+    delete pInfo;
     }
 
     CPPUNIT_TEST_SUITE(getAppCommandArg);
@@ -228,10 +229,10 @@ public:
         pChildOutputRead,
         nullptr);
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE
+        CPPUNIT_ASSERT_MESSAGE
         (
             "osl_createProcess failed",
-            osl_Process_E_None, osl_error
+            osl_error == osl_Process_E_None
         );
     //we could get return value only after the process terminated
         osl_joinProcess(hProcess);
@@ -256,5 +257,9 @@ public:
 
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(rtl_Process::getAppCommandArg, "rtl_Process");
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(rtl_Process::getGlobalProcessId, "rtl_Process");
+
+// this macro creates an empty function, which will called by the RegisterAllFunctions()
+// to let the user the possibility to also register some functions by hand.
+CPPUNIT_PLUGIN_IMPLEMENT();
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

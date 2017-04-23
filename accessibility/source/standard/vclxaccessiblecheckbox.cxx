@@ -17,18 +17,17 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblecheckbox.hxx>
+#include <accessibility/standard/vclxaccessiblecheckbox.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <comphelper/accessiblekeybindinghelper.hxx>
 #include <com/sun/star/awt/KeyModifier.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/sequence.hxx>
 
@@ -116,7 +115,7 @@ void VCLXAccessibleCheckBox::ProcessWindowEvent( const VclWindowEvent& rVclWindo
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::CheckboxToggle:
+        case VCLEVENT_CHECKBOX_TOGGLE:
         {
             SetChecked( IsChecked() );
             SetIndeterminate( IsIndeterminate() );
@@ -157,22 +156,23 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleCheckBox, VCLXAccessibleTextComp
 // XServiceInfo
 
 
-OUString VCLXAccessibleCheckBox::getImplementationName()
+OUString VCLXAccessibleCheckBox::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleCheckBox" );
 }
 
 
-Sequence< OUString > VCLXAccessibleCheckBox::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleCheckBox::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleCheckBox" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleCheckBox" };
+    return aNames;
 }
 
 
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleCheckBox::getAccessibleActionCount( )
+sal_Int32 VCLXAccessibleCheckBox::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -180,7 +180,7 @@ sal_Int32 VCLXAccessibleCheckBox::getAccessibleActionCount( )
 }
 
 
-sal_Bool VCLXAccessibleCheckBox::doAccessibleAction ( sal_Int32 nIndex )
+sal_Bool VCLXAccessibleCheckBox::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -211,7 +211,7 @@ sal_Bool VCLXAccessibleCheckBox::doAccessibleAction ( sal_Int32 nIndex )
 }
 
 
-OUString VCLXAccessibleCheckBox::getAccessibleActionDescription ( sal_Int32 nIndex )
+OUString VCLXAccessibleCheckBox::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -225,7 +225,7 @@ OUString VCLXAccessibleCheckBox::getAccessibleActionDescription ( sal_Int32 nInd
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleCheckBox::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+Reference< XAccessibleKeyBinding > VCLXAccessibleCheckBox::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -235,7 +235,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleCheckBox::getAccessibleActionKe
     OAccessibleKeyBindingHelper* pKeyBindingHelper = new OAccessibleKeyBindingHelper();
     Reference< XAccessibleKeyBinding > xKeyBinding = pKeyBindingHelper;
 
-    VclPtr<vcl::Window> pWindow = GetWindow();
+    vcl::Window* pWindow = GetWindow();
     if ( pWindow )
     {
         KeyEvent aKeyEvent = pWindow->GetActivationKey();
@@ -266,7 +266,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleCheckBox::getAccessibleActionKe
 // XAccessibleValue
 
 
-Any VCLXAccessibleCheckBox::getCurrentValue(  )
+Any VCLXAccessibleCheckBox::getCurrentValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -280,7 +280,7 @@ Any VCLXAccessibleCheckBox::getCurrentValue(  )
 }
 
 
-sal_Bool VCLXAccessibleCheckBox::setCurrentValue( const Any& aNumber )
+sal_Bool VCLXAccessibleCheckBox::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -307,7 +307,7 @@ sal_Bool VCLXAccessibleCheckBox::setCurrentValue( const Any& aNumber )
 }
 
 
-Any VCLXAccessibleCheckBox::getMaximumValue(  )
+Any VCLXAccessibleCheckBox::getMaximumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -323,7 +323,7 @@ Any VCLXAccessibleCheckBox::getMaximumValue(  )
 }
 
 
-Any VCLXAccessibleCheckBox::getMinimumValue(  )
+Any VCLXAccessibleCheckBox::getMinimumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

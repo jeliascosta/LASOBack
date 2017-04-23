@@ -48,7 +48,6 @@
 #include <svl/languageoptions.hxx>
 #include <vcl/image.hxx>
 #include <vcl/floatwin.hxx>
-#include <xmloff/autolayout.hxx>
 
 #include <com/sun/star/frame/XController.hpp>
 #include <com/sun/star/drawing/framework/XControllerManager.hpp>
@@ -102,22 +101,22 @@ static const snewfoil_value_info standard[] =
 {
     {BMP_LAYOUT_EMPTY, STR_AUTOLAYOUT_NONE, WritingMode_LR_TB,        AUTOLAYOUT_NONE},
     {BMP_LAYOUT_HEAD03, STR_AUTOLAYOUT_TITLE, WritingMode_LR_TB,       AUTOLAYOUT_TITLE},
-    {BMP_LAYOUT_HEAD02, STR_AUTOLAYOUT_CONTENT, WritingMode_LR_TB,        AUTOLAYOUT_TITLE_CONTENT},
-    {BMP_LAYOUT_HEAD02A, STR_AUTOLAYOUT_2CONTENT, WritingMode_LR_TB,       AUTOLAYOUT_TITLE_2CONTENT},
-    {BMP_LAYOUT_HEAD01, STR_AUTOLAYOUT_ONLY_TITLE, WritingMode_LR_TB,  AUTOLAYOUT_TITLE_ONLY},
+    {BMP_LAYOUT_HEAD02, STR_AUTOLAYOUT_CONTENT, WritingMode_LR_TB,        AUTOLAYOUT_ENUM},
+    {BMP_LAYOUT_HEAD02A, STR_AUTOLAYOUT_2CONTENT, WritingMode_LR_TB,       AUTOLAYOUT_2TEXT},
+    {BMP_LAYOUT_HEAD01, STR_AUTOLAYOUT_ONLY_TITLE, WritingMode_LR_TB,  AUTOLAYOUT_ONLY_TITLE},
     {BMP_LAYOUT_TEXTONLY, STR_AUTOLAYOUT_ONLY_TEXT, WritingMode_LR_TB,   AUTOLAYOUT_ONLY_TEXT},
-    {BMP_LAYOUT_HEAD03B, STR_AUTOLAYOUT_2CONTENT_CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_TITLE_2CONTENT_CONTENT},
-    {BMP_LAYOUT_HEAD03C, STR_AUTOLAYOUT_CONTENT_2CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_TITLE_CONTENT_2CONTENT},
-    {BMP_LAYOUT_HEAD03A, STR_AUTOLAYOUT_2CONTENT_OVER_CONTENT,WritingMode_LR_TB, AUTOLAYOUT_TITLE_2CONTENT_OVER_CONTENT},
-    {BMP_LAYOUT_HEAD02B, STR_AUTOLAYOUT_CONTENT_OVER_CONTENT, WritingMode_LR_TB, AUTOLAYOUT_TITLE_CONTENT_OVER_CONTENT},
-    {BMP_LAYOUT_HEAD04, STR_AUTOLAYOUT_4CONTENT, WritingMode_LR_TB,        AUTOLAYOUT_TITLE_4CONTENT},
-    {BMP_LAYOUT_HEAD06, STR_AUTOLAYOUT_6CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_TITLE_6CONTENT},
+    {BMP_LAYOUT_HEAD03B, STR_AUTOLAYOUT_2CONTENT_CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_2OBJTEXT},
+    {BMP_LAYOUT_HEAD03C, STR_AUTOLAYOUT_CONTENT_2CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_TEXT2OBJ},
+    {BMP_LAYOUT_HEAD03A, STR_AUTOLAYOUT_2CONTENT_OVER_CONTENT,WritingMode_LR_TB, AUTOLAYOUT_2OBJOVERTEXT},
+    {BMP_LAYOUT_HEAD02B, STR_AUTOLAYOUT_CONTENT_OVER_CONTENT, WritingMode_LR_TB, AUTOLAYOUT_OBJOVERTEXT},
+    {BMP_LAYOUT_HEAD04, STR_AUTOLAYOUT_4CONTENT, WritingMode_LR_TB,        AUTOLAYOUT_4OBJ},
+    {BMP_LAYOUT_HEAD06, STR_AUTOLAYOUT_6CONTENT, WritingMode_LR_TB,    AUTOLAYOUT_6CLIPART},
 
     // vertical
-    {BMP_LAYOUT_VERTICAL02, STR_AL_VERT_TITLE_TEXT_CHART, WritingMode_TB_RL, AUTOLAYOUT_VTITLE_VCONTENT_OVER_VCONTENT},
-    {BMP_LAYOUT_VERTICAL01, STR_AL_VERT_TITLE_VERT_OUTLINE, WritingMode_TB_RL, AUTOLAYOUT_VTITLE_VCONTENT},
-    {BMP_LAYOUT_HEAD02, STR_AL_TITLE_VERT_OUTLINE, WritingMode_TB_RL, AUTOLAYOUT_TITLE_VCONTENT},
-    {BMP_LAYOUT_HEAD02A, STR_AL_TITLE_VERT_OUTLINE_CLIPART,   WritingMode_TB_RL, AUTOLAYOUT_TITLE_2VTEXT},
+    {BMP_LAYOUT_VERTICAL02, STR_AL_VERT_TITLE_TEXT_CHART, WritingMode_TB_RL,AUTOLAYOUT_VERTICAL_TITLE_TEXT_CHART},
+    {BMP_LAYOUT_VERTICAL01, STR_AL_VERT_TITLE_VERT_OUTLINE, WritingMode_TB_RL, AUTOLAYOUT_VERTICAL_TITLE_VERTICAL_OUTLINE},
+    {BMP_LAYOUT_HEAD02, STR_AL_TITLE_VERT_OUTLINE, WritingMode_TB_RL, AUTOLAYOUT_TITLE_VERTICAL_OUTLINE},
+    {BMP_LAYOUT_HEAD02A, STR_AL_TITLE_VERT_OUTLINE_CLIPART,   WritingMode_TB_RL, AUTOLAYOUT_TITLE_VERTICAL_OUTLINE_CLIPART},
     {0, 0, WritingMode_LR_TB, AUTOLAYOUT_NONE}
 };
 
@@ -169,7 +168,14 @@ void LayoutMenu::implConstruct( DrawDocShell& rDocumentShell )
     InvalidateContent();
 
     Link<::sd::tools::EventMultiplexerEvent&,void> aEventListenerLink (LINK(this,LayoutMenu,EventMultiplexerListener));
-    mrBase.GetEventMultiplexer()->AddEventListener(aEventListenerLink);
+    mrBase.GetEventMultiplexer()->AddEventListener(aEventListenerLink,
+        ::sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE
+        | ::sd::tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION
+        | ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
+        | ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
+        | ::sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED
+        | ::sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_NORMAL
+        | ::sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_MASTER);
 
     Window::SetHelpId(HID_SD_TASK_PANE_PREVIEW_LAYOUTS);
     SetAccessibleName(SdResId(STR_TASKPANEL_LAYOUT_MENU_TITLE));
@@ -194,8 +200,6 @@ void LayoutMenu::dispose()
 {
     SAL_INFO("sd.ui", "destroying LayoutMenu at " << this);
     Dispose();
-    DragSourceHelper::dispose();
-    DropTargetHelper::dispose();
     ValueSet::dispose();
 }
 
@@ -257,7 +261,7 @@ ui::LayoutSize LayoutMenu::GetHeightForWidth (const sal_Int32 nWidth)
     return ui::LayoutSize(nPreferredHeight,nPreferredHeight,nPreferredHeight);
 }
 
-void LayoutMenu::Paint (vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect)
+void LayoutMenu::Paint (vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if (mbSelectionUpdatePending)
     {
@@ -363,7 +367,7 @@ int LayoutMenu::CalculateRowCount (const Size&, int nColumnCount)
     return nRowCount;
 }
 
-IMPL_LINK_NOARG(LayoutMenu, ClickHandler, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(LayoutMenu, ClickHandler, ValueSet*, void)
 {
     AssignLayoutToSelectedSlides( GetSelectedAutoLayout() );
 }
@@ -394,7 +398,7 @@ void LayoutMenu::AssignLayoutToSelectedSlides (AutoLayout aLayout)
             {
                 DrawViewShell* pDrawViewShell = static_cast<DrawViewShell*>(pMainViewShell);
                 if (pDrawViewShell != nullptr)
-                    if (pDrawViewShell->GetEditMode() == EditMode::MasterPage)
+                    if (pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
                         bMasterPageMode = true;
                 break;
             }
@@ -434,7 +438,7 @@ void LayoutMenu::AssignLayoutToSelectedSlides (AutoLayout aLayout)
         {
             // No valid slide sorter available.  Ask the main view shell for
             // its current page.
-            pPageSelection.reset(new ::sd::slidesorter::SlideSorterViewShell::PageSelection);
+            pPageSelection.reset(new ::sd::slidesorter::SlideSorterViewShell::PageSelection());
             pPageSelection->push_back(pMainViewShell->GetActualPage());
         }
 
@@ -538,17 +542,22 @@ void LayoutMenu::Fill()
     }
 
     Clear();
+    int n = 0;
     for (sal_uInt16 i=1; pInfo!=nullptr&&pInfo->mnBmpResId!=0; i++,pInfo++)
     {
         if ((WritingMode_TB_RL != pInfo->meWritingMode) || bVertical)
         {
             BitmapEx aBmp(SdResId(pInfo->mnBmpResId));
 
+            if (GetDPIScaleFactor() > 1)
+                aBmp.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
+
             if (bRightToLeft && (WritingMode_TB_RL != pInfo->meWritingMode))
                 aBmp.Mirror (BmpMirrorFlags::Horizontal);
 
             InsertItem(i, Image(aBmp), SdResId (pInfo->mnStrResId));
             SetItemData (i, new AutoLayout(pInfo->maAutoLayout));
+            n++;
         }
     }
 
@@ -595,13 +604,12 @@ void LayoutMenu::Command (const CommandEvent& rEvent)
                 {
                     if (GetSelectItemId() == (sal_uInt16)-1)
                         return;
-                    ::tools::Rectangle aBBox (GetItemRect(GetSelectItemId()));
+                    Rectangle aBBox (GetItemRect(GetSelectItemId()));
                     aMenuPosition = aBBox.Center();
                 }
 
                 // Setup the menu.
-                VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "modules/simpress/ui/layoutmenu.ui", "");
-                VclPtr<PopupMenu> pMenu(aBuilder.get_menu("menu"));
+                std::shared_ptr<PopupMenu> pMenu (new PopupMenu(SdResId(RID_TASKPANE_LAYOUTMENU_POPUP)));
                 FloatingWindow* pMenuWindow = dynamic_cast<FloatingWindow*>(pMenu->GetWindow());
                 if (pMenuWindow != nullptr)
                     pMenuWindow->SetPopupModeFlags(
@@ -617,7 +625,7 @@ void LayoutMenu::Command (const CommandEvent& rEvent)
                     pMenu->EnableItem(SID_INSERTPAGE_LAYOUT_MENU, false);
 
                 // Show the menu.
-                pMenu->Execute(this, ::tools::Rectangle(aMenuPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
+                pMenu->Execute(this, Rectangle(aMenuPosition,Size(1,1)), PopupMenuFlags::ExecuteDown);
             }
             break;
 
@@ -627,12 +635,12 @@ void LayoutMenu::Command (const CommandEvent& rEvent)
     }
 }
 
-IMPL_LINK_NOARG(LayoutMenu, StateChangeHandler, const OUString&, void)
+IMPL_LINK_NOARG_TYPED(LayoutMenu, StateChangeHandler, const OUString&, void)
 {
     InvalidateContent();
 }
 
-IMPL_LINK(LayoutMenu, OnMenuItemSelected, Menu*, pMenu, bool)
+IMPL_LINK_TYPED(LayoutMenu, OnMenuItemSelected, Menu*, pMenu, bool)
 {
     if (pMenu == nullptr)
     {
@@ -641,13 +649,13 @@ IMPL_LINK(LayoutMenu, OnMenuItemSelected, Menu*, pMenu, bool)
     }
 
     pMenu->Deactivate();
-    OString sIdent = pMenu->GetCurItemIdent();
+    const sal_Int32 nIndex (pMenu->GetCurItemId());
 
-    if (sIdent == "apply")
+    if (nIndex == SID_TP_APPLY_TO_SELECTED_SLIDES)
     {
         AssignLayoutToSelectedSlides(GetSelectedAutoLayout());
     }
-    else if (sIdent == "insert")
+    else if (nIndex == SID_INSERTPAGE_LAYOUT_MENU)
     {
         // Add arguments to this slot and forward it to the main view
         // shell.
@@ -696,25 +704,25 @@ void LayoutMenu::UpdateSelection()
         SetNoSelection();
 }
 
-IMPL_LINK(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
+IMPL_LINK_TYPED(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case EventMultiplexerEventId::CurrentPageChanged:
-        case EventMultiplexerEventId::SlideSortedSelection:
+        case ::sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
+        case ::sd::tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION:
             if ( ! mbSelectionUpdatePending)
                 UpdateSelection();
             break;
 
-        case EventMultiplexerEventId::MainViewAdded:
+        case ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
             mbIsMainViewChangePending = true;
             break;
 
-        case EventMultiplexerEventId::MainViewRemoved:
+        case ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
             HideFocus();
             break;
 
-        case EventMultiplexerEventId::ConfigurationUpdated:
+        case ::sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED:
             if (mbIsMainViewChangePending)
             {
                 mbIsMainViewChangePending = false;
@@ -723,16 +731,17 @@ IMPL_LINK(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiplexerEve
             break;
 
         default:
+            /* Ignored */
             break;
     }
 }
 
-IMPL_LINK(LayoutMenu, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK_TYPED(LayoutMenu, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
-        case VclEventId::WindowShow:
-        case VclEventId::WindowResize:
+        case VCLEVENT_WINDOW_SHOW:
+        case VCLEVENT_WINDOW_RESIZE:
             SetSizePixel(GetParent()->GetSizePixel());
             break;
 

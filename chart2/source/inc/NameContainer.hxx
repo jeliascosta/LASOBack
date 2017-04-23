@@ -50,38 +50,38 @@ public:
     NameContainer() = delete;
     NameContainer( const css::uno::Type& rType, const OUString& rServicename, const OUString& rImplementationName );
     explicit NameContainer( const NameContainer & rOther );
-    virtual ~NameContainer() override;
+    virtual ~NameContainer();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XNameContainer
-    virtual void SAL_CALL insertByName( const  OUString& aName, const  css::uno::Any& aElement ) override;
-    virtual void SAL_CALL removeByName( const  OUString& Name ) override;
+    virtual void SAL_CALL insertByName( const  OUString& aName, const  css::uno::Any& aElement ) throw( css::lang::IllegalArgumentException, css::container::ElementExistException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeByName( const  OUString& Name ) throw( css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XNameReplace
-    virtual void SAL_CALL replaceByName( const  OUString& aName, const  css::uno::Any& aElement ) override;
+    virtual void SAL_CALL replaceByName( const  OUString& aName, const  css::uno::Any& aElement ) throw( css::lang::IllegalArgumentException, css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const  OUString& aName ) override;
-    virtual css::uno::Sequence<  OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const  OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const  OUString& aName ) throw( css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence<  OUString > SAL_CALL getElementNames(  ) throw( css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const  OUString& aName ) throw( css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
+    virtual sal_Bool SAL_CALL hasElements(  ) throw( css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Type SAL_CALL getElementType(  ) throw( css::uno::RuntimeException, std::exception) override;
 
     // XCloneable
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone() throw (css::uno::RuntimeException, std::exception) override;
 
 private: //member
     const css::uno::Type           m_aType;
     const OUString                 m_aServicename;
     const OUString                 m_aImplementationName;
 
-    typedef std::map< OUString, css::uno::Any > tContentMap;
+    typedef ::std::map< OUString, css::uno::Any > tContentMap;
 
     tContentMap m_aMap;
 };

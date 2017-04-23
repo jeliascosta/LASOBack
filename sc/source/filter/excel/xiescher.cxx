@@ -189,7 +189,7 @@ XclImpDrawObjRef XclImpDrawObjBase::ReadObj3( const XclImpRoot& rRoot, XclImpStr
             case EXC_OBJTYPE_BUTTON:        xDrawObj.reset( new XclImpButtonObj( rRoot ) );         break;
             case EXC_OBJTYPE_PICTURE:       xDrawObj.reset( new XclImpPictureObj( rRoot ) );        break;
             default:
-                SAL_WARN("sc.filter",  "XclImpDrawObjBase::ReadObj3 - unknown object type 0x" << std::hex << nObjType );
+                OSL_TRACE( "XclImpDrawObjBase::ReadObj3 - unknown object type 0x%04hX", nObjType );
                 rRoot.GetTracer().TraceUnsupportedObjects();
         }
     }
@@ -226,7 +226,7 @@ XclImpDrawObjRef XclImpDrawObjBase::ReadObj4( const XclImpRoot& rRoot, XclImpStr
             case EXC_OBJTYPE_PICTURE:       xDrawObj.reset( new XclImpPictureObj( rRoot ) );        break;
             case EXC_OBJTYPE_POLYGON:       xDrawObj.reset( new XclImpPolygonObj( rRoot ) );        break;
             default:
-                SAL_WARN("sc.filter",  "XclImpDrawObjBase::ReadObj4 - unknown object type 0x" << std::hex << nObjType );
+                OSL_TRACE( "XclImpDrawObjBase::ReadObj4 - unknown object type 0x%04hX", nObjType );
                 rRoot.GetTracer().TraceUnsupportedObjects();
         }
     }
@@ -273,7 +273,7 @@ XclImpDrawObjRef XclImpDrawObjBase::ReadObj5( const XclImpRoot& rRoot, XclImpStr
             case EXC_OBJTYPE_GROUPBOX:      xDrawObj.reset( new XclImpGroupBoxObj( rRoot ) );       break;
             case EXC_OBJTYPE_DROPDOWN:      xDrawObj.reset( new XclImpDropDownObj( rRoot ) );       break;
             default:
-                SAL_WARN("sc.filter",  "XclImpDrawObjBase::ReadObj5 - unknown object type 0x" << std::hex << nObjType );
+                OSL_TRACE( "XclImpDrawObjBase::ReadObj5 - unknown object type 0x%04hX", nObjType );
                 rRoot.GetTracer().TraceUnsupportedObjects();
                 xDrawObj.reset( new XclImpPhObj( rRoot ) );
         }
@@ -338,7 +338,7 @@ XclImpDrawObjRef XclImpDrawObjBase::ReadObj8( const XclImpRoot& rRoot, XclImpStr
                 case EXC_OBJTYPE_NOTE:          xDrawObj.reset( new XclImpNoteObj( rRoot ) );           break;
 
                 default:
-                    SAL_WARN("sc.filter",  "XclImpDrawObjBase::ReadObj8 - unknown object type 0x" << std::hex << nObjType );
+                    OSL_TRACE( "XclImpDrawObjBase::ReadObj8 - unknown object type 0x%04hX", nObjType );
                     rRoot.GetTracer().TraceUnsupportedObjects();
             }
         }
@@ -346,7 +346,7 @@ XclImpDrawObjRef XclImpDrawObjBase::ReadObj8( const XclImpRoot& rRoot, XclImpStr
 
     if (!xDrawObj) //ensure placeholder for unknown or broken records
     {
-        SAL_WARN( "sc.filter", "XclImpDrawObjBase::ReadObj8 import failed, substituting placeholder");
+        SAL_WARN( "sc", "XclImpDrawObjBase::ReadObj8 import failed, substituting placeholder");
         xDrawObj.reset( new XclImpPhObj( rRoot ) );
     }
 
@@ -387,7 +387,7 @@ const XclObjAnchor* XclImpDrawObjBase::GetAnchor() const
     return mbHasAnchor ? &maAnchor : nullptr;
 }
 
-bool XclImpDrawObjBase::IsValidSize( const tools::Rectangle& rAnchorRect ) const
+bool XclImpDrawObjBase::IsValidSize( const Rectangle& rAnchorRect ) const
 {
     // XclObjAnchor rounds up the width, width of 3 is the result of an Excel width of 0
     return mbAreaObj ?
@@ -410,12 +410,12 @@ ScRange XclImpDrawObjBase::GetUsedArea( SCTAB nScTab ) const
     return aScUsedArea;
 }
 
-std::size_t XclImpDrawObjBase::GetProgressSize() const
+sal_Size XclImpDrawObjBase::GetProgressSize() const
 {
     return DoGetProgressSize();
 }
 
-SdrObjectPtr XclImpDrawObjBase::CreateSdrObject( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect, bool bIsDff ) const
+SdrObjectPtr XclImpDrawObjBase::CreateSdrObject( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect, bool bIsDff ) const
 {
     SdrObjectPtr xSdrObj;
     if( bIsDff && !mbCustomDff )
@@ -467,7 +467,7 @@ SdrObjectPtr XclImpDrawObjBase::CreateSdrObject( XclImpDffConverter& rDffConv, c
                     }
                     catch(const Exception&)
                     {
-                        SAL_WARN("sc.filter", "XclImpDrawObjBase::CreateSdrObject, this control can't be set the property ControlTypeinMSO!");
+                        OSL_TRACE("XclImpDrawObjBase::CreateSdrObject, this control can't be set the property ControlTypeinMSO!");
                     }
                 }
                 if( mnObjType == 8 )//OCX
@@ -486,7 +486,7 @@ SdrObjectPtr XclImpDrawObjBase::CreateSdrObject( XclImpDffConverter& rDffConv, c
                         }
                         catch(const Exception&)
                         {
-                            SAL_WARN("sc.filter", "XclImpDrawObjBase::CreateSdrObject, this control can't be set the property ObjIDinMSO!");
+                            OSL_TRACE("XclImpDrawObjBase::CreateSdrObject, this control can't be set the property ObjIDinMSO!");
                         }
                     }
                 }
@@ -715,7 +715,7 @@ void XclImpDrawObjBase::ConvertFillStyle( SdrObject& rSdrObj, const XclObjFillDa
 
             XOBitmap aXOBitmap( aBitmap );
             aXOBitmap.Bitmap2Array();
-            aXOBitmap.SetBitmapType( XBitmapType::N8x8 );
+            aXOBitmap.SetBitmapType( XBITMAP_8X8 );
             if( aXOBitmap.GetBackgroundColor().GetColor() == COL_BLACK )
                 ::std::swap( aPattColor, aBackColor );
             aXOBitmap.SetPixelColor( aPattColor );
@@ -790,12 +790,12 @@ void XclImpDrawObjBase::DoReadObj8SubRec( XclImpStream&, sal_uInt16, sal_uInt16 
 {
 }
 
-std::size_t XclImpDrawObjBase::DoGetProgressSize() const
+sal_Size XclImpDrawObjBase::DoGetProgressSize() const
 {
     return 1;
 }
 
-SdrObjectPtr XclImpDrawObjBase::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& ) const
+SdrObjectPtr XclImpDrawObjBase::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& ) const
 {
     rDffConv.Progress( GetProgressSize() );
     return nullptr;
@@ -886,7 +886,7 @@ void XclImpDrawObjBase::ImplReadObj8( XclImpStream& rStrm )
         nSubRecSize = rStrm.ReaduInt16();
         rStrm.PushPosition();
         // sometimes the last subrecord has an invalid length (OBJLBSDATA) -> min()
-        nSubRecSize = static_cast< sal_uInt16 >( ::std::min< std::size_t >( nSubRecSize, rStrm.GetRecLeft() ) );
+        nSubRecSize = static_cast< sal_uInt16 >( ::std::min< sal_Size >( nSubRecSize, rStrm.GetRecLeft() ) );
 
         switch( nSubRecId )
         {
@@ -943,7 +943,7 @@ void XclImpDrawObjBase::ImplReadObj8( XclImpStream& rStrm )
     }
 }
 
-void XclImpDrawObjVector::InsertGrouped( XclImpDrawObjRef const & xDrawObj )
+void XclImpDrawObjVector::InsertGrouped( XclImpDrawObjRef xDrawObj )
 {
     if( !mObjs.empty() )
         if( XclImpGroupObj* pGroupObj = dynamic_cast< XclImpGroupObj* >( mObjs.back().get() ) )
@@ -952,9 +952,9 @@ void XclImpDrawObjVector::InsertGrouped( XclImpDrawObjRef const & xDrawObj )
     mObjs.push_back( xDrawObj );
 }
 
-std::size_t XclImpDrawObjVector::GetProgressSize() const
+sal_Size XclImpDrawObjVector::GetProgressSize() const
 {
-    std::size_t nProgressSize = 0;
+    sal_Size nProgressSize = 0;
     for( ::std::vector< XclImpDrawObjRef >::const_iterator aIt = mObjs.begin(), aEnd = mObjs.end(); aIt != aEnd; ++aIt )
         nProgressSize += (*aIt)->GetProgressSize();
     return nProgressSize;
@@ -972,7 +972,7 @@ XclImpGroupObj::XclImpGroupObj( const XclImpRoot& rRoot ) :
 {
 }
 
-bool XclImpGroupObj::TryInsert( XclImpDrawObjRef const & xDrawObj )
+bool XclImpGroupObj::TryInsert( XclImpDrawObjRef xDrawObj )
 {
     if( xDrawObj->GetObjId() == mnFirstUngrouped )
         return false;
@@ -1006,12 +1006,12 @@ void XclImpGroupObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal_u
     ReadMacro5( rStrm, nMacroSize );
 }
 
-std::size_t XclImpGroupObj::DoGetProgressSize() const
+sal_Size XclImpGroupObj::DoGetProgressSize() const
 {
     return XclImpDrawObjBase::DoGetProgressSize() + maChildren.GetProgressSize();
 }
 
-SdrObjectPtr XclImpGroupObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& /*rAnchorRect*/ ) const
+SdrObjectPtr XclImpGroupObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& /*rAnchorRect*/ ) const
 {
     std::unique_ptr<SdrObjGroup, SdrObjectFree> xSdrObj( new SdrObjGroup );
     // child objects in BIFF2-BIFF5 have absolute size, not needed to pass own anchor rectangle
@@ -1058,7 +1058,7 @@ void XclImpLineObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal_uI
     ReadMacro5( rStrm, nMacroSize );
 }
 
-SdrObjectPtr XclImpLineObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpLineObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     ::basegfx::B2DPolygon aB2DPolygon;
     switch( mnStartPoint )
@@ -1194,7 +1194,7 @@ void XclImpRectObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal_uI
     ReadMacro5( rStrm, nMacroSize );
 }
 
-SdrObjectPtr XclImpRectObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpRectObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     SdrObjectPtr xSdrObj( new SdrRectObj( rAnchorRect ) );
     ConvertRectStyle( *xSdrObj );
@@ -1207,7 +1207,7 @@ XclImpOvalObj::XclImpOvalObj( const XclImpRoot& rRoot ) :
 {
 }
 
-SdrObjectPtr XclImpOvalObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpOvalObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     SdrObjectPtr xSdrObj( new SdrCircObj( OBJ_CIRC, rAnchorRect ) );
     ConvertRectStyle( *xSdrObj );
@@ -1247,9 +1247,9 @@ void XclImpArcObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal_uIn
     ReadMacro5( rStrm, nMacroSize );
 }
 
-SdrObjectPtr XclImpArcObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpArcObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
-    tools::Rectangle aNewRect = rAnchorRect;
+    Rectangle aNewRect = rAnchorRect;
     long nStartAngle = 0;
     long nEndAngle = 0;
     switch( mnQuadrant )
@@ -1336,7 +1336,7 @@ void XclImpPolygonObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal
 
 namespace {
 
-::basegfx::B2DPoint lclGetPolyPoint( const tools::Rectangle& rAnchorRect, const Point& rPoint )
+::basegfx::B2DPoint lclGetPolyPoint( const Rectangle& rAnchorRect, const Point& rPoint )
 {
     return ::basegfx::B2DPoint(
         rAnchorRect.Left() + static_cast< sal_Int32 >( ::std::min< double >( rPoint.X(), 16384.0 ) / 16384.0 * rAnchorRect.GetWidth() + 0.5 ),
@@ -1345,7 +1345,7 @@ namespace {
 
 } // namespace
 
-SdrObjectPtr XclImpPolygonObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpPolygonObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     SdrObjectPtr xSdrObj;
     if( maCoords.size() >= 2 )
@@ -1419,7 +1419,7 @@ void XclImpTextObj::DoReadObj5( XclImpStream& rStrm, sal_uInt16 nNameLen, sal_uI
     maTextData.ReadFormats( rStrm );
 }
 
-SdrObjectPtr XclImpTextObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpTextObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     std::unique_ptr<SdrObjCustomShape, SdrObjectFree> xSdrObj( new SdrObjCustomShape );
     xSdrObj->NbcSetSnapRect( rAnchorRect );
@@ -1464,7 +1464,7 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                 (with no content) while exporting to XLS, which can cause a
                 corrupted exported document. */
 
-            SvxAdjust eHorAlign = SvxAdjust::Left;
+            SvxAdjust eHorAlign = SVX_ADJUST_LEFT;
             SdrTextVertAdjust eVerAlign = SDRTEXTVERTADJUST_TOP;
 
             // orientation (this is only a fake, drawing does not support real text orientation)
@@ -1478,10 +1478,10 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                     eWriteMode = csst::WritingMode_LR_TB;
                     switch( maTextData.maData.GetHorAlign() )
                     {
-                        case EXC_OBJ_HOR_LEFT:      eHorAlign = SvxAdjust::Left;    break;
-                        case EXC_OBJ_HOR_CENTER:    eHorAlign = SvxAdjust::Center;  break;
-                        case EXC_OBJ_HOR_RIGHT:     eHorAlign = SvxAdjust::Right;   break;
-                        case EXC_OBJ_HOR_JUSTIFY:   eHorAlign = SvxAdjust::Block;   break;
+                        case EXC_OBJ_HOR_LEFT:      eHorAlign = SVX_ADJUST_LEFT;    break;
+                        case EXC_OBJ_HOR_CENTER:    eHorAlign = SVX_ADJUST_CENTER;  break;
+                        case EXC_OBJ_HOR_RIGHT:     eHorAlign = SVX_ADJUST_RIGHT;   break;
+                        case EXC_OBJ_HOR_JUSTIFY:   eHorAlign = SVX_ADJUST_BLOCK;   break;
                     }
                     switch( maTextData.maData.GetVerAlign() )
                     {
@@ -1520,7 +1520,7 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                         case mso_anchorMiddleCentered :
                         case mso_anchorBottomCentered :
                         {
-                            eHorAlign = SvxAdjust::Center;
+                            eHorAlign = SVX_ADJUST_CENTER;
                         }
                         break;
 
@@ -1528,10 +1528,10 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                         {
                             switch( maTextData.maData.GetVerAlign() )
                             {
-                                case EXC_OBJ_VER_TOP:       eHorAlign = SvxAdjust::Right;   break;
-                                case EXC_OBJ_VER_CENTER:    eHorAlign = SvxAdjust::Center;  break;
-                                case EXC_OBJ_VER_BOTTOM:    eHorAlign = SvxAdjust::Left;    break;
-                                case EXC_OBJ_VER_JUSTIFY:   eHorAlign = SvxAdjust::Block;   break;
+                                case EXC_OBJ_VER_TOP:       eHorAlign = SVX_ADJUST_RIGHT;   break;
+                                case EXC_OBJ_VER_CENTER:    eHorAlign = SVX_ADJUST_CENTER;  break;
+                                case EXC_OBJ_VER_BOTTOM:    eHorAlign = SVX_ADJUST_LEFT;    break;
+                                case EXC_OBJ_VER_JUSTIFY:   eHorAlign = SVX_ADJUST_BLOCK;   break;
                             }
                         }
                     }
@@ -1560,7 +1560,7 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                         case mso_anchorMiddleCentered :
                         case mso_anchorBottomCentered :
                         {
-                            eHorAlign = SvxAdjust::Center;
+                            eHorAlign = SVX_ADJUST_CENTER;
                         }
                         break;
 
@@ -1568,10 +1568,10 @@ void XclImpTextObj::DoPreProcessSdrObj( XclImpDffConverter& rDffConv, SdrObject&
                         {
                             switch( maTextData.maData.GetVerAlign() )
                             {
-                                case EXC_OBJ_VER_TOP:       eHorAlign = SvxAdjust::Left;   break;
-                                case EXC_OBJ_VER_CENTER:    eHorAlign = SvxAdjust::Center;  break;
-                                case EXC_OBJ_VER_BOTTOM:    eHorAlign = SvxAdjust::Right;   break;
-                                case EXC_OBJ_VER_JUSTIFY:   eHorAlign = SvxAdjust::Block;   break;
+                                case EXC_OBJ_VER_TOP:       eHorAlign = SVX_ADJUST_LEFT;   break;
+                                case EXC_OBJ_VER_CENTER:    eHorAlign = SVX_ADJUST_CENTER;  break;
+                                case EXC_OBJ_VER_BOTTOM:    eHorAlign = SVX_ADJUST_RIGHT;   break;
+                                case EXC_OBJ_VER_JUSTIFY:   eHorAlign = SVX_ADJUST_BLOCK;   break;
                             }
                         }
                     }
@@ -1681,12 +1681,12 @@ void XclImpChartObj::DoReadObj8SubRec( XclImpStream& rStrm, sal_uInt16 nSubRecId
     }
 }
 
-std::size_t XclImpChartObj::DoGetProgressSize() const
+sal_Size XclImpChartObj::DoGetProgressSize() const
 {
     return mxChart ? mxChart->GetProgressSize() : 1;
 }
 
-SdrObjectPtr XclImpChartObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpChartObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     SdrObjectPtr xSdrObj;
     SfxObjectShell* pDocShell = GetDocShell();
@@ -1703,7 +1703,7 @@ SdrObjectPtr XclImpChartObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const
             inserted into the draw page. */
         sal_Int64 nAspect = css::embed::Aspects::MSOLE_CONTENT;
         MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xEmbObj->getMapUnit( nAspect ) );
-        Size aSize( vcl::Window::LogicToLogic( rAnchorRect.GetSize(), MapMode( MapUnit::Map100thMM ), MapMode( aUnit ) ) );
+        Size aSize( vcl::Window::LogicToLogic( rAnchorRect.GetSize(), MapMode( MAP_100TH_MM ), MapMode( aUnit ) ) );
         css::awt::Size aAwtSize( aSize.Width(), aSize.Height() );
         xEmbObj->setVisualAreaSize( nAspect, aAwtSize );
 
@@ -1766,7 +1766,7 @@ void XclImpChartObj::FinalizeTabChart()
 
     // create the object anchor
     XclObjAnchor aAnchor;
-    aAnchor.SetRect( GetRoot(), GetCurrScTab(), tools::Rectangle( 1000, 500, nWidth, nHeight ), MapUnit::Map100thMM );
+    aAnchor.SetRect( GetRoot(), GetCurrScTab(), Rectangle( 1000, 500, nWidth, nHeight ), MAP_100TH_MM );
     SetAnchor( aAnchor );
 }
 
@@ -1815,7 +1815,7 @@ XclImpControlHelper::~XclImpControlHelper()
 }
 
 SdrObjectPtr XclImpControlHelper::CreateSdrObjectFromShape(
-        const Reference< XShape >& rxShape, const tools::Rectangle& rAnchorRect ) const
+        const Reference< XShape >& rxShape, const Rectangle& rAnchorRect ) const
 {
     mxShape = rxShape;
     SdrObjectPtr xSdrObj( SdrObject::getSdrObjectFromXShape( rxShape ) );
@@ -2054,13 +2054,13 @@ void XclImpTbxObjBase::ConvertLabel( ScfPropertySet& rPropSet ) const
             xPropset->setPropertyValue( "Description", makeAny(::rtl::OUString(aLabel)) );
         }catch( ... )
         {
-            SAL_WARN("sc.filter", "Can't set a default text for TBX Control ");
+            OSL_TRACE( " Can't set a default text for TBX Control ");
         }
     }
     ConvertFont( rPropSet );
 }
 
-SdrObjectPtr XclImpTbxObjBase::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpTbxObjBase::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     SdrObjectPtr xSdrObj( rDffConv.CreateSdrObject( *this, rAnchorRect ) );
     rDffConv.Progress();
@@ -2279,8 +2279,9 @@ void XclImpOptionButtonObj::DoProcessControl( ScfPropertySet& rPropSet ) const
         //     b) propagate the linked cell from the lead radiobutton
         //     c) apply the correct Ref value
         XclImpOptionButtonObj* pLeader = pTbxObj;
-
+ ;
         sal_Int32 nRefVal = 1;
+        OSL_TRACE( "0x%x start group ", pLeader->GetObjId()/*.mnObjId */);
         do
         {
 
@@ -2656,9 +2657,9 @@ XclImpListBoxObj::XclImpListBoxObj( const XclImpRoot& rRoot ) :
 {
 }
 
-void XclImpListBoxObj::ReadFullLbsData( XclImpStream& rStrm, std::size_t nRecLeft )
+void XclImpListBoxObj::ReadFullLbsData( XclImpStream& rStrm, sal_Size nRecLeft )
 {
-    std::size_t nRecEnd = rStrm.GetRecPos() + nRecLeft;
+    sal_Size nRecEnd = rStrm.GetRecPos() + nRecLeft;
     ReadLbsData( rStrm );
     OSL_ENSURE( (rStrm.GetRecPos() == nRecEnd) || (rStrm.GetRecPos() + mnEntryCount == nRecEnd),
         "XclImpListBoxObj::ReadFullLbsData - invalid size of OBJLBSDATA record" );
@@ -2720,7 +2721,7 @@ void XclImpListBoxObj::DoProcessControl( ScfPropertySet& rPropSet ) const
 
         if( !aSelVec.empty() )
         {
-            Sequence<sal_Int16> aSelSeq(aSelVec.data(), static_cast<sal_Int32>(aSelVec.size()));
+            Sequence< sal_Int16 > aSelSeq( &aSelVec.front(), static_cast< sal_Int32 >( aSelVec.size() ) );
             rPropSet.SetProperty( "DefaultSelection", aSelSeq );
         }
     }
@@ -2861,7 +2862,7 @@ OUString XclImpPictureObj::GetOleStorageName() const
         aStrgName = mbEmbedded ? OUString(EXC_STORAGE_OLE_EMBEDDED) : OUString(EXC_STORAGE_OLE_LINKED);
         static const sal_Char spcHexChars[] = "0123456789ABCDEF";
         for( sal_uInt8 nIndex = 32; nIndex > 0; nIndex -= 4 )
-            aStrgName += OUStringLiteral1( spcHexChars[ ::extract_value< sal_uInt8 >( mnStorageId, nIndex - 4, 4 ) ] );
+            aStrgName += OUString( sal_Unicode( spcHexChars[ ::extract_value< sal_uInt8 >( mnStorageId, nIndex - 4, 4 ) ] ) );
     }
     return aStrgName;
 }
@@ -2934,7 +2935,7 @@ void XclImpPictureObj::DoReadObj8SubRec( XclImpStream& rStrm, sal_uInt16 nSubRec
     }
 }
 
-SdrObjectPtr XclImpPictureObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const tools::Rectangle& rAnchorRect ) const
+SdrObjectPtr XclImpPictureObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, const Rectangle& rAnchorRect ) const
 {
     // try to create an OLE object or form control
     SdrObjectPtr xSdrObj( rDffConv.CreateSdrObject( *this, rAnchorRect ) );
@@ -2947,13 +2948,13 @@ SdrObjectPtr XclImpPictureObj::DoCreateSdrObj( XclImpDffConverter& rDffConv, con
     // XclImpPictureObj instance but there are so many layers of indirection I
     // don't see an easy way. This way at least ensures that we can
     // avoid a 'blank' shape that can result from a failed control import
-    if ( !xSdrObj && IsOcxControl() && maGraphic.GetType() == GraphicType::NONE )
+    if ( !xSdrObj && IsOcxControl() && maGraphic.GetType() == GRAPHIC_NONE )
     {
         const_cast< XclImpPictureObj* >( this )->maGraphic =
                 SdrOle2Obj::GetEmptyOLEReplacementGraphic();
     }
     // no OLE - create a plain picture from IMGDATA record data
-    if( !xSdrObj && (maGraphic.GetType() != GraphicType::NONE) )
+    if( !xSdrObj && (maGraphic.GetType() != GRAPHIC_NONE) )
     {
         xSdrObj.reset( new SdrGrafObj( maGraphic, rAnchorRect ) );
         ConvertRectStyle( *xSdrObj );
@@ -3036,7 +3037,7 @@ void XclImpPictureObj::ReadFlags8( XclImpStream& rStrm )
 
 void XclImpPictureObj::ReadPictFmla( XclImpStream& rStrm, sal_uInt16 nLinkSize )
 {
-    std::size_t nLinkEnd = rStrm.GetRecPos() + nLinkSize;
+    sal_Size nLinkEnd = rStrm.GetRecPos() + nLinkSize;
     if( nLinkSize >= 6 )
     {
         sal_uInt16 nFmlaSize;
@@ -3119,8 +3120,8 @@ void XclImpPictureObj::ReadPictFmla( XclImpStream& rStrm, sal_uInt16 nLinkSize )
         if( rStrm.GetRecLeft() <= 8 ) return;
 
         // position and size of control data in 'Ctls' stream
-        mnCtlsStrmPos = static_cast< std::size_t >( rStrm.ReaduInt32() );
-        mnCtlsStrmSize = static_cast< std::size_t >( rStrm.ReaduInt32() );
+        mnCtlsStrmPos = static_cast< sal_Size >( rStrm.ReaduInt32() );
+        mnCtlsStrmSize = static_cast< sal_Size >( rStrm.ReaduInt32() );
 
         if( rStrm.GetRecLeft() <= 8 ) return;
 
@@ -3169,7 +3170,7 @@ void XclImpSolverContainer::RemoveSdrObjectInfo( SdrObject& rSdrObj )
         if( SdrObjList* pSubList = pGroupObj->GetSubList() )
         {
             // iterate flat over the list because this function already works recursively
-            SdrObjListIter aObjIt( *pSubList, SdrIterMode::Flat );
+            SdrObjListIter aObjIt( *pSubList, IM_FLAT );
             for( SdrObject* pChildObj = aObjIt.Next(); pChildObj; pChildObj = aObjIt.Next() )
                 RemoveSdrObjectInfo( *pChildObj );
         }
@@ -3221,7 +3222,7 @@ XclImpSimpleDffConverter::~XclImpSimpleDffConverter()
 
 bool XclImpSimpleDffConverter::GetColorFromPalette( sal_uInt16 nIndex, Color& rColor ) const
 {
-    ColorData nColor = GetPalette().GetColorData( nIndex );
+    ColorData nColor = GetPalette().GetColorData( static_cast< sal_uInt16 >( nIndex ) );
 
     if( nColor == COL_AUTO )
         return false;
@@ -3277,18 +3278,21 @@ OUString XclImpObjectManager::GetOleNameOverride( SCTAB nTab, sal_uInt16 nObjId 
         mxOleCtrlNameOverride->getByName( sCodeName ) >>= xIdToOleName;
         xIdToOleName->getByIndex( nObjId ) >>= sOleName;
     }
+    OSL_TRACE("XclImpObjectManager::GetOleNameOverride tab %d, ( module %s ) object id ( %d ) is %s", nTab,
+        OUStringToOString( sCodeName, RTL_TEXTENCODING_UTF8 ).getStr(), nObjId,
+        OUStringToOString( sOleName, RTL_TEXTENCODING_UTF8 ).getStr() );
 
     return sOleName;
 }
 
-void XclImpDffConverter::StartProgressBar( std::size_t nProgressSize )
+void XclImpDffConverter::StartProgressBar( sal_Size nProgressSize )
 {
     mxProgress.reset( new ScfProgressBar( GetDocShell(), STR_PROGRESS_CALCULATING ) );
     mxProgress->AddSegment( nProgressSize );
     mxProgress->Activate();
 }
 
-void XclImpDffConverter::Progress( std::size_t nDelta )
+void XclImpDffConverter::Progress( sal_Size nDelta )
 {
     OSL_ENSURE( mxProgress, "XclImpDffConverter::Progress - invalid call, no progress bar" );
     mxProgress->Progress( nDelta );
@@ -3307,7 +3311,7 @@ void XclImpDffConverter::ProcessObject( SdrObjList& rObjList, const XclImpDrawOb
     {
         if( const XclObjAnchor* pAnchor = rDrawObj.GetAnchor() )
         {
-            tools::Rectangle aAnchorRect = GetConvData().mrDrawing.CalcAnchorRect( *pAnchor, false );
+            Rectangle aAnchorRect = GetConvData().mrDrawing.CalcAnchorRect( *pAnchor, false );
             if( rDrawObj.IsValidSize( aAnchorRect ) )
             {
                 // CreateSdrObject() recursively creates embedded child objects
@@ -3351,7 +3355,7 @@ void XclImpDffConverter::FinalizeDrawing()
         SetModel( &maDataStack.back()->mrSdrModel, 1440 );
 }
 
-SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpTbxObjBase& rTbxObj, const tools::Rectangle& rAnchorRect )
+SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpTbxObjBase& rTbxObj, const Rectangle& rAnchorRect )
 {
     SdrObjectPtr xSdrObj;
 
@@ -3385,7 +3389,7 @@ SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpTbxObjBase& rTbxOb
     return xSdrObj;
 }
 
-SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpPictureObj& rPicObj, const tools::Rectangle& rAnchorRect )
+SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpPictureObj& rPicObj, const Rectangle& rAnchorRect )
 {
     SdrObjectPtr xSdrObj;
 
@@ -3393,7 +3397,7 @@ SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpPictureObj& rPicOb
     {
         if( rPicObj.IsOcxControl() )
         {
-            if( mxCtlsStrm.is() ) try
+            if( mxCtlsStrm.Is() ) try
             {
                 /*  set controls form, needed in virtual function InsertControl()
                     called from ReadOCXExcelKludgeStream() */
@@ -3406,7 +3410,8 @@ SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpPictureObj& rPicOb
                      Reference< XFormComponent >  xFComp;
                      css::awt::Size aSz;  // not used in import
                      ReadOCXCtlsStream( mxCtlsStrm, xFComp, rPicObj.GetCtlsStreamPos(),  rPicObj.GetCtlsStreamSize() );
-                     // recreate the method formerly known as ReadOCXExcelKludgeStream()
+                     // recreate the method formally known as
+                     // ReadOCXExcelKludgeStream( )
                      if ( xFComp.is() )
                      {
                          ScfPropertySet aPropSet( xFComp );
@@ -3425,18 +3430,18 @@ SdrObjectPtr XclImpDffConverter::CreateSdrObject( const XclImpPictureObj& rPicOb
             SfxObjectShell* pDocShell = GetDocShell();
             tools::SvRef<SotStorage> xSrcStrg = GetRootStorage();
             OUString aStrgName = rPicObj.GetOleStorageName();
-            if( pDocShell && xSrcStrg.is() && (!aStrgName.isEmpty()) )
+            if( pDocShell && xSrcStrg.Is() && (!aStrgName.isEmpty()) )
             {
                 // first try to resolve graphic from DFF storage
                 Graphic aGraphic;
-                tools::Rectangle aVisArea;
+                Rectangle aVisArea;
                 if( !GetBLIP( GetPropertyValue( DFF_Prop_pib, 0 ), aGraphic, &aVisArea ) )
                 {
                     // if not found, use graphic from object (imported from IMGDATA record)
                     aGraphic = rPicObj.GetGraphic();
                     aVisArea = rPicObj.GetVisArea();
                 }
-                if( aGraphic.GetType() != GraphicType::NONE )
+                if( aGraphic.GetType() != GRAPHIC_NONE )
                 {
                     ErrCode nError = ERRCODE_NONE;
                     namespace cssea = ::com::sun::star::embed::Aspects;
@@ -3484,7 +3489,7 @@ void XclImpDffConverter::ProcessClientAnchor2( SvStream& rDffStrm,
 }
 
 SdrObject* XclImpDffConverter::ProcessObj( SvStream& rDffStrm, DffObjData& rDffObjData,
-        void* pClientData, tools::Rectangle& /*rTextRect*/, SdrObject* pOldSdrObj )
+        void* pClientData, Rectangle& /*rTextRect*/, SdrObject* pOldSdrObj )
 {
     XclImpDffConvData& rConvData = GetConvData();
 
@@ -3495,7 +3500,7 @@ SdrObject* XclImpDffConverter::ProcessObj( SvStream& rDffStrm, DffObjData& rDffO
 
     // find the OBJ record data related to the processed shape
     XclImpDrawObjRef xDrawObj = rConvData.mrDrawing.FindDrawObj( rDffObjData.rSpHd );
-    const tools::Rectangle& rAnchorRect = rDffObjData.aChildAnchor;
+    const Rectangle& rAnchorRect = rDffObjData.aChildAnchor;
 
     // Do not process the global page group shape (flag SP_FPATRIARCH)
     bool bGlobalPageGroup = ::get_flag< sal_uInt32 >( rDffObjData.nSpFlags, SP_FPATRIARCH );
@@ -3542,7 +3547,7 @@ SdrObject* XclImpDffConverter::ProcessObj( SvStream& rDffStrm, DffObjData& rDffO
     // try to create a custom SdrObject that overwrites the passed object
     SdrObjectPtr xNewSdrObj( xDrawObj->CreateSdrObject( *this, rAnchorRect, true ) );
     if( xNewSdrObj )
-        xSdrObj = std::move( xNewSdrObj );
+        xSdrObj.reset( xNewSdrObj.release() );
 
     // process the SdrObject
     if( xSdrObj )
@@ -3669,10 +3674,10 @@ OUString XclImpDffConverter::ReadHlinkProperty( SvStream& rDffStrm ) const
 
         // copy from DFF stream to memory stream
         ::std::vector< sal_uInt8 > aBuffer( nBufferSize );
-        sal_uInt8* pnData = aBuffer.data();
-        if (rDffStrm.ReadBytes(pnData, nBufferSize) == nBufferSize)
+        sal_uInt8* pnData = &aBuffer.front();
+        if( rDffStrm.Read( pnData, nBufferSize ) == nBufferSize )
         {
-            aMemStream.WriteBytes(pnData, nBufferSize);
+            aMemStream.Write( pnData, nBufferSize );
 
             // create BIFF import stream to be able to use XclImpHyperlink class
             XclImpStream aXclStrm( aMemStream, GetRoot() );
@@ -3685,7 +3690,7 @@ OUString XclImpDffConverter::ReadHlinkProperty( SvStream& rDffStrm ) const
 
 void XclImpDffConverter::ProcessDgContainer( SvStream& rDffStrm, const DffRecordHeader& rDgHeader )
 {
-    std::size_t nEndPos = rDgHeader.GetRecEndFilePos();
+    sal_Size nEndPos = rDgHeader.GetRecEndFilePos();
     while( rDffStrm.Tell() < nEndPos )
     {
         DffRecordHeader aHeader;
@@ -3714,7 +3719,7 @@ void XclImpDffConverter::ProcessDgContainer( SvStream& rDffStrm, const DffRecord
 
 void XclImpDffConverter::ProcessShGrContainer( SvStream& rDffStrm, const DffRecordHeader& rShGrHeader )
 {
-    std::size_t nEndPos = rShGrHeader.GetRecEndFilePos();
+    sal_Size nEndPos = rShGrHeader.GetRecEndFilePos();
     while( rDffStrm.Tell() < nEndPos )
     {
         DffRecordHeader aHeader;
@@ -3746,7 +3751,7 @@ void XclImpDffConverter::ProcessSolverContainer( SvStream& rDffStrm, const DffRe
 void XclImpDffConverter::ProcessShContainer( SvStream& rDffStrm, const DffRecordHeader& rShHeader )
 {
     rShHeader.SeekToBegOfRecord( rDffStrm );
-    tools::Rectangle aDummy;
+    Rectangle aDummy;
     const XclImpDrawObjBase* pDrawObj = nullptr;
     /*  The call to ImportObj() creates and returns a new SdrObject for the
         processed shape. We take ownership of the returned object here. If the
@@ -3947,9 +3952,9 @@ void XclImpDrawing::SetSkipObj( sal_uInt16 nObjId )
     maSkipObjs.push_back( nObjId );
 }
 
-std::size_t XclImpDrawing::GetProgressSize() const
+sal_Size XclImpDrawing::GetProgressSize() const
 {
-    std::size_t nProgressSize = maRawObjs.GetProgressSize();
+    sal_Size nProgressSize = maRawObjs.GetProgressSize();
     for( XclImpObjMap::const_iterator aIt = maObjMap.begin(), aEnd = maObjMap.end(); aIt != aEnd; ++aIt )
         nProgressSize += aIt->second->GetProgressSize();
     return nProgressSize;
@@ -4125,9 +4130,9 @@ void XclImpSheetDrawing::ConvertObjects( XclImpDffConverter& rDffConv )
             ImplConvertObjects( rDffConv, *pSdrModel, *pSdrPage );
 }
 
-tools::Rectangle XclImpSheetDrawing::CalcAnchorRect( const XclObjAnchor& rAnchor, bool /*bDffAnchor*/ ) const
+Rectangle XclImpSheetDrawing::CalcAnchorRect( const XclObjAnchor& rAnchor, bool /*bDffAnchor*/ ) const
 {
-    return rAnchor.GetRect( GetRoot(), maScUsedArea.aStart.Tab(), MapUnit::Map100thMM );
+    return rAnchor.GetRect( GetRoot(), maScUsedArea.aStart.Tab(), MAP_100TH_MM );
 }
 
 void XclImpSheetDrawing::OnObjectInserted( const XclImpDrawObjBase& rDrawObj )
@@ -4247,7 +4252,7 @@ void XclImpObjectManager::ConvertObjects()
         return;
 
     // get total progress bar size for all sheet drawing managers
-    std::size_t nProgressSize = 0;
+    sal_Size nProgressSize = 0;
     for( XclImpSheetDrawingMap::iterator aIt = maSheetDrawings.begin(), aEnd = maSheetDrawings.end(); aIt != aEnd; ++aIt )
         nProgressSize += aIt->second->GetProgressSize();
     // nothing to do if progress bar is zero (no objects present)

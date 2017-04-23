@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgmasknode.hxx>
+#include <svgio/svgreader/svgmasknode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
 #include <drawinglayer/primitive2d/transparenceprimitive2d.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
@@ -48,6 +48,7 @@ namespace svgio
 
         SvgMaskNode::~SvgMaskNode()
         {
+            delete mpaTransform;
         }
 
         const SvgStyleAttributes* SvgMaskNode::getSvgStyleAttributes() const
@@ -77,7 +78,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maX = aNum;
+                        setX(aNum);
                     }
                     break;
                 }
@@ -87,7 +88,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        maY = aNum;
+                        setY(aNum);
                     }
                     break;
                 }
@@ -99,7 +100,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maWidth = aNum;
+                            setWidth(aNum);
                         }
                     }
                     break;
@@ -112,7 +113,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            maHeight = aNum;
+                            setHeight(aNum);
                         }
                     }
                     break;
@@ -214,7 +215,7 @@ namespace svgio
                         // create OffscreenBufferRange
                         basegfx::B2DRange aOffscreenBufferRange;
 
-                        if(objectBoundingBox == maMaskUnits)
+                        if(objectBoundingBox == getMaskUnits())
                         {
                             // fractions or percentages of the bounding box of the element to which the mask is applied
                             const double fX(Unit_percent == getX().getUnit() ? getX().getNumber() * 0.01 : getX().getNumber());
@@ -240,7 +241,7 @@ namespace svgio
                                 fY + (getHeight().isSet() ? getHeight().solve(*this, ycoordinate) : 0.0));
                         }
 
-                        if(objectBoundingBox == maMaskContentUnits)
+                        if(objectBoundingBox == getMaskContentUnits())
                         {
                             // mask is object-relative, embed in content transformation
                             const drawinglayer::primitive2d::Primitive2DReference xTransform(

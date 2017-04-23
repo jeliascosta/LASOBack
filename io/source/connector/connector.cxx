@@ -30,8 +30,6 @@
 
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/connection/ConnectionSetupException.hpp>
-#include <com/sun/star/connection/NoConnectException.hpp>
 #include <com/sun/star/connection/XConnector.hpp>
 
 #include "services.hxx"
@@ -55,15 +53,16 @@ namespace stoc_connector
         Reference< XComponentContext > _xCtx;
     public:
         explicit OConnector(const Reference< XComponentContext > &xCtx);
-
+        virtual ~OConnector();
         // Methods
         virtual Reference< XConnection > SAL_CALL connect(
-            const OUString& sConnectionDescription ) override;
+            const OUString& sConnectionDescription )
+            throw( NoConnectException, ConnectionSetupException, RuntimeException, std::exception) override;
 
     public: // XServiceInfo
-                virtual OUString              SAL_CALL getImplementationName() override;
-                virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() override;
-                virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) override;
+                virtual OUString              SAL_CALL getImplementationName() throw(std::exception) override;
+                virtual Sequence< OUString >  SAL_CALL getSupportedServiceNames() throw(std::exception) override;
+                virtual sal_Bool              SAL_CALL supportsService(const OUString& ServiceName) throw(std::exception) override;
     };
 
     OConnector::OConnector(const Reference< XComponentContext > &xCtx)
@@ -71,8 +70,16 @@ namespace stoc_connector
         , _xCtx( xCtx )
     {}
 
+    OConnector::~OConnector() {}
+
     Reference< XConnection > SAL_CALL OConnector::connect( const OUString& sConnectionDescription )
+        throw( NoConnectException, ConnectionSetupException, RuntimeException, std::exception)
     {
+        OSL_TRACE(
+            "connector %s\n",
+            OUStringToOString(
+                sConnectionDescription, RTL_TEXTENCODING_ASCII_US).getStr());
+
         // split string into tokens
         try
         {
@@ -91,10 +98,11 @@ namespace stoc_connector
                 }
                 else
                 {
-                    OUString const sMessage(
-                        "Connector : couldn't connect to pipe " + aName + "("
-                        + OUString::number(pConn->m_pipe.getError()) + ")");
-                    SAL_WARN("io.connector", sMessage);
+                    OUString sMessage("Connector : couldn't connect to pipe ");
+                    sMessage += aName;
+                    sMessage += "(";
+                    sMessage += OUString::number(  pConn->m_pipe.getError() );
+                    sMessage += ")";
                     delete pConn;
                     throw NoConnectException( sMessage );
                 }
@@ -137,8 +145,13 @@ namespace stoc_connector
             }
             else
             {
-                OUString delegatee= "com.sun.star.connection.Connector." + aDesc.getName();
+                OUString delegatee("com.sun.star.connection.Connector.");
+                delegatee += aDesc.getName();
 
+                OSL_TRACE(
+                    "connector: trying to get service %s\n",
+                    OUStringToOString(
+                        delegatee, RTL_TEXTENCODING_ASCII_US).getStr());
                 Reference<XConnector> xConnector(
                     _xSMgr->createInstanceWithContext(delegatee, _xCtx), UNO_QUERY );
 
@@ -150,7 +163,7 @@ namespace stoc_connector
                     throw ConnectionSetupException(message);
                 }
 
-                sal_Int32 index = sConnectionDescription.indexOf(',');
+                sal_Int32 index = sConnectionDescription.indexOf((sal_Unicode) ',');
 
                 r = xConnector->connect(sConnectionDescription.copy(index + 1).trim());
             }
@@ -173,17 +186,17 @@ namespace stoc_connector
         return OUString( IMPLEMENTATION_NAME );
     }
 
-        OUString OConnector::getImplementationName()
+        OUString OConnector::getImplementationName() throw(std::exception)
     {
         return connector_getImplementationName();
     }
 
-        sal_Bool OConnector::supportsService(const OUString& ServiceName)
+        sal_Bool OConnector::supportsService(const OUString& ServiceName) throw(std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }
 
-        Sequence< OUString > OConnector::getSupportedServiceNames()
+        Sequence< OUString > OConnector::getSupportedServiceNames() throw(std::exception)
     {
         return connector_getSupportedServiceNames();
     }

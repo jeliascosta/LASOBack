@@ -61,20 +61,20 @@ sal_Int32 lcl_html_getNextPart( OUString& rPart, const OUString& rContent,
             {
             case '\\':
                 if( bQuoted )
-                    rPart += OUStringLiteral1( c );
+                    rPart += OUString( c );
                 bQuoted = !bQuoted;
                 break;
 
             case ';':
                 if( bQuoted )
-                    rPart += OUStringLiteral1( c );
+                    rPart += OUString( c );
                 else
                     bDone = true;
                 bQuoted = false;
                 break;
 
             default:
-                rPart += OUStringLiteral1( c );
+                rPart += OUString( c );
                 bQuoted = false;
                 break;
             }
@@ -98,7 +98,7 @@ sal_Int32 lcl_html_getEndNoteInfo( SwEndNoteInfo& rInfo,
         switch( nPart )
         {
         case 0:
-            rInfo.aFormat.SetNumberingType( bEndNote ? SVX_NUM_ROMAN_LOWER : SVX_NUM_ARABIC );
+            rInfo.aFormat.SetNumberingType( static_cast< sal_Int16 >(bEndNote ? SVX_NUM_ROMAN_LOWER : SVX_NUM_ARABIC));
             if( !aPart.isEmpty() )
                 rInfo.aFormat.SetNumberingType(SwHTMLParser::GetNumType( aPart,
                                                              rInfo.aFormat.GetNumberingType() ));
@@ -123,14 +123,14 @@ sal_Int32 lcl_html_getEndNoteInfo( SwEndNoteInfo& rInfo,
 
 void SwHTMLParser::FillEndNoteInfo( const OUString& rContent )
 {
-    SwEndNoteInfo aInfo( m_xDoc->GetEndNoteInfo() );
+    SwEndNoteInfo aInfo( m_pDoc->GetEndNoteInfo() );
     lcl_html_getEndNoteInfo( aInfo, rContent, true );
-    m_xDoc->SetEndNoteInfo( aInfo );
+    m_pDoc->SetEndNoteInfo( aInfo );
 }
 
 void SwHTMLParser::FillFootNoteInfo( const OUString& rContent )
 {
-    SwFootnoteInfo aInfo( m_xDoc->GetFootnoteInfo() );
+    SwFootnoteInfo aInfo( m_pDoc->GetFootnoteInfo() );
 
     sal_Int32 nStrPos = lcl_html_getEndNoteInfo( aInfo, rContent, false );
 
@@ -177,7 +177,7 @@ void SwHTMLParser::FillFootNoteInfo( const OUString& rContent )
         }
     }
 
-    m_xDoc->SetFootnoteInfo( aInfo );
+    m_pDoc->SetFootnoteInfo( aInfo );
 }
 
 void SwHTMLParser::InsertFootEndNote( const OUString& rName, bool bEndNote,
@@ -204,11 +204,11 @@ void SwHTMLParser::FinishFootEndNote()
     if( m_pFootEndNoteImpl->bFixed )
         aFootnote.SetNumStr( m_pFootEndNoteImpl->sContent );
 
-    m_xDoc->getIDocumentContentOperations().InsertPoolItem( *m_pPam, aFootnote );
+    m_pDoc->getIDocumentContentOperations().InsertPoolItem( *m_pPam, aFootnote );
     SwTextFootnote * const pTextFootnote = static_cast<SwTextFootnote *>(
         m_pPam->GetNode().GetTextNode()->GetTextAttrForCharAt(
             m_pPam->GetPoint()->nContent.GetIndex() - 1, RES_TXTATR_FTN ) );
-    // In header and footer no footnotes can be inserted.
+    // In Kopf- und Fusszeilen duerfen keine Fussnoten eingefuegt werden.
     if( pTextFootnote )
     {
         m_pFootEndNoteImpl->aTextFootnotes.push_back( pTextFootnote );
@@ -359,12 +359,12 @@ void SwHTMLWriter::OutFootEndNotes()
         Strm().WriteCharPtr( "\">" );
 
         m_bLFPossible = true;
-        IncIndentLevel();   // indent content of <DIV>
+        IncIndentLevel();   // Inhalt von <DIV> einruecken
 
-        OSL_ENSURE( pTextFootnote, "SwHTMLWriter::OutFootEndNotes: SwTextFootnote is missing" );
+        OSL_ENSURE( pTextFootnote, "SwHTMLWriter::OutFootEndNotes: SwTextFootnote fehlt" );
         SwNodeIndex *pSttNdIdx = pTextFootnote->GetStartNode();
         OSL_ENSURE( pSttNdIdx,
-                "SwHTMLWriter::OutFootEndNotes: StartNode-Index is missing" );
+                "SwHTMLWriter::OutFootEndNotes: StartNode-Index fehlt" );
         if( pSttNdIdx )
         {
             HTMLSaveData aSaveData( *this, pSttNdIdx->GetIndex()+1,
@@ -372,14 +372,14 @@ void SwHTMLWriter::OutFootEndNotes()
             Out_SwDoc( pCurPam );
         }
 
-        DecIndentLevel();   // indent content of <DIV>
+        DecIndentLevel();   // Inhalt von <DIV> einruecken
         if( m_bLFPossible )
             OutNewLine();
         HTMLOutFuncs::Out_AsciiTag( Strm(), OOO_STRING_SVTOOLS_HTML_division, false );
         m_bLFPossible = true;
 
         OSL_ENSURE( !m_pFormatFootnote,
-                "SwHTMLWriter::OutFootEndNotes: Footnote was not output" );
+                "SwHTMLWriter::OutFootEndNotes: Footnote wurde nicht ausgegeben" );
         if( m_pFormatFootnote )
         {
             if( m_pFormatFootnote->IsEndNote() )
@@ -393,9 +393,9 @@ void SwHTMLWriter::OutFootEndNotes()
 
 #if OSL_DEBUG_LEVEL > 0
     OSL_ENSURE( nFootnote == m_nFootNote,
-            "SwHTMLWriter::OutFootEndNotes: Number of footnotes does not match" );
+            "SwHTMLWriter::OutFootEndNotes: Anzahl Fussnoten stimmt nicht" );
     OSL_ENSURE( nEn == m_nEndNote,
-            "SwHTMLWriter::OutFootEndNotes: Number of endnotes does not match" );
+            "SwHTMLWriter::OutFootEndNotes: Anzahl Endnoten stimmt nicht" );
 #endif
 
     delete m_pFootEndNotes;

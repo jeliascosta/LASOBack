@@ -33,10 +33,6 @@ $(eval $(call gb_CppunitTest_add_libs,libreofficekit_tiledrendering,\
 ))
 endif
 
-$(eval $(call gb_CppunitTest_use_api,libreofficekit_tiledrendering,\
-    offapi \
-))
-
 $(eval $(call gb_CppunitTest_use_configuration,libreofficekit_tiledrendering))
 
 # vim: set noet sw=4 ts=4:

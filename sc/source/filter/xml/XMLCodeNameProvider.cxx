@@ -59,6 +59,7 @@ XMLCodeNameProvider::~XMLCodeNameProvider()
 }
 
 sal_Bool SAL_CALL XMLCodeNameProvider::hasByName( const OUString& aName )
+    throw (uno::RuntimeException, std::exception )
 {
     if( aName == msDocName )
         return !mpDoc->GetCodeName().isEmpty();
@@ -78,6 +79,8 @@ sal_Bool SAL_CALL XMLCodeNameProvider::hasByName( const OUString& aName )
 }
 
 uno::Any SAL_CALL XMLCodeNameProvider::getByName( const OUString& aName )
+    throw (container::NoSuchElementException,
+           lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     uno::Any aRet;
     uno::Sequence<beans::PropertyValue> aProps(1);
@@ -107,6 +110,7 @@ uno::Any SAL_CALL XMLCodeNameProvider::getByName( const OUString& aName )
 }
 
 uno::Sequence< OUString > SAL_CALL XMLCodeNameProvider::getElementNames(  )
+    throw (uno::RuntimeException, std::exception)
 {
     SCTAB nCount = mpDoc->GetTableCount() + 1;
     std::vector< OUString > aNames;
@@ -130,11 +134,13 @@ uno::Sequence< OUString > SAL_CALL XMLCodeNameProvider::getElementNames(  )
 }
 
 uno::Type SAL_CALL XMLCodeNameProvider::getElementType(  )
+    throw (uno::RuntimeException, std::exception)
 {
     return cppu::UnoType<uno::Sequence<beans::PropertyValue>>::get();
 }
 
 sal_Bool SAL_CALL XMLCodeNameProvider::hasElements()
+    throw (uno::RuntimeException, std::exception )
 {
     if( !mpDoc->GetCodeName().isEmpty() )
         return true;

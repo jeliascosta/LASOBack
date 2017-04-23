@@ -30,6 +30,7 @@
 #include "wformsh.hxx"
 #include "globals.hrc"
 #include "web.hrc"
+#include "popup.hrc"
 #include "shells.hrc"
 
 #include <sfx2/request.hxx>
@@ -44,7 +45,7 @@ void SwWebDrawFormShell::InitInterface_Impl()
 {
     GetStaticInterface()->RegisterPopupMenu("form");
 
-    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, SfxVisibilityFlags::Invisible, RID_TEXT_TOOLBOX);
+    GetStaticInterface()->RegisterObjectBar(SFX_OBJECTBAR_OBJECT, RID_TEXT_TOOLBOX);
 }
 
 

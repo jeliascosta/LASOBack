@@ -48,24 +48,24 @@ class XEditAttribute
 {
 private:
     const SfxPoolItem*  pItem;
-    sal_Int32           nStart;
-    sal_Int32           nEnd;
+    sal_uInt16              nStart;
+    sal_uInt16              nEnd;
 
                         XEditAttribute( const XEditAttribute& rCopyFrom ) = delete;
 
 public:
-    XEditAttribute( const SfxPoolItem& rAttr, sal_Int32 nStart, sal_Int32 nEnd );
+    XEditAttribute( const SfxPoolItem& rAttr, sal_uInt16 nStart, sal_uInt16 nEnd );
     ~XEditAttribute();
 
-    const SfxPoolItem*      GetItem() const             { return pItem; }
+    const SfxPoolItem*  GetItem() const             { return pItem; }
 
-    sal_Int32&              GetStart()                  { return nStart; }
-    sal_Int32&              GetEnd()                    { return nEnd; }
+    sal_uInt16&             GetStart()                  { return nStart; }
+    sal_uInt16&             GetEnd()                    { return nEnd; }
 
-    sal_Int32               GetStart() const            { return nStart; }
-    sal_Int32               GetEnd() const              { return nEnd; }
+    sal_uInt16              GetStart() const            { return nStart; }
+    sal_uInt16              GetEnd() const              { return nEnd; }
 
-    sal_Int32               GetLen() const              { return nEnd-nStart; }
+    sal_uInt16              GetLen() const              { return nEnd-nStart; }
 
     bool IsFeature() const;
     void SetItem(const SfxPoolItem& rNew);
@@ -74,7 +74,7 @@ public:
 struct XParaPortion
 {
     long                nHeight;
-    sal_uInt16          nFirstLineOffset;
+    sal_uInt16              nFirstLineOffset;
 
     EditLineList        aLines;
     TextPortionList     aTextPortions;
@@ -114,14 +114,13 @@ public:
     typedef std::vector<std::unique_ptr<XEditAttribute> > XEditAttributesType;
 
 private:
-    svl::SharedString   maText;
+    svl::SharedString maText;
     OUString            aStyle;
 
-    XEditAttributesType maCharAttribs;
+    XEditAttributesType aAttribs;
     SfxStyleFamily      eFamily;
     SfxItemSet          aParaAttribs;
-    std::unique_ptr<WrongList>
-                        mpWrongs;
+    std::unique_ptr<WrongList> mpWrongs;
 
                         ContentInfo( SfxItemPool& rPool );
                         ContentInfo( const ContentInfo& rCopyFrom, SfxItemPool& rPoolToUse  );
@@ -136,19 +135,16 @@ public:
     OUString GetText() const;
     void SetText( const OUString& rStr );
 
-    void dumpAsXml(struct _xmlTextWriter* pWriter) const;
-
-    const XEditAttributesType& GetCharAttribs() const { return maCharAttribs; }
-    XEditAttributesType& GetCharAttribs() { return maCharAttribs; }
+    const XEditAttributesType& GetAttribs() const { return aAttribs; }
+    XEditAttributesType& GetAttribs() { return aAttribs; }
 
     const OUString&     GetStyle()          const   { return aStyle; }
+    const SfxItemSet&   GetParaAttribs()    const   { return aParaAttribs; }
     SfxStyleFamily      GetFamily()         const   { return eFamily; }
 
-    void                SetStyle(const OUString& rStyle) { aStyle = rStyle; }
-    void                SetFamily(const SfxStyleFamily& rFamily) { eFamily  = rFamily; }
-
-    const SfxItemSet&   GetParaAttribs()    const   { return aParaAttribs; }
+    OUString&           GetStyle()          { return aStyle; }
     SfxItemSet&         GetParaAttribs()    { return aParaAttribs; }
+    SfxStyleFamily&     GetFamily()         { return eFamily; }
 
     const WrongList* GetWrongList() const;
     void SetWrongList( WrongList* p );
@@ -163,7 +159,6 @@ public:
 
 class EditTextObjectImpl
 {
-friend class EditTextObject;
 public:
     typedef std::vector<std::unique_ptr<ContentInfo> > ContentInfosType;
 
@@ -211,7 +206,7 @@ public:
     void                    SetScriptType( SvtScriptType nType );
 
     ContentInfo*            CreateAndInsertContent();
-    XEditAttribute*         CreateAttrib( const SfxPoolItem& rItem, sal_Int32 nStart, sal_Int32 nEnd );
+    XEditAttribute*         CreateAttrib( const SfxPoolItem& rItem, sal_uInt16 nStart, sal_uInt16 nEnd );
     void                    DestroyAttrib( XEditAttribute* pAttr );
 
     ContentInfosType&       GetContents() { return aContents;}
@@ -230,7 +225,7 @@ public:
 
     void GetCharAttribs( sal_Int32 nPara, std::vector<EECharAttrib>& rLst ) const;
 
-    bool RemoveCharAttribs( sal_uInt16 nWhich );
+    bool RemoveCharAttribs( sal_uInt16 nWhich = 0 );
 
     void GetAllSections( std::vector<editeng::Section>& rAttrs ) const;
 
@@ -238,7 +233,7 @@ public:
     const SvxFieldItem* GetField() const;
     const SvxFieldData* GetFieldData(sal_Int32 nPara, size_t nPos, sal_Int32 nType) const;
 
-    bool HasField( sal_Int32 nType ) const;
+    bool HasField( sal_Int32 nType = css::text::textfield::Type::UNSPECIFIED ) const;
 
     const SfxItemSet& GetParaAttribs(sal_Int32 nPara) const;
 

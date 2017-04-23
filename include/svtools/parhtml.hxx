@@ -43,38 +43,39 @@ class SvKeyValueIterator;
 #define HTMLFONTSZ6_DFLT 24
 #define HTMLFONTSZ7_DFLT 36
 
-enum class HTMLTableFrame { Void, Above, Below, HSides, LHS, RHS, VSides, Box };
+enum HTMLTableFrame { HTML_TF_VOID, HTML_TF_ABOVE, HTML_TF_BELOW,
+    HTML_TF_HSIDES, HTML_TF_LHS, HTML_TF_RHS, HTML_TF_VSIDES, HTML_TF_BOX };
 
-enum class HTMLTableRules { NONE, Groups, Rows, Cols, All };
+enum HTMLTableRules { HTML_TR_NONE, HTML_TR_GROUPS, HTML_TR_ROWS,
+    HTML_TR_COLS, HTML_TR_ALL };
 
-enum class HTMLInputType
+enum HTMLInputType
 {
-    Text =      1,
-    Password,
-    Checkbox,
-    Radio,
-    Range,
-    Scribble,
-    File,
-    Hidden,
-    Submit,
-    Image,
-    Reset,
-    Button
+    HTML_IT_TEXT =      0x01,
+    HTML_IT_PASSWORD =  0x02,
+    HTML_IT_CHECKBOX =  0x03,
+    HTML_IT_RADIO =     0x04,
+    HTML_IT_RANGE =     0x05,
+    HTML_IT_SCRIBBLE =  0x06,
+    HTML_IT_FILE =      0x07,
+    HTML_IT_HIDDEN =    0x08,
+    HTML_IT_SUBMIT =    0x09,
+    HTML_IT_IMAGE =     0x0a,
+    HTML_IT_RESET =     0x0b,
+    HTML_IT_BUTTON =    0x0c
 };
 
-enum class HTMLScriptLanguage
+enum HTMLScriptLanguage
 {
-    StarBasic,
-    JavaScript,
-    Unknown
+    HTML_SL_STARBASIC,
+    HTML_SL_JAVASCRIPT,
+    HTML_SL_UNKNOWN
 };
 
-template<typename EnumT>
 struct HTMLOptionEnum
 {
     const sal_Char *pName;  // value of an HTML option
-    EnumT           nValue; // and corresponding value of an enum
+    sal_uInt16 nValue;      // and corresponding value of an enum
 };
 
 /** Representation of an HTML option (=attribute in a start tag).
@@ -104,33 +105,10 @@ public:
     void GetNumbers( std::vector<sal_uInt32> &rNumbers ) const; // ... as numbers
     void GetColor( Color& ) const;                      // ... as color
 
-    template<typename EnumT>
-    EnumT GetEnum( const HTMLOptionEnum<EnumT> *pOptEnums,
-                        EnumT nDflt = static_cast<EnumT>(0) ) const
-    {
-        while( pOptEnums->pName )
-        {
-            if( aValue.equalsIgnoreAsciiCaseAscii( pOptEnums->pName ) )
-                return pOptEnums->nValue;
-            pOptEnums++;
-        }
-        return nDflt;
-    }
-
-    template<typename EnumT>
-    bool GetEnum( EnumT &rEnum, const HTMLOptionEnum<EnumT> *pOptEnums ) const
-    {
-        while( pOptEnums->pName )
-        {
-            if( aValue.equalsIgnoreAsciiCaseAscii( pOptEnums->pName ) )
-            {
-                rEnum = pOptEnums->nValue;
-                return true;
-            }
-            pOptEnums++;
-        }
-        return false;
-    }
+    // ... as enum; pOptEnums is an HTMLOptionEnum array
+    sal_uInt16 GetEnum( const HTMLOptionEnum *pOptEnums,
+                        sal_uInt16 nDflt=0 ) const;
+    bool GetEnum( sal_uInt16 &rEnum, const HTMLOptionEnum *pOptEnums ) const;
 
     // ... and as a few special enums
     HTMLInputType GetInputType() const;                 // <INPUT TYPE=...>
@@ -177,7 +155,7 @@ protected:
     // scan next token
     virtual int GetNextToken_() override;
 
-    virtual ~HTMLParser() override;
+    virtual ~HTMLParser();
 
     void FinishHeader( bool bBody ) { bIsInHeader = false; bIsInBody = bBody; }
 
@@ -256,7 +234,7 @@ public:
 
     // remove a comment around the content of <SCRIPT> or <STYLE>
     // In case of 'bFull', the whole line behind a "<!--" might
-    // be deleted (for JavaScript)
+    // be deleted (for JavaSript)
     static void RemoveSGMLComment( OUString &rString, bool bFull );
 
     static bool InternalImgToPrivateURL( OUString& rURL );

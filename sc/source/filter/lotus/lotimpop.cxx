@@ -42,18 +42,23 @@
 LOTUS_ROOT::LOTUS_ROOT( ScDocument* pDocP, rtl_TextEncoding eQ )
     :
         pDoc( pDocP),
-        maRangeNames( this ),
+        pRangeNames( new LotusRangeList(this)),
         pScRangeName( pDocP->GetRangeName()),
         eCharsetQ( eQ),
-        eFirstType( Lotus123Typ::X),
-        eActType( Lotus123Typ::X),
+        eFirstType( Lotus_X),
+        eActType( Lotus_X),
         pRngNmBffWK3( new RangeNameBufferWK3(this)),
-        maAttrTable( this )
+        pFontBuff( new LotusFontBuffer),
+        pAttrTable( new LotAttrTable(this))
 {
 }
 
 LOTUS_ROOT::~LOTUS_ROOT()
 {
+    delete pRangeNames;
+    delete pRngNmBffWK3;
+    delete pFontBuff;
+    delete pAttrTable;
 }
 
 static osl::Mutex aLotImpSemaphore;
@@ -100,11 +105,11 @@ void ImportLotus::Bof()
     {
         if( nFileCode == 0x1000 )
         {// <= WK3
-            rContext.pLotusRoot->eFirstType = rContext.pLotusRoot->eActType = Lotus123Typ::WK3;
+            rContext.pLotusRoot->eFirstType = rContext.pLotusRoot->eActType = Lotus_WK3;
         }
         else if( nFileCode == 0x1002 )
         {// WK4
-            rContext.pLotusRoot->eFirstType = rContext.pLotusRoot->eActType = Lotus123Typ::WK4;
+            rContext.pLotusRoot->eFirstType = rContext.pLotusRoot->eActType = Lotus_WK4;
         }
     }
 }
@@ -121,7 +126,7 @@ bool ImportLotus::BofFm3()
 
 void ImportLotus::Columnwidth( sal_uInt16 nRecLen )
 {
-    OSL_ENSURE( nRecLen >= 4, "*ImportLotus::Columnwidth(): Record too short!" );
+    OSL_ENSURE( nRecLen >= 4, "*ImportLotus::Columnwidth(): Record zu kurz!" );
 
     sal_uInt8    nLTab, nWindow2;
     sal_uInt16    nCnt = (nRecLen < 4) ? 0 : ( nRecLen - 4 ) / 2;
@@ -184,7 +189,7 @@ void ImportLotus::Userrange()
     Read( nRangeType );
 
     sal_Char aBuffer[ 17 ];
-    pIn->ReadBytes(aBuffer, 16);
+    pIn->Read( aBuffer, 16 );
     aBuffer[ 16 ] = 0;
     OUString      aName( aBuffer, strlen(aBuffer), eQuellChar );
 
@@ -312,7 +317,7 @@ void ImportLotus::RowPresentation( sal_uInt16 nRecLen )
             nHeight *= 20;  // -> 32 * TWIPS
             nHeight /= 32;  // -> TWIPS
 
-            pD->SetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), pD->GetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab) ) | CRFlags::ManualSize );
+            pD->SetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), pD->GetRowFlags( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab) ) | CR_MANUALSIZE );
 
             pD->SetRowHeight( static_cast<SCROW> (nRow), static_cast<SCTAB> (nLTab), nHeight );
         }
@@ -349,7 +354,7 @@ void ImportLotus::Font_Face()
     Read( aName );
 
     LotusContext &rContext = aConv.getContext();
-    rContext.pLotusRoot->maFontBuff.SetName( nNum, aName );
+    rContext.pLotusRoot->pFontBuff->SetName( nNum, aName );
 }
 
 void ImportLotus::Font_Type()
@@ -359,7 +364,7 @@ void ImportLotus::Font_Type()
     {
         sal_uInt16 nType;
         Read( nType );
-        rContext.pLotusRoot->maFontBuff.SetType( nCnt, nType );
+        rContext.pLotusRoot->pFontBuff->SetType( nCnt, nType );
     }
 }
 
@@ -370,7 +375,7 @@ void ImportLotus::Font_Ysize()
     {
         sal_uInt16 nSize;
         Read( nSize );
-        rContext.pLotusRoot->maFontBuff.SetHeight( nCnt, nSize );
+        rContext.pLotusRoot->pFontBuff->SetHeight( nCnt, nSize );
     }
 }
 
@@ -407,7 +412,7 @@ void ImportLotus::Row_( const sal_uInt16 nRecLen )
         Read( nRepeats );
 
         if( aAttr.HasStyles() )
-            rContext.pLotusRoot->maAttrTable.SetAttr(
+            rContext.pLotusRoot->pAttrTable->SetAttr(
                 nColCnt, static_cast<SCCOL> ( nColCnt + nRepeats ), nRow, aAttr );
 
         // Do this here and NOT in class LotAttrTable, as we only add attributes if the other

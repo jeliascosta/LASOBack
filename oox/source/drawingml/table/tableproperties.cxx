@@ -40,7 +40,8 @@ using namespace ::com::sun::star::table;
 namespace oox { namespace drawingml { namespace table {
 
 TableProperties::TableProperties()
-: mbFirstRow( false )
+: mbRtl( false )
+, mbFirstRow( false )
 , mbFirstCol( false )
 , mbLastRow( false )
 , mbLastCol( false )
@@ -98,7 +99,7 @@ namespace
 }
 
 //for pptx just has table style id
-static void SetTableStyleProperties(TableStyle* &pTableStyle , sal_Int32 tblFillClr, sal_Int32 tblTextClr, sal_Int32 lineBdrClr)
+static void SetTableStyleProperties(TableStyle* &pTableStyle , const sal_Int32& tblFillClr,const sal_Int32& tblTextClr, const sal_Int32& lineBdrClr)
 {
     //whole table fill style and color
     oox::drawingml::FillPropertiesPtr pWholeTabFillProperties( new oox::drawingml::FillProperties );

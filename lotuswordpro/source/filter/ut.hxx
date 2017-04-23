@@ -60,13 +60,28 @@
 namespace OpenStormBento
 {
 
-inline sal_uInt16 UtGetIntelWord(sal_uInt8 * pData)
+#define UtMin(x,y) ((x) < (y) ? (x) : (y))
+#define UtMax(x,y) ((x) > (y) ? (x) : (y))
+
+#define UtHugeMemcpy memcpy
+
+#define UtErr_OK 0
+#define UtErr_Fail 1
+
+#define UtByte sal_uInt8
+#define UtDWord sal_uInt32
+#define UtWord sal_uInt16
+
+#define UtDefClassP(Name) class Name; typedef Name * p##Name; \
+  typedef const Name * pConst##Name
+
+inline UtWord UtGetIntelWord(UtByte * pData)
 { return pData[0] | pData[1] << 8; }
 
-inline sal_uInt32 UtGetIntelDWord(sal_uInt8 * pData)
+inline UtDWord UtGetIntelDWord(UtByte * pData)
 { return pData[0] | pData[1] << 8 | pData[2] << 16 | pData[3] << 24; }
 
-inline sal_uInt8 UtGetIntelByte(sal_uInt8 * pData)
+inline UtByte UtGetIntelByte(UtByte * pData)
 { return * pData; }
 
 }

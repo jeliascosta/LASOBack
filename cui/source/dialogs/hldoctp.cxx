@@ -41,13 +41,13 @@ SvxHyperlinkDocTp::SvxHyperlinkDocTp ( vcl::Window *pParent, IconChoiceDialog* p
     get(m_pCbbPath, "path");
     m_pCbbPath->SetSmartProtocol(INetProtocol::File);
     get(m_pBtFileopen, "fileopen");
-    BitmapEx aBitmap(CUI_RES(RID_SVXBMP_FILEOPEN));
+    BitmapEx aBitmap = Image(CUI_RES(RID_SVXBMP_FILEOPEN)).GetBitmapEx();
     aBitmap.Scale(GetDPIScaleFactor(),GetDPIScaleFactor(),BmpScaleFlag::BestQuality);
     m_pBtFileopen->SetModeImage(Image(aBitmap));
     get(m_pEdTarget, "target");
     get(m_pFtFullURL, "url");
     get(m_pBtBrowse, "browse");
-    aBitmap = BitmapEx(CUI_RES(RID_SVXBMP_TARGET));
+    aBitmap = Image(CUI_RES(RID_SVXBMP_TARGET)).GetBitmapEx();
     aBitmap.Scale(GetDPIScaleFactor(),GetDPIScaleFactor(),BmpScaleFlag::BestQuality );
     m_pBtBrowse->SetModeImage(Image(aBitmap));
 
@@ -72,7 +72,7 @@ SvxHyperlinkDocTp::SvxHyperlinkDocTp ( vcl::Window *pParent, IconChoiceDialog* p
 
     m_pCbbPath->SetLoseFocusHdl( LINK ( this, SvxHyperlinkDocTp, LostFocusPathHdl_Impl ) );
 
-    maTimer.SetInvokeHandler ( LINK ( this, SvxHyperlinkDocTp, TimeoutHdl_Impl ) );
+    maTimer.SetTimeoutHdl ( LINK ( this, SvxHyperlinkDocTp, TimeoutHdl_Impl ) );
 }
 
 SvxHyperlinkDocTp::~SvxHyperlinkDocTp()
@@ -193,18 +193,16 @@ void SvxHyperlinkDocTp::SetInitFocus()
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, ClickFileopenHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, ClickFileopenHdl_Impl, Button*, void)
 {
     // Open Fileopen-Dialog
-    sfx2::FileDialogHelper aDlg(
+       ::sfx2::FileDialogHelper aDlg(
         css::ui::dialogs::TemplateDescription::FILEOPEN_SIMPLE, FileDialogFlags::NONE,
         GetParent() );
     OUString aOldURL( GetCurrentURL() );
     if( aOldURL.startsWithIgnoreAsciiCase( sFileScheme ) )
     {
-        OUString aPath;
-        osl::FileBase::getSystemPathFromFileURL(aOldURL, aPath);
-        aDlg.SetDisplayFolder( aPath );
+        aDlg.SetDisplayDirectory( aOldURL );
     }
 
     DisableClose( true );
@@ -232,7 +230,7 @@ IMPL_LINK_NOARG(SvxHyperlinkDocTp, ClickFileopenHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, ClickTargetHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, ClickTargetHdl_Impl, Button*, void)
 {
     if ( GetPathType ( maStrURL ) == Type_ExistsFile  ||
          maStrURL.isEmpty() ||
@@ -262,7 +260,7 @@ IMPL_LINK_NOARG(SvxHyperlinkDocTp, ClickTargetHdl_Impl, Button*, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, ModifiedPathHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, ModifiedPathHdl_Impl, Edit&, void)
 {
     maStrURL = GetCurrentURL();
 
@@ -278,7 +276,7 @@ IMPL_LINK_NOARG(SvxHyperlinkDocTp, ModifiedPathHdl_Impl, Edit&, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, TimeoutHdl_Impl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, TimeoutHdl_Impl, Timer *, void)
 {
     if ( IsMarkWndVisible() && ( GetPathType( maStrURL )==Type_ExistsFile ||
                                   maStrURL.isEmpty() ||
@@ -301,7 +299,7 @@ IMPL_LINK_NOARG(SvxHyperlinkDocTp, TimeoutHdl_Impl, Timer *, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, ModifiedTargetHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, ModifiedTargetHdl_Impl, Edit&, void)
 {
     maStrURL = GetCurrentURL();
 
@@ -317,7 +315,7 @@ IMPL_LINK_NOARG(SvxHyperlinkDocTp, ModifiedTargetHdl_Impl, Edit&, void)
 |*
 |************************************************************************/
 
-IMPL_LINK_NOARG(SvxHyperlinkDocTp, LostFocusPathHdl_Impl, Control&, void)
+IMPL_LINK_NOARG_TYPED(SvxHyperlinkDocTp, LostFocusPathHdl_Impl, Control&, void)
 {
     maStrURL = GetCurrentURL();
 

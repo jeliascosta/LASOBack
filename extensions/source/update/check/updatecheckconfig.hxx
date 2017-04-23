@@ -86,7 +86,7 @@ class UpdateCheckConfig : public ::cppu::WeakImplHelper<
                        const css::uno::Reference< css::container::XNameContainer >& xIgnoredUpdates,
                        const ::rtl::Reference< UpdateCheckConfigListener >& rListener );
 
-    virtual ~UpdateCheckConfig() override;
+    virtual ~UpdateCheckConfig();
 
 public:
 
@@ -150,26 +150,44 @@ public:
                                 const OUString& rVersion );
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType(  ) override;
-    virtual sal_Bool SAL_CALL hasElements(  ) override;
+    virtual css::uno::Type SAL_CALL getElementType(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
-    virtual css::uno::Any SAL_CALL getByName( const OUString& aName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  ) override;
-    virtual sal_Bool SAL_CALL hasByName( const OUString& aName ) override;
+    virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
+        throw (css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getElementNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName( const OUString& aName )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XNameReplace
-    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement ) override;
+    virtual void SAL_CALL replaceByName( const OUString& aName, const css::uno::Any& aElement )
+        throw (css::lang::IllegalArgumentException,
+               css::container::NoSuchElementException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
 
     // XChangesBatch
-    virtual void SAL_CALL commitChanges(  ) override;
-    virtual sal_Bool SAL_CALL hasPendingChanges(  ) override;
-    virtual css::uno::Sequence< css::util::ElementChange > SAL_CALL getPendingChanges(  ) override;
+    virtual void SAL_CALL commitChanges(  )
+        throw (css::lang::WrappedTargetException,
+               css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasPendingChanges(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::util::ElementChange > SAL_CALL getPendingChanges(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(OUString const & serviceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & serviceName)
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 private:
 
@@ -182,9 +200,10 @@ private:
     const ::rtl::Reference< UpdateCheckConfigListener > m_rListener;
 };
 
-/// @throws css::uno::RuntimeException
+
 template <typename T>
 T getValue( const css::uno::Sequence< css::beans::NamedValue >& rNamedValues, const sal_Char * pszName )
+    throw (css::uno::RuntimeException)
 {
     for( sal_Int32 n=0; n < rNamedValues.getLength(); n++ )
     {

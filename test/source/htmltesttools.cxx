@@ -26,9 +26,9 @@ htmlDocPtr HtmlTestTools::parseHtml(utl::TempFile& aTempFile)
 
 htmlDocPtr HtmlTestTools::parseHtmlStream(SvStream* pStream)
 {
-    std::size_t nSize = pStream->remainingSize();
+    sal_Size nSize = pStream->remainingSize();
     std::unique_ptr<sal_uInt8[]> pBuffer(new sal_uInt8[nSize + 1]);
-    pStream->ReadBytes(pBuffer.get(), nSize);
+    pStream->Read(pBuffer.get(), nSize);
     pBuffer[nSize] = 0;
     return htmlParseDoc(reinterpret_cast<xmlChar*>(pBuffer.get()), nullptr);
 }

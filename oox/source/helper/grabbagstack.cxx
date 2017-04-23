@@ -38,7 +38,7 @@ PropertyValue GrabBagStack::getRootProperty()
 
     PropertyValue aProperty;
     aProperty.Name = mCurrentElement.maElementName;
-    aProperty.Value <<= comphelper::containerToSequence(mCurrentElement.maPropertyList);
+    aProperty.Value = makeAny(comphelper::containerToSequence(mCurrentElement.maPropertyList));
 
     return aProperty;
 }

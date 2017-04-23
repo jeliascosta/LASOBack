@@ -61,7 +61,7 @@ namespace pcr
         sal_Int32               m_nMinHelpTextLines;
         sal_Int32               m_nMaxHelpTextLines;
         bool                m_bIsReadOnly;
-        std::unique_ptr< ::cppu::IPropertyArrayHelper >
+        ::std::unique_ptr< ::cppu::IPropertyArrayHelper >
                                 m_pPropertyInfo;
 
     public:
@@ -72,10 +72,10 @@ namespace pcr
         using ::comphelper::OPropertyContainerHelper::getFastPropertyValue;
 
     public:
-        bool    hasHelpSection() const { return m_bHasHelpSection; }
-        bool    isReadOnly() const { return m_bIsReadOnly; }
-        sal_Int32   getMinHelpTextLines() const { return m_nMinHelpTextLines; }
-        sal_Int32   getMaxHelpTextLines() const { return m_nMaxHelpTextLines; }
+        inline  bool    hasHelpSection() const { return m_bHasHelpSection; }
+        inline  bool    isReadOnly() const { return m_bIsReadOnly; }
+        inline  sal_Int32   getMinHelpTextLines() const { return m_nMinHelpTextLines; }
+        inline  sal_Int32   getMaxHelpTextLines() const { return m_nMaxHelpTextLines; }
 
         css::uno::Reference< css::beans::XPropertySetInfo >
                             getPropertySetInfo();
@@ -173,7 +173,7 @@ namespace pcr
     IMPLEMENT_FORWARD_XTYPEPROVIDER2( ImplInspectorModel, ImplInspectorModel_Base, ImplInspectorModel_PBase )
 
 
-    Reference< XPropertySetInfo > SAL_CALL ImplInspectorModel::getPropertySetInfo(  )
+    Reference< XPropertySetInfo > SAL_CALL ImplInspectorModel::getPropertySetInfo(  ) throw (RuntimeException, std::exception)
     {
         return m_pProperties->getPropertySetInfo();
     }
@@ -185,13 +185,13 @@ namespace pcr
     }
 
 
-    sal_Bool SAL_CALL ImplInspectorModel::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue )
+    sal_Bool SAL_CALL ImplInspectorModel::convertFastPropertyValue( Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue ) throw (IllegalArgumentException)
     {
         return m_pProperties->convertFastPropertyValue( rConvertedValue, rOldValue, nHandle, rValue );
     }
 
 
-    void SAL_CALL ImplInspectorModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue )
+    void SAL_CALL ImplInspectorModel::setFastPropertyValue_NoBroadcast( sal_Int32 nHandle, const Any& rValue ) throw (Exception, std::exception)
     {
         m_pProperties->setFastPropertyValue( nHandle, rValue );
     }
@@ -203,36 +203,36 @@ namespace pcr
     }
 
 
-    sal_Bool SAL_CALL ImplInspectorModel::getHasHelpSection()
+    sal_Bool SAL_CALL ImplInspectorModel::getHasHelpSection() throw (RuntimeException, std::exception)
     {
         return m_pProperties->hasHelpSection();
     }
 
 
-    ::sal_Int32 SAL_CALL ImplInspectorModel::getMinHelpTextLines()
+    ::sal_Int32 SAL_CALL ImplInspectorModel::getMinHelpTextLines() throw (RuntimeException, std::exception)
     {
         return m_pProperties->getMinHelpTextLines();
     }
 
 
-    ::sal_Int32 SAL_CALL ImplInspectorModel::getMaxHelpTextLines()
+    ::sal_Int32 SAL_CALL ImplInspectorModel::getMaxHelpTextLines() throw (RuntimeException, std::exception)
     {
         return m_pProperties->getMaxHelpTextLines();
     }
 
 
-    sal_Bool SAL_CALL ImplInspectorModel::getIsReadOnly()
+    sal_Bool SAL_CALL ImplInspectorModel::getIsReadOnly() throw (css::uno::RuntimeException, std::exception)
     {
         return m_pProperties->isReadOnly();
     }
 
 
-    void SAL_CALL ImplInspectorModel::setIsReadOnly( sal_Bool IsReadOnly )
+    void SAL_CALL ImplInspectorModel::setIsReadOnly( sal_Bool IsReadOnly ) throw (css::uno::RuntimeException, std::exception)
     {
         setFastPropertyValue( MODEL_PROPERTY_ID_IS_READ_ONLY, makeAny( IsReadOnly ) );
     }
 
-    sal_Bool SAL_CALL ImplInspectorModel::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL ImplInspectorModel::supportsService( const OUString& ServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, ServiceName);
     }

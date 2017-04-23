@@ -68,7 +68,7 @@ public:
     ScRangeManagerTable(SvSimpleTableContainer& rParent,
         std::map<OUString, std::unique_ptr<ScRangeName>>& rTabRangeNames,
         const ScAddress& rPos);
-    virtual ~ScRangeManagerTable() override;
+    virtual ~ScRangeManagerTable();
     virtual void dispose() override;
 
     virtual void Resize() override;
@@ -76,7 +76,7 @@ public:
 
     void setInitListener( InitListener* pListener );
 
-    void addEntry( const ScRangeNameLine& rLine, bool bSetCurEntry );
+    void addEntry( const ScRangeNameLine& rLine, bool bSetCurEntry = true );
     void DeleteSelectedEntries();
     void SetEntry( const ScRangeNameLine& rLine );
 
@@ -84,8 +84,8 @@ public:
     bool IsMultiSelection();
     std::vector<ScRangeNameLine> GetSelectedEntries();
 
-    DECL_LINK( ScrollHdl, SvTreeListBox*, void);
-    DECL_LINK( HeaderEndDragHdl, HeaderBar*, void);
+    DECL_LINK_TYPED( ScrollHdl, SvTreeListBox*, void);
+    DECL_LINK_TYPED( HeaderEndDragHdl, HeaderBar*, void);
 };
 
 #endif

@@ -97,7 +97,7 @@ inline const Atom* Atom::findNextChildAtom( const Atom* pLast )
 
 inline bool Atom::isContainer() const
 {
-    return maRecordHeader.IsContainer();
+    return (bool)maRecordHeader.IsContainer();
 }
 
 inline bool Atom::seekToContent() const

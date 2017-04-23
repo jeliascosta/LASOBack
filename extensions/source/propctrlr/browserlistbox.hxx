@@ -32,14 +32,11 @@
 #include <tools/link.hxx>
 #include <rtl/ref.hxx>
 
-#include <limits>
 #include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-#define EDITOR_LIST_REPLACE_EXISTING \
-    std::numeric_limits<ListBoxLines::size_type>::max()
 
 namespace pcr
 {
@@ -62,14 +59,14 @@ namespace pcr
         css::uno::Reference< css::inspection::XPropertyHandler >
                                                 xHandler;
 
-        ListBoxLine( const OUString& rName, const BrowserLinePointer& _pLine, const css::uno::Reference< css::inspection::XPropertyHandler >& _rxHandler )
+        ListBoxLine( const OUString& rName, BrowserLinePointer _pLine, const css::uno::Reference< css::inspection::XPropertyHandler >& _rxHandler )
             : aName( rName ),
               pLine( _pLine ),
               xHandler( _rxHandler )
         {
         }
     };
-    typedef std::vector< ListBoxLine > ListBoxLines;
+    typedef ::std::vector< ListBoxLine > ListBoxLines;
 
 
     class OBrowserListBox   :public Control
@@ -89,14 +86,14 @@ namespace pcr
                                     m_xActiveControl;
         sal_uInt16                  m_nTheNameSize;
         long                        m_nRowHeight;
-        std::set<ListBoxLines::size_type> m_aOutOfDateLines;
+        ::std::set< sal_uInt16 >    m_aOutOfDateLines;
         bool                    m_bIsActive : 1;
         bool                    m_bUpdate : 1;
         ::rtl::Reference< PropertyControlContext_Impl >
                                     m_pControlContextImpl;
 
     protected:
-        void    PositionLine( ListBoxLines::size_type _nIndex );
+        void    PositionLine( sal_uInt16 _nIndex );
         void    UpdatePosNSize();
         void    UpdatePlayGround();
         void    UpdateVScroll();
@@ -105,17 +102,19 @@ namespace pcr
         void    Resize() override;
 
     public:
-        explicit                    OBrowserListBox( vcl::Window* pParent );
+                                    OBrowserListBox( vcl::Window* pParent, WinBits nWinStyle = WB_DIALOGCONTROL );
 
-                                    virtual ~OBrowserListBox() override;
+                                    virtual ~OBrowserListBox();
         virtual void                dispose() override;
+
+        void                        UpdateAll();
 
         void                        ActivateListBox( bool _bActive );
 
         sal_uInt16                  CalcVisibleLines();
         void                        EnableUpdate();
         void                        DisableUpdate();
-        bool                        EventNotify( NotifyEvent& _rNEvt ) override;
+        bool                        Notify( NotifyEvent& _rNEvt ) override;
         virtual bool                PreNotify( NotifyEvent& _rNEvt ) override;
 
         void                        SetListener( IPropertyLineListener* _pListener );
@@ -128,9 +127,9 @@ namespace pcr
 
         void                        Clear();
 
-        void                        InsertEntry( const OLineDescriptor&, sal_uInt16 nPos );
+        void                        InsertEntry( const OLineDescriptor&, sal_uInt16 nPos = EDITOR_LIST_APPEND );
         bool                        RemoveEntry( const OUString& _rName );
-        void                        ChangeEntry( const OLineDescriptor&, ListBoxLines::size_type nPos );
+        void                        ChangeEntry( const OLineDescriptor&, sal_uInt16 nPos );
 
         void                        SetPropertyValue( const OUString& rEntryName, const css::uno::Any& rValue, bool _bUnknownValue );
         sal_uInt16                  GetPropertyPos( const OUString& rEntryName ) const;
@@ -146,12 +145,9 @@ namespace pcr
         bool                        IsModified( ) const;
         void                        CommitModified( );
 
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL               focusGained( const css::uno::Reference< css::inspection::XPropertyControl >& Control );
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL               valueChanged( const css::uno::Reference< css::inspection::XPropertyControl >& Control );
-        /// @throws css::uno::RuntimeException
-        void SAL_CALL               activateNextControl( const css::uno::Reference< css::inspection::XPropertyControl >& CurrentControl );
+        void SAL_CALL               focusGained( const css::uno::Reference< css::inspection::XPropertyControl >& Control ) throw (css::uno::RuntimeException);
+        void SAL_CALL               valueChanged( const css::uno::Reference< css::inspection::XPropertyControl >& Control ) throw (css::uno::RuntimeException);
+        void SAL_CALL               activateNextControl( const css::uno::Reference< css::inspection::XPropertyControl >& CurrentControl ) throw (css::uno::RuntimeException);
 
     protected:
         // IButtonClickListener
@@ -159,7 +155,7 @@ namespace pcr
 
         using Window::SetHelpText;
     private:
-        DECL_LINK( ScrollHdl, ScrollBar*, void );
+        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
 
         /** retrieves the index of a given control in our line list
             @param _rxControl

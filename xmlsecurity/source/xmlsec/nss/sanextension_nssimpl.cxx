@@ -38,6 +38,29 @@ using namespace ::com::sun::star::security ;
 
 using ::com::sun::star::security::XCertificateExtension ;
 
+
+SanExtensionImpl::SanExtensionImpl() :
+m_critical( false )
+{
+}
+
+SanExtensionImpl::~SanExtensionImpl() {
+}
+
+
+//Methods from XCertificateExtension
+sal_Bool SAL_CALL SanExtensionImpl::isCritical() throw( css::uno::RuntimeException, std::exception ) {
+    return m_critical ;
+}
+
+css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionId() throw( css::uno::RuntimeException, std::exception ) {
+    return m_xExtnId ;
+}
+
+css::uno::Sequence< sal_Int8 > SAL_CALL SanExtensionImpl::getExtensionValue() throw( css::uno::RuntimeException, std::exception ) {
+    return m_xExtnValue ;
+}
+
 namespace {
     // Helper functions from nss/lib/certdb/genname.c
     int GetNamesLength(CERTGeneralName *names)
@@ -58,33 +81,33 @@ namespace {
 }
 
 //Methods from XSanExtension
-css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl::getAlternativeNames()
-{
-    if (m_Entries.empty())
+css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl::getAlternativeNames() throw( css::uno::RuntimeException, std::exception ){
+
+    if (!m_Entries.hasElements())
     {
         SECItem item;
 
         item.type = siDERCertBuffer;
-        item.data = reinterpret_cast<unsigned char*>(m_Extn.m_xExtnValue.getArray());
-        item.len = m_Extn.m_xExtnValue.getLength();
+        item.data = reinterpret_cast<unsigned char*>(m_xExtnValue.getArray());
+        item.len = m_xExtnValue.getLength();
 
         PRArenaPool *arena;
         CERTGeneralName *nameList;
         arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
 
         if (!arena)
-            return css::uno::Sequence<css::security::CertAltNameEntry>();
+            return m_Entries;
 
         nameList = CERT_DecodeAltNameExtension(arena, &item);
 
         CERTGeneralName* current = nameList;
 
         int size = GetNamesLength(nameList);
-        m_Entries.resize(size);
-        for(int i = 0; i < size; ++i){
+        CertAltNameEntry* arrCertAltNameEntry = new CertAltNameEntry[size];
+        for(int i = 0; i < size ; i++){
             switch (current->type) {
                 case certOtherName: {
-                    m_Entries[i].Type = ExtAltNameType_OTHER_NAME;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_OTHER_NAME;
                     css::beans::PropertyValue otherNameProp;
                     otherNameProp.Name = OUString::createFromAscii(CERT_GetOidString(&current->name.OthName.oid));
 
@@ -94,62 +117,68 @@ css::uno::Sequence< css::security::CertAltNameEntry > SAL_CALL SanExtensionImpl:
 
                     otherNameProp.Value <<= otherName;
 
-                    m_Entries[i].Value <<= otherNameProp;
+                    arrCertAltNameEntry[i].Value <<= otherNameProp;
                     break;
                                     }
                 case certRFC822Name:
-                    m_Entries[i].Type = ExtAltNameType_RFC822_NAME;
-                    m_Entries[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_RFC822_NAME;
+                    arrCertAltNameEntry[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
                     break;
                 case certDNSName:
-                    m_Entries[i].Type = ExtAltNameType_DNS_NAME;
-                    m_Entries[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_DNS_NAME;
+                    arrCertAltNameEntry[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
                     break;
                 case certX400Address: {
                     // unsupported
-                    m_Entries[i].Type = ExtAltNameType_X400_ADDRESS;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_X400_ADDRESS;
                     break;
                                       }
                 case certDirectoryName: {
                     // unsupported
-                    m_Entries[i].Type = ExtAltNameType_DIRECTORY_NAME;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_DIRECTORY_NAME;
                     break;
                                         }
                 case certEDIPartyName:  {
                     // unsupported
-                    m_Entries[i].Type = ExtAltNameType_EDI_PARTY_NAME;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_EDI_PARTY_NAME;
                     break;
                                         }
                 case certURI:
-                    m_Entries[i].Type = ExtAltNameType_URL;
-                    m_Entries[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_URL;
+                    arrCertAltNameEntry[i].Value <<= OUString(reinterpret_cast<char*>(current->name.other.data), current->name.other.len, RTL_TEXTENCODING_ASCII_US);
                     break;
                 case certIPAddress: {
-                    m_Entries[i].Type = ExtAltNameType_IP_ADDRESS;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_IP_ADDRESS;
 
                     Sequence< sal_Int8 > ipAddress( current->name.other.len ) ;
                     for( unsigned int r = 0; r < current->name.other.len ; r ++ )
                         ipAddress[r] = *( current->name.other.data + r ) ;
 
-                    m_Entries[i].Value <<= ipAddress;
+                    arrCertAltNameEntry[i].Value <<= ipAddress;
                     break;
                                     }
                 case certRegisterID:
-                    m_Entries[i].Type = ExtAltNameType_REGISTERED_ID;
+                    arrCertAltNameEntry[i].Type = ExtAltNameType_REGISTERED_ID;
 
 
                     OString nssOid = OString(CERT_GetOidString(&current->name.other));
                     OString unoOid = removeOIDFromString(nssOid);
-                    m_Entries[i].Value <<= OStringToOUString( unoOid, RTL_TEXTENCODING_ASCII_US );
+                    arrCertAltNameEntry[i].Value <<= OStringToOUString( unoOid, RTL_TEXTENCODING_ASCII_US );
                     break;
             }
             current = CERT_GetNextGeneralName(current);
         }
 
+        m_Entries = ::comphelper::arrayToSequence< css::security::CertAltNameEntry >(arrCertAltNameEntry, size);
+
+        delete [] arrCertAltNameEntry;
+
         PORT_FreeArena(arena, PR_FALSE);
+
+
     }
 
-    return comphelper::containerToSequence<css::security::CertAltNameEntry>(m_Entries);
+    return m_Entries;
 }
 
 OString SanExtensionImpl::removeOIDFromString( const OString &oidString)

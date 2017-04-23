@@ -11,11 +11,13 @@
 #include "ww8scan.hxx"
 #include <rtl/ustrbuf.hxx>
 #include <stdarg.h>
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/document/IndexedPropertyValues.hpp>
 #include <com/sun/star/ui/XUIConfigurationPersistence.hpp>
 #include <com/sun/star/ui/theModuleUIConfigurationManagerSupplier.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XSingleComponentFactory.hpp>
+#include <com/sun/star/lang/XMultiComponentFactory.hpp>
+#include <com/sun/star/ui/XImageManager.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
 #include <fstream>
 #include <comphelper/processfactory.hxx>
@@ -50,9 +52,9 @@ MSOWordCommandConvertor::MSOWordCommandConvertor()
     msoToOOcmd[ 0x20b ] = ".uno:CloseDoc";
     msoToOOcmd[ 0x50 ] = ".uno:Open";
 
-    // mso tcid to ooo command string
+   // mso tcid to ooo command string
     // #FIXME and *HUNDREDS* of id's to added here
-    tcidToOOcmd[ 0x9d9 ] = ".uno:Print";
+   tcidToOOcmd[ 0x9d9 ] = ".uno:Print";
 }
 
 OUString MSOWordCommandConvertor::MSOCommandToOOCommand( sal_Int16 key )
@@ -71,8 +73,8 @@ OUString MSOWordCommandConvertor::MSOTCIDToOOCommand( sal_Int16 key )
     return OUString();
 }
 
-SwCTBWrapper::SwCTBWrapper() :
-reserved2(0)
+SwCTBWrapper::SwCTBWrapper( bool bReadId ) : Tcg255SubStruct( bReadId )
+,reserved2(0)
 ,reserved3(0)
 ,reserved4(0)
 ,reserved5(0)
@@ -194,7 +196,7 @@ void SwCTBWrapper::Print( FILE* fp )
         indent_printf(fp,"    reserved3(0x%x)\n",reserved3);
         indent_printf(fp,"    reserved4(0x%x)\n",reserved4);
         indent_printf(fp,"    reserved5(0x%x)\n",reserved5);
-        indent_printf(fp,"Quitting dump");
+        indent_printf(fp,"Quiting dump");
         return;
     }
     indent_printf(fp,"  size of TBDelta structures 0x%x\n", cbTBD );
@@ -371,7 +373,7 @@ bool Customization::ImportMenu( SwCTBWrapper& rWrapper, CustomToolBarImportHelpe
                     // create the popup menu
                     uno::Sequence< beans::PropertyValue > aPopupMenu( 4 );
                     aPopupMenu[0].Name = "CommandURL";
-                    aPopupMenu[0].Value <<= "vnd.openoffice.org:" + sMenuName;
+                    aPopupMenu[0].Value = uno::makeAny( "vnd.openoffice.org:" + sMenuName );
                     aPopupMenu[1].Name = "Label";
                     aPopupMenu[1].Value <<= sMenuName;
                     aPopupMenu[2].Name = "Type";
@@ -401,7 +403,7 @@ bool Customization::ImportMenu( SwCTBWrapper& rWrapper, CustomToolBarImportHelpe
 
 bool Customization::ImportCustomToolBar( SwCTBWrapper& rWrapper, CustomToolBarImportHelper& helper )
 {
-    if ( tbidForTBD == 0x25 )
+    if ( GetTBIDForTB() == 0x25 )
         return ImportMenu( rWrapper, helper );
     if ( !customizationDataCTB.get() )
         return false;
@@ -725,7 +727,7 @@ SwTBC::ImportToolBarControl( SwCTBWrapper& rWrapper, const css::uno::Reference< 
                     return false;
                 if ( !bIsMenuBar )
                 {
-                    if ( !helper.createMenu( pMenu->Name(), uno::Reference< container::XIndexAccess >( xMenuDesc, uno::UNO_QUERY ) ) )
+                    if ( !helper.createMenu( pMenu->Name(), uno::Reference< container::XIndexAccess >( xMenuDesc, uno::UNO_QUERY ), true ) )
                         return false;
                 }
                 else
@@ -743,7 +745,7 @@ SwTBC::ImportToolBarControl( SwCTBWrapper& rWrapper, const css::uno::Reference< 
             // insert spacer
             uno::Sequence< beans::PropertyValue > sProps( 1 );
             sProps[ 0 ].Name = "Type";
-            sProps[ 0 ].Value <<= ui::ItemType::SEPARATOR_LINE;
+            sProps[ 0 ].Value = uno::makeAny( ui::ItemType::SEPARATOR_LINE );
             toolbarcontainer->insertByIndex( toolbarcontainer->getCount(), uno::makeAny( sProps ) );
         }
 
@@ -830,33 +832,33 @@ bool Tcg255::processSubStruct( sal_uInt8 nId, SvStream &rS )
      {
          case 0x1:
          {
-             pSubStruct = new PlfMcd;
+             pSubStruct = new PlfMcd( false ); // don't read the id
              break;
          }
          case 0x2:
          {
-             pSubStruct = new PlfAcd;
+             pSubStruct = new PlfAcd( false );
              break;
          }
          case 0x3:
          case 0x4:
          {
-             pSubStruct = new PlfKme;
+             pSubStruct = new PlfKme( false );
              break;
          }
          case 0x10:
          {
-             pSubStruct = new TcgSttbf;
+             pSubStruct = new TcgSttbf( false );
              break;
          }
          case 0x11:
          {
-             pSubStruct = new MacroNames;
+             pSubStruct = new MacroNames( false );
              break;
          }
          case 0x12:
          {
-             pSubStruct = new SwCTBWrapper;
+             pSubStruct = new SwCTBWrapper( false );
              break;
          }
          default:
@@ -924,7 +926,7 @@ void Tcg255::Print( FILE* fp)
 }
 #endif
 
-Tcg255SubStruct::Tcg255SubStruct( ) : ch(0)
+Tcg255SubStruct::Tcg255SubStruct( bool bReadId ) : mbReadId( bReadId ), ch(0)
 {
 }
 
@@ -932,11 +934,14 @@ bool Tcg255SubStruct::Read(SvStream &rS)
 {
     SAL_INFO("sw.ww8","Tcg255SubStruct::Read() stream pos 0x" << std::hex << rS.Tell() );
     nOffSet = rS.Tell();
+    if ( mbReadId )
+        rS.ReadUChar( ch );
     return rS.good();
 }
 
-PlfMcd::PlfMcd()
-    : iMac(0)
+PlfMcd::PlfMcd(bool bReadId)
+    : Tcg255SubStruct(bReadId)
+    , iMac(0)
 {
 }
 
@@ -973,14 +978,15 @@ void PlfMcd::Print( FILE* fp )
 }
 #endif
 
-PlfAcd::PlfAcd() :
- iMac(0)
+PlfAcd::PlfAcd( bool bReadId ) : Tcg255SubStruct( bReadId )
+,iMac(0)
 ,rgacd(nullptr)
 {
 }
 
 PlfAcd::~PlfAcd()
 {
+        delete[] rgacd;
 }
 
 bool PlfAcd::Read( SvStream &rS)
@@ -999,7 +1005,7 @@ bool PlfAcd::Read( SvStream &rS)
     }
     if (iMac)
     {
-        rgacd.reset( new Acd[ iMac ] );
+        rgacd = new Acd[ iMac ];
         for ( sal_Int32 index = 0; index < iMac; ++index )
         {
             if ( !rgacd[ index ].Read( rS ) )
@@ -1024,14 +1030,15 @@ void PlfAcd::Print( FILE* fp )
 }
 #endif
 
-PlfKme::PlfKme() :
- iMac( 0 )
+PlfKme::PlfKme( bool bReadId ) : Tcg255SubStruct( bReadId )
+,iMac( 0 )
 ,rgkme( nullptr )
 {
 }
 
 PlfKme::~PlfKme()
 {
+        delete[] rgkme;
 }
 
 bool PlfKme::Read(SvStream &rS)
@@ -1042,7 +1049,7 @@ bool PlfKme::Read(SvStream &rS)
     rS.ReadInt32( iMac );
     if ( iMac )
     {
-        rgkme.reset( new Kme[ iMac ] );
+        rgkme = new Kme[ iMac ];
         for( sal_Int32 index=0; index<iMac; ++index )
         {
             if ( !rgkme[ index ].Read( rS ) )
@@ -1067,7 +1074,7 @@ void PlfKme::Print( FILE* fp )
 }
 #endif
 
-TcgSttbf::TcgSttbf()
+TcgSttbf::TcgSttbf( bool bReadId ) : Tcg255SubStruct( bReadId )
 {
 }
 
@@ -1097,6 +1104,7 @@ TcgSttbfCore::TcgSttbfCore() : fExtend( 0 )
 
 TcgSttbfCore::~TcgSttbfCore()
 {
+        delete[] dataItems;
 }
 
 bool TcgSttbfCore::Read( SvStream& rS )
@@ -1108,7 +1116,7 @@ bool TcgSttbfCore::Read( SvStream& rS )
     {
         if (cData > rS.remainingSize() / 4) //definitely an invalid record
             return false;
-        dataItems.reset( new SBBItem[ cData ] );
+        dataItems = new SBBItem[ cData ];
         for ( sal_Int32 index = 0; index < cData; ++index )
         {
             rS.ReadUInt16( dataItems[ index ].cchData );
@@ -1136,14 +1144,15 @@ void TcgSttbfCore::Print( FILE* fp )
 }
 #endif
 
-MacroNames::MacroNames() :
- iMac( 0 )
+MacroNames::MacroNames( bool bReadId ) : Tcg255SubStruct( bReadId )
+,iMac( 0 )
 ,rgNames( nullptr )
 {
 }
 
 MacroNames::~MacroNames()
 {
+    delete[] rgNames;
 }
 
 bool MacroNames::Read( SvStream &rS)
@@ -1158,7 +1167,7 @@ bool MacroNames::Read( SvStream &rS)
         size_t nMaxAvailableRecords = rS.remainingSize()/sizeof(sal_uInt16);
         if (iMac > nMaxAvailableRecords)
             return false;
-        rgNames.reset( new MacroName[ iMac ] );
+        rgNames = new MacroName[ iMac ];
         for ( sal_Int32 index = 0; index < iMac; ++index )
         {
             if ( !rgNames[ index ].Read( rS ) )

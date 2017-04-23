@@ -39,22 +39,25 @@ class Renderable :
     VclPtr<Printer> getPrinter();
 public:
     explicit Renderable (BaseWindow*);
-    virtual ~Renderable() override;
+    virtual ~Renderable();
 
     // XRenderable
     virtual sal_Int32 SAL_CALL getRendererCount (
         const css::uno::Any& aSelection,
-        const css::uno::Sequence<css::beans::PropertyValue >& xOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue >& xOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence<css::beans::PropertyValue> SAL_CALL getRenderer (
         sal_Int32 nRenderer,
         const css::uno::Any& rSelection,
-        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL render (
         sal_Int32 nRenderer,
         const css::uno::Any& rSelection,
-        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions) override;
+        const css::uno::Sequence<css::beans::PropertyValue>& rxOptions)
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
 };
 

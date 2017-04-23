@@ -19,8 +19,6 @@
 
 #include <sal/config.h>
 
-#include <algorithm>
-
 #include <sal/types.h>
 
 #ifdef _MSC_VER
@@ -32,8 +30,8 @@
 #include "syswinwrapper.hxx"
 
 
-static HCURSOR afxCursors[10] = { nullptr, };
-static HBRUSH afxHalftoneBrush = nullptr;
+HCURSOR _afxCursors[10] = { 0, };
+HBRUSH _afxHalftoneBrush = 0;
 
 
 // the struct below is used to determine the qualities of a particular handle
@@ -50,7 +48,7 @@ struct AFX_HANDLEINFO
 };
 
 // this array describes all 8 handles (clock-wise)
-const AFX_HANDLEINFO afxHandleInfo[] =
+const AFX_HANDLEINFO _afxHandleInfo[] =
 {
     // corner handles (top-left, top-right, bottom-right, bottom-left
     { offsetof(RECT, left), offsetof(RECT, top),        0, 0,  0,  0, 1, 3 },
@@ -74,7 +72,7 @@ struct AFX_RECTINFO
 };
 
 // this array is indexed by the offset of the RECT member / sizeof(int)
-const AFX_RECTINFO afxRectInfo[] =
+const AFX_RECTINFO _afxRectInfo[] =
 {
     { offsetof(RECT, right), +1 },
     { offsetof(RECT, bottom), +1 },
@@ -85,26 +83,26 @@ const AFX_RECTINFO afxRectInfo[] =
 
 HBRUSH HalftoneBrush()
 {
-    if (afxHalftoneBrush == nullptr)
+    if (_afxHalftoneBrush == NULL)
     {
         WORD grayPattern[8];
         for (int i = 0; i < 8; i++)
             grayPattern[i] = (WORD)(0x5555 << (i & 1));
         HBITMAP grayBitmap = CreateBitmap(8, 8, 1, 1, &grayPattern);
-        if (grayBitmap != nullptr)
+        if (grayBitmap != NULL)
         {
-            afxHalftoneBrush = CreatePatternBrush(grayBitmap);
+            _afxHalftoneBrush = CreatePatternBrush(grayBitmap);
             DeleteObject(grayBitmap);
         }
     }
-    return afxHalftoneBrush;
+    return _afxHalftoneBrush;
 }
 
 
 void DrawDragRect(
     HDC hDC,LPRECT lpRect,SIZE size,
     LPRECT lpRectLast,SIZE sizeLast,
-    HBRUSH hBrush = nullptr,HBRUSH hBrushLast = nullptr)
+    HBRUSH hBrush = NULL,HBRUSH hBrushLast = NULL)
 {
     // first, determine the update region and select it
     HRGN rgnNew;
@@ -117,15 +115,15 @@ void DrawDragRect(
     rgnNew = CreateRectRgn(0, 0, 0, 0);
     CombineRgn(rgnNew,rgnOutside,rgnInside,RGN_XOR);
 
-    HBRUSH hBrushOld = nullptr;
-    if (hBrush == nullptr)
+    HBRUSH hBrushOld = NULL;
+    if (hBrush == NULL)
         hBrush = HalftoneBrush();
-    if (hBrushLast == nullptr)
+    if (hBrushLast == NULL)
         hBrushLast = hBrush;
 
-    HRGN rgnLast(nullptr);
-    HRGN rgnUpdate(nullptr);
-    if (lpRectLast != nullptr)
+    HRGN rgnLast(NULL);
+    HRGN rgnUpdate(NULL);
+    if (lpRectLast != NULL)
     {
         // find difference between new region and old region
         rgnLast = CreateRectRgn(0, 0, 0, 0);
@@ -148,29 +146,29 @@ void DrawDragRect(
             CombineRgn(rgnUpdate,rgnLast,rgnNew, RGN_XOR);
         }
     }
-    if (hBrush != hBrushLast && lpRectLast != nullptr)
+    if (hBrush != hBrushLast && lpRectLast != NULL)
     {
         // brushes are different -- erase old region first
         SelectClipRgn(hDC,rgnLast);
         GetClipBox(hDC,&rect);
-        hBrushOld = static_cast<HBRUSH>(SelectObject(hDC,static_cast<HGDIOBJ>(hBrushLast)));
+        hBrushOld = (HBRUSH)SelectObject(hDC,(HGDIOBJ)hBrushLast);
         PatBlt(hDC,rect.left,rect.top,(rect.right-rect.left),(rect.bottom-rect.top),PATINVERT);
 
-        SelectObject(hDC,static_cast<HGDIOBJ>(hBrushOld));
-        hBrushOld = nullptr;
+        SelectObject(hDC,(HGDIOBJ)hBrushOld);
+        hBrushOld = NULL;
     }
 
     // draw into the update/new region
     SelectClipRgn(hDC,rgnUpdate);
 
     GetClipBox(hDC,&rect);
-    hBrushOld = static_cast<HBRUSH>(SelectObject(hDC, static_cast<HGDIOBJ>(hBrush)));
+    hBrushOld = (HBRUSH) SelectObject(hDC,(HGDIOBJ) hBrush);
     PatBlt(hDC,rect.left, rect.top,(rect.right-rect.left),(rect.bottom-rect.top), PATINVERT);
 
     // cleanup DC
-    if (hBrushOld != nullptr)
-        SelectObject(hDC, static_cast<HGDIOBJ>(hBrushOld));
-    SelectClipRgn(hDC,nullptr);
+    if (hBrushOld != NULL)
+        SelectObject(hDC,(HGDIOBJ)hBrushOld);
+    SelectClipRgn(hDC,NULL);
 }
 
 
@@ -220,9 +218,9 @@ Tracker::Tracker(LPCRECT lpSrcRect, UINT nStyle)
     m_nStyle = nStyle;
 }
 
-static HBRUSH afxHatchBrush = nullptr;
-static HPEN afxBlackDottedPen = nullptr;
-static int afxHandleSize = 0;
+HBRUSH _afxHatchBrush = 0;
+HPEN _afxBlackDottedPen = 0;
+int _afxHandleSize = 0;
 
 
 void Tracker::Construct()
@@ -230,7 +228,7 @@ void Tracker::Construct()
     static BOOL bInitialized = false;
     if (!bInitialized)
     {
-        if (afxHatchBrush == nullptr)
+        if (_afxHatchBrush == NULL)
         {
             // create the hatch pattern + bitmap
             WORD hatchPattern[8];
@@ -244,32 +242,32 @@ void Tracker::Construct()
             HBITMAP hatchBitmap = CreateBitmap(8, 8, 1, 1,&hatchPattern);
 
             // create black hatched brush
-            afxHatchBrush = CreatePatternBrush(hatchBitmap);
+            _afxHatchBrush = CreatePatternBrush(hatchBitmap);
             DeleteObject(hatchBitmap);
         }
 
-        if (afxBlackDottedPen == nullptr)
+        if (_afxBlackDottedPen == NULL)
         {
             // create black dotted pen
-            afxBlackDottedPen = CreatePen(PS_DOT, 0, RGB(0, 0, 0));
+            _afxBlackDottedPen = CreatePen(PS_DOT, 0, RGB(0, 0, 0));
         }
 
         // get default handle size from Windows profile setting
         static const TCHAR szWindows[] = TEXT("windows");
         static const TCHAR szInplaceBorderWidth[] =
             TEXT("oleinplaceborderwidth");
-        afxHandleSize = GetProfileInt(szWindows, szInplaceBorderWidth, 4);
+        _afxHandleSize = GetProfileInt(szWindows, szInplaceBorderWidth, 4);
         bInitialized = TRUE;
 
-        afxCursors[0] = afxCursors[2] = LoadCursor(nullptr,IDC_SIZENWSE);
-        afxCursors[4] = afxCursors[6] = LoadCursor(nullptr,IDC_SIZENS);
-        afxCursors[1] = afxCursors[3] = LoadCursor(nullptr,IDC_SIZENESW);
-        afxCursors[5] = afxCursors[7] = LoadCursor(nullptr,IDC_SIZEWE);
-        afxCursors[8] = LoadCursor(nullptr,IDC_SIZEALL);
+        _afxCursors[0] = _afxCursors[2] = LoadCursor(0,IDC_SIZENWSE);
+        _afxCursors[4] = _afxCursors[6] = LoadCursor(0,IDC_SIZENS);
+        _afxCursors[1] = _afxCursors[3] = LoadCursor(0,IDC_SIZENESW);
+        _afxCursors[5] = _afxCursors[7] = LoadCursor(0,IDC_SIZEWE);
+        _afxCursors[8] = LoadCursor(0,IDC_SIZEALL);
     }
 
     m_nStyle = 0;
-    m_nHandleSize = afxHandleSize;
+    m_nHandleSize = _afxHandleSize;
     m_sizeMin.cy = m_sizeMin.cx = m_nHandleSize*2;
 
     SetRectEmpty(&m_rectLast);
@@ -329,7 +327,7 @@ BOOL Tracker::SetCursor(HWND pWnd, UINT nHitTest) const
             nHandle = (TrackerHit)9;
     }
 
-    ::SetCursor(afxCursors[nHandle]);
+    ::SetCursor(_afxCursors[nHandle]);
     return TRUE;
 }
 
@@ -355,7 +353,7 @@ BOOL Tracker::Track(HWND hWnd,POINT point,BOOL bAllowInvert,
 BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
 {
     // don't handle if capture already set
-    if (GetCapture() != nullptr)
+    if (GetCapture() != NULL)
         return FALSE;
 
     // save original width & height in pixels
@@ -365,7 +363,7 @@ BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
     // set capture to the window which received this message
     SetCapture(hWnd);
     UpdateWindow(hWnd);
-    if (hWndClipTo != nullptr)
+    if (hWndClipTo != NULL)
         UpdateWindow(hWndClipTo);
     RECT rectSave = m_rect;
 
@@ -378,10 +376,10 @@ BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
 
     // get DC for drawing
     HDC hDrawDC;
-    if (hWndClipTo != nullptr)
+    if (hWndClipTo != NULL)
     {
         // clip to arbitrary window by using adjusted Window DC
-        hDrawDC = GetDCEx(hWndClipTo,nullptr, DCX_CACHE);
+        hDrawDC = GetDCEx(hWndClipTo,NULL, DCX_CACHE);
     }
     else
     {
@@ -396,7 +394,7 @@ BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
     for (;;)
     {
         MSG msg;
-        GetMessage(&msg, nullptr, 0, 0);
+        GetMessage(&msg, NULL, 0, 0);
 
         if (GetCapture() != hWnd)
             break;
@@ -408,9 +406,9 @@ BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
         case WM_MOUSEMOVE:
             rectOld = m_rect;
             // handle resize cases (and part of move)
-            if (px != nullptr)
+            if (px != NULL)
                 *px = (int)(short)LOWORD(msg.lParam) - xDiff;
-            if (py != nullptr)
+            if (py != NULL)
                 *py = (int)(short)HIWORD(msg.lParam) - yDiff;
 
             // handle move case
@@ -467,7 +465,7 @@ BOOL Tracker::TrackHandle(int nHandle,HWND hWnd,POINT point,HWND hWndClipTo)
     }
 
   ExitLoop:
-    if (hWndClipTo != nullptr)
+    if (hWndClipTo != NULL)
         ReleaseDC(hWndClipTo,hDrawDC);
     else
         ReleaseDC(hWnd,hDrawDC);
@@ -496,29 +494,29 @@ void Tracker::AdjustRect(int nHandle, LPRECT)
 
     // convert the handle into locations within m_rect
     int *px, *py;
-    GetModifyPointers(nHandle, &px, &py, nullptr, nullptr);
+    GetModifyPointers(nHandle, &px, &py, NULL, NULL);
 
     // enforce minimum width
     int nNewWidth = m_rect.right - m_rect.left;
     int nAbsWidth = m_bAllowInvert ? abs(nNewWidth) : nNewWidth;
-    if (px != nullptr && nAbsWidth < m_sizeMin.cx)
+    if (px != NULL && nAbsWidth < m_sizeMin.cx)
     {
         nNewWidth = nAbsWidth != 0 ? nNewWidth / nAbsWidth : 1;
         const AFX_RECTINFO* pRectInfo =
-            &afxRectInfo[px - reinterpret_cast<int*>(&m_rect)];
-        *px = *reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&m_rect) + pRectInfo->nOffsetAcross) +
+            &_afxRectInfo[(int*)px - (int*)&m_rect];
+        *px = *(int*)((BYTE*)&m_rect + pRectInfo->nOffsetAcross) +
             nNewWidth * m_sizeMin.cx * -pRectInfo->nSignAcross;
     }
 
     // enforce minimum height
     int nNewHeight = m_rect.bottom - m_rect.top;
     int nAbsHeight = m_bAllowInvert ? abs(nNewHeight) : nNewHeight;
-    if (py != nullptr && nAbsHeight < m_sizeMin.cy)
+    if (py != NULL && nAbsHeight < m_sizeMin.cy)
     {
         nNewHeight = nAbsHeight != 0 ? nNewHeight / nAbsHeight : 1;
         const AFX_RECTINFO* pRectInfo =
-            &afxRectInfo[py - reinterpret_cast<int*>(&m_rect)];
-        *py = *reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&m_rect) + pRectInfo->nOffsetAcross) +
+            &_afxRectInfo[(int*)py - (int*)&m_rect];
+        *py = *(int*)((BYTE*)&m_rect + pRectInfo->nOffsetAcross) +
             nNewHeight * m_sizeMin.cy * -pRectInfo->nSignAcross;
     }
 }
@@ -532,7 +530,7 @@ void Tracker::DrawTrackerRect(
     NormalizeRect(&rect);
 
     // convert to client coordinates
-    if (pWndClipTo != nullptr)
+    if (pWndClipTo != NULL)
         TransformRect(&rect,pWnd,pWndClipTo);
 
     SIZE size;
@@ -542,7 +540,7 @@ void Tracker::DrawTrackerRect(
         // otherwise, size depends on the style
         if (m_nStyle & hatchedBorder)
         {
-            size.cx = size.cy = std::max(1,GetHandleSize(&rect)-1);
+            size.cx = size.cy = max(1,GetHandleSize(&rect)-1);
             InflateRect(&rect,size.cx,size.cy);
         }
         else
@@ -566,15 +564,15 @@ void Tracker::Draw(HDC hDC) const
 {
     // set initial DC state
     SetMapMode(hDC,MM_TEXT);
-    SetViewportOrgEx(hDC,0, 0,nullptr);
-    SetWindowOrgEx(hDC,0, 0,nullptr);
+    SetViewportOrgEx(hDC,0, 0,NULL);
+    SetWindowOrgEx(hDC,0, 0,NULL);
 
     // get normalized rectangle
     RECT rect = m_rect;
     NormalizeRect(&rect);
 
-    HPEN pOldPen = nullptr;
-    HBRUSH pOldBrush = nullptr;
+    HPEN pOldPen = NULL;
+    HBRUSH pOldBrush = NULL;
     HGDIOBJ pTemp;
     int nOldROP;
 
@@ -582,10 +580,10 @@ void Tracker::Draw(HDC hDC) const
     if ((m_nStyle & (dottedLine|solidLine)) != 0)
     {
         if (m_nStyle & dottedLine)
-            pOldPen = static_cast<HPEN>(SelectObject(hDC,afxBlackDottedPen));
+            pOldPen = (HPEN)SelectObject(hDC,_afxBlackDottedPen);
         else
-            pOldPen = static_cast<HPEN>(SelectObject(hDC,reinterpret_cast<HGDIOBJ>(BLACK_PEN)));
-        pOldBrush = static_cast<HBRUSH>(SelectObject(hDC,reinterpret_cast<HGDIOBJ>(NULL_BRUSH)));
+            pOldPen = (HPEN)SelectObject(hDC,(HGDIOBJ)BLACK_PEN);
+        pOldBrush = (HBRUSH)SelectObject(hDC,(HGDIOBJ)NULL_BRUSH);
         nOldROP = SetROP2(hDC,R2_COPYPEN);
         InflateRect(&rect,+1, +1);   // borders are one pixel outside
         Rectangle(hDC,rect.left, rect.top, rect.right, rect.bottom);
@@ -594,17 +592,17 @@ void Tracker::Draw(HDC hDC) const
 
     // if hatchBrush is going to be used, need to unrealize it
     if ((m_nStyle & (hatchInside|hatchedBorder)) != 0)
-        UnrealizeObject(static_cast<HGDIOBJ>(afxHatchBrush));
+        UnrealizeObject((HGDIOBJ)_afxHatchBrush);
 
     // hatch inside
     if ((m_nStyle & hatchInside) != 0)
     {
-        pTemp = SelectObject(hDC,reinterpret_cast<HGDIOBJ>(NULL_PEN));
-        if (pOldPen == nullptr)
-            pOldPen = static_cast<HPEN>(pTemp);
-        pTemp = SelectObject(hDC,static_cast<HGDIOBJ>(afxHatchBrush));
-        if (pOldBrush == nullptr)
-            pOldBrush = static_cast<HBRUSH>(pTemp);
+        pTemp = SelectObject(hDC,(HGDIOBJ)NULL_PEN);
+        if (pOldPen == NULL)
+            pOldPen = (HPEN)pTemp;
+        pTemp = SelectObject(hDC,(HGDIOBJ)_afxHatchBrush);
+        if (pOldBrush == NULL)
+            pOldBrush = (HBRUSH)pTemp;
         SetBkMode(hDC,TRANSPARENT);
         nOldROP = SetROP2(hDC,R2_MASKNOTPEN);
         Rectangle(hDC,rect.left+1, rect.top+1, rect.right, rect.bottom);
@@ -614,9 +612,9 @@ void Tracker::Draw(HDC hDC) const
     // draw hatched border
     if ((m_nStyle & hatchedBorder) != 0)
     {
-        pTemp = SelectObject(hDC,static_cast<HGDIOBJ>(afxHatchBrush));
-        if (pOldBrush == nullptr)
-            pOldBrush = static_cast<HBRUSH>(pTemp);
+        pTemp = SelectObject(hDC,(HGDIOBJ)_afxHatchBrush);
+        if (pOldBrush == NULL)
+            pOldBrush = (HBRUSH)pTemp;
         SetBkMode(hDC,OPAQUE);
         RECT rectTrue;
         GetTrueRect(&rectTrue);
@@ -649,9 +647,9 @@ void Tracker::Draw(HDC hDC) const
     }
 
     // cleanup pDC state
-    if (pOldPen != nullptr)
+    if (pOldPen != NULL)
         SelectObject(hDC,pOldPen);
-    if (pOldBrush != nullptr)
+    if (pOldBrush != NULL)
         SelectObject(hDC,pOldBrush);
     RestoreDC(hDC,-1);
 }
@@ -678,9 +676,9 @@ void Tracker::GetHandleRect(int nHandle,RECT* pHandleRect) const
     int nWidth = rectT.right - rectT.left;
     int nHeight = rectT.bottom - rectT.top;
     RECT rect;
-    const AFX_HANDLEINFO* pHandleInfo = &afxHandleInfo[nHandle];
-    rect.left = *reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&rectT) + pHandleInfo->nOffsetX);
-    rect.top = *reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&rectT) + pHandleInfo->nOffsetY);
+    const AFX_HANDLEINFO* pHandleInfo = &_afxHandleInfo[nHandle];
+    rect.left = *(int*)((BYTE*)&rectT + pHandleInfo->nOffsetX);
+    rect.top = *(int*)((BYTE*)&rectT + pHandleInfo->nOffsetY);
     rect.left += size * pHandleInfo->nHandleX;
     rect.top += size * pHandleInfo->nHandleY;
     rect.left += pHandleInfo->nCenterX * (nWidth - size) / 2;
@@ -694,14 +692,15 @@ void Tracker::GetHandleRect(int nHandle,RECT* pHandleRect) const
 
 int Tracker::GetHandleSize(LPRECT lpRect) const
 {
-    LPCRECT rect = lpRect == nullptr ? &m_rect : lpRect;
+    if (lpRect == NULL)
+        lpRect = (LPRECT)&m_rect;
 
     int size = m_nHandleSize;
     if (!(m_nStyle & resizeOutside))
     {
         // make sure size is small enough for the size of the rect
-        int sizeMax = std::min(abs(rect->right - rect->left),
-                          abs(rect->bottom - rect->top));
+        int sizeMax = min(abs(lpRect->right - lpRect->left),
+                          abs(lpRect->bottom - lpRect->top));
         if (size * 2 > sizeMax)
             size = sizeMax / 2;
     }
@@ -739,11 +738,11 @@ int Tracker::NormalizeHit(int nHandle) const
 {
     if (nHandle == hitMiddle || nHandle == hitNothing)
         return nHandle;
-    const AFX_HANDLEINFO* pHandleInfo = &afxHandleInfo[nHandle];
+    const AFX_HANDLEINFO* pHandleInfo = &_afxHandleInfo[nHandle];
     if (m_rect.right - m_rect.left < 0)
     {
         nHandle = (TrackerHit)pHandleInfo->nInvertX;
-        pHandleInfo = &afxHandleInfo[nHandle];
+        pHandleInfo = &_afxHandleInfo[nHandle];
     }
     if (m_rect.bottom - m_rect.top < 0)
         nHandle = (TrackerHit)pHandleInfo->nInvertY;
@@ -792,36 +791,36 @@ void Tracker::GetModifyPointers(
     if (nHandle == hitMiddle)
         nHandle = hitTopLeft;   // same as hitting top-left
 
-    *ppx = nullptr;
-    *ppy = nullptr;
+    *ppx = NULL;
+    *ppy = NULL;
 
     // fill in the part of the rect that this handle modifies
     //  (Note: handles that map to themselves along a given axis when that
     //   axis is inverted don't modify the value on that axis)
 
-    const AFX_HANDLEINFO* pHandleInfo = &afxHandleInfo[nHandle];
+    const AFX_HANDLEINFO* pHandleInfo = &_afxHandleInfo[nHandle];
     if (pHandleInfo->nInvertX != nHandle)
     {
-        *ppx = reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&m_rect) + pHandleInfo->nOffsetX);
-        if (px != nullptr)
+        *ppx = (int*)((BYTE*)&m_rect + pHandleInfo->nOffsetX);
+        if (px != NULL)
             *px = **ppx;
     }
     else
     {
         // middle handle on X axis
-        if (px != nullptr)
+        if (px != NULL)
             *px = m_rect.left + (m_rect.left-m_rect.right) / 2;
     }
     if (pHandleInfo->nInvertY != nHandle)
     {
-        *ppy = reinterpret_cast<int*>(reinterpret_cast<BYTE*>(&m_rect) + pHandleInfo->nOffsetY);
-        if (py != nullptr)
+        *ppy = (int*)((BYTE*)&m_rect + pHandleInfo->nOffsetY);
+        if (py != NULL)
             *py = **ppy;
     }
     else
     {
         // middle handle on Y axis
-        if (py != nullptr)
+        if (py != NULL)
             *py = m_rect.top + (m_rect.top-m_rect.bottom) / 2;
     }
 }

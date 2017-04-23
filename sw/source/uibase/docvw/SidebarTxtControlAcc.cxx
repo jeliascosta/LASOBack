@@ -44,7 +44,7 @@ class SidebarTextEditSource : public SvxEditSource,
 {
     public:
         explicit SidebarTextEditSource(SidebarTextControl& rSidebarTextControl);
-        virtual ~SidebarTextEditSource() override;
+        virtual ~SidebarTextEditSource();
 
         virtual SvxEditSource* Clone() const override;
 
@@ -55,7 +55,7 @@ class SidebarTextEditSource : public SvxEditSource,
         virtual void UpdateData() override;
 
         virtual SfxBroadcaster& GetBroadcaster() const override;
-        DECL_LINK( NotifyHdl, EENotify&, void );
+        DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
 
     private:
         SidebarTextControl& mrSidebarTextControl;
@@ -113,7 +113,7 @@ SfxBroadcaster& SidebarTextEditSource::GetBroadcaster() const
     return *( const_cast< SidebarTextEditSource* > (this) );
 }
 
-IMPL_LINK(SidebarTextEditSource, NotifyHdl, EENotify&, rNotify, void)
+IMPL_LINK_TYPED(SidebarTextEditSource, NotifyHdl, EENotify&, rNotify, void)
 {
     std::unique_ptr< SfxHint > aHint( SvxEditSourceHelper::EENotification2Hint( &rNotify ) );
 
@@ -128,19 +128,23 @@ class SidebarTextControlAccessibleContext : public VCLXAccessibleComponent
 {
     public:
         explicit SidebarTextControlAccessibleContext( SidebarTextControl& rSidebarTextControl );
-        virtual ~SidebarTextControlAccessibleContext() override;
+        virtual ~SidebarTextControlAccessibleContext();
 
         virtual sal_Int32 SAL_CALL
-                getAccessibleChildCount() override;
+                getAccessibleChildCount()
+                throw (css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL
-                getAccessibleChild( sal_Int32 i ) override;
+                getAccessibleChild( sal_Int32 i )
+                throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
         virtual void SAL_CALL
                 addAccessibleEventListener (
-                    const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
+                    const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+                throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL
                 removeAccessibleEventListener (
-                    const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener) override;
+                    const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+                throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
         virtual void ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent ) override;
@@ -176,6 +180,7 @@ void SidebarTextControlAccessibleContext::defunc()
 }
 
 sal_Int32 SAL_CALL SidebarTextControlAccessibleContext::getAccessibleChildCount()
+    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard( maMutex );
 
@@ -190,6 +195,7 @@ sal_Int32 SAL_CALL SidebarTextControlAccessibleContext::getAccessibleChildCount(
 }
 
 css::uno::Reference< css::accessibility::XAccessible > SAL_CALL SidebarTextControlAccessibleContext::getAccessibleChild( sal_Int32 i )
+    throw ( css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( maMutex );
 
@@ -205,6 +211,7 @@ css::uno::Reference< css::accessibility::XAccessible > SAL_CALL SidebarTextContr
 
 void SAL_CALL SidebarTextControlAccessibleContext::addAccessibleEventListener (
     const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard( maMutex );
 
@@ -216,6 +223,7 @@ void SAL_CALL SidebarTextControlAccessibleContext::addAccessibleEventListener (
 
 void SAL_CALL SidebarTextControlAccessibleContext::removeAccessibleEventListener (
     const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener)
+    throw (css::uno::RuntimeException, std::exception)
 {
     osl::MutexGuard aGuard( maMutex );
 
@@ -231,24 +239,23 @@ void SidebarTextControlAccessibleContext::ProcessWindowEvent( const VclWindowEve
     {
         switch ( rVclWindowEvent.GetId() )
         {
-            case VclEventId::ObjectDying:
+            case VCLEVENT_OBJECT_DYING:
             {
                 defunc();
             }
             break;
-            case VclEventId::WindowGetFocus:
-            case VclEventId::ControlGetFocus:
+            case VCLEVENT_WINDOW_GETFOCUS:
+            case VCLEVENT_CONTROL_GETFOCUS:
             {
                 mpAccessibleTextHelper->SetFocus();
             }
             break;
-            case VclEventId::WindowLoseFocus:
-            case VclEventId::ControlLoseFocus:
+            case VCLEVENT_WINDOW_LOSEFOCUS:
+            case VCLEVENT_CONTROL_LOSEFOCUS:
             {
                 mpAccessibleTextHelper->SetFocus( false );
             }
             break;
-            default: break;
         }
     }
 

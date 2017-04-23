@@ -135,8 +135,8 @@ namespace drawinglayer
                             {   // #i93162# For painting the control setting a Zoom (using setZoom() at the xControlView)
                                 // is needed to define the font size. Normally this is done in
                                 // ViewObjectContactOfUnoControl::createPrimitive2DSequence by using positionControlForPaint().
-                                // For some reason the difference between MapUnit::MapTwipS and MapUnit::Map100thMM still plays
-                                // a role there so that for Draw/Impress/Calc (the MapUnit::Map100thMM users) i need to set a zoom
+                                // For some reason the difference between MAP_TWIPS and MAP_100TH_MM still plays
+                                // a role there so that for Draw/Impress/Calc (the MAP_100TH_MM users) i need to set a zoom
                                 // here, too. The factor includes the needed scale, but is calculated by pure comparisons. It
                                 // is somehow related to the twips/100thmm relationship.
                                 bool bUserIs100thmm(false);
@@ -152,15 +152,18 @@ namespace drawinglayer
 
                                         if(pVCLXWindow)
                                         {
-                                            VclPtr<vcl::Window> pWindow = pVCLXWindow->GetWindow();
+                                            vcl::Window* pWindow = pVCLXWindow->GetWindow();
 
                                             if(pWindow)
                                             {
                                                 pWindow = pWindow->GetParent();
 
-                                                if(pWindow && MapUnit::Map100thMM == pWindow->GetMapMode().GetMapUnit())
+                                                if(pWindow)
                                                 {
-                                                    bUserIs100thmm = true;
+                                                    if(MAP_100TH_MM == pWindow->GetMapMode().GetMapUnit())
+                                                    {
+                                                        bUserIs100thmm = true;
+                                                    }
                                                 }
                                             }
                                         }
@@ -234,7 +237,7 @@ namespace drawinglayer
             return xRetval;
         }
 
-        void ControlPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer ControlPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             // try to create a bitmap decomposition. If that fails for some reason,
             // at least create a replacement decomposition.
@@ -245,7 +248,7 @@ namespace drawinglayer
                 xReference = createPlaceholderDecomposition(rViewInformation);
             }
 
-            rContainer.push_back(xReference);
+            return Primitive2DContainer { xReference };
         }
 
         ControlPrimitive2D::ControlPrimitive2D(
@@ -326,7 +329,7 @@ namespace drawinglayer
             return aRetval;
         }
 
-        void ControlPrimitive2D::get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer ControlPrimitive2D::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
             // this primitive is view-dependent related to the scaling. If scaling has changed,
             // destroy existing decomposition. To detect change, use size of unit size in view coordinates
@@ -349,7 +352,7 @@ namespace drawinglayer
             }
 
             // use parent implementation
-            BufferedDecompositionPrimitive2D::get2DDecomposition(rVisitor, rViewInformation);
+            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
         }
 
         // provide unique ID

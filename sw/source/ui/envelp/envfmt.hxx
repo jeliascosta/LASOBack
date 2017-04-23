@@ -19,6 +19,7 @@
 #ifndef INCLUDED_SW_SOURCE_UI_ENVELP_ENVFMT_HXX
 #define INCLUDED_SW_SOURCE_UI_ENVELP_ENVFMT_HXX
 
+#include <svtools/stdctrl.hxx>
 #include <vcl/field.hxx>
 #include <vcl/menubtn.hxx>
 #include <vcl/group.hxx>
@@ -42,10 +43,10 @@ class SwEnvFormatPage : public SfxTabPage
 
     std::vector<sal_uInt16>  aIDs;
 
-    DECL_LINK( ModifyHdl, SpinField&, void );
-    DECL_LINK( LoseFocusHdl, Control&, void );
-    DECL_LINK( EditHdl, MenuButton *, void );
-    DECL_LINK(FormatHdl, ListBox&, void);
+    DECL_LINK_TYPED( ModifyHdl, SpinField&, void );
+    DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
+    DECL_LINK_TYPED( EditHdl, MenuButton *, void );
+    DECL_LINK_TYPED(FormatHdl, ListBox&, void);
 
     void SetMinMax();
 
@@ -58,13 +59,13 @@ class SwEnvFormatPage : public SfxTabPage
 
 public:
     SwEnvFormatPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwEnvFormatPage() override;
+    virtual ~SwEnvFormatPage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
+    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
             void FillItem(SwEnvItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;

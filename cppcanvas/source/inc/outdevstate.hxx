@@ -62,7 +62,7 @@ namespace cppcanvas
                 textDirection(css::rendering::TextDirection::WEAK_LEFT_TO_RIGHT),
                 textAlignment(0), // TODO(Q2): Synchronize with implrenderer
                                   // and possibly new rendering::TextAlignment
-                textReliefStyle(FontRelief::NONE),
+                textReliefStyle(RELIEF_NONE),
                 textOverlineStyle(LINESTYLE_NONE),
                 textUnderlineStyle(LINESTYLE_NONE),
                 textStrikeoutStyle(STRIKEOUT_NONE),
@@ -80,7 +80,7 @@ namespace cppcanvas
             }
 
             ::basegfx::B2DPolyPolygon                                                clip;
-            ::tools::Rectangle                                                              clipRect;
+            ::Rectangle                                                              clipRect;
             css::uno::Reference< css::rendering::XPolyPolygon2D >                    xClipPoly;
 
             css::uno::Sequence< double >                                             lineColor;
@@ -103,7 +103,7 @@ namespace cppcanvas
             PushFlags                                                                pushFlags;
             sal_Int8                                                                 textDirection;
             sal_Int8                                                                 textAlignment;
-            FontRelief                                                               textReliefStyle;
+            sal_Int8                                                                 textReliefStyle;
             sal_Int8                                                                 textOverlineStyle;
             sal_Int8                                                                 textUnderlineStyle;
             sal_Int8                                                                 textStrikeoutStyle;

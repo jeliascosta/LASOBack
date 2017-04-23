@@ -29,7 +29,7 @@ static void lcl_sleep( ::osl::Condition& aCondition,
                        ::sal_Int32       nMilliSeconds )
 {
     if (nMilliSeconds < 1)
-        aCondition.wait();
+        aCondition.wait(0);
     else
     {
         TimeValue aTime;
@@ -61,7 +61,7 @@ void Request::notify()
 AsyncRequests::AsyncRequests(const RequestHandlerRef& rHandler)
     : ::cppu::BaseMutex(         )
     , ::osl::Thread    (         )
-    , m_bFinish        (false)
+    , m_bFinish        (sal_False)
     , m_rHandler       (rHandler )
     , m_lRequests      (         )
 {
@@ -71,7 +71,7 @@ AsyncRequests::~AsyncRequests()
 {
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
-    m_bFinish = true;
+    m_bFinish = sal_True;
     aLock.clear();
     // <- SYNCHRONIZED
 
@@ -107,7 +107,7 @@ void AsyncRequests::triggerRequestBlocked(const RequestRef& rRequest)
 
     triggerJobExecution();
 
-    rRequest->wait();
+    rRequest->wait(Request::WAIT_INFINITE);
 }
 
 void AsyncRequests::triggerRequestNonBlocked(const RequestRef& rRequest)
@@ -129,7 +129,7 @@ void AsyncRequests::triggerRequestDirectly(const RequestRef& rRequest)
     aLock.clear();
     // <- SYNCHRONIZED
 
-    if (rHandler != nullptr)
+    if (rHandler != NULL)
         rHandler->doRequest(rRequest);
 }
 
@@ -157,11 +157,11 @@ void SAL_CALL AsyncRequests::run()
     // SYNCHRONIZED ->
     ::osl::ResettableMutexGuard aLock(m_aMutex);
     RequestHandlerRef rHandler  = m_rHandler;
-    bool bFinished = m_bFinish;
+    sal_Bool        bFinished = m_bFinish;
     aLock.clear();
     // <- SYNCHRONIZED
 
-    if (rHandler != nullptr)
+    if (rHandler != NULL)
         rHandler->before();
 
     while ( ! bFinished)
@@ -180,21 +180,21 @@ void SAL_CALL AsyncRequests::run()
         aLock.clear();
         // <- SYNCHRONIZED
 
-        if (rRequest == nullptr)
+        if (rRequest == NULL)
         {
             lcl_sleep(maWait, TIME_TO_WAIT_FOR_NEW_REQUESTS);
             maWait.reset();
             continue;
         }
 
-        if (rHandler != nullptr)
+        if (rHandler != NULL)
         {
             rHandler->doRequest(rRequest);
             rRequest->notify();
         }
     }
 
-    if (rHandler != nullptr)
+    if (rHandler != NULL)
         rHandler->after();
 }
 

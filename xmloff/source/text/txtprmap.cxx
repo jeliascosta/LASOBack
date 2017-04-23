@@ -25,6 +25,8 @@
 #include <xmloff/maptype.hxx>
 #include <xmloff/xmltypes.hxx>
 #include "txtprhdl.hxx"
+
+//UUUU
 #include <xmlsdtypes.hxx>
 
 using namespace ::com::sun::star;
@@ -68,10 +70,6 @@ using namespace ::xmloff::token;
 #define MR_E( a, p, l, t, c ) \
     M_E_( a, p, l, (t|XML_TYPE_PROP_RUBY), c )
 
-// cell properties
-#define MC_E( a, p, l, t, c ) \
-    M_E_( a, p, l, (t|XML_TYPE_PROP_TABLE_CELL), c )
-
 // extensions import/export
 #define MAP_EXT(name,prefix,token,type,context)  { name, sizeof(name)-1, prefix, token, type, context, SvtSaveOptions::ODFVER_012_EXT_COMPAT, false }
 // extensions import only
@@ -80,15 +78,16 @@ using namespace ::xmloff::token;
 #define M_END() \
     { nullptr, 0, 0, XML_TOKEN_INVALID, 0, 0, SvtSaveOptions::ODFVER_010, false }
 
+//UUUU
 #define MAP_(name,prefix,token,type,context)  { name, sizeof(name)-1, prefix, token, type, context, SvtSaveOptions::ODFVER_010, false }
 #define GMAP(name,prefix,token,type,context) MAP_(name,prefix,token,static_cast<sal_Int32>(type|XML_TYPE_PROP_GRAPHIC),context)
 
-XMLPropertyMapEntry const aXMLParaPropMap[] =
+XMLPropertyMapEntry aXMLParaPropMap[] =
 {
     // RES_UNKNOWNATR_CONTAINER
     MP_E( "ParaUserDefinedAttributes", TEXT, XMLNS, XML_TYPE_ATTRIBUTE_CONTAINER | MID_FLAG_SPECIAL_ITEM, 0 ),
 
-    // fill attributes for paragraph backgrounds
+    //UUUU fill attributes for paragraph backgrounds
     // #i125045# moved to the front to be able to exclude these in lcl_txtprmap_getMap
     // for TextPropMap::SHAPE_PARA to not have these double for Shapes (which already have these)
     GMAP( "FillStyle",                      XML_NAMESPACE_DRAW, XML_FILL,                   XML_SW_TYPE_FILLSTYLE, 0 ),
@@ -456,7 +455,7 @@ XMLPropertyMapEntry const aXMLParaPropMap[] =
 };
 
 
-XMLPropertyMapEntry const aXMLAdditionalTextDefaultsMap[] =
+XMLPropertyMapEntry aXMLAdditionalTextDefaultsMap[] =
 {
     // RES_FOLLOW_TEXT_FLOW - DVO #i18732#
     MG_ED( "IsFollowingTextFlow", STYLE, FLOW_WITH_TEXT,      XML_TYPE_BOOL, 0 ),
@@ -467,7 +466,7 @@ XMLPropertyMapEntry const aXMLAdditionalTextDefaultsMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLTextPropMap[] =
+XMLPropertyMapEntry aXMLTextPropMap[] =
 {
     // RES_CHRATR_CASEMAP
     MT_E( "CharCaseMap",        FO,     FONT_VARIANT,       XML_TYPE_TEXT_CASEMAP_VAR,  0 ),
@@ -670,7 +669,7 @@ XMLPropertyMapEntry const aXMLTextPropMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLFramePropMap[] =
+XMLPropertyMapEntry aXMLFramePropMap[] =
 {
     // RES_FILL_ORDER
     // TODO: not required???
@@ -756,7 +755,7 @@ XMLPropertyMapEntry const aXMLFramePropMap[] =
     MG_E( "BackGraphicFilter",STYLE,    FILTER_NAME,    MID_FLAG_SPECIAL_ITEM|XML_TYPE_STRING, CTF_BACKGROUND_FILTER ),
     MG_E( "BackGraphicURL", STYLE,  BACKGROUND_IMAGE,   MID_FLAG_ELEMENT_ITEM|XML_TYPE_STRING, CTF_BACKGROUND_URL ),
 
-    // fill attributes
+    //UUUU fill attributes
     GMAP( "FillStyle",                      XML_NAMESPACE_DRAW, XML_FILL,                   XML_SW_TYPE_FILLSTYLE, 0 ),
     GMAP( "FillColor",                      XML_NAMESPACE_DRAW, XML_FILL_COLOR,             XML_TYPE_COLOR, 0 ),
     GMAP( "FillColor2",                     XML_NAMESPACE_DRAW, XML_SECONDARY_FILL_COLOR,   XML_TYPE_COLOR, 0 ),
@@ -876,7 +875,7 @@ XMLPropertyMapEntry const aXMLFramePropMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLShapePropMap[] =
+XMLPropertyMapEntry aXMLShapePropMap[] =
 {
     // RES_LR_SPACE
     MG_E( "LeftMargin",             FO, MARGIN_LEFT,        XML_TYPE_MEASURE,  0),
@@ -921,7 +920,7 @@ XMLPropertyMapEntry const aXMLShapePropMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLSectionPropMap[] =
+XMLPropertyMapEntry aXMLSectionPropMap[] =
 {
     // RES_COL
     MS_E( "TextColumns",            STYLE,  COLUMNS,    MID_FLAG_ELEMENT_ITEM|XML_TYPE_TEXT_COLUMNS, CTF_TEXTCOLUMNS ),
@@ -967,7 +966,7 @@ XMLPropertyMapEntry const aXMLSectionPropMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLRubyPropMap[] =
+XMLPropertyMapEntry aXMLRubyPropMap[] =
 {
     MR_E( "RubyAdjust", STYLE, RUBY_ALIGN, XML_TYPE_TEXT_RUBY_ADJUST, 0 ),
     MR_E( "RubyIsAbove",    STYLE, RUBY_POSITION, XML_TYPE_TEXT_RUBY_POSITION, 0 ),
@@ -975,7 +974,7 @@ XMLPropertyMapEntry const aXMLRubyPropMap[] =
 };
 
 
-XMLPropertyMapEntry const aXMLTableDefaultsMap[] =
+XMLPropertyMapEntry aXMLTableDefaultsMap[] =
 {
     // RES_COLLAPSING_BORDERS: only occurs in tables, but we need to
     // read/write the default for this item
@@ -984,7 +983,7 @@ XMLPropertyMapEntry const aXMLTableDefaultsMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLTableRowDefaultsMap[] =
+XMLPropertyMapEntry aXMLTableRowDefaultsMap[] =
 {
     // RES_ROW_SPLIT: only occurs in table rows, but we need to
     // read/write the default for this item
@@ -993,77 +992,9 @@ XMLPropertyMapEntry const aXMLTableRowDefaultsMap[] =
     M_END()
 };
 
-XMLPropertyMapEntry const aXMLCellPropMap[] =
+static XMLPropertyMapEntry *lcl_txtprmap_getMap( TextPropMap nType )
 {
-    MC_E( "BackColor",            FO,    BACKGROUND_COLOR, XML_TYPE_COLORTRANSPARENT|MID_FLAG_MULTI_PROPERTY, 0 ),
-    MC_E( "LeftBorder",           FO,    BORDER_LEFT,      XML_TYPE_BORDER,                                   0 ),
-    MC_E( "RightBorder",          FO,    BORDER_RIGHT,     XML_TYPE_BORDER,                                   0 ),
-    MC_E( "TopBorder",            FO,    BORDER_TOP,       XML_TYPE_BORDER,                                   0 ),
-    MC_E( "BottomBorder",         FO,    BORDER_BOTTOM,    XML_TYPE_BORDER,                                   0 ),
-    MC_E( "BorderDistance",       FO,    PADDING,          XML_TYPE_MEASURE|MID_FLAG_MULTI_PROPERTY,          0 ),
-    MC_E( "LeftBorderDistance",   FO,    PADDING_LEFT,     XML_TYPE_MEASURE|MID_FLAG_MULTI_PROPERTY,          0 ),
-    MC_E( "RightBorderDistance",  FO,    PADDING_RIGHT,    XML_TYPE_MEASURE|MID_FLAG_MULTI_PROPERTY,          0 ),
-    MC_E( "TopBorderDistance",    FO,    PADDING_TOP,      XML_TYPE_MEASURE|MID_FLAG_MULTI_PROPERTY,          0 ),
-    MC_E( "BottomBorderDistance", FO,    PADDING_BOTTOM,   XML_TYPE_MEASURE|MID_FLAG_MULTI_PROPERTY,          0 ),
-    MC_E( "VertOrient",           STYLE, VERTICAL_ALIGN,   XML_TYPE_TEXT_VERTICAL_POS,                        0 ),
-    MC_E( "WritingMode",          STYLE, WRITING_MODE,     XML_TYPE_TEXT_WRITING_MODE_WITH_DEFAULT,           0 ),
-    MC_E( "NumberFormat",         STYLE, DATA_STYLE_NAME,  XML_TYPE_NUMBER,                                   0 ),
-    // paragraph properties
-    MP_E( "ParaAdjust",           FO,    TEXT_ALIGN,       XML_TYPE_TEXT_ADJUST,                              0 ),
-    // text properties
-    MT_ED( "CharColor",           FO,    COLOR,                    XML_TYPE_COLORAUTO|MID_FLAG_MERGE_PROPERTY,                0 ),
-    MT_ED( "CharColor",           STYLE, USE_WINDOW_FONT_COLOR,    XML_TYPE_ISAUTOCOLOR|MID_FLAG_MERGE_PROPERTY,              0 ),
-    MT_E( "CharShadowed",         FO,    TEXT_SHADOW,              XML_TYPE_TEXT_SHADOWED,                                    0 ),
-    MT_E( "CharContoured",        STYLE, TEXT_OUTLINE,             XML_TYPE_BOOL,                                             0 ),
-    MT_E( "CharStrikeout",        STYLE, TEXT_LINE_THROUGH_STYLE,  XML_TYPE_TEXT_CROSSEDOUT_STYLE|MID_FLAG_MERGE_PROPERTY,    0 ),
-    MT_E( "CharStrikeout",        STYLE, TEXT_LINE_THROUGH_TYPE,   XML_TYPE_TEXT_CROSSEDOUT_TYPE|MID_FLAG_MERGE_PROPERTY,     0 ),
-    MT_E( "CharStrikeout",        STYLE, TEXT_LINE_THROUGH_WIDTH,  XML_TYPE_TEXT_CROSSEDOUT_WIDTH|MID_FLAG_MERGE_PROPERTY,    0 ),
-    MT_E( "CharStrikeout",        STYLE, TEXT_LINE_THROUGH_TEXT,   XML_TYPE_TEXT_CROSSEDOUT_TEXT|MID_FLAG_MERGE_PROPERTY,     0 ),
-    MT_E( "CharUnderline",        STYLE, TEXT_UNDERLINE_STYLE,     XML_TYPE_TEXT_UNDERLINE_STYLE|MID_FLAG_MERGE_PROPERTY,     0 ),
-    MT_E( "CharUnderline",        STYLE, TEXT_UNDERLINE_TYPE,      XML_TYPE_TEXT_UNDERLINE_TYPE|MID_FLAG_MERGE_PROPERTY,      0 ),
-    MT_E( "CharUnderline",        STYLE, TEXT_UNDERLINE_WIDTH,     XML_TYPE_TEXT_UNDERLINE_WIDTH|MID_FLAG_MERGE_PROPERTY,     0 ),
-    MT_E( "CharUnderlineColor",   STYLE, TEXT_UNDERLINE_COLOR,     XML_TYPE_TEXT_UNDERLINE_COLOR|MID_FLAG_MULTI_PROPERTY,     0 ),
-    MT_E( "CharUnderlineHasColor",STYLE, TEXT_UNDERLINE_COLOR,     XML_TYPE_TEXT_UNDERLINE_HASCOLOR|MID_FLAG_MERGE_ATTRIBUTE, 0 ),
-    // STANDARD FONT
-    MT_ED( "CharHeight",          FO,    FONT_SIZE,                XML_TYPE_CHAR_HEIGHT|MID_FLAG_MULTI_PROPERTY,              0 ),
-    MT_E( "CharWeight",           FO,    FONT_WEIGHT,              XML_TYPE_TEXT_WEIGHT,                                      0 ),
-    MT_E( "CharPosture",          FO,    FONT_STYLE,               XML_TYPE_TEXT_POSTURE,                                     0 ),
-    // RES_CHRATR_FONT
-    MT_ED( "CharFontName",        STYLE, FONT_NAME,          XML_TYPE_STRING|MID_FLAG_SPECIAL_ITEM_IMPORT,              CTF_FONTNAME       ),
-    MT_ED( "CharFontName",        FO,    FONT_FAMILY,        XML_TYPE_TEXT_FONTFAMILYNAME|MID_FLAG_SPECIAL_ITEM_IMPORT, CTF_FONTFAMILYNAME ),
-    MT_ED( "CharFontStyleName",   STYLE, FONT_STYLE_NAME,    XML_TYPE_STRING,                                           CTF_FONTSTYLENAME  ),
-    MT_ED( "CharFontFamily",      STYLE, FONT_FAMILY_GENERIC,XML_TYPE_TEXT_FONTFAMILY,                                  CTF_FONTFAMILY     ),
-    MT_ED( "CharFontPitch",       STYLE, FONT_PITCH,         XML_TYPE_TEXT_FONTPITCH,                                   CTF_FONTPITCH      ),
-    MT_ED( "CharFontCharSet",     STYLE, FONT_CHARSET,       XML_TYPE_TEXT_FONTENCODING,                                CTF_FONTCHARSET    ),
-    // CJK FONT
-    MT_ED( "CharHeightAsian",         STYLE, FONT_SIZE_ASIAN,            XML_TYPE_CHAR_HEIGHT|MID_FLAG_MULTI_PROPERTY,  0                  ),
-    MT_E( "CharWeightAsian",          STYLE, FONT_WEIGHT_ASIAN,          XML_TYPE_TEXT_WEIGHT,                          0                  ),
-    MT_E( "CharPostureAsian",         STYLE, FONT_STYLE_ASIAN,           XML_TYPE_TEXT_POSTURE,                         0                  ),
-    // RES_CHRATR_CJK_FONT
-    MT_ED( "CharFontNameAsian",       STYLE, FONT_NAME_ASIAN,            XML_TYPE_STRING|MID_FLAG_SPECIAL_ITEM_IMPORT,              CTF_FONTNAME_CJK       ),
-    MT_ED( "CharFontNameAsian",       STYLE, FONT_FAMILY_ASIAN,          XML_TYPE_TEXT_FONTFAMILYNAME|MID_FLAG_SPECIAL_ITEM_IMPORT, CTF_FONTFAMILYNAME_CJK ),
-    MT_ED( "CharFontStyleNameAsian",  STYLE, FONT_STYLE_NAME_ASIAN,      XML_TYPE_STRING,                                           CTF_FONTSTYLENAME_CJK  ),
-    MT_ED( "CharFontFamilyAsian",     STYLE, FONT_FAMILY_GENERIC_ASIAN,  XML_TYPE_TEXT_FONTFAMILY,                                  CTF_FONTFAMILY_CJK     ),
-    MT_ED( "CharFontPitchAsian",      STYLE, FONT_PITCH_ASIAN,           XML_TYPE_TEXT_FONTPITCH,                                   CTF_FONTPITCH_CJK      ),
-    MT_ED( "CharFontCharSetAsian",    STYLE, FONT_CHARSET_ASIAN,         XML_TYPE_TEXT_FONTENCODING,                                CTF_FONTCHARSET_CJK    ),
-    // CTL FONT
-    MT_ED( "CharHeightComplex",       STYLE, FONT_SIZE_COMPLEX,          XML_TYPE_CHAR_HEIGHT|MID_FLAG_MULTI_PROPERTY,              0                      ),
-    MT_E( "CharWeightComplex",        STYLE, FONT_WEIGHT_COMPLEX,        XML_TYPE_TEXT_WEIGHT,                                      0                      ),
-    MT_E( "CharPostureComplex",       STYLE, FONT_STYLE_COMPLEX,         XML_TYPE_TEXT_POSTURE,                                     0                      ),
-    // RES_CHRATR_CTL_FONT
-    MT_ED( "CharFontNameComplex",     STYLE, FONT_NAME_COMPLEX,          XML_TYPE_STRING|MID_FLAG_SPECIAL_ITEM_IMPORT,              CTF_FONTNAME_CTL       ),
-    MT_ED( "CharFontNameComplex",     STYLE, FONT_FAMILY_COMPLEX,        XML_TYPE_TEXT_FONTFAMILYNAME|MID_FLAG_SPECIAL_ITEM_IMPORT, CTF_FONTFAMILYNAME_CTL ),
-    MT_ED( "CharFontStyleNameComplex",STYLE, FONT_STYLE_NAME_COMPLEX,    XML_TYPE_STRING,                                           CTF_FONTSTYLENAME_CTL  ),
-    MT_ED( "CharFontFamilyComplex",   STYLE, FONT_FAMILY_GENERIC_COMPLEX,XML_TYPE_TEXT_FONTFAMILY,                                  CTF_FONTFAMILY_CTL     ),
-    MT_ED( "CharFontPitchComplex",    STYLE, FONT_PITCH_COMPLEX,         XML_TYPE_TEXT_FONTPITCH,                                   CTF_FONTPITCH_CTL      ),
-    MT_ED( "CharFontCharSetComplex",  STYLE, FONT_CHARSET_COMPLEX,       XML_TYPE_TEXT_FONTENCODING,                                CTF_FONTCHARSET_CTL    ),
-
-    M_END()
-};
-
-static XMLPropertyMapEntry const *lcl_txtprmap_getMap( TextPropMap nType )
-{
-    XMLPropertyMapEntry const *pMap = nullptr;
+    XMLPropertyMapEntry *pMap = nullptr;
     switch( nType )
     {
     case TextPropMap::TEXT:
@@ -1075,7 +1006,7 @@ static XMLPropertyMapEntry const *lcl_txtprmap_getMap( TextPropMap nType )
         // [XATTR_FILL_FIRST .. XATTR_FILL_LAST] and would be double since Shapes
         // already contain these (usually in aXMLSDProperties)
         pMap = &(aXMLParaPropMap[21]);
-        assert( pMap->meXMLName == XML_MARGIN && " shape para map changed" );
+        OSL_ENSURE( pMap->meXMLName == XML_MARGIN, "shape para map changed" );
         break;
     case TextPropMap::PARA:
         pMap = aXMLParaPropMap;
@@ -1085,7 +1016,7 @@ static XMLPropertyMapEntry const *lcl_txtprmap_getMap( TextPropMap nType )
         break;
     case TextPropMap::AUTO_FRAME:
         pMap = &(aXMLFramePropMap[13]);
-        assert( pMap->meXMLName == XML_MARGIN && " frame map changed" );
+        OSL_ENSURE( pMap->meXMLName == XML_MARGIN, "frame map changed" );
         break;
     case TextPropMap::SHAPE:
         pMap = aXMLShapePropMap;
@@ -1105,11 +1036,8 @@ static XMLPropertyMapEntry const *lcl_txtprmap_getMap( TextPropMap nType )
     case TextPropMap::TABLE_ROW_DEFAULTS:
         pMap = aXMLTableRowDefaultsMap;
         break;
-    case TextPropMap::CELL:
-        pMap = aXMLCellPropMap;
-        break;
     }
-    SAL_WARN_IF( !pMap, "xmloff", "illegal map type" );
+    DBG_ASSERT( pMap, "illegal map type" );
     return pMap;
 }
 

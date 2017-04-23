@@ -48,7 +48,7 @@ namespace rptxml
                     ,const css::uno::Reference< css::report::XFunctionsSupplier >&    _xFunctions
                     ,bool _bAddToReport = false
                     );
-        virtual ~OXMLFunction() override;
+        virtual ~OXMLFunction();
 
         virtual void EndElement() override;
     };

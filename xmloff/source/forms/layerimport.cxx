@@ -71,6 +71,7 @@ using namespace ::com::sun::star::sdb;
 //= OFormLayerXMLImport_Impl
 OFormLayerXMLImport_Impl::OFormLayerXMLImport_Impl(SvXMLImport& _rImporter)
     :m_rImporter(_rImporter)
+    ,m_pAutoStyles(nullptr)
 {
     // build the attribute2property map
     // string properties which are exported as attributes
@@ -179,46 +180,46 @@ OFormLayerXMLImport_Impl::OFormLayerXMLImport_Impl(SvXMLImport& _rImporter)
     // the enum attributes
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getCommonControlAttributeName( CCAFlags::VisualEffect ), PROPERTY_VISUAL_EFFECT,
-        VisualEffect::LOOK3D, aVisualEffectMap,
+        VisualEffect::LOOK3D, OEnumMapper::getEnumMap( OEnumMapper::epVisualEffect ),
         &::cppu::UnoType<sal_Int16>::get() );
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getCommonControlAttributeName( CCAFlags::Orientation ), PROPERTY_ORIENTATION,
-        ScrollBarOrientation::HORIZONTAL, aOrientationMap,
+        ScrollBarOrientation::HORIZONTAL, OEnumMapper::getEnumMap( OEnumMapper::epOrientation ),
         &::cppu::UnoType<sal_Int32>::get() );
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getCommonControlAttributeName(CCAFlags::ButtonType), PROPERTY_BUTTONTYPE,
-        FormButtonType_PUSH, aFormButtonTypeMap,
+        FormButtonType_PUSH, OEnumMapper::getEnumMap(OEnumMapper::epButtonType),
         &::cppu::UnoType<FormButtonType>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getDatabaseAttributeName(DAFlags::ListSource_TYPE), PROPERTY_LISTSOURCETYPE,
-        ListSourceType_VALUELIST, aListSourceTypeMap,
+        ListSourceType_VALUELIST, OEnumMapper::getEnumMap(OEnumMapper::epListSourceType),
         &::cppu::UnoType<ListSourceType>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getSpecialAttributeName(SCAFlags::State), PROPERTY_DEFAULT_STATE, TRISTATE_FALSE,
-        aCheckStateMap,
+        OEnumMapper::getEnumMap(OEnumMapper::epCheckState),
         &::cppu::UnoType<sal_Int16>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getSpecialAttributeName(SCAFlags::CurrentState), PROPERTY_STATE, TRISTATE_FALSE,
-        aCheckStateMap,
+        OEnumMapper::getEnumMap(OEnumMapper::epCheckState),
         &::cppu::UnoType<sal_Int16>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getFormAttributeName(faEnctype), PROPERTY_SUBMIT_ENCODING,
-        FormSubmitEncoding_URL, aSubmitEncodingMap,
+        FormSubmitEncoding_URL, OEnumMapper::getEnumMap(OEnumMapper::epSubmitEncoding),
         &::cppu::UnoType<FormSubmitEncoding>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getFormAttributeName(faMethod), PROPERTY_SUBMIT_METHOD,
-        FormSubmitMethod_GET, aSubmitMethodMap,
+        FormSubmitMethod_GET, OEnumMapper::getEnumMap(OEnumMapper::epSubmitMethod),
         &::cppu::UnoType<FormSubmitMethod>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getFormAttributeName(faCommandType), PROPERTY_COMMAND_TYPE,
-        CommandType::COMMAND, aCommandTypeMap);
+        CommandType::COMMAND, OEnumMapper::getEnumMap(OEnumMapper::epCommandType));
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getFormAttributeName(faNavigationMode), PROPERTY_NAVIGATION,
-        NavigationBarMode_NONE, aNavigationTypeMap,
+        NavigationBarMode_NONE, OEnumMapper::getEnumMap(OEnumMapper::epNavigationType),
         &::cppu::UnoType<NavigationBarMode>::get());
     m_aAttributeMetaData.addEnumProperty(
         OAttributeMetaData::getFormAttributeName(faTabbingCycle), PROPERTY_CYCLE,
-        TabulatorCycle_RECORDS, aTabulatorCycleMap,
+        TabulatorCycle_RECORDS, OEnumMapper::getEnumMap(OEnumMapper::epTabCyle),
         &::cppu::UnoType<TabulatorCycle>::get());
 
     // 'initialize'
@@ -226,12 +227,19 @@ OFormLayerXMLImport_Impl::OFormLayerXMLImport_Impl(SvXMLImport& _rImporter)
 }
 
 OFormLayerXMLImport_Impl::~OFormLayerXMLImport_Impl()
-{}
+{
+    // outlined to allow forward declaration of OAttribute2Property in the header
+
+    if (m_pAutoStyles)
+        m_pAutoStyles->ReleaseRef();
+}
 
 void OFormLayerXMLImport_Impl::setAutoStyleContext(SvXMLStylesContext* _pNewContext)
 {
-    OSL_ENSURE(!m_xAutoStyles.is(), "OFormLayerXMLImport_Impl::setAutoStyleContext: not to be called twice!");
-    m_xAutoStyles.set(_pNewContext);
+    OSL_ENSURE(!m_pAutoStyles, "OFormLayerXMLImport_Impl::setAutoStyleContext: not to be called twice!");
+    m_pAutoStyles = _pNewContext;
+    if (m_pAutoStyles)
+        m_pAutoStyles->AddFirstRef();
 }
 
 void OFormLayerXMLImport_Impl::applyControlNumberStyle(const Reference< XPropertySet >& _rxControlModel, const OUString& _rControlNumerStyleName)
@@ -239,15 +247,17 @@ void OFormLayerXMLImport_Impl::applyControlNumberStyle(const Reference< XPropert
     OSL_ENSURE(_rxControlModel.is() && (!_rControlNumerStyleName.isEmpty()),
         "OFormLayerXMLImport_Impl::applyControlNumberStyle: invalid arguments (this will crash)!");
 
-    OSL_ENSURE(m_xAutoStyles.is(), "OFormLayerXMLImport_Impl::applyControlNumberStyle: have no auto style context!");
-    if (!m_xAutoStyles.is())
+    OSL_ENSURE(m_pAutoStyles, "OFormLayerXMLImport_Impl::applyControlNumberStyle: have no auto style context!");
+    if (!m_pAutoStyles)
     {
-        m_xAutoStyles.set(m_rImporter.GetShapeImport()->GetAutoStylesContext());
+        m_pAutoStyles = m_rImporter.GetShapeImport()->GetAutoStylesContext();
+        if (m_pAutoStyles)
+            m_pAutoStyles->AddFirstRef();
     }
 
-    if (m_xAutoStyles.is())
+    if (m_pAutoStyles)
     {
-        const SvXMLStyleContext* pStyle = m_xAutoStyles->FindStyleChildContext(XML_STYLE_FAMILY_DATA_STYLE, _rControlNumerStyleName);
+        const SvXMLStyleContext* pStyle = m_pAutoStyles->FindStyleChildContext(XML_STYLE_FAMILY_DATA_STYLE, _rControlNumerStyleName);
         if (pStyle)
         {
             const SvXMLNumFormatContext* pDataStyle = static_cast<const SvXMLNumFormatContext*>(pStyle);
@@ -331,12 +341,12 @@ void OFormLayerXMLImport_Impl::registerCellRangeListSource( const Reference< XPr
 }
 const SvXMLStyleContext* OFormLayerXMLImport_Impl::getStyleElement(const OUString& _rStyleName) const
 {
-    OSL_ENSURE( m_xAutoStyles.is(), "OFormLayerXMLImport_Impl::getStyleElement: have no auto style context!" );
+    OSL_ENSURE( m_pAutoStyles, "OFormLayerXMLImport_Impl::getStyleElement: have no auto style context!" );
         // did you use setAutoStyleContext?
 
     const SvXMLStyleContext* pControlStyle =
-        m_xAutoStyles.is() ? m_xAutoStyles->FindStyleChildContext( XML_STYLE_FAMILY_TEXT_PARAGRAPH, _rStyleName ) : nullptr;
-    OSL_ENSURE( pControlStyle || !m_xAutoStyles.is(),
+        m_pAutoStyles ? m_pAutoStyles->FindStyleChildContext( XML_STYLE_FAMILY_TEXT_PARAGRAPH, _rStyleName ) : nullptr;
+    OSL_ENSURE( pControlStyle || !m_pAutoStyles,
                 OStringBuffer("OFormLayerXMLImport_Impl::getStyleElement: did not find the style named \"").append(OUStringToOString(_rStyleName, RTL_TEXTENCODING_ASCII_US)).append("\"!").getStr() );
     return pControlStyle;
 }
@@ -506,6 +516,7 @@ void OFormLayerXMLImport_Impl::documentDone( )
         &&  FormCellBindingHelper::isCellBindingAllowed( rImport.GetModel() )
         )
     {
+        static const char s_sIndex[] = ":index";
         ::std::vector< ModelStringPair >::const_iterator aEnd = m_aCellValueBindings.end();
         for (   ::std::vector< ModelStringPair >::const_iterator aCellBindings = m_aCellValueBindings.begin();
                 aCellBindings != aEnd;
@@ -521,7 +532,7 @@ void OFormLayerXMLImport_Impl::documentDone( )
                     // There are special bindings for listboxes. See
                     // OListAndComboImport::doRegisterCellValueBinding for a comment on this HACK.
                     OUString sBoundCellAddress( aCellBindings->second );
-                    sal_Int32 nIndicator = sBoundCellAddress.lastIndexOf( ":index" );
+                    sal_Int32 nIndicator = sBoundCellAddress.lastIndexOf( s_sIndex );
 
                     bool bUseIndexBinding = false;
                     if ( nIndicator != -1 )

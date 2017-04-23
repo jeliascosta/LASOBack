@@ -30,12 +30,14 @@
 #include <svtools/svtools.hrc>
 #include <unotools/configmgr.hxx>
 #include <unotools/saveopt.hxx>
+#include <unotools/localisationoptions.hxx>
 #include <svl/intitem.hxx>
 #include <svl/eitem.hxx>
 #include <svl/stritem.hxx>
 #include <vcl/msgbox.hxx>
 #include <svtools/ehdl.hxx>
 #include <comphelper/processfactory.hxx>
+#include <unotools/configmgr.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <osl/security.hxx>
 #include <unotools/pathoptions.hxx>
@@ -78,25 +80,25 @@ class SfxTerminateListener_Impl : public ::cppu::WeakImplHelper< XTerminateListe
 public:
 
     // XTerminateListener
-    virtual void SAL_CALL queryTermination( const EventObject& aEvent ) override;
-    virtual void SAL_CALL notifyTermination( const EventObject& aEvent ) override;
-    virtual void SAL_CALL disposing( const EventObject& Source ) override;
+    virtual void SAL_CALL queryTermination( const EventObject& aEvent ) throw( TerminationVetoException, RuntimeException, std::exception ) override;
+    virtual void SAL_CALL notifyTermination( const EventObject& aEvent ) throw( RuntimeException, std::exception ) override;
+    virtual void SAL_CALL disposing( const EventObject& Source ) throw( RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& sServiceName ) throw (RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (RuntimeException, std::exception) override;
 };
 
-void SAL_CALL SfxTerminateListener_Impl::disposing( const EventObject& )
+void SAL_CALL SfxTerminateListener_Impl::disposing( const EventObject& ) throw( RuntimeException, std::exception )
 {
 }
 
-void SAL_CALL SfxTerminateListener_Impl::queryTermination( const EventObject& )
+void SAL_CALL SfxTerminateListener_Impl::queryTermination( const EventObject& ) throw(TerminationVetoException, RuntimeException, std::exception )
 {
 }
 
-void SAL_CALL SfxTerminateListener_Impl::notifyTermination( const EventObject& aEvent )
+void SAL_CALL SfxTerminateListener_Impl::notifyTermination( const EventObject& aEvent ) throw(RuntimeException, std::exception )
 {
     Reference< XDesktop > xDesktop( aEvent.Source, UNO_QUERY );
     if( xDesktop.is() )
@@ -110,9 +112,9 @@ void SAL_CALL SfxTerminateListener_Impl::notifyTermination( const EventObject& a
     Scheduler::ImplDeInitScheduler();
 
     SfxApplication* pApp = SfxGetpApp();
-    pApp->Broadcast( SfxHint( SfxHintId::Deinitializing ) );
-    pApp->Get_Impl()->mxAppDispatch->ReleaseAll();
-    pApp->Get_Impl()->mxAppDispatch.clear();
+    pApp->Broadcast( SfxSimpleHint( SFX_HINT_DEINITIALIZING ) );
+    pApp->Get_Impl()->pAppDispatch->ReleaseAll();
+    pApp->Get_Impl()->pAppDispatch->release();
 
     css::uno::Reference< css::uno::XComponentContext > xContext = ::comphelper::getProcessComponentContext();
     css::uno::Reference< css::document::XDocumentEventListener > xGlobalBroadcaster(css::frame::theGlobalEventBroadcaster::get(xContext), css::uno::UNO_QUERY_THROW);
@@ -125,17 +127,17 @@ void SAL_CALL SfxTerminateListener_Impl::notifyTermination( const EventObject& a
     Application::Quit();
 }
 
-OUString SAL_CALL SfxTerminateListener_Impl::getImplementationName()
+OUString SAL_CALL SfxTerminateListener_Impl::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString("com.sun.star.comp.sfx2.SfxTerminateListener");
 }
 
-sal_Bool SAL_CALL SfxTerminateListener_Impl::supportsService( const OUString& sServiceName )
+sal_Bool SAL_CALL SfxTerminateListener_Impl::supportsService( const OUString& sServiceName ) throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, sServiceName);
 }
 
-Sequence< OUString > SAL_CALL SfxTerminateListener_Impl::getSupportedServiceNames()
+Sequence< OUString > SAL_CALL SfxTerminateListener_Impl::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
     // Note: That service  does not really exists .-)
     // But this implementation is not thought to be registered really within our service.rdb.
@@ -202,27 +204,37 @@ void SfxApplication::Initialize_Impl()
 #endif
 
     Reference < XDesktop2 > xDesktop = Desktop::create ( ::comphelper::getProcessComponentContext() );
-    xDesktop->addTerminateListener( new SfxTerminateListener_Impl );
+    xDesktop->addTerminateListener( new SfxTerminateListener_Impl() );
 
-    pImpl->mxAppDispatch = new SfxStatusDispatcher;
+    Application::EnableAutoHelpId();
+
+    pAppData_Impl->pAppDispatch = new SfxStatusDispatcher;
+    pAppData_Impl->pAppDispatch->acquire();
 
     // SV-Look
     Help::EnableContextHelp();
     Help::EnableExtHelp();
 
-    pImpl->m_pToolsErrorHdl = new SfxErrorHandler(
+    if (!utl::ConfigManager::IsAvoidConfig())
+    {
+        SvtLocalisationOptions aLocalisation;
+        Application::EnableAutoMnemonic ( aLocalisation.IsAutoMnemonic() );
+        Application::SetDialogScaleX    ( (short)(aLocalisation.GetDialogScale()) );
+    }
+
+    pAppData_Impl->m_pToolsErrorHdl = new SfxErrorHandler(
         RID_ERRHDL, ERRCODE_AREA_TOOLS, ERRCODE_AREA_LIB1);
 
 #if HAVE_FEATURE_SCRIPTING
-    pImpl->pBasicResMgr = ResMgr::CreateResMgr("sb");
+    pAppData_Impl->pBasicResMgr = ResMgr::CreateResMgr("sb");
 #endif
-    pImpl->pSvtResMgr = ResMgr::CreateResMgr("svt");
+    pAppData_Impl->pSvtResMgr = ResMgr::CreateResMgr("svt");
 
-    pImpl->m_pSoErrorHdl = new SfxErrorHandler(
-        RID_SO_ERROR_HANDLER, ERRCODE_AREA_SO, ERRCODE_AREA_SO_END, pImpl->pSvtResMgr );
+    pAppData_Impl->m_pSoErrorHdl = new SfxErrorHandler(
+        RID_SO_ERROR_HANDLER, ERRCODE_AREA_SO, ERRCODE_AREA_SO_END, pAppData_Impl->pSvtResMgr );
 #if HAVE_FEATURE_SCRIPTING
-    pImpl->m_pSbxErrorHdl = new SfxErrorHandler(
-        RID_BASIC_START, ERRCODE_AREA_SBX, ERRCODE_AREA_SBX_END, pImpl->pBasicResMgr );
+    pAppData_Impl->m_pSbxErrorHdl = new SfxErrorHandler(
+        RID_BASIC_START, ERRCODE_AREA_SBX, ERRCODE_AREA_SBX_END, pAppData_Impl->pBasicResMgr );
 #endif
 
     if (!utl::ConfigManager::IsAvoidConfig())
@@ -232,31 +244,34 @@ void SfxApplication::Initialize_Impl()
         SfxPickList::ensure();
     }
 
-    DBG_ASSERT( !pImpl->pAppDispat, "AppDispatcher already exists" );
-    pImpl->pAppDispat = new SfxDispatcher;
-    pImpl->pSlotPool = new SfxSlotPool;
-    pImpl->pTbxCtrlFac = new SfxTbxCtrlFactArr_Impl;
-    pImpl->pStbCtrlFac = new SfxStbCtrlFactArr_Impl;
-    pImpl->pViewFrames = new SfxViewFrameArr_Impl;
-    pImpl->pViewShells = new SfxViewShellArr_Impl;
-    pImpl->pObjShells = new SfxObjectShellArr_Impl;
+    DBG_ASSERT( !pAppData_Impl->pAppDispat, "AppDispatcher already exists" );
+    pAppData_Impl->pAppDispat = new SfxDispatcher(static_cast<SfxDispatcher*>(nullptr));
+    pAppData_Impl->pSlotPool = new SfxSlotPool;
+    pAppData_Impl->pTbxCtrlFac = new SfxTbxCtrlFactArr_Impl;
+    pAppData_Impl->pStbCtrlFac = new SfxStbCtrlFactArr_Impl;
+    pAppData_Impl->pViewFrames = new SfxViewFrameArr_Impl;
+    pAppData_Impl->pViewShells = new SfxViewShellArr_Impl;
+    pAppData_Impl->pObjShells = new SfxObjectShellArr_Impl;
+    pAppData_Impl->nInterfaces = SFX_INTERFACE_APP+8;
+    pAppData_Impl->pInterfaces = new SfxInterface*[pAppData_Impl->nInterfaces];
+    memset( pAppData_Impl->pInterfaces, 0, sizeof(SfxInterface*) * pAppData_Impl->nInterfaces );
 
     Registrations_Impl();
 
     // Subklasse initialisieren
-    pImpl->bDowning = false;
+    pAppData_Impl->bDowning = false;
 
     // get CHAOS item pool...
-    pImpl->pPool = NoChaos::GetItemPool();
-    SetPool( pImpl->pPool );
+    pAppData_Impl->pPool = NoChaos::GetItemPool();
+    SetPool( pAppData_Impl->pPool );
 
-    if ( pImpl->bDowning )
+    if ( pAppData_Impl->bDowning )
         return;
 
     // App-Dispatcher aufbauen
-    pImpl->pAppDispat->Push(*this);
-    pImpl->pAppDispat->Flush();
-    pImpl->pAppDispat->DoActivate_Impl( true );
+    pAppData_Impl->pAppDispat->Push(*this);
+    pAppData_Impl->pAppDispat->Flush();
+    pAppData_Impl->pAppDispat->DoActivate_Impl( true, nullptr );
 
     {
         SolarMutexGuard aGuard;

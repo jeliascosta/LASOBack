@@ -30,7 +30,7 @@ typedef ::std::vector< Range* > ImpSelList;
 
 #define SFX_ENDOFSELECTION      ULONG_MAX
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC MultiSelection
+class TOOLS_DLLPUBLIC MultiSelection
 {
 private:
     ImpSelList      aSels;      // array of SV-selections
@@ -66,7 +66,6 @@ public:
     void            SetTotalRange( const Range& rTotRange );
     void            Insert( long nIndex, long nCount = 1 );
     void            Remove( long nIndex );
-    void            Reset();
 
     const Range&    GetTotalRange() const { return aTotRange; }
     long            FirstSelected();
@@ -77,13 +76,14 @@ public:
     const Range&    GetRange( size_t nRange ) const { return *aSels[nRange]; }
 };
 
-class SAL_WARN_UNUSED TOOLS_DLLPUBLIC StringRangeEnumerator
+class TOOLS_DLLPUBLIC StringRangeEnumerator
 {
     struct Range
     {
         sal_Int32   nFirst;
         sal_Int32   nLast;
 
+        Range() : nFirst( -1 ), nLast( -1 ) {}
         Range( sal_Int32 i_nFirst, sal_Int32 i_nLast ) : nFirst( i_nFirst ), nLast( i_nLast ) {}
     };
     std::vector< StringRangeEnumerator::Range >            maSequence;
@@ -133,6 +133,7 @@ public:
     Iterator begin( const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
     Iterator end( const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
 
+    bool isValidInput() const { return mbValidInput; }
     bool hasValue( sal_Int32 nValue, const std::set< sal_Int32 >* i_pPossibleValues = nullptr ) const;
 
     /**
@@ -164,7 +165,7 @@ public:
                                      sal_Int32 i_nMinNumber,
                                      sal_Int32 i_nMaxNumber,
                                      sal_Int32 i_nLogicalOffset = -1,
-                                     std::set< sal_Int32 > const * i_pPossibleValues = nullptr
+                                     std::set< sal_Int32 >* i_pPossibleValues = nullptr
                                     );
 };
 

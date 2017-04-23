@@ -41,6 +41,8 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext
         ) throw();
 
+    virtual ~XMLMetaImportComponent() throw();
+
 protected:
 
     virtual SvXMLImportContext* CreateContext(
@@ -49,7 +51,8 @@ protected:
         const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList ) override;
 
     // XImporter
-    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) override;
+    virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc )
+        throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 };
 
 // global functions to support the component
@@ -68,6 +71,10 @@ XMLMetaImportComponent::XMLMetaImportComponent(
 {
 }
 
+XMLMetaImportComponent::~XMLMetaImportComponent() throw()
+{
+}
+
 SvXMLImportContext* XMLMetaImportComponent::CreateContext(
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
@@ -77,9 +84,9 @@ SvXMLImportContext* XMLMetaImportComponent::CreateContext(
          IsXMLToken(rLocalName, XML_DOCUMENT_META) )
     {
         if (!mxDocProps.is()) {
-            throw uno::RuntimeException(
+            throw uno::RuntimeException(OUString(
                 "XMLMetaImportComponent::CreateContext: setTargetDocument "
-                "has not been called", *this);
+                "has not been called"), *this);
         }
         return new SvXMLMetaDocumentContext(
                         *this, nPrefix, rLocalName, mxDocProps);
@@ -92,12 +99,13 @@ SvXMLImportContext* XMLMetaImportComponent::CreateContext(
 
 void SAL_CALL XMLMetaImportComponent::setTargetDocument(
     const uno::Reference< lang::XComponent >& xDoc )
+    throw(lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 {
     mxDocProps.set( xDoc, uno::UNO_QUERY );
     if( !mxDocProps.is() )
-        throw lang::IllegalArgumentException(
+        throw lang::IllegalArgumentException(OUString(
             "XMLMetaImportComponent::setTargetDocument: argument is no "
-            "XDocumentProperties", uno::Reference<uno::XInterface>(*this), 0);
+            "XDocumentProperties"), uno::Reference<uno::XInterface>(*this), 0);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

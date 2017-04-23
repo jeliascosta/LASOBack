@@ -55,8 +55,10 @@ protected:
 public:
     UnxFilePickerNotifyThread( UnxFilePicker *pUnxFilePicker );
 
-    virtual void SAL_CALL addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener );
-    virtual void SAL_CALL removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener );
+    virtual void SAL_CALL addFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
+        throw( css::uno::RuntimeException );
+    virtual void SAL_CALL removeFilePickerListener( const css::uno::Reference< css::ui::dialogs::XFilePickerListener >& xListener )
+        throw( css::uno::RuntimeException );
 
     void SAL_CALL               exit();
 

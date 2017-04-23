@@ -33,16 +33,20 @@
 class SVX_DLLPUBLIC XOutdevItemPool : public SfxItemPool
 {
 protected:
-    std::vector<SfxPoolItem*>* mpLocalPoolDefaults;
-    SfxItemInfo*               mpLocalItemInfos;
+    SfxPoolItem**   mppLocalPoolDefaults;
+    SfxItemInfo*    mpLocalItemInfos;
 
 public:
-    XOutdevItemPool( SfxItemPool* pMaster, bool bLoadRefCounts = true);
+    XOutdevItemPool(
+        SfxItemPool* pMaster = nullptr,
+        sal_uInt16 nAttrStart = XATTR_START,
+        sal_uInt16 nAttrEnd = XATTR_END,
+        bool bLoadRefCounts = true);
     XOutdevItemPool(const XOutdevItemPool& rPool);
 
     virtual SfxItemPool* Clone() const override;
 protected:
-    virtual ~XOutdevItemPool() override;
+    virtual ~XOutdevItemPool();
 };
 
 #endif // INCLUDED_SVX_XPOOL_HXX

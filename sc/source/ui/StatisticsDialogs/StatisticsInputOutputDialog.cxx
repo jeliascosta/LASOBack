@@ -21,10 +21,11 @@
 #include "reffact.hxx"
 #include "scresid.hxx"
 #include "docfunc.hxx"
+#include "strload.hxx"
 
 #include "StatisticsInputOutputDialog.hxx"
 
-ScRangeList ScStatisticsInputOutputDialog::MakeColumnRangeList(SCTAB aTab, ScAddress const & aStart, ScAddress const & aEnd)
+ScRangeList ScStatisticsInputOutputDialog::MakeColumnRangeList(SCTAB aTab, ScAddress aStart, ScAddress aEnd)
 {
     ScRangeList aRangeList;
     for (SCCOL inCol = aStart.Col(); inCol <= aEnd.Col(); inCol++)
@@ -38,7 +39,7 @@ ScRangeList ScStatisticsInputOutputDialog::MakeColumnRangeList(SCTAB aTab, ScAdd
     return aRangeList;
 }
 
-ScRangeList ScStatisticsInputOutputDialog::MakeRowRangeList(SCTAB aTab, ScAddress const & aStart, ScAddress const & aEnd)
+ScRangeList ScStatisticsInputOutputDialog::MakeRowRangeList(SCTAB aTab, ScAddress aStart, ScAddress aEnd)
 {
     ScRangeList aRangeList;
     for (SCROW inRow = aStart.Row(); inRow <= aEnd.Row(); inRow++)
@@ -193,13 +194,13 @@ void ScStatisticsInputOutputDialog::SetReference( const ScRange& rReferenceRange
         mpButtonOk->Disable();
 }
 
-IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, OkClicked, Button*, void )
+IMPL_LINK_NOARG_TYPED( ScStatisticsInputOutputDialog, OkClicked, Button*, void )
 {
     CalculateInputAndWriteToOutput();
     Close();
 }
 
-IMPL_LINK( ScStatisticsInputOutputDialog, GetFocusHandler, Control&, rCtrl, void )
+IMPL_LINK_TYPED( ScStatisticsInputOutputDialog, GetFocusHandler, Control&, rCtrl, void )
 {
     mpActiveEdit = nullptr;
 
@@ -212,12 +213,12 @@ IMPL_LINK( ScStatisticsInputOutputDialog, GetFocusHandler, Control&, rCtrl, void
         mpActiveEdit->SetSelection( Selection( 0, SELECTION_MAX ) );
 }
 
-IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, LoseFocusHandler, Control&, void )
+IMPL_LINK_NOARG_TYPED( ScStatisticsInputOutputDialog, LoseFocusHandler, Control&, void )
 {
     mDialogLostFocus = !IsActive();
 }
 
-IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, GroupByChanged, RadioButton&, void )
+IMPL_LINK_NOARG_TYPED( ScStatisticsInputOutputDialog, GroupByChanged, RadioButton&, void )
 {
     if (mpGroupByColumnsRadio->IsChecked())
         mGroupedBy = BY_COLUMN;
@@ -225,7 +226,7 @@ IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, GroupByChanged, RadioButton&, vo
         mGroupedBy = BY_ROW;
 }
 
-IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, RefInputModifyHandler, Edit&, void )
+IMPL_LINK_NOARG_TYPED( ScStatisticsInputOutputDialog, RefInputModifyHandler, Edit&, void )
 {
     if ( mpActiveEdit )
     {
@@ -283,15 +284,15 @@ IMPL_LINK_NOARG( ScStatisticsInputOutputDialog, RefInputModifyHandler, Edit&, vo
 
 void ScStatisticsInputOutputDialog::CalculateInputAndWriteToOutput()
 {
-    OUString aUndo(SC_RESSTR(GetUndoNameId()));
+    OUString aUndo(SC_STRLOAD(RID_STATISTICS_DLGS, GetUndoNameId()));
     ScDocShell* pDocShell = mViewData->GetDocShell();
     svl::IUndoManager* pUndoManager = pDocShell->GetUndoManager();
-    pUndoManager->EnterListAction( aUndo, aUndo, 0, mViewData->GetViewShell()->GetViewShellId() );
+    pUndoManager->EnterListAction( aUndo, aUndo );
 
     ScRange aOutputRange = ApplyOutput(pDocShell);
 
     pUndoManager->LeaveListAction();
-    pDocShell->PostPaint( aOutputRange, PaintPartFlags::Grid );
+    pDocShell->PostPaint( aOutputRange, PAINT_GRID );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

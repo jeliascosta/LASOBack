@@ -32,7 +32,7 @@ class ScfProgressBar;
 /** The main progress bar for the export filter.
 
     This class encapsulates creation and initialization of sub progress
-    segments. The Activate***Segment() functions activate a specific segment
+    segments. The Activate***Segment() functions activate a specific segement
     of the main progress bar. The implementation of these functions contain the
     calculation of the needed size of the segment. Following calls of the
     Progress() function increase the currently activated sub segment.
@@ -41,7 +41,7 @@ class XclExpProgressBar : protected XclExpRoot
 {
 public:
     explicit            XclExpProgressBar( const XclExpRoot& rRoot );
-    virtual             ~XclExpProgressBar() override;
+    virtual             ~XclExpProgressBar();
 
     /** Initializes all segments and sub progress bars. */
     void                Initialize();
@@ -69,7 +69,7 @@ private:
     ScfProgressBar*     mpSubRowFinal;      /// Sub progress bar for finalizing ROW records.
     sal_Int32           mnSegRowFinal;      /// Progress segment for finalizing ROW records.
 
-    std::size_t         mnRowCount;         /// Number of created ROW records.
+    sal_Size            mnRowCount;         /// Number of created ROW records.
 };
 
 // Calc->Excel cell address/range conversion ==================================
@@ -177,7 +177,7 @@ public:
     typedef std::shared_ptr< XclExpHyperlink > XclExpHyperlinkRef;
 
     explicit            XclExpHyperlinkHelper( const XclExpRoot& rRoot, const ScAddress& rScPos );
-                        virtual ~XclExpHyperlinkHelper() override;
+                        virtual ~XclExpHyperlinkHelper();
 
     /** Processes the passed URL field (tries to create a HLINK record).
         @return  The representation string of the URL field. */
@@ -189,9 +189,9 @@ public:
     XclExpHyperlinkRef  GetLinkRecord();
 
     /** Returns true, if multiple URLs have been processed. */
-    bool         HasMultipleUrls() const { return mbMultipleUrls; }
+    inline bool         HasMultipleUrls() const { return mbMultipleUrls; }
     /** Returns a string containing all processed URLs. */
-    const OUString& GetUrlList() { return maUrlList; }
+    inline const OUString& GetUrlList() { return maUrlList; }
 
 private:
     XclExpHyperlinkRef  mxLinkRec;          /// Created HLINK record.
@@ -374,9 +374,9 @@ public:
                             const EditTextObject* pRightObj );
 
     /** Returns the last generated header/footer string. */
-    const OUString& GetHFString() const { return maHFString; }
+    inline const OUString& GetHFString() const { return maHFString; }
     /** Returns the total height of the last generated header/footer in twips. */
-    sal_Int32    GetTotalHeight() const { return mnTotalHeight; }
+    inline sal_Int32    GetTotalHeight() const { return mnTotalHeight; }
 
 private:
     /** Converts the text object contents and stores it in the passed string. */
@@ -426,7 +426,7 @@ public:
                    ~XclExpCachedMatrix();
 
     /** Returns the byte count of all contained data. */
-    std::size_t     GetSize() const;
+    sal_Size        GetSize() const;
     /** Writes the complete matrix to stream. */
     void            Save( XclExpStream& rStrm ) const;
 

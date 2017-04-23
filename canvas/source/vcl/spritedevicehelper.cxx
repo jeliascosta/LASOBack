@@ -95,7 +95,7 @@ namespace vclcanvas
         if( !mpBackBuffer )
             return uno::Any();
 
-        return uno::Any(
+        return uno::makeAny(
             reinterpret_cast< sal_Int64 >(&mpBackBuffer->getOutDev()) );
     }
 
@@ -116,7 +116,7 @@ namespace vclcanvas
         {
             OUString aFilename = "dbg_backbuffer" + OUString::number(nFilePostfixCount) + ".bmp";
 
-            SvFileStream aStream( aFilename, StreamMode::STD_READWRITE );
+            SvFileStream aStream( aFilename, STREAM_STD_READWRITE );
 
             const ::Point aEmptyPoint;
             mpBackBuffer->getOutDev().EnableMapMode( false );

@@ -57,7 +57,7 @@ namespace connectivity
             // a constructor, which is required for returning objects:
             OResultSetMetaData(OConnection* _pConnection) : m_pConnection(_pConnection){}
 
-            /// Avoid ambiguous cast error from the compiler.
+            /// Avoid ambigous cast error from the compiler.
             inline operator ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSetMetaData > () throw()
             { return this; }
 

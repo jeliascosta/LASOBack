@@ -186,6 +186,7 @@ private:
     const OUString                         msPrintable;
     const OUString                         msVisible;
 
+    const OUString                         msEmptyPres;
     const OUString                         msModel;
     const OUString                         msStartShape;
     const OUString                         msEndShape;
@@ -210,7 +211,7 @@ private:
 
     SAL_DLLPRIVATE void ImpExportNewTrans(const css::uno::Reference< css::beans::XPropertySet >& xPropSet, XMLShapeExportFlags nFeatures, css::awt::Point* pRefPoint);
     SAL_DLLPRIVATE void ImpExportNewTrans_GetB2DHomMatrix(::basegfx::B2DHomMatrix& rMatrix, const css::uno::Reference< css::beans::XPropertySet >& xPropSet);
-    SAL_DLLPRIVATE static void ImpExportNewTrans_DecomposeAndRefPoint(const ::basegfx::B2DHomMatrix& rMat, ::basegfx::B2DTuple& rTRScale, double& fTRShear, double& fTRRotate, ::basegfx::B2DTuple& rTRTranslate, css::awt::Point* pRefPoint);
+    SAL_DLLPRIVATE void ImpExportNewTrans_DecomposeAndRefPoint(const ::basegfx::B2DHomMatrix& rMat, ::basegfx::B2DTuple& rTRScale, double& fTRShear, double& fTRRotate, ::basegfx::B2DTuple& rTRTranslate, css::awt::Point* pRefPoint);
     SAL_DLLPRIVATE void ImpExportNewTrans_FeaturesAndWrite(::basegfx::B2DTuple& rTRScale, double fTRShear, double fTRRotate, ::basegfx::B2DTuple& rTRTranslate, const XMLShapeExportFlags nFeatures);
     SAL_DLLPRIVATE bool ImpExportPresentationAttributes( const css::uno::Reference< css::beans::XPropertySet >& xPropSet, const OUString& rClass );
     SAL_DLLPRIVATE void ImpExportText( const css::uno::Reference< css::drawing::XShape >& xShape, TextPNS eExtensionNS = TextPNS::ODF );
@@ -243,7 +244,7 @@ private:
     SAL_DLLPRIVATE void ImpExportTableShape(const css::uno::Reference< css::drawing::XShape >& xShape, XmlShapeType eShapeType, XMLShapeExportFlags nFeatures = SEF_DEFAULT,    css::awt::Point* pRefPoint = nullptr );
 public:
     XMLShapeExport(SvXMLExport& rExp, SvXMLExportPropertyMapper *pExtMapper=nullptr );
-    virtual ~XMLShapeExport() override;
+    virtual ~XMLShapeExport();
 
     // This method collects all automatic styles for the given XShape
     void collectShapeAutoStyles(
@@ -287,7 +288,7 @@ public:
         If this is a non NULL reference, the animation information from all shapes given to exportShape()
         from now on are collected.
     */
-    void setAnimationsExporter( rtl::Reference< XMLAnimationsExporter > const & xAnimExport ) { mxAnimationsExporter = xAnimExport; }
+    void setAnimationsExporter( rtl::Reference< XMLAnimationsExporter > xAnimExport ) { mxAnimationsExporter = xAnimExport; }
 
     /** returns the last set XMLAnimationExport */
     const rtl::Reference< XMLAnimationsExporter >& getAnimationsExporter() const { return mxAnimationsExporter; }
@@ -296,6 +297,7 @@ public:
     static SvXMLExportPropertyMapper* CreateShapePropMapper( SvXMLExport& rExport );
 
     void enableLayerExport() { mbExportLayer = true; }
+    bool IsLayerExportEnabled() const { return mbExportLayer; }
 
     /** defines if the export should increment the progress bar or not */
     void enableHandleProgressBar() { mbHandleProgressBar = true; }

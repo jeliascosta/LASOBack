@@ -22,7 +22,7 @@
 ScPaintLockData::ScPaintLockData() :
     nLevel( 0 ),
     nDocLevel( 0 ),
-    nParts( PaintPartFlags::NONE ),
+    nParts( 0 ),
     bModified( false )
 {
 }
@@ -31,9 +31,9 @@ ScPaintLockData::~ScPaintLockData()
 {
 }
 
-void ScPaintLockData::AddRange( const ScRange& rRange, PaintPartFlags nP )
+void ScPaintLockData::AddRange( const ScRange& rRange, sal_uInt16 nP )
 {
-    if (!xRangeList.is())
+    if (!xRangeList.Is())
         xRangeList = new ScRangeList;
 
     xRangeList->Join( rRange );

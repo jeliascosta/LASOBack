@@ -15,7 +15,7 @@
 #include <vcl/edit.hxx>
 #include <vcl/vclmedit.hxx>
 #include <vcl/fixed.hxx>
-#include <vcl/layout.hxx>
+
 
 class AuthFallbackDlg : public ModalDialog
 {
@@ -23,25 +23,22 @@ private:
     VclPtr<VclMultiLineEdit> m_pTVInstructions;
     VclPtr<Edit> m_pEDUrl;
     VclPtr<Edit> m_pEDCode;
-    VclPtr<Edit> m_pEDGoogleCode;
     VclPtr<PushButton> m_pBTOk;
     VclPtr<PushButton> m_pBTCancel;
-    VclPtr<VclVBox> m_pGoogleBox;
-    VclPtr<VclVBox> m_pOneDriveBox;
-    bool m_bGoogleMode;
+    VclPtr<FixedText> m_pFTGooglePrefixLabel;
 
 public:
     AuthFallbackDlg(Window* pParent, const OUString& instructions,
                     const OUString& url);
-    virtual ~AuthFallbackDlg() override;
+    virtual ~AuthFallbackDlg();
     virtual void dispose() override;
 
-    OUString GetCode() const;
+    OUString GetCode() const { return m_pEDCode->GetText(); }
 
 private:
 
-    DECL_LINK ( OKHdl, Button *, void );
-    DECL_LINK ( CancelHdl, Button *, void );
+    DECL_LINK_TYPED ( OKHdl, Button *, void );
+    DECL_LINK_TYPED ( CancelHdl, Button *, void );
 };
 
 #endif // INCLUDED_SVTOOLS_AUTHFALLBACKDLG_HXX

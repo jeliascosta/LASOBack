@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include "osl/diagnose.hxx"
 #include <osl/time.h>
@@ -111,14 +110,17 @@ public:
     explicit TestBridgeImpl( const Reference< XComponentContext > & xContext )
         : m_xContext( xContext )
         {}
+    virtual ~TestBridgeImpl()
+    {
+    }
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString & rServiceName ) throw (RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (RuntimeException, std::exception) override;
 
     // XMain
-    virtual sal_Int32 SAL_CALL run( const Sequence< OUString > & rArgs ) override;
+    virtual sal_Int32 SAL_CALL run( const Sequence< OUString > & rArgs ) throw (RuntimeException, std::exception) override;
 };
 
 
@@ -273,7 +275,7 @@ static bool performAnyTest( const Reference< XBridgeTest > &xLBT, const TestData
     }
 
     {
-        a <<= data.Char;
+        a.setValue( &(data.Char) , cppu::UnoType<cppu::UnoCharType>::get() );
         OSL_ASSERT( xLBT->transportAny( a ) == a );
     }
 
@@ -311,7 +313,8 @@ private:
 public:
     void SAL_CALL callRecursivly(
         const css::uno::Reference< XRecursiveCall >& xCall,
-        sal_Int32 nToCall ) override
+        sal_Int32 nToCall )
+        throw(css::uno::RuntimeException, std::exception) override
         {
             MutexGuard guard( m_mutex );
             if( nToCall )
@@ -335,12 +338,30 @@ class MyClass : public osl::DebugBase<MyClass>, public OWeakObject
 {
 public:
     MyClass();
+    virtual ~MyClass();
+    virtual void SAL_CALL acquire() throw () override;
+    virtual void SAL_CALL release() throw () override;
 };
 
 
 MyClass::MyClass()
 {
 }
+
+MyClass::~MyClass()
+{
+}
+
+void MyClass::acquire() throw ()
+{
+    OWeakObject::acquire();
+}
+
+void MyClass::release() throw ()
+{
+    OWeakObject::release();
+}
+
 
 static bool performTest(
     const Reference<XComponentContext> & xContext,
@@ -571,9 +592,12 @@ static bool performTest(
                     xLBT->getNullPolyType().member == Type(),
                     "getNullPolyType");
                 Any nullAny(xLBT->getNullPolyAny().member);
-                auto ifc = o3tl::tryAccess<Reference<XInterface>>(nullAny);
                 bRet &= check(
-                    !nullAny.hasValue() || (ifc && !ifc->is()),
+                    (((nullAny.getValueTypeName() ==
+                       "com.sun.star.uno.XInterface") &&
+                      !static_cast< Reference< XInterface > const * >(
+                          nullAny.getValue())->is())
+                     || nullAny == Any()),
                     "getNullPolyAny");
                 bRet &= check(
                     xLBT->getNullPolySequence().member.getLength() == 0,
@@ -1011,7 +1035,7 @@ uno_Sequence* cloneSequence(const uno_Sequence* val, const Type& type)
     sal_Int8* pBufCur = buf.get();
 
     uno_Sequence* retSeq = nullptr;
-    switch ((TypeClass)pTdElem->eTypeClass)
+    switch (pTdElem->eTypeClass)
     {
     case TypeClass_SEQUENCE:
     {
@@ -1101,6 +1125,7 @@ inline bool makeSurrogate(
 
 
 sal_Int32 TestBridgeImpl::run( const Sequence< OUString > & rArgs )
+    throw (RuntimeException, std::exception)
 {
     bool bRet = false;
     try
@@ -1155,7 +1180,11 @@ sal_Int32 TestBridgeImpl::run( const Sequence< OUString > & rArgs )
         {
             throw RuntimeException( "cannot get test object!" );
         }
-        Reference< XBridgeTest > xTest( xOriginal, UNO_QUERY_THROW );
+        Reference< XBridgeTest > xTest( xOriginal, UNO_QUERY );
+        if (! xTest.is())
+        {
+            throw RuntimeException( "test object does not implement XBridgeTest!" );
+        }
 
         Reference<XBridgeTest > xLBT;
         bRet = check( makeSurrogate( xLBT, xTest ), "makeSurrogate" );
@@ -1183,16 +1212,19 @@ sal_Int32 TestBridgeImpl::run( const Sequence< OUString > & rArgs )
 // XServiceInfo
 
 OUString TestBridgeImpl::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString( IMPLNAME );
 }
 
 sal_Bool TestBridgeImpl::supportsService( const OUString & rServiceName )
+    throw (RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 Sequence< OUString > TestBridgeImpl::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     return bridge_test::getSupportedServiceNames();
 }

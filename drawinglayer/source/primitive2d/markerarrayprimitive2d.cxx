@@ -34,8 +34,9 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        void MarkerArrayPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
+        Primitive2DContainer MarkerArrayPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
         {
+            Primitive2DContainer xRetval;
             const std::vector< basegfx::B2DPoint >& rPositions = getPositions();
             const sal_uInt32 nMarkerCount(rPositions.size());
 
@@ -53,6 +54,9 @@ namespace drawinglayer
                     // use half size for expand
                     aLogicHalfSize *= 0.5;
 
+                    // number of primitives is known; realloc accordingly
+                    xRetval.resize(nMarkerCount);
+
                     for(sal_uInt32 a(0); a < nMarkerCount; a++)
                     {
                         const basegfx::B2DPoint& rPosition(rPositions[a]);
@@ -64,10 +68,12 @@ namespace drawinglayer
                         aTransform.set(0, 2, aRange.getMinX());
                         aTransform.set(1, 2, aRange.getMinY());
 
-                        rContainer.push_back(new BitmapPrimitive2D(getMarker(), aTransform));
+                        xRetval[a] = Primitive2DReference(new BitmapPrimitive2D(getMarker(), aTransform));
                     }
                 }
             }
+
+            return xRetval;
         }
 
         MarkerArrayPrimitive2D::MarkerArrayPrimitive2D(

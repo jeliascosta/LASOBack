@@ -133,9 +133,8 @@ adjust_boundaries( css::uno::Reference<css::accessibility::XAccessibleText> cons
 
 /*****************************************************************************/
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleText>
-    getText( AtkText *pText )
+    getText( AtkText *pText ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pText );
     if( pWrap )
@@ -153,9 +152,8 @@ static css::uno::Reference<css::accessibility::XAccessibleText>
 
 /*****************************************************************************/
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleTextMarkup>
-    getTextMarkup( AtkText *pText )
+    getTextMarkup( AtkText *pText ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pText );
     if( pWrap )
@@ -173,9 +171,8 @@ static css::uno::Reference<css::accessibility::XAccessibleTextMarkup>
 
 /*****************************************************************************/
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleTextAttributes>
-    getTextAttributes( AtkText *pText )
+    getTextAttributes( AtkText *pText ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pText );
     if( pWrap )
@@ -193,9 +190,8 @@ static css::uno::Reference<css::accessibility::XAccessibleTextAttributes>
 
 /*****************************************************************************/
 
-/// @throws uno::RuntimeException
 static css::uno::Reference<css::accessibility::XAccessibleMultiLineText>
-    getMultiLineText( AtkText *pText )
+    getMultiLineText( AtkText *pText ) throw (uno::RuntimeException)
 {
     AtkObjectWrapper *pWrap = ATK_OBJECT_WRAPPER( pText );
     if( pWrap )

@@ -160,7 +160,7 @@ beans::PropertyValue StyleSheetEntry::GetInteropGrabBag()
     aRet.Name = sStyleIdentifierI;
 
     beans::PropertyValues aSeq = GetInteropGrabBagSeq();
-    aRet.Value <<= aSeq;
+    aRet.Value = uno::makeAny(aSeq);
     return aRet;
 }
 
@@ -267,7 +267,6 @@ struct StyleSheetTable_Impl
     /// Style names which should not be used without a " (user)" suffix.
     std::set<OUString>                      m_aReservedStyleNames;
     ListCharStylePropertyVector_t           m_aListCharStylePropertyVector;
-    bool                                    m_bHasImportedDefaultParaStyle;
     bool                                    m_bIsNewDoc;
 
     StyleSheetTable_Impl(DomainMapper& rDMapper, uno::Reference< text::XTextDocument> const& xTextDocument, bool bIsNewDoc);
@@ -290,7 +289,6 @@ StyleSheetTable_Impl::StyleSheetTable_Impl(DomainMapper& rDMapper,
             m_pCurrentEntry(),
             m_pDefaultParaProps(new PropertyMap),
             m_pDefaultCharProps(new PropertyMap),
-            m_bHasImportedDefaultParaStyle(false),
             m_bIsNewDoc(bIsNewDoc)
 {
     //set font height default to 10pt
@@ -298,10 +296,6 @@ StyleSheetTable_Impl::StyleSheetTable_Impl(DomainMapper& rDMapper,
     m_pDefaultCharProps->Insert( PROP_CHAR_HEIGHT, aVal );
     m_pDefaultCharProps->Insert( PROP_CHAR_HEIGHT_ASIAN, aVal );
     m_pDefaultCharProps->Insert( PROP_CHAR_HEIGHT_COMPLEX, aVal );
-
-    // See SwDoc::RemoveAllFormatLanguageDependencies(), internal filters
-    // disable kerning by default, do the same here.
-    m_pDefaultCharProps->Insert(PROP_CHAR_AUTO_KERNING, uno::Any(false));
 }
 
 
@@ -462,14 +456,11 @@ void StyleSheetTable::lcl_attribute(Id Name, Value & val)
         break;
         case NS_ooxml::LN_CT_Style_default:
             m_pImpl->m_pCurrentEntry->bIsDefaultStyle = (nIntValue != 0);
-            if (m_pImpl->m_pCurrentEntry->bIsDefaultStyle && m_pImpl->m_pCurrentEntry->nStyleTypeCode == STYLE_TYPE_PARA)
-                m_pImpl->m_bHasImportedDefaultParaStyle = true;
-
             if (m_pImpl->m_pCurrentEntry->nStyleTypeCode != STYLE_TYPE_UNKNOWN)
             {
                 beans::PropertyValue aValue;
                 aValue.Name = "default";
-                aValue.Value <<= m_pImpl->m_pCurrentEntry->bIsDefaultStyle;
+                aValue.Value = uno::makeAny(m_pImpl->m_pCurrentEntry->bIsDefaultStyle);
                 m_pImpl->m_pCurrentEntry->AppendInteropGrabBag(aValue);
             }
         break;
@@ -478,7 +469,7 @@ void StyleSheetTable::lcl_attribute(Id Name, Value & val)
             {
                 beans::PropertyValue aValue;
                 aValue.Name = "customStyle";
-                aValue.Value <<= (nIntValue != 0);
+                aValue.Value = uno::makeAny(nIntValue != 0);
                 m_pImpl->m_pCurrentEntry->AppendInteropGrabBag(aValue);
             }
         break;
@@ -490,7 +481,7 @@ void StyleSheetTable::lcl_attribute(Id Name, Value & val)
                 TableStyleSheetEntry* pTableEntry = static_cast<TableStyleSheetEntry *>(m_pImpl->m_pCurrentEntry.get());
                 beans::PropertyValue aValue;
                 aValue.Name = "styleId";
-                aValue.Value <<= sValue;
+                aValue.Value = uno::makeAny(sValue);
                 pTableEntry->AppendInteropGrabBag(aValue);
             }
         break;
@@ -549,7 +540,7 @@ void StyleSheetTable::lcl_sprm(Sprm & rSprm)
                 TableStyleSheetEntry* pTableEntry = static_cast<TableStyleSheetEntry *>(m_pImpl->m_pCurrentEntry.get());
                 beans::PropertyValue aValue;
                 aValue.Name = "name";
-                aValue.Value <<= sStringValue;
+                aValue.Value = uno::makeAny(sStringValue);
                 pTableEntry->AppendInteropGrabBag(aValue);
             }
             break;
@@ -560,7 +551,7 @@ void StyleSheetTable::lcl_sprm(Sprm & rSprm)
                 TableStyleSheetEntry* pTableEntry = static_cast<TableStyleSheetEntry *>(m_pImpl->m_pCurrentEntry.get());
                 beans::PropertyValue aValue;
                 aValue.Name = "basedOn";
-                aValue.Value <<= sStringValue;
+                aValue.Value = uno::makeAny(sStringValue);
                 pTableEntry->AppendInteropGrabBag(aValue);
             }
             break;
@@ -616,7 +607,7 @@ void StyleSheetTable::lcl_sprm(Sprm & rSprm)
                     aStr.append(aBuf.getStr());
 
                     aValue.Name = "rsid";
-                    aValue.Value <<= aStr.makeStringAndClear();
+                    aValue.Value = uno::makeAny(aStr.makeStringAndClear());
                 }
                 break;
                 case NS_ooxml::LN_CT_Style_qFormat:
@@ -631,13 +622,13 @@ void StyleSheetTable::lcl_sprm(Sprm & rSprm)
                 case NS_ooxml::LN_CT_Style_uiPriority:
                 {
                     aValue.Name = "uiPriority";
-                    aValue.Value <<= OUString::number(nIntValue);
+                    aValue.Value = uno::makeAny(OUString::number(nIntValue));
                 }
                 break;
                 case NS_ooxml::LN_CT_Style_link:
                 {
                     aValue.Name = "link";
-                    aValue.Value <<= sStringValue;
+                    aValue.Value = uno::makeAny(sStringValue);
                 }
                 break;
                 case NS_ooxml::LN_CT_Style_locked:
@@ -748,7 +739,7 @@ void StyleSheetTable::lcl_sprm(Sprm & rSprm)
                 pProperties->resolve(*pLatentStyleHandler);
                 beans::PropertyValue aValue;
                 aValue.Name = "lsdException";
-                aValue.Value <<= comphelper::containerToSequence(pLatentStyleHandler->getAttributes());
+                aValue.Value = uno::makeAny(comphelper::containerToSequence(pLatentStyleHandler->getAttributes()));
                 m_pImpl->m_pCurrentEntry->aLsdExceptions.push_back(aValue);
             }
         }
@@ -845,7 +836,7 @@ void StyleSheetTable::lcl_entry(int /*pos*/, writerfilter::Reference<Properties>
             std::vector<beans::PropertyValue>& rLsdExceptions = m_pImpl->m_pCurrentEntry->aLsdExceptions;
             beans::PropertyValue aValue;
             aValue.Name = "lsdExceptions";
-            aValue.Value <<= comphelper::containerToSequence(rLsdExceptions);
+            aValue.Value = uno::makeAny( comphelper::containerToSequence(rLsdExceptions) );
             rLatentStyles.push_back(aValue);
         }
 
@@ -858,7 +849,7 @@ void StyleSheetTable::lcl_entry(int /*pos*/, writerfilter::Reference<Properties>
         auto aGrabBag = comphelper::sequenceToContainer< std::vector<beans::PropertyValue> >(xPropertySet->getPropertyValue("InteropGrabBag").get< uno::Sequence<beans::PropertyValue> >());
         beans::PropertyValue aValue;
         aValue.Name = "latentStyles";
-        aValue.Value <<= aLatentStyles;
+        aValue.Value = uno::makeAny(aLatentStyles);
         aGrabBag.push_back(aValue);
         xPropertySet->setPropertyValue("InteropGrabBag", uno::makeAny(comphelper::containerToSequence(aGrabBag)));
     }
@@ -952,17 +943,7 @@ void StyleSheetTable::ApplyStyleSheets( const FontTablePtr& rFontTable )
 
                         // Standard is handled already in applyDefaults().
                         if (sConvertedStyleName != "Standard")
-                        {
                             StyleSheetTable_Impl::SetPropertiesToDefault(xStyle);
-
-                            // resolve import conflicts with built-in styles (only if normal style has been defined)
-                            if( m_pImpl->m_bHasImportedDefaultParaStyle
-                                && pEntry->sBaseStyleIdentifier.isEmpty()
-                                && !xStyle->getParentStyle().isEmpty() )
-                            {
-                                xStyle->setParentStyle( "Standard" );
-                            }
-                        }
                     }
                     else
                     {
@@ -1135,7 +1116,7 @@ void StyleSheetTable::ApplyStyleSheets( const FontTablePtr& rFontTable )
                                 {
                                     beans::PropertyValue aNew;
                                     aNew.Name = "FollowStyle";
-                                    aNew.Value <<= ConvertStyleName((*it)->sStyleIdentifierD);
+                                    aNew.Value = uno::makeAny(ConvertStyleName((*it)->sStyleIdentifierD));
                                     aSortedPropVals.Insert(aNew);
                                     break;
                                 }
@@ -1209,7 +1190,7 @@ void StyleSheetTable::ApplyStyleSheets( const FontTablePtr& rFontTable )
                 auto aGrabBag = comphelper::sequenceToContainer< std::vector<beans::PropertyValue> >(aAny.get< uno::Sequence<beans::PropertyValue> >());
                 beans::PropertyValue aValue;
                 aValue.Name = "tableStyles";
-                aValue.Value <<= comphelper::containerToSequence(aTableStylesVec);
+                aValue.Value = uno::makeAny(comphelper::containerToSequence(aTableStylesVec));
                 aGrabBag.push_back(aValue);
                 xPropertySet->setPropertyValue("InteropGrabBag", uno::makeAny(comphelper::containerToSequence(aGrabBag)));
             }

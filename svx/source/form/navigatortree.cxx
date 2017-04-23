@@ -134,23 +134,25 @@ namespace svxform
     {
         SetHelpId( HID_FORM_NAVIGATOR );
 
+        m_aNavigatorImages = ImageList( SVX_RES( RID_SVXIMGLIST_FMEXPL ) );
+
         SetNodeBitmaps(
-            Image(BitmapEx(SVX_RES(RID_SVXBMP_COLLAPSEDNODE))),
-            Image(BitmapEx(SVX_RES(RID_SVXBMP_EXPANDEDNODE)))
+            m_aNavigatorImages.GetImage( RID_SVXIMG_COLLAPSEDNODE ),
+            m_aNavigatorImages.GetImage( RID_SVXIMG_EXPANDEDNODE )
         );
 
         SetDragDropMode(DragDropMode::ALL);
         EnableInplaceEditing( true );
-        SetSelectionMode(SelectionMode::Multiple);
+        SetSelectionMode(MULTIPLE_SELECTION);
 
-        m_pNavModel = new NavigatorTreeModel();
+        m_pNavModel = new NavigatorTreeModel( m_aNavigatorImages );
         Clear();
 
         StartListening( *m_pNavModel );
 
-        m_aDropActionTimer.SetInvokeHandler(LINK(this, NavigatorTree, OnDropActionTimer));
+        m_aDropActionTimer.SetTimeoutHdl(LINK(this, NavigatorTree, OnDropActionTimer));
 
-        m_aSynchronizeTimer.SetInvokeHandler(LINK(this, NavigatorTree, OnSynchronizeTimer));
+        m_aSynchronizeTimer.SetTimeoutHdl(LINK(this, NavigatorTree, OnSynchronizeTimer));
         SetSelectHdl(LINK(this, NavigatorTree, OnEntrySelDesel));
         SetDeselectHdl(LINK(this, NavigatorTree, OnEntrySelDesel));
     }
@@ -358,77 +360,77 @@ namespace svxform
                 FmFormModel* pFormModel = pFormShell ? pFormShell->GetFormModel() : nullptr;
                 if( pFormShell && pFormModel )
                 {
-                    ScopedVclPtrInstance<PopupMenu> aContextMenu(SVX_RES(RID_FMEXPLORER_POPUPMENU));
-                    PopupMenu* pSubMenuNew = aContextMenu->GetPopupMenu( SID_FM_NEW );
+                    PopupMenu aContextMenu(SVX_RES(RID_FMEXPLORER_POPUPMENU));
+                    PopupMenu* pSubMenuNew = aContextMenu.GetPopupMenu( SID_FM_NEW );
 
                     // menu 'New' only exists, if only the root or only one form is selected
-                    aContextMenu->EnableItem( SID_FM_NEW, bSingleSelection && (m_nFormsSelected || m_bRootSelected) );
+                    aContextMenu.EnableItem( SID_FM_NEW, bSingleSelection && (m_nFormsSelected || m_bRootSelected) );
 
                     // 'New'\'Form' under the same terms
                     pSubMenuNew->EnableItem( SID_FM_NEW_FORM, bSingleSelection && (m_nFormsSelected || m_bRootSelected) );
-                    pSubMenuNew->SetItemImage(SID_FM_NEW_FORM, Image(BitmapEx(SVX_RES(RID_SVXBMP_FORM))));
-                    pSubMenuNew->SetItemImage(SID_FM_NEW_HIDDEN, Image(BitmapEx(SVX_RES(RID_SVXBMP_HIDDEN))));
+                    pSubMenuNew->SetItemImage(SID_FM_NEW_FORM, m_aNavigatorImages.GetImage(RID_SVXIMG_FORM));
+                    pSubMenuNew->SetItemImage(SID_FM_NEW_HIDDEN, m_aNavigatorImages.GetImage(RID_SVXIMG_HIDDEN));
 
                     // 'New'\'hidden...', if exactly one form is selected
                     pSubMenuNew->EnableItem( SID_FM_NEW_HIDDEN, bSingleSelection && m_nFormsSelected );
 
                     // 'Delete': everything which is not root can be removed
-                    aContextMenu->EnableItem( SID_FM_DELETE, !m_bRootSelected );
+                    aContextMenu.EnableItem( SID_FM_DELETE, !m_bRootSelected );
 
                     // 'Cut', 'Copy' and 'Paste'
-                    aContextMenu->EnableItem( SID_CUT, !m_bRootSelected && implAllowExchange( DND_ACTION_MOVE ) );
-                    aContextMenu->EnableItem( SID_COPY, !m_bRootSelected && implAllowExchange( DND_ACTION_COPY ) );
-                    aContextMenu->EnableItem( SID_PASTE, implAcceptPaste( ) );
+                    aContextMenu.EnableItem( SID_CUT, !m_bRootSelected && implAllowExchange( DND_ACTION_MOVE ) );
+                    aContextMenu.EnableItem( SID_COPY, !m_bRootSelected && implAllowExchange( DND_ACTION_COPY ) );
+                    aContextMenu.EnableItem( SID_PASTE, implAcceptPaste( ) );
 
                     // TabDialog, if exactly one form
-                    aContextMenu->EnableItem( SID_FM_TAB_DIALOG, bSingleSelection && m_nFormsSelected );
+                    aContextMenu.EnableItem( SID_FM_TAB_DIALOG, bSingleSelection && m_nFormsSelected );
 
                     // in XML forms, we don't allow for the properties of a form
                     // #i36484#
                     if ( pFormShell->GetImpl()->isEnhancedForm() && !m_nControlsSelected )
-                        aContextMenu->RemoveItem( aContextMenu->GetItemPos( SID_FM_SHOW_PROPERTY_BROWSER ) );
+                        aContextMenu.RemoveItem( aContextMenu.GetItemPos( SID_FM_SHOW_PROPERTY_BROWSER ) );
 
                     // if the property browser is already open, we don't allow for the properties, too
                     if( pFormShell->GetImpl()->IsPropBrwOpen() )
-                        aContextMenu->RemoveItem( aContextMenu->GetItemPos( SID_FM_SHOW_PROPERTY_BROWSER ) );
+                        aContextMenu.RemoveItem( aContextMenu.GetItemPos( SID_FM_SHOW_PROPERTY_BROWSER ) );
                     // and finally, if there's a mixed selection of forms and controls, disable the entry, too
                     else
-                        aContextMenu->EnableItem( SID_FM_SHOW_PROPERTY_BROWSER,
+                        aContextMenu.EnableItem( SID_FM_SHOW_PROPERTY_BROWSER,
                             (m_nControlsSelected && !m_nFormsSelected) || (!m_nControlsSelected && m_nFormsSelected) );
 
                     // rename, if one element and no root
-                    aContextMenu->EnableItem( SID_FM_RENAME_OBJECT, bSingleSelection && !m_bRootSelected );
+                    aContextMenu.EnableItem( SID_FM_RENAME_OBJECT, bSingleSelection && !m_bRootSelected );
 
                     // Readonly-entry is only for root
-                    aContextMenu->EnableItem( SID_FM_OPEN_READONLY, m_bRootSelected );
+                    aContextMenu.EnableItem( SID_FM_OPEN_READONLY, m_bRootSelected );
                     // the same for automatic control focus
-                    aContextMenu->EnableItem( SID_FM_AUTOCONTROLFOCUS, m_bRootSelected );
+                    aContextMenu.EnableItem( SID_FM_AUTOCONTROLFOCUS, m_bRootSelected );
 
                     // ConvertTo-Slots are enabled, if one control is selected
                     // the corresponding slot is disabled
                     if (!m_bRootSelected && !m_nFormsSelected && (m_nControlsSelected == 1))
                     {
-                        aContextMenu->SetPopupMenu( SID_FM_CHANGECONTROLTYPE, FmXFormShell::GetConversionMenu() );
+                        aContextMenu.SetPopupMenu( SID_FM_CHANGECONTROLTYPE, FmXFormShell::GetConversionMenu() );
 #if OSL_DEBUG_LEVEL > 0
                         FmControlData* pCurrent = static_cast<FmControlData*>((*m_arrCurrentSelection.begin())->GetUserData());
                         OSL_ENSURE( pFormShell->GetImpl()->isSolelySelected( pCurrent->GetFormComponent() ),
                             "NavigatorTree::Command: inconsistency between the navigator selection, and the selection as the shell knows it!" );
 #endif
 
-                        pFormShell->GetImpl()->checkControlConversionSlotsForCurrentSelection( *aContextMenu->GetPopupMenu( SID_FM_CHANGECONTROLTYPE ) );
+                        pFormShell->GetImpl()->checkControlConversionSlotsForCurrentSelection( *aContextMenu.GetPopupMenu( SID_FM_CHANGECONTROLTYPE ) );
                     }
                     else
-                        aContextMenu->EnableItem( SID_FM_CHANGECONTROLTYPE, false );
+                        aContextMenu.EnableItem( SID_FM_CHANGECONTROLTYPE, false );
 
                     // remove all disabled entries
-                    aContextMenu->RemoveDisabledEntries(true, true);
+                    aContextMenu.RemoveDisabledEntries(true, true);
 
                     // set OpenReadOnly
 
-                    aContextMenu->CheckItem( SID_FM_OPEN_READONLY, pFormModel->GetOpenInDesignMode() );
-                    aContextMenu->CheckItem( SID_FM_AUTOCONTROLFOCUS, pFormModel->GetAutoControlFocus() );
+                    aContextMenu.CheckItem( SID_FM_OPEN_READONLY, pFormModel->GetOpenInDesignMode() );
+                    aContextMenu.CheckItem( SID_FM_AUTOCONTROLFOCUS, pFormModel->GetAutoControlFocus() );
 
-                    sal_uInt16 nSlotId = aContextMenu->Execute( this, ptWhere );
+                    sal_uInt16 nSlotId = aContextMenu.Execute( this, ptWhere );
                     switch( nSlotId )
                     {
                         case SID_FM_NEW_FORM:
@@ -451,7 +453,7 @@ namespace svxform
                             pFormModel->BegUndo(aUndoStr);
                             // slot was valid for (exactly) one selected form
                             OUString fControlName = FM_COMPONENT_HIDDEN;
-                            NewControl( fControlName, *m_arrCurrentSelection.begin(), true );
+                            NewControl( fControlName, *m_arrCurrentSelection.begin() );
                             pFormModel->EndUndo();
 
                         }   break;
@@ -588,8 +590,9 @@ namespace svxform
         {
             SvTreeListBox::Clear();
 
+
             // default-entry "Forms"
-            Image aRootImage(BitmapEx(SVX_RES(RID_SVXBMP_FORMS)));
+            Image aRootImage( m_aNavigatorImages.GetImage( RID_SVXIMG_FORMS ) );
             m_pRootEntry = InsertEntry( SVX_RESSTR(RID_STR_FORMS), aRootImage, aRootImage,
                 nullptr, false, 0 );
         }
@@ -638,7 +641,7 @@ namespace svxform
         for( size_t i = 0; i < nChildCount; i++ )
         {
             FmEntryData* pChildData = pChildList->at( i );
-            Insert( pChildData, TREELIST_APPEND );
+            Insert( pChildData );
         }
 
         return pNewEntry;
@@ -707,6 +710,12 @@ namespace svxform
 
         sal_Int8 nAction = m_aControlExchange.isClipboardOwner() && doingKeyboardCut( ) ? DND_ACTION_MOVE : DND_ACTION_COPY;
         return ( nAction == implAcceptDataTransfer( aClipboardContent.GetDataFlavorExVector(), nAction, pFirstSelected, false ) );
+    }
+
+
+    sal_Int8 NavigatorTree::implAcceptDataTransfer( const DataFlavorExVector& _rFlavors, sal_Int8 _nAction, const ::Point& _rDropPos, bool _bDnD )
+    {
+        return implAcceptDataTransfer( _rFlavors, _nAction, GetEntry( _rDropPos ), _bDnD );
     }
 
 
@@ -898,7 +907,7 @@ namespace svxform
                 m_aDropActionTimer.Stop();
         }
 
-        return implAcceptDataTransfer( GetDataFlavorExVector(), rEvt.mnAction, GetEntry( aDropPos ), true );
+        return implAcceptDataTransfer( GetDataFlavorExVector(), rEvt.mnAction, aDropPos, true );
     }
 
 
@@ -1229,7 +1238,7 @@ namespace svxform
 
     void NavigatorTree::ModelHasRemoved( SvTreeListEntry* _pEntry )
     {
-        SvTreeListEntry* pTypedEntry = _pEntry;
+        SvTreeListEntry* pTypedEntry = static_cast< SvTreeListEntry* >( _pEntry );
         if ( doingKeyboardCut() )
             m_aCutEntries.erase( pTypedEntry );
 
@@ -1334,7 +1343,7 @@ namespace svxform
         if (!xPropertySet.is())
             return;
 
-        FmFormData* pNewFormData = new FmFormData(xNewForm, pParentFormData);
+        FmFormData* pNewFormData = new FmFormData( xNewForm, m_aNavigatorImages, pParentFormData );
 
 
         // set name
@@ -1395,7 +1404,7 @@ namespace svxform
         if (!xNewComponent.is())
             return nullptr;
 
-        FmControlData* pNewFormControlData = new FmControlData(xNewComponent, pParentFormData);
+        FmControlData* pNewFormControlData = new FmControlData( xNewComponent, m_aNavigatorImages, pParentFormData );
 
 
         // set name
@@ -1474,7 +1483,7 @@ namespace svxform
     }
 
 
-    IMPL_LINK_NOARG(NavigatorTree, OnEdit, void*, void)
+    IMPL_LINK_NOARG_TYPED(NavigatorTree, OnEdit, void*, void)
     {
         nEditEvent = nullptr;
         EditEntry( m_pEditEntry );
@@ -1482,7 +1491,7 @@ namespace svxform
     }
 
 
-    IMPL_LINK_NOARG(NavigatorTree, OnDropActionTimer, Timer *, void)
+    IMPL_LINK_NOARG_TYPED(NavigatorTree, OnDropActionTimer, Timer *, void)
     {
         if (--m_aTimerCounter > 0)
             return;
@@ -1493,7 +1502,7 @@ namespace svxform
         {
             SvTreeListEntry* pToExpand = GetEntry(m_aTimerTriggered);
             if (pToExpand && (GetChildCount(pToExpand) > 0) &&  !IsExpanded(pToExpand))
-                // normally, we have to test, if the node is expanded,
+                // normaly, we have to test, if the node is expanded,
                 // but there is no method for this either in base class nor the model
                 // the base class should tolerate it anyway
                 Expand(pToExpand);
@@ -1517,7 +1526,7 @@ namespace svxform
     }
 
 
-    IMPL_LINK_NOARG(NavigatorTree, OnEntrySelDesel, SvTreeListBox*, void)
+    IMPL_LINK_NOARG_TYPED(NavigatorTree, OnEntrySelDesel, SvTreeListBox*, void)
     {
         m_sdiState = SDI_DIRTY;
 
@@ -1532,13 +1541,13 @@ namespace svxform
     }
 
 
-    IMPL_LINK_NOARG(NavigatorTree, OnSynchronizeTimer, Timer *, void)
+    IMPL_LINK_NOARG_TYPED(NavigatorTree, OnSynchronizeTimer, Timer *, void)
     {
         SynchronizeMarkList();
     }
 
 
-    IMPL_LINK_NOARG(NavigatorTree, OnClipboardAction, OLocalExchange&, void)
+    IMPL_LINK_NOARG_TYPED(NavigatorTree, OnClipboardAction, OLocalExchange&, void)
     {
         if ( !m_aControlExchange.isClipboardOwner() )
         {
@@ -2077,7 +2086,7 @@ namespace svxform
             }
         } // while ( aIter.IsMore() )
         // make the mark visible
-        ::tools::Rectangle aMarkRect( pFormView->GetAllMarkedRect());
+        ::Rectangle aMarkRect( pFormView->GetAllMarkedRect());
         for ( sal_uInt32 i = 0; i < pFormView->PaintWindowCount(); ++i )
         {
             SdrPaintWindow* pPaintWindow = pFormView->GetPaintWindow( i );
@@ -2145,7 +2154,7 @@ namespace svxform
         if ( bPaint )
         {
             // make the mark visible
-            ::tools::Rectangle aMarkRect( pFormView->GetAllMarkedRect());
+            ::Rectangle aMarkRect( pFormView->GetAllMarkedRect());
             for ( sal_uInt32 i = 0; i < pFormView->PaintWindowCount(); ++i )
             {
                 SdrPaintWindow* pPaintWindow = pFormView->GetPaintWindow( i );

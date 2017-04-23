@@ -22,10 +22,6 @@
 //  File:       propspec.cxx
 //  Contents:   C++ wrappers for FULLPROPSPEC
 
-#include <sal/config.h>
-
-#include <new>
-
 #if defined _MSC_VER
 #pragma warning(push, 1)
 #endif
@@ -99,14 +95,17 @@ CFullPropSpec::CFullPropSpec( CFullPropSpec const & src ) :
             SetProperty( src._psProperty.lpwstr );
         }
         else
-            _psProperty.lpwstr = nullptr;
+            _psProperty.lpwstr = 0;
     }
     else
     {
         _psProperty.propid = src._psProperty.propid;
     }
 }
-
+inline void * operator new( size_t /*size*/, void * p )
+{
+    return p;
+}
 //+-------------------------------------------------------------------------
 //  Member:     CFullPropSpec::operator=, public
 //  Synopsis:   Assignment operator
@@ -117,7 +116,13 @@ CFullPropSpec & CFullPropSpec::operator=( CFullPropSpec const & Property )
     // Clean up.
     this->CFullPropSpec::~CFullPropSpec();
 
-    ::new (this) CFullPropSpec( Property );
+#ifdef _MSC_VER
+#pragma warning( disable : 4291 )           // unmatched operator new
+#endif
+    new (this) CFullPropSpec( Property );
+#ifdef _MSC_VER
+#pragma warning( default : 4291 )
+#endif
     return *this;
 }
 CFullPropSpec::~CFullPropSpec()
@@ -131,7 +136,7 @@ CFullPropSpec::~CFullPropSpec()
 void CFullPropSpec::SetProperty( PROPID pidProperty )
 {
     if ( _psProperty.ulKind == PRSPEC_LPWSTR &&
-         nullptr != _psProperty.lpwstr )
+         0 != _psProperty.lpwstr )
     {
         CoTaskMemFree( _psProperty.lpwstr );
     }
@@ -141,14 +146,14 @@ void CFullPropSpec::SetProperty( PROPID pidProperty )
 BOOL CFullPropSpec::SetProperty( WCHAR const * wcsProperty )
 {
     if ( _psProperty.ulKind == PRSPEC_LPWSTR &&
-         nullptr != _psProperty.lpwstr )
+         0 != _psProperty.lpwstr )
     {
         CoTaskMemFree( _psProperty.lpwstr );
     }
     _psProperty.ulKind = PRSPEC_LPWSTR;
     int len = (int) ( (wcslen( wcsProperty ) + 1) * sizeof( WCHAR ) );
-    _psProperty.lpwstr = static_cast<WCHAR *>(CoTaskMemAlloc( len ));
-    if ( nullptr != _psProperty.lpwstr )
+    _psProperty.lpwstr = (WCHAR *)CoTaskMemAlloc( len );
+    if ( 0 != _psProperty.lpwstr )
     {
         memcpy( _psProperty.lpwstr,
                 wcsProperty,
@@ -157,18 +162,18 @@ BOOL CFullPropSpec::SetProperty( WCHAR const * wcsProperty )
     }
     else
     {
-        _psProperty.lpwstr = nullptr;
+        _psProperty.lpwstr = 0;
         return FALSE;
     }
 }
-bool CFullPropSpec::operator==( CFullPropSpec const & prop ) const
+int CFullPropSpec::operator==( CFullPropSpec const & prop ) const
 {
     if ( memcmp( &prop._guidPropSet,
                  &_guidPropSet,
                  sizeof( _guidPropSet ) ) != 0 ||
          prop._psProperty.ulKind != _psProperty.ulKind )
     {
-        return false;
+        return 0;
     }
     switch( _psProperty.ulKind )
     {
@@ -179,16 +184,16 @@ bool CFullPropSpec::operator==( CFullPropSpec const & prop ) const
         return( GetPropertyPropid() == prop.GetPropertyPropid() );
         break;
     default:
-        return false;
+        return 0;
         break;
     }
 }
-bool CFullPropSpec::operator!=( CFullPropSpec const & prop ) const
+int CFullPropSpec::operator!=( CFullPropSpec const & prop ) const
 {
     if (*this == prop)
-        return false;
+        return 0;
     else
-        return true;
+        return 1;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

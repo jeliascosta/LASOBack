@@ -170,6 +170,7 @@ public:
 
     const OUString &    GetRightText() const    { return aRightText; }
     const OUString &    GetLeftText() const     { return rEntryContext.GetLeftText(); }
+    ConvDic *           GetDic()                { return GetConvDicImport().GetDic(); }
 };
 
 
@@ -281,7 +282,7 @@ void ConvDicXMLRightTextContext_Impl::Characters( const OUString &rChars )
 
 void ConvDicXMLRightTextContext_Impl::EndElement()
 {
-    ConvDic *pDic = GetConvDicImport().GetDic();
+    ConvDic *pDic = GetDic();
     if (pDic)
         pDic->AddEntry( GetLeftText(), GetRightText() );
 }
@@ -370,11 +371,18 @@ void ConvDicXMLExport::ExportContent_()
 }
 
 void SAL_CALL ConvDicXMLImport::startDocument()
+    throw( xml::sax::SAXException, uno::RuntimeException, std::exception )
 {
     // register namespace at first possible opportunity
     GetNamespaceMap().Add( "tcd",
             XML_NAMESPACE_TCD_STRING, XML_NAMESPACE_TCD );
     SvXMLImport::startDocument();
+}
+
+void SAL_CALL ConvDicXMLImport::endDocument()
+    throw( xml::sax::SAXException, uno::RuntimeException, std::exception )
+{
+    SvXMLImport::endDocument();
 }
 
 SvXMLImportContext * ConvDicXMLImport::CreateContext(

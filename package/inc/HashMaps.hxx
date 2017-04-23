@@ -23,8 +23,6 @@
 #include <rtl/ref.hxx>
 #include <unordered_map>
 
-#include <memory>
-
 struct eqFunc
 {
     bool operator()( const OUString &r1,
@@ -35,7 +33,9 @@ struct eqFunc
 };
 
 class ZipPackageFolder;
-struct ZipContentInfo;
+namespace com { namespace sun { namespace star { namespace packages {
+class ContentInfo;
+} } } }
 
 typedef std::unordered_map < OUString,
                         ZipPackageFolder *,
@@ -43,7 +43,7 @@ typedef std::unordered_map < OUString,
                         eqFunc > FolderHash;
 
 typedef std::unordered_map < OUString,
-                        std::unique_ptr<ZipContentInfo>,
+                        rtl::Reference < css::packages::ContentInfo >,
                         OUStringHash,
                         eqFunc > ContentHash;
 

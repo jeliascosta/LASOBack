@@ -34,7 +34,8 @@ using namespace ::cppu;
 
 KabCatalog::KabCatalog(KabConnection* _pCon)
         : connectivity::sdbcx::OCatalog(_pCon),
-          m_pConnection(_pCon)
+          m_pConnection(_pCon),
+          m_xMetaData(m_pConnection->getMetaData())
 {
 }
 
@@ -78,7 +79,7 @@ void KabCatalog::refreshUsers()
 
 
 // XTablesSupplier
-Reference< XNameAccess > SAL_CALL KabCatalog::getTables(  )
+Reference< XNameAccess > SAL_CALL KabCatalog::getTables(  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_aMutex);
     checkDisposed(rBHelper.bDisposed);

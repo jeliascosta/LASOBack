@@ -104,6 +104,7 @@ void SAL_CALL ContentIdentifier::release() throw()
 // virtual
 Any SAL_CALL
 ContentIdentifier::queryInterface( const Type & rType )
+    throw ( RuntimeException, std::exception )
 {
     Any aRet = cppu::queryInterface( rType,
                 static_cast< XTypeProvider * >( this ),
@@ -119,6 +120,7 @@ ContentIdentifier::queryInterface( const Type & rType )
 // virtual
 Sequence< sal_Int8 > SAL_CALL
 ContentIdentifier::getImplementationId()
+    throw( RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -127,6 +129,7 @@ ContentIdentifier::getImplementationId()
 // virtual
 Sequence< css::uno::Type > SAL_CALL
 ContentIdentifier::getTypes()
+    throw( RuntimeException, std::exception )
 {
     static cppu::OTypeCollection* pCollection = nullptr;
       if ( !pCollection )
@@ -149,6 +152,7 @@ ContentIdentifier::getTypes()
 
 // virtual
 OUString SAL_CALL ContentIdentifier::getContentIdentifier()
+    throw( RuntimeException, std::exception )
 {
     return m_pImpl->m_aContentId;
 }
@@ -156,6 +160,7 @@ OUString SAL_CALL ContentIdentifier::getContentIdentifier()
 
 // virtual
 OUString SAL_CALL ContentIdentifier::getContentProviderScheme()
+    throw( RuntimeException, std::exception )
 {
     return m_pImpl->m_aProviderScheme;
 }

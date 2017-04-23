@@ -37,19 +37,19 @@ struct SvProgressArg;
 class SFX2_DLLPUBLIC SfxProgress
 {
     std::unique_ptr< SfxProgress_Impl >       pImpl;
-    sal_uInt32              nVal;
+    sal_uIntPtr             nVal;
     bool                    bSuspended;
 
 public:
                             SfxProgress( SfxObjectShell* pObjSh,
                                          const rtl::OUString& rText,
-                                         sal_uInt32 nRange,
+                                         sal_uIntPtr nRange,
                                          bool bWait = true);
     virtual                 ~SfxProgress();
 
-    void                    SetStateText( sal_uInt32 nVal, const rtl::OUString &rVal );
-    void                    SetState( sal_uInt32 nVal, sal_uInt32 nNewRange = 0 );
-    sal_uInt32              GetState() const { return nVal; }
+    bool                    SetStateText( sal_uIntPtr nVal, const rtl::OUString &rVal );
+    bool                    SetState( sal_uIntPtr nVal, sal_uIntPtr nNewRange = 0 );
+    sal_uIntPtr             GetState() const { return nVal; }
 
     void                    Resume();
     void                    Suspend();

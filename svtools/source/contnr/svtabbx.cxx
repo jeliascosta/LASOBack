@@ -95,7 +95,14 @@ SvTabListBox::SvTabListBox( vcl::Window* pParent, WinBits nBits )
     SetHighlightRange();    // select full width
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SvTabListBox, WB_TABSTOP)
+VCL_BUILDER_DECL_FACTORY(SvTabListBox)
+{
+    WinBits nWinStyle = WB_TABSTOP;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+        nWinStyle |= WB_BORDER;
+    rRet = VclPtr<SvTabListBox>::Create(pParent, nWinStyle);
+}
 
 SvTabListBox::~SvTabListBox()
 {
@@ -125,7 +132,7 @@ void SvTabListBox::SetTabs(const long* pTabs, MapUnit eMapUnit)
     nTabCount = nCount;
 
     MapMode aMMSource( eMapUnit );
-    MapMode aMMDest( MapUnit::MapPixel );
+    MapMode aMMDest( MAP_PIXEL );
 
     pTabs++;
     for( sal_uInt16 nIdx = 0; nIdx < nCount; nIdx++, pTabs++ )
@@ -148,7 +155,7 @@ void SvTabListBox::SetTab( sal_uInt16 nTab,long nValue,MapUnit eMapUnit )
     {
         DBG_ASSERT(pTabList,"TabList?");
         MapMode aMMSource( eMapUnit );
-        MapMode aMMDest( MapUnit::MapPixel );
+        MapMode aMMDest( MAP_PIXEL );
         Size aSize( nValue, 0 );
         aSize = LogicToLogic( aSize, &aMMSource, &aMMDest );
         nValue = aSize.Width();
@@ -256,7 +263,7 @@ OUString SvTabListBox::GetEntryText( SvTreeListEntry* pEntry, sal_uInt16 nCol )
         while( nCur < nCount )
         {
             const SvLBoxItem& rStr = pEntry->GetItem( nCur );
-            if (rStr.GetType() == SvLBoxItemType::String)
+            if (rStr.GetType() == SV_ITEM_ID_LBOXSTRING)
             {
                 if( nCol == 0xffff )
                 {
@@ -305,7 +312,7 @@ void SvTabListBox::SetEntryText(const OUString& rStr, SvTreeListEntry* pEntry, s
     for (sal_uInt16 nCur = 0; nCur < nCount; ++nCur)
     {
         SvLBoxItem& rBoxItem = pEntry->GetItem( nCur );
-        if (rBoxItem.GetType() == SvLBoxItemType::String)
+        if (rBoxItem.GetType() == SV_ITEM_ID_LBOXSTRING)
         {
             if (!nCol || nCol==0xFFFF)
             {
@@ -322,8 +329,9 @@ void SvTabListBox::SetEntryText(const OUString& rStr, SvTreeListEntry* pEntry, s
     }
     GetModel()->InvalidateEntry( pEntry );
 
-    std::unique_ptr<TabListBoxEventData> pData( new TabListBoxEventData( pEntry, nTextColumn, sOldText ) );
-    CallEventListeners( VclEventId::TableCellNameChanged, pData.get() );
+    TabListBoxEventData* pData = new TabListBoxEventData( pEntry, nTextColumn, sOldText );
+    CallEventListeners( VCLEVENT_TABLECELL_NAMECHANGED, pData );
+    delete pData;
 }
 
 OUString SvTabListBox::GetCellText( sal_uLong nPos, sal_uInt16 nCol ) const
@@ -334,7 +342,7 @@ OUString SvTabListBox::GetCellText( sal_uLong nPos, sal_uInt16 nCol ) const
     if (pEntry && pEntry->ItemCount() > static_cast<size_t>(nCol+1))
     {
         const SvLBoxItem& rStr = pEntry->GetItem( nCol + 1 );
-        if (rStr.GetType() == SvLBoxItemType::String)
+        if (rStr.GetType() == SV_ITEM_ID_LBOXSTRING)
             aResult = static_cast<const SvLBoxString&>(rStr).GetText();
     }
     return aResult;
@@ -369,6 +377,11 @@ sal_uLong SvTabListBox::GetEntryPos( const SvTreeListEntry* pEntry ) const
     return 0xffffffff;
 }
 
+void SvTabListBox::Resize()
+{
+    SvTreeListBox::Resize();
+}
+
 // static
 OUString SvTabListBox::GetToken( const OUString &sStr, sal_Int32& nIndex )
 {
@@ -387,7 +400,7 @@ OUString SvTabListBox::GetTabEntryText( sal_uLong nPos, sal_uInt16 nCol ) const
         while( nCur < nCount )
         {
             const SvLBoxItem& rBoxItem = pEntry->GetItem( nCur );
-            if (rBoxItem.GetType() == SvLBoxItemType::String)
+            if (rBoxItem.GetType() == SV_ITEM_ID_LBOXSTRING)
             {
                 if ( nCol == 0xffff )
                 {
@@ -506,11 +519,11 @@ SvHeaderTabListBox::~SvHeaderTabListBox()
 
 void SvHeaderTabListBox::dispose()
 {
-    m_pImpl.reset();
+    delete m_pImpl;
     SvTabListBox::dispose();
 }
 
-void SvHeaderTabListBox::Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect )
+void SvHeaderTabListBox::Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect )
 {
     if (m_bFirstPaint)
     {
@@ -533,7 +546,7 @@ bool SvHeaderTabListBox::IsItemChecked( SvTreeListEntry* pEntry, sal_uInt16 nCol
     SvButtonState eState = SvButtonState::Unchecked;
     SvLBoxButton& rItem = static_cast<SvLBoxButton&>( pEntry->GetItem( nCol + 1 ) );
 
-    if (rItem.GetType() == SvLBoxItemType::Button)
+    if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
     {
         SvItemStateFlags nButtonFlags = rItem.GetButtonFlags();
         eState = SvLBoxButtonData::ConvertToButtonState( nButtonFlags );
@@ -595,12 +608,12 @@ void SvHeaderTabListBox::Clear()
     m_aAccessibleChildren.clear();
 }
 
-IMPL_LINK_NOARG(SvHeaderTabListBox, ScrollHdl_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SvHeaderTabListBox, ScrollHdl_Impl, SvTreeListBox*, void)
 {
     m_pImpl->m_pHeaderBar->SetOffset( -GetXOffset() );
 }
 
-IMPL_LINK_NOARG(SvHeaderTabListBox, CreateAccessibleHdl_Impl, HeaderBar*, void)
+IMPL_LINK_NOARG_TYPED(SvHeaderTabListBox, CreateAccessibleHdl_Impl, HeaderBar*, void)
 {
     vcl::Window* pParent = m_pImpl->m_pHeaderBar->GetAccessibleParentWindow();
     DBG_ASSERT( pParent, "SvHeaderTabListBox..CreateAccessibleHdl_Impl - accessible parent not found" );
@@ -640,7 +653,7 @@ bool SvHeaderTabListBox::IsCellCheckBox( long _nRow, sal_uInt16 _nColumn, TriSta
         if ( nItemCount > ( _nColumn + 1 ) )
         {
             SvLBoxItem& rItem = pEntry->GetItem( _nColumn + 1 );
-            if (rItem.GetType() == SvLBoxItemType::Button)
+            if (rItem.GetType() == SV_ITEM_ID_LBOXBUTTON)
             {
                 bRet = true;
                 _rState = ( ( static_cast<SvLBoxButton&>(rItem).GetButtonFlags() & SvItemStateFlags::UNCHECKED ) == SvItemStateFlags::NONE )
@@ -728,6 +741,11 @@ void SvHeaderTabListBox::SelectAll()
     SvTreeListBox::SelectAll(true);
 }
 
+void SvHeaderTabListBox::SelectAll( bool bSelect, bool bPaint )
+{
+    // overwritten just to disambiguate the SelectAll() from the base' class SelectAll( bool, bool )
+    SvTabListBox::SelectAll( bSelect, bPaint );
+}
 void SvHeaderTabListBox::SelectRow( long _nRow, bool _bSelect, bool )
 {
     Select( GetEntry( _nRow ), _bSelect );
@@ -776,9 +794,9 @@ OUString SvHeaderTabListBox::GetAccessibleCellText( long _nRow, sal_uInt16 _nCol
     return GetTabEntryText(_nRow, _nColumnPos);
 }
 
-tools::Rectangle SvHeaderTabListBox::calcHeaderRect( bool _bIsColumnBar, bool _bOnScreen )
+Rectangle SvHeaderTabListBox::calcHeaderRect( bool _bIsColumnBar, bool _bOnScreen )
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     if ( _bIsColumnBar )
     {
         vcl::Window* pParent = nullptr;
@@ -790,36 +808,36 @@ tools::Rectangle SvHeaderTabListBox::calcHeaderRect( bool _bIsColumnBar, bool _b
     return aRect;
 }
 
-tools::Rectangle SvHeaderTabListBox::calcTableRect( bool _bOnScreen )
+Rectangle SvHeaderTabListBox::calcTableRect( bool _bOnScreen )
 {
     vcl::Window* pParent = nullptr;
     if ( !_bOnScreen )
         pParent = GetAccessibleParentWindow();
 
-    tools::Rectangle aRect( GetWindowExtentsRelative( pParent ) );
+    Rectangle aRect( GetWindowExtentsRelative( pParent ) );
     return aRect;
 }
 
-tools::Rectangle SvHeaderTabListBox::GetFieldRectPixelAbs( sal_Int32 _nRow, sal_uInt16 _nColumn, bool _bIsHeader, bool _bOnScreen )
+Rectangle SvHeaderTabListBox::GetFieldRectPixelAbs( sal_Int32 _nRow, sal_uInt16 _nColumn, bool _bIsHeader, bool _bOnScreen )
 {
     DBG_ASSERT( !_bIsHeader || 0 == _nRow, "invalid parameters" );
-    tools::Rectangle aRect;
+    Rectangle aRect;
     SvTreeListEntry* pEntry = GetEntry( _nRow );
     if ( pEntry )
     {
         aRect = _bIsHeader ? calcHeaderRect( true, false ) : GetBoundingRect( pEntry );
         Point aTopLeft = aRect.TopLeft();
         DBG_ASSERT( m_pImpl->m_pHeaderBar->GetItemCount() > _nColumn, "invalid column" );
-        tools::Rectangle aItemRect = m_pImpl->m_pHeaderBar->GetItemRect( m_pImpl->m_pHeaderBar->GetItemId( _nColumn ) );
+        Rectangle aItemRect = m_pImpl->m_pHeaderBar->GetItemRect( m_pImpl->m_pHeaderBar->GetItemId( _nColumn ) );
         aTopLeft.X() = aItemRect.Left();
         Size aSize = aItemRect.GetSize();
-        aRect = tools::Rectangle( aTopLeft, aSize );
+        aRect = Rectangle( aTopLeft, aSize );
         vcl::Window* pParent = nullptr;
         if ( !_bOnScreen )
             pParent = GetAccessibleParentWindow();
         aTopLeft = aRect.TopLeft();
         aTopLeft += GetWindowExtentsRelative( pParent ).TopLeft();
-        aRect = tools::Rectangle( aTopLeft, aRect.GetSize() );
+        aRect = Rectangle( aTopLeft, aRect.GetSize() );
     }
 
     return aRect;
@@ -1090,12 +1108,12 @@ void SvHeaderTabListBox::GrabTableFocus()
     GrabFocus();
 }
 
-bool SvHeaderTabListBox::GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, MetricVector& rVector )
+bool SvHeaderTabListBox::GetGlyphBoundRects( const Point& rOrigin, const OUString& rStr, int nIndex, int nLen, int nBase, MetricVector& rVector )
 {
-    return Control::GetGlyphBoundRects( rOrigin, rStr, nIndex, nLen, rVector );
+    return Control::GetGlyphBoundRects( rOrigin, rStr, nIndex, nLen, nBase, rVector );
 }
 
-tools::Rectangle SvHeaderTabListBox::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
+Rectangle SvHeaderTabListBox::GetWindowExtentsRelative( vcl::Window *pRelativeWindow ) const
 {
     return Control::GetWindowExtentsRelative( pRelativeWindow );
 }
@@ -1141,9 +1159,9 @@ Reference< XAccessible > SvHeaderTabListBox::CreateAccessible()
     return xAccessible;
 }
 
-tools::Rectangle SvHeaderTabListBox::GetFieldCharacterBounds(sal_Int32,sal_Int32,sal_Int32)
+Rectangle SvHeaderTabListBox::GetFieldCharacterBounds(sal_Int32,sal_Int32,sal_Int32)
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     return aRect;
 }
 
@@ -1151,7 +1169,7 @@ sal_Int32 SvHeaderTabListBox::GetFieldIndexAtPoint(sal_Int32 _nRow,sal_Int32 _nC
 {
     OUString sText = GetAccessibleCellText( _nRow, static_cast< sal_uInt16 >( _nColumnPos ) );
     MetricVector aRects;
-    if ( GetGlyphBoundRects(Point(0,0), sText, 0, sText.getLength(), aRects) )
+    if ( GetGlyphBoundRects(Point(0,0), sText, 0, sText.getLength(), 0, aRects) )
     {
         for (MetricVector::iterator aIter = aRects.begin(); aIter != aRects.end(); ++aIter)
         {

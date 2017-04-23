@@ -48,7 +48,7 @@ KabResultSet::KabResultSet(KabCommonStatement* pStmt)
     : KabResultSet_BASE(m_aMutex),
       OPropertySetHelper(KabResultSet_BASE::rBHelper),
       m_xStatement(pStmt),
-      m_xMetaData(nullptr),
+      m_xMetaData(NULL),
       m_aKabAddressees(),
       m_nRowPos(-1),
       m_bWasNull(true)
@@ -116,7 +116,7 @@ m_xStatement.clear();
 m_xMetaData.clear();
 }
 
-Any SAL_CALL KabResultSet::queryInterface(const Type & rType)
+Any SAL_CALL KabResultSet::queryInterface(const Type & rType) throw(RuntimeException, std::exception)
 {
     Any aRet = OPropertySetHelper::queryInterface(rType);
     if (!aRet.hasValue())
@@ -134,22 +134,22 @@ void SAL_CALL KabResultSet::release() throw()
     KabResultSet_BASE::release();
 }
 
-Sequence<  Type > SAL_CALL KabResultSet::getTypes()
+Sequence<  Type > SAL_CALL KabResultSet::getTypes() throw(RuntimeException, std::exception)
 {
     OTypeCollection aTypes(
-        cppu::UnoType<css::beans::XMultiPropertySet>::get(),
-        cppu::UnoType<css::beans::XFastPropertySet>::get(),
-        cppu::UnoType<css::beans::XPropertySet>::get());
+        cppu::UnoType<com::sun::star::beans::XMultiPropertySet>::get(),
+        cppu::UnoType<com::sun::star::beans::XFastPropertySet>::get(),
+        cppu::UnoType<com::sun::star::beans::XPropertySet>::get());
 
     return comphelper::concatSequences(aTypes.getTypes(), KabResultSet_BASE::getTypes());
 }
 
-css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL KabResultSet::getPropertySetInfo(  )
+::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL KabResultSet::getPropertySetInfo(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
 
-sal_Int32 SAL_CALL KabResultSet::findColumn(const OUString& columnName)
+sal_Int32 SAL_CALL KabResultSet::findColumn(const OUString& columnName) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -169,7 +169,7 @@ sal_Int32 SAL_CALL KabResultSet::findColumn(const OUString& columnName)
     return 0; // Never reached
 }
 
-OUString SAL_CALL KabResultSet::getString(sal_Int32 columnIndex)
+OUString SAL_CALL KabResultSet::getString(sal_Int32 columnIndex) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -192,7 +192,7 @@ return aRet;
             default:
                 aQtName = aFields[nFieldNumber - KAB_DATA_FIELDS]->value(m_aKabAddressees[m_nRowPos]);
         }
-// KDE address book currently does not use nullptr values.
+// KDE address book currently does not use NULL values.
 // But it might do it someday
         if (!aQtName.isNull())
         {
@@ -206,114 +206,114 @@ return aRet;
     return aRet;
 }
 
-sal_Bool SAL_CALL KabResultSet::getBoolean(sal_Int32)
+sal_Bool SAL_CALL KabResultSet::getBoolean(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getBoolean", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getBoolean", NULL);
 
-    return false;
+    return sal_False;
 }
 
-sal_Int8 SAL_CALL KabResultSet::getByte(sal_Int32)
+sal_Int8 SAL_CALL KabResultSet::getByte(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getByte", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getByte", NULL);
 
     sal_Int8 nRet = 0;
     return nRet;
 }
 
-sal_Int16 SAL_CALL KabResultSet::getShort(sal_Int32)
+sal_Int16 SAL_CALL KabResultSet::getShort(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getShort", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getShort", NULL);
 
     sal_Int16 nRet = 0;
     return nRet;
 }
 
-sal_Int32 SAL_CALL KabResultSet::getInt(sal_Int32)
+sal_Int32 SAL_CALL KabResultSet::getInt(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getInt", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getInt", NULL);
 
     sal_Int32 nRet = 0;
     return nRet;
 }
 
-sal_Int64 SAL_CALL KabResultSet::getLong(sal_Int32)
+sal_Int64 SAL_CALL KabResultSet::getLong(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getLong", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getLong", NULL);
 
     return sal_Int64();
 }
 
-float SAL_CALL KabResultSet::getFloat(sal_Int32)
+float SAL_CALL KabResultSet::getFloat(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getFloat", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getFloat", NULL);
 
     float nVal(0);
     return nVal;
 }
 
-double SAL_CALL KabResultSet::getDouble(sal_Int32)
+double SAL_CALL KabResultSet::getDouble(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getDouble", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getDouble", NULL);
 
     double nRet = 0;
     return nRet;
 }
 
-Sequence< sal_Int8 > SAL_CALL KabResultSet::getBytes(sal_Int32)
+Sequence< sal_Int8 > SAL_CALL KabResultSet::getBytes(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("", NULL);
 
     return Sequence< sal_Int8 >();
 }
 
-cssu::Date SAL_CALL KabResultSet::getDate(sal_Int32)
+cssu::Date SAL_CALL KabResultSet::getDate(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getDate", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getDate", NULL);
 
     cssu::Date aRet;
     return aRet;
 }
 
-cssu::Time SAL_CALL KabResultSet::getTime(sal_Int32)
+cssu::Time SAL_CALL KabResultSet::getTime(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getTime", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getTime", NULL);
 
     cssu::Time nRet;
     return nRet;
 }
 
-cssu::DateTime SAL_CALL KabResultSet::getTimestamp(sal_Int32 columnIndex)
+cssu::DateTime SAL_CALL KabResultSet::getTimestamp(sal_Int32 columnIndex) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -352,77 +352,77 @@ cssu::DateTime SAL_CALL KabResultSet::getTimestamp(sal_Int32 columnIndex)
     return nRet;
 }
 
-Reference< XInputStream > SAL_CALL KabResultSet::getBinaryStream(sal_Int32)
+Reference< XInputStream > SAL_CALL KabResultSet::getBinaryStream(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getBinaryStream", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getBinaryStream", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Reference< XInputStream > SAL_CALL KabResultSet::getCharacterStream(sal_Int32)
+Reference< XInputStream > SAL_CALL KabResultSet::getCharacterStream(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getCharacterStream", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getCharacterStream", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Any SAL_CALL KabResultSet::getObject(sal_Int32, const Reference< css::container::XNameAccess >&)
+Any SAL_CALL KabResultSet::getObject(sal_Int32, const Reference< ::com::sun::star::container::XNameAccess >&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getObject", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getObject", NULL);
 
     return Any();
 }
 
-Reference< XRef > SAL_CALL KabResultSet::getRef(sal_Int32)
+Reference< XRef > SAL_CALL KabResultSet::getRef(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getRef", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getRef", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Reference< XBlob > SAL_CALL KabResultSet::getBlob(sal_Int32)
+Reference< XBlob > SAL_CALL KabResultSet::getBlob(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getBlob", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getBlob", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Reference< XClob > SAL_CALL KabResultSet::getClob(sal_Int32)
+Reference< XClob > SAL_CALL KabResultSet::getClob(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getClob", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getClob", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Reference< XArray > SAL_CALL KabResultSet::getArray(sal_Int32)
+Reference< XArray > SAL_CALL KabResultSet::getArray(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-::dbtools::throwFunctionNotSupportedSQLException("getArray", nullptr);
+::dbtools::throwFunctionNotSupportedSQLException("getArray", NULL);
 
-    return nullptr;
+    return NULL;
 }
 
-Reference< XResultSetMetaData > SAL_CALL KabResultSet::getMetaData()
+Reference< XResultSetMetaData > SAL_CALL KabResultSet::getMetaData() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -434,53 +434,53 @@ Reference< XResultSetMetaData > SAL_CALL KabResultSet::getMetaData()
     return xMetaData;
 }
 
-sal_Bool SAL_CALL KabResultSet::isBeforeFirst()
+sal_Bool SAL_CALL KabResultSet::isBeforeFirst() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     if (m_nRowPos == -1)
-        return true;
+        return sal_True;
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::isAfterLast()
+sal_Bool SAL_CALL KabResultSet::isAfterLast() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     sal_Int32 nAddressees = m_aKabAddressees.size();
     if (m_nRowPos == nAddressees)
-        return true;
+        return sal_True;
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::isFirst()
+sal_Bool SAL_CALL KabResultSet::isFirst() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     if (m_nRowPos == 0)
-        return true;
+        return sal_True;
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::isLast()
+sal_Bool SAL_CALL KabResultSet::isLast() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     sal_Int32 nAddressees = m_aKabAddressees.size();
     if (m_nRowPos == nAddressees - 1)
-        return true;
+        return sal_True;
 
-    return false;
+    return sal_False;
 }
 
-void SAL_CALL KabResultSet::beforeFirst()
+void SAL_CALL KabResultSet::beforeFirst() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -489,7 +489,7 @@ void SAL_CALL KabResultSet::beforeFirst()
     m_nRowPos = -1;
 }
 
-void SAL_CALL KabResultSet::afterLast()
+void SAL_CALL KabResultSet::afterLast() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -499,7 +499,7 @@ void SAL_CALL KabResultSet::afterLast()
     m_nRowPos = nAddressees;
 }
 
-void SAL_CALL KabResultSet::close()
+void SAL_CALL KabResultSet::close() throw(SQLException, RuntimeException, std::exception)
 {
     {
         ::osl::MutexGuard aGuard( m_aMutex );
@@ -508,33 +508,33 @@ void SAL_CALL KabResultSet::close()
     dispose();
 }
 
-sal_Bool SAL_CALL KabResultSet::first()
+sal_Bool SAL_CALL KabResultSet::first() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     sal_Int32 nAddressees = m_aKabAddressees.size();
     if (nAddressees == 0)
-        return false;
+        return sal_False;
 
     m_nRowPos = 0;
-    return true;
+    return sal_True;
 }
 
-sal_Bool SAL_CALL KabResultSet::last()
+sal_Bool SAL_CALL KabResultSet::last() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
     sal_Int32 nAddressees = m_aKabAddressees.size();
     if (nAddressees == 0)
-        return false;
+        return sal_False;
 
     m_nRowPos = nAddressees - 1;
-    return true;
+    return sal_True;
 }
 
-sal_Int32 SAL_CALL KabResultSet::getRow()
+sal_Int32 SAL_CALL KabResultSet::getRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -542,7 +542,7 @@ sal_Int32 SAL_CALL KabResultSet::getRow()
     return m_nRowPos;
 }
 
-sal_Bool SAL_CALL KabResultSet::absolute(sal_Int32 row)
+sal_Bool SAL_CALL KabResultSet::absolute(sal_Int32 row) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -550,13 +550,13 @@ sal_Bool SAL_CALL KabResultSet::absolute(sal_Int32 row)
     sal_Int32 nAddressees = m_aKabAddressees.size();
     if (row <= -1 ||
         row >= nAddressees)
-        return false;
+        return sal_False;
 
     m_nRowPos = row;
-    return true;
+    return sal_True;
 }
 
-sal_Bool SAL_CALL KabResultSet::relative(sal_Int32 row)
+sal_Bool SAL_CALL KabResultSet::relative(sal_Int32 row) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -564,7 +564,7 @@ sal_Bool SAL_CALL KabResultSet::relative(sal_Int32 row)
     return absolute(m_nRowPos + row);
 }
 
-sal_Bool SAL_CALL KabResultSet::next()
+sal_Bool SAL_CALL KabResultSet::next() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -572,7 +572,7 @@ sal_Bool SAL_CALL KabResultSet::next()
     return absolute(m_nRowPos + 1);
 }
 
-sal_Bool SAL_CALL KabResultSet::previous()
+sal_Bool SAL_CALL KabResultSet::previous() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -580,7 +580,7 @@ sal_Bool SAL_CALL KabResultSet::previous()
     return absolute(m_nRowPos - 1);
 }
 
-Reference< XInterface > SAL_CALL KabResultSet::getStatement()
+Reference< XInterface > SAL_CALL KabResultSet::getStatement() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -589,31 +589,31 @@ Reference< XInterface > SAL_CALL KabResultSet::getStatement()
     return xStatement;
 }
 
-sal_Bool SAL_CALL KabResultSet::rowDeleted()
+sal_Bool SAL_CALL KabResultSet::rowDeleted() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::rowInserted()
+sal_Bool SAL_CALL KabResultSet::rowInserted() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::rowUpdated()
+sal_Bool SAL_CALL KabResultSet::rowUpdated() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::wasNull()
+sal_Bool SAL_CALL KabResultSet::wasNull() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -621,22 +621,22 @@ sal_Bool SAL_CALL KabResultSet::wasNull()
     return m_bWasNull;
 }
 
-void SAL_CALL KabResultSet::cancel()
+void SAL_CALL KabResultSet::cancel() throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::clearWarnings()
+void SAL_CALL KabResultSet::clearWarnings() throw(SQLException, RuntimeException, std::exception)
 {
 }
 
-Any SAL_CALL KabResultSet::getWarnings()
+Any SAL_CALL KabResultSet::getWarnings() throw(SQLException, RuntimeException, std::exception)
 {
     return Any();
 }
 
-void SAL_CALL KabResultSet::insertRow()
+void SAL_CALL KabResultSet::insertRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -644,7 +644,7 @@ void SAL_CALL KabResultSet::insertRow()
     // you only have to implement this if you want to insert new rows
 }
 
-void SAL_CALL KabResultSet::updateRow()
+void SAL_CALL KabResultSet::updateRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -652,19 +652,19 @@ void SAL_CALL KabResultSet::updateRow()
     // only when you allow updates
 }
 
-void SAL_CALL KabResultSet::deleteRow()
+void SAL_CALL KabResultSet::deleteRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::cancelRowUpdates()
+void SAL_CALL KabResultSet::cancelRowUpdates() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::moveToInsertRow()
+void SAL_CALL KabResultSet::moveToInsertRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -672,122 +672,122 @@ void SAL_CALL KabResultSet::moveToInsertRow()
     // only when you allow inserts
 }
 
-void SAL_CALL KabResultSet::moveToCurrentRow()
+void SAL_CALL KabResultSet::moveToCurrentRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateNull(sal_Int32)
+void SAL_CALL KabResultSet::updateNull(sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateBoolean(sal_Int32, sal_Bool)
+void SAL_CALL KabResultSet::updateBoolean(sal_Int32, sal_Bool) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateByte(sal_Int32, sal_Int8)
+void SAL_CALL KabResultSet::updateByte(sal_Int32, sal_Int8) throw(SQLException, RuntimeException, std::exception)
 {
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
     ::osl::MutexGuard aGuard( m_aMutex );
 }
 
-void SAL_CALL KabResultSet::updateShort(sal_Int32, sal_Int16)
+void SAL_CALL KabResultSet::updateShort(sal_Int32, sal_Int16) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateInt(sal_Int32, sal_Int32)
+void SAL_CALL KabResultSet::updateInt(sal_Int32, sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
     ::osl::MutexGuard aGuard( m_aMutex );
 }
 
-void SAL_CALL KabResultSet::updateLong(sal_Int32, sal_Int64)
+void SAL_CALL KabResultSet::updateLong(sal_Int32, sal_Int64) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateFloat(sal_Int32, float)
+void SAL_CALL KabResultSet::updateFloat(sal_Int32, float) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateDouble(sal_Int32, double)
+void SAL_CALL KabResultSet::updateDouble(sal_Int32, double) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateString(sal_Int32, const OUString&)
+void SAL_CALL KabResultSet::updateString(sal_Int32, const OUString&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateBytes(sal_Int32, const Sequence< sal_Int8 >&)
+void SAL_CALL KabResultSet::updateBytes(sal_Int32, const Sequence< sal_Int8 >&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateDate(sal_Int32, const cssu::Date&)
+void SAL_CALL KabResultSet::updateDate(sal_Int32, const cssu::Date&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateTime(sal_Int32, const cssu::Time&)
+void SAL_CALL KabResultSet::updateTime(sal_Int32, const cssu::Time&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateTimestamp(sal_Int32, const cssu::DateTime&)
+void SAL_CALL KabResultSet::updateTimestamp(sal_Int32, const cssu::DateTime&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateBinaryStream(sal_Int32, const Reference< XInputStream >&, sal_Int32)
+void SAL_CALL KabResultSet::updateBinaryStream(sal_Int32, const Reference< XInputStream >&, sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateCharacterStream(sal_Int32, const Reference< XInputStream >&, sal_Int32)
+void SAL_CALL KabResultSet::updateCharacterStream(sal_Int32, const Reference< XInputStream >&, sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::refreshRow()
+void SAL_CALL KabResultSet::refreshRow() throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateObject(sal_Int32, const Any&)
+void SAL_CALL KabResultSet::updateObject(sal_Int32, const Any&) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
-void SAL_CALL KabResultSet::updateNumericObject(sal_Int32, const Any&, sal_Int32)
+void SAL_CALL KabResultSet::updateNumericObject(sal_Int32, const Any&, sal_Int32) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
 }
 
 // XRowLocate
-Any SAL_CALL KabResultSet::getBookmark()
+Any SAL_CALL KabResultSet::getBookmark() throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -803,7 +803,7 @@ Any SAL_CALL KabResultSet::getBookmark()
     return Any();
 }
 
-sal_Bool SAL_CALL KabResultSet::moveToBookmark(const  Any& bookmark)
+sal_Bool SAL_CALL KabResultSet::moveToBookmark(const  Any& bookmark) throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -819,13 +819,13 @@ sal_Bool SAL_CALL KabResultSet::moveToBookmark(const  Any& bookmark)
         if (sUniqueIdentifier == sBookmark)
         {
             m_nRowPos = nRow;
-            return true;
+            return sal_True;
         }
     }
-    return false;
+    return sal_False;
 }
 
-sal_Bool SAL_CALL KabResultSet::moveRelativeToBookmark(const  Any& bookmark, sal_Int32 rows)
+sal_Bool SAL_CALL KabResultSet::moveRelativeToBookmark(const  Any& bookmark, sal_Int32 rows) throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -839,14 +839,14 @@ sal_Bool SAL_CALL KabResultSet::moveRelativeToBookmark(const  Any& bookmark, sal
         m_nRowPos += rows;
 
         if (-1 < m_nRowPos && m_nRowPos < nAddressees)
-            return true;
+            return sal_True;
     }
 
     m_nRowPos = nRowSave;
-    return false;
+    return sal_False;
 }
 
-sal_Int32 SAL_CALL KabResultSet::compareBookmarks(const  Any& firstItem, const  Any& secondItem)
+sal_Int32 SAL_CALL KabResultSet::compareBookmarks(const  Any& firstItem, const  Any& secondItem) throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -861,12 +861,12 @@ sal_Int32 SAL_CALL KabResultSet::compareBookmarks(const  Any& firstItem, const  
     return CompareBookmark::EQUAL;
 }
 
-sal_Bool SAL_CALL KabResultSet::hasOrderedBookmarks()
+sal_Bool SAL_CALL KabResultSet::hasOrderedBookmarks() throw( SQLException,  RuntimeException, std::exception)
 {
-    return false;
+    return sal_False;
 }
 
-sal_Int32 SAL_CALL KabResultSet::hashBookmark(const  Any& bookmark)
+sal_Int32 SAL_CALL KabResultSet::hashBookmark(const  Any& bookmark) throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -877,7 +877,7 @@ sal_Int32 SAL_CALL KabResultSet::hashBookmark(const  Any& bookmark)
 }
 
 // XDeleteRows
-Sequence< sal_Int32 > SAL_CALL KabResultSet::deleteRows(const  Sequence<  Any >&)
+Sequence< sal_Int32 > SAL_CALL KabResultSet::deleteRows(const  Sequence<  Any >&) throw( SQLException,  RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(KabResultSet_BASE::rBHelper.bDisposed);
@@ -890,22 +890,22 @@ IPropertyArrayHelper* KabResultSet::createArrayHelper() const
     Sequence< Property > aProps(6);
     Property* pProperties = aProps.getArray();
     sal_Int32 nPos = 0;
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
         PROPERTY_ID_CURSORNAME, cppu::UnoType<OUString>::get(), PropertyAttribute::READONLY);
 
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
         PROPERTY_ID_FETCHDIRECTION, cppu::UnoType<sal_Int32>::get(), 0);
 
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
         PROPERTY_ID_FETCHSIZE, cppu::UnoType<sal_Int32>::get(), 0);
 
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ISBOOKMARKABLE),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ISBOOKMARKABLE),
         PROPERTY_ID_ISBOOKMARKABLE, cppu::UnoType<bool>::get(), PropertyAttribute::READONLY);
 
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
         PROPERTY_ID_RESULTSETCONCURRENCY, cppu::UnoType<sal_Int32>::get(), PropertyAttribute::READONLY);
 
-    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
+    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
         PROPERTY_ID_RESULTSETTYPE, cppu::UnoType<sal_Int32>::get(), PropertyAttribute::READONLY);
 
     return new OPropertyArrayHelper(aProps);
@@ -913,7 +913,7 @@ IPropertyArrayHelper* KabResultSet::createArrayHelper() const
 
 IPropertyArrayHelper & KabResultSet::getInfoHelper()
 {
-    return *(this->getArrayHelper());
+    return *static_cast<KabResultSet*>(this)->getArrayHelper();
 }
 
 sal_Bool KabResultSet::convertFastPropertyValue(
@@ -921,6 +921,7 @@ sal_Bool KabResultSet::convertFastPropertyValue(
             Any &,
             sal_Int32 nHandle,
             const Any& )
+                throw (::com::sun::star::lang::IllegalArgumentException)
 {
     switch (nHandle)
     {
@@ -928,19 +929,20 @@ sal_Bool KabResultSet::convertFastPropertyValue(
         case PROPERTY_ID_CURSORNAME:
         case PROPERTY_ID_RESULTSETCONCURRENCY:
         case PROPERTY_ID_RESULTSETTYPE:
-            throw css::lang::IllegalArgumentException();
+            throw ::com::sun::star::lang::IllegalArgumentException();
             break;
         case PROPERTY_ID_FETCHDIRECTION:
         case PROPERTY_ID_FETCHSIZE:
         default:
             ;
     }
-    return false;
+    return sal_False;
 }
 
 void KabResultSet::setFastPropertyValue_NoBroadcast(
             sal_Int32 nHandle,
             const Any& )
+                 throw (Exception, std::exception)
 {
     switch (nHandle)
     {

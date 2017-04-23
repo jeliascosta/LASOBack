@@ -10,6 +10,7 @@
 #include <vcl/sysdata.hxx>
 
 #include <unx/salunx.h>
+#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salgdi.h>
 #include <unx/salvd.h>
@@ -69,6 +70,7 @@ X11OpenGLSalVirtualDevice::X11OpenGLSalVirtualDevice( SalGraphics* pGraphics,
 
 X11OpenGLSalVirtualDevice::~X11OpenGLSalVirtualDevice()
 {
+    delete mpGraphics;
 }
 
 SalGraphics* X11OpenGLSalVirtualDevice::AcquireGraphics()
@@ -79,7 +81,7 @@ SalGraphics* X11OpenGLSalVirtualDevice::AcquireGraphics()
     if( mpGraphics )
         mbGraphics = true;
 
-    return mpGraphics.get();
+    return mpGraphics;
 }
 
 void X11OpenGLSalVirtualDevice::ReleaseGraphics( SalGraphics* )

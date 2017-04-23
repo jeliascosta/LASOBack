@@ -316,7 +316,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                 {
                     //  URL has to be decoded for escaped characters (%20)
                     aAddress = INetURLObject::decode( aAddress,
-                                               INetURLObject::DecodeMechanism::WithCharset );
+                                               INetURLObject::DECODE_WITH_CHARSET );
                 }
 
                 bool bFound = false;
@@ -557,7 +557,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
 
                     pThisFrame->GetDispatcher()->Execute( SID_VIEWSHELL1, SfxCallMode::ASYNCHRON );
                 }
-                //  else error (e.g. Ole)
+                //  else Fehler (z.B. Ole)
             }
             break;
 
@@ -708,7 +708,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                 {
                     SfxItemSet      aSet     ( GetPool(), SID_ATTR_ZOOM, SID_ATTR_ZOOM );
                     SvxZoomItem     aZoomItem( eOldZoomType, nOldZoom, SID_ATTR_ZOOM );
-                    ScopedVclPtr<AbstractSvxZoomDialog> pDlg;
+                    std::unique_ptr<AbstractSvxZoomDialog> pDlg;
                     ScMarkData&     rMark = GetViewData().GetMarkData();
                     SvxZoomEnableFlags nBtnFlags = SvxZoomEnableFlags::N50
                                                 | SvxZoomEnableFlags::N75
@@ -726,7 +726,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                     if(pFact)
                     {
-                        pDlg.disposeAndReset(pFact->CreateSvxZoomDialog(GetDialogParent(), aSet));
+                        pDlg.reset(pFact->CreateSvxZoomDialog(GetDialogParent(), aSet ));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
                     }
                     if (pDlg)
@@ -851,7 +851,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                 ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-                ScopedVclPtr<AbstractScShowTabDlg> pDlg(pFact->CreateScShowTabDlg(GetDialogParent()));
+                std::unique_ptr<AbstractScShowTabDlg> pDlg(pFact->CreateScShowTabDlg(GetDialogParent()));
                 OSL_ENSURE(pDlg, "Dialog create fail!");
                 pDlg->SetDescription(
                     OUString( ScResId( STR_DLG_SELECTTABLES_TITLE ) ),
@@ -871,7 +871,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                     const sal_Int32 nSelCount = pDlg->GetSelectEntryCount();
                     for( sal_Int32 nSelIx = 0; nSelIx < nSelCount; ++nSelIx )
                         aIndexList.insert( aIndexList.begin()+nSelIx, pDlg->GetSelectEntryPos( nSelIx ) );
-                    pDlg.disposeAndClear();
+                    pDlg.reset();
                     rReq.AppendItem( SfxIntegerListItem( SID_SELECT_TABLES, aIndexList ) );
                 }
                 else
@@ -1018,7 +1018,7 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
             break;
 
         case SID_CREATE_SW_DRAWVIEW:
-            //  is called by Forms, when the DrawView has to be created with all
+            //  is called by Forms, when the DrawView has to be crated with all
             //  the extras
             if (!GetScDrawView())
             {
@@ -1080,7 +1080,6 @@ void ScTabViewShell::Execute( SfxRequest& rReq )
                     pDlg->SetHelpId( GetStaticInterface()->GetSlot(FID_PROTECT_DOC)->GetCommand() );
                     pDlg->SetEditHelpId( HID_PASSWD_DOC );
                     pDlg->ShowExtras( SfxShowExtras::CONFIRM );
-                    pDlg->SetConfirmHelpId( HID_PASSWD_DOC_CONFIRM );
 
                     if (pDlg->Execute() == RET_OK)
                     {

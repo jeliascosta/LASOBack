@@ -62,9 +62,8 @@ public:
                         SfxRequest( const SfxSlot* pSlot, const css::uno::Sequence < css::beans::PropertyValue >& rArgs,
                                             SfxCallMode nCallMode, SfxItemPool &rPool );
                         SfxRequest( sal_uInt16 nSlot, SfxCallMode nCallMode, const SfxAllItemSet& rSfxArgs );
-                        SfxRequest( sal_uInt16 nSlot, SfxCallMode nCallMode, const SfxAllItemSet& rSfxArgs, const SfxAllItemSet& rSfxInternalArgs );
                         SfxRequest( const SfxRequest& rOrig );
-                        virtual ~SfxRequest() override;
+                        virtual ~SfxRequest();
 
     sal_uInt16              GetSlot() const { return nSlot; }
     void                SetSlot(sal_uInt16 nNewSlot) { nSlot = nNewSlot; }
@@ -94,8 +93,8 @@ public:
     void                SetReturnValue(const SfxPoolItem &);
     const SfxPoolItem*  GetReturnValue() const;
 
-    static css::uno::Reference< css::frame::XDispatchRecorder > GetMacroRecorder( SfxViewFrame* pFrame );
-    static bool         HasMacroRecorder( SfxViewFrame* pFrame );
+    static css::uno::Reference< css::frame::XDispatchRecorder > GetMacroRecorder( SfxViewFrame* pFrame=nullptr );
+    static bool         HasMacroRecorder( SfxViewFrame* pFrame=nullptr );
     SfxCallMode         GetCallMode() const;
     void                AllowRecording( bool );
     bool                AllowsRecording() const;

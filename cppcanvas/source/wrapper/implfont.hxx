@@ -44,7 +44,7 @@ namespace cppcanvas
                       const OUString& rFontName,
                       const double& rCellSize );
 
-            virtual ~ImplFont() override;
+            virtual ~ImplFont();
 
         private:
             css::uno::Reference< css::rendering::XCanvas >        mxCanvas;

@@ -30,7 +30,7 @@
 #include "drawingml/textparagraph.hxx"
 #include "drawingml/textrun.hxx"
 #include "drawingml/diagram/diagram.hxx"
-#include "drawingml/fillproperties.hxx"
+#include "oox/drawingml/fillproperties.hxx"
 #include "oox/ppt/pptshapegroupcontext.hxx"
 #include "oox/ppt/pptshape.hxx"
 
@@ -73,10 +73,10 @@ DiagramData::DiagramData()
 
 void DiagramData::dump()
 {
-    SAL_INFO("oox.drawingml", "Dgm: DiagramData # of cnx: " << maConnections.size() );
+    OSL_TRACE("Dgm: DiagramData # of cnx: %zu", maConnections.size() );
     std::for_each( maConnections.begin(), maConnections.end(),
             [] (dgm::Connection & rConnection) { rConnection.dump(); } );
-    SAL_INFO("oox.drawingml", "Dgm: DiagramData # of pt: " << maPoints.size() );
+    OSL_TRACE("Dgm: DiagramData # of pt: %zu", maPoints.size() );
     std::for_each( maPoints.begin(), maPoints.end(),
             [] (dgm::Point & rPoint) { rPoint.dump(); } );
 }
@@ -339,14 +339,14 @@ uno::Sequence<beans::PropertyValue> Diagram::getDomsAsPropertyValues() const
          ++i)
     {
         pValue[0].Name = i->first;
-        pValue[0].Value <<= i->second;
+        pValue[0].Value = uno::makeAny(i->second);
         ++pValue;
     }
 
     if ( 0 < maDataRelsMap.getLength() )
     {
         pValue[0].Name = "OOXDiagramDataRels";
-        pValue[0].Value <<= maDataRelsMap;
+        pValue[0].Value = uno::makeAny ( maDataRelsMap );
         ++pValue;
     }
 
@@ -392,12 +392,12 @@ void loadDiagram( ShapePtr& pShape,
                   const OUString& rQStylePath,
                   const OUString& rColorStylePath )
 {
-    DiagramPtr pDiagram( new Diagram );
+    DiagramPtr pDiagram( new Diagram() );
 
     DiagramDataPtr pData( new DiagramData() );
     pDiagram->setData( pData );
 
-    DiagramLayoutPtr pLayout( new DiagramLayout );
+    DiagramLayoutPtr pLayout( new DiagramLayout() );
     pDiagram->setLayout( pLayout );
 
     // data
@@ -489,12 +489,12 @@ void loadDiagram( const ShapePtr& pShape,
                   const uno::Reference<xml::dom::XDocument>& rXQStyleDom,
                   const uno::Reference<xml::dom::XDocument>& rXColorStyleDom )
 {
-    DiagramPtr pDiagram( new Diagram );
+    DiagramPtr pDiagram( new Diagram() );
 
     DiagramDataPtr pData( new DiagramData() );
     pDiagram->setData( pData );
 
-    DiagramLayoutPtr pLayout( new DiagramLayout );
+    DiagramLayoutPtr pLayout( new DiagramLayout() );
     pDiagram->setLayout( pLayout );
 
     // data

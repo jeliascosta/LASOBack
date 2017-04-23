@@ -25,7 +25,7 @@
 #include <rtl/strbuf.hxx>
 
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class SvStream;
 
 #define IMAP_OBJ_NONE       ((sal_uInt16)0x0000)
@@ -87,6 +87,8 @@ public:
                                     bool bActive );
     virtual             ~IMapObject() {};
 
+    static sal_uInt16   GetVersion() { return IMAP_OBJ_VERSION; }
+
     virtual sal_uInt16  GetType() const = 0;
     virtual bool        IsHit( const Point& rPoint ) const = 0;
 
@@ -109,13 +111,13 @@ public:
     void                SetName( const OUString& rName ) { aName = rName; }
 
     bool                IsActive() const { return bActive; }
-    void                SetActive( bool bSetActive ) { bActive = bSetActive; }
+    void                SetActive( bool bSetActive = true ) { bActive = bSetActive; }
 
     bool                IsEqual( const IMapObject& rEqObj );
 
     // IMap-Events
-    const SvxMacroTableDtor& GetMacroTable() const { return aEventList;}
-    void SetMacroTable( const SvxMacroTableDtor& rTbl ) { aEventList = rTbl; }
+    inline const SvxMacroTableDtor& GetMacroTable() const { return aEventList;}
+    inline void SetMacroTable( const SvxMacroTableDtor& rTbl ) { aEventList = rTbl; }
 };
 
 #endif

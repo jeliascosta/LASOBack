@@ -145,7 +145,7 @@ namespace sdr
             return rtl::Reference<OverlayManager>(new OverlayManager(rOutputDevice));
         }
 
-        drawinglayer::geometry::ViewInformation2D const & OverlayManager::getCurrentViewInformation2D() const
+        const drawinglayer::geometry::ViewInformation2D OverlayManager::getCurrentViewInformation2D() const
         {
             if(getOutputDevice().GetViewTransformation() != maViewTransformation)
             {
@@ -246,7 +246,7 @@ namespace sdr
                 //ImpCheckMapModeChange();
 
                 // paint members
-                const tools::Rectangle aRegionBoundRect(rRegion.GetBoundRect());
+                const Rectangle aRegionBoundRect(rRegion.GetBoundRect());
                 const basegfx::B2DRange aRegionRange(
                     aRegionBoundRect.Left(), aRegionBoundRect.Top(),
                     aRegionBoundRect.Right(), aRegionBoundRect.Bottom());
@@ -303,7 +303,7 @@ namespace sdr
                 {
                     // assume AA needs one pixel more and invalidate one pixel more
                     const double fDiscreteOne(getDiscreteOne());
-                    const tools::Rectangle aInvalidateRectangle(
+                    const Rectangle aInvalidateRectangle(
                         (sal_Int32)floor(rRange.getMinX() - fDiscreteOne),
                         (sal_Int32)floor(rRange.getMinY() - fDiscreteOne),
                         (sal_Int32)ceil(rRange.getMaxX() + fDiscreteOne),
@@ -316,7 +316,7 @@ namespace sdr
                 {
                     // #i77674# transform to rectangle. Use floor/ceil to get all covered
                     // discrete pixels, see #i75163# and OverlayManagerBuffered::invalidateRange
-                    const tools::Rectangle aInvalidateRectangle(
+                    const Rectangle aInvalidateRectangle(
                         (sal_Int32)floor(rRange.getMinX()), (sal_Int32)floor(rRange.getMinY()),
                         (sal_Int32)ceil(rRange.getMaxX()), (sal_Int32)ceil(rRange.getMaxY()));
 

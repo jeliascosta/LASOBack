@@ -201,7 +201,7 @@ public class TableDescriptor extends CommandMetaData implements XContainerListen
         return false;
     }
 
-    private boolean isColumnNameDuplicate(XNameAccess _xColumns, XPropertySet _xToBeAppendedPropertySet)
+    private boolean isColunnNameDuplicate(XNameAccess _xColumns, XPropertySet _xToBeAppendedPropertySet)
     {
         try
         {
@@ -235,7 +235,7 @@ public class TableDescriptor extends CommandMetaData implements XContainerListen
             for (int i = 0; i < columncontainer.size(); i++)
             {
                 XPropertySet xColPropertySet = getByIndex(i);
-                if (xColPropertySet != null && !isColumnNameDuplicate(xNameAccessColumns, xColPropertySet))
+                if (xColPropertySet != null && !isColunnNameDuplicate(xNameAccessColumns, xColPropertySet))
                 {
                     xAppendColumns.appendByDescriptor(xColPropertySet);	//xColPropertySet.setPropertyValue("Type", 32423)
                 }
@@ -256,7 +256,7 @@ public class TableDescriptor extends CommandMetaData implements XContainerListen
                     for (int i = 0; i < keycolumncontainer.size(); i++)
                     {
                         XPropertySet xKeyColPropertySet = keycolumncontainer.get(i);
-                        if (!isColumnNameDuplicate(xKeyColumnSupplier.getColumns(), xKeyColPropertySet))
+                        if (!isColunnNameDuplicate(xKeyColumnSupplier.getColumns(), xKeyColPropertySet))
                         {
                             xKeyColAppend.appendByDescriptor(xKeyColPropertySet);
                         }

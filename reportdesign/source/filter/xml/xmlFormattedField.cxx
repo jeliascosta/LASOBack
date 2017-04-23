@@ -43,7 +43,7 @@ OXMLFormattedField::OXMLFormattedField( ORptFilter& rImport,
                 ,bool _bPageCount) :
     OXMLReportElementBase( rImport, nPrfx, rLName,_xComponent.get(),_pContainer)
 {
-    OSL_ENSURE(m_xReportComponent.is(),"Component is NULL!");
+    OSL_ENSURE(m_xComponent.is(),"Component is NULL!");
     const SvXMLNamespaceMap& rMap = rImport.GetNamespaceMap();
     const SvXMLTokenMap& rTokenMap = rImport.GetControlElemTokenMap();
 
@@ -63,7 +63,10 @@ OXMLFormattedField::OXMLFormattedField( ORptFilter& rImport,
                     _xComponent->setDataField(ORptFilter::convertFormula(sValue));
                     break;
                 case XML_TOK_SELECT_PAGE:
-                    _xComponent->setDataField("rpt:PageNumber()");
+                    {
+                        static const char s_sPageNumber[] = "rpt:PageNumber()";
+                        _xComponent->setDataField(s_sPageNumber);
+                    }
                     break;
                 default:
                     break;
@@ -71,7 +74,8 @@ OXMLFormattedField::OXMLFormattedField( ORptFilter& rImport,
         }
         if ( _bPageCount )
         {
-            _xComponent->setDataField("rpt:PageCount()");
+            static const char s_sPageNumber[] = "rpt:PageCount()";
+            _xComponent->setDataField(s_sPageNumber);
         }
     }
     catch(Exception&)

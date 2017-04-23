@@ -28,31 +28,37 @@ OUString ActionDescriptionProvider::createDescription( ActionType eActionType
     sal_uInt16 nResID=0;
     switch( eActionType )
     {
-    case ActionType::Insert:
+    case INSERT:
         nResID=STR_UndoInsertObj;
         break;
-    case ActionType::Delete:
+    case DELETE:
         nResID= STR_EditDelete;
         break;
-    case ActionType::Move:
+    case CUT:
+        nResID= STR_ExchangeClpCut;
+        break;
+    case MOVE:
         nResID= STR_EditMove;
         break;
-    case ActionType::Resize:
+    case RESIZE:
         nResID= STR_EditResize;
         break;
-    case ActionType::Rotate:
+    case ROTATE:
         nResID= STR_EditRotate;
         break;
-    case ActionType::Format:
+    case TRANSFORM:
+        nResID= STR_EditTransform;
+        break;
+    case FORMAT:
         nResID= STR_EditSetAttributes;
         break;
-    case ActionType::MoveToTop:
+    case MOVE_TOTOP:
         nResID= STR_EditMovToTop;
         break;
-    case ActionType::MoveToBottom:
+    case MOVE_TOBOTTOM:
         nResID= STR_EditMovToBtm;
         break;
-    case ActionType::PosSize:
+    case POS_SIZE:
         nResID = STR_EditPosSize;
         break;
     }

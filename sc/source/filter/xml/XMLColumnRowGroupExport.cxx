@@ -132,15 +132,21 @@ bool ScMyOpenCloseColumnRowGroup::IsGroupEnd(const sal_Int32 nField)
     return bGroupEnd;
 }
 
+void ScMyOpenCloseColumnRowGroup::CloseGroup()
+{
+    rExport.EndElement( rName, true );
+}
+
 void ScMyOpenCloseColumnRowGroup::CloseGroups(const sal_Int32 nField)
 {
     ScMyFieldGroupVec::iterator aItr(aTableEnd.begin());
+    ScMyFieldGroupVec::iterator aEndItr(aTableEnd.end());
     bool bReady(false);
-    while(!bReady && aItr != aTableEnd.end())
+    while(!bReady && aItr != aEndItr)
     {
         if (*aItr == nField)
         {
-            rExport.EndElement( rName, true );
+            CloseGroup();
             aItr = aTableEnd.erase(aItr);
         }
         else
@@ -152,7 +158,8 @@ sal_Int32 ScMyOpenCloseColumnRowGroup::GetLast()
 {
     sal_Int32 maximum(-1);
     ScMyFieldGroupVec::iterator i(aTableEnd.begin());
-    while (i != aTableEnd.end())
+    ScMyFieldGroupVec::iterator endi(aTableEnd.end());
+    while (i != endi)
     {
         if (*i > maximum)
             maximum = *i;
@@ -164,7 +171,7 @@ sal_Int32 ScMyOpenCloseColumnRowGroup::GetLast()
 void ScMyOpenCloseColumnRowGroup::Sort()
 {
     aTableStart.sort();
-    std::sort(aTableEnd.begin(), aTableEnd.end());
+    aTableEnd.sort();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -66,6 +66,7 @@ public:
 
     virtual void render() override;
 private:
+    bool mbRoundedCorners;
     glm::mat4 maPos;
     Color maColor; // RGBA fill color
 };
@@ -109,7 +110,7 @@ public:
 
     virtual void render() override;
     void setPosition(const glm::vec2& rTopLeft, const glm::vec2& rBottomRight,
-            const glm::vec3& r3DPos);
+            const glm::vec3& r3DPos = glm::vec3(0.0, 0.0, 0.0));
 
 private:
     TextCacheItem maText;

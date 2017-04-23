@@ -76,6 +76,7 @@ public:
         sStyleName( rStyleName )
     {
     }
+    virtual ~XMLStyleHint_Impl() {}
 
     const OUString& GetStyleName() const { return sStyleName; }
 };
@@ -93,6 +94,8 @@ public:
     {
     }
 
+    virtual ~XMLReferenceHint_Impl() {}
+
     const OUString& GetRefName() const { return sRefName; }
 };
 
@@ -103,13 +106,20 @@ class XMLHyperlinkHint_Impl : public XMLHint_Impl
     OUString                 sTargetFrameName;
     OUString                 sStyleName;
     OUString                 sVisitedStyleName;
-    rtl::Reference<XMLEventsImportContext> mxEvents;
+    XMLEventsImportContext*  pEvents;
 
 public:
 
     XMLHyperlinkHint_Impl( const css::uno::Reference < css::text::XTextRange > & rPos ) :
-        XMLHint_Impl( XML_HINT_HYPERLINK, rPos, rPos )
+        XMLHint_Impl( XML_HINT_HYPERLINK, rPos, rPos ),
+        pEvents( nullptr )
     {
+    }
+
+    virtual ~XMLHyperlinkHint_Impl()
+    {
+        if (nullptr != pEvents)
+            pEvents->ReleaseRef();
     }
 
     void SetHRef( const OUString& s ) { sHRef = s; }
@@ -124,11 +134,13 @@ public:
     const OUString& GetVisitedStyleName() const { return sVisitedStyleName; }
     XMLEventsImportContext* GetEventsContext() const
     {
-        return mxEvents.get();
+        return pEvents;
     }
     void SetEventsContext( XMLEventsImportContext* pCtxt )
     {
-        mxEvents.set(pCtxt);
+        pEvents = pCtxt;
+        if (pEvents != nullptr)
+            pEvents->AddFirstRef();
     }
 };
 
@@ -157,6 +169,8 @@ public:
     {
     }
 
+    virtual ~XMLIndexMarkHint_Impl() {}
+
     const css::uno::Reference<css::beans::XPropertySet> & GetMark() const
         { return xIndexMarkPropSet; }
     const OUString& GetID() const { return sID; }
@@ -176,10 +190,14 @@ public:
     {
     }
 
+    virtual ~XMLTextFrameHint_Impl()
+    {
+    }
+
     css::uno::Reference < css::text::XTextContent > GetTextContent() const
     {
         css::uno::Reference < css::text::XTextContent > xTxt;
-        SvXMLImportContext *pContext = xContext.get();
+        SvXMLImportContext *pContext = &xContext;
         if (XMLTextFrameContext *pFrameContext =  dynamic_cast<XMLTextFrameContext*>(pContext))
             xTxt = pFrameContext->GetTextContent();
         else if (XMLTextFrameHyperlinkContext *pLinkContext = dynamic_cast<XMLTextFrameHyperlinkContext*>(pContext))
@@ -192,7 +210,7 @@ public:
     css::uno::Reference < css::drawing::XShape > GetShape() const
     {
         css::uno::Reference < css::drawing::XShape > xShape;
-        SvXMLImportContext *pContext = xContext.get();
+        SvXMLImportContext *pContext = &xContext;
         if (XMLTextFrameContext *pFrameContext = dynamic_cast<XMLTextFrameContext*>(pContext))
             xShape = pFrameContext->GetShape();
         else if(XMLTextFrameHyperlinkContext *pLinkContext =  dynamic_cast<XMLTextFrameHyperlinkContext*>(pContext))
@@ -204,7 +222,7 @@ public:
     bool IsBoundAtChar() const
     {
         bool bRet = false;
-        SvXMLImportContext *pContext = xContext.get();
+        SvXMLImportContext *pContext = &xContext;
         if (XMLTextFrameContext *pFrameContext = dynamic_cast<XMLTextFrameContext*>(pContext))
             bRet = css::text::TextContentAnchorType_AT_CHARACTER ==
                 pFrameContext->GetAnchorType();
@@ -229,13 +247,16 @@ public:
     {
     }
 
+    virtual ~XMLDrawHint_Impl()
+    {
+    }
+
     // Frame "to character": anchor moves from first to last char after saving (#i33242#)
     css::uno::Reference < css::drawing::XShape > GetShape() const
     {
-        return static_cast<SvXMLShapeContext*>(xContext.get())->getShape();
+        return static_cast<SvXMLShapeContext*>(&xContext)->getShape();
     }
 };
-
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

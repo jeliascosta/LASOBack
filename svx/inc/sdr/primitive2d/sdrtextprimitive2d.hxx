@@ -69,6 +69,7 @@ namespace drawinglayer
             // needed because of background color change
             Color                                   maLastTextBackgroundColor;
 
+            // bitfield
             // is there a PageNumber, Header, Footer or DateTimeField used? Evaluated at construction
             bool                                    mbContainsPageField : 1;
             bool                                    mbContainsPageCountField : 1;
@@ -76,7 +77,7 @@ namespace drawinglayer
 
         protected:
             // support for XTEXT_PAINTSHAPE_BEGIN/XTEXT_PAINTSHAPE_END Metafile comments
-            static void encapsulateWithTextHierarchyBlockPrimitive2D(Primitive2DContainer& rContainer, const Primitive2DContainer& rCandidate);
+            static Primitive2DContainer encapsulateWithTextHierarchyBlockPrimitive2D(const Primitive2DContainer& rCandidate);
 
         public:
             SdrTextPrimitive2D(
@@ -92,7 +93,7 @@ namespace drawinglayer
 
             // own get2DDecomposition to take aspect of decomposition with or without spell checker
             // into account
-            virtual void get2DDecomposition(Primitive2DDecompositionVisitor& rVisitor, const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
 
             // transformed clone operator
             virtual SdrTextPrimitive2D* createTransformedClone(const basegfx::B2DHomMatrix& rTransform) const = 0;
@@ -116,7 +117,7 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrContourTextPrimitive2D(
@@ -157,7 +158,7 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrPathTextPrimitive2D(
@@ -197,6 +198,7 @@ namespace drawinglayer
             SdrTextHorzAdjust                       maSdrTextHorzAdjust;
             SdrTextVertAdjust                       maSdrTextVertAdjust;
 
+            // bitfield
             bool                                    mbFixedCellHeight : 1;
             bool                                    mbUnlimitedPage : 1;    // force layout with no text break
             bool                                    mbCellText : 1;         // this is a cell text as block text
@@ -205,7 +207,7 @@ namespace drawinglayer
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrBlockTextPrimitive2D(
@@ -253,11 +255,12 @@ namespace drawinglayer
             // text range transformation from unit range ([0.0 .. 1.0]) to text range
             basegfx::B2DHomMatrix                   maTextRangeTransform;
 
+            // bitfield
             bool                                    mbFixedCellHeight : 1;
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrStretchTextPrimitive2D(
@@ -292,11 +295,12 @@ namespace drawinglayer
         private:
             ::basegfx::B2DHomMatrix                 maTextRangeTransform;   // text range transformation from unit range ([0.0 .. 1.0]) to text range
 
+            // bitfield
             bool                                    mbWordWrap : 1;         // for CustomShapes text layout
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrAutoFitTextPrimitive2D(
@@ -333,7 +337,7 @@ namespace drawinglayer
             ::basegfx::B2DHomMatrix maTextRangeTransform;   // text range transformation from unit range ([0.0 .. 1.0]) to text range
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrChainedTextPrimitive2D(

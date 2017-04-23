@@ -35,19 +35,18 @@ static double getRandom()
 
 vcl::Window *DebugEventInjector::ChooseWindow()
 {
-    vcl::Window *pParent;
+    vcl::Window *pWindow, *pParent;
 
-    if (getRandom() < 0.80)
-        if (vcl::Window * pWindow = Application::GetFocusWindow())
-            return pWindow;
+    if (getRandom() < 0.80 &&
+        (pWindow = Application::GetFocusWindow()))
+        return pWindow;
 
     if (getRandom() > 0.50 ||
         !(pParent = Application::GetActiveTopWindow()))
     {
         // select a top window at random
         long nIdx = Application::GetTopWindowCount() * getRandom();
-        pParent = Application::GetTopWindow( nIdx );
-        if (!pParent)
+        if (!(pParent = Application::GetTopWindow( nIdx )))
             pParent = static_cast<vcl::Window *>(Application::GetAppWindow());
     }
     assert (pParent != nullptr);
@@ -58,8 +57,9 @@ vcl::Window *DebugEventInjector::ChooseWindow()
     return aChildren[ aChildren.size() * getRandom() ];
 }
 
+typedef std::vector< SalMenuEvent > MenuItemIds;
 
-static void CollectMenuItemIds( Menu *pMenu, std::vector< SalMenuEvent > &rIds )
+static void CollectMenuItemIds( Menu *pMenu, MenuItemIds &rIds )
 {
     sal_uInt16 nItems = pMenu->GetItemCount();
     for (sal_uInt16 i = 0; i < nItems; i++)
@@ -99,7 +99,7 @@ void DebugEventInjector::InjectMenuEvent()
         SalEvent::MenuButtonCommand,
     };
 
-    std::vector< SalMenuEvent > aIds;
+    MenuItemIds aIds;
     CollectMenuItemIds( pMenuBar, aIds );
 
     SalEvent nEvent = nEvents[ (int)(getRandom() * SAL_N_ELEMENTS( nEvents )) ];

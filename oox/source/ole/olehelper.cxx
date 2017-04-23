@@ -204,12 +204,13 @@ StdFontInfo::StdFontInfo() :
 {
 }
 
-StdFontInfo::StdFontInfo( const OUString& rName, sal_uInt32 nHeight ) :
+StdFontInfo::StdFontInfo( const OUString& rName, sal_uInt32 nHeight,
+        sal_uInt16 nWeight, sal_uInt16 nCharSet, sal_uInt8 nFlags ) :
     maName( rName ),
     mnHeight( nHeight ),
-    mnWeight( OLE_STDFONT_NORMAL ),
-    mnCharSet( WINDOWS_CHARSET_ANSI ),
-    mnFlags( 0 )
+    mnWeight( nWeight ),
+    mnCharSet( nCharSet ),
+    mnFlags( nFlags )
 {
 }
 
@@ -329,7 +330,7 @@ Reference< css::frame::XFrame > lcl_getFrame( const  Reference< css::frame::XMod
     return xFrame;
 }
 
-class OleFormCtrlExportHelper final
+class OleFormCtrlExportHelper
 {
     ::oox::ole::EmbeddedControl maControl;
     ::oox::ole::ControlModelBase* mpModel;
@@ -343,6 +344,7 @@ class OleFormCtrlExportHelper final
     OUString maGUID;
 public:
     OleFormCtrlExportHelper( const Reference< XComponentContext >& rxCtx, const Reference< XModel >& xDocModel, const Reference< XControlModel >& xModel );
+    virtual ~OleFormCtrlExportHelper() { }
     OUString getGUID()
     {
         OUString sResult;
@@ -467,7 +469,7 @@ MSConvertOCXControls::ReadOCXCtlsStream( tools::SvRef<SotStorageStream>& rSrc1, 
                                    sal_Int32 nPos,
                                    sal_Int32 nStreamSize)
 {
-    if ( rSrc1.is()  )
+    if ( rSrc1.Is()  )
     {
         BinaryXInputStream aCtlsStrm( Reference< XInputStream >( new utl::OSeekableInputStreamWrapper( *rSrc1 ) ), true );
         aCtlsStrm.seek( nPos );
@@ -515,15 +517,15 @@ bool MSConvertOCXControls::importControlFromStream( ::oox::BinaryInputStream& rI
 bool MSConvertOCXControls::ReadOCXStorage( tools::SvRef<SotStorage>& xOleStg,
                                   Reference< XFormComponent > & rxFormComp )
 {
-    if ( xOleStg.is() )
+    if ( xOleStg.Is() )
     {
-        tools::SvRef<SotStorageStream> pNameStream = xOleStg->OpenSotStream("\3OCXNAME", StreamMode::READ);
+        tools::SvRef<SotStorageStream> pNameStream = xOleStg->OpenSotStream( "\3OCXNAME");
         BinaryXInputStream aNameStream( Reference< XInputStream >( new utl::OSeekableInputStreamWrapper( *pNameStream ) ), true );
 
-        tools::SvRef<SotStorageStream> pContents = xOleStg->OpenSotStream("contents", StreamMode::READ);
+        tools::SvRef<SotStorageStream> pContents = xOleStg->OpenSotStream( "contents");
         BinaryXInputStream aInStrm(  Reference< XInputStream >( new utl::OSeekableInputStreamWrapper( *pContents ) ), true );
 
-        tools::SvRef<SotStorageStream> pClsStrm = xOleStg->OpenSotStream("\1CompObj", StreamMode::READ);
+        tools::SvRef<SotStorageStream> pClsStrm = xOleStg->OpenSotStream("\1CompObj");
         BinaryXInputStream aClsStrm( Reference< XInputStream >( new utl::OSeekableInputStreamWrapper(*pClsStrm ) ), true );
         aClsStrm.skip(12);
 

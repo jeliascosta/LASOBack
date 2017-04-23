@@ -42,7 +42,7 @@ namespace dbp
 
     public:
         explicit OTableSelectionPage(OControlWizard* _pParent);
-        virtual ~OTableSelectionPage() override;
+        virtual ~OTableSelectionPage();
         virtual void dispose() override;
 
     protected:
@@ -54,10 +54,11 @@ namespace dbp
         virtual bool        commitPage( ::svt::WizardTypes::CommitPageReason _eReason ) override;
 
     protected:
-        DECL_LINK( OnListboxSelection, ListBox&, void );
-        DECL_LINK( OnListboxDoubleClicked, ListBox&, void );
-        DECL_LINK( OnSearchClicked, Button*, void );
+        DECL_LINK_TYPED( OnListboxSelection, ListBox&, void );
+        DECL_LINK_TYPED( OnListboxDoubleClicked, ListBox&, void );
+        DECL_LINK_TYPED( OnSearchClicked, Button*, void );
 
+        void implCollectDatasource();
         void implFillTables(const css::uno::Reference< css::sdbc::XConnection >&
                         _rxConn = css::uno::Reference< css::sdbc::XConnection >());
 
@@ -74,11 +75,11 @@ namespace dbp
 
     public:
         OMaybeListSelectionPage( OControlWizard* _pParent, const OString& _rID, const OUString& _rUIXMLDescription );
-        virtual ~OMaybeListSelectionPage() override;
+        virtual ~OMaybeListSelectionPage();
         virtual void dispose() override;
 
     protected:
-        DECL_LINK( OnRadioSelected, Button*, void );
+        DECL_LINK_TYPED( OnRadioSelected, Button*, void );
 
         // TabPage overridables
         void ActivatePage() override;
@@ -105,7 +106,7 @@ namespace dbp
 
     public:
         explicit ODBFieldPage( OControlWizard* _pParent );
-        virtual ~ODBFieldPage() override;
+        virtual ~ODBFieldPage();
         virtual void dispose() override;
 
     protected:

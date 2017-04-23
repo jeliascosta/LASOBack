@@ -93,7 +93,7 @@ struct ConnectionModel
 class Connection : public WorkbookHelper
 {
 public:
-    explicit            Connection( const WorkbookHelper& rHelper );
+    explicit            Connection( const WorkbookHelper& rHelper, sal_Int32 nConnId = -1 );
 
     /** Imports connection settings from the connection element. */
     void                importConnection( const AttributeList& rAttribs );
@@ -114,9 +114,9 @@ public:
     void                importWebPrTable( SequenceInputStream& rStrm, sal_Int32 nRecId );
 
     /** Returns the unique connection identifier. */
-    sal_Int32    getConnectionId() const { return maModel.mnId; }
+    inline sal_Int32    getConnectionId() const { return maModel.mnId; }
     /** Returns the source data type of the connection. */
-    sal_Int32    getConnectionType() const { return maModel.mnType; }
+    inline sal_Int32    getConnectionType() const { return maModel.mnType; }
     /** Returns read-only access to the connection model data. */
     const ConnectionModel& getModel() const { return maModel; }
 

@@ -36,7 +36,7 @@ BitmapTransporter::~BitmapTransporter()
 }
 
 
-css::awt::Size BitmapTransporter::getSize()
+css::awt::Size BitmapTransporter::getSize() throw(std::exception)
 {
     osl::MutexGuard aGuard( m_aProtector );
     int         nPreviousPos = m_aStream.Tell();
@@ -59,7 +59,7 @@ css::awt::Size BitmapTransporter::getSize()
 }
 
 
-Sequence< sal_Int8 > BitmapTransporter::getDIB()
+Sequence< sal_Int8 > BitmapTransporter::getDIB() throw(std::exception)
 {
     osl::MutexGuard aGuard( m_aProtector );
     int         nPreviousPos = m_aStream.Tell();
@@ -70,7 +70,7 @@ Sequence< sal_Int8 > BitmapTransporter::getDIB()
     m_aStream.Seek( 0 );
 
     Sequence< sal_Int8 > aValue( nBytes );
-    m_aStream.ReadBytes( aValue.getArray(), nBytes );
+    m_aStream.Read( aValue.getArray(), nBytes );
     m_aStream.Seek( nPreviousPos );
 
     return aValue;
@@ -132,16 +132,17 @@ public:
     virtual void run() override;
     virtual void onTerminated() override { delete this; }
 public:
-    ScannerThread( const std::shared_ptr<SaneHolder>& pHolder,
+    ScannerThread( std::shared_ptr<SaneHolder> pHolder,
                    const Reference< css::lang::XEventListener >& listener,
                    ScannerManager* pManager );
-    virtual ~ScannerThread() override;
+    virtual ~ScannerThread();
 };
 
 
-ScannerThread::ScannerThread(const std::shared_ptr<SaneHolder>& pHolder,
+ScannerThread::ScannerThread(
+                             std::shared_ptr<SaneHolder> pHolder,
                              const Reference< css::lang::XEventListener >& listener,
-                             ScannerManager* pManager)
+                             ScannerManager* pManager )
         : m_pHolder( pHolder ), m_xListener( listener ), m_pManager( pManager )
 {
     SAL_INFO("extensions.scanner", "ScannerThread");
@@ -199,7 +200,7 @@ void ScannerManager::ReleaseData()
 }
 
 
-css::awt::Size ScannerManager::getSize()
+css::awt::Size ScannerManager::getSize() throw(std::exception)
 {
     css::awt::Size aRet;
     aRet.Width = aRet.Height = 0;
@@ -207,13 +208,13 @@ css::awt::Size ScannerManager::getSize()
 }
 
 
-Sequence< sal_Int8 > ScannerManager::getDIB()
+Sequence< sal_Int8 > ScannerManager::getDIB() throw(std::exception)
 {
     return Sequence< sal_Int8 >();
 }
 
 
-Sequence< ScannerContext > ScannerManager::getAvailableScanners()
+Sequence< ScannerContext > ScannerManager::getAvailableScanners() throw(std::exception)
 {
     osl::MutexGuard aGuard( theSaneProtector::get() );
     sanevec &rSanes = theSanes::get().m_aSanes;
@@ -239,6 +240,7 @@ Sequence< ScannerContext > ScannerManager::getAvailableScanners()
 
 sal_Bool ScannerManager::configureScannerAndScan( ScannerContext& scanner_context,
                                                   const Reference< css::lang::XEventListener >& listener )
+    throw (ScannerException, RuntimeException, std::exception)
 {
     bool bRet;
     bool bScan;
@@ -277,7 +279,7 @@ sal_Bool ScannerManager::configureScannerAndScan( ScannerContext& scanner_contex
 
 
 void ScannerManager::startScan( const ScannerContext& scanner_context,
-                                const Reference< css::lang::XEventListener >& listener )
+                                const Reference< css::lang::XEventListener >& listener ) throw( ScannerException, std::exception )
 {
     osl::MutexGuard aGuard( theSaneProtector::get() );
     sanevec &rSanes = theSanes::get().m_aSanes;
@@ -304,7 +306,7 @@ void ScannerManager::startScan( const ScannerContext& scanner_context,
 }
 
 
-ScanError ScannerManager::getError( const ScannerContext& scanner_context )
+ScanError ScannerManager::getError( const ScannerContext& scanner_context ) throw( ScannerException, std::exception )
 {
     osl::MutexGuard aGuard( theSaneProtector::get() );
     sanevec &rSanes = theSanes::get().m_aSanes;
@@ -322,7 +324,7 @@ ScanError ScannerManager::getError( const ScannerContext& scanner_context )
 }
 
 
-Reference< css::awt::XBitmap > ScannerManager::getBitmap( const ScannerContext& scanner_context )
+Reference< css::awt::XBitmap > ScannerManager::getBitmap( const ScannerContext& scanner_context ) throw( ScannerException, std::exception )
 {
     osl::MutexGuard aGuard( theSaneProtector::get() );
     sanevec &rSanes = theSanes::get().m_aSanes;

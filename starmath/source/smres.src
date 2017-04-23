@@ -65,6 +65,14 @@ String STR_MAGENTA
 {
     Text [ en-US ] = "magenta" ;
 };
+String STR_AQUA
+{
+    Text [ en-US ] = "aqua" ;
+};
+String STR_FUCHSIA
+{
+    Text [ en-US ] = "fuchsia" ;
+};
 String STR_GRAY
 {
     Text [ en-US ] = "gray" ;
@@ -158,14 +166,14 @@ String RID_ERR_IDENT
     Text [ en-US ] = "ERROR : " ;
 };
 
+String RID_ERR_UNKNOWN
+{
+    Text [ en-US ] = "Unknown error occurred" ;
+};
+
 String RID_ERR_UNEXPECTEDCHARACTER
 {
     Text [ en-US ] = "Unexpected character" ;
-};
-
-String RID_ERR_UNEXPECTEDTOKEN
-{
-    Text [ en-US ] = "Unexpected token" ;
 };
 
 String RID_ERR_LGROUPEXPECTED
@@ -188,29 +196,29 @@ String RID_ERR_RBRACEEXPECTED
     Text [ en-US ] = "')' expected" ;
 };
 
-String RID_ERR_PARENTMISMATCH
+String RID_ERR_FUNCEXPECTED
 {
-    Text [ en-US ] = "Left and right symbols mismatched" ;
+    Text [ en-US ] = "Function expected" ;
 };
 
-String RID_ERR_FONTEXPECTED
+String RID_ERR_UNOPEREXPECTED
 {
-    Text [ en-US ] = "'fixed', 'sans', or 'serif' expected" ;
+    Text [ en-US ] = "Unary operator expected" ;
 };
 
-String RID_ERR_SIZEEXPECTED
+String RID_ERR_BINOPEREXPECTED
 {
-    Text [ en-US ] = "'size' followed by an unexpected token" ;
+    Text [ en-US ] = "Binary operator expected" ;
 };
 
-String RID_ERR_DOUBLEALIGN
+String RID_ERR_SYMBOLEXPECTED
 {
-    Text [ en-US ] = "Double aligning is not allowed" ;
+    Text [ en-US ] = "Symbol expected" ;
 };
 
-String RID_ERR_DOUBLESUBSUPSCRIPT
+String RID_ERR_IDENTEXPECTED
 {
-    Text [ en-US ] = "Double sub/superscripts is not allowed" ;
+    Text [ en-US ] = "Identifier expected" ;
 };
 
 String RID_ERR_POUNDEXPECTED
@@ -223,54 +231,35 @@ String RID_ERR_COLOREXPECTED
     Text [ en-US ] = "Color required" ;
 };
 
+String RID_ERR_LPARENTEXPECTED
+{
+    Text [ en-US ] = "Left limit expected" ;
+};
+
+String RID_ERR_RPARENTEXPECTED
+{
+    Text [ en-US ] = "Right limit expected" ;
+};
+
 String RID_ERR_RIGHTEXPECTED
 {
     Text [ en-US ] = "'RIGHT' expected" ;
 };
 
-String RID_PRINTUIOPT_PRODNAME
+StringArray RID_PRINTUIOPTIONS
 {
-    Text [ en-US ] = "%PRODUCTNAME %s" ;
-};
-
-String RID_PRINTUIOPT_CONTENTS
-{
-    Text [ en-US ] = "Contents" ;
-};
-
-String RID_PRINTUIOPT_TITLE
-{
-    Text [ en-US ] = "~Title" ;
-};
-
-String RID_PRINTUIOPT_FRMLTXT
-{
-    Text [ en-US ] = "~Formula text" ;
-};
-
-String RID_PRINTUIOPT_BORDERS
-{
-    Text [ en-US ] = "B~orders" ;
-};
-
-String RID_PRINTUIOPT_SIZE
-{
-    Text [ en-US ] = "Size" ;
-};
-
-String RID_PRINTUIOPT_ORIGSIZE
-{
-    Text [ en-US ] = "O~riginal size" ;
-};
-
-String RID_PRINTUIOPT_FITTOPAGE
-{
-    Text [ en-US ] = "Fit to ~page" ;
-};
-
-String RID_PRINTUIOPT_SCALING
-{
-    Text [ en-US ] = "~Scaling" ;
+    ItemList [en-US] =
+    {
+        < "%PRODUCTNAME %s"; >;
+        < "Contents"; >;
+        < "~Title"; >;
+        < "~Formula text"; >;
+        < "B~orders"; >;
+        < "Size"; >;
+        < "O~riginal size"; >;
+        < "Fit to ~page"; >;
+        < "~Scaling"; >;
+    };
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

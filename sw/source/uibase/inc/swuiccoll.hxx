@@ -47,17 +47,17 @@ class SwCondCollPage : public SfxTabPage
 
     bool                m_bNewTemplate;
 
-    virtual ~SwCondCollPage() override;
+    virtual ~SwCondCollPage();
     virtual void dispose() override;
 
-    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
+    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
 
-    DECL_LINK( OnOffHdl, Button*, void );
-    DECL_LINK( AssignRemoveHdl, ListBox&, void);
-    DECL_LINK( AssignRemoveTreeListBoxHdl, SvTreeListBox*, bool);
-    DECL_LINK( AssignRemoveClickHdl, Button*, void);
-    DECL_LINK( SelectTreeListBoxHdl, SvTreeListBox*, void );
-    DECL_LINK( SelectListBoxHdl, ListBox&, void );
+    DECL_LINK_TYPED( OnOffHdl, Button*, void );
+    DECL_LINK_TYPED( AssignRemoveHdl, ListBox&, void);
+    DECL_LINK_TYPED( AssignRemoveTreeListBoxHdl, SvTreeListBox*, bool);
+    DECL_LINK_TYPED( AssignRemoveClickHdl, Button*, void);
+    DECL_LINK_TYPED( SelectTreeListBoxHdl, SvTreeListBox*, void );
+    DECL_LINK_TYPED( SelectListBoxHdl, ListBox&, void );
     void AssignRemove(void*);
     void SelectHdl(void*);
 

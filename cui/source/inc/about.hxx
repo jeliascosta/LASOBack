@@ -22,7 +22,6 @@
 #include <vcl/accel.hxx>
 #include <vcl/button.hxx>
 #include <vcl/fixed.hxx>
-#include <vcl/fixedhyper.hxx>
 #include <vcl/vclmedit.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <vector>
@@ -36,7 +35,6 @@ private:
     BitmapEx           aLogoBitmap;
 
     VclPtr<VclMultiLineEdit>    m_pVersion;
-    VclPtr<FixedHyperlink>      m_pBuildIdLink;
     VclPtr<FixedText>           m_pDescriptionText;
     VclPtr<FixedText>           m_pCopyrightText;
     VclPtr<FixedImage>          m_pLogoImage;
@@ -52,9 +50,7 @@ private:
     OUString m_aCreditsLinkStr;
     OUString m_sBuildStr;
     OUString m_aLocaleStr;
-    OUString m_buildIdLinkString;
 
-    void SetBuildIdLink();
     void StyleControls();
     void SetLogo();
 
@@ -62,19 +58,18 @@ private:
     OUString GetVersionString();
     OUString GetCopyrightString();
     static OUString GetLocaleString();
-    static bool IsStringValidGitHash(const OUString& hash);
 
 protected:
     virtual bool Close() override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const ::tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void Resize() override;
 
 public:
     AboutDialog(vcl::Window* pParent);
-    virtual ~AboutDialog() override;
+    virtual ~AboutDialog();
     virtual void dispose() override;
 
-    DECL_LINK( HandleClick, Button*, void );
+    DECL_LINK_TYPED( HandleClick, Button*, void );
 };
 
 #endif // INCLUDED_CUI_SOURCE_INC_ABOUT_HXX

@@ -82,7 +82,8 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
                         const char*                            msg,
                         int                                    nOriginalDepth )
 {
-    SAL_INFO("vcl", "Testing " << msg << ", with depth " << nOriginalDepth);
+    OSL_TRACE("-------------------------");
+    OSL_TRACE("Testing %s, with depth %d", msg, nOriginalDepth);
 
     BitmapEx aContainedBmpEx( xBmp->getBitmapEx() );
     Bitmap   aContainedBmp( aContainedBmpEx.GetBitmap() );
@@ -93,14 +94,14 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
         nDepth = pAcc->GetBitCount();
     }
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Original bitmap size not (200,200)",
-                            Size(200,200), aContainedBmp.GetSizePixel());
+    CPPUNIT_ASSERT_MESSAGE( "Original bitmap size not (200,200)",
+                            aContainedBmp.GetSizePixel() == Size(200,200));
 
     CPPUNIT_ASSERT_MESSAGE( "Original bitmap size via API not (200,200)",
                             xBmp->getSize().Width == 200 && xBmp->getSize().Height == 200);
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "alpha state mismatch",
-                            aContainedBmpEx.IsTransparent(), bool(xBmp->hasAlpha()));
+    CPPUNIT_ASSERT_MESSAGE( "alpha state mismatch",
+                            bool(xBmp->hasAlpha()) == aContainedBmpEx.IsTransparent());
 
     CPPUNIT_ASSERT_MESSAGE( "getScaledBitmap() failed",
                             xBmp->getScaledBitmap( geometry::RealSize2D(500,500), false ).is());
@@ -110,32 +111,32 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
 
     const sal_Int32 nExpectedBitsPerPixel(
         aContainedBmpEx.IsTransparent() ? std::max(8,nDepth)+8 : nDepth);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "# scanlines not 1",
-                            static_cast<sal_Int32>(1), aLayout.ScanLines);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "# scanline bytes mismatch",
-                            static_cast<sal_Int32>((nExpectedBitsPerPixel+7)/8), aLayout.ScanLineBytes);
+    CPPUNIT_ASSERT_MESSAGE( "# scanlines not 1",
+                            aLayout.ScanLines == 1);
+    CPPUNIT_ASSERT_MESSAGE( "# scanline bytes mismatch",
+                            aLayout.ScanLineBytes == (nExpectedBitsPerPixel+7)/8);
     CPPUNIT_ASSERT_MESSAGE( "# scanline stride mismatch",
                             aLayout.ScanLineStride == (nExpectedBitsPerPixel+7)/8 ||
                             aLayout.ScanLineStride == -(nExpectedBitsPerPixel+7)/8);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "# plane stride not 0",
-                            static_cast<sal_Int32>(0), aLayout.PlaneStride);
+    CPPUNIT_ASSERT_MESSAGE( "# plane stride not 0",
+                            aLayout.PlaneStride == 0);
 
     CPPUNIT_ASSERT_MESSAGE( "Color space not there",
                             aLayout.ColorSpace.is());
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Palette existence does not conform to bitmap",
-                            (nDepth <= 8), aLayout.Palette.is());
+    CPPUNIT_ASSERT_MESSAGE( "Palette existence does not conform to bitmap",
+                            aLayout.Palette.is() == (nDepth <= 8));
 
     uno::Sequence<sal_Int8> aPixelData2 = xBmp->getPixel( aLayout, geometry::IntegerPoint2D(0,0) );
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "getData and getPixel did not return same amount of data",
-                            aPixelData.getLength(), aPixelData2.getLength());
+    CPPUNIT_ASSERT_MESSAGE( "getData and getPixel did not return same amount of data",
+                            aPixelData2.getLength() == aPixelData.getLength());
 
     aPixelData = xBmp->getData(aLayout, geometry::IntegerRectangle2D(0,0,200,1));
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "# scanlines not 1 for getPixel",
-                            static_cast<sal_Int32>(1), aLayout.ScanLines);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "# scanline bytes mismatch for getPixel",
-                            static_cast<sal_Int32>((200*nExpectedBitsPerPixel+7)/8), aLayout.ScanLineBytes);
+    CPPUNIT_ASSERT_MESSAGE( "# scanlines not 1 for getPixel",
+                            aLayout.ScanLines == 1);
+    CPPUNIT_ASSERT_MESSAGE( "# scanline bytes mismatch for getPixel",
+                            aLayout.ScanLineBytes == (200*nExpectedBitsPerPixel+7)/8);
     CPPUNIT_ASSERT_MESSAGE( "# scanline stride mismatch for getPixel",
                             aLayout.ScanLineStride == (200*nExpectedBitsPerPixel+7)/8 ||
                             aLayout.ScanLineStride == -(200*nExpectedBitsPerPixel+7)/8);
@@ -148,8 +149,8 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
     const rendering::ARGBColor* pARGBStart( aARGBColors.getConstArray() );
     std::pair<const rendering::RGBColor*,
         const rendering::ARGBColor*> aRes = std::mismatch( pRGBStart, pRGBEnd, pARGBStart );
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "argb and rgb colors are not equal",
-                            pRGBEnd, aRes.first);
+    CPPUNIT_ASSERT_MESSAGE( "argb and rgb colors are not equal",
+                            aRes.first == pRGBEnd);
 
     CPPUNIT_ASSERT_MESSAGE( "rgb colors are not within [0,1] range",
                             std::none_of(pRGBStart,pRGBEnd,&rangeCheck));
@@ -164,8 +165,8 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
         "Second pixel is not opaque", 1.0, pARGBStart[1].Alpha, 1E-12);
     if( aContainedBmpEx.IsTransparent() )
     {
-        CPPUNIT_ASSERT_EQUAL_MESSAGE( "First pixel is not fully transparent",
-                                0.0, pARGBStart[0].Alpha);
+        CPPUNIT_ASSERT_MESSAGE( "First pixel is not fully transparent",
+                                pARGBStart[0].Alpha == 0.0);
     }
 
     CPPUNIT_ASSERT_MESSAGE( "Second pixel is not black",
@@ -189,8 +190,8 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
         uno::Reference<rendering::XBitmapPalette> xPal = xBmp->getPalette();
         CPPUNIT_ASSERT_MESSAGE( "8bit or less: missing palette",
                                 xPal.is());
-        CPPUNIT_ASSERT_EQUAL_MESSAGE( "Palette incorrect entry count",
-                                static_cast<sal_Int32>(1L << nOriginalDepth), xPal->getNumberOfEntries());
+        CPPUNIT_ASSERT_MESSAGE( "Palette incorrect entry count",
+                                xPal->getNumberOfEntries() == 1L << nOriginalDepth);
         uno::Sequence<double> aIndex;
         CPPUNIT_ASSERT_MESSAGE( "Palette is not read-only",
                                 !xPal->setIndex(aIndex,true,0));
@@ -226,13 +227,13 @@ void checkCanvasBitmap( const rtl::Reference<VclCanvasBitmap>& xBmp,
         aPixel3 = xBmp->convertIntegerFromARGB( aARGBColor );
         aPixel4 = xBmp->getPixel( aLayout, geometry::IntegerPoint2D(5,0) );
         CPPUNIT_ASSERT_MESSAGE( "Green pixel from bitmap mismatch with manually converted green pixel",
-                                bool(aPixel3 == aPixel4));
+                                aPixel3 == aPixel4);
 
         if( !aContainedBmpEx.IsTransparent() )
         {
             aPixel3 = xBmp->convertIntegerFromRGB( aRGBColor );
             CPPUNIT_ASSERT_MESSAGE( "Green pixel from bitmap mismatch with manually RGB-converted green pixel",
-                                    bool(aPixel3 == aPixel4));
+                                    aPixel3 == aPixel4);
         }
     }
 }
@@ -249,14 +250,18 @@ private:
     const sal_Int32                mnBitsPerPixel;
 
     // XBitmap
-    virtual geometry::IntegerSize2D SAL_CALL getSize() override { return maSize; }
-    virtual sal_Bool SAL_CALL hasAlpha(  ) override { return mnBitsPerPixel != 8; }
+    virtual geometry::IntegerSize2D SAL_CALL getSize() throw (uno::RuntimeException, std::exception) override { return maSize; }
+    virtual sal_Bool SAL_CALL hasAlpha(  ) throw (uno::RuntimeException, std::exception) override { return mnBitsPerPixel != 8; }
     virtual uno::Reference< rendering::XBitmap > SAL_CALL getScaledBitmap( const geometry::RealSize2D&,
-                                                                           sal_Bool ) override { return this; }
+                                                                           sal_Bool ) throw (uno::RuntimeException, std::exception) override { return this; }
 
     // XIntegerReadOnlyBitmap
     virtual uno::Sequence< ::sal_Int8 > SAL_CALL getData( rendering::IntegerBitmapLayout&     bitmapLayout,
-                                                          const geometry::IntegerRectangle2D& rect ) override
+                                                          const geometry::IntegerRectangle2D& rect )
+        throw (lang::IndexOutOfBoundsException,
+               rendering::VolatileContentDestroyedException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE( "X1 out of bounds", rect.X1 >= 0 );
         CPPUNIT_ASSERT_MESSAGE( "Y1 out of bounds", rect.Y1 >= 0 );
@@ -301,14 +306,17 @@ private:
     }
 
     virtual uno::Sequence< ::sal_Int8 > SAL_CALL getPixel( rendering::IntegerBitmapLayout&,
-                                                           const geometry::IntegerPoint2D&  ) override
+                                                           const geometry::IntegerPoint2D&  )
+        throw (lang::IndexOutOfBoundsException,
+               rendering::VolatileContentDestroyedException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("getPixel: method not implemented", false);
         return uno::Sequence< sal_Int8 >();
     }
 
-    /// @throws uno::RuntimeException
-    uno::Reference< rendering::XBitmapPalette > SAL_CALL getPalette(  )
+    uno::Reference< rendering::XBitmapPalette > SAL_CALL getPalette(  ) throw (uno::RuntimeException)
     {
         uno::Reference< XBitmapPalette > aRet;
         if( mnBitsPerPixel == 8 )
@@ -316,7 +324,7 @@ private:
         return aRet;
     }
 
-    virtual rendering::IntegerBitmapLayout SAL_CALL getMemoryLayout(  ) override
+    virtual rendering::IntegerBitmapLayout SAL_CALL getMemoryLayout(  ) throw (uno::RuntimeException, std::exception) override
     {
         rendering::IntegerBitmapLayout aLayout( maLayout );
 
@@ -332,7 +340,7 @@ private:
     }
 
     // XBitmapPalette
-    virtual sal_Int32 SAL_CALL getNumberOfEntries() override
+    virtual sal_Int32 SAL_CALL getNumberOfEntries() throw (uno::RuntimeException, std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE( "Got palette getNumberOfEntries interface call without handing out palette",
                                 getPalette().is() );
@@ -341,7 +349,10 @@ private:
     }
 
     virtual sal_Bool SAL_CALL getIndex( uno::Sequence< double >& entry,
-                                          ::sal_Int32 nIndex ) override
+                                          ::sal_Int32 nIndex )
+        throw (lang::IndexOutOfBoundsException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE( "Got palette getIndex interface call without handing out palette",
                                 getPalette().is() );
@@ -357,7 +368,10 @@ private:
 
     virtual sal_Bool SAL_CALL setIndex( const uno::Sequence< double >&,
                                           sal_Bool,
-                                          ::sal_Int32 nIndex ) override
+                                          ::sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException,
+                                                                      lang::IllegalArgumentException,
+                                                                      uno::RuntimeException,
+                                                                      std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE( "Got palette setIndex interface call without handing out palette",
                                 getPalette().is());
@@ -375,7 +389,7 @@ private:
         }
     };
 
-    virtual uno::Reference< rendering::XColorSpace > SAL_CALL getColorSpace(  ) override
+    virtual uno::Reference< rendering::XColorSpace > SAL_CALL getColorSpace(  ) throw (uno::RuntimeException, std::exception) override
     {
         // this is the method from XBitmapPalette. Return palette color
         // space here
@@ -383,106 +397,135 @@ private:
     }
 
     // XIntegerBitmapColorSpace
-    virtual ::sal_Int8 SAL_CALL getType(  ) override
+    virtual ::sal_Int8 SAL_CALL getType(  ) throw (uno::RuntimeException, std::exception) override
     {
         return rendering::ColorSpaceType::RGB;
     }
 
-    virtual uno::Sequence< sal_Int8 > SAL_CALL getComponentTags(  ) override
+    virtual uno::Sequence< sal_Int8 > SAL_CALL getComponentTags(  ) throw (uno::RuntimeException, std::exception) override
     {
         return maComponentTags;
     }
 
-    virtual ::sal_Int8 SAL_CALL getRenderingIntent(  ) override
+    virtual ::sal_Int8 SAL_CALL getRenderingIntent(  ) throw (uno::RuntimeException, std::exception) override
     {
         return rendering::RenderingIntent::PERCEPTUAL;
     }
 
-    virtual uno::Sequence< beans::PropertyValue > SAL_CALL getProperties() override
+    virtual uno::Sequence< beans::PropertyValue > SAL_CALL getProperties()
+        throw (uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("getProperties: method not implemented", false );
         return uno::Sequence< ::beans::PropertyValue >();
     }
 
     virtual uno::Sequence< double > SAL_CALL convertColorSpace( const uno::Sequence< double >&,
-                                                                const uno::Reference< rendering::XColorSpace >& ) override
+                                                                const uno::Reference< rendering::XColorSpace >& )
+        throw (uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertColorSpace: method not implemented", false);
         return uno::Sequence< double >();
     }
 
-    virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertToRGB( const uno::Sequence< double >& ) override
+    virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertToRGB( const uno::Sequence< double >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertToRGB: method not implemented", false);
         return uno::Sequence< rendering::RGBColor >();
     }
 
-    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToARGB( const uno::Sequence< double >& ) override
+    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToARGB( const uno::Sequence< double >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertToARGB: method not implemented", false);
         return uno::Sequence< rendering::ARGBColor >();
     }
 
-    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToPARGB( const uno::Sequence< double >& ) override
+    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertToPARGB( const uno::Sequence< double >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertToPARGB: method not implemented", false);
         return uno::Sequence< rendering::ARGBColor >();
     }
 
-    virtual uno::Sequence< double > SAL_CALL convertFromRGB( const uno::Sequence< rendering::RGBColor >& ) override
+    virtual uno::Sequence< double > SAL_CALL convertFromRGB( const uno::Sequence< rendering::RGBColor >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertFromRGB: method not implemented", false);
         return uno::Sequence< double >();
     }
 
-    virtual uno::Sequence< double > SAL_CALL convertFromARGB( const uno::Sequence< rendering::ARGBColor >& ) override
+    virtual uno::Sequence< double > SAL_CALL convertFromARGB( const uno::Sequence< rendering::ARGBColor >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertFromARGB: this method is not expected to be called!", false);
         return uno::Sequence< double >();
     }
 
-    virtual uno::Sequence< double > SAL_CALL convertFromPARGB( const uno::Sequence< rendering::ARGBColor >& ) override
+    virtual uno::Sequence< double > SAL_CALL convertFromPARGB( const uno::Sequence< rendering::ARGBColor >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertFromPARGB: this method is not expected to be called!", false);
         return uno::Sequence< double >();
     }
 
-    virtual ::sal_Int32 SAL_CALL getBitsPerPixel(  ) override
+    virtual ::sal_Int32 SAL_CALL getBitsPerPixel(  ) throw (uno::RuntimeException, std::exception) override
     {
         return mnBitsPerPixel;
     }
 
-    virtual uno::Sequence< ::sal_Int32 > SAL_CALL getComponentBitCounts(  ) override
+    virtual uno::Sequence< ::sal_Int32 > SAL_CALL getComponentBitCounts(  ) throw (uno::RuntimeException, std::exception) override
     {
         return maComponentBitCounts;
     }
 
-    virtual ::sal_Int8 SAL_CALL getEndianness(  ) override
+    virtual ::sal_Int8 SAL_CALL getEndianness(  ) throw (uno::RuntimeException, std::exception) override
     {
         return util::Endianness::LITTLE;
     }
 
     virtual uno::Sequence< double > SAL_CALL convertFromIntegerColorSpace( const uno::Sequence< ::sal_Int8 >& ,
-                                                                           const uno::Reference< rendering::XColorSpace >& ) override
+                                                                           const uno::Reference< rendering::XColorSpace >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertFromIntegerColorSpace: method not implemented", false);
         return uno::Sequence< double >();
     }
 
     virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertToIntegerColorSpace( const uno::Sequence< ::sal_Int8 >& ,
-                                                                             const uno::Reference< rendering::XIntegerBitmapColorSpace >& ) override
+                                                                             const uno::Reference< rendering::XIntegerBitmapColorSpace >& )
+        throw (lang::IllegalArgumentException,
+               uno::RuntimeException,
+               std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertToIntegerColorSpace: method not implemented", false);
         return uno::Sequence< sal_Int8 >();
     }
 
-    virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertIntegerToRGB( const uno::Sequence< ::sal_Int8 >& deviceColor ) override
+    virtual uno::Sequence< rendering::RGBColor > SAL_CALL convertIntegerToRGB( const uno::Sequence< ::sal_Int8 >& deviceColor ) throw (lang::IllegalArgumentException,
+                                                                                                                                       uno::RuntimeException, std::exception) override
     {
         const uno::Sequence< rendering::ARGBColor > aTemp( convertIntegerToARGB(deviceColor) );
-        const std::size_t nLen(aTemp.getLength());
+        const sal_Size nLen(aTemp.getLength());
         uno::Sequence< rendering::RGBColor > aRes( nLen );
         rendering::RGBColor* pOut = aRes.getArray();
-        for( std::size_t i=0; i<nLen; ++i )
+        for( sal_Size i=0; i<nLen; ++i )
         {
             *pOut++ = rendering::RGBColor(aTemp[i].Red,
                                           aTemp[i].Green,
@@ -492,19 +535,20 @@ private:
         return aRes;
     }
 
-    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertIntegerToARGB( const uno::Sequence< ::sal_Int8 >& deviceColor ) override
+    virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertIntegerToARGB( const uno::Sequence< ::sal_Int8 >& deviceColor ) throw (lang::IllegalArgumentException,
+                                                                                                                                         uno::RuntimeException, std::exception) override
     {
-        const std::size_t  nLen( deviceColor.getLength() );
+        const sal_Size  nLen( deviceColor.getLength() );
         const sal_Int32 nBytesPerPixel(mnBitsPerPixel == 8 ? 1 : 4);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("number of channels no multiple of pixel element count",
-                               0, static_cast<int>(nLen%nBytesPerPixel));
+        CPPUNIT_ASSERT_MESSAGE("number of channels no multiple of pixel element count",
+                               nLen%nBytesPerPixel==0);
 
         uno::Sequence< rendering::ARGBColor > aRes( nLen / nBytesPerPixel );
         rendering::ARGBColor* pOut( aRes.getArray() );
 
         if( getPalette().is() )
         {
-            for( std::size_t i=0; i<nLen; ++i )
+            for( sal_Size i=0; i<nLen; ++i )
             {
                 *pOut++ = rendering::ARGBColor(
                     1.0,
@@ -515,7 +559,7 @@ private:
         }
         else
         {
-            for( std::size_t i=0; i<nLen; i+=4 )
+            for( sal_Size i=0; i<nLen; i+=4 )
             {
                 *pOut++ = rendering::ARGBColor(
                     vcl::unotools::toDoubleColor(deviceColor[i+3]),
@@ -529,19 +573,22 @@ private:
     }
 
     virtual uno::Sequence< rendering::ARGBColor > SAL_CALL convertIntegerToPARGB(
-        const uno::Sequence< ::sal_Int8 >& deviceColor) override
+        const uno::Sequence< ::sal_Int8 >& deviceColor)
+            throw (lang::IllegalArgumentException,
+                   uno::RuntimeException,
+                   std::exception) override
     {
-        const std::size_t  nLen( deviceColor.getLength() );
+        const sal_Size  nLen( deviceColor.getLength() );
         const sal_Int32 nBytesPerPixel(mnBitsPerPixel == 8 ? 1 : 4);
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("number of channels no multiple of pixel element count",
-                               0, static_cast<int>(nLen%nBytesPerPixel));
+        CPPUNIT_ASSERT_MESSAGE("number of channels no multiple of pixel element count",
+                               nLen%nBytesPerPixel==0);
 
         uno::Sequence< rendering::ARGBColor > aRes( nLen / nBytesPerPixel );
         rendering::ARGBColor* pOut( aRes.getArray() );
 
         if( getPalette().is() )
         {
-            for( std::size_t i=0; i<nLen; ++i )
+            for( sal_Size i=0; i<nLen; ++i )
             {
                 *pOut++ = rendering::ARGBColor(
                     1.0,
@@ -552,7 +599,7 @@ private:
         }
         else
         {
-            for( std::size_t i=0; i<nLen; i+=4 )
+            for( sal_Size i=0; i<nLen; i+=4 )
             {
                 const double fAlpha=vcl::unotools::toDoubleColor(deviceColor[i+3]);
                 *pOut++ = rendering::ARGBColor(
@@ -567,19 +614,27 @@ private:
     }
 
     virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertIntegerFromRGB(
-        const uno::Sequence< rendering::RGBColor >&) override
+        const uno::Sequence< rendering::RGBColor >&)
+            throw (lang::IllegalArgumentException,
+                   uno::RuntimeException,
+                   std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertIntegerFromRGB: method not implemented", false);
         return uno::Sequence< sal_Int8 >();
     }
 
-    virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertIntegerFromARGB( const uno::Sequence< rendering::ARGBColor >& ) override
+    virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertIntegerFromARGB( const uno::Sequence< rendering::ARGBColor >& ) throw (lang::IllegalArgumentException,
+                                                                                                                               uno::RuntimeException,
+                                  std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertIntegerFromARGB: method not implemented", false);
         return uno::Sequence< sal_Int8 >();
     }
 
-    virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertIntegerFromPARGB( const uno::Sequence< rendering::ARGBColor >& ) override
+    virtual uno::Sequence< ::sal_Int8 > SAL_CALL convertIntegerFromPARGB( const uno::Sequence< rendering::ARGBColor >& )
+        throw (lang::IllegalArgumentException,
+        uno::RuntimeException,
+        std::exception) override
     {
         CPPUNIT_ASSERT_MESSAGE("convertIntegerFromPARGB: method not implemented", false);
         return uno::Sequence< sal_Int8 >();
@@ -656,7 +711,7 @@ void CanvasBitmapTest::runTest()
                     aWhite = Color(COL_WHITE);
                 }
                 pAcc->SetFillColor(COL_GREEN);
-                pAcc->FillRect(tools::Rectangle(0,0,100,100));
+                pAcc->FillRect(Rectangle(0,0,100,100));
                 pAcc->SetPixel(0,0,aWhite);
                 pAcc->SetPixel(0,1,aBlack);
                 pAcc->SetPixel(0,2,aWhite);
@@ -674,7 +729,7 @@ void CanvasBitmapTest::runTest()
             if( pAcc.get() )
             {
                 pAcc->SetFillColor(COL_BLACK);
-                pAcc->FillRect(tools::Rectangle(0,0,100,100));
+                pAcc->FillRect(Rectangle(0,0,100,100));
                 pAcc->SetPixel(0,0,BitmapColor(1));
                 pAcc->SetPixel(0,1,BitmapColor(0));
                 pAcc->SetPixel(0,2,BitmapColor(1));
@@ -692,7 +747,7 @@ void CanvasBitmapTest::runTest()
             if( pAcc )
             {
                 pAcc->SetFillColor(COL_BLACK);
-                pAcc->FillRect(tools::Rectangle(0,0,100,100));
+                pAcc->FillRect(Rectangle(0,0,100,100));
                 pAcc->SetPixel(0,0,BitmapColor(255));
                 pAcc->SetPixel(0,1,BitmapColor(0));
                 pAcc->SetPixel(0,2,BitmapColor(255));
@@ -713,22 +768,22 @@ void CanvasBitmapTest::runTest()
     BitmapEx aBmp = vcl::unotools::bitmapExFromXBitmap(xTestBmp);
     CPPUNIT_ASSERT_MESSAGE( "Palette bitmap is transparent",
                             !aBmp.IsTransparent());
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Bitmap does not have size (10,10)",
-                            Size(10,10), aBmp.GetSizePixel());
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Bitmap does not have bitcount of 8",
-                            static_cast<sal_uInt16>(8),  aBmp.GetBitCount());
+    CPPUNIT_ASSERT_MESSAGE( "Bitmap does not have size (10,10)",
+                            aBmp.GetSizePixel() == Size(10,10));
+    CPPUNIT_ASSERT_MESSAGE( "Bitmap does not have bitcount of 8",
+                            aBmp.GetBitCount() == 8);
     {
         BitmapReadAccess* pBmpAcc   = aBmp.GetBitmap().AcquireReadAccess();
 
         CPPUNIT_ASSERT_MESSAGE( "Bitmap has invalid BitmapReadAccess",
                                 pBmpAcc );
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(0,0) incorrect content",
-                               BitmapColor(0), pBmpAcc->GetPixel(0,0));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(2,2) incorrect content",
-                               BitmapColor(2), pBmpAcc->GetPixel(2,2));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(9,2) incorrect content",
-                               BitmapColor(9), pBmpAcc->GetPixel(2,9));
+        CPPUNIT_ASSERT_MESSAGE("(0,0) incorrect content",
+                               pBmpAcc->GetPixel(0,0) == BitmapColor(0));
+        CPPUNIT_ASSERT_MESSAGE("(2,2) incorrect content",
+                               pBmpAcc->GetPixel(2,2) == BitmapColor(2));
+        CPPUNIT_ASSERT_MESSAGE("(9,2) incorrect content",
+                               pBmpAcc->GetPixel(2,9) == BitmapColor(9));
 
         Bitmap::ReleaseAccess(pBmpAcc);
     }
@@ -740,10 +795,10 @@ void CanvasBitmapTest::runTest()
                             aBmp.IsTransparent());
     CPPUNIT_ASSERT_MESSAGE( "Palette bitmap has no alpha",
                             aBmp.IsAlpha());
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Bitmap does not have size (10,10)",
-                            Size(10,10), aBmp.GetSizePixel());
-    CPPUNIT_ASSERT_EQUAL_MESSAGE( "Bitmap has bitcount of 24",
-                            static_cast<sal_uInt16>(24), aBmp.GetBitCount());
+    CPPUNIT_ASSERT_MESSAGE( "Bitmap does not have size (10,10)",
+                            aBmp.GetSizePixel() == Size(10,10));
+    CPPUNIT_ASSERT_MESSAGE( "Bitmap has bitcount of 24",
+                            aBmp.GetBitCount() == 24);
     {
         BitmapReadAccess* pBmpAcc   = aBmp.GetBitmap().AcquireReadAccess();
         BitmapReadAccess* pAlphaAcc = aBmp.GetAlpha().AcquireReadAccess();
@@ -753,18 +808,18 @@ void CanvasBitmapTest::runTest()
         CPPUNIT_ASSERT_MESSAGE( "Bitmap has invalid alpha BitmapReadAccess",
                                 pAlphaAcc);
 
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(0,0) incorrect content",
-                               BitmapColor(0,1,0), pBmpAcc->GetPixel(0,0));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(0,0) incorrect alpha content",
-                               BitmapColor(255), pAlphaAcc->GetPixel(0,0));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(2,2) incorrect content",
-                               BitmapColor(0,3,2), pBmpAcc->GetPixel(2,2));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(2,2) incorrect alpha content",
-                               BitmapColor(253), pAlphaAcc->GetPixel(2,2));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(9,2) incorrect content",
-                               BitmapColor(0,3,9), pBmpAcc->GetPixel(2,9));
-        CPPUNIT_ASSERT_EQUAL_MESSAGE("(9,2) correct alpha content",
-                               BitmapColor(253), pAlphaAcc->GetPixel(2,9));
+        CPPUNIT_ASSERT_MESSAGE("(0,0) incorrect content",
+                               pBmpAcc->GetPixel(0,0) == BitmapColor(0,1,0));
+        CPPUNIT_ASSERT_MESSAGE("(0,0) incorrect alpha content",
+                               pAlphaAcc->GetPixel(0,0) == BitmapColor(255));
+        CPPUNIT_ASSERT_MESSAGE("(2,2) incorrect content",
+                               pBmpAcc->GetPixel(2,2) == BitmapColor(0,3,2));
+        CPPUNIT_ASSERT_MESSAGE("(2,2) incorrect alpha content",
+                               pAlphaAcc->GetPixel(2,2) == BitmapColor(253));
+        CPPUNIT_ASSERT_MESSAGE("(9,2) incorrect content",
+                               pBmpAcc->GetPixel(2,9) == BitmapColor(0,3,9));
+        CPPUNIT_ASSERT_MESSAGE("(9,2) correct alpha content",
+                               pAlphaAcc->GetPixel(2,9) == BitmapColor(253));
 
         aBmp.GetAlpha().ReleaseAccess(pAlphaAcc);
         Bitmap::ReleaseAccess(pBmpAcc);

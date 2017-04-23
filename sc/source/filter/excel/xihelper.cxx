@@ -152,7 +152,8 @@ EditTextObject* lclCreateTextObject( const XclImpRoot& rRoot,
         const XclImpFontBuffer& rFontBuffer = rRoot.GetFontBuffer();
         const XclFormatRunVec& rFormats = rString.GetFormats();
 
-        ScEditEngineDefaulter& rEE = rRoot.GetEditEngine();
+        ScEditEngineDefaulter& rEE = (eType == EXC_FONTITEM_NOTE) ?
+            static_cast< ScEditEngineDefaulter& >( rRoot.GetDoc().GetNoteEngine() ) : rRoot.GetEditEngine();
         rEE.SetText( rString.GetText() );
 
         SfxItemSet aItemSet( rEE.GetEmptyItemSet() );
@@ -217,7 +218,7 @@ EditTextObject* lclCreateTextObject( const XclImpRoot& rRoot,
 EditTextObject* XclImpStringHelper::CreateTextObject(
         const XclImpRoot& rRoot, const XclImpString& rString )
 {
-    return lclCreateTextObject( rRoot, rString, XclFontItemType::Editeng, 0 );
+    return lclCreateTextObject( rRoot, rString, EXC_FONTITEM_EDITENG, 0 );
 }
 
 void XclImpStringHelper::SetToDocument(
@@ -227,7 +228,7 @@ void XclImpStringHelper::SetToDocument(
     if (rString.GetText().isEmpty())
         return;
 
-    ::std::unique_ptr< EditTextObject > pTextObj( lclCreateTextObject( rRoot, rString, XclFontItemType::Editeng, nXFIndex ) );
+    ::std::unique_ptr< EditTextObject > pTextObj( lclCreateTextObject( rRoot, rString, EXC_FONTITEM_EDITENG, nXFIndex ) );
 
     if (pTextObj.get())
     {
@@ -236,7 +237,7 @@ void XclImpStringHelper::SetToDocument(
     else
     {
         const OUString& aStr = rString.GetText();
-        if (aStr.indexOf('\n') != -1 || aStr.indexOf('\r') != -1)
+        if (aStr.indexOf('\n') != -1 || aStr.indexOf(CHAR_CR) != -1)
         {
             // Multiline content.
             ScFieldEditEngine& rEngine = rDoc.getDoc().GetEditEngine();
@@ -299,7 +300,7 @@ void XclImpHFConverter::ParseString( const OUString& rHFString )
     } eState = xlPSText;
 
     const sal_Unicode* pChar = rHFString.getStr();
-    const sal_Unicode* pNull = pChar + rHFString.getLength(); // pointer to terminating null char
+    const sal_Unicode* pNull = pChar + rHFString.getLength(); // pointer to teminating null char
     while( *pChar )
     {
         switch( eState )
@@ -320,7 +321,7 @@ void XclImpHFConverter::ParseString( const OUString& rHFString )
                         InsertLineBreak();
                     break;
                     default:
-                        maCurrText += OUStringLiteral1(*pChar);
+                        maCurrText += OUString(*pChar);
                 }
             }
             break;
@@ -409,7 +410,7 @@ void XclImpHFConverter::ParseString( const OUString& rHFString )
                         eState = xlPSFontStyle;
                     break;
                     default:
-                        aReadFont += OUStringLiteral1(*pChar);
+                        aReadFont += OUString(*pChar);
                 }
             }
             break;
@@ -428,7 +429,7 @@ void XclImpHFConverter::ParseString( const OUString& rHFString )
                         eState = xlPSText;
                     break;
                     default:
-                        aReadStyle += OUStringLiteral1(*pChar);
+                        aReadStyle += OUString(*pChar);
                 }
             }
             break;
@@ -496,6 +497,11 @@ sal_uInt16 XclImpHFConverter::GetMaxLineHeight( XclImpHFPortion ePortion ) const
     return (nMaxHt == 0) ? mxFontData->mnHeight : nMaxHt;
 }
 
+sal_uInt16 XclImpHFConverter::GetCurrMaxLineHeight() const
+{
+    return GetMaxLineHeight( meCurrObj );
+}
+
 void XclImpHFConverter::UpdateMaxLineHeight( XclImpHFPortion ePortion )
 {
     sal_uInt16& rnMaxHt = maInfos[ ePortion ].mnMaxLineHt;
@@ -514,7 +520,7 @@ void XclImpHFConverter::SetAttribs()
     {
         SfxItemSet aItemSet( mrEE.GetEmptyItemSet() );
         XclImpFont aFont( GetRoot(), *mxFontData );
-        aFont.FillToItemSet( aItemSet, XclFontItemType::HeaderFooter );
+        aFont.FillToItemSet( aItemSet, EXC_FONTITEM_HF );
         mrEE.QuickSetAttribs( aItemSet, rSel );
         rSel.nStartPara = rSel.nEndPara;
         rSel.nStartPos = rSel.nEndPos;
@@ -558,7 +564,7 @@ void XclImpHFConverter::InsertLineBreak()
     mrEE.QuickInsertText( OUString('\n'), ESelection( rSel.nEndPara, rSel.nEndPos, rSel.nEndPara, rSel.nEndPos ) );
     ++rSel.nEndPara;
     rSel.nEndPos = 0;
-    GetCurrInfo().mnHeight += GetMaxLineHeight( meCurrObj );
+    GetCurrInfo().mnHeight += GetCurrMaxLineHeight();
     GetCurrInfo().mnMaxLineHt = 0;
 }
 
@@ -594,7 +600,7 @@ void lclAppendUrlChar( OUString& rUrl, sal_Unicode cChar )
     {
         case '#':   rUrl += "%23";  break;
         case '%':   rUrl += "%25";  break;
-        default:    rUrl += OUStringLiteral1( cChar );
+        default:    rUrl += OUString( cChar );
     }
 }
 
@@ -617,7 +623,7 @@ void XclImpUrlHelper::DecodeUrl(
     rbSameWb = false;
 
     sal_Unicode cCurrDrive = 0;
-    OUString aDosBase( INetURLObject( rRoot.GetBasePath() ).getFSysPath( FSysStyle::Dos ) );
+    OUString aDosBase( INetURLObject( rRoot.GetBasePath() ).getFSysPath( INetURLObject::FSYS_DOS ) );
     if (!aDosBase.isEmpty() && aDosBase.match(":\\", 1))
         cCurrDrive = aDosBase[0];
 
@@ -688,7 +694,7 @@ void XclImpUrlHelper::DecodeUrl(
                             rUrl += "\\";
                         else    // control character in raw name -> DDE link
                         {
-                            rUrl += OUStringLiteral1(EXC_DDE_DELIM);
+                            rUrl += OUStringLiteral1<EXC_DDE_DELIM>();
                             eState = xlUrlRaw;
                         }
                     break;
@@ -730,7 +736,7 @@ void XclImpUrlHelper::DecodeUrl(
 // --- sheet name ---
 
             case xlUrlSheetName:
-                rTabName += OUStringLiteral1( *pChar );
+                rTabName += OUString( *pChar );
             break;
 
 // --- raw read mode ---
@@ -806,9 +812,9 @@ XclImpCachedValue::~XclImpCachedValue()
 {
 }
 
-FormulaError XclImpCachedValue::GetScError() const
+sal_uInt16 XclImpCachedValue::GetScError() const
 {
-    return (mnType == EXC_CACHEDVAL_ERROR) ? XclTools::GetScErrorCode( mnBoolErr ) : FormulaError::NONE;
+    return (mnType == EXC_CACHEDVAL_ERROR) ? XclTools::GetScErrorCode( mnBoolErr ) : 0;
 }
 
 // Matrix Cached Values ==============================================================

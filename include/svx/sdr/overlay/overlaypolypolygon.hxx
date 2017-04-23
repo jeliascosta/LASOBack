@@ -41,7 +41,7 @@ namespace sdr
         public:
             explicit OverlayPolyPolygonStripedAndFilled(
                 const basegfx::B2DPolyPolygon& rLinePolyPolygon);
-            virtual ~OverlayPolyPolygonStripedAndFilled() override;
+            virtual ~OverlayPolyPolygonStripedAndFilled();
 
             // change geometry
             const basegfx::B2DPolyPolygon& getLinePolyPolygon() const { return maLinePolyPolygon; }

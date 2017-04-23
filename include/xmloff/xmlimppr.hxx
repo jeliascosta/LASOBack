@@ -70,7 +70,7 @@ public:
     SvXMLImportPropertyMapper(
             const rtl::Reference< XMLPropertySetMapper >& rMapper,
             SvXMLImport& rImport);
-    virtual ~SvXMLImportPropertyMapper() override;
+    virtual ~SvXMLImportPropertyMapper();
 
     // Add a ImportPropertyMapper at the end of the import mapper chain.
     // The added mapper MUST not be used outside the Mapper chain any longer,
@@ -133,7 +133,7 @@ public:
 
         // parameter for use by txtstyli.cxx; allows efficient
         // catching the combined characters property
-        ContextID_Index_Pair* pSpecialContextIds );
+        ContextID_Index_Pair* pSpecialContextIds = nullptr );
 
     /** implementation helper for FillPropertySet: fill an XMultiPropertySet.
      * If unsuccessul, set return value. */
@@ -145,7 +145,7 @@ public:
 
         // parameters for use by txtstyli.cxx; allows efficient
         // catching the combined characters property
-        ContextID_Index_Pair* pSpecialContextIds );
+        ContextID_Index_Pair* pSpecialContextIds = nullptr );
 
     /** implementation helper for FillPropertySet: fill an XTolerantMultiPropertySet.
      * If unsuccessul, set return value. */
@@ -157,7 +157,7 @@ public:
 
         // parameters for use by txtstyli.cxx; allows efficient
         // catching the combined characters property
-        ContextID_Index_Pair* pSpecialContextIds );
+        ContextID_Index_Pair* pSpecialContextIds = nullptr );
 
 
     static void PrepareForMultiPropertySet_(

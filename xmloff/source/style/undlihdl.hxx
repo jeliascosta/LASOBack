@@ -28,7 +28,7 @@
 class XMLUnderlineTypePropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLUnderlineTypePropHdl() override;
+    virtual ~XMLUnderlineTypePropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -37,7 +37,7 @@ public:
 class XMLUnderlineStylePropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLUnderlineStylePropHdl() override;
+    virtual ~XMLUnderlineStylePropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
@@ -46,7 +46,7 @@ public:
 class XMLUnderlineWidthPropHdl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLUnderlineWidthPropHdl() override;
+    virtual ~XMLUnderlineWidthPropHdl();
 
     virtual bool importXML( const OUString& rStrImpValue, css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;
     virtual bool exportXML( OUString& rStrExpValue, const css::uno::Any& rValue, const SvXMLUnitConverter& rUnitConverter ) const override;

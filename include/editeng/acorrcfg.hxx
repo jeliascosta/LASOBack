@@ -21,7 +21,6 @@
 
 #include <editeng/editengdllapi.h>
 #include <unotools/configitem.hxx>
-#include <memory>
 
 class SvxAutoCorrect;
 class SvxAutoCorrCfg;
@@ -35,11 +34,11 @@ private:
 
 public:
     SvxBaseAutoCorrCfg(SvxAutoCorrCfg& rParent);
-    virtual ~SvxBaseAutoCorrCfg() override;
+    virtual ~SvxBaseAutoCorrCfg();
 
     void                    Load(bool bInit);
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
-    using ConfigItem::SetModified;
+    void                    SetModified() {ConfigItem::SetModified();}
 };
 
 class EDITENG_DLLPUBLIC SvxSwAutoCorrCfg : public utl::ConfigItem
@@ -52,21 +51,21 @@ private:
 
 public:
     SvxSwAutoCorrCfg(SvxAutoCorrCfg& rParent);
-    virtual ~SvxSwAutoCorrCfg() override;
+    virtual ~SvxSwAutoCorrCfg();
 
     void                    Load(bool bInit);
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
-    using ConfigItem::SetModified;
+    void                    SetModified() {ConfigItem::SetModified();}
 };
 /*--------------------------------------------------------------------
     Description:   Configuration for Auto Correction
  --------------------------------------------------------------------*/
-class EDITENG_DLLPUBLIC SvxAutoCorrCfg final
+class EDITENG_DLLPUBLIC SvxAutoCorrCfg
 {
     friend class SvxBaseAutoCorrCfg;
     friend class SvxSwAutoCorrCfg;
 
-    std::unique_ptr<SvxAutoCorrect> pAutoCorrect;
+    SvxAutoCorrect* pAutoCorrect;
 
     SvxBaseAutoCorrCfg      aBaseConfig;
     SvxSwAutoCorrCfg        aSwConfig;
@@ -92,8 +91,8 @@ public:
                     aSwConfig.Commit();
                 }
 
-          SvxAutoCorrect* GetAutoCorrect()          { return pAutoCorrect.get(); }
-    const SvxAutoCorrect* GetAutoCorrect() const    { return pAutoCorrect.get(); }
+          SvxAutoCorrect* GetAutoCorrect()          { return pAutoCorrect; }
+    const SvxAutoCorrect* GetAutoCorrect() const    { return pAutoCorrect; }
     // the pointer is transferred to the possession of the ConfigItems!
     void SetAutoCorrect( SvxAutoCorrect* );
 
@@ -112,7 +111,7 @@ public:
     bool IsSearchInAllCategories() const        { return bSearchInAllCategories;}
 
     SvxAutoCorrCfg();
-    ~SvxAutoCorrCfg();
+    virtual ~SvxAutoCorrCfg();
     static SvxAutoCorrCfg& Get();
 };
 

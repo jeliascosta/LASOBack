@@ -21,7 +21,6 @@
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <comphelper/container.hxx>
-#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 
 
@@ -29,7 +28,7 @@ namespace comphelper
 {
 
 
-IndexAccessIterator::IndexAccessIterator(css::uno::Reference< css::uno::XInterface> const & xStartingPoint)
+IndexAccessIterator::IndexAccessIterator(css::uno::Reference< css::uno::XInterface> xStartingPoint)
     :m_xStartingPoint(xStartingPoint)
     ,m_xCurrentObject(nullptr)
 {
@@ -39,7 +38,7 @@ IndexAccessIterator::IndexAccessIterator(css::uno::Reference< css::uno::XInterfa
 IndexAccessIterator::~IndexAccessIterator() {}
 
 
-css::uno::Reference< css::uno::XInterface> const & IndexAccessIterator::Next()
+css::uno::Reference< css::uno::XInterface> IndexAccessIterator::Next()
 {
     bool bCheckingStartingPoint = !m_xCurrentObject.is();
         // Is the current node the starting point?
@@ -66,7 +65,7 @@ css::uno::Reference< css::uno::XInterface> const & IndexAccessIterator::Next()
             if (xContainerAccess.is() && xContainerAccess->getCount() && ShouldStepInto(xContainerAccess))
             {
                 css::uno::Any aElement(xContainerAccess->getByIndex(0));
-                xSearchLoop = *o3tl::doAccess<css::uno::Reference<css::uno::XInterface>>(aElement);
+                xSearchLoop = *static_cast<css::uno::Reference< css::uno::XInterface> const *>(aElement.getValue());
                 bCheckingStartingPoint = false;
 
                 m_arrChildIndizies.push_back((sal_Int32)0);
@@ -91,10 +90,10 @@ css::uno::Reference< css::uno::XInterface> const & IndexAccessIterator::Next()
                         ++nOldSearchChildIndex;
                         // and check the next child
                         css::uno::Any aElement(xContainerAccess->getByIndex(nOldSearchChildIndex));
-                        xSearchLoop = *o3tl::doAccess<css::uno::Reference<css::uno::XInterface>>(aElement);
+                        xSearchLoop = *static_cast<css::uno::Reference< css::uno::XInterface> const *>(aElement.getValue());
                         bCheckingStartingPoint = false;
                         // and update its position in the list.
-                        m_arrChildIndizies.push_back(nOldSearchChildIndex);
+                        m_arrChildIndizies.push_back((sal_Int32)nOldSearchChildIndex);
 
                         break;
                     }

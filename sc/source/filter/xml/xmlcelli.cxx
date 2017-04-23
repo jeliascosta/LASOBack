@@ -90,13 +90,28 @@
 #include <svl/sharedstringpool.hxx>
 #include <svtools/miscopt.hxx>
 #include <sax/tools/converter.hxx>
-#include <sax/fastattribs.hxx>
 
+#include <com/sun/star/frame/XModel.hpp>
+#include <com/sun/star/text/XText.hpp>
+#include <com/sun/star/sheet/XSpreadsheets.hpp>
+#include <com/sun/star/sheet/XSpreadsheet.hpp>
+#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
+
+#include <com/sun/star/sheet/XSheetCondition.hpp>
+#include <com/sun/star/table/XCellRange.hpp>
+#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/util/NumberFormat.hpp>
+#include <com/sun/star/util/XNumberFormatsSupplier.hpp>
+#include <com/sun/star/util/XNumberFormatTypes.hpp>
 #include <com/sun/star/util/Date.hpp>
+#include <com/sun/star/lang/Locale.hpp>
+#include <com/sun/star/text/ControlCharacter.hpp>
+#include <com/sun/star/table/XCell.hpp>
+#include <com/sun/star/document/XActionLockable.hpp>
 
 #include <com/sun/star/sheet/ValidationType.hpp>
 #include <com/sun/star/sheet/ValidationAlertStyle.hpp>
+#include <com/sun/star/sheet/ConditionOperator.hpp>
 
 #include <rtl/ustrbuf.hxx>
 #include <tools/date.hxx>
@@ -114,14 +129,16 @@ ScXMLTableRowCellContext::Field::Field(SvxFieldData* pData) : mpData(pData) {}
 
 ScXMLTableRowCellContext::Field::~Field()
 {
+    delete mpData;
 }
 
 ScXMLTableRowCellContext::ScXMLTableRowCellContext( ScXMLImport& rImport,
-                                      sal_Int32 /*nElement*/,
-                                      const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList,
+                                      sal_uInt16 nPrfx,
+                                      const OUString& rLName,
+                                      const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                                       const bool bTempIsCovered,
                                       const sal_Int32 nTempRepeatedRows ) :
-    ScXMLImportContext( rImport ),
+    ScXMLImportContext(rImport, nPrfx, rLName),
     mpEditEngine(GetScImport().GetEditEngine()),
     mnCurParagraph(0),
     pDetectiveObjVec(nullptr),
@@ -148,146 +165,142 @@ ScXMLTableRowCellContext::ScXMLTableRowCellContext( ScXMLImport& rImport,
     mbCheckWithCompilerForError(false),
     mbEditEngineHasText(false),
     mbHasFormatRuns(false),
-    mbHasStyle(false),
-    mbPossibleEmptyDisplay(false)
+    mbHasStyle(false)
 {
     rtl::math::setNan(&fValue); // NaN by default
 
     rXMLImport.SetRemoveLastChar(false);
     rXMLImport.GetTables().AddColumn(bTempIsCovered);
-
-    std::unique_ptr<OUString> xStyleName;
-    std::unique_ptr<OUString> xCurrencySymbol;
+    const sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
+    OUString aLocalName;
+    OUString* pStyleName = nullptr;
+    OUString* pCurrencySymbol = nullptr;
     const SvXMLTokenMap& rTokenMap = rImport.GetTableRowCellAttrTokenMap();
-    if( xAttrList.is() )
+    for (sal_Int16 i = 0; i < nAttrCount; ++i)
     {
-        sax_fastparser::FastAttributeList *pAttribList;
-        assert( dynamic_cast< sax_fastparser::FastAttributeList *>( xAttrList.get() ) != nullptr );
-        pAttribList = static_cast< sax_fastparser::FastAttributeList *>( xAttrList.get() );
+        sal_uInt16 nAttrPrefix = rImport.GetNamespaceMap().GetKeyByAttrName(
+            xAttrList->getNameByIndex(i), &aLocalName);
 
-        for ( auto it = pAttribList->begin(); it != pAttribList->end(); ++it)
+        const OUString& sValue = xAttrList->getValueByIndex(i);
+        sal_uInt16 nToken = rTokenMap.Get(nAttrPrefix, aLocalName);
+        switch (nToken)
         {
-            sal_uInt16 nToken = rTokenMap.Get( it.getToken() );
-            switch ( nToken )
+            case XML_TOK_TABLE_ROW_CELL_ATTR_STYLE_NAME:
+                pStyleName = new OUString(sValue);
+                mbHasStyle = true;
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_CONTENT_VALIDATION_NAME:
+                OSL_ENSURE(!maContentValidationName, "here should be only one Validation Name");
+                if (!sValue.isEmpty())
+                    maContentValidationName.reset(sValue);
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_ROWS:
+                bIsMerged = true;
+                nMergedRows = static_cast<SCROW>(sValue.toInt32());
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_COLS:
+                bIsMerged = true;
+                nMergedCols = static_cast<SCCOL>(sValue.toInt32());
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_MATRIX_COLS:
+                bIsMatrix = true;
+                nMatrixCols = static_cast<SCCOL>(sValue.toInt32());
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_MATRIX_ROWS:
+                bIsMatrix = true;
+                nMatrixRows = static_cast<SCROW>(sValue.toInt32());
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_REPEATED:
+                nColsRepeated = static_cast<SCCOL>(std::min<sal_Int32>( MAXCOLCOUNT,
+                            std::max( sValue.toInt32(), static_cast<sal_Int32>(1) ) ));
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_VALUE_TYPE:
+                nCellType = GetScImport().GetCellType(sValue);
+                bIsEmpty = false;
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_NEW_VALUE_TYPE:
+                if(sValue == "error")
+                    mbErrorValue = true;
+                else
+                    nCellType = GetScImport().GetCellType(sValue);
+                bIsEmpty = false;
+                mbNewValueType = true;
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_VALUE:
             {
-                case XML_TOK_TABLE_ROW_CELL_ATTR_STYLE_NAME:
-                    xStyleName.reset( new OUString( it.toString() ) );
-                    mbHasStyle = true;
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_CONTENT_VALIDATION_NAME:
-                    OSL_ENSURE(!maContentValidationName, "here should be only one Validation Name");
-                    if (!it.isEmpty())
-                        maContentValidationName.reset(it.toString());
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_ROWS:
-                    bIsMerged = true;
-                    nMergedRows = static_cast<SCROW>(it.toInt32());
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_COLS:
-                    bIsMerged = true;
-                    nMergedCols = static_cast<SCCOL>(it.toInt32());
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_MATRIX_COLS:
-                    bIsMatrix = true;
-                    nMatrixCols = static_cast<SCCOL>(it.toInt32());
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_SPANNED_MATRIX_ROWS:
-                    bIsMatrix = true;
-                    nMatrixRows = static_cast<SCROW>(it.toInt32());
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_REPEATED:
-                    nColsRepeated = static_cast<SCCOL>(std::min<sal_Int32>( MAXCOLCOUNT,
-                                std::max( it.toInt32(), static_cast<sal_Int32>(1) ) ));
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_VALUE_TYPE:
-                    nCellType = GetScImport().GetCellType(it.toString());
-                    bIsEmpty = false;
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_NEW_VALUE_TYPE:
-                    if(it.isString( "error" ) )
-                        mbErrorValue = true;
-                    else
-                        nCellType = GetScImport().GetCellType(it.toString());
-                    bIsEmpty = false;
-                    mbNewValueType = true;
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_VALUE:
+                if (!sValue.isEmpty())
                 {
-                    if (!it.isEmpty())
-                    {
-                        ::sax::Converter::convertDouble(fValue, it.toString());
-                        bIsEmpty = false;
+                    ::sax::Converter::convertDouble(fValue, sValue);
+                    bIsEmpty = false;
 
-                        //if office:value="0", let's get the text:p in case this is
-                        //a special case in HasSpecialCaseFormulaText(). If it
-                        //turns out not to be a special case, we'll use the 0 value.
-                        if(fValue == 0.0)
-                            bFormulaTextResult = true;
-                    }
+                    //if office:value="0", let's get the text:p in case this is
+                    //a special case in HasSpecialCaseFormulaText(). If it
+                    //turns out not to be a special case, we'll use the 0 value.
+                    if(fValue == 0.0)
+                        bFormulaTextResult = true;
                 }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_DATE_VALUE:
-                {
-                    if (!it.isEmpty() && rXMLImport.SetNullDateOnUnitConverter())
-                    {
-                        rXMLImport.GetMM100UnitConverter().convertDateTime(fValue, it.toString());
-                        bIsEmpty = false;
-                    }
-                }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_TIME_VALUE:
-                {
-                    if (!it.isEmpty())
-                    {
-                        ::sax::Converter::convertDuration(fValue, it.toString());
-                        bIsEmpty = false;
-                    }
-                }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_STRING_VALUE:
-                {
-                    if (!it.isEmpty())
-                    {
-                        OSL_ENSURE(!maStringValue, "here should be only one string value");
-                        maStringValue.reset(it.toString());
-                        bIsEmpty = false;
-                    }
-                }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_BOOLEAN_VALUE:
-                {
-                    if (!it.isEmpty())
-                    {
-                        if ( IsXMLToken( it.toCString(), XML_TRUE ) )
-                            fValue = 1.0;
-                        else if ( IsXMLToken( it.toCString(), XML_FALSE ) )
-                            fValue = 0.0;
-                        else
-                            ::sax::Converter::convertDouble(fValue, it.toString() );
-                        bIsEmpty = false;
-                    }
-                }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_FORMULA:
-                {
-                    if (!it.isEmpty())
-                    {
-                        OSL_ENSURE(!maFormula, "here should be only one formula");
-                        OUString aFormula, aFormulaNmsp;
-                        rXMLImport.ExtractFormulaNamespaceGrammar( aFormula, aFormulaNmsp, eGrammar, it.toString() );
-                        maFormula.reset( FormulaWithNamespace(aFormula, aFormulaNmsp) );
-                    }
-                }
-                break;
-                case XML_TOK_TABLE_ROW_CELL_ATTR_CURRENCY:
-                    xCurrencySymbol.reset( new OUString( it.toString() ) );
-                break;
-                default:
-                    ;
             }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_DATE_VALUE:
+            {
+                if (!sValue.isEmpty() && rXMLImport.SetNullDateOnUnitConverter())
+                {
+                    rXMLImport.GetMM100UnitConverter().convertDateTime(fValue, sValue);
+                    bIsEmpty = false;
+                }
+            }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_TIME_VALUE:
+            {
+                if (!sValue.isEmpty())
+                {
+                    ::sax::Converter::convertDuration(fValue, sValue);
+                    bIsEmpty = false;
+                }
+            }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_STRING_VALUE:
+            {
+                if (!sValue.isEmpty())
+                {
+                    OSL_ENSURE(!maStringValue, "here should be only one string value");
+                    maStringValue.reset(sValue);
+                    bIsEmpty = false;
+                }
+            }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_BOOLEAN_VALUE:
+            {
+                if (!sValue.isEmpty())
+                {
+                    if ( IsXMLToken(sValue, XML_TRUE) )
+                        fValue = 1.0;
+                    else if ( IsXMLToken(sValue, XML_FALSE) )
+                        fValue = 0.0;
+                    else
+                        ::sax::Converter::convertDouble(fValue, sValue);
+                    bIsEmpty = false;
+                }
+            }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_FORMULA:
+            {
+                if (!sValue.isEmpty())
+                {
+                    OSL_ENSURE(!maFormula, "here should be only one formula");
+                    OUString aFormula, aFormulaNmsp;
+                    rXMLImport.ExtractFormulaNamespaceGrammar( aFormula, aFormulaNmsp, eGrammar, sValue );
+                    maFormula.reset( FormulaWithNamespace(aFormula, aFormulaNmsp) );
+                }
+            }
+            break;
+            case XML_TOK_TABLE_ROW_CELL_ATTR_CURRENCY:
+                pCurrencySymbol = new OUString(sValue);
+            break;
+            default:
+                ;
         }
     }
-
     if (maFormula)
     {
         if (nCellType == util::NumberFormat::TEXT)
@@ -300,7 +313,7 @@ ScXMLTableRowCellContext::ScXMLTableRowCellContext( ScXMLImport& rImport,
         if(bIsEmpty)
             bFormulaTextResult = true;
     }
-    rXMLImport.GetStylesImportHelper()->SetAttributes(xStyleName.release(), xCurrencySymbol.release(), nCellType);
+    rXMLImport.GetStylesImportHelper()->SetAttributes(pStyleName, pCurrencySymbol, nCellType);
 }
 
 ScXMLTableRowCellContext::~ScXMLTableRowCellContext()
@@ -315,6 +328,15 @@ void ScXMLTableRowCellContext::LockSolarMutex()
     {
         GetScImport().LockSolarMutex();
         bSolarMutexLocked = true;
+    }
+}
+
+void ScXMLTableRowCellContext::UnlockSolarMutex()
+{
+    if (bSolarMutexLocked)
+    {
+        GetScImport().UnlockSolarMutex();
+        bSolarMutexLocked = false;
     }
 }
 
@@ -501,7 +523,7 @@ void ScXMLTableRowCellContext::PushFormat(sal_Int32 nBegin, sal_Int32 nEnd, cons
             case EE_CHAR_RELIEF:
             {
                 if (!pPoolItem)
-                    pPoolItem.reset(new SvxCharReliefItem(FontRelief::NONE, pEntry->mnItemID));
+                    pPoolItem.reset(new SvxCharReliefItem(RELIEF_NONE, pEntry->mnItemID));
 
                 pPoolItem->PutValue(it->maValue, pEntry->mnFlag);
             }
@@ -682,7 +704,7 @@ SvXMLImportContext *ScXMLTableRowCellContext::CreateChildContext( sal_uInt16 nPr
         {
             bIsEmpty = false;
             if (!pDetectiveObjVec)
-                pDetectiveObjVec = new ScMyImpDetectiveObjVec;
+                pDetectiveObjVec = new ScMyImpDetectiveObjVec();
             pContext = new ScXMLDetectiveContext(
                 rXMLImport, nPrefix, rLName, pDetectiveObjVec );
         }
@@ -711,7 +733,9 @@ SvXMLImportContext *ScXMLTableRowCellContext::CreateChildContext( sal_uInt16 nPr
             XMLTableShapeImportHelper* pTableShapeImport =
                     static_cast< XMLTableShapeImportHelper* >( rXMLImport.GetShapeImport().get() );
             pTableShapeImport->SetOnTable(false);
-            pTableShapeImport->SetCell(aCellPos);
+            css::table::CellAddress aCellAddress;
+            ScUnoConversion::FillApiAddress( aCellAddress, aCellPos );
+            pTableShapeImport->SetCell(aCellAddress);
             pContext = rXMLImport.GetShapeImport()->CreateGroupChildContext(
                 rXMLImport, nPrefix, rLName, xAttrList, xShapes);
             if (pContext)
@@ -787,7 +811,7 @@ void ScXMLTableRowCellContext::SetContentValidation( const ScRange& rScRange )
         {
             ScValidationData aScValidationData(
                 validationTypeToMode(aValidation.aValidationType),
-                ScConditionEntry::GetModeFromApi(aValidation.aOperator),
+                ScConditionEntry::GetModeFromApi(static_cast<sal_Int32>(aValidation.aOperator)),
                 aValidation.sFormula1, aValidation.sFormula2, pDoc, ScAddress(),
                 aValidation.sFormulaNmsp1, aValidation.sFormulaNmsp2,
                 aValidation.eGrammar1, aValidation.eGrammar2
@@ -867,7 +891,7 @@ void ScXMLTableRowCellContext::SetAnnotation(const ScAddress& rPos)
             {
                 OSL_ENSURE( !pCaption->GetLogicRect().IsEmpty(), "ScXMLTableRowCellContext::SetAnnotation - invalid caption rectangle" );
                 // create the cell note with the caption object
-                pNote = ScNoteUtil::CreateNoteFromCaption( *pDoc, rPos, pCaption, true );
+                pNote = ScNoteUtil::CreateNoteFromCaption( *pDoc, rPos, *pCaption, true );
                 // forget pointer to object (do not create note again below)
                 pObject = nullptr;
             }
@@ -881,7 +905,7 @@ void ScXMLTableRowCellContext::SetAnnotation(const ScAddress& rPos)
             ::std::unique_ptr< OutlinerParaObject > xOutlinerObj;
             if( OutlinerParaObject* pOutlinerObj = pObject->GetOutlinerParaObject() )
                 xOutlinerObj.reset( new OutlinerParaObject( *pOutlinerObj ) );
-            tools::Rectangle aCaptionRect;
+            Rectangle aCaptionRect;
             if( mxAnnotationData->mbUseShapePos )
                 aCaptionRect = pObject->GetLogicRect();
             // remove the shape from the drawing page, this invalidates pObject
@@ -1010,11 +1034,9 @@ void ScXMLTableRowCellContext::SetFormulaCell(ScFormulaCell* pFCell) const
                 pFCell->ResetDirty();
             }
         }
-        else if (rtl::math::isFinite(fValue))
+        else if (!rtl::math::isNan(fValue))
         {
             pFCell->SetHybridDouble(fValue);
-            if (mbPossibleEmptyDisplay && fValue == 0.0)
-                pFCell->SetHybridEmptyDisplayedAsString();
             pFCell->ResetDirty();
         }
     }
@@ -1132,7 +1154,7 @@ void ScXMLTableRowCellContext::PutValueCell( const ScAddress& rCurrentPos )
         ScRefCellValue aCell(*rXMLImport.GetDocument(), rCurrentPos);
         if (aCell.meType == CELLTYPE_FORMULA)
         {
-            ScFormulaCell* pFCell = aCell.mpFormula;
+            ScFormulaCell* pFCell = aCell.mpFormula;;
             SetFormulaCell(pFCell);
             if (pFCell)
                 pFCell->SetNeedNumberFormat( true );
@@ -1143,7 +1165,7 @@ void ScXMLTableRowCellContext::PutValueCell( const ScAddress& rCurrentPos )
         // fdo#62250 absent values are not NaN, set to 0.0
         // PutValueCell() is called only for a known cell value type,
         // bIsEmpty==false in all these cases, no sense to check it here.
-        if (!::rtl::math::isFinite( fValue))
+        if (::rtl::math::isNan( fValue))
             fValue = 0.0;
 
         // #i62435# Initialize the value cell's script type if the default
@@ -1256,6 +1278,11 @@ void ScXMLTableRowCellContext::AddTextAndValueCell( const ScAddress& rCellPos,
     }
 }
 
+bool ScXMLTableRowCellContext::HasSpecialContent() const
+{
+    return (mxAnnotationData.get() || pDetectiveObjVec || pCellRangeSource);
+}
+
 bool ScXMLTableRowCellContext::CellsAreRepeated() const
 {
     return ( (nColsRepeated > 1) || (nRepeatedRows > 1) );
@@ -1313,7 +1340,7 @@ void ScXMLTableRowCellContext::AddNonFormulaCell( const ScAddress& rCellPos )
     }
 
     ScAddress aCurrentPos( rCellPos );
-    if( mxAnnotationData.get() || pDetectiveObjVec || pCellRangeSource ) // has special content
+    if( HasSpecialContent() )
         bIsEmpty = false;
 
     AddTextAndValueCell( rCellPos, pOUText, aCurrentPos );
@@ -1347,42 +1374,57 @@ void ScXMLTableRowCellContext::PutFormulaCell( const ScAddress& rCellPos )
 
     if ( !aText.isEmpty() )
     {
-        // temporary formula string as string tokens
-        ScTokenArray *pCode = new ScTokenArray();
-
-        // Check the special case of a single error constant without leading
-        // '=' and create an error formula cell without tokens.
-        FormulaError nError = GetScImport().GetFormulaErrorConstant(aText);
-        if (nError != FormulaError::NONE)
+        if ( aText[0] == '=' && aText.getLength() > 1 )
         {
-            pCode->SetCodeError(nError);
+            // temporary formula string as string tokens
+            ScTokenArray *pCode = new ScTokenArray();
+
+            OUString aFormulaNmsp = maFormula->second;
+            if( eGrammar != formula::FormulaGrammar::GRAM_EXTERNAL )
+                aFormulaNmsp.clear();
+            pCode->AssignXMLString( aText, aFormulaNmsp );
+
+            rDoc.getDoc().IncXMLImportedFormulaCount( aText.getLength() );
+            ScFormulaCell* pNewCell = new ScFormulaCell(pDoc, rCellPos, pCode, eGrammar, MM_NONE);
+            SetFormulaCell(pNewCell);
+            rDoc.setFormulaCell(rCellPos, pNewCell);
+
+            // Re-calculate to get number format only when style is not set.
+            pNewCell->SetNeedNumberFormat(!mbHasStyle);
+        }
+        else if ( aText[0] == '\'' && aText.getLength() > 1 )
+        {
+            //  for bEnglish, "'" at the beginning is always interpreted as text
+            //  marker and stripped
+            rDoc.setStringCell(rCellPos, aText.copy(1));
         }
         else
         {
-            // 5.2 and earlier wrote broken "Err:xxx" as formula to designate
-            // an error formula cell.
-            if (aText.startsWithIgnoreAsciiCase("Err:") && aText.getLength() <= 9 &&
-                    ((nError =
-                      GetScImport().GetFormulaErrorConstant( "#ERR" + aText.copy(4) + "!")) != FormulaError::NONE))
+            SvNumberFormatter* pFormatter = pDoc->GetFormatTable();
+            sal_uInt32 nEnglish = pFormatter->GetStandardIndex(LANGUAGE_ENGLISH_US);
+            double fVal;
+            if ( pFormatter->IsNumberFormat( aText, nEnglish, fVal ) )
             {
-                pCode->SetCodeError(nError);
+                rDoc.setNumericCell(rCellPos, fVal);
+                //the (english) number format will not be set
+                //search matching local format and apply it
             }
             else
             {
-                OUString aFormulaNmsp = maFormula->second;
-                if( eGrammar != formula::FormulaGrammar::GRAM_EXTERNAL )
-                    aFormulaNmsp.clear();
-                pCode->AssignXMLString( aText, aFormulaNmsp );
-                rDoc.getDoc().IncXMLImportedFormulaCount( aText.getLength() );
+                // Error constants are stored as "#ERRxxx!" by 5.3+, error
+                // numbers are sal_uInt16 so at most 5 decimal digits, no
+                // other expression must be present.
+                if (aText.startsWithIgnoreAsciiCase("#ERR") && aText.getLength() <= 10 &&
+                        aText[aText.getLength()-1] == '!')
+                {
+                    // Display error constants written by 5.3+ in the for 5.2 usual way.
+                    sal_uInt32 nErr = aText.copy( 4, aText.getLength() - 5).toUInt32();
+                    if (0 < nErr && nErr <= SAL_MAX_UINT16)
+                        aText = ScGlobal::GetErrorString(nErr);
+                }
+                rDoc.setStringCell(rCellPos, aText);
             }
         }
-
-        ScFormulaCell* pNewCell = new ScFormulaCell(pDoc, rCellPos, pCode, eGrammar, ScMatrixMode::NONE);
-        SetFormulaCell(pNewCell);
-        rDoc.setFormulaCell(rCellPos, pNewCell);
-
-        // Re-calculate to get number format only when style is not set.
-        pNewCell->SetNeedNumberFormat(!mbHasStyle);
     }
 }
 
@@ -1419,12 +1461,11 @@ void ScXMLTableRowCellContext::AddFormulaCell( const ScAddress& rCellPos )
                         if (!IsPossibleErrorString())
                         {
                             pFCell->SetResultMatrix(
-                                    nMatrixCols, nMatrixRows, pMat, new formula::FormulaStringToken(
-                                        rXMLImport.GetDocument()->GetSharedStringPool().intern( *maStringValue)));
+                                nMatrixCols, nMatrixRows, pMat, new formula::FormulaStringToken(*maStringValue));
                             pFCell->ResetDirty();
                         }
                     }
-                    else if (rtl::math::isFinite(fValue))
+                    else if (!rtl::math::isNan(fValue))
                     {
                         pFCell->SetResultMatrix(
                             nMatrixCols, nMatrixRows, pMat, new formula::FormulaDoubleToken(fValue));
@@ -1460,24 +1501,12 @@ void ScXMLTableRowCellContext::AddFormulaCell( const ScAddress& rCellPos )
 // Libreoffice 4.1+ with ODF1.2 extended write however calcext:value-type="error" in that case
 void ScXMLTableRowCellContext::HasSpecialCaseFormulaText()
 {
-    if (!mbEditEngineHasText)
+    if (!mbEditEngineHasText || mbNewValueType)
         return;
 
-    const OUString aStr = GetFirstParagraph();
+    OUString aStr = GetFirstParagraph();
 
-    if (mbNewValueType)
-    {
-        if (aStr.isEmpty())
-            mbPossibleEmptyDisplay = true;
-        return;
-    }
-
-    if (aStr.isEmpty())
-    {
-        mbPossibleErrorCell = true;
-        mbPossibleEmptyDisplay = true;
-    }
-    else if (aStr.startsWith("Err:"))
+    if (aStr.isEmpty() || aStr.startsWith("Err:"))
         mbPossibleErrorCell = true;
     else if (aStr.startsWith("#"))
         mbCheckWithCompilerForError = true;
@@ -1489,16 +1518,16 @@ bool ScXMLTableRowCellContext::IsPossibleErrorString() const
         return false;
     else if(mbNewValueType && mbErrorValue)
         return true;
-    return mbPossibleErrorCell || (mbCheckWithCompilerForError &&
-            GetScImport().GetFormulaErrorConstant(*maStringValue) != FormulaError::NONE);
+    return mbPossibleErrorCell || ( mbCheckWithCompilerForError && GetScImport().IsFormulaErrorConstant(*maStringValue) );
 }
 
-void SAL_CALL ScXMLTableRowCellContext::endFastElement(sal_Int32 /*nElement*/)
+void ScXMLTableRowCellContext::EndElement()
 {
     HasSpecialCaseFormulaText();
     if( bFormulaTextResult && (mbPossibleErrorCell || mbCheckWithCompilerForError) )
     {
         maStringValue.reset(GetFirstParagraph());
+        nCellType = util::NumberFormat::TEXT;
     }
 
     ScAddress aCellPos = rXMLImport.GetTables().GetCurrentCellPos();
@@ -1512,12 +1541,7 @@ void SAL_CALL ScXMLTableRowCellContext::endFastElement(sal_Int32 /*nElement*/)
     else
         AddNonFormulaCell(aCellPos);
 
-    //if LockSolarMutex got used, we presumably need to ensure an UnlockSolarMutex
-    if (bSolarMutexLocked)
-    {
-        GetScImport().UnlockSolarMutex();
-        bSolarMutexLocked = false;
-    }
+    UnlockSolarMutex(); //if LockSolarMutex got used, we presumably need to ensure an UnlockSolarMutex
 
     bIsMerged = false;
     nMergedCols = 1;

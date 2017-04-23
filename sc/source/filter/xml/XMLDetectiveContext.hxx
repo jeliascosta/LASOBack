@@ -21,10 +21,10 @@
 #define INCLUDED_SC_SOURCE_FILTER_XML_XMLDETECTIVECONTEXT_HXX
 
 #include <xmloff/xmlimp.hxx>
+#include <com/sun/star/table/CellRangeAddress.hpp>
 #include "detfunc.hxx"
 #include "detdata.hxx"
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 #include <list>
 
@@ -62,20 +62,23 @@ private:
     ScMyImpDetectiveOpList      aDetectiveOpList;
 
 public:
-    ScMyImpDetectiveOpArray() :
+    inline                      ScMyImpDetectiveOpArray() :
                                     aDetectiveOpList()  {}
 
-    void                 AddDetectiveOp( const ScMyImpDetectiveOp& rDetOp )
+    inline void                 AddDetectiveOp( const ScMyImpDetectiveOp& rDetOp )
                                     { aDetectiveOpList.push_back( rDetOp ); }
 
     void                        Sort();
     bool                        GetFirstOp( ScMyImpDetectiveOp& rDetOp );
 };
 
-class ScXMLDetectiveContext : public ScXMLImportContext
+class ScXMLDetectiveContext : public SvXMLImportContext
 {
 private:
     ScMyImpDetectiveObjVec*     pDetectiveObjVec;
+
+    const ScXMLImport&          GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport&                GetScImport()       { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
                                 ScXMLDetectiveContext(
@@ -84,7 +87,7 @@ public:
                                     const OUString& rLName,
                                     ScMyImpDetectiveObjVec* pNewDetectiveObjVec
                                     );
-    virtual                     ~ScXMLDetectiveContext() override;
+    virtual                     ~ScXMLDetectiveContext();
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,
@@ -94,12 +97,15 @@ public:
     virtual void                EndElement() override;
 };
 
-class ScXMLDetectiveHighlightedContext : public ScXMLImportContext
+class ScXMLDetectiveHighlightedContext : public SvXMLImportContext
 {
 private:
     ScMyImpDetectiveObjVec*     pDetectiveObjVec;
     ScMyImpDetectiveObj         aDetectiveObj;
     bool                        bValid;
+
+    const ScXMLImport&          GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport&                GetScImport()       { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
                                 ScXMLDetectiveHighlightedContext(
@@ -109,7 +115,7 @@ public:
                                     const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
                                     ScMyImpDetectiveObjVec* pNewDetectiveObjVec
                                     );
-    virtual                     ~ScXMLDetectiveHighlightedContext() override;
+    virtual                     ~ScXMLDetectiveHighlightedContext();
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,
@@ -119,11 +125,14 @@ public:
     virtual void                EndElement() override;
 };
 
-class ScXMLDetectiveOperationContext : public ScXMLImportContext
+class ScXMLDetectiveOperationContext : public SvXMLImportContext
 {
 private:
     ScMyImpDetectiveOp          aDetectiveOp;
     bool                        bHasType;
+
+    const ScXMLImport&          GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport&                GetScImport()       { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
                                 ScXMLDetectiveOperationContext(
@@ -132,7 +141,7 @@ public:
                                     const OUString& rLName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList
                                     );
-    virtual                     ~ScXMLDetectiveOperationContext() override;
+    virtual                     ~ScXMLDetectiveOperationContext();
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,

@@ -82,7 +82,6 @@ void Deck::dispose()
     for (VclPtr<Panel> & rpPanel : aPanels)
         rpPanel.disposeAndClear();
 
-    maPanels.clear(); // just to keep the loplugin:vclwidgets happy
     mpTitleBar.disposeAndClear();
     mpFiller.disposeAndClear();
     mpVerticalScrollBar.disposeAndClear();
@@ -92,17 +91,17 @@ void Deck::dispose()
     vcl::Window::dispose();
 }
 
-VclPtr<DeckTitleBar> Deck::GetTitleBar() const
+DeckTitleBar* Deck::GetTitleBar() const
 {
-    return mpTitleBar;
+    return mpTitleBar.get();
 }
 
-tools::Rectangle Deck::GetContentArea() const
+Rectangle Deck::GetContentArea() const
 {
     const Size aWindowSize (GetSizePixel());
     const int nBorderSize (Theme::GetInteger(Theme::Int_DeckBorderSize));
 
-    return tools::Rectangle(
+    return Rectangle(
         Theme::GetInteger(Theme::Int_DeckLeftPadding) + nBorderSize,
         Theme::GetInteger(Theme::Int_DeckTopPadding) + nBorderSize,
         aWindowSize.Width() - 1 - Theme::GetInteger(Theme::Int_DeckRightPadding) - nBorderSize,
@@ -114,7 +113,7 @@ void Deck::ApplySettings(vcl::RenderContext& rRenderContext)
     rRenderContext.SetBackground(Wallpaper());
 }
 
-void Deck::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rUpdateArea*/)
+void Deck::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rUpdateArea*/)
 {
     const Size aWindowSize (GetSizePixel());
     const SvBorder aPadding(Theme::GetInteger(Theme::Int_DeckLeftPadding),
@@ -123,7 +122,7 @@ void Deck::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*r
                             Theme::GetInteger(Theme::Int_DeckBottomPadding));
 
     // Paint deck background outside the border.
-    tools::Rectangle aBox(0, 0, aWindowSize.Width() - 1, aWindowSize.Height() - 1);
+    Rectangle aBox(0, 0, aWindowSize.Width() - 1, aWindowSize.Height() - 1);
     DrawHelper::DrawBorder(rRenderContext, aBox, aPadding,
                            Theme::GetPaint(Theme::Paint_DeckBackground),
                            Theme::GetPaint(Theme::Paint_DeckBackground));
@@ -147,7 +146,7 @@ void Deck::DataChanged (const DataChangedEvent& rEvent)
     RequestLayout();
 }
 
-bool Deck::EventNotify(NotifyEvent& rEvent)
+bool Deck::Notify (NotifyEvent& rEvent)
 {
     if (rEvent.GetType() == MouseNotifyEvent::COMMAND)
     {
@@ -163,7 +162,7 @@ bool Deck::EventNotify(NotifyEvent& rEvent)
             }
     }
 
-    return Window::EventNotify(rEvent);
+    return Window::Notify(rEvent);
 }
 
 bool Deck::ProcessWheelEvent(CommandEvent* pCommandEvent)
@@ -244,7 +243,7 @@ void Deck::ShowPanel(const Panel& rPanel)
         sal_Int32 nPanelTop (rPanel.GetPosPixel().Y());
         const sal_Int32 nPanelBottom (nPanelTop + rPanel.GetSizePixel().Height() - 1);
         // Add the title bar into the extent.
-        if (rPanel.GetTitleBar() && rPanel.GetTitleBar()->IsVisible())
+        if (rPanel.GetTitleBar() != nullptr && rPanel.GetTitleBar()->IsVisible())
             nPanelTop = rPanel.GetTitleBar()->GetPosPixel().Y();
 
         // Determine what the new thumb position should be like.
@@ -280,7 +279,7 @@ const OUString GetWindowClassification(const vcl::Window* pWindow)
 
 void Deck::PrintWindowSubTree(vcl::Window* pRoot, int nIndentation)
 {
-    static const char* const sIndentation = "                                                                  ";
+    static const char* sIndentation = "                                                                  ";
     const Point aLocation (pRoot->GetPosPixel());
     const Size aSize (pRoot->GetSizePixel());
     SAL_INFO(
@@ -296,7 +295,7 @@ void Deck::PrintWindowSubTree(vcl::Window* pRoot, int nIndentation)
         PrintWindowSubTree(pRoot->GetChild(nIndex), nIndentation + 1);
 }
 
-IMPL_LINK_NOARG(Deck, HandleVerticalScrollBarChange, ScrollBar*, void)
+IMPL_LINK_NOARG_TYPED(Deck, HandleVerticalScrollBarChange, ScrollBar*, void)
 {
     const sal_Int32 nYOffset (-mpVerticalScrollBar->GetThumbPos());
     mpScrollContainer->SetPosPixel(Point(mpScrollContainer->GetPosPixel().X(),
@@ -314,7 +313,7 @@ Deck::ScrollContainerWindow::ScrollContainerWindow (vcl::Window* pParentWindow)
 #endif
 }
 
-void Deck::ScrollContainerWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rUpdateArea*/)
+void Deck::ScrollContainerWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*rUpdateArea*/)
 {
     // Paint the separators.
     const sal_Int32 nSeparatorHeight(Theme::GetInteger(Theme::Int_DeckSeparatorHeight));

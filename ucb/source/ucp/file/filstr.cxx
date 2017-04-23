@@ -17,14 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "sal/config.h"
-
-#include "com/sun/star/io/BufferSizeExceededException.hpp"
 #include "com/sun/star/io/IOException.hpp"
 #include "com/sun/star/uno/RuntimeException.hpp"
 #include "osl/diagnose.h"
 #include "filstr.hxx"
-#include "filtask.hxx"
+#include "shell.hxx"
 #include "prov.hxx"
 #include <memory>
 
@@ -88,6 +85,7 @@ XStream_impl::~XStream_impl()
 
 uno::Reference< io::XInputStream > SAL_CALL
 XStream_impl::getInputStream(  )
+    throw( uno::RuntimeException, std::exception)
 {
     {
         osl::MutexGuard aGuard( m_aMutex );
@@ -99,6 +97,7 @@ XStream_impl::getInputStream(  )
 
 uno::Reference< io::XOutputStream > SAL_CALL
 XStream_impl::getOutputStream(  )
+    throw( uno::RuntimeException, std::exception )
 {
     {
         osl::MutexGuard aGuard( m_aMutex );
@@ -109,6 +108,7 @@ XStream_impl::getOutputStream(  )
 
 
 void SAL_CALL XStream_impl::truncate()
+    throw( io::IOException, uno::RuntimeException, std::exception )
 {
     if (osl::FileBase::E_None != m_aFile.setSize(0))
         throw io::IOException( THROW_WHERE );
@@ -125,6 +125,10 @@ sal_Int32 SAL_CALL
 XStream_impl::readBytes(
     uno::Sequence< sal_Int8 >& aData,
     sal_Int32 nBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     if( ! m_nIsOpen )
         throw io::IOException( THROW_WHERE );
@@ -155,20 +159,33 @@ sal_Int32 SAL_CALL
 XStream_impl::readSomeBytes(
     uno::Sequence< sal_Int8 >& aData,
     sal_Int32 nMaxBytesToRead )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     return readBytes( aData,nMaxBytesToRead );
 }
 
 
 void SAL_CALL
-XStream_impl::skipBytes( sal_Int32 nBytesToSkip )
+XStream_impl::skipBytes(
+    sal_Int32 nBytesToSkip )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     m_aFile.setPos( osl_Pos_Current, sal_uInt64( nBytesToSkip ) );
 }
 
 
 sal_Int32 SAL_CALL
-XStream_impl::available()
+XStream_impl::available(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     return 0;
 }
@@ -176,6 +193,10 @@ XStream_impl::available()
 
 void SAL_CALL
 XStream_impl::writeBytes( const uno::Sequence< sal_Int8 >& aData )
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception)
 {
     sal_uInt32 length = aData.getLength();
     if(length)
@@ -190,7 +211,11 @@ XStream_impl::writeBytes( const uno::Sequence< sal_Int8 >& aData )
 
 
 void SAL_CALL
-XStream_impl::closeStream()
+XStream_impl::closeStream(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException )
 {
     if( m_nIsOpen )
     {
@@ -207,7 +232,11 @@ XStream_impl::closeStream()
 }
 
 void SAL_CALL
-XStream_impl::closeInput()
+XStream_impl::closeInput(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
     m_bInputStreamCalled = false;
@@ -218,7 +247,11 @@ XStream_impl::closeInput()
 
 
 void SAL_CALL
-XStream_impl::closeOutput()
+XStream_impl::closeOutput(
+    void )
+    throw( io::NotConnectedException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     osl::MutexGuard aGuard( m_aMutex );
     m_bOutputStreamCalled = false;
@@ -229,7 +262,11 @@ XStream_impl::closeOutput()
 
 
 void SAL_CALL
-XStream_impl::seek( sal_Int64 location )
+XStream_impl::seek(
+    sal_Int64 location )
+    throw( lang::IllegalArgumentException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {
     if( location < 0 )
         throw lang::IllegalArgumentException( THROW_WHERE, uno::Reference< uno::XInterface >(), 0 );
@@ -239,7 +276,10 @@ XStream_impl::seek( sal_Int64 location )
 
 
 sal_Int64 SAL_CALL
-XStream_impl::getPosition()
+XStream_impl::getPosition(
+    void )
+    throw( io::IOException,
+           uno::RuntimeException, std::exception )
 {
     sal_uInt64 uPos;
     if( osl::FileBase::E_None != m_aFile.getPos( uPos ) )
@@ -248,7 +288,10 @@ XStream_impl::getPosition()
 }
 
 sal_Int64 SAL_CALL
-XStream_impl::getLength()
+XStream_impl::getLength(
+    void )
+    throw( io::IOException,
+           uno::RuntimeException, std::exception )
 {
         sal_uInt64 uEndPos;
         if ( m_aFile.getSize(uEndPos) != osl::FileBase::E_None )
@@ -259,16 +302,21 @@ XStream_impl::getLength()
 
 void SAL_CALL
 XStream_impl::flush()
+    throw( io::NotConnectedException,
+           io::BufferSizeExceededException,
+           io::IOException,
+           uno::RuntimeException, std::exception )
 {}
 
 void XStream_impl::waitForCompletion()
+    throw (io::IOException, uno::RuntimeException, std::exception)
 {
     // At least on UNIX, to reliably learn about any errors encountered by
     // asynchronous NFS write operations, without closing the file directly
     // afterwards, there appears to be no cheaper way than to call fsync:
     if (m_nIsOpen && m_aFile.sync() != osl::FileBase::E_None) {
         throw io::IOException(
-            "could not synchronize file to disc",
+            OUString( "could not synchronize file to disc"),
             static_cast< OWeakObject * >(this));
     }
 }

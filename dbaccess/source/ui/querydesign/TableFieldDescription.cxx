@@ -83,7 +83,7 @@ OTableFieldDesc& OTableFieldDesc::operator=( const OTableFieldDesc& rRS )
     m_aAliasName = rRS.GetAlias();      // table range
     m_aFieldName = rRS.GetField();      // column
     m_aFieldAlias = rRS.GetFieldAlias();    // column alias
-    m_aFunctionName = rRS.GetFunction();
+    m_aFunctionName = rRS.GetFunction();    // Funktionsname
     m_pTabWindow = rRS.GetTabWindow();
     m_eDataType = rRS.GetDataType();
     m_eFunctionType = rRS.GetFunctionType();
@@ -104,7 +104,8 @@ void OTableFieldDesc::SetCriteria( sal_uInt16 nIdx, const OUString& rCrit)
         m_aCriteria[nIdx] = rCrit;
     else
     {
-        m_aCriteria.insert(m_aCriteria.end(), nIdx - m_aCriteria.size(), OUString());
+        for(sal_Int32 i=m_aCriteria.size();i<nIdx;++i)
+            m_aCriteria.push_back( OUString());
         m_aCriteria.push_back(rCrit);
     }
 }
@@ -120,7 +121,7 @@ OUString OTableFieldDesc::GetCriteria( sal_uInt16 nIdx ) const
 
 namespace
 {
-    struct SelectPropertyValueAsString : public std::unary_function< PropertyValue, OUString >
+    struct SelectPropertyValueAsString : public ::std::unary_function< PropertyValue, OUString >
     {
         OUString operator()( const PropertyValue& i_rPropValue ) const
         {
@@ -153,7 +154,7 @@ void OTableFieldDesc::Load( const css::beans::PropertyValue& i_rSettings, const 
     {
         const Sequence< PropertyValue > aCriteria( aFieldDesc.getOrDefault( "Criteria", Sequence< PropertyValue >() ) );
         m_aCriteria.resize( aCriteria.getLength() );
-        std::transform(
+        ::std::transform(
             aCriteria.getConstArray(),
             aCriteria.getConstArray() + aCriteria.getLength(),
             m_aCriteria.begin(),
@@ -171,7 +172,7 @@ void OTableFieldDesc::Save( ::comphelper::NamedValueCollection& o_rSettings, con
     o_rSettings.put( "FieldAlias", m_aFieldAlias );
     o_rSettings.put( "FunctionName", m_aFunctionName );
     o_rSettings.put( "DataType", m_eDataType );
-    o_rSettings.put( "FunctionType", m_eFunctionType );
+    o_rSettings.put( "FunctionType", (sal_Int32)m_eFunctionType );
     o_rSettings.put( "FieldType", (sal_Int32)m_eFieldType );
     o_rSettings.put( "OrderDir", (sal_Int32)m_eOrderDir );
     o_rSettings.put( "ColWidth", m_nColWidth );
@@ -184,7 +185,7 @@ void OTableFieldDesc::Save( ::comphelper::NamedValueCollection& o_rSettings, con
         {
             sal_Int32 c = 0;
             Sequence< PropertyValue > aCriteria( m_aCriteria.size() );
-            for (   std::vector< OUString >::const_iterator crit = m_aCriteria.begin();
+            for (   ::std::vector< OUString >::const_iterator crit = m_aCriteria.begin();
                     crit != m_aCriteria.end();
                     ++crit, ++c
                 )

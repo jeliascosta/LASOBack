@@ -67,22 +67,22 @@ class SpellAlternatives
 
 public:
     LNG_DLLPUBLIC SpellAlternatives();
-    SpellAlternatives(const OUString &rWord, sal_Int16 nLang,
+    SpellAlternatives(const OUString &rWord, sal_Int16 nLang, sal_Int16 nFailureType,
                       const css::uno::Sequence< OUString > &rAlternatives );
-    virtual ~SpellAlternatives() override;
+    virtual ~SpellAlternatives();
     SpellAlternatives(const SpellAlternatives&) = delete;
     SpellAlternatives& operator=( const SpellAlternatives& ) = delete;
 
     // XSpellAlternatives
-    virtual OUString SAL_CALL getWord(  ) override;
-    virtual css::lang::Locale SAL_CALL getLocale(  ) override;
-    virtual ::sal_Int16 SAL_CALL getFailureType(  ) override;
-    virtual ::sal_Int16 SAL_CALL getAlternativesCount(  ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getAlternatives(  ) override;
+    virtual OUString SAL_CALL getWord(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getLocale(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int16 SAL_CALL getFailureType(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int16 SAL_CALL getAlternativesCount(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getAlternatives(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XSetSpellAlternatives
-    virtual void SAL_CALL setAlternatives( const css::uno::Sequence< OUString >& aAlternatives ) override;
-    virtual void SAL_CALL setFailureType( ::sal_Int16 nFailureType ) override;
+    virtual void SAL_CALL setAlternatives( const css::uno::Sequence< OUString >& aAlternatives ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFailureType( ::sal_Int16 nFailureType ) throw (css::uno::RuntimeException, std::exception) override;
 
     // non-interface specific functions
     void    LNG_DLLPUBLIC SetWordLanguage(const OUString &rWord, sal_Int16 nLang);

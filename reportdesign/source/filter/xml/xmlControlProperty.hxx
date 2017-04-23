@@ -50,7 +50,7 @@ namespace rptxml
                     ,const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList
                     ,const css::uno::Reference< css::beans::XPropertySet >& _xControl
                     ,OXMLControlProperty* _pContainer = nullptr);
-        virtual ~OXMLControlProperty() override;
+        virtual ~OXMLControlProperty();
 
         virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                     const OUString& rLocalName,

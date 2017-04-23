@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#ifdef __sun
+#ifdef SOLARIS
 #include <ctime>
 #endif
 
@@ -180,6 +180,8 @@ OUString SfxFilter::GetTypeFromStorage( const SotStorage& rStg )
 
 OUString SfxFilter::GetTypeFromStorage(
     const uno::Reference<embed::XStorage>& xStorage, bool bTemplate )
+        throw ( beans::UnknownPropertyException, lang::WrappedTargetException,
+                uno::RuntimeException, std::exception )
 {
     SfxFilterMatcher aMatcher;
 

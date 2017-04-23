@@ -10,12 +10,7 @@
 #ifndef INCLUDED_FORMULA_VECTORTOKEN_HXX
 #define INCLUDED_FORMULA_VECTORTOKEN_HXX
 
-#include <cstddef>
-#include <vector>
-
-#include <formula/formuladllapi.h>
 #include <formula/token.hxx>
-#include <rtl/ustring.hxx>
 
 namespace formula {
 

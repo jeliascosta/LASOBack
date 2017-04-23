@@ -16,126 +16,80 @@
 #include <rtl/strbuf.hxx>
 
 #include <memory>
-#include <numeric>
 
 namespace
 {
 
-OUString collectPushFlags(PushFlags nFlags)
+OUString flagToString(PushFlags nFlag)
 {
-    if ((nFlags & PushFlags::ALL) == PushFlags::ALL)
-        return OUString("PushAll");
-    else if ((nFlags & PUSH_ALLFONT) == PUSH_ALLFONT)
-        return OUString("PushAllFont");
-    else if ((nFlags & PUSH_ALLTEXT) == PUSH_ALLTEXT)
-        return OUString("PushAllText");
+    if (nFlag & PushFlags::LINECOLOR)
+        return OUString("PushLineColor");
+    else if (nFlag & PushFlags::FILLCOLOR)
+        return OUString("PushFillColor");
+    else if (nFlag & PushFlags::FONT)
+        return OUString("PushFont");
+    else if (nFlag & PushFlags::TEXTCOLOR)
+        return OUString("PushTextColor");
+    else if (nFlag & PushFlags::MAPMODE)
+        return OUString("PushMapMode");
+    else if (nFlag & PushFlags::CLIPREGION)
+        return OUString("PushClipRegion");
+    else if (nFlag & PushFlags::RASTEROP)
+        return OUString("PushRasterOp");
+    else if (nFlag & PushFlags::TEXTFILLCOLOR)
+        return OUString("PushTextFillColor");
+    else if (nFlag & PushFlags::TEXTALIGN)
+        return OUString("PushTextAlign");
+    else if (nFlag & PushFlags::REFPOINT)
+        return OUString("PushRefPoint");
+    else if (nFlag & PushFlags::TEXTLINECOLOR)
+        return OUString("PushTextLineColor");
+    else if (nFlag & PushFlags::TEXTLAYOUTMODE)
+        return OUString("PushTextLayoutMode");
+    else if (nFlag & PushFlags::TEXTLANGUAGE)
+        return OUString("PushTextLanguage");
+    else if (nFlag & PushFlags::OVERLINECOLOR)
+        return OUString("PushOverlineColor");
 
-    std::vector<OUString> aStrings;
-
-    if (nFlags & PushFlags::LINECOLOR)
-        aStrings.push_back("PushLineColor");
-    if (nFlags & PushFlags::FILLCOLOR)
-        aStrings.push_back("PushFillColor");
-    if (nFlags & PushFlags::FONT)
-        aStrings.push_back("PushFont");
-    if (nFlags & PushFlags::TEXTCOLOR)
-        aStrings.push_back("PushTextColor");
-    if (nFlags & PushFlags::MAPMODE)
-        aStrings.push_back("PushMapMode");
-    if (nFlags & PushFlags::CLIPREGION)
-        aStrings.push_back("PushClipRegion");
-    if (nFlags & PushFlags::RASTEROP)
-        aStrings.push_back("PushRasterOp");
-    if (nFlags & PushFlags::TEXTFILLCOLOR)
-        aStrings.push_back("PushTextFillColor");
-    if (nFlags & PushFlags::TEXTALIGN)
-        aStrings.push_back("PushTextAlign");
-    if (nFlags & PushFlags::REFPOINT)
-        aStrings.push_back("PushRefPoint");
-    if (nFlags & PushFlags::TEXTLINECOLOR)
-        aStrings.push_back("PushTextLineColor");
-    if (nFlags & PushFlags::TEXTLAYOUTMODE)
-        aStrings.push_back("PushTextLayoutMode");
-    if (nFlags & PushFlags::TEXTLANGUAGE)
-        aStrings.push_back("PushTextLanguage");
-    if (nFlags & PushFlags::OVERLINECOLOR)
-        aStrings.push_back("PushOverlineColor");
-
-    OUString aString;
-
-    if (aStrings.empty())
-        return aString;
-
-    aString = aStrings[0];
-    for (size_t i = 1; i < aStrings.size(); ++i)
-    {
-        aString = aString + ", " + aStrings[i];
-    }
-    return aString;
+    return OUString();
 }
 
-OUString convertDrawTextFlagsToString(DrawTextFlags eDrawTextFlags)
+OUString collectPushFlags(PushFlags nFlags)
 {
-    std::vector<OUString> aStrings;
-    if (eDrawTextFlags & DrawTextFlags::Disable)
-        aStrings.push_back("Disable");
-    if (eDrawTextFlags & DrawTextFlags::Mnemonic)
-        aStrings.push_back("Mnemonic");
-    if (eDrawTextFlags & DrawTextFlags::Mono)
-        aStrings.push_back("Mono");
-    if (eDrawTextFlags & DrawTextFlags::Clip)
-        aStrings.push_back("Clip");
-    if (eDrawTextFlags & DrawTextFlags::Left)
-        aStrings.push_back("Left");
-    if (eDrawTextFlags & DrawTextFlags::Center)
-        aStrings.push_back("Center");
-    if (eDrawTextFlags & DrawTextFlags::Right)
-        aStrings.push_back("Right");
-    if (eDrawTextFlags & DrawTextFlags::Top)
-        aStrings.push_back("Top");
-    if (eDrawTextFlags & DrawTextFlags::VCenter)
-        aStrings.push_back("VCenter");
-    if (eDrawTextFlags & DrawTextFlags::Bottom)
-        aStrings.push_back("Bottom");
-    if (eDrawTextFlags & DrawTextFlags::EndEllipsis)
-        aStrings.push_back("EndEllipsis");
-    if (eDrawTextFlags & DrawTextFlags::PathEllipsis)
-        aStrings.push_back("PathEllipsis");
-    if (eDrawTextFlags & DrawTextFlags::MultiLine)
-        aStrings.push_back("MultiLine");
-    if (eDrawTextFlags & DrawTextFlags::WordBreak)
-        aStrings.push_back("WordBreak");
-    if (eDrawTextFlags & DrawTextFlags::NewsEllipsis)
-        aStrings.push_back("NewsEllipsis");
-    if (eDrawTextFlags & DrawTextFlags::WordBreakHyphenation)
-        aStrings.push_back("WordBreakHyphenation");
-    if (eDrawTextFlags & DrawTextFlags::CenterEllipsis)
-        aStrings.push_back("CenterEllipsis");
-    if (eDrawTextFlags & DrawTextFlags::HideMnemonic)
-        aStrings.push_back("HideMnemonic");
+    if ((nFlags & PushFlags::ALL) == nFlags)
+        return OUString("PushAll");
+    else if ((nFlags & PUSH_ALLFONT) == nFlags)
+        return OUString("PushAllFont");
+    else if ((nFlags & PUSH_ALLTEXT) == nFlags)
+        return OUString("PushAllText");
 
-    OUString aString;
+    OUString sFlags;
 
-    if (aStrings.empty())
-        return OUString("None");
-
-    aString = aStrings[0];
-    for (size_t i = 1; i < aStrings.size(); ++i)
+    for (sal_uInt16 nFlag = 1; nFlag > 0; nFlag <<= 1)
     {
-        aString = aString + " " + aStrings[i];
+        OUString sFlag = flagToString(static_cast<PushFlags>(nFlag));
+        if (!sFlag.isEmpty())
+        {
+            if (!sFlags.isEmpty())
+            {
+                sFlags += ",";
+            }
+            sFlags += flagToString(static_cast<PushFlags>(nFlag));
+        }
     }
-    return aString;
-};
+
+    return sFlags;
+}
 
 OUString convertRopToString(RasterOp eRop)
 {
     switch (eRop)
     {
-        case RasterOp::OverPaint: return OUString("overpaint");
-        case RasterOp::Xor:       return OUString("xor");
-        case RasterOp::N0:        return OUString("0");
-        case RasterOp::N1:        return OUString("1");
-        case RasterOp::Invert:    return OUString("invert");
+        case ROP_OVERPAINT: return OUString("overpaint");
+        case ROP_XOR:       return OUString("xor");
+        case ROP_0:         return OUString("0");
+        case ROP_1:         return OUString("1");
+        case ROP_INVERT:    return OUString("invert");
     }
     return OUString();
 }
@@ -162,10 +116,10 @@ OUString convertLineStyleToString(LineStyle eAlign)
 {
     switch (eAlign)
     {
-        case LineStyle::NONE:    return OUString("none");
-        case LineStyle::Solid:   return OUString("solid");
-        case LineStyle::Dash:    return OUString("dash");
-        default: break;
+        case LINE_NONE:    return OUString("none");
+        case LINE_SOLID:   return OUString("solid");
+        case LINE_DASH:    return OUString("dash");
+        case LineStyle_FORCE_EQUAL_SIZE: return OUString("equalsize");
     }
     return OUString();
 }
@@ -193,20 +147,12 @@ OUString convertLineCapToString(css::drawing::LineCap eCap)
     }
 }
 
-OUString convertPolygonFlags(PolyFlags eFlags)
-{
-    switch (eFlags)
-    {
-        default:
-        case PolyFlags::Normal:    return OUString("normal");
-        case PolyFlags::Control:   return OUString("control");
-        case PolyFlags::Smooth:    return OUString("smooth");
-        case PolyFlags::Symmetric: return OUString("symmetric");
-    }
-}
-
 OUString convertFontWeigthToString(FontWeight eFontWeight)
 {
+    enum FontWeight { WEIGHT_DONTKNOW, WEIGHT_THIN, WEIGHT_ULTRALIGHT,
+                  WEIGHT_LIGHT, WEIGHT_SEMILIGHT, WEIGHT_NORMAL,
+                  WEIGHT_MEDIUM, WEIGHT_SEMIBOLD, WEIGHT_BOLD,
+                  WEIGHT_ULTRABOLD, WEIGHT_BLACK, FontWeight_FORCE_EQUAL_SIZE=SAL_MAX_ENUM };
     switch (eFontWeight)
     {
         case WEIGHT_DONTKNOW:   return OUString("unknown");
@@ -220,51 +166,7 @@ OUString convertFontWeigthToString(FontWeight eFontWeight)
         case WEIGHT_BOLD:       return OUString("bold");
         case WEIGHT_ULTRABOLD:  return OUString("ultrabold");
         case WEIGHT_BLACK:      return OUString("black");
-        case FontWeight_FORCE_EQUAL_SIZE: return OUString("equalsize");
-    }
-    return OUString();
-}
-
-OUString convertFontStrikeoutToString(FontStrikeout eFontStrikeout)
-{
-    switch (eFontStrikeout)
-    {
-        case STRIKEOUT_NONE:     return OUString("none");
-        case STRIKEOUT_SINGLE:   return OUString("single");
-        case STRIKEOUT_DOUBLE:   return OUString("double");
-        case STRIKEOUT_DONTKNOW: return OUString("dontknow");
-        case STRIKEOUT_BOLD:     return OUString("bold");
-        case STRIKEOUT_SLASH:    return OUString("slash");
-        case STRIKEOUT_X:        return OUString("x");
-        case FontStrikeout_FORCE_EQUAL_SIZE: return OUString("equalsize");
-    }
-    return OUString();
-}
-
-OUString convertFontLineStyleToString(FontLineStyle eFontLineStyle)
-{
-    switch (eFontLineStyle)
-    {
-        case LINESTYLE_NONE:            return OUString("none");
-        case LINESTYLE_SINGLE:          return OUString("single");
-        case LINESTYLE_DOUBLE:          return OUString("double");
-        case LINESTYLE_DOTTED:          return OUString("dotted");
-        case LINESTYLE_DONTKNOW:        return OUString("dontknow");
-        case LINESTYLE_DASH:            return OUString("dash");
-        case LINESTYLE_LONGDASH:        return OUString("longdash");
-        case LINESTYLE_DASHDOT:         return OUString("dashdot");
-        case LINESTYLE_DASHDOTDOT:      return OUString("dashdotdot");
-        case LINESTYLE_SMALLWAVE:       return OUString("smallwave");
-        case LINESTYLE_WAVE:            return OUString("wave");
-        case LINESTYLE_DOUBLEWAVE:      return OUString("doublewave");
-        case LINESTYLE_BOLD:            return OUString("bold");
-        case LINESTYLE_BOLDDOTTED:      return OUString("bolddotted");
-        case LINESTYLE_BOLDDASH:        return OUString("bolddash");
-        case LINESTYLE_BOLDLONGDASH:    return OUString("boldlongdash");
-        case LINESTYLE_BOLDDASHDOT:     return OUString("bolddashdot");
-        case LINESTYLE_BOLDDASHDOTDOT:  return OUString("bolddashdotdot");
-        case LINESTYLE_BOLDWAVE:        return OUString("boldwave");
-        case FontLineStyle_FORCE_EQUAL_SIZE: return OUString("equalsize");
+        case FontWeight_FORCE_EQUAL_SIZE:    return OUString("equalsize");
     }
     return OUString();
 }
@@ -331,70 +233,6 @@ OString convertLineStyleToString(const MetaActionType nActionType)
     return "";
 }
 
-OUString convertBitmapExTransparentType(TransparentType eType)
-{
-    switch (eType)
-    {
-        default:
-        case TransparentType::NONE:   return OUString("none");
-        case TransparentType::Bitmap: return OUString("bitmap");
-        case TransparentType::Color:  return OUString("color");
-    }
-}
-
-
-OUString hex32(sal_uInt32 nNumber)
-{
-    std::stringstream ss;
-    ss << std::hex << std::setfill ('0') << std::setw(8) << nNumber;
-    return OUString::createFromAscii(ss.str().c_str());
-}
-
-void writePoint(XmlWriter& rWriter, Point const& rPoint)
-{
-    rWriter.attribute("x", rPoint.X());
-    rWriter.attribute("y", rPoint.Y());
-}
-
-void writeStartPoint(XmlWriter& rWriter, Point const& rPoint)
-{
-    rWriter.attribute("startx", rPoint.X());
-    rWriter.attribute("starty", rPoint.Y());
-}
-
-void writeEndPoint(XmlWriter& rWriter, Point const& rPoint)
-{
-    rWriter.attribute("endx", rPoint.X());
-    rWriter.attribute("endy", rPoint.Y());
-}
-
-void writeSize(XmlWriter& rWriter, Size const& rSize)
-{
-    rWriter.attribute("width", rSize.Width());
-    rWriter.attribute("height", rSize.Height());
-}
-
-void writeRectangle(XmlWriter& rWriter, tools::Rectangle const& rRectangle)
-{
-    rWriter.attribute("left", rRectangle.Left());
-    rWriter.attribute("top", rRectangle.Top());
-    rWriter.attribute("right", rRectangle.Right());
-    rWriter.attribute("bottom", rRectangle.Bottom());
-}
-
-void writeLineInfo(XmlWriter& rWriter, LineInfo const& rLineInfo)
-{
-    rWriter.attribute("style", convertLineStyleToString(rLineInfo.GetStyle()));
-    rWriter.attribute("width", rLineInfo.GetWidth());
-    rWriter.attribute("dashlen", rLineInfo.GetDashLen());
-    rWriter.attribute("dashcount", rLineInfo.GetDashCount());
-    rWriter.attribute("dotlen", rLineInfo.GetDotLen());
-    rWriter.attribute("dotcount", rLineInfo.GetDotCount());
-    rWriter.attribute("distance", rLineInfo.GetDistance());
-    rWriter.attribute("join", convertLineJoinToString(rLineInfo.GetLineJoin()));
-    rWriter.attribute("cap", convertLineCapToString(rLineInfo.GetLineCap()));
-}
-
 } // anonymous namespace
 
 MetafileXmlDump::MetafileXmlDump()
@@ -422,7 +260,7 @@ xmlDocPtr MetafileXmlDump::dumpAndParse(const GDIMetaFile& rMetaFile, const OUSt
     if (rTempStreamName.isEmpty())
         pStream.reset(new SvMemoryStream());
     else
-        pStream.reset(new SvFileStream(rTempStreamName, StreamMode::STD_READWRITE | StreamMode::TRUNC));
+        pStream.reset(new SvFileStream(rTempStreamName, STREAM_STD_READWRITE | StreamMode::TRUNC));
 
     XmlWriter aWriter(pStream.get());
     aWriter.startDocument();
@@ -453,96 +291,26 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
 
         switch (nActionType)
         {
-            case MetaActionType::PIXEL:
-            {
-                auto* pMetaAction = static_cast<MetaPixelAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMetaAction->GetPoint());
-                rWriter.attribute("color", convertColorToString(pMetaAction->GetColor()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::POINT:
-            {
-                auto* pMetaAction = static_cast<MetaPointAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMetaAction->GetPoint());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::RECT:
-            {
-                MetaRectAction* pMetaAction = static_cast<MetaRectAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::ROUNDRECT:
-            {
-                auto pMetaAction = static_cast<MetaRoundRectAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                rWriter.attribute("horizontalround", pMetaAction->GetHorzRound());
-                rWriter.attribute("verticalround", pMetaAction->GetVertRound());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::ELLIPSE:
-            {
-                auto pMetaAction = static_cast<MetaEllipseAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::ARC:
-            {
-                auto pMetaAction = static_cast<MetaArcAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                writeStartPoint(rWriter, pMetaAction->GetStartPoint());
-                writeEndPoint(rWriter, pMetaAction->GetEndPoint());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::PIE:
-            {
-                auto pMetaAction = static_cast<MetaPieAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                writeStartPoint(rWriter, pMetaAction->GetStartPoint());
-                writeEndPoint(rWriter, pMetaAction->GetEndPoint());
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::CHORD:
-            {
-                auto pMetaAction = static_cast<MetaChordAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMetaAction->GetRect());
-                writeStartPoint(rWriter, pMetaAction->GetStartPoint());
-                writeEndPoint(rWriter, pMetaAction->GetEndPoint());
-                rWriter.endElement();
-            }
-            break;
-
             case MetaActionType::LINE:
             {
                 MetaLineAction* pMetaLineAction = static_cast<MetaLineAction*>(pAction);
                 rWriter.startElement(sCurrentElementTag);
-                writeStartPoint(rWriter, pMetaLineAction->GetStartPoint());
-                writeEndPoint(rWriter, pMetaLineAction->GetEndPoint());
+
+                rWriter.attribute("startx", pMetaLineAction->GetStartPoint().X());
+                rWriter.attribute("starty", pMetaLineAction->GetStartPoint().Y());
+                rWriter.attribute("endx", pMetaLineAction->GetEndPoint().X());
+                rWriter.attribute("endy", pMetaLineAction->GetEndPoint().Y());
 
                 LineInfo aLineInfo = pMetaLineAction->GetLineInfo();
-                writeLineInfo(rWriter, pMetaLineAction->GetLineInfo());
+                rWriter.attribute("style", convertLineStyleToString(aLineInfo.GetStyle()));
+                rWriter.attribute("width", aLineInfo.GetWidth());
+                rWriter.attribute("dashlen", aLineInfo.GetDashLen());
+                rWriter.attribute("dashcount", aLineInfo.GetDashCount());
+                rWriter.attribute("dotlen", aLineInfo.GetDotLen());
+                rWriter.attribute("dotcount", aLineInfo.GetDotCount());
+                rWriter.attribute("distance", aLineInfo.GetDistance());
+                rWriter.attribute("join", convertLineJoinToString(aLineInfo.GetLineJoin()));
+                rWriter.attribute("cap", convertLineCapToString(aLineInfo.GetLineCap()));
                 rWriter.endElement();
             }
             break;
@@ -567,7 +335,7 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 MetaRasterOpAction* pMetaRasterOpAction = static_cast<MetaRasterOpAction*>(pAction);
                 rWriter.startElement(sCurrentElementTag);
 
-                if (pMetaRasterOpAction->GetRasterOp() != RasterOp::OverPaint)
+                if (pMetaRasterOpAction->GetRasterOp() != ROP_OVERPAINT)
                 {
                     rWriter.attribute("operation", convertRopToString(pMetaRasterOpAction->GetRasterOp()));
                 }
@@ -640,21 +408,6 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
             }
             break;
 
-            case MetaActionType::TEXT:
-            {
-                auto* pMeta = static_cast<MetaTextAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                rWriter.attribute("index", pMeta->GetIndex());
-                rWriter.attribute("length", pMeta->GetLen());
-                rWriter.startElement("textcontent");
-                rWriter.content(pMeta->GetText());
-                rWriter.endElement();
-
-                rWriter.endElement();
-            }
-            break;
-
             case MetaActionType::TEXTARRAY:
             {
                 MetaTextArrayAction* pMetaTextArrayAction = static_cast<MetaTextArrayAction*>(pAction);
@@ -663,75 +416,25 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 sal_Int32 aIndex = pMetaTextArrayAction->GetIndex();
                 sal_Int32 aLength = pMetaTextArrayAction->GetLen();
 
-                writePoint(rWriter, pMetaTextArrayAction->GetPoint());
+                rWriter.attribute("x", pMetaTextArrayAction->GetPoint().X());
+                rWriter.attribute("y", pMetaTextArrayAction->GetPoint().Y());
                 rWriter.attribute("index", aIndex);
                 rWriter.attribute("length", aLength);
 
-                if (pMetaTextArrayAction->GetDXArray())
+                rWriter.startElement("dxarray");
+                OUString sDxLengthString;
+                for (sal_Int32 i = 0; i < aLength; ++i)
                 {
-                    rWriter.startElement("dxarray");
-                    OUString sDxLengthString;
-                    for (sal_Int32 i = 0; i < aLength - aIndex; ++i)
-                    {
-                        sDxLengthString += OUString::number(pMetaTextArrayAction->GetDXArray()[aIndex + i]);
-                        sDxLengthString += " ";
-                    }
-                    rWriter.content(sDxLengthString);
-                    rWriter.endElement();
+                    sDxLengthString += OUString::number(pMetaTextArrayAction->GetDXArray()[aIndex+i]);
+                    sDxLengthString += " ";
                 }
+                rWriter.content(sDxLengthString);
+                rWriter.endElement();
 
                 rWriter.startElement("text");
                 rWriter.content(pMetaTextArrayAction->GetText());
                 rWriter.endElement();
 
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::STRETCHTEXT:
-            {
-                auto* pMeta = static_cast<MetaStretchTextAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-
-                writePoint(rWriter, pMeta->GetPoint());
-                rWriter.attribute("index", pMeta->GetIndex());
-                rWriter.attribute("length", pMeta->GetLen());
-                rWriter.attribute("width", pMeta->GetWidth());
-
-                rWriter.startElement("textcontent");
-                rWriter.content(pMeta->GetText());
-                rWriter.endElement();
-
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::TEXTRECT:
-            {
-                auto* pMeta = static_cast<MetaTextRectAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writeRectangle(rWriter, pMeta->GetRect());
-                rWriter.startElement("textcontent");
-                rWriter.content(pMeta->GetText());
-                rWriter.endElement();
-
-                rWriter.startElement("style");
-                rWriter.content(convertDrawTextFlagsToString(pMeta->GetStyle()));
-                rWriter.endElement();
-
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::TEXTLINE:
-            {
-                auto* pMeta = static_cast<MetaTextLineAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetStartPoint());
-                rWriter.attribute("width", pMeta->GetWidth());
-                rWriter.attribute("strikeout", convertFontStrikeoutToString(pMeta->GetStrikeout()));
-                rWriter.attribute("underline", convertFontLineStyleToString(pMeta->GetUnderline()));
-                rWriter.attribute("overline", convertFontLineStyleToString(pMeta->GetOverline()));
                 rWriter.endElement();
             }
             break;
@@ -764,8 +467,12 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 // FIXME for now we dump only the bounding box; this is
                 // enough for the tests we have, but may need extending to
                 // dumping the real polypolygon in the future
-                tools::Rectangle aRectangle = pA->GetRegion().GetBoundRect();
-                writeRectangle(rWriter, aRectangle);
+                Rectangle aRectangle = pA->GetRegion().GetBoundRect();
+                rWriter.attribute("top",    aRectangle.Top());
+                rWriter.attribute("left",   aRectangle.Left());
+                rWriter.attribute("bottom", aRectangle.Bottom());
+                rWriter.attribute("right",  aRectangle.Right());
+
                 rWriter.endElement();
             }
             break;
@@ -775,22 +482,12 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 MetaISectRectClipRegionAction* pMetaISectRectClipRegionAction = static_cast<MetaISectRectClipRegionAction*>(pAction);
                 rWriter.startElement(sCurrentElementTag);
 
-                tools::Rectangle aRectangle = pMetaISectRectClipRegionAction->GetRect();
-                writeRectangle(rWriter, aRectangle);
-                rWriter.endElement();
-            }
-            break;
+                Rectangle aRectangle = pMetaISectRectClipRegionAction->GetRect();
+                rWriter.attribute("top",    aRectangle.Top());
+                rWriter.attribute("left",   aRectangle.Left());
+                rWriter.attribute("bottom", aRectangle.Bottom());
+                rWriter.attribute("right",  aRectangle.Right());
 
-            case MetaActionType::ISECTREGIONCLIPREGION:
-            {
-                MetaISectRegionClipRegionAction* pMetaISectRegionClipRegionAction = static_cast<MetaISectRegionClipRegionAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-
-                // FIXME for now we dump only the bounding box; this is
-                // enough for the tests we have, but may need extending to
-                // dumping the real polypolygon in the future
-                tools::Rectangle aRectangle = pMetaISectRegionClipRegionAction->GetRegion().GetBoundRect();
-                writeRectangle(rWriter, aRectangle);
                 rWriter.endElement();
             }
             break;
@@ -800,18 +497,21 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 MetaPolyLineAction* pMetaPolyLineAction = static_cast<MetaPolyLineAction*>(pAction);
                 rWriter.startElement(sCurrentElementTag);
 
-                writeLineInfo(rWriter, pMetaPolyLineAction->GetLineInfo());
-
                 tools::Polygon aPolygon = pMetaPolyLineAction->GetPolygon();
-                bool bFlags = aPolygon.HasFlags();
                 for (sal_uInt16 i = 0; i < aPolygon.GetSize(); i++)
                 {
                     rWriter.startElement("point");
-                    writePoint(rWriter, aPolygon[i]);
-                    if (bFlags)
-                        rWriter.attribute("flags", convertPolygonFlags(aPolygon.GetFlags(i)));
+                    rWriter.attribute("x", aPolygon[i].X());
+                    rWriter.attribute("y", aPolygon[i].Y());
                     rWriter.endElement();
                 }
+
+                LineInfo aLineInfo = pMetaPolyLineAction->GetLineInfo();
+                rWriter.attribute("style", convertLineStyleToString(aLineInfo.GetStyle()));
+                rWriter.attribute("width", aLineInfo.GetWidth());
+                rWriter.attribute("dashlen", aLineInfo.GetDashLen());
+                rWriter.attribute("dotlen", aLineInfo.GetDotLen());
+                rWriter.attribute("distance", aLineInfo.GetDistance());
 
                 rWriter.endElement();
             }
@@ -823,13 +523,11 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 rWriter.startElement(sCurrentElementTag);
 
                 tools::Polygon aPolygon = pMetaPolygonAction->GetPolygon();
-                bool bFlags = aPolygon.HasFlags();
                 for (sal_uInt16 i = 0; i < aPolygon.GetSize(); i++)
                 {
                     rWriter.startElement("point");
-                    writePoint(rWriter, aPolygon[i]);
-                    if (bFlags)
-                        rWriter.attribute("flags", convertPolygonFlags(aPolygon.GetFlags(i)));
+                    rWriter.attribute("x", aPolygon[i].X());
+                    rWriter.attribute("y", aPolygon[i].Y());
                     rWriter.endElement();
                 }
 
@@ -839,22 +537,19 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
 
             case MetaActionType::POLYPOLYGON:
             {
-                MetaPolyPolygonAction *const pMetaPolyPolygonAction = static_cast<MetaPolyPolygonAction*>(pAction);
+                MetaPolyPolygonAction *const pMPPAction(
+                        static_cast<MetaPolyPolygonAction*>(pAction));
                 rWriter.startElement(sCurrentElementTag);
 
-                tools::PolyPolygon const& rPolyPolygon(pMetaPolyPolygonAction->GetPolyPolygon());
-
-                for (sal_uInt16 j = 0; j < rPolyPolygon.Count(); ++j)
+                tools::PolyPolygon const& rPoly(pMPPAction->GetPolyPolygon());
+                for (sal_uInt16 j = 0; j < rPoly.Count(); ++j)
                 {
                     rWriter.startElement("polygon");
-                    tools::Polygon const& rPolygon = rPolyPolygon[j];
-                    bool bFlags = rPolygon.HasFlags();
-                    for (sal_uInt16 i = 0; i < rPolygon.GetSize(); ++i)
+                    for (sal_uInt16 i = 0; i < rPoly[j].GetSize(); i++)
                     {
                         rWriter.startElement("point");
-                        writePoint(rWriter, rPolygon[i]);
-                        if (bFlags)
-                            rWriter.attribute("flags", convertPolygonFlags(rPolygon.GetFlags(i)));
+                        rWriter.attribute("x", rPoly[j][i].X());
+                        rWriter.attribute("y", rPoly[j][i].Y());
                         rWriter.endElement();
                     }
                     rWriter.endElement();
@@ -880,126 +575,6 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                     rWriter.endElement();
                 }
 
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMP:
-            {
-                auto pMeta = static_cast<MetaBmpAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMPSCALE:
-            {
-                auto pMeta = static_cast<MetaBmpScaleAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                writeSize(rWriter, pMeta->GetSize());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMPSCALEPART:
-            {
-                auto pMeta = static_cast<MetaBmpScalePartAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                rWriter.attribute("destx", pMeta->GetDestPoint().X());
-                rWriter.attribute("desty", pMeta->GetDestPoint().Y());
-                rWriter.attribute("destwidth", pMeta->GetDestSize().Width());
-                rWriter.attribute("destheight", pMeta->GetDestSize().Height());
-                rWriter.attribute("srcx", pMeta->GetSrcPoint().X());
-                rWriter.attribute("srcy", pMeta->GetSrcPoint().Y());
-                rWriter.attribute("srcwidth", pMeta->GetSrcSize().Width());
-                rWriter.attribute("srcheight", pMeta->GetSrcSize().Height());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMPEX:
-            {
-                auto pMeta = static_cast<MetaBmpExAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmapEx().GetBitmap().GetChecksum()));
-                rWriter.attribute("transparenttype", convertBitmapExTransparentType(pMeta->GetBitmapEx().GetTransparentType()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMPEXSCALE:
-            {
-                auto pMeta = static_cast<MetaBmpExScaleAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                writeSize(rWriter, pMeta->GetSize());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmapEx().GetBitmap().GetChecksum()));
-                rWriter.attribute("transparenttype", convertBitmapExTransparentType(pMeta->GetBitmapEx().GetTransparentType()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::BMPEXSCALEPART:
-            {
-                auto pMeta = static_cast<MetaBmpExScalePartAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                rWriter.attribute("destx", pMeta->GetDestPoint().X());
-                rWriter.attribute("desty", pMeta->GetDestPoint().Y());
-                rWriter.attribute("destwidth", pMeta->GetDestSize().Width());
-                rWriter.attribute("destheight", pMeta->GetDestSize().Height());
-                rWriter.attribute("srcx", pMeta->GetSrcPoint().X());
-                rWriter.attribute("srcy", pMeta->GetSrcPoint().Y());
-                rWriter.attribute("srcwidth", pMeta->GetSrcSize().Width());
-                rWriter.attribute("srcheight", pMeta->GetSrcSize().Height());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmapEx().GetBitmap().GetChecksum()));
-                rWriter.attribute("transparenttype", convertBitmapExTransparentType(pMeta->GetBitmapEx().GetTransparentType()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::MASK:
-            {
-                auto pMeta = static_cast<MetaMaskAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.attribute("color", convertColorToString(pMeta->GetColor()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::MASKSCALE:
-            {
-                auto pMeta = static_cast<MetaMaskScaleAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                writePoint(rWriter, pMeta->GetPoint());
-                writeSize(rWriter, pMeta->GetSize());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.attribute("color", convertColorToString(pMeta->GetColor()));
-                rWriter.endElement();
-            }
-            break;
-
-            case MetaActionType::MASKSCALEPART:
-            {
-                auto pMeta = static_cast<MetaMaskScalePartAction*>(pAction);
-                rWriter.startElement(sCurrentElementTag);
-                rWriter.attribute("destx", pMeta->GetDestPoint().X());
-                rWriter.attribute("desty", pMeta->GetDestPoint().Y());
-                rWriter.attribute("destwidth", pMeta->GetDestSize().Width());
-                rWriter.attribute("destheight", pMeta->GetDestSize().Height());
-                rWriter.attribute("srcx", pMeta->GetSrcPoint().X());
-                rWriter.attribute("srcy", pMeta->GetSrcPoint().Y());
-                rWriter.attribute("srcwidth", pMeta->GetSrcSize().Width());
-                rWriter.attribute("srcheight", pMeta->GetSrcSize().Height());
-                rWriter.attribute("crc", hex32(pMeta->GetBitmap().GetChecksum()));
-                rWriter.attribute("color", convertColorToString(pMeta->GetColor()));
                 rWriter.endElement();
             }
             break;

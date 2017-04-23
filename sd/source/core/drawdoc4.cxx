@@ -21,6 +21,7 @@
 
 #include <com/sun/star/style/XStyle.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
+#include <com/sun/star/container/XNameAccess.hpp>
 #include <i18nlangtag/mslangid.hxx>
 #include <sfx2/docfile.hxx>
 #include <sfx2/dispatch.hxx>
@@ -28,7 +29,7 @@
 #include <comphelper/processfactory.hxx>
 #include <editeng/outliner.hxx>
 
-#include "DrawDocShell.hxx"
+#include "../ui/inc/DrawDocShell.hxx"
 #include <editeng/eeitem.hxx>
 
 #include <vcl/settings.hxx>
@@ -84,10 +85,12 @@
 #include <svx/svditer.hxx>
 #include <svx/svdogrp.hxx>
 #include <svx/svdlayer.hxx>
+#include <tools/shl.hxx>
 #include <editeng/numitem.hxx>
 #include <editeng/editeng.hxx>
 #include <editeng/unolingu.hxx>
 #include <com/sun/star/linguistic2/XHyphenator.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <svl/itempool.hxx>
 #include <editeng/outlobj.hxx>
 #include <sfx2/viewfrm.hxx>
@@ -212,9 +215,9 @@ void SdDrawDocument::CreateLayoutTemplates()
     rISet.Put(SvxUnderlineItem(LINESTYLE_NONE, EE_CHAR_UNDERLINE));
     rISet.Put(SvxOverlineItem(LINESTYLE_NONE, EE_CHAR_OVERLINE));
     rISet.Put(SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ));
-    rISet.Put(SvxCaseMapItem(SvxCaseMap::NotMapped, EE_CHAR_CASEMAP ));
+    rISet.Put(SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ));
     rISet.Put(SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK));
-    rISet.Put(SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF));
+    rISet.Put(SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF));
     rISet.Put(SvxColorItem(Color(COL_AUTO), EE_CHAR_COLOR ));
 
     // Paragraph attributes (Edit Engine)
@@ -286,7 +289,7 @@ void SdDrawDocument::CreateLayoutTemplates()
     pISet->Put(makeSdrShadowXDistItem(200));        // 3 mm shadow distance
     pISet->Put(makeSdrShadowYDistItem(200));
 
-    // Object without filling
+    // Object without fillung
     aName = SD_RESSTR(STR_POOLSHEET_OBJWITHOUTFILL);
     pSheet = &(pSSPool->Make(aName, SD_STYLE_FAMILY_GRAPHICS, nMask));
     pSheet->SetParent(aStdName);
@@ -340,7 +343,7 @@ void SdDrawDocument::CreateLayoutTemplates()
     pISet->Put(XLineStyleItem(drawing::LineStyle_NONE));
     pISet->Put(XFillStyleItem(drawing::FillStyle_NONE));
 
-    pISet->Put(SvxAdjustItem(SvxAdjust::Block, EE_PARA_JUST ));
+    pISet->Put(SvxAdjustItem(SVX_ADJUST_BLOCK, EE_PARA_JUST ));
 
     // Text body, indented
     aName = SD_RESSTR(STR_POOLSHEET_TEXTBODY_INDENT);
@@ -387,7 +390,7 @@ void SdDrawDocument::CreateLayoutTemplates()
 
     pISet->Put(SvxFontHeightItem(846, 100, EE_CHAR_FONTHEIGHT ));       // 24 pt
 
-    pISet->Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST ));
+    pISet->Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
 
     // Title2
 
@@ -416,7 +419,7 @@ void SdDrawDocument::CreateLayoutTemplates()
 
     pISet->Put(SvxULSpaceItem(100, 100, EE_PARA_ULSPACE ));      // Paragraph margin above/below: 1 mm
 
-    pISet->Put(SvxAdjustItem(SvxAdjust::Center, EE_PARA_JUST ));
+    pISet->Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
 
     // Headline
 
@@ -596,7 +599,7 @@ void SdDrawDocument::CreateDefaultCellStyles()
 
     Color aWhite( COL_WHITE );
     ::editeng::SvxBorderLine aBorderLine(
-            &aWhite, 1, SvxBorderLineStyle::SOLID);
+            &aWhite, 1, table::BorderLineStyle::SOLID);
 
     SvxBoxItem aBoxItem( SDRATTR_TABLE_BORDER );
     aBoxItem.SetLine( &aBorderLine, SvxBoxItemLine::TOP );
@@ -741,7 +744,7 @@ void SdDrawDocument::StartOnlineSpelling(bool bForceSpelling)
     {
         StopOnlineSpelling();
 
-        SdOutliner* pOutl = GetInternalOutliner();
+        ::sd::Outliner* pOutl = GetInternalOutliner();
 
         Reference< XSpellChecker1 > xSpellChecker( LinguMgr::GetSpellChecker() );
         if ( xSpellChecker.is() )
@@ -770,8 +773,8 @@ void SdDrawDocument::StartOnlineSpelling(bool bForceSpelling)
 
         mpOnlineSpellingList->seekShape(0);
         mpOnlineSpellingIdle = new Idle("OnlineSpelling");
-        mpOnlineSpellingIdle->SetInvokeHandler( LINK(this, SdDrawDocument, OnlineSpellingHdl) );
-        mpOnlineSpellingIdle->SetPriority(TaskPriority::LOWEST);
+        mpOnlineSpellingIdle->SetIdleHdl( LINK(this, SdDrawDocument, OnlineSpellingHdl) );
+        mpOnlineSpellingIdle->SetPriority(SchedulerPriority::LOWEST);
         mpOnlineSpellingIdle->Start();
     }
 }
@@ -779,7 +782,7 @@ void SdDrawDocument::StartOnlineSpelling(bool bForceSpelling)
 // Fill OnlineSpelling list
 void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
 {
-    SdrObjListIter aIter(*pPage, SdrIterMode::Flat);
+    SdrObjListIter aIter(*pPage, IM_FLAT);
 
     while (aIter.IsMore())
     {
@@ -797,7 +800,7 @@ void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
         {
             // Found a group object
             SdrObjListIter aGroupIter(*static_cast<SdrObjGroup*>(pObj)->GetSubList(),
-                                      SdrIterMode::DeepNoGroups);
+                                      IM_DEEPNOGROUPS);
 
             bool bSubTextObjFound = false;
 
@@ -819,7 +822,7 @@ void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
 }
 
 // OnlineSpelling in the background
-IMPL_LINK_NOARG(SdDrawDocument, OnlineSpellingHdl, Timer *, void)
+IMPL_LINK_NOARG_TYPED(SdDrawDocument, OnlineSpellingHdl, Idle *, void)
 {
     if (mpOnlineSpellingList!=nullptr
         && ( !mbOnlineSpell || mpOnlineSpellingList->hasMore()))
@@ -838,7 +841,7 @@ IMPL_LINK_NOARG(SdDrawDocument, OnlineSpellingHdl, Timer *, void)
             {
                 // Found a group object
                 SdrObjListIter aGroupIter(*static_cast<SdrObjGroup*>(pObj)->GetSubList(),
-                                          SdrIterMode::DeepNoGroups);
+                                          IM_DEEPNOGROUPS);
 
 
                 while (aGroupIter.IsMore())
@@ -876,14 +879,14 @@ void SdDrawDocument::SpellObject(SdrTextObj* pObj)
     if (pObj && pObj->GetOutlinerParaObject() /* && pObj != pView->GetTextEditObject() */)
     {
         mbHasOnlineSpellErrors = false;
-        SdOutliner* pOutl = GetInternalOutliner();
+        ::sd::Outliner* pOutl = GetInternalOutliner();
         pOutl->SetUpdateMode(true);
         Link<EditStatus&,void> aEvtHdl = pOutl->GetStatusEventHdl();
         pOutl->SetStatusEventHdl(LINK(this, SdDrawDocument, OnlineSpellEventHdl));
 
         OutlinerMode nOldOutlMode = pOutl->GetMode();
         OutlinerMode nOutlMode = OutlinerMode::TextObject;
-        if (pObj->GetObjInventor() == SdrInventor::Default &&
+        if (pObj->GetObjInventor() == SdrInventor &&
             pObj->GetObjIdentifier() == OBJ_OUTLINETEXT)
         {
             nOutlMode = OutlinerMode::OutlineObject;
@@ -951,7 +954,7 @@ void SdDrawDocument::RemoveObject(SdrObject* pObj, SdPage* /*pPage*/)
 }
 
 // Callback for ExecuteSpellPopup()
-IMPL_LINK(SdDrawDocument, OnlineSpellEventHdl, EditStatus&, rEditStat, void)
+IMPL_LINK_TYPED(SdDrawDocument, OnlineSpellEventHdl, EditStatus&, rEditStat, void)
 {
     EditStatusFlags nStat = rEditStat.GetStatusWord();
     mbHasOnlineSpellErrors = bool(nStat & EditStatusFlags::WRONGWORDCHANGED);
@@ -1036,19 +1039,19 @@ OUString SdDrawDocument::CreatePageNumValue(sal_uInt16 nNum) const
 
     switch (mePageNumType)
     {
-        case css::style::NumberingType::CHARS_UPPER_LETTER:
-            aPageNumValue += OUStringLiteral1( (nNum - 1) % 26 + 'A' );
+        case SVX_CHARS_UPPER_LETTER:
+            aPageNumValue += OUString( (sal_Unicode)(char)((nNum - 1) % 26 + 'A') );
             break;
-        case css::style::NumberingType::CHARS_LOWER_LETTER:
-            aPageNumValue += OUStringLiteral1( (nNum - 1) % 26 + 'a' );
+        case SVX_CHARS_LOWER_LETTER:
+            aPageNumValue += OUString( (sal_Unicode)(char)((nNum - 1) % 26 + 'a') );
             break;
-        case css::style::NumberingType::ROMAN_UPPER:
+        case SVX_ROMAN_UPPER:
             bUpper = true;
             SAL_FALLTHROUGH;
-        case css::style::NumberingType::ROMAN_LOWER:
+        case SVX_ROMAN_LOWER:
             aPageNumValue += SvxNumberFormat::CreateRomanString(nNum, bUpper);
             break;
-        case css::style::NumberingType::NUMBER_NONE:
+        case SVX_NUMBER_NONE:
             aPageNumValue = " ";
             break;
         default:
@@ -1118,7 +1121,7 @@ void SdDrawDocument::RenameLayoutTemplate(const OUString& rOldLayoutName, const 
             {
                 SdrObject* pObj = pPage->GetObj(nObj);
 
-                if (pObj->GetObjInventor() == SdrInventor::Default)
+                if (pObj->GetObjInventor() == SdrInventor)
                 {
                     switch( pObj->GetObjIdentifier() )
                     {
@@ -1161,7 +1164,7 @@ void SdDrawDocument::RenameLayoutTemplate(const OUString& rOldLayoutName, const 
             {
                 SdrObject* pObj = pPage->GetObj(nObj);
 
-                if (pObj->GetObjInventor() == SdrInventor::Default)
+                if (pObj->GetObjInventor() == SdrInventor)
                 {
                     switch(pObj->GetObjIdentifier())
                     {
@@ -1210,7 +1213,7 @@ void SdDrawDocument::SetTextDefaults() const
     aNumberFormat.SetBulletRelSize(45);
     aNumberFormat.SetBulletColor(Color(COL_AUTO));
     aNumberFormat.SetStart(1);
-    aNumberFormat.SetNumAdjust(SvxAdjust::Left);
+    aNumberFormat.SetNumAdjust(SVX_ADJUST_LEFT);
 
     SvxNumRule aNumRule( SvxNumRuleFlags::BULLET_REL_SIZE | SvxNumRuleFlags::BULLET_COLOR | SvxNumRuleFlags::CHAR_TEXT_DISTANCE, SVX_MAX_NUM, false);
 
@@ -1239,9 +1242,9 @@ css::text::WritingMode SdDrawDocument::GetDefaultWritingMode() const
     {
         switch( static_cast<const SvxFrameDirectionItem&>( *pItem ).GetValue() )
         {
-            case SvxFrameDirection::Horizontal_LR_TB: eRet = css::text::WritingMode_LR_TB; break;
-            case SvxFrameDirection::Horizontal_RL_TB: eRet = css::text::WritingMode_RL_TB; break;
-            case SvxFrameDirection::Vertical_RL_TB: eRet = css::text::WritingMode_TB_RL; break;
+            case FRMDIR_HORI_LEFT_TOP: eRet = css::text::WritingMode_LR_TB; break;
+            case FRMDIR_HORI_RIGHT_TOP: eRet = css::text::WritingMode_RL_TB; break;
+            case FRMDIR_VERT_TOP_RIGHT: eRet = css::text::WritingMode_TB_RL; break;
 
             default:
                 OSL_FAIL( "Frame direction not supported yet" );
@@ -1259,9 +1262,9 @@ void SdDrawDocument::SetDefaultWritingMode(css::text::WritingMode eMode )
         SvxFrameDirection nVal;
         switch( eMode )
         {
-        case css::text::WritingMode_LR_TB: nVal = SvxFrameDirection::Horizontal_LR_TB; break;
-        case css::text::WritingMode_RL_TB: nVal = SvxFrameDirection::Horizontal_RL_TB; break;
-        case css::text::WritingMode_TB_RL: nVal = SvxFrameDirection::Vertical_RL_TB; break;
+        case css::text::WritingMode_LR_TB: nVal = FRMDIR_HORI_LEFT_TOP; break;
+        case css::text::WritingMode_RL_TB: nVal = FRMDIR_HORI_RIGHT_TOP; break;
+        case css::text::WritingMode_TB_RL: nVal = FRMDIR_VERT_TOP_RIGHT; break;
         default:
             OSL_FAIL( "Frame direction not supported yet" );
             return;
@@ -1270,10 +1273,10 @@ void SdDrawDocument::SetDefaultWritingMode(css::text::WritingMode eMode )
         SvxFrameDirectionItem aModeItem( nVal, EE_PARA_WRITINGDIR );
         pItemPool->SetPoolDefaultItem( aModeItem );
 
-        SvxAdjustItem aAdjust( SvxAdjust::Left, EE_PARA_JUST );
+        SvxAdjustItem aAdjust( SVX_ADJUST_LEFT, EE_PARA_JUST );
 
         if( eMode == css::text::WritingMode_RL_TB )
-            aAdjust.SetAdjust( SvxAdjust::Right );
+            aAdjust.SetEnumValue( SVX_ADJUST_RIGHT );
 
         pItemPool->SetPoolDefaultItem( aAdjust );
 

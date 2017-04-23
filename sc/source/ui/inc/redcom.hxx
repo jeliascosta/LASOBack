@@ -32,10 +32,10 @@ private:
     ScChangeAction  *pChangeAction;
     ScDocShell      *pDocShell;
     OUString        aComment;
-    VclPtr<AbstractSvxPostItDialog> pDlg;
+    AbstractSvxPostItDialog* pDlg;
 
-    DECL_LINK( PrevHdl, AbstractSvxPostItDialog&, void );
-    DECL_LINK( NextHdl, AbstractSvxPostItDialog&, void );
+    DECL_LINK_TYPED( PrevHdl, AbstractSvxPostItDialog&, void );
+    DECL_LINK_TYPED( NextHdl, AbstractSvxPostItDialog&, void );
 
 protected:
 
@@ -48,7 +48,7 @@ protected:
 public:
 
     ScRedComDialog( vcl::Window* pParent, const SfxItemSet& rCoreSet,
-                    ScDocShell *pShell, ScChangeAction *pAction, bool bPrevNext);
+                    ScDocShell *pShell, ScChangeAction *pAction, bool bPrevNext = false);
     ~ScRedComDialog();
 
     void Execute();

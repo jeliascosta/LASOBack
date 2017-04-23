@@ -35,7 +35,7 @@ public:
     explicit UndoCommandDispatch(
         const css::uno::Reference< css::uno::XComponentContext > & xContext,
         const css::uno::Reference< css::frame::XModel > & xModel );
-    virtual ~UndoCommandDispatch() override;
+    virtual ~UndoCommandDispatch();
 
     // late initialisation, especially for adding as listener
     virtual void initialize() override;
@@ -44,7 +44,8 @@ protected:
     // ____ XDispatch ____
     virtual void SAL_CALL dispatch(
         const css::util::URL& URL,
-        const css::uno::Sequence< css::beans::PropertyValue >& Arguments ) override;
+        const css::uno::Sequence< css::beans::PropertyValue >& Arguments )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ____ WeakComponentImplHelperBase ____
     /// is called when this is disposed
@@ -52,7 +53,8 @@ protected:
 
     // ____ XEventListener (base of XModifyListener) ____
     virtual void SAL_CALL disposing(
-        const css::lang::EventObject& Source ) override;
+        const css::lang::EventObject& Source )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void fireStatusEvent(
         const OUString & rURL,

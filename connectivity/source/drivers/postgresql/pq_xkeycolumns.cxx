@@ -36,7 +36,7 @@
 
 #include <rtl/ustrbuf.hxx>
 #include <rtl/strbuf.hxx>
-#include <com/sun/star/sdbc/SQLException.hpp>
+
 #include <com/sun/star/sdbc/XRow.hpp>
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <com/sun/star/sdbc/ColumnValue.hpp>
@@ -69,7 +69,7 @@ namespace pq_sdbc_driver
 
 KeyColumns::KeyColumns(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings,
         const OUString &schemaName,
         const OUString &tableName,
@@ -87,17 +87,18 @@ KeyColumns::~KeyColumns()
 
 
 void KeyColumns::refresh()
+    throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     try
     {
-        if (isLog(m_pSettings, LogLevel::Info))
+        if( isLog( m_pSettings, LogLevel::INFO ) )
         {
             OStringBuffer buf;
             buf.append( "sdbcx.KeyColumns get refreshed for table " );
-            buf.append( OUStringToOString( m_schemaName, ConnectionSettings::encoding ) );
+            buf.append( OUStringToOString( m_schemaName, m_pSettings->encoding ) );
             buf.append( "." );
-            buf.append( OUStringToOString( m_tableName, ConnectionSettings::encoding ) );
-            log( m_pSettings, LogLevel::Info, buf.makeStringAndClear().getStr() );
+            buf.append( OUStringToOString( m_tableName, m_pSettings->encoding ) );
+            log( m_pSettings, LogLevel::INFO, buf.makeStringAndClear().getStr() );
         }
 
         osl::MutexGuard guard( m_refMutex->mutex );
@@ -130,7 +131,7 @@ void KeyColumns::refresh()
 
             KeyColumn * pKeyColumn =
                 new KeyColumn( m_refMutex, m_origin, m_pSettings );
-            Reference< css::beans::XPropertySet > prop = pKeyColumn;
+            Reference< com::sun::star::beans::XPropertySet > prop = pKeyColumn;
 
             OUString name = columnMetaData2SDBCX( pKeyColumn, xRow );
             if( keyindex < m_foreignColumnNames.getLength() )
@@ -147,7 +148,7 @@ void KeyColumns::refresh()
         }
         m_name2index.swap( map );
     }
-    catch ( css::sdbc::SQLException & e )
+    catch ( com::sun::star::sdbc::SQLException & e )
     {
         throw RuntimeException( e.Message , e.Context );
     }
@@ -157,17 +158,20 @@ void KeyColumns::refresh()
 
 
 void KeyColumns::appendByDescriptor(
-    const css::uno::Reference< css::beans::XPropertySet >& future )
+    const ::com::sun::star::uno::Reference< ::com::sun::star::beans::XPropertySet >& future )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::container::ElementExistException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) future;
-    throw css::sdbc::SQLException(
+    throw com::sun::star::sdbc::SQLException(
         "KeyColumns::appendByDescriptor not implemented yet",
         *this, OUString(), 1, Any() );
 
 //     osl::MutexGuard guard( m_refMutex->mutex );
 //     Statics & st = getStatics();
 //     Reference< XPropertySet > past = createDataDescriptor();
-//     past->setPropertyValue( st.IS_NULLABLE, makeAny( css::sdbc::ColumnValue::NULLABLE ) );
+//     past->setPropertyValue( st.IS_NULLABLE, makeAny( com::sun::star::sdbc::ColumnValue::NULLABLE ) );
 //     alterColumnByDescriptor(
 //         m_schemaName, m_tableName, m_pSettings->encoding, m_origin->createStatement() , past, future  );
 
@@ -175,9 +179,12 @@ void KeyColumns::appendByDescriptor(
 
 
 void KeyColumns::dropByIndex( sal_Int32 index )
+    throw (::com::sun::star::sdbc::SQLException,
+           ::com::sun::star::lang::IndexOutOfBoundsException,
+           ::com::sun::star::uno::RuntimeException, std::exception)
 {
     (void) index;
-    throw css::sdbc::SQLException(
+    throw com::sun::star::sdbc::SQLException(
         "KeyColumns::dropByIndex not implemented yet",
         *this, OUString(), 1, Any() );
 //     osl::MutexGuard guard( m_refMutex->mutex );
@@ -189,7 +196,7 @@ void KeyColumns::dropByIndex( sal_Int32 index )
 //         buf.appendAscii( ", got " );
 //         buf.append( index );
 //         buf.appendAscii( ")" );
-//         throw css::lang::IndexOutOfBoundsException(
+//         throw com::sun::star::lang::IndexOutOfBoundsException(
 //             buf.makeStringAndClear(), *this );
 //     }
 
@@ -211,14 +218,15 @@ void KeyColumns::dropByIndex( sal_Int32 index )
 }
 
 
-Reference< css::beans::XPropertySet > KeyColumns::createDataDescriptor()
+Reference< ::com::sun::star::beans::XPropertySet > KeyColumns::createDataDescriptor()
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return new KeyColumnDescriptor( m_refMutex, m_origin, m_pSettings );
 }
 
-Reference< css::container::XNameAccess > KeyColumns::create(
+Reference< com::sun::star::container::XNameAccess > KeyColumns::create(
     const ::rtl::Reference< RefCountedMutex > & refMutex,
-    const css::uno::Reference< css::sdbc::XConnection >  & origin,
+    const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
     ConnectionSettings *pSettings,
     const OUString &schemaName,
     const OUString &tableName,
@@ -227,7 +235,7 @@ Reference< css::container::XNameAccess > KeyColumns::create(
 {
     KeyColumns *pKeyColumns = new KeyColumns(
         refMutex, origin, pSettings, schemaName, tableName, columnNames, foreignColumnNames );
-    Reference< css::container::XNameAccess > ret = pKeyColumns;
+    Reference< com::sun::star::container::XNameAccess > ret = pKeyColumns;
     pKeyColumns->refresh();
 
     return ret;
@@ -236,12 +244,13 @@ Reference< css::container::XNameAccess > KeyColumns::create(
 
 KeyColumnDescriptors::KeyColumnDescriptors(
         const ::rtl::Reference< RefCountedMutex > & refMutex,
-        const css::uno::Reference< css::sdbc::XConnection >  & origin,
+        const ::com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection >  & origin,
         ConnectionSettings *pSettings )
     : Container( refMutex, origin, pSettings,  "KEY_COLUMN" )
 {}
 
-Reference< css::beans::XPropertySet > KeyColumnDescriptors::createDataDescriptor()
+Reference< ::com::sun::star::beans::XPropertySet > KeyColumnDescriptors::createDataDescriptor()
+        throw (::com::sun::star::uno::RuntimeException, std::exception)
 {
     return new KeyColumnDescriptor( m_refMutex, m_origin, m_pSettings );
 }

@@ -17,11 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
-
-#include <o3tl/make_unique.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
 #include "resourceprovider.hxx"
@@ -34,21 +29,28 @@
 #include <com/sun/star/ui/dialogs/CommonFilePickerElementIds.hpp>
 #include <com/sun/star/ui/dialogs/ExtendedFilePickerElementIds.hpp>
 
+
+// namespace directives
+
+
 using namespace ::com::sun::star::ui::dialogs::ExtendedFilePickerElementIds;
 using namespace ::com::sun::star::ui::dialogs::CommonFilePickerElementIds;
+
 
 #define FOLDERPICKER_TITLE            500
 #define FOLDER_PICKER_DEF_DESCRIPTION 501
 
+
 // we have to translate control ids to resource ids
 
-struct Entry
+
+struct _Entry
 {
     sal_Int32 ctrlId;
     sal_Int16 resId;
 };
 
-Entry const CtrlIdToResIdTable[] = {
+_Entry CtrlIdToResIdTable[] = {
     { CHECKBOX_AUTOEXTENSION,                   STR_SVT_FILEPICKER_AUTO_EXTENSION },
     { CHECKBOX_PASSWORD,                        STR_SVT_FILEPICKER_PASSWORD },
     { CHECKBOX_FILTEROPTIONS,                   STR_SVT_FILEPICKER_FILTER_OPTIONS },
@@ -66,6 +68,7 @@ Entry const CtrlIdToResIdTable[] = {
 
 const sal_Int32 SIZE_TABLE = SAL_N_ELEMENTS( CtrlIdToResIdTable );
 
+
 sal_Int16 CtrlIdToResId( sal_Int32 aControlId )
 {
     sal_Int16 aResId = -1;
@@ -82,6 +85,7 @@ sal_Int16 CtrlIdToResId( sal_Int32 aControlId )
     return aResId;
 }
 
+
 class CResourceProvider_Impl
 {
 public:
@@ -90,9 +94,16 @@ public:
     CResourceProvider_Impl( )
     {
         const SolarMutexGuard aGuard;
-        m_ResMgr = o3tl::make_unique<SimpleResMgr>(
+        m_ResMgr = new SimpleResMgr(
             "fps_office", Application::GetSettings().GetUILanguageTag());
     }
+
+
+    ~CResourceProvider_Impl( )
+    {
+        delete m_ResMgr;
+    }
+
 
     OUString getResString( sal_Int16 aId )
     {
@@ -100,6 +111,8 @@ public:
 
         try
         {
+            OSL_ASSERT( m_ResMgr );
+
             // translate the control id to a resource id
             sal_Int16 aResId = CtrlIdToResId( aId );
 
@@ -114,16 +127,21 @@ public:
     }
 
 public:
-    std::unique_ptr<SimpleResMgr> m_ResMgr;
+    SimpleResMgr* m_ResMgr;
 };
 
+
 CResourceProvider::CResourceProvider( ) :
-    m_pImpl( o3tl::make_unique<CResourceProvider_Impl>() )
+    m_pImpl( new CResourceProvider_Impl() )
 {
 }
 
+
 CResourceProvider::~CResourceProvider( )
-{}
+{
+    delete m_pImpl;
+}
+
 
 OUString CResourceProvider::getResString( sal_Int16 aId )
 {

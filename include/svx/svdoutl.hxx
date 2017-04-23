@@ -35,7 +35,7 @@ protected:
 
 public:
     SdrOutliner( SfxItemPool* pItemPool, OutlinerMode nMode );
-    virtual ~SdrOutliner() override ;
+    virtual ~SdrOutliner() ;
 
     void  SetTextObj( const SdrTextObj* pObj );
     void SetTextObjNoInit( const SdrTextObj* pObj );

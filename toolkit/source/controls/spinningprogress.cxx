@@ -38,17 +38,17 @@ public:
     virtual UnoControlModel* Clone() const override;
 
     // XPropertySet
-    css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) override;
+    css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL getPropertySetInfo(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XPersistObject
-    OUString SAL_CALL getServiceName() override;
+    OUString SAL_CALL getServiceName() throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    OUString SAL_CALL getImplementationName(  ) override;
-    css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    OUString SAL_CALL getImplementationName(  ) throw(css::uno::RuntimeException, std::exception) override;
+    css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
-    virtual ~SpinningProgressControlModel() override;
+    virtual ~SpinningProgressControlModel();
 };
 
     SpinningProgressControlModel::SpinningProgressControlModel( Reference< XComponentContext > const & i_factory )
@@ -61,7 +61,7 @@ protected:
             {
                 Throbber::ImageSet aImageSets[] =
                 {
-                    Throbber::ImageSet::N16px, Throbber::ImageSet::N32px, Throbber::ImageSet::N64px
+                    Throbber::IMAGES_16_PX, Throbber::IMAGES_32_PX, Throbber::IMAGES_64_PX
                 };
                 for ( size_t i=0; i < SAL_N_ELEMENTS(aImageSets); ++i )
                 {
@@ -96,26 +96,26 @@ protected:
     }
 
 
-    Reference< beans::XPropertySetInfo > SAL_CALL SpinningProgressControlModel::getPropertySetInfo(  )
+    Reference< beans::XPropertySetInfo > SAL_CALL SpinningProgressControlModel::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
     {
         static Reference< beans::XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
         return xInfo;
     }
 
 
-    OUString SAL_CALL SpinningProgressControlModel::getServiceName()
+    OUString SAL_CALL SpinningProgressControlModel::getServiceName() throw(RuntimeException, std::exception)
     {
         return OUString("com.sun.star.awt.SpinningProgressControlModel");
     }
 
 
-    OUString SAL_CALL SpinningProgressControlModel::getImplementationName(  )
+    OUString SAL_CALL SpinningProgressControlModel::getImplementationName(  ) throw(RuntimeException, std::exception)
     {
         return OUString("org.openoffice.comp.toolkit.SpinningProgressControlModel");
     }
 
 
-    Sequence< OUString > SAL_CALL SpinningProgressControlModel::getSupportedServiceNames()
+    Sequence< OUString > SAL_CALL SpinningProgressControlModel::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
         Sequence< OUString > aServiceNames(3);
         aServiceNames[0] = "com.sun.star.awt.SpinningProgressControlModel";

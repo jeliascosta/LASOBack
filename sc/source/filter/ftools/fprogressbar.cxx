@@ -23,7 +23,7 @@
 #include <osl/diagnose.h>
 #include <o3tl/make_unique.hxx>
 
-ScfProgressBar::ScfProgressSegment::ScfProgressSegment( std::size_t nSize ) :
+ScfProgressBar::ScfProgressSegment::ScfProgressSegment( sal_Size nSize ) :
     mnSize( nSize ),
     mnPos( 0 )
 {
@@ -105,15 +105,15 @@ void ScfProgressBar::SetCurrSegment( ScfProgressSegment* pSegment )
     }
 }
 
-void ScfProgressBar::IncreaseProgressBar( std::size_t nDelta )
+void ScfProgressBar::IncreaseProgressBar( sal_Size nDelta )
 {
-    std::size_t nNewPos = mnTotalPos + nDelta;
+    sal_Size nNewPos = mnTotalPos + nDelta;
 
     // call back to parent progress bar
     if( mpParentProgress && mpParentSegment )
     {
         // calculate new position of parent progress bar
-        std::size_t nParentPos = static_cast< std::size_t >(
+        sal_Size nParentPos = static_cast< sal_Size >(
             static_cast< double >( nNewPos ) * mpParentSegment->mnSize / mnTotalSize );
         mpParentProgress->ProgressAbs( nParentPos );
     }
@@ -134,7 +134,7 @@ void ScfProgressBar::IncreaseProgressBar( std::size_t nDelta )
     mnTotalPos = nNewPos;
 }
 
-sal_Int32 ScfProgressBar::AddSegment( std::size_t nSize )
+sal_Int32 ScfProgressBar::AddSegment( sal_Size nSize )
 {
     OSL_ENSURE( !mbInProgress, "ScfProgressBar::AddSegment - already in progress mode" );
     if( nSize == 0 )
@@ -171,7 +171,7 @@ void ScfProgressBar::ActivateSegment( sal_Int32 nSegment )
         SetCurrSegment( GetSegment( nSegment ) );
 }
 
-void ScfProgressBar::ProgressAbs( std::size_t nPos )
+void ScfProgressBar::ProgressAbs( sal_Size nPos )
 {
     OSL_ENSURE( mbInProgress && mpCurrSegment, "ScfProgressBar::ProgressAbs - no segment started" );
     if( mpCurrSegment )
@@ -186,34 +186,34 @@ void ScfProgressBar::ProgressAbs( std::size_t nPos )
     }
 }
 
-void ScfProgressBar::Progress( std::size_t nDelta )
+void ScfProgressBar::Progress( sal_Size nDelta )
 {
     ProgressAbs( mpCurrSegment ? (mpCurrSegment->mnPos + nDelta) : 0 );
 }
 
-ScfSimpleProgressBar::ScfSimpleProgressBar( std::size_t nSize, SfxObjectShell* pDocShell, const OUString& rText ) :
+ScfSimpleProgressBar::ScfSimpleProgressBar( sal_Size nSize, SfxObjectShell* pDocShell, const OUString& rText ) :
     maProgress( pDocShell, rText )
 {
     Init( nSize );
 }
 
-ScfSimpleProgressBar::ScfSimpleProgressBar( std::size_t nSize, SfxObjectShell* pDocShell, sal_uInt16 nResId ) :
+ScfSimpleProgressBar::ScfSimpleProgressBar( sal_Size nSize, SfxObjectShell* pDocShell, sal_uInt16 nResId ) :
     maProgress( pDocShell, nResId )
 {
     Init( nSize );
 }
 
-void ScfSimpleProgressBar::Init( std::size_t nSize )
+void ScfSimpleProgressBar::Init( sal_Size nSize )
 {
     sal_Int32 nSegment = maProgress.AddSegment( nSize );
     if( nSegment >= 0 )
         maProgress.ActivateSegment( nSegment );
 }
 
-ScfStreamProgressBar::ScfStreamProgressBar( SvStream& rStrm, SfxObjectShell* pDocShell ) :
+ScfStreamProgressBar::ScfStreamProgressBar( SvStream& rStrm, SfxObjectShell* pDocShell, sal_uInt16 nResId ) :
     mrStrm( rStrm )
 {
-    Init( pDocShell, ScGlobal::GetRscString( STR_LOAD_DOC ) );
+    Init( pDocShell, ScGlobal::GetRscString( nResId ) );
 }
 
 void ScfStreamProgressBar::Progress()
@@ -223,9 +223,9 @@ void ScfStreamProgressBar::Progress()
 
 void ScfStreamProgressBar::Init( SfxObjectShell* pDocShell, const OUString& rText )
 {
-    sal_uInt64 const nPos = mrStrm.Tell();
+    sal_Size nPos = mrStrm.Tell();
     mrStrm.Seek( STREAM_SEEK_TO_END );
-    sal_uInt64 const nSize = mrStrm.Tell();
+    sal_Size nSize = mrStrm.Tell();
     mrStrm.Seek( nPos );
 
     mxProgress.reset( new ScfSimpleProgressBar( nSize, pDocShell, rText ) );

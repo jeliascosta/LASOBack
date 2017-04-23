@@ -28,16 +28,18 @@ class NumberingPopup : public svtools::ToolbarMenu
     NumberingPageType mePageType;
     NumberingToolBoxControl& mrController;
     VclPtr<SvxNumValueSet> mpValueSet;
-    DECL_LINK( VSSelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK( VSSelectValueSetHdl, ValueSet*, void );
+    DECL_LINK_TYPED( VSSelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK_TYPED( VSSelectValueSetHdl, ValueSet*, void );
     void VSSelectHdl(void *);
 public:
     NumberingPopup( NumberingToolBoxControl& rController,
+                    const css::uno::Reference< css::frame::XFrame >& rFrame,
                     vcl::Window* pParent, NumberingPageType ePageType );
-    virtual ~NumberingPopup() override;
+    virtual ~NumberingPopup();
     virtual void dispose() override;
 
-    virtual void statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
+    virtual void statusChanged( const css::frame::FeatureStateEvent& rEvent )
+        throw ( css::uno::RuntimeException ) override;
 };
 
 class NumberingToolBoxControl : public svt::PopupWindowController
@@ -47,24 +49,30 @@ class NumberingToolBoxControl : public svt::PopupWindowController
 public:
     explicit NumberingToolBoxControl( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
+    bool IsInImpressDraw();
 
     // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
+    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw ( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     using svt::ToolboxController::createPopupWindow;
 };
 
 //class NumberingPopup
 NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
+                                const css::uno::Reference< css::frame::XFrame >& rFrame,
                                 vcl::Window* pParent, NumberingPageType ePageType ) :
-    ToolbarMenu( rController.getFrameInterface(), pParent, WB_STDPOPUP ),
+    ToolbarMenu( rFrame, pParent, WB_STDPOPUP ),
     mePageType( ePageType ),
     mrController( rController )
 {
@@ -95,7 +103,7 @@ NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
         }
     }
 
-    Size aItemSize( LogicToPixel( Size( 30, 42 ), MapUnit::MapAppFont ) );
+    Size aItemSize( LogicToPixel( Size( 30, 42 ), MAP_APPFONT ) );
     mpValueSet->SetExtraSpacing( 2 );
     mpValueSet->SetOutputSizePixel( mpValueSet->CalcWindowSizePixel( aItemSize ) );
     mpValueSet->SetColor( GetSettings().GetStyleSettings().GetFieldColor() );
@@ -120,7 +128,7 @@ NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
         AddStatusListener( ".uno:CurrentOutlineType" );
     }
 
-    appendEntry( 1, aMoreItemText, ::GetImage( mrController.getFrameInterface(), ".uno:OutlineBullet", false ) );
+    appendEntry( 1, aMoreItemText, ::GetImage( rFrame, ".uno:OutlineBullet", false ) );
 
     SetOutputSizePixel( getMenuSize() );
     mpValueSet->SetSelectHdl( LINK( this, NumberingPopup, VSSelectValueSetHdl ) );
@@ -139,6 +147,7 @@ void NumberingPopup::dispose()
 }
 
 void NumberingPopup::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+    throw ( css::uno::RuntimeException )
 {
     mpValueSet->SetNoSelection();
 
@@ -147,11 +156,11 @@ void NumberingPopup::statusChanged( const css::frame::FeatureStateEvent& rEvent 
         mpValueSet->SelectItem( nSelItem );
 }
 
-IMPL_LINK( NumberingPopup, VSSelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK_TYPED( NumberingPopup, VSSelectValueSetHdl, ValueSet*, pControl, void )
 {
     VSSelectHdl(pControl);
 }
-IMPL_LINK( NumberingPopup, VSSelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK_TYPED( NumberingPopup, VSSelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     VSSelectHdl(pControl);
 }
@@ -182,7 +191,14 @@ void NumberingPopup::VSSelectHdl(void* pControl)
     }
     else if ( getSelectedEntryId() == 1 )
     {
-        auto aArgs( comphelper::InitPropertySequence( { { "Page", css::uno::makeAny( OUString("customize") ) } } ) );
+        OUString aPageName;
+        if ( mrController.IsInImpressDraw() )
+            aPageName = "customize";
+        else
+            // Writer variants
+            aPageName = "options";
+
+        auto aArgs( comphelper::InitPropertySequence( { { "Page", css::uno::makeAny( aPageName ) } } ) );
         mrController.dispatchCommand( ".uno:OutlineBullet", aArgs );
     }
 }
@@ -197,11 +213,17 @@ NumberingToolBoxControl::NumberingToolBoxControl( const css::uno::Reference< css
 
 VclPtr<vcl::Window> NumberingToolBoxControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<NumberingPopup>::Create( *this, pParent, mePageType );
+    return VclPtr<NumberingPopup>::Create( *this, m_xFrame, pParent, mePageType );
 }
 
+bool NumberingToolBoxControl::IsInImpressDraw()
+{
+    return ( m_sModuleName == "com.sun.star.presentation.PresentationDocument" ||
+             m_sModuleName == "com.sun.star.drawing.DrawingDocument" );
+}
 
 void SAL_CALL NumberingToolBoxControl::statusChanged( const css::frame::FeatureStateEvent& rEvent )
+    throw ( css::uno::RuntimeException, std::exception )
 {
     ToolBox* pToolBox = nullptr;
     sal_uInt16 nId = 0;
@@ -215,6 +237,7 @@ void SAL_CALL NumberingToolBoxControl::statusChanged( const css::frame::FeatureS
 }
 
 void SAL_CALL NumberingToolBoxControl::initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+    throw ( css::uno::Exception, css::uno::RuntimeException, std::exception )
 {
     svt::PopupWindowController::initialize( aArguments );
 
@@ -231,13 +254,16 @@ void SAL_CALL NumberingToolBoxControl::initialize( const css::uno::Sequence< css
 }
 
 OUString SAL_CALL NumberingToolBoxControl::getImplementationName()
+    throw ( css::uno::RuntimeException, std::exception )
 {
     return OUString( "com.sun.star.comp.svx.NumberingToolBoxControl" );
 }
 
 css::uno::Sequence< OUString > SAL_CALL NumberingToolBoxControl::getSupportedServiceNames()
+    throw ( css::uno::RuntimeException, std::exception )
 {
-    return { "com.sun.star.frame.ToolbarController" };
+    css::uno::Sequence<OUString> aRet { "com.sun.star.frame.ToolbarController" };
+    return aRet;
 }
 
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL

@@ -57,7 +57,7 @@ static bool ImpIsTreeAvailable( Reference< XMultiServiceFactory >& rXCfgProv, co
         // creation arguments: nodepath
         PropertyValue aPathArgument;
         aPathArgument.Name = "nodepath";
-        aPathArgument.Value <<= rTree.getToken(i++, '/');
+        aPathArgument.Value = Any(rTree.getToken(i++, '/'));
 
         Sequence< Any > aArguments( 1 );
         aArguments[ 0 ] <<= aPathArgument;
@@ -113,13 +113,13 @@ void FilterConfigItem::ImpInitTree( const OUString& rSubTree )
         // creation arguments: nodepath
         PropertyValue aPathArgument;
         aPathArgument.Name = "nodepath";
-        aPathArgument.Value <<= sTree;
+        aPathArgument.Value = Any(sTree);
 
         // creation arguments: commit mode
         PropertyValue aModeArgument;
         bool bAsynchron = true;
         aModeArgument.Name = "lazywrite";
-        aModeArgument.Value <<= bAsynchron;
+        aModeArgument.Value = Any(bAsynchron);
 
         Sequence< Any > aArguments( 2 );
         aArguments[ 0 ] <<= aPathArgument;
@@ -189,22 +189,26 @@ void FilterConfigItem::WriteModifiedConfig()
     }
 }
 
-bool FilterConfigItem::ImplGetPropertyValue( Any& rAny, const Reference< XPropertySet >& rXPropSet, const OUString& rString )
+bool FilterConfigItem::ImplGetPropertyValue( Any& rAny, const Reference< XPropertySet >& rXPropSet, const OUString& rString, bool bTestPropertyAvailability )
 {
     bool bRetValue = true;
 
     if ( rXPropSet.is() )
     {
-        bRetValue = false;
-        try
+        if ( bTestPropertyAvailability )
         {
-            Reference< XPropertySetInfo >
-                aXPropSetInfo( rXPropSet->getPropertySetInfo() );
-            if ( aXPropSetInfo.is() )
-                bRetValue = aXPropSetInfo->hasPropertyByName( rString );
-        }
-        catch( css::uno::Exception& )
-        {
+            bRetValue = false;
+            try
+            {
+                Reference< XPropertySetInfo >
+                    aXPropSetInfo( rXPropSet->getPropertySetInfo() );
+                if ( aXPropSetInfo.is() )
+                    bRetValue = aXPropSetInfo->hasPropertyByName( rString );
+            }
+            catch( css::uno::Exception& )
+            {
+
+            }
         }
         if ( bRetValue )
         {
@@ -277,7 +281,7 @@ bool FilterConfigItem::ReadBool( const OUString& rKey, bool bDefault )
     {
         pPropVal->Value >>= bRetValue;
     }
-    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey ) )
+    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey, true ) )
     {
         aAny >>= bRetValue;
     }
@@ -297,7 +301,7 @@ sal_Int32 FilterConfigItem::ReadInt32( const OUString& rKey, sal_Int32 nDefault 
     {
         pPropVal->Value >>= nRetValue;
     }
-    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey ) )
+    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey, true ) )
     {
         aAny >>= nRetValue;
     }
@@ -317,7 +321,7 @@ OUString FilterConfigItem::ReadString( const OUString& rKey, const OUString& rDe
     {
         pPropVal->Value >>= aRetValue;
     }
-    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey ) )
+    else if ( ImplGetPropertyValue( aAny, xPropSet, rKey, true ) )
     {
         aAny >>= aRetValue;
     }
@@ -338,7 +342,7 @@ void FilterConfigItem::WriteBool( const OUString& rKey, bool bNewValue )
     if ( xPropSet.is() )
     {
         Any aAny;
-        if ( ImplGetPropertyValue( aAny, xPropSet, rKey ) )
+        if ( ImplGetPropertyValue( aAny, xPropSet, rKey, true ) )
         {
             bool bOldValue(true);
             if ( aAny >>= bOldValue )
@@ -371,7 +375,7 @@ void FilterConfigItem::WriteInt32( const OUString& rKey, sal_Int32 nNewValue )
     {
         Any aAny;
 
-        if ( ImplGetPropertyValue( aAny, xPropSet, rKey ) )
+        if ( ImplGetPropertyValue( aAny, xPropSet, rKey, true ) )
         {
             sal_Int32 nOldValue = 0;
             if ( aAny >>= nOldValue )

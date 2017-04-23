@@ -200,7 +200,7 @@ bool FindBox_( FndBox_ & rBox, LinesAndTable* pPara )
     }
     else if (rBox.GetBox())
     {
-        ::InsertLine(pPara->m_rLines, rBox.GetBox()->GetUpper());
+        ::InsertLine(pPara->m_rLines, static_cast<SwTableLine*>(rBox.GetBox()->GetUpper()));
     }
     return true;
 }
@@ -1099,7 +1099,7 @@ void SwDoc::GetTabBorders( const SwCursor& rCursor, SfxItemSet& rSet )
                                 rBox.GetDistance( k ) )
                             {
                                 aSetBoxInfo.SetValid( SvxBoxInfoItemValidFlags::DISTANCE, false );
-                                aSetBox.SetAllDistances(0);
+                                aSetBox.SetDistance( 0 );
                                 break;
                             }
                     }
@@ -1272,23 +1272,23 @@ static sal_uInt16 lcl_CalcCellFit( const SwLayoutFrame *pCell )
 {
     SwTwips nRet = 0;
     const SwFrame *pFrame = pCell->Lower(); // The whole Line
-    SwRectFnSet aRectFnSet(pCell);
+    SWRECTFN( pCell )
     while ( pFrame )
     {
-        const SwTwips nAdd = aRectFnSet.GetWidth(pFrame->Frame()) -
-                             aRectFnSet.GetWidth(pFrame->Prt());
+        const SwTwips nAdd = (pFrame->Frame().*fnRect->fnGetWidth)() -
+                             (pFrame->Prt().*fnRect->fnGetWidth)();
 
         // pFrame does not necessarily have to be a SwTextFrame!
         const SwTwips nCalcFitToContent = pFrame->IsTextFrame() ?
                                           const_cast<SwTextFrame*>(static_cast<const SwTextFrame*>(pFrame))->CalcFitToContent() :
-                                          aRectFnSet.GetWidth(pFrame->Prt());
+                                          (pFrame->Prt().*fnRect->fnGetWidth)();
 
         nRet = std::max( nRet, nCalcFitToContent + nAdd );
         pFrame = pFrame->GetNext();
     }
     // Surrounding border as well as left and Right Border also need to be respected
-    nRet += aRectFnSet.GetWidth(pCell->Frame()) -
-            aRectFnSet.GetWidth(pCell->Prt());
+    nRet += (pCell->Frame().*fnRect->fnGetWidth)() -
+            (pCell->Prt().*fnRect->fnGetWidth)();
 
     // To compensate for the accuracy of calculation later on in SwTable::SetTabCols
     // we keep adding up a little.
@@ -1317,7 +1317,7 @@ static void lcl_CalcSubColValues( std::vector<sal_uInt16> &rToFill, const SwTabC
                     ::lcl_CalcCellFit( pCell ) :
                     MINLAY + sal_uInt16(pCell->Frame().Width() - pCell->Prt().Width());
 
-    SwRectFnSet aRectFnSet(pTab);
+    SWRECTFN( pTab )
 
     for ( size_t i = 0 ; i <= rCols.Count(); ++i )
     {
@@ -1327,14 +1327,14 @@ static void lcl_CalcSubColValues( std::vector<sal_uInt16> &rToFill, const SwTabC
         nColRight += rCols.GetLeftMin();
 
         // Adapt values to the proportions of the Table (Follows)
-        if ( rCols.GetLeftMin() != aRectFnSet.GetLeft(pTab->Frame()) )
+        if ( rCols.GetLeftMin() != (pTab->Frame().*fnRect->fnGetLeft)() )
         {
-            const long nDiff = aRectFnSet.GetLeft(pTab->Frame()) - rCols.GetLeftMin();
+            const long nDiff = (pTab->Frame().*fnRect->fnGetLeft)() - rCols.GetLeftMin();
             nColLeft  += nDiff;
             nColRight += nDiff;
         }
-        const long nCellLeft  = aRectFnSet.GetLeft(pCell->Frame());
-        const long nCellRight = aRectFnSet.GetRight(pCell->Frame());
+        const long nCellLeft  = (pCell->Frame().*fnRect->fnGetLeft)();
+        const long nCellRight = (pCell->Frame().*fnRect->fnGetRight)();
 
         // Calculate overlapping value
         long nWidth = 0;
@@ -1376,7 +1376,7 @@ static void lcl_CalcColValues( std::vector<sal_uInt16> &rToFill, const SwTabCols
 {
     SwSelUnions aUnions;
     ::MakeSelUnions( aUnions, pStart, pEnd,
-                    bWishValues ? SwTableSearchType::NONE : SwTableSearchType::Col );
+                    bWishValues ? nsSwTableSearchType::TBLSEARCH_NONE : nsSwTableSearchType::TBLSEARCH_COL );
 
     for ( auto &rU : aUnions )
     {
@@ -1384,7 +1384,7 @@ static void lcl_CalcColValues( std::vector<sal_uInt16> &rToFill, const SwTabCols
         const SwTabFrame *pTab = pSelUnion->GetTable();
         const SwRect &rUnion = pSelUnion->GetUnion();
 
-        SwRectFnSet aRectFnSet(pTab);
+        SWRECTFN( pTab )
         bool bRTL = pTab->IsRightToLeft();
 
         const SwLayoutFrame *pCell = pTab->FirstCell();
@@ -1394,8 +1394,8 @@ static void lcl_CalcColValues( std::vector<sal_uInt16> &rToFill, const SwTabCols
         {
             if ( pCell->IsCellFrame() && pCell->FindTabFrame() == pTab && ::IsFrameInTableSel( rUnion, pCell ) )
             {
-                const long nCLeft  = aRectFnSet.GetLeft(pCell->Frame());
-                const long nCRight = aRectFnSet.GetRight(pCell->Frame());
+                const long nCLeft  = (pCell->Frame().*fnRect->fnGetLeft)();
+                const long nCRight = (pCell->Frame().*fnRect->fnGetRight)();
 
                 bool bNotInCols = true;
 
@@ -1418,9 +1418,9 @@ static void lcl_CalcColValues( std::vector<sal_uInt16> &rToFill, const SwTabCols
                     // Adapt values to the proportions of the Table (Follows)
                     long nLeftA  = nColLeft;
                     long nRightA = nColRight;
-                    if ( rCols.GetLeftMin() !=  sal_uInt16(aRectFnSet.GetLeft(pTab->Frame())) )
+                    if ( rCols.GetLeftMin() !=  sal_uInt16((pTab->Frame().*fnRect->fnGetLeft)()) )
                     {
-                        const long nDiff = aRectFnSet.GetLeft(pTab->Frame()) - rCols.GetLeftMin();
+                        const long nDiff = (pTab->Frame().*fnRect->fnGetLeft)() - rCols.GetLeftMin();
                         nLeftA  += nDiff;
                         nRightA += nDiff;
                     }
@@ -1574,7 +1574,7 @@ void SwDoc::AdjustCellWidth( const SwCursor& rCursor, bool bBalance )
     const sal_Int16 nOriHori = pFormat->GetHoriOrient().GetHoriOrient();
 
     // We can leave the "real" work to the SwTable now
-    SetTabCols( aTabCols, false, static_cast<SwCellFrame*>(pBoxFrame) );
+    SetTabCols( aTabCols, false, nullptr, static_cast<SwCellFrame*>(pBoxFrame) );
 
     // Alignment might have been changed in SetTabCols; restore old value
     const SwFormatHoriOrient &rHori = pFormat->GetHoriOrient();

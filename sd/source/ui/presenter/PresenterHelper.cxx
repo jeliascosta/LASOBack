@@ -58,6 +58,7 @@ PresenterHelper::~PresenterHelper()
 //----- XInitialize -----------------------------------------------------------
 
 void SAL_CALL PresenterHelper::initialize (const Sequence<Any>& rArguments)
+    throw(Exception,RuntimeException, std::exception)
 {
     (void)rArguments;
 }
@@ -70,6 +71,7 @@ Reference<awt::XWindow> SAL_CALL PresenterHelper::createWindow (
     sal_Bool bInitiallyVisible,
     sal_Bool bEnableChildTransparentMode,
     sal_Bool bEnableParentClip)
+    throw (css::uno::RuntimeException, std::exception)
 {
     VclPtr<vcl::Window> pParentWindow(VCLUnoHelper::GetWindow(rxParentWindow));
 
@@ -95,7 +97,7 @@ Reference<awt::XWindow> SAL_CALL PresenterHelper::createWindow (
 
     pWindow->Show(bInitiallyVisible);
 
-    pWindow->SetMapMode(MapUnit::MapPixel);
+    pWindow->SetMapMode(MAP_PIXEL);
     pWindow->SetBackground();
     if ( ! bEnableParentClip)
     {
@@ -117,6 +119,7 @@ Reference<rendering::XCanvas> SAL_CALL PresenterHelper::createSharedCanvas (
     const Reference<rendering::XCanvas>& rxSharedCanvas,
     const Reference<awt::XWindow>& rxSharedWindow,
     const Reference<awt::XWindow>& rxWindow)
+    throw (css::uno::RuntimeException, std::exception)
 {
     if ( ! rxSharedCanvas.is()
         || ! rxSharedWindow.is()
@@ -140,22 +143,23 @@ Reference<rendering::XCanvas> SAL_CALL PresenterHelper::createCanvas (
     const Reference<awt::XWindow>& rxWindow,
     sal_Int16 nRequestedCanvasFeatures,
     const OUString& rsOptionalCanvasServiceName)
+    throw (css::uno::RuntimeException, std::exception)
 {
     (void)nRequestedCanvasFeatures;
 
     // No shared window is given or an explicit canvas service name is
     // specified.  Create a new canvas.
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(rxWindow);
-    if (pWindow)
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow(rxWindow);
+    if (pWindow != nullptr)
     {
         Sequence<Any> aArg (5);
 
         // common: first any is VCL pointer to window (for VCL canvas)
-        aArg[0] <<= reinterpret_cast<sal_Int64>(pWindow.get());
+        aArg[0] = makeAny(reinterpret_cast<sal_Int64>(pWindow));
         aArg[1] = Any();
-        aArg[2] <<= css::awt::Rectangle();
-        aArg[3] <<= false;
-        aArg[4] <<= rxWindow;
+        aArg[2] = makeAny(css::awt::Rectangle());
+        aArg[3] = makeAny(false);
+        aArg[4] = makeAny(rxWindow);
 
         Reference<lang::XMultiServiceFactory> xFactory (
             mxComponentContext->getServiceManager(), UNO_QUERY_THROW);
@@ -173,9 +177,10 @@ Reference<rendering::XCanvas> SAL_CALL PresenterHelper::createCanvas (
 
 void SAL_CALL PresenterHelper::toTop (
     const Reference<awt::XWindow>& rxWindow)
+    throw (css::uno::RuntimeException, std::exception)
 {
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(rxWindow);
-    if (pWindow)
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow(rxWindow);
+    if (pWindow != nullptr)
     {
         pWindow->ToTop();
         pWindow->SetZOrder(nullptr, ZOrderFlags::Last);
@@ -194,6 +199,7 @@ struct IdMapEntry {
 Reference<rendering::XBitmap> SAL_CALL PresenterHelper::loadBitmap (
     const OUString& id,
     const Reference<rendering::XCanvas>& rxCanvas)
+    throw (RuntimeException, std::exception)
 {
     if ( ! rxCanvas.is())
         return nullptr;
@@ -415,24 +421,26 @@ Reference<rendering::XBitmap> SAL_CALL PresenterHelper::loadBitmap (
 
 void SAL_CALL PresenterHelper::captureMouse (
     const Reference<awt::XWindow>& rxWindow)
+    throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard (::osl::Mutex::getGlobalMutex());
 
     // Capture the mouse (if not already done.)
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(rxWindow);
-    if (pWindow && ! pWindow->IsMouseCaptured())
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow(rxWindow);
+    if (pWindow != nullptr && ! pWindow->IsMouseCaptured())
     {
         pWindow->CaptureMouse();
     }
 }
 
 void SAL_CALL PresenterHelper::releaseMouse (const Reference<awt::XWindow>& rxWindow)
+    throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard (::osl::Mutex::getGlobalMutex());
 
     // Release the mouse (if not already done.)
-    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(rxWindow);
-    if (pWindow && pWindow->IsMouseCaptured())
+    vcl::Window* pWindow = VCLUnoHelper::GetWindow(rxWindow);
+    if (pWindow != nullptr && pWindow->IsMouseCaptured())
     {
         pWindow->ReleaseMouse();
     }
@@ -441,12 +449,13 @@ void SAL_CALL PresenterHelper::releaseMouse (const Reference<awt::XWindow>& rxWi
 awt::Rectangle PresenterHelper::getWindowExtentsRelative (
     const Reference<awt::XWindow>& rxChildWindow,
     const Reference<awt::XWindow>& rxParentWindow)
+    throw (RuntimeException, std::exception)
 {
-    VclPtr<vcl::Window> pChildWindow = VCLUnoHelper::GetWindow(rxChildWindow);
-    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(rxParentWindow);
-    if (pChildWindow && pParentWindow)
+    vcl::Window* pChildWindow = VCLUnoHelper::GetWindow(rxChildWindow);
+    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(rxParentWindow);
+    if (pChildWindow!=nullptr && pParentWindow!=nullptr)
     {
-        ::tools::Rectangle aBox (pChildWindow->GetWindowExtentsRelative(pParentWindow));
+        Rectangle aBox (pChildWindow->GetWindowExtentsRelative(pParentWindow));
         return awt::Rectangle(aBox.Left(),aBox.Top(),aBox.GetWidth(),aBox.GetHeight());
     }
     else

@@ -46,15 +46,16 @@ ScAddInListener* ScAddInListener::CreateListener(
     return pNew;
 }
 
-ScAddInListener::ScAddInListener( uno::Reference<sheet::XVolatileResult> const & xVR, ScDocument* pDoc ) :
-    xVolRes( xVR ),
-    pDocs( new ScAddInDocs )
+ScAddInListener::ScAddInListener( uno::Reference<sheet::XVolatileResult> xVR, ScDocument* pDoc ) :
+    xVolRes( xVR )
 {
+    pDocs = new ScAddInDocs();
     pDocs->insert( pDoc );
 }
 
 ScAddInListener::~ScAddInListener()
 {
+    delete pDocs;
 }
 
 ScAddInListener* ScAddInListener::Get( const uno::Reference<sheet::XVolatileResult>& xVR )
@@ -79,7 +80,7 @@ void ScAddInListener::RemoveDocument( ScDocument* pDocumentP )
     ::std::list<ScAddInListener*>::iterator iter = aAllListeners.begin();
     while(iter != aAllListeners.end())
     {
-        ScAddInDocs* p = (*iter)->pDocs.get();
+        ScAddInDocs* p = (*iter)->pDocs;
         ScAddInDocs::iterator iter2 = p->find( pDocumentP );
         if( iter2 != p->end() )
         {
@@ -105,6 +106,7 @@ void ScAddInListener::RemoveDocument( ScDocument* pDocumentP )
 // XResultListener
 
 void SAL_CALL ScAddInListener::modified( const css::sheet::ResultEvent& aEvent )
+                                throw(css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard; //TODO: or generate a UserEvent
 
@@ -112,19 +114,20 @@ void SAL_CALL ScAddInListener::modified( const css::sheet::ResultEvent& aEvent )
 
     // notify document of changes
 
-    Broadcast( ScHint(SfxHintId::ScDataChanged, ScAddress()) );
+    Broadcast( ScHint(SC_HINT_DATACHANGED, ScAddress()) );
 
     for ( ScAddInDocs::iterator it = pDocs->begin(); it != pDocs->end(); ++it )
     {
         ScDocument* pDoc = *it;
         pDoc->TrackFormulas();
-        pDoc->GetDocumentShell()->Broadcast( SfxHint( SfxHintId::ScDataChanged ) );
+        pDoc->GetDocumentShell()->Broadcast( SfxSimpleHint( FID_DATACHANGED ) );
     }
 }
 
 // XEventListener
 
 void SAL_CALL ScAddInListener::disposing( const css::lang::EventObject& /* Source */ )
+                                throw(css::uno::RuntimeException, std::exception)
 {
     // hold a ref so this is not deleted at removeResultListener
     uno::Reference<sheet::XResultListener> xRef( this );

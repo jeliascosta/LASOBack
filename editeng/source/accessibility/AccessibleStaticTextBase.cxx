@@ -30,7 +30,6 @@
 #include <vcl/window.hxx>
 #include <vcl/svapp.hxx>
 #include <comphelper/sequence.hxx>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
@@ -61,9 +60,9 @@ using namespace ::com::sun::star::accessibility;
 
 namespace accessibility
 {
-    typedef std::vector< beans::PropertyValue > PropertyValueVector;
+    typedef ::std::vector< beans::PropertyValue > PropertyValueVector;
 
-    class PropertyValueEqualFunctor : public std::binary_function< beans::PropertyValue, beans::PropertyValue, bool >
+    class PropertyValueEqualFunctor : public ::std::binary_function< beans::PropertyValue, beans::PropertyValue, bool >
     {
     public:
         PropertyValueEqualFunctor()
@@ -73,7 +72,7 @@ namespace accessibility
             return ( lhs.Name == rhs.Name && lhs.Value == rhs.Value );
         }
     };
-    sal_Unicode const cNewLine(0x0a);
+    sal_Unicode cNewLine(0x0a);
 
 
     // Static Helper
@@ -110,8 +109,9 @@ namespace accessibility
 
         // receive pointer to our frontend class and view window
         AccessibleStaticTextBase_Impl();
+        ~AccessibleStaticTextBase_Impl();
 
-        void SetEditSource( std::unique_ptr< SvxEditSource > && pEditSource );
+        void SetEditSource( ::std::unique_ptr< SvxEditSource > && pEditSource );
 
         void SetEventSource( const uno::Reference< XAccessible >& rInterface )
         {
@@ -148,7 +148,7 @@ namespace accessibility
         bool                    CopyText( sal_Int32 nStartPara, sal_Int32 nStartIndex,
                                               sal_Int32 nEndPara, sal_Int32 nEndIndex );
 
-        tools::Rectangle                   GetParagraphBoundingBox() const;
+        Rectangle                   GetParagraphBoundingBox() const;
         bool                    RemoveLineBreakCount( sal_Int32& rIndex );
 
     private:
@@ -161,7 +161,9 @@ namespace accessibility
         uno::Reference< XAccessible > mxThis;
 
         // implements our functionality, we're just an adapter (guarded by solar mutex)
-        mutable rtl::Reference<AccessibleEditableTextPara> mxTextParagraph;
+        mutable AccessibleEditableTextPara* mpTextParagraph;
+
+        uno::Reference< XAccessible > mxParagraph;
 
         // a wrapper for the text forwarders (guarded by solar mutex)
         mutable SvxEditSourceAdapter maEditSource;
@@ -180,7 +182,8 @@ namespace accessibility
 
     AccessibleStaticTextBase_Impl::AccessibleStaticTextBase_Impl() :
         mxThis( nullptr ),
-        mxTextParagraph( new AccessibleEditableTextPara(nullptr) ),
+        mpTextParagraph( new AccessibleEditableTextPara(nullptr) ),
+        mxParagraph( mpTextParagraph ),
         maEditSource(),
         maMutex(),
         maOffset(0,0)
@@ -190,12 +193,16 @@ namespace accessibility
         // now the maTextParagraph has an empty parent reference set
     }
 
-    void AccessibleStaticTextBase_Impl::SetEditSource( std::unique_ptr< SvxEditSource > && pEditSource )
+    AccessibleStaticTextBase_Impl::~AccessibleStaticTextBase_Impl()
+    {
+    }
+
+    void AccessibleStaticTextBase_Impl::SetEditSource( ::std::unique_ptr< SvxEditSource > && pEditSource )
     {
 
         maEditSource.SetEditSource( std::move(pEditSource) );
-        if( mxTextParagraph.is() )
-            mxTextParagraph->SetEditSource( &maEditSource );
+        if( mpTextParagraph )
+            mpTextParagraph->SetEditSource( &maEditSource );
     }
 
     void AccessibleStaticTextBase_Impl::SetOffset( const Point& rPoint )
@@ -207,42 +214,43 @@ namespace accessibility
             maOffset = rPoint;
         }
 
-        if( mxTextParagraph.is() )
-            mxTextParagraph->SetEEOffset( rPoint );
+        if( mpTextParagraph )
+            mpTextParagraph->SetEEOffset( rPoint );
     }
 
     void AccessibleStaticTextBase_Impl::Dispose()
     {
 
         // we're the owner of the paragraph, so destroy it, too
-        if( mxTextParagraph.is() )
-            mxTextParagraph->Dispose();
+        if( mpTextParagraph )
+            mpTextParagraph->Dispose();
 
         // drop references
+        mxParagraph = nullptr;
         mxThis = nullptr;
-        mxTextParagraph.clear();
+        mpTextParagraph = nullptr;
     }
 
     AccessibleEditableTextPara& AccessibleStaticTextBase_Impl::GetParagraph( sal_Int32 nPara ) const
     {
 
-        if( !mxTextParagraph.is() )
+        if( !mpTextParagraph )
             throw lang::DisposedException ("object has been already disposed", mxThis );
 
         // TODO: Have a different method on AccessibleEditableTextPara
         // that does not care about state changes
-        mxTextParagraph->SetParagraphIndex( nPara );
+        mpTextParagraph->SetParagraphIndex( nPara );
 
-        return *mxTextParagraph;
+        return *mpTextParagraph;
     }
 
     sal_Int32 AccessibleStaticTextBase_Impl::GetParagraphCount() const
     {
 
-        if( !mxTextParagraph.is() )
+        if( !mpTextParagraph )
             return 0;
         else
-            return mxTextParagraph->GetTextForwarder().GetParagraphCount();
+            return mpTextParagraph->GetTextForwarder().GetParagraphCount();
     }
 
     sal_Int32 AccessibleStaticTextBase_Impl::Internal2Index( EPosition nEEIndex ) const
@@ -324,12 +332,12 @@ namespace accessibility
                                                           sal_Int32 nEndPara, sal_Int32 nEndIndex )
     {
 
-        if( !mxTextParagraph.is() )
+        if( !mpTextParagraph )
             return false;
 
         try
         {
-            SvxEditViewForwarder& rCacheVF = mxTextParagraph->GetEditViewForwarder( true );
+            SvxEditViewForwarder& rCacheVF = mpTextParagraph->GetEditViewForwarder( true );
             return rCacheVF.SetSelection( MakeSelection(nStartPara, nStartIndex, nEndPara, nEndIndex) );
         }
         catch( const uno::RuntimeException& )
@@ -342,13 +350,13 @@ namespace accessibility
                                                       sal_Int32 nEndPara, sal_Int32 nEndIndex )
     {
 
-        if( !mxTextParagraph.is() )
+        if( !mpTextParagraph )
             return false;
 
         try
         {
-            SvxEditViewForwarder& rCacheVF = mxTextParagraph->GetEditViewForwarder( true );
-            mxTextParagraph->GetTextForwarder();    // MUST be after GetEditViewForwarder(), see method docs
+            SvxEditViewForwarder& rCacheVF = mpTextParagraph->GetEditViewForwarder( true );
+            mpTextParagraph->GetTextForwarder();    // MUST be after GetEditViewForwarder(), see method docs
             bool aRetVal;
 
             // save current selection
@@ -367,13 +375,13 @@ namespace accessibility
         }
     }
 
-    tools::Rectangle AccessibleStaticTextBase_Impl::GetParagraphBoundingBox() const
+    Rectangle AccessibleStaticTextBase_Impl::GetParagraphBoundingBox() const
     {
-        tools::Rectangle aRect;
-        if( mxTextParagraph.is() )
+        Rectangle aRect;
+        if( mpTextParagraph )
         {
-            awt::Rectangle aAwtRect = mxTextParagraph->getBounds();
-            aRect = tools::Rectangle( Point( aAwtRect.X, aAwtRect.Y ), Size( aAwtRect.Width, aAwtRect.Height ) );
+            awt::Rectangle aAwtRect = mpTextParagraph->getBounds();
+            aRect = Rectangle( Point( aAwtRect.X, aAwtRect.Y ), Size( aAwtRect.Width, aAwtRect.Height ) );
         }
         else
         {
@@ -436,7 +444,7 @@ namespace accessibility
 
     // AccessibleStaticTextBase implementation
 
-    AccessibleStaticTextBase::AccessibleStaticTextBase( std::unique_ptr< SvxEditSource > && pEditSource ) :
+    AccessibleStaticTextBase::AccessibleStaticTextBase( ::std::unique_ptr< SvxEditSource > && pEditSource ) :
         mpImpl( new AccessibleStaticTextBase_Impl() )
     {
         SolarMutexGuard aGuard;
@@ -448,12 +456,17 @@ namespace accessibility
     {
     }
 
-    void AccessibleStaticTextBase::SetEditSource( std::unique_ptr< SvxEditSource > && pEditSource )
+    void AccessibleStaticTextBase::SetEditSource( ::std::unique_ptr< SvxEditSource > && pEditSource )
     {
+#ifdef DBG_UTIL
         // precondition: solar mutex locked
         DBG_TESTSOLARMUTEX();
 
         mpImpl->SetEditSource( std::move(pEditSource) );
+
+#else
+        mpImpl->SetEditSource( std::move(pEditSource) );
+#endif
     }
 
     void AccessibleStaticTextBase::SetEventSource( const uno::Reference< XAccessible >& rInterface )
@@ -464,10 +477,15 @@ namespace accessibility
 
     void AccessibleStaticTextBase::SetOffset( const Point& rPoint )
     {
+#ifdef DBG_UTIL
         // precondition: solar mutex locked
         DBG_TESTSOLARMUTEX();
 
         mpImpl->SetOffset( rPoint );
+
+#else
+        mpImpl->SetOffset( rPoint );
+#endif
     }
 
     void AccessibleStaticTextBase::Dispose()
@@ -477,26 +495,26 @@ namespace accessibility
     }
 
     // XAccessibleContext
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getAccessibleChildCount()
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getAccessibleChildCount() throw (uno::RuntimeException, std::exception)
     {
         // no children at all
         return 0;
     }
 
-    uno::Reference< XAccessible > SAL_CALL AccessibleStaticTextBase::getAccessibleChild( sal_Int32 /*i*/ )
+    uno::Reference< XAccessible > SAL_CALL AccessibleStaticTextBase::getAccessibleChild( sal_Int32 /*i*/ ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         // no children at all
         return uno::Reference< XAccessible >();
     }
 
-    uno::Reference< XAccessible > SAL_CALL AccessibleStaticTextBase::getAccessibleAtPoint( const awt::Point& /*_aPoint*/ )
+    uno::Reference< XAccessible > SAL_CALL AccessibleStaticTextBase::getAccessibleAtPoint( const awt::Point& /*_aPoint*/ ) throw (uno::RuntimeException, std::exception)
     {
         // no children at all
         return uno::Reference< XAccessible >();
     }
 
     // XAccessibleText
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getCaretPosition()
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getCaretPosition() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -510,12 +528,12 @@ namespace accessibility
         return nPos;
     }
 
-    sal_Bool SAL_CALL AccessibleStaticTextBase::setCaretPosition( sal_Int32 nIndex )
+    sal_Bool SAL_CALL AccessibleStaticTextBase::setCaretPosition( sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         return setSelection(nIndex, nIndex);
     }
 
-    sal_Unicode SAL_CALL AccessibleStaticTextBase::getCharacter( sal_Int32 nIndex )
+    sal_Unicode SAL_CALL AccessibleStaticTextBase::getCharacter( sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -524,7 +542,7 @@ namespace accessibility
         return mpImpl->GetParagraph( aPos.nPara ).getCharacter( aPos.nIndex );
     }
 
-    uno::Sequence< beans::PropertyValue > SAL_CALL AccessibleStaticTextBase::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes )
+    uno::Sequence< beans::PropertyValue > SAL_CALL AccessibleStaticTextBase::getCharacterAttributes( sal_Int32 nIndex, const css::uno::Sequence< OUString >& aRequestedAttributes ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -536,7 +554,7 @@ namespace accessibility
         return mpImpl->GetParagraph( aPos.nPara ).getCharacterAttributes( aPos.nIndex, aRequestedAttributes );
     }
 
-    awt::Rectangle SAL_CALL AccessibleStaticTextBase::getCharacterBounds( sal_Int32 nIndex )
+    awt::Rectangle SAL_CALL AccessibleStaticTextBase::getCharacterBounds( sal_Int32 nIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -554,7 +572,7 @@ namespace accessibility
         return aBounds;
     }
 
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getCharacterCount()
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getCharacterCount() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -566,7 +584,7 @@ namespace accessibility
         return nCount;
     }
 
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getIndexAtPoint( const awt::Point& rPoint )
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getIndexAtPoint( const awt::Point& rPoint ) throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -593,7 +611,7 @@ namespace accessibility
         return -1;
     }
 
-    OUString SAL_CALL AccessibleStaticTextBase::getSelectedText()
+    OUString SAL_CALL AccessibleStaticTextBase::getSelectedText() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -607,7 +625,7 @@ namespace accessibility
         return getTextRange( nStart, nEnd );
     }
 
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getSelectionStart()
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getSelectionStart() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -621,7 +639,7 @@ namespace accessibility
         return nPos;
     }
 
-    sal_Int32 SAL_CALL AccessibleStaticTextBase::getSelectionEnd()
+    sal_Int32 SAL_CALL AccessibleStaticTextBase::getSelectionEnd() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -635,7 +653,7 @@ namespace accessibility
         return nPos;
     }
 
-    sal_Bool SAL_CALL AccessibleStaticTextBase::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    sal_Bool SAL_CALL AccessibleStaticTextBase::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -646,7 +664,7 @@ namespace accessibility
                                      aEndIndex.nPara, aEndIndex.nIndex );
     }
 
-    OUString SAL_CALL AccessibleStaticTextBase::getText()
+    OUString SAL_CALL AccessibleStaticTextBase::getText() throw (uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -658,12 +676,12 @@ namespace accessibility
         return aRes;
     }
 
-    OUString SAL_CALL AccessibleStaticTextBase::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    OUString SAL_CALL AccessibleStaticTextBase::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
         if( nStartIndex > nEndIndex )
-            std::swap(nStartIndex, nEndIndex);
+            ::std::swap(nStartIndex, nEndIndex);
         //if startindex equals endindex we will get nothing. So return an empty string directly.
         if ( nStartIndex == nEndIndex )
         {
@@ -713,7 +731,7 @@ namespace accessibility
             // paragraphs inbetween are fully included
             for( ; i<aEndIndex.nPara; ++i )
             {
-                aRes += OUStringLiteral1(cNewLine);
+                aRes += OUString(cNewLine);
                 aRes += mpImpl->GetParagraph(i).getText();
             }
 
@@ -723,7 +741,7 @@ namespace accessibility
                 //we need to add a "\n" before we add the last part of the string.
                 if ( !bEnd && aEndIndex.nIndex )
                 {
-                    aRes += OUStringLiteral1(cNewLine);
+                    aRes += OUString(cNewLine);
                 }
                 aRes += mpImpl->GetParagraph(i).getTextRange( 0, aEndIndex.nIndex );
             }
@@ -732,16 +750,16 @@ namespace accessibility
         //or at the end of the result string.
         if ( bStart )
         {
-            aRes = OUStringLiteral1(cNewLine) + aRes;
+            aRes = OUString(cNewLine) + aRes;
         }
         if ( bEnd )
         {
-            aRes += OUStringLiteral1(cNewLine);
+            aRes += OUString(cNewLine);
         }
         return aRes;
     }
 
-    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -792,7 +810,7 @@ namespace accessibility
         return aResult;
     }
 
-    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -838,7 +856,7 @@ namespace accessibility
         return aResult;
     }
 
-    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+    css::accessibility::TextSegment SAL_CALL AccessibleStaticTextBase::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
@@ -872,19 +890,19 @@ namespace accessibility
             mpImpl->CorrectTextSegment( aResult, aPos.nPara );
             if ( bLineBreak )
             {
-                aResult.SegmentText = OUStringLiteral1(cNewLine) + aResult.SegmentText;
+                aResult.SegmentText = OUString(cNewLine) + aResult.SegmentText;
             }
        }
 
         return aResult;
     }
 
-    sal_Bool SAL_CALL AccessibleStaticTextBase::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+    sal_Bool SAL_CALL AccessibleStaticTextBase::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         SolarMutexGuard aGuard;
 
         if( nStartIndex > nEndIndex )
-            std::swap(nStartIndex, nEndIndex);
+            ::std::swap(nStartIndex, nEndIndex);
 
         EPosition aStartIndex( mpImpl->Range2Internal(nStartIndex) );
         EPosition aEndIndex( mpImpl->Range2Internal(nEndIndex) );
@@ -894,7 +912,7 @@ namespace accessibility
     }
 
     // XAccessibleTextAttributes
-    uno::Sequence< beans::PropertyValue > AccessibleStaticTextBase::getDefaultAttributes( const uno::Sequence< OUString >& RequestedAttributes )
+    uno::Sequence< beans::PropertyValue > AccessibleStaticTextBase::getDefaultAttributes( const uno::Sequence< OUString >& RequestedAttributes ) throw (uno::RuntimeException, std::exception)
     {
         // get the intersection of the default attributes of all paragraphs
 
@@ -914,7 +932,7 @@ namespace accessibility
             {
                 const beans::PropertyValue* pItr = aSeq.getConstArray();
                 const beans::PropertyValue* pEnd  = pItr + aSeq.getLength();
-                const beans::PropertyValue* pFind = std::find_if( pItr, pEnd, std::bind2nd( PropertyValueEqualFunctor(), std::cref( *aItr ) ) );
+                const beans::PropertyValue* pFind = ::std::find_if( pItr, pEnd, ::std::bind2nd( PropertyValueEqualFunctor(), std::cref( *aItr ) ) );
                 if ( pFind != pEnd )
                 {
                     aIntersectionVec.push_back( *pFind );
@@ -932,7 +950,7 @@ namespace accessibility
         return comphelper::containerToSequence(aDefAttrVec);
     }
 
-    uno::Sequence< beans::PropertyValue > SAL_CALL AccessibleStaticTextBase::getRunAttributes( sal_Int32 nIndex, const uno::Sequence< OUString >& RequestedAttributes )
+    uno::Sequence< beans::PropertyValue > SAL_CALL AccessibleStaticTextBase::getRunAttributes( sal_Int32 nIndex, const uno::Sequence< OUString >& RequestedAttributes ) throw (lang::IndexOutOfBoundsException, uno::RuntimeException, std::exception)
     {
         // get those default attributes of the paragraph, which are not part
         // of the intersection of all paragraphs and add them to the run attributes
@@ -952,7 +970,7 @@ namespace accessibility
         {
             const beans::PropertyValue* pItr = aIntersectionSeq.getConstArray();
             const beans::PropertyValue* pEnd  = pItr + aIntersectionSeq.getLength();
-            bool bNone = std::none_of( pItr, pEnd, std::bind2nd( PropertyValueEqualFunctor(), std::cref( pDefAttr[i] ) ) );
+            bool bNone = ::std::none_of( pItr, pEnd, ::std::bind2nd( PropertyValueEqualFunctor(), std::cref( pDefAttr[i] ) ) );
             if ( bNone && pDefAttr[i].Handle != 0)
             {
                 aDiffVec.push_back( pDefAttr[i] );
@@ -962,7 +980,7 @@ namespace accessibility
         return ::comphelper::concatSequences( aRunAttrSeq, comphelper::containerToSequence(aDiffVec) );
     }
 
-    tools::Rectangle AccessibleStaticTextBase::GetParagraphBoundingBox() const
+    Rectangle AccessibleStaticTextBase::GetParagraphBoundingBox() const
     {
         return mpImpl->GetParagraphBoundingBox();
     }

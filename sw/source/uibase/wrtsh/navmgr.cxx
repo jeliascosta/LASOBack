@@ -148,7 +148,7 @@ bool SwNavigationMgr::addEntry(const SwPosition& rPos) {
                        // Indicates whether the index should be decremented before
                        // jumping back or not
     // The navigation history has recency with temporal ordering enhancement,
-    // as described on http://zing.ncsl.nist.gov/hfweb/proceedings/greenberg/
+    //  as described on http://zing.ncsl.nist.gov/hfweb/proceedings/greenberg/
     // If any forward history exists, twist the tail of the
     // list from the current position to the end
     if (bForwardWasEnabled) {
@@ -157,7 +157,7 @@ bool SwNavigationMgr::addEntry(const SwPosition& rPos) {
         int curr = m_nCurrent; // Index from which we'll twist the tail.
         int n = (number_ofm_entries - curr) / 2; // Number of entries that will swap places
         for (int i = 0; i < n; i++) {
-            std::swap(m_entries[curr + i], m_entries[number_ofm_entries -1 - i]);
+            ::std::swap(m_entries[curr + i], m_entries[number_ofm_entries -1 - i]);
         }
 
         if (*m_entries.back()->GetPoint() != rPos)

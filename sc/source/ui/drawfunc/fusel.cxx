@@ -49,8 +49,8 @@
 #include "docuno.hxx"
 #include "docsh.hxx"
 
-//  maximal permitted mouse movement to start Drag&Drop
-//! fusel,fuconstr,futext - combine them!
+//  Maximal erlaubte Mausbewegung um noch Drag&Drop zu starten
+//! fusel,fuconstr,futext - zusammenfassen!
 #define SC_MAXDRAGMOVE  3
 // Min necessary mouse motion for normal dragging
 #define SC_MINDRAGMOVE 2
@@ -59,24 +59,30 @@ using namespace com::sun::star;
 
 /*************************************************************************
 |*
-|* ctor
+|* Konstruktor
 |*
 \************************************************************************/
 
 FuSelection::FuSelection(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pViewP,
                SdrModel* pDoc, SfxRequest& rReq ) :
-    FuDraw(pViewSh, pWin, pViewP, pDoc, rReq)
+    FuDraw(pViewSh, pWin, pViewP, pDoc, rReq),
+    bVCAction(false)
 {
 }
 
 /*************************************************************************
 |*
-|* dtor
+|* Destruktor
 |*
 \************************************************************************/
 
 FuSelection::~FuSelection()
 {
+}
+
+sal_uInt8 FuSelection::Command(const CommandEvent& rCEvt)
+{
+    return FuDraw::Command( rCEvt );
 }
 
 /*************************************************************************
@@ -97,7 +103,8 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
         return true;
     }
 
-    bIsInDragMode = false;      //  somewhere it has to be reset (#50033#)
+    bVCAction = false;
+    bIsInDragMode = false;      //  irgendwo muss es ja zurueckgesetzt werden (#50033#)
 
     bool bReturn = FuDraw::MouseButtonDown(rMEvt);
 
@@ -121,7 +128,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                 if( ScDrawLayer::IsNoteCaption( pMarkedObj ) )
                 {
                     // move using the valid caption handles for note text box.
-                    if(pHdl && (pHdl->GetKind() != SdrHdlKind::Poly && pHdl->GetKind() != SdrHdlKind::Circle))
+                    if(pHdl && (pHdl->GetKind() != HDL_POLY && pHdl->GetKind() != HDL_CIRC))
                         bDrag = true;
                     // move the complete note box.
                     else if(!pHdl)
@@ -143,10 +150,10 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
         }
         else
         {
-            SdrPageView* pPV = nullptr;
+            SdrObject* pObj;
+            SdrPageView* pPV;
             bool bAlt = rMEvt.IsMod2();
-            SdrObject* pObj = !bAlt ? pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::PICKMACRO) : nullptr;
-            if (pObj)
+            if ( !bAlt && pView->PickObj(aMDPos, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKMACRO) )
             {
                 pView->BegMacroObj(aMDPos, pObj, pPV, pWindow);
                 bReturn = true;
@@ -154,8 +161,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
             else
             {
                 OUString sURL, sTarget;
-                pObj = !bAlt ? pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER) : nullptr;
-                if (pObj)
+                if ( !bAlt && pView->PickObj(aMDPos, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER))
                 {
                    // Support for imported Excel docs
                    // Excel is of course not consistent and allows
@@ -177,8 +183,8 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                        ScMacroInfo* pTmpInfo = ScDrawLayer::GetMacroInfo( pObj );
                        if ( !pTmpInfo || pTmpInfo->GetMacro().isEmpty() )
                        {
-                           SdrObject* pHit = pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::DEEP);
-                           if (pHit)
+                           SdrObject* pHit = nullptr;
+                           if ( pView->PickObj(aMDPos, pView->getHitTolLog(), pHit, pPV, SdrSearchOptions::DEEP ) )
                                pObj = pHit;
                        }
                    }
@@ -187,6 +193,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                    // For interoperability favour links over macros if both are defined
                    if ( !pInfo->GetHlink().isEmpty() )
                    {
+                       OSL_TRACE("** Got URL");
                        sURL = pInfo->GetHlink();
                    }
                    else if ( !pInfo->GetMacro().isEmpty() )
@@ -211,7 +218,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                            pObjSh->CallXScript( pInfo->GetMacro(),
                                aInArgs, aRet, aOutArgsIndex, aOutArgs, true, &aCaller );
                            pViewShell->FakeButtonUp( pViewShell->GetViewData().GetActivePart() );
-                           return true;        // no CaptureMouse etc.
+                           return true;        // kein CaptureMouse etc.
                        }
                    }
                 }
@@ -220,7 +227,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
 
                 SdrViewEvent aVEvt;
                 if ( !bAlt &&
-                    pView->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) != SdrHitKind::NONE &&
+                    pView->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) != SDRHIT_NONE &&
                     aVEvt.pObj != nullptr )
                 {
                     if ( ScDrawLayer::GetIMapInfo( aVEvt.pObj ) )       // ImageMap
@@ -233,7 +240,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                             sTarget = pIMapObj->GetTarget();
                         }
                     }
-                    if ( aVEvt.eEvent == SdrEventKind::ExecuteUrl && aVEvt.pURLField )   // URL
+                    if ( aVEvt.eEvent == SDREVENT_EXECUTEURL && aVEvt.pURLField )   // URL
                     {
                         sURL = aVEvt.pURLField->GetURL();
                         sTarget = aVEvt.pURLField->GetTargetFrame();
@@ -245,7 +252,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                 {
                     ScGlobal::OpenURL( sURL, sTarget );
                     pViewShell->FakeButtonUp( pViewShell->GetViewData().GetActivePart() );
-                    return true;        // no CaptureMouse etc.
+                    return true;        // kein CaptureMouse etc.
                 }
 
                 //  Is another object being edited in this view?
@@ -269,7 +276,7 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                 if ( pView->MarkObj( aMDPos, -2, false, rMEvt.IsMod1() ) )
                 {
 
-                    // move object
+                    //Objekt verschieben
 
                     if (pView->IsMarkedHit(aMDPos))
                     {
@@ -284,16 +291,18 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
                         pView->BegDragObj(aMDPos, nullptr, pHdl);
                         bReturn = true;
                     }
-                    else                                    // object at the edge
+                    else                                    // Objekt am Rand getroffen
                         if (pViewShell->IsDrawSelMode())
                             bReturn = true;
                 }
                 else
                 {
+                    //      nichts getroffen
+
                     if (pViewShell->IsDrawSelMode())
                     {
 
-                        // select object
+                        //Objekt selektieren
 
                         pView->BegMarkObj(aMDPos);
                         bReturn = true;
@@ -306,8 +315,8 @@ bool FuSelection::MouseButtonDown(const MouseEvent& rMEvt)
 
     if (!bIsInDragMode)
     {
-        // VC calls CaptureMouse itself
-        pWindow->CaptureMouse();
+        if (!bVCAction)                 // VC rufen selber CaptureMouse
+            pWindow->CaptureMouse();
         ForcePointer(&rMEvt);
     }
 
@@ -340,6 +349,13 @@ bool FuSelection::MouseMove(const MouseEvent& rMEvt)
 
         ForceScroll(aPix);
         pView->MovAction(aPnt);
+        bReturn = true;
+    }
+
+    // Ein VCControl ist aktiv
+    // Event an den Manager weiterleiten
+    if( bVCAction )
+    {
         bReturn = true;
     }
 
@@ -384,7 +400,7 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
         if ( pView->IsDragObj() )
         {
             /******************************************************************
-            * object was moved
+            * Objekt wurde verschoben
             ******************************************************************/
             if ( rMEvt.IsMod1() )
             {
@@ -418,8 +434,7 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
                 * one, he releases the mouse button immediately
                 **************************************************************/
                 SdrPageView* pPV = nullptr;
-                pObj = pView->PickObj(aMDPos, pView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER | SdrSearchOptions::BEFOREMARK);
-                if (pObj)
+                if (pView->PickObj(aMDPos, pView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER | SdrSearchOptions::BEFOREMARK))
                 {
                     pView->UnmarkAllObj();
                     pView->MarkObj(pObj,pPV);
@@ -463,7 +478,7 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
     }
 
     /**************************************************************************
-    * maybe consider OLE object
+    * Ggf. OLE-Objekt beruecksichtigen
     **************************************************************************/
     SfxInPlaceClient* pIPClient = pViewShell ? pViewShell->GetIPClient() : nullptr;
 
@@ -487,15 +502,16 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
                 SdrMark* pMark = rMarkList.GetMark(0);
                 pObj = pMark->GetMarkedSdrObj();
 
-                //  only activate, when the mouse also is over the selected object
+                //  aktivieren nur, wenn die Maus auch (noch) ueber dem
+                //  selektierten Objekt steht
 
                 SdrViewEvent aVEvt;
                 SdrHitKind eHit = pView->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt );
-                if (eHit != SdrHitKind::NONE && aVEvt.pObj == pObj &&  pViewShell)
+                if (eHit != SDRHIT_NONE && aVEvt.pObj == pObj &&  pViewShell)
                 {
                     sal_uInt16 nSdrObjKind = pObj->GetObjIdentifier();
 
-                    //  OLE: activate
+                    //  OLE: aktivieren
 
                     if (nSdrObjKind == OBJ_OLE2)
                     {
@@ -521,9 +537,9 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
                         pViewShell->GetViewData().GetDispatcher().
                             Execute(nTextSlotId, SfxCallMode::SYNCHRON | SfxCallMode::RECORD);
 
-                        // Get the created FuText now and change into EditModus
+                        // jetzt den erzeugten FuText holen und in den EditModus setzen
                         FuPoor* pPoor = pViewShell->GetViewData().GetView()->GetDrawFuncPtr();
-                        if ( pPoor && pPoor->GetSlotID() == nTextSlotId )    // has no RTTI
+                        if ( pPoor && pPoor->GetSlotID() == nTextSlotId )    // hat keine RTTI
                         {
                             FuText* pText = static_cast<FuText*>(pPoor);
                             Point aMousePixel = rMEvt.GetPosPixel();
@@ -538,13 +554,21 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
             bReturn = true;
     }
 
+    // Ein VCControl ist aktiv
+    // Event an den Manager weiterleiten
+    if( bVCAction )
+    {
+        bVCAction = false;
+        bReturn = true;
+    }
+
     ForcePointer(&rMEvt);
 
     if (pWindow->IsMouseCaptured())
         pWindow->ReleaseMouse();
 
-    //  command handler for context menu follows after MouseButtonUp,
-    //  therefore here the hard IsLeft call
+    //  Command-Handler fuer Kontext-Menue kommt erst nach MouseButtonUp,
+    //  darum hier die harte IsLeft-Abfrage
     if ( !bReturn && rMEvt.IsLeft() )
         if (pViewShell->IsDrawSelMode())
             pViewShell->GetViewData().GetDispatcher().
@@ -563,6 +587,45 @@ bool FuSelection::MouseButtonUp(const MouseEvent& rMEvt)
     }
 
     return bReturn;
+}
+
+/*************************************************************************
+|*
+|* Tastaturereignisse bearbeiten
+|*
+|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
+|* FALSE.
+|*
+\************************************************************************/
+
+bool FuSelection::KeyInput(const KeyEvent& rKEvt)
+{
+    return FuDraw::KeyInput(rKEvt);
+}
+
+/*************************************************************************
+|*
+|* Function aktivieren
+|*
+\************************************************************************/
+
+void FuSelection::Activate()
+{
+    FuDraw::Activate();
+}
+
+/*************************************************************************
+|*
+|* Function deaktivieren
+|*
+\************************************************************************/
+
+void FuSelection::Deactivate()
+{
+    /**************************************************************************
+    * Hide Cursor
+    **************************************************************************/
+    FuDraw::Deactivate();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

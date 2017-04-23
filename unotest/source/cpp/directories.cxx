@@ -54,19 +54,16 @@ OUString test::Directories::getPathFromSrc( const char *pPath )
     return m_aSrcRootPath + OUString::createFromAscii( pPath );
 }
 
-OUString test::Directories::getPathFromSrc(const OUString& rPath)
-{
-    return m_aSrcRootPath + rPath;;
-}
-
 OUString test::Directories::getURLFromWorkdir( const char *pPath )
 {
     return m_aWorkdirRootURL + OUString::createFromAscii( pPath );
 }
 
+#ifdef _WIN32 // ifdef just to keep it out of unusedcode.easy
 OUString test::Directories::getPathFromWorkdir( const char *pPath )
 {
     return m_aWorkdirRootPath + OUString::createFromAscii( pPath );
 }
+#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -48,6 +48,7 @@ namespace drawinglayer
             /// the fill parameters
             attribute::MaterialAttribute3D              maMaterial;
 
+            /// bitfield
             bool                                        mbDoubleSided : 1;
 
         public:

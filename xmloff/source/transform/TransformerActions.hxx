@@ -31,18 +31,18 @@ struct NameKey_Impl
     sal_uInt16 m_nPrefix;
     OUString m_aLocalName;
 
-    NameKey_Impl( sal_uInt16 nPrfx, const OUString& rLclNm ) :
+    inline NameKey_Impl( sal_uInt16 nPrfx, const OUString& rLclNm ) :
         m_nPrefix( nPrfx ),
         m_aLocalName( rLclNm )
     {
     }
 
-    NameKey_Impl() :
+    inline NameKey_Impl() :
         m_nPrefix( XML_NAMESPACE_UNKNOWN )
     {
     }
 
-    void SetLocalName( ::xmloff::token::XMLTokenEnum eLclNm )
+    inline void SetLocalName( ::xmloff::token::XMLTokenEnum eLclNm )
     {
         m_aLocalName = ::xmloff::token::GetXMLToken( eLclNm );
     }
@@ -75,7 +75,7 @@ struct TransformerAction_Impl
     sal_uInt32 m_nParam2;
     sal_uInt32 m_nParam3;
 
-    TransformerAction_Impl() :
+    inline TransformerAction_Impl() :
         m_nActionType( XML_TACTION_EOT ),
         m_nParam1( 0 ),
         m_nParam2( 0 ),

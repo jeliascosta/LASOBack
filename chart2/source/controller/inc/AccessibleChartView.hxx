@@ -58,12 +58,12 @@ class AccessibleChartView :
 {
 public:
     AccessibleChartView(SdrView* pView );
-    virtual ~AccessibleChartView() override;
+    virtual ~AccessibleChartView();
 
     AccessibleChartView() = delete;
 
     // ____ WeakComponentHelper (called from XComponent::dispose()) ____
-    using AccessibleBase::disposing;
+    virtual void SAL_CALL disposing() override;
 
     // ____ lang::XInitialization ____
     // 0: view::XSelectionSupplier offers notifications for selection changes and access to the selection itself
@@ -73,24 +73,31 @@ public:
     // 4: awt::XWindow representing the view's window (is a vcl Window)
     // all arguments are only valid until next initialization - don't keep them longer
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw (css::uno::Exception,
+               css::uno::RuntimeException, std::exception) override;
 
     // ____ view::XSelectionChangeListener ____
-    virtual void SAL_CALL selectionChanged( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL selectionChanged( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ________ XEventListener ________
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ________ XAccessibleContext ________
-    virtual OUString SAL_CALL getAccessibleDescription() override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent() override;
-    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() override;
-    virtual OUString SAL_CALL getAccessibleName() override;
-    virtual sal_Int16 SAL_CALL getAccessibleRole() override;
+    virtual OUString SAL_CALL getAccessibleDescription()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleParent()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getAccessibleName()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int16 SAL_CALL getAccessibleRole()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // ________ XAccessibleComponent ________
-    virtual css::awt::Rectangle SAL_CALL getBounds() override;
-    virtual css::awt::Point SAL_CALL getLocationOnScreen() override;
+    virtual css::awt::Rectangle SAL_CALL getBounds() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Point SAL_CALL getLocationOnScreen() throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
     // ________ AccessibleChartElement ________
@@ -105,6 +112,8 @@ private: // methods
      */
     css::awt::Rectangle GetWindowPosSize() const;
 
+    ExplicitValueProvider* getExplicitValueProvider();
+
 private: // members
     css::uno::WeakReference< css::view::XSelectionSupplier >        m_xSelectionSupplier;
     css::uno::WeakReference< css::frame::XModel >                   m_xChartModel;
@@ -115,7 +124,7 @@ private: // members
     std::shared_ptr< ObjectHierarchy >                              m_spObjectHierarchy;
     AccessibleUniqueId                                              m_aCurrentSelectionOID;
     SdrView*                                                        m_pSdrView;
-    std::unique_ptr<::accessibility::IAccessibleViewForwarder>      m_pViewForwarder;
+    ::accessibility::IAccessibleViewForwarder*                      m_pViewForwarder;
 };
 
 } //namespace chart

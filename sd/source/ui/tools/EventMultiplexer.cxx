@@ -65,29 +65,34 @@ class EventMultiplexer::Implementation
 {
 public:
     explicit Implementation (ViewShellBase& rBase);
-    virtual ~Implementation() override;
+    virtual ~Implementation();
 
     void AddEventListener (
-        const Link<EventMultiplexerEvent&,void>& rCallback);
+        const Link<EventMultiplexerEvent&,void>& rCallback,
+        EventMultiplexerEvent::EventId aEventTypes);
 
     void RemoveEventListener (
-        const Link<EventMultiplexerEvent&,void>& rCallback);
+        const Link<EventMultiplexerEvent&,void>& rCallback,
+        EventMultiplexerEvent::EventId aEventTypes);
 
     void CallListeners (EventMultiplexerEvent& rEvent);
 
     //===== lang::XEventListener ==============================================
     virtual void SAL_CALL
-        disposing (const css::lang::EventObject& rEventObject) override;
+        disposing (const css::lang::EventObject& rEventObject)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== beans::XPropertySetListener =======================================
     virtual void SAL_CALL
         propertyChange (
-            const css::beans::PropertyChangeEvent& rEvent) override;
+            const css::beans::PropertyChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== view::XSelectionChangeListener ====================================
     virtual void SAL_CALL
         selectionChanged (
-            const css::lang::EventObject& rEvent) override;
+            const css::lang::EventObject& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== frame::XFrameActionListener  ======================================
     /** For certain actions the listener connects to a new controller of the
@@ -95,12 +100,14 @@ public:
         in the center pane is replaced by another view shell.
     */
     virtual void SAL_CALL
-        frameAction (const css::frame::FrameActionEvent& rEvent) override;
+        frameAction (const css::frame::FrameActionEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //===== drawing::framework::XConfigurationChangeListener ==================
     virtual void SAL_CALL
         notifyConfigurationChange (
-            const css::drawing::framework::ConfigurationChangeEvent& rEvent) override;
+            const css::drawing::framework::ConfigurationChangeEvent& rEvent)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -111,7 +118,8 @@ protected:
 
 private:
     ViewShellBase& mrBase;
-    typedef ::std::vector<Link<EventMultiplexerEvent&,void>> ListenerList;
+    typedef ::std::pair<Link<EventMultiplexerEvent&,void>,EventMultiplexerEvent::EventId> ListenerDescriptor;
+    typedef ::std::vector<ListenerDescriptor> ListenerList;
     ListenerList maListeners;
 
     /// Remember whether we are listening to the UNO controller.
@@ -131,10 +139,16 @@ private:
     void DisconnectFromController();
 
     void CallListeners (
-        EventMultiplexerEventId eId,
+        EventMultiplexerEvent::EventId eId,
         void* pUserData = nullptr);
 
-    DECL_LINK(SlideSorterSelectionChangeListener, LinkParamNone*, void);
+    /** This method throws a DisposedException when the object has already been
+        disposed.
+    */
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
+
+    DECL_LINK_TYPED(SlideSorterSelectionChangeListener, LinkParamNone*, void);
 };
 
 const char aCurrentPagePropertyName[] = "CurrentPage";
@@ -145,6 +159,7 @@ const char aEditModePropertyName[] = "IsMasterPageMode";
 EventMultiplexer::EventMultiplexer (ViewShellBase& rBase)
     : mpImpl (new EventMultiplexer::Implementation(rBase))
 {
+    mpImpl->acquire();
 }
 
 EventMultiplexer::~EventMultiplexer()
@@ -162,19 +177,21 @@ EventMultiplexer::~EventMultiplexer()
 }
 
 void EventMultiplexer::AddEventListener (
-    const Link<EventMultiplexerEvent&,void>& rCallback)
+    const Link<EventMultiplexerEvent&,void>& rCallback,
+    EventMultiplexerEvent::EventId aEventTypes)
 {
-    mpImpl->AddEventListener(rCallback);
+    mpImpl->AddEventListener (rCallback, aEventTypes);
 }
 
 void EventMultiplexer::RemoveEventListener (
-    const Link<EventMultiplexerEvent&,void>& rCallback)
+    const Link<EventMultiplexerEvent&,void>& rCallback,
+    EventMultiplexerEvent::EventId aEventTypes)
 {
-    mpImpl->RemoveEventListener(rCallback);
+    mpImpl->RemoveEventListener (rCallback, aEventTypes);
 }
 
 void EventMultiplexer::MultiplexEvent(
-    EventMultiplexerEventId eEventId,
+    EventMultiplexerEvent::EventId eEventId,
     void* pUserData )
 {
     EventMultiplexerEvent aEvent(eEventId, pUserData);
@@ -198,7 +215,7 @@ EventMultiplexer::Implementation::Implementation (ViewShellBase& rBase)
     // Connect to the frame to listen for controllers being exchanged.
     // Listen to changes of certain properties.
     Reference<frame::XFrame> xFrame (
-        mrBase.GetFrame()->GetFrame().GetFrameInterface(),
+        mrBase.GetFrame()->GetTopFrame().GetFrameInterface(),
         uno::UNO_QUERY);
     mxFrameWeak = xFrame;
     if (xFrame.is())
@@ -290,25 +307,42 @@ void EventMultiplexer::Implementation::ReleaseListeners()
 }
 
 void EventMultiplexer::Implementation::AddEventListener (
-    const Link<EventMultiplexerEvent&,void>& rCallback)
-{
-    for (auto const & i : maListeners)
-        if (i == rCallback)
-            return;
-    maListeners.push_back(rCallback);
-}
-
-void EventMultiplexer::Implementation::RemoveEventListener (
-    const Link<EventMultiplexerEvent&,void>& rCallback)
+    const Link<EventMultiplexerEvent&,void>& rCallback,
+    EventMultiplexerEvent::EventId aEventTypes)
 {
     ListenerList::iterator iListener (maListeners.begin());
     ListenerList::const_iterator iEnd (maListeners.end());
     for (;iListener!=iEnd; ++iListener)
-        if (*iListener == rCallback)
-        {
-            maListeners.erase(iListener);
+        if (iListener->first == rCallback)
             break;
-        }
+    if (iListener != maListeners.end())
+    {
+        // Listener exists.  Update its event type set.
+        iListener->second |= aEventTypes;
+    }
+    else
+    {
+        maListeners.push_back (ListenerDescriptor(rCallback,aEventTypes));
+    }
+}
+
+void EventMultiplexer::Implementation::RemoveEventListener (
+    const Link<EventMultiplexerEvent&,void>& rCallback,
+    EventMultiplexerEvent::EventId aEventTypes)
+{
+    ListenerList::iterator iListener (maListeners.begin());
+    ListenerList::const_iterator iEnd (maListeners.end());
+    for (;iListener!=iEnd; ++iListener)
+        if (iListener->first == rCallback)
+            break;
+    if (iListener != maListeners.end())
+    {
+        // Update the event type set.
+        iListener->second &= ~aEventTypes;
+        // When no events remain in the set then remove the listener.
+        if (iListener->second == EID_EMPTY_SET)
+            maListeners.erase (iListener);
+    }
 }
 
 void EventMultiplexer::Implementation::ConnectToController()
@@ -347,7 +381,7 @@ void EventMultiplexer::Implementation::ConnectToController()
                 }
                 catch (const beans::UnknownPropertyException&)
                 {
-                    SAL_WARN("sd", "EventMultiplexer::ConnectToController: CurrentPage unknown");
+                    OSL_TRACE("EventMultiplexer::ConnectToController: CurrentPage unknown");
                 }
 
                 try
@@ -356,7 +390,7 @@ void EventMultiplexer::Implementation::ConnectToController()
                 }
                 catch (const beans::UnknownPropertyException&)
                 {
-                    SAL_WARN("sd", "EventMultiplexer::ConnectToController: IsMasterPageMode unknown");
+                    OSL_TRACE("EventMultiplexer::ConnectToController: IsMasterPageMode unknown");
                 }
         }
 
@@ -391,7 +425,7 @@ void EventMultiplexer::Implementation::DisconnectFromController()
             }
             catch (const beans::UnknownPropertyException&)
             {
-                SAL_WARN("sd", "DisconnectFromController: CurrentPage unknown");
+                OSL_TRACE ("DisconnectFromController: CurrentPage unknown");
             }
 
             try
@@ -400,7 +434,7 @@ void EventMultiplexer::Implementation::DisconnectFromController()
             }
             catch (const beans::UnknownPropertyException&)
             {
-                SAL_WARN("sd", "DisconnectFromController: IsMasterPageMode unknown");
+                OSL_TRACE ("DisconnectFromController: IsMasterPageMode unknown");
             }
         }
 
@@ -425,6 +459,7 @@ void EventMultiplexer::Implementation::DisconnectFromController()
 
 void SAL_CALL EventMultiplexer::Implementation::disposing (
     const lang::EventObject& rEventObject)
+    throw (RuntimeException, std::exception)
 {
     if (mbListeningToController)
     {
@@ -448,26 +483,22 @@ void SAL_CALL EventMultiplexer::Implementation::disposing (
 
 void SAL_CALL EventMultiplexer::Implementation::propertyChange (
     const beans::PropertyChangeEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
-    if (rBHelper.bDisposed || rBHelper.bInDispose)
-    {
-        throw lang::DisposedException (
-            "SlideSorterController object has already been disposed",
-            static_cast<uno::XWeak*>(this));
-    }
+    ThrowIfDisposed();
 
     if ( rEvent.PropertyName == aCurrentPagePropertyName )
     {
-        CallListeners(EventMultiplexerEventId::CurrentPageChanged);
+        CallListeners(EventMultiplexerEvent::EID_CURRENT_PAGE);
     }
     else if ( rEvent.PropertyName == aEditModePropertyName )
     {
         bool bIsMasterPageMode (false);
         rEvent.NewValue >>= bIsMasterPageMode;
         if (bIsMasterPageMode)
-            CallListeners(EventMultiplexerEventId::EditModeMaster);
+            CallListeners(EventMultiplexerEvent::EID_EDIT_MODE_MASTER);
         else
-            CallListeners(EventMultiplexerEventId::EditModeNormal);
+            CallListeners(EventMultiplexerEvent::EID_EDIT_MODE_NORMAL);
     }
 }
 
@@ -475,6 +506,7 @@ void SAL_CALL EventMultiplexer::Implementation::propertyChange (
 
 void SAL_CALL EventMultiplexer::Implementation::frameAction (
     const frame::FrameActionEvent& rEvent)
+    throw (css::uno::RuntimeException, std::exception)
 {
     Reference<frame::XFrame> xFrame (mxFrameWeak);
     if (rEvent.Frame == xFrame)
@@ -482,19 +514,19 @@ void SAL_CALL EventMultiplexer::Implementation::frameAction (
         {
             case frame::FrameAction_COMPONENT_DETACHING:
                 DisconnectFromController();
-                CallListeners (EventMultiplexerEventId::ControllerDetached);
+                CallListeners (EventMultiplexerEvent::EID_CONTROLLER_DETACHED);
                 break;
 
             case frame::FrameAction_COMPONENT_REATTACHED:
-                CallListeners (EventMultiplexerEventId::ControllerDetached);
+                CallListeners (EventMultiplexerEvent::EID_CONTROLLER_DETACHED);
                 DisconnectFromController();
                 ConnectToController();
-                CallListeners (EventMultiplexerEventId::ControllerAttached);
+                CallListeners (EventMultiplexerEvent::EID_CONTROLLER_ATTACHED);
                 break;
 
             case frame::FrameAction_COMPONENT_ATTACHED:
                 ConnectToController();
-                CallListeners (EventMultiplexerEventId::ControllerAttached);
+                CallListeners (EventMultiplexerEvent::EID_CONTROLLER_ATTACHED);
                 break;
 
             default:
@@ -506,14 +538,16 @@ void SAL_CALL EventMultiplexer::Implementation::frameAction (
 
 void SAL_CALL EventMultiplexer::Implementation::selectionChanged (
     const lang::EventObject& )
+    throw (css::uno::RuntimeException, std::exception)
 {
-    CallListeners (EventMultiplexerEventId::EditViewSelection);
+    CallListeners (EventMultiplexerEvent::EID_EDIT_VIEW_SELECTION);
 }
 
 //===== drawing::framework::XConfigurationChangeListener ==================
 
 void SAL_CALL EventMultiplexer::Implementation::notifyConfigurationChange (
     const ConfigurationChangeEvent& rEvent)
+    throw (RuntimeException, std::exception)
 {
     sal_Int32 nEventType = 0;
     rEvent.UserData >>= nEventType;
@@ -522,12 +556,12 @@ void SAL_CALL EventMultiplexer::Implementation::notifyConfigurationChange (
         case ResourceActivationEvent:
             if (rEvent.ResourceId->getResourceURL().match(FrameworkHelper::msViewURLPrefix))
             {
-                CallListeners (EventMultiplexerEventId::ViewAdded);
+                CallListeners (EventMultiplexerEvent::EID_VIEW_ADDED);
 
                 if (rEvent.ResourceId->isBoundToURL(
                     FrameworkHelper::msCenterPaneURL, AnchorBindingMode_DIRECT))
                 {
-                    CallListeners (EventMultiplexerEventId::MainViewAdded);
+                    CallListeners (EventMultiplexerEvent::EID_MAIN_VIEW_ADDED);
                 }
 
                 // Add selection change listener at slide sorter.
@@ -549,10 +583,12 @@ void SAL_CALL EventMultiplexer::Implementation::notifyConfigurationChange (
         case ResourceDeactivationEvent:
             if (rEvent.ResourceId->getResourceURL().match(FrameworkHelper::msViewURLPrefix))
             {
+                CallListeners (EventMultiplexerEvent::EID_VIEW_REMOVED);
+
                 if (rEvent.ResourceId->isBoundToURL(
                     FrameworkHelper::msCenterPaneURL, AnchorBindingMode_DIRECT))
                 {
-                    CallListeners (EventMultiplexerEventId::MainViewRemoved);
+                    CallListeners (EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED);
                 }
 
                 // Remove selection change listener from slide sorter.  Add
@@ -573,7 +609,7 @@ void SAL_CALL EventMultiplexer::Implementation::notifyConfigurationChange (
             break;
 
         case ConfigurationUpdateEvent:
-            CallListeners (EventMultiplexerEventId::ConfigurationUpdated);
+            CallListeners (EventMultiplexerEvent::EID_CONFIGURATION_UPDATED);
             break;
     }
 
@@ -581,8 +617,19 @@ void SAL_CALL EventMultiplexer::Implementation::notifyConfigurationChange (
 
 void SAL_CALL EventMultiplexer::Implementation::disposing()
 {
-    CallListeners (EventMultiplexerEventId::Disposing);
+    CallListeners (EventMultiplexerEvent::EID_DISPOSING);
     ReleaseListeners();
+}
+
+void EventMultiplexer::Implementation::ThrowIfDisposed()
+    throw (css::lang::DisposedException)
+{
+    if (rBHelper.bDisposed || rBHelper.bInDispose)
+    {
+        throw lang::DisposedException (
+            "SlideSorterController object has already been disposed",
+            static_cast<uno::XWeak*>(this));
+    }
 }
 
 void EventMultiplexer::Implementation::Notify (
@@ -594,42 +641,43 @@ void EventMultiplexer::Implementation::Notify (
     {
         switch (pSdrHint->GetKind())
         {
-            case SdrHintKind::ModelCleared:
-            case SdrHintKind::PageOrderChange:
-                CallListeners (EventMultiplexerEventId::PageOrder);
+            case HINT_MODELCLEARED:
+            case HINT_PAGEORDERCHG:
+                CallListeners (EventMultiplexerEvent::EID_PAGE_ORDER);
                 break;
 
-            case SdrHintKind::SwitchToPage:
-                CallListeners (EventMultiplexerEventId::CurrentPageChanged);
+            case HINT_SWITCHTOPAGE:
+                CallListeners (EventMultiplexerEvent::EID_CURRENT_PAGE);
                 break;
 
-            case SdrHintKind::ObjectChange:
-                CallListeners(EventMultiplexerEventId::ShapeChanged,
+            case HINT_OBJCHG:
+                CallListeners(EventMultiplexerEvent::EID_SHAPE_CHANGED,
                     const_cast<void*>(static_cast<const void*>(pSdrHint->GetPage())));
                 break;
 
-            case SdrHintKind::ObjectInserted:
-                CallListeners(EventMultiplexerEventId::ShapeInserted,
+            case HINT_OBJINSERTED:
+                CallListeners(EventMultiplexerEvent::EID_SHAPE_INSERTED,
                     const_cast<void*>(static_cast<const void*>(pSdrHint->GetPage())));
                 break;
 
-            case SdrHintKind::ObjectRemoved:
-                CallListeners(EventMultiplexerEventId::ShapeRemoved,
+            case HINT_OBJREMOVED:
+                CallListeners(EventMultiplexerEvent::EID_SHAPE_REMOVED,
                     const_cast<void*>(static_cast<const void*>(pSdrHint->GetPage())));
                 break;
             default:
                 break;
         }
     }
-    else
+    else if (dynamic_cast<const SfxSimpleHint*>(&rHint))
     {
-        if (rHint.GetId() == SfxHintId::Dying)
+        const SfxSimpleHint& rSimpleHint = static_cast<const SfxSimpleHint&>(rHint);
+        if (rSimpleHint.GetId() == SFX_HINT_DYING)
             mpDocument = nullptr;
     }
 }
 
 void EventMultiplexer::Implementation::CallListeners (
-    EventMultiplexerEventId eId,
+    EventMultiplexerEvent::EventId eId,
     void* pUserData)
 {
     EventMultiplexerEvent aEvent(eId, pUserData);
@@ -643,19 +691,20 @@ void EventMultiplexer::Implementation::CallListeners (EventMultiplexerEvent& rEv
     ListenerList::const_iterator iListenerEnd (aCopyListeners.end());
     for (; iListener!=iListenerEnd; ++iListener)
     {
-        iListener->Call(rEvent);
+        if ((iListener->second && rEvent.meEventId))
+            iListener->first.Call(rEvent);
     }
 }
 
-IMPL_LINK_NOARG(EventMultiplexer::Implementation, SlideSorterSelectionChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(EventMultiplexer::Implementation, SlideSorterSelectionChangeListener, LinkParamNone*, void)
 {
-    CallListeners(EventMultiplexerEventId::SlideSortedSelection);
+    CallListeners(EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION);
 }
 
 //===== EventMultiplexerEvent =================================================
 
 EventMultiplexerEvent::EventMultiplexerEvent (
-    EventMultiplexerEventId eEventId,
+    EventId eEventId,
     const void* pUserData)
     : meEventId(eEventId),
       mpUserData(pUserData)

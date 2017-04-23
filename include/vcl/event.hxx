@@ -38,10 +38,10 @@ namespace com { namespace sun { namespace star { namespace awt {
     struct MouseEvent;
 } } } }
 
-enum class TextDirectionality {
-    LeftToRight_TopToBottom,
-    RightToLeft_TopToBottom,
-    TopToBottom_RightToLeft
+enum TextDirectionality {
+    TextDirectionality_LeftToRight_TopToBottom,
+    TextDirectionality_RightToLeft_TopToBottom,
+    TextDirectionality_TopToBottom_RightToLeft
 };
 
 class VCL_DLLPUBLIC KeyEvent
@@ -125,6 +125,8 @@ public:
 
     const Point&    GetPosPixel() const     { return maPos; }
     MouseEventModifiers GetMode() const         { return mnMode; }
+                    /** inits this vcl KeyEvent with all settings from the given awt event **/
+                    MouseEvent( const css::awt::MouseEvent& rEvent );
 
     sal_uInt16      GetClicks() const       { return mnClicks; }
 
@@ -175,6 +177,67 @@ inline MouseEvent::MouseEvent( const Point& rPos, sal_uInt16 nClicks,
     mnCode      = nButtons | nModifier;
 }
 
+class VCL_DLLPUBLIC ZoomEvent
+{
+private:
+    Point           maCenter;
+    float           mfScale;
+
+public:
+    ZoomEvent() :
+        mfScale( 1 )
+    {
+    }
+
+    ZoomEvent( const Point& rCenter,
+               float fScale ) :
+        maCenter( rCenter ),
+        mfScale( fScale )
+    {
+    }
+
+    const Point& GetCenter() const
+    {
+        return maCenter;
+    }
+
+    float GetScale() const
+    {
+        return mfScale;
+    }
+};
+
+class VCL_DLLPUBLIC ScrollEvent
+{
+private:
+    int mnXOffset;
+    int mnYOffset;
+
+public:
+    ScrollEvent() :
+        mnXOffset( 0 ),
+        mnYOffset( 0 )
+    {
+    }
+
+    ScrollEvent( int xOffset, int yOffset ) :
+        mnXOffset( xOffset ),
+        mnYOffset( yOffset )
+    {
+    }
+
+    int GetXOffset() const
+    {
+        return mnXOffset;
+    }
+
+    int GetYOffset() const
+    {
+        return mnYOffset;
+    }
+};
+
+
 enum class HelpEventMode
 {
     NONE           = 0x0000,
@@ -221,23 +284,23 @@ private:
     /// RenderContext to which we should draw - can be a VirtualDevice or anything.
     VclPtr<vcl::RenderContext> mpRenderContext;
 
-    tools::Rectangle           maOutRect;
+    Rectangle           maOutRect;
     sal_uInt16          mnItemId;
     sal_uInt16          mnStyle;
 
 public:
     UserDrawEvent(vcl::Window* pWindow, vcl::RenderContext* pRenderContext,
-            const tools::Rectangle& rOutRect, sal_uInt16 nId, sal_uInt16 nStyle = 0);
+            const Rectangle& rOutRect, sal_uInt16 nId, sal_uInt16 nStyle = 0);
 
     vcl::Window*        GetWindow() const { return mpWindow; }
     vcl::RenderContext* GetRenderContext() const { return mpRenderContext; }
-    const tools::Rectangle&    GetRect() const { return maOutRect; }
+    const Rectangle&    GetRect() const { return maOutRect; }
     sal_uInt16          GetItemId() const { return mnItemId; }
     sal_uInt16          GetStyle() const { return mnStyle; }
 };
 
 inline UserDrawEvent::UserDrawEvent(vcl::Window* pWindow, vcl::RenderContext* pRenderContext,
-        const tools::Rectangle& rOutRect, sal_uInt16 nId, sal_uInt16 nStyle)
+        const Rectangle& rOutRect, sal_uInt16 nId, sal_uInt16 nStyle)
     : mpWindow(pWindow)
     , mpRenderContext(pRenderContext)
     , maOutRect( rOutRect )
@@ -299,6 +362,7 @@ private:
     VclPtr<vcl::Window>     mpWindow;
     void*                   mpData;
     MouseNotifyEvent        mnEventType;
+    long                    mnRetValue;
 
 public:
                             NotifyEvent( MouseNotifyEvent nEventType,

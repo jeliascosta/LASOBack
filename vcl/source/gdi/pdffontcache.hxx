@@ -45,14 +45,13 @@ namespace vcl
                 std::type_info *pType = rRight.m_typeFontFace;
 
                 return m_nFontId < rRight.m_nFontId ||
-                       ( m_nFontId == rRight.m_nFontId &&
-                       ( m_typeFontFace->before( *pType ) ||
-                       ( *m_typeFontFace == *pType && m_bVertical < rRight.m_bVertical ) ) );
+                       m_typeFontFace->before( *pType ) ||
+                       m_bVertical < rRight.m_bVertical;
             }
         };
         struct FontData
         {
-            std::vector< sal_Int32 >  m_nWidths;
+            Int32Vector  m_nWidths;
             Ucs2UIntMap  m_aGlyphIdToIndex;
         };
         typedef std::map< FontIdentifier, sal_uInt32 > FontToIndexMap;
@@ -63,6 +62,7 @@ namespace vcl
         FontData& getFont( const PhysicalFontFace*, bool bVertical );
         public:
         PDFFontCache() {}
+        ~PDFFontCache() {}
 
         sal_Int32 getGlyphWidth( const PhysicalFontFace*, sal_GlyphId, bool bVertical, SalGraphics* );
     };

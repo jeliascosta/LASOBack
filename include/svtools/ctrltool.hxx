@@ -134,6 +134,7 @@ private:
 
     OUString                maMapBoth;
     OUString                maMapPrinterOnly;
+    OUString                maMapScreenOnly;
     OUString                maMapStyleNotAvailable;
     mutable OUString        maMapNotAvailable;
     OUString                maLight;
@@ -151,11 +152,13 @@ private:
 
     SVT_DLLPRIVATE ImplFontListNameInfo*    ImplFind( const OUString& rSearchName, sal_uLong* pIndex ) const;
     SVT_DLLPRIVATE ImplFontListNameInfo*    ImplFindByName( const OUString& rStr ) const;
-    SVT_DLLPRIVATE void                     ImplInsertFonts(OutputDevice* pDev, bool bInsertData);
+    SVT_DLLPRIVATE void                 ImplInsertFonts( OutputDevice* pDev, bool bAll,
+                                             bool bInsertData );
 
 public:
                             FontList( OutputDevice* pDevice,
-                                      OutputDevice* pDevice2 = nullptr);
+                                      OutputDevice* pDevice2 = nullptr,
+                                      bool bAll = true );
                             ~FontList();
 
     FontList*               Clone() const;

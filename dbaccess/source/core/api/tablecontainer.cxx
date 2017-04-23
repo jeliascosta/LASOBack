@@ -332,10 +332,12 @@ ObjectType OTableContainer::appendObject( const OUString& _rForName, const Refer
             }
         }
     }
-    Sequence< OUString> aNames{
-        PROPERTY_FILTER, PROPERTY_ORDER, PROPERTY_APPLYFILTER, PROPERTY_FONT,
-        PROPERTY_ROW_HEIGHT, PROPERTY_TEXTCOLOR, PROPERTY_TEXTLINECOLOR,
-        PROPERTY_TEXTEMPHASIS, PROPERTY_TEXTRELIEF};
+    const static OUString s_pTableProps[] = {    OUString(PROPERTY_FILTER), OUString(PROPERTY_ORDER)
+                                                    , OUString(PROPERTY_APPLYFILTER), OUString(PROPERTY_FONT)
+                                                    , OUString(PROPERTY_ROW_HEIGHT), OUString(PROPERTY_TEXTCOLOR)
+                                                    , OUString(PROPERTY_TEXTLINECOLOR), OUString(PROPERTY_TEXTEMPHASIS)
+                                                    , OUString(PROPERTY_TEXTRELIEF) };
+    Sequence< OUString> aNames(s_pTableProps, SAL_N_ELEMENTS(s_pTableProps));
     if ( bModified || !lcl_isPropertySetDefaulted(aNames,xTableDefinition) )
         ::dbaccess::notifyDataSourceModified(m_xTableDefinitions,true);
 
@@ -406,7 +408,7 @@ void OTableContainer::dropObject(sal_Int32 _nPos, const OUString& _sElementName)
     m_bInDrop = false;
 }
 
-void SAL_CALL OTableContainer::elementInserted( const ContainerEvent& Event )
+void SAL_CALL OTableContainer::elementInserted( const ContainerEvent& Event ) throw (RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard(m_rMutex);
     OUString sName;
@@ -424,11 +426,11 @@ void SAL_CALL OTableContainer::elementInserted( const ContainerEvent& Event )
     }
 }
 
-void SAL_CALL OTableContainer::elementRemoved( const ContainerEvent& /*Event*/ )
+void SAL_CALL OTableContainer::elementRemoved( const ContainerEvent& /*Event*/ ) throw (RuntimeException, std::exception)
 {
 }
 
-void SAL_CALL OTableContainer::elementReplaced( const ContainerEvent& Event )
+void SAL_CALL OTableContainer::elementReplaced( const ContainerEvent& Event ) throw (RuntimeException, std::exception)
 {
     // create a new config entry
     {
@@ -448,7 +450,7 @@ void SAL_CALL OTableContainer::disposing()
     m_pTableMediator = nullptr;
 }
 
-void SAL_CALL OTableContainer::disposing( const css::lang::EventObject& /*Source*/ )
+void SAL_CALL OTableContainer::disposing( const css::lang::EventObject& /*Source*/ ) throw (css::uno::RuntimeException, std::exception)
 {
 }
 

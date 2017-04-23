@@ -29,27 +29,37 @@
 #include <i18nlangtag/languagetag.hxx>
 #include <unotools/options.hxx>
 
+// bits for broadcasting hints of changes in a SfxSimpleHint, may be combined
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_LOCALE       = 0x00000001;
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_CURRENCY     = 0x00000002;
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_UILOCALE     = 0x00000004;
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_DECSEP       = 0x00000008;
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_DATEPATTERNS = 0x00000010;
+const sal_uInt32 SYSLOCALEOPTIONS_HINT_IGNORELANG   = 0x00000020;
+
 class SvtSysLocaleOptions_Impl;
 class SvtListener;
 namespace osl { class Mutex; }
 
 class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtSysLocaleOptions : public utl::detail::Options
 {
-    std::shared_ptr<SvtSysLocaleOptions_Impl>  pImpl;
+    static  SvtSysLocaleOptions_Impl*   pOptions;
+    static  sal_Int32                   nRefCount;
 
     UNOTOOLS_DLLPRIVATE static  ::osl::Mutex&       GetMutex();
-    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster* p, ConfigurationHints nHint ) override;
+    virtual void ConfigurationChanged( utl::ConfigurationBroadcaster* p, sal_uInt32 nHint ) override;
 
 public:
 
-    enum class EOption
+    enum EOption
     {
-        Locale,
-        Currency,
-        DatePatterns
+        E_LOCALE,
+        E_UILOCALE,
+        E_CURRENCY,
+        E_DATEPATTERNS
     };
                                 SvtSysLocaleOptions();
-                                virtual ~SvtSysLocaleOptions() override;
+                                virtual ~SvtSysLocaleOptions();
 
     // ConfigItem methods
 
@@ -86,8 +96,10 @@ public:
     // config value access methods
 
     /// The config string may be empty to denote the SYSTEM locale
+            const OUString&     GetLocaleConfigString() const;
             void                SetLocaleConfigString( const OUString& rStr );
-            /** Get locale set, not resolved to the real locale. */
+            /** Get locale set, if empty denotes SYSTEM locale, not resolved
+                to the real locale. */
             LanguageTag         GetLanguageTag() const;
             /** Get locale set, always resolved to the real locale. */
             const LanguageTag&  GetRealLanguageTag() const;

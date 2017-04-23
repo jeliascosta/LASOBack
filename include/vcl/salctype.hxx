@@ -52,6 +52,7 @@ public:
 
                         ConvertData( const Graphic& rGraphic, SvStream& rStm, ConvertDataFormat nFormat ) :
                             maGraphic( rGraphic ), mrStm( rStm ), mnFormat( nFormat ) {}
+                        ~ConvertData() {}
 };
 
 typedef sal_uLong (*SALGRFCVTPROC)( void* pInst,

@@ -52,6 +52,10 @@ public:
 
     XMLAutoStylePoolProperties( XMLAutoStyleFamily& rFamilyData, const ::std::vector< XMLPropertyState >& rProperties, OUString& rParentname );
 
+    ~XMLAutoStylePoolProperties()
+    {
+    }
+
     const OUString& GetName() const { return msName; }
     const ::std::vector< XMLPropertyState >& GetProperties() const { return maProperties; }
     sal_uInt32 GetPos() const { return mnPos; }
@@ -78,7 +82,7 @@ public:
 
     ~XMLAutoStylePoolParent();
 
-    bool Add( XMLAutoStyleFamily& rFamilyData, const ::std::vector< XMLPropertyState >& rProperties, OUString& rName, bool bDontSeek );
+    bool Add( XMLAutoStyleFamily& rFamilyData, const ::std::vector< XMLPropertyState >& rProperties, OUString& rName, bool bDontSeek = false );
 
     bool AddNamed( XMLAutoStyleFamily& rFamilyData, const ::std::vector< XMLPropertyState >& rProperties, const OUString& rName );
 
@@ -107,7 +111,6 @@ struct XMLAutoStyleFamily
 
     ParentSetType m_ParentSet;
     std::set<OUString> maNameSet;
-    std::set<OUString> maReservedNameSet;
     sal_uInt32 mnCount;
     sal_uInt32 mnName;
     OUString maStrPrefix;
@@ -115,9 +118,10 @@ struct XMLAutoStyleFamily
 
     XMLAutoStyleFamily( sal_Int32 nFamily, const OUString& rStrName,
             const rtl::Reference<SvXMLExportPropertyMapper>& rMapper,
-            const OUString& rStrPrefix, bool bAsFamily );
+            const OUString& rStrPrefix, bool bAsFamily = true );
 
     explicit XMLAutoStyleFamily( sal_Int32 nFamily );
+    ~XMLAutoStyleFamily();
 
     XMLAutoStyleFamily(const XMLAutoStyleFamily&) = delete;
     XMLAutoStyleFamily& operator=(const XMLAutoStyleFamily&) = delete;
@@ -147,11 +151,10 @@ public:
 
     void AddFamily( sal_Int32 nFamily, const OUString& rStrName,
         const rtl::Reference < SvXMLExportPropertyMapper > & rMapper,
-        const OUString& rStrPrefix, bool bAsFamily );
+        const OUString& rStrPrefix, bool bAsFamily = true );
     void SetFamilyPropSetMapper( sal_Int32 nFamily,
         const rtl::Reference < SvXMLExportPropertyMapper > & rMapper );
     void RegisterName( sal_Int32 nFamily, const OUString& rName );
-    void RegisterDefinedName( sal_Int32 nFamily, const OUString& rName );
     void GetRegisteredNames(
         css::uno::Sequence<sal_Int32>& aFamilies,
         css::uno::Sequence<OUString>& aNames );

@@ -22,12 +22,14 @@
 #include <xmloff/xmlimp.hxx>
 #include <rtl/ustrbuf.hxx>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
-class ScXMLContentContext : public ScXMLImportContext
+class ScXMLContentContext : public SvXMLImportContext
 {
     OUStringBuffer sOUText;
     OUStringBuffer& sValue;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -36,7 +38,7 @@ public:
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                         OUStringBuffer& sValue);
 
-    virtual ~ScXMLContentContext() override;
+    virtual ~ScXMLContentContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

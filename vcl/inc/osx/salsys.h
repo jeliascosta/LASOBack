@@ -29,11 +29,11 @@ class VCL_DLLPUBLIC AquaSalSystem : public SalSystem
 {
 public:
     AquaSalSystem() {}
-    virtual ~AquaSalSystem() override;
+    virtual ~AquaSalSystem();
 
     // get info about the display
     virtual unsigned int GetDisplayScreenCount() override;
-    virtual tools::Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen ) override;
+    virtual Rectangle GetDisplayScreenPosSizePixel( unsigned int nScreen ) override;
 
     virtual int ShowNativeMessageBox( const OUString& rTitle,
                                       const OUString& rMessage) override;

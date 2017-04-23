@@ -26,83 +26,142 @@
 
 namespace fileaccess {
 
-    class TaskManager;
+    class shell;
 
     class XRow_impl: public cppu::WeakImplHelper<
         css::sdbc::XRow >
     {
     public:
-        XRow_impl( TaskManager* pShell,const css::uno::Sequence< css::uno::Any >& aValueMap );
-        virtual ~XRow_impl() override;
+        XRow_impl( shell* pShell,const css::uno::Sequence< css::uno::Any >& aValueMap );
+        virtual ~XRow_impl();
 
         virtual sal_Bool SAL_CALL
-        wasNull() override;
+        wasNull(
+            void )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual OUString SAL_CALL
-        getString( sal_Int32 columnIndex ) override;
+        getString(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual sal_Bool SAL_CALL
-        getBoolean( sal_Int32 columnIndex ) override;
+        getBoolean(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual sal_Int8 SAL_CALL
-        getByte( sal_Int32 columnIndex ) override;
+        getByte(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual sal_Int16 SAL_CALL
-        getShort( sal_Int32 columnIndex ) override;
+        getShort(
+            sal_Int32 columnIndex )
+            throw(
+                css::sdbc::SQLException,
+                css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Int32 SAL_CALL
-        getInt( sal_Int32 columnIndex ) override;
+        getInt(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual sal_Int64 SAL_CALL
-        getLong( sal_Int32 columnIndex ) override;
+        getLong(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception ) override;
 
         virtual float SAL_CALL
-        getFloat( sal_Int32 columnIndex ) override;
+        getFloat(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual double SAL_CALL
         getDouble(
-            sal_Int32 columnIndex ) override;
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-        getBytes( sal_Int32 columnIndex ) override;
+        getBytes(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::util::Date SAL_CALL
-        getDate( sal_Int32 columnIndex ) override;
+        getDate(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::util::Time SAL_CALL
-        getTime( sal_Int32 columnIndex ) override;
+        getTime(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::util::DateTime SAL_CALL
-        getTimestamp( sal_Int32 columnIndex ) override;
+        getTimestamp(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::io::XInputStream > SAL_CALL
-        getBinaryStream( sal_Int32 columnIndex ) override;
+        getBinaryStream(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::io::XInputStream > SAL_CALL
-        getCharacterStream( sal_Int32 columnIndex ) override;
+        getCharacterStream(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Any SAL_CALL
         getObject(
             sal_Int32 columnIndex,
-            const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+            const css::uno::Reference< css::container::XNameAccess >& typeMap )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::sdbc::XRef > SAL_CALL
-        getRef( sal_Int32 columnIndex ) override;
+        getRef(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::sdbc::XBlob > SAL_CALL
-        getBlob( sal_Int32 columnIndex ) override;
+        getBlob(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::sdbc::XClob > SAL_CALL
-        getClob( sal_Int32 columnIndex ) override;
+        getClob(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
         virtual css::uno::Reference< css::sdbc::XArray > SAL_CALL
-        getArray( sal_Int32 columnIndex ) override;
+        getArray(
+            sal_Int32 columnIndex )
+            throw( css::sdbc::SQLException,
+                   css::uno::RuntimeException, std::exception) override;
 
     private:
         osl::Mutex                                         m_aMutex;
         css::uno::Sequence< css::uno::Any >                m_aValueMap;
         bool                                               m_nWasNull;
-        TaskManager*                                             m_pMyShell;
+        shell*                                             m_pMyShell;
         css::uno::Reference< css::script::XTypeConverter > m_xTypeConverter;
     };
 

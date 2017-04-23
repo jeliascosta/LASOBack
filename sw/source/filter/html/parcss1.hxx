@@ -24,6 +24,7 @@
 enum CSS1Token
 {
     CSS1_NULL,
+    CSS1_UNKNOWN,
 
     CSS1_IDENT,
     CSS1_STRING,
@@ -59,7 +60,8 @@ enum CSS1Token
 enum CSS1ParserState
 {
     CSS1_PAR_ACCEPTED = 0,
-    CSS1_PAR_WORKING
+    CSS1_PAR_WORKING,
+    CSS1_PAR_ERROR
 };
 
 enum CSS1SelectorType
@@ -205,6 +207,10 @@ class CSS1Parser
 
     bool IsEOF() const { return bEOF; }
 
+    void IncLineNr() { ++nlLineNr; }
+    sal_uInt32 IncLinePos() { return ++nlLinePos; }
+    inline void SetLinePos( sal_uInt32 nlPos ); // inline declaration below
+
     // parse parts of the grammar
     void ParseRule();
     CSS1Selector *ParseSelector();
@@ -254,6 +260,11 @@ public:
     CSS1Parser();
     virtual ~CSS1Parser();
 };
+
+inline void CSS1Parser::SetLinePos( sal_uInt32 nlPos )
+{
+    nlLinePos = nlPos;
+}
 
 #endif
 

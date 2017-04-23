@@ -25,10 +25,10 @@
 #include <svl/urihelper.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/zformat.hxx>
-#include <unotools/configmgr.hxx>
 #include <unotools/pathoptions.hxx>
 #include <sfx2/app.hxx>
 #include <svx/dialmgr.hxx>
+#include <svx/dialogs.hrc>
 #include <swtable.hxx>
 #include <swtblfmt.hxx>
 #include <com/sun/star/text/VertOrientation.hpp>
@@ -289,10 +289,10 @@ SwBoxAutoFormat::SwBoxAutoFormat()
     m_aTLBR( 0 ),
     m_aBLTR( 0 ),
     m_aBackground( RES_BACKGROUND ),
-    m_aAdjust( SvxAdjust::Left, RES_PARATR_ADJUST ),
-    m_aTextOrientation(SvxFrameDirection::Environment, RES_FRAMEDIR),
+    m_aAdjust( SVX_ADJUST_LEFT, RES_PARATR_ADJUST ),
+    m_aTextOrientation(FRMDIR_ENVIRONMENT, RES_FRAMEDIR),
     m_aVerticalAlignment(0, css::text::VertOrientation::NONE, css::text::RelOrientation::FRAME),
-    m_aHorJustify( SvxCellHorJustify::Standard, 0),
+    m_aHorJustify( SVX_HOR_JUSTIFY_STANDARD, 0),
     m_aVerJustify( SVX_VER_JUSTIFY_STANDARD, 0),
     m_aStacked( 0 ),
     m_aMargin( 0 ),
@@ -305,7 +305,7 @@ SwBoxAutoFormat::SwBoxAutoFormat()
     m_aRotateMode( SVX_ROTATE_MODE_STANDARD, 0 )
 {
     m_eSysLanguage = m_eNumFormatLanguage = ::GetAppLanguage();
-    m_aBox.SetAllDistances(55);
+    m_aBox.SetDistance( 55 );
 }
 
 SwBoxAutoFormat::SwBoxAutoFormat( const SwBoxAutoFormat& rNew )
@@ -392,11 +392,6 @@ SwBoxAutoFormat& SwBoxAutoFormat::operator=( const SwBoxAutoFormat& rNew )
     m_eNumFormatLanguage = rNew.m_eNumFormatLanguage;
 
     return *this;
-}
-
-bool SwBoxAutoFormat::operator==(const SwBoxAutoFormat& rRight)
-{
-    return GetBackground().GetColor() == rRight.GetBackground().GetColor();
 }
 
 #define READ( aItem, aItemType, nVers )\
@@ -594,15 +589,13 @@ bool SwBoxAutoFormat::SaveVersionNo( SvStream& rStream, sal_uInt16 fileVersion )
 SwTableAutoFormat::SwTableAutoFormat( const OUString& rName )
     : m_aName( rName )
     , nStrResId( USHRT_MAX )
-    , m_aBreak( SvxBreak::NONE, RES_BREAK )
+    , m_aBreak( SVX_BREAK_NONE, RES_BREAK )
     , m_aKeepWithNextPara( false, RES_KEEP )
     , m_aRepeatHeading( 0 )
     , m_bLayoutSplit( true )
     , m_bRowSplit( true )
     , m_bCollapsingBorders(true)
     , m_aShadow( RES_SHADOW )
-    , m_bHidden( false )
-    , m_bUserDefined( true )
 {
     bInclFont = true;
     bInclJustify = true;
@@ -658,8 +651,6 @@ SwTableAutoFormat& SwTableAutoFormat::operator=( const SwTableAutoFormat& rNew )
     m_bRowSplit = rNew.m_bRowSplit;
     m_bCollapsingBorders = rNew.m_bCollapsingBorders;
     m_aShadow = rNew.m_aShadow;
-    m_bHidden = rNew.m_bHidden;
-    m_bUserDefined = rNew.m_bUserDefined;
 
     return *this;
 }
@@ -697,29 +688,6 @@ const SwBoxAutoFormat& SwTableAutoFormat::GetBoxFormat( sal_uInt8 nPos ) const
             pDfltBoxAutoFormat = new SwBoxAutoFormat;
         return *pDfltBoxAutoFormat;
     }
-}
-
-SwBoxAutoFormat& SwTableAutoFormat::GetBoxFormat( sal_uInt8 nPos )
-{
-    SAL_WARN_IF(!(nPos < 16), "sw.core", "GetBoxFormat wrong area");
-
-    SwBoxAutoFormat** pFormat = &aBoxAutoFormat[ nPos ];
-    if( !*pFormat )
-    {
-        // If default doesn't exist yet:
-        if( !pDfltBoxAutoFormat )
-            pDfltBoxAutoFormat = new SwBoxAutoFormat();
-        *pFormat = new SwBoxAutoFormat(*pDfltBoxAutoFormat);
-    }
-    return **pFormat;
-}
-
-const SwBoxAutoFormat& SwTableAutoFormat::GetDefaultBoxFormat()
-{
-    if(!pDfltBoxAutoFormat)
-        pDfltBoxAutoFormat = new SwBoxAutoFormat();
-
-    return *pDfltBoxAutoFormat;
 }
 
 void SwTableAutoFormat::UpdateFromSet( sal_uInt8 nPos,
@@ -811,12 +779,9 @@ void SwTableAutoFormat::UpdateToSet(sal_uInt8 nPos, SfxItemSet& rSet,
             }
             else
             {
-                std::unique_ptr<SfxPoolItem> pNewItem(rChg.GetHeight().CloneSetWhich(RES_CHRATR_CJK_FONTSIZE));
-                rSet.Put( *pNewItem);
-                pNewItem.reset(rChg.GetWeight().CloneSetWhich(RES_CHRATR_CJK_WEIGHT));
-                rSet.Put( *pNewItem);
-                pNewItem.reset(rChg.GetPosture().CloneSetWhich(RES_CHRATR_CJK_POSTURE));
-                rSet.Put( *pNewItem);
+                rSet.Put( rChg.GetHeight(), RES_CHRATR_CJK_FONTSIZE );
+                rSet.Put( rChg.GetWeight(), RES_CHRATR_CJK_WEIGHT );
+                rSet.Put( rChg.GetPosture(), RES_CHRATR_CJK_POSTURE );
             }
             // do not insert empty CTL font
             const SvxFontItem& rCTLFont = rChg.GetCTLFont();
@@ -829,12 +794,9 @@ void SwTableAutoFormat::UpdateToSet(sal_uInt8 nPos, SfxItemSet& rSet,
             }
             else
             {
-                std::unique_ptr<SfxPoolItem> pNewItem(rChg.GetHeight().CloneSetWhich(RES_CHRATR_CTL_FONTSIZE));
-                rSet.Put( *pNewItem);
-                pNewItem.reset(rChg.GetWeight().CloneSetWhich(RES_CHRATR_CTL_WEIGHT));
-                rSet.Put( *pNewItem);
-                pNewItem.reset(rChg.GetPosture().CloneSetWhich(RES_CHRATR_CTL_POSTURE));
-                rSet.Put( *pNewItem);
+                rSet.Put( rChg.GetHeight(), RES_CHRATR_CTL_FONTSIZE );
+                rSet.Put( rChg.GetWeight(), RES_CHRATR_CTL_WEIGHT );
+                rSet.Put( rChg.GetPosture(), RES_CHRATR_CTL_POSTURE );
             }
             rSet.Put( rChg.GetUnderline() );
             rSet.Put( rChg.GetOverline() );
@@ -860,11 +822,7 @@ void SwTableAutoFormat::UpdateToSet(sal_uInt8 nPos, SfxItemSet& rSet,
             rSet.Put( rChg.GetBackground() );
 
         rSet.Put(rChg.GetTextOrientation());
-
-        // Do not put a VertAlign when it has default value.
-        // It prevents the export of default value by automatic cell-styles export.
-        if (rChg.GetVerticalAlignment().GetVertOrient() != GetDefaultBoxFormat().GetVerticalAlignment().GetVertOrient())
-            rSet.Put(rChg.GetVerticalAlignment());
+        rSet.Put(rChg.GetVerticalAlignment());
 
         if( IsValueFormat() && pNFormatr )
         {
@@ -945,23 +903,6 @@ void SwTableAutoFormat::StoreTableProperties(const SwTable &table)
     m_aShadow = static_cast<const SvxShadowItem&>(rSet.Get(RES_SHADOW));
 }
 
-bool SwTableAutoFormat::FirstRowEndColumnIsRow()
-{
-    return GetBoxFormat(3) == GetBoxFormat(2);
-}
-bool SwTableAutoFormat::FirstRowStartColumnIsRow()
-{
-    return GetBoxFormat(0) == GetBoxFormat(1);
-}
-bool SwTableAutoFormat::LastRowEndColumnIsRow()
-{
-    return GetBoxFormat(14) == GetBoxFormat(15);
-}
-bool SwTableAutoFormat::LastRowStartColumnIsRow()
-{
-    return GetBoxFormat(12) == GetBoxFormat(13);
-}
-
 bool SwTableAutoFormat::Load( SvStream& rStream, const SwAfVersions& rVersions )
 {
     sal_uInt16  nVal = 0;
@@ -978,12 +919,11 @@ bool SwTableAutoFormat::Load( SvStream& rStream, const SwAfVersions& rVersions )
         if( AUTOFORMAT_DATA_ID_552 <= nVal )
         {
             rStream.ReadUInt16( nStrResId );
-            // start from 3d because default is added via constructor
-            sal_uInt16 nId = RES_POOLTABLESTYLE_3D + nStrResId;
-            if( RES_POOLTABLESTYLE_3D <= nId &&
-                nId < RES_POOLTABSTYLE_END )
+            sal_uInt16 nId = RID_SVXSTR_TBLAFMT_BEGIN + nStrResId;
+            if( RID_SVXSTR_TBLAFMT_BEGIN <= nId &&
+                nId < RID_SVXSTR_TBLAFMT_END )
             {
-                m_aName = SwStyleNameMapper::GetUIName(nId, m_aName);
+                m_aName = SVX_RESSTR( nId );
             }
             else
                 nStrResId = USHRT_MAX;
@@ -1023,7 +963,6 @@ bool SwTableAutoFormat::Load( SvStream& rStream, const SwAfVersions& rVersions )
             }
         }
     }
-    m_bUserDefined = false;
     return bRet;
 }
 
@@ -1069,72 +1008,6 @@ bool SwTableAutoFormat::Save( SvStream& rStream, sal_uInt16 fileVersion ) const
     return bRet;
 }
 
-OUString SwTableAutoFormat::GetTableTemplateCellSubName(const SwBoxAutoFormat& rBoxFormat) const
-{
-    sal_Int32 nIndex = 0;
-    for (; nIndex < 16; ++nIndex)
-        if (aBoxAutoFormat[nIndex] == &rBoxFormat) break;
-
-    // box format doesn't belong to this table format
-    if (16 <= nIndex)
-        return OUString();
-
-    const std::vector<sal_Int32> aTableTemplateMap = GetTableTemplateMap();
-    for (size_t i=0; i < aTableTemplateMap.size(); ++i)
-    {
-        if (aTableTemplateMap[i] == nIndex)
-            return "." + OUString::number(i + 1);
-    }
-
-    // box format doesn't belong to a table template
-    return OUString();
-}
-
-/*
- * Mapping schema
- *          0            1            2           3           4           5
- *      +-----------------------------------------------------------------------+
- *   0  |   FRSC    |  FR       |  FREC     |           |           |  FRENC    |
- *      +-----------------------------------------------------------------------+
- *   1  |   FC      |  ER       |  EC       |           |           |  LC       |
- *      +-----------------------------------------------------------------------+
- *   2  |   OR      |  OC       |  BODY     |           |           |  BCKG     |
- *      +-----------------------------------------------------------------------+
- *   3  |           |           |           |           |           |           |
- *      +-----------------------------------------------------------------------+
- *   4  |           |           |           |           |           |           |
- *      +-----------------------------------------------------------------------+
- *   5  |   LRSC    |  LR       |  LRENC    |           |           |  LRENC    |
- *      +-----------+-----------+-----------+-----------+-----------+-----------+
- * ODD  = 1, 3, 5, ...
- * EVEN = 2, 4, 6, ...
- */
-const std::vector<sal_Int32>& SwTableAutoFormat::GetTableTemplateMap()
-{
-    static std::vector<sal_Int32>* pTableTemplateMap;
-    if (!pTableTemplateMap)
-    {
-        pTableTemplateMap = new std::vector<sal_Int32>;
-        pTableTemplateMap->push_back(1 ); // FIRST_ROW              // FR
-        pTableTemplateMap->push_back(13); // LAST_ROW               // LR
-        pTableTemplateMap->push_back(4 ); // FIRST_COLUMN           // FC
-        pTableTemplateMap->push_back(7 ); // LAST_COLUMN            // LC
-        pTableTemplateMap->push_back(5 ); // EVEN_ROWS              // ER
-        pTableTemplateMap->push_back(8 ); // ODD_ROWS               // OR
-        pTableTemplateMap->push_back(6 ); // EVEN_COLUMNS           // EC
-        pTableTemplateMap->push_back(9 ); // ODD_COLUMNS            // OC
-        pTableTemplateMap->push_back(10); // BODY
-        pTableTemplateMap->push_back(11); // BACKGROUND             // BCKG
-        pTableTemplateMap->push_back(0 ); // FIRST_ROW_START_COLUMN // FRSC
-        pTableTemplateMap->push_back(3 ); // FIRST_ROW_END_COLUMN   // FRENC
-        pTableTemplateMap->push_back(12); // LAST_ROW_START_COLUMN  // LRSC
-        pTableTemplateMap->push_back(15); // LAST_ROW_END_COLUMN    // LRENC
-        pTableTemplateMap->push_back(2 ); // FIRST_ROW_EVEN_COLUMN  // FREC
-        pTableTemplateMap->push_back(14); // LAST_ROW_EVEN_COLUMN   // LREC
-    }
-    return *pTableTemplateMap;
-}
-
 struct SwTableAutoFormatTable::Impl
 {
     std::vector<std::unique_ptr<SwTableAutoFormat>> m_AutoFormats;
@@ -1173,41 +1046,11 @@ void SwTableAutoFormatTable::EraseAutoFormat(size_t const i)
     m_pImpl->m_AutoFormats.erase(m_pImpl->m_AutoFormats.begin() + i);
 }
 
-void SwTableAutoFormatTable::EraseAutoFormat(const OUString& rName)
-{
-    for (auto iter = m_pImpl->m_AutoFormats.begin();
-         iter != m_pImpl->m_AutoFormats.end(); ++iter)
-    {
-        if ((*iter)->GetName() == rName)
-        {
-            m_pImpl->m_AutoFormats.erase(iter);
-            return;
-        }
-    }
-    SAL_INFO("sw.core", "SwTableAutoFormatTable::EraseAutoFormat, SwTableAutoFormat with given name not found");
-}
-
 std::unique_ptr<SwTableAutoFormat> SwTableAutoFormatTable::ReleaseAutoFormat(size_t const i)
 {
     auto const iter(m_pImpl->m_AutoFormats.begin() + i);
     std::unique_ptr<SwTableAutoFormat> pRet(std::move(*iter));
     m_pImpl->m_AutoFormats.erase(iter);
-    return pRet;
-}
-
-std::unique_ptr<SwTableAutoFormat> SwTableAutoFormatTable::ReleaseAutoFormat(const OUString& rName)
-{
-    std::unique_ptr<SwTableAutoFormat> pRet(nullptr);
-    for (auto iter = m_pImpl->m_AutoFormats.begin();
-         iter != m_pImpl->m_AutoFormats.end(); ++iter)
-    {
-        if ((*iter)->GetName() == rName)
-        {
-            pRet = std::move(*iter);
-            m_pImpl->m_AutoFormats.erase(iter);
-            break;
-        }
-    }
     return pRet;
 }
 
@@ -1231,7 +1074,7 @@ SwTableAutoFormatTable::SwTableAutoFormatTable()
 {
     OUString sNm;
     std::unique_ptr<SwTableAutoFormat> pNew(new SwTableAutoFormat(
-                SwStyleNameMapper::GetUIName(RES_POOLTABSTYLE_DEFAULT, sNm)));
+                SwStyleNameMapper::GetUIName(RES_POOLCOLL_STANDARD, sNm)));
 
     SwBoxAutoFormat aNew;
 
@@ -1269,7 +1112,7 @@ SwTableAutoFormatTable::SwTableAutoFormatTable()
         pNew->SetBoxFormat( aNew, i );
 
     SvxBoxItem aBox( RES_BOX );
-    aBox.SetAllDistances(55);
+    aBox.SetDistance( 55 );
     SvxBorderLine aLn( &aColor, DEF_LINE_WIDTH_0 );
     aBox.SetLine( &aLn, SvxBoxItemLine::LEFT );
     aBox.SetLine( &aLn, SvxBoxItemLine::BOTTOM );
@@ -1281,20 +1124,17 @@ SwTableAutoFormatTable::SwTableAutoFormatTable()
         const_cast<SwBoxAutoFormat&>(pNew->GetBoxFormat( i )).SetBox( aBox );
     }
 
-    pNew->SetUserDefined(false);
     m_pImpl->m_AutoFormats.push_back(std::move(pNew));
 }
 
 bool SwTableAutoFormatTable::Load()
 {
-    if (utl::ConfigManager::IsAvoidConfig())
-        return false;
     bool bRet = false;
     OUString sNm(AUTOTABLE_FORMAT_NAME);
     SvtPathOptions aOpt;
     if( aOpt.SearchFile( sNm ))
     {
-        SfxMedium aStream( sNm, StreamMode::STD_READ );
+        SfxMedium aStream( sNm, STREAM_STD_READ );
         bRet = Load( *aStream.GetInStream() );
     }
     else
@@ -1304,11 +1144,9 @@ bool SwTableAutoFormatTable::Load()
 
 bool SwTableAutoFormatTable::Save() const
 {
-    if (utl::ConfigManager::IsAvoidConfig())
-        return false;
     SvtPathOptions aPathOpt;
     const OUString sNm( aPathOpt.GetUserConfigPath() + "/" AUTOTABLE_FORMAT_NAME );
-    SfxMedium aStream(sNm, StreamMode::STD_WRITE );
+    SfxMedium aStream(sNm, STREAM_STD_WRITE );
     return Save( *aStream.GetOutStream() ) && aStream.Commit();
 }
 
@@ -1414,100 +1252,14 @@ bool SwTableAutoFormatTable::Save( SvStream& rStream ) const
         rStream.WriteUInt16( m_pImpl->m_AutoFormats.size() - 1 );
         bRet = 0 == rStream.GetError();
 
-        for (auto const & rFormat: m_pImpl->m_AutoFormats)
+        for (sal_uInt16 i = 1; bRet && i < m_pImpl->m_AutoFormats.size(); ++i)
         {
-            bRet = rFormat->Save(rStream, AUTOFORMAT_FILE_VERSION);
+            SwTableAutoFormat const& rFormat = *m_pImpl->m_AutoFormats[i];
+            bRet = rFormat.Save(rStream, AUTOFORMAT_FILE_VERSION);
         }
     }
     rStream.Flush();
     return bRet;
 }
 
-SwCellStyleTable::SwCellStyleTable()
-{ }
-
-SwCellStyleTable::~SwCellStyleTable()
-{
-    for (size_t i=0; i < m_aCellStyles.size(); ++i)
-        delete m_aCellStyles[i].second;
-}
-
-size_t SwCellStyleTable::size() const
-{
-    return m_aCellStyles.size();
-}
-
-void SwCellStyleTable::clear()
-{
-    for (size_t i=0; i < m_aCellStyles.size(); ++i)
-        delete m_aCellStyles[i].second;
-
-    m_aCellStyles.clear();
-}
-
-SwCellStyleDescriptor SwCellStyleTable::operator[](size_t i) const
-{
-    return SwCellStyleDescriptor(m_aCellStyles[i]);
-}
-
-void SwCellStyleTable::AddBoxFormat(const SwBoxAutoFormat& rBoxFormat, const OUString& sName)
-{
-    m_aCellStyles.push_back(std::make_pair(sName, new SwBoxAutoFormat(rBoxFormat)));
-}
-
-void SwCellStyleTable::RemoveBoxFormat(const OUString& sName)
-{
-    for (auto iter = m_aCellStyles.begin(); iter != m_aCellStyles.end(); ++iter)
-    {
-        if (iter->first == sName)
-        {
-            delete iter->second;
-            m_aCellStyles.erase(iter);
-            return;
-        }
-    }
-    SAL_INFO("sw.core", "SwCellStyleTable::RemoveBoxFormat, format with given name doesn't exists");
-}
-
-OUString SwCellStyleTable::GetBoxFormatName(const SwBoxAutoFormat& rBoxFormat) const
-{
-    for (size_t i=0; i < m_aCellStyles.size(); ++i)
-    {
-        if (m_aCellStyles[i].second == &rBoxFormat)
-            return m_aCellStyles[i].first;
-    }
-
-    // box format not found
-    return OUString();
-}
-
-SwBoxAutoFormat* SwCellStyleTable::GetBoxFormat(const OUString& sName) const
-{
-    for (size_t i=0; i < m_aCellStyles.size(); ++i)
-    {
-        if (m_aCellStyles[i].first == sName)
-            return m_aCellStyles[i].second;
-    }
-
-    return nullptr;
-}
-
-void SwCellStyleTable::ChangeBoxFormatName(const OUString& sFromName, const OUString& sToName)
-{
-    if (!GetBoxFormat(sToName))
-    {
-        SAL_INFO("sw.core", "SwCellStyleTable::ChangeBoxName, box with given name already exists");
-        return;
-    }
-    for (size_t i=0; i < m_aCellStyles.size(); ++i)
-    {
-        if (m_aCellStyles[i].first == sFromName)
-        {
-            m_aCellStyles[i].first = sToName;
-            // changed successfully
-            return;
-        }
-    }
-    SAL_INFO("sw.core", "SwCellStyleTable::ChangeBoxName, box with given name not found");
-}
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

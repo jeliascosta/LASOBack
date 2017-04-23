@@ -23,7 +23,10 @@
 #include <xmloff/xmlimp.hxx>
 #include <com/sun/star/sheet/XSpreadsheet.hpp>
 #include <com/sun/star/drawing/XDrawPage.hpp>
+#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/table/XCellRange.hpp>
+#include <com/sun/star/table/CellRangeAddress.hpp>
+#include <com/sun/star/frame/XModel.hpp>
 
 #include "XMLTableShapeResizer.hxx"
 #include <formula/grammar.hxx>
@@ -85,9 +88,9 @@ public:
     SCROW                               GetCurrentRow() const { return (maCurrentCellPos.Row() >= 0) ? maCurrentCellPos.Row() : 0; }
     const css::uno::Reference< css::sheet::XSpreadsheet >&
                                         GetCurrentXSheet() const { return xCurrentSheet; }
-    css::uno::Reference< css::drawing::XDrawPage > const &
+    css::uno::Reference< css::drawing::XDrawPage >
                                         GetCurrentXDrawPage();
-    css::uno::Reference< css::drawing::XShapes > const &
+    css::uno::Reference< css::drawing::XShapes >
                                         GetCurrentXShapes();
     bool                                HasDrawPage();
     bool                                HasXShapes();

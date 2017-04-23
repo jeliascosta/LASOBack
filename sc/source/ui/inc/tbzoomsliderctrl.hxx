@@ -31,7 +31,7 @@ class ScZoomSliderControl : public SfxToolBoxControl
 public:
     SFX_DECL_TOOLBOX_CONTROL();
     ScZoomSliderControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~ScZoomSliderControl() override;
+    virtual ~ScZoomSliderControl();
 
     virtual void StateChanged( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState ) override;
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window *pParent ) override;
@@ -47,19 +47,19 @@ private:
 
     sal_uInt16 Offset2Zoom(long nOffset) const;
     long Zoom2Offset(sal_uInt16 nZoom) const;
-    void DoPaint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect);
+    void DoPaint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
 
 public:
     ScZoomSliderWnd(vcl::Window* pParent, const css::uno::Reference<css::frame::XDispatchProvider >& rDispatchProvider,
                     sal_uInt16 nCurrentZoom);
-    virtual ~ScZoomSliderWnd() override;
+    virtual ~ScZoomSliderWnd();
     virtual void dispose() override;
     void UpdateFromItem( const SvxZoomSliderItem* pZoomSliderItem );
 
 protected:
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void MouseMove( const MouseEvent& rMEvt ) override;
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
 };
 #endif
 

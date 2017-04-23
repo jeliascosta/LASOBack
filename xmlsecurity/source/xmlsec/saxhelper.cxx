@@ -20,7 +20,7 @@
 
 #include <rtl/ustring.hxx>
 
-#include "xmlsec/saxhelper.hxx"
+#include "saxhelper.hxx"
 #include "libxml/parserInternals.h"
 
 #ifndef XMLSEC_NO_XSLT
@@ -214,6 +214,7 @@ void SAXHelper::setCurrentNode(const xmlNodePtr pNode)
  * XDocumentHandler -- start an xml document
  */
 void SAXHelper::startDocument()
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     if( m_pParserCtxt == nullptr)
     {
@@ -242,6 +243,7 @@ void SAXHelper::startDocument()
  * XDocumentHandler -- end an xml document
  */
 void SAXHelper::endDocument()
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     m_pSaxHandler->endDocument( m_pParserCtxt ) ;
 }
@@ -252,6 +254,7 @@ void SAXHelper::endDocument()
 void SAXHelper::startElement(
     const OUString& aName,
     const cssu::Sequence< cssxcsax::XMLAttribute >& aAttributes )
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     const xmlChar* fullName = nullptr ;
     const xmlChar** attrs = nullptr ;
@@ -287,6 +290,7 @@ void SAXHelper::startElement(
  * XDocumentHandler -- end an xml element
  */
 void SAXHelper::endElement( const OUString& aName )
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     xmlChar* fullname = nullptr ;
 
@@ -304,6 +308,7 @@ void SAXHelper::endElement( const OUString& aName )
  * XDocumentHandler -- an xml element or cdata characters
  */
 void SAXHelper::characters( const OUString& aChars )
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     const xmlChar* chars = nullptr ;
     int length = 0 ;
@@ -321,6 +326,7 @@ void SAXHelper::characters( const OUString& aChars )
  * XDocumentHandler -- ignorable xml white space
  */
 void SAXHelper::ignorableWhitespace( const OUString& aWhitespaces )
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     const xmlChar* chars = nullptr ;
     int length = 0 ;
@@ -340,6 +346,7 @@ void SAXHelper::ignorableWhitespace( const OUString& aWhitespaces )
 void SAXHelper::processingInstruction(
     const OUString& aTarget,
     const OUString& aData )
+    throw( cssxs::SAXException , cssu::RuntimeException )
 {
     xmlChar* target = nullptr ;
     xmlChar* data = nullptr ;

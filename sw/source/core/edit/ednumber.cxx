@@ -133,12 +133,12 @@ bool SwEditShell::NoNum()
     SwPaM* pCursor = GetCursor();
     if( pCursor->GetNext() != pCursor )         // Multiple selection?
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
             bRet = bRet && GetDoc()->NoNum( aRangeArr.SetPam( n, aPam ));
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     else
         bRet = GetDoc()->NoNum( *pCursor );
@@ -278,14 +278,14 @@ void SwEditShell::DelNumRules()
     SwPaM* pCursor = GetCursor();
     if( pCursor->IsMultiSelection() )
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
         {
             GetDoc()->DelNumRules( aRangeArr.SetPam( n, aPam ) );
         }
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     else
         GetDoc()->DelNumRules( *pCursor );
@@ -311,12 +311,12 @@ bool SwEditShell::NumUpDown( bool bDown )
         bRet = GetDoc()->NumUpDown( *pCursor, bDown );
     else
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
             bRet = bRet && GetDoc()->NumUpDown( aRangeArr.SetPam( n, aPam ), bDown );
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     GetDoc()->getIDocumentState().SetModified();
 
@@ -506,13 +506,13 @@ bool SwEditShell::MoveNumParas( bool bUpperLower, bool bUpperLeft )
 
             if( nOffset )
             {
-                aCursor.Move( fnMoveBackward, GoInNode );
+                aCursor.Move( fnMoveBackward, fnGoNode );
                 bRet = GetDoc()->MoveParagraph( aCursor, nOffset );
             }
         }
         else if( (bUpperLeft ? nUpperLevel : nLowerLevel+1) < MAXLEVEL )
         {
-            aCursor.Move( fnMoveBackward, GoInNode );
+            aCursor.Move( fnMoveBackward, fnGoNode );
             bRet = GetDoc()->NumUpDown( aCursor, !bUpperLeft );
         }
     }
@@ -532,20 +532,20 @@ bool SwEditShell::OutlineUpDown( short nOffset )
         bRet = GetDoc()->OutlineUpDown( *pCursor, nOffset );
     else
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
             bRet = bRet && GetDoc()->OutlineUpDown(
                                     aRangeArr.SetPam( n, aPam ), nOffset );
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     GetDoc()->getIDocumentState().SetModified();
     EndAllAction();
     return bRet;
 }
 
-bool SwEditShell::MoveOutlinePara( SwOutlineNodes::difference_type nOffset )
+bool SwEditShell::MoveOutlinePara( short nOffset )
 {
     StartAllAction();
     bool bRet = GetDoc()->MoveOutlinePara( *GetCursor(), nOffset );
@@ -563,7 +563,7 @@ bool SwEditShell::IsProtectedOutlinePara() const
         const SwOutlineNodes& rOutlNd = GetDoc()->GetNodes().GetOutLineNds();
         SwNodePtr pNd = const_cast<SwNodePtr>(&rNd);
         bool bFirst = true;
-        SwOutlineNodes::size_type nPos;
+        sal_uInt16 nPos;
         int nLvl(0);
         if( !rOutlNd.Seek_Entry( pNd, &nPos ) && nPos )
             --nPos;
@@ -608,7 +608,7 @@ bool SwEditShell::IsProtectedOutlinePara() const
  * 2) outline must not be within table
  * 3) if bCopy is set, outline must not be write protected
  */
-static bool lcl_IsOutlineMoveAndCopyable( const SwDoc* pDoc, SwOutlineNodes::size_type nIdx, bool bCopy )
+static bool lcl_IsOutlineMoveAndCopyable( const SwDoc* pDoc, sal_uInt16 nIdx, bool bCopy )
 {
     const SwNodes& rNds = pDoc->GetNodes();
     const SwNode* pNd = rNds.GetOutLineNds()[ nIdx ];
@@ -617,12 +617,12 @@ static bool lcl_IsOutlineMoveAndCopyable( const SwDoc* pDoc, SwOutlineNodes::siz
             ( bCopy || !pNd->IsProtect() );                         // 3) write
 }
 
-bool SwEditShell::IsOutlineMovable( SwOutlineNodes::size_type nIdx ) const
+bool SwEditShell::IsOutlineMovable( sal_uInt16 nIdx ) const
 {
     return lcl_IsOutlineMoveAndCopyable( GetDoc(), nIdx, false );
 }
 
-bool SwEditShell::IsOutlineCopyable( SwOutlineNodes::size_type nIdx ) const
+bool SwEditShell::IsOutlineCopyable( sal_uInt16 nIdx ) const
 {
     return lcl_IsOutlineMoveAndCopyable( GetDoc(), nIdx, true );
 }
@@ -737,7 +737,7 @@ void SwEditShell::SetCurNumRule( const SwNumRule& rRule,
 {
     StartAllAction();
 
-    GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+    GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
 
     SwPaM* pCursor = GetCursor();
     if( IsMultiSelection() )
@@ -770,7 +770,7 @@ void SwEditShell::SetCurNumRule( const SwNumRule& rRule,
                               true, bResetIndentAttrs );
         GetDoc()->SetCounted( *pCursor, true );
     }
-    GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+    GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
 
     EndAllAction();
 }
@@ -801,12 +801,12 @@ void SwEditShell::SetNumRuleStart( bool bFlag, SwPaM* pPaM )
     SwPaM* pCursor = pPaM ? pPaM : GetCursor();
     if( pCursor->IsMultiSelection() )         // multiple selection ?
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
             GetDoc()->SetNumRuleStart( *aRangeArr.SetPam( n, aPam ).GetPoint(), bFlag );
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     else
         GetDoc()->SetNumRuleStart( *pCursor->GetPoint(), bFlag );
@@ -828,12 +828,12 @@ void SwEditShell::SetNodeNumStart( sal_uInt16 nStt )
     SwPaM* pCursor = GetCursor();
     if( pCursor->IsMultiSelection() )         // multiple selection ?
     {
-        GetDoc()->GetIDocumentUndoRedo().StartUndo( SwUndoId::START, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().StartUndo( UNDO_START, nullptr );
         SwPamRanges aRangeArr( *pCursor );
         SwPaM aPam( *pCursor->GetPoint() );
         for( size_t n = 0; n < aRangeArr.Count(); ++n )
             GetDoc()->SetNodeNumStart( *aRangeArr.SetPam( n, aPam ).GetPoint(), nStt );
-        GetDoc()->GetIDocumentUndoRedo().EndUndo( SwUndoId::END, nullptr );
+        GetDoc()->GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
     }
     else
         GetDoc()->SetNodeNumStart( *pCursor->GetPoint(), nStt );

@@ -33,11 +33,7 @@ published enum WrapTextMode
 
     /** text flow ignores the object.
      */
-    THROUGH,
-
-    /** text flow ignores the object: errant spelling deprecated in version 5.4
-     */
-    THROUGHT = THROUGH,
+    THROUGHT,
 
     /** text flows to the left and right of the object.
      */

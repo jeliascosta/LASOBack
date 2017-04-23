@@ -50,7 +50,7 @@
 
 using namespace com::sun::star;
 
-//  delimiters additionally to EditEngine default:
+//  Delimiters zusaetzlich zu EditEngine-Default:
 
 ScEditUtil::ScEditUtil( ScDocument* pDocument, SCCOL nX, SCROW nY, SCTAB nZ,
                             const Point& rScrPosPixel,
@@ -63,7 +63,7 @@ ScEditUtil::ScEditUtil( ScDocument* pDocument, SCCOL nX, SCROW nY, SCTAB nZ,
 OUString ScEditUtil::ModifyDelimiters( const OUString& rOld )
 {
     // underscore is used in function argument names
-    OUString aRet = rOld.replaceAll("_", "") +
+    OUString aRet = comphelper::string::remove(rOld, '_') +
         "=()+-*/^&<>" +
         ScCompiler::GetNativeSymbol(ocSep); // argument separator is localized.
     return aRet;
@@ -271,13 +271,13 @@ OUString ScEditUtil::GetCellFieldValue(
             aRet = "?";
     }
 
-    if (aRet.isEmpty())        // empty is yuck
-        aRet = " ";         // space is default of EditEngine
+    if (aRet.isEmpty())        // leer ist baeh
+        aRet = " ";         // Space ist Default der Editengine
 
     return aRet;
 }
 
-tools::Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bForceToTop )
+Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bForceToTop )
 {
     // bForceToTop = always align to top, for editing
     // (sal_False for querying URLs etc.)
@@ -308,13 +308,13 @@ tools::Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bF
     const SvxMarginItem* pMargin = static_cast<const SvxMarginItem*>(&pPattern->GetItem(ATTR_MARGIN));
     sal_uInt16 nIndent = 0;
     if ( static_cast<const SvxHorJustifyItem&>(pPattern->GetItem(ATTR_HOR_JUSTIFY)).GetValue() ==
-                SvxCellHorJustify::Left )
+                SVX_HOR_JUSTIFY_LEFT )
         nIndent = static_cast<const SfxUInt16Item&>(pPattern->GetItem(ATTR_INDENT)).GetValue();
     long nPixDifX   = (long) ( ( pMargin->GetLeftMargin() + nIndent ) * nPPTX );
     aStartPos.X()   += nPixDifX * nLayoutSign;
-    nCellX          -= nPixDifX + (long) ( pMargin->GetRightMargin() * nPPTX );     // due to line feed, etc.
+    nCellX          -= nPixDifX + (long) ( pMargin->GetRightMargin() * nPPTX );     // wegen Umbruch etc.
 
-    //  align vertical position to the one in the table
+    //  vertikale Position auf die in der Tabelle anpassen
 
     long nPixDifY;
     long nTopMargin = (long) ( pMargin->GetTopMargin() * nPPTY );
@@ -331,12 +331,12 @@ tools::Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bF
     else
     {
         MapMode aMode = pDev->GetMapMode();
-        pDev->SetMapMode( MapUnit::MapPixel );
+        pDev->SetMapMode( MAP_PIXEL );
 
         long nTextHeight = pDoc->GetNeededSize( nCol, nRow, nTab,
                                                 pDev, nPPTX, nPPTY, aZoomX, aZoomY, false );
         if (!nTextHeight)
-        {                                   // empty cell
+        {                                   // leere Zelle
             vcl::Font aFont;
             // font color doesn't matter here
             pPattern->GetFont( aFont, SC_AUTOCOL_BLACK, pDev, &aZoomY );
@@ -348,7 +348,7 @@ tools::Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bF
         pDev->SetMapMode(aMode);
 
         if ( nTextHeight > nCellY + nTopMargin || bForceToTop )
-            nPixDifY = 0;                           // too large -> begin at the top
+            nPixDifY = 0;                           // zu gross -> oben anfangen
         else
         {
             if ( eJust == SVX_VER_JUSTIFY_CENTER )
@@ -364,8 +364,8 @@ tools::Rectangle ScEditUtil::GetEditArea( const ScPatternAttr* pPattern, bool bF
     if ( bLayoutRTL )
         aStartPos.X() -= nCellX - 2;    // excluding grid on both sides
 
-                                                        //  -1 -> don't overwrite grid
-    return tools::Rectangle( aStartPos, Size(nCellX-1,nCellY-1) );
+                                                        //  -1 -> Gitter nicht ueberschreiben
+    return Rectangle( aStartPos, Size(nCellX-1,nCellY-1) );
 }
 
 ScEditAttrTester::ScEditAttrTester( ScEditEngineDefaulter* pEng ) :
@@ -381,8 +381,8 @@ ScEditAttrTester::ScEditAttrTester( ScEditEngineDefaulter* pEng ) :
     else
     {
         const SfxPoolItem* pItem = nullptr;
-        pEditAttrs.reset( new SfxItemSet( pEngine->GetAttribs(
-                                        ESelection(0,0,0,pEngine->GetTextLen(0)), EditEngineAttribs::OnlyHard ) ) );
+        pEditAttrs = new SfxItemSet( pEngine->GetAttribs(
+                                        ESelection(0,0,0,pEngine->GetTextLen(0)), EditEngineAttribs_OnlyHard ) );
         const SfxItemSet& rEditDefaults = pEngine->GetDefaults();
 
         for (sal_uInt16 nId = EE_CHAR_START; nId <= EE_CHAR_END && !bNeedsObject; nId++)
@@ -411,7 +411,7 @@ ScEditAttrTester::ScEditAttrTester( ScEditEngineDefaulter* pEng ) :
             }
         }
 
-        //  contains field commands?
+        //  Feldbefehle enthalten?
 
         SfxItemState eFieldState = pEditAttrs->GetItemState( EE_FEATURE_FIELD, false );
         if ( eFieldState == SfxItemState::DONTCARE || eFieldState == SfxItemState::SET )
@@ -427,6 +427,7 @@ ScEditAttrTester::ScEditAttrTester( ScEditEngineDefaulter* pEng ) :
 
 ScEditAttrTester::~ScEditAttrTester()
 {
+    delete pEditAttrs;
 }
 
 ScEnginePoolHelper::ScEnginePoolHelper( SfxItemPool* pEnginePoolP,
@@ -710,17 +711,17 @@ ScTabEditEngine::ScTabEditEngine( const ScPatternAttr& rPattern,
 
 void ScTabEditEngine::Init( const ScPatternAttr& rPattern )
 {
-    SetRefMapMode(MapUnit::Map100thMM);
+    SetRefMapMode(MAP_100TH_MM);
     SfxItemSet* pEditDefaults = new SfxItemSet( GetEmptyItemSet() );
     rPattern.FillEditItemSet( pEditDefaults );
     SetDefaults( pEditDefaults );
-    // we have no StyleSheets for text
+    // wir haben keine StyleSheets fuer Text
     SetControlWord( GetControlWord() & ~EEControlBits::RTFSTYLESHEETS );
 }
 
-//      field commands for header and footer
+//      Feldbefehle fuer Kopf- und Fusszeilen
 
-//      numbers from \sw\source\core\doc\numbers.cxx
+//      Zahlen aus \sw\source\core\doc\numbers.cxx
 
 static OUString lcl_GetCharStr( sal_Int32 nNo )
 {
@@ -734,7 +735,7 @@ static OUString lcl_GetCharStr( sal_Int32 nNo )
         nCalc = nNo % coDiff;
         if( !nCalc )
             nCalc = coDiff;
-        aStr = OUStringLiteral1( 'a' - 1 + nCalc ) + aStr;
+        aStr = OUString( (sal_Unicode)('a' - 1 + nCalc ) ) + aStr;
         nNo = sal::static_int_cast<sal_Int32>( nNo - nCalc );
         if( nNo )
             nNo /= coDiff;
@@ -749,33 +750,33 @@ static OUString lcl_GetNumStr(sal_Int32 nNo, SvxNumType eType)
     {
         switch( eType )
         {
-        case css::style::NumberingType::CHARS_UPPER_LETTER:
-        case css::style::NumberingType::CHARS_LOWER_LETTER:
+        case SVX_CHARS_UPPER_LETTER:
+        case SVX_CHARS_LOWER_LETTER:
             aTmpStr = lcl_GetCharStr( nNo );
             break;
 
-        case css::style::NumberingType::ROMAN_UPPER:
-        case css::style::NumberingType::ROMAN_LOWER:
+        case SVX_ROMAN_UPPER:
+        case SVX_ROMAN_LOWER:
             if( nNo < 4000 )
-                aTmpStr = SvxNumberFormat::CreateRomanString( nNo, ( eType == css::style::NumberingType::ROMAN_UPPER ) );
+                aTmpStr = SvxNumberFormat::CreateRomanString( nNo, ( eType == SVX_ROMAN_UPPER ) );
             else
                 aTmpStr.clear();
             break;
 
-        case css::style::NumberingType::NUMBER_NONE:
+        case SVX_NUMBER_NONE:
             aTmpStr.clear();
             break;
 
 //      CHAR_SPECIAL:
 //          ????
 
-//      case ARABIC:    is default now
+//      case ARABIC:    ist jetzt default
         default:
             aTmpStr = OUString::number(nNo);
             break;
         }
 
-        if( css::style::NumberingType::CHARS_UPPER_LETTER == eType )
+        if( SVX_CHARS_UPPER_LETTER == eType )
             aTmpStr = aTmpStr.toAsciiUpperCase();
     }
     return aTmpStr;
@@ -787,7 +788,7 @@ ScHeaderFieldData::ScHeaderFieldData()
         aTime( tools::Time::EMPTY )
 {
     nPageNo = nTotalPages = 0;
-    eNumType = SVX_NUM_ARABIC;
+    eNumType = SVX_ARABIC;
 }
 
 ScHeaderEditEngine::ScHeaderEditEngine( SfxItemPool* pEnginePoolP )
@@ -846,7 +847,7 @@ OUString ScHeaderEditEngine::CalcFieldValue( const SvxFieldItem& rField,
     return aRet;
 }
 
-//                          field data
+//                          Feld-Daten
 
 ScFieldEditEngine::ScFieldEditEngine(
     ScDocument* pDoc, SfxItemPool* pEnginePoolP,

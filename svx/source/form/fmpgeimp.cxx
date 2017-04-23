@@ -177,8 +177,8 @@ void FmFormPageImpl::initFrom( FmFormPageImpl& i_foreignImpl )
             FmFormObj* pForeignObj = dynamic_cast< FmFormObj* >( aForeignIter.Next() );
             FmFormObj* pOwnObj = dynamic_cast< FmFormObj* >( aOwnIter.Next() );
 
-            bool bForeignIsForm = pForeignObj && ( pForeignObj->GetObjInventor() == SdrInventor::FmForm );
-            bool bOwnIsForm = pOwnObj && ( pOwnObj->GetObjInventor() == SdrInventor::FmForm );
+            bool bForeignIsForm = pForeignObj && ( pForeignObj->GetObjInventor() == FmFormInventor );
+            bool bOwnIsForm = pOwnObj && ( pOwnObj->GetObjInventor() == FmFormInventor );
 
             if ( bForeignIsForm != bOwnIsForm )
             {
@@ -599,7 +599,7 @@ Reference< XForm >  FmFormPageImpl::findFormForDataSource(
             if (aCursorSource.isEmpty())
             {
                 xFormProps->setPropertyValue(FM_PROP_COMMAND, makeAny(_rCursorSource));
-                xFormProps->setPropertyValue(FM_PROP_COMMANDTYPE, makeAny(nCommandType));
+                xFormProps->setPropertyValue(FM_PROP_COMMANDTYPE, makeAny((sal_Int32)nCommandType));
             }
         }
     }

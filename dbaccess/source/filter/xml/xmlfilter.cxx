@@ -20,7 +20,6 @@
 #include <sal/config.h>
 
 #include <com/sun/star/util/MeasureUnit.hpp>
-#include <com/sun/star/packages/WrongPasswordException.hpp>
 #include <com/sun/star/packages/zip/ZipIOException.hpp>
 #include <com/sun/star/embed/ElementModes.hpp>
 #include <com/sun/star/sdb/XOfficeDatabaseDocument.hpp>
@@ -225,12 +224,14 @@ ODBFilter::~ODBFilter() throw()
 
 
 OUString ODBFilter::getImplementationName_Static()
+    throw (css::uno::RuntimeException)
 {
     return OUString("com.sun.star.comp.sdb.DBFilter");
 }
 
 
 css::uno::Sequence<OUString> ODBFilter::getSupportedServiceNames_Static()
+    throw (css::uno::RuntimeException)
 {
     css::uno::Sequence<OUString> s { "com.sun.star.document.ImportFilter" };
     return s;
@@ -245,6 +246,7 @@ css::uno::Reference< css::uno::XInterface >
 
 
 sal_Bool SAL_CALL ODBFilter::filter( const Sequence< PropertyValue >& rDescriptor )
+    throw (RuntimeException, std::exception)
 {
     uno::Reference< css::awt::XWindow > xWindow;
     {
@@ -262,7 +264,7 @@ sal_Bool SAL_CALL ODBFilter::filter( const Sequence< PropertyValue >& rDescripto
     if ( xWindow.is() )
     {
         SolarMutexGuard aGuard;
-        VclPtr<vcl::Window> pFocusWindow = VCLUnoHelper::GetWindow( xWindow );
+        vcl::Window* pFocusWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pFocusWindow )
             pFocusWindow->LeaveWait();
     }
@@ -272,6 +274,7 @@ sal_Bool SAL_CALL ODBFilter::filter( const Sequence< PropertyValue >& rDescripto
 
 
 bool ODBFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
+    throw (RuntimeException, std::exception)
 {
     OUString sFileName;
     ::comphelper::NamedValueCollection aMediaDescriptor( rDescriptor );
@@ -302,8 +305,8 @@ bool ODBFilter::implImport( const Sequence< PropertyValue >& rDescriptor )
             {
                 // In this case the host contains the real path, and the path is the embedded stream name.
                 INetURLObject aURL(sFileName);
-                sFileName = aURL.GetHost(INetURLObject::DecodeMechanism::WithCharset);
-                sStreamRelPath = aURL.GetURLPath(INetURLObject::DecodeMechanism::WithCharset);
+                sFileName = aURL.GetHost(INetURLObject::DECODE_WITH_CHARSET);
+                sStreamRelPath = aURL.GetURLPath(INetURLObject::DECODE_WITH_CHARSET);
                 if (sStreamRelPath.startsWith("/"))
                     sStreamRelPath = sStreamRelPath.copy(1);
             }
@@ -404,7 +407,7 @@ SvXMLImportContext* ODBFilter::CreateContext( sal_uInt16 nPrefix,
             pContext = CreateStylesContext(nPrefix, rLocalName, xAttrList, true);
             break;
         case XML_TOK_DOC_SCRIPT:
-            pContext = new XMLScriptContext( *this, rLocalName, GetModel() );
+            pContext = CreateScriptContext( rLocalName );
             break;
     }
 
@@ -725,7 +728,13 @@ SvXMLImportContext* ODBFilter::CreateStylesContext(sal_uInt16 _nPrefix,const OUS
 }
 
 
-rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetTableStylesPropertySetMapper() const
+SvXMLImportContext* ODBFilter::CreateScriptContext( const OUString& _rLocalName )
+{
+    return new XMLScriptContext( *this, _rLocalName, GetModel() );
+}
+
+
+rtl::Reference < XMLPropertySetMapper > ODBFilter::GetTableStylesPropertySetMapper() const
 {
     if ( !m_xTableStylesPropertySetMapper.is() )
     {
@@ -735,7 +744,7 @@ rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetTableStylesPropert
 }
 
 
-rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetColumnStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > ODBFilter::GetColumnStylesPropertySetMapper() const
 {
     if ( !m_xColumnStylesPropertySetMapper.is() )
     {
@@ -745,7 +754,7 @@ rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetColumnStylesProper
 }
 
 
-rtl::Reference < XMLPropertySetMapper > const & ODBFilter::GetCellStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > ODBFilter::GetCellStylesPropertySetMapper() const
 {
     if ( !m_xCellStylesPropertySetMapper.is() )
     {

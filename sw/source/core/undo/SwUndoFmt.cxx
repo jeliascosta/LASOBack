@@ -33,7 +33,7 @@
 
 SwUndoFormatCreate::SwUndoFormatCreate
 (SwUndoId nUndoId, SwFormat * _pNew, SwFormat * _pDerivedFrom, SwDoc * _pDoc)
-    : SwUndo(nUndoId, _pDoc), pNew(_pNew),
+    : SwUndo(nUndoId), pNew(_pNew),
       pDoc(_pDoc), pNewSet(nullptr), nId(0), bAuto(false)
 {
     if (_pDerivedFrom)
@@ -98,7 +98,7 @@ SwRewriter SwUndoFormatCreate::GetRewriter() const
 
 SwUndoFormatDelete::SwUndoFormatDelete
 (SwUndoId nUndoId, SwFormat * _pOld, SwDoc * _pDoc)
-    : SwUndo(nUndoId, _pDoc),
+    : SwUndo(nUndoId),
       pDoc(_pDoc), sOldName(_pOld->GetName()),
       aOldSet(_pOld->GetAttrSet())
 {
@@ -150,7 +150,7 @@ SwUndoRenameFormat::SwUndoRenameFormat(SwUndoId nUndoId,
                                  const OUString & _sOldName,
                                  const OUString & _sNewName,
                                  SwDoc * _pDoc)
-    : SwUndo(nUndoId, _pDoc), sOldName(_sOldName),
+    : SwUndo(nUndoId), sOldName(_sOldName),
       sNewName(_sNewName), pDoc(_pDoc)
 {
 }
@@ -192,7 +192,7 @@ SwRewriter SwUndoRenameFormat::GetRewriter() const
 
 SwUndoTextFormatCollCreate::SwUndoTextFormatCollCreate
 (SwTextFormatColl * _pNew, SwTextFormatColl * _pDerivedFrom, SwDoc * _pDoc)
-    : SwUndoFormatCreate(SwUndoId::TXTFMTCOL_CREATE, _pNew, _pDerivedFrom, _pDoc)
+    : SwUndoFormatCreate(UNDO_TXTFMTCOL_CREATE, _pNew, _pDerivedFrom, _pDoc)
 {
 }
 
@@ -213,7 +213,7 @@ SwFormat * SwUndoTextFormatCollCreate::Find(const OUString & rName) const
 
 SwUndoTextFormatCollDelete::SwUndoTextFormatCollDelete(SwTextFormatColl * _pOld,
                                                SwDoc * _pDoc)
-    : SwUndoFormatDelete(SwUndoId::TXTFMTCOL_DELETE, _pOld, _pDoc)
+    : SwUndoFormatDelete(UNDO_TXTFMTCOL_DELETE, _pOld, _pDoc)
 {
 }
 
@@ -257,7 +257,7 @@ SwFormat * SwUndoCondTextFormatCollDelete::Create(SwFormat * pDerivedFrom)
 SwUndoRenameFormatColl::SwUndoRenameFormatColl(const OUString & sInitOldName,
                                          const OUString & sInitNewName,
                                          SwDoc * _pDoc)
-    : SwUndoRenameFormat(SwUndoId::TXTFMTCOL_RENAME, sInitOldName, sInitNewName, _pDoc)
+    : SwUndoRenameFormat(UNDO_TXTFMTCOL_RENAME, sInitOldName, sInitNewName, _pDoc)
 {
 }
 
@@ -269,7 +269,7 @@ SwFormat * SwUndoRenameFormatColl::Find(const OUString & rName) const
 SwUndoCharFormatCreate::SwUndoCharFormatCreate(SwCharFormat * pNewFormat,
                                          SwCharFormat * pDerivedFrom,
                                          SwDoc * pDocument)
-    : SwUndoFormatCreate(SwUndoId::CHARFMT_CREATE, pNewFormat, pDerivedFrom, pDocument)
+    : SwUndoFormatCreate(UNDO_CHARFMT_CREATE, pNewFormat, pDerivedFrom, pDocument)
 {
 }
 
@@ -289,7 +289,7 @@ SwFormat * SwUndoCharFormatCreate::Find(const OUString & rName) const
 }
 
 SwUndoCharFormatDelete::SwUndoCharFormatDelete(SwCharFormat * pOld, SwDoc * pDocument)
-    : SwUndoFormatDelete(SwUndoId::CHARFMT_DELETE, pOld, pDocument)
+    : SwUndoFormatDelete(UNDO_CHARFMT_DELETE, pOld, pDocument)
 {
 }
 
@@ -311,7 +311,7 @@ SwFormat * SwUndoCharFormatDelete::Find(const OUString & rName) const
 SwUndoRenameCharFormat::SwUndoRenameCharFormat(const OUString & sInitOldName,
                                          const OUString & sInitNewName,
                                          SwDoc * pDocument)
-    : SwUndoRenameFormat(SwUndoId::CHARFMT_RENAME, sInitOldName, sInitNewName, pDocument)
+    : SwUndoRenameFormat(UNDO_CHARFMT_RENAME, sInitOldName, sInitNewName, pDocument)
 {
 }
 
@@ -323,13 +323,14 @@ SwFormat * SwUndoRenameCharFormat::Find(const OUString & rName) const
 SwUndoFrameFormatCreate::SwUndoFrameFormatCreate(SwFrameFormat * pNewFormat,
                                        SwFrameFormat * pDerivedFrom,
                                        SwDoc * pDocument)
-    : SwUndoFormatCreate(SwUndoId::FRMFMT_CREATE, pNewFormat, pDerivedFrom, pDocument)
+    : SwUndoFormatCreate(UNDO_FRMFMT_CREATE, pNewFormat, pDerivedFrom, pDocument),
+      bAuto(pNewFormat->IsAuto())
 {
 }
 
 SwFormat * SwUndoFrameFormatCreate::Create(SwFormat * pDerivedFrom)
 {
-    return pDoc->MakeFrameFormat(sNewName, static_cast<SwFrameFormat *>(pDerivedFrom), true, pNew->IsAuto());
+    return pDoc->MakeFrameFormat(sNewName, static_cast<SwFrameFormat *>(pDerivedFrom), true, bAuto);
 }
 
 void SwUndoFrameFormatCreate::Delete()
@@ -343,7 +344,7 @@ SwFormat * SwUndoFrameFormatCreate::Find(const OUString & rName) const
 }
 
 SwUndoFrameFormatDelete::SwUndoFrameFormatDelete(SwFrameFormat * pOld, SwDoc * pDocument)
-    : SwUndoFormatDelete(SwUndoId::FRMFMT_DELETE, pOld, pDocument)
+    : SwUndoFormatDelete(UNDO_FRMFMT_DELETE, pOld, pDocument)
 {
 }
 
@@ -365,7 +366,7 @@ SwFormat * SwUndoFrameFormatDelete::Find(const OUString & rName) const
 SwUndoRenameFrameFormat::SwUndoRenameFrameFormat(const OUString & sInitOldName,
                                        const OUString & sInitNewName,
                                        SwDoc * pDocument)
-    : SwUndoRenameFormat(SwUndoId::FRMFMT_RENAME, sInitOldName, sInitNewName, pDocument)
+    : SwUndoRenameFormat(UNDO_FRMFMT_RENAME, sInitOldName, sInitNewName, pDocument)
 {
 }
 
@@ -376,7 +377,7 @@ SwFormat * SwUndoRenameFrameFormat::Find(const OUString & rName) const
 
 SwUndoNumruleCreate::SwUndoNumruleCreate(const SwNumRule * _pNew,
                                          SwDoc * _pDoc)
-    : SwUndo(SwUndoId::NUMRULE_CREATE, _pDoc), pNew(_pNew), aNew(*_pNew), pDoc(_pDoc),
+    : SwUndo(UNDO_NUMRULE_CREATE), pNew(_pNew), aNew(*_pNew), pDoc(_pDoc),
       bInitialized(false)
 {
 }
@@ -414,7 +415,7 @@ SwRewriter SwUndoNumruleCreate::GetRewriter() const
 
 SwUndoNumruleDelete::SwUndoNumruleDelete(const SwNumRule & rRule,
                                          SwDoc * _pDoc)
-    : SwUndo(SwUndoId::NUMRULE_DELETE, _pDoc), aOld(rRule), pDoc(_pDoc)
+    : SwUndo(UNDO_NUMRULE_DELETE), aOld(rRule), pDoc(_pDoc)
 {
 }
 
@@ -440,7 +441,7 @@ SwRewriter SwUndoNumruleDelete::GetRewriter() const
 SwUndoNumruleRename::SwUndoNumruleRename(const OUString & _aOldName,
                                          const OUString & _aNewName,
                                          SwDoc * _pDoc)
-    : SwUndo(SwUndoId::NUMRULE_RENAME, _pDoc), aOldName(_aOldName), aNewName(_aNewName),
+    : SwUndo(UNDO_NUMRULE_RENAME), aOldName(_aOldName), aNewName(_aNewName),
       pDoc(_pDoc)
 {
 }

@@ -17,10 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sal/config.h>
-
-#include <memory>
-
 #if defined _MSC_VER
 #pragma warning(push, 1)
 #pragma warning(disable: 4917)
@@ -56,7 +52,7 @@ namespace avmedia { namespace win {
 FrameGrabber::FrameGrabber( const uno::Reference< lang::XMultiServiceFactory >& rxMgr ) :
     mxMgr( rxMgr )
 {
-    ::CoInitialize( nullptr );
+    ::CoInitialize( NULL );
 }
 
 
@@ -65,13 +61,12 @@ FrameGrabber::~FrameGrabber()
     ::CoUninitialize();
 }
 
-namespace {
 
-IMediaDet* implCreateMediaDet( const OUString& rURL )
+IMediaDet* FrameGrabber::implCreateMediaDet( const OUString& rURL ) const
 {
-    IMediaDet* pDet = nullptr;
+    IMediaDet* pDet = NULL;
 
-    if( SUCCEEDED( CoCreateInstance( CLSID_MediaDet, nullptr, CLSCTX_INPROC_SERVER, IID_IMediaDet, reinterpret_cast<void**>(&pDet) ) ) )
+    if( SUCCEEDED( CoCreateInstance( CLSID_MediaDet, NULL, CLSCTX_INPROC_SERVER, IID_IMediaDet, (void**) &pDet ) ) )
     {
         OUString aLocalStr;
 
@@ -81,7 +76,7 @@ IMediaDet* implCreateMediaDet( const OUString& rURL )
             if( !SUCCEEDED( pDet->put_Filename( ::SysAllocString( reinterpret_cast<LPCOLESTR>(aLocalStr.getStr()) ) ) ) )
             {
                 pDet->Release();
-                pDet = nullptr;
+                pDet = NULL;
             }
         }
     }
@@ -89,7 +84,6 @@ IMediaDet* implCreateMediaDet( const OUString& rURL )
     return pDet;
 }
 
-}
 
 bool FrameGrabber::create( const OUString& rURL )
 {
@@ -100,7 +94,7 @@ bool FrameGrabber::create( const OUString& rURL )
     {
         maURL = rURL;
         pDet->Release();
-        pDet = nullptr;
+        pDet = NULL;
     }
     else
         maURL.clear();
@@ -110,6 +104,7 @@ bool FrameGrabber::create( const OUString& rURL )
 
 
 uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMediaTime )
+    throw (uno::RuntimeException)
 {
     uno::Reference< graphic::XGraphic > xRet;
     IMediaDet*                          pDet = implCreateMediaDet( maURL );
@@ -158,29 +153,29 @@ uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMe
 
                 if( aMediaType.cbFormat != 0 )
                 {
-                    ::CoTaskMemFree( aMediaType.pbFormat );
+                    ::CoTaskMemFree( (PVOID) aMediaType.pbFormat );
                     aMediaType.cbFormat = 0;
-                    aMediaType.pbFormat = nullptr;
+                    aMediaType.pbFormat = NULL;
                 }
 
-                if( aMediaType.pUnk != nullptr )
+                if( aMediaType.pUnk != NULL )
                 {
                     aMediaType.pUnk->Release();
-                    aMediaType.pUnk = nullptr;
+                    aMediaType.pUnk = NULL;
                 }
             }
 
             if( ( nWidth > 0 ) && ( nHeight > 0 ) &&
-                SUCCEEDED( pDet->GetBitmapBits( 0, &nSize, nullptr, nWidth, nHeight ) ) &&
+                SUCCEEDED( pDet->GetBitmapBits( 0, &nSize, NULL, nWidth, nHeight ) ) &&
                 ( nSize > 0  ) )
             {
-                auto pBuffer = std::unique_ptr<char[]>(new char[ nSize ]);
+                char* pBuffer = new char[ nSize ];
 
                 try
                 {
-                    if( SUCCEEDED( pDet->GetBitmapBits( fMediaTime, nullptr, pBuffer.get(), nWidth, nHeight ) ) )
+                    if( SUCCEEDED( pDet->GetBitmapBits( fMediaTime, NULL, pBuffer, nWidth, nHeight ) ) )
                     {
-                        SvMemoryStream  aMemStm( pBuffer.get(), nSize, StreamMode::READ | StreamMode::WRITE );
+                        SvMemoryStream  aMemStm( pBuffer, nSize, StreamMode::READ | StreamMode::WRITE );
                         Bitmap          aBmp;
 
                         if( ReadDIB(aBmp, aMemStm, false ) && !aBmp.IsEmpty() )
@@ -193,6 +188,8 @@ uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMe
                 catch( ... )
                 {
                 }
+
+                delete [] pBuffer;
             }
         }
 
@@ -204,20 +201,25 @@ uno::Reference< graphic::XGraphic > SAL_CALL FrameGrabber::grabFrame( double fMe
 
 
 OUString SAL_CALL FrameGrabber::getImplementationName(  )
+    throw (uno::RuntimeException)
 {
     return OUString( AVMEDIA_WIN_FRAMEGRABBER_IMPLEMENTATIONNAME );
 }
 
 
 sal_Bool SAL_CALL FrameGrabber::supportsService( const OUString& ServiceName )
+    throw (uno::RuntimeException)
 {
     return cppu::supportsService(this, ServiceName);
 }
 
 
 uno::Sequence< OUString > SAL_CALL FrameGrabber::getSupportedServiceNames(  )
+    throw (uno::RuntimeException)
 {
-    return { AVMEDIA_WIN_FRAMEGRABBER_SERVICENAME };
+    uno::Sequence<OUString> aRet { AVMEDIA_WIN_FRAMEGRABBER_SERVICENAME };
+
+    return aRet;
 }
 
 } // namespace win

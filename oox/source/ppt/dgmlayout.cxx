@@ -24,7 +24,6 @@
 #include "drawingml/diagram/diagram.hxx"
 #include "oox/dump/pptxdumper.hxx"
 
-#include <com/sun/star/awt/Rectangle.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/drawing/XMasterPageTarget.hpp>
@@ -55,7 +54,7 @@ uno::Sequence< OUString > SAL_CALL QuickDiagrammingLayout_getSupportedServiceNam
     return aSeq;
 }
 
-uno::Reference< uno::XInterface > SAL_CALL QuickDiagrammingLayout_createInstance( const Reference< XComponentContext >& rxContext )
+uno::Reference< uno::XInterface > SAL_CALL QuickDiagrammingLayout_createInstance( const Reference< XComponentContext >& rxContext ) throw( Exception )
 {
     return static_cast<cppu::OWeakObject*>(new QuickDiagrammingLayout( rxContext ));
 }
@@ -65,7 +64,7 @@ QuickDiagrammingLayout::QuickDiagrammingLayout( const Reference< XComponentConte
     mpThemePtr(new drawingml::Theme())
 {}
 
-bool QuickDiagrammingLayout::importDocument()
+bool QuickDiagrammingLayout::importDocument() throw (css::uno::RuntimeException)
 {
     Reference<drawing::XShape>  xParentShape(getParentShape(),
                                              UNO_QUERY_THROW);
@@ -165,7 +164,7 @@ const oox::drawingml::table::TableStyleListPtr QuickDiagrammingLayout::getTableS
     return nullptr;
 }
 
-OUString QuickDiagrammingLayout::getImplementationName()
+OUString QuickDiagrammingLayout::getImplementationName() throw (css::uno::RuntimeException, std::exception)
 {
     return QuickDiagrammingLayout_getImplementationName();
 }

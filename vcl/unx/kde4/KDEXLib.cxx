@@ -32,7 +32,6 @@
 #include <QtCore/QAbstractEventDispatcher>
 #include <QtGui/QClipboard>
 #include <QtCore/QThread>
-#include <QtGui/QFrame>
 
 #include "unx/i18n_im.hxx"
 #include "unx/i18n_xkb.hxx"
@@ -41,7 +40,7 @@
 
 #include "KDESalDisplay.hxx"
 
-#if KDE4_HAVE_GLIB
+#if KDE_HAVE_GLIB
 #include "KDE4FilePicker.hxx"
 #include "tst_exclude_socket_notifiers.moc"
 #include "tst_exclude_posted_events.moc"
@@ -50,8 +49,8 @@
 KDEXLib::KDEXLib() :
     SalXLib(),  m_bStartupDone(false),
     m_pFreeCmdLineArgs(nullptr), m_pAppCmdLineArgs(nullptr), m_nFakeCmdLineArgs( 0 ),
-    m_isGlibEventLoopType(false),
-    m_allowKdeDialogs(false), m_blockIdleTimeout(false)
+    m_frameWidth( -1 ), m_isGlibEventLoopType(false),
+    m_allowKdeDialogs(false), blockIdleTimeout(false)
 {
     // the timers created here means they belong to the main thread.
     // As the timeoutTimer runs the LO event queue, which may block on a dialog,
@@ -76,6 +75,9 @@ KDEXLib::KDEXLib() :
     connect( this, SIGNAL( createFilePickerSignal( const css::uno::Reference< css::uno::XComponentContext >&) ),
              this, SLOT( createFilePicker( const css::uno::Reference< css::uno::XComponentContext >&) ),
              Qt::BlockingQueuedConnection );
+
+    connect( this, SIGNAL( getFrameWidthSignal() ),
+             this, SLOT( getFrameWidth() ), Qt::BlockingQueuedConnection );
 }
 
 KDEXLib::~KDEXLib()
@@ -93,8 +95,8 @@ KDEXLib::~KDEXLib()
 
 void KDEXLib::Init()
 {
-    m_pInputMethod = new SalI18N_InputMethod;
-    m_pInputMethod->SetLocale();
+    SalI18N_InputMethod* pInputMethod = new SalI18N_InputMethod;
+    pInputMethod->SetLocale();
     XrmInitialize();
 
     KAboutData *kAboutData = new KAboutData( "LibreOffice",
@@ -120,12 +122,13 @@ void KDEXLib::Init()
             "bischoff@kde.org" );
 
     m_nFakeCmdLineArgs = 2;
+    sal_uInt16 nIdx;
 
-    sal_uInt32 nParams = osl_getCommandArgCount();
+    int nParams = osl_getCommandArgCount();
     OString aDisplay;
     OUString aParam, aBin;
 
-    for ( sal_uInt32 nIdx = 0; nIdx < nParams; ++nIdx )
+    for ( nIdx = 0; nIdx < nParams; ++nIdx )
     {
         osl_getCommandArg( nIdx, &aParam.pData );
         if ( !m_pFreeCmdLineArgs && aParam == "-display" && nIdx + 1 < nParams )
@@ -177,7 +180,7 @@ void KDEXLib::Init()
 
     KApplication::setQuitOnLastWindowClosed(false);
 
-#if KDE4_HAVE_GLIB
+#if KDE_HAVE_GLIB
     m_isGlibEventLoopType = QAbstractEventDispatcher::instance()->inherits( "QEventDispatcherGlib" );
     // Using KDE dialogs (and their nested event loops) works only with a proper event loop integration
     // that will release SolarMutex when waiting for more events.
@@ -191,7 +194,11 @@ void KDEXLib::Init()
 
     setupEventLoop();
 
-    m_pDisplay = QX11Info::display();
+    Display* pDisp = QX11Info::display();
+    SalKDEDisplay *pSalDisplay = new SalKDEDisplay(pDisp);
+
+    pInputMethod->CreateMethod( pDisp );
+    pSalDisplay->SetupInput( pInputMethod );
 }
 
 // When we use Qt event loop, it can actually use its own event loop handling, or wrap
@@ -201,7 +208,7 @@ void KDEXLib::Init()
 // needs to be unlocked shortly before entering the main sleep (e.g. select()) and locked
 // immediately after. So we need to know which event loop implementation is used and
 // hook accordingly.
-#if KDE4_HAVE_GLIB
+#if KDE_HAVE_GLIB
 #include <glib.h>
 
 static GPollFunc old_gpoll = nullptr;
@@ -226,7 +233,7 @@ static bool qt_event_filter( void* m )
 void KDEXLib::setupEventLoop()
 {
     old_qt_event_filter = QAbstractEventDispatcher::instance()->setEventFilter( qt_event_filter );
-#if KDE4_HAVE_GLIB
+#if KDE_HAVE_GLIB
     if( m_isGlibEventLoopType )
     {
         old_gpoll = g_main_context_get_poll_func( nullptr );
@@ -300,20 +307,22 @@ SalYieldResult KDEXLib::Yield( bool bWait, bool bHandleAllCurrentEvents )
     }
 }
 
-/**
- * Quoting the Qt docs: [QAbstractEventDispatcher::processEvents] processes
- * pending events that match flags until there are no more events to process.
- */
-SalYieldResult KDEXLib::processYield( bool bWait, bool )
+SalYieldResult KDEXLib::processYield( bool bWait, bool bHandleAllCurrentEvents )
 {
-    m_blockIdleTimeout = !bWait;
+    blockIdleTimeout = !bWait;
     QAbstractEventDispatcher* dispatcher = QAbstractEventDispatcher::instance( qApp->thread());
     bool wasEvent = false;
-    if ( bWait )
-        wasEvent = dispatcher->processEvents( QEventLoop::WaitForMoreEvents );
-    else
-        wasEvent = dispatcher->processEvents( QEventLoop::AllEvents );
-    m_blockIdleTimeout = false;
+    for( int cnt = bHandleAllCurrentEvents ? 100 : 1;
+         cnt > 0;
+         --cnt )
+    {
+        if( !dispatcher->processEvents( QEventLoop::AllEvents ))
+            break;
+        wasEvent = true;
+    }
+    if( bWait && !wasEvent )
+        dispatcher->processEvents( QEventLoop::WaitForMoreEvents );
+    blockIdleTimeout = false;
     return wasEvent ? SalYieldResult::EVENT
                     : SalYieldResult::TIMEOUT;
 }
@@ -345,7 +354,7 @@ void KDEXLib::StopTimer()
 void KDEXLib::timeoutActivated()
 {
     // HACK? Always process posted events before timer timeouts.
-    // There are places that may watch both (for example, there's a posted
+    // There are places that may watch both both (for example, there's a posted
     // event about change of the current active window and there's a timeout
     // event informing that a document has finished loading). This is of course
     // racy, but both generic and gtk event loops manage to deliver posted events
@@ -356,7 +365,7 @@ void KDEXLib::timeoutActivated()
 
     // QGuiEventDispatcherGlib makes glib watch also X11 fd, but its hasPendingEvents()
     // doesn't check X11, so explicitly check XPending() here.
-    bool idle = QApplication::hasPendingEvents() && !m_blockIdleTimeout && !XPending( QX11Info::display());
+    bool idle = QApplication::hasPendingEvents() && !blockIdleTimeout && !XPending( QX11Info::display());
     X11SalData::Timeout( idle );
     // QTimer is not single shot, so will be restarted immediately
 }
@@ -406,7 +415,7 @@ using namespace com::sun::star;
 uno::Reference< ui::dialogs::XFilePicker2 > KDEXLib::createFilePicker(
         const uno::Reference< uno::XComponentContext >& xMSF )
 {
-#if KDE4_HAVE_GLIB
+#if KDE_HAVE_GLIB
     if( qApp->thread() != QThread::currentThread()) {
         SalYieldMutexReleaser aReleaser;
         return Q_EMIT createFilePickerSignal( xMSF );
@@ -415,6 +424,25 @@ uno::Reference< ui::dialogs::XFilePicker2 > KDEXLib::createFilePicker(
 #else
     return NULL;
 #endif
+}
+
+#include <QtGui/QFrame>
+
+int KDEXLib::getFrameWidth()
+{
+    if( m_frameWidth >= 0 )
+        return m_frameWidth;
+    if( qApp->thread() != QThread::currentThread()) {
+        SalYieldMutexReleaser aReleaser;
+        return Q_EMIT getFrameWidthSignal();
+    }
+
+    // fill in a default
+    QFrame aFrame( nullptr );
+    aFrame.setFrameStyle( QFrame::StyledPanel | QFrame::Sunken );
+    aFrame.ensurePolished();
+    m_frameWidth = aFrame.frameWidth();
+    return m_frameWidth;
 }
 
 #include "KDEXLib.moc"

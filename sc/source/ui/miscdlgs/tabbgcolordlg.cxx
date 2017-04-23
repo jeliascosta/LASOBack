@@ -21,7 +21,7 @@
 
 #include "tabbgcolordlg.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 
 #include <tools/color.hxx>
 #include <sfx2/objsh.hxx>
@@ -36,7 +36,8 @@
 #define HDL(hdl) LINK(this,ScTabBgColorDlg,hdl)
 
 ScTabBgColorDlg::ScTabBgColorDlg(vcl::Window* pParent, const OUString& rTitle,
-    const OUString& rTabBgColorNoColorText, const Color& rDefaultColor)
+    const OUString& rTabBgColorNoColorText, const Color& rDefaultColor,
+    const OString& sHelpId)
     : ModalDialog(pParent, "TabColorDialog", "modules/scalc/ui/tabcolordialog.ui")
     , m_aTabBgColor(rDefaultColor)
     , m_aTabBgColorNoColorText(rTabBgColorNoColorText)
@@ -47,6 +48,7 @@ ScTabBgColorDlg::ScTabBgColorDlg(vcl::Window* pParent, const OUString& rTitle,
     m_pTabBgColorSet->SetColCount(SvxColorValueSet::getColumnCount());
     get(m_pBtnOk, "ok");
 
+    SetHelpId( sHelpId );
     this->SetText( rTitle );
     this->SetStyle(GetStyle() | WB_BORDER | WB_STDFLOATWIN | WB_3DLOOK | WB_DIALOGCONTROL | WB_SYSTEMWINDOW | WB_STANDALONE | WB_HIDE);
 
@@ -114,7 +116,7 @@ void ScTabBgColorDlg::FillColorValueSets_Impl()
 }
 
 ///    Handler, called when color selection is changed
-IMPL_LINK_NOARG(ScTabBgColorDlg, TabBgColorDblClickHdl_Impl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(ScTabBgColorDlg, TabBgColorDblClickHdl_Impl, ValueSet*, void)
 {
     sal_uInt16 nItemId = m_pTabBgColorSet->GetSelectItemId();
     Color aColor = nItemId ? ( m_pTabBgColorSet->GetItemColor( nItemId ) ) : Color( COL_AUTO );
@@ -123,7 +125,7 @@ IMPL_LINK_NOARG(ScTabBgColorDlg, TabBgColorDblClickHdl_Impl, ValueSet*, void)
 }
 
 //    Handler, called when the OK button is pushed
-IMPL_LINK_NOARG(ScTabBgColorDlg, TabBgColorOKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScTabBgColorDlg, TabBgColorOKHdl_Impl, Button*, void)
 {
     sal_uInt16 nItemId = m_pTabBgColorSet->GetSelectItemId();
     Color aColor = nItemId ? ( m_pTabBgColorSet->GetItemColor( nItemId ) ) : Color( COL_AUTO );

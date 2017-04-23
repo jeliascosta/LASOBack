@@ -144,6 +144,11 @@ void OTableGrantControl::Init()
     SetMode(nMode);
 }
 
+void OTableGrantControl::Resize()
+{
+    EditBrowseBox::Resize();
+}
+
 bool OTableGrantControl::PreNotify(NotifyEvent& rNEvt)
 {
     if (rNEvt.GetType() == MouseNotifyEvent::LOSEFOCUS)
@@ -162,13 +167,13 @@ bool OTableGrantControl::PreNotify(NotifyEvent& rNEvt)
     return EditBrowseBox::PreNotify(rNEvt);
 }
 
-IMPL_LINK_NOARG(OTableGrantControl, AsynchActivate, void*, void)
+IMPL_LINK_NOARG_TYPED(OTableGrantControl, AsynchActivate, void*, void)
 {
     m_nDeactivateEvent = nullptr;
     ActivateCell();
 }
 
-IMPL_LINK_NOARG(OTableGrantControl, AsynchDeactivate, void*, void)
+IMPL_LINK_NOARG_TYPED(OTableGrantControl, AsynchDeactivate, void*, void)
 {
     m_nDeactivateEvent = nullptr;
     DeactivateCell();
@@ -244,7 +249,7 @@ bool OTableGrantControl::SaveModified()
         bErg = false;
         ::dbaui::showError(::dbtools::SQLExceptionInfo(e),GetParent(),m_xContext);
     }
-    if(bErg && Controller().is())
+    if(bErg && Controller().Is())
         Controller()->ClearModified();
     if(!bErg)
         UpdateTables();
@@ -386,7 +391,7 @@ bool OTableGrantControl::SeekRow( long nRow )
     return (nRow <= m_aTableNames.getLength());
 }
 
-void OTableGrantControl::PaintCell( OutputDevice& rDev, const tools::Rectangle& rRect, sal_uInt16 nColumnId ) const
+void OTableGrantControl::PaintCell( OutputDevice& rDev, const Rectangle& rRect, sal_uInt16 nColumnId ) const
 {
 
     if(nColumnId != COL_TABLE_NAME)

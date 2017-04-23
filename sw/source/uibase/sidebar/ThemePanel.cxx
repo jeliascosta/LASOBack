@@ -26,6 +26,11 @@
 #include <sfx2/viewsh.hxx>
 #include <sfx2/objsh.hxx>
 
+#include <com/sun/star/frame/XController.hpp>
+#include <com/sun/star/frame/XModel.hpp>
+#include <com/sun/star/frame/DocumentTemplates.hpp>
+#include <com/sun/star/frame/XDocumentTemplates.hpp>
+#include <com/sun/star/document/XUndoManagerSupplier.hpp>
 
 #include <editeng/fontitem.hxx>
 #include <editeng/boxitem.hxx>
@@ -61,7 +66,7 @@ public:
         , mnTintShade()
     {}
 
-    ColorVariable(long nIndex, sal_Int16 nTintShade)
+    ColorVariable(long nIndex, sal_Int16 nTintShade = 0)
         : mnIndex(nIndex)
         , maColor()
         , mnTintShade(nTintShade)
@@ -110,7 +115,7 @@ public:
         : maStyles()
     {}
 
-    void add(StyleRedefinition const & aRedefinition)
+    void add(StyleRedefinition aRedefinition)
     {
         maStyles.push_back(aRedefinition);
     }
@@ -389,9 +394,9 @@ void applyTheme(SfxStyleSheetBasePool* pPool, const OUString& sFontSetName, cons
 BitmapEx GenerateColorPreview(const svx::ColorSet& rColorSet)
 {
     ScopedVclPtrInstance<VirtualDevice> pVirtualDev(*Application::GetDefaultDevice());
-    float fScaleFactor = pVirtualDev->GetDPIScaleFactor();
-    long BORDER = 2 * fScaleFactor;
-    long SIZE = 12 * fScaleFactor;
+    sal_Int32 nScaleFactor = pVirtualDev->GetDPIScaleFactor();
+    long BORDER = 2 * nScaleFactor;
+    long SIZE = 12 * nScaleFactor;
 
     Size aSize(BORDER * 7 + SIZE * 6, BORDER * 3 + SIZE * 2);
     pVirtualDev->SetOutputSizePixel(aSize);
@@ -405,10 +410,10 @@ BitmapEx GenerateColorPreview(const svx::ColorSet& rColorSet)
     for (sal_uInt32 i = 0; i < 12; i += 2)
     {
         pVirtualDev->SetFillColor(rColorSet.getColor(i));
-        pVirtualDev->DrawRect(tools::Rectangle(x, y1, x + SIZE, y1 + SIZE));
+        pVirtualDev->DrawRect(Rectangle(x, y1, x + SIZE, y1 + SIZE));
 
         pVirtualDev->SetFillColor(rColorSet.getColor(i + 1));
-        pVirtualDev->DrawRect(tools::Rectangle(x, y2, x + SIZE, y2 + SIZE));
+        pVirtualDev->DrawRect(Rectangle(x, y2, x + SIZE, y2 + SIZE));
 
         x += SIZE + BORDER;
     }
@@ -480,15 +485,15 @@ void ThemePanel::dispose()
     PanelLayout::dispose();
 }
 
-IMPL_LINK_NOARG(ThemePanel, ClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ThemePanel, ClickHdl, Button*, void)
 {
     DoubleClickHdl();
 }
-IMPL_LINK_NOARG(ThemePanel, DoubleClickValueSetHdl, ValueSet*, void)
+IMPL_LINK_NOARG_TYPED(ThemePanel, DoubleClickValueSetHdl, ValueSet*, void)
 {
     DoubleClickHdl();
 }
-IMPL_LINK_NOARG(ThemePanel, DoubleClickHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ThemePanel, DoubleClickHdl, ListBox&, void)
 {
     DoubleClickHdl();
 }

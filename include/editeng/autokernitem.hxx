@@ -45,11 +45,11 @@ public:
     virtual SvStream&       Store(SvStream &, sal_uInt16 nItemVersion) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
-    SvxAutoKernItem& operator=(const SvxAutoKernItem& rAutoKern)
+    inline SvxAutoKernItem& operator=(const SvxAutoKernItem& rAutoKern)
         {
             SetValue( rAutoKern.GetValue() );
             return *this;

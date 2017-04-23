@@ -47,12 +47,15 @@ namespace connectivity
                             sal_Int32       Precision,
                             sal_Int32       Scale,
                             sal_Int32       Type,
+                            bool            IsAutoIncrement,
+                            bool            IsRowVersion,
+                            bool            IsCurrency,
                             bool            _bCase,
                             const OUString& CatalogName,
                             const OUString& SchemaName,
                             const OUString& TableName);
             // just to make it not inline
-            virtual ~OKeyColumn() override;
+            virtual ~OKeyColumn();
 
             virtual void construct() override;
             DECLARE_SERVICE_INFO();

@@ -76,9 +76,6 @@ public:
         return true;
     }
 
-    /** setAnyProperty should be used */
-    bool                setProperty( sal_Int32, const css::uno::Any& ) = delete;
-
     css::uno::Any       getProperty( sal_Int32 nPropId );
 
     void                erase( sal_Int32 nPropId );

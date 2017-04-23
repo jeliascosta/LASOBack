@@ -163,16 +163,16 @@ void DescriptionGenerator::AddProperty (const OUString& sPropertyName,
             // Delegate to type specific property handling.
             switch (aType)
             {
-                case PropertyType::Color:
+                case COLOR:
                     AddColor (sPropertyName, sLocalizedName);
                     break;
-                case PropertyType::Integer:
+                case INTEGER:
                     AddInteger (sPropertyName, sLocalizedName);
                     break;
-                case PropertyType::String:
+                case STRING:
                     AddString (sPropertyName, sLocalizedName, nWhichId);
                     break;
-                case PropertyType::FillStyle:
+                case FILL_STYLE:
                     AddFillStyle (sPropertyName, sLocalizedName);
                     break;
             }
@@ -188,10 +188,10 @@ void DescriptionGenerator::AppendString (const OUString& sString)
 
 void DescriptionGenerator::AddLineProperties()
 {
-    AddProperty ("LineColor", DescriptionGenerator::PropertyType::Color, SIP_XA_LINECOLOR);
-    AddProperty ("LineDashName", DescriptionGenerator::PropertyType::String,
+    AddProperty ("LineColor", DescriptionGenerator::COLOR, SIP_XA_LINECOLOR);
+    AddProperty ("LineDashName", DescriptionGenerator::STRING,
                  SIP_XA_LINEDASH, XATTR_LINEDASH);
-    AddProperty ("LineWidth", DescriptionGenerator::PropertyType::Integer, SIP_XA_LINEWIDTH);
+    AddProperty ("LineWidth", DescriptionGenerator::INTEGER, SIP_XA_LINEWIDTH);
 }
 
 
@@ -200,13 +200,13 @@ void DescriptionGenerator::AddLineProperties()
 */
 void DescriptionGenerator::AddFillProperties()
 {
-    AddProperty ("FillStyle", DescriptionGenerator::PropertyType::FillStyle, SIP_XA_FILLSTYLE);
+    AddProperty ("FillStyle", DescriptionGenerator::FILL_STYLE, SIP_XA_FILLSTYLE);
 }
 
 
 void DescriptionGenerator::Add3DProperties()
 {
-    AddProperty ("D3DMaterialColor", DescriptionGenerator::PropertyType::Color,
+    AddProperty ("D3DMaterialColor", DescriptionGenerator::COLOR,
         RID_SVXSTR_A11Y_3D_MATERIAL_COLOR);
     AddLineProperties ();
     AddFillProperties ();
@@ -215,7 +215,7 @@ void DescriptionGenerator::Add3DProperties()
 
 void DescriptionGenerator::AddTextProperties()
 {
-    AddProperty ("CharColor", DescriptionGenerator::PropertyType::Color);
+    AddProperty ("CharColor", DescriptionGenerator::COLOR);
     AddFillProperties ();
 }
 
@@ -339,7 +339,7 @@ void DescriptionGenerator::AddFillStyle (const OUString& sPropertyName,
                     case drawing::FillStyle_BITMAP:
                         sFillStyleName = SVX_RESSTR(RID_SVXSTR_A11Y_FILLSTYLE_BITMAP);
                         break;
-                    default:
+                    case drawing::FillStyle_MAKE_FIXED_SIZE:
                         break;
                 }
             }
@@ -351,22 +351,22 @@ void DescriptionGenerator::AddFillStyle (const OUString& sPropertyName,
                 case drawing::FillStyle_NONE:
                     break;
                 case drawing::FillStyle_SOLID:
-                    AddProperty ("FillColor", PropertyType::Color, SIP_XA_FILLCOLOR);
+                    AddProperty ("FillColor", COLOR, SIP_XA_FILLCOLOR);
                     break;
                 case drawing::FillStyle_GRADIENT:
-                    AddProperty ("FillGradientName", PropertyType::String, SIP_XA_FILLGRADIENT,
+                    AddProperty ("FillGradientName", STRING, SIP_XA_FILLGRADIENT,
                         XATTR_FILLGRADIENT);
                     break;
                 case drawing::FillStyle_HATCH:
-                    AddProperty ("FillColor", PropertyType::Color, SIP_XA_FILLCOLOR);
-                    AddProperty ("FillHatchName", PropertyType::String, SIP_XA_FILLHATCH,
+                    AddProperty ("FillColor", COLOR, SIP_XA_FILLCOLOR);
+                    AddProperty ("FillHatchName", STRING, SIP_XA_FILLHATCH,
                         XATTR_FILLHATCH);
                     break;
                 case drawing::FillStyle_BITMAP:
-                    AddProperty ("FillBitmapName", PropertyType::String, SIP_XA_FILLBITMAP,
+                    AddProperty ("FillBitmapName", STRING, SIP_XA_FILLBITMAP,
                         XATTR_FILLBITMAP);
                     break;
-                default:
+                case drawing::FillStyle_MAKE_FIXED_SIZE:
                     break;
             }
         }

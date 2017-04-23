@@ -56,11 +56,13 @@ namespace rptui
         ReportFormula( const BindType _eType, const OUString& _rFieldOrExpression );
         ~ReportFormula();
 
+        ReportFormula& operator=(class ReportFormula const &);
+
         /// returns whether the object denotes a valid formula
         bool        isValid() const;
 
         /// returns the type of the binding represented by the formula
-        BindType    getType() const { return m_eType; }
+        inline BindType    getType() const { return m_eType; }
 
         /// returns the complete formula represented by the object
         const OUString&

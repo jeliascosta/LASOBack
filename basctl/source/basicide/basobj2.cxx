@@ -42,12 +42,11 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::container;
 
 extern "C" {
-    SAL_DLLPUBLIC_EXPORT rtl_uString* basicide_choose_macro( void* pOnlyInDocument_AsXModel, void* pDocFrame_AsXFrame, sal_Bool bChooseOnly, rtl_uString* pMacroDesc )
+    SAL_DLLPUBLIC_EXPORT rtl_uString* basicide_choose_macro( void* pOnlyInDocument_AsXModel, sal_Bool bChooseOnly, rtl_uString* pMacroDesc )
     {
         OUString aMacroDesc( pMacroDesc );
         Reference< frame::XModel > aDocument( static_cast< frame::XModel* >( pOnlyInDocument_AsXModel ) );
-        Reference< frame::XFrame > aDocFrame( static_cast< frame::XFrame* >( pDocFrame_AsXFrame ) );
-        OUString aScriptURL = basctl::ChooseMacro( aDocument, aDocFrame, bChooseOnly, aMacroDesc );
+        OUString aScriptURL = basctl::ChooseMacro( aDocument, bChooseOnly, aMacroDesc );
         rtl_uString* pScriptURL = aScriptURL.pData;
         rtl_uString_acquire( pScriptURL );
 
@@ -98,7 +97,7 @@ static bool StringCompareLessThan( const OUString& rStr1, const OUString& rStr2 
 Sequence< OUString > GetMergedLibraryNames( const Reference< script::XLibraryContainer >& xModLibContainer, const Reference< script::XLibraryContainer >& xDlgLibContainer )
 {
     // create a sorted list of module library names
-    std::vector<OUString> aModLibList;
+    ::std::vector<OUString> aModLibList;
     if ( xModLibContainer.is() )
     {
         Sequence< OUString > aModLibNames = xModLibContainer->getElementNames();
@@ -106,11 +105,11 @@ Sequence< OUString > GetMergedLibraryNames( const Reference< script::XLibraryCon
         const OUString* pModLibNames = aModLibNames.getConstArray();
         for ( sal_Int32 i = 0 ; i < nModLibCount ; i++ )
             aModLibList.push_back( pModLibNames[ i ] );
-        std::sort( aModLibList.begin() , aModLibList.end() , StringCompareLessThan );
+        ::std::sort( aModLibList.begin() , aModLibList.end() , StringCompareLessThan );
     }
 
     // create a sorted list of dialog library names
-    std::vector<OUString> aDlgLibList;
+    ::std::vector<OUString> aDlgLibList;
     if ( xDlgLibContainer.is() )
     {
         Sequence< OUString > aDlgLibNames = xDlgLibContainer->getElementNames();
@@ -118,13 +117,13 @@ Sequence< OUString > GetMergedLibraryNames( const Reference< script::XLibraryCon
         const OUString* pDlgLibNames = aDlgLibNames.getConstArray();
         for ( sal_Int32 i = 0 ; i < nDlgLibCount ; i++ )
             aDlgLibList.push_back( pDlgLibNames[ i ] );
-        std::sort( aDlgLibList.begin() , aDlgLibList.end() , StringCompareLessThan );
+        ::std::sort( aDlgLibList.begin() , aDlgLibList.end() , StringCompareLessThan );
     }
 
     // merge both lists
-    std::vector<OUString> aLibList( aModLibList.size() + aDlgLibList.size() );
-    std::merge( aModLibList.begin(), aModLibList.end(), aDlgLibList.begin(), aDlgLibList.end(), aLibList.begin(), StringCompareLessThan );
-    std::vector<OUString>::iterator aIterEnd = std::unique( aLibList.begin(), aLibList.end() );  // move unique elements to the front
+    ::std::vector<OUString> aLibList( aModLibList.size() + aDlgLibList.size() );
+    ::std::merge( aModLibList.begin(), aModLibList.end(), aDlgLibList.begin(), aDlgLibList.end(), aLibList.begin(), StringCompareLessThan );
+    ::std::vector<OUString>::iterator aIterEnd = ::std::unique( aLibList.begin(), aLibList.end() );  // move unique elements to the front
     aLibList.erase( aIterEnd, aLibList.end() ); // remove duplicates
 
     // copy to sequence
@@ -170,7 +169,7 @@ bool RenameModule (
 
     if (Shell* pShell = GetShell())
     {
-        if (VclPtr<ModulWindow> pWin = pShell->FindBasWin(rDocument, rLibName, rNewName, false, true))
+        if (ModulWindow* pWin = pShell->FindBasWin(rDocument, rLibName, rNewName, false, true))
         {
             // set new name in window
             pWin->SetName( rNewName );
@@ -210,10 +209,10 @@ namespace
     class MacroExecution
     {
     public:
-        DECL_STATIC_LINK( MacroExecution, ExecuteMacroEvent, void*, void );
+        DECL_STATIC_LINK_TYPED( MacroExecution, ExecuteMacroEvent, void*, void );
     };
 
-    IMPL_STATIC_LINK( MacroExecution, ExecuteMacroEvent, void*, p, void )
+    IMPL_STATIC_LINK_TYPED( MacroExecution, ExecuteMacroEvent, void*, p, void )
     {
         MacroExecutionData* i_pData = static_cast<MacroExecutionData*>(p);
         ENSURE_OR_RETURN_VOID( i_pData, "wrong MacroExecutionData" );
@@ -228,13 +227,11 @@ namespace
         if ( pData->aDocument.isDocument() )
             pUndoGuard.reset( new ::framework::DocumentUndoGuard( pData->aDocument.getDocument() ) );
 
-        RunMethod( pData->xMethod.get() );
+        RunMethod(pData->xMethod);
     }
 }
 
-OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
-                      const uno::Reference< frame::XFrame >& xDocFrame,
-                      bool bChooseOnly, const OUString& rMacroDesc )
+OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument, bool bChooseOnly, const OUString& rMacroDesc )
 {
     (void)rMacroDesc;
 
@@ -245,7 +242,7 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
     OUString aScriptURL;
     SbMethod* pMethod = nullptr;
 
-    ScopedVclPtrInstance< MacroChooser > pChooser( nullptr, xDocFrame, true );
+    ScopedVclPtrInstance< MacroChooser > pChooser( nullptr, true );
     if ( bChooseOnly || !SvtModuleOptions::IsBasicIDE() )
         pChooser->SetMode(MacroChooser::ChooseOnly);
 
@@ -292,7 +289,12 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
             }
 
             // name
-            OUString aName = pBasic->GetName() + "." + pModule->GetName() + "." + pMethod->GetName();
+            OUString aName;
+            aName += pBasic->GetName();
+            aName += ".";
+            aName += pModule->GetName();
+            aName += ".";
+            aName += pMethod->GetName();
 
             // location
             OUString aLocation;
@@ -340,7 +342,12 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
             // script URL
             if ( !bError )
             {
-                aScriptURL = "vnd.sun.star.script:" + aName + "?language=Basic&location=" + aLocation;
+                aScriptURL = "vnd.sun.star.script:" ;
+                aScriptURL += aName;
+                aScriptURL += "?language=" ;
+                aScriptURL += "Basic";
+                aScriptURL += "&location=" ;
+                aScriptURL += aLocation;
             }
 
             if ( !rxLimitToDocument.is() )
@@ -358,6 +365,7 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
 }
 
 Sequence< OUString > GetMethodNames( const ScriptDocument& rDocument, const OUString& rLibName, const OUString& rModName )
+    throw (NoSuchElementException, RuntimeException, std::exception)
 {
     Sequence< OUString > aSeqMethods;
 
@@ -376,7 +384,7 @@ Sequence< OUString > GetMethodNames( const ScriptDocument& rDocument, const OUSt
         {
             xModule = new SbModule( rModName );
             xModule->SetSource32( aOUSource );
-            pMod = xModule.get();
+            pMod = xModule;
         }
 
         sal_uInt16 nCount = pMod->GetMethods()->Count();
@@ -426,9 +434,9 @@ bool HasMethod (
         {
             xModule = new SbModule( rModName );
             xModule->SetSource32( aOUSource );
-            pMod = xModule.get();
+            pMod = xModule;
         }
-        SbxArray* pMethods = pMod->GetMethods().get();
+        SbxArray* pMethods = pMod->GetMethods();
         if ( pMethods )
         {
             SbMethod* pMethod = static_cast<SbMethod*>(pMethods->Find( rMethName, SbxClassType::Method ));

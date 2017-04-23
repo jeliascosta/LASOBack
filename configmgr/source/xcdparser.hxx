@@ -43,7 +43,7 @@ public:
         Data & data);
 
 private:
-    virtual ~XcdParser() override;
+    virtual ~XcdParser();
 
     virtual xmlreader::XmlReader::Text getTextMode() override;
 

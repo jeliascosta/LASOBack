@@ -52,16 +52,22 @@ namespace comphelper
         Reference< XLogger >            m_xLogger;
 
     public:
-        EventLogger_Impl( const Reference< XComponentContext >& _rxContext, const OUString& _rLoggerName );
+        EventLogger_Impl( const Reference< XComponentContext >& _rxContext, const OUString& _rLoggerName )
+            :m_aContext( _rxContext )
+            ,m_sLoggerName( _rLoggerName )
+        {
+            impl_createLogger_nothrow();
+        }
 
         bool isValid() const { return m_xLogger.is(); }
         const Reference< XLogger >& getLogger() const { return m_xLogger; }
         const Reference< XComponentContext >& getContext() const { return m_aContext; }
+
+    private:
+        void    impl_createLogger_nothrow();
     };
 
-    EventLogger_Impl::EventLogger_Impl( const Reference< XComponentContext >& _rxContext, const OUString& _rLoggerName )
-        :m_aContext( _rxContext )
-        ,m_sLoggerName( _rLoggerName )
+    void EventLogger_Impl::impl_createLogger_nothrow()
     {
         try
         {

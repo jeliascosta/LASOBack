@@ -57,7 +57,8 @@ OUString MimeConfigurationHelper::GetStringClassIDRepresentation( const uno::Seq
 
             sal_Int32 nDigit1 = (sal_Int32)( (sal_uInt8)aClassID[nInd] / 16 );
             sal_Int32 nDigit2 = (sal_uInt8)aClassID[nInd] % 16;
-            aResult += OUString::number( nDigit1, 16 ) + OUString::number( nDigit2, 16 );
+            aResult += OUString::number( nDigit1, 16 );
+            aResult += OUString::number( nDigit2, 16 );
         }
     }
 
@@ -229,7 +230,7 @@ OUString MimeConfigurationHelper::GetDocServiceNameFromMediaType( const OUString
         try
         {
             // make query for all types matching the properties
-            uno::Sequence < beans::NamedValue > aSeq { { "MediaType", css::uno::Any(aMediaType) } };
+            uno::Sequence < beans::NamedValue > aSeq { { "MediaType", css::uno::makeAny(aMediaType) } };
 
             uno::Reference < container::XEnumeration > xEnum = xTypeCFG->createSubSetEnumerationByProperties( aSeq );
             while ( xEnum->hasMoreElements() )
@@ -579,7 +580,10 @@ OUString MimeConfigurationHelper::UpdateMediaDescriptorWithFilterName(
 
         uno::Reference< document::XTypeDetection > xTypeDetection(
                 m_xContext->getServiceManager()->createInstanceWithContext("com.sun.star.document.TypeDetection", m_xContext),
-                uno::UNO_QUERY_THROW );
+                uno::UNO_QUERY );
+
+        if ( !xTypeDetection.is() )
+            throw uno::RuntimeException(); // TODO
 
         // typedetection can change the mode, add a stream and so on, thus a copy should be used
         uno::Sequence< beans::PropertyValue > aTempMD( aMediaDescr );
@@ -690,7 +694,7 @@ SfxFilterFlags MimeConfigurationHelper::GetFilterFlags( const OUString& aFilterN
 bool MimeConfigurationHelper::AddFilterNameCheckOwnFile(
                         uno::Sequence< beans::PropertyValue >& aMediaDescr )
 {
-    OUString aFilterName = UpdateMediaDescriptorWithFilterName( aMediaDescr, false );
+    OUString aFilterName = UpdateMediaDescriptorWithFilterName( aMediaDescr, sal_False );
     if ( !aFilterName.isEmpty() )
     {
         SfxFilterFlags nFlags = GetFilterFlags( aFilterName );
@@ -716,8 +720,8 @@ OUString MimeConfigurationHelper::GetDefaultFilterFromServiceName( const OUStrin
 
             uno::Sequence< beans::NamedValue > aSearchRequest
             {
-                { "DocumentService", css::uno::Any(aServiceName) },
-                { "FileFormatVersion", css::uno::Any(nVersion) }
+                { "DocumentService", css::uno::makeAny(aServiceName) },
+                { "FileFormatVersion", css::uno::makeAny(nVersion) }
             };
 
             uno::Reference< container::XEnumeration > xFilterEnum =
@@ -798,8 +802,8 @@ OUString MimeConfigurationHelper::GetExportFilterFromImportFilter( const OUStrin
                     {
                         uno::Sequence< beans::NamedValue > aSearchRequest
                         {
-                            { "Type", css::uno::Any(aTypeName) },
-                            { "DocumentService", css::uno::Any(aDocumentServiceName) }
+                            { "Type", css::uno::makeAny(aTypeName) },
+                            { "DocumentService", css::uno::makeAny(aDocumentServiceName) }
                         };
 
                         uno::Sequence< beans::PropertyValue > aExportFilterProps = SearchForFilter(

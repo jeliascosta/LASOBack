@@ -42,11 +42,9 @@ namespace dbaui
         Show();
     }
 
-    OTableConnection::OTableConnection( const OTableConnection& _rConn )
-        : VclReferenceBase()
-         ,Window(_rConn.m_pParent.get())
-         ,m_pData(_rConn.GetData()->NewInstance())
-         ,m_pParent(nullptr)
+    OTableConnection::OTableConnection( const OTableConnection& _rConn ) : Window(_rConn.m_pParent.get())
+        ,m_pData(_rConn.GetData()->NewInstance())
+        ,m_pParent(nullptr)
     {
         *this = _rConn;
     }
@@ -62,10 +60,14 @@ namespace dbaui
             m_vConnLine.push_back( new OConnectionLine(this, *aIter) );
     }
 
+    OConnectionLine* OTableConnection::CreateConnLine( const OConnectionLine& rConnLine )
+    {
+        return new OConnectionLine( rConnLine );
+    }
     void OTableConnection::clearLineData()
     {
-        std::vector<OConnectionLine*>::const_iterator aLineEnd = m_vConnLine.end();
-        for(std::vector<OConnectionLine*>::const_iterator aLineIter = m_vConnLine.begin();aLineIter != aLineEnd;++aLineIter)
+        ::std::vector<OConnectionLine*>::const_iterator aLineEnd = m_vConnLine.end();
+        for(::std::vector<OConnectionLine*>::const_iterator aLineIter = m_vConnLine.begin();aLineIter != aLineEnd;++aLineIter)
             delete *aLineIter;
         m_vConnLine.clear();
     }
@@ -88,12 +90,12 @@ namespace dbaui
         // copy linelist
         if(! rConn.GetConnLineList().empty() )
         {
-            const std::vector<OConnectionLine*>& rLine = rConn.GetConnLineList();
-            std::vector<OConnectionLine*>::const_iterator aIter = rLine.begin();
-            std::vector<OConnectionLine*>::const_iterator aEnd = rLine.end();
+            const ::std::vector<OConnectionLine*>& rLine = rConn.GetConnLineList();
+            ::std::vector<OConnectionLine*>::const_iterator aIter = rLine.begin();
+            ::std::vector<OConnectionLine*>::const_iterator aEnd = rLine.end();
             m_vConnLine.reserve(rLine.size());
             for(;aIter != aEnd;++aIter)
-                m_vConnLine.push_back( new OConnectionLine( **aIter ));
+                m_vConnLine.push_back( CreateConnLine( **aIter ));
         }
 
         // as the data are not mine, I also do not delete the old
@@ -148,7 +150,7 @@ namespace dbaui
     bool OTableConnection::CheckHit( const Point& rMousePos ) const
     {
         // check if the point hit our line
-        return std::any_of(m_vConnLine.begin(),
+        return ::std::any_of(m_vConnLine.begin(),
                              m_vConnLine.end(),
                              [&rMousePos]
                              ( const OConnectionLine* pLine )
@@ -157,7 +159,7 @@ namespace dbaui
 
     void OTableConnection::InvalidateConnection()
     {
-        tools::Rectangle rcBounding = GetBoundingRect();
+        Rectangle rcBounding = GetBoundingRect();
         rcBounding.Bottom() += 1;
         rcBounding.Right() += 1;
         // I believe Invalidate and Draw(Rectangle) do not behave consistent: in any case it
@@ -167,13 +169,13 @@ namespace dbaui
         m_pParent->Invalidate( rcBounding, InvalidateFlags::NoChildren );
     }
 
-    tools::Rectangle OTableConnection::GetBoundingRect() const
+    Rectangle OTableConnection::GetBoundingRect() const
     {
         // determine all lines of the surrounding rectangle
-        tools::Rectangle aBoundingRect( Point(0,0), Point(0,0) );
-        tools::Rectangle aTempRect;
-        std::vector<OConnectionLine*>::const_iterator aEnd = m_vConnLine.end();
-        for(std::vector<OConnectionLine*>::const_iterator aIter = m_vConnLine.begin();aIter != aEnd;++aIter)
+        Rectangle aBoundingRect( Point(0,0), Point(0,0) );
+        Rectangle aTempRect;
+        ::std::vector<OConnectionLine*>::const_iterator aEnd = m_vConnLine.end();
+        for(::std::vector<OConnectionLine*>::const_iterator aIter = m_vConnLine.begin();aIter != aEnd;++aIter)
         {
             aTempRect = (*aIter)->GetBoundingRect();
 
@@ -190,7 +192,7 @@ namespace dbaui
         return aBoundingRect;
     }
 
-    void OTableConnection::Draw(vcl::RenderContext& rRenderContext, const tools::Rectangle& /*rRect*/)
+    void OTableConnection::Draw(vcl::RenderContext& rRenderContext, const Rectangle& /*rRect*/)
     {
         // Draw line
         for( const auto& pLine : m_vConnLine )

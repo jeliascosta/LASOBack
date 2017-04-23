@@ -60,10 +60,9 @@ private:
     std::unique_ptr<DlgEditor> m_pEditor;
     std::unique_ptr<SfxUndoManager> m_pUndoMgr; // never nullptr
     OUString            m_sCurPath;
-    sal_uInt16          m_nControlSlotId;
 
 protected:
-    virtual void        Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void        Resize() override;
     virtual void        dispose() override;
 
@@ -74,7 +73,7 @@ protected:
     virtual void        Command( const CommandEvent& rCEvt ) override;
     virtual void        LoseFocus() override;
 
-    DECL_STATIC_LINK( DialogWindow, NotifyUndoActionHdl, SdrUndoAction *, void );
+    DECL_STATIC_LINK_TYPED( DialogWindow, NotifyUndoActionHdl, SdrUndoAction *, void );
     virtual void        DoInit() override;
     virtual void        DoScroll( ScrollBar* pCurScrollBar ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -127,7 +126,7 @@ class DialogWindowLayout : public Layout
 {
 public:
     DialogWindowLayout (vcl::Window* pParent, ObjectCatalog&);
-    virtual ~DialogWindowLayout() override;
+    virtual ~DialogWindowLayout();
     virtual void dispose() override;
 public:
     void ShowPropertyBrowser ();

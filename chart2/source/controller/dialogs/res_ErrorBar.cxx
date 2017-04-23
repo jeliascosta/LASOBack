@@ -52,22 +52,22 @@ sal_uInt16 lcl_getLbEntryPosByErrorKind( SvxChartKindError eErrorKind )
     switch( eErrorKind )
     {
         // for these cases select the default in the list box
-        case SvxChartKindError::NONE:
-        case SvxChartKindError::Percent:
-        case SvxChartKindError::Const:
-        case SvxChartKindError::Range:
+        case CHERROR_NONE:
+        case CHERROR_PERCENT:
+        case CHERROR_CONST:
+        case CHERROR_RANGE:
             nResult = CHART_LB_FUNCTION_STD_DEV;
             break;
-        case SvxChartKindError::Variant:
+        case CHERROR_VARIANT:
             nResult = CHART_LB_FUNCTION_VARIANCE;
             break;
-        case SvxChartKindError::Sigma:
+        case CHERROR_SIGMA:
             nResult = CHART_LB_FUNCTION_STD_DEV;
             break;
-        case SvxChartKindError::BigError:
+        case CHERROR_BIGERROR:
             nResult = CHART_LB_FUNCTION_ERROR_MARGIN;
             break;
-        case SvxChartKindError::StdError:
+        case CHERROR_STDERROR:
             nResult = CHART_LB_FUNCTION_STD_ERROR;
             break;
     }
@@ -81,8 +81,8 @@ namespace chart
 ErrorBarResources::ErrorBarResources( VclBuilderContainer* pParent, Dialog * pParentDialog,
                                       const SfxItemSet& rInAttrs, bool bNoneAvailable,
                                       tErrorBarType eType /* = ERROR_BAR_Y */ ) :
-        m_eErrorKind( SvxChartKindError::NONE ),
-        m_eIndicate( SvxChartIndicate::Both ),
+        m_eErrorKind( CHERROR_NONE ),
+        m_eIndicate( CHINDICATE_BOTH ),
         m_bErrorKindUnique( true ),
         m_bIndicatorUnique( true ),
         m_bPlusUnique( true ),
@@ -340,24 +340,24 @@ void ErrorBarResources::UpdateControlStates()
     }
 }
 
-IMPL_LINK_NOARG( ErrorBarResources, CategoryChosen2, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( ErrorBarResources, CategoryChosen2, ListBox&, void )
 {
    CategoryChosen(nullptr);
 }
 
-IMPL_LINK_NOARG( ErrorBarResources, CategoryChosen, Button*, void )
+IMPL_LINK_NOARG_TYPED( ErrorBarResources, CategoryChosen, Button*, void )
 {
     m_bErrorKindUnique = true;
     SvxChartKindError eOldError = m_eErrorKind;
 
     if( m_pRbNone->IsChecked())
-        m_eErrorKind = SvxChartKindError::NONE;
+        m_eErrorKind = CHERROR_NONE;
     else if( m_pRbConst->IsChecked())
-        m_eErrorKind = SvxChartKindError::Const;
+        m_eErrorKind = CHERROR_CONST;
     else if( m_pRbPercent->IsChecked())
-        m_eErrorKind = SvxChartKindError::Percent;
+        m_eErrorKind = CHERROR_PERCENT;
     else if( m_pRbRange->IsChecked())
-        m_eErrorKind = SvxChartKindError::Range;
+        m_eErrorKind = CHERROR_RANGE;
     else if( m_pRbFunction->IsChecked())
     {
         if( m_pLbFunction->GetSelectEntryCount() == 1 )
@@ -365,13 +365,13 @@ IMPL_LINK_NOARG( ErrorBarResources, CategoryChosen, Button*, void )
             switch( m_pLbFunction->GetSelectEntryPos())
             {
                 case CHART_LB_FUNCTION_STD_ERROR:
-                    m_eErrorKind = SvxChartKindError::StdError; break;
+                    m_eErrorKind = CHERROR_STDERROR; break;
                 case CHART_LB_FUNCTION_STD_DEV:
-                    m_eErrorKind = SvxChartKindError::Sigma; break;
+                    m_eErrorKind = CHERROR_SIGMA; break;
                 case CHART_LB_FUNCTION_VARIANCE:
-                    m_eErrorKind = SvxChartKindError::Variant; break;
+                    m_eErrorKind = CHERROR_VARIANT; break;
                 case CHART_LB_FUNCTION_ERROR_MARGIN:
-                    m_eErrorKind = SvxChartKindError::BigError; break;
+                    m_eErrorKind = CHERROR_BIGERROR; break;
                 default:
                     m_bErrorKindUnique = false;
             }
@@ -386,16 +386,16 @@ IMPL_LINK_NOARG( ErrorBarResources, CategoryChosen, Button*, void )
     }
 
     // changed to range
-    if( m_eErrorKind == SvxChartKindError::Range &&
-        eOldError != SvxChartKindError::Range )
+    if( m_eErrorKind == CHERROR_RANGE &&
+        eOldError != CHERROR_RANGE )
     {
         m_pCbSyncPosNeg->Check(
             (!m_pEdRangePositive->GetText().isEmpty()) &&
             m_pEdRangePositive->GetText() == m_pEdRangeNegative->GetText());
     }
     // changed from range
-    else if( m_eErrorKind != SvxChartKindError::Range &&
-        eOldError == SvxChartKindError::Range )
+    else if( m_eErrorKind != CHERROR_RANGE &&
+        eOldError == CHERROR_RANGE )
     {
         m_pCbSyncPosNeg->Check( m_pMfPositive->GetValue() == m_pMfNegative->GetValue());
     }
@@ -403,13 +403,13 @@ IMPL_LINK_NOARG( ErrorBarResources, CategoryChosen, Button*, void )
     UpdateControlStates();
 }
 
-IMPL_LINK_NOARG(ErrorBarResources, SynchronizePosAndNeg, CheckBox&, void)
+IMPL_LINK_NOARG_TYPED(ErrorBarResources, SynchronizePosAndNeg, CheckBox&, void)
 {
     UpdateControlStates();
     PosValueChanged( *m_pMfPositive );
 }
 
-IMPL_LINK_NOARG(ErrorBarResources, PosValueChanged, Edit&, void)
+IMPL_LINK_NOARG_TYPED(ErrorBarResources, PosValueChanged, Edit&, void)
 {
     if( m_pCbSyncPosNeg->IsChecked())
     {
@@ -423,22 +423,22 @@ IMPL_LINK_NOARG(ErrorBarResources, PosValueChanged, Edit&, void)
     }
 }
 
-IMPL_LINK_NOARG(ErrorBarResources, IndicatorChanged, Button*, void)
+IMPL_LINK_NOARG_TYPED(ErrorBarResources, IndicatorChanged, Button*, void)
 {
     m_bIndicatorUnique = true;
     if( m_pRbBoth->IsChecked())
-        m_eIndicate = SvxChartIndicate::Both;
+        m_eIndicate = CHINDICATE_BOTH;
     else if( m_pRbPositive->IsChecked())
-        m_eIndicate = SvxChartIndicate::Up;
+        m_eIndicate = CHINDICATE_UP;
     else if( m_pRbNegative->IsChecked())
-        m_eIndicate = SvxChartIndicate::Down;
+        m_eIndicate = CHINDICATE_DOWN;
     else
         m_bIndicatorUnique = false;
 
     UpdateControlStates();
 }
 
-IMPL_LINK( ErrorBarResources, ChooseRange, Button*, pButton, void )
+IMPL_LINK_TYPED( ErrorBarResources, ChooseRange, Button*, pButton, void )
 {
     OSL_ASSERT( m_apRangeSelectionHelper.get());
     if( ! m_apRangeSelectionHelper.get())
@@ -470,7 +470,7 @@ IMPL_LINK( ErrorBarResources, ChooseRange, Button*, pButton, void )
         m_pCurrentRangeChoosingField = nullptr;
 }
 
-IMPL_LINK( ErrorBarResources, RangeChanged, Edit&, rEdit, void )
+IMPL_LINK_TYPED( ErrorBarResources, RangeChanged, Edit&, rEdit, void )
 {
     if( &rEdit == m_pEdRangePositive )
     {
@@ -490,7 +490,7 @@ void ErrorBarResources::Reset(const SfxItemSet& rInAttrs)
     const SfxPoolItem *pPoolItem = nullptr;
 
     // category
-    m_eErrorKind = SvxChartKindError::NONE;
+    m_eErrorKind = CHERROR_NONE;
     SfxItemState aState = rInAttrs.GetItemState( SCHATTR_STAT_KIND_ERROR, true, &pPoolItem );
     m_bErrorKindUnique = ( aState != SfxItemState::DONTCARE );
 
@@ -503,22 +503,22 @@ void ErrorBarResources::Reset(const SfxItemSet& rInAttrs)
     {
         switch( m_eErrorKind )
         {
-            case SvxChartKindError::NONE:
+            case CHERROR_NONE:
                 m_pRbNone->Check();
                 break;
-            case SvxChartKindError::Percent:
+            case CHERROR_PERCENT:
                 m_pRbPercent->Check();
                 break;
-            case SvxChartKindError::Const:
+            case CHERROR_CONST:
                 m_pRbConst->Check();
                 break;
-            case SvxChartKindError::StdError:
-            case SvxChartKindError::Variant:
-            case SvxChartKindError::Sigma:
-            case SvxChartKindError::BigError:
+            case CHERROR_STDERROR:
+            case CHERROR_VARIANT:
+            case CHERROR_SIGMA:
+            case CHERROR_BIGERROR:
                 m_pRbFunction->Check();
                 break;
-            case SvxChartKindError::Range:
+            case CHERROR_RANGE:
                 m_pRbRange->Check();
                 break;
         }
@@ -545,7 +545,7 @@ void ErrorBarResources::Reset(const SfxItemSet& rInAttrs)
     {
         m_fMinusValue = static_cast<const SvxDoubleItem*>(pPoolItem)->GetValue();
 
-        if( m_eErrorKind != SvxChartKindError::Range &&
+        if( m_eErrorKind != CHERROR_RANGE &&
             m_fPlusValue == m_fMinusValue )
             m_pCbSyncPosNeg->Check();
     }
@@ -560,15 +560,15 @@ void ErrorBarResources::Reset(const SfxItemSet& rInAttrs)
     {
         switch( m_eIndicate )
         {
-            case SvxChartIndicate::NONE :
+            case CHINDICATE_NONE :
                 // no longer used, use both as default
-                m_eIndicate = SvxChartIndicate::Both;
+                m_eIndicate = CHINDICATE_BOTH;
                 SAL_FALLTHROUGH; // to BOTH
-            case SvxChartIndicate::Both :
+            case CHINDICATE_BOTH :
                 m_pRbBoth->Check(); break;
-            case SvxChartIndicate::Up :
+            case CHINDICATE_UP :
                 m_pRbPositive->Check(); break;
-            case SvxChartIndicate::Down :
+            case CHINDICATE_DOWN :
                 m_pRbNegative->Check(); break;
         }
     }
@@ -594,7 +594,7 @@ void ErrorBarResources::Reset(const SfxItemSet& rInAttrs)
     {
         OUString sRangeNegative = (static_cast< const SfxStringItem * >( pPoolItem ))->GetValue();
         m_pEdRangeNegative->SetText( sRangeNegative );
-        if( m_eErrorKind == SvxChartKindError::Range &&
+        if( m_eErrorKind == CHERROR_RANGE &&
             !sRangeNegative.isEmpty() &&
             sRangeNegative == m_pEdRangePositive->GetText() )
             m_pCbSyncPosNeg->Check();
@@ -612,7 +612,7 @@ bool ErrorBarResources::FillItemSet(SfxItemSet& rOutAttrs) const
 
     if( m_bErrorKindUnique )
     {
-        if( m_eErrorKind == SvxChartKindError::Range )
+        if( m_eErrorKind == CHERROR_RANGE )
         {
             OUString aPosRange;
             OUString aNegRange;
@@ -637,9 +637,9 @@ bool ErrorBarResources::FillItemSet(SfxItemSet& rOutAttrs) const
             if( m_bRangeNegUnique )
                 rOutAttrs.Put( SfxStringItem( SCHATTR_STAT_RANGE_NEG, aNegRange ));
         }
-        else if( m_eErrorKind == SvxChartKindError::Const ||
-                 m_eErrorKind == SvxChartKindError::Percent ||
-                 m_eErrorKind == SvxChartKindError::BigError )
+        else if( m_eErrorKind == CHERROR_CONST ||
+                 m_eErrorKind == CHERROR_PERCENT ||
+                 m_eErrorKind == CHERROR_BIGERROR )
         {
             double fPosValue = static_cast< double >( m_pMfPositive->GetValue()) /
                 pow( 10.0, m_pMfPositive->GetDecimalDigits());
@@ -665,15 +665,15 @@ void ErrorBarResources::FillValueSets()
 {
     if( m_eErrorBarType == ERROR_BAR_Y )
     {
-        m_pFiNegative->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_DOWN))));
-        m_pFiPositive->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_UP))));
-        m_pFiBoth->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_BOTH_VERTI))));
+        m_pFiNegative->SetImage( Image( SchResId( BMP_INDICATE_DOWN       ) ) );
+        m_pFiPositive->SetImage( Image( SchResId( BMP_INDICATE_UP         ) ) );
+        m_pFiBoth->SetImage(     Image( SchResId( BMP_INDICATE_BOTH_VERTI ) ) );
     }
     else if( m_eErrorBarType == ERROR_BAR_X )
     {
-        m_pFiNegative->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_LEFT))));
-        m_pFiPositive->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_RIGHT))));
-        m_pFiBoth->SetImage(Image(BitmapEx(SchResId(BMP_INDICATE_BOTH_HORI))));
+        m_pFiNegative->SetImage( Image( SchResId( BMP_INDICATE_LEFT      ) ) );
+        m_pFiPositive->SetImage( Image( SchResId( BMP_INDICATE_RIGHT     ) ) );
+        m_pFiBoth->SetImage(     Image( SchResId( BMP_INDICATE_BOTH_HORI ) ) );
     }
 }
 

@@ -45,8 +45,8 @@ const sal_uInt8 EXC_STRF_UNKNOWN            = 0xF2;
 // Fixed-size characters
 const sal_uInt8 EXC_LF_C                    = '\x0A';       /// LF character (used for line break).
 const sal_uInt16 EXC_LF                     = EXC_LF_C;     /// LF character (unicode).
-const sal_uInt8 EXC_NUL_C                   = '\x00';       /// NUL character.
-const sal_uInt16 EXC_NUL                    = EXC_NUL_C;    /// NUL character (unicode).
+const sal_uInt8 EXC_NUL_C                   = '\x00';       /// NUL chararcter.
+const sal_uInt16 EXC_NUL                    = EXC_NUL_C;    /// NUL chararcter (unicode).
 
 // Rich-string formatting runs ================================================
 
@@ -61,8 +61,8 @@ struct XclFormatRun
     sal_uInt16          mnChar;         /// First character this format applies to.
     sal_uInt16          mnFontIdx;      /// Excel font index for the next characters.
 
-    explicit XclFormatRun() : mnChar( 0 ), mnFontIdx( 0 ) {}
-    explicit XclFormatRun( sal_uInt16 nChar, sal_uInt16 nFontIdx ) :
+    explicit inline     XclFormatRun() : mnChar( 0 ), mnFontIdx( 0 ) {}
+    explicit inline     XclFormatRun( sal_uInt16 nChar, sal_uInt16 nFontIdx ) :
                             mnChar( nChar ), mnFontIdx( nFontIdx ) {}
 };
 

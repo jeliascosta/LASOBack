@@ -51,11 +51,11 @@ using namespace ::com::sun::star::container;
 
 static HTMLOutEvent aBodyEventTable[] =
 {
-    { OOO_STRING_SVTOOLS_HTML_O_SDonload,    OOO_STRING_SVTOOLS_HTML_O_onload,    (sal_uInt16)SfxEventHintId::OpenDoc   },
-    { OOO_STRING_SVTOOLS_HTML_O_SDonunload,  OOO_STRING_SVTOOLS_HTML_O_onunload,  (sal_uInt16)SfxEventHintId::PrepareCloseDoc   },
-    { OOO_STRING_SVTOOLS_HTML_O_SDonfocus,   OOO_STRING_SVTOOLS_HTML_O_onfocus,   (sal_uInt16)SfxEventHintId::ActivateDoc   },
-    { OOO_STRING_SVTOOLS_HTML_O_SDonblur,    OOO_STRING_SVTOOLS_HTML_O_onblur,    (sal_uInt16)SfxEventHintId::DeactivateDoc },
-    { nullptr,                               nullptr,                             0                   }
+    { OOO_STRING_SVTOOLS_HTML_O_SDonload,       OOO_STRING_SVTOOLS_HTML_O_onload,       SFX_EVENT_OPENDOC   },
+    { OOO_STRING_SVTOOLS_HTML_O_SDonunload, OOO_STRING_SVTOOLS_HTML_O_onunload, SFX_EVENT_PREPARECLOSEDOC   },
+    { OOO_STRING_SVTOOLS_HTML_O_SDonfocus,  OOO_STRING_SVTOOLS_HTML_O_onfocus,  SFX_EVENT_ACTIVATEDOC   },
+    { OOO_STRING_SVTOOLS_HTML_O_SDonblur,       OOO_STRING_SVTOOLS_HTML_O_onblur,       SFX_EVENT_DEACTIVATEDOC },
+    { nullptr,                    nullptr,                  0                   }
 };
 
 void SwHTMLParser::NewScript()
@@ -65,7 +65,7 @@ void SwHTMLParser::NewScript()
 
     if( !m_aScriptURL.isEmpty() )
     {
-        // Ignore the script tag
+        // Den Inhalt des Script-Tags ignorieren
         m_bIgnoreRawData = true;
     }
 }
@@ -77,7 +77,7 @@ void SwHTMLParser::EndScript()
 
     switch( m_eScriptLang )
     {
-    case HTMLScriptLanguage::StarBasic:
+    case HTML_SL_STARBASIC:
         bInsIntoBasic = true;
         break;
     default:
@@ -88,11 +88,12 @@ void SwHTMLParser::EndScript()
     m_bIgnoreRawData = false;
     m_aScriptSource = convertLineEnd(m_aScriptSource, GetSystemLineEnd());
 
-    // Except for StarBasic and unused JavaScript, save each script or module name in a field
+    // Ausser StarBasic und unbenutzem JavaScript jedes Script oder den
+    // Modulnamen in einem Feld merken merken
     if( bInsSrcIntoField && !m_bIgnoreHTMLComments )
     {
         SwScriptFieldType *pType =
-            static_cast<SwScriptFieldType*>(m_xDoc->getIDocumentFieldsAccess().GetSysFieldType( SwFieldIds::Script ));
+            static_cast<SwScriptFieldType*>(m_pDoc->getIDocumentFieldsAccess().GetSysFieldType( RES_SCRIPTFLD ));
 
         SwScriptField aField( pType, m_aScriptType,
                             !m_aScriptURL.isEmpty() ? m_aScriptURL : m_aScriptSource,
@@ -100,13 +101,12 @@ void SwHTMLParser::EndScript()
         InsertAttr( SwFormatField( aField ), false );
     }
 
-    SwDocShell *pDocSh = m_xDoc->GetDocShell();
+    SwDocShell *pDocSh = m_pDoc->GetDocShell();
     if( !m_aScriptSource.isEmpty() && pDocSh &&
         bInsIntoBasic && IsNewDoc() )
     {
-    // Create a Basic module for javascript and StarBasic.
-
-        // The Basic does still not remove SGML comments
+    // Fuer JavaScript und StarBasic noch ein Basic-Modul anlegen
+        // Das Basic entfernt natuerlich weiterhin keine SGML-Kommentare
         RemoveSGMLComment( m_aScriptSource, true );
 
         // get library name
@@ -182,9 +182,9 @@ void SwHTMLParser::EndScript()
 
 void SwHTMLParser::AddScriptSource()
 {
-    // We'll just remember a few strings here
+    // Hier merken wir und nur ein par Strings
     if( aToken.getLength() > 2 &&
-        (HTMLScriptLanguage::StarBasic==m_eScriptLang && aToken[ 0 ] == '\'') )
+        (HTML_SL_STARBASIC==m_eScriptLang && aToken[ 0 ] == '\'') )
     {
         sal_Int32 nPos = -1;
         if( m_aBasicLib.isEmpty() )
@@ -218,14 +218,14 @@ void SwHTMLParser::AddScriptSource()
     }
     else if( !m_aScriptSource.isEmpty() || !aToken.isEmpty() )
     {
-        // Empty lines are ignored on the beginning
+        // Leerzeilen am Anfang werden ignoriert
         if( !m_aScriptSource.isEmpty() )
         {
             m_aScriptSource += "\n";
         }
         else
         {
-            // We're behind the CR/LF of the line before
+            // Wir stehen hinter dem CR/LF der Zeile davor
             m_nScriptStartLineNr = GetLineNr() - 1;
         }
         m_aScriptSource += aToken;
@@ -236,12 +236,12 @@ void SwHTMLParser::InsertBasicDocEvent( const OUString& aEvent, const OUString& 
                                         ScriptType eScrType,
                                         const OUString& rScrType )
 {
-    OSL_ENSURE( !rName.isEmpty(), "InsertBasicDocEvent() called without macro" );
+    OSL_ENSURE( !rName.isEmpty(), "InsertBasicDocEvent() ohne Macro gerufen" );
     if( rName.isEmpty() )
         return;
 
-    SwDocShell *pDocSh = m_xDoc->GetDocShell();
-    OSL_ENSURE( pDocSh, "Where is the DocShell?" );
+    SwDocShell *pDocSh = m_pDoc->GetDocShell();
+    OSL_ENSURE( pDocSh, "Wo ist die DocShell?" );
     if( !pDocSh )
         return;
 
@@ -261,15 +261,16 @@ void SwHTMLWriter::OutBasic()
         return;
 
     BasicManager *pBasicMan = pDoc->GetDocShell()->GetBasicManager();
-    OSL_ENSURE( pBasicMan, "Where is the Basic-Manager?" );
-    // Only write DocumentBasic
+    OSL_ENSURE( pBasicMan, "Wo ist der Basic-Manager?" );
+    // nur das DocumentBasic schreiben
     if( !pBasicMan || pBasicMan == SfxApplication::GetBasicManager() )
     {
         return;
     }
 
     bool bFirst=true;
-    // Now write all StarBasic and unused Javascript modules
+    // und jetzt alle StarBasic-Module und alle unbenutzen JavaSrript-Module
+    // ausgeben
     for( sal_uInt16 i=0; i<pBasicMan->GetLibCount(); i++ )
     {
         StarBASIC *pBasic = pBasicMan->GetLib( i  );
@@ -297,7 +298,7 @@ void SwHTMLWriter::OutBasic()
             }
 
             const OUString& rModName = pModule->GetName();
-            Strm().WriteCharPtr( SAL_NEWLINE_STRING );   // don't indent!
+            Strm().WriteCharPtr( SAL_NEWLINE_STRING );   // nicht einruecken!
             HTMLOutFuncs::OutScript( Strm(), GetBaseURL(), pModule->GetSource(),
                                      sLang, eType, aEmptyOUStr,
                                      &rLibName, &rModName,

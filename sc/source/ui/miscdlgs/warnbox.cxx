@@ -22,33 +22,55 @@
 #include "scmod.hxx"
 #include "inputopt.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "sc.hrc"
 
-ScReplaceWarnBox::ScReplaceWarnBox( vcl::Window* pParent ) :
-    WarningBox( pParent, WB_YES_NO | WB_DEF_YES, OUString( ScResId( STR_REPLCELLSWARN ) ) )
+ScCbWarningBox::ScCbWarningBox( vcl::Window* pParent, const OUString& rMsgStr ) :
+    WarningBox( pParent, WB_YES_NO | WB_DEF_YES, rMsgStr )
 {
     // By default, the check box is ON, and the user needs to un-check it to
     // disable all future warnings.
     SetCheckBoxState(true);
     SetCheckBoxText(ScResId(SCSTR_WARN_ME_IN_FUTURE_CHECK));
-    SetHelpId( HID_SC_REPLCELLSWARN );
 }
 
-sal_Int16 ScReplaceWarnBox::Execute()
+sal_Int16 ScCbWarningBox::Execute()
 {
-    sal_Int16 nRet = RET_YES;
-    if( SC_MOD()->GetInputOptions().GetReplaceCellsWarn() )
+    sal_Int16 nRet = (GetStyle() & WB_DEF_YES) ? RET_YES : RET_NO;
+    if( IsDialogEnabled() )
     {
         nRet = WarningBox::Execute();
         if (!GetCheckBoxState())
-        {
-            ScModule* pScMod = SC_MOD();
-            ScInputOptions aInputOpt( pScMod->GetInputOptions() );
-            aInputOpt.SetReplaceCellsWarn( false );
-            pScMod->SetInputOptions( aInputOpt );
-        }
+            DisableDialog();
     }
     return nRet;
+}
+
+bool ScCbWarningBox::IsDialogEnabled()
+{
+    return true;
+}
+
+void ScCbWarningBox::DisableDialog()
+{
+}
+
+ScReplaceWarnBox::ScReplaceWarnBox( vcl::Window* pParent ) :
+    ScCbWarningBox( pParent, OUString( ScResId( STR_REPLCELLSWARN ) ) )
+{
+    SetHelpId( HID_SC_REPLCELLSWARN );
+}
+
+bool ScReplaceWarnBox::IsDialogEnabled()
+{
+    return (bool) SC_MOD()->GetInputOptions().GetReplaceCellsWarn();
+}
+
+void ScReplaceWarnBox::DisableDialog()
+{
+    ScModule* pScMod = SC_MOD();
+    ScInputOptions aInputOpt( pScMod->GetInputOptions() );
+    aInputOpt.SetReplaceCellsWarn( false );
+    pScMod->SetInputOptions( aInputOpt );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

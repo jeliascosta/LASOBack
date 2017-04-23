@@ -40,8 +40,9 @@
 using namespace ::com::sun::star;
 using namespace xmloff::token;
 
-XMLTableShapeImportHelper::XMLTableShapeImportHelper( ScXMLImport& rImp ) :
-    XMLShapeImportHelper(rImp, rImp.GetModel(), nullptr ),
+XMLTableShapeImportHelper::XMLTableShapeImportHelper(
+        ScXMLImport& rImp, SvXMLImportPropertyMapper *pImpMapper ) :
+    XMLShapeImportHelper(rImp, rImp.GetModel(), pImpMapper ),
     pAnnotationContext(nullptr),
     bOnTable(false)
 {
@@ -88,14 +89,15 @@ void XMLTableShapeImportHelper::finishShape(
         if (!pAnnotationContext)
         {
             ScDrawObjData aAnchor;
-            aAnchor.maStart = aStartCell;
+            aAnchor.maStart = ScAddress(aStartCell.Column, aStartCell.Row, aStartCell.Sheet);
             awt::Point aStartPoint(rShape->getPosition());
             aAnchor.maStartOffset = Point(aStartPoint.X, aStartPoint.Y);
 
             sal_Int32 nEndX(-1);
             sal_Int32 nEndY(-1);
             sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
-            std::unique_ptr<OUString> xRangeList;
+            table::CellAddress aEndCell;
+            OUString* pRangeList(nullptr);
             sal_Int16 nLayerID(-1);
             for( sal_Int16 i=0; i < nAttrCount; ++i )
             {
@@ -111,7 +113,8 @@ void XMLTableShapeImportHelper::finishShape(
                     if (IsXMLToken(aLocalName, XML_END_CELL_ADDRESS))
                     {
                         sal_Int32 nOffset(0);
-                        ScRangeStringConverter::GetAddressFromString(aAnchor.maEnd, rValue, static_cast<ScXMLImport&>(mrImporter).GetDocument(), ::formula::FormulaGrammar::CONV_OOO, nOffset);
+                        ScRangeStringConverter::GetAddressFromString(aEndCell, rValue, static_cast<ScXMLImport&>(mrImporter).GetDocument(), ::formula::FormulaGrammar::CONV_OOO, nOffset);
+                        aAnchor.maEnd = ScAddress(aEndCell.Column, aEndCell.Row, aEndCell.Sheet);
                     }
                     else if (IsXMLToken(aLocalName, XML_END_X))
                     {
@@ -134,7 +137,7 @@ void XMLTableShapeImportHelper::finishShape(
                 else if(nPrefix == XML_NAMESPACE_DRAW)
                 {
                     if (IsXMLToken(aLocalName, XML_NOTIFY_ON_UPDATE_OF_RANGES))
-                        xRangeList.reset(new OUString(rValue));
+                        pRangeList = new OUString(rValue);
                 }
             }
             SetLayer(rShape, nLayerID, rShape->getShapeType());
@@ -150,17 +153,17 @@ void XMLTableShapeImportHelper::finishShape(
                 }
             }
 
-            if (xRangeList)
+            if (pRangeList)
             {
                 // #i78086# If there are notification ranges, the ChartListener must be created
                 // also when anchored to the sheet
                 // -> call AddOLE with invalid cell position (checked in ScMyShapeResizer::ResizeShapes)
 
                 if (ScMyTables::IsOLE(rShape))
-                    rTables.AddOLE(rShape, *xRangeList);
+                    rTables.AddOLE(rShape, *pRangeList);
             }
 
-            xRangeList.reset();
+            delete pRangeList;
         }
         else // shape is annotation
         {

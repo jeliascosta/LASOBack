@@ -40,7 +40,7 @@ typedef std::vector< RoadmapItem* > HL_Vector;
 class IDLabel :  public FixedText
 {
 public:
-    IDLabel( vcl::Window* _pParent, WinBits _nWinStyle );
+    IDLabel( vcl::Window* _pParent, WinBits _nWinStyle = 0 );
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 };
 
@@ -69,11 +69,13 @@ public:
     void                    SetInteractive( bool _bInteractive );
 
     void                    SetClickHdl( const Link<HyperLabel*,void>& rLink );
-    void                    Enable( bool bEnable );
+    void                    Enable( bool bEnable = true);
     bool                    IsEnabled() const;
     void                    GrabFocus();
 
     bool                    Contains( const vcl::Window* _pWindow ) const;
+
+    HyperLabel*             GetDescriptionHyperLabel() const { return mpDescription; }
 
 private:
     void                    ImplUpdateIndex( const ItemIndex _nIndex );
@@ -187,8 +189,8 @@ public:
 void RoadmapImpl::initItemSize()
 {
     Size aLabelSize( m_rAntiImpl.GetOutputSizePixel() );
-    aLabelSize.Height() = m_rAntiImpl.LogicToPixel( Size( 0, LABELBASEMAPHEIGHT ), MapUnit::MapAppFont ).Height();
-    aLabelSize.Width() -= m_rAntiImpl.LogicToPixel( Size( 2 * ROADMAP_INDENT_X, 0 ), MapUnit::MapAppFont ).Width();
+    aLabelSize.Height() = m_rAntiImpl.LogicToPixel( Size( 0, LABELBASEMAPHEIGHT ), MAP_APPFONT ).Height();
+    aLabelSize.Width() -= m_rAntiImpl.LogicToPixel( Size( 2 * ROADMAP_INDENT_X, 0 ), MAP_APPFONT ).Width();
     m_aItemSizePixel = aLabelSize;
 }
 
@@ -239,7 +241,8 @@ void ORoadmap::dispose()
     }
     if ( ! m_pImpl->isComplete() )
         delete m_pImpl->InCompleteHyperLabel;
-    m_pImpl.reset();
+    delete m_pImpl;
+    m_pImpl = nullptr;
     Control::dispose();
 }
 
@@ -515,7 +518,7 @@ Link<LinkParamNone*,void> ORoadmap::GetItemSelectHdl() const
 void ORoadmap::Select()
 {
     GetItemSelectHdl().Call( nullptr );
-    CallEventListeners( VclEventId::RoadmapItemSelected );
+    CallEventListeners( VCLEVENT_ROADMAP_ITEMSELECTED );
 }
 
 void ORoadmap::GetFocus()
@@ -546,7 +549,7 @@ bool ORoadmap::SelectRoadmapItemByID( ItemId _nNewID )
     return false;
 }
 
-void ORoadmap::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& _rRect)
+void ORoadmap::Paint(vcl::RenderContext& rRenderContext, const Rectangle& _rRect)
 {
     if (!m_pImpl->m_bPaintInitialized)
         implInit(rRenderContext);
@@ -570,12 +573,12 @@ void ORoadmap::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&
 
 void ORoadmap::DrawHeadline(vcl::RenderContext& rRenderContext)
 {
-    Point aTextPos = LogicToPixel(Point(ROADMAP_INDENT_X, 8), MapUnit::MapAppFont);
+    Point aTextPos = LogicToPixel(Point(ROADMAP_INDENT_X, 8), MAP_APPFONT);
 
     Size aOutputSize(GetOutputSizePixel());
 
     // draw it
-    rRenderContext.DrawText(tools::Rectangle(aTextPos, aOutputSize), GetText(),
+    rRenderContext.DrawText(Rectangle(aTextPos, aOutputSize), GetText(),
                             DrawTextFlags::Left | DrawTextFlags::Top | DrawTextFlags::MultiLine | DrawTextFlags::WordBreak);
     rRenderContext.DrawTextLine(aTextPos, aOutputSize.Width(), STRIKEOUT_NONE, LINESTYLE_SINGLE, LINESTYLE_NONE);
     const StyleSettings& rStyleSettings = rRenderContext.GetSettings().GetStyleSettings();
@@ -633,7 +636,7 @@ bool ORoadmap::PreNotify(NotifyEvent& _rNEvt)
     return Window::PreNotify( _rNEvt );
 }
 
-IMPL_LINK(ORoadmap, ImplClickHdl, HyperLabel*, CurHyperLabel, void)
+IMPL_LINK_TYPED(ORoadmap, ImplClickHdl, HyperLabel*, CurHyperLabel, void)
 {
    SelectRoadmapItemByID( CurHyperLabel->GetID() );
 }
@@ -742,11 +745,11 @@ void RoadmapItem::SetPosition(RoadmapItem* _pOldItem)
     Point aIDPos;
     if ( _pOldItem == nullptr )
     {
-        aIDPos = mpID->LogicToPixel( Point( ROADMAP_INDENT_X, ROADMAP_INDENT_Y ), MapUnit::MapAppFont );
+        aIDPos = mpID->LogicToPixel( Point( ROADMAP_INDENT_X, ROADMAP_INDENT_Y ), MAP_APPFONT );
     }
     else
     {
-        Size aOldSize = _pOldItem->mpDescription->GetSizePixel();
+        Size aOldSize = _pOldItem->GetDescriptionHyperLabel()->GetSizePixel();
 
         aIDPos = _pOldItem->mpID->GetPosPixel();
         aIDPos.Y() += aOldSize.Height();

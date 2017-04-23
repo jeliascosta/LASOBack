@@ -54,8 +54,8 @@ namespace {
             : mpPanel(),maLayoutSize(0,0,0),mnDistributedHeight(0),mnWeight(0),mnPanelIndex(0),mbShowTitleBar(true)
         {}
     };
-    tools::Rectangle LayoutPanels (
-        const tools::Rectangle& rContentArea,
+    Rectangle LayoutPanels (
+        const Rectangle& rContentArea,
         sal_Int32& rMinimalWidth,
         ::std::vector<LayoutItem>& rLayoutItems,
         vcl::Window& rScrollClipWindow,
@@ -66,7 +66,7 @@ namespace {
         ::std::vector<LayoutItem>& rLayoutItem,
         sal_Int32& rAvailableHeight,
         sal_Int32& rMinimalWidth,
-        const tools::Rectangle& rContentBox);
+        const Rectangle& rContentBox);
     void DistributeHeights (
         ::std::vector<LayoutItem>& rLayoutItems,
         const sal_Int32 nHeightToDistribute,
@@ -77,12 +77,12 @@ namespace {
         const sal_Int32 nWidth,
         const LayoutMode eMode,
         vcl::Window& rScrollContainer);
-    tools::Rectangle PlaceDeckTitle (
+    Rectangle PlaceDeckTitle (
         vcl::Window& rTittleBar,
-        const tools::Rectangle& rAvailableSpace);
-    tools::Rectangle PlaceVerticalScrollBar (
+        const Rectangle& rAvailableSpace);
+    Rectangle PlaceVerticalScrollBar (
         ScrollBar& rVerticalScrollBar,
-        const tools::Rectangle& rAvailableSpace,
+        const Rectangle& rAvailableSpace,
         const bool bShowVerticalScrollBar);
     void SetupVerticalScrollBar(
         ScrollBar& rVerticalScrollBar,
@@ -90,11 +90,11 @@ namespace {
         const sal_Int32 nVisibleHeight);
     void UpdateFiller (
         vcl::Window& rFiller,
-        const tools::Rectangle& rBox);
+        const Rectangle& rBox);
 }
 
 void DeckLayouter::LayoutDeck (
-    const tools::Rectangle& rContentArea,
+    const Rectangle& rContentArea,
     sal_Int32& rMinimalWidth,
     SharedPanelContainer& rPanels,
     vcl::Window& rDeckTitleBar,
@@ -105,7 +105,7 @@ void DeckLayouter::LayoutDeck (
 {
     if (rContentArea.GetWidth()<=0 || rContentArea.GetHeight()<=0)
         return;
-    tools::Rectangle aBox (PlaceDeckTitle(rDeckTitleBar, rContentArea));
+    Rectangle aBox (PlaceDeckTitle(rDeckTitleBar, rContentArea));
 
     if ( ! rPanels.empty())
     {
@@ -131,8 +131,8 @@ void DeckLayouter::LayoutDeck (
 
 namespace {
 
-tools::Rectangle LayoutPanels (
-    const tools::Rectangle& rContentArea,
+Rectangle LayoutPanels (
+    const Rectangle& rContentArea,
     sal_Int32& rMinimalWidth,
     ::std::vector<LayoutItem>& rLayoutItems,
     vcl::Window& rScrollClipWindow,
@@ -140,7 +140,7 @@ tools::Rectangle LayoutPanels (
     ScrollBar& rVerticalScrollBar,
     const bool bShowVerticalScrollBar)
 {
-    tools::Rectangle aBox (PlaceVerticalScrollBar(rVerticalScrollBar, rContentArea, bShowVerticalScrollBar));
+    Rectangle aBox (PlaceVerticalScrollBar(rVerticalScrollBar, rContentArea, bShowVerticalScrollBar));
 
     const sal_Int32 nWidth (aBox.GetWidth());
 
@@ -184,10 +184,10 @@ tools::Rectangle LayoutPanels (
 
     // We are now in one of three modes.
     // - The preferred height fits into the available size:
-    //   Use the preferred size, distribute the remaining height by
+    //   Use the preferred size, distribute the remaining height bei
     //   enlarging panels.
     // - The total minimum height fits into the available size:
-    //   Use the minimum size, distribute the remaining height by
+    //   Use the minimum size, distribute the remaining height bei
     //   enlarging panels.
     // - The total minimum height does not fit into the available
     //   size:
@@ -266,8 +266,8 @@ sal_Int32 PlacePanels (
         nY += nDeckSeparatorHeight;
 
         // Place the title bar.
-        VclPtr<PanelTitleBar> pTitleBar = rPanel.GetTitleBar();
-        if (pTitleBar)
+        PanelTitleBar* pTitleBar = rPanel.GetTitleBar();
+        if (pTitleBar != nullptr)
         {
             const sal_Int32 nPanelTitleBarHeight (Theme::GetInteger(Theme::Int_PanelTitleBarHeight) * rPanel.GetDPIScaleFactor());
 
@@ -339,7 +339,7 @@ void GetRequestedSizes (
     ::std::vector<LayoutItem>& rLayoutItems,
     sal_Int32& rAvailableHeight,
     sal_Int32& rMinimalWidth,
-    const tools::Rectangle& rContentBox)
+    const Rectangle& rContentBox)
 {
     rAvailableHeight = rContentBox.GetHeight();
 
@@ -483,9 +483,9 @@ void DistributeHeights (
     OSL_ASSERT(nRemainingHeightToDistribute==0);
 }
 
-tools::Rectangle PlaceDeckTitle (
+Rectangle PlaceDeckTitle (
     vcl::Window& rDeckTitleBar,
-    const tools::Rectangle& rAvailableSpace)
+    const Rectangle& rAvailableSpace)
 {
     if (static_cast<DockingWindow*>(rDeckTitleBar.GetParent()->GetParent())->IsFloatingMode())
     {
@@ -502,7 +502,7 @@ tools::Rectangle PlaceDeckTitle (
             rAvailableSpace.GetWidth(),
             nDeckTitleBarHeight);
         rDeckTitleBar.Show();
-        return tools::Rectangle(
+        return Rectangle(
             rAvailableSpace.Left(),
             rAvailableSpace.Top() + nDeckTitleBarHeight,
             rAvailableSpace.Right(),
@@ -510,9 +510,9 @@ tools::Rectangle PlaceDeckTitle (
     }
 }
 
-tools::Rectangle PlaceVerticalScrollBar (
+Rectangle PlaceVerticalScrollBar (
     ScrollBar& rVerticalScrollBar,
-    const tools::Rectangle& rAvailableSpace,
+    const Rectangle& rAvailableSpace,
     const bool bShowVerticalScrollBar)
 {
     if (bShowVerticalScrollBar)
@@ -524,7 +524,7 @@ tools::Rectangle PlaceVerticalScrollBar (
             nScrollBarWidth,
             rAvailableSpace.GetHeight());
         rVerticalScrollBar.Show();
-        return tools::Rectangle(
+        return Rectangle(
             rAvailableSpace.Left(),
             rAvailableSpace.Top(),
             rAvailableSpace.Right() - nScrollBarWidth,
@@ -551,7 +551,7 @@ void SetupVerticalScrollBar(
 
 void UpdateFiller (
     vcl::Window& rFiller,
-    const tools::Rectangle& rBox)
+    const Rectangle& rBox)
 {
     if (rBox.GetHeight() > 0)
     {

@@ -37,22 +37,27 @@ class CoinMPSolver : public SolverComponent
 {
 public:
     CoinMPSolver() {}
+    virtual ~CoinMPSolver() {}
 
 private:
-    virtual void SAL_CALL solve() override;
-    virtual OUString SAL_CALL getImplementationName() override
+    virtual void SAL_CALL solve() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw(css::uno::RuntimeException, std::exception) override
     {
         return OUString("com.sun.star.comp.Calc.CoinMPSolver");
     }
-    virtual OUString SAL_CALL getComponentDescription() override
+    virtual OUString SAL_CALL getComponentDescription()
+        throw (uno::RuntimeException, std::exception) override
     {
         return SolverComponent::GetResourceString( RID_COINMP_SOLVER_COMPONENT );
     }
 };
 
-void SAL_CALL CoinMPSolver::solve()
+void SAL_CALL CoinMPSolver::solve() throw(uno::RuntimeException, std::exception)
 {
-    uno::Reference<frame::XModel> xModel( mxDoc, uno::UNO_QUERY_THROW );
+    uno::Reference<frame::XModel> xModel( mxDoc, uno::UNO_QUERY );
+    if ( !xModel.is() )
+        throw uno::RuntimeException();
 
     maStatus.clear();
     mbSuccess = false;

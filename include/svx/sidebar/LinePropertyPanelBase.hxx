@@ -47,7 +47,12 @@ class ListBox;
 class ToolBox;
 class FloatingWindow;
 
+namespace
+{
+
 #define SIDEBAR_LINE_WIDTH_GLOBAL_VALUE "PopupPanel_LineWidth"
+
+} //end of anonymous namespace
 
 namespace sfx2 { namespace sidebar {
 
@@ -63,7 +68,7 @@ namespace sidebar
 class SVX_DLLPUBLIC LinePropertyPanelBase : public PanelLayout
 {
 public:
-    virtual ~LinePropertyPanelBase() override;
+    virtual ~LinePropertyPanelBase();
     virtual void dispose() override;
 
     virtual void DataChanged(
@@ -73,7 +78,7 @@ public:
     void SetWidthIcon(int n);
     void SetWidthIcon();
 
-    // constructor/destructor
+    // constructor/destuctor
     LinePropertyPanelBase(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
@@ -106,7 +111,7 @@ protected:
     void SelectLineStyle();
     void ActivateControls();
 
-    void setMapUnit(MapUnit eMapUnit);
+    void setMapUnit(SfxMapUnit eMapUnit);
 
     void disableArrowHead();
 
@@ -134,7 +139,7 @@ private:
     std::unique_ptr<XLineDashItem>  mpDashItem;
 
     sal_uInt16      mnTrans;
-    MapUnit         meMapUnit;
+    SfxMapUnit      meMapUnit;
     sal_Int32       mnWidthCoreValue;
     XLineEndListRef mxLineEndList;
     XDashListRef    mxLineStyleList;
@@ -150,18 +155,19 @@ private:
     // multi-images
     std::unique_ptr<Image[]> mpIMGWidthIcon;
 
+    /// bitfield
     bool                mbWidthValuable : 1;
     bool mbArrowSupported;
 
     void Initialize();
 
-    DECL_LINK(ChangeLineStyleHdl, ListBox&, void);
-    DECL_LINK(ToolboxWidthSelectHdl, ToolBox*, void);
-    DECL_LINK(ChangeTransparentHdl, Edit&, void );
-    DECL_LINK(ChangeStartHdl, ListBox&, void);
-    DECL_LINK(ChangeEndHdl, ListBox&, void);
-    DECL_LINK(ChangeEdgeStyleHdl, ListBox&, void);
-    DECL_LINK(ChangeCapStyleHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangeLineStyleHdl, ListBox&, void);
+    DECL_LINK_TYPED(ToolboxWidthSelectHdl, ToolBox*, void);
+    DECL_LINK_TYPED(ChangeTransparentHdl, Edit&, void );
+    DECL_LINK_TYPED(ChangeStartHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangeEndHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangeEdgeStyleHdl, ListBox&, void);
+    DECL_LINK_TYPED(ChangeCapStyleHdl, ListBox&, void);
 };
 
 } } // end of namespace svx::sidebar

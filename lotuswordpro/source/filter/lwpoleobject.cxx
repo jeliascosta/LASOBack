@@ -87,8 +87,8 @@ void LwpGraphicOleObject::Read()
     if (LwpFileHeader::m_nFileRevision >= 0x000b)
     {
         // I'm not sure about the read method
-        m_pNextObj.ReadIndexed(m_pObjStrm.get());
-        m_pPrevObj.ReadIndexed(m_pObjStrm.get());
+        m_pNextObj.ReadIndexed(m_pObjStrm);
+        m_pPrevObj.ReadIndexed(m_pObjStrm);
     }
     m_pObjStrm->SkipExtra();
 
@@ -215,12 +215,12 @@ void LwpOleObject::Read()
             //if (VO_INVALID == m_pObjStrm->QuickReaduInt16())
             //  return;
 
-            ID.Read(m_pObjStrm.get());
+            ID.Read(m_pObjStrm);
             //return m_pObjStrm->Locate(ID);
         }
         else
         {
-            ID.ReadIndexed(m_pObjStrm.get());
+            ID.ReadIndexed(m_pObjStrm);
             //if (ID.IsNull())
             //  return;
 
@@ -239,7 +239,7 @@ void LwpOleObject::Read()
 /**
  * @descr:   Parse VO_OLEOBJECT and dump to XML stream only on WIN32 platform
  * @param:  pOutputStream - stream to dump OLE object
- * @param:  pFrameLayout -  framelayout object used to dump OLE object
+ * @param:  pFrameLayout -  framlayout object used to dump OLE object
  */
 void LwpOleObject::Parse(IXFStream* /*pOutputStream*/)
 {

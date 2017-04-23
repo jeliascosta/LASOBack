@@ -24,7 +24,7 @@
 #include <xmloff/dllapi.h>
 #include <sal/types.h>
 
-#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/implbase1.hxx>
 #include <xmloff/xmltoken.hxx>
 
 #include <vector>
@@ -46,7 +46,7 @@ class SvXMLExport;
     office:meta must <em>not</em> be written.
     </p>
  */
-class XMLOFF_DLLPUBLIC SvXMLMetaExport : public cppu::WeakImplHelper<
+class XMLOFF_DLLPUBLIC SvXMLMetaExport : public ::cppu::WeakImplHelper1<
                 css::xml::sax::XDocumentHandler >
 {
 private:
@@ -71,7 +71,7 @@ public:
     SvXMLMetaExport( SvXMLExport& i_rExport,
         const css::uno::Reference< css::document::XDocumentProperties>& i_rDocProps);
 
-    virtual ~SvXMLMetaExport() override;
+    virtual ~SvXMLMetaExport();
 
     /// export via XSAXWriter interface, with fallback to _MExport
     void Export();
@@ -80,20 +80,36 @@ public:
                         const css::util::DateTime& rDateTime );
 
     // css::xml::sax::XDocumentHandler:
-    virtual void SAL_CALL startDocument() override;
-    virtual void SAL_CALL endDocument() override;
+    virtual void SAL_CALL startDocument()
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
+    virtual void SAL_CALL endDocument()
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
     virtual void SAL_CALL startElement(const OUString & i_rName,
         const css::uno::Reference<
-                css::xml::sax::XAttributeList > & i_xAttribs) override;
-    virtual void SAL_CALL endElement(const OUString & i_rName) override;
-    virtual void SAL_CALL characters(const OUString & i_rChars) override;
+                css::xml::sax::XAttributeList > & i_xAttribs)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
+    virtual void SAL_CALL endElement(const OUString & i_rName)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
+    virtual void SAL_CALL characters(const OUString & i_rChars)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
     virtual void SAL_CALL ignorableWhitespace(
-        const OUString & i_rWhitespaces) override;
+        const OUString & i_rWhitespaces)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
     virtual void SAL_CALL processingInstruction(
-        const OUString & i_rTarget, const OUString & i_rData) override;
+        const OUString & i_rTarget, const OUString & i_rData)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
     virtual void SAL_CALL setDocumentLocator(
         const css::uno::Reference<
-                css::xml::sax::XLocator > & i_xLocator) override;
+                css::xml::sax::XLocator > & i_xLocator)
+        throw (css::uno::RuntimeException,
+               css::xml::sax::SAXException, std::exception) override;
 
 };
 

@@ -20,19 +20,18 @@
 #define INCLUDED_SW_INC_UNOCRSR_HXX
 
 #include <swcrsr.hxx>
-#include <svl/SfxBroadcaster.hxx>
-#include <svl/lstner.hxx>
+#include <calbck.hxx>
 
 namespace sw
 {
-    struct SW_DLLPUBLIC UnoCursorHint final : public SfxHint
+    struct SW_DLLPUBLIC DocDisposingHint final : public SfxHint
     {
-        UnoCursorHint() {}
-        virtual ~UnoCursorHint() override;
+        DocDisposingHint() {}
+        virtual ~DocDisposingHint();
     };
 }
 
-class SwUnoCursor : public virtual SwCursor
+class SwUnoCursor : public virtual SwCursor, public SwModify
 {
 private:
     bool m_bRemainInSection : 1;
@@ -40,9 +39,8 @@ private:
     bool m_bSkipOverProtectSections : 1;
 
 public:
-    SfxBroadcaster m_aNotifier;
-    SwUnoCursor( const SwPosition &rPos );
-    virtual ~SwUnoCursor() override;
+    SwUnoCursor( const SwPosition &rPos, SwPaM* pRing = nullptr );
+    virtual ~SwUnoCursor();
 
 protected:
 
@@ -54,10 +52,10 @@ public:
 
     // Does a selection of content exist in table?
     // Return value indicates if the cursor remains at its old position.
-    virtual bool IsSelOvr( SwCursorSelOverFlags eFlags =
-                                ( SwCursorSelOverFlags::CheckNodeSection |
-                                  SwCursorSelOverFlags::Toggle |
-                                  SwCursorSelOverFlags::ChangePos )) override;
+    virtual bool IsSelOvr( int eFlags =
+                                ( nsSwCursorSelOverFlags::SELOVER_CHECKNODESSECTION |
+                                  nsSwCursorSelOverFlags::SELOVER_TOGGLE |
+                                  nsSwCursorSelOverFlags::SELOVER_CHANGEPOS )) override;
 
     virtual bool IsReadOnlyAvailable() const override;
 
@@ -88,14 +86,14 @@ class SwUnoTableCursor : public virtual SwUnoCursor, public virtual SwTableCurso
 
 public:
     SwUnoTableCursor( const SwPosition& rPos );
-    virtual ~SwUnoTableCursor() override;
+    virtual ~SwUnoTableCursor();
 
     // Does a selection of content exist in table?
     // Return value indicates if the cursor remains at its old position.
-    virtual bool IsSelOvr( SwCursorSelOverFlags eFlags =
-                                ( SwCursorSelOverFlags::CheckNodeSection |
-                                  SwCursorSelOverFlags::Toggle |
-                                  SwCursorSelOverFlags::ChangePos )) override;
+    virtual bool IsSelOvr( int eFlags =
+                                ( nsSwCursorSelOverFlags::SELOVER_CHECKNODESSECTION |
+                                  nsSwCursorSelOverFlags::SELOVER_TOGGLE |
+                                  nsSwCursorSelOverFlags::SELOVER_CHANGEPOS )) override;
 
     void MakeBoxSels();
 
@@ -105,49 +103,55 @@ public:
 
 namespace sw
 {
-    class UnoCursorPointer : public SfxListener
+    class UnoCursorPointer : public SwClient
     {
         public:
             UnoCursorPointer()
-                : m_pCursor(nullptr)
-           {}
-            UnoCursorPointer(std::shared_ptr<SwUnoCursor> const & pCursor)
-                : m_pCursor(pCursor)
+                : m_pCursor(nullptr), m_bSectionRestricted(false)
+            {}
+            UnoCursorPointer(std::shared_ptr<SwUnoCursor> pCursor, bool bSectionRestricted=false)
+                : m_pCursor(pCursor), m_bSectionRestricted(bSectionRestricted)
             {
-                StartListening(m_pCursor->m_aNotifier);
+                m_pCursor->Add(this);
             }
             UnoCursorPointer(const UnoCursorPointer& rOther)
-                : SfxListener()
+                : SwClient(nullptr)
                 , m_pCursor(rOther.m_pCursor)
+                , m_bSectionRestricted(rOther.m_bSectionRestricted)
             {
                 if(m_pCursor)
-                    StartListening(m_pCursor->m_aNotifier);
+                    m_pCursor->Add(this);
             }
             virtual ~UnoCursorPointer() override
             {
                 if(m_pCursor)
-                    EndListening(m_pCursor->m_aNotifier);
+                    m_pCursor->Remove(this);
             }
-            virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override
+            virtual void SwClientNotify(const SwModify& rModify, const SfxHint& rHint) override
             {
+                SwClient::SwClientNotify(rModify, rHint);
                 if(m_pCursor)
                 {
-                    if(typeid(rHint) == typeid(UnoCursorHint))
-                        EndListening(rBC);
+                    if(typeid(rHint) == typeid(DocDisposingHint))
+                        m_pCursor->Remove(this);
+                    else if(m_bSectionRestricted && typeid(rHint) == typeid(LegacyModifyHint))
+                    {
+                        const auto pLegacyHint = static_cast<const LegacyModifyHint*>(&rHint);
+                        if(pLegacyHint->m_pOld && pLegacyHint->m_pOld->Which() == RES_UNOCURSOR_LEAVES_SECTION)
+                            m_pCursor->Remove(this);
+                    }
                 }
-                if(!GetBroadcasterCount())
+                if(!GetRegisteredIn())
                     m_pCursor.reset();
             };
-            SwUnoCursor* get() const
-                { return m_pCursor.get(); }
-            SwUnoCursor* operator->() const
-                { return get(); }
             SwUnoCursor& operator*() const
-                { return *get(); }
+                { return *m_pCursor.get(); }
+            SwUnoCursor* operator->() const
+                { return m_pCursor.get(); }
             UnoCursorPointer& operator=(UnoCursorPointer aOther)
             {
                 if(aOther.m_pCursor)
-                    StartListening(aOther.m_pCursor->m_aNotifier);
+                    aOther.m_pCursor->Add(this);
                 m_pCursor = aOther.m_pCursor;
                 return *this;
             }
@@ -156,13 +160,14 @@ namespace sw
             void reset(std::shared_ptr<SwUnoCursor> pNew)
             {
                 if(pNew)
-                    StartListening(pNew->m_aNotifier);
+                    pNew->Add(this);
                 else if(m_pCursor)
-                    EndListening(m_pCursor->m_aNotifier);
+                    m_pCursor->Remove(this);
                 m_pCursor = pNew;
             }
         private:
             std::shared_ptr<SwUnoCursor> m_pCursor;
+            const bool m_bSectionRestricted;
     };
 }
 #endif

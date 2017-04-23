@@ -33,7 +33,7 @@ class XMLFilterTabPageBasic : public TabPage
 {
 public:
     explicit XMLFilterTabPageBasic(vcl::Window* pParent);
-    virtual ~XMLFilterTabPageBasic() override;
+    virtual ~XMLFilterTabPageBasic();
     virtual void dispose() override;
 
     void FillInfo( filter_info_impl* pInfo );

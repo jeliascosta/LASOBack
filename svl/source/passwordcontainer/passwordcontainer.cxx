@@ -97,7 +97,7 @@ static vector< OUString > getInfoFromInd( const OUString& aInd )
         while( *pLine && !( pLine[0] == '_' && pLine[1] == '_' ))
             if( *pLine != '_' )
             {
-                newItem += OUStringLiteral1( *pLine );
+                newItem += OUString( (sal_Unicode) *pLine );
                 pLine++;
             }
             else
@@ -114,10 +114,10 @@ static vector< OUString > getInfoFromInd( const OUString& aInd )
                         return aResult;
                     }
 
-                    aNum += OUStringLiteral1( pLine[i] );
+                    aNum += OUString( (sal_Unicode) pLine[i] );
                 }
 
-                newItem += OUStringLiteral1( aNum.toUInt32( 16 ) );
+                newItem += OUString( (sal_Unicode) aNum.toUInt32( 16 ) );
                 pLine += 3;
             }
 
@@ -379,7 +379,7 @@ PasswordContainer::PasswordContainer( const Reference<XMultiServiceFactory>& xSe
     mComponent.set( xServiceFactory, UNO_QUERY );
     mComponent->addEventListener( this );
 
-    m_pStorageFile = new StorageItem( this, "Office.Common/Passwords" );
+    m_pStorageFile = new StorageItem( this, OUString("Office.Common/Passwords") );
     if( m_pStorageFile->useStorage() )
         m_aContainer = m_pStorageFile->getInfo();
 }
@@ -402,7 +402,8 @@ PasswordContainer::~PasswordContainer()
     }
 }
 
-void SAL_CALL PasswordContainer::disposing( const EventObject& )
+
+void SAL_CALL PasswordContainer::disposing( const EventObject& ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -419,7 +420,8 @@ void SAL_CALL PasswordContainer::disposing( const EventObject& )
     }
 }
 
-vector< OUString > PasswordContainer::DecodePasswords( const OUString& aLine, const OUString& aMasterPasswd )
+
+vector< OUString > PasswordContainer::DecodePasswords( const OUString& aLine, const OUString& aMasterPasswd ) throw(RuntimeException)
 {
     if( !aMasterPasswd.isEmpty() )
     {
@@ -468,7 +470,7 @@ vector< OUString > PasswordContainer::DecodePasswords( const OUString& aLine, co
     throw RuntimeException("Can't decode!" );
 }
 
-OUString PasswordContainer::EncodePasswords(const vector< OUString >& lines, const OUString& aMasterPasswd )
+OUString PasswordContainer::EncodePasswords(const vector< OUString >& lines, const OUString& aMasterPasswd ) throw(RuntimeException)
 {
     if( !aMasterPasswd.isEmpty() )
     {
@@ -545,7 +547,7 @@ OUString PasswordContainer::EncodePasswords(const vector< OUString >& lines, con
     throw RuntimeException("Can't encode!" );
 }
 
-void PasswordContainer::UpdateVector( const OUString& aURL, list< NamePassRecord >& toUpdate, NamePassRecord& aRecord, bool writeFile )
+void PasswordContainer::UpdateVector( const OUString& aURL, list< NamePassRecord >& toUpdate, NamePassRecord& aRecord, bool writeFile ) throw(RuntimeException)
 {
     for( list< NamePassRecord >::iterator aNPIter = toUpdate.begin(); aNPIter != toUpdate.end(); ++aNPIter )
         if( aNPIter->GetUserName().equals( aRecord.GetUserName() ) )
@@ -602,7 +604,7 @@ UserRecord PasswordContainer::CopyToUserRecord( const NamePassRecord& aRecord, b
 }
 
 
-Sequence< UserRecord > PasswordContainer::CopyToUserRecordSequence( const list< NamePassRecord >& original, const Reference< XInteractionHandler >& aHandler )
+Sequence< UserRecord > PasswordContainer::CopyToUserRecordSequence( const list< NamePassRecord >& original, const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     Sequence< UserRecord >     aResult( original.size() );
     sal_uInt32 nInd = 0;
@@ -619,7 +621,7 @@ Sequence< UserRecord > PasswordContainer::CopyToUserRecordSequence( const list< 
 }
 
 
-void SAL_CALL PasswordContainer::add( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, const Reference< XInteractionHandler >& aHandler )
+void SAL_CALL PasswordContainer::add( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -627,7 +629,7 @@ void SAL_CALL PasswordContainer::add( const OUString& Url, const OUString& UserN
 }
 
 
-void SAL_CALL PasswordContainer::addPersistent( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, const Reference< XInteractionHandler >& aHandler  )
+void SAL_CALL PasswordContainer::addPersistent( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, const Reference< XInteractionHandler >& aHandler  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -635,10 +637,10 @@ void SAL_CALL PasswordContainer::addPersistent( const OUString& Url, const OUStr
 }
 
 
-void PasswordContainer::PrivateAdd( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, char Mode, const Reference< XInteractionHandler >& aHandler )
+void PasswordContainer::PrivateAdd( const OUString& Url, const OUString& UserName, const Sequence< OUString >& Passwords, char Mode, const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     NamePassRecord aRecord( UserName );
-    ::std::vector< OUString > aStorePass = comphelper::sequenceToContainer< std::vector<OUString> >( Passwords );
+    ::std::vector< OUString > aStorePass = comphelper::sequenceToContainer< std::vector<OUString>, OUString>( Passwords );
 
     if( Mode == PERSISTENT_RECORD )
         aRecord.SetPersPasswords( EncodePasswords( aStorePass, GetMasterPassword( aHandler ) ) );
@@ -670,19 +672,19 @@ void PasswordContainer::PrivateAdd( const OUString& Url, const OUString& UserNam
 }
 
 
-UrlRecord SAL_CALL PasswordContainer::find( const OUString& aURL, const Reference< XInteractionHandler >& aHandler  )
+UrlRecord SAL_CALL PasswordContainer::find( const OUString& aURL, const Reference< XInteractionHandler >& aHandler  ) throw(RuntimeException, std::exception)
 {
     return find( aURL, OUString(), false, aHandler );
 }
 
 
-UrlRecord SAL_CALL PasswordContainer::findForName( const OUString& aURL, const OUString& aName, const Reference< XInteractionHandler >& aHandler  )
+UrlRecord SAL_CALL PasswordContainer::findForName( const OUString& aURL, const OUString& aName, const Reference< XInteractionHandler >& aHandler  ) throw(RuntimeException, std::exception)
 {
     return find( aURL, aName, true, aHandler );
 }
 
 
-Sequence< UserRecord > PasswordContainer::FindUsr( const list< NamePassRecord >& userlist, const OUString& aName, const Reference< XInteractionHandler >& aHandler )
+Sequence< UserRecord > PasswordContainer::FindUsr( const list< NamePassRecord >& userlist, const OUString& aName, const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     sal_uInt32 nInd = 0;
     for( list< NamePassRecord >::const_iterator aNPIter = userlist.begin();
@@ -709,6 +711,7 @@ bool PasswordContainer::createUrlRecord(
     const OUString & aName,
     const Reference< XInteractionHandler >& aHandler,
     UrlRecord & rRec )
+        throw( RuntimeException )
 {
     if ( bName )
     {
@@ -735,7 +738,7 @@ UrlRecord PasswordContainer::find(
     const OUString& aURL,
     const OUString& aName,
     bool bName, // only needed to support empty user names
-    const Reference< XInteractionHandler >& aHandler  )
+    const Reference< XInteractionHandler >& aHandler  ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -815,7 +818,7 @@ OUString PasswordContainer::RequestPasswordFromUser( PasswordRequestMode aRMode,
 }
 
 
-OUString const & PasswordContainer::GetMasterPassword( const Reference< XInteractionHandler >& aHandler )
+OUString PasswordContainer::GetMasterPassword( const Reference< XInteractionHandler >& aHandler ) throw(RuntimeException, std::exception)
 {
     PasswordRequestMode aRMode = PasswordRequestMode_PASSWORD_ENTER;
     if( !m_pStorageFile || !m_pStorageFile->useStorage() )
@@ -874,7 +877,7 @@ OUString const & PasswordContainer::GetMasterPassword( const Reference< XInterac
 }
 
 
-void SAL_CALL PasswordContainer::remove( const OUString& aURL, const OUString& aName )
+void SAL_CALL PasswordContainer::remove( const OUString& aURL, const OUString& aName ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -914,7 +917,7 @@ void SAL_CALL PasswordContainer::remove( const OUString& aURL, const OUString& a
 }
 
 
-void SAL_CALL PasswordContainer::removePersistent( const OUString& aURL, const OUString& aName )
+void SAL_CALL PasswordContainer::removePersistent( const OUString& aURL, const OUString& aName ) throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -959,7 +962,7 @@ void SAL_CALL PasswordContainer::removePersistent( const OUString& aURL, const O
     }
 }
 
-void SAL_CALL PasswordContainer::removeAllPersistent()
+void SAL_CALL PasswordContainer::removeAllPersistent() throw(RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -1000,7 +1003,7 @@ void SAL_CALL PasswordContainer::removeAllPersistent()
     }
 }
 
-Sequence< UrlRecord > SAL_CALL PasswordContainer::getAllPersistent( const Reference< XInteractionHandler >& xHandler )
+Sequence< UrlRecord > SAL_CALL PasswordContainer::getAllPersistent( const Reference< XInteractionHandler >& xHandler ) throw(RuntimeException, std::exception)
 {
     Sequence< UrlRecord > aResult;
 
@@ -1028,6 +1031,7 @@ Sequence< UrlRecord > SAL_CALL PasswordContainer::getAllPersistent( const Refere
 }
 
 sal_Bool SAL_CALL PasswordContainer::authorizateWithMasterPassword( const uno::Reference< task::XInteractionHandler >& xHandler )
+    throw (uno::RuntimeException, std::exception)
 {
     bool bResult = false;
     OUString aEncodedMP;
@@ -1081,6 +1085,7 @@ sal_Bool SAL_CALL PasswordContainer::authorizateWithMasterPassword( const uno::R
 }
 
 sal_Bool SAL_CALL PasswordContainer::changeMasterPassword( const uno::Reference< task::XInteractionHandler >& xHandler )
+    throw (uno::RuntimeException, std::exception)
 {
     bool bResult = false;
     uno::Reference< task::XInteractionHandler > xTmpHandler = xHandler;
@@ -1137,6 +1142,7 @@ sal_Bool SAL_CALL PasswordContainer::changeMasterPassword( const uno::Reference<
 }
 
 void SAL_CALL PasswordContainer::removeMasterPassword()
+    throw (uno::RuntimeException, std::exception)
 {
     // remove all the stored passwords and the master password
     removeAllPersistent();
@@ -1150,6 +1156,7 @@ void SAL_CALL PasswordContainer::removeMasterPassword()
 }
 
 sal_Bool SAL_CALL PasswordContainer::hasMasterPassword(  )
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -1161,6 +1168,7 @@ sal_Bool SAL_CALL PasswordContainer::hasMasterPassword(  )
 }
 
 sal_Bool SAL_CALL PasswordContainer::allowPersistentStoring( sal_Bool bAllow )
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -1178,6 +1186,7 @@ sal_Bool SAL_CALL PasswordContainer::allowPersistentStoring( sal_Bool bAllow )
 }
 
 sal_Bool SAL_CALL PasswordContainer::isPersistentStoringAllowed()
+    throw (css::uno::RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -1188,6 +1197,7 @@ sal_Bool SAL_CALL PasswordContainer::isPersistentStoringAllowed()
 }
 
 sal_Bool SAL_CALL PasswordContainer::useDefaultMasterPassword( const uno::Reference< task::XInteractionHandler >& xHandler )
+    throw ( uno::RuntimeException, std::exception )
 {
     bool bResult = false;
     uno::Reference< task::XInteractionHandler > xTmpHandler = xHandler;
@@ -1242,6 +1252,7 @@ sal_Bool SAL_CALL PasswordContainer::useDefaultMasterPassword( const uno::Refere
 }
 
 sal_Bool SAL_CALL PasswordContainer::isDefaultMasterPasswordUsed()
+    throw ( uno::RuntimeException, std::exception )
 {
     ::osl::MutexGuard aGuard( mMutex );
 
@@ -1254,21 +1265,25 @@ sal_Bool SAL_CALL PasswordContainer::isDefaultMasterPasswordUsed()
 
 
 void SAL_CALL PasswordContainer::addUrl( const OUString& Url, sal_Bool MakePersistent )
+    throw (uno::RuntimeException, std::exception)
 {
     mUrlContainer.add( Url, MakePersistent );
 }
 
 OUString SAL_CALL PasswordContainer::findUrl( const OUString& Url )
+    throw (uno::RuntimeException, std::exception)
 {
     return mUrlContainer.find( Url );
 }
 
 void SAL_CALL PasswordContainer::removeUrl( const OUString& Url )
+    throw (uno::RuntimeException, std::exception)
 {
     mUrlContainer.remove( Url );
 }
 
 uno::Sequence< OUString > SAL_CALL PasswordContainer::getUrls( sal_Bool OnlyPersistent )
+    throw (uno::RuntimeException, std::exception)
 {
     return mUrlContainer.list( OnlyPersistent );
 }
@@ -1319,38 +1334,40 @@ void PasswordContainer::Notify()
     }
 }
 
-OUString SAL_CALL PasswordContainer::getImplementationName(  )
+OUString SAL_CALL PasswordContainer::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
     return impl_getStaticImplementationName();
 }
 
-sal_Bool SAL_CALL PasswordContainer::supportsService( const OUString& ServiceName )
+sal_Bool SAL_CALL PasswordContainer::supportsService( const OUString& ServiceName ) throw(uno::RuntimeException, std::exception)
 {
     return cppu::supportsService( this,  ServiceName );
 }
 
-Sequence< OUString > SAL_CALL PasswordContainer::getSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL PasswordContainer::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
     return impl_getStaticSupportedServiceNames();
 }
 
-Sequence< OUString > SAL_CALL PasswordContainer::impl_getStaticSupportedServiceNames(  )
+Sequence< OUString > SAL_CALL PasswordContainer::impl_getStaticSupportedServiceNames(  ) throw(uno::RuntimeException)
 {
     Sequence< OUString > aRet { "com.sun.star.task.PasswordContainer" };
     return aRet;
 }
 
-OUString SAL_CALL PasswordContainer::impl_getStaticImplementationName()
+OUString SAL_CALL PasswordContainer::impl_getStaticImplementationName() throw(uno::RuntimeException)
 {
     return OUString("stardiv.svl.PasswordContainer");
 }
 
-Reference< XInterface > SAL_CALL PasswordContainer::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager )
+
+Reference< XInterface > SAL_CALL PasswordContainer::impl_createInstance( const Reference< XMultiServiceFactory >& xServiceManager ) throw( RuntimeException )
 {
     return Reference< XInterface >( *new PasswordContainer( xServiceManager ) );
 }
 
-Reference< XSingleServiceFactory > SAL_CALL PasswordContainer::impl_createFactory( const Reference< XMultiServiceFactory >& ServiceManager )
+
+Reference< XSingleServiceFactory > SAL_CALL PasswordContainer::impl_createFactory( const Reference< XMultiServiceFactory >& ServiceManager ) throw(RuntimeException)
 {
     Reference< XSingleServiceFactory > xReturn( ::cppu::createOneInstanceFactory( ServiceManager,
                                                         PasswordContainer::impl_getStaticImplementationName(),

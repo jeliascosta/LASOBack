@@ -40,7 +40,7 @@ class SwNavigationConfig : public utl::ConfigItem
 
 public:
     SwNavigationConfig();
-    virtual ~SwNavigationConfig() override;
+    virtual ~SwNavigationConfig();
 
     virtual void Notify( const css::uno::Sequence< OUString >& aPropertyNames ) override;
 

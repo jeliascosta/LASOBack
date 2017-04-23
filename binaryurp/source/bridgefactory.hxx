@@ -78,16 +78,20 @@ private:
     BridgeFactory(const BridgeFactory&) = delete;
     BridgeFactory& operator=(const BridgeFactory&) = delete;
 
-    BridgeFactory();
+    explicit BridgeFactory(
+        com::sun::star::uno::Reference< com::sun::star::uno::XComponentContext >
+            const & context);
 
-    virtual ~BridgeFactory() override;
+    virtual ~BridgeFactory();
 
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    virtual sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     virtual com::sun::star::uno::Sequence< OUString > SAL_CALL
-    getSupportedServiceNames() override;
+    getSupportedServiceNames() throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     virtual com::sun::star::uno::Reference< com::sun::star::bridge::XBridge >
     SAL_CALL createBridge(
@@ -96,16 +100,21 @@ private:
             com::sun::star::connection::XConnection > const & aConnection,
         com::sun::star::uno::Reference<
             com::sun::star::bridge::XInstanceProvider > const &
-                anInstanceProvider) override;
+                anInstanceProvider)
+        throw (
+            com::sun::star::bridge::BridgeExistsException,
+            com::sun::star::lang::IllegalArgumentException,
+            com::sun::star::uno::RuntimeException, std::exception) override;
 
     virtual com::sun::star::uno::Reference< com::sun::star::bridge::XBridge >
     SAL_CALL getBridge(
-        OUString const & sName) override;
+        OUString const & sName)
+        throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     virtual
     com::sun::star::uno::Sequence<
         com::sun::star::uno::Reference< com::sun::star::bridge::XBridge > >
-    SAL_CALL getExistingBridges() override;
+    SAL_CALL getExistingBridges() throw (com::sun::star::uno::RuntimeException, std::exception) override;
 
     void SAL_CALL disposing() override;
 
@@ -120,6 +129,8 @@ private:
             com::sun::star::uno::Reference< com::sun::star::bridge::XBridge > >
         BridgeMap;
 
+    com::sun::star::uno::Reference< com::sun::star::uno::XComponentContext >
+        context_;
     BridgeList unnamed_;
     BridgeMap named_;
 };

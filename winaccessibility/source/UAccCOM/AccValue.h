@@ -20,9 +20,9 @@
 #ifndef INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCVALUE_H
 #define INCLUDED_WINACCESSIBILITY_SOURCE_UACCCOM_ACCVALUE_H
 
-#include "Resource.h"           // main symbols
+#include "resource.h"           // main symbols
 
-#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/reference.hxx>
 #include <com/sun/star/accessibility/XAccessibleValue.hpp>
 #include "UNOXWrapper.h"
 
@@ -46,20 +46,13 @@ public:
     BEGIN_COM_MAP(CAccValue)
     COM_INTERFACE_ENTRY(IAccessibleValue)
     COM_INTERFACE_ENTRY(IUNOXWrapper)
-    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,SmartQI_)
-#if defined __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winconsistent-missing-override"
-#endif
+    COM_INTERFACE_ENTRY_FUNC_BLIND(NULL,_SmartQI)
     END_COM_MAP()
-#if defined __clang__
-#pragma clang diagnostic pop
-#endif
 
-    static HRESULT WINAPI SmartQI_(void* pv,
+    static HRESULT WINAPI _SmartQI(void* pv,
                                    REFIID iid, void** ppvObject, DWORD_PTR)
     {
-        return static_cast<CAccValue*>(pv)->SmartQI(iid,ppvObject);
+        return ((CAccValue*)pv)->SmartQI(iid,ppvObject);
     }
 
     HRESULT SmartQI(REFIID iid, void** ppvObject)
@@ -75,25 +68,25 @@ public:
     // IAccessibleValue
 
     // Returns the value of this object as a number.
-    STDMETHOD(get_currentValue)(VARIANT *currentValue) override;
+    STDMETHOD(get_currentValue)(VARIANT *currentValue);
 
     // Sets the value of this object to the given number.
-    STDMETHOD(setCurrentValue)(VARIANT value) override;
+    STDMETHOD(setCurrentValue)(VARIANT value);
 
     // Returns the maximal value that can be represented by this object.
-    STDMETHOD(get_maximumValue)(VARIANT *maximumValue) override;
+    STDMETHOD(get_maximumValue)(VARIANT *maximumValue);
 
     // Returns the minimal value that can be represented by this object.
-    STDMETHOD(get_minimumValue)(VARIANT *mininumValue) override;
+    STDMETHOD(get_minimumValue)(VARIANT *mininumValue);
 
     // Override of IUNOXWrapper.
-    STDMETHOD(put_XInterface)(hyper pXInterface) override;
+    STDMETHOD(put_XInterface)(hyper pXInterface);
 
 private:
 
     css::uno::Reference<css::accessibility::XAccessibleValue> pRXVal;
 
-    css::accessibility::XAccessibleValue* GetXInterface()
+    inline css::accessibility::XAccessibleValue* GetXInterface()
     {
         return pRXVal.get();
     }

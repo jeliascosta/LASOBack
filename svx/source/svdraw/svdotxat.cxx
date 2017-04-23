@@ -34,6 +34,7 @@
 
 
 #include <editeng/editview.hxx>
+#include <svl/smplhint.hxx>
 #include <svl/whiter.hxx>
 #include <editeng/outlobj.hxx>
 #include <editeng/outliner.hxx>
@@ -56,7 +57,7 @@ const short PADDING_LENGTH_FOR_STYLE_FAMILY = 5;
 const sal_Char PADDING_CHARACTER_FOR_STYLE_FAMILY = ' ';
 }
 
-bool SdrTextObj::AdjustTextFrameWidthAndHeight( tools::Rectangle& rR, bool bHgt, bool bWdt ) const
+bool SdrTextObj::AdjustTextFrameWidthAndHeight( Rectangle& rR, bool bHgt, bool bWdt ) const
 {
     if (!bTextFrame)
         // Not a text frame.  Bail out.
@@ -83,11 +84,11 @@ bool SdrTextObj::AdjustTextFrameWidthAndHeight( tools::Rectangle& rR, bool bHgt,
     SdrTextAniKind eAniKind = GetTextAniKind();
     SdrTextAniDirection eAniDir = GetTextAniDirection();
 
-    bool bScroll = eAniKind == SdrTextAniKind::Scroll || eAniKind == SdrTextAniKind::Alternate || eAniKind == SdrTextAniKind::Slide;
-    bool bHScroll = bScroll && (eAniDir == SdrTextAniDirection::Left || eAniDir == SdrTextAniDirection::Right);
-    bool bVScroll = bScroll && (eAniDir == SdrTextAniDirection::Up || eAniDir == SdrTextAniDirection::Down);
+    bool bScroll = eAniKind == SDRTEXTANI_SCROLL || eAniKind == SDRTEXTANI_ALTERNATE || eAniKind == SDRTEXTANI_SLIDE;
+    bool bHScroll = bScroll && (eAniDir == SDRTEXTANI_LEFT || eAniDir == SDRTEXTANI_RIGHT);
+    bool bVScroll = bScroll && (eAniDir == SDRTEXTANI_UP || eAniDir == SDRTEXTANI_DOWN);
 
-    tools::Rectangle aOldRect = rR;
+    Rectangle aOldRect = rR;
     long nHgt = 0, nMinHgt = 0, nMaxHgt = 0;
     long nWdt = 0, nMinWdt = 0, nMaxWdt = 0;
 
@@ -275,10 +276,10 @@ bool SdrTextObj::NbcAdjustTextFrameWidthAndHeight(bool bHgt, bool bWdt)
 
 bool SdrTextObj::AdjustTextFrameWidthAndHeight()
 {
-    tools::Rectangle aNeuRect(maRect);
+    Rectangle aNeuRect(maRect);
     bool bRet=AdjustTextFrameWidthAndHeight(aNeuRect);
     if (bRet) {
-        tools::Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
+        Rectangle aBoundRect0; if (pUserCall!=nullptr) aBoundRect0=GetLastBoundRect();
         maRect = aNeuRect;
         SetRectsDirty();
         if (dynamic_cast<const SdrRectObj *>(this) != nullptr) { // this is a hack
@@ -289,7 +290,7 @@ bool SdrTextObj::AdjustTextFrameWidthAndHeight()
         }
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
+        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
     }
     return bRet;
 }
@@ -419,7 +420,7 @@ void SdrTextObj::RemoveOutlinerCharacterAttribs( const std::vector<sal_uInt16>& 
 bool SdrTextObj::HasText() const
 {
     if( pEdtOutl )
-        return HasTextImpl(pEdtOutl);
+        return HasEditText();
 
     OutlinerParaObject* pOPO = GetOutlinerParaObject();
 

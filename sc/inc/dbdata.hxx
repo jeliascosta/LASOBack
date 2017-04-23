@@ -42,6 +42,7 @@ struct ScImportParam;
 enum class ScDBDataPortion
 {
     TOP_LEFT,   ///< top left cell of area
+    HEADER,     ///< header row of area, if headers are present
     AREA        ///< entire area
 };
 
@@ -112,7 +113,7 @@ public:
              bool bByR = true, bool bHasH = true, bool bTotals = false);
     ScDBData(const ScDBData& rData);
     ScDBData(const OUString& rName, const ScDBData& rData);
-    virtual ~ScDBData() override;
+    virtual ~ScDBData();
 
     virtual void Notify( const SfxHint& rHint ) override;
 
@@ -241,7 +242,7 @@ public:
         ScDBCollection& mrParent;
         NamedDBs(ScDBCollection& rParent, ScDocument& rDoc);
         NamedDBs(const NamedDBs& r);
-        virtual ~NamedDBs() override;
+        virtual ~NamedDBs();
         NamedDBs & operator=(NamedDBs const&) = delete;
         void initInserted( ScDBData* p );
 

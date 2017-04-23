@@ -129,7 +129,7 @@ void LwpFribParaNumber::Read(LwpObjectStream* pObjStrm, sal_uInt16 /*len*/)
  * @short:   default constructor of LwpFribDocVar
  */
 LwpFribDocVar::LwpFribDocVar(LwpPara* pPara)
-    : LwpFrib(pPara), m_nType(0)
+    : LwpFrib(pPara), m_nType(0), m_pName(new LwpAtomHolder)
 {
 }
 /**
@@ -137,6 +137,11 @@ LwpFribDocVar::LwpFribDocVar(LwpPara* pPara)
  */
 LwpFribDocVar::~LwpFribDocVar()
 {
+    if (m_pName)
+    {
+        delete m_pName;
+        m_pName = nullptr;
+    }
 }
 /**
  * @short:   Reading mothed of document variable frib.
@@ -146,7 +151,7 @@ LwpFribDocVar::~LwpFribDocVar()
 void LwpFribDocVar::Read(LwpObjectStream* pObjStrm, sal_uInt16 /*len*/)
 {
     m_nType = pObjStrm->QuickReaduInt16();
-    m_aName.Read(pObjStrm);
+    m_pName->Read(pObjStrm);
 }
 
 /**

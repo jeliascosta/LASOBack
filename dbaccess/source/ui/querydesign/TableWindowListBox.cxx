@@ -51,7 +51,7 @@ OTableWindowListBox::OTableWindowListBox( OTableWindow* pParent )
     m_aScrollTimer.SetTimeout( SCROLLING_TIMESPAN );
     SetDoubleClickHdl( LINK(this, OTableWindowListBox, OnDoubleClick) );
 
-    SetSelectionMode(SelectionMode::Single);
+    SetSelectionMode(SINGLE_SELECTION);
 
     SetHighlightRange( );
 }
@@ -167,7 +167,7 @@ bool OTableWindowListBox::PreNotify(NotifyEvent& rNEvt)
     return true;
 }
 
-IMPL_LINK_NOARG( OTableWindowListBox, ScrollUpHdl, Timer*, void )
+IMPL_LINK_NOARG_TYPED( OTableWindowListBox, ScrollUpHdl, Timer*, void )
 {
     SvTreeListEntry* pEntry = GetEntry( m_aMousePos );
     if( !pEntry )
@@ -181,7 +181,7 @@ IMPL_LINK_NOARG( OTableWindowListBox, ScrollUpHdl, Timer*, void )
     }
 }
 
-IMPL_LINK_NOARG( OTableWindowListBox, ScrollDownHdl, Timer*, void )
+IMPL_LINK_NOARG_TYPED( OTableWindowListBox, ScrollDownHdl, Timer*, void )
 {
     SvTreeListEntry* pEntry = GetEntry( m_aMousePos );
     if( !pEntry )
@@ -233,16 +233,16 @@ sal_Int8 OTableWindowListBox::AcceptDrop( const AcceptDropEvent& _rEvt )
                 return DND_ACTION_NONE;
 
             // Scrolling Areas
-            tools::Rectangle aBottomScrollArea( Point(0, aOutputSize.Height()-LISTBOX_SCROLLING_AREA),
+            Rectangle aBottomScrollArea( Point(0, aOutputSize.Height()-LISTBOX_SCROLLING_AREA),
                                          Size(aOutputSize.Width(), LISTBOX_SCROLLING_AREA) );
-            tools::Rectangle aTopScrollArea( Point(0,0), Size(aOutputSize.Width(), LISTBOX_SCROLLING_AREA) );
+            Rectangle aTopScrollArea( Point(0,0), Size(aOutputSize.Width(), LISTBOX_SCROLLING_AREA) );
 
              // scroll up if the pointer is on the upper scroll area
             if( aBottomScrollArea.IsInside(m_aMousePos) )
             {
                 if( !m_aScrollTimer.IsActive() )
                 {
-                    m_aScrollTimer.SetInvokeHandler( LINK(this, OTableWindowListBox, ScrollUpHdl) );
+                    m_aScrollTimer.SetTimeoutHdl( LINK(this, OTableWindowListBox, ScrollUpHdl) );
                     ScrollUpHdl( nullptr );
                 }
             }
@@ -252,7 +252,7 @@ sal_Int8 OTableWindowListBox::AcceptDrop( const AcceptDropEvent& _rEvt )
             {
                 if( !m_aScrollTimer.IsActive() )
                 {
-                    m_aScrollTimer.SetInvokeHandler( LINK(this, OTableWindowListBox, ScrollDownHdl) );
+                    m_aScrollTimer.SetTimeoutHdl( LINK(this, OTableWindowListBox, ScrollDownHdl) );
                     ScrollDownHdl( nullptr );
                 }
             }
@@ -275,13 +275,13 @@ sal_Int8 OTableWindowListBox::AcceptDrop( const AcceptDropEvent& _rEvt )
     return nDND_Action;
 }
 
-IMPL_LINK_NOARG( OTableWindowListBox, LookForUiHdl, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableWindowListBox, LookForUiHdl, void*, void )
 {
     m_nUiEvent = nullptr;
     m_pTabWin->getTableView()->lookForUiActivities();
 }
 
-IMPL_LINK_NOARG( OTableWindowListBox, DropHdl, void*, void )
+IMPL_LINK_NOARG_TYPED( OTableWindowListBox, DropHdl, void*, void )
 {
     // create the connection
     m_nDropEvent = nullptr;
@@ -342,11 +342,11 @@ void OTableWindowListBox::GetFocus()
     SvTreeListBox::GetFocus();
 }
 
-IMPL_LINK_NOARG( OTableWindowListBox, OnDoubleClick, SvTreeListBox *, bool )
+IMPL_LINK_NOARG_TYPED( OTableWindowListBox, OnDoubleClick, SvTreeListBox *, bool )
 {
     // tell my parent
     vcl::Window* pParent = Window::GetParent();
-    OSL_ENSURE(pParent != nullptr, "OTableWindowListBox::OnDoubleClick : have no Parent !");
+    OSL_ENSURE(pParent != nullptr, "OTableWindowListBox::OnDoubleClick : habe kein Parent !");
 
     static_cast<OTableWindow*>(pParent)->OnEntryDoubleClicked(GetHdlEntry());
 

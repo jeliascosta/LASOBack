@@ -21,7 +21,7 @@
 
 #include <com/sun/star/frame/XDesktop.hpp>
 #include <com/sun/star/frame/FrameSearchFlag.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
+
 #include <vcl/svapp.hxx>
 
 namespace framework{
@@ -42,13 +42,12 @@ OFrames::OFrames( const   css::uno::Reference< XFrame >&              xOwner    
         ,   m_pFrameContainer           ( pFrameContainer               )
         ,   m_bRecursiveSearchProtection( false                     )
 {
-    // An instance of this class can only work with valid initialization.
-    // We share the mutex with our owner class, need a valid factory to instanciate new services and
-    // use the access to our owner for some operations.
-    SAL_WARN_IF( !xOwner.is() || !pFrameContainer, "fwk", "OFrames::OFrames(): Invalid parameter detected!" );
+    // Safe impossible cases
+    // Method is not defined for ALL incoming parameters!
+    SAL_WARN_IF( !impldbg_checkParameter_OFramesCtor( xOwner, pFrameContainer ), "fwk", "OFrames::OFrames(): Invalid parameter detected!" );
 }
 
-//  (protected!) destructor
+//  (proteced!) destructor
 
 OFrames::~OFrames()
 {
@@ -57,13 +56,13 @@ OFrames::~OFrames()
 }
 
 //  XFrames
-void SAL_CALL OFrames::append( const css::uno::Reference< XFrame >& xFrame )
+void SAL_CALL OFrames::append( const css::uno::Reference< XFrame >& xFrame ) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
     // Safe impossible cases
     // Method is not defined for ALL incoming parameters!
-    SAL_WARN_IF( !xFrame.is(), "fwk", "OFrames::append(): Invalid parameter detected!" );
+    SAL_WARN_IF( !impldbg_checkParameter_append( xFrame ), "fwk", "OFrames::append(): Invalid parameter detected!" );
 
     // Do the follow only, if owner instance valid!
     // Lock owner for follow operations - make a "hard reference"!
@@ -80,13 +79,13 @@ void SAL_CALL OFrames::append( const css::uno::Reference< XFrame >& xFrame )
 }
 
 //  XFrames
-void SAL_CALL OFrames::remove( const css::uno::Reference< XFrame >& xFrame )
+void SAL_CALL OFrames::remove( const css::uno::Reference< XFrame >& xFrame ) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
     // Safe impossible cases
     // Method is not defined for ALL incoming parameters!
-    SAL_WARN_IF( !xFrame.is(), "fwk", "OFrames::remove(): Invalid parameter detected!" );
+    SAL_WARN_IF( !impldbg_checkParameter_remove( xFrame ), "fwk", "OFrames::remove(): Invalid parameter detected!" );
 
     // Do the follow only, if owner instance valid!
     // Lock owner for follow operations - make a "hard reference"!
@@ -104,7 +103,7 @@ void SAL_CALL OFrames::remove( const css::uno::Reference< XFrame >& xFrame )
 }
 
 //  XFrames
-Sequence< css::uno::Reference< XFrame > > SAL_CALL OFrames::queryFrames( sal_Int32 nSearchFlags )
+Sequence< css::uno::Reference< XFrame > > SAL_CALL OFrames::queryFrames( sal_Int32 nSearchFlags ) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -132,7 +131,7 @@ Sequence< css::uno::Reference< XFrame > > SAL_CALL OFrames::queryFrames( sal_Int
             // We think about right implementation.
             SAL_WARN_IF( (nSearchFlags & FrameSearchFlag::AUTO), "fwk", "OFrames::queryFrames(): Search with AUTO-flag is not supported yet!" );
 
-            // Search for ALL and GLOBAL is superfluous!
+            // Search for ALL and GLOBAL is superflous!
             // We support all necessary flags, from which these two flags are derived.
             //      ALL     = PARENT + SELF  + CHILDREN + SIBLINGS
             //      GLOBAL  = ALL    + TASKS
@@ -202,7 +201,7 @@ Sequence< css::uno::Reference< XFrame > > SAL_CALL OFrames::queryFrames( sal_Int
 }
 
 //  XIndexAccess
-sal_Int32 SAL_CALL OFrames::getCount()
+sal_Int32 SAL_CALL OFrames::getCount() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -224,7 +223,9 @@ sal_Int32 SAL_CALL OFrames::getCount()
 
 //  XIndexAccess
 
-Any SAL_CALL OFrames::getByIndex( sal_Int32 nIndex )
+Any SAL_CALL OFrames::getByIndex( sal_Int32 nIndex ) throw( IndexOutOfBoundsException   ,
+                                                            WrappedTargetException      ,
+                                                            RuntimeException, std::exception            )
 {
     SolarMutexGuard g;
 
@@ -251,14 +252,14 @@ Any SAL_CALL OFrames::getByIndex( sal_Int32 nIndex )
 }
 
 //  XElementAccess
-Type SAL_CALL OFrames::getElementType()
+Type SAL_CALL OFrames::getElementType() throw( RuntimeException, std::exception )
 {
     // This "container" support XFrame-interfaces only!
     return cppu::UnoType<XFrame>::get();
 }
 
 //  XElementAccess
-sal_Bool SAL_CALL OFrames::hasElements()
+sal_Bool SAL_CALL OFrames::hasElements() throw( RuntimeException, std::exception )
 {
     SolarMutexGuard g;
 
@@ -280,7 +281,7 @@ sal_Bool SAL_CALL OFrames::hasElements()
     return bHasElements;
 }
 
-//  protected method
+//  proteced method
 
 void OFrames::impl_resetObject()
 {
@@ -318,7 +319,7 @@ void OFrames::impl_appendSequence(          Sequence< css::uno::Reference< XFram
     }
 
     // Don't manipulate nResultPosition between these two loops!
-    // It's the current position in the result list.
+    // Its the current position in the result list.
 
     // Copy all items from second sequence.
     for ( sal_Int32 nDestinationPosition=0; nDestinationPosition<nDestinationCount; ++nDestinationPosition )
@@ -344,8 +345,31 @@ void OFrames::impl_appendSequence(          Sequence< css::uno::Reference< XFram
         But ... look for right testing! See using of this methods!
 -----------------------------------------------------------------------------------------------------------------*/
 
+// An instance of this class can only work with valid initialization.
+// We share the mutex with our owner class, need a valid factory to instanciate new services and
+// use the access to our owner for some operations.
+bool OFrames::impldbg_checkParameter_OFramesCtor(   const   css::uno::Reference< XFrame >&              xOwner          ,
+                                                            FrameContainer*                             pFrameContainer )
+{
+    return xOwner.is() && pFrameContainer != nullptr;
+}
+
+// Its only allowed to add valid references to container.
+// AND - alle frames must support XFrames-interface!
+bool OFrames::impldbg_checkParameter_append( const css::uno::Reference< XFrame >& xFrame )
+{
+    return xFrame.is();
+}
+
+// Its only allowed to add valid references to container...
+// ... => You can only delete valid references!
+bool OFrames::impldbg_checkParameter_remove( const css::uno::Reference< XFrame >& xFrame )
+{
+    return xFrame.is();
+}
+
 // A search for frames must initiate with right flags.
-// Some one are superfluous and not supported yet. But here we control only the range of incoming parameter!
+// Some one are superflous and not supported yet. But here we control only the range of incoming parameter!
 bool OFrames::impldbg_checkParameter_queryFrames( sal_Int32 nSearchFlags )
 {
     // Set default return value.

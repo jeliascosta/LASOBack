@@ -26,7 +26,7 @@
 #include <rtl/uri.hxx>
 
 #include <libxml/uri.h>
-#include "xmlsec-wrapper.h"
+#include "xmlsecurity/xmlsec-wrapper.h"
 
 #define XMLSTREAMIO_INITIALIZED 0x01
 #define XMLSTREAMIO_REGISTERED  0x02
@@ -37,7 +37,7 @@
  */
 static char enableXmlStreamIO = 0x00 ;
 
-static css::uno::Reference< css::xml::crypto::XUriBinding > m_xUriBinding ;
+css::uno::Reference< css::xml::crypto::XUriBinding > m_xUriBinding ;
 
 extern "C"
 int xmlStreamMatch( const char* uri )

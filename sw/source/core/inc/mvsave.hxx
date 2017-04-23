@@ -49,7 +49,7 @@ namespace sw { namespace mark
             SaveBookmark(
                 const ::sw::mark::IMark& rBkmk,
                 const SwNodeIndex& rMvPos,
-                const SwIndex* pIdx);
+                const SwIndex* pIdx =nullptr);
             void SetInDoc(SwDoc* pDoc,
                 const SwNodeIndex&,
                 const SwIndex* pIdx =nullptr);
@@ -58,6 +58,8 @@ namespace sw { namespace mark
             OUString m_aName;
             OUString m_aShortName;
             vcl::KeyCode m_aCode;
+            bool m_bSavePos;
+            bool m_bSaveOtherPos;
             IDocumentMarkAccess::MarkType m_eOrigBkmType;
             sal_uLong m_nNode1;
             sal_uLong m_nNode2;
@@ -82,7 +84,7 @@ namespace sw { namespace mark
 
 void DelBookmarks(const SwNodeIndex& rStt,
     const SwNodeIndex& rEnd,
-    std::vector< ::sw::mark::SaveBookmark> * SaveBkmk =nullptr,
+    ::std::vector< ::sw::mark::SaveBookmark> * SaveBkmk =nullptr,
     const SwIndex* pSttIdx =nullptr,
     const SwIndex* pEndIdx =nullptr);
 
@@ -99,7 +101,7 @@ struct SaveFly
     { }
 };
 
-typedef std::deque< SaveFly > SaveFlyArr;
+typedef ::std::deque< SaveFly > SaveFlyArr;
 
 void RestFlyInRange( SaveFlyArr& rArr, const SwNodeIndex& rSttIdx,
                       const SwNodeIndex* pInsPos );

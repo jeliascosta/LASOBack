@@ -45,8 +45,8 @@ SfxSizeItem::SfxSizeItem( const SfxSizeItem& rItem ) :
 bool SfxSizeItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    MapUnit                 /*eCoreMetric*/,
-    MapUnit                 /*ePresentationMetric*/,
+    SfxMapUnit              /*eCoreMetric*/,
+    SfxMapUnit              /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -58,7 +58,7 @@ bool SfxSizeItem::GetPresentation
 
 bool SfxSizeItem::operator==( const SfxPoolItem& rItem ) const
 {
-    assert(SfxPoolItem::operator==(rItem));
+    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
     return static_cast<const SfxSizeItem&>(rItem).aVal == aVal;
 }
 

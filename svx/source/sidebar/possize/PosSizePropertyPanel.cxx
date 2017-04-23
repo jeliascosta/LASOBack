@@ -16,7 +16,7 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include "PosSizePropertyPanel.hxx"
 #include <svx/sidebar/SidebarDialControl.hxx>
@@ -41,6 +41,9 @@
 using namespace css;
 using namespace css::uno;
 
+const char UNO_FLIPHORIZONTAL[] = ".uno:FlipHorizontal";
+const char UNO_FLIPVERTICAL[]   = ".uno:FlipVertical";
+
 const char USERITEM_NAME[]      = "FitItem";
 
 namespace svx { namespace sidebar {
@@ -56,6 +59,7 @@ PosSizePropertyPanel::PosSizePropertyPanel(
     mpView(nullptr),
     mlOldWidth(1),
     mlOldHeight(1),
+    meRP(RP_LT),
     maAnchorPos(),
     mlRotX(0),
     mlRotY(0),
@@ -76,6 +80,7 @@ PosSizePropertyPanel::PosSizePropertyPanel(
     m_aMetricCtl(SID_ATTR_METRIC, *pBindings, *this),
     maContext(),
     mpBindings(pBindings),
+    mbMtrPosXMirror(false),
     mbSizeProtected(false),
     mbPositionProtected(false),
     mbAutoWidth(false),
@@ -157,7 +162,7 @@ namespace
             const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
             const SdrObjKind eKind((SdrObjKind)pObj->GetObjIdentifier());
 
-            if((pObj->GetObjInventor() == SdrInventor::Default) && (OBJ_TEXT == eKind || OBJ_TITLETEXT == eKind || OBJ_OUTLINETEXT == eKind))
+            if((pObj->GetObjInventor() == SdrInventor) && (OBJ_TEXT == eKind || OBJ_TITLETEXT == eKind || OBJ_OUTLINETEXT == eKind))
             {
                 const SdrTextObj* pSdrTextObj = dynamic_cast< const SdrTextObj* >(pObj);
 
@@ -248,7 +253,7 @@ void PosSizePropertyPanel::DataChanged(
 }
 
 void PosSizePropertyPanel::HandleContextChange(
-    const vcl::EnumContext& rContext)
+    const ::sfx2::sidebar::EnumContext& rContext)
 {
     if (maContext == rContext)
     {
@@ -264,37 +269,37 @@ void PosSizePropertyPanel::HandleContextChange(
 
     switch (maContext.GetCombinedContext_DI())
     {
-        case CombinedEnumContext(Application::WriterVariants, Context::Draw):
+        case CombinedEnumContext(Application_WriterVariants, Context_Draw):
             bShowAngle = true;
             bShowFlip = true;
             break;
 
-        case CombinedEnumContext(Application::WriterVariants, Context::Graphic):
+        case CombinedEnumContext(Application_WriterVariants, Context_Graphic):
             bShowFlip = true;
             break;
 
-        case CombinedEnumContext(Application::Calc, Context::Draw):
-        case CombinedEnumContext(Application::Calc, Context::DrawLine):
-        case CombinedEnumContext(Application::Calc, Context::Graphic):
-        case CombinedEnumContext(Application::DrawImpress, Context::Draw):
-        case CombinedEnumContext(Application::DrawImpress, Context::DrawLine):
-        case CombinedEnumContext(Application::DrawImpress, Context::TextObject):
-        case CombinedEnumContext(Application::DrawImpress, Context::Graphic):
+        case CombinedEnumContext(Application_Calc, Context_Draw):
+        case CombinedEnumContext(Application_Calc, Context_DrawLine):
+        case CombinedEnumContext(Application_Calc, Context_Graphic):
+        case CombinedEnumContext(Application_DrawImpress, Context_Draw):
+        case CombinedEnumContext(Application_DrawImpress, Context_DrawLine):
+        case CombinedEnumContext(Application_DrawImpress, Context_TextObject):
+        case CombinedEnumContext(Application_DrawImpress, Context_Graphic):
             bShowPosition = true;
             bShowAngle = true;
             bShowFlip = true;
             break;
 
-        case CombinedEnumContext(Application::Calc, Context::Chart):
-        case CombinedEnumContext(Application::Calc, Context::Form):
-        case CombinedEnumContext(Application::Calc, Context::Media):
-        case CombinedEnumContext(Application::Calc, Context::OLE):
-        case CombinedEnumContext(Application::Calc, Context::MultiObject):
-        case CombinedEnumContext(Application::DrawImpress, Context::Media):
-        case CombinedEnumContext(Application::DrawImpress, Context::Form):
-        case CombinedEnumContext(Application::DrawImpress, Context::OLE):
-        case CombinedEnumContext(Application::DrawImpress, Context::ThreeDObject):
-        case CombinedEnumContext(Application::DrawImpress, Context::MultiObject):
+        case CombinedEnumContext(Application_Calc, Context_Chart):
+        case CombinedEnumContext(Application_Calc, Context_Form):
+        case CombinedEnumContext(Application_Calc, Context_Media):
+        case CombinedEnumContext(Application_Calc, Context_OLE):
+        case CombinedEnumContext(Application_Calc, Context_MultiObject):
+        case CombinedEnumContext(Application_DrawImpress, Context_Media):
+        case CombinedEnumContext(Application_DrawImpress, Context_Form):
+        case CombinedEnumContext(Application_DrawImpress, Context_OLE):
+        case CombinedEnumContext(Application_DrawImpress, Context_3DObject):
+        case CombinedEnumContext(Application_DrawImpress, Context_MultiObject):
             bShowPosition = true;
             break;
     }
@@ -320,7 +325,7 @@ void PosSizePropertyPanel::HandleContextChange(
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, ChangeWidthHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, ChangeWidthHdl, Edit&, void )
 {
     if( mpCbxScale->IsChecked() &&
         mpCbxScale->IsEnabled() )
@@ -342,7 +347,7 @@ IMPL_LINK_NOARG( PosSizePropertyPanel, ChangeWidthHdl, Edit&, void )
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, ChangeHeightHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, ChangeHeightHdl, Edit&, void )
 {
     if( mpCbxScale->IsChecked() &&
         mpCbxScale->IsEnabled() )
@@ -364,43 +369,19 @@ IMPL_LINK_NOARG( PosSizePropertyPanel, ChangeHeightHdl, Edit&, void )
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, ChangePosXHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, ChangePosXHdl, Edit&, void )
 {
-    if ( mpMtrPosX->IsValueModified())
-    {
-        long lX = GetCoreValue( *mpMtrPosX, mePoolUnit );
-
-        Fraction aUIScale = mpView->GetModel()->GetUIScale();
-        lX += maAnchorPos.X();
-        lX = Fraction( lX ) * aUIScale;
-
-        SfxInt32Item aPosXItem( SID_ATTR_TRANSFORM_POS_X,(sal_uInt32) lX);
-
-        GetBindings()->GetDispatcher()->ExecuteList(
-            SID_ATTR_TRANSFORM, SfxCallMode::RECORD, { &aPosXItem });
-    }
+    executePosX();
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, ChangePosYHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, ChangePosYHdl, Edit&, void )
 {
-    if ( mpMtrPosY->IsValueModified() )
-    {
-        long lY = GetCoreValue( *mpMtrPosY, mePoolUnit );
-
-        Fraction aUIScale = mpView->GetModel()->GetUIScale();
-        lY += maAnchorPos.Y();
-        lY = Fraction( lY ) * aUIScale;
-
-        SfxInt32Item aPosYItem( SID_ATTR_TRANSFORM_POS_Y,(sal_uInt32) lY);
-
-        GetBindings()->GetDispatcher()->ExecuteList(
-            SID_ATTR_TRANSFORM, SfxCallMode::RECORD, { &aPosYItem });
-    }
+    executePosY();
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, ClickAutoHdl, Button*, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, ClickAutoHdl, Button*, void )
 {
     if ( mpCbxScale->IsChecked() )
     {
@@ -409,12 +390,12 @@ IMPL_LINK_NOARG( PosSizePropertyPanel, ClickAutoHdl, Button*, void )
     }
 
     // mpCbxScale must synchronized with that on Position and Size tabpage on Shape Properties dialog
-    SvtViewOptions aPageOpt(EViewType::TabPage, "cui/ui/possizetabpage/PositionAndSize");
+    SvtViewOptions aPageOpt(E_TABPAGE, "cui/ui/possizetabpage/PositionAndSize");
     aPageOpt.SetUserItem( USERITEM_NAME, css::uno::makeAny( ::rtl::OUString::number( int(mpCbxScale->IsChecked()) ) ) );
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, AngleModifiedHdl, Edit&, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, AngleModifiedHdl, Edit&, void )
 {
     OUString sTmp = mpMtrAngle->GetText();
     if (sTmp.isEmpty())
@@ -459,7 +440,7 @@ IMPL_LINK_NOARG( PosSizePropertyPanel, AngleModifiedHdl, Edit&, void )
 }
 
 
-IMPL_LINK_NOARG( PosSizePropertyPanel, RotationHdl, DialControl*, void )
+IMPL_LINK_NOARG_TYPED( PosSizePropertyPanel, RotationHdl, DialControl*, void )
 {
     sal_Int32 nTmp = mpDial->GetRotation();
 
@@ -474,17 +455,17 @@ IMPL_LINK_NOARG( PosSizePropertyPanel, RotationHdl, DialControl*, void )
 }
 
 
-IMPL_LINK( PosSizePropertyPanel, FlipHdl, ToolBox*, pBox, void )
+IMPL_LINK_TYPED( PosSizePropertyPanel, FlipHdl, ToolBox*, pBox, void )
 {
     const OUString aCommand(pBox->GetItemCommand(pBox->GetCurItemId()));
 
-    if(aCommand == ".uno:FlipHorizontal")
+    if(aCommand == UNO_FLIPHORIZONTAL)
     {
         SfxVoidItem aHoriItem(SID_FLIP_HORIZONTAL);
         GetBindings()->GetDispatcher()->ExecuteList(SID_FLIP_HORIZONTAL,
                 SfxCallMode::RECORD, { &aHoriItem });
     }
-    else if(aCommand == ".uno:FlipVertical")
+    else if(aCommand == UNO_FLIPVERTICAL)
     {
         SfxVoidItem aVertItem(SID_FLIP_VERTICAL);
         GetBindings()->GetDispatcher()->ExecuteList(SID_FLIP_VERTICAL,
@@ -755,8 +736,8 @@ void PosSizePropertyPanel::NotifyItemUpdate(
             const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
             const SdrObjKind eKind((SdrObjKind)pObj->GetObjIdentifier());
 
-            if(((nCombinedContext == CombinedEnumContext(Application::DrawImpress, Context::Draw)
-               || nCombinedContext == CombinedEnumContext(Application::DrawImpress, Context::TextObject)
+            if(((nCombinedContext == CombinedEnumContext(Application_DrawImpress, Context_Draw)
+               || nCombinedContext == CombinedEnumContext(Application_DrawImpress, Context_TextObject)
                  ) && OBJ_EDGE == eKind)
                || OBJ_CAPTION == eKind)
             {
@@ -779,8 +760,8 @@ void PosSizePropertyPanel::NotifyItemUpdate(
                 const SdrObject* pObj = rMarkList.GetMark(nMarkObj)->GetMarkedSdrObj();
                 const SdrObjKind eKind((SdrObjKind)pObj->GetObjIdentifier());
 
-                if(((nCombinedContext == CombinedEnumContext(Application::DrawImpress, Context::Draw)
-                  || nCombinedContext == CombinedEnumContext(Application::DrawImpress, Context::TextObject)
+                if(((nCombinedContext == CombinedEnumContext(Application_DrawImpress, Context_Draw)
+                  || nCombinedContext == CombinedEnumContext(Application_DrawImpress, Context_TextObject)
                      ) && OBJ_EDGE == eKind)
                   || OBJ_CAPTION == eKind)
                 {
@@ -802,7 +783,7 @@ void PosSizePropertyPanel::NotifyItemUpdate(
         }
     }
 
-    if(nCombinedContext == CombinedEnumContext(Application::DrawImpress, Context::TextObject))
+    if(nCombinedContext == CombinedEnumContext(Application_DrawImpress, Context_TextObject))
     {
         mpFlipTbx->Disable();
         mpFtFlip->Disable();
@@ -811,7 +792,7 @@ void PosSizePropertyPanel::NotifyItemUpdate(
     DisableControls();
 
     // mpCbxScale must synchronized with that on Position and Size tabpage on Shape Properties dialog
-    SvtViewOptions aPageOpt(EViewType::TabPage, "cui/ui/possizetabpage/PositionAndSize");
+    SvtViewOptions aPageOpt(E_TABPAGE, "cui/ui/possizetabpage/PositionAndSize");
     OUString  sUserData;
     css::uno::Any  aUserItem = aPageOpt.GetUserItem( USERITEM_NAME );
     ::rtl::OUString aTemp;
@@ -831,24 +812,24 @@ void PosSizePropertyPanel::executeSize()
         double nWidth = (double)mpMtrWidth->GetValue( meDlgUnit );
         nWidth = MetricField::ConvertDoubleValue( nWidth, mpMtrWidth->GetBaseValue(), mpMtrWidth->GetDecimalDigits(), meDlgUnit, FUNIT_100TH_MM );
         long lWidth = (long)(nWidth * (double)aUIScale);
-        lWidth = OutputDevice::LogicToLogic( lWidth, MapUnit::Map100thMM, mePoolUnit );
+        lWidth = OutputDevice::LogicToLogic( lWidth, MAP_100TH_MM, (MapUnit)mePoolUnit );
         lWidth = (long)mpMtrWidth->Denormalize( lWidth );
 
         // get Height
         double nHeight = (double)mpMtrHeight->GetValue( meDlgUnit );
         nHeight = MetricField::ConvertDoubleValue( nHeight, mpMtrHeight->GetBaseValue(), mpMtrHeight->GetDecimalDigits(), meDlgUnit, FUNIT_100TH_MM );
         long lHeight = (long)(nHeight * (double)aUIScale);
-        lHeight = OutputDevice::LogicToLogic( lHeight, MapUnit::Map100thMM, mePoolUnit );
+        lHeight = OutputDevice::LogicToLogic( lHeight, MAP_100TH_MM, (MapUnit)mePoolUnit );
         lHeight = (long)mpMtrWidth->Denormalize( lHeight );
 
         // put Width & Height to itemset
         SfxUInt32Item aWidthItem( SID_ATTR_TRANSFORM_WIDTH, (sal_uInt32) lWidth);
         SfxUInt32Item aHeightItem( SID_ATTR_TRANSFORM_HEIGHT, (sal_uInt32) lHeight);
-        SfxAllEnumItem aPointItem (SID_ATTR_TRANSFORM_SIZE_POINT, (sal_uInt16)RectPoint::LT);
+        SfxAllEnumItem aPointItem (SID_ATTR_TRANSFORM_SIZE_POINT, (sal_uInt16)meRP);
         const sal_Int32 nCombinedContext(maContext.GetCombinedContext_DI());
 
-        if( nCombinedContext == CombinedEnumContext(Application::WriterVariants, Context::Graphic)
-            || nCombinedContext == CombinedEnumContext(Application::WriterVariants, Context::OLE)
+        if( nCombinedContext == CombinedEnumContext(Application_WriterVariants, Context_Graphic)
+            || nCombinedContext == CombinedEnumContext(Application_WriterVariants, Context_OLE)
             )
         {
             GetBindings()->GetDispatcher()->ExecuteList(SID_ATTR_TRANSFORM,
@@ -866,6 +847,52 @@ void PosSizePropertyPanel::executeSize()
                 GetBindings()->GetDispatcher()->ExecuteList(SID_ATTR_TRANSFORM,
                     SfxCallMode::RECORD, { &aHeightItem, &aPointItem });
         }
+    }
+}
+
+
+void PosSizePropertyPanel::executePosX()
+{
+    if ( mpMtrPosX->IsValueModified())
+    {
+        long lX = GetCoreValue( *mpMtrPosX, mePoolUnit );
+        if( mbMtrPosXMirror )
+            lX = -lX;
+        long lY = GetCoreValue( *mpMtrPosY, mePoolUnit );
+
+        Fraction aUIScale = mpView->GetModel()->GetUIScale();
+        lX += maAnchorPos.X();
+        lX = Fraction( lX ) * aUIScale;
+        lY += maAnchorPos.Y();
+        lY = Fraction( lY ) * aUIScale;
+
+        SfxInt32Item aPosXItem( SID_ATTR_TRANSFORM_POS_X,(sal_uInt32) lX);
+        SfxInt32Item aPosYItem( SID_ATTR_TRANSFORM_POS_Y,(sal_uInt32) lY);
+
+        GetBindings()->GetDispatcher()->ExecuteList(
+            SID_ATTR_TRANSFORM, SfxCallMode::RECORD, { &aPosXItem });
+    }
+}
+
+
+void PosSizePropertyPanel::executePosY()
+{
+    if ( mpMtrPosY->IsValueModified() )
+    {
+        long lX = GetCoreValue( *mpMtrPosX, mePoolUnit );
+        long lY = GetCoreValue( *mpMtrPosY, mePoolUnit );
+
+        Fraction aUIScale = mpView->GetModel()->GetUIScale();
+        lX += maAnchorPos.X();
+        lX = Fraction( lX ) * aUIScale;
+        lY += maAnchorPos.Y();
+        lY = Fraction( lY ) * aUIScale;
+
+        SfxInt32Item aPosXItem( SID_ATTR_TRANSFORM_POS_X,(sal_uInt32) lX);
+        SfxInt32Item aPosYItem( SID_ATTR_TRANSFORM_POS_Y,(sal_uInt32) lY);
+
+        GetBindings()->GetDispatcher()->ExecuteList(
+            SID_ATTR_TRANSFORM, SfxCallMode::RECORD, { &aPosYItem });
     }
 }
 
@@ -1031,11 +1058,11 @@ void PosSizePropertyPanel::SetPosSizeMinMax()
     SdrPageView* pPV = mpView->GetSdrPageView();
     if (!pPV)
         return;
-    tools::Rectangle aTmpRect(mpView->GetAllMarkedRect());
+    Rectangle aTmpRect(mpView->GetAllMarkedRect());
     pPV->LogicToPagePos(aTmpRect);
     maRect = basegfx::B2DRange(aTmpRect.Left(), aTmpRect.Top(), aTmpRect.Right(), aTmpRect.Bottom());
 
-    tools::Rectangle aTmpRect2(mpView->GetWorkArea());
+    Rectangle aTmpRect2(mpView->GetWorkArea());
     pPV->LogicToPagePos(aTmpRect2);
     maWorkArea = basegfx::B2DRange(aTmpRect2.Left(), aTmpRect2.Top(), aTmpRect2.Right(), aTmpRect2.Bottom());
 
@@ -1044,8 +1071,8 @@ void PosSizePropertyPanel::SetPosSizeMinMax()
     TransfrmHelper::ScaleRect( maRect, aUIScale );
 
     const sal_uInt16 nDigits(mpMtrPosX->GetDecimalDigits());
-    TransfrmHelper::ConvertRect( maWorkArea, nDigits, mePoolUnit, meDlgUnit );
-    TransfrmHelper::ConvertRect( maRect, nDigits, mePoolUnit, meDlgUnit );
+    TransfrmHelper::ConvertRect( maWorkArea, nDigits, (MapUnit) mePoolUnit, meDlgUnit );
+    TransfrmHelper::ConvertRect( maRect, nDigits, (MapUnit) mePoolUnit, meDlgUnit );
 
     double fLeft(maWorkArea.getMinX());
     double fTop(maWorkArea.getMinY());
@@ -1057,7 +1084,7 @@ void PosSizePropertyPanel::SetPosSizeMinMax()
     fRight  -= maRect.getWidth();
     fBottom -= maRect.getHeight();
 
-    const double fMaxLong((double)(MetricField::ConvertValue( LONG_MAX, 0, MapUnit::Map100thMM, meDlgUnit ) - 1L));
+    const double fMaxLong((double)(MetricField::ConvertValue( LONG_MAX, 0, MAP_100TH_MM, meDlgUnit ) - 1L));
     fLeft = basegfx::clamp(fLeft, -fMaxLong, fMaxLong);
     fRight = basegfx::clamp(fRight, -fMaxLong, fMaxLong);
     fTop = basegfx::clamp(fTop, - fMaxLong, fMaxLong);

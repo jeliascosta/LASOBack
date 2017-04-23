@@ -27,40 +27,12 @@
 #include <svl/currencytable.hxx>
 
 #include <svx/numfmtsh.hxx>
-#include <svx/flagsdef.hxx>
 #include <svx/tbcontrl.hxx>
 
 #include <limits>
 
-namespace {
+const double SvxNumberFormatShell::DEFAULT_NUMVALUE = 1234.56789;
 
-double GetDefaultValNum( const short nType )
-{
-    switch( nType )
-    {
-        case css::util::NumberFormat::NUMBER:
-            return fSvxNumValConst[SvxNumValCategory::Standard];
-        case css::util::NumberFormat::CURRENCY:
-            return fSvxNumValConst[SvxNumValCategory::Currency];
-        case css::util::NumberFormat::PERCENT:
-            return fSvxNumValConst[SvxNumValCategory::Percent];
-        case css::util::NumberFormat::DATE:
-        case css::util::NumberFormat::DATETIME:
-            return fSvxNumValConst[SvxNumValCategory::Date];
-        case css::util::NumberFormat::TIME:
-            return fSvxNumValConst[SvxNumValCategory::Time];
-        case css::util::NumberFormat::SCIENTIFIC:
-            return fSvxNumValConst[SvxNumValCategory::Scientific];
-        case css::util::NumberFormat::FRACTION:
-            return fSvxNumValConst[SvxNumValCategory::Fraction];
-        case css::util::NumberFormat::LOGICAL:
-            return fSvxNumValConst[SvxNumValCategory::Boolean];
-        default: break;
-    }
-    return fSvxNumValConst[SvxNumValCategory::NoValue];
-}
-
-}
 
 SvxNumberFormatShell* SvxNumberFormatShell::Create( SvNumberFormatter* pNumFormatter,
                                               sal_uInt32           nFormatKey,
@@ -97,26 +69,21 @@ SvxNumberFormatShell::SvxNumberFormatShell( SvNumberFormatter*  pNumFormatter,
     , bBankingSymbol  (false)
     , nCurCurrencyEntryPos((sal_uInt16) SELPOS_NONE)
     , bUseStarFormat  (false)
-    , bIsDefaultValNum (true)
 {
-    nValNum = 0;
+    nValNum = DEFAULT_NUMVALUE;
 
     switch ( eValType )
     {
-        case SvxNumberValueType::String:
+        case SVX_VALUE_TYPE_STRING:
             aValStr = rNumStr;
             break;
-        case SvxNumberValueType::Number:
-            if ( pFormatter )
-            {
-                nValNum = GetDefaultValNum( pFormatter->GetType( nCurFormatKey ) );
-            }
-            SAL_FALLTHROUGH;
-        case SvxNumberValueType::Undefined:
+        case SVX_VALUE_TYPE_NUMBER:
+        case SVX_VALUE_TYPE_UNDEFINED:
         default:
             aValStr.clear();
     }
 }
+
 
 SvxNumberFormatShell::SvxNumberFormatShell( SvNumberFormatter*  pNumFormatter,
                                             sal_uInt32          nFormatKey,
@@ -134,7 +101,6 @@ SvxNumberFormatShell::SvxNumberFormatShell( SvNumberFormatter*  pNumFormatter,
     , bBankingSymbol  (false)
     , nCurCurrencyEntryPos((sal_uInt16) SELPOS_NONE)
     , bUseStarFormat  (false)
-    , bIsDefaultValNum (false)
 {
     //  #50441# When used in Writer, the SvxNumberInfoItem contains the
     //  original string in addition to the value
@@ -144,14 +110,13 @@ SvxNumberFormatShell::SvxNumberFormatShell( SvNumberFormatter*  pNumFormatter,
 
     switch ( eValType )
     {
-        case SvxNumberValueType::Number:
+        case SVX_VALUE_TYPE_NUMBER:
             nValNum = nNumVal;
             break;
-        case SvxNumberValueType::String:
-        case SvxNumberValueType::Undefined:
+        case SVX_VALUE_TYPE_STRING:
+        case SVX_VALUE_TYPE_UNDEFINED:
         default:
-            nValNum = 0;
-            bIsDefaultValNum = true;
+            nValNum = DEFAULT_NUMVALUE;
     }
 }
 
@@ -295,7 +260,7 @@ bool SvxNumberFormatShell::AddFormat( OUString& rFormat, sal_Int32& rErrPos,
     if ( bInserted )
     {
         nCurFormatKey = nAddKey;
-        DBG_ASSERT( GetAdded_Impl( nCurFormatKey ) == aAddList.end(), "duplicate format!" );
+        DBG_ASSERT( !IsAdded_Impl( nCurFormatKey ), "duplicate format!" );
         aAddList.push_back( nCurFormatKey );
 
         // get current table
@@ -454,7 +419,7 @@ void SvxNumberFormatShell::MakePreviewString( const OUString& rFormatStr,
         //  format exists
 
         //  #50441# if a string was set in addition to the value, use it for text formats
-        bool bUseText = ( eValType == SvxNumberValueType::String ||
+        bool bUseText = ( eValType == SVX_VALUE_TYPE_STRING ||
                             ( !aValStr.isEmpty() && ( pFormatter->GetType(nExistingFormat) & css::util::NumberFormat::TEXT ) ) );
         if ( bUseText )
         {
@@ -463,8 +428,6 @@ void SvxNumberFormatShell::MakePreviewString( const OUString& rFormatStr,
         }
         else
         {
-            if ( bIsDefaultValNum )
-                nValNum = GetDefaultValNum( pFormatter->GetType(nExistingFormat) );
             pFormatter->GetOutputString( nValNum, nExistingFormat,
                                          rPreviewStr, &rpFontColor, bUseStarFormat );
         }
@@ -539,7 +502,7 @@ void SvxNumberFormatShell::GetInitSettings( sal_uInt16& nCatLbPos,
     short                   nSelPos     = SELPOS_NONE;
 
     // Sonderbehandlung fuer undefiniertes Zahlenformat:
-    if ( (eValType == SvxNumberValueType::Undefined) && (nCurFormatKey == 0) )
+    if ( (eValType == SVX_VALUE_TYPE_UNDEFINED) && (nCurFormatKey == 0) )
         PosToCategory_Impl( CAT_ALL, nCurCategory );        // Kategorie = Alle
     else
         nCurCategory = css::util::NumberFormat::UNDEFINED;      // Kategorie = Undefiniert
@@ -606,7 +569,7 @@ void SvxNumberFormatShell::FillEListWithStd_Impl( std::vector<OUString>& rList,
      * Ist die Liste leer oder gibt es kein aktuelles Format,
      * so wird SELPOS_NONE geliefert.
      */
-    DBG_ASSERT( pCurFmtTable != nullptr, "unknown NumberFormat" );
+    DBG_ASSERT( pCurFmtTable != nullptr, "Unbekanntes Zahlenformat!" );
 
     aCurrencyFormatList.clear();
 
@@ -642,7 +605,7 @@ void SvxNumberFormatShell::FillEListWithStd_Impl( std::vector<OUString>& rList,
             case CAT_FRACTION       :eOffsetStart=NF_FRACTION_START;
                                      eOffsetEnd=NF_FRACTION_END;
                                      nSelPos = FillEListWithFormats_Impl( rList, nSelPos, eOffsetStart, eOffsetEnd);
-                                     nSelPos = FillEListWithFormats_Impl( rList, nSelPos, NF_FRACTION_3D, NF_FRACTION_100);
+                                     nSelPos = FillEListWithFormats_Impl( rList, nSelPos, NF_FRACTION_3, NF_FRACTION_4);
                                      return;
             case CAT_BOOLEAN        :eOffsetStart=NF_BOOLEAN;
                                      eOffsetEnd=NF_BOOLEAN;
@@ -692,7 +655,7 @@ short SvxNumberFormatShell::FillEListWithFormats_Impl( std::vector<OUString>& rL
 
         if(pNumEntry==nullptr) continue;
 
-        nMyCat=pNumEntry->GetMaskedType();
+        nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
         aStrComment=pNumEntry->GetComment();
         CategoryToPos_Impl(nMyCat,nMyType);
         aNewFormNInfo=  pNumEntry->GetFormatstring();
@@ -727,7 +690,7 @@ short SvxNumberFormatShell::FillEListWithDateTime_Impl( std::vector<OUString>& r
         const SvNumberformat* pNumEntry   = pFormatter->GetEntry(nNFEntry);
         if(pNumEntry!=nullptr)
         {
-            nMyCat=pNumEntry->GetMaskedType();
+            nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
             aStrComment=pNumEntry->GetComment();
             CategoryToPos_Impl(nMyCat,nMyType);
             aNewFormNInfo=  pNumEntry->GetFormatstring();
@@ -753,7 +716,7 @@ short SvxNumberFormatShell::FillEListWithCurrency_Impl( std::vector<OUString>& r
      * Ist die Liste leer oder gibt es kein aktuelles Format,
      * so wird SELPOS_NONE geliefert.
      */
-    DBG_ASSERT( pCurFmtTable != nullptr, "unknown NumberFormat" );
+    DBG_ASSERT( pCurFmtTable != nullptr, "Unbekanntes Zahlenformat!" );
 
     const NfCurrencyEntry* pTmpCurrencyEntry;
     bool             bTmpBanking;
@@ -789,7 +752,7 @@ short SvxNumberFormatShell::FillEListWithSysCurrencys( std::vector<OUString>& rL
      */
     sal_uInt16  nMyType;
 
-    DBG_ASSERT( pCurFmtTable != nullptr, "unknown NumberFormat" );
+    DBG_ASSERT( pCurFmtTable != nullptr, "Unbekanntes Zahlenformat!" );
 
     sal_uInt32          nNFEntry;
     OUString            aStrComment;
@@ -811,7 +774,7 @@ short SvxNumberFormatShell::FillEListWithSysCurrencys( std::vector<OUString>& rL
 
         if(pNumEntry==nullptr) continue;
 
-        nMyCat=pNumEntry->GetMaskedType();
+        nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
         aStrComment=pNumEntry->GetComment();
         CategoryToPos_Impl(nMyCat,nMyType);
         aNewFormNInfo=  pNumEntry->GetFormatstring();
@@ -850,7 +813,7 @@ short SvxNumberFormatShell::FillEListWithSysCurrencys( std::vector<OUString>& rL
 
                 if(!bUserNewCurrency &&(pNumEntry->GetType() & css::util::NumberFormat::DEFINED))
                 {
-                    nMyCat=pNumEntry->GetMaskedType();
+                    nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
                     aStrComment=pNumEntry->GetComment();
                     CategoryToPos_Impl(nMyCat,nMyType);
                     aNewFormNInfo=  pNumEntry->GetFormatstring();
@@ -875,7 +838,7 @@ short SvxNumberFormatShell::FillEListWithUserCurrencys( std::vector<OUString>& r
      */
     sal_uInt16 nMyType;
 
-    DBG_ASSERT( pCurFmtTable != nullptr, "unknown NumberFormat" );
+    DBG_ASSERT( pCurFmtTable != nullptr, "Unbekanntes Zahlenformat!" );
 
     OUString        aStrComment;
     OUString        aNewFormNInfo;
@@ -935,7 +898,7 @@ short SvxNumberFormatShell::FillEListWithUserCurrencys( std::vector<OUString>& r
             if( pNumEntry->GetType() & css::util::NumberFormat::DEFINED ||
                 pNumEntry->IsAdditionalBuiltin() )
             {
-                nMyCat=pNumEntry->GetMaskedType();
+                nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
                 aStrComment = pNumEntry->GetComment();
                 CategoryToPos_Impl(nMyCat,nMyType);
                 aNewFormNInfo =  pNumEntry->GetFormatstring();
@@ -1067,7 +1030,7 @@ short SvxNumberFormatShell::FillEListWithUsD_Impl( std::vector<OUString>& rList,
      */
     sal_uInt16 nMyType;
 
-    DBG_ASSERT( pCurFmtTable != nullptr, "unknown NumberFormat" );
+    DBG_ASSERT( pCurFmtTable != nullptr, "Unbekanntes Zahlenformat!" );
 
     OUString        aStrComment;
     OUString        aNewFormNInfo;
@@ -1086,7 +1049,7 @@ short SvxNumberFormatShell::FillEListWithUsD_Impl( std::vector<OUString>& rList,
             if( (pNumEntry->GetType() & css::util::NumberFormat::DEFINED) ||
                     (bAdditional && pNumEntry->IsAdditionalBuiltin()) )
             {
-                nMyCat=pNumEntry->GetMaskedType();
+                nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
                 aStrComment=pNumEntry->GetComment();
                 CategoryToPos_Impl(nMyCat,nMyType);
                 aNewFormNInfo=  pNumEntry->GetFormatstring();
@@ -1116,7 +1079,7 @@ void SvxNumberFormatShell::GetPreviewString_Impl( OUString& rString, Color*& rpC
     rpColor = nullptr;
 
     //  #50441# if a string was set in addition to the value, use it for text formats
-    bool bUseText = ( eValType == SvxNumberValueType::String ||
+    bool bUseText = ( eValType == SVX_VALUE_TYPE_STRING ||
                         ( !aValStr.isEmpty() && ( pFormatter->GetType(nCurFormatKey) & css::util::NumberFormat::TEXT ) ) );
 
     if ( bUseText )
@@ -1148,8 +1111,13 @@ bool SvxNumberFormatShell::IsRemoved_Impl( size_t nKey )
 }
 
 
+bool SvxNumberFormatShell::IsAdded_Impl( size_t nKey )
+{
+    return GetAdded_Impl( nKey ) != aAddList.end();
+}
+
 // Konvertierungs-Routinen:
-void SvxNumberFormatShell::PosToCategory_Impl(sal_uInt16 nPos, short& rCategory)
+void SvxNumberFormatShell::PosToCategory_Impl(sal_uInt16 nPos, short& rCategory) const
 {
     // Kategorie css::form-Positionen abbilden (->Resource)
     switch ( nPos )
@@ -1169,7 +1137,7 @@ void SvxNumberFormatShell::PosToCategory_Impl(sal_uInt16 nPos, short& rCategory)
     }
 }
 
-void SvxNumberFormatShell::CategoryToPos_Impl(short nCategory, sal_uInt16& rPos)
+void SvxNumberFormatShell::CategoryToPos_Impl(short nCategory, sal_uInt16& rPos) const
 {
     // Kategorie auf css::form-Positionen abbilden (->Resource)
     switch ( nCategory )
@@ -1262,7 +1230,7 @@ short SvxNumberFormatShell::GetCategory4Entry(short nEntry) const
             sal_uInt16 nMyCat,nMyType;
             if(pNumEntry!=nullptr)
             {
-                nMyCat=pNumEntry->GetMaskedType();
+                nMyCat=pNumEntry->GetType() & ~css::util::NumberFormat::DEFINED;
                 CategoryToPos_Impl(nMyCat,nMyType);
 
                 return (short) nMyType;

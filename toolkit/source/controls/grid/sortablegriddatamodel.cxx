@@ -17,13 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include "initguard.hxx"
+
 #include <com/sun/star/i18n/Collator.hpp>
 #include <com/sun/star/i18n/XCollator.hpp>
 #include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/lang/NotInitializedException.hpp>
 #include <com/sun/star/ucb/AlreadyInitializedException.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <com/sun/star/awt/grid/XGridDataListener.hpp>
@@ -33,7 +33,6 @@
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <comphelper/anycompare.hxx>
-#include <comphelper/componentguard.hxx>
 #include <cppuhelper/supportsservice.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <tools/diagnose_ex.h>
@@ -46,11 +45,12 @@ using namespace css::i18n;
 using namespace css::lang;
 using namespace css::ucb;
 using namespace css::uno;
+using namespace toolkit;
 
 namespace {
 
 class SortableGridDataModel;
-class MethodGuard;
+typedef InitGuard< SortableGridDataModel >  MethodGuard;
 
 typedef ::cppu::WeakComponentImplHelper    <   css::awt::grid::XSortableMutableGridDataModel
                                             ,   css::lang::XServiceInfo
@@ -69,68 +69,68 @@ public:
     bool    isInitialized() const { return m_isInitialized; }
 
 protected:
-    virtual ~SortableGridDataModel() override;
+    virtual ~SortableGridDataModel();
 
 public:
     // XSortableGridData
-    virtual void SAL_CALL sortByColumn( ::sal_Int32 ColumnIndex, sal_Bool SortAscending ) override;
-    virtual void SAL_CALL removeColumnSort(  ) override;
-    virtual css::beans::Pair< ::sal_Int32, sal_Bool > SAL_CALL getCurrentSortOrder(  ) override;
+    virtual void SAL_CALL sortByColumn( ::sal_Int32 ColumnIndex, sal_Bool SortAscending ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeColumnSort(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::beans::Pair< ::sal_Int32, sal_Bool > SAL_CALL getCurrentSortOrder(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XMutableGridDataModel
-    virtual void SAL_CALL addRow( const css::uno::Any& Heading, const css::uno::Sequence< css::uno::Any >& Data ) override;
-    virtual void SAL_CALL addRows( const css::uno::Sequence< css::uno::Any >& Headings, const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& Data ) override;
-    virtual void SAL_CALL insertRow( ::sal_Int32 i_index, const css::uno::Any& i_heading, const css::uno::Sequence< css::uno::Any >& Data ) override;
-    virtual void SAL_CALL insertRows( ::sal_Int32 i_index, const css::uno::Sequence< css::uno::Any>& Headings, const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& Data ) override;
-    virtual void SAL_CALL removeRow( ::sal_Int32 RowIndex ) override;
-    virtual void SAL_CALL removeAllRows(  ) override;
-    virtual void SAL_CALL updateCellData( ::sal_Int32 ColumnIndex, ::sal_Int32 RowIndex, const css::uno::Any& Value ) override;
-    virtual void SAL_CALL updateRowData( const css::uno::Sequence< ::sal_Int32 >& ColumnIndexes, ::sal_Int32 RowIndex, const css::uno::Sequence< css::uno::Any >& Values ) override;
-    virtual void SAL_CALL updateRowHeading( ::sal_Int32 RowIndex, const css::uno::Any& Heading ) override;
-    virtual void SAL_CALL updateCellToolTip( ::sal_Int32 ColumnIndex, ::sal_Int32 RowIndex, const css::uno::Any& Value ) override;
-    virtual void SAL_CALL updateRowToolTip( ::sal_Int32 RowIndex, const css::uno::Any& Value ) override;
-    virtual void SAL_CALL addGridDataListener( const css::uno::Reference< css::awt::grid::XGridDataListener >& Listener ) override;
-    virtual void SAL_CALL removeGridDataListener( const css::uno::Reference< css::awt::grid::XGridDataListener >& Listener ) override;
+    virtual void SAL_CALL addRow( const css::uno::Any& Heading, const css::uno::Sequence< css::uno::Any >& Data ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addRows( const css::uno::Sequence< css::uno::Any >& Headings, const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& Data ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL insertRow( ::sal_Int32 i_index, const css::uno::Any& i_heading, const css::uno::Sequence< css::uno::Any >& Data ) throw (css::uno::RuntimeException, css::lang::IndexOutOfBoundsException, std::exception) override;
+    virtual void SAL_CALL insertRows( ::sal_Int32 i_index, const css::uno::Sequence< css::uno::Any>& Headings, const css::uno::Sequence< css::uno::Sequence< css::uno::Any > >& Data ) throw (css::lang::IllegalArgumentException, css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeRow( ::sal_Int32 RowIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeAllRows(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateCellData( ::sal_Int32 ColumnIndex, ::sal_Int32 RowIndex, const css::uno::Any& Value ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateRowData( const css::uno::Sequence< ::sal_Int32 >& ColumnIndexes, ::sal_Int32 RowIndex, const css::uno::Sequence< css::uno::Any >& Values ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateRowHeading( ::sal_Int32 RowIndex, const css::uno::Any& Heading ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateCellToolTip( ::sal_Int32 ColumnIndex, ::sal_Int32 RowIndex, const css::uno::Any& Value ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateRowToolTip( ::sal_Int32 RowIndex, const css::uno::Any& Value ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addGridDataListener( const css::uno::Reference< css::awt::grid::XGridDataListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeGridDataListener( const css::uno::Reference< css::awt::grid::XGridDataListener >& Listener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XGridDataModel
-    virtual ::sal_Int32 SAL_CALL getRowCount() override;
-    virtual ::sal_Int32 SAL_CALL getColumnCount() override;
-    virtual css::uno::Any SAL_CALL getCellData( ::sal_Int32 Column, ::sal_Int32 RowIndex ) override;
-    virtual css::uno::Any SAL_CALL getCellToolTip( ::sal_Int32 Column, ::sal_Int32 RowIndex ) override;
-    virtual css::uno::Any SAL_CALL getRowHeading( ::sal_Int32 RowIndex ) override;
-    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getRowData( ::sal_Int32 RowIndex ) override;
+    virtual ::sal_Int32 SAL_CALL getRowCount() throw (css::uno::RuntimeException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getColumnCount() throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getCellData( ::sal_Int32 Column, ::sal_Int32 RowIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getCellToolTip( ::sal_Int32 Column, ::sal_Int32 RowIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getRowHeading( ::sal_Int32 RowIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::uno::Any > SAL_CALL getRowData( ::sal_Int32 RowIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
     // OComponentHelper
     virtual void SAL_CALL disposing() override;
 
     // XCloneable
-    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+    virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XGridDataListener
-    virtual void SAL_CALL rowsInserted( const css::awt::grid::GridDataEvent& Event ) override;
-    virtual void SAL_CALL rowsRemoved( const css::awt::grid::GridDataEvent& Event ) override;
-    virtual void SAL_CALL dataChanged( const css::awt::grid::GridDataEvent& Event ) override;
-    virtual void SAL_CALL rowHeadingChanged( const css::awt::grid::GridDataEvent& Event ) override;
+    virtual void SAL_CALL rowsInserted( const css::awt::grid::GridDataEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL rowsRemoved( const css::awt::grid::GridDataEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dataChanged( const css::awt::grid::GridDataEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL rowHeadingChanged( const css::awt::grid::GridDataEvent& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& i_event ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& i_event ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
-    virtual void SAL_CALL acquire(  ) throw () final override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL acquire(  ) throw () override;
     virtual void SAL_CALL release(  ) throw () override;
 
     // XTypeProvider
-    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL getImplementationId(  ) override;
+    virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL getImplementationId(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 private:
     /** translates the given public index into one to be passed to our delegator
@@ -143,7 +143,7 @@ private:
     */
     ::sal_Int32 impl_getPublicRowIndex_nothrow( ::sal_Int32 const i_privateRowIndex ) const;
 
-    bool impl_isSorted_nothrow() const
+    inline bool impl_isSorted_nothrow() const
     {
         return m_currentSortColumn >= 0;
     }
@@ -195,17 +195,6 @@ private:
     bool                                                    m_sortAscending;
     ::std::vector< ::sal_Int32 >                                  m_publicToPrivateRowIndex;
     ::std::vector< ::sal_Int32 >                                  m_privateToPublicRowIndex;
-};
-
-class MethodGuard : public ::comphelper::ComponentGuard
-{
-public:
-    MethodGuard( SortableGridDataModel& i_component, ::cppu::OBroadcastHelper & i_broadcastHelper )
-        :comphelper::ComponentGuard( i_component, i_broadcastHelper )
-    {
-        if ( !i_component.isInitialized() )
-            throw css::lang::NotInitializedException( OUString(), *&i_component );
-    }
 };
 
     namespace
@@ -262,7 +251,7 @@ public:
     }
 
 
-    Any SAL_CALL SortableGridDataModel::queryInterface( const Type& aType )
+    Any SAL_CALL SortableGridDataModel::queryInterface( const Type& aType ) throw (RuntimeException, std::exception)
     {
         Any aReturn( SortableGridDataModel_Base::queryInterface( aType ) );
         if ( !aReturn.hasValue() )
@@ -283,14 +272,14 @@ public:
     }
 
 
-    Sequence< Type > SAL_CALL SortableGridDataModel::getTypes(  )
+    Sequence< Type > SAL_CALL SortableGridDataModel::getTypes(  ) throw (RuntimeException, std::exception)
     {
         return SortableGridDataModel_Base::getTypes();
         // don't expose the types got via SortableGridDataModel_PrivateBase - they're private, after all
     }
 
 
-    Sequence< ::sal_Int8 > SAL_CALL SortableGridDataModel::getImplementationId(  )
+    Sequence< ::sal_Int8 > SAL_CALL SortableGridDataModel::getImplementationId(  ) throw (RuntimeException, std::exception)
     {
         return css::uno::Sequence<sal_Int8>();
     }
@@ -307,7 +296,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::initialize( const Sequence< Any >& i_arguments )
+    void SAL_CALL SortableGridDataModel::initialize( const Sequence< Any >& i_arguments ) throw (Exception, RuntimeException, std::exception)
     {
         ::comphelper::ComponentGuard aGuard( *this, rBHelper );
 
@@ -364,7 +353,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::rowsInserted( const GridDataEvent& i_event )
+    void SAL_CALL SortableGridDataModel::rowsInserted( const GridDataEvent& i_event ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -423,7 +412,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::rowsRemoved( const GridDataEvent& i_event )
+    void SAL_CALL SortableGridDataModel::rowsRemoved( const GridDataEvent& i_event ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -483,7 +472,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::dataChanged( const GridDataEvent& i_event )
+    void SAL_CALL SortableGridDataModel::dataChanged( const GridDataEvent& i_event ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -492,7 +481,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::rowHeadingChanged( const GridDataEvent& i_event )
+    void SAL_CALL SortableGridDataModel::rowHeadingChanged( const GridDataEvent& i_event ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -501,7 +490,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::disposing( const EventObject& )
+    void SAL_CALL SortableGridDataModel::disposing( const EventObject& ) throw (RuntimeException, std::exception)
     {
     }
 
@@ -593,7 +582,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::sortByColumn( ::sal_Int32 i_columnIndex, sal_Bool i_sortAscending )
+    void SAL_CALL SortableGridDataModel::sortByColumn( ::sal_Int32 i_columnIndex, sal_Bool i_sortAscending ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -635,14 +624,14 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::removeColumnSort(  )
+    void SAL_CALL SortableGridDataModel::removeColumnSort(  ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
         impl_removeColumnSort( aGuard );
     }
 
 
-    css::beans::Pair< ::sal_Int32, sal_Bool > SAL_CALL SortableGridDataModel::getCurrentSortOrder(  )
+    css::beans::Pair< ::sal_Int32, sal_Bool > SAL_CALL SortableGridDataModel::getCurrentSortOrder(  ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -650,7 +639,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::addRow( const Any& i_heading, const Sequence< Any >& i_data )
+    void SAL_CALL SortableGridDataModel::addRow( const Any& i_heading, const Sequence< Any >& i_data ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -660,7 +649,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::addRows( const Sequence< Any >& i_headings, const Sequence< Sequence< Any > >& i_data )
+    void SAL_CALL SortableGridDataModel::addRows( const Sequence< Any >& i_headings, const Sequence< Sequence< Any > >& i_data ) throw (IllegalArgumentException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -670,7 +659,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::insertRow( ::sal_Int32 i_index, const Any& i_heading, const Sequence< Any >& i_data )
+    void SAL_CALL SortableGridDataModel::insertRow( ::sal_Int32 i_index, const Any& i_heading, const Sequence< Any >& i_data ) throw (RuntimeException, IndexOutOfBoundsException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -683,7 +672,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::insertRows( ::sal_Int32 i_index, const Sequence< Any>& i_headings, const Sequence< Sequence< Any > >& i_data )
+    void SAL_CALL SortableGridDataModel::insertRows( ::sal_Int32 i_index, const Sequence< Any>& i_headings, const Sequence< Sequence< Any > >& i_data ) throw (IllegalArgumentException, IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -696,7 +685,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::removeRow( ::sal_Int32 i_rowIndex )
+    void SAL_CALL SortableGridDataModel::removeRow( ::sal_Int32 i_rowIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -708,7 +697,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::removeAllRows(  )
+    void SAL_CALL SortableGridDataModel::removeAllRows(  ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -718,7 +707,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::updateCellData( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex, const Any& i_value )
+    void SAL_CALL SortableGridDataModel::updateCellData( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex, const Any& i_value ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -730,7 +719,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::updateRowData( const Sequence< ::sal_Int32 >& i_columnIndexes, ::sal_Int32 i_rowIndex, const Sequence< Any >& i_values )
+    void SAL_CALL SortableGridDataModel::updateRowData( const Sequence< ::sal_Int32 >& i_columnIndexes, ::sal_Int32 i_rowIndex, const Sequence< Any >& i_values ) throw (IndexOutOfBoundsException, IllegalArgumentException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -742,7 +731,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::updateRowHeading( ::sal_Int32 i_rowIndex, const Any& i_heading )
+    void SAL_CALL SortableGridDataModel::updateRowHeading( ::sal_Int32 i_rowIndex, const Any& i_heading ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -754,7 +743,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::updateCellToolTip( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex, const Any& i_value )
+    void SAL_CALL SortableGridDataModel::updateCellToolTip( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex, const Any& i_value ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -766,7 +755,7 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::updateRowToolTip( ::sal_Int32 i_rowIndex, const Any& i_value )
+    void SAL_CALL SortableGridDataModel::updateRowToolTip( ::sal_Int32 i_rowIndex, const Any& i_value ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -778,19 +767,19 @@ public:
     }
 
 
-    void SAL_CALL SortableGridDataModel::addGridDataListener( const Reference< XGridDataListener >& i_listener )
+    void SAL_CALL SortableGridDataModel::addGridDataListener( const Reference< XGridDataListener >& i_listener ) throw (RuntimeException, std::exception)
     {
         rBHelper.addListener( cppu::UnoType<XGridDataListener>::get(), i_listener );
     }
 
 
-    void SAL_CALL SortableGridDataModel::removeGridDataListener( const Reference< XGridDataListener >& i_listener )
+    void SAL_CALL SortableGridDataModel::removeGridDataListener( const Reference< XGridDataListener >& i_listener ) throw (RuntimeException, std::exception)
     {
         rBHelper.removeListener( cppu::UnoType<XGridDataListener>::get(), i_listener );
     }
 
 
-    ::sal_Int32 SAL_CALL SortableGridDataModel::getRowCount()
+    ::sal_Int32 SAL_CALL SortableGridDataModel::getRowCount() throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -800,7 +789,7 @@ public:
     }
 
 
-    ::sal_Int32 SAL_CALL SortableGridDataModel::getColumnCount()
+    ::sal_Int32 SAL_CALL SortableGridDataModel::getColumnCount() throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -810,7 +799,7 @@ public:
     }
 
 
-    Any SAL_CALL SortableGridDataModel::getCellData( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex )
+    Any SAL_CALL SortableGridDataModel::getCellData( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -822,7 +811,7 @@ public:
     }
 
 
-    Any SAL_CALL SortableGridDataModel::getCellToolTip( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex )
+    Any SAL_CALL SortableGridDataModel::getCellToolTip( ::sal_Int32 i_columnIndex, ::sal_Int32 i_rowIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -834,7 +823,7 @@ public:
     }
 
 
-    Any SAL_CALL SortableGridDataModel::getRowHeading( ::sal_Int32 i_rowIndex )
+    Any SAL_CALL SortableGridDataModel::getRowHeading( ::sal_Int32 i_rowIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -846,7 +835,7 @@ public:
     }
 
 
-    Sequence< Any > SAL_CALL SortableGridDataModel::getRowData( ::sal_Int32 i_rowIndex )
+    Sequence< Any > SAL_CALL SortableGridDataModel::getRowData( ::sal_Int32 i_rowIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -877,7 +866,7 @@ public:
     }
 
 
-    Reference< css::util::XCloneable > SAL_CALL SortableGridDataModel::createClone(  )
+    Reference< css::util::XCloneable > SAL_CALL SortableGridDataModel::createClone(  ) throw (RuntimeException, std::exception)
     {
         MethodGuard aGuard( *this, rBHelper );
 
@@ -885,17 +874,17 @@ public:
     }
 
 
-    OUString SAL_CALL SortableGridDataModel::getImplementationName(  )
+    OUString SAL_CALL SortableGridDataModel::getImplementationName(  ) throw (RuntimeException, std::exception)
     {
         return OUString( "org.openoffice.comp.toolkit.SortableGridDataModel" );
     }
 
-    sal_Bool SAL_CALL SortableGridDataModel::supportsService( const OUString& i_serviceName )
+    sal_Bool SAL_CALL SortableGridDataModel::supportsService( const OUString& i_serviceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, i_serviceName);
     }
 
-    Sequence< OUString > SAL_CALL SortableGridDataModel::getSupportedServiceNames(  )
+    Sequence< OUString > SAL_CALL SortableGridDataModel::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
         Sequence< OUString > aServiceNames { "com.sun.star.awt.grid.SortableGridDataModel" };
         return aServiceNames;

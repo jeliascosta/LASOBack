@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessiblemenuitem.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/standard/vclxaccessiblemenuitem.hxx>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 #include <toolkit/helper/convert.hxx>
-#include <helper/characterattributeshelper.hxx>
+#include <accessibility/helper/characterattributeshelper.hxx>
 #include <comphelper/accessiblekeybindinghelper.hxx>
 #include <com/sun/star/awt/KeyModifier.hpp>
 
@@ -29,7 +29,6 @@
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/datatransfer/clipboard/XClipboard.hpp>
 #include <com/sun/star/datatransfer/clipboard/XFlushableClipboard.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <unotools/accessiblestatesethelper.hxx>
 #include <comphelper/sequence.hxx>
 #include <vcl/svapp.hxx>
@@ -154,22 +153,23 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleMenuItem, OAccessibleMenuItemCom
 // XServiceInfo
 
 
-OUString VCLXAccessibleMenuItem::getImplementationName()
+OUString VCLXAccessibleMenuItem::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleMenuItem" );
 }
 
 
-Sequence< OUString > VCLXAccessibleMenuItem::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleMenuItem::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleMenuItem" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenuItem" };
+    return aNames;
 }
 
 
 // XAccessibleContext
 
 
-sal_Int16 VCLXAccessibleMenuItem::getAccessibleRole(  )
+sal_Int16 VCLXAccessibleMenuItem::getAccessibleRole(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
     // IA2 CWS. MT: We had the additional roles in UAA for ever, but never used them anywhere.
@@ -191,7 +191,7 @@ sal_Int16 VCLXAccessibleMenuItem::getAccessibleRole(  )
 // XAccessibleText
 
 
-sal_Int32 VCLXAccessibleMenuItem::getCaretPosition()
+sal_Int32 VCLXAccessibleMenuItem::getCaretPosition() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -199,7 +199,7 @@ sal_Int32 VCLXAccessibleMenuItem::getCaretPosition()
 }
 
 
-sal_Bool VCLXAccessibleMenuItem::setCaretPosition( sal_Int32 nIndex )
+sal_Bool VCLXAccessibleMenuItem::setCaretPosition( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
 
     OExternalLockGuard aGuard( this );
@@ -211,7 +211,7 @@ sal_Bool VCLXAccessibleMenuItem::setCaretPosition( sal_Int32 nIndex )
 }
 
 
-sal_Unicode VCLXAccessibleMenuItem::getCharacter( sal_Int32 nIndex )
+sal_Unicode VCLXAccessibleMenuItem::getCharacter( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -219,7 +219,7 @@ sal_Unicode VCLXAccessibleMenuItem::getCharacter( sal_Int32 nIndex )
 }
 
 
-Sequence< PropertyValue > VCLXAccessibleMenuItem::getCharacterAttributes( sal_Int32 nIndex, const Sequence< OUString >& aRequestedAttributes )
+Sequence< PropertyValue > VCLXAccessibleMenuItem::getCharacterAttributes( sal_Int32 nIndex, const Sequence< OUString >& aRequestedAttributes ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -236,7 +236,7 @@ Sequence< PropertyValue > VCLXAccessibleMenuItem::getCharacterAttributes( sal_In
 }
 
 
-awt::Rectangle VCLXAccessibleMenuItem::getCharacterBounds( sal_Int32 nIndex )
+awt::Rectangle VCLXAccessibleMenuItem::getCharacterBounds( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -247,8 +247,8 @@ awt::Rectangle VCLXAccessibleMenuItem::getCharacterBounds( sal_Int32 nIndex )
     if ( m_pParent )
     {
         sal_uInt16 nItemId = m_pParent->GetItemId( m_nItemPos );
-        tools::Rectangle aItemRect = m_pParent->GetBoundingRectangle( m_nItemPos );
-        tools::Rectangle aCharRect = m_pParent->GetCharacterBounds( nItemId, nIndex );
+        Rectangle aItemRect = m_pParent->GetBoundingRectangle( m_nItemPos );
+        Rectangle aCharRect = m_pParent->GetCharacterBounds( nItemId, nIndex );
         aCharRect.Move( -aItemRect.Left(), -aItemRect.Top() );
         aBounds = AWTRectangle( aCharRect );
     }
@@ -257,7 +257,7 @@ awt::Rectangle VCLXAccessibleMenuItem::getCharacterBounds( sal_Int32 nIndex )
 }
 
 
-sal_Int32 VCLXAccessibleMenuItem::getCharacterCount()
+sal_Int32 VCLXAccessibleMenuItem::getCharacterCount() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -265,7 +265,7 @@ sal_Int32 VCLXAccessibleMenuItem::getCharacterCount()
 }
 
 
-sal_Int32 VCLXAccessibleMenuItem::getIndexAtPoint( const awt::Point& aPoint )
+sal_Int32 VCLXAccessibleMenuItem::getIndexAtPoint( const awt::Point& aPoint ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -273,7 +273,7 @@ sal_Int32 VCLXAccessibleMenuItem::getIndexAtPoint( const awt::Point& aPoint )
     if ( m_pParent )
     {
         sal_uInt16 nItemId = 0;
-        tools::Rectangle aItemRect = m_pParent->GetBoundingRectangle( m_nItemPos );
+        Rectangle aItemRect = m_pParent->GetBoundingRectangle( m_nItemPos );
         Point aPnt( VCLPoint( aPoint ) );
         aPnt += aItemRect.TopLeft();
         sal_Int32 nI = m_pParent->GetIndexForPoint( aPnt, nItemId );
@@ -285,7 +285,7 @@ sal_Int32 VCLXAccessibleMenuItem::getIndexAtPoint( const awt::Point& aPoint )
 }
 
 
-OUString VCLXAccessibleMenuItem::getSelectedText()
+OUString VCLXAccessibleMenuItem::getSelectedText() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -293,7 +293,7 @@ OUString VCLXAccessibleMenuItem::getSelectedText()
 }
 
 
-sal_Int32 VCLXAccessibleMenuItem::getSelectionStart()
+sal_Int32 VCLXAccessibleMenuItem::getSelectionStart() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -301,7 +301,7 @@ sal_Int32 VCLXAccessibleMenuItem::getSelectionStart()
 }
 
 
-sal_Int32 VCLXAccessibleMenuItem::getSelectionEnd()
+sal_Int32 VCLXAccessibleMenuItem::getSelectionEnd() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -309,7 +309,7 @@ sal_Int32 VCLXAccessibleMenuItem::getSelectionEnd()
 }
 
 
-sal_Bool VCLXAccessibleMenuItem::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+sal_Bool VCLXAccessibleMenuItem::setSelection( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -320,7 +320,7 @@ sal_Bool VCLXAccessibleMenuItem::setSelection( sal_Int32 nStartIndex, sal_Int32 
 }
 
 
-OUString VCLXAccessibleMenuItem::getText()
+OUString VCLXAccessibleMenuItem::getText() throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -328,7 +328,7 @@ OUString VCLXAccessibleMenuItem::getText()
 }
 
 
-OUString VCLXAccessibleMenuItem::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+OUString VCLXAccessibleMenuItem::getTextRange( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -336,7 +336,7 @@ OUString VCLXAccessibleMenuItem::getTextRange( sal_Int32 nStartIndex, sal_Int32 
 }
 
 
-css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextAtIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -344,7 +344,7 @@ css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextAtIndex( sal_Int3
 }
 
 
-css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBeforeIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -352,7 +352,7 @@ css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBeforeIndex( sal_
 }
 
 
-css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType )
+css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBehindIndex( sal_Int32 nIndex, sal_Int16 aTextType ) throw (css::lang::IndexOutOfBoundsException, css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -360,7 +360,7 @@ css::accessibility::TextSegment VCLXAccessibleMenuItem::getTextBehindIndex( sal_
 }
 
 
-sal_Bool VCLXAccessibleMenuItem::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex )
+sal_Bool VCLXAccessibleMenuItem::copyText( sal_Int32 nStartIndex, sal_Int32 nEndIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -396,7 +396,7 @@ sal_Bool VCLXAccessibleMenuItem::copyText( sal_Int32 nStartIndex, sal_Int32 nEnd
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleMenuItem::getAccessibleActionCount( )
+sal_Int32 VCLXAccessibleMenuItem::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -404,7 +404,7 @@ sal_Int32 VCLXAccessibleMenuItem::getAccessibleActionCount( )
 }
 
 
-sal_Bool VCLXAccessibleMenuItem::doAccessibleAction ( sal_Int32 nIndex )
+sal_Bool VCLXAccessibleMenuItem::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -417,7 +417,7 @@ sal_Bool VCLXAccessibleMenuItem::doAccessibleAction ( sal_Int32 nIndex )
 }
 
 
-OUString VCLXAccessibleMenuItem::getAccessibleActionDescription ( sal_Int32 nIndex )
+OUString VCLXAccessibleMenuItem::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -428,7 +428,7 @@ OUString VCLXAccessibleMenuItem::getAccessibleActionDescription ( sal_Int32 nInd
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleMenuItem::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+Reference< XAccessibleKeyBinding > VCLXAccessibleMenuItem::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -441,7 +441,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleMenuItem::getAccessibleActionKe
     if ( m_pParent )
     {
         // create auto mnemonics
-        if (!(m_pParent->GetMenuFlags() & MenuFlags::NoAutoMnemonics))
+        if ( Application::GetSettings().GetStyleSettings().GetAutoMnemonic() && !( m_pParent->GetMenuFlags() & MenuFlags::NoAutoMnemonics ) )
             m_pParent->CreateAutoMnemonics();
 
         // activation key
@@ -507,7 +507,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleMenuItem::getAccessibleActionKe
 // XAccessibleValue
 
 
-Any VCLXAccessibleMenuItem::getCurrentValue(  )
+Any VCLXAccessibleMenuItem::getCurrentValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -521,7 +521,7 @@ Any VCLXAccessibleMenuItem::getCurrentValue(  )
 }
 
 
-sal_Bool VCLXAccessibleMenuItem::setCurrentValue( const Any& aNumber )
+sal_Bool VCLXAccessibleMenuItem::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -544,7 +544,7 @@ sal_Bool VCLXAccessibleMenuItem::setCurrentValue( const Any& aNumber )
 }
 
 
-Any VCLXAccessibleMenuItem::getMaximumValue(  )
+Any VCLXAccessibleMenuItem::getMaximumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -555,7 +555,7 @@ Any VCLXAccessibleMenuItem::getMaximumValue(  )
 }
 
 
-Any VCLXAccessibleMenuItem::getMinimumValue(  )
+Any VCLXAccessibleMenuItem::getMinimumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

@@ -31,7 +31,7 @@ class AquaSalTimer : public SalTimer
   public:
 
     AquaSalTimer();
-    virtual ~AquaSalTimer() override;
+    virtual ~AquaSalTimer();
 
     void Start( sal_uLong nMS ) override;
     void Stop() override;

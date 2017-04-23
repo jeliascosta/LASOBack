@@ -38,6 +38,7 @@ private:
     bool                        mbMirrorEntries;    /// true = mirror the order of entries (including header)
     bool                        mbMirrorLevels;     /// true = mirror the order of levels, including the border
 
+    ImageList*                  mpSymbols;          /// Symbols for buttons.
     Color                       maLineColor;        /// Line color for expanded groups.
     long                        mnHeaderSize;       /// Size of the header area in entry direction.
     long                        mnHeaderPos;        /// Position of the header area in entry direction.
@@ -49,7 +50,7 @@ private:
     bool                        mbMTActive;         /// Mouse tracking active?
     bool                        mbMTPressed;        /// Mouse tracking: Button currently drawed pressed?
 
-    tools::Rectangle                   maFocusRect;        /// Focus rectangle on screen.
+    Rectangle                   maFocusRect;        /// Focus rectangle on screen.
     size_t                      mnFocusLevel;       /// Level of focused button.
     size_t                      mnFocusEntry;       /// Entry index of focused button.
     bool                        mbDontDrawFocus;    /// Do not redraw focus in next Paint().
@@ -60,7 +61,7 @@ public:
                                     ScOutlineMode eMode,
                                     ScViewData* pViewData,
                                     ScSplitPos eWhich );
-    virtual                     ~ScOutlineWindow() override;
+    virtual                     ~ScOutlineWindow();
     virtual void                dispose() override;
 
     /** Sets the size of the header area (width/height dep. on window type). */
@@ -78,9 +79,9 @@ private:
     void                        InitSettings();
 
     /** Returns the calc document. */
-    ScDocument&          GetDoc() const { return *mrViewData.GetDocument(); }
+    inline ScDocument&          GetDoc() const { return *mrViewData.GetDocument(); }
     /** Returns the current sheet index. */
-    SCTAB                GetTab() const { return mrViewData.GetTabNo(); }
+    inline SCTAB                GetTab() const { return mrViewData.GetTabNo(); }
     /** Returns the outline array of the corresponding document. */
     const ScOutlineArray*       GetOutlineArray() const;
     /** Returns the specified outline entry. */
@@ -98,7 +99,7 @@ private:
     /** Returns the point in the window of the specified position. */
     Point                       GetPoint( long nLevelPos, long nEntryPos ) const;
     /** Returns the rectangle in the window of the specified position. */
-    tools::Rectangle                   GetRectangle(
+    Rectangle                   GetRectangle(
                                     long nLevelStart, long nEntryStart,
                                     long nLevelEnd, long nEntryEnd ) const;
 
@@ -178,7 +179,7 @@ private:
     /** Starts mouse tracking after click on a button. */
     void                        StartMouseTracking( size_t nLevel, size_t nEntry );
     /** Returns whether mouse tracking mode is active. */
-    bool                 IsMouseTracking() const { return mbMTActive; }
+    inline bool                 IsMouseTracking() const { return mbMTActive; }
     /** Ends mouse tracking. */
     void                        EndMouseTracking();
 
@@ -206,7 +207,7 @@ private:
     void                        ScrollRel( long nEntryDiff, long nEntryStart, long nEntryEnd );
 
 protected:
-    virtual void                Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void                Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
     virtual void                Resize() override;
     virtual void                GetFocus() override;

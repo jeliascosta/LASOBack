@@ -101,8 +101,11 @@ class ViewShellObjectBarFactory
 {
 public:
     explicit ViewShellObjectBarFactory (::sd::ViewShell& rViewShell);
-    virtual ~ViewShellObjectBarFactory() override;
-    virtual SfxShell* CreateShell( ::sd::ShellId nId ) override;
+    virtual ~ViewShellObjectBarFactory();
+    virtual SfxShell* CreateShell (
+        ::sd::ShellId nId,
+        vcl::Window* pParentWindow,
+        ::sd::FrameView* pFrameView) override;
     virtual void ReleaseShell (SfxShell* pShell) override;
 private:
     ::sd::ViewShell& mrViewShell;
@@ -140,6 +143,7 @@ SfxViewFrame* ViewShell::GetViewFrame() const
 
 ViewShell::ViewShell( SfxViewFrame*, vcl::Window* pParentWindow, ViewShellBase& rViewShellBase)
 :   SfxShell(&rViewShellBase)
+,   mbCenterAllowed(true)
 ,   mpParentWindow(pParentWindow)
 {
     construct();
@@ -163,7 +167,7 @@ ViewShell::~ViewShell()
     if (mpContentWindow)
     {
         SAL_INFO(
-            "sd.view",
+            "sd.ui",
             "destroying mpContentWindow at " << mpContentWindow.get()
                 << " with parent " << mpContentWindow->GetParent());
         mpContentWindow.disposeAndClear();
@@ -205,7 +209,7 @@ void ViewShell::construct()
 
     GetParentWindow()->SetBackground (Wallpaper());
     mpContentWindow->SetBackground (Wallpaper());
-    mpContentWindow->SetCenterAllowed(true);
+    mpContentWindow->SetCenterAllowed(mbCenterAllowed);
     mpContentWindow->SetViewShell(this);
     mpContentWindow->SetPosSizePixel(
         GetParentWindow()->GetPosPixel(),GetParentWindow()->GetSizePixel());
@@ -790,9 +794,9 @@ bool ViewShell::HandleScrollCommand(const CommandEvent& rCEvt, ::sd::Window* pWi
                         Point aOldMousePos = GetActiveWindow()->PixelToLogic(rCEvt.GetMousePosPixel());
 
                         if( pData->GetDelta() < 0L )
-                            nNewZoom = std::max<long>( pWin->GetMinZoom(), basegfx::zoomtools::zoomOut( nOldZoom ));
+                            nNewZoom = std::max( (long) pWin->GetMinZoom(), basegfx::zoomtools::zoomOut( nOldZoom ));
                         else
-                            nNewZoom = std::min<long>( pWin->GetMaxZoom(), basegfx::zoomtools::zoomIn( nOldZoom ));
+                            nNewZoom = std::min( (long) pWin->GetMaxZoom(), basegfx::zoomtools::zoomIn( nOldZoom ));
 
                         SetZoom( nNewZoom );
                         // Keep mouse at same doc point before zoom
@@ -888,7 +892,7 @@ const SfxPoolItem* ViewShell::GetNumBulletItem(SfxItemSet& aNewAttr, sal_uInt16&
                 for(size_t nNum = 0; nNum < nCount; ++nNum)
                 {
                     SdrObject* pObj = rMarkList.GetMark(nNum)->GetMarkedSdrObj();
-                    if( pObj->GetObjInventor() == SdrInventor::Default )
+                    if( pObj->GetObjInventor() == SdrInventor )
                     {
                         switch(pObj->GetObjIdentifier())
                         {
@@ -916,8 +920,7 @@ const SfxPoolItem* ViewShell::GetNumBulletItem(SfxItemSet& aNewAttr, sal_uInt16&
             if( pItem == nullptr )
                 pItem = static_cast<const SvxNumBulletItem*>( aNewAttr.GetPool()->GetSecondaryPool()->GetPoolDefaultItem(EE_PARA_NUMBULLET) );
 
-            std::unique_ptr<SfxPoolItem> pNewItem(pItem->CloneSetWhich(EE_PARA_NUMBULLET));
-            aNewAttr.Put(*pNewItem);
+            aNewAttr.Put(*pItem, EE_PARA_NUMBULLET);
 
             if(bTitle && aNewAttr.GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET )
             {
@@ -1088,7 +1091,7 @@ void ViewShell::ArrangeGUIElements()
     }
 
     // Windows in the center and rulers at the left and top side.
-    maAllWindowRectangle = ::tools::Rectangle(
+    maAllWindowRectangle = Rectangle(
         maViewPos,
         Size(maViewSize.Width()-maScrBarWH.Width(),
             maViewSize.Height()-maScrBarWH.Height()));
@@ -1237,7 +1240,7 @@ class KeepSlideSorterInSyncWithPageChanges
     sd::slidesorter::controller::SelectionObserver::Context m_aContext;
 
 public:
-    explicit KeepSlideSorterInSyncWithPageChanges(sd::slidesorter::SlideSorter& rSlideSorter)
+    KeepSlideSorterInSyncWithPageChanges(sd::slidesorter::SlideSorter& rSlideSorter)
         : m_aDrawLock(rSlideSorter)
         , m_aModelLock(rSlideSorter.GetController())
         , m_aUpdateLock(rSlideSorter)
@@ -1525,7 +1528,7 @@ void ViewShell::PrePaint()
 {
 }
 
-void ViewShell::Paint (const ::tools::Rectangle&, ::sd::Window* )
+void ViewShell::Paint (const Rectangle&, ::sd::Window* )
 {
 }
 
@@ -1559,7 +1562,8 @@ bool ViewShell::RelocateToParentWindow (vcl::Window* pParentWindow)
 {
     mpParentWindow = pParentWindow;
 
-    mpParentWindow->SetBackground (Wallpaper());
+    if (mpParentWindow)
+        mpParentWindow->SetBackground (Wallpaper());
 
     if (mpContentWindow.get() != nullptr)
         mpContentWindow->SetParent(pParentWindow);
@@ -1600,11 +1604,6 @@ void ViewShell::NotifyAccUpdate( )
     GetViewShellBase().GetDrawController().NotifyAccUpdate();
 }
 
-sd::Window* ViewShell::GetContentWindow() const
-{
-    return mpContentWindow.get();
-}
-
 } // end of namespace sd
 
 //===== ViewShellObjectBarFactory =============================================
@@ -1627,7 +1626,10 @@ ViewShellObjectBarFactory::~ViewShellObjectBarFactory()
     }
 }
 
-SfxShell* ViewShellObjectBarFactory::CreateShell( ::sd::ShellId nId )
+SfxShell* ViewShellObjectBarFactory::CreateShell (
+    ::sd::ShellId nId,
+    vcl::Window*,
+    ::sd::FrameView* )
 {
     SfxShell* pShell = nullptr;
 

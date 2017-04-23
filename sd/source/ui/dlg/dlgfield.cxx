@@ -87,9 +87,9 @@ SvxFieldData* SdModifyFieldDlg::GetField()
             SvxDateFormat eFormat;
 
             if( m_pRbtFix->IsChecked() )
-                eType = SvxDateType::Fix;
+                eType = SVXDATETYPE_FIX;
             else
-                eType = SvxDateType::Var;
+                eType = SVXDATETYPE_VAR;
 
             eFormat = (SvxDateFormat) ( m_pLbFormat->GetSelectEntryPos() + 2 );
 
@@ -264,7 +264,7 @@ void SdModifyFieldDlg::FillControls()
         const SvxDateField* pDateField = static_cast<const SvxDateField*>(pField);
         SvxDateField aDateField( *pDateField );
 
-        if( pDateField->GetType() == SvxDateType::Fix )
+        if( pDateField->GetType() == SVXDATETYPE_FIX )
             m_pRbtFix->Check();
         else
             m_pRbtVar->Check();
@@ -312,7 +312,7 @@ void SdModifyFieldDlg::FillControls()
     m_pLbFormat->SaveValue();
 }
 
-IMPL_LINK_NOARG(SdModifyFieldDlg, LanguageChangeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SdModifyFieldDlg, LanguageChangeHdl, ListBox&, void)
 {
     FillFormatList();
 }

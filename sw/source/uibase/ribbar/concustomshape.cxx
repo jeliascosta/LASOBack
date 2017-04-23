@@ -96,6 +96,11 @@ bool ConstCustomShape::MouseButtonDown(const MouseEvent& rMEvt)
     return bReturn;
 }
 
+bool ConstCustomShape::MouseButtonUp(const MouseEvent& rMEvt)
+{
+    return SwDrawBase::MouseButtonUp(rMEvt);
+}
+
 void ConstCustomShape::Activate(const sal_uInt16 nSlotId)
 {
     m_pWin->SetSdrDrawMode( OBJ_CUSTOMSHAPE );
@@ -114,7 +119,8 @@ void ConstCustomShape::SetAttributes( SdrObject* pObj )
         std::vector< OUString > aObjList;
         if ( GalleryExplorer::FillObjListTitle( GALLERY_THEME_POWERPOINT, aObjList ) )
         {
-            for ( std::vector<OUString>::size_type i = 0; i < aObjList.size(); i++ )
+            sal_uInt16 i;
+            for ( i = 0; i < aObjList.size(); i++ )
             {
                 if ( aObjList[ i ].equalsIgnoreAsciiCase( aCustomShape ) )
                 {
@@ -159,7 +165,7 @@ void ConstCustomShape::SetAttributes( SdrObject* pObj )
     }
     if ( !bAttributesAppliedFromGallery )
     {
-        pObj->SetMergedItem( SvxAdjustItem( SvxAdjust::Center, RES_PARATR_ADJUST ) );
+        pObj->SetMergedItem( SvxAdjustItem( SVX_ADJUST_CENTER, RES_PARATR_ADJUST ) );
         pObj->SetMergedItem( SdrTextVertAdjustItem( SDRTEXTVERTADJUST_CENTER ) );
         pObj->SetMergedItem( SdrTextHorzAdjustItem( SDRTEXTHORZADJUST_BLOCK ) );
         pObj->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );

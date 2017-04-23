@@ -33,7 +33,7 @@ class ScPrintAreasDlg : public ScAnyRefDlg
 {
 public:
                     ScPrintAreasDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent );
-                    virtual ~ScPrintAreasDlg() override;
+                    virtual ~ScPrintAreasDlg();
     virtual void    dispose() override;
 
     virtual void    SetReference( const ScRange& rRef, ScDocument* pDoc ) override;
@@ -73,10 +73,10 @@ private:
     bool Impl_GetItem( Edit* pEd, SfxStringItem& rItem );
 
     // Handler:
-    DECL_LINK( Impl_SelectHdl, ListBox&, void );
-    DECL_LINK( Impl_ModifyHdl, Edit&, void  );
-    DECL_LINK( Impl_BtnHdl,    Button*, void );
-    DECL_LINK( Impl_GetFocusHdl, Control&, void );
+    DECL_LINK_TYPED( Impl_SelectHdl, ListBox&, void );
+    DECL_LINK_TYPED( Impl_ModifyHdl, Edit&, void  );
+    DECL_LINK_TYPED( Impl_BtnHdl,    Button*, void );
+    DECL_LINK_TYPED( Impl_GetFocusHdl, Control&, void );
 };
 
 #endif

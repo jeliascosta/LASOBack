@@ -32,13 +32,13 @@ class ScTpPrintOptions : public SfxTabPage
 
             ScTpPrintOptions( vcl::Window* pParent, const SfxItemSet& rCoreSet );
 public:
-    virtual ~ScTpPrintOptions() override;
+    virtual ~ScTpPrintOptions();
     virtual void dispose() override;
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rCoreSet );
     virtual bool        FillItemSet( SfxItemSet* rCoreSet ) override;
     virtual void        Reset( const SfxItemSet* rCoreSet ) override;
     using SfxTabPage::DeactivatePage;
-    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
+    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
 };
 
 #endif

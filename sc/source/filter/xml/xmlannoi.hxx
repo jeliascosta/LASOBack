@@ -26,7 +26,6 @@
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/drawing/XShapes.hpp>
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 class ScXMLTableRowCellContext;
 
@@ -63,7 +62,7 @@ struct ScXMLAnnotationData
                         ~ScXMLAnnotationData();
 };
 
-class ScXMLAnnotationContext : public ScXMLImportContext
+class ScXMLAnnotationContext : public SvXMLImportContext
 {
 public:
 
@@ -73,7 +72,7 @@ public:
                         ScXMLAnnotationData& rAnnotationData,
                         ScXMLTableRowCellContext* pCellContext);
 
-    virtual ~ScXMLAnnotationContext() override;
+    virtual ~ScXMLAnnotationContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -100,6 +99,9 @@ private:
     OUStringBuffer maCreateDateStringBuffer;
     ScXMLTableRowCellContext* pCellContext;
     SvXMLImportContext* pShapeContext;
+
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 };
 
 #endif

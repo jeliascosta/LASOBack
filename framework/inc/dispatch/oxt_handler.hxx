@@ -59,34 +59,30 @@ class Oxt_Handler  :    public  ::cppu::WeakImplHelper<
     public:
 
                  Oxt_Handler( const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory );
-        virtual ~Oxt_Handler(                                                                        ) override;
+        virtual ~Oxt_Handler(                                                                        );
 
         //  XInterface, XTypeProvider, XServiceInfo
 
-        DECLARE_XSERVICEINFO_NOFACTORY
-        /* Helper for registry */
-        /// @throws css::uno::Exception
-        static css::uno::Reference< css::uno::XInterface >             SAL_CALL impl_createInstance                ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
-        static css::uno::Reference< css::lang::XSingleServiceFactory > SAL_CALL impl_createFactory                 ( const css::uno::Reference< css::lang::XMultiServiceFactory >& xServiceManager );
+        DECLARE_XSERVICEINFO
 
         //  XNotifyingDispatch
 
         virtual void SAL_CALL dispatchWithNotification(const css::util::URL&                                             aURL      ,
                                                        const css::uno::Sequence< css::beans::PropertyValue >&            lArguments,
-                                                       const css::uno::Reference< css::frame::XDispatchResultListener >& xListener ) override;
+                                                       const css::uno::Reference< css::frame::XDispatchResultListener >& xListener ) throw( css::uno::RuntimeException, std::exception ) override;
 
         //  XDispatch
 
         virtual void SAL_CALL dispatch              (  const css::util::URL&                                     aURL        ,
-                                                       const css::uno::Sequence< css::beans::PropertyValue >&    lArguments  ) override;
+                                                       const css::uno::Sequence< css::beans::PropertyValue >&    lArguments  ) throw( css::uno::RuntimeException, std::exception ) override;
         // not supported !
         virtual void SAL_CALL addStatusListener     (  const css::uno::Reference< css::frame::XStatusListener >& /*xListener*/   ,
-                                                       const css::util::URL&                                     /*aURL*/        ) override {};
+                                                       const css::util::URL&                                     /*aURL*/        ) throw( css::uno::RuntimeException, std::exception ) override {};
         virtual void SAL_CALL removeStatusListener  (  const css::uno::Reference< css::frame::XStatusListener >& /*xListener*/   ,
-                                                       const css::util::URL&                                     /*aURL*/        ) override {};
+                                                       const css::util::URL&                                     /*aURL*/        ) throw( css::uno::RuntimeException, std::exception ) override {};
 
         //  XExtendedFilterDetection
-        virtual OUString SAL_CALL detect     (        css::uno::Sequence< css::beans::PropertyValue >&    lDescriptor ) override;
+        virtual OUString SAL_CALL detect     (        css::uno::Sequence< css::beans::PropertyValue >&    lDescriptor ) throw( css::uno::RuntimeException, std::exception ) override;
 
     private:
         osl::Mutex m_mutex;

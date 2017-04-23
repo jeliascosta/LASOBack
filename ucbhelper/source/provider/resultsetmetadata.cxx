@@ -56,13 +56,16 @@ struct ResultSetMetaData_Impl
     osl::Mutex                                      m_aMutex;
     std::vector< ::ucbhelper::ResultSetColumnData > m_aColumnData;
     bool                                        m_bObtainedTypes;
+    bool                                        m_bGlobalReadOnlyValue;
 
     explicit ResultSetMetaData_Impl( sal_Int32 nSize )
-    : m_aColumnData( nSize ), m_bObtainedTypes( false ) {}
+    : m_aColumnData( nSize ), m_bObtainedTypes( false ),
+      m_bGlobalReadOnlyValue( true ) {}
 
     explicit ResultSetMetaData_Impl(
         const std::vector< ::ucbhelper::ResultSetColumnData >& rColumnData )
-    : m_aColumnData( rColumnData ), m_bObtainedTypes( false ) {}
+    : m_aColumnData( rColumnData ), m_bObtainedTypes( false ),
+      m_bGlobalReadOnlyValue( false ) {}
 };
 
 }
@@ -80,7 +83,8 @@ ResultSetMetaData::ResultSetMetaData(
                         const Sequence< Property >& rProps )
 : m_pImpl( new ResultSetMetaData_Impl( rProps.getLength() ) ),
   m_xContext( rxContext ),
-  m_aProps( rProps )
+  m_aProps( rProps ),
+  m_bReadOnly( true )
 {
 }
 
@@ -91,7 +95,8 @@ ResultSetMetaData::ResultSetMetaData(
                         const std::vector< ResultSetColumnData >& rColumnData )
 : m_pImpl( new ResultSetMetaData_Impl( rColumnData ) ),
   m_xContext( rxContext ),
-  m_aProps( rProps )
+  m_aProps( rProps ),
+  m_bReadOnly( true )
 {
     OSL_ENSURE( rColumnData.size() == sal_uInt32( rProps.getLength() ),
                 "ResultSetMetaData ctor - different array sizes!" );
@@ -119,6 +124,7 @@ void SAL_CALL ResultSetMetaData::release()
 }
 
 css::uno::Any SAL_CALL ResultSetMetaData::queryInterface( const css::uno::Type & rType )
+    throw( css::uno::RuntimeException, std::exception )
 {
     css::uno::Any aRet = cppu::queryInterface( rType,
                                                (static_cast< XTypeProvider* >(this)),
@@ -140,24 +146,31 @@ XTYPEPROVIDER_IMPL_2( ResultSetMetaData,
 
 // virtual
 sal_Int32 SAL_CALL ResultSetMetaData::getColumnCount()
+    throw( SQLException, RuntimeException, std::exception )
 {
     return m_aProps.getLength();
 }
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isAutoIncrement( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isAutoIncrement( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Checks whether column is automatically numbered, which makes it
         read-only.
      */
-    return false;
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isAutoIncrement;
 }
 
 
 // virtual
 sal_Bool SAL_CALL ResultSetMetaData::isCaseSensitive( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
         return false;
@@ -167,35 +180,70 @@ sal_Bool SAL_CALL ResultSetMetaData::isCaseSensitive( sal_Int32 column )
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isSearchable( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isSearchable( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return false;
+    /*
+        Checks whether the value stored in column can be used in a
+        WHERE clause.
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isSearchable;
 }
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isCurrency( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isCurrency( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return false;
+    /*
+        Checks whether column is a cash value.
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isCurrency;
 }
 
 
 // virtual
-sal_Int32 SAL_CALL ResultSetMetaData::isNullable( sal_Int32 /*column*/ )
+sal_Int32 SAL_CALL ResultSetMetaData::isNullable( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return ColumnValue::NULLABLE;
+    /*
+        Checks whether a NULL can be stored in column.
+        Possible values: see com/sun/star/sdbc/ColumnValue.idl
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return ColumnValue::NULLABLE;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isNullable;
 }
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isSigned( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isSigned( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return false;
+    /*
+        Checks whether the value stored in column is a signed number.
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isSigned;
 }
 
 
 // virtual
 sal_Int32 SAL_CALL ResultSetMetaData::getColumnDisplaySize( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the normal maximum width in characters for column.
@@ -210,6 +258,7 @@ sal_Int32 SAL_CALL ResultSetMetaData::getColumnDisplaySize( sal_Int32 column )
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getColumnLabel( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the suggested column title for column, to be used in print-
@@ -229,6 +278,7 @@ OUString SAL_CALL ResultSetMetaData::getColumnLabel( sal_Int32 column )
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getColumnName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the name of column.
@@ -243,6 +293,7 @@ OUString SAL_CALL ResultSetMetaData::getColumnName( sal_Int32 column )
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getSchemaName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the schema name for the table from which column of this
@@ -259,21 +310,43 @@ OUString SAL_CALL ResultSetMetaData::getSchemaName( sal_Int32 column )
 
 
 // virtual
-sal_Int32 SAL_CALL ResultSetMetaData::getPrecision( sal_Int32 /*column*/ )
+sal_Int32 SAL_CALL ResultSetMetaData::getPrecision( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return -1;
+    /*
+        For number types, getprecision gets the number of decimal digits
+        in column.
+        For character types, it gets the maximum length in characters for
+        column.
+        For binary types, it gets the maximum length in bytes for column.
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return -1;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].precision;
 }
 
 
 // virtual
-sal_Int32 SAL_CALL ResultSetMetaData::getScale( sal_Int32 /*column*/ )
+sal_Int32 SAL_CALL ResultSetMetaData::getScale( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return 0;
+    /*
+        Gets the number of digits to the right of the decimal point for
+        values in column.
+     */
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return 0;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].scale;
 }
 
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getTableName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the name of the table from which column of this result set
@@ -291,6 +364,7 @@ OUString SAL_CALL ResultSetMetaData::getTableName( sal_Int32 column )
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getCatalogName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the catalog name for the table from which column of this
@@ -308,6 +382,7 @@ OUString SAL_CALL ResultSetMetaData::getCatalogName( sal_Int32 column )
 
 // virtual
 sal_Int32 SAL_CALL ResultSetMetaData::getColumnType( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the JDBC type for the value stored in column. ... The STRUCT
@@ -415,6 +490,7 @@ sal_Int32 SAL_CALL ResultSetMetaData::getColumnType( sal_Int32 column )
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getColumnTypeName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
         Gets the type name used by this particular data source for the
@@ -431,28 +507,52 @@ OUString SAL_CALL ResultSetMetaData::getColumnTypeName( sal_Int32 column )
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isReadOnly( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isReadOnly( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return true;
+    if ( m_pImpl->m_bGlobalReadOnlyValue )
+        return m_bReadOnly;
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return true;
+
+    // autoincrement==true => readonly
+    return m_pImpl->m_aColumnData[ column - 1 ].isAutoIncrement ||
+           m_pImpl->m_aColumnData[ column - 1 ].isReadOnly;
 }
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isWritable( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isWritable( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return false;
+    if ( m_pImpl->m_bGlobalReadOnlyValue )
+        return !m_bReadOnly;
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isWritable;
 }
 
 
 // virtual
-sal_Bool SAL_CALL ResultSetMetaData::isDefinitelyWritable( sal_Int32 /*column*/ )
+sal_Bool SAL_CALL ResultSetMetaData::isDefinitelyWritable( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
-    return false;
+    if ( m_pImpl->m_bGlobalReadOnlyValue )
+        return !m_bReadOnly;
+
+    if ( ( column < 1 ) || ( column > m_aProps.getLength() ) )
+        return false;
+
+    return m_pImpl->m_aColumnData[ column - 1 ].isDefinitelyWritable;
 }
 
 
 // virtual
 OUString SAL_CALL ResultSetMetaData::getColumnServiceName( sal_Int32 column )
+    throw( SQLException, RuntimeException, std::exception )
 {
     /*
           Returns the fully-qualified name of the service whose instances

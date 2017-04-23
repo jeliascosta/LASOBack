@@ -14,11 +14,9 @@ $(eval $(call gb_Executable_add_exception_objects,unoidl-write, \
 ))
 
 $(eval $(call gb_Executable_use_libraries,unoidl-write, \
-    unoidl \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),reg) \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),store) \
-    salhelper \
     sal \
+    salhelper \
+    unoidl \
 ))
 
 # vim: set noet sw=4 ts=4:

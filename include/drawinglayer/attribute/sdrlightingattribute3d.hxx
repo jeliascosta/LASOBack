@@ -58,9 +58,7 @@ namespace drawinglayer
                 const ::std::vector< Sdr3DLightAttribute >& rLightVector);
             SdrLightingAttribute();
             SdrLightingAttribute(const SdrLightingAttribute& rCandidate);
-            SdrLightingAttribute(SdrLightingAttribute&& rCandidate);
             SdrLightingAttribute& operator=(const SdrLightingAttribute& rCandidate);
-            SdrLightingAttribute& operator=(SdrLightingAttribute&& rCandidate);
             ~SdrLightingAttribute();
 
             // checks if the incarnation is default constructed

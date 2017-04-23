@@ -22,10 +22,10 @@
 #include <sal/config.h>
 #include <svl/svldllapi.h>
 #include <com/sun/star/util/XSearchDescriptor.hpp>
+#include <com/sun/star/util/SearchOptions2.hpp>
 #include <com/sun/star/util/SearchAlgorithms2.hpp>
 #include <com/sun/star/util/SearchFlags.hpp>
-#include <i18nutil/transliteration.hxx>
-#include <i18nutil/searchopt.hxx>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 #include <unotools/configitem.hxx>
 #include <rsc/rscsfx.hxx>
 #include <svl/poolitem.hxx>
@@ -55,6 +55,7 @@ enum class SvxSearchApp
     WRITER        = 0,
     CALC          = 1,
     DRAW          = 2,
+    BASE          = 3,
 };
 
 // class SvxSearchItem ---------------------------------------------------
@@ -63,7 +64,7 @@ class SVL_DLLPUBLIC SvxSearchItem :
         public SfxPoolItem,
         public utl::ConfigItem
 {
-    i18nutil::SearchOptions2 m_aSearchOpt;
+    css::util::SearchOptions2 m_aSearchOpt;
 
     SfxStyleFamily  m_eFamily;            // style family
 
@@ -96,16 +97,16 @@ public:
 
     explicit SvxSearchItem( const sal_uInt16 nId );
     SvxSearchItem( const SvxSearchItem& rItem );
-    virtual ~SvxSearchItem() override;
+    virtual ~SvxSearchItem();
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
     virtual bool             operator == ( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     // ConfigItem
     virtual void            Notify( const css::uno::Sequence< OUString > &rPropertyNames ) override;
@@ -180,19 +181,18 @@ public:
     inline  sal_uInt16      GetLEVLonger() const;
     inline  void            SetLEVLonger(sal_uInt16 nSet);
 
-    inline const i18nutil::SearchOptions2 &
+    inline const css::util::SearchOptions2 &
                             GetSearchOptions() const;
-    inline void             SetSearchOptions( const i18nutil::SearchOptions2 &rOpt );
+    inline void             SetSearchOptions( const css::util::SearchOptions2 &rOpt );
 
-    inline  TransliterationFlags
-                            GetTransliterationFlags() const;
-            void            SetTransliterationFlags( TransliterationFlags nFlags );
+    inline  sal_Int32       GetTransliterationFlags() const;
+            void            SetTransliterationFlags( sal_Int32 nFlags );
 
     inline  bool            IsMatchFullHalfWidthForms() const;
     void                    SetMatchFullHalfWidthForms( bool bVal );
 
-    bool            IsUseAsianOptions() const           { return m_bAsianOptions; }
-    void            SetUseAsianOptions( bool bVal ) { m_bAsianOptions = bVal; }
+    inline  bool            IsUseAsianOptions() const           { return m_bAsianOptions; }
+    inline  void            SetUseAsianOptions( bool bVal ) { m_bAsianOptions = bVal; }
 
     sal_Int32 GetStartPointX() const;
     sal_Int32 GetStartPointY() const;
@@ -228,7 +228,7 @@ bool SvxSearchItem::GetWordOnly() const
 
 bool SvxSearchItem::GetExact() const
 {
-    return !(m_aSearchOpt.transliterateFlags & TransliterationFlags::IGNORE_CASE);
+    return 0 == (m_aSearchOpt.transliterateFlags & css::i18n::TransliterationModules_IGNORE_CASE);
 }
 
 bool SvxSearchItem::GetSelection() const
@@ -299,24 +299,24 @@ bool SvxSearchItem::IsLevenshtein() const
     return m_aSearchOpt.AlgorithmType2 == css::util::SearchAlgorithms2::APPROXIMATE;
 }
 
-const i18nutil::SearchOptions2 & SvxSearchItem::GetSearchOptions() const
+const css::util::SearchOptions2 & SvxSearchItem::GetSearchOptions() const
 {
     return m_aSearchOpt;
 }
 
-void SvxSearchItem::SetSearchOptions( const i18nutil::SearchOptions2 &rOpt )
+void SvxSearchItem::SetSearchOptions( const css::util::SearchOptions2 &rOpt )
 {
     m_aSearchOpt = rOpt;
 }
 
-TransliterationFlags SvxSearchItem::GetTransliterationFlags() const
+sal_Int32 SvxSearchItem::GetTransliterationFlags() const
 {
     return m_aSearchOpt.transliterateFlags;
 }
 
 bool SvxSearchItem::IsMatchFullHalfWidthForms() const
 {
-    return bool(m_aSearchOpt.transliterateFlags & TransliterationFlags::IGNORE_WIDTH);
+    return 0 != (m_aSearchOpt.transliterateFlags & css::i18n::TransliterationModules_IGNORE_WIDTH);
 }
 
 #endif

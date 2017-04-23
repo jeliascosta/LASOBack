@@ -75,7 +75,7 @@ private:
     bool        mbBookPreviewModeToggled;
 
     Size        maMaxPageSize;
-    tools::Rectangle   maPreviewDocRect;
+    Rectangle   maPreviewDocRect;
     SwTwips     mnColWidth;
     SwTwips     mnRowHeight;
     SwTwips     mnPreviewLayoutWidth;
@@ -90,7 +90,7 @@ private:
     Point       maPaintStartPageOffset;
     Point       maPaintPreviewDocOffset;
     Point       maAdditionalPaintOffset;
-    tools::Rectangle   maPaintedPreviewDocRect;
+    Rectangle   maPaintedPreviewDocRect;
     sal_uInt16  mnSelectedPageNum;
 
     std::vector<PreviewPage*> maPreviewPages;
@@ -242,7 +242,7 @@ public:
 
         @author
     */
-    ~SwPagePreviewLayout()
+    inline ~SwPagePreviewLayout()
     {
         ClearPreviewPageData();
     }
@@ -325,7 +325,7 @@ public:
                   const Point&      rProposedStartPos,
                   const Size&      _rPxWinSize,
                   sal_uInt16&      _onStartPageNum,
-                  tools::Rectangle&       _orDocPreviewPaintRect,
+                  Rectangle&       _orDocPreviewPaintRect,
                   const bool       _bStartWithPageAtFirstCol = true
                 );
 
@@ -333,7 +333,7 @@ public:
 
         @author OD
     */
-    sal_uInt16 SelectedPage()
+    inline sal_uInt16 SelectedPage()
     {
         return mnSelectedPageNum;
     }
@@ -342,7 +342,7 @@ public:
 
         @author OD
     */
-    void SetSelectedPage( sal_uInt16 _nSelectedPageNum )
+    inline void SetSelectedPage( sal_uInt16 _nSelectedPageNum )
     {
         mnSelectedPageNum = _nSelectedPageNum;
     }
@@ -356,7 +356,7 @@ public:
 
         @return boolean, indicating, if paint of preview was performed
     */
-    bool Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rOutRect) const;
+    bool Paint(vcl::RenderContext& rRenderContext, const Rectangle& rOutRect) const;
 
     /** repaint pages on page preview
 
@@ -365,7 +365,7 @@ public:
 
         @author OD
     */
-    void Repaint(const tools::Rectangle& rInvalidCoreRect) const;
+    void Repaint(const Rectangle& rInvalidCoreRect) const;
 
     /** paint to mark new selected page
 
@@ -465,17 +465,17 @@ public:
                                    bool&        _obPosInEmptyPage,
                                    sal_uInt16&  _onPageNum ) const;
 
-    bool DoesPreviewLayoutRowsFitIntoWindow() const
+    inline bool DoesPreviewLayoutRowsFitIntoWindow() const
     {
         return mbDoesLayoutRowsFitIntoWindow;
     }
 
-    bool DoesPreviewLayoutColsFitIntoWindow() const
+    inline bool DoesPreviewLayoutColsFitIntoWindow() const
     {
         return mbDoesLayoutColsFitIntoWindow;
     }
 
-    bool PreviewLayoutValid() const
+    inline bool PreviewLayoutValid() const
     {
         return mbLayoutInfoValid && mbLayoutSizesValid && mbPaintInfoValid;
     }
@@ -550,7 +550,7 @@ public:
     */
     bool SetBookPreviewMode( const bool  _bEnableBookPreview,
                              sal_uInt16& _onStartPageNum,
-                             tools::Rectangle&  _orDocPreviewPaintRect );
+                             Rectangle&  _orDocPreviewPaintRect );
 
     /** Convert relative to absolute page numbers (see PrintEmptyPages)
 

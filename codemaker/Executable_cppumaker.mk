@@ -12,11 +12,9 @@ $(eval $(call gb_Executable_Executable,cppumaker))
 $(eval $(call gb_Executable_use_external,cppumaker,boost_headers))
 
 $(eval $(call gb_Executable_use_libraries,cppumaker,\
-    unoidl \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),reg) \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),store) \
-    salhelper \
     sal \
+    salhelper \
+    unoidl \
 ))
 
 $(eval $(call gb_Executable_use_static_libraries,cppumaker,\
@@ -33,7 +31,7 @@ $(eval $(call gb_Executable_add_exception_objects,cppumaker,\
     codemaker/source/cppumaker/includes \
 ))
 
-ifeq ($(OS),WNT)
+ifeq ($(OS)$(COM),WNTMSC)
 $(eval $(call gb_Executable_add_cxxflags,cppumaker,\
 	-Ob0 \
 ))

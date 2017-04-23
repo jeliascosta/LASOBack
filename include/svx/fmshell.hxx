@@ -61,7 +61,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC FmDesignModeChangedHint : public SfxHint
 
 public:
     FmDesignModeChangedHint( bool bDesMode );
-    virtual ~FmDesignModeChangedHint() override;
+    virtual ~FmDesignModeChangedHint();
 
     bool GetDesignMode() const { return m_bDesignMode; }
 };
@@ -71,7 +71,7 @@ class SVX_DLLPUBLIC FmFormShell : public SfxShell
     friend class FmFormView;
     friend class FmXFormShell;
 
-    rtl::Reference<FmXFormShell> m_pImpl;
+    FmXFormShell*   m_pImpl;
     FmFormView*     m_pFormView;
     FmFormModel*    m_pFormModel;
 
@@ -85,6 +85,8 @@ class SVX_DLLPUBLIC FmFormShell : public SfxShell
         // (the FormView itself is not a broadcaster, therefore it can't always correctly notify the
         // form explorer who is interested in the event)
 
+    const OutputDevice* GetCurrentViewDevice() const { return m_pFormView ? m_pFormView->GetActualOutDev() : nullptr; }
+
 public:
     SFX_DECL_INTERFACE(SVX_INTERFACE_FORM_SH)
 
@@ -94,11 +96,11 @@ private:
 
 public:
     FmFormShell(SfxViewShell* pParent, FmFormView* pView = nullptr);
-    virtual ~FmFormShell() override;
+    virtual ~FmFormShell();
 
     void Execute( SfxRequest& );
     void GetState( SfxItemSet& );
-    virtual bool HasUIFeature(SfxShellFeature nFeature) const override;
+    virtual bool HasUIFeature( sal_uInt32 nFeature ) override;
 
     void ExecuteTextAttribute( SfxRequest& );
     void GetTextAttributeState( SfxItemSet& );
@@ -111,7 +113,7 @@ public:
     FmFormView*  GetFormView() const { return m_pFormView; }
     FmFormModel* GetFormModel() const { return m_pFormModel; }
     FmFormPage*  GetCurPage() const;
-    FmXFormShell* GetImpl() const {return m_pImpl.get();};
+    FmXFormShell* GetImpl() const {return m_pImpl;};
 
     bool PrepareClose(bool bUI = true);
 

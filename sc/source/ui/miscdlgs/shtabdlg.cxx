@@ -23,7 +23,7 @@
 
 #include "shtabdlg.hxx"
 #include "scresid.hxx"
-#include "scres.hrc"
+#include "miscdlgs.hrc"
 
 ScShowTabDlg::ScShowTabDlg(vcl::Window* pParent)
     : ModalDialog(pParent, "ShowSheetDialog", "modules/scalc/ui/showsheetdialog.ui")
@@ -81,7 +81,7 @@ sal_Int32 ScShowTabDlg::GetSelectEntryPos(sal_Int32 nPos) const
     return m_pLb->GetSelectEntryPos(nPos);
 }
 
-IMPL_LINK_NOARG(ScShowTabDlg, DblClkHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScShowTabDlg, DblClkHdl, ListBox&, void)
 {
     EndDialog( RET_OK );
 }

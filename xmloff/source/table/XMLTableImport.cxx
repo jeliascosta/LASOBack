@@ -24,7 +24,6 @@
 #include <com/sun/star/table/XTable.hpp>
 #include <com/sun/star/text/XText.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
-#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/XSingleServiceFactory.hpp>
 
 #include <xmloff/table/XMLTableImport.hxx>
@@ -38,7 +37,6 @@
 #include <xmloff/prstylei.hxx>
 
 #include <xmloff/xmlnmspe.hxx>
-#include <xmloff/xmluconv.hxx>
 #include "table.hxx"
 
 #include <osl/diagnose.h>
@@ -94,6 +92,7 @@ class XMLTableImportContext : public SvXMLImportContext
 {
 public:
     XMLTableImportContext( const rtl::Reference< XMLTableImport >& xThis, sal_uInt16 nPrfx, const OUString& rLName, Reference< XColumnRowRange >& xColumnRowRange );
+    virtual ~XMLTableImportContext();
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList ) override;
 
@@ -132,6 +131,8 @@ public:
                           sal_uInt16 nPrfx, const OUString& rLName,
                           const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList );
 
+    virtual ~XMLCellImportContext();
+
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList ) override;
 
     virtual void EndElement() override;
@@ -159,7 +160,6 @@ public:
 
     virtual void EndElement() override;
 
-    virtual void CreateAndInsert( bool bOverwrite ) override;
 private:
     XMLTableTemplate maTableTemplate;
     OUString msTemplateStyleName;
@@ -175,7 +175,7 @@ XMLProxyContext::XMLProxyContext( SvXMLImport& rImport, const SvXMLImportContext
 
 SvXMLImportContext * XMLProxyContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList )
 {
-    if( mxParent.is() )
+    if( mxParent.Is() )
         return mxParent->CreateChildContext( nPrefix, rLocalName, xAttrList );
     else
         return SvXMLImportContext::CreateChildContext( nPrefix, rLocalName, xAttrList );
@@ -186,37 +186,8 @@ SvXMLImportContext * XMLProxyContext::CreateChildContext( sal_uInt16 nPrefix, co
 XMLTableImport::XMLTableImport( SvXMLImport& rImport, const rtl::Reference< XMLPropertySetMapper >& xCellPropertySetMapper, const rtl::Reference< XMLPropertyHandlerFactory >& xFactoryRef )
 : mrImport( rImport )
 {
-    bool bWriter = false;
-    // check if called by Writer
-    Reference<XMultiServiceFactory> xFac(rImport.GetModel(), UNO_QUERY);
-    if (xFac.is()) try
-    {
-        Sequence<OUString> sSNS = xFac->getAvailableServiceNames();
-        const sal_Int32 nLength = sSNS.getLength();
-        const OUString* pSNS = sSNS.getConstArray();
-        for (sal_Int32 i=0; i < nLength; ++i, ++pSNS)
-        {
-            if (*pSNS == "com.sun.star.style.TableStyle")
-            {
-                bWriter = true;
-                break;
-            }
-        }
-    }
-    catch(const Exception&)
-    {
-        SAL_WARN("xmloff.table", "Error while checking available service names");
-    }
-
-    if (bWriter)
-    {
-        mxCellImportPropertySetMapper = XMLTextImportHelper::CreateTableCellExtPropMapper(rImport);
-    }
-    else
-    {
-        mxCellImportPropertySetMapper = new SvXMLImportPropertyMapper( xCellPropertySetMapper.get(), rImport );
-        mxCellImportPropertySetMapper->ChainImportMapper(XMLTextImportHelper::CreateParaExtPropMapper(rImport));
-    }
+    mxCellImportPropertySetMapper = new SvXMLImportPropertyMapper( xCellPropertySetMapper.get(), rImport );
+    mxCellImportPropertySetMapper->ChainImportMapper(XMLTextImportHelper::CreateParaExtPropMapper(rImport));
 
     rtl::Reference < XMLPropertySetMapper > xRowMapper( new XMLPropertySetMapper( getRowPropertiesMap(), xFactoryRef.get(), false ) );
     mxRowImportPropertySetMapper = new SvXMLImportPropertyMapper( xRowMapper, rImport );
@@ -245,67 +216,6 @@ void XMLTableImport::addTableTemplate( const OUString& rsStyleName, XMLTableTemp
     std::shared_ptr< XMLTableTemplate > xPtr( new XMLTableTemplate );
     xPtr->swap( xTableTemplate );
     maTableTemplates[rsStyleName] = xPtr;
-}
-
-void XMLTableImport::insertTabletemplate(const OUString& rsStyleName, bool bOverwrite)
-{
-    XMLTableTemplateMap::iterator it = maTableTemplates.find(rsStyleName);
-    if (it == maTableTemplates.end())
-        return;
-
-    try
-    {
-        Reference<XStyleFamiliesSupplier> xFamiliesSupp(mrImport.GetModel(), UNO_QUERY_THROW);
-        Reference<XNameAccess> xFamilies(xFamiliesSupp->getStyleFamilies());
-        const OUString sFamilyName("TableStyles");
-        const OUString sCellFamilyName("CellStyles");
-
-        Reference<XNameContainer> xTableFamily(xFamilies->getByName(sFamilyName), UNO_QUERY_THROW);
-        Reference<XIndexAccess> xCellFamily(xFamilies->getByName(sCellFamilyName), UNO_QUERY_THROW);
-
-        const OUString sTemplateName(it->first);
-        Reference<XMultiServiceFactory> xFactory(mrImport.GetModel(), UNO_QUERY_THROW);
-        Reference<XNameReplace> xTemplate(xFactory->createInstance("com.sun.star.style.TableStyle"), UNO_QUERY_THROW);
-
-        std::shared_ptr<XMLTableTemplate> xT(it->second);
-
-        for (auto aStyleIter=xT->begin(); aStyleIter != xT->end(); ++aStyleIter) try
-        {
-            const OUString sPropName((*aStyleIter).first);
-            const OUString sStyleName((*aStyleIter).second);
-            // Internally unassigned cell styles are stored by display name.
-            // However table-template elements reference cell styles by its encoded name.
-            // This loop is looking for cell style by their encoded names.
-            sal_Int32 nCount = xCellFamily->getCount();
-            for (sal_Int32 i=0; i < nCount; ++i)
-            {
-                Any xCellStyle = xCellFamily->getByIndex(i);
-                OUString sEncodedStyleName = mrImport.GetMM100UnitConverter().encodeStyleName(
-                    xCellStyle.get<Reference<XStyle>>()->getName());
-                if (sEncodedStyleName == sStyleName)
-                {
-                    xTemplate->replaceByName(sPropName, xCellStyle);
-                    break;
-                }
-            }
-        }
-        catch (Exception&)
-        {
-            SAL_WARN("xmloff.table", "XMLTableImport::insertTabletemplate(), exception caught!");
-        }
-
-        if (xTemplate.is())
-        {
-            if (xTableFamily->hasByName(sTemplateName) && bOverwrite)
-               xTableFamily->replaceByName(sTemplateName, Any(xTemplate));
-            else
-               xTableFamily->insertByName(sTemplateName, Any(xTemplate));
-        }
-    }
-    catch (Exception&)
-    {
-        SAL_WARN("xmloff.table", "XMLTableImport::insertTabletemplate(), exception caught!");
-    }
 }
 
 void XMLTableImport::finishStyles()
@@ -369,6 +279,10 @@ XMLTableImportContext::XMLTableImportContext( const rtl::Reference< XMLTableImpo
 , mxRows( xColumnRowRange->getRows() )
 , mnCurrentRow( -1 )
 , mnCurrentColumn( -1 )
+{
+}
+
+XMLTableImportContext::~XMLTableImportContext()
 {
 }
 
@@ -702,6 +616,10 @@ XMLCellImportContext::XMLCellImportContext( SvXMLImport& rImport, const Referenc
     }
 }
 
+XMLCellImportContext::~XMLCellImportContext()
+{
+}
+
 SvXMLImportContext * XMLCellImportContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList )
 {
     // create text cursor on demand
@@ -742,9 +660,10 @@ void XMLCellImportContext::EndElement()
     if(mxCursor.is())
     {
         // delete addition newline
+        const OUString aEmpty;
         mxCursor->gotoEnd( false );
         mxCursor->goLeft( 1, true );
-        mxCursor->setString( "" );
+        mxCursor->setString( aEmpty );
 
         // reset cursor
         GetImport().GetTextImport()->ResetCursor();
@@ -773,9 +692,7 @@ void XMLTableTemplateContext::StartElement( const Reference< XAttributeList >& x
     {
         OUString sAttrName;
         sal_uInt16 nAttrPrefix = GetImport().GetNamespaceMap().GetKeyByAttrName( xAttrList->getNameByIndex( i ), &sAttrName );
-        if( (nAttrPrefix == XML_NAMESPACE_TEXT && IsXMLToken( sAttrName, XML_STYLE_NAME ))
-            // Writer specific: according to oasis odf 1.2 prefix should be "table" and element name should be "name"
-            || (nAttrPrefix == XML_NAMESPACE_TABLE && IsXMLToken( sAttrName, XML_NAME )))
+        if( (nAttrPrefix == XML_NAMESPACE_TEXT ) && IsXMLToken( sAttrName, XML_STYLE_NAME ) )
         {
             msTemplateStyleName = xAttrList->getValueByIndex( i );
             break;
@@ -788,13 +705,6 @@ void XMLTableTemplateContext::EndElement()
     rtl::Reference< XMLTableImport > xTableImport( GetImport().GetShapeImport()->GetShapeTableImport() );
     if( xTableImport.is() )
         xTableImport->addTableTemplate( msTemplateStyleName, maTableTemplate );
-}
-
-void XMLTableTemplateContext::CreateAndInsert(bool bOverwrite)
-{
-    rtl::Reference<XMLTableImport> xTableImport(GetImport().GetShapeImport()->GetShapeTableImport());
-    if(xTableImport.is())
-       xTableImport->insertTabletemplate(msTemplateStyleName, bOverwrite);
 }
 
 SvXMLImportContext * XMLTableTemplateContext::CreateChildContext( sal_uInt16 nPrefix, const OUString& rLocalName, const Reference< XAttributeList >& xAttrList )
@@ -816,27 +726,6 @@ SvXMLImportContext * XMLTableTemplateContext::CreateChildContext( sal_uInt16 nPr
                     IsXMLToken( sAttrName, XML_STYLE_NAME ) )
                 {
                     maTableTemplate[pElements->msStyleName] = xAttrList->getValueByIndex( i );
-                    break;
-                }
-            }
-        }
-    } else if (nPrefix == XML_NAMESPACE_LO_EXT) // Writer specific cell styles
-    {
-        const TableStyleElement* pElements = getWriterSpecificTableStyleMap();
-        while ((pElements->meElement != XML_TOKEN_END) && !IsXMLToken(rLocalName, pElements->meElement ))
-            pElements++;
-
-        if (pElements->meElement != XML_TOKEN_END)
-        {
-            sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
-            for (sal_Int16 i=0; i < nAttrCount; i++)
-            {
-                OUString sAttrName;
-                sal_uInt16 nAttrPrefix = GetImport().GetNamespaceMap().GetKeyByAttrName(xAttrList->getNameByIndex( i ), &sAttrName);
-                if( (nAttrPrefix == XML_NAMESPACE_TEXT || nAttrPrefix == XML_NAMESPACE_TABLE) &&
-                    IsXMLToken( sAttrName, XML_STYLE_NAME ) )
-                {
-                    maTableTemplate[pElements->msStyleName] = xAttrList->getValueByIndex(i);
                     break;
                 }
             }

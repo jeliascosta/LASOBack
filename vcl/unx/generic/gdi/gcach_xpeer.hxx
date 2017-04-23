@@ -26,7 +26,7 @@ class X11GlyphCache : public GlyphCache
 {
 public:
     explicit X11GlyphCache();
-    virtual ~X11GlyphCache() override;
+    virtual ~X11GlyphCache();
     static X11GlyphCache& GetInstance();
     static void  KillInstance();
 };

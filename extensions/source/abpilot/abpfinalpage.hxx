@@ -51,7 +51,7 @@ namespace abp
 
     public:
         explicit FinalPage(OAddressBookSourcePilot* _pParent);
-        virtual ~FinalPage() override;
+        virtual ~FinalPage();
         virtual void dispose() override;
 
     protected:
@@ -67,9 +67,9 @@ namespace abp
         virtual bool        canAdvance() const override;
 
     private:
-        DECL_LINK( OnNameModified, Edit&, void );
-        DECL_LINK(OnRegister, Button*, void);
-        DECL_LINK(OnEmbed, Button*, void);
+        DECL_LINK_TYPED( OnNameModified, Edit&, void );
+        DECL_LINK_TYPED(OnRegister, Button*, void);
+        DECL_LINK_TYPED(OnEmbed, Button*, void);
 
         bool    isValidName() const;
         void        implCheckName();

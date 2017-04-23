@@ -114,14 +114,14 @@ namespace dbaui
 
         OFieldDescription*      pActFieldDescr;
 
-        DECL_LINK( OnScroll, ScrollBar*, void);
+        DECL_LINK_TYPED( OnScroll, ScrollBar*, void);
 
-        DECL_LINK( FormatClickHdl, Button *, void );
-        DECL_LINK( ChangeHdl, ListBox&, void );
+        DECL_LINK_TYPED( FormatClickHdl, Button *, void );
+        DECL_LINK_TYPED( ChangeHdl, ListBox&, void );
 
         // used by ActivatePropertyField
-        DECL_LINK( OnControlFocusLost, Control&, void );
-        DECL_LINK( OnControlFocusGot, Control&, void );
+        DECL_LINK_TYPED( OnControlFocusLost, Control&, void );
+        DECL_LINK_TYPED( OnControlFocusGot, Control&, void );
 
         void                UpdateFormatSample(OFieldDescription* pFieldDescr);
         void                ArrangeAggregates();
@@ -138,12 +138,12 @@ namespace dbaui
         void                InitializeControl(Control* _pControl,const OString& _sHelpId,bool _bAddChangeHandler);
 
     protected:
-        void    setRightAligned()       { m_bRightAligned = true; }
-        bool    isRightAligned() const  { return m_bRightAligned; }
+        inline  void    setRightAligned()       { m_bRightAligned = true; }
+        inline  bool    isRightAligned() const  { return m_bRightAligned; }
 
-        void                saveCurrentFieldDescData() { SaveData( pActFieldDescr ); }
-        OFieldDescription*  getCurrentFieldDescData() { return pActFieldDescr; }
-        void                setCurrentFieldDescData( OFieldDescription* _pDesc ) { pActFieldDescr = _pDesc; }
+        inline  void                saveCurrentFieldDescData() { SaveData( pActFieldDescr ); }
+        inline  OFieldDescription*  getCurrentFieldDescData() { return pActFieldDescr; }
+        inline  void                setCurrentFieldDescData( OFieldDescription* _pDesc ) { pActFieldDescr = _pDesc; }
 
         sal_uInt16          CountActiveAggregates() const;
         sal_Int32           GetMaxControlHeight() const;
@@ -174,7 +174,7 @@ namespace dbaui
 
     public:
         OFieldDescControl( vcl::Window* pParent, OTableDesignHelpBar* pHelpBar);
-        virtual ~OFieldDescControl() override;
+        virtual ~OFieldDescControl();
         virtual void        dispose() override;
 
         void                DisplayData(OFieldDescription* pFieldDescr );
@@ -204,7 +204,7 @@ namespace dbaui
 
         OUString            getControlDefault( const OFieldDescription* _pFieldDescr, bool _bCheck = true) const;
 
-        void setEditWidth(sal_Int32 _nWidth) { m_nWidth = _nWidth; }
+        inline void setEditWidth(sal_Int32 _nWidth) { m_nWidth = _nWidth; }
     };
 }
 #endif

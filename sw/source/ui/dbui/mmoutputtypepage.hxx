@@ -21,6 +21,7 @@
 
 #include <svtools/wizardmachine.hxx>
 #include <vcl/button.hxx>
+#include <svtools/stdctrl.hxx>
 #include <mailmergehelper.hxx>
 class SwMailMergeWizard;
 
@@ -34,11 +35,11 @@ class SwMailMergeOutputTypePage : public svt::OWizardPage
 
     VclPtr<SwMailMergeWizard>  m_pWizard;
 
-    DECL_LINK(TypeHdl_Impl, Button*, void);
+    DECL_LINK_TYPED(TypeHdl_Impl, Button*, void);
 
 public:
     SwMailMergeOutputTypePage( SwMailMergeWizard* _pParent);
-    virtual ~SwMailMergeOutputTypePage() override;
+    virtual ~SwMailMergeOutputTypePage();
     virtual void dispose() override;
 };
 #endif

@@ -35,6 +35,7 @@ using namespace ::com::sun::star::lang;
 OEvoabCatalog::OEvoabCatalog(OEvoabConnection* _pCon) :
     connectivity::sdbcx::OCatalog(_pCon)
     ,m_pConnection(_pCon)
+    ,m_xMetaData(m_pConnection->getMetaData())
 {
 }
 void OEvoabCatalog::refreshTables()
@@ -61,7 +62,7 @@ void OEvoabCatalog::refreshTables()
         m_pTables = new OEvoabTables(m_xMetaData,*this,m_aMutex,aVector);
 }
 // XTablesSupplier
-Reference< XNameAccess > SAL_CALL  OEvoabCatalog::getTables(  )
+Reference< XNameAccess > SAL_CALL  OEvoabCatalog::getTables(  ) throw(RuntimeException, std::exception)
 {
         ::osl::MutexGuard aGuard(m_aMutex);
 

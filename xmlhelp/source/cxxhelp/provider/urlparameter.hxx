@@ -109,9 +109,10 @@ namespace chelp {
     class URLParameter
     {
     public:
-        /// @throws css::ucb::IllegalIdentifierException
+
         URLParameter( const OUString& aURL,
-                      Databases* pDatabases );
+                      Databases* pDatabases )
+            throw( css::ucb::IllegalIdentifierException );
 
         bool isActive() const { return !m_aActive.isEmpty() && m_aActive == "true"; }
         bool isQuery() const { return m_aId.isEmpty() && !m_aQuery.isEmpty(); }
@@ -120,25 +121,25 @@ namespace chelp {
         bool isRoot() const { return m_aModule.isEmpty(); }
         bool isErrorDocument();
 
-        OUString const & get_id();
+        OUString get_id();
 
         OUString get_tag();
 
         //  Not called for an directory
 
-        OUString get_path();
+        OUString get_path()   { return get_the_path(); }
 
         const OUString& get_eid() const   { return m_aEid; }
 
         OUString get_title();
 
-        OUString get_jar();
+        OUString get_jar()      { return get_the_jar(); }
 
         const OUString& get_ExtensionRegistryPath() const { return m_aExtensionRegistryPath; }
 
         const OUString& get_module() const { return m_aModule; }
 
-        OUString const & get_dbpar() const
+        OUString get_dbpar() const
         {
             if( !m_aDbPar.isEmpty() )
                 return m_aDbPar;
@@ -146,9 +147,11 @@ namespace chelp {
                 return m_aModule;
         }
 
-        OUString const & get_language();
+        const OUString& get_prefix() const { return m_aPrefix; }
 
-        OUString const & get_program();
+        OUString get_language();
+
+        OUString get_program();
 
         const OUString& get_query() const { return m_aQuery; }
 
@@ -213,12 +216,15 @@ namespace chelp {
 
         OUString get_the_tag();
 
+        OUString get_the_path();
+
         OUString get_the_title();
+
+        OUString get_the_jar();
 
         void readHelpDataFile();
 
-        /// @throws css::ucb::IllegalIdentifierException
-        void parse();
+        void parse() throw( css::ucb::IllegalIdentifierException );
 
         bool scheme();
 

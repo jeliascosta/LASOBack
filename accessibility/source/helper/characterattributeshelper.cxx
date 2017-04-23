@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <helper/characterattributeshelper.hxx>
+#include <accessibility/helper/characterattributeshelper.hxx>
 #include <tools/gen.hxx>
 #include <comphelper/sequence.hxx>
 
@@ -27,30 +27,39 @@ using namespace ::com::sun::star::beans;
 
 CharacterAttributesHelper::CharacterAttributesHelper( const vcl::Font& rFont, sal_Int32 nBackColor, sal_Int32 nColor )
 {
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharBackColor" ),     Any( nBackColor ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharColor" ),         Any( nColor ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontCharSet" ),   Any( (sal_Int16) rFont.GetCharSet() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontFamily" ),    Any( (sal_Int16) rFont.GetFamilyType() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontName" ),      Any( rFont.GetFamilyName() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontPitch" ),     Any( (sal_Int16) rFont.GetPitch() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontStyleName" ), Any( rFont.GetStyleName() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharHeight" ),        Any( (sal_Int16) rFont.GetFontSize().Height() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharScaleWidth" ),    Any( (sal_Int16) rFont.GetFontSize().Width() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharStrikeout" ),     Any( (sal_Int16) rFont.GetStrikeout() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharUnderline" ),     Any( (sal_Int16) rFont.GetUnderline() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharWeight" ),        Any( (float) rFont.GetWeight() ) ) );
-    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharPosture" ),       Any( (sal_Int16)rFont.GetItalic() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharBackColor" ),     makeAny( (sal_Int32) nBackColor ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharColor" ),         makeAny( (sal_Int32) nColor ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontCharSet" ),   makeAny( (sal_Int16) rFont.GetCharSet() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontFamily" ),    makeAny( (sal_Int16) rFont.GetFamilyType() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontName" ),      makeAny( rFont.GetFamilyName() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontPitch" ),     makeAny( (sal_Int16) rFont.GetPitch() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharFontStyleName" ), makeAny( rFont.GetStyleName() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharHeight" ),        makeAny( (sal_Int16) rFont.GetFontSize().Height() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharScaleWidth" ),    makeAny( (sal_Int16) rFont.GetFontSize().Width() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharStrikeout" ),     makeAny( (sal_Int16) rFont.GetStrikeout() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharUnderline" ),     makeAny( (sal_Int16) rFont.GetUnderline() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharWeight" ),        makeAny( (float) rFont.GetWeight() ) ) );
+    m_aAttributeMap.insert( AttributeMap::value_type( OUString( "CharPosture" ),       makeAny( (sal_Int16)rFont.GetItalic() ) ) );
+}
+
+
+CharacterAttributesHelper::~CharacterAttributesHelper()
+{
+    m_aAttributeMap.clear();
 }
 
 
 std::vector< PropertyValue > CharacterAttributesHelper::GetCharacterAttributes()
 {
-    std::vector< PropertyValue > aValues;
-    aValues.reserve( m_aAttributeMap.size() );
+    std::vector< PropertyValue > aValues( m_aAttributeMap.size() );
 
-    for ( const auto& aIt : m_aAttributeMap)
+    int i = 0;
+    for ( AttributeMap::iterator aIt = m_aAttributeMap.begin(); aIt != m_aAttributeMap.end(); ++aIt, ++i )
     {
-        aValues.emplace_back(aIt.first, (sal_Int32) -1, aIt.second, PropertyState_DIRECT_VALUE);
+        aValues[i].Name   = aIt->first;
+        aValues[i].Handle = (sal_Int32) -1;
+        aValues[i].Value  = aIt->second;
+        aValues[i].State  = PropertyState_DIRECT_VALUE;
     }
 
     return aValues;
@@ -63,14 +72,27 @@ Sequence< PropertyValue > CharacterAttributesHelper::GetCharacterAttributes( con
         return comphelper::containerToSequence(GetCharacterAttributes());
 
     std::vector< PropertyValue > aValues;
+    sal_Int32 nLength = aRequestedAttributes.getLength();
 
-    for ( const auto& aRequestedAttribute: aRequestedAttributes)
+    AttributeMap aAttributeMap;
+
+    for ( sal_Int32 i = 0; i < nLength; ++i )
     {
-        AttributeMap::iterator aFound = m_aAttributeMap.find( aRequestedAttribute );
+        AttributeMap::iterator aFound = m_aAttributeMap.find( aRequestedAttributes[i] );
         if ( aFound != m_aAttributeMap.end() )
-            aValues.emplace_back(aFound->first, (sal_Int32) -1, aFound->second, PropertyState_DIRECT_VALUE);
+            aAttributeMap.insert( *aFound );
     }
 
+    aValues.reserve( aAttributeMap.size() );
+
+    int i = 0;
+    for ( AttributeMap::iterator aIt = aAttributeMap.begin(); aIt != aAttributeMap.end(); ++aIt, ++i )
+    {
+        aValues[i].Name   = aIt->first;
+        aValues[i].Handle = (sal_Int32) -1;
+        aValues[i].Value  = aIt->second;
+        aValues[i].State  = PropertyState_DIRECT_VALUE;
+    }
     return comphelper::containerToSequence(aValues);
 }
 

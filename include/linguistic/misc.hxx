@@ -80,7 +80,7 @@ enum class CapType
 
 LNG_DLLPUBLIC ::osl::Mutex& GetLinguMutex();
 
-const LocaleDataWrapper & GetLocaleDataWrapper( LanguageType nLang );
+LocaleDataWrapper & GetLocaleDataWrapper( sal_Int16 nLang );
 
 sal_Int32 LevDistance( const OUString &rTxt1, const OUString &rTxt2 );
 
@@ -179,7 +179,7 @@ class AppExitListener :
 
 public:
     AppExitListener();
-    virtual ~AppExitListener() override;
+    virtual ~AppExitListener();
 
     virtual void    AtExit() = 0;
 
@@ -187,11 +187,11 @@ public:
     void            Deactivate();
 
     // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw(css::uno::RuntimeException, std::exception) override;
 
     // XTerminateListener
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& aEvent ) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent ) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& aEvent ) throw(css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception) override;
 };
 
 }   // namespace linguistic

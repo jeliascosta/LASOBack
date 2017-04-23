@@ -50,7 +50,6 @@
 
 #include <libxml/xmlwriter.h>
 #include <algorithm>
-#include <cassert>
 
 #if DEBUG_EDIT_ENGINE
 #include <iostream>
@@ -61,7 +60,7 @@ using std::endl;
 using namespace com::sun::star;
 
 
-XEditAttribute* MakeXEditAttribute( SfxItemPool& rPool, const SfxPoolItem& rItem, sal_Int32 nStart, sal_Int32 nEnd )
+XEditAttribute* MakeXEditAttribute( SfxItemPool& rPool, const SfxPoolItem& rItem, sal_uInt16 nStart, sal_uInt16 nEnd )
 {
     // Create thw new attribute in the pool
     const SfxPoolItem& rNew = rPool.Put( rItem );
@@ -70,7 +69,7 @@ XEditAttribute* MakeXEditAttribute( SfxItemPool& rPool, const SfxPoolItem& rItem
     return pNew;
 }
 
-XEditAttribute::XEditAttribute( const SfxPoolItem& rAttr, sal_Int32 nS, sal_Int32 nE )
+XEditAttribute::XEditAttribute( const SfxPoolItem& rAttr, sal_uInt16 nS, sal_uInt16 nE )
 {
     pItem = &rAttr;
     nStart = nS;
@@ -128,12 +127,12 @@ ContentInfo::ContentInfo( const ContentInfo& rCopyFrom, SfxItemPool& rPoolToUse 
     // this should ensure that the Items end up in the correct Pool!
     aParaAttribs.Set( rCopyFrom.GetParaAttribs() );
 
-    for (const auto & aAttrib : rCopyFrom.maCharAttribs)
+    for (const auto & aAttrib : rCopyFrom.aAttribs)
     {
         const XEditAttribute& rAttr = *aAttrib.get();
         XEditAttribute* pMyAttr = MakeXEditAttribute(
             rPoolToUse, *rAttr.GetItem(), rAttr.GetStart(), rAttr.GetEnd());
-        maCharAttribs.push_back(std::unique_ptr<XEditAttribute>(pMyAttr));
+        aAttribs.push_back(std::unique_ptr<XEditAttribute>(pMyAttr));
     }
 
     if ( rCopyFrom.GetWrongList() )
@@ -142,10 +141,10 @@ ContentInfo::ContentInfo( const ContentInfo& rCopyFrom, SfxItemPool& rPoolToUse 
 
 ContentInfo::~ContentInfo()
 {
-    XEditAttributesType::iterator it = maCharAttribs.begin(), itEnd = maCharAttribs.end();
+    XEditAttributesType::iterator it = aAttribs.begin(), itEnd = aAttribs.end();
     for (; it != itEnd; ++it)
         aParaAttribs.GetPool()->Remove(*(*it)->GetItem());
-    maCharAttribs.clear();
+    aAttribs.clear();
 }
 
 void ContentInfo::NormalizeString( svl::SharedStringPool& rPool )
@@ -163,25 +162,6 @@ OUString ContentInfo::GetText() const
 void ContentInfo::SetText( const OUString& rStr )
 {
     maText = svl::SharedString(rStr.pData, nullptr);
-}
-
-void ContentInfo::dumpAsXml(xmlTextWriterPtr pWriter) const
-{
-    xmlTextWriterStartElement(pWriter, BAD_CAST("ContentInfo"));
-    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("style"), BAD_CAST(aStyle.toUtf8().getStr()));
-    xmlTextWriterStartElement(pWriter, BAD_CAST("text"));
-    xmlTextWriterWriteString(pWriter, BAD_CAST(GetText().toUtf8().getStr()));
-    xmlTextWriterEndElement(pWriter);
-    aParaAttribs.dumpAsXml(pWriter);
-    for (size_t i=0; i<maCharAttribs.size(); ++i)
-    {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("attribs"));
-        xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("start"), "%" SAL_PRIdINT32, maCharAttribs[i]->GetStart());
-        xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("end"), "%" SAL_PRIdINT32, maCharAttribs[i]->GetEnd());
-        maCharAttribs[i]->GetItem()->dumpAsXml(pWriter);
-        xmlTextWriterEndElement(pWriter);
-    }
-    xmlTextWriterEndElement(pWriter);
 }
 
 const WrongList* ContentInfo::GetWrongList() const
@@ -372,7 +352,7 @@ void EditTextObject::Store( SvStream& rOStream ) const
     if ( rOStream.GetError() )
         return;
 
-    sal_uInt64 const nStartPos = rOStream.Tell();
+    sal_Size nStartPos = rOStream.Tell();
 
     sal_uInt16 nWhich = static_cast<sal_uInt16>(EE_FORMAT_BIN);
     rOStream.WriteUInt16( nWhich );
@@ -380,9 +360,9 @@ void EditTextObject::Store( SvStream& rOStream ) const
     sal_uInt32 nStructSz = 0;
     rOStream.WriteUInt32( nStructSz );
 
-    mpImpl->StoreData(rOStream);
+    StoreData( rOStream );
 
-    sal_uInt64 const nEndPos = rOStream.Tell();
+    sal_Size nEndPos = rOStream.Tell();
     nStructSz = nEndPos - nStartPos - sizeof( nWhich ) - sizeof( nStructSz );
     rOStream.Seek( nStartPos + sizeof( nWhich ) );
     rOStream.WriteUInt32( nStructSz );
@@ -391,7 +371,7 @@ void EditTextObject::Store( SvStream& rOStream ) const
 
 EditTextObject* EditTextObject::Create( SvStream& rIStream )
 {
-    sal_uInt64 const nStartPos = rIStream.Tell();
+    sal_Size nStartPos = rIStream.Tell();
 
     // First check what type of Object...
     sal_uInt16 nWhich;
@@ -411,12 +391,22 @@ EditTextObject* EditTextObject::Create( SvStream& rIStream )
         return nullptr;
 
     EditTextObject* pTxtObj = new EditTextObject(nullptr);
-    pTxtObj->mpImpl->CreateData(rIStream);
+    pTxtObj->CreateData(rIStream);
 
     // Make sure that the stream is left at the correct place.
-    std::size_t nFullSz = sizeof( nWhich ) + sizeof( nStructSz ) + nStructSz;
+    sal_Size nFullSz = sizeof( nWhich ) + sizeof( nStructSz ) + nStructSz;
     rIStream.Seek( nStartPos + nFullSz );
     return pTxtObj;
+}
+
+void EditTextObject::StoreData( SvStream& rStrm ) const
+{
+    mpImpl->StoreData(rStrm);
+}
+
+void EditTextObject::CreateData( SvStream& rStrm )
+{
+    mpImpl->CreateData(rStrm);
 }
 
 EditTextObject* EditTextObject::Clone() const
@@ -449,35 +439,21 @@ void EditTextObject::Dump() const
 
 void EditTextObject::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    bool bOwns = false;
-    if (!pWriter)
-    {
-        pWriter = xmlNewTextWriterFilename("editTextObject.xml", 0);
-        xmlTextWriterSetIndent(pWriter,1);
-        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
-        xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
-        bOwns = true;
-    }
-
-    xmlTextWriterStartElement(pWriter, BAD_CAST("EditTextObject"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("editTextObject"));
     sal_Int32 nCount = GetParagraphCount();
     for (sal_Int32 i = 0; i < nCount; ++i)
     {
-        mpImpl->aContents[i]->dumpAsXml(pWriter);
+        xmlTextWriterStartElement(pWriter, BAD_CAST("paragraph"));
+        xmlTextWriterWriteString(pWriter, BAD_CAST(GetText(i).toUtf8().getStr()));
+        xmlTextWriterEndElement(pWriter);
     }
     xmlTextWriterEndElement(pWriter);
-
-    if (bOwns)
-    {
-       xmlTextWriterEndDocument(pWriter);
-       xmlFreeTextWriter(pWriter);
-    }
 }
 
 // from SfxItemPoolUser
 void EditTextObjectImpl::ObjectInDestruction(const SfxItemPool& rSfxItemPool)
 {
-    if(!bOwnerOfPool && pPool == &rSfxItemPool)
+    if(!bOwnerOfPool && pPool && pPool == &rSfxItemPool)
     {
         // The pool we are based on gets destructed; get owner of pool by creating own one.
         // No need to call RemoveSfxItemPoolUser(), this is done from the pool's destructor
@@ -485,7 +461,10 @@ void EditTextObjectImpl::ObjectInDestruction(const SfxItemPool& rSfxItemPool)
         // pool if needed, but only text attributes should be used.
         SfxItemPool* pNewPool = EditEngine::CreatePool();
 
-        pNewPool->SetDefaultMetric(pPool->GetMetric(DEF_METRIC));
+        if(pPool)
+        {
+            pNewPool->SetDefaultMetric(pPool->GetMetric(DEF_METRIC));
+        }
 
         ContentInfosType aReplaced;
         aReplaced.reserve(aContents.size());
@@ -669,7 +648,7 @@ void EditTextObjectImpl::SetScriptType( SvtScriptType nType )
     nScriptType = nType;
 }
 
-XEditAttribute* EditTextObjectImpl::CreateAttrib( const SfxPoolItem& rItem, sal_Int32 nStart, sal_Int32 nEnd )
+XEditAttribute* EditTextObjectImpl::CreateAttrib( const SfxPoolItem& rItem, sal_uInt16 nStart, sal_uInt16 nEnd )
 {
     return MakeXEditAttribute( *pPool, rItem, nStart, nEnd );
 }
@@ -733,7 +712,7 @@ void EditTextObjectImpl::GetCharAttribs( sal_Int32 nPara, std::vector<EECharAttr
 
     rLst.clear();
     const ContentInfo& rC = *aContents[nPara].get();
-    for (const auto & aAttrib : rC.maCharAttribs)
+    for (const auto & aAttrib : rC.aAttribs)
     {
         const XEditAttribute& rAttr = *aAttrib.get();
         EECharAttrib aEEAttr;
@@ -757,10 +736,10 @@ const SvxFieldItem* EditTextObjectImpl::GetField() const
         const ContentInfo& rC = *aContents[0].get();
         if (rC.GetText().getLength() == 1)
         {
-            size_t nAttribs = rC.maCharAttribs.size();
+            size_t nAttribs = rC.aAttribs.size();
             for (size_t nAttr = nAttribs; nAttr; )
             {
-                const XEditAttribute& rX = *rC.maCharAttribs[--nAttr].get();
+                const XEditAttribute& rX = *rC.aAttribs[--nAttr].get();
                 if (rX.GetItem()->Which() == EE_FEATURE_FIELD)
                     return static_cast<const SvxFieldItem*>(rX.GetItem());
             }
@@ -775,11 +754,11 @@ const SvxFieldData* EditTextObjectImpl::GetFieldData(sal_Int32 nPara, size_t nPo
         return nullptr;
 
     const ContentInfo& rC = *aContents[nPara].get();
-    if (nPos >= rC.maCharAttribs.size())
+    if (nPos >= rC.aAttribs.size())
         // URL position is out-of-bound.
         return nullptr;
 
-    ContentInfo::XEditAttributesType::const_iterator it = rC.maCharAttribs.begin(), itEnd = rC.maCharAttribs.end();
+    ContentInfo::XEditAttributesType::const_iterator it = rC.aAttribs.begin(), itEnd = rC.aAttribs.end();
     size_t nCurPos = 0;
     for (; it != itEnd; ++it)
     {
@@ -810,10 +789,10 @@ bool EditTextObjectImpl::HasField( sal_Int32 nType ) const
     for (size_t nPara = 0; nPara < nParagraphs; ++nPara)
     {
         const ContentInfo& rC = *aContents[nPara].get();
-        size_t nAttrs = rC.maCharAttribs.size();
+        size_t nAttrs = rC.aAttribs.size();
         for (size_t nAttr = 0; nAttr < nAttrs; ++nAttr)
         {
-            const XEditAttribute& rAttr = *rC.maCharAttribs[nAttr].get();
+            const XEditAttribute& rAttr = *rC.aAttribs[nAttr].get();
             if (rAttr.GetItem()->Which() != EE_FEATURE_FIELD)
                 continue;
 
@@ -843,13 +822,13 @@ bool EditTextObjectImpl::RemoveCharAttribs( sal_uInt16 _nWhich )
     {
         ContentInfo& rC = *aContents[--nPara].get();
 
-        for (size_t nAttr = rC.maCharAttribs.size(); nAttr; )
+        for (size_t nAttr = rC.aAttribs.size(); nAttr; )
         {
-            XEditAttribute& rAttr = *rC.maCharAttribs[--nAttr].get();
+            XEditAttribute& rAttr = *rC.aAttribs[--nAttr].get();
             if ( !_nWhich || (rAttr.GetItem()->Which() == _nWhich) )
             {
                 pPool->Remove(*rAttr.GetItem());
-                rC.maCharAttribs.erase(rC.maCharAttribs.begin()+nAttr);
+                rC.aAttribs.erase(rC.aAttribs.begin()+nAttr);
                 bChanged = true;
             }
         }
@@ -901,7 +880,7 @@ void EditTextObjectImpl::GetAllSections( std::vector<editeng::Section>& rAttrs )
         SectionBordersType& rBorders = aParaBorders[nPara];
         rBorders.push_back(0);
         rBorders.push_back(rC.GetText().getLength());
-        for (const auto & aAttrib : rC.maCharAttribs)
+        for (const auto & aAttrib : rC.aAttribs)
         {
             const XEditAttribute& rAttr = *aAttrib.get();
             const SfxPoolItem* pItem = rAttr.GetItem();
@@ -967,7 +946,7 @@ void EditTextObjectImpl::GetAllSections( std::vector<editeng::Section>& rAttrs )
             return;
         }
 
-        for (const auto & aAttrib : rC.maCharAttribs)
+        for (const auto & aAttrib : rC.aAttribs)
         {
             const XEditAttribute& rXAttr = *aAttrib.get();
             const SfxPoolItem* pItem = rXAttr.GetItem();
@@ -1025,8 +1004,8 @@ void EditTextObjectImpl::SetStyleSheet(sal_Int32 nPara, const OUString& rName, c
         return;
 
     ContentInfo& rC = *aContents[nPara].get();
-    rC.SetStyle(rName);
-    rC.SetFamily(rFamily);
+    rC.GetStyle() = rName;
+    rC.GetFamily() = rFamily;
 }
 
 bool EditTextObjectImpl::ImpChangeStyleSheets(
@@ -1043,8 +1022,8 @@ bool EditTextObjectImpl::ImpChangeStyleSheets(
         {
             if ( rC.GetStyle() == rOldName )
             {
-                rC.SetStyle(rNewName);
-                rC.SetFamily(eNewFamily);
+                rC.GetStyle() = rNewName;
+                rC.GetFamily() = eNewFamily;
                 bChanges = true;
             }
         }
@@ -1075,9 +1054,9 @@ namespace {
 class FindAttribByChar : public std::unary_function<std::unique_ptr<XEditAttribute>, bool>
 {
     sal_uInt16 mnWhich;
-    sal_Int32 mnChar;
+    sal_uInt16 mnChar;
 public:
-    FindAttribByChar(sal_uInt16 nWhich, sal_Int32 nChar) : mnWhich(nWhich), mnChar(nChar) {}
+    FindAttribByChar(sal_uInt16 nWhich, sal_uInt16 nChar) : mnWhich(nWhich), mnChar(nChar) {}
     bool operator() (const std::unique_ptr<XEditAttribute>& rAttr) const
     {
         return (rAttr->GetItem()->Which() == mnWhich) && (rAttr->GetStart() <= mnChar) && (rAttr->GetEnd() > mnChar);
@@ -1093,7 +1072,7 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
 
     rOStream.WriteBool( bOwnerOfPool );
 
-    // First store the pool, later only the Surrogate
+    // First store the pool, later only the Surregate
     if ( bOwnerOfPool )
     {
         GetPool()->SetFileFormatVersion( SOFFICE_FILEFORMAT_50 );
@@ -1119,6 +1098,9 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
     {
         const ContentInfo& rC = *aContents[nPara].get();
 
+        // Text...
+        OStringBuffer aBuffer(OUStringToOString(rC.GetText(), eEncoding));
+
         // Symbols?
         bool bSymbolPara = false;
         if (rC.GetParaAttribs().GetItemState( EE_CHAR_FONTINFO ) == SfxItemState::SET)
@@ -1126,16 +1108,13 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
             const SvxFontItem& rFontItem = static_cast<const SvxFontItem&>(rC.GetParaAttribs().Get(EE_CHAR_FONTINFO));
             if ( rFontItem.GetCharSet() == RTL_TEXTENCODING_SYMBOL )
             {
+                aBuffer = OStringBuffer(OUStringToOString(rC.GetText(), RTL_TEXTENCODING_SYMBOL));
                 bSymbolPara = true;
             }
         }
-
-        // eEncoding for Text, RTL_TEXTENCODING_SYMBOL for Symbols
-        OStringBuffer aBuffer(OUStringToOString(rC.GetText(), bSymbolPara ? RTL_TEXTENCODING_SYMBOL : eEncoding));
-
-        for (size_t nA = 0; nA < rC.maCharAttribs.size(); ++nA)
+        for (size_t nA = 0; nA < rC.aAttribs.size(); ++nA)
         {
-            const XEditAttribute& rAttr = *rC.maCharAttribs[nA].get();
+            const XEditAttribute& rAttr = *rC.aAttribs[nA].get();
 
             if (rAttr.GetItem()->Which() == EE_CHAR_FONTINFO)
             {
@@ -1156,13 +1135,15 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
                 {
                     // Don't create a new Attrib with StarBats font, MBR changed the
                     // SvxFontItem::Store() to store StarBats instead of StarSymbol!
-                    for (sal_Int32 nChar = rAttr.GetStart(); nChar < rAttr.GetEnd(); ++nChar)
+                    for (sal_uInt16 nChar = rAttr.GetStart(); nChar < rAttr.GetEnd(); ++nChar)
                     {
                         sal_Unicode cOld = rC.GetText()[ nChar ];
                         char cConv = OUStringToOString(OUString(ConvertFontToSubsFontChar(hConv, cOld)), RTL_TEXTENCODING_SYMBOL).toChar();
                         if ( cConv )
                             aBuffer[nChar] = cConv;
                     }
+
+                    DestroyFontToSubsFontConverter( hConv );
                 }
             }
         }
@@ -1177,9 +1158,9 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
         }
         if ( hConv )
         {
-            for ( sal_Int32 nChar = 0; nChar < rC.GetText().getLength(); nChar++ )
+            for ( sal_uInt16 nChar = 0; nChar < rC.GetText().getLength(); nChar++ )
             {
-                const ContentInfo::XEditAttributesType& rAttribs = rC.maCharAttribs;
+                const ContentInfo::XEditAttributesType& rAttribs = rC.aAttribs;
                 if ( std::none_of(rAttribs.begin(), rAttribs.end(),
                                   FindAttribByChar(EE_CHAR_FONTINFO, nChar)) )
                 {
@@ -1189,6 +1170,9 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
                         aBuffer[nChar] = cConv;
                 }
             }
+
+            DestroyFontToSubsFontConverter( hConv );
+
         }
 
 
@@ -1204,26 +1188,18 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
         rC.GetParaAttribs().Store( rOStream );
 
         // The number of attributes ...
-        size_t nAttribs = rC.maCharAttribs.size();
+        size_t nAttribs = rC.aAttribs.size();
         rOStream.WriteUInt16( nAttribs );
 
         // And the individual attributes
-        // Items as Surrogate => always 8 bytes per Attribute
+        // Items as Surregate => always 8 bytes per Attribute
         // Which = 2; Surregat = 2; Start = 2; End = 2;
         for (size_t nAttr = 0; nAttr < nAttribs; ++nAttr)
         {
-            const XEditAttribute& rX = *rC.maCharAttribs[nAttr].get();
+            const XEditAttribute& rX = *rC.aAttribs[nAttr].get();
 
             rOStream.WriteUInt16( rX.GetItem()->Which() );
             GetPool()->StoreSurrogate(rOStream, rX.GetItem());
-            assert(rX.GetStart() >= 0 && rX.GetStart() <= rX.GetEnd());
-            if (rX.GetEnd() > SAL_MAX_UINT16)
-            {
-                //TODO!
-                SAL_WARN(
-                    "editeng",
-                    "position " << rX.GetEnd() << " > SAL_MAX_UINT16");
-            }
             rOStream.WriteUInt16( rX.GetStart() );
             rOStream.WriteUInt16( rX.GetEnd() );
         }
@@ -1245,15 +1221,14 @@ void EditTextObjectImpl::StoreData( SvStream& rOStream ) const
             const ContentInfo& rC = *aContents[nPara].get();
             sal_uInt16 nL = rC.GetText().getLength();
             rOStream.WriteUInt16( nL );
-            // FIXME this isn't endian safe, but presumably this is just used for copy/paste?
-            rOStream.WriteBytes(rC.GetText().getStr(), nL*sizeof(sal_Unicode));
+            rOStream.Write(rC.GetText().getStr(), nL*sizeof(sal_Unicode));
 
             // StyleSheetName must be Unicode too!
             // Copy/Paste from EA3 to BETA or from BETA to EA3 not possible, not needed...
             // If needed, change nL back to sal_uLong and increase version...
             nL = rC.GetStyle().getLength();
             rOStream.WriteUInt16( nL );
-            rOStream.WriteBytes(rC.GetStyle().getStr(), nL*sizeof(sal_Unicode));
+            rOStream.Write(rC.GetStyle().getStr(), nL*sizeof(sal_Unicode));
         }
     }
 }
@@ -1313,10 +1288,10 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
         pC->SetText(OStringToOUString(aByteString, eSrcEncoding));
 
         // StyleName and Family...
-        pC->SetStyle(rIStream.ReadUniOrByteString(eSrcEncoding));
+        pC->GetStyle() = rIStream.ReadUniOrByteString(eSrcEncoding);
         sal_uInt16 nStyleFamily(0);
         rIStream.ReadUInt16( nStyleFamily );
-        pC->SetFamily((SfxStyleFamily)nStyleFamily);
+        pC->GetFamily() = (SfxStyleFamily)nStyleFamily;
 
         // Paragraph attributes ...
         pC->GetParaAttribs().Load( rIStream );
@@ -1336,7 +1311,7 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
         }
 
         // And the individual attributes
-        // Items as Surrogate => always 8 bytes per Attributes
+        // Items as Surregate => always 8 bytes per Attributes
         // Which = 2; Surregat = 2; Start = 2; End = 2;
         for (size_t nAttr = 0; nAttr < nAttribs; ++nAttr)
         {
@@ -1360,7 +1335,7 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                 else
                 {
                     XEditAttribute* pAttr = new XEditAttribute( *pItem, nStart, nEnd );
-                    pC->maCharAttribs.push_back(std::unique_ptr<XEditAttribute>(pAttr));
+                    pC->aAttribs.push_back(std::unique_ptr<XEditAttribute>(pAttr));
 
                     if ( ( _nWhich >= EE_FEATURE_START ) && ( _nWhich <= EE_FEATURE_END ) )
                     {
@@ -1387,9 +1362,9 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
             }
         }
 
-        for (size_t nAttr = pC->maCharAttribs.size(); nAttr; )
+        for (size_t nAttr = pC->aAttribs.size(); nAttr; )
         {
-            const XEditAttribute& rAttr = *pC->maCharAttribs[--nAttr].get();
+            const XEditAttribute& rAttr = *pC->aAttribs[--nAttr].get();
             if ( rAttr.GetItem()->Which() == EE_CHAR_FONTINFO )
             {
                 const SvxFontItem& rFontItem = static_cast<const SvxFontItem&>(*rAttr.GetItem());
@@ -1410,12 +1385,13 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                     aNewFontItem.SetFamilyName( GetFontToSubsFontName( hConv ) );
 
                     // Replace the existing attribute with a new one.
-                    pC->maCharAttribs[nAttr] =
-                            std::unique_ptr<XEditAttribute>(CreateAttrib(aNewFontItem, rAttr.GetStart(), rAttr.GetEnd()));
-                    pPool->Remove(*rAttr.GetItem());
+                    XEditAttribute* pNewAttr = CreateAttrib(aNewFontItem, rAttr.GetStart(), rAttr.GetEnd());
 
-                    XEditAttribute* pNewAttr = pC->maCharAttribs[nAttr].get();
-                    for ( sal_Int32 nChar = pNewAttr->GetStart(); nChar < pNewAttr->GetEnd(); nChar++ )
+                    pPool->Remove(*rAttr.GetItem());
+                    pC->aAttribs.erase(pC->aAttribs.begin()+nAttr);
+                    pC->aAttribs.insert(pC->aAttribs.begin()+nAttr, std::unique_ptr<XEditAttribute>(pNewAttr));
+
+                    for ( sal_uInt16 nChar = pNewAttr->GetStart(); nChar < pNewAttr->GetEnd(); nChar++ )
                     {
                         sal_Unicode cOld = pC->GetText()[ nChar ];
                         DBG_ASSERT( cOld >= 0xF000, "cOld not converted?!" );
@@ -1423,6 +1399,8 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                         if ( cConv )
                             pC->SetText(pC->GetText().replaceAt(nChar, 1, OUString(cConv)));
                     }
+
+                    DestroyFontToSubsFontConverter( hConv );
                 }
             }
         }
@@ -1440,9 +1418,9 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                 aNewFontItem.SetFamilyName( GetFontToSubsFontName( hConv ) );
                 pC->GetParaAttribs().Put( aNewFontItem );
 
-                for ( sal_Int32 nChar = 0; nChar < pC->GetText().getLength(); nChar++ )
+                for ( sal_uInt16 nChar = 0; nChar < pC->GetText().getLength(); nChar++ )
                 {
-                    const ContentInfo::XEditAttributesType& rAttribs = pC->maCharAttribs;
+                    const ContentInfo::XEditAttributesType& rAttribs = pC->aAttribs;
                     if ( std::none_of(rAttribs.begin(), rAttribs.end(),
                                       FindAttribByChar(EE_CHAR_FONTINFO, nChar)) )
                     {
@@ -1453,6 +1431,8 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                             pC->SetText(pC->GetText().replaceAt(nChar, 1, OUString(cConv)));
                     }
                 }
+
+                DestroyFontToSubsFontConverter( hConv );
             }
         }
     }
@@ -1468,7 +1448,7 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
             // therefore evaluate only from 401
             nMetric = nTmpMetric;
             if ( bOwnerOfPool && pPool && ( nMetric != 0xFFFF ) )
-                pPool->SetDefaultMetric( (MapUnit)nMetric );
+                pPool->SetDefaultMetric( (SfxMapUnit)nMetric );
         }
     }
 
@@ -1515,8 +1495,7 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                     }
 
                     rtl_uString *pStr = rtl_uString_alloc(nL);
-                    // FIXME this isn't endian safe, but presumably this is just used for copy/paste?
-                    rIStream.ReadBytes(pStr->buffer, nL*sizeof(sal_Unicode));
+                    rIStream.Read(pStr->buffer, nL*sizeof(sal_Unicode));
                     rC.SetText((OUString(pStr, SAL_NO_ACQUIRE)));
 
                     nL = 0;
@@ -1535,8 +1514,8 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
                     }
 
                     rtl_uString *pStr = rtl_uString_alloc(nL);
-                    rIStream.ReadBytes(pStr->buffer, nL*sizeof(sal_Unicode) );
-                    rC.SetStyle(OUString(pStr, SAL_NO_ACQUIRE));
+                    rIStream.Read(pStr->buffer, nL*sizeof(sal_Unicode) );
+                    rC.GetStyle() = OUString(pStr, SAL_NO_ACQUIRE);
                 }
             }
         }
@@ -1554,7 +1533,7 @@ void EditTextObjectImpl::CreateData( SvStream& rIStream )
             if ( rLRSpace.GetTextLeft() && ( rC.GetParaAttribs().GetItemState( EE_PARA_TABS ) == SfxItemState::SET ) )
             {
                 const SvxTabStopItem& rTabs = static_cast<const SvxTabStopItem&>(rC.GetParaAttribs().Get(EE_PARA_TABS));
-                SvxTabStopItem aNewTabs( 0, 0, SvxTabAdjust::Left, EE_PARA_TABS );
+                SvxTabStopItem aNewTabs( 0, 0, SVX_TAB_ADJUST_LEFT, EE_PARA_TABS );
                 for ( sal_uInt16 t = 0; t < rTabs.Count(); t++ )
                 {
                     const SvxTabStop& rT = rTabs[ t ];

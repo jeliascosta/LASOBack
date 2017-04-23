@@ -46,14 +46,14 @@ inline ::Point VCLPoint( const css::awt::Point& rAWTPoint )
     return ::Point( rAWTPoint.X, rAWTPoint.Y );
 }
 
-inline css::awt::Rectangle AWTRectangle( const ::tools::Rectangle& rVCLRect )
+inline css::awt::Rectangle AWTRectangle( const ::Rectangle& rVCLRect )
 {
     return css::awt::Rectangle( rVCLRect.Left(), rVCLRect.Top(), rVCLRect.GetWidth(), rVCLRect.GetHeight() );
 }
 
-inline ::tools::Rectangle VCLRectangle( const css::awt::Rectangle& rAWTRect )
+inline ::Rectangle VCLRectangle( const css::awt::Rectangle& rAWTRect )
 {
-    return ::tools::Rectangle( ::Point( rAWTRect.X, rAWTRect.Y ), ::Size( rAWTRect.Width, rAWTRect.Height ) );
+    return ::Rectangle( ::Point( rAWTRect.X, rAWTRect.Y ), ::Size( rAWTRect.Width, rAWTRect.Height ) );
 }
 
 #endif // INCLUDED_TOOLKIT_HELPER_CONVERT_HXX

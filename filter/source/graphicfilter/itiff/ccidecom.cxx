@@ -624,17 +624,18 @@ void CCIDecompressor::StartDecompression( SvStream & rIStream )
         return;
 }
 
-DecompressStatus CCIDecompressor::DecompressScanline( sal_uInt8 * pTarget, sal_uLong nTargetBits, bool bLastLine )
+
+bool CCIDecompressor::DecompressScanline( sal_uInt8 * pTarget, sal_uLong nTargetBits, bool bLastLine )
 {
     //Read[1|2]DScanlineData take a sal_uInt16, so its either limit here or expand there
     if (nTargetBits > SAL_MAX_UINT16)
-        return DecompressStatus(false, true);
+        return false;
 
     if ( nEOLCount >= 5 )   // RTC (Return To Controller)
-        return DecompressStatus(true, true);
+        return true;
 
     if ( !bStatus )
-        return DecompressStatus(false, true);
+        return false;
 
     // If EOL-Codes exist, the EOL-Code also appeared in front of the first line.
     // (and I thought it means 'End of Line'...)
@@ -659,13 +660,13 @@ DecompressStatus CCIDecompressor::DecompressScanline( sal_uInt8 * pTarget, sal_u
         {
             if ( !ReadEOL( nTargetBits ) )
             {
-                return DecompressStatus(bStatus, true);
+                return bStatus;
             }
         }
     }
 
     if ( nEOLCount >= 5 )   // RTC (Return To Controller)
-        return DecompressStatus(true, true);
+        return true;
 
     // should the situation arise, generate a white previous line for 2D:
     if ( nOptions & CCI_OPTION_2D )
@@ -695,12 +696,11 @@ DecompressStatus CCIDecompressor::DecompressScanline( sal_uInt8 * pTarget, sal_u
     else
         b2D = false;
 
-    bool bUnchanged;
     // read scanline:
     if ( b2D )
-        bUnchanged = Read2DScanlineData(pTarget, nTargetBits);
+        Read2DScanlineData( pTarget, (sal_uInt16)nTargetBits );
     else
-        bUnchanged = Read1DScanlineData(pTarget, nTargetBits);
+        Read1DScanlineData( pTarget, (sal_uInt16)nTargetBits );
 
     // if we're in 2D mode we have to remember the line:
     if ( nOptions & CCI_OPTION_2D && bStatus )
@@ -717,7 +717,7 @@ DecompressStatus CCIDecompressor::DecompressScanline( sal_uInt8 * pTarget, sal_u
     if ( pIStream->GetError() )
         bStatus = false;
 
-    return DecompressStatus(bStatus, bUnchanged);
+    return bStatus;
 }
 
 
@@ -923,9 +923,8 @@ sal_uInt16 CCIDecompressor::CountBits(const sal_uInt8 * pData, sal_uInt16 nDataS
     return nPos-nBitPos;
 }
 
-bool CCIDecompressor::Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nBitsToRead)
+void CCIDecompressor::Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits)
 {
-    sal_uInt16 nTargetBits = nBitsToRead;
     sal_uInt16 nCode,nCodeBits,nDataBits,nTgtFreeByteBits;
     sal_uInt8 nByte;
     sal_uInt8 nBlackOrWhite; // is 0xff for black or 0x00 for white
@@ -963,11 +962,11 @@ bool CCIDecompressor::Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nBitsTo
         // is that an invalid code?
         if ( nDataBits == 9999 )
         {
-            return nTargetBits == nBitsToRead;
+            return;
         }
         if ( nCodeBits == 0 )
         {
-            return nTargetBits == nBitsToRead;  // could be filling bits now
+            return;             // could be filling bits now
         }
         nEOLCount = 0;
         // too much data?
@@ -999,14 +998,10 @@ bool CCIDecompressor::Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nBitsTo
                 nDataBits = nDataBits - nTgtFreeByteBits;
                 pTarget++;
                 nTgtFreeByteBits=8;
-                if (nDataBits >= 8)
-                {
-                    const sal_uInt16 nDataBytes = nDataBits / 8;
-                    memset(pTarget, nBlackOrWhite, nDataBytes);
-                    pTarget += nDataBytes;
-                    nDataBits -= nDataBytes * 8;
+                while (nDataBits>=8) {
+                    *(pTarget++)=nBlackOrWhite;
+                    nDataBits-=8;
                 }
-
                 if (nDataBits>0) {
                     *pTarget=nBlackOrWhite;
                     nTgtFreeByteBits = nTgtFreeByteBits - nDataBits;
@@ -1018,11 +1013,10 @@ bool CCIDecompressor::Read1DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nBitsTo
         if (bTerminatingCode) nBlackOrWhite = ~nBlackOrWhite;
 
     } while (nTargetBits>0 || !bTerminatingCode);
-
-    return nTargetBits == nBitsToRead;
 }
 
-bool CCIDecompressor::Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits)
+
+void CCIDecompressor::Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTargetBits)
 {
     sal_uInt16 n2DMode,nBitPos,nUncomp,nRun,nRun2,nt;
     sal_uInt8 nBlackOrWhite;
@@ -1034,7 +1028,7 @@ bool CCIDecompressor::Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTarget
 
         n2DMode=ReadCodeAndDecode(p2DModeLookUp,10);
         if (!bStatus)
-            return nBitPos == 0;
+            return;
 
         if (n2DMode==CCI2DMODE_UNCOMP) {
             for (;;) {
@@ -1116,8 +1110,7 @@ bool CCIDecompressor::Read2DScanlineData(sal_uInt8 * pTarget, sal_uInt16 nTarget
             nBlackOrWhite=~nBlackOrWhite;
         }
     }
-
-    return nBitPos == 0;
 }
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

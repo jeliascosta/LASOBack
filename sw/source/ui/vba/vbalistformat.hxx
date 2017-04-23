@@ -33,13 +33,12 @@ private:
     css::uno::Reference< css::text::XTextRange > mxTextRange;
 
 public:
-    /// @throws css::uno::RuntimeException
-    SwVbaListFormat( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextRange >& xTextRange );
-    virtual ~SwVbaListFormat() override;
+    SwVbaListFormat( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const css::uno::Reference< css::text::XTextRange >& xTextRange ) throw ( css::uno::RuntimeException );
+    virtual ~SwVbaListFormat();
 
     // Methods
-    virtual void SAL_CALL ApplyListTemplate( const css::uno::Reference< ::ooo::vba::word::XListTemplate >& ListTemplate, const css::uno::Any& ContinuePreviousList, const css::uno::Any& ApplyTo, const css::uno::Any& DefaultListBehavior ) override;
-    virtual void SAL_CALL ConvertNumbersToText(  ) override;
+    virtual void SAL_CALL ApplyListTemplate( const css::uno::Reference< ::ooo::vba::word::XListTemplate >& ListTemplate, const css::uno::Any& ContinuePreviousList, const css::uno::Any& ApplyTo, const css::uno::Any& DefaultListBehavior ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL ConvertNumbersToText(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XHelperInterface
     virtual OUString getServiceImplName() override;

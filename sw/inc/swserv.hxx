@@ -56,7 +56,7 @@ public:
     {
         CNTNT_TYPE.pSectNd = &rSectNd;
     }
-    virtual ~SwServerObject() override;
+    virtual ~SwServerObject();
 
     virtual bool GetData( css::uno::Any & rData,
                             const OUString & rMimeType,

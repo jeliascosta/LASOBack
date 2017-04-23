@@ -32,7 +32,6 @@
 #include <osl/mutex.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/interfacecontainer2.hxx>
-#include <rtl/ref.hxx>
 
 
 class OLockListener;
@@ -45,7 +44,8 @@ class OInstanceLocker : public ::cppu::WeakImplHelper< css::lang::XComponent,
 {
     ::osl::Mutex m_aMutex;
 
-    rtl::Reference< OLockListener > m_xLockListener;
+    css::uno::Reference< css::uno::XInterface > m_xLockListener;
+    OLockListener* m_pLockListener;
 
     ::comphelper::OInterfaceContainerHelper2* m_pListenersContainer; // list of listeners
 
@@ -54,20 +54,20 @@ class OInstanceLocker : public ::cppu::WeakImplHelper< css::lang::XComponent,
 
 public:
     explicit OInstanceLocker();
-    virtual ~OInstanceLocker() override;
+    virtual ~OInstanceLocker();
 
 // XComponent
-    virtual void SAL_CALL dispose() override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) override;
+    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
 // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
 // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
 };
 
@@ -92,21 +92,21 @@ public:
                     sal_Int32 nMode,
                     const css::uno::Reference< css::embed::XActionsApproval >& rApproval );
 
-    virtual ~OLockListener() override;
+    virtual ~OLockListener();
 
     void Init();
     void Dispose();
 
 // XEventListener
-    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
 // XCloseListener
-    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) override;
-    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) override;
+    virtual void SAL_CALL queryClosing( const css::lang::EventObject& Source, sal_Bool GetsOwnership ) throw (css::util::CloseVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyClosing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
 // XTerminateListener
-    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) override;
-    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) override;
+    virtual void SAL_CALL queryTermination( const css::lang::EventObject& Event ) throw (css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL notifyTermination( const css::lang::EventObject& Event ) throw (css::uno::RuntimeException, std::exception) override;
 
 };
 

@@ -28,33 +28,46 @@ class SwXDocumentIndexes
 
 private:
 
-    virtual ~SwXDocumentIndexes() override;
+    virtual ~SwXDocumentIndexes();
 
 public:
 
     SwXDocumentIndexes(SwDoc *const pDoc);
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
+    virtual OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL supportsService(
-            const OUString& rServiceName) override;
+            const OUString& rServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getSupportedServiceNames() override;
+        getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XElementAccess
-    virtual css::uno::Type SAL_CALL getElementType() override;
-    virtual sal_Bool SAL_CALL hasElements() override;
+    virtual css::uno::Type SAL_CALL getElementType()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasElements()
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XIndexAccess
-    virtual sal_Int32 SAL_CALL getCount() override;
-    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 nIndex) override;
+    virtual sal_Int32 SAL_CALL getCount()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Any SAL_CALL getByIndex(sal_Int32 nIndex)
+        throw (css::lang::IndexOutOfBoundsException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
 
     // XNameAccess
     virtual css::uno::Any SAL_CALL getByName(
-            const OUString& rName) override;
+            const OUString& rName)
+        throw (css::container::NoSuchElementException,
+                css::lang::WrappedTargetException,
+                css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL
-        getElementNames() override;
-    virtual sal_Bool SAL_CALL hasByName(const OUString& rName) override;
+        getElementNames() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasByName(const OUString& rName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
 };
 

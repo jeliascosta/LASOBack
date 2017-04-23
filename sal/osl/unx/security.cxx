@@ -38,7 +38,7 @@
 #include "osl/thread.h"
 #include "osl/file.h"
 
-#if defined LINUX || defined __sun
+#if defined LINUX || defined SOLARIS
 #include <crypt.h>
 #endif
 
@@ -65,11 +65,12 @@ static bool sysconf_SC_GETPW_R_SIZE_MAX(std::size_t * value) {
            FreeBSD versions support sysconf(_SC_GETPW_R_SIZE_MAX) in a broken
            way and always set EINVAL, so be resilient here: */
         return false;
-    }
-    SAL_WARN_IF( m < 0 || (unsigned long) m >= std::numeric_limits<std::size_t>::max(), "sal.osl",
+    } else {
+        SAL_WARN_IF( m < 0 || (unsigned long) m >= std::numeric_limits<std::size_t>::max(), "sal.osl",
                 "m < 0 || (unsigned long) m >= std::numeric_limits<std::size_t>::max()");
-    *value = (std::size_t) m;
-    return true;
+        *value = (std::size_t) m;
+        return true;
+    }
 #else
     /* some platforms like Mac OS X 1.3 do not define _SC_GETPW_R_SIZE_MAX: */
     return false;
@@ -351,7 +352,7 @@ static bool SAL_CALL osl_psz_getHomeDir(oslSecurity Security, sal_Char* pszDirec
     if (getuid() == pSecImpl->m_pPasswd.pw_uid)
     {
         sal_Char *pStr = nullptr;
-#ifdef __sun
+#ifdef SOLARIS
         char    buffer[8192];
 
         struct passwd pwd;
@@ -479,7 +480,7 @@ static bool SAL_CALL osl_psz_getConfigDir(oslSecurity Security, sal_Char* pszDir
 /*
  * FIXME: rewrite to use more flexible
  * NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES)
- * as soon as we can bump the baseline to Tiger (for NSApplicationSupportDirectory) and have
+ * as soon as we can bumb the baseline to Tiger (for NSApplicationSupportDirectory) and have
  * support for Objective-C in the build environment
  */
 

@@ -71,6 +71,7 @@ XFFrame::XFFrame(bool isTextBox)
     , m_strName(XFGlobal::GenFrameName())  // give it a default name
     , m_nZIndex(ZINDEX_MIN)
     , m_fMinHeight(0)
+    , m_fMaxHeight(0)
     , m_eType(enumXFFrameTextbox)
     , m_nFlag(0)
     , m_isTextBox(isTextBox)
@@ -162,7 +163,7 @@ void    XFFrame::StartFrame(IXFStream *pStrm)
     {
         pAttrList->AddAttribute( "fo:min-height", OUString::number(m_fMinHeight) + "cm" );
         if( m_nFlag&XFFRAME_FLAG_MAXHEIGHT )
-            pAttrList->AddAttribute( "fo:max-height", OUString::number(0) + "cm" );
+            pAttrList->AddAttribute( "fo:max-height", OUString::number(m_fMaxHeight) + "cm" );
     }
     else
         pAttrList->AddAttribute( "svg:height", OUString::number(m_aRect.GetHeight()) + "cm" );

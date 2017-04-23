@@ -59,15 +59,15 @@ private:
 
     std::unique_ptr<SvxSaveTabPage_Impl>    pImpl;
 
-    DECL_LINK( AutoClickHdl_Impl, Button*, void );
-    DECL_LINK( FilterHdl_Impl, ListBox&, void );
-    DECL_LINK(ODFVersionHdl_Impl, ListBox&, void );
+    DECL_LINK_TYPED( AutoClickHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( FilterHdl_Impl, ListBox&, void );
+    DECL_LINK_TYPED(ODFVersionHdl_Impl, ListBox&, void );
 
     void    DetectHiddenControls();
 
 public:
     SvxSaveTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SvxSaveTabPage() override;
+    virtual ~SvxSaveTabPage();
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

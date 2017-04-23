@@ -26,7 +26,6 @@
 #include <com/sun/star/awt/XControlContainer.hpp>
 #include <svx/svxdllapi.h>
 #include <svx/svdorect.hxx>
-#include <memory>
 
 
 // Forward declaration
@@ -46,7 +45,7 @@ class SVX_DLLPUBLIC SdrUnoObj : public SdrRectObj
     friend class                SdrPageView;
     friend class                SdrControlEventListenerImpl;
 
-    std::unique_ptr<SdrUnoObjDataHolder>        m_pImpl;
+    SdrUnoObjDataHolder*        m_pImpl;
 
     OUString                    aUnoControlModelTypeName;
     OUString                    aUnoControlTypeName;
@@ -64,7 +63,10 @@ public:
     explicit SdrUnoObj(const OUString& rModelName);
     SdrUnoObj(const OUString& rModelName,
         const css::uno::Reference< css::lang::XMultiServiceFactory >& rxSFac);
-    virtual ~SdrUnoObj() override;
+    virtual ~SdrUnoObj();
+
+    virtual void SetPage(SdrPage* pNewPage) override;
+    virtual void SetModel(SdrModel* pModel) override;
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;

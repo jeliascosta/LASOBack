@@ -30,7 +30,7 @@
 
 using namespace ::com::sun::star;
 
-OUString const sWW8_form( "WW-Standard" );
+OUString sWW8_form( "WW-Standard" );
 
 SvxMSConvertOCXControls::SvxMSConvertOCXControls( const uno::Reference< frame::XModel >& rxModel) : mxModel(rxModel)
 {
@@ -132,7 +132,8 @@ const uno::Reference< container::XIndexContainer >&
                     uno::UNO_QUERY );
                 OSL_ENSURE( xForms.is(), "XForms not available" );
 
-                aTmp <<= xForm;
+                aTmp.setValue( &xForm,
+                    cppu::UnoType<form::XForm>::get());
                 xForms->insertByIndex( xForms->getCount(), aTmp );
 
                 xFormComps = uno::Reference< container::XIndexContainer >

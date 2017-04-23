@@ -43,7 +43,7 @@ public:
                  sal_Int32 nStartIndex, sal_Int32 nEndIndex,
                  const PageContextType aType );
 
-    virtual ~PagePropertySetContext() override;
+    virtual ~PagePropertySetContext();
 
     using SvXMLPropertySetContext::CreateChildContext;
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,

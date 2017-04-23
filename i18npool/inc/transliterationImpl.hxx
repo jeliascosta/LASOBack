@@ -38,48 +38,58 @@ public:
     // Constructors
     TransliterationImpl(const css::uno::Reference < css::uno::XComponentContext >& xContext);
     // Destructor
-    virtual ~TransliterationImpl() override;
+    virtual ~TransliterationImpl();
 
     // Methods
-    virtual OUString SAL_CALL getName(  ) override ;
-    virtual sal_Int16 SAL_CALL getType(  ) override ;
+    virtual OUString SAL_CALL getName(  ) throw(css::uno::RuntimeException, std::exception) override ;
+    virtual sal_Int16 SAL_CALL getType(  ) throw(css::uno::RuntimeException, std::exception) override ;
 
-    virtual void SAL_CALL loadModule( TransliterationModules modName, const css::lang::Locale& rLocale ) override ;
+    virtual void SAL_CALL loadModule( TransliterationModules modName, const css::lang::Locale& rLocale )
+        throw(css::uno::RuntimeException, std::exception) override ;
     virtual void SAL_CALL loadModuleNew( const css::uno::Sequence< TransliterationModulesNew >& modName,
-        const css::lang::Locale& rLocale ) override ;
+        const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override ;
     virtual void SAL_CALL loadModuleByImplName( const OUString& implName,
-        const css::lang::Locale& rLocale ) override;
+        const css::lang::Locale& rLocale ) throw(css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL loadModulesByImplNames(const css::uno::Sequence< OUString >& modNamelist,
-        const css::lang::Locale& rLocale) override;
+        const css::lang::Locale& rLocale) throw(css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL getAvailableModules(
-        const css::lang::Locale& rLocale, sal_Int16 sType ) override;
+        const css::lang::Locale& rLocale, sal_Int16 sType )
+        throw(css::uno::RuntimeException, std::exception) override;
 
     virtual OUString SAL_CALL transliterate( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        css::uno::Sequence< sal_Int32 >& offset  ) override ;
+        css::uno::Sequence< sal_Int32 >& offset  ) throw(css::uno::RuntimeException, std::exception) override ;
 
     virtual OUString SAL_CALL folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-        css::uno::Sequence< sal_Int32 >& offset ) override;
+        css::uno::Sequence< sal_Int32 >& offset ) throw(css::uno::RuntimeException, std::exception) override;
 
     // Methods in XExtendedTransliteration
-    virtual OUString SAL_CALL transliterateString2String( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount ) override ;
-    virtual OUString SAL_CALL transliterateChar2String( sal_Unicode inChar ) override ;
-    virtual sal_Unicode SAL_CALL transliterateChar2Char( sal_Unicode inChar ) override ;
+    virtual OUString SAL_CALL transliterateString2String( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount )
+        throw(css::uno::RuntimeException, std::exception) override ;
+    virtual OUString SAL_CALL transliterateChar2String( sal_Unicode inChar )
+        throw(css::uno::RuntimeException, std::exception) override ;
+    virtual sal_Unicode SAL_CALL transliterateChar2Char( sal_Unicode inChar )
+        throw(css::i18n::MultipleCharsOutputException,
+                css::uno::RuntimeException, std::exception) override ;
 
     virtual sal_Bool SAL_CALL equals( const OUString& str1, sal_Int32 pos1, sal_Int32 nCount1,
-        sal_Int32& nMatch1, const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2 ) override;
+        sal_Int32& nMatch1, const OUString& str2, sal_Int32 pos2, sal_Int32 nCount2, sal_Int32& nMatch2 )
+        throw(css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL transliterateRange( const OUString& str1,
-        const OUString& str2 ) override ;
+        const OUString& str2 ) throw(css::uno::RuntimeException, std::exception) override ;
 
     virtual sal_Int32 SAL_CALL compareSubstring( const OUString& s1, sal_Int32 off1, sal_Int32 len1,
-        const OUString& s2, sal_Int32 off2, sal_Int32 len2) override;
+        const OUString& s2, sal_Int32 off2, sal_Int32 len2) throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual sal_Int32 SAL_CALL compareString( const OUString& s1, const OUString& s2) override;
+    virtual sal_Int32 SAL_CALL compareString( const OUString& s1, const OUString& s2)
+        throw(css::uno::RuntimeException, std::exception) override;
 
     //XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw( css::uno::RuntimeException, std::exception ) override;
+    virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName)
+        throw( css::uno::RuntimeException, std::exception ) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
 private:
 #define maxCascade 27
@@ -90,20 +100,20 @@ private:
     css::uno::Reference< XLocaleData4 > mxLocaledata;
     css::uno::Reference< css::i18n::XExtendedTransliteration > caseignore;
 
-    /// @throws css::uno::RuntimeException
     bool SAL_CALL loadModuleByName( const OUString& implName,
-        css::uno::Reference<css::i18n::XExtendedTransliteration> & body, const css::lang::Locale& rLocale);
+        css::uno::Reference<css::i18n::XExtendedTransliteration> & body, const css::lang::Locale& rLocale)
+        throw(css::uno::RuntimeException);
 
     void clear();
 
-    /// @throws css::uno::RuntimeException
     void loadBody( OUString &implName,
-        css::uno::Reference< css::i18n::XExtendedTransliteration >& body );
+        css::uno::Reference< css::i18n::XExtendedTransliteration >& body )
+        throw (css::uno::RuntimeException);
 
-    /// @throws css::uno::RuntimeException
     css::uno::Sequence< OUString > SAL_CALL getRange(
         const css::uno::Sequence< OUString > &inStrs,
-        sal_Int32 length, const sal_Int16 _nCascade);
+        sal_Int32 length, const sal_Int16 _nCascade)
+        throw(css::uno::RuntimeException);
 };
 
 } } } }

@@ -34,12 +34,12 @@ DlgEdPropListenerImpl::~DlgEdPropListenerImpl()
 }
 
 // XEventListener
-void SAL_CALL DlgEdPropListenerImpl::disposing( const css::lang::EventObject& )
+void SAL_CALL DlgEdPropListenerImpl::disposing( const css::lang::EventObject& ) throw( css::uno::RuntimeException, std::exception)
 {
 }
 
 // XPropertyChangeListener
-void SAL_CALL DlgEdPropListenerImpl::propertyChange( const  css::beans::PropertyChangeEvent& evt )
+void SAL_CALL DlgEdPropListenerImpl::propertyChange( const  css::beans::PropertyChangeEvent& evt ) throw( css::uno::RuntimeException, std::exception)
 {
     rDlgEdObj._propertyChange( evt );
 }
@@ -55,22 +55,22 @@ DlgEdEvtContListenerImpl::~DlgEdEvtContListenerImpl()
 }
 
 // XEventListener
-void SAL_CALL DlgEdEvtContListenerImpl::disposing( const  css::lang::EventObject& )
+void SAL_CALL DlgEdEvtContListenerImpl::disposing( const  css::lang::EventObject& ) throw( css::uno::RuntimeException, std::exception)
 {
 }
 
 // XContainerListener
-void SAL_CALL DlgEdEvtContListenerImpl::elementInserted(const css::container::ContainerEvent& Event)
+void SAL_CALL DlgEdEvtContListenerImpl::elementInserted(const css::container::ContainerEvent& Event) throw(css::uno::RuntimeException, std::exception)
 {
     rDlgEdObj._elementInserted( Event );
 }
 
-void SAL_CALL DlgEdEvtContListenerImpl::elementReplaced(const css::container::ContainerEvent& Event)
+void SAL_CALL DlgEdEvtContListenerImpl::elementReplaced(const css::container::ContainerEvent& Event) throw(css::uno::RuntimeException, std::exception)
 {
     rDlgEdObj._elementReplaced( Event );
 }
 
-void SAL_CALL DlgEdEvtContListenerImpl::elementRemoved(const css::container::ContainerEvent& Event)
+void SAL_CALL DlgEdEvtContListenerImpl::elementRemoved(const css::container::ContainerEvent& Event) throw(css::uno::RuntimeException, std::exception)
 {
     rDlgEdObj._elementRemoved( Event );
 }

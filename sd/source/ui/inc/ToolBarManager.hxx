@@ -93,7 +93,7 @@ public:
     void MainViewShellChanged (const ViewShell& rMainViewShell);
 
     /** Call this method when the selection has changed to update the more
-        temporary tool bars (those in the ToolBarGroup::Function group.)
+        temporary tool bars (those in the TBG_FUNCTION group.)
     */
     void SelectionHasChanged (
         const ViewShell& rViewShell,
@@ -119,12 +119,15 @@ public:
 
     /** The set of tool bar groups.
     */
-    enum class ToolBarGroup {
-        Permanent,
-        Function,
-        CommonTask,
-        MasterMode,
-        LAST = MasterMode
+    enum ToolBarGroup {
+        TBG_FIRST,
+
+        TBG_PERMANENT = TBG_FIRST,
+        TBG_FUNCTION,
+        TBG_COMMON_TASK,
+        TBG_MASTER_MODE,
+
+        TBG_LAST = TBG_MASTER_MODE
     };
 
     /** Reset the set of visible object bars in the specified group.  Tool

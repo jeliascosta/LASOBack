@@ -13,11 +13,9 @@
 #include <stddef.h>
 
 #if defined LOK_USE_UNSTABLE_API || defined LIBO_INTERNAL_ONLY
-# ifndef _WIN32
 // the unstable API needs C99's bool
-#  include <stdbool.h>
-# endif
-# include <stdint.h>
+#include <stdbool.h>
+#include <stdint.h>
 #endif
 
 #include <LibreOfficeKit/LibreOfficeKitTypes.h>
@@ -77,11 +75,6 @@ struct _LibreOfficeKitClass
     void (*setDocumentPassword) (LibreOfficeKit* pThis,
             char const* pURL,
             char const* pPassword);
-
-    /// @see lok::Office::getVersionInfo().
-    char* (*getVersionInfo) (LibreOfficeKit* pThis);
-
-    bool (*runMacro) (LibreOfficeKit *pThis, const char* pURL);
 #endif
 
 };
@@ -223,13 +216,12 @@ struct _LibreOfficeKitDocumentClass
     void (*setView) (LibreOfficeKitDocument* pThis, int nId);
     /// @see lok::Document::getView().
     int (*getView) (LibreOfficeKitDocument* pThis);
-    /// @see lok::Document::getViewsCount().
-    int (*getViewsCount) (LibreOfficeKitDocument* pThis);
+    /// @see lok::Document::getViews().
+    int (*getViews) (LibreOfficeKitDocument* pThis);
 
     /// @see lok::Document::renderFont().
     unsigned char* (*renderFont) (LibreOfficeKitDocument* pThis,
                        const char* pFontName,
-                       const char* pChar,
                        int* pFontWidth,
                        int* pFontHeight);
 
@@ -248,11 +240,6 @@ struct _LibreOfficeKitDocumentClass
                            const int nTilePosY,
                            const int nTileWidth,
                            const int nTileHeight);
-
-    /// @see lok::Document::getViewIds().
-    bool (*getViewIds) (LibreOfficeKitDocument* pThis,
-                       int* pArray,
-                       size_t nSize);
 
 #endif // defined LOK_USE_UNSTABLE_API || defined LIBO_INTERNAL_ONLY
 };

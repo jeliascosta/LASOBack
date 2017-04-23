@@ -80,17 +80,18 @@ struct ConnectionSettings;
 
 // Logging API
 
-enum class LogLevel
+namespace LogLevel
 {
-    NONE    = 0,
-    Error,
-    Sql,
-    Info,
-    LAST = Info
-};
-bool isLog(ConnectionSettings *settings, LogLevel nLevel);
-void log(ConnectionSettings *settings, LogLevel nLevel, const OUString &logString);
-void log(ConnectionSettings *settings, LogLevel nLevel, const char *str);
+// when you add a loglevel, extend the log function !
+static const sal_Int32 NONE = 0;
+static const sal_Int32 ERROR = 1;
+static const sal_Int32 SQL = 2;
+static const sal_Int32 INFO = 3;
+static const sal_Int32 DATA = 4;
+}
+bool isLog( ConnectionSettings *settings, int loglevel );
+void log( ConnectionSettings *settings, sal_Int32 level, const OUString &logString );
+void log( ConnectionSettings *settings, sal_Int32 level, const char *str );
 
 
 class Tables;
@@ -98,6 +99,7 @@ class Views;
 struct ConnectionSettings
 {
     ConnectionSettings() :
+        encoding( RTL_TEXTENCODING_UTF8),
         pConnection(nullptr),
         maxNameLen(0),
         maxIndexKeys(0),
@@ -105,33 +107,33 @@ struct ConnectionSettings
         pViewsImpl(nullptr),
         showSystemColumns( false ),
         logFile( nullptr ),
-        m_nLogLevel(LogLevel::Info)
+        loglevel( LogLevel::INFO )
     {}
-    static const rtl_TextEncoding encoding = RTL_TEXTENCODING_UTF8;
+    rtl_TextEncoding encoding;
     PGconn *pConnection;
     sal_Int32 maxNameLen;
     sal_Int32 maxIndexKeys;
-    css::uno::Reference< css::script::XTypeConverter > tc;
-    css::uno::Reference< css::container::XNameAccess > tables;
-    css::uno::Reference< css::container::XNameAccess > users;
-    css::uno::Reference< css::container::XNameAccess > views;
+    ::com::sun::star::uno::Reference< com::sun::star::script::XTypeConverter > tc;
+    ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > tables;
+    ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > users;
+    ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > views;
     Tables *pTablesImpl;  // needed to implement renaming of tables / views
     Views *pViewsImpl;   // needed to implement renaming of tables / views
     OUString user;
     OUString catalog;
     bool showSystemColumns;
     FILE *logFile;
-    LogLevel m_nLogLevel;
+    sal_Int32 loglevel;
 };
 
 
 typedef cppu::WeakComponentImplHelper<
-    css::sdbc::XConnection,
-    css::sdbc::XWarningsSupplier,
-    css::lang::XInitialization,
-    css::sdbcx::XTablesSupplier,
-    css::sdbcx::XViewsSupplier,
-    css::sdbcx::XUsersSupplier > ConnectionBase;
+    com::sun::star::sdbc::XConnection,
+    com::sun::star::sdbc::XWarningsSupplier,
+    com::sun::star::lang::XInitialization,
+    com::sun::star::sdbcx::XTablesSupplier,
+    com::sun::star::sdbcx::XViewsSupplier,
+    com::sun::star::sdbcx::XUsersSupplier > ConnectionBase;
 
 // some types
 struct HashByteSequence
@@ -144,9 +146,9 @@ struct HashByteSequence
 
 typedef std::unordered_map<
     ::rtl::ByteSequence,
-    css::uno::WeakReference< css::sdbc::XCloseable >,
+    ::com::sun::star::uno::WeakReference< com::sun::star::sdbc::XCloseable >,
     HashByteSequence > WeakHashMap;
-typedef std::vector< OString > OStringVector;
+typedef ::std::vector< OString > OStringVector;
 
 
 typedef std::unordered_map
@@ -157,68 +159,89 @@ typedef std::unordered_map
 
 class Connection : public ConnectionBase
 {
-    css::uno::Reference< css::uno::XComponentContext > m_ctx;
-    css::uno::Reference< css::container::XNameAccess > m_typeMap;
+    ::com::sun::star::uno::Reference< com::sun::star::uno::XComponentContext > m_ctx;
+    ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > m_typeMap;
     ConnectionSettings m_settings;
     ::rtl::Reference< RefCountedMutex > m_refMutex;
-    css::uno::Reference< css::sdbc::XDatabaseMetaData > m_meta;
+    ::com::sun::star::uno::Reference< com::sun::star::sdbc::XDatabaseMetaData > m_meta;
     WeakHashMap m_myStatements;
 
 private:
-    /// @throws css::sdbc::SQLException
-    /// @throws css::uno::RuntimeException
-    void checkClosed();
+    void checkClosed()
+        throw ( com::sun::star::sdbc::SQLException, com::sun::star::uno::RuntimeException );
 
 public:
     Connection(
         const rtl::Reference< RefCountedMutex > &refMutex,
-        const css::uno::Reference< css::uno::XComponentContext > & ctx );
+        const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XComponentContext > & ctx );
 
-    virtual ~Connection( ) override;
+    virtual ~Connection( );
 
 public: // XCloseable
-    virtual void SAL_CALL close() override;
+    virtual void SAL_CALL close()
+        throw ( ::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception ) override;
 
 public: // XConnection
 
-    virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) override ;
-    virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement(
-        const OUString& sql ) override;
-    virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall(
-        const OUString& sql ) override;
-    virtual OUString SAL_CALL nativeSQL( const OUString& sql ) override;
-    virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit ) override;
-    virtual sal_Bool SAL_CALL getAutoCommit(  ) override;
-    virtual void SAL_CALL commit(  ) override;
-    virtual void SAL_CALL rollback(  ) override;
-    virtual sal_Bool SAL_CALL isClosed(  ) override;
-    virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) override;
-    virtual void SAL_CALL setReadOnly( sal_Bool readOnly ) override;
-    virtual sal_Bool SAL_CALL isReadOnly(  ) override;
-    virtual void SAL_CALL setCatalog( const OUString& catalog ) override;
-    virtual OUString SAL_CALL getCatalog(  ) override;
-    virtual void SAL_CALL setTransactionIsolation( sal_Int32 level ) override;
-    virtual sal_Int32 SAL_CALL getTransactionIsolation(  ) override;
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTypeMap(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override ;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement(
+        const OUString& sql )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall(
+        const OUString& sql )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL nativeSQL( const OUString& sql )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setAutoCommit( sal_Bool autoCommit )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL getAutoCommit(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL commit(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL rollback(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isClosed(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual ::com::sun::star::uno::Reference< com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setReadOnly( sal_Bool readOnly )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isReadOnly(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCatalog( const OUString& catalog )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getCatalog(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTransactionIsolation( sal_Int32 level )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getTransactionIsolation(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess > SAL_CALL getTypeMap(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setTypeMap(
-        const css::uno::Reference< css::container::XNameAccess >& typeMap ) override;
+        const ::com::sun::star::uno::Reference< com::sun::star::container::XNameAccess >& typeMap )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XWarningsSupplier
-    virtual css::uno::Any SAL_CALL getWarnings(  ) override;
-    virtual void SAL_CALL clearWarnings(  ) override;
+    virtual ::com::sun::star::uno::Any SAL_CALL getWarnings(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL clearWarnings(  )
+        throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XInitialization
     virtual void SAL_CALL initialize(
-        const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+        const ::com::sun::star::uno::Sequence< ::com::sun::star::uno::Any >& aArguments )
+        throw (com::sun::star::uno::Exception, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XTablesSupplier
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getTables(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getTables(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XUsersSupplier
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getUsers(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getUsers(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public: // XViewsSupplier
-    virtual css::uno::Reference< css::container::XNameAccess > SAL_CALL getViews(  ) override;
+    virtual ::com::sun::star::uno::Reference< ::com::sun::star::container::XNameAccess > SAL_CALL getViews(  ) throw (::com::sun::star::uno::RuntimeException, std::exception) override;
 
 public:
     virtual void SAL_CALL disposing() override;

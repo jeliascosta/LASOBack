@@ -30,6 +30,7 @@
 #include <sfx2/viewsh.hxx>
 #include <sfx2/basedlgs.hxx>
 #include <svl/cjkoptions.hxx>
+#include <com/sun/star/i18n/TransliterationModules.hpp>
 
 #include "cuisrchdlg.hxx"
 
@@ -47,7 +48,7 @@
 // class SvxJSearchOptionsDialog -----------------------------------------
 
 SvxJSearchOptionsDialog::SvxJSearchOptionsDialog(vcl::Window *pParent,
-    const SfxItemSet& rOptionsSet, TransliterationFlags nInitialFlags)
+    const SfxItemSet& rOptionsSet, sal_Int32 nInitialFlags)
     : SfxSingleTabDialog(pParent, rOptionsSet)
     , nInitialTlFlags( nInitialFlags )
 {
@@ -76,7 +77,7 @@ void SvxJSearchOptionsDialog::Activate()
     pPage->SetTransliterationFlags( nInitialTlFlags );
 }
 
-TransliterationFlags SvxJSearchOptionsDialog::GetTransliterationFlags() const
+sal_Int32 SvxJSearchOptionsDialog::GetTransliterationFlags() const
 {
     return pPage->GetTransliterationFlags();
 }

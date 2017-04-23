@@ -31,16 +31,23 @@ public:
     explicit WrappedDefaultProperty(
         const OUString& rOuterName, const OUString& rInnerName,
         const css::uno::Any& rNewOuterDefault );
-    virtual ~WrappedDefaultProperty() override;
+    virtual ~WrappedDefaultProperty();
 
     virtual void setPropertyToDefault(
-        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException) override;
 
     virtual css::uno::Any getPropertyDefault(
-        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+        throw (css::beans::UnknownPropertyException,
+               css::lang::WrappedTargetException,
+               css::uno::RuntimeException) override;
 
     virtual css::beans::PropertyState getPropertyState(
-        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+        const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+        throw (css::beans::UnknownPropertyException,
+               css::uno::RuntimeException) override;
 private:
     css::uno::Any m_aOuterDefaultValue;
 };

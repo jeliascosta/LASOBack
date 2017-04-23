@@ -38,10 +38,14 @@ enum Orientation {
 };
 
 enum Tag {
-    ORIENTATION         = 0x0112
+    ORIENTATION         = 0x0112,
+    X_RESOLUTION        = 0x011a,
+    Y_RESOLUTION        = 0x011b,
+    EXIF_OFFSET         = 0x8769,
+    INTEROP_OFFSET      = 0xa005
 };
 
-class Exif final
+class Exif
 {
 private:
     Orientation maOrientation;
@@ -68,7 +72,7 @@ private:
 
 public:
     Exif();
-    ~Exif();
+    virtual ~Exif();
 
     bool hasExif() { return mbExifPresent;}
 

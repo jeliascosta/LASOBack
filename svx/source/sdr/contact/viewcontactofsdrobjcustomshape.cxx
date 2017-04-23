@@ -45,9 +45,9 @@ namespace sdr
 
         basegfx::B2DRange ViewContactOfSdrObjCustomShape::getCorrectedTextBoundRect() const
         {
-            tools::Rectangle aObjectBound(GetCustomShapeObj().GetGeoRect());
+            Rectangle aObjectBound(GetCustomShapeObj().GetGeoRect());
             aObjectBound += GetCustomShapeObj().GetGridOffset();
-            tools::Rectangle aTextBound(aObjectBound);
+            Rectangle aTextBound(aObjectBound);
             GetCustomShapeObj().GetTextBounds(aTextBound);
             aTextBound += GetCustomShapeObj().GetGridOffset();
             basegfx::B2DRange aTextRange(aTextBound.Left(), aTextBound.Top(), aTextBound.Right(), aTextBound.Bottom());
@@ -138,7 +138,7 @@ namespace sdr
                         b3DShape = true;
                     }
 
-                    const drawinglayer::primitive2d::Primitive2DContainer xNew(rCandidate.GetViewContact().getViewIndependentPrimitive2DContainer());
+                    const drawinglayer::primitive2d::Primitive2DContainer xNew(rCandidate.GetViewContact().getViewIndependentPrimitive2DSequence());
                     xGroup.insert(xGroup.end(), xNew.begin(), xNew.end());
                 }
             }
@@ -153,7 +153,7 @@ namespace sdr
                 {
                     // take unrotated snap rect as default, then get the
                     // unrotated text box. Rotation needs to be done centered
-                    tools::Rectangle aObjectBound(GetCustomShapeObj().GetGeoRect());
+                    Rectangle aObjectBound(GetCustomShapeObj().GetGeoRect());
                     // hack for calc grid sync
                     aObjectBound += GetCustomShapeObj().GetGridOffset();
                     const basegfx::B2DRange aObjectRange(aObjectBound.Left(), aObjectBound.Top(), aObjectBound.Right(), aObjectBound.Bottom());

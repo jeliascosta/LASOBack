@@ -117,34 +117,33 @@ protected:
     const static sal_Int32 UNIQUE_NUMBER_NEEDS_INITIALISATION = -1;
 
     // Checks read only status and throws exception if it's true
-    /// @throws css::lang::NoSupportException
-    void implCheckReadOnly( const sal_Char* pExceptionMsg );
+    void implCheckReadOnly( const sal_Char* pExceptionMsg )
+        throw (css::lang::NoSupportException);
 
     // Returns the LocalItem for a given locale, if it exists, otherwise NULL
     // This method compares the locales exactly, no closest match search is performed
-    /// @throws css::lang::IllegalArgumentException
-    LocaleItem* getItemForLocale( const css::lang::Locale& locale, bool bException );
+    LocaleItem* getItemForLocale( const css::lang::Locale& locale, bool bException )
+        throw (css::lang::IllegalArgumentException);
 
     // Returns the LocalItem for a given locale, if it exists, otherwise NULL
     // This method performs a closest match search, at least the language must match
     LocaleItem* getClosestMatchItemForLocale( const css::lang::Locale& locale );
-    /// @throws css::lang::IllegalArgumentException
-    /// @throws css::uno::RuntimeException
     void implSetCurrentLocale( const css::lang::Locale& locale,
-        bool FindClosestMatch, bool bUseDefaultIfNoMatch );
+        bool FindClosestMatch, bool bUseDefaultIfNoMatch )
+            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException);
 
     void implModified();
     void implNotifyListeners();
 
     //=== Impl methods for ...ForLocale methods ===
-    /// @throws css::resource::MissingResourceException
-    OUString SAL_CALL implResolveString( const OUString& ResourceID, LocaleItem* pLocaleItem );
+    OUString SAL_CALL implResolveString( const OUString& ResourceID, LocaleItem* pLocaleItem )
+        throw (css::resource::MissingResourceException);
     bool implHasEntryForId( const OUString& ResourceID, LocaleItem* pLocaleItem );
     css::uno::Sequence< OUString > implGetResourceIDs( LocaleItem* pLocaleItem );
     void implSetString( const OUString& ResourceID,
         const OUString& Str, LocaleItem* pLocaleItem );
-    /// @throws css::resource::MissingResourceException
-    void implRemoveId( const OUString& ResourceID, LocaleItem* pLocaleItem );
+    void implRemoveId( const OUString& ResourceID, LocaleItem* pLocaleItem )
+        throw (css::resource::MissingResourceException);
 
     // Method to load a locale if necessary, returns true if loading was
     // successful. Default implementation in base class just returns true.
@@ -155,44 +154,75 @@ protected:
 public:
     explicit StringResourceImpl(
         const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~StringResourceImpl() override;
+    virtual ~StringResourceImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
      // XStringResourceResolver
-    virtual OUString SAL_CALL resolveString( const OUString& ResourceID ) override;
+    virtual OUString SAL_CALL resolveString( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL resolveStringForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw ( css::resource::MissingResourceException,
+                    css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL hasEntryForIdAndLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDsForLocale
-        ( const css::lang::Locale& locale ) override;
-    virtual css::lang::Locale SAL_CALL getCurrentLocale(  ) override;
-    virtual css::lang::Locale SAL_CALL getDefaultLocale(  ) override;
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  ) override;
+        ( const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getCurrentLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getDefaultLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceManager
-    virtual sal_Bool SAL_CALL isReadOnly() override;
-    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch ) override;
-    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str ) override;
+    virtual sal_Bool SAL_CALL isReadOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str )
+        throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setStringForLocale( const OUString& ResourceID, const OUString& Str,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeId( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
     virtual void SAL_CALL removeIdForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL newLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale ) override;
-    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+                   css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL newLocale( const css::lang::Locale& locale )
+        throw (css::container::ElementExistException, css::lang::IllegalArgumentException,
+               css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  )
+        throw (css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception) override;
  };
 
 typedef ::cppu::ImplInheritanceHelper<
@@ -207,9 +237,8 @@ protected:
     OUString                                                             m_aNameBase;
     OUString                                                             m_aComment;
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL implInitializeCommonParameters( const css::uno::Sequence< css::uno::Any >& aArguments );
+    void SAL_CALL implInitializeCommonParameters( const css::uno::Sequence< css::uno::Any >& aArguments )
+            throw (css::uno::Exception, css::uno::RuntimeException);
 
     // Scan locale properties files
     virtual void implScanLocales();
@@ -236,8 +265,6 @@ protected:
 
     void implWriteLocaleBinary( LocaleItem* pLocaleItem, BinaryOutput& rOut );
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
     void implStoreAtStorage
     (
         const OUString& aNameBase,
@@ -245,28 +272,25 @@ protected:
         const css::uno::Reference< css::embed::XStorage >& Storage,
         bool bUsedForStore,
         bool bStoreAll
-    );
+    )
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception);
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
     void implKillRemovedLocaleFiles
     (
         const OUString& Location,
         const OUString& aNameBase,
         const css::uno::Reference< css::ucb::XSimpleFileAccess3 >& xFileAccess
-    );
+    )
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception);
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
     void implKillChangedDefaultFiles
     (
         const OUString& Location,
         const OUString& aNameBase,
         const css::uno::Reference< css::ucb::XSimpleFileAccess3 >& xFileAccess
-    );
+    )
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception);
 
-    /// @throws css::uno::Exception
-    /// @throws css::uno::RuntimeException
     void implStoreAtLocation
     (
         const OUString& Location,
@@ -276,62 +300,103 @@ protected:
         bool bUsedForStore,
         bool bStoreAll,
         bool bKillAll = false
-    );
+    )
+    throw (css::uno::Exception, css::uno::RuntimeException, std::exception);
 
 public:
     explicit StringResourcePersistenceImpl(
         const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~StringResourcePersistenceImpl() override;
+    virtual ~StringResourcePersistenceImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
      // XStringResourceResolver
-    virtual OUString SAL_CALL resolveString( const OUString& ResourceID ) override;
+    virtual OUString SAL_CALL resolveString( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL resolveStringForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw ( css::resource::MissingResourceException,
+                    css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL hasEntryForIdAndLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDsForLocale
-        ( const css::lang::Locale& locale ) override;
-    virtual css::lang::Locale SAL_CALL getCurrentLocale(  ) override;
-    virtual css::lang::Locale SAL_CALL getDefaultLocale(  ) override;
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  ) override;
+        ( const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getCurrentLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getDefaultLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceManager
-    virtual sal_Bool SAL_CALL isReadOnly() override;
-    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch ) override;
-    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str ) override;
+    virtual sal_Bool SAL_CALL isReadOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str )
+        throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setStringForLocale( const OUString& ResourceID, const OUString& Str,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeId( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
     virtual void SAL_CALL removeIdForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL newLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale ) override;
-    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+                   css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL newLocale( const css::lang::Locale& locale )
+        throw (css::container::ElementExistException, css::lang::IllegalArgumentException,
+               css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  )
+        throw (css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception) override;
 
     // XStringResourcePersistence
-    virtual void SAL_CALL store(  ) override;
-    virtual sal_Bool SAL_CALL isModified(  ) override;
-    virtual void SAL_CALL setComment( const OUString& Comment ) override;
+    virtual void SAL_CALL store(  )
+        throw (css::lang::NoSupportException,
+               css::uno::Exception,
+               css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isModified(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setComment( const OUString& Comment )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToStorage
         ( const css::uno::Reference< css::embed::XStorage >& Storage,
-          const OUString& NameBase, const OUString& Comment ) override;
+          const OUString& NameBase, const OUString& Comment )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToURL( const OUString& URL, const OUString& NameBase,
         const OUString& Comment, const css::uno::Reference
-        < css::task::XInteractionHandler >& Handler ) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  ) override;
-    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data ) override;
+        < css::task::XInteractionHandler >& Handler )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 };
 
 
@@ -350,66 +415,109 @@ class StringResourceWithStorageImpl : public StringResourceWithStorageImpl_BASE
 
 public:
     explicit StringResourceWithStorageImpl( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~StringResourceWithStorageImpl() override;
+    virtual ~StringResourceWithStorageImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
      // XStringResourceResolver
-    virtual OUString SAL_CALL resolveString( const OUString& ResourceID ) override;
+    virtual OUString SAL_CALL resolveString( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL resolveStringForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw ( css::resource::MissingResourceException,
+                    css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL hasEntryForIdAndLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDsForLocale
-        ( const css::lang::Locale& locale ) override;
-    virtual css::lang::Locale SAL_CALL getCurrentLocale(  ) override;
-    virtual css::lang::Locale SAL_CALL getDefaultLocale(  ) override;
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  ) override;
+        ( const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getCurrentLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getDefaultLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceManager
-    virtual sal_Bool SAL_CALL isReadOnly() override;
-    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch ) override;
-    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str ) override;
+    virtual sal_Bool SAL_CALL isReadOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str )
+        throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setStringForLocale( const OUString& ResourceID, const OUString& Str,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeId( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
     virtual void SAL_CALL removeIdForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL newLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale ) override;
-    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+                   css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL newLocale( const css::lang::Locale& locale )
+        throw (css::container::ElementExistException, css::lang::IllegalArgumentException,
+               css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  )
+        throw (css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception) override;
 
     // XStringResourcePersistence
-    virtual void SAL_CALL store(  ) override;
-    virtual sal_Bool SAL_CALL isModified(  ) override;
-    virtual void SAL_CALL setComment( const OUString& Comment ) override;
+    virtual void SAL_CALL store(  )
+        throw (css::lang::NoSupportException,
+               css::uno::Exception,
+               css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isModified(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setComment( const OUString& Comment )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToStorage
         ( const css::uno::Reference< css::embed::XStorage >& Storage,
-          const OUString& NameBase, const OUString& Comment ) override;
+          const OUString& NameBase, const OUString& Comment )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToURL( const OUString& URL, const OUString& NameBase,
         const OUString& Comment, const css::uno::Reference
-        < css::task::XInteractionHandler >& Handler ) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  ) override;
-    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data ) override;
+        < css::task::XInteractionHandler >& Handler )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceWithStorage
     virtual void SAL_CALL storeAsStorage
-        ( const css::uno::Reference< css::embed::XStorage >& Storage ) override;
+        ( const css::uno::Reference< css::embed::XStorage >& Storage )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setStorage
-        ( const css::uno::Reference< css::embed::XStorage >& Storage ) override;
+        ( const css::uno::Reference< css::embed::XStorage >& Storage )
+            throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 };
 
 
@@ -432,64 +540,108 @@ class StringResourceWithLocationImpl : public StringResourceWithLocationImpl_BAS
 
 public:
     explicit StringResourceWithLocationImpl( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~StringResourceWithLocationImpl() override;
+    virtual ~StringResourceWithLocationImpl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName(  ) override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+    virtual OUString SAL_CALL getImplementationName(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments ) override;
+    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XModifyBroadcaster
-    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+    virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener )
+        throw (css::uno::RuntimeException, std::exception) override;
 
      // XStringResourceResolver
-    virtual OUString SAL_CALL resolveString( const OUString& ResourceID ) override;
+    virtual OUString SAL_CALL resolveString( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL resolveStringForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw ( css::resource::MissingResourceException,
+                    css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL hasEntryForId( const OUString& ResourceID )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL hasEntryForIdAndLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDs(  )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getResourceIDsForLocale
-        ( const css::lang::Locale& locale ) override;
-    virtual css::lang::Locale SAL_CALL getCurrentLocale(  ) override;
-    virtual css::lang::Locale SAL_CALL getDefaultLocale(  ) override;
-    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  ) override;
+        ( const css::lang::Locale& locale )
+            throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getCurrentLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::lang::Locale SAL_CALL getDefaultLocale(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< css::lang::Locale > SAL_CALL getLocales(  )
+        throw (css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceManager
-    virtual sal_Bool SAL_CALL isReadOnly() override;
-    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch ) override;
-    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str ) override;
+    virtual sal_Bool SAL_CALL isReadOnly()
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setCurrentLocale( const css::lang::Locale& locale, sal_Bool FindClosestMatch )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setDefaultLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL setString( const OUString& ResourceID, const OUString& Str )
+        throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL setStringForLocale( const OUString& ResourceID, const OUString& Str,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeId( const OUString& ResourceID ) override;
+        const css::lang::Locale& locale )
+            throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeId( const OUString& ResourceID )
+        throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
     virtual void SAL_CALL removeIdForLocale( const OUString& ResourceID,
-        const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL newLocale( const css::lang::Locale& locale ) override;
-    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale ) override;
-    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  ) override;
+        const css::lang::Locale& locale )
+            throw (css::resource::MissingResourceException, css::uno::RuntimeException,
+                   css::lang::NoSupportException, std::exception) override;
+    virtual void SAL_CALL newLocale( const css::lang::Locale& locale )
+        throw (css::container::ElementExistException, css::lang::IllegalArgumentException,
+               css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeLocale( const css::lang::Locale& locale )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException,
+               css::lang::NoSupportException, std::exception) override;
+    virtual ::sal_Int32 SAL_CALL getUniqueNumericId(  )
+        throw (css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception) override;
 
     // XStringResourcePersistence
-    virtual void SAL_CALL store(  ) override;
-    virtual sal_Bool SAL_CALL isModified(  ) override;
-    virtual void SAL_CALL setComment( const OUString& Comment ) override;
+    virtual void SAL_CALL store(  )
+        throw (css::lang::NoSupportException,
+               css::uno::Exception,
+               css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL isModified(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setComment( const OUString& Comment )
+        throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToStorage
         ( const css::uno::Reference< css::embed::XStorage >& Storage,
-          const OUString& NameBase, const OUString& Comment ) override;
+          const OUString& NameBase, const OUString& Comment )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL storeToURL( const OUString& URL, const OUString& NameBase,
         const OUString& Comment, const css::uno::Reference
-        < css::task::XInteractionHandler >& Handler ) override;
-    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  ) override;
-    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data ) override;
+        < css::task::XInteractionHandler >& Handler )
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< ::sal_Int8 > SAL_CALL exportBinary(  )
+        throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL importBinary( const css::uno::Sequence< ::sal_Int8 >& Data )
+        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XStringResourceWithLocation
-    virtual void SAL_CALL storeAsURL( const OUString& URL ) override;
-    virtual void SAL_CALL setURL( const OUString& URL ) override;
+    virtual void SAL_CALL storeAsURL( const OUString& URL )
+        throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setURL( const OUString& URL )
+        throw (css::lang::IllegalArgumentException, css::lang::NoSupportException,
+               css::uno::RuntimeException, std::exception) override;
 };
 
 

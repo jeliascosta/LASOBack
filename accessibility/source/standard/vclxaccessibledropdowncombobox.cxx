@@ -17,12 +17,12 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessibledropdowncombobox.hxx>
-#include <standard/vclxaccessiblecombobox.hxx>
-#include <standard/vclxaccessibletextfield.hxx>
-#include <standard/vclxaccessiblelist.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/standard/vclxaccessibledropdowncombobox.hxx>
+#include <accessibility/standard/vclxaccessiblecombobox.hxx>
+#include <accessibility/standard/vclxaccessibletextfield.hxx>
+#include <accessibility/standard/vclxaccessiblelist.hxx>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
@@ -64,8 +64,8 @@ void VCLXAccessibleDropDownComboBox::ProcessWindowEvent (const VclWindowEvent& r
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::DropdownOpen:
-        case VclEventId::DropdownClose:
+        case VCLEVENT_DROPDOWN_OPEN:
+        case VCLEVENT_DROPDOWN_CLOSE:
         {
             break;
         }
@@ -79,12 +79,14 @@ void VCLXAccessibleDropDownComboBox::ProcessWindowEvent (const VclWindowEvent& r
 // XServiceInfo
 
 OUString VCLXAccessibleDropDownComboBox::getImplementationName()
+    throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleDropDownComboBox" );
 }
 
 
 Sequence< OUString > VCLXAccessibleDropDownComboBox::getSupportedServiceNames()
+    throw (RuntimeException, std::exception)
 {
     Sequence< OUString > aNames = VCLXAccessibleBox::getSupportedServiceNames();
     sal_Int32 nLength = aNames.getLength();

@@ -40,7 +40,7 @@ namespace dbaccess
     */
     class ObjectNameApproval : public IContainerApprove
     {
-        std::unique_ptr< ObjectNameApproval_Impl >   m_pImpl;
+        ::std::unique_ptr< ObjectNameApproval_Impl >   m_pImpl;
 
     public:
         enum ObjectType
@@ -63,7 +63,7 @@ namespace dbaccess
             const css::uno::Reference< css::sdbc::XConnection >& _rxConnection,
             ObjectType _eType
         );
-        virtual ~ObjectNameApproval() override;
+        virtual ~ObjectNameApproval();
 
         // IContainerApprove
         virtual void SAL_CALL approveElement( const OUString& _rName, const css::uno::Reference< css::uno::XInterface >& _rxElement ) override;

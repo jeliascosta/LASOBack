@@ -40,12 +40,13 @@ namespace drawinglayer
             double                                      mfCornerRadiusX;    // [0.0..1.0] relative to 1/2 width
             double                                      mfCornerRadiusY;    // [0.0..1.0] relative to 1/2 height
 
+            // bitfield
             // flag which decides if the HitArea should be the filled geometry
             bool                                        mbForceFillForHitTest : 1;
 
         protected:
             // local decomposition.
-            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& aViewInformation) const override;
+            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& aViewInformation) const override;
 
         public:
             SdrRectanglePrimitive2D(

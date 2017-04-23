@@ -41,14 +41,15 @@ class ItemHolder2 : private ItemHolderMutexBase
     public:
 
         ItemHolder2();
-        virtual ~ItemHolder2() override;
+        virtual ~ItemHolder2();
         static void holdConfigItem(EItem eItem);
 
 
     // uno interface
     public:
 
-        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent) override;
+        virtual void SAL_CALL disposing(const css::lang::EventObject& aEvent)
+            throw(css::uno::RuntimeException, std::exception) override;
 
 
     // helper

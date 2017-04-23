@@ -190,7 +190,7 @@ public:
     virtual void WritePostitFieldReference() {};
 
     /// Output text (inside a run).
-    virtual void RunText( const OUString& rText, rtl_TextEncoding eCharSet = RTL_TEXTENCODING_UTF8 ) = 0;
+    virtual void RunText( const OUString& rText, rtl_TextEncoding eCharSet ) = 0;
 
     /// Output text (without markup).
     virtual void RawText(const OUString& rText, rtl_TextEncoding eCharSet) = 0;
@@ -225,7 +225,7 @@ public:
     /// Output FKP (Formatted disK Page) - necessary for binary formats only.
     /// FIXME having it in AttributeOutputBase is probably a hack, it
     /// should be in WW8AttributeOutput only...
-    virtual void OutputFKP(bool /*bForce*/) {}
+    virtual void OutputFKP(bool /*bForce*/ = false) {}
 
     /// Output style.
     virtual void ParagraphStyle( sal_uInt16 nStyle ) = 0;
@@ -267,7 +267,7 @@ public:
     virtual void EndStyles( sal_uInt16 nNumberOfStyles ) = 0;
 
     /// Write default style.
-    virtual void DefaultStyle() = 0;
+    virtual void DefaultStyle( sal_uInt16 nStyle ) = 0;
 
     /// Start of a style in the styles table.
     virtual void StartStyle( const OUString& rName, StyleType eType,
@@ -358,7 +358,7 @@ public:
         sal_Int16 nFirstLineIndex,
         sal_Int16 nListTabPos,
         const OUString &rNumberingString,
-        const SvxBrushItem* pBrush) = 0; // #i120928 export graphic of bullet
+        const SvxBrushItem* pBrush = nullptr) = 0; // #i120928 export graphic of bullet
 
 protected:
 
@@ -623,8 +623,8 @@ protected:
 
     virtual bool AnalyzeURL( const OUString& rUrl, const OUString& rTarget, OUString* pLinkURL, OUString* pMark );
 
-    ww8::GridColsPtr GetGridCols( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
-    ww8::WidthsPtr   GetColumnWidths( ww8::WW8TableNodeInfoInner::Pointer_t const & pTableTextNodeInfoInner );
+    ww8::GridColsPtr GetGridCols( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
+    ww8::WidthsPtr   GetColumnWidths( ww8::WW8TableNodeInfoInner::Pointer_t pTableTextNodeInfoInner );
 
 public:
     AttributeOutputBase() {}
@@ -640,7 +640,7 @@ public:
     void OutputItem( const SfxPoolItem& rHt );
 
     /// Use OutputItem() on an item set - for styles.
-    void OutputStyleItemSet( const SfxItemSet& rSet, bool bTestForDefault );
+    void OutputStyleItemSet( const SfxItemSet& rSet, bool bDeep, bool bTestForDefault );
 
     /// Output frames.
     void OutputFlyFrame( const ww8::Frame& rFormat );

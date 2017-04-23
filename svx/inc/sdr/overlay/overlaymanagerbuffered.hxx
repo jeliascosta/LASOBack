@@ -47,27 +47,28 @@ namespace sdr
             // Range for buffering (in pixel to be independent from mapMode)
             basegfx::B2IRange                       maBufferRememberedRangePixel;
 
+            // bitfield
             // Flag to decide if PreRendering shall be used for overlay refreshes.
             // Default is false.
             bool                                    mbRefreshWithPreRendering : 1;
 
             // link for timer
-            DECL_LINK(ImpBufferTimerHandler, Timer*, void);
+            DECL_LINK_TYPED(ImpBufferTimerHandler, Idle*, void);
 
             // Internal methods for buffering
             void ImpPrepareBufferDevice();
             void ImpRestoreBackground() const ;
             void ImpRestoreBackground(const vcl::Region& rRegionPixel) const;
-            void ImpSaveBackground(const vcl::Region& rRegion, OutputDevice* pPreRenderDevice);
+            void ImpSaveBackground(const vcl::Region& rRegion, OutputDevice* pPreRenderDevice = nullptr);
 
             OverlayManagerBuffered(
                 OutputDevice& rOutputDevice,
-                bool bRefreshWithPreRendering);
-            virtual ~OverlayManagerBuffered() override;
+                bool bRefreshWithPreRendering = false);
+            virtual ~OverlayManagerBuffered();
 
         public:
             static rtl::Reference<OverlayManager> create(OutputDevice& rOutputDevice,
-                bool bRefreshWithPreRendering);
+                bool bRefreshWithPreRendering = false);
 
             // complete redraw
             virtual void completeRedraw(const vcl::Region& rRegion, OutputDevice* pPreRenderDevice = nullptr) const override;
@@ -80,6 +81,9 @@ namespace sdr
 
             // invalidate the given range at local OutputDevice
             virtual void invalidateRange(const basegfx::B2DRange& rRange) override;
+
+            // access to RefreshWithPreRendering Flag
+            bool DoRefreshWithPreRendering() const { return mbRefreshWithPreRendering; }
         };
     } // end of namespace overlay
 } // end of namespace sdr

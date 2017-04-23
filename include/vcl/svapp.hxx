@@ -41,9 +41,6 @@
 #include <vcl/metric.hxx>
 #include <unotools/localedatawrapper.hxx>
 #include <o3tl/typed_flags_set.hxx>
-#include <com/sun/star/uno/Reference.h>
-#include <com/sun/star/connection/XConnection.hpp>
-
 
 class BitmapEx;
 class AllSettings;
@@ -59,8 +56,13 @@ class Reflection;
 class NotifyEvent;
 class KeyEvent;
 class MouseEvent;
+class ZoomEvent;
+class ScrollEvent;
 struct ImplSVEvent;
 struct ConvertData;
+
+#include <com/sun/star/uno/Reference.h>
+#include <com/sun/star/connection/XConnection.hpp>
 
 namespace com {
 namespace sun {
@@ -96,79 +98,79 @@ namespace o3tl
 typedef long (*VCLEventHookProc)( NotifyEvent& rEvt, void* pData );
 
 /** An application can be notified of a number of different events:
-    - Type::Accept       - listen for connection to the application (a connection
+    - TYPE_ACCEPT       - listen for connection to the application (a connection
                           string is passed via the event)
-    - Type::Unaccept     - stops listening for a connection to the app (determined by
+    - TYPE_UNACCEPT     - stops listening for a connection to the app (determined by
                           a connection string passed via the event)
-    - Type::Appear       - brings the app to the front (i.e. makes it "appear")
-    - Type::Version      - display the app version
-    - Type::Help         - opens a help topic (help topic passed as string)
-    - Type::OpenHELP_URL - opens a help URL (URL passed as a string)
-    - Type::ShowDialog   - shows a dialog (dialog passed as a string)
-    - Type::Open         - opens a document or group of documents (documents passed
+    - TYPE_APPEAR       - brings the app to the front (i.e. makes it "appear")
+    - TYPE_VERSION      - display the app version
+    - TYPE_HELP         - opens a help topic (help topic passed as string)
+    - TYPE_OPENHELP_URL - opens a help URL (URL passed as a string)
+    - TYPE_SHOWDIALOG   - shows a dialog (dialog passed as a string)
+    - TYPE_OPEN         - opens a document or group of documents (documents passed
                           as an array of strings)
-    - Type::Print        - print a document or group of documents (documents passed
+    - TYPE_PRINT        - print a document or group of documents (documents passed
                           as an array of strings
-    - Type::PrivateDoShutdown - shutdown the app
+    - TYPE_PRIVATE_DOSHUTDOWN - shutdown the app
 */
 
 class VCL_DLLPUBLIC ApplicationEvent
 {
 public:
-    enum class Type {
-        Accept,                ///< Listen for connections
-        Appear,                ///< Make application appear
-        Help,                  ///< Bring up help options (command-line help)
-        Version,               ///< Display product version
-        Open,                  ///< Open a document
-        OpenHelpUrl,           ///< Open a help URL
-        Print,                 ///< Print document
-        PrivateDoShutdown,    ///< Shutdown application
-        QuickStart,            ///< Start QuickStart
-        ShowDialog,            ///< Show a dialog
-        Unaccept               ///< Stop listening for connections
+    enum Type {
+        TYPE_ACCEPT,                ///< Listen for connections
+        TYPE_APPEAR,                ///< Make application appear
+        TYPE_HELP,                  ///< Bring up help options (command-line help)
+        TYPE_VERSION,               ///< Display product version
+        TYPE_OPEN,                  ///< Open a document
+        TYPE_OPENHELPURL,           ///< Open a help URL
+        TYPE_PRINT,                 ///< Print document
+        TYPE_PRIVATE_DOSHUTDOWN,    ///< Shutdown application
+        TYPE_QUICKSTART,            ///< Start QuickStart
+        TYPE_SHOWDIALOG,            ///< Show a dialog
+        TYPE_UNACCEPT               ///< Stop listening for connections
     };
 
     /** Explicit constructor for ApplicationEvent.
 
-     @attention Type::Appear, Type::Version, Type::PrivateDoShutdown and
-        Type::QuickStart are the \em only events that don't need to include
+     @attention TYPE_APPEAR, TYPE_VERSION, TYPE_PRIVATE_DOSHUTDOWN and
+        TYPE_QUICKSTART are the \em only events that don't need to include
         a data string with the event. No other events should use this
         constructor!
     */
     explicit ApplicationEvent(Type type): aEvent(type)
     {
         assert(
-            type == Type::Appear || type == Type::Version
-            || type == Type::PrivateDoShutdown || type == Type::QuickStart);
+            type == TYPE_APPEAR || type == TYPE_VERSION
+            || type == TYPE_PRIVATE_DOSHUTDOWN || type == TYPE_QUICKSTART);
     }
 
     /** Constructor for ApplicationEvent, accepts a string for the data
      associated with the event.
 
-     @attention Type::Accept, Type::Help, Type::OpenHelpUrl, Type::ShowDialog
-        and Type::Unaccept are the \em only events that accept a single
+     @attention TYPE_ACCEPT, TYPE_HELP, TYPE_OPENHELPURL, TYPE_SHOWDIALOG
+        and TYPE_UNACCEPT are the \em only events that accept a single
         string as event data. No other events should use this constructor!
     */
     ApplicationEvent(Type type, OUString const & data): aEvent(type)
     {
         assert(
-            type == Type::Accept || type == Type::Help || type == Type::OpenHelpUrl
-            || type == Type::ShowDialog || type == Type::Unaccept);
+            type == TYPE_ACCEPT || type == TYPE_HELP || type == TYPE_OPENHELPURL
+            || type == TYPE_SHOWDIALOG || type == TYPE_UNACCEPT);
         aData.push_back(data);
     }
 
     /** Constructor for ApplicationEvent, accepts an array of strings for
      the data associated with the event.
 
-     @attention Type::Open and Type::Print can apply to multiple documents,
+     @attention TYPE_OPEN and TYPE_PRINT can apply to multiple documents,
         and are the \em only events that accept an array of strings. No other
         events should use this constructor.
     */
     ApplicationEvent(Type type, std::vector<OUString> const & data):
         aEvent(type), aData(data)
     {
-        assert(type == Type::Open || type == Type::Print);
+        assert(type == TYPE_OPEN || type == TYPE_PRINT);
     }
 
     /** Get the type of event.
@@ -182,17 +184,17 @@ public:
 
     /** Gets the application event's data string.
 
-     @attention The \em only events that need a single string Type::Accept,
-        Type::Help, Type::OpenHelpUrl, Type::ShowDialog and Type::Unaccept
+     @attention The \em only events that need a single string TYPE_ACCEPT,
+        TYPE_HELP, TYPE_OPENHELPURL, TYPE_SHOWDIALOG and TYPE_UNACCEPT
 
      @returns The event's data string.
     */
     OUString GetStringData() const
     {
         assert(
-            aEvent == Type::Accept || aEvent == Type::Help
-            || aEvent == Type::OpenHelpUrl || aEvent == Type::ShowDialog
-            || aEvent == Type::Unaccept);
+            aEvent == TYPE_ACCEPT || aEvent == TYPE_HELP
+            || aEvent == TYPE_OPENHELPURL || aEvent == TYPE_SHOWDIALOG
+            || aEvent == TYPE_UNACCEPT);
         assert(aData.size() == 1);
         return aData[0];
     }
@@ -200,11 +202,11 @@ public:
     /** Gets the event's array of strings.
 
      @attention The \em only events that need an array of strings
-        are Type::Open and Type::Print.
+        are TYPE_OPEN and TYPE_PRINT.
     */
     std::vector<OUString> const & GetStringsData() const
     {
-        assert(aEvent == Type::Open || aEvent == Type::Print);
+        assert(aEvent == TYPE_OPEN || aEvent == TYPE_PRINT);
         return aData;
     }
 
@@ -230,10 +232,10 @@ private:
 class VCL_DLLPUBLIC Application
 {
 public:
-    enum class DialogCancelMode {
-        Off,      ///< do not automatically cancel dialogs
-        Silent,   ///< silently cancel any dialogs
-        Fatal     ///< cancel any dialogs by std::abort
+    enum DialogCancelMode {
+        DIALOG_CANCEL_OFF,      ///< do not automatically cancel dialogs
+        DIALOG_CANCEL_SILENT,   ///< silently cancel any dialogs
+        DIALOG_CANCEL_FATAL     ///< cancel any dialogs by std::abort
     };
 
     /** @name Initialization
@@ -723,7 +725,7 @@ public:
 
      @see ImplCallEventListeners(VclSimpleEvent* pEvent)
     */
-    static void                 ImplCallEventListeners( VclEventId nEvent, vcl::Window* pWin, void* pData );
+    static void                 ImplCallEventListeners( sal_uLong nEvent, vcl::Window* pWin, void* pData );
 
     /** Send event to all VCL application event listeners
 
@@ -741,7 +743,7 @@ public:
 
      @see PostKeyEvent
     */
-    static bool                 HandleKey( VclEventId nEvent, vcl::Window *pWin, KeyEvent* pKeyEvent );
+    static bool                 HandleKey( sal_uLong nEvent, vcl::Window *pWin, KeyEvent* pKeyEvent );
 
     /** Send keypress event
 
@@ -751,7 +753,7 @@ public:
 
      @see HandleKey
     */
-    static ImplSVEvent *        PostKeyEvent( VclEventId nEvent, vcl::Window *pWin, KeyEvent* pKeyEvent );
+    static ImplSVEvent *        PostKeyEvent( sal_uLong nEvent, vcl::Window *pWin, KeyEvent* pKeyEvent );
 
     /** Send mouse event
 
@@ -759,7 +761,7 @@ public:
      @param     pWin            Pointer to window to which the event is sent
      @param     pMouseEvent     Mouse event to send
     */
-    static ImplSVEvent *        PostMouseEvent( VclEventId nEvent, vcl::Window *pWin, MouseEvent* pMouseEvent );
+    static ImplSVEvent *        PostMouseEvent( sal_uLong nEvent, vcl::Window *pWin, MouseEvent* pMouseEvent );
 
     /** Remove mouse and keypress events from a window... any also zoom and scroll events
      if the platform supports it.
@@ -772,7 +774,7 @@ public:
 
     /** Post a user event to the default window.
 
-     User events allow for the deferral of work to later in the main-loop - at idle.
+     User events allow for the deferreal of work to later in the main-loop - at idle.
 
      Execution of the deferred work is thread-safe which means all the tasks are executed
      serially, so no thread-safety locks between tasks are necessary.
@@ -792,6 +794,24 @@ public:
      @param     nUserEvent      User event to remove
     */
     static void                 RemoveUserEvent( ImplSVEvent * nUserEvent );
+
+    /** Insert an idle handler into the application.
+
+     If the idle event manager doesn't exist, then initialize it.
+
+     @param     rLink           const reference to the idle handler
+     @param     nPriority       The priority of the idle handler - idle handlers of a higher
+                                priority will be processed before this handler.
+
+     @return true if the handler was inserted successfully, false if it couldn't be inserted.
+    */
+    static bool                 InsertIdleHdl( const Link<Application*,void>& rLink, sal_uInt16 nPriority );
+
+    /** Remove an idle handler from the application.
+
+     @param     rLink           const reference to the idle handler to remove
+    */
+    static void                 RemoveIdleHdl( const Link<Application*,void>& rLink );
 
     /*** Get the DisplayConnection.
 
@@ -982,7 +1002,7 @@ public:
 
      @see GetScreenCount
     */
-    static tools::Rectangle            GetScreenPosSizePixel( unsigned int nScreen );
+    static Rectangle            GetScreenPosSizePixel( unsigned int nScreen );
 
     /** Determines if the screens that make up a display are separate or
      form one large display area.
@@ -1006,7 +1026,7 @@ public:
 
      @see IsUnifiedDisplay, GetDisplayBuiltInScreen
     */
-    SAL_DLLPRIVATE static unsigned int GetBestScreen( const tools::Rectangle& );
+    SAL_DLLPRIVATE static unsigned int GetBestScreen( const Rectangle& );
 
     /** Get the built-in screen.
 
@@ -1059,6 +1079,22 @@ public:
     */
     static void                 RemoveAccel( Accelerator* pAccel );
 
+    /** Enable auto-mnemonics
+
+     @param     bEnabled        True enables auto-mnemonics, and false disables it
+
+     @see IsAutoMnemonicEnabled
+    */
+    static void                 EnableAutoMnemonic( bool bEnabled = true );
+
+    /** Determines if auto-mnemonics are enabled.
+
+     @returns True if auto-mnemonics is enabled, false if not.
+
+     @see EnableAutoMnemonic
+    */
+    static bool                 IsAutoMnemonicEnabled();
+
     /** Get the number of reserved key codes used by the application.
 
      @returns number of reserved key codes
@@ -1102,6 +1138,21 @@ public:
      @see SetHelp
     */
     static Help*                GetHelp();
+
+    /** Turns on "auto-help" (hover mouse above UI element and a tooltip with an
+     explanation pops up.
+
+     @see EnableAutoHelpId
+    */
+    static void                 EnableAutoHelpId();
+
+    /** Determines if auto-help is enabled or disabled.
+
+     @return true if auto-help is enabled, false if it is disabled.
+
+     @see EnableAutoHelpId
+    */
+    static bool                 IsAutoHelpIdEnabled();
 
     ///@}
 
@@ -1168,6 +1219,13 @@ public:
      @see SetSystemWindowMode
     */
     static SystemWindowFlags    GetSystemWindowMode();
+
+
+    /** Set a dialog scaling factor. Used for localization.
+
+     @param     nScale          Scaling factor
+    */
+    static void                 SetDialogScaleX( short nScale );
 
     ///@}
 
@@ -1268,12 +1326,6 @@ public:
      @return True if event testing mode is enabled, false if not.
     */
     static bool                 IsEventTestingModeEnabled();
-
-    /** Set safe mode to enabled */
-    static void                 EnableSafeMode();
-
-    /** Determines if safe mode is enabled */
-    static bool                 IsSafeModeEnabled();
 
     ///@}
 
@@ -1393,7 +1445,7 @@ public:
     static void setDeInitHook(Link<LinkParamNone*,void> const & hook);
 
 private:
-    DECL_STATIC_LINK( Application, PostEventHandler, void*, void );
+    DECL_STATIC_LINK_TYPED( Application, PostEventHandler, void*, void );
 };
 
 
@@ -1425,7 +1477,6 @@ class VCL_DLLPUBLIC SolarMutexClearableGuard final
     SolarMutexClearableGuard( const SolarMutexClearableGuard& ) = delete;
     const SolarMutexClearableGuard& operator = ( const SolarMutexClearableGuard& ) = delete;
     bool m_bCleared;
-    comphelper::SolarMutex& m_solarMutex;
 public:
     /** Acquires mutex
      */
@@ -1454,6 +1505,9 @@ public:
             m_bCleared = true;
         }
     }
+
+protected:
+    comphelper::SolarMutex& m_solarMutex;
 };
 
 class VCL_DLLPUBLIC SolarMutexResettableGuard final
@@ -1461,7 +1515,6 @@ class VCL_DLLPUBLIC SolarMutexResettableGuard final
     SolarMutexResettableGuard( const SolarMutexResettableGuard& ) = delete;
     const SolarMutexResettableGuard& operator = ( const SolarMutexResettableGuard& ) = delete;
     bool m_bCleared;
-    comphelper::SolarMutex& m_solarMutex;
 public:
     /** Acquires mutex
      */
@@ -1500,6 +1553,9 @@ public:
             m_bCleared = false;
         }
     }
+
+protected:
+    comphelper::SolarMutex& m_solarMutex;
 };
 
 namespace vcl

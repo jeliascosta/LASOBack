@@ -31,7 +31,7 @@
 namespace basctl
 {
 
-typedef std::multimap< sal_Int16, OUString > IndexToNameMap;
+typedef ::std::multimap< sal_Int16, OUString, ::std::less< sal_Int16 > > IndexToNameMap;
 
 
 class DlgEdForm;
@@ -69,7 +69,7 @@ protected:
     using SfxListener::StartListening;
     void StartListening();
     using SfxListener::EndListening;
-    void    EndListening(bool bRemoveListener);
+    void    EndListening(bool bRemoveListener = true);
     bool    isListening() const { return bIsListening; }
 
     bool TransformSdrToControlCoordinates(
@@ -87,12 +87,13 @@ protected:
 
 public:
 
-    virtual ~DlgEdObj() override;
+    virtual ~DlgEdObj();
+    virtual void SetPage(SdrPage* pNewPage) override;
 
     void SetDlgEdForm( DlgEdForm* pForm ) { pDlgEdForm = pForm; }
     DlgEdForm* GetDlgEdForm() const { return pDlgEdForm; }
 
-    virtual SdrInventor GetObjInventor() const override;
+    virtual sal_uInt32 GetObjInventor() const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
 
     virtual DlgEdObj*   Clone() const override;                                          // not working yet
@@ -115,23 +116,16 @@ public:
     css::uno::Reference< css::awt::XControl > GetControl() const;
 
     virtual void PositionAndSizeChange( const css::beans::PropertyChangeEvent& evt );
-    /// @throws css::container::NoSuchElementException
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL NameChange( const  css::beans::PropertyChangeEvent& evt );
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL TabIndexChange( const  css::beans::PropertyChangeEvent& evt );
+    void SAL_CALL NameChange( const  css::beans::PropertyChangeEvent& evt ) throw(css::container::NoSuchElementException, css::uno::RuntimeException);
+    void SAL_CALL TabIndexChange( const  css::beans::PropertyChangeEvent& evt ) throw( css::uno::RuntimeException);
 
     // PropertyChangeListener
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL _propertyChange(const css::beans::PropertyChangeEvent& evt);
+    void SAL_CALL _propertyChange(const css::beans::PropertyChangeEvent& evt) throw (css::uno::RuntimeException, std::exception);
 
     // ContainerListener
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL _elementInserted( const css::container::ContainerEvent& Event );
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL _elementReplaced( const css::container::ContainerEvent& Event );
-    /// @throws css::uno::RuntimeException
-    void SAL_CALL _elementRemoved( const css::container::ContainerEvent& Event );
+    void SAL_CALL _elementInserted( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException);
+    void SAL_CALL _elementReplaced( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException);
+    void SAL_CALL _elementRemoved( const css::container::ContainerEvent& Event ) throw(css::uno::RuntimeException);
 
     virtual void SetLayer(SdrLayerID nLayer) override;
     void MakeDataAware( const css::uno::Reference< css::frame::XModel >& xModel );
@@ -148,7 +142,7 @@ class DlgEdForm: public DlgEdObj
 
 private:
     DlgEditor& rDlgEditor;
-    std::vector<DlgEdObj*> pChildren;
+    ::std::vector<DlgEdObj*> pChildren;
 
     mutable ::boost::optional< css::awt::DeviceInfo >   mpDeviceInfo;
 
@@ -162,7 +156,7 @@ protected:
 
 public:
 
-    virtual ~DlgEdForm() override;
+    virtual ~DlgEdForm();
 
     DlgEditor& GetDlgEditor () const { return rDlgEditor; }
 

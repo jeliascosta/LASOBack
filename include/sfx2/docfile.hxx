@@ -100,7 +100,7 @@ public:
                                     const SfxItemSet* pSet=nullptr );
                         SfxMedium( const css::uno::Sequence< css::beans::PropertyValue >& aArgs );
 
-                        virtual ~SfxMedium() override;
+                        virtual ~SfxMedium();
 
     void                UseInteractionHandler( bool );
     css::uno::Reference< css::task::XInteractionHandler >
@@ -118,7 +118,7 @@ public:
      */
     void                SetFilter(const std::shared_ptr<const SfxFilter>& pFilter);
     const std::shared_ptr<const SfxFilter>& GetFilter() const;
-    std::shared_ptr<const SfxFilter> const & GetOrigFilter() const;
+    std::shared_ptr<const SfxFilter>    GetOrigFilter() const;
     const OUString&     GetOrigURL() const;
 
     SfxItemSet  *       GetItemSet() const;
@@ -145,7 +145,9 @@ public:
                         { return ERRCODE_TOERROR(GetErrorCode()); }
     sal_uInt32          GetLastStorageCreationState();
 
-    void                SetError(sal_uInt32 nError);
+    void                SetError( sal_uInt32 nError, const OUString& aLogMessage );
+
+    void                AddLog( const OUString& aMessage );
 
     void                CloseInStream();
     bool                CloseOutStream();
@@ -161,8 +163,7 @@ public:
     bool                Commit();
     bool                IsStorage();
 
-    enum class ShowLockResult { NoLock, Succeeded,Try };
-    ShowLockResult      ShowLockedDocumentDialog( const LockFileEntry& aData, bool bIsLoading, bool bOwnLock );
+    sal_Int8            ShowLockedDocumentDialog( const LockFileEntry& aData, bool bIsLoading, bool bOwnLock );
     void                LockOrigFileOnDemand( bool bLoading, bool bNoUI );
     void                DisableUnlockWebDAV( bool bDisableUnlockWebDAV = true );
     void                UnlockFile( bool bReleaseLockStream );
@@ -177,16 +178,10 @@ public:
                         GetVersionList( bool _bNoReload = false );
     SAL_WARN_UNUSED_RESULT bool  IsReadOnly() const;
 
-    // Whether the medium had originally been opened r/o (either because it is
-    // "physically" r/o, or because it was requested to be opended r/o,
-    // independent of later changes via SetOpenMode; used to keep track of the
-    // "true" state of the medium across toggles via SID_EDITDOC (which do
-    // change SetOpenMode):
+    // Whether the medium had originally been opened r/o, independent of later
+    // changes via SetOpenMode; used to keep track of the "true" state of the
+    // medium across toggles via SID_EDITDOC (which do change SetOpenMode):
     SAL_WARN_UNUSED_RESULT bool  IsOriginallyReadOnly() const;
-
-    // Whether the medium had originally been requested to be opened r/o,
-    // independent of later changes via SetOpenMode; used for SID_RELOAD:
-    SAL_WARN_UNUSED_RESULT bool IsOriginallyLoadedReadOnly() const;
 
     css::uno::Reference< css::io::XInputStream >  GetInputStream();
 
@@ -221,6 +216,7 @@ public:
     SAL_DLLPRIVATE SvKeyValueIterator* GetHeaderAttributes_Impl();
 
     SAL_DLLPRIVATE void Init_Impl();
+    SAL_DLLPRIVATE void ForceSynchronStream_Impl();
 
     SAL_DLLPRIVATE void GetLockingStream_Impl();
     SAL_DLLPRIVATE void GetMedium_Impl();

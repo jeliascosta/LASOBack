@@ -26,6 +26,9 @@
 #include "breakpoint.hxx"
 #include "linenumberwindow.hxx"
 
+class ExtTextEngine;
+class ExtTextView;
+class SvxSearchItem;
 #include <svtools/svtabbx.hxx>
 #include <svtools/headbar.hxx>
 
@@ -47,9 +50,6 @@
 #include <comphelper/syntaxhighlight.hxx>
 #include <com/sun/star/reflection/XIdlReflection.hpp>
 
-class ExtTextEngine;
-class TextView;
-class SvxSearchItem;
 namespace com { namespace sun { namespace star { namespace beans {
     class XMultiPropertySet;
 } } } }
@@ -74,8 +74,8 @@ friend class CodeCompleteListBox;
 private:
     class ChangesListener;
 
-    std::unique_ptr<TextView>        pEditView;
-    std::unique_ptr<ExtTextEngine>   pEditEngine;
+    std::unique_ptr<ExtTextView>   pEditView;
+    std::unique_ptr<ExtTextEngine> pEditEngine;
     ModulWindow&                     rModulWindow;
 
     rtl::Reference< ChangesListener > listener_;
@@ -88,18 +88,21 @@ private:
     SyntaxHighlighter   aHighlighter;
     Idle                aSyntaxIdle;
     std::set<sal_uInt16>       aSyntaxLineTable;
-    DECL_LINK(SyntaxTimerHdl, Timer *, void);
+    DECL_LINK_TYPED(SyntaxTimerHdl, Idle *, void);
 
     // progress bar
     class ProgressInfo;
     std::unique_ptr<ProgressInfo> pProgress;
 
+    virtual void DataChanged(DataChangedEvent const & rDCEvt) override;
+
+    using           Window::Notify;
     virtual void    Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
     void            ImpDoHighlight( sal_uLong nLineOff );
     void            ImplSetFont();
 
-    bool            bHighlighting;
+    bool            bHighlightning;
     bool            bDoSyntaxHighlight;
     bool            bDelayHighlight;
 
@@ -116,7 +119,7 @@ private:
     TextSelection GetLastHighlightPortionTextSelection();
 
 protected:
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
     virtual void    Resize() override;
     virtual void    KeyInput( const KeyEvent& rKeyEvt ) override;
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
@@ -132,11 +135,11 @@ protected:
 
 public:
                     EditorWindow (vcl::Window* pParent, ModulWindow*);
-                    virtual ~EditorWindow() override;
+                    virtual ~EditorWindow();
     virtual void    dispose() override;
 
     ExtTextEngine*  GetEditEngine() const   { return pEditEngine.get(); }
-    TextView*       GetEditView() const     { return pEditView.get(); }
+    ExtTextView*    GetEditView() const     { return pEditView.get(); }
 
     void            CreateProgress( const OUString& rText, sal_uLong nRange );
     void            DestroyProgress();
@@ -153,7 +156,6 @@ public:
 
     bool            CanModify() { return ImpCanModify(); }
 
-    void            ChangeFontColor( Color aColor );
     void            UpdateSyntaxHighlighting ();
 
     bool            GetProcedureName(OUString& rLine, OUString& rProcType, OUString& rProcName) const;
@@ -168,14 +170,13 @@ private:
     sal_uInt16      nMarkerPos;
     BreakPointList  aBreakPointList;
     bool            bErrorMarker;
-    std::unique_ptr<VclBuilder> mpUIBuilder;
 
     virtual void DataChanged(DataChangedEvent const & rDCEvt) override;
 
     void setBackgroundColor(Color aColor);
 
 protected:
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     BreakPoint*     FindBreakPoint( const Point& rMousePos );
     void ShowMarker(vcl::RenderContext& rRenderContext);
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -185,7 +186,6 @@ protected:
 
 public:
                     BreakPointWindow (vcl::Window* pParent, ModulWindow*);
-    virtual void    dispose() override;
 
     void            SetMarkerPos( sal_uInt16 nLine, bool bErrorMarker = false );
     void            SetNoMarker ();
@@ -209,7 +209,7 @@ protected:
 
 public:
     WatchTreeListBox( vcl::Window* pParent, WinBits nWinBits );
-    virtual ~WatchTreeListBox() override;
+    virtual ~WatchTreeListBox();
     virtual void    dispose() override;
 
     void            RequestingChildren( SvTreeListEntry * pParent ) override;
@@ -231,22 +231,22 @@ private:
 
 protected:
     virtual void    Resize() override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
-    DECL_LINK( ButtonHdl, Button *, void );
-    DECL_LINK(TreeListHdl, SvTreeListBox*, void);
-    DECL_LINK( implEndDragHdl, HeaderBar *, void );
-    DECL_LINK( EditAccHdl, Accelerator&, void );
+    DECL_LINK_TYPED( ButtonHdl, Button *, void );
+    DECL_LINK_TYPED(TreeListHdl, SvTreeListBox*, void);
+    DECL_LINK_TYPED( implEndDragHdl, HeaderBar *, void );
+    DECL_LINK_TYPED( EditAccHdl, Accelerator&, void );
 
 
 public:
     explicit WatchWindow (Layout* pParent);
-    virtual ~WatchWindow() override;
+    virtual ~WatchWindow();
     virtual void    dispose() override;
 
     void            AddWatch( const OUString& rVName );
     void            RemoveSelectedWatch();
-    void            UpdateWatches( bool bBasicStopped );
+    void            UpdateWatches( bool bBasicStopped = false );
 };
 
 
@@ -258,11 +258,11 @@ private:
 
 protected:
     virtual void    Resize() override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
 
 public:
     explicit StackWindow (Layout* pParent);
-    virtual ~StackWindow() override;
+    virtual ~StackWindow();
     virtual void    dispose() override;
 
     void            UpdateCalls();
@@ -281,11 +281,11 @@ private:
 
 protected:
     virtual void        Resize() override;
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
 
 public:
     explicit ComplexEditorWindow( ModulWindow* pParent );
-    virtual             ~ComplexEditorWindow() override;
+    virtual             ~ComplexEditorWindow();
     virtual void        dispose() override;
     BreakPointWindow&   GetBrkWindow()      { return *aBrkWindow.get(); }
     LineNumberWindow&   GetLineNumberWindow() { return *aLineNumberWindow.get(); }
@@ -311,19 +311,21 @@ private:
     void                CheckCompileBasic();
     void                BasicExecute();
 
-    sal_Int32           FormatAndPrint( Printer* pPrinter, sal_Int32 nPage );
-    SbModuleRef const & XModule();
+    static void         GoOnTop();
+
+    sal_Int32           FormatAndPrint( Printer* pPrinter, sal_Int32 nPage = -1 );
+    SbModuleRef         XModule();
 protected:
     virtual void    Resize() override;
     virtual void    GetFocus() override;
-    virtual void    Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle& ) override;
+    virtual void    Paint( vcl::RenderContext& rRenderContext, const Rectangle& ) override;
     virtual void    DoInit() override;
     virtual void    DoScroll( ScrollBar* pCurScrollBar ) override;
 
 public:
     ModulWindow( ModulWindowLayout* pParent, const ScriptDocument& rDocument, const OUString& aLibName, const OUString& aName, OUString& aModule );
 
-                    virtual ~ModulWindow() override;
+                    virtual ~ModulWindow();
     virtual void    dispose() override;
 
     virtual void    ExecuteCommand (SfxRequest& rReq) override;
@@ -342,9 +344,9 @@ public:
     virtual void    SetReadOnly (bool bReadOnly) override;
     virtual bool    IsReadOnly() override;
 
-    StarBASIC*      GetBasic() { XModule(); return m_xBasic.get(); }
+    StarBASIC*      GetBasic() { XModule(); return m_xBasic; }
 
-    SbModule*       GetSbModule() { return m_xModule.get(); }
+    SbModule*       GetSbModule() { return m_xModule; }
     void            SetSbModule( SbModule* pModule ) { m_xModule = pModule; }
     OUString        GetSbModuleName();
 
@@ -361,7 +363,7 @@ public:
     void            BasicAddWatch();
 
     bool            BasicErrorHdl( StarBASIC* pBasic );
-    BasicDebugFlags BasicBreakHdl( StarBASIC* pBasic );
+    long            BasicBreakHdl( StarBASIC* pBasic );
     void            AssertValidEditEngine();
 
     void            LoadBasic();
@@ -387,7 +389,7 @@ public:
     LineNumberWindow&   GetLineNumberWindow()   { return m_aXEditorWindow->GetLineNumberWindow(); }
     ScrollBar&          GetEditVScrollBar()     { return m_aXEditorWindow->GetEWVScrollBar(); }
     ExtTextEngine*      GetEditEngine()         { return GetEditorWindow().GetEditEngine(); }
-    TextView*           GetEditView()           { return GetEditorWindow().GetEditView(); }
+    ExtTextView*        GetEditView()           { return GetEditorWindow().GetEditView(); }
     BreakPointList&     GetBreakPoints()        { return GetBreakPointWindow().GetBreakPoints(); }
     ModulWindowLayout&  GetLayout ()            { return m_rLayout; }
 
@@ -415,7 +417,7 @@ class ModulWindowLayout: public Layout
 {
 public:
     ModulWindowLayout (vcl::Window* pParent, ObjectCatalog&);
-    virtual ~ModulWindowLayout() override;
+    virtual ~ModulWindowLayout();
     virtual void dispose() override;
 public:
     // Layout:
@@ -426,13 +428,11 @@ public:
 public:
     void BasicAddWatch (OUString const&);
     void BasicRemoveWatch ();
-    Color GetBackgroundColor () const { return aSyntaxColors.GetBackgroundColor(); }
-    Color GetFontColor () const { return aSyntaxColors.GetFontColor(); }
     Color GetSyntaxColor (TokenType eType) const { return aSyntaxColors.GetColor(eType); }
 
 protected:
     // Window:
-    virtual void Paint (vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect) override;
+    virtual void Paint (vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     // Layout:
     virtual void OnFirstSize (long nWidth, long nHeight) override;
 
@@ -443,27 +443,26 @@ private:
     VclPtr<WatchWindow> aWatchWindow;
     VclPtr<StackWindow> aStackWindow;
     ObjectCatalog& rObjectCatalog;
-
+private:
+    virtual void DataChanged (DataChangedEvent const& rDCEvt) override;
+private:
     // SyntaxColors -- stores Basic syntax highlighting colors
     class SyntaxColors : public utl::ConfigurationListener
     {
     public:
         SyntaxColors ();
-        virtual ~SyntaxColors () override;
+        virtual ~SyntaxColors ();
     public:
         void SetActiveEditor (EditorWindow* pEditor_) { pEditor = pEditor_; }
+        void SettingsChanged ();
     public:
-        Color GetBackgroundColor () const { return m_aBackgroundColor; };
-        Color GetFontColor () const { return m_aFontColor; }
         Color GetColor (TokenType eType) const { return aColors[eType]; }
 
     private:
-        virtual void ConfigurationChanged (utl::ConfigurationBroadcaster*, ConfigurationHints) override;
+        virtual void ConfigurationChanged (utl::ConfigurationBroadcaster*, sal_uInt32) override;
         void NewConfig (bool bFirst);
 
     private:
-        Color m_aBackgroundColor;
-        Color m_aFontColor;
         // the color values (the indexes are TokenType, see comphelper/syntaxhighlight.hxx)
         o3tl::enumarray<TokenType, Color> aColors;
         // the configuration
@@ -487,16 +486,16 @@ private:
 
     void SetMatchingEntries(); // sets the visible entries based on aFuncBuffer variable
     void HideAndRestoreFocus();
-    TextView* GetParentEditView();
+    ExtTextView* GetParentEditView();
 
 public:
     explicit CodeCompleteListBox( CodeCompleteWindow* pPar );
-    virtual ~CodeCompleteListBox() override;
+    virtual ~CodeCompleteListBox();
     virtual void dispose() override;
     void InsertSelectedEntry(); //insert the selected entry
 
-    DECL_LINK(ImplDoubleClickHdl, ListBox&, void);
-    DECL_LINK(ImplSelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(ImplDoubleClickHdl, ListBox&, void);
+    DECL_LINK_TYPED(ImplSelectHdl, ListBox&, void);
 
 protected:
     virtual void KeyInput( const KeyEvent& rKeyEvt ) override;
@@ -514,7 +513,7 @@ private:
 
 public:
     explicit CodeCompleteWindow( EditorWindow* pPar );
-    virtual ~CodeCompleteWindow() override;
+    virtual ~CodeCompleteWindow();
     virtual void dispose() override;
 
     void InsertEntry( const OUString& aStr );
@@ -542,6 +541,7 @@ private:
 
 public:
     UnoTypeCodeCompletetor( const std::vector< OUString >& aVect, const OUString& sVarType );
+    ~UnoTypeCodeCompletetor(){}
 
     std::vector< OUString > GetXIdlClassMethods() const;
     std::vector< OUString > GetXIdlClassFields() const;

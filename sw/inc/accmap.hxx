@@ -30,16 +30,13 @@
 #include <svx/AccessibleControlShape.hxx>
 #include <svx/AccessibleShape.hxx>
 #include "fesh.hxx"
-#include <o3tl/typed_flags_set.hxx>
-
-#include <list>
 #include <vector>
-#include <memory>
 #include <set>
+#include <o3tl/typed_flags_set.hxx>
 
 class SwAccessibleParagraph;
 class SwViewShell;
-namespace tools { class Rectangle; }
+class Rectangle;
 class SwFrame;
 class SwTextFrame;
 class SwPageFrame;
@@ -47,6 +44,7 @@ class SwAccessibleContext;
 class SwAccessibleContextMap_Impl;
 class SwAccessibleEventList_Impl;
 class SwAccessibleEventMap_Impl;
+class SwShapeList_Impl;
 class SdrObject;
 namespace accessibility { class AccessibleShape; }
 class SwAccessibleShapeMap_Impl;
@@ -57,18 +55,6 @@ class MapMode;
 class SwAccPreviewData;
 struct PreviewPage;
 namespace vcl { class Window; }
-
-// The shape list is filled if an accessible shape is destroyed. It
-// simply keeps a reference to the accessible shape's XShape. These
-// references are destroyed within the EndAction when firing events.
-// There are two reason for this. First of all, a new accessible shape
-// for the XShape might be created soon. It's then cheaper if the XShape
-// still exists. The other reason are situations where an accessible shape
-// is destroyed within an SwFrameFormat::Modify. In this case, destroying
-// the XShape at the same time (indirectly by destroying the accessible
-// shape) leads to an assert, because a client of the Modify is destroyed
-// within a Modify call.
-using SwShapeList_Impl = std::list<css::uno::Reference<css::drawing::XShape>>;
 
 enum class AccessibleStates
 {
@@ -90,7 +76,6 @@ namespace o3tl
 
 class SwAccessibleMap : public ::accessibility::IAccessibleViewForwarder,
                         public ::accessibility::IAccessibleParent
-                , public std::enable_shared_from_this<SwAccessibleMap>
 {
     mutable ::osl::Mutex maMutex;
     ::osl::Mutex maEventMutex;
@@ -122,10 +107,7 @@ class SwAccessibleMap : public ::accessibility::IAccessibleViewForwarder,
 
     //mpSelectedFrameMap contains the old selected objects.
     SwAccessibleContextMap_Impl *mpSeletedFrameMap;
-
-    OUString maDocName;
-
-    //InvalidateShapeInParaSelection() method is responsible for the updating the selected states of the objects.
+    //IvalidateShapeInParaSelection() method is responsible for the updating the selected states of the objects.
     void InvalidateShapeInParaSelection();
 
     void InvalidateRelationSet_( const SwFrame* pFrame, bool bFrom );
@@ -145,7 +127,7 @@ class SwAccessibleMap : public ::accessibility::IAccessibleViewForwarder,
 public:
 
     SwAccessibleMap( SwViewShell *pSh );
-    virtual ~SwAccessibleMap() override;
+    virtual ~SwAccessibleMap();
 
     css::uno::Reference<css::accessibility::XAccessible> GetDocumentView();
 
@@ -171,17 +153,17 @@ public:
                                         SwAccessibleContext *pParentImpl,
                                         bool bCreate = true );
 
-    SwViewShell* GetShell() const
+    inline SwViewShell* GetShell() const
     {
         return mpVSh;
     }
     static bool IsInSameLevel(const SdrObject* pObj, const SwFEShell* pFESh);
     void AddShapeContext(const SdrObject *pObj,
-                             css::uno::Reference < css::accessibility::XAccessible > const & xAccShape);
+                             css::uno::Reference < css::accessibility::XAccessible > xAccShape);
 
     void AddGroupContext(const SdrObject *pParentObj,
-                    css::uno::Reference < css::accessibility::XAccessible > const & xAccParent);
-    void RemoveGroupContext(const SdrObject *pParentObj);
+                    css::uno::Reference < css::accessibility::XAccessible > xAccParent);
+    void RemoveGroupContext(const SdrObject *pParentObj, css::uno::Reference < css::accessibility::XAccessible > xAccParent);
 
     const SwRect& GetVisArea() const;
 
@@ -200,11 +182,10 @@ public:
     void RemoveContext( const SdrObject *pObj );
 
     // Dispose frame and its children if bRecursive is set
-    void A11yDispose( const SwFrame* pFrame,
-                      const SdrObject* pObj,
-                      vcl::Window* pWindow,
-                      bool bRecursive = false,
-                      bool bCanSkipInvisible = true );
+    void Dispose( const SwFrame* pFrame,
+                  const SdrObject* pObj,
+                  vcl::Window* pWindow,
+                  bool bRecursive = false );
 
     void InvalidatePosOrSize( const SwFrame* pFrame,
                               const SdrObject* pObj,
@@ -267,11 +248,9 @@ public:
 
     void FireEvents();
 
-    const OUString& GetDocName() const { return maDocName; }
-
     // IAccessibleViewForwarder
 
-    virtual tools::Rectangle GetVisibleArea() const override;
+    virtual Rectangle GetVisibleArea() const override;
     virtual Point LogicToPixel (const Point& rPoint) const override;
     virtual Size LogicToPixel (const Size& rSize) const override;
 
@@ -281,16 +260,18 @@ public:
         const css::uno::Reference< css::drawing::XShape >& _rxShape,
         const long _nIndex,
         const ::accessibility::AccessibleShapeTreeInfo& _rShapeTreeInfo
-    ) override;
+    )   throw (css::uno::RuntimeException) override;
     virtual ::accessibility::AccessibleControlShape* GetAccControlShapeFromModel
-        (css::beans::XPropertySet* pSet) override;
+        (css::beans::XPropertySet* pSet)
+        throw (css::uno::RuntimeException) override;
     virtual css::uno::Reference< css::accessibility::XAccessible >   GetAccessibleCaption (
-        const css::uno::Reference< css::drawing::XShape > & xShape) override;
+        const css::uno::Reference< css::drawing::XShape > & xShape)
+    throw (css::uno::RuntimeException) override;
 
     // additional Core/Pixel conversions for internal use; also works
     // for preview
     Point PixelToCore (const Point& rPoint) const;
-    tools::Rectangle CoreToPixel (const tools::Rectangle& rRect) const;
+    Rectangle CoreToPixel (const Rectangle& rRect) const;
 
 private:
     /** get mapping mode for LogicToPixel and PixelToLogic conversions

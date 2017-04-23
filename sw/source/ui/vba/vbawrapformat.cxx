@@ -16,16 +16,10 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
-
-#include <sal/config.h>
-
-#include "service.hxx"
 #include "vbawrapformat.hxx"
 #include <ooo/vba/word/WdWrapSideType.hpp>
 #include <ooo/vba/word/WdWrapType.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/text/WrapTextMode.hpp>
-#include <basic/sberrors.hxx>
 #include <vbahelper/vbahelper.hxx>
 #include <vbahelper/helperdecl.hxx>
 
@@ -37,7 +31,7 @@ SwVbaWrapFormat::SwVbaWrapFormat( uno::Sequence< uno::Any > const& aArgs, uno::R
     m_xPropertySet.set( m_xShape, uno::UNO_QUERY_THROW );
 }
 
-void SwVbaWrapFormat::makeWrap()
+void SwVbaWrapFormat::makeWrap() throw (uno::RuntimeException)
 {
     text::WrapTextMode eTextMode = text::WrapTextMode_NONE;
     if( mnSide == word::WdWrapSideType::wdWrapLeft )
@@ -56,7 +50,7 @@ void SwVbaWrapFormat::makeWrap()
             case word::WdWrapType::wdWrapNone:
             case word::WdWrapType::wdWrapThrough:
             {
-                eTextMode = text::WrapTextMode_THROUGH;
+                eTextMode = text::WrapTextMode_THROUGHT;
                 break;
             }
             case word::WdWrapType::wdWrapInline:
@@ -86,7 +80,7 @@ void SwVbaWrapFormat::makeWrap()
     m_xPropertySet->setPropertyValue("TextWrap", uno::makeAny( eTextMode ) );
 }
 
-::sal_Int32 SAL_CALL SwVbaWrapFormat::getType()
+::sal_Int32 SAL_CALL SwVbaWrapFormat::getType() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nType = word::WdWrapType::wdWrapSquare;
     text::WrapTextMode eTextMode;
@@ -98,7 +92,7 @@ void SwVbaWrapFormat::makeWrap()
             nType = word::WdWrapType::wdWrapTopBottom;
             break;
         }
-        case text::WrapTextMode_THROUGH:
+        case text::WrapTextMode_THROUGHT:
         {
             nType = word::WdWrapType::wdWrapNone;
             break;
@@ -128,13 +122,13 @@ void SwVbaWrapFormat::makeWrap()
     return nType;
 }
 
-void SAL_CALL SwVbaWrapFormat::setType( ::sal_Int32 _type )
+void SAL_CALL SwVbaWrapFormat::setType( ::sal_Int32 _type ) throw (uno::RuntimeException, std::exception)
 {
     mnWrapFormatType = _type;
     makeWrap();
 }
 
-::sal_Int32 SAL_CALL SwVbaWrapFormat::getSide()
+::sal_Int32 SAL_CALL SwVbaWrapFormat::getSide() throw (uno::RuntimeException, std::exception)
 {
     sal_Int32 nSide = word::WdWrapSideType::wdWrapBoth;
     text::WrapTextMode eTextMode;
@@ -159,61 +153,61 @@ void SAL_CALL SwVbaWrapFormat::setType( ::sal_Int32 _type )
     return nSide;
 }
 
-void SAL_CALL SwVbaWrapFormat::setSide( ::sal_Int32 _side )
+void SAL_CALL SwVbaWrapFormat::setSide( ::sal_Int32 _side ) throw (uno::RuntimeException, std::exception)
 {
     mnSide = _side;
     makeWrap();
 }
 
-float SwVbaWrapFormat::getDistance( const OUString& sName )
+float SwVbaWrapFormat::getDistance( const OUString& sName ) throw (uno::RuntimeException)
 {
     sal_Int32 nDistance = 0;
     m_xPropertySet->getPropertyValue( sName ) >>= nDistance;
     return static_cast< float >( Millimeter::getInPoints( nDistance ) );
 }
 
-void SwVbaWrapFormat::setDistance( const OUString& sName, float _distance )
+void SwVbaWrapFormat::setDistance( const OUString& sName, float _distance ) throw (uno::RuntimeException)
 {
     sal_Int32 nDistance = Millimeter::getInHundredthsOfOneMillimeter( _distance );
     m_xPropertySet->setPropertyValue( sName, uno::makeAny( nDistance ) );
 }
 
-float SAL_CALL SwVbaWrapFormat::getDistanceTop()
+float SAL_CALL SwVbaWrapFormat::getDistanceTop() throw (uno::RuntimeException, std::exception)
 {
     return getDistance( "TopMargin" );
 }
 
-void SAL_CALL SwVbaWrapFormat::setDistanceTop( float _distancetop )
+void SAL_CALL SwVbaWrapFormat::setDistanceTop( float _distancetop ) throw (uno::RuntimeException, std::exception)
 {
     setDistance( "TopMargin", _distancetop );
 }
 
-float SAL_CALL SwVbaWrapFormat::getDistanceBottom()
+float SAL_CALL SwVbaWrapFormat::getDistanceBottom() throw (uno::RuntimeException, std::exception)
 {
     return getDistance( "BottomMargin" );
 }
 
-void SAL_CALL SwVbaWrapFormat::setDistanceBottom( float _distancebottom )
+void SAL_CALL SwVbaWrapFormat::setDistanceBottom( float _distancebottom ) throw (uno::RuntimeException, std::exception)
 {
     setDistance( "BottomMargin", _distancebottom );
 }
 
-float SAL_CALL SwVbaWrapFormat::getDistanceLeft()
+float SAL_CALL SwVbaWrapFormat::getDistanceLeft() throw (uno::RuntimeException, std::exception)
 {
     return getDistance( "LeftMargin" );
 }
 
-void SAL_CALL SwVbaWrapFormat::setDistanceLeft( float _distanceleft )
+void SAL_CALL SwVbaWrapFormat::setDistanceLeft( float _distanceleft ) throw (uno::RuntimeException, std::exception)
 {
     setDistance( "LeftMargin", _distanceleft );
 }
 
-float SAL_CALL SwVbaWrapFormat::getDistanceRight()
+float SAL_CALL SwVbaWrapFormat::getDistanceRight() throw (uno::RuntimeException, std::exception)
 {
     return getDistance( "RightMargin" );
 }
 
-void SAL_CALL SwVbaWrapFormat::setDistanceRight( float _distanceright )
+void SAL_CALL SwVbaWrapFormat::setDistanceRight( float _distanceright ) throw (uno::RuntimeException, std::exception)
 {
     setDistance( "RightMargin", _distanceright );
 }
@@ -239,8 +233,8 @@ SwVbaWrapFormat::getServiceNames()
 namespace wrapformat
 {
 namespace sdecl = comphelper::service_decl;
-sdecl::vba_service_class_<SwVbaWrapFormat, sdecl::with_args<true> > const serviceImpl;
-sdecl::ServiceDecl const serviceDecl(
+sdecl::vba_service_class_<SwVbaWrapFormat, sdecl::with_args<true> > serviceImpl;
+extern sdecl::ServiceDecl const serviceDecl(
     serviceImpl,
     "SwVbaWrapFormat",
     "ooo.vba.word.WrapFormat" );

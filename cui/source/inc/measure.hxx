@@ -54,22 +54,22 @@ private:
     const SfxItemSet&   rOutAttrs;
     SfxItemSet          aAttrSet;
     const SdrView*      pView;
-    MapUnit             eUnit;
+    SfxMapUnit          eUnit;
 
     bool            bPositionModified;
 
     void                FillUnitLB();
 
-    DECL_LINK( ClickAutoPosHdl_Impl, Button*, void );
-    DECL_LINK( ChangeAttrEditHdl_Impl, Edit&, void );
-    DECL_LINK( ChangeAttrListBoxHdl_Impl, ListBox&, void );
-    DECL_LINK( ChangeAttrClickHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( ClickAutoPosHdl_Impl, Button*, void );
+    DECL_LINK_TYPED( ChangeAttrEditHdl_Impl, Edit&, void );
+    DECL_LINK_TYPED( ChangeAttrListBoxHdl_Impl, ListBox&, void );
+    DECL_LINK_TYPED( ChangeAttrClickHdl_Impl, Button*, void );
     void ChangeAttrHdl_Impl(void*);
 
 public:
 
     SvxMeasurePage( vcl::Window* pWindow, const SfxItemSet& rInAttrs );
-    virtual ~SvxMeasurePage() override;
+    virtual ~SvxMeasurePage();
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window*, const SfxItemSet* );
@@ -78,7 +78,7 @@ public:
     virtual bool        FillItemSet( SfxItemSet* ) override;
     virtual void        Reset( const SfxItemSet * ) override;
 
-    virtual void        PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
+    virtual void        PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
 
     void         Construct();
     void         SetView( const SdrView* pSdrView ) { pView = pSdrView; }

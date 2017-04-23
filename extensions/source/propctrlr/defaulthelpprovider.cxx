@@ -67,13 +67,13 @@ namespace pcr
     }
 
 
-    OUString DefaultHelpProvider::getImplementationName_static(  )
+    OUString DefaultHelpProvider::getImplementationName_static(  ) throw(RuntimeException)
     {
         return OUString("org.openoffice.comp.extensions.DefaultHelpProvider");
     }
 
 
-    Sequence< OUString > DefaultHelpProvider::getSupportedServiceNames_static(  )
+    Sequence< OUString > DefaultHelpProvider::getSupportedServiceNames_static(  ) throw(RuntimeException)
     {
         Sequence< OUString > aSupported { "com.sun.star.inspection.DefaultHelpProvider" };
         return aSupported;
@@ -86,7 +86,7 @@ namespace pcr
     }
 
 
-    void SAL_CALL DefaultHelpProvider::focusGained( const Reference< XPropertyControl >& Control )
+    void SAL_CALL DefaultHelpProvider::focusGained( const Reference< XPropertyControl >& Control ) throw (RuntimeException, std::exception)
     {
         if ( !m_xInspectorUI.is() )
             throw RuntimeException( OUString(), *this );
@@ -102,13 +102,13 @@ namespace pcr
     }
 
 
-    void SAL_CALL DefaultHelpProvider::valueChanged( const Reference< XPropertyControl >& )
+    void SAL_CALL DefaultHelpProvider::valueChanged( const Reference< XPropertyControl >& ) throw (RuntimeException, std::exception)
     {
         // not interested in
     }
 
 
-    void SAL_CALL DefaultHelpProvider::initialize( const Sequence< Any >& _arguments )
+    void SAL_CALL DefaultHelpProvider::initialize( const Sequence< Any >& _arguments ) throw (Exception, RuntimeException, std::exception)
     {
         if ( m_bConstructed )
             throw AlreadyInitializedException();
@@ -154,7 +154,7 @@ namespace pcr
         try
         {
             Reference< XWindow > xControlWindow( _rxControl->getControlWindow(), UNO_QUERY_THROW );
-            pControlWindow = VCLUnoHelper::GetWindow( xControlWindow ).get();
+            pControlWindow = VCLUnoHelper::GetWindow( xControlWindow );
         }
         catch( const Exception& )
         {

@@ -31,9 +31,10 @@ namespace connectivity
         if ( sStmt.startsWith("INSERT") )
         {
             sStatement = m_sGeneratedValueStatement;
+            static const char sColumn[] = "$column";
             static const char sTable[] = "$table";
             sal_Int32 nIndex = 0;
-            nIndex = sStatement.indexOf("$column",nIndex);
+            nIndex = sStatement.indexOf(sColumn,nIndex);
             if ( -1 != nIndex )
             { // we need a column
             }

@@ -72,7 +72,7 @@ namespace svxform
         */
         virtual void dispose() = 0;
 
-        virtual ~IFormScriptingEnvironment() override;
+        virtual ~IFormScriptingEnvironment();
     };
     typedef ::rtl::Reference< IFormScriptingEnvironment >   PFormScriptingEnvironment;
 

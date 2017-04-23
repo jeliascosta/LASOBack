@@ -21,7 +21,6 @@ $(eval $(call gb_Executable_use_externals,idlc,\
 
 $(eval $(call gb_Executable_use_libraries,idlc,\
     reg \
-    $(if $(filter TRUE,$(DISABLE_DYNLOADING)),store) \
     sal \
     salhelper \
 ))

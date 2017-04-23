@@ -45,7 +45,8 @@ public:
 
     // XInterface
     virtual css::uno::Any SAL_CALL
-    queryInterface( const css::uno::Type & rType ) override;
+    queryInterface( const css::uno::Type & rType )
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire()
         throw() override;
     virtual void SAL_CALL release()
@@ -53,15 +54,19 @@ public:
 
     // XTypeProvider
     virtual css::uno::Sequence< css::uno::Type > SAL_CALL
-    getTypes() override;
+    getTypes()
+        throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< sal_Int8 > SAL_CALL
-    getImplementationId() override;
+    getImplementationId()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XInteractionContinuation
-    virtual void SAL_CALL select() override;
+    virtual void SAL_CALL select()
+        throw( css::uno::RuntimeException, std::exception ) override;
 
     // XInteractionSupplyName
-    virtual void SAL_CALL setName( const OUString& Name ) override;
+    virtual void SAL_CALL setName( const OUString& Name )
+        throw ( css::uno::RuntimeException, std::exception ) override;
 
     // Non-interface methods.
 
@@ -88,6 +93,7 @@ void SAL_CALL InteractionSupplyName::release()
 
 uno::Any SAL_CALL
 InteractionSupplyName::queryInterface( const uno::Type & rType )
+    throw ( uno::RuntimeException, std::exception )
 {
     uno::Any aRet = cppu::queryInterface( rType,
                 static_cast< lang::XTypeProvider * >( this ),
@@ -99,11 +105,13 @@ InteractionSupplyName::queryInterface( const uno::Type & rType )
 }
 
 uno::Sequence< sal_Int8 > SAL_CALL InteractionSupplyName::getImplementationId()
+    throw( uno::RuntimeException, std::exception )
 {
     return css::uno::Sequence<sal_Int8>();
 }
 
 uno::Sequence< uno::Type > SAL_CALL InteractionSupplyName::getTypes()
+    throw( uno::RuntimeException, std::exception )
 {
     static cppu::OTypeCollection* pCollection = nullptr;
       if ( !pCollection )
@@ -121,12 +129,14 @@ uno::Sequence< uno::Type > SAL_CALL InteractionSupplyName::getTypes()
 }
 
 void SAL_CALL InteractionSupplyName::select()
+    throw( uno::RuntimeException, std::exception )
 {
     recordSelection();
 }
 
 void SAL_CALL
 InteractionSupplyName::setName( const OUString& Name )
+    throw( uno::RuntimeException, std::exception )
 {
     m_aName = Name;
 }

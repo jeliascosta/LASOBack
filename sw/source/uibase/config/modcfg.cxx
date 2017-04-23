@@ -19,9 +19,9 @@
 
 #include <hintids.hxx>
 #include <comphelper/classids.hxx>
-#include <o3tl/any.hxx>
 #include <tools/stream.hxx>
 #include <vcl/svapp.hxx>
+#include <svl/mailenum.hxx>
 #include <svx/svxids.hrc>
 #include <editeng/svxenum.hxx>
 #include <osl/diagnose.h>
@@ -177,7 +177,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                             nChar += nVal;
                         }
                         if( bValidData )
-                            sReturn += OUStringLiteral1(nChar);
+                            sReturn += OUString(nChar);
                         break;
                     }
 
@@ -188,7 +188,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                 }
             }
             else
-                sReturn += OUStringLiteral1(c);
+                sReturn += OUString(c);
         }
     }
     else
@@ -210,7 +210,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                     }
                     else
                     {
-                        sReturn += OUStringLiteral1(c);
+                        sReturn += OUString(c);
                     }
             }
         }
@@ -275,13 +275,12 @@ static sal_Int32 lcl_ConvertAttrToCfg(const AuthorCharAttr& rAttr)
         case  SID_ATTR_CHAR_STRIKEOUT: nRet = 3; break;
         case  SID_ATTR_CHAR_CASEMAP:
         {
-            switch((SvxCaseMap)rAttr.nAttr)
+            switch(rAttr.nAttr)
             {
-                case  SvxCaseMap::Uppercase : nRet = 5;break;
-                case  SvxCaseMap::Lowercase : nRet = 6;break;
-                case  SvxCaseMap::SmallCaps : nRet = 7;break;
-                case  SvxCaseMap::Capitalize: nRet = 8;break;
-                default: break;
+                case  SVX_CASEMAP_VERSALIEN   : nRet = 5;break;
+                case  SVX_CASEMAP_GEMEINE     : nRet = 6;break;
+                case  SVX_CASEMAP_KAPITAELCHEN: nRet = 7;break;
+                case  SVX_CASEMAP_TITEL       : nRet = 8;break;
             }
         }
         break;
@@ -336,10 +335,10 @@ static void lcl_ConvertCfgToAttr(sal_Int32 nVal, AuthorCharAttr& rAttr, bool bDe
                 }
         break;
         case 4: rAttr.nItemId = SID_ATTR_CHAR_UNDERLINE;rAttr.nAttr = LINESTYLE_DOUBLE         ; break;
-        case 5: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = (sal_uInt16)SvxCaseMap::Uppercase; break;
-        case 6: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = (sal_uInt16)SvxCaseMap::Lowercase; break;
-        case 7: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = (sal_uInt16)SvxCaseMap::SmallCaps; break;
-        case 8: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = (sal_uInt16)SvxCaseMap::Capitalize; break;
+        case 5: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = SVX_CASEMAP_VERSALIEN    ; break;
+        case 6: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = SVX_CASEMAP_GEMEINE      ; break;
+        case 7: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = SVX_CASEMAP_KAPITAELCHEN ; break;
+        case 8: rAttr.nItemId = SID_ATTR_CHAR_CASEMAP;  rAttr.nAttr = SVX_CASEMAP_TITEL        ; break;
         case 9: rAttr.nItemId = SID_ATTR_BRUSH; break;
     }
 }
@@ -805,7 +804,7 @@ static void lcl_ReadOpt(InsCaptionOpt& rOpt, const Any* pValues, sal_Int32 nProp
     switch(nOffset)
     {
         case 0:
-            rOpt.UseCaption() = *o3tl::doAccess<bool>(pValues[nProp]);
+            rOpt.UseCaption() = *static_cast<sal_Bool const *>(pValues[nProp].getValue());
         break;//Enable
         case 1:
         {
@@ -900,7 +899,7 @@ void SwInsertConfig::Load()
     {
         if (pValues[nProp].hasValue())
         {
-            bool bBool = nProp < INS_PROP_CAP_OBJECT_TABLE_ENABLE && *o3tl::doAccess<bool>(pValues[nProp]);
+            bool bBool = nProp < INS_PROP_CAP_OBJECT_TABLE_ENABLE && *static_cast<sal_Bool const *>(pValues[nProp].getValue());
             switch (nProp)
             {
                 case INS_PROP_TABLE_HEADER:
@@ -1089,8 +1088,8 @@ void SwInsertConfig::Load()
             {
                 //#i61007#  initialize caption order, right now only HUNGARIAN seems to need a different order
                 SvtSysLocaleOptions aSysLocaleOptions;
-                const LanguageTag& rLang = aSysLocaleOptions.GetRealLanguageTag();
-                bCaptionOrderNumberingFirst = (rLang.getLanguage() == "hu");
+                OUString sLang = aSysLocaleOptions.GetLocaleConfigString();
+                bCaptionOrderNumberingFirst = sLang.startsWith( "hu" );
             }
         }
 
@@ -1173,9 +1172,9 @@ void SwTableConfig::Load()
                 case 2 : pValues[nProp] >>= nTemp; nTableHInsert = (sal_uInt16)convertMm100ToTwip(nTemp); break;   //"Insert/Row",
                 case 3 : pValues[nProp] >>= nTemp; nTableVInsert = (sal_uInt16)convertMm100ToTwip(nTemp); break;   //"Insert/Column",
                 case 4 : pValues[nProp] >>= nTemp; eTableChgMode = (TableChgMode)nTemp; break;   //"Change/Effect",
-                case 5 : bInsTableFormatNum = *o3tl::doAccess<bool>(pValues[nProp]);  break;  //"Input/NumberRecognition",
-                case 6 : bInsTableChangeNumFormat = *o3tl::doAccess<bool>(pValues[nProp]); break;  //"Input/NumberFormatRecognition",
-                case 7 : bInsTableAlignNum = *o3tl::doAccess<bool>(pValues[nProp]); break;  //"Input/Alignment"
+                case 5 : bInsTableFormatNum = *static_cast<sal_Bool const *>(pValues[nProp].getValue());  break;  //"Input/NumberRecognition",
+                case 6 : bInsTableChangeNumFormat = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;  //"Input/NumberFormatRecognition",
+                case 7 : bInsTableAlignNum = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;  //"Input/Alignment"
             }
         }
     }
@@ -1277,16 +1276,22 @@ void SwMiscConfig::Load()
                 case 0 : pValues[nProp] >>= sTmp;
                     sWordDelimiter = SwModuleOptions::ConvertWordDelimiter(sTmp, true);
                 break;
-                case 1 : bDefaultFontsInCurrDocOnly = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 2 : bShowIndexPreview = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 3 : bGrfToGalleryAsLnk = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 4 : bNumAlignSize = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 5 : bSinglePrintJob = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 6 : nMailingFormats = static_cast<MailTextFormats>(*o3tl::doAccess<sal_Int32>(pValues[nProp])); break;
+                case 1 : bDefaultFontsInCurrDocOnly = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 2 : bShowIndexPreview = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 3 : bGrfToGalleryAsLnk = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 4 : bNumAlignSize = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 5 : bSinglePrintJob = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 6 :
+                    {
+                        sal_Int32 n = 0;
+                        pValues[nProp] >>= n;
+                        nMailingFormats = static_cast<MailTextFormats>(n);
+                        break;
+                    }
                 case 7 : pValues[nProp] >>= sTmp; sNameFromColumn = sTmp; break;
                 case 8 : pValues[nProp] >>= sTmp; sMailingPath = sTmp;  break;
                 case 9 : pValues[nProp] >>= sTmp; sMailName = sTmp;     break;
-                case 10: bIsNameFromColumn = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 10: bIsNameFromColumn = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
                 case 11: pValues[nProp] >>= bAskForMailMergeInPrint; break;
             }
         }
@@ -1320,7 +1325,7 @@ SwCompareConfig::SwCompareConfig() :
         ConfigItemMode::DelayedUpdate|ConfigItemMode::ReleaseTree)
     ,m_bStoreRsid(true)
 {
-    eCmpMode = SwCompareMode::Auto;
+    eCmpMode = SVX_CMP_AUTO;
     bUseRsid = false;
     bIgnorePieces = false;
     nPieceLen = 1;
@@ -1362,11 +1367,11 @@ void SwCompareConfig::Load()
 
             switch(nProp)
             {
-                case 0 : eCmpMode = (SwCompareMode) nVal; break;
-                case 1 : bUseRsid = *o3tl::doAccess<bool>(pValues[nProp]); break;
-                case 2 : bIgnorePieces = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 0 : eCmpMode = (SvxCompareMode) nVal; break;
+                case 1 : bUseRsid = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 2 : bIgnorePieces = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
                 case 3 : nPieceLen = nVal; break;
-                case 4 : m_bStoreRsid = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 4 : m_bStoreRsid = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
             }
         }
     }

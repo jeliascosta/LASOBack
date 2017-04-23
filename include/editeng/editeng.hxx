@@ -25,7 +25,6 @@
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/i18n/WordType.hpp>
 #include <com/sun/star/i18n/CharacterIteratorMode.hpp>
-#include <com/sun/star/i18n/TransliterationModules.hpp>
 
 #include <rsc/rscsfx.hxx>
 #include <editeng/editdata.hxx>
@@ -84,7 +83,7 @@ class KeyEvent;
 namespace tools { class PolyPolygon; }
 class Size;
 class Point;
-namespace tools { class Rectangle; }
+class Rectangle;
 class SvStream;
 class OutputDevice;
 namespace vcl { class Window; }
@@ -110,15 +109,15 @@ class Range;
 struct EPaM;
 class DeletedNodeInfo;
 class ParaPortionList;
-enum class CharCompressType;
-enum class TransliterationFlags;
+
 
 /** values for:
-       SfxItemSet GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs::All );
+       SfxItemSet GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs_All );
 */
-enum class EditEngineAttribs {
-    All,          /// returns all attributes even when they are not set
-    OnlyHard      /// returns only attributes hard set on portions
+enum EditEngineAttribs {
+    EditEngineAttribs_All,          /// returns all attributes even when theire not set
+    EditEngineAttribs_HardAndPara,  /// returns all attributes set on paragraph and on portions
+    EditEngineAttribs_OnlyHard      /// returns only attributes hard set on portions
 };
 
 /** values for:
@@ -141,10 +140,6 @@ template<class T> bool checkSvxFieldData(const SvxFieldData* pData)
     return dynamic_cast<const T*>(pData) != nullptr;
 }
 
-enum class SetAttribsMode {
-    NONE, WholeWord, Edge
-};
-
 class SdrObject;
 class EDITENG_DLLPUBLIC EditEngine
 {
@@ -158,16 +153,12 @@ class EDITENG_DLLPUBLIC EditEngine
 public:
     typedef std::vector<EditView*> ViewsType;
 
-    EditSelection InsertText(
-        css::uno::Reference<css::datatransfer::XTransferable > const & rxDataObj,
-        const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial);
-
 private:
-    std::unique_ptr<ImpEditEngine>  pImpEditEngine;
+    ImpEditEngine*  pImpEditEngine;
 
                                        EditEngine( const EditEngine& ) = delete;
                        EditEngine&     operator=( const EditEngine& ) = delete;
-    EDITENG_DLLPRIVATE bool            PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pView, vcl::Window* pFrameWin );
+    EDITENG_DLLPRIVATE bool            PostKeyEvent( const KeyEvent& rKeyEvent, EditView* pView, vcl::Window* pFrameWin = nullptr );
 
     EDITENG_DLLPRIVATE void CursorMoved(ContentNode* pPrevNode);
     EDITENG_DLLPRIVATE void CheckIdleFormatter();
@@ -179,6 +170,10 @@ private:
     EDITENG_DLLPRIVATE css::uno::Reference<
         css::datatransfer::XTransferable>
             CreateTransferable(const EditSelection& rSelection);
+
+    EDITENG_DLLPRIVATE EditSelection InsertText(
+        css::uno::Reference<css::datatransfer::XTransferable >& rxDataObj,
+        const OUString& rBaseURL, const EditPaM& rPaM, bool bUseSpecial);
 
     EDITENG_DLLPRIVATE EditPaM EndOfWord(const EditPaM& rPaM);
 
@@ -232,7 +227,7 @@ public:
 
     void            InsertView(EditView* pEditView, size_t nIndex = EE_APPEND);
     EditView*       RemoveView( EditView* pEditView );
-    void            RemoveView(size_t nIndex);
+    void            RemoveView(size_t nIndex = EE_APPEND);
     EditView*       GetView(size_t nIndex = 0) const;
     size_t          GetViewCount() const;
     bool            HasView( EditView* pView ) const;
@@ -254,10 +249,10 @@ public:
     LanguageType    GetLanguage(const EditPaM& rPaM) const;
     LanguageType    GetLanguage( sal_Int32 nPara, sal_Int32 nPos ) const;
 
-    void            TransliterateText( const ESelection& rSelection, TransliterationFlags nTransliterationMode );
-    EditSelection   TransliterateText( const EditSelection& rSelection, TransliterationFlags nTransliterationMode );
+    void            TransliterateText( const ESelection& rSelection, sal_Int32 nTransliterationMode );
+    EditSelection   TransliterateText( const EditSelection& rSelection, sal_Int32 nTransliterationMode );
 
-    void            SetAsianCompressionMode( CharCompressType nCompression );
+    void            SetAsianCompressionMode( sal_uInt16 nCompression );
 
     void            SetKernAsianPunctuation( bool bEnabled );
 
@@ -294,7 +289,7 @@ public:
     ParagraphInfos  GetParagraphInfos( sal_Int32 nPara );
     sal_Int32       FindParagraph( long nDocPosY );
     EPosition       FindDocPosition( const Point& rDocPos ) const;
-    tools::Rectangle       GetCharacterBounds( const EPosition& rPos ) const;
+    Rectangle       GetCharacterBounds( const EPosition& rPos ) const;
 
     OUString        GetWord(sal_Int32 nPara, sal_Int32 nIndex);
 
@@ -321,7 +316,7 @@ public:
     void            GetCharAttribs( sal_Int32 nPara, std::vector<EECharAttrib>& rLst ) const;
 
     SfxItemSet      GetAttribs( sal_Int32 nPara, sal_Int32 nStart, sal_Int32 nEnd, GetAttribsFlags nFlags = GetAttribsFlags::ALL ) const;
-    SfxItemSet      GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs::All );
+    SfxItemSet      GetAttribs( const ESelection& rSel, EditEngineAttribs nOnlyHardAttrib = EditEngineAttribs_All );
 
     bool            HasParaAttrib( sal_Int32 nPara, sal_uInt16 nWhich ) const;
     const SfxPoolItem&  GetParaAttrib( sal_Int32 nPara, sal_uInt16 nWhich );
@@ -331,7 +326,7 @@ public:
 
     void            RemoveAttribs( const ESelection& rSelection, bool bRemoveParaAttribs, sal_uInt16 nWhich );
 
-    void            ShowParagraph( sal_Int32 nParagraph, bool bShow );
+    void            ShowParagraph( sal_Int32 nParagraph, bool bShow = true );
 
     ::svl::IUndoManager& GetUndoManager();
     ::svl::IUndoManager* SetUndoManager(::svl::IUndoManager* pNew);
@@ -363,15 +358,15 @@ public:
     long            GetFirstLineStartX( sal_Int32 nParagraph );
     Point           GetDocPosTopLeft( sal_Int32 nParagraph );
     Point           GetDocPos( const Point& rPaperPos ) const;
-    bool            IsTextPos( const Point& rPaperPos, sal_uInt16 nBorder );
+    bool            IsTextPos( const Point& rPaperPos, sal_uInt16 nBorder = 0 );
 
     // StartDocPos corresponds to VisArea.TopLeft().
-    void            Draw( OutputDevice* pOutDev, const tools::Rectangle& rOutRect );
-    void            Draw( OutputDevice* pOutDev, const tools::Rectangle& rOutRect, const Point& rStartDocPos );
-    void            Draw( OutputDevice* pOutDev, const tools::Rectangle& rOutRect, const Point& rStartDocPos, bool bClip );
+    void            Draw( OutputDevice* pOutDev, const Rectangle& rOutRect );
+    void            Draw( OutputDevice* pOutDev, const Rectangle& rOutRect, const Point& rStartDocPos );
+    void            Draw( OutputDevice* pOutDev, const Rectangle& rOutRect, const Point& rStartDocPos, bool bClip );
     void            Draw( OutputDevice* pOutDev, const Point& rStartPos, short nOrientation = 0 );
 
-    //  sal_uInt32: Error code of the stream.
+//  sal_uInt32: Error code of the stream.
     sal_uLong       Read( SvStream& rInput, const OUString& rBaseURL, EETextFormat, SvKeyValueIterator* pHTTPHeaderAttrs = nullptr );
     void            Write( SvStream& rOutput, EETextFormat );
 
@@ -381,11 +376,8 @@ public:
     void            SetNotifyHdl( const Link<EENotify&,void>& rLink );
     Link<EENotify&,void>  GetNotifyHdl() const;
 
-    void            SetRtfImportHdl( const Link<RtfImportInfo&,void>& rLink );
-    const Link<RtfImportInfo&,void>& GetRtfImportHdl() const;
-
-    void            SetHtmlImportHdl( const Link<HtmlImportInfo&,void>& rLink );
-    const Link<HtmlImportInfo&,void>& GetHtmlImportHdl() const;
+    void            SetImportHdl( const Link<ImportInfo&,void>& rLink );
+    const Link<ImportInfo&,void>& GetImportHdl() const;
 
     // Do not evaluate font formatting => For Outliner
     bool            IsFlatMode() const;
@@ -403,7 +395,7 @@ public:
     void            QuickDelete( const ESelection& rSel );
     void            QuickMarkToBeRepainted( sal_Int32 nPara );
 
-    void            SetGlobalCharStretching( sal_uInt16 nX, sal_uInt16 nY );
+    void            SetGlobalCharStretching( sal_uInt16 nX = 100, sal_uInt16 nY = 100 );
     void            GetGlobalCharStretching( sal_uInt16& rX, sal_uInt16& rY ) const;
 
     void            SetEditTextObjectPool( SfxItemPool* pPool );
@@ -423,7 +415,7 @@ public:
     void            EraseVirtualDevice();
 
     void            SetSpeller( css::uno::Reference<
-                            css::linguistic2::XSpellChecker1 > const &xSpeller );
+                            css::linguistic2::XSpellChecker1 > &xSpeller );
     css::uno::Reference<
         css::linguistic2::XSpellChecker1 >
                     GetSpeller();
@@ -471,7 +463,7 @@ public:
     css::uno::Reference< css::datatransfer::XTransferable >
                     CreateTransferable( const ESelection& rSelection ) const;
 
-    // MT: Can't create new virtual functions like for ParagraphInserted/Deleted, must be compatible in SRC638, change later...
+    // MT: Can't create new virtual functions like for ParagraphInserted/Deleted, musst be compatible in SRC638, change later...
     void            SetBeginMovingParagraphsHdl( const Link<MoveParagraphsInfo&,void>& rLink );
     void            SetEndMovingParagraphsHdl( const Link<MoveParagraphsInfo&,void>& rLink );
     void            SetBeginPasteOrDropHdl( const Link<PasteOrDropInfos&,void>& rLink );
@@ -511,7 +503,7 @@ public:
     // override this if access to bullet information needs to be provided
     virtual const SvxNumberFormat * GetNumberFormat( sal_Int32 nPara ) const;
 
-    virtual tools::Rectangle GetBulletArea( sal_Int32 nPara );
+    virtual Rectangle GetBulletArea( sal_Int32 nPara );
 
     static SfxItemPool* CreatePool( bool bLoadRefCounts = true );
     static SfxItemPool& GetGlobalItemPool();
@@ -541,24 +533,21 @@ public:
 
     EditDoc& GetEditDoc();
     const EditDoc& GetEditDoc() const;
-    void dumpAsXmlEditDoc(struct _xmlTextWriter* pWriter) const;
 
     ParaPortionList& GetParaPortions();
     const ParaPortionList& GetParaPortions() const;
 
     bool IsFormatted() const;
-    bool IsHtmlImportHandlerSet() const;
-    bool IsRtfImportHandlerSet() const;
+    bool IsImportHandlerSet() const;
     bool IsImportRTFStyleSheetsSet() const;
 
-    void CallRtfImportHandler(RtfImportInfo& rInfo);
-    void CallHtmlImportHandler(HtmlImportInfo& rInfo);
+    void CallImportHandler(ImportInfo& rInfo);
 
     void ParaAttribsToCharAttribs(ContentNode* pNode);
 
     EditPaM CreateEditPaM(const EPaM& rEPaM);
     EditPaM ConnectParagraphs(
-        ContentNode* pLeft, ContentNode* pRight, bool bBackward);
+        ContentNode* pLeft, ContentNode* pRight, bool bBackward = false);
 
     EditPaM InsertField(const EditSelection& rEditSelection, const SvxFieldItem& rFld);
     EditPaM InsertText(const EditSelection& aCurEditSelection, const OUString& rStr);
@@ -580,7 +569,7 @@ public:
 
     const SfxItemSet& GetBaseParaAttribs(sal_Int32 nPara) const;
     void SetParaAttribsOnly(sal_Int32 nPara, const SfxItemSet& rSet);
-    void SetAttribs(const EditSelection& rSel, const SfxItemSet& rSet, SetAttribsMode nSpecial = SetAttribsMode::NONE);
+    void SetAttribs(const EditSelection& rSel, const SfxItemSet& rSet, sal_uInt8 nSpecial = 0);
 
     OUString GetSelected(const EditSelection& rSel) const;
     EditPaM DeleteSelected(const EditSelection& rSel);
@@ -601,16 +590,16 @@ public:
 
     void InsertFeature(const EditSelection& rEditSelection, const SfxPoolItem& rItem);
 
-    EditSelection MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos);
+    EditSelection MoveParagraphs(const Range& rParagraphs, sal_Int32 nNewPos, EditView* pCurView);
 
     void RemoveCharAttribs(sal_Int32 nPara, sal_uInt16 nWhich = 0, bool bRemoveFeatures = false);
-    void RemoveCharAttribs(const EditSelection& rSel, bool bRemoveParaAttribs, sal_uInt16 nWhich);
+    void RemoveCharAttribs(const EditSelection& rSel, bool bRemoveParaAttribs, sal_uInt16 nWhich = 0);
 
     ViewsType& GetEditViews();
     const ViewsType& GetEditViews() const;
 
     void SetUndoMode(bool b);
-    void FormatAndUpdate(EditView* pCurView, bool bCalledFromUndo = false);
+    void FormatAndUpdate(EditView* pCurView = nullptr, bool bCalledFromUndo = false);
 
     void Undo(EditView* pView);
     void Redo(EditView* pView);

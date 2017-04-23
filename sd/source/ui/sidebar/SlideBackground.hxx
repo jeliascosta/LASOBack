@@ -34,7 +34,6 @@
 #include <com/sun/star/drawing/XDrawView.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include "fupage.hxx"
-#include <svx/papersizelistbox.hxx>
 #include <svx/xflclit.hxx>
 #include <svx/xgrad.hxx>
 #include <svx/xflgrit.hxx>
@@ -44,8 +43,6 @@
 #include <svx/xflhtit.hxx>
 #include "EventMultiplexer.hxx"
 #include <sfx2/sidebar/IContextChangeReceiver.hxx>
-
-class SvxColorListBox;
 
 namespace sd { namespace sidebar {
 
@@ -60,7 +57,7 @@ public:
         ViewShellBase& rBase,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         SfxBindings* pBindings );
-    virtual ~SlideBackground() override;
+    virtual ~SlideBackground();
     virtual void dispose() override;
     SfxBindings* GetBindings() { return mpBindings; }
     // Window
@@ -71,24 +68,21 @@ public:
         const SfxPoolItem* pState,
         const bool bIsEnabled) override;
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
 private:
 
     ViewShellBase& mrBase;
 
-    VclPtr<PaperSizeListBox> mpPaperSizeBox;
+    VclPtr<ListBox> mpPaperSizeBox;
     VclPtr<ListBox> mpPaperOrientation;
     VclPtr<ListBox> mpMasterSlide;
     VclPtr<SvxFillTypeBox> mpFillStyle;
-    VclPtr<SvxColorListBox> mpFillLB;
+    VclPtr<ColorLB> mpFillLB;
     VclPtr<SvxFillAttrBox> mpFillAttr;
-    VclPtr<SvxColorListBox> mpFillGrad;
+    VclPtr<ColorLB> mpFillGrad;
     VclPtr<CheckBox> mpDspMasterBackground;
     VclPtr<CheckBox> mpDspMasterObjects;
-    VclPtr<Button> mpCloseMaster;
-    VclPtr<Button> mpEditMaster;
-    VclPtr<FixedText> mpMasterLabel;
 
     ::sfx2::sidebar::ControllerItem maPaperSizeController;
     ::sfx2::sidebar::ControllerItem maPaperOrientationController;
@@ -101,33 +95,28 @@ private:
     ::sfx2::sidebar::ControllerItem maDspBckController;
     ::sfx2::sidebar::ControllerItem maDspObjController;
     ::sfx2::sidebar::ControllerItem maMetricController;
-    ::sfx2::sidebar::ControllerItem maCloseMasterController;
 
-    std::unique_ptr< SvxPageItem >          mpPageItem;
-    std::unique_ptr< XFillColorItem >       mpColorItem;
-    std::unique_ptr< XFillGradientItem >    mpGradientItem;
-    std::unique_ptr< XFillHatchItem >       mpHatchItem;
-    std::unique_ptr< XFillBitmapItem >      mpBitmapItem;
-
-    bool mbEditModeChangePending;
+    std::unique_ptr< XFillStyleItem > mpFillStyleItem;
+    std::unique_ptr< XFillColorItem > mpColorItem;
+    std::unique_ptr< XFillGradientItem > mpGradientItem;
+    std::unique_ptr< XFillHatchItem > mpHatchItem;
+    std::unique_ptr< XFillBitmapItem > mpBitmapItem;
 
     css::uno::Reference<css::frame::XFrame> mxFrame;
-    vcl::EnumContext maContext;
-    vcl::EnumContext::Application maApplication;
+    ::sfx2::sidebar::EnumContext            maContext;
     bool         mbTitle;
     SfxBindings* mpBindings;
 
-    MapUnit meUnit;
+    SfxMapUnit meUnit;
 
-    DECL_LINK(FillBackgroundHdl, ListBox&, void);
-    DECL_LINK(FillStyleModifyHdl, ListBox&, void);
-    DECL_LINK(PaperSizeModifyHdl, ListBox&, void);
-    DECL_LINK(FillColorHdl, SvxColorListBox&, void);
-    DECL_LINK(AssignMasterPage, ListBox&, void);
-    DECL_LINK(DspBackground, Button*, void);
-    DECL_LINK(DspObjects, Button*, void);
-    DECL_LINK(CloseMasterHdl, Button*, void);
-    DECL_LINK(EventMultiplexerListener, tools::EventMultiplexerEvent&, void );
+    DECL_LINK_TYPED(FillBackgroundHdl, ListBox&, void);
+    DECL_LINK_TYPED(FillStyleModifyHdl, ListBox&, void);
+    DECL_LINK_TYPED(PaperSizeModifyHdl, ListBox&, void);
+    DECL_LINK_TYPED(FillColorHdl, ListBox&, void);
+    DECL_LINK_TYPED(AssignMasterPage, ListBox&, void);
+    DECL_LINK_TYPED(DspBackground, Button*, void);
+    DECL_LINK_TYPED(DspObjects, Button*, void);
+    DECL_LINK_TYPED(EventMultiplexerListener, tools::EventMultiplexerEvent&, void );
 
     void Initialize();
     void Update();
@@ -137,8 +126,6 @@ private:
     XGradient GetGradientSetOrDefault();
     const OUString GetHatchingSetOrDefault();
     const OUString GetBitmapSetOrDefault();
-    const OUString GetPatternSetOrDefault();
-    bool IsImpress();
     void addListener();
     void removeListener();
     void populateMasterSlideDropdown();

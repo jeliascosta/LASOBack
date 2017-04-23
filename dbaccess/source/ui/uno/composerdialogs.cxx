@@ -70,6 +70,7 @@ namespace dbaui
     }
 
     css::uno::Sequence<sal_Int8> ComposerDialog::getImplementationId()
+        throw (css::uno::RuntimeException, std::exception)
     {
         return css::uno::Sequence<sal_Int8>();
     }
@@ -144,7 +145,7 @@ namespace dbaui
         return VclPtr<DlgFilterCrit>::Create( _pParent, m_aContext, _rxConnection, m_xComposer, _rxColumns );
     }
 
-    void SAL_CALL RowsetFilterDialog::initialize( const Sequence< Any >& aArguments )
+    void SAL_CALL RowsetFilterDialog::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
     {
         if( aArguments.getLength() == 3 )
         {
@@ -192,7 +193,7 @@ namespace dbaui
         return VclPtr<DlgOrderCrit>::Create( _pParent, _rxConnection, m_xComposer, _rxColumns );
     }
 
-    void SAL_CALL RowsetOrderDialog::initialize( const Sequence< Any >& aArguments )
+    void SAL_CALL RowsetOrderDialog::initialize( const Sequence< Any >& aArguments ) throw (Exception, RuntimeException, std::exception)
     {
         if( aArguments.getLength() == 2 )
         {

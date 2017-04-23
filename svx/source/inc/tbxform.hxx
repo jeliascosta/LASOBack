@@ -29,7 +29,7 @@
 class SvxFmAbsRecWin : public NumericField
 {
     SfxToolBoxControl*  m_pController;
-        // for invalidating our content when losing the focus
+        // for invalidating our content whe losing the focus
 public:
     SvxFmAbsRecWin( vcl::Window* _pParent, SfxToolBoxControl* _pController );
 
@@ -48,7 +48,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxFmTbxCtlAbsRec( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxFmTbxCtlAbsRec() override;
+    virtual ~SvxFmTbxCtlAbsRec();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window* pParent ) override;
 
@@ -63,7 +63,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxFmTbxCtlRecText( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxFmTbxCtlRecText() override;
+    virtual ~SvxFmTbxCtlRecText();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window* pParent ) override;
 };
@@ -75,7 +75,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxFmTbxCtlRecFromText( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxFmTbxCtlRecFromText() override;
+    virtual ~SvxFmTbxCtlRecFromText();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window* pParent ) override;
 };
@@ -89,7 +89,7 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxFmTbxCtlRecTotal( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx );
-    virtual ~SvxFmTbxCtlRecTotal() override;
+    virtual ~SvxFmTbxCtlRecTotal();
 
     virtual VclPtr<vcl::Window> CreateItemWindow( vcl::Window* pParent ) override;
     virtual void    StateChanged( sal_uInt16 nSID, SfxItemState eState,

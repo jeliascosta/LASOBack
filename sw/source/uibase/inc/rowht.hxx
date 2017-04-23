@@ -37,7 +37,7 @@ protected:
 
 public:
     SwTableHeightDlg( vcl::Window *pParent, SwWrtShell &rS );
-    virtual ~SwTableHeightDlg() override;
+    virtual ~SwTableHeightDlg();
     virtual void dispose() override;
 };
 

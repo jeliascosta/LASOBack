@@ -19,7 +19,6 @@
 
 
 #include "connector.hxx"
-#include <com/sun/star/io/IOException.hpp>
 #include <rtl/ustrbuf.hxx>
 #include <exception>
 
@@ -104,12 +103,12 @@ namespace stoc_connector {
 
         OUStringBuffer buf( 256 );
         buf.append( ",peerPort=" );
-        buf.append( nPort );
+        buf.append( (sal_Int32) nPort );
         buf.append( ",peerHost=" );
         buf.append( m_socket.getPeerHost() );
 
         buf.append( ",localPort=" );
-        buf.append( nPort );
+        buf.append( (sal_Int32) nPort );
         buf.append( ",localHost=" );
         buf.append( m_socket.getLocalHost( ) );
 
@@ -117,6 +116,8 @@ namespace stoc_connector {
     }
 
     sal_Int32 SocketConnection::read( Sequence < sal_Int8 > & aReadBytes , sal_Int32 nBytesToRead )
+            throw(css::io::IOException,
+                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -161,6 +162,8 @@ namespace stoc_connector {
     }
 
     void SocketConnection::write( const Sequence < sal_Int8 > &seq )
+            throw(css::io::IOException,
+                  css::uno::RuntimeException, std::exception)
     {
         if( ! m_nStatus )
         {
@@ -195,11 +198,15 @@ namespace stoc_connector {
     }
 
     void SocketConnection::flush( )
+            throw(css::io::IOException,
+                  css::uno::RuntimeException, std::exception)
     {
 
     }
 
     void SocketConnection::close()
+            throw(css::io::IOException,
+                  css::uno::RuntimeException, std::exception)
     {
             // ensure that close is called only once
         if( 1 == osl_atomic_increment( (&m_nStatus) ) )
@@ -210,20 +217,21 @@ namespace stoc_connector {
     }
 
     OUString SocketConnection::getDescription()
+            throw( css::uno::RuntimeException, std::exception)
     {
         return m_sDescription;
     }
 
 
     // XConnectionBroadcaster
-    void SAL_CALL SocketConnection::addStreamListener(const Reference<XStreamListener> & aListener)
+    void SAL_CALL SocketConnection::addStreamListener(const Reference<XStreamListener> & aListener) throw(RuntimeException, std::exception)
     {
         MutexGuard guard(_mutex);
 
         _listeners.insert(aListener);
     }
 
-    void SAL_CALL SocketConnection::removeStreamListener(const Reference<XStreamListener> & aListener)
+    void SAL_CALL SocketConnection::removeStreamListener(const Reference<XStreamListener> & aListener) throw(RuntimeException, std::exception)
     {
         MutexGuard guard(_mutex);
 

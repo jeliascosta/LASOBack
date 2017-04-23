@@ -53,11 +53,6 @@
  *
  *
  ************************************************************************/
-
-#include <sal/config.h>
-
-#include <cstring>
-
 #include "first.hxx"
 #include "assert.h"
 namespace OpenStormBento
@@ -85,8 +80,8 @@ CBenTOCReader::ReadLabelAndTOC()
     if ((Err = cpContainer->SeekToPosition(TOCOffset)) != BenErr_OK)
         return Err;
 
-    cpTOC.reset( new BenByte[cTOCSize] );
-    if ((Err = cpContainer->ReadKnownSize(cpTOC.get(), cTOCSize)) != BenErr_OK)
+    cpTOC = new BenByte[cTOCSize];
+    if ((Err = cpContainer->ReadKnownSize(cpTOC, cTOCSize)) != BenErr_OK)
         return Err;
 
     if ((Err = ReadTOC()) != BenErr_OK)
@@ -215,7 +210,7 @@ CBenTOCReader::ReadTOC()
         BenObjectID ObjectID;
         if ((Err = GetDWord(&ObjectID)) != BenErr_OK)
             return Err;
-        CBenObject * pObject = nullptr;
+        pCBenObject pObject = nullptr;
 
         // Read in all properties for object
         do
@@ -224,7 +219,7 @@ CBenTOCReader::ReadTOC()
 
             if ((Err = GetDWord(&PropertyID)) != BenErr_OK)
                 return Err;
-            CBenProperty * pProperty = nullptr;
+            pCBenProperty pProperty = nullptr;
 
             // Read in all values for property
             do
@@ -293,7 +288,7 @@ CBenTOCReader::ReadTOC()
                         return Err;
                     }
 
-                    CUtListElmt * pPrevNamedObjectListElmt;
+                    pCUtListElmt pPrevNamedObjectListElmt;
                     if (FindNamedObject(&cpContainer->GetNamedObjects(),
                       sBuffer, &pPrevNamedObjectListElmt) != nullptr)
                     {
@@ -301,7 +296,7 @@ CBenTOCReader::ReadTOC()
                         return BenErr_DuplicateName;
                     }
 
-                    CBenObject * pPrevObject = static_cast<CBenObject *>( cpContainer->
+                    pCBenObject pPrevObject = static_cast<pCBenObject>( cpContainer->
                       GetObjects().GetLast());
 
                     if (PropertyID == BEN_PROPID_GLOBAL_PROPERTY_NAME)
@@ -367,7 +362,7 @@ CBenTOCReader::ReadTOC()
 }
 
 BenError
-CBenTOCReader::ReadSegments(CBenValue * pValue, BenByte * pLookAhead)
+CBenTOCReader::ReadSegments(pCBenValue pValue, BenByte * pLookAhead)
 {
     BenError Err;
 
@@ -383,7 +378,7 @@ CBenTOCReader::ReadSegments(CBenValue * pValue, BenByte * pLookAhead)
 }
 
 BenError
-CBenTOCReader::ReadSegment(CBenValue * pValue, BenByte * pLookAhead)
+CBenTOCReader::ReadSegment(pCBenValue pValue, BenByte * pLookAhead)
 {
     BenError Err;
 
@@ -467,7 +462,7 @@ CBenTOCReader::GetByte(BenByte * pByte)
     if (! CanGetData(1))
         return BenErr_ReadPastEndOfTOC;
 
-    *pByte = UtGetIntelByte(cpTOC.get() + cCurr);
+    *pByte = UtGetIntelByte(cpTOC + cCurr);
     ++cCurr;
     return BenErr_OK;
 }
@@ -478,7 +473,7 @@ CBenTOCReader::GetDWord(BenDWord * pDWord)
     if (! CanGetData(4))
         return BenErr_ReadPastEndOfTOC;
 
-    *pDWord = UtGetIntelDWord(cpTOC.get() + cCurr);
+    *pDWord = UtGetIntelDWord(cpTOC + cCurr);
     cCurr += 4;
     return BenErr_OK;
 }
@@ -507,7 +502,7 @@ CBenTOCReader::GetData(void * pBuffer, unsigned long Amt)
     if (! CanGetData(Amt))
         return BenErr_ReadPastEndOfTOC;
 
-    std::memcpy(pBuffer, cpTOC.get() + cCurr, Amt);
+    UtHugeMemcpy(pBuffer, cpTOC + cCurr, Amt);
     cCurr += Amt;
     return BenErr_OK;
 }

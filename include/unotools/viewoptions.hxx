@@ -35,12 +35,12 @@ class SvtViewOptionsBase_Impl;
     @descr          Use these enum values to specify right list in configuration in which your view data are saved.
 *//*-*************************************************************************************************************/
 
-enum class EViewType
+enum EViewType
 {
-    Dialog    =   0,
-    TabDialog =   1,
-    TabPage   =   2,
-    Window    =   3
+    E_DIALOG    =   0,
+    E_TABDIALOG =   1,
+    E_TABPAGE   =   2,
+    E_WINDOW    =   3
 };
 
 /*-************************************************************************************************************
@@ -119,7 +119,7 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC SvtViewOptions : public utl::detail::Op
 
          SvtViewOptions(       EViewType        eType     ,
                          const OUString& sViewName );
-        virtual ~SvtViewOptions() override;
+        virtual ~SvtViewOptions();
 
         /*-****************************************************************************************************
             @short      support preload of these config item

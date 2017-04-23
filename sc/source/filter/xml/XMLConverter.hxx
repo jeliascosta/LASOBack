@@ -33,7 +33,6 @@
 
 class ScDocument;
 class DateTime;
-enum class ScGeneralFunction;
 
 class ScXMLConverter
 {
@@ -48,17 +47,13 @@ public:
     static css::sheet::GeneralFunction
                         GetFunctionFromString(
                             const OUString& rString );
-    static ScGeneralFunction
-                        GetFunctionFromString2(
-                            const OUString& rString );
-
     static ScSubTotalFunc GetSubTotalFuncFromString(
                             const OUString& rString );
 
-// EXPORT: GeneralFunctio2 / ScSubTotalFunc
+// EXPORT: GeneralFunction / ScSubTotalFunc
     static void         GetStringFromFunction(
                             OUString& rString,
-                            const sal_Int16 eFunction );
+                            const css::sheet::GeneralFunction eFunction );
     static void         GetStringFromFunction(
                             OUString& rString,
                             const ScSubTotalFunc eFunction );

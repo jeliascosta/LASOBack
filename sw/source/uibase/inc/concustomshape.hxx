@@ -39,6 +39,7 @@ class ConstCustomShape : public SwDrawBase
     ConstCustomShape( SwWrtShell* pSh, SwEditWin* pWin, SwView* pView, SfxRequest& rReq );
 
                                        // Mouse- & Key-Events
+    virtual bool MouseButtonUp(const MouseEvent& rMEvt) override;
     virtual bool MouseButtonDown(const MouseEvent& rMEvt) override;
 
     virtual void Activate(const sal_uInt16 nSlotId) override;    // activate function

@@ -22,11 +22,10 @@
 
 #include <drawinglayer/drawinglayerdllapi.h>
 
-#include <cppuhelper/compbase.hxx>
-#include <cppuhelper/basemutex.hxx>
+#include <cppuhelper/compbase1.hxx>
 #include <com/sun/star/graphic/XPrimitive3D.hpp>
+#include <comphelper/broadcasthelper.hxx>
 #include <basegfx/range/b3drange.hxx>
-#include <deque>
 
 
 /** defines for DeclPrimitive3DIDBlock and ImplPrimitive3DIDBlock
@@ -50,22 +49,22 @@ namespace drawinglayer { namespace geometry {
 
 namespace drawinglayer { namespace primitive3d {
     /// typedefs for basePrimitive3DImplBase, Primitive3DContainer and Primitive3DReference
-    typedef cppu::WeakComponentImplHelper< css::graphic::XPrimitive3D > BasePrimitive3DImplBase;
+    typedef cppu::WeakComponentImplHelper1< css::graphic::XPrimitive3D > BasePrimitive3DImplBase;
     typedef css::uno::Reference< css::graphic::XPrimitive3D > Primitive3DReference;
     typedef css::uno::Sequence< Primitive3DReference > Primitive3DSequence;
 
-    class SAL_WARN_UNUSED DRAWINGLAYER_DLLPUBLIC Primitive3DContainer : public std::deque< Primitive3DReference >
+    class SAL_WARN_UNUSED DRAWINGLAYER_DLLPUBLIC Primitive3DContainer : public std::vector< Primitive3DReference >
     {
     public:
         explicit Primitive3DContainer() {}
-        explicit Primitive3DContainer( size_type count ) : deque(count) {}
-        Primitive3DContainer( const Primitive3DContainer& other ) : deque(other) {}
-        Primitive3DContainer( const Primitive3DContainer&& other ) : deque(other) {}
-        Primitive3DContainer( std::initializer_list<Primitive3DReference> init ) : deque(init) {}
+        explicit Primitive3DContainer( size_type count ) : vector(count) {}
+        Primitive3DContainer( const Primitive3DContainer& other ) : vector(other) {}
+        Primitive3DContainer( const Primitive3DContainer&& other ) : vector(other) {}
+        Primitive3DContainer( std::initializer_list<Primitive3DReference> init ) : vector(init) {}
 
         void append(const Primitive3DContainer& rSource);
-        Primitive3DContainer& operator=(const Primitive3DContainer& r) { deque::operator=(r); return *this; }
-        Primitive3DContainer& operator=(const Primitive3DContainer&& r) { deque::operator=(r); return *this; }
+        Primitive3DContainer& operator=(const Primitive3DContainer& r) { vector::operator=(r); return *this; }
+        Primitive3DContainer& operator=(const Primitive3DContainer&& r) { vector::operator=(r); return *this; }
         bool operator==(const Primitive3DContainer& rB) const;
         bool operator!=(const Primitive3DContainer& rB) const { return !operator==(rB); }
         basegfx::B3DRange getB3DRange(const geometry::ViewInformation3D& aViewInformation) const;
@@ -94,7 +93,7 @@ namespace drawinglayer
             That's all for 3D!
          */
         class DRAWINGLAYER_DLLPUBLIC BasePrimitive3D
-        :   protected cppu::BaseMutex,
+        :   protected comphelper::OBaseMutex,
             public BasePrimitive3DImplBase
         {
             BasePrimitive3D(const BasePrimitive3D&) = delete;
@@ -102,7 +101,7 @@ namespace drawinglayer
         public:
             // constructor/destructor
             BasePrimitive3D();
-            virtual ~BasePrimitive3D() override;
+            virtual ~BasePrimitive3D();
 
             /** the ==operator is mainly needed to allow testing newly-created high level primitives against their last
                 incarnation which buffers/holds the decompositions. The default implementation
@@ -133,12 +132,12 @@ namespace drawinglayer
             /** The getDecomposition implementation for UNO API will use getDecomposition from this implementation. It
                 will get the ViewInformation from the ViewParameters for that purpose
              */
-            virtual Primitive3DSequence SAL_CALL getDecomposition( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) override;
+            virtual Primitive3DSequence SAL_CALL getDecomposition( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) throw ( css::uno::RuntimeException, std::exception ) override;
 
             /** the getRange default implementation will use getDecomposition to create the range information from merging
                 getRange results from the single local decomposition primitives.
              */
-            virtual css::geometry::RealRectangle3D SAL_CALL getRange( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) override;
+            virtual css::geometry::RealRectangle3D SAL_CALL getRange( const css::uno::Sequence< css::beans::PropertyValue >& rViewParameters ) throw ( css::uno::RuntimeException, std::exception ) override;
         };
     } // end of namespace primitive3d
 } // end of namespace drawinglayer

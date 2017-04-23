@@ -13,7 +13,7 @@
 
 ScSortKeyItem::ScSortKeyItem(vcl::Window* pParent)
 {
-    m_pUIBuilder.reset(new VclBuilder(pParent, getUIRootDir(), "modules/scalc/ui/sortkey.ui"));
+    m_pUIBuilder = new VclBuilder(pParent, getUIRootDir(), "modules/scalc/ui/sortkey.ui");
 
     get(m_pFrame, "SortKeyFrame");
     get(m_pFlSort, "sortft");
@@ -123,7 +123,7 @@ void ScSortKeyCtrl::setScrollRange()
     checkAutoVScroll();
 }
 
-IMPL_LINK( ScSortKeyCtrl, ScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK_TYPED( ScSortKeyCtrl, ScrollHdl, ScrollBar*, pScrollBar, void )
 {
     sal_Int32 nOffset = m_aSortWin.GetItemHeight();
     nOffset *= pScrollBar->GetThumbPos();

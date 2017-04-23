@@ -48,7 +48,7 @@ struct SpellErrorDescription
                       const OUString& rText,
                       const css::lang::Locale& rLocale,
                       const css::uno::Sequence< OUString >& rSuggestions,
-                      css::uno::Reference< css::linguistic2::XProofreader > const & rxGrammarChecker,
+                      css::uno::Reference< css::linguistic2::XProofreader > rxGrammarChecker,
                       const OUString* pDialogTitle = nullptr,
                       const OUString* pExplanation = nullptr,
                       const OUString* pRuleId = nullptr,
@@ -100,7 +100,7 @@ private:
 public:
                             SpellErrorAttrib( const SpellErrorDescription& );
                             SpellErrorAttrib( const SpellErrorAttrib& rAttr );
-                            virtual ~SpellErrorAttrib() override;
+                            virtual ~SpellErrorAttrib();
 
     const SpellErrorDescription& GetErrorDescription() const { return m_aSpellErrorDescription; }
 
@@ -120,7 +120,7 @@ class SpellLanguageAttrib : public TextAttrib
 public:
                             SpellLanguageAttrib(LanguageType eLanguage);
                             SpellLanguageAttrib( const SpellLanguageAttrib& rAttr );
-                            virtual ~SpellLanguageAttrib() override;
+                            virtual ~SpellLanguageAttrib();
 
     LanguageType            GetLanguage() const {return m_eLanguage;}
 
@@ -139,7 +139,7 @@ class SpellBackgroundAttrib : public TextAttrib
 public:
                             SpellBackgroundAttrib(const Color& rCol);
                             SpellBackgroundAttrib( const SpellBackgroundAttrib& rAttr );
-                            virtual ~SpellBackgroundAttrib() override;
+                            virtual ~SpellBackgroundAttrib();
 
     virtual void            SetFont( vcl::Font& rFont ) const override;
     virtual TextAttrib*     Clone() const override;

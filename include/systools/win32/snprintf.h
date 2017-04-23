@@ -49,8 +49,8 @@
 #   endif
 
 
-#ifndef LO_SNPRINTF_DLLIMPORT
-#define LO_SNPRINTF_DLLIMPORT __declspec( dllimport )
+#ifndef _SNPRINTF_DLLIMPORT
+#define _SNPRINTF_DLLIMPORT __declspec( dllimport )
 #endif
 
 #ifdef __cplusplus
@@ -66,14 +66,19 @@ extern "C" {
     even if the buffer wasn't large
     enough to hold the string. */
 
+
+#if !defined(__MINGW32__) || defined (__NO_ISOCEXT)
+
 /* VS 2015 and above support ISO C snprintf */
 #if _MSC_VER < 1900
 
 /* UNICODE version */
-LO_SNPRINTF_DLLIMPORT int __cdecl snwprintf( wchar_t *buffer, size_t count, const wchar_t *format, ... );
+_SNPRINTF_DLLIMPORT int __cdecl snwprintf( wchar_t *buffer, size_t count, const wchar_t *format, ... );
 
 /* SBCS and MBCS version */
-LO_SNPRINTF_DLLIMPORT int __cdecl snprintf( char *buffer, size_t count, const char *format, ... );
+_SNPRINTF_DLLIMPORT int __cdecl snprintf( char *buffer, size_t count, const char *format, ... );
+
+#endif
 
 #endif
 

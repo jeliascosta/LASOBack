@@ -16,8 +16,10 @@
  *   except in compliance with the License. You may obtain a copy of
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
+#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <sfx2/sidebar/ControlFactory.hxx>
 #include <LinePropertyPanel.hxx>
+#include <LinePropertyPanel.hrc>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
 #include <sfx2/objsh.hxx>
@@ -43,6 +45,8 @@
 #include <svx/xlnedit.hxx>
 #include <svx/xlncapit.hxx>
 #include <svx/xlinjoit.hxx>
+#include "svx/sidebar/PopupContainer.hxx"
+#include "svx/sidebar/PopupControl.hxx"
 
 using namespace css;
 using namespace css::uno;
@@ -67,7 +71,7 @@ LinePropertyPanel::LinePropertyPanel(
     mpBindings(pBindings),
     maContext()
 {
-    setMapUnit(maWidthControl.GetCoreMetric());
+    Initialize();
 }
 
 LinePropertyPanel::~LinePropertyPanel()
@@ -89,6 +93,11 @@ void LinePropertyPanel::dispose()
     maCapStyle.dispose();
 
     LinePropertyPanelBase::dispose();
+}
+
+void LinePropertyPanel::Initialize()
+{
+    setMapUnit(maWidthControl.GetCoreMetric());
 }
 
 VclPtr<vcl::Window> LinePropertyPanel::Create (
@@ -175,7 +184,7 @@ void LinePropertyPanel::NotifyItemUpdate(
 }
 
 void LinePropertyPanel::HandleContextChange(
-    const vcl::EnumContext& rContext)
+    const sfx2::sidebar::EnumContext& rContext)
 {
     if(maContext == rContext)
     {
@@ -188,9 +197,9 @@ void LinePropertyPanel::HandleContextChange(
 
     switch(maContext.GetCombinedContext_DI())
     {
-        case CombinedEnumContext(Application::Calc, Context::DrawLine):
-        case CombinedEnumContext(Application::DrawImpress, Context::DrawLine):
-        case CombinedEnumContext(Application::WriterVariants, Context::Draw):
+        case CombinedEnumContext(Application_Calc, Context_DrawLine):
+        case CombinedEnumContext(Application_DrawImpress, Context_DrawLine):
+        case CombinedEnumContext(Application_WriterVariants, Context_Draw):
             // TODO : Implement DrawLine context in Writer
             bShowArrows = true;
             break;

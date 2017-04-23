@@ -105,33 +105,34 @@ namespace frm
 
         // UNO
         DECLARE_UNO3_AGG_DEFAULTS( ORichTextModel, OControlModel )
-        virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) override;
+        virtual css::uno::Any SAL_CALL queryAggregation( const css::uno::Type& _rType ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XServiceInfo
-        virtual OUString SAL_CALL getImplementationName() override;
-        virtual ::css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+        virtual OUString SAL_CALL getImplementationName() throw (::css::uno::RuntimeException, std::exception) override;
+        virtual ::css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (::css::uno::RuntimeException, std::exception) override;
 
         // XPersistObject
-        virtual OUString SAL_CALL getServiceName() override;
+        DECLARE_XPERSISTOBJECT()
 
         // XTypeProvider
         DECLARE_XTYPEPROVIDER()
 
         // XCloneable
-        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) override;
+        virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XUnoTunnel
-        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) override;
+        virtual sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& aIdentifier ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XModifyBroadcaster
-        virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
-        virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) override;
+        virtual void SAL_CALL addModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
+        virtual void SAL_CALL removeModifyListener( const css::uno::Reference< css::util::XModifyListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
         // XPropertySet and friends
         virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
         virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue,
-                                            sal_Int32 nHandle, const css::uno::Any& rValue ) override;
-        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) override;
+                                            sal_Int32 nHandle, const css::uno::Any& rValue )
+                                        throw(css::lang::IllegalArgumentException) override;
+        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
         virtual css::uno::Any getPropertyDefaultByHandle( sal_Int32 nHandle ) const override;
 
         // OControlModel's property handling
@@ -167,7 +168,7 @@ namespace frm
         */
         void    impl_smlock_setEngineText( const OUString& _rText );
 
-        DECL_LINK( OnEngineContentModified, LinkParamNone*, void );
+        DECL_LINK_TYPED( OnEngineContentModified, LinkParamNone*, void );
 
         static  css::uno::Sequence< sal_Int8 > getEditEngineTunnelId();
 

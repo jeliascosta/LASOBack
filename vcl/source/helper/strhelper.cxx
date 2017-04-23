@@ -20,7 +20,7 @@
 #include <vcl/strhelper.hxx>
 #include "sal/alloca.h"
 
-namespace  {
+namespace psp {
 
 inline bool isSpace( sal_Unicode cChar )
 {
@@ -96,10 +96,6 @@ inline void CopyUntil( sal_Unicode*& pTo, const sal_Unicode*& pFrom, sal_Unicode
     if( *pFrom )
         pFrom++;
 }
-
-}
-
-namespace psp {
 
 OUString GetCommandLineToken( int nToken, const OUString& rLine )
 {

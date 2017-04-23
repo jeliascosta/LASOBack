@@ -57,6 +57,7 @@ struct ImplConfigData
     sal_uIntPtr     mnDataUpdateId;
     sal_uIntPtr     mnTimeStamp;
     LineEnd         meLineEnd;
+    sal_uInt16      mnRefCount;
     bool            mbModified;
     bool            mbRead;
     bool            mbIsUTF8BOM;
@@ -117,7 +118,7 @@ static sal_uInt8* ImplSysReadConfig( const OUString& rFileName,
                 if (nRead > 2 && memcmp(pBuf, BOM, 3) == 0)
                 {
                     nRead -= 3;
-                    memmove(pBuf, pBuf + 3, sal::static_int_cast<std::size_t>(nRead * sizeof(sal_uInt8)) );
+                    memmove(pBuf, pBuf + 3, sal::static_int_cast<sal_Size>(nRead * sizeof(sal_uInt8)) );
                     rbIsUTF8BOM = true;
                 }
 
@@ -587,6 +588,7 @@ static ImplConfigData* ImplGetConfigData( const OUString& rFileName )
     pData->mpFirstGroup     = nullptr;
     pData->mnDataUpdateId   = 0;
     pData->meLineEnd        = LINEEND_CRLF;
+    pData->mnRefCount       = 0;
     pData->mbRead           = false;
     pData->mbIsUTF8BOM      = false;
     ImplReadConfig( pData );
@@ -642,7 +644,7 @@ ImplGroupData* Config::ImplGetGroup() const
                 mpData->mpFirstGroup = pGroup;
         }
 
-        // Always inherit group names and update cache members
+        // Always inherit group names and upate cache members
         pGroup->maGroupName             = maGroupName;
         const_cast<Config*>(this)->mnDataUpdateId = mpData->mnDataUpdateId;
         const_cast<Config*>(this)->mpActGroup     = pGroup;
@@ -659,13 +661,19 @@ Config::Config( const OUString& rFileName )
     mpActGroup      = nullptr;
     mnDataUpdateId  = 0;
     mnLockCount     = 1;
+    mbPersistence   = true;
 
-    SAL_INFO("tools.generic", "Config::Config( " << maFileName << " )");
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::Config( " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8) + " )");
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 }
 
 Config::~Config()
 {
-    SAL_INFO("tools.generic", "Config::~Config()" );
+#ifdef DBG_UTIL
+    OSL_TRACE( "Config::~Config()" );
+#endif
 
     Flush();
     ImplFreeConfigData( mpData );
@@ -721,7 +729,7 @@ void Config::DeleteGroup(const OString& rGroup)
         delete pGroup;
 
         // Rewrite config data
-        if ( !mnLockCount )
+        if ( !mnLockCount && mbPersistence )
             ImplWriteConfig( mpData );
         else
         {
@@ -804,8 +812,10 @@ OString Config::ReadKey(const OString& rKey) const
 
 OString Config::ReadKey(const OString& rKey, const OString& rDefault) const
 {
-    SAL_INFO("tools.generic", "Config::ReadKey( " << rKey << " ) from " << GetGroup()
-                      << " in " << maFileName);
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::ReadKey( " + rKey + " ) from " + GetGroup() + " in " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8));
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 
     // Update config data if necessary
     if ( !mnLockCount )
@@ -830,8 +840,10 @@ OString Config::ReadKey(const OString& rKey, const OString& rDefault) const
 
 void Config::WriteKey(const OString& rKey, const OString& rStr)
 {
-    SAL_INFO("tools.generic", "Config::WriteKey( " << rKey << ", " << rStr << " ) to "
-                       << GetGroup() << " in " << maFileName);
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::WriteKey( " + rKey + ", " + rStr + " ) to " + GetGroup() + " in " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8));
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 
     // Update config data if necessary
     if ( !mnLockCount || !mpData->mbRead )
@@ -875,7 +887,7 @@ void Config::WriteKey(const OString& rKey, const OString& rStr)
         {
             pKey->maValue = rStr;
 
-            if ( !mnLockCount )
+            if ( !mnLockCount && mbPersistence )
                 ImplWriteConfig( mpData );
             else
             {
@@ -919,7 +931,7 @@ void Config::DeleteKey(const OString& rKey)
             delete pKey;
 
             // Rewrite config file
-            if ( !mnLockCount )
+            if ( !mnLockCount && mbPersistence )
                 ImplWriteConfig( mpData );
             else
             {
@@ -931,7 +943,10 @@ void Config::DeleteKey(const OString& rKey)
 
 sal_uInt16 Config::GetKeyCount() const
 {
-    SAL_INFO("tools.generic", "Config::GetKeyCount() from " << GetGroup() << " in " << maFileName);
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::GetKeyCount() from " + GetGroup() + " in " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8));
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 
     // Update config data if necessary
     if ( !mnLockCount )
@@ -957,8 +972,10 @@ sal_uInt16 Config::GetKeyCount() const
 
 OString Config::GetKeyName(sal_uInt16 nKey) const
 {
-    SAL_INFO("tools.generic", "Config::GetKeyName( " << OString::number(static_cast<sal_Int32>(nKey))
-                      << " ) from " << GetGroup() << " in " << maFileName);
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::GetKeyName( " + OString::number(static_cast<sal_Int32>(nKey)) + " ) from " + GetGroup() + " in " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8));
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 
     // search key and return name if found
     ImplGroupData* pGroup = ImplGetGroup();
@@ -983,8 +1000,10 @@ OString Config::GetKeyName(sal_uInt16 nKey) const
 
 OString Config::ReadKey(sal_uInt16 nKey) const
 {
-    SAL_INFO("tools.generic", "Config::ReadKey( " << OString::number(static_cast<sal_Int32>(nKey))
-                       << " ) from " << GetGroup() << " in " << maFileName);
+#ifdef DBG_UTIL
+    OString aTraceStr("Config::ReadKey( " + OString::number(static_cast<sal_Int32>(nKey)) + " ) from " + GetGroup() + " in " + OUStringToOString(maFileName, RTL_TEXTENCODING_UTF8));
+    OSL_TRACE("%s", aTraceStr.getStr());
+#endif
 
     // Search key and return value if found
     ImplGroupData* pGroup = ImplGetGroup();
@@ -1009,7 +1028,7 @@ OString Config::ReadKey(sal_uInt16 nKey) const
 
 void Config::Flush()
 {
-    if ( mpData->mbModified )
+    if ( mpData->mbModified && mbPersistence )
         ImplWriteConfig( mpData );
 }
 

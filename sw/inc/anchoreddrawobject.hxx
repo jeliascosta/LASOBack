@@ -21,7 +21,7 @@
 
 #include <anchoredobject.hxx>
 
-namespace tools { class Rectangle; }
+class Rectangle;
 
 /** class for the positioning of drawing objects
 
@@ -35,7 +35,7 @@ class SW_DLLPUBLIC SwAnchoredDrawObject : public SwAnchoredObject
         bool mbValidPos;
 
         // rectangle, keeping the last object rectangle after the positioning
-        std::unique_ptr<tools::Rectangle> mpLastObjRect;
+        Rectangle* mpLastObjRect;
 
         // boolean, indicating that anchored drawing object hasn't been attached
         // to a anchor frame yet. Once, it is attached to a anchor frame the
@@ -123,12 +123,12 @@ class SW_DLLPUBLIC SwAnchoredDrawObject : public SwAnchoredObject
     public:
 
         SwAnchoredDrawObject();
-        virtual ~SwAnchoredDrawObject() override;
+        virtual ~SwAnchoredDrawObject();
 
         // declaration of pure virtual methods of base class <SwAnchoredObject>
         virtual void MakeObjPos() override;
         virtual void InvalidateObjPos() override;
-        bool IsValidPos() const
+        inline bool IsValidPos() const
         {
             return mbValidPos;
         }
@@ -140,9 +140,9 @@ class SW_DLLPUBLIC SwAnchoredDrawObject : public SwAnchoredObject
         // accessors to the object area and its position
         virtual const SwRect GetObjRect() const override;
         // Return value can be NULL.
-        const tools::Rectangle* GetLastObjRect() const { return mpLastObjRect.get();}
+        const Rectangle* GetLastObjRect() const { return mpLastObjRect;}
 
-        void SetLastObjRect( const tools::Rectangle& _rNewObjRect );
+        void SetLastObjRect( const Rectangle& _rNewObjRect );
 
         /** adjust positioning and alignment attributes for new anchor frame
 
@@ -172,7 +172,7 @@ class SW_DLLPUBLIC SwAnchoredDrawObject : public SwAnchoredObject
                                        const SwRect& _rRect,
                                        PrepareHint _eHint ) override;
 
-        bool NotYetPositioned() const
+        inline bool NotYetPositioned() const
         {
             return mbNotYetPositioned;
         }

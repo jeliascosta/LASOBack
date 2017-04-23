@@ -298,11 +298,6 @@ interface DrawView
         ExecMethod = FuTemporary ;
         StateMethod = GetMenuState ;
     ]
-    SID_EMOJI_CONTROL // ole : no, status : ?
-    [
-        ExecMethod = FuTemporary ;
-        StateMethod = GetMenuState ;
-    ]
     FN_INSERT_SOFT_HYPHEN // status(final|play)
     [
         ExecMethod = FuTemporary ;
@@ -402,6 +397,11 @@ interface DrawView
         ExecMethod = FuTemporary ;
         StateMethod = GetMenuState ;
     ]
+    SID_INSERT_IMAGE // ole : yes, status : ?
+    [
+        ExecMethod = FuTemporary ;
+        StateMethod = GetMenuState ;
+    ]
     SID_INSERT_MATH // ole : yes, status : ?
     [
         ExecMethod = FuTemporary ;
@@ -423,6 +423,11 @@ interface DrawView
         StateMethod = GetMenuState ;
     ]
     SID_PAGEMARGIN // ole : no, status : rec play
+    [
+        ExecMethod = FuTemporary ;
+        StateMethod = GetMenuState ;
+    ]
+    SID_SELECTAT // ole : no, status : play rec
     [
         ExecMethod = FuTemporary ;
         StateMethod = GetMenuState ;
@@ -659,6 +664,11 @@ interface DrawView
         ExecMethod = FuSupport ;
         StateMethod = GetMenuState ;
     ]
+    SID_ZOOM // ole : no, status : play rec
+    [
+        ExecMethod = FuSupport ;
+        StateMethod = GetMenuState ;
+    ]
     SID_DELETE // ole : no, status : ?
     [
         ExecMethod = FuSupport ;
@@ -683,6 +693,11 @@ interface DrawView
         ExecMethod = FuTemporary ;
         StateMethod = GetMenuState ;
         ReadOnlyDoc = FALSE ;
+    ]
+    SID_CHOOSE_POLYGON // ole : no, status : ?
+    [
+        ExecMethod = FuTemporary ;
+        StateMethod = GetMenuState ;
     ]
     FN_NUM_BULLET_ON
     [
@@ -1218,11 +1233,14 @@ interface DrawView
         StateMethod = GetMenuState ;
     ]
 
-    SID_OBJECT_ALIGN // ole : no, status : ?
+    SfxVoidItem ObjectAlign SID_OBJECT_ALIGN // ole : no, status : ?
     [
         StateMethod = GetMenuState ;
         GroupId = GID_DOCUMENT ;
         Export ;
+        PseudoSlots = FALSE ;
+        ToolBoxConfig ;
+        MenuConfig = TRUE;
     ]
 
     SID_ZOOM_TOOLBOX // ole : no, status : ?
@@ -1385,10 +1403,6 @@ interface DrawView
         StateMethod = GetAttrState ;
     ]
     SID_BITMAP_LIST
-    [
-        StateMethod = GetAttrState ;
-    ]
-    SID_PATTERN_LIST
     [
         StateMethod = GetAttrState ;
     ]
@@ -1613,6 +1627,11 @@ interface DrawView
         ExecMethod = FuTemporary ;
         StateMethod = GetMenuState ;
     ]
+    SID_GRAPHIC_EXPORT // ole : no, status : ?
+    [
+        ExecMethod = FuTemporary ;
+        StateMethod = GetMenuState ;
+    ]
     SID_NAME_GROUP // ole : no, status : ?
     [
         ExecMethod = FuTemporary ;
@@ -1654,6 +1673,11 @@ interface DrawView
         StateMethod = GetMenuState ;
         GroupId = GID_DOCUMENT ;
     MenuConfig = TRUE ;
+    ]
+    SID_TEXTALIGNMENT // ole : no, status : ?
+    [
+        ExecMethod = FuTemporary ;
+        StateMethod = GetMenuState ;
     ]
     SID_COLOR_CONTROL // ole : no, status : ?
     [

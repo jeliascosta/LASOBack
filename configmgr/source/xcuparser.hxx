@@ -56,7 +56,7 @@ public:
         Modifications * broadcastModifications, Additions * additions);
 
 private:
-    virtual ~XcuParser() override;
+    virtual ~XcuParser();
 
     virtual xmlreader::XmlReader::Text getTextMode() override;
 

@@ -63,7 +63,7 @@ class SmPrintOptionsTabPage : public SfxTabPage
     VclPtr<CheckBox>       m_pSaveOnlyUsedSymbols;
     VclPtr<CheckBox>       m_pAutoCloseBrackets;
 
-    DECL_LINK(SizeButtonClickHdl, Button *, void);
+    DECL_LINK_TYPED(SizeButtonClickHdl, Button *, void);
 
     virtual bool    FillItemSet(SfxItemSet* rSet) override;
     virtual void    Reset(const SfxItemSet* rSet) override;
@@ -72,7 +72,7 @@ public:
     static VclPtr<SfxTabPage> Create(vcl::Window *pWindow, const SfxItemSet &rSet);
 
     SmPrintOptionsTabPage(vcl::Window *pParent, const SfxItemSet &rOptions);
-    virtual ~SmPrintOptionsTabPage() override;
+    virtual ~SmPrintOptionsTabPage();
     virtual void dispose() override;
 };
 
@@ -80,7 +80,7 @@ public:
 
 class SmShowFont : public vcl::Window
 {
-    virtual void Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
 
     vcl::Font maFont;
 
@@ -103,15 +103,15 @@ class SmFontDialog : public ModalDialog
 
     vcl::Font maFont;
 
-    DECL_LINK(FontSelectHdl, ComboBox&, void);
-    DECL_LINK(FontModifyHdl, Edit&, void);
-    DECL_LINK(AttrChangeHdl, Button *, void);
+    DECL_LINK_TYPED(FontSelectHdl, ComboBox&, void);
+    DECL_LINK_TYPED(FontModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(AttrChangeHdl, Button *, void);
 
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 public:
     SmFontDialog(vcl::Window * pParent, OutputDevice *pFntListDevice, bool bHideCheckboxes);
-    virtual ~SmFontDialog() override;
+    virtual ~SmFontDialog();
     virtual void dispose() override;
 
     const vcl::Font& GetFont() const
@@ -133,11 +133,11 @@ class SmFontSizeDialog : public ModalDialog
     VclPtr<MetricField> m_pBorderSize;
     VclPtr<PushButton> m_pDefaultButton;
 
-    DECL_LINK(DefaultButtonClickHdl, Button *, void);
+    DECL_LINK_TYPED(DefaultButtonClickHdl, Button *, void);
 
 public:
     SmFontSizeDialog(vcl::Window *pParent);
-    virtual ~SmFontSizeDialog() override;
+    virtual ~SmFontSizeDialog();
     virtual void dispose() override;
 
     void ReadFrom(const SmFormat &rFormat);
@@ -160,12 +160,12 @@ class SmFontTypeDialog : public ModalDialog
 
     VclPtr<OutputDevice> pFontListDev;
 
-    DECL_LINK(MenuSelectHdl, Menu *, bool);
-    DECL_LINK(DefaultButtonClickHdl, Button *, void);
+    DECL_LINK_TYPED(MenuSelectHdl, Menu *, bool);
+    DECL_LINK_TYPED(DefaultButtonClickHdl, Button *, void);
 
 public:
     SmFontTypeDialog(vcl::Window *pParent, OutputDevice *pFntListDevice);
-    virtual ~SmFontTypeDialog() override;
+    virtual ~SmFontTypeDialog();
     virtual void dispose() override;
 
     void ReadFrom(const SmFormat &rFormat);
@@ -223,10 +223,10 @@ class SmDistanceDialog : public ModalDialog
     sal_uInt16          nActiveCategory;
     bool            bScaleAllBrackets;
 
-    DECL_LINK(GetFocusHdl, Control&, void);
-    DECL_LINK(MenuSelectHdl, Menu *, bool);
-    DECL_LINK(DefaultButtonClickHdl, Button *, void);
-    DECL_LINK(CheckBoxClickHdl, Button *, void);
+    DECL_LINK_TYPED(GetFocusHdl, Control&, void);
+    DECL_LINK_TYPED(MenuSelectHdl, Menu *, bool);
+    DECL_LINK_TYPED(DefaultButtonClickHdl, Button *, void);
+    DECL_LINK_TYPED(CheckBoxClickHdl, Button *, void);
 
     using   Window::SetHelpId;
     static void SetHelpId(MetricField &rField, const OString& sHelpId);
@@ -234,11 +234,14 @@ class SmDistanceDialog : public ModalDialog
 
 public:
     SmDistanceDialog(vcl::Window *pParent);
-    virtual ~SmDistanceDialog() override;
+    virtual ~SmDistanceDialog();
     virtual void dispose() override;
 
     void ReadFrom(const SmFormat &rFormat);
-    void WriteTo (SmFormat &rFormat);
+    void WriteTo (SmFormat &rFormat) /*const*/;
+
+    // Window
+    virtual void    DataChanged( const DataChangedEvent &rEvt ) override;
 };
 
 
@@ -252,11 +255,11 @@ class SmAlignDialog : public ModalDialog
     VclPtr<RadioButton> m_pRight;
     VclPtr<PushButton>  m_pDefaultButton;
 
-    DECL_LINK(DefaultButtonClickHdl, Button *, void);
+    DECL_LINK_TYPED(DefaultButtonClickHdl, Button *, void);
 
 public:
     SmAlignDialog(vcl::Window *pParent);
-    virtual ~SmAlignDialog() override;
+    virtual ~SmAlignDialog();
     virtual void dispose() override;
 
     void ReadFrom(const SmFormat &rFormat);
@@ -279,16 +282,16 @@ class SmShowSymbolSetWindow : public Control
     void SetScrollBarRange();
     Point OffsetPoint(const Point &rPoint) const;
 
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void    MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void    KeyInput(const KeyEvent& rKEvt) override;
     virtual void    Resize() override;
     virtual Size    GetOptimalSize() const override;
 
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
 public:
     SmShowSymbolSetWindow(vcl::Window *pParent, WinBits nStyle);
-    virtual ~SmShowSymbolSetWindow() override;
+    virtual ~SmShowSymbolSetWindow();
     virtual void dispose() override;
     void setScrollbar(ScrollBar *pVScrollBar);
     void calccols();
@@ -306,7 +309,7 @@ class SmShowSymbolSet : public VclHBox
 
 public:
     SmShowSymbolSet(vcl::Window *pParent);
-    virtual ~SmShowSymbolSet() override;
+    virtual ~SmShowSymbolSet();
     virtual void dispose() override;
 
     void    SetSymbolSet(const SymbolPtrVec_t& rSymbolSet) { aSymbolWindow->SetSymbolSet(rSymbolSet); }
@@ -323,7 +326,7 @@ class SmShowSymbol : public Control
 {
     Link<SmShowSymbol&,void> aDblClickHdlLink;
 
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void    ApplySettings(vcl::RenderContext& rRenderContext) override;
     virtual void    MouseButtonDown(const MouseEvent& rMEvt) override;
     virtual void    Resize() override;
@@ -358,12 +361,12 @@ class SmSymbolDialog : public ModalDialog
 
     VclPtr<OutputDevice> pFontListDev;
 
-    DECL_LINK(SymbolSetChangeHdl, ListBox&, void);
-    DECL_LINK(SymbolChangeHdl, SmShowSymbolSetWindow&, void);
-    DECL_LINK(SymbolDblClickHdl, SmShowSymbol&, void);
-    DECL_LINK(SymbolDblClickHdl2, SmShowSymbolSetWindow&, void);
-    DECL_LINK(EditClickHdl, Button*, void);
-    DECL_LINK(GetClickHdl, Button*, void);
+    DECL_LINK_TYPED(SymbolSetChangeHdl, ListBox&, void);
+    DECL_LINK_TYPED(SymbolChangeHdl, SmShowSymbolSetWindow&, void);
+    DECL_LINK_TYPED(SymbolDblClickHdl, SmShowSymbol&, void);
+    DECL_LINK_TYPED(SymbolDblClickHdl2, SmShowSymbolSetWindow&, void);
+    DECL_LINK_TYPED(EditClickHdl, Button*, void);
+    DECL_LINK_TYPED(GetClickHdl, Button*, void);
     void SymbolDblClickHdl();
 
     void            FillSymbolSets();
@@ -374,17 +377,18 @@ class SmSymbolDialog : public ModalDialog
 public:
     SmSymbolDialog(vcl::Window * pParent, OutputDevice *pFntListDevice,
             SmSymbolManager &rSymbolMgr, SmViewShell &rViewShell);
-    virtual ~SmSymbolDialog() override;
+    virtual ~SmSymbolDialog();
     virtual void dispose() override;
 
     bool    SelectSymbolSet(const OUString &rSymbolSetName);
     void    SelectSymbol(sal_uInt16 nSymbolPos);
+    sal_uInt16  GetSelectedSymbol() const   { return m_pSymbolSetDisplay->GetSelectSymbol(); }
 };
 
 
 class SmShowChar : public Control
 {
-    virtual void    Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle&) override;
+    virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void    Resize() override;
 
 public:
@@ -425,16 +429,16 @@ class SmSymDefineDialog : public ModalDialog
     std::unique_ptr<SubsetMap> pSubsetMap;
     FontList           *pFontList;
 
-    DECL_LINK(OldSymbolChangeHdl, ComboBox&, void);
-    DECL_LINK(OldSymbolSetChangeHdl, ComboBox&, void);
-    DECL_LINK(ModifyHdl, Edit&, void);
-    DECL_LINK(FontChangeHdl, ListBox&, void);
-    DECL_LINK(SubsetChangeHdl, ListBox&, void);
-    DECL_LINK(StyleChangeHdl, ComboBox&, void);
-    DECL_LINK(CharHighlightHdl, SvxShowCharSet*, void);
-    DECL_LINK(AddClickHdl, Button *, void);
-    DECL_LINK(ChangeClickHdl, Button *, void);
-    DECL_LINK(DeleteClickHdl, Button *, void);
+    DECL_LINK_TYPED(OldSymbolChangeHdl, ComboBox&, void);
+    DECL_LINK_TYPED(OldSymbolSetChangeHdl, ComboBox&, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(FontChangeHdl, ListBox&, void);
+    DECL_LINK_TYPED(SubsetChangeHdl, ListBox&, void);
+    DECL_LINK_TYPED(StyleChangeHdl, ComboBox&, void);
+    DECL_LINK_TYPED(CharHighlightHdl, SvxShowCharSet*, void);
+    DECL_LINK_TYPED(AddClickHdl, Button *, void);
+    DECL_LINK_TYPED(ChangeClickHdl, Button *, void);
+    DECL_LINK_TYPED(DeleteClickHdl, Button *, void);
 
     void    FillSymbols(ComboBox &rComboBox, bool bDeleteText = true);
     void    FillSymbolSets(ComboBox &rComboBox, bool bDeleteText = true);
@@ -463,7 +467,7 @@ class SmSymDefineDialog : public ModalDialog
 
 public:
     SmSymDefineDialog(vcl::Window *pParent, OutputDevice *pFntListDevice, SmSymbolManager &rMgr);
-    virtual ~SmSymDefineDialog() override;
+    virtual ~SmSymDefineDialog();
     virtual void dispose() override;
 
     using OutputDevice::SetFont;

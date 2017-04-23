@@ -91,16 +91,20 @@ public:
         @param rIterator
             The iterator to compare to.
         @return
-            When both iterators are equal <TRUE/> is returned, <FALSE/> otherwise.
+            When both iterators ar equal <TRUE/> is returned, <FALSE/> otherwise.
     */
     virtual bool operator== (const IteratorImplBase& rIterator) const;
-    /** This method is used by the equality operator. It is part of a "multimethod" pattern.
+    /** This method is used by the equality operator.  Additionally to the
+        iterator it takes a type information which is taken into account on
+        comparison.  It is part of a "multimethod" pattern.
         @param rIterator
             The iterator to compare to.
+        @param aType
+            The type of the iterator.
         @return
             Returns <TRUE/> when both iterators point to the same object.
     */
-    virtual bool IsEqualSelection(const IteratorImplBase& rIterator) const;
+    virtual bool IsEqual (const IteratorImplBase& rIterator, IteratorType aType) const;
     /** Reverse the direction of iteration.  The current object stays the same.
     */
     virtual void Reverse();
@@ -136,11 +140,11 @@ public:
         const std::weak_ptr<ViewShell>& rpViewShellWeak,
         bool bDirectionIsForward);
     SelectionIteratorImpl (const SelectionIteratorImpl& rObject);
-    virtual ~SelectionIteratorImpl() override;
+    virtual ~SelectionIteratorImpl();
 
     virtual void GotoNextText() override;
     virtual const IteratorPosition& GetPosition() override;
-    virtual IteratorImplBase* Clone (IteratorImplBase* pObject = nullptr) const override;
+    virtual IteratorImplBase* Clone (IteratorImplBase* pObject) const override;
     virtual bool operator== (const IteratorImplBase& rIterator) const override;
 
 private:
@@ -151,10 +155,12 @@ private:
         only the case that the given iterator is an instance of this class.
         @param rIterator
             The iterator to compare to.
+        @param aType
+            The type of the iterator.
         @return
             Returns <TRUE/> when both iterators point to the same object.
     */
-    virtual bool IsEqualSelection(const IteratorImplBase& rIterator) const override;
+    virtual bool IsEqual (const IteratorImplBase& rIterator, IteratorType aType) const override;
 
     IteratorImplBase& operator= (const IteratorImplBase& rIterator);
 };
@@ -182,10 +188,10 @@ public:
         bool bDirectionIsForward,
         PageKind ePageKind,
         EditMode eEditMode);
-    virtual ~ViewIteratorImpl() override;
+    virtual ~ViewIteratorImpl();
 
     virtual void GotoNextText() override;
-    virtual IteratorImplBase* Clone (IteratorImplBase* pObject = nullptr) const override;
+    virtual IteratorImplBase* Clone (IteratorImplBase* pObject) const override;
     virtual void Reverse() override;
 
 protected:
@@ -225,10 +231,10 @@ public:
         SdDrawDocument* pDocument,
         const std::weak_ptr<ViewShell>& rpViewShellWeak,
         bool bDirectionIsForward);
-    virtual ~DocumentIteratorImpl() override;
+    virtual ~DocumentIteratorImpl();
 
     virtual void GotoNextText() override;
-    virtual IteratorImplBase* Clone (IteratorImplBase* pObject = nullptr) const override;
+    virtual IteratorImplBase* Clone (IteratorImplBase* pObject) const override;
 
 private:
     /// Number of pages in the view that is specified by <member>maPosition</member>.

@@ -98,7 +98,9 @@ namespace vclcanvas
 
         OutputDevice* pOutDev = reinterpret_cast<OutputDevice*>(nPtr);
         if( !pOutDev )
-            throw lang::NoSupportException("Passed OutDev invalid!", nullptr);
+            throw lang::NoSupportException(
+                OUString( "Passed OutDev invalid!" ),
+                nullptr);
 
         OutDevProviderSharedPtr pOutdevProvider( new OutDevHolder(*pOutDev) );
 
@@ -127,7 +129,7 @@ namespace vclcanvas
         CanvasBaseT::disposeThis();
     }
 
-    OUString SAL_CALL Canvas::getServiceName(  )
+    OUString SAL_CALL Canvas::getServiceName(  ) throw (css::uno::RuntimeException, std::exception)
     {
         return OUString( CANVAS_SERVICE_NAME );
     }

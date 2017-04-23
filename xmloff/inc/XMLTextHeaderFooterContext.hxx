@@ -51,7 +51,7 @@ public:
             const css::uno::Reference< css::beans::XPropertySet > & rPageStylePropSet,
                bool bFooter, bool bLft, bool bFrst );
 
-    virtual ~XMLTextHeaderFooterContext() override;
+    virtual ~XMLTextHeaderFooterContext();
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,

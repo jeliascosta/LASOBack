@@ -25,7 +25,7 @@
 
 #include "dbfunc.hxx"
 
-#include "scres.hrc"
+#include "sc.hrc"
 
 #define DECL_WRAPPER_WITHID(Class) \
     class Class : public SfxChildWindow                                         \
@@ -185,7 +185,7 @@ class SC_DLLPUBLIC ScValidityRefChildWin : public SfxChildWindow
 public:
     ScValidityRefChildWin( vcl::Window*, sal_uInt16, SfxBindings*, SfxChildWinInfo* );
     SFX_DECL_CHILDWINDOW_WITHID(ScValidityRefChildWin);
-    virtual ~ScValidityRefChildWin() override;
+    virtual ~ScValidityRefChildWin();
     bool    LockVisible( bool bLock ){ bool bVis = m_bVisibleLock; m_bVisibleLock = bLock; return bVis; }
     bool    LockFreeWindow( bool bLock ){ bool bFreeWindow = m_bFreeWindowLock; m_bFreeWindowLock = bLock; return bFreeWindow; }
     void                Hide() override { if( !m_bVisibleLock) SfxChildWindow::Hide(); }

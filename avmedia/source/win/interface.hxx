@@ -25,7 +25,9 @@ extern "C" const IID IID_IMediaDet;
 struct ISampleGrabber;
 
 struct
+#ifndef __MINGW32__
 __declspec(uuid("65BD0710-24D2-4ff7-9324-ED2E5D3ABAFA")) __declspec(novtable)
+#endif
 IMediaDet : public IUnknown
 {
 public:
@@ -75,7 +77,9 @@ protected:
 
 extern "C" const IID IID_ISampleGrabberCB;
 struct
+#ifndef __MINGW32__
 __declspec(uuid("0579154A-2B53-4994-B0D0-E773148EFF85")) __declspec(novtable)
+#endif
 ISampleGrabberCB : public IUnknown
 {
 public:
@@ -93,7 +97,9 @@ protected:
 
 extern "C" const IID IID_ISampleGrabber;
 struct
+#ifndef __MINGW32__
 __declspec(uuid("6B652FFF-11FE-4fce-92AD-0266B5D7C78F")) __declspec(novtable)
+#endif
 ISampleGrabber : public IUnknown
 {
 public:

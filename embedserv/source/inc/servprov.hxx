@@ -35,13 +35,16 @@ class EmbedServer_Impl: public cppu::WeakImplHelper<css::lang::XServiceInfo>
 {
 public:
     EmbedServer_Impl( const css::uno::Reference< css::lang::XMultiServiceFactory > &xFactory );
-    virtual ~EmbedServer_Impl() override;
+    virtual ~EmbedServer_Impl();
 
-    OUString SAL_CALL getImplementationName() override;
+    OUString SAL_CALL getImplementationName()
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    sal_Bool SAL_CALL supportsService(OUString const & ServiceName) override;
+    sal_Bool SAL_CALL supportsService(OUString const & ServiceName)
+        throw (css::uno::RuntimeException, std::exception) override;
 
-    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() override;
+    css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
+        throw (css::uno::RuntimeException, std::exception) override;
 
 protected:
 
@@ -56,17 +59,17 @@ public:
     EmbedProviderFactory_Impl( const css::uno::Reference< css::lang::XMultiServiceFactory >& xFactory, const GUID* pGuid);
     virtual ~EmbedProviderFactory_Impl();
 
-    bool registerClass();
-    bool deregisterClass();
+    sal_Bool registerClass();
+    sal_Bool deregisterClass();
 
     /* IUnknown methods */
-    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj) override;
-    STDMETHOD_(ULONG, AddRef)() override;
-    STDMETHOD_(ULONG, Release)() override;
+    STDMETHOD(QueryInterface)(REFIID riid, LPVOID FAR * ppvObj);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     /* IClassFactory methods */
-    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv) override;
-    STDMETHOD(LockServer)(int fLock) override;
+    STDMETHOD(CreateInstance)(IUnknown FAR* punkOuter, REFIID riid, void FAR* FAR* ppv);
+    STDMETHOD(LockServer)(int fLock);
 
 protected:
 

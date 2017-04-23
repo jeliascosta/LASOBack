@@ -23,6 +23,7 @@
 #include "Chart2ModelContact.hxx"
 #include "ChartTypeHelper.hxx"
 #include "DiagramHelper.hxx"
+#include "ContainerHelper.hxx"
 #include "ChartModelHelper.hxx"
 #include "LinePropertiesHelper.hxx"
 #include "FillProperties.hxx"
@@ -66,6 +67,7 @@ using ::com::sun::star::uno::Any;
 
 namespace
 {
+static const char lcl_aServiceName[] = "com.sun.star.comp.chart.DataSeries";
 
 enum
 {
@@ -89,7 +91,7 @@ enum
 };
 
 void lcl_AddPropertiesToVector_PointProperties(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     //service chart::Chart3DBarProperties
     rOutProperties.push_back(
@@ -186,7 +188,7 @@ void lcl_AddPropertiesToVector_PointProperties(
 }
 
 void lcl_AddPropertiesToVector_SeriesOnly(
-    std::vector< Property > & rOutProperties )
+    ::std::vector< Property > & rOutProperties )
 {
     rOutProperties.push_back(
         Property( "Axis",
@@ -205,7 +207,7 @@ void lcl_AddPropertiesToVector_SeriesOnly(
 
 uno::Sequence< Property > lcl_GetPropertySequence( DataSeriesPointWrapper::eType _eType )
 {
-    std::vector< css::beans::Property > aProperties;
+    ::std::vector< css::beans::Property > aProperties;
 
     lcl_AddPropertiesToVector_PointProperties( aProperties );
     if( _eType == DataSeriesPointWrapper::DATA_SERIES )
@@ -222,7 +224,7 @@ uno::Sequence< Property > lcl_GetPropertySequence( DataSeriesPointWrapper::eType
     ::chart::UserDefinedProperties::AddPropertiesToVector( aProperties );
     ::chart::wrapper::WrappedScaleTextProperties::addProperties( aProperties );
 
-    std::sort( aProperties.begin(), aProperties.end(), ::chart::PropertyNameLess() );
+    ::std::sort( aProperties.begin(), aProperties.end(), ::chart::PropertyNameLess() );
 
     return comphelper::containerToSequence( aProperties );
 }
@@ -257,26 +259,35 @@ struct StaticPointWrapperPropertyArray : public rtl::StaticAggregate< Sequence< 
 class WrappedAttachedAxisProperty : public ::chart::WrappedProperty
 {
 public:
-    explicit WrappedAttachedAxisProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    explicit WrappedAttachedAxisProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
+    virtual ~WrappedAttachedAxisProperty();
 
-    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual Any getPropertyValue( const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+    virtual Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
 protected:
     std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;
 };
 
 WrappedAttachedAxisProperty::WrappedAttachedAxisProperty(
-                const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
+                std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
                 : WrappedProperty("Axis",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
 {
 }
 
+WrappedAttachedAxisProperty::~WrappedAttachedAxisProperty()
+{
+}
+
 Any WrappedAttachedAxisProperty::getPropertyDefault( const Reference< beans::XPropertyState >& /*xInnerPropertyState*/ ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
     aRet <<= css::chart::ChartAxisAssign::PRIMARY_Y;
@@ -284,6 +295,7 @@ Any WrappedAttachedAxisProperty::getPropertyDefault( const Reference< beans::XPr
 }
 
 Any WrappedAttachedAxisProperty::getPropertyValue( const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aRet;
 
@@ -297,6 +309,7 @@ Any WrappedAttachedAxisProperty::getPropertyValue( const Reference< beans::XProp
 }
 
 void WrappedAttachedAxisProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     uno::Reference< chart2::XDataSeries > xDataSeries( xInnerPropertySet, uno::UNO_QUERY );
 
@@ -319,6 +332,7 @@ class WrappedSegmentOffsetProperty : public ::chart::WrappedProperty
 {
 public:
     WrappedSegmentOffsetProperty();
+    virtual ~WrappedSegmentOffsetProperty();
 
 protected:
     virtual Any convertInnerToOuterValue( const Any& rInnerValue ) const override;
@@ -327,6 +341,9 @@ protected:
 
 WrappedSegmentOffsetProperty::WrappedSegmentOffsetProperty() :
         WrappedProperty("SegmentOffset","Offset")
+{}
+
+WrappedSegmentOffsetProperty::~WrappedSegmentOffsetProperty()
 {}
 
 Any WrappedSegmentOffsetProperty::convertInnerToOuterValue( const Any& rInnerValue ) const
@@ -357,12 +374,16 @@ class WrappedLineColorProperty : public WrappedSeriesAreaOrLineProperty
 {
 public:
     explicit WrappedLineColorProperty( DataSeriesPointWrapper* pDataSeriesPointWrapper );
+    virtual ~WrappedLineColorProperty();
 
-    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual void setPropertyToDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+    virtual void setPropertyToDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException) override;
 
-    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+    virtual css::uno::Any getPropertyDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
 protected:
     DataSeriesPointWrapper* m_pDataSeriesPointWrapper;
@@ -374,12 +395,17 @@ WrappedLineColorProperty::WrappedLineColorProperty(
                 DataSeriesPointWrapper* pDataSeriesPointWrapper )
                 : WrappedSeriesAreaOrLineProperty("LineColor","BorderColor","Color", pDataSeriesPointWrapper )
                 , m_pDataSeriesPointWrapper( pDataSeriesPointWrapper )
-                , m_aDefaultValue(uno::Any(sal_Int32( 0x0099ccff )))  // blue 8
+                , m_aDefaultValue(uno::makeAny(sal_Int32( 0x0099ccff )))  // blue 8
                 , m_aOuterValue(m_aDefaultValue)
 {
 }
 
+WrappedLineColorProperty::~WrappedLineColorProperty()
+{
+}
+
 void WrappedLineColorProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if( m_pDataSeriesPointWrapper && m_pDataSeriesPointWrapper->isLinesForbidden() )
         m_aOuterValue = rOuterValue;
@@ -388,6 +414,7 @@ void WrappedLineColorProperty::setPropertyValue( const Any& rOuterValue, const R
 }
 
 void WrappedLineColorProperty::setPropertyToDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException)
 {
     if( m_pDataSeriesPointWrapper && m_pDataSeriesPointWrapper->isLinesForbidden() )
         m_aOuterValue = m_aDefaultValue;
@@ -396,6 +423,7 @@ void WrappedLineColorProperty::setPropertyToDefault( const Reference< beans::XPr
 }
 
 Any WrappedLineColorProperty::getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
 {
     if( m_pDataSeriesPointWrapper && !m_pDataSeriesPointWrapper->isSupportingAreaProperties() )
         return m_aDefaultValue;
@@ -407,10 +435,13 @@ class WrappedLineStyleProperty : public WrappedSeriesAreaOrLineProperty
 {
 public:
     explicit WrappedLineStyleProperty( DataSeriesPointWrapper* pDataSeriesPointWrapper );
+    virtual ~WrappedLineStyleProperty();
 
-    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const override;
+    virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
+                        throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
 
-    virtual void setPropertyToDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const override;
+    virtual void setPropertyToDefault( const css::uno::Reference< css::beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException) override;
 
 protected:
     DataSeriesPointWrapper* m_pDataSeriesPointWrapper;
@@ -422,23 +453,29 @@ WrappedLineStyleProperty::WrappedLineStyleProperty(
                 DataSeriesPointWrapper* pDataSeriesPointWrapper )
                 : WrappedSeriesAreaOrLineProperty("LineStyle","BorderStyle", "LineStyle", pDataSeriesPointWrapper )
                 , m_pDataSeriesPointWrapper( pDataSeriesPointWrapper )
-                , m_aDefaultValue(uno::Any(drawing::LineStyle_SOLID))
+                , m_aDefaultValue(uno::makeAny(drawing::LineStyle_SOLID))
                 , m_aOuterValue(m_aDefaultValue)
 {
 }
 
+WrappedLineStyleProperty::~WrappedLineStyleProperty()
+{
+}
+
 void WrappedLineStyleProperty::setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
+                throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException)
 {
     Any aNewValue(rOuterValue);
     if( m_pDataSeriesPointWrapper && m_pDataSeriesPointWrapper->isLinesForbidden() )
     {
         m_aOuterValue = rOuterValue;
-        aNewValue <<= drawing::LineStyle_NONE;
+        aNewValue = uno::makeAny(drawing::LineStyle_NONE);
     }
     WrappedSeriesAreaOrLineProperty::setPropertyValue( aNewValue, xInnerPropertySet );
 }
 
 void WrappedLineStyleProperty::setPropertyToDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
+                        throw (css::beans::UnknownPropertyException, css::uno::RuntimeException)
 {
     if( m_pDataSeriesPointWrapper && m_pDataSeriesPointWrapper->isLinesForbidden() )
         m_aOuterValue = m_aDefaultValue;
@@ -453,19 +490,21 @@ namespace chart
 namespace wrapper
 {
 
-DataSeriesPointWrapper::DataSeriesPointWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
-    : m_spChart2ModelContact( spChart2ModelContact )
-    , m_aEventListenerContainer( m_aMutex )
-    , m_eType( DATA_SERIES )
-    , m_nSeriesIndexInNewAPI( -1 )
-    , m_nPointIndex( -1 )
-    , m_bLinesAllowed(true)
-    , m_xDataSeries(nullptr)
+DataSeriesPointWrapper::DataSeriesPointWrapper(
+            std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+        : m_spChart2ModelContact( spChart2ModelContact )
+        , m_aEventListenerContainer( m_aMutex )
+        , m_eType( DATA_SERIES )
+        , m_nSeriesIndexInNewAPI( -1 )
+        , m_nPointIndex( -1 )
+        , m_bLinesAllowed(true)
+        , m_xDataSeries(nullptr)
 {
     //need initialize call afterwards
 }
 
 void SAL_CALL DataSeriesPointWrapper::initialize( const uno::Sequence< uno::Any >& aArguments )
+                throw ( uno::Exception, uno::RuntimeException, std::exception)
 {
     OSL_PRECOND(aArguments.getLength() >= 1,"need at least 1 argument to initialize the DataSeriesPointWrapper: series reference + optional datapoint index");
 
@@ -490,10 +529,10 @@ void SAL_CALL DataSeriesPointWrapper::initialize( const uno::Sequence< uno::Any 
         m_eType = DATA_SERIES;
 }
 
-DataSeriesPointWrapper::DataSeriesPointWrapper(eType _eType,
-                                               sal_Int32 nSeriesIndexInNewAPI ,
-                                               sal_Int32 nPointIndex, //ignored for series
-                                               const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+DataSeriesPointWrapper::DataSeriesPointWrapper( eType _eType,
+                                                sal_Int32 nSeriesIndexInNewAPI ,
+                                                sal_Int32 nPointIndex, //ignored for series
+                                                std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
     : m_spChart2ModelContact( spChart2ModelContact )
     , m_aEventListenerContainer( m_aMutex )
     , m_eType( _eType )
@@ -510,6 +549,7 @@ DataSeriesPointWrapper::~DataSeriesPointWrapper()
 
 // ____ XComponent ____
 void SAL_CALL DataSeriesPointWrapper::dispose()
+    throw (uno::RuntimeException, std::exception)
 {
     uno::Reference< uno::XInterface > xSource( static_cast< ::cppu::OWeakObject* >( this ) );
     m_aEventListenerContainer.disposeAndClear( lang::EventObject( xSource ) );
@@ -520,18 +560,21 @@ void SAL_CALL DataSeriesPointWrapper::dispose()
 
 void SAL_CALL DataSeriesPointWrapper::addEventListener(
     const uno::Reference< lang::XEventListener >& xListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.addInterface( xListener );
 }
 
 void SAL_CALL DataSeriesPointWrapper::removeEventListener(
     const uno::Reference< lang::XEventListener >& aListener )
+    throw (uno::RuntimeException, std::exception)
 {
     m_aEventListenerContainer.removeInterface( aListener );
 }
 
 // ____ XEventListener ____
 void SAL_CALL DataSeriesPointWrapper::disposing( const lang::EventObject& /*Source*/ )
+    throw (uno::RuntimeException, std::exception)
 {
 }
 
@@ -551,7 +594,7 @@ Reference< chart2::XDataSeries > DataSeriesPointWrapper::getDataSeries()
     if( !xSeries.is() )
     {
         Reference< chart2::XDiagram > xDiagram( m_spChart2ModelContact->getChart2Diagram() );
-        std::vector< uno::Reference< chart2::XDataSeries > > aSeriesList(
+        ::std::vector< uno::Reference< chart2::XDataSeries > > aSeriesList(
             ::chart::DiagramHelper::getDataSeriesFromDiagram( xDiagram ) );
 
         if( m_nSeriesIndexInNewAPI >= 0 && m_nSeriesIndexInNewAPI < static_cast<sal_Int32>(aSeriesList.size()) )
@@ -581,7 +624,7 @@ void DataSeriesPointWrapper::updateReferenceSize()
     if( xProp.is() )
     {
         if( xProp->getPropertyValue("ReferencePageSize").hasValue() )
-            xProp->setPropertyValue("ReferencePageSize", uno::Any(
+            xProp->setPropertyValue("ReferencePageSize", uno::makeAny(
                 m_spChart2ModelContact->GetPageSize() ));
     }
 }
@@ -602,6 +645,7 @@ awt::Size DataSeriesPointWrapper::getCurrentSizeForReference()
 
 //XPropertyState
 beans::PropertyState SAL_CALL DataSeriesPointWrapper::getPropertyState( const OUString& rPropertyName )
+                                    throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     beans::PropertyState aState( beans::PropertyState_DIRECT_VALUE );
     try
@@ -666,6 +710,7 @@ beans::PropertyState SAL_CALL DataSeriesPointWrapper::getPropertyState( const OU
 }
 
 void SAL_CALL DataSeriesPointWrapper::setPropertyToDefault( const OUString& rPropertyName )
+                                    throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 {
     if( m_eType == DATA_SERIES )
         WrappedPropertySet::setPropertyToDefault( rPropertyName );
@@ -676,6 +721,7 @@ void SAL_CALL DataSeriesPointWrapper::setPropertyToDefault( const OUString& rPro
     }
 }
 Any SAL_CALL DataSeriesPointWrapper::getPropertyDefault( const OUString& rPropertyName )
+                                    throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     Any aRet;
     try
@@ -719,7 +765,7 @@ const Sequence< beans::Property >& DataSeriesPointWrapper::getPropertySequence()
 
 const std::vector< WrappedProperty* > DataSeriesPointWrapper::createWrappedProperties()
 {
-    std::vector< ::chart::WrappedProperty* > aWrappedProperties;
+    ::std::vector< ::chart::WrappedProperty* > aWrappedProperties;
 
     WrappedCharacterHeightProperty::addWrappedProperties( aWrappedProperties, this );
 
@@ -747,7 +793,7 @@ const std::vector< WrappedProperty* > DataSeriesPointWrapper::createWrappedPrope
     aWrappedProperties.push_back( new WrappedProperty("FillStyle","FillStyle" ) );
     aWrappedProperties.push_back( new WrappedProperty("FillTransparence","Transparency") );
 
-    aWrappedProperties.push_back( new WrappedIgnoreProperty("LineJoint", uno::Any( drawing::LineJoint_ROUND ) ) );
+    aWrappedProperties.push_back( new WrappedIgnoreProperty("LineJoint", uno::makeAny( drawing::LineJoint_ROUND ) ) );
     aWrappedProperties.push_back( new WrappedProperty("FillTransparenceGradientName","TransparencyGradientName") );
     aWrappedProperties.push_back( new WrappedProperty("FillGradientName","GradientName") );
     aWrappedProperties.push_back( new WrappedProperty("FillGradientStepCount","GradientStepCount") );
@@ -776,6 +822,7 @@ const std::vector< WrappedProperty* > DataSeriesPointWrapper::createWrappedPrope
 }
 
 void SAL_CALL DataSeriesPointWrapper::setPropertyValue( const OUString& rPropertyName, const Any& rValue )
+                                    throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if(rPropertyName == "Lines")
     {
@@ -836,6 +883,7 @@ void SAL_CALL DataSeriesPointWrapper::setPropertyValue( const OUString& rPropert
 }
 
 Any SAL_CALL DataSeriesPointWrapper::getPropertyValue( const OUString& rPropertyName )
+                throw ( beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException, std::exception)
 {
     if( m_eType == DATA_POINT )
     {
@@ -854,7 +902,7 @@ Any SAL_CALL DataSeriesPointWrapper::getPropertyValue( const OUString& rProperty
                     {
                         Reference< chart2::XColorScheme > xColorScheme( xDiagram->getDefaultColorScheme() );
                         if( xColorScheme.is() )
-                            return uno::Any( xColorScheme->getColorByIndex( m_nPointIndex ) );
+                            return uno::makeAny( xColorScheme->getColorByIndex( m_nPointIndex ) );
                     }
                 }
             }
@@ -863,27 +911,42 @@ Any SAL_CALL DataSeriesPointWrapper::getPropertyValue( const OUString& rProperty
     return WrappedPropertySet::getPropertyValue( rPropertyName );
 }
 
-OUString SAL_CALL DataSeriesPointWrapper::getImplementationName()
+uno::Sequence< OUString > DataSeriesPointWrapper::getSupportedServiceNames_Static()
 {
-    return OUString("com.sun.star.comp.chart.DataSeries");
+    uno::Sequence< OUString > aServices( 7 );
+    aServices[ 0 ] = "com.sun.star.chart.ChartDataRowProperties";
+    aServices[ 1 ] = "com.sun.star.chart.ChartDataPointProperties";
+    aServices[ 2 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
+    aServices[ 3 ] =  "com.sun.star.beans.PropertySet";
+    aServices[ 4 ] = "com.sun.star.drawing.FillProperties";
+    aServices[ 5 ] = "com.sun.star.drawing.LineProperties";
+    aServices[ 6 ] = "com.sun.star.style.CharacterProperties";
+
+    return aServices;
+}
+
+// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
+OUString SAL_CALL DataSeriesPointWrapper::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return getImplementationName_Static();
+}
+
+OUString DataSeriesPointWrapper::getImplementationName_Static()
+{
+    return OUString(lcl_aServiceName);
 }
 
 sal_Bool SAL_CALL DataSeriesPointWrapper::supportsService( const OUString& rServiceName )
+    throw( css::uno::RuntimeException, std::exception )
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 css::uno::Sequence< OUString > SAL_CALL DataSeriesPointWrapper::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
 {
-    return {
-        "com.sun.star.chart.ChartDataRowProperties",
-        "com.sun.star.chart.ChartDataPointProperties",
-        "com.sun.star.xml.UserDefinedAttributesSupplier",
-        "com.sun.star.beans.PropertySet",
-        "com.sun.star.drawing.FillProperties",
-        "com.sun.star.drawing.LineProperties",
-        "com.sun.star.style.CharacterProperties"
-    };
+    return getSupportedServiceNames_Static();
 }
 
 } //  namespace wrapper

@@ -9,7 +9,6 @@
 
 #include <swmodeltestbase.hxx>
 
-#include <com/sun/star/awt/FontSlant.hpp>
 #include <com/sun/star/awt/XBitmap.hpp>
 #include <com/sun/star/drawing/FillStyle.hpp>
 #include <com/sun/star/graphic/XGraphic.hpp>
@@ -35,6 +34,9 @@ protected:
         const char* aBlacklist[] = {
             "math-escape.docx",
             "math-mso2k7.docx",
+            "ImageCrop.docx",
+            "test_GIF_ImageCrop.docx",
+            "test_PNG_ImageCrop.docx"
         };
         std::vector<const char*> vBlacklist(aBlacklist, aBlacklist + SAL_N_ELEMENTS(aBlacklist));
 
@@ -80,11 +82,14 @@ protected:
     }
 };
 
+//This test gives errors due to ATL
+#if HAVE_FEATURE_ATL || !defined(_WIN32)
 DECLARE_OOXMLEXPORT_TEST(testfdo81381, "fdo81381.docx")
 {
     if (xmlDocPtr pXmlDoc = parseExport("word/document.xml"))
         assertXPath(pXmlDoc, "/w:document/w:body/w:p[1]/w:r[1]/w:object[1]/o:OLEObject[1]", "DrawAspect", "Icon");
 }
+#endif
 
 DECLARE_OOXMLEXPORT_TEST(testSdtAlias, "sdt-alias.docx")
 {
@@ -344,21 +349,6 @@ DECLARE_OOXMLEXPORT_TEST(testNumberingFont, "numbering-font.docx")
     uno::Reference<beans::XPropertySet> xStyle(getStyles("CharacterStyles")->getByName("ListLabel 1"), uno::UNO_QUERY);
     // This was Calibri, i.e. custom font of the numbering itself ("1.\t") was lost on import.
     CPPUNIT_ASSERT_EQUAL(OUString("Verdana"), getProperty<OUString>(xStyle, "CharFontName"));
-}
-
-DECLARE_OOXMLEXPORT_TEST(testTdf53856_conflictingStyle, "tdf53856_conflictingStyle.docx")
-{
-    // The "Text" style conflicted with builtin paragraph style Caption -> Text
-    uno::Reference<beans::XPropertySet> xStyle(getStyles("ParagraphStyles")->getByName("Text"), uno::UNO_QUERY);
-    CPPUNIT_ASSERT_EQUAL(OUString("Times New Roman"), getProperty<OUString>(xStyle, "CharFontName"));
-    CPPUNIT_ASSERT_EQUAL(awt::FontSlant_NONE, getProperty<awt::FontSlant>(xStyle, "CharPosture"));
-}
-
-DECLARE_OOXMLEXPORT_TEST(testTdf104713_undefinedStyles, "tdf104713_undefinedStyles.docx")
-{
-    // Normal paragraph style was not defined, so don't replace conflicting styles
-    uno::Reference<beans::XPropertySet> xStyle(getStyles("ParagraphStyles")->getByName("Heading 1"), uno::UNO_QUERY);
-    CPPUNIT_ASSERT_EQUAL(static_cast<sal_Int32>(212), getProperty<sal_Int32>(xStyle, "ParaBottomMargin"));
 }
 
 DECLARE_OOXMLEXPORT_TEST(testDrawingmlFlipv, "drawingml-flipv.docx")
@@ -691,7 +681,7 @@ DECLARE_OOXMLEXPORT_TEST(testNumOverrideLvltext, "num-override-lvltext.docx")
     CPPUNIT_ASSERT_EQUAL(sal_Int16(2), comphelper::SequenceAsHashMap(xRules->getByIndex(1))["ParentNumbering"].get<sal_Int16>());
 
     // The paragraph marker's red font color was inherited by the number portion, this was ff0000.
-    CPPUNIT_ASSERT_EQUAL(OUString("00000a"), parseDump("//Special[@nType='POR_NUMBER']/SwFont", "color"));
+    CPPUNIT_ASSERT_EQUAL(OUString("00000a"), parseDump("//Special[@nType='POR_NUMBER']/pFont", "color"));
 }
 
 DECLARE_OOXMLEXPORT_TEST(testNumOverrideStart, "num-override-start.docx")
@@ -840,6 +830,16 @@ DECLARE_OOXMLEXPORT_TEST(testTdf44986, "tdf44986.docx")
     // Check the first row of the table, it should have two cells (one separator).
     // This was 0: the first row had no separators, so it had only one cell, which was too wide.
     CPPUNIT_ASSERT_EQUAL(sal_Int32(1), getProperty< uno::Sequence<text::TableColumnSeparator> >(xTableRows->getByIndex(0), "TableColumnSeparators").getLength());
+}
+
+DECLARE_OOXMLEXPORT_TEST(testTdf103982, "tdf103982.docx")
+{
+    xmlDocPtr pXmlDoc = parseExport("word/document.xml");
+    if (!pXmlDoc)
+        return;
+    sal_Int32 nDistB = getXPath(pXmlDoc, "//wp:anchor", "distB").toInt32();
+    // This was -260350, which is not a valid value for an unsigned type.
+    CPPUNIT_ASSERT(nDistB >= 0);
 }
 
 CPPUNIT_PLUGIN_IMPLEMENT();

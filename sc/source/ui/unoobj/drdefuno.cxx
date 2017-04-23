@@ -43,7 +43,8 @@ ScDrawDefaultsObj::~ScDrawDefaultsObj() throw ()
 
 void ScDrawDefaultsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    if ( rHint.GetId() == SfxHintId::Dying )
+    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
+    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // document gone
     }

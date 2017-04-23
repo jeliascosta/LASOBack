@@ -37,6 +37,7 @@
 #include "querycontroller.hxx"
 #include "dbu_qry.hrc"
 #include "dbustrings.hrc"
+#include "Query.hrc"
 #include <comphelper/extract.hxx>
 #include "UITools.hxx"
 #include "TableWindowAccess.hxx"
@@ -64,7 +65,7 @@ namespace DatabaseObject = css::sdb::application::DatabaseObject;
 
 namespace {
 
-void Draw3DBorder(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void Draw3DBorder(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     // Use the System Style-Settings for my colours
     const StyleSettings& aSystemStyle = Application::GetSettings().GetStyleSettings();
@@ -98,7 +99,7 @@ OTableWindow::OTableWindow( vcl::Window* pParent, const TTableWindowData::value_
           ,m_pData( pTabWinData )
           ,m_nMoveCount(0)
           ,m_nMoveIncrement(1)
-          ,m_nSizingFlags( SizingFlags::NONE )
+          ,m_nSizingFlags( SIZING_NONE )
           ,m_bActive( false )
 {
 
@@ -183,6 +184,11 @@ void OTableWindow::SetPosSizePixel( const Point& rNewPos, const Size& rNewSize )
     SetSizePixel( rNewSize );
 }
 
+VclPtr<OTableWindowListBox> OTableWindow::CreateListBox()
+{
+    return VclPtr<OTableWindowListBox>::Create(this);
+}
+
 bool OTableWindow::FillListBox()
 {
     m_xListBox->Clear();
@@ -192,9 +198,10 @@ bool OTableWindow::FillListBox()
         if ( xContainer.is() )
             m_pContainerListener = new ::comphelper::OContainerListenerAdapter(this,xContainer);
     }
-
     // mark all primary keys with special image
-    Image aPrimKeyImage = Image(BitmapEx(ModuleRes(BMP_PRIMARY_KEY)));
+    ModuleRes TmpRes(IMG_JOINS);
+    ImageList aImageList(TmpRes);
+    Image aPrimKeyImage = aImageList.GetImage(IMG_PRIMARY_KEY);
 
     if (GetData()->IsShowAll())
     {
@@ -294,9 +301,9 @@ bool OTableWindow::Init()
     // create list box if necessary
     if ( !m_xListBox )
     {
-        m_xListBox = VclPtr<OTableWindowListBox>::Create(this);
+        m_xListBox = CreateListBox();
         OSL_ENSURE( m_xListBox != nullptr, "OTableWindow::Init() : CreateListBox returned NULL !" );
-        m_xListBox->SetSelectionMode( SelectionMode::Multiple );
+        m_xListBox->SetSelectionMode( MULTIPLE_SELECTION );
     }
 
     // Set the title
@@ -328,18 +335,19 @@ void OTableWindow::DataChanged(const DataChangedEvent& rDCEvt)
     }
 }
 
-void OTableWindow::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void OTableWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
-    tools::Rectangle aRect(Point(0,0), GetOutputSizePixel());
+    Rectangle aRect(Point(0,0), GetOutputSizePixel());
     Window::Paint(rRenderContext, rRect);
     Draw3DBorder(rRenderContext, aRect);
 }
 
-tools::Rectangle OTableWindow::getSizingRect(const Point& _rPos,const Size& _rOutputSize) const
+Rectangle OTableWindow::getSizingRect(const Point& _rPos,const Size& _rOutputSize) const
 {
-    tools::Rectangle aSizingRect = tools::Rectangle( GetPosPixel(), GetSizePixel() );
+    Rectangle aSizingRect = Rectangle( GetPosPixel(), GetSizePixel() );
+    sal_uInt16 nSizingFlags = GetSizingFlags();
 
-    if( m_nSizingFlags & SizingFlags::Top )
+    if( nSizingFlags & SIZING_TOP )
     {
         if( _rPos.Y() < 0 )
             aSizingRect.Top() = 0;
@@ -347,7 +355,7 @@ tools::Rectangle OTableWindow::getSizingRect(const Point& _rPos,const Size& _rOu
             aSizingRect.Top() = _rPos.Y();
     }
 
-    if( m_nSizingFlags & SizingFlags::Bottom )
+    if( nSizingFlags & SIZING_BOTTOM )
     {
         if( _rPos.Y() > _rOutputSize.Height() )
             aSizingRect.Bottom() = _rOutputSize.Height();
@@ -355,7 +363,7 @@ tools::Rectangle OTableWindow::getSizingRect(const Point& _rPos,const Size& _rOu
             aSizingRect.Bottom() = _rPos.Y();
     }
 
-    if( m_nSizingFlags & SizingFlags::Right )
+    if( nSizingFlags & SIZING_RIGHT )
     {
         if( _rPos.X() > _rOutputSize.Width() )
             aSizingRect.Right() = _rOutputSize.Width();
@@ -363,7 +371,7 @@ tools::Rectangle OTableWindow::getSizingRect(const Point& _rPos,const Size& _rOu
             aSizingRect.Right() = _rPos.X();
     }
 
-    if( m_nSizingFlags & SizingFlags::Left )
+    if( nSizingFlags & SIZING_LEFT )
     {
         if( _rPos.X() < 0 )
             aSizingRect.Left() = 0;
@@ -377,19 +385,19 @@ void OTableWindow::setSizingFlag(const Point& _rPos)
 {
     Size    aOutSize = GetOutputSizePixel();
     // Set the flags when the mouse cursor is in the sizing area
-    m_nSizingFlags = SizingFlags::NONE;
+    m_nSizingFlags = SIZING_NONE;
 
     if( _rPos.X() < TABWIN_SIZING_AREA )
-        m_nSizingFlags |= SizingFlags::Left;
+        m_nSizingFlags |= SIZING_LEFT;
 
     if( _rPos.Y() < TABWIN_SIZING_AREA )
-        m_nSizingFlags |= SizingFlags::Top;
+        m_nSizingFlags |= SIZING_TOP;
 
     if( _rPos.X() > aOutSize.Width()-TABWIN_SIZING_AREA )
-        m_nSizingFlags |= SizingFlags::Right;
+        m_nSizingFlags |= SIZING_RIGHT;
 
     if( _rPos.Y() > aOutSize.Height()-TABWIN_SIZING_AREA )
-        m_nSizingFlags |= SizingFlags::Bottom;
+        m_nSizingFlags |= SIZING_BOTTOM;
 }
 
 void OTableWindow::MouseMove( const MouseEvent& rEvt )
@@ -405,18 +413,28 @@ void OTableWindow::MouseMove( const MouseEvent& rEvt )
     Pointer aPointer;
 
     // Set the mouse cursor when it is in the sizing area
-    if ( m_nSizingFlags == SizingFlags::Top ||
-         m_nSizingFlags == SizingFlags::Bottom )
+    switch( m_nSizingFlags )
+    {
+    case SIZING_TOP:
+    case SIZING_BOTTOM:
         aPointer = Pointer( PointerStyle::SSize );
-    else if ( m_nSizingFlags == SizingFlags::Left ||
-              m_nSizingFlags ==SizingFlags::Right )
+        break;
+
+    case SIZING_LEFT:
+    case SIZING_RIGHT:
         aPointer = Pointer( PointerStyle::ESize );
-    else if ( m_nSizingFlags == (SizingFlags::Left | SizingFlags::Top) ||
-              m_nSizingFlags == (SizingFlags::Right | SizingFlags::Bottom) )
+        break;
+
+    case SIZING_LEFT+SIZING_TOP:
+    case SIZING_RIGHT+SIZING_BOTTOM:
         aPointer = Pointer( PointerStyle::SESize );
-    else if ( m_nSizingFlags == (SizingFlags::Right | SizingFlags::Top) ||
-              m_nSizingFlags == (SizingFlags::Left | SizingFlags::Bottom) )
+        break;
+
+    case SIZING_RIGHT+SIZING_TOP:
+    case SIZING_LEFT+SIZING_BOTTOM:
         aPointer = Pointer( PointerStyle::NESize );
+        break;
+    }
 
     SetPointer( aPointer );
 }
@@ -425,7 +443,7 @@ void OTableWindow::MouseButtonDown( const MouseEvent& rEvt )
 {
     // When resizing, the parent must be informed that
     // the window size of its child has changed
-    if( m_nSizingFlags != SizingFlags::NONE )
+    if( m_nSizingFlags )
         getTableView()->BeginChildSizing( this, GetPointer() );
 
     Window::MouseButtonDown( rEvt );
@@ -476,7 +494,7 @@ void OTableWindow::SetBoldTitle( bool bBold )
 void OTableWindow::GetFocus()
 {
     Window::GetFocus();
-    // we have to forward the focus to our listbox to enable keystrokes
+    // we have to forward the focus to our listbox to enable keystokes
     if(m_xListBox)
         m_xListBox->GrabFocus();
 }
@@ -519,7 +537,7 @@ bool OTableWindow::ExistsAConn() const
     return getTableView()->ExistsAConn(this);
 }
 
-void OTableWindow::EnumValidFields(std::vector< OUString>& arrstrFields)
+void OTableWindow::EnumValidFields(::std::vector< OUString>& arrstrFields)
 {
     arrstrFields.clear();
     // This default implementation counts every item in the ListBox ... for any other behaviour it must be over-written
@@ -585,8 +603,8 @@ void OTableWindow::Command(const CommandEvent& rEvt)
                         ptWhere = m_xTitle->GetPosPixel();
                 }
 
-                ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_MENU_JOINVIEW_TABLE));
-                switch (aContextMenu->Execute(this, ptWhere))
+                PopupMenu aContextMenu(ModuleRes(RID_MENU_JOINVIEW_TABLE));
+                switch (aContextMenu.Execute(this, ptWhere))
                 {
                     case SID_DELETE:
                         Remove();
@@ -700,7 +718,7 @@ bool OTableWindow::PreNotify(NotifyEvent& rNEvt)
                             m_nMoveIncrement    = 1;
                         }
                     }
-                    m_nSizingFlags = SizingFlags::NONE;
+                    resetSizingFlag();
                 }
                 else
                 {
@@ -740,17 +758,17 @@ OUString OTableWindow::getTitle() const
     return m_xTitle->GetText();
 }
 
-void OTableWindow::_elementInserted( const container::ContainerEvent& /*_rEvent*/ )
+void OTableWindow::_elementInserted( const container::ContainerEvent& /*_rEvent*/ )  throw(css::uno::RuntimeException, std::exception)
 {
     FillListBox();
 }
 
-void OTableWindow::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ )
+void OTableWindow::_elementRemoved( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
 {
     FillListBox();
 }
 
-void OTableWindow::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ )
+void OTableWindow::_elementReplaced( const container::ContainerEvent& /*_rEvent*/ ) throw(css::uno::RuntimeException, std::exception)
 {
     FillListBox();
 }

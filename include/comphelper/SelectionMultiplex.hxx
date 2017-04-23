@@ -24,7 +24,6 @@
 #include <com/sun/star/view/XSelectionSupplier.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/comphelperdllapi.h>
-#include <rtl/ref.hxx>
 
 
 //= selection helper classes
@@ -44,18 +43,17 @@ namespace comphelper
     {
         friend class OSelectionChangeMultiplexer;
 
-        rtl::Reference<OSelectionChangeMultiplexer>  m_xAdapter;
-        ::osl::Mutex&                                m_rMutex;
+        OSelectionChangeMultiplexer*    m_pAdapter;
+        ::osl::Mutex&                   m_rMutex;
 
     public:
         OSelectionChangeListener(::osl::Mutex& _rMutex)
-            : m_rMutex(_rMutex) { }
+            : m_pAdapter(nullptr), m_rMutex(_rMutex) { }
         virtual ~OSelectionChangeListener();
 
-        /// @throws css::uno::RuntimeException
-        virtual void _selectionChanged( const css::lang::EventObject& aEvent ) = 0;
-        /// @throws css::uno::RuntimeException
-        virtual void _disposing(const css::lang::EventObject& _rSource);
+        virtual void _selectionChanged( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException) = 0;
+        virtual void _disposing(const css::lang::EventObject& _rSource)
+            throw (css::uno::RuntimeException, std::exception);
 
     protected:
         // pseudo-private. Making it private now could break compatibility
@@ -72,19 +70,20 @@ namespace comphelper
         css::uno::Reference< css::view::XSelectionSupplier>  m_xSet;
         OSelectionChangeListener*                            m_pListener;
         sal_Int32                                            m_nLockCount;
+        bool                                                 m_bListening        : 1;
 
         OSelectionChangeMultiplexer(const OSelectionChangeMultiplexer&) = delete;
         OSelectionChangeMultiplexer& operator=(const OSelectionChangeMultiplexer&) = delete;
     protected:
-        virtual ~OSelectionChangeMultiplexer() override;
+        virtual ~OSelectionChangeMultiplexer();
     public:
         OSelectionChangeMultiplexer(OSelectionChangeListener* _pListener, const  css::uno::Reference< css::view::XSelectionSupplier>& _rxSet);
 
     // XEventListener
-        virtual void SAL_CALL disposing( const  css::lang::EventObject& Source ) override;
+        virtual void SAL_CALL disposing( const  css::lang::EventObject& Source ) throw( css::uno::RuntimeException, std::exception) override;
 
     // XSelectionChangeListener
-        virtual void SAL_CALL selectionChanged( const css::lang::EventObject& aEvent ) override;
+        virtual void SAL_CALL selectionChanged( const css::lang::EventObject& aEvent ) throw (css::uno::RuntimeException, std::exception) override;
 
         /// incremental lock
         void        lock();
@@ -92,6 +91,8 @@ namespace comphelper
         void        unlock();
         /// get the lock count
         sal_Int32   locked() const { return m_nLockCount; }
+
+        void dispose();
     };
 
 

@@ -33,7 +33,7 @@ using namespace ::osl;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star;
 
-#define ROOTNODE_SLIDESORTERBAR                "Office.Impress/MultiPaneGUI/SlideSorterBar/Visible"
+#define ROOTNODE_SLIDESORTERBAR                OUString("Office.Impress/MultiPaneGUI/SlideSorterBar/Visible")
 
 #define PROPERTYNAME_VISIBLE_IMPRESSVIEW       OUString("ImpressView")
 #define PROPERTYHANDLE_VISIBLE_IMPRESSVIEW     0
@@ -55,11 +55,11 @@ class SvtSlideSorterBarOptions_Impl : public ConfigItem
     public:
 
          SvtSlideSorterBarOptions_Impl();
-        ~SvtSlideSorterBarOptions_Impl() override;
+        virtual ~SvtSlideSorterBarOptions_Impl();
 
         /** called for notify of configmanager
 
-            This method is called from the ConfigManager before the application ends or from the
+            These method is called from the ConfigManager before application ends or from the
             PropertyChangeListener if the sub tree broadcasts changes. You must update your
             internal values.
 
@@ -83,11 +83,11 @@ class SvtSlideSorterBarOptions_Impl : public ConfigItem
         bool m_bVisibleDrawView;
 
     private:
-        virtual void ImplCommit() final override;
+        virtual void ImplCommit() override;
 
-        /** return list of key names of our configuration management which represent our module tree
+        /** return list of key names of our configuration management which represent oue module tree
 
-            This method returns a static const list of key names. We need it to get needed values from
+            These methods return a static const list of key names. We need it to get needed values from our
             configuration management.
 
             \return A list of needed configuration keys is returned.
@@ -193,8 +193,7 @@ SvtSlideSorterBarOptions_Impl::SvtSlideSorterBarOptions_Impl()
 
 SvtSlideSorterBarOptions_Impl::~SvtSlideSorterBarOptions_Impl()
 {
-    if (IsModified())
-        Commit();
+    assert(!IsModified()); // should have been committed
 }
 
 static int lcl_MapPropertyName( const OUString& rCompare,
@@ -344,20 +343,20 @@ void SvtSlideSorterBarOptions_Impl::SetVisibleViewImpl( bool& bVisibleView, bool
     }
 }
 
-namespace {
-    std::weak_ptr<SvtSlideSorterBarOptions_Impl> g_pSlideSorterBarOptions;
-}
+//  initialize static member, see definition for further information
+//  DON'T DO IT IN YOUR HEADER!
+SvtSlideSorterBarOptions_Impl* SvtSlideSorterBarOptions::m_pDataContainer    = nullptr  ;
+sal_Int32                      SvtSlideSorterBarOptions::m_nRefCount = 0     ;
 
 SvtSlideSorterBarOptions::SvtSlideSorterBarOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl = g_pSlideSorterBarOptions.lock();
-    if( !m_pImpl )
+    ++m_nRefCount;
+    // ... and initialize our data container only if it not already exist!
+    if( m_pDataContainer == nullptr )
     {
-        m_pImpl = std::make_shared<SvtSlideSorterBarOptions_Impl>();
-        g_pSlideSorterBarOptions = m_pImpl;
+       m_pDataContainer = new SvtSlideSorterBarOptions_Impl;
     }
 }
 
@@ -365,68 +364,75 @@ SvtSlideSorterBarOptions::~SvtSlideSorterBarOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-
-    m_pImpl.reset();
+    --m_nRefCount;
+    // If last instance was deleted we must destroy our static data container!
+    if( m_nRefCount <= 0 )
+    {
+        if (m_pDataContainer->IsModified())
+            m_pDataContainer->Commit();
+        delete m_pDataContainer;
+        m_pDataContainer = nullptr;
+    }
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleImpressView() const
 {
-    return m_pImpl->m_bVisibleImpressView && !comphelper::LibreOfficeKit::isActive();
+    return m_pDataContainer->m_bVisibleImpressView && !comphelper::LibreOfficeKit::isActive();
 }
 
 void SvtSlideSorterBarOptions::SetVisibleImpressView(bool bVisible)
 {
-    m_pImpl->SetVisibleImpressView( bVisible );
+    m_pDataContainer->SetVisibleImpressView( bVisible );
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleOutlineView() const
 {
-    return m_pImpl->m_bVisibleOutlineView;
+    return m_pDataContainer->m_bVisibleOutlineView;
 }
 
 void SvtSlideSorterBarOptions::SetVisibleOutlineView(bool bVisible)
 {
-    m_pImpl->SetVisibleOutlineView( bVisible );
+    m_pDataContainer->SetVisibleOutlineView( bVisible );
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleNotesView() const
 {
-    return m_pImpl->m_bVisibleNotesView;
+    return m_pDataContainer->m_bVisibleNotesView;
 }
 
 void SvtSlideSorterBarOptions::SetVisibleNotesView(bool bVisible)
 {
-    m_pImpl->SetVisibleNotesView( bVisible );
+    m_pDataContainer->SetVisibleNotesView( bVisible );
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleHandoutView() const
 {
-    return m_pImpl->m_bVisibleHandoutView;
+    return m_pDataContainer->m_bVisibleHandoutView;
 }
 
 void SvtSlideSorterBarOptions::SetVisibleHandoutView(bool bVisible)
 {
-    m_pImpl->SetVisibleHandoutView( bVisible );
+    m_pDataContainer->SetVisibleHandoutView( bVisible );
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleSlideSorterView() const
 {
-    return m_pImpl->m_bVisibleSlideSorterView && !comphelper::LibreOfficeKit::isActive();
+    return m_pDataContainer->m_bVisibleSlideSorterView && !comphelper::LibreOfficeKit::isActive();
 }
 
 void SvtSlideSorterBarOptions::SetVisibleSlideSorterView(bool bVisible)
 {
-    m_pImpl->SetVisibleSlideSorterView( bVisible );
+    m_pDataContainer->SetVisibleSlideSorterView( bVisible );
 }
 
 bool SvtSlideSorterBarOptions::GetVisibleDrawView() const
 {
-    return m_pImpl->m_bVisibleDrawView;
+    return m_pDataContainer->m_bVisibleDrawView;
 }
 
 void SvtSlideSorterBarOptions::SetVisibleDrawView(bool bVisible)
 {
-    m_pImpl->SetVisibleDrawView( bVisible );
+    m_pDataContainer->SetVisibleDrawView( bVisible );
 }
 
 namespace

@@ -37,29 +37,27 @@ namespace com { namespace sun { namespace star {
 
 namespace swf {
 
-/// @throws css::uno::RuntimeException
-OUString FlashExportFilter_getImplementationName();
+OUString FlashExportFilter_getImplementationName()
+    throw (css::uno::RuntimeException);
 
-/// @throws css::uno::RuntimeException
 css::uno::Sequence<OUString> SAL_CALL
-FlashExportFilter_getSupportedServiceNames();
+FlashExportFilter_getSupportedServiceNames() throw (css::uno::RuntimeException);
 
-/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL
 FlashExportFilter_createInstance(
-    css::uno::Reference<css::lang::XMultiServiceFactory> const & rSMgr);
+    css::uno::Reference<css::lang::XMultiServiceFactory> const & rSMgr)
+    throw (css::uno::Exception);
 
 }
 
-/// @throws css::uno::RuntimeException
-OUString SWFDialog_getImplementationName ();
+OUString SWFDialog_getImplementationName () throw (css::uno::RuntimeException);
 
-/// @throws css::uno::RuntimeException
-css::uno::Sequence<OUString> SAL_CALL SWFDialog_getSupportedServiceNames();
+css::uno::Sequence<OUString> SAL_CALL SWFDialog_getSupportedServiceNames()
+    throw (css::uno::RuntimeException);
 
-/// @throws css::uno::Exception
 css::uno::Reference<css::uno::XInterface> SAL_CALL SWFDialog_createInstance(
-    css::uno::Reference<css::lang::XMultiServiceFactory> const & rSMgr);
+    css::uno::Reference<css::lang::XMultiServiceFactory> const & rSMgr)
+    throw(css::uno::Exception);
 
 #endif
 

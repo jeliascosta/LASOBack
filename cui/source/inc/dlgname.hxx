@@ -36,11 +36,11 @@ private:
 
     Link<SvxNameDialog&,bool> aCheckNameHdl;
 
-    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
 
 public:
     SvxNameDialog( vcl::Window* pWindow, const OUString& rName, const OUString& rDesc );
-    virtual ~SvxNameDialog() override;
+    virtual ~SvxNameDialog();
     virtual void dispose() override;
 
     void    GetName( OUString& rName ){rName = pEdtName->GetText();}
@@ -49,7 +49,7 @@ public:
         field is changed.  The Link result determines whether the OK
         Button is enabled (> 0) or disabled (== 0).
 
-        @param rLink a Callback declared with DECL_LINK and implemented with
+        @param rLink a Callback declared with DECL_LINK_TYPED and implemented with
                IMPL_LINK, that is executed on modification.
 
         @param bCheckImmediately If true, the Link is called directly after
@@ -60,7 +60,7 @@ public:
         @todo Remove the parameter bCheckImmediately and incorporate the 'true'
               behaviour as default.
      */
-    void    SetCheckNameHdl( const Link<SvxNameDialog&,bool>& rLink, bool bCheckImmediately )
+    void    SetCheckNameHdl( const Link<SvxNameDialog&,bool>& rLink, bool bCheckImmediately = false )
     {
         aCheckNameHdl = rLink;
         if ( bCheckImmediately )
@@ -85,12 +85,12 @@ private:
     // callback link for name uniqueness
     Link<SvxObjectNameDialog&,bool> aCheckNameHdl;
 
-    DECL_LINK(ModifyHdl, Edit&, void);
+    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
 
 public:
     // constructor
     SvxObjectNameDialog(vcl::Window* pWindow, const OUString& rName);
-    virtual ~SvxObjectNameDialog() override;
+    virtual ~SvxObjectNameDialog();
     virtual void dispose() override;
 
     // data access
@@ -117,7 +117,7 @@ private:
 public:
     // constructor
     SvxObjectTitleDescDialog(vcl::Window* pWindow, const OUString& rTitle, const OUString& rDesc);
-    virtual ~SvxObjectTitleDescDialog() override;
+    virtual ~SvxObjectTitleDescDialog();
     virtual void dispose() override;
     // data access
     void GetTitle(OUString& rTitle) {rTitle = pEdtTitle->GetText(); }
@@ -138,12 +138,12 @@ private:
     VclPtr<FixedImage>     pFtImage;
     Image*          pImage;
 
-    DECL_LINK(Button1Hdl, Button*, void);
-    DECL_LINK(Button2Hdl, Button*, void);
+    DECL_LINK_TYPED(Button1Hdl, Button*, void);
+    DECL_LINK_TYPED(Button2Hdl, Button*, void);
 
 public:
     SvxMessDialog( vcl::Window* pWindow, const OUString& rText, const OUString& rDesc, Image* pImg = nullptr );
-    virtual ~SvxMessDialog() override;
+    virtual ~SvxMessDialog();
     virtual void dispose() override;
 
     void    SetButtonText( SvxMessDialogButton nBtnId, const OUString& rNewTxt );

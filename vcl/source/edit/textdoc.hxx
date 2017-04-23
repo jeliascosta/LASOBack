@@ -32,7 +32,8 @@ private:
     TextCharAttribList(const TextCharAttribList&) = delete;
     TextCharAttribList& operator=(const TextCharAttribList&) = delete;
 
-    std::vector<std::unique_ptr<TextCharAttrib> > maAttribs;
+    typedef std::vector<std::unique_ptr<TextCharAttrib> > TextCharAttribs;
+    TextCharAttribs maAttribs;
     bool            mbHasEmptyAttribs;
 
 public:
@@ -54,7 +55,7 @@ public:
     bool&           HasEmptyAttribs()       { return mbHasEmptyAttribs; }
 
     TextCharAttrib* FindAttrib( sal_uInt16 nWhich, sal_Int32 nPos );
-    const TextCharAttrib* FindNextAttrib( sal_uInt16 nWhich, sal_Int32 nFromPos, sal_Int32 nMaxPos ) const;
+    const TextCharAttrib* FindNextAttrib( sal_uInt16 nWhich, sal_Int32 nFromPos, sal_Int32 nMaxPos = SAL_MAX_INT32 ) const;
     TextCharAttrib* FindEmptyAttrib( sal_uInt16 nWhich, sal_Int32 nPos );
     bool            HasAttrib( sal_uInt16 nWhich ) const;
     bool            HasBoundingAttrib( sal_Int32 nBound );
@@ -68,7 +69,7 @@ private:
 
 protected:
     void                ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNewChars );
-    void                CollapseAttribs( sal_Int32 nIndex, sal_Int32 nDelChars );
+    void                CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDelChars );
 
 public:
                         TextNode( const OUString& rText );

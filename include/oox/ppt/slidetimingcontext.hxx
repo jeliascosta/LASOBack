@@ -20,12 +20,12 @@
 #ifndef INCLUDED_OOX_PPT_SLIDETIMINGCONTEXT_HXX
 #define INCLUDED_OOX_PPT_SLIDETIMINGCONTEXT_HXX
 
-#include <oox/core/contexthandler.hxx>
-#include <oox/core/fragmenthandler2.hxx>
+#include <com/sun/star/animations/XTimeContainer.hpp>
 #include <oox/ppt/timenode.hxx>
-#include <sal/types.h>
+#include <oox/core/fragmenthandler2.hxx>
 
-namespace oox { class AttributeList; }
+#include <stack>
+#include <vector>
 
 namespace oox { namespace ppt {
 
@@ -33,7 +33,7 @@ class SlideTimingContext : public ::oox::core::FragmentHandler2
 {
 public:
     SlideTimingContext( ::oox::core::FragmentHandler2& rParent, TimeNodePtrList & aTimeNodeList ) throw();
-    virtual ~SlideTimingContext() throw() override;
+    virtual ~SlideTimingContext() throw();
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;
 

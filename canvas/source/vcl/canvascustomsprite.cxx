@@ -60,11 +60,11 @@ namespace vclcanvas
 
 
         const ::Size aSize(
-            static_cast<sal_Int32>( std::max( 1.0,
+            static_cast<sal_Int32>( ::std::max( 1.0,
                                                 ceil( rSpriteSize.Width ))),  // round up to nearest int,
                                                                               // enforce sprite to have at
                                                                                // least (1,1) pixel size
-            static_cast<sal_Int32>( std::max( 1.0,
+            static_cast<sal_Int32>( ::std::max( 1.0,
                                                 ceil( rSpriteSize.Height ))) );
 
         // create content backbuffer in screen depth
@@ -115,19 +115,21 @@ namespace vclcanvas
         maCanvasHelper.clear();
     }
 
-    OUString SAL_CALL CanvasCustomSprite::getImplementationName()
+    OUString SAL_CALL CanvasCustomSprite::getImplementationName() throw( uno::RuntimeException, std::exception )
     {
         return OUString( "VCLCanvas.CanvasCustomSprite" );
     }
 
-    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName )
+    sal_Bool SAL_CALL CanvasCustomSprite::supportsService( const OUString& ServiceName ) throw( uno::RuntimeException, std::exception )
     {
         return cppu::supportsService( this, ServiceName );
     }
 
-    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()
+    uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()  throw( uno::RuntimeException, std::exception )
     {
-        return { "com.sun.star.rendering.CanvasCustomSprite" };
+        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasCustomSprite" };
+
+        return aRet;
     }
 
     // Sprite

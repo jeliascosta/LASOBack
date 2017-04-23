@@ -30,7 +30,7 @@ namespace dbaccess
 {
 
     // SubComponentRecovery
-    class SubComponentRecovery
+    class DBACCESS_DLLPRIVATE SubComponentRecovery
     {
     public:
         SubComponentRecovery(

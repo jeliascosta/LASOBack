@@ -76,15 +76,19 @@ class NamingService_Impl
     HashMap_OWString_Interface          aMap;
 public:
     NamingService_Impl();
+    virtual ~NamingService_Impl();
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName ) override;
-    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName()
+    throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
+    throw(css::uno::RuntimeException, std::exception) override;
+    virtual Sequence< OUString > SAL_CALL getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception) override;
 
-    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRegisteredObject( const OUString& Name ) override;
-    virtual void SAL_CALL registerObject( const OUString& Name, const css::uno::Reference< css::uno::XInterface >& Object ) override;
-    virtual void SAL_CALL revokeObject( const OUString& Name ) override;
+    virtual css::uno::Reference< css::uno::XInterface > SAL_CALL getRegisteredObject( const OUString& Name ) throw(Exception, RuntimeException, std::exception) override;
+    virtual void SAL_CALL registerObject( const OUString& Name, const css::uno::Reference< css::uno::XInterface >& Object ) throw(Exception, RuntimeException, std::exception) override;
+    virtual void SAL_CALL revokeObject( const OUString& Name ) throw(Exception, RuntimeException, std::exception) override;
 };
 
 
@@ -97,26 +101,32 @@ static Reference<XInterface> SAL_CALL NamingService_Impl_create(
 
 NamingService_Impl::NamingService_Impl() {}
 
+
+NamingService_Impl::~NamingService_Impl() {}
+
 // XServiceInfo
 OUString NamingService_Impl::getImplementationName()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return ns_getImplementationName();
 }
 
 // XServiceInfo
 sal_Bool NamingService_Impl::supportsService( const OUString & rServiceName )
+    throw(css::uno::RuntimeException, std::exception)
 {
     return cppu::supportsService(this, rServiceName);
 }
 
 // XServiceInfo
 Sequence< OUString > NamingService_Impl::getSupportedServiceNames()
+    throw(css::uno::RuntimeException, std::exception)
 {
     return ns_getSupportedServiceNames();
 }
 
 // XServiceInfo
-Reference< XInterface > NamingService_Impl::getRegisteredObject( const OUString& Name )
+Reference< XInterface > NamingService_Impl::getRegisteredObject( const OUString& Name ) throw(Exception, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( aMutex );
     Reference< XInterface > xRet;
@@ -127,14 +137,14 @@ Reference< XInterface > NamingService_Impl::getRegisteredObject( const OUString&
 }
 
 // XServiceInfo
-void NamingService_Impl::registerObject( const OUString& Name, const Reference< XInterface >& Object )
+void NamingService_Impl::registerObject( const OUString& Name, const Reference< XInterface >& Object ) throw(Exception, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( aMutex );
     aMap[ Name ] = Object;
 }
 
 // XServiceInfo
-void NamingService_Impl::revokeObject( const OUString& Name )
+void NamingService_Impl::revokeObject( const OUString& Name ) throw(Exception, RuntimeException, std::exception)
 {
     Guard< Mutex > aGuard( aMutex );
     aMap.erase( Name );

@@ -15,23 +15,15 @@
 
 #include "node.hxx"
 
-#include <cassert>
-#include <memory>
-#include <vector>
-
 /** Representation of caret position with an equation */
 struct SmCaretPos{
-    SmCaretPos(SmNode* selectedNode = nullptr, int iIndex = 0)
-        : pSelectedNode(selectedNode)
-        , nIndex(iIndex)
-    {
-        assert(nIndex >= 0);
+    SmCaretPos(SmNode* selectedNode = nullptr, int iIndex = 0) {
+        pSelectedNode = selectedNode;
+        Index = iIndex;
     }
-
     /** Selected node */
     SmNode* pSelectedNode;
-
-    /** Index (invariant: non-negative) within the selected node
+    /** Index within the selected node
      *
      * 0: Position in front of a node
      * 1: Position after a node or after first char in SmTextNode
@@ -41,12 +33,11 @@ struct SmCaretPos{
      */
     //TODO: Special cases for SmBlankNode is needed
     //TODO: Consider forgetting about the todo above... As it's really unpleasant.
-    int nIndex;
-
+    int Index;
     /** True, if this is a valid caret position */
     bool IsValid() const { return pSelectedNode != nullptr; }
     bool operator==(const SmCaretPos &pos) const {
-        return pos.pSelectedNode == pSelectedNode && nIndex == pos.nIndex;
+        return pos.pSelectedNode == pSelectedNode && Index == pos.Index;
     }
     /** Get the caret position after pNode, regardless of pNode
      *
@@ -74,7 +65,7 @@ public:
     long SquaredDistanceX(const SmCaretLine& line) const{
         return (GetLeft() - line.GetLeft()) * (GetLeft() - line.GetLeft());
     }
-    long SquaredDistanceX(const Point &pos) const{
+    long SquaredDistanceX(Point pos) const{
         return (GetLeft() - pos.X()) * (GetLeft() - pos.X());
     }
     long SquaredDistanceY(const SmCaretLine& line) const{
@@ -87,7 +78,7 @@ public:
             return 0;
         return d * d;
     }
-    long SquaredDistanceY(const Point &pos) const{
+    long SquaredDistanceY(Point pos) const{
         long d = GetTop() - pos.Y();
         if(d < 0)
             d = (d * -1) - GetHeight();
@@ -105,9 +96,9 @@ private:
 
 /** An entry in SmCaretPosGraph */
 struct SmCaretPosGraphEntry{
-    SmCaretPosGraphEntry(SmCaretPos pos,
-                         SmCaretPosGraphEntry* left,
-                         SmCaretPosGraphEntry* right) {
+    SmCaretPosGraphEntry(SmCaretPos pos = SmCaretPos(),
+                       SmCaretPosGraphEntry* left = nullptr,
+                       SmCaretPosGraphEntry* right = nullptr){
         CaretPos = pos;
         Left = left;
         Right = right;
@@ -126,33 +117,74 @@ struct SmCaretPosGraphEntry{
     }
 };
 
+class SmCaretPosGraph;
+
+/** Iterator for SmCaretPosGraph */
+class SmCaretPosGraphIterator{
+public:
+    SmCaretPosGraphIterator(SmCaretPosGraph* graph){
+        pGraph = graph;
+        nOffset = 0;
+        pEntry = nullptr;
+    }
+    /** Get the next entry, NULL if none */
+    SmCaretPosGraphEntry* Next();
+    /** Get the current entry, NULL if none */
+    SmCaretPosGraphEntry* Current(){
+        return pEntry;
+    }
+    /** Get the current entry, NULL if none */
+    SmCaretPosGraphEntry* operator->(){
+        return pEntry;
+    }
+private:
+    /** Next entry to return */
+    int nOffset;
+    /** Current graph */
+    SmCaretPosGraph* pGraph;
+    /** Current entry */
+    SmCaretPosGraphEntry* pEntry;
+};
+
+
 /** A graph over all caret positions
  * @remarks Graphs can only grow, entries cannot be removed!
  */
 class SmCaretPosGraph{
 public:
-    SmCaretPosGraph();
-
+    SmCaretPosGraph(){
+        pNext = nullptr;
+        nOffset = 0;
+    }
     ~SmCaretPosGraph();
-
     /** Add a caret position
-     *  @remarks If left is NULL, they will point back to the entry.
+     *  @remarks If Left and/or Right are set NULL, they will point back to the entry.
+     */
+    SmCaretPosGraphEntry* Add(SmCaretPosGraphEntry entry);
+    /** Add a caret position
+     *  @remarks If left and/or right are set NULL, they will point back to the entry.
      */
     SmCaretPosGraphEntry* Add(SmCaretPos pos,
-                            SmCaretPosGraphEntry* left = nullptr);
-
-    std::vector<std::unique_ptr<SmCaretPosGraphEntry>>::iterator begin()
-    {
-        return mvEntries.begin();
+                            SmCaretPosGraphEntry* left = nullptr,
+                            SmCaretPosGraphEntry* right = nullptr){
+        SAL_WARN_IF( pos.Index < 0, "starmath", "Index shouldn't be -1!" );
+        return Add(SmCaretPosGraphEntry(pos, left, right));
     }
-
-    std::vector<std::unique_ptr<SmCaretPosGraphEntry>>::iterator end()
-    {
-        return mvEntries.end();
+    /** Get an iterator for this graph */
+    SmCaretPosGraphIterator GetIterator(){
+        return SmCaretPosGraphIterator(this);
     }
-
+    friend class SmCaretPosGraphIterator;
 private:
-    std::vector<std::unique_ptr<SmCaretPosGraphEntry>> mvEntries;
+    /** Define SmCaretPosGraph to be less than one page 4096 */
+    static const int SmCaretPosGraphSize = 255;
+
+    /** Next graph, to be used when this graph is full */
+    SmCaretPosGraph* pNext;
+    /** Next free entry in graph */
+    int nOffset;
+    /** Entries in this graph segment */
+    SmCaretPosGraphEntry Graph[SmCaretPosGraphSize];
 };
 
 /** \page visual_formula_editing Visual Formula Editing

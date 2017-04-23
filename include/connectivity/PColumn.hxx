@@ -55,7 +55,7 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper() const override;
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
-            virtual ~OParseColumn() override;
+            virtual ~OParseColumn();
         public:
             OParseColumn(const css::uno::Reference< css::beans::XPropertySet>& _xColumn, bool _bCase);
             OParseColumn(const OUString& Name,
@@ -122,7 +122,7 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper() const override;
             virtual ::cppu::IPropertyArrayHelper & SAL_CALL getInfoHelper() override;
 
-            virtual ~OOrderColumn() override;
+            virtual ~OOrderColumn();
         public:
             OOrderColumn(
                 const css::uno::Reference< css::beans::XPropertySet>& _xColumn,
@@ -139,7 +139,7 @@ namespace connectivity
 
             virtual void construct() override;
 
-            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) override;
+            virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw(css::uno::RuntimeException, std::exception) override;
         private:
             using OOrderColumn_BASE::createArrayHelper;
         };

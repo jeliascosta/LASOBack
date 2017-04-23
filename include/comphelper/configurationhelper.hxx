@@ -101,11 +101,11 @@ public:
      *
      *  This method must be used in combination with openConfig().
      *  The cached configuration access must be provided here ... and
-     *  all operations are made relative to this access point.
+     *  all operations are made relativ to this access point.
      *
      *  @param  xCFG
      *          the configuration root, where sRelPath should be interpreted.
-     *          as relative path
+     *          as relativ path
      *
      *  @param  sRelPath
      *          path relative to xCFG parameter.
@@ -130,11 +130,11 @@ public:
      *
      *  This method must be used in combination with openConfig().
      *  The cached configuration access must be provided here ... and
-     *  all operations are made relative to this access point.
+     *  all operations are made relativ to this access point.
      *
      *  @param  xCFG
      *          the configuration root, where sRelPath should be interpreted.
-     *          as relative path
+     *          as relativ path
      *
      *  @param  sRelPath
      *          path relative to xCFG parameter.
@@ -161,14 +161,14 @@ public:
      *
      *  This method must be used in combination with openConfig().
      *  The cached configuration access must be provided here ... and
-     *  all operations are made relative to this access point.
+     *  all operations are made relativ to this access point.
      *
      *  Further this method must be used only with configuration set's.
      *  Atomic keys can't be "created" ... they "exists every time".
      *
      *  @param  xCFG
      *          the configuration root, where sRelPathToSet should be interpreted
-     *          as relative path.
+     *          as relativ path.
      *
      *  @param  sRelPathToSet
      *          path relative to xCFG parameter.
@@ -210,7 +210,7 @@ public:
      * Because it opens the specified configuration package, reads the key and
      * closes the configuration again.
      *
-     * So it's not very useful to use this method for reading multiple keys at the same time.
+     * So its not very useful to use this method for reading multiple keys at the same time.
      * (Excepting these keys exists inside different configuration packages ...))
      */
     static css::uno::Any readDirectKey(const css::uno::Reference< css::uno::XComponentContext >&    rxContext,
@@ -226,7 +226,7 @@ public:
      * Because it opens the specified configuration package, writes the key, flush
      * all changes and closes the configuration again.
      *
-     * So it's not very useful to use this method for writing multiple keys at the same time.
+     * So its not very useful to use this method for writing multiple keys at the same time.
      * (Excepting these keys exists inside different configuration packages ...))
      */
     static void writeDirectKey(const css::uno::Reference< css::uno::XComponentContext >&    rxContext,

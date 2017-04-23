@@ -47,7 +47,7 @@ class DocListenerBox    :public ListBox
 {
 protected:
     DocListenerBox( vcl::Window* pParent );
-    virtual ~DocListenerBox() override;
+    virtual ~DocListenerBox();
     virtual void dispose() override;
 
 protected:
@@ -92,7 +92,7 @@ protected:
 
 public:
                     LibBox( vcl::Window* pParent );
-    virtual         ~LibBox() override;
+    virtual         ~LibBox();
     virtual void    dispose() override;
 
     using           Window::Update;
@@ -131,7 +131,7 @@ protected:
 
 public:
     LanguageBox( vcl::Window* pParent );
-    virtual ~LanguageBox() override;
+    virtual ~LanguageBox();
     virtual void    dispose() override;
 
     using           Window::Update;

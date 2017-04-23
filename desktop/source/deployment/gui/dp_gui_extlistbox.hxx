@@ -74,6 +74,7 @@ struct Entry_Impl
     OUString        m_sErrorText;
     OUString        m_sLicenseText;
     Image           m_aIcon;
+    Image           m_aIconHC;
     VclPtr<FixedHyperlink> m_pPublisher;
 
     css::uno::Reference<css::deployment::XPackage> m_xPackage;
@@ -96,11 +97,12 @@ class ExtensionRemovedListener : public ::cppu::WeakImplHelper<css::lang::XEvent
 public:
 
     explicit ExtensionRemovedListener( ExtensionBox_Impl *pParent ) { m_pParent = pParent; }
-    virtual ~ExtensionRemovedListener() override;
+    virtual ~ExtensionRemovedListener();
 
 
     // XEventListener
-    virtual void SAL_CALL disposing(css::lang::EventObject const& evt) override;
+    virtual void SAL_CALL disposing(css::lang::EventObject const& evt)
+        throw (css::uno::RuntimeException, std::exception) override;
 };
 
 
@@ -124,9 +126,11 @@ class ExtensionBox_Impl : public ::svt::IExtensionListBox
     Image m_aWarningImage;
     Image m_aDefaultImage;
 
+    Link<FixedHyperlink&,void> m_aClickHdl;
+
     VclPtr<ScrollBar>      m_pScrollBar;
 
-    rtl::Reference<ExtensionRemovedListener> m_xRemoveListener;
+    css::uno::Reference<ExtensionRemovedListener> m_xRemoveListener;
 
     TheExtensionManager      *m_pManager;
     //This mutex is used for synchronizing access to m_vEntries.
@@ -153,32 +157,35 @@ class ExtensionBox_Impl : public ::svt::IExtensionListBox
     void CalcActiveHeight( const long nPos );
     long GetTotalHeight() const;
     void SetupScrollBar();
-    void DrawRow(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect, const TEntry_Impl& rEntry);
+    void DrawRow(vcl::RenderContext& rRenderContext, const Rectangle& rRect, const TEntry_Impl& rEntry);
     bool HandleCursorKey( sal_uInt16 nKeyCode );
     bool FindEntryPos( const TEntry_Impl& rEntry, long nStart, long nEnd, long &nFound );
     void DeleteRemoved();
 
 
-    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl, ScrollBar*, void );
 
     void Init();
 public:
     explicit ExtensionBox_Impl(vcl::Window* pParent);
-    virtual ~ExtensionBox_Impl() override;
+    virtual ~ExtensionBox_Impl();
     virtual void dispose() override;
 
     virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
-    virtual void Paint( vcl::RenderContext& rRenderContext, const tools::Rectangle &rPaintRect ) override;
+    virtual void Paint( vcl::RenderContext& rRenderContext, const Rectangle &rPaintRect ) override;
     virtual void Resize() override;
-    virtual bool EventNotify( NotifyEvent& rNEvt ) override;
+    virtual bool Notify( NotifyEvent& rNEvt ) override;
     virtual Size GetOptimalSize() const override;
 
+    void            SetExtraSize( long nSize ) { m_nExtraHeight = nSize; }
     TEntry_Impl     GetEntryData( long nPos ) { return m_vEntries[ nPos ]; }
     long            GetEntryCount() { return (long) m_vEntries.size(); }
-    tools::Rectangle       GetEntryRect( const long nPos ) const;
+    Rectangle       GetEntryRect( const long nPos ) const;
     bool            HasActive() { return m_bHasActive; }
     long            PointToPos( const Point& rPos );
+    void            SetScrollHdl( const Link<ScrollBar*,void>& rLink );
     void            DoScroll( long nDelta );
+    void            SetHyperlinkHdl( const Link<FixedHyperlink&,void>& rLink ){ m_aClickHdl = rLink; }
     virtual void    RecalcAll();
     void            RemoveUnlocked();
 

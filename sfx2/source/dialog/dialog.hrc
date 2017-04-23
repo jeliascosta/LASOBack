@@ -24,8 +24,15 @@
 
 // defines ---------------------------------------------------------------
 
+#define ID_NEW                          1
+#define ID_EDIT                         2
+#define ID_DELETE                       3
+#define ID_HIDE                         4
+#define ID_SHOW                         5
+
 #define RC_DIALOG_BEGIN                 RID_SFX_DIALOG_START
 
+#define RID_DLG_ALIEN_WARNING           ( RC_DIALOG_BEGIN + 0)
 #define STR_RESET                       ( RC_DIALOG_BEGIN + 0)
 #define STR_QUERY_OVERWRITE             ( RC_DIALOG_BEGIN + 1)
 #define STR_TABPAGE_INVALIDNAME         ( RC_DIALOG_BEGIN + 13)
@@ -36,26 +43,27 @@
 #define STR_DELETE_STYLE                ( RC_DIALOG_BEGIN + 19)
 #define STR_DELETE_STYLE_USED           ( RC_DIALOG_BEGIN + 20)
 
+#define MN_CONTEXT_TEMPLDLG             ( RC_DIALOG_BEGIN + 46)
+
 #define STR_VIEWVERSIONCOMMENT          ( RC_DIALOG_BEGIN + 71 )
 #define STR_NO_NAME_SET                 ( RC_DIALOG_BEGIN + 72 )
 
 #define STR_ERROR_WRONG_CONFIRM         ( RC_DIALOG_BEGIN + 76 )
 
+#define STR_APPLY                       ( RC_DIALOG_BEGIN + 87 )
+
 // 100-106 in tbxcust.hrc
 #define STR_MACRO_LOSS                  ( RC_DIALOG_BEGIN + 107 )
 #define STR_CANCEL_RECORDING            ( RC_DIALOG_BEGIN + 108 )
 
+#define RID_DLG_SEARCH                  ( RC_DIALOG_BEGIN + 109 )
+
 #define STR_PDF_EXPORT_SEND             ( RC_DIALOG_BEGIN + 120 )
-#define STR_STYLE_FILL_FORMAT_MODE      ( RC_DIALOG_BEGIN + 121 )
-#define STR_STYLE_NEW_STYLE_FROM_SELECTION ( RC_DIALOG_BEGIN + 122 )
-#define STR_STYLE_UPDATE_STYLE          ( RC_DIALOG_BEGIN + 123 )
+#define IMG_INFO                        ( RC_DIALOG_BEGIN + 122 )
+
 #define SFX_ST_EDIT                     ( RC_DIALOG_BEGIN + 124 )
 #define STR_STYLE_ELEMTLIST             ( RC_DIALOG_BEGIN + 125 )
 #define STR_FONT_TABPAGE                ( RC_DIALOG_BEGIN + 126 )
-#define STR_PREVIEW_CHECKBOX            ( RC_DIALOG_BEGIN + 127 )
-#define RID_SFXBMP_WATERCAN             ( RC_DIALOG_BEGIN + 128 )
-#define RID_SFXBMP_NEW_BY_EXAMPLE       ( RC_DIALOG_BEGIN + 129 )
-#define RID_SFXBMP_UPDATE_BY_EXAMPLE    ( RC_DIALOG_BEGIN + 130 )
 
 #endif
 

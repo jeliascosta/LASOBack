@@ -26,6 +26,7 @@
 #include <vector>
 #include <xmloff/xmlstyle.hxx>
 
+//UUUU
 #include <unordered_set>
 
 struct XMLPropertyState;
@@ -35,6 +36,7 @@ namespace com { namespace sun { namespace star {
     namespace beans { class XPropertySet; }
 } } }
 
+//UUUU
 typedef std::unordered_set<OUString, OUStringHash> OldFillStyleDefinitionSet;
 
 class XMLOFF_DLLPUBLIC XMLPropStyleContext : public SvXMLStyleContext
@@ -46,38 +48,45 @@ private:
     css::uno::Reference < css::style::XStyle > mxStyle;
     SvXMLImportContextRef                      mxStyles;
 
+    //UUUU
+    static OldFillStyleDefinitionSet maStandardSet;
+    static OldFillStyleDefinitionSet maHeaderSet;
+    static OldFillStyleDefinitionSet maFooterSet;
+    static OldFillStyleDefinitionSet maParaSet;
+
     XMLPropStyleContext(XMLPropStyleContext &) = delete;
     void operator =(XMLPropStyleContext &) = delete;
 
 protected:
 
-    // Helper to check if the local maProperties contains the given
+    //UUUU Helper to check if the local maProperties contains the given
     // FillStyle tag and if the FillStyle there is different from FillStyle_NONE
     bool doNewDrawingLayerFillStyleDefinitionsExist(
         const ::rtl::OUString& rFillStyleTag) const;
 
-    // Helper which will deactivate all old fill definitions (identified by
+    //UUUU Helper which will deactivate all old fill definitions (identified by
     // the given OldFillStyleDefinitionSet) in the local maProperties. Deactivation
     // is done setting theindex to -1. It returns true when actually old fill
     // definitions existed and were deactivated
     void deactivateOldFillStyleDefinitions(
         const OldFillStyleDefinitionSet& rHashSetOfTags);
 
-    // Helper to translate new DrawingLayer FillStyle values which are name-based
+    //UUUU Helper to translate new DrawingLayer FillStyle values which are name-based
     // from ODF internal name to style display names which can be found in the current
     // document model (using NameOrIndex Items). The change is executed on the internal
     // maProperties. The return value is true when actually names were changed
     void translateNameBasedDrawingLayerFillStyleDefinitionsToStyleDisplayNames();
 
-    // provider for often used sets
+    //UUUU provider for often used sets
     static const OldFillStyleDefinitionSet& getStandardSet();
     static const OldFillStyleDefinitionSet& getHeaderSet();
     static const OldFillStyleDefinitionSet& getFooterSet();
+    static const OldFillStyleDefinitionSet& getParaSet();
 
     virtual void SetAttribute( sal_uInt16 nPrefixKey,
                                const OUString& rLocalName,
                                const OUString& rValue ) override;
-    SvXMLStylesContext *GetStyles() { return static_cast<SvXMLStylesContext *>(mxStyles.get()); }
+    SvXMLStylesContext *GetStyles() { return static_cast<SvXMLStylesContext *>(&mxStyles); }
     ::std::vector< XMLPropertyState > & GetProperties() { return maProperties; }
 
     // Override this method to create a new style. It's called by
@@ -91,9 +100,9 @@ public:
     XMLPropStyleContext( SvXMLImport& rImport, sal_uInt16 nPrfx,
             const OUString& rLName,
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
-            SvXMLStylesContext& rStyles, sal_uInt16 nFamily,
+            SvXMLStylesContext& rStyles, sal_uInt16 nFamily = 0,
             bool bDefaultStyle=false );
-    virtual ~XMLPropStyleContext() override;
+    virtual ~XMLPropStyleContext();
 
     virtual SvXMLImportContext *CreateChildContext(
             sal_uInt16 nPrefix,
@@ -103,7 +112,7 @@ public:
     virtual void FillPropertySet(
             const css::uno::Reference< css::beans::XPropertySet > & rPropSet );
 
-    const SvXMLStylesContext *GetStyles() const { return static_cast<const SvXMLStylesContext *>(mxStyles.get()); }
+    const SvXMLStylesContext *GetStyles() const { return static_cast<const SvXMLStylesContext *>(&mxStyles); }
     const ::std::vector< XMLPropertyState > & GetProperties() const { return maProperties; }
 
     const css::uno::Reference< css::style::XStyle >&

@@ -171,7 +171,7 @@ public class _XControl extends MultiMethodTest {
 
     /**
     * Test calls the method. Then mode is checked using isDesignMode().<p>
-    * Has <b> OK </b> status if mode is switched.
+    * Has <b> OK </b> status if mode is swithed.
     */
     public void _setDesignMode() {
     desMode = oObj.isDesignMode();

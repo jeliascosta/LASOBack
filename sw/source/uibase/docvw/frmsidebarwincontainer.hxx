@@ -25,12 +25,10 @@
 class SwFrame;
 class SwFormatField;
 namespace vcl { class Window; }
-namespace sw { namespace annotation {
-    class SwAnnotationWin;
-} }
 
 namespace sw { namespace sidebarwindows {
 
+class SwSidebarWin;
 class FrameSidebarWinContainer;
 
 class SwFrameSidebarWinContainer
@@ -41,14 +39,14 @@ class SwFrameSidebarWinContainer
 
         bool insert( const SwFrame& rFrame,
                      const SwFormatField& rFormatField,
-                     sw::annotation::SwAnnotationWin& rSidebarWin );
+                     SwSidebarWin& rSidebarWin );
 
         bool remove( const SwFrame& rFrame,
-                     const sw::annotation::SwAnnotationWin& rSidebarWin );
+                     const SwSidebarWin& rSidebarWin );
 
         bool empty( const SwFrame& rFrame );
 
-        sw::annotation::SwAnnotationWin* get( const SwFrame& rFrame,
+        SwSidebarWin* get( const SwFrame& rFrame,
                            const sal_Int32 nIndex );
 
         void getAll( const SwFrame& rFrame,

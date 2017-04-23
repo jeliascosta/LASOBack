@@ -173,14 +173,7 @@ namespace tools
             addPolyPolygon(rPolyPoly,XOR);
         }
 
-        void transform(const basegfx::B2DHomMatrix& rTranslate)
-        {
-            maPendingRanges.transform(rTranslate);
-            maPendingPolygons.transform(rTranslate);
-            maClipPoly.transform(rTranslate);
-        }
-
-        B2DPolyPolygon const & getClipPoly() const
+        B2DPolyPolygon getClipPoly() const
         {
             commitPendingRanges();
             commitPendingPolygons();
@@ -203,7 +196,7 @@ namespace tools
             switch(mePendingOps)
             {
                 case UNION:
-                    assert( !bIsCleared );
+                    OSL_ASSERT( !bIsCleared );
 
                     if( bIsEmpty )
                         maClipPoly = maPendingPolygons;
@@ -213,7 +206,7 @@ namespace tools
                             maPendingPolygons);
                     break;
                 case INTERSECT:
-                    assert( !bIsEmpty );
+                    OSL_ASSERT( !bIsEmpty );
 
                     if( bIsCleared )
                         maClipPoly = maPendingPolygons;
@@ -247,7 +240,7 @@ namespace tools
                             maPendingPolygons);
                     break;
                 case SUBTRACT:
-                    assert( !bIsEmpty );
+                    OSL_ASSERT( !bIsEmpty );
 
                     // first union all pending ones, subtract en bloc then
                     maPendingPolygons = solveCrossovers(maPendingPolygons);
@@ -293,7 +286,7 @@ namespace tools
             switch(mePendingOps)
             {
                 case UNION:
-                    assert( !bIsCleared );
+                    OSL_ASSERT( !bIsCleared );
 
                     aCollectedRanges = maPendingRanges.solveCrossovers();
                     aCollectedRanges = stripNeutralPolygons(aCollectedRanges);
@@ -306,7 +299,7 @@ namespace tools
                             aCollectedRanges);
                     break;
                 case INTERSECT:
-                    assert( !bIsEmpty );
+                    OSL_ASSERT( !bIsEmpty );
 
                     aCollectedRanges = maPendingRanges.solveCrossovers();
                     aCollectedRanges = stripNeutralPolygons(aCollectedRanges);
@@ -349,7 +342,7 @@ namespace tools
                             aCollectedRanges);
                     break;
                 case SUBTRACT:
-                    assert( !bIsEmpty );
+                    OSL_ASSERT( !bIsEmpty );
 
                     // first union all pending ranges, subtract en bloc then
                     aCollectedRanges = maPendingRanges.solveCrossovers();
@@ -400,10 +393,6 @@ namespace tools
         mpImpl(rOrig.mpImpl)
     {}
 
-    B2DClipState::B2DClipState( B2DClipState&& rOrig ) :
-        mpImpl(std::move(rOrig.mpImpl))
-    {}
-
     B2DClipState::B2DClipState( const B2DPolyPolygon& rPolyPoly ) :
         mpImpl( ImplB2DClipState(rPolyPoly) )
     {}
@@ -411,12 +400,6 @@ namespace tools
     B2DClipState& B2DClipState::operator=( const B2DClipState& rRHS )
     {
         mpImpl = rRHS.mpImpl;
-        return *this;
-    }
-
-    B2DClipState& B2DClipState::operator=( B2DClipState&& rRHS )
-    {
-        mpImpl = std::move(rRHS.mpImpl);
         return *this;
     }
 
@@ -487,12 +470,6 @@ namespace tools
     {
         return mpImpl->getClipPoly();
     }
-
-    void B2DClipState::transform(const basegfx::B2DHomMatrix& rTranslate)
-    {
-        return mpImpl->transform(rTranslate);
-    }
-
 
 } // end of namespace tools
 } // end of namespace basegfx

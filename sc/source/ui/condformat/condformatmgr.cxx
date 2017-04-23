@@ -30,7 +30,7 @@ ScCondFormatManagerWindow::ScCondFormatManagerWindow(SvSimpleTableContainer& rPa
 
     Init();
     Show();
-    SetSelectionMode(SelectionMode::Multiple);
+    SetSelectionMode(MULTIPLE_SELECTION);
 }
 
 OUString ScCondFormatManagerWindow::createEntryString(const ScConditionalFormat& rFormat)
@@ -99,7 +99,7 @@ void ScCondFormatManagerWindow::setColSizes()
         return;
     long aStaticTabs[]= { 2, 0, 0 };
     aStaticTabs[2] = rBar.GetSizePixel().Width() / 2;
-    SvSimpleTable::SetTabs(aStaticTabs, MapUnit::MapPixel);
+    SvSimpleTable::SetTabs(aStaticTabs, MAP_PIXEL);
 }
 
 ScCondFormatManagerDlg::ScCondFormatManagerDlg(vcl::Window* pParent, ScDocument* pDoc, const ScConditionalFormatList* pFormatList):
@@ -109,7 +109,7 @@ ScCondFormatManagerDlg::ScCondFormatManagerDlg(vcl::Window* pParent, ScDocument*
     mbModified(false)
 {
     SvSimpleTableContainer *pContainer = get<SvSimpleTableContainer>("CONTAINER");
-    Size aSize(LogicToPixel(Size(290, 220), MapUnit::MapAppFont));
+    Size aSize(LogicToPixel(Size(290, 220), MAP_APPFONT));
     pContainer->set_width_request(aSize.Width());
     pContainer->set_height_request(aSize.Height());
     m_pCtrlManager = VclPtr<ScCondFormatManagerWindow>::Create(*pContainer, mpDoc, mpFormatList);
@@ -153,18 +153,18 @@ ScConditionalFormat* ScCondFormatManagerDlg::GetCondFormatSelected()
     return m_pCtrlManager->GetSelection();
 }
 
-IMPL_LINK_NOARG(ScCondFormatManagerDlg, RemoveBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScCondFormatManagerDlg, RemoveBtnHdl, Button*, void)
 {
     m_pCtrlManager->DeleteSelection();
     mbModified = true;
 }
 
-IMPL_LINK_NOARG(ScCondFormatManagerDlg, EditBtnClickHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScCondFormatManagerDlg, EditBtnClickHdl, Button*, void)
 {
     mbModified = true;
     EditBtnHdl(nullptr);
 }
-IMPL_LINK_NOARG(ScCondFormatManagerDlg, EditBtnHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG_TYPED(ScCondFormatManagerDlg, EditBtnHdl, SvTreeListBox*, bool)
 {
     ScConditionalFormat* pFormat = m_pCtrlManager->GetSelection();
 
@@ -177,7 +177,7 @@ IMPL_LINK_NOARG(ScCondFormatManagerDlg, EditBtnHdl, SvTreeListBox*, bool)
     return false;
 }
 
-IMPL_LINK_NOARG(ScCondFormatManagerDlg, AddBtnHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScCondFormatManagerDlg, AddBtnHdl, Button*, void)
 {
     mbModified = true;
     EndDialog( DLG_RET_ADD );

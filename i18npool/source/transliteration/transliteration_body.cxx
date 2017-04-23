@@ -18,10 +18,9 @@
  */
 
 #include <rtl/ustrbuf.hxx>
-#include <rtl/ref.hxx>
 #include <i18nutil/casefolding.hxx>
 #include <i18nutil/unicode.hxx>
-#include <com/sun/star/i18n/MultipleCharsOutputException.hpp>
+
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
 #include <osl/diagnose.h>
@@ -46,7 +45,7 @@ Transliteration_body::Transliteration_body()
     implementationName = "com.sun.star.i18n.Transliteration.Transliteration_body";
 }
 
-sal_Int16 SAL_CALL Transliteration_body::getType()
+sal_Int16 SAL_CALL Transliteration_body::getType() throw(RuntimeException, std::exception)
 {
     return TransliterationType::ONE_TO_ONE;
 }
@@ -54,12 +53,14 @@ sal_Int16 SAL_CALL Transliteration_body::getType()
 sal_Bool SAL_CALL Transliteration_body::equals(
     const OUString& /*str1*/, sal_Int32 /*pos1*/, sal_Int32 /*nCount1*/, sal_Int32& /*nMatch1*/,
     const OUString& /*str2*/, sal_Int32 /*pos2*/, sal_Int32 /*nCount2*/, sal_Int32& /*nMatch2*/)
+    throw(RuntimeException, std::exception)
 {
     throw RuntimeException();
 }
 
 Sequence< OUString > SAL_CALL
 Transliteration_body::transliterateRange( const OUString& str1, const OUString& str2 )
+    throw( RuntimeException, std::exception)
 {
     Sequence< OUString > ostr(2);
     ostr[0] = str1;
@@ -93,6 +94,7 @@ OUString SAL_CALL
 Transliteration_body::transliterate(
     const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
     Sequence< sal_Int32 >& offset)
+    throw(RuntimeException, std::exception)
 {
     const sal_Unicode *in = inStr.getStr() + startPos;
 
@@ -179,7 +181,7 @@ Transliteration_body::transliterate(
 }
 
 OUString SAL_CALL
-Transliteration_body::transliterateChar2String( sal_Unicode inChar )
+Transliteration_body::transliterateChar2String( sal_Unicode inChar ) throw(RuntimeException, std::exception)
 {
     const Mapping &map = casefolding::getValue(&inChar, 0, 1, aLocale, nMappingType);
     rtl_uString* pStr = rtl_uString_alloc(map.nmap);
@@ -194,7 +196,7 @@ Transliteration_body::transliterateChar2String( sal_Unicode inChar )
 }
 
 sal_Unicode SAL_CALL
-Transliteration_body::transliterateChar2Char( sal_Unicode inChar )
+Transliteration_body::transliterateChar2Char( sal_Unicode inChar ) throw(MultipleCharsOutputException, RuntimeException, std::exception)
 {
     const Mapping &map = casefolding::getValue(&inChar, 0, 1, aLocale, nMappingType);
     if (map.nmap > 1)
@@ -204,7 +206,7 @@ Transliteration_body::transliterateChar2Char( sal_Unicode inChar )
 
 OUString SAL_CALL
 Transliteration_body::folding( const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
-    Sequence< sal_Int32 >& offset)
+    Sequence< sal_Int32 >& offset) throw(RuntimeException, std::exception)
 {
     return this->transliterate(inStr, startPos, nCount, offset);
 }
@@ -255,11 +257,11 @@ Transliteration_titlecase::Transliteration_titlecase()
     implementationName = "com.sun.star.i18n.Transliteration.Transliteration_titlecase";
 }
 
-/// @throws RuntimeException
 static OUString transliterate_titlecase_Impl(
     const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
     const Locale &rLocale,
     Sequence< sal_Int32 >& offset )
+    throw(RuntimeException)
 {
     const OUString aText( inStr.copy( startPos, nCount ) );
 
@@ -267,7 +269,7 @@ static OUString transliterate_titlecase_Impl(
     if (!aText.isEmpty())
     {
         Reference< XComponentContext > xContext = ::comphelper::getProcessComponentContext();
-        rtl::Reference< CharacterClassificationImpl > xCharClassImpl( new CharacterClassificationImpl( xContext ) );
+        Reference< CharacterClassificationImpl > xCharClassImpl( new CharacterClassificationImpl( xContext ) );
 
         // because xCharClassImpl.toTitle does not handle ligatures or Beta but will raise
         // an exception we need to handle the first chara manually...
@@ -307,6 +309,7 @@ static OUString transliterate_titlecase_Impl(
 OUString SAL_CALL Transliteration_titlecase::transliterate(
     const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
     Sequence< sal_Int32 >& offset )
+    throw(RuntimeException, std::exception)
 {
     return transliterate_titlecase_Impl( inStr, startPos, nCount, aLocale, offset );
 }
@@ -323,6 +326,7 @@ Transliteration_sentencecase::Transliteration_sentencecase()
 OUString SAL_CALL Transliteration_sentencecase::transliterate(
     const OUString& inStr, sal_Int32 startPos, sal_Int32 nCount,
     Sequence< sal_Int32 >& offset )
+    throw(RuntimeException, std::exception)
 {
     return transliterate_titlecase_Impl( inStr, startPos, nCount, aLocale, offset );
 }

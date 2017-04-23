@@ -503,10 +503,7 @@ public class XMergeBridge {
             }
             finally{
                 if (newxos != null){
-                    try {
-                        newxos.flush();
-                    } catch (IOException e) {
-                    }
+                    newxos.flush();
                     newxos.close();
                 }
                 xis.close();

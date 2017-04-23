@@ -83,24 +83,15 @@ public:
 
         @return UNacquired interface pointer
     */
-    XInterface * SAL_CALL get() const
+    inline XInterface * SAL_CALL get() const
         { return _pInterface; }
 
     /** Checks if reference is null.
 
         @return true if reference acquires an interface, i.e. true if it is not null
     */
-    bool SAL_CALL is() const
+    inline bool SAL_CALL is() const
         { return (NULL != _pInterface); }
-
-#if defined LIBO_INTERNAL_ONLY
-    /** Checks if reference is null.
-
-        @return true if reference acquires an interface, i.e. true if it is not null
-    */
-    explicit operator bool() const
-        { return is(); }
-#endif
 
     /** Equality operator: compares two interfaces
         Checks if both references are null or refer to the same object.
@@ -256,7 +247,7 @@ class SAL_DLLPUBLIC_RTTI Reference : public BaseReference
         principle, this is not guaranteed to work.  In practice, it seems to
         work on all supported platforms.
     */
-    static interface_type * castFromXInterface(XInterface * p) {
+    static inline interface_type * castFromXInterface(XInterface * p) {
         return static_cast< interface_type * >(static_cast< void * >(p));
     }
 
@@ -271,20 +262,20 @@ class SAL_DLLPUBLIC_RTTI Reference : public BaseReference
         principle, this is not guaranteed to work.  In practice, it seems to
         work on all supported platforms.
     */
-    static XInterface * castToXInterface(interface_type * p) {
+    static inline XInterface * castToXInterface(interface_type * p) {
         return static_cast< XInterface * >(static_cast< void * >(p));
     }
 
 public:
     /// @cond INTERNAL
     // these are here to force memory de/allocation to sal lib.
-    static void * SAL_CALL operator new ( ::size_t nSize )
+    inline static void * SAL_CALL operator new ( ::size_t nSize )
         { return ::rtl_allocateMemory( nSize ); }
-    static void SAL_CALL operator delete ( void * pMem )
+    inline static void SAL_CALL operator delete ( void * pMem )
         { ::rtl_freeMemory( pMem ); }
-    static void * SAL_CALL operator new ( ::size_t, void * pMem )
+    inline static void * SAL_CALL operator new ( ::size_t, void * pMem )
         { return pMem; }
-    static void SAL_CALL operator delete ( void *, void * )
+    inline static void SAL_CALL operator delete ( void *, void * )
         {}
     /// @endcond
 
@@ -342,7 +333,7 @@ public:
         @param pInterface another reference
         @param dummy UNO_REF_NO_ACQUIRE to force obvious distinction to other constructors
     */
-    inline SAL_DEPRECATED("use SAL_NO_ACQUIRE version") Reference( interface_type * pInterface, UnoReference_NoAcquire dummy );
+    inline Reference( interface_type * pInterface, UnoReference_NoAcquire dummy );
 
     /** Constructor: Queries given interface for reference interface type (interface_type).
 
@@ -409,14 +400,14 @@ public:
         any interface must be derived from com.sun.star.uno.XInterface.
         This a useful direct cast possibility.
     */
-    SAL_CALL operator const Reference< XInterface > & () const
+    inline SAL_CALL operator const Reference< XInterface > & () const
         { return * reinterpret_cast< const Reference< XInterface > * >( this ); }
 
     /** Dereference operator: Used to call interface methods.
 
         @return UNacquired interface pointer
     */
-    interface_type * SAL_CALL operator -> () const {
+    inline interface_type * SAL_CALL operator -> () const {
         assert(_pInterface != NULL);
         return castFromXInterface(_pInterface);
     }
@@ -425,7 +416,7 @@ public:
 
         @return UNacquired interface pointer
     */
-    interface_type * SAL_CALL get() const
+    inline interface_type * SAL_CALL get() const
         { return castFromXInterface(_pInterface); }
 
     /** Clears reference, i.e. releases interface. Reference is null after clear() call.
@@ -460,7 +451,7 @@ public:
         @param dummy UNO_REF_NO_ACQUIRE to force obvious distinction to set methods
         @return true, if non-null interface was set
     */
-    inline SAL_DEPRECATED("use SAL_NO_ACQUIRE version") bool SAL_CALL set( interface_type * pInterface, UnoReference_NoAcquire dummy);
+    inline bool SAL_CALL set( interface_type * pInterface, UnoReference_NoAcquire dummy);
 
     /** Queries given interface for reference interface type (interface_type) and sets it.
         An interface already set will be released.

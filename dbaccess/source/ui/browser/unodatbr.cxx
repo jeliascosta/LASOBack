@@ -65,7 +65,6 @@
 #include <com/sun/star/sdb/SQLContext.hpp>
 #include <com/sun/star/sdb/XBookmarksSupplier.hpp>
 #include <com/sun/star/sdb/XCompletedConnection.hpp>
-#include <com/sun/star/sdb/XDatabaseContext.hpp>
 #include <com/sun/star/sdb/XDatabaseRegistrations.hpp>
 #include <com/sun/star/sdb/XDocumentDataSource.hpp>
 #include <com/sun/star/sdb/XParametersSupplier.hpp>
@@ -100,6 +99,7 @@
 #include <comphelper/types.hxx>
 #include <connectivity/dbexception.hxx>
 #include <cppuhelper/exc_hlp.hxx>
+#include <cppuhelper/implbase2.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/dispatch.hxx>
@@ -180,22 +180,22 @@ void SafeRemovePropertyListener(const Reference< XPropertySet > & xSet, const OU
         xSet->removePropertyChangeListener(rPropName, pListener);
 }
 
-OUString SAL_CALL SbaTableQueryBrowser::getImplementationName()
+OUString SAL_CALL SbaTableQueryBrowser::getImplementationName() throw(RuntimeException, std::exception)
 {
     return getImplementationName_Static();
 }
 
-css::uno::Sequence<OUString> SAL_CALL SbaTableQueryBrowser::getSupportedServiceNames()
+css::uno::Sequence<OUString> SAL_CALL SbaTableQueryBrowser::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
     return getSupportedServiceNames_Static();
 }
 
-OUString SbaTableQueryBrowser::getImplementationName_Static()
+OUString SbaTableQueryBrowser::getImplementationName_Static() throw(RuntimeException)
 {
     return OUString("org.openoffice.comp.dbu.ODatasourceBrowser");
 }
 
-css::uno::Sequence<OUString> SbaTableQueryBrowser::getSupportedServiceNames_Static()
+css::uno::Sequence<OUString> SbaTableQueryBrowser::getSupportedServiceNames_Static() throw(RuntimeException)
 {
     css::uno::Sequence<OUString> aSupported { "com.sun.star.sdb.DataSourceBrowser" };
     return aSupported;
@@ -238,7 +238,7 @@ SbaTableQueryBrowser::~SbaTableQueryBrowser()
     m_pSplitter.reset();
 }
 
-Any SAL_CALL SbaTableQueryBrowser::queryInterface(const Type& _rType)
+Any SAL_CALL SbaTableQueryBrowser::queryInterface(const Type& _rType) throw (RuntimeException, std::exception)
 {
     if ( _rType.equals( cppu::UnoType<XScriptInvocationContext>::get() ) )
     {
@@ -254,7 +254,7 @@ Any SAL_CALL SbaTableQueryBrowser::queryInterface(const Type& _rType)
     return aReturn;
 }
 
-Sequence< Type > SAL_CALL SbaTableQueryBrowser::getTypes(  )
+Sequence< Type > SAL_CALL SbaTableQueryBrowser::getTypes(  ) throw (RuntimeException, std::exception)
 {
     Sequence< Type > aTypes( ::comphelper::concatSequences(
         SbaXDataBrowserController::getTypes(),
@@ -265,18 +265,18 @@ Sequence< Type > SAL_CALL SbaTableQueryBrowser::getTypes(  )
     if ( !m_aDocScriptSupport || !*m_aDocScriptSupport )
     {
         Sequence< Type > aStrippedTypes( aTypes.getLength() - 1 );
-        std::remove_copy_if(
+        ::std::remove_copy_if(
             aTypes.getConstArray(),
             aTypes.getConstArray() + aTypes.getLength(),
             aStrippedTypes.getArray(),
-            std::bind2nd( std::equal_to< Type >(), cppu::UnoType<XScriptInvocationContext>::get() )
+            ::std::bind2nd( ::std::equal_to< Type >(), cppu::UnoType<XScriptInvocationContext>::get() )
         );
         aTypes = aStrippedTypes;
     }
     return aTypes;
 }
 
-Sequence< sal_Int8 > SAL_CALL SbaTableQueryBrowser::getImplementationId(  )
+Sequence< sal_Int8 > SAL_CALL SbaTableQueryBrowser::getImplementationId(  ) throw (RuntimeException, std::exception)
 {
     return css::uno::Sequence<sal_Int8>();
 }
@@ -299,7 +299,7 @@ void SAL_CALL SbaTableQueryBrowser::disposing()
     clearTreeModel();
     // clear the tree model
     {
-        std::unique_ptr<SvTreeList> aTemp(m_pTreeModel);
+        ::std::unique_ptr<SvTreeList> aTemp(m_pTreeModel);
         m_pTreeModel = nullptr;
     }
 
@@ -347,7 +347,7 @@ bool SbaTableQueryBrowser::Construct(vcl::Window* pParent)
     {
 
         // create controls and set sizes
-        const long  nFrameWidth = getBrowserView()->LogicToPixel( ::Size( 3, 0 ), MapUnit::MapAppFont ).Width();
+        const long  nFrameWidth = getBrowserView()->LogicToPixel( ::Size( 3, 0 ), MAP_APPFONT ).Width();
 
         m_pSplitter = VclPtr<Splitter>::Create(getBrowserView(),WB_HSCROLL);
         m_pSplitter->SetPosSizePixel( ::Point(0,0), ::Size(nFrameWidth,0) );
@@ -363,7 +363,7 @@ bool SbaTableQueryBrowser::Construct(vcl::Window* pParent)
         m_pTreeView->SetHelpId(HID_CTL_TREEVIEW);
 
         // a default pos for the splitter, so that the listbox is about 80 (logical) pixels wide
-        m_pSplitter->SetSplitPosPixel( getBrowserView()->LogicToPixel( ::Size( 80, 0 ), MapUnit::MapAppFont ).Width() );
+        m_pSplitter->SetSplitPosPixel( getBrowserView()->LogicToPixel( ::Size( 80, 0 ), MAP_APPFONT ).Width() );
 
         getBrowserView()->setSplitter(m_pSplitter);
         getBrowserView()->setTreeView(m_pTreeView);
@@ -387,7 +387,7 @@ bool SbaTableQueryBrowser::Construct(vcl::Window* pParent)
 
 namespace
 {
-    struct SelectValueByName : public std::unary_function< OUString, Any >
+    struct SelectValueByName : public ::std::unary_function< OUString, Any >
     {
         const Any& operator()( OUString const& i_name ) const
         {
@@ -479,7 +479,11 @@ void SbaTableQueryBrowser::impl_sanitizeRowSetClauses_nothrow()
         // "SELECT * FROM <table> WHERE <other_table>.<column> = <value>", it will return "<column>". But
         // there's no API at all to retrieve the information about  "<other_table>" - which is what would
         // be needed here.
-        // That'd be a chance to replace getStructuredFilter with something more reasonable.
+        // That'd be a chance to replace getStructuredFilter with something more reasonable. This method
+        // has at least one other problem: for a clause like "<column> != <value>", it will return "<column>"
+        // as column name, "NOT_EQUAL" as operator, and "!= <value>" as value, effectively duplicating the
+        // information about the operator, and begging all clients to manually remove the "!=" from the value
+        // string.
         // So, what really would be handy, is some
         //   XNormalizedFilter getNormalizedFilter();
         // with
@@ -518,7 +522,7 @@ bool SbaTableQueryBrowser::InitializeForm( const Reference< XPropertySet > & i_f
     if(!m_pCurrentlyDisplayed)
         return true;
 
-    // this method set all format settings from the original table or query
+    // this method set all format settings from the orignal table or query
     try
     {
         DBTreeListUserData* pData = static_cast<DBTreeListUserData*>(m_pCurrentlyDisplayed->GetUserData());
@@ -543,12 +547,12 @@ bool SbaTableQueryBrowser::InitializeForm( const Reference< XPropertySet > & i_f
             aPropertyValues.put( aTransferPropertie, pData->xObjectProperties->getPropertyValue( aTransferPropertie ) );
         }
 
-        std::vector< OUString > aNames( aPropertyValues.getNames() );
-        std::sort(aNames.begin(), aNames.end());
+        ::std::vector< OUString > aNames( aPropertyValues.getNames() );
+        ::std::sort(aNames.begin(), aNames.end());
         Sequence< OUString > aPropNames( comphelper::containerToSequence(aNames) );
 
         Sequence< Any > aPropValues( aNames.size() );
-        std::transform( aNames.begin(), aNames.end(), aPropValues.getArray(), SelectValueByName( aPropertyValues ) );
+        ::std::transform( aNames.begin(), aNames.end(), aPropValues.getArray(), SelectValueByName( aPropertyValues ) );
 
         Reference< XMultiPropertySet > xFormMultiSet( i_formProperties, UNO_QUERY_THROW );
         xFormMultiSet->setPropertyValues( aPropNames, aPropValues );
@@ -685,8 +689,8 @@ bool SbaTableQueryBrowser::InitializeGridModel(const Reference< css::form::XForm
                 bool bFormattedIsNumeric    = true;
                 sal_Int32 nType = ::comphelper::getINT32( xColumn->getPropertyValue( PROPERTY_TYPE ) );
 
-                std::vector< NamedValue > aInitialValues;
-                std::vector< OUString > aCopyProperties;
+                ::std::vector< NamedValue > aInitialValues;
+                ::std::vector< OUString > aCopyProperties;
                 Any aDefault;
 
                 switch(nType)
@@ -695,13 +699,13 @@ bool SbaTableQueryBrowser::InitializeGridModel(const Reference< css::form::XForm
                     case DataType::BOOLEAN:
                     {
                         aCurrentModelType = "CheckBox";
-                        aInitialValues.push_back( NamedValue( "VisualEffect", makeAny( VisualEffect::FLAT ) ) );
+                        aInitialValues.push_back( NamedValue( OUString( "VisualEffect" ), makeAny( VisualEffect::FLAT ) ) );
                         sDefaultProperty = PROPERTY_DEFAULTSTATE;
 
                         sal_Int32 nNullable = ColumnValue::NULLABLE_UNKNOWN;
                         OSL_VERIFY( xColumn->getPropertyValue( PROPERTY_ISNULLABLE ) >>= nNullable );
                         aInitialValues.push_back( NamedValue(
-                            "TriState",
+                            OUString( "TriState" ),
                             makeAny( ColumnValue::NO_NULLS != nNullable )
                         ) );
                         if ( ColumnValue::NO_NULLS == nNullable )
@@ -711,7 +715,7 @@ bool SbaTableQueryBrowser::InitializeGridModel(const Reference< css::form::XForm
 
                     case DataType::LONGVARCHAR:
                     case DataType::CLOB:
-                        aInitialValues.push_back( NamedValue( "MultiLine", makeAny( true ) ) );
+                        aInitialValues.push_back( NamedValue( OUString( "MultiLine" ), makeAny( true ) ) );
                         SAL_FALLTHROUGH;
                     case DataType::BINARY:
                     case DataType::VARBINARY:
@@ -729,8 +733,8 @@ bool SbaTableQueryBrowser::InitializeGridModel(const Reference< css::form::XForm
                         sDefaultProperty = PROPERTY_EFFECTIVEDEFAULT;
 
                         if ( xSupplier.is() )
-                            aInitialValues.push_back( NamedValue( "FormatsSupplier", makeAny( xSupplier ) ) );
-                        aInitialValues.push_back( NamedValue( "TreatAsNumber", makeAny( bFormattedIsNumeric ) ) );
+                            aInitialValues.push_back( NamedValue( OUString("FormatsSupplier"), makeAny( xSupplier ) ) );
+                        aInitialValues.push_back( NamedValue( OUString("TreatAsNumber"), makeAny( bFormattedIsNumeric ) ) );
                         aCopyProperties.push_back( static_cast<const OUString&>(PROPERTY_FORMATKEY) );
                         break;
                 }
@@ -791,14 +795,14 @@ bool SbaTableQueryBrowser::InitializeGridModel(const Reference< css::form::XForm
                     aInitialValues.push_back( NamedValue( PROPERTY_MOUSE_WHEEL_BEHAVIOR, makeAny( MouseWheelBehavior::SCROLL_DISABLED ) ) );
 
                 // now set all those values
-                for ( std::vector< NamedValue >::const_iterator property = aInitialValues.begin();
+                for ( ::std::vector< NamedValue >::const_iterator property = aInitialValues.begin();
                       property != aInitialValues.end();
                       ++property
                     )
                 {
                     xGridCol->setPropertyValue( property->Name, property->Value );
                 }
-                for ( std::vector< OUString >::const_iterator copyPropertyName = aCopyProperties.begin();
+                for ( ::std::vector< OUString >::const_iterator copyPropertyName = aCopyProperties.begin();
                       copyPropertyName != aCopyProperties.end();
                       ++copyPropertyName
                     )
@@ -845,7 +849,7 @@ void SbaTableQueryBrowser::transferChangedControlProperty(const OUString& _rProp
     }
 }
 
-void SbaTableQueryBrowser::propertyChange(const PropertyChangeEvent& evt)
+void SbaTableQueryBrowser::propertyChange(const PropertyChangeEvent& evt) throw(css::uno::RuntimeException, std::exception)
 {
     SbaXDataBrowserController::propertyChange(evt);
 
@@ -952,7 +956,7 @@ void SbaTableQueryBrowser::propertyChange(const PropertyChangeEvent& evt)
     }
 }
 
-sal_Bool SbaTableQueryBrowser::suspend(sal_Bool bSuspend)
+sal_Bool SbaTableQueryBrowser::suspend(sal_Bool bSuspend) throw( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );
@@ -975,7 +979,7 @@ sal_Bool SbaTableQueryBrowser::suspend(sal_Bool bSuspend)
     return bRet;
 }
 
-void SAL_CALL SbaTableQueryBrowser::statusChanged( const FeatureStateEvent& _rEvent )
+void SAL_CALL SbaTableQueryBrowser::statusChanged( const FeatureStateEvent& _rEvent ) throw(RuntimeException, std::exception)
 {
     // search the external dispatcher causing this call
     Reference< XDispatch > xSource(_rEvent.Source, UNO_QUERY);
@@ -1001,11 +1005,11 @@ void SAL_CALL SbaTableQueryBrowser::statusChanged( const FeatureStateEvent& _rEv
                     OSL_ENSURE(bProperFormat, "SbaTableQueryBrowser::statusChanged: need a data access descriptor here!");
                     m_aDocumentDataSource.initializeFrom(aDescriptor);
 
-                    OSL_ENSURE( (   m_aDocumentDataSource.has(DataAccessDescriptorProperty::DataSource)
-                                ||  m_aDocumentDataSource.has(DataAccessDescriptorProperty::DatabaseLocation)
+                    OSL_ENSURE( (   m_aDocumentDataSource.has(daDataSource)
+                                ||  m_aDocumentDataSource.has(daDatabaseLocation)
                                 )
-                                &&  m_aDocumentDataSource.has(DataAccessDescriptorProperty::Command)
-                                &&  m_aDocumentDataSource.has(DataAccessDescriptorProperty::CommandType),
+                                &&  m_aDocumentDataSource.has(daCommand)
+                                &&  m_aDocumentDataSource.has(daCommandType),
                         "SbaTableQueryBrowser::statusChanged: incomplete descriptor!");
 
                     // check if we know the object which is set as document data source
@@ -1040,13 +1044,13 @@ void SbaTableQueryBrowser::checkDocumentDataSource()
                 // TODO: should we expand the object container? This may be too expensive just for checking ....
             else
             {
-                if ((nullptr == pObjectEntry) && m_aDocumentDataSource.has(DataAccessDescriptorProperty::CommandType) && m_aDocumentDataSource.has(DataAccessDescriptorProperty::Command))
+                if ((nullptr == pObjectEntry) && m_aDocumentDataSource.has(daCommandType) && m_aDocumentDataSource.has(daCommand))
                 {   // maybe we have a command to be displayed ?
                     sal_Int32 nCommandType = CommandType::TABLE;
-                    m_aDocumentDataSource[DataAccessDescriptorProperty::CommandType] >>= nCommandType;
+                    m_aDocumentDataSource[daCommandType] >>= nCommandType;
 
                     OUString sCommand;
-                    m_aDocumentDataSource[DataAccessDescriptorProperty::Command] >>= sCommand;
+                    m_aDocumentDataSource[daCommand] >>= sCommand;
 
                     bKnownDocDataSource = (CommandType::COMMAND == nCommandType) && (!sCommand.isEmpty());
                 }
@@ -1064,15 +1068,15 @@ void SbaTableQueryBrowser::checkDocumentDataSource()
 void SbaTableQueryBrowser::extractDescriptorProps(const svx::ODataAccessDescriptor& _rDescriptor, OUString& _rDataSource, OUString& _rCommand, sal_Int32& _rCommandType, bool& _rEscapeProcessing)
 {
     _rDataSource = _rDescriptor.getDataSource();
-    if ( _rDescriptor.has(DataAccessDescriptorProperty::Command) )
-        _rDescriptor[DataAccessDescriptorProperty::Command] >>= _rCommand;
-    if ( _rDescriptor.has(DataAccessDescriptorProperty::CommandType) )
-        _rDescriptor[DataAccessDescriptorProperty::CommandType] >>= _rCommandType;
+    if ( _rDescriptor.has(daCommand) )
+        _rDescriptor[daCommand] >>= _rCommand;
+    if ( _rDescriptor.has(daCommandType) )
+        _rDescriptor[daCommandType] >>= _rCommandType;
 
     // escape processing is the only one allowed not to be present
     _rEscapeProcessing = true;
-    if (_rDescriptor.has(DataAccessDescriptorProperty::EscapeProcessing))
-        _rEscapeProcessing = ::cppu::any2bool(_rDescriptor[DataAccessDescriptorProperty::EscapeProcessing]);
+    if (_rDescriptor.has(daEscapeProcessing))
+        _rEscapeProcessing = ::cppu::any2bool(_rDescriptor[daEscapeProcessing]);
 }
 
 namespace
@@ -1082,8 +1086,8 @@ namespace
         INetURLObject aURL( _rDS );
         if ( aURL.GetProtocol() != INetProtocol::NotValid )
         {
-            _rDisplayName = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DecodeMechanism::WithCharset);
-            _rUniqueId = aURL.GetMainURL( INetURLObject::DecodeMechanism::NONE );
+            _rDisplayName = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DECODE_WITH_CHARSET);
+            _rUniqueId = aURL.GetMainURL( INetURLObject::NO_DECODE );
             return true;
         }
         _rDisplayName = _rDS;
@@ -1108,13 +1112,13 @@ namespace
     }
 }
 
-OUString SbaTableQueryBrowser::getDataSourceAccessor( SvTreeListEntry* _pDataSourceEntry ) const
+OUString SbaTableQueryBrowser::getDataSourceAcessor( SvTreeListEntry* _pDataSourceEntry ) const
 {
-    OSL_ENSURE( _pDataSourceEntry, "SbaTableQueryBrowser::getDataSourceAccessor: invalid entry!" );
+    OSL_ENSURE( _pDataSourceEntry, "SbaTableQueryBrowser::getDataSourceAcessor: invalid entry!" );
 
     DBTreeListUserData* pData = static_cast< DBTreeListUserData* >( _pDataSourceEntry->GetUserData() );
-    OSL_ENSURE( pData, "SbaTableQueryBrowser::getDataSourceAccessor: invalid entry data!" );
-    OSL_ENSURE( pData->eType == etDatasource, "SbaTableQueryBrowser::getDataSourceAccessor: entry does not denote a data source!" );
+    OSL_ENSURE( pData, "SbaTableQueryBrowser::getDataSourceAcessor: invalid entry data!" );
+    OSL_ENSURE( pData->eType == etDatasource, "SbaTableQueryBrowser::getDataSourceAcessor: entry does not denote a data source!" );
     return !pData->sAccessor.isEmpty() ? OUString(pData->sAccessor) : GetEntryText( _pDataSourceEntry );
 }
 
@@ -1326,8 +1330,8 @@ void SbaTableQueryBrowser::implCheckExternalSlot( sal_uInt16 _nId )
     if ( !m_xMainToolbar.is() )
         return;
 
-    VclPtr<vcl::Window> pToolboxWindow = VCLUnoHelper::GetWindow( m_xMainToolbar );
-    ToolBox* pToolbox = dynamic_cast< ToolBox* >( pToolboxWindow.get() );
+    vcl::Window* pToolboxWindow = VCLUnoHelper::GetWindow( m_xMainToolbar );
+    ToolBox* pToolbox = dynamic_cast< ToolBox* >( pToolboxWindow );
     OSL_ENSURE( pToolbox, "SbaTableQueryBrowser::implCheckExternalSlot: cannot obtain the toolbox window!" );
 
     // check if we have to hide this item from the toolbox
@@ -1342,7 +1346,7 @@ void SbaTableQueryBrowser::implCheckExternalSlot( sal_uInt16 _nId )
     InvalidateFeature( _nId );
 }
 
-void SAL_CALL SbaTableQueryBrowser::disposing( const css::lang::EventObject& _rSource )
+void SAL_CALL SbaTableQueryBrowser::disposing( const css::lang::EventObject& _rSource ) throw(RuntimeException, std::exception)
 {
     // our frame ?
     Reference< css::frame::XFrame >  xSourceFrame(_rSource.Source, UNO_QUERY);
@@ -1369,7 +1373,7 @@ void SAL_CALL SbaTableQueryBrowser::disposing( const css::lang::EventObject& _rS
                     // maybe update the UI
                     implCheckExternalSlot(nSlot);
 
-                    // continue, the same XDispatch may be responsible for more than one URL
+                    // continue, the same XDispatch may be resposible for more than one URL
                 }
             }
         }
@@ -1424,7 +1428,7 @@ void SbaTableQueryBrowser::implRemoveStatusListeners()
     m_aExternalFeatures.clear();
 }
 
-sal_Bool SAL_CALL SbaTableQueryBrowser::select( const Any& _rSelection )
+sal_Bool SAL_CALL SbaTableQueryBrowser::select( const Any& _rSelection ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
         // doin' a lot of VCL stuff here -> lock the SolarMutex
@@ -1445,14 +1449,14 @@ sal_Bool SAL_CALL SbaTableQueryBrowser::select( const Any& _rSelection )
     }
 
     // check the presence of the props we need
-    if ( !(aDescriptor.has(DataAccessDescriptorProperty::DataSource) || aDescriptor.has(DataAccessDescriptorProperty::DatabaseLocation)) || !aDescriptor.has(DataAccessDescriptorProperty::Command) || !aDescriptor.has(DataAccessDescriptorProperty::CommandType))
+    if ( !(aDescriptor.has(daDataSource) || aDescriptor.has(daDatabaseLocation)) || !aDescriptor.has(daCommand) || !aDescriptor.has(daCommandType))
         throw IllegalArgumentException(OUString(), *this, 1);
         // TODO: error message
 
     return implSelect(aDescriptor,true);
 }
 
-Any SAL_CALL SbaTableQueryBrowser::getSelection(  )
+Any SAL_CALL SbaTableQueryBrowser::getSelection(  ) throw (RuntimeException, std::exception)
 {
     Any aReturn;
 
@@ -1464,8 +1468,8 @@ Any SAL_CALL SbaTableQueryBrowser::getSelection(  )
             Reference< XPropertySet > aFormProps(getRowSet(), UNO_QUERY);
             ODataAccessDescriptor aDescriptor(aFormProps);
             // remove properties which are not part of our "selection"
-            aDescriptor.erase(DataAccessDescriptorProperty::Connection);
-            aDescriptor.erase(DataAccessDescriptorProperty::Cursor);
+            aDescriptor.erase(daConnection);
+            aDescriptor.erase(daCursor);
 
             aReturn <<= aDescriptor.createPropertyValueSequence();
         }
@@ -1478,17 +1482,17 @@ Any SAL_CALL SbaTableQueryBrowser::getSelection(  )
     return aReturn;
 }
 
-void SAL_CALL SbaTableQueryBrowser::addSelectionChangeListener( const Reference< XSelectionChangeListener >& _rxListener )
+void SAL_CALL SbaTableQueryBrowser::addSelectionChangeListener( const Reference< XSelectionChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     m_aSelectionListeners.addInterface(_rxListener);
 }
 
-void SAL_CALL SbaTableQueryBrowser::removeSelectionChangeListener( const Reference< XSelectionChangeListener >& _rxListener )
+void SAL_CALL SbaTableQueryBrowser::removeSelectionChangeListener( const Reference< XSelectionChangeListener >& _rxListener ) throw (RuntimeException, std::exception)
 {
     m_aSelectionListeners.removeInterface(_rxListener);
 }
 
-void SbaTableQueryBrowser::attachFrame(const Reference< css::frame::XFrame > & _xFrame)
+void SbaTableQueryBrowser::attachFrame(const Reference< css::frame::XFrame > & _xFrame) throw( RuntimeException, std::exception )
 {
     implRemoveStatusListeners();
 
@@ -1844,6 +1848,7 @@ void SbaTableQueryBrowser::Execute(sal_uInt16 nId, const Sequence< PropertyValue
             break;
 
         case ID_TREE_CLOSE_CONN:
+            openHelpAgent( OString( HID_DSBROWSER_DISCONNECTING ));
             closeConnection( m_pTreeView->getListBox().GetRootLevelParent( m_pTreeView->getListBox().GetCurEntry() ) );
             break;
 
@@ -1972,14 +1977,14 @@ void SbaTableQueryBrowser::Execute(sal_uInt16 nId, const Sequence< PropertyValue
                         xProp->getPropertyValue(PROPERTY_DATASOURCENAME) >>= sDataSourceName;
 
                         aDescriptor.setDataSource(sDataSourceName);
-                        aDescriptor[DataAccessDescriptorProperty::Command]      =   xProp->getPropertyValue(PROPERTY_COMMAND);
-                        aDescriptor[DataAccessDescriptorProperty::CommandType]  =   xProp->getPropertyValue(PROPERTY_COMMAND_TYPE);
-                        aDescriptor[DataAccessDescriptorProperty::Connection]   =   xProp->getPropertyValue(PROPERTY_ACTIVE_CONNECTION);
-                        aDescriptor[DataAccessDescriptorProperty::Cursor]       <<= xCursorClone;
+                        aDescriptor[daCommand]      =   xProp->getPropertyValue(PROPERTY_COMMAND);
+                        aDescriptor[daCommandType]  =   xProp->getPropertyValue(PROPERTY_COMMAND_TYPE);
+                        aDescriptor[daConnection]   =   xProp->getPropertyValue(PROPERTY_ACTIVE_CONNECTION);
+                        aDescriptor[daCursor]       <<= xCursorClone;
                         if ( aSelection.getLength() )
                         {
-                            aDescriptor[DataAccessDescriptorProperty::Selection]            <<= aSelection;
-                            aDescriptor[DataAccessDescriptorProperty::BookmarkSelection]    <<= false;
+                            aDescriptor[daSelection]            <<= aSelection;
+                            aDescriptor[daBookmarkSelection]    <<= false;
                                 // these are selection indices
                                 // before we change this, all clients have to be adjusted
                                 // so that they recognize the new BookmarkSelection property!
@@ -2131,7 +2136,7 @@ void SbaTableQueryBrowser::populateTree(const Reference<XNameAccess>& _xNameAcce
 
 SvTreeListEntry* SbaTableQueryBrowser::implAppendEntry( SvTreeListEntry* _pParent, const OUString& _rName, void* _pUserData, EntryType _eEntryType )
 {
-    std::unique_ptr< ImageProvider > pImageProvider( getImageProviderFor( _pParent ) );
+    ::std::unique_ptr< ImageProvider > pImageProvider( getImageProviderFor( _pParent ) );
 
     Image aImage;
     pImageProvider->getImages( _rName, getDatabaseObjectType( _eEntryType ), aImage );
@@ -2144,7 +2149,7 @@ SvTreeListEntry* SbaTableQueryBrowser::implAppendEntry( SvTreeListEntry* _pParen
     return pNewEntry;
 }
 
-IMPL_LINK(SbaTableQueryBrowser, OnExpandEntry, SvTreeListEntry*, _pParent, bool)
+IMPL_LINK_TYPED(SbaTableQueryBrowser, OnExpandEntry, SvTreeListEntry*, _pParent, bool)
 {
     if (_pParent->HasChildren())
         // nothing to do...
@@ -2303,7 +2308,7 @@ bool SbaTableQueryBrowser::ensureEntryObject( SvTreeListEntry* _pEntry )
                     try
                     {
                         Reference< XQueryDefinitionsSupplier > xQuerySup;
-                        m_xDatabaseContext->getByName( getDataSourceAccessor( pDataSourceEntry ) ) >>= xQuerySup;
+                        m_xDatabaseContext->getByName( getDataSourceAcessor( pDataSourceEntry ) ) >>= xQuerySup;
                         if (xQuerySup.is())
                         {
                             Reference< XNameAccess > xQueryDefs = xQuerySup->getQueryDefinitions();
@@ -2477,7 +2482,7 @@ bool SbaTableQueryBrowser::implSelect(const OUString& _rDataSourceName, const OU
     return false;
 }
 
-IMPL_LINK_NOARG(SbaTableQueryBrowser, OnSelectionChange, LinkParamNone*, void)
+IMPL_LINK_NOARG_TYPED(SbaTableQueryBrowser, OnSelectionChange, LinkParamNone*, void)
 {
     implSelect( m_pTreeView->getListBox().FirstSelected() );
 }
@@ -2675,7 +2680,7 @@ bool SbaTableQueryBrowser::implSelect( SvTreeListEntry* _pEntry )
                 }
             }
 
-            OUString sDataSourceName( getDataSourceAccessor( pConnection ) );
+            OUString sDataSourceName( getDataSourceAcessor( pConnection ) );
             bSuccess = implLoadAnything( sDataSourceName, aName, nCommandType, bEscapeProcessing, pConData->xConnection );
             if ( !bSuccess )
             {   // clean up
@@ -2733,7 +2738,7 @@ SvTreeListEntry* SbaTableQueryBrowser::getEntryFromContainer(const Reference<XNa
     return pContainer;
 }
 
-void SAL_CALL SbaTableQueryBrowser::elementInserted( const ContainerEvent& _rEvent )
+void SAL_CALL SbaTableQueryBrowser::elementInserted( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
@@ -2778,7 +2783,7 @@ bool SbaTableQueryBrowser::isCurrentlyDisplayedChanged(const OUString& _sName,Sv
             &&  m_pTreeView->getListBox().GetEntryText(m_pCurrentlyDisplayed) == _sName;
 }
 
-void SAL_CALL SbaTableQueryBrowser::elementRemoved( const ContainerEvent& _rEvent )
+void SAL_CALL SbaTableQueryBrowser::elementRemoved( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
@@ -2830,7 +2835,7 @@ void SAL_CALL SbaTableQueryBrowser::elementRemoved( const ContainerEvent& _rEven
         SbaXDataBrowserController::elementRemoved(_rEvent);
 }
 
-void SAL_CALL SbaTableQueryBrowser::elementReplaced( const ContainerEvent& _rEvent )
+void SAL_CALL SbaTableQueryBrowser::elementReplaced( const ContainerEvent& _rEvent ) throw(RuntimeException, std::exception)
 {
     SolarMutexGuard aSolarGuard;
 
@@ -3280,9 +3285,9 @@ bool SbaTableQueryBrowser::ensureConnection(SvTreeListEntry* _pAnyEntry, SharedC
     return ensureConnection( pDSEntry, pDSData, _rConnection );
 }
 
-std::unique_ptr< ImageProvider > SbaTableQueryBrowser::getImageProviderFor( SvTreeListEntry* _pAnyEntry )
+::std::unique_ptr< ImageProvider > SbaTableQueryBrowser::getImageProviderFor( SvTreeListEntry* _pAnyEntry )
 {
-    std::unique_ptr< ImageProvider > pImageProvider( new ImageProvider );
+    ::std::unique_ptr< ImageProvider > pImageProvider( new ImageProvider );
     SharedConnection xConnection;
     if ( getExistentConnectionFor( _pAnyEntry, xConnection ) )
         pImageProvider.reset( new ImageProvider( xConnection ) );
@@ -3330,7 +3335,7 @@ bool SbaTableQueryBrowser::ensureConnection( SvTreeListEntry* _pDSEntry, void* p
 
             // connect
             _rConnection.reset(
-                connect( getDataSourceAccessor( _pDSEntry ), sConnectingContext, nullptr ),
+                connect( getDataSourceAcessor( _pDSEntry ), sConnectingContext, nullptr ),
                 SharedConnection::TakeOwnership
             );
 
@@ -3342,7 +3347,7 @@ bool SbaTableQueryBrowser::ensureConnection( SvTreeListEntry* _pDSEntry, void* p
     return _rConnection.is();
 }
 
-IMPL_LINK( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
+IMPL_LINK_TYPED( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _rSortData, sal_Int32 )
 {
     const SvTreeListEntry* pLHS = static_cast<const SvTreeListEntry*>(_rSortData.pLeft);
     const SvTreeListEntry* pRHS = static_cast<const SvTreeListEntry*>(_rSortData.pRight);
@@ -3380,8 +3385,8 @@ IMPL_LINK( SbaTableQueryBrowser, OnTreeEntryCompare, const SvSortData&, _rSortDa
         return 0;
     }
 
-    const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SvLBoxItemType::String));
-    const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SvLBoxItemType::String));
+    const SvLBoxString* pLeftTextItem = static_cast<const SvLBoxString*>(pLHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
+    const SvLBoxString* pRightTextItem = static_cast<const SvLBoxString*>(pRHS->GetFirstItem(SV_ITEM_ID_LBOXSTRING));
     OSL_ENSURE(pLeftTextItem && pRightTextItem, "SbaTableQueryBrowser::OnTreeEntryCompare: invalid text items!");
 
     OUString sLeftText = pLeftTextItem->GetText();
@@ -3424,7 +3429,7 @@ void SbaTableQueryBrowser::implAdministrate( SvTreeListEntry* _pApplyTo )
             pTopLevelSelected = m_pTreeView->getListBox().GetParent(pTopLevelSelected);
         OUString sInitialSelection;
         if (pTopLevelSelected)
-            sInitialSelection = getDataSourceAccessor( pTopLevelSelected );
+            sInitialSelection = getDataSourceAcessor( pTopLevelSelected );
 
         Reference< XDataSource > xDataSource( getDataSourceByName( sInitialSelection, getView(), getORB(), nullptr ) );
         Reference< XModel > xDocumentModel( getDataSourceOrModel( xDataSource ), UNO_QUERY );
@@ -3467,14 +3472,14 @@ bool SbaTableQueryBrowser::requestQuickHelp( const SvTreeListEntry* _pEntry, OUS
     return false;
 }
 
-OUString SbaTableQueryBrowser::getContextMenuResourceName( Control& _rControl ) const
+PopupMenu* SbaTableQueryBrowser::getContextMenu( Control& _rControl ) const
 {
     OSL_PRECOND( &m_pTreeView->getListBox() == &_rControl,
-        "SbaTableQueryBrowser::getContextMenuResourceName: where does this come from?" );
+        "SbaTableQueryBrowser::getContextMenu: where does this come from?" );
     if ( &m_pTreeView->getListBox() != &_rControl )
-        return OUString();
+        return nullptr;
 
-    return OUString("explorer");
+    return new PopupMenu( ModuleRes( MENU_BROWSER_DEFAULTCONTEXT ) );
 }
 
 IController& SbaTableQueryBrowser::getCommandController()
@@ -3516,7 +3521,7 @@ Any SbaTableQueryBrowser::getCurrentSelection( Control& _rControl ) const
     case DatabaseObjectContainer::DATA_SOURCE:
     case DatabaseObjectContainer::QUERIES:
     case DatabaseObjectContainer::TABLES:
-        aSelectedObject.Name = getDataSourceAccessor( pSelected );
+        aSelectedObject.Name = getDataSourceAcessor( pSelected );
         break;
 
     default:
@@ -3541,8 +3546,8 @@ bool SbaTableQueryBrowser::implGetQuerySignature( OUString& _rCommand, bool& _bE
         Reference< XPropertySet > xRowsetProps( getRowSet(), UNO_QUERY );
         ODataAccessDescriptor aDesc( xRowsetProps );
         sDataSourceName = aDesc.getDataSource();
-        aDesc[ DataAccessDescriptorProperty::Command ]      >>= sCommand;
-        aDesc[ DataAccessDescriptorProperty::CommandType ]  >>= nCommandType;
+        aDesc[ daCommand ]      >>= sCommand;
+        aDesc[ daCommandType ]  >>= nCommandType;
 
         // do we need to do anything?
         if ( CommandType::QUERY != nCommandType )
@@ -3575,7 +3580,7 @@ bool SbaTableQueryBrowser::implGetQuerySignature( OUString& _rCommand, bool& _bE
     return false;
 }
 
-void SbaTableQueryBrowser::frameAction(const css::frame::FrameActionEvent& aEvent)
+void SbaTableQueryBrowser::frameAction(const css::frame::FrameActionEvent& aEvent) throw( RuntimeException, std::exception )
 {
     if (aEvent.Frame == m_xCurrentFrameParent)
     {
@@ -3637,7 +3642,7 @@ OUString SbaTableQueryBrowser::getPrivateTitle() const
         sTitle = GetEntryText( pConnection );
         INetURLObject aURL(sTitle);
         if ( aURL.GetProtocol() != INetProtocol::NotValid )
-            sTitle = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DecodeMechanism::WithCharset);
+            sTitle = aURL.getBase(INetURLObject::LAST_SEGMENT,true,INetURLObject::DECODE_WITH_CHARSET);
         if ( !sName.isEmpty() )
         {
             sName += " - ";
@@ -3682,7 +3687,7 @@ void SbaTableQueryBrowser::postReloadForm()
     LoadFinished(true);
 }
 
-Reference< XEmbeddedScripts > SAL_CALL SbaTableQueryBrowser::getScriptContainer()
+Reference< XEmbeddedScripts > SAL_CALL SbaTableQueryBrowser::getScriptContainer() throw (RuntimeException, std::exception)
 {
     // update our database document
     Reference< XModel > xDocument;
@@ -3707,19 +3712,19 @@ Reference< XEmbeddedScripts > SAL_CALL SbaTableQueryBrowser::getScriptContainer(
     return xScripts;
 }
 
-void SAL_CALL SbaTableQueryBrowser::registerContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor )
+void SAL_CALL SbaTableQueryBrowser::registerContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor ) throw (RuntimeException, std::exception)
 {
     if ( Interceptor.is() )
         m_aContextMenuInterceptors.addInterface( Interceptor );
 }
 
-void SAL_CALL SbaTableQueryBrowser::releaseContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor )
+void SAL_CALL SbaTableQueryBrowser::releaseContextMenuInterceptor( const Reference< XContextMenuInterceptor >& Interceptor ) throw (RuntimeException, std::exception)
 {
     if ( Interceptor.is() )
         m_aContextMenuInterceptors.removeInterface( Interceptor );
 }
 
-void SAL_CALL SbaTableQueryBrowser::registeredDatabaseLocation( const DatabaseRegistrationEvent& Event )
+void SAL_CALL SbaTableQueryBrowser::registeredDatabaseLocation( const DatabaseRegistrationEvent& Event ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
     implAddDatasource( Event.Name, SharedConnection() );
@@ -3774,7 +3779,7 @@ void SbaTableQueryBrowser::impl_cleanupDataSourceEntry( const OUString& _rDataSo
     m_pTreeModel->Remove( pDataSourceEntry );
 }
 
-void SAL_CALL SbaTableQueryBrowser::revokedDatabaseLocation( const DatabaseRegistrationEvent& Event )
+void SAL_CALL SbaTableQueryBrowser::revokedDatabaseLocation( const DatabaseRegistrationEvent& Event ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
@@ -3784,7 +3789,7 @@ void SAL_CALL SbaTableQueryBrowser::revokedDatabaseLocation( const DatabaseRegis
     checkDocumentDataSource();
 }
 
-void SAL_CALL SbaTableQueryBrowser::changedDatabaseLocation( const DatabaseRegistrationEvent& Event )
+void SAL_CALL SbaTableQueryBrowser::changedDatabaseLocation( const DatabaseRegistrationEvent& Event ) throw (RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 

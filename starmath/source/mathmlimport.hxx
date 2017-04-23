@@ -26,7 +26,6 @@
 #include <xmloff/xmltoken.hxx>
 
 #include <node.hxx>
-#include <deque>
 #include <memory>
 
 class SfxMedium;
@@ -37,8 +36,6 @@ namespace com { namespace sun { namespace star {
         class XPropertySet; }
 } } }
 
-
-typedef std::deque<std::unique_ptr<SmNode>> SmNodeStack;
 
 class SmXMLImportWrapper
 {
@@ -81,7 +78,6 @@ class SmXMLImport : public SvXMLImport
     std::unique_ptr<SvXMLTokenMap> pPresTableElemTokenMap;
     std::unique_ptr<SvXMLTokenMap> pColorTokenMap;
     std::unique_ptr<SvXMLTokenMap> pActionAttrTokenMap;
-    std::unique_ptr<SvXMLTokenMap> pMspaceAttrTokenMap;
 
         SmNodeStack aNodeStack;
         bool bSuccess;
@@ -91,13 +87,15 @@ public:
     SmXMLImport(
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlags);
-    virtual ~SmXMLImport() throw () override;
+    virtual ~SmXMLImport() throw ();
 
     // XUnoTunnel
-    sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) override;
+    sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw(css::uno::RuntimeException, std::exception) override;
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
 
-    void SAL_CALL endDocument() override;
+    void SAL_CALL endDocument()
+        throw( css::xml::sax::SAXException,
+        css::uno::RuntimeException, std::exception ) override;
 
     SvXMLImportContext *CreateContext(sal_uInt16 nPrefix,
         const OUString &rLocalName,
@@ -238,9 +236,12 @@ public:
     const SvXMLTokenMap &GetPresTableElemTokenMap();
     const SvXMLTokenMap &GetColorTokenMap();
     const SvXMLTokenMap &GetActionAttrTokenMap();
-    const SvXMLTokenMap &GetMspaceAttrTokenMap();
 
     SmNodeStack & GetNodeStack()    { return aNodeStack; }
+    SmNode *GetTree()
+    {
+        return popOrZero(aNodeStack);
+    }
 
     bool GetSuccess()              { return bSuccess; }
     SAL_WARN_UNUSED_RESULT const OUString& GetText() { return aText; }
@@ -287,8 +288,7 @@ enum SmXMLPresLayoutAttrTokenMap
     XML_TOK_FONTSIZE,
     XML_TOK_FONTFAMILY,
     XML_TOK_COLOR,
-    XML_TOK_MATHCOLOR,
-    XML_TOK_MATHVARIANT
+    XML_TOK_MATHCOLOR
 };
 
 
@@ -338,10 +338,6 @@ enum SmXMLActionAttrTokenMap
     XML_TOK_SELECTION
 };
 
-enum SmXMLMspaceAttrTokenMap
-{
-    XML_TOK_WIDTH
-};
 
 #endif
 

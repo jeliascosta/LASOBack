@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <standard/vclxaccessibleradiobutton.hxx>
+#include <accessibility/standard/vclxaccessibleradiobutton.hxx>
 
 #include <toolkit/awt/vclxwindows.hxx>
-#include <helper/accresmgr.hxx>
-#include <helper/accessiblestrings.hrc>
+#include <accessibility/helper/accresmgr.hxx>
+#include <accessibility/helper/accessiblestrings.hrc>
 
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
@@ -30,7 +30,6 @@
 #include <com/sun/star/accessibility/AccessibleRelationType.hpp>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <cppuhelper/typeprovider.hxx>
 #include <comphelper/sequence.hxx>
 #include <vcl/window.hxx>
@@ -63,7 +62,7 @@ void VCLXAccessibleRadioButton::ProcessWindowEvent( const VclWindowEvent& rVclWi
 {
     switch ( rVclWindowEvent.GetId() )
     {
-        case VclEventId::RadiobuttonToggle:
+        case VCLEVENT_RADIOBUTTON_TOGGLE:
         {
             Any aOldValue;
             Any aNewValue;
@@ -90,7 +89,7 @@ void VCLXAccessibleRadioButton::FillAccessibleRelationSet( utl::AccessibleRelati
     VclPtr< RadioButton > pRadioButton = GetAsDynamic< RadioButton >();
     if ( pRadioButton )
     {
-        std::vector< VclPtr<RadioButton> > aGroup(pRadioButton->GetRadioButtonGroup());
+        ::std::vector< VclPtr<RadioButton> > aGroup(pRadioButton->GetRadioButtonGroup());
         if (!aGroup.empty())
         {
             sal_Int32 i = 0;
@@ -135,22 +134,23 @@ IMPLEMENT_FORWARD_XTYPEPROVIDER2( VCLXAccessibleRadioButton, VCLXAccessibleTextC
 // XServiceInfo
 
 
-OUString VCLXAccessibleRadioButton::getImplementationName()
+OUString VCLXAccessibleRadioButton::getImplementationName() throw (RuntimeException, std::exception)
 {
     return OUString( "com.sun.star.comp.toolkit.AccessibleRadioButton" );
 }
 
 
-Sequence< OUString > VCLXAccessibleRadioButton::getSupportedServiceNames()
+Sequence< OUString > VCLXAccessibleRadioButton::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    return { "com.sun.star.awt.AccessibleRadioButton" };
+    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleRadioButton" };
+    return aNames;
 }
 
 
 // XAccessibleAction
 
 
-sal_Int32 VCLXAccessibleRadioButton::getAccessibleActionCount( )
+sal_Int32 VCLXAccessibleRadioButton::getAccessibleActionCount( ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -158,7 +158,7 @@ sal_Int32 VCLXAccessibleRadioButton::getAccessibleActionCount( )
 }
 
 
-sal_Bool VCLXAccessibleRadioButton::doAccessibleAction ( sal_Int32 nIndex )
+sal_Bool VCLXAccessibleRadioButton::doAccessibleAction ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -173,7 +173,7 @@ sal_Bool VCLXAccessibleRadioButton::doAccessibleAction ( sal_Int32 nIndex )
 }
 
 
-OUString VCLXAccessibleRadioButton::getAccessibleActionDescription ( sal_Int32 nIndex )
+OUString VCLXAccessibleRadioButton::getAccessibleActionDescription ( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -184,7 +184,7 @@ OUString VCLXAccessibleRadioButton::getAccessibleActionDescription ( sal_Int32 n
 }
 
 
-Reference< XAccessibleKeyBinding > VCLXAccessibleRadioButton::getAccessibleActionKeyBinding( sal_Int32 nIndex )
+Reference< XAccessibleKeyBinding > VCLXAccessibleRadioButton::getAccessibleActionKeyBinding( sal_Int32 nIndex ) throw (IndexOutOfBoundsException, RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -194,7 +194,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleRadioButton::getAccessibleActio
     OAccessibleKeyBindingHelper* pKeyBindingHelper = new OAccessibleKeyBindingHelper();
     Reference< XAccessibleKeyBinding > xKeyBinding = pKeyBindingHelper;
 
-    VclPtr<vcl::Window> pWindow = GetWindow();
+    vcl::Window* pWindow = GetWindow();
     if ( pWindow )
     {
         KeyEvent aKeyEvent = pWindow->GetActivationKey();
@@ -225,7 +225,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleRadioButton::getAccessibleActio
 // XAccessibleValue
 
 
-Any VCLXAccessibleRadioButton::getCurrentValue(  )
+Any VCLXAccessibleRadioButton::getCurrentValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -239,7 +239,7 @@ Any VCLXAccessibleRadioButton::getCurrentValue(  )
 }
 
 
-sal_Bool VCLXAccessibleRadioButton::setCurrentValue( const Any& aNumber )
+sal_Bool VCLXAccessibleRadioButton::setCurrentValue( const Any& aNumber ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -264,7 +264,7 @@ sal_Bool VCLXAccessibleRadioButton::setCurrentValue( const Any& aNumber )
 }
 
 
-Any VCLXAccessibleRadioButton::getMaximumValue(  )
+Any VCLXAccessibleRadioButton::getMaximumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 
@@ -275,7 +275,7 @@ Any VCLXAccessibleRadioButton::getMaximumValue(  )
 }
 
 
-Any VCLXAccessibleRadioButton::getMinimumValue(  )
+Any VCLXAccessibleRadioButton::getMinimumValue(  ) throw (RuntimeException, std::exception)
 {
     OExternalLockGuard aGuard( this );
 

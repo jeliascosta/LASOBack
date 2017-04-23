@@ -54,14 +54,13 @@ struct WW8SwFlyPara
     sal_Int16 nWidth, nHeight;      // size
     sal_Int16 nNetWidth;
 
-    SwFrameSize eHeightFix;         // height fixed or min
-    RndStdIds   eAnchor;            // binding
-    short       eHRel;              // page or page border
-    short       eVRel;              // page or page border
-    sal_Int16   eVAlign;            // up, down, centered
-    sal_Int16   eHAlign;            // left, right, centered
-    css::text::WrapTextMode
-                eSurround;          // wrap mode
+    SwFrameSize eHeightFix;       // height fixed or min
+    RndStdIds eAnchor;          // binding
+    short eHRel;     // page or page border
+    short eVRel;     // page or page border
+    sal_Int16 eVAlign;       // up, down, centered
+    sal_Int16 eHAlign;       // left, right, centered
+    SwSurround eSurround;       // wrap mode
 
     sal_uInt8 nXBind, nYBind;        // bound relative to what
 
@@ -108,7 +107,7 @@ friend class SwWW8ImplReader;
     bool bFCTLSizeChanged;  // For Simulating Default-CTL FontSize
     bool bWidowsChanged;    // For Simulating Default-Widows / Orphans
 
-    void ImportSprms(std::size_t nPosFc, short nLen, bool bPap);
+    void ImportSprms(sal_Size nPosFc, short nLen, bool bPap);
     void ImportSprms(sal_uInt8 *pSprms, short nLen, bool bPap);
     void ImportGrupx(short nLen, bool bPara, bool bOdd);
     short ImportUPX(short nLen, bool bPAP, bool bOdd);
@@ -116,6 +115,8 @@ friend class SwWW8ImplReader;
     void Set1StyleDefaults();
     void Import1Style(sal_uInt16 nNr);
     void RecursiveReg(sal_uInt16 nNr);
+
+    void ImportStyles();
 
     void ImportNewFormatStyles();
     void ScanStyles();
@@ -130,7 +131,7 @@ public:
     WW8RStyle( WW8Fib& rFib, SwWW8ImplReader* pI );
     void Import();
     void PostProcessStyles();
-    SprmResult HasParaSprm(sal_uInt16 nId) const;
+    const sal_uInt8* HasParaSprm( sal_uInt16 nId ) const;
 };
 
 class WW8FlySet: public SfxItemSet

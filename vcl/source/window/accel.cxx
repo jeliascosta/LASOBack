@@ -89,7 +89,7 @@ sal_uInt16 ImplAccelEntryGetIndex( ImplAccelList* pList, sal_uInt16 nId,
 static void ImplAccelEntryInsert( ImplAccelList* pList, ImplAccelEntry* pEntry )
 {
     sal_uInt16  nInsIndex(0);
-    std::vector<ImplAccelEntry *>::size_type nIndex = ImplAccelEntryGetIndex( pList, pEntry->mnId, &nInsIndex );
+    sal_uInt16  nIndex = ImplAccelEntryGetIndex( pList, pEntry->mnId, &nInsIndex );
 
     if ( nIndex != ACCELENTRY_NOTFOUND )
     {
@@ -123,10 +123,30 @@ static void ImplAccelEntryInsert( ImplAccelList* pList, ImplAccelEntry* pEntry )
     }
 }
 
+static sal_uInt16 ImplAccelEntryGetFirstPos( ImplAccelList* pList, sal_uInt16 nId )
+{
+    sal_uInt16 nIndex = ImplAccelEntryGetIndex( pList, nId );
+    if ( nIndex != ACCELENTRY_NOTFOUND )
+    {
+        while ( nIndex )
+        {
+            nIndex--;
+            if ( (*pList)[ nIndex ]->mnId != nId )
+                break;
+        }
+
+        if ( (*pList)[ nIndex ]->mnId != nId )
+            nIndex++;
+    }
+
+    return nIndex;
+}
+
 void Accelerator::ImplInit()
 {
     mnCurId             = 0;
     mnCurRepeat         = 0;
+    mbIsCancel          = false;
     mpDel               = nullptr;
 }
 
@@ -175,7 +195,7 @@ void Accelerator::ImplDeleteData()
 void Accelerator::ImplInsertAccel( sal_uInt16 nItemId, const vcl::KeyCode& rKeyCode,
                                    bool bEnable, Accelerator* pAutoAccel )
 {
-    SAL_WARN_IF( !nItemId, "vcl", "Accelerator::InsertItem(): ItemId == 0" );
+    DBG_ASSERT( nItemId, "Accelerator::InsertItem(): ItemId == 0" );
 
     if ( rKeyCode.IsFunction() )
     {
@@ -218,7 +238,7 @@ void Accelerator::ImplInsertAccel( sal_uInt16 nItemId, const vcl::KeyCode& rKeyC
     }
     else if ( !mpData->maKeyMap.insert( std::make_pair( nCode, pEntry ) ).second )
     {
-        SAL_WARN( "vcl", "Accelerator::InsertItem(): KeyCode (Key: " << nCode << ") already exists" );
+        SAL_WARN( "vcl.layout", "Accelerator::InsertItem(): KeyCode (Key: " << nCode << ") already exists" );
         delete pEntry;
     }
     else
@@ -232,8 +252,10 @@ Accelerator::Accelerator()
     mpData = new ImplAccelData;
 }
 
-Accelerator::Accelerator(const Accelerator& rAccel)
-    : maCurKeyCode( rAccel.maCurKeyCode )
+Accelerator::Accelerator( const Accelerator& rAccel ) :
+    Resource(),
+    maHelpStr( rAccel.maHelpStr ),
+    maCurKeyCode( rAccel.maCurKeyCode )
 {
 
     ImplInit();
@@ -273,6 +295,16 @@ sal_uInt16 Accelerator::GetItemCount() const
     return (sal_uInt16)mpData->maIdList.size();
 }
 
+vcl::KeyCode Accelerator::GetKeyCode( sal_uInt16 nItemId ) const
+{
+
+    sal_uInt16 nIndex = ImplAccelEntryGetFirstPos( &(mpData->maIdList), nItemId );
+    if ( nIndex != ACCELENTRY_NOTFOUND )
+        return mpData->maIdList[ nIndex ]->maKeyCode;
+    else
+        return vcl::KeyCode();
+}
+
 sal_uInt16 Accelerator::GetItemId( sal_uInt16 nPos ) const
 {
 
@@ -297,9 +329,11 @@ Accelerator& Accelerator::operator=( const Accelerator& rAccel )
 {
 
     // assign new data
+    maHelpStr       = rAccel.maHelpStr;
     maCurKeyCode    = vcl::KeyCode();
     mnCurId         = 0;
     mnCurRepeat     = 0;
+    mbIsCancel      = false;
 
     // delete and copy tables
     ImplDeleteData();

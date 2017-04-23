@@ -58,7 +58,7 @@ public:
     /** The constructor de-registers all remaining listeners.  Usually a prior
         dispose() call should have done that already.
     */
-    virtual ~SlotStateListener() override;
+    virtual ~SlotStateListener();
 
     /** Set the callback to the given value.  Whenever one of the observed
         slots changes its state this callback is informed about it.
@@ -92,12 +92,14 @@ public:
     */
     virtual void SAL_CALL
         statusChanged (
-            const css::frame::FeatureStateEvent& rState) override;
+            const css::frame::FeatureStateEvent& rState)
+        throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  lang::XEventListener  ============================================
 
     virtual void SAL_CALL
-        disposing(const css::lang::EventObject& rEvent) override;
+        disposing(const css::lang::EventObject& rEvent)
+        throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
     /** This method is called by the WeakComponentImplHelper base class in
@@ -121,10 +123,11 @@ private:
     */
     void ReleaseListeners();
 
-    /** @throws css::lang::DisposedException when the object has already been
+    /** This method throws a DisposedException when the object has already been
         disposed.
     */
-    void ThrowIfDisposed();
+    void ThrowIfDisposed()
+        throw (css::lang::DisposedException);
 
     /** Transform the given string into a URL object.
     */

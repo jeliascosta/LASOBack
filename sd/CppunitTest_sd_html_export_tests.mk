@@ -59,7 +59,10 @@ $(eval $(call gb_CppunitTest_set_include,sd_html_export_tests,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sd_html_export_tests))
+$(eval $(call gb_CppunitTest_use_api,sd_html_export_tests,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sd_html_export_tests))
 $(eval $(call gb_CppunitTest_use_vcl,sd_html_export_tests))
@@ -101,8 +104,8 @@ $(eval $(call gb_CppunitTest_use_components,sd_html_export_tests,\
     unotools/util/utl \
     unoxml/source/rdf/unordf \
     unoxml/source/service/unoxml \
-    uui/util/uui \
     xmloff/util/xo \
+    xmlsecurity/util/xsec_fw \
     xmlsecurity/util/xmlsecurity \
 ))
 

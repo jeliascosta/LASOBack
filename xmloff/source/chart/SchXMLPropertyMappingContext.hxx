@@ -30,9 +30,9 @@ public:
                           SvXMLImport& rImport, const OUString& rLocalName,
                           tSchXMLLSequencesPerIndex& rLSequencesPerIndex,
                               css::uno::Reference<
-                              css::chart2::XDataSeries > const & xSeries );
+                              css::chart2::XDataSeries > xSeries );
 
-    virtual ~SchXMLPropertyMappingContext() override;
+    virtual ~SchXMLPropertyMappingContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 private:

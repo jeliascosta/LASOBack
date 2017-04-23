@@ -26,6 +26,7 @@
 
 #include <com/sun/star/util/Color.hpp>
 
+
 class Chart2ImportTest : public ChartTest
 {
 public:
@@ -40,7 +41,6 @@ public:
     void testDOCChartSeries();
     void testDOCXChartSeries();
     void testPPTXChartSeries();
-    void testPPTXSparseChartSeries();
     /**
      * Original data contains 3 series but 2 of them are hidden. For now, we
      * detect and skip those hidden series on import (since we don't support
@@ -92,8 +92,6 @@ public:
     void testSecondaryAxisTitleDefaultRotationXLSX();
     void testAxisTitleRotationXLSX();
 
-    void testInternalDataProvider();
-
     CPPUNIT_TEST_SUITE(Chart2ImportTest);
     CPPUNIT_TEST(Fdo60083);
     CPPUNIT_TEST(testSteppedLines);
@@ -107,7 +105,6 @@ public:
     CPPUNIT_TEST(testDOCXChartSeries);
     CPPUNIT_TEST(testPPTChartSeries);
     CPPUNIT_TEST(testPPTXChartSeries);
-    CPPUNIT_TEST(testPPTXSparseChartSeries);
     CPPUNIT_TEST(testPPTXHiddenDataSeries);
     CPPUNIT_TEST(testPPTXPercentageNumberFormats);
     CPPUNIT_TEST(testPPTXStackedNonStackedYAxis);
@@ -145,9 +142,6 @@ public:
     CPPUNIT_TEST(testAxisTitleDefaultRotationXLSX);
     CPPUNIT_TEST(testSecondaryAxisTitleDefaultRotationXLSX);
     CPPUNIT_TEST(testAxisTitleRotationXLSX);
-
-    CPPUNIT_TEST(testInternalDataProvider);
-
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -298,7 +292,7 @@ void Chart2ImportTest::testSteppedLines()
     }
 }
 
-uno::Sequence < OUString > getChartColumnDescriptions( uno::Reference< chart::XChartDocument > const & xChart1Doc)
+uno::Sequence < OUString > getChartColumnDescriptions( uno::Reference< chart::XChartDocument > xChart1Doc)
 {
     CPPUNIT_ASSERT(xChart1Doc.is());
     uno::Reference< chart::XChartDataArray > xChartData ( xChart1Doc->getData(), UNO_QUERY_THROW);
@@ -403,28 +397,6 @@ void Chart2ImportTest::testPPTXChartSeries()
     CPPUNIT_ASSERT_EQUAL(OUString("Column 3"), aLabels[2][0].get<OUString>());
 }
 
-void Chart2ImportTest::testPPTXSparseChartSeries()
-{
-    //test chart series sparse data for pptx
-    load("/chart2/qa/extras/data/pptx/", "sparse-chart.pptx");
-    Reference<chart2::XChartDocument> xChartDoc(getChartDocFromDrawImpress(0, 0), uno::UNO_QUERY);
-    CPPUNIT_ASSERT(xChartDoc.is());
-
-    Reference<chart2::XChartType> xCT = getChartTypeFromDoc(xChartDoc, 0);
-    CPPUNIT_ASSERT(xCT.is());
-
-    std::vector<std::vector<double> > aValues = getDataSeriesYValuesFromChartType(xCT);
-    CPPUNIT_ASSERT_EQUAL(size_t(2), aValues.size());
-    CPPUNIT_ASSERT( rtl::math::isNan( aValues[0][0] ) );
-    CPPUNIT_ASSERT_EQUAL(2.5,  aValues[0][1]);
-    CPPUNIT_ASSERT_EQUAL(3.5,  aValues[0][2]);
-    CPPUNIT_ASSERT( rtl::math::isNan( aValues[0][3] ) );
-    CPPUNIT_ASSERT_EQUAL(-2.4, aValues[1][0]);
-    CPPUNIT_ASSERT( rtl::math::isNan( aValues[1][1] ) );
-    CPPUNIT_ASSERT( rtl::math::isNan( aValues[1][2] ) );
-    CPPUNIT_ASSERT_EQUAL(-2.8, aValues[1][3]);
-}
-
 void Chart2ImportTest::testPPTXHiddenDataSeries()
 {
     load("/chart2/qa/extras/data/pptx/", "stacked-bar-chart-hidden-series.pptx");
@@ -435,8 +407,8 @@ void Chart2ImportTest::testPPTXHiddenDataSeries()
     Reference<beans::XPropertySet> xPropSet = xChartDoc->getPageBackground();
     CPPUNIT_ASSERT(xPropSet.is());
     drawing::FillStyle eStyle = xPropSet->getPropertyValue("FillStyle").get<drawing::FillStyle>();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("'Automatic' chart background fill in pptx should be loaded as no fill (transparent).",
-        drawing::FillStyle_NONE, eStyle);
+    CPPUNIT_ASSERT_MESSAGE("'Automatic' chart background fill in pptx should be loaded as no fill (transparent).",
+        eStyle == drawing::FillStyle_NONE);
 
     Reference<chart2::XChartType> xCT = getChartTypeFromDoc(xChartDoc, 0);
     CPPUNIT_ASSERT(xCT.is());
@@ -753,7 +725,7 @@ void Chart2ImportTest::testTransparentBackground(OUString const & filename)
     css::drawing::FillStyle aStyle;
     xPropSet -> getPropertyValue("FillStyle") >>= aStyle;
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Background needs to be with solid fill style", css::drawing::FillStyle_SOLID, aStyle);
+    CPPUNIT_ASSERT_MESSAGE("Background needs to be with solid fill style", aStyle == 1);
 }
 // 2 test methods here so that tearDown() can dispose the document
 void Chart2ImportTest::testFdo54361()
@@ -776,10 +748,10 @@ void Chart2ImportTest::testAutoBackgroundXLSX()
     CPPUNIT_ASSERT(xPropSet.is());
     drawing::FillStyle eStyle = xPropSet->getPropertyValue("FillStyle").get<drawing::FillStyle>();
     sal_Int32 nColor = xPropSet->getPropertyValue("FillColor").get<sal_Int32>();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid fill.",
-        drawing::FillStyle_SOLID, eStyle);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid white.",
-        sal_Int32(0x00FFFFFF), sal_Int32(nColor & 0x00FFFFFF)); // highest 2 bytes are transparency which we ignore here.
+    CPPUNIT_ASSERT_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid fill.",
+        eStyle == drawing::FillStyle_SOLID);
+    CPPUNIT_ASSERT_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid white.",
+        (nColor & 0x00FFFFFF) == 0x00FFFFFF); // highest 2 bytes are transparency which we ignore here.
 }
 
 void Chart2ImportTest::testChartAreaStyleBackgroundXLSX()
@@ -793,8 +765,8 @@ void Chart2ImportTest::testChartAreaStyleBackgroundXLSX()
     CPPUNIT_ASSERT(xPropSet.is());
     drawing::FillStyle eStyle = xPropSet->getPropertyValue("FillStyle").get<drawing::FillStyle>();
     sal_Int32 nColor = xPropSet->getPropertyValue("FillColor").get<sal_Int32>();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid fill.",
-        drawing::FillStyle_SOLID, eStyle);
+    CPPUNIT_ASSERT_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid fill.",
+        eStyle == drawing::FillStyle_SOLID);
     CPPUNIT_ASSERT_EQUAL_MESSAGE("'Automatic' chart background fill in xlsx should be loaded as solid white.",
         sal_Int32(0), nColor);
 }
@@ -1176,51 +1148,6 @@ void Chart2ImportTest::testAxisTitleRotationXLSX()
         CPPUNIT_ASSERT_EQUAL(270.0, nRotation);
     }
 
-}
-
-void Chart2ImportTest::testInternalDataProvider() {
-    uno::Reference< chart2::XChartDocument > xChartDoc(getChartDocFromImpress("/chart2/qa/extras/data/odp/", "chart.odp"), uno::UNO_QUERY_THROW);
-    const uno::Reference< chart2::data::XDataProvider >& rxDataProvider = xChartDoc->getDataProvider();
-
-    // Parse 42 array
-    Reference<chart2::data::XDataSequence> xDataSeq = rxDataProvider->createDataSequenceByValueArray("values-y", "{42;42;42;42}");
-    Sequence<Any> xSequence = xDataSeq->getData();
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[0]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[1]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[2]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[3]);
-
-    // Parse empty first and last
-    xDataSeq = rxDataProvider->createDataSequenceByValueArray("values-y", "{\"\";42;42;\"\"}");
-    xSequence = xDataSeq->getData();
-    CPPUNIT_ASSERT( rtl::math::isNan( *static_cast<const double*>(xSequence[0].getValue())));
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[1]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[2]);
-    CPPUNIT_ASSERT( rtl::math::isNan( *static_cast<const double*>(xSequence[3].getValue())));
-
-    // Parse empty middle
-    xDataSeq = rxDataProvider->createDataSequenceByValueArray("values-y", "{42;\"\";\"\";42}");
-    xSequence = xDataSeq->getData();
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[0]);
-    CPPUNIT_ASSERT( rtl::math::isNan( *static_cast<const double*>(xSequence[1].getValue())) );
-    CPPUNIT_ASSERT( rtl::math::isNan( *static_cast<const double*>(xSequence[2].getValue())) );
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[3]);
-
-    // Parse mixed types, numeric only role
-    xDataSeq = rxDataProvider->createDataSequenceByValueArray("values-y", "{42;\"hello\";0;\"world\"}");
-    xSequence = xDataSeq->getData();
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(42)), xSequence[0]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(0)),  xSequence[1]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(0)),  xSequence[2]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(sal_Int32(0)),  xSequence[3]);
-
-    // Parse mixed types, mixed role
-    xDataSeq = rxDataProvider->createDataSequenceByValueArray("categories", "{42;\"hello\";0;\"world\"}");
-    xSequence = xDataSeq->getData();
-    CPPUNIT_ASSERT_EQUAL(uno::Any(OUString("42")),    xSequence[0]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(OUString("hello")), xSequence[1]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(OUString("0")),     xSequence[2]);
-    CPPUNIT_ASSERT_EQUAL(uno::Any(OUString("world")), xSequence[3]);
 }
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Chart2ImportTest);

@@ -34,6 +34,8 @@ bool UIConfigurationImporterOOo1x::ImportCustomToolbars(
     const uno::Reference< uno::XComponentContext >& rxContext,
     const uno::Reference< embed::XStorage >& rToolbarStorage )
 {
+    const char USERDEFTOOLBOX[] = "userdeftoolbox0.xml";
+
     bool bResult ( false );
     if ( rToolbarStorage.is() && rContainerFactory.is() )
     {
@@ -41,7 +43,11 @@ bool UIConfigurationImporterOOo1x::ImportCustomToolbars(
         {
             for ( sal_uInt16 i = 1; i <= 4; i++ )
             {
-                OUString aTbxStreamName = "userdeftoolbox" + OUString::number(i) + ".xml";
+                OUStringBuffer aCustomTbxName( 20 );
+                aCustomTbxName.append( USERDEFTOOLBOX );
+                aCustomTbxName[14] = aCustomTbxName[14] + i;
+
+                OUString aTbxStreamName( aCustomTbxName.makeStringAndClear() );
                 uno::Reference< io::XStream > xStream = rToolbarStorage->openStreamElement( aTbxStreamName, embed::ElementModes::READ );
                 if ( xStream.is() )
                 {

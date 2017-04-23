@@ -25,11 +25,11 @@
 #include <list>
 #include <map>
 
+#define MAX_LIGHT_NUM 8
+
 namespace chart {
 
 namespace opengl3D {
-
-const auto maxLights = 8;
 
 struct PosVecf3
 {
@@ -41,7 +41,6 @@ struct PosVecf3
 typedef std::vector <glm::vec3> Vertices3D;
 typedef std::vector <glm::vec3> Normals3D;
 
-// fields must match definition in GLSL shader file
 struct MaterialParameters
 {
     glm::vec4 ambient;
@@ -49,28 +48,24 @@ struct MaterialParameters
     glm::vec4 specular;
     glm::vec4 materialColor;
 
-    bool  twoSidesLighting;
+    bool twoSidesLighting;
     float shininess;
     float pad;
     float pad1;
 };
 
-// fields must match definition in GLSL shader file
 struct LightSource
 {
     glm::vec4   lightColor;
     glm::vec4   positionWorldspace;
     float  lightPower;
-    float  pad1;
-    float  pad2;
-    float  pad3;
 };
 
 struct GlobalLights
 {
     int lightNum;
     glm::vec4 ambient;
-    LightSource light[maxLights];
+    LightSource light[MAX_LIGHT_NUM];
 };
 
 struct Polygon3DInfo
@@ -181,7 +176,7 @@ public:
     ~OpenGL3DRenderer();
 
     void init();
-    void Set3DSenceInfo(sal_uInt32 color, bool twoSidesLighting = true);
+    void Set3DSenceInfo(sal_uInt32 color = 255, bool twoSidesLighting = true);
     void SetLightInfo(bool lightOn, sal_uInt32 color, const glm::vec4& direction);
     void AddShapePolygon3DObject(sal_uInt32 color, bool lineOnly, sal_uInt32 lineColor,
             long fillStyle, sal_uInt32 specular, sal_uInt32 nUniqueId);
@@ -272,6 +267,7 @@ private:
     void InitBatch3DUniformBlock();
     void UpdateBatch3DUniformBlock();
     void RenderBatchBars(bool bNewScene);
+    void CheckGLSLVersion();
     void RenderTextShapeBatch();
     void ReleaseTextShapesBatch();
     void CreateTextTextureSingle(const boost::shared_array<sal_uInt8> &bitmapBuf,
@@ -468,9 +464,9 @@ private:
     //for 3.0 version
     int m_iLightNum;
     glm::vec4 m_Ambient;
-    glm::vec4 m_LightColor[maxLights];
-    glm::vec4 m_PositionWorldspace[maxLights];
-    float m_fLightPower[maxLights];
+    glm::vec4 m_LightColor[MAX_LIGHT_NUM];
+    glm::vec4 m_PositionWorldspace[MAX_LIGHT_NUM];
+    float m_fLightPower[MAX_LIGHT_NUM];
     //for 3.0 end
     std::vector<GLuint> m_Texturelist;
     std::vector<GLuint> m_ScreenTexturelist;

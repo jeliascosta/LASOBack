@@ -40,7 +40,7 @@ namespace sdr
         public:
             // basic constructor, used from SdrObject.
             explicit ViewContactOfSdrCircObj(SdrCircObj& rCircObj);
-            virtual ~ViewContactOfSdrCircObj() override;
+            virtual ~ViewContactOfSdrCircObj();
 
         protected:
             // This method is responsible for creating the graphical visualisation data

@@ -24,10 +24,8 @@
 #include <services.h>
 
 #include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/frame/ModuleManager.hpp>
-#include <com/sun/star/frame/UnknownModuleException.hpp>
 
 #include <comphelper/processfactory.hxx>
 #include <vcl/svapp.hxx>
@@ -40,7 +38,7 @@ namespace framework{
 
 FrameListAnalyzer::FrameListAnalyzer( const css::uno::Reference< css::frame::XFramesSupplier >& xSupplier       ,
                                       const css::uno::Reference< css::frame::XFrame >&          xReferenceFrame ,
-                                            FrameAnalyzerFlags                                  eDetectMode     )
+                                            sal_uInt32                                          eDetectMode     )
     : m_xSupplier      (xSupplier      )
     , m_xReferenceFrame(xReferenceFrame)
     , m_eDetectMode    (eDetectMode    )
@@ -97,7 +95,7 @@ void FrameListAnalyzer::impl_analyze()
     // to sort it into the list of frames with the same model.
     // Suppress this step, if right detect mode isn't set.
     css::uno::Reference< css::frame::XModel > xReferenceModel;
-    if (m_eDetectMode & FrameAnalyzerFlags::Model)
+    if ((m_eDetectMode & E_MODEL) == E_MODEL )
     {
         css::uno::Reference< css::frame::XController > xReferenceController;
         if (m_xReferenceFrame.is())
@@ -109,14 +107,17 @@ void FrameListAnalyzer::impl_analyze()
     // check, if the reference frame is in hidden mode.
     // But look, if this analyze step is really needed.
     css::uno::Reference< css::beans::XPropertySet > xSet(m_xReferenceFrame, css::uno::UNO_QUERY);
-    if ( (m_eDetectMode & FrameAnalyzerFlags::Hidden) && xSet.is() )
+    if (
+        ((m_eDetectMode & E_HIDDEN) == E_HIDDEN) &&
+        (xSet.is()                             )
+       )
     {
         xSet->getPropertyValue(FRAME_PROPNAME_ASCII_ISHIDDEN) >>= m_bReferenceIsHidden;
     }
 
     // check, if the reference frame includes the backing component.
     // But look, if this analyze step is really needed.
-    if ((m_eDetectMode & FrameAnalyzerFlags::BackingComponent) && m_xReferenceFrame.is() )
+    if (((m_eDetectMode & E_BACKINGCOMPONENT) == E_BACKINGCOMPONENT) && m_xReferenceFrame.is() )
     {
         try
         {
@@ -137,7 +138,7 @@ void FrameListAnalyzer::impl_analyze()
     // check, if the reference frame includes the help module.
     // But look, if this analyze step is really needed.
     if (
-        (m_eDetectMode & FrameAnalyzerFlags::Help) &&
+        ((m_eDetectMode & E_HELP)     == E_HELP                ) &&
         (m_xReferenceFrame.is()                                ) &&
         (m_xReferenceFrame->getName() == SPECIALTARGET_HELPTASK)
        )
@@ -162,7 +163,7 @@ void FrameListAnalyzer::impl_analyze()
                 continue;
 
             if (
-                (m_eDetectMode & FrameAnalyzerFlags::Zombie) &&
+                ((m_eDetectMode & E_ZOMBIE) == E_ZOMBIE) &&
                 (
                  (!xFrame->getContainerWindow().is()) ||
                  (!xFrame->getComponentWindow().is())
@@ -175,7 +176,7 @@ void FrameListAnalyzer::impl_analyze()
             // a) Is it the special help task?
             //    Return it separated from any return list.
             if (
-                (m_eDetectMode & FrameAnalyzerFlags::Help) &&
+                ((m_eDetectMode & E_HELP) == E_HELP      ) &&
                 (xFrame->getName()==SPECIALTARGET_HELPTASK)
                )
             {
@@ -187,7 +188,7 @@ void FrameListAnalyzer::impl_analyze()
             //    Return it separated from any return list.
             //    But check if the reference task itself is the backing frame.
             //    Our user must know it to decide right.
-            if (m_eDetectMode & FrameAnalyzerFlags::BackingComponent)
+            if ((m_eDetectMode & E_BACKINGCOMPONENT) == E_BACKINGCOMPONENT)
             {
                 try
                 {
@@ -207,7 +208,7 @@ void FrameListAnalyzer::impl_analyze()
 
             // c) Or is it the a task, which uses the specified model?
             //    Add it to the list of "model frames".
-            if (m_eDetectMode & FrameAnalyzerFlags::Model)
+            if ((m_eDetectMode & E_MODEL) == E_MODEL)
             {
                 css::uno::Reference< css::frame::XController > xController = xFrame->getController();
                 css::uno::Reference< css::frame::XModel >      xModel;
@@ -226,7 +227,7 @@ void FrameListAnalyzer::impl_analyze()
             //    visible state ... if it's allowed to do so.
 
             bool bHidden = false;
-            if (m_eDetectMode & FrameAnalyzerFlags::Hidden)
+            if ((m_eDetectMode & E_HIDDEN) == E_HIDDEN )
             {
                 xSet.set(xFrame, css::uno::UNO_QUERY);
                 if (xSet.is())

@@ -54,10 +54,10 @@ namespace sdr
                 new drawinglayer::primitive2d::OverlayRectanglePrimitive(
                     aHatchRange,
                     aColor,
-                    mfTransparence,
-                    mfDiscreteGrow,
-                    mfDiscreteShrink,
-                    mfRotation));
+                    getTransparence(),
+                    getDiscreteGrow(),
+                    getDiscreteShrink(),
+                    getRotation()));
 
             return drawinglayer::primitive2d::Primitive2DContainer { aReference };
         }
@@ -70,6 +70,7 @@ namespace sdr
             double fDiscreteGrow,
             double fDiscreteShrink,
             double fRotation,
+            sal_uInt64 nBlinkTime,
             bool bAnimate)
         :   OverlayObjectWithBasePosition(rBasePosition, rHatchColor),
             maSecondPosition(rSecondPosition),
@@ -77,7 +78,7 @@ namespace sdr
             mfDiscreteGrow(fDiscreteGrow),
             mfDiscreteShrink(fDiscreteShrink),
             mfRotation(fRotation),
-            mnBlinkTime(impCheckBlinkTimeValueRange(500)),
+            mnBlinkTime(impCheckBlinkTimeValueRange(nBlinkTime)),
             mbOverlayState(false)
         {
             if(Application::GetSettings().GetStyleSettings().GetHighContrastMode())

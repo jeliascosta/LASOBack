@@ -71,6 +71,7 @@ GenericToolboxController::~GenericToolboxController()
 }
 
 void SAL_CALL GenericToolboxController::dispose()
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
     m_pToolbox.clear();
@@ -79,6 +80,7 @@ void SAL_CALL GenericToolboxController::dispose()
 }
 
 void SAL_CALL GenericToolboxController::execute( sal_Int16 /*KeyModifier*/ )
+throw ( RuntimeException, std::exception )
 {
     Reference< XDispatch >       xDispatch;
     Reference< XURLTransformer > xURLTransformer;
@@ -122,6 +124,7 @@ void SAL_CALL GenericToolboxController::execute( sal_Int16 /*KeyModifier*/ )
 }
 
 void GenericToolboxController::statusChanged( const FeatureStateEvent& Event )
+throw ( RuntimeException, std::exception )
 {
     SolarMutexGuard aSolarMutexGuard;
 
@@ -164,7 +167,7 @@ void GenericToolboxController::statusChanged( const FeatureStateEvent& Event )
     }
 }
 
-IMPL_STATIC_LINK( GenericToolboxController, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK_TYPED( GenericToolboxController, ExecuteHdl_Impl, void*, p, void )
 {
    ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
    try

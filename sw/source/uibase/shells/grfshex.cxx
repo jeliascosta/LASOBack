@@ -40,6 +40,9 @@
 #include <svx/svdpagv.hxx>
 #include <SwStyleNameMapper.hxx>
 #include <sfx2/filedlghelper.hxx>
+#include <com/sun/star/ui/dialogs/XFilePickerControlAccess.hpp>
+#include <com/sun/star/ui/dialogs/ExtendedFilePickerElementIds.hpp>
+#include <com/sun/star/ui/dialogs/ListboxControlActions.hpp>
 #include <poolfmt.hrc>
 
 #include <sfx2/request.hxx>
@@ -113,9 +116,9 @@ bool SwTextShell::InsertMediaDlg( SfxRequest& rReq )
             if( aPrefSize.Width() && aPrefSize.Height() )
             {
                 if( pWindow )
-                    aSize = pWindow->PixelToLogic( aPrefSize, MapUnit::MapTwip );
+                    aSize = pWindow->PixelToLogic( aPrefSize, MAP_TWIP );
                 else
-                    aSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MapUnit::MapTwip );
+                    aSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MAP_TWIP );
             }
             else
                 aSize = Size( 2835, 2835 );
@@ -133,7 +136,7 @@ bool SwTextShell::InsertMediaDlg( SfxRequest& rReq )
                 if (!bRet) { return bRet; }
             }
 
-            SdrMediaObj* pObj = new SdrMediaObj( tools::Rectangle( aPos, aSize ) );
+            SdrMediaObj* pObj = new SdrMediaObj( Rectangle( aPos, aSize ) );
 
             pObj->SetModel(rSh.GetDoc()->getIDocumentDrawModelAccess().GetDrawModel()); // set before setURL
             pObj->setURL( realURL, "" );

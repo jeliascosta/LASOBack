@@ -17,7 +17,6 @@
 #if !HAVE_GCC_ATTRIBUTE_WARN_UNUSED_STL
 
 #include "compat.hxx"
-#include "check.hxx"
 #include "unusedvariablecheck.hxx"
 
 #include <clang/AST/Attr.h>
@@ -50,29 +49,23 @@ void UnusedVariableCheck::run()
     TraverseDecl( compiler.getASTContext().getTranslationUnitDecl());
     }
 
-bool BaseCheckNotSomethingInterestingSubclass(
+bool BaseCheckNotDialogSubclass(
     const CXXRecordDecl *BaseDefinition
 #if CLANG_VERSION < 30800
     , void *
 #endif
     )
 {
-    if (BaseDefinition) {
-        auto tc = loplugin::TypeCheck(BaseDefinition);
-        if (tc.Class("Dialog").GlobalNamespace() || tc.Class("SfxPoolItem").GlobalNamespace()) {
-            return false;
-        }
+    if (BaseDefinition && BaseDefinition->getQualifiedNameAsString().compare("Dialog") == 0) {
+        return false;
     }
     return true;
 }
 
-bool isDerivedFromSomethingInteresting(const CXXRecordDecl *decl) {
+bool isDerivedFromDialog(const CXXRecordDecl *decl) {
     if (!decl)
         return false;
-    auto tc = loplugin::TypeCheck(decl);
-    if (tc.Class("Dialog"))
-        return true;
-    if (tc.Class("SfxPoolItem"))
+    if (decl->getQualifiedNameAsString() == "Dialog")
         return true;
     if (!decl->hasDefinition()) {
         return false;
@@ -80,7 +73,7 @@ bool isDerivedFromSomethingInteresting(const CXXRecordDecl *decl) {
     if (// not sure what hasAnyDependentBases() does,
         // but it avoids classes we don't want, e.g. WeakAggComponentImplHelper1
         !decl->hasAnyDependentBases() &&
-        !compat::forallBases(*decl, BaseCheckNotSomethingInterestingSubclass, nullptr, true)) {
+        !compat::forallBases(*decl, BaseCheckNotDialogSubclass, nullptr, true)) {
         return true;
     }
     return false;
@@ -115,16 +108,14 @@ bool UnusedVariableCheck::VisitVarDecl( const VarDecl* var )
             }
         if( !warn_unused )
             {
-            auto tc = loplugin::TypeCheck(type);
+            string n = type->getQualifiedNameAsString();
             // Check some common non-LO types.
-            if( tc.Class("string").Namespace("std").GlobalNamespace()
-                || tc.Class("basic_string").Namespace("std").GlobalNamespace()
-                || tc.Class("list").Namespace("std").GlobalNamespace()
-                || tc.Class("list").Namespace("__debug").Namespace("std").GlobalNamespace()
-                || tc.Class("vector").Namespace("std").GlobalNamespace()
-                || tc.Class("vector" ).Namespace("__debug").Namespace("std").GlobalNamespace())
+            if( n == "std::string" || n == "std::basic_string"
+                || n == "std::list" || n == "std::__debug::list"
+                || n == "std::vector" || n == "std::__debug::vector" )
                 warn_unused = true;
-            if (!warn_unused && isDerivedFromSomethingInteresting(type))
+            // check if this field is derived from Dialog
+            if (!warn_unused && isDerivedFromDialog(type))
                   warn_unused = true;
             }
         if( warn_unused )

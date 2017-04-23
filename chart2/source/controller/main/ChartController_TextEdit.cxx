@@ -69,11 +69,11 @@ void ChartController::StartTextEdit( const Point* pMousePixel )
     //#i77362 change notification for changes on additional shapes are missing
     uno::Reference< beans::XPropertySet > xChartViewProps( m_xChartView, uno::UNO_QUERY );
     if( xChartViewProps.is() )
-        xChartViewProps->setPropertyValue( "SdrViewIsInEditMode", uno::Any(true) );
+        xChartViewProps->setPropertyValue( "SdrViewIsInEditMode", uno::makeAny(true) );
 
     bool bEdit = m_pDrawViewWrapper->SdrBeginTextEdit( pTextObj
                     , m_pDrawViewWrapper->GetPageView()
-                    , GetChartWindow()
+                    , m_pChartWindow
                     , false //bIsNewObj
                     , pOutliner
                     , nullptr //pOutlinerView
@@ -98,7 +98,7 @@ void ChartController::StartTextEdit( const Point* pMousePixel )
 
         //we invalidate the outliner region because the outliner has some
         //paint problems (some characters are painted twice a little bit shifted)
-        GetChartWindow()->Invalidate( m_pDrawViewWrapper->GetMarkedObjBoundRect() );
+        m_pChartWindow->Invalidate( m_pDrawViewWrapper->GetMarkedObjBoundRect() );
     }
 }
 
@@ -109,7 +109,7 @@ bool ChartController::EndTextEdit()
     //#i77362 change notification for changes on additional shapes are missing
     uno::Reference< beans::XPropertySet > xChartViewProps( m_xChartView, uno::UNO_QUERY );
     if( xChartViewProps.is() )
-        xChartViewProps->setPropertyValue( "SdrViewIsInEditMode", uno::Any(false) );
+        xChartViewProps->setPropertyValue( "SdrViewIsInEditMode", uno::makeAny(false) );
 
     SdrObject* pTextObject = m_pDrawViewWrapper->getTextEditObject();
     if(!pTextObject)
@@ -169,7 +169,7 @@ void ChartController::executeDispatch_InsertSpecialCharacter()
     vcl::Font aCurFont = m_pDrawViewWrapper->getOutliner()->GetRefDevice()->GetFont();
     aSet.Put( SvxFontItem( aCurFont.GetFamilyType(), aCurFont.GetFamilyName(), aCurFont.GetStyleName(), aCurFont.GetPitch(), aCurFont.GetCharSet(), SID_ATTR_CHAR_FONT ) );
 
-    ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( GetChartWindow(), aSet, getFrame(), RID_SVXDLG_CHARMAP ));
+    std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( m_pChartWindow, aSet, getFrame(), RID_SVXDLG_CHARMAP ));
     OSL_ENSURE( pDlg, "Couldn't create SvxCharacterMap dialog" );
     if( pDlg->Execute() == RET_OK )
     {

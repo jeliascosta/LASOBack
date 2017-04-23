@@ -31,14 +31,14 @@
 namespace connectivity { namespace hsqldb
 {
 
-    typedef ::connectivity::sdbcx::OView                   HView_Base;
-    typedef ::cppu::ImplHelper1< css::sdbcx::XAlterView >  HView_IBASE;
+    typedef ::connectivity::sdbcx::OView                                HView_Base;
+    typedef ::cppu::ImplHelper1< ::com::sun::star::sdbcx::XAlterView >  HView_IBASE;
     class HView :public HView_Base
                 ,public HView_IBASE
     {
     public:
         HView(
-            const css::uno::Reference< css::sdbc::XConnection >& _rxConnection,
+            const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection >& _rxConnection,
             bool _bCaseSensitive,
             const OUString& _rSchemaName,
             const OUString& _rName
@@ -49,14 +49,14 @@ namespace connectivity { namespace hsqldb
         DECLARE_XTYPEPROVIDER()
 
         // XAlterView
-        virtual void SAL_CALL alterCommand( const OUString& NewCommand ) override;
+        virtual void SAL_CALL alterCommand( const OUString& NewCommand ) throw (::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~HView() override;
+        virtual ~HView();
 
     protected:
         // OPropertyContainer
-        virtual void SAL_CALL getFastPropertyValue( css::uno::Any& _rValue, sal_Int32 _nHandle ) const override;
+        virtual void SAL_CALL getFastPropertyValue( ::com::sun::star::uno::Any& _rValue, sal_Int32 _nHandle ) const override;
 
     private:
         /** retrieves the current command of the View */
@@ -64,19 +64,19 @@ namespace connectivity { namespace hsqldb
 
         /** retrieves the current command of the View
 
-            @throws css::lang::WrappedTargetException
+            @throws ::com::sun::star::lang::WrappedTargetException
                 if an error occurs while retrieving the command from the database.
         */
         OUString impl_getCommand_wrapSQLException() const;
         /** retrieves the current command of the View
 
-            @throws css::sdbc::SQLException
+            @throws ::com::sun::star::sdbc::SQLException
                 if an error occurs while retrieving the command from the database.
         */
         OUString impl_getCommand_throwSQLException() const;
 
     private:
-        css::uno::Reference< css::sdbc::XConnection > m_xConnection;
+        ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XConnection > m_xConnection;
     private:
         using HView_Base::getFastPropertyValue;
     };

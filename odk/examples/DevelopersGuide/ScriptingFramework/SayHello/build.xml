@@ -23,7 +23,7 @@
   <property name="macroname" value="SayHello"/>
   <property name="unopkgfile" value="${basedir}/${macroname}.uno.pkg"/>
 
-  <!-- ==================== initialise properties ========================= -->
+  <!-- ==================== intialise properties ========================= -->
   <target name="checksdk">
     <condition property="UsingSDK">
       <available file="${env.OFFICE_PROGRAM_PATH}"/>

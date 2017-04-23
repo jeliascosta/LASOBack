@@ -14,6 +14,7 @@
 #include <calcmacros.hxx>
 
 #include <svl/listener.hxx>
+#include <vector>
 
 #include <vector>
 
@@ -40,7 +41,7 @@ public:
     FormulaGroupAreaListener( const ScRange& rRange, const ScDocument& rDocument,
             const ScAddress& rTopCellPos, SCROW nGroupLen, bool bStartFixed, bool bEndFixed );
 
-    virtual ~FormulaGroupAreaListener() override;
+    virtual ~FormulaGroupAreaListener();
 
     ScRange getListeningRange() const;
 

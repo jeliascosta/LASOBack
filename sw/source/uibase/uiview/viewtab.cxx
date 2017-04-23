@@ -21,8 +21,6 @@
 #include "uitool.hxx"
 #include <sfx2/app.hxx>
 #include <svx/rulritem.hxx>
-#include <svx/xfillit.hxx>
-#include <svx/xfillit0.hxx>
 #include <editeng/tstpitem.hxx>
 #include <sfx2/request.hxx>
 #include <editeng/lrspitem.hxx>
@@ -57,8 +55,6 @@
 #include "pam.hxx"
 
 #include <IDocumentSettingAccess.hxx>
-
-#include <svx/xtable.hxx>
 
 using namespace ::com::sun::star;
 
@@ -150,7 +146,7 @@ static void lcl_EraseDefTabs(SvxTabStopItem& rTabStops)
     for ( sal_uInt16 i = 0; i < rTabStops.Count(); )
     {
         // Here also throw out the DefTab to zero
-        if ( SvxTabAdjust::Default == rTabStops[i].GetAdjustment() ||
+        if ( SVX_TAB_ADJUST_DEFAULT == rTabStops[i].GetAdjustment() ||
             rTabStops[i].GetTabPos() == 0 )
         {
             rTabStops.Remove(i);
@@ -166,7 +162,7 @@ void SwView::SwapPageMargin(const SwPageDesc& rDesc, SvxLRSpaceItem& rLRSpace)
     sal_uInt16 nPhyPage, nVirPage;
     GetWrtShell().GetPageNum( nPhyPage, nVirPage );
 
-    if ( rDesc.GetUseOn() == UseOnPage::Mirror && (nPhyPage % 2) == 0 )
+    if ( rDesc.GetUseOn() == nsUseOnPage::PD_MIRROR && (nPhyPage % 2) == 0 )
     {
         long nTmp = rLRSpace.GetRight();
         rLRSpace.SetRight( rLRSpace.GetLeft() );
@@ -246,7 +242,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
 
     const SwFormatFrameSize &rFrameSize = rDesc.GetMaster().GetFrameSize();
 
-    const SwRect& rPageRect = rSh.GetAnyCurRect(CurRectType::Page);
+    const SwRect& rPageRect = rSh.GetAnyCurRect(RECT_PAGE);
     const long nPageWidth  = bBrowse ? rPageRect.Width() : rFrameSize.GetWidth();
     const long nPageHeight = bBrowse ? rPageRect.Height() : rFrameSize.GetHeight();
 
@@ -264,8 +260,8 @@ void SwView::ExecTabWin( SfxRequest& rReq )
             SvxLRSpaceItem aLR(RES_LR_SPACE);
             if ( !bSect && (bFrameSelection || nFrameType & FrameTypeFlags::FLY_ANY) )
             {
-                SwFrameFormat* pFormat = rSh.GetFlyFrameFormat();
-                const SwRect &rRect = rSh.GetAnyCurRect(CurRectType::FlyEmbedded);
+                SwFrameFormat* pFormat = static_cast<SwFrameFormat*>(rSh.GetFlyFrameFormat());
+                const SwRect &rRect = rSh.GetAnyCurRect(RECT_FLY_EMBEDDED);
 
                 bool bVerticalFrame(false);
                 {
@@ -304,7 +300,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
                 if(aSize.GetWidthPercent())
                 {
                     SwRect aRect;
-                    rSh.CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
+                    rSh.CalcBoundRect(aRect, FLY_AS_CHAR);
                     long nPrtWidth = aRect.Width();
                     aSize.SetWidthPercent(sal_uInt8((nPageWidth - aLongLR.GetLeft() - aLongLR.GetRight()) * 100 /nPrtWidth));
                 }
@@ -361,8 +357,8 @@ void SwView::ExecTabWin( SfxRequest& rReq )
             {
                 //change the section indents and the columns if available
                 //at first determine the changes
-                SwRect aSectRect = rSh.GetAnyCurRect(CurRectType::SectionPrt);
-                const SwRect aTmpRect = rSh.GetAnyCurRect(CurRectType::Section);
+                SwRect aSectRect = rSh.GetAnyCurRect(RECT_SECTION_PRT);
+                const SwRect aTmpRect = rSh.GetAnyCurRect(RECT_SECTION);
                 aSectRect.Pos() += aTmpRect.Pos();
                 long nLeftDiff = aLongLR.GetLeft() - (long)(aSectRect.Left() - rPageRect.Left() );
                 long nRightDiff = aLongLR.GetRight() - (long)( rPageRect.Right() - aSectRect.Right());
@@ -423,8 +419,8 @@ void SwView::ExecTabWin( SfxRequest& rReq )
 
             if( bFrameSelection || nFrameType & FrameTypeFlags::FLY_ANY )
             {
-                SwFrameFormat* pFormat = rSh.GetFlyFrameFormat();
-                const SwRect &rRect = rSh.GetAnyCurRect(CurRectType::FlyEmbedded);
+                SwFrameFormat* pFormat = static_cast<SwFrameFormat*>(rSh.GetFlyFrameFormat());
+                const SwRect &rRect = rSh.GetAnyCurRect(RECT_FLY_EMBEDDED);
                 const long nDeltaY = rPageRect.Top() + aLongULSpace.GetUpper() - rRect.Top();
                 const long nHeight = nPageHeight - (aLongULSpace.GetUpper() + aLongULSpace.GetLower());
 
@@ -453,7 +449,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
                 if(aSize.GetHeightPercent())
                 {
                     SwRect aRect;
-                    rSh.CalcBoundRect(aRect, RndStdIds::FLY_AS_CHAR);
+                    rSh.CalcBoundRect(aRect, FLY_AS_CHAR);
                     long nPrtHeight = aRect.Height();
                     aSize.SetHeightPercent(sal_uInt8(nHeight * 100 /nPrtHeight));
                 }
@@ -474,8 +470,8 @@ void SwView::ExecTabWin( SfxRequest& rReq )
             {
                 //change the section indents and the columns if available
                 //at first determine the changes
-                SwRect aSectRect = rSh.GetAnyCurRect(CurRectType::SectionPrt);
-                const SwRect aTmpRect = rSh.GetAnyCurRect(CurRectType::Section);
+                SwRect aSectRect = rSh.GetAnyCurRect(RECT_SECTION_PRT);
+                const SwRect aTmpRect = rSh.GetAnyCurRect(RECT_SECTION);
                 aSectRect.Pos() += aTmpRect.Pos();
                 const long nLeftDiff = aLongULSpace.GetUpper() - (long)(aSectRect.Top() - rPageRect.Top());
                 const long nRightDiff = aLongULSpace.GetLower() - (long)(nPageHeight - aSectRect.Bottom() + rPageRect.Top());
@@ -633,7 +629,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
 
             if ( rLR.GetTextFirstLineOfst() < 0 )
             {
-                SvxTabStop aSwTabStop( 0, SvxTabAdjust::Default );
+                SvxTabStop aSwTabStop( 0, SVX_TAB_ADJUST_DEFAULT );
                 aTabStops.Insert( aSwTabStop );
             }
 
@@ -651,21 +647,6 @@ void SwView::ExecTabWin( SfxRequest& rReq )
                 rSh.SetAttrItem( aTabStops );
         }
         break;
-
-    case SID_HANGING_INDENT:
-    {
-        SfxItemSet aLRSpaceSet( GetPool(), RES_LR_SPACE, RES_LR_SPACE );
-        rSh.GetCurAttr( aLRSpaceSet );
-        SvxLRSpaceItem aParaMargin( static_cast<const SvxLRSpaceItem&>( aLRSpaceSet.Get( RES_LR_SPACE ) ) );
-
-        SvxLRSpaceItem aNewMargin( RES_LR_SPACE );
-        aNewMargin.SetTextLeft( aParaMargin.GetTextLeft() + aParaMargin.GetTextFirstLineOfst() );
-        aNewMargin.SetRight( aParaMargin.GetRight() );
-        aNewMargin.SetTextFirstLineOfst( (aParaMargin.GetTextFirstLineOfst()) * (-1) );
-
-        rSh.SetAttrItem( aNewMargin );
-        break;
-    }
 
     case SID_ATTR_PARA_LRSPACE_VERTICAL:
     case SID_ATTR_PARA_LRSPACE:
@@ -727,7 +708,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
 
                     ::lcl_EraseDefTabs(aTabStops);
 
-                    SvxTabStop aSwTabStop( 0, SvxTabAdjust::Default );
+                    SvxTabStop aSwTabStop( 0, SVX_TAB_ADJUST_DEFAULT );
                     aTabStops.Insert(aSwTabStop);
 
                     const SvxTabStopItem& rDefTabs =
@@ -892,7 +873,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
                         bSect ?
                             pSectFormat->GetCol() :
                                 static_cast<const SwFormatCol&>(aSet.Get( RES_COL, false )));
-                    SwRect aCurRect = rSh.GetAnyCurRect(bSect ? CurRectType::SectionPrt : CurRectType::FlyEmbeddedPrt);
+                    SwRect aCurRect = rSh.GetAnyCurRect(bSect ? RECT_SECTION_PRT : RECT_FLY_PRT_EMBEDDED);
                     const long lWidth = bVerticalWriting ? aCurRect.Height() : aCurRect.Width();
                     ::lcl_ConvertToCols( aColItem, lWidth, aCols );
                     aSet.Put( aCols );
@@ -916,7 +897,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
                 else
                 {
                     SwFormatCol aCols( rDesc.GetMaster().GetCol() );
-                    const SwRect aPrtRect = rSh.GetAnyCurRect(CurRectType::PagePrt);
+                    const SwRect aPrtRect = rSh.GetAnyCurRect(RECT_PAGE_PRT);
                     ::lcl_ConvertToCols( aColItem,
                                     bVerticalWriting ? aPrtRect.Height() : aPrtRect.Width(),
                                     aCols );
@@ -994,175 +975,6 @@ void SwView::ExecTabWin( SfxRequest& rReq )
         }
         break;
 
-    case SID_ATTR_PAGE_HEADER:
-    {
-        if ( pReqArgs )
-        {
-            const bool bHeaderOn =  static_cast<const SfxBoolItem&>(pReqArgs->Get(SID_ATTR_PAGE_HEADER)).GetValue();
-            SwPageDesc aDesc(rDesc);
-            SwFrameFormat &rMaster = aDesc.GetMaster();
-            rMaster.SetFormatAttr( SwFormatHeader( bHeaderOn ));
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_HEADER_LRMARGIN:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetHeader().IsActive() )
-        {
-            const SvxLongLRSpaceItem& aLongLR = static_cast<const SvxLongLRSpaceItem&>(pReqArgs->Get(SID_ATTR_PAGE_HEADER_LRMARGIN));
-            SvxLRSpaceItem aLR(RES_LR_SPACE);
-            SwPageDesc aDesc(rDesc);
-            aLR.SetLeft(aLongLR.GetLeft());
-            aLR.SetRight(aLongLR.GetRight());
-            SwFrameFormat* pFormat = const_cast<SwFrameFormat*>(aDesc.GetMaster().GetHeader().GetHeaderFormat());
-            pFormat->SetFormatAttr( aLR );
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_HEADER_SPACING:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetHeader().IsActive())
-        {
-            const SvxLongULSpaceItem& aLongUL = static_cast<const SvxLongULSpaceItem&>(pReqArgs->Get(SID_ATTR_PAGE_HEADER_SPACING));
-            SwPageDesc aDesc(rDesc);
-            SvxULSpaceItem aUL(0, aLongUL.GetLower(), RES_UL_SPACE );
-            SwFrameFormat* pFormat = const_cast<SwFrameFormat*>(aDesc.GetMaster().GetHeader().GetHeaderFormat());
-            pFormat->SetFormatAttr( aUL );
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_HEADER_LAYOUT:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetHeader().IsActive())
-        {
-            const SfxInt16Item& aLayoutItem = static_cast<const SfxInt16Item&>(pReqArgs->Get(SID_ATTR_PAGE_HEADER_LAYOUT));
-            sal_uInt16 nLayout = aLayoutItem.GetValue();
-            SwPageDesc aDesc(rDesc);
-            aDesc.ChgHeaderShare((nLayout>>1) == 0);
-            aDesc.ChgFirstShare((nLayout % 2) == 0); // FIXME control changes for both header footer - tdf#100287
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_FOOTER:
-    {
-        if ( pReqArgs )
-        {
-            const bool bFooterOn =  static_cast<const SfxBoolItem&>(pReqArgs->Get(SID_ATTR_PAGE_FOOTER)).GetValue();
-            SwPageDesc aDesc(rDesc);
-            SwFrameFormat &rMaster = aDesc.GetMaster();
-            rMaster.SetFormatAttr( SwFormatFooter( bFooterOn ));
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_FOOTER_LRMARGIN:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetFooter().IsActive() )
-        {
-            const SvxLongLRSpaceItem& aLongLR = static_cast<const SvxLongLRSpaceItem&>(pReqArgs->Get(SID_ATTR_PAGE_FOOTER_LRMARGIN));
-            SvxLRSpaceItem aLR(RES_LR_SPACE);
-            SwPageDesc aDesc(rDesc);
-            aLR.SetLeft(aLongLR.GetLeft());
-            aLR.SetRight(aLongLR.GetRight());
-            SwFrameFormat* pFormat = const_cast<SwFrameFormat*>(aDesc.GetMaster().GetFooter().GetFooterFormat());
-            pFormat->SetFormatAttr( aLR );
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_FOOTER_SPACING:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetFooter().IsActive())
-        {
-            const SvxLongULSpaceItem& aLongUL = static_cast<const SvxLongULSpaceItem&>(pReqArgs->Get(SID_ATTR_PAGE_FOOTER_SPACING));
-            SwPageDesc aDesc(rDesc);
-            SvxULSpaceItem aUL(aLongUL.GetUpper(), 0, RES_UL_SPACE );
-            SwFrameFormat* pFormat = const_cast<SwFrameFormat*>(aDesc.GetMaster().GetFooter().GetFooterFormat());
-            pFormat->SetFormatAttr( aUL );
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-    case SID_ATTR_PAGE_FOOTER_LAYOUT:
-    {
-        if ( pReqArgs && rDesc.GetMaster().GetFooter().IsActive())
-        {
-            const SfxInt16Item& aLayoutItem = static_cast<const SfxInt16Item&>(pReqArgs->Get(SID_ATTR_PAGE_FOOTER_LAYOUT));
-            sal_uInt16 nLayout = aLayoutItem.GetValue();
-            SwPageDesc aDesc(rDesc);
-            aDesc.ChgFooterShare((nLayout>>1) == 0);
-            aDesc.ChgFirstShare((nLayout % 2) == 0); // FIXME control changes for both header footer - tdf#100287
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-
-    case SID_ATTR_PAGE_COLOR:
-    case SID_ATTR_PAGE_FILLSTYLE:
-    case SID_ATTR_PAGE_GRADIENT:
-    case SID_ATTR_PAGE_HATCH:
-    case SID_ATTR_PAGE_BITMAP:
-    {
-        if(pReqArgs)
-        {
-            SwPageDesc aDesc(rDesc);
-            SwFrameFormat &rMaster = aDesc.GetMaster();
-            switch (nSlot)
-            {
-                case(SID_ATTR_PAGE_FILLSTYLE):
-                {
-                    XFillStyleItem aFSItem( static_cast<const XFillStyleItem&>(pReqArgs->Get( XATTR_FILLSTYLE )) );
-                    drawing::FillStyle eXFS = aFSItem.GetValue();
-
-                    if ( eXFS == drawing::FillStyle_NONE )
-                         rMaster.SetFormatAttr( XFillStyleItem( eXFS ) );
-                }
-                break;
-
-                case(SID_ATTR_PAGE_COLOR):
-                {
-                    XFillColorItem aColorItem( static_cast<const XFillColorItem&>(pReqArgs->Get( XATTR_FILLCOLOR )) );
-                    rMaster.SetFormatAttr( XFillStyleItem( drawing::FillStyle_SOLID ) );
-                    rMaster.SetFormatAttr( XFillColorItem( aColorItem ));
-                }
-                break;
-
-                case(SID_ATTR_PAGE_GRADIENT):
-                {
-                    XFillGradientItem aGradientItem( static_cast<const XFillGradientItem&>(pReqArgs->Get( XATTR_FILLGRADIENT )) );
-                    rMaster.SetFormatAttr( XFillStyleItem( drawing::FillStyle_GRADIENT ) );
-                    rMaster.SetFormatAttr( XFillGradientItem( aGradientItem ) );
-                }
-                break;
-
-                case(SID_ATTR_PAGE_HATCH):
-                {
-                    XFillHatchItem aHatchItem( static_cast<const XFillHatchItem&>(pReqArgs->Get( XATTR_FILLHATCH )) );
-                    rMaster.SetFormatAttr( XFillStyleItem( drawing::FillStyle_HATCH ) );
-                    rMaster.SetFormatAttr( XFillHatchItem( aHatchItem ));
-                }
-                break;
-
-                case(SID_ATTR_PAGE_BITMAP):
-                {
-                    XFillBitmapItem aBitmapItem( static_cast<const XFillBitmapItem&>(pReqArgs->Get( XATTR_FILLBITMAP )) );
-                    rMaster.SetFormatAttr( XFillStyleItem( drawing::FillStyle_BITMAP ) );
-                    rMaster.SetFormatAttr( XFillBitmapItem( aBitmapItem ));
-                }
-                break;
-
-                default:
-                break;
-            }
-            rSh.ChgPageDesc(rSh.GetCurPageDesc(), aDesc);
-        }
-    }
-    break;
-
     default:
         OSL_ENSURE( false, "wrong SlotId");
     }
@@ -1177,7 +989,7 @@ void SwView::ExecTabWin( SfxRequest& rReq )
 
 // Here the status of the tab bar will be determined.
 // This means that all relevant attributes at the CursorPos
-// will be submitted to the tab bar.
+// will be submittet to the tab bar.
 void SwView::StateTabWin(SfxItemSet& rSet)
 {
     SwWrtShell &rSh         = GetWrtShell();
@@ -1190,8 +1002,8 @@ void SwView::StateTabWin(SfxItemSet& rSet)
     const bool  bFrameSelection = rSh.IsFrameSelected();
     const bool bBrowse = rSh.GetViewOptions()->getBrowseMode();
     // PageOffset/limiter
-    const SwRect& rPageRect = rSh.GetAnyCurRect( CurRectType::Page, pPt );
-    const SwRect& rPagePrtRect = rSh.GetAnyCurRect( CurRectType::PagePrt, pPt );
+    const SwRect& rPageRect = rSh.GetAnyCurRect( RECT_PAGE, pPt );
+    const SwRect& rPagePrtRect = rSh.GetAnyCurRect( RECT_PAGE_PRT, pPt );
     const long nPageWidth  = rPageRect.Width();
     const long nPageHeight = rPageRect.Height();
 
@@ -1224,6 +1036,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
 
     SfxWhichIter aIter( rSet );
     sal_uInt16 nWhich = aIter.FirstWhich();
+    bool bPutContentProtection = false;
 
     while ( nWhich )
     {
@@ -1263,8 +1076,6 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             {
                 nColumnType = 3;
             }
-            else
-                nColumnType = nCols;
 
             rSet.Put( SfxInt16Item( SID_ATTR_PAGE_COLUMN, nColumnType ) );
         }
@@ -1272,8 +1083,8 @@ void SwView::StateTabWin(SfxItemSet& rSet)
 
         case SID_ATTR_LONG_LRSPACE:
         {
-            SvxLongLRSpaceItem aLongLR( aPageLRSpace.GetLeft(),
-                                        aPageLRSpace.GetRight(),
+            SvxLongLRSpaceItem aLongLR( (long)aPageLRSpace.GetLeft(),
+                                        (long)aPageLRSpace.GetRight(),
                                         SID_ATTR_LONG_LRSPACE);
             if(bBrowse)
             {
@@ -1283,16 +1094,17 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             if ( ( nFrameType & FrameTypeFlags::HEADER || nFrameType & FrameTypeFlags::FOOTER ) &&
                  !(nFrameType & FrameTypeFlags::COLSECT) )
             {
-                SwFrameFormat *pFormat = const_cast<SwFrameFormat*>((nFrameType & FrameTypeFlags::HEADER) ?
+                SwFrameFormat *pFormat = const_cast<SwFrameFormat*>(nFrameType & FrameTypeFlags::HEADER ?
                                 rDesc.GetMaster().GetHeader().GetHeaderFormat() :
                                 rDesc.GetMaster().GetFooter().GetFooterFormat());
                 if( pFormat )// #i80890# if rDesc is not the one belonging to the current page is might crash
                 {
-                    SwRect aRect( rSh.GetAnyCurRect( CurRectType::HeaderFooter, pPt));
-                    aRect.Pos() -= rSh.GetAnyCurRect( CurRectType::Page, pPt ).Pos();
+                    SwRect aRect( rSh.GetAnyCurRect( RECT_HEADERFOOTER, pPt));
+                    aRect.Pos() -= rSh.GetAnyCurRect( RECT_PAGE, pPt ).Pos();
                     const SvxLRSpaceItem& aLR = pFormat->GetLRSpace();
-                    aLongLR.SetLeft ( aLR.GetLeft() + aRect.Left() );
-                    aLongLR.SetRight( nPageWidth - aRect.Right() + aLR.GetRight() );
+                    aLongLR.SetLeft ( (long)aLR.GetLeft() + (long)aRect.Left() );
+                    aLongLR.SetRight( (nPageWidth -
+                                        (long)aRect.Right() + (long)aLR.GetRight()));
                 }
             }
             else
@@ -1300,13 +1112,13 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                 SwRect aRect;
                 if( !bFrameSelection && ((nFrameType & FrameTypeFlags::COLSECT) || rSh.IsDirectlyInSection()) )
                 {
-                    aRect = rSh.GetAnyCurRect(CurRectType::SectionPrt, pPt);
-                    const SwRect aTmpRect = rSh.GetAnyCurRect(CurRectType::Section, pPt);
+                    aRect = rSh.GetAnyCurRect(RECT_SECTION_PRT, pPt);
+                    const SwRect aTmpRect = rSh.GetAnyCurRect(RECT_SECTION, pPt);
                     aRect.Pos() += aTmpRect.Pos();
                 }
 
                 else if ( bFrameSelection || nFrameType & FrameTypeFlags::FLY_ANY )
-                    aRect = rSh.GetAnyCurRect(CurRectType::FlyEmbedded, pPt);
+                    aRect = rSh.GetAnyCurRect(RECT_FLY_EMBEDDED, pPt);
                 else if( nFrameType & FrameTypeFlags::DRAWOBJ)
                     aRect = rSh.GetObjRect();
 
@@ -1335,8 +1147,8 @@ void SwView::StateTabWin(SfxItemSet& rSet)
         {
             const SvxLRSpaceItem aTmpPageLRSpace( rDesc.GetMaster().GetLRSpace() );
             const SvxLongLRSpaceItem aLongLR(
-                aTmpPageLRSpace.GetLeft(),
-                aTmpPageLRSpace.GetRight(),
+                (long)aTmpPageLRSpace.GetLeft(),
+                (long)aTmpPageLRSpace.GetRight(),
                 SID_ATTR_PAGE_LRSPACE );
             rSet.Put( aLongLR );
         }
@@ -1353,14 +1165,14 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             if ( bFrameSelection || nFrameType & FrameTypeFlags::FLY_ANY )
             {
                 // Convert document coordinates into page coordinates.
-                const SwRect &rRect = rSh.GetAnyCurRect(CurRectType::FlyEmbedded, pPt);
+                const SwRect &rRect = rSh.GetAnyCurRect(RECT_FLY_EMBEDDED, pPt);
                 aLongUL.SetUpper(rRect.Top() - rPageRect.Top());
                 aLongUL.SetLower(rPageRect.Bottom() - rRect.Bottom());
             }
             else if ( nFrameType & FrameTypeFlags::HEADER || nFrameType & FrameTypeFlags::FOOTER )
             {
-                SwRect aRect( rSh.GetAnyCurRect( CurRectType::HeaderFooter, pPt));
-                aRect.Pos() -= rSh.GetAnyCurRect( CurRectType::Page, pPt ).Pos();
+                SwRect aRect( rSh.GetAnyCurRect( RECT_HEADERFOOTER, pPt));
+                aRect.Pos() -= rSh.GetAnyCurRect( RECT_PAGE, pPt ).Pos();
                 aLongUL.SetUpper( aRect.Top() );
                 aLongUL.SetLower( nPageHeight - aRect.Bottom() );
             }
@@ -1406,9 +1218,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             if ( dynamic_cast< const SwWebView *>( this ) !=  nullptr ||
                  IsTabColFromDoc() ||
                  IsTabRowFromDoc() ||
-                 ( nSelType & SelectionType::Graphic ) ||
-                 ( nSelType & SelectionType::Frame ) ||
-                 ( nSelType & SelectionType::Ole ) ||
+                 ( nSelType & nsSelectionType::SEL_GRF ) ||
+                 ( nSelType & nsSelectionType::SEL_FRM ) ||
+                 ( nSelType & nsSelectionType::SEL_OLE ) ||
                  ( SfxItemState::DEFAULT > aCoreSet.GetItemState(RES_LR_SPACE) ) ||
                  (!bVerticalWriting && (SID_ATTR_TABSTOP_VERTICAL == nWhich) ) ||
                  ( bVerticalWriting && (RES_PARATR_TABSTOP == nWhich))
@@ -1427,29 +1239,17 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                 m_pHRuler->SetDefTabDist( nDefTabDist );
                 m_pVRuler->SetDefTabDist( nDefTabDist );
                 ::lcl_EraseDefTabs(aTabStops);
-                aTabStops.SetWhich(nWhich);
-                rSet.Put(aTabStops);
+                rSet.Put(aTabStops, nWhich);
             }
-            break;
-        }
-
-        case SID_HANGING_INDENT:
-        {
-            SfxItemState e = aCoreSet.GetItemState(RES_LR_SPACE);
-            if( e == SfxItemState::DISABLED )
-                rSet.DisableItem(nWhich);
             break;
         }
 
         case SID_ATTR_PARA_LRSPACE_VERTICAL:
         case SID_ATTR_PARA_LRSPACE:
-        case SID_ATTR_PARA_LEFTSPACE:
-        case SID_ATTR_PARA_RIGHTSPACE:
-        case SID_ATTR_PARA_FIRSTLINESPACE:
         {
-            if ( nSelType & SelectionType::Graphic ||
-                 nSelType & SelectionType::Frame ||
-                 nSelType & SelectionType::Ole ||
+            if ( nSelType & nsSelectionType::SEL_GRF ||
+                 nSelType & nsSelectionType::SEL_FRM ||
+                 nSelType & nsSelectionType::SEL_OLE ||
                  nFrameType == FrameTypeFlags::DRAWOBJ ||
                  (!bVerticalWriting && (SID_ATTR_PARA_LRSPACE_VERTICAL == nWhich)) ||
                  ( bVerticalWriting && (SID_ATTR_PARA_LRSPACE == nWhich))
@@ -1485,8 +1285,6 @@ void SwView::StateTabWin(SfxItemSet& rSet)
         }
 
         case SID_ATTR_PARA_ULSPACE:
-        case SID_ATTR_PARA_ABOVESPACE:
-        case SID_ATTR_PARA_BELOWSPACE:
         case SID_PARASPACE_INCREASE:
         case SID_PARASPACE_DECREASE:
         {
@@ -1498,12 +1296,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     rSet.DisableItem( SID_PARASPACE_DECREASE );
                 else if ( aUL.GetUpper() >= 5670 && aUL.GetLower() >= 5670 )
                     rSet.DisableItem( SID_PARASPACE_INCREASE );
-                if ( nWhich == SID_ATTR_PARA_ULSPACE
-                    || nWhich == SID_ATTR_PARA_ABOVESPACE
-                    || nWhich == SID_ATTR_PARA_BELOWSPACE
-                )
+                if ( nWhich == SID_ATTR_PARA_ULSPACE )
                 {
-                    aUL.SetWhich( nWhich );
+                    aUL.SetWhich( SID_ATTR_PARA_ULSPACE );
                     rSet.Put( aUL );
                 }
             }
@@ -1512,8 +1307,6 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                 rSet.DisableItem( SID_PARASPACE_INCREASE );
                 rSet.DisableItem( SID_PARASPACE_DECREASE );
                 rSet.InvalidateItem( SID_ATTR_PARA_ULSPACE );
-                rSet.InvalidateItem( SID_ATTR_PARA_ABOVESPACE );
-                rSet.InvalidateItem( SID_ATTR_PARA_BELOWSPACE );
             }
         }
         break;
@@ -1522,9 +1315,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
         {
             m_nLeftBorderDistance = 0;
             m_nRightBorderDistance = 0;
-            if ( nSelType & SelectionType::Graphic ||
-                    nSelType & SelectionType::Frame ||
-                    nSelType & SelectionType::Ole ||
+            if ( nSelType & nsSelectionType::SEL_GRF ||
+                    nSelType & nsSelectionType::SEL_FRM ||
+                    nSelType & nsSelectionType::SEL_OLE ||
                     nFrameType == FrameTypeFlags::DRAWOBJ )
                 rSet.DisableItem(SID_RULER_BORDER_DISTANCE);
             else
@@ -1534,12 +1327,15 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                 {
                     if( IsTabColFromDoc() )
                     {
-                        const SwRect& rFlyPrtRect = rSh.GetAnyCurRect( CurRectType::FlyEmbeddedPrt, pPt );
+                        const SwRect& rFlyPrtRect = rSh.GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, pPt );
                         aDistLR.SetLeft(rFlyPrtRect.Left());
                         aDistLR.SetRight(rFlyPrtRect.Left());
                     }
                     else
                     {
+                        SfxItemSet aCoreSet2( GetPool(),
+                                                RES_BOX, RES_BOX,
+                                                SID_ATTR_BORDER_INNER, SID_ATTR_BORDER_INNER, 0 );
                         SvxBoxInfoItem aBoxInfo( SID_ATTR_BORDER_INNER );
                         aCoreSet.Put( aBoxInfo );
                         rSh.GetFlyFrameAttr( aCoreSet );
@@ -1548,7 +1344,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                         aDistLR.SetRight(rBox.GetDistance(SvxBoxItemLine::RIGHT));
 
                         //add the paragraph border distance
-                        SfxItemSet aCoreSet1( GetPool(), RES_BOX, RES_BOX );
+                        SfxItemSet aCoreSet1( GetPool(),
+                                                RES_BOX, RES_BOX,
+                                                0 );
                         rSh.GetCurAttr( aCoreSet1 );
                         const SvxBoxItem& rParaBox = static_cast<const SvxBoxItem&>(aCoreSet1.Get(RES_BOX));
                         aDistLR.SetLeft(aDistLR.GetLeft() + rParaBox.GetDistance(SvxBoxItemLine::LEFT));
@@ -1615,7 +1413,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     }
 
                     //add the border distance of the paragraph
-                    SfxItemSet aCoreSetTmp( GetPool(), RES_BOX, RES_BOX );
+                    SfxItemSet aCoreSetTmp( GetPool(),
+                                            RES_BOX, RES_BOX,
+                                            SID_ATTR_BORDER_INNER, SID_ATTR_BORDER_INNER, 0 );
                     rSh.GetCurAttr( aCoreSetTmp );
                     const SvxBoxItem& rParaBox = static_cast<const SvxBoxItem&>(aCoreSetTmp.Get(RES_BOX));
                     aDistLR.SetLeft(aDistLR.GetLeft() + rParaBox.GetDistance(SvxBoxItemLine::LEFT));
@@ -1630,9 +1430,9 @@ void SwView::StateTabWin(SfxItemSet& rSet)
 
         case SID_RULER_TEXT_RIGHT_TO_LEFT:
         {
-            if ( nSelType & SelectionType::Graphic ||
-                    nSelType & SelectionType::Frame ||
-                    nSelType & SelectionType::Ole ||
+            if ( nSelType & nsSelectionType::SEL_GRF ||
+                    nSelType & nsSelectionType::SEL_FRM ||
+                    nSelType & nsSelectionType::SEL_OLE ||
                     nFrameType == FrameTypeFlags::DRAWOBJ)
                 rSet.DisableItem(nWhich);
             else
@@ -1671,8 +1471,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             {
                 SwTabCols aTabCols;
                 size_t nNum = 0;
-                m_bSetTabColFromDoc = IsTabColFromDoc();
-                if ( m_bSetTabColFromDoc )
+                if ( ( m_bSetTabColFromDoc = IsTabColFromDoc() ) )
                 {
                     rSh.GetMouseTabCols( aTabCols, m_aTabColFromDocPos );
                     nNum = rSh.GetCurMouseTabColNum( m_aTabColFromDocPos );
@@ -1736,8 +1535,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                                 0, 0, true);
                     aColItem.Append(aColDesc);
                 }
-                aColItem.SetWhich(nWhich);
-                rSet.Put(aColItem);
+                rSet.Put(aColItem, nWhich);
             }
             else if ( bFrameSelection || nFrameType & ( FrameTypeFlags::COLUMN | FrameTypeFlags::COLSECT ) )
             {
@@ -1769,8 +1567,8 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                         else
                             --nNum;
                         SvxColumnItem aColItem(nNum);
-                        SwRect aRect = rSh.GetAnyCurRect(CurRectType::SectionPrt, pPt);
-                        const SwRect aTmpRect = rSh.GetAnyCurRect(CurRectType::Section, pPt);
+                        SwRect aRect = rSh.GetAnyCurRect(RECT_SECTION_PRT, pPt);
+                        const SwRect aTmpRect = rSh.GetAnyCurRect(RECT_SECTION, pPt);
 
                         ::lcl_FillSvxColumn(rCol, bVerticalWriting ? aRect.Height() : aRect.Width(), aColItem, 0);
 
@@ -1791,8 +1589,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                         }
                         aColItem.SetOrtho(aColItem.CalcOrtho());
 
-                        aColItem.SetWhich(nWhich);
-                        rSet.Put(aColItem);
+                        rSet.Put(aColItem, nWhich);
                     }
                 }
                 else if( bFrameSelection || nFrameType & FrameTypeFlags::FLY_ANY )
@@ -1808,11 +1605,11 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                         else
                             nNum--;
                         SvxColumnItem aColItem(nNum);
-                        const SwRect &rSizeRect = rSh.GetAnyCurRect(CurRectType::FlyEmbeddedPrt, pPt);
+                        const SwRect &rSizeRect = rSh.GetAnyCurRect(RECT_FLY_PRT_EMBEDDED, pPt);
 
                         bool bUseVertical = bFrameHasVerticalColumns || (!bFrameSelection && bVerticalWriting);
                         const long lWidth = bUseVertical ? rSizeRect.Height() : rSizeRect.Width();
-                        const SwRect &rRect = rSh.GetAnyCurRect(CurRectType::FlyEmbedded, pPt);
+                        const SwRect &rRect = rSh.GetAnyCurRect(RECT_FLY_EMBEDDED, pPt);
                         long nDist2 = ((bUseVertical ? rRect.Height() : rRect.Width()) - lWidth) /2;
                         ::lcl_FillSvxColumn(rCol, lWidth, aColItem, nDist2);
 
@@ -1832,8 +1629,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
 
                         aColItem.SetOrtho(aColItem.CalcOrtho());
 
-                        aColItem.SetWhich(nWhich);
-                        rSet.Put(aColItem);
+                        rSet.Put(aColItem, nWhich);
                     }
                     else
                         rSet.DisableItem(nWhich);
@@ -1842,15 +1638,15 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                 {   // Columns on the page
                     const SwFrameFormat& rMaster = rDesc.GetMaster();
                     SwFormatCol aCol(rMaster.GetCol());
-                    if(rFrameDir.GetValue() == SvxFrameDirection::Horizontal_RL_TB)
+                    if(rFrameDir.GetValue() == FRMDIR_HORI_RIGHT_TOP)
                         nNum = aCol.GetColumns().size() - nNum;
                     else
                         nNum--;
 
                     SvxColumnItem aColItem(nNum);
-                    const SwRect aPrtRect = rSh.GetAnyCurRect(CurRectType::PagePrt, pPt);
+                    const SwRect aPrtRect = rSh.GetAnyCurRect(RECT_PAGE_PRT, pPt);
                     const SvxBoxItem& rBox = static_cast<const SvxBoxItem&>(rMaster.GetFormatAttr(RES_BOX));
-                    long nDist = rBox.GetSmallestDistance();
+                    long nDist = rBox.GetDistance();
 
                     lcl_FillSvxColumn(
                         aCol,
@@ -1886,8 +1682,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     }
                     aColItem.SetOrtho(aColItem.CalcOrtho());
 
-                    aColItem.SetWhich(nWhich);
-                    rSet.Put(aColItem);
+                    rSet.Put(aColItem, nWhich);
                 }
             }
             else
@@ -1916,8 +1711,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     !(nFrameType & FrameTypeFlags::COLSECT ) ) )
             {
                 SwTabCols aTabCols;
-                m_bSetTabRowFromDoc = IsTabRowFromDoc();
-                if ( m_bSetTabRowFromDoc )
+                if ( ( m_bSetTabRowFromDoc = IsTabRowFromDoc() ) )
                 {
                     rSh.GetMouseTabRows( aTabCols, m_aTabColFromDocPos );
                 }
@@ -1965,6 +1759,10 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     nEnd = aTabCols.GetRight();
                 else
                     nEnd = aTabCols.GetLeft();
+                // put a position protection when the last row cannot be moved
+                // due to a page break inside of a row
+                if(!aTabCols.IsLastRowAllowedToChange())
+                    bPutContentProtection = true;
 
                 SvxColumnDescription aColDesc( nStart, nEnd,
                                             aTabCols.GetRight(),
@@ -1972,8 +1770,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                                             false );
                 aColItem.Append(aColDesc);
 
-                aColItem.SetWhich(nWhich);
-                rSet.Put(aColItem);
+                rSet.Put(aColItem, nWhich);
             }
             else
                 rSet.DisableItem(nWhich);
@@ -1991,7 +1788,7 @@ void SwView::StateTabWin(SfxItemSet& rSet)
 
         case SID_RULER_LR_MIN_MAX:
         {
-            tools::Rectangle aRectangle;
+            Rectangle aRectangle;
             if( ( nFrameType & FrameTypeFlags::COLSECT ) && !IsTabColFromDoc() &&
                 ( nFrameType & ( FrameTypeFlags::TABLE|FrameTypeFlags::COLUMN ) ) )
             {
@@ -2029,11 +1826,11 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     sal_uInt16 nNum = rSh.GetCurOutColNum();
                     const sal_uInt16 nCount = std::min(sal_uInt16(nNum + 1), sal_uInt16(rCols.size()));
                     const SwRect aRect( rSh.GetAnyCurRect( pFormat
-                                                    ? CurRectType::FlyEmbeddedPrt
-                                                    : CurRectType::PagePrt, pPt ));
+                                                    ? RECT_FLY_PRT_EMBEDDED
+                                                    : RECT_PAGE_PRT, pPt ));
                     const SwRect aAbsRect( rSh.GetAnyCurRect( pFormat
-                                                    ? CurRectType::FlyEmbedded
-                                                    : CurRectType::Page, pPt ));
+                                                    ? RECT_FLY_EMBEDDED
+                                                    : RECT_PAGE, pPt ));
 
                     // The width of the frame or within the page margins.
                     const sal_uInt16 nTotalWidth = (sal_uInt16)aRect.Width();
@@ -2094,8 +1891,8 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     if( nFrameType & FrameTypeFlags::FLY_ANY && IsTabColFromDoc() )
                     {
                         SwRect aRect( rSh.GetAnyCurRect(
-                                            CurRectType::FlyEmbeddedPrt, pPt ) );
-                        aRect.Pos() += rSh.GetAnyCurRect( CurRectType::FlyEmbedded,
+                                            RECT_FLY_PRT_EMBEDDED, pPt ) );
+                        aRect.Pos() += rSh.GetAnyCurRect( RECT_FLY_EMBEDDED,
                                                                 pPt ).Pos();
 
                         aRectangle.Left()  = aRect.Left() - rPageRect.Left();
@@ -2121,15 +1918,15 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                                                     : FrameTypeFlags::COLSECT )
                                                 );
                     //So you can also drag with the mouse, without being in the table.
-                    CurRectType eRecType = CurRectType::PagePrt;
+                    CurRectType eRecType = RECT_PAGE_PRT;
                     size_t nNum = IsTabColFromDoc() ?
                                 rSh.GetCurMouseColNum( m_aTabColFromDocPos ):
                                 rSh.GetCurOutColNum();
                     const SwFrameFormat* pFormat = nullptr;
                     if( bColSct )
                     {
-                        eRecType = bSectOutTable ? CurRectType::SectionOutsideTable
-                                               : CurRectType::Section;
+                        eRecType = bSectOutTable ? RECT_OUTTABSECTION
+                                               : RECT_SECTION;
                         const SwSection *pSect = rSh.GetAnySection( bSectOutTable, pPt );
                         OSL_ENSURE( pSect, "Which section?");
                         pFormat = pSect->GetFormat();
@@ -2137,22 +1934,21 @@ void SwView::StateTabWin(SfxItemSet& rSet)
                     else if( bFrame )
                     {
                         pFormat = rSh.GetFlyFrameFormat();
-                        eRecType = CurRectType::FlyEmbeddedPrt;
+                        eRecType = RECT_FLY_PRT_EMBEDDED;
                     }
 
                     const SwFormatCol* pCols = pFormat ? &pFormat->GetCol():
                                                    &rDesc.GetMaster().GetCol();
                     const SwColumns& rCols = pCols->GetColumns();
-                    const sal_uInt16 nBorder = (pFormat)
-                        ? pFormat->GetBox().GetSmallestDistance()
-                        : rDesc.GetMaster().GetBox().GetSmallestDistance();
+                    const sal_uInt16 nBorder = pFormat ? pFormat->GetBox().GetDistance() :
+                                                  rDesc.GetMaster().GetBox().GetDistance();
 
                     // RECT_FLY_PRT_EMBEDDED returns the relative position to RECT_FLY_EMBEDDED
                     // the absolute position must be added here
 
                     SwRect aRect( rSh.GetAnyCurRect( eRecType, pPt ) );
-                    if(CurRectType::FlyEmbeddedPrt == eRecType)
-                        aRect.Pos() += rSh.GetAnyCurRect( CurRectType::FlyEmbedded,
+                    if(RECT_FLY_PRT_EMBEDDED == eRecType)
+                        aRect.Pos() += rSh.GetAnyCurRect( RECT_FLY_EMBEDDED,
                                                                 pPt ).Pos();
 
                     const sal_uInt16 nTotalWidth = (sal_uInt16)aRect.Width();
@@ -2234,120 +2030,14 @@ void SwView::StateTabWin(SfxItemSet& rSet)
             }
         }
         break;
-
-        case SID_ATTR_PAGE_HEADER:
-        case SID_ATTR_PAGE_HEADER_LRMARGIN:
-        case SID_ATTR_PAGE_HEADER_SPACING:
-        case SID_ATTR_PAGE_HEADER_LAYOUT:
-        {
-            const SwFormatHeader& rHeader = rDesc.GetMaster().GetHeader();
-            bool bHeaderOn = rHeader.IsActive();
-            rSet.Put( SfxBoolItem(SID_ATTR_PAGE_HEADER, bHeaderOn ) );
-            if(bHeaderOn)
-            {
-                const SvxLRSpaceItem* rLR = static_cast<const SvxLRSpaceItem*>(
-                                            rHeader.GetHeaderFormat()->GetAttrSet().GetItem(SID_ATTR_LRSPACE));
-                const SvxULSpaceItem* rUL = static_cast<const SvxULSpaceItem*>(
-                                            rHeader.GetHeaderFormat()->GetAttrSet().GetItem(SID_ATTR_ULSPACE));
-                SvxLongLRSpaceItem aLR(rLR->GetLeft(), rLR->GetRight(), SID_ATTR_PAGE_HEADER_LRMARGIN);
-                rSet.Put(aLR);
-                SvxLongULSpaceItem aUL( rUL->GetUpper(), rUL->GetLower(), SID_ATTR_PAGE_HEADER_SPACING);
-                rSet.Put(aUL);
-
-                bool bShared = !rDesc.IsHeaderShared();
-                bool bFirst = !rDesc.IsFirstShared(); // FIXME control changes for both header footer - tdf#100287
-                sal_uInt16 nLayout = ((int)bShared<<1) + (int)bFirst;
-                SfxInt16Item aLayoutItem(SID_ATTR_PAGE_HEADER_LAYOUT, nLayout);
-                rSet.Put(aLayoutItem);
-            }
-        }
-        break;
-        case SID_ATTR_PAGE_FOOTER:
-        case SID_ATTR_PAGE_FOOTER_LRMARGIN:
-        case SID_ATTR_PAGE_FOOTER_SPACING:
-        case SID_ATTR_PAGE_FOOTER_LAYOUT:
-        {
-            const SwFormatFooter& rFooter = rDesc.GetMaster().GetFooter();
-            bool bFooterOn = rFooter.IsActive();
-            rSet.Put( SfxBoolItem(SID_ATTR_PAGE_FOOTER, bFooterOn ) );
-            if(bFooterOn)
-            {
-                const SvxLRSpaceItem* rLR = rFooter.GetFooterFormat()->GetAttrSet().GetItem<SvxLRSpaceItem>(SID_ATTR_LRSPACE);
-                const SvxULSpaceItem* rUL = rFooter.GetFooterFormat()->GetAttrSet().GetItem<SvxULSpaceItem>(SID_ATTR_ULSPACE);
-                SvxLongLRSpaceItem aLR(rLR->GetLeft(), rLR->GetRight(), SID_ATTR_PAGE_FOOTER_LRMARGIN);
-                rSet.Put(aLR);
-                SvxLongULSpaceItem aUL( rUL->GetUpper(), rUL->GetLower(), SID_ATTR_PAGE_FOOTER_SPACING);
-                rSet.Put(aUL);
-
-                bool bShared = !rDesc.IsFooterShared();
-                bool bFirst = !rDesc.IsFirstShared(); // FIXME control changes for both header footer - tdf#100287
-                sal_uInt16 nLayout = ((int)bShared<<1) + (int)bFirst;
-                SfxInt16Item aLayoutItem(SID_ATTR_PAGE_FOOTER_LAYOUT, nLayout);
-                rSet.Put(aLayoutItem);
-            }
-        }
-        break;
-
-        case SID_ATTR_PAGE_COLOR:
-        case SID_ATTR_PAGE_FILLSTYLE:
-        case SID_ATTR_PAGE_GRADIENT:
-        case SID_ATTR_PAGE_HATCH:
-        case SID_ATTR_PAGE_BITMAP:
-        {
-            SfxItemSet aSet = rDesc.GetMaster().GetAttrSet();
-            drawing::FillStyle eXFS = (drawing::FillStyle) ( static_cast<const XFillStyleItem*>(
-                                        aSet.GetItem(XATTR_FILLSTYLE) )->GetValue() );
-            XFillStyleItem aFillStyleItem( eXFS );
-            aFillStyleItem.SetWhich( SID_ATTR_PAGE_FILLSTYLE );
-            rSet.Put(aFillStyleItem);
-            switch(eXFS)
-            {
-                case (drawing::FillStyle_SOLID):
-                {
-                    Color aColor = aSet.GetItem<XFillColorItem>( XATTR_FILLCOLOR, false )->GetColorValue();
-                    XFillColorItem aFillColorItem( OUString(), aColor );
-                    aFillColorItem.SetWhich( SID_ATTR_PAGE_COLOR );
-                    rSet.Put( aFillColorItem );
-                }
-                break;
-
-                case (drawing::FillStyle_GRADIENT):
-                {
-                    const XGradient& xGradient = aSet.GetItem<XFillGradientItem>( XATTR_FILLGRADIENT )->GetGradientValue();
-                    XFillGradientItem aFillGradientItem( OUString(), xGradient, SID_ATTR_PAGE_GRADIENT  );
-                    rSet.Put( aFillGradientItem );
-                }
-                break;
-
-                case (drawing::FillStyle_HATCH):
-                {
-                    const XFillHatchItem *pFillHatchItem( aSet.GetItem<XFillHatchItem>( XATTR_FILLHATCH ) );
-                    XFillHatchItem aFillHatchItem( pFillHatchItem->GetName(), pFillHatchItem->GetHatchValue());
-                    aFillHatchItem.SetWhich( SID_ATTR_PAGE_HATCH );
-                    rSet.Put( aFillHatchItem );
-                }
-                break;
-
-                case (drawing::FillStyle_BITMAP):
-                {
-                    const XFillBitmapItem *pFillBitmapItem = aSet.GetItem<XFillBitmapItem>( XATTR_FILLBITMAP );
-                    XFillBitmapItem aFillBitmapItem( pFillBitmapItem->GetName(), pFillBitmapItem->GetGraphicObject() );
-                    aFillBitmapItem.SetWhich( SID_ATTR_PAGE_BITMAP );
-                    rSet.Put( aFillBitmapItem );
-                }
-                break;
-                case (drawing::FillStyle_NONE):
-                {
-                }
-                break;
-
-                default:
-                break;
-            }
-        }
-        break;
         }
         nWhich = aIter.NextWhich();
+    }
+    if(bPutContentProtection)
+    {
+        SvxProtectItem aProtect(SID_RULER_PROTECT);
+        aProtect.SetContentProtect(true);
+        rSet.Put(aProtect);
     }
 }
 

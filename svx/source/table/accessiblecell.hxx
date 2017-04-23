@@ -52,7 +52,7 @@ class AccessibleCell : public AccessibleCellBase
 {
 public:
     AccessibleCell( const css::uno::Reference< css::accessibility::XAccessible>& rxParent, const sdr::table::CellRef& rCell, sal_Int32 nIndex, const AccessibleShapeTreeInfo& rShapeTreeInfo);
-    virtual ~AccessibleCell() override;
+    virtual ~AccessibleCell();
     AccessibleCell(const AccessibleCell&) = delete;
     AccessibleCell& operator=(const AccessibleCell&) = delete;
 
@@ -62,52 +62,54 @@ public:
     virtual bool ResetState (sal_Int16 aState) override;
 
     // XInterface
-    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) override;
+    virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL acquire(  ) throw () override;
     virtual void SAL_CALL release(  ) throw () override;
 
     // XAccessibleContext
-    virtual sal_Int32 SAL_CALL getAccessibleChildCount() override;
-    virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL getAccessibleChild(sal_Int32 nIndex) override;
-    virtual css::uno::Reference< css::accessibility::XAccessibleStateSet> SAL_CALL getAccessibleStateSet() override;
-    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() override;
-    virtual OUString SAL_CALL getAccessibleName() override;
+    virtual sal_Int32 SAL_CALL getAccessibleChildCount() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible> SAL_CALL getAccessibleChild(sal_Int32 nIndex) throw(css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessibleStateSet> SAL_CALL getAccessibleStateSet() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getAccessibleIndexInParent() throw(css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getAccessibleName() throw (css::uno::RuntimeException, std::exception) override;
     const sdr::table::CellRef& getCellRef() { return mxCell;}
     void UpdateChildren();
     static OUString getCellName( sal_Int32 nCol, sal_Int32 nRow );
 
     // XAccessibleComponent
-    virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint) override;
-    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint(const css::awt::Point& aPoint) override;
-    virtual css::awt::Rectangle SAL_CALL getBounds() override;
-    virtual css::awt::Point SAL_CALL getLocation() override;
-    virtual css::awt::Point SAL_CALL getLocationOnScreen() override;
-    virtual css::awt::Size SAL_CALL getSize() override;
-    virtual void SAL_CALL grabFocus() override;
-    virtual sal_Int32 SAL_CALL getForeground() override;
-    virtual sal_Int32 SAL_CALL getBackground() override;
+    virtual sal_Bool SAL_CALL containsPoint( const css::awt::Point& aPoint) throw (css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessibleAtPoint(const css::awt::Point& aPoint) throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Rectangle SAL_CALL getBounds() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Point SAL_CALL getLocation() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Point SAL_CALL getLocationOnScreen() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::awt::Size SAL_CALL getSize() throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL addFocusListener ( const css::uno::Reference< css::awt::XFocusListener >& xListener) throw (css::uno::RuntimeException) override;
+    virtual void SAL_CALL removeFocusListener (const css::uno::Reference< css::awt::XFocusListener >& xListener ) throw (css::uno::RuntimeException) override;
+    virtual void SAL_CALL grabFocus() throw (css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getForeground() throw(css::uno::RuntimeException, std::exception) override;
+    virtual sal_Int32 SAL_CALL getBackground() throw(css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleExtendedComponent
-    virtual css::uno::Reference< css::awt::XFont > SAL_CALL getFont() override;
-    virtual OUString SAL_CALL getTitledBorderText() override;
-    virtual OUString SAL_CALL getToolTipText() override;
+    virtual css::uno::Reference< css::awt::XFont > SAL_CALL getFont() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getTitledBorderText() throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getToolTipText() throw (css::uno::RuntimeException, std::exception) override;
 
     // XAccessibleEventBroadcaster
-    virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& rxListener) override;
-    virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& rxListener) override;
+    virtual void SAL_CALL addAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& rxListener) throw(css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL removeAccessibleEventListener( const css::uno::Reference< css::accessibility::XAccessibleEventListener >& rxListener) throw(css::uno::RuntimeException, std::exception) override;
 
     // XServiceInfo
-    virtual OUString SAL_CALL getImplementationName() override;
-    virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() override;
+    virtual OUString SAL_CALL getImplementationName() throw(css::uno::RuntimeException, std::exception) override;
+    virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     // IAccessibleViewForwarderListener
-    virtual void ViewForwarderChanged() override;
+    virtual void ViewForwarderChanged (ChangeType aChangeType, const IAccessibleViewForwarder* pViewForwarder) override;
 
     // Misc
 
     /** set the index _nIndex at the accessible cell param  _nIndex The new index in parent.
     */
-    void setIndexInParent(sal_Int32 _nIndex) { mnIndexInParent = _nIndex; }
+    inline void setIndexInParent(sal_Int32 _nIndex) { mnIndexInParent = _nIndex; }
 
     //Get the parent table
     AccessibleTableShape* GetParentTable() { return pAccTable; }

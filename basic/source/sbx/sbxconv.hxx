@@ -37,7 +37,8 @@ void ImpGetIntntlSep( sal_Unicode& rcDecimalSep, sal_Unicode& rcThousandSep );
 
 // SBXINT.CXX
 
-sal_Int16   ImpGetInteger( const SbxValues* );
+double      ImpRound( double );
+sal_Int16       ImpGetInteger( const SbxValues* );
 void        ImpPutInteger( SbxValues*, sal_Int16 );
 
 sal_Int64   ImpGetInt64( const SbxValues* );

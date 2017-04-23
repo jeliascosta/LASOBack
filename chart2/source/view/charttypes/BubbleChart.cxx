@@ -47,6 +47,7 @@ BubbleChart::BubbleChart( const uno::Reference<XChartType>& xChartTypeModel
                      , sal_Int32 nDimensionCount )
         : VSeriesPlotter( xChartTypeModel, nDimensionCount, false )
         , m_bShowNegativeValues(false)
+        , m_bBubbleSizeAsArea(true)
         , m_fBubbleSizeScaling(1.0)
         , m_fMaxLogicBubbleSize( 0.0 )
         , m_fBubbleSizeFactorToScreen( 1.0 )
@@ -72,17 +73,17 @@ void BubbleChart::calculateMaximumLogicBubbleSize()
     sal_Int32 nEndIndex = VSeriesPlotter::getPointCount();
     for( sal_Int32 nIndex = nStartIndex; nIndex < nEndIndex; nIndex++ )
     {
-        std::vector< std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
-        const std::vector< std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
+        ::std::vector< ::std::vector< VDataSeriesGroup > >::iterator             aZSlotIter = m_aZSlots.begin();
+        const ::std::vector< ::std::vector< VDataSeriesGroup > >::const_iterator  aZSlotEnd = m_aZSlots.end();
         for( ; aZSlotIter != aZSlotEnd; ++aZSlotIter )
         {
-            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
             for( ; aXSlotIter != aXSlotEnd; ++aXSlotIter )
             {
-                std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
-                std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
-                const std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
+                ::std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
+                ::std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
+                const ::std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
                 for( ; aSeriesIter != aSeriesEnd; ++aSeriesIter )
                 {
                     VDataSeries* pSeries( *aSeriesIter );
@@ -130,8 +131,13 @@ drawing::Direction3D BubbleChart::transformToScreenBubbleSize( double fLogicSize
 
     double fMaxSize = m_fMaxLogicBubbleSize;
 
-    double fMaxRadius = sqrt( fMaxSize / F_PI );
-    double fRaduis = sqrt( fLogicSize / F_PI );
+    double fMaxRadius = fMaxSize;
+    double fRaduis = fLogicSize;
+    if( m_bBubbleSizeAsArea )
+    {
+        fMaxRadius = sqrt( fMaxSize / F_PI );
+        fRaduis = sqrt( fLogicSize / F_PI );
+    }
 
     aRet.DirectionX = m_fBubbleSizeScaling * m_fBubbleSizeFactorToScreen * fRaduis / fMaxRadius;
     aRet.DirectionY = aRet.DirectionX;
@@ -157,6 +163,11 @@ LegendSymbolStyle BubbleChart::getLegendSymbolStyle()
 drawing::Direction3D BubbleChart::getPreferredDiagramAspectRatio() const
 {
     return drawing::Direction3D(-1,-1,-1);
+}
+
+void BubbleChart::addSeries( VDataSeries* pSeries, sal_Int32 zSlot, sal_Int32 xSlot, sal_Int32 ySlot )
+{
+    VSeriesPlotter::addSeries( pSeries, zSlot, xSlot, ySlot );
 }
 
 //better performance for big data
@@ -215,19 +226,19 @@ void BubbleChart::createShapes()
     //iterate through all x values per indices
     for( sal_Int32 nIndex = nStartIndex; nIndex < nEndIndex; nIndex++ )
     {
-        std::vector< std::vector< VDataSeriesGroup > >::iterator aZSlotIter = m_aZSlots.begin();
-        const std::vector< std::vector< VDataSeriesGroup > >::const_iterator aZSlotEnd = m_aZSlots.end();
+        ::std::vector< ::std::vector< VDataSeriesGroup > >::iterator aZSlotIter = m_aZSlots.begin();
+        const ::std::vector< ::std::vector< VDataSeriesGroup > >::const_iterator aZSlotEnd = m_aZSlots.end();
 
         for( sal_Int32 nZ=1; aZSlotIter != aZSlotEnd; ++aZSlotIter, nZ++ )
         {
-            std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
-            const std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
+            ::std::vector< VDataSeriesGroup >::iterator             aXSlotIter = aZSlotIter->begin();
+            const ::std::vector< VDataSeriesGroup >::const_iterator aXSlotEnd = aZSlotIter->end();
 
             for( sal_Int32 nX=0; aXSlotIter != aXSlotEnd; ++aXSlotIter, ++nX )
             {
-                std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
-                std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
-                const std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
+                ::std::vector< VDataSeries* >* pSeriesList = &(aXSlotIter->m_aSeriesVector);
+                ::std::vector< VDataSeries* >::const_iterator       aSeriesIter = pSeriesList->begin();
+                const ::std::vector< VDataSeries* >::const_iterator aSeriesEnd  = pSeriesList->end();
 
                 //iterate through all series
                 for( sal_Int32 nSeriesIndex = 0; aSeriesIter != aSeriesEnd; ++aSeriesIter, ++nSeriesIndex )
@@ -255,7 +266,7 @@ void BubbleChart::createShapes()
                     if( !m_bShowNegativeValues && fBubbleSize<0.0 )
                         continue;
 
-                    if( fBubbleSize == 0.0 || ::rtl::math::isNan(fBubbleSize) )
+                    if( ::rtl::math::approxEqual( fBubbleSize, 0.0 ) || ::rtl::math::isNan(fBubbleSize) )
                         continue;
 
                     if(    ::rtl::math::isNan(fLogicX) || ::rtl::math::isInf(fLogicX)
@@ -316,7 +327,7 @@ void BubbleChart::createShapes()
                             if(!rtl::math::isNan(nPropVal))
                             {
                                 uno::Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY_THROW );
-                                xProps->setPropertyValue("FillColor", uno::Any(static_cast<sal_Int32>(nPropVal)));
+                                xProps->setPropertyValue("FillColor", uno::makeAny(static_cast<sal_Int32>(nPropVal)));
                             }
                         }
                         if(bHasBorderColorMapping)
@@ -325,7 +336,7 @@ void BubbleChart::createShapes()
                             if(!rtl::math::isNan(nPropVal))
                             {
                                 uno::Reference< beans::XPropertySet > xProps( xShape, uno::UNO_QUERY_THROW );
-                                xProps->setPropertyValue("LineColor", uno::Any(static_cast<sal_Int32>(nPropVal)));
+                                xProps->setPropertyValue("LineColor", uno::makeAny(static_cast<sal_Int32>(nPropVal)));
                             }
                         }
 

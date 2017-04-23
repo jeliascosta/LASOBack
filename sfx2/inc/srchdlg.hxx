@@ -53,11 +53,11 @@ private:
     void                LoadConfig();
     void                SaveConfig();
 
-    DECL_LINK(FindHdl, Button *, void);
+    DECL_LINK_TYPED(FindHdl, Button *, void);
 
 public:
     SearchDialog( vcl::Window* pWindow, const OUString& rConfigName );
-    virtual ~SearchDialog() override;
+    virtual ~SearchDialog();
     virtual void dispose() override;
 
     void         SetFindHdl( const Link<SearchDialog&,void>& rLink ) { m_aFindHdl = rLink; }

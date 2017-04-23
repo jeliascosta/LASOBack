@@ -46,11 +46,9 @@
 #include "dumputils.hxx"
 #include "includes.hxx"
 
-namespace
-{
+namespace {
 
-bool isBootstrapType(OUString const & name)
-{
+bool isBootstrapType(OUString const & name) {
     static char const * const names[] = {
         "com.sun.star.beans.Property",
         "com.sun.star.beans.PropertyAttribute",
@@ -148,8 +146,7 @@ bool isBootstrapType(OUString const & name)
     return false;
 }
 
-class CppuType
-{
+class CppuType {
 public:
     CppuType(
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr);
@@ -169,9 +166,8 @@ public:
         codemaker::GeneratedTypeSet & generated, CppuOptions const & options);
 
     virtual void dumpHdlFile(
-        FileStream & out, codemaker::cppumaker::Includes & includes) {
-        dumpHFileContent(out, includes);
-    }
+        FileStream & out, codemaker::cppumaker::Includes & includes)
+    { dumpHFileContent(out, includes); }
 
     virtual void dumpHppFile(FileStream& o, codemaker::cppumaker::Includes & includes) = 0;
 
@@ -181,18 +177,16 @@ public:
 
     virtual void dumpLightGetCppuType(FileStream & out);
 
-    virtual void dumpNormalGetCppuType(FileStream &) {
-        assert(false);    // this cannot happen
-    }
+    virtual void dumpNormalGetCppuType(FileStream &)
+    { assert(false); } // this cannot happen
 
-    virtual void dumpComprehensiveGetCppuType(FileStream &) {
-        assert(false);    // this cannot happen
-    }
+    virtual void dumpComprehensiveGetCppuType(FileStream &)
+    { assert(false); } // this cannot happen
 
     void dumpType(
         FileStream & out, OUString const & name, bool isConst = false,
         bool isRef = false, bool native = false, bool cppuUnoType = false)
-    const;
+        const;
 
     OUString getTypeClass(OUString const & name, bool cStyle = false);
 
@@ -205,10 +199,8 @@ public:
     void            dec(sal_Int32 num=4);
     OUString indent() const;
 protected:
-    virtual sal_uInt32 checkInheritedMemberCount() const {
-        assert(false);    // this cannot happen
-        return 0;
-    }
+    virtual sal_uInt32 checkInheritedMemberCount() const
+    { assert(false); return 0; } // this cannot happen
 
     bool passByReference(OUString const & name) const;
 
@@ -221,9 +213,8 @@ protected:
 
     codemaker::cpp::IdentifierTranslationMode isGlobal() const;
 
-    virtual void dumpDeclaration(FileStream &) {
-        assert(false);    // this cannot happen
-    }
+    virtual void dumpDeclaration(FileStream &)
+    { assert(false); } // this cannot happen
 
     virtual void dumpFiles(OUString const & uri, CppuOptions const & options);
 
@@ -268,7 +259,7 @@ protected:
 
 private:
     void addGetCppuTypeIncludes(codemaker::cppumaker::Includes & includes)
-    const;
+        const;
 };
 
 CppuType::CppuType(
@@ -284,10 +275,11 @@ CppuType::CppuType(
 {}
 
 void CppuType::addGetCppuTypeIncludes(codemaker::cppumaker::Includes & includes)
-const
+    const
 {
     if (name_ == "com.sun.star.uno.XInterface"
-        || name_ == "com.sun.star.uno.Exception") {
+        || name_ == "com.sun.star.uno.Exception")
+    {
         includes.addType();
         includes.addCppuUnotypeHxx();
         includes.addSalTypesH();
@@ -302,8 +294,7 @@ const
     }
 }
 
-void CppuType::dumpFiles(OUString const & uri, CppuOptions const & options)
-{
+void CppuType::dumpFiles(OUString const & uri, CppuOptions const & options) {
     dumpFile(uri, name_, false, options);
     dumpFile(uri, name_, true, options);
 }
@@ -332,13 +323,9 @@ void CppuType::addComprehensiveGetCppuTypeIncludes(
     includes.addCppuUnotypeHxx();
 }
 
-bool CppuType::isPolymorphic() const
-{
-    return false;
-}
+bool CppuType::isPolymorphic() const { return false; }
 
-void CppuType::dumpGetCppuTypePreamble(FileStream & out)
-{
+void CppuType::dumpGetCppuTypePreamble(FileStream & out) {
     if (isPolymorphic()) {
         out << "namespace cppu {\n\n";
         dumpTemplateHead(out);
@@ -361,8 +348,7 @@ void CppuType::dumpGetCppuTypePreamble(FileStream & out)
     inc();
 }
 
-void CppuType::dumpGetCppuTypePostamble(FileStream & out)
-{
+void CppuType::dumpGetCppuTypePostamble(FileStream & out) {
     dec();
     if (isPolymorphic()) {
         out << indent() << "}\n\nprivate:\n"
@@ -391,8 +377,7 @@ void CppuType::dumpGetCppuTypePostamble(FileStream & out)
     out << indent() << "}\n";
 }
 
-void CppuType::dump(CppuOptions const & options)
-{
+void CppuType::dump(CppuOptions const & options) {
     if (isBootstrapType(name_)) {
         m_cppuTypeDynamic = false;
     } else {
@@ -449,7 +434,7 @@ bool CppuType::dumpFile(
     }
     out.close();
     return makeValidTypeFile(
-               u2b(fileUri), u2b(tmpUri), exists && options.isValid("-Gc"));
+        u2b(fileUri), u2b(tmpUri), exists && options.isValid("-Gc"));
 }
 
 void CppuType::dumpDependedTypes(
@@ -458,7 +443,8 @@ void CppuType::dumpDependedTypes(
     if (!options.isValid("-nD")) {
         codemaker::cppumaker::Dependencies::Map const & map
             = m_dependencies.getMap();
-        for (const auto& entry : map) {
+        for (const std::pair<OUString,codemaker::cppumaker::Dependencies::Kind>& entry : map)
+        {
             produce(entry.first, m_typeMgr, generated, options);
         }
     }
@@ -475,23 +461,27 @@ OUString CppuType::dumpHeaderDefine(
 }
 
 void CppuType::addDefaultHIncludes(codemaker::cppumaker::Includes & includes)
-const
+    const
 {
     //TODO: Only include what is really needed
     includes.addCppuMacrosHxx();
     if (m_typeMgr->getSort(name_)
-        == codemaker::UnoType::Sort::Interface) {
+        == codemaker::UnoType::Sort::Interface)
+    {
+        includes.addException();
         includes.addReference();
     }
 }
 
 void CppuType::addDefaultHxxIncludes(codemaker::cppumaker::Includes & includes)
-const
+    const
 {
     //TODO: Only include what is really needed
     includes.addType();
     if (m_typeMgr->getSort(name_)
-        == codemaker::UnoType::Sort::Interface) {
+        == codemaker::UnoType::Sort::Interface)
+    {
+        includes.addException();
         includes.addReference();
     }
 }
@@ -529,7 +519,6 @@ void CppuType::dumpInitializer(
                     << (dynamic_cast< unoidl::EnumTypeEntity * >(ent.get())->
                         getMembers()[0].name);
                 break;
-            break;
             case codemaker::UnoType::Sort::String:
             case codemaker::UnoType::Sort::Type:
             case codemaker::UnoType::Sort::Any:
@@ -553,9 +542,7 @@ void CppuType::dumpHFileContent(
     addDefaultHIncludes(includes);
     dumpHeaderDefine(out, "HDL");
     out << "\n";
-    includes.dump(out, nullptr, false);
-        // 'exceptions = false' would be wrong for services/singletons, but
-        // those don't dump .hdl files anyway
+    includes.dump(out, nullptr);
     out << ("\nnamespace com { namespace sun { namespace star { namespace uno"
             " { class Type; } } } }\n\n");
     if (codemaker::cppumaker::dumpNamespaceOpen(out, name_, false)) {
@@ -564,7 +551,8 @@ void CppuType::dumpHFileContent(
     dumpDeclaration(out);
     if (!(name_ == "com.sun.star.uno.XInterface"
           || name_ == "com.sun.star.uno.Exception"
-          || isPolymorphic())) {
+          || isPolymorphic()))
+    {
         out << "\n" << indent()
             << ("inline ::css::uno::Type const &"
                 " cppu_detail_getUnoType(SAL_UNUSED_PARAMETER ");
@@ -582,8 +570,7 @@ void CppuType::dumpHFileContent(
     out << " *);\n\n#endif\n";
 }
 
-void CppuType::dumpGetCppuType(FileStream & out)
-{
+void CppuType::dumpGetCppuType(FileStream & out) {
     if (name_ == "com.sun.star.uno.XInterface") {
         out << indent()
             << ("SAL_DEPRECATED(\"use cppu::UnoType\") inline ::css::uno::Type const & SAL_CALL"
@@ -617,8 +604,7 @@ void CppuType::dumpGetCppuType(FileStream & out)
     }
 }
 
-void CppuType::dumpLightGetCppuType(FileStream & out)
-{
+void CppuType::dumpLightGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << "static typelib_TypeDescriptionReference * the_type = 0;\n"
@@ -633,115 +619,112 @@ void CppuType::dumpLightGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-codemaker::cpp::IdentifierTranslationMode CppuType::isGlobal() const
-{
+codemaker::cpp::IdentifierTranslationMode CppuType::isGlobal() const {
     return name_.indexOf('.') == -1
-           ? codemaker::cpp::IdentifierTranslationMode::Global : codemaker::cpp::IdentifierTranslationMode::NonGlobal;
+        ? codemaker::cpp::IdentifierTranslationMode::Global : codemaker::cpp::IdentifierTranslationMode::NonGlobal;
 }
 
 sal_uInt32 CppuType::getInheritedMemberCount()
 {
-    if (m_inheritedMemberCount == 0) {
+    if (m_inheritedMemberCount == 0)
+    {
         m_inheritedMemberCount = checkInheritedMemberCount();
     }
 
     return m_inheritedMemberCount;
 }
 
-OUString CppuType::getTypeClass(OUString const & name, bool cStyle)
-{
+OUString CppuType::getTypeClass(OUString const & name, bool cStyle) {
     rtl::Reference< unoidl::Entity > ent;
     switch (m_typeMgr->getSort(name, &ent)) {
     case codemaker::UnoType::Sort::Void:
         return cStyle
-               ? OUString("typelib_TypeClass_VOID")
-               : OUString("::css::uno::TypeClass_VOID");
+            ? OUString("typelib_TypeClass_VOID")
+            : OUString("::css::uno::TypeClass_VOID");
     case codemaker::UnoType::Sort::Boolean:
         return cStyle
-               ? OUString("typelib_TypeClass_BOOLEAN")
-               : OUString("::css::uno::TypeClass_BOOLEAN");
+            ? OUString("typelib_TypeClass_BOOLEAN")
+            : OUString("::css::uno::TypeClass_BOOLEAN");
     case codemaker::UnoType::Sort::Byte:
         return cStyle
-               ? OUString("typelib_TypeClass_BYTE")
-               : OUString("::css::uno::TypeClass_BYTE");
+            ? OUString("typelib_TypeClass_BYTE")
+            : OUString("::css::uno::TypeClass_BYTE");
     case codemaker::UnoType::Sort::Short:
         return cStyle
-               ? OUString("typelib_TypeClass_SHORT")
-               : OUString("::css::uno::TypeClass_SHORT");
+            ? OUString("typelib_TypeClass_SHORT")
+            : OUString("::css::uno::TypeClass_SHORT");
     case codemaker::UnoType::Sort::UnsignedShort:
         return cStyle
-               ? OUString("typelib_TypeClass_UNSIGNED_SHORT")
-               : OUString("::css::uno::TypeClass_UNSIGNED_SHORT");
+            ? OUString("typelib_TypeClass_UNSIGNED_SHORT")
+            : OUString("::css::uno::TypeClass_UNSIGNED_SHORT");
     case codemaker::UnoType::Sort::Long:
         return cStyle
-               ? OUString("typelib_TypeClass_LONG")
-               : OUString("::css::uno::TypeClass_LONG");
+            ? OUString("typelib_TypeClass_LONG")
+            : OUString("::css::uno::TypeClass_LONG");
     case codemaker::UnoType::Sort::UnsignedLong:
         return cStyle
-               ? OUString("typelib_TypeClass_UNSIGNED_LONG")
-               : OUString("::css::uno::TypeClass_UNSIGNED_LONG");
+            ? OUString("typelib_TypeClass_UNSIGNED_LONG")
+            : OUString("::css::uno::TypeClass_UNSIGNED_LONG");
     case codemaker::UnoType::Sort::Hyper:
         return cStyle
-               ? OUString("typelib_TypeClass_HYPER")
-               : OUString("::css::uno::TypeClass_HYPER");
+            ? OUString("typelib_TypeClass_HYPER")
+            : OUString("::css::uno::TypeClass_HYPER");
     case codemaker::UnoType::Sort::UnsignedHyper:
         return cStyle
-               ? OUString("typelib_TypeClass_UNSIGNED_HYPER")
-               : OUString("::css::uno::TypeClass_UNSIGNED_HYPER");
+            ? OUString("typelib_TypeClass_UNSIGNED_HYPER")
+            : OUString("::css::uno::TypeClass_UNSIGNED_HYPER");
     case codemaker::UnoType::Sort::Float:
         return cStyle
-               ? OUString("typelib_TypeClass_FLOAT")
-               : OUString("::css::uno::TypeClass_FLOAT");
+            ? OUString("typelib_TypeClass_FLOAT")
+            : OUString("::css::uno::TypeClass_FLOAT");
     case codemaker::UnoType::Sort::Double:
         return cStyle
-               ? OUString("typelib_TypeClass_DOUBLE")
-               : OUString("::css::uno::TypeClass_DOUBLE");
+            ? OUString("typelib_TypeClass_DOUBLE")
+            : OUString("::css::uno::TypeClass_DOUBLE");
     case codemaker::UnoType::Sort::Char:
         return cStyle
-               ? OUString("typelib_TypeClass_CHAR")
-               : OUString("::css::uno::TypeClass_CHAR");
+            ? OUString("typelib_TypeClass_CHAR")
+            : OUString("::css::uno::TypeClass_CHAR");
     case codemaker::UnoType::Sort::String:
         return cStyle
-               ? OUString("typelib_TypeClass_STRING")
-               : OUString("::css::uno::TypeClass_STRING");
+            ? OUString("typelib_TypeClass_STRING")
+            : OUString("::css::uno::TypeClass_STRING");
     case codemaker::UnoType::Sort::Type:
         return cStyle
-               ? OUString("typelib_TypeClass_TYPE")
-               : OUString("::css::uno::TypeClass_TYPE");
+            ? OUString("typelib_TypeClass_TYPE")
+            : OUString("::css::uno::TypeClass_TYPE");
     case codemaker::UnoType::Sort::Any:
         return cStyle
-               ? OUString("typelib_TypeClass_ANY")
-               : OUString("::css::uno::TypeClass_ANY");
+            ? OUString("typelib_TypeClass_ANY")
+            : OUString("::css::uno::TypeClass_ANY");
     case codemaker::UnoType::Sort::Sequence:
         return cStyle
-               ? OUString("typelib_TypeClass_SEQUENCE")
-               : OUString("::css::uno::TypeClass_SEQUENCE");
+            ? OUString("typelib_TypeClass_SEQUENCE")
+            : OUString("::css::uno::TypeClass_SEQUENCE");
     case codemaker::UnoType::Sort::Enum:
         return cStyle
-               ? OUString("typelib_TypeClass_ENUM")
-               : OUString("::css::uno::TypeClass_ENUM");
+            ? OUString("typelib_TypeClass_ENUM")
+            : OUString("::css::uno::TypeClass_ENUM");
     case codemaker::UnoType::Sort::PlainStruct:
     case codemaker::UnoType::Sort::PolymorphicStructTemplate:
     case codemaker::UnoType::Sort::InstantiatedPolymorphicStruct:
         return cStyle
-               ? OUString("typelib_TypeClass_STRUCT")
-               : OUString("::css::uno::TypeClass_STRUCT");
+            ? OUString("typelib_TypeClass_STRUCT")
+            : OUString("::css::uno::TypeClass_STRUCT");
     case codemaker::UnoType::Sort::Exception:
         return cStyle
-               ? OUString("typelib_TypeClass_EXCEPTION")
-               : OUString("::css::uno::TypeClass_EXCEPTION");
+            ? OUString("typelib_TypeClass_EXCEPTION")
+            : OUString("::css::uno::TypeClass_EXCEPTION");
     case codemaker::UnoType::Sort::Interface:
         return cStyle
-               ? OUString("typelib_TypeClass_INTERFACE")
-               : OUString("::css::uno::TypeClass_INTERFACE");
+            ? OUString("typelib_TypeClass_INTERFACE")
+            : OUString("::css::uno::TypeClass_INTERFACE");
     case codemaker::UnoType::Sort::Typedef:
         return getTypeClass(
-                   dynamic_cast<unoidl::TypedefEntity&>(*ent.get()).getType(),
-                   cStyle);
+            dynamic_cast<unoidl::TypedefEntity&>(*ent.get()).getType(),
+            cStyle);
     default:
-        for (;;) {
-            std::abort();
-        }
+        for (;;) { std::abort(); }
     }
 }
 
@@ -818,7 +801,8 @@ void CppuType::dumpType(
         if (!args.empty()) {
             out << "< ";
             for (std::vector< OString >::iterator i(args.begin());
-                 i != args.end(); ++i) {
+                 i != args.end(); ++i)
+            {
                 if (i != args.begin()) {
                     out << ", ";
                 }
@@ -855,7 +839,7 @@ void CppuType::dumpCppuGetType(
     OUString nucleus;
     sal_Int32 rank;
     codemaker::UnoType::Sort sort = m_typeMgr->decompose(
-                                        name, true, &nucleus, &rank, nullptr, nullptr);
+        name, true, &nucleus, &rank, nullptr, nullptr);
     switch (rank == 0 ? sort : codemaker::UnoType::Sort::Sequence) {
     case codemaker::UnoType::Sort::Void:
     case codemaker::UnoType::Sort::Boolean:
@@ -895,8 +879,7 @@ void CppuType::dumpCppuGetType(
     }
 }
 
-bool CppuType::passByReference(OUString const & name) const
-{
+bool CppuType::passByReference(OUString const & name) const {
     switch (m_typeMgr->getSort(resolveOuterTypedefs(name))) {
     case codemaker::UnoType::Sort::Boolean:
     case codemaker::UnoType::Sort::Byte:
@@ -926,12 +909,10 @@ bool CppuType::passByReference(OUString const & name) const
     }
 }
 
-bool CppuType::canBeWarnUnused(OUString const & name) const
-{
+bool CppuType::canBeWarnUnused(OUString const & name) const {
     return canBeWarnUnused(name, 0);
 }
-bool CppuType::canBeWarnUnused(OUString const & name, int depth) const
-{
+bool CppuType::canBeWarnUnused(OUString const & name, int depth) const {
     // prevent infinite recursion and blowing the stack
     if (depth > 10)
         return false;
@@ -952,20 +933,23 @@ bool CppuType::canBeWarnUnused(OUString const & name, int depth) const
     case codemaker::UnoType::Sort::String:
     case codemaker::UnoType::Sort::Type:
         return true;
-    case codemaker::UnoType::Sort::PlainStruct: {
+    case codemaker::UnoType::Sort::PlainStruct:
+    {
         rtl::Reference< unoidl::Entity > ent;
         m_typeMgr->getSort(aResolvedName, &ent);
         rtl::Reference< unoidl::PlainStructTypeEntity > ent2(
             dynamic_cast< unoidl::PlainStructTypeEntity * >(ent.get()));
         if (!ent2->getDirectBase().isEmpty() && !canBeWarnUnused(ent2->getDirectBase(), depth+1))
             return false;
-        for ( const unoidl::PlainStructTypeEntity::Member& rMember : ent2->getDirectMembers()) {
+        for ( const unoidl::PlainStructTypeEntity::Member& rMember : ent2->getDirectMembers())
+        {
             if (!canBeWarnUnused(rMember.type, depth+1))
                 return false;
         }
         return true;
     }
-    case codemaker::UnoType::Sort::Sequence: {
+    case codemaker::UnoType::Sort::Sequence:
+    {
         OUString aInnerType = aResolvedName.copy(2);
         return canBeWarnUnused(aInnerType, depth+1);
     }
@@ -980,8 +964,7 @@ bool CppuType::canBeWarnUnused(OUString const & name, int depth) const
     }
 }
 
-OUString CppuType::resolveOuterTypedefs(OUString const & name) const
-{
+OUString CppuType::resolveOuterTypedefs(OUString const & name) const {
     for (OUString n(name);;) {
         rtl::Reference< unoidl::Entity > ent;
         if (m_typeMgr->getSort(n, &ent) != codemaker::UnoType::Sort::Typedef) {
@@ -991,8 +974,7 @@ OUString CppuType::resolveOuterTypedefs(OUString const & name) const
     }
 }
 
-OUString CppuType::resolveAllTypedefs(OUString const & name) const
-{
+OUString CppuType::resolveAllTypedefs(OUString const & name) const {
     sal_Int32 k1;
     OUString n(b2u(codemaker::UnoType::decompose(u2b(name), &k1)));
     for (;;) {
@@ -1002,10 +984,10 @@ OUString CppuType::resolveAllTypedefs(OUString const & name) const
         }
         sal_Int32 k2;
         n = b2u(
-                codemaker::UnoType::decompose(
-                    u2b(dynamic_cast<unoidl::TypedefEntity&>(*ent.get()).
-                        getType()),
-                    &k2));
+            codemaker::UnoType::decompose(
+                u2b(dynamic_cast<unoidl::TypedefEntity&>(*ent.get()).
+                    getType()),
+                &k2));
         k1 += k2; //TODO: overflow
     }
     OUStringBuffer b;
@@ -1026,8 +1008,7 @@ void CppuType::dec(sal_Int32 num)
     m_indentLength = std::max< sal_Int32 >(m_indentLength - num, 0);
 }
 
-OUString CppuType::indent() const
-{
+OUString CppuType::indent() const {
     OUStringBuffer buf(m_indentLength);
     for (sal_Int32 i = 0; i != m_indentLength; ++i) {
         buf.append(' ');
@@ -1035,9 +1016,9 @@ OUString CppuType::indent() const
     return buf.makeStringAndClear();
 }
 
-bool isDeprecated(std::vector< OUString > const & annotations)
-{
-    for (const OUString& r : annotations) {
+bool isDeprecated(std::vector< OUString > const & annotations) {
+    for (const OUString& r : annotations)
+    {
         if (r == "deprecated") {
             return true;
         }
@@ -1045,28 +1026,22 @@ bool isDeprecated(std::vector< OUString > const & annotations)
     return false;
 }
 
-void dumpDeprecation(FileStream & out, bool deprecated)
-{
+void dumpDeprecation(FileStream & out, bool deprecated) {
     if (deprecated) {
         out << "SAL_DEPRECATED_INTERNAL(\"marked @deprecated in UNOIDL\") ";
     }
 }
 
-class BaseOffset
-{
+class BaseOffset {
 public:
     BaseOffset(
         rtl::Reference< TypeManager > const & manager,
         rtl::Reference< unoidl::InterfaceTypeEntity > const & entity):
-        manager_(manager), offset_(0) {
-        calculateBases(entity);
-    }
+        manager_(manager), offset_(0) { calculateBases(entity); }
     BaseOffset(const BaseOffset&) = delete;
     const BaseOffset& operator=(const BaseOffset&) = delete;
 
-    sal_Int32 get() const {
-        return offset_;
-    }
+    sal_Int32 get() const { return offset_; }
 
 private:
     void calculateBases(
@@ -1081,7 +1056,8 @@ void BaseOffset::calculateBases(
     rtl::Reference< unoidl::InterfaceTypeEntity > const & entity)
 {
     assert(entity.is());
-    for (const unoidl::AnnotatedReference& ar : entity->getDirectMandatoryBases()) {
+    for (const unoidl::AnnotatedReference& ar : entity->getDirectMandatoryBases())
+    {
         if (set_.insert(ar.name).second) {
             rtl::Reference< unoidl::Entity > ent;
             codemaker::UnoType::Sort sort = manager_->getSort(ar.name, &ent);
@@ -1095,13 +1071,12 @@ void BaseOffset::calculateBases(
             assert(ent2.is());
             calculateBases(ent2);
             offset_ += ent2->getDirectAttributes().size()
-                       + ent2->getDirectMethods().size(); //TODO: overflow
+                + ent2->getDirectMethods().size(); //TODO: overflow
         }
     }
 }
 
-class InterfaceType: public CppuType
-{
+class InterfaceType: public CppuType {
 public:
     InterfaceType(
         rtl::Reference< unoidl::InterfaceTypeEntity > const & entity,
@@ -1125,9 +1100,12 @@ private:
     virtual void addComprehensiveGetCppuTypeIncludes(
         codemaker::cppumaker::Includes & includes) const override;
 
-    virtual sal_uInt32 checkInheritedMemberCount() const override {
-        return BaseOffset(m_typeMgr, entity_).get();
-    }
+    virtual sal_uInt32 checkInheritedMemberCount() const override
+    { return BaseOffset(m_typeMgr, entity_).get(); }
+
+    static void dumpExceptionSpecification(
+        FileStream & out, std::vector< OUString > const & exceptions,
+        bool runtimeException);
 
     void dumpExceptionTypeName(
         FileStream & out, OUString const & prefix, sal_uInt32 index,
@@ -1150,12 +1128,12 @@ InterfaceType::InterfaceType(
     assert(entity.is());
 }
 
-void InterfaceType::dumpDeclaration(FileStream & out)
-{
+void InterfaceType::dumpDeclaration(FileStream & out) {
     out << "\nclass SAL_NO_VTABLE SAL_DLLPUBLIC_RTTI " << id_;
     for (std::vector< unoidl::AnnotatedReference >::const_iterator i(
              entity_->getDirectMandatoryBases().begin());
-         i != entity_->getDirectMandatoryBases().end(); ++i) {
+         i != entity_->getDirectMandatoryBases().end(); ++i)
+    {
         out << (i == entity_->getDirectMandatoryBases().begin() ? " :" : ",")
             << " public " << codemaker::cpp::scopedCppName(u2b(i->name));
     }
@@ -1182,7 +1160,7 @@ void InterfaceType::dumpHppFile(
     OUString headerDefine(dumpHeaderDefine(out, "HPP"));
     out << "\n";
     addDefaultHxxIncludes(includes);
-    includes.dump(out, &name_, !(m_cppuTypeLeak || m_cppuTypeDynamic));
+    includes.dump(out, &name_);
     out << "\n";
     dumpGetCppuType(out);
     out << "\n::css::uno::Type const & "
@@ -1196,50 +1174,58 @@ void InterfaceType::dumpHppFile(
     out << "}\n\n#endif // "<< headerDefine << "\n";
 }
 
-void InterfaceType::dumpAttributes(FileStream & out)
-{
+void InterfaceType::dumpAttributes(FileStream & out) {
     if (!entity_->getDirectAttributes().empty()) {
         out << "\n" << indent() << "// Attributes\n";
     }
-    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes()) {
+    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes())
+    {
         bool depr = m_isDeprecated || isDeprecated(attr.annotations);
         out << indent();
         dumpDeprecation(out, depr);
         out << "virtual ";
         dumpType(out, attr.type);
-        out << " SAL_CALL get" << attr.name << "() = 0;\n";
+        out << " SAL_CALL get" << attr.name << "()";
+        dumpExceptionSpecification(out, attr.getExceptions, true);
+        out << " = 0;\n";
         if (!attr.readOnly) {
             bool byRef = passByReference(attr.type);
             out << indent();
             dumpDeprecation(out, depr);
             out << "virtual void SAL_CALL set" << attr.name << "( ";
             dumpType(out, attr.type, byRef, byRef);
-            out << " _" << attr.name.toAsciiLowerCase() << " ) = 0;\n";
+            out << " _" << attr.name.toAsciiLowerCase() << " )";
+            dumpExceptionSpecification(out, attr.setExceptions, true);
+            out << " = 0;\n";
         }
     }
 }
 
-void InterfaceType::dumpMethods(FileStream & out)
-{
+void InterfaceType::dumpMethods(FileStream & out) {
     if (!entity_->getDirectMethods().empty()) {
         out << "\n" << indent() << "// Methods\n";
     }
-    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods()) {
+    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods())
+    {
         out << indent();
         dumpDeprecation(out, m_isDeprecated || isDeprecated(method.annotations));
         out << "virtual ";
         dumpType(out, method.returnType);
         out << " SAL_CALL " << method.name << "(";
-        if (!method.parameters.empty()) {
+        if (method.parameters.empty()) {
+            out << ")";
+        } else {
             out << " ";
             for (std::vector< unoidl::InterfaceTypeEntity::Method::Parameter >::
-                 const_iterator j(method.parameters.begin());
-                 j != method.parameters.end();) {
+                     const_iterator j(method.parameters.begin());
+                 j != method.parameters.end();)
+            {
                 bool isConst;
                 bool isRef;
                 if (j->direction
                     == (unoidl::InterfaceTypeEntity::Method::Parameter::
-                        DIRECTION_IN)) {
+                        DIRECTION_IN))
+                {
                     isConst = passByReference(j->type);
                     isRef = isConst;
                 } else {
@@ -1253,14 +1239,15 @@ void InterfaceType::dumpMethods(FileStream & out)
                     out << ", ";
                 }
             }
-            out << " ";
+            out << " )";
         }
-        out << ") = 0;\n";
+        dumpExceptionSpecification(
+            out, method.exceptions, method.name != "acquire" && method.name != "release");
+        out << " = 0;\n";
     }
 }
 
-void InterfaceType::dumpNormalGetCppuType(FileStream & out)
-{
+void InterfaceType::dumpNormalGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << "static typelib_TypeDescriptionReference * the_type = 0;\n"
@@ -1270,14 +1257,16 @@ void InterfaceType::dumpNormalGetCppuType(FileStream & out)
         entity_->getDirectMandatoryBases().size());
     if (bases == 1
         && (entity_->getDirectMandatoryBases()[0].name
-            == "com.sun.star.uno.XInterface")) {
+            == "com.sun.star.uno.XInterface"))
+    {
         bases = 0;
     }
     if (bases != 0) {
         out << indent() << "typelib_TypeDescriptionReference * aSuperTypes["
             << entity_->getDirectMandatoryBases().size() << "];\n";
         std::vector< unoidl::AnnotatedReference >::size_type n = 0;
-        for (const unoidl::AnnotatedReference& ar : entity_->getDirectMandatoryBases()) {
+        for (const unoidl::AnnotatedReference& ar : entity_->getDirectMandatoryBases())
+        {
             out << indent() << "aSuperTypes[" << n++ << "] = ::cppu::UnoType< ";
             dumpType(out, ar.name, true, false, false, true);
             out << " >::get().getTypeLibType();\n";
@@ -1293,8 +1282,7 @@ void InterfaceType::dumpNormalGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void InterfaceType::dumpComprehensiveGetCppuType(FileStream & out)
-{
+void InterfaceType::dumpComprehensiveGetCppuType(FileStream & out) {
     codemaker::cppumaker::dumpNamespaceOpen(out, name_, false);
     OUString staticTypeClass("the" + id_ + "Type");
     out << " namespace detail {\n\n" << indent() << "struct " << staticTypeClass
@@ -1310,13 +1298,14 @@ void InterfaceType::dumpComprehensiveGetCppuType(FileStream & out)
     out << indent() << "typelib_TypeDescriptionReference * aSuperTypes["
         << entity_->getDirectMandatoryBases().size() << "];\n";
     std::vector< unoidl::AnnotatedReference >::size_type n = 0;
-    for (const unoidl::AnnotatedReference& ar : entity_->getDirectMandatoryBases()) {
+    for (const unoidl::AnnotatedReference& ar : entity_->getDirectMandatoryBases())
+    {
         out << indent() << "aSuperTypes[" << n++ << "] = ::cppu::UnoType< ";
         dumpType(out, ar.name, false, false, false, true);
         out << " >::get().getTypeLibType();\n";
     }
     std::size_t count = entity_->getDirectAttributes().size()
-                        + entity_->getDirectMethods().size(); //TODO: overflow
+        + entity_->getDirectMethods().size(); //TODO: overflow
     if (count != 0) {
         out << indent() << "typelib_TypeDescriptionReference * pMembers["
             << count << "] = { ";
@@ -1341,7 +1330,7 @@ void InterfaceType::dumpComprehensiveGetCppuType(FileStream & out)
     dec();
     out << indent()
         << ("typelib_typedescription_register( (typelib_TypeDescription**)&pTD"
-            " );\n");
+          " );\n");
     for (std::size_t i = 0; i != count; ++i) {
         out << indent() << "typelib_typedescriptionreference_release( pMembers["
             << i << "] );\n";
@@ -1395,7 +1384,8 @@ void InterfaceType::dumpComprehensiveGetCppuType(FileStream & out)
 void InterfaceType::dumpCppuAttributeRefs(FileStream & out, sal_uInt32 & index)
 {
     std::vector< unoidl::InterfaceTypeEntity::Attribute >::size_type n = 0;
-    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes()) {
+    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes())
+    {
         out << indent() << "::rtl::OUString sAttributeName" << n << "( \""
             << name_ << "::" << attr.name << "\" );\n" << indent()
             << "typelib_typedescriptionreference_new( &pMembers[" << index++
@@ -1409,10 +1399,10 @@ void InterfaceType::dumpCppuAttributeRefs(FileStream & out, sal_uInt32 & index)
     }
 }
 
-void InterfaceType::dumpCppuMethodRefs(FileStream & out, sal_uInt32 & index)
-{
+void InterfaceType::dumpCppuMethodRefs(FileStream & out, sal_uInt32 & index) {
     std::vector< unoidl::InterfaceTypeEntity::Method >::size_type n = 0;
-    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods()) {
+    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods())
+    {
         out << indent() << "::rtl::OUString sMethodName" << n << "( \"" << name_
             << "::" << method.name << "\" );\n" << indent()
             << "typelib_typedescriptionreference_new( &pMembers[" << index++
@@ -1437,13 +1427,13 @@ void InterfaceType::addComprehensiveGetCppuTypeIncludes(
     includes.add("com.sun.star.uno.RuntimeException");
 }
 
-void InterfaceType::dumpCppuAttributes(FileStream & out, sal_uInt32 & index)
-{
+void InterfaceType::dumpCppuAttributes(FileStream & out, sal_uInt32 & index) {
     if (!entity_->getDirectAttributes().empty()) {
         out << "\n" << indent()
             << "typelib_InterfaceAttributeTypeDescription * pAttribute = 0;\n";
         std::vector< unoidl::InterfaceTypeEntity::Attribute >::size_type n = 0;
-        for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes()) {
+        for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes())
+        {
             OUString type(resolveAllTypedefs(attr.type));
             out << indent() << "{\n";
             inc();
@@ -1452,9 +1442,9 @@ void InterfaceType::dumpCppuAttributes(FileStream & out, sal_uInt32 & index)
                 << "::rtl::OUString sAttributeName" << n << "( \"" << name_
                 << "::" << attr.name << "\" );\n";
             sal_Int32 getExcn = dumpExceptionTypeNames(
-                                    out, "get", attr.getExceptions, false);
+                out, "get", attr.getExceptions, false);
             sal_Int32 setExcn = dumpExceptionTypeNames(
-                                    out, "set", attr.setExceptions, false);
+                out, "set", attr.setExceptions, false);
             out << indent()
                 << ("typelib_typedescription_newExtendedInterfaceAttribute("
                     " &pAttribute,\n");
@@ -1481,13 +1471,13 @@ void InterfaceType::dumpCppuAttributes(FileStream & out, sal_uInt32 & index)
     }
 }
 
-void InterfaceType::dumpCppuMethods(FileStream & out, sal_uInt32 & index)
-{
+void InterfaceType::dumpCppuMethods(FileStream & out, sal_uInt32 & index) {
     if (!entity_->getDirectMethods().empty()) {
         out << "\n" << indent()
             << "typelib_InterfaceMethodTypeDescription * pMethod = 0;\n";
         std::vector< unoidl::InterfaceTypeEntity::Method >::size_type n = 0;
-        for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods()) {
+        for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods())
+        {
             OUString returnType(resolveAllTypedefs(method.returnType));
             out << indent() << "{\n";
             inc();
@@ -1496,8 +1486,9 @@ void InterfaceType::dumpCppuMethods(FileStream & out, sal_uInt32 & index)
                     << method.parameters.size() << "];\n";
             }
             std::vector< unoidl::InterfaceTypeEntity::Method::Parameter >::
-            size_type m = 0;
-            for (const unoidl::InterfaceTypeEntity::Method::Parameter& param : method.parameters) {
+                size_type m = 0;
+            for (const unoidl::InterfaceTypeEntity::Method::Parameter& param : method.parameters)
+            {
                 OUString type(resolveAllTypedefs(param.type));
                 out << indent() << "::rtl::OUString sParamName" << m << "( \""
                     << param.name << "\" );\n" << indent()
@@ -1522,8 +1513,8 @@ void InterfaceType::dumpCppuMethods(FileStream & out, sal_uInt32 & index)
                 ++m;
             }
             sal_Int32 excn = dumpExceptionTypeNames(
-                                 out, "", method.exceptions,
-                                 method.name != "acquire" && method.name != "release");
+                out, "", method.exceptions,
+                method.name != "acquire" && method.name != "release");
             out << indent() << "::rtl::OUString sReturnType" << n << "( \""
                 << returnType << "\" );\n" << indent()
                 << "::rtl::OUString sMethodName" << n << "( \"" << name_ << "::"
@@ -1556,16 +1547,19 @@ void InterfaceType::dumpAttributesCppuDecl(
     FileStream & out, std::set< OUString > * seen)
 {
     assert(seen != nullptr);
-    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes()) {
+    for (const unoidl::InterfaceTypeEntity::Attribute& attr : entity_->getDirectAttributes())
+    {
         if (seen->insert(attr.type).second) {
             dumpCppuGetType(out, attr.type);
         }
-        for (const OUString& exc : attr.getExceptions) {
+        for (const OUString& exc : attr.getExceptions)
+        {
             if (seen->insert(exc).second) {
                 dumpCppuGetType(out, exc);
             }
         }
-        for (const OUString& exc : attr.setExceptions) {
+        for (const OUString& exc : attr.setExceptions)
+        {
             if (seen->insert(exc).second) {
                 dumpCppuGetType(out, exc);
             }
@@ -1577,13 +1571,49 @@ void InterfaceType::dumpMethodsCppuDecl(
     FileStream & out, std::set< OUString > * seen)
 {
     assert(seen != nullptr);
-    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods()) {
-        for (const OUString& ex : method.exceptions) {
+    for (const unoidl::InterfaceTypeEntity::Method& method : entity_->getDirectMethods())
+    {
+        for (const OUString& ex : method.exceptions)
+        {
             if (seen->insert(ex).second) {
                 dumpCppuGetType(out, ex);
             }
         }
     }
+}
+
+void InterfaceType::dumpExceptionSpecification(
+    FileStream & out, std::vector< OUString > const & exceptions,
+    bool runtimeException)
+{
+    // Exception specifications are undesirable in production code, but make
+    // for useful assertions in debug builds (on platforms where they are
+    // enforced at runtime):
+#if !defined DBG_UTIL
+    out << " /*";
+#endif
+    out << " throw (";
+    bool bFirst = true;
+    for (const OUString& ex : exceptions)
+    {
+        if (ex != "com.sun.star.uno.RuntimeException") {
+            if (!bFirst) {
+                out << ", ";
+            }
+            out << codemaker::cpp::scopedCppName(u2b(ex));
+            bFirst = false;
+        }
+    }
+    if (runtimeException) {
+        if (!bFirst) {
+            out << ", ";
+        }
+        out << "::css::uno::RuntimeException, ::std::exception";
+    }
+    out << ")";
+#if !defined DBG_UTIL
+    out << " */";
+#endif
 }
 
 void InterfaceType::dumpExceptionTypeName(
@@ -1599,7 +1629,8 @@ sal_Int32 InterfaceType::dumpExceptionTypeNames(
     std::vector< OUString > const & exceptions, bool runtimeException)
 {
     sal_Int32 count = 0;
-    for (const OUString& ex : exceptions) {
+    for (const OUString& ex : exceptions)
+    {
         if (ex != "com.sun.star.uno.RuntimeException") {
             dumpExceptionTypeName(out, prefix, count++, ex);
         }
@@ -1619,19 +1650,15 @@ sal_Int32 InterfaceType::dumpExceptionTypeNames(
     return count;
 }
 
-class ConstantGroup: public CppuType
-{
+class ConstantGroup: public CppuType {
 public:
     ConstantGroup(
         rtl::Reference< unoidl::ConstantGroupEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
-    bool hasConstants() const {
-        return !entity_->getMembers().empty();
-    }
+    bool hasConstants() const { return !entity_->getMembers().empty(); }
 
 private:
     virtual void dumpHdlFile(
@@ -1651,7 +1678,7 @@ void ConstantGroup::dumpHdlFile(
     OUString headerDefine(dumpHeaderDefine(out, "HDL"));
     out << "\n";
     addDefaultHIncludes(includes);
-    includes.dump(out, nullptr, true);
+    includes.dump(out, nullptr);
     out << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(out, name_, true)) {
         out << "\n";
@@ -1674,9 +1701,9 @@ void ConstantGroup::dumpHppFile(
     out << "\n#endif // "<< headerDefine << "\n";
 }
 
-void ConstantGroup::dumpDeclaration(FileStream & out)
-{
-    for (const unoidl::ConstantGroupEntity::Member& member : entity_->getMembers()) {
+void ConstantGroup::dumpDeclaration(FileStream & out) {
+    for (const unoidl::ConstantGroupEntity::Member& member : entity_->getMembers())
+    {
         out << "static const ";
         switch (member.value.type) {
         case unoidl::ConstantValue::TYPE_BOOLEAN:
@@ -1763,28 +1790,24 @@ void ConstantGroup::dumpDeclaration(FileStream & out)
     }
 }
 
-void dumpTypeParameterName(FileStream & out, OUString const & name)
-{
+void dumpTypeParameterName(FileStream & out, OUString const & name) {
     // Prefix all type parameters with "typeparam_" to avoid problems when a
     // struct member has the same name as a type parameter, as in
     // struct<T> { T T; };
     out << "typeparam_" << name;
 }
 
-class PlainStructType: public CppuType
-{
+class PlainStructType: public CppuType {
 public:
     PlainStructType(
         rtl::Reference< unoidl::PlainStructTypeEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
 private:
-    virtual sal_uInt32 checkInheritedMemberCount() const override {
-        return getTotalMemberCount(entity_->getDirectBase());
-    }
+    virtual sal_uInt32 checkInheritedMemberCount() const override
+    { return getTotalMemberCount(entity_->getDirectBase()); }
 
     virtual void dumpDeclaration(FileStream& o) override;
 
@@ -1813,8 +1836,7 @@ private:
     rtl::Reference< unoidl::PlainStructTypeEntity > entity_;
 };
 
-void PlainStructType::dumpDeclaration(FileStream & out)
-{
+void PlainStructType::dumpDeclaration(FileStream & out) {
     out << "\n#ifdef SAL_W32\n#   pragma pack(push, 8)\n#endif\n\n" << indent();
     out << "struct SAL_DLLPUBLIC_RTTI ";
     if (canBeWarnUnused(name_))
@@ -1830,7 +1852,8 @@ void PlainStructType::dumpDeclaration(FileStream & out)
     if (!entity_->getDirectMembers().empty() || getInheritedMemberCount() > 0) {
         out << "\n" << indent() << "inline " << id_ << "(";
         bool bFirst = !dumpBaseMembers(out, base, true);
-        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             if (!bFirst) {
                 out << ", ";
             }
@@ -1843,14 +1866,16 @@ void PlainStructType::dumpDeclaration(FileStream & out)
     if (!entity_->getDirectMembers().empty()) {
         out << "\n";
         for (std::vector< unoidl::PlainStructTypeEntity::Member >::
-             const_iterator i(entity_->getDirectMembers().begin());
-             i != entity_->getDirectMembers().end(); ++i) {
+                 const_iterator i(entity_->getDirectMembers().begin());
+             i != entity_->getDirectMembers().end(); ++i)
+        {
             out << indent();
             dumpType(out, i->type);
             out << " " << i->name;
             if (i == entity_->getDirectMembers().begin() && !base.isEmpty()
                 && i->type != "hyper" && i->type != "unsigned hyper"
-                && i->type != "double") {
+                && i->type != "double")
+            {
                 out << " CPPU_GCC3_ALIGN("
                     << codemaker::cpp::scopedCppName(u2b(base)) << ")";
             }
@@ -1866,7 +1891,7 @@ void PlainStructType::dumpHppFile(
 {
     OUString headerDefine(dumpHeaderDefine(out, "HPP"));
     out << "\n";
-    includes.dump(out, &name_, true);
+    includes.dump(out, &name_);
     out << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(out, name_, false)) {
         out << "\n";
@@ -1880,7 +1905,8 @@ void PlainStructType::dumpHppFile(
             << "()\n";
         bFirst = false;
     }
-    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         out << indent() << (bFirst ? ":" : ",") << " " << member.name;
         dumpInitializer(out, false, member.type);
         out << "\n";
@@ -1892,7 +1918,8 @@ void PlainStructType::dumpHppFile(
         out << "inline " << id_;
         out << "::" << id_ << "(";
         bFirst = !dumpBaseMembers(out, base, true);
-        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             if (!bFirst) {
                 out << ", ";
             }
@@ -1910,7 +1937,8 @@ void PlainStructType::dumpHppFile(
             out << ")\n";
             bFirst = false;
         }
-        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             out << indent() << (bFirst ? ":" : ",") << " " << member.name << "("
                 << member.name << "_)\n";
             bFirst = false;
@@ -1929,7 +1957,8 @@ void PlainStructType::dumpHppFile(
             << ">(the_lhs), static_cast< " << codemaker::cpp::scopedCppName(u2b(base)) << ">(the_rhs) )\n";
         bFirst = false;
     }
-    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         if (!bFirst)
             out << "\n" << indent() << indent() << "&& ";
         out << "the_lhs." << member.name << " == the_rhs." << member.name;
@@ -1952,8 +1981,7 @@ void PlainStructType::dumpHppFile(
     out << "\n#endif // "<< headerDefine << "\n";
 }
 
-void PlainStructType::dumpLightGetCppuType(FileStream & out)
-{
+void PlainStructType::dumpLightGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << ("//TODO: On certain platforms with weak memory models, the"
@@ -1971,8 +1999,7 @@ void PlainStructType::dumpLightGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void PlainStructType::dumpNormalGetCppuType(FileStream & out)
-{
+void PlainStructType::dumpNormalGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << ("//TODO: On certain platforms with weak memory models, the"
@@ -1987,7 +2014,8 @@ void PlainStructType::dumpNormalGetCppuType(FileStream & out)
     inc();
     for (std::vector< unoidl::PlainStructTypeEntity::Member >::const_iterator i(
              entity_->getDirectMembers().begin());
-         i != entity_->getDirectMembers().end();) {
+         i != entity_->getDirectMembers().end();)
+    {
         out << indent() << "::cppu::UnoType< ";
         dumpType(out, i->type, false, false, false, true);
         ++i;
@@ -2011,8 +2039,7 @@ void PlainStructType::dumpNormalGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void PlainStructType::dumpComprehensiveGetCppuType(FileStream & out)
-{
+void PlainStructType::dumpComprehensiveGetCppuType(FileStream & out) {
     OUString staticTypeClass("the" + id_ + "Type");
     codemaker::cppumaker::dumpNamespaceOpen(out, name_, false);
     out << " namespace detail {\n\n" << indent() << "struct "
@@ -2026,11 +2053,13 @@ void PlainStructType::dumpComprehensiveGetCppuType(FileStream & out)
     out << indent() << "::rtl::OUString the_name( \"" << name_ << "\" );\n";
     std::map< OUString, sal_uInt32 > types;
     std::vector< unoidl::PlainStructTypeEntity::Member >::size_type n = 0;
-    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::PlainStructTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         if (types.insert(
                 std::map< OUString, sal_uInt32 >::value_type(
                     member.type, static_cast< sal_uInt32 >(types.size()))).
-            second) {
+            second)
+        {
             dumpCppuGetType(out, member.type, &name_);
             // For typedefs, use the resolved type name, as there will be no
             // information available about the typedef itself at runtime (the
@@ -2049,7 +2078,8 @@ void PlainStructType::dumpComprehensiveGetCppuType(FileStream & out)
     n = 0;
     for (std::vector< unoidl::PlainStructTypeEntity::Member >::const_iterator i(
              entity_->getDirectMembers().begin());
-         i != entity_->getDirectMembers().end();) {
+         i != entity_->getDirectMembers().end();)
+    {
         out << indent() << "{ { " << getTypeClass(i->type, true)
             << ", the_tname" << types.find(i->type)->second
             << ".pData, the_name" << n++ << ".pData }, false }";
@@ -2102,7 +2132,8 @@ bool PlainStructType::dumpBaseMembers(
             return false;
         }
         hasMember = dumpBaseMembers(out, ent2->getDirectBase(), withType);
-        for (const unoidl::PlainStructTypeEntity::Member& member : ent2->getDirectMembers()) {
+        for (const unoidl::PlainStructTypeEntity::Member& member : ent2->getDirectMembers())
+        {
             if (hasMember) {
                 out << ", ";
             }
@@ -2150,8 +2181,7 @@ void PlainStructType::addComprehensiveGetCppuTypeIncludes(
     includes.addTypelibTypedescriptionH();
 }
 
-sal_uInt32 PlainStructType::getTotalMemberCount(OUString const & base) const
-{
+sal_uInt32 PlainStructType::getTotalMemberCount(OUString const & base) const {
     if (base.isEmpty()) {
         return 0;
     }
@@ -2168,19 +2198,17 @@ sal_uInt32 PlainStructType::getTotalMemberCount(OUString const & base) const
         return 0;
     }
     return getTotalMemberCount(ent2->getDirectBase())
-           + ent2->getDirectMembers().size(); //TODO: overflow
+        + ent2->getDirectMembers().size(); //TODO: overflow
 }
 
-class PolyStructType: public CppuType
-{
+class PolyStructType: public CppuType {
 public:
     PolyStructType(
         rtl::Reference< unoidl::PolymorphicStructTypeTemplateEntity > const &
-        entity,
+            entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpDeclaration(FileStream& o) override;
@@ -2202,9 +2230,7 @@ private:
     virtual void addComprehensiveGetCppuTypeIncludes(
         codemaker::cppumaker::Includes & includes) const override;
 
-    virtual bool isPolymorphic() const override {
-        return true;
-    }
+    virtual bool isPolymorphic() const override { return true; }
 
     virtual void dumpTemplateHead(FileStream & out) const override;
 
@@ -2213,8 +2239,7 @@ private:
     rtl::Reference< unoidl::PolymorphicStructTypeTemplateEntity > entity_;
 };
 
-void PolyStructType::dumpDeclaration(FileStream & out)
-{
+void PolyStructType::dumpDeclaration(FileStream & out) {
     out << "\n#ifdef SAL_W32\n#   pragma pack(push, 8)\n#endif\n\n" << indent();
     dumpTemplateHead(out);
     out << "struct SAL_DLLPUBLIC_RTTI " << id_ << " {\n";
@@ -2223,9 +2248,10 @@ void PolyStructType::dumpDeclaration(FileStream & out)
     if (!entity_->getMembers().empty()) {
         out << "\n" << indent() << "inline " << id_ << "(";
         for (std::vector<
-             unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-             const_iterator i(entity_->getMembers().begin());
-             i != entity_->getMembers().end(); ++i) {
+                 unoidl::PolymorphicStructTypeTemplateEntity::Member >::
+                 const_iterator i(entity_->getMembers().begin());
+             i != entity_->getMembers().end(); ++i)
+        {
             if (i != entity_->getMembers().begin()) {
                 out << ", ";
             }
@@ -2240,7 +2266,8 @@ void PolyStructType::dumpDeclaration(FileStream & out)
         out << ");\n\n";
         // print the member fields
         for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member :
-             entity_->getMembers()) {
+                 entity_->getMembers())
+        {
             out << indent();
             if (member.parameterized) {
                 dumpTypeParameterName(out, member.type);
@@ -2259,7 +2286,7 @@ void PolyStructType::dumpHppFile(
 {
     OUString headerDefine(dumpHeaderDefine(out, "HPP"));
     out << "\n";
-    includes.dump(out, &name_, true);
+    includes.dump(out, &name_);
     out << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(out, name_, false)) {
         out << "\n";
@@ -2272,8 +2299,9 @@ void PolyStructType::dumpHppFile(
     out << "::" << id_ << "()\n";
     inc();
     for (std::vector< unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-         const_iterator i(entity_->getMembers().begin());
-         i != entity_->getMembers().end(); ++i) {
+             const_iterator i(entity_->getMembers().begin());
+         i != entity_->getMembers().end(); ++i)
+    {
         out << indent() << (i == entity_->getMembers().begin() ? ":" : ",")
             << " " << i->name;
         dumpInitializer(out, i->parameterized, i->type);
@@ -2288,9 +2316,10 @@ void PolyStructType::dumpHppFile(
         dumpTemplateParameters(out);
         out << "::" << id_ << "(";
         for (std::vector<
-             unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-             const_iterator i(entity_->getMembers().begin());
-             i != entity_->getMembers().end(); ++i) {
+                 unoidl::PolymorphicStructTypeTemplateEntity::Member >::
+                 const_iterator i(entity_->getMembers().begin());
+             i != entity_->getMembers().end(); ++i)
+        {
             if (i != entity_->getMembers().begin()) {
                 out << ", ";
             }
@@ -2305,9 +2334,10 @@ void PolyStructType::dumpHppFile(
         out << ")\n";
         inc();
         for (std::vector<
-             unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-             const_iterator i(entity_->getMembers().begin());
-             i != entity_->getMembers().end(); ++i) {
+                 unoidl::PolymorphicStructTypeTemplateEntity::Member >::
+                 const_iterator i(entity_->getMembers().begin());
+             i != entity_->getMembers().end(); ++i)
+        {
             out << indent() << (i == entity_->getMembers().begin() ? ":" : ",")
                 << " " << i->name << "(" << i->name << "_)\n";
         }
@@ -2319,9 +2349,10 @@ void PolyStructType::dumpHppFile(
         dumpTemplateParameters(out);
         out << "\n" << indent() << "make_" << id_ << "(";
         for (std::vector<
-             unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-             const_iterator i(entity_->getMembers().begin());
-             i != entity_->getMembers().end(); ++i) {
+                 unoidl::PolymorphicStructTypeTemplateEntity::Member >::
+                 const_iterator i(entity_->getMembers().begin());
+             i != entity_->getMembers().end(); ++i)
+        {
             if (i != entity_->getMembers().begin()) {
                 out << ", ";
             }
@@ -2339,9 +2370,10 @@ void PolyStructType::dumpHppFile(
         dumpTemplateParameters(out);
         out << "(";
         for (std::vector<
-             unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-             const_iterator i(entity_->getMembers().begin());
-             i != entity_->getMembers().end(); ++i) {
+                 unoidl::PolymorphicStructTypeTemplateEntity::Member >::
+                 const_iterator i(entity_->getMembers().begin());
+             i != entity_->getMembers().end(); ++i)
+        {
             if (i != entity_->getMembers().begin()) {
                 out << ", ";
             }
@@ -2362,7 +2394,8 @@ void PolyStructType::dumpHppFile(
     inc();
     out << indent() << "return ";
     bool bFirst = true;
-    for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member : entity_->getMembers()) {
+    for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member : entity_->getMembers())
+    {
         if (!bFirst)
             out << "\n" << indent() << indent() << "&& ";
         out << "the_lhs." << member.name << " == the_rhs." << member.name;
@@ -2390,8 +2423,7 @@ void PolyStructType::dumpHppFile(
     out << "\n#endif // "<< headerDefine << "\n";
 }
 
-void PolyStructType::dumpLightGetCppuType(FileStream & out)
-{
+void PolyStructType::dumpLightGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << ("//TODO: On certain platforms with weak memory models, the"
@@ -2405,7 +2437,8 @@ void PolyStructType::dumpLightGetCppuType(FileStream & out)
         << "<\");\n";
     for (std::vector< OUString >::const_iterator i(
              entity_->getTypeParameters().begin());
-         i != entity_->getTypeParameters().end();) {
+         i != entity_->getTypeParameters().end();)
+    {
         out << indent()
             << ("the_buffer.append(::rtl::OUStringToOString("
                 "::cppu::getTypeFavourChar(static_cast< ");
@@ -2425,8 +2458,7 @@ void PolyStructType::dumpLightGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void PolyStructType::dumpNormalGetCppuType(FileStream & out)
-{
+void PolyStructType::dumpNormalGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << ("//TODO: On certain platforms with weak memory models, the"
@@ -2440,7 +2472,8 @@ void PolyStructType::dumpNormalGetCppuType(FileStream & out)
         << "<\");\n";
     for (std::vector< OUString >::const_iterator i(
              entity_->getTypeParameters().begin());
-         i != entity_->getTypeParameters().end();) {
+         i != entity_->getTypeParameters().end();)
+    {
         out << indent()
             << ("the_buffer.append(::rtl::OUStringToOString("
                 "::cppu::getTypeFavourChar(static_cast< ");
@@ -2455,8 +2488,9 @@ void PolyStructType::dumpNormalGetCppuType(FileStream & out)
         << "::typelib_TypeDescriptionReference * the_members[] = {\n";
     inc();
     for (std::vector< unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-         const_iterator i(entity_->getMembers().begin());
-         i != entity_->getMembers().end();) {
+             const_iterator i(entity_->getMembers().begin());
+         i != entity_->getMembers().end();)
+    {
         out << indent();
         if (i->parameterized) {
             out << "::cppu::getTypeFavourChar(static_cast< ";
@@ -2474,8 +2508,9 @@ void PolyStructType::dumpNormalGetCppuType(FileStream & out)
     dec();
     out << indent() << "static ::sal_Bool const the_parameterizedTypes[] = { ";
     for (std::vector< unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-         const_iterator i(entity_->getMembers().begin());
-         i != entity_->getMembers().end(); ++i) {
+             const_iterator i(entity_->getMembers().begin());
+         i != entity_->getMembers().end(); ++i)
+    {
         if (i != entity_->getMembers().begin()) {
             out << ", ";
         }
@@ -2493,8 +2528,7 @@ void PolyStructType::dumpNormalGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out)
-{
+void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out) {
     out << "namespace cppu {  namespace detail {\n\n" << indent();
     dumpTemplateHead(out);
     OUString staticTypeClass("the" + id_ + "Type");
@@ -2511,7 +2545,8 @@ void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out)
         << "the_buffer.append(\"" << name_ << "<\");\n";
     for (std::vector< OUString >::const_iterator i(
              entity_->getTypeParameters().begin());
-         i != entity_->getTypeParameters().end();) {
+         i != entity_->getTypeParameters().end();)
+    {
         out << indent()
             << "the_buffer.append(::cppu::getTypeFavourChar(static_cast< ";
         dumpTypeParameterName(out, *i);
@@ -2529,13 +2564,15 @@ void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out)
     std::map< OUString, sal_uInt32 > parameters;
     std::map< OUString, sal_uInt32 > types;
     std::vector< unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-    size_type n = 0;
-    for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member : entity_->getMembers()) {
+        size_type n = 0;
+    for (const unoidl::PolymorphicStructTypeTemplateEntity::Member& member : entity_->getMembers())
+    {
         if (member.parameterized) {
             if (parameters.insert(
                     std::map< OUString, sal_uInt32 >::value_type(
                         member.type, static_cast< sal_uInt32 >(parameters.size()))).
-                second) {
+                second)
+            {
                 sal_uInt32 k = static_cast< sal_uInt32 >(parameters.size() - 1);
                 out << indent()
                     << "::css::uno::Type const & the_ptype" << k
@@ -2551,7 +2588,8 @@ void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out)
         } else if (types.insert(
                        std::map< OUString, sal_uInt32 >::value_type(
                            member.type, static_cast< sal_uInt32 >(types.size()))).
-                   second) {
+                   second)
+        {
             dumpCppuGetType(out, member.type, &name_);
             // For typedefs, use the resolved type name, as there will be no
             // information available about the typedef itself at runtime (the
@@ -2569,8 +2607,9 @@ void PolyStructType::dumpComprehensiveGetCppuType(FileStream & out)
     inc();
     n = 0;
     for (std::vector< unoidl::PolymorphicStructTypeTemplateEntity::Member >::
-         const_iterator i(entity_->getMembers().begin());
-         i != entity_->getMembers().end();) {
+             const_iterator i(entity_->getMembers().begin());
+         i != entity_->getMembers().end();)
+    {
         out << indent() << "{ { ";
         if (i->parameterized) {
             sal_uInt32 k = parameters.find(i->type)->second;
@@ -2646,12 +2685,12 @@ void PolyStructType::addComprehensiveGetCppuTypeIncludes(
     includes.addRtlUstrbufHxx();
 }
 
-void PolyStructType::dumpTemplateHead(FileStream & out) const
-{
+void PolyStructType::dumpTemplateHead(FileStream & out) const {
     out << "template< ";
     for (std::vector< OUString >::const_iterator i(
              entity_->getTypeParameters().begin());
-         i != entity_->getTypeParameters().end(); ++i) {
+         i != entity_->getTypeParameters().end(); ++i)
+    {
         if (i != entity_->getTypeParameters().begin()) {
             out << ", ";
         }
@@ -2661,12 +2700,12 @@ void PolyStructType::dumpTemplateHead(FileStream & out) const
     out << " > ";
 }
 
-void PolyStructType::dumpTemplateParameters(FileStream & out) const
-{
+void PolyStructType::dumpTemplateParameters(FileStream & out) const {
     out << "< ";
     for (std::vector< OUString >::const_iterator i(
              entity_->getTypeParameters().begin());
-         i != entity_->getTypeParameters().end(); ++i) {
+         i != entity_->getTypeParameters().end(); ++i)
+    {
         if (i != entity_->getTypeParameters().begin()) {
             out << ", ";
         }
@@ -2675,8 +2714,7 @@ void PolyStructType::dumpTemplateParameters(FileStream & out) const
     out << " >";
 }
 
-OUString typeToIdentifier(OUString const & name)
-{
+OUString typeToIdentifier(OUString const & name) {
     sal_Int32 k;
     OUString n(b2u(codemaker::UnoType::decompose(u2b(name), &k)));
     OUStringBuffer b;
@@ -2692,15 +2730,13 @@ OUString typeToIdentifier(OUString const & name)
     return b.makeStringAndClear();
 }
 
-class ExceptionType: public CppuType
-{
+class ExceptionType: public CppuType {
 public:
     ExceptionType(
         rtl::Reference< unoidl::ExceptionTypeEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpHppFile(
@@ -2715,9 +2751,8 @@ private:
 
     virtual void dumpComprehensiveGetCppuType(FileStream & out) override;
 
-    virtual sal_uInt32 checkInheritedMemberCount() const override {
-        return getTotalMemberCount(entity_->getDirectBase());
-    }
+    virtual sal_uInt32 checkInheritedMemberCount() const override
+    { return getTotalMemberCount(entity_->getDirectBase()); }
 
     virtual void dumpDeclaration(FileStream & out) override;
 
@@ -2743,7 +2778,7 @@ void ExceptionType::dumpHppFile(
     OUString headerDefine(dumpHeaderDefine(out, "HPP"));
     out << "\n";
     addDefaultHxxIncludes(includes);
-    includes.dump(out, &name_, true);
+    includes.dump(out, &name_);
     out << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(out, name_, false)) {
         out << "\n";
@@ -2757,7 +2792,8 @@ void ExceptionType::dumpHppFile(
             << "()\n";
         bFirst = false;
     }
-    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         out << indent() << (bFirst ? ":" : ",") << " ";
         out << member.name;
         dumpInitializer(out, false, member.type);
@@ -2778,7 +2814,8 @@ void ExceptionType::dumpHppFile(
     if (!entity_->getDirectMembers().empty() || getInheritedMemberCount() > 0) {
         out << indent() << "inline " << id_ << "::" << id_ << "(";
         bFirst = !dumpBaseMembers(out, base, true, false);
-        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             if (!bFirst) {
                 out << ", ";
             }
@@ -2796,7 +2833,8 @@ void ExceptionType::dumpHppFile(
             out << ")\n";
             bFirst = false;
         }
-        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             out << indent() << (bFirst ? ":" : ",") << " " << member.name << "("
                 << member.name << "_)\n";
             bFirst = false;
@@ -2813,15 +2851,16 @@ void ExceptionType::dumpHppFile(
         }
         out << "}\n\n";
     }
-    out << "#if !defined LIBO_INTERNAL_ONLY\n" << indent() << id_ << "::" << id_
-        << "(" << id_ << " const & the_other)";
+    out << indent() << id_ << "::" << id_ << "(" << id_
+        << " const & the_other)";
     bFirst = true;
     if (!base.isEmpty()) {
         out << ": " << codemaker::cpp::scopedCppName(u2b(base))
             << "(the_other)";
         bFirst = false;
     }
-    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         out << (bFirst ? ":" : ",") << " " << member.name << "(the_other." << member.name
             << ")";
         bFirst = false;
@@ -2837,12 +2876,13 @@ void ExceptionType::dumpHppFile(
         out << indent() << codemaker::cpp::scopedCppName(u2b(base))
             << "::operator =(the_other);\n";
     }
-    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         out << indent() << member.name << " = the_other." << member.name << ";\n";
     }
     out << indent() << "return *this;\n";
     dec();
-    out << indent() << "}\n#endif\n\n";
+    out << indent() << "}\n\n";
     if (codemaker::cppumaker::dumpNamespaceClose(out, name_, false)) {
         out << "\n";
     }
@@ -2851,8 +2891,7 @@ void ExceptionType::dumpHppFile(
     out << "\n#endif // "<< headerDefine << "\n";
 }
 
-void ExceptionType::dumpLightGetCppuType(FileStream & out)
-{
+void ExceptionType::dumpLightGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << "static typelib_TypeDescriptionReference * the_type = 0;\n"
@@ -2867,8 +2906,7 @@ void ExceptionType::dumpLightGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void ExceptionType::dumpNormalGetCppuType(FileStream & out)
-{
+void ExceptionType::dumpNormalGetCppuType(FileStream & out) {
     dumpGetCppuTypePreamble(out);
     out << indent()
         << "static typelib_TypeDescriptionReference * the_type = 0;\n"
@@ -2892,7 +2930,8 @@ void ExceptionType::dumpNormalGetCppuType(FileStream & out)
             << entity_->getDirectMembers().size() << "];\n";
         std::set< OUString > seen;
         std::vector< unoidl::ExceptionTypeEntity::Member >::size_type n = 0;
-        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             OUString type(resolveAllTypedefs(member.type));
             OUString modType(typeToIdentifier(type));
             if (seen.insert(type).second) {
@@ -2927,8 +2966,7 @@ void ExceptionType::dumpNormalGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void ExceptionType::dumpComprehensiveGetCppuType(FileStream & out)
-{
+void ExceptionType::dumpComprehensiveGetCppuType(FileStream & out) {
     codemaker::cppumaker::dumpNamespaceOpen(out, name_, false);
     out << " namespace detail {\n\n";
     OUString staticTypeClass("the" + id_ + "Type");
@@ -2951,7 +2989,8 @@ void ExceptionType::dumpComprehensiveGetCppuType(FileStream & out)
         out << " >::get();\n";
     }
     std::set< OUString > seen;
-    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+    for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+    {
         if (seen.insert(member.type).second) {
             dumpCppuGetType(out, member.type);
         }
@@ -2960,7 +2999,8 @@ void ExceptionType::dumpComprehensiveGetCppuType(FileStream & out)
         out << "\n" << indent() << "typelib_CompoundMember_Init aMembers["
             << entity_->getDirectMembers().size() << "];\n";
         std::vector< unoidl::ExceptionTypeEntity::Member >::size_type n = 0;
-        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             OUString type(resolveAllTypedefs(member.type));
             out << indent() << "::rtl::OUString sMemberType" << n << "( \""
                 << type << "\" );\n" << indent()
@@ -3001,8 +3041,7 @@ void ExceptionType::dumpComprehensiveGetCppuType(FileStream & out)
     dumpGetCppuTypePostamble(out);
 }
 
-void ExceptionType::dumpDeclaration(FileStream & out)
-{
+void ExceptionType::dumpDeclaration(FileStream & out) {
     out << "\nclass CPPU_GCC_DLLPUBLIC_EXPORT " << id_;
     OUString base(entity_->getDirectBase());
     if (!base.isEmpty()) {
@@ -3016,7 +3055,8 @@ void ExceptionType::dumpDeclaration(FileStream & out)
         out << indent() << "inline CPPU_GCC_DLLPRIVATE " << id_ << "(";
         bool eligibleForDefaults = entity_->getDirectMembers().empty();
         bool bFirst = !dumpBaseMembers(out, base, true, eligibleForDefaults);
-        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : entity_->getDirectMembers())
+        {
             if (!bFirst) {
                 out << ", ";
             }
@@ -3026,20 +3066,21 @@ void ExceptionType::dumpDeclaration(FileStream & out)
         }
         out << ");\n\n";
     }
-    out << "#if !defined LIBO_INTERNAL_ONLY\n" << indent()
-        << "inline CPPU_GCC_DLLPRIVATE " << id_ << "(" << id_
+    out << indent() << "inline CPPU_GCC_DLLPRIVATE " << id_ << "(" << id_
         << " const &);\n\n" << indent() << "inline CPPU_GCC_DLLPRIVATE ~"
         << id_ << "();\n\n" << indent() << "inline CPPU_GCC_DLLPRIVATE " << id_
-        << " & operator =(" << id_ << " const &);\n#endif\n\n";
+        << " & operator =(" << id_ << " const &);\n\n";
     for (std::vector< unoidl::ExceptionTypeEntity::Member >::const_iterator i(
              entity_->getDirectMembers().begin());
-         i != entity_->getDirectMembers().end(); ++i) {
+         i != entity_->getDirectMembers().end(); ++i)
+    {
         out << indent();
         dumpType(out, i->type);
         out << " " << i->name;
         if (i == entity_->getDirectMembers().begin() && !base.isEmpty()
             && i->type != "hyper" && i->type != "unsigned hyper"
-            && i->type != "double") {
+            && i->type != "double")
+        {
             out << " CPPU_GCC3_ALIGN( "
                 << codemaker::cpp::scopedCppName(u2b(base)) << " )";
         }
@@ -3067,9 +3108,10 @@ bool ExceptionType::dumpBaseMembers(
             return false;
         }
         hasMember = dumpBaseMembers( out, ent2->getDirectBase(), withType,
-                                     eligibleForDefaults && ent2->getDirectMembers().empty() );
+                        eligibleForDefaults && ent2->getDirectMembers().empty() );
         int memberCount = 0;
-        for (const unoidl::ExceptionTypeEntity::Member& member : ent2->getDirectMembers()) {
+        for (const unoidl::ExceptionTypeEntity::Member& member : ent2->getDirectMembers())
+        {
             if (hasMember) {
                 out << ", ";
             }
@@ -3082,10 +3124,10 @@ bool ExceptionType::dumpBaseMembers(
             // constructors, since most of the time we don't pass a Context object in to the exception
             // throw sites.
             if (eligibleForDefaults
-                && base == "com.sun.star.uno.Exception"
-                && memberCount == 1
-                && member.name == "Context"
-                && member.type == "com.sun.star.uno.XInterface") {
+                  && base == "com.sun.star.uno.Exception"
+                  && memberCount == 1
+                  && member.name == "Context"
+                  && member.type == "com.sun.star.uno.XInterface") {
                 out << " = ::css::uno::Reference< ::css::uno::XInterface >()";
             }
             hasMember = true;
@@ -3095,8 +3137,7 @@ bool ExceptionType::dumpBaseMembers(
     return hasMember;
 }
 
-sal_uInt32 ExceptionType::getTotalMemberCount(OUString const & base) const
-{
+sal_uInt32 ExceptionType::getTotalMemberCount(OUString const & base) const {
     if (base.isEmpty()) {
         return 0;
     }
@@ -3109,18 +3150,16 @@ sal_uInt32 ExceptionType::getTotalMemberCount(OUString const & base) const
     unoidl::ExceptionTypeEntity& ent2(
         dynamic_cast< unoidl::ExceptionTypeEntity&>(*ent.get()));
     return getTotalMemberCount(ent2.getDirectBase())
-           + ent2.getDirectMembers().size(); //TODO: overflow
+        + ent2.getDirectMembers().size(); //TODO: overflow
 }
 
-class EnumType: public CppuType
-{
+class EnumType: public CppuType {
 public:
     EnumType(
         rtl::Reference< unoidl::EnumTypeEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpDeclaration(FileStream& o) override;
@@ -3145,14 +3184,11 @@ void EnumType::addComprehensiveGetCppuTypeIncludes(
 
 void EnumType::dumpDeclaration(FileStream& o)
 {
-    o << "\n#if defined LIBO_INTERNAL_ONLY\n";
-    o << "\nenum class SAL_DLLPUBLIC_RTTI " << id_ << "\n{\n";
-    o << "\n#else\n";
     o << "\nenum SAL_DLLPUBLIC_RTTI " << id_ << "\n{\n";
-    o << "\n#endif\n";
     inc();
 
-    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers()) {
+    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers())
+    {
         o << indent() << id_ << "_" << u2b(member.name) << " = " << member.value
           << ",\n";
     }
@@ -3161,16 +3197,6 @@ void EnumType::dumpDeclaration(FileStream& o)
 
     dec();
     o << "};\n\n";
-
-    // use constexpr to create a kind of type-alias so we don't have to modify existing code
-    o << "#if defined LIBO_INTERNAL_ONLY\n";
-    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers()) {
-        o << "constexpr auto " << id_ << "_" << u2b(member.name)
-          << " = "
-          << id_ << "::" << id_ << "_" << u2b(member.name)
-          << ";\n";
-    }
-    o << "#endif\n";
 }
 
 void EnumType::dumpHppFile(
@@ -3180,7 +3206,7 @@ void EnumType::dumpHppFile(
     o << "\n";
 
     addDefaultHxxIncludes(includes);
-    includes.dump(o, &name_, true);
+    includes.dump(o, &name_);
     o << "\n";
 
     dumpGetCppuType(o);
@@ -3237,7 +3263,8 @@ void EnumType::dumpComprehensiveGetCppuType(FileStream& o)
     o << indent() << "rtl_uString* enumValueNames["
       << entity_->getMembers().size() << "];\n";
     std::vector< unoidl::EnumTypeEntity::Member >::size_type n = 0;
-    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers()) {
+    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers())
+    {
         o << indent() << "::rtl::OUString sEnumValue" << n << "( \""
           << u2b(member.name) << "\" );\n";
         o << indent() << "enumValueNames[" << n << "] = sEnumValue" << n
@@ -3248,7 +3275,8 @@ void EnumType::dumpComprehensiveGetCppuType(FileStream& o)
     o << "\n" << indent() << "sal_Int32 enumValues["
       << entity_->getMembers().size() << "];\n";
     n = 0;
-    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers()) {
+    for (const unoidl::EnumTypeEntity::Member& member : entity_->getMembers())
+    {
         o << indent() << "enumValues[" << n++ << "] = " << member.value << ";\n";
     }
 
@@ -3287,15 +3315,13 @@ void EnumType::dumpComprehensiveGetCppuType(FileStream& o)
     dumpGetCppuTypePostamble(o);
 }
 
-class Typedef: public CppuType
-{
+class Typedef: public CppuType {
 public:
     Typedef(
         rtl::Reference< unoidl::TypedefEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & typeMgr):
-        CppuType(name, typeMgr), entity_(entity) {
-        assert(entity.is());
-    }
+        CppuType(name, typeMgr), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpDeclaration(FileStream& o) override;
@@ -3314,7 +3340,7 @@ void Typedef::dumpHdlFile(
     o << "\n";
 
     addDefaultHIncludes(includes);
-    includes.dump(o, nullptr, true);
+    includes.dump(o, nullptr);
     o << "\n";
 
     if (codemaker::cppumaker::dumpNamespaceOpen(o, name_, false)) {
@@ -3344,34 +3370,31 @@ void Typedef::dumpHppFile(
     o << "\n";
 
     addDefaultHxxIncludes(includes);
-    includes.dump(o, &name_, true);
+    includes.dump(o, &name_);
     o << "\n";
 
     o << "\n#endif // "<< headerDefine << "\n";
 }
 
-class ConstructiveType: public CppuType
-{
+class ConstructiveType: public CppuType {
 public:
     ConstructiveType(
         OUString const & name, rtl::Reference< TypeManager > const & manager):
         CppuType(name, manager) {}
 
 private:
-    virtual void dumpHdlFile(FileStream &, codemaker::cppumaker::Includes &) override {
-        assert(false);    // this cannot happen
-    }
+    virtual void dumpHdlFile(FileStream &, codemaker::cppumaker::Includes &) override
+    { assert(false); } // this cannot happen
 
-    virtual void dumpFiles(OUString const & uri, CppuOptions const & options) override {
-        dumpFile(uri, name_, true, options);
-    }
+    virtual void dumpFiles(OUString const & uri, CppuOptions const & options) override
+    { dumpFile(uri, name_, true, options); }
 };
 
 bool hasRestParameter(
     unoidl::SingleInterfaceBasedServiceEntity::Constructor const & constructor)
 {
     return !constructor.parameters.empty()
-           && constructor.parameters.back().rest;
+        && constructor.parameters.back().rest;
 }
 
 void includeExceptions(
@@ -3381,22 +3404,21 @@ void includeExceptions(
     if (node->present) {
         includes.add(node->name);
     } else {
-        for (std::unique_ptr<codemaker::ExceptionTreeNode> const & pChild : node->children) {
-            includeExceptions(includes, pChild.get());
+        for (codemaker::ExceptionTreeNode* pChild : node->children)
+        {
+            includeExceptions(includes, pChild);
         }
     }
 }
 
-class ServiceType: public ConstructiveType
-{
+class ServiceType: public ConstructiveType {
 public:
     ServiceType(
         rtl::Reference< unoidl::SingleInterfaceBasedServiceEntity > const &
-        entity,
+            entity,
         OUString const & name, rtl::Reference< TypeManager > const & manager):
-        ConstructiveType(name, manager), entity_(entity) {
-        assert(entity.is());
-    }
+        ConstructiveType(name, manager), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpHppFile(
@@ -3428,7 +3450,8 @@ void ServiceType::dumpHppFile(
         includes.addRtlUstringHxx();
         includes.add("com.sun.star.uno.DeploymentException");
         includes.add("com.sun.star.uno.XComponentContext");
-        for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor& cons : entity_->getConstructors()) {
+        for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor& cons : entity_->getConstructors())
+        {
             if (cons.defaultConstructor) {
                 includes.add("com.sun.star.uno.Exception");
                 includes.add("com.sun.star.uno.RuntimeException");
@@ -3437,18 +3460,21 @@ void ServiceType::dumpHppFile(
                     includes.addAny();
                     includes.addSequence();
                     for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor::Parameter& param :
-                         cons.parameters) {
+                                 cons.parameters)
+                    {
                         if (m_typeMgr->getSort(
                                 b2u(codemaker::UnoType::decompose(
                                         u2b(param.type))))
-                            == codemaker::UnoType::Sort::Char) {
+                            == codemaker::UnoType::Sort::Char)
+                        {
                             includes.addCppuUnotypeHxx();
                             break;
                         }
                     }
                 }
                 codemaker::ExceptionTree tree;
-                for (const OUString& ex : cons.exceptions) {
+                for (const OUString& ex : cons.exceptions)
+                {
                     tree.add(u2b(ex), m_typeMgr);
                 }
                 if (!tree.getRoot().present) {
@@ -3464,7 +3490,7 @@ void ServiceType::dumpHppFile(
             u2b(id_), "service", isGlobal()));
     OUString headerDefine(dumpHeaderDefine(o, "HPP"));
     o << "\n";
-    includes.dump(o, nullptr, true);
+    includes.dump(o, nullptr);
     if (!entity_->getConstructors().empty()) {
         o << ("\n#if defined ANDROID || defined IOS //TODO\n"
               "#include <com/sun/star/lang/XInitialization.hpp>\n"
@@ -3477,7 +3503,7 @@ void ServiceType::dumpHppFile(
           << "\nextern \"C\" ::css::uno::XInterface * SAL_CALL LO_URE_CTOR_FUN_"
           << name_.replaceAll(".", "_dot_")
           << "(::css::uno::XComponentContext *, ::css::uno::Sequence< "
-          "::css::uno::Any > const &);\n#endif\n";
+             "::css::uno::Any > const &);\n#endif\n";
     }
     o << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(o, name_, false)) {
@@ -3490,7 +3516,8 @@ void ServiceType::dumpHppFile(
         OString scopedBaseName(codemaker::cpp::scopedCppName(baseName));
         o << "public:\n";
         for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor& cons :
-             entity_->getConstructors()) {
+                 entity_->getConstructors())
+        {
             if (cons.defaultConstructor) {
                 o << indent() << "static ::css::uno::Reference< "
                   << scopedBaseName << " > "
@@ -3559,7 +3586,8 @@ void ServiceType::dumpHppFile(
                       " the_context");
                 bool rest = hasRestParameter(cons);
                 for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor::Parameter& param :
-                     cons.parameters) {
+                         cons.parameters)
+                {
                     o << ", ";
                     OUStringBuffer buf;
                     if (param.rest) {
@@ -3581,22 +3609,22 @@ void ServiceType::dumpHppFile(
                       << ("::css::uno::Sequence< ::css::uno::Any > the_arguments(")
                       << cons.parameters.size() << ");\n";
                     std::vector<
-                    unoidl::SingleInterfaceBasedServiceEntity::Constructor::
-                    Parameter >::size_type n = 0;
+                        unoidl::SingleInterfaceBasedServiceEntity::Constructor::
+                        Parameter >::size_type n = 0;
                     for (const unoidl::SingleInterfaceBasedServiceEntity::Constructor::Parameter& j :
-                         cons.parameters) {
+                                 cons.parameters)
+                    {
                         o << indent() << "the_arguments[" << n++ << "] ";
                         OString param(
                             codemaker::cpp::translateUnoToCppIdentifier(
                                 u2b(j.name), "param",
                                 codemaker::cpp::IdentifierTranslationMode::NonGlobal));
                         sal_Int32 rank;
-                        if (resolveOuterTypedefs(j.type) == "any") {
-                            o << "= " << param;
-                        } else if (m_typeMgr->getSort(
-                                       b2u(codemaker::UnoType::decompose(
-                                               u2b(j.type), &rank)))
-                                   == codemaker::UnoType::Sort::Char) {
+                        if (m_typeMgr->getSort(
+                                b2u(codemaker::UnoType::decompose(
+                                        u2b(j.type), &rank)))
+                            == codemaker::UnoType::Sort::Char)
+                        {
                             o << "= ::css::uno::Any(&" << param
                               << ", ::cppu::UnoType< ";
                             for (sal_Int32 k = 0; k < rank; ++k) {
@@ -3616,7 +3644,8 @@ void ServiceType::dumpHppFile(
                 o << indent() << "::css::uno::Reference< "
                   << scopedBaseName << " > the_instance;\n";
                 codemaker::ExceptionTree tree;
-                for (const OUString& ex : cons.exceptions) {
+                for (const OUString& ex : cons.exceptions)
+                {
                     tree.add(u2b(ex), m_typeMgr);
                 }
                 if (!tree.getRoot().present) {
@@ -3638,8 +3667,8 @@ void ServiceType::dumpHppFile(
                   << ")(the_context.get(), ";
                 if (rest) {
                     o << codemaker::cpp::translateUnoToCppIdentifier(
-                          u2b(cons.parameters.back().name), "param",
-                          codemaker::cpp::IdentifierTranslationMode::NonGlobal);
+                        u2b(cons.parameters.back().name), "param",
+                        codemaker::cpp::IdentifierTranslationMode::NonGlobal);
                 } else if (cons.parameters.empty()) {
                     o << "::css::uno::Sequence< ::css::uno::Any >()";
                 } else {
@@ -3665,8 +3694,8 @@ void ServiceType::dumpHppFile(
                   << name_ << "\", ";
                 if (rest) {
                     o << codemaker::cpp::translateUnoToCppIdentifier(
-                          u2b(cons.parameters.back().name), "param",
-                          codemaker::cpp::IdentifierTranslationMode::NonGlobal);
+                        u2b(cons.parameters.back().name), "param",
+                        codemaker::cpp::IdentifierTranslationMode::NonGlobal);
                 } else if (cons.parameters.empty()) {
                     o << ("::css::uno::Sequence< ::css::uno::Any >()");
                 } else {
@@ -3727,21 +3756,20 @@ void ServiceType::dumpCatchClauses(
         out << indent() << "throw;\n";
         dec();
     } else {
-        for (std::unique_ptr<codemaker::ExceptionTreeNode> const & pChild : node->children) {
-            dumpCatchClauses(out, pChild.get());
+        for (codemaker::ExceptionTreeNode* pChild : node->children)
+        {
+            dumpCatchClauses(out, pChild);
         }
     }
 }
 
-class SingletonType: public ConstructiveType
-{
+class SingletonType: public ConstructiveType {
 public:
     SingletonType(
         rtl::Reference< unoidl::InterfaceBasedSingletonEntity > const & entity,
         OUString const & name, rtl::Reference< TypeManager > const & manager):
-        ConstructiveType(name, manager), entity_(entity) {
-        assert(entity.is());
-    }
+        ConstructiveType(name, manager), entity_(entity)
+    { assert(entity.is()); }
 
 private:
     virtual void dumpHppFile(
@@ -3769,7 +3797,7 @@ void SingletonType::dumpHppFile(
     includes.addReference();
     includes.addRtlUstringH();
     includes.addRtlUstringHxx();
-    includes.dump(o, nullptr, true);
+    includes.dump(o, nullptr);
     o << ("\n#if defined ANDROID || defined IOS //TODO\n"
           "#include <com/sun/star/lang/XInitialization.hpp>\n"
           "#include <osl/detail/component-defines.h>\n#endif\n\n"
@@ -3781,7 +3809,7 @@ void SingletonType::dumpHppFile(
       << "\nextern \"C\" ::css::uno::XInterface * SAL_CALL LO_URE_CTOR_FUN_"
       << name_.replaceAll(".", "_dot_")
       << "(::css::uno::XComponentContext *, ::css::uno::Sequence< "
-      "::css::uno::Any > const &);\n#endif\n";
+         "::css::uno::Any > const &);\n#endif\n";
     o << "\n";
     if (codemaker::cppumaker::dumpNamespaceOpen(o, name_, false)) {
         o << "\n";
@@ -3812,9 +3840,9 @@ void SingletonType::dumpHppFile(
       << name_.replaceAll(".", "_dot_")
       << (")(the_context.get(), ::css::uno::Sequence<"
           " ::css::uno::Any >())), ::SAL_NO_ACQUIRE),"
-          " ::css::uno::UNO_QUERY);\n#else\n")
+                      " ::css::uno::UNO_QUERY);\n#else\n")
       << indent() << ("the_context->getValueByName("
-                      "::rtl::OUString( \"/singletons/")
+          "::rtl::OUString( \"/singletons/")
       << name_ << "\" )) >>= instance;\n#endif\n"
       << indent() << "if (!instance.is()) {\n";
     inc();
@@ -3856,96 +3884,106 @@ void produce(
     rtl::Reference< unoidl::Entity > ent;
     rtl::Reference< unoidl::MapCursor > cur;
     switch (manager->getSort(name, &ent, &cur)) {
-    case codemaker::UnoType::Sort::Module: {
-        OUString prefix;
-        if (!name.isEmpty()) {
-            prefix = name + ".";
-        }
-        for (;;) {
-            OUString mem;
-            if (!cur->getNext(&mem).is()) {
-                break;
+    case codemaker::UnoType::Sort::Module:
+        {
+            OUString prefix;
+            if (!name.isEmpty()) {
+                prefix = name + ".";
             }
-            produce(prefix + mem, manager, generated, options);
+            for (;;) {
+                OUString mem;
+                if (!cur->getNext(&mem).is()) {
+                    break;
+                }
+                produce(prefix + mem, manager, generated, options);
+            }
+            break;
         }
-        break;
-    }
-    case codemaker::UnoType::Sort::Enum: {
-        EnumType t(
-            dynamic_cast< unoidl::EnumTypeEntity * >(ent.get()), name,
-            manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::PlainStruct: {
-        PlainStructType t(
-            dynamic_cast< unoidl::PlainStructTypeEntity * >(ent.get()),
-            name, manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::PolymorphicStructTemplate: {
-        PolyStructType t(
-            dynamic_cast< unoidl::PolymorphicStructTypeTemplateEntity * >(
-                ent.get()),
-            name, manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::Exception: {
-        ExceptionType t(
-            dynamic_cast< unoidl::ExceptionTypeEntity * >(ent.get()), name,
-            manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::Interface: {
-        InterfaceType t(
-            dynamic_cast< unoidl::InterfaceTypeEntity * >(ent.get()), name,
-            manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::Typedef: {
-        Typedef t(
-            dynamic_cast< unoidl::TypedefEntity * >(ent.get()), name,
-            manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::ConstantGroup: {
-        ConstantGroup t(
-            dynamic_cast< unoidl::ConstantGroupEntity * >(ent.get()), name,
-            manager);
-        if (t.hasConstants()) {
+    case codemaker::UnoType::Sort::Enum:
+        {
+            EnumType t(
+                dynamic_cast< unoidl::EnumTypeEntity * >(ent.get()), name,
+                manager);
             t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
         }
-        break;
-    }
-    case codemaker::UnoType::Sort::SingleInterfaceBasedService: {
-        ServiceType t(
-            dynamic_cast< unoidl::SingleInterfaceBasedServiceEntity * >(
-                ent.get()),
-            name, manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
-    case codemaker::UnoType::Sort::InterfaceBasedSingleton: {
-        SingletonType t(
-            dynamic_cast< unoidl::InterfaceBasedSingletonEntity * >(
-                ent.get()),
-            name, manager);
-        t.dump(options);
-        t.dumpDependedTypes(generated, options);
-        break;
-    }
+    case codemaker::UnoType::Sort::PlainStruct:
+        {
+            PlainStructType t(
+                dynamic_cast< unoidl::PlainStructTypeEntity * >(ent.get()),
+                name, manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::PolymorphicStructTemplate:
+        {
+            PolyStructType t(
+                dynamic_cast< unoidl::PolymorphicStructTypeTemplateEntity * >(
+                    ent.get()),
+                name, manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::Exception:
+        {
+            ExceptionType t(
+                dynamic_cast< unoidl::ExceptionTypeEntity * >(ent.get()), name,
+                manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::Interface:
+        {
+            InterfaceType t(
+                dynamic_cast< unoidl::InterfaceTypeEntity * >(ent.get()), name,
+                manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::Typedef:
+        {
+            Typedef t(
+                dynamic_cast< unoidl::TypedefEntity * >(ent.get()), name,
+                manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::ConstantGroup:
+        {
+            ConstantGroup t(
+                dynamic_cast< unoidl::ConstantGroupEntity * >(ent.get()), name,
+                manager);
+            if (t.hasConstants()) {
+                t.dump(options);
+            }
+            break;
+        }
+    case codemaker::UnoType::Sort::SingleInterfaceBasedService:
+        {
+            ServiceType t(
+                dynamic_cast< unoidl::SingleInterfaceBasedServiceEntity * >(
+                    ent.get()),
+                name, manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
+    case codemaker::UnoType::Sort::InterfaceBasedSingleton:
+        {
+            SingletonType t(
+                dynamic_cast< unoidl::InterfaceBasedSingletonEntity * >(
+                    ent.get()),
+                name, manager);
+            t.dump(options);
+            t.dumpDependedTypes(generated, options);
+            break;
+        }
     case codemaker::UnoType::Sort::AccumulationBasedService:
     case codemaker::UnoType::Sort::ServiceBasedSingleton:
         break;

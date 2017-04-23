@@ -23,31 +23,34 @@
 #include <xmloff/xmlimp.hxx>
 #include "address.hxx"
 #include "xmlimprt.hxx"
-#include "importcontext.hxx"
 
 
-class ScXMLTableRowContext : public ScXMLImportContext
+class ScXMLTableRowContext : public SvXMLImportContext
 {
     OUString sStyleName;
     OUString sVisibility;
     sal_Int32 nRepeatedRows;
     bool bHasCell;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
 
-    ScXMLTableRowContext( ScXMLImport& rImport, sal_Int32 nElement,
-                       const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList );
+    ScXMLTableRowContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
+                       const OUString& rLName,
+                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableRowContext() override;
+    virtual ~ScXMLTableRowContext();
 
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
+    virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
+                                     const OUString& rLocalName,
+                                     const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) override;
 
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-        createFastChildContext( sal_Int32 nElement,
-        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
+    virtual void EndElement() override;
 };
 
-class ScXMLTableRowsContext : public ScXMLImportContext
+class ScXMLTableRowsContext : public SvXMLImportContext
 {
     SCROW nHeaderStartRow;
     SCROW nGroupStartRow;
@@ -55,20 +58,23 @@ class ScXMLTableRowsContext : public ScXMLImportContext
     bool bGroup;
     bool bGroupDisplay;
 
+    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
+    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
+
 public:
 
-    ScXMLTableRowsContext( ScXMLImport& rImport, sal_Int32 nElement,
-                       const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList,
+    ScXMLTableRowsContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
+                       const OUString& rLName,
+                       const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                        const bool bHeader, const bool bGroup);
 
-    virtual ~ScXMLTableRowsContext() override;
+    virtual ~ScXMLTableRowsContext();
 
-    virtual css::uno::Reference< css::xml::sax::XFastContextHandler > SAL_CALL
-                        createFastChildContext( sal_Int32 nElement,
-                        const css::uno::Reference<css::xml::sax::XFastAttributeList>& xAttrList ) override;
+    virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
+                                     const OUString& rLocalName,
+                                     const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList ) override;
 
-    virtual void SAL_CALL endFastElement(sal_Int32 nElement) override;
-
+    virtual void EndElement() override;
 };
 
 #endif

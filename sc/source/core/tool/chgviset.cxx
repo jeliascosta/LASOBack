@@ -26,6 +26,7 @@
 
 ScChangeViewSettings::~ScChangeViewSettings()
 {
+    delete pCommentSearcher;
 }
 
 ScChangeViewSettings::ScChangeViewSettings( const ScChangeViewSettings& r ):
@@ -95,14 +96,18 @@ bool ScChangeViewSettings::IsValidComment(const OUString* pCommentStr) const
 void ScChangeViewSettings::SetTheComment(const OUString& rString)
 {
     aComment = rString;
-    pCommentSearcher.reset();
+    if(pCommentSearcher)
+    {
+        delete pCommentSearcher;
+        pCommentSearcher=nullptr;
+    }
 
     if(!rString.isEmpty())
     {
         utl::SearchParam aSearchParam( rString,
-            utl::SearchParam::SearchType::Regexp,false );
+            utl::SearchParam::SRCH_REGEXP,false );
 
-        pCommentSearcher.reset( new utl::TextSearch( aSearchParam, *ScGlobal::pCharClass ) );
+        pCommentSearcher = new utl::TextSearch( aSearchParam, *ScGlobal::pCharClass );
     }
 }
 
@@ -141,7 +146,7 @@ void ScChangeViewSettings::AdjustDateMode( const ScDocument& rDoc )
                 aFirstDateTime.SetTime( 0 );
             }
             aLastDateTime = Date( Date::SYSTEM );
-            aLastDateTime.AddYears( 100 );
+            aLastDateTime.SetYear( aLastDateTime.GetYear() + 100 );
         }
         break;
         default:

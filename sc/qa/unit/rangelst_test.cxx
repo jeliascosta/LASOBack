@@ -47,7 +47,6 @@ public:
     void testGetIntersectedRange();
 
     void testUpdateReference_DeleteRow();
-    void testUpdateReference_DeleteLastRow();
     void testUpdateReference_DeleteCol();
 
     void testInsertRow();
@@ -73,7 +72,6 @@ public:
     CPPUNIT_TEST(testJoin_Case1);
     CPPUNIT_TEST(testJoin_Case2);
     CPPUNIT_TEST(testUpdateReference_DeleteRow);
-    CPPUNIT_TEST(testUpdateReference_DeleteLastRow);
     CPPUNIT_TEST(testUpdateReference_DeleteCol);
     CPPUNIT_TEST(testGetIntersectedRange);
     CPPUNIT_TEST(testInsertRow);
@@ -100,7 +98,7 @@ void Test::setUp()
 
 void Test::tearDown()
 {
-    m_xDocShRef.clear();
+    m_xDocShRef.Clear();
     BootstrapFixture::tearDown();
 }
 
@@ -443,13 +441,6 @@ void Test::testUpdateReference_DeleteRow()
     ScRangeList aList2(ScRange(2,2,0,2,2,0));
     aList2.UpdateReference(URM_INSDEL, m_pDoc, ScRange(0,3,0,MAXCOL,MAXROW,0), 0, -1, 0);
     CPPUNIT_ASSERT(aList2.empty());
-}
-
-void Test::testUpdateReference_DeleteLastRow()
-{
-    ScRangeList aList(ScRange(1,1,0,4,4,0));
-    bool bUpdated = aList.UpdateReference(URM_INSDEL, m_pDoc, ScRange(0,4,0,MAXCOL,4,0), 0, -1, 0);
-    CPPUNIT_ASSERT(bUpdated);
 }
 
 void Test::testUpdateReference_DeleteCol()

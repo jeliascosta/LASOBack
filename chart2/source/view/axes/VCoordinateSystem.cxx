@@ -40,7 +40,6 @@
 #include <com/sun/star/chart2/XDataSeriesContainer.hpp>
 #include <comphelper/sequence.hxx>
 
-#include <algorithm>
 #include <rtl/math.hxx>
 
 namespace chart
@@ -99,6 +98,7 @@ void VCoordinateSystem::initPlottingTargets(  const Reference< drawing::XShapes 
        , const Reference< drawing::XShapes >& xFinalTarget
        , const Reference< lang::XMultiServiceFactory >& xShapeFactory
        , Reference< drawing::XShapes >& xLogicTargetForSeriesBehindAxis )
+            throw (uno::RuntimeException, std::exception)
 {
     OSL_PRECOND(xLogicTarget.is()&&xFinalTarget.is()&&xShapeFactory.is(),"no proper initialization parameters");
     //is only allowed to be called once
@@ -152,9 +152,11 @@ void VCoordinateSystem::setTransformationSceneToScreen(
 uno::Sequence< sal_Int32 > VCoordinateSystem::getCoordinateSystemResolution(
             const awt::Size& rPageSize, const awt::Size& rPageResolution )
 {
-    uno::Sequence<sal_Int32> aResolution(
-        std::max<sal_Int32>(m_xCooSysModel->getDimension(), 2));
+    uno::Sequence< sal_Int32 > aResolution(2);
 
+    sal_Int32 nDimensionCount = m_xCooSysModel->getDimension();
+    if(nDimensionCount>2)
+        aResolution.realloc(nDimensionCount);
     sal_Int32 nN = 0;
     for( nN = 0 ;nN<aResolution.getLength(); nN++ )
         aResolution[nN]=1000;
@@ -163,8 +165,8 @@ uno::Sequence< sal_Int32 > VCoordinateSystem::getCoordinateSystemResolution(
         BaseGFXHelper::HomogenMatrixToB3DHomMatrix(
             m_aMatrixSceneToScreen ) ) );
 
-    double fCoosysWidth = fabs(aScale.getX()*FIXED_SIZE_FOR_3D_CHART_VOLUME);
-    double fCoosysHeight = fabs(aScale.getY()*FIXED_SIZE_FOR_3D_CHART_VOLUME);
+    double fCoosysWidth = static_cast< double >( fabs(aScale.getX()*FIXED_SIZE_FOR_3D_CHART_VOLUME));
+    double fCoosysHeight = static_cast< double >( fabs(aScale.getY()*FIXED_SIZE_FOR_3D_CHART_VOLUME));
 
     double fPageWidth = rPageSize.Width;
     double fPageHeight = rPageSize.Height;

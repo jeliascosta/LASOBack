@@ -29,7 +29,7 @@ class StreamInterface;
 class CContentReader : public CBaseReader
 {
 public:
-    virtual ~CContentReader() override;
+    virtual ~CContentReader();
 
     CContentReader( const std::string& DocumentName, LocaleSet_t const & DocumentLocale );
 
@@ -41,7 +41,7 @@ public:
         @return
         the chunkbuffer of the document.
     */
-    ChunkBuffer_t const & getChunkBuffer( ) const{ return m_ChunkBuffer; };
+    inline ChunkBuffer_t const & getChunkBuffer( ) const{ return m_ChunkBuffer; };
 
 protected: // protected because its only an implementation relevant class
 
@@ -57,7 +57,7 @@ protected: // protected because its only an implementation relevant class
     virtual void start_element(
         const std::wstring& raw_name,
         const std::wstring& local_name,
-        const XmlTagAttributes_t& attributes) override;
+        const XmlTagAttributes_t& attributes);
 
     /** end_element occurs when a tag is closed
 
@@ -67,14 +67,14 @@ protected: // protected because its only an implementation relevant class
         local name of the tag.
     */
     virtual void end_element(
-        const std::wstring& raw_name, const std::wstring& local_name) override;
+        const std::wstring& raw_name, const std::wstring& local_name);
 
     /** characters occurs when receiving characters
 
         @param character
         content of the information received.
     */
-    virtual void characters(const std::wstring& character) override;
+    virtual void characters(const std::wstring& character);
 
 protected:
     /** choose an appropriate tag reader to handle the tag.
@@ -92,7 +92,7 @@ protected:
         @return
         the Style-Locale map
     */
-    StyleLocaleMap_t const & getStyleMap( ) const{ return m_StyleMap; };
+    inline StyleLocaleMap_t const & getStyleMap( ) const{ return m_StyleMap; };
 
     /** get style of the current content.
 

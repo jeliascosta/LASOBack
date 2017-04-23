@@ -44,7 +44,7 @@ sdbcx::ObjectType OGroups::createObject(const OUString& _rName)
     return new OAdoGroup(m_pCatalog,isCaseSensitive(),_rName);
 }
 
-void OGroups::impl_refresh()
+void OGroups::impl_refresh() throw(RuntimeException)
 {
     m_aCollection.Refresh();
 }
@@ -57,8 +57,8 @@ Reference< XPropertySet > OGroups::createDescriptor()
 // XAppend
 sdbcx::ObjectType OGroups::appendObject( const OUString& _rForName, const Reference< XPropertySet >& descriptor )
 {
-    OAdoGroup* pGroup = nullptr;
-    if ( !getImplementation(pGroup,descriptor) || pGroup == nullptr )
+    OAdoGroup* pGroup = NULL;
+    if ( !getImplementation(pGroup,descriptor) || pGroup == NULL )
         m_pCatalog->getConnection()->throwGenericSQLException( STR_INVALID_GROUP_DESCRIPTOR_ERROR,static_cast<XTypeProvider*>(this) );
 
     m_aCollection.Append( pGroup->getImpl() );

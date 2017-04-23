@@ -26,7 +26,7 @@ template<typename T> css::beans::PropertyValue makePropertyValue(const OUString&
 {
     css::beans::PropertyValue aValue;
     aValue.Name = rName;
-    aValue.Value = css::uno::toAny(rValue);
+    aValue.Value <<= rValue;
     return aValue;
 }
 

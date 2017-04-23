@@ -33,16 +33,17 @@ public:
     ScRangeList();
     ScRangeList( const ScRangeList& rList );
     ScRangeList( const ScRange& rRange );
-    virtual ~ScRangeList() override;
+    virtual ~ScRangeList();
 
     ScRangeList& operator=(const ScRangeList& rList);
     void Append( const ScRange& rRange );
 
-    ScRefFlags Parse( const OUString&, ScDocument*,
+    ScRefFlags Parse( const OUString&, ScDocument* = nullptr,
+                      ScRefFlags nMask = ScRefFlags::VALID,
                       formula::FormulaGrammar::AddressConvention eConv = formula::FormulaGrammar::CONV_OOO,
                       SCTAB nDefaultTab = 0, sal_Unicode cDelimiter = 0 );
 
-    void            Format( OUString&, ScRefFlags nFlags, ScDocument* = nullptr,
+    void            Format( OUString&, ScRefFlags nFlags = ScRefFlags::ZERO, ScDocument* = nullptr,
                             formula::FormulaGrammar::AddressConvention eConv = formula::FormulaGrammar::CONV_OOO,
                             sal_Unicode cDelimiter = 0 ) const;
 
@@ -75,7 +76,7 @@ public:
 
     ScRangeList     GetIntersectedRange(const ScRange& rRange) const;
 
-    void            Remove(size_t nPos);
+    ScRange*        Remove(size_t nPos);
     void            RemoveAll();
 
     ScRange         Combine() const;
@@ -106,7 +107,7 @@ typedef tools::SvRef<ScRangeList> ScRangeListRef;
 class SC_DLLPUBLIC ScRangePairList : public SvRefBase
 {
 public:
-    virtual             ~ScRangePairList() override;
+    virtual             ~ScRangePairList();
     ScRangePairList*    Clone() const;
     void                Append( const ScRangePair& rRangePair )
                         {
@@ -123,7 +124,7 @@ public:
     ScRangePair**       CreateNameSortedArray( size_t& nCount, ScDocument* ) const;
 
     void                Remove(size_t nPos);
-    void                Remove(ScRangePair* pAdr);
+    ScRangePair*        Remove(ScRangePair* pAdr);
 
     size_t              size() const;
     ScRangePair*        operator[](size_t idx);

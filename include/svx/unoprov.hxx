@@ -24,9 +24,6 @@
 #include <com/sun/star/uno/Sequence.hxx>
 #include <svl/itemprop.hxx>
 #include <svx/svxdllapi.h>
-#include <editeng/unoipset.hxx>
-#include <rtl/ref.hxx>
-
 
 class SvxItemPropertySet;
 class SfxItemPool;
@@ -57,7 +54,7 @@ public:
 #define SVXMAP_POLYPOLYGONBEZIER    5
 #define SVXMAP_GRAPHICOBJECT        6
 #define SVXMAP_3DSCENEOBJECT        7
-#define SVXMAP_3DCUBEOBJECT         8
+#define SVXMAP_3DCUBEOBJEKT         8
 #define SVXMAP_3DSPHEREOBJECT       9
 #define SVXMAP_3DLATHEOBJECT        10
 #define SVXMAP_3DEXTRUDEOBJECT      11
@@ -101,6 +98,8 @@ const sal_Int16 OBJ_OLE2_PLUGIN = 101;
 
 #define E3D_INVENTOR_FLAG           (0x80000000)
 
+#include <editeng/unoipset.hxx>
+
 /**
  * class SvxPropertySetInfoPool
  */
@@ -117,7 +116,7 @@ public:
     SVX_DLLPUBLIC static comphelper::PropertySetInfo* getOrCreate( sal_Int32 nServiceId ) throw();
 
 private:
-    static rtl::Reference<comphelper::PropertySetInfo> mxInfos[SVXUNO_SERVICEID_LASTID+1];
+    static comphelper::PropertySetInfo* mpInfos[SVXUNO_SERVICEID_LASTID+1];
 };
 
 #endif

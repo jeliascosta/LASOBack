@@ -44,11 +44,12 @@ StgPage::StgPage( short nSize, sal_Int32 nPage )
     OSL_ENSURE( mnSize >= 512, "Unexpected page size is provided!" );
     // We will write this data to a permanent file later
     // best to clear if first.
-    memset( mpData.get(), 0, mnSize );
+    memset( mpData, 0, mnSize );
 }
 
 StgPage::~StgPage()
 {
+    delete [] mpData;
 }
 
 rtl::Reference< StgPage > StgPage::Create( short nData, sal_Int32 nPage )
@@ -273,7 +274,7 @@ void StgCache::SetStrm( UCBStorageStream* pStgStream )
 
 void StgCache::SetDirty( const rtl::Reference< StgPage > &rPage )
 {
-    assert( m_pStrm && m_pStrm->IsWritable() );
+    assert( IsWritable() );
     maDirtyPages[ rPage->GetPage() ] = rPage;
 }
 
@@ -297,7 +298,7 @@ bool StgCache::Open( const OUString& rName, StreamMode nMode )
     {
         sal_uLong nFileSize = m_pStrm->Seek( STREAM_SEEK_TO_END );
         m_nPages = lcl_GetPageCount( nFileSize, m_nPageSize );
-        m_pStrm->Seek( 0 );
+        m_pStrm->Seek( 0L );
     }
     else
         m_nPages = 0;
@@ -335,7 +336,7 @@ bool StgCache::Read( sal_Int32 nPage, void* pBuf )
             // fixed address and size for the header
             if( nPage == -1 )
             {
-                nPos = 0;
+                nPos = 0L;
                 nBytes = 512;
                 nPg2 = 1;
             }
@@ -343,7 +344,7 @@ bool StgCache::Read( sal_Int32 nPage, void* pBuf )
             {
                 m_pStrm->Seek(nPos);
             }
-            m_pStrm->ReadBytes( pBuf, nBytes );
+            m_pStrm->Read( pBuf, nBytes );
             if ( 1 != nPg2 )
                 SetError( SVSTREAM_READ_ERROR );
             else
@@ -364,14 +365,14 @@ bool StgCache::Write( sal_Int32 nPage, void* pBuf )
         // nPageSize must be >= 512, otherwise the header can not be written here, we check it on import
         if( nPage == -1 )
         {
-            nPos = 0;
+            nPos = 0L;
             nBytes = 512;
         }
         if( m_pStrm->Tell() != nPos )
         {
             m_pStrm->Seek(nPos);
         }
-        sal_uLong nRes = m_pStrm->WriteBytes( pBuf, nBytes );
+        sal_uLong nRes = m_pStrm->Write( pBuf, nBytes );
         if( nRes != nBytes )
             SetError( SVSTREAM_WRITE_ERROR );
         else

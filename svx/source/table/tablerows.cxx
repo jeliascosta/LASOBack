@@ -51,7 +51,7 @@ void TableRows::dispose()
 }
 
 
-void TableRows::throwIfDisposed() const
+void TableRows::throwIfDisposed() const throw (css::uno::RuntimeException)
 {
     if( !mxTableModel.is() )
         throw DisposedException();
@@ -61,14 +61,14 @@ void TableRows::throwIfDisposed() const
 // XTableRows
 
 
-void SAL_CALL TableRows::insertByIndex( sal_Int32 nIndex, sal_Int32 nCount )
+void SAL_CALL TableRows::insertByIndex( sal_Int32 nIndex, sal_Int32 nCount ) throw (RuntimeException, std::exception)
 {
     throwIfDisposed();
     mxTableModel->insertRows( nIndex, nCount );
 }
 
 
-void SAL_CALL TableRows::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount )
+void SAL_CALL TableRows::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount ) throw (RuntimeException, std::exception)
 {
     throwIfDisposed();
     mxTableModel->removeRows( nIndex, nCount );
@@ -78,14 +78,14 @@ void SAL_CALL TableRows::removeByIndex( sal_Int32 nIndex, sal_Int32 nCount )
 // XIndexAccess
 
 
-sal_Int32 SAL_CALL TableRows::getCount()
+sal_Int32 SAL_CALL TableRows::getCount() throw (RuntimeException, std::exception)
 {
     throwIfDisposed();
     return mxTableModel->getRowCount();
 }
 
 
-Any SAL_CALL TableRows::getByIndex( sal_Int32 Index )
+Any SAL_CALL TableRows::getByIndex( sal_Int32 Index ) throw (IndexOutOfBoundsException, WrappedTargetException, RuntimeException, std::exception)
 {
     throwIfDisposed();
     return Any( Reference< XCellRange >( static_cast< XCellRange* >( mxTableModel->getRow( Index ).get() ) ) );
@@ -95,14 +95,14 @@ Any SAL_CALL TableRows::getByIndex( sal_Int32 Index )
 // XElementAccess
 
 
-Type SAL_CALL TableRows::getElementType()
+Type SAL_CALL TableRows::getElementType() throw (RuntimeException, std::exception)
 {
     throwIfDisposed();
     return cppu::UnoType<XCellRange>::get();
 }
 
 
-sal_Bool SAL_CALL TableRows::hasElements()
+sal_Bool SAL_CALL TableRows::hasElements() throw (RuntimeException, std::exception)
 {
     throwIfDisposed();
     return mxTableModel->getRowCount() != 0;

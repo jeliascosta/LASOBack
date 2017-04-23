@@ -20,6 +20,7 @@
 #include "Condition.hxx"
 #include "UITools.hxx"
 #include "CondFormat.hxx"
+#include "CondFormat.hrc"
 #include "RptResId.hrc"
 #include "ReportController.hxx"
 #include "ModuleHelper.hxx"
@@ -66,7 +67,7 @@ ConditionField::ConditionField(Condition* pParent, Edit* pSubEdit, PushButton *p
     m_pFormula->SetClickHdl( LINK( this, ConditionField, OnFormula ) );
 }
 
-IMPL_LINK( ConditionField, OnFormula, Button*, _pClickedButton, void )
+IMPL_LINK_TYPED( ConditionField, OnFormula, Button*, _pClickedButton, void )
 {
     OUString sFormula(m_pSubEdit->GetText());
     const sal_Int32 nLen = sFormula.getLength();
@@ -84,36 +85,146 @@ IMPL_LINK( ConditionField, OnFormula, Button*, _pClickedButton, void )
     }
 }
 
-ConditionColorWrapper::ConditionColorWrapper(Condition* pControl)
-    : mxControl(pControl)
-    , mnSlotId(0)
+// class SvxColorWindow_Impl --------------------------------------------------
+#ifndef WB_NO_DIRECTSELECT
+#define WB_NO_DIRECTSELECT      ((WinBits)0x04000000)
+#endif
+
+#define PALETTE_X 10
+#define PALETTE_Y 10
+#define PALETTE_SIZE (PALETTE_X * PALETTE_Y)
+class OColorPopup : public FloatingWindow
 {
+    DECL_LINK_TYPED( SelectHdl, ValueSet*, void );
+    VclPtr<Condition>      m_pCondition;
+    sal_uInt16             m_nSlotId;
+public:
+    OColorPopup(vcl::Window* _pParent,Condition* _pCondition);
+    virtual ~OColorPopup();
+    virtual void dispose() override;
+    VclPtr<ValueSet>        m_aColorSet;
+
+    virtual void KeyInput( const KeyEvent& rKEvt ) override;
+    virtual void Resize() override;
+
+    void StartSelection();
+    void SetSlotId(sal_uInt16 _nSlotId);
+};
+
+OColorPopup::OColorPopup(vcl::Window* _pParent,Condition* _pCondition)
+:FloatingWindow(_pParent, WinBits( WB_BORDER | WB_STDFLOATWIN | WB_3DLOOK|WB_DIALOGCONTROL ))
+,m_pCondition(_pCondition)
+,m_nSlotId(0)
+,m_aColorSet( VclPtr<ValueSet>::Create(this, WinBits( WB_ITEMBORDER | WB_NAMEFIELD | WB_3DLOOK | WB_NO_DIRECTSELECT)) )
+{
+    m_aColorSet->SetHelpId( HID_RPT_POPUP_COLOR_CTRL );
+    SetHelpId( HID_RPT_POPUP_COLOR );
+    const Size aSize12( 13, 13 );
+    short i = 0;
+    XColorListRef pColorList( XColorList::CreateStdColorList() );
+    long nCount = pColorList->Count();
+    Color aColWhite( COL_WHITE );
+    OUString aStrWhite( ModuleRes(STR_COLOR_WHITE) );
+
+    if ( nCount > PALETTE_SIZE )
+        // Show scrollbar if more than PALLETTE_SIZE colors are available
+        m_aColorSet->SetStyle( m_aColorSet->GetStyle() | WB_VSCROLL );
+
+    for ( i = 0; i < nCount; i++ )
+    {
+        XColorEntry* pEntry = pColorList->GetColor(i);
+        m_aColorSet->InsertItem( i+1, pEntry->GetColor(), pEntry->GetName() );
+    }
+
+    while ( i < PALETTE_SIZE )
+    {
+        // fill empty elements if less then PALLETTE_SIZE colors are available
+        m_aColorSet->InsertItem( i+1, aColWhite, aStrWhite );
+        i++;
+    }
+
+    m_aColorSet->SetSelectHdl( LINK( this, OColorPopup, SelectHdl ) );
+    m_aColorSet->SetColCount( PALETTE_X );
+    m_aColorSet->SetLineCount( PALETTE_Y );
+    Size aSize = m_aColorSet->CalcWindowSizePixel( aSize12 );
+    aSize.Width()  += 4;
+    aSize.Height() += 4;
+    SetOutputSizePixel( aSize );
+    m_aColorSet->Show();
 }
 
-void ConditionColorWrapper::dispose()
+OColorPopup::~OColorPopup()
 {
-    mxControl.clear();
+    disposeOnce();
 }
 
-void ConditionColorWrapper::operator()(const OUString& /*rCommand*/, const NamedColor& rNamedColor)
+void OColorPopup::dispose()
 {
-    mxControl->ApplyCommand(mnSlotId, rNamedColor.first);
+    disposeBuilder();
+    m_aColorSet.disposeAndClear();
+    m_pCondition.clear();
+    FloatingWindow::dispose();
 }
+
+void OColorPopup::KeyInput( const KeyEvent& rKEvt )
+{
+    m_aColorSet->KeyInput(rKEvt);
+}
+
+void OColorPopup::Resize()
+{
+    Size aSize = GetOutputSizePixel();
+    aSize.Width()  -= 4;
+    aSize.Height() -= 4;
+    m_aColorSet->SetPosSizePixel( Point(2,2), aSize );
+}
+
+void OColorPopup::StartSelection()
+{
+    m_aColorSet->StartSelection();
+}
+
+void OColorPopup::SetSlotId(sal_uInt16 _nSlotId)
+{
+    m_nSlotId = _nSlotId;
+    if ( SID_ATTR_CHAR_COLOR_BACKGROUND == _nSlotId || SID_BACKGROUND_COLOR == _nSlotId )
+    {
+        m_aColorSet->SetStyle( m_aColorSet->GetStyle() | WB_NONEFIELD );
+        m_aColorSet->SetText( OUString(ModuleRes( STR_TRANSPARENT )) );
+    }
+}
+
+IMPL_LINK_NOARG_TYPED(OColorPopup, SelectHdl, ValueSet*, void)
+{
+    sal_uInt16 nItemId = m_aColorSet->GetSelectItemId();
+    Color aColor( nItemId == 0 ? Color( COL_TRANSPARENT ) : m_aColorSet->GetItemColor( nItemId ) );
+
+    /*  #i33380# Moved the following line above the Dispatch() calls.
+        This instance may be deleted in the meantime (i.e. when a dialog is opened
+        while in Dispatch()), accessing members will crash in this case. */
+    m_aColorSet->SetNoSelection();
+
+    if ( IsInPopupMode() )
+        EndPopupMode();
+
+    m_pCondition->ApplyCommand( m_nSlotId, aColor );
+}
+
 
 // = Condition
 
 
 Condition::Condition( vcl::Window* _pParent, IConditionalFormatAction& _rAction, ::rptui::OReportController& _rController )
-    : VclHBox(_pParent)
-    , m_aColorWrapper(this)
-    , m_rController(_rController)
-    , m_rAction(_rAction)
-    , m_pBtnUpdaterFontColor(nullptr)
-    , m_pBtnUpdaterBackgroundColor(nullptr)
-    , m_nCondIndex(0)
-    , m_bInDestruction(false)
+    :VclHBox(_pParent)
+    ,m_rController( _rController )
+    ,m_rAction( _rAction )
+    ,m_pColorFloat(nullptr)
+    ,m_pBtnUpdaterFontColor(nullptr)
+    ,m_pBtnUpdaterBackgroundColor(nullptr)
+    ,m_nCondIndex( 0 )
+    ,m_bInDestruction( false )
 {
-    m_pUIBuilder.reset(new VclBuilder(this, getUIRootDir(), "modules/dbreport/ui/conditionwin.ui"));
+    m_pUIBuilder = new VclBuilder(this, getUIRootDir(), "modules/dbreport/ui/conditionwin.ui");
 
     get(m_pHeader, "headerLabel");
     get(m_pConditionType, "typeCombobox");
@@ -218,36 +329,40 @@ void Condition::dispose()
     m_pAddCondition.clear();
     m_pRemoveCondition.clear();
     m_pColorFloat.disposeAndClear();
-    m_aColorWrapper.dispose();
     disposeBuilder();
     VclHBox::dispose();
 }
 
-IMPL_LINK(Condition, DropdownClick, ToolBox*, pToolBox, void)
+IMPL_LINK_NOARG_TYPED( Condition, DropdownClick, ToolBox*, void )
 {
     sal_uInt16 nId( m_pActions->GetCurItemId() );
-    m_pColorFloat.disposeAndClear();
-    sal_uInt16 nSlotId(mapToolbarItemToSlotId(nId));
-    m_aColorWrapper.SetSlotId(nSlotId);
-    m_pColorFloat = VclPtr<SvxColorWindow>::Create(
-                           OUString() /*m_aCommandURL*/,
-                           m_aPaletteManager,
-                           m_aBorderColorStatus,
-                           nSlotId,
-                           nullptr,
-                           pToolBox,
-                           m_aColorWrapper);
+    if ( !m_pColorFloat )
+        m_pColorFloat = VclPtr<OColorPopup>::Create(m_pActions,this);
 
-    m_pColorFloat->StartPopupMode(pToolBox, FloatWinPopupFlags::GrabFocus);
+    sal_uInt16 nTextId = 0;
+    if (nId == m_nFontColorId)
+    {
+        nTextId = STR_CHARCOLOR;
+    }
+    else if (nId == m_nBackgroundColorId)
+    {
+        nTextId = STR_CHARBACKGROUND;
+    }
+    if ( nTextId )
+        m_pColorFloat->SetText(OUString(ModuleRes(nTextId)));
+    m_pColorFloat->SetSlotId(mapToolbarItemToSlotId(nId));
+    m_pColorFloat->SetPosPixel(m_pActions->GetItemPopupPosition(nId,m_pColorFloat->GetSizePixel()));
+    m_pColorFloat->StartPopupMode(m_pActions);
+    m_pColorFloat->StartSelection();
 }
 
-IMPL_LINK_NOARG( Condition, OnFormatAction, ToolBox*, void )
+IMPL_LINK_NOARG_TYPED( Condition, OnFormatAction, ToolBox*, void )
 {
     Color aCol(COL_AUTO);
     ApplyCommand(mapToolbarItemToSlotId(m_pActions->GetCurItemId()),aCol);
 }
 
-IMPL_LINK( Condition, OnConditionAction, Button*, _pClickedButton, void )
+IMPL_LINK_TYPED( Condition, OnConditionAction, Button*, _pClickedButton, void )
 {
     if ( _pClickedButton == m_pMoveUp )
         m_rAction.moveConditionUp( getConditionIndex() );
@@ -284,13 +399,13 @@ void Condition::GetFocus()
         m_pCondLHS->GrabFocus();
 }
 
-IMPL_LINK_NOARG( Condition, OnTypeSelected, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( Condition, OnTypeSelected, ListBox&, void )
 {
     impl_layoutOperands();
 }
 
 
-IMPL_LINK_NOARG( Condition, OnOperationSelected, ListBox&, void )
+IMPL_LINK_NOARG_TYPED( Condition, OnOperationSelected, ListBox&, void )
 {
     impl_layoutOperands();
 }
@@ -392,8 +507,8 @@ void Condition::updateToolbar(const uno::Reference< report::XReportControlFormat
     OSL_ENSURE(_xReportControlFormat.is(),"XReportControlFormat is NULL!");
     if ( _xReportControlFormat.is() )
     {
-        ToolBox::ImplToolItems::size_type nItemCount = m_pActions->GetItemCount();
-        for (ToolBox::ImplToolItems::size_type j = 0; j< nItemCount; ++j)
+        sal_uInt16 nItemCount = m_pActions->GetItemCount();
+        for (sal_uInt16 j = 0; j< nItemCount; ++j)
         {
             sal_uInt16 nItemId = m_pActions->GetItemId(j);
             m_pActions->CheckItem( nItemId, OReportController::isFormatCommandEnabled(mapToolbarItemToSlotId(nItemId),
@@ -404,7 +519,7 @@ void Condition::updateToolbar(const uno::Reference< report::XReportControlFormat
         {
             vcl::Font aBaseFont( Application::GetDefaultDevice()->GetSettings().GetStyleSettings().GetAppFont() );
             SvxFont aFont( VCLUnoHelper::CreateFont( _xReportControlFormat->getFontDescriptor(), aBaseFont ) );
-            aFont.SetFontHeight( OutputDevice::LogicToLogic( Size( 0, (sal_Int32)aFont.GetFontHeight() ), MapUnit::MapPoint, MapUnit::MapTwip ).Height());
+            aFont.SetFontHeight( OutputDevice::LogicToLogic( Size( 0, (sal_Int32)aFont.GetFontHeight() ), MAP_POINT, MAP_TWIP ).Height());
             aFont.SetEmphasisMark( static_cast< FontEmphasisMark >( _xReportControlFormat->getControlTextEmphasis() ) );
             aFont.SetRelief( static_cast< FontRelief >( _xReportControlFormat->getCharRelief() ) );
             aFont.SetColor( _xReportControlFormat->getCharColor() );

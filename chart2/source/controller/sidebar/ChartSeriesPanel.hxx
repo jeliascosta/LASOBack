@@ -58,7 +58,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const vcl::EnumContext& rContext) override;
+        const ::sfx2::sidebar::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -66,12 +66,12 @@ public:
         const SfxPoolItem* pState,
         const bool bIsEnabled) override;
 
-    // constructor/destructor
+    // constructor/destuctor
     ChartSeriesPanel(
         vcl::Window* pParent,
         const css::uno::Reference<css::frame::XFrame>& rxFrame,
         ChartController* pController);
-    virtual ~ChartSeriesPanel() override;
+    virtual ~ChartSeriesPanel();
     virtual void dispose() override;
 
     virtual void updateData() override;
@@ -106,9 +106,9 @@ private:
 
     void Initialize();
 
-    DECL_LINK(CheckBoxHdl, Button*, void);
-    DECL_LINK(RadioBtnHdl, RadioButton&, void);
-    DECL_LINK(ListBoxHdl, ListBox&, void);
+    DECL_LINK_TYPED(CheckBoxHdl, Button*, void);
+    DECL_LINK_TYPED(RadioBtnHdl, RadioButton&, void);
+    DECL_LINK_TYPED(ListBoxHdl, ListBox&, void);
 };
 
 } } // end of namespace ::chart::sidebar

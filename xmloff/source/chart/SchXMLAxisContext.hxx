@@ -27,14 +27,14 @@ class SchXMLAxisContext : public SvXMLImportContext
 public:
     SchXMLAxisContext( SchXMLImportHelper& rImpHelper,
                        SvXMLImport& rImport, const OUString& rLocalName,
-                       css::uno::Reference< css::chart::XDiagram > const & xDiagram,
+                       css::uno::Reference< css::chart::XDiagram > xDiagram,
                        std::vector< SchXMLAxis >& aAxes,
                        OUString& rCategoriesAddress,
                        bool bAddMissingXAxisForNetCharts,
                        bool bAdaptWrongPercentScaleValues,
                        bool bAdaptXAxisOrientationForOld2DBarCharts,
                        bool& rbAxisPositionAttributeImported );
-    virtual ~SchXMLAxisContext() override;
+    virtual ~SchXMLAxisContext();
 
     virtual void StartElement( const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
     virtual void EndElement() override;

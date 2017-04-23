@@ -33,7 +33,7 @@ public:
 
     explicit SwNodeNum( SwTextNode* pTextNode );
     explicit SwNodeNum( SwNumRule* pNumRule );
-    virtual ~SwNodeNum() override;
+    virtual ~SwNodeNum();
 
     SwNumRule* GetNumRule() const { return mpNumRule;}
     void ChangeNumRule( SwNumRule& rNumRule );

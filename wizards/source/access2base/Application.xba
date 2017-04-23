@@ -45,7 +45,6 @@ Global Const ERRSQLSTATEMENT		=	1523
 Global Const ERROBJECTNOTFOUND		=	1524
 Global Const ERROPENOBJECT			=	1525
 Global Const ERRCLOSEOBJECT			=	1526
-Global Const ERRMETHOD				=	1527
 Global Const ERRACTION				=	1528
 Global Const ERRSENDMAIL			=	1529
 Global Const ERRFORMYETOPEN			=	1530
@@ -73,10 +72,6 @@ Global Const ERRTABLECREATION		=	1551
 Global Const ERRFIELDCREATION		=	1552
 Global Const ERRSUBFORMNOTFOUND		=	1553
 Global Const ERRWINDOW				=	1554
-Global Const ERRCOMPATIBILITY		=	1555
-Global Const ERRPRECISION			=	1556
-Global Const ERRMODULENOTFOUND		=	1557
-Global Const ERRPROCEDURENOTFOUND	=	1558
 
 REM -----------------------------------------------------------------------------------------------------------------------
 Global Const DBCONNECTBASE			=	1			&apos;	Connection from Base document (OpenConnection)
@@ -84,20 +79,8 @@ Global Const DBCONNECTFORM			=	2			&apos;	Connection from a database-aware form 
 Global Const DBCONNECTANY			=	3			&apos;	Connection from any document for data access only (OpenDatabase)
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Global Const DBMS_UNKNOWN			=	0
-Global Const DBMS_HSQLDB1			=	1
-Global Const DBMS_HSQLDB2			=	2
-Global Const DBMS_FIREBIRD			=	3
-Global Const DBMS_MSACCESS2003		=	4
-Global Const DBMS_MSACCESS2007		=	5
-Global Const DBMS_MYSQL				=	6
-Global Const DBMS_POSTGRES			=	7
-Global Const DBMS_SQLITE			=	8
-
-REM -----------------------------------------------------------------------------------------------------------------------
 Global Const COLLALLDIALOGS 		= &quot;ALLDIALOGS&quot;
 Global Const COLLALLFORMS			= &quot;ALLFORMS&quot;
-Global Const COLLALLMODULES			= &quot;ALLMODULES&quot;
 Global Const COLLCOMMANDBARS		= &quot;COMMANDBARS&quot;
 Global Const COLLCOMMANDBARCONTROLS	= &quot;COMMANDBARCONTROLS&quot;
 Global Const COLLCONTROLS			= &quot;CONTROLS&quot;
@@ -120,7 +103,6 @@ Global Const OBJDIALOG				= &quot;DIALOG&quot;
 Global Const OBJEVENT				= &quot;EVENT&quot;
 Global Const OBJFIELD				= &quot;FIELD&quot;
 Global Const OBJFORM				= &quot;FORM&quot;
-Global Const OBJMODULE				= &quot;MODULE&quot;
 Global Const OBJOPTIONGROUP			= &quot;OPTIONGROUP&quot;
 Global Const OBJPROPERTY			= &quot;PROPERTY&quot;
 Global Const OBJQUERYDEF			= &quot;QUERYDEF&quot;
@@ -165,10 +147,23 @@ Global Const CTLPARENTISGRID	= &quot;GRID&quot;
 Global Const CTLPARENTISGROUP	= &quot;OPTIONGROUP&quot;
 
 REM -----------------------------------------------------------------------------------------------------------------------
-Global Const MODDOCUMENT		= &quot;DOCUMENT&quot;
-Global Const MODGLOBAL			= &quot;GLOBAL&quot;
+Type Root
+	ErrorHandler		As Boolean
+	MinimalTraceLevel	As Integer
+	TraceLogs()			As Variant
+	TraceLogCount		As Integer
+	TraceLogLast		As Integer
+	TraceLogMaxEntries	As Integer
+	CalledSub			As String
+	Introspection		As Object				&apos;	com.sun.star.beans.Introspection	
+	VersionNumber		As String				&apos;	Actual Access2Base version number
+	FindRecord			As Object
+	StatusBar			As Object
+	Dialogs				As Object				&apos;	Collection
+	TempVars			As Object				&apos;	Collection
+	CurrentDoc()		As Variant				&apos;	Array of document containers - [0] = Base document, [1 ... N] = other documents
+End Type
 
-REM -----------------------------------------------------------------------------------------------------------------------
 Type DocContainer
 	Document			As Object				&apos;	com.sun.star.comp.dba.ODatabaseDocument	or SwXTextDocument or ScModelObj
 	Active				As Boolean
@@ -214,11 +209,9 @@ Const cstSepar = &quot;!&quot;
 	Set oMacLibraries = DialogLibraries
 	vMacLibraries = oMacLibraries.getElementNames()
 	&apos;Remove Access2Base from the list
-	If _A2B_.ExcludeA2B Then
-		For i = 0 To UBound(vMacLibraries)
-			If Left(vMacLibraries(i), 11) = &quot;Access2Base&quot; Then vMacLibraries(i) = &quot;&quot;
-		Next i
-	End If
+	For i = 0 To UBound(vMacLibraries)
+		If Left(vMacLibraries(i), 11) = &quot;Access2Base&quot; Then vMacLibraries(i) = &quot;&quot;
+	Next i
 	vMacLibraries = Utils._TrimArray(vMacLibraries)
 
 	If UBound(vDocLibraries) + UBound(vMacLibraries) &lt; 0 Then				&apos;	No library
@@ -403,149 +396,6 @@ Error_Function:
 	Set vAllForms = Nothing
 	GoTo Exit_Function
 End Function		&apos;	AllForms	V0.9.0
-
-REM -----------------------------------------------------------------------------------------------------------------------
-Public Function AllModules(ByVal Optional pvIndex As Variant, ByVal Optional pbAllModules As Boolean) As Variant
-&apos;	Return either a Collection or a Module object
-&apos;	The modules are selected only if library is loaded
-&apos;	(UNPUBLISHED) pbAllModules = False collects only the modules located in the currently open document
-
-	If _ErrorHandler() Then On Local Error Goto Error_Function
-Const cstThisSub = &quot;AllModules&quot;
-	Utils._SetCalledSub(cstThisSub)
-
-Dim iMode As Integer, vModules() As Variant, i As Integer, j As Integer, iCount As Integer
-Dim oMacLibraries As Object, vAllModules As Variant, oLibrary As Object, vNames() As Variant, bFound As Boolean
-Dim sScript As String, sLibrary As String, oDocLibraries As Object, sStorage As String
-Dim vLibraries() As Variant, vMacLibraries() As Variant, vDocLibraries() As Variant, oDocMacLib As Object
-Const cstCount = 0, cstByIndex = 1, cstByName = 2
-Const cstDot = &quot;.&quot;
-
-	If IsMissing(pvIndex) Then
-		iMode = cstCount
-	Else
-		If Not Utils._CheckArgument(pvIndex, 1, Utils._AddNumeric(vbString)) Then Goto Exit_Function
-		If VarType(pvIndex) = vbString Then
-			iMode = cstByName
-			&apos;	Determine full name STORAGE.LIBRARY.MODULE
-			vNames = Split(pvIndex, cstDot)
-			If UBound(vNames) = 2 Then
-			ElseIf UBound(vNames) = 1 Then
-				pvIndex = MODDOCUMENT &amp; cstDot &amp; pvIndex
-			ElseIf UBound(vNames) = 0 Then
-				pvIndex = MODDOCUMENT &amp; cstDot &amp; &quot;STANDARD&quot; &amp; cstDot &amp; pvIndex
-			Else
-				GoTo Trace_Not_Found
-			End If
-		Else
-			iMode = cstByIndex
-		End If
-	End If
-
-	If IsMissing(pbAllModules) Then pbAllModules = True
-	If Not Utils._CheckArgument(pbAllModules, 2, vbBoolean) Then Goto Exit_Function
-
-	Set vAllModules = Nothing
-
-	Set oDocLibraries = ThisComponent.BasicLibraries
-	vDocLibraries = oDocLibraries.getElementNames()
-	If pbAllModules Then
-		Set oMacLibraries = GlobalScope.BasicLibraries
-		vMacLibraries = oMacLibraries.getElementNames()
-		&apos;Remove Access2Base from the list
-		If _A2B_.ExcludeA2B Then
-			For i = 0 To UBound(vMacLibraries)
-				If Left(vMacLibraries(i), 11) = &quot;Access2Base&quot; Then vMacLibraries(i) = &quot;&quot;
-			Next i
-		End If
-		vMacLibraries = Utils._TrimArray(vMacLibraries)
-	End If
-
-	If UBound(vDocLibraries) + UBound(vMacLibraries) &lt; 0 Then				&apos;	No library
-		Set vAllModules = New Collect
-		vAllModules._CollType = COLLALLMODULES
-		vAllModules._ParentType = OBJAPPLICATION
-		vAllModules._ParentName = &quot;&quot;
-		vAllModules._Count = 0
-		Goto Exit_Function
-	End If
-	
-	iCount = 0
-	For i = 0 To UBound(vDocLibraries) + UBound(vMacLibraries) + 1
-		bFound = False
-		If i &lt;= UBound(vDocLibraries) Then
-			sLibrary = vDocLibraries(i)
-			sStorage = MODDOCUMENT
-			Set oDocMacLib = oDocLibraries
-			&apos;	Sometimes library not loaded as should ??
-			If Not oDocMacLib.IsLibraryLoaded(sLibrary) Then oDocMacLib.loadLibrary(sLibrary)
-		Else
-			sLibrary = vMacLibraries(i - UBound(vDocLibraries) - 1)
-			sStorage = MODGLOBAL
-			Set oDocMacLib = oMacLibraries
-		End If
-		If oDocMacLib.IsLibraryLoaded(sLibrary) Then
-			Set oLibrary = oDocMacLib.getByName(sLibrary)
-			If oLibrary.hasElements() Then
-				vModules = oLibrary.getElementNames()
-				Select Case iMode
-					Case cstCount
-						iCount = iCount + UBound(vModules) + 1
-					Case cstByIndex, cstByName
-						For j = 0 To UBound(vModules)
-							If iMode = cstByIndex Then
-								If pvIndex = iCount Then bFound = True
-								iCount = iCount + 1
-							Else
-								If UCase(pvIndex) = UCase(sStorage &amp; cstDot &amp; sLibrary &amp; cstDot &amp; vModules(j)) Then bFound = True
-							End If
-							If bFound Then
-								sScript = oLibrary.getByName(vModules(j))	&apos;	Initiate Module object
-								iCount = i
-								Exit For
-							End If
-						Next j
-				End Select						
-			End If
-		End If
-		If bFound Then Exit For
-	Next i
-	
-	If iMode = cstCount Then
-		Set vAllModules = New Collect
-		vAllModules._CollType = COLLALLMODULES
-		vAllModules._ParentType = OBJAPPLICATION
-		vAllModules._ParentName = &quot;&quot;
-		vAllModules._Count = iCount
-	Else
-		If Not bFound Then
-			If iMode = cstByIndex Then Goto Trace_Error_Index Else Goto Trace_Not_Found
-		End If
-		Set vAllModules = New Module
-		vAllModules._Name = vModules(j)
-		vAllModules._LibraryName = sLibrary
-		Set vAllModules._Library = oLibrary
-		vAllModules._Storage = sStorage
-		vAllModules._Script = sScript
-		vAllModules._Initialize()
-	End If
-
-Exit_Function:
-	Set AllModules = vAllModules
-	Utils._ResetCalledSub(cstThisSub)
-	Exit Function
-Trace_Not_Found:
-	TraceError(TRACEFATAL, ERRMODULENOTFOUND, Utils._CalledSub(), 0, , pvIndex)
-	Goto Exit_Function
-Trace_Error_Index:
-	TraceError(TRACEFATAL, ERRCOLLECTION, Utils._CalledSub(), 0, 1)
-	Set vModules = Nothing
-	Goto Exit_Function
-Error_Function:
-	TraceError(TRACEABORT, Err, cstThisSub, Erl)
-	Set vModules = Nothing
-	GoTo Exit_Function
-End Function		&apos;	AllModules	V1.7.0
 
 REM -----------------------------------------------------------------------------------------------------------------------
 Public Sub CloseConnection ()
@@ -734,13 +584,13 @@ Public Function Controls(ByVal Optional pvObject As Variant, Optional ByVal pvIn
 &apos;	If no pvIndex argument, return a Collection type
 
 If _ErrorHandler() Then On Local Error Goto Error_Function
-Dim vObject As Object
+Dim vObject As Object, vEMPTY As variant
 Const cstThisSub = &quot;Controls&quot;
 	Utils._SetCalledSub(cstThisSub)
 
 	If IsMissing(pvObject) Then Call _TraceArguments()
 	If IsNull(pvObject) Or IsEmpty(pvObject) Then Call _TraceArguments()
-	Controls = EMPTY
+	Controls = vEMPTY
 
 	If VarType(pvObject) = vbString Then
 		Set vObject = Forms(pvObject)
@@ -1069,7 +919,7 @@ Dim sOutput As String, l As Long, lLength As Long
 	If Len(pvString) &gt; 0 Then
 		For l = 1 To Len(pvString)
 			If lLength &gt; 0 And Len(sOutput) &gt; lLength Then Exit For
-			sOutput = sOutput &amp; Utils._UTF8Encode(Mid(pvString, l, 1))
+			sOutput = sOutput &amp; Utils._UTF8Encode(Mid(pvString, l, 1)
 		Next l
 	End If
 
@@ -1189,18 +1039,13 @@ Const cstThisSub = &quot;OpenConnection&quot;
 				vDocContainer.DbConnect = DBCONNECTBASE
 				._DbConnect = DBCONNECTBASE
 				Set .MetaData = .Connection.MetaData
-				._LoadMetadata()
-				If .MetaData.DatabaseProductName = &quot;MySQL&quot; Then
-					._ReadOnly = .MetaData.isReadOnly()
-				Else
-					._ReadOnly = .Connection.isReadOnly()		&apos;	Always True in Mysql ??
-				End If
+				._ReadOnly = .Connection.isReadOnly()
 				Set .Document = oComponent
 				.Title = oComponent.Title
 				.URL = vDocContainer.URL
 				ReDim vDbContainers(0 To 0)
 				Set vDbContainers(0) = vDbContainer
-				TraceLog(TRACEANY, .Version, False)
+				TraceLog(TRACEANY, .MetaData.getDatabaseProductName() &amp; &quot; &quot; &amp; .MetaData.getDatabaseProductVersion, False)
 				TraceLog(TRACEANY, UCase(cstThisSub) &amp; &quot; &quot; &amp; .URL, False)
 			End With
 		Case Else
@@ -1219,7 +1064,6 @@ Const cstThisSub = &quot;OpenConnection&quot;
 					Set .Connection = .Form.ActiveConnection	&apos;	Might be Nothing in Windows at AOO/LO startup (not met in Linux)
 					If Not IsNull(.Connection) Then
 						Set .MetaData = .Connection.MetaData
-						._LoadMetadata()
 						._ReadOnly = .Connection.isReadOnly()
 						TraceLog(TRACEANY, .MetaData.getDatabaseProductName() &amp; &quot; &quot; &amp; .MetaData.getDatabaseProductVersion, False)
 					End If
@@ -1301,7 +1145,7 @@ Const cstThisSub = &quot;OpenDatabase&quot;
 	Set oBaseContext = CreateUnoService(&quot;com.sun.star.sdb.DatabaseContext&quot;)
 	sDbNames() = oBaseContext.getElementNames()
 	bFound = False
-	For i = 0 To UBound(sDbNames())		&apos;	Enumerate registered databases and check non case-sensitive equality
+	For i = 0 To UBound(sDbNames()		&apos;	Enumerate registered databases and check non case-sensitive equality
 		If UCase(sDbNames(i)) = UCase(pvDatabaseURL) Then
 			sDatabaseURL = sDbNames(i)
 			Set oBaseSource = oBaseContext.getByName(sDatabaseURL)
@@ -1319,7 +1163,6 @@ Const cstThisSub = &quot;OpenDatabase&quot;
 	Set odbDatabase.Connection = oBaseSource.getConnection(pvUser, pvPassword)
 	If Not IsNull(odbDatabase.Connection) Then				&apos;	Null when standalone and target db does not exist
 		Set odbDatabase.MetaData = odbDatabase.Connection.MetaData
-		odbDatabase._LoadMetadata()
 	Else
 		Goto Trace_Error
 	End If
@@ -1620,6 +1463,7 @@ REM ----------------------------------------------------------------------------
 Public Sub _RootInit(Optional ByVal pbForce As Boolean)
 &apos;	Initialize _A2B_ global variable. Reinit forced if pbForce = True
 
+Dim vRoot As Root, vCurrentDoc() As Variant
 	If IsMissing(pbForce) Then pbForce = False
 	If IsEmpty(_A2B_) Or pbForce Then _A2B_ = New Root_
 	

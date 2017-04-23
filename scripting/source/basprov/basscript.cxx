@@ -26,7 +26,6 @@
 #include <basic/sbmeth.hxx>
 #include <basic/sbuno.hxx>
 #include <basic/basmgr.hxx>
-#include <com/sun/star/script/provider/ScriptFrameworkErrorException.hpp>
 #include <com/sun/star/script/provider/ScriptFrameworkErrorType.hpp>
 #include "bcholder.hxx"
 #include <comphelper/proparrhlp.hxx>
@@ -51,13 +50,13 @@ namespace basprov
 
 #define BASSCRIPT_DEFAULT_ATTRIBS()       PropertyAttribute::BOUND | PropertyAttribute::TRANSIENT
 
-    typedef ::std::map< sal_Int16, Any > OutParamMap;
+    typedef ::std::map< sal_Int16, Any, ::std::less< sal_Int16 > > OutParamMap;
 
 
     // BasicScriptImpl
 
 
-    BasicScriptImpl::BasicScriptImpl( const OUString& funcName, SbMethodRef const & xMethod )
+    BasicScriptImpl::BasicScriptImpl( const OUString& funcName, SbMethodRef xMethod )
         : ::scripting_helper::OBroadcastHelperHolder( m_aMutex )
         ,OPropertyContainer( GetBroadcastHelper() )
         ,m_xMethod( xMethod )
@@ -69,7 +68,7 @@ namespace basprov
     }
 
 
-    BasicScriptImpl::BasicScriptImpl( const OUString& funcName, SbMethodRef const & xMethod,
+    BasicScriptImpl::BasicScriptImpl( const OUString& funcName, SbMethodRef xMethod,
         BasicManager& documentBasicManager, const Reference< XScriptInvocationContext >& documentScriptContext ) : ::scripting_helper::OBroadcastHelperHolder( m_aMutex )
         ,OPropertyContainer( GetBroadcastHelper() )
         ,m_xMethod( xMethod )
@@ -101,7 +100,8 @@ namespace basprov
             // not interested in
             return;
         }
-        if ( rHint.GetId() == SfxHintId::Dying )
+        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &rHint );
+        if ( pSimpleHint && ( pSimpleHint->GetId() == SFX_HINT_DYING ) )
         {
             m_documentBasicManager = nullptr;
             EndListening( rBC );    // prevent multiple notifications
@@ -144,7 +144,7 @@ namespace basprov
     // XPropertySet
 
 
-    Reference< XPropertySetInfo > BasicScriptImpl::getPropertySetInfo(  )
+    Reference< XPropertySetInfo > BasicScriptImpl::getPropertySetInfo(  ) throw (RuntimeException, std::exception)
     {
         Reference< XPropertySetInfo > xInfo( createPropertySetInfo( getInfoHelper() ) );
         return xInfo;
@@ -155,6 +155,7 @@ namespace basprov
 
 
     Any BasicScriptImpl::invoke( const Sequence< Any >& aParams, Sequence< sal_Int16 >& aOutParamIndex, Sequence< Any >& aOutParam )
+        throw ( provider::ScriptFrameworkErrorException, reflection::InvocationTargetException, uno::RuntimeException, std::exception)
     {
         // TODO: throw CannotConvertException
         // TODO: check length of aOutParamIndex, aOutParam
@@ -163,7 +164,7 @@ namespace basprov
 
         Any aReturn;
 
-        if ( m_xMethod.is() )
+        if ( m_xMethod )
         {
             // check if compiled
             SbModule* pModule = static_cast< SbModule* >( m_xMethod->GetParent() );
@@ -188,11 +189,12 @@ namespace basprov
                 if ( nParamsCount < nSbxCount - nSbxOptional )
                 {
                     throw provider::ScriptFrameworkErrorException(
-                         "wrong number of parameters!",
+                        OUString(
+                                "wrong number of parameters!" ),
                          Reference< XInterface >(),
                          m_funcName,
-                         "Basic",
-                         provider::ScriptFrameworkErrorType::NO_SUCH_SCRIPT  );
+                         OUString( "Basic" ),
+                        provider::ScriptFrameworkErrorType::NO_SUCH_SCRIPT  );
                 }
             }
 
@@ -205,16 +207,16 @@ namespace basprov
                 for ( sal_Int32 i = 0; i < nParamsCount; ++i )
                 {
                     SbxVariableRef xSbxVar = new SbxVariable( SbxVARIANT );
-                    unoToSbxValue( xSbxVar.get(), pParams[i] );
-                    xSbxParams->Put( xSbxVar.get(), static_cast< sal_uInt16 >( i ) + 1 );
+                    unoToSbxValue( static_cast< SbxVariable* >( xSbxVar ), pParams[i] );
+                    xSbxParams->Put( xSbxVar, static_cast< sal_uInt16 >( i ) + 1 );
 
                     // Enable passing by ref
                     if ( xSbxVar->GetType() != SbxVARIANT )
                         xSbxVar->SetFlag( SbxFlagBits::Fixed );
                  }
             }
-            if ( xSbxParams.is() )
-                m_xMethod->SetParameters( xSbxParams.get() );
+            if ( xSbxParams.Is() )
+                m_xMethod->SetParameters( xSbxParams );
 
             // call method
             SbxVariableRef xReturn = new SbxVariable;
@@ -228,11 +230,11 @@ namespace basprov
             if ( m_caller.getLength() && m_caller[ 0 ].hasValue()  )
             {
                 SbxVariableRef xCallerVar = new SbxVariable( SbxVARIANT );
-                unoToSbxValue( xCallerVar.get(), m_caller[ 0 ] );
-                nErr = m_xMethod->Call( xReturn.get(), xCallerVar.get() );
+                unoToSbxValue( static_cast< SbxVariable* >( xCallerVar ), m_caller[ 0 ] );
+                nErr = m_xMethod->Call( xReturn, xCallerVar );
             }
             else
-                nErr = m_xMethod->Call( xReturn.get() );
+                nErr = m_xMethod->Call( xReturn );
 
             if ( m_documentBasicManager && m_xDocumentScriptContext.is() )
                 m_documentBasicManager->SetGlobalUNOConstant( "ThisComponent", aOldThisComponent );
@@ -243,7 +245,7 @@ namespace basprov
             }
 
             // get output parameters
-            if ( xSbxParams.is() )
+            if ( xSbxParams.Is() )
             {
                 SbxInfo* pInfo_ = m_xMethod->GetInfo();
                 if ( pInfo_ )
@@ -258,7 +260,7 @@ namespace basprov
                             if ( pVar )
                             {
                                 SbxVariableRef xVar = pVar;
-                                aOutParamMap.insert( OutParamMap::value_type( n - 1, sbxToUnoValue( xVar.get() ) ) );
+                                aOutParamMap.insert( OutParamMap::value_type( n - 1, sbxToUnoValue( xVar ) ) );
                             }
                         }
                     }
@@ -276,7 +278,7 @@ namespace basprov
             }
 
             // get return value
-            aReturn = sbxToUnoValue( xReturn.get() );
+            aReturn = sbxToUnoValue( xReturn );
 
             // reset parameters
             m_xMethod->SetParameters( nullptr );

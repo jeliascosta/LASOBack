@@ -100,10 +100,10 @@
         from DocShell:  none
         Bemerkung:      provides dependent of chosen ValueSet-Item
                         only SvxBoxItem or additionally SvxBoxInfoItem
-                        If the Controller in SfxUInt16Item receives a
+                        If the Controller ein SfxUInt16Item receives a
                         value != 0, paragraph mode will be switched on,
                         i.e. the last line will be hidden.
-                        A value == 0 switches again to Table mode.
+                        A value == 0 switches again to Tabel mode.
 
         SvxFrameLineStyleToolBoxControl
         -------------------------------
@@ -136,7 +136,6 @@
 #include <svx/strarray.hxx>
 #include <svx/svxdllapi.h>
 #include <com/sun/star/awt/FontDescriptor.hpp>
-#include <svx/colorwindow.hxx>
 #include <svx/PaletteManager.hxx>
 #include <memory>
 
@@ -163,23 +162,26 @@ public:
     SFX_DECL_TOOLBOX_CONTROL();
 
     SvxStyleToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rToolBox);
-    virtual ~SvxStyleToolBoxControl() override;
+    virtual ~SvxStyleToolBoxControl();
 
     virtual VclPtr<vcl::Window> CreateItemWindow(vcl::Window* pParent) override;
 
     virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
                               const SfxPoolItem* pState) override;
 
-    DECL_LINK( VisibilityNotification, SvxStyleBox_Impl&, void );
+    DECL_LINK_TYPED( VisibilityNotification, SvxStyleBox_Impl&, void );
 protected:
     // XInitialization
-    virtual void SAL_CALL initialize(const css::uno::Sequence<css::uno::Any>& aArguments) override;
+    virtual void SAL_CALL initialize(const css::uno::Sequence<css::uno::Any>& aArguments)
+            throw (css::uno::Exception, css::uno::RuntimeException, std::exception) override;
 
     // XUpdatable
-    virtual void SAL_CALL update() override;
+    virtual void SAL_CALL update()
+            throw (css::uno::RuntimeException, std::exception) override;
 
     // XComponent
-    virtual void SAL_CALL dispose() override;
+    virtual void SAL_CALL dispose()
+            throw (css::uno::RuntimeException, std::exception) override;
 
 private:
 
@@ -201,36 +203,77 @@ friend class SfxStyleControllerItem_Impl;
     SVX_DLLPRIVATE SfxStyleFamily GetActFamily();
 };
 
-typedef std::function<void(const OUString&, const NamedColor&)> ColorSelectFunction;
-
-class SVX_DLLPUBLIC SvxColorToolBoxControl : public cppu::ImplInheritanceHelper< SfxToolBoxControl,
-                                                                                 css::frame::XSubToolbarController >
+class SVX_DLLPUBLIC SvxFontNameToolBoxControl : public SfxToolBoxControl
 {
+public:
+    SFX_DECL_TOOLBOX_CONTROL();
+    SvxFontNameToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rTbx);
+
+    virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
+                              const SfxPoolItem* pState) override;
+    virtual VclPtr<vcl::Window> CreateItemWindow(vcl::Window* pParent) override;
+};
+
+class BorderColorStatus
+{
+    Color maColor;
+    Color maTLBRColor;
+    Color maBLTRColor;
+public:
+    BorderColorStatus();
+    ~BorderColorStatus();
+    void StateChanged(sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState);
+    Color GetColor();
+};
+
+typedef std::function<void(const OUString&, const Color&)> ColorSelectFunction;
+class SVX_DLLPUBLIC SvxColorToolBoxControl : public SfxToolBoxControl
+{
+    using SfxToolBoxControl::StateChanged;
+
     std::unique_ptr<svx::ToolboxButtonColorUpdater> m_xBtnUpdater;
-    std::unique_ptr<PaletteManager> m_xPaletteManager;
-    BorderColorStatus m_aBorderColorStatus;
-    bool m_bSplitButton;
-    ColorSelectFunction m_aColorSelectFunction;
-    DECL_LINK(SelectedHdl, const NamedColor&, void);
+    PaletteManager mPaletteManager;
+    BorderColorStatus maBorderColorStatus;
+    bool bSidebarType;
+    ColorSelectFunction maColorSelectFunction;
+    DECL_LINK_TYPED(SelectedHdl, const Color&, void);
 public:
     SFX_DECL_TOOLBOX_CONTROL();
     SvxColorToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rToolBox);
-    virtual ~SvxColorToolBoxControl() override;
+    virtual ~SvxColorToolBoxControl();
 
-    // XStatusListener
-    virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) override;
-
+    virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
+                              const SfxPoolItem* pState) override;
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
     virtual void Select(sal_uInt16 nSelectModifier) override;
 
     // XSubToolbarController
-    virtual sal_Bool SAL_CALL opensSubToolbar() override;
-    virtual OUString SAL_CALL getSubToolbarName() override;
-    virtual void SAL_CALL functionSelected( const OUString& rCommand ) override;
-    virtual void SAL_CALL updateImage() override;
+    virtual sal_Bool SAL_CALL opensSubToolbar() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL updateImage() throw (css::uno::RuntimeException, std::exception) override;
 
     void setColorSelectFunction(const ColorSelectFunction& aColorSelectFunction);
-    void EnsurePaletteManager();
+};
+
+class SVX_DLLPUBLIC SvxFrameToolBoxControl : public SfxToolBoxControl
+{
+public:
+    SFX_DECL_TOOLBOX_CONTROL();
+    SvxFrameToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rToolBox);
+
+    virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
+    virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
+                              const SfxPoolItem* pState) override;
+};
+
+class SVX_DLLPUBLIC SvxFrameLineStyleToolBoxControl : public SfxToolBoxControl
+{
+public:
+    SFX_DECL_TOOLBOX_CONTROL();
+    SvxFrameLineStyleToolBoxControl(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rToolBox);
+
+    virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
+    virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
+                              const SfxPoolItem* pState) override;
 };
 
 class SVX_DLLPUBLIC SvxSimpleUndoRedoController : public SfxToolBoxControl
@@ -241,7 +284,7 @@ private:
 public:
     SFX_DECL_TOOLBOX_CONTROL();
     SvxSimpleUndoRedoController(sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rToolBox);
-    virtual ~SvxSimpleUndoRedoController() override;
+    virtual ~SvxSimpleUndoRedoController();
 
     virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
                               const SfxPoolItem* pState) override;
@@ -258,12 +301,11 @@ public:
                                     std::vector<sal_uInt16>& rCurrencyList );
     SFX_DECL_TOOLBOX_CONTROL();
     SvxCurrencyToolBoxControl( sal_uInt16 nSlotId, sal_uInt16 nId, ToolBox& rBox );
-    virtual ~SvxCurrencyToolBoxControl() override;
+    virtual ~SvxCurrencyToolBoxControl();
     virtual void Select( sal_uInt16 nSelectModifier ) override;
     virtual VclPtr<SfxPopupWindow> CreatePopupWindow() override;
-
-    // XInitialization
-    virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& rArguments ) override;
+    virtual void StateChanged(sal_uInt16 nSID, SfxItemState eState,
+                              const SfxPoolItem* pState) override;
 };
 
 

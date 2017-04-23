@@ -371,14 +371,24 @@ static void createInstance( Reference< T > & rxOut,
 
     if (! x.is())
     {
-        throw RuntimeException( "cannot get service instance \"" + rServiceName );
+        OUStringBuffer buf( 64 );
+        buf.append( "cannot get service instance \"" );
+        buf.append( rServiceName );
+        buf.append( "\"!" );
+        throw RuntimeException( buf.makeStringAndClear() );
     }
 
     rxOut = Reference< T >::query( x );
     if (! rxOut.is())
     {
-        throw RuntimeException( "service instance \"" + rServiceName +
-                  "\" does not support demanded interface \"" + cppu::UnoType<T>::get().getTypeName() );
+        OUStringBuffer buf( 64 );
+        buf.append( "service instance \"" );
+        buf.append( rServiceName );
+        buf.append( "\" does not support demanded interface \"" );
+        const Type & rType = cppu::UnoType<T>::get();
+        buf.append( rType.getTypeName() );
+        buf.append( "\"!" );
+        throw RuntimeException( buf.makeStringAndClear() );
     }
 }
 
@@ -480,7 +490,11 @@ Reference< XInterface > TestImpl::resolveObject( const OUString & rUnoUrl )
 
     if (! xResolvedObject.is())
     {
-        throw RuntimeException( "cannot resolve object \"" + rUnoUrl + "\"!" );
+        OUStringBuffer buf( 32 );
+        buf.append( "cannot resolve object \"" );
+        buf.append( rUnoUrl );
+        buf.append( "\"!" );
+        throw RuntimeException( buf.makeStringAndClear() );
     }
 
     return xResolvedObject;
@@ -540,7 +554,9 @@ static void benchmark(
     TimingSheet & rSheet, const Reference< XInterface > & xInstance, sal_Int64 nLoop )
     throw (Exception)
 {
-    Reference< XPerformanceTest > xBench( xInstance, UNO_QUERY_THROW );
+    Reference< XPerformanceTest > xBench( xInstance, UNO_QUERY );
+    if (! xBench.is())
+        throw RuntimeException("illegal test object!" );
 
     sal_Int64 i;
     sal_uInt32 tStart, tEnd;
@@ -770,7 +786,7 @@ static void benchmark(
     while (i--)
         xBench->setString( aDummyString );
     tEnd = getSystemTicks();
-    rSheet.insert( "6c: setString() call (empty)", nLoop, tEnd - tStart );
+    rSheet.insert( "6c: setString() call (emtpy)", nLoop, tEnd - tStart );
     i = nLoop;
     tStart = getSystemTicks();
     while (i--)
@@ -973,7 +989,11 @@ sal_Int32 TestImpl::run( const Sequence< OUString > & rArgs )
                 stream = ::fopen( aFileName.getStr(), "w" );
                 if (! stream)
                 {
-                    throw RuntimeException( "cannot open file for writing: \"" + aLogStr + "\"!" );
+                    OUStringBuffer buf( 32 );
+                    buf.append( "cannot open file for writing: \"" );
+                    buf.append( aLogStr );
+                    buf.append( "\"!" );
+                    throw RuntimeException( buf.makeStringAndClear() );
                 }
             }
         }

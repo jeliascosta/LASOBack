@@ -50,14 +50,9 @@ namespace sdr
             maRedrawArea = rRegion;
         }
 
-        void DisplayInfo::SetWriterPageFrame(basegfx::B2IRectangle const& rPageFrame)
-        {
-            m_WriterPageFrame = rPageFrame;
-        }
-
         void DisplayInfo::SetControlLayerProcessingActive(bool bDoProcess)
         {
-            if(mbControlLayerProcessingActive != bDoProcess)
+            if((bool)mbControlLayerProcessingActive != bDoProcess)
             {
                 mbControlLayerProcessingActive = bDoProcess;
             }
@@ -65,7 +60,7 @@ namespace sdr
 
         void DisplayInfo::SetPageProcessingActive(bool bDoProcess)
         {
-            if(mbPageProcessingActive != bDoProcess)
+            if((bool)mbPageProcessingActive != bDoProcess)
             {
                 mbPageProcessingActive = bDoProcess;
             }
@@ -83,7 +78,7 @@ namespace sdr
 
         void DisplayInfo::SetSubContentActive(bool bNew)
         {
-            if(mbSubContentActive != bNew)
+            if((bool)mbSubContentActive != bNew)
             {
                 mbSubContentActive = bNew;
             }

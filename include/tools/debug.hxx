@@ -39,13 +39,21 @@
 
 typedef void (*DbgTestSolarMutexProc)();
 
-TOOLS_DLLPUBLIC void DbgSetTestSolarMutex( DbgTestSolarMutexProc pParam );
-TOOLS_DLLPUBLIC void DbgTestSolarMutex();
+// Dbg prototypes
+#define DBG_FUNC_SETTESTSOLARMUTEX  2
+#define DBG_FUNC_TESTSOLARMUTEX     3
 
-#define DBG_TESTSOLARMUTEX()   \
-do                             \
-{                              \
-    DbgTestSolarMutex();       \
+TOOLS_DLLPUBLIC void* DbgFunc( sal_uInt16 nAction, void* pData = nullptr );
+
+inline void DbgSetTestSolarMutex( DbgTestSolarMutexProc pProc )
+{
+    DbgFunc( DBG_FUNC_SETTESTSOLARMUTEX, reinterpret_cast<void*>(reinterpret_cast<sal_uIntPtr>(pProc)) );
+}
+
+#define DBG_TESTSOLARMUTEX()                \
+do                                          \
+{                                           \
+    DbgFunc(DBG_FUNC_TESTSOLARMUTEX);       \
 } while(false)
 
 #else

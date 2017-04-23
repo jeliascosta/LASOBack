@@ -63,14 +63,14 @@ private:
     void                FillLanguageBox();
     void                ClearLanguageBox();
 
-    DECL_LINK(AddHdl, Button*, void);
-    DECL_LINK(DeleteHdl, Button*, void);
-    DECL_LINK(MakeDefHdl, Button*, void);
-    DECL_LINK(SelectHdl, ListBox&, void);
+    DECL_LINK_TYPED(AddHdl, Button*, void);
+    DECL_LINK_TYPED(DeleteHdl, Button*, void);
+    DECL_LINK_TYPED(MakeDefHdl, Button*, void);
+    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
 
 public:
-    ManageLanguageDialog( vcl::Window* pParent, std::shared_ptr<LocalizationMgr> const & _pLMgr );
-    virtual ~ManageLanguageDialog() override;
+    ManageLanguageDialog( vcl::Window* pParent, std::shared_ptr<LocalizationMgr> _pLMgr );
+    virtual ~ManageLanguageDialog();
     virtual void dispose() override;
 };
 
@@ -89,8 +89,8 @@ private:
     void                FillLanguageBox();
 
 public:
-    SetDefaultLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> const & xLMgr);
-    virtual ~SetDefaultLanguageDialog() override;
+    SetDefaultLanguageDialog(vcl::Window* pParent, std::shared_ptr<LocalizationMgr> xLMgr);
+    virtual ~SetDefaultLanguageDialog();
     virtual void dispose() override;
 
     css::uno::Sequence< css::lang::Locale >   GetLocales() const;

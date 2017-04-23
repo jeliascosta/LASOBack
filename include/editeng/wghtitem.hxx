@@ -32,7 +32,7 @@ class SvXMLUnitConverter;
     This item describes the font weight.
 */
 
-class EDITENG_DLLPUBLIC SvxWeightItem : public SfxEnumItem<FontWeight>
+class EDITENG_DLLPUBLIC SvxWeightItem : public SfxEnumItem
 {
 public:
     static SfxPoolItem* CreateDefault();
@@ -42,9 +42,9 @@ public:
 
     // "pure virtual Methods" from SfxPoolItem + SfxEnumItem
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                  MapUnit eCoreMetric,
-                                  MapUnit ePresMetric,
-                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                    SfxMapUnit eCoreMetric,
+                                    SfxMapUnit ePresMetric,
+                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create(SvStream &, sal_uInt16) const override;
@@ -59,13 +59,14 @@ public:
     virtual bool            GetBoolValue() const override;
     virtual void            SetBoolValue( bool bVal ) override;
 
-    SvxWeightItem& operator=(const SvxWeightItem& rWeight) {
+    inline SvxWeightItem& operator=(const SvxWeightItem& rWeight) {
             SetValue( rWeight.GetValue() );
             return *this;
         }
 
     // enum cast
-    FontWeight              GetWeight() const { return GetValue(); }
+    FontWeight              GetWeight() const
+                                { return (FontWeight)GetValue(); }
 
     void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 };

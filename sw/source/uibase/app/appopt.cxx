@@ -108,6 +108,7 @@ SfxItemSet*  SwModule::CreateItemSet( sal_uInt16 nId )
                                     SID_HTML_MODE,          SID_HTML_MODE,
                                     FN_PARAM_SHADOWCURSOR,  FN_PARAM_SHADOWCURSOR,
                                     FN_PARAM_CRSR_IN_PROTECTED, FN_PARAM_CRSR_IN_PROTECTED,
+                                    FN_PARAM_IGNORE_PROTECTED, FN_PARAM_IGNORE_PROTECTED,
                                     FN_HSCROLL_METRIC,      FN_VSCROLL_METRIC,
                                     SID_ATTR_LANGUAGE,      SID_ATTR_LANGUAGE,
                                     SID_ATTR_CHAR_CJK_LANGUAGE,   SID_ATTR_CHAR_CJK_LANGUAGE,
@@ -117,12 +118,13 @@ SfxItemSet*  SwModule::CreateItemSet( sal_uInt16 nId )
 #endif
                                     0);
 
-    pRet->Put( SwDocDisplayItem( aViewOpt ) );
-    pRet->Put( SwElemItem( aViewOpt ) );
+    pRet->Put( SwDocDisplayItem( aViewOpt, FN_PARAM_DOCDISP) );
+    pRet->Put( SwElemItem( aViewOpt, FN_PARAM_ELEM) );
     if( bTextDialog )
     {
-        pRet->Put( SwShadowCursorItem( aViewOpt ));
+        pRet->Put( SwShadowCursorItem( aViewOpt, FN_PARAM_SHADOWCURSOR ));
         pRet->Put( SfxBoolItem(FN_PARAM_CRSR_IN_PROTECTED, aViewOpt.IsCursorInProtectedArea()));
+        pRet->Put(SfxBoolItem(FN_PARAM_IGNORE_PROTECTED, aViewOpt.IsIgnoreProtectedArea()));
     }
 
     if( pAppView )
@@ -134,17 +136,14 @@ SfxItemSet*  SwModule::CreateItemSet( sal_uInt16 nId )
             pRet->Put(SwPtrItem(FN_PARAM_PRINTER, pPrt));
         pRet->Put(SwPtrItem(FN_PARAM_WRTSHELL, &rWrtShell));
 
-        std::unique_ptr<SfxPoolItem> pNewItem( static_cast<const SvxLanguageItem&>(
-            rWrtShell.GetDefault(RES_CHRATR_LANGUAGE)).CloneSetWhich(SID_ATTR_LANGUAGE) );
-        pRet->Put(*pNewItem);
+        pRet->Put(static_cast<const SvxLanguageItem&>(
+            rWrtShell.GetDefault(RES_CHRATR_LANGUAGE)), SID_ATTR_LANGUAGE);
 
-        pNewItem.reset(static_cast<const SvxLanguageItem&>(
-            rWrtShell.GetDefault(RES_CHRATR_CJK_LANGUAGE)).CloneSetWhich(SID_ATTR_CHAR_CJK_LANGUAGE));
-        pRet->Put(*pNewItem);
+        pRet->Put(static_cast<const SvxLanguageItem&>(
+            rWrtShell.GetDefault(RES_CHRATR_CJK_LANGUAGE)), SID_ATTR_CHAR_CJK_LANGUAGE);
 
-        pNewItem.reset(static_cast<const SvxLanguageItem&>(
-            rWrtShell.GetDefault(RES_CHRATR_CTL_LANGUAGE)).CloneSetWhich(SID_ATTR_CHAR_CTL_LANGUAGE));
-        pRet->Put(*pNewItem);
+        pRet->Put(static_cast<const SvxLanguageItem&>(
+            rWrtShell.GetDefault(RES_CHRATR_CTL_LANGUAGE)), SID_ATTR_CHAR_CTL_LANGUAGE);
     }
     else
     {
@@ -225,7 +224,7 @@ SfxItemSet*  SwModule::CreateItemSet( sal_uInt16 nId )
     if(!pOpt)
         pOpt = GetPrtOptions(!bTextDialog);
 
-    SwAddPrinterItem aAddPrinterItem(*pOpt );
+    SwAddPrinterItem aAddPrinterItem (FN_PARAM_ADDPRINTER, *pOpt );
     pRet->Put(aAddPrinterItem);
 
     // Options for Web background
@@ -333,7 +332,7 @@ void SwModule::ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet )
         pPref->SetDefTab(nTabDist);
         if(pAppView)
         {
-            SvxTabStopItem aDefTabs( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
+            SvxTabStopItem aDefTabs( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
             MakeDefTabs( nTabDist, aDefTabs );
             pAppView->GetWrtShell().SetDefault( aDefTabs );
         }
@@ -411,7 +410,10 @@ void SwModule::ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet )
         aViewOpt.SetCursorInProtectedArea(static_cast<const SfxBoolItem*>(pItem)->GetValue());
     }
 
-    // set elements for the current view and shell
+    if (rSet.GetItemState(FN_PARAM_IGNORE_PROTECTED, false, &pItem) == SfxItemState::SET)
+        aViewOpt.SetIgnoreProtectedArea(static_cast<const SfxBoolItem*>(pItem)->GetValue());
+
+        // set elements for the current view and shell
     ApplyUsrPref( aViewOpt, pAppView, bTextDialog? SvViewOpt::DestText : SvViewOpt::DestWeb);
 }
 
@@ -472,7 +474,7 @@ VclPtr<SfxTabPage> SwModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
                 if( (bWebView &&  RID_SW_TP_HTML_OPTTABLE_PAGE == nId) ||
                     (!bWebView &&  RID_SW_TP_HTML_OPTTABLE_PAGE != nId) )
                 {
-                    aSet.Put (SwWrtShellItem(pCurrView->GetWrtShellPtr()));
+                    aSet.Put (SwWrtShellItem(SID_WRT_SHELL,pCurrView->GetWrtShellPtr()));
                     pRet->PageCreated(aSet);
                 }
             }
@@ -494,7 +496,7 @@ VclPtr<SfxTabPage> SwModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
                 SwView* pCurrView = GetView();
                 if(pCurrView)
                 {
-                    aSet.Put( SwWrtShellItem( pCurrView->GetWrtShellPtr() ) );
+                    aSet.Put( SwWrtShellItem( SID_WRT_SHELL, pCurrView->GetWrtShellPtr() ) );
                     pRet->PageCreated(aSet);
                 }
             }

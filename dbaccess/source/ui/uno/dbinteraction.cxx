@@ -66,12 +66,12 @@ namespace dbaui
             "BasicInteractionHandler::BasicInteractionHandler: enabling legacy behavior, there should be no clients of this anymore!" );
     }
 
-    sal_Bool SAL_CALL BasicInteractionHandler::handleInteractionRequest( const Reference< XInteractionRequest >& i_rRequest )
+    sal_Bool SAL_CALL BasicInteractionHandler::handleInteractionRequest( const Reference< XInteractionRequest >& i_rRequest ) throw (RuntimeException, std::exception)
     {
         return impl_handle_throw( i_rRequest );
     }
 
-    void SAL_CALL BasicInteractionHandler::handle( const Reference< XInteractionRequest >& i_rRequest )
+    void SAL_CALL BasicInteractionHandler::handle( const Reference< XInteractionRequest >& i_rRequest ) throw(RuntimeException, std::exception)
     {
         impl_handle_throw( i_rRequest );
     }

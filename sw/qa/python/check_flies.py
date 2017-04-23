@@ -16,8 +16,18 @@
     the License at http://www.apache.org/licenses/LICENSE-2.0 .
 '''
 
+from com.sun.star.lang import XMultiServiceFactory
+from com.sun.star.text import XTextDocument
+from com.sun.star.text import XTextFramesSupplier
+from com.sun.star.text import XTextGraphicObjectsSupplier
+from com.sun.star.text import XTextEmbeddedObjectsSupplier
+from com.sun.star.container import XNameAccess
+from com.sun.star.container import NoSuchElementException
+from com.sun.star.container import XIndexAccess
 from org.libreoffice.unotest import UnoInProcess
 import unittest
+import unohelper
+import os
 
 
 class CheckFlies(unittest.TestCase):
@@ -51,19 +61,17 @@ class CheckFlies(unittest.TestCase):
             vExpectedEmbeddedFrames.remove(sFrameName)
             # raises ValueError if not found
             print (sFrameName)
-            xEmbeddedFrames[sFrameName]
+            xEmbeddedFrames.getByName(sFrameName)
             self.assertTrue(xEmbeddedFrames.hasByName(sFrameName),
                             "Could not find embedded frame by name.")
 
-        self.assertTrue(not(vExpectedEmbeddedFrames),
-                        "Missing expected embedded frames.")
+        self.assertTrue(not(vExpectedEmbeddedFrames), "Missing expected embedded frames.")
 
         xEmbeddedFramesIdx = xEmbeddedFrames
 
-        self.assertEqual(nEmbeddedFrames, len(xEmbeddedFramesIdx),
-                         "Unexpected number of embedded frames reported")
+        self.assertEqual(nEmbeddedFrames, xEmbeddedFramesIdx.getCount())  # Unexpected number of embedded frames reported
 
-        for nCurrentFrameIdx in range(len(xEmbeddedFramesIdx)):
+        for nCurrentFrameIdx in range(xEmbeddedFramesIdx.getCount()):
             xEmbeddedFramesIdx.getByIndex(nCurrentFrameIdx)
 
     def checkGraphicFrames(self, xTGOS):
@@ -74,7 +82,7 @@ class CheckFlies(unittest.TestCase):
         for sFrameName in xGraphicFrames.getElementNames():
             vExpectedGraphicFrames.remove(sFrameName)
             # raises ValueError if not found
-            xGraphicFrames[sFrameName]
+            xGraphicFrames.getByName(sFrameName)
             self.assertTrue(
                 xGraphicFrames.hasByName(sFrameName),
                 "Could not find graphics frame by name.")
@@ -83,10 +91,9 @@ class CheckFlies(unittest.TestCase):
             "Missing expected graphics frames.")
 
         xGraphicFramesIdx = xGraphicFrames
-        self.assertEqual(nGraphicFrames, len(xGraphicFramesIdx),
-                         "Unexpected number of graphics frames reported")
+        self.assertEqual(nGraphicFrames, xGraphicFramesIdx.getCount())  # Unexpected number of graphics frames reported
 
-        for nCurrentFrameIdx in range(len(xGraphicFramesIdx)):
+        for nCurrentFrameIdx in range(xGraphicFramesIdx.getCount()):
             xGraphicFramesIdx.getByIndex(nCurrentFrameIdx)
 
     def checkTextFrames(self, xTFS):
@@ -98,7 +105,7 @@ class CheckFlies(unittest.TestCase):
         for sFrameName in xTextFrames.getElementNames():
             vExpectedTextFrames.remove(sFrameName)
             # raises ValueError if not found
-            xTextFrames[sFrameName]
+            xTextFrames.getByName(sFrameName)
             self.assertTrue(
                 xTextFrames.hasByName(sFrameName),
                 "Could not find text frame by name.")
@@ -108,10 +115,9 @@ class CheckFlies(unittest.TestCase):
 
         xTextFramesIdx = xTextFrames
 
-        self.assertEqual(nTextFrames, len(xTextFrames),
-                         "Unexpected number of text frames reported")
+        self.assertEqual(nTextFrames, xTextFrames.getCount())  # Unexpected number of text frames reported
 
-        for nCurrentFrameIdx in range(len(xTextFramesIdx)):
+        for nCurrentFrameIdx in range(xTextFramesIdx.getCount()):
             xTextFramesIdx.getByIndex(nCurrentFrameIdx)
 
 

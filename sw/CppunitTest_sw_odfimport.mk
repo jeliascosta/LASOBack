@@ -21,7 +21,6 @@ $(eval $(call gb_CppunitTest_use_libraries,sw_odfimport, \
     cppuhelper \
     sal \
 	svt \
-	sfx \
 	sw \
     test \
     unotest \
@@ -44,7 +43,10 @@ $(eval $(call gb_CppunitTest_set_include,sw_odfimport,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_sdk_api,sw_odfimport))
+$(eval $(call gb_CppunitTest_use_api,sw_odfimport,\
+    offapi \
+    udkapi \
+))
 
 $(eval $(call gb_CppunitTest_use_ure,sw_odfimport))
 $(eval $(call gb_CppunitTest_use_vcl,sw_odfimport))

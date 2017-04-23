@@ -155,7 +155,7 @@ VclPtr<SfxTabPage> SwLoadOptPage::Create( vcl::Window* pParent,
     return VclPtr<SwLoadOptPage>::Create(pParent, *rAttrSet );
 }
 
-IMPL_LINK_NOARG(SwLoadOptPage, StandardizedPageCountCheckHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(SwLoadOptPage, StandardizedPageCountCheckHdl, Button*, void)
 {
     m_pStandardizedPageSizeNF->Enable(m_pShowStandardizedPageCount->IsChecked());
 }
@@ -345,18 +345,15 @@ void SwLoadOptPage::Reset( const SfxItemSet* rSet)
     m_pUseCharUnit->SaveValue();
 
     m_pWordCountED->SetText(officecfg::Office::Writer::WordCount::AdditionalSeparators::get());
-    m_pWordCountED->Enable(!officecfg::Office::Writer::WordCount::AdditionalSeparators::isReadOnly());
     m_pWordCountED->SaveValue();
     m_pShowStandardizedPageCount->Check(officecfg::Office::Writer::WordCount::ShowStandardizedPageCount::get());
-    m_pShowStandardizedPageCount->Enable(!officecfg::Office::Writer::WordCount::ShowStandardizedPageCount::isReadOnly());
     m_pShowStandardizedPageCount->SaveValue();
     m_pStandardizedPageSizeNF->SetValue(officecfg::Office::Writer::WordCount::StandardizedPageSize::get());
-    m_pStandardizedPageSizeNF->Enable(!officecfg::Office::Writer::WordCount::StandardizedPageSize::isReadOnly());
     m_pStandardizedPageSizeNF->SaveValue();
     m_pStandardizedPageSizeNF->Enable(m_pShowStandardizedPageCount->IsChecked());
 }
 
-IMPL_LINK_NOARG(SwLoadOptPage, MetricHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwLoadOptPage, MetricHdl, ListBox&, void)
 {
     const sal_Int32 nMPos = m_pMetricLB->GetSelectEntryPos();
     if(nMPos != LISTBOX_ENTRY_NOTFOUND)
@@ -386,10 +383,22 @@ SwCaptionPreview::SwCaptionPreview(vcl::Window* pParent, WinBits nStyle)
     : Window(pParent, nStyle)
     , mbFontInitialized(false)
 {
-    maDrawPos = Point(4, 6);
+    Init();
 }
 
-VCL_BUILDER_FACTORY_CONSTRUCTOR(SwCaptionPreview, 0)
+VCL_BUILDER_DECL_FACTORY(SwCaptionPreview)
+{
+    WinBits nBits = 0;
+    OString sBorder = VclBuilder::extractCustomProperty(rMap);
+    if (!sBorder.isEmpty())
+       nBits |= WB_BORDER;
+    rRet = VclPtr<SwCaptionPreview>::Create(pParent, nBits);
+}
+
+void SwCaptionPreview::Init()
+{
+    maDrawPos = Point(4, 6);
+}
 
 void SwCaptionPreview::ApplySettings(vcl::RenderContext& rRenderContext)
 {
@@ -420,14 +429,14 @@ void SwCaptionPreview::SetPreviewText(const OUString& rText)
 
 Size SwCaptionPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(106 , 20), MapMode(MapUnit::MapAppFont));
+    return LogicToPixel(Size(106 , 20), MapMode(MAP_APPFONT));
 }
 
-void SwCaptionPreview::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void SwCaptionPreview::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     Window::Paint(rRenderContext, rRect);
 
-    rRenderContext.DrawRect(tools::Rectangle(Point(0, 0), GetSizePixel()));
+    rRenderContext.DrawRect(Rectangle(Point(0, 0), GetSizePixel()));
     rRenderContext.DrawText(Point(4, 6), maText);
 }
 
@@ -477,9 +486,8 @@ SwCaptionOptPage::SwCaptionOptPage(vcl::Window* pParent, const SfxItemSet& rSet)
     {
         for ( auto i = pMgr->GetFieldTypeCount(); i; )
         {
-            SwFieldType* pFieldType = pMgr->GetFieldType(SwFieldIds::Unknown, --i);
-            if (!pFieldType->GetName().isEmpty()
-                && pFieldType->GetName().equals(m_pCategoryBox->GetText()))
+            SwFieldType* pFieldType = pMgr->GetFieldType(USHRT_MAX, --i);
+            if (pFieldType->GetName().equals(m_pCategoryBox->GetText()))
             {
                 nSelFormat = (sal_uInt16)static_cast<SwSetExpFieldType*>(pFieldType)->GetSeqFormat();
                 break;
@@ -508,7 +516,7 @@ SwCaptionOptPage::SwCaptionOptPage(vcl::Window* pParent, const SfxItemSet& rSet)
     if (pSh)
     {
         SwSetExpFieldType* pFieldType = static_cast<SwSetExpFieldType*>(pMgr->GetFieldType(
-                                            SwFieldIds::SetExp, m_pCategoryBox->GetText() ));
+                                            RES_SETEXPFLD, m_pCategoryBox->GetText() ));
         if( pFieldType )
         {
             sDelim = pFieldType->GetDelimiter();
@@ -670,7 +678,7 @@ void SwCaptionOptPage::DelUserData()
     }
 }
 
-IMPL_LINK_NOARG(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pSelEntry = m_pCheckLB->FirstSelected();
 
@@ -692,25 +700,25 @@ IMPL_LINK_NOARG(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
         InsCaptionOpt* pOpt = static_cast<InsCaptionOpt*>(pSelEntry->GetUserData());
 
         m_pCategoryBox->Clear();
-        m_pCategoryBox->InsertEntry(m_sNone, 0);
+        m_pCategoryBox->InsertEntry(m_sNone);
         if (pSh)
         {
             const size_t nCount = pMgr->GetFieldTypeCount();
 
             for (size_t i = 0; i < nCount; ++i)
             {
-                SwFieldType *pType = pMgr->GetFieldType( SwFieldIds::Unknown, i );
-                if( pType->Which() == SwFieldIds::SetExp &&
+                SwFieldType *pType = pMgr->GetFieldType( USHRT_MAX, i );
+                if( pType->Which() == RES_SETEXPFLD &&
                     static_cast<SwSetExpFieldType *>( pType)->GetType() & nsSwGetSetExpType::GSE_SEQ )
-                    m_pCategoryBox->InsertSwEntry(pType->GetName());
+                    m_pCategoryBox->InsertSwEntry(SwBoxEntry(pType->GetName()));
             }
         }
         else
         {
-            m_pCategoryBox->InsertSwEntry(m_sIllustration);
-            m_pCategoryBox->InsertSwEntry(m_sTable);
-            m_pCategoryBox->InsertSwEntry(m_sText);
-            m_pCategoryBox->InsertSwEntry(m_sDrawing);
+            m_pCategoryBox->InsertSwEntry(SwBoxEntry(m_sIllustration));
+            m_pCategoryBox->InsertSwEntry(SwBoxEntry(m_sTable));
+            m_pCategoryBox->InsertSwEntry(SwBoxEntry(m_sText));
+            m_pCategoryBox->InsertSwEntry(SwBoxEntry(m_sDrawing));
         }
 
         if(!pOpt->GetCategory().isEmpty())
@@ -719,7 +727,7 @@ IMPL_LINK_NOARG(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
             m_pCategoryBox->SetText(m_sNone);
         if (!pOpt->GetCategory().isEmpty() &&
             m_pCategoryBox->GetEntryPos(pOpt->GetCategory()) == COMBOBOX_ENTRY_NOTFOUND)
-            m_pCategoryBox->InsertEntry(pOpt->GetCategory(), 0);
+            m_pCategoryBox->InsertEntry(pOpt->GetCategory());
         if (m_pCategoryBox->GetText().isEmpty())
         {
             sal_Int32 nPos = 0;
@@ -730,7 +738,7 @@ IMPL_LINK_NOARG(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
                 case TABLE_CAP:         nPos = 2;   break;
                 case FRAME_CAP:         nPos = 3;   break;
             }
-            m_pCategoryBox->SetText(m_pCategoryBox->GetSwEntry(nPos));
+            m_pCategoryBox->SetText(m_pCategoryBox->GetSwEntry(nPos).GetName());
         }
 
         for (sal_Int32 i = 0; i < m_pFormatBox->GetEntryCount(); i++)
@@ -777,7 +785,7 @@ IMPL_LINK_NOARG(SwCaptionOptPage, ShowEntryHdl, SvTreeListBox*, void)
     ModifyHdl(*m_pCategoryBox);
 }
 
-IMPL_LINK_NOARG(SwCaptionOptPage, SaveEntryHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG_TYPED(SwCaptionOptPage, SaveEntryHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pEntry = m_pCheckLB->GetHdlEntry();
 
@@ -813,7 +821,7 @@ void SwCaptionOptPage::SaveEntry(SvTreeListEntry* pEntry)
     }
 }
 
-IMPL_LINK_NOARG(SwCaptionOptPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG_TYPED(SwCaptionOptPage, ModifyHdl, Edit&, void)
 {
     const OUString sFieldTypeName = m_pCategoryBox->GetText();
 
@@ -831,17 +839,17 @@ IMPL_LINK_NOARG(SwCaptionOptPage, ModifyHdl, Edit&, void)
     InvalidatePreview();
 }
 
-IMPL_LINK_NOARG(SwCaptionOptPage, SelectHdl, ComboBox&, void)
+IMPL_LINK_NOARG_TYPED(SwCaptionOptPage, SelectHdl, ComboBox&, void)
 {
     InvalidatePreview();
 }
 
-IMPL_LINK_NOARG(SwCaptionOptPage, SelectListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(SwCaptionOptPage, SelectListBoxHdl, ListBox&, void)
 {
     InvalidatePreview();
 }
 
-IMPL_LINK( SwCaptionOptPage, OrderHdl, ListBox&, rBox, void )
+IMPL_LINK_TYPED( SwCaptionOptPage, OrderHdl, ListBox&, rBox, void )
 {
     InvalidatePreview();
 
@@ -881,7 +889,7 @@ void SwCaptionOptPage::InvalidatePreview()
             if (pSh)
             {
                 SwSetExpFieldType* pFieldType = static_cast<SwSetExpFieldType*>(pMgr->GetFieldType(
-                                                SwFieldIds::SetExp, m_pCategoryBox->GetText() ));
+                                                RES_SETEXPFLD, m_pCategoryBox->GetText() ));
                 if( pFieldType && pFieldType->GetOutlineLvl() < MAXLEVEL )
                 {
                     sal_uInt8 nLvl = pFieldType->GetOutlineLvl();
@@ -918,66 +926,11 @@ void SwCaptionOptPage::InvalidatePreview()
     m_pPreview->SetPreviewText(aStr);
 }
 
-CaptionComboBox::CaptionComboBox(vcl::Window* pParent, WinBits nStyle)
-    : ComboBox(pParent, nStyle)
-{
-    // create administration for the resource's Stringlist
-    sal_Int32 nSize = GetEntryCount();
-    for( sal_Int32 i=0; i < nSize; ++i )
-    {
-        m_EntryList.push_back(ComboBox::GetEntry(i));
-    }
-}
-
-CaptionComboBox::~CaptionComboBox()
-{
-}
-
-sal_Int32 CaptionComboBox::InsertEntry(const OUString& rStr, sal_Int32)
-{
-    InsertSwEntry(rStr);
-    return 0;
-}
-
-void CaptionComboBox::InsertSwEntry(const OUString& rEntry)
-{
-    InsertSorted(rEntry);
-}
-
-void CaptionComboBox::InsertSorted(OUString const& rEntry)
-{
-    ComboBox::InsertEntry(rEntry);
-    sal_Int32 nPos = ComboBox::GetEntryPos(rEntry);
-    m_EntryList.insert(m_EntryList.begin() + nPos, rEntry);
-}
-
-void CaptionComboBox::RemoveEntryAt(sal_Int32 const nPos)
-{
-    if (nPos < 0 || static_cast<size_t>(nPos) >= m_EntryList.size())
-        return;
-
-    // Remove old element
-    ComboBox::RemoveEntryAt(nPos);
-
-    // Don't add new entries to the list
-    // add to DelEntryList
-    m_DelEntryList.push_back(m_EntryList[nPos]);
-    m_EntryList.erase(m_EntryList.begin() + nPos);
-}
-
-const OUString& CaptionComboBox::GetSwEntry(sal_Int32 const nPos) const
-{
-    if (0 <= nPos && static_cast<size_t>(nPos) < m_EntryList.size())
-        return m_EntryList[nPos];
-
-    return aDefault;
-}
-
 // Description: ComboBox without Spaces
 void CaptionComboBox::KeyInput(const KeyEvent& rEvt)
 {
     if (rEvt.GetKeyCode().GetCode() != KEY_SPACE)
-        ComboBox::KeyInput(rEvt);
+        SwComboBox::KeyInput(rEvt);
 }
 
 VCL_BUILDER_DECL_FACTORY(CaptionComboBox)

@@ -78,17 +78,23 @@ void ScLinkedAreaDlg::dispose()
     ModalDialog::dispose();
 }
 
+short ScLinkedAreaDlg::Execute()
+{
+    return ModalDialog::Execute();
+}
+
 #define FILTERNAME_HTML  "HTML (StarCalc)"
 #define FILTERNAME_QUERY "calc_HTML_WebQuery"
 
-IMPL_LINK_NOARG(ScLinkedAreaDlg, BrowseHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScLinkedAreaDlg, BrowseHdl, Button*, void)
 {
     if ( !pDocInserter )
-        pDocInserter = new sfx2::DocumentInserter(ScDocShell::Factory().GetFactoryName());
+        pDocInserter = new sfx2::DocumentInserter(
+            OUString::createFromAscii( ScDocShell::Factory().GetShortName() ) );
     pDocInserter->StartExecuteModal( LINK( this, ScLinkedAreaDlg, DialogClosedHdl ) );
 }
 
-IMPL_LINK_NOARG(ScLinkedAreaDlg, FileHdl, ComboBox&, void)
+IMPL_LINK_NOARG_TYPED(ScLinkedAreaDlg, FileHdl, ComboBox&, void)
 {
     OUString aEntered = m_pCbUrl->GetURL();
     if (pSourceShell)
@@ -125,7 +131,7 @@ void ScLinkedAreaDlg::LoadDocument( const OUString& rFile, const OUString& rFilt
         //  unload old document
         pSourceShell->DoClose();
         pSourceShell = nullptr;
-        aSourceRef.clear();
+        aSourceRef.Clear();
     }
 
     if ( !rFile.isEmpty() )
@@ -181,17 +187,17 @@ void ScLinkedAreaDlg::InitFromOldLink( const OUString& rFile, const OUString& rF
     UpdateEnable();
 }
 
-IMPL_LINK_NOARG(ScLinkedAreaDlg, RangeHdl, ListBox&, void)
+IMPL_LINK_NOARG_TYPED(ScLinkedAreaDlg, RangeHdl, ListBox&, void)
 {
     UpdateEnable();
 }
 
-IMPL_LINK_NOARG(ScLinkedAreaDlg, ReloadHdl, Button*, void)
+IMPL_LINK_NOARG_TYPED(ScLinkedAreaDlg, ReloadHdl, Button*, void)
 {
     UpdateEnable();
 }
 
-IMPL_LINK( ScLinkedAreaDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
+IMPL_LINK_TYPED( ScLinkedAreaDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg, void )
 {
     if ( _pFileDlg->GetError() != ERRCODE_NONE )
         return;
@@ -238,7 +244,7 @@ IMPL_LINK( ScLinkedAreaDlg, DialogClosedHdl, sfx2::FileDialogHelper*, _pFileDlg,
         {
             pSourceShell->DoClose();
             pSourceShell = nullptr;
-            aSourceRef.clear();
+            aSourceRef.Clear();
 
             m_pCbUrl->SetText( EMPTY_OUSTRING );
         }

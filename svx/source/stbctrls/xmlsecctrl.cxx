@@ -19,7 +19,6 @@
 
 
 #include <vcl/status.hxx>
-#include <vcl/builder.hxx>
 #include <vcl/menu.hxx>
 #include <vcl/image.hxx>
 #include <sfx2/signaturestate.hxx>
@@ -55,13 +54,31 @@ XmlSecStatusBarControl::XmlSecStatusBarControl( sal_uInt16 _nSlotId,  sal_uInt16
 {
     mpImpl->mnState = SignatureState::UNKNOWN;
 
-    mpImpl->maImage             = Image(BitmapEx(SVX_RES(RID_SVXBMP_SIGNET)));
-    mpImpl->maImageBroken       = Image(BitmapEx(SVX_RES(RID_SVXBMP_SIGNET_BROKEN)));
-    mpImpl->maImageNotValidated = Image(BitmapEx(SVX_RES(RID_SVXBMP_SIGNET_NOTVALIDATED)));
+    mpImpl->maImage             = Image( SVX_RES( RID_SVXBMP_SIGNET              ) );
+    mpImpl->maImageBroken       = Image( SVX_RES( RID_SVXBMP_SIGNET_BROKEN       ) );
+    mpImpl->maImageNotValidated = Image( SVX_RES( RID_SVXBMP_SIGNET_NOTVALIDATED ) );
+
+    if (_rStb.GetDPIScaleFactor() > 1)
+    {
+        Image arr[3] = {mpImpl->maImage, mpImpl->maImageBroken, mpImpl->maImageNotValidated};
+
+        for (Image & i : arr)
+        {
+            BitmapEx b = i.GetBitmapEx();
+            b.Scale(_rStb.GetDPIScaleFactor(), _rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
+            i = Image(b);
+        }
+
+        mpImpl->maImage = arr[0];
+        mpImpl->maImageBroken = arr[1];
+        mpImpl->maImageNotValidated = arr[2];
+    }
+
 }
 
 XmlSecStatusBarControl::~XmlSecStatusBarControl()
 {
+    delete mpImpl;
 }
 
 void XmlSecStatusBarControl::StateChanged( sal_uInt16, SfxItemState eState, const SfxPoolItem* pState )
@@ -102,9 +119,8 @@ void XmlSecStatusBarControl::Command( const CommandEvent& rCEvt )
 {
     if( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        VclBuilder aBuilder(nullptr, VclBuilderContainer::getUIRootDir(), "svx/ui/xmlsecstatmenu.ui", "");
-        VclPtr<PopupMenu> aPopupMenu(aBuilder.get_menu("menu"));
-        if (aPopupMenu->Execute(&GetStatusBar(), rCEvt.GetMousePosPixel()))
+        PopupMenu aPopupMenu( ResId( RID_SVXMNU_XMLSECSTATBAR, DIALOG_MGR() ) );
+        if( aPopupMenu.Execute( &GetStatusBar(), rCEvt.GetMousePosPixel() ) )
         {
             css::uno::Any a;
             SfxUInt16Item aState( GetSlotId(), 0 );
@@ -126,7 +142,7 @@ void XmlSecStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
 {
     vcl::RenderContext* pDev = rUsrEvt.GetRenderContext();
 
-    tools::Rectangle           aRect = rUsrEvt.GetRect();
+    Rectangle           aRect = rUsrEvt.GetRect();
     Color               aOldLineColor = pDev->GetLineColor();
     Color               aOldFillColor = pDev->GetFillColor();
 

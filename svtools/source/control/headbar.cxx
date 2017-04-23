@@ -158,9 +158,9 @@ long HeaderBar::ImplGetItemPos( sal_uInt16 nPos ) const
     return nX;
 }
 
-tools::Rectangle HeaderBar::ImplGetItemRect( sal_uInt16 nPos ) const
+Rectangle HeaderBar::ImplGetItemRect( sal_uInt16 nPos ) const
 {
-    tools::Rectangle aRect( ImplGetItemPos( nPos ), 0, 0, mnDY-1 );
+    Rectangle aRect( ImplGetItemPos( nPos ), 0, 0, mnDY-1 );
     aRect.Right() = aRect.Left() + (*mpItemList)[ nPos ]->mnSize - 1;
     // check for overflow on various systems
     if ( aRect.Right() > 16000 )
@@ -233,11 +233,11 @@ sal_uInt16 HeaderBar::ImplHitTest( const Point& rPos,
 
 void HeaderBar::ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos )
 {
-    tools::Rectangle aRect1 = ImplGetItemRect( nStartPos );
-    tools::Rectangle aRect2 = ImplGetItemRect( nEndPos );
+    Rectangle aRect1 = ImplGetItemRect( nStartPos );
+    Rectangle aRect2 = ImplGetItemRect( nEndPos );
     Point     aStartPos = aRect1.Center();
     Point     aEndPos = aStartPos;
-    tools::Rectangle aStartRect( aStartPos.X()-2, aStartPos.Y()-2,
+    Rectangle aStartRect( aStartPos.X()-2, aStartPos.Y()-2,
                           aStartPos.X()+2, aStartPos.Y()+2 );
 
     if ( nEndPos > nStartPos )
@@ -251,7 +251,7 @@ void HeaderBar::ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos )
         aEndPos.X() = aRect2.Left()+6;
     }
 
-    SetRasterOp( RasterOp::Invert );
+    SetRasterOp( ROP_INVERT );
     DrawRect( aStartRect );
     DrawLine( aStartPos, aEndPos );
     if ( nEndPos > nStartPos )
@@ -274,17 +274,17 @@ void HeaderBar::ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos )
                   Point( aEndPos.X()-3, aEndPos.Y()+1 ) );
         DrawPixel( Point( aEndPos.X()-4, aEndPos.Y() ) );
     }
-    SetRasterOp( RasterOp::OverPaint );
+    SetRasterOp( ROP_OVERPAINT );
 }
 
 void HeaderBar::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, bool bHigh,
-                             const tools::Rectangle& rItemRect, const tools::Rectangle* pRect, DrawFlags )
+                             const Rectangle& rItemRect, const Rectangle* pRect, DrawFlags )
 {
     ImplControlValue aControlValue(0);
-    tools::Rectangle aCtrlRegion;
+    Rectangle aCtrlRegion;
     ControlState nState(ControlState::NONE);
 
-    tools::Rectangle aRect = rItemRect;
+    Rectangle aRect = rItemRect;
 
     // do not display if there is no space
     if (aRect.GetWidth() <= 1)
@@ -555,7 +555,7 @@ void HeaderBar::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos
         {
             if (rRenderContext.IsNativeControlSupported(ControlType::ListHeader, ControlPart::Arrow))
             {
-                aCtrlRegion = tools::Rectangle(Point(nArrowX, aRect.Top()), Size(nArrowWidth, aRect.GetHeight()));
+                aCtrlRegion = Rectangle(Point(nArrowX, aRect.Top()), Size(nArrowWidth, aRect.GetHeight()));
                 // control value passes 1 if arrow points down, 0 otherwise
                 aControlValue.setNumericVal((nBits & HeaderBarItemBits::DOWNARROW) ? 1 : 0);
                 nState |= ControlState::ENABLED;
@@ -609,9 +609,9 @@ void HeaderBar::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos
 }
 
 void HeaderBar::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos,
-                             bool bHigh, const tools::Rectangle* pRect )
+                             bool bHigh, const Rectangle* pRect )
 {
-    tools::Rectangle aRect = ImplGetItemRect(nPos);
+    Rectangle aRect = ImplGetItemRect(nPos);
     ImplDrawItem(rRenderContext, nPos, bHigh, aRect, pRect, DrawFlags::NONE );
 }
 
@@ -619,7 +619,7 @@ void HeaderBar::ImplUpdate(sal_uInt16 nPos, bool bEnd)
 {
     if (IsVisible() && IsUpdateMode())
     {
-        tools::Rectangle aRect;
+        Rectangle aRect;
         size_t nItemCount = mpItemList->size();
         if (nPos < nItemCount)
             aRect = ImplGetItemRect(nPos);
@@ -684,12 +684,12 @@ void HeaderBar::ImplStartDrag( const Point& rMousePos, bool bCommand )
             StartTracking();
             mnStartPos = rMousePos.X()-mnMouseOff;
             mnDragPos = mnStartPos;
-            maStartDragHdl.Call( this );
+            StartDrag();
             if (mbItemMode)
                 Invalidate();
             else
             {
-                tools::Rectangle aSizeRect( mnDragPos, 0, mnDragPos, mnDragSize+mnDY );
+                Rectangle aSizeRect( mnDragPos, 0, mnDragPos, mnDragSize+mnDY );
                 ShowTracking( aSizeRect, ShowTrackFlags::Split );
             }
         }
@@ -707,7 +707,7 @@ void HeaderBar::ImplDrag( const Point& rMousePos )
     {
         bool bNewOutDrag;
 
-        tools::Rectangle aItemRect = ImplGetItemRect( nPos );
+        Rectangle aItemRect = ImplGetItemRect( nPos );
         if ( aItemRect.IsInside( rMousePos ) )
             bNewOutDrag = false;
         else
@@ -789,19 +789,19 @@ void HeaderBar::ImplDrag( const Point& rMousePos )
     }
     else
     {
-        tools::Rectangle aItemRect = ImplGetItemRect( nPos );
+        Rectangle aItemRect = ImplGetItemRect( nPos );
         if ( mnDragPos < aItemRect.Left() )
             mnDragPos = aItemRect.Left();
         if ( (mnDragPos < 0) || (mnDragPos > mnDX-1) )
             HideTracking();
         else
         {
-            tools::Rectangle aSizeRect( mnDragPos, 0, mnDragPos, mnDragSize+mnDY );
+            Rectangle aSizeRect( mnDragPos, 0, mnDragPos, mnDragSize+mnDY );
             ShowTracking( aSizeRect, ShowTrackFlags::Split );
         }
     }
 
-    maDragHdl.Call( this );
+    Drag();
 }
 
 void HeaderBar::ImplEndDrag( bool bCancel )
@@ -912,7 +912,7 @@ void HeaderBar::Tracking( const TrackingEvent& rTEvt )
         ImplDrag( aMousePos );
 }
 
-void HeaderBar::Paint(vcl::RenderContext& rRenderContext, const tools::Rectangle& rRect)
+void HeaderBar::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
 {
     if (mnBorderOff1 || mnBorderOff2)
     {
@@ -944,7 +944,7 @@ void HeaderBar::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize,
 {
     Point       aPos  = pDev->LogicToPixel( rPos );
     Size        aSize = pDev->LogicToPixel( rSize );
-    tools::Rectangle   aRect( aPos, aSize );
+    Rectangle   aRect( aPos, aSize );
     vcl::Font   aFont = GetDrawPixelFont( pDev );
 
     pDev->Push();
@@ -975,7 +975,7 @@ void HeaderBar::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize,
         }
     }
 
-    tools::Rectangle aItemRect( aRect );
+    Rectangle aItemRect( aRect );
     size_t nItemCount = mpItemList->size();
     for ( size_t i = 0; i < nItemCount; i++ )
     {
@@ -1020,7 +1020,7 @@ void HeaderBar::RequestHelp( const HelpEvent& rHEvt )
     {
         if ( rHEvt.GetMode() & (HelpEventMode::QUICK | HelpEventMode::BALLOON) )
         {
-            tools::Rectangle aItemRect = GetItemRect( nItemId );
+            Rectangle aItemRect = GetItemRect( nItemId );
             Point aPt = OutputToScreenPixel( aItemRect.TopLeft() );
             aItemRect.Left()   = aPt.X();
             aItemRect.Top()    = aPt.Y();
@@ -1102,6 +1102,16 @@ void HeaderBar::DataChanged( const DataChangedEvent& rDCEvt )
         ImplInitSettings( true, true, true );
         Invalidate();
     }
+}
+
+void HeaderBar::StartDrag()
+{
+    maStartDragHdl.Call( this );
+}
+
+void HeaderBar::Drag()
+{
+    maDragHdl.Call( this );
 }
 
 void HeaderBar::EndDrag()
@@ -1193,7 +1203,7 @@ void HeaderBar::Clear()
 void HeaderBar::SetOffset( long nNewOffset )
 {
     // move area
-    tools::Rectangle aRect( 0, mnBorderOff1, mnDX-1, mnDY-mnBorderOff1-mnBorderOff2-1 );
+    Rectangle aRect( 0, mnBorderOff1, mnDX-1, mnDY-mnBorderOff1-mnBorderOff2-1 );
     long nDelta = mnOffset-nNewOffset;
     mnOffset = nNewOffset;
     Scroll( nDelta, 0, aRect );
@@ -1233,9 +1243,9 @@ sal_uInt16 HeaderBar::GetItemId( const Point& rPos ) const
     return 0;
 }
 
-tools::Rectangle HeaderBar::GetItemRect( sal_uInt16 nItemId ) const
+Rectangle HeaderBar::GetItemRect( sal_uInt16 nItemId ) const
 {
-    tools::Rectangle aRect;
+    Rectangle aRect;
     sal_uInt16 nPos = GetItemPos( nItemId );
     if ( nPos != HEADERBAR_ITEM_NOTFOUND )
         aRect = ImplGetItemRect( nPos );

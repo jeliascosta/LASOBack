@@ -24,17 +24,16 @@
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/awt/FontSlant.hpp>
 #include <tools/fontenum.hxx>
-#include <vcl/unohelp.hxx>
 
 using namespace ::com::sun::star;
 using namespace ::xmloff::token;
 
-SvXMLEnumMapEntry<FontItalic> const aPostureGenericMapping[] =
+SvXMLEnumMapEntry const aPostureGenericMapping[] =
 {
     { XML_POSTURE_NORMAL,       ITALIC_NONE     },
     { XML_POSTURE_ITALIC,       ITALIC_NORMAL   },
     { XML_POSTURE_OBLIQUE,      ITALIC_OBLIQUE  },
-    { XML_TOKEN_INVALID,        (FontItalic)0   }
+    { XML_TOKEN_INVALID,        0               }
 };
 
 
@@ -48,10 +47,10 @@ XMLPosturePropHdl::~XMLPosturePropHdl()
 
 bool XMLPosturePropHdl::importXML( const OUString& rStrImpValue, uno::Any& rValue, const SvXMLUnitConverter& ) const
 {
-    FontItalic ePosture;
+    sal_uInt16 ePosture;
     bool bRet = SvXMLUnitConverter::convertEnum( ePosture, rStrImpValue, aPostureGenericMapping );
     if( bRet )
-        rValue <<= vcl::unohelper::ConvertFontSlant(ePosture);
+        rValue <<= (awt::FontSlant)ePosture;
 
     return bRet;
 }
@@ -71,7 +70,7 @@ bool XMLPosturePropHdl::exportXML( OUString& rStrExpValue, const uno::Any& rValu
     }
 
     OUStringBuffer aOut;
-    bool bRet = SvXMLUnitConverter::convertEnum(aOut, vcl::unohelper::ConvertFontSlant(eSlant), aPostureGenericMapping);
+    bool bRet = SvXMLUnitConverter::convertEnum( aOut, (sal_Int32)eSlant, aPostureGenericMapping );
     if( bRet )
         rStrExpValue = aOut.makeStringAndClear();
 

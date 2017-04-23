@@ -30,12 +30,12 @@ class SwDPage : public FmFormPage, public SdrObjUserCall
 {
     SwDPage &operator=(const SwDPage&) = delete;
 
-    std::unique_ptr<SdrPageGridFrameList>   pGridLst;
-    SwDoc*                                  pDoc;
+    SdrPageGridFrameList*   pGridLst;
+    SwDoc*                  pDoc;
 
 public:
-    explicit SwDPage(SwDrawModel& rNewModel, bool bMasterPage);
-    virtual ~SwDPage() override;
+    explicit SwDPage(SwDrawModel& rNewModel, bool bMasterPage=false);
+    virtual ~SwDPage();
 
     virtual SwDPage* Clone() const override;
     virtual SwDPage* Clone(SdrModel* pNewModel) const override;
@@ -46,14 +46,14 @@ public:
     virtual SdrObject* ReplaceObject( SdrObject* pNewObj, size_t nObjNum ) override;
 
     virtual const SdrPageGridFrameList* GetGridFrameList(const SdrPageView* pPV,
-                                    const tools::Rectangle *pRect) const override;
+                                    const Rectangle *pRect) const override;
 
     bool RequestHelp( vcl::Window* pWindow, SdrView* pView, const HelpEvent& rEvt );
 
     virtual css::uno::Reference< css::uno::XInterface > createUnoPage() override;
 
 protected:
-    void lateInit(const SwDPage& rPage, SwDrawModel* pNewModel);
+    void lateInit(const SwDPage& rPage, SwDrawModel* pNewModel = nullptr);
 
 private:
     SwDPage(const SwDPage& rSrcPage);

@@ -44,10 +44,14 @@ using namespace winwrap;
 
 typedef CHatchWin *PCHatchWin;
 
+
+void DrawShading(LPRECT prc, HDC hDC, UINT cWidth);
+
+
 winwrap::CWindow::CWindow(HINSTANCE hInst)
 {
     m_hInst=hInst;
-    m_hWnd=nullptr;
+    m_hWnd=NULL;
     return;
 }
 
@@ -114,10 +118,10 @@ BOOL winwrap::HatchWindowRegister(HINSTANCE hInst)
     wc.cbClsExtra    = 0;
     wc.lpfnWndProc   = HatchWndProc;
     wc.cbWndExtra    = CBHATCHWNDEXTRA;
-    wc.hIcon         = nullptr;
-    wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW+1);
-    wc.lpszMenuName  = nullptr;
+    wc.hIcon         = NULL;
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+    wc.lpszMenuName  = NULL;
     wc.lpszClassName = SZCLASSHATCHWIN;
 
     return RegisterClass(&wc);
@@ -136,9 +140,9 @@ CHatchWin::CHatchWin(HINSTANCE hInst,const DocumentHolder* pDocHolder)
     : CWindow(hInst),
       m_aTracker()
 {
-    m_hWnd=nullptr;
-    m_hWndKid=nullptr;
-    m_hWndAssociate=nullptr;
+    m_hWnd=NULL;
+    m_hWndKid=NULL;
+    m_hWndAssociate=NULL;
     m_uID=0;
 
     m_dBorderOrg=GetProfileInt(TEXT("windows")
@@ -160,7 +164,7 @@ CHatchWin::~CHatchWin()
      * Chances are this was already destroyed when a document
      * was destroyed.
      */
-    if (nullptr!=m_hWnd && IsWindow(m_hWnd))
+    if (NULL!=m_hWnd && IsWindow(m_hWnd))
         DestroyWindow(m_hWnd);
 
     return;
@@ -196,7 +200,7 @@ BOOL CHatchWin::Init(HWND hWndParent, WORD uID, HWND hWndAssoc)
     m_uID=uID;
     m_hWndAssociate=hWndAssoc;
 
-    return (nullptr!=m_hWnd);
+    return (NULL!=m_hWnd);
 }
 
 
@@ -270,7 +274,7 @@ void CHatchWin::RectsSet(LPRECT prcPos, LPRECT prcClip)
     InflateRect(&rcPos, m_dBorder, m_dBorder);
     IntersectRect(&rc, &rcPos, prcClip);
 
-    SetWindowPos(m_hWnd, nullptr, rc.left, rc.top, rc.right-rc.left
+    SetWindowPos(m_hWnd, NULL, rc.left, rc.top, rc.right-rc.left
                  , rc.bottom-rc.top, SWP_NOZORDER | SWP_NOACTIVATE);
 
     /*
@@ -312,7 +316,7 @@ void CHatchWin::ChildSet(HWND hWndKid)
 {
     m_hWndKid=hWndKid;
 
-    if (nullptr!=hWndKid)
+    if (NULL!=hWndKid)
     {
         SetParent(hWndKid, m_hWnd);
 
@@ -370,14 +374,14 @@ LRESULT APIENTRY winwrap::HatchWndProc(
     HDC         hDC;
     PAINTSTRUCT ps;
 
-    phw=reinterpret_cast<PCHatchWin>(GetWindowLongPtr(hWnd, HWWL_STRUCTURE));
+    phw=(PCHatchWin)GetWindowLongPtr(hWnd, HWWL_STRUCTURE);
     POINT ptMouse;
 
     switch (iMsg)
     {
         case WM_CREATE:
-            phw=static_cast<PCHatchWin>(reinterpret_cast<LPCREATESTRUCT>(lParam)->lpCreateParams);
-            SetWindowLongPtr(hWnd, HWWL_STRUCTURE, reinterpret_cast<LONG_PTR>(phw));
+            phw=(PCHatchWin)((LPCREATESTRUCT)lParam)->lpCreateParams;
+            SetWindowLongPtr(hWnd, HWWL_STRUCTURE, (LONG_PTR)phw);
             break;
         case WM_PAINT:
             hDC=BeginPaint(hWnd,&ps);
@@ -405,7 +409,7 @@ LRESULT APIENTRY winwrap::HatchWndProc(
             break;
         case WM_SETFOCUS:
             //We need this since the container will SetFocus to us.
-            if (nullptr!=phw->m_hWndKid)
+            if (NULL!=phw->m_hWndKid)
                 SetFocus(phw->m_hWndKid);
 
             break;
@@ -419,12 +423,12 @@ LRESULT APIENTRY winwrap::HatchWndProc(
              * message when the mouse is on the border.  So we can
              * just send the notification.
              */
-            if (nullptr!=phw->m_hWndAssociate)
+            if (NULL!=phw->m_hWndAssociate)
             {
                 SendMessage(
                     phw->m_hWndAssociate, WM_COMMAND,
                     MAKEWPARAM(phw->m_uID, HWN_BORDERDOUBLECLICKED),
-                    reinterpret_cast<LPARAM>(hWnd));
+                    (LPARAM) hWnd);
             }
 
             break;
